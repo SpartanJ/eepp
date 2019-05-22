@@ -3,6 +3,7 @@
 
 #include <eepp/config.hpp>
 #include <eepp/math/vector2.hpp>
+#include <eepp/core/string.hpp>
 
 namespace EE { namespace Math {
 
@@ -40,6 +41,8 @@ class tOriginPoint : public Vector2<T> {
 		{
 		}
 
+		std::string toString() const;
+
 		tOriginPoint<T>& operator=(const Vector2<T>& v);
 };
 
@@ -48,6 +51,13 @@ tOriginPoint<T>& tOriginPoint<T>::operator=(const Vector2<T>& v) {
 	this->x = v.x;
 	this->y = v.y;
 	return *this;
+}
+
+template<typename T>
+std::string tOriginPoint<T>::toString() const {
+	if ( OriginType == OriginCenter ) return "center";
+	else if ( OriginType == OriginTopLeft ) return "topleft";
+	return String::toStr(this->x) + "," + String::toStr(this->y);
 }
 
 typedef tOriginPoint<Float>		OriginPoint;

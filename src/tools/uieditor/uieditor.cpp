@@ -728,7 +728,7 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 	Uint32 width = eemin( currentMode.Width, (Uint32)( 1280 * pixelDensity ) );
 	Uint32 height = eemin( currentMode.Height, (Uint32)( 720 * pixelDensity ) );
 
-	window = Engine::instance()->createWindow( WindowSettings( width, height, "eepp - UI Editor", WindowStyle::Default, WindowBackend::Default, 32, "assets/icon/ee.png", pixelDensity ), ContextSettings( true, GLv_default, true, 24, 1, 0, false ) );
+	window = Engine::instance()->createWindow( WindowSettings( width, height, "eepp - UI Editor", WindowStyle::Default, WindowBackend::Default, 32, "assets/icon/ee.png", pixelDensity ), ContextSettings( true, GLv_default, true, 24, 1, 0, true ) );
 
 	if ( window->isOpen() ) {
 		window->setCloseRequestCallback( cb::Make1( onCloseRequestCallback ) );

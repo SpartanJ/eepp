@@ -1,6 +1,8 @@
 #ifndef EE_GRAPHICSFONTHELPER_HPP
 #define EE_GRAPHICSFONTHELPER_HPP
 
+#include <eepp/config.hpp>
+
 namespace EE { namespace Graphics {
 
 enum EE_FONT_TYPE {

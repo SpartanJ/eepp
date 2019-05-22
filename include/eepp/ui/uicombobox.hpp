@@ -42,6 +42,8 @@ class EE_API UIComboBox : public UIWidget {
 
 		virtual void onPositionChange();
 
+		virtual void onPaddingChange();
+
 		virtual void onAutoSize();
 };
 

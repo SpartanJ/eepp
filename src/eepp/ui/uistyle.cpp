@@ -8,7 +8,7 @@ using namespace EE::UI::CSS;
 
 namespace EE { namespace UI {
 
-UIStyle * EE::UI::UIStyle::New( UIWidget * widget ) {
+UIStyle * UIStyle::New( UIWidget * widget ) {
 	return eeNew( UIStyle, ( widget ) );
 }
 
@@ -18,42 +18,38 @@ UIStyle::UIStyle( UIWidget * widget ) :
 	load();
 }
 
-UIStyle::~UIStyle()
-{}
-
-bool UIStyle::stateExists( const EE::Uint32 & state  ) const {
-	return mStates.find( state ) != mStates.end();
+UIStyle::~UIStyle() {
+	removeRelatedWidgets();
+	unsubscribeNonCacheableStyles();
 }
 
-void UIStyle::addStyleSheetProperty( const Uint32& state, const StyleSheetProperty& attribute ) {
+bool UIStyle::stateExists( const EE::Uint32&  ) const {
+	return true;
+}
+
+void UIStyle::setStyleSheetProperty( const StyleSheetProperty& attribute ) {
 	if ( attribute.getName() == "padding" ) {
 		Rectf rect(  NodeAttribute( attribute.getName(), attribute.getValue() ).asRectf() );
-		mStates[ state ][ "paddingleft" ] = StyleSheetProperty( "paddingleft", String::toStr( rect.Left ), attribute.getSpecificity() );
-		mStates[ state ][ "paddingright" ] = StyleSheetProperty( "paddingright", String::toStr( rect.Right ), attribute.getSpecificity() );
-		mStates[ state ][ "paddingtop" ] = StyleSheetProperty( "paddingtop", String::toStr( rect.Top ), attribute.getSpecificity() );
-		mStates[ state ][ "paddingbottom" ] = StyleSheetProperty( "paddingbottom", String::toStr( rect.Bottom ), attribute.getSpecificity() );
+		mElementStyle.setProperty( StyleSheetProperty( "paddingleft", String::toStr( rect.Left ), attribute.getSpecificity(), attribute.isVolatile() ) );
+		mElementStyle.setProperty( StyleSheetProperty( "paddingright", String::toStr( rect.Right ), attribute.getSpecificity(), attribute.isVolatile() ) );
+		mElementStyle.setProperty( StyleSheetProperty( "paddingtop", String::toStr( rect.Top ), attribute.getSpecificity(), attribute.isVolatile() ) );
+		mElementStyle.setProperty( StyleSheetProperty( "paddingbottom", String::toStr( rect.Bottom ), attribute.getSpecificity(), attribute.isVolatile() ) );
 	} else if ( attribute.getName() == "layout_margin" ) {
 		Rect rect(  NodeAttribute( attribute.getName(), attribute.getValue() ).asRect() );
-		mStates[ state ][ "layout_marginleft" ] = StyleSheetProperty( "layout_marginleft", String::toStr( rect.Left ), attribute.getSpecificity() );
-		mStates[ state ][ "layout_marginright" ] = StyleSheetProperty( "layout_marginright", String::toStr( rect.Right ), attribute.getSpecificity() );
-		mStates[ state ][ "layout_margintop" ] = StyleSheetProperty( "layout_margintop", String::toStr( rect.Top ), attribute.getSpecificity() );
-		mStates[ state ][ "layout_marginbottom" ] = StyleSheetProperty( "layout_marginbottom", String::toStr( rect.Bottom ), attribute.getSpecificity() );
+		mElementStyle.setProperty( StyleSheetProperty( "layout_marginleft", String::toStr( rect.Left ), attribute.getSpecificity(), attribute.isVolatile() ) );
+		mElementStyle.setProperty( StyleSheetProperty( "layout_marginright", String::toStr( rect.Right ), attribute.getSpecificity(), attribute.isVolatile() ) );
+		mElementStyle.setProperty( StyleSheetProperty( "layout_margintop", String::toStr( rect.Top ), attribute.getSpecificity(), attribute.isVolatile() ) );
+		mElementStyle.setProperty( StyleSheetProperty( "layout_marginbottom", String::toStr( rect.Bottom ), attribute.getSpecificity(), attribute.isVolatile() ) );
 	} else {
-		mStates[ state ][ attribute.getName() ] = attribute;
-	}
-
-	if ( String::startsWith( attribute.getName(), "transition" ) ) {
-		mTransitionAttributes[ state ].push_back( attribute );
-
-		parseTransitions( state );
+		mElementStyle.setProperty( attribute );
 	}
 }
 
 void UIStyle::load() {
-	mStates.clear();
+	unsubscribeNonCacheableStyles();
+
+	mCacheableStyles.clear();
 	mNoncacheableStyles.clear();
-	mTransitions.clear();
-	mTransitionAttributes.clear();
 
 	UISceneNode * uiSceneNode = mWidget->getSceneNode()->isUISceneNode() ? static_cast<UISceneNode*>( mWidget->getSceneNode() ) : NULL;
 
@@ -61,165 +57,140 @@ void UIStyle::load() {
 		CSS::StyleSheet& styleSheet = uiSceneNode->getStyleSheet();
 
 		if ( !styleSheet.isEmpty() ) {
-			CSS::StyleSheet::StyleSheetPseudoClassProperties propertiesByPseudoClass = styleSheet.getElementPropertiesByState( mWidget );
+			StyleSheetStyleVector styles = styleSheet.getElementStyles( mWidget );
 
-			if ( !propertiesByPseudoClass.empty() ) {
-				Uint32 stateFlag;
+			for ( auto& style : styles ) {
+				const StyleSheetSelector& selector = style.getSelector();
 
-				for ( auto it = propertiesByPseudoClass.begin(); it != propertiesByPseudoClass.end(); ++it ) {
-					stateFlag = getStateFlagFromName( it->first );
-
-					if ( eeINDEX_NOT_FOUND != stateFlag )
-						addStyleSheetProperties( stateFlag, it->second );
+				if ( selector.isCacheable() ) {
+					mCacheableStyles.push_back( style );
+				} else {
+					mNoncacheableStyles.push_back( style );
 				}
 			}
 
-			mNoncacheableStyles = styleSheet.getNoncacheableElementStyles( mWidget );
+			subscribeNonCacheableStyles();
 		}
 	}
 }
 
-void UIStyle::addStyleSheetProperties(const Uint32 & state, const CSS::StyleSheetProperties& properties ) {
+void UIStyle::setStyleSheetProperties( const CSS::StyleSheetProperties& properties ) {
 	if ( !properties.empty() ) {
-		for ( auto it = properties.begin(); it != properties.end(); ++it ) {
-			CSS::StyleSheetProperty property = it->second;
-
-			addStyleSheetProperty( state, property );
+		for ( const auto& it : properties ) {
+			setStyleSheetProperty( it.second );
 		}
 	}
 }
 
-bool UIStyle::hasTransition( const Uint32& state, const std::string& propertyName ) {
-	bool ret = mTransitions.find( state ) != mTransitions.end() &&
-			( mTransitions[ state ].find( propertyName ) != mTransitions[ state ].end() ||
-			  mTransitions[ state ].find( "all" ) != mTransitions[ state ].end()
-			);
-
-	// When transitions are declared without state are global
-	if ( !ret && state != StateFlagNormal ) {
-		ret = mTransitions.find( StateFlagNormal ) != mTransitions.end() && (
-			  mTransitions[ StateFlagNormal ].find( propertyName ) != mTransitions[ StateFlagNormal ].end() ||
-			  mTransitions[ StateFlagNormal ].find( "all" ) != mTransitions[ StateFlagNormal ].end()
-		);
-	}
-
-	return ret;
+bool UIStyle::hasTransition( const std::string& propertyName ) {
+	return mTransitions.find( propertyName ) != mTransitions.end() || mTransitions.find( "all" ) != mTransitions.end();
 }
 
-UIStyle::TransitionInfo UIStyle::getTransition( const Uint32& state, const std::string& propertyName ) {
-	if ( mTransitions.find( state ) != mTransitions.end() ) {
-		auto propertyTransitionIt = mTransitions[ state ].find( propertyName );
+UIStyle::TransitionInfo UIStyle::getTransition( const std::string& propertyName ) {
+	auto propertyTransitionIt = mTransitions.find( propertyName );
 
-		if ( propertyTransitionIt != mTransitions[ state ].end() ) {
-			return propertyTransitionIt->second;
-		} else if ( ( propertyTransitionIt = mTransitions[ state ].find( "all" ) ) != mTransitions[ state ].end() ) {
-			return propertyTransitionIt->second;
-		} else if ( mTransitions.find( StateFlagNormal ) != mTransitions.end() ) {
-			propertyTransitionIt = mTransitions[ StateFlagNormal ].find( propertyName );
-
-			if ( propertyTransitionIt != mTransitions[ StateFlagNormal ].end() ) {
-				return propertyTransitionIt->second;
-			} else if ( ( propertyTransitionIt = mTransitions[ StateFlagNormal ].find( "all" ) ) != mTransitions[ state ].end() ) {
-				return propertyTransitionIt->second;
-			}
-		}
-	} else if ( mTransitions.find( StateFlagNormal ) != mTransitions.end() ) {
-		auto propertyTransitionIt = mTransitions[ StateFlagNormal ].find( propertyName );
-
-		if ( propertyTransitionIt != mTransitions[ StateFlagNormal ].end() ) {
-			return propertyTransitionIt->second;
-		} else if ( ( propertyTransitionIt = mTransitions[ StateFlagNormal ].find( "all" ) ) != mTransitions[ state ].end() ) {
-			return propertyTransitionIt->second;
-		}
+	if ( propertyTransitionIt != mTransitions.end() ) {
+		return propertyTransitionIt->second;
+	} else if ( ( propertyTransitionIt = mTransitions.find( "all" ) ) != mTransitions.end() ) {
+		return propertyTransitionIt->second;
 	}
 
 	return TransitionInfo();
 }
 
+void UIStyle::subscribeRelated( UIWidget * widget ) {
+	mRelatedWidgets.insert( widget );
+}
+
+void UIStyle::unsubscribeRelated( UIWidget * widget ) {
+	mRelatedWidgets.erase( widget );
+}
+
+void UIStyle::tryApplyStyle( const StyleSheetStyle& style ) {
+	if ( style.getSelector().select( mWidget ) ) {
+		for ( const auto& prop : style.getProperties() ) {
+			const StyleSheetProperty& property = prop.second;
+			const auto& it = mProperties.find( property.getName() );
+
+			if ( it == mProperties.end() || property.getSpecificity() >= it->second.getSpecificity() ) {
+				mProperties[ property.getName() ] = property;
+
+				if ( String::startsWith( property.getName(), "transition" ) )
+					mTransitionAttributes.push_back( property );
+			}
+		}
+	}
+}
+
 void UIStyle::onStateChange() {
 	if ( NULL != mWidget ) {
-		StyleSheetProperties properties;
+		mProperties.clear();
+		mTransitionAttributes.clear();
 
-		auto& props = mStates[ mCurrentState ];
+		tryApplyStyle( mElementStyle );
 
-		for ( auto& prop : props ) {
-			auto& property = prop.second;
-			auto it = properties.find( property.getName() );
-
-			if ( it == properties.end() || property.getSpecificity() >= it->second.getSpecificity() ) {
-				properties[ property.getName() ] = property;
-			}
+		for ( auto& style : mCacheableStyles ) {
+			tryApplyStyle( style );
 		}
 
 		for ( auto& style : mNoncacheableStyles ) {
-			if ( style.getSelector().select( mWidget ) ) {
-				for ( auto& prop : style.getProperties() ) {
-					auto& property = prop.second;
-					auto it = properties.find( property.getName() );
-
-					if ( it == properties.end() || property.getSpecificity() >= it->second.getSpecificity() ) {
-						properties[ property.getName() ] = property;
-					}
-				}
-			}
+			tryApplyStyle( style );
 		}
+
+		parseTransitions();
 
 		mWidget->beginAttributesTransaction();
 
-		for ( auto& prop : properties ) {
-			auto& property = prop.second;
+		for ( const auto& prop : mProperties ) {
+			const StyleSheetProperty& property = prop.second;
 
-			mWidget->setAttribute( property.getName(), property.getValue(), mCurrentState );
+			mWidget->setAttribute( NodeAttribute( property.getName(), property.getValue(), property.isVolatile() ), mCurrentState );
 		}
 
 		mWidget->endAttributesTransaction();
-	}
-}
 
-StyleSheetProperty UIStyle::getStyleSheetProperty( const Uint32& state, const std::string& attributeName ) const {
-	if ( !attributeName.empty() && stateExists( state ) ) {
-		auto& attributesMap = mStates.at( state );
-
-		auto attributeFound = attributesMap.find( attributeName );
-
-		if ( attributeFound != attributesMap.end() ) {
-			return attributeFound->second;
-		}
-	}
-
-	return StyleSheetProperty();
-}
-
-StyleSheetProperty UIStyle::getStyleSheetPropertyFromNames( const Uint32& state, const std::vector<std::string>& propertiesNames ) const {
-	if ( !propertiesNames.empty() && stateExists( state ) ) {
-		auto& attributesMap = mStates.at( state );
-
-		for ( size_t i = 0; i < propertiesNames.size(); i++ ) {
-			const std::string& name = propertiesNames[i];
-			auto attributeFound = attributesMap.find( name );
-
-			if ( attributeFound != attributesMap.end() ) {
-				return attributeFound->second;
+		for ( auto& related : mRelatedWidgets ) {
+			if ( NULL != related->getUIStyle() ) {
+				related->getUIStyle()->onStateChange();
 			}
+		}
+	}
+}
 
+StyleSheetProperty UIStyle::getStatelessStyleSheetProperty( const std::string& propertyName ) const {
+	if ( !propertyName.empty() ) {
+		if  ( !mElementStyle.getSelector().hasPseudoClasses() ) {
+			StyleSheetProperty property = mElementStyle.getPropertyByName( propertyName );
+
+			if ( !property.isEmpty() )
+				return property;
+		}
+
+		for ( const StyleSheetStyle& style : mCacheableStyles ) {
+			if  ( !style.getSelector().hasPseudoClasses() ) {
+				StyleSheetProperty property = style.getPropertyByName( propertyName );
+
+				if ( !property.isEmpty() )
+					return property;
+			}
 		}
 	}
 
 	return StyleSheetProperty();
 }
 
-NodeAttribute UIStyle::getNodeAttribute( const Uint32& state, const std::string& attributeName ) const {
-	StyleSheetProperty property( getStyleSheetProperty( state, attributeName ) );
-	return NodeAttribute( property.getName(), property.getValue() );
+StyleSheetProperty UIStyle::getStyleSheetProperty( const std::string& propertyName ) const {
+	auto propertyIt = mProperties.find( propertyName );
+
+	if ( propertyIt != mProperties.end() )
+		return propertyIt->second;
+
+	return StyleSheetProperty();
 }
 
-bool UIStyle::hasStyleSheetProperty( const Uint32 & state, const std::string& propertyName ) const {
-	if ( !propertyName.empty() && stateExists( state ) ) {
-		auto& attributesMap = mStates.at( state );
-		return attributesMap.find( propertyName ) != attributesMap.end();
-	}
-
-	return false;
+NodeAttribute UIStyle::getNodeAttribute( const std::string& attributeName ) const {
+	StyleSheetProperty property( getStyleSheetProperty( attributeName ) );
+	return NodeAttribute( property.getName(), property.getValue() );
 }
 
 void UIStyle::updateState() {
@@ -229,36 +200,65 @@ void UIStyle::updateState() {
 				if ( mCurrentState != getStateFlag(i) ) {
 					mPreviousState = mCurrentState;
 					mCurrentState = getStateFlag(i);
-					onStateChange();
+					break;
 				}
-
-				return;
 			}
 		}
 	}
 
-	Uint32 currentState = mCurrentState;
+	onStateChange();
+}
 
-	mCurrentState = StateFlagNormal;
+void UIStyle::subscribeNonCacheableStyles() {
+	for ( auto& style : mNoncacheableStyles ) {
+		std::vector<CSS::StyleSheetElement*> elements = style.getSelector().getRelatedElements( mWidget, false );
 
-	if ( currentState != StateFlagNormal ) {
-		onStateChange();
+		if ( !elements.empty() ) {
+			for ( auto& element : elements ) {
+				UIWidget * widget = dynamic_cast<UIWidget*>( element );
+
+				if ( NULL != widget && NULL != widget->getUIStyle() ) {
+					widget->getUIStyle()->subscribeRelated( mWidget );
+
+					mSubscribedWidgets.insert( widget );
+				}
+			}
+		}
 	}
 }
 
-void UIStyle::parseTransitions( const Uint32& state ) {
+void UIStyle::unsubscribeNonCacheableStyles() {
+	for ( auto& widget : mSubscribedWidgets ) {
+		if ( NULL != widget->getUIStyle() ) {
+			widget->getUIStyle()->unsubscribeRelated( mWidget );
+		}
+	}
+
+	mSubscribedWidgets.clear();
+}
+
+void UIStyle::removeFromSubscribedWidgets( UIWidget * widget ) {
+	mSubscribedWidgets.erase( widget );
+}
+
+void UIStyle::removeRelatedWidgets() {
+	for ( auto& widget : mRelatedWidgets ) {
+		if ( NULL != widget->getUIStyle() ) {
+			widget->getUIStyle()->removeFromSubscribedWidgets( mWidget );
+		}
+	}
+
+	mRelatedWidgets.clear();
+}
+
+void UIStyle::parseTransitions() {
 	std::vector<std::string> properties;
 	std::vector<Time> durations;
 	std::vector<Time> delays;
 	std::vector<Ease::Interpolation> timingFunctions;
 	TransitionsMap transitions;
 
-	if ( mTransitionAttributes.find( state ) == mTransitionAttributes.end() )
-		return;
-
-	auto transitionAttributes = mTransitionAttributes[ state ];
-
-	for ( auto& attr : transitionAttributes ) {
+	for ( auto& attr : mTransitionAttributes ) {
 		if ( attr.getName() == "transition" ) {
 			auto strTransitions = String::split( attr.getValue(), ',' );
 
@@ -329,7 +329,7 @@ void UIStyle::parseTransitions( const Uint32& state ) {
 
 	if ( properties.empty() ) {
 		if ( !transitions.empty() )
-			mTransitions[ state ] = transitions;
+			mTransitions = transitions;
 
 		return;
 	}
@@ -358,7 +358,7 @@ void UIStyle::parseTransitions( const Uint32& state ) {
 			transitionInfo.timingFunction = timingFunctions[0];
 		}
 
-		mTransitions[ state ][ property ] = transitionInfo;
+		mTransitions[ property ] = transitionInfo;
 	}
 }
 

@@ -89,43 +89,27 @@ class EE_API UINode : public Node {
 
 		UISkin * setBackgroundFillEnabled( bool enabled );
 
-		UINode * setBackgroundDrawable( const Uint32 & state, Drawable * drawable , bool ownIt = false );
-
 		UINode * setBackgroundDrawable( Drawable * drawable , bool ownIt = false );
-
-		UINode * setBackgroundColor( const Uint32 & state, const Color& color );
 
 		UINode * setBackgroundColor( const Color& color );
 
-		Color getBackgroundColor( const Uint32 & state ) const;
-
 		Color getBackgroundColor() const;
 
-		UINode * setBorderRadius( const Uint32 & state, const unsigned int& corners );
-
 		UINode * setBorderRadius( const unsigned int& corners );
-
-		Uint32 getBorderRadius( const Uint32& state ) const;
 
 		Uint32 getBorderRadius() const;
 
 		UISkin * setForegroundFillEnabled( bool enabled );
 
-		UINode * setForegroundDrawable( const Uint32 & state, Drawable * drawable , bool ownIt = false );
-
 		UINode * setForegroundDrawable( Drawable * drawable , bool ownIt = false );
-
-		UINode * setForegroundColor( const Uint32 & state, const Color& color );
 
 		UINode * setForegroundColor( const Color& color );
 
-		Color getForegroundColor( const Uint32 & state ) const;
-
 		Color getForegroundColor() const;
 
-		UINode * setForegroundRadius( const Uint32 & state, const unsigned int& corners );
-
 		UINode * setForegroundRadius( const unsigned int& corners );
+
+		Uint32 getForegroundRadius() const;
 
 		RectangleDrawable * setBorderEnabled( bool enabled );
 
@@ -134,6 +118,8 @@ class EE_API UINode : public Node {
 		Color getBorderColor();
 
 		UINode * setBorderWidth( const unsigned int& width );
+
+		Float getBorderWidth() const;
 
 		const Uint32& getFlags() const;
 
@@ -165,13 +151,9 @@ class EE_API UINode : public Node {
 
 		UINode * setSkin( UISkin * skin );
 
-		UINode * setSkinColor( const Uint32& state, const Color& color );
-
 		UINode * setSkinColor( const Color& color );
 
-		Color getSkinColor( const Uint32& state )const;
-
-		Color getSkinColor() const;
+		const Color& getSkinColor() const;
 
 		void removeSkin();
 
@@ -213,6 +195,7 @@ class EE_API UINode : public Node {
 		RectangleDrawable *	mBorder;
 		Vector2f		mDragPoint;
 		Uint32			mDragButton;
+		Color			mSkinColor;
 
 		virtual Uint32 onMouseDown( const Vector2i& position, const Uint32& flags );
 

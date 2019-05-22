@@ -22,8 +22,7 @@ SceneManager::~SceneManager() {
 	mResources.clear();
 }
 
-void SceneManager::draw()
-{
+void SceneManager::draw() {
 	for ( auto it = mResources.begin() ; it != mResources.end(); it++ ) {
 		SceneNode * sceneNode = (*it);
 
@@ -43,8 +42,7 @@ void SceneManager::update() {
 	update( mClock.getElapsed() );
 }
 
-bool SceneManager::isShootingDown() const
-{
+bool SceneManager::isShootingDown() const {
 	return mIsShootingDown;
 }
 

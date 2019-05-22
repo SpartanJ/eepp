@@ -109,20 +109,20 @@ class EE_API TextureLoader : public ObjectLoader {
 		Int32			mImgHeight;
 
 		std::string 	mFilepath;
-		unsigned int 			mWidth;
-		unsigned int 			mHeight;
+		unsigned int 	mWidth;
+		unsigned int 	mHeight;
 		bool 			mMipmap;
 		Int32 			mChannels;
 		Texture::ClampMode 	mClampMode;
 		bool 			mCompressTexture;
 		bool 			mLocalCopy;
-		Pack * 		mPack;
+		Pack *			mPack;
 		IOStream *		mStream;
 
 		const Uint8 *	mImagePtr;
 		Uint32			mSize;
 
-		RGB *		mColorKey;
+		RGB *			mColorKey;
 		Image::FormatConfiguration mFormatConfiguration;
 
 		void 			start();

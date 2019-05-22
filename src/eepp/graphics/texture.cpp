@@ -7,6 +7,10 @@
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/math/polygon2.hpp>
 #include <eepp/graphics/texturesaver.hpp>
+#include <eepp/system/thread.hpp>
+#include <eepp/window/engine.hpp>
+
+using namespace EE::Window;
 using namespace EE::Graphics::Private;
 
 namespace EE { namespace Graphics {
@@ -123,8 +127,14 @@ void Texture::setName(const std::string & name) {
 }
 
 Uint8 * Texture::iLock( const bool& ForceRGBA, const bool& KeepFormat ) {
+	bool threaded = Engine::instance()->isSharedGLContextEnabled() &&
+					Thread::getCurrentThreadId() != Engine::instance()->getMainThreadId();
+
 #ifndef EE_GLES
 	if ( !( mFlags & TEX_FLAG_LOCKED ) ) {
+		if ( threaded )
+			Engine::instance()->getCurrentWindow()->setGLContextThread();
+
 		if ( ForceRGBA )
 			mChannels = 4;
 
@@ -163,29 +173,40 @@ Uint8 * Texture::iLock( const bool& ForceRGBA, const bool& KeepFormat ) {
 		mFlags |= TEX_FLAG_LOCKED;
 	}
 
+	if ( threaded )
+		Engine::instance()->getCurrentWindow()->unsetGLContextThread();
+
 	return &mPixels[0];
 #else
 	if ( !( mFlags & TEX_FLAG_LOCKED ) ) {
-		TextureSaver saver( mTexture );
+		if ( threaded )
+			Engine::instance()->getCurrentWindow()->setGLContextThread();
 
-		GLuint frameBuffer = 0;
-		GLi->genFramebuffers(1, &frameBuffer);
+		{
+			TextureSaver saver( mTexture );
 
-		if ( frameBuffer ) {
-			allocate( mWidth * mHeight * 4 );
+			GLuint frameBuffer = 0;
+			GLi->genFramebuffers(1, &frameBuffer);
 
-			GLint previousFrameBuffer;
-			glGetIntegerv( GL_FRAMEBUFFER_BINDING, &previousFrameBuffer );
-			GLi->bindFramebuffer( GL_FRAMEBUFFER, frameBuffer );
-			GLi->framebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mTexture, 0 );
-			glReadPixels( 0, 0, mWidth, mHeight, GL_RGBA, GL_UNSIGNED_BYTE, &mPixels[0] );
-			GLi->deleteFramebuffers(1, &frameBuffer);
-			GLi->bindFramebuffer( GL_FRAMEBUFFER, previousFrameBuffer );
+			if ( frameBuffer ) {
+				allocate( mWidth * mHeight * 4 );
 
-			mFlags |= TEX_FLAG_LOCKED;
+				GLint previousFrameBuffer;
+				glGetIntegerv( GL_FRAMEBUFFER_BINDING, &previousFrameBuffer );
+				GLi->bindFramebuffer( GL_FRAMEBUFFER, frameBuffer );
+				GLi->framebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mTexture, 0 );
+				glReadPixels( 0, 0, mWidth, mHeight, GL_RGBA, GL_UNSIGNED_BYTE, &mPixels[0] );
+				GLi->deleteFramebuffers(1, &frameBuffer);
+				GLi->bindFramebuffer( GL_FRAMEBUFFER, previousFrameBuffer );
 
-			return &mPixels[0];
+				mFlags |= TEX_FLAG_LOCKED;
+			}
 		}
+
+		if ( threaded )
+			Engine::instance()->getCurrentWindow()->unsetGLContextThread();
+
+		return NULL != mPixels ? &mPixels[0] : NULL;
 	}
 
 	return NULL;
@@ -389,38 +410,49 @@ void Texture::reload()  {
 		Int32 width = (Int32)mWidth;
 		Int32 height = (Int32)mHeight;
 
-		TextureSaver saver( mTexture );
+		bool threaded = Engine::instance()->isSharedGLContextEnabled() &&
+						Thread::getCurrentThreadId() != Engine::instance()->getMainThreadId();
 
-		Uint32 flags = ( mFlags & TEX_FLAG_MIPMAP ) ? SOIL_FLAG_MIPMAPS : 0;
-		flags = (mClampMode == ClampRepeat) ? (flags | SOIL_FLAG_TEXTURE_REPEATS) : flags;
+		if ( threaded )
+			Engine::instance()->getCurrentWindow()->setGLContextThread();
 
-		if ( ( mFlags & TEX_FLAG_COMPRESSED ) ) {
-			if ( isGrabed() )
-				mTexture = SOIL_create_OGL_texture( reinterpret_cast<Uint8 *> ( &mPixels[0] ), &width, &height, mChannels, mTexture, flags | SOIL_FLAG_COMPRESS_TO_DXT );
-			else
-				glCompressedTexImage2D( mTexture, 0, mInternalFormat, width, height, 0, mSize, &mPixels[0] );
-		} else {
-			mTexture = SOIL_create_OGL_texture( reinterpret_cast<Uint8 *> ( &mPixels[0] ), &width, &height, mChannels, mTexture, flags );
+		{
+			TextureSaver saver( mTexture );
 
-			TextureFactory::instance()->mMemSize -= mSize;
+			Uint32 flags = ( mFlags & TEX_FLAG_MIPMAP ) ? SOIL_FLAG_MIPMAPS : 0;
+			flags = (mClampMode == ClampRepeat) ? (flags | SOIL_FLAG_TEXTURE_REPEATS) : flags;
 
-			mSize = mWidth * mHeight * mChannels;
+			if ( ( mFlags & TEX_FLAG_COMPRESSED ) ) {
+				if ( isGrabed() )
+					mTexture = SOIL_create_OGL_texture( reinterpret_cast<Uint8 *> ( &mPixels[0] ), &width, &height, mChannels, mTexture, flags | SOIL_FLAG_COMPRESS_TO_DXT );
+				else
+					glCompressedTexImage2D( mTexture, 0, mInternalFormat, width, height, 0, mSize, &mPixels[0] );
+			} else {
+				mTexture = SOIL_create_OGL_texture( reinterpret_cast<Uint8 *> ( &mPixels[0] ), &width, &height, mChannels, mTexture, flags );
 
-			if ( getMipmap() ) {
-				int w = mWidth;
-				int h = mHeight;
+				TextureFactory::instance()->mMemSize -= mSize;
 
-				while( w > 2 && h > 2 ) {
-					w>>=1;
-					h>>=1;
-					mSize += ( w * h * mChannels );
+				mSize = mWidth * mHeight * mChannels;
+
+				if ( getMipmap() ) {
+					int w = mWidth;
+					int h = mHeight;
+
+					while( w > 2 && h > 2 ) {
+						w>>=1;
+						h>>=1;
+						mSize += ( w * h * mChannels );
+					}
 				}
+
+				TextureFactory::instance()->mMemSize += mSize;
 			}
 
-			TextureFactory::instance()->mMemSize += mSize;
+			iTextureFilter( mFilter );
 		}
 
-		iTextureFilter( mFilter );
+		if ( threaded )
+			Engine::instance()->getCurrentWindow()->unsetGLContextThread();
 	} else {
 		iLock(false,true);
 		reload();
@@ -442,15 +474,26 @@ static unsigned int convertPixelFormatToGLFormat( Image::PixelFormat pf ) {
 
 void Texture::update( const Uint8* pixels, Uint32 width, Uint32 height, Uint32 x, Uint32 y, PixelFormat pf ) {
 	if ( NULL != pixels && mTexture && x + width <= mWidth && y + height <= mHeight ) {
-		TextureSaver saver( mTexture );
+		bool threaded = Engine::instance()->isSharedGLContextEnabled() &&
+						Thread::getCurrentThreadId() != Engine::instance()->getMainThreadId();
 
-		glTexSubImage2D( GL_TEXTURE_2D, 0, x, y, width, height, (unsigned int)convertPixelFormatToGLFormat( pf ), GL_UNSIGNED_BYTE, pixels );
+		if ( threaded )
+			Engine::instance()->getCurrentWindow()->setGLContextThread();
 
-		if ( hasLocalCopy() ) {
-			Image image( pixels, width, height, mChannels );
+		{
+			TextureSaver saver( mTexture );
 
-			Image::copyImage( &image, x, y );
+			glTexSubImage2D( GL_TEXTURE_2D, 0, x, y, width, height, (unsigned int)convertPixelFormatToGLFormat( pf ), GL_UNSIGNED_BYTE, pixels );
+
+			if ( hasLocalCopy() ) {
+				Image image( pixels, width, height, mChannels );
+
+				Image::copyImage( &image, x, y );
+			}
 		}
+
+		if ( threaded )
+			Engine::instance()->getCurrentWindow()->unsetGLContextThread();
 	}
 }
 
@@ -463,27 +506,38 @@ void Texture::update( Image *image, Uint32 x, Uint32 y ) {
 }
 
 void Texture::replace( Image * image ) {
-	Uint32 flags = ( mFlags & TEX_FLAG_MIPMAP ) ? SOIL_FLAG_MIPMAPS : 0;
-	flags = (mClampMode == ClampRepeat) ? (flags | SOIL_FLAG_TEXTURE_REPEATS) : flags;
+	bool threaded = Engine::instance()->isSharedGLContextEnabled() &&
+					Thread::getCurrentThreadId() != Engine::instance()->getMainThreadId();
 
-	TextureSaver textureSaver;
+	if ( threaded )
+		Engine::instance()->getCurrentWindow()->setGLContextThread();
 
-	Int32 width = (Int32)image->getWidth();
-	Int32 height = (Int32)image->getHeight();
-	mTexture = SOIL_create_OGL_texture( image->getPixelsPtr(), &width, &height, image->getChannels(), mTexture, flags );
-	mWidth = mImgWidth = width;
-	mHeight = mImgHeight = height;
-	mChannels = image->getChannels();
+	{
+		Uint32 flags = ( mFlags & TEX_FLAG_MIPMAP ) ? SOIL_FLAG_MIPMAPS : 0;
+		flags = (mClampMode == ClampRepeat) ? (flags | SOIL_FLAG_TEXTURE_REPEATS) : flags;
 
-	TextureFactory::instance()->mMemSize -= mSize;
-	mSize = mWidth * mHeight * mChannels;
-	TextureFactory::instance()->mMemSize += mSize;
+		TextureSaver textureSaver;
 
-	if ( hasLocalCopy() ) {
-		// Renew the local copy
-		allocate( image->getMemSize(), Color(0,0,0,0), false );
-		Image::copyImage( image );
+		Int32 width = (Int32)image->getWidth();
+		Int32 height = (Int32)image->getHeight();
+		mTexture = SOIL_create_OGL_texture( image->getPixelsPtr(), &width, &height, image->getChannels(), mTexture, flags );
+		mWidth = mImgWidth = width;
+		mHeight = mImgHeight = height;
+		mChannels = image->getChannels();
+
+		TextureFactory::instance()->mMemSize -= mSize;
+		mSize = mWidth * mHeight * mChannels;
+		TextureFactory::instance()->mMemSize += mSize;
+
+		if ( hasLocalCopy() ) {
+			// Renew the local copy
+			allocate( image->getMemSize(), Color(0,0,0,0), false );
+			Image::copyImage( image );
+		}
 	}
+
+	if ( threaded )
+		Engine::instance()->getCurrentWindow()->unsetGLContextThread();
 }
 
 const Uint32& Texture::getHashName() const {

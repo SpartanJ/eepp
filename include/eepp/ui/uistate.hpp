@@ -37,6 +37,8 @@ class EE_API UIState {
 
 		static int getStateNumber(const std::string & State);
 
+		static const char * getStateNameFromStateFlag( const Uint32& stateFlag );
+
 		static const Uint32& getStateFlag( const Uint32& stateIndex );
 
 		static Uint32 getStateFlagFromName( const std::string& name );

@@ -12,13 +12,15 @@ StyleSheetProperty::StyleSheetProperty()
 
 StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::string& value ) :
 	mName( String::toLower( String::trim( name ) ) ),
-	mValue( String::trim( value ) )
+	mValue( String::trim( value ) ),
+	mSpecificity( 0 )
 {}
 
-StyleSheetProperty::StyleSheetProperty( const std::string & name, const std::string& value, const Uint32 & specificity ) :
+StyleSheetProperty::StyleSheetProperty( const std::string & name, const std::string& value, const Uint32 & specificity, const bool& isVolatile ) :
 	mName( String::toLower( String::trim( name ) ) ),
 	mValue( String::trim( value ) ),
-	mSpecificity( specificity )
+	mSpecificity( specificity ),
+	mVolatile( isVolatile )
 {}
 
 const std::string &StyleSheetProperty::getName() const {
@@ -47,6 +49,14 @@ void StyleSheetProperty::setName( const std::string& name ) {
 
 void StyleSheetProperty::setValue( const std::string& value ) {
 	mValue = value;
+}
+
+const bool &StyleSheetProperty::isVolatile() const {
+	return mVolatile;
+}
+
+void StyleSheetProperty::setVolatile( const bool & isVolatile ) {
+	mVolatile = isVolatile;
 }
 
 }}}

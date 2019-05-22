@@ -33,13 +33,18 @@ const std::vector<std::string>& NodeAttribute::Info::getNames() const {
 NodeAttribute::NodeAttribute()
 {}
 
-NodeAttribute::NodeAttribute( std::string name, std::string value ) :
+NodeAttribute::NodeAttribute( std::string name, std::string value, bool isVolatile ) :
 	mName( String::toLower( name ) ),
-	mValue( value )
+	mValue( value ),
+	mVolatile( isVolatile )
 {}
 
 bool NodeAttribute::isEmpty() const {
 	return mName.empty();
+}
+
+bool NodeAttribute::isVolatile() const {
+	return mVolatile;
 }
 
 std::string NodeAttribute::getName() const {
@@ -133,8 +138,8 @@ static OriginPoint toOriginPoint( std::string val ) {
 			Float x = 0;
 			Float y = 0;
 
-			bool Res1 = String::fromString<Float>( x, parts[0] );
-			bool Res2 = String::fromString<Float>( y, parts[1] );
+			bool Res1 = String::fromString<Float>( x, String::trim(parts[0]) );
+			bool Res2 = String::fromString<Float>( y, String::trim(parts[1]) );
 
 			if ( Res1 && Res2 ) {
 				return OriginPoint( x, y );
@@ -174,8 +179,8 @@ Vector2f NodeAttribute::asVector2f( const Vector2f & defaultValue ) const {
 		if ( xySplit.size() == 2 ) {
 			Float val;
 
-			vector.x = String::fromString<Float>( val, xySplit[0] ) ? val : defaultValue.x;
-			vector.y = String::fromString<Float>( val, xySplit[1] ) ? val : defaultValue.y;
+			vector.x = String::fromString<Float>( val, String::trim(xySplit[0]) ) ? val : defaultValue.x;
+			vector.y = String::fromString<Float>( val, String::trim(xySplit[1]) ) ? val : defaultValue.y;
 
 			return vector;
 		} else if ( xySplit.size() == 1 ) {
@@ -198,8 +203,8 @@ Vector2i NodeAttribute::asVector2i( const Vector2i & defaultValue ) const {
 		if ( xySplit.size() == 2 ) {
 			int val;
 
-			vector.x = String::fromString<int>( val, xySplit[0] ) ? val : defaultValue.x;
-			vector.y = String::fromString<int>( val, xySplit[1] ) ? val : defaultValue.y;
+			vector.x = String::fromString<int>( val, String::trim(xySplit[0]) ) ? val : defaultValue.x;
+			vector.y = String::fromString<int>( val, String::trim(xySplit[1]) ) ? val : defaultValue.y;
 
 			return vector;
 		} else if ( xySplit.size() == 1 ) {
@@ -365,7 +370,7 @@ const std::string& NodeAttribute::FunctionType::getName() const {
 	return name;
 }
 
-const std::vector<std::string> NodeAttribute::FunctionType::getParameters() const {
+const std::vector<std::string>& NodeAttribute::FunctionType::getParameters() const {
 	return parameters;
 }
 

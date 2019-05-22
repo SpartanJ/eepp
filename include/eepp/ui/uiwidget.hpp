@@ -92,7 +92,7 @@ class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
 
 		void notifyLayoutAttrChangeParent();
 
-		bool setAttribute( const std::string& name, const std::string& value, const Uint32& state = UIState::StateFlagNormal );
+		void setStyleSheetProperty( const std::string& name, const std::string& value, const Uint32& specificity = UINT32_MAX - 1/*SpecificityInline*/ );
 
 		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
 
@@ -191,6 +191,8 @@ class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
 
 		virtual void onThemeLoaded();
 
+		virtual void onParentChange();
+
 		void updateAnchors( const Vector2f & SizeChange );
 
 		void alignAgainstLayout();
@@ -198,6 +200,16 @@ class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
 		void reportStyleStateChange();
 
 		bool isSceneNodeLoading() const;
+
+		std::string getLayoutWidthRulesString() const;
+
+		std::string getLayoutHeightRulesString() const;
+
+		std::string getLayoutGravityString() const;
+
+		std::string getGravityString() const;
+
+		std::string getFlagsString() const;
 };
 
 }}

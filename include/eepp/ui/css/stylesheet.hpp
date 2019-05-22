@@ -23,13 +23,7 @@ class EE_API StyleSheet {
 
 		void combineStyleSheet( const StyleSheet& styleSheet );
 
-		StyleSheetPseudoClassProperties getElementPropertiesByState( StyleSheetElement * element );
-
 		StyleSheetStyleVector getElementStyles( StyleSheetElement * element, const bool& applyPseudo = false );
-
-		StyleSheetStyleVector getCacheableElementStyles( StyleSheetElement * element, const bool& applyPseudo = false );
-
-		StyleSheetStyleVector getNoncacheableElementStyles( StyleSheetElement * element, const bool& applyPseudo = false );
 
 		const StyleSheetStyleList& getStyles() const;
 	protected:

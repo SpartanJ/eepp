@@ -494,8 +494,8 @@ void EETest::createBaseUI() {
 	w->setParent( C )->setSize( 20, 20 )->setPosition( 260, 130 );
 	w->setBackgroundColor( Color::Green );
 	w->setRotation( 45 );
-	w->setBackgroundColor( UIState::StateFlagHover, Color::Yellow );
-	w->setBackgroundColor( UIState::StateFlagPressed, Color::Red );
+	//w->setBackgroundColor( UIState::StateFlagHover, Color::Yellow );
+	//w->setBackgroundColor( UIState::StateFlagPressed, Color::Red );
 
 	C = reinterpret_cast<UINode*> ( C->getParent() );
 
@@ -626,7 +626,7 @@ void EETest::createNewUI() {
 	relLay = UIRelativeLayout::New();
 	relLay->setLayoutSizeRules( MATCH_PARENT, MATCH_PARENT );
 
-	UINode * container = UINode::New();
+	UIWidget * container = UIWidget::New();
 	container->setSize( relLay->getSize() - 32.f );
 
 	UIScrollView * scrollView = UIScrollView::New();
@@ -645,6 +645,7 @@ void EETest::createNewUI() {
 	loader->setBackgroundColor( 0xCCCCCCCC );
 
 	UIRadioButton * ctrl = UIRadioButton::New();
+	ctrl->setId( "happy_radio" );
 	ctrl->setLayoutSizeRules( FIXED, FIXED )->setPosition( 50, 100 )->setSize( 200, 32 )->setParent( container );
 	ctrl->setBackgroundColor( 0x33333333 );
 	ctrl->setBorderColor( 0x66666666 );
@@ -652,11 +653,19 @@ void EETest::createNewUI() {
 	ctrl->setFontColor( Color::Black );
 
 	UICheckBox * cbox = UICheckBox::New();
+	cbox->setId( "happy_check" );
 	cbox->setLayoutSizeRules( FIXED, FIXED )->setPosition( 50, 164 )->setSize( 200, 32 )->setParent( container );
 	cbox->setBackgroundColor( 0x33333333 );
 	cbox->setBorderColor( 0x66666666 );
 	cbox->setText( "Happy CheckBox :)" );
 	cbox->setFontColor( Color::Black );
+
+	SceneManager::instance()->getUISceneNode()->combineStyleSheet( R"css(
+		#happy_check,
+		#happy_radio {
+			textColor: black;
+		}
+	)css");
 
 	UIImage * gfx = UIImage::New();
 	gfx->setPosition( 50, 140 )->setSize( 16, 16 )->setParent( container );
@@ -1144,7 +1153,7 @@ void EETest::onQuitClick( const Event * event ) {
 }
 
 void EETest::showMenu() {
-	if ( Menu->show() ) {
+	if ( NULL != Menu && Menu->show() ) {
 		Vector2f Pos = mWindow->getInput()->getMousePosf();
 		UIMenu::fixMenuPos( Pos , Menu );
 		Menu->setPosition( Vector2f( Pos.x / PixelDensity::getPixelDensity(), Pos.y / PixelDensity::getPixelDensity() ) );
@@ -1394,7 +1403,7 @@ void EETest::screen2() {
 	polygon.rotate( ang , polygon.getBounds().getCenter() );
 	shape.setPolygon( polygon );
 	shape.setPosition( Vector2f( 150, 150 ));
-	shape.setColor( Color::Magenta );
+	shape.setColor( Color::Fuchsia );
 	shape.setAlpha( 100 );
 	shape.draw();
 

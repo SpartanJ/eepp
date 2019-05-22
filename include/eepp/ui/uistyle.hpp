@@ -7,6 +7,8 @@
 #include <eepp/ui/css/stylesheetstyle.hpp>
 #include <eepp/graphics/fontstyleconfig.hpp>
 #include <eepp/math/ease.hpp>
+#include <set>
+#include <functional>
 
 using namespace EE::Scene;
 
@@ -31,7 +33,7 @@ class EE_API UIStyle : public UIState {
 
 				Ease::Interpolation getTimingFunction() const { return timingFunction; }
 
-				const Time& getDelay() const { return delay; };
+				const Time& getDelay() const { return delay; }
 
 				const Time& getDuration() const { return duration; }
 
@@ -53,33 +55,49 @@ class EE_API UIStyle : public UIState {
 
 		void onStateChange();
 
-		CSS::StyleSheetProperty getStyleSheetProperty( const Uint32& state, const std::string& attributeName ) const;
+		CSS::StyleSheetProperty getStatelessStyleSheetProperty( const std::string& propertyName ) const;
 
-		CSS::StyleSheetProperty getStyleSheetPropertyFromNames( const Uint32& state, const std::vector<std::string>& propertiesNames ) const;
+		CSS::StyleSheetProperty getStyleSheetProperty( const std::string& propertyName ) const;
 
-		NodeAttribute getNodeAttribute( const Uint32& state, const std::string& attributeName ) const;
+		NodeAttribute getNodeAttribute(const std::string& attributeName ) const;
 
-		bool hasStyleSheetProperty( const Uint32& state, const std::string& propertyName ) const;
+		void setStyleSheetProperties( const CSS::StyleSheetProperties& properties );
 
-		void addStyleSheetProperties( const Uint32& state, const CSS::StyleSheetProperties& properties );
+		void setStyleSheetProperty( const CSS::StyleSheetProperty& property );
 
-		void addStyleSheetProperty( const Uint32& state, const CSS::StyleSheetProperty& property );
+		bool hasTransition( const std::string& propertyName );
 
-		bool hasTransition( const Uint32& state, const std::string& propertyName );
-
-		TransitionInfo getTransition( const Uint32& state, const std::string& propertyName );
+		TransitionInfo getTransition( const std::string& propertyName );
 	protected:
 		typedef std::map<std::string, TransitionInfo> TransitionsMap;
 
 		UIWidget * mWidget;
-		std::map<Uint32, CSS::StyleSheetProperties> mStates;
-		std::map<Uint32, TransitionsMap> mTransitions;
-		std::map<Uint32, std::vector<CSS::StyleSheetProperty>> mTransitionAttributes;
+		CSS::StyleSheetStyleVector mCacheableStyles;
 		CSS::StyleSheetStyleVector mNoncacheableStyles;
+		CSS::StyleSheetStyle mElementStyle;
+		CSS::StyleSheetProperties mProperties;
+		std::vector<CSS::StyleSheetProperty> mTransitionAttributes;
+		TransitionsMap mTransitions;
+		std::set<UIWidget*> mRelatedWidgets;
+		std::set<UIWidget*> mSubscribedWidgets;
+
+		void tryApplyStyle( const CSS::StyleSheetStyle& style );
 
 		void updateState();
 
-		void parseTransitions( const Uint32& state );
+		void parseTransitions();
+
+		void subscribeNonCacheableStyles();
+
+		void unsubscribeNonCacheableStyles();
+
+		void subscribeRelated( UIWidget * widget );
+
+		void unsubscribeRelated( UIWidget * widget );
+
+		void removeFromSubscribedWidgets( UIWidget * widget );
+
+		void removeRelatedWidgets();
 };
 
 }}

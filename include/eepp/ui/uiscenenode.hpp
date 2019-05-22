@@ -44,7 +44,11 @@ class EE_API UISceneNode : public SceneNode {
 
 		void setStyleSheet( const CSS::StyleSheet& styleSheet );
 
+		void setStyleSheet( const std::string& inlineStyleSheet );
+
 		void combineStyleSheet( const CSS::StyleSheet& styleSheet );
+
+		void combineStyleSheet( const std::string& inlineStyleSheet );
 
 		CSS::StyleSheet& getStyleSheet();
 

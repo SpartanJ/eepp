@@ -557,11 +557,12 @@ void UITextView::resetSelCache() {
 }
 
 #define SAVE_NORMAL_STATE_ATTR( ATTR_FORMATED ) \
-	if ( state != UIState::StateFlagNormal ) { \
-	CSS::StyleSheetProperty oldAttribute = mStyle->getStyleSheetProperty( UIState::StateFlagNormal, attribute.getName() ); \
-	if ( oldAttribute.isEmpty() && mStyle->getPreviousState() == UIState::StateFlagNormal ) \
-		mStyle->addStyleSheetProperty( UIState::StateFlagNormal, CSS::StyleSheetProperty( attribute.getName(), ATTR_FORMATED ) ); \
-	} \
+	if ( state != UIState::StateFlagNormal || ( state == UIState::StateFlagNormal && attribute.isVolatile() ) ) { \
+		CSS::StyleSheetProperty oldAttribute = mStyle->getStatelessStyleSheetProperty( attribute.getName() ); \
+		if ( oldAttribute.isEmpty() && mStyle->getPreviousState() == UIState::StateFlagNormal ) { \
+			mStyle->setStyleSheetProperty( CSS::StyleSheetProperty( attribute.getName(), ATTR_FORMATED ) ); \
+		} \
+	}
 
 bool UITextView::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
@@ -574,8 +575,8 @@ bool UITextView::setAttribute( const NodeAttribute& attribute, const Uint32& sta
 
 		Color color = attribute.asColor();
 
-		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( state, attribute.getName() ) ) {
-			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
+		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
+			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( attribute.getName() ) );
 
 			Action * action = Actions::Tint::New( getFontColor(), color, true, transitionInfo.duration, transitionInfo.timingFunction, Actions::Tint::Text );
 
@@ -591,8 +592,8 @@ bool UITextView::setAttribute( const NodeAttribute& attribute, const Uint32& sta
 
 		Color color = attribute.asColor();
 
-		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( state, attribute.getName() ) ) {
-			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
+		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
+			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( attribute.getName() ) );
 
 			Action * action = Actions::Tint::New( getFontShadowColor(), color, true, transitionInfo.duration, transitionInfo.timingFunction, Actions::Tint::TextShadow );
 
@@ -643,8 +644,8 @@ bool UITextView::setAttribute( const NodeAttribute& attribute, const Uint32& sta
 
 		Color color = attribute.asColor();
 
-		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( state, attribute.getName() ) ) {
-			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
+		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
+			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( attribute.getName() ) );
 
 			Action * action = Actions::Tint::New( getOutlineColor(), color, true, transitionInfo.duration, transitionInfo.timingFunction, Actions::Tint::TextOutline );
 

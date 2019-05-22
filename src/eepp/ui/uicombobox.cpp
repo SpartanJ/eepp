@@ -37,6 +37,9 @@ void UIComboBox::setTheme( UITheme * Theme ) {
 		mDropDownList->setEnabled( true );
 		mDropDownList->setAllowEditing( true );
 		mDropDownList->getInputTextBuffer()->setFreeEditing( true );
+		mDropDownList->addEventListener( Event::OnPaddingChange, [this](const Event*) {
+			this->onPaddingChange();
+		});
 	}
 
 	if ( NULL == mButton ) {
@@ -84,6 +87,8 @@ void UIComboBox::loadFromXmlNode(const pugi::xml_node& node) {
 	mDropDownList->loadFromXmlNode( node );
 
 	endAttributesTransaction();
+
+	updateControls();
 }
 
 Uint32 UIComboBox::onMessage( const NodeMessage * Msg ) {
@@ -109,19 +114,26 @@ void UIComboBox::updateControls() {
 }
 
 void UIComboBox::onSizeChange() {
-	UIWidget::onSizeChange();
-
 	updateControls();
+
+	UIWidget::onSizeChange();
 }
 
 void UIComboBox::onPositionChange() {
-	UIWidget::onPositionChange();
-
 	updateControls();
+
+	UIWidget::onPositionChange();
+}
+
+void UIComboBox::onPaddingChange() {
+	updateControls();
+
+	UIWidget::onPaddingChange();
 }
 
 void UIComboBox::onAutoSize() {
-	setInternalHeight( mDropDownList->getSkinSize().getHeight() + mDropDownList->getPadding().Top + mDropDownList->getPadding().Bottom );
+	if ( NULL != mDropDownList )
+		setInternalHeight( mDropDownList->getSkinSize().getHeight() + mDropDownList->getPadding().Top + mDropDownList->getPadding().Bottom );
 }
 
 }}

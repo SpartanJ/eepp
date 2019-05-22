@@ -15,7 +15,7 @@ UIScrollView::UIScrollView() :
 	mHScrollMode( UI_SCROLLBAR_AUTO ),
 	mVScroll( UIScrollBar::NewVertical() ),
 	mHScroll( UIScrollBar::NewHorizontal() ),
-	mContainer( UINode::New() ),
+	mContainer( UIWidget::NewWithTag( "scrollview::container" ) ),
 	mScrollView( NULL ),
 	mSizeChangeCb( 0 )
 {
@@ -131,7 +131,7 @@ UIScrollBar * UIScrollView::getHorizontalScrollBar() const {
 	return mHScroll;
 }
 
-UINode * UIScrollView::getContainer() const {
+UIWidget * UIScrollView::getContainer() const {
 	return mContainer;
 }
 

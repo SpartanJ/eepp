@@ -1,5 +1,4 @@
 #include <eepp/ui/css/stylesheetstyle.hpp>
-#include <iostream>
 
 namespace EE { namespace UI { namespace CSS {
 
@@ -10,32 +9,53 @@ StyleSheetStyle::StyleSheetStyle( const std::string& selector, const StyleSheetP
 	mSelector( selector ),
 	mProperties( properties )
 {
-	for ( auto it = mProperties.begin(); it != mProperties.end(); ++it )
-		it->second.setSpecificity( mSelector.getSpecificity() );
+	for ( auto& it : mProperties ) {
+		it.second.setSpecificity( mSelector.getSpecificity() );
+		it.second.setVolatile( !mSelector.isCacheable() );
+	}
 }
 
-void StyleSheetStyle::print() {
-	std::cout << mSelector.getName() << " {" << std::endl;
+std::string StyleSheetStyle::build() {
+	std::string css;
 
-	for ( StyleSheetProperties::iterator it = mProperties.begin(); it != mProperties.end(); ++it ) {
-		StyleSheetProperty& prop = it->second;
+	css += mSelector.getName() + " {";
 
-		std::cout << "\t" << prop.getName() << ": " << prop.getValue() << ";" << std::endl;
+
+	for ( auto& it : mProperties ) {
+		StyleSheetProperty& prop = it.second;
+
+		css += "\t" + prop.getName() + ": " + prop.getValue() + ";\n";
 	}
 
-	std::cout << "}" << std::endl;
+	css += "}\n";
+
+	return css;
 }
 
-const StyleSheetSelector &StyleSheetStyle::getSelector() const {
+
+const StyleSheetSelector& StyleSheetStyle::getSelector() const {
 	return mSelector;
 }
 
-const StyleSheetProperties &StyleSheetStyle::getProperties() const {
+const StyleSheetProperties& StyleSheetStyle::getProperties() const {
 	return mProperties;
+}
+
+StyleSheetProperty StyleSheetStyle::getPropertyByName( const std::string& name ) const {
+	auto it = mProperties.find( name );
+
+	if ( it != mProperties.end() )
+		return it->second;
+
+	return StyleSheetProperty();
 }
 
 void StyleSheetStyle::setProperty( const StyleSheetProperty & property ) {
 	mProperties[ property.getName() ] = property;
+}
+
+void StyleSheetStyle::clearProperties() {
+	mProperties.clear();
 }
 
 }}}

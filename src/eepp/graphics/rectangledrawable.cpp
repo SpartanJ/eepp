@@ -94,9 +94,11 @@ Uint32 RectangleDrawable::getCorners() const {
 }
 
 void RectangleDrawable::setCorners(const Uint32 & corners) {
-	mCorners = corners;
-	mNeedsUpdate = true;
-	mRecreateVertexBuffer = true;
+	if ( corners != mCorners ) {
+		mCorners = corners;
+		mNeedsUpdate = true;
+		mRecreateVertexBuffer = true;
+	}
 }
 
 RectColors RectangleDrawable::getRectColors() const {

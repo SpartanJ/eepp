@@ -241,22 +241,22 @@ class EE_API Color : public tColor<Uint8>
 		static bool isColorString( std::string str );
 
 		static const Color Transparent;
-		static const Color White;
 		static const Color Black;
-		static const Color Red;
-		static const Color Green;
-		static const Color Blue;
-		static const Color Yellow;
-		static const Color Cyan;
-		static const Color Magenta;
 		static const Color Silver;
 		static const Color Gray;
+		static const Color White;
 		static const Color Maroon;
-		static const Color Olive;
-		static const Color OfficeGreen;
+		static const Color Red;
 		static const Color Purple;
-		static const Color Teal;
+		static const Color Fuchsia;
+		static const Color Green;
+		static const Color Lime;
+		static const Color Olive;
+		static const Color Yellow;
 		static const Color Navy;
+		static const Color Blue;
+		static const Color Teal;
+		static const Color Aqua;
 };
 
 typedef Color ColorA;

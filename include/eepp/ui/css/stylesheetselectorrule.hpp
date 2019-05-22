@@ -26,6 +26,8 @@ class StyleSheetSelectorRule {
 		};
 
 		enum SpecificityVal {
+			SpecificityImportant = UINT32_MAX,
+			SpecificityInline = UINT32_MAX - 1,
 			SpecificityId = 1000000,
 			SpecificityClass = 100000,
 			SpecificityTag = 10000,
@@ -57,7 +59,7 @@ class StyleSheetSelectorRule {
 
 		bool hasPseudoClasses() const;
 
-		bool hasPseudoClass(const std::string & cls) const;
+		bool hasPseudoClass(const std::string& cls) const;
 
 		const std::vector<std::string>& getPseudoClasses() const;
 
