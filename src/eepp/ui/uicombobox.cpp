@@ -87,6 +87,8 @@ void UIComboBox::loadFromXmlNode(const pugi::xml_node& node) {
 	mDropDownList->loadFromXmlNode( node );
 
 	endAttributesTransaction();
+
+	updateControls();
 }
 
 Uint32 UIComboBox::onMessage( const NodeMessage * Msg ) {
