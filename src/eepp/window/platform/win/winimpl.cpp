@@ -21,9 +21,9 @@ static BOOL WIN_showWindow( HWND hWnd, int nCmdShow ) {
 
 namespace EE { namespace Window { namespace Platform {
 
-static HCURSOR SYS_CURSORS[ SYS_CURSOR_COUNT ] = {0};
+static HCURSOR SYS_CURSORS[ Cursor::SysCursorCount ] = {0};
 
-static HCURSOR GetLoadCursor( const EE_SYSTEM_CURSOR& cursor, LPCSTR syscur ) {
+static HCURSOR GetLoadCursor( const Cursor::SysType& cursor, LPCSTR syscur ) {
 	if ( 0 == SYS_CURSORS[ cursor ] ) {
 		SYS_CURSORS[ cursor ] = LoadCursor( NULL, syscur );
 	}
@@ -91,7 +91,7 @@ void WinImpl::showMouseCursor() {
 	mCursorHidden = false;
 
 	if ( !mCursorCurrent ) {
-		setSystemMouseCursor( SYS_CURSOR_ARROW );
+		setSystemMouseCursor( Cursor::SysArrow );
 	} else {
 		SetCursor( (HCURSOR)mCursorCurrent );
 		SetClassLong( getHandler(), GCL_HCURSOR, (DWORD)mCursorCurrent );
@@ -136,34 +136,34 @@ void WinImpl::setMouseCursor( Cursor * cursor ) {
 	}
 }
 
-void WinImpl::setSystemMouseCursor( EE_SYSTEM_CURSOR syscursor ) {
+void WinImpl::setSystemMouseCursor( Cursor::SysType syscursor ) {
 	HCURSOR mc;
 
 	switch ( syscursor ) {
-		case SYS_CURSOR_ARROW:
-			mc = GetLoadCursor(SYS_CURSOR_ARROW, IDC_ARROW); break;
-		case SYS_CURSOR_WAIT:
-			mc = GetLoadCursor(SYS_CURSOR_WAIT, IDC_WAIT); break;
-		case SYS_CURSOR_CROSSHAIR:
-			mc = GetLoadCursor(SYS_CURSOR_CROSSHAIR, IDC_CROSS); break;
-		case SYS_CURSOR_IBEAM:
-			mc = GetLoadCursor(SYS_CURSOR_IBEAM, IDC_IBEAM); break;
-		case SYS_CURSOR_WAITARROW:
-			mc = GetLoadCursor(SYS_CURSOR_WAITARROW, IDC_WAIT); break;
-		case SYS_CURSOR_SIZENWSE:
-			mc = GetLoadCursor(SYS_CURSOR_SIZENWSE, IDC_SIZENWSE); break;
-		case SYS_CURSOR_SIZENESW:
-			mc = GetLoadCursor(SYS_CURSOR_SIZENESW, IDC_SIZENESW); break;
-		case SYS_CURSOR_SIZEWE:
-			mc = GetLoadCursor(SYS_CURSOR_SIZEWE, IDC_SIZEWE); break;
-		case SYS_CURSOR_SIZENS:
-			mc = GetLoadCursor(SYS_CURSOR_SIZENS, IDC_SIZENS); break;
-		case SYS_CURSOR_SIZEALL:
-			mc = GetLoadCursor(SYS_CURSOR_SIZEALL, IDC_SIZEALL); break;
-		case SYS_CURSOR_NO:
-			mc = GetLoadCursor(SYS_CURSOR_NO, IDC_NO); break;
-		case SYS_CURSOR_HAND:
-			mc = GetLoadCursor(SYS_CURSOR_HAND, IDC_HAND); break;
+		case Cursor::SysArrow:
+			mc = GetLoadCursor(Cursor::SysArrow, IDC_ARROW); break;
+		case Cursor::SysWait:
+			mc = GetLoadCursor(Cursor::SysWait, IDC_WAIT); break;
+		case Cursor::SysCrosshair:
+			mc = GetLoadCursor(Cursor::SysCrosshair, IDC_CROSS); break;
+		case Cursor::SysIBeam:
+			mc = GetLoadCursor(Cursor::SysIBeam, IDC_IBEAM); break;
+		case Cursor::SysWaitArrow:
+			mc = GetLoadCursor(Cursor::SysWaitArrow, IDC_WAIT); break;
+		case Cursor::SysSizeNWSE:
+			mc = GetLoadCursor(Cursor::SysSizeNWSE, IDC_SIZENWSE); break;
+		case Cursor::SysSizeNESW:
+			mc = GetLoadCursor(Cursor::SysSizeNESW, IDC_SIZENESW); break;
+		case Cursor::SysSizeWE:
+			mc = GetLoadCursor(Cursor::SysSizeWE, IDC_SIZEWE); break;
+		case Cursor::SysSizeNS:
+			mc = GetLoadCursor(Cursor::SysSizeNS, IDC_SIZENS); break;
+		case Cursor::SysSizeAll:
+			mc = GetLoadCursor(Cursor::SysSizeAll, IDC_SIZEALL); break;
+		case Cursor::SysNoCursor:
+			mc = GetLoadCursor(Cursor::SysNoCursor, IDC_NO); break;
+		case Cursor::SysHand:
+			mc = GetLoadCursor(Cursor::SysHand, IDC_HAND); break;
 		default:
 			return;
 	}

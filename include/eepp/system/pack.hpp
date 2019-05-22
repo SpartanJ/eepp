@@ -2,7 +2,7 @@
 #define EE_SYSTEMCPACK_HPP
 
 #include <eepp/system/mutex.hpp>
-#include <eepp/system/safedatapointer.hpp>
+#include <eepp/system/scopedbuffer.hpp>
 #include <eepp/system/iostream.hpp>
 
 namespace EE { namespace System {
@@ -52,7 +52,7 @@ class EE_API Pack : protected Mutex {
 		virtual bool extractFileToMemory( const std::string& path, std::vector<Uint8>& data ) = 0;
 
 		/** Extract a file to memory from the pack file */
-		virtual bool extractFileToMemory( const std::string& path, SafeDataPointer& data ) = 0;
+		virtual bool extractFileToMemory( const std::string& path, ScopedBuffer& data ) = 0;
 
 		/** Check if a file exists in the pack file and return the number of the file, otherwise return -1. */
 		virtual Int32 exists( const std::string& path ) = 0;

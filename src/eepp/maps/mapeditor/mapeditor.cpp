@@ -358,11 +358,12 @@ void MapEditor::createTextureRegionContainer( Int32 Width ) {
 
 	mGfxPreview = UITextureRegion::New();
 	mGfxPreview->setScaleType( UIScaleType::FitInside )
+			   ->setLayoutSizeRules( FIXED, FIXED )
 			   ->resetFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP )
 			   ->setParent( mSGCont )->setSize( Width, Width )
 			   ->setPosition( 0, mTextureRegionList->getPosition().y + mTextureRegionList->getSize().getHeight() + 4 );
 
-	mGfxPreview->setBorderEnabled( true )->setColor( Color( 0, 0, 0, 200 ) );
+	mGfxPreview->setBorderColor( Color( 0, 0, 0, 200 ) );
 
 	mDICont = UIWidget::New();
 	mDICont->setParent( mTextureRegionCont )->setPosition( TAB_CONT_X_DIST, mChkDI->getPosition().y + mChkDI->getSize().getHeight() + 8 );
@@ -393,8 +394,8 @@ void MapEditor::createLighContainer() {
 	mUIBaseColor->setParent( mLightCont );
 	mUIBaseColor->setPosition( Txt->getPosition().x, Txt->getPosition().y + Txt->getSize().getHeight() + 4 );
 	mUIBaseColor->setSize( 58, 64 );
-	mUIBaseColor->getBackground()->setColor( Color(255,255,255,255) );
-	mUIBaseColor->getBorder()->setColor( Color( 100, 100, 100, 200 ) );
+	mUIBaseColor->setBackgroundColor( Color(255,255,255,255) );
+	mUIBaseColor->setBorderColor( Color( 100, 100, 100, 200 ) );
 
 	Txt = createTextBox( "R:", mLightCont, Sizef(), Vector2f( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIBaseColor->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
@@ -601,7 +602,7 @@ void MapEditor::onNewLight( const Event * Event ) {
 void MapEditor::onRedChange( const Event * Event ) {
 	Color Col = mUIBaseColor->getBackground()->getColor();
 	Col.r = (Uint8)mUIRedSlider->getValue();
-	mUIBaseColor->getBackground()->setColor( Col );
+	mUIBaseColor->setBackgroundColor( Col );
 	mUIRedTxt->setText( String::toStr( (Int32)mUIRedSlider->getValue() ) );
 
 	if ( NULL != mUIMap->getSelectedLight() ) {
@@ -614,7 +615,7 @@ void MapEditor::onRedChange( const Event * Event ) {
 void MapEditor::onGreenChange( const Event * Event ) {
 	Color Col = mUIBaseColor->getBackground()->getColor();
 	Col.g = (Uint8)mUIGreenSlider->getValue();
-	mUIBaseColor->getBackground()->setColor( Col );
+	mUIBaseColor->setBackgroundColor( Col );
 	mUIGreenTxt->setText( String::toStr( (Uint32)mUIGreenSlider->getValue() ) );
 
 	if ( NULL != mUIMap->getSelectedLight() ) {
@@ -627,7 +628,7 @@ void MapEditor::onGreenChange( const Event * Event ) {
 void MapEditor::onBlueChange( const Event * Event ) {
 	Color Col = mUIBaseColor->getBackground()->getColor();
 	Col.b = (Uint8)mUIBlueSlider->getValue();
-	mUIBaseColor->getBackground()->setColor( Col );
+	mUIBaseColor->setBackgroundColor( Col );
 	mUIBlueTxt->setText( String::toStr( (Uint32)mUIBlueSlider->getValue() ) );
 
 	if ( NULL != mUIMap->getSelectedLight() ) {
@@ -832,7 +833,7 @@ void MapEditor::createNewMap() {
 }
 
 void MapEditor::createNewEmptyMap() {
-	mUIMap->Map()->create( Sizei( 100, 100 ), 16, Sizei( 32, 32 ), MAP_EDITOR_DEFAULT_FLAGS | MAP_FLAG_LIGHTS_ENABLED, mUIMap->getRealSize() );
+	mUIMap->Map()->create( Sizei( 100, 100 ), 16, Sizei( 32, 32 ), MAP_EDITOR_DEFAULT_FLAGS | MAP_FLAG_LIGHTS_ENABLED, mUIMap->getPixelsSize() );
 }
 
 void MapEditor::mapCreated() {
@@ -904,7 +905,7 @@ void MapEditor::mapOpen( const Event * Event ) {
 void MapEditor::onMapLoad() {
 	mCurLayer = NULL;
 
-	mUIMap->Map()->setViewSize( mUIMap->getRealSize() );
+	mUIMap->Map()->setViewSize( mUIMap->getPixelsSize() );
 
 	mapCreated();
 
@@ -1250,13 +1251,13 @@ GameObject * MapEditor::createGameObject() {
 
 		if ( mChkAnim->isActive() ) {
 
-			Sprite * tAnimSprite = eeNew( Sprite, ( String::removeNumbersAtEnd( mGfxPreview->getTextureRegion()->getName() ) ) );
+			Sprite * tAnimSprite = Sprite::New( String::removeNumbersAtEnd( mGfxPreview->getTextureRegion()->getName() ) );
 			tObj = eeNew( GameObjectSprite, ( mCurGOFlags, mCurLayer, tAnimSprite ) );
 			tAnimSprite->setAutoAnimate( false );
 
 		} else {
 
-			Sprite * tStatiSprite = eeNew( Sprite, ( mGfxPreview->getTextureRegion() ) );
+			Sprite * tStatiSprite = Sprite::New( mGfxPreview->getTextureRegion() );
 			tObj = eeNew( GameObjectSprite, ( mCurGOFlags, mCurLayer, tStatiSprite ) );
 
 		}

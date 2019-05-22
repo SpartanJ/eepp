@@ -1,5 +1,6 @@
 #include <eepp/ui/uisprite.hpp>
 #include <eepp/graphics/sprite.hpp>
+#include <eepp/scene/scenenode.hpp>
 #include <pugixml/pugixml.hpp>
 #include <eepp/graphics/globaltextureatlas.hpp>
 
@@ -10,12 +11,13 @@ UISprite * UISprite::New() {
 }
 
 UISprite::UISprite() :
-	UIWidget(),
+	UIWidget( "sprite" ),
 	mSprite( NULL ),
 	mRender( RENDER_NORMAL ),
 	mAlignOffset(0,0),
 	mTextureRegionLast(NULL)
 {
+	subscribeScheduledUpdate();
 }
 
 UISprite::~UISprite() {
@@ -70,9 +72,7 @@ void UISprite::draw() {
 	}
 }
 
-void UISprite::update( const Time& time ) {
-	UIWidget::update( time );
-
+void UISprite::scheduledUpdate( const Time& time ) {
 	if ( NULL != mSprite ) {
 		TextureRegion * textureRegion = mSprite->getCurrentTextureRegion();
 
@@ -171,8 +171,8 @@ const Vector2f& UISprite::getAlignOffset() const {
 	return mAlignOffset;
 }
 
-void UISprite::setDeallocSprite( const bool& dealloc ) {
-	writeCtrlFlag( NODE_FLAG_FREE_USE, dealloc ? 1 : 0 );
+void UISprite::setIsSpriteOwner( const bool& dealloc ) {
+	writeNodeFlag( NODE_FLAG_FREE_USE, dealloc ? 1 : 0 );
 }
 
 bool UISprite::getDeallocSprite() {
@@ -185,18 +185,18 @@ void UISprite::onSizeChange() {
 	UIWidget::onSizeChange();
 }
 
-bool UISprite::setAttribute( const NodeAttribute& attribute ) {
+bool UISprite::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "src" == name ) {
 		std::string val = attribute.asString();
 
 		if ( val.size() ) {
-			setDeallocSprite( true );
-			setSprite( eeNew( Sprite, ( val ) ) );
+			setIsSpriteOwner( true );
+			setSprite( Sprite::New( val ) );
 		}
 	} else {
-		return UIWidget::setAttribute( attribute );
+		return UIWidget::setAttribute( attribute, state );
 	}
 
 	return true;

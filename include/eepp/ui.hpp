@@ -1,11 +1,7 @@
 #ifndef EEPP_UI_HPP
 #define EEPP_UI_HPP
 
-#include <eepp/ui/uibackground.hpp>
-#include <eepp/ui/uiborder.hpp>
 #include <eepp/ui/uiskin.hpp>
-#include <eepp/ui/uiskinsimple.hpp>
-#include <eepp/ui/uiskincomplex.hpp>
 #include <eepp/ui/uitheme.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uinode.hpp>
@@ -50,8 +46,15 @@
 #include <eepp/ui/uigridlayout.hpp>
 #include <eepp/ui/tools/textureatlaseditor.hpp>
 
-#include <eepp/ui/uithemedefault.hpp>
-
 #include <eepp/ui/uiwidgetcreator.hpp>
+
+#include <eepp/ui/css/stylesheet.hpp>
+#include <eepp/ui/css/stylesheetelement.hpp>
+#include <eepp/ui/css/stylesheetstyle.hpp>
+#include <eepp/ui/css/stylesheetparser.hpp>
+#include <eepp/ui/css/stylesheetselector.hpp>
+#include <eepp/ui/css/stylesheetproperty.hpp>
+#include <eepp/ui/css/stylesheetselectorparser.hpp>
+#include <eepp/ui/css/stylesheetpropertiesparser.hpp>
 
 #endif

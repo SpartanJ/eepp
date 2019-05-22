@@ -10,8 +10,12 @@ UIImage * UIImage::New() {
 	return eeNew( UIImage, () );
 }
 
-UIImage::UIImage() :
-	UIWidget(),
+UIImage *UIImage::NewWithTag( const std::string& tag ) {
+	return eeNew( UIImage, ( tag ) );
+}
+
+UIImage::UIImage( const std::string& tag ) :
+	UIWidget( tag ),
 	mScaleType( UIScaleType::None ),
 	mDrawable( NULL ),
 	mColor(),
@@ -22,6 +26,10 @@ UIImage::UIImage() :
 
 	onAutoSize();
 }
+
+UIImage::UIImage() :
+	UIImage( "image" )
+{}
 
 UIImage::~UIImage() {
 	safeDeleteDrawable();
@@ -58,7 +66,7 @@ UIImage * UIImage::setDrawable( Drawable * drawable ) {
 void UIImage::onAutoSize() {
 	if ( NULL != mDrawable ) {
 		if ( ( mFlags & UI_AUTO_SIZE ) && Sizef::Zero == mDpSize ) {
-			setSize( mDrawable->getSize() );
+			setInternalSize( mDrawable->getSize() );
 		}
 
 		if ( mLayoutWidthRules == WRAP_CONTENT ) {
@@ -183,7 +191,7 @@ const Vector2f& UIImage::getAlignOffset() const {
 	return mAlignOffset;
 }
 
-bool UIImage::setAttribute( const NodeAttribute& attribute ) {
+bool UIImage::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "src" == name ) {
@@ -207,9 +215,9 @@ bool UIImage::setAttribute( const NodeAttribute& attribute ) {
 			setScaleType( UIScaleType::None );
 		}
 	} else if ( "tint" == name ) {
-		setColor( Color::fromString( attribute.asString() ) );
+		setColor( attribute.asColor() );
 	} else {
-		return UIWidget::setAttribute( attribute );
+		return UIWidget::setAttribute( attribute, state );
 	}
 
 	return true;

@@ -1,5 +1,6 @@
 #include <eepp/ui/uiloader.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
+#include <eepp/scene/scenenode.hpp>
 #include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
@@ -9,7 +10,7 @@ UILoader * UILoader::New() {
 }
 
 UILoader::UILoader() :
-	UIWidget(),
+	UIWidget( "loader" ),
 	mRadius(0),
 	mOutlineThickness( PixelDensity::dpToPx(8) ),
 	mColor( Color::Green ),
@@ -21,9 +22,14 @@ UILoader::UILoader() :
 	mOp(1),
 	mIndeterminate(true)
 {
+	subscribeScheduledUpdate();
+
 	mArc.setFillMode( DRAW_FILL );
 	mCircle.setFillMode( DRAW_FILL );
 	setFillColor( mColor );
+}
+
+UILoader::~UILoader() {
 }
 
 Uint32 UILoader::getType() const {
@@ -52,9 +58,7 @@ void UILoader::draw() {
 	clippingMask->stencilMaskDisable();
 }
 
-void UILoader::update( const Time& time ) {
-	UIWidget::update( time );
-
+void UILoader::scheduledUpdate( const Time& time ) {
 	invalidateDraw();
 
 	if ( mIndeterminate ) {
@@ -111,9 +115,9 @@ const Color& UILoader::getFillColor() const {
 }
 
 void UILoader::onSizeChange() {
-	if ( mRadius == 0 ) {
-		setRadius( eemin( mDpSize.x - mPadding.Left - mPadding.Right, mDpSize.y - mPadding.Top - mPadding.Bottom ) / 2.f );
-	}
+	UIWidget::onSizeChange();
+
+	updateRadius();
 }
 
 void UILoader::onPaddingChange() {
@@ -122,6 +126,12 @@ void UILoader::onPaddingChange() {
 	onSizeChange();
 
 	UIWidget::onPaddingChange();
+}
+
+void UILoader::updateRadius() {
+	if ( mRadius == 0 ) {
+		setRadius( eemin( mDpSize.x - mPadding.Left - mPadding.Right, mDpSize.y - mPadding.Top - mPadding.Bottom ) / 2.f );
+	}
 }
 
 void UILoader::onAutoSize() {
@@ -136,9 +146,9 @@ void UILoader::onAutoSize() {
 			minSize.y = eemax( minSize.y, 64.f );
 		}
 
-		setSize( minSize );
+		setInternalSize( minSize );
 
-		onSizeChange();
+		updateRadius();
 	}
 }
 
@@ -184,7 +194,7 @@ UILoader * UILoader::setAnimationSpeed( const Float& animationSpeed ) {
 	return this;
 }
 
-bool UILoader::setAttribute( const NodeAttribute& attribute ) {
+bool UILoader::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	std::string name = attribute.getName();
 
 	if ( "indeterminate" == name ) {
@@ -194,7 +204,7 @@ bool UILoader::setAttribute( const NodeAttribute& attribute ) {
 	} else if ( "progress" == name ) {
 		setProgress( attribute.asFloat() );
 	} else if ( "fillcolor" == name ) {
-		setFillColor( Color::fromString( attribute.asString() ) );
+		setFillColor( attribute.asColor() );
 	} else if ( "radius" == name ) {
 		setRadius( attribute.asFloat() );
 	} else if ( "outlinethickness" == name ) {
@@ -204,7 +214,7 @@ bool UILoader::setAttribute( const NodeAttribute& attribute ) {
 	} else if ( "arcstartangle" == name ) {
 		setArcStartAngle( attribute.asFloat() );
 	} else {
-		return UIWidget::setAttribute( attribute );
+		return UIWidget::setAttribute( attribute, state );
 	}
 
 	return true;

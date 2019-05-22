@@ -55,10 +55,10 @@ class EE_API String {
 	static const std::size_t InvalidPos; ///< Represents an invalid position in the string
 
 	/** @return string hash */
-	static Uint32 hash( const Uint8 * str );
+	static constexpr Uint32 hash( const Uint8 * str );
 
 	/** @return string hash */
-	static Uint32 hash( const char * str );
+	static constexpr Uint32 hash( const char * str );
 
 	/** @return string hash */
 	static Uint32 hash( const std::string& str );
@@ -67,13 +67,13 @@ class EE_API String {
 	static Uint32 hash( const String& str );
 
 	/** @return If the value passed is a character */
-	static bool isCharacter( const int& mValue );
+	static bool isCharacter( const int& value );
 
 	/** @return If the value passed is a number */
-	static bool isNumber( const int& mValue, bool AllowDot = false );
+	static bool isNumber( const int& value, bool AllowDot = false );
 
 	/** @return If the value passed is a letter */
-	static bool isLetter( const int& mValue );
+	static bool isLetter( const int& value );
 
 	/** Split a String and hold it on a vector */
 	static std::vector < String > split( const String& str, const Uint32& splitchar = '\n', const bool& pushEmptyString = false );
@@ -173,7 +173,7 @@ class EE_API String {
 	}
 
 	/** Returning a std::string from a formated string */
-	static std::string strFormated( const char* format, ... )
+	static std::string format( const char* format, ... )
 	#ifdef __GNUC__
 		/* This attribute is nice: it even works through gettext invokation. For
 		   example, gcc will complain that StrFormat(_("%s"), 42) is ill-formed. */
@@ -182,7 +182,7 @@ class EE_API String {
 	;
 
 	/** Format a char buffer */
-	static void strFormat( char * Buffer, int BufferSize, const char * format, ... );
+	static void formatBuffer( char * Buffer, int BufferSize, const char * format, ... );
 
 	/** @brief Construct from an UTF-8 string to UTF-32 according
 	** @param utf8String UTF-8 string to convert

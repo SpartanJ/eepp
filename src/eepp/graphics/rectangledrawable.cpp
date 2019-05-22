@@ -4,6 +4,14 @@
 
 namespace EE { namespace Graphics {
 
+RectangleDrawable * RectangleDrawable::New() {
+	return eeNew( RectangleDrawable, () );
+}
+
+RectangleDrawable * RectangleDrawable::New( const Vector2f& position, const Sizef& size ) {
+	return eeNew( RectangleDrawable, ( position, size ) );
+}
+
 RectangleDrawable::RectangleDrawable() :
 	PrimitiveDrawable( Drawable::RECTANGLE ),
 	mRotation( 0 ),
@@ -32,13 +40,18 @@ void RectangleDrawable::draw() {
 	draw( mPosition );
 }
 
-void RectangleDrawable::draw(const Vector2f & position) {
+void RectangleDrawable::draw(const Vector2f &) {
 	draw( mPosition, mSize );
 }
 
 void RectangleDrawable::draw(const Vector2f & position, const Sizef & size) {
 	if ( size != mSize ) {
 		mSize = size;
+		mNeedsUpdate = true;
+	}
+
+	if ( position != mPosition ) {
+		mPosition = position;
 		mNeedsUpdate = true;
 	}
 
@@ -81,9 +94,11 @@ Uint32 RectangleDrawable::getCorners() const {
 }
 
 void RectangleDrawable::setCorners(const Uint32 & corners) {
-	mCorners = corners;
-	mNeedsUpdate = true;
-	mRecreateVertexBuffer = true;
+	if ( corners != mCorners ) {
+		mCorners = corners;
+		mNeedsUpdate = true;
+		mRecreateVertexBuffer = true;
+	}
 }
 
 RectColors RectangleDrawable::getRectColors() const {

@@ -3,10 +3,15 @@
 
 #include <eepp/ui/base.hpp>
 #include <eepp/ui/uihelper.hpp>
-#include <eepp/ui/uibackground.hpp>
-#include <eepp/ui/uiborder.hpp>
+#include <eepp/ui/uistate.hpp>
 #include <eepp/ui/uiskin.hpp>
+#include <eepp/ui/uiskinstate.hpp>
 #include <eepp/scene/node.hpp>
+
+namespace EE { namespace Graphics {
+class Drawable;
+class RectangleDrawable;
+}}
 
 namespace EE { namespace Scene {
 class Action;
@@ -17,6 +22,8 @@ using namespace EE::Scene;
 namespace EE { namespace UI {
 
 class UITheme;
+class UISkin;
+class UISkinState;
 
 class EE_API UINode : public Node {
 	public:
@@ -32,13 +39,13 @@ class EE_API UINode : public Node {
 
 		void nodeToWorldTranslation( Vector2f& position ) const;
 
-		void worldToNode( Vector2i& pos );
+		void worldToNode( Vector2i& pos ) const;
 
-		void nodeToWorld( Vector2i& pos );
+		void nodeToWorld( Vector2i& pos ) const;
 
-		void worldToNode( Vector2f& pos );
+		void worldToNode( Vector2f& pos ) const;
 
-		void nodeToWorld( Vector2f& pos );
+		void nodeToWorld( Vector2f& pos ) const;
 
 		virtual Uint32 getType() const;
 
@@ -54,7 +61,7 @@ class EE_API UINode : public Node {
 
 		const Vector2f& getPosition() const;
 
-		const Vector2f& getRealPosition() const;
+		const Vector2f& getPixelsPosition() const;
 
 		virtual Node * setSize( const Sizef& size );
 
@@ -64,15 +71,11 @@ class EE_API UINode : public Node {
 
 		UINode * setPixelsSize( const Float& x, const Float& y );
 
-		const Sizef& getSize();
-
-		virtual const Sizef& getRealSize();
+		const Sizef& getSize() const;
 
 		Rect getRect() const;
 
 		virtual void draw();
-
-		virtual void update( const Time& time );
 
 		Uint32 getHorizontalAlign() const;
 
@@ -84,31 +87,39 @@ class EE_API UINode : public Node {
 
 		UINode * setGravity( Uint32 hvalign );
 
-		UIBackground * setBackgroundFillEnabled( bool enabled );
+		UISkin * setBackgroundFillEnabled( bool enabled );
 
 		UINode * setBackgroundDrawable( Drawable * drawable , bool ownIt = false );
 
 		UINode * setBackgroundColor( const Color& color );
 
-		UINode * setBackgroundCorners( const unsigned int& corners );
+		Color getBackgroundColor() const;
 
-		UINode * setBackgroundBlendMode( const BlendMode& blendMode );
+		UINode * setBorderRadius( const unsigned int& corners );
 
-		UIBackground * setForegroundFillEnabled( bool enabled );
+		Uint32 getBorderRadius() const;
+
+		UISkin * setForegroundFillEnabled( bool enabled );
 
 		UINode * setForegroundDrawable( Drawable * drawable , bool ownIt = false );
 
 		UINode * setForegroundColor( const Color& color );
 
-		UINode * setForegroundCorners( const unsigned int& corners );
+		Color getForegroundColor() const;
 
-		UINode * setForegroundBlendMode( const BlendMode& blendMode );
+		UINode * setForegroundRadius( const unsigned int& corners );
 
-		UIBorder * setBorderEnabled( bool enabled );
+		Uint32 getForegroundRadius() const;
+
+		RectangleDrawable * setBorderEnabled( bool enabled );
 
 		UINode * setBorderColor( const Color& color );
 
+		Color getBorderColor();
+
 		UINode * setBorderWidth( const unsigned int& width );
+
+		Float getBorderWidth() const;
 
 		const Uint32& getFlags() const;
 
@@ -118,9 +129,11 @@ class EE_API UINode : public Node {
 
 		virtual UINode * resetFlags( Uint32 newFlags = 0 );
 
-		UIBackground * getBackground();
+		UISkin * getBackground();
 
-		UIBorder * getBorder();
+		UISkin * getForeground();
+
+		RectangleDrawable * getBorder();
 
 		void setThemeByName( const std::string& Theme );
 
@@ -132,21 +145,27 @@ class EE_API UINode : public Node {
 
 		void setThemeToChilds( UITheme * Theme );
 
-		UISkin * getSkin();
+		UISkin * getSkin() const;
 
 		virtual UINode * setSkin( const UISkin& Skin );
 
 		UINode * setSkin( UISkin * skin );
 
+		UINode * setSkinColor( const Color& color );
+
+		const Color& getSkinColor() const;
+
 		void removeSkin();
 
-		void setSkinState( const Uint32& State );
+		virtual void pushState( const Uint32& State, bool emitEvent = true );
 
-		Sizef getSkinSize();
+		virtual void popState( const Uint32& State, bool emitEvent = true );
+
+		Sizef getSkinSize() const;
 
 		void applyDefaultTheme();
 
-		Node * getWindowContainer();
+		Node * getWindowContainer() const;
 
 		bool isDragging() const;
 
@@ -164,57 +183,29 @@ class EE_API UINode : public Node {
 
 		const Uint32& getDragButton() const;
 
-		bool isAnimating();
-
-		Interpolation1d * startAlphaAnim( const Float& From, const Float& To, const Time& TotalTime, const bool& alphaChilds = true, const Ease::Interpolation& type = Ease::Linear, Interpolation1d::OnPathEndCallback PathEndCallback = Interpolation1d::OnPathEndCallback() );
-
-		Interpolation2d * startScaleAnim( const Vector2f& From, const Vector2f& To, const Time& TotalTime, const Ease::Interpolation& type = Ease::Linear, Interpolation2d::OnPathEndCallback PathEndCallback = Interpolation2d::OnPathEndCallback() );
-
-		Interpolation2d * startScaleAnim( const Float& From, const Float& To, const Time& TotalTime, const Ease::Interpolation& type = Ease::Linear, Interpolation2d::OnPathEndCallback PathEndCallback = Interpolation2d::OnPathEndCallback() );
-
-		Interpolation2d * startTranslation( const Vector2f& From, const Vector2f& To, const Time& TotalTime, const Ease::Interpolation& type = Ease::Linear, Interpolation2d::OnPathEndCallback PathEndCallback = Interpolation2d::OnPathEndCallback() );
-
-		Interpolation1d * startRotation( const Float& From, const Float& To, const Time& TotalTime, const Ease::Interpolation& type = Ease::Linear, Interpolation1d::OnPathEndCallback PathEndCallback = Interpolation1d::OnPathEndCallback() );
-
-		Interpolation1d * startAlphaAnim( const Float& To, const Time& TotalTime, const bool& alphaChilds = true, const Ease::Interpolation& type = Ease::Linear, Interpolation1d::OnPathEndCallback PathEndCallback = Interpolation1d::OnPathEndCallback() );
-
-		Interpolation2d * startScaleAnim( const Vector2f& To, const Time& TotalTime, const Ease::Interpolation& type = Ease::Linear, Interpolation2d::OnPathEndCallback PathEndCallback = Interpolation2d::OnPathEndCallback() );
-
-		Interpolation2d * startScaleAnim( const Float& To, const Time& TotalTime, const Ease::Interpolation& type = Ease::Linear, Interpolation2d::OnPathEndCallback PathEndCallback = Interpolation2d::OnPathEndCallback() );
-
-		Interpolation2d * startTranslation( const Vector2f& To, const Time& TotalTime, const Ease::Interpolation& type = Ease::Linear, Interpolation2d::OnPathEndCallback PathEndCallback = Interpolation2d::OnPathEndCallback() );
-
-		Interpolation1d * startRotation( const Float& To, const Time& TotalTime, const Ease::Interpolation& type = Ease::Linear, Interpolation1d::OnPathEndCallback PathEndCallback = Interpolation1d::OnPathEndCallback() );
-
-		Interpolation1d * createFadeIn( const Time& Time, const bool& alphaChilds = true, const Ease::Interpolation& type = Ease::Linear );
-
-		Interpolation1d * createFadeOut( const Time& Time, const bool& alphaChilds = true, const Ease::Interpolation& type = Ease::Linear );
-
-		Interpolation1d * closeFadeOut( const Time& Time, const bool& alphaChilds = true, const Ease::Interpolation& type = Ease::Linear );
-
-		Interpolation1d * disableFadeOut( const Time & Time, const bool& alphaChilds = true, const Ease::Interpolation& type = Ease::Linear );
-
-		bool isFadingOut();
-
 		virtual void setFocus();
 	protected:
 		Vector2f		mDpPos;
 		Sizef			mDpSize;
 		Uint32			mFlags;
+		Uint32			mState;
 		UISkinState *	mSkinState;
-		UIBackground *	mBackground;
-		UIBackground *	mForeground;
-		UIBorder *		mBorder;
+		UISkinState *	mBackgroundState;
+		UISkinState *	mForegroundState;
+		RectangleDrawable *	mBorder;
 		Vector2f		mDragPoint;
 		Uint32			mDragButton;
+		Color			mSkinColor;
 
-		virtual Uint32 onMouseDown( const Vector2i& position, const Uint32 flags );
+		virtual Uint32 onMouseDown( const Vector2i& position, const Uint32& flags );
 
-		virtual Uint32 onMouseUp( const Vector2i& position, const Uint32 flags );
+		virtual Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
 
 		virtual Uint32 onValueChange();
 
 		virtual void onStateChange();
+
+		virtual void onEnabledChange();
 
 		virtual void onAlignChange();
 
@@ -230,17 +221,21 @@ class EE_API UINode : public Node {
 
 		virtual void onChildCountChange();
 
-		virtual Uint32 onDrag( const Vector2f& position );
+		virtual Uint32 onCalculateDrag( const Vector2f& position, const Uint32& flags );
+
+		virtual Uint32 onDrag( const Vector2f& position, const Uint32& flags );
 
 		virtual Uint32 onDragStart( const Vector2i& position );
 
 		virtual Uint32 onDragStop( const Vector2i& position );
 
-		virtual Uint32 onMouseEnter( const Vector2i& position, const Uint32 flags );
+		virtual Uint32 onMouseOver( const Vector2i& position, const Uint32& flags );
 
-		virtual Uint32 onMouseExit( const Vector2i& position, const Uint32 flags );
+		virtual Uint32 onMouseLeave( const Vector2i& position, const Uint32& flags );
 
 		virtual Uint32 onFocus();
+
+		virtual Uint32 onFocusLoss();
 
 		void checkClose();
 
@@ -248,13 +243,11 @@ class EE_API UINode : public Node {
 
 		virtual void onWidgetFocusLoss();
 
-		void setPrevSkinState();
-
 		void writeFlag( const Uint32& Flag, const Uint32& Val );
 
 		Rectf makePadding( bool PadLeft = true, bool PadRight = true, bool PadTop = true, bool PadBottom = true, bool SkipFlags = false );
 
-		Sizef getSkinSize( UISkin * Skin, const Uint32& State = UISkinState::StateNormal );
+		Sizef getSkinSize( UISkin * Skin, const Uint32& State = UIState::StateFlagNormal ) const;
 
 		void drawHighlightFocus();
 

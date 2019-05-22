@@ -9,13 +9,13 @@ UIScrollView * UIScrollView::New() {
 }
 
 UIScrollView::UIScrollView() :
-	UITouchDragableWidget(),
+	UITouchDragableWidget( "scrollview" ),
 	mViewType( Exclusive ),
 	mVScrollMode( UI_SCROLLBAR_AUTO ),
 	mHScrollMode( UI_SCROLLBAR_AUTO ),
-	mVScroll( UIScrollBar::New( UI_VERTICAL ) ),
-	mHScroll( UIScrollBar::New( UI_HORIZONTAL ) ),
-	mContainer( UINode::New() ),
+	mVScroll( UIScrollBar::NewVertical() ),
+	mHScroll( UIScrollBar::NewHorizontal() ),
+	mContainer( UIWidget::NewWithTag( "scrollview::container" ) ),
 	mScrollView( NULL ),
 	mSizeChangeCb( 0 )
 {
@@ -131,7 +131,7 @@ UIScrollBar * UIScrollView::getHorizontalScrollBar() const {
 	return mHScroll;
 }
 
-UINode * UIScrollView::getContainer() const {
+UIWidget * UIScrollView::getContainer() const {
 	return mContainer;
 }
 
@@ -199,16 +199,16 @@ void UIScrollView::updateScroll() {
 		return;
 
 	mScrollView->setPosition(
-		mHScroll->isVisible() ? -( mHScroll->getSlider()->getValue() * eemax( 0.f, mScrollView->getSize().getWidth() - mDpSize.getWidth() ) ) : 0.f ,
-		mVScroll->isVisible() ? -( mVScroll->getSlider()->getValue() * eemax( 0.f, mScrollView->getSize().getHeight() - mDpSize.getHeight() ) ) : 0.f
+		mHScroll->isVisible() ? -static_cast<int>( mHScroll->getSlider()->getValue() * eemax( 0.f, mScrollView->getSize().getWidth() - mDpSize.getWidth() ) ) : 0.f ,
+		mVScroll->isVisible() ? -static_cast<int>( mVScroll->getSlider()->getValue() * eemax( 0.f, mScrollView->getSize().getHeight() - mDpSize.getHeight() ) ) : 0.f
 	);
 }
 
-void UIScrollView::onValueChangeCb( const Event * Event ) {
+void UIScrollView::onValueChangeCb( const Event * ) {
 	updateScroll();
 }
 
-void UIScrollView::onScrollViewSizeChange(const Event * Event) {
+void UIScrollView::onScrollViewSizeChange(const Event *) {
 	containerUpdate();
 }
 
@@ -228,7 +228,7 @@ bool UIScrollView::isTouchOverAllowedChilds() {
 	return isMouseOverMeOrChilds() && mScrollView->isMouseOverMeOrChilds() && ret;
 }
 
-bool UIScrollView::setAttribute( const NodeAttribute& attribute ) {
+bool UIScrollView::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "type" == name ) {
@@ -263,7 +263,7 @@ bool UIScrollView::setAttribute( const NodeAttribute& attribute ) {
 			mHScroll->setScrollBarType( UIScrollBar::NoButtons );
 		}
 	} else {
-		return UITouchDragableWidget::setAttribute( attribute );
+		return UITouchDragableWidget::setAttribute( attribute, state );
 	}
 
 	return true;

@@ -46,8 +46,8 @@ TileMapProperties::TileMapProperties( TileMap * Map ) :
 		mUIBaseColor->setParent( mUIWindow->getContainer() );
 		mUIBaseColor->setPosition( Txt->getPosition().x, Txt->getPosition().y + Txt->getSize().getHeight() + 4 );
 		mUIBaseColor->setSize( 64, 64 );
-		mUIBaseColor->getBackground()->setColor( mMap->getBaseColor() );
-		mUIBaseColor->getBorder()->setColor( Color( 100, 100, 100, 200 ) );
+		mUIBaseColor->setBackgroundColor( mMap->getBaseColor() );
+		mUIBaseColor->setBorderColor( Color( 100, 100, 100, 200 ) );
 
 		Txt = createTextBox( "Red Color:", mUIWindow->getContainer(), Sizef(), Vector2f( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIBaseColor->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 		mUIRedSlider = UISlider::New()->setOrientation( UI_HORIZONTAL );
@@ -139,10 +139,10 @@ TileMapProperties::TileMapProperties( TileMap * Map ) :
 TileMapProperties::~TileMapProperties() {
 }
 
-void TileMapProperties::onRedChange( const Event * Event ) {
+void TileMapProperties::onRedChange( const Event * ) {
 	Color Col = mUIBaseColor->getBackground()->getColor();
 	Col.r = (Uint8)mUIRedSlider->getValue();
-	mUIBaseColor->getBackground()->setColor( Col );
+	mUIBaseColor->setBackgroundColor( Col );
 	mUIRedTxt->setText( String::toStr( (Int32)mUIRedSlider->getValue() ) );
 
 	Color MapCol = mMap->getBaseColor();
@@ -150,10 +150,10 @@ void TileMapProperties::onRedChange( const Event * Event ) {
 	mMap->setBaseColor( MapCol );
 }
 
-void TileMapProperties::onGreenChange( const Event * Event ) {
+void TileMapProperties::onGreenChange( const Event * ) {
 	Color Col = mUIBaseColor->getBackground()->getColor();
 	Col.g = (Uint8)mUIGreenSlider->getValue();
-	mUIBaseColor->getBackground()->setColor( Col );
+	mUIBaseColor->setBackgroundColor( Col );
 	mUIGreenTxt->setText( String::toStr( (Uint32)mUIGreenSlider->getValue() ) );
 
 	Color MapCol = mMap->getBaseColor();
@@ -161,10 +161,10 @@ void TileMapProperties::onGreenChange( const Event * Event ) {
 	mMap->setBaseColor( MapCol );
 }
 
-void TileMapProperties::onBlueChange( const Event * Event ) {
+void TileMapProperties::onBlueChange( const Event * ) {
 	Color Col = mUIBaseColor->getBackground()->getColor();
 	Col.b = (Uint8)mUIBlueSlider->getValue();
-	mUIBaseColor->getBackground()->setColor( Col );
+	mUIBaseColor->setBackgroundColor( Col );
 	mUIBlueTxt->setText( String::toStr( (Uint32)mUIBlueSlider->getValue() ) );
 
 	Color MapCol = mMap->getBaseColor();
@@ -204,21 +204,21 @@ void TileMapProperties::loadProperties() {
 	}
 }
 
-void TileMapProperties::onOKClick( const Event * Event ) {
+void TileMapProperties::onOKClick( const Event * ) {
 	saveProperties();
 
 	mUIWindow->closeWindow();
 }
 
-void TileMapProperties::onCancelClick( const Event * Event ) {
+void TileMapProperties::onCancelClick( const Event * ) {
 	mUIWindow->closeWindow();
 }
 
-void TileMapProperties::onWindowClose( const Event * Event ) {
+void TileMapProperties::onWindowClose( const Event * ) {
 	eeDelete( this );
 }
 
-void TileMapProperties::onAddCellClick( const Event * Event ) {
+void TileMapProperties::onAddCellClick( const Event * ) {
 	mGenGrid->add( createCell() );
 
 	Uint32 Index = mGenGrid->getItemSelectedIndex();
@@ -228,7 +228,7 @@ void TileMapProperties::onAddCellClick( const Event * Event ) {
 	}
 }
 
-void TileMapProperties::onRemoveCellClick( const Event * Event ) {
+void TileMapProperties::onRemoveCellClick( const Event * ) {
 	Uint32 Index = mGenGrid->getItemSelectedIndex();
 
 	if ( eeINDEX_NOT_FOUND != Index ) {

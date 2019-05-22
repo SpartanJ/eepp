@@ -11,7 +11,11 @@ class EE_API UITextInput : public UITextView {
 	public:
 		static UITextInput * New();
 
+		static UITextInput * NewWithTag( const std::string& tag );
+
 		UITextInput();
+
+		explicit UITextInput( const std::string& tag );
 
 		virtual ~UITextInput();
 
@@ -19,7 +23,7 @@ class EE_API UITextInput : public UITextView {
 
 		virtual bool isType( const Uint32& type ) const;
 
-		virtual void update( const Time& time );
+		virtual void scheduledUpdate( const Time& time );
 
 		virtual void draw();
 
@@ -47,7 +51,7 @@ class EE_API UITextInput : public UITextView {
 
 		bool isFreeEditingEnabled();
 
-		virtual bool setAttribute( const NodeAttribute& attribute );
+		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
 
 		virtual UIWidget * setPadding(const Rectf& padding);
 	protected:
@@ -57,7 +61,6 @@ class EE_API UITextInput : public UITextView {
 		int				mCursorPos;
 		bool			mAllowEditing;
 		bool			mShowingWait;
-
 		void resetWaitCursor();
 
 		virtual void alignFix();
@@ -68,11 +71,11 @@ class EE_API UITextInput : public UITextView {
 
 		void autoPadding();
 
-		virtual Uint32 onMouseClick( const Vector2i& position, const Uint32 flags );
+		virtual Uint32 onMouseClick( const Vector2i& position, const Uint32& flags );
 
-		virtual Uint32 onMouseDoubleClick( const Vector2i& position, const Uint32 flags );
+		virtual Uint32 onMouseDoubleClick( const Vector2i& position, const Uint32& flags );
 
-		virtual Uint32 onMouseExit( const Vector2i& position, const Uint32 flags );
+		virtual Uint32 onMouseLeave( const Vector2i& position, const Uint32& flags );
 
 		virtual Uint32 onFocus();
 

@@ -2,6 +2,7 @@
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/scene/scenenode.hpp>
+#include <eepp/scene/actions/actions.hpp>
 #include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
@@ -11,7 +12,7 @@ UIDropDownList * UIDropDownList::New() {
 }
 
 UIDropDownList::UIDropDownList() :
-	UITextInput(),
+	UITextInput( "dropdownlist" ),
 	mListBox( NULL ),
 	mFriendCtrl( NULL )
 {
@@ -19,17 +20,11 @@ UIDropDownList::UIDropDownList() :
 	setFlags( UI_AUTO_SIZE | UI_AUTO_PADDING );
 	unsetFlags( UI_TEXT_SELECTION_ENABLED );
 
-	UITheme * theme = UIThemeManager::instance()->getDefaultTheme();
-
-	if ( NULL != theme ) {
-		mStyleConfig = theme->getDropDownListStyleConfig();
-	}
-
 	setAllowEditing( false );
 
 	applyDefaultTheme();
 
-	mListBox = UIListBox::New();
+	mListBox = UIListBox::NewWithTag( "dropdownlist::listbox" );
 	mListBox->setSize( mDpSize.getWidth(), mStyleConfig.MaxNumVisibleItems * mDpSize.getHeight() );
 	mListBox->setEnabled( false );
 	mListBox->setVisible( false );
@@ -63,25 +58,15 @@ void UIDropDownList::setTheme( UITheme * Theme ) {
 }
 
 void UIDropDownList::onSizeChange() {
+	onAutoSize();
+
 	UIWidget::onSizeChange();
-
-	autoSizeControl();
-}
-
-void UIDropDownList::autoSizeControl() {
-	if ( ( mFlags & UI_AUTO_SIZE || 0 == mDpSize.getHeight() ) && 0 != getSkinSize().getHeight() ) {
-		setSize( mDpSize.x, getSkinSize().getHeight() );
-	}
-
-	if ( mLayoutHeightRules == WRAP_CONTENT ) {
-		setInternalPixelsHeight( PixelDensity::dpToPxI( getSkinSize().getHeight() ) + mRealPadding.Top + mRealPadding.Bottom );
-	}
 }
 
 void UIDropDownList::onThemeLoaded() {
 	autoPadding();
 
-	autoSizeControl();
+	onAutoSize();
 }
 
 void UIDropDownList::setFriendControl( UINode * friendCtrl ) {
@@ -89,14 +74,36 @@ void UIDropDownList::setFriendControl( UINode * friendCtrl ) {
 }
 
 void UIDropDownList::onAutoSize() {
-	autoSizeControl();
+	if ( mLayoutHeightRules == WRAP_CONTENT ) {
+		setInternalPixelsHeight( PixelDensity::dpToPxI( getSkinSize().getHeight() ) + mRealPadding.Top + mRealPadding.Bottom );
+	} else if ( ( mFlags & UI_AUTO_SIZE || 0 == mDpSize.getHeight() ) && 0 != getSkinSize().getHeight() ) {
+		setInternalHeight( getSkinSize().getHeight() );
+	}
 }
 
 UIListBox * UIDropDownList::getListBox() const {
 	return mListBox;
 }
 
-Uint32 UIDropDownList::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
+Uint32 UIDropDownList::onMouseUp( const Vector2i& Pos, const Uint32& Flags ) {
+	if ( mEnabled && mVisible && isMouseOver() ) {
+		if ( Flags & EE_BUTTONS_WUWD ) {
+			if ( Flags & EE_BUTTON_WUMASK ) {
+				mListBox->selectPrev();
+			} else if ( Flags & EE_BUTTON_WDMASK ) {
+				if ( mListBox->getItemSelectedIndex() != eeINDEX_NOT_FOUND ) {
+					mListBox->selectNext();
+				} else {
+					mListBox->setSelected( 0 );
+				}
+			}
+		}
+	}
+
+	return UITextInput::onMouseUp( Pos, Flags );
+}
+
+Uint32 UIDropDownList::onMouseClick( const Vector2i& Pos, const Uint32& Flags ) {
 	if ( ( Flags & EE_BUTTON_LMASK ) && NULL == mFriendCtrl )
 		showList();
 
@@ -110,7 +117,7 @@ Uint32 UIDropDownList::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 void UIDropDownList::showList() {
 	if ( !mListBox->isVisible() ) {
 		if ( !mStyleConfig.PopUpToMainControl )
-			mListBox->setParent( NULL != mFriendCtrl ? mFriendCtrl->getParent() : getWindowContainer() );
+			mListBox->setParent( getWindowContainer() );
 		else
 			mListBox->setParent( mSceneNode );
 
@@ -121,8 +128,6 @@ void UIDropDownList::showList() {
 		if ( mStyleConfig.PopUpToMainControl ) {
 			getParent()->nodeToWorld( Pos );
 			Pos = PixelDensity::pxToDp( Pos );
-		} else if ( NULL != mFriendCtrl ) {
-			Pos = Vector2f( mFriendCtrl->getPosition().x, mFriendCtrl->getPosition().y + mFriendCtrl->getSize().getHeight() );
 		} else {
 			Node * ParentLoop = getParent();
 			Node * rp = getWindowContainer();
@@ -174,18 +179,18 @@ void UIDropDownList::setMaxNumVisibleItems(const Uint32 & maxNumVisibleItems) {
 	mListBox->setSize( mDpSize.getWidth(), mStyleConfig.MaxNumVisibleItems * mDpSize.getHeight() );
 }
 
-UIDropDownListStyleConfig UIDropDownList::getStyleConfig() const {
+const UIDropDownList::StyleConfig& UIDropDownList::getStyleConfig() const {
 	return mStyleConfig;
 }
 
-void UIDropDownList::setStyleConfig(const UIDropDownListStyleConfig & styleConfig) {
+void UIDropDownList::setStyleConfig( const StyleConfig& styleConfig ) {
 	mStyleConfig = styleConfig;
 
-	mListBox->setFontStyleConfig( mStyleConfig );
 	setMaxNumVisibleItems( mStyleConfig.MaxNumVisibleItems );
+	setPopUpToMainControl( mStyleConfig.PopUpToMainControl );
 }
 
-void UIDropDownList::onControlClear( const Event * Event ) {
+void UIDropDownList::onControlClear( const Event * ) {
 	setText( "" );
 }
 
@@ -196,7 +201,7 @@ void UIDropDownList::onItemKeyDown( const Event * Event ) {
 		onItemClicked( Event );
 }
 
-void UIDropDownList::onListBoxFocusLoss( const Event * Event ) {
+void UIDropDownList::onListBoxFocusLoss( const Event * ) {
 	if ( NULL == getEventDispatcher() )
 		return;
 
@@ -208,12 +213,12 @@ void UIDropDownList::onListBoxFocusLoss( const Event * Event ) {
 	}
 }
 
-void UIDropDownList::onItemClicked( const Event * Event ) {
+void UIDropDownList::onItemClicked( const Event * ) {
 	hide();
 	setFocus();
 }
 
-void UIDropDownList::onItemSelected( const Event * Event ) {
+void UIDropDownList::onItemSelected( const Event * ) {
 	setText( mListBox->getItemSelectedText() );
 
 	NodeMessage Msg( this, NodeMessage::Selected, mListBox->getItemSelectedIndex() );
@@ -227,35 +232,20 @@ void UIDropDownList::show() {
 	mListBox->setVisible( true );
 
 	if ( UIThemeManager::instance()->getDefaultEffectsEnabled() ) {
-		mListBox->startAlphaAnim( 255.f == mListBox->getAlpha() ? 0.f : mListBox->getAlpha(), 255.f, UIThemeManager::instance()->getControlsFadeInTime() );
+		mListBox->runAction( Actions::Sequence::New(
+								 Actions::Fade::New( 255.f == mListBox->getAlpha() ? 0.f : mListBox->getAlpha(), 255.f, UIThemeManager::instance()->getControlsFadeOutTime() ),
+								 Actions::Spawn::New( Actions::Enable::New(), Actions::Visible::New( true ) ) ) );
 	}
 }
 
 void UIDropDownList::hide() {
 	if ( UIThemeManager::instance()->getDefaultEffectsEnabled() ) {
-		mListBox->disableFadeOut( UIThemeManager::instance()->getControlsFadeOutTime() );
+		mListBox->runAction( Actions::Sequence::New( Actions::FadeOut::New( UIThemeManager::instance()->getControlsFadeOutTime() ),
+													 Actions::Spawn::New( Actions::Disable::New(), Actions::Visible::New( false ) ) ) );
 	} else {
 		mListBox->setEnabled( false );
 		mListBox->setVisible( false );
 	}
-}
-
-void UIDropDownList::update( const Time& time ) {
-	if ( mEnabled && mVisible && NULL != getEventDispatcher() ) {
-		if ( isMouseOver() ) {
-			Uint32 Flags 			= getEventDispatcher()->getClickTrigger();
-
-			if ( Flags & EE_BUTTONS_WUWD ) {
-				if ( Flags & EE_BUTTON_WUMASK ) {
-					mListBox->selectPrev();
-				} else if ( Flags & EE_BUTTON_WDMASK ) {
-					mListBox->selectNext();
-				}
-			}
-		}
-	}
-
-	UITextInput::update( time );
 }
 
 Uint32 UIDropDownList::onKeyDown( const KeyEvent &Event ) {
@@ -270,7 +260,7 @@ void UIDropDownList::destroyListBox() {
 	}
 }
 
-bool UIDropDownList::setAttribute( const NodeAttribute& attribute ) {
+bool UIDropDownList::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "popuptomaincontrol" == name ) {
@@ -278,7 +268,7 @@ bool UIDropDownList::setAttribute( const NodeAttribute& attribute ) {
 	} else if ( "maxnumvisibleitems" == name ) {
 		setMaxNumVisibleItems( attribute.asUint() );
 	} else {
-		return UITextInput::setAttribute( attribute );
+		return UITextInput::setAttribute( attribute, state );
 	}
 
 	return true;

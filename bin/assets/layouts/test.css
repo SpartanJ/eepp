@@ -1,0 +1,330 @@
+/* Global rules */
+* {
+	textColor: #E6E6E6FF;
+	textShadowColor: #32323296;
+	textSelectedColor: #000;
+	textSelectionBackColor: #969696FF;
+}
+
+TabWidget {
+	tabSeparation: -1dp;
+	drawLineBelowTabs: true;
+	lineBelowTabsColor: #2f3030;
+	lineBelowTabsYOffset: 0dp;
+}
+
+ProgressBar {
+	displayPercent: true;
+	verticalExpand: true;
+	fillerPadding: 2dp;
+	movementSpeed: 32, 0;
+}
+
+WinMenu {
+	buttonMargin: 12dp;
+}
+
+Menu,
+PopUpMenu {
+	textColor: #E6E6E6FF;
+	minWidth: 100dp;
+	minSpaceForIcons: 24dp;
+	minRightMargin: 8dp;
+}
+
+Menu:hover, 
+PopUpMenu:hover,
+Menu::Item:hover,
+Menu::CheckBox:hover,
+Menu::SubMenu:hover,
+ListBox::item:hover,
+Tab:selected,
+Tab:hover,
+Tab:pressed {
+	textColor: #FFF;
+}
+
+Slider { 
+	halfSlider: true;
+	backgroundColor: #555;
+}
+
+ScrollBar {
+	expandBackground: true;
+}
+
+Window {
+	winFlags: shadow;
+	buttonsPositionFixer: -2, 0;
+}
+
+Window::title {
+	textColor: #E6E6E6FF;
+	textStyle: shadow;
+}
+
+Tooltip {
+	padding: 8dp;
+	textColor: black;
+}
+
+#lvbox > * {
+	layout_marginTop: 8dp;
+}
+
+#lvbox > #tpad {
+	layout_marginTop: 0dp;
+	borderWidth: 2dp;
+	borderColor: #66666666;
+	backgroundColor: #33FF3333;
+	backgroundImage: linear-gradient( #8c8886, #585857 );
+	borderRadius: 12;
+	textSize: 24dp;
+	padding: 12dp;
+	transition: scale 0.25s, rotation 0.25s 0.25s, borderColor 0.25s, backgroundColor 0.25s, borderRadius 0.25s;
+}
+
+#lvbox > #tpad:hover {
+	scale: 1.1;
+	rotation: -3;
+	backgroundColor: #FF333333;
+	borderColor: #99999999;
+	borderRadius: 4;
+}
+
+#tpad2 {
+	layout_marginLeft: 0;
+	padding: 24dp;
+	opacity: 0.8;
+	textSize: 24dp;
+	backgroundColor: #333;
+	transition: all 0.25s;
+}
+
+#tpad2:hover {
+	layout_marginLeft: 8dp;
+	padding: 28dp;
+	opacity: 1;
+	borderRadius: 24;
+	backgroundColor: #656;
+}
+
+#tpad3 {
+	borderWidth: 2dp;
+	borderColor: #1e2021d7;
+	backgroundImage: linear-gradient( #797a79, #585857 );
+	borderRadius: 3;
+	padding: 12dp;
+	transition: all 0.25;
+	textStyle: shadow;
+	textColor: white;
+}
+
+#tpad3:hover {
+	backgroundImage: linear-gradient( #9c9d9b, #5b5b5a );
+	borderColor: #1d1f1fd7;
+	borderRadius: 3;
+	cursor: hand;
+	textShadowColor: black;
+	padding: 18dp 12dp 100dp 12dp;
+}
+
+#tpad3:pressed {
+	backgroundImage: linear-gradient( #4e4f4d, #414141 );
+	borderColor: #222320d7;
+	padding: 22dp 12dp 120dp 12dp;
+}
+
+#chbox,
+#rdbut {
+	textSize:24dp;
+	padding: 12dp;
+	backgroundColor: #333;
+}
+
+#tres {
+	backgroundColor: #444;
+	padding: 8dp;
+	transition: all 0.25s;
+}
+
+#tres:hover {
+	width: 128dp;
+	height: 48dp;
+}
+
+#pbut {
+	transition: all 0.25s;
+}
+
+#pbut:hover {
+	skinColor: #66ff44;
+}
+
+#test_2 > #rtest {
+	padding: 8dp;
+	background: #221122;
+}
+
+#test_2 > #rtest #rttv {
+	background: #333;
+	textSize: 24dp;
+	borderRadius: 8;
+	padding: 8dp;
+	transition: all 0.125s;
+}
+
+#test_2 > #rtest #rttv:hover {
+	background: #666;
+}
+
+#test_2 > #rtest:hover #rttv {
+	background: #005522;
+}
+
+#test_2 > #rtest:hover #rttv:hover {
+	background: #008822;
+}
+
+#test_2 > #rtest:hover #rttv:pressed {
+	background: lime;
+	textColor: #333;
+}
+
+#test_3 {
+	background: #221122;
+}
+
+#test_3 > .rooter {
+	background: red;
+}
+
+#test_3 > .rooter .outer {
+	background: blue;
+	transition: all 0.125s;
+}
+
+#test_3 > .rooter:hover .outer {
+	background: green;
+}
+
+#test_3 > .rooter:hover .outer:hover {
+	background: yellow;
+}
+
+#test_3 > .rooter .inner {
+	background: #123456;
+	transition: all 0.125s;
+}
+
+#test_3 > .rooter:hover .outer:hover .inner {
+	background: #DABA22;
+	layout_marginLeft: 16dp;
+}
+
+#test_3 > .rooter:hover .outer:hover .inner:hover {
+	background: #CCC;
+}
+
+#test_4 {
+	backgroundColor: #221122;
+}
+
+#test_4 > RelativeLayout {
+	backgroundColor: #331133;
+	padding: 8dp;
+	transition: all 0.125s;
+}
+
+#test_4 > RelativeLayout:hover {
+	backgroundColor: #442244;
+	cursor: hand;
+}
+
+#test_4 > RelativeLayout:pressed {
+	backgroundColor: #662266;
+}
+
+#test_4 > RelativeLayout > TextView {
+	transition: all 0.125s;
+}
+
+#test_4 > RelativeLayout:hover > TextView {
+	layout_marginLeft: 8dp;
+}
+
+TabWidget {
+	paddingLeft: 8dp;
+	paddingRight: 8dp;
+	paddingBottom: 8dp;
+	paddingTop: 20dp;
+	backgroundColor: #656565;
+}
+
+#lvbox {
+	backgroundColor: #222;
+	padding: 12dp;
+}
+
+.list {
+	textSize: 16dp;
+	padding: 8dp;
+}
+
+#tviewl {
+	textSize: 24dp;
+	backgroundColor: #333;
+}
+
+#tinput {
+	textSize: 24dp;
+	padding: 24dp;
+}
+
+#rvbox {
+	backgroundColor: #323232;
+	padding: 12dp;
+}
+
+#rrl {
+	backgroundColor: #999;
+	padding: 24dp;
+}
+
+#rrl > #tmap {
+	textSize: 24dp;
+	padding: 12dp;
+	backgroundColor: #333;
+}
+
+.eltv {
+	textSize: 24dp;
+	padding: 12dp;
+	backgroundColor: #242424;
+}
+
+#rrl > #el2,
+#rrl > #tm,
+#rrl > #tmp {
+	layout_margin: 12dp;
+}
+
+#rrl > #slider {
+	padding: 32dp;
+	backgroundColor: #555;
+}
+
+#rrl > #scrollbar {
+	padding: 8dp;
+	backgroundColor: #12345666;
+}
+
+#rrl > #spinbox {
+	padding: 8dp;
+	backgroundColor: #54345666;
+}
+
+#rrl > TextEdit {
+	padding: 16dp;
+	layout_marginBottom: 140dp;
+}

@@ -5,6 +5,7 @@
 
 #if defined( EE_PLATFORM_POSIX )
 
+#include <eepp/system/time.hpp>
 #include <eepp/network/socket.hpp>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -13,6 +14,8 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <unistd.h>
+
+using namespace EE::System;
 
 namespace EE { namespace Network { namespace Private {
 
@@ -44,6 +47,12 @@ class SocketImpl {
 		/** Get the last socket error status
 		**  @return Status corresponding to the last socket error */
 		static Socket::Status getErrorStatus();
+
+		/** Set the send timeout */
+		static void setSendTimeout(SocketHandle sock, const Time& timeout);
+
+		/** Set the receive timeout */
+		static void setReceiveTimeout(SocketHandle sock, const Time& timeout);
 };
 
 }}}

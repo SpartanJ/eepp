@@ -10,7 +10,7 @@ UIRadioButton * UIRadioButton::New() {
 }
 
 UIRadioButton::UIRadioButton() :
-	UITextView(),
+	UITextView( "radiobutton" ),
 	mActiveButton(NULL),
 	mInactiveButton(NULL),
 	mActive( false ),
@@ -81,7 +81,7 @@ void UIRadioButton::onThemeLoaded() {
 void UIRadioButton::onAutoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
 		if ( mDpSize.getWidth() == 0 ) {
-			setInternalPixelsWidth( (int)mTextCache->getTextWidth() + mActiveButton->getRealSize().getWidth() + mTextSeparation + mRealPadding.Left + mRealPadding.Right );
+			setInternalPixelsWidth( (int)mTextCache->getTextWidth() + mActiveButton->getPixelsSize().getWidth() + mTextSeparation + mRealPadding.Left + mRealPadding.Right );
 		}
 
 		if ( mDpSize.getHeight() == 0 ) {
@@ -93,7 +93,7 @@ void UIRadioButton::onAutoSize() {
 	}
 
 	if ( mLayoutWidthRules == WRAP_CONTENT ) {
-		setInternalPixelsWidth( (int)mTextCache->getTextWidth() + mRealPadding.Left + mRealPadding.Right + mActiveButton->getRealSize().getWidth() + mTextSeparation );
+		setInternalPixelsWidth( (int)mTextCache->getTextWidth() + mRealPadding.Left + mRealPadding.Right + mActiveButton->getPixelsSize().getWidth() + mTextSeparation );
 	}
 
 	if ( mLayoutHeightRules == WRAP_CONTENT ) {
@@ -231,7 +231,19 @@ void UIRadioButton::onPaddingChange() {
 void UIRadioButton::alignFix() {
 	UITextView::alignFix();
 
-	mRealAlignOffset.x = mActiveButton->getRealPosition().x + mActiveButton->getRealSize().getWidth() + PixelDensity::dpToPx( mTextSeparation );
+	switch ( fontHAlignGet( getFlags() ) ) {
+		case UI_HALIGN_CENTER:
+			mRealAlignOffset.x = (Float)( (Int32)( ( mSize.x - mRealPadding.Left - mRealPadding.Right - mTextCache->getTextWidth() - mActiveButton->getPixelsSize().getWidth() + PixelDensity::dpToPx( mTextSeparation ) ) / 2.f ) ) + mActiveButton->getPixelsSize().getWidth() + PixelDensity::dpToPx( mTextSeparation );
+			break;
+		case UI_HALIGN_RIGHT:
+			mRealAlignOffset.x = ( (Float)mSize.x - mRealPadding.Left - mRealPadding.Right - (Float)mTextCache->getTextWidth() );
+			break;
+		case UI_HALIGN_LEFT:
+			mRealAlignOffset.x = mActiveButton->getPixelsSize().getWidth() + PixelDensity::dpToPx( mTextSeparation );
+			break;
+	}
+
+	mAlignOffset = PixelDensity::pxToDp( mRealAlignOffset );
 }
 
 UINode * UIRadioButton::getActiveButton() const {
@@ -252,13 +264,13 @@ void UIRadioButton::setTextSeparation(const Int32 & textSeparation) {
 	setPadding( getPadding() );
 }
 
-bool UIRadioButton::setAttribute( const NodeAttribute& attribute ) {
+bool UIRadioButton::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "selected" == name || "active" == name ) {
 		setActive( attribute.asBool() );
 	} else {
-		return UITextView::setAttribute( attribute );
+		return UITextView::setAttribute( attribute, state );
 	}
 
 	return true;

@@ -47,16 +47,13 @@ std::string FileSystem::getOSSlash() {
 	#endif
 }
 
-bool FileSystem::fileGet( const std::string& path, SafeDataPointer& data ) {
+bool FileSystem::fileGet( const std::string& path, ScopedBuffer& data ) {
 	if ( fileExists( path ) ) {
 		IOStreamFile fs ( path  );
 
-		eeSAFE_DELETE( data.data );
+		data.reset( fileSize( path ) );
 
-		data.size	= fileSize( path );
-		data.data		= eeNewArray( Uint8, ( data.size ) );
-
-		fs.read( reinterpret_cast<char*> ( data.data ), data.size  );
+		fs.read( reinterpret_cast<char*> ( data.get() ), data.length()  );
 
 		return true;
 	}
@@ -88,10 +85,8 @@ bool FileSystem::fileCopy( const std::string& src, const std::string& dst ) {
 		Int64	allocate	= ( size < chunksize ) ? size : chunksize;
 		Int64	copysize	= 0;
 
-		SafeDataPointer data;
-		data.size	= (Uint32)allocate;
-		data.data		= eeNewArray( Uint8, ( data.size ) );
-		char * buff		= (char*)data.data;
+		TScopedBuffer<char> data( allocate );
+		char * buff		= data.get();
 
 		IOStreamFile in( src, "rb" );
 		IOStreamFile out( dst, "wb" );
@@ -105,7 +100,7 @@ bool FileSystem::fileCopy( const std::string& src, const std::string& dst ) {
 				}
 
 				in.read		( &buff[0], copysize );
-				out.write	( (const char*)&buff[0], copysize );
+				out.write	( &buff[0], copysize );
 
 				size_left -= copysize;
 			} while ( size_left > 0 );
@@ -540,7 +535,7 @@ bool FileSystem::changeWorkingDirectory( const std::string & path ) {
 
 std::string FileSystem::getCurrentWorkingDirectory() {
 #ifdef EE_COMPILER_MSVC
-	#if defined( UNICODE ) AND !defined( EE_NO_WIDECHAR )
+	#if defined( UNICODE ) && !defined( EE_NO_WIDECHAR )
 	wchar_t dir[_MAX_PATH];
 	return ( 0 != GetCurrentDirectoryW( _MAX_PATH, dir ) ) ? String( dir )::toUtf8() : std::string();
 	#else
@@ -578,6 +573,26 @@ Int64 FileSystem::getDiskFreeSpace(const std::string& path) {
 #else
 	return -1;
 #endif
+}
+
+std::string FileSystem::fileGetNumberedFileNameFromPath(std::string directoryPath, const std::string& fileName, const std::string& separator, const std::string& fileExtension) {
+	Uint32 fileNum = 1;
+	std::string fileNumName;
+
+	if ( FileSystem::isDirectory( directoryPath ) ) {
+		dirPathAddSlashAtEnd( directoryPath );
+
+		while ( fileNum < 10000 ) {
+			fileNumName = String::format( std::string( "%s" + separator + "%d%s" ).c_str(), fileName.c_str(), fileNum,  fileExtension.empty() ? "" : std::string( "." + fileExtension ).c_str() );
+
+			if ( !FileSystem::fileExists( directoryPath + fileNumName ) )
+				return fileNumName;
+
+			fileNum++;
+		}
+	}
+
+	return "";
 }
 
 }}

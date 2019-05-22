@@ -16,7 +16,7 @@ UILinearLayout * UILinearLayout::NewHorizontal() {
 }
 
 UILinearLayout::UILinearLayout() :
-	UILayout(),
+	UILayout( "linearlayout" ),
 	mOrientation( UI_VERTICAL )
 {
 	clipEnable();
@@ -49,7 +49,7 @@ void UILinearLayout::onSizeChange() {
 	pack();
 }
 
-void UILinearLayout::onParentSizeChange( const Vector2f& SizeChange ) {
+void UILinearLayout::onParentSizeChange( const Vector2f& ) {
 	UILayout::onParentChange();
 	pack();
 }
@@ -97,7 +97,7 @@ void UILinearLayout::packVertical() {
 				{
 					int w = mDpSize.getWidth() - widget->getLayoutMargin().Left - widget->getLayoutMargin().Right - mPadding.Left - mPadding.Right;
 
-					if ( widget->getSize().getWidth() != w )
+					if ( (int)widget->getSize().getWidth() != w )
 						widget->setSize( w, widget->getSize().getHeight() );
 
 					break;
@@ -166,14 +166,14 @@ void UILinearLayout::packVertical() {
 	if ( getLayoutHeightRules() == WRAP_CONTENT ) {
 		curY += mPadding.Bottom;
 
-		if ( curY != mDpSize.getHeight() ) {
+		if ( curY != (int)mDpSize.getHeight() ) {
 			setInternalHeight( curY );
 			notifyLayoutAttrChangeParent();
 		}
 	} else if ( getLayoutHeightRules() == MATCH_PARENT ) {
 		int h = getParent()->getSize().getHeight() - mLayoutMargin.Top - mLayoutMargin.Bottom;
 
-		if ( h != mDpSize.getHeight() )
+		if ( h != (int)mDpSize.getHeight() )
 			setInternalHeight( h );
 	}
 
@@ -215,7 +215,7 @@ void UILinearLayout::packHorizontal() {
 				{
 					int h = mDpSize.getHeight() - widget->getLayoutMargin().Top - widget->getLayoutMargin().Bottom - mPadding.Top - mPadding.Bottom;
 
-					if ( h != widget->getSize().getHeight() )
+					if ( h != (int)widget->getSize().getHeight() )
 						widget->setSize( widget->getSize().getWidth(), h );
 
 					break;
@@ -284,14 +284,14 @@ void UILinearLayout::packHorizontal() {
 	if ( getLayoutWidthRules() == WRAP_CONTENT ) {
 		curX += mPadding.Right;
 
-		if ( curX != mDpSize.getWidth() ) {
+		if ( curX != (int)mDpSize.getWidth() ) {
 			setInternalWidth( curX );
 			notifyLayoutAttrChangeParent();
 		}
 	} else if ( getLayoutWidthRules() == MATCH_PARENT ) {
 		int w = getParent()->getSize().getWidth() - mLayoutMargin.Left - mLayoutMargin.Right;
 
-		if ( w != mDpSize.getWidth() )
+		if ( w != (int)mDpSize.getWidth() )
 			setInternalWidth( w );
 	}
 
@@ -336,7 +336,7 @@ Sizei UILinearLayout::getTotalUsedSize() {
 	return size;
 }
 
-bool UILinearLayout::setAttribute( const NodeAttribute& attribute ) {
+bool UILinearLayout::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "orientation" == name ) {
@@ -348,7 +348,7 @@ bool UILinearLayout::setAttribute( const NodeAttribute& attribute ) {
 		else if ( "vertical" == val )
 			setOrientation( UI_VERTICAL );
 	} else {
-		return UILayout::setAttribute( attribute );
+		return UILayout::setAttribute( attribute, state );
 	}
 
 	return true;

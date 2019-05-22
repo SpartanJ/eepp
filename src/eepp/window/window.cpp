@@ -258,7 +258,7 @@ bool Window::takeScreenshot(std::string filepath, const Image::SaveType & Format
 	if ( CreateNewFile ) { // Search if file path is given, and if have and extension
 		bool find = false;
 		Int32 FileNum = 1;
-		std::string TmpPath = filepath, Ext;
+		std::string TmpPath = filepath;
 
 		if ( !FileSystem::isDirectory( filepath ) )
 			FileSystem::makeDir( filepath );
@@ -266,7 +266,7 @@ bool Window::takeScreenshot(std::string filepath, const Image::SaveType & Format
 		Ext = "." + Image::saveTypeToExtension( Format );
 
 		while ( !find && FileNum < 10000 ) {
-			TmpPath = String::strFormated( "%s%05d%s", filepath.c_str(), FileNum, Ext.c_str() );
+			TmpPath = String::format( "%s%05d%s", filepath.c_str(), FileNum, Ext.c_str() );
 
 			FileNum++;
 
@@ -553,7 +553,7 @@ bool Window::isTextInputActive() {
 void Window::stopTextInput() {
 }
 
-void Window::setTextInputRect( Rect& rect ) {
+void Window::setTextInputRect( Rect& ) {
 }
 
 bool Window::hasScreenKeyboardSupport()

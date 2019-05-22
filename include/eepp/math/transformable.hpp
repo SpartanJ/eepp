@@ -33,7 +33,7 @@ class EE_API Transformable {
 
 		virtual const Vector2f& getPosition() const;
 
-		virtual float getRotation() const;
+		virtual const float& getRotation() const;
 
 		virtual const Vector2f& getScale() const;
 

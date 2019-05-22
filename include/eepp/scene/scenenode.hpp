@@ -2,7 +2,7 @@
 #define EE_SCENENODE_HPP
 
 #include <eepp/scene/node.hpp>
-#include <eepp/window/cursorhelper.hpp>
+#include <eepp/window/cursor.hpp>
 #include <eepp/system/translator.hpp>
 
 namespace EE { namespace Graphics {
@@ -39,10 +39,6 @@ class EE_API SceneNode : public Node {
 		virtual void draw();
 
 		virtual void update( const Time& elapsed );
-
-		bool invalidated();
-
-		void invalidate();
 
 		void enableDrawInvalidation();
 
@@ -96,19 +92,38 @@ class EE_API SceneNode : public Node {
 
 		const bool& getUseGlobalCursors();
 
-		void setCursor( EE_CURSOR_TYPE cursor );
+		void setCursor( Cursor::Type cursor );
 
-		virtual bool isDrawInvalidator();
+		virtual bool isDrawInvalidator() const;
+
+		ActionManager * getActionManager() const;
+
+		void subscribeScheduledUpdate( Node * node );
+
+		void unsubscribeScheduledUpdate( Node * node );
+
+		bool isSubscribedForScheduledUpdate( Node * node );
+
+		void addMouseOverNode( Node * node );
+
+		void removeMouseOverNode( Node * node );
+
+		const bool& getUpdateAllChilds() const;
+
+		void setUpdateAllChilds( const bool& updateAllChilds );
 	protected:
 		friend class Node;
+		typedef std::list<Node*> CloseList;
 
 		EE::Window::Window * mWindow;
+		ActionManager * mActionManager;
 		FrameBuffer * mFrameBuffer;
 		EventDispatcher * mEventDispatcher;
-		std::list<Node*>	mCloseList;
+		CloseList	mCloseList;
 		bool mFrameBufferBound;
 		bool mUseInvalidation;
 		bool mUseGlobalCursors;
+		bool mUpdateAllChilds;
 		Int32 mResizeCb;
 		bool mDrawDebugData;
 		bool mDrawBoxes;
@@ -119,6 +134,9 @@ class EE_API SceneNode : public Node {
 		Color mHighlightOverColor;
 		Color mHighlightInvalidationColor;
 		Time mElapsed;
+		std::list<Node*>	mScheduledUpdate;
+		std::list<Node*>	mScheduledUpdateRemove;
+		std::list<Node*>	mMouseOverNodes;
 
 		virtual void onSizeChange();
 

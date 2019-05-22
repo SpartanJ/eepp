@@ -1,16 +1,17 @@
 #ifndef EE_UICUITOOLTIP_HPP
 #define EE_UICUITOOLTIP_HPP
 
-#include <eepp/ui/uinode.hpp>
-#include <eepp/ui/uithemeconfig.hpp>
+#include <eepp/ui/uiwidget.hpp>
+#include <eepp/ui/uifontstyleconfig.hpp>
 
 namespace EE { namespace Graphics {
 class Text;
+class Font;
 }}
 
 namespace EE { namespace UI {
 
-class EE_API UITooltip : public UINode {
+class EE_API UITooltip : public UIWidget {
 	public:
 		static UITooltip * New();
 
@@ -29,8 +30,6 @@ class EE_API UITooltip : public UINode {
 		void hide();
 
 		virtual void draw();
-
-		virtual void setAlpha( const Float& alpha );
 
 		Graphics::Font * getFont() const;
 
@@ -52,10 +51,6 @@ class EE_API UITooltip : public UINode {
 
 		virtual void onFontChanged();
 
-		virtual void setPadding( const Rectf& padding );
-
-		const Rectf& getPadding() const;
-
 		Text * getTextCache();
 
 		Float getTextWidth();
@@ -76,16 +71,35 @@ class EE_API UITooltip : public UINode {
 
 		void setTooltipOf(UINode * tooltipOf);
 
-		UITooltipStyleConfig getStyleConfig() const;
+		const UIFontStyleConfig & getFontStyleConfig() const;
 
-		void setStyleConfig(const UITooltipStyleConfig & styleConfig);
+		void setFontStyleConfig(const UIFontStyleConfig & styleConfig);
+
+		Uint32 getCharacterSize() const;
+
+		UITooltip * setCharacterSize( const Uint32& characterSize );
+
+		UITooltip * setFontStyle( const Uint32 & fontStyle );
+
+		const Uint32& getFontStyle() const;
+
+		const Float& getOutlineThickness() const;
+
+		UITooltip * setOutlineThickness( const Float& outlineThickness );
+
+		const Color& getOutlineColor() const;
+
+		UITooltip * setOutlineColor( const Color& outlineColor );
+
+		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
 	protected:
 		Text *	mTextCache;
-		UITooltipStyleConfig mStyleConfig;
+		UIFontStyleConfig mStyleConfig;
 		Vector2f 	mAlignOffset;
-		Rectf		mRealPadding;
 		Time		mTooltipTime;
 		UINode *	mTooltipOf;
+
+		virtual void onAlphaChange();
 
 		virtual void onSizeChange();
 

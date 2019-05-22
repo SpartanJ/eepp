@@ -13,12 +13,18 @@ UITextInput * UITextInput::New() {
 	return eeNew( UITextInput, () );
 }
 
-UITextInput::UITextInput() :
-	UITextView(),
+UITextInput * UITextInput::NewWithTag( const std::string& tag ) {
+	return eeNew( UITextInput, ( tag ) );
+}
+
+UITextInput::UITextInput( const std::string& tag ) :
+	UITextView( tag ),
 	mCursorPos(0),
 	mAllowEditing( true ),
 	mShowingWait( true )
 {
+	subscribeScheduledUpdate();
+
 	setFlags( UI_AUTO_PADDING | UI_AUTO_SIZE | UI_TEXT_SELECTION_ENABLED );
 	clipEnable();
 
@@ -31,6 +37,10 @@ UITextInput::UITextInput() :
 	applyDefaultTheme();
 }
 
+UITextInput::UITextInput() :
+	UITextInput( "textinput" )
+{}
+
 UITextInput::~UITextInput() {
 }
 
@@ -42,12 +52,10 @@ bool UITextInput::isType( const Uint32& type ) const {
 	return UITextInput::getType() == type ? true : UITextView::isType( type );
 }
 
-void UITextInput::update( const Time& time ) {
+void UITextInput::scheduledUpdate( const Time& time ) {
 	if ( isMouseOverMeOrChilds() && NULL != mSceneNode ) {
-		mSceneNode->setCursor( EE_CURSOR_IBEAM );
+		mSceneNode->setCursor( Cursor::IBeam );
 	}
-
-	UITextView::update( time );
 
 	if ( mTextBuffer.changedSinceLastUpdate() ) {
 		Vector2f offSet = mRealAlignOffset;
@@ -210,7 +218,7 @@ void UITextInput::onThemeLoaded() {
 
 void UITextInput::onAutoSize() {
 	if ( ( mFlags & UI_AUTO_SIZE ) && 0 == mDpSize.getHeight() ) {
-		setSize( mDpSize.x, getSkinSize().getHeight() + mRealPadding.Top + mRealPadding.Bottom );
+		setInternalPixelsHeight( PixelDensity::dpToPxI( getSkinSize().getHeight() ) + mRealPadding.Top + mRealPadding.Bottom );
 	}
 
 	if ( mLayoutHeightRules == WRAP_CONTENT ) {
@@ -221,7 +229,7 @@ void UITextInput::onAutoSize() {
 
 void UITextInput::autoPadding() {
 	if ( mFlags & UI_AUTO_PADDING ) {
-		setPadding( makePadding( true, true, false, false ) );
+		setPadding( Rectf() );
 	}
 }
 
@@ -269,7 +277,7 @@ void UITextInput::shrinkText( const Uint32& MaxWidth ) {
 void UITextInput::updateText() {
 }
 
-Uint32 UITextInput::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
+Uint32 UITextInput::onMouseClick( const Vector2i& Pos, const Uint32& Flags ) {
 	if ( Flags & EE_BUTTON_LMASK ) {
 		Vector2f controlPos( Vector2f( Pos.x, Pos.y ) );
 		worldToNode( controlPos );
@@ -286,7 +294,7 @@ Uint32 UITextInput::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 	return UITextView::onMouseClick( Pos, Flags );
 }
 
-Uint32 UITextInput::onMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags ) {
+Uint32 UITextInput::onMouseDoubleClick( const Vector2i& Pos, const Uint32& Flags ) {
 	UITextView::onMouseDoubleClick( Pos, Flags );
 
 	if ( isTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) && selCurEnd() != -1 ) {
@@ -297,11 +305,11 @@ Uint32 UITextInput::onMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags 
 	return 1;
 }
 
-Uint32 UITextInput::onMouseExit( const Vector2i& Pos, const Uint32 Flags ) {
-	UINode::onMouseExit( Pos, Flags );
+Uint32 UITextInput::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
+	UINode::onMouseLeave( Pos, Flags );
 
 	if ( NULL != mSceneNode )
-		mSceneNode->setCursor( EE_CURSOR_ARROW );
+		mSceneNode->setCursor( Cursor::Arrow );
 
 	return 1;
 }
@@ -344,7 +352,7 @@ bool UITextInput::isFreeEditingEnabled() {
 	return mTextBuffer.isFreeEditingEnabled();
 }
 
-bool UITextInput::setAttribute( const NodeAttribute& attribute ) {
+bool UITextInput::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "text" == name ) {
@@ -362,7 +370,7 @@ bool UITextInput::setAttribute( const NodeAttribute& attribute ) {
 	} else if ( "allowdot" == name ) {
 		getInputTextBuffer()->setAllowOnlyNumbers( getInputTextBuffer()->onlyNumbersAllowed(), attribute.asBool() );
 	} else {
-		return UITextView::setAttribute( attribute );
+		return UITextView::setAttribute( attribute, state );
 	}
 
 	return true;

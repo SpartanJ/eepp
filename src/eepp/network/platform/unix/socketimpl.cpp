@@ -57,6 +57,20 @@ Socket::Status SocketImpl::getErrorStatus() {
 	}
 }
 
+void SocketImpl::setSendTimeout(SocketHandle sock, const Time& timeout) {
+	struct timeval time;
+	time.tv_sec  = static_cast<long>(timeout.asMicroseconds() / 1000000);
+	time.tv_usec = static_cast<long>(timeout.asMicroseconds() % 1000000);
+	setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (const char*)&time, sizeof time);
+}
+
+void SocketImpl::setReceiveTimeout(SocketHandle sock, const Time & timeout) {
+	struct timeval time;
+	time.tv_sec  = static_cast<long>(timeout.asMicroseconds() / 1000000);
+	time.tv_usec = static_cast<long>(timeout.asMicroseconds() % 1000000);
+	setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&time, sizeof time);
+}
+
 }}}
 
 #endif

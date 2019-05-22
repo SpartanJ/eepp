@@ -242,7 +242,7 @@ bool FontTrueType::loadFromPack( Pack * pack, std::string filePackPath ) {
 	mMemCopy.clear();
 
 	if ( pack->isOpen() && pack->extractFileToMemory( filePackPath, mMemCopy ) ) {
-		Ret = loadFromMemory( mMemCopy.data, mMemCopy.size );
+		Ret = loadFromMemory( mMemCopy.get(), mMemCopy.length() );
 	}
 
 	return Ret;
@@ -367,8 +367,9 @@ Texture* FontTrueType::getTexture(unsigned int characterSize) const {
 }
 
 FontTrueType& FontTrueType::operator =(const FontTrueType& right) {
-	FontTrueType temp(right);
+	FontTrueType temp(right.getName());
 
+	temp.mMemCopy.swap(right.mMemCopy);
 	std::swap(mLibrary,     temp.mLibrary);
 	std::swap(mFace,        temp.mFace);
 	std::swap(mStreamRec,   temp.mStreamRec);

@@ -130,7 +130,7 @@ bool FontSprite::loadFromStream( IOStream& stream, Color key, Uint32 firstChar, 
 		xPosToRead = charSpacing;
 	}
 
-	img.createMaskFromColor( Color::Magenta, 0 );
+	img.createMaskFromColor( Color::Fuchsia, 0 );
 
 	Uint32 texId = TextureFactory::instance()->loadFromPixels( img.getPixelsPtr(), img.getWidth(), img.getHeight(), img.getChannels() );
 

@@ -49,6 +49,10 @@ using namespace Private;
 */
 class EE_API TexturePacker {
 	public:
+		static TexturePacker * New();
+
+		static TexturePacker * New( const Uint32& MaxWidth, const Uint32& MaxHeight, const EE_PIXEL_DENSITY& PixelDensity = PD_MDPI, const bool& ForcePowOfTwo = true, const bool& scalableSVG = false, const Uint32& PixelBorder = 0, const Texture::TextureFilter& textureFilter = Texture::TextureFilter::Linear, const bool& AllowFlipping = false );
+
 		/** Creates a new texture packer ( you will need to call SetOptions before adding any texture or image ). */
 		TexturePacker();
 

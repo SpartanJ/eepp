@@ -47,7 +47,7 @@ class WinImpl : public PlatformImpl {
 
 		void setMouseCursor( Cursor * cursor );
 
-		void setSystemMouseCursor( EE_SYSTEM_CURSOR syscursor );
+		void setSystemMouseCursor( Cursor::SysType syscursor );
 
 		void restoreCursor();
 

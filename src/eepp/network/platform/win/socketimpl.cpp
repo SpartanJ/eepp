@@ -42,6 +42,16 @@ Socket::Status SocketImpl::getErrorStatus() {
 	}
 }
 
+void SocketImpl::setSendTimeout(SocketHandle sock, const Time& timeout) {
+	DWORD time = timeout.asMilliseconds();
+	setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (const char*)&time, sizeof time);
+}
+
+void SocketImpl::setReceiveTimeout(SocketHandle sock, const Time & timeout) {
+	DWORD time = timeout.asMilliseconds();
+	setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&time, sizeof time);
+}
+
 /** Windows needs some initialization and cleanup to get
 **  sockets working properly... so let's create a class that will do it automatically */
 struct SocketInitializer

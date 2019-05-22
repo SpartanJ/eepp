@@ -5,6 +5,10 @@
 
 namespace EE { namespace Scene {
 
+ActionManager * ActionManager::New() {
+	return eeNew( ActionManager, () );
+}
+
 ActionManager::ActionManager() {
 }
 
@@ -39,7 +43,7 @@ void ActionManager::update( const Time& time ) {
 	if ( isEmpty() )
 		return;
 
-	std::list<Action*> removeList;
+	std::vector<Action*> removeList;
 
 	for ( auto it = mActions.begin(); it != mActions.end(); ++it ) {
 		Action * action = (*it);
@@ -81,6 +85,21 @@ void ActionManager::removeAction( Action * action ) {
 
 		eeSAFE_DELETE( action );
 	}
+}
+
+void ActionManager::removeAllActionsFromTarget( Node * target ) {
+	std::vector<Action*> removeList;
+
+	for ( auto it = mActions.begin(); it != mActions.end(); ++it ) {
+		Action * action = (*it);
+
+		if ( action->getTarget() == target ) {
+			removeList.push_back( *it );
+		}
+	}
+
+	for ( auto it = removeList.begin(); it != removeList.end(); ++it )
+		removeAction( (*it) );
 }
 
 }}

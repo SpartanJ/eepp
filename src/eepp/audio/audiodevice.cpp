@@ -17,6 +17,10 @@ namespace
 
 namespace EE { namespace Audio { namespace Private {
 
+AudioDevice * AudioDevice::New() {
+	return eeNew( AudioDevice, ( ) );
+}
+
 AudioDevice::AudioDevice() {
 	// Create the device
 	audioDevice = alcOpenDevice(NULL);
@@ -67,7 +71,7 @@ bool AudioDevice::isExtensionSupported(const std::string& extension) {
 
 	AudioDevice * device = NULL;
 	if (!audioDevice)
-		device = eeNew( AudioDevice, () );
+		device = AudioDevice::New();
 
 	if ((extension.length() > 2) && (extension.substr(0, 3) == "ALC"))
 		ret = alcIsExtensionPresent(audioDevice, extension.c_str()) != AL_FALSE;
@@ -86,7 +90,7 @@ int AudioDevice::getFormatFromChannelCount(unsigned int channelCount) {
 	// queries if none has been created yet.
 	AudioDevice * device = NULL;
 	if (!audioDevice)
-		device = eeNew( AudioDevice, () );
+		device = AudioDevice::New();
 
 	// Find the good format according to the number of channels
 	int format = 0;

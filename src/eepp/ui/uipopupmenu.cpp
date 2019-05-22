@@ -1,6 +1,7 @@
 #include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/scene/scenenode.hpp>
+#include <eepp/scene/actions/actions.hpp>
 
 namespace EE { namespace UI {
 
@@ -11,6 +12,7 @@ UIPopUpMenu * UIPopUpMenu::New() {
 UIPopUpMenu::UIPopUpMenu() :
 	UIMenu()
 {
+	setElementTag( "popupmenu" );
 	setVisible( false );
 	setEnabled( false );
 	applyDefaultTheme();
@@ -46,7 +48,8 @@ bool UIPopUpMenu::show() {
 		toFront();
 
 		if ( UIThemeManager::instance()->getDefaultEffectsEnabled() ) {
-			startAlphaAnim( 255.f == mAlpha ? 0.f : mAlpha, 255.f, UIThemeManager::instance()->getControlsFadeInTime() );
+			runAction( Actions::Sequence::New( Actions::Fade::New( 255.f == mAlpha ? 0.f : mAlpha, 255.f, UIThemeManager::instance()->getControlsFadeOutTime() ),
+										  Actions::Spawn::New( Actions::Enable::New(), Actions::Visible::New( true ) ) ) );
 		}
 
 		setFocus();
@@ -59,19 +62,18 @@ bool UIPopUpMenu::show() {
 
 bool UIPopUpMenu::hide() {
 	if ( isVisible() ) {
-		if ( !isFadingOut() ) {
-			if ( NULL != mItemSelected )
-				mItemSelected->setSkinState( UISkinState::StateNormal );
+		if ( NULL != mItemSelected )
+			mItemSelected->popState( UIState::StateSelected );
 
-			mItemSelected		= NULL;
-			mItemSelectedIndex	= eeINDEX_NOT_FOUND;
+		mItemSelected		= NULL;
+		mItemSelectedIndex	= eeINDEX_NOT_FOUND;
 
-			if ( UIThemeManager::instance()->getDefaultEffectsEnabled() ) {
-				disableFadeOut( UIThemeManager::instance()->getControlsFadeOutTime() );
-			} else {
-				setEnabled( false );
-				setVisible( false );
-			}
+		if ( UIThemeManager::instance()->getDefaultEffectsEnabled() ) {
+			runAction( Actions::Sequence::New( Actions::FadeOut::New( UIThemeManager::instance()->getControlsFadeOutTime() ),
+											   Actions::Spawn::New( Actions::Disable::New(), Actions::Visible::New( false ) ) ) );
+		} else {
+			setEnabled( false );
+			setVisible( false );
 		}
 
 		return true;

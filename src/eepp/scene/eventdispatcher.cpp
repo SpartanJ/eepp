@@ -4,6 +4,7 @@
 #include <eepp/window/inputevent.hpp>
 #include <eepp/window/window.hpp>
 #include <eepp/window/engine.hpp>
+#include <algorithm>
 
 namespace EE { namespace Scene {
 
@@ -21,7 +22,7 @@ EventDispatcher::EventDispatcher( SceneNode * sceneNode ) :
 	mLossFocusControl( NULL ),
 	mCbId( 0 ),
 	mFirstPress( false ),
-	mControlDragging( false )
+	mNodeDragging( NULL )
 {
 	mCbId = mInput->pushCallback( cb::Make1( this, &EventDispatcher::inputCallback ) );
 }
@@ -39,8 +40,6 @@ void EventDispatcher::inputCallback( InputEvent * Event ) {
 			break;
 		case InputEvent::KeyDown:
 			sendKeyDown( Event->key.keysym.sym, Event->key.keysym.unicode, Event->key.keysym.mod );
-
-			//checkTabPress( Event->key.keysym.sym );
 			break;
 		case InputEvent::SysWM:
 		case InputEvent::VideoResize:
@@ -52,9 +51,10 @@ void EventDispatcher::inputCallback( InputEvent * Event ) {
 	}
 }
 
-void EventDispatcher::update( const Time& elapsed ) {
-	bool wasDraggingControl = mControlDragging;
+void EventDispatcher::update( const Time& time ) {
+	bool wasDraggingControl = mNodeDragging;
 
+	mElapsed = time;
 	mMousePos = mInput->getMousePosFromView( mWindow->getDefaultView() );
 	mMousePosi = mMousePos.asInt();
 
@@ -62,20 +62,25 @@ void EventDispatcher::update( const Time& elapsed ) {
 
 	if ( pOver != mOverControl ) {
 		if ( NULL != mOverControl ) {
-			sendMsg( mOverControl, NodeMessage::MouseExit );
-			mOverControl->onMouseExit( mMousePosi, 0 );
+			mOverControl->onMouseLeave( mMousePosi, 0 );
+			sendMsg( mOverControl, NodeMessage::MouseLeave );
 		}
 
 		mOverControl = pOver;
 
 		if ( NULL != mOverControl ) {
-			sendMsg( mOverControl, NodeMessage::MouseEnter );
-			mOverControl->onMouseEnter( mMousePosi, 0 );
+			mOverControl->onMouseOver( mMousePosi, 0 );
+			sendMsg( mOverControl, NodeMessage::MouseOver );
 		}
 	} else {
-		if ( NULL != mOverControl )
+		if ( NULL != mOverControl ) {
 			mOverControl->onMouseMove( mMousePosi, mInput->getPressTrigger() );
+			sendMsg( mOverControl, NodeMessage::MouseMove );
+		}
 	}
+
+	if ( NULL != mNodeDragging )
+		mNodeDragging->onCalculateDrag( mMousePos, mInput->getPressTrigger() );
 
 	if ( mInput->getPressTrigger() ) {
 		if ( NULL != mOverControl ) {
@@ -101,16 +106,20 @@ void EventDispatcher::update( const Time& elapsed ) {
 				// And the Click would be received by the new focused control instead of the real one
 				Node * lastFocusControl = mFocusControl;
 
-				lastFocusControl->onMouseUp( mMousePosi, mInput->getReleaseTrigger() );
-				sendMsg( lastFocusControl, NodeMessage::MouseUp, mInput->getReleaseTrigger() );
+				if ( NULL != mOverControl ) {
+					getOverControl()->onMouseUp( mMousePosi, mInput->getReleaseTrigger() );
+
+					if ( NULL != getOverControl() )
+						sendMsg( getOverControl(), NodeMessage::MouseUp, mInput->getReleaseTrigger() );
+				}
 
 				if ( mInput->getClickTrigger() ) {
-					sendMsg( lastFocusControl, NodeMessage::Click, mInput->getClickTrigger() );
 					lastFocusControl->onMouseClick( mMousePosi, mInput->getClickTrigger() );
+					sendMsg( lastFocusControl, NodeMessage::Click, mInput->getClickTrigger() );
 
 					if ( mInput->getDoubleClickTrigger() ) {
-						sendMsg( lastFocusControl, NodeMessage::DoubleClick, mInput->getDoubleClickTrigger() );
 						lastFocusControl->onMouseDoubleClick( mMousePosi, mInput->getDoubleClickTrigger() );
+						sendMsg( lastFocusControl, NodeMessage::DoubleClick, mInput->getDoubleClickTrigger() );
 					}
 				}
 			}
@@ -221,12 +230,12 @@ const Uint32 &EventDispatcher::getDoubleClickTrigger() const {
 	return mInput->getDoubleClickTrigger();
 }
 
-void EventDispatcher::setControlDragging( bool dragging ) {
-	mControlDragging = dragging;
+void EventDispatcher::setNodeDragging( Node * dragging ) {
+	mNodeDragging = dragging;
 }
 
-const bool& EventDispatcher::isControlDragging() const {
-	return mControlDragging;
+bool EventDispatcher::isNodeDragging() const {
+	return NULL != mNodeDragging;
 }
 
 Vector2i EventDispatcher::getMousePos() {
@@ -247,6 +256,10 @@ Vector2f EventDispatcher::getLastMousePos() {
 
 SceneNode * EventDispatcher::getSceneNode() const {
 	return mSceneNode;
+}
+
+const Time &EventDispatcher::getLastFrameTime() const {
+	return mElapsed;
 }
 
 }}

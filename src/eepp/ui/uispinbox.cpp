@@ -1,5 +1,6 @@
 #include <eepp/ui/uispinbox.hpp>
 #include <eepp/graphics/textureregion.hpp>
+#include <eepp/scene/scenenode.hpp>
 #include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
@@ -9,24 +10,26 @@ UISpinBox * UISpinBox::New() {
 }
 
 UISpinBox::UISpinBox() :
-	UIWidget(),
+	UIWidget( "spinbox" ),
 	mMinValue( 0.f ),
 	mMaxValue( 1024.f ),
 	mValue( 0 ),
 	mClickStep( 1.f )
 {
-	mInput	= UITextInput::New();
+	subscribeScheduledUpdate();
+
+	mInput	= UITextInput::NewWithTag( "spinbox::input" );
 	mInput->setVisible( true );
 	mInput->setEnabled( true );
 	mInput->setParent( this );
 
-	mPushUp	= UINode::New();
+	mPushUp	= UIWidget::NewWithTag( "spinbox::btnup" );
 	mPushUp->setVisible( true );
 	mPushUp->setEnabled( true );
 	mPushUp->setParent( this );
 	mPushUp->setSize( 16, 16 );
 
-	mPushDown = UINode::New();
+	mPushDown = UIWidget::NewWithTag( "spinbox::btndown" );
 	mPushDown->setVisible( true );
 	mPushDown->setEnabled( true );
 	mPushDown->setParent( this );
@@ -76,6 +79,7 @@ void UISpinBox::setTheme( UITheme * Theme ) {
 	}
 
 	adjustChilds();
+	onThemeLoaded();
 }
 
 void UISpinBox::adjustChilds() {
@@ -212,12 +216,8 @@ const Float& UISpinBox::getMaxValue() const {
 	return mMaxValue;
 }
 
-void UISpinBox::update( const Time& time ) {
-	bool Changed = mInput->getInputTextBuffer()->changedSinceLastUpdate();
-
-	UINode::update( time );
-
-	if ( Changed ) {
+void UISpinBox::scheduledUpdate( const Time& ) {
+	if ( mInput->getInputTextBuffer()->changedSinceLastUpdate() ) {
 		if ( !mInput->getText().size() ) {
 			setValue( 0 );
 		} else {
@@ -273,7 +273,7 @@ void UISpinBox::onPaddingChange() {
 	UIWidget::onPaddingChange();
 }
 
-bool UISpinBox::setAttribute( const NodeAttribute& attribute ) {
+bool UISpinBox::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	bool attributeSet = true;
@@ -287,7 +287,7 @@ bool UISpinBox::setAttribute( const NodeAttribute& attribute ) {
 	} else if ( "clickstep" == name ) {
 		setClickStep(attribute.asFloat() );
 	} else {
-		attributeSet = UIWidget::setAttribute( attribute );
+		attributeSet = UIWidget::setAttribute( attribute, state );
 	}
 
 	mInput->setAttribute( attribute );

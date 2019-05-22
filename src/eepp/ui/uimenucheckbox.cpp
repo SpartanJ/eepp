@@ -9,7 +9,7 @@ UIMenuCheckBox * UIMenuCheckBox::New() {
 }
 
 UIMenuCheckBox::UIMenuCheckBox() :
-	UIMenuItem(),
+	UIMenuItem( "menu::checkbox" ),
 	mActive( false ),
 	mSkinActive( NULL ),
 	mSkinInactive( NULL )
@@ -55,10 +55,10 @@ void UIMenuCheckBox::setActive( const bool& active ) {
 			if ( NULL == mIcon->getSkin() || mIcon->getSkin()->getName() != mSkinActive->getName() )
 				mIcon->setSkin( mSkinActive );
 
-			if ( mSkinState->getState() == UISkinState::StateSelected )
-				mIcon->setSkinState( UISkinState::StateMouseEnter );
+			if ( mSkinState->getState() & UIState::StateFlagSelected )
+				mIcon->pushState( UIState::StateHover );
 			else
-				mIcon->setSkinState( UISkinState::StateNormal );
+				mIcon->popState( UIState::StateHover );
 		} else {
 			mIcon->removeSkin();
 		}
@@ -67,10 +67,10 @@ void UIMenuCheckBox::setActive( const bool& active ) {
 			if ( NULL == mIcon->getSkin() || mIcon->getSkin()->getName() != mSkinInactive->getName() )
 				mIcon->setSkin( mSkinInactive );
 
-			if ( mSkinState->getState() == UISkinState::StateSelected )
-				mIcon->setSkinState( UISkinState::StateMouseEnter );
+			if ( mSkinState->getState() & UIState::StateFlagSelected )
+				mIcon->pushState( UIState::StateHover );
 			else
-				mIcon->setSkinState( UISkinState::StateNormal );
+				mIcon->popState( UIState::StateHover );
 		} else {
 			mIcon->removeSkin();
 		}
@@ -93,7 +93,7 @@ void UIMenuCheckBox::switchActive() {
 	setActive( !mActive );
 }
 
-Uint32 UIMenuCheckBox::onMouseUp( const Vector2i &Pos, const Uint32 Flags ) {
+Uint32 UIMenuCheckBox::onMouseUp( const Vector2i &Pos, const Uint32& Flags ) {
 	UIMenuItem::onMouseUp( Pos, Flags );
 
 	if ( getParent()->isVisible() && ( Flags & EE_BUTTONS_LRM ) )

@@ -213,6 +213,9 @@ class EE_API URI {
 		/** Places the single path segments (delimited by slashes) into the given vector. */
 		void getPathSegments(std::vector<std::string>& segments);
 
+		/** @return The last path segment if any */
+		std::string getLastPathSegment();
+
 		/** URI-encodes the given string by escaping reserved and non-ASCII
 		* characters. The encoded string is appended to encodedStr. */
 		static void encode(const std::string& str, const std::string& reserved, std::string& encodedStr);

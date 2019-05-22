@@ -15,6 +15,8 @@ class Packet;
 class EE_API TcpSocket : public Socket {
 	public:
 
+	static TcpSocket * New();
+
 	/** @brief Default constructor */
 	TcpSocket();
 
@@ -110,6 +112,14 @@ class EE_API TcpSocket : public Socket {
 	**  @return Status code
 	**  @see Send */
 	virtual Status receive(Packet& packet);
+
+	/** Set the send timeout. Only callable after connect ( after the socket
+	 ** has been initialized ). */
+	void setSendTimeout(SocketHandle sock, const Time& timeout);
+
+	/** Set the receive timeout Only callable after connect ( after the socket
+	 ** has been initialized ). */
+	void setReceiveTimeout(SocketHandle sock, const Time& timeout);
 
 	private:
 

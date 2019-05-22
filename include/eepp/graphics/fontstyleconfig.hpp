@@ -23,19 +23,19 @@ class FontStyleConfig {
 			return ShadowColor;
 		}
 
-		Uint32 getFontCharacterSize() const {
+		const Uint32& getFontCharacterSize() const {
 			return CharacterSize;
 		}
 
-		Uint32 getFontStyle() const {
+		const Uint32& getFontStyle() const {
 			return Style;
 		}
 
-		Float getOutlineThickness() const {
+		const Float& getOutlineThickness() const {
 			return OutlineThickness;
 		}
 
-		Color getOutlineColor() const {
+		const Color& getOutlineColor() const {
 			return OutlineColor;
 		}
 

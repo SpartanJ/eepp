@@ -11,17 +11,11 @@ UIPushButton * UIPushButton::New() {
 	return eeNew( UIPushButton, () );
 }
 
-UIPushButton::UIPushButton() :
-	UIWidget(),
+UIPushButton::UIPushButton( const std::string& tag ) :
+	UIWidget( tag ),
 	mIcon( NULL ),
 	mTextBox( NULL )
 {
-	UITheme * theme = UIThemeManager::instance()->getDefaultTheme();
-
-	if ( NULL != theme ) {
-		mStyleConfig = theme->getPushButtonStyleConfig();
-	}
-
 	mFlags |= ( UI_AUTO_SIZE | UI_VALIGN_CENTER | UI_HALIGN_CENTER );
 
 	Uint32 GfxFlags;
@@ -32,7 +26,7 @@ UIPushButton::UIPushButton() :
 		GfxFlags = UI_AUTO_SIZE | UI_VALIGN_CENTER | UI_HALIGN_CENTER;
 	}
 
-	mIcon = UIImage::New();
+	mIcon = UIImage::NewWithTag( "pushbutton::image" );
 	mIcon->setParent( this );
 	mIcon->setLayoutSizeRules( FIXED, FIXED );
 	mIcon->setFlags( GfxFlags );
@@ -46,7 +40,7 @@ UIPushButton::UIPushButton() :
 	mIcon->setVisible( true );
 	mIcon->setEnabled( false );
 
-	mTextBox = UITextView::New();
+	mTextBox = UITextView::NewWithTag( "pushbutton::text" );
 	mTextBox->setLayoutSizeRules( WRAP_CONTENT, WRAP_CONTENT );
 	mTextBox->setParent( this );
 	mTextBox->setVisible( true );
@@ -60,6 +54,10 @@ UIPushButton::UIPushButton() :
 
 	applyDefaultTheme();
 }
+
+UIPushButton::UIPushButton() :
+	UIPushButton( "pushbutton" )
+{}
 
 UIPushButton::~UIPushButton() {
 }
@@ -87,7 +85,7 @@ void UIPushButton::onAutoSize() {
 		Int32 txtW = NULL != mTextBox ? mTextBox->getTextWidth() : 0;
 
 		Int32 minSize = txtW +
-						( NULL != mIcon ? mIcon->getRealSize().getWidth() : 0 ) +
+						( NULL != mIcon ? mIcon->getPixelsSize().getWidth() : 0 ) +
 						PixelDensity::dpToPxI( mStyleConfig.IconHorizontalMargin ) + mRealPadding.Left + mRealPadding.Right +
 						( NULL != getSkin() ? PixelDensity::dpToPxI( getSkin()->getBorderSize().Left + getSkin()->getBorderSize().Right ) : 0 );
 
@@ -125,10 +123,10 @@ void UIPushButton::onSizeChange() {
 
 		switch ( fontVAlignGet( getFlags() ) ) {
 			case UI_VALIGN_CENTER:
-				position.y = ( mSize.getHeight() - mTextBox->getRealSize().getHeight() ) / 2;
+				position.y = ( mSize.getHeight() - mTextBox->getPixelsSize().getHeight() ) / 2;
 				break;
 			case UI_VALIGN_BOTTOM:
-				position.y = mSize.y - mTextBox->getRealSize().getHeight() - autoPadding.Bottom;
+				position.y = mSize.y - mTextBox->getPixelsSize().getHeight() - autoPadding.Bottom;
 				break;
 			case UI_VALIGN_TOP:
 				position.y = autoPadding.Top;
@@ -137,13 +135,13 @@ void UIPushButton::onSizeChange() {
 
 		switch ( fontHAlignGet( getFlags() ) ) {
 			case UI_HALIGN_RIGHT:
-				position.x = mSize.getWidth() - mTextBox->getRealSize().getWidth() - autoPadding.Right;
+				position.x = mSize.getWidth() - mTextBox->getPixelsSize().getWidth() - autoPadding.Right;
 				break;
 			case UI_HALIGN_CENTER:
-				position.x = ( mSize.getWidth() - mTextBox->getRealSize().getWidth() ) / 2;
+				position.x = ( mSize.getWidth() - mTextBox->getPixelsSize().getWidth() ) / 2;
 
 				if ( NULL != mIcon->getDrawable() ) {
-					Uint32 iconPos = mIcon->getRealPosition().x + mIcon->getRealSize().getWidth();
+					Uint32 iconPos = mIcon->getPixelsPosition().x + mIcon->getPixelsSize().getWidth();
 
 					if ( iconPos >= position.x ) {
 						Float px = PixelDensity::dpToPx(1);
@@ -154,7 +152,7 @@ void UIPushButton::onSizeChange() {
 
 				break;
 			case UI_HALIGN_LEFT:
-				position.x = mIcon->getRealPosition().x + mIcon->getRealSize().getWidth();
+				position.x = mIcon->getPixelsPosition().x + mIcon->getPixelsSize().getWidth();
 				break;
 		}
 
@@ -174,13 +172,7 @@ void UIPushButton::setTheme( UITheme * Theme ) {
 }
 
 void UIPushButton::onThemeLoaded() {
-	if ( NULL != mTextBox && NULL == mTextBox->getFont() && NULL != mSkinState && NULL != mSkinState->getSkin() && NULL != mSkinState->getSkin()->getTheme() && NULL != mSkinState->getSkin()->getTheme()->getFontStyleConfig().getFont() )
-		mTextBox->setFont( mSkinState->getSkin()->getTheme()->getFontStyleConfig().getFont() );
-
-	if ( mNodeFlags & NODE_FLAG_FREE_USE ) {
-		Rectf RMargin = makePadding( true, false, false, false, true );
-		mStyleConfig.IconHorizontalMargin = RMargin.Left;
-	}
+	autoIconHorizontalMargin();
 
 	onAutoSize();
 
@@ -220,14 +212,6 @@ UITextView * UIPushButton::getTextBox() const {
 	return mTextBox;
 }
 
-void UIPushButton::setFont(Font * font) {
-	mTextBox->setFont( font );
-}
-
-Font * UIPushButton::getFont() {
-	return mTextBox->getFont();
-}
-
 void UIPushButton::onAlphaChange() {
 	UIWidget::onAlphaChange();
 
@@ -236,12 +220,6 @@ void UIPushButton::onAlphaChange() {
 }
 
 void UIPushButton::onStateChange() {
-	if ( mSkinState->getState() == UISkinState::StateMouseEnter ) {
-		mTextBox->setFontColor( mStyleConfig.FontOverColor );
-	} else {
-		mTextBox->setFontColor( mStyleConfig.FontColor );
-	}
-
 	mTextBox->setAlpha( mAlpha );
 
 	UIWidget::onStateChange();
@@ -260,7 +238,7 @@ Uint32 UIPushButton::onKeyDown( const KeyEvent& Event ) {
 		messagePost( &Msg );
 		onMouseClick( Vector2i(0,0), EE_BUTTON_LMASK );
 
-		setSkinState( UISkinState::StateMouseDown );
+		pushState( UIState::StatePressed );
 	}
 
 	return UIWidget::onKeyDown( Event );
@@ -268,106 +246,45 @@ Uint32 UIPushButton::onKeyDown( const KeyEvent& Event ) {
 
 Uint32 UIPushButton::onKeyUp( const KeyEvent& Event ) {
 	if ( Event.getKeyCode() == KEY_RETURN ) {
-		setPrevSkinState();
+		popState( UIState::StatePressed );
 	}
 
 	return UIWidget::onKeyUp( Event );
 }
-const Color& UIPushButton::getFontColor() const {
-	return mStyleConfig.FontColor;
-}
 
-void UIPushButton::setFontColor( const Color& color ) {
-	mStyleConfig.FontColor = color;
-	onStateChange();
-}
-
-const Color& UIPushButton::getFontOverColor() const {
-	return mStyleConfig.FontOverColor;
-}
-
-void UIPushButton::setFontOverColor( const Color& color ) {
-	mStyleConfig.FontOverColor = color;
-	onStateChange();
-}
-
-const Color& UIPushButton::getFontShadowColor() const {
-	return mTextBox->getFontShadowColor();
-}
-
-void UIPushButton::setFontShadowColor( const Color& color ) {
-	mTextBox->setFontShadowColor( color );
-}
-
-Uint32 UIPushButton::getCharacterSize() {
-	return mTextBox->getCharacterSize();
-}
-
-void UIPushButton::setCharacterSize(const Uint32 & characterSize) {
-	mTextBox->setCharacterSize( characterSize );
-	onSizeChange();
-}
-
-const Uint32 &UIPushButton::getFontStyle() const {
-	return mStyleConfig.Style;
-}
-
-const Float &UIPushButton::getOutlineThickness() const {
-	return mStyleConfig.OutlineThickness;
-}
-
-UIPushButton * UIPushButton::setOutlineThickness( const Float & outlineThickness ) {
-	if ( mStyleConfig.OutlineThickness != outlineThickness ) {
-		mTextBox->setOutlineThickness( outlineThickness );
-		mStyleConfig.OutlineThickness = outlineThickness;
+void UIPushButton::autoIconHorizontalMargin() {
+	if ( mNodeFlags & NODE_FLAG_FREE_USE ) {
+		Rectf RMargin = makePadding( true, false, false, false, true );
+		setIconHorizontalMargin( RMargin.Left );
 	}
-
-	return this;
 }
 
-const Color &UIPushButton::getOutlineColor() const {
-	return mStyleConfig.OutlineColor;
-}
-
-UIPushButton * UIPushButton::setOutlineColor(const Color & outlineColor) {
-	if ( mStyleConfig.OutlineColor != outlineColor ) {
-		mTextBox->setOutlineColor( outlineColor );
-		mStyleConfig.OutlineColor = outlineColor;
-	}
-
-	return this;
-}
-
-UIPushButton * UIPushButton::setFontStyle(const Uint32 & fontStyle) {
-	if ( mStyleConfig.Style != fontStyle ) {
-		mTextBox->setFontStyle( fontStyle );
-		mStyleConfig.Style = fontStyle;
-	}
-
-	return this;
-}
-
-UITooltipStyleConfig UIPushButton::getStyleConfig() const {
+const UIPushButton::StyleConfig& UIPushButton::getStyleConfig() const {
 	return mStyleConfig;
 }
 
-void UIPushButton::setStyleConfig(const UIPushButtonStyleConfig & styleConfig) {
-	mStyleConfig = styleConfig;
-	mTextBox->setFontStyleConfig( styleConfig );
+void UIPushButton::setIconMinimumSize( const Sizei & minIconSize ) {
+	if ( minIconSize != mStyleConfig.IconMinSize ) {
+		mStyleConfig.IconMinSize = minIconSize;
 
-	if ( mStyleConfig.IconMinSize.x != 0 && mStyleConfig.IconMinSize.y != 0 ) {
-		Sizef minSize( eemax( mDpSize.x, (Float)mStyleConfig.IconMinSize.x ), eemax( mDpSize.y, (Float)mStyleConfig.IconMinSize.y ) );
+		if ( mStyleConfig.IconMinSize.x != 0 && mStyleConfig.IconMinSize.y != 0 ) {
+			Sizef minSize( eemax( mDpSize.x, (Float)mStyleConfig.IconMinSize.x ), eemax( mDpSize.y, (Float)mStyleConfig.IconMinSize.y ) );
 
-		if ( minSize != mDpSize ) {
-			mIcon->setSize( minSize );
-			onSizeChange();
+			if ( minSize != mDpSize ) {
+				mIcon->setSize( minSize );
+				onSizeChange();
+			}
 		}
 	}
+}
 
+void UIPushButton::setStyleConfig(const StyleConfig & styleConfig) {
+	setIconMinimumSize( styleConfig.IconMinSize );
+	mStyleConfig = styleConfig;
 	onStateChange();
 }
 
-bool UIPushButton::setAttribute( const NodeAttribute& attribute ) {
+bool UIPushButton::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	bool attributeSet = true;
@@ -375,8 +292,6 @@ bool UIPushButton::setAttribute( const NodeAttribute& attribute ) {
 	if ( "text" == name ) {
 		if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
 			setText( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( attribute.asString() ) );
-	} else if ( "textovercolor" == name ) {
-		setFontOverColor( Color::fromString( attribute.asString() ) );
 	} else if ( "icon" == name ) {
 		std::string val = attribute.asString();
 		Drawable * icon = NULL;
@@ -386,8 +301,17 @@ bool UIPushButton::setAttribute( const NodeAttribute& attribute ) {
 		} else if ( NULL != ( icon = DrawableSearcher::searchByName( val ) ) ) {
 			setIcon( icon );
 		}
+	} else if ( "iconminsize" == name ) {
+		setIconMinimumSize( attribute.asSizei() );
+	} else if ( "iconhorizontalmargin" == name ) {
+		setIconHorizontalMargin( attribute.asInt() );
+	} else if ( "iconautomargin" == name ) {
+		mStyleConfig.IconAutoMargin = attribute.asBool();
+
+		if ( mStyleConfig.IconAutoMargin )
+			mNodeFlags |= NODE_FLAG_FREE_USE;
 	} else {
-		attributeSet = UIWidget::setAttribute( attribute );
+		attributeSet = UIWidget::setAttribute( attribute, state );
 	}
 
 	if ( !attributeSet && ( String::startsWith( name, "text" ) || String::startsWith( name, "font" ) ) )

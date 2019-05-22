@@ -22,7 +22,7 @@ class CursorManagerSDL : public CursorManager {
 
 		void set( Cursor * cursor );
 
-		void set( EE_SYSTEM_CURSOR syscurid );
+		void set( Cursor::SysType syscurid );
 
 		void show();
 

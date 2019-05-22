@@ -13,9 +13,13 @@ class EE_API UIScrollBar : public UIWidget {
 			NoButtons
 		};
 
-		static UIScrollBar * New( const UI_ORIENTATION & orientation = UI_VERTICAL );
+		static UIScrollBar * New();
 
-		UIScrollBar( const UI_ORIENTATION& orientation = UI_VERTICAL );
+		static UIScrollBar * NewHorizontal();
+
+		static UIScrollBar * NewVertical();
+
+		explicit UIScrollBar( const UI_ORIENTATION& orientation = UI_VERTICAL );
 
 		virtual ~UIScrollBar();
 
@@ -47,8 +51,6 @@ class EE_API UIScrollBar : public UIWidget {
 
 		bool isVertical() const;
 
-		virtual void update( const Time& time );
-
 		UISlider * getSlider() const;
 
 		UINode * getButtonUp() const;
@@ -67,7 +69,7 @@ class EE_API UIScrollBar : public UIWidget {
 
 		void setExpandBackground( bool expandBackground );
 
-		virtual bool setAttribute( const NodeAttribute& attribute );
+		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
 	protected:
 		ScrollBarType	mScrollBarType;
 		UISlider * 		mSlider;
@@ -87,8 +89,6 @@ class EE_API UIScrollBar : public UIWidget {
 		virtual Uint32 onMessage( const NodeMessage * Msg );
 
 		virtual void onPaddingChange();
-
-		void manageClick( const Uint32& flags );
 };
 
 }}

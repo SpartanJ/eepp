@@ -4,6 +4,10 @@
 
 namespace EE { namespace System {
 
+DirectoryPack * DirectoryPack::New() {
+	return eeNew( DirectoryPack, ( ) );
+}
+
 DirectoryPack::DirectoryPack() {}
 
 DirectoryPack::~DirectoryPack() {}
@@ -84,7 +88,7 @@ bool DirectoryPack::extractFileToMemory( const std::string& path, std::vector<Ui
 	return FileSystem::fileGet( mPath + path, data );
 }
 
-bool DirectoryPack::extractFileToMemory( const std::string& path, SafeDataPointer& data ) {
+bool DirectoryPack::extractFileToMemory( const std::string& path, ScopedBuffer& data ) {
 	return FileSystem::fileGet( mPath + path, data );
 }
 

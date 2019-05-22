@@ -12,16 +12,11 @@ UIWinMenu * UIWinMenu::New() {
 }
 
 UIWinMenu::UIWinMenu() :
-	UIWidget(),
+	UIWidget( "winmenu" ),
 	mCurrentMenu( NULL )
 {
 	if ( !(mFlags & UI_ANCHOR_RIGHT) )
 		mFlags |= UI_ANCHOR_RIGHT;
-
-	UITheme * theme = UIThemeManager::instance()->getDefaultTheme();
-
-	if ( NULL != theme )
-		mStyleConfig = theme->getWinMenuStyleConfig();
 
 	onParentChange();
 
@@ -43,16 +38,14 @@ bool UIWinMenu::isType( const Uint32& type ) const {
 void UIWinMenu::addMenuButton( const String& ButtonText, UIPopUpMenu * Menu ) {
 	eeASSERT( NULL != Menu );
 
-	UISelectButton * Button = UISelectButton::New();
-
-	Button->setStyleConfig( mStyleConfig );
+	UISelectButton * Button = UISelectButton::NewWithTag( "winmenu::button" );
 	Button->setParent( this );
 	Button->setText( ButtonText );
 	Button->setVisible( true );
 	Button->setEnabled( true );
 
-	if ( NULL != mSkinState && NULL != mSkinState->getSkin() )
-		Button->setThemeSkin( mSkinState->getSkin()->getTheme(), "winmenubutton" );
+	if ( NULL != mTheme )
+		Button->setThemeSkin( mTheme, "winmenubutton" );
 
 	Menu->setVisible( false );
 	Menu->setEnabled( false );
@@ -73,13 +66,8 @@ void UIWinMenu::setTheme( UITheme * Theme ) {
 		it->first->setThemeSkin( Theme, "winmenubutton" );
 	}
 
-	if ( 0 == mStyleConfig.MenuHeight && NULL != getSkin() ) {
-		mStyleConfig.MenuHeight = getSkinSize().getHeight();
-
-		setSize( getParent()->getSize().getWidth(), mStyleConfig.MenuHeight );
-
-		updateAnchorsDistances();
-	}
+	autoHeight();
+	onThemeLoaded();
 }
 
 void UIWinMenu::removeMenuButton( const String& ButtonText ) {
@@ -126,13 +114,65 @@ void UIWinMenu::setMarginBetweenButtons(const Uint32 & marginBetweenButtons) {
 	refreshButtons();
 }
 
-UIWinMenuStyleConfig UIWinMenu::getStyleConfig() const {
+Uint32 UIWinMenu::getButtonMargin() const {
+	return mStyleConfig.ButtonMargin;
+}
+
+void UIWinMenu::setButtonMargin( const Uint32& buttonMargin ) {
+	mStyleConfig.ButtonMargin = buttonMargin;
+	refreshButtons();
+}
+
+const UIWinMenu::StyleConfig& UIWinMenu::getStyleConfig() const {
 	return mStyleConfig;
 }
 
-void UIWinMenu::setStyleConfig(const UIWinMenuStyleConfig & styleConfig) {
+void UIWinMenu::setStyleConfig(const StyleConfig & styleConfig) {
 	mStyleConfig = styleConfig;
 	refreshButtons();
+}
+
+Uint32 UIWinMenu::getMenuHeight() const {
+	return mStyleConfig.MenuHeight;
+}
+
+void UIWinMenu::setMenuHeight( const Uint32& menuHeight ) {
+	mStyleConfig.MenuHeight = menuHeight;
+
+	if ( 0 != mStyleConfig.MenuHeight ) {
+		setSize( getParent()->getSize().getWidth(), mStyleConfig.MenuHeight );
+	} else {
+		autoHeight();
+	}
+
+	refreshButtons();
+}
+
+Uint32 UIWinMenu::getFirstButtonMargin() const {
+	return mStyleConfig.FirstButtonMargin;
+}
+
+void UIWinMenu::setFirstButtonMargin( const Uint32& buttonMargin ) {
+	mStyleConfig.FirstButtonMargin = buttonMargin;
+	refreshButtons();
+}
+
+bool UIWinMenu::setAttribute( const NodeAttribute& attribute, const Uint32 & state ) {
+	const std::string& name = attribute.getName();
+
+	if ( "marginbetweenbuttons" == name ) {
+		setMarginBetweenButtons( attribute.asDpDimensionUint() );
+	} else if ( "buttonmargin" == name ) {
+		setButtonMargin( attribute.asDpDimensionUint() );
+	} else if ( "menuheight" == name ) {
+		setMenuHeight( attribute.asDpDimensionUint() );
+	} else if ( "firstbuttonmargin" == name ) {
+		setFirstButtonMargin( attribute.asDpDimensionUint() );
+	} else {
+		return UIWidget::setAttribute( attribute, state );
+	}
+
+	return true;
 }
 
 void UIWinMenu::refreshButtons() {
@@ -150,7 +190,7 @@ void UIWinMenu::refreshButtons() {
 			skin = tbut->getSkin();
 
 			if ( NULL != skin ) {
-				th = skin->getSize( UISkinState::StateSelected ).getHeight();
+				th = skin->getSize( UIState::StateFlagSelected ).getHeight();
 
 				switch ( VAlignGet( getFlags() ) ) {
 					case UI_VALIGN_CENTER:
@@ -172,8 +212,7 @@ void UIWinMenu::refreshButtons() {
 		UITextView * tbox		= pbut->getTextBox();
 
 		pbut->setLayoutSizeRules( FIXED, FIXED );
-		pbut->setStyleConfig( mStyleConfig );
-		pbut->setPixelsSize( tbox->getTextWidth() + PixelDensity::dpToPx( mStyleConfig.ButtonMargin ), getRealSize().getHeight() );
+		pbut->setPixelsSize( tbox->getTextWidth() + PixelDensity::dpToPx( mStyleConfig.ButtonMargin ), getPixelsSize().getHeight() );
 		pbut->setPosition( xpos, ycenter );
 
 		xpos += pbut->getSize().getWidth() + mStyleConfig.MarginBetweenButtons;
@@ -183,7 +222,7 @@ void UIWinMenu::refreshButtons() {
 Uint32 UIWinMenu::onMessage( const NodeMessage * Msg ) {
 	switch ( Msg->getMsg() ) {
 		case NodeMessage::MouseUp:
-		case NodeMessage::MouseEnter:
+		case NodeMessage::MouseOver:
 		{
 			if ( Msg->getSender()->isType( UI_TYPE_SELECTBUTTON ) ) {
 				UISelectButton * tbut	= reinterpret_cast<UISelectButton*> ( Msg->getSender() );
@@ -192,7 +231,7 @@ Uint32 UIWinMenu::onMessage( const NodeMessage * Msg ) {
 				Vector2f pos( tbut->getPosition().x, tbut->getPosition().y + tbut->getSize().getHeight() );
 				tpop->setPosition( pos );
 
-				if ( Msg->getMsg() == NodeMessage::MouseEnter ) {
+				if ( Msg->getMsg() == NodeMessage::MouseOver ) {
 					if ( NULL != mCurrentMenu ) {
 						mCurrentMenu = tpop;
 
@@ -274,7 +313,7 @@ bool UIWinMenu::isPopUpMenuChild( Node * Ctrl ) {
 	return false;
 }
 
-void UIWinMenu::onMenuFocusLoss( const Event * Event ) {
+void UIWinMenu::onMenuFocusLoss( const Event * ) {
 	Node * FocusCtrl = getEventDispatcher()->getFocusControl();
 
 	if ( !isParentOf( FocusCtrl ) && !isPopUpMenuChild( FocusCtrl ) ) {
@@ -299,6 +338,16 @@ void UIWinMenu::destroyMenues() {
 		for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); ++it ) {
 			it->second->close();
 		}
+	}
+}
+
+void UIWinMenu::autoHeight() {
+	if ( 0 == mStyleConfig.MenuHeight && NULL != getSkin() ) {
+		mStyleConfig.MenuHeight = getSkinSize().getHeight();
+
+		setSize( getParent()->getSize().getWidth(), mStyleConfig.MenuHeight );
+
+		updateAnchorsDistances();
 	}
 }
 

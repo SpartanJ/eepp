@@ -48,8 +48,7 @@ class EE_API Socket : NonCopyable {
 		bool isBlocking() const;
 protected :
 	/** @brief Types of protocols that the socket can use */
-	enum Type
-	{
+	enum Type {
 		Tcp, ///< TCP protocol
 		Udp  ///< UDP protocol
 	};

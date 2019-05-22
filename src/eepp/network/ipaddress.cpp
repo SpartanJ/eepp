@@ -93,10 +93,10 @@ IpAddress IpAddress::getLocalAddress() {
 IpAddress IpAddress::getPublicAddress(Time timeout) {
 	// The trick here is more complicated, because the only way
 	// to get our public IP address is to get it from a distant computer.
-	// Here we get the web page from http://www.sfml-dev.org/ip-provider.php
+	// Here we get the web page from http://ip.ensoft.dev
 	// and parse the result to extract our IP address
 	// (not very hard: the web page contains only our IP address).
-	Http server("ip.ensoft-dev.com");
+	Http server("ip.ensoft.dev");
 	Http::Request request("/", Http::Request::Get);
 	Http::Response page = server.sendRequest(request, timeout);
 	if (page.getStatus() == Http::Response::Ok)
@@ -110,47 +110,35 @@ void IpAddress::resolve(const std::string& address) {
 	mAddress = 0;
 	mValid = false;
 
-	if (address == "255.255.255.255")
-	{
+	if (address == "255.255.255.255") {
 		// The broadcast address needs to be handled explicitly,
 		// because it is also the value returned by inet_addr on error
 		mAddress = INADDR_BROADCAST;
 		mValid = true;
-	}
-	else if (address == "0.0.0.0")
-	{
+	} else if (address == "0.0.0.0") {
 		mAddress = INADDR_ANY;
 		mValid = true;
-	}
-	else
-	{
+	} else {
 		// Try to convert the address as a byte representation ("xxx.xxx.xxx.xxx")
 		Uint32 ip = inet_addr(address.c_str());
-		if (ip != INADDR_NONE)
-		{
+		if (ip != INADDR_NONE) {
 			mAddress = ip;
 			mValid = true;
-		}
-		else
-		{
+		} else {
 			// Not a valid address, try to convert it as a host name
 			addrinfo hints;
 			std::memset(&hints, 0, sizeof(hints));
 			hints.ai_family = AF_INET;
 			addrinfo* result = NULL;
 			int res = getaddrinfo(address.c_str(), NULL, &hints, &result);
-			if (res == 0)
-			{
-				if (result)
-				{
+			if (res == 0) {
+				if (result) {
 					ip = reinterpret_cast<sockaddr_in*>(result->ai_addr)->sin_addr.s_addr;
 					freeaddrinfo(result);
 					mAddress = ip;
 					mValid = true;
 				}
-			}
-			else
-			{
+			} else {
 				eePRINTL( "getaddrinfo on \"%s\": %s", address.c_str(), gai_strerror(res) );
 			}
 		}

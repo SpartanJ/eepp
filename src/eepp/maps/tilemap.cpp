@@ -120,7 +120,7 @@ void TileMap::createEmptyTile() {
 	//! I create a texture representing an empty tile to render instead of rendering with primitives because is a lot faster, at least with NVIDIA GPUs.
 	TextureFactory * TF = TextureFactory::instance();
 
-	std::string tileName( String::strFormated( "maptile-%dx%d-%ul", mTileSize.getWidth(), mTileSize.getHeight(), mGridLinesColor.getValue() ) );
+	std::string tileName( String::format( "maptile-%dx%d-%ul", mTileSize.getWidth(), mTileSize.getHeight(), mGridLinesColor.getValue() ) );
 
 	Texture * Tex = TF->getByName( tileName );
 
@@ -1072,13 +1072,13 @@ bool TileMap::loadFromFile( const std::string& path ) {
 
 bool TileMap::loadFromPack( Pack * Pack, const std::string& FilePackPath ) {
 	if ( NULL != Pack && Pack->isOpen() && -1 != Pack->exists( FilePackPath ) ) {
-		SafeDataPointer PData;
+		ScopedBuffer buffer;
 
-		Pack->extractFileToMemory( FilePackPath, PData );
+		Pack->extractFileToMemory( FilePackPath, buffer );
 
 		mPath = FilePackPath;
 
-		return loadFromMemory( reinterpret_cast<const char*> ( PData.data ), PData.size );
+		return loadFromMemory( reinterpret_cast<const char*> ( buffer.get() ), buffer.length() );
 	}
 
 	return false;

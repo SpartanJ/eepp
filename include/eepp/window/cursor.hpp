@@ -2,12 +2,16 @@
 #define EE_WINDOWCCURSOR_HPP
 
 #include <eepp/core.hpp>
+#include <eepp/window/windowhandle.hpp>
+#include <eepp/math/vector2.hpp>
+using namespace EE::Math;
 
-#include <eepp/graphics/image.hpp>
-#include <eepp/graphics/texture.hpp>
+namespace EE { namespace Graphics {
+class Texture;
+class Image;
+}}
 using namespace EE::Graphics;
 
-#include <eepp/window/windowhandle.hpp>
 
 namespace EE { namespace Window {
 
@@ -15,6 +19,42 @@ class Window;
 
 class EE_API Cursor {
 	public:
+		enum Type {
+			Arrow = 0, /**< Arrow */
+			IBeam,     /**< I-beam */
+			Wait,      /**< Wait */
+			Crosshair, /**< Crosshair */
+			WaitArrow, /**< Small wait cursor (or Wait if not available) */
+			SizeNWSE,  /**< Double arrow pointing northwest and southeast */
+			SizeNESW,  /**< Double arrow pointing northeast and southwest */
+			SizeWE,    /**< Double arrow pointing west and east */
+			SizeNS,    /**< Double arrow pointing north and south */
+			SizeAll,   /**< Four pointed arrow pointing north, south, east, and west */
+			NoCursor,        /**< Slashed circle or crossbones */
+			Hand,      /**< Hand */
+			CursorCount
+		};
+
+		static Cursor::Type fromName( std::string name );
+
+		/** @enum EE_SYSTEM_CURSOR list the system cursors that can be used */
+		enum SysType {
+			SysArrow = 0, /**< Arrow */
+			SysIBeam,     /**< I-beam */
+			SysWait,      /**< Wait */
+			SysCrosshair, /**< Crosshair */
+			SysWaitArrow, /**< Small wait cursor (or Wait if not available) */
+			SysSizeNWSE,  /**< Double arrow pointing northwest and southeast */
+			SysSizeNESW,  /**< Double arrow pointing northeast and southwest */
+			SysSizeWE,    /**< Double arrow pointing west and east */
+			SysSizeNS,    /**< Double arrow pointing north and south */
+			SysSizeAll,   /**< Four pointed arrow pointing north, south, east, and west */
+			SysNoCursor,        /**< Slashed circle or crossbones */
+			SysHand,      /**< Hand */
+			SysCursorCount,
+			SysCursorNone
+		};
+
 		/** @return The cursor id */
 		const Uint32& getId() const;
 

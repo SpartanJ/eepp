@@ -44,7 +44,7 @@ void SocketSelector::add(Socket& socket) {
 		if (mImpl->SocketCount >= FD_SETSIZE) {
 			eePRINT( "The socket can't be added to the selector because its " );
 			eePRINT( "ID is too high. This is a limitation of your operating " );
-			eePRINT( "system's FD_SETSIZE setting." );
+			eePRINTL( "system's FD_SETSIZE setting." );
 			return;
 		}
 
@@ -56,7 +56,7 @@ void SocketSelector::add(Socket& socket) {
 		if (handle >= FD_SETSIZE) {
 			eePRINT( "The socket can't be added to the selector because its " );
 			eePRINT( "ID is too high. This is a limitation of your operating " );
-			eePRINT( "system's FD_SETSIZE setting." );
+			eePRINTL( "system's FD_SETSIZE setting." );
 			return;
 		}
 

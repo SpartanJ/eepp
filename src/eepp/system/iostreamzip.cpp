@@ -5,6 +5,10 @@
 
 namespace EE { namespace System {
 
+IOStreamZip * IOStreamZip::New( Zip * pack, const std::string& path ) {
+	return eeNew( IOStreamZip, ( pack, path ) );
+}
+
 IOStreamZip::IOStreamZip( Zip * pack, const std::string& path ) :
 	mPath( path ),
 	mZip( pack->getZip() ),
@@ -54,8 +58,8 @@ ios_size IOStreamZip::seek( ios_size position ) {
 			mFile = zip_fopen_index( mZip, zs.index, 0 );
 
 			if ( 0 != position ) {
-				SafeDataPointer ptr( position );
-				read( (char*)ptr.data, position );
+				ScopedBuffer ptr( position );
+				read( (char*)ptr.get(), position );
 			}
 
 			mPos = position;

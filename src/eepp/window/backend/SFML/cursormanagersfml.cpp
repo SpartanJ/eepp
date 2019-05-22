@@ -45,7 +45,7 @@ void CursorManagerSFML::set( Cursor * cursor ) {
 	mWindow->getPlatform()->setMouseCursor( cursor );
 }
 
-void CursorManagerSFML::set( EE_SYSTEM_CURSOR syscurid ) {
+void CursorManagerSFML::set( Cursor::SysType syscurid ) {
 	mWindow->getPlatform()->setSystemMouseCursor( syscurid );
 }
 

@@ -11,7 +11,7 @@ UITextureRegion * UITextureRegion::New() {
 }
 
 UITextureRegion::UITextureRegion() :
-	UIWidget(),
+	UIWidget( "textureregion" ),
 	mTextureRegion( NULL ),
 	mColor(),
 	mRender( RENDER_NORMAL ),
@@ -54,15 +54,20 @@ UITextureRegion * UITextureRegion::setTextureRegion( Graphics::TextureRegion * T
 void UITextureRegion::onAutoSize() {
 	if ( NULL != mTextureRegion ) {
 		if ( ( mFlags & UI_AUTO_SIZE ) && Sizef::Zero == mDpSize ) {
-			setSize( mTextureRegion->getDpSize().asFloat() );
+			setInternalSize( mTextureRegion->getDpSize().asFloat() );
+			autoAlign();
 		}
 
-		if ( mLayoutWidthRules == WRAP_CONTENT ) {
-			setInternalPixelsWidth( mTextureRegion->getPxSize().getWidth() + mRealPadding.Left + mRealPadding.Right );
-		}
+		if ( mLayoutWidthRules == WRAP_CONTENT || mLayoutHeightRules == WRAP_CONTENT ) {
+			if ( mLayoutWidthRules == WRAP_CONTENT ) {
+				setInternalPixelsWidth( mTextureRegion->getPxSize().getWidth() + mRealPadding.Left + mRealPadding.Right );
+			}
 
-		if ( mLayoutHeightRules == WRAP_CONTENT ) {
-			setInternalPixelsHeight( mTextureRegion->getPxSize().getHeight() + mRealPadding.Top + mRealPadding.Bottom );
+			if ( mLayoutHeightRules == WRAP_CONTENT ) {
+				setInternalPixelsHeight( mTextureRegion->getPxSize().getHeight() + mRealPadding.Top + mRealPadding.Bottom );
+			}
+
+			autoAlign();
 		}
 	}
 }
@@ -192,10 +197,10 @@ const Vector2f& UITextureRegion::getAlignOffset() const {
 	return mAlignOffset;
 }
 
-bool UITextureRegion::setAttribute( const NodeAttribute& attribute ) {
+bool UITextureRegion::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
-	if ( "src" == name || "textureregion" == name || "subtexture" == name ) {
+	if ( "src" == name || "textureregion" == name ) {
 		Drawable * res = NULL;
 
 		if ( NULL != ( res = TextureAtlasManager::instance()->getTextureRegionByName( attribute.asString() ) ) && res->getDrawableType() == Drawable::TEXTUREREGION ) {
@@ -213,9 +218,9 @@ bool UITextureRegion::setAttribute( const NodeAttribute& attribute ) {
 			setScaleType( UIScaleType::None );
 		}
 	} else if ( "tint" == name ) {
-		setColor( Color::fromString( attribute.asString() ) );
+		setColor( attribute.asColor() );
 	} else {
-		return UIWidget::setAttribute( attribute );
+		return UIWidget::setAttribute( attribute, state );
 	}
 
 	return true;

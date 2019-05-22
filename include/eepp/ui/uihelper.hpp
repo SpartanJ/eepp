@@ -41,7 +41,7 @@ enum UI_FLAGS {
 	UI_TEXT_SELECTION_ENABLED		= (1 << 19)
 };
 
-enum UI_CONTROL_TYPES {
+enum UI_NODE_TYPES {
 	UI_TYPE_NODE	= 0,
 	UI_TYPE_UINODE,
 	UI_TYPE_WIDGET,
@@ -149,6 +149,15 @@ enum LayoutPositionRules {
 	RIGHT_OF,
 	TOP_OF,
 	BOTTOM_OF
+};
+
+class UIScaleType {
+	public:
+		enum Type {
+			None,
+			Expand,
+			FitInside
+		};
 };
 
 static const Uint32 UI_CONTROL_DEFAULT_ALIGN = UI_HALIGN_LEFT | UI_VALIGN_CENTER;

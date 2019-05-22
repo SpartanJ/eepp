@@ -13,13 +13,15 @@ class EE_API UILoader : public UIWidget {
 
 		UILoader();
 
+		~UILoader();
+
 		virtual Uint32 getType() const;
 
 		virtual bool isType( const Uint32& type ) const;
 
 		virtual void draw();
 
-		virtual void update( const Time& time );
+		virtual void scheduledUpdate( const Time& time );
 
 		UILoader * setOutlineThickness( const Float& thickness );
 
@@ -49,7 +51,7 @@ class EE_API UILoader : public UIWidget {
 
 		UILoader * setAnimationSpeed( const Float& animationSpeed );
 
-		virtual bool setAttribute( const NodeAttribute& attribute );
+		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
 
 		Float getArcStartAngle() const;
 
@@ -73,6 +75,8 @@ class EE_API UILoader : public UIWidget {
 		virtual void onSizeChange();
 
 		virtual void onPaddingChange();
+
+		void updateRadius();
 };
 
 }}

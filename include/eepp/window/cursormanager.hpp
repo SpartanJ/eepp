@@ -8,7 +8,6 @@
 using namespace EE::Graphics;
 
 #include <eepp/window/window.hpp>
-#include <eepp/window/cursorhelper.hpp>
 #include <eepp/window/cursor.hpp>
 
 #include <set>
@@ -79,19 +78,19 @@ class EE_API CursorManager {
 		virtual void			set( Cursor * cursor ) = 0;
 
 		/** Set the cursor using a system cursor */
-		virtual void			set( EE_SYSTEM_CURSOR syscurid ) = 0;
+		virtual void			set( Cursor::SysType syscurid ) = 0;
 
 		/** Set the cursor as the global cursor used in eepp
 		**	@see SetGlobalCursor */
-		virtual void			set( EE_CURSOR_TYPE cursor );
+		virtual void			set( Cursor::Type cursor );
 
 		/** A Global Cursor is a cursor setted to be used in eepp. It's the system cursor of the engine.
 		**	The global cursor can be a Cursor ( user created cursor ) or a system cursor ( the OS cursor ).
 		**	The system cursor is used by default, but can be override it with this function. */
-		virtual void			setGlobalCursor( EE_CURSOR_TYPE cursor, Cursor * fromCursor );
+		virtual void			setGlobalCursor( Cursor::Type cursor, Cursor * fromCursor );
 
 		/** @see SetGlobalCursor */
-		virtual void			setGlobalCursor( EE_CURSOR_TYPE cursor, EE_SYSTEM_CURSOR fromCursor );
+		virtual void			setGlobalCursor( Cursor::Type cursor, Cursor::SysType fromCursor );
 
 		/** Force to show the cursor */
 		virtual void			show() = 0;
@@ -112,7 +111,7 @@ class EE_API CursorManager {
 		Cursor *				getCurrent() const;
 
 		/** @return The current system cursor */
-		EE_SYSTEM_CURSOR		getCurrentSysCursor() const;
+		Cursor::SysType		getCurrentSysCursor() const;
 
 		/** @return True if the current cursor seted is a system cursor */
 		bool					currentIsSysCursor() const;
@@ -122,24 +121,24 @@ class EE_API CursorManager {
 		{
 			public:
 				GlobalCursor() :
-					SysCur( SYS_CURSOR_NONE ),
+					SysCur( Cursor::SysCursorNone ),
 					Cur( NULL )
 				{
 				}
 
-				GlobalCursor( EE_SYSTEM_CURSOR sysCur, Cursor * cur ) :
+				GlobalCursor( Cursor::SysType sysCur, Cursor * cur ) :
 					SysCur( sysCur ),
 					Cur( cur )
 				{
 				}
 
-				EE_SYSTEM_CURSOR	SysCur;
+				Cursor::SysType	SysCur;
 				Cursor *			Cur;
 		};
-		GlobalCursor			mGlobalCursors[ EE_CURSOR_COUNT ];
+		GlobalCursor			mGlobalCursors[ Cursor::CursorCount ];
 		EE::Window::Window *				mWindow;
 		Cursor *				mCurrent;
-		EE_SYSTEM_CURSOR		mSysCursor;
+		Cursor::SysType		mSysCursor;
 		CursorsList				mCursors;
 		bool					mCurSysCursor;
 		bool					mVisible;

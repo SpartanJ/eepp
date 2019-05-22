@@ -18,6 +18,14 @@ namespace EE { namespace Graphics {
 */
 class EE_API FontTrueTypeLoader : public ObjectLoader {
 	public:
+		static FontTrueTypeLoader * New( const std::string& FontName, const std::string& Filepath );
+
+		static FontTrueTypeLoader * New( const std::string& FontName, Pack * Pack, const std::string& FilePackPath );
+
+		static FontTrueTypeLoader * New( const std::string& FontName, Uint8* TTFData, const unsigned int& TTFDataSize );
+
+		static FontTrueTypeLoader * New( const std::string& FontName, IOStream& stream );
+
 		/** Load a True Type Font from path
 		* @param FontName The font name
 		* @param Filepath The TTF file path

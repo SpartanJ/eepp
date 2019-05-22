@@ -6,6 +6,22 @@
 
 namespace EE { namespace Graphics {
 
+FontTrueTypeLoader * FontTrueTypeLoader::New( const std::string& FontName, const std::string& Filepath ) {
+	return eeNew( FontTrueTypeLoader, ( FontName, Filepath ) );
+}
+
+FontTrueTypeLoader * FontTrueTypeLoader::New( const std::string& FontName, Pack * Pack, const std::string& FilePackPath ) {
+	return eeNew( FontTrueTypeLoader, ( FontName, Pack, FilePackPath ) );
+}
+
+FontTrueTypeLoader * FontTrueTypeLoader::New( const std::string& FontName, Uint8* TTFData, const unsigned int& TTFDataSize ) {
+	return eeNew( FontTrueTypeLoader, ( FontName, TTFData, TTFDataSize ) );
+}
+
+FontTrueTypeLoader * FontTrueTypeLoader::New( const std::string& FontName, IOStream& stream ) {
+	return eeNew( FontTrueTypeLoader, ( FontName, stream ) );
+}
+
 FontTrueTypeLoader::FontTrueTypeLoader( const std::string& FontName, const std::string& Filepath ) :
 	ObjectLoader( FontLoader ),
 	mLoadType( TTF_LT_PATH ),

@@ -19,9 +19,9 @@ class EE_API UIMenuItem : public UIPushButton {
 
 		virtual void setTheme( UITheme * Theme );
 	protected:
-		virtual Uint32 onMouseEnter( const Vector2i &position, const Uint32 flags );
+		explicit UIMenuItem( const std::string& tag );
 
-		virtual void onStateChange();
+		virtual Uint32 onMouseOver( const Vector2i& position, const Uint32& flags );
 };
 
 }}

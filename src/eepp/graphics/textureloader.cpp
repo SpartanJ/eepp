@@ -20,6 +20,26 @@ using namespace EE::Window;
 
 namespace EE { namespace Graphics {
 
+TextureLoader * TextureLoader::New( IOStream& Stream, const bool& Mipmap, const Texture::ClampMode& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy ) {
+	return eeNew( TextureLoader, ( Stream, Mipmap, ClampMode, CompressTexture, KeepLocalCopy ) );
+}
+
+TextureLoader * TextureLoader::New( const std::string& filepath, const bool& Mipmap, const Texture::ClampMode& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy ) {
+	return eeNew( TextureLoader, ( filepath, Mipmap, ClampMode, CompressTexture, KeepLocalCopy ) );
+}
+
+TextureLoader * TextureLoader::New( const unsigned char * ImagePtr, const unsigned int& Size, const bool& Mipmap, const Texture::ClampMode& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy ) {
+	return eeNew( TextureLoader, ( ImagePtr, Size, Mipmap, ClampMode, CompressTexture, KeepLocalCopy ) );
+}
+
+TextureLoader * TextureLoader::New( Pack * Pack, const std::string& FilePackPath, const bool& Mipmap, const Texture::ClampMode& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy ) {
+	return eeNew( TextureLoader, ( Pack, FilePackPath, Mipmap, ClampMode, CompressTexture, KeepLocalCopy ) );
+}
+
+TextureLoader * TextureLoader::New( const unsigned char * Pixels, const unsigned int& Width, const unsigned int& Height, const unsigned int& Channels, const bool& Mipmap, const Texture::ClampMode& ClampMode, const bool& CompressTexture , const bool& KeepLocalCopy, const std::string& FileName ) {
+	return eeNew( TextureLoader, ( Pixels, Width, Height, Channels, Mipmap, ClampMode, CompressTexture, KeepLocalCopy ) );
+}
+
 TextureLoader::TextureLoader( IOStream& Stream,
 	const bool& Mipmap,
 	const Texture::ClampMode& ClampMode,
@@ -258,11 +278,11 @@ void TextureLoader::loadFromFile() {
 }
 
 void TextureLoader::loadFromPack() {
-	SafeDataPointer PData;
+	ScopedBuffer buffer;
 
-	if ( NULL != mPack && mPack->isOpen() && mPack->extractFileToMemory( mFilepath, PData ) ) {
-		mImagePtr	= PData.data;
-		mSize		= PData.size;
+	if ( NULL != mPack && mPack->isOpen() && mPack->extractFileToMemory( mFilepath, buffer ) ) {
+		mImagePtr	= buffer.get();
+		mSize		= buffer.length();
 
 		loadFromMemory();
 	}
@@ -383,7 +403,7 @@ void TextureLoader::loadFromPixels() {
 				if ( NULL != mColorKey ) {
 					mChannels = STBI_rgb_alpha;
 
-					Image * tImg = eeNew ( Image, ( mPixels, mImgWidth, mImgHeight, mChannels ) );
+					Image * tImg = Image::New( mPixels, mImgWidth, mImgHeight, mChannels );
 
 					tImg->createMaskFromColor( Color( mColorKey->r, mColorKey->g, mColorKey->b, 255 ), 0 );
 
@@ -451,7 +471,8 @@ void TextureLoader::loadFromPixels() {
 			mPixels = NULL;
 		} else {
 			if ( NULL != stbi_failure_reason() ) {
-				eePRINTL( stbi_failure_reason() );
+				if ( TEX_LT_PATH != mLoadType )
+					eePRINTL( stbi_failure_reason() );
 			} else {
 				std::string failText( "Texture " + mFilepath + " failed to load" );
 

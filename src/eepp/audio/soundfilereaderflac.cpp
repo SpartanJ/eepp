@@ -57,14 +57,14 @@ bool SoundFileReaderFlac::open(IOStream& stream, Info& info) {
 		return true;
 	}
 
-	eeSAFE_FREE( mFlac );
+	drflac_close( mFlac );
 
 	return false;
 }
 
 void SoundFileReaderFlac::seek(Uint64 sampleOffset) {
 	if ( mFlac ) {
-		drflac_seek_to_sample( mFlac, sampleOffset );
+		drflac_seek_to_pcm_frame( mFlac, sampleOffset  / mChannelCount );
 	}
 }
 
@@ -74,12 +74,17 @@ Uint64 SoundFileReaderFlac::read(Int16* samples, Uint64 maxCount) {
 	Uint64 count = 0;
 
 	while (count < maxCount) {
-		int samplesToRead = static_cast<int>(maxCount - count);
-		long samplesRead = drflac_read_s16( mFlac, samplesToRead, samples );
+		const int samplesToRead = static_cast<int>(maxCount - count);
+		int frames = samplesToRead / mChannelCount;
+		long framesRead = drflac_read_pcm_frames_s16( mFlac, frames, samples );
 
-		if (samplesRead > 0) {
+		if (framesRead > 0) {
+			long samplesRead = framesRead * mChannelCount;
 			count += samplesRead;
 			samples += samplesRead;
+
+			if (framesRead != frames)
+				break;
 		} else {
 			// error or end of file
 			break;
@@ -92,7 +97,6 @@ Uint64 SoundFileReaderFlac::read(Int16* samples, Uint64 maxCount) {
 void SoundFileReaderFlac::close() {
 	if ( mFlac ) {
 		drflac_close( mFlac );
-		eeSAFE_FREE( mFlac );
 		mChannelCount = 0;
 	}
 }

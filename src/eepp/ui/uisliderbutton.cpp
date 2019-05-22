@@ -8,7 +8,7 @@ UISliderButton *UISliderButton::New() {
 }
 
 UISliderButton::UISliderButton() :
-	UIWidget()
+	UIWidget( "slider::button" )
 {
 	applyDefaultTheme();
 }

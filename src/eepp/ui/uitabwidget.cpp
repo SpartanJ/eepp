@@ -4,6 +4,7 @@
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/fontmanager.hpp>
 #include <pugixml/pugixml.hpp>
+#include <eepp/ui/uistyle.hpp>
 
 namespace EE { namespace UI {
 
@@ -12,17 +13,11 @@ UITabWidget * UITabWidget::New() {
 }
 
 UITabWidget::UITabWidget() :
-	UIWidget(),
+	UIWidget( "tabwidget" ),
 	mTabSelected( NULL ),
 	mTabSelectedIndex( eeINDEX_NOT_FOUND )
 {
 	setHorizontalAlign( UI_HALIGN_CENTER );
-
-	UITheme * Theme = UIThemeManager::instance()->getDefaultTheme();
-
-	if ( NULL != Theme ) {
-		mStyleConfig = Theme->getTabWidgetStyleConfig();
-	}
 
 	mTabContainer = UIWidget::New();
 	mTabContainer->setPixelsSize( mSize.getWidth(), mStyleConfig.TabWidgetHeight )
@@ -62,7 +57,7 @@ void UITabWidget::setTheme( UITheme * Theme ) {
 
 		if ( NULL != tSkin ) {
 			Sizef tSize1		= getSkinSize( tSkin );
-			Sizef tSize2		= getSkinSize( tSkin, UISkinState::StateSelected );
+			Sizef tSize2		= getSkinSize( tSkin, UIState::StateFlagSelected );
 
 			mStyleConfig.TabWidgetHeight	= eemax( tSize1.getHeight(), tSize2.getHeight() );
 
@@ -95,15 +90,15 @@ void UITabWidget::draw() {
 		if ( smooth ) GLi->lineSmooth( false );
 
 		Primitives P;
-		Vector2f p1( mScreenPos.x + mRealPadding.Left, mScreenPos.y + mRealPadding.Top + mTabContainer->getRealSize().getHeight() + mStyleConfig.LineBelowTabsYOffset );
-		Vector2f p2( mScreenPos.x + mTabContainer->getRealPosition().x, p1.y );
+		Vector2f p1( mScreenPos.x + mRealPadding.Left, mScreenPos.y + mRealPadding.Top + mTabContainer->getPixelsSize().getHeight() + mStyleConfig.LineBelowTabsYOffset );
+		Vector2f p2( mScreenPos.x + mTabContainer->getPixelsPosition().x, p1.y );
 
 		P.setLineWidth( PixelDensity::dpToPx( 1 ) );
 		P.setColor( Color( mStyleConfig.LineBelowTabsColor, mAlpha ) );
 		P.drawLine( Line2f( Vector2f( (int)p1.x, (int)p1.y ), Vector2f( (int)p2.x, (int)p2.y ) ) );
 
-		Vector2f p3( mScreenPos.x + mTabContainer->getRealPosition().x + mTabContainer->getRealSize().getWidth(), mScreenPos.y + mRealPadding.Top + mTabContainer->getRealSize().getHeight() + mStyleConfig.LineBelowTabsYOffset );
-		Vector2f p4( mScreenPos.x + mRealPadding.Left + mCtrlContainer->getRealSize().getWidth(), p3.y );
+		Vector2f p3( mScreenPos.x + mTabContainer->getPixelsPosition().x + mTabContainer->getPixelsSize().getWidth(), mScreenPos.y + mRealPadding.Top + mTabContainer->getPixelsSize().getHeight() + mStyleConfig.LineBelowTabsYOffset );
+		Vector2f p4( mScreenPos.x + mRealPadding.Left + mCtrlContainer->getPixelsSize().getWidth(), p3.y );
 
 		P.drawLine( Line2f( Vector2f( (int)p3.x, (int)p3.y ), Vector2f( (int)p4.x, (int)p4.y ) ) );
 
@@ -111,73 +106,11 @@ void UITabWidget::draw() {
 	}
 }
 
-UITooltipStyleConfig UITabWidget::getFontStyleConfig() const {
-	return UITooltipStyleConfig( mStyleConfig );
-}
-
-void UITabWidget::setFontStyleConfig(const UITooltipStyleConfig & fontStyleConfig) {
-	mStyleConfig.updateStyleConfig( fontStyleConfig );
-}
-
-UITabWidgetStyleConfig UITabWidget::getStyleConfig() const {
+const UITabWidget::StyleConfig& UITabWidget::getStyleConfig() const {
 	return mStyleConfig;
 }
 
-const Uint32 &UITabWidget::getFontStyle() const {
-	return mStyleConfig.Style;
-}
-
-const Float &UITabWidget::getOutlineThickness() const {
-	return mStyleConfig.OutlineThickness;
-}
-
-UITabWidget * UITabWidget::setOutlineThickness( const Float & outlineThickness ) {
-	if ( mStyleConfig.OutlineThickness != outlineThickness ) {
-		mStyleConfig.OutlineThickness = outlineThickness;
-
-		if ( mTabs.size() > 0 ) {
-			for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
-				((UITab*)mTabs[ i ])->setOutlineThickness( outlineThickness );
-			}
-		}
-	}
-
-	return this;
-}
-
-const Color &UITabWidget::getOutlineColor() const {
-	return mStyleConfig.OutlineColor;
-}
-
-UITabWidget * UITabWidget::setOutlineColor(const Color & outlineColor) {
-	if ( mStyleConfig.OutlineColor != outlineColor ) {
-		mStyleConfig.OutlineColor = outlineColor;
-
-		if ( mTabs.size() > 0 ) {
-			for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
-				((UITab*)mTabs[ i ])->setOutlineColor( outlineColor );
-			}
-		}
-	}
-
-	return this;
-}
-
-UITabWidget * UITabWidget::setFontStyle(const Uint32 & fontStyle) {
-	if ( mStyleConfig.Style != fontStyle ) {
-		mStyleConfig.Style = fontStyle;
-
-		if ( mTabs.size() > 0 ) {
-			for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
-				((UITab*)mTabs[ i ])->setFontStyle( fontStyle );
-			}
-		}
-	}
-
-	return this;
-}
-
-void UITabWidget::setStyleConfig(const UITabWidgetStyleConfig & styleConfig) {
+void UITabWidget::setStyleConfig(const StyleConfig & styleConfig) {
 	Uint32		tabWidgetHeight = mStyleConfig.TabWidgetHeight;
 	mStyleConfig = styleConfig;
 	mStyleConfig.TabWidgetHeight = tabWidgetHeight;
@@ -186,54 +119,10 @@ void UITabWidget::setStyleConfig(const UITabWidgetStyleConfig & styleConfig) {
 	orderTabs();
 }
 
-bool UITabWidget::setAttribute( const NodeAttribute& attribute ) {
+bool UITabWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
-	if ( "textcolor" == name ) {
-		setFontColor( Color::fromString( attribute.asString() ) );
-	} else if ( "textshadowcolor" == name ) {
-		setFontShadowColor( Color::fromString( attribute.asString() ) );
-	} else if ( "textovercolor" == name ) {
-		setFontOverColor( Color::fromString( attribute.asString() ) );
-	} else if ( "textselectedcolor" == name ) {
-		setFontSelectedColor( Color::fromString( attribute.asString() ) );
-	} else if ( "fontfamily" == name || "fontname" == name ) {
-		Font * font = FontManager::instance()->getByName( attribute.asString() );
-
-		if ( NULL != font )
-			setFont( font );
-	} else if ( "textsize" == name || "fontsize" == name || "charactersize" == name ) {
-		setCharacterSize( PixelDensity::toDpFromStringI( attribute.asString() ) );
-	} else if ( "textstyle" == name || "fontstyle" == name ) {
-		std::string valStr = attribute.asString();
-		String::toLowerInPlace( valStr );
-		std::vector<std::string> strings = String::split( valStr, '|' );
-		Uint32 flags = Text::Regular;
-
-		if ( strings.size() ) {
-			for ( std::size_t i = 0; i < strings.size(); i++ ) {
-				std::string cur = strings[i];
-				String::toLowerInPlace( cur );
-
-				if ( "underlined" == cur || "underline" == cur )
-					flags |= Text::Underlined;
-				else if ( "bold" == cur )
-					flags |= Text::Bold;
-				else if ( "italic" == cur )
-					flags |= Text::Italic;
-				else if ( "strikethrough" == cur )
-					flags |= Text::StrikeThrough;
-				else if ( "shadowed" == cur || "shadow" == cur )
-					flags |= Text::Shadow;
-			}
-
-			setFontStyle( flags );
-		}
-	} else if ( "fontoutlinethickness" == name ) {
-		setOutlineThickness( PixelDensity::toDpFromString( attribute.asString() ) );
-	} else if ( "fontoutlinecolor" == name ) {
-		setOutlineColor( Color::fromString( attribute.asString() ) );
-	} else if ( "maxtextlength" == name ) {
+	if ( "maxtextlength" == name ) {
 		setMaxTextLength( attribute.asUint(1) );
 	} else if ( "mintabwidth" == name ) {
 		setMinTabWidth( attribute.asUint(1) );
@@ -246,98 +135,16 @@ bool UITabWidget::setAttribute( const NodeAttribute& attribute ) {
 	} else if ( "drawlinebelowtabs" == name ) {
 		setDrawLineBelowTabs( attribute.asBool() );
 	} else if ( "linebelowtabscolor" == name ) {
-		setLineBelowTabsColor( Color::fromString( attribute.asString() ) );
+		setLineBelowTabsColor( attribute.asColor() );
 	} else if ( "linebelowtabsyoffset" == name ) {
-		setLineBelowTabsYOffset( attribute.asInt() );
+		setLineBelowTabsYOffset( attribute.asDpDimensionI() );
+	} else if ( "tabseparation" == name ) {
+		setTabSeparation( attribute.asDpDimensionI() );
 	} else {
-		return UIWidget::setAttribute( attribute );
+		return UIWidget::setAttribute( attribute, state );
 	}
 
 	return true;
-}
-
-Font * UITabWidget::getFont() const {
-	return mStyleConfig.Font;
-}
-
-void UITabWidget::setFont(Font * font) {
-	mStyleConfig.Font = font;
-
-	if ( mTabs.size() > 0 ) {
-		for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
-			((UITab*)mTabs[ i ])->setFont( mStyleConfig.Font );
-		}
-	}
-}
-
-Color UITabWidget::getFontColor() const {
-	return mStyleConfig.FontColor;
-}
-
-void UITabWidget::setFontColor(const Color & fontColor) {
-	mStyleConfig.FontColor = fontColor;
-
-	if ( mTabs.size() > 0 ) {
-		for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
-			((UITab*)mTabs[ i ])->setFontColor( mStyleConfig.FontColor );
-		}
-	}
-}
-
-Color UITabWidget::getFontShadowColor() const {
-	return mStyleConfig.ShadowColor;
-}
-
-void UITabWidget::setFontShadowColor(const Color & fontShadowColor) {
-	mStyleConfig.ShadowColor = fontShadowColor;
-
-	if ( mTabs.size() > 0 ) {
-		for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
-			((UITab*)mTabs[ i ])->setFontShadowColor( mStyleConfig.ShadowColor );
-		}
-	}
-}
-
-Color UITabWidget::getFontOverColor() const {
-	return mStyleConfig.FontOverColor;
-}
-
-void UITabWidget::setFontOverColor(const Color & fontOverColor) {
-	mStyleConfig.FontOverColor = fontOverColor;
-
-	if ( mTabs.size() > 0 ) {
-		for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
-			((UITab*)mTabs[ i ])->setFontOverColor( mStyleConfig.FontOverColor );
-		}
-	}
-}
-
-Color UITabWidget::getFontSelectedColor() const {
-	return mStyleConfig.FontSelectedColor;
-}
-
-void UITabWidget::setFontSelectedColor(const Color & fontSelectedColor) {
-	mStyleConfig.FontSelectedColor = fontSelectedColor;
-
-	if ( mTabs.size() > 0 ) {
-		for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
-			((UITab*)mTabs[ i ])->setFontSelectedColor( mStyleConfig.FontSelectedColor );
-		}
-	}
-}
-
-Uint32 UITabWidget::getCharacterSize() {
-	return mStyleConfig.CharacterSize;
-}
-
-void UITabWidget::setCharacterSize( const Uint32& characterSize ) {
-	mStyleConfig.CharacterSize = characterSize;
-
-	if ( mTabs.size() > 0 ) {
-		for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
-			((UITab*)mTabs[ i ])->setCharacterSize( mStyleConfig.CharacterSize );
-		}
-	}
 }
 
 Int32 UITabWidget::getTabSeparation() const {
@@ -431,7 +238,7 @@ void UITabWidget::setTabContainerSize() {
 
 	if ( mTabs.size() > 0 ) {
 		for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
-			s += mTabs[i]->getRealSize().getWidth() + mStyleConfig.TabSeparation;
+			s += mTabs[i]->getPixelsSize().getWidth() + mStyleConfig.TabSeparation;
 		}
 
 		s -= mStyleConfig.TabSeparation;
@@ -504,7 +311,6 @@ UITab * UITabWidget::createTab( const String& Text, UINode * CtrlOwned, Drawable
 	UITab * tCtrl 	= UITab::New();
 	tCtrl->setParent( mTabContainer );
 	tCtrl->setFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER | UI_AUTO_SIZE );
-	tCtrl->setStyleConfig( mStyleConfig );
 	tCtrl->setIcon( Icon );
 	tCtrl->setText( Text );
 	tCtrl->setVisible( true );
@@ -577,6 +383,7 @@ void UITabWidget::remove( const Uint32& Index ) {
 
 	if ( mTabs[ Index ] == mTabSelected ) {
 		mTabSelected->getControlOwned()->setVisible( false );
+		mTabSelected->getControlOwned()->setEnabled( false );
 	}
 
 	eeSAFE_DELETE( mTabs[ Index ] );
@@ -648,15 +455,13 @@ void UITabWidget::setTabSelected( UITab * Tab ) {
 	if ( NULL != mTabSelected ) {
 		mTabSelected->unselect();
 
-		if ( NULL != mTabSelected->getControlOwned() )
+		if ( NULL != mTabSelected->getControlOwned() ) {
 			mTabSelected->getControlOwned()->setVisible( false );
+			mTabSelected->getControlOwned()->setEnabled( false );
+		}
 	}
 
-	if ( NULL != Tab ) {
-		Tab->select();
-	} else {
-		return;
-	}
+	Tab->select();
 
 	Uint32 TabIndex		= getTabIndex( Tab );
 
@@ -676,6 +481,7 @@ void UITabWidget::refreshControlOwned( UITab * tab ) {
 	if ( NULL != tab && NULL != tab->getControlOwned() ) {
 		tab->getControlOwned()->setParent( mCtrlContainer );
 		tab->getControlOwned()->setVisible( tab == mTabSelected );
+		tab->getControlOwned()->setEnabled( tab == mTabSelected );
 		tab->getControlOwned()->setSize( mCtrlContainer->getSize() );
 		tab->getControlOwned()->setPosition( 0, 0 );
 	}

@@ -1,11 +1,15 @@
 #include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uistyle.hpp>
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/primitives.hpp>
-#include <eepp/window/clipboard.hpp>
-#include <pugixml/pugixml.hpp>
+#include <eepp/graphics/text.hpp>
 #include <eepp/graphics/fontmanager.hpp>
-#include <eepp/ui/uiscenenode.hpp>
+#include <eepp/window/clipboard.hpp>
+#include <eepp/scene/actions/actions.hpp>
+#include <pugixml/pugixml.hpp>
+#include <eepp/ui/css/stylesheetproperty.hpp>
 
 namespace EE { namespace UI {
 
@@ -13,8 +17,12 @@ UITextView * UITextView::New() {
 	return eeNew( UITextView, () );
 }
 
-UITextView::UITextView() :
-	UIWidget(),
+UITextView * UITextView::NewWithTag( const std::string& tag ) {
+	return eeNew( UITextView, ( tag ) );
+}
+
+UITextView::UITextView( const std::string& tag ) :
+	UIWidget( tag ),
 	mRealAlignOffset( 0.f, 0.f ),
 	mSelCurInit( -1 ),
 	mSelCurEnd( -1 ),
@@ -23,19 +31,29 @@ UITextView::UITextView() :
 	mFontLineCenter( 0 ),
 	mSelecting( false )
 {
-	mFontStyleConfig = UIThemeManager::instance()->getDefaultFontStyleConfig();
+	mTextCache = Text::New();
 
-	mTextCache = eeNew( Text, () );
-	mTextCache->setFont( mFontStyleConfig.Font );
-	mTextCache->setCharacterSize( mFontStyleConfig.CharacterSize );
-	mTextCache->setStyle( mFontStyleConfig.Style );
-	mTextCache->setFillColor( mFontStyleConfig.FontColor );
-	mTextCache->setShadowColor( mFontStyleConfig.ShadowColor );
-	mTextCache->setOutlineThickness( mFontStyleConfig.OutlineThickness );
-	mTextCache->setOutlineColor( mFontStyleConfig.OutlineColor );
+	UITheme * theme = UIThemeManager::instance()->getDefaultTheme();
+
+	if ( NULL != theme ) {
+		mFontStyleConfig.Font = theme->getDefaultFont();
+	}
+
+	if ( NULL == getFont() ) {
+		if ( NULL != UIThemeManager::instance()->getDefaultFont() )
+			setFont( UIThemeManager::instance()->getDefaultFont() );
+		else
+			eePRINTL( "UITextView::UITextView : Created a without a defined font." );
+	}
 
 	alignFix();
+
+	applyDefaultTheme();
 }
+
+UITextView::UITextView() :
+	UITextView( "textview" )
+{}
 
 UITextView::~UITextView() {
 	eeSAFE_DELETE( mTextCache );
@@ -80,7 +98,7 @@ Graphics::Font * UITextView::getFont() const {
 }
 
 UITextView * UITextView::setFont( Graphics::Font * font ) {
-	if ( mTextCache->getFont() != font ) {
+	if ( NULL != font && mTextCache->getFont() != font ) {
 		mTextCache->setFont( font );
 		recalculate();
 		onFontChanged();
@@ -90,7 +108,7 @@ UITextView * UITextView::setFont( Graphics::Font * font ) {
 	return this;
 }
 
-Uint32 UITextView::getCharacterSize() {
+Uint32 UITextView::getCharacterSize() const {
 	return mTextCache->getCharacterSize();
 }
 
@@ -132,8 +150,9 @@ const Color &UITextView::getOutlineColor() const {
 
 UITextView * UITextView::setOutlineColor(const Color & outlineColor) {
 	if ( mFontStyleConfig.OutlineColor != outlineColor ) {
-		mTextCache->setOutlineColor( outlineColor );
 		mFontStyleConfig.OutlineColor = outlineColor;
+		Color newColor( outlineColor.r, outlineColor.g, outlineColor.b, outlineColor.a * mAlpha / 255.f );
+		mTextCache->setOutlineColor( newColor );
 		invalidateDraw();
 	}
 
@@ -187,9 +206,8 @@ const Color& UITextView::getFontColor() const {
 UITextView * UITextView::setFontColor( const Color& color ) {
 	if ( mFontStyleConfig.FontColor != color ) {
 		mFontStyleConfig.FontColor = color;
-		mTextCache->setFillColor( color );
-
-		setAlpha( color.a );
+		Color newColor( color.r, color.g, color.b, color.a * mAlpha / 255.f );
+		mTextCache->setFillColor( newColor );
 	}
 
 	return this;
@@ -202,7 +220,8 @@ const Color& UITextView::getFontShadowColor() const {
 UITextView * UITextView::setFontShadowColor( const Color& color ) {
 	if ( mFontStyleConfig.ShadowColor != color ) {
 		mFontStyleConfig.ShadowColor = color;
-		mTextCache->setShadowColor( mFontStyleConfig.ShadowColor );
+		Color newColor( color.r, color.g, color.b, color.a * mAlpha / 255.f );
+		mTextCache->setShadowColor( newColor );
 		invalidateDraw();
 	}
 
@@ -220,16 +239,6 @@ UITextView * UITextView::setSelectionBackColor( const Color& color ) {
 	}
 
 	return this;
-}
-
-void UITextView::setAlpha( const Float& alpha ) {
-	if ( mAlpha != alpha ) {
-		UINode::setAlpha( alpha );
-		mFontStyleConfig.FontColor.a = (Uint8)alpha;
-		mFontStyleConfig.ShadowColor.a = (Uint8)alpha;
-
-		mTextCache->setAlpha( mFontStyleConfig.FontColor.a );
-	}
 }
 
 void UITextView::autoShrink() {
@@ -314,12 +323,24 @@ void UITextView::onFontChanged() {
 	invalidateDraw();
 }
 
+void UITextView::onAlphaChange() {
+	Color color( getFontColor() );
+	Color newColor( color.r, color.g, color.b, color.a * mAlpha / 255.f );
+	mTextCache->setFillColor( newColor );
+
+	color = getFontShadowColor();
+	newColor = Color( color.r, color.g, color.b, color.a * mAlpha / 255.f );
+	mTextCache->setShadowColor( newColor );
+
+	color = getOutlineColor();
+	newColor = Color( color.r, color.g, color.b, color.a * mAlpha / 255.f );
+	mTextCache->setOutlineColor( newColor );
+}
+
 void UITextView::setTheme( UITheme * Theme ) {
 	UIWidget::setTheme( Theme );
 
-	if ( NULL == mTextCache->getFont() && NULL != Theme->getFontStyleConfig().getFont() ) {
-		mTextCache->setFont( Theme->getFontStyleConfig().getFont() );
-	}
+	onThemeLoaded();
 }
 
 Float UITextView::getTextWidth() {
@@ -338,7 +359,7 @@ const Vector2f& UITextView::getAlignOffset() const {
 	return mAlignOffset;
 }
 
-Uint32 UITextView::onMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags ) {
+Uint32 UITextView::onMouseDoubleClick( const Vector2i& Pos, const Uint32& Flags ) {
 	if ( isTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) ) {
 		Vector2f controlPos( Vector2f( Pos.x, Pos.y ) );
 		worldToNode( controlPos );
@@ -362,7 +383,7 @@ Uint32 UITextView::onMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags )
 	return UIWidget::onMouseDoubleClick( Pos, Flags );
 }
 
-Uint32 UITextView::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
+Uint32 UITextView::onMouseClick( const Vector2i& Pos, const Uint32& Flags ) {
 	if ( isTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) ) {
 		if ( selCurInit() == selCurEnd() ) {
 			selCurInit( -1 );
@@ -376,7 +397,7 @@ Uint32 UITextView::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 	return UIWidget::onMouseClick( Pos, Flags );
 }
 
-Uint32 UITextView::onMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
+Uint32 UITextView::onMouseDown( const Vector2i& Pos, const Uint32& Flags ) {
 	if ( NULL != getEventDispatcher() && isTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) && getEventDispatcher()->getDownControl() == this ) {
 		Vector2f controlPos( Vector2f( Pos.x, Pos.y ) );
 		worldToNode( controlPos );
@@ -434,7 +455,7 @@ void UITextView::drawSelection( Text * textCache ) {
 			} while ( end != lastEnd );
 		}
 
-		if ( mSelPosCache.size() ) {
+		if ( !mSelPosCache.empty() ) {
 			Primitives P;
 			P.setColor( mFontStyleConfig.FontSelectionBackColor );
 			Float vspace = textCache->getFont()->getFontHeight( textCache->getCharacterSizePx() );
@@ -457,8 +478,19 @@ bool UITextView::isTextSelectionEnabled() const {
 	return 0 != ( mFlags & UI_TEXT_SELECTION_ENABLED );
 }
 
-UITooltipStyleConfig UITextView::getFontStyleConfig() const {
+const UIFontStyleConfig& UITextView::getFontStyleConfig() const {
 	return mFontStyleConfig;
+}
+
+void UITextView::setFontStyleConfig( const UIFontStyleConfig& fontStyleConfig ) {
+	mFontStyleConfig = fontStyleConfig;
+	setFont( fontStyleConfig.getFont() );
+	setCharacterSize( fontStyleConfig.getFontCharacterSize() );
+	setFontColor( fontStyleConfig.getFontColor() );
+	setFontShadowColor( fontStyleConfig.getFontShadowColor() );
+	setOutlineThickness( fontStyleConfig.getOutlineThickness() );
+	setOutlineColor( fontStyleConfig.getOutlineColor() );
+	setFontStyle( fontStyleConfig.getFontStyle() );
 }
 
 void UITextView::selCurInit( const Int32& init ) {
@@ -492,9 +524,13 @@ void UITextView::onSelectionChange() {
 	mTextCache->invalidateColors();
 
 	if ( selCurInit() != selCurEnd() ) {
-		mTextCache->setFillColor( mFontStyleConfig.getFontSelectedColor(), eemin<Int32>( selCurInit(), selCurEnd() ), eemax<Int32>( selCurInit(), selCurEnd() ) - 1 );
+		Color color( mFontStyleConfig.getFontSelectedColor() );
+		color.a =  mFontStyleConfig.getFontSelectedColor().a * mAlpha / 255.f;
+		mTextCache->setFillColor( color, eemin<Int32>( selCurInit(), selCurEnd() ), eemax<Int32>( selCurInit(), selCurEnd() ) - 1 );
 	} else {
-		mTextCache->setFillColor( mFontStyleConfig.getFontColor() );
+		Color color( mFontStyleConfig.getFontColor() );
+		color.a =  mFontStyleConfig.getFontColor().a * mAlpha / 255.f;
+		mTextCache->setFillColor( color );
 	}
 
 	invalidateDraw();
@@ -520,78 +556,110 @@ void UITextView::resetSelCache() {
 	onSelectionChange();
 }
 
-void UITextView::setFontStyleConfig( const UITooltipStyleConfig& fontStyleConfig ) {
-	mFontStyleConfig = fontStyleConfig;
+#define SAVE_NORMAL_STATE_ATTR( ATTR_FORMATED ) \
+	if ( state != UIState::StateFlagNormal || ( state == UIState::StateFlagNormal && attribute.isVolatile() ) ) { \
+		CSS::StyleSheetProperty oldAttribute = mStyle->getStatelessStyleSheetProperty( attribute.getName() ); \
+		if ( oldAttribute.isEmpty() && mStyle->getPreviousState() == UIState::StateFlagNormal ) { \
+			mStyle->setStyleSheetProperty( CSS::StyleSheetProperty( attribute.getName(), ATTR_FORMATED ) ); \
+		} \
+	}
 
-	setFont( mFontStyleConfig.getFont() );
-	setFontColor( mFontStyleConfig.getFontColor() );
-	setCharacterSize( mFontStyleConfig.getFontCharacterSize() );
-	setFontShadowColor( mFontStyleConfig.getFontShadowColor() );
-	setFontStyle( mFontStyleConfig.getFontStyle() );
-	setOutlineThickness( mFontStyleConfig.getOutlineThickness() );
-	setOutlineColor( mFontStyleConfig.getOutlineColor() );
-}
-
-bool UITextView::setAttribute( const NodeAttribute& attribute ) {
+bool UITextView::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "text" == name ) {
 		if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
 			setText( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( attribute.asString() ) );
 	} else if ( "textcolor" == name ) {
-		setFontColor( Color::fromString( attribute.asString() ) );
-	} else if ( "textshadowcolor" == name ) {
-		setFontShadowColor( Color::fromString( attribute.asString() ) );
-	} else if ( "textovercolor" == name ) {
-		mFontStyleConfig.FontOverColor = Color::fromString( attribute.asString() );
-	} else if ( "textselectedcolor" == name ) {
-		mFontStyleConfig.FontSelectedColor = Color::fromString( attribute.asString() );
-	} else if ( "textselectionbackcolor" == name ) {
-		setSelectionBackColor( Color::fromString( attribute.asString() ) );
-	} else if ( "fontfamily" == name || "fontname" == name ) {
-		Font * font = FontManager::instance()->getByName( attribute.asString() );
+		SAVE_NORMAL_STATE_ATTR( getFontColor().toHexString() );
 
-		if ( NULL != font )
-			setFont( font );
-	} else if ( "textsize" == name || "fontsize" == name || "charactersize" == name ) {
-		setCharacterSize( PixelDensity::toDpFromStringI( attribute.asString() ) );
-	} else if ( "textstyle" == name || "fontstyle" == name ) {
-		std::string valStr = attribute.asString();
-		String::toLowerInPlace( valStr );
-		std::vector<std::string> strings = String::split( valStr, '|' );
-		Uint32 flags = Text::Regular;
+		Color color = attribute.asColor();
 
-		if ( strings.size() ) {
-			for ( std::size_t i = 0; i < strings.size(); i++ ) {
-				std::string cur = strings[i];
-				String::toLowerInPlace( cur );
+		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
+			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( attribute.getName() ) );
 
-				if ( "underlined" == cur || "underline" == cur )
-					flags |= Text::Underlined;
-				else if ( "bold" == cur )
-					flags |= Text::Bold;
-				else if ( "italic" == cur )
-					flags |= Text::Italic;
-				else if ( "strikethrough" == cur )
-					flags |= Text::StrikeThrough;
-				else if ( "shadowed" == cur || "shadow" == cur )
-					flags |= Text::Shadow;
-				else if ( "wordwrap" == cur ) {
-					mFlags |= UI_WORD_WRAP;
-					autoShrink();
-				}
-			}
+			Action * action = Actions::Tint::New( getFontColor(), color, true, transitionInfo.duration, transitionInfo.timingFunction, Actions::Tint::Text );
 
-			setFontStyle( flags );
+			if ( Time::Zero != transitionInfo.delay )
+				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
+
+			runAction( action );
+		} else {
+			setFontColor( color );
 		}
+	} else if ( "textshadowcolor" == name ) {
+		SAVE_NORMAL_STATE_ATTR( getFontShadowColor().toHexString() );
+
+		Color color = attribute.asColor();
+
+		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
+			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( attribute.getName() ) );
+
+			Action * action = Actions::Tint::New( getFontShadowColor(), color, true, transitionInfo.duration, transitionInfo.timingFunction, Actions::Tint::TextShadow );
+
+			if ( Time::Zero != transitionInfo.delay )
+				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
+
+			runAction( action );
+		} else {
+			setFontShadowColor( color );
+		}
+	} else if ( "textselectedcolor" == name ) {
+		mFontStyleConfig.FontSelectedColor = attribute.asColor();
+	} else if ( "textselectionbackcolor" == name ) {
+		setSelectionBackColor( attribute.asColor() );
+	} else if ( "fontfamily" == name || "fontname" == name ) {
+		SAVE_NORMAL_STATE_ATTR( getFont()->getName() );
+
+		setFont( FontManager::instance()->getByName( attribute.asString() ) );
+	} else if ( "textsize" == name || "fontsize" == name || "charactersize" == name ) {
+		SAVE_NORMAL_STATE_ATTR( String::format( "%dpx", getCharacterSize() ) );
+
+		setCharacterSize( attribute.asDpDimensionI() );
+	} else if ( "textstyle" == name || "fontstyle" == name ) {
+		Uint32 flags = attribute.asFontStyle();
+
+		SAVE_NORMAL_STATE_ATTR( Text::styleFlagToString( getFontStyle() ) );
+
+		if ( flags & UI_WORD_WRAP ) {
+			mFlags |= UI_WORD_WRAP;
+			flags &= ~ UI_WORD_WRAP;
+			autoShrink();
+		}
+
+		setFontStyle( flags );
+	} else if ( "wordwrap" == name || "word_wrap" == name ) {
+		if ( attribute.asBool() )
+			mFlags |= UI_WORD_WRAP;
+		else
+			mFlags &= ~UI_WORD_WRAP;
+
+		autoShrink();
 	} else if ( "fontoutlinethickness" == name ) {
-		setOutlineThickness( PixelDensity::toDpFromString( attribute.asString() ) );
+		SAVE_NORMAL_STATE_ATTR( String::toStr( PixelDensity::dpToPx( getOutlineThickness() ) ) )
+
+		setOutlineThickness( PixelDensity::dpToPx( attribute.asDpDimension() ) );
 	} else if ( "fontoutlinecolor" == name ) {
-		setOutlineColor( Color::fromString( attribute.asString() ) );
+		SAVE_NORMAL_STATE_ATTR( getOutlineColor().toHexString() );
+
+		Color color = attribute.asColor();
+
+		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
+			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( attribute.getName() ) );
+
+			Action * action = Actions::Tint::New( getOutlineColor(), color, true, transitionInfo.duration, transitionInfo.timingFunction, Actions::Tint::TextOutline );
+
+			if ( Time::Zero != transitionInfo.delay )
+				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
+
+			runAction( action );
+		} else {
+			setOutlineColor( color );
+		}
 	} else if ( "textselection" == name ) {
 		mFlags|= UI_TEXT_SELECTION_ENABLED;
 	} else {
-		return UIWidget::setAttribute( attribute );
+		return UIWidget::setAttribute( attribute, state );
 	}
 
 	return true;

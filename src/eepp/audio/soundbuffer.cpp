@@ -6,7 +6,7 @@
 #include <eepp/audio/alcheck.hpp>
 #include <eepp/core/debug.hpp>
 #include <eepp/system/pack.hpp>
-#include <eepp/system/safedatapointer.hpp>
+#include <eepp/system/scopedbuffer.hpp>
 #include <eepp/system/pack.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/packmanager.hpp>
@@ -105,10 +105,10 @@ bool SoundBuffer::loadFromSamples(const Int16* samples, Uint64 sampleCount, unsi
 
 bool SoundBuffer::loadFromPack(Pack * pack, std::string filePackPath) {
 	bool Ret = false;
-	SafeDataPointer PData;
+	ScopedBuffer buffer;
 
-	if ( pack->isOpen() && pack->extractFileToMemory( filePackPath, PData ) )
-		Ret = loadFromMemory( reinterpret_cast<const char*> ( PData.data ), PData.size );
+	if ( pack->isOpen() && pack->extractFileToMemory( filePackPath, buffer ) )
+		Ret = loadFromMemory( reinterpret_cast<const char*> ( buffer.get() ), buffer.length() );
 
 	return Ret;
 }

@@ -8,6 +8,12 @@ namespace EE { namespace UI {
 
 class EE_API UIDropDownList : public UITextInput {
 	public:
+		class StyleConfig {
+			public:
+				Uint32 MaxNumVisibleItems = 10;
+				bool PopUpToMainControl = false;
+		};
+
 		static UIDropDownList * New();
 
 		UIDropDownList();
@@ -22,8 +28,6 @@ class EE_API UIDropDownList : public UITextInput {
 
 		UIListBox * getListBox() const;
 
-		virtual void update( const Time& time );
-
 		void showList();
 
 		bool getPopUpToMainControl() const;
@@ -34,17 +38,17 @@ class EE_API UIDropDownList : public UITextInput {
 
 		void setMaxNumVisibleItems(const Uint32 & maxNumVisibleItems);
 
-		UIDropDownListStyleConfig getStyleConfig() const;
+		const StyleConfig& getStyleConfig() const;
 
-		void setStyleConfig(const UIDropDownListStyleConfig & styleConfig);
+		void setStyleConfig(const StyleConfig & styleConfig);
 
-		virtual bool setAttribute( const NodeAttribute& attribute );
+		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
 
 		virtual void loadFromXmlNode(const pugi::xml_node & node);
 	protected:
 		friend class UIComboBox;
 
-		UIDropDownListStyleConfig mStyleConfig;
+		StyleConfig		mStyleConfig;
 		UIListBox *		mListBox;
 		UINode *		mFriendCtrl;
 
@@ -56,7 +60,9 @@ class EE_API UIDropDownList : public UITextInput {
 
 		virtual void hide();
 
-		Uint32 onMouseClick( const Vector2i& position, const Uint32 flags );
+		Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
+
+		Uint32 onMouseClick( const Vector2i& position, const Uint32& flags );
 
 		virtual void onItemClicked( const Event * Event );
 
@@ -69,8 +75,6 @@ class EE_API UIDropDownList : public UITextInput {
 		virtual void onSizeChange();
 
 		virtual void onAutoSize();
-
-		virtual void autoSizeControl();
 
 		virtual void onThemeLoaded();
 

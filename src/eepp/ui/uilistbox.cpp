@@ -8,6 +8,7 @@
 #include <eepp/graphics/text.hpp>
 #include <eepp/window/input.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uistyle.hpp>
 
 namespace EE { namespace UI {
 
@@ -15,8 +16,12 @@ UIListBox * UIListBox::New() {
 	return eeNew( UIListBox, () );
 }
 
-UIListBox::UIListBox() :
-	UITouchDragableWidget(),
+UIListBox * UIListBox::NewWithTag( const std::string& tag ) {
+	return eeNew( UIListBox, ( tag ) );
+}
+
+UIListBox::UIListBox( const std::string& tag ) :
+	UITouchDragableWidget( tag ),
 	mRowHeight(0),
 	mVScrollMode( UI_SCROLLBAR_AUTO ),
 	mHScrollMode( UI_SCROLLBAR_AUTO ),
@@ -36,8 +41,6 @@ UIListBox::UIListBox() :
 	mSmoothScroll( true )
 {
 	setFlags( UI_AUTO_PADDING );
-
-	mFontStyleConfig = UIThemeManager::instance()->getDefaultFontStyleConfig();
 
 	mContainer = eeNew( UIItemContainer<UIListBox>, () );
 	mContainer->setParent( this );
@@ -65,12 +68,22 @@ UIListBox::UIListBox() :
 	mVScrollBar->addEventListener( Event::OnValueChange, cb::Make1( this, &UIListBox::onScrollValueChange ) );
 	mHScrollBar->addEventListener( Event::OnValueChange, cb::Make1( this, &UIListBox::onHScrollValueChange ) );
 
+	mDummyItem = createListBoxItem( "" );
+	mDummyItem->setSize(0,0);
+	mDummyItem->setParent( this );
+	mDummyItem->setVisible( false );
+	mDummyItem->setEnabled( false );
+
 	setSmoothScroll( true );
 
 	applyDefaultTheme();
 
 	setRowHeight();
 }
+
+UIListBox::UIListBox() :
+	UIListBox( "listbox" )
+{}
 
 UIListBox::~UIListBox() {
 }
@@ -94,6 +107,8 @@ void UIListBox::setTheme( UITheme * Theme ) {
 	autoPadding();
 
 	onSizeChange();
+
+	onThemeLoaded();
 }
 
 void UIListBox::autoPadding() {
@@ -148,9 +163,13 @@ Uint32 UIListBox::addListBoxItem( const String& text ) {
 	mTexts.push_back( text );
 	mItems.push_back( NULL );
 
-	if ( NULL != mFontStyleConfig.Font ) {
-		Text textCache( mFontStyleConfig.Font, mFontStyleConfig.CharacterSize );
+	const UIFontStyleConfig& fontStyleConfig = mDummyItem->getFontStyleConfig();
+
+	if ( NULL != fontStyleConfig.getFont() ) {
+		Text textCache;
+		textCache.setStyleConfig( fontStyleConfig );
 		textCache.setString( text );
+
 		Uint32 twidth = textCache.getTextWidth();
 
 		if ( twidth > mMaxTextWidth ) {
@@ -172,7 +191,6 @@ UIListBoxItem * UIListBox::createListBoxItem( const String& Name ) {
 	tItem->setParent( mContainer );
 	tItem->setTheme( mTheme );
 	tItem->setHorizontalAlign( UI_HALIGN_LEFT )->setVerticalAlign( UI_VALIGN_CENTER );
-	tItem->setFontStyleConfig( mFontStyleConfig );
 	tItem->setText( Name );
 
 	return tItem;
@@ -189,11 +207,10 @@ Uint32 UIListBox::removeListBoxItem( UIListBoxItem * Item ) {
 void UIListBox::removeListBoxItems( std::vector<Uint32> ItemsIndex ) {
 	if ( ItemsIndex.size() && eeINDEX_NOT_FOUND != ItemsIndex[0] ) {
 		std::vector<UIListBoxItem*> ItemsCpy;
-		bool erase;
 		mTexts.clear();
 
 		for ( Uint32 i = 0; i < mItems.size(); i++ ) {
-			erase = false;
+			bool erase = false;
 
 			for ( Uint32 z = 0; z < ItemsIndex.size(); z++ ) {
 				if ( ItemsIndex[z] == i ) {
@@ -223,8 +240,8 @@ void UIListBox::removeListBoxItems( std::vector<Uint32> ItemsIndex ) {
 
 		mItems = ItemsCpy;
 
-		updateScroll();
 		findMaxWidth();
+		updateScroll();
 		updateListBoxItemsSize();
 	}
 }
@@ -270,11 +287,11 @@ Uint32 UIListBox::getListBoxItemIndex( UIListBoxItem * Item ) {
 	return eeINDEX_NOT_FOUND;
 }
 
-void UIListBox::onScrollValueChange( const Event * Event ) {
+void UIListBox::onScrollValueChange( const Event * ) {
 	updateScroll( true );
 }
 
-void UIListBox::onHScrollValueChange( const Event * Event ) {
+void UIListBox::onHScrollValueChange( const Event * ) {
 	updateScroll( true );
 }
 
@@ -286,7 +303,7 @@ void UIListBox::onSizeChange() {
 	mHScrollBar->setSize( mDpSize.getWidth() - mVScrollBar->getSize().getWidth() + mHScrollPadding.Right, mHScrollBar->getSize().getHeight() + mHScrollPadding.Bottom );
 
 	if ( mContainer->isClipped() && UI_SCROLLBAR_AUTO == mHScrollMode ) {
-		if ( (Int32)mMaxTextWidth <= mContainer->getRealSize().getWidth() ) {
+		if ( (Int32)mMaxTextWidth <= mContainer->getPixelsSize().getWidth() ) {
 			mHScrollBar->setVisible( false );
 			mHScrollBar->setEnabled( false );
 			mHScrollInit = 0;
@@ -311,13 +328,10 @@ void UIListBox::setRowHeight() {
 	if ( 0 == mRowHeight ) {
 		Uint32 FontSize = PixelDensity::dpToPxI( 12 );
 
-		UITheme * theme = NULL != mTheme ? mTheme : UIThemeManager::instance()->getDefaultTheme();
+		const FontStyleConfig& fontStyleConfig = mDummyItem->getFontStyleConfig();
 
-		if ( NULL != theme )
-			FontSize = theme->getFontStyleConfig().getFont()->getFontHeight( PixelDensity::dpToPxI( UIThemeManager::instance()->getDefaultFontStyleConfig().CharacterSize ) );
-
-		if ( NULL != mFontStyleConfig.getFont() )
-			FontSize = mFontStyleConfig.getFont()->getFontHeight( PixelDensity::dpToPxI( mFontStyleConfig.CharacterSize ) );
+		if ( NULL != fontStyleConfig.getFont() )
+			FontSize = fontStyleConfig.getFont()->getFontHeight( PixelDensity::dpToPxI( fontStyleConfig.getFontCharacterSize() ) );
 
 		mRowHeight = (Uint32)PixelDensity::pxToDpI( FontSize ) + 4;
 	}
@@ -329,10 +343,10 @@ void UIListBox::setRowHeight() {
 }
 
 void UIListBox::setHScrollStep() {
-	Float width = (Float)mContainer->getRealSize().getWidth();
+	Float width = (Float)mContainer->getPixelsSize().getWidth();
 
 	if ( ( mItemsNotVisible > 0 && UI_SCROLLBAR_AUTO == mVScrollMode ) || UI_SCROLLBAR_ALWAYS_ON == mVScrollMode )
-		width -= mVScrollBar->getRealSize().getWidth();
+		width -= mVScrollBar->getPixelsSize().getWidth();
 
 	Float stepVal = width / (Float)mMaxTextWidth;
 
@@ -354,9 +368,15 @@ bool UIListBox::isTouchOverAllowedChilds() {
 }
 
 void UIListBox::findMaxWidth() {
+	const FontStyleConfig& fontStyleConfig = mDummyItem->getFontStyleConfig();
+
+	if ( NULL == fontStyleConfig.getFont() )
+		return;
+
 	Uint32 size = (Uint32)mItems.size();
 	Int32 width;
-	Text textCache( mFontStyleConfig.Font, mFontStyleConfig.CharacterSize );
+	Text textCache;
+	textCache.setStyleConfig( fontStyleConfig );
 
 	mMaxTextWidth = 0;
 
@@ -410,7 +430,7 @@ void UIListBox::containerResize() {
 	mContainer->setPixelsPosition( padding.Left, padding.Top );
 
 	if( mHScrollBar->isVisible() )
-		mContainer->setPixelsSize( mSize.getWidth() - padding.Right - padding.Left, mSize.getHeight() - padding.Top - mHScrollBar->getRealSize().getHeight() );
+		mContainer->setPixelsSize( mSize.getWidth() - padding.Right - padding.Left, mSize.getHeight() - padding.Top - mHScrollBar->getPixelsSize().getHeight() );
 	else
 		mContainer->setPixelsSize( mSize.getWidth() - padding.Right - padding.Left, mSize.getHeight() - padding.Bottom - padding.Top );
 }
@@ -467,8 +487,8 @@ void UIListBox::updateScroll( bool FromScrollChange ) {
 	}
 
 	if ( Clipped && ( UI_SCROLLBAR_AUTO == mHScrollMode || UI_SCROLLBAR_ALWAYS_ON == mHScrollMode ) ) {
-		if ( ( mVScrollBar->isVisible() && mContainer->getRealSize().getWidth() - mVScrollBar->getRealSize().getWidth() < (Int32)mMaxTextWidth ) ||
-			( !mVScrollBar->isVisible() && mContainer->getRealSize().getWidth() < (Int32)mMaxTextWidth ) ) {
+		if ( ( mVScrollBar->isVisible() && mContainer->getPixelsSize().getWidth() - mVScrollBar->getPixelsSize().getWidth() < (Int32)mMaxTextWidth ) ||
+			( !mVScrollBar->isVisible() && mContainer->getPixelsSize().getWidth() < (Int32)mMaxTextWidth ) ) {
 				mHScrollBar->setVisible( true );
 				mHScrollBar->setEnabled( true );
 
@@ -712,48 +732,6 @@ Uint32 UIListBox::getItemIndex( const String& Text ) {
 	return eeINDEX_NOT_FOUND;
 }
 
-void UIListBox::setFontColor( const Color& Color ) {
-	mFontStyleConfig.FontColor = Color;
-
-	for ( Uint32 i = 0; i < mItems.size(); i++ )
-		mItems[i]->setFontColor( mFontStyleConfig.FontColor );
-}
-
-const Color& UIListBox::getFontColor() const {
-	return mFontStyleConfig.FontColor;
-}
-
-void UIListBox::setFontOverColor( const Color& Color ) {
-	mFontStyleConfig.FontOverColor = Color;
-}
-
-const Color& UIListBox::getFontOverColor() const {
-	return mFontStyleConfig.FontOverColor;
-}
-
-void UIListBox::setFontSelectedColor( const Color& Color ) {
-	mFontStyleConfig.FontSelectedColor = Color;
-}
-
-const Color& UIListBox::getFontSelectedColor() const {
-	return mFontStyleConfig.FontSelectedColor;
-}
-
-void UIListBox::setFont( Graphics::Font * Font ) {
-	mFontStyleConfig.Font = Font;
-
-	for ( Uint32 i = 0; i < mItems.size(); i++ )
-		mItems[i]->setFont( mFontStyleConfig.Font );
-
-	findMaxWidth();
-	updateListBoxItemsSize();
-	updateScroll();
-}
-
-Graphics::Font * UIListBox::getFont() const {
-	return mFontStyleConfig.Font;
-}
-
 Rectf UIListBox::getContainerPadding() const {
 	return PixelDensity::pxToDp( mContainerPadding + mPadding );
 }
@@ -972,37 +950,11 @@ const UI_SCROLLBAR_MODE& UIListBox::getHorizontalScrollMode() {
 	return mHScrollMode;
 }
 
-UIFontStyleConfig UIListBox::getFontStyleConfig() const {
-	return mFontStyleConfig;
-}
-
-void UIListBox::setFontStyleConfig(const UIFontStyleConfig & fontStyleConfig) {
-	mFontStyleConfig = fontStyleConfig;
-
-	setFont( mFontStyleConfig.Font );
-	setFontColor( mFontStyleConfig.FontColor );
-}
-
-bool UIListBox::setAttribute( const NodeAttribute& attribute ) {
+bool UIListBox::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "rowheight" == name ) {
 		setRowHeight( attribute.asInt() );
-	} else if ( "textcolor" == name ) {
-		setFontColor( Color::fromString( attribute.asString() ) );
-	} else if ( "textshadowcolor" == name ) {
-		mFontStyleConfig.ShadowColor = ( Color::fromString( attribute.asString() ) );
-	} else if ( "textovercolor" == name ) {
-		setFontOverColor( Color::fromString( attribute.asString() ) );
-	} else if ( "textselectedcolor" == name ) {
-		setFontSelectedColor( Color::fromString( attribute.asString() ) );
-	} else if ( "textselectionbackcolor" == name ) {
-		mFontStyleConfig.FontSelectionBackColor = ( Color::fromString( attribute.asString() ) );
-	} else if ( "fontfamily" == name || "fontname" == name ) {
-		Font * font = FontManager::instance()->getByName( attribute.asString() );
-
-		if ( NULL != font )
-			setFont( font );
 	} else if ( "verticalscrollmode" == name || "vscrollmode" == name ) {
 		std::string val = attribute.asString();
 		if ( "auto" == val ) setVerticalScrollMode( UI_SCROLLBAR_AUTO );
@@ -1029,7 +981,7 @@ bool UIListBox::setAttribute( const NodeAttribute& attribute ) {
 			mHScrollBar->setScrollBarType( UIScrollBar::NoButtons );
 		}
 	} else {
-		return UITouchDragableWidget::setAttribute( attribute );
+		return UITouchDragableWidget::setAttribute( attribute, state );
 	}
 
 	return true;

@@ -146,7 +146,7 @@ void GameObjectSprite::setDataId( Uint32 Id ) {
 		std::vector<TextureRegion*> tTextureRegionVec = TextureAtlasManager::instance()->getTextureRegionsByPatternId( Id );
 
 		if ( tTextureRegionVec.size() ) {
-			tSprite = eeNew( Graphics::Sprite, () );
+			tSprite = Graphics::Sprite::New();
 			tSprite->createAnimation();
 			tSprite->addFrames( tTextureRegionVec );
 
@@ -156,7 +156,7 @@ void GameObjectSprite::setDataId( Uint32 Id ) {
 		Graphics::TextureRegion * tTextureRegion = TextureAtlasManager::instance()->getTextureRegionById( Id );
 
 		if ( NULL != tTextureRegion ) {
-			setSprite( eeNew( Graphics::Sprite, ( tTextureRegion ) ) );
+			setSprite( Graphics::Sprite::New( tTextureRegion ) );
 		}
 	}
 }

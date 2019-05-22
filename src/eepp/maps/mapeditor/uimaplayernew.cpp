@@ -72,7 +72,7 @@ void UIMapLayerNew::onOnKeyUp( const Event * event ) {
 	}
 }
 
-void UIMapLayerNew::onOKClick( const Event * event ) {
+void UIMapLayerNew::onOKClick( const Event * ) {
 	if ( mUILayerName->getText().size() ) {
 		mLayer = mUIMap->Map()->addLayer( mType, LAYER_FLAG_VISIBLE | LAYER_FLAG_LIGHTS_ENABLED, mUILayerName->getText() );
 
@@ -83,11 +83,11 @@ void UIMapLayerNew::onOKClick( const Event * event ) {
 	mUIWindow->closeWindow();
 }
 
-void UIMapLayerNew::onCancelClick( const Event * Event ) {
+void UIMapLayerNew::onCancelClick( const Event * ) {
 	mUIWindow->closeWindow();
 }
 
-void UIMapLayerNew::onWindowClose( const Event * Event ) {
+void UIMapLayerNew::onWindowClose( const Event * ) {
 	eeDelete( this );
 }
 

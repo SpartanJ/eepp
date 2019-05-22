@@ -12,7 +12,7 @@ UIMap * UIMap::New( UITheme * Theme, TileMap * Map ) {
 }
 
 UIMap::UIMap( UITheme * Theme, TileMap * Map ) :
-	UIWindow( SIMPLE_LAYOUT, UIWindowStyleConfig( UI_WIN_NO_BORDER | UI_WIN_FRAME_BUFFER ) ),
+	UIWindow( SIMPLE_LAYOUT, StyleConfig( UI_WIN_NO_BORDER | UI_WIN_FRAME_BUFFER ) ),
 	mMap( Map ),
 	mCurLayer( NULL ),
 	mEditingMode( 0 ),
@@ -29,6 +29,8 @@ UIMap::UIMap( UITheme * Theme, TileMap * Map ) :
 	mSelPoint( false ),
 	mTileBox( NULL )
 {
+	subscribeScheduledUpdate();
+
 	if ( NULL == Map ) {
 		mMap = eeNew( TileMap, () );
 	}
@@ -51,7 +53,7 @@ UIMap::~UIMap() {
 	eeSAFE_DELETE( mMap );
 }
 
-Uint32 UIMap::onDrag( const Vector2f& Pos ) {
+Uint32 UIMap::onDrag( const Vector2f& Pos, const Uint32& ) {
 
 	if (	( EDITING_OBJECT == mEditingMode && NULL != mSelObj ) ||
 			( EDITING_LIGHT == mEditingMode && NULL != mSelLight ) ) {
@@ -99,8 +101,8 @@ void UIMap::updateScreenPos() {
 	}
 }
 
-void UIMap::update( const Time& time ) {
-	UIWindow::update( time );
+void UIMap::scheduledUpdate( const Time& time ) {
+	UIWindow::scheduledUpdate( time );
 
 	if ( NULL != mMap ) {
 		invalidate();
@@ -335,7 +337,7 @@ void UIMap::onSizeChange() {
 	UIWindow::onSizeChange();
 }
 
-Uint32 UIMap::onMouseMove( const Vector2i& Pos, const Uint32 Flags ) {
+Uint32 UIMap::onMouseMove( const Vector2i& Pos, const Uint32& Flags ) {
 	if ( NULL != mMap ) {
 		if ( EDITING_LIGHT == mEditingMode && NULL != mAddLight ) {
 			mAddLight->setPosition( mMap->getMouseMapPosf() );

@@ -6,9 +6,21 @@
 
 namespace EE { namespace UI {
 
+class EE_API UISliderStyleConfig {
+	public:
+		UISliderStyleConfig() {}
+
+		bool AllowHalfSliderOut = false;
+		bool ExpandBackground = false;
+};
+
 class EE_API UISlider : public UIWidget {
 	public:
-		static UISlider * New( const UI_ORIENTATION& orientation = UI_HORIZONTAL );
+		static UISlider * New();
+
+		static UISlider * NewVertical();
+
+		static UISlider * NewHorizontal();
 
 		UISlider( const UI_ORIENTATION& orientation = UI_HORIZONTAL );
 
@@ -38,8 +50,6 @@ class EE_API UISlider : public UIWidget {
 
 		bool isVertical() const;
 
-		virtual void update( const Time& time );
-
 		UINode * getBackSlider() const;
 
 		UINode * getSliderButton() const;
@@ -64,7 +74,7 @@ class EE_API UISlider : public UIWidget {
 
 		void setPageStep( const Float & pageStep );
 
-		virtual bool setAttribute( const NodeAttribute& attribute );
+		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
 
 		Sizef getMinimumSize();
 	protected:
@@ -95,6 +105,8 @@ class EE_API UISlider : public UIWidget {
 		virtual Uint32 onKeyDown( const KeyEvent &Event );
 		
 		virtual void onAlphaChange();
+
+		virtual Uint32 onMessage( const NodeMessage * Msg );
 };
 
 }}

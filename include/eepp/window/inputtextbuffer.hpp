@@ -26,6 +26,10 @@ class EE_API InputTextBuffer {
 	public:
 		typedef std::function<void()> EnterCallback;
 
+		static InputTextBuffer * New( const bool& active, const bool& newLineEnabled, const bool& freeEditing, EE::Window::Window * window = NULL, const Uint32& maxLength = INPUT_LENGHT_MAX );
+
+		static InputTextBuffer * New( EE::Window::Window * window = NULL );
+
 		InputTextBuffer( const bool& active, const bool& newLineEnabled, const bool& freeEditing, EE::Window::Window * window = NULL, const Uint32& maxLength = INPUT_LENGHT_MAX );
 
 		InputTextBuffer( EE::Window::Window * window = NULL );

@@ -51,18 +51,20 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 	if ( win->isOpen() ) {
 		win->setCloseRequestCallback( cb::Make1( onCloseRequestCallback ) );
 
-		SceneManager::instance()->add( UISceneNode::New() );
+		UISceneNode * uiSceneNode = UISceneNode::New();
+
+		SceneManager::instance()->add( uiSceneNode );
 
 		{
 			std::string pd;
 			if ( PixelDensity::getPixelDensity() >= 1.5f ) pd = "1.5x";
 			else if ( PixelDensity::getPixelDensity() >= 2.f ) pd = "2x";
 
-			TextureAtlasLoader tgl( "assets/ui/uitheme" + pd + ".eta" );
-
-			UITheme * theme = UITheme::loadFromTextureAtlas( UIThemeDefault::New( "uitheme" + pd, "uitheme" + pd ), TextureAtlasManager::instance()->getByName( "uitheme" + pd ) );
-
 			FontTrueType * font = FontTrueType::New( "NotoSans-Regular", "assets/fonts/NotoSans-Regular.ttf" );
+
+			UITheme * theme = UITheme::load( "uitheme" + pd, "uitheme" + pd, "assets/ui/uitheme" + pd + ".eta", font, "assets/ui/uitheme.css" );
+
+			uiSceneNode->combineStyleSheet( theme->getStyleSheet() );
 
 			UIThemeManager::instance()->setDefaultEffectsEnabled( true )->setDefaultTheme( theme )->setDefaultFont( font )->add( theme );
 		}

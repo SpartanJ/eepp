@@ -6,6 +6,7 @@
 #include <eepp/system/filesystem.hpp>
 #include <pugixml/pugixml.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
+#include <eepp/ui/css/stylesheetparser.hpp>
 #include <algorithm>
 
 namespace EE { namespace UI {
@@ -15,8 +16,12 @@ UISceneNode * UISceneNode::New( EE::Window::Window * window ) {
 }
 
 UISceneNode::UISceneNode( EE::Window::Window * window ) :
-	SceneNode( window )
+	SceneNode( window ),
+	mIsLoading( false )
 {
+	// Update only UI elements that requires it.
+	setUpdateAllChilds( false );
+
 	mNodeFlags |= NODE_FLAG_UISCENENODE | NODE_FLAG_OVER_FIND_ALLOWED;
 
 	setEventDispatcher( UIEventDispatcher::New( this ) );
@@ -24,8 +29,8 @@ UISceneNode::UISceneNode( EE::Window::Window * window ) :
 	resizeControl( mWindow );
 }
 
-void UISceneNode::resizeControl( EE::Window::Window * win ) {
-	setSize( (Float)mWindow->getWidth() / PixelDensity::getPixelDensity(), (Float)mWindow->getHeight() / PixelDensity::getPixelDensity() );
+void UISceneNode::resizeControl( EE::Window::Window * ) {
+	setSize( eefloor( mWindow->getWidth() / PixelDensity::getPixelDensity() ), eefloor(mWindow->getHeight() / PixelDensity::getPixelDensity()) );
 	sendMsg( this, NodeMessage::WindowResize );
 }
 
@@ -33,7 +38,7 @@ void UISceneNode::setTranslator( Translator translator ) {
 	mTranslator = translator;
 }
 
-String UISceneNode::getTranslatorString(const std::string & str) {
+String UISceneNode::getTranslatorString( const std::string& str ) {
 	if ( String::startsWith( str, "@string/" ) ) {
 		String tstr = mTranslator.getString( str.substr( 8 ) );
 
@@ -42,6 +47,17 @@ String UISceneNode::getTranslatorString(const std::string & str) {
 	}
 
 	return String( str );
+}
+
+String UISceneNode::getTranslatorString( const std::string& str, const String& defaultValue ) {
+	if ( String::startsWith( str, "@string/" ) ) {
+		String tstr = mTranslator.getString( str.substr( 8 ) );
+
+		if ( !tstr.empty() )
+			return tstr;
+	}
+
+	return defaultValue;
 }
 
 void UISceneNode::setFocusLastWindow( UIWindow * window ) {
@@ -71,6 +87,7 @@ bool UISceneNode::windowExists( UIWindow * win ) {
 }
 
 UIWidget * UISceneNode::loadLayoutNodes( pugi::xml_node node, Node * parent ) {
+	mIsLoading = true;
 	UIWidget * firstWidget = NULL;
 
 	if ( NULL == parent )
@@ -91,11 +108,61 @@ UIWidget * UISceneNode::loadLayoutNodes( pugi::xml_node node, Node * parent ) {
 				loadLayoutNodes( widget.first_child(), uiwidget );
 			}
 
+			uiwidget->reloadStyle( false );
 			uiwidget->onWidgetCreated();
 		}
 	}
 
+	mIsLoading = false;
+
 	return firstWidget;
+}
+
+void UISceneNode::setStyleSheet( const CSS::StyleSheet& styleSheet ) {
+	mStyleSheet = styleSheet;
+
+	reloadStyle();
+}
+
+void UISceneNode::setStyleSheet( const std::string& inlineStyleSheet ) {
+	CSS::StyleSheetParser parser;
+
+	if ( parser.loadFromString( inlineStyleSheet ) )
+		setStyleSheet( parser.getStyleSheet() );
+}
+
+void UISceneNode::combineStyleSheet( const CSS::StyleSheet& styleSheet ) {
+	mStyleSheet.combineStyleSheet( styleSheet );
+
+	reloadStyle();
+}
+
+void UISceneNode::combineStyleSheet( const std::string& inlineStyleSheet ) {
+	CSS::StyleSheetParser parser;
+
+	if ( parser.loadFromString( inlineStyleSheet ) )
+		combineStyleSheet( parser.getStyleSheet() );
+}
+
+CSS::StyleSheet& UISceneNode::getStyleSheet() {
+	return mStyleSheet;
+}
+
+bool UISceneNode::hasStyleSheet() {
+	return !mStyleSheet.isEmpty();
+}
+
+void UISceneNode::reloadStyle() {
+	if ( NULL != mChild ) {
+		Node * ChildLoop = mChild;
+
+		while ( NULL != ChildLoop ) {
+			if ( ChildLoop->isWidget() )
+				static_cast<UIWidget*>( ChildLoop )->reloadStyle();
+
+			ChildLoop = ChildLoop->getNextNode();
+		}
+	}
 }
 
 UIWidget * UISceneNode::loadLayoutFromFile( const std::string& layoutPath, Node * parent ) {
@@ -157,11 +224,11 @@ UIWidget * UISceneNode::loadLayoutFromStream( IOStream& stream, Node * parent ) 
 		return NULL;
 
 	ios_size bufferSize = stream.getSize();
-	SafeDataPointer safeDataPointer( eeNewArray( Uint8, bufferSize ), bufferSize );
-	stream.read( reinterpret_cast<char*>( safeDataPointer.data ), safeDataPointer.size );
+	TScopedBuffer<char> scopedBuffer( bufferSize );
+	stream.read( scopedBuffer.get(), scopedBuffer.length() );
 
 	pugi::xml_document doc;
-	pugi::xml_parse_result result = doc.load_buffer( safeDataPointer.data, safeDataPointer.size );
+	pugi::xml_parse_result result = doc.load_buffer( scopedBuffer.get(), scopedBuffer.length() );
 
 	if ( result ) {
 		return loadLayoutNodes( doc.first_child(), NULL != parent ? parent : this );
@@ -175,10 +242,10 @@ UIWidget * UISceneNode::loadLayoutFromStream( IOStream& stream, Node * parent ) 
 }
 
 UIWidget * UISceneNode::loadLayoutFromPack( Pack * pack, const std::string& FilePackPath, Node * parent ) {
-	SafeDataPointer PData;
+	ScopedBuffer buffer;
 
-	if ( pack->isOpen() && pack->extractFileToMemory( FilePackPath, PData ) ) {
-		return loadLayoutFromMemory( PData.data, PData.size, parent );
+	if ( pack->isOpen() && pack->extractFileToMemory( FilePackPath, buffer ) ) {
+		return loadLayoutFromMemory( buffer.get(), buffer.length(), parent );
 	}
 
 	return NULL;
@@ -212,12 +279,12 @@ Node * UISceneNode::setSize(const Float & Width, const Float & Height) {
 	return setSize( Vector2f( Width, Height ) );
 }
 
-const Sizef &UISceneNode::getSize() {
+const Sizef &UISceneNode::getSize() const {
 	return mDpSize;
 }
 
-const Sizef &UISceneNode::getRealSize() {
-	return mSize;
+const bool& UISceneNode::isLoading() const {
+	return mIsLoading;
 }
 
 }}

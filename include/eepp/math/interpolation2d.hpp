@@ -1,7 +1,8 @@
 #ifndef EE_MATHCWAYPOINTS_H
 #define EE_MATHCWAYPOINTS_H
 
-#include <eepp/math/base.hpp>
+#include <eepp/core.hpp>
+#include <eepp/math/ease.hpp>
 #include <eepp/math/vector2.hpp>
 #include <eepp/system/time.hpp>
 #include <vector>

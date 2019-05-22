@@ -10,7 +10,7 @@ UICheckBox * UICheckBox::New() {
 }
 
 UICheckBox::UICheckBox() :
-	UITextView(),
+	UITextView( "checkbox" ),
 	mActive( false ),
 	mTextSeparation( 4 )
 {
@@ -32,7 +32,6 @@ UICheckBox::UICheckBox() :
 
 	applyDefaultTheme();
 }
-
 
 UICheckBox::~UICheckBox() {
 }
@@ -81,7 +80,7 @@ void UICheckBox::onThemeLoaded() {
 void UICheckBox::onAutoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
 		if ( mDpSize.getWidth() == 0 ) {
-			setInternalPixelsWidth( (int)mTextCache->getTextWidth() + mActiveButton->getRealSize().getWidth() + mTextSeparation + mRealPadding.Left + mRealPadding.Right );
+			setInternalPixelsWidth( (int)mTextCache->getTextWidth() + mActiveButton->getPixelsSize().getWidth() + mTextSeparation + mRealPadding.Left + mRealPadding.Right );
 		}
 
 		if ( mDpSize.getHeight() == 0 ) {
@@ -93,7 +92,7 @@ void UICheckBox::onAutoSize() {
 	}
 
 	if ( mLayoutWidthRules == WRAP_CONTENT ) {
-		setInternalPixelsWidth( (int)mTextCache->getTextWidth() + mRealPadding.Left + mRealPadding.Right + mActiveButton->getRealSize().getWidth() + mTextSeparation );
+		setInternalPixelsWidth( (int)mTextCache->getTextWidth() + mRealPadding.Left + mRealPadding.Right + mActiveButton->getPixelsSize().getWidth() + mTextSeparation );
 	}
 
 	if ( mLayoutHeightRules == WRAP_CONTENT ) {
@@ -103,7 +102,6 @@ void UICheckBox::onAutoSize() {
 		mInactiveButton->centerVertical();
 	}
 }
-
 
 void UICheckBox::onSizeChange() {
 	UITextView::onSizeChange();
@@ -164,7 +162,19 @@ void UICheckBox::onPaddingChange() {
 void UICheckBox::alignFix() {
 	UITextView::alignFix();
 
-	mRealAlignOffset.x = mActiveButton->getRealPosition().x + mActiveButton->getRealSize().getWidth() + PixelDensity::dpToPx( mTextSeparation );
+	switch ( fontHAlignGet( getFlags() ) ) {
+		case UI_HALIGN_CENTER:
+			mRealAlignOffset.x = (Float)( (Int32)( ( mSize.x - mRealPadding.Left - mRealPadding.Right - mTextCache->getTextWidth() - mActiveButton->getPixelsSize().getWidth() + PixelDensity::dpToPx( mTextSeparation ) ) / 2.f ) ) + mActiveButton->getPixelsSize().getWidth() + PixelDensity::dpToPx( mTextSeparation );
+			break;
+		case UI_HALIGN_RIGHT:
+			mRealAlignOffset.x = ( (Float)mSize.x - mRealPadding.Left - mRealPadding.Right - (Float)mTextCache->getTextWidth() );
+			break;
+		case UI_HALIGN_LEFT:
+			mRealAlignOffset.x = mActiveButton->getPixelsSize().getWidth() + PixelDensity::dpToPx( mTextSeparation );
+			break;
+	}
+
+	mAlignOffset = PixelDensity::pxToDp( mRealAlignOffset );
 }
 
 UINode * UICheckBox::getActiveButton() const {
@@ -185,13 +195,13 @@ void UICheckBox::setTextSeparation(const Int32 & textSeparation) {
 	setPadding( getPadding() );
 }
 
-bool UICheckBox::setAttribute( const NodeAttribute& attribute ) {
+bool UICheckBox::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "selected" == name || "active" == name ) {
 		setActive( attribute.asBool() );
 	} else {
-		return UITextView::setAttribute( attribute );
+		return UITextView::setAttribute( attribute, state );
 	}
 
 	return true;

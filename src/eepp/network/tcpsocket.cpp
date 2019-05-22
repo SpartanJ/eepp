@@ -25,6 +25,10 @@ namespace
 
 namespace EE { namespace Network {
 
+TcpSocket * TcpSocket::New() {
+	return eeNew( TcpSocket, ( ) );
+}
+
 TcpSocket::TcpSocket() :
 	Socket(Tcp)
 {
@@ -310,6 +314,18 @@ Socket::Status TcpSocket::receive(Packet& packet) {
 	mPendingPacket = PendingPacket();
 
 	return Done;
+}
+
+void TcpSocket::setSendTimeout(SocketHandle sock, const Time& timeout) {
+	if (getHandle() != Private::SocketImpl::invalidSocket()) {
+		Private::SocketImpl::setSendTimeout(getHandle(), timeout);
+	}
+}
+
+void TcpSocket::setReceiveTimeout(SocketHandle sock, const Time& timeout) {
+	if (getHandle() != Private::SocketImpl::invalidSocket()) {
+		Private::SocketImpl::setReceiveTimeout(getHandle(), timeout);
+	}
 }
 
 TcpSocket::PendingPacket::PendingPacket() :

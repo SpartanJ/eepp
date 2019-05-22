@@ -6,6 +6,7 @@
 #include <eepp/ui/uispinbox.hpp>
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uislider.hpp>
+#include <eepp/ui/uitextview.hpp>
 #include <eepp/maps/mapeditor/uimap.hpp>
 
 using namespace EE::UI;

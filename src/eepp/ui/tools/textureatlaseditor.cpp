@@ -14,7 +14,7 @@
 
 namespace EE { namespace UI { namespace Tools {
 
-UIWidget * TextureAtlasEditor::createTextureAtlasTextureRegionEditor( std::string name ) {
+UIWidget * TextureAtlasEditor::createTextureAtlasTextureRegionEditor( std::string ) {
 	mTextureRegionEditor = TextureAtlasTextureRegionEditor::New( this );
 	return mTextureRegionEditor;
 }
@@ -148,19 +148,16 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow * AttatchTo, const TGEditorClos
 		mUIWindow->addEventListener( Event::OnWindowClose, cb::Make1( this, &TextureAtlasEditor::windowClose ) );
 	} else {
 		mUIContainer->addEventListener( Event::OnClose, cb::Make1( this, &TextureAtlasEditor::windowClose ) );
-		static_cast<UINode*>( mUIContainer->find("texture_atlas_editor_root") )->setThemeSkin( mTheme, "winback" );
+		mUIContainer->find<UINode>("texture_atlas_editor_root")->setThemeSkin( mTheme, "winback" );
 	}
 
 	mTGEU = eeNew( UITGEUpdater, ( this ) );
+	mTGEU->setParent( mUIContainer );
 }
 
 TextureAtlasEditor::~TextureAtlasEditor() {
 	eeSAFE_DELETE( mTexturePacker );
 	eeSAFE_DELETE( mTextureAtlasLoader );
-
-	if ( !SceneManager::instance()->isShootingDown() ) {
-		mTGEU->close();
-	}
 }
 
 void TextureAtlasEditor::onResetDestSize( const Event * event ) {
@@ -211,21 +208,21 @@ void TextureAtlasEditor::onHBOffset( const Event * Event ) {
 	}
 }
 
-void TextureAtlasEditor::onOffXChange( const Event * Event ) {
+void TextureAtlasEditor::onOffXChange( const Event * ) {
 	if ( NULL != mCurTextureRegion ) {
 		mCurTextureRegion->setOffset( Vector2i( (Int32)mSpinOffX->getValue(), mCurTextureRegion->getOffset().y ) );
 		mEdited = true;
 	}
 }
 
-void TextureAtlasEditor::onOffYChange( const Event * Event ) {
+void TextureAtlasEditor::onOffYChange( const Event * ) {
 	if ( NULL != mCurTextureRegion ) {
 		mCurTextureRegion->setOffset( Vector2i( mCurTextureRegion->getOffset().x, (Int32)mSpinOffY->getValue() ) );
 		mEdited = true;
 	}
 }
 
-void TextureAtlasEditor::onDestWChange( const Event * Event ) {
+void TextureAtlasEditor::onDestWChange( const Event * ) {
 	if ( NULL != mCurTextureRegion ) {
 		mCurTextureRegion->setOriDestSize( Sizef( (Int32)mSpinDestW->getValue(), mCurTextureRegion->getDpSize().y ) );
 		mTextureRegionEditor->getGfx()->setSize( (Int32)mSpinDestW->getValue(), mTextureRegionEditor->getGfx()->getSize().getHeight() );
@@ -233,7 +230,7 @@ void TextureAtlasEditor::onDestWChange( const Event * Event ) {
 	}
 }
 
-void TextureAtlasEditor::onDestHChange( const Event * Event ) {
+void TextureAtlasEditor::onDestHChange( const Event * ) {
 	if ( NULL != mCurTextureRegion ) {
 		mCurTextureRegion->setOriDestSize( Sizef( mCurTextureRegion->getDpSize().x, (Int32)mSpinDestH->getValue() ) );
 		mTextureRegionEditor->getGfx()->setSize( mTextureRegionEditor->getGfx()->getSize().getWidth(), (Int32)mSpinDestH->getValue() );
@@ -241,7 +238,7 @@ void TextureAtlasEditor::onDestHChange( const Event * Event ) {
 	}
 }
 
-void TextureAtlasEditor::windowClose( const Event * Event ) {
+void TextureAtlasEditor::windowClose( const Event * ) {
 	if ( mCloseCb )
 		mCloseCb();
 
@@ -286,7 +283,7 @@ void TextureAtlasEditor::fileMenuClick( const Event * Event ) {
 	}
 }
 
-void TextureAtlasEditor::onTextureFilterChange( const Event * Event ) {
+void TextureAtlasEditor::onTextureFilterChange( const Event * ) {
 	if ( NULL == mTextureAtlasLoader || NULL == mTextureAtlasLoader->getTextureAtlas() || !mTextureAtlasLoader->isLoaded() )
 		return;
 
@@ -303,7 +300,7 @@ void TextureAtlasEditor::onTextureAtlasCreate( TexturePacker * TexPacker ) {
 
 	std::string FPath( FileSystem::fileRemoveExtension( mTexturePacker->getFilepath() + EE_TEXTURE_ATLAS_EXTENSION ) );
 
-	mTextureAtlasLoader = eeNew( TextureAtlasLoader, ( FPath, true, cb::Make1( this, &TextureAtlasEditor::onTextureAtlasLoaded ) ) );
+	mTextureAtlasLoader = TextureAtlasLoader::New( FPath, true, cb::Make1( this, &TextureAtlasEditor::onTextureAtlasLoaded ) );
 }
 
 void TextureAtlasEditor::updateControls() {
@@ -337,7 +334,7 @@ void TextureAtlasEditor::fillTextureRegionList() {
 
 	mTextureRegionList->getVerticalScrollBar()->setClickStep( 8.f / (Float)mTextureRegionList->getCount() );
 
-	if ( Res.size() > 0 ) {
+	if ( !Res.empty() ) {
 		mTextureRegionGrid->childsCloseAll();
 
 		for ( auto it = Res.begin(); it != Res.end(); ++it ) {
@@ -370,7 +367,7 @@ void TextureAtlasEditor::onTextureRegionChange( const Event * Event ) {
 				UITextureRegion * curImage = static_cast<UITextureRegion*>( node );
 
 				if ( curImage->getTextureRegion() == mCurTextureRegion ) {
-					curImage->setBackgroundFillEnabled( true )->setColor( Color( "#00000033" ) );
+					curImage->setBackgroundColor( Color( "#00000033" ) );
 				} else {
 					curImage->setBackgroundFillEnabled( false );
 				}
@@ -404,22 +401,22 @@ void TextureAtlasEditor::openTextureAtlas( const Event * Event ) {
 	threaded = false;
 	#endif
 
-	mTextureAtlasLoader = eeNew( TextureAtlasLoader, ( CDL->getFullPath(), threaded, cb::Make1( this, &TextureAtlasEditor::onTextureAtlasLoaded ) ) );
+	mTextureAtlasLoader = TextureAtlasLoader::New( CDL->getFullPath(), threaded, cb::Make1( this, &TextureAtlasEditor::onTextureAtlasLoaded ) );
 }
 
-void TextureAtlasEditor::onTextureAtlasLoaded( TextureAtlasLoader * TGLoader ) {
+void TextureAtlasEditor::onTextureAtlasLoaded( TextureAtlasLoader * ) {
 	if ( NULL != mTextureAtlasLoader && mTextureAtlasLoader->isLoaded() ) {
 		updateControls();
 	}
 }
 
-void TextureAtlasEditor::saveTextureAtlas( const Event * Event ) {
+void TextureAtlasEditor::saveTextureAtlas( const Event * ) {
 	if ( NULL != mTextureAtlasLoader && mTextureAtlasLoader->isLoaded() ) {
 		mTextureAtlasLoader->updateTextureAtlas();
 	}
 }
 
-void TextureAtlasEditor::onTextureAtlasClose( const Event * Event ) {
+void TextureAtlasEditor::onTextureAtlasClose( const Event * ) {
 	eeSAFE_DELETE( mTextureAtlasLoader );
 	mTextureRegionList->clear();
 	mSpinOffX->setValue( 0 );

@@ -9,6 +9,13 @@ namespace EE { namespace UI {
 
 class EE_API UIPushButton : public UIWidget {
 	public:
+		class StyleConfig {
+			public:
+				Int32 IconHorizontalMargin = 4;
+				bool IconAutoMargin = true;
+				Sizei IconMinSize;
+		};
+
 		static UIPushButton * New();
 
 		UIPushButton();
@@ -35,47 +42,19 @@ class EE_API UIPushButton : public UIWidget {
 
 		UITextView * getTextBox() const;
 
-		void setFont( Font * font );
+		const StyleConfig& getStyleConfig() const;
 
-		Font * getFont();
+		void setIconMinimumSize( const Sizei& minIconSize );
 
-		const Color& getFontColor() const;
+		void setStyleConfig(const StyleConfig & styleConfig);
 
-		void setFontColor( const Color& color );
-
-		const Color& getFontOverColor() const;
-
-		void setFontOverColor( const Color& color );
-
-		const Color& getFontShadowColor() const;
-
-		void setFontShadowColor( const Color& color );
-
-		Uint32 getCharacterSize();
-
-		void setCharacterSize( const Uint32& characterSize );
-
-		const Uint32& getFontStyle() const;
-
-		UIPushButton * setFontStyle( const Uint32& fontStyle );
-
-		const Float & getOutlineThickness() const;
-
-		UIPushButton * setOutlineThickness( const Float& outlineThickness );
-
-		const Color& getOutlineColor() const;
-
-		UIPushButton * setOutlineColor( const Color& outlineColor );
-
-		UITooltipStyleConfig getStyleConfig() const;
-
-		void setStyleConfig(const UIPushButtonStyleConfig & styleConfig);
-
-		virtual bool setAttribute( const NodeAttribute& attribute );
+		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
 	protected:
-		UIPushButtonStyleConfig mStyleConfig;
+		StyleConfig mStyleConfig;
 		UIImage * 	mIcon;
 		UITextView * 	mTextBox;
+
+		explicit UIPushButton( const std::string& tag );
 
 		virtual void onSizeChange();
 
@@ -94,6 +73,8 @@ class EE_API UIPushButton : public UIWidget {
 		virtual Uint32 onKeyDown( const KeyEvent& Event );
 
 		virtual Uint32 onKeyUp( const KeyEvent& Event );
+
+		void autoIconHorizontalMargin();
 };
 
 }}

@@ -1,6 +1,7 @@
 #include <eepp/ui/uimessagebox.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uitheme.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 
 namespace EE { namespace UI {
 
@@ -44,25 +45,25 @@ UIMessageBox::UIMessageBox( UI_MSGBOX_TYPE type , String message ) :
 	switch ( mMsgBoxType ) {
 		case MSGBOX_OKCANCEL:
 		{
-			mButtonOK->setText( "OK" );
-			mButtonCancel->setText( "Cancel" );
+			mButtonOK->setText( getUISceneNode()->getTranslatorString( "@string/msg_box_ok", "Ok" ) );
+			mButtonCancel->setText( getUISceneNode()->getTranslatorString( "@string/msg_box_cancel", "Cancel" ) );
 			break;
 		}
 		case MSGBOX_YESNO:
 		{
-			mButtonOK->setText( "Yes" );
-			mButtonCancel->setText( "No" );
+			mButtonOK->setText( getUISceneNode()->getTranslatorString( "@string/msg_box_yes", "Yes" ) );
+			mButtonCancel->setText( getUISceneNode()->getTranslatorString( "@string/msg_box_no", "No" ) );
 			break;
 		}
 		case MSGBOX_RETRYCANCEL:
 		{
-			mButtonOK->setText( "Retry" );
-			mButtonCancel->setText( "Cancel" );
+			mButtonOK->setText( getUISceneNode()->getTranslatorString( "@string/msg_box_retry", "Retry" ) );
+			mButtonCancel->setText( getUISceneNode()->getTranslatorString( "@string/msg_box_cancel", "Cancel" ) );
 			break;
 		}
 		case MSGBOX_OK:
 		{
-			mButtonOK->setText( "OK" );
+			mButtonOK->setText( getUISceneNode()->getTranslatorString( "@string/msg_box_ok", "Ok" ) );
 			mButtonCancel->setVisible( false );
 			mButtonCancel->setEnabled( false );
 			break;
@@ -96,6 +97,8 @@ void UIMessageBox::setTheme( UITheme * Theme ) {
 			mButtonCancel->setIcon( CancelIcon );
 		}
 	}
+
+	onThemeLoaded();
 }
 
 Uint32 UIMessageBox::onMessage( const NodeMessage * Msg ) {

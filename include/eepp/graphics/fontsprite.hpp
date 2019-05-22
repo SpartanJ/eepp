@@ -21,13 +21,13 @@ class EE_API FontSprite : public Font {
 
 		~FontSprite();
 
-		bool loadFromFile(const std::string& filename, Color key = Color::Magenta, Uint32 firstChar = 32, int spacing = 0);
+		bool loadFromFile(const std::string& filename, Color key = Color::Fuchsia, Uint32 firstChar = 32, int spacing = 0);
 
-		bool loadFromMemory(const void* data, std::size_t sizeInBytes, Color key = Color::Magenta, Uint32 firstChar = 32, int spacing = 0);
+		bool loadFromMemory(const void* data, std::size_t sizeInBytes, Color key = Color::Fuchsia, Uint32 firstChar = 32, int spacing = 0);
 
-		bool loadFromStream( IOStream& stream, Color key = Color::Magenta, Uint32 firstChar = 32, int spacing = 0 );
+		bool loadFromStream( IOStream& stream, Color key = Color::Fuchsia, Uint32 firstChar = 32, int spacing = 0 );
 
-		bool loadFromPack( Pack * pack, std::string filePackPath, Color key = Color::Magenta, Uint32 firstChar = 32, int spacing = 0 );
+		bool loadFromPack( Pack * pack, std::string filePackPath, Color key = Color::Fuchsia, Uint32 firstChar = 32, int spacing = 0 );
 
 		const Font::Info& getInfo() const;
 

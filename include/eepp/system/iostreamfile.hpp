@@ -8,6 +8,8 @@ namespace EE { namespace System {
 /** @brief An implementation for a file system file steam */
 class EE_API IOStreamFile : public IOStream {
 	public:
+		static IOStreamFile * New( const std::string& path, const char * modes = "rb"  );
+
 		/** @brief Open a file from the file system
 		**	@param path File to open from path
 		**	@param mode The open mode that it will be used for the file ( default read-binary )
@@ -31,6 +33,8 @@ class EE_API IOStreamFile : public IOStream {
 		/** @brief Synchronizes the buffer associated with the stream to its controlled output sequence.
 		** This effectively means that all unwritten characters in the buffer are written to its controlled output sequence as soon as possible. */
 		void flush();
+
+		void close();
 	protected:
 		std::FILE*		mFS;
 		ios_size		mSize;

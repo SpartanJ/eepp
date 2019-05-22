@@ -22,43 +22,41 @@ namespace EE { namespace Scene {
 class Action;
 class ActionManager;
 class SceneNode;
-class NodeDrawInvalidator;
 }}
 using namespace EE::Scene;
 
 namespace EE { namespace Scene {
 
 enum NODE_FLAGS_VALUES {
+	NODE_FLAG_SCHEDULED_UPDATE					= (1<<0),
 	NODE_FLAG_VIEW_DIRTY						= (1<<1),
 	NODE_FLAG_POSITION_DIRTY					= (1<<2),
 	NODE_FLAG_POLYGON_DIRTY						= (1<<3),
 	NODE_FLAG_ROTATED							= (1<<4),
 	NODE_FLAG_SCALED							= (1<<5),
 	NODE_FLAG_CLOSE								= (1<<6),
-	NODE_FLAG_CLOSE_DELAYED						= (1<<7),
-	NODE_FLAG_MOUSEOVER							= (1<<8),
-	NODE_FLAG_HAS_FOCUS							= (1<<9),
-	NODE_FLAG_SELECTED							= (1<<10),
-	NODE_FLAG_DISABLE_DELAYED					= (1<<11),
-	NODE_FLAG_MOUSEOVER_ME_OR_CHILD				= (1<<12),
-	NODE_FLAG_DRAGGING							= (1<<13),
-	NODE_FLAG_SKIN_OWNER						= (1<<14),
-	NODE_FLAG_TOUCH_DRAGGING					= (1<<15),
-	NODE_FLAG_DISABLED_BY_NODE					= (1<<16),
-	NODE_FLAG_OWNED_BY_NODE						= (1<<17),
-	NODE_FLAG_REVERSE_DRAW						= (1<<18),
-	NODE_FLAG_FRAME_BUFFER						= (1<<19),
-	NODE_FLAG_CLIP_ENABLE						= (1<<20),
-	NODE_FLAG_REPORT_SIZE_CHANGE_TO_CHILDS		= (1<<21),
-	NODE_FLAG_OVER_FIND_ALLOWED					= (1<<22),
+	NODE_FLAG_MOUSEOVER							= (1<<7),
+	NODE_FLAG_HAS_FOCUS							= (1<<8),
+	NODE_FLAG_SELECTED							= (1<<9),
+	NODE_FLAG_MOUSEOVER_ME_OR_CHILD				= (1<<10),
+	NODE_FLAG_DRAGGING							= (1<<11),
+	NODE_FLAG_SKIN_OWNER						= (1<<12),
+	NODE_FLAG_TOUCH_DRAGGING					= (1<<13),
+	NODE_FLAG_DISABLED_BY_NODE					= (1<<14),
+	NODE_FLAG_OWNED_BY_NODE						= (1<<15),
+	NODE_FLAG_REVERSE_DRAW						= (1<<16),
+	NODE_FLAG_FRAME_BUFFER						= (1<<17),
+	NODE_FLAG_CLIP_ENABLE						= (1<<18),
+	NODE_FLAG_REPORT_SIZE_CHANGE_TO_CHILDS		= (1<<19),
+	NODE_FLAG_OVER_FIND_ALLOWED					= (1<<20),
 
-	NODE_FLAG_SCENENODE							= (1<<23),
-	NODE_FLAG_UISCENENODE						= (1<<24),
-	NODE_FLAG_UINODE							= (1<<25),
-	NODE_FLAG_WIDGET							= (1<<26),
-	NODE_FLAG_WINDOW							= (1<<27),
+	NODE_FLAG_SCENENODE							= (1<<21),
+	NODE_FLAG_UISCENENODE						= (1<<22),
+	NODE_FLAG_UINODE							= (1<<23),
+	NODE_FLAG_WIDGET							= (1<<24),
+	NODE_FLAG_WINDOW							= (1<<25),
 
-	NODE_FLAG_FREE_USE							= (1<<28)
+	NODE_FLAG_FREE_USE							= (1<<26)
 };
 
 class EE_API Node : public Transformable {
@@ -75,13 +73,13 @@ class EE_API Node : public Transformable {
 
 		virtual void nodeToWorldTranslation( Vector2f& position ) const;
 
-		virtual void worldToNode( Vector2i& pos );
+		virtual void worldToNode( Vector2i& pos ) const;
 
-		virtual void nodeToWorld( Vector2i& pos );
+		virtual void nodeToWorld( Vector2i& pos ) const;
 
-		virtual void worldToNode( Vector2f& pos );
+		virtual void worldToNode( Vector2f& pos ) const;
 
-		virtual void nodeToWorld( Vector2f& pos );
+		virtual void nodeToWorld( Vector2f& pos ) const;
 
 		virtual Uint32 getType() const;
 
@@ -97,9 +95,9 @@ class EE_API Node : public Transformable {
 
 		Node * setSize( const Float& Width, const Float& Height );
 
-		virtual const Sizef& getSize();
+		virtual const Sizef& getSize() const;
 
-		virtual const Sizef& getRealSize();
+		const Sizef& getPixelsSize() const;
 
 		Node * setVisible( const bool& visible );
 
@@ -123,6 +121,8 @@ class EE_API Node : public Transformable {
 
 		virtual void update( const Time& time );
 
+		virtual void scheduledUpdate( const Time& time );
+
 		Node * getNextNode() const;
 
 		Node * getPrevNode() const;
@@ -135,7 +135,7 @@ class EE_API Node : public Transformable {
 
 		Node * setBlendMode( const BlendMode& blend );
 
-		BlendMode getBlendMode();
+		const BlendMode& getBlendMode() const;
 
 		void toFront();
 
@@ -148,35 +148,35 @@ class EE_API Node : public Transformable {
 		/** Use it at your own risk */
 		void setNodeFlags( const Uint32& flags );
 
-		Uint32 isSceneNode();
+		Uint32 isSceneNode() const;
 
-		Uint32 isUISceneNode();
+		Uint32 isUISceneNode() const;
 
-		Uint32 isUINode();
+		Uint32 isUINode() const;
 
-		Uint32 isWidget();
+		Uint32 isWidget() const;
 
-		Uint32 isWindow();
+		Uint32 isWindow() const;
 
-		Uint32 isClipped();
+		Uint32 isClipped() const;
 
-		Uint32 isRotated();
+		Uint32 isRotated() const;
 
-		Uint32 isScaled();
+		Uint32 isScaled() const;
 
-		Uint32 isFrameBuffer();
+		Uint32 isFrameBuffer() const;
 
-		bool isMouseOver();
+		bool isMouseOver() const;
 
-		bool isMouseOverMeOrChilds();
+		bool isMouseOverMeOrChilds() const;
 
-		bool isMeOrParentTreeRotated();
+		bool isMeOrParentTreeRotated() const;
 
-		bool isMeOrParentTreeScaled();
+		bool isMeOrParentTreeScaled() const;
 
-		bool isMeOrParentTreeScaledOrRotated();
+		bool isMeOrParentTreeScaledOrRotated() const;
 
-		bool isMeOrParentTreeScaledOrRotatedOrFrameBuffer();
+		bool isMeOrParentTreeScaledOrRotatedOrFrameBuffer() const;
 
 		Uint32 addEventListener( const Uint32& EventType, const EventCallback& Callback );
 
@@ -190,7 +190,7 @@ class EE_API Node : public Transformable {
 
 		const Rectf& getWorldBounds();
 
-		bool isParentOf( Node * Ctrl );
+		bool isParentOf( Node * Ctrl ) const;
 
 		void sendEvent( const Event * Event );
 
@@ -202,14 +202,14 @@ class EE_API Node : public Transformable {
 
 		std::string getId() const;
 
-		Node * setId( const std::string & id );
+		virtual Node * setId( const std::string & id );
 
 		Uint32 getIdHash() const;
 
-		Node * find( const std::string& id );
+		Node * find( const std::string& id ) const;
 
 		template<typename T>
-		T * find( const std::string& id )
+		T * find( const std::string& id ) const
 		{
 			return reinterpret_cast<T*>( find( id ) );
 		}
@@ -235,7 +235,7 @@ class EE_API Node : public Transformable {
 
 		void setRotationOriginPoint( const OriginPoint& center );
 
-		Vector2f getRotationCenter();
+		Vector2f getRotationCenter() const;
 
 		void setScale( const Vector2f& scale );
 
@@ -247,7 +247,7 @@ class EE_API Node : public Transformable {
 
 		void setScaleOriginPoint( const OriginPoint& center );
 
-		Vector2f getScaleCenter();
+		Vector2f getScaleCenter() const;
 
 		virtual void setScale(float factorX, float factorY);
 
@@ -261,35 +261,35 @@ class EE_API Node : public Transformable {
 
 		virtual void setChildsAlpha( const Float& alpha );
 
-		ActionManager * getActionManager();
+		ActionManager * getActionManager() const;
 
-		void runAction( Action * action );
+		Node * runAction( Action * action );
 
-		Transform getLocalTransform();
+		Transform getLocalTransform() const;
 
-		Transform getGlobalTransform();
+		Transform getGlobalTransform() const;
 
-		Transform getNodeToWorldTransform();
+		Transform getNodeToWorldTransform() const;
 
-		Transform getWorldToNodeTransform();
+		Transform getWorldToNodeTransform() const;
 
-		Vector2f convertToNodeSpace(const Vector2f& worldPoint);
+		Vector2f convertToNodeSpace(const Vector2f& worldPoint) const;
 
-		Vector2f convertToWorldSpace(const Vector2f& nodePoint);
+		Vector2f convertToWorldSpace(const Vector2f& nodePoint) const;
 
-		Rectf getLocalBounds();
+		Rectf getLocalBounds() const;
 
 		bool hasFocus() const;
 
 		virtual void setFocus();
 
-		Node * getNextWidget();
+		Node * getNextWidget() const;
 
 		void enableReportSizeChangeToChilds();
 
 		void disableReportSizeChangeToChilds();
 
-		bool reportSizeChangeToChilds();
+		bool reportSizeChangeToChilds() const;
 
 		void centerHorizontal();
 
@@ -301,17 +301,17 @@ class EE_API Node : public Transformable {
 
 		Node * clipDisable();
 
-		void writeCtrlFlag( const Uint32& Flag, const Uint32& Val );
+		void writeNodeFlag( const Uint32& Flag, const Uint32& Val );
 
-		SceneNode * getSceneNode();
+		SceneNode * getSceneNode() const;
 
-		EventDispatcher * getEventDispatcher();
+		EventDispatcher * getEventDispatcher() const;
 
-		virtual bool isDrawInvalidator();
+		virtual bool isDrawInvalidator() const;
 
-		virtual bool invalidated();
+		bool invalidated() const;
 
-		virtual void invalidate();
+		void invalidate();
 
 		Uint32 childCount() const;
 
@@ -350,27 +350,27 @@ class EE_API Node : public Transformable {
 		OriginPoint			mScaleOriginPoint;
 		Float				mAlpha;
 
-		ActionManager *		mActionManager;
-
 		virtual Uint32 onMessage( const NodeMessage * Msg );
 
 		virtual Uint32 onKeyDown( const KeyEvent& Event );
 
 		virtual Uint32 onKeyUp( const KeyEvent& Event );
 
-		virtual Uint32 onMouseMove( const Vector2i& position, const Uint32 flags );
+		virtual Uint32 onMouseMove( const Vector2i& position, const Uint32& flags );
 
-		virtual Uint32 onMouseDown( const Vector2i& position, const Uint32 flags );
+		virtual Uint32 onMouseDown( const Vector2i& position, const Uint32& flags );
 
-		virtual Uint32 onMouseClick( const Vector2i& position, const Uint32 flags );
+		virtual Uint32 onMouseClick( const Vector2i& position, const Uint32& flags );
 
-		virtual Uint32 onMouseDoubleClick( const Vector2i& position, const Uint32 flags );
+		virtual Uint32 onMouseDoubleClick( const Vector2i& position, const Uint32& flags );
 
-		virtual Uint32 onMouseUp( const Vector2i& position, const Uint32 flags );
+		virtual Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
 
-		virtual Uint32 onMouseEnter( const Vector2i& position, const Uint32 flags );
+		virtual Uint32 onMouseOver( const Vector2i& position, const Uint32& flags );
 
-		virtual Uint32 onMouseExit( const Vector2i& position, const Uint32 flags );
+		virtual Uint32 onMouseLeave( const Vector2i& position, const Uint32& flags );
+
+		virtual Uint32 onCalculateDrag( const Vector2f& position, const Uint32& flags );
 
 		virtual void onClose();
 
@@ -452,7 +452,7 @@ class EE_API Node : public Transformable {
 
 		Color getColor( const Color& Col );
 
-		Node * findIdHash( const Uint32& idHash );
+		Node * findIdHash( const Uint32& idHash ) const;
 
 		void updateOriginPoint();
 
@@ -468,7 +468,13 @@ class EE_API Node : public Transformable {
 
 		SceneNode * findSceneNode();
 
-		void updateDrawInvalidator();
+		void updateDrawInvalidator( bool force = false );
+
+		void subscribeScheduledUpdate();
+
+		void unsubscribeScheduledUpdate();
+
+		bool isSubscribedForScheduledUpdate();
 };
 
 }}

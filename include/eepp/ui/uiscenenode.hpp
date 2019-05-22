@@ -3,6 +3,7 @@
 
 #include <eepp/scene/scenenode.hpp>
 #include <eepp/system/translator.hpp>
+#include <eepp/ui/css/stylesheet.hpp>
 
 namespace EE { namespace UI {
 
@@ -13,21 +14,21 @@ class EE_API UISceneNode : public SceneNode {
 	public:
 		static UISceneNode * New( EE::Window::Window * window = NULL );
 
-		UISceneNode( EE::Window::Window * window = NULL );
+		explicit UISceneNode( EE::Window::Window * window = NULL );
 
 		virtual Node * setSize( const Sizef& size );
 
 		virtual Node * setSize( const Float& Width, const Float& Height );
 
-		const Sizef& getSize();
-
-		virtual const Sizef& getRealSize();
+		const Sizef& getSize() const;
 
 		void setTranslator( Translator translator );
 
 		Translator& getTranslator();
 
 		String getTranslatorString( const std::string& str );
+
+		String getTranslatorString( const std::string& str, const String& defaultValue );
 
 		UIWidget * loadLayoutFromFile( const std::string& layoutPath, Node * parent = NULL );
 
@@ -41,12 +42,27 @@ class EE_API UISceneNode : public SceneNode {
 
 		UIWidget * loadLayoutNodes( pugi::xml_node node, Node * parent );
 
+		void setStyleSheet( const CSS::StyleSheet& styleSheet );
+
+		void setStyleSheet( const std::string& inlineStyleSheet );
+
+		void combineStyleSheet( const CSS::StyleSheet& styleSheet );
+
+		void combineStyleSheet( const std::string& inlineStyleSheet );
+
+		CSS::StyleSheet& getStyleSheet();
+
+		bool hasStyleSheet();
+
+		const bool& isLoading() const;
 	protected:
 		friend class EE::UI::UIWindow;
 		Sizef				mDpSize;
 		Uint32				mFlags;
 		Translator			mTranslator;
 		std::list<UIWindow*> mWindowsList;
+		CSS::StyleSheet mStyleSheet;
+		bool				mIsLoading;
 
 		virtual void resizeControl( EE::Window::Window * win );
 
@@ -60,9 +76,9 @@ class EE_API UISceneNode : public SceneNode {
 
 		bool				windowExists( UIWindow * win );
 
-
 		virtual void setInternalSize(const Sizef& size );
 
+		void reloadStyle();
 };
 
 }}

@@ -7,11 +7,17 @@ UIMenuItem * UIMenuItem::New() {
 	return eeNew( UIMenuItem, () );
 }
 
-UIMenuItem::UIMenuItem() :
-	UIPushButton()
+UIMenuItem::UIMenuItem( const std::string& tag ) :
+	UIPushButton( tag )
 {
+	mIcon->setElementTag( getElementTag() + "::image" );
+	mTextBox->setElementTag( getElementTag() + "::text" );
 	applyDefaultTheme();
 }
+
+UIMenuItem::UIMenuItem() :
+	UIMenuItem( "menu::item" )
+{}
 
 UIMenuItem::~UIMenuItem() {
 }
@@ -30,29 +36,12 @@ void UIMenuItem::setTheme( UITheme * Theme ) {
 	onThemeLoaded();
 }
 
-Uint32 UIMenuItem::onMouseEnter( const Vector2i &Pos, const Uint32 Flags ) {
-	UIPushButton::onMouseEnter( Pos, Flags );
+Uint32 UIMenuItem::onMouseOver( const Vector2i& Pos, const Uint32& Flags ) {
+	UIPushButton::onMouseOver( Pos, Flags );
 
 	reinterpret_cast<UIMenu*> ( getParent() )->setItemSelected( this );
 
 	return 1;
-}
-
-void UIMenuItem::onStateChange() {
-	UIMenu * tMenu = reinterpret_cast<UIMenu*> ( getParent() );
-
-	if ( NULL == mSkinState )
-		return;
-
-	if ( mSkinState->getState() == UISkinState::StateSelected ) {
-		mTextBox->setFontColor( tMenu->getFontStyleConfig().getFontSelectedColor() );
-	} else if ( mSkinState->getState() == UISkinState::StateMouseEnter ) {
-		mTextBox->setFontColor( tMenu->getFontStyleConfig().getFontOverColor() );
-	} else {
-		mTextBox->setFontColor( tMenu->getFontStyleConfig().getFontColor() );
-	}
-
-	UIPushButton::onStateChange();
 }
 
 }}

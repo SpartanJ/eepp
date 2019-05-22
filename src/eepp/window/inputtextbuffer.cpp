@@ -4,6 +4,14 @@
 
 namespace EE { namespace Window {
 
+InputTextBuffer * InputTextBuffer::New( const bool& active, const bool& newLineEnabled, const bool& freeEditing, EE::Window::Window * window, const Uint32& maxLength ) {
+	return eeNew( InputTextBuffer, ( active, newLineEnabled, freeEditing, window, maxLength ) );
+}
+
+InputTextBuffer * InputTextBuffer::New( EE::Window::Window * window ) {
+	return eeNew( InputTextBuffer, ( window ) );
+}
+
 InputTextBuffer::InputTextBuffer( const bool& active, const bool& newLineEnabled, const bool& freeEditing, EE::Window::Window * window, const Uint32& maxLength ) :
 	mWindow( window ),
 	mFlags(0),
@@ -441,17 +449,15 @@ void InputTextBuffer::update( InputEvent* Event ) {
 						if ( c == KEY_HOME ) {
 							if ( 0 != mPromptPos ) {
 								for ( Int32 i = (Int32)mPromptPos - 1; i >= 0; i-- )  {
-									if ( i >= 0 ) {
-										if ( mText[i] == '\n' ) {
-											mPromptPos = i + 1;
-											autoPrompt( false );
-											break;
-										}
+									if ( mText[i] == '\n' ) {
+										mPromptPos = i + 1;
+										autoPrompt( false );
+										break;
+									}
 
-										if ( i == 0 ) {
-											mPromptPos = 0;
-											autoPrompt( false );
-										}
+									if ( i == 0 ) {
+										mPromptPos = 0;
+										autoPrompt( false );
 									}
 								}
 							}

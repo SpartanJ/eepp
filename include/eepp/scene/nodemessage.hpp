@@ -13,10 +13,11 @@ class EE_API NodeMessage {
 		{
 			Click = 0,
 			DoubleClick,
-			MouseEnter,
-			MouseExit,
+			MouseOver,
+			MouseLeave,
 			MouseDown,
 			MouseUp,
+			MouseMove,
 			WindowResize,
 			Focus,
 			FocusLoss,

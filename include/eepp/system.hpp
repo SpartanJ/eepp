@@ -25,6 +25,7 @@
 #include <eepp/system/packmanager.hpp>
 #include <eepp/system/threadlocal.hpp>
 #include <eepp/system/threadlocalptr.hpp>
+#include <eepp/system/compression.hpp>
 #include <eepp/system/base64.hpp>
 #include <eepp/system/md5.hpp>
 #include <eepp/system/translator.hpp>
@@ -32,6 +33,9 @@
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/iostreamzip.hpp>
 #include <eepp/system/iostreampak.hpp>
+#include <eepp/system/iostreamstring.hpp>
+#include <eepp/system/iostreaminflate.hpp>
+#include <eepp/system/iostreamdeflate.hpp>
 #include <eepp/system/virtualfilesystem.hpp>
 
 #endif

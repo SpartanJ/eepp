@@ -86,7 +86,7 @@ class EE_API FontTrueType : public Font {
 		void*                      mStreamRec;   ///< Pointer to the stream rec instance (it is typeless to avoid exposing implementation details)
 		void*                      mStroker;     ///< Pointer to the stroker (it is typeless to avoid exposing implementation details)
 		int*                       mRefCount;    ///< Reference counter used by implicit sharing
-		SafeDataPointer            mMemCopy;
+		mutable ScopedBuffer       mMemCopy;     ///< If loaded from memory, this is the file copy in memory
 		Font::Info                 mInfo;        ///< Information about the font
 		mutable PageTable          mPages;       ///< Table containing the glyphs pages by character size
 		mutable std::vector<Uint8> mPixelBuffer; ///< Pixel buffer holding a glyph's pixels before being written to the texture

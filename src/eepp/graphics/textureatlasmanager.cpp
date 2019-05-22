@@ -120,7 +120,7 @@ std::vector<TextureRegion*> TextureAtlasManager::getTextureRegionsByPattern( con
 
 	// Test if name starts with 0 - 1
 	for ( i = 0; i < 2; i++ ) {
-		search = String::strFormated( "%s%d%s", name.c_str(), i, realext.c_str() );
+		search = String::format( "%s%d%s", name.c_str(), i, realext.c_str() );
 
 		if ( NULL == SearchInTextureAtlas )
 			tTextureRegion = getTextureRegionByName( search );
@@ -137,7 +137,7 @@ std::vector<TextureRegion*> TextureAtlasManager::getTextureRegionsByPattern( con
 	// in case that name doesn't start with 0 - 1, we test with 00 - 01
 	if ( 0 == t ) {
 		for ( i = 0; i < 2; i++ ) {
-			search = String::strFormated( "%s%02d%s", name.c_str(), i, realext.c_str() );
+			search = String::format( "%s%02d%s", name.c_str(), i, realext.c_str() );
 
 			if ( NULL == SearchInTextureAtlas )
 				tTextureRegion = getTextureRegionByName( search );
@@ -154,7 +154,7 @@ std::vector<TextureRegion*> TextureAtlasManager::getTextureRegionsByPattern( con
 		// in case that name doesn't start with 00 - 01, we test with 000 - 001
 		if ( 0 == t ) {
 			for ( i = 0; i < 2; i++ ) {
-				search = String::strFormated( "%s%03d%s", name.c_str(), i, realext.c_str() );
+				search = String::format( "%s%03d%s", name.c_str(), i, realext.c_str() );
 
 				if ( NULL == SearchInTextureAtlas )
 					tTextureRegion = getTextureRegionByName( search );
@@ -170,7 +170,7 @@ std::vector<TextureRegion*> TextureAtlasManager::getTextureRegionsByPattern( con
 
 			if ( 0 == t ) {
 				for ( i = 0; i < 2; i++ ) {
-					search = String::strFormated( "%s%04d%s", name.c_str(), i, realext.c_str() );
+					search = String::format( "%s%04d%s", name.c_str(), i, realext.c_str() );
 
 					if ( NULL == SearchInTextureAtlas )
 						tTextureRegion = getTextureRegionByName( search );
@@ -186,7 +186,7 @@ std::vector<TextureRegion*> TextureAtlasManager::getTextureRegionsByPattern( con
 
 				if ( 0 == t ) {
 					for ( i = 0; i < 2; i++ ) {
-						search = String::strFormated( "%s%05d%s", name.c_str(), i, realext.c_str() );
+						search = String::format( "%s%05d%s", name.c_str(), i, realext.c_str() );
 
 						if ( NULL == SearchInTextureAtlas )
 							tTextureRegion = getTextureRegionByName( search );
@@ -202,7 +202,7 @@ std::vector<TextureRegion*> TextureAtlasManager::getTextureRegionsByPattern( con
 
 					if ( 0 == t ) {
 						for ( i = 0; i < 2; i++ ) {
-							search = String::strFormated( "%s%06d%s", name.c_str(), i, realext.c_str() );
+							search = String::format( "%s%06d%s", name.c_str(), i, realext.c_str() );
 
 							if ( NULL == SearchInTextureAtlas )
 								tTextureRegion = getTextureRegionByName( search );
@@ -224,12 +224,12 @@ std::vector<TextureRegion*> TextureAtlasManager::getTextureRegionsByPattern( con
 	if ( 0 != t ) {
 		do {
 			switch ( t ) {
-				case 1: search = String::strFormated( "%s%d%s", name.c_str(), c, realext.c_str() ); break;
-				case 2: search = String::strFormated( "%s%02d%s", name.c_str(), c, realext.c_str() ); break;
-				case 3: search = String::strFormated( "%s%03d%s", name.c_str(), c, realext.c_str() ); break;
-				case 4: search = String::strFormated( "%s%04d%s", name.c_str(), c, realext.c_str() ); break;
-				case 5: search = String::strFormated( "%s%05d%s", name.c_str(), c, realext.c_str() ); break;
-				case 6: search = String::strFormated( "%s%06d%s", name.c_str(), c, realext.c_str() ); break;
+				case 1: search = String::format( "%s%d%s", name.c_str(), c, realext.c_str() ); break;
+				case 2: search = String::format( "%s%02d%s", name.c_str(), c, realext.c_str() ); break;
+				case 3: search = String::format( "%s%03d%s", name.c_str(), c, realext.c_str() ); break;
+				case 4: search = String::format( "%s%04d%s", name.c_str(), c, realext.c_str() ); break;
+				case 5: search = String::format( "%s%05d%s", name.c_str(), c, realext.c_str() ); break;
+				case 6: search = String::format( "%s%06d%s", name.c_str(), c, realext.c_str() ); break;
 				default: found = false;
 			}
 

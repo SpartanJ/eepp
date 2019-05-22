@@ -9,7 +9,10 @@ namespace EE { namespace System {
 /** @brief Quake 2 PAK handler */
 class EE_API Pak : public Pack {
 	public:
+		static Pak * New();
+
 		Pak();
+
 		~Pak();
 
 		/** Creates a new pakFile */
@@ -50,7 +53,7 @@ class EE_API Pak : public Pack {
 		bool extractFileToMemory( const std::string& path, std::vector<Uint8>& data );
 
 		/** Extract a file to memory from the pakFile */
-		bool extractFileToMemory( const std::string& path, SafeDataPointer& data );
+		bool extractFileToMemory( const std::string& path, ScopedBuffer& data );
 
 		/** Check if a file exists in the pakFile and return the number of the file, otherwise return -1. */
 		Int32 exists( const std::string& path );

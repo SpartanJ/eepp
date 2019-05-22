@@ -3,7 +3,7 @@
 
 #include <eepp/scene/nodeattribute.hpp>
 #include <eepp/ui/uinode.hpp>
-#include <eepp/ui/uitooltip.hpp>
+#include <eepp/ui/css/stylesheetelement.hpp>
 
 namespace pugi {
 class xml_node;
@@ -11,9 +11,14 @@ class xml_node;
 
 namespace EE { namespace UI {
 
-class EE_API UIWidget : public UINode {
+class UITooltip;
+class UIStyle;
+
+class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
 	public:
 		static UIWidget * New();
+
+		static UIWidget * NewWithTag( const std::string& tag );
 
 		UIWidget();
 
@@ -22,8 +27,6 @@ class EE_API UIWidget : public UINode {
 		virtual Uint32 getType() const;
 
 		virtual bool isType( const Uint32& type ) const;
-
-		virtual void update( const Time& time );
 
 		virtual Node * setSize( const Sizef& size );
 
@@ -41,7 +44,9 @@ class EE_API UIWidget : public UINode {
 
 		virtual Node * setSize( const Float& Width, const Float& Height );
 
-		const Sizef& getSize();
+		virtual Node * setId( const std::string & id );
+
+		const Sizef& getSize() const;
 
 		UITooltip * getTooltip();
 
@@ -87,18 +92,62 @@ class EE_API UIWidget : public UINode {
 
 		void notifyLayoutAttrChangeParent();
 
-		bool setAttribute( const std::string& name, const std::string& value );
+		void setStyleSheetProperty( const std::string& name, const std::string& value, const Uint32& specificity = UINT32_MAX - 1/*SpecificityInline*/ );
 
-		virtual bool setAttribute( const NodeAttribute& attribute );
+		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
 
 		const Rectf& getPadding() const;
 
 		UIWidget * setPadding(const Rectf& padding);
+
+		const std::string& getStyleSheetTag() const;
+
+		const std::string& getStyleSheetId() const;
+
+		const std::vector<std::string>& getStyleSheetClasses() const;
+
+		StyleSheetElement * getStyleSheetParentElement() const;
+
+		StyleSheetElement * getStyleSheetPreviousSiblingElement() const;
+
+		StyleSheetElement * getStyleSheetNextSiblingElement() const;
+
+		const std::vector<std::string>& getStyleSheetPseudoClasses() const;
+
+		void addClass( const std::string& cls );
+
+		void addClasses( const std::vector<std::string>& classes );
+
+		void removeClass( const std::string& cls );
+
+		bool containsClass( const std::string& cls );
+
+		void setElementTag( const std::string& tag );
+
+		const std::string& getElementTag() const;
+
+		virtual void pushState( const Uint32& State, bool emitEvent = true );
+
+		virtual void popState( const Uint32& State, bool emitEvent = true );
+
+		UIStyle * getUIStyle() const;
+
+		void reloadStyle( const bool& reloadChilds = true );
+
+		void beginAttributesTransaction();
+
+		void endAttributesTransaction();
+
+		const Uint32& getStyleState() const;
+
+		const Uint32& getStylePreviousState() const;
 	protected:
 		friend class UIManager;
 		friend class UISceneNode;
 
+		std::string mTag;
 		UITheme *	mTheme;
+		UIStyle *	mStyle;
 		UITooltip *	mTooltip;
 		Sizef		mMinControlSize;
 		Rect		mDistToBorder;
@@ -113,8 +162,18 @@ class EE_API UIWidget : public UINode {
 		UIWidget * mLayoutPositionRuleWidget;
 		int	mAttributesTransactionCount;
 		std::string mSkinName;
+		std::vector<std::string> mClasses;
+		std::vector<std::string> mPseudoClasses;
+
+		explicit UIWidget( const std::string& tag );
+
+		void updatePseudoClasses();
 
 		void createTooltip();
+
+		virtual Uint32 onMouseMove( const Vector2i& Pos, const Uint32& Flags );
+
+		virtual Uint32 onMouseLeave( const Vector2i& Pos, const Uint32& Flags );
 
 		virtual void onParentSizeChange( const Vector2f& SizeChange );
 
@@ -122,19 +181,35 @@ class EE_API UIWidget : public UINode {
 
 		virtual void onVisibilityChange();
 
+		virtual void onSizeChange();
+
 		virtual void onAutoSize();
 
 		virtual void onWidgetCreated();
 
 		virtual void onPaddingChange();
 
-		void beginAttributesTransaction();
+		virtual void onThemeLoaded();
 
-		void endAttributesTransaction();
+		virtual void onParentChange();
 
 		void updateAnchors( const Vector2f & SizeChange );
 
 		void alignAgainstLayout();
+
+		void reportStyleStateChange();
+
+		bool isSceneNodeLoading() const;
+
+		std::string getLayoutWidthRulesString() const;
+
+		std::string getLayoutHeightRulesString() const;
+
+		std::string getLayoutGravityString() const;
+
+		std::string getGravityString() const;
+
+		std::string getFlagsString() const;
 };
 
 }}

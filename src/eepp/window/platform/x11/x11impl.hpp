@@ -50,15 +50,15 @@ class X11Impl : public PlatformImpl {
 
 		void setMouseCursor( Cursor * cursor );
 
-		void setSystemMouseCursor( EE_SYSTEM_CURSOR syscursor );
+		void setSystemMouseCursor( Cursor::SysType syscursor );
 
 		void restoreCursor();
 
-		eeWindowHandle GetDisplay() const;
+		eeWindowHandle getDisplay() const;
 
-		void Lock();
+		void lock();
 
-		void Unlock();
+		void unlock();
 
 		eeWindowContex getWindowContext();
 	protected:

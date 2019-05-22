@@ -10,9 +10,12 @@ UITab *UITab::New() {
 }
 
 UITab::UITab() :
-	UISelectButton(),
+	UISelectButton( "tab" ),
 	mControlOwned( NULL )
 {
+	mTextBox->setElementTag( "tab::text" );
+	mIcon->setElementTag( "tab::icon" );
+
 	applyDefaultTheme();
 }
 
@@ -60,9 +63,10 @@ void UITab::setTheme( UITheme * Theme ) {
 	UINode::setThemeSkin( Theme, tabPos );
 
 	onThemeLoaded();
+	onStateChange();
 }
 
-Uint32 UITab::onMouseClick( const Vector2i &Pos, const Uint32 Flags ) {
+Uint32 UITab::onMouseClick( const Vector2i &Pos, const Uint32& Flags ) {
 	UISelectButton::onMouseClick( Pos, Flags );
 
 	UITabWidget * tTabW = getTabWidget();
@@ -73,7 +77,7 @@ Uint32 UITab::onMouseClick( const Vector2i &Pos, const Uint32 Flags ) {
 		}
 	}
 
-	return 1;
+	return UISelectButton::onMouseClick( Pos, Flags );
 }
 
 void UITab::onStateChange() {
@@ -82,21 +86,13 @@ void UITab::onStateChange() {
 	UITabWidget * tTabW = getTabWidget();
 
 	if ( NULL != tTabW && NULL != mSkinState ) {
-		Int32 skinSize = getSkinSize( getSkin(), mSkinState->getState() ).getHeight();
+		Int32 skinSize = getSkinSize( getSkin(), mSkinState->getCurrentState() ).getHeight();
 
 		if ( 0 == skinSize ) {
 			skinSize = getSkinSize().getHeight();
 		}
 
 		setSize( mDpSize.getWidth(), skinSize );
-
-		if ( mSkinState->getState() == UISkinState::StateSelected ) {
-			mTextBox->setFontColor( tTabW->getFontSelectedColor() );
-		} else if ( mSkinState->getState() == UISkinState::StateMouseEnter ) {
-			mTextBox->setFontColor( tTabW->getFontOverColor() );
-		} else {
-			mTextBox->setFontColor( tTabW->getFontColor() );
-		}
 	}
 }
 
@@ -144,39 +140,11 @@ void UITab::onAutoSize() {
 			w = eemin( w, tTabW->getMaxTabWidth() );
 		}
 
-		setSize( w, mDpSize.getHeight() );
+		setInternalWidth( w );
 	}
 }
 
-void UITab::update( const Time& time ) {
-	UISelectButton::update( time );
-
-	if ( mEnabled && mVisible ) {
-		if ( NULL == mControlOwned && !mOwnedName.empty() ) {
-			setOwnedControl();
-		}
-
-		if ( isMouseOver() ) {
-			UITabWidget * tTabW	= getTabWidget();
-
-			if ( NULL != tTabW && NULL != getEventDispatcher() ) {
-				Uint32 Flags 			= getEventDispatcher()->getClickTrigger();
-
-				if ( Flags & EE_BUTTONS_WUWD ) {
-					if ( Flags & EE_BUTTON_WUMASK ) {
-						tTabW->selectPrev();
-					} else if ( Flags & EE_BUTTON_WDMASK ) {
-						tTabW->selectNext();
-					}
-				} else if ( tTabW->getTabsClosable() && ( Flags & EE_BUTTON_MMASK ) ) {
-					tTabW->remove( this );
-				}
-			}
-		}
-	}
-}
-
-bool UITab::setAttribute( const NodeAttribute& attribute ) {
+bool UITab::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	std::string name = attribute.getName();
 
 	if ( "name" == name || "text" == name ) {
@@ -186,10 +154,34 @@ bool UITab::setAttribute( const NodeAttribute& attribute ) {
 		mOwnedName = attribute.asString();
 		setOwnedControl();
 	} else {
-		return UISelectButton::setAttribute( attribute );
+		return UISelectButton::setAttribute( attribute, state );
 	}
 
 	return true;
+}
+
+Uint32 UITab::onMouseUp( const Vector2i& Pos, const Uint32& Flags ) {
+	if ( mEnabled && mVisible ) {
+		if ( NULL == mControlOwned && !mOwnedName.empty() ) {
+			setOwnedControl();
+		}
+
+		UITabWidget * tTabW	= getTabWidget();
+
+		if ( NULL != tTabW ) {
+			if ( Flags & EE_BUTTONS_WUWD ) {
+				if ( Flags & EE_BUTTON_WUMASK ) {
+					tTabW->selectPrev();
+				} else if ( Flags & EE_BUTTON_WDMASK ) {
+					tTabW->selectNext();
+				}
+			} else if ( tTabW->getTabsClosable() && ( Flags & EE_BUTTON_MMASK ) ) {
+				tTabW->remove( this );
+			}
+		}
+	}
+
+	return UISelectButton::onMouseUp( Pos, Flags );
 }
 
 void UITab::setOwnedControl() {

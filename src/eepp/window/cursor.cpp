@@ -1,4 +1,6 @@
 #include <eepp/window/cursor.hpp>
+#include <eepp/graphics/image.hpp>
+#include <eepp/graphics/texture.hpp>
 
 namespace EE { namespace Window {
 
@@ -10,7 +12,7 @@ Cursor::Cursor( Texture * tex, const Vector2i& hotspot, const std::string& name,
 	mWindow( window )
 {
 	if ( NULL != tex && tex->lock() ) {
-		mImage = eeNew( Graphics::Image, ( tex->getPixelsPtr(), tex->getWidth(), tex->getHeight(), tex->getChannels() ) );
+		mImage = Graphics::Image::New( tex->getPixelsPtr(), tex->getWidth(), tex->getHeight(), tex->getChannels() );
 
 		tex->unlock();
 	} else {
@@ -26,7 +28,7 @@ Cursor::Cursor( Graphics::Image * img, const Vector2i& hotspot, const std::strin
 	mWindow( window )
 {
 	if ( img->getMemSize() ) {
-		mImage = eeNew( Graphics::Image, ( img->getPixelsPtr(), img->getWidth(), img->getHeight(), img->getChannels() ) );
+		mImage = Graphics::Image::New( img->getPixelsPtr(), img->getWidth(), img->getHeight(), img->getChannels() );
 	} else {
 		eePRINTL( "Cursor::Cursor: Error creating cursor from Image." );
 	}
@@ -39,7 +41,7 @@ Cursor::Cursor( const std::string& path, const Vector2i& hotspot, const std::str
 	mHotSpot( hotspot ),
 	mWindow( window )
 {
-	mImage = eeNew( Graphics::Image, ( path ) );
+	mImage = Graphics::Image::New( path );
 
 	if ( NULL == mImage->getPixels() ) {
 		eePRINTL( "Cursor::Cursor: Error creating cursor from path." );
@@ -52,6 +54,23 @@ Cursor::~Cursor() {
 
 const Vector2i& Cursor::getHotSpot() const {
 	return mHotSpot;
+}
+
+Cursor::Type Cursor::fromName( std::string name ) {
+	String::toLowerInPlace( name );
+	if ( "arrow" == name )			return Arrow;
+	if ( "hand" == name )			return Hand;
+	if ( "ibream" == name )			return IBeam;
+	if ( "wait" == name )			return Wait;
+	if ( "crosshair" == name )		return Crosshair;
+	if ( "waitarrow" == name )		return WaitArrow;
+	if ( "sizenwse" == name )		return SizeNWSE;
+	if ( "sizenesw" == name )		return SizeNESW;
+	if ( "sizewe" == name )			return SizeWE;
+	if ( "sizens" == name )			return SizeNS;
+	if ( "sizeall" == name )		return SizeAll;
+	if ( "nocursor" == name )		return NoCursor;
+	return Arrow;
 }
 
 const Uint32& Cursor::getId() const {

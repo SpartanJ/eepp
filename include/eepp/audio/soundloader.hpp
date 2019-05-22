@@ -16,6 +16,22 @@ namespace EE { namespace Audio {
 template <typename T>
 class tSoundLoader : public ObjectLoader {
 	public:
+		static tSoundLoader<T> * New( tSoundManager<T> * SndMngr, const T& id, const std::string& filepath ) {
+			return eeNew( tSoundLoader<T>, ( SndMngr, id, filepath ) );
+		}
+
+		static tSoundLoader<T> * New( tSoundManager<T> * SndMngr, const T& id, const char* Data, std::size_t SizeInBytes ) {
+			return eeNew( tSoundLoader<T>, ( SndMngr, id, Data, SizeInBytes ) );
+		}
+
+		static tSoundLoader<T> * New( tSoundManager<T> * SndMngr, const T& id, const Int16* Samples, std::size_t SamplesCount, unsigned int ChannelCount, unsigned int SampleRate ) {
+			return eeNew( tSoundLoader<T>, ( SndMngr, id, Samples, SamplesCount, ChannelCount, SampleRate ) );
+		}
+
+		static tSoundLoader<T> * New( tSoundManager<T> * SndMngr, const T& id, Pack* Pack, const std::string& FilePackPath ) {
+			return eeNew( tSoundLoader<T>, ( SndMngr, id, Pack, FilePackPath ) );
+		}
+
 		/** @brief Load the sound from file */
 		tSoundLoader( tSoundManager<T> * SndMngr, const T& id, const std::string& filepath );
 
@@ -64,7 +80,14 @@ tSoundLoader<T>::tSoundLoader( tSoundManager<T> * SndMngr,
 	mLoadType(SND_LT_PATH),
 	mSndMngr(SndMngr),
 	mId(id),
-	mFilepath(filepath)
+	mFilepath(filepath),
+	mData(NULL),
+	mDataSize(0),
+	mSamples(0),
+	mSamplesCount(0),
+	mChannelCount(0),
+	mSampleRate(0),
+	mPack(0)
 {
 }
 
@@ -78,7 +101,12 @@ tSoundLoader<T>::tSoundLoader( tSoundManager<T> * SndMngr,
 	mSndMngr(SndMngr),
 	mId(id),
 	mData(Data),
-	mDataSize(SizeInBytes)
+	mDataSize(SizeInBytes),
+	mSamples(0),
+	mSamplesCount(0),
+	mChannelCount(0),
+	mSampleRate(0),
+	mPack(0)
 {
 }
 
@@ -93,10 +121,13 @@ tSoundLoader<T>::tSoundLoader( tSoundManager<T> * SndMngr,
 	mLoadType(SND_LT_SAMPLES),
 	mSndMngr(SndMngr),
 	mId(id),
+	mData(NULL),
+	mDataSize(0),
 	mSamples(Samples),
 	mSamplesCount(SamplesCount),
 	mChannelCount(ChannelCount),
-	mSampleRate(SampleRate)
+	mSampleRate(SampleRate),
+	mPack(0)
 {
 }
 
@@ -108,6 +139,11 @@ tSoundLoader<T>::tSoundLoader( tSoundManager<T> * SndMngr,
 	mLoadType(SND_LT_PACK),
 	mSndMngr(SndMngr),
 	mId(id),
+	mData(NULL),
+	mDataSize(0),
+	mSamples(0),
+	mSamplesCount(0),
+	mChannelCount(0),
 	mFilepath(FilePackPath),
 	mPack(Pack)
 {

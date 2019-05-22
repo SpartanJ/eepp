@@ -9,7 +9,7 @@ UIMenuSubMenu * UIMenuSubMenu::New() {
 }
 
 UIMenuSubMenu::UIMenuSubMenu() :
-	UIMenuItem(),
+	UIMenuItem( "menu::submenu" ),
 	mSubMenu( NULL ),
 	mArrow( NULL ),
 	mTimeOver( 0.f ),
@@ -44,6 +44,8 @@ void UIMenuSubMenu::setTheme( UITheme * Theme ) {
 	mArrow->setSize( mArrow->getSkinSize() );
 
 	onStateChange();
+
+	onThemeLoaded();
 }
 
 void UIMenuSubMenu::onSizeChange() {
@@ -83,7 +85,7 @@ UIMenu * UIMenuSubMenu::getSubMenu() const {
 	return mSubMenu;
 }
 
-Uint32 UIMenuSubMenu::onMouseMove( const Vector2i &Pos, const Uint32 Flags ) {
+Uint32 UIMenuSubMenu::onMouseMove( const Vector2i &Pos, const Uint32& Flags ) {
 	UIMenuItem::onMouseMove( Pos, Flags );
 
 	if ( NULL != mSceneNode && NULL != mSubMenu && !mSubMenu->isVisible() ) {
@@ -100,7 +102,7 @@ Uint32 UIMenuSubMenu::onMouseMove( const Vector2i &Pos, const Uint32 Flags ) {
 void UIMenuSubMenu::showSubMenu() {
 	mSubMenu->setParent( getParent()->getParent() );
 
-	Vector2f Pos = getRealPosition();
+	Vector2f Pos = getPixelsPosition();
 	nodeToWorldTranslation( Pos );
 	Pos.x += mSize.getWidth() + reinterpret_cast<UIMenu*> ( getParent() )->getPadding().Right;
 
@@ -114,8 +116,8 @@ void UIMenuSubMenu::showSubMenu() {
 	}
 }
 
-Uint32 UIMenuSubMenu::onMouseExit( const Vector2i &Pos, const Uint32 Flags ) {
-	UIMenuItem::onMouseExit( Pos, Flags );
+Uint32 UIMenuSubMenu::onMouseLeave( const Vector2i &Pos, const Uint32& Flags ) {
+	UIMenuItem::onMouseLeave( Pos, Flags );
 
 	mTimeOver = 0;
 
@@ -126,7 +128,7 @@ UINode * UIMenuSubMenu::getArrow() const {
 	return mArrow;
 }
 
-void UIMenuSubMenu::onSubMenuFocusLoss( const Event * Event ) {
+void UIMenuSubMenu::onSubMenuFocusLoss( const Event * ) {
 	if ( NULL != getEventDispatcher() ) {
 		Node * FocusCtrl = getEventDispatcher()->getFocusControl();
 
@@ -142,7 +144,7 @@ void UIMenuSubMenu::onSubMenuFocusLoss( const Event * Event ) {
 	}
 }
 
-void UIMenuSubMenu::onHideByClick( const Event * Event ) {
+void UIMenuSubMenu::onHideByClick( const Event * ) {
 	UIMenu * tMenu = reinterpret_cast<UIMenu *>( getParent() );
 
 	tMenu->mClickHide = true;

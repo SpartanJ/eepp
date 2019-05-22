@@ -9,11 +9,11 @@ namespace EE {
 
 const std::size_t String::InvalidPos = StringType::npos;
 
-Uint32 String::hash( const Uint8 * str ) {
+constexpr Uint32 String::hash( const Uint8 * str ) {
 	//! djb2
 	if ( NULL != str ) {
 		Uint32 hash = 5381;
-		Int32 c;
+		Int32 c = 0;
 
 		while ( ( c = *str++ ) )
 			hash = ( ( hash << 5 ) + hash ) + c;
@@ -24,31 +24,42 @@ Uint32 String::hash( const Uint8 * str ) {
 	return 0;
 }
 
-Uint32 String::hash( const char * str ) {
-	return String::hash( reinterpret_cast<const Uint8*>( str ) );
+constexpr Uint32 String::hash( const char * str ) {
+	//! djb2
+	if ( NULL != str ) {
+		Uint32 hash = 5381;
+		Int32 c = 0;
+
+		while ( ( c = *str++ ) )
+			hash = ( ( hash << 5 ) + hash ) + c;
+
+		return hash;
+	}
+
+	return 0;
 }
 
 Uint32 String::hash( const std::string& str ) {
-	return String::hash( reinterpret_cast<const Uint8*>( &str[0] ) );
+	return String::hash( str.c_str() );
 }
 
 Uint32 String::hash( const String& str ) {
-	return String::hash( reinterpret_cast<const Uint8*>( &(str.mString[0]) ) );
+	return String::hash( (const Uint8*)str.c_str() );
 }
 
-bool String::isCharacter( const int& mValue ) {
-	return (mValue >= 32 && mValue <= 126) || (mValue >= 161 && mValue <= 255) || (mValue == 9);
+bool String::isCharacter( const int& value ) {
+	return (value >= 32 && value <= 126) || (value >= 161 && value <= 255) || (value == 9);
 }
 
-bool String::isNumber( const int& mValue, bool AllowDot ) {
+bool String::isNumber( const int& value, bool AllowDot ) {
 	if ( AllowDot )
-		return ( mValue >= 48 && mValue <= 57 ) || mValue == 46;
+		return ( value >= 48 && value <= 57 ) || value == 46;
 
-	return mValue >= 48 && mValue <= 57;
+	return value >= 48 && value <= 57;
 }
 
-bool String::isLetter( const int& mValue ) {
-	return ( ( (mValue >= 65 && mValue <= 90) || (mValue >= 97 && mValue <= 122) || (mValue >= 192 && mValue <= 255) ) && (mValue != 215) && (mValue != 247) );
+bool String::isLetter( const int& value ) {
+	return ( ( (value >= 65 && value <= 90) || (value >= 97 && value <= 122) || (value >= 192 && value <= 255) ) && (value != 215) && (value != 247) );
 }
 
 std::vector < String > String::split ( const String& str, const Uint32& splitchar, const bool& pushEmptyString ) {
@@ -220,7 +231,7 @@ void String::insertChar( String& str, const unsigned int& pos, const Uint32& tch
 	str.insert( str.begin() + pos, tchar );
 }
 
-void String::strFormat( char * Buffer, int BufferSize, const char * format, ... ) {
+void String::formatBuffer( char * Buffer, int BufferSize, const char * format, ... ) {
 	va_list	args;
 	va_start( args, format );
 #ifdef EE_COMPILER_MSVC
@@ -231,7 +242,7 @@ void String::strFormat( char * Buffer, int BufferSize, const char * format, ... 
 	va_end( args );
 }
 
-std::string String::strFormated( const char * format, ... ) {
+std::string String::format( const char * format, ... ) {
 	int n, size = 256;
 	std::string tstr( size, '\0' );
 

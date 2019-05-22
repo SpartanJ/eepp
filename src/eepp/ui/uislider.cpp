@@ -5,12 +5,20 @@
 
 namespace EE { namespace UI {
 
-UISlider * UISlider::New( const UI_ORIENTATION& orientation ) {
-	return eeNew( UISlider, ( orientation ) );
+UISlider * UISlider::New() {
+	return eeNew( UISlider, ( UI_VERTICAL ) );
+}
+
+UISlider * UISlider::NewVertical() {
+	return eeNew( UISlider, ( UI_VERTICAL ) );
+}
+
+UISlider * UISlider::NewHorizontal() {
+	return eeNew( UISlider, ( UI_HORIZONTAL ) );
 }
 
 UISlider::UISlider( const UI_ORIENTATION& orientation ) :
-	UIWidget(),
+	UIWidget( "slider" ),
 	mOrientation( orientation ),
 	mBackSlider( NULL ),
 	mSlider( NULL ),
@@ -21,12 +29,6 @@ UISlider::UISlider( const UI_ORIENTATION& orientation ) :
 	mPageStep( 0 ),
 	mOnPosChange( false )
 {
-	UITheme * theme = UIThemeManager::instance()->getDefaultTheme();
-
-	if ( NULL != theme ) {
-		mStyleConfig = theme->getSliderStyleConfig();
-	}
-
 	Sizef bgSize;
 
 	if ( UI_HORIZONTAL == mOrientation )
@@ -34,7 +36,7 @@ UISlider::UISlider( const UI_ORIENTATION& orientation ) :
 	else
 		bgSize = Sizef( 8, mDpSize.getHeight() - 16 );
 
-	mBackSlider = UINode::New();
+	mBackSlider = UIWidget::NewWithTag( "slider::back" );
 	mBackSlider->setParent( this );
 	mBackSlider->setVisible( true );
 	mBackSlider->setEnabled( true );
@@ -86,6 +88,8 @@ void UISlider::setTheme( UITheme * Theme ) {
 	adjustChilds();
 
 	setValue( mValue );
+
+	onThemeLoaded();
 }
 
 void UISlider::onSizeChange() {
@@ -286,14 +290,6 @@ bool UISlider::isVertical() const {
 	return mOrientation == UI_VERTICAL;
 }
 
-void UISlider::update( const Time& time ) {
-	UINode::update( time );
-
-	if ( NULL != getEventDispatcher() && ( isMouseOver() || mBackSlider->isMouseOver() || mSlider->isMouseOver() ) ) {
-		manageClick( getEventDispatcher()->getClickTrigger() );
-	}
-}
-
 Uint32 UISlider::onKeyDown( const KeyEvent &Event ) {
 	if ( Sys::getTicks() - mLastTickMove > 100 ) {
 		if ( Event.getKeyCode() == KEY_DOWN ) {
@@ -349,9 +345,11 @@ UI_ORIENTATION UISlider::getOrientation() const {
 }
 
 UISlider * UISlider::setOrientation( const UI_ORIENTATION & orientation ) {
-	mOrientation = orientation;
+	if ( orientation != mOrientation ) {
+		mOrientation = orientation;
 
-	applyDefaultTheme();
+		applyDefaultTheme();
+	}
 
 	return this;
 }
@@ -361,11 +359,13 @@ bool UISlider::getAllowHalfSliderOut() const {
 }
 
 void UISlider::setAllowHalfSliderOut( bool allowHalfSliderOut ) {
-	mStyleConfig.AllowHalfSliderOut = allowHalfSliderOut;
+	if ( mStyleConfig.AllowHalfSliderOut != allowHalfSliderOut ) {
+		mStyleConfig.AllowHalfSliderOut = allowHalfSliderOut;
 
-	adjustChilds();
+		adjustChilds();
 
-	setValue( mValue );
+		setValue( mValue );
+	}
 }
 
 bool UISlider::getExpandBackground() const {
@@ -373,11 +373,13 @@ bool UISlider::getExpandBackground() const {
 }
 
 void UISlider::setExpandBackground( bool expandBackground ) {
-	mStyleConfig.ExpandBackground = expandBackground;
+	if ( mStyleConfig.ExpandBackground != expandBackground ) {
+		mStyleConfig.ExpandBackground = expandBackground;
 
-	adjustChilds();
+		adjustChilds();
 
-	setValue( mValue );
+		setValue( mValue );
+	}
 }
 
 Float UISlider::getPageStep() const {
@@ -407,7 +409,19 @@ void UISlider::onAlphaChange() {
 	mSlider->setAlpha( mAlpha );
 }
 
-bool UISlider::setAttribute( const NodeAttribute& attribute ) {
+Uint32 UISlider::onMessage(const NodeMessage * Msg) {
+	switch ( Msg->getMsg() ) {
+		case NodeMessage::MouseUp:
+		{
+			manageClick( Msg->getFlags() );
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+bool UISlider::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "orientation" == name ) {
@@ -430,8 +444,10 @@ bool UISlider::setAttribute( const NodeAttribute& attribute ) {
 		setPageStep( attribute.asFloat() );
 	} else if ( "halfslider" == name ) {
 		setAllowHalfSliderOut( attribute.asBool() );
+	} else if ( "expandbackground" == name ) {
+		setExpandBackground( attribute.asBool() );
 	} else {
-		return UIWidget::setAttribute( attribute );
+		return UIWidget::setAttribute( attribute, state );
 	}
 
 	return true;

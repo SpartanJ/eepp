@@ -24,7 +24,7 @@ class EE_API UISprite : public UIWidget {
 
 		virtual void draw();
 
-		virtual void update( const Time& time );
+		virtual void scheduledUpdate( const Time& time );
 
 		virtual void setAlpha( const Float& alpha );
 
@@ -42,11 +42,11 @@ class EE_API UISprite : public UIWidget {
 
 		const Vector2f& getAlignOffset() const;
 
-		void setDeallocSprite( const bool& dealloc );
+		void setIsSpriteOwner( const bool& dealloc );
 
 		bool getDeallocSprite();
 
-		virtual bool setAttribute( const NodeAttribute& attribute );
+		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
 	protected:
 		Graphics::Sprite * 	mSprite;
 		RenderMode			mRender;

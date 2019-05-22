@@ -21,8 +21,6 @@ class EE_API UITextInputPassword : public UITextInput
 		virtual UITextView * setText( const String& text );
 
 		Text * getPassCache() const;
-
-		void setFontStyleConfig( const UITooltipStyleConfig& fontStyleConfig );
 	protected:
 		Text *	mPassCache;
 
@@ -31,6 +29,10 @@ class EE_API UITextInputPassword : public UITextInput
 		void updateText();
 
 		void updatePass( const String& pass );
+
+		void updateFontStyleConfig();
+
+		virtual void onStateChange();
 };
 
 }}

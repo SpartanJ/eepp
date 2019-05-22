@@ -1,4 +1,6 @@
 #include <eepp/graphics/drawable.hpp>
+#include <eepp/graphics/statefuldrawable.hpp>
+#include <eepp/core/debug.hpp>
 
 namespace EE { namespace Graphics {
 
@@ -24,12 +26,14 @@ const Uint8& Drawable::getAlpha() {
 }
 
 void Drawable::setColor(const Color & color) {
-	mColor = color;
-	onColorFilterChange();
-	onAlphaChange();
+	if ( mColor != color ) {
+		mColor = color;
+		onColorFilterChange();
+		onAlphaChange();
+	}
 }
 
-const Color& Drawable::getColor() const {
+Color Drawable::getColor() const {
 	return mColor;
 }
 
@@ -85,6 +89,11 @@ void Drawable::setPosition( const Vector2f& position ) {
 		mPosition = position;
 		onPositionChange();
 	}
+}
+
+StatefulDrawable * Drawable::asStatefulDrawable() {
+	eeASSERT( isStateful() );
+	return static_cast<StatefulDrawable*>( this );
 }
 
 void Drawable::onAlphaChange() {

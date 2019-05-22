@@ -9,6 +9,14 @@ namespace EE { namespace UI {
 
 class EE_API UIProgressBar : public UIWidget {
 	public:
+		class StyleConfig {
+			public:
+				bool DisplayPercent = false;
+				bool VerticalExpand = true;
+				Vector2f MovementSpeed = Vector2f( 64.f, 0 );
+				Rectf FillerPadding;
+		};
+
 		static UIProgressBar * New();
 
 		UIProgressBar();
@@ -31,7 +39,7 @@ class EE_API UIProgressBar : public UIWidget {
 
 		virtual void draw();
 
-		virtual void update( const Time& time );
+		virtual void scheduledUpdate( const Time& time );
 
 		void setMovementSpeed( const Vector2f& Speed );
 
@@ -51,9 +59,11 @@ class EE_API UIProgressBar : public UIWidget {
 		
 		UITextView * getTextBox() const;
 
-		virtual bool setAttribute( const NodeAttribute& attribute );
+		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
+
+		const StyleConfig& getStyleConfig() const;
 	protected:
-		UIProgressBarStyleConfig mStyleConfig;
+		StyleConfig			mStyleConfig;
 		Float				mProgress;
 		Float				mTotalSteps;
 		UITextView * 		mTextBox;

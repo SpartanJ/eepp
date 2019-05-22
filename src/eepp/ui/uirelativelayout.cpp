@@ -7,7 +7,7 @@ UIRelativeLayout * UIRelativeLayout::New() {
 }
 
 UIRelativeLayout::UIRelativeLayout() :
-	UILayout()
+	UILayout( "relativelayout" )
 {
 }
 
@@ -34,7 +34,7 @@ void UIRelativeLayout::onChildCountChange() {
 	fixChilds();
 }
 
-void UIRelativeLayout::onParentSizeChange( const Vector2f& SizeChange ) {
+void UIRelativeLayout::onParentSizeChange( const Vector2f& ) {
 	fixChilds();
 }
 

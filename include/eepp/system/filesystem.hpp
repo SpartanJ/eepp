@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 #include <eepp/core.hpp>
-#include <eepp/system/safedatapointer.hpp>
+#include <eepp/system/scopedbuffer.hpp>
 
 namespace EE { namespace System {
 
@@ -25,10 +25,10 @@ class EE_API FileSystem {
 
 		/** Copy a file to memory
 		* @param path The file path
-		* @param data A SafeDataPointer to allocate the data to memory
-		* @return True if returned the file to the SafeDataPointer
+		* @param data A ScopedBuffer to allocate the data to memory
+		* @return True if returned the file to the ScopedBuffer
 		*/
-		static bool fileGet( const std::string& path, SafeDataPointer& data );
+		static bool fileGet( const std::string& path, ScopedBuffer& data );
 
 		/** Copy a file to location.
 		* @param src Source File Path
@@ -110,6 +110,13 @@ class EE_API FileSystem {
 
 		/** @return Returns free disk space for a given path in bytes */
 		static Int64 getDiskFreeSpace(const std::string& path);
+
+		/** Creates a file name available for the directory path.
+		* @example For file name "file-name-" will search the first available name
+		* in the file system starting from file-name-1, file-name-2, and so on.
+		* @return The file name found, otherwise empty string if error.
+		*/
+		static std::string fileGetNumberedFileNameFromPath( std::string directoryPath, const std::string& fileName, const std::string& separator = ".", const std::string& fileExtension = "" );
 };
 
 }}

@@ -1,11 +1,11 @@
 #ifndef EE_UICUITEXTEDIT_HPP
 #define EE_UICUITEXTEDIT_HPP
 
-#include <eepp/ui/uinode.hpp>
 #include <eepp/ui/uitextinput.hpp>
-#include <eepp/ui/uiscrollbar.hpp>
 
 namespace EE { namespace UI {
+
+class UIScrollBar;
 
 class EE_API UITextEdit : public UIWidget {
 	public:
@@ -31,8 +31,6 @@ class EE_API UITextEdit : public UIWidget {
 
 		UIScrollBar * getVScrollBar() const;
 
-		virtual void update( const Time& time );
-
 		void setAllowEditing( const bool& allow );
 
 		const bool& isEditingAllowed() const;
@@ -47,9 +45,7 @@ class EE_API UITextEdit : public UIWidget {
 
 		UIFontStyleConfig getFontStyleConfig() const;
 
-		void setFontStyleConfig(const UIFontStyleConfig & fontStyleConfig);
-
-		virtual bool setAttribute( const NodeAttribute& attribute );
+		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
 	protected:
 		UITextInput *		mTextInput;
 		UIScrollBar *		mHScrollBar;
@@ -66,6 +62,8 @@ class EE_API UITextEdit : public UIWidget {
 		virtual void onParentSizeChange( const Vector2f& SizeChange );
 
 		virtual void onPaddingChange();
+
+		virtual Uint32 onMessage( const NodeMessage * Msg );
 
 		void onVScrollValueChange( const Event * Event );
 

@@ -4,6 +4,9 @@
 #include <eepp/config.hpp>
 #include <eepp/system/bitop.hpp>
 #include <string>
+#if EE_PLATFORM == EE_PLATFORM_WIN
+#undef RGB
+#endif
 
 namespace EE { namespace System {
 
@@ -219,6 +222,8 @@ class EE_API Color : public tColor<Uint8>
 
 		Colorf toHsl();
 
+		std::string toHexString() const;
+
 		static Color fromHsl( const Colorf& hsl );
 
 		/** Blend a source color to destination color */
@@ -233,23 +238,25 @@ class EE_API Color : public tColor<Uint8>
 
 		static Color fromString( std::string str );
 
+		static bool isColorString( std::string str );
+
 		static const Color Transparent;
-		static const Color White;
 		static const Color Black;
-		static const Color Red;
-		static const Color Green;
-		static const Color Blue;
-		static const Color Yellow;
-		static const Color Cyan;
-		static const Color Magenta;
 		static const Color Silver;
 		static const Color Gray;
+		static const Color White;
 		static const Color Maroon;
-		static const Color Olive;
-		static const Color OfficeGreen;
+		static const Color Red;
 		static const Color Purple;
-		static const Color Teal;
+		static const Color Fuchsia;
+		static const Color Green;
+		static const Color Lime;
+		static const Color Olive;
+		static const Color Yellow;
 		static const Color Navy;
+		static const Color Blue;
+		static const Color Teal;
+		static const Color Aqua;
 };
 
 typedef Color ColorA;
@@ -257,25 +264,46 @@ typedef tColor<Float>		ColorAf;
 
 //! @brief Small class to help in some color operations
 class EE_API RGB : public tRGB<Uint8> {
-public:
-	RGB();
+	public:
+		RGB();
 
-	/** Creates an RGB color from each component.
-	**	@param r Red component
-	**	@param g Green component
-	**	@param b Blue component
-	*/
-	RGB( Uint8 r, Uint8 g, Uint8 b );
+		/** Creates an RGB color from each component.
+		**	@param r Red component
+		**	@param g Green component
+		**	@param b Blue component
+		*/
+		RGB( Uint8 r, Uint8 g, Uint8 b );
 
-	RGB( const tRGB<Uint8>& color );
+		RGB( const tRGB<Uint8>& color );
 
-	RGB( Uint32 Col );
+		RGB( Uint32 Col );
 
-	Color toColor();
+		Color toColor();
 };
 
-class RectColors {
+class EE_API RectColors {
 	public:
+		RectColors() :
+			TopLeft( Color::White ),
+			TopRight( Color::White ),
+			BottomLeft( Color::White ),
+			BottomRight( Color::White )
+		{}
+
+		RectColors( const Color& color ) :
+			TopLeft( color ),
+			TopRight( color ),
+			BottomLeft( color ),
+			BottomRight( color )
+		{}
+
+		RectColors( const Color& topLeft, const Color& topRight, const Color& bottomLeft, const Color& bottomRight ) :
+			TopLeft( topLeft ),
+			TopRight( topRight ),
+			BottomLeft( bottomLeft ),
+			BottomRight( bottomRight )
+		{}
+
 		Color TopLeft;
 		Color TopRight;
 		Color BottomLeft;

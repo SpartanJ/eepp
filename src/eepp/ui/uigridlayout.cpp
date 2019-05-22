@@ -8,7 +8,7 @@ UIGridLayout * UIGridLayout::New() {
 }
 
 UIGridLayout::UIGridLayout() :
-	UILayout(),
+	UILayout( "gridlayout" ),
 	mColumnMode( Weight ),
 	mRowMode( Weight  ),
 	mColumnWeight( 0.25f ),
@@ -199,12 +199,12 @@ Uint32 UIGridLayout::onMessage(const NodeMessage * Msg) {
 	return 0;
 }
 
-Sizef UIGridLayout::getTargetElementSize() {
+Sizef UIGridLayout::getTargetElementSize() const {
 	return Sizef( mColumnMode == Size ? mColumnWidth : ( ( getLayoutHeightRules() == WRAP_CONTENT ? getParent()->getSize().getWidth() : mDpSize.getWidth() ) - mPadding.Left - mPadding.Right ) * mColumnWeight,
 				  mRowMode == Size ? mRowHeight : ( ( getLayoutHeightRules() == WRAP_CONTENT ? getParent()->getSize().getHeight() : mDpSize.getHeight() ) - mPadding.Top - mPadding.Bottom ) * mRowWeight );
 }
 
-bool UIGridLayout::setAttribute( const NodeAttribute &attribute ) {
+bool UIGridLayout::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "columnspan" == name ) {
@@ -232,7 +232,7 @@ bool UIGridLayout::setAttribute( const NodeAttribute &attribute ) {
 	} else if ( "reversedraw" == name ) {
 		setReverseDraw( attribute.asBool() );
 	} else {
-		return UILayout::setAttribute( attribute );
+		return UILayout::setAttribute( attribute, state );
 	}
 
 	return true;

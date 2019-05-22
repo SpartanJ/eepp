@@ -10,6 +10,14 @@ namespace EE { namespace UI {
 
 class EE_API UIWinMenu : public UIWidget {
 	public:
+		class StyleConfig {
+			public:
+				Uint32 MarginBetweenButtons = 0;
+				Uint32 ButtonMargin = 4;
+				Uint32 MenuHeight = 0;
+				Uint32 FirstButtonMargin = 1;
+		};
+
 		static UIWinMenu * New();
 
 		UIWinMenu();
@@ -34,15 +42,29 @@ class EE_API UIWinMenu : public UIWidget {
 
 		void setMarginBetweenButtons(const Uint32 & marginBetweenButtons);
 
-		UIWinMenuStyleConfig getStyleConfig() const;
+		Uint32 getButtonMargin() const;
 
-		void setStyleConfig(const UIWinMenuStyleConfig & styleConfig);
+		void setButtonMargin( const Uint32& buttonMargin );
+
+		Uint32 getMenuHeight() const;
+
+		void setMenuHeight( const Uint32& menuHeight );
+
+		Uint32 getFirstButtonMargin() const;
+
+		void setFirstButtonMargin( const Uint32& buttonMargin );
+
+		const StyleConfig& getStyleConfig() const;
+
+		void setStyleConfig(const StyleConfig & styleConfig);
+
+		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
 
 		virtual void loadFromXmlNode( const pugi::xml_node& node );
 	protected:
 		typedef std::list< std::pair< UISelectButton *, UIPopUpMenu * > > WinMenuList;
 
-		UIWinMenuStyleConfig mStyleConfig;
+		StyleConfig mStyleConfig;
 		UIPopUpMenu *	mCurrentMenu;
 		WinMenuList		mButtons;
 
@@ -63,6 +85,8 @@ class EE_API UIWinMenu : public UIWidget {
 		void unselectButtons();
 
 		void destroyMenues();
+
+		void autoHeight();
 };
 
 }}

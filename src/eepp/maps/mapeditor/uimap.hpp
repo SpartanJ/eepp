@@ -43,7 +43,7 @@ class EE_API UIMap : public UIWindow {
 
 		virtual void draw();
 
-		virtual void update( const Time& time );
+		virtual void scheduledUpdate( const Time& time );
 
 		TileMap * Map() const;
 
@@ -135,7 +135,7 @@ class EE_API UIMap : public UIWindow {
 
 		virtual Uint32 onMessage( const NodeMessage * Msg );
 
-		virtual Uint32 onMouseMove( const Vector2i& getPosition, const Uint32 flags );
+		virtual Uint32 onMouseMove( const Vector2i& position, const Uint32& flags );
 
 		virtual void onSizeChange();
 
@@ -143,7 +143,7 @@ class EE_API UIMap : public UIWindow {
 
 		virtual void onAlphaChange();
 
-		virtual Uint32 onDrag( const Vector2f& Pos );
+		virtual Uint32 onDrag( const Vector2f& Pos , const Uint32 & flags );
 
 		void objItemClick( const Event * Event );
 

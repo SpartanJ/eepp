@@ -8,6 +8,14 @@
 
 namespace EE { namespace Graphics {
 
+TexturePacker * TexturePacker::New() {
+	return eeNew( TexturePacker, ( ) );
+}
+
+TexturePacker * TexturePacker::New( const Uint32& MaxWidth, const Uint32& MaxHeight, const EE_PIXEL_DENSITY& PixelDensity, const bool& ForcePowOfTwo, const bool& scalableSVG, const Uint32& PixelBorder, const Texture::TextureFilter& textureFilter, const bool& AllowFlipping ) {
+	return eeNew( TexturePacker, ( MaxWidth, MaxHeight, PixelDensity, ForcePowOfTwo, scalableSVG, PixelBorder, textureFilter, AllowFlipping ) );
+}
+
 TexturePacker::TexturePacker(const Uint32& MaxWidth, const Uint32& MaxHeight, const EE_PIXEL_DENSITY& PixelDensity, const bool& ForcePowOfTwo, const bool& scalableSVG, const Uint32& PixelBorder, const Texture::TextureFilter& textureFilter, const bool& AllowFlipping ) :
 	mTotalArea(0),
 	mFreeList(NULL),

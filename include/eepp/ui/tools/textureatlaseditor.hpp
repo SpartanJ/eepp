@@ -2,6 +2,7 @@
 #define EE_UITOOLSCTEXTUREATLASEDITOR_HPP
 
 #include <eepp/ui/base.hpp>
+#include <eepp/scene/scenenode.hpp>
 #include <eepp/ui/uiwindow.hpp>
 #include <eepp/ui/uispinbox.hpp>
 #include <eepp/ui/uilistbox.hpp>
@@ -35,9 +36,17 @@ class EE_API TextureAtlasEditor {
 		class UITGEUpdater : public UINode
 		{
 			public:
-				UITGEUpdater( TextureAtlasEditor * TGEditor ) : UINode(), mTGEditor( TGEditor ) {}
+				explicit UITGEUpdater( TextureAtlasEditor * TGEditor ) :
+					UINode(),
+					mTGEditor( TGEditor )
+				{
+					subscribeScheduledUpdate();
+				}
 
-				virtual void update( const Time& time ) { mTGEditor->update(); }
+				~UITGEUpdater() {
+				}
+
+				virtual void scheduledUpdate( const Time& ) { mTGEditor->update(); }
 			protected:
 				TextureAtlasEditor * mTGEditor;
 		};

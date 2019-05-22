@@ -6,6 +6,7 @@
 #include <eepp/graphics/textureregion.hpp>
 #include <eepp/graphics/framebuffer.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
+#include <eepp/scene/actionmanager.hpp>
 #include <algorithm>
 
 namespace EE { namespace Scene {
@@ -17,11 +18,13 @@ SceneNode * SceneNode::New( EE::Window::Window * window ) {
 SceneNode::SceneNode( EE::Window::Window * window ) :
 	Node(),
 	mWindow( window ),
+	mActionManager( ActionManager::New() ),
 	mFrameBuffer( NULL ),
 	mEventDispatcher( NULL ),
 	mFrameBufferBound( false ),
 	mUseInvalidation( false ),
 	mUseGlobalCursors( true ),
+	mUpdateAllChilds( true ),
 	mResizeCb( -1 ),
 	mDrawDebugData( false ),
 	mDrawBoxes( false ),
@@ -53,6 +56,8 @@ SceneNode::~SceneNode() {
 
 	onClose();
 
+	eeSAFE_DELETE( mActionManager );
+
 	eeSAFE_DELETE( mEventDispatcher );
 
 	eeSAFE_DELETE( mFrameBuffer );
@@ -66,7 +71,7 @@ void SceneNode::enableFrameBuffer() {
 void SceneNode::disableFrameBuffer() {
 	eeSAFE_DELETE( mFrameBuffer );
 
-	writeCtrlFlag( NODE_FLAG_FRAME_BUFFER, 0 );
+	writeNodeFlag( NODE_FLAG_FRAME_BUFFER, 0 );
 }
 
 bool SceneNode::ownsFrameBuffer() const {
@@ -109,7 +114,7 @@ void SceneNode::draw() {
 
 		postDraw();
 
-		writeCtrlFlag( NODE_FLAG_VIEW_DIRTY, 0 );
+		writeNodeFlag( NODE_FLAG_VIEW_DIRTY, 0 );
 	}
 
 	mWindow->setView( prevView );
@@ -117,15 +122,36 @@ void SceneNode::draw() {
 	GlobalBatchRenderer::instance()->draw();
 }
 
-void SceneNode::update( const Time& elapsed ) {
-	mElapsed = elapsed;
+void SceneNode::update( const Time& time ) {
+	mElapsed = time;
 
 	if ( NULL != mEventDispatcher )
-		mEventDispatcher->update( elapsed );
+		mEventDispatcher->update( time );
+
+	mActionManager->update( time );
 
 	checkClose();
 
-	Node::update( elapsed );
+	if ( !mScheduledUpdateRemove.empty() ) {
+		for ( auto it = mScheduledUpdateRemove.begin(); it != mScheduledUpdateRemove.end(); ++it )
+			mScheduledUpdate.remove( *it );
+
+		mScheduledUpdateRemove.clear();
+	}
+
+	if ( !mScheduledUpdate.empty() ) {
+		for ( auto it = mScheduledUpdate.begin(); it != mScheduledUpdate.end(); ++it )
+			(*it)->scheduledUpdate( time );
+	}
+
+	if ( mUpdateAllChilds ) {
+		Node::update( time );
+	} else {
+		for ( auto it = mMouseOverNodes.begin(); it != mMouseOverNodes.end(); ++it )
+			(*it)->writeNodeFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 0 );
+	}
+
+	mMouseOverNodes.clear();
 }
 
 void SceneNode::onSizeChange() {
@@ -144,10 +170,9 @@ void SceneNode::onSizeChange() {
 void SceneNode::addToCloseQueue( Node * Ctrl ) {
 	eeASSERT( NULL != Ctrl );
 
-	std::list<Node*>::iterator it;
 	Node * itCtrl = NULL;
 
-	for ( it = mCloseList.begin(); it != mCloseList.end(); ++it ) {
+	for ( auto it = mCloseList.begin(); it != mCloseList.end(); ++it ) {
 		itCtrl = *it;
 
 		if ( NULL != itCtrl && itCtrl->isParentOf( Ctrl ) ) {
@@ -158,9 +183,9 @@ void SceneNode::addToCloseQueue( Node * Ctrl ) {
 		}
 	}
 
-	std::list< std::list<Node*>::iterator > itEraseList;
+	std::vector< CloseList::iterator > itEraseList;
 
-	for ( it = mCloseList.begin(); it != mCloseList.end(); ++it ) {
+	for ( auto it = mCloseList.begin(); it != mCloseList.end(); ++it ) {
 		itCtrl = *it;
 
 		if ( NULL != itCtrl && Ctrl->isParentOf( itCtrl ) ) {
@@ -175,9 +200,7 @@ void SceneNode::addToCloseQueue( Node * Ctrl ) {
 
 	// We delete all the controls that don't need to be deleted
 	// because of the new added control to the queue
-	std::list< std::list<Node*>::iterator >::iterator ite;
-
-	for ( ite = itEraseList.begin(); ite != itEraseList.end(); ++ite ) {
+	for ( auto ite = itEraseList.begin(); ite != itEraseList.end(); ++ite ) {
 		mCloseList.erase( *ite );
 	}
 
@@ -188,7 +211,7 @@ void SceneNode::addToCloseQueue( Node * Ctrl ) {
 
 void SceneNode::checkClose() {
 	if ( !mCloseList.empty() ) {
-		for ( std::list<Node*>::iterator it = mCloseList.begin(); it != mCloseList.end(); ++it ) {
+		for ( auto it = mCloseList.begin(); it != mCloseList.end(); ++it ) {
 			eeDelete( *it );
 		}
 
@@ -201,12 +224,17 @@ Sizei SceneNode::getFrameBufferSize() {
 }
 
 void SceneNode::createFrameBuffer() {
-	writeCtrlFlag( NODE_FLAG_FRAME_BUFFER, 1 );
+	writeNodeFlag( NODE_FLAG_FRAME_BUFFER, 1 );
 	eeSAFE_DELETE( mFrameBuffer );
 	Sizei fboSize( getFrameBufferSize() );
 	if ( fboSize.getWidth() < 1 ) fboSize.setWidth(1);
 	if ( fboSize.getHeight() < 1 ) fboSize.setHeight(1);
 	mFrameBuffer = FrameBuffer::New( fboSize.getWidth(), fboSize.getHeight(), true, false, false, 4, mWindow );
+
+	// Frame buffer failed to create?
+	if ( !mFrameBuffer->created() ) {
+		eeSAFE_DELETE( mFrameBuffer );
+	}
 }
 
 void SceneNode::drawFrameBuffer() {
@@ -275,19 +303,9 @@ void SceneNode::sendMsg( Node * Ctrl, const Uint32& Msg, const Uint32& Flags ) {
 	Ctrl->messagePost( &tMsg );
 }
 
-void SceneNode::resizeControl( EE::Window::Window * win ) {
+void SceneNode::resizeControl( EE::Window::Window * ) {
 	setSize( (Float)mWindow->getWidth() , (Float)mWindow->getHeight() );
 	sendMsg( this, NodeMessage::WindowResize );
-}
-
-void SceneNode::invalidate() {
-	if ( mVisible && mAlpha != 0.f ) {
-		writeCtrlFlag( NODE_FLAG_VIEW_DIRTY, 1 );
-	}
-}
-
-bool SceneNode::invalidated() {
-	return 0 != ( mNodeFlags & NODE_FLAG_VIEW_DIRTY );
 }
 
 FrameBuffer * SceneNode::getFrameBuffer() const {
@@ -382,20 +400,52 @@ const bool& SceneNode::getUseGlobalCursors() {
 	return mUseGlobalCursors;
 }
 
-void SceneNode::setCursor( EE_CURSOR_TYPE cursor ) {
+void SceneNode::setCursor( Cursor::Type cursor ) {
 	if ( mUseGlobalCursors ) {
 		mWindow->getCursorManager()->set( cursor );
 	}
 }
 
-bool SceneNode::isDrawInvalidator() {
+bool SceneNode::isDrawInvalidator() const {
 	return true;
+}
+
+ActionManager * SceneNode::getActionManager() const {
+	return mActionManager;
 }
 
 void SceneNode::preDraw() {
 }
 
 void SceneNode::postDraw() {
+}
+
+void SceneNode::subscribeScheduledUpdate( Node * node ) {
+	mScheduledUpdate.push_back( node );
+}
+
+void SceneNode::unsubscribeScheduledUpdate( Node * node ) {
+	mScheduledUpdateRemove.push_back( node );
+}
+
+bool SceneNode::isSubscribedForScheduledUpdate( Node * node ) {
+	return std::find( mScheduledUpdate.begin(), mScheduledUpdate.end(), node ) != mScheduledUpdate.end();
+}
+
+void SceneNode::addMouseOverNode( Node * node ) {
+	mMouseOverNodes.push_back( node );
+}
+
+void SceneNode::removeMouseOverNode(Node * node) {
+	mMouseOverNodes.remove( node );
+}
+
+const bool& SceneNode::getUpdateAllChilds() const {
+	return mUpdateAllChilds;
+}
+
+void SceneNode::setUpdateAllChilds( const bool& updateAllChilds ) {
+	mUpdateAllChilds = updateAllChilds;
 }
 
 }}

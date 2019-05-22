@@ -8,7 +8,7 @@ UITable * UITable::New() {
 }
 
 UITable::UITable() :
-	UITouchDragableWidget(),
+	UITouchDragableWidget( "table" ),
 	mContainerPadding(),
 	mContainer( NULL ),
 	mVScrollBar( NULL ),
@@ -98,7 +98,7 @@ void UITable::setDefaultCollumnsWidth() {
 	updateCells();
 }
 
-void UITable::onScrollValueChange( const Event * Event ) {
+void UITable::onScrollValueChange( const Event * ) {
 	updateScroll( true );
 }
 
@@ -110,6 +110,8 @@ void UITable::setTheme( UITheme * Theme ) {
 	autoPadding();
 
 	onSizeChange();
+
+	onThemeLoaded();
 }
 
 void UITable::autoPadding() {
@@ -144,12 +146,12 @@ void UITable::containerResize() {
 	mContainer->setPosition( padding.Left, padding.Top );
 
 	if( mHScrollBar->isVisible() )
-		mContainer->setPixelsSize( mSize.getWidth() - padding.Right - padding.Left, mSize.getHeight() - padding.Top - mHScrollBar->getRealSize().getHeight() );
+		mContainer->setPixelsSize( mSize.getWidth() - padding.Right - padding.Left, mSize.getHeight() - padding.Top - mHScrollBar->getPixelsSize().getHeight() );
 	else
 		mContainer->setPixelsSize( mSize.getWidth() - padding.Right - padding.Left, mSize.getHeight() - padding.Bottom - padding.Top );
 
 	if ( mVScrollBar->isVisible() )
-		mContainer->setPixelsSize( mContainer->getRealSize().getWidth() - mVScrollBar->getRealSize().getWidth(), mContainer->getRealSize().getHeight() );
+		mContainer->setPixelsSize( mContainer->getPixelsSize().getWidth() - mVScrollBar->getPixelsSize().getWidth(), mContainer->getPixelsSize().getHeight() );
 
 	setDefaultCollumnsWidth();
 }
@@ -203,10 +205,10 @@ void UITable::updateHScroll() {
 }
 
 void UITable::setHScrollStep() {
-	Float width = (Float)mContainer->getRealSize().getWidth();
+	Float width = (Float)mContainer->getPixelsSize().getWidth();
 
 	if ( ( mItemsNotVisible > 0 && UI_SCROLLBAR_AUTO == mVScrollMode ) || UI_SCROLLBAR_ALWAYS_ON == mVScrollMode )
-		width -= mVScrollBar->getRealSize().getWidth();
+		width -= mVScrollBar->getPixelsSize().getWidth();
 
 	Float maxWidth = 0;
 
@@ -617,7 +619,7 @@ bool UITable::isTouchOverAllowedChilds() {
 	return isMouseOverMeOrChilds() && !mVScrollBar->isMouseOverMeOrChilds() && !mHScrollBar->isMouseOverMeOrChilds();
 }
 
-bool UITable::setAttribute( const NodeAttribute& attribute ) {
+bool UITable::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "rowheight" == name ) {
@@ -644,7 +646,7 @@ bool UITable::setAttribute( const NodeAttribute& attribute ) {
 			mHScrollBar->setScrollBarType( UIScrollBar::NoButtons );
 		}
 	} else {
-		return UITouchDragableWidget::setAttribute( attribute );
+		return UITouchDragableWidget::setAttribute( attribute, state );
 	}
 
 	return true;

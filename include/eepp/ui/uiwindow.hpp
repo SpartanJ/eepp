@@ -15,19 +15,39 @@ class UISceneNode;
 
 class EE_API UIWindow : public UIWidget {
 	public:
+		class StyleConfig {
+			public:
+				StyleConfig() {}
+
+				StyleConfig( Uint32 winFlags ) :
+					WinFlags( winFlags )
+				{}
+
+				Uint32		WinFlags = UI_WIN_DEFAULT_FLAGS;
+				Sizei		DecorationSize;
+				Sizei		BorderSize;
+				Sizef		MinWindowSize;
+				Vector2i	ButtonsPositionFixer;
+				Uint32		ButtonsSeparation = 4;
+				Int32		MinCornerDistance = 24;
+				Uint8		BaseAlpha = 255;
+				bool		DecorationAutoSize = true;
+				bool		BorderAutoSize = true;
+		};
+
 		enum WindowBaseContainerType {
 			SIMPLE_LAYOUT,
 			LINEAR_LAYOUT,
 			RELATIVE_LAYOUT
 		};
 
-		static UIWindow * New( WindowBaseContainerType type, const UIWindowStyleConfig& windowStyleConfig );
+		static UIWindow * NewOpt( WindowBaseContainerType type, const StyleConfig& windowStyleConfig );
 
-		static UIWindow * New( WindowBaseContainerType type = SIMPLE_LAYOUT );
+		static UIWindow * New();
 
-		UIWindow( WindowBaseContainerType type, const UIWindowStyleConfig& windowStyleConfig );
+		explicit UIWindow( WindowBaseContainerType type, const StyleConfig& windowStyleConfig );
 
-		UIWindow( WindowBaseContainerType type = SIMPLE_LAYOUT );
+		explicit UIWindow( WindowBaseContainerType type = SIMPLE_LAYOUT );
 
 		virtual ~UIWindow();
 
@@ -43,7 +63,7 @@ class EE_API UIWindow : public UIWidget {
 
 		UIWindow * setSizeWithDecoration( const Sizef& size );
 
-		const Sizef& getSize();
+		const Sizef& getSize() const;
 
 		virtual void setTheme( UITheme * Theme );
 
@@ -61,7 +81,7 @@ class EE_API UIWindow : public UIWidget {
 
 		virtual bool hide();
 
-		virtual void update( const Time& time );
+		virtual void scheduledUpdate( const Time& time );
 
 		virtual void closeWindow();
 
@@ -95,9 +115,9 @@ class EE_API UIWindow : public UIWidget {
 
 		UIWindow * setWinFlags(const Uint32 & winFlags);
 
-		UIWindowStyleConfig getStyleConfig() const;
+		const StyleConfig& getStyleConfig() const;
 
-		UIWindow * setStyleConfig(const UIWindowStyleConfig & styleConfig);
+		UIWindow * setStyleConfig(const StyleConfig & styleConfig);
 
 		UIWindow * setMinWindowSize( Sizef size );
 
@@ -109,7 +129,7 @@ class EE_API UIWindow : public UIWidget {
 
 		virtual void loadFromXmlNode( const pugi::xml_node& node );
 
-		virtual bool setAttribute( const NodeAttribute& attribute );
+		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
 
 		virtual void internalDraw();
 
@@ -119,7 +139,7 @@ class EE_API UIWindow : public UIWidget {
 
 		FrameBuffer * getFrameBuffer() const;
 
-		virtual bool isDrawInvalidator();
+		virtual bool isDrawInvalidator() const;
 	protected:
 		class KeyboardShortcut {
 			public:
@@ -155,7 +175,7 @@ class EE_API UIWindow : public UIWidget {
 		};
 
 		FrameBuffer * mFrameBuffer;
-		UIWindowStyleConfig	mStyleConfig;
+		StyleConfig	mStyleConfig;
 		UINode *	mWindowDecoration;
 		UINode *	mBorderLeft;
 		UINode *	mBorderRight;
@@ -209,7 +229,7 @@ class EE_API UIWindow : public UIWidget {
 
 		void fixTitleSize();
 
-		Uint32 onMouseDoubleClick( const Vector2i &position, const Uint32 flags );
+		Uint32 onMouseDoubleClick( const Vector2i &position, const Uint32& flags );
 
 		void checkShortcuts( const Uint32& KeyCode, const Uint32& Mod );
 

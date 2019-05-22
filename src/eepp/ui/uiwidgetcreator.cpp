@@ -32,46 +32,60 @@
 
 namespace  EE { namespace UI {
 
+static bool sBaseListCreated = false;
+
 UIWidgetCreator::WidgetCallbackMap UIWidgetCreator::widgetCallback = UIWidgetCreator::WidgetCallbackMap();
 
 UIWidgetCreator::RegisteredWidgetCallbackMap UIWidgetCreator::registeredWidget = UIWidgetCreator::RegisteredWidgetCallbackMap();
 
-UIWidget * UIWidgetCreator::createFromName( std::string widgetName ) {
-	String::toLowerInPlace( widgetName );
+void UIWidgetCreator::createBaseWidgetList() {
+	if ( !sBaseListCreated ) {
+		registeredWidget["widget"] = UIWidget::New;
+		registeredWidget["linearlayout"] = UILinearLayout::NewVertical;
+		registeredWidget["relativelayout"] = UIRelativeLayout::New;
+		registeredWidget["textview"] = UITextView::New;
+		registeredWidget["pushbutton"] = UIPushButton::New;
+		registeredWidget["checkbox"] = UICheckBox::New;
+		registeredWidget["radiobutton"] = UIRadioButton::New;
+		registeredWidget["combobox"] = UIComboBox::New;
+		registeredWidget["dropdownlist"] = UIDropDownList::New;
+		registeredWidget["image"] = UIImage::New;
+		registeredWidget["listbox"] = UIListBox::New;
+		registeredWidget["winmenu"] = UIWinMenu::New;
+		registeredWidget["progressbar"] = UIProgressBar::New;
+		registeredWidget["scrollbar"] = UIScrollBar::New;
+		registeredWidget["slider"] = UISlider::New;
+		registeredWidget["spinbox"] = UISpinBox::New;
+		registeredWidget["sprite"] = UISprite::New;
+		registeredWidget["tab"] = UITab::New;
+		registeredWidget["table"] = UITable::New;
+		registeredWidget["tablecell"] = UITableCell::New;
+		registeredWidget["tabwidget"] = UITabWidget::New;
+		registeredWidget["textedit"] = UITextEdit::New;
+		registeredWidget["textinput"] = UITextInput::New;
+		registeredWidget["textinputpassword"] = UITextInputPassword::New;
+		registeredWidget["loader"] = UILoader::New;
+		registeredWidget["selectbutton"] = UISelectButton::New;
+		registeredWidget["window"] = UIWindow::New;
+		registeredWidget["scrollview"] = UIScrollView::New;
+		registeredWidget["textureregion"] = UITextureRegion::New;
+		registeredWidget["touchdragable"] = UITouchDragableWidget::New;
+		registeredWidget["gridlayout"] = UIGridLayout::New;
+		registeredWidget["layout"] = UILayout::New;
 
-	if ( widgetName == "widget" )				return UIWidget::New();
-	else if ( widgetName == "horizontallinearlayout" || widgetName == "hll" || widgetName == "hbox" )									return UILinearLayout::NewHorizontal();
-	else if ( widgetName == "linearlayout" || widgetName == "verticallinearlayout" || widgetName == "vll" || widgetName == "vbox" )		return UILinearLayout::NewVertical();
-	else if ( widgetName == "relativelayout" )	return UIRelativeLayout::New();
-	else if ( widgetName == "textview" )		return UITextView::New();
-	else if ( widgetName == "pushbutton" )		return UIPushButton::New();
-	else if ( widgetName == "checkbox" )		return UICheckBox::New();
-	else if ( widgetName == "radiobutton" )		return UIRadioButton::New();
-	else if ( widgetName == "combobox" )		return UIComboBox::New();
-	else if ( widgetName == "dropdownlist" )	return UIDropDownList::New();
-	else if ( widgetName == "image" )			return UIImage::New();
-	else if ( widgetName == "listbox" )			return UIListBox::New();
-	else if ( widgetName == "winmenu" )			return UIWinMenu::New();
-	else if ( widgetName == "progressbar" )		return UIProgressBar::New();
-	else if ( widgetName == "scrollbar" )		return UIScrollBar::New();
-	else if ( widgetName == "slider" )			return UISlider::New();
-	else if ( widgetName == "spinbox" )			return UISpinBox::New();
-	else if ( widgetName == "sprite" )			return UISprite::New();
-	else if ( widgetName == "tab" )				return UITab::New();
-	else if ( widgetName == "table" )			return UITable::New();
-	else if ( widgetName == "tablecell" )		return UITableCell::New();
-	else if ( widgetName == "tabwidget" )		return UITabWidget::New();
-	else if ( widgetName == "textedit" )		return UITextEdit::New();
-	else if ( widgetName == "textinput" || widgetName == "input" )						return UITextInput::New();
-	else if ( widgetName == "textinputpassword" || widgetName == "inputpassword" )		return UITextInputPassword::New();
-	else if ( widgetName == "loader" )			return UILoader::New();
-	else if ( widgetName == "selectbutton" )	return UISelectButton::New();
-	else if ( widgetName == "window" )			return UIWindow::New();
-	else if ( widgetName == "scrollview" )		return UIScrollView::New();
-	else if ( widgetName == "textureregion" || widgetName == "subtexture" )	return UITextureRegion::New();
-	else if ( widgetName == "touchdragable" )	return UITouchDragableWidget::New();
-	else if ( widgetName == "gridlayout" )		return UIGridLayout::New();
-	else if ( widgetName == "layout" )			return UILayout::New();
+		registeredWidget["hbox"] = UILinearLayout::NewHorizontal;
+		registeredWidget["vbox"] = UILinearLayout::NewVertical;
+		registeredWidget["input"] = UITextInput::New;
+		registeredWidget["inputpassword"] = UITextInputPassword::New;
+
+		sBaseListCreated = true;
+	}
+}
+
+UIWidget * UIWidgetCreator::createFromName( std::string widgetName ) {
+	createBaseWidgetList();
+
+	String::toLowerInPlace( widgetName );
 
 	if ( registeredWidget.find( widgetName ) != registeredWidget.end() ) {
 		return registeredWidget[ widgetName ]();
@@ -106,6 +120,10 @@ void UIWidgetCreator::unregisterWidget( std::string widgetName ) {
 
 bool UIWidgetCreator::isWidgetRegistered( std::string widgetName ) {
 	return registeredWidget.find( String::toLower( widgetName ) ) != registeredWidget.end();
+}
+
+const UIWidgetCreator::RegisteredWidgetCallbackMap& UIWidgetCreator::getRegisteredWidgets() {
+	return registeredWidget;
 }
 
 }}

@@ -84,10 +84,8 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 
 	mWindow.Flags = SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN;
 
-	#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	#if SDL_VERSION_ATLEAST(2,0,1)
 	mWindow.Flags |= SDL_WINDOW_ALLOW_HIGHDPI;
-	#endif
 	#endif
 
 	if ( mWindow.WindowConfig.Style & WindowStyle::Resize ) {
@@ -227,7 +225,7 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 	/// Init the input after the window creation
 	reinterpret_cast<InputSDL*> ( mInput )->init();
 
-	mCursorManager->set( SYS_CURSOR_ARROW );
+	mCursorManager->set( Cursor::SysArrow );
 
 	logSuccessfulInit( getVersion() );
 
@@ -259,7 +257,7 @@ std::string WindowSDL::getVersion() {
 
 	SDL_GetVersion( &ver );
 
-	return String::strFormated( "SDL %d.%d.%d", ver.major, ver.minor, ver.patch );
+	return String::format( "SDL %d.%d.%d", ver.major, ver.minor, ver.patch );
 }
 
 void WindowSDL::createPlatform() {
@@ -352,7 +350,7 @@ void WindowSDL::onWindowResize( Uint32 Width, Uint32 Height ) {
 	mWindow.WindowConfig.Height	= Height;
 	mWindow.WindowSize = Sizei( Width, Height );
 
-	mDefaultView.reset( Rectf( 0, 0, Width, Height ) );
+	mDefaultView.reset( Rectf( 0, 0, mWindow.WindowConfig.Width, mWindow.WindowConfig.Height ) );
 
 	setup2D( false );
 

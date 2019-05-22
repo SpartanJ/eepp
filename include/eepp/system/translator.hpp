@@ -28,7 +28,7 @@ class EE_API Translator {
 
 		void loadFromPack( Pack * pack, const std::string& FilePackPath, std::string lang = "" );
 
-		String getString( const std::string& key );
+		String getString( const std::string& key, const String& defaultValue = String() );
 
 		String getStringf( const char * key, ... );
 

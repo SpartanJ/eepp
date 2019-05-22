@@ -135,8 +135,8 @@ UIMapNew::UIMapNew( UIMap * Map, std::function<void()> NewMapCb, bool ResizeMap 
 
 	mUIBaseColor = UIWidget::New();
 	mUIBaseColor->setFlags( UI_FILL_BACKGROUND | UI_BORDER );
-	mUIBaseColor->getBorder()->setColor( Color( 100, 100, 100, 200 ) );
-	mUIBaseColor->getBackground()->setColor( ResizeMap ? mUIMap->Map()->getBaseColor() : Color( 255, 255, 255, 255 ) );
+	mUIBaseColor->setBorderColor( Color( 100, 100, 100, 200 ) );
+	mUIBaseColor->setBackgroundColor( ResizeMap ? mUIMap->Map()->getBaseColor() : Color( 255, 255, 255, 255 ) );
 	mUIBaseColor->setParent( mUIWindow->getContainer() )->setPosition( Txt->getPosition().x, Txt->getPosition().y + Txt->getSize().getHeight() + 4 )->setSize( 64, 64 );
 
 	Txt = createTextBox( "Red Color:", mUIWindow->getContainer(), Sizef(), Vector2f( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIBaseColor->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
@@ -201,28 +201,28 @@ UIMapNew::UIMapNew( UIMap * Map, std::function<void()> NewMapCb, bool ResizeMap 
 UIMapNew::~UIMapNew() {
 }
 
-void UIMapNew::onRedChange( const Event * Event ) {
+void UIMapNew::onRedChange( const Event * ) {
 	Color Col = mUIBaseColor->getBackground()->getColor();
 	Col.r = (Uint8)mUIRedSlider->getValue();
-	mUIBaseColor->getBackground()->setColor( Col );
+	mUIBaseColor->setBackgroundColor( Col );
 	mUIRedTxt->setText( String::toStr( (Int32)mUIRedSlider->getValue() ) );
 }
 
-void UIMapNew::onGreenChange( const Event * Event ) {
+void UIMapNew::onGreenChange( const Event * ) {
 	Color Col = mUIBaseColor->getBackground()->getColor();
 	Col.g = (Uint8)mUIGreenSlider->getValue();
-	mUIBaseColor->getBackground()->setColor( Col );
+	mUIBaseColor->setBackgroundColor( Col );
 	mUIGreenTxt->setText( String::toStr( (Uint32)mUIGreenSlider->getValue() ) );
 }
 
-void UIMapNew::onBlueChange( const Event * Event ) {
+void UIMapNew::onBlueChange( const Event * ) {
 	Color Col = mUIBaseColor->getBackground()->getColor();
 	Col.b = (Uint8)mUIBlueSlider->getValue();
-	mUIBaseColor->getBackground()->setColor( Col );
+	mUIBaseColor->setBackgroundColor( Col );
 	mUIBlueTxt->setText( String::toStr( (Uint32)mUIBlueSlider->getValue() ) );
 }
 
-void UIMapNew::onOKClick( const Event * Event ) {
+void UIMapNew::onOKClick( const Event * ) {
 	Int32 w = static_cast<Int32>( mUIMapWidth->getValue() );
 	Int32 h = static_cast<Int32>( mUIMapHeight->getValue() );
 	Int32 tw = static_cast<Int32>( mUIMapTWidth->getValue() );
@@ -272,11 +272,11 @@ void UIMapNew::onOKClick( const Event * Event ) {
 	mUIWindow->closeWindow();
 }
 
-void UIMapNew::onCancelClick( const Event * Event ) {
+void UIMapNew::onCancelClick( const Event * ) {
 	mUIWindow->closeWindow();
 }
 
-void UIMapNew::onWindowClose( const Event * Event ) {
+void UIMapNew::onWindowClose( const Event * ) {
 	eeDelete( this );
 }
 

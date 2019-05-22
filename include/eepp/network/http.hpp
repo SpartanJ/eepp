@@ -10,7 +10,7 @@
 #include <eepp/system/thread.hpp>
 #include <eepp/system/mutex.hpp>
 #include <eepp/system/lock.hpp>
-#include <eepp/thirdparty/PlusCallback/callback.hpp>
+#include <eepp/network/uri.hpp>
 #include <map>
 #include <string>
 #include <list>
@@ -26,108 +26,6 @@ namespace EE { namespace Network {
 /** @brief A HTTP client */
 class EE_API Http : NonCopyable {
 	public :
-		/** @brief Define a HTTP request */
-		class EE_API Request {
-			public :
-			/** @brief Enumerate the available HTTP methods for a request */
-			enum Method {
-				Get,	///< Request in get mode, standard method to retrieve a page
-				Post,	///< Request in post mode, usually to send data to a page
-				Head,	///< Request a page's header only
-				Put,	///< Request in put mode, useful for a REST API
-				Delete	///< Request in delete mode, useful for a REST API
-			};
-
-			/** @brief Default constructor
-			**  This constructor creates a GET request, with the root
-			**  URI ("/") and an empty body.
-			**  @param uri	Target URI
-			**  @param method Method to use for the request
-			**  @param body   Content of the request's body
-			**  @param validateCertificate Enables certificate validation for https request
-			**  @param validateHostname Enables hostname validation for https request */
-			Request(const std::string& uri = "/", Method method = Get, const std::string& body = "", bool validateCertificate = true, bool validateHostname = true );
-
-			/** @brief Set the value of a field
-			**  The field is created if it doesn't exist. The name of
-			**  the field is case insensitive.
-			**  By default, a request doesn't contain any field (but the
-			**  mandatory fields are added later by the HTTP client when
-			**  sending the request).
-			**  @param field Name of the field to set
-			**  @param value Value of the field */
-			void setField(const std::string& field, const std::string& value);
-
-			/** @brief Set the request method
-			**  See the Method enumeration for a complete list of all
-			**  the availale methods.
-			**  The method is Http::Request::Get by default.
-			**  @param method Method to use for the request */
-			void setMethod(Method method);
-
-			/** @brief Set the requested URI
-			**  The URI is the resource (usually a web page or a file)
-			**  that you want to get or post.
-			**  The URI is "/" (the root page) by default.
-			**  @param uri URI to request, relative to the host */
-			void setUri(const std::string& uri);
-
-			/** @brief Set the HTTP version for the request
-			**  The HTTP version is 1.0 by default.
-			**  @param major Major HTTP version number
-			**  @param minor Minor HTTP version number */
-			void setHttpVersion(unsigned int major, unsigned int minor);
-
-			/** @brief Set the body of the request
-			**  The body of a request is optional and only makes sense
-			**  for POST requests. It is ignored for all other methods.
-			**  The body is empty by default.
-			**  @param body Content of the body */
-			void setBody(const std::string& body);
-
-			/** @return The request Uri */
-			const std::string& getUri() const;
-
-			/** @return If SSL certificate validation is enabled */
-			const bool& getValidateCertificate() const;
-
-			/** Enable/disable SSL certificate validation */
-			void setValidateCertificate( bool enable );
-
-			/** @return If SSL hostname validation is enabled */
-			const bool& getValidateHostname() const;
-
-			/** Enable/disable SSL hostname validation */
-			void setValidateHostname( bool enable );
-		private:
-			friend class Http;
-
-			/** @brief Prepare the final request to send to the server
-			**  This is used internally by Http before sending the
-			**  request to the web server.
-			**  @return String containing the request, ready to be sent */
-			std::string prepare() const;
-
-			/** @brief Check if the request defines a field
-			**  This function uses case-insensitive comparisons.
-			**  @param field Name of the field to test
-			**  @return True if the field exists, false otherwise */
-			bool hasField(const std::string& field) const;
-
-			// Types
-			typedef std::map<std::string, std::string> FieldTable;
-
-			// Member data
-			FieldTable		mFields;				///< Fields of the header associated to their value
-			Method			mMethod;				///< Method to use for the request
-			std::string		mUri;					///< Target URI of the request
-			unsigned int	mMajorVersion;			///< Major HTTP version
-			unsigned int	mMinorVersion;			///< Minor HTTP version
-			std::string		mBody;					///< Body of the request
-			bool			mValidateCertificate;	///< Validates the SSL certificate in case of an HTTPS request
-			bool			mValidateHostname;		///< Validates the hostname in case of an HTTPS request
-		};
-
 		/** @brief Define a HTTP response */
 		class EE_API Response {
 			public:
@@ -171,6 +69,9 @@ class EE_API Http : NonCopyable {
 				ConnectionFailed	= 1001  ///< Connection with server failed
 			};
 
+			/** @return The status string */
+			static const char * statusToString( const Status& status );
+
 			/** @brief Default constructor
 			**  Constructs an empty response. */
 			Response();
@@ -185,6 +86,9 @@ class EE_API Http : NonCopyable {
 			**  @return Value of the field, or empty string if not found */
 			const std::string& getField(const std::string& field) const;
 
+			/** @return If the field is found in the response headers. */
+			bool hasField(const std::string& field) const;
+
 			/** @brief Get the response status code
 			**  The status code should be the first thing to be checked
 			**  after receiving a response, it defines whether it is a
@@ -192,6 +96,9 @@ class EE_API Http : NonCopyable {
 			**  enumeration).
 			**  @return Status code of the response */
 			Status getStatus() const;
+
+			/** @brief Get the response status description */
+			const char * getStatusDescription() const;
 
 			/** @brief Get the major HTTP version number of the response
 			**  @return Major HTTP version number
@@ -234,11 +141,202 @@ class EE_API Http : NonCopyable {
 			std::string		mBody;			///< Body of the response
 		};
 
+		/** @brief Define a HTTP request */
+		class EE_API Request {
+			public :
+			/** @brief Enumerate the available HTTP methods for a request */
+			enum Method {
+				Get,     ///< The GET method requests a representation of the specified resource. Requests using GET should only retrieve data.
+				Head,    ///< Request a page's header only
+				Post,    ///< The POST method is used to submit an entity to the specified resource, often causing a change in state or side effects on the server.
+				Put,     ///< The PUT method replaces all current representations of the target resource with the request payload.
+				Delete,  ///< The DELETE method deletes the specified resource.
+				Options, ///< The OPTIONS method is used to describe the communication options for the target resource.
+				Patch,   ///< The PATCH method is used to apply partial modifications to a resource.
+				Connect  ///< The CONNECT method starts two-way communications with the requested resource. It can be used to open a tunnel.
+			};
+
+			/** @brief Enumerate the available states for a request */
+			enum Status {
+				Connected,       ///< Connected to server.
+				Sent,            ///< Request sent to the server.
+				HeaderReceived,  ///< Header received.
+				ContentReceived  ///< Content received.
+			};
+
+			/** @return Method from a method name string. */
+			static Method methodFromString( std::string methodString );
+
+			/** @return The method string from a method */
+			static std::string methodToString( const Method& method );
+
+			/** @brief Default constructor
+			**  This constructor creates a GET request, with the root
+			**  URI ("/") and an empty body.
+			**  @param uri	Target URI
+			**  @param method Method to use for the request
+			**  @param body   Content of the request's body
+			**  @param validateCertificate Enables certificate validation for https request
+			**  @param validateHostname Enables hostname validation for https request
+			**  @param followRedirect Allow follor redirects to the request.
+			**  @param compressedResponse Set if the requested response should be compressed ( if available )
+			*/
+			Request(const std::string& uri = "/", Method method = Get, const std::string& body = "", bool validateCertificate = true, bool validateHostname = true, bool followRedirect = true, bool compressedResponse = false);
+
+			/** @brief Set the value of a field
+			**  The field is created if it doesn't exist. The name of
+			**  the field is case insensitive.
+			**  By default, a request doesn't contain any field (but the
+			**  mandatory fields are added later by the HTTP client when
+			**  sending the request).
+			**  @param field Name of the field to set
+			**  @param value Value of the field */
+			void setField(const std::string& field, const std::string& value);
+
+			/** @brief Check if the request defines a field
+			**  This function uses case-insensitive comparisons.
+			**  @param field Name of the field to test
+			**  @return True if the field exists, false otherwise */
+			bool hasField(const std::string& field) const;
+
+			/** @brief Get the value of a field
+			**  If the field @a field is not found in the response header,
+			**  the empty string is returned. This function uses
+			**  case-insensitive comparisons.
+			**  @param field Name of the field to get
+			**  @return Value of the field, or empty string if not found */
+			const std::string& getField(const std::string& field) const;
+
+			/** @brief Set the request method
+			**  See the Method enumeration for a complete list of all
+			**  the availale methods.
+			**  The method is Http::Request::Get by default.
+			**  @param method Method to use for the request */
+			void setMethod(Method method);
+
+			/** @brief Set the requested URI
+			**  The URI is the resource (usually a web page or a file)
+			**  that you want to get or post.
+			**  The URI is "/" (the root page) by default.
+			**  @param uri URI to request, relative to the host */
+			void setUri(const std::string& uri);
+
+			/** @brief Set the HTTP version for the request
+			**  The HTTP version is 1.0 by default.
+			**  @param major Major HTTP version number
+			**  @param minor Minor HTTP version number */
+			void setHttpVersion(unsigned int major, unsigned int minor);
+
+			/** @brief Set the body of the request
+			**  The body of a request is optional and only makes sense
+			**  for POST requests. It is ignored for all other methods.
+			**  The body is empty by default.
+			**  @param body Content of the body */
+			void setBody(const std::string& body);
+
+			/** @return The request Uri */
+			const std::string& getUri() const;
+
+			/** @return If SSL certificate validation is enabled */
+			const bool& getValidateCertificate() const;
+
+			/** Enable/disable SSL certificate validation */
+			void setValidateCertificate( bool enable );
+
+			/** @return If SSL hostname validation is enabled */
+			const bool& getValidateHostname() const;
+
+			/** Enable/disable SSL hostname validation */
+			void setValidateHostname( bool enable );
+
+			/** @return If requests follow redirects */
+			const bool& getFollowRedirect() const;
+
+			/** Enables/Disables follow redirects */
+			void setFollowRedirect( bool follow );
+
+			/** @return The maximun number of redirects allowd if follow redirect is enabled. */
+			const unsigned int& getMaxRedirects() const;
+
+			/** Set the maximun number of redirects allowed if follow redirect is enabled. */
+			void setMaxRedirects( unsigned int maxRedirects );
+
+			/** Definition of the current progress callback
+			 * @param http The http client
+			 * @param request The http request
+			 * @param status The status of the progress event
+			 * @param totalBytes The total bytes of the document / files ( only available if Content-Length is returned, otherwise is 0 )
+			 * @param currentBytes Current received total bytes
+			 * @return True if continue the request, false will cancel the current request.
+			*/
+			typedef std::function<bool( const Http& http, const Http::Request& request, const Http::Response& response, const Status& status, std::size_t totalBytes, std::size_t currentBytes )>		ProgressCallback;
+
+			/** Sets a progress callback */
+			void setProgressCallback( const ProgressCallback& progressCallback );
+
+			/** Get the progress callback */
+			const ProgressCallback& getProgressCallback() const;
+
+			/** Cancels the current request if being processed */
+			void cancel();
+
+			/** @return True if the current request was cancelled */
+			const bool& isCancelled() const;
+
+			/** @return If requests a compressed response */
+			const bool& isCompressedResponse() const;
+
+			/** Set to request a compressed response from the server
+			**  The returned response will be automatically decompressed
+			**  by the client.
+			*/
+			void setCompressedResponse(const bool& compressedResponse);
+
+			/** Resumes download if a file is already present */
+			void setContinue(const bool& resume);
+
+			/** @return If must continue a download previously started. */
+			const bool& isContinue() const;
+
+			private:
+			friend class Http;
+
+			/** @brief Prepare the final request to send to the server
+			**  This is used internally by Http before sending the
+			**  request to the web server.
+			**  @return String containing the request, ready to be sent */
+			std::string prepare(const Http& http) const;
+
+			/** Prepares a http tunnel request */
+			std::string prepareTunnel(const Http& http);
+
+			// Types
+			typedef std::map<std::string, std::string> FieldTable;
+
+			// Member data
+			FieldTable            mFields;              ///< Fields of the header associated to their value
+			Method                mMethod;              ///< Method to use for the request
+			std::string           mUri;                 ///< Target URI of the request
+			unsigned int          mMajorVersion;        ///< Major HTTP version
+			unsigned int          mMinorVersion;        ///< Minor HTTP version
+			std::string           mBody;                ///< Body of the request
+			bool                  mValidateCertificate; ///< Validates the SSL certificate in case of an HTTPS request
+			bool                  mValidateHostname;    ///< Validates the hostname in case of an HTTPS request
+			bool                  mFollowRedirect;      ///< Follows redirect response codes
+			bool                  mCompressedResponse;  ///< Request comrpessed response
+			bool                  mContinue;            ///< Resume download
+			mutable bool          mCancel;              ///< Cancel state of current request
+			ProgressCallback      mProgressCallback;    ///< Progress callback
+			unsigned int          mMaxRedirections;     ///< Maximun number of redirections allowed
+			mutable unsigned int  mRedirectionCount;    ///< Number of redirections followed by the request
+			URI                   mProxy;               ///< Proxy information
+		};
+
 		/** @brief Default constructor */
 		Http();
 
 		/** @brief Construct the HTTP client with the target host
-		**  This is equivalent to calling SetHost(host, port).
+		**  This is equivalent to calling setHost(host, port).
 		**  The port has a default value of 0, which means that the
 		**  HTTP client will use the right port according to the
 		**  protocol used (80 for HTTP, 443 for HTTPS). You should
@@ -246,8 +344,10 @@ class EE_API Http : NonCopyable {
 		**  than the standard one, or use an unknown protocol.
 		**  @param host Web server to connect to
 		**  @param port Port to use for connection
-		**	@param useSSL force the SSL usage ( if compiled with the support of it ). If the host starts with https:// it will use it by default. */
-		Http(const std::string& host, unsigned short port = 0, bool useSSL = false);
+		**  @param useSSL force the SSL usage ( if compiled with the support of it ). If the host starts with https:// it will use it by default.
+		**  @param proxy Set an http proxy for the host connection
+		*/
+		Http(const std::string& host, unsigned short port = 0, bool useSSL = false, URI proxy = URI());
 
 		~Http();
 
@@ -261,8 +361,10 @@ class EE_API Http : NonCopyable {
 		**  than the standard one, or use an unknown protocol.
 		**  @param host Web server to connect to
 		**  @param port Port to use for connection
-		**	@param useSSL force the SSL usage ( if compiled with the support of it ). If the host starts with https:// it will use it by default. */
-		void setHost(const std::string& host, unsigned short port = 0, bool useSSL = false);
+		**	@param useSSL force the SSL usage ( if compiled with the support of it ). If the host starts with https:// it will use it by default.
+		**	@param proxy Set an http proxy for the host connection
+		*/
+		void setHost(const std::string& host, unsigned short port = 0, bool useSSL = false, URI proxy = URI());
 
 		/** @brief Send a HTTP request and return the server's response.
 		**  You must have a valid host before sending a request (see setHost).
@@ -311,13 +413,18 @@ class EE_API Http : NonCopyable {
 
 		/** @brief Sends the request and creates a new thread, when got the response informs the result to the callback.
 		**	This function does not lock the caller thread.
-		**  @see SendRequest */
+		**  @see sendRequest */
 		void sendAsyncRequest( AsyncResponseCallback cb, const Http::Request& request, Time timeout = Time::Zero );
 
 		/** @brief Sends the request and creates a new thread, when got the response informs the result to the callback.
 		**	This function does not lock the caller thread.
-		**  @see SendRequest */
+		**  @see downloadRequest */
 		void downloadAsyncRequest( AsyncResponseCallback cb, const Http::Request& request, IOStream& writeTo, Time timeout = Time::Zero );
+
+		/** @brief Sends the request and creates a new thread, when got the response informs the result to the callback.
+		**	This function does not lock the caller thread.
+		**  @see downloadRequest */
+		void downloadAsyncRequest( AsyncResponseCallback cb, const Http::Request& request, std::string writePath, Time timeout = Time::Zero );
 
 		/** @return The host address */
 		const IpAddress& getHost() const;
@@ -327,6 +434,21 @@ class EE_API Http : NonCopyable {
 
 		/** @return The host port */
 		const unsigned short& getPort() const;
+
+		/** @return If the HTTP client uses SSL/TLS */
+		const bool& isSSL() const;
+
+		/** @return The URI from the schema + hostname + port */
+		URI getURI() const;
+
+		/** Sets the request proxy */
+		void setProxy( const URI& uri );
+
+		/** @return The request proxy */
+		const URI& getProxy() const;
+
+		/** @return Is a proxy is need to be used */
+		bool isProxied() const;
 	private:
 		class AsyncRequest : public Thread {
 			public:
@@ -350,14 +472,53 @@ class EE_API Http : NonCopyable {
 				bool					mStreamOwned;
 				IOStream *				mStream;
 		};
+
+		class HttpConnection {
+			public:
+				HttpConnection();
+
+				HttpConnection( TcpSocket * socket );
+
+				~HttpConnection();
+
+				void setSocket( TcpSocket * socket );
+
+				TcpSocket * getSocket() const;
+
+				void disconnect();
+
+				const bool& isConnected() const;
+
+				void setConnected( const bool& connected );
+
+				const bool& isTunneled() const;
+
+				void setTunneled( const bool& tunneled );
+
+				const bool& isSSL() const;
+
+				void setSSL( const bool& ssl );
+
+				const bool& isKeepAlive() const;
+
+				void setKeepAlive( const bool& isKeepAlive );
+			protected:
+				TcpSocket * mSocket;
+				bool mIsConnected;
+				bool mIsTunneled;
+				bool mIsSSL;
+				bool mIsKeepAlive;
+		};
+
 		friend class AsyncRequest;
-		ThreadLocalPtr<TcpSocket>		mConnection;	///< Connection to the host
+		ThreadLocalPtr<HttpConnection>	mConnection;	///< Connection to the host
 		IpAddress						mHost;			///< Web host address
 		std::string						mHostName;		///< Web host name
 		unsigned short					mPort;			///< Port used for connection with host
 		std::list<AsyncRequest*>		mThreads;
 		Mutex							mThreadsMutex;
 		bool							mIsSSL;
+		URI								mProxy;
 
 		void removeOldThreads();
 

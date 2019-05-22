@@ -6,6 +6,10 @@
 
 namespace EE { namespace Network {
 
+UdpSocket * UdpSocket::New() {
+	return eeNew( UdpSocket, ( ) );
+}
+
 UdpSocket::UdpSocket() :
 	Socket  (Udp),
 	mBuffer(MaxDatagramSize)
@@ -57,8 +61,7 @@ Socket::Status UdpSocket::send(const void* data, std::size_t size, const IpAddre
 	create();
 
 	// Make sure that all the data will fit in one datagram
-	if (size > MaxDatagramSize)
-	{
+	if (size > MaxDatagramSize) {
 		eePRINTL( "Cannot send data over the network (the number of bytes to send is greater than UdpSocket::MaxDatagramSize)" );
 		return Error;
 	}
@@ -139,5 +142,16 @@ Socket::Status UdpSocket::receive(Packet& packet, IpAddress& remoteAddress, unsi
 	return status;
 }
 
+void UdpSocket::setSendTimeout(SocketHandle sock, const Time& timeout) {
+	if (getHandle() != Private::SocketImpl::invalidSocket()) {
+		Private::SocketImpl::setSendTimeout(getHandle(), timeout);
+	}
+}
+
+void UdpSocket::setReceiveTimeout(SocketHandle sock, const Time& timeout) {
+	if (getHandle() != Private::SocketImpl::invalidSocket()) {
+		Private::SocketImpl::setReceiveTimeout(getHandle(), timeout);
+	}
+}
 
 }}

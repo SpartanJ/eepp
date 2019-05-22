@@ -5,6 +5,8 @@
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
 
+#include <eepp/system/time.hpp>
+
 #ifdef _WIN32_WINDOWS
 	#undef _WIN32_WINDOWS
 #endif
@@ -16,6 +18,8 @@
 #include <eepp/network/socket.hpp>
 #include <winsock2.h>
 #include <ws2tcpip.h>
+
+using namespace EE::System;
 
 namespace EE { namespace Network { namespace Private {
 
@@ -47,6 +51,12 @@ class SocketImpl {
 		/** Get the last socket error status
 		**  @return Status corresponding to the last socket error */
 		static Socket::Status getErrorStatus();
+
+		/** Set the send timeout */
+		static void setSendTimeout(SocketHandle sock, const Time& timeout);
+
+		/** Set the receive timeout */
+		static void setReceiveTimeout(SocketHandle sock, const Time& timeout);
 };
 
 }}}

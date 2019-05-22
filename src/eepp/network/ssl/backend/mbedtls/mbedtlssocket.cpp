@@ -14,7 +14,7 @@ bool MbedTLSSocket::init() {
 	mbedtls_x509_crt_init(&sCACert);
 
 	//! Load the certificates and config
-	SafeDataPointer data;
+	ScopedBuffer data;
 
 	if ( FileSystem::fileExists( SSLSocket::CertificatesPath ) ) {
 		FileSystem::fileGet( SSLSocket::CertificatesPath, data );
@@ -28,12 +28,12 @@ bool MbedTLSSocket::init() {
 		}
 	}
 
-	if ( data.size > 0 ) {
-		SafeDataPointer dataZeroEnded( data.size + 1 );
-		memcpy( dataZeroEnded.data, data.data, data.size );
-		dataZeroEnded.data[ data.size ] = '\0';
+	if ( data.length() > 0 ) {
+		ScopedBuffer dataZeroEnded( data.length() + 1 );
+		memcpy( dataZeroEnded.get(), data.get(), data.length() );
+		dataZeroEnded[ data.length() ] = '\0';
 
-		int err = mbedtls_x509_crt_parse( &sCACert, (const unsigned char*)dataZeroEnded.data, dataZeroEnded.size );
+		int err = mbedtls_x509_crt_parse( &sCACert, (const unsigned char*)dataZeroEnded.get(), dataZeroEnded.length() );
 
 		if ( err != 0 ) {
 			char errStr[ 1024 ];
@@ -72,7 +72,7 @@ int MbedTLSSocket::bio_send(void *ctx, const unsigned char *buf, size_t len) {
 	MbedTLSSocket *sp = (MbedTLSSocket *)ctx;
 
 	size_t sent;
-	Socket::Status err = sp->mSSLSocket->tcp_send((const void*)buf, len, sent);
+	Socket::Status err = sp->mSSLSocket->tcpSend((const void*)buf, len, sent);
 
 	if (err != Socket::Done) {
 		return MBEDTLS_ERR_SSL_INTERNAL_ERROR;
@@ -90,7 +90,7 @@ int MbedTLSSocket::bio_recv(void *ctx, unsigned char *buf, size_t len) {
 	MbedTLSSocket *sp = (MbedTLSSocket *)ctx;
 
 	size_t got;
-	Socket::Status err = sp->mSSLSocket->tcp_receive(buf, len, got);
+	Socket::Status err = sp->mSSLSocket->tcpReceive(buf, len, got);
 
 	if (err != Socket::Done) {
 		return MBEDTLS_ERR_SSL_INTERNAL_ERROR;

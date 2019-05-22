@@ -47,13 +47,13 @@ SINGLETON_DECLARE_IMPLEMENTATION(Engine)
 Engine::Engine() :
 	mBackend( NULL ),
 	mWindow( NULL ),
-	mSharedGLContext( false ),
+	mSharedGLContext( true ),
 	mMainThreadId( 0 ),
 	mPlatformHelper( NULL ),
 	mDisplayManager( NULL )
 {
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
-	mZip = eeNew( Zip, () );
+	mZip = Zip::New();
 	mZip->open( getPlatformHelper()->getApkPath() );
 
 	FileSystem::changeWorkingDirectory( getPlatformHelper()->getExternalStoragePath() );

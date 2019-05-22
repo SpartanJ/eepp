@@ -11,7 +11,7 @@ class EE_API UITouchDragableWidget : public UIWidget {
 		
 		UITouchDragableWidget();
 
-		virtual void update( const Time& time );
+		~UITouchDragableWidget();
 
 		virtual Uint32 getType() const;
 
@@ -29,15 +29,19 @@ class EE_API UITouchDragableWidget : public UIWidget {
 
 		UITouchDragableWidget * setTouchDragDeceleration( const Vector2f& touchDragDeceleration );
 
-		virtual bool setAttribute( const NodeAttribute& attribute );
+		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
 	protected:
 		Vector2f mTouchDragPoint;
 		Vector2f mTouchDragAcceleration;
 		Vector2f mTouchDragDeceleration;
 
+		UITouchDragableWidget( const std::string& tag );
+
 		virtual void onTouchDragValueChange( Vector2f diff );
 
 		virtual bool isTouchOverAllowedChilds();
+
+		virtual void scheduledUpdate( const Time& time );
 };
 
 }}

@@ -42,7 +42,7 @@ SoundFileReaderMp3::~SoundFileReaderMp3() {
 
 bool SoundFileReaderMp3::open(IOStream& stream, Info& info) {
 	mMp3 = (drmp3*)eeMalloc(sizeof(drmp3));
-
+	// This could be solved with drmp3_get_mp3_frame_count, but our implementation is faster.
 	Mp3Info::Info mp3info = Mp3Info( stream ).getInfo();
 
 	stream.seek(0);
@@ -61,7 +61,7 @@ bool SoundFileReaderMp3::open(IOStream& stream, Info& info) {
 
 void SoundFileReaderMp3::seek(Uint64 sampleOffset) {
 	if ( mMp3 ) {
-		drmp3_seek_to_frame( mMp3, sampleOffset / mChannelCount );
+		drmp3_seek_to_pcm_frame( mMp3, sampleOffset / mChannelCount );
 	}
 }
 
@@ -70,22 +70,16 @@ Uint64 SoundFileReaderMp3::read(Int16* samples, Uint64 maxCount) {
 
 	Uint64 count = 0;
 	while (count < maxCount) {
-		int samplesToRead = static_cast<int>(maxCount - count);
+		const int samplesToRead = static_cast<int>(maxCount - count);
 		int frames = samplesToRead / mChannelCount;
-		float rSamples[samplesToRead];
-
-		long framesRead = drmp3_read_f32( mMp3, frames, rSamples );
+		long framesRead = drmp3_read_pcm_frames_s16( mMp3, frames, samples );
 
 		if (framesRead > 0) {
 			long samplesRead = framesRead * mChannelCount;
-
-			for ( int i = 0; i < samplesRead; i++ )
-				samples[i] = rSamples[i] * 32768.f;
-
 			count += samplesRead;
 			samples += samplesRead;
 
-			if ( framesRead != frames )
+			if (framesRead != frames)
 				break;
 		} else {
 			// error or end of file

@@ -3,6 +3,14 @@
 
 namespace EE { namespace Graphics {
 
+ArcDrawable * ArcDrawable::New() {
+	return eeNew( ArcDrawable, () );
+}
+
+ArcDrawable * ArcDrawable::New( const Float& radius, Uint32 segmentsCount, const Float& arcAngle, const Float& arcStartAngle ) {
+	return eeNew( ArcDrawable, ( radius, segmentsCount, arcAngle, arcStartAngle ) );
+}
+
 ArcDrawable::ArcDrawable() :
 	PrimitiveDrawable( Drawable::ARC ),
 	mRadius( 0 ),

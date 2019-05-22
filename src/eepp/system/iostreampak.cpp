@@ -3,6 +3,10 @@
 
 namespace EE { namespace System {
 
+IOStreamPak * IOStreamPak::New( Pak * pack, const std::string& path, bool writeMode ) {
+	return eeNew( IOStreamPak, ( pack, path, writeMode ) );
+}
+
 IOStreamPak::IOStreamPak( Pak * pack, const std::string & path, bool writeMode ) :
 	mFile( NULL ),
 	mPos( 0 ),
@@ -13,7 +17,7 @@ IOStreamPak::IOStreamPak( Pak * pack, const std::string & path, bool writeMode )
 	if ( -1 != ( index = pack->exists( path ) ) ) {
 		mEntry = pack->getPackEntry( (Uint32)index );
 
-		mFile = eeNew( IOStreamFile, ( pack->getPackPath(), ( writeMode ? "wb" : "rb" ) ) );
+		mFile = IOStreamFile::New( pack->getPackPath(), ( writeMode ? "wb" : "rb" ) );
 
 		if ( mFile->isOpen() ) {
 			mFile->seek( mEntry.file_position );

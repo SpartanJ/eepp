@@ -8,7 +8,7 @@ UIListBoxItem * UIListBoxItem::New() {
 }
 
 UIListBoxItem::UIListBoxItem() :
-	UITextView()
+	UITextView( "listbox::item" )
 {
 	setLayoutSizeRules( FIXED, FIXED );
 	applyDefaultTheme();
@@ -38,16 +38,33 @@ void UIListBoxItem::setTheme( UITheme * Theme ) {
 	UIWidget::setTheme( Theme );
 
 	setThemeSkin( Theme, "listboxitem" );
+
+	onThemeLoaded();
 }
 
-Uint32 UIListBoxItem::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
+Uint32 UIListBoxItem::onMouseUp( const Vector2i& Pos, const Uint32& Flags ) {
+	UITextView::onMouseUp( Pos, Flags );
+
+	if ( mEnabled && mVisible ) {
+		UIListBox * LBParent 	= reinterpret_cast<UIListBox*> ( getParent()->getParent() );
+
+		if ( Flags & EE_BUTTONS_WUWD && LBParent->getVerticalScrollBar()->isVisible() ) {
+			// Manage click can delete _this_
+			LBParent->getVerticalScrollBar()->getSlider()->manageClick( Flags );
+		}
+	}
+
+	return 1;
+}
+
+Uint32 UIListBoxItem::onMouseClick( const Vector2i& Pos, const Uint32& Flags ) {
 	if ( Flags & EE_BUTTONS_LRM ) {
 		reinterpret_cast<UIListBox*> ( getParent()->getParent() )->itemClicked( this );
 
 		select();
 	}
 
-	return 1;
+	return UITextView::onMouseClick( Pos, Flags );
 }
 
 void UIListBoxItem::select() {
@@ -57,7 +74,7 @@ void UIListBoxItem::select() {
 
 	if ( LBParent->isMultiSelect() ) {
 		if ( !wasSelected ) {
-			setSkinState( UISkinState::StateSelected );
+			pushState( UIState::StateSelected );
 
 			mNodeFlags |= NODE_FLAG_SELECTED;
 
@@ -70,7 +87,7 @@ void UIListBoxItem::select() {
 			LBParent->mSelected.remove( LBParent->getItemIndex( this ) );
 		}
 	} else {
-		setSkinState( UISkinState::StateSelected );
+		pushState( UIState::StateSelected );
 
 		mNodeFlags |= NODE_FLAG_SELECTED;
 
@@ -83,26 +100,11 @@ void UIListBoxItem::select() {
 	}
 }
 
-void UIListBoxItem::update( const Time& time ) {
-	UITextView::update( time );
-
-	if ( mEnabled && mVisible && NULL != getEventDispatcher() ) {
-		UIListBox * LBParent 	= reinterpret_cast<UIListBox*> ( getParent()->getParent() );
-		Uint32 Flags 			= getEventDispatcher()->getClickTrigger();
-
-		if ( isMouseOver() ) {
-			if ( Flags & EE_BUTTONS_WUWD && LBParent->getVerticalScrollBar()->isVisible() ) {
-				LBParent->getVerticalScrollBar()->getSlider()->manageClick( Flags );
-			}
-		}
-	}
-}
-
-Uint32 UIListBoxItem::onMouseExit( const Vector2i& Pos, const Uint32 Flags ) {
-	UINode::onMouseExit( Pos, Flags );
+Uint32 UIListBoxItem::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
+	UINode::onMouseLeave( Pos, Flags );
 
 	if ( mNodeFlags & NODE_FLAG_SELECTED )
-		setSkinState( UISkinState::StateSelected );
+		pushState( UIState::StateSelected );
 
 	return 1;
 }
@@ -111,7 +113,7 @@ void UIListBoxItem::unselect() {
 	if ( mNodeFlags & NODE_FLAG_SELECTED )
 		mNodeFlags &= ~NODE_FLAG_SELECTED;
 
-	setSkinState( UISkinState::StateNormal );
+	popState( UIState::StateSelected );
 }
 
 bool UIListBoxItem::isSelected() const {
@@ -119,18 +121,8 @@ bool UIListBoxItem::isSelected() const {
 }
 
 void UIListBoxItem::onStateChange() {
-	UIListBox * LBParent = reinterpret_cast<UIListBox*> ( getParent()->getParent() );
-
-	if ( isSelected() && mSkinState->getState() != UISkinState::StateSelected ) {
-		setSkinState( UISkinState::StateSelected );
-	}
-
-	if ( mSkinState->getState() == UISkinState::StateSelected ) {
-		setFontColor( LBParent->getFontSelectedColor() );
-	} else if ( mSkinState->getState() == UISkinState::StateMouseEnter ) {
-		setFontColor( LBParent->getFontOverColor() );
-	} else {
-		setFontColor( LBParent->getFontColor() );
+	if ( isSelected() && mSkinState->getState() != UIState::StateSelected ) {
+		pushState( UIState::StateSelected, false );
 	}
 
 	UITextView::onStateChange();
