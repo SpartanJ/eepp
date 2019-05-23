@@ -16,7 +16,7 @@ Uint32 UIRelativeLayout::getType() const {
 }
 
 bool UIRelativeLayout::isType( const Uint32& type ) const {
-	return UIRelativeLayout::getType() == type ? true : UIWidget::isType( type );
+	return UIRelativeLayout::getType() == type ? true : UILayout::isType( type );
 }
 
 UIRelativeLayout * UIRelativeLayout::add(UIWidget * widget) {

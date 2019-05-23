@@ -27,7 +27,7 @@ Uint32 UILinearLayout::getType() const {
 }
 
 bool UILinearLayout::isType( const Uint32& type ) const {
-	return UIWidget::getType() == type ? true : UIWidget::isType( type );
+	return UILinearLayout::getType() == type ? true : UILayout::isType( type );
 }
 
 UI_ORIENTATION UILinearLayout::getOrientation() const {
@@ -69,12 +69,41 @@ void UILinearLayout::pack() {
 }
 
 void UILinearLayout::packVertical() {
+	bool sizeChanged = false;
+	Sizef size;
+
 	if ( getLayoutWidthRules() == MATCH_PARENT && 0 == mLayoutWeight ) {
-		setInternalWidth( getParent()->getSize().getWidth() - mLayoutMargin.Left - mLayoutMargin.Right );
+		Float w = getParent()->getSize().getWidth() - mLayoutMargin.Left - mLayoutMargin.Right;
+
+		if ( getParent()->isType( UI_TYPE_LAYOUT ) ) {
+			UILayout * pLay = static_cast<UILayout*>(getParent());
+			w = w - pLay->getPadding().Left - pLay->getPadding().Right;
+		}
+
+		if ( (int)w != (int)getSize().getWidth() ) {
+			sizeChanged = true;
+
+			size.setWidth( w );
+		}
 	}
 
 	if ( getLayoutHeightRules() == MATCH_PARENT ) {
-		setInternalHeight( getParent()->getSize().getHeight() - mLayoutMargin.Top - mLayoutMargin.Bottom );
+		Float h = getParent()->getSize().getHeight() - mLayoutMargin.Top - mLayoutMargin.Bottom;
+
+		if ( getParent()->isType( UI_TYPE_LAYOUT ) ) {
+			UILayout * pLay = static_cast<UILayout*>(getParent());
+			h = h - pLay->getPadding().Top - pLay->getPadding().Bottom;
+		}
+
+		if ( (int)h != (int)getSize().getHeight() ) {
+			sizeChanged = true;
+
+			size.setWidth( h );
+		}
+	}
+
+	if ( sizeChanged ) {
+		setInternalSize( size );
 	}
 
 	Node * ChildLoop = mChild;
@@ -173,6 +202,11 @@ void UILinearLayout::packVertical() {
 	} else if ( getLayoutHeightRules() == MATCH_PARENT ) {
 		int h = getParent()->getSize().getHeight() - mLayoutMargin.Top - mLayoutMargin.Bottom;
 
+		if ( getParent()->isType( UI_TYPE_LAYOUT ) ) {
+			UILayout * pLay = static_cast<UILayout*>(getParent());
+			h = h - pLay->getPadding().Top - pLay->getPadding().Bottom;
+		}
+
 		if ( h != (int)mDpSize.getHeight() )
 			setInternalHeight( h );
 	}
@@ -187,12 +221,41 @@ void UILinearLayout::packVertical() {
 }
 
 void UILinearLayout::packHorizontal() {
+	bool sizeChanged = false;
+	Sizef size;
+
 	if ( getLayoutWidthRules() == MATCH_PARENT ) {
-		setInternalWidth( getParent()->getSize().getWidth() - mLayoutMargin.Left - mLayoutMargin.Right );
+		Float w = getParent()->getSize().getWidth() - mLayoutMargin.Left - mLayoutMargin.Right;
+
+		if ( getParent()->isType( UI_TYPE_LAYOUT ) ) {
+			UILayout * pLay = static_cast<UILayout*>(getParent());
+			w = w - pLay->getPadding().Left - pLay->getPadding().Right;
+		}
+
+		if ( (int)w != (int)getSize().getWidth() ) {
+			sizeChanged = true;
+
+			size.setWidth( w );
+		}
 	}
 
 	if ( getLayoutHeightRules() == MATCH_PARENT && 0 == mLayoutWeight ) {
-		setInternalHeight( getParent()->getSize().getHeight() - mLayoutMargin.Top - mLayoutMargin.Bottom );
+		Float h = getParent()->getSize().getHeight() - mLayoutMargin.Top - mLayoutMargin.Bottom;
+
+		if ( getParent()->isType( UI_TYPE_LAYOUT ) ) {
+			UILayout * pLay = static_cast<UILayout*>(getParent());
+			h = h - pLay->getPadding().Top - pLay->getPadding().Bottom;
+		}
+
+		if ( (int)h != (int)getSize().getHeight() ) {
+			sizeChanged = true;
+
+			size.setHeight( h );
+		}
+	}
+
+	if ( sizeChanged ) {
+		setInternalSize( size );;
 	}
 
 	Node * ChildLoop = mChild;
@@ -290,6 +353,11 @@ void UILinearLayout::packHorizontal() {
 		}
 	} else if ( getLayoutWidthRules() == MATCH_PARENT ) {
 		int w = getParent()->getSize().getWidth() - mLayoutMargin.Left - mLayoutMargin.Right;
+
+		if ( getParent()->isType( UI_TYPE_LAYOUT ) ) {
+			UILayout * pLay = static_cast<UILayout*>(getParent());
+			w = w - pLay->getPadding().Left - pLay->getPadding().Right;
+		}
 
 		if ( w != (int)mDpSize.getWidth() )
 			setInternalWidth( w );

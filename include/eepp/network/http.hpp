@@ -298,6 +298,9 @@ class EE_API Http : NonCopyable {
 			/** @return If must continue a download previously started. */
 			const bool& isContinue() const;
 
+			// Types
+			typedef std::map<std::string, std::string> FieldTable;
+
 			private:
 			friend class Http;
 
@@ -309,9 +312,6 @@ class EE_API Http : NonCopyable {
 
 			/** Prepares a http tunnel request */
 			std::string prepareTunnel(const Http& http);
-
-			// Types
-			typedef std::map<std::string, std::string> FieldTable;
 
 			// Member data
 			FieldTable            mFields;              ///< Fields of the header associated to their value
@@ -414,17 +414,17 @@ class EE_API Http : NonCopyable {
 		/** @brief Sends the request and creates a new thread, when got the response informs the result to the callback.
 		**	This function does not lock the caller thread.
 		**  @see sendRequest */
-		void sendAsyncRequest( AsyncResponseCallback cb, const Http::Request& request, Time timeout = Time::Zero );
+		void sendAsyncRequest( const AsyncResponseCallback & cb, const Http::Request& request, Time timeout = Time::Zero );
 
 		/** @brief Sends the request and creates a new thread, when got the response informs the result to the callback.
 		**	This function does not lock the caller thread.
 		**  @see downloadRequest */
-		void downloadAsyncRequest( AsyncResponseCallback cb, const Http::Request& request, IOStream& writeTo, Time timeout = Time::Zero );
+		void downloadAsyncRequest( const AsyncResponseCallback& cb, const Http::Request& request, IOStream& writeTo, Time timeout = Time::Zero );
 
 		/** @brief Sends the request and creates a new thread, when got the response informs the result to the callback.
 		**	This function does not lock the caller thread.
 		**  @see downloadRequest */
-		void downloadAsyncRequest( AsyncResponseCallback cb, const Http::Request& request, std::string writePath, Time timeout = Time::Zero );
+		void downloadAsyncRequest( const AsyncResponseCallback& cb, const Http::Request& request, std::string writePath, Time timeout = Time::Zero );
 
 		/** @return The host address */
 		const IpAddress& getHost() const;
@@ -449,14 +449,85 @@ class EE_API Http : NonCopyable {
 
 		/** @return Is a proxy is need to be used */
 		bool isProxied() const;
+
+		/** HTTP Client Pool
+		* Will keep the instances of the HTTP clients until the Pool is destroyed.
+		* Acts as a host client cache.
+		*/
+		class EE_API Pool {
+			public:
+				/** @returns The reference to the global HTTP Pool
+				* A global HTTP Pool is created at the program start
+				*/
+				static Pool& getGlobal();
+
+				Pool();
+
+				~Pool();
+
+				/** Clear all the HTTP Clients */
+				void clear();
+
+				/** @return True if the client already exists in the pool
+				* @param host The scheme + hostname + port represented as an URI.
+				* @param proxy The client proxy if any, scheme + hostname + post as URI.
+				*/
+				bool exists( const URI& host, const URI& proxy = URI() ) const;
+
+				/** @return An HTTP Client to the host and proxy ( creates one if no one is found )
+				* @param host The scheme + hostname + port represented as an URI.
+				* @param proxy The client proxy if any, scheme + hostname + post as URI.
+				*/
+				Http * get( const URI& host, const URI& proxy = URI() );
+			protected:
+				std::map<Uint32,Http*> mHttps;
+
+				static std::string getHostKey( const URI& host, const URI& proxy );
+
+				static Uint32 getHostHash( const URI& host, const URI& proxy );
+		};
+
+		/** Creates an HTTP Request using the global HTTP Client Pool */
+		static Response request( const URI& uri, Request::Method method = Request::Method::Get, const Request::ProgressCallback& progressCallback = Request::ProgressCallback(),
+								  const Request::FieldTable& headers = Request::FieldTable(), const std::string& body = "", const Time& timeout = Time::Zero,
+								  const bool& validateCertificate = true, const URI& proxy = URI() );
+
+		/** Creates an HTTP GET Request using the global HTTP Client Pool */
+		static Response get( const URI& uri, const Request::ProgressCallback& progressCallback = Request::ProgressCallback(),
+							  const Request::FieldTable& headers = Request::FieldTable(), const std::string& body = "", const Time& timeout = Time::Zero,
+							  const bool& validateCertificate = true, const URI& proxy = URI() );
+
+		/** Creates an HTTP POST Request using the global HTTP Client Pool */
+		static Response post( const URI& uri, const Request::ProgressCallback& progressCallback = Request::ProgressCallback(),
+							  const Request::FieldTable& headers = Request::FieldTable(), const std::string& body = "", const Time& timeout = Time::Zero,
+							  const bool& validateCertificate = true, const URI& proxy = URI() );
+
+		/** Creates an async HTTP Request using the global HTTP Client Pool */
+		static void requestAsync( const Http::AsyncResponseCallback& cb,
+								  const URI& uri, Request::Method method = Request::Method::Get, const Request::ProgressCallback& progressCallback = Request::ProgressCallback(),
+								  const Request::FieldTable& headers = Request::FieldTable(), const std::string& body = "", const Time& timeout = Time::Zero,
+								  const bool& validateCertificate = true, const URI& proxy = URI() );
+
+		/** Creates an async HTTP GET Request using the global HTTP Client Pool */
+		static void getAsync( const Http::AsyncResponseCallback& cb,
+							  const URI& uri, const Request::ProgressCallback& progressCallback = Request::ProgressCallback(),
+							  const Request::FieldTable& headers = Request::FieldTable(), const std::string& body = "", const Time& timeout = Time::Zero,
+							  const bool& validateCertificate = true, const URI& proxy = URI() );
+
+		/** Creates an async HTTP POST Request using the global HTTP Client Pool */
+		static void postAsync( const Http::AsyncResponseCallback& cb,
+							   const URI& uri, const Request::ProgressCallback& progressCallback = Request::ProgressCallback(),
+							   const Request::FieldTable& headers = Request::FieldTable(), const std::string& body = "", const Time& timeout = Time::Zero,
+							   const bool& validateCertificate = true, const URI& proxy = URI() );
+
 	private:
 		class AsyncRequest : public Thread {
 			public:
-				AsyncRequest( Http * http, AsyncResponseCallback cb, Http::Request request, Time timeout );
+				AsyncRequest( Http * http, const AsyncResponseCallback& cb, Http::Request request, Time timeout );
 
-				AsyncRequest( Http * http, AsyncResponseCallback cb, Http::Request request, IOStream& writeTo, Time timeout );
+				AsyncRequest( Http * http, const AsyncResponseCallback& cb, Http::Request request, IOStream& writeTo, Time timeout );
 
-				AsyncRequest( Http * http, AsyncResponseCallback cb, Http::Request request, std::string writePath, Time timeout );
+				AsyncRequest( Http * http, const AsyncResponseCallback& cb, Http::Request request, std::string writePath, Time timeout );
 
 				~AsyncRequest();
 

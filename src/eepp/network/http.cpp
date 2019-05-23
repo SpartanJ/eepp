@@ -400,6 +400,59 @@ void Http::Response::parseFields(std::istream &in) {
 	}
 }
 
+static Http::Pool sGlobalHttpPool = Http::Pool();
+
+Http::Response Http::request( const URI& uri, Request::Method method, const Http::Request::ProgressCallback& progressCallback,
+							  const Http::Request::FieldTable& headers, const std::string& body, const Time& timeout,
+							  const bool& validateCertificate, const URI& proxy ) {
+	Http * http = sGlobalHttpPool.get( uri, proxy );
+	Request request( uri.getPathAndQuery(), method, body, validateCertificate, validateCertificate, true, true );
+	request.setProgressCallback( progressCallback );
+
+	for ( const auto& field : headers )
+		request.setField( field.first, field.second );
+
+	return http->sendRequest( request, timeout );
+}
+
+Http::Response Http::get( const URI& uri, const Http::Request::ProgressCallback& progressCallback,
+							  const Http::Request::FieldTable& headers, const std::string& body, const Time& timeout,
+							  const bool& validateCertificate, const URI& proxy ) {
+	return request( uri, Request::Method::Get, progressCallback, headers, body, timeout, validateCertificate, proxy );
+}
+
+Http::Response Http::post( const URI& uri, const Http::Request::ProgressCallback& progressCallback,
+							  const Http::Request::FieldTable& headers, const std::string& body, const Time& timeout,
+							  const bool& validateCertificate, const URI& proxy ) {
+	return request( uri, Request::Method::Post, progressCallback, headers, body, timeout, validateCertificate, proxy );
+}
+
+void Http::requestAsync( const Http::AsyncResponseCallback& cb,
+						 const URI& uri, Request::Method method, const Http::Request::ProgressCallback& progressCallback,
+						 const Http::Request::FieldTable& headers, const std::string& body, const Time& timeout,
+						 const bool& validateCertificate, const URI& proxy ) {
+	Http * http = sGlobalHttpPool.get( uri, proxy );
+	Request request( uri.getPathAndQuery(), method, body, validateCertificate, validateCertificate, true, true );
+	request.setProgressCallback( progressCallback );
+
+	for ( const auto& field : headers )
+		request.setField( field.first, field.second );
+
+	http->sendAsyncRequest( cb, request, timeout );
+}
+
+void Http::getAsync( const Http::AsyncResponseCallback& cb, const URI& uri, const Http::Request::ProgressCallback& progressCallback,
+							  const Http::Request::FieldTable& headers, const std::string& body, const Time& timeout,
+							  const bool& validateCertificate, const URI& proxy ) {
+	requestAsync( cb, uri, Request::Method::Get, progressCallback, headers, body, timeout, validateCertificate, proxy );
+}
+
+void Http::postAsync( const Http::AsyncResponseCallback& cb, const URI& uri, const Http::Request::ProgressCallback& progressCallback,
+							  const Http::Request::FieldTable& headers, const std::string& body, const Time& timeout,
+							  const bool& validateCertificate, const URI& proxy ) {
+	requestAsync( cb, uri, Request::Method::Post, progressCallback, headers, body, timeout, validateCertificate, proxy );
+}
+
 Http::Http() :
 	mConnection( NULL ),
 	mHost(),
@@ -833,7 +886,7 @@ Http::Response Http::downloadRequest(const Http::Request& request, std::string w
 	return downloadRequest( request, file, timeout );
 }
 
-Http::AsyncRequest::AsyncRequest(Http *http, AsyncResponseCallback cb, Http::Request request, Time timeout) :
+Http::AsyncRequest::AsyncRequest(Http *http, const Http::AsyncResponseCallback& cb, Http::Request request, Time timeout) :
 	mHttp( http ),
 	mCb( cb ),
 	mRequest( request ),
@@ -845,7 +898,7 @@ Http::AsyncRequest::AsyncRequest(Http *http, AsyncResponseCallback cb, Http::Req
 {
 }
 
-Http::AsyncRequest::AsyncRequest(Http * http, Http::AsyncResponseCallback cb, Http::Request request, IOStream & writeTo, Time timeout) :
+Http::AsyncRequest::AsyncRequest(Http * http, const Http::AsyncResponseCallback& cb, Http::Request request, IOStream & writeTo, Time timeout) :
 	mHttp( http ),
 	mCb( cb ),
 	mRequest( request ),
@@ -857,7 +910,7 @@ Http::AsyncRequest::AsyncRequest(Http * http, Http::AsyncResponseCallback cb, Ht
 {
 }
 
-Http::AsyncRequest::AsyncRequest(Http * http, Http::AsyncResponseCallback cb, Http::Request request, std::string writePath, Time timeout) :
+Http::AsyncRequest::AsyncRequest(Http * http, const Http::AsyncResponseCallback& cb, Http::Request request, std::string writePath, Time timeout) :
 	mHttp( http ),
 	mCb( cb ),
 	mRequest( request ),
@@ -963,7 +1016,7 @@ bool Http::isProxied() const {
 	return !mProxy.empty();
 }
 
-void Http::sendAsyncRequest( AsyncResponseCallback cb, const Http::Request& request, Time timeout ) {
+void Http::sendAsyncRequest(const Http::AsyncResponseCallback& cb, const Http::Request& request, Time timeout) {
 	AsyncRequest * thread = eeNew( AsyncRequest, ( this, cb, request, timeout ) );
 
 	thread->launch();
@@ -976,7 +1029,7 @@ void Http::sendAsyncRequest( AsyncResponseCallback cb, const Http::Request& requ
 	mThreads.push_back( thread );
 }
 
-void Http::downloadAsyncRequest(Http::AsyncResponseCallback cb, const Http::Request& request, IOStream& writeTo, Time timeout) {
+void Http::downloadAsyncRequest(const Http::AsyncResponseCallback& cb, const Http::Request& request, IOStream& writeTo, Time timeout) {
 	AsyncRequest * thread = eeNew( AsyncRequest, ( this, cb, request, writeTo, timeout ) );
 
 	thread->launch();
@@ -989,7 +1042,7 @@ void Http::downloadAsyncRequest(Http::AsyncResponseCallback cb, const Http::Requ
 	mThreads.push_back( thread );
 }
 
-void Http::downloadAsyncRequest(Http::AsyncResponseCallback cb, const Http::Request& request, std::string writePath, Time timeout) {
+void Http::downloadAsyncRequest(const Http::AsyncResponseCallback& cb, const Http::Request& request, std::string writePath, Time timeout) {
 	AsyncRequest * thread = eeNew( AsyncRequest, ( this, cb, request, writePath, timeout ) );
 
 	thread->launch();
@@ -1086,6 +1139,52 @@ const bool &Http::HttpConnection::isKeepAlive() const {
 
 void Http::HttpConnection::setKeepAlive(const bool & isKeepAlive) {
 	mIsKeepAlive = isKeepAlive;
+}
+
+Http::Pool& Http::Pool::getGlobal() {
+	return sGlobalHttpPool;
+}
+
+Http::Pool::Pool() {}
+
+Http::Pool::~Pool() {
+	clear();
+}
+
+void Http::Pool::clear() {
+	for ( auto& connection : mHttps ) {
+		Http * con = connection.second;
+
+		eeSAFE_DELETE( con );
+	}
+
+	mHttps.clear();
+}
+
+std::string Http::Pool::getHostKey(const URI & host, const URI & proxy) {
+	return proxy.empty() ?
+				host.getSchemeAndAuthority() :
+				String::format( "%s-%s", host.getSchemeAndAuthority().c_str(), proxy.getSchemeAndAuthority().c_str() ) ;
+}
+
+Uint32 Http::Pool::getHostHash(const URI & host, const URI & proxy) {
+	return String::hash( Http::Pool::getHostKey( host, proxy ) );
+}
+
+bool Http::Pool::exists(const URI & host, const URI & proxy) const {
+	return mHttps.find( getHostHash( host, proxy ) ) != mHttps.end();
+}
+
+Http *Http::Pool::get(const URI & host, const URI & proxy) {
+	auto hostInstance = mHttps.find( Http::Pool::getHostHash( host, proxy ) );
+
+	if ( hostInstance != mHttps.end() ) {
+		return hostInstance->second;
+	}
+
+	Http * http = eeNew( Http,( host.getHost(), host.getPort(), host.getScheme() == "https" ) );
+	mHttps[ getHostHash( host, proxy ) ] = http;
+	return http;
 }
 
 }}

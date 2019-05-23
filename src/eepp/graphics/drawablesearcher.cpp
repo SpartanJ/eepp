@@ -5,6 +5,12 @@
 #include <eepp/graphics/ninepatchmanager.hpp>
 #include <eepp/graphics/sprite.hpp>
 
+#include <eepp/window/engine.hpp>
+#include <eepp/network/http.hpp>
+#include <eepp/network/uri.hpp>
+using namespace EE::Window;
+using namespace EE::Network;
+
 namespace EE { namespace Graphics {
 
 bool DrawableSearcher::sPrintWarnings = false;
@@ -69,6 +75,25 @@ Drawable * DrawableSearcher::searchByName( const std::string& name ) {
 				if ( texId > 0 )
 					drawable = TextureFactory::instance()->getTexture( texId );
 			}
+		} else if ( String::startsWith( name, "http://" ) || String::startsWith( name, "https://" ) ) {
+			Texture * texture = TextureFactory::instance()->getByName( name );
+
+			if ( NULL == texture && Engine::instance()->isSharedGLContextEnabled() ) {
+				Uint32 texId = TextureFactory::instance()->createEmptyTexture( 1, 1, 4, Color::Transparent, false, Texture::ClampMode::ClampToEdge, false, false, name );
+
+				texture = TextureFactory::instance()->getTexture( texId );
+
+				Http::getAsync( [=]( const Http&, Http::Request&, Http::Response& response ) {
+					if ( !response.getBody().empty() ) {
+						Image image( (const Uint8*)&response.getBody()[0], response.getBody().size() );
+
+						if ( image.getPixels() != NULL )
+							texture->replace( &image );
+					}
+				}, URI(name), Http::Request::ProgressCallback(), Http::Request::FieldTable(), "", Seconds(5) );
+			}
+
+			drawable = texture;
 		} else {
 			drawable = searchByNameInternal( name );
 		}

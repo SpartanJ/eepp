@@ -240,8 +240,8 @@ void URI::setAuthority(const std::string& authority) {
 	parseAuthority(beg, end);
 }
 
-std::string URI::getSchemeAndAuthority() {
-	return getScheme() + getAuthority();
+std::string URI::getSchemeAndAuthority() const {
+	return getScheme() + "://" + getAuthority();
 }
 
 void URI::getPath(const std::string& path) {

@@ -15,6 +15,7 @@
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/physics/physicsmanager.hpp>
 #include <eepp/network/ssl/sslsocket.hpp>
+#include <eepp/network/http.hpp>
 #include <eepp/window/backend.hpp>
 #include <eepp/window/backend/SDL2/backendsdl2.hpp>
 #include <eepp/window/backend/SFML/backendsfml.hpp>
@@ -98,6 +99,8 @@ Engine::~Engine() {
 	#ifdef EE_SSL_SUPPORT
 	Network::SSL::SSLSocket::end();
 	#endif
+
+	Network::Http::Pool::getGlobal().clear();
 
 	destroy();
 

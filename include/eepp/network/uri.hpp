@@ -138,7 +138,7 @@ class EE_API URI {
 		void setAuthority(const std::string& authority);
 
 		/** @returns The scheme and authority of the URI. */
-		std::string getSchemeAndAuthority();
+		std::string getSchemeAndAuthority() const;
 
 		/** @returns The path part of the URI. */
 		const std::string& getPath() const;

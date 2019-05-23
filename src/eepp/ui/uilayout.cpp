@@ -21,7 +21,7 @@ Uint32 UILayout::getType() const {
 }
 
 bool UILayout::isType( const Uint32& type ) const {
-	return UIWidget::getType() == type ? true : UIWidget::isType( type );
+	return UILayout::getType() == type ? true : UIWidget::isType( type );
 }
 
 }}
