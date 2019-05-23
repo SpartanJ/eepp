@@ -860,6 +860,19 @@ Uint32 Node::isUINode() const {
 	return mNodeFlags & NODE_FLAG_UINODE;
 }
 
+bool Node::isMeOrParentTreeVisible() const {
+	const Node * Ctrl = this;
+
+	while( NULL != Ctrl ) {
+		if ( !Ctrl->isVisible() )
+			return false;
+
+		Ctrl = Ctrl->getParent();
+	}
+
+	return true;
+}
+
 bool Node::isMeOrParentTreeRotated() const {
 	const Node * Ctrl = this;
 

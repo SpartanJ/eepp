@@ -59,7 +59,8 @@ void UILoader::draw() {
 }
 
 void UILoader::scheduledUpdate( const Time& time ) {
-	invalidateDraw();
+	if ( mVisible && isMeOrParentTreeVisible() )
+		invalidateDraw();
 
 	if ( mIndeterminate ) {
 		mArcAngle += time.asMilliseconds() * mAnimationSpeed * mOp;

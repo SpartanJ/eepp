@@ -170,6 +170,8 @@ class EE_API Node : public Transformable {
 
 		bool isMouseOverMeOrChilds() const;
 
+		bool isMeOrParentTreeVisible() const;
+
 		bool isMeOrParentTreeRotated() const;
 
 		bool isMeOrParentTreeScaled() const;
