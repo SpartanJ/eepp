@@ -1,11 +1,20 @@
 #include <eepp/system/color.hpp>
 #include <eepp/core/string.hpp>
-#include <eepp/math/math.hpp>
 #include <cstdlib>
 #include <ctype.h>
 #include <iomanip>
+#include <cmath>
 
 namespace EE { namespace System {
+
+namespace {
+
+template <typename T>
+inline T _round( T r ) {
+	return (r > 0.0f) ? eefloor(r + 0.5f) : eeceil(r - 0.5f);
+}
+
+}
 
 // @TODO: Support all CSS3 color keywords.
 // Reference: https://www.w3.org/TR/2018/REC-css-color-3-20180619/
@@ -247,7 +256,7 @@ Color Color::fromHsl( const Colorf& hsl ) {
 	Color rgba;
 
 	if( hsl.hsl.s == 0  ){
-		rgba.r = rgba.g = rgba.b = (Uint8)Math::round( hsl.hsl.l ); // achromatic
+		rgba.r = rgba.g = rgba.b = (Uint8)_round( hsl.hsl.l ); // achromatic
 	} else {
 		Float q = hsl.hsl.l < 0.5f ? hsl.hsl.l * (1.f + hsl.hsl.s) : hsl.hsl.l + hsl.hsl.s - hsl.hsl.l * hsl.hsl.s;
 		Float p = 2.f * hsl.hsl.l - q;
@@ -256,7 +265,7 @@ Color Color::fromHsl( const Colorf& hsl ) {
 		rgba.b = hue2rgb(p, q, hsl.hsl.h - 1.f/3.f);
 	}
 
-	return Color( (Uint8)Math::round(rgba.r * 255.f), (Uint8)Math::round(rgba.g * 255.f), (Uint8)Math::round(rgba.b * 255.f), Math::round( hsl.hsl.a * 255.f ) );
+	return Color( (Uint8)_round(rgba.r * 255.f), (Uint8)_round(rgba.g * 255.f), (Uint8)_round(rgba.b * 255.f), _round( hsl.hsl.a * 255.f ) );
 }
 
 Color Color::fromPointer( void *ptr ) {

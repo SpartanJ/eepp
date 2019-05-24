@@ -1,12 +1,12 @@
 #include <eepp/network/http.hpp>
 #include <eepp/network/ssl/sslsocket.hpp>
 #include <eepp/network/uri.hpp>
+#include <eepp/network/http/httpstreamchunked.hpp>
 #include <eepp/system/iostream.hpp>
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/iostreaminflate.hpp>
 #include <eepp/system/iostreamstring.hpp>
 #include <eepp/system/compression.hpp>
-#include <eepp/network/http/httpstreamchunked.hpp>
 #include <cctype>
 #include <algorithm>
 #include <iterator>
