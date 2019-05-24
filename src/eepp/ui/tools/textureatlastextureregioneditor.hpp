@@ -20,19 +20,18 @@ class EE_API TextureAtlasTextureRegionEditor : public UIWidget {
 
 		virtual void draw();
 
-		virtual void scheduledUpdate( const Time& time );
-
 		Graphics::TextureRegion * getTextureRegion() const;
 
 		void setTextureRegion( Graphics::TextureRegion * TextureRegion );
 
 		UITextureRegion * getGfx() const;
 	protected:
-		UITheme *				mTheme;
-		UITextureRegion *					mGfx;
-		UINode *			mDrag;
-		Vector2f				mUICenter;
-		TextureAtlasEditor *	mEditor;
+		UITheme * mTheme;
+		UITextureRegion * mGfx;
+		UINode * mDrag;
+		Vector2f mUICenter;
+		TextureAtlasEditor * mEditor;
+		Vector2f mDragPos;
 
 		virtual void onSizeChange();
 

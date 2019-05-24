@@ -225,9 +225,9 @@ class EE_API UINode : public Node {
 
 		virtual Uint32 onDrag( const Vector2f& position, const Uint32& flags );
 
-		virtual Uint32 onDragStart( const Vector2i& position );
+		virtual Uint32 onDragStart( const Vector2i& position, const Uint32& flags );
 
-		virtual Uint32 onDragStop( const Vector2i& position );
+		virtual Uint32 onDragStop( const Vector2i& position, const Uint32& flags );
 
 		virtual Uint32 onMouseOver( const Vector2i& position, const Uint32& flags );
 

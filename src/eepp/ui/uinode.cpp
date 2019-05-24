@@ -940,13 +940,13 @@ Uint32 UINode::onDrag( const Vector2f& , const Uint32& ) {
 	return 1;
 }
 
-Uint32 UINode::onDragStart( const Vector2i& ) {
-	sendCommonEvent( Event::OnDragStart );
+Uint32 UINode::onDragStart( const Vector2i& pos, const Uint32& flags ) {
+	sendMouseEvent( Event::OnDragStart, pos, flags );
 	return 1;
 }
 
-Uint32 UINode::onDragStop( const Vector2i& ) {
-	sendCommonEvent( Event::OnDragStop );
+Uint32 UINode::onDragStop( const Vector2i& pos, const Uint32& flags ) {
+	sendMouseEvent( Event::OnDragStop, pos, flags );
 	return 1;
 }
 
@@ -986,15 +986,15 @@ void UINode::setDragging( const bool& dragging ) {
 	writeNodeFlag( NODE_FLAG_DRAGGING, dragging );
 
 	if ( dragging ) {
-		NodeMessage tMsg( this, NodeMessage::DragStart, 0 );
+		NodeMessage tMsg( this, NodeMessage::DragStart, getEventDispatcher()->getPressTrigger() );
 		messagePost( &tMsg );
 
-		onDragStart( getEventDispatcher()->getMousePos() );
+		onDragStart( getEventDispatcher()->getMousePos(), getEventDispatcher()->getPressTrigger() );
 	} else {
-		NodeMessage tMsg( this, NodeMessage::DragStop, 0 );
+		NodeMessage tMsg( this, NodeMessage::DragStop, getEventDispatcher()->getPressTrigger() );
 		messagePost( &tMsg );
 
-		onDragStop( getEventDispatcher()->getMousePos() );
+		onDragStop( getEventDispatcher()->getMousePos(), getEventDispatcher()->getPressTrigger() );
 	}
 }
 

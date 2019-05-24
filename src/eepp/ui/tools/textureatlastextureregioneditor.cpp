@@ -19,8 +19,6 @@ TextureAtlasTextureRegionEditor::TextureAtlasTextureRegionEditor( TextureAtlasEd
 		return;
 	}
 
-	subscribeScheduledUpdate();
-
 	mTheme = UIThemeManager::instance()->getDefaultTheme();
 
 	mGfx = UITextureRegion::New();
@@ -35,8 +33,27 @@ TextureAtlasTextureRegionEditor::TextureAtlasTextureRegionEditor( TextureAtlasEd
 	mDrag->setVisible( true );
 	mDrag->setDragEnabled( true );
 	mDrag->center();
+	mDragPos = mDrag->getPixelsPosition();
+
+	mDrag->addEventListener( Event::OnPositionChange, [this](const Event* event) {
+		if ( NULL != mGfx->getTextureRegion() ) {
+			Vector2f Diff = -( mDragPos - mDrag->getPixelsPosition() );
+
+			mDragPos = mDrag->getPixelsPosition();
+
+			Diff = PixelDensity::pxToDp( Diff );
+
+			mGfx->getTextureRegion()->setOffset( Vector2i( mGfx->getTextureRegion()->getOffset().x + Diff.x, mGfx->getTextureRegion()->getOffset().y + Diff.y ) );
+
+			mEditor->getSpinOffX()->setValue( mGfx->getTextureRegion()->getOffset().x );
+			mEditor->getSpinOffY()->setValue( mGfx->getTextureRegion()->getOffset().y );
+		}
+
+		mGfx->setPosition( mUICenter );
+	} );
 
 	getCenter();
+	mGfx->setPosition( mUICenter );
 }
 
 TextureAtlasTextureRegionEditor::~TextureAtlasTextureRegionEditor() {
@@ -55,25 +72,9 @@ void TextureAtlasTextureRegionEditor::draw() {
 	P.drawLine( Line2f( Vector2f( mScreenPos.x + uiCenterPx.x, mScreenPos.y ), Vector2f( mScreenPos.x + uiCenterPx.x, mScreenPos.y + mSize.getHeight() ) ) );
 }
 
-void TextureAtlasTextureRegionEditor::scheduledUpdate( const Time& ) {
-	Vector2f Pos = mDrag->getPixelsPosition();
-
-	if ( NULL != mGfx->getTextureRegion() && mDrag->isDragEnabled() && mDrag->isDragging() && Pos != mDrag->getPixelsPosition() ) {
-		Vector2f Diff = -( Pos - mDrag->getPixelsPosition() );
-
-		Diff = PixelDensity::pxToDp( Diff );
-
-		mGfx->getTextureRegion()->setOffset( Vector2i( mGfx->getTextureRegion()->getOffset().x + Diff.x, mGfx->getTextureRegion()->getOffset().y + Diff.y ) );
-
-		mEditor->getSpinOffX()->setValue( mGfx->getTextureRegion()->getOffset().x );
-		mEditor->getSpinOffY()->setValue( mGfx->getTextureRegion()->getOffset().y );
-	}
-
-	mGfx->setPosition( mUICenter );
-}
-
 void TextureAtlasTextureRegionEditor::onSizeChange() {
 	getCenter();
+	mGfx->setPosition( mUICenter );
 }
 
 Graphics::TextureRegion * TextureAtlasTextureRegionEditor::getTextureRegion() const {
