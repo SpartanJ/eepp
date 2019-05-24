@@ -18,6 +18,9 @@ using namespace EE::Graphics;
 #include <eepp/math/originpoint.hpp>
 using namespace EE::Math;
 
+#include <eepp/system/color.hpp>
+using namespace EE::System;
+
 namespace EE { namespace Scene {
 class Action;
 class ActionManager;

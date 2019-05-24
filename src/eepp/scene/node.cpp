@@ -4,6 +4,7 @@
 #include <eepp/scene/action.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
+#include <eepp/graphics/pixeldensity.hpp>
 
 namespace EE { namespace Scene {
 

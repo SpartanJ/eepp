@@ -4,6 +4,7 @@
 #include <eepp/scene/node.hpp>
 #include <eepp/window/cursor.hpp>
 #include <eepp/system/translator.hpp>
+#include <list>
 
 namespace EE { namespace Graphics {
 class FrameBuffer;

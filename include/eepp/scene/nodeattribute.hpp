@@ -2,10 +2,10 @@
 #define EE_NODEATTRIBUTE_HPP
 
 #include <string>
-#include <eepp/math/rect.hpp>
 #include <eepp/core/string.hpp>
 #include <eepp/system/time.hpp>
 #include <eepp/system/color.hpp>
+#include <eepp/math/rect.hpp>
 #include <eepp/math/originpoint.hpp>
 #include <eepp/math/ease.hpp>
 #include <eepp/graphics/blendmode.hpp>

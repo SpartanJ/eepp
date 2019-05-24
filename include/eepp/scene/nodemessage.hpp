@@ -1,7 +1,7 @@
 #ifndef EE_SCENENODEMESSAGE_HPP
 #define EE_SCENENODEMESSAGE_HPP
 
-#include <eepp/ui/base.hpp>
+#include <eepp/config.hpp>
 
 namespace EE { namespace Scene {
 
