@@ -126,7 +126,7 @@ void UILinearLayout::packVertical() {
 				{
 					int w = mDpSize.getWidth() - widget->getLayoutMargin().Left - widget->getLayoutMargin().Right - mPadding.Left - mPadding.Right;
 
-					if ( (int)widget->getSize().getWidth() != w )
+					if ( (int)widget->getSize().getWidth() != w && w > 0 )
 						widget->setSize( w, widget->getSize().getHeight() );
 
 					break;
@@ -278,7 +278,7 @@ void UILinearLayout::packHorizontal() {
 				{
 					int h = mDpSize.getHeight() - widget->getLayoutMargin().Top - widget->getLayoutMargin().Bottom - mPadding.Top - mPadding.Bottom;
 
-					if ( h != (int)widget->getSize().getHeight() )
+					if ( h != (int)widget->getSize().getHeight() && h > 0 )
 						widget->setSize( widget->getSize().getWidth(), h );
 
 					break;
