@@ -70,7 +70,7 @@ void UILinearLayout::pack() {
 
 void UILinearLayout::packVertical() {
 	bool sizeChanged = false;
-	Sizef size;
+	Sizef size( getSize() );
 
 	if ( getLayoutWidthRules() == MATCH_PARENT && 0 == mLayoutWeight ) {
 		Float w = getParent()->getSize().getWidth() - mLayoutMargin.Left - mLayoutMargin.Right;
@@ -98,7 +98,7 @@ void UILinearLayout::packVertical() {
 		if ( (int)h != (int)getSize().getHeight() ) {
 			sizeChanged = true;
 
-			size.setWidth( h );
+			size.setHeight( h );
 		}
 	}
 
@@ -222,7 +222,7 @@ void UILinearLayout::packVertical() {
 
 void UILinearLayout::packHorizontal() {
 	bool sizeChanged = false;
-	Sizef size;
+	Sizef size( getSize() );
 
 	if ( getLayoutWidthRules() == MATCH_PARENT ) {
 		Float w = getParent()->getSize().getWidth() - mLayoutMargin.Left - mLayoutMargin.Right;
