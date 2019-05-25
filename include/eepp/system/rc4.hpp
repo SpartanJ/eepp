@@ -50,9 +50,9 @@ class EE_API RC4 {
 		/** @brief Decrypt a file ( you must set the key first ). */
 		bool decryptFile( const std::string& SourceFile, const std::string& DestFile );
 	private:
-		typedef struct _RC4Key {
+		struct RC4Key {
 			Uint8 state[256];
-		} RC4Key;
+		};
 		RC4Key mKey;
 		
 		void swap( Uint8& a, Uint8& b );

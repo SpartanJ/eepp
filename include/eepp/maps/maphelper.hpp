@@ -9,20 +9,20 @@ namespace EE { namespace Maps {
 #define LAYER_NAME_SIZE				(64)
 #define MAP_TEXTUREATLAS_PATH_SIZE	(128)
 
-typedef struct sPropertyHdrS {
+struct sPropertyHdr {
 	char	Name[ MAP_PROPERTY_SIZE ];
 	char	Value[ MAP_PROPERTY_SIZE ];
-} sPropertyHdr;
+};
 
-typedef struct sMapTextureAtlasS {
+struct sMapTextureAtlas {
 	char	Path[ MAP_TEXTUREATLAS_PATH_SIZE ];
-} sMapTextureAtlas;
+};
 
-typedef struct sVirtualObjS {
+struct sVirtualObj {
 	char	Name[ MAP_PROPERTY_SIZE ];
-} sVirtualObj;
+};
 
-typedef struct sMapHdrS {
+struct sMapHdr {
 	Uint32	Magic;
 	Uint32	SizeX;
 	Uint32	SizeY;
@@ -36,9 +36,9 @@ typedef struct sMapHdrS {
 	Uint32	VirtualObjectTypesCount;
 	Uint32	BaseColor;
 	Uint32	LightsCount;
-} sMapHdr;
+};
 
-typedef struct sLayerHdrS {
+struct sLayerHdr {
 	char	Name[ LAYER_NAME_SIZE ];
 	Uint32	Type;
 	Uint32	Flags;
@@ -46,36 +46,36 @@ typedef struct sLayerHdrS {
 	Int32	OffsetY;
 	Uint32	PropertyCount;
 	Uint32	ObjectCount;		//! Only used by the Object Layer
-} sLayerHdr;
+};
 
-typedef struct sMapTileGOHdrS {
+struct sMapTileGOHdr {
 	Uint32	Type;
 	Uint32	Id;
 	Uint32	Flags;
-} sMapTileGOHdr;
+};
 
-typedef struct sMapObjGOHdrS {
+struct sMapObjGOHdr {
 	Uint32	Type;
 	Uint32	Id;
 	Uint32	Flags;
 	Int32	PosX;
 	Int32	PosY;
-} sMapObjGOHdr;
+};
 
-typedef struct sMapLightHdrS {
+struct sMapLightHdr {
 	Uint32	Radius;
 	Int32	PosX;
 	Int32	PosY;
 	Uint32	Color;
 	Uint32	Type;
-} sMapLightHdr;
+};
 
-typedef struct sMapObjObjHdrS {
+struct sMapObjObjHdr {
 	char	Name[ MAP_PROPERTY_SIZE ];
 	char	Type[ MAP_PROPERTY_SIZE ];
 	Uint32	PointCount;
 	Uint32	PropertyCount;
-} sMapObjObjHdr;
+};
 
 class GObjFlags {
 	public:

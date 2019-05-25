@@ -9,13 +9,13 @@ namespace EE { namespace System {
 
 class MD5 {
 	public:
-		typedef struct {
+		struct Result {
 			std::vector<Uint8> digest;
 
 			std::string toHexString() {
 				return MD5::hexDigest( digest );
 			}
-		} Result;
+		};
 
 		/** @return Calculates the md5 hash from a stream */
 		static Result fromStream( IOStream& stream );
@@ -34,12 +34,12 @@ class MD5 {
 	protected:
 		typedef unsigned int MD5_u32plus;
 
-		typedef struct {
+		struct Context {
 			MD5_u32plus lo, hi;
 			MD5_u32plus a, b, c, d;
 			unsigned char buffer[64];
 			MD5_u32plus block[16];
-		} Context;
+		};
 
 		static const void * body( Context *ctx, const void *data, unsigned long size );
 

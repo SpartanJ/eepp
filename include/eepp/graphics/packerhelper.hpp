@@ -9,7 +9,7 @@ namespace EE { namespace Graphics { namespace Private {
 
 #define HDR_NAME_SIZE 64
 
-typedef struct sTextureRegionHdrSN {
+struct sTextureRegionHdr {
 	char	Name[ HDR_NAME_SIZE ];
 	Uint64	Date;
 	Int32	X;
@@ -24,18 +24,18 @@ typedef struct sTextureRegionHdrSN {
 	Int32	DestHeight;
 	Uint32	Flags;
 	Uint32	PixelDensity;
-} sTextureRegionHdr;
+};
 
 #define HDR_TEXTUREREGION_FLAG_FLIPED 					( 1 << 0 )
 
-typedef struct sTextureHdrS {
+struct sTextureHdr {
 	char	Name[ HDR_NAME_SIZE ];
 	Uint32	ResourceID;
 	Uint32	Size;
 	Int32	TextureRegionCount;
-} sTextureHdr;
+};
 
-typedef struct sTextureAtlasHdrSN {
+struct sTextureAtlasHdr {
 	Uint32	Magic;
 	Uint32	Version;
 	Uint64	Date;
@@ -47,7 +47,7 @@ typedef struct sTextureAtlasHdrSN {
 	Uint32	Flags;
 	char	TextureFilter;
 	char	Reserved[15];
-} sTextureAtlasHdr;
+};
 
 #define HDR_TEXTURE_ATLAS_ALLOW_FLIPPING		( 1 << 0 )
 #define HDR_TEXTURE_ATLAS_REMOVE_EXTENSION		( 1 << 1 )

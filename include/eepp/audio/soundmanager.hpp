@@ -56,10 +56,10 @@ class tSoundManager {
 
 		~tSoundManager();
 	private:
-		typedef struct sSound {
+		struct sSound {
 			SoundBuffer Buf;
 			std::vector<Sound> Snd;
-		} sSound;
+		};
 		std::map<T, sSound> tSounds;
 };
 

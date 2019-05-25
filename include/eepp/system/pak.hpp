@@ -74,24 +74,24 @@ class EE_API Pak : public Pack {
 	protected:
 		friend class IOStreamPak;
 
-		typedef struct pakheader_t {
+		struct pakHeader {
 			char head[4];		//! Header of the file ( default: 'PACK' )
 			Uint32 dir_offset; 	//! Offset to the first pakEntry on the pakFile
 			Uint32 dir_length; 	//! Space ocuped by all the pakEntrys ( num of pakEntrys = dir_length / sizeof(pakEntry) )
-		} pakHeader; //! The header of the file
+		}; //! The header of the file
 
-		typedef struct dirsection_t {
+		struct pakEntry {
 			char filename[56];		//! File name
 			Uint32 file_position;	//! The file position on the file ( in bytes )
 			Uint32 file_length;		//! THe file length ( in bytes )
-		} pakEntry;	//! The stored file info
+		};	//! The stored file info
 
-		typedef struct pakfile_t {
+		struct pakFile {
 			IOStreamFile * fs;
 			pakHeader header;
 			Uint32 pakFilesNum;
 			std::string pakPath;
-		} pakFile;
+		};
 
 		pakFile					mPak;
 		std::vector<pakEntry>	mPakFiles;

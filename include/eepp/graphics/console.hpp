@@ -161,11 +161,11 @@ class EE_API Console : protected LogReaderInterface {
 		Primitives mPri;
 		Uint32 mTexId;
 
-		typedef struct {
+		struct sCon {
 			int ConMin;
 			int ConMax;
 			int ConModif;
-		} sCon;
+		};
 		sCon mCon;
 
 		Float mCurAlpha;

@@ -148,10 +148,10 @@ class EE_API TextureAtlasLoader {
 		GLLoadCallback			mLoadCallback;
 		std::vector<Texture*>	mTexturesLoaded;
 
-		typedef struct sTempTexAtlasS {
+		struct sTempTexAtlas {
 			sTextureHdr 			Texture;
 			std::vector<sTextureRegionHdr>	TextureRegions;
-		} sTempTexAtlas;
+		};
 
 		sTextureAtlasHdr mTexGrHdr;
 		std::vector<sTempTexAtlas> mTempAtlass;
