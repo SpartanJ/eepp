@@ -22,8 +22,6 @@ using namespace EE::Scene;
 namespace EE { namespace UI {
 
 class UITheme;
-class UISkin;
-class UISkinState;
 
 class EE_API UINode : public Node {
 	public:

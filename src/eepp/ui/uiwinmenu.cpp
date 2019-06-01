@@ -51,6 +51,7 @@ void UIWinMenu::addMenuButton( const String& ButtonText, UIPopUpMenu * Menu ) {
 	Menu->setEnabled( false );
 	Menu->setParent( getWindowContainer() );
 	Menu->addEventListener( Event::OnWidgetFocusLoss, cb::Make1( this, &UIWinMenu::onMenuFocusLoss ) );
+	Menu->addEventListener( Event::OnHideByClick, cb::Make1( this, &UIWinMenu::onHideByClick ) );
 
 	mButtons.push_back( std::make_pair( Button, Menu ) );
 
@@ -240,10 +241,17 @@ Uint32 UIWinMenu::onMessage( const NodeMessage * Msg ) {
 					}
 				} else {
 					if ( Msg->getFlags() & EE_BUTTON_LMASK ) {
-						mCurrentMenu = tpop;
+						if ( mCurrentMenu != tpop ) {
+							mCurrentMenu = tpop;
 
-						tbut->select();
-						tpop->show();
+							tbut->select();
+							tpop->show();
+						} else {
+							mCurrentMenu = NULL;
+
+							tbut->unselect();
+							tpop->hide();
+						}
 					}
 				}
 
@@ -319,6 +327,10 @@ void UIWinMenu::onMenuFocusLoss( const Event * ) {
 	if ( !isParentOf( FocusCtrl ) && !isPopUpMenuChild( FocusCtrl ) ) {
 		onWidgetFocusLoss();
 	}
+}
+
+void UIWinMenu::onHideByClick( const Event * ) {
+	onWidgetFocusLoss();
 }
 
 void UIWinMenu::onWidgetFocusLoss() {

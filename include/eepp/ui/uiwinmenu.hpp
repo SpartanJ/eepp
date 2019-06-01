@@ -82,6 +82,8 @@ class EE_API UIWinMenu : public UIWidget {
 
 		void onMenuFocusLoss( const Event * Event );
 
+		void onHideByClick( const Event * Event );
+
 		void unselectButtons();
 
 		void destroyMenues();

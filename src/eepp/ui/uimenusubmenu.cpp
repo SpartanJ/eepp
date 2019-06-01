@@ -138,8 +138,9 @@ void UIMenuSubMenu::onSubMenuFocusLoss( const Event * ) {
 	}
 
 	if ( mSubMenu->mClickHide ) {
-		reinterpret_cast<UIMenu *>( getParent() )->hide();
-
+		UIMenu * parentMenu = reinterpret_cast<UIMenu *>( getParent() );
+		parentMenu->sendCommonEvent( Event::OnHideByClick );
+		parentMenu->hide();
 		mSubMenu->mClickHide = false;
 	}
 }
@@ -148,6 +149,7 @@ void UIMenuSubMenu::onHideByClick( const Event * ) {
 	UIMenu * tMenu = reinterpret_cast<UIMenu *>( getParent() );
 
 	tMenu->mClickHide = true;
+	tMenu->sendCommonEvent( Event::OnHideByClick );
 	tMenu->hide();
 }
 
