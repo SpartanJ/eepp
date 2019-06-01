@@ -286,7 +286,7 @@ Uint32 UIMenu::onMessage( const NodeMessage * Msg ) {
 			if ( NULL != getEventDispatcher() ) {
 				Node * focusCtrl = getEventDispatcher()->getFocusControl();
 
-				if ( this != focusCtrl && !isParentOf( focusCtrl ) && !isSubMenu( focusCtrl ) ) {
+				if ( this != focusCtrl && !isParentOf( focusCtrl ) && !isSubMenu( focusCtrl ) && mOwnerNode != focusCtrl ) {
 					mClickHide = true;
 
 					onWidgetFocusLoss();
@@ -584,6 +584,14 @@ bool UIMenu::setAttribute(const NodeAttribute & attribute, const Uint32 & state)
 	}
 
 	return true;
+}
+
+UINode * UIMenu::getOwnerNode() const {
+	return mOwnerNode;
+}
+
+void UIMenu::setOwnerNode( UINode * ownerNode ) {
+	mOwnerNode = ownerNode;
 }
 
 void UIMenu::setMinSpaceForIcons(const Uint32 & minSpaceForIcons) {

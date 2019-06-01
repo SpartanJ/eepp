@@ -76,6 +76,11 @@ class EE_API UIMenu : public UIWidget {
 		virtual void loadFromXmlNode( const pugi::xml_node& node );
 
 		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
+
+		UINode * getOwnerNode() const;
+
+		/** The owner node is the node who triggers the visibility of the menu */
+		void setOwnerNode( UINode * ownerNode );
 	protected:
 		friend class UIMenuItem;
 		friend class UIMenuCheckBox;
@@ -90,6 +95,7 @@ class EE_API UIMenu : public UIWidget {
 		Uint32				mItemSelectedIndex;
 		bool				mClickHide;
 		Uint32				mLastTickMove;
+		UINode *			mOwnerNode;
 
 		virtual void onSizeChange();
 

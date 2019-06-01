@@ -71,6 +71,7 @@ void UIMenuSubMenu::setSubMenu( UIMenu * SubMenu ) {
 	if ( NULL != mSubMenu && mSubMenu != SubMenu ) {
 		mSubMenu->removeEventListener( mCbId );
 		mSubMenu->removeEventListener( mCbId2 );
+		mSubMenu->setOwnerNode( NULL );
 	}
 
 	mSubMenu = SubMenu;
@@ -78,6 +79,7 @@ void UIMenuSubMenu::setSubMenu( UIMenu * SubMenu ) {
 	if ( NULL != mSubMenu ) {
 		mCbId	= mSubMenu->addEventListener( Event::OnEnabledChange, cb::Make1( this, &UIMenuSubMenu::onSubMenuFocusLoss ) );
 		mCbId2	= mSubMenu->addEventListener( Event::OnHideByClick, cb::Make1( this, &UIMenuSubMenu::onHideByClick ) );
+		mSubMenu->setOwnerNode( this );
 	}
 }
 
