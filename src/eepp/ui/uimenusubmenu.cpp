@@ -129,18 +129,24 @@ UINode * UIMenuSubMenu::getArrow() const {
 }
 
 void UIMenuSubMenu::onSubMenuFocusLoss( const Event * ) {
-	if ( NULL != getEventDispatcher() ) {
-		Node * FocusCtrl = getEventDispatcher()->getFocusControl();
+	Node * focusCtrl = NULL;
 
-		if ( getParent() != FocusCtrl && !getParent()->isParentOf( FocusCtrl ) ) {
+	if ( NULL != getEventDispatcher() ) {
+		focusCtrl = getEventDispatcher()->getFocusControl();
+
+		if ( getParent() != focusCtrl && !getParent()->isParentOf( focusCtrl ) ) {
 			getParent()->setFocus();
 		}
 	}
 
 	if ( mSubMenu->mClickHide ) {
 		UIMenu * parentMenu = reinterpret_cast<UIMenu *>( getParent() );
-		parentMenu->sendCommonEvent( Event::OnHideByClick );
-		parentMenu->hide();
+
+		if ( !parentMenu->isSubMenu( focusCtrl ) && focusCtrl != this ) {
+			parentMenu->sendCommonEvent( Event::OnHideByClick );
+			parentMenu->hide();
+		}
+
 		mSubMenu->mClickHide = false;
 	}
 }

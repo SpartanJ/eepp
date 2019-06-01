@@ -284,9 +284,9 @@ Uint32 UIMenu::onMessage( const NodeMessage * Msg ) {
 		case NodeMessage::FocusLoss:
 		{
 			if ( NULL != getEventDispatcher() ) {
-				Node * FocusCtrl = getEventDispatcher()->getFocusControl();
+				Node * focusCtrl = getEventDispatcher()->getFocusControl();
 
-				if ( this != FocusCtrl && !isParentOf( FocusCtrl ) && !isSubMenu( FocusCtrl ) ) {
+				if ( this != focusCtrl && !isParentOf( focusCtrl ) && !isSubMenu( focusCtrl ) ) {
 					mClickHide = true;
 
 					onWidgetFocusLoss();
