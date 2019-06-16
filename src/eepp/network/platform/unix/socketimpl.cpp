@@ -5,6 +5,9 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <cstring>
+#ifdef EE_PLATFORM_HAIKU
+#include <posix/sys/time.h>
+#endif
 
 namespace EE { namespace Network { namespace Private {
 
