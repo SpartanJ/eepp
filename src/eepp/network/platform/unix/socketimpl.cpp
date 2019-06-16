@@ -5,7 +5,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <cstring>
-#ifdef EE_PLATFORM_HAIKU
+#if EE_PLATFORM == EE_PLATFORM_HAIKU
 #include <posix/sys/time.h>
 #endif
 
