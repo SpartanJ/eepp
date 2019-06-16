@@ -58,7 +58,20 @@ class EE_API String {
 	static constexpr Uint32 hash( const Uint8 * str );
 
 	/** @return string hash */
-	static constexpr Uint32 hash( const char * str );
+	static constexpr Uint32 hash( const char * str ) {
+		//! djb2
+		if ( NULL != str ) {
+			Uint32 hash = 5381;
+			Int32 c = 0;
+
+			while ( ( c = *str++ ) )
+				hash = ( ( hash << 5 ) + hash ) + c;
+
+			return hash;
+		}
+
+		return 0;
+	}
 
 	/** @return string hash */
 	static Uint32 hash( const std::string& str );
