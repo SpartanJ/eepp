@@ -2,6 +2,7 @@
 #include <eepp/scene/scenenode.hpp>
 #include <eepp/scene/actionmanager.hpp>
 #include <eepp/scene/action.hpp>
+#include <eepp/scene/scenemanager.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/pixeldensity.hpp>
@@ -33,11 +34,13 @@ Node::Node() :
 }
 
 Node::~Node() {
-	if ( NULL != mSceneNode && mSceneNode != this && NULL != mSceneNode->getActionManager() )
-		mSceneNode->getActionManager()->removeAllActionsFromTarget( this );
+	if ( !SceneManager::instance()->isShootingDown() ) {
+		if ( NULL != mSceneNode && mSceneNode != this && NULL != mSceneNode->getActionManager() )
+			mSceneNode->getActionManager()->removeAllActionsFromTarget(this);
 
-	if ( NULL != mSceneNode && ( mNodeFlags & NODE_FLAG_SCHEDULED_UPDATE ) )
-		mSceneNode->unsubscribeScheduledUpdate( this );
+		if ( NULL != mSceneNode && (mNodeFlags & NODE_FLAG_SCHEDULED_UPDATE) )
+			mSceneNode->unsubscribeScheduledUpdate(this);
+	}
 
 	childDeleteAll();
 
