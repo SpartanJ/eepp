@@ -118,7 +118,7 @@ inline double sineOut( double t, double b, double c, double d ) {
 *  @return The value of the interpolated property at the specified time.
 */
 inline double sineInOut( double t, double b, double c, double d ) {
-	return -c / 2 * ( eecos( EE_PI * t / d ) - 1 ) + b;
+	return -c / 2 * ( cos( EE_PI * t / d ) - 1 ) + b;
 }
 
 /**
@@ -132,7 +132,7 @@ inline double sineInOut( double t, double b, double c, double d ) {
 *  @return Number corresponding to the position of the component.
 */
 inline double exponentialIn( double t, double b, double c, double d ) {
-	return t == 0 ? b : c * eepow( 2, 10 * ( t / d - 1 ) ) + b;
+	return t == 0 ? b : c * pow( 2, 10 * ( t / d - 1 ) ) + b;
 }
 
 /**
@@ -146,7 +146,7 @@ inline double exponentialIn( double t, double b, double c, double d ) {
 *  @return The value of the interpolated property at the specified time.
 */
 inline double exponentialOut( double t, double b, double c, double d ) {
-	return t == d ? b + c : c * ( -eepow( 2, -10 * t / d ) + 1 ) + b;
+	return t == d ? b + c : c * ( -pow( 2, -10 * t / d ) + 1 ) + b;
 }
 
 /**
@@ -169,9 +169,9 @@ inline double exponentialInOut( double t, double b, double c, double d ) {
 		return b + c;
 
 	if ( ( t /= d / 2 ) < 1 )
-		return c / 2 * eepow( 2, 10 * (t - 1) ) + b;
+		return c / 2 * pow( 2, 10 * (t - 1) ) + b;
 
-	return c / 2 * ( -eepow( 2, -10 * --t ) + 2 ) + b;
+	return c / 2 * ( -pow( 2, -10 * --t ) + 2 ) + b;
 }
 
 inline double quarticIn( double t, double b, double c, double d ) {
@@ -223,24 +223,24 @@ inline double quinticInOut( double t, double b, double c, double d ) {
 inline double circularIn( double t, double b, double c, double d ) {
 	t /= d;
 
-	return -c * ( eesqrt( 1 - t * t ) - 1) + b;
+	return -c * ( sqrt( 1 - t * t ) - 1) + b;
 }
 
 inline double circularOut( double t, double b, double c, double d ) {
 	t = t / d - 1;
 
-	return c * eesqrt( 1 - t * t ) + b;
+	return c * sqrt( 1 - t * t ) + b;
 }
 
 inline double circularInOut( double t, double b, double c, double d ) {
 	t /= d / 2;
 
 	if ( t < 1 )
-		return -c / 2 * ( eesqrt( 1 - t * t ) - 1 ) + b;
+		return -c / 2 * ( sqrt( 1 - t * t ) - 1 ) + b;
 
 	t -= 2;
 
-	return c / 2 * ( eesqrt( 1 - t * t ) + 1) + b;
+	return c / 2 * ( sqrt( 1 - t * t ) + 1) + b;
 }
 
 inline double cubicIn( double t, double b, double c, double d ) {
@@ -283,7 +283,7 @@ inline double backOut( double t, double b, double c, double d ) {
 }
 
 inline double backInOut( double t, double b, double c, double d ) {
-	float s = 1.70158f;
+	double s = 1.70158f;
 
 	t /= d / 2;
 	s *= ( 1.525f );
@@ -370,7 +370,7 @@ inline double elasticInOut( double t, double b, double c, double d ) {
 	if ( t == 2 )
 		return b + c;
 
-	double p = d * ( 0.3f * 1.5f );
+	double p = d * ( 0.3 * 1.5 );
 	double a = c;
 	double s = p / 4.f;
 

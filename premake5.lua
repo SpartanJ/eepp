@@ -1,8 +1,7 @@
 require "premake/modules/androidmk"
 
-newoption { trigger = "with-ssl", description = "Enables SSL support for the Network module ( by default uses mbedtls. )" }
 newoption { trigger = "with-openssl", description = "Enables OpenSSL support ( and disables mbedtls backend )." }
-newoption { trigger = "with-static-freetype", description = "Build freetype as a static library." }
+newoption { trigger = "with-dynamic-freetype", description = "Dynamic link against freetype." }
 newoption { trigger = "with-static-eepp", description = "Force to build the demos and tests with eepp compiled statically" }
 newoption { trigger = "with-static-backend", description = "It will try to compile the library with a static backend (only for gcc and mingw).\n\t\t\t\tThe backend should be placed in libs/your_platform/libYourBackend.a" }
 newoption { trigger = "with-gles2", description = "Compile with GLES2 support" }
@@ -276,6 +275,10 @@ function build_link_configuration( package_name, use_ee_icon )
 
 	configuration "windows"
 		add_cross_config_links()
+		
+		if is_vs() and table.contains( backends, "SDL2" ) then
+			links { "SDL2", "SDL2main" }
+		end
 
 	configuration "emscripten"
 		linkoptions{ "-O2 -s TOTAL_MEMORY=67108864 -s ASM_JS=1 -s VERBOSE=1 -s DISABLE_EXCEPTION_CATCHING=0 -s USE_SDL=2 -s ERROR_ON_UNDEFINED_SYMBOLS=0 -s FULL_ES3=1 -s \"BINARYEN_TRAP_MODE='clamp'\"" }
@@ -340,8 +343,7 @@ function add_static_links()
 		end
 	end
 
-	if _OPTIONS["with-static-freetype"] or not os_findlib("freetype") then
-		print("Enabled static freetype")
+	if not _OPTIONS["with-dynamic-freetype"] then
 		links { "freetype-static" }
 	end
 
@@ -355,7 +357,7 @@ function add_static_links()
 			"vorbis-static"
 	}
 
-	if _OPTIONS["with-ssl"] and not _OPTIONS["with-openssl"] then
+	if not _OPTIONS["with-openssl"] then
 		links { "mbedtls-static" }
 	end
 
@@ -385,6 +387,8 @@ function add_sdl2()
 	else
 		insert_static_backend( "SDL2" )
 	end
+	
+	table.insert( backends, "SDL2" )
 end
 
 function add_sfml()
@@ -399,6 +403,8 @@ function add_sfml()
 		insert_static_backend( "libsfml-system" )
 		insert_static_backend( "libsfml-window" )
 	end
+	
+	table.insert( backends, "SFML" )
 end
 
 function set_xcode_config()
@@ -495,35 +501,31 @@ function select_backend()
 			add_sfml()
 		else
 			print("ERROR: Couldnt find any backend. Forced SDL2.")
-			add_sdl2( true )
+			add_sdl2()
 		end
 	end
 end
 
 function check_ssl_support()
-	if _OPTIONS["with-ssl"] then
-		print("Enabled SSL support")
-
-		if _OPTIONS["with-openssl"] then
-			if os.istarget("windows") then
-				table.insert( link_list, get_backend_link_name( "libssl" ) )
-				table.insert( link_list, get_backend_link_name( "libcrypto" ) )
-			else
-				table.insert( link_list, get_backend_link_name( "ssl" ) )
-				table.insert( link_list, get_backend_link_name( "crypto" ) )
-			end
-
-			files { "src/eepp/network/ssl/backend/openssl/*.cpp" }
-
-			defines { "EE_OPENSSL" }
+	if _OPTIONS["with-openssl"] then
+		if os.istarget("windows") then
+			table.insert( link_list, get_backend_link_name( "libssl" ) )
+			table.insert( link_list, get_backend_link_name( "libcrypto" ) )
 		else
-			files { "src/eepp/network/ssl/backend/mbedtls/*.cpp" }
-
-			defines { "EE_MBEDTLS" }
+			table.insert( link_list, get_backend_link_name( "ssl" ) )
+			table.insert( link_list, get_backend_link_name( "crypto" ) )
 		end
 
-		defines { "EE_SSL_SUPPORT" }
+		files { "src/eepp/network/ssl/backend/openssl/*.cpp" }
+
+		defines { "EE_OPENSSL" }
+	else
+		files { "src/eepp/network/ssl/backend/mbedtls/*.cpp" }
+
+		defines { "EE_MBEDTLS" }
 	end
+
+	defines { "EE_SSL_SUPPORT" }
 end
 
 function build_eepp( build_name )
@@ -577,7 +579,7 @@ function build_eepp( build_name )
 
 	select_backend()
 
-	if not _OPTIONS["with-static-freetype"] and os_findlib("freetype") then
+	if _OPTIONS["with-dynamic-freetype"] and os_findlib("freetype") then
 		table.insert( link_list, get_backend_link_name( "freetype" ) )
 	end
 
@@ -660,7 +662,7 @@ workspace "eepp"
 			build_base_configuration( "glew" )
 	end
 
-	if _OPTIONS["with-ssl"] and not _OPTIONS["with-openssl"] then
+	if not _OPTIONS["with-openssl"] then
 		project "mbedtls-static"
 			kind "StaticLib"
 			language "C"

@@ -231,7 +231,11 @@ bool FileSystem::isDirectory( const std::string& path ) {
 	struct stat st;
 	return ( stat( path.c_str(), &st ) == 0 ) && S_ISDIR( st.st_mode );
 #else
+	#if UNICODE
+	return 0 != (GetFileAttributes(String::fromUtf8(path).toWideString().c_str()) & FILE_ATTRIBUTE_DIRECTORY);
+	#else
 	return 0 != ( GetFileAttributes( (LPCTSTR) path.c_str() ) & FILE_ATTRIBUTE_DIRECTORY );
+	#endif
 #endif
 }
 
@@ -537,7 +541,7 @@ std::string FileSystem::getCurrentWorkingDirectory() {
 #ifdef EE_COMPILER_MSVC
 	#if defined( UNICODE ) && !defined( EE_NO_WIDECHAR )
 	wchar_t dir[_MAX_PATH];
-	return ( 0 != GetCurrentDirectoryW( _MAX_PATH, dir ) ) ? String( dir )::toUtf8() : std::string();
+	return ( 0 != GetCurrentDirectoryW( _MAX_PATH, dir ) ) ? String( dir ).toUtf8() : std::string();
 	#else
 	char dir[_MAX_PATH];
 	return ( 0 != GetCurrentDirectory( _MAX_PATH, dir ) ) ? String( dir, std::locale() ).toUtf8() : std::string();

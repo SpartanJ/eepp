@@ -98,9 +98,13 @@
 	#define EE_BACKEND_SDL_ACTIVE
 #endif
 
-#if EE_PLATFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_IOS
+#if EE_PLATFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_IOS || (EE_PLATFORM == EE_PLATFORM_WIN && defined(EE_COMPILER_MSVC))
 	#if defined( EE_BACKEND_SDL_ACTIVE )
-		#define main	EE_SDL_main
+		#if EE_PLATFORM == EE_PLATFORM_WIN && defined(EE_COMPILER_MSVC)
+			#define main	SDL_main
+		#else
+			#define main	EE_SDL_main
+		#endif
 	#endif
 #endif
 

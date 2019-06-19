@@ -21,9 +21,15 @@ static BOOL WIN_showWindow( HWND hWnd, int nCmdShow ) {
 
 namespace EE { namespace Window { namespace Platform {
 
+#ifdef UNICODE
+#define WIN_CHAR_TYPE LPWSTR
+#else
+#define WIN_CHAR_TYPE LPCSTR
+#endif
+
 static HCURSOR SYS_CURSORS[ Cursor::SysCursorCount ] = {0};
 
-static HCURSOR GetLoadCursor( const Cursor::SysType& cursor, LPCSTR syscur ) {
+static HCURSOR GetLoadCursor( const Cursor::SysType& cursor, WIN_CHAR_TYPE syscur ) {
 	if ( 0 == SYS_CURSORS[ cursor ] ) {
 		SYS_CURSORS[ cursor ] = LoadCursor( NULL, syscur );
 	}

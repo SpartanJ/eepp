@@ -51,6 +51,7 @@ Engine::Engine() :
 	mSharedGLContext( true ),
 	mMainThreadId( 0 ),
 	mPlatformHelper( NULL ),
+	mZip( NULL ),
 	mDisplayManager( NULL )
 {
 #if EE_PLATFORM == EE_PLATFORM_ANDROID

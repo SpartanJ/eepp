@@ -114,9 +114,12 @@ class WindowInfo {
 	public:
 
 	inline WindowInfo() :
+		Backend( WindowBackend::Default ),
+		Flags(0),
 		ClearColor(0,0,0),
 		Created( false ),
-		Maximized( false )
+		Maximized( false ),
+		Context(0)
 	{}
 
 	WindowSettings		WindowConfig;

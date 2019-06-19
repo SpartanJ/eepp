@@ -753,9 +753,12 @@ void * Sys::loadObject( const std::string& sofile ) {
 
 	return (handle);
 #elif EE_PLATFORM == EE_PLATFORM_WIN
-	LPTSTR tstr = const_cast<char*>( sofile.c_str() );
-	void * handle = (void *) LoadLibrary(tstr);
-
+	#ifdef UNICODE
+		void* handle = (void*)LoadLibrary(String::fromUtf8(sofile).toWideString().c_str());
+	#else
+		LPTSTR tstr = const_cast<char*>(sofile.c_str());
+		void* handle = (void*)LoadLibrary(tstr);
+	#endif
 	/* Generate an error message if all loads failed */
 	if ( handle == NULL ) {
 		WIN_SetError( "Failed loading " + sofile );

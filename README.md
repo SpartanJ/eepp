@@ -235,7 +235,7 @@ This is the current big issue with the library. Since i'm solo working, it's rea
 **How to build it?**
 ------------------------
 
-The library has very few external dependencies. Most of the time you will only need SDL2 and OpenAL libraries with the headers installed. Also **premake4** is needed to generate the Makefiles or project files to build the library. I will assume that you know what you are doing and skip the basics.
+The library has very few external dependencies. Most of the time you will only need SDL2 and OpenAL libraries with the headers installed. Also **premake4** or **premake5** is needed to generate the Makefiles or project files to build the library. I will assume that you know what you are doing and skip the basics.
 
 **_GNU/Linux_**
 
@@ -243,8 +243,8 @@ In a Ubuntu system it would be something like ( also you will need gcc and freet
 
 `sudo apt-get install premake4 libsdl2-2.0-0 libsdl2-dev libopenal1 libopenal-dev`
 
-Clone the repository and on the repository root run:
-`premake4 --with-ssl gmake`
+Clone the repository and on the repository root directory run:
+`premake4 gmake`
 
 Then just build the library:
 `cd make/linux`
@@ -259,10 +259,12 @@ You have two options: build with *Visual Studio* or with *mingw*.
 To build with any of both options first you will need to build the project files with [premake4](https://premake.github.io/download.html). Then add the premake4.exe file to any of the executable paths defined in `PATH` ( or add one ).
 
 For *Visual Studio*:
-`premake4.exe --with-ssl --with-static-freetype vs2010`
+`premake5.exe vs2019`
+or
+`premake4.exe vs2010`
 
 For *mingw*:
-`premake4.exe --with-ssl --with-static-freetype gmake`
+`premake4.exe gmake`
 
 Then you will need the prebuild binaries and development libraries of [*SDL2*](http://libsdl.org/download-2.0.php) and [*openal-soft*](http://kcat.strangesoft.net/openal.html#download). Download the ones needed ( *VS* or *mingw* ).
 
@@ -280,7 +282,7 @@ Then you will need the prebuild binaries and development libraries of [*SDL2*](h
 For a CLI build you can use the `projects/osx/make.sh` script, that generates the *Makefiles* and builds the project, also fix the dylibs generated.
 
 For *XCode* :
-`premake4 --with-ssl --with-static-freetype xcode4`
+`premake4 xcode4`
 
 And open the XCode project generated in `make/osx/`
 

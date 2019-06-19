@@ -66,7 +66,11 @@ void Log::write( std::string Text, const bool& newLine ) {
 	#if EE_PLATFORM == EE_PLATFORM_ANDROID
 		__android_log_print( ANDROID_LOG_INFO, "eepp", "%s", Text.c_str() );
 	#elif defined( EE_COMPILER_MSVC )
+		#ifdef UNICODE
+		OutputDebugString( String::fromUtf8( Text ).toWideString().c_str() );
+		#else
 		OutputDebugString( Text.c_str() );
+		#endif
 	#else
 		std::cout << Text;
 	#endif
@@ -124,7 +128,11 @@ void Log::writef( const char* format, ... ) {
 			#if EE_PLATFORM == EE_PLATFORM_ANDROID
 				__android_log_print( ANDROID_LOG_INFO, "eepp", "%s", tstr.c_str() );
 			#elif defined( EE_COMPILER_MSVC )
-				OutputDebugString( tstr.c_str() );
+				#ifdef UNICODE
+				OutputDebugString( String::fromUtf8(tstr).toWideString().c_str() );
+				#else
+				OutputDebugString(tstr.c_str());
+				#endif
 			#else
 				std::cout << tstr;
 			#endif

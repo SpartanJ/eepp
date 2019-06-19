@@ -64,6 +64,7 @@ class CP_API Space {
 		class BBQuery {
 			public:
 				BBQuery() :
+					Space( NULL ),
 					Data( NULL )
 				{}
 
@@ -74,7 +75,9 @@ class CP_API Space {
 
 		class SegmentQuery {
 			public:
-				SegmentQuery()
+				SegmentQuery() :
+					Space( NULL ),
+					Data( NULL )
 				{}
 
 				Physics::Space *	Space;
@@ -85,6 +88,7 @@ class CP_API Space {
 		class PointQuery {
 			public:
 				PointQuery() :
+					Space( NULL ),
 					Data( NULL )
 				{}
 
