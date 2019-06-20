@@ -723,14 +723,12 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 
 	Display * currentDisplay = Engine::instance()->getDisplayManager()->getDisplayIndex(0);
 	Float pixelDensity = PixelDensity::toFloat( currentDisplay->getPixelDensity() );
-	DisplayMode currentMode = currentDisplay->getCurrentMode();
 
-	Uint32 width = eemin( currentMode.Width, (Uint32)( 1280 * pixelDensity ) );
-	Uint32 height = eemin( currentMode.Height, (Uint32)( 720 * pixelDensity ) );
-
-	window = Engine::instance()->createWindow( WindowSettings( width, height, "eepp - UI Editor", WindowStyle::Default, WindowBackend::Default, 32, "assets/icon/ee.png", pixelDensity ), ContextSettings( true, GLv_default, true, 24, 1, 0, true ) );
+	window = Engine::instance()->createWindow( WindowSettings( 1280, 720, "eepp - UI Editor", WindowStyle::Default, WindowBackend::Default, 32, "assets/icon/ee.png", pixelDensity ), ContextSettings( true, GLv_default, true, 24, 1, 0, true ) );
 
 	if ( window->isOpen() ) {
+		PixelDensity::setPixelDensity( eemax( window->getScale(), pixelDensity ) );
+
 		window->setCloseRequestCallback( cb::Make1( onCloseRequestCallback ) );
 
 		uiSceneNode = UISceneNode::New();

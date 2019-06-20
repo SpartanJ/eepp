@@ -158,15 +158,15 @@ class EE_API Window {
 		typedef std::function<bool( Window* )>			WindowRequestCloseCallback;
 
 		Window( WindowSettings Settings, ContextSettings Context, Clipboard * Clipboard, Input * Input, CursorManager * CursorManager );
-		
+
 		virtual ~Window();
-		
+
 		/** Creates a new window and GL context */
 		virtual bool create( WindowSettings Settings, ContextSettings Context ) = 0;
-		
+
 		/** Toogle the screen to Fullscreen, if it's in fullscreen toogle to windowed mode. */
 		virtual void toggleFullscreen() = 0;
-		
+
 		/** Set the window caption */
 		virtual void setCaption( const std::string& setCaption ) = 0;
 
@@ -277,6 +277,9 @@ class EE_API Window {
 		/** @return The window borders size */
 		virtual Rect getBorderSize();
 
+		/** @return The size of the pixel in screen coordinates. This is the device scale factor. */
+		virtual Float getScale();
+
 		/** @return If the aplication is running returns true ( If you Init correctly the window and is running ). */
 		bool isRunning() const;
 
@@ -337,7 +340,7 @@ class EE_API Window {
 
 		/** @return The clipboard manager */
 		Clipboard * getClipboard() const;
-		
+
 		/** @return The input manager */
 		Input * getInput() const;
 
@@ -447,7 +450,7 @@ class EE_API Window {
 		Uint32 mNumCallBacks;
 		std::map<Uint32, WindowResizeCallback> mCallbacks;
 		WindowRequestCloseCallback mCloseRequestCallback;
-		
+
 		class FrameData {
 			public:
 				class cFPSData {

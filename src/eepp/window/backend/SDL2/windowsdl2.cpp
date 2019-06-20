@@ -109,6 +109,11 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, mWindow.ContextConfig.Multisamples);
 	}
 
+	#if EE_PLATFORM != EE_PLATFORM_MACOSX && EE_PLATFORM != EE_PLATFORM_IOS
+	mWindow.WindowConfig.Width *= mWindow.WindowConfig.PixelDensity;
+	mWindow.WindowConfig.Height *= mWindow.WindowConfig.PixelDensity;
+	#endif
+
 	mSDLWindow = SDL_CreateWindow( mWindow.WindowConfig.Caption.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, mWindow.WindowConfig.Width, mWindow.WindowConfig.Height, mTmpFlags );
 
 	if ( NULL == mSDLWindow ) {
@@ -589,6 +594,18 @@ Rect WindowSDL::getBorderSize() {
 	return bordersSize;
 #else
 	return Rect();
+#endif
+}
+
+Float WindowSDL::getScale() {
+#if SDL_VERSION_ATLEAST(2,0,1)
+	int realX, realY;
+	int scaledX, scaledY;
+	SDL_GL_GetDrawableSize(mSDLWindow, &realX, &realY);
+	SDL_GetWindowSize(mSDLWindow, &scaledX, &scaledY);
+	return (Float)realX / (Float)scaledX;
+#else
+	return 1.f;
 #endif
 }
 

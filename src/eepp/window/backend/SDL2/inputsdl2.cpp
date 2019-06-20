@@ -323,20 +323,14 @@ void InputSDL::injectMousePos( const Uint16& x, const Uint16& y ) {
 }
 
 void InputSDL::init() {
-#if SDL_VERSION_ATLEAST(2,0,1)
-	int realX, realY;
-	int scaledX, scaledY;
-	SDL_Window * sdlw = reinterpret_cast<WindowSDL*>( mWindow )->GetSDLWindow();
-	SDL_GL_GetDrawableSize(sdlw, &realX, &realY);
-	SDL_GetWindowSize(sdlw, &scaledX, &scaledY);
-	mDPIScale = (Float)realX / (Float)scaledX;
-#endif
+	mDPIScale = mWindow->getScale();
 
 #if SDL_VERSION_ATLEAST(2,0,5)
 	Vector2i mTempMouse;
 	Vector2i mTempWinPos;
 	Rect mBordersSize;
 
+	SDL_Window * sdlw = reinterpret_cast<WindowSDL*>( mWindow )->GetSDLWindow();
 	SDL_GetGlobalMouseState( &mTempMouse.x, &mTempMouse.y );
 	SDL_GetWindowPosition( sdlw, &mTempWinPos.x, &mTempWinPos.y );
 	SDL_GetWindowBordersSize( sdlw, &mBordersSize.Top, &mBordersSize.Left, &mBordersSize.Bottom, &mBordersSize.Right );

@@ -539,6 +539,10 @@ Rect Window::getBorderSize() {
 	return Rect();
 }
 
+Float Window::getScale() {
+	return 1.f;
+}
+
 Platform::PlatformImpl * Window::getPlatform() const {
 	return mPlatform;
 }

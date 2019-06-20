@@ -677,7 +677,7 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 					writeTo.seek( continueLength );
 					Request newRequest( request );
 					newRequest.setContinue( false );
-					newRequest.setField( "Range", String::format( "bytes=%lu-%lu", continueLength, contentLength ) );
+					newRequest.setField( "Range", String::format( "bytes=%lu-%lu", (unsigned long)continueLength, (unsigned long)contentLength ) );
 					return downloadRequest( newRequest, writeTo, timeout );
 				}
 			}

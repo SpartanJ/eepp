@@ -59,6 +59,8 @@ class EE_API WindowSDL : public Window {
 
 		virtual Rect getBorderSize();
 
+		virtual Float getScale();
+
 		SDL_Window *	GetSDLWindow() const;
 
 		void startTextInput();

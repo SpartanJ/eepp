@@ -41,14 +41,12 @@ void mainLoop() {
 EE_MAIN_FUNC int main (int argc, char * argv []) {
 	Display * currentDisplay = Engine::instance()->getDisplayManager()->getDisplayIndex(0);
 	Float pixelDensity = PixelDensity::toFloat( currentDisplay->getPixelDensity() );
-	DisplayMode currentMode = currentDisplay->getCurrentMode();
 
-	Uint32 width = eemin( currentMode.Width, (Uint32)( 1280 * pixelDensity ) );
-	Uint32 height = eemin( currentMode.Height, (Uint32)( 720 * pixelDensity ) );
-
-	win = Engine::instance()->createWindow( WindowSettings( width, height, "eepp - Texture Atlas Editor", WindowStyle::Default, WindowBackend::Default, 32, "assets/icon/ee.png", pixelDensity ), ContextSettings( true, GLv_default, true, 24, 1, 0, false ) );
+	win = Engine::instance()->createWindow( WindowSettings( 1280, 720, "eepp - Texture Atlas Editor", WindowStyle::Default, WindowBackend::Default, 32, "assets/icon/ee.png", pixelDensity ), ContextSettings( true, GLv_default, true, 24, 1, 0, false ) );
 
 	if ( win->isOpen() ) {
+		PixelDensity::setPixelDensity( eemax( win->getScale(), pixelDensity ) );
+
 		win->setCloseRequestCallback( cb::Make1( onCloseRequestCallback ) );
 
 		UISceneNode * uiSceneNode = UISceneNode::New();
