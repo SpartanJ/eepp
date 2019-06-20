@@ -3,9 +3,13 @@
 
 #include <eepp/config.hpp>
 
+#ifdef EE_USE_FRAMEWORKS
+#include <OpenAL/al.h>
+#include <OpenAL/alc.h>
+#else
 #include <AL/al.h>
 #include <AL/alc.h>
-
+#endif
 namespace EE { namespace Audio {
 
 #ifdef EE_DEBUG

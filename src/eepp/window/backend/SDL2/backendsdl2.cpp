@@ -21,7 +21,9 @@ WindowBackendSDL2::WindowBackendSDL2() :
 
 WindowBackendSDL2::~WindowBackendSDL2()
 {
+#if EE_PLATFORM != EE_PLATFORM_MACOSX
 	SDL_Quit();
+#endif
 }
 
 }}}}

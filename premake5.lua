@@ -409,7 +409,7 @@ end
 
 function set_xcode_config()
 	if is_xcode() or _OPTIONS["use-frameworks"] then
-		linkoptions { "-F/Library/Frameworks" }
+		linkoptions { "-F /Library/Frameworks" }
 		includedirs { "/Library/Frameworks/SDL2.framework/Headers" }
 		defines { "EE_SDL2_FROM_ROOTPATH" }
 	end
@@ -528,9 +528,20 @@ function check_ssl_support()
 	defines { "EE_SSL_SUPPORT" }
 end
 
+function set_macos_config()
+	if os.istarget("macosx") and ( is_xcode() or _OPTIONS["use-frameworks"] ) then
+		libdirs { "/System/Library/Frameworks", "/Library/Frameworks" }
+	end
+	
+	if _OPTIONS["use-frameworks"] then
+		defines { "EE_USE_FRAMEWORKS" }
+	end
+end
+
 function build_eepp( build_name )
 	includedirs { "include", "src", "src/thirdparty", "include/eepp/thirdparty", "src/thirdparty/freetype2/include", "src/thirdparty/zlib", "src/thirdparty/libogg/include", "src/thirdparty/libvorbis/include", "src/thirdparty/mbedtls/include" }
-
+	
+	set_macos_config()
 	set_ios_config()
 	set_xcode_config()
 
@@ -867,6 +878,10 @@ workspace "eepp"
 			links { "pthread" }
 		end
 
+		if os.istarget("macosx") then
+			links { "CoreFoundation.framework", "CoreServices.framework" }
+		end
+		
 		links { "efsw-static", "pugixml-static" }
 		files { "src/tools/uieditor/*.cpp" }
 		build_link_configuration( "eepp-UIEditor", true )

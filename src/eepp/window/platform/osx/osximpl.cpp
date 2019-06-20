@@ -64,7 +64,7 @@ Cursor * OSXImpl::createMouseCursor( const std::string& path, const Vector2i& ho
 void OSXImpl::setMouseCursor( Cursor * cursor ) {
 }
 
-void OSXImpl::setSystemMouseCursor( EE_SYSTEM_CURSOR syscursor ) {
+void OSXImpl::setSystemMouseCursor( Cursor::SysType syscursor ) {
 }
 
 void OSXImpl::restoreCursor() {
