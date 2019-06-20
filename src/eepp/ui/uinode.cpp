@@ -620,13 +620,20 @@ void UINode::internalDraw() {
 		if ( mNodeFlags & NODE_FLAG_POSITION_DIRTY )
 			updateScreenPos();
 
+		if ( mNodeFlags & NODE_FLAG_POLYGON_DIRTY )
+			updateWorldPolygon();
+
 		matrixSet();
 
 		clipStart();
 
-		draw();
+		if ( mWorldBounds.intersect( mSceneNode->getWorldBounds() ) ) {
+			draw();
 
-		drawChilds();
+			drawChilds();
+		} else if ( !isClipped() ) {
+			drawChilds();
+		}
 
 		clipEnd();
 

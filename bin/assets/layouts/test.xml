@@ -38,13 +38,13 @@
 
 					<PushButton layout_width="wrap_content" layout_height="wrap_content" text="testing padding" layout_gravity="bottom|right" gravity="center" padding="8dp" layout_to_top_of="tmp" />
 					<PushButton id="pbut" text="OK!" textSize="16dp" icon="ok" layout_gravity="left|bottom" gravity="center" layout_width="wrap_content" layout_height="wrap_content" layout_marginBottom="8dp" padding="8dp" layout_to_top_of="tm" />
-					
+
 					<Slider id="slider" orientation="horizontal" halfslider="true" layout_width="200dp" layout_height="wrap_content" layout_to_bottom_of="el1" />
-					
+
 					<ScrollBar id="scrollbar" orientation="horizontal" layout_width="200dp" layout_height="wrap_content" layout_to_bottom_of="slider" />
 
 					<SpinBox id="spinbox" layout_width="200dp" layout_height="wrap_content" layout_to_bottom_of="scrollbar" />
-					
+
 					<TextEdit layout_width="200dp" layout_height="50dp" layout_gravity="bottom|center_horizontal" />
 				</RelativeLayout>
 			</vbox>
@@ -68,10 +68,19 @@
 			<RelativeLayout layout_width="match_parent" layout_height="32dp"><TextView layout_width="wrap_content" layout_height="wrap_content" text="FAQ" /></RelativeLayout>
 			<RelativeLayout layout_width="match_parent" layout_height="32dp"><TextView layout_width="wrap_content" layout_height="wrap_content" text="About Us" /></RelativeLayout>
 		</vbox>
-		
+		<ScrollView id="test_5" layout_width="match_parent" layout_height="match_parent" touchdrag="true">
+			<vbox layout_width="match_parent" layout_height="wrap_content">
+				<TextView text="Test" /><TextView text="Test" /><TextView text="Test" /><TextView text="Test" /><TextView text="Test" /><TextView text="Test" />
+				<TextView text="Test" /><TextView text="Test" /><TextView text="Test" /><TextView text="Test" /><TextView text="Test" /><TextView text="Test" />
+				<TextView text="Test" /><TextView text="Test" /><TextView text="Test" /><TextView text="Test" /><TextView text="Test" /><TextView text="Test" />
+				<TextView text="Test" /><TextView text="Test" /><TextView text="Test" /><TextView text="Test" /><TextView text="Test" /><TextView text="Test" />
+				<TextView text="Test" /><TextView text="Test" /><TextView text="Test" /><TextView text="Test" /><TextView text="Test" /><TextView text="Test" />
+			</vbox>
+		</ScrollView>
 		<Tab name="Padding Test" owns="test_1" />
 		<Tab name="Tabs Test" owns="test_2" />
 		<Tab name="Cascade Test" owns="test_3" />
 		<Tab name="Hover Test" owns="test_4" />
+		<Tab name="Scroll Test" owns="test_5" />
 	</TabWidget>
 </vbox>

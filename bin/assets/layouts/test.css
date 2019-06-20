@@ -32,7 +32,7 @@ PopUpMenu {
 	minRightMargin: 8dp;
 }
 
-Menu:hover, 
+Menu:hover,
 PopUpMenu:hover,
 Menu::Item:hover,
 Menu::CheckBox:hover,
@@ -44,7 +44,7 @@ Tab:pressed {
 	textColor: #FFF;
 }
 
-Slider { 
+Slider {
 	halfSlider: true;
 	backgroundColor: #555;
 }
@@ -327,4 +327,8 @@ TabWidget {
 #rrl > TextEdit {
 	padding: 16dp;
 	layout_marginBottom: 140dp;
+}
+
+#test_5 TextView {
+	padding: 8dp;
 }

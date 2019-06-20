@@ -9,7 +9,16 @@ namespace EE { namespace UI { namespace CSS {
 StyleSheet::StyleSheet() {}
 
 void StyleSheet::addStyle( const StyleSheetStyle& node ) {
-	mNodes[ node.getSelector().getName() ] = node;
+	auto nodeIt = mNodes.find( node.getSelector().getName() );
+
+	if ( nodeIt == mNodes.end() ) {
+		mNodes[ node.getSelector().getName() ] = node;
+	} else {
+		StyleSheetStyle& currentNode = nodeIt->second;
+
+		for ( auto& pit : node.getProperties() )
+			currentNode.setProperty( pit.second );
+	}
 }
 
 void StyleSheet::combineStyle( const StyleSheetStyle& node ) {
@@ -18,7 +27,7 @@ void StyleSheet::combineStyle( const StyleSheetStyle& node ) {
 	if ( nodeIt == mNodes.end() ) {
 		addStyle( node );
 	} else {
-		auto currentNode = nodeIt->second;
+		auto& currentNode = nodeIt->second;
 
 		if ( node.getSelector().getSpecificity() > currentNode.getSelector().getSpecificity() ) {
 			for ( auto& pit : node.getProperties() )
