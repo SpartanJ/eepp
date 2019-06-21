@@ -258,16 +258,16 @@ std::vector<String> FileSystem::filesGetInPath( const String& path, const bool& 
 
 #ifdef EE_COMPILER_MSVC
 	#ifdef UNICODE
-		String mPath( path );
+		String widePath( path );
 
-		if ( mPath[ mPath.size() - 1 ] == '/' || mPath[ mPath.size() - 1 ] == '\\' ) {
-			mPath += "*";
+		if ( widePath[ widePath.size() - 1 ] == '/' || widePath[ widePath.size() - 1 ] == '\\' ) {
+			widePath += "*";
 		} else {
-			mPath += "\\*";
+			widePath += "\\*";
 		}
 
 		WIN32_FIND_DATA findFileData;
-		HANDLE hFind = FindFirstFile( (LPCWSTR)mPath.toWideString().c_str(), &findFileData );
+		HANDLE hFind = FindFirstFile( widePath.toWideString().c_str(), &findFileData );
 
 		if( hFind != INVALID_HANDLE_VALUE ) {
 			String tmpstr( findFileData.cFileName );
@@ -380,16 +380,16 @@ std::vector<std::string> FileSystem::filesGetInPath( const std::string& path, co
 
 #ifdef EE_COMPILER_MSVC
 	#ifdef UNICODE
-		String mPath( String::fromUtf8( path ) );
+		String widePath( path );
 
-		if ( mPath[ mPath.size() - 1 ] == '/' || mPath[ mPath.size() - 1 ] == '\\' ) {
-			mPath += "*";
+		if ( widePath[ widePath.size() - 1 ] == '/' || widePath[ widePath.size() - 1 ] == '\\' ) {
+			widePath += "*";
 		} else {
-			mPath += "\\*";
+			widePath += "\\*";
 		}
 
 		WIN32_FIND_DATA findFileData;
-		HANDLE hFind = FindFirstFile( (LPCWSTR)mPath.toWideString().c_str(), &findFileData );
+		HANDLE hFind = FindFirstFile( widePath.toWideString().c_str(), &findFileData );
 
 		if( hFind != INVALID_HANDLE_VALUE ) {
 			String tmpstr( findFileData.cFileName );
@@ -449,13 +449,11 @@ std::vector<std::string> FileSystem::filesGetInPath( const std::string& path, co
 	closedir(dp);
 #endif
 
-	if ( sortByName == true )
-	{
+	if ( sortByName == true ) {
 		std::sort( files.begin(), files.end() );
 	}
 
-	if ( foldersFirst == true )
-	{
+	if ( foldersFirst == true ) {
 		String fpath( path );
 
 		if ( fpath[ fpath.size() - 1 ] != '/' && fpath[ fpath.size() - 1 ] != '\\' )
@@ -567,7 +565,7 @@ Int64 FileSystem::getDiskFreeSpace(const std::string& path) {
 	Int64 TotalBytes;
 	Int64 FreeBytes;
 	#ifdef UNICODE
-	GetDiskFreeSpaceEx((LPCWSTR)path.c_str(),(PULARGE_INTEGER) &AvailableBytes,
+	GetDiskFreeSpaceEx( String::fromUtf8( path.c_str() ).toWideString().c_str(),(PULARGE_INTEGER) &AvailableBytes,
 	#else
 	GetDiskFreeSpaceEx(path.c_str(),(PULARGE_INTEGER) &AvailableBytes,
 	#endif
