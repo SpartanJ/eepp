@@ -13,7 +13,8 @@ UIStyle * UIStyle::New( UIWidget * widget ) {
 }
 
 UIStyle::UIStyle( UIWidget * widget ) :
-	mWidget( widget )
+	mWidget( widget ),
+	mChangingState( false )
 {
 	load();
 }
@@ -98,6 +99,10 @@ UIStyle::TransitionInfo UIStyle::getTransition( const std::string& propertyName 
 	return TransitionInfo();
 }
 
+const bool& UIStyle::isChangingState() const {
+	return mChangingState;
+}
+
 void UIStyle::subscribeRelated( UIWidget * widget ) {
 	mRelatedWidgets.insert( widget );
 }
@@ -124,6 +129,8 @@ void UIStyle::tryApplyStyle( const StyleSheetStyle& style ) {
 
 void UIStyle::onStateChange() {
 	if ( NULL != mWidget ) {
+		mChangingState = true;
+
 		mProperties.clear();
 		mTransitionAttributes.clear();
 
@@ -154,6 +161,8 @@ void UIStyle::onStateChange() {
 				related->getUIStyle()->onStateChange();
 			}
 		}
+
+		mChangingState = false;
 	}
 }
 

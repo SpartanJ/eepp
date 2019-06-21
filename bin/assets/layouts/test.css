@@ -331,4 +331,6 @@ TabWidget {
 
 #test_5 TextView {
 	padding: 8dp;
+	layout_width: match_parent;
+	skin: button;
 }

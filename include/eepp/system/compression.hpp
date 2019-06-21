@@ -6,7 +6,7 @@
 
 namespace EE { namespace System {
 
-class Compression {
+class EE_API Compression {
 	public:
 		enum Mode {
 			MODE_DEFLATE,

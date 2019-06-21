@@ -68,6 +68,8 @@ class EE_API UIStyle : public UIState {
 		bool hasTransition( const std::string& propertyName );
 
 		TransitionInfo getTransition( const std::string& propertyName );
+
+		const bool& isChangingState() const;
 	protected:
 		typedef std::map<std::string, TransitionInfo> TransitionsMap;
 
@@ -80,6 +82,7 @@ class EE_API UIStyle : public UIState {
 		TransitionsMap mTransitions;
 		std::set<UIWidget*> mRelatedWidgets;
 		std::set<UIWidget*> mSubscribedWidgets;
+		bool mChangingState;
 
 		void tryApplyStyle( const CSS::StyleSheetStyle& style );
 

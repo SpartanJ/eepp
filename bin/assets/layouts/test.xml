@@ -68,7 +68,7 @@
 			<RelativeLayout layout_width="match_parent" layout_height="32dp"><TextView layout_width="wrap_content" layout_height="wrap_content" text="FAQ" /></RelativeLayout>
 			<RelativeLayout layout_width="match_parent" layout_height="32dp"><TextView layout_width="wrap_content" layout_height="wrap_content" text="About Us" /></RelativeLayout>
 		</vbox>
-		<ScrollView id="test_5" layout_width="match_parent" layout_height="match_parent" touchdrag="true">
+		<ScrollView id="test_5" layout_width="match_parent" layout_height="match_parent">
 			<vbox layout_width="match_parent" layout_height="wrap_content">
 				<TextView text="Test" /><TextView text="Test" /><TextView text="Test" /><TextView text="Test" /><TextView text="Test" /><TextView text="Test" />
 				<TextView text="Test" /><TextView text="Test" /><TextView text="Test" /><TextView text="Test" /><TextView text="Test" /><TextView text="Test" />

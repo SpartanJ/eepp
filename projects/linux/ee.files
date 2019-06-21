@@ -398,6 +398,7 @@
 ../../Makefile
 ../../Makefile.base
 ../../premake4.lua
+../../premake5.lua
 ../../src/eepp/audio/alcheck.cpp
 ../../src/eepp/audio/ALCheck.cpp
 ../../src/eepp/audio/alcheck.hpp

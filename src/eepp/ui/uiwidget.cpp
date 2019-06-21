@@ -433,7 +433,7 @@ void UIWidget::alignAgainstLayout() {
 }
 
 void UIWidget::reportStyleStateChange() {
-	if ( NULL != mStyle )
+	if ( NULL != mStyle && !mStyle->isChangingState() )
 		mStyle->onStateChange();
 }
 

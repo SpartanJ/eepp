@@ -7,7 +7,7 @@ namespace EE { namespace UI { namespace CSS {
 
 class StyleSheetElement;
 
-class StyleSheetSelectorRule {
+class EE_API StyleSheetSelectorRule {
 	public:
 		enum TypeIdentifier {
 			TAG = 0,
