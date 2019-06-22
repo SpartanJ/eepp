@@ -70,11 +70,10 @@
 		</vbox>
 		<ScrollView id="test_5" layout_width="match_parent" layout_height="match_parent">
 			<vbox layout_width="match_parent" layout_height="wrap_content">
-				<TextView text="Test" /><TextView text="Test" /><TextView text="Test" /><TextView text="Test" /><TextView text="Test" /><TextView text="Test" />
-				<TextView text="Test" /><TextView text="Test" /><TextView text="Test" /><TextView text="Test" /><TextView text="Test" /><TextView text="Test" />
-				<TextView text="Test" /><TextView text="Test" /><TextView text="Test" /><TextView text="Test" /><TextView text="Test" /><TextView text="Test" />
-				<TextView text="Test" /><TextView text="Test" /><TextView text="Test" /><TextView text="Test" /><TextView text="Test" /><TextView text="Test" />
-				<TextView text="Test" /><TextView text="Test" /><TextView text="Test" /><TextView text="Test" /><TextView text="Test" /><TextView text="Test" />
+				<TextView text="Test 1" /><TextView text="Test 2" /><TextView text="Test 3" /><TextView text="Test 4" /><TextView text="Test 5" /><TextView text="Test 6" />
+				<TextView text="Test 7" /><TextView text="Test 8" /><TextView text="Test 9" /><TextView text="Test 10" /><TextView text="Test 11" /><TextView text="Test 12" />
+				<TextView text="Test 13" /><TextView text="Test 14" /><TextView text="Test 15" /><TextView text="Test 16" /><TextView text="Test 17" /><TextView text="Tes 18" />
+				<TextView text="Test 19" /><TextView text="Test 20" /><TextView text="Test 21" /><TextView text="Test 22" /><TextView text="Test 23" /><TextView text="Test 24" />
 			</vbox>
 		</ScrollView>
 		<Tab name="Padding Test" owns="test_1" />

@@ -6,14 +6,6 @@
 
 namespace EE { namespace UI {
 
-class EE_API UISliderStyleConfig {
-	public:
-		UISliderStyleConfig() {}
-
-		bool AllowHalfSliderOut = false;
-		bool ExpandBackground = false;
-};
-
 class EE_API UISlider : public UIWidget {
 	public:
 		static UISlider * New();
@@ -81,7 +73,8 @@ class EE_API UISlider : public UIWidget {
 		friend class Private::UISliderButton;
 
 		UI_ORIENTATION		mOrientation;
-		UISliderStyleConfig	mStyleConfig;
+		bool				mAllowHalfSliderOut;
+		bool				mExpandBackground;
 		UINode *		mBackSlider;
 		Private::UISliderButton * 	mSlider;
 		Float				mMinValue;

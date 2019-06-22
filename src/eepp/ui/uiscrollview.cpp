@@ -42,8 +42,8 @@ bool UIScrollView::isType( const Uint32& type ) const {
 }
 
 void UIScrollView::onSizeChange() {
-	UIWidget::onSizeChange();
 	containerUpdate();
+	UIWidget::onSizeChange();
 }
 
 void UIScrollView::onAlphaChange() {
@@ -77,8 +77,8 @@ void UIScrollView::onChildCountChange() {
 			mScrollView->close();
 		}
 
-		child->setParent( mContainer );
 		mScrollView = child;
+		mScrollView->setParent( mContainer );
 		mSizeChangeCb = mScrollView->addEventListener( Event::OnSizeChange, cb::Make1( this, &UIScrollView::onScrollViewSizeChange ) );
 
 		containerUpdate();
@@ -139,19 +139,6 @@ void UIScrollView::containerUpdate() {
 	if ( NULL == mScrollView )
 		return;
 
-	Sizef size = mDpSize - mPadding;
-
-	if ( Exclusive == mViewType ) {
-		if ( mVScroll->isVisible() )
-			size.x -= mVScroll->getSize().getWidth();
-
-		if ( mHScroll->isVisible() )
-			size.y -= mHScroll->getSize().getHeight();
-	}
-
-	mContainer->setPosition( mPadding.Left, mPadding.Top );
-	mContainer->setSize( size );
-
 	if ( UI_SCROLLBAR_ALWAYS_ON == mHScrollMode ) {
 		mHScroll->setVisible( true );
 		mHScroll->setEnabled( true );
@@ -159,7 +146,7 @@ void UIScrollView::containerUpdate() {
 		mHScroll->setVisible( false );
 		mHScroll->setEnabled( false );
 	} else {
-		bool visible = mScrollView->getSize().getWidth() > mContainer->getSize().getWidth();
+		bool visible = mScrollView->getSize().getWidth() > getSize().getWidth() - getPadding().Left - getPadding().Right;
 
 		mHScroll->setVisible( visible );
 		mHScroll->setEnabled( visible );
@@ -172,11 +159,24 @@ void UIScrollView::containerUpdate() {
 		mVScroll->setVisible( false );
 		mVScroll->setEnabled( false );
 	} else {
-		bool visible = mScrollView->getSize().getHeight() > mContainer->getSize().getHeight();
+		bool visible = mScrollView->getSize().getHeight() > getSize().getHeight() - getPadding().Top - getPadding().Bottom;
 
 		mVScroll->setVisible( visible );
 		mVScroll->setEnabled( visible );
 	}
+
+	Sizef size = mDpSize - mPadding;
+
+	if ( Exclusive == mViewType ) {
+		if ( mVScroll->isVisible() )
+			size.x -= mVScroll->getSize().getWidth();
+
+		if ( mHScroll->isVisible() )
+			size.y -= mHScroll->getSize().getHeight();
+	}
+
+	mContainer->setPosition( mPadding.Left, mPadding.Top );
+	mContainer->setSize( size );
 
 	mVScroll->setPosition( mDpSize.getWidth() - mVScroll->getSize().getWidth() - mPadding.Right, mPadding.Top );
 	mHScroll->setPosition( mPadding.Left, mDpSize.getHeight() - mHScroll->getSize().getHeight() - mPadding.Bottom );

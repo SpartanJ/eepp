@@ -35,13 +35,12 @@ UIScrollBar::UIScrollBar( const UI_ORIENTATION& orientation ) :
 	mBtnDown->setSize( 16, 16 );
 
 	mSlider		= UISlider::New();
+	mSlider->addEventListener( Event::OnValueChange, cb::Make1( this, &UIScrollBar::onValueChangeCb ) );
 	mSlider->setElementTag( "scrollbarslider" );
 	mSlider->setOrientation( orientation );
 	mSlider->setParent( this );
 	mSlider->setAllowHalfSliderOut( false );
 	mSlider->setExpandBackground( false );
-
-	mSlider->addEventListener( Event::OnValueChange, cb::Make1( this, &UIScrollBar::onValueChangeCb ) );
 
 	adjustChilds();
 
@@ -294,7 +293,9 @@ bool UIScrollBar::getExpandBackground() const {
 }
 
 void UIScrollBar::setExpandBackground( bool expandBackground ) {
-	mSlider->setExpandBackground( expandBackground );
+	if ( mSlider->getExpandBackground() != expandBackground ) {
+		mSlider->setExpandBackground( expandBackground );
+	}
 
 	adjustChilds();
 }
