@@ -88,6 +88,7 @@ class EE_API WindowSDL : public Window {
 		SDL_Window *	mSDLWindow;
 		SDL_GLContext	mGLContext;
 		SDL_GLContext	mGLContextThread;
+		Mutex			mGLContextMutex;
 
 		#ifdef EE_USE_WMINFO
 		WMInfo *		mWMinfo;

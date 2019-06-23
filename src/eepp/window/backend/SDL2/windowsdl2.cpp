@@ -246,11 +246,13 @@ bool WindowSDL::isThreadedGLContext() {
 }
 
 void WindowSDL::setGLContextThread() {
+	mGLContextMutex.lock();
 	SDL_GL_MakeCurrent( mSDLWindow, mGLContextThread );
 }
 
 void WindowSDL::unsetGLContextThread() {
 	SDL_GL_MakeCurrent( mSDLWindow, NULL );
+	mGLContextMutex.unlock();
 }
 
 int WindowSDL::getCurrentDisplayIndex() {
