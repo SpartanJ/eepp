@@ -69,17 +69,26 @@
 			<RelativeLayout layout_width="match_parent" layout_height="32dp"><TextView layout_width="wrap_content" layout_height="wrap_content" text="About Us" /></RelativeLayout>
 		</vbox>
 		<ScrollView id="test_5" layout_width="match_parent" layout_height="match_parent">
-			<vbox layout_width="match_parent" layout_height="wrap_content">
+			<vbox class="ll" layout_width="match_parent" layout_height="wrap_content">
 				<TextView text="Test 1" /><TextView text="Test 2" /><TextView text="Test 3" /><TextView text="Test 4" /><TextView text="Test 5" /><TextView text="Test 6" />
 				<TextView text="Test 7" /><TextView text="Test 8" /><TextView text="Test 9" /><TextView text="Test 10" /><TextView text="Test 11" /><TextView text="Test 12" />
 				<TextView text="Test 13" /><TextView text="Test 14" /><TextView text="Test 15" /><TextView text="Test 16" /><TextView text="Test 17" /><TextView text="Tes 18" />
 				<TextView text="Test 19" /><TextView text="Test 20" /><TextView text="Test 21" /><TextView text="Test 22" /><TextView text="Test 23" /><TextView text="Test 24" />
 			</vbox>
 		</ScrollView>
+		<GridLayout id="test_6" columnMode="size" rowMode="size" columnWidth="64dp" rowHeight="64dp" layout_width="match_parent" layout_height="wrap_content">
+			<Image src="file://assets/tiles/1.png" scaleType="fit_inside" />
+			<Image src="file://assets/tiles/2.png" scaleType="fit_inside" />
+			<Image src="file://assets/tiles/3.png" scaleType="fit_inside" />
+			<Image src="file://assets/tiles/4.png" scaleType="fit_inside" />
+			<Image src="file://assets/tiles/5.png" scaleType="fit_inside" />
+			<Image src="file://assets/tiles/6.png" scaleType="fit_inside" />
+		</GridLayout>
 		<Tab name="Padding Test" owns="test_1" />
 		<Tab name="Tabs Test" owns="test_2" />
 		<Tab name="Cascade Test" owns="test_3" />
 		<Tab name="Hover Test" owns="test_4" />
 		<Tab name="Scroll Test" owns="test_5" />
+		<Tab name="Grid Test" owns="test_6" />
 	</TabWidget>
 </vbox>

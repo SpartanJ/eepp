@@ -220,17 +220,17 @@ void UISlider::fixSliderPos() {
 }
 
 void UISlider::setValue( Float Val ) {
-	if ( mValue == Val )
-		return;
-
 	if ( Val < mMinValue ) Val = mMinValue;
 	if ( Val > mMaxValue ) Val = mMaxValue;
+
+	if ( mValue == Val )
+		return;
 
 	if ( Val >= mMinValue && Val <= mMaxValue ) {
 		mValue = Val;
 
 		if ( !mOnPosChange ) {
-			Float Percent = ( Val - mMinValue ) / ( mMaxValue - mMinValue );
+			Float Percent = ( mValue - mMinValue ) / ( mMaxValue - mMinValue );
 
 			mOnPosChange = true;
 
@@ -238,7 +238,7 @@ void UISlider::setValue( Float Val ) {
 				if ( mAllowHalfSliderOut )
 					mSlider->setPosition( mPadding.Left + (Int32)( (Float)mBackSlider->getSize().getWidth() * Percent ), mSlider->getPosition().y );
 				else
-					mSlider->setPosition( mPadding.Left + (Int32)( ( (Float)mDpSize.getWidth() - mPadding.Left - mPadding.Top - mSlider->getSize().getWidth() ) * Percent ), mSlider->getPosition().y );
+					mSlider->setPosition( mPadding.Left + (Int32)( ( (Float)mDpSize.getWidth() - mPadding.Left - mPadding.Right - mSlider->getSize().getWidth() ) * Percent ), mSlider->getPosition().y );
 			} else {
 				if ( mAllowHalfSliderOut )
 					mSlider->setPosition( mSlider->getPosition().x, mPadding.Top + (Int32)( (Float)mBackSlider->getSize().getHeight() * Percent ) );
@@ -392,11 +392,13 @@ Float UISlider::getPageStep() const {
 }
 
 void UISlider::setPageStep(const Float & pageStep) {
-	mPageStep = eemin( eemax( pageStep, mMinValue ), mMaxValue );
+	if ( pageStep != mPageStep ) {
+		mPageStep = eemin( eemax( pageStep, mMinValue ), mMaxValue );
 
-	adjustChilds();
+		adjustChilds();
 
-	setValue( mValue );
+		setValue( mValue );
+	}
 }
 
 UINode * UISlider::getBackSlider() const {

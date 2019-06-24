@@ -269,7 +269,21 @@ WindowSettings Engine::createWindowSettings( IniFile * ini, std::string iniKeyNa
 	bool Resizeable		= ini->getValueB( iniKeyName, "Resizeable", true );
 	bool Borderless		= ini->getValueB( iniKeyName, "Borderless", false );
 	bool UseDesktopResolution = ini->getValueB( iniKeyName, "UseDesktopResolution", false );
-	float pixelDensity	= ini->getValueF( iniKeyName, "PixelDensity", PixelDensity::getPixelDensity() );
+	std::string pixelDensityStr	= ini->getValue( iniKeyName, "PixelDensity" );
+	float pixelDensity = PixelDensity::getPixelDensity();
+
+	if ( !pixelDensityStr.empty() ) {
+		if ( String::toLower( pixelDensityStr ) == "auto" ) {
+			Display * currentDisplay = Engine::instance()->getDisplayManager()->getDisplayIndex(0);
+			pixelDensity = PixelDensity::toFloat( currentDisplay->getPixelDensity() );
+		} else {
+			float pd = 1;
+			bool res = String::fromString<float>( pd, pixelDensityStr );
+
+			if ( res )
+				pixelDensity = pd;
+		}
+	}
 
 	std::string Backend = ini->getValue( iniKeyName, "Backend", "" );
 	Uint32 WinBackend	= getDefaultBackend();

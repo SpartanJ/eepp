@@ -26,7 +26,7 @@
 
 */
 
-/*! NOTE by Martin Lucas Golini
+/*
 **	This implementation is based on the John W. Ratcliff texture atlas implementation.
 ** Implementation differs from the original, but i used the base texture atlas algorithm.
 */

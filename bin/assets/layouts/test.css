@@ -329,8 +329,35 @@ TabWidget {
 	layout_marginBottom: 140dp;
 }
 
+#test_5 {
+	padding: 8dp;
+	background: #555;
+}
+
+#test_5 .ll {
+	background: #333;
+}
+
 #test_5 TextView {
+	layout_margin: 4dp;
 	padding: 8dp;
 	layout_width: match_parent;
 	skin: button;
+}
+
+#test_6 {
+	layout_margin: 8dp;
+	background: #323232;
+}
+
+#test_6 > * {
+	gravity: center;
+	background: #323232;
+	transition: all 0.2;
+}
+
+#test_6 > *:hover {
+	background: #444;
+	scale: 1.1;
+	cursor: hand;
 }

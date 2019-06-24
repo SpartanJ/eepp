@@ -17,7 +17,8 @@ UIScrollView::UIScrollView() :
 	mHScroll( UIScrollBar::NewHorizontal() ),
 	mContainer( UIWidget::NewWithTag( "scrollview::container" ) ),
 	mScrollView( NULL ),
-	mSizeChangeCb( 0 )
+	mSizeChangeCb( 0 ),
+	mPosChangeCb( 0 )
 {
 	enableReportSizeChangeToChilds();
 
@@ -74,12 +75,16 @@ void UIScrollView::onChildCountChange() {
 			if ( 0 != mSizeChangeCb )
 				mScrollView->removeEventListener( mSizeChangeCb );
 
+			if ( 0 != mPosChangeCb )
+				mScrollView->removeEventListener( mPosChangeCb );
+
 			mScrollView->close();
 		}
 
 		mScrollView = child;
 		mScrollView->setParent( mContainer );
 		mSizeChangeCb = mScrollView->addEventListener( Event::OnSizeChange, cb::Make1( this, &UIScrollView::onScrollViewSizeChange ) );
+		mPosChangeCb = mScrollView->addEventListener( Event::OnPositionChange, cb::Make1( this, &UIScrollView::onScrollViewPositionChange ) );
 
 		containerUpdate();
 	}
@@ -199,8 +204,12 @@ void UIScrollView::updateScroll() {
 		return;
 
 	mScrollView->setPosition(
-		mHScroll->isVisible() ? -static_cast<int>( mHScroll->getSlider()->getValue() * eemax( 0.f, mScrollView->getSize().getWidth() - mDpSize.getWidth() ) ) : 0.f ,
-		mVScroll->isVisible() ? -static_cast<int>( mVScroll->getSlider()->getValue() * eemax( 0.f, mScrollView->getSize().getHeight() - mDpSize.getHeight() ) ) : 0.f
+		mHScroll->isVisible() ?
+			-static_cast<int>( mHScroll->getSlider()->getValue() *
+								eemax( 0.f, mScrollView->getSize().getWidth() - mContainer->getSize().getWidth() ) ) : 0.f ,
+		mVScroll->isVisible() ?
+			-static_cast<int>( mVScroll->getSlider()->getValue() *
+								eemax( 0.f, mScrollView->getSize().getHeight() - mContainer->getSize().getHeight() ) ) : 0.f
 	);
 }
 
@@ -210,6 +219,10 @@ void UIScrollView::onValueChangeCb( const Event * ) {
 
 void UIScrollView::onScrollViewSizeChange(const Event *) {
 	containerUpdate();
+}
+
+void UIScrollView::onScrollViewPositionChange(const Event *) {
+	updateScroll();
 }
 
 void UIScrollView::onTouchDragValueChange( Vector2f diff ) {
@@ -267,6 +280,25 @@ bool UIScrollView::setAttribute( const NodeAttribute& attribute, const Uint32& s
 	}
 
 	return true;
+}
+
+Uint32 UIScrollView::onMessage( const NodeMessage * Msg ) {
+	switch ( Msg->getMsg() ) {
+		case NodeMessage::MouseUp:
+		{
+			if ( mVScroll->isEnabled() && 0 != mScrollView->getSize().getHeight() ) {
+				if ( Msg->getFlags() & EE_BUTTON_WUMASK ) {
+					mVScroll->setValue( mVScroll->getValue() - mVScroll->getClickStep() );
+					return 1;
+				} else if ( Msg->getFlags() & EE_BUTTON_WDMASK ) {
+					mVScroll->setValue( mVScroll->getValue() + mVScroll->getClickStep() );
+					return 1;
+				}
+			}
+		}
+	}
+
+	return 0;
 }
 
 }}

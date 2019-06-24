@@ -35,8 +35,6 @@ inline Uint32 fontVAlignGet( Uint32 Flags ) {
 
 #define TEXT_ALIGN_MASK	( TEXT_VALIGN_MASK | TEXT_HALIGN_MASK )
 
-#define EE_TTF_FONT_MAGIC ( ( 'E' << 0 ) | ( 'E' << 8 ) | ( 'F' << 16 ) | ( 'N' << 24 ) )
-
 }}
 
 #endif

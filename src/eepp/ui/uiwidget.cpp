@@ -429,7 +429,7 @@ void UIWidget::alignAgainstLayout() {
 			break;
 	}
 
-	setInternalPosition( pos );
+	setPosition( pos );
 }
 
 void UIWidget::reportStyleStateChange() {

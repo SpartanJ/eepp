@@ -483,7 +483,14 @@ void UITabWidget::refreshControlOwned( UITab * tab ) {
 		tab->getControlOwned()->setVisible( tab == mTabSelected );
 		tab->getControlOwned()->setEnabled( tab == mTabSelected );
 		tab->getControlOwned()->setSize( mCtrlContainer->getSize() );
-		tab->getControlOwned()->setPosition( 0, 0 );
+
+		if ( tab->getControlOwned()->isWidget() ) {
+			UIWidget * widget = static_cast<UIWidget*>( tab->getControlOwned() );
+
+			widget->setPosition( widget->getLayoutMargin().Left, widget->getLayoutMargin().Top );
+		} else {
+			tab->getControlOwned()->setPosition( 0, 0 );
+		}
 	}
 }
 

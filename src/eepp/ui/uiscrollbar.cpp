@@ -148,19 +148,21 @@ void UIScrollBar::onAutoSize() {
 		if ( mLayoutHeightRules == WRAP_CONTENT ) {
 			setInternalPixelsHeight( size.getHeight() );
 		}
+
+		adjustChilds();
 	}
 }
 
 void UIScrollBar::onSizeChange() {
-	adjustChilds();
+	onAutoSize();
 
-	mSlider->adjustChilds();
+	adjustChilds();
 
 	UIWidget::onSizeChange();
 }
 
 void UIScrollBar::adjustChilds() {
-	onAutoSize();
+	mSlider->adjustChilds();
 
 	mBtnUp->setPosition( 0, 0 );
 
@@ -295,9 +297,11 @@ bool UIScrollBar::getExpandBackground() const {
 void UIScrollBar::setExpandBackground( bool expandBackground ) {
 	if ( mSlider->getExpandBackground() != expandBackground ) {
 		mSlider->setExpandBackground( expandBackground );
-	}
 
-	adjustChilds();
+		onAutoSize();
+
+		adjustChilds();
+	}
 }
 
 bool UIScrollBar::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
@@ -332,6 +336,8 @@ bool UIScrollBar::setAttribute( const NodeAttribute& attribute, const Uint32& st
 		}
 	} else if ( "expandbackground" == name ) {
 		setExpandBackground( attribute.asBool() );
+	} else if ( "padding" == name ) {
+		return UIWidget::setAttribute( attribute, state );
 	} else {
 		return UIWidget::setAttribute( attribute, state );
 	}
@@ -346,6 +352,8 @@ UIScrollBar::ScrollBarType UIScrollBar::getScrollBarType() const {
 void UIScrollBar::setScrollBarType( const ScrollBarType & scrollBarType ) {
 	if ( mScrollBarType != scrollBarType ) {
 		mScrollBarType = scrollBarType;
+
+		onAutoSize();
 
 		adjustChilds();
 	}
@@ -374,7 +382,10 @@ void UIScrollBar::onAlphaChange() {
 }
 
 void UIScrollBar::onPaddingChange() {
+	onAutoSize();
+
 	adjustChilds();
+
 	UIWidget::onPaddingChange();
 }
 

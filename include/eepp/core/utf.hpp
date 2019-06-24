@@ -21,7 +21,7 @@
 // 3. This notice may not be removed or altered from any source distribution.
 //
 ////////////////////////////////////////////////////////////
-/** NOTE:
+/*
  * The class was modified to fit EEPP own needs. This is not the original implementation from SFML2.
  * */
 

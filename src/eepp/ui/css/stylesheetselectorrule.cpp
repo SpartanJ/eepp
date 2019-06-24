@@ -229,8 +229,13 @@ bool StyleSheetSelectorRule::hasStructuralPseudoClass( const std::string& cls ) 
 bool StyleSheetSelectorRule::matches( StyleSheetElement * element, const bool& applyPseudo ) const {
 	Uint32 flags = 0;
 
-	if ( mTagName == "*" )
-		return true;
+	if ( mTagName == "*" ) {
+		if ( !applyPseudo ) {
+			return true;
+		} else {
+			flags |= TagName;
+		}
+	}
 
 	if ( !mTagName.empty() && !element->getStyleSheetTag().empty() && mTagName == element->getStyleSheetTag() ) {
 		flags |= TagName;

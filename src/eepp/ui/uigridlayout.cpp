@@ -129,7 +129,7 @@ void UIGridLayout::onParentSizeChange(const Vector2f& SizeChange) {
 void UIGridLayout::pack() {
 	Sizef oldSize( mDpSize );
 
-	//setInternalPosition( Vector2i( mLayoutMargin.Left, mLayoutMargin.Top ) );
+	setInternalPosition( Vector2f( mLayoutMargin.Left, mLayoutMargin.Top ) );
 
 	if ( getLayoutWidthRules() == MATCH_PARENT ) {
 		setInternalWidth( getParent()->getSize().getWidth() - mLayoutMargin.Left - mLayoutMargin.Right );
