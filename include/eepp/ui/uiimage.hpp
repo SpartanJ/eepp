@@ -46,6 +46,7 @@ class EE_API UIImage : public UIWidget {
 		Color			mColor;
 		Vector2f		mAlignOffset;
 		Vector2f		mDestSize;
+		Uint32			mResourceChangeCb;
 		bool			mDrawableOwner;
 
 		virtual void onSizeChange();
@@ -59,6 +60,8 @@ class EE_API UIImage : public UIWidget {
 		void autoAlign();
 
 		void safeDeleteDrawable();
+
+		void onDrawableResourceEvent( DrawableResource::Event event, DrawableResource* );
 };
 
 }}

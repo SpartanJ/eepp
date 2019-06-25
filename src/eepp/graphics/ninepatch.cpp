@@ -47,7 +47,7 @@ NinePatch::NinePatch(TextureRegion * textureRegion, int left, int top, int right
 
 		mSize = r.getSize();
 
-		createFromTexture( tex->getId(), left, top, right, bottom );
+		createFromTexture( tex->getTextureId(), left, top, right, bottom );
 
 		for ( int i = 0; i  < SideCount; i++ ) {
 			TextureRegion * side = static_cast<TextureRegion*>( mDrawable[i] );

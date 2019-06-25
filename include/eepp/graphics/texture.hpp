@@ -3,14 +3,14 @@
 
 #include <eepp/core.hpp>
 #include <eepp/graphics/image.hpp>
-#include <eepp/graphics/drawable.hpp>
+#include <eepp/graphics/drawableresource.hpp>
 #include <eepp/core/noncopyable.hpp>
 #include <eepp/math/polygon2.hpp>
 #include <eepp/math/originpoint.hpp>
 
 namespace EE { namespace Graphics {
 
-class EE_API Texture : public Image, public Drawable, private NonCopyable {
+class EE_API Texture : public DrawableResource, public Image, private NonCopyable {
 	public:
 		/** @enum TextureFilter Defines the texture filter used. */
 		enum TextureFilter {
@@ -246,10 +246,10 @@ class EE_API Texture : public Image, public Drawable, private NonCopyable {
 		virtual bool isStateful() { return false; }
 
 		/** Set the texture factory internal id of the texture */
-		void setId( const Uint32& id );
+		void setTextureId( const Uint32& id );
 
 		/** @return The texture factory internal id of the texture */
-		const Uint32& getId() const;
+		const Uint32& getTextureId() const;
 
 		/** Reload the texture from the current local copy. */
 		void reload();
@@ -262,10 +262,6 @@ class EE_API Texture : public Image, public Drawable, private NonCopyable {
 		* @param textureUnit The Texture unit that want to be used to bind ( usually 0 )
 		*/
 		void bind( CoordinateType coordinateType = Texture::CoordinateType::Normalized, const Uint32 & textureUnit = 0 );
-
-		std::string getName() const;
-
-		void setName( const std::string& name );
 
 		virtual ~Texture();
 	protected:
@@ -289,9 +285,6 @@ class EE_API Texture : public Image, public Drawable, private NonCopyable {
 		void create( const Uint32& texture, const unsigned int& width, const unsigned int& height, const unsigned int& imgwidth, const unsigned int& imgheight, const bool& UseMipmap, const unsigned int& channels, const std::string& filepath, const Texture::ClampMode& clampMode, const bool& CompressedTexture, const Uint32& memSize = 0, const Uint8* data = NULL );
 
 		std::string 	mFilepath;
-		std::string		mName;
-
-		Uint32 			mId;
 		Uint32 			mTexId;
 		int 			mTexture;
 

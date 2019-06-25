@@ -46,7 +46,7 @@ class UIBlurredWindow : public UIWindow {
 					mFboBlur->resize( mSize.x / fboDiv, mSize.y / fboDiv );
 				}
 
-				TextureRegion textureRegion( curFBO->getTexture()->getId(),
+				TextureRegion textureRegion( curFBO->getTexture()->getTextureId(),
 									   Rect(	mScreenPos.x, mScreenPos.y,
 												mScreenPos.x + mSize.x, mScreenPos.y + mSize.y
 				) );

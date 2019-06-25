@@ -20,6 +20,7 @@ UIImage::UIImage( const std::string& tag ) :
 	mDrawable( NULL ),
 	mColor(),
 	mAlignOffset(0,0),
+	mResourceChangeCb(0),
 	mDrawableOwner(false)
 {
 	mFlags |= UI_AUTO_SIZE;
@@ -47,6 +48,10 @@ UIImage * UIImage::setDrawable( Drawable * drawable ) {
 	safeDeleteDrawable();
 
 	mDrawable = drawable;
+
+	if ( NULL != mDrawable && mDrawable->isDrawableResource() ) {
+		mResourceChangeCb = static_cast<DrawableResource*>( mDrawable )->pushResourceChangeCallback( cb::Make2( this, &UIImage::onDrawableResourceEvent ) );
+	}
 
 	onAutoSize();
 
@@ -165,6 +170,11 @@ void UIImage::autoAlign() {
 }
 
 void UIImage::safeDeleteDrawable() {
+	if ( NULL != mDrawable && mDrawable->isDrawableResource() ) {
+		static_cast<DrawableResource*>( mDrawable )->popResourceChangeCallback( mResourceChangeCb );
+		mResourceChangeCb = 0;
+	}
+
 	if ( NULL != mDrawable && mDrawableOwner ) {
 		if ( mDrawable->getDrawableType() == Drawable::SPRITE ) {
 			Sprite * spr = reinterpret_cast<Sprite*>( mDrawable );
@@ -172,6 +182,14 @@ void UIImage::safeDeleteDrawable() {
 		}
 
 		mDrawableOwner = false;
+	}
+}
+
+void UIImage::onDrawableResourceEvent( DrawableResource::Event event, DrawableResource * ) {
+	if ( event == DrawableResource::Change ) {
+		invalidateDraw();
+	} else if ( event == DrawableResource::Unload ) {
+		mDrawable = NULL;
 	}
 }
 

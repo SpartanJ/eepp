@@ -29,7 +29,7 @@ void FontBMFont::cleanup() {
 	Texture * texture = mPages[ mFontSize ].texture;
 
 	if ( NULL != texture && TextureFactory::existsSingleton() )
-		TextureFactory::instance()->remove( texture->getId() );
+		TextureFactory::instance()->remove( texture->getTextureId() );
 
 	mPages.clear();
 	mFontSize = 0;

@@ -96,6 +96,10 @@ StatefulDrawable * Drawable::asStatefulDrawable() {
 	return static_cast<StatefulDrawable*>( this );
 }
 
+bool Drawable::isDrawableResource() const {
+	return false;
+}
+
 void Drawable::onAlphaChange() {
 }
 

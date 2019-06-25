@@ -354,6 +354,8 @@ TabWidget {
 	gravity: center;
 	background: #323232;
 	transition: all 0.2;
+	scaleType: expand;
+	padding: 4dp;
 }
 
 #test_6 > *:hover {

@@ -267,7 +267,7 @@ void FrameBufferFBO::draw( const Vector2f & position, const Sizef & size ) {
 
 void FrameBufferFBO::draw( Rect src, Rect dst ) {
 	if ( NULL != mTexture ) {
-		TextureRegion textureRegion( getTexture()->getId(), src );
+		TextureRegion textureRegion( getTexture()->getTextureId(), src );
 		Sizei size( dst.getSize() );
 		textureRegion.setDestSize( Sizef( size.x, size.y ) );
 		textureRegion.draw( dst.Left, dst.Top, Color::White );

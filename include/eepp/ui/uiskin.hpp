@@ -6,8 +6,6 @@
 
 namespace EE { namespace UI {
 
-class UITheme;
-
 class EE_API UISkin : public StateListDrawable {
 	public:
 		static UISkin * New( const std::string& name = "" );

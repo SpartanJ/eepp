@@ -30,11 +30,9 @@ Uint32 Texture::getMaximumSize() {
 }
 
 Texture::Texture() :
+	DrawableResource( Drawable::TEXTURE ),
 	Image(),
-	Drawable( Drawable::TEXTURE ),
 	mFilepath(""),
-	mName(""),
-	mId(0),
 	mTexture(0),
 	mImgWidth(0),
 	mImgHeight(0),
@@ -48,11 +46,9 @@ Texture::Texture() :
 }
 
 Texture::Texture( const Texture& Copy ) :
+	DrawableResource( Drawable::TEXTURE, mName ),
 	Image(),
-	Drawable( Drawable::TEXTURE ),
 	mFilepath( Copy.mFilepath ),
-	mName( Copy.mName ),
-	mId( Copy.mId ),
 	mTexture( Copy.mTexture ),
 	mImgWidth( Copy.mImgWidth ),
 	mImgHeight( Copy.mImgHeight ),
@@ -69,7 +65,7 @@ Texture::Texture( const Texture& Copy ) :
 }
 
 Texture::Texture( const Uint32& texture, const unsigned int& width, const unsigned int& height, const unsigned int& imgwidth, const unsigned int& imgheight, const bool& UseMipmap, const unsigned int& Channels, const std::string& filepath, const Texture::ClampMode& ClampMode, const bool& CompressedTexture, const Uint32& MemSize, const Uint8* data ) :
-	Drawable( Drawable::TEXTURE )
+	DrawableResource( Drawable::TEXTURE )
 {
 	create( texture, width, height, imgwidth, imgheight, UseMipmap, Channels, filepath, ClampMode, CompressedTexture, MemSize, data );
 }
@@ -96,8 +92,7 @@ void Texture::deleteTexture() {
 
 void Texture::create( const Uint32& texture, const unsigned int& width, const unsigned int& height, const unsigned int& imgwidth, const unsigned int& imgheight, const bool& UseMipmap, const unsigned int& Channels, const std::string& filepath, const Texture::ClampMode& ClampMode, const bool& CompressedTexture, const Uint32& MemSize, const Uint8* data ) {
 	mFilepath 	= filepath;
-	mName		= mFilepath;
-	mId 		= String::hash( mName );
+	setName( mFilepath );
 	mTexture 	= texture;
 	mWidth 		= width;
 	mHeight 	= height;
@@ -115,15 +110,8 @@ void Texture::create( const Uint32& texture, const unsigned int& width, const un
 		mFlags |= TEX_FLAG_COMPRESSED;
 
 	setPixels( data );
-}
 
-std::string Texture::getName() const {
-	return mName;
-}
-
-void Texture::setName(const std::string & name) {
-	mName = name;
-	mId = String::hash( name );
+	onResourceChange();
 }
 
 Uint8 * Texture::iLock( const bool& ForceRGBA, const bool& KeepFormat ) {
@@ -318,6 +306,8 @@ void Texture::replaceColor( const Color& ColorKey, const Color& NewColor ) {
 	Image::replaceColor( ColorKey, NewColor );
 
 	unlock( false, true );
+
+	onResourceChange();
 }
 
 void Texture::createMaskFromColor( const Color& ColorKey, Uint8 Alpha ) {
@@ -326,6 +316,8 @@ void Texture::createMaskFromColor( const Color& ColorKey, Uint8 Alpha ) {
 	Image::replaceColor( ColorKey, Color( ColorKey.r, ColorKey.g, ColorKey.b, Alpha ) );
 
 	unlock( false, true );
+
+	onResourceChange();
 }
 
 void Texture::fillWithColor( const Color& Color ) {
@@ -334,6 +326,8 @@ void Texture::fillWithColor( const Color& Color ) {
 	Image::fillWithColor( Color );
 
 	unlock( false, true );
+
+	onResourceChange();
 }
 
 void Texture::resize( const Uint32& newWidth, const Uint32& newHeight , ResamplerFilter filter ) {
@@ -342,6 +336,8 @@ void Texture::resize( const Uint32& newWidth, const Uint32& newHeight , Resample
 	Image::resize( newWidth, newHeight, filter );
 
 	unlock( false, true );
+
+	onResourceChange();
 }
 
 void Texture::scale( const Float& scale, ResamplerFilter filter ) {
@@ -350,6 +346,8 @@ void Texture::scale( const Float& scale, ResamplerFilter filter ) {
 	Image::scale( scale, filter );
 
 	unlock( false, true );
+
+	onResourceChange();
 }
 
 void Texture::copyImage(Image * image, const Uint32& x, const Uint32& y ) {
@@ -358,6 +356,8 @@ void Texture::copyImage(Image * image, const Uint32& x, const Uint32& y ) {
 	Image::copyImage( image, x, y );
 
 	unlock( false, true );
+
+	onResourceChange();
 }
 
 void Texture::flip() {
@@ -397,11 +397,11 @@ void Texture::applyClampMode() {
 	}
 }
 
-void Texture::setId( const Uint32& id ) {
+void Texture::setTextureId( const Uint32& id ) {
 	mTexId = id;
 }
 
-const Uint32& Texture::getId() const {
+const Uint32& Texture::getTextureId() const {
 	return mTexId;
 }
 
@@ -458,6 +458,8 @@ void Texture::reload()  {
 		reload();
 		unlock();
 	}
+
+	onResourceChange();
 }
 
 static unsigned int convertPixelFormatToGLFormat( Image::PixelFormat pf ) {
@@ -494,6 +496,8 @@ void Texture::update( const Uint8* pixels, Uint32 width, Uint32 height, Uint32 x
 
 		if ( threaded )
 			Engine::instance()->getCurrentWindow()->unsetGLContextThread();
+
+		onResourceChange();
 	}
 }
 
@@ -538,6 +542,8 @@ void Texture::replace( Image * image ) {
 
 	if ( threaded )
 		Engine::instance()->getCurrentWindow()->unsetGLContextThread();
+
+	onResourceChange();
 }
 
 const Uint32& Texture::getHashName() const {

@@ -84,7 +84,7 @@ Uint32 TextureFactory::pushTexture( const std::string& Filepath, const Uint32& T
 	Tex = mTextures[ Pos ] = eeNew( Texture, () );
 
 	Tex->create( TexId, Width, Height, ImgWidth, ImgHeight, Mipmap, Channels, FPath, ClampMode, CompressTexture, MemSize );
-	Tex->setId( Pos );
+	Tex->setTextureId( Pos );
 
 	if ( LocalCopy ) {
 		Tex->lock();
@@ -194,14 +194,14 @@ void TextureFactory::removeReference( Texture * Tex ) {
 
 	int glTexId = Tex->getHandle();
 
-	mTextures[ Tex->getId() ] = NULL;
+	mTextures[ Tex->getTextureId() ] = NULL;
 
 	for ( Uint32 i = 0; i < EE_MAX_TEXTURE_UNITS; i++ ) {
 		if ( mCurrentTexture[ i ] == (Int32)glTexId )
 			mCurrentTexture[ i ] = 0;
 	}
 
-	mVectorFreeSlots.push_back( Tex->getId() );
+	mVectorFreeSlots.push_back( Tex->getTextureId() );
 }
 
 const bool& TextureFactory::isErasing() const {

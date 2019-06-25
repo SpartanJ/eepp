@@ -192,6 +192,8 @@ void TextureRegion::replaceColor( Color ColorKey, Color NewColor ) {
 	}
 
 	mTexture->unlock( false, true );
+
+	onResourceChange();
 }
 
 void TextureRegion::createMaskFromColor(Color ColorKey, Uint8 Alpha) {
@@ -343,6 +345,8 @@ bool TextureRegion::unlock( const bool& KeepData, const bool& Modified ) {
 				Channel = GL_ALPHA;
 
 			glTexSubImage2D( GL_TEXTURE_2D, 0, mSrcRect.Left, mSrcRect.Top, mSrcRect.getSize().getWidth(), mSrcRect.getSize().getHeight(), Channel, GL_UNSIGNED_BYTE, reinterpret_cast<const void *> ( &mPixels[0] ) );
+
+			onResourceChange();
 		}
 
 		if ( !KeepData ) {
