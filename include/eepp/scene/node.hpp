@@ -6,6 +6,7 @@
 #include <eepp/scene/keyevent.hpp>
 #include <eepp/scene/mouseevent.hpp>
 #include <eepp/scene/eventdispatcher.hpp>
+#include <eepp/scene/actions/runnable.hpp>
 
 #include <eepp/graphics/blendmode.hpp>
 using namespace EE::Graphics;
@@ -321,6 +322,8 @@ class EE_API Node : public Transformable {
 		Uint32 childCount() const;
 
 		Node * childAt( Uint32 Index ) const;
+
+		void runOnMainThread( Actions::Runnable::RunnableFunc runnable, const Time& delay = Seconds(0) );
 	protected:
 		typedef std::map< Uint32, std::map<Uint32, EventCallback> > EventsMap;
 		friend class EventDispatcher;

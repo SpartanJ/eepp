@@ -1,6 +1,7 @@
 #include <eepp/scene/actionmanager.hpp>
 #include <eepp/scene/action.hpp>
 #include <eepp/core.hpp>
+#include <eepp/system/lock.hpp>
 #include <algorithm>
 
 namespace EE { namespace Scene {
@@ -17,6 +18,8 @@ ActionManager::~ActionManager() {
 }
 
 void ActionManager::addAction( Action * action ) {
+	Lock lock( mMutex );
+
 	bool found = (std::find(mActions.begin(), mActions.end(), action) != mActions.end());
 
 	if ( !found ) {
@@ -25,6 +28,8 @@ void ActionManager::addAction( Action * action ) {
 }
 
 Action * ActionManager::getActionByTag( const Uint32& tag ) {
+	Lock lock( mMutex );
+
 	for ( auto it = mActions.begin(); it != mActions.end(); ++it ) {
 		Action * action = (*it);
 
@@ -45,15 +50,19 @@ void ActionManager::update( const Time& time ) {
 
 	std::vector<Action*> removeList;
 
-	for ( auto it = mActions.begin(); it != mActions.end(); ++it ) {
-		Action * action = (*it);
+	{
+		Lock lock( mMutex );
 
-		action->update( time );
+		for ( auto it = mActions.begin(); it != mActions.end(); ++it ) {
+			Action * action = (*it);
 
-		if ( action->isDone() ) {
-			action->sendEvent( Action::ActionType::OnDone );
+			action->update( time );
 
-			removeList.push_back( action );
+			if ( action->isDone() ) {
+				action->sendEvent( Action::ActionType::OnDone );
+
+				removeList.push_back( action );
+			}
 		}
 	}
 
@@ -62,14 +71,20 @@ void ActionManager::update( const Time& time ) {
 }
 
 std::size_t ActionManager::count() const {
+	Lock lock( const_cast<Mutex&>(mMutex) );
+
 	return mActions.size();
 }
 
 bool ActionManager::isEmpty() const {
+	Lock lock( const_cast<Mutex&>(mMutex) );
+
 	return mActions.empty();
 }
 
 void ActionManager::clear() {
+	Lock lock( mMutex );
+
 	for ( auto it = mActions.begin(); it != mActions.end(); ++it ) {
 		Action * action = (*it);
 
@@ -80,6 +95,8 @@ void ActionManager::clear() {
 }
 
 void ActionManager::removeAction( Action * action ) {
+	Lock lock( mMutex );
+
 	if ( NULL != action ) {
 		mActions.remove( action );
 
@@ -90,11 +107,15 @@ void ActionManager::removeAction( Action * action ) {
 void ActionManager::removeAllActionsFromTarget( Node * target ) {
 	std::vector<Action*> removeList;
 
-	for ( auto it = mActions.begin(); it != mActions.end(); ++it ) {
-		Action * action = (*it);
+	{
+		Lock lock( mMutex );
 
-		if ( action->getTarget() == target ) {
-			removeList.push_back( *it );
+		for ( auto it = mActions.begin(); it != mActions.end(); ++it ) {
+			Action * action = (*it);
+
+			if ( action->getTarget() == target ) {
+				removeList.push_back( *it );
+			}
 		}
 	}
 

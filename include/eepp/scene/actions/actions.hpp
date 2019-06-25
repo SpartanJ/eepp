@@ -12,6 +12,7 @@
 #include <eepp/scene/actions/sequence.hpp>
 #include <eepp/scene/actions/spawn.hpp>
 #include <eepp/scene/actions/delay.hpp>
+#include <eepp/scene/actions/runnable.hpp>
 #include <eepp/scene/actions/close.hpp>
 #include <eepp/scene/actions/disable.hpp>
 #include <eepp/scene/actions/visible.hpp>

@@ -1282,6 +1282,10 @@ Node * Node::runAction( Action * action ) {
 	return this;
 }
 
+void Node::runOnMainThread( Actions::Runnable::RunnableFunc runnable, const Time& delay ) {
+	runAction( Actions::Runnable::New( runnable, delay ) );
+}
+
 Transform Node::getLocalTransform() const {
 	return getTransform();
 }

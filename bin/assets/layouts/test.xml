@@ -34,7 +34,7 @@
 					<TextView class="eltv" id="el2" layout_width="wrap_content" layout_height="wrap_content" text="testing margin" layout_gravity="top|right" />
 					<TextView class="eltv" id="tm" layout_width="wrap_content" layout_height="wrap_content" text="testing margin"  layout_gravity="bottom|left" />
 					<TextView class="eltv" id="tmp" layout_width="wrap_content" layout_height="wrap_content" text="testing margin padding" layout_gravity="bottom|right" />
-					<Loader layout_width="350dp" layout_height="350dp" layout_gravity="center" fillColor="#999" padding="44dp" outlinethickness="8dp" />
+					<!-- <Loader layout_width="350dp" layout_height="350dp" layout_gravity="center" fillColor="#999" padding="44dp" outlinethickness="8dp" /> -->
 
 					<PushButton layout_width="wrap_content" layout_height="wrap_content" text="testing padding" layout_gravity="bottom|right" gravity="center" padding="8dp" layout_to_top_of="tmp" />
 					<PushButton id="pbut" text="OK!" textSize="16dp" icon="ok" layout_gravity="left|bottom" gravity="center" layout_width="wrap_content" layout_height="wrap_content" layout_marginBottom="8dp" padding="8dp" layout_to_top_of="tm" />

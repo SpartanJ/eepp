@@ -222,6 +222,7 @@
 ../../include/eepp/scene/actions/resizeheight.hpp
 ../../include/eepp/scene/actions/resizewidth.hpp
 ../../include/eepp/scene/actions/rotate.hpp
+../../include/eepp/scene/actions/runnable.hpp
 ../../include/eepp/scene/actions/scale.hpp
 ../../include/eepp/scene/actions/sequence.hpp
 ../../include/eepp/scene/actions/spawn.hpp
@@ -656,6 +657,7 @@
 ../../src/eepp/scene/actions/resizeheight.cpp
 ../../src/eepp/scene/actions/resizewidth.cpp
 ../../src/eepp/scene/actions/rotate.cpp
+../../src/eepp/scene/actions/runnable.cpp
 ../../src/eepp/scene/actions/scale.cpp
 ../../src/eepp/scene/actions/sequence.cpp
 ../../src/eepp/scene/actions/spawn.cpp

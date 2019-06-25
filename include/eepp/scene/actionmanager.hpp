@@ -4,6 +4,7 @@
 #include <list>
 #include <eepp/config.hpp>
 #include <eepp/system/time.hpp>
+#include <eepp/system/mutex.hpp>
 using namespace EE::System;
 
 namespace EE { namespace Scene {
@@ -38,6 +39,7 @@ class EE_API ActionManager {
 		void clear();
 	protected:
 		std::list<Action*> mActions;
+		Mutex mMutex;
 };
 
 }}

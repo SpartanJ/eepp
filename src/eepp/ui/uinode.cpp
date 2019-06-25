@@ -735,7 +735,10 @@ UINode * UINode::setSkin( UISkin * skin ) {
 }
 
 UINode * UINode::setSkinColor( const Color& color ) {
-	mSkinColor = color;
+	if ( color != mSkinColor ) {
+		mSkinColor = color;
+		invalidateDraw();
+	}
 	return this;
 }
 
