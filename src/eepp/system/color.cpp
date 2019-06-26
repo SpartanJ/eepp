@@ -16,7 +16,9 @@ inline T _round( T r ) {
 
 }
 
-// @TODO: Support all CSS3 color keywords.
+std::map<std::string, Color> Color::sColors;
+
+// TODO: Support all CSS3 color keywords.
 // Reference: https://www.w3.org/TR/2018/REC-css-color-3-20180619/
 const Color Color::Transparent = Color(0x00000000);
 const Color Color::Black = Color(0x000000FF);
@@ -311,6 +313,15 @@ Color Color::fromString( std::string str ) {
 
 		if ( 0 == size )
 			return Color::White;
+	} else if ( String::startsWith( str, "@color/" ) ) {
+		std::string colorName( String::toLower( str.substr(7) ) );
+		const auto& it = sColors.find( colorName );
+
+		if ( it != sColors.end() ) {
+			return it->second;
+		} else {
+			return Color::Transparent;
+		}
 	} else if ( size >= 3 && isalpha( str[0] ) && isalpha( str[1] ) && isalpha( str[2] ) ) {
 		String::toLowerInPlace( str );
 		if ( "transparent" == str )			return Color::Transparent;
@@ -372,6 +383,14 @@ bool Color::isColorString( std::string str ) {
 	else if ( "aqua" == str )			return true;
 
 	return false;
+}
+
+void Color::registerColor( const std::string& name, const Color & color ) {
+	sColors[ String::toLower(name) ] = color;
+}
+
+bool Color::unregisterColor( const std::string& name ) {
+	return sColors.erase( String::toLower( name ) ) > 0;
 }
 
 }}

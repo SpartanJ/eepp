@@ -32,7 +32,7 @@ const Uint32& StyleSheetSelector::getSpecificity() const {
 }
 
 void removeExtraSpaces( std::string& string ) {
-	// @TODO: Optimize this
+	// TODO: Optimize this
 	string = String::trim( string );
 	String::replaceAll( string, "   ", " " );
 	String::replaceAll( string, "  ", " " );

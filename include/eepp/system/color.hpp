@@ -4,6 +4,7 @@
 #include <eepp/config.hpp>
 #include <eepp/system/bitop.hpp>
 #include <string>
+#include <map>
 #if EE_PLATFORM == EE_PLATFORM_WIN
 #undef RGB
 #endif
@@ -197,8 +198,7 @@ class tColor {
 typedef tColor<Float> ColorAf;
 typedef tColor<Float> Colorf;
 
-class EE_API Color : public tColor<Uint8>
-{
+class EE_API Color : public tColor<Uint8> {
 	public:
 		Color();
 
@@ -240,6 +240,10 @@ class EE_API Color : public tColor<Uint8>
 
 		static bool isColorString( std::string str );
 
+		static void registerColor( const std::string& name, const Color& color );
+
+		static bool unregisterColor( const std::string& name );
+
 		static const Color Transparent;
 		static const Color Black;
 		static const Color Silver;
@@ -257,6 +261,8 @@ class EE_API Color : public tColor<Uint8>
 		static const Color Blue;
 		static const Color Teal;
 		static const Color Aqua;
+	private:
+		static std::map<std::string, Color> sColors;
 };
 
 typedef Color ColorA;

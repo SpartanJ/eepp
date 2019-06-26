@@ -2,6 +2,7 @@
 #define EE_SYSTEMTCONTAINER_HPP
 
 #include <list>
+#include <eepp/config.hpp>
 
 namespace EE { namespace System {
 

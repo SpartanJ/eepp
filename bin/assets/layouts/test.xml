@@ -77,12 +77,12 @@
 			</vbox>
 		</ScrollView>
 		<GridLayout id="test_6" columnMode="size" rowMode="size" columnWidth="64dp" rowHeight="64dp" layout_width="match_parent" layout_height="wrap_content">
-			<Image src="file://assets/tiles/1.png" scaleType="fit_inside" />
-			<Image src="file://assets/tiles/2.png" scaleType="fit_inside" />
-			<Image src="file://assets/tiles/3.png" scaleType="fit_inside" />
-			<Image src="file://assets/tiles/4.png" scaleType="fit_inside" />
-			<Image src="file://assets/tiles/5.png" scaleType="fit_inside" />
-			<Image src="file://assets/tiles/6.png" scaleType="fit_inside" />
+			<Image src="file://assets/tiles/1.png" />
+			<Image src="file://assets/tiles/2.png" />
+			<Image src="file://assets/tiles/3.png" />
+			<Image src="file://assets/tiles/4.png" />
+			<Image src="file://assets/tiles/5.png" />
+			<Image src="file://assets/tiles/6.png" />
 		</GridLayout>
 		<Tab name="Padding Test" owns="test_1" />
 		<Tab name="Tabs Test" owns="test_2" />

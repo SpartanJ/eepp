@@ -1102,7 +1102,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 			onSizeChange();
 		}
 	} else if ( String::startsWith( name, "layout_to_" ) || String::startsWith( name, "layoutto" ) ) {
-		// @TODO: SAVE_NORMAL_STATE_ATTR
+		// TODO: SAVE_NORMAL_STATE_ATTR
 
 		LayoutPositionRules rule = NONE;
 		if ( "layout_to_left_of" == name || "layouttoleftof" == name ) rule = LEFT_OF;
@@ -1165,7 +1165,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 
 		setScaleOriginPoint( attribute.asOriginPoint() );
 	} else if ( "blendmode" == name ) {
-		// @TODO: SAVE_NORMAL_STATE_ATTR
+		// TODO: SAVE_NORMAL_STATE_ATTR
 		setBlendMode( attribute.asBlendMode() );
 	} else if ( String::startsWith( name, "padding" ) ) {
 		SAVE_NORMAL_STATE_ATTR( String::format( "%2.f %2.f %2.f %2.f", mPadding.Left, mPadding.Top, mPadding.Right, mPadding.Bottom ) );

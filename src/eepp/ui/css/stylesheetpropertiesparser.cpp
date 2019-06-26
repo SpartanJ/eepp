@@ -19,7 +19,7 @@ StyleSheetPropertiesParser::StyleSheetPropertiesParser( const std::string& props
 
 const StyleSheetProperties & StyleSheetPropertiesParser::getProperties() const {
 	return mProperties;
-};
+}
 
 void StyleSheetPropertiesParser::parse( std::string propsstr ) {
 	ReadState rs = ReadingPropertyName;

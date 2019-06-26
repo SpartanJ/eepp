@@ -51,6 +51,8 @@ void UIStyle::load() {
 
 	mCacheableStyles.clear();
 	mNoncacheableStyles.clear();
+	mElementStyle.clearProperties();
+	mProperties.clear();
 
 	UISceneNode * uiSceneNode = mWidget->getSceneNode()->isUISceneNode() ? static_cast<UISceneNode*>( mWidget->getSceneNode() ) : NULL;
 
