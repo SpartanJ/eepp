@@ -20,7 +20,8 @@ UIMenu::UIMenu() :
 	mItemSelected( NULL ),
 	mItemSelectedIndex( eeINDEX_NOT_FOUND ),
 	mClickHide( false ),
-	mLastTickMove( 0 )
+	mLastTickMove( 0 ),
+	mOwnerNode( NULL )
 {
 	mFlags |= UI_AUTO_SIZE;
 

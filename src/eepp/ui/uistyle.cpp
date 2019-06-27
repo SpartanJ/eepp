@@ -13,6 +13,7 @@ UIStyle * UIStyle::New( UIWidget * widget ) {
 }
 
 UIStyle::UIStyle( UIWidget * widget ) :
+	UIState(),
 	mWidget( widget ),
 	mChangingState( false )
 {
