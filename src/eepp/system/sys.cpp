@@ -424,14 +424,15 @@ void Sys::sleep( const Uint32& ms ) {
 
 void Sys::sleep( const Time& time ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
-	TIMECAPS tc;
-	timeGetDevCaps(&tc, sizeof(TIMECAPS));
+	HANDLE timer;
+	LARGE_INTEGER ft;
 
-	timeBeginPeriod(tc.wPeriodMin);
+	ft.QuadPart = -(10*time.asMicroseconds()); // Convert to 100 nanosecond interval, negative value indicates relative time
 
-	::Sleep( time.asMilliseconds() );
-
-	timeEndPeriod(tc.wPeriodMin);
+	timer = CreateWaitableTimer(NULL, TRUE, NULL);
+	SetWaitableTimer(timer, &ft, 0, NULL, NULL, 0);
+	WaitForSingleObject(timer, INFINITE);
+	CloseHandle(timer);
 #elif defined( EE_PLATFORM_POSIX )
 	Uint64 usecs = time.asMicroseconds();
 

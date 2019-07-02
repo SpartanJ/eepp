@@ -197,7 +197,7 @@ void mainLoop()
 	/// Stop the simulation if the window is not visible
 	while ( !win->isVisible() ) {
 		imp->update();	/// To get the real state of the window you need to update the window input
-		Sys::sleep( 100 ); /// Sleep 100 ms
+		Sys::sleep( Milliseconds(100) );
 	}
 
 	win->display();

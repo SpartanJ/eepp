@@ -251,7 +251,7 @@ class EE_API Window {
 		virtual void display( bool clear = false );
 
 		/** @return The elapsed time for the last frame rendered */
-		virtual System::Time getElapsed() const;
+		virtual const System::Time & getElapsed() const;
 
 		/** @return The current frames per second of the screen */
 		virtual Uint32 getFPS() const;
@@ -436,6 +436,12 @@ class EE_API Window {
 		Vector2i mapCoordsToPixel(const Vector2f & point, const View & view);
 
 		void setCloseRequestCallback( const WindowRequestCloseCallback& closeRequestCallback );
+
+		/** In case of a frame rate limit is set, this will return the time spent sleeping per second. */
+		const System::Time& getSleepTimePerSecond() const;
+
+		/** In case of a frame rate limit is set, this will return the time spent doing work/rendering per second. */
+		const System::Time& getRenderTimePerSecond() const;
 	protected:
 		friend class Engine;
 		friend class Input;
@@ -453,24 +459,30 @@ class EE_API Window {
 
 		class FrameData {
 			public:
-				class cFPSData {
+				class FPSData {
 					public:
-					cFPSData() :
-						LastCheck(0),
+					FPSData() :
+						LastCheck(),
 						Current(0),
 						Count(0),
 						Limit(0),
-						Error(0)
+						Error(System::Time::Zero)
 					{}
 
-					Uint32 LastCheck;
+					Clock LastCheck;
 					Uint32 Current;
 					Uint32 Count;
 					Float Limit;
-					Int32 Error;
+					System::Time Error;
+					System::Time SleepTime;
+					System::Time CurSleepTime;
+					System::Time FrameTime;
+					System::Time RenderTime;
+					System::Time CurRenderTime;
+					Clock RenderClock;
 				};
 
-				cFPSData		FPS;
+				FPSData			FPS;
 				Clock *			FrameElapsed;
 				System::Time	ElapsedTime;
 
@@ -502,7 +514,7 @@ class EE_API Window {
 
 		void limitFps();
 
-		void getElapsedTime();
+		void updateElapsedTime();
 
 		void logSuccessfulInit( const std::string& BackendName );
 

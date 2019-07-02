@@ -39,8 +39,7 @@ Window::FrameData::FrameData() :
 	ElapsedTime()
 {}
 
-Window::FrameData::~FrameData()
-{
+Window::FrameData::~FrameData() {
 	eeSAFE_DELETE( FrameElapsed );
 }
 
@@ -312,23 +311,36 @@ Uint32 Window::getFPS() const {
 	return mFrameData.FPS.Current;
 }
 
-Time Window::getElapsed() const {
+const Time& Window::getElapsed() const {
 	return mFrameData.ElapsedTime;
 }
 
-void Window::getElapsedTime() {
+void Window::updateElapsedTime() {
 	if ( NULL == mFrameData.FrameElapsed ) {
 		mFrameData.FrameElapsed = eeNew( Clock, () );
 	}
 
 	mFrameData.ElapsedTime = mFrameData.FrameElapsed->getElapsed();
+	printf("elapsed time: %4.2f\n", mFrameData.ElapsedTime.asMilliseconds());
+}
+
+const Time& Window::getSleepTimePerSecond() const {
+	return mFrameData.FPS.CurSleepTime;
+}
+
+const Time& Window::getRenderTimePerSecond() const {
+	return mFrameData.FPS.CurRenderTime;
 }
 
 void Window::calculateFps() {
-	if ( Sys::getTicks() - mFrameData.FPS.LastCheck >= 1000 ) {
+	if ( mFrameData.FPS.LastCheck.getElapsedTime().asSeconds() >= 1.f ) {
 		mFrameData.FPS.Current = mFrameData.FPS.Count;
 		mFrameData.FPS.Count = 0;
-		mFrameData.FPS.LastCheck =	Sys::getTicks();
+		mFrameData.FPS.CurSleepTime = mFrameData.FPS.SleepTime;
+		mFrameData.FPS.SleepTime = Time::Zero;
+		mFrameData.FPS.CurRenderTime = mFrameData.FPS.RenderTime;
+		mFrameData.FPS.RenderTime = Time::Zero;
+		mFrameData.FPS.LastCheck.restart();
 	}
 
 	mFrameData.FPS.Count++;
@@ -336,21 +348,27 @@ void Window::calculateFps() {
 
 void Window::limitFps() {
 	if ( mFrameData.FPS.Limit > 0 ) {
-		mFrameData.FPS.Error = 0;
-		double RemainT = 1000.0 / mFrameData.FPS.Limit - ( mFrameData.ElapsedTime.asMilliseconds() * 0.1f );
+		Time frameTime(Milliseconds(1000.0 / mFrameData.FPS.Limit));
+		Time remainingTime = frameTime - mFrameData.FPS.FrameTime;
 
-		if ( RemainT < 0 ) {
-			mFrameData.FPS.Error = 0;
-		} else {
-			mFrameData.FPS.Error += 1000 % (Int32)mFrameData.FPS.Limit;
+		if ( frameTime - mFrameData.ElapsedTime > Time::Zero ) {
+			remainingTime += mFrameData.FPS.Error;
+		}
 
-			if ( mFrameData.FPS.Error > (Int32)mFrameData.FPS.Limit ) {
-				++RemainT;
-				mFrameData.FPS.Error -= (Int32)mFrameData.FPS.Limit;
-			}
+		mFrameData.FPS.Error = Time::Zero;
 
-			if ( RemainT > 0 ) {
-				Sys::sleep( (Uint32) RemainT );
+		if ( remainingTime > Time::Zero ) {
+			Clock checkElapsed;
+
+			Sys::sleep( remainingTime );
+
+			Time elapsed = checkElapsed.getElapsed();
+			Time timeDiff = elapsed - remainingTime;
+
+			mFrameData.FPS.SleepTime += elapsed;
+
+			if ( timeDiff > Time::Zero ) {
+				mFrameData.FPS.Error += timeDiff;
 			}
 		}
 	}
@@ -373,11 +391,16 @@ void Window::display( bool clear ) {
 		this->clear();
 	#endif
 
-	getElapsedTime();
+	mFrameData.FPS.FrameTime = mFrameData.FPS.RenderClock.getElapsedTime();
+	mFrameData.FPS.RenderTime += mFrameData.FPS.FrameTime;
+
+	updateElapsedTime();
+
+	limitFps();
 
 	calculateFps();
 
-	limitFps();
+	mFrameData.FPS.RenderClock.restart();
 }
 
 Clipboard * Window::getClipboard() const {

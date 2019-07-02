@@ -31,7 +31,7 @@ Time Seconds(double amount) {
 }
 
 Time Milliseconds(double amount) {
-	return Time(static_cast<Int64>(amount) * 1000);
+	return Time(static_cast<Int64>(amount * 1000));
 }
 
 Time Microseconds(Int64 amount) {

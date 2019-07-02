@@ -1359,7 +1359,7 @@ void EETest::run() {
 void EETest::particlesThread() {
 	while ( mWindow->isRunning() ) {
 		updateParticles();
-		Sys::sleep(10);
+		Sys::sleep( Milliseconds(10) );
 	}
 }
 
@@ -1665,9 +1665,11 @@ void EETest::render() {
 	if ( Sys::getTicks() - lasttick >= 50 ) {
 		lasttick = Sys::getTicks();
 		#ifdef EE_DEBUG
-		mInfo = String::format( "EE - FPS: %d Frame Time: %4.2f\nMouse X: %d Mouse Y: %d\nTexture Memory Usage: %s\nApp Memory Usage: %s\nApp Peak Memory Usage: %s",
+		mInfo = String::format( "EE - FPS: %d Frame Time: %4.2f Sleep Time: %4.2f Render Time: %4.2f\nMouse X: %d Mouse Y: %d\nTexture Memory Usage: %s\nApp Memory Usage: %s\nApp Peak Memory Usage: %s",
 							mWindow->getFPS(),
 							et.asMilliseconds(),
+							mWindow->getSleepTimePerSecond().asMilliseconds(),
+							mWindow->getRenderTimePerSecond().asMilliseconds(),
 							(Int32)Mouse.x,
 							(Int32)Mouse.y,
 							FileSystem::sizeToString( TF->getTextureMemorySize() ).c_str(),
