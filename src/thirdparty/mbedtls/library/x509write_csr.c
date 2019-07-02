@@ -35,6 +35,12 @@
 #include "mbedtls/x509_csr.h"
 #include "mbedtls/oid.h"
 #include "mbedtls/asn1write.h"
+#include "mbedtls/platform_util.h"
+
+#if defined(MBEDTLS_USE_PSA_CRYPTO)
+#include "psa/crypto.h"
+#include "mbedtls/psa_util.h"
+#endif
 
 #include <string.h>
 #include <stdlib.h>
@@ -42,11 +48,6 @@
 #if defined(MBEDTLS_PEM_WRITE_C)
 #include "mbedtls/pem.h"
 #endif
-
-/* Implementation that should never be optimized out by the compiler */
-static void mbedtls_zeroize( void *v, size_t n ) {
-    volatile unsigned char *p = v; while( n-- ) *p++ = 0;
-}
 
 void mbedtls_x509write_csr_init( mbedtls_x509write_csr *ctx )
 {
@@ -58,7 +59,7 @@ void mbedtls_x509write_csr_free( mbedtls_x509write_csr *ctx )
     mbedtls_asn1_free_named_data_list( &ctx->subject );
     mbedtls_asn1_free_named_data_list( &ctx->extensions );
 
-    mbedtls_zeroize( ctx, sizeof( mbedtls_x509write_csr ) );
+    mbedtls_platform_zeroize( ctx, sizeof( mbedtls_x509write_csr ) );
 }
 
 void mbedtls_x509write_csr_set_md_alg( mbedtls_x509write_csr *ctx, mbedtls_md_type_t md_alg )
@@ -93,12 +94,13 @@ int mbedtls_x509write_csr_set_key_usage( mbedtls_x509write_csr *ctx, unsigned ch
 
     c = buf + 4;
 
-    if( ( ret = mbedtls_asn1_write_bitstring( &c, buf, &key_usage, 7 ) ) != 4 )
+    ret = mbedtls_asn1_write_named_bitstring( &c, buf, &key_usage, 8 );
+    if( ret < 3 || ret > 4 )
         return( ret );
 
     ret = mbedtls_x509write_csr_set_extension( ctx, MBEDTLS_OID_KEY_USAGE,
                                        MBEDTLS_OID_SIZE( MBEDTLS_OID_KEY_USAGE ),
-                                       buf, 4 );
+                                       c, (size_t)ret );
     if( ret != 0 )
         return( ret );
 
@@ -114,12 +116,13 @@ int mbedtls_x509write_csr_set_ns_cert_type( mbedtls_x509write_csr *ctx,
 
     c = buf + 4;
 
-    if( ( ret = mbedtls_asn1_write_bitstring( &c, buf, &ns_cert_type, 8 ) ) != 4 )
+    ret = mbedtls_asn1_write_named_bitstring( &c, buf, &ns_cert_type, 8 );
+    if( ret < 3 || ret > 4 )
         return( ret );
 
     ret = mbedtls_x509write_csr_set_extension( ctx, MBEDTLS_OID_NS_CERT_TYPE,
                                        MBEDTLS_OID_SIZE( MBEDTLS_OID_NS_CERT_TYPE ),
-                                       buf, 4 );
+                                       c, (size_t)ret );
     if( ret != 0 )
         return( ret );
 
@@ -140,7 +143,11 @@ int mbedtls_x509write_csr_der( mbedtls_x509write_csr *ctx, unsigned char *buf, s
     size_t pub_len = 0, sig_and_oid_len = 0, sig_len;
     size_t len = 0;
     mbedtls_pk_type_t pk_alg;
-
+#if defined(MBEDTLS_USE_PSA_CRYPTO)
+    psa_hash_operation_t hash_operation = PSA_HASH_OPERATION_INIT;
+    size_t hash_len;
+    psa_algorithm_t hash_alg = mbedtls_psa_translate_md( ctx->md_alg );
+#endif /* MBEDTLS_USE_PSA_CRYPTO */
     /*
      * Prepare data to be signed in tmp_buf
      */
@@ -191,9 +198,23 @@ int mbedtls_x509write_csr_der( mbedtls_x509write_csr *ctx, unsigned char *buf, s
 
     /*
      * Prepare signature
+     * Note: hash errors can happen only after an internal error
      */
-    mbedtls_md( mbedtls_md_info_from_type( ctx->md_alg ), c, len, hash );
+#if defined(MBEDTLS_USE_PSA_CRYPTO)
+    if( psa_hash_setup( &hash_operation, hash_alg ) != PSA_SUCCESS )
+        return( MBEDTLS_ERR_X509_FATAL_ERROR );
 
+    if( psa_hash_update( &hash_operation, c, len ) != PSA_SUCCESS )
+        return( MBEDTLS_ERR_X509_FATAL_ERROR );
+
+    if( psa_hash_finish( &hash_operation, hash, sizeof( hash ), &hash_len )
+        != PSA_SUCCESS )
+    {
+        return( MBEDTLS_ERR_X509_FATAL_ERROR );
+    }
+#else /* MBEDTLS_USE_PSA_CRYPTO */
+    mbedtls_md( mbedtls_md_info_from_type( ctx->md_alg ), c, len, hash );
+#endif
     if( ( ret = mbedtls_pk_sign( ctx->key, ctx->md_alg, hash, 0, sig, &sig_len,
                                  f_rng, p_rng ) ) != 0 )
     {
