@@ -46,7 +46,7 @@ Texture::Texture() :
 }
 
 Texture::Texture( const Texture& Copy ) :
-	DrawableResource( Drawable::TEXTURE, mName ),
+	DrawableResource( Drawable::TEXTURE, Copy.mName ),
 	Image(),
 	mFilepath( Copy.mFilepath ),
 	mTexture( Copy.mTexture ),
@@ -238,6 +238,11 @@ bool Texture::unlock( const bool& KeepData, const bool& Modified ) {
 
 	return false;
 	#else
+	if ( ( mFlags & TEX_FLAG_LOCKED ) ) {
+		mFlags &= ~TEX_FLAG_LOCKED;
+		return true;
+	}
+
 	return false;
 	#endif
 }
