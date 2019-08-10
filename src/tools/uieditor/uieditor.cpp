@@ -97,7 +97,7 @@ class UpdateListener : public efsw::FileWatchListener {
 	public:
 		UpdateListener() {}
 
-		virtual ~UpdateListener() {};
+		virtual ~UpdateListener() {}
 
 		void handleFileAction( efsw::WatchID, const std::string& dir, const std::string& filename, efsw::Action action, std::string ) {
 			if ( action == efsw::Actions::Modified ) {

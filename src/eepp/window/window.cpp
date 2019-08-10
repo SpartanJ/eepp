@@ -321,7 +321,6 @@ void Window::updateElapsedTime() {
 	}
 
 	mFrameData.ElapsedTime = mFrameData.FrameElapsed->getElapsed();
-	printf("elapsed time: %4.2f\n", mFrameData.ElapsedTime.asMilliseconds());
 }
 
 const Time& Window::getSleepTimePerSecond() const {
