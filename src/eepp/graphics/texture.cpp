@@ -256,8 +256,8 @@ const Uint8 * Texture::getPixelsPtr() {
 	return Image::getPixelsPtr();
 }
 
-void Texture::setPixel( const unsigned int& x, const unsigned int& y, const Color& Color ) {
-	Image::setPixel( x, y, Color );
+void Texture::setPixel( const unsigned int& x, const unsigned int& y, const Color& color ) {
+	Image::setPixel( x, y, color );
 
 	mFlags |= TEX_FLAG_MODIFIED;
 }

@@ -166,23 +166,23 @@ class tColor {
 		}
 
 		tColor<T> operator+( const tColor<T>& Col ) const {
-			return tColor<T>(	eemin( this->r	+ Col.r	, 255 ),
-								eemin( this->g	+ Col.g	, 255 ),
-								eemin( this->b	+ Col.b	, 255 ),
-								eemin( this->a	+ Col.a	, 255 )
+			return tColor<T>(	std::abs( this->r	+ Col.r ),
+								std::abs( this->g	+ Col.g ),
+								std::abs( this->b	+ Col.b ),
+								std::abs( this->a	+ Col.a )
 			);
 		}
 
 		tColor<T> operator-( const tColor<T>& Col ) const {
-			return tColor<T>(	eemax( this->r	- Col.r	, 0 ),
-								eemax( this->g	- Col.g	, 0 ),
-								eemax( this->b	- Col.b	, 0 ),
-								eemax( this->a	- Col.a	, 0 )
+			return tColor<T>(	std::abs( this->r	- Col.r ),
+								std::abs( this->g	- Col.g ),
+								std::abs( this->b	- Col.b ),
+								std::abs( this->a	- Col.a )
 			);
 		}
 
 		tColor<T> operator*( const tColor<T>& Col ) const {
-			return tColor<T>(	( this->r		* Col.r	/ 255 ),
+			return tColor<T>(	( this->r	* Col.r	/ 255 ),
 								( this->g	* Col.g	/ 255 ),
 								( this->b	* Col.b	/ 255 ),
 								( this->a	* Col.a	/ 255 )

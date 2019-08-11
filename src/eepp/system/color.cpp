@@ -103,7 +103,7 @@ Color::Color( std::string colorString ) {
 }
 
 Color::Color(Uint8 r, Uint8 g, Uint8 b, Uint8 a) :
-	tColor<Uint8>(r,g,b,a)
+	tColor<Uint8>(r, g, b, a)
 {}
 
 Color::Color( const tRGB<Uint8>& Col ) :
@@ -119,7 +119,7 @@ Color::Color( const tColor<Uint8> & Col, Uint8 a ) :
 {}
 
 Color::Color( const tColor<Uint8>& Col ) :
-	tColor<Uint8>( Col.Value )
+	tColor<Uint8>( Col.r, Col.g, Col.b, Col.a )
 {}
 
 Color::Color( const Uint32& Col ) :

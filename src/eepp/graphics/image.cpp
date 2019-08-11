@@ -46,8 +46,7 @@ static const char * get_resampler_name( Image::ResamplerFilter filter ) {
 static unsigned char * resample_image( unsigned char* pSrc_image, int src_width, int src_height, int n, int dst_width, int dst_height, Image::ResamplerFilter filter ) {
 	const int max_components = 4;
 
-	if ((std::max(src_width, src_height) > RESAMPLER_MAX_DIMENSION) || (n > max_components))
-	{
+	if ((std::max(src_width, src_height) > RESAMPLER_MAX_DIMENSION) || (n > max_components)) {
 		return NULL;
 	}
 
@@ -69,8 +68,7 @@ static unsigned char * resample_image( unsigned char* pSrc_image, int src_width,
 	const float inv_linear_to_srgb_table_size = 1.0f / linear_to_srgb_table_size;
 	const float inv_source_gamma = 1.0f / source_gamma;
 
-	for (int i = 0; i < linear_to_srgb_table_size; ++i)
-	{
+	for (int i = 0; i < linear_to_srgb_table_size; ++i) {
 		int k = (int)(255.0f * pow(i * inv_linear_to_srgb_table_size, inv_source_gamma) + .5f);
 		if (k < 0) k = 0; else if (k > 255) k = 255;
 		linear_to_srgb[i] = (unsigned char)k;
@@ -81,8 +79,7 @@ static unsigned char * resample_image( unsigned char* pSrc_image, int src_width,
 
 	resamplers[0] = new Resampler(src_width, src_height, dst_width, dst_height, Resampler::BOUNDARY_CLAMP, 0.0f, 1.0f, pFilter, NULL, NULL, filter_scale, filter_scale);
 	samples[0].resize(src_width);
-	for (int i = 1; i < n; i++)
-	{
+	for (int i = 1; i < n; i++) {
 		resamplers[i] = new Resampler(src_width, src_height, dst_width, dst_height, Resampler::BOUNDARY_CLAMP, 0.0f, 1.0f, pFilter, resamplers[0]->get_clist_x(), resamplers[0]->get_clist_y(), filter_scale, filter_scale);
 		samples[i].resize(src_width);
 	}
@@ -93,14 +90,11 @@ static unsigned char * resample_image( unsigned char* pSrc_image, int src_width,
 	const int dst_pitch = dst_width * n;
 	int dst_y = 0;
 
-	for (int src_y = 0; src_y < src_height; src_y++)
-	{
+	for (int src_y = 0; src_y < src_height; src_y++) {
 		const unsigned char* pSrc = &pSrc_image[src_y * src_pitch];
 
-		for (int x = 0; x < src_width; x++)
-		{
-			for (int c = 0; c < n; c++)
-			{
+		for (int x = 0; x < src_width; x++) {
+			for (int c = 0; c < n; c++) {
 				if ((c == 3) || ((n == 2) && (c == 1)))
 					samples[c][x] = *pSrc++ * (1.0f/255.0f);
 				else
@@ -108,19 +102,15 @@ static unsigned char * resample_image( unsigned char* pSrc_image, int src_width,
 			}
 		}
 
-		for (int c = 0; c < n; c++)
-		{
-			if (!resamplers[c]->put_line(&samples[c][0]))
-			{
+		for (int c = 0; c < n; c++) {
+			if (!resamplers[c]->put_line(&samples[c][0])) {
 				return NULL;
 			}
 		}
 
-		for ( ; ; )
-		{
+		for ( ; ; ) {
 			int c;
-			for (c = 0; c < n; c++)
-			{
+			for (c = 0; c < n; c++) {
 				const float* pOutput_samples = resamplers[c]->get_line();
 				if (!pOutput_samples)
 					break;
@@ -129,16 +119,12 @@ static unsigned char * resample_image( unsigned char* pSrc_image, int src_width,
 				eeASSERT(dst_y < dst_height);
 				unsigned char* pDst = &dst_image[dst_y * dst_pitch + c];
 
-				for (int x = 0; x < dst_width; x++)
-				{
-					if (alpha_channel)
-					{
+				for (int x = 0; x < dst_width; x++) {
+					if (alpha_channel) {
 						int c = (int)(255.0f * pOutput_samples[x] + .5f);
 						if (c < 0) c = 0; else if (c > 255) c = 255;
 							*pDst = (unsigned char)c;
-					}
-					else
-					{
+					} else {
 						int j = (int)(linear_to_srgb_table_size * pOutput_samples[x] + .5f);
 						if (j < 0) j = 0; else if (j >= linear_to_srgb_table_size) j = linear_to_srgb_table_size - 1;
 						*pDst = linear_to_srgb[j];
@@ -620,9 +606,9 @@ Color Image::getPixel( const unsigned int& x, const unsigned int& y ) {
 	return dst;
 }
 
-void Image::setPixel(const unsigned int& x, const unsigned int& y, const Color& Color) {
+void Image::setPixel(const unsigned int& x, const unsigned int& y, const Color& color) {
 	eeASSERT( !( mPixels == NULL || x > mWidth || y > mHeight ) );
-	memcpy( &mPixels[ ( ( x + y * mWidth ) * mChannels ) ], &Color, mChannels );
+	memcpy( &mPixels[ ( ( x + y * mWidth ) * mChannels ) ], &color, mChannels );
 }
 
 void Image::create( const Uint32& Width, const Uint32& Height, const Uint32& Channels, const Color& DefaultColor, const bool& initWithDefaultColor ) {
