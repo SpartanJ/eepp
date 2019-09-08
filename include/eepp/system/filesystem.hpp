@@ -13,7 +13,7 @@ class EE_API FileSystem {
 		/** @return The default slash path code of the current OS */
 		static std::string getOSSlash();
 
-		/** @return True if the file exists ( false if is a directory, to know if directory exists use IsDirectory ) */
+		/** @return True if the file exists ( false if is a directory, to know if directory exists use isDirectory ) */
 		static bool fileExists( const std::string& Filepath );
 
 		/** Copy a file to memory

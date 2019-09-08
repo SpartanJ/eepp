@@ -118,8 +118,6 @@ void TextureAtlasLoader::setTextureFilter(const Texture::TextureFilter & texture
 }
 
 void TextureAtlasLoader::update() {
-	mRL.update();
-
 	if ( mRL.isLoaded() && !mLoaded )
 		createTextureRegions();
 }
@@ -148,9 +146,9 @@ void TextureAtlasLoader::loadFromStream( IOStream& IOS ) {
 
 				if ( !mSkipResourceLoad && NULL == tTex ) {
 					if ( NULL != mPack ) {
-						mRL.add( TextureLoader::New( mPack, path ) );
+						mRL.add( [=] { TextureFactory::instance()->loadFromPack( mPack, path ); } );
 					} else {
-						mRL.add( TextureLoader::New( path ) );
+						mRL.add( [=] { TextureFactory::instance()->loadFromFile( path ); } );
 					}
 				}
 

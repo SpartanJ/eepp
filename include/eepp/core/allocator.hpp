@@ -14,8 +14,8 @@ class Allocator {
 		typedef const T *		const_pointer;
 		typedef T&				reference;
 		typedef const T&		const_reference;
-		typedef ptrdiff_t		difference_type;
-		typedef size_t			size_type;
+		typedef std::ptrdiff_t	difference_type;
+		typedef std::size_t		size_type;
 
 		Allocator() {
 		}
@@ -41,7 +41,7 @@ class Allocator {
 
 		void destroy( T * ptr ) {
 			#ifdef EE_MEMORY_MANAGER
-			EE::MemoryManager::RemovePointer( ptr );
+			EE::MemoryManager::removePointer( ptr );
 			#endif
 
 			ptr->~T();
@@ -71,8 +71,6 @@ class Allocator {
 
 		template <class U>
 		Allocator& operator=(const Allocator<U>&) { return *this; }
-	protected:
-
 };
 
 }

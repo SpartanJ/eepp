@@ -19,12 +19,12 @@
 #include <eepp/system/zip.hpp>
 #include <eepp/system/directorypack.hpp>
 #include <eepp/system/rc4.hpp>
-#include <eepp/system/objectloader.hpp>
 #include <eepp/system/resourceloader.hpp>
 #include <eepp/system/resourcemanager.hpp>
 #include <eepp/system/packmanager.hpp>
 #include <eepp/system/threadlocal.hpp>
 #include <eepp/system/threadlocalptr.hpp>
+#include <eepp/system/threadpool.hpp>
 #include <eepp/system/compression.hpp>
 #include <eepp/system/base64.hpp>
 #include <eepp/system/md5.hpp>

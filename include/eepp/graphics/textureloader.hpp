@@ -1,9 +1,8 @@
-#ifndef EE_GRAPHICSCTEXTURELOADER
-#define EE_GRAPHICSCTEXTURELOADER
+#ifndef EE_GRAPHICS_TEXTURELOADER
+#define EE_GRAPHICS_TEXTURELOADER
 
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/texture.hpp>
-#include <eepp/system/objectloader.hpp>
 
 #include <eepp/system/pack.hpp>
 #include <eepp/system/clock.hpp>
@@ -11,21 +10,9 @@ using namespace EE::System;
 
 namespace EE { namespace Graphics {
 
-/** @brief The Texture loader loads a texture in synchronous or asynchronous mode.
-@see ObjectLoader
-*/
-class EE_API TextureLoader : public ObjectLoader {
+/** @brief The Texture loader loads a texture in synchronous or asynchronous mode. */
+class EE_API TextureLoader {
 	public:
-		static TextureLoader * New( IOStream& Stream, const bool& Mipmap = false, const Texture::ClampMode& ClampMode = Texture::ClampMode::ClampToEdge, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
-
-		static TextureLoader * New( const std::string& filepath, const bool& Mipmap = false, const Texture::ClampMode& ClampMode = Texture::ClampMode::ClampToEdge, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
-
-		static TextureLoader * New( const unsigned char * ImagePtr, const unsigned int& Size, const bool& Mipmap = false, const Texture::ClampMode& ClampMode = Texture::ClampMode::ClampToEdge, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
-
-		static TextureLoader * New( Pack * Pack, const std::string& FilePackPath, const bool& Mipmap = false, const Texture::ClampMode& ClampMode = Texture::ClampMode::ClampToEdge, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
-
-		static TextureLoader * New( const unsigned char * Pixels, const unsigned int& Width, const unsigned int& Height, const unsigned int& Channels, const bool& Mipmap = false, const Texture::ClampMode& ClampMode = Texture::ClampMode::ClampToEdge, const bool& CompressTexture = false, const bool& KeepLocalCopy = false, const std::string& FileName = std::string("") );
-
 		/** Load a Texture from stream
 		* @param Stream The io stream instance
 		* @param Mipmap Use mipmaps?
@@ -82,10 +69,6 @@ class EE_API TextureLoader : public ObjectLoader {
 		/** A color key can be set to be transparent in the texture. This must be set before the loading is done. */
 		void			setColorKey( RGB Color );
 
-		/** This must be called for the asynchronous mode to update the texture data to the GPU, the call must be done from the same thread that the GL context was created ( the main thread ).
-		** @see ObjectLoader::Update */
-		void 			update();
-
 		/** @brief Releases the texture loaded ( if was already loaded ), it will destroy the texture from memory. */
 		void			unload();
 
@@ -101,6 +84,9 @@ class EE_API TextureLoader : public ObjectLoader {
 		Image::FormatConfiguration getFormatConfiguration() const;
 
 		void setFormatConfiguration(const Image::FormatConfiguration & formatConfiguration);
+
+		/** Starts loading the texture */
+		void 			load();
 	protected:
 		Uint32			mLoadType; 	// From memory, from path, from pack
 		Uint8 * 		mPixels;	// Texture Info
@@ -125,10 +111,9 @@ class EE_API TextureLoader : public ObjectLoader {
 		RGB *			mColorKey;
 		Image::FormatConfiguration mFormatConfiguration;
 
-		void 			start();
-
 		void			reset();
 	private:
+		bool			mLoaded;
 		bool			mTexLoaded;
 		bool			mDirectUpload;
 		int				mImgType;

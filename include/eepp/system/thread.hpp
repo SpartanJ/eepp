@@ -86,7 +86,7 @@ class EE_API Thread : NonCopyable {
 		**	thread's constructor, and returns immediately.
 		**	After this function returns, the thread's function is
 		**	running in parallel to the calling code. */
-		virtual void	launch();
+		void launch();
 
 		/** @brief Wait until the thread finishes.
 		**	This function will block the execution until the
@@ -95,7 +95,7 @@ class EE_API Thread : NonCopyable {
 		**	thread will block forever.
 		**	If this function is called from its owner thread, it
 		**	returns without doing anything. */
-		void			wait();
+		void wait();
 
 		/** @brief Terminate the thread
 		**	This function immediately stops the thread, without waiting
@@ -104,10 +104,10 @@ class EE_API Thread : NonCopyable {
 		**	and can lead to local variables not being destroyed
 		**	on some operating systems. You should rather try to make
 		**	the thread function terminate by itself. */
-		void			terminate();
+		void terminate();
 
 		/** @return The id of the thread */
-		Uint32			getId();
+		Uint32 getId();
 	protected:
 		Thread();
 	private:
@@ -124,38 +124,55 @@ class EE_API Thread : NonCopyable {
 namespace Private {
 
 // Base class for abstract thread functions
-struct ThreadFunc
-{
+struct ThreadFunc {
 	virtual ~ThreadFunc() {}
 	virtual void run() = 0;
 };
 
 // Specialization using a functor (including free functions) with no argument
 template <typename T>
-struct ThreadFunctor : ThreadFunc
-{
-	ThreadFunctor(T functor) : mFunctor(functor) {}
-	virtual void run() {mFunctor();}
+struct ThreadFunctor : ThreadFunc {
+	ThreadFunctor(T functor) :
+		mFunctor(functor)
+	{}
+
+	virtual void run() {
+		mFunctor();
+	}
+
 	T mFunctor;
 };
 
 // Specialization using a functor (including free functions) with one argument
 template <typename F, typename A>
-struct ThreadFunctorWithArg : ThreadFunc
-{
-	ThreadFunctorWithArg(F function, A arg) : mFunction(function), mArg(arg) {}
-	virtual void run() {mFunction(mArg);}
+struct ThreadFunctorWithArg : ThreadFunc {
+	ThreadFunctorWithArg(F function, A arg) :
+		mFunction(function),
+		mArg(arg)
+	{}
+
+	virtual void run() {
+		mFunction(mArg);
+	}
+
 	F mFunction;
 	A mArg;
 };
 
 // Specialization using a member function
 template <typename C>
-struct ThreadMemberFunc : ThreadFunc
-{
-	ThreadMemberFunc(void(C::*function)(), C* object) : mFunction(function), mObject(object) {}
-	virtual void run() {(mObject->*mFunction)();}
+struct ThreadMemberFunc : ThreadFunc {
+	ThreadMemberFunc(void(C::*function)(), C* object) :
+		mFunction(function),
+		mObject(object)
+	{}
+
+	virtual void run() {
+		(mObject->*mFunction)();
+	}
+
 	void(C::*mFunction)();
+
 	C* mObject;
 };
 
@@ -165,22 +182,19 @@ template <typename F>
 Thread::Thread(F functor) :
 	mThreadImpl(NULL),
 	mEntryPoint( new Private::ThreadFunctor<F>(functor) )
-{
-}
+{}
 
 template <typename F, typename A>
 Thread::Thread(F function, A argument) :
 	mThreadImpl(NULL),
 	mEntryPoint( new Private::ThreadFunctorWithArg<F eeCOMMA A> (function, argument) )
-{
-}
+{}
 
 template <typename C>
 Thread::Thread(void(C::*function)(), C* object) :
 	mThreadImpl(NULL),
 	mEntryPoint( new Private::ThreadMemberFunc<C> (function, object) )
-{
-}
+{}
 
 }}
 

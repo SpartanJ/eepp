@@ -131,8 +131,7 @@ class EETest : private Thread {
 
 		void loadFonts();
 
-		ResourceLoader mFontLoader;
-		void onFontLoaded( ResourceLoader * ObjLoaded );
+		void onFontLoaded();
 
 		JoystickManager * JM;
 		Float mAxisX;

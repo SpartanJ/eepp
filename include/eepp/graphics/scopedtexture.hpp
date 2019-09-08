@@ -1,16 +1,16 @@
-#ifndef EE_GRAPHICSCTEXTURESAVER_HPP
-#define EE_GRAPHICSCTEXTURESAVER_HPP
+#ifndef EE_GRAPHICS_SCOPEDTEXTURE_HPP
+#define EE_GRAPHICS_SCOPEDTEXTURE_HPP
 
 #include <eepp/config.hpp>
 
 namespace EE { namespace Graphics { namespace Private {
 
 /** @brief binds a texture a restores previusly binded texture */
-class EE_API TextureSaver {
+class EE_API ScopedTexture {
 	public:
-		TextureSaver( int textureBind = -1 /** with -1 as default it avoid the auto-binding */ );
+		ScopedTexture( int textureBind = -1 /** with -1 as default it avoid the auto-binding */ );
 		
-		~TextureSaver();
+		~ScopedTexture();
 	private:
 		int mTextureBinded;
 		int mTextureToBind;

@@ -11,7 +11,7 @@
 #include <eepp/graphics/primitivetype.hpp>
 #include <eepp/graphics/image.hpp>
 #include <eepp/graphics/texture.hpp>
-#include <eepp/graphics/texturesaver.hpp>
+#include <eepp/graphics/scopedtexture.hpp>
 #include <eepp/graphics/textureloader.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/graphics/texturepacker.hpp>
@@ -28,7 +28,6 @@
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/fontbmfont.hpp>
 #include <eepp/graphics/fontsprite.hpp>
-#include <eepp/graphics/fonttruetypeloader.hpp>
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/graphics/primitives.hpp>

@@ -1,16 +1,19 @@
 #include <eepp/graphics/textureloader.hpp>
 #include <eepp/graphics/texture.hpp>
 #include <eepp/graphics/texturefactory.hpp>
-#include <eepp/window/engine.hpp>
+#include <eepp/graphics/scopedtexture.hpp>
 #include <eepp/graphics/renderer/opengl.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
+#include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/packmanager.hpp>
-#include <eepp/system/filesystem.hpp>
+#include <eepp/system/thread.hpp>
+#include <eepp/window/engine.hpp>
 #include <SOIL2/src/SOIL2/stb_image.h>
 #include <SOIL2/src/SOIL2/SOIL2.h>
 #include <eepp/graphics/stbi_iocb.hpp>
 using namespace EE::Window;
+using namespace EE::Graphics::Private;
 
 #define TEX_LT_PATH 	(1)
 #define TEX_LT_MEM 		(2)
@@ -20,33 +23,12 @@ using namespace EE::Window;
 
 namespace EE { namespace Graphics {
 
-TextureLoader * TextureLoader::New( IOStream& Stream, const bool& Mipmap, const Texture::ClampMode& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy ) {
-	return eeNew( TextureLoader, ( Stream, Mipmap, ClampMode, CompressTexture, KeepLocalCopy ) );
-}
-
-TextureLoader * TextureLoader::New( const std::string& filepath, const bool& Mipmap, const Texture::ClampMode& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy ) {
-	return eeNew( TextureLoader, ( filepath, Mipmap, ClampMode, CompressTexture, KeepLocalCopy ) );
-}
-
-TextureLoader * TextureLoader::New( const unsigned char * ImagePtr, const unsigned int& Size, const bool& Mipmap, const Texture::ClampMode& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy ) {
-	return eeNew( TextureLoader, ( ImagePtr, Size, Mipmap, ClampMode, CompressTexture, KeepLocalCopy ) );
-}
-
-TextureLoader * TextureLoader::New( Pack * Pack, const std::string& FilePackPath, const bool& Mipmap, const Texture::ClampMode& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy ) {
-	return eeNew( TextureLoader, ( Pack, FilePackPath, Mipmap, ClampMode, CompressTexture, KeepLocalCopy ) );
-}
-
-TextureLoader * TextureLoader::New( const unsigned char * Pixels, const unsigned int& Width, const unsigned int& Height, const unsigned int& Channels, const bool& Mipmap, const Texture::ClampMode& ClampMode, const bool& CompressTexture , const bool& KeepLocalCopy, const std::string& FileName ) {
-	return eeNew( TextureLoader, ( Pixels, Width, Height, Channels, Mipmap, ClampMode, CompressTexture, KeepLocalCopy ) );
-}
-
 TextureLoader::TextureLoader( IOStream& Stream,
 	const bool& Mipmap,
 	const Texture::ClampMode& ClampMode,
 	const bool& CompressTexture,
 	const bool& KeepLocalCopy
-) : ObjectLoader( ObjectLoader::TextureLoader ),
-	mLoadType(TEX_LT_STREAM),
+) : mLoadType(TEX_LT_STREAM),
 	mPixels(NULL),
 	mTexId(0),
 	mImgWidth(0),
@@ -64,6 +46,7 @@ TextureLoader::TextureLoader( IOStream& Stream,
 	mImagePtr(NULL),
 	mSize(0),
 	mColorKey(NULL),
+	mLoaded(false),
 	mTexLoaded(false),
 	mDirectUpload(false),
 	mImgType(STBI_unknown),
@@ -76,8 +59,7 @@ TextureLoader::TextureLoader( const std::string& Filepath,
 	const Texture::ClampMode& ClampMode,
 	const bool& CompressTexture,
 	const bool& KeepLocalCopy
-) : ObjectLoader( ObjectLoader::TextureLoader ),
-	mLoadType(TEX_LT_PATH),
+) : mLoadType(TEX_LT_PATH),
 	mPixels(NULL),
 	mTexId(0),
 	mImgWidth(0),
@@ -95,6 +77,7 @@ TextureLoader::TextureLoader( const std::string& Filepath,
 	mImagePtr(NULL),
 	mSize(0),
 	mColorKey(NULL),
+	mLoaded(false),
 	mTexLoaded(false),
 	mDirectUpload(false),
 	mImgType(STBI_unknown),
@@ -108,8 +91,7 @@ TextureLoader::TextureLoader( const unsigned char * ImagePtr,
 	const Texture::ClampMode& ClampMode,
 	const bool& CompressTexture,
 	const bool& KeepLocalCopy
-) : ObjectLoader( ObjectLoader::TextureLoader ),
-	mLoadType(TEX_LT_MEM),
+) : mLoadType(TEX_LT_MEM),
 	mPixels(NULL),
 	mTexId(0),
 	mImgWidth(0),
@@ -127,6 +109,7 @@ TextureLoader::TextureLoader( const unsigned char * ImagePtr,
 	mImagePtr(ImagePtr),
 	mSize(Size),
 	mColorKey(NULL),
+	mLoaded(false),
 	mTexLoaded(false),
 	mDirectUpload(false),
 	mImgType(STBI_unknown),
@@ -140,8 +123,7 @@ TextureLoader::TextureLoader( Pack * Pack,
 	const Texture::ClampMode& ClampMode,
 	const bool& CompressTexture,
 	const bool& KeepLocalCopy
-) : ObjectLoader( ObjectLoader::TextureLoader ),
-	mLoadType(TEX_LT_PACK),
+) : mLoadType(TEX_LT_PACK),
 	mPixels(NULL),
 	mTexId(0),
 	mImgWidth(0),
@@ -159,6 +141,7 @@ TextureLoader::TextureLoader( Pack * Pack,
 	mImagePtr(NULL),
 	mSize(0),
 	mColorKey(NULL),
+	mLoaded(false),
 	mTexLoaded(false),
 	mDirectUpload(false),
 	mImgType(STBI_unknown),
@@ -175,8 +158,7 @@ TextureLoader::TextureLoader( const unsigned char * Pixels,
 	const bool& CompressTexture,
 	const bool& KeepLocalCopy,
 	const std::string& FileName
-) : ObjectLoader( ObjectLoader::TextureLoader ),
-	mLoadType(TEX_LT_PIXELS),
+) : mLoadType(TEX_LT_PIXELS),
 	mPixels( const_cast<unsigned char *> ( Pixels ) ),
 	mTexId(0),
 	mImgWidth(Width),
@@ -194,6 +176,7 @@ TextureLoader::TextureLoader( const unsigned char * Pixels,
 	mImagePtr(NULL),
 	mSize(0),
 	mColorKey(NULL),
+	mLoaded(false),
 	mTexLoaded(false),
 	mDirectUpload(false),
 	mImgType(STBI_unknown),
@@ -208,9 +191,7 @@ TextureLoader::~TextureLoader() {
 		eeSAFE_FREE( mPixels );
 }
 
-void TextureLoader::start() {
-	ObjectLoader::start();
-
+void TextureLoader::load() {
 	mTE.restart();
 
 	if ( TEX_LT_PATH == mLoadType )
@@ -224,9 +205,7 @@ void TextureLoader::start() {
 
 	mTexLoaded = true;
 
-	if ( !mThreaded || ( Engine::instance()->isSharedGLContextEnabled() && Engine::instance()->getCurrentWindow()->isThreadedGLContext() ) ) {
-		loadFromPixels();
-	}
+	loadFromPixels();
 }
 
 void TextureLoader::loadFile() {
@@ -379,48 +358,41 @@ void TextureLoader::loadFromPixels() {
 			flags = ( mClampMode == Texture::ClampMode::ClampRepeat) ? (flags | SOIL_FLAG_TEXTURE_REPEATS) : flags;
 			flags = ( mCompressTexture ) ? ( flags | SOIL_FLAG_COMPRESS_TO_DXT ) : flags;
 
-			bool ForceGLThreaded = Thread::getCurrentThreadId() != Engine::instance()->getMainThreadId();
+			bool threadedLoad = Thread::getCurrentThreadId() != Engine::instance()->getMainThreadId();
 
-			if ( ( mThreaded || ForceGLThreaded ) &&
-				 ( ForceGLThreaded || Engine::instance()->isSharedGLContextEnabled() ) &&
-				 Engine::instance()->getCurrentWindow()->isThreadedGLContext() )
-			{
+			if ( threadedLoad && Engine::instance()->isSharedGLContextEnabled() ) {
 				Engine::instance()->getCurrentWindow()->setGLContextThread();
 			}
 
-			int PreviousTexture;
-			glGetIntegerv(GL_TEXTURE_BINDING_2D, &PreviousTexture);
+			{
+				ScopedTexture scopedTexture;
 
-			if ( mDirectUpload ) {
-				if ( STBI_dds == mImgType ) {
-					tTexId = SOIL_direct_load_DDS_from_memory( mPixels, mSize, SOIL_CREATE_NEW_ID, flags, 0 );
-				} else if ( STBI_pvr == mImgType ) {
-					tTexId = SOIL_direct_load_PVR_from_memory( mPixels, mSize, SOIL_CREATE_NEW_ID, flags, 0 );
-				} else if ( STBI_pkm == mImgType ) {
-					tTexId = SOIL_direct_load_ETC1_from_memory( mPixels, mSize, SOIL_CREATE_NEW_ID, flags );
+				if ( mDirectUpload ) {
+					if ( STBI_dds == mImgType ) {
+						tTexId = SOIL_direct_load_DDS_from_memory( mPixels, mSize, SOIL_CREATE_NEW_ID, flags, 0 );
+					} else if ( STBI_pvr == mImgType ) {
+						tTexId = SOIL_direct_load_PVR_from_memory( mPixels, mSize, SOIL_CREATE_NEW_ID, flags, 0 );
+					} else if ( STBI_pkm == mImgType ) {
+						tTexId = SOIL_direct_load_ETC1_from_memory( mPixels, mSize, SOIL_CREATE_NEW_ID, flags );
+					}
+				} else {
+					if ( NULL != mColorKey ) {
+						mChannels = STBI_rgb_alpha;
+
+						Image * tImg = Image::New( mPixels, mImgWidth, mImgHeight, mChannels );
+
+						tImg->createMaskFromColor( Color( mColorKey->r, mColorKey->g, mColorKey->b, 255 ), 0 );
+
+						tImg->avoidFreeImage( true  );
+
+						eeSAFE_DELETE( tImg );
+					}
+
+					tTexId = SOIL_create_OGL_texture( mPixels, &width, &height, mChannels, SOIL_CREATE_NEW_ID, flags );
 				}
-			} else {
-				if ( NULL != mColorKey ) {
-					mChannels = STBI_rgb_alpha;
-
-					Image * tImg = Image::New( mPixels, mImgWidth, mImgHeight, mChannels );
-
-					tImg->createMaskFromColor( Color( mColorKey->r, mColorKey->g, mColorKey->b, 255 ), 0 );
-
-					tImg->avoidFreeImage( true  );
-
-					eeSAFE_DELETE( tImg );
-				}
-
-				tTexId = SOIL_create_OGL_texture( mPixels, &width, &height, mChannels, SOIL_CREATE_NEW_ID, flags );
 			}
 
-			GLi->bindTexture( GL_TEXTURE_2D, PreviousTexture );
-
-			if ( ( mThreaded || ForceGLThreaded ) &&
-				 ( ForceGLThreaded || Engine::instance()->isSharedGLContextEnabled() ) &&
-				 Engine::instance()->getCurrentWindow()->isThreadedGLContext() )
-			{
+			if ( threadedLoad && Engine::instance()->isSharedGLContextEnabled() ) {
 				Engine::instance()->getCurrentWindow()->unsetGLContextThread();
 			}
 
@@ -482,13 +454,7 @@ void TextureLoader::loadFromPixels() {
 			}
 		}
 
-		setLoaded();
-	}
-}
-
-void TextureLoader::update() {
-	if ( !( Engine::instance()->isSharedGLContextEnabled() && Engine::instance()->getCurrentWindow()->isThreadedGLContext() ) ) {
-		loadFromPixels();
+		mLoaded = true;
 	}
 }
 
@@ -529,8 +495,6 @@ void TextureLoader::unload() {
 }
 
 void TextureLoader::reset() {
-	ObjectLoader::reset();
-
 	mPixels				= NULL;
 	mTexId				= 0;
 	mImgWidth			= 0;
@@ -539,6 +503,7 @@ void TextureLoader::reset() {
 	mHeight				= 0;
 	mChannels			= 0;
 	mSize				= 0;
+	mLoaded				= false;
 	mTexLoaded			= false;
 	mDirectUpload		= false;
 	mImgType			= STBI_unknown;

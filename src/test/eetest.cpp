@@ -252,13 +252,13 @@ void EETest::createUIThemeTextureAtlas() {
 void EETest::loadFonts() {
 	mFTE.restart();
 
-	mFontLoader.add( FontTrueTypeLoader::New( "NotoSans-Regular", MyPath + "fonts/NotoSans-Regular.ttf" ) );
-	mFontLoader.add( FontTrueTypeLoader::New( "DejaVuSansMono", MyPath + "fonts/DejaVuSansMono.ttf" ) );
+	FontTrueType::New( "NotoSans-Regular", MyPath + "fonts/NotoSans-Regular.ttf" );
+	FontTrueType::New( "DejaVuSansMono", MyPath + "fonts/DejaVuSansMono.ttf" );
 
-	mFontLoader.load( cb::Make1( this, &EETest::onFontLoaded ) );
+	onFontLoaded();
 }
 
-void EETest::onFontLoaded( ResourceLoader * ) {
+void EETest::onFontLoaded() {
 	TTF		= FontManager::instance()->getByName( "NotoSans-Regular" );
 	Font * DBSM	= FontManager::instance()->getByName( "DejaVuSansMono" );
 
@@ -1231,10 +1231,6 @@ void EETest::loadTextures() {
 
 	#ifndef EE_GLES
 
-	#if defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX
-	Engine::instance()->enableSharedGLContext();
-	#endif
-
 	PakTest = Zip::New();
 	PakTest->open( MyPath + "test.zip" );
 
@@ -1244,13 +1240,14 @@ void EETest::loadTextures() {
 		std::string name( files[i] );
 
 		if ( "jpg" == FileSystem::fileExtension( name ) ) {
-			mResLoad.add( TextureLoader::New( PakTest, name ) );
+			mResLoad.add( [=] { TextureFactory::instance()->loadFromPack( PakTest, name ); } );
 		}
 	}
 	#endif
 
-	mResLoad.add( SoundLoader::New( &SndMng, "mysound", MyPath + "sounds/sound.ogg" ) );
+	SndMng.loadFromFile( "mysound", MyPath + "sounds/sound.ogg" );
 
+	mResLoad.setThreaded( EE->isSharedGLContextEnabled() );
 	mResLoad.load( cb::Make1( this, &EETest::onTextureLoaded ) );
 
 	TN.resize(12);
@@ -1970,13 +1967,7 @@ void EETest::update() {
 
 	input();
 
-	mResLoad.update();
-
-	if ( mFontLoader.isLoaded() ) {
-		render();
-	} else {
-		mFontLoader.update();
-	}
+	render();
 
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 	updateParticles();

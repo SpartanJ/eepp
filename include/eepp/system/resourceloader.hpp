@@ -1,7 +1,9 @@
 #ifndef EE_SYSTEMCRESOURCELOADER
 #define EE_SYSTEMCRESOURCELOADER
 
-#include <eepp/system/objectloader.hpp>
+#include <eepp/core.hpp>
+#include <eepp/system/thread.hpp>
+#include <vector>
 
 namespace EE { namespace System {
 
@@ -11,6 +13,7 @@ namespace EE { namespace System {
 class EE_API ResourceLoader {
 	public:
 		typedef std::function<void( ResourceLoader * )> ResLoadCallback;
+		typedef std::function<void()> ObjectLoaderTask;
 
 		/** @param MaxThreads Set the maximun simultaneous threads to load resources, THREADS_AUTO will use the cpu number of cores. */
 		ResourceLoader( const Uint32& MaxThreads = THREADS_AUTO );
@@ -20,22 +23,16 @@ class EE_API ResourceLoader {
 		/** @brief Adds a resource to load.
 		**	Must be called before the loading starts.
 		**	Once an object loader is added to the resource loader, the instance of that object will be managed and released by the loader.
-		**	@param Object The instance object loader to load
+		**	@param Object The function callback of the load process
 		*/
-		void			add( ObjectLoader * Object );
+		void			add( const ObjectLoaderTask& objectLoaderTask );
 
 		/** @brief Starts loading the resources.
 		**	@param Cb A callback that is called when the resources finished loading. */
-		void 			load( ResLoadCallback Cb );
+		void 			load( const ResLoadCallback& callback );
 
 		/** @brief Starts loading the resources. */
 		void 			load();
-
-		/** @brief Unload all the resources already loaded. */
-		void			unload();
-
-		/** @brief Update must be called from the thread that started the loading to update the state of the resource loader. */
-		virtual void 	update();
 
 		/** @returns If the resources were loaded. */
 		virtual bool	isLoaded();
@@ -50,9 +47,8 @@ class EE_API ResourceLoader {
 		**	This must be called before the load starts. */
 		void			setThreaded( const bool& setThreaded );
 
-		/** @brief Clears the resources added to load that werent loaded, and delete the instances of the loaders.
-		**	@param ClearObjectsLoaded Sets if the objects loader that were already loaded must be also deleted ( it will not unload the loaded resources, but the instance of the object loader ). */
-		bool			clear( const bool& ClearObjectsLoaded = true );
+		/** @brief Clears the resources added to load that werent loaded, and delete the instances of the loaders. */
+		bool			clear();
 
 		/** @return The aproximate percent of progress ( between 0 and 100 ) */
 		Float			getProgress();
@@ -64,14 +60,19 @@ class EE_API ResourceLoader {
 		bool			mLoading;
 		bool			mThreaded;
 		Uint32			mThreads;
+		Uint32			mTotalLoaded;
+		Thread			mThread;
 
-		std::list<ResLoadCallback>	mLoadCbs;
-		std::list<ObjectLoader *>	mObjs;
-		std::list<ObjectLoader *>	mObjsLoaded;
+		std::vector<ResLoadCallback>	mLoadCbs;
+		std::vector<ObjectLoaderTask>	mTasks;
 
 		void			setThreads();
 
 		virtual void	setLoaded();
+
+		void			taskRunner();
+
+		void			serializedLoad();
 };
 
 }}

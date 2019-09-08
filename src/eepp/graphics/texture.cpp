@@ -6,7 +6,7 @@
 #include <eepp/graphics/renderer/openglext.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/math/polygon2.hpp>
-#include <eepp/graphics/texturesaver.hpp>
+#include <eepp/graphics/scopedtexture.hpp>
 #include <eepp/system/thread.hpp>
 #include <eepp/window/engine.hpp>
 
@@ -126,7 +126,7 @@ Uint8 * Texture::iLock( const bool& ForceRGBA, const bool& KeepFormat ) {
 		if ( ForceRGBA )
 			mChannels = 4;
 
-		TextureSaver saver( mTexture );
+		ScopedTexture saver( mTexture );
 
 		Int32 width = 0, height = 0;
 		glGetTexLevelParameteriv( GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width );
@@ -171,7 +171,7 @@ Uint8 * Texture::iLock( const bool& ForceRGBA, const bool& KeepFormat ) {
 			Engine::instance()->getCurrentWindow()->setGLContextThread();
 
 		{
-			TextureSaver saver( mTexture );
+			ScopedTexture scopedTexture( mTexture );
 
 			GLuint frameBuffer = 0;
 			GLi->genFramebuffers(1, &frameBuffer);
@@ -212,7 +212,7 @@ bool Texture::unlock( const bool& KeepData, const bool& Modified ) {
 		unsigned int NTexId = 0;
 
 		if ( Modified || ( mFlags & TEX_FLAG_MODIFIED ) )	{
-			TextureSaver saver( mTexture );
+			ScopedTexture saver( mTexture );
 
 			Uint32 flags = ( mFlags & TEX_FLAG_MIPMAP ) ? SOIL_FLAG_MIPMAPS : 0;
 			flags = (mClampMode == ClampRepeat) ? (flags | SOIL_FLAG_TEXTURE_REPEATS) : flags;
@@ -290,7 +290,7 @@ void Texture::iTextureFilter( const TextureFilter& filter ) {
 	if (mTexture) {
 		mFilter = filter;
 
-		TextureSaver saver( mTexture );
+		ScopedTexture saver( mTexture );
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (mFilter == Linear) ? GL_LINEAR : GL_NEAREST);
 
@@ -389,7 +389,7 @@ void Texture::setClampMode( const Texture::ClampMode& clampmode ) {
 
 void Texture::applyClampMode() {
 	if (mTexture) {
-		TextureSaver saver( mTexture );
+		ScopedTexture saver( mTexture );
 
 		if( mClampMode == ClampRepeat ) {
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
@@ -422,7 +422,7 @@ void Texture::reload()  {
 			Engine::instance()->getCurrentWindow()->setGLContextThread();
 
 		{
-			TextureSaver saver( mTexture );
+			ScopedTexture saver( mTexture );
 
 			Uint32 flags = ( mFlags & TEX_FLAG_MIPMAP ) ? SOIL_FLAG_MIPMAPS : 0;
 			flags = (mClampMode == ClampRepeat) ? (flags | SOIL_FLAG_TEXTURE_REPEATS) : flags;
@@ -488,7 +488,7 @@ void Texture::update( const Uint8* pixels, Uint32 width, Uint32 height, Uint32 x
 			Engine::instance()->getCurrentWindow()->setGLContextThread();
 
 		{
-			TextureSaver saver( mTexture );
+			ScopedTexture saver( mTexture );
 
 			glTexSubImage2D( GL_TEXTURE_2D, 0, x, y, width, height, (unsigned int)convertPixelFormatToGLFormat( pf ), GL_UNSIGNED_BYTE, pixels );
 
@@ -525,7 +525,7 @@ void Texture::replace( Image * image ) {
 		Uint32 flags = ( mFlags & TEX_FLAG_MIPMAP ) ? SOIL_FLAG_MIPMAPS : 0;
 		flags = (mClampMode == ClampRepeat) ? (flags | SOIL_FLAG_TEXTURE_REPEATS) : flags;
 
-		TextureSaver textureSaver;
+		ScopedTexture scopedTexture;
 
 		Int32 width = (Int32)image->getWidth();
 		Int32 height = (Int32)image->getHeight();

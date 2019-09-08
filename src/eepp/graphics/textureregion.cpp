@@ -3,7 +3,7 @@
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <SOIL2/src/SOIL2/SOIL2.h>
 #include <jpeg-compressor/jpge.h>
-#include <eepp/graphics/texturesaver.hpp>
+#include <eepp/graphics/scopedtexture.hpp>
 #include <eepp/graphics/renderer/opengl.hpp>
 #include <eepp/graphics/pixeldensity.hpp>
 using namespace EE::Graphics::Private;
@@ -332,7 +332,7 @@ Uint8 * TextureRegion::lock() {
 bool TextureRegion::unlock( const bool& KeepData, const bool& Modified ) {
 	if ( NULL != mPixels  && NULL != mTexture ) {
 		if ( Modified ) {
-			TextureSaver saver( mTexture->getHandle() );
+			ScopedTexture saver( mTexture->getHandle() );
 
 			Uint32 Channels = mTexture->getChannels();
 			Uint32 Channel = GL_RGBA;

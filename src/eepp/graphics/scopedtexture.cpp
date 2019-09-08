@@ -1,10 +1,10 @@
-#include <eepp/graphics/texturesaver.hpp>
+#include <eepp/graphics/scopedtexture.hpp>
 #include <eepp/graphics/renderer/opengl.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 
 namespace EE { namespace Graphics { namespace Private {
 
-TextureSaver::TextureSaver( int textureBind ) :
+ScopedTexture::ScopedTexture( int textureBind ) :
 	mTextureBinded( 0 ),
 	mTextureToBind( textureBind )
 {
@@ -14,7 +14,7 @@ TextureSaver::TextureSaver( int textureBind ) :
 		GLi->bindTexture( GL_TEXTURE_2D, mTextureToBind );
 }
 
-TextureSaver::~TextureSaver() {
+ScopedTexture::~ScopedTexture() {
 	if ( mTextureBinded != mTextureToBind )
 		GLi->bindTexture( GL_TEXTURE_2D, mTextureBinded );
 }
