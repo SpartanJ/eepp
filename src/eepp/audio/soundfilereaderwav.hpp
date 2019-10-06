@@ -1,5 +1,5 @@
-#ifndef SFML_SOUNDFILEREADERWAV_HPP
-#define SFML_SOUNDFILEREADERWAV_HPP
+#ifndef EE_AUDIO_SOUNDFILEREADERWAV_HPP
+#define EE_AUDIO_SOUNDFILEREADERWAV_HPP
 
 #include <eepp/audio/soundfilereader.hpp>
 #include <string>

@@ -120,7 +120,7 @@ class EE_API Thread : NonCopyable {
 		Private::ThreadFunc *		mEntryPoint; ///< Abstraction of the function to run
 };
 
-// Taken from SFML threads
+// Based on the SFML2 thread implementation.
 namespace Private {
 
 // Base class for abstract thread functions

@@ -1,7 +1,7 @@
 #ifndef EE_NETWORKCFTP_HPP
 #define EE_NETWORKCFTP_HPP
 
-#include <eepp/network/base.hpp>
+#include <eepp/core.hpp>
 #include <eepp/network/tcpsocket.hpp>
 #include <eepp/core/noncopyable.hpp>
 #include <eepp/system/time.hpp>

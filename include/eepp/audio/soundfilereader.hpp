@@ -78,12 +78,12 @@ class EE_API SoundFileReader {
 /// \ingroup audio
 ///
 /// This class allows users to read audio file formats not natively
-/// supported by SFML, and thus extend the set of supported readable
+/// supported by EEPP, and thus extend the set of supported readable
 /// audio formats.
 ///
 /// A valid sound file reader must override the open, seek and write functions,
 /// as well as providing a static check function; the latter is used by
-/// SFML to find a suitable writer for a given input file.
+/// EEPP to find a suitable writer for a given input file.
 ///
 /// To register a new reader, use the SoundFileFactory::registerReader
 /// template function.

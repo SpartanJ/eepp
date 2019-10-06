@@ -1,5 +1,5 @@
-#ifndef SFML_TRANSFORM_HPP
-#define SFML_TRANSFORM_HPP
+#ifndef EE_MATH_TRANSFORM_HPP
+#define EE_MATH_TRANSFORM_HPP
 
 #include <eepp/config.hpp>
 #include <eepp/math/rect.hpp>

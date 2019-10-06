@@ -1,7 +1,7 @@
 #ifndef EE_NETWORKCPACKET_HPP
 #define EE_NETWORKCPACKET_HPP
 
-#include <eepp/network/base.hpp>
+#include <eepp/core.hpp>
 #include <string>
 #include <vector>
 

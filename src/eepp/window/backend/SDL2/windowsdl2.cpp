@@ -3,7 +3,6 @@
 #ifdef EE_BACKEND_SDL2
 
 #include <eepp/window/engine.hpp>
-#include <eepp/window/platform/platformimpl.hpp>
 #include <eepp/window/backend/SDL2/windowsdl2.hpp>
 #include <eepp/window/backend/SDL2/clipboardsdl2.hpp>
 #include <eepp/window/backend/SDL2/inputsdl2.hpp>
@@ -208,8 +207,6 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 		Renderer::instance()->init();
 	}
 
-	createPlatform();
-
 	getMainContext();
 
 	setCaption( mWindow.WindowConfig.Caption );
@@ -265,24 +262,6 @@ std::string WindowSDL::getVersion() {
 	SDL_GetVersion( &ver );
 
 	return String::format( "SDL %d.%d.%d", ver.major, ver.minor, ver.patch );
-}
-
-void WindowSDL::createPlatform() {
-	eeSAFE_DELETE( mPlatform );
-
-#ifdef EE_USE_WMINFO
-	mWMinfo = eeNew( WMInfo, ( mSDLWindow ) );
-#endif
-
-#if defined( EE_X11_PLATFORM )
-	mPlatform = eeNew( Platform::X11Impl, ( this, mWMinfo->getWindowHandler(), mWMinfo->getWindow(), mWMinfo->getWindow(), NULL, NULL ) );
-#elif EE_PLATFORM == EE_PLATFORM_WIN
-	mPlatform = eeNew( Platform::WinImpl, ( this, getWindowHandler() ) );
-#elif EE_PLATFORM == EE_PLATFORM_MACOSX
-	mPlatform = eeNew( Platform::OSXImpl, ( this ) );
-#else
-	Window::createPlatform();
-#endif
 }
 
 void WindowSDL::setGLConfig() {

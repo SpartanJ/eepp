@@ -271,7 +271,7 @@ class EE_API SoundRecorder : AlResource {
 /// (the microphone). As an abstract base class, it only cares
 /// about capturing sound samples, the task of making something
 /// useful with them is left to the derived class. Note that
-/// SFML provides a built-in specialization for saving the
+/// EEPP provides a built-in specialization for saving the
 /// captured data to a sound buffer (see SoundBufferRecorder).
 ///
 /// A derived class has only one virtual function to override:

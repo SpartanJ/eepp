@@ -12,48 +12,13 @@
 		* Sean Barrett for the stb_vorbis and stb_image libraries.
 		* Sam Latinga for Simple DirectMedia Layer library.
 		* Jonathan Dummer for the Simple OpenGL Image Library.
-		* Laurent Gomila for the SFML library ( eepp audio and network modules are heavily based on the SFML audio module )
-		* OGRE staff for the Timer implementation
-		* Lewis Van Winkle for PlusCallback
-		* Dieter Baron and Thomas Klausner for libzip
-		* Jean-loup Gailly and Mark Adler for zlib
-		* Milan Ikits and Marcelo Magallon for GLEW
+		* Laurent Gomila for the SFML library.
+		* OGRE staff for the Timer implementation.
+		* Lewis Van Winkle for PlusCallback.
+		* Dieter Baron and Thomas Klausner for libzip.
+		* Jean-loup Gailly and Mark Adler for zlib.
+		* Milan Ikits and Marcelo Magallon for GLEW.
 		* And a lot more people!
-
-	ROADMAP:
-
-	Short-term plans:
-
-	@todo Improve documentation.
-				STATE:	EE ( Base ) documented what is needed.
-						EE::Window documented.
-						EE::System documented.
-						EE::Graphics documented.
-						EE::Audio documented.
-						EE::Math documented.
-						EE::Network documented.
-						EE::Scene Not documented at all.
-						EE::UI Not documented at all.
-						EE::Physics Not documented at all, chipmunk documentation should help.
-						EE::Maps Not documented at all.
-
-	@todo Add more commented examples, showing at least the basic usage of the engine ( 10 or more examples at least ).
-				STATE:	7 examples available.
-
-	@todo Improve the map editor ( add triggers, tiles selection to copy paste in other zones of the map, undo/redo actions ).
-				STATE:	Needs at least to reoffset tiles and objects for the map resizing.
-						Tile selection i'm not decided yet.
-						Copy-Paste will be moved for a middle to long term plan.
-
-	Middle-term plans:
-
-	@todo Add Scripting support ( squirrel or angel script or lua ), at least some parts of the engine. Binding everything seems too much work.
-				STATE:	I've binded some classes with lua+luabind and is awesome, but... luabind is bloated ( and for my needs it's the only good option ), and adds A LOT of compile time.
-						squirrel+sqrat almost does everything i need, but it have some bugs that seems to be unfixable ( none enum parameters, char parameters segfaults, no constructor overloading ).
-
-	@todo Add some kind of support for TMX map files ( Tiles Map Editor ).
-
-	@todo Pathfinding and AI helpers ( A*, FSM ).
 */
 
 	// General includes and declarations

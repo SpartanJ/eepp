@@ -42,12 +42,12 @@ class EE_API SoundFileWriter {
 /// \ingroup audio
 ///
 /// This class allows users to write audio file formats not natively
-/// supported by SFML, and thus extend the set of supported writable
+/// supported by EEPP, and thus extend the set of supported writable
 /// audio formats.
 ///
 /// A valid sound file writer must override the open and write functions,
 /// as well as providing a static check function; the latter is used by
-/// SFML to find a suitable writer for a given filename.
+/// EEPP to find a suitable writer for a given filename.
 ///
 /// To register a new writer, use the SoundFileFactory::registerWriter
 /// template function.

@@ -19,9 +19,7 @@ class EE_API Engine {
 	public:
 		~Engine();
 
-		/** Creates a new window.
-		* SDL2, SFML backends support more than one window creation, SDL 1.2 backend only 1 window.
-		*/
+		/** Creates a new window. */
 		EE::Window::Window * createWindow( WindowSettings Settings, ContextSettings Context = ContextSettings() );
 
 		/** Destroy the window instance, and set as current other window running ( if any ).
@@ -51,7 +49,7 @@ class EE_API Engine {
 			BitColor		32,16,8
 			Windowed		bool
 			Resizeable		bool
-			Backend			SDL, SDL2 or SFML
+			Backend			SDL2
 			WinIcon			The path to the window icon
 			WinCaption		The window default title
 
@@ -67,7 +65,7 @@ class EE_API Engine {
 			BitColor		32,16,8
 			Windowed		bool
 			Resizeable		bool
-			Backend			SDL, SDL2 or SFML
+			Backend			SDL2
 			WinIcon			The path to the window icon
 			WinCaption		The window default title
 
@@ -142,11 +140,7 @@ class EE_API Engine {
 
 		Backend::WindowBackend * createSDL2Backend( const WindowSettings& Settings );
 
-		Backend::WindowBackend * createSFMLBackend( const WindowSettings& Settings );
-
 		EE::Window::Window * createSDL2Window( const WindowSettings& Settings, const ContextSettings& Context );
-
-		EE::Window::Window * createSFMLWindow( const WindowSettings& Settings, const ContextSettings& Context );
 
 		EE::Window::Window * createDefaultWindow( const WindowSettings& Settings, const ContextSettings& Context );
 

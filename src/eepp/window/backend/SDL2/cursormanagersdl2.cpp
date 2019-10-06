@@ -1,6 +1,5 @@
 #include <eepp/window/backend/SDL2/cursormanagersdl2.hpp>
 #include <eepp/window/backend/SDL2/cursorsdl2.hpp>
-#include <eepp/window/platformimpl.hpp>
 
 #ifdef EE_BACKEND_SDL2
 

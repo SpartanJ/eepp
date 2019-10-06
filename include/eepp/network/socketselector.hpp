@@ -1,7 +1,7 @@
 #ifndef EE_NETWORKCSOCKETSELECTOR_HPP
 #define EE_NETWORKCSOCKETSELECTOR_HPP
 
-#include <eepp/network/base.hpp>
+#include <eepp/core.hpp>
 #include <eepp/system/time.hpp>
 using namespace EE::System;
 

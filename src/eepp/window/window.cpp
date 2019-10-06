@@ -2,8 +2,6 @@
 #include <eepp/window/clipboard.hpp>
 #include <eepp/window/input.hpp>
 #include <eepp/window/cursormanager.hpp>
-#include <eepp/window/platform/null/nullimpl.hpp>
-#include <eepp/window/platformimpl.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/graphics/renderer/openglext.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
@@ -47,7 +45,6 @@ Window::Window( WindowSettings Settings, ContextSettings Context, Clipboard * Cl
 	mClipboard( Clipboard ),
 	mInput( Input ),
 	mCursorManager( CursorManager ),
-	mPlatform( NULL ),
 	mCurrentView( NULL ),
 	mNumCallBacks( 0 )
 {
@@ -59,7 +56,6 @@ Window::~Window() {
 	eeSAFE_DELETE( mClipboard );
 	eeSAFE_DELETE( mInput );
 	eeSAFE_DELETE( mCursorManager );
-	eeSAFE_DELETE( mPlatform );
 }
 
 Sizei Window::getSize() {
@@ -482,10 +478,6 @@ eeWindowContex Window::getContext() const {
 }
 
 void Window::getMainContext() {
-#ifdef EE_GLEW_AVAILABLE
-	if ( NULL != mPlatform )
-		mWindow.Context = mPlatform->getWindowContext();
-#endif
 }
 
 void Window::setDefaultContext() {
@@ -494,59 +486,27 @@ void Window::setDefaultContext() {
 #endif
 }
 
-void Window::minimize() {
-	if ( NULL != mPlatform )
-		mPlatform->minimizeWindow();
-}
+void Window::minimize() {}
 
-void Window::maximize() {
-	if ( NULL != mPlatform )
-		mPlatform->maximizeWindow();
-}
+void Window::maximize() {}
 
 bool Window::isMaximized() {
-	if ( NULL != mPlatform )
-		return mPlatform->isWindowMaximized();
-
 	return false;
 }
 
-void Window::hide() {
-	if ( NULL != mPlatform )
-		mPlatform->hideWindow();
-}
+void Window::hide() {}
 
-void Window::raise() {
-	if ( NULL != mPlatform )
-		mPlatform->raiseWindow();
-}
+void Window::raise() {}
 
-void Window::show() {
-	if ( NULL != mPlatform )
-		mPlatform->showWindow();
-}
+void Window::show() {}
 
-void Window::setPosition( Int16 Left, Int16 Top ) {
-	if ( NULL != mPlatform )
-		mPlatform->moveWindow( Left, Top );
-}
+void Window::setPosition( Int16 Left, Int16 Top ) {}
 
 Vector2i Window::getPosition() {
-	if ( NULL != mPlatform )
-		return mPlatform->getPosition();
-
-	return Vector2i();
+	return Vector2i::Zero;
 }
 
-void Window::setCurrentContext( eeWindowContex Context ) {
-	if ( NULL != mPlatform )
-		mPlatform->setContext( Context );
-}
-
-void Window::createPlatform() {
-	eeSAFE_DELETE( mPlatform );
-	mPlatform = eeNew( Platform::NullImpl, ( this ) );
-}
+void Window::setCurrentContext( eeWindowContex Context ) {}
 
 void Window::setCurrent() {
 }
@@ -563,10 +523,6 @@ Rect Window::getBorderSize() {
 
 Float Window::getScale() {
 	return 1.f;
-}
-
-Platform::PlatformImpl * Window::getPlatform() const {
-	return mPlatform;
 }
 
 void Window::startTextInput() {

@@ -96,8 +96,6 @@ class EE_API WindowSDL : public Window {
 
 		Vector2i		mWinPos;
 
-		void createPlatform();
-
 		void swapBuffers();
 
 		void setGLConfig();

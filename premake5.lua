@@ -11,9 +11,7 @@ newoption {
 	trigger = "with-backend",
 	description = "Select the backend to use for window and input handling.\n\t\t\tIf no backend is selected or if the selected is not installed the script will search for a backend present in the system, and will use it.",
 	allowed = {
-		{ "SDL2",  "SDL2 (default and recommended)" },
-		{ "SFML",  "SFML2" },
-		{ "SDL2,SFML", "SDL2+SFML" }
+		{ "SDL2",  "SDL2" },
 	}
 }
 
@@ -275,7 +273,7 @@ function build_link_configuration( package_name, use_ee_icon )
 
 	configuration "windows"
 		add_cross_config_links()
-		
+
 		if is_vs() and table.contains( backends, "SDL2" ) then
 			links { "SDL2", "SDL2main" }
 		end
@@ -387,24 +385,8 @@ function add_sdl2()
 	else
 		insert_static_backend( "SDL2" )
 	end
-	
+
 	table.insert( backends, "SDL2" )
-end
-
-function add_sfml()
-	print("Using SFML backend");
-	files { "src/eepp/window/backend/SFML/*.cpp" }
-	defines { "EE_BACKEND_SFML_ACTIVE" }
-
-	if not can_add_static_backend("SFML") then
-		table.insert( link_list, get_backend_link_name( "sfml-system" ) )
-		table.insert( link_list, get_backend_link_name( "sfml-window" ) )
-	else
-		insert_static_backend( "libsfml-system" )
-		insert_static_backend( "libsfml-window" )
-	end
-	
-	table.insert( backends, "SFML" )
 end
 
 function set_xcode_config()
@@ -488,17 +470,10 @@ function select_backend()
 		add_sdl2()
 	end
 
-	if backend_is("SFML", "sfml-window") then
-		print("Selected SFML")
-		add_sfml()
-	end
-
 	-- If the selected backend is not present, try to find one present
 	if not backend_selected then
 		if os_findlib("SDL2", "SDL2") then
 			add_sdl2()
-		elseif os_findlib("SFML", "sfml-window") then
-			add_sfml()
 		else
 			print("ERROR: Couldnt find any backend. Forced SDL2.")
 			add_sdl2()
@@ -532,7 +507,7 @@ function set_macos_config()
 	if os.istarget("macosx") and ( is_xcode() or _OPTIONS["use-frameworks"] ) then
 		libdirs { "/System/Library/Frameworks", "/Library/Frameworks" }
 	end
-	
+
 	if _OPTIONS["use-frameworks"] then
 		defines { "EE_USE_FRAMEWORKS" }
 	end
@@ -540,7 +515,7 @@ end
 
 function build_eepp( build_name )
 	includedirs { "include", "src", "src/thirdparty", "include/eepp/thirdparty", "src/thirdparty/freetype2/include", "src/thirdparty/zlib", "src/thirdparty/libogg/include", "src/thirdparty/libvorbis/include", "src/thirdparty/mbedtls/include" }
-	
+
 	set_macos_config()
 	set_ios_config()
 	set_xcode_config()
@@ -570,7 +545,6 @@ function build_eepp( build_name )
 			"src/eepp/graphics/*.cpp",
 			"src/eepp/graphics/renderer/*.cpp",
 			"src/eepp/window/*.cpp",
-			"src/eepp/window/platform/null/*.cpp",
 			"src/eepp/network/*.cpp",
 			"src/eepp/network/ssl/*.cpp",
 			"src/eepp/network/http/*.cpp",
@@ -599,16 +573,6 @@ function build_eepp( build_name )
 	links { link_list }
 
 	build_link_configuration( build_name )
-
-	configuration "windows"
-		files { "src/eepp/window/platform/win/*.cpp" }
-		add_cross_config_links()
-
-	configuration "linux"
-		files { "src/eepp/window/platform/x11/*.cpp" }
-
-	configuration "macosx"
-		files { "src/eepp/window/platform/osx/*.cpp" }
 
 	configuration "emscripten"
 		if _OPTIONS["force-gles1"] then
@@ -881,7 +845,7 @@ workspace "eepp"
 		if os.istarget("macosx") then
 			links { "CoreFoundation.framework", "CoreServices.framework" }
 		end
-		
+
 		links { "efsw-static", "pugixml-static" }
 		files { "src/tools/uieditor/*.cpp" }
 		build_link_configuration( "eepp-UIEditor", true )

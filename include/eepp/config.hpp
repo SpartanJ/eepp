@@ -94,7 +94,7 @@
 #endif
 
 /// Activate at least one backend for the compilation
-#if !defined( EE_BACKEND_SDL_ACTIVE ) && !defined( EE_BACKEND_SFML_ACTIVE )
+#if !defined( EE_BACKEND_SDL_ACTIVE )
 	#define EE_BACKEND_SDL_ACTIVE
 #endif
 

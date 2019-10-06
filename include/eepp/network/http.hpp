@@ -1,7 +1,7 @@
 #ifndef EE_NETWORKCHTTP_HPP
 #define EE_NETWORKCHTTP_HPP
 
-#include <eepp/network/base.hpp>
+#include <eepp/core.hpp>
 #include <eepp/network/ipaddress.hpp>
 #include <eepp/network/tcpsocket.hpp>
 #include <eepp/core/noncopyable.hpp>

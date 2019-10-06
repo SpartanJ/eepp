@@ -56,11 +56,11 @@ Entropia Engine++
 
   * Backend based module, this means that you can easily create a backend for the window/input handling.
 
-  * Currently supports SDL 2 and SFML as backends ( SDL 2 by default, most of it's features are covered and abstracted in the library ).
+  * Currently supports SDL 2 as backend.
 
-  * Clipboard support ( SDL 2 backend ).
+  * Clipboard support.
 
-  * Color hardware cursors ( SDL 2 fully supported, partial support with SFML ).
+  * Hardware cursors.
 
   * Display Manager
 
@@ -70,7 +70,7 @@ Entropia Engine++
 **Audio Module:**
 -----------------
 
-  * OpenAL audio engine with extendable file format support. Read and write support for OGG and Wav, and read support for MP3 and FLAC. Audio module heavily based on the SFML implementation.
+  * OpenAL audio engine with extendable file format support. Read and write support for OGG and Wav, and read support for MP3 and FLAC. Audio module is based on an old version of the SFML Audio module.
 
 
 **Physics Module:**
@@ -123,7 +123,7 @@ Entropia Engine++
 
   * HTTP Proxy Support.
 
-Module based on the SFML implementation.
+Module was originally based on the SFML Network module implementation, though currently differs a lot from it.
 
 
 **Scene Module:**

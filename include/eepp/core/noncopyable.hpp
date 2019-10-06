@@ -60,5 +60,4 @@ class EE_API NonCopyable {
 **	and to use EE::NonCopyable when necessary to prevent
 **	many potential future errors when using it. This is also
 **	a very important indication to users of your class.
-**	Taken from SFML and Boost.
 */

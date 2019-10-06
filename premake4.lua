@@ -148,9 +148,7 @@ newoption {
 	trigger = "with-backend",
 	description = "Select the backend to use for window and input handling.\n\t\t\tIf no backend is selected or if the selected is not installed the script will search for a backend present in the system, and will use it.",
 	allowed = {
-		{ "SDL2",  "SDL2 (default and recommended)" },
-		{ "SFML",  "SFML2" },
-		{ "SDL2,SFML", "SDL2+SFML" }
+		{ "SDL2",  "SDL2" }
 	}
 }
 
@@ -550,20 +548,6 @@ function add_sdl2()
 	end
 end
 
-function add_sfml()
-	print("Using SFML backend");
-	files { "src/eepp/window/backend/SFML/*.cpp" }
-	defines { "EE_BACKEND_SFML_ACTIVE" }
-
-	if not can_add_static_backend("SFML") then
-		table.insert( link_list, get_backend_link_name( "sfml-system" ) )
-		table.insert( link_list, get_backend_link_name( "sfml-window" ) )
-	else
-		insert_static_backend( "libsfml-system" )
-		insert_static_backend( "libsfml-window" )
-	end
-end
-
 function set_xcode_config()
 	if is_xcode() or _OPTIONS["use-frameworks"] then
 		linkoptions { "-F/Library/Frameworks" }
@@ -645,17 +629,10 @@ function select_backend()
 		add_sdl2()
 	end
 
-	if backend_is("SFML", "sfml-window") then
-		print("Selected SFML")
-		add_sfml()
-	end
-
 	-- If the selected backend is not present, try to find one present
 	if not backend_selected then
 		if os_findlib("SDL2", "SDL2") then
 			add_sdl2()
-		elseif os_findlib("SFML", "sfml-window") then
-			add_sfml()
 		else
 			print("ERROR: Couldnt find any backend. Forced SDL2.")
 			add_sdl2( true )
@@ -716,7 +693,6 @@ function build_eepp( build_name )
 			"src/eepp/graphics/*.cpp",
 			"src/eepp/graphics/renderer/*.cpp",
 			"src/eepp/window/*.cpp",
-			"src/eepp/window/platform/null/*.cpp",
 			"src/eepp/network/*.cpp",
 			"src/eepp/network/ssl/*.cpp",
 			"src/eepp/network/http/*.cpp",
@@ -745,16 +721,6 @@ function build_eepp( build_name )
 	links { link_list }
 
 	build_link_configuration( build_name )
-
-	configuration "windows"
-		files { "src/eepp/window/platform/win/*.cpp" }
-		add_cross_config_links()
-
-	configuration "linux"
-		files { "src/eepp/window/platform/x11/*.cpp" }
-
-	configuration "macosx"
-		files { "src/eepp/window/platform/osx/*.cpp" }
 
 	configuration "emscripten"
 		if _OPTIONS["force-gles1"] then

@@ -304,7 +304,7 @@ class EE_API SoundStream : public SoundSource {
 /// (sounds played over the network).
 ///
 /// SoundStream is a base class that doesn't care about the
-/// stream source, which is left to the derived class. SFML provides
+/// stream source, which is left to the derived class. EEPP provides
 /// a built-in specialization for big files (see Music).
 /// No network stream source is provided, but you can write your own
 /// by combining this class with the network module.

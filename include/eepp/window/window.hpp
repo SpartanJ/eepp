@@ -37,7 +37,6 @@ namespace WindowBackend {
 	enum
 	{
 		SDL2,
-		SFML,
 		Default
 	};
 }
@@ -355,9 +354,6 @@ class EE_API Window {
 		/** Pop the callback id indicated. */
 		void popResizeCallback( const Uint32& CallbackId );
 
-		/** @return The pointer to the instance of the platform implementation functions. */
-		Platform::PlatformImpl * getPlatform() const;
-
 		/**
 		* @brief Start accepting Unicode text input events.
 		*        This function will show the on-screen keyboard if supported.
@@ -450,7 +446,6 @@ class EE_API Window {
 		Clipboard *	mClipboard;
 		Input *	mInput;
 		CursorManager *	mCursorManager;
-		Platform::PlatformImpl * mPlatform;
 		View mDefaultView;
 		const View * mCurrentView;
 		Uint32 mNumCallBacks;
@@ -501,8 +496,6 @@ class EE_API Window {
 
 		/** Obtain the Main Context, this is called after the OpenGL context creation. */
 		virtual void getMainContext();
-
-		virtual void createPlatform();
 
 		virtual void onWindowResize( Uint32 Width, Uint32 Height ) = 0;
 

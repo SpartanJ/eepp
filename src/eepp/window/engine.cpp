@@ -18,9 +18,7 @@
 #include <eepp/network/http.hpp>
 #include <eepp/window/backend.hpp>
 #include <eepp/window/backend/SDL2/backendsdl2.hpp>
-#include <eepp/window/backend/SFML/backendsfml.hpp>
 #include <eepp/window/backend/SDL2/platformhelpersdl2.hpp>
-#include <eepp/window/backend/SFML/platformhelpersfml.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/ui/uithememanager.hpp>
 
@@ -29,14 +27,11 @@
 #endif
 
 #define BACKEND_SDL2		1
-#define BACKEND_SFML		2
 
 #ifndef DEFAULT_BACKEND
 
 #if defined( EE_BACKEND_SDL2 )
 #define DEFAULT_BACKEND		BACKEND_SDL2
-#elif defined( EE_BACKEND_SFML_ACTIVE )
-#define DEFAULT_BACKEND		BACKEND_SFML
 #endif
 
 #endif
@@ -134,14 +129,6 @@ Backend::WindowBackend * Engine::createSDL2Backend( const WindowSettings &Settin
 #endif
 }
 
-Backend::WindowBackend * Engine::createSFMLBackend( const WindowSettings &Settings ) {
-#if defined( EE_BACKEND_SFML_ACTIVE )
-	return eeNew( Backend::SFML::WindowBackendSFML, () );
-#else
-	return NULL;
-#endif
-}
-
 EE::Window::Window * Engine::createSDL2Window( const WindowSettings& Settings, const ContextSettings& Context ) {
 #if defined( EE_SDL_VERSION_2 )
 	if ( NULL == mBackend ) {
@@ -154,24 +141,9 @@ EE::Window::Window * Engine::createSDL2Window( const WindowSettings& Settings, c
 #endif
 }
 
-EE::Window::Window * Engine::createSFMLWindow( const WindowSettings& Settings, const ContextSettings& Context ) {
-#if defined( EE_BACKEND_SFML_ACTIVE )
-
-	if ( NULL == mBackend ) {
-		mBackend	= createSFMLBackend( Settings );
-	}
-
-	return eeNew( Backend::SFML::WindowSFML, ( Settings, Context ) );
-#else
-	return NULL;
-#endif
-}
-
 EE::Window::Window * Engine::createDefaultWindow( const WindowSettings& Settings, const ContextSettings& Context ) {
 #if DEFAULT_BACKEND == BACKEND_SDL2
 	return createSDL2Window( Settings, Context );
-#elif DEFAULT_BACKEND == BACKEND_SFML
-	return createSFMLWindow( Settings, Context );
 #endif
 }
 
@@ -185,8 +157,6 @@ EE::Window::Window * Engine::createWindow( WindowSettings Settings, ContextSetti
 	}
 
 	switch ( Settings.Backend ) {
-		case WindowBackend::SDL2:		window = createSDL2Window( Settings, Context );		break;
-		case WindowBackend::SFML:		window = createSFMLWindow( Settings, Context );		break;
 		case WindowBackend::Default:
 		default:						window = createDefaultWindow( Settings, Context );	break;
 	}
@@ -252,8 +222,6 @@ bool Engine::isRunning() const {
 Uint32 Engine::getDefaultBackend() const {
 #if DEFAULT_BACKEND == BACKEND_SDL2
 	return WindowBackend::SDL2;
-#elif DEFAULT_BACKEND == BACKEND_SFML
-	return WindowBackend::SFML;
 #endif
 }
 
@@ -291,7 +259,6 @@ WindowSettings Engine::createWindowSettings( IniFile * ini, std::string iniKeyNa
 	String::toLowerInPlace( Backend );
 
 	if ( "sdl2" == Backend )		WinBackend	= WindowBackend::SDL2;
-	else if ( "sfml" == Backend )	WinBackend	= WindowBackend::SFML;
 
 	Uint32 Style = WindowStyle::Titlebar;
 
@@ -377,8 +344,6 @@ PlatformHelper * Engine::getPlatformHelper() {
 	if ( NULL == mPlatformHelper ) {
 	#if DEFAULT_BACKEND == BACKEND_SDL2
 		mPlatformHelper = eeNew( Backend::SDL2::PlatformHelperSDL2, () );
-	#elif DEFAULT_BACKEND == BACKEND_SFML
-		mPlatform = eeNew( Backend::SFML::PlatformHelperSFML, () );
 	#endif
 	}
 
@@ -389,8 +354,6 @@ DisplayManager * Engine::getDisplayManager() {
 	if ( NULL == mDisplayManager ) {
 	#if DEFAULT_BACKEND == BACKEND_SDL2
 		mDisplayManager = eeNew( Backend::SDL2::DisplayManagerSDL2, () );
-	#elif DEFAULT_BACKEND == BACKEND_SFML
-		mDisplayManager = eeNew( Backend::SFML::DisplayManagerSFML, () );
 	#endif
 	}
 

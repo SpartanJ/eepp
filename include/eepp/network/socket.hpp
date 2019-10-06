@@ -1,7 +1,7 @@
 #ifndef EE_NETWORKCSOCKET_HPP
 #define EE_NETWORKCSOCKET_HPP
 
-#include <eepp/network/base.hpp>
+#include <eepp/core.hpp>
 #include <eepp/network/sockethandle.hpp>
 #include <eepp/core/noncopyable.hpp>
 #include <vector>
