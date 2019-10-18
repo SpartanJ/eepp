@@ -53,25 +53,8 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 		Http::Request request;
 
 		if ( !url ) {
-			// We'll work on en.wikipedia.org
-			if ( SSLSocket::isSupported() ) {
-				http.setHost("https://en.wikipedia.org");
-			} else {
-				http.setHost("http://en.wikipedia.org");
-			}
-
-			// Creates an async http request and set the path requested
-			Http::Request asyncRequest( "/wiki/" + Version::getCodename() );
-
-			http.sendAsyncRequest([]( const Http& http, Http::Request& request, Http::Response& response ) {
-				std::cout << "Got response from request: " << http.getHostName() << request.getUri() << std::endl;
-
-				if ( response.getStatus() == Http::Response::Ok ) {
-					std::cout << response.getBody() << std::endl;
-				} else {
-					std::cout << "Error " << response.getStatus() << std::endl;
-				}
-			}, asyncRequest, Seconds( 5 ) );
+			std::cout << parser;
+			return EXIT_SUCCESS;
 		} else {
 			// If the user provided the URL, creates an instance of URI to parse it.
 			URI uri( url.Get() );

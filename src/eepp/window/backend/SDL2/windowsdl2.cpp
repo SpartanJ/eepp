@@ -532,6 +532,10 @@ void WindowSDL::maximize() {
 	SDL_MaximizeWindow( mSDLWindow );
 }
 
+bool WindowSDL::isMaximized() {
+	return SDL_GetWindowFlags( mSDLWindow ) & SDL_WINDOW_MAXIMIZED;
+}
+
 void WindowSDL::hide() {
 	SDL_HideWindow( mSDLWindow );
 }

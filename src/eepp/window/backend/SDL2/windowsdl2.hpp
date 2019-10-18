@@ -45,6 +45,8 @@ class EE_API WindowSDL : public Window {
 
 		virtual void maximize();
 
+		virtual bool isMaximized();
+
 		virtual void hide();
 
 		virtual void raise();
