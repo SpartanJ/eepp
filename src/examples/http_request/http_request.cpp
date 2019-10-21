@@ -93,6 +93,7 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 
 			// Set the post data / body
 			if ( postData ) {
+				request.setMethod( Http::Request::Method::Post );
 				request.setBody( postData.Get() );
 			}
 
