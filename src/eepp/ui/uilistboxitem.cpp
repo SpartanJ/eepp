@@ -122,7 +122,7 @@ bool UIListBoxItem::isSelected() const {
 }
 
 void UIListBoxItem::onStateChange() {
-	if ( isSelected() && mSkinState->getState() != UIState::StateSelected ) {
+	if ( isSelected() && NULL != mSkinState && mSkinState->getState() != UIState::StateSelected ) {
 		pushState( UIState::StateSelected, false );
 	}
 
