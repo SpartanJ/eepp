@@ -1,9 +1,5 @@
 #include <eepp/ui/css/stylesheetproperty.hpp>
 #include <eepp/core/string.hpp>
-#include <eepp/graphics/pixeldensity.hpp>
-#include <eepp/graphics/text.hpp>
-#include <eepp/ui/uihelper.hpp>
-#include <algorithm>
 
 namespace EE { namespace UI { namespace CSS {
 

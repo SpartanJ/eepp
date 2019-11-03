@@ -221,7 +221,7 @@ bool UIImage::setAttribute( const NodeAttribute& attribute, const Uint32& state 
 
 			setDrawable( res );
 		}
-	} else if ( "scaletype" == name ) {
+	} else if ( "scale-type" == name || "scaletype" == name ) {
 		std::string val = attribute.asString();
 		String::toLowerInPlace( val );
 

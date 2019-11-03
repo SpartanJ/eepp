@@ -485,14 +485,14 @@ bool UITextEdit::setAttribute( const NodeAttribute& attribute, const Uint32& sta
 		if ( NULL != mSceneNode && mSceneNode->isUISceneNode() ) {
 			setText( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( attribute.asString() ) );
 		}
-	} else if ( "allowediting" == name ) {
+	} else if ( "allow-editing" == name || "allowediting" == name ) {
 		setAllowEditing( attribute.asBool() );
-	} else if ( "verticalscrollmode" == name || "vscrollmode" == name ) {
+	} else if ( "vscroll-mode" == name || "vscrollmode" == name ) {
 		std::string val = attribute.asString();
 		if ( "auto" == val ) setVerticalScrollMode( UI_SCROLLBAR_AUTO );
 		else if ( "on" == val ) setVerticalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
 		else if ( "off" == val ) setVerticalScrollMode( UI_SCROLLBAR_ALWAYS_OFF );
-	} else if ( "horizontalscrollmode" == name || "hscrollmode" == name ) {
+	} else if ( "hscroll-mode" == name || "hscrollmode" == name ) {
 		std::string val = attribute.asString();
 		if ( "auto" == val ) setHorizontalScrollMode( UI_SCROLLBAR_AUTO );
 		else if ( "on" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_ON );

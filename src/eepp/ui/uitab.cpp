@@ -150,7 +150,7 @@ bool UITab::setAttribute( const NodeAttribute& attribute, const Uint32& state ) 
 	if ( "name" == name || "text" == name ) {
 		if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
 			setText( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( attribute.asString() ) );
-	} else if ( "controlowned" == name || "owns" == name ) {
+	} else if ( "owns" == name ) {
 		mOwnedName = attribute.asString();
 		setOwnedControl();
 	} else {

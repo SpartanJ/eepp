@@ -97,6 +97,7 @@ void StyleSheetSelectorRule::pushSelectorTypeIdentifier( TypeIdentifier selector
 		case GLOBAL:
 			mTagName = name;
 			mSpecificity += SpecificityGlobal;
+			break;
 		case TAG:
 			mTagName = name;
 			mSpecificity += SpecificityTag;

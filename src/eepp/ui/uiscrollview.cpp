@@ -250,28 +250,28 @@ bool UIScrollView::setAttribute( const NodeAttribute& attribute, const Uint32& s
 
 		if ( "inclusive" == val ) setViewType( Inclusive );
 		else if ( "exclusive" == val ) setViewType( Exclusive );
-	} else if ( "vscroll_mode" == name ) {
+	} else if ( "vscroll-mode" == name || "vscrollmode" == name ) {
 		std::string val( attribute.asString() );
 		String::toLowerInPlace( val );
 
 		if ( "on" == val ) setVerticalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
 		else if ( "off" == val ) setVerticalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
 		else if ( "auto" == val ) setVerticalScrollMode( UI_SCROLLBAR_AUTO );
-	} else if ( "hscroll_mode" == name ) {
+	} else if ( "hscroll-mode" == name || "hscrollmode" == name ) {
 		std::string val( attribute.asString() );
 		String::toLowerInPlace( val );
 
 		if ( "on" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
 		else if ( "off" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
 		else if ( "auto" == val ) setHorizontalScrollMode( UI_SCROLLBAR_AUTO );
-	} else if ( "scrollbartype" == name ) {
+	} else if ( "scrollbar-type" == name || "scrollbartype" == name ) {
 		std::string val( attribute.asString() );
 		String::toLowerInPlace( val );
 
-		if ( "nobuttons" == val ) {
+		if ( "no-buttons" == val || "nobuttons" == val ) {
 			mVScroll->setScrollBarType( UIScrollBar::NoButtons );
 			mHScroll->setScrollBarType( UIScrollBar::NoButtons );
-		} else if ( "twobuttons" == val ) {
+		} else if ( "two-buttons" == val || "twobuttons" == val ) {
 			mVScroll->setScrollBarType( UIScrollBar::TwoButtons );
 			mHScroll->setScrollBarType( UIScrollBar::NoButtons );
 		}

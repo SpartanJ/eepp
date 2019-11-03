@@ -263,10 +263,17 @@ void UIDropDownList::destroyListBox() {
 bool UIDropDownList::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
-	if ( "popuptomaincontrol" == name ) {
+	if ( "popup-to-main-control" == name || "popuptomaincontrol" == name ) {
 		setPopUpToMainControl( attribute.asBool() );
-	} else if ( "maxnumvisibleitems" == name ) {
+	} else if ( "max-visible-items" == name || "maxvisibleitems" == name ) {
 		setMaxNumVisibleItems( attribute.asUint() );
+	} else if ( "selected-index" == name || "selected-text" == name ||
+				"scrollbar-type" == name || "row-height" == name ||
+				"vscroll-mode" == name || "hscroll-mode" == name ||
+				"selectedindex" == name || "selectedtext" == name ||
+				"scrollbartype" == name || "rowheight" == name ||
+				"vscrollmode" == name || "hscrollmode" == name) {
+		mListBox->setAttribute( attribute, state );
 	} else {
 		return UITextInput::setAttribute( attribute, state );
 	}
@@ -277,15 +284,9 @@ bool UIDropDownList::setAttribute( const NodeAttribute& attribute, const Uint32&
 void UIDropDownList::loadFromXmlNode(const pugi::xml_node & node) {
 	beginAttributesTransaction();
 
-	UITextInput::loadFromXmlNode( node );
-
-	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
-		if ( String::startsWith( std::string( ait->name() ), "listbox_" ) ) {
-			mListBox->setAttribute( NodeAttribute( std::string( ait->name() + 8 ), ait->value() ) );
-		}
-	}
-
 	mListBox->loadItemsFromXmlNode( node );
+
+	UITextInput::loadFromXmlNode( node );
 
 	endAttributesTransaction();
 }

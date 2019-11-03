@@ -262,7 +262,7 @@ bool UISpinBox::dotsInNumbersAllowed() {
 
 void UISpinBox::onAlphaChange() {
 	UINode::onAlphaChange();
-	
+
 	mInput->setAlpha( mAlpha );
 	mPushUp->setAlpha( mAlpha );
 	mPushDown->setAlpha( mAlpha );
@@ -278,13 +278,13 @@ bool UISpinBox::setAttribute( const NodeAttribute& attribute, const Uint32& stat
 
 	bool attributeSet = true;
 
-	if ( "minvalue" == name ) {
+	if ( "min-value" == name || "minvalue" == name ) {
 		setMinValue(attribute.asFloat() );
-	} else if ( "maxvalue" == name ) {
+	} else if ( "max-value" == name || "maxvalue" == name ) {
 		setMaxValue(attribute.asFloat() );
 	} else if ( "value" == name ) {
 		setValue(attribute.asFloat() );
-	} else if ( "clickstep" == name ) {
+	} else if ( "click-step" == name || "clickstep" == name ) {
 		setClickStep(attribute.asFloat() );
 	} else {
 		attributeSet = UIWidget::setAttribute( attribute, state );

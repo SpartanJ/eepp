@@ -802,7 +802,7 @@ void UIWindow::tryResize( const UI_RESIZE_TYPE& Type ) {
 	Vector2f Pos = getEventDispatcher()->getMousePosf();
 
 	worldToNode( Pos );
-	
+
 	mResizeType = Type;
 
 	Pos = PixelDensity::dpToPx( Pos );
@@ -1414,14 +1414,14 @@ bool UIWindow::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		setSize( mDpSize.getWidth(), attribute.asInt() );
 	} else if ( "title" == name ) {
 		setTitle( attribute.asString() );
-	} else if ( "basealpha" == name ) {
+	} else if ( "base-alpha" == name || "basealpha" == name ) {
 		unsigned int val = attribute.asUint();
 		if ( val <= 255 )
 			setBaseAlpha( (Uint8)val );
-	} else if ( "buttonspositionfixer" == name ) {
+	} else if ( "buttons-position-offset" == name || "buttonspositionoffset" == name ) {
 		mStyleConfig.ButtonsPositionFixer = attribute.asVector2i();
 		fixChildsSize();
-	} else if ( "winflags" == name ) {
+	} else if ( "window-flags" == name || "winflags" == name ) {
 		std::string flagsStr = attribute.asString();
 		String::toLowerInPlace( flagsStr );
 		std::vector<std::string> strings = String::split( flagsStr, '|' );
@@ -1450,24 +1450,24 @@ bool UIWindow::setAttribute( const NodeAttribute& attribute, const Uint32& state
 			mStyleConfig.WinFlags |= winflags;
 			updateWinFlags();
 		}
-	} else if ( "decorationsize" == name ) {
+	} else if ( "decoration-size" == name || "decorationsize" == name ) {
 		mStyleConfig.DecorationSize = attribute.asSizei();
 		fixChildsSize();
-	} else if ( "bordersize" == name ) {
+	} else if ( "border-size" == name || "bordersize" == name ) {
 		mStyleConfig.BorderSize = attribute.asSizei();
 		fixChildsSize();
-	} else if ( "minwindowsize" == name ) {
+	} else if ( "min-window-size" == name || "minwindowsize" == name ) {
 		mStyleConfig.MinWindowSize = attribute.asSizef();
 		fixChildsSize();
-	} else if ( "buttonsseparation" == name ) {
+	} else if ( "buttons-separation" == name || "buttonsseparation" == name ) {
 		mStyleConfig.ButtonsSeparation = attribute.asUint();
 		fixChildsSize();
-	} else if ( "mincornerdistance" == name ) {
+	} else if ( "min-corner-distance" == name || "mincornerdistance" == name ) {
 		mStyleConfig.MinCornerDistance = attribute.asInt();
-	} else if ( "decorationautosize" == name ) {
+	} else if ( "decoration-auto-size" == name || "decorationautosize" == name ) {
 		mStyleConfig.DecorationAutoSize = attribute.asBool();
 		fixChildsSize();
-	} else if ( "borderautosize" == name ) {
+	} else if ( "border-auto-size" == name || "borderautosize" == name ) {
 		mStyleConfig.BorderAutoSize = attribute.asBool();
 		fixChildsSize();
 	} else {

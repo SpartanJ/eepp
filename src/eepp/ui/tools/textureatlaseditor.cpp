@@ -60,47 +60,47 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow * AttatchTo, const TGEditorClos
 		</WinMenu>
 		<LinearLayout layout_width="match_parent" layout_height="0dp" layout_weight="1" orientation="horizontal">
 			<TextureAtlasTextureRegionEditor layout_width="match_parent" layout_height="match_parent" layout_weight="1"
-											flags="clip" backgroundColor="#00000032" borderWidth="1" borderColor="#000000FF" />
-			<LinearLayout orientation="vertical" layout_width="210dp" layout_height="match_parent" layout_marginLeft="8dp" layout_marginRight="8dp">
-				<TextView text="Texture Filter:" fontStyle="shadow" layout_marginTop="4dp" layout_marginBottom="4dp" />
-				<DropDownList id="textureFilter" layout_width="match_parent" layout_height="wrap_content" layout_gravity="center_vertical" selectedText="Linear">
+											flags="clip" background-color="#00000032" border-width="1" border-color="#000000FF" />
+			<LinearLayout orientation="vertical" layout_width="210dp" layout_height="match_parent" margin-left="8dp" margin-right="8dp">
+				<TextView text="Texture Filter:" font-style="shadow" margin-top="4dp" margin-bottom="4dp" />
+				<DropDownList id="textureFilter" layout_width="match_parent" layout_height="wrap_content" layout_gravity="center_vertical" selected-text="Linear">
 					<item>Linear</item>
 					<item>Nearest</item>
 				</DropDownList>
-				<TextView text="TextureRegion List:" fontStyle="shadow" layout_marginTop="8dp" layout_marginBottom="8dp" />
+				<TextView text="TextureRegion List:" font-style="shadow" margin-top="8dp" margin-bottom="8dp" />
 				<TabWidget layout_width="match_parent" layout_height="0dp" layout_weight="1">
 					<ScrollView id="GridView" layout_width="match_parent" layout_height="144dp" touchdrag="true">
-						<GridLayout columnMode="size" rowMode="size" columnWidth="64dp" rowHeight="64dp" layout_width="match_parent" layout_height="wrap_content" id="gridlayout" />
+						<GridLayout columnMode="size" rowMode="size" columnWidth="64dp" row-height="64dp" layout_width="match_parent" layout_height="wrap_content" id="gridlayout" />
 					</ScrollView>
 					<ListBox id="TextureRegionList" layout_width="match_parent" layout_height="144dp" touchDrag="true" />
 					<Tab name="List" owns="TextureRegionList" />
 					<Tab name="Grid" owns="GridView" />
 				</TabWidget>
-				<TextView text="Current TextureRegion:" fontStyle="shadow" layout_marginTop="16dp" layout_marginBottom="16dp" />
+				<TextView text="Current TextureRegion:" font-style="shadow" margin-top="16dp" margin-bottom="16dp" />
 				<LinearLayout orientation="horizontal" layout_width="match_parent" layout_height="wrap_content">
-					<TextView text="Offset X:" fontStyle="shadow" layout_width="match_parent" layout_height="wrap_content" layout_weight="1"
-									layout_marginRight="8dp" layout_gravity="center" gravity="right|center_vertical" />
-					<SpinBox id="offX" layout_width="100dp" layout_height="wrap_content" minValue="-32000" maxValue="32000" />
+					<TextView text="Offset X:" font-style="shadow" layout_width="match_parent" layout_height="wrap_content" layout_weight="1"
+									margin-right="8dp" layout_gravity="center" gravity="right|center_vertical" />
+					<SpinBox id="offX" layout_width="100dp" layout_height="wrap_content" min-value="-32000" max-value="32000" />
 				</LinearLayout>
 				<LinearLayout orientation="horizontal" layout_width="match_parent" layout_height="wrap_content">
-					<TextView text="Offset Y:" fontStyle="shadow" layout_width="match_parent" layout_height="wrap_content" layout_weight="1"
-									layout_marginRight="8dp" layout_gravity="center" gravity="right|center_vertical" />
-					<SpinBox id="offY" layout_width="100dp" layout_height="wrap_content" minValue="-32000" maxValue="32000" />
+					<TextView text="Offset Y:" font-style="shadow" layout_width="match_parent" layout_height="wrap_content" layout_weight="1"
+									margin-right="8dp" layout_gravity="center" gravity="right|center_vertical" />
+					<SpinBox id="offY" layout_width="100dp" layout_height="wrap_content" min-value="-32000" max-value="32000" />
 				</LinearLayout>
 				<LinearLayout orientation="horizontal" layout_width="match_parent" layout_height="wrap_content">
-					<TextView text="Dest. Width" fontStyle="shadow" layout_width="match_parent" layout_height="wrap_content" layout_weight="1"
-									layout_marginRight="8dp" layout_gravity="center" gravity="right|center_vertical" />
-					<SpinBox id="destW" layout_width="100dp" layout_height="wrap_content" minValue="0" maxValue="32000" />
+					<TextView text="Dest. Width" font-style="shadow" layout_width="match_parent" layout_height="wrap_content" layout_weight="1"
+									margin-right="8dp" layout_gravity="center" gravity="right|center_vertical" />
+					<SpinBox id="destW" layout_width="100dp" layout_height="wrap_content" min-value="0" max-value="32000" />
 				</LinearLayout>
 				<LinearLayout orientation="horizontal" layout_width="match_parent" layout_height="wrap_content">
-					<TextView text="Dest. Height" fontStyle="shadow" layout_width="match_parent" layout_height="wrap_content" layout_weight="1"
-									layout_marginRight="8dp" layout_gravity="center" gravity="right|center_vertical" />
-					<SpinBox id="destH" layout_width="100dp" layout_height="wrap_content" minValue="0" maxValue="32000" />
+					<TextView text="Dest. Height" font-style="shadow" layout_width="match_parent" layout_height="wrap_content" layout_weight="1"
+									margin-right="8dp" layout_gravity="center" gravity="right|center_vertical" />
+					<SpinBox id="destH" layout_width="100dp" layout_height="wrap_content" min-value="0" max-value="32000" />
 				</LinearLayout>
-				<PushButton id="resetDest" text="Reset Dest. Size" layout_width="match_parent" layout_height="wrap_content" layout_marginBottom="8dp" layout_marginTop="8dp" />
-				<PushButton id="resetOff" text="Reset Offset" layout_width="match_parent" layout_height="wrap_content" layout_marginBottom="8dp" />
-				<PushButton id="centerOff" text="Centered Offset" layout_width="match_parent" layout_height="wrap_content" layout_marginBottom="8dp" />
-				<PushButton id="hbotOff" text="Half-Bottom Offset" layout_width="match_parent" layout_height="wrap_content" layout_marginBottom="8dp" />
+				<PushButton id="resetDest" text="Reset Dest. Size" layout_width="match_parent" layout_height="wrap_content" margin-bottom="8dp" margin-top="8dp" />
+				<PushButton id="resetOff" text="Reset Offset" layout_width="match_parent" layout_height="wrap_content" margin-bottom="8dp" />
+				<PushButton id="centerOff" text="Centered Offset" layout_width="match_parent" layout_height="wrap_content" margin-bottom="8dp" />
+				<PushButton id="hbotOff" text="Half-Bottom Offset" layout_width="match_parent" layout_height="wrap_content" margin-bottom="8dp" />
 			</LinearLayout>
 		</LinearLayout>
 	</LinearLayout>

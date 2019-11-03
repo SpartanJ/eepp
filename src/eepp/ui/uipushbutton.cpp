@@ -301,11 +301,11 @@ bool UIPushButton::setAttribute( const NodeAttribute& attribute, const Uint32& s
 		} else if ( NULL != ( icon = DrawableSearcher::searchByName( val ) ) ) {
 			setIcon( icon );
 		}
-	} else if ( "iconminsize" == name ) {
+	} else if ( "min-icon-size" == name || "miniconsize" == name ) {
 		setIconMinimumSize( attribute.asSizei() );
-	} else if ( "iconhorizontalmargin" == name ) {
+	} else if ( "icon-horizontal-margin" == name || "iconhorizontalmargin" == name ) {
 		setIconHorizontalMargin( attribute.asInt() );
-	} else if ( "iconautomargin" == name ) {
+	} else if ( "icon-auto-margin" == name || "iconautomargin" == name ) {
 		mStyleConfig.IconAutoMargin = attribute.asBool();
 
 		if ( mStyleConfig.IconAutoMargin )

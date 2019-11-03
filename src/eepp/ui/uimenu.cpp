@@ -191,12 +191,12 @@ UINode * UIMenu::getItem( const String& Text ) {
 	for ( Uint32 i = 0; i < mItems.size(); i++ ) {
 		if ( mItems[i]->isType( UI_TYPE_MENUITEM ) ) {
 			UIMenuItem * tMenuItem = reinterpret_cast<UIMenuItem*>( mItems[i] );
-			
+
 			if ( tMenuItem->getText() == Text )
 				return tMenuItem;
 		}
 	}
-	
+
 	return NULL;
 }
 
@@ -573,12 +573,12 @@ void UIMenu::loadFromXmlNode( const pugi::xml_node& node ) {
 bool UIMenu::setAttribute(const NodeAttribute & attribute, const Uint32 & state) {
 	const std::string& name = attribute.getName();
 
-	if ( "minwidth" == name ) {
+	if ( "min-width" == name || "minwidth" == name ) {
 		mStyleConfig.MinWidth = attribute.asInt();
 		onSizeChange();
-	} else if ( "minrightmargin" == name ) {
+	} else if ( "min-margin-right" == name || "minmarginright" == name ) {
 		setMinRightMargin( attribute.asDpDimensionUint() );
-	} else if ( "minspaceforicons" == name ) {
+	} else if ( "min-icon-space" == name || "miniconspace" == name ) {
 		setMinSpaceForIcons( attribute.asDpDimensionUint() );
 	} else {
 		return UIWidget::setAttribute( attribute, state );

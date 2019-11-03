@@ -315,29 +315,27 @@ bool UIScrollBar::setAttribute( const NodeAttribute& attribute, const Uint32& st
 			setOrientation( UI_HORIZONTAL );
 		else if ( "vertical" == val )
 			setOrientation( UI_VERTICAL );
-	} else if ( "minvalue" == name ) {
+	} else if ( "min-value" == name || "minvalue" == name ) {
 		setMinValue( attribute.asFloat() );
-	} else if ( "maxvalue" == name ) {
+	} else if ( "max-value" == name || "maxvalue" == name ) {
 		setMaxValue( attribute.asFloat() );
 	} else if ( "value" == name ) {
 		setValue( attribute.asFloat() );
-	} else if ( "clickstep" == name ) {
+	} else if ( "click-step" == name || "clickstep" == name ) {
 		setClickStep( attribute.asFloat() );
-	} else if ( "pagestep" == name ) {
+	} else if ( "page-step" == name || "pagestep" == name ) {
 		setPageStep( attribute.asFloat() );
-	} else if ( "scrollbartype" == name ) {
+	} else if ( "scrollbar-type" == name || "scrollbartype" == name ) {
 		std::string val = attribute.asString();
 		String::toLowerInPlace( val );
 
-		if ( "nobuttons" == val ) {
+		if ( "no-buttons" == val || "nobuttons" == val ) {
 			setScrollBarType( NoButtons );
-		} else if ( "twobuttons" == val ) {
+		} else if ( "two-buttons" == val || "twobuttons" == val ) {
 			setScrollBarType( TwoButtons );
 		}
-	} else if ( "expandbackground" == name ) {
+	} else if ( "background-expand" == name || "backgroundexpand" == name ) {
 		setExpandBackground( attribute.asBool() );
-	} else if ( "padding" == name ) {
-		return UIWidget::setAttribute( attribute, state );
 	} else {
 		return UIWidget::setAttribute( attribute, state );
 	}
@@ -375,7 +373,7 @@ UINode * UIScrollBar::setOrientation( const UI_ORIENTATION & orientation ) {
 
 void UIScrollBar::onAlphaChange() {
 	UINode::onAlphaChange();
-	
+
 	mSlider->setAlpha( mAlpha );
 	mBtnUp->setAlpha( mAlpha );
 	mBtnDown->setAlpha( mAlpha );

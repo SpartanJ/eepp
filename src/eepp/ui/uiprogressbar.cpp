@@ -210,26 +210,26 @@ UITextView * UIProgressBar::getTextBox() const {
 bool UIProgressBar::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
-	if ( "totalsteps" == name ) {
+	if ( "total-steps" == name || "totalsteps" == name ) {
 		setTotalSteps( attribute.asFloat() );
 	} else if ( "progress" == name ) {
 		setProgress( attribute.asFloat() );
-	} else if ( "verticalexpand" == name ) {
+	} else if ( "vertical-expand" == name || "verticalexpand" == name ) {
 		setVerticalExpand( attribute.asBool() );
-	} else if ( "displaypercent" == name ) {
+	} else if ( "display-percent" == name || "displaypercent" == name ) {
 		setDisplayPercent( attribute.asBool() );
-	} else if ( "fillerpadding" == name ) {
+	} else if ( "filler-padding" == name || "fillerpadding" == name ) {
 		Float val = attribute.asDpDimension();
 		setFillerPadding( Rectf( val, val, val, val ) );
-	} else if ( "fillerpaddingleft" == name ) {
+	} else if ( "filler-padding-left" == name || "fillerpaddingleft" == name ) {
 		setFillerPadding( Rectf( attribute.asDpDimension(), mStyleConfig.FillerPadding.Top, mStyleConfig.FillerPadding.Right, mStyleConfig.FillerPadding.Bottom ) );
-	} else if ( "fillerpaddingright" == name ) {
+	} else if ( "filler-padding-right" == name || "fillerpaddingright" == name ) {
 		setFillerPadding( Rectf( mStyleConfig.FillerPadding.Left, mStyleConfig.FillerPadding.Top, attribute.asDpDimension(), mStyleConfig.FillerPadding.Bottom ) );
-	} else if ( "fillerpaddingtop" == name ) {
+	} else if ( "filler-padding-top" == name || "fillerpaddingtop" == name ) {
 		setFillerPadding( Rectf( mStyleConfig.FillerPadding.Left, attribute.asDpDimension(), mStyleConfig.FillerPadding.Right, mStyleConfig.FillerPadding.Bottom ) );
-	} else if ( "fillerpaddingbottom" == name ) {
+	} else if ( "filler-padding-bottom" == name || "fillerpaddingbottom" == name ) {
 		setFillerPadding( Rectf( mStyleConfig.FillerPadding.Left, mStyleConfig.FillerPadding.Top, mStyleConfig.FillerPadding.Right, attribute.asDpDimension() ) );
-	} else if ( "movementspeed" == name ) {
+	} else if ( "movement-speed" == name || "movementspeed" == name ) {
 		setMovementSpeed( attribute.asVector2f() );
 	} else {
 		return UIWidget::setAttribute( attribute, state );
@@ -244,7 +244,7 @@ const UIProgressBar::StyleConfig & UIProgressBar::getStyleConfig() const {
 
 void UIProgressBar::onAlphaChange() {
 	UINode::onAlphaChange();
-	
+
 	mTextBox->setAlpha( mAlpha );
 }
 

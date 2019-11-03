@@ -1,38 +1,38 @@
 /* Global rules */
 * {
-	textColor: #E6E6E6FF;
-	textShadowColor: #32323296;
-	textSelectedColor: #000;
-	textSelectionBackColor: #969696FF;
+	color: #E6E6E6FF;
+	shadow-color: #32323296;
+	selected-color: #000;
+	selection-back-color: #969696FF;
 }
 
 TabWidget {
-	tabSeparation: -1dp;
-	drawLineBelowTabs: true;
-	lineBelowTabsColor: #2f3030;
-	lineBelowTabsYOffset: 0dp;
+	tab-separation: -1dp;
+	line-below-tabs: true;
+	line-below-tabs-color: #2f3030;
+	line-below-tabs-y-offset: 0dp;
 }
 
 ProgressBar {
-	displayPercent: true;
-	verticalExpand: true;
-	fillerPadding: 2dp;
-	movementSpeed: 32, 0;
+	display-percent: true;
+	vertical-expand: true;
+	filler-padding: 2dp;
+	movement-speed: 32, 0;
 }
 
 WinMenu {
-	buttonMargin: 12dp;
+	button-margin: 12dp;
 }
 
 Menu,
 PopUpMenu {
-	textColor: #E6E6E6FF;
-	minWidth: 100dp;
-	minSpaceForIcons: 24dp;
-	minRightMargin: 8dp;
+	color: #E6E6E6FF;
+	min-width: 100dp;
+	min-icon-space: 24dp;
+	min-margin-right: 8dp;
 }
 
-Menu:hover, 
+Menu:hover,
 PopUpMenu:hover,
 Menu::Item:hover,
 Menu::CheckBox:hover,
@@ -41,28 +41,29 @@ ListBox::item:hover,
 Tab:selected,
 Tab:hover,
 Tab:pressed {
-	textColor: #FFF;
+	color: #FFF;
 }
 
-Slider { 
-	halfSlider: true;
+Slider {
+	half-slider: true;
 }
 
 ScrollBar {
-	expandBackground: true;
+	background-expand: true;
 }
 
 Window {
-	winFlags: shadow;
-	buttonsPositionFixer: -2, 0;
+	window-flags: shadow;
+	buttons-position-offset: -2, 0;
 }
 
 Window::title {
-	textColor: #E6E6E6FF;
-	textStyle: shadow;
+	color: #E6E6E6FF;
+	font-style: shadow;
 }
 
 Tooltip {
 	padding: 8dp;
-	textColor: black;
+	color: black;
 }
+

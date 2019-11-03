@@ -28,10 +28,10 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) :
 	mUIWindow->setTitle( "New Texture Atlas" );
 
 	std::string layout = R"xml(
-	<LinearLayout id='container' layout_width='match_parent' layout_height='wrap_content' layout_marginLeft='8dp' layout_marginRight='8dp' layout_marginTop='8dp'>
-		<LinearLayout layout_width='match_parent' layout_height='wrap_content' orientation='horizontal' layout_marginBottom='8dp'>
+	<LinearLayout id='container' layout_width='match_parent' layout_height='wrap_content' margin-left='8dp' margin-right='8dp' margin-top='8dp'>
+		<LinearLayout layout_width='match_parent' layout_height='wrap_content' orientation='horizontal' margin-bottom='8dp'>
 			<TextView layout_width='match_parent' layout_weight='0.7' layout_height='wrap_content' layout_gravity='center_vertical' text='Save File Format:' />
-			<DropDownList id='saveType' layout_width='match_parent' layout_weight='0.3' layout_height='wrap_content' layout_gravity='center_vertical' selectedText='PNG'>
+			<DropDownList id='saveType' layout_width='match_parent' layout_weight='0.3' layout_height='wrap_content' layout_gravity='center_vertical' selected-text='PNG'>
 				<item>TGA</item>
 				<item>BMP</item>
 				<item>PNG</item>
@@ -39,21 +39,21 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) :
 				<item>JPG</item>
 			</DropDownList>
 		</LinearLayout>
-		<LinearLayout layout_width='match_parent' layout_height='wrap_content' orientation='horizontal' layout_marginBottom='8dp'>
+		<LinearLayout layout_width='match_parent' layout_height='wrap_content' orientation='horizontal' margin-bottom='8dp'>
 			<TextView layout_width='match_parent' layout_weight='0.7' layout_height='wrap_content' layout_gravity='center_vertical' text='Max. Texture Atlas Width:' />
 			<ComboBox id='maxTAWidth' layout_width='match_parent' layout_weight='0.3' layout_height='wrap_content' layout_gravity='center_vertical' onlyNumbers='true' />
 		</LinearLayout>
-		<LinearLayout layout_width='match_parent' layout_height='wrap_content' orientation='horizontal' layout_marginBottom='8dp'>
+		<LinearLayout layout_width='match_parent' layout_height='wrap_content' orientation='horizontal' margin-bottom='8dp'>
 			<TextView layout_width='match_parent' layout_weight='0.7' layout_height='wrap_content' layout_gravity='center_vertical' text='Max. Texture Atlas Height:' />
 			<ComboBox id='maxTAHeight' layout_width='match_parent' layout_weight='0.3' layout_height='wrap_content' layout_gravity='center_vertical' onlyNumbers='true' />
 		</LinearLayout>
-		<LinearLayout layout_width='match_parent' layout_height='wrap_content' orientation='horizontal' layout_marginBottom='8dp'>
+		<LinearLayout layout_width='match_parent' layout_height='wrap_content' orientation='horizontal' margin-bottom='8dp'>
 			<TextView layout_width='match_parent' layout_weight='0.7' layout_height='wrap_content' layout_gravity='center_vertical' text='Space between sub textures (pixels):' />
 			<SpinBox id='pixelSpace' layout_width='match_parent' layout_weight='0.3' layout_height='wrap_content' layout_gravity='center_vertical' />
 		</LinearLayout>
-		<LinearLayout layout_width='match_parent' layout_height='wrap_content' orientation='horizontal' layout_marginBottom='8dp'>
+		<LinearLayout layout_width='match_parent' layout_height='wrap_content' orientation='horizontal' margin-bottom='8dp'>
 			<TextView layout_width='match_parent' layout_weight='0.7' layout_height='wrap_content' layout_gravity='center_vertical' text='Pixel Density:' />
-			<DropDownList id='pixelDensity' layout_width='match_parent' layout_weight='0.3' layout_height='wrap_content' layout_gravity='center_vertical' selectedText='MDPI'>
+			<DropDownList id='pixelDensity' layout_width='match_parent' layout_weight='0.3' layout_height='wrap_content' layout_gravity='center_vertical' selected-text='MDPI'>
 				<item>MDPI</item>
 				<item>HDPI</item>
 				<item>XHDPI</item>
@@ -61,20 +61,20 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) :
 				<item>XXXHDPI</item>
 			</DropDownList>
 		</LinearLayout>
-		<LinearLayout layout_width='match_parent' layout_height='wrap_content' orientation='horizontal' layout_marginBottom='8dp'>
+		<LinearLayout layout_width='match_parent' layout_height='wrap_content' orientation='horizontal' margin-bottom='8dp'>
 			<TextView layout_width='match_parent' layout_weight='0.7' layout_height='wrap_content' layout_gravity='center_vertical' text='Texture Filter:' />
-			<DropDownList id='textureFilter' layout_width='match_parent' layout_weight='0.3' layout_height='wrap_content' layout_gravity='center_vertical' selectedText='Linear'>
+			<DropDownList id='textureFilter' layout_width='match_parent' layout_weight='0.3' layout_height='wrap_content' layout_gravity='center_vertical' selected-text='Linear'>
 				<item>Linear</item>
 				<item>Nearest</item>
 			</DropDownList>
 		</LinearLayout>
 		<TextView layout_width='match_parent' layout_height='wrap_content' layout_gravity='center_vertical' text='TextureAtlas Folder Path:' />
-		<LinearLayout layout_width='match_parent' layout_height='wrap_content' orientation='horizontal' layout_marginBottom='8dp'>
+		<LinearLayout layout_width='match_parent' layout_height='wrap_content' orientation='horizontal' margin-bottom='8dp'>
 			<TextInput id='pathInput' layout_width='match_parent' layout_height='match_parent' layout_weight='1' allowEditing='false' />
 			<PushButton id='openPath' layout_width='32dp' layout_height='wrap_content' text='...'  />
 		</LinearLayout>
-		<LinearLayout layout_gravity='center_vertical|right' layout_width='wrap_content' layout_height='wrap_content' orientation='horizontal' layout_marginBottom='16dp'>
-			<PushButton id='okButton' layout_width='wrap_content' layout_height='wrap_content' layout_weight='0.2' icon='ok' text='OK' layout_marginRight='4dp' />
+		<LinearLayout layout_gravity='center_vertical|right' layout_width='wrap_content' layout_height='wrap_content' orientation='horizontal' margin-bottom='16dp'>
+			<PushButton id='okButton' layout_width='wrap_content' layout_height='wrap_content' layout_weight='0.2' icon='ok' text='OK' margin-right='4dp' />
 			<PushButton id='cancelButton' layout_width='wrap_content' layout_height='wrap_content' layout_weight='0.2' icon='cancel' text='Cancel'  />
 		</LinearLayout>
 	 </LinearLayout>

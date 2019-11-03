@@ -200,19 +200,19 @@ bool UILoader::setAttribute( const NodeAttribute& attribute, const Uint32& state
 
 	if ( "indeterminate" == name ) {
 		setIndeterminate( attribute.asBool() );
-	} else if ( "maxprogress" == name ) {
+	} else if ( "max-progress" == name || "maxprogress" == name ) {
 		setMaxProgress( attribute.asFloat() );
 	} else if ( "progress" == name ) {
 		setProgress( attribute.asFloat() );
-	} else if ( "fillcolor" == name ) {
+	} else if ( "fill-color" == name || "fillcolor" == name ) {
 		setFillColor( attribute.asColor() );
 	} else if ( "radius" == name ) {
 		setRadius( attribute.asFloat() );
-	} else if ( "outlinethickness" == name ) {
+	} else if ( "outline-thickness" == name || "outlinethickness" == name ) {
 		setOutlineThickness( attribute.asFloat() );
-	} else if ( "animationspeed" == name ) {
+	} else if ( "animation-speed" == name || "animationspeed" == name ) {
 		setAnimationSpeed( attribute.asFloat() );
-	} else if ( "arcstartangle" == name ) {
+	} else if ( "arc-start-angle" == name || "arcstartangle" == name ) {
 		setArcStartAngle( attribute.asFloat() );
 	} else {
 		return UIWidget::setAttribute( attribute, state );

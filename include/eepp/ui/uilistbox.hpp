@@ -127,7 +127,9 @@ class EE_API UIListBox : public UITouchDragableWidget {
 		std::vector<UIListBoxItem *> 	mItems;
 		std::vector<String>				mTexts;
 
-		void updateScroll( bool FromScrollChange = false );
+		void updateScroll( bool fromScrollChange = false );
+
+		void updateScrollBarState();
 
 		void onScrollValueChange( const Event * Event );
 

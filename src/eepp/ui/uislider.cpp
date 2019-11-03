@@ -105,9 +105,7 @@ void UISlider::onPaddingChange() {
 }
 
 void UISlider::adjustChilds() {
-	UISkin * tSkin = NULL;
-
-	tSkin = mSlider->getSkin();
+	UISkin * tSkin = mSlider->getSkin();
 
 	if ( NULL != tSkin ) {
 		if ( mPageStep == 0 ) {
@@ -183,7 +181,7 @@ void UISlider::fixSliderPos() {
 					mSlider->setPosition( mBackSlider->getSize().getWidth() + mPadding.Left, 0 );
 			} else {
 				if ( mSlider->getPosition().x > mBackSlider->getSize().getWidth() - mSlider->getSize().getWidth() + mPadding.Left )
-					mSlider->setPosition( mBackSlider->getSize().getWidth() - mSlider->getSize().getWidth() + mPadding.Left, 0 );
+					mSlider->setPosition( eemax(0.f, mBackSlider->getSize().getWidth() - mSlider->getSize().getWidth()) + mPadding.Left, 0 );
 			}
 
 			mSlider->centerVertical();
@@ -203,7 +201,7 @@ void UISlider::fixSliderPos() {
 					mSlider->setPosition( 0, mBackSlider->getSize().getHeight() + mPadding.Top );
 			} else {
 				if ( mSlider->getPosition().y > mBackSlider->getSize().getHeight() - mSlider->getSize().getHeight() + mPadding.Top ) {
-					mSlider->setPosition( 0, mBackSlider->getSize().getHeight() - mSlider->getSize().getHeight() + mPadding.Top );
+					mSlider->setPosition( 0, eemax(0.f, mBackSlider->getSize().getHeight() - mSlider->getSize().getHeight()) + mPadding.Top );
 				}
 			}
 
@@ -411,7 +409,7 @@ UINode * UISlider::getSliderButton() const {
 
 void UISlider::onAlphaChange() {
 	UINode::onAlphaChange();
-	
+
 	mBackSlider->setAlpha( mAlpha );
 	mSlider->setAlpha( mAlpha );
 }
@@ -439,19 +437,19 @@ bool UISlider::setAttribute( const NodeAttribute& attribute, const Uint32& state
 			setOrientation( UI_HORIZONTAL );
 		else if ( "vertical" == val )
 			setOrientation( UI_VERTICAL );
-	} else if ( "minvalue" == name ) {
+	} else if ( "min-value" == name || "minvalue" == name ) {
 		setMinValue( attribute.asFloat() );
-	} else if ( "maxvalue" == name ) {
+	} else if ( "max-value" == name || "maxvalue" == name ) {
 		setMaxValue( attribute.asFloat() );
 	} else if ( "value" == name ) {
 		setValue( attribute.asFloat() );
-	} else if ( "clickstep" == name ) {
+	} else if ( "click-step" == name || "clickstep" == name ) {
 		setClickStep( attribute.asFloat() );
-	} else if ( "pagestep" == name ) {
+	} else if ( "page-step" == name || "pagestep" == name ) {
 		setPageStep( attribute.asFloat() );
-	} else if ( "halfslider" == name ) {
+	} else if ( "half-slider" == name || "halfslider" == name ) {
 		setAllowHalfSliderOut( attribute.asBool() );
-	} else if ( "expandbackground" == name ) {
+	} else if ( "background-expand" == name || "backgroundexpand" == name ) {
 		setExpandBackground( attribute.asBool() );
 	} else {
 		return UIWidget::setAttribute( attribute, state );

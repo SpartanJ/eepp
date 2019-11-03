@@ -570,7 +570,7 @@ bool UITextView::setAttribute( const NodeAttribute& attribute, const Uint32& sta
 	if ( "text" == name ) {
 		if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
 			setText( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( attribute.asString() ) );
-	} else if ( "textcolor" == name ) {
+	} else if ( "color" == name || "textcolor" == name ) {
 		SAVE_NORMAL_STATE_ATTR( getFontColor().toHexString() );
 
 		Color color = attribute.asColor();
@@ -587,7 +587,7 @@ bool UITextView::setAttribute( const NodeAttribute& attribute, const Uint32& sta
 		} else {
 			setFontColor( color );
 		}
-	} else if ( "textshadowcolor" == name ) {
+	} else if ( "shadow-color" == name || "textshadowcolor" == name ) {
 		SAVE_NORMAL_STATE_ATTR( getFontShadowColor().toHexString() );
 
 		Color color = attribute.asColor();
@@ -604,19 +604,19 @@ bool UITextView::setAttribute( const NodeAttribute& attribute, const Uint32& sta
 		} else {
 			setFontShadowColor( color );
 		}
-	} else if ( "textselectedcolor" == name ) {
+	} else if ( "selected-color" == name || "textselectedcolor" == name ) {
 		mFontStyleConfig.FontSelectedColor = attribute.asColor();
-	} else if ( "textselectionbackcolor" == name ) {
+	} else if ( "selection-back-color" == name || "textselectionbackcolor" == name ) {
 		setSelectionBackColor( attribute.asColor() );
-	} else if ( "fontfamily" == name || "fontname" == name ) {
+	} else if ( "font-family" == name || "font-name" == name || "fontfamily" == name || "fontname" == name ) {
 		SAVE_NORMAL_STATE_ATTR( getFont()->getName() );
 
 		setFont( FontManager::instance()->getByName( attribute.asString() ) );
-	} else if ( "textsize" == name || "fontsize" == name || "charactersize" == name ) {
+	} else if ( "font-size" == name || "textsize" == name || "fontsize" == name ) {
 		SAVE_NORMAL_STATE_ATTR( String::format( "%dpx", getCharacterSize() ) );
 
 		setCharacterSize( attribute.asDpDimensionI() );
-	} else if ( "textstyle" == name || "fontstyle" == name ) {
+	} else if ( "font-style" == name || "textstyle" == name || "fontstyle" == name ) {
 		Uint32 flags = attribute.asFontStyle();
 
 		SAVE_NORMAL_STATE_ATTR( Text::styleFlagToString( getFontStyle() ) );
@@ -628,18 +628,18 @@ bool UITextView::setAttribute( const NodeAttribute& attribute, const Uint32& sta
 		}
 
 		setFontStyle( flags );
-	} else if ( "wordwrap" == name || "word_wrap" == name ) {
+	} else if ( "wordwrap" == name || "word-wrap" == name ) {
 		if ( attribute.asBool() )
 			mFlags |= UI_WORD_WRAP;
 		else
 			mFlags &= ~UI_WORD_WRAP;
 
 		autoShrink();
-	} else if ( "fontoutlinethickness" == name ) {
+	} else if ( "text-stroke-width" == name || "fontoutlinethickness" == name ) {
 		SAVE_NORMAL_STATE_ATTR( String::toStr( PixelDensity::dpToPx( getOutlineThickness() ) ) )
 
 		setOutlineThickness( PixelDensity::dpToPx( attribute.asDpDimension() ) );
-	} else if ( "fontoutlinecolor" == name ) {
+	} else if ( "text-stroke-color" == name || "fontoutlinecolor" == name ) {
 		SAVE_NORMAL_STATE_ATTR( getOutlineColor().toHexString() );
 
 		Color color = attribute.asColor();
@@ -656,7 +656,7 @@ bool UITextView::setAttribute( const NodeAttribute& attribute, const Uint32& sta
 		} else {
 			setOutlineColor( color );
 		}
-	} else if ( "textselection" == name ) {
+	} else if ( "text-selection" == name || "textselection" == name ) {
 		mFlags|= UI_TEXT_SELECTION_ENABLED;
 	} else {
 		return UIWidget::setAttribute( attribute, state );

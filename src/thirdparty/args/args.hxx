@@ -1,4 +1,8 @@
-/* Copyright (c) 2016-2017 Taylor C. Richberger <taywee@gmx.com> and Pavel
+/* A simple header-only C++ argument parser library.
+ *
+ * https://github.com/Taywee/args
+ *
+ * Copyright (c) 2016-2019 Taylor C. Richberger <taywee@gmx.com> and Pavel
  * Belikov
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -1633,11 +1637,11 @@ namespace args
 
         public:
             Subparser(std::vector<std::string> args_, ArgumentParser &parser_, const Command &command_, const HelpParams &helpParams_)
-                : args(std::move(args_)), parser(&parser_), helpParams(helpParams_), command(command_)
+                : Group({}, Validators::AllChildGroups), args(std::move(args_)), parser(&parser_), helpParams(helpParams_), command(command_)
             {
             }
 
-            Subparser(const Command &command_, const HelpParams &helpParams_) : helpParams(helpParams_), command(command_)
+            Subparser(const Command &command_, const HelpParams &helpParams_) : Group({}, Validators::AllChildGroups), helpParams(helpParams_), command(command_)
             {
             }
 
@@ -2128,18 +2132,23 @@ namespace args
                     return;
                 }
 
+                auto onValidationError = [&]
+                {
+                    std::ostringstream problem;
+                    problem << "Group validation failed somewhere!";
+#ifdef ARGS_NOEXCEPT
+                    error = Error::Validation;
+                    errorMsg = problem.str();
+#else
+                    throw ValidationError(problem.str());
+#endif
+                };
+
                 for (Base *child: Children())
                 {
                     if (child->IsGroup() && !child->Matched())
                     {
-                        std::ostringstream problem;
-                        problem << "Group validation failed somewhere!";
-#ifdef ARGS_NOEXCEPT
-                        error = Error::Validation;
-                        errorMsg = problem.str();
-#else
-                        throw ValidationError(problem.str());
-#endif
+                        onValidationError();
                     }
 
                     child->Validate(shortprefix, longprefix);
@@ -2148,6 +2157,10 @@ namespace args
                 if (subparser != nullptr)
                 {
                     subparser->Validate(shortprefix, longprefix);
+                    if (!subparser->Matched())
+                    {
+                        onValidationError();
+                    }
                 }
 
                 if (selectedCommand == nullptr && commandIsRequired && (Group::HasCommand() || subparserHasCommand))
@@ -3256,9 +3269,14 @@ namespace args
         operator ()(const std::string &name, const std::string &value, T &destination)
         {
             std::istringstream ss(value);
-            ss >> destination >> std::ws;
+            bool failed = !(ss >> destination);
 
-            if (ss.rdbuf()->in_avail() > 0)
+            if (!failed)
+            {
+                ss >> std::ws;
+            }
+
+            if (ss.rdbuf()->in_avail() > 0 || failed)
             {
 #ifdef ARGS_NOEXCEPT
                 (void)name;

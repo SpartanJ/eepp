@@ -168,17 +168,17 @@ void StyleSheetPropertiesParser::addProperty( const std::string& name, std::stri
 	if ( name == "padding" ) {
 		value = String::toLower( String::trim( value ) );
 		Rectf rect( NodeAttribute( name, value ).asRectf() );
-		mProperties[ "paddingleft" ] = StyleSheetProperty( "paddingleft", String::toStr( rect.Left ) );
-		mProperties[ "paddingright" ] = StyleSheetProperty( "paddingright", String::toStr( rect.Right ) );
-		mProperties[ "paddingtop" ] = StyleSheetProperty( "paddingtop", String::toStr( rect.Top ) );
-		mProperties[ "paddingbottom" ] = StyleSheetProperty( "paddingbottom", String::toStr( rect.Bottom ) );
-	} else if ( name == "layout_margin" ) {
+		mProperties[ "padding-left" ] = StyleSheetProperty( "padding-left", String::toStr( rect.Left ) );
+		mProperties[ "padding-right" ] = StyleSheetProperty( "padding-right", String::toStr( rect.Right ) );
+		mProperties[ "padding-top" ] = StyleSheetProperty( "padding-top", String::toStr( rect.Top ) );
+		mProperties[ "padding-bottom" ] = StyleSheetProperty( "padding-bottom", String::toStr( rect.Bottom ) );
+	} else if ( name == "margin" ) {
 		value = String::toLower( String::trim( value ) );
 		Rect rect( NodeAttribute( name, value ).asRect() );
-		mProperties[ "layout_marginleft" ] = StyleSheetProperty( "layout_marginleft", String::toStr( rect.Left ) );
-		mProperties[ "layout_marginright" ] = StyleSheetProperty( "layout_marginright", String::toStr( rect.Right ) );
-		mProperties[ "layout_margintop" ] = StyleSheetProperty( "layout_margintop", String::toStr( rect.Top ) );
-		mProperties[ "layout_marginbottom" ] = StyleSheetProperty( "layout_marginbottom", String::toStr( rect.Bottom ) );
+		mProperties[ "margin-left" ] = StyleSheetProperty( "margin-left", String::toStr( rect.Left ) );
+		mProperties[ "margin-right" ] = StyleSheetProperty( "margin-right", String::toStr( rect.Right ) );
+		mProperties[ "margin-top" ] = StyleSheetProperty( "margin-top", String::toStr( rect.Top ) );
+		mProperties[ "margin-bottom" ] = StyleSheetProperty( "margin-bottom", String::toStr( rect.Bottom ) );
 	} else {
 		mProperties[ name ] = StyleSheetProperty( name, value );
 	}

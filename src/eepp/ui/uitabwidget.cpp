@@ -122,23 +122,23 @@ void UITabWidget::setStyleConfig(const StyleConfig & styleConfig) {
 bool UITabWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
-	if ( "maxtextlength" == name ) {
+	if ( "max-text-length" == name || "maxtextlength" == name ) {
 		setMaxTextLength( attribute.asUint(1) );
-	} else if ( "mintabwidth" == name ) {
+	} else if ( "min-tab-width" == name || "mintabwidth" == name ) {
 		setMinTabWidth( attribute.asUint(1) );
-	} else if ( "maxtabwidth" == name ) {
+	} else if ( "max-tab-width" == name || "maxtabwidth" == name ) {
 		setMaxTabWidth( attribute.asUint() );
-	} else if ( "tabclosable" == name ) {
+	} else if ( "tab-closable" == name || "tabclosable" == name ) {
 		setTabsClosable( attribute.asBool() );
-	} else if ( "specialbordertabs" == name ) {
+	} else if ( "special-border-tabs" == name || "specialbordertabs" == name ) {
 		setSpecialBorderTabs( attribute.asBool() );
-	} else if ( "drawlinebelowtabs" == name ) {
+	} else if ( "line-below-tabs" == name || "linebelowtabs" == name ) {
 		setDrawLineBelowTabs( attribute.asBool() );
-	} else if ( "linebelowtabscolor" == name ) {
+	} else if ( "line-below-tabs-color" == name || "linebelowtabscolor" == name ) {
 		setLineBelowTabsColor( attribute.asColor() );
-	} else if ( "linebelowtabsyoffset" == name ) {
+	} else if ( "line-below-tabs-y-offset" == name || "linebelowtabsyoffset" == name ) {
 		setLineBelowTabsYOffset( attribute.asDpDimensionI() );
-	} else if ( "tabseparation" == name ) {
+	} else if ( "tab-separation" == name || "tabseparation" == name ) {
 		setTabSeparation( attribute.asDpDimensionI() );
 	} else {
 		return UIWidget::setAttribute( attribute, state );

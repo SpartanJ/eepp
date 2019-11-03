@@ -32,16 +32,16 @@ bool UIStyle::stateExists( const EE::Uint32&  ) const {
 void UIStyle::setStyleSheetProperty( const StyleSheetProperty& attribute ) {
 	if ( attribute.getName() == "padding" ) {
 		Rectf rect(  NodeAttribute( attribute.getName(), attribute.getValue() ).asRectf() );
-		mElementStyle.setProperty( StyleSheetProperty( "paddingleft", String::toStr( rect.Left ), attribute.getSpecificity(), attribute.isVolatile() ) );
-		mElementStyle.setProperty( StyleSheetProperty( "paddingright", String::toStr( rect.Right ), attribute.getSpecificity(), attribute.isVolatile() ) );
-		mElementStyle.setProperty( StyleSheetProperty( "paddingtop", String::toStr( rect.Top ), attribute.getSpecificity(), attribute.isVolatile() ) );
-		mElementStyle.setProperty( StyleSheetProperty( "paddingbottom", String::toStr( rect.Bottom ), attribute.getSpecificity(), attribute.isVolatile() ) );
-	} else if ( attribute.getName() == "layout_margin" ) {
+		mElementStyle.setProperty( StyleSheetProperty( "padding-left", String::toStr( rect.Left ), attribute.getSpecificity(), attribute.isVolatile() ) );
+		mElementStyle.setProperty( StyleSheetProperty( "padding-right", String::toStr( rect.Right ), attribute.getSpecificity(), attribute.isVolatile() ) );
+		mElementStyle.setProperty( StyleSheetProperty( "padding-top", String::toStr( rect.Top ), attribute.getSpecificity(), attribute.isVolatile() ) );
+		mElementStyle.setProperty( StyleSheetProperty( "padding-bottom", String::toStr( rect.Bottom ), attribute.getSpecificity(), attribute.isVolatile() ) );
+	} else if ( attribute.getName() == "margin" ) {
 		Rect rect(  NodeAttribute( attribute.getName(), attribute.getValue() ).asRect() );
-		mElementStyle.setProperty( StyleSheetProperty( "layout_marginleft", String::toStr( rect.Left ), attribute.getSpecificity(), attribute.isVolatile() ) );
-		mElementStyle.setProperty( StyleSheetProperty( "layout_marginright", String::toStr( rect.Right ), attribute.getSpecificity(), attribute.isVolatile() ) );
-		mElementStyle.setProperty( StyleSheetProperty( "layout_margintop", String::toStr( rect.Top ), attribute.getSpecificity(), attribute.isVolatile() ) );
-		mElementStyle.setProperty( StyleSheetProperty( "layout_marginbottom", String::toStr( rect.Bottom ), attribute.getSpecificity(), attribute.isVolatile() ) );
+		mElementStyle.setProperty( StyleSheetProperty( "margin-left", String::toStr( rect.Left ), attribute.getSpecificity(), attribute.isVolatile() ) );
+		mElementStyle.setProperty( StyleSheetProperty( "margin-right", String::toStr( rect.Right ), attribute.getSpecificity(), attribute.isVolatile() ) );
+		mElementStyle.setProperty( StyleSheetProperty( "margin-top", String::toStr( rect.Top ), attribute.getSpecificity(), attribute.isVolatile() ) );
+		mElementStyle.setProperty( StyleSheetProperty( "margin-bottom", String::toStr( rect.Bottom ), attribute.getSpecificity(), attribute.isVolatile() ) );
 	} else {
 		mElementStyle.setProperty( attribute );
 	}

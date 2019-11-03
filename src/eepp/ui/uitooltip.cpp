@@ -158,6 +158,8 @@ void UITooltip::onAutoSize() {
 			(int)mTextCache->getTextWidth() + mRealPadding.Left + mRealPadding.Right,
 			(int)mTextCache->getTextHeight() + mRealPadding.Top + mRealPadding.Bottom
 		) );
+
+		autoAlign();
 	}
 }
 
@@ -328,21 +330,19 @@ void UITooltip::setFontStyleConfig(const UIFontStyleConfig & styleConfig) {
 bool UITooltip::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
-	if ( "textcolor" == name ) {
+	if ( "color" == name ) {
 		setFontColor( attribute.asColor() );
-	} else if ( "padding" == name ) {
-		setPadding( attribute.asRectf() );
-	} else if ( "textshadowcolor" == name ) {
+	} else if ( "shadow-color" == name  || "textshadowcolor" == name ) {
 		setFontShadowColor( attribute.asColor() );
-	} else if ( "fontfamily" == name || "fontname" == name ) {
+	} else if ( "font-family" == name || "font-name" == name || "fontfamily" == name || "fontname" == name ) {
 		setFont( FontManager::instance()->getByName( attribute.asString() ) );
-	} else if ( "textsize" == name || "fontsize" == name || "charactersize" == name ) {
+	} else if ( "font-size" == name || "textsize" == name || "fontsize" == name ) {
 		setCharacterSize( attribute.asDpDimensionI() );
-	} else if ( "textstyle" == name || "fontstyle" == name ) {
+	} else if ( "font-style" == name || "textstyle" == name || "fontstyle" == name ) {
 		setFontStyle( attribute.asFontStyle() );
-	} else if ( "fontoutlinethickness" == name ) {
+	} else if ( "text-stroke-width" == name || "fontoutlinethickness" == name ) {
 		setOutlineThickness( attribute.asDpDimension() );
-	} else if ( "fontoutlinecolor" == name ) {
+	} else if ( "text-stroke-color" == name || "fontoutlinecolor" == name ) {
 		setOutlineColor( attribute.asColor() );
 	} else {
 		return UIWidget::setAttribute( attribute, state );

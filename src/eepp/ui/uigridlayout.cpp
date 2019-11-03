@@ -207,29 +207,29 @@ Sizef UIGridLayout::getTargetElementSize() const {
 bool UIGridLayout::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
-	if ( "columnspan" == name ) {
+	if ( "column-span" == name || "columnspan" == name ) {
 		setSpan( Sizei( attribute.asInt(), mSpan.y ) );
-	} else if ( "rowspan" == name ) {
+	} else if ( "row-span" == name || "rowspan" == name ) {
 		setSpan( Sizei( mSpan.x, attribute.asInt() ) );
 	} else if ( "span" == name ) {
 		setSpan( Sizei( attribute.asInt(), attribute.asInt() ) );
-	} else if ( "columnmode" == name ) {
+	} else if ( "column-mode" == name || "columnmode" == name ) {
 		std::string val( attribute.asString() );
 		String::toLowerInPlace( val );
 		setColumnMode( "size" == val ? Size : Weight );
-	} else if ( "rowmode" == name ) {
+	} else if ( "row-mode" == name || "rowmode" == name ) {
 		std::string val( attribute.asString() );
 		String::toLowerInPlace( val );
 		setRowMode( "size" == val ? Size : Weight );
-	} else if ( "columnweight" == name ) {
+	} else if ( "column-weight" == name || "columnweight" == name ) {
 		setColumnWeight( attribute.asFloat() );
-	} else if ( "columnwidth" == name ) {
+	} else if ( "column-width" == name || "columnwidth" == name ) {
 		setColumnWidth( attribute.asInt() );
-	} else if ( "rowweight" == name ) {
+	} else if ( "row-weight" == name || "rowweight" == name ) {
 		setRowWeight( attribute.asFloat() );
-	} else if ( "rowheight" == name ) {
+	} else if ( "row-height" == name || "rowheight" == name ) {
 		setRowHeight( attribute.asInt() );
-	} else if ( "reversedraw" == name ) {
+	} else if ( "reverse-draw" == name || "reversedraw" == name ) {
 		setReverseDraw( attribute.asBool() );
 	} else {
 		return UILayout::setAttribute( attribute, state );

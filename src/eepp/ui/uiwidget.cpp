@@ -140,7 +140,6 @@ UIWidget * UIWidget::setLayoutSizeRules(const LayoutSizeRules & layoutWidthRules
 }
 
 UIWidget * UIWidget::setLayoutPositionRule(const LayoutPositionRules & layoutPositionRule, UIWidget * of) {
-
 	if ( mLayoutPositionRule != layoutPositionRule || mLayoutPositionRuleWidget != of ) {
 		mLayoutPositionRule = layoutPositionRule;
 		mLayoutPositionRuleWidget = of;
@@ -758,11 +757,11 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		Drawable * res = NULL;
 
 		if ( Color::isColorString( attribute.getValue() ) ) {
-			setAttribute( NodeAttribute( "backgroundcolor", attribute.getValue() ) );
+			setAttribute( NodeAttribute( "background-color", attribute.getValue() ) );
 		} else if ( NULL != ( res = DrawableSearcher::searchByName( attribute.getValue() ) ) ) {
 			setBackgroundDrawable( res, res->getDrawableType() == Drawable::SPRITE );
 		}
-	} else if ( "backgroundcolor" == name ) {
+	} else if ( "background-color" == name || "backgroundcolor" == name ) {
 		SAVE_NORMAL_STATE_ATTR( getBackgroundColor().toHexString() );
 
 		Color color = attribute.asColor();
@@ -780,7 +779,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		} else {
 			setBackgroundColor( color );
 		}
-	} else if ( "backgroundimage" == name ) {
+	} else if ( "background-image" == name || "backgroundimage" == name ) {
 		NodeAttribute::FunctionType functionType = NodeAttribute::FunctionType::parse( attribute.getValue() );
 		Drawable * res = NULL;
 
@@ -815,7 +814,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 						rectColors.BottomLeft = rectColors.BottomRight = Color::fromString( params.at(2) );
 					}
 				} else {
-					return setAttribute( NodeAttribute( "backgroundcolor", params.at(0) ) );
+					return setAttribute( NodeAttribute( "background-color", params.at(0) ) );
 				}
 
 				drawable->setRectColors( rectColors );
@@ -829,11 +828,11 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		Drawable * res = NULL;
 
 		if ( Color::isColorString( attribute.getValue() ) ) {
-			setAttribute( NodeAttribute( "foregroundcolor", attribute.getValue() ) );
+			setAttribute( NodeAttribute( "foreground-color", attribute.getValue() ) );
 		} else if ( NULL != ( res = DrawableSearcher::searchByName( attribute.getValue() ) ) ) {
 			setForegroundDrawable( res, res->getDrawableType() == Drawable::SPRITE );
 		}
-	} else if ( "foregroundcolor" == name ) {
+	} else if ( "foreground-color" == name || "foregroundcolor" == name ) {
 		SAVE_NORMAL_STATE_ATTR( getForegroundColor().toHexString() );
 
 		Color color = attribute.asColor();
@@ -851,11 +850,11 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		} else {
 			setForegroundColor( color );
 		}
-	} else if ( "foregroundradius" == name ) {
+	} else if ( "foreground-radius" == name || "foregroundradius" == name ) {
 		SAVE_NORMAL_STATE_ATTR( String::toStr( getForegroundRadius() ) );
 
 		setForegroundRadius( attribute.asUint() );
-	} else if ( "bordercolor" == name ) {
+	} else if ( "border-color" == name || "bordercolor" == name ) {
 		SAVE_NORMAL_STATE_ATTR( getBorderColor().toHexString() )
 
 		Color color = attribute.asColor();
@@ -873,11 +872,11 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		} else {
 			setBorderColor( color );
 		}
-	} else if ( "borderwidth" == name ) {
+	} else if ( "border-width" == name || "borderwidth" == name ) {
 		SAVE_NORMAL_STATE_ATTR( String::toStr( getBorderWidth() ) );
 
 		setBorderWidth( attribute.asDpDimensionI("1") );
-	} else if ( "borderradius" == name ) {
+	} else if ( "border-radius" == name || "borderradius" == name ) {
 		SAVE_NORMAL_STATE_ATTR( String::format( "%d", getBorderRadius() ) );
 
 		Uint32 borderRadius = attribute.asUint();
@@ -916,7 +915,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		SAVE_NORMAL_STATE_ATTR( mSkinName );
 		mSkinName = attribute.asString();
 		setThemeSkin( mSkinName );
-	} else if ( "skincolor" == name ) {
+	} else if ( "skin-color" == name || "skincolor" == name ) {
 		SAVE_NORMAL_STATE_ATTR( getSkinColor().toHexString() );
 
 		Color color = attribute.asColor();
@@ -991,25 +990,25 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 				}
 			}
 		}
-	} else if ( String::startsWith( name, "layout_margin" ) ) {
+	} else if ( String::startsWith( name, "margin" ) || String::startsWith( name, "layout_margin" ) ) {
 		SAVE_NORMAL_STATE_ATTR( String::format( "%d %d %d %d", mLayoutMargin.Left, mLayoutMargin.Top, mLayoutMargin.Right, mLayoutMargin.Bottom ) );
 
 		Rect margin;
 		Uint32 marginFlag = 0;
 
-		if ( "layout_margin" == name ) {
+		if ( "margin" == name || "layout_margin" == name ) {
 			margin = attribute.asRect();
 			marginFlag = Actions::MarginMove::All;
-		} else if ( "layout_marginleft" == name ) {
+		} else if ( "margin-left" == name || "layout_marginleft" == name ) {
 			margin = Rect( attribute.asDpDimensionI(), mLayoutMargin.Top, mLayoutMargin.Right, mLayoutMargin.Bottom );
 			marginFlag = Actions::MarginMove::Left;
-		} else if ( "layout_marginright" == name ) {
+		} else if ( "margin-right" == name || "layout_marginright" == name ) {
 			margin = Rect( mLayoutMargin.Left, mLayoutMargin.Top, attribute.asDpDimensionI(), mLayoutMargin.Bottom );
 			marginFlag = Actions::MarginMove::Right;
-		} else if ( "layout_margintop" == name ) {
+		} else if ( "margin-top" == name || "layout_margintop" == name ) {
 			margin = Rect( mLayoutMargin.Left, attribute.asDpDimensionI(), mLayoutMargin.Right, mLayoutMargin.Bottom );
 			marginFlag = Actions::MarginMove::Top;
-		} else if ( "layout_marginbottom" == name ) {
+		} else if ( "margin-bottom" == name || "layout_marginbottom" == name ) {
 			margin = Rect( mLayoutMargin.Left, mLayoutMargin.Top, mLayoutMargin.Right, attribute.asDpDimensionI() );
 			marginFlag = Actions::MarginMove::Bottom;
 		}
@@ -1027,11 +1026,11 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		}
 	} else if ( "tooltip" == name ) {
 		setTooltipText( attribute.asString() );
-	} else if ( "layout_weight" == name ) {
+	} else if ( "layout_weight" == name || "layout-weight" == name ) {
 		SAVE_NORMAL_STATE_ATTR( String::toStr( getLayoutWeight() ) );
 
 		setLayoutWeight( attribute.asFloat() );
-	} else if ( "layout_gravity" == name ) {
+	} else if ( "layout_gravity" == name || "layout-gravity" == name ) {
 		SAVE_NORMAL_STATE_ATTR( getLayoutGravityString() );
 
 		std::string gravityStr = attribute.asString();
@@ -1063,7 +1062,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 
 			setLayoutGravity( gravity );
 		}
-	} else if ( "layout_width" == name ) {
+	} else if ( "layout_width" == name || "layout-width" == name ) {
 		SAVE_NORMAL_STATE_ATTR( getLayoutWidthRulesString() );
 
 		std::string val = attribute.asString();
@@ -1082,7 +1081,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 			setInternalWidth( PixelDensity::toDpFromStringI( val ) );
 			onSizeChange();
 		}
-	} else if ( "layout_height" == name ) {
+	} else if ( "layout_height" == name || "layout-height" == name ) {
 		SAVE_NORMAL_STATE_ATTR( getLayoutHeightRulesString() );
 
 		std::string val = attribute.asString();
@@ -1156,15 +1155,15 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		} else {
 			setScale( attribute.asVector2f() );
 		}
-	} else if ( "rotationoriginpoint" == name ) {
+	} else if ( "rotation-origin-point" == name || "rotationoriginpoint" == name ) {
 		SAVE_NORMAL_STATE_ATTR( getRotationOriginPoint().toString() );
 
 		setRotationOriginPoint( attribute.asOriginPoint() );
-	} else if ( "scaleoriginpoint" == name ) {
+	} else if ( "scale-origin-point" == name || "scaleoriginpoint" == name ) {
 		SAVE_NORMAL_STATE_ATTR( getScaleOriginPoint().toString() );
 
 		setScaleOriginPoint( attribute.asOriginPoint() );
-	} else if ( "blendmode" == name ) {
+	} else if ( "blend-mode" == name || "blendmode" == name ) {
 		// TODO: SAVE_NORMAL_STATE_ATTR
 		setBlendMode( attribute.asBlendMode() );
 	} else if ( String::startsWith( name, "padding" ) ) {
@@ -1176,16 +1175,16 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		if ( "padding" == name ) {
 			padding = ( attribute.asRectf() );
 			paddingFlag = Actions::PaddingTransition::All;
-		} else if ( "paddingleft" == name ) {
+		} else if ( "padding-left" == name || "paddingleft" == name ) {
 			padding = Rectf( attribute.asDpDimension(), mPadding.Top, mPadding.Right, mPadding.Bottom );
 			paddingFlag = Actions::PaddingTransition::Left;
-		} else if ( "paddingright" == name ) {
+		} else if ( "padding-right" == name || "paddingright" == name ) {
 			padding = Rectf( mPadding.Left, mPadding.Top, attribute.asDpDimension(), mPadding.Bottom );
 			paddingFlag = Actions::PaddingTransition::Right;
-		} else if ( "paddingtop" == name ) {
+		} else if ( "padding-top" == name || "paddingtop" == name ) {
 			padding = Rectf( mPadding.Left, attribute.asDpDimension(), mPadding.Right, mPadding.Bottom );
 			paddingFlag = Actions::PaddingTransition::Top;
-		} else if ( "paddingbottom" == name ) {
+		} else if ( "padding-bottom" == name || "paddingbottom" == name ) {
 			padding = Rectf( mPadding.Left, mPadding.Top, mPadding.Right, attribute.asDpDimension() );
 			paddingFlag = Actions::PaddingTransition::Bottom;
 		}

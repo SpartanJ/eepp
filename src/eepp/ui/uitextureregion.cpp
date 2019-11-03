@@ -105,7 +105,7 @@ void UITextureRegion::draw() {
 					autoAlign();
 
 					drawTextureRegion();
-				} else {					
+				} else {
 					mTextureRegion->setDestSize( Vector2f( (Float)pxSize.x, (Float)pxSize.y ) );
 
 					autoAlign();
@@ -200,13 +200,13 @@ const Vector2f& UITextureRegion::getAlignOffset() const {
 bool UITextureRegion::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
-	if ( "src" == name || "textureregion" == name ) {
+	if ( "src" == name ) {
 		Drawable * res = NULL;
 
 		if ( NULL != ( res = TextureAtlasManager::instance()->getTextureRegionByName( attribute.asString() ) ) && res->getDrawableType() == Drawable::TEXTUREREGION ) {
 			setTextureRegion( static_cast<TextureRegion*>( res ) );
 		}
-	} else if ( "scaletype" == name ) {
+	} else if ( "scale-type" == name || "scaletype" == name ) {
 		std::string val = attribute.asString();
 		String::toLowerInPlace( val );
 

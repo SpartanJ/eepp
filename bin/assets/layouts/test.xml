@@ -8,12 +8,12 @@
 				<CheckBox id="chbox" layout_width="wrap_content" layout_height="wrap_content" text="testing padding" />
 				<RadioButton id="rdbut" layout_width="wrap_content" layout_height="wrap_content" text="testing padding"/>
 				<TextInput id="tinput" layout_width="300dp" layout_height="wrap_content" text="testing padding" />
-				<Image id="tres" layout_width="32dp" layout_height="32dp" src="file://assets/tiles/1.png" scaleType="fit_inside" />
+				<Image id="tres" layout_width="32dp" layout_height="32dp" src="file://assets/tiles/1.png" scale-type="fit_inside" />
 				<hbox layout_width="match_parent" layout_height="wrap_content">
-					<Image id="tres2" layout_width="32dp" layout_height="32dp" src="https://bitbucket.org/SpartanJ/eepp/raw/01ab7c1f4c9924fbc5ef17fb85b6040709af0eda/bin/assets/icon/ee.png" scaleType="fit_inside" />
-					<Image id="tres2" layout_width="32dp" layout_height="32dp" src="https://bitbucket.org/SpartanJ/eepp/raw/01ab7c1f4c9924fbc5ef17fb85b6040709af0eda/bin/assets/sprites/2.png" scaleType="fit_inside" />
-					<Image id="tres2" layout_width="32dp" layout_height="32dp" src="https://bitbucket.org/SpartanJ/eepp/raw/01ab7c1f4c9924fbc5ef17fb85b6040709af0eda/bin/assets/sprites/3.png" scaleType="fit_inside" />
-					<Image id="tres2" layout_width="32dp" layout_height="32dp" src="https://bitbucket.org/SpartanJ/eepp/raw/01ab7c1f4c9924fbc5ef17fb85b6040709af0eda/bin/assets/sprites/4.png" scaleType="fit_inside" />
+					<Image id="tres2" layout_width="32dp" layout_height="32dp" src="https://bitbucket.org/SpartanJ/eepp/raw/01ab7c1f4c9924fbc5ef17fb85b6040709af0eda/bin/assets/icon/ee.png" scale-type="fit_inside" />
+					<Image id="tres2" layout_width="32dp" layout_height="32dp" src="https://bitbucket.org/SpartanJ/eepp/raw/01ab7c1f4c9924fbc5ef17fb85b6040709af0eda/bin/assets/sprites/2.png" scale-type="fit_inside" />
+					<Image id="tres2" layout_width="32dp" layout_height="32dp" src="https://bitbucket.org/SpartanJ/eepp/raw/01ab7c1f4c9924fbc5ef17fb85b6040709af0eda/bin/assets/sprites/3.png" scale-type="fit_inside" />
+					<Image id="tres2" layout_width="32dp" layout_height="32dp" src="https://bitbucket.org/SpartanJ/eepp/raw/01ab7c1f4c9924fbc5ef17fb85b6040709af0eda/bin/assets/sprites/4.png" scale-type="fit_inside" />
 				</hbox>
 				<DropDownList class="list" layout_width="300dp" layout_height="wrap_content" text="testing padding">
 					<item>Test</item>
@@ -34,12 +34,12 @@
 					<TextView class="eltv" id="el2" layout_width="wrap_content" layout_height="wrap_content" text="testing margin" layout_gravity="top|right" />
 					<TextView class="eltv" id="tm" layout_width="wrap_content" layout_height="wrap_content" text="testing margin"  layout_gravity="bottom|left" />
 					<TextView class="eltv" id="tmp" layout_width="wrap_content" layout_height="wrap_content" text="testing margin padding" layout_gravity="bottom|right" />
-					<!-- <Loader layout_width="350dp" layout_height="350dp" layout_gravity="center" fillColor="#999" padding="44dp" outlinethickness="8dp" /> -->
+					<!-- <Loader layout_width="350dp" layout_height="350dp" layout_gravity="center" fill-color="#999" padding="44dp" outline-thickness="8dp" /> -->
 
 					<PushButton layout_width="wrap_content" layout_height="wrap_content" text="testing padding" layout_gravity="bottom|right" gravity="center" padding="8dp" layout_to_top_of="tmp" />
-					<PushButton id="pbut" text="OK!" textSize="16dp" icon="ok" layout_gravity="left|bottom" gravity="center" layout_width="wrap_content" layout_height="wrap_content" layout_marginBottom="8dp" padding="8dp" layout_to_top_of="tm" />
+					<PushButton id="pbut" text="OK!" font-size="16dp" icon="ok" layout_gravity="left|bottom" gravity="center" layout_width="wrap_content" layout_height="wrap_content" margin-bottom="8dp" padding="8dp" layout_to_top_of="tm" />
 
-					<Slider id="slider" orientation="horizontal" halfslider="true" layout_width="200dp" layout_height="wrap_content" layout_to_bottom_of="el1" />
+					<Slider id="slider" orientation="horizontal" half-slider="true" layout_width="200dp" layout_height="wrap_content" layout_to_bottom_of="el1" />
 
 					<ScrollBar id="scrollbar" orientation="horizontal" layout_width="200dp" layout_height="wrap_content" layout_to_bottom_of="slider" />
 
@@ -51,7 +51,7 @@
 		</hbox>
 		<hbox id="test_2" layout_width="match_parent" layout_height="match_parent">
 			<RelativeLayout id="rtest" layout_width="match_parent" layout_height="match_parent">
-					<TextView id="rttv" layout_width="wrap_content" layout_height="wrap_content" text="Hello World!" layout_gravity="center" />
+				<TextView id="rttv" layout_width="wrap_content" layout_height="wrap_content" text="Hello World!" layout_gravity="center" />
 			</RelativeLayout>
 		</hbox>
 		<hbox id="test_3" layout_width="match_parent" layout_height="match_parent">
@@ -76,7 +76,7 @@
 				<TextView text="Test 19" /><TextView text="Test 20" /><TextView text="Test 21" /><TextView text="Test 22" /><TextView text="Test 23" /><TextView text="Test 24" />
 			</vbox>
 		</ScrollView>
-		<GridLayout id="test_6" columnMode="size" rowMode="size" columnWidth="64dp" rowHeight="64dp" layout_width="match_parent" layout_height="wrap_content">
+		<GridLayout id="test_6" column-mode="size" row-mode="size" column-width="64dp" row-height="64dp" layout_width="match_parent" layout_height="wrap_content">
 			<Image src="file://assets/tiles/1.png" />
 			<Image src="file://assets/tiles/2.png" />
 			<Image src="file://assets/tiles/3.png" />

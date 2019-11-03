@@ -359,15 +359,15 @@ bool UITextInput::setAttribute( const NodeAttribute& attribute, const Uint32& st
 		if ( NULL != mSceneNode && mSceneNode->isUISceneNode() ) {
 			setText( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( attribute.asString() ) );
 		}
-	} else if ( "allowediting" == name ) {
+	} else if ( "allow-editing" == name || "allowediting" == name ) {
 		setAllowEditing( attribute.asBool() );
-	} else if ( "maxlength" == name ) {
+	} else if ( "max-length" == name || "maxlength" == name ) {
 		setMaxLength( attribute.asUint() );
-	} else if ( "freeediting" == name ) {
+	} else if ( "free-editing" == name || "freeediting" == name ) {
 		setFreeEditing( attribute.asBool() );
-	} else if ( "onlynumbers" == name ) {
+	} else if ( "only-numbers" == name || "onlynumbers" == name ) {
 		getInputTextBuffer()->setAllowOnlyNumbers( attribute.asBool(), getInputTextBuffer()->dotsInNumbersAllowed() );
-	} else if ( "allowdot" == name ) {
+	} else if ( "allow-dot" == name || "allowdot" == name ) {
 		getInputTextBuffer()->setAllowOnlyNumbers( getInputTextBuffer()->onlyNumbersAllowed(), attribute.asBool() );
 	} else {
 		return UITextView::setAttribute( attribute, state );

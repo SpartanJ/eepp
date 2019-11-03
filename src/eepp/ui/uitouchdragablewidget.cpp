@@ -149,9 +149,9 @@ void UITouchDragableWidget::scheduledUpdate( const Time& time ) {
 bool UITouchDragableWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
-	if ( "touchdrag" == name ) {
+	if ( "touch-drag" == name || "touchdrag" == name ) {
 		setTouchDragEnabled( attribute.asBool() );
-	} else if ( "touchdragdeceleration" == name ) {
+	} else if ( "touchdrag-deceleration" == name || "touchdragdeceleration" == name ) {
 		setTouchDragDeceleration( Vector2f( attribute.asFloat(), attribute.asFloat() ) );
 	} else {
 		return UIWidget::setAttribute( attribute, state );

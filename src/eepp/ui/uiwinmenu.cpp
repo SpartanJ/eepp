@@ -161,13 +161,13 @@ void UIWinMenu::setFirstButtonMargin( const Uint32& buttonMargin ) {
 bool UIWinMenu::setAttribute( const NodeAttribute& attribute, const Uint32 & state ) {
 	const std::string& name = attribute.getName();
 
-	if ( "marginbetweenbuttons" == name ) {
+	if ( "margin-between-buttons" == name || "marginbetweenbuttons" == name ) {
 		setMarginBetweenButtons( attribute.asDpDimensionUint() );
-	} else if ( "buttonmargin" == name ) {
+	} else if ( "button-margin" == name || "buttonmargin" == name ) {
 		setButtonMargin( attribute.asDpDimensionUint() );
-	} else if ( "menuheight" == name ) {
+	} else if ( "menu-height" == name || "menuheight" == name ) {
 		setMenuHeight( attribute.asDpDimensionUint() );
-	} else if ( "firstbuttonmargin" == name ) {
+	} else if ( "first-button-margin-left" == name || "firstbuttonmarginleft" == name ) {
 		setFirstButtonMargin( attribute.asDpDimensionUint() );
 	} else {
 		return UIWidget::setAttribute( attribute, state );
