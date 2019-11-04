@@ -1409,9 +1409,9 @@ bool UIWindow::setAttribute( const NodeAttribute& attribute, const Uint32& state
 	const std::string& name = attribute.getName();
 
 	if ( "width" == name ) {
-		setSize( attribute.asInt(), mDpSize.getHeight() );
+		setSize( attribute.asDpDimension(), mDpSize.getHeight() );
 	} else if ( "height" == name ) {
-		setSize( mDpSize.getWidth(), attribute.asInt() );
+		setSize( mDpSize.getWidth(), attribute.asDpDimension() );
 	} else if ( "title" == name ) {
 		setTitle( attribute.asString() );
 	} else if ( "base-alpha" == name || "basealpha" == name ) {
@@ -1460,10 +1460,10 @@ bool UIWindow::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		mStyleConfig.MinWindowSize = attribute.asSizef();
 		fixChildsSize();
 	} else if ( "buttons-separation" == name || "buttonsseparation" == name ) {
-		mStyleConfig.ButtonsSeparation = attribute.asUint();
+		mStyleConfig.ButtonsSeparation = attribute.asDpDimensionUint();
 		fixChildsSize();
 	} else if ( "min-corner-distance" == name || "mincornerdistance" == name ) {
-		mStyleConfig.MinCornerDistance = attribute.asInt();
+		mStyleConfig.MinCornerDistance = attribute.asDpDimensionI();
 	} else if ( "decoration-auto-size" == name || "decorationautosize" == name ) {
 		mStyleConfig.DecorationAutoSize = attribute.asBool();
 		fixChildsSize();

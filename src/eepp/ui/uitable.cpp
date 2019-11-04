@@ -623,7 +623,7 @@ bool UITable::setAttribute( const NodeAttribute& attribute, const Uint32& state 
 	const std::string& name = attribute.getName();
 
 	if ( "row-height" == name || "rowheight" == name ) {
-		setRowHeight( attribute.asInt() );
+		setRowHeight( attribute.asDpDimensionI() );
 	} else if ( "vscroll-mode" == name || "vscrollmode" == name ) {
 		std::string val = attribute.asString();
 		if ( "auto" == val ) setVerticalScrollMode( UI_SCROLLBAR_AUTO );

@@ -2,7 +2,7 @@
 #include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
-	
+
 UIGridLayout * UIGridLayout::New() {
 	return eeNew( UIGridLayout, () );
 }
@@ -208,11 +208,11 @@ bool UIGridLayout::setAttribute( const NodeAttribute& attribute, const Uint32& s
 	const std::string& name = attribute.getName();
 
 	if ( "column-span" == name || "columnspan" == name ) {
-		setSpan( Sizei( attribute.asInt(), mSpan.y ) );
+		setSpan( Sizei( attribute.asDpDimensionI(), mSpan.y ) );
 	} else if ( "row-span" == name || "rowspan" == name ) {
-		setSpan( Sizei( mSpan.x, attribute.asInt() ) );
+		setSpan( Sizei( mSpan.x, attribute.asDpDimensionI() ) );
 	} else if ( "span" == name ) {
-		setSpan( Sizei( attribute.asInt(), attribute.asInt() ) );
+		setSpan( Sizei( attribute.asDpDimension(), attribute.asDpDimensionI() ) );
 	} else if ( "column-mode" == name || "columnmode" == name ) {
 		std::string val( attribute.asString() );
 		String::toLowerInPlace( val );
@@ -224,11 +224,11 @@ bool UIGridLayout::setAttribute( const NodeAttribute& attribute, const Uint32& s
 	} else if ( "column-weight" == name || "columnweight" == name ) {
 		setColumnWeight( attribute.asFloat() );
 	} else if ( "column-width" == name || "columnwidth" == name ) {
-		setColumnWidth( attribute.asInt() );
+		setColumnWidth( attribute.asDpDimensionI() );
 	} else if ( "row-weight" == name || "rowweight" == name ) {
-		setRowWeight( attribute.asFloat() );
+		setRowWeight( attribute.asDpDimension() );
 	} else if ( "row-height" == name || "rowheight" == name ) {
-		setRowHeight( attribute.asInt() );
+		setRowHeight( attribute.asDpDimensionI() );
 	} else if ( "reverse-draw" == name || "reversedraw" == name ) {
 		setReverseDraw( attribute.asBool() );
 	} else {
@@ -238,4 +238,4 @@ bool UIGridLayout::setAttribute( const NodeAttribute& attribute, const Uint32& s
 	return true;
 }
 
-}} 
+}}

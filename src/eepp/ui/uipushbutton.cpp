@@ -304,7 +304,7 @@ bool UIPushButton::setAttribute( const NodeAttribute& attribute, const Uint32& s
 	} else if ( "min-icon-size" == name || "miniconsize" == name ) {
 		setIconMinimumSize( attribute.asSizei() );
 	} else if ( "icon-horizontal-margin" == name || "iconhorizontalmargin" == name ) {
-		setIconHorizontalMargin( attribute.asInt() );
+		setIconHorizontalMargin( attribute.asDpDimensionI() );
 	} else if ( "icon-auto-margin" == name || "iconautomargin" == name ) {
 		mStyleConfig.IconAutoMargin = attribute.asBool();
 

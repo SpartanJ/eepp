@@ -621,8 +621,8 @@ void UIListBox::updateScroll( bool fromScrollChange ) {
 			}
 		}
 	}
-	
-	
+
+
 	if ( mHScrollBar->isVisible() && !mVScrollBar->isVisible() ) {
 		mHScrollBar->setPosition( mHScrollPadding.Left, mDpSize.getHeight() - mHScrollBar->getSize().getHeight() + mHScrollPadding.Top );
 		mHScrollBar->setSize( mDpSize.getWidth() + mHScrollPadding.Right, mHScrollBar->getSize().getHeight() + mHScrollPadding.Bottom );
@@ -960,7 +960,7 @@ bool UIListBox::setAttribute( const NodeAttribute& attribute, const Uint32& stat
 	const std::string& name = attribute.getName();
 
 	if ( "row-height" == name || "rowheight" == name ) {
-		setRowHeight( attribute.asInt() );
+		setRowHeight( attribute.asDpDimensionI() );
 	} else if ( "vscroll-mode" == name || "vscrollmode" == name ) {
 		std::string val = attribute.asString();
 		if ( "auto" == val ) setVerticalScrollMode( UI_SCROLLBAR_AUTO );
