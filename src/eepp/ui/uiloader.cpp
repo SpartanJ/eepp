@@ -48,14 +48,19 @@ void UILoader::draw() {
 	mCircle.setPosition( rect.getCenter() );
 
 	ClippingMask * clippingMask = Renderer::instance()->getClippingMask();
-	clippingMask->setMaskMode( ClippingMask::Exclusive );
-	clippingMask->clearMasks();
-	clippingMask->appendMask( mCircle );
-	clippingMask->stencilMaskEnable();
+
+	if ( mCircle.getRadius() > 0 ) {
+		clippingMask->setMaskMode( ClippingMask::Exclusive );
+		clippingMask->clearMasks();
+		clippingMask->appendMask( mCircle );
+		clippingMask->stencilMaskEnable();
+	}
 
 	mArc.draw();
 
-	clippingMask->stencilMaskDisable();
+	if ( mCircle.getRadius() > 0 ) {
+		clippingMask->stencilMaskDisable();
+	}
 }
 
 void UILoader::scheduledUpdate( const Time& time ) {

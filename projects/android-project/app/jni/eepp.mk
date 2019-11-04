@@ -38,7 +38,7 @@ EEPP_C_FLAGS				:= \
 
 EEPP_LDLIBS				:= $(APP_LDLIBS)
 
-include $(call all-subdir-makefiles) 
+include $(call all-subdir-makefiles)
 
 #*************** EEPP ***************
 include $(CLEAR_VARS)
@@ -62,6 +62,7 @@ CODE_SRCS				:=  \
 	system/*.cpp \
 	system/platform/posix/*.cpp \
 	network/*.cpp \
+	network/http/*.cpp \
 	network/ssl/*.cpp \
 	network/ssl/backend/mbedtls/*.cpp \
 	network/platform/unix/*.cpp \
@@ -70,7 +71,6 @@ CODE_SRCS				:=  \
 	audio/*.cpp \
 	window/*.cpp \
 	window/backend/SDL2/*.cpp \
-	window/platform/null/*.cpp \
 	graphics/*.cpp \
 	graphics/renderer/*.cpp \
 	physics/*.cpp \
@@ -90,7 +90,7 @@ LOCAL_SRC_FILES			:= $(foreach F, $(CODE_SRCS), $(addprefix $(dir $(F)),$(notdir
 
 LOCAL_STATIC_LIBRARIES	:= openal SDL2 chipmunk freetype
 
-include $(BUILD_STATIC_LIBRARY) 
+include $(BUILD_STATIC_LIBRARY)
 #*************** EEPP ***************
 
 #*************** CHIPMUNK ***************
@@ -226,4 +226,4 @@ LOCAL_SRC_FILES := \
 
 include $(BUILD_STATIC_LIBRARY)
 #**************** SDL 2 ***************
- 
+
