@@ -537,14 +537,11 @@ void EETest::createBaseUI() {
 	SceneManager::instance()->getUISceneNode()->addEventListener( Event::MouseClick, cb::Make1( this, &EETest::onMainClick ) );
 
 #ifdef EE_PLATFORM_TOUCH
-	TextureAtlas * SG = GlobalTextureAtlas::instance();
-
-	Texture * butTex = TF->getTexture( TF->loadFromFile( MyPath + "sprites/button-te_normal.png" ) );
-
-	SG->add( butTex->getId(), "button-te_normal" );
-	SG->add( TF->loadFromFile( MyPath + "sprites/button-te_mdown.png" ), "button-te_mdown" );
-
 	UISkin nSkin( "button-te" );
+	nSkin.setStateDrawable( UIState::getStateNumber("normal"),
+							TF->getTexture( TF->loadFromFile( MyPath + "sprites/button-te_normal.png" ) ) );
+	nSkin.setStateDrawable( UIState::getStateNumber("pressed"),
+							TF->getTexture( TF->loadFromFile( MyPath + "sprites/button-te_mdown.png" ) ) );
 	Sizef screenSize = SceneManager::instance()->getUISceneNode()->getSize();
 
 	mShowMenu = UIPushButton::New();
@@ -552,7 +549,7 @@ void EETest::createBaseUI() {
 
 	Sizef skinSize = mShowMenu->getSkinSize();
 
-	mShowMenu->setSize( mShowMenu->getSkinSize() )
+	mShowMenu->setSize( skinSize )
 			->setPosition( screenSize.getWidth() - skinSize.getWidth() - 40,
 						   screenSize.getHeight() - skinSize.getHeight() - 10 );
 
