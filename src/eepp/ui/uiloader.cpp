@@ -212,9 +212,9 @@ bool UILoader::setAttribute( const NodeAttribute& attribute, const Uint32& state
 	} else if ( "fill-color" == name || "fillcolor" == name ) {
 		setFillColor( attribute.asColor() );
 	} else if ( "radius" == name ) {
-		setRadius( attribute.asFloat() );
+		setRadius( attribute.asDpDimension() );
 	} else if ( "outline-thickness" == name || "outlinethickness" == name ) {
-		setOutlineThickness( attribute.asFloat() );
+		setOutlineThickness( attribute.asDpDimension() );
 	} else if ( "animation-speed" == name || "animationspeed" == name ) {
 		setAnimationSpeed( attribute.asFloat() );
 	} else if ( "arc-start-angle" == name || "arcstartangle" == name ) {
