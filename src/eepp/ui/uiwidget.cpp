@@ -790,7 +790,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 
 				const std::vector<std::string>& params( functionType.getParameters() );
 
-				if ( Color::isColorString( params.at(0) ) ) {
+				if ( Color::isColorString( params.at(0) ) && params.size() >= 2 ) {
 					rectColors.TopLeft = rectColors.TopRight = Color::fromString( params.at(0) );
 					rectColors.BottomLeft = rectColors.BottomRight = Color::fromString( params.at(1) );
 				} else if ( params.size() >= 3 ) {

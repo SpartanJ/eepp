@@ -106,38 +106,22 @@ const bool& TextureAtlasManager::getPrintWarnings() const {
 }
 
 std::vector<TextureRegion*> TextureAtlasManager::getTextureRegionsByPattern( const std::string& name, const std::string& extension, TextureAtlas * SearchInTextureAtlas ) {
-	std::vector<TextureRegion*> 	TextureRegions;
-	std::string 			search;
-	bool 					found 	= true;
-	TextureRegion *				tTextureRegion 	= NULL;
-	std::string				realext = "";
-	int 					c 		= 0;
-	int					t		= 0;
+	std::vector<TextureRegion*> TextureRegions;
+	std::string search;
+	bool found 	= true;
+	TextureRegion * tTextureRegion 	= NULL;
+	std::string realext = "";
+	int c = 0;
+	int numPadding = 0;
 	int i;
 
 	if ( extension.size() )
 		realext = "." + extension;
 
-	// Test if name starts with 0 - 1
-	for ( i = 0; i < 2; i++ ) {
-		search = String::format( "%s%d%s", name.c_str(), i, realext.c_str() );
-
-		if ( NULL == SearchInTextureAtlas )
-			tTextureRegion = getTextureRegionByName( search );
-		else
-			tTextureRegion = SearchInTextureAtlas->getByName( search );
-
-		if ( NULL != tTextureRegion ) {
-			t = 1;
-
-			break;
-		}
-	}
-
-	// in case that name doesn't start with 0 - 1, we test with 00 - 01
-	if ( 0 == t ) {
+	for ( int len = 1; len < 7; len++ ) {
 		for ( i = 0; i < 2; i++ ) {
-			search = String::format( "%s%02d%s", name.c_str(), i, realext.c_str() );
+			std::string formatStr( "%s%0" + String::toStr(len) + "d%s" );
+			search = String::format( formatStr.c_str(), name.c_str(), i, realext.c_str() );
 
 			if ( NULL == SearchInTextureAtlas )
 				tTextureRegion = getTextureRegionByName( search );
@@ -145,110 +129,36 @@ std::vector<TextureRegion*> TextureAtlasManager::getTextureRegionsByPattern( con
 				tTextureRegion = SearchInTextureAtlas->getByName( search );
 
 			if ( NULL != tTextureRegion ) {
-				t = 2;
+				numPadding = len;
 
 				break;
 			}
 		}
 
-		// in case that name doesn't start with 00 - 01, we test with 000 - 001
-		if ( 0 == t ) {
-			for ( i = 0; i < 2; i++ ) {
-				search = String::format( "%s%03d%s", name.c_str(), i, realext.c_str() );
-
-				if ( NULL == SearchInTextureAtlas )
-					tTextureRegion = getTextureRegionByName( search );
-				else
-					tTextureRegion = SearchInTextureAtlas->getByName( search );
-
-				if ( NULL != tTextureRegion ) {
-					t = 3;
-
-					break;
-				}
-			}
-
-			if ( 0 == t ) {
-				for ( i = 0; i < 2; i++ ) {
-					search = String::format( "%s%04d%s", name.c_str(), i, realext.c_str() );
-
-					if ( NULL == SearchInTextureAtlas )
-						tTextureRegion = getTextureRegionByName( search );
-					else
-						tTextureRegion = SearchInTextureAtlas->getByName( search );
-
-					if ( NULL != tTextureRegion ) {
-						t = 4;
-
-						break;
-					}
-				}
-
-				if ( 0 == t ) {
-					for ( i = 0; i < 2; i++ ) {
-						search = String::format( "%s%05d%s", name.c_str(), i, realext.c_str() );
-
-						if ( NULL == SearchInTextureAtlas )
-							tTextureRegion = getTextureRegionByName( search );
-						else
-							tTextureRegion = SearchInTextureAtlas->getByName( search );
-
-						if ( NULL != tTextureRegion ) {
-							t = 5;
-
-							break;
-						}
-					}
-
-					if ( 0 == t ) {
-						for ( i = 0; i < 2; i++ ) {
-							search = String::format( "%s%06d%s", name.c_str(), i, realext.c_str() );
-
-							if ( NULL == SearchInTextureAtlas )
-								tTextureRegion = getTextureRegionByName( search );
-							else
-								tTextureRegion = SearchInTextureAtlas->getByName( search );
-
-							if ( NULL != tTextureRegion ) {
-								t = 6;
-
-								break;
-							}
-						}
-					}
-				}
-			}
+		if ( 0 != numPadding ) {
+			break;
 		}
 	}
 
-	if ( 0 != t ) {
+	if ( 0 != numPadding ) {
 		do {
-			switch ( t ) {
-				case 1: search = String::format( "%s%d%s", name.c_str(), c, realext.c_str() ); break;
-				case 2: search = String::format( "%s%02d%s", name.c_str(), c, realext.c_str() ); break;
-				case 3: search = String::format( "%s%03d%s", name.c_str(), c, realext.c_str() ); break;
-				case 4: search = String::format( "%s%04d%s", name.c_str(), c, realext.c_str() ); break;
-				case 5: search = String::format( "%s%05d%s", name.c_str(), c, realext.c_str() ); break;
-				case 6: search = String::format( "%s%06d%s", name.c_str(), c, realext.c_str() ); break;
-				default: found = false;
-			}
+			std::string formatStr( "%s%0" + String::toStr(numPadding) + "d%s" );
+			search = String::format( formatStr.c_str(), name.c_str(), c, realext.c_str() );
 
-			if ( found ) {
-				if ( NULL == SearchInTextureAtlas )
-					tTextureRegion = getTextureRegionByName( search );
-				else
-					tTextureRegion = SearchInTextureAtlas->getByName( search );
+			if ( NULL == SearchInTextureAtlas )
+				tTextureRegion = getTextureRegionByName( search );
+			else
+				tTextureRegion = SearchInTextureAtlas->getByName( search );
 
-				if ( NULL != tTextureRegion ) {
-					TextureRegions.push_back( tTextureRegion );
+			if ( NULL != tTextureRegion ) {
+				TextureRegions.push_back( tTextureRegion );
 
+				found = true;
+			} else {
+				if ( 0 == c ) // if didn't found "00", will search at least for "01"
 					found = true;
-				} else {
-					if ( 0 == c ) // if didn't found "00", will search at least for "01"
-						found = true;
-					else
-						found = false;
-				}
+				else
+					found = false;
 			}
 
 			c++;
