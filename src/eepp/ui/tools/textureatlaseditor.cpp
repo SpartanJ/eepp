@@ -249,7 +249,7 @@ void TextureAtlasEditor::fileMenuClick( const Event * Event ) {
 	if ( !Event->getNode()->isType( UI_TYPE_MENUITEM ) )
 		return;
 
-	const String& txt = reinterpret_cast<UIMenuItem*> ( Event->getNode() )->getText();
+	const String& txt = Event->getNode()->asType<UIMenuItem>()->getText();
 
 	if ( "New..." == txt ) {
 		eeNew( TextureAtlasNew, ( cb::Make1( this, &TextureAtlasEditor::onTextureAtlasCreate ) ) );
@@ -393,15 +393,13 @@ void TextureAtlasEditor::update() {
 }
 
 void TextureAtlasEditor::openTextureAtlas( const Event * Event ) {
-	UICommonDialog * CDL = reinterpret_cast<UICommonDialog*> ( Event->getNode() );
-
 	eeSAFE_DELETE( mTextureAtlasLoader );
 	bool threaded = true;
 	#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 	threaded = false;
 	#endif
 
-	mTextureAtlasLoader = TextureAtlasLoader::New( CDL->getFullPath(), threaded, cb::Make1( this, &TextureAtlasEditor::onTextureAtlasLoaded ) );
+	mTextureAtlasLoader = TextureAtlasLoader::New( Event->getNode()->asType<UICommonDialog>()->getFullPath(), threaded, cb::Make1( this, &TextureAtlasEditor::onTextureAtlasLoaded ) );
 }
 
 void TextureAtlasEditor::onTextureAtlasLoaded( TextureAtlasLoader * ) {

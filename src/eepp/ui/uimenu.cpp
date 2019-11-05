@@ -106,7 +106,7 @@ Uint32 UIMenu::addSubMenu( const String& Text, Drawable * Icon, UIMenu * SubMenu
 
 bool UIMenu::checkControlSize( UINode * Control, const bool& Resize ) {
 	if ( Control->isType( UI_TYPE_MENUITEM ) ) {
-		UIMenuItem * tItem = reinterpret_cast<UIMenuItem*> ( Control );
+		UIMenuItem * tItem = Control->asType<UIMenuItem>();
 
 		if ( NULL != tItem->getIcon() && tItem->getIconHorizontalMargin() + tItem->getIcon()->getSize().getWidth() > (Int32)mBiggestIcon ) {
 			mBiggestIcon = tItem->getIconHorizontalMargin() + tItem->getIcon()->getSize().getWidth();
@@ -116,7 +116,7 @@ bool UIMenu::checkControlSize( UINode * Control, const bool& Resize ) {
 			if ( Control->isType( UI_TYPE_MENUSUBMENU ) ) {
 				Int32 textWidth = tItem->getTextBox()->getTextWidth();
 
-				UIMenuSubMenu * tMenu = reinterpret_cast<UIMenuSubMenu*> ( tItem );
+				UIMenuSubMenu * tMenu = tItem->asType<UIMenuSubMenu>();
 
 				if ( textWidth + PixelDensity::dpToPxI( mBiggestIcon ) + tMenu->getArrow()->getPixelsSize().getWidth() + PixelDensity::dpToPxI( mStyleConfig.MinRightMargin ) > (Int32)mMaxWidth ) {
 					mMaxWidth = textWidth + mRealPadding.Left + mRealPadding.Right + PixelDensity::dpToPxI( mBiggestIcon + mStyleConfig.MinRightMargin ) + tMenu->getArrow()->getPixelsSize().getWidth();
@@ -190,7 +190,7 @@ UINode * UIMenu::getItem( const Uint32& Index ) {
 UINode * UIMenu::getItem( const String& Text ) {
 	for ( Uint32 i = 0; i < mItems.size(); i++ ) {
 		if ( mItems[i]->isType( UI_TYPE_MENUITEM ) ) {
-			UIMenuItem * tMenuItem = reinterpret_cast<UIMenuItem*>( mItems[i] );
+			UIMenuItem * tMenuItem = mItems[i]->asType<UIMenuItem>();
 
 			if ( tMenuItem->getText() == Text )
 				return tMenuItem;
@@ -261,7 +261,7 @@ void UIMenu::insert( UINode * Control, const Uint32& Index ) {
 bool UIMenu::isSubMenu( Node * Ctrl ) {
 	for ( Uint32 i = 0; i < mItems.size(); i++ ) {
 		if ( NULL != mItems[i] && mItems[i]->isType( UI_TYPE_MENUSUBMENU ) ) {
-			UIMenuSubMenu * tMenu = reinterpret_cast<UIMenuSubMenu*> ( mItems[i] );
+			UIMenuSubMenu * tMenu = mItems[i]->asType<UIMenuSubMenu>();
 
 			if ( tMenu->getSubMenu() == Ctrl )
 				return true;
@@ -378,7 +378,7 @@ bool UIMenu::hide() {
 void UIMenu::setItemSelected( UINode * Item ) {
 	if ( NULL != mItemSelected ) {
 		if ( mItemSelected->isType( UI_TYPE_MENUSUBMENU ) ) {
-			UIMenuSubMenu * tMenu = reinterpret_cast<UIMenuSubMenu*> ( mItemSelected );
+			UIMenuSubMenu * tMenu = mItemSelected->asType<UIMenuSubMenu>();
 
 			if ( NULL != tMenu->getSubMenu() )
 				tMenu->getSubMenu()->hide();
@@ -473,7 +473,7 @@ Uint32 UIMenu::onKeyDown( const KeyEvent& Event ) {
 				break;
 			case KEY_RIGHT:
 				if ( NULL != mItemSelected && ( mItemSelected->isType( UI_TYPE_MENUSUBMENU ) ) ) {
-					UIMenuSubMenu * tMenu = reinterpret_cast<UIMenuSubMenu*> ( mItemSelected );
+					UIMenuSubMenu * tMenu = mItemSelected->asType<UIMenuSubMenu>();
 
 					tMenu->showSubMenu();
 				}

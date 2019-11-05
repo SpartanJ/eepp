@@ -39,7 +39,7 @@ void UIMenuItem::setTheme( UITheme * Theme ) {
 Uint32 UIMenuItem::onMouseOver( const Vector2i& Pos, const Uint32& Flags ) {
 	UIPushButton::onMouseOver( Pos, Flags );
 
-	reinterpret_cast<UIMenu*> ( getParent() )->setItemSelected( this );
+	getParent()->asType<UIMenu>()->setItemSelected( this );
 
 	return 1;
 }

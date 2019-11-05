@@ -215,16 +215,19 @@ class EE_API Node : public Transformable {
 		Node * find( const std::string& id ) const;
 
 		template<typename T>
-		T * find( const std::string& id ) const
-		{
+		T * find( const std::string& id ) const {
 			return reinterpret_cast<T*>( find( id ) );
 		}
 
 		template<typename T>
-		T * bind( const std::string& id, T*& ctrl )
-		{
+		T * bind( const std::string& id, T*& ctrl ) {
 			ctrl = find<T>( id );
 			return ctrl;
+		}
+
+		template<typename T>
+		T * asType() {
+			return reinterpret_cast<T*>(this);
 		}
 
 		bool isReverseDraw() const;

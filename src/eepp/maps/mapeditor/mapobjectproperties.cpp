@@ -117,8 +117,8 @@ void MapObjectProperties::saveProperties() {
 	for ( Uint32 i = 0; i < mGenGrid->getCount(); i++ ) {
 		UITableCell * Cell = mGenGrid->getCell( i );
 
-		UITextInput * Input = reinterpret_cast<UITextInput*>( Cell->getCell( 1 ) );
-		UITextInput * Input2 = reinterpret_cast<UITextInput*>( Cell->getCell( 3 ) );
+		UITextInput * Input = Cell->getCell( 1 )->asType<UITextInput>();
+		UITextInput * Input2 = Cell->getCell( 3 )->asType<UITextInput>();
 
 		if ( NULL != Cell && Input->getText().size() && Input2->getText().size() ) {
 			mObj->addProperty(	Input->getText(), Input2->getText() );
@@ -132,8 +132,8 @@ void MapObjectProperties::loadProperties() {
 	for ( GameObjectObject::PropertiesMap::iterator it = Proper.begin(); it != Proper.end(); ++it ) {
 		UITableCell * Cell = createCell();
 
-		UITextInput * Input = reinterpret_cast<UITextInput*>( Cell->getCell( 1 ) );
-		UITextInput * Input2 = reinterpret_cast<UITextInput*>( Cell->getCell( 3 ) );
+		UITextInput * Input = Cell->getCell( 1 )->asType<UITextInput>();
+		UITextInput * Input2 = Cell->getCell( 3 )->asType<UITextInput>();
 
 		Input->setText( it->first );
 		Input2->setText( it->second );

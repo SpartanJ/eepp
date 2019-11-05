@@ -52,7 +52,7 @@ UISceneNode * SceneManager::getUISceneNode() {
 			SceneNode * sceneNode = (*it);
 
 			if ( sceneNode->isUISceneNode() ) {
-				mUISceneNode = reinterpret_cast<UISceneNode*>( sceneNode );
+				mUISceneNode = sceneNode->asType<UISceneNode>();
 				break;
 			}
 		}

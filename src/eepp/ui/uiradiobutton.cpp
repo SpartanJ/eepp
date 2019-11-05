@@ -160,7 +160,7 @@ void UIRadioButton::setActive( const bool& active ) {
 		while ( NULL != tChild ) {
 			if ( tChild->isType( UI_TYPE_RADIOBUTTON ) ) {
 				if ( tChild != this ) {
-					UIRadioButton * tRB = reinterpret_cast<UIRadioButton*> ( tChild );
+					UIRadioButton * tRB = tChild->asType<UIRadioButton>();
 
 					if ( tRB->isActive() )
 						tRB->setActive( false );
@@ -179,7 +179,7 @@ bool UIRadioButton::checkActives() {
 		while ( NULL != tChild ) {
 			if ( tChild->isType( UI_TYPE_RADIOBUTTON ) ) {
 				if ( tChild != this ) {
-					UIRadioButton * tRB = reinterpret_cast<UIRadioButton*> ( tChild );
+					UIRadioButton * tRB = tChild->asType<UIRadioButton>();
 
 					if ( tRB->isActive() )
 						return true;
@@ -202,7 +202,7 @@ void UIRadioButton::autoActivate() {
 		while ( NULL != tChild ) {
 			if ( tChild->isType( UI_TYPE_RADIOBUTTON ) ) {
 				if ( tChild != this ) {
-					UIRadioButton * tRB = reinterpret_cast<UIRadioButton*> ( tChild );
+					UIRadioButton * tRB = tChild->asType<UIRadioButton>();
 
 					if ( tRB->isActive() ) {
 						return;
@@ -290,7 +290,7 @@ Uint32 UIRadioButton::onKeyDown( const KeyEvent& Event ) {
 
 void UIRadioButton::onAlphaChange() {
 	UITextView::onAlphaChange();
-	
+
 	mActiveButton->setAlpha( mAlpha );
 	mInactiveButton->setAlpha( mAlpha );
 }

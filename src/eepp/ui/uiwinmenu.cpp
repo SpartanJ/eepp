@@ -226,7 +226,7 @@ Uint32 UIWinMenu::onMessage( const NodeMessage * Msg ) {
 		case NodeMessage::MouseOver:
 		{
 			if ( Msg->getSender()->isType( UI_TYPE_SELECTBUTTON ) ) {
-				UISelectButton * tbut	= reinterpret_cast<UISelectButton*> ( Msg->getSender() );
+				UISelectButton * tbut	= Msg->getSender()->asType<UISelectButton>();
 				UIPopUpMenu * tpop		= getMenuFromButton( tbut );
 
 				Vector2f pos( tbut->getPosition().x, tbut->getPosition().y + tbut->getSize().getHeight() );

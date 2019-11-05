@@ -245,7 +245,7 @@ void onRecentProjectClick( const Event * event ) {
 	if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 		return;
 
-	const String& txt = reinterpret_cast<UIMenuItem*> ( event->getNode() )->getText();
+	const String& txt = event->getNode()->asType<UIMenuItem>()->getText();
 	std::string path( txt.toUtf8() );
 
 	if ( FileSystem::fileExists( path ) && !FileSystem::isDirectory( path ) ) {
@@ -335,7 +335,7 @@ void onLayoutSelected( const Event * event ) {
 	if ( !event->getNode()->isType( UI_TYPE_MENUCHECKBOX) )
 		return;
 
-	const String& txt = reinterpret_cast<UIMenuItem*> ( event->getNode() )->getText();
+	const String& txt = event->getNode()->asType<UIMenuItem>()->getText();
 
 	UIPopUpMenu * uiLayoutsMenu;
 
@@ -629,40 +629,30 @@ void mainLoop() {
 }
 
 void imagePathOpen( const Event * event ) {
-	UICommonDialog * CDL = reinterpret_cast<UICommonDialog*> ( event->getNode() );
-
-	loadImagesFromFolder( CDL->getFullPath() );
+	loadImagesFromFolder( event->getNode()->asType<UICommonDialog>()->getFullPath() );
 }
 
 void fontPathOpen( const Event * event ) {
-	UICommonDialog * CDL = reinterpret_cast<UICommonDialog*> ( event->getNode() );
-
-	loadFontsFromFolder( CDL->getFullPath() );
+	loadFontsFromFolder( event->getNode()->asType<UICommonDialog>()->getFullPath() );
 }
 
 void styleSheetPathOpen( const Event * event ) {
-	UICommonDialog * CDL = reinterpret_cast<UICommonDialog*> ( event->getNode() );
-
-	loadStyleSheet( CDL->getFullPath() );
+	loadStyleSheet( event->getNode()->asType<UICommonDialog>()->getFullPath() );
 }
 
 void layoutOpen( const Event * event ) {
-	UICommonDialog * CDL = reinterpret_cast<UICommonDialog*> ( event->getNode() );
-
-	loadLayout( CDL->getFullPath() );
+	loadLayout( event->getNode()->asType<UICommonDialog>()->getFullPath() );
 }
 
 void projectOpen( const Event * event ) {
-	UICommonDialog * CDL = reinterpret_cast<UICommonDialog*> ( event->getNode() );
-
-	loadProject( CDL->getFullPath() );
+	loadProject( event->getNode()->asType<UICommonDialog>()->getFullPath() );
 }
 
 void fileMenuClick( const Event * event ) {
 	if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 		return;
 
-	const String& txt = reinterpret_cast<UIMenuItem*> ( event->getNode() )->getText();
+	const String& txt = event->getNode()->asType<UIMenuItem>()->getText();
 
 	UITheme * prevTheme = UIThemeManager::instance()->getDefaultTheme();
 	UIThemeManager::instance()->setDefaultTheme( theme );

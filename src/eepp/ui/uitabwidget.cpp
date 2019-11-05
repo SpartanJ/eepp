@@ -355,7 +355,7 @@ UITab * UITabWidget::getTab( const Uint32& Index ) {
 UITab * UITabWidget::getTab( const String& Text ) {
 	for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
 		if ( mTabs[i]->isType( UI_TYPE_TAB ) ) {
-			UITab * tTab = reinterpret_cast<UITab*>( mTabs[i] );
+			UITab * tTab = mTabs[i]->asType<UITab>();
 
 			if ( tTab->getText() == Text )
 				return tTab;

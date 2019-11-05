@@ -115,18 +115,18 @@ void MapEditor::createWinMenu() {
 
 	UIPopUpMenu * PU3 = UIPopUpMenu::New();
 	PU3->setParent( mUIContainer );
-	mChkShowGrid = reinterpret_cast<UIMenuCheckBox*>( PU3->getItem( PU3->addCheckBox( "Show Grid" ) ) );
+	mChkShowGrid = PU3->getItem( PU3->addCheckBox( "Show Grid" ) )->asType<UIMenuCheckBox>();
 
 	mChkShowGrid->setActive( true );
 
-	mChkMarkTileOver = reinterpret_cast<UIMenuCheckBox*>( PU3->getItem( PU3->addCheckBox( "Mark Tile Over" ) ) );
+	mChkMarkTileOver = PU3->getItem( PU3->addCheckBox( "Mark Tile Over" ) )->asType<UIMenuCheckBox>();
 
-	mChkShowBlocked = reinterpret_cast<UIMenuCheckBox*>( PU3->getItem( PU3->addCheckBox( "Show Blocked" ) ) );
+	mChkShowBlocked = PU3->getItem( PU3->addCheckBox( "Show Blocked" ) )->asType<UIMenuCheckBox>();
 
 	PU3->addSeparator();
-	mUIWindow->addShortcut( KEY_KP_PLUS	, KEYMOD_CTRL, reinterpret_cast<UIPushButton*> ( PU3->getItem( PU3->add( "Zoom In", mTheme->getIconByName( "zoom-in" ) ) ) ) );
-	mUIWindow->addShortcut( KEY_KP_MINUS, KEYMOD_CTRL, reinterpret_cast<UIPushButton*> ( PU3->getItem( PU3->add( "Zoom Out", mTheme->getIconByName( "zoom-out" ) ) ) ) );
-	mUIWindow->addShortcut( KEY_KP0		, KEYMOD_CTRL, reinterpret_cast<UIPushButton*> ( PU3->getItem( PU3->add( "Normal Size", mTheme->getIconByName( "zoom-original" ) ) ) ) );
+	mUIWindow->addShortcut( KEY_KP_PLUS	, KEYMOD_CTRL, PU3->getItem( PU3->add( "Zoom In", mTheme->getIconByName( "zoom-in" ) ) )->asType<UIPushButton>() );
+	mUIWindow->addShortcut( KEY_KP_MINUS, KEYMOD_CTRL, PU3->getItem( PU3->add( "Zoom Out", mTheme->getIconByName( "zoom-out" ) ) )->asType<UIPushButton>() );
+	mUIWindow->addShortcut( KEY_KP0		, KEYMOD_CTRL, PU3->getItem( PU3->add( "Normal Size", mTheme->getIconByName( "zoom-original" ) ) )->asType<UIPushButton>() );
 	PU3->addSeparator();
 
 	PU3->addEventListener( Event::OnItemClicked, cb::Make1( this, &MapEditor::viewMenuClick ) );
@@ -154,12 +154,12 @@ void MapEditor::createWinMenu() {
 	PU5->addSeparator();
 
 	Uint32 LayerChkBoxIndex = PU5->addCheckBox( "Lights Enabled" );
-	mLayerChkLights = reinterpret_cast<UIMenuCheckBox*> ( PU5->getItem( LayerChkBoxIndex ) );
+	mLayerChkLights = PU5->getItem( LayerChkBoxIndex )->asType<UIMenuCheckBox>();
 
 	PU5->addSeparator();
 
 	LayerChkBoxIndex = PU5->addCheckBox( "Visible" );
-	mLayerChkVisible = reinterpret_cast<UIMenuCheckBox*> ( PU5->getItem( LayerChkBoxIndex ) );
+	mLayerChkVisible = PU5->getItem( LayerChkBoxIndex )->asType<UIMenuCheckBox>();
 
 	PU5->addEventListener( Event::OnItemClicked, cb::Make1( this, &MapEditor::layerMenuClick ) );
 	WinMenu->addMenuButton( "Layer", PU5 );
@@ -895,7 +895,7 @@ void MapEditor::updateScroll() {
 }
 
 void MapEditor::mapOpen( const Event * Event ) {
-	UICommonDialog * CDL = reinterpret_cast<UICommonDialog*> ( Event->getNode() );
+	UICommonDialog * CDL = Event->getNode()->asType<UICommonDialog>();
 
 	if ( mUIMap->Map()->loadFromFile( CDL->getFullPath() ) ) {
 		onMapLoad();
@@ -915,7 +915,7 @@ void MapEditor::onMapLoad() {
 }
 
 void MapEditor::mapSave( const Event * Event ) {
-	UICommonDialog * CDL = reinterpret_cast<UICommonDialog*> ( Event->getNode() );
+	UICommonDialog * CDL = Event->getNode()->asType<UICommonDialog>();
 
 	std::string path( CDL->getFullPath() );
 
@@ -930,7 +930,7 @@ void MapEditor::fileMenuClick( const Event * Event ) {
 	if ( !Event->getNode()->isType( UI_TYPE_MENUITEM ) )
 		return;
 
-	const String& txt = reinterpret_cast<UIMenuItem*> ( Event->getNode() )->getText();
+	const String& txt = Event->getNode()->asType<UIMenuItem>()->getText();
 
 	if ( "New..." == txt ) {
 		createNewMap();
@@ -981,14 +981,14 @@ void MapEditor::viewMenuClick( const Event * Event ) {
 	if ( !Event->getNode()->isType( UI_TYPE_MENUITEM ) )
 		return;
 
-	const String& txt = reinterpret_cast<UIMenuItem*> ( Event->getNode() )->getText();
+	const String& txt = Event->getNode()->asType<UIMenuItem>()->getText();
 
 	if ( "Show Grid" == txt ) {
-		mUIMap->Map()->setDrawGrid( reinterpret_cast<UIMenuCheckBox*> ( Event->getNode() )->isActive() );
+		mUIMap->Map()->setDrawGrid( Event->getNode()->asType<UIMenuCheckBox>()->isActive() );
 	} else if ( "Mark Tile Over" == txt ) {
-		mUIMap->Map()->setDrawTileOver( reinterpret_cast<UIMenuCheckBox*> ( Event->getNode() )->isActive() );
+		mUIMap->Map()->setDrawTileOver( Event->getNode()->asType<UIMenuCheckBox>()->isActive() );
 	} else if ( "Show Blocked" == txt ) {
-		mUIMap->Map()->setShowBlocked( reinterpret_cast<UIMenuCheckBox*> ( Event->getNode() )->isActive() );
+		mUIMap->Map()->setShowBlocked( Event->getNode()->asType<UIMenuCheckBox>()->isActive() );
 	} else if ( "Zoom In" == txt ) {
 		zoomIn();
 	} else if ( "Zoom Out" == txt ) {
@@ -1060,7 +1060,7 @@ void MapEditor::mapMenuClick( const Event * Event ) {
 	if ( !Event->getNode()->isType( UI_TYPE_MENUITEM ) )
 		return;
 
-	const String& txt = reinterpret_cast<UIMenuItem*> ( Event->getNode() )->getText();
+	const String& txt = Event->getNode()->asType<UIMenuItem>()->getText();
 
 	if ( "New Texture Atlas..." == txt ) {
 		UIWindow * tWin = UIWindow::New();
@@ -1089,7 +1089,7 @@ void MapEditor::layerMenuClick( const Event * Event ) {
 	if ( !Event->getNode()->isType( UI_TYPE_MENUITEM ) )
 		return;
 
-	const String& txt = reinterpret_cast<UIMenuItem*> ( Event->getNode() )->getText();
+	const String& txt = Event->getNode()->asType<UIMenuItem>()->getText();
 
 	if ( "Add Tile Layer..." == txt ) {
 		eeNew( UIMapLayerNew, ( mUIMap, MAP_LAYER_TILED, cb::Make1( this, &MapEditor::onLayerAdd ) ) );
@@ -1182,7 +1182,7 @@ void MapEditor::refreshLayersList() {
 }
 
 void MapEditor::cextureAtlasOpen( const Event * Event ) {
-	UICommonDialog * CDL = reinterpret_cast<UICommonDialog*> ( Event->getNode() );
+	UICommonDialog * CDL = Event->getNode()->asType<UICommonDialog>();
 
 	std::string sgname = FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( CDL->getFullPath() ) );
 

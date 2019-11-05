@@ -47,7 +47,7 @@ Uint32 UIListBoxItem::onMouseUp( const Vector2i& Pos, const Uint32& Flags ) {
 	UITextView::onMouseUp( Pos, Flags );
 
 	if ( mEnabled && mVisible ) {
-		UIListBox * LBParent 	= reinterpret_cast<UIListBox*> ( getParent()->getParent() );
+		UIListBox * LBParent 	= getParent()->getParent()->asType<UIListBox>();
 
 		if ( Flags & EE_BUTTONS_WUWD && LBParent->getVerticalScrollBar()->isVisible() ) {
 			// Manage click can delete _this_
@@ -60,7 +60,7 @@ Uint32 UIListBoxItem::onMouseUp( const Vector2i& Pos, const Uint32& Flags ) {
 
 Uint32 UIListBoxItem::onMouseClick( const Vector2i& Pos, const Uint32& Flags ) {
 	if ( Flags & EE_BUTTONS_LRM ) {
-		reinterpret_cast<UIListBox*> ( getParent()->getParent() )->itemClicked( this );
+		getParent()->getParent()->asType<UIListBox>()->itemClicked( this );
 
 		select();
 	}
@@ -69,7 +69,7 @@ Uint32 UIListBoxItem::onMouseClick( const Vector2i& Pos, const Uint32& Flags ) {
 }
 
 void UIListBoxItem::select() {
-	UIListBox * LBParent = reinterpret_cast<UIListBox*> ( getParent()->getParent() );
+	UIListBox * LBParent = getParent()->getParent()->asType<UIListBox>();
 
 	bool wasSelected = 0 != ( mNodeFlags & NODE_FLAG_SELECTED );
 

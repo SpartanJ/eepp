@@ -77,7 +77,7 @@ void UIMenuCheckBox::setActive( const bool& active ) {
 	}
 
 	if ( oActive != active ) {
-		UIMenu * Menu = reinterpret_cast<UIMenu*> ( getParent() );
+		UIMenu * Menu = getParent()->asType<UIMenu>();
 
 		if ( !Menu->checkControlSize( this ) ) {
 			if ( NULL != getIcon()->getDrawable() ) {

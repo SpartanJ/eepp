@@ -32,7 +32,7 @@ bool UITab::isType( const Uint32& type ) const {
 
 UITabWidget * UITab::getTabWidget() {
 	if ( NULL != getParent() && NULL != getParent()->getParent() && getParent()->getParent()->isType( UI_TYPE_TABWIDGET ) ) {
-		return reinterpret_cast<UITabWidget*> ( getParent()->getParent() );
+		return getParent()->getParent()->asType<UITabWidget>();
 	}
 
 	return NULL;

@@ -19,8 +19,7 @@ UISliderButton::~UISliderButton() {
 void UISliderButton::onPositionChange() {
 	UIWidget::onPositionChange();
 
-	UISlider * Slider = reinterpret_cast<UISlider*> ( mParentCtrl );
-	Slider->fixSliderPos();
+	mParentCtrl->asType<UISlider>()->fixSliderPos();
 }
 
 }}}

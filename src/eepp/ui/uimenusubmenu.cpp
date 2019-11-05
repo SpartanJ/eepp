@@ -106,9 +106,9 @@ void UIMenuSubMenu::showSubMenu() {
 
 	Vector2f Pos = getPixelsPosition();
 	nodeToWorldTranslation( Pos );
-	Pos.x += mSize.getWidth() + reinterpret_cast<UIMenu*> ( getParent() )->getPadding().Right;
+	Pos.x += mSize.getWidth() + getParent()->asType<UIMenu>()->getPadding().Right;
 
-	UIMenu::fixMenuPos( Pos, mSubMenu, reinterpret_cast<UIMenu*> ( getParent() ), this );
+	UIMenu::fixMenuPos( Pos, mSubMenu, getParent()->asType<UIMenu>(), this );
 
 	mSubMenu->getParent()->worldToNode( Pos );
 	mSubMenu->setPixelsPosition( Pos );
@@ -142,7 +142,7 @@ void UIMenuSubMenu::onSubMenuFocusLoss( const Event * ) {
 	}
 
 	if ( mSubMenu->mClickHide ) {
-		UIMenu * parentMenu = reinterpret_cast<UIMenu *>( getParent() );
+		UIMenu * parentMenu = getParent()->asType<UIMenu>();
 
 		if ( !parentMenu->isSubMenu( focusCtrl ) && focusCtrl != this ) {
 			parentMenu->sendCommonEvent( Event::OnHideByClick );
@@ -154,7 +154,7 @@ void UIMenuSubMenu::onSubMenuFocusLoss( const Event * ) {
 }
 
 void UIMenuSubMenu::onHideByClick( const Event * ) {
-	UIMenu * tMenu = reinterpret_cast<UIMenu *>( getParent() );
+	UIMenu * tMenu = getParent()->asType<UIMenu>();
 
 	tMenu->mClickHide = true;
 	tMenu->sendCommonEvent( Event::OnHideByClick );

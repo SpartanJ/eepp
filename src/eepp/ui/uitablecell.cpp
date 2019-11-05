@@ -32,7 +32,7 @@ void UITableCell::setTheme( UITheme * Theme ) {
 }
 
 UITable * UITableCell::gridParent() const {
-	return reinterpret_cast<UITable*> ( mParentCtrl->getParent() );
+	return mParentCtrl->getParent()->asType<UITable>();
 }
 
 void UITableCell::setCell( const Uint32& CollumnIndex, UINode * Ctrl ) {
@@ -73,7 +73,7 @@ void UITableCell::fixCell() {
 }
 
 void UITableCell::select() {
-	UITable * MyParent 	= reinterpret_cast<UITable*> ( getParent()->getParent() );
+	UITable * MyParent 	= getParent()->getParent()->asType<UITable>();
 
 	if ( MyParent->getItemSelected() != this ) {
 		if ( NULL != MyParent->getItemSelected() )
@@ -131,7 +131,7 @@ Uint32 UITableCell::onMessage( const NodeMessage * Msg ) {
 		}
 		case NodeMessage::MouseUp:
 		{
-			UITable * MyParent 	= reinterpret_cast<UITable*> ( getParent()->getParent() );
+			UITable * MyParent 	= getParent()->getParent()->asType<UITable>();
 
 			if ( ( Msg->getFlags() & EE_BUTTONS_WUWD ) && MyParent->getVerticalScrollBar()->isVisible() ) {
 				MyParent->getVerticalScrollBar()->getSlider()->manageClick( Msg->getFlags() );
@@ -145,7 +145,7 @@ Uint32 UITableCell::onMessage( const NodeMessage * Msg ) {
 }
 
 void UITableCell::onAutoSize() {
-	UITable * MyParent 	= reinterpret_cast<UITable*> ( getParent()->getParent() );
+	UITable * MyParent 	= getParent()->getParent()->asType<UITable>();
 
 	setInternalSize( Sizef( MyParent->mTotalWidth, MyParent->mRowHeight ) );
 }
@@ -165,7 +165,7 @@ void UITableCell::onParentChange() {
 
 void UITableCell::onAlphaChange() {
 	if ( mEnabled && mVisible ) {
-		UITable * MyParent 	= reinterpret_cast<UITable*> ( getParent()->getParent() );
+		UITable * MyParent 	= getParent()->getParent()->asType<UITable>();
 
 		if ( NULL != MyParent && MyParent->getAlpha() != mAlpha ) {
 			setAlpha( MyParent->getAlpha() );

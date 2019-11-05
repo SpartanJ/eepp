@@ -43,7 +43,7 @@ UITooltip::~UITooltip() {
 	eeSAFE_DELETE( mTextCache );
 
 	if ( NULL != mTooltipOf && mTooltipOf->isWidget() ) {
-		reinterpret_cast<UIWidget*>( mTooltipOf )->tooltipRemove();
+		mTooltipOf->asType<UIWidget>()->tooltipRemove();
 	}
 }
 

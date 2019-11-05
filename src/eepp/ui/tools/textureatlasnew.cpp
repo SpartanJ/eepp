@@ -148,8 +148,7 @@ static bool isValidExtension( const std::string& ext ) {
 }
 
 void TextureAtlasNew::textureAtlasSave( const Event * Event ) {
-	UICommonDialog * CDL = reinterpret_cast<UICommonDialog*> ( Event->getNode() );
-	std::string FPath( CDL->getFullPath() );
+	std::string FPath( Event->getNode()->asType<UICommonDialog>()->getFullPath() );
 
 	if ( !FileSystem::isDirectory( FPath ) ) {
 		Int32 w = 0, h = 0, b;
@@ -201,7 +200,7 @@ void TextureAtlasNew::onDialogFolderSelect( const Event * event ) {
 }
 
 void TextureAtlasNew::onSelectFolder( const Event * Event ) {
-	UICommonDialog * CDL = reinterpret_cast<UICommonDialog*> ( Event->getNode() );
+	UICommonDialog * CDL = Event->getNode()->asType<UICommonDialog>();
 	UIMessageBox * MsgBox;
 	std::string FPath( CDL->getFullPath() );
 	FileSystem::dirPathAddSlashAtEnd( FPath );

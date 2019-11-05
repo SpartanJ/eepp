@@ -559,7 +559,7 @@ void UIMap::objItemClick( const Event * Event ) {
 		return;
 
 	if ( NULL != mSelObj && NULL != mCurLayer && mCurLayer->getType() == MAP_LAYER_OBJECT && mSelObj->getLayer() == mCurLayer ) {
-		const String& txt = reinterpret_cast<UIMenuItem*> ( Event->getNode() )->getText();
+		const String& txt = Event->getNode()->asType<UIMenuItem>()->getText();
 
 		MapObjectLayer * tLayer = reinterpret_cast<MapObjectLayer*>( mCurLayer );
 

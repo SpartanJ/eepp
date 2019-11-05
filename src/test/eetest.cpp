@@ -490,7 +490,7 @@ void EETest::createBaseUI() {
 	//w->setBackgroundColor( UIState::StateFlagHover, Color::Yellow );
 	//w->setBackgroundColor( UIState::StateFlagPressed, Color::Red );
 
-	C = reinterpret_cast<UINode*> ( C->getParent() );
+	C = C->getParent()->asType<UINode>();
 
 	Menu = UIPopUpMenu::New();
 	Menu->add( "New", mTheme->getIconByName( "document-new" ) );
@@ -990,7 +990,7 @@ void EETest::createDecoratedWindow() {
 		if ( NULL == win )
 			return;
 
-		UIMenuItem* menuItem = reinterpret_cast<UIMenuItem*> ( Event->getNode() );
+		UIMenuItem* menuItem = Event->getNode()->asType<UIMenuItem>();
 		const String& txt = menuItem->getText();
 
 		if ( "Hide Border" == txt ) {
@@ -1055,7 +1055,7 @@ void EETest::onItemClick( const Event * Event ) {
 	if ( !Event->getNode()->isType( UI_TYPE_MENUITEM ) )
 		return;
 
-	const String& txt = reinterpret_cast<UIMenuItem*> ( Event->getNode() )->getText();
+	const String& txt = Event->getNode()->asType<UIMenuItem>()->getText();
 
 	if ( "Show Screen 1" == txt ) {
 		setScreen( 0 );
@@ -1078,7 +1078,7 @@ void EETest::onItemClick( const Event * Event ) {
 			mWindow->stopTextInput();
 		}
 	} else if ( "Show Window" == txt ) {
-		UIMenuCheckBox * Chk = reinterpret_cast<UIMenuCheckBox*> ( Event->getNode() );
+		UIMenuCheckBox * Chk = Event->getNode()->asType<UIMenuCheckBox>();
 
 		C->toFront();
 		C->setVisible( true );
