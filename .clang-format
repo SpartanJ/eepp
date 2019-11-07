@@ -1,0 +1,10 @@
+﻿---
+AlignEscapedNewlines: Left
+ColumnLimit: '100'
+CompactNamespaces: 'true'
+IndentWidth: '4'
+SpacesInParentheses: 'true'
+TabWidth: '4'
+UseTab: Always
+
+...

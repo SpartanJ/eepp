@@ -80,7 +80,7 @@ bool StateListDrawable::isStateful() {
 }
 
 StatefulDrawable * StateListDrawable::setState( Uint32 state ) {
-	if ( state != mCurrentState || mCurrentDrawable == NULL ) {
+	if ( state != mCurrentState || mCurrentDrawable == NULL || mCurrentDrawable != mDrawables[ mCurrentState ] ) {
 		mCurrentState = state;
 
 		auto it = mDrawables.find( state );

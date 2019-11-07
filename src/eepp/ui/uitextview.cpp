@@ -335,6 +335,8 @@ void UITextView::onAlphaChange() {
 	color = getOutlineColor();
 	newColor = Color( color.r, color.g, color.b, color.a * mAlpha / 255.f );
 	mTextCache->setOutlineColor( newColor );
+
+	invalidateDraw();
 }
 
 void UITextView::setTheme( UITheme * Theme ) {

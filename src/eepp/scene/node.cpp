@@ -592,7 +592,7 @@ void Node::childAddAt( Node * ChildCtrl, Uint32 Pos ) {
 	eeASSERT( NULL != ChildCtrl );
 
 	Node * ChildLoop = mChild;
-	
+
 	ChildCtrl->setParent( this );
 
 	childRemove( ChildCtrl );
@@ -1252,8 +1252,11 @@ const Float& Node::getAlpha() const {
 }
 
 void Node::setAlpha( const Float& alpha ) {
-	mAlpha = alpha;
-	onAlphaChange();
+	if ( mAlpha != alpha ) {
+		mAlpha = alpha;
+		invalidateDraw();
+		onAlphaChange();
+	}
 }
 
 void Node::setChildsAlpha( const Float &alpha ) {

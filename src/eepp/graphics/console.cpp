@@ -244,12 +244,12 @@ void Console::draw() {
 			text2.setOutlineColor( mFontStyleConfig.OutlineColor );
 			text2.setFillColor( Color( mFontLineColor.r, mFontLineColor.g, mFontLineColor.b, static_cast<Uint8>(mCurAlpha) ) );
 
-			if ( (unsigned int)mTBuf->getCursorPos() == mTBuf->getBuffer().size() ) {
+			if ( (unsigned int)mTBuf->getCursorPosition() == mTBuf->getBuffer().size() ) {
 				Uint32 width = text.getTextWidth();
 				text2.setString( "_" );
 				text2.draw( mFontSize + width, CurY );
 			} else {
-				text2.setString( "> " + mTBuf->getBuffer().substr( 0, mTBuf->getCursorPos() ) );
+				text2.setString( "> " + mTBuf->getBuffer().substr( 0, mTBuf->getCursorPosition() ) );
 				Uint32 width = mFontSize + text2.getTextWidth();
 				text2.setString( "_" );
 				text2.draw( width, CurY );
@@ -629,9 +629,9 @@ void Console::privInputCallback( InputEvent * Event ) {
 		Uint32 Button	= Event->button.button;
 
 		if ( InputEvent::KeyDown == etype ) {
-			if ( ( KeyCode == KEY_TAB ) && (unsigned int)mTBuf->getCursorPos() == mTBuf->getBuffer().size() ) {
+			if ( ( KeyCode == KEY_TAB ) && (unsigned int)mTBuf->getCursorPosition() == mTBuf->getBuffer().size() ) {
 				printCommandsStartingWith( mTBuf->getBuffer() );
-				getFilesFrom( mTBuf->getBuffer().toUtf8(), mTBuf->getCursorPos() );
+				getFilesFrom( mTBuf->getBuffer().toUtf8(), mTBuf->getCursorPosition() );
 			}
 
 			if ( KeyMod & KEYMOD_SHIFT ) {

@@ -80,7 +80,7 @@ void UITextInputPassword::alignFix() {
 		Uint32 NLPos	= 0;
 		Uint32 LineNum	= mTextBuffer.getCurPosLinePos( NLPos );
 
-		String curStr( mTextBuffer.getBuffer().substr( NLPos, mTextBuffer.getCursorPos() - NLPos ) );
+		String curStr( mTextBuffer.getBuffer().substr( NLPos, mTextBuffer.getCursorPosition() - NLPos ) );
 		String pasStr;
 
 		for ( size_t i = 0; i < curStr.size(); i++ )

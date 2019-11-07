@@ -779,7 +779,7 @@ void Text::ensureGeometryUpdate() {
 			continue;
 		}
 
-		
+
 		// Apply the outline
 		if (mOutlineThickness != 0) {
 			const Glyph& glyph = mFont->getGlyph(curChar, mRealCharacterSize, bold, mOutlineThickness);
@@ -926,7 +926,6 @@ void Text::setFillColor( const Color& color, Uint32 from, Uint32 to ) {
 
 	bool  underlined = (mStyle & Underlined) != 0;
 	bool  strikeThrough = (mStyle & StrikeThrough) != 0;
-	std::vector<Color> colors( GLi->quadVertexs(), color );
 	std::size_t s = mString.size();
 
 	if ( to >= s ) {
@@ -974,7 +973,7 @@ void Text::setFillColor( const Color& color, Uint32 from, Uint32 to ) {
 					if ( '\n' == curChar) {
 						if ( underlined || strikeThrough ) {
 							for ( int v = 0; v < GLi->quadVertexs(); v++ )
-								mColors[ rpos * GLi->quadVertexs() + v ] = colors[v];
+								mColors[ rpos * GLi->quadVertexs() + v ] = color;
 						}
 
 						if ( underlined )
@@ -984,10 +983,10 @@ void Text::setFillColor( const Color& color, Uint32 from, Uint32 to ) {
 							rpos++;
 					}
 				}
+			} else {
+				for ( int v = 0; v < GLi->quadVertexs(); v++ )
+					mColors[ lpos * GLi->quadVertexs() + v ] = color;
 			}
-
-			for ( int v = 0; v < GLi->quadVertexs(); v++ )
-				mColors[ lpos * GLi->quadVertexs() + v ] = colors[v];
 		}
 
 		if ( rto == s ) {
@@ -997,7 +996,7 @@ void Text::setFillColor( const Color& color, Uint32 from, Uint32 to ) {
 
 				if ( pos < mColors.size() ) {
 					for ( int v = 0; v < GLi->quadVertexs(); v++ )
-						mColors[ lpos * GLi->quadVertexs() + v ] = colors[v];
+						mColors[ lpos * GLi->quadVertexs() + v ] = color;
 				}
 			}
 
@@ -1007,7 +1006,7 @@ void Text::setFillColor( const Color& color, Uint32 from, Uint32 to ) {
 
 				if ( pos < mColors.size() ) {
 					for ( int v = 0; v < GLi->quadVertexs(); v++ )
-						mColors[ lpos * GLi->quadVertexs() + v ] = colors[v];
+						mColors[ lpos * GLi->quadVertexs() + v ] = color;
 				}
 			}
 		}

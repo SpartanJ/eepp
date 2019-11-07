@@ -25,6 +25,9 @@ enum INPUT_TEXTBUFFER_FLAGS {
 class EE_API InputTextBuffer {
 	public:
 		typedef std::function<void()> EnterCallback;
+		typedef std::function<void()> CursorPositionChangeCallback;
+		typedef std::function<void()> BufferChangeCallback;
+		typedef std::function<void()> SelectionChangeCallback;
 
 		static InputTextBuffer * New( const bool& active, const bool& newLineEnabled, const bool& freeEditing, EE::Window::Window * window = NULL, const Uint32& maxLength = INPUT_LENGHT_MAX );
 
@@ -94,14 +97,14 @@ class EE_API InputTextBuffer {
 		void setChangedSinceLastUpdate( const bool& Changed );
 
 		/** @return The Cursor Position (where is the cursor editing) */
-		int getCursorPos() const;
+		int getCursorPosition() const;
 
 		/** Set the cursor position */
-		void setCursorPos( const Uint32& pos );
+		void setCursorPosition( const Uint32& pos );
 
-		/** This function it's for helping the Font class to locate the cursor position for the correct rendering of it.
+		/** This function locates the cursor line position for the correct rendering of it.
 		* @param LastNewLinePos This will return the position of the closest "\n" to the current Cursor Pos
-		* @return On which line it's the cursor
+		* @return On which line is the cursor
 		*/
 		Uint32 getCurPosLinePos( Uint32& LastNewLinePos );
 
@@ -134,6 +137,15 @@ class EE_API InputTextBuffer {
 
 		/** @return The selection cursor final position */
 		const Int32& selCurEnd() const;
+
+		/** Event callback when the cursor position changes. */
+		void setCursorPositionChangeCallback(const CursorPositionChangeCallback& cursorPositionChangeCallback);
+
+		/** Event callback when the text buffer changes. */
+		void setBufferChangeCallback(const BufferChangeCallback& bufferChangeCallback);
+
+		/** Event callback when the selection changes. */
+		void setSelectionChangeCallback(const SelectionChangeCallback& selectionChangeCallback);
 	protected:
 		EE::Window::Window * mWindow;
 		String mText;
@@ -141,6 +153,9 @@ class EE_API InputTextBuffer {
 		Uint32 mCallback;
 		int mPromptPos;
 		EnterCallback mEnterCall;
+		CursorPositionChangeCallback mCursorPositionChangeCallback;
+		BufferChangeCallback mBufferChangeCallback;
+		SelectionChangeCallback mSelectionChangeCallback;
 		Uint32 mMaxLength;
 		std::vector<Uint32>	mIgnoredChars;
 		Int32 mSelCurInit;
@@ -175,6 +190,16 @@ class EE_API InputTextBuffer {
 		void removeSelection();
 
 		void resetSelection();
+
+		void onCursorPositionChange();
+
+		void onSelectionChange();
+
+		void onBufferChange();
+
+		/** Set the cursor position */
+		void setCursorPos( const Uint32& pos );
+
 };
 
 }}

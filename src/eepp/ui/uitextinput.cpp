@@ -33,6 +33,9 @@ UITextInput::UITextInput( const std::string& tag ) :
 	mTextBuffer.setFreeEditing( true );
 	mTextBuffer.setTextSelectionEnabled( isTextSelectionEnabled() );
 	mTextBuffer.setReturnCallback( cb::Make0( this, &UITextInput::privOnPressEnter ) );
+	mTextBuffer.setCursorPositionChangeCallback( cb::Make0( this, &UITextInput::onCursorPositionChange ) );
+	mTextBuffer.setBufferChangeCallback( cb::Make0( this, &UITextInput::onBufferChange ) );
+	mTextBuffer.setSelectionChangeCallback( cb::Make0( this, &UITextInput::onInputSelectionChange ) );
 
 	applyDefaultTheme();
 }
@@ -55,36 +58,6 @@ bool UITextInput::isType( const Uint32& type ) const {
 void UITextInput::scheduledUpdate( const Time& time ) {
 	if ( isMouseOverMeOrChilds() && NULL != mSceneNode ) {
 		mSceneNode->setCursor( Cursor::IBeam );
-	}
-
-	if ( mTextBuffer.changedSinceLastUpdate() ) {
-		Vector2f offSet = mRealAlignOffset;
-
-		UITextView::setText( mTextBuffer.getBuffer() );
-
-		updateText();
-
-		mRealAlignOffset = offSet;
-
-		resetWaitCursor();
-
-		alignFix();
-
-		mCursorPos = mTextBuffer.getCursorPos();
-
-		mTextBuffer.setChangedSinceLastUpdate( false );
-
-		invalidateDraw();
-
-		return;
-	}
-
-	if ( mCursorPos != mTextBuffer.getCursorPos() ) {
-		alignFix();
-		mCursorPos = mTextBuffer.getCursorPos();
-		mWaitCursorTime = 0.f;
-		mShowingWait = true;
-		onCursorPosChange();
 	}
 
 	updateWaitingCursor( time );
@@ -180,7 +153,7 @@ void UITextInput::alignFix() {
 
 		Text textCache( mTextCache->getFont(), mTextCache->getCharacterSize() );
 
-		textCache.setString( mTextBuffer.getBuffer().substr( NLPos, mTextBuffer.getCursorPos() - NLPos ) );
+		textCache.setString( mTextBuffer.getBuffer().substr( NLPos, mTextBuffer.getCursorPosition() - NLPos ) );
 
 		Float tW	= textCache.getTextWidth();
 		Float tX	= mRealAlignOffset.x + tW;
@@ -278,27 +251,51 @@ void UITextInput::updateText() {
 }
 
 Uint32 UITextInput::onMouseClick( const Vector2i& Pos, const Uint32& Flags ) {
-	if ( Flags & EE_BUTTON_LMASK ) {
-		Vector2f controlPos( Vector2f( Pos.x, Pos.y ) );
-		worldToNode( controlPos );
-		controlPos = PixelDensity::dpToPx( controlPos ) - mRealAlignOffset;
+	UITextView::onMouseClick( Pos, Flags );
 
-		Int32 curPos = mTextCache->findCharacterFromPos( Vector2i( controlPos.x, controlPos.y ) );
+	if ( ( Flags & EE_BUTTON_LMASK ) ) {
+		if ( selCurInit() == selCurEnd() ) {
+			Vector2f controlPos( Vector2f( Pos.x, Pos.y ) );
+			worldToNode( controlPos );
+			controlPos = PixelDensity::dpToPx( controlPos ) - mRealAlignOffset;
 
-		if ( -1 != curPos ) {
-			mTextBuffer.setCursorPos( curPos );
+			Int32 curPos = mTextCache->findCharacterFromPos( Vector2i( controlPos.x, controlPos.y ) );
+
+			if ( -1 != curPos ) {
+				mTextBuffer.setCursorPosition( curPos );
+				onCursorPositionChange();
+				resetWaitCursor();
+			}
+		} else {
+			mTextBuffer.setCursorPosition( selCurEnd() );
+			onCursorPositionChange();
 			resetWaitCursor();
 		}
 	}
 
-	return UITextView::onMouseClick( Pos, Flags );
+	return 1;
+}
+
+Uint32 UITextInput::onMouseDown(const Vector2i& position, const Uint32& flags) {
+	int endPos = selCurEnd();
+
+	UITextView::onMouseDown( position, flags );
+
+	if ( endPos != selCurEnd() && -1 != selCurEnd() ) {
+		mTextBuffer.setCursorPosition( selCurEnd() );
+		onCursorPositionChange();
+		resetWaitCursor();
+	}
+
+	return 1;
 }
 
 Uint32 UITextInput::onMouseDoubleClick( const Vector2i& Pos, const Uint32& Flags ) {
 	UITextView::onMouseDoubleClick( Pos, Flags );
 
 	if ( isTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) && selCurEnd() != -1 ) {
-		mTextBuffer.setCursorPos( selCurEnd() );
+		mTextBuffer.setCursorPosition( selCurEnd() );
+		onCursorPositionChange();
 		resetWaitCursor();
 	}
 
@@ -315,14 +312,21 @@ Uint32 UITextInput::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
 }
 
 void UITextInput::selCurInit( const Int32& init ) {
-	mTextBuffer.selCurInit( init );
+	if ( mTextBuffer.selCurInit() != init ) {
+		mTextBuffer.selCurInit( init );
+		invalidateDraw();
+	}
 }
 
 void UITextInput::selCurEnd( const Int32& end ) {
-	mTextBuffer.selCurEnd( end );
+	if ( mTextBuffer.selCurEnd() != end ) {
+		mTextBuffer.selCurEnd( end );
+		invalidateDraw();
 
-	if ( mTextBuffer.selCurEnd() != mTextBuffer.selCurInit() ) {
-		mTextBuffer.setCursorPos( end );
+		if ( mTextBuffer.selCurEnd() != mTextBuffer.selCurInit() ) {
+			mTextBuffer.setCursorPosition( end );
+			onCursorPosChange();
+		}
 	}
 }
 
@@ -332,6 +336,40 @@ Int32 UITextInput::selCurInit() {
 
 Int32 UITextInput::selCurEnd() {
 	return mTextBuffer.selCurEnd();
+}
+
+void UITextInput::onCursorPositionChange() {
+	if ( mCursorPos != mTextBuffer.getCursorPosition() ) {
+		alignFix();
+		mCursorPos = mTextBuffer.getCursorPosition();
+		mWaitCursorTime = 0.f;
+		mShowingWait = true;
+		onCursorPosChange();
+	}
+}
+
+void UITextInput::onBufferChange() {
+	Vector2f offSet = mRealAlignOffset;
+
+	UITextView::setText( mTextBuffer.getBuffer() );
+
+	updateText();
+
+	mRealAlignOffset = offSet;
+
+	resetWaitCursor();
+
+	alignFix();
+
+	mCursorPos = mTextBuffer.getCursorPosition();
+
+	mTextBuffer.setChangedSinceLastUpdate( false );
+
+	invalidateDraw();
+}
+
+void UITextInput::onInputSelectionChange() {
+	onSelectionChange();
 }
 
 UITextInput * UITextInput::setMaxLength( Uint32 maxLength ) {

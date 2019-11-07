@@ -92,15 +92,15 @@ void InputTextBuffer::promptToLeftFirstNoChar() {
 	if ( mPromptPos - 2 > 0 ) {
 		for ( Int32 i = mPromptPos - 2; i > 0; i-- ) {
 			if ( !String::isLetter( mText[i] ) && !String::isNumber( mText[i] ) && '\n' != mText[i] ) {
-				mPromptPos = i + 1;
+				setCursorPos( i + 1 );
 				break;
 			} else if ( i - 1 == 0 ) {
-				mPromptPos = 0;
+				setCursorPos( 0 );
 				break;
 			}
 		}
 	} else {
-		mPromptPos = 0;
+		setCursorPos( 0 );
 	}
 
 	resetSelection();
@@ -114,10 +114,10 @@ void InputTextBuffer::promptToRightFirstNoChar() {
 
 	for ( Int32 i = mPromptPos; i < s; i++ ) {
 		if ( !String::isLetter( mText[i] ) && !String::isNumber( mText[i] ) && '\n' != mText[i] ) {
-			mPromptPos = i + 1;
+			setCursorPos( i + 1 );
 			break;
 		} else if ( i + 1 == s ) {
-			mPromptPos = s;
+			setCursorPos( s );
 		}
 	}
 
@@ -128,6 +128,7 @@ void InputTextBuffer::resetSelection() {
 	if ( isTextSelectionEnabled() ) {
 		selCurInit( -1 );
 		selCurEnd( -1 );
+		onSelectionChange();
 	}
 }
 
@@ -140,14 +141,14 @@ void InputTextBuffer::eraseToPrevNoChar() {
 	do {
 		if ( mPromptPos < (int)mText.size() ) {
 			mText.erase( mPromptPos - 1, 1 );
-			mPromptPos--;
+			setCursorPos( mPromptPos - 1 );
 		} else {
 			mText.resize( mText.size() - 1 );
-			mPromptPos = mText.size();
+			setCursorPos( mText.size() );
 		}
 
 		if ( mPromptPos <= 0 ) {
-			mPromptPos = 0;
+			setCursorPos( 0 );
 			break;
 		}
 
@@ -157,6 +158,7 @@ void InputTextBuffer::eraseToPrevNoChar() {
 	resetSelection();
 
 	setChangedSinceLastUpdate( true );
+	onBufferChange();
 }
 
 void InputTextBuffer::eraseToNextNoChar() {
@@ -184,6 +186,7 @@ void InputTextBuffer::eraseToNextNoChar() {
 		setBuffer( iniStr + endStr );
 
 		resetSelection();
+		onBufferChange();
 	}
 }
 
@@ -223,15 +226,16 @@ void InputTextBuffer::tryAddChar( const Uint32& c ) {
 		if ( validChar( c ) ) {
 			removeSelection();
 
-			setChangedSinceLastUpdate( true );
-
 			if ( autoPrompt() ) {
 				mText += c;
-				mPromptPos = (int)mText.size();
+				setCursorPos( (int)mText.size() );
 			} else {
 				String::insertChar( mText, mPromptPos, c );
-				mPromptPos++;
+				setCursorPos( mPromptPos+1 );
 			}
+
+			setChangedSinceLastUpdate( true );
+			onBufferChange();
 		}
 	} else {
 		if ( canAdd() && String::isCharacter(c) ) {
@@ -261,6 +265,7 @@ void InputTextBuffer::removeSelection() {
 			setCursorPos( init );
 
 			resetSelection();
+			onBufferChange();
 		} else {
 			resetSelection();
 		}
@@ -310,6 +315,7 @@ void InputTextBuffer::update( InputEvent* Event ) {
 							selCurInit( 0 );
 							selCurEnd( mText.size() );
 							setCursorPos( mSelCurEnd );
+							onSelectionChange();
 						}
 					}
 
@@ -329,12 +335,10 @@ void InputTextBuffer::update( InputEvent* Event ) {
 							}
 
 							if ( txt.size() ) {
-								setChangedSinceLastUpdate( true );
-
 								if ( mText.size() + txt.size() < mMaxLength ) {
 									if ( autoPrompt() ) {
 										mText += txt;
-										mPromptPos = (int)mText.size();
+										setCursorPos( (int)mText.size() );
 									} else {
 										mText.insert( mPromptPos, txt );
 										mPromptPos += txt.size();
@@ -342,6 +346,9 @@ void InputTextBuffer::update( InputEvent* Event ) {
 
 									autoPrompt( false );
 								}
+
+								setChangedSinceLastUpdate( true );
+								onBufferChange();
 							}
 						}
 
@@ -364,13 +371,11 @@ void InputTextBuffer::update( InputEvent* Event ) {
 
 					if ( ( c == KEY_BACKSPACE || c == KEY_DELETE ) ) {
 						if ( mText.size() ) {
-							setChangedSinceLastUpdate( true );
-
 							if ( mPromptPos < (int)mText.size() ) {
 								if ( c == KEY_BACKSPACE ) {
 									if ( mPromptPos > 0 ) {
 										mText.erase(mPromptPos-1,1);
-										mPromptPos--;
+										setCursorPos( mPromptPos - 1 );
 									}
 								} else {
 									mText.erase(mPromptPos,1);
@@ -381,16 +386,20 @@ void InputTextBuffer::update( InputEvent* Event ) {
 							}
 
 							resetSelection();
+
+							setChangedSinceLastUpdate( true );
+							onBufferChange();
 						}
 					} else if ( ( c == KEY_RETURN || c == KEY_KP_ENTER ) ) {
 						if ( setSupportNewLine() && canAdd() ) {
 							String::insertChar( mText, mPromptPos, '\n' );
 
-							mPromptPos++;
+							setCursorPos( mPromptPos + 1 );
 
 							resetSelection();
 
 							setChangedSinceLastUpdate( true );
+							onBufferChange();
 						}
 
 						if ( mEnterCall )
@@ -398,13 +407,13 @@ void InputTextBuffer::update( InputEvent* Event ) {
 
 					} else if ( c == KEY_LEFT ) {
 						if ( ( mPromptPos - 1 ) >= 0 ) {
-							mPromptPos--;
+							setCursorPos( mPromptPos - 1 );
 							autoPrompt( false );
 							shiftSelection( mPromptPos + 1 );
 						}
 					} else if ( c == KEY_RIGHT ) {
 						if ( ( mPromptPos + 1 ) < (int)mText.size() ) {
-							mPromptPos++;
+							setCursorPos( mPromptPos + 1 );
 							autoPrompt(false);
 							shiftSelection( mPromptPos - 1 );
 						} else if ( ( mPromptPos + 1 ) == (int)mText.size() ) {
@@ -432,13 +441,13 @@ void InputTextBuffer::update( InputEvent* Event ) {
 						if ( c == KEY_END ) {
 							for ( Uint32 i = mPromptPos; i < mText.size(); i++ )  {
 								if ( mText[i] == '\n' ) {
-									mPromptPos = i;
+									setCursorPos( i );
 									autoPrompt( false );
 									break;
 								}
 
 								if ( i == ( mText.size() - 1 ) ) {
-									mPromptPos = mText.size();
+									setCursorPos( mText.size() );
 									autoPrompt( false );
 								}
 							}
@@ -450,13 +459,13 @@ void InputTextBuffer::update( InputEvent* Event ) {
 							if ( 0 != mPromptPos ) {
 								for ( Int32 i = (Int32)mPromptPos - 1; i >= 0; i-- )  {
 									if ( mText[i] == '\n' ) {
-										mPromptPos = i + 1;
+										setCursorPos( i + 1 );
 										autoPrompt( false );
 										break;
 									}
 
 									if ( i == 0 ) {
-										mPromptPos = 0;
+										setCursorPos( 0 );
 										autoPrompt( false );
 									}
 								}
@@ -474,7 +483,7 @@ void InputTextBuffer::update( InputEvent* Event ) {
 						}
 
 						if ( c == KEY_HOME ) {
-							mPromptPos = 0;
+							setCursorPos( 0 );
 							autoPrompt(false);
 
 							shiftSelection( lPromtpPos );
@@ -487,8 +496,6 @@ void InputTextBuffer::update( InputEvent* Event ) {
 			if ( Event->Type == InputEvent::TextInput ) {
 				tryAddChar( Event->text.text );
 			} else if ( Event->Type == InputEvent::KeyDown ) {
-				setChangedSinceLastUpdate( true );
-
 				if ( c == KEY_BACKSPACE && mText.size() > 0 ) {
 					mText.resize( mText.size() - 1 );
 				} else if ( ( c == KEY_RETURN || c == KEY_KP_ENTER ) && !Input->isMetaPressed() && !Input->isAltPressed() && !Input->isControlPressed() ) {
@@ -498,6 +505,9 @@ void InputTextBuffer::update( InputEvent* Event ) {
 					if ( mEnterCall )
 						mEnterCall();
 				}
+
+				setChangedSinceLastUpdate( true );
+				onBufferChange();
 			}
 		}
 	}
@@ -510,11 +520,13 @@ void InputTextBuffer::shiftSelection( const int& lastPromtpPos ) {
 	Input * Input = mWindow->getInput();
 
 	if ( Input->isShiftPressed() && !Input->isControlPressed() ) {
-		if ( selCurInit() != getCursorPos() ) {
-			selCurEnd( getCursorPos() );
+		if ( selCurInit() != getCursorPosition() ) {
+			selCurEnd( getCursorPosition() );
+			onSelectionChange();
 		} else {
-			if ( selCurInit() != getCursorPos() ) {
-				selCurInit( getCursorPos() );
+			if ( selCurInit() != getCursorPosition() ) {
+				selCurInit( getCursorPosition() );
+				onSelectionChange();
 			} else {
 				resetSelection();
 				return;
@@ -523,10 +535,12 @@ void InputTextBuffer::shiftSelection( const int& lastPromtpPos ) {
 
 		if ( -1 == selCurInit() ) {
 			selCurInit( lastPromtpPos );
+			onSelectionChange();
 		}
 
 		if ( -1 == selCurEnd() ) {
 			selCurEnd( lastPromtpPos );
+			onSelectionChange();
 		}
 	}
 }
@@ -564,9 +578,9 @@ void InputTextBuffer::movePromptRowDown( const bool& breakit ) {
 
 		if ( 0 != dLastLinePos ) {
 			if ( dCharLineCount < dCharsTo ) {
-				mPromptPos = dLastLinePos + dCharLineCount;
+				setCursorPos( dLastLinePos + dCharLineCount );
 			} else {
-				mPromptPos = dLastLinePos + dCharsTo;
+				setCursorPos( dLastLinePos + dCharsTo );
 			}
 
 			autoPrompt( false );
@@ -604,9 +618,9 @@ void InputTextBuffer::movePromptRowUp( const bool& breakit ) {
 			}
 
 			if ( uCharLineCount < uCharsTo ) {
-				mPromptPos = uLastLinePos + uCharLineCount;
+				setCursorPos( uLastLinePos + uCharLineCount );
 			} else {
-				mPromptPos = uLastLinePos + uCharsTo;
+				setCursorPos( uLastLinePos + uCharsTo );
 			}
 
 			autoPrompt( false );
@@ -632,18 +646,25 @@ void InputTextBuffer::setBuffer( const String& str ) {
 	}
 }
 
-int InputTextBuffer::getCursorPos() const {
+int InputTextBuffer::getCursorPosition() const {
 	return mPromptPos;
+}
+
+void InputTextBuffer::setCursorPosition(const Uint32& pos) {
+	if ( isFreeEditingEnabled() ) {
+		if ( pos < mText.size() ) {
+			autoPrompt( false );
+		}
+
+		mPromptPos = pos;
+	}
 }
 
 void InputTextBuffer::setCursorPos( const Uint32& pos ) {
 	if ( isFreeEditingEnabled() ) {
-		if (  pos < mText.size() ) {
-			mPromptPos = pos;
-			autoPrompt( false );
-		} else {
-			cursorToEnd();
-		}
+		setCursorPosition( pos );
+
+		onCursorPositionChange();
 	}
 }
 
@@ -697,7 +718,9 @@ void InputTextBuffer::autoPrompt( const bool& set ) {
 	BitOp::writeBitKey( &mFlags, INPUT_TB_PROMPT_AUTO_POS, set == true );
 
 	if ( set ) {
-		mPromptPos		= (int)mText.size();
+		mPromptPos = (int)mText.size();
+
+		onCursorPositionChange();
 	}
 }
 
@@ -759,7 +782,7 @@ void InputTextBuffer::setTextSelectionEnabled( const bool& enabled ) {
 }
 
 void InputTextBuffer::cursorToEnd() {
-	mPromptPos = mText.size();
+	setCursorPos( mText.size() );
 }
 
 void InputTextBuffer::selCurInit( const Int32& init ) {
@@ -776,6 +799,36 @@ const Int32& InputTextBuffer::selCurInit() const {
 
 const Int32& InputTextBuffer::selCurEnd() const {
 	return mSelCurEnd;
+}
+
+void InputTextBuffer::setCursorPositionChangeCallback( const CursorPositionChangeCallback& cursorPositionChangeCallback ) {
+	mCursorPositionChangeCallback = cursorPositionChangeCallback;
+}
+
+void InputTextBuffer::setBufferChangeCallback(const BufferChangeCallback& bufferChangeCallback) {
+	mBufferChangeCallback = bufferChangeCallback;
+}
+
+void InputTextBuffer::setSelectionChangeCallback(const SelectionChangeCallback& selectionChangeCallback) {
+	mSelectionChangeCallback = selectionChangeCallback;
+}
+
+void InputTextBuffer::onCursorPositionChange() {
+	if ( mCursorPositionChangeCallback ) {
+		mCursorPositionChangeCallback();
+	}
+}
+
+void InputTextBuffer::onSelectionChange() {
+	if ( mSelectionChangeCallback ) {
+		mSelectionChangeCallback();
+	}
+}
+
+void InputTextBuffer::onBufferChange() {
+	if ( mBufferChangeCallback ) {
+		mBufferChangeCallback();
+	}
 }
 
 }}

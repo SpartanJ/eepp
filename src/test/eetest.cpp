@@ -452,6 +452,7 @@ void EETest::createBaseUI() {
 	comboBox->getListBox()->setSelected( 0 );
 
 	UITextEdit * TextEdit = UITextEdit::New();
+	TextEdit->setFlags( UI_WORD_WRAP );
 	TextEdit->setParent( C )->setPosition( 5, 245 )->setSize( 315, 130 );
 	TextEdit->setText( mBuda );
 
@@ -715,6 +716,7 @@ void EETest::createNewUI() {
 	comboBox->getListBox()->setSelected( 0 );
 
 	UITextEdit * textEdit = UITextEdit::New();
+	textEdit->setFlags( UI_WORD_WRAP );
 	textEdit->setPosition( 350, 4 )->setSize( 200, 200 )->setParent( container );
 	textEdit->setText( mBuda );
 
@@ -1029,6 +1031,7 @@ void EETest::createDecoratedWindow() {
 			->setParent( lay );
 
 	UITextEdit * TEdit = UITextEdit::New();
+	TEdit->setFlags( UI_WORD_WRAP );
 	TEdit->setParent( TabWidget );
 	TEdit->setText( mBuda );
 	TabWidget->add( "TextEdit", TEdit );
