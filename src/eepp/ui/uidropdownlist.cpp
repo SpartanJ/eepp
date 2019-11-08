@@ -60,7 +60,7 @@ void UIDropDownList::setTheme( UITheme * Theme ) {
 void UIDropDownList::onSizeChange() {
 	onAutoSize();
 
-	UIWidget::onSizeChange();
+	UITextView::onSizeChange();
 }
 
 void UIDropDownList::onThemeLoaded() {
