@@ -391,16 +391,20 @@ void UITextEdit::fixScrollToCursor() {
 
 		mSkipValueChange = true;
 
-		Float tW	= textCache.getTextWidth();
 		Float lineHeight = (Float)textCache.getFont()->getLineSpacing( textCache.getCharacterSizePx() );
-		Float tH	= (Float)(LineNum == 0 ? 0 : LineNum + 1) * lineHeight;
+		Float currentLineY	= LineNum * lineHeight;
+		Float visibleLines = eefloor( Height / lineHeight );
+		Float scrollLines = (Float)mTextInput->getNumLines() - visibleLines;
 
-		if ( mTextInput->getPixelsPosition().y + tH < lineHeight ||
-			 mTextInput->getPixelsPosition().y + tH > Height ) {
-			mVScrollBar->setValue( tH / mTextInput->getPixelsSize().getHeight() );
+		if ( mTextInput->getNumLines() > 0 ) {
+			if ( mTextInput->getPixelsPosition().y + currentLineY < 0 ) {
+				mVScrollBar->setValue( LineNum / scrollLines );
+			} else if ( mTextInput->getPixelsPosition().y + currentLineY + lineHeight > Height ) {
+				mVScrollBar->setValue( (LineNum + 1 - visibleLines) / scrollLines );
+			}
 		}
 
-		mHScrollBar->setValue( tW / mTextInput->getPixelsSize().getWidth() );
+		mHScrollBar->setValue( textCache.getTextWidth() / mTextInput->getPixelsSize().getWidth() );
 
 		fixScroll();
 
