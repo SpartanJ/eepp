@@ -522,7 +522,7 @@ void UIListBox::updateScroll( bool fromScrollChange ) {
 
 	updateScrollBarState();
 
-	bool visibleItems 		= mContainer->getSize().getHeight() / mRowHeight;
+	Uint32 visibleItems 	= mContainer->getSize().getHeight() / mRowHeight;
 	mItemsNotVisible 		= (Uint32)mItems.size() - visibleItems;
 	Int32 scrolleable 		= (Int32)mItems.size() * mRowHeight - mContainer->getSize().getHeight();
 	bool isScrollVisible 	= mVScrollBar->isVisible();
