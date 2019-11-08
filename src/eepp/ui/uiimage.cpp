@@ -2,7 +2,6 @@
 #include <eepp/graphics/drawable.hpp>
 #include <eepp/graphics/sprite.hpp>
 #include <eepp/graphics/drawablesearcher.hpp>
-#include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 

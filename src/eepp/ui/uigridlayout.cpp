@@ -1,5 +1,4 @@
 #include <eepp/ui/uigridlayout.hpp>
-#include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 

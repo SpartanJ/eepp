@@ -1,6 +1,5 @@
 #include <eepp/ui/uipushbutton.hpp>
 #include <eepp/graphics/text.hpp>
-#include <pugixml/pugixml.hpp>
 #include <eepp/graphics/drawablesearcher.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uiscenenode.hpp>

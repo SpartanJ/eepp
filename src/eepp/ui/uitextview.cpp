@@ -8,7 +8,6 @@
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/window/clipboard.hpp>
 #include <eepp/scene/actions/actions.hpp>
-#include <pugixml/pugixml.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
 
 namespace EE { namespace UI {

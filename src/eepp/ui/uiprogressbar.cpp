@@ -1,7 +1,6 @@
 #include <eepp/ui/uiprogressbar.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/scene/scenenode.hpp>
-#include <pugixml/pugixml.hpp>
 #include <eepp/graphics/globaltextureatlas.hpp>
 
 namespace EE { namespace UI {

@@ -3,7 +3,6 @@
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/fontmanager.hpp>
-#include <pugixml/pugixml.hpp>
 #include <eepp/ui/uistyle.hpp>
 
 namespace EE { namespace UI {

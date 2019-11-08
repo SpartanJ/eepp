@@ -1,6 +1,5 @@
 #include <eepp/ui/uitextureregion.hpp>
 #include <eepp/graphics/textureregion.hpp>
-#include <pugixml/pugixml.hpp>
 #include <eepp/graphics/globaltextureatlas.hpp>
 #include <eepp/graphics/textureatlasmanager.hpp>
 

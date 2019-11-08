@@ -3,7 +3,6 @@
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/graphics/font.hpp>
-#include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 
@@ -20,7 +19,7 @@ UITextEdit::UITextEdit() :
 	mVScrollBarMode( UI_SCROLLBAR_AUTO ),
 	mSkipValueChange( false )
 {
-	setFlags( UI_AUTO_PADDING | UI_TEXT_SELECTION_ENABLED | UI_WORD_WRAP );
+	setFlags( UI_AUTO_PADDING | UI_TEXT_SELECTION_ENABLED );
 	clipEnable();
 
 	mTextInput	= UITextInput::New();

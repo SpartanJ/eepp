@@ -1,6 +1,5 @@
 #include <eepp/ui/uiscrollview.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
-#include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 

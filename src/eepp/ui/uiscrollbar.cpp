@@ -36,7 +36,7 @@ UIScrollBar::UIScrollBar( const UI_ORIENTATION& orientation ) :
 
 	mSlider		= UISlider::New();
 	mSlider->addEventListener( Event::OnValueChange, cb::Make1( this, &UIScrollBar::onValueChangeCb ) );
-	mSlider->setElementTag( "scrollbarslider" );
+	mSlider->setElementTag( "scrollbar::slider" );
 	mSlider->setOrientation( orientation );
 	mSlider->setParent( this );
 	mSlider->setAllowHalfSliderOut( false );

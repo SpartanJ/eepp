@@ -1,7 +1,6 @@
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/graphics/textureregion.hpp>
 #include <eepp/graphics/text.hpp>
-#include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 
@@ -223,7 +222,7 @@ Uint32 UICheckBox::onKeyDown( const KeyEvent& Event ) {
 
 void UICheckBox::onAlphaChange() {
 	UITextView::onAlphaChange();
-	
+
 	mActiveButton->setAlpha( mAlpha );
 	mInactiveButton->setAlpha( mAlpha );
 }

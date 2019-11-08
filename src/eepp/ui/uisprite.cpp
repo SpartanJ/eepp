@@ -1,7 +1,6 @@
 #include <eepp/ui/uisprite.hpp>
 #include <eepp/graphics/sprite.hpp>
 #include <eepp/scene/scenenode.hpp>
-#include <pugixml/pugixml.hpp>
 #include <eepp/graphics/globaltextureatlas.hpp>
 
 namespace EE { namespace UI {
@@ -43,7 +42,7 @@ void UISprite::setSprite( Graphics::Sprite * sprite ) {
 
 	mSprite = sprite;
 	mSprite->setAutoAnimate( false );
-	
+
 	updateSize();
 }
 
@@ -112,7 +111,7 @@ Color UISprite::getColor() const {
 void UISprite::setColor( const Color& color ) {
 	if ( NULL != mSprite )
 		mSprite->setColor( color );
-	
+
 	setAlpha( color.a );
 }
 

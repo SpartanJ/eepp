@@ -1,7 +1,6 @@
 #include <eepp/ui/uiradiobutton.hpp>
 #include <eepp/graphics/textureregion.hpp>
 #include <eepp/graphics/text.hpp>
-#include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 

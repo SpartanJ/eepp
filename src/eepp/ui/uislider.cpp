@@ -1,7 +1,6 @@
 #include <eepp/ui/uislider.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/graphics/textureregion.hpp>
-#include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 

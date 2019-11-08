@@ -1,6 +1,5 @@
 #include <eepp/ui/uitouchdragablewidget.hpp>
 #include <eepp/scene/scenenode.hpp>
-#include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 
