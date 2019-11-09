@@ -210,6 +210,8 @@ class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
 		std::string getGravityString() const;
 
 		std::string getFlagsString() const;
+
+		bool drawablePropertySet( const std::string& propertyName, const std::string& value, std::function<void(Drawable * drawable, bool ownIt)> funcSet);
 };
 
 }}

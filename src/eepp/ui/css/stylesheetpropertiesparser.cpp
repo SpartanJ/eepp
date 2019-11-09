@@ -86,11 +86,6 @@ int StyleSheetPropertiesParser::readPropertyValue(StyleSheetPropertiesParser::Re
 			return pos;
 		}
 
-		if ( buffer.size() == 4 && buffer.substr(0,4) == "url(" ) {
-			rs = ReadingValueUrl;
-			pos = readValueUrl( rs, pos, buffer, str );
-		}
-
 		if ( str[pos] == ';' ) {
 			rs = ReadingPropertyName;
 
@@ -126,37 +121,6 @@ int StyleSheetPropertiesParser::readComment(StyleSheetPropertiesParser::ReadStat
 		}
 
 		buffer += str[pos];
-
-		pos++;
-	}
-
-	return pos;
-}
-
-int StyleSheetPropertiesParser::readValueUrl(StyleSheetPropertiesParser::ReadState & rs, std::size_t pos, std::string & buffer, const std::string& str) {
-	bool quoted = false;
-
-	while ( pos < str.size() ) {
-		if ( !quoted && str[pos] == '"' ) {
-			buffer += str[pos];
-
-			quoted = true;
-		} else if ( !quoted ) {
-			if ( str[pos] != '\n' && str[pos] != '\t' )
-				buffer += str[pos];
-
-			if ( str[pos] == ')' ) {
-				rs = ReadingPropertyValue;
-				return pos + 1;
-			}
-		}
-		else {
-			buffer += str[pos];
-
-			if ( quoted && str[pos] == '"' ) {
-				quoted = false;
-			}
-		}
 
 		pos++;
 	}

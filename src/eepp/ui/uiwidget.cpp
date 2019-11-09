@@ -754,12 +754,10 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 			notifyLayoutAttrChange();
 		}
 	} else if ( "background" == name ) {
-		Drawable * res = NULL;
-
 		if ( Color::isColorString( attribute.getValue() ) ) {
 			setAttribute( NodeAttribute( "background-color", attribute.getValue() ) );
-		} else if ( NULL != ( res = DrawableSearcher::searchByName( attribute.getValue() ) ) ) {
-			setBackgroundDrawable( res, res->getDrawableType() == Drawable::SPRITE );
+		} else {
+			setAttribute( NodeAttribute( "background-image", attribute.getValue() ) );
 		}
 	} else if ( "background-color" == name || "backgroundcolor" == name ) {
 		SAVE_NORMAL_STATE_ATTR( getBackgroundColor().toHexString() );
@@ -780,57 +778,14 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 			setBackgroundColor( color );
 		}
 	} else if ( "background-image" == name || "backgroundimage" == name ) {
-		NodeAttribute::FunctionType functionType = NodeAttribute::FunctionType::parse( attribute.getValue() );
-		Drawable * res = NULL;
-
-		if ( !functionType.isEmpty() ) {
-			if ( functionType.getName() == "linear-gradient" && functionType.getParameters().size() >= 2 ) {
-				RectangleDrawable * drawable = RectangleDrawable::New();
-				RectColors rectColors;
-
-				const std::vector<std::string>& params( functionType.getParameters() );
-
-				if ( Color::isColorString( params.at(0) ) && params.size() >= 2 ) {
-					rectColors.TopLeft = rectColors.TopRight = Color::fromString( params.at(0) );
-					rectColors.BottomLeft = rectColors.BottomRight = Color::fromString( params.at(1) );
-				} else if ( params.size() >= 3 ) {
-					std::string direction = params.at(0);
-					String::toLowerInPlace( direction );
-
-					if ( direction == "to bottom" ) {
-						rectColors.TopLeft = rectColors.TopRight = Color::fromString( params.at(1) );
-						rectColors.BottomLeft = rectColors.BottomRight = Color::fromString( params.at(2) );
-					} else if ( direction == "to left" ) {
-						rectColors.TopLeft = rectColors.BottomLeft = Color::fromString( params.at(2) );
-						rectColors.TopRight = rectColors.BottomRight = Color::fromString( params.at(1) );
-					} else if ( direction == "to right" ) {
-						rectColors.TopLeft = rectColors.BottomLeft = Color::fromString( params.at(1) );
-						rectColors.TopRight = rectColors.BottomRight = Color::fromString( params.at(2) );
-					} else if ( direction == "to top" ) {
-						rectColors.TopLeft = rectColors.TopRight = Color::fromString( params.at(2) );
-						rectColors.BottomLeft = rectColors.BottomRight = Color::fromString( params.at(1) );
-					} else {
-						rectColors.TopLeft = rectColors.TopRight = Color::fromString( params.at(1) );
-						rectColors.BottomLeft = rectColors.BottomRight = Color::fromString( params.at(2) );
-					}
-				} else {
-					return setAttribute( NodeAttribute( "background-color", params.at(0) ) );
-				}
-
-				drawable->setRectColors( rectColors );
-
-				setBackgroundDrawable( drawable, true );
-			}
-		} else if ( NULL != ( res = DrawableSearcher::searchByName( attribute.getValue() ) ) ) {
-			setBackgroundDrawable( res, res->getDrawableType() == Drawable::SPRITE );
-		}
+		drawablePropertySet( "background", attribute.getValue(), [&] ( Drawable * drawable, bool ownIt ) {
+			setBackgroundDrawable( drawable, ownIt );
+		} );
 	} else if ( "foreground" == name ) {
-		Drawable * res = NULL;
-
 		if ( Color::isColorString( attribute.getValue() ) ) {
 			setAttribute( NodeAttribute( "foreground-color", attribute.getValue() ) );
-		} else if ( NULL != ( res = DrawableSearcher::searchByName( attribute.getValue() ) ) ) {
-			setForegroundDrawable( res, res->getDrawableType() == Drawable::SPRITE );
+		} else {
+			setAttribute( NodeAttribute( "foreground-image", attribute.getValue() ) );
 		}
 	} else if ( "foreground-color" == name || "foregroundcolor" == name ) {
 		SAVE_NORMAL_STATE_ATTR( getForegroundColor().toHexString() );
@@ -850,6 +805,10 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		} else {
 			setForegroundColor( color );
 		}
+	} else if ( "foreground-image" == name || "foregroundimage" == name ) {
+		drawablePropertySet( "foreground", attribute.getValue(), [&] ( Drawable * drawable, bool ownIt ) {
+			setForegroundDrawable( drawable, ownIt );
+		} );
 	} else if ( "foreground-radius" == name || "foregroundradius" == name ) {
 		SAVE_NORMAL_STATE_ATTR( String::toStr( getForegroundRadius() ) );
 
@@ -1294,6 +1253,62 @@ std::string UIWidget::getFlagsString() const {
 	if ( isClipped() ) flagvec.push_back( "clip" );
 
 	return String::join( flagvec, '|' );
+}
+
+bool UIWidget::drawablePropertySet(const std::string& propertyName, const std::string& value, std::function<void (Drawable*, bool)> funcSet) {
+	NodeAttribute::FunctionType functionType = NodeAttribute::FunctionType::parse( value );
+	Drawable * res = NULL;
+	bool attributeSet = true;
+
+	if ( !functionType.isEmpty() ) {
+		if ( functionType.getName() == "linear-gradient" && functionType.getParameters().size() >= 2 ) {
+			RectangleDrawable * drawable = RectangleDrawable::New();
+			RectColors rectColors;
+
+			const std::vector<std::string>& params( functionType.getParameters() );
+
+			if ( Color::isColorString( params.at(0) ) && params.size() >= 2 ) {
+				rectColors.TopLeft = rectColors.TopRight = Color::fromString( params.at(0) );
+				rectColors.BottomLeft = rectColors.BottomRight = Color::fromString( params.at(1) );
+			} else if ( params.size() >= 3 ) {
+				std::string direction = params.at(0);
+				String::toLowerInPlace( direction );
+
+				if ( direction == "to bottom" ) {
+					rectColors.TopLeft = rectColors.TopRight = Color::fromString( params.at(1) );
+					rectColors.BottomLeft = rectColors.BottomRight = Color::fromString( params.at(2) );
+				} else if ( direction == "to left" ) {
+					rectColors.TopLeft = rectColors.BottomLeft = Color::fromString( params.at(2) );
+					rectColors.TopRight = rectColors.BottomRight = Color::fromString( params.at(1) );
+				} else if ( direction == "to right" ) {
+					rectColors.TopLeft = rectColors.BottomLeft = Color::fromString( params.at(1) );
+					rectColors.TopRight = rectColors.BottomRight = Color::fromString( params.at(2) );
+				} else if ( direction == "to top" ) {
+					rectColors.TopLeft = rectColors.TopRight = Color::fromString( params.at(2) );
+					rectColors.BottomLeft = rectColors.BottomRight = Color::fromString( params.at(1) );
+				} else {
+					rectColors.TopLeft = rectColors.TopRight = Color::fromString( params.at(1) );
+					rectColors.BottomLeft = rectColors.BottomRight = Color::fromString( params.at(2) );
+				}
+			} else {
+				return setAttribute( NodeAttribute( propertyName + "-color", params.at(0) ) );
+			}
+
+			drawable->setRectColors( rectColors );
+
+			funcSet( drawable, true );
+		} else if ( functionType.getName() == "url" && functionType.getParameters().size() >= 1 ) {
+			if ( NULL != ( res = DrawableSearcher::searchByName( functionType.getParameters().at(0) ) ) ) {
+				funcSet( res, res->getDrawableType() == Drawable::SPRITE );
+			}
+		}
+	} else if ( NULL != ( res = DrawableSearcher::searchByName( value ) ) ) {
+		funcSet( res, res->getDrawableType() == Drawable::SPRITE );
+	} else {
+		attributeSet = false;
+	}
+
+	return attributeSet;
 }
 
 }}

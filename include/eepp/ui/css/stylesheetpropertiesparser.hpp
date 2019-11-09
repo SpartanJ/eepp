@@ -22,7 +22,6 @@ class EE_API StyleSheetPropertiesParser {
 		enum ReadState {
 			ReadingPropertyName,
 			ReadingPropertyValue,
-			ReadingValueUrl,
 			ReadingComment
 		};
 
@@ -37,8 +36,6 @@ class EE_API StyleSheetPropertiesParser {
 		int readPropertyValue( ReadState& rs, std::size_t pos, std::string& buffer, const std::string& str );
 
 		int readComment( ReadState& rs, std::size_t pos, std::string& buffer, const std::string& str );
-
-		int readValueUrl( ReadState& rs, std::size_t pos, std::string& buffer, const std::string& str );
 
 		void addProperty( const std::string& name, std::string value );
 };
