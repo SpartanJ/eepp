@@ -69,7 +69,7 @@ void UILinearLayout::packVertical() {
 	bool sizeChanged = false;
 	Sizef size( getSize() );
 
-	if ( getLayoutWidthRules() == MATCH_PARENT && 0 == mLayoutWeight ) {
+	if ( getLayoutWidthRules() == MATCH_PARENT && 0 == getLayoutWeight() ) {
 		Float w = getParent()->getSize().getWidth() - mLayoutMargin.Left - mLayoutMargin.Right;
 
 		if ( getParent()->isType( UI_TYPE_LAYOUT ) ) {
@@ -209,9 +209,12 @@ void UILinearLayout::packVertical() {
 	}
 
 	if ( getLayoutWidthRules() == WRAP_CONTENT && mDpSize.getWidth() != maxX ) {
-		setInternalWidth( maxX );
-		packVertical();
-		notifyLayoutAttrChangeParent();
+		if ( !(0 != getLayoutWeight() && getParent()->isType( UI_TYPE_LINEAR_LAYOUT ) &&
+			 getParent()->asType<UILinearLayout>()->getOrientation() == UI_HORIZONTAL) ) {
+			setInternalWidth( maxX );
+			packVertical();
+			notifyLayoutAttrChangeParent();
+		}
 	}
 
 	alignAgainstLayout();
@@ -236,7 +239,7 @@ void UILinearLayout::packHorizontal() {
 		}
 	}
 
-	if ( getLayoutHeightRules() == MATCH_PARENT && 0 == mLayoutWeight ) {
+	if ( getLayoutHeightRules() == MATCH_PARENT && 0 == getLayoutWeight() ) {
 		Float h = getParent()->getSize().getHeight() - mLayoutMargin.Top - mLayoutMargin.Bottom;
 
 		if ( getParent()->isType( UI_TYPE_LAYOUT ) ) {
@@ -361,9 +364,12 @@ void UILinearLayout::packHorizontal() {
 	}
 
 	if ( getLayoutHeightRules() == WRAP_CONTENT && mDpSize.getHeight() != maxY ) {
-		setInternalHeight( maxY );
-		packHorizontal();
-		notifyLayoutAttrChangeParent();
+		if ( !(0 != getLayoutWeight() && getParent()->isType( UI_TYPE_LINEAR_LAYOUT ) &&
+			 getParent()->asType<UILinearLayout>()->getOrientation() == UI_VERTICAL) ) {
+			setInternalHeight( maxY );
+			packHorizontal();
+			notifyLayoutAttrChangeParent();
+		}
 	}
 
 	alignAgainstLayout();
