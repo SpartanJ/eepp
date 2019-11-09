@@ -80,16 +80,12 @@ void loadConfig() {
 	ini.loadFromFile( path );
 	ini.readFile();
 
-	std::string recent = ini.getValue( "UIEDITOR", "recentfiles", "" );
-	std::vector<std::string> files = String::split( recent, ';' );
-
-	recentProjects = files;
+	std::string recent = ini.getValue( "UIEDITOR", "recentprojects", "" );
+	recentProjects = String::split( recent, ';' );
 }
 
 void saveConfig() {
-	std::string files = String::join( recentProjects, ';' );
-
-	ini.setValue( "UIEDITOR", "recentfiles", files );
+	ini.setValue( "UIEDITOR", "recentprojects", String::join( recentProjects, ';' ) );
 	ini.writeFile();
 }
 
@@ -227,6 +223,10 @@ static void loadLayout( std::string file ) {
 
 static void refreshLayout() {
 	if ( !currentLayout.empty() && FileSystem::fileExists( currentLayout ) && uiContainer != NULL ) {
+		if ( !currentStyleSheet.empty() && FileSystem::fileExists( currentStyleSheet ) && uiContainer != NULL ) {
+			loadStyleSheet( currentStyleSheet );
+		}
+
 		loadLayout( currentLayout );
 	}
 
@@ -236,6 +236,10 @@ static void refreshLayout() {
 static void refreshStyleSheet() {
 	if ( !currentStyleSheet.empty() && FileSystem::fileExists( currentStyleSheet ) && uiContainer != NULL ) {
 		loadStyleSheet( currentStyleSheet );
+
+		if ( !currentLayout.empty() && FileSystem::fileExists( currentLayout ) && uiContainer != NULL ) {
+			loadLayout( currentLayout );
+		}
 	}
 
 	updateStyleSheet = false;
@@ -383,7 +387,7 @@ void refreshLayoutList() {
 
 			chk->setActive( currentLayout == it->second );
 		}
-	} else if ( uiWinMenu->getButton( "Layouts" ) == NULL ) {
+	} else if ( uiWinMenu->getButton( "Layouts" ) != NULL ) {
 		uiWinMenu->removeMenuButton( "Layouts" );
 	}
 
@@ -534,8 +538,12 @@ void loadProject( std::string projectPath ) {
 		if ( result ) {
 			loadProjectNodes( doc.first_child() );
 
-			if ( recentProjects.size() > 0 && recentProjects[0] == projectPath )
-				return;
+			for ( auto pathIt = recentProjects.begin(); pathIt != recentProjects.end(); pathIt++ ) {
+				if ( *pathIt == projectPath ) {
+					recentProjects.erase(pathIt);
+					break;
+				}
+			}
 
 			recentProjects.insert( recentProjects.begin(), projectPath );
 

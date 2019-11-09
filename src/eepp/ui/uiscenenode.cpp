@@ -4,9 +4,9 @@
 #include <eepp/window/window.hpp>
 #include <eepp/system/packmanager.hpp>
 #include <eepp/system/filesystem.hpp>
-#include <pugixml/pugixml.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
 #include <eepp/ui/css/stylesheetparser.hpp>
+#include <pugixml/pugixml.hpp>
 #include <algorithm>
 
 namespace EE { namespace UI {
@@ -110,6 +110,8 @@ UIWidget * UISceneNode::loadLayoutNodes( pugi::xml_node node, Node * parent ) {
 
 			uiwidget->reloadStyle( false );
 			uiwidget->onWidgetCreated();
+		} else if ( String::toLower( widget.name() ) == "style" ) {
+			combineStyleSheet( widget.text().as_string() );
 		}
 	}
 

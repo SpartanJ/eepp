@@ -34,12 +34,15 @@ Node::Node() :
 }
 
 Node::~Node() {
-	if ( !SceneManager::instance()->isShootingDown() ) {
-		if ( NULL != mSceneNode && mSceneNode != this && NULL != mSceneNode->getActionManager() )
+	if ( !SceneManager::instance()->isShootingDown() && NULL != mSceneNode ) {
+		if ( mSceneNode != this && NULL != mSceneNode->getActionManager() )
 			mSceneNode->getActionManager()->removeAllActionsFromTarget(this);
 
-		if ( NULL != mSceneNode && (mNodeFlags & NODE_FLAG_SCHEDULED_UPDATE) )
+		if ( mNodeFlags & NODE_FLAG_SCHEDULED_UPDATE )
 			mSceneNode->unsubscribeScheduledUpdate(this);
+
+		if ( isMouseOverMeOrChilds() )
+			mSceneNode->removeMouseOverNode( this );
 	}
 
 	childDeleteAll();

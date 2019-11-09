@@ -216,7 +216,7 @@ Uint32 UIMenu::getCount() const {
 void UIMenu::remove( const Uint32& Index ) {
 	eeASSERT( Index < mItems.size() );
 
-	eeSAFE_DELETE( mItems[ Index ] );
+	mItems[ Index ]->close();
 
 	mItems.erase( mItems.begin() + Index );
 
@@ -235,7 +235,7 @@ void UIMenu::remove( UINode * Ctrl ) {
 
 void UIMenu::removeAll() {
 	for ( Uint32 i = 0; i < mItems.size(); i++ ) {
-		eeSAFE_DELETE( mItems[ i ] );
+		mItems[ i ]->close();
 	}
 
 	mItems.clear();

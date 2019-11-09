@@ -13,14 +13,13 @@ namespace EE { namespace Graphics {
 SINGLETON_DECLARE_IMPLEMENTATION(TextureFactory)
 
 TextureFactory::TextureFactory() :
+	mCurrentTexture(EE_MAX_TEXTURE_UNITS),
 	mMemSize(0),
 	mLastCoordinateType( Texture::CoordinateType::Normalized ),
 	mErasing(false)
 {
 	mTextures.clear();
 	mTextures.push_back( NULL );
-
-	memset( &mCurrentTexture[0], 0, EE_MAX_TEXTURE_UNITS );
 }
 
 const Texture::CoordinateType & TextureFactory::getLastCoordinateType() const {

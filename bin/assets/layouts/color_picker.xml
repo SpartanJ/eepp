@@ -1,0 +1,86 @@
+<style>
+#color_picker {
+	min-window-size: 320dp, 470dp;
+}
+#color_picker .container {
+	margin: 4dp;
+}
+#color_picker .container > .header > .current_color {
+	background-color: white;
+	foreground-color: red;
+}
+#color_picker .container > .header {
+	margin-bottom: 4dp;
+}
+#color_picker .container > .header > .picker_icon {
+	icon: color-picker-white;
+	gravity: center;
+}
+#color_picker .container > .pickers > .color_picker {
+	background-image: linear-gradient(white, black);
+}
+#color_picker .container > .pickers > .separator,
+#color_picker .container > .header > .separator {
+	margin: 8dp 0dp 8dp 0dp;
+}
+#color_picker .container > .pickers > .separator {
+	background-color: #FFFFFF88;
+}
+#color_picker .container > .pickers > .hue_picker {
+	background-image: linear-gradient(white, black);
+}
+#color_picker .container > .separator {
+	margin: 0dp 8dp 0dp 4dp;
+	background-color: #FFFFFF88;
+}
+#color_picker .container > .slider_container,
+#color_picker .container > .footer {
+	margin-top: 4dp;
+}
+#color_picker .container > .footer > PushButton {
+	padding-left: 8dp;
+	padding-right: 8dp;
+	icon: ok;
+}
+</style>
+<window id="color_picker" layout_width="320dp" layout_height="470dp">
+	<LinearLayout class="container" orientation="vertical" layout_width="match_parent" layout_height="wrap_content">
+		<LinearLayout class="header" orientation="horizontal" layout_width="match_parent" layout_height="28dp">
+			<Widget class="current_color" layout_width="256dp" layout_height="match_parent" />
+			<Widget class="separator" layout_width="1dp" layout_height="256dp" />
+			<Image class="picker_icon" layout_width="0dp" layout_weight="1" layout_height="match_parent" />
+		</LinearLayout>
+		<LinearLayout class="pickers" orientation="horizontal" layout_width="match_parent" layout_height="256dp">
+			<Widget class="color_picker" layout_width="256dp" layout_height="256dp" />
+			<Widget class="separator" layout_width="1dp" layout_height="256dp" />
+			<Widget class="hue_picker" layout_width="0dp" layout_weight="1" layout_height="256dp" />
+		</LinearLayout>
+		<Widget class="separator" layout_width="match_parent" layout_height="1dp" />
+		<LinearLayout class="slider_container" orientation="horizontal" ayout_width="match_parent" layout_height="wrap_content">
+			<TextView layout_width="16dp" layout_height="wrap_content" text="R" layout_gravity="center" />
+			<Slider layout_width="0dp" layout_weight="1" layout_height="wrap_content" orientation="horizontal" layout_gravity="center" />
+			<SpinBox layout_width="48dp" layout_height="wrap_content" />
+		</LinearLayout>
+		<LinearLayout class="slider_container" orientation="horizontal" ayout_width="match_parent" layout_height="wrap_content">
+			<TextView layout_width="16dp" layout_height="wrap_content" text="G" layout_gravity="center" />
+			<Slider layout_width="0dp" layout_weight="1" layout_height="wrap_content" orientation="horizontal" layout_gravity="center" />
+			<SpinBox layout_width="48dp" layout_height="wrap_content" />
+		</LinearLayout>
+		<LinearLayout class="slider_container" orientation="horizontal" ayout_width="match_parent" layout_height="wrap_content">
+			<TextView layout_width="16dp" layout_height="wrap_content" text="B" layout_gravity="center" />
+			<Slider layout_width="0dp" layout_weight="1" layout_height="wrap_content" orientation="horizontal" layout_gravity="center" />
+			<SpinBox layout_width="48dp" layout_height="wrap_content" />
+		</LinearLayout>
+		<LinearLayout class="slider_container" orientation="horizontal" ayout_width="match_parent" layout_height="wrap_content">
+			<TextView layout_width="16dp" layout_height="wrap_content" text="A" layout_gravity="center" />
+			<Slider layout_width="0dp" layout_weight="1" layout_height="wrap_content" orientation="horizontal" layout_gravity="center" />
+			<SpinBox layout_width="48dp" layout_height="wrap_content" />
+		</LinearLayout>
+		<LinearLayout class="footer" orientation="horizontal" ayout_width="match_parent" layout_height="wrap_content">
+			<TextView layout_width="wrap_content" layout_height="wrap_content" text="HTML Notation #" layout_gravity="center" />
+			<TextInput layout_width="120dp" layout_height="wrap_content" />
+			<Widget layout_width="0dp" layout_weight="1" layout_height="match_parent" />
+			<PushButton layout_width="wrap_content" layout_height="wrap_content" text="OK" />
+		</LinearLayout>
+	</LinearLayout>
+</window>

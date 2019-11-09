@@ -29,7 +29,7 @@ void StyleSheet::combineStyle( const StyleSheetStyle& node ) {
 	} else {
 		auto& currentNode = nodeIt->second;
 
-		if ( node.getSelector().getSpecificity() > currentNode.getSelector().getSpecificity() ) {
+		if ( node.getSelector().getSpecificity() >= currentNode.getSelector().getSpecificity() ) {
 			for ( auto& pit : node.getProperties() )
 				currentNode.setProperty( pit.second );
 		}

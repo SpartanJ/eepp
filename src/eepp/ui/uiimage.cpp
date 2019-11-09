@@ -2,6 +2,7 @@
 #include <eepp/graphics/drawable.hpp>
 #include <eepp/graphics/sprite.hpp>
 #include <eepp/graphics/drawablesearcher.hpp>
+#include <eepp/ui/uithememanager.hpp>
 
 namespace EE { namespace UI {
 
@@ -25,6 +26,8 @@ UIImage::UIImage( const std::string& tag ) :
 	mFlags |= UI_AUTO_SIZE;
 
 	onAutoSize();
+
+	applyDefaultTheme();
 }
 
 UIImage::UIImage() :
@@ -74,11 +77,11 @@ void UIImage::onAutoSize() {
 		}
 
 		if ( mLayoutWidthRules == WRAP_CONTENT ) {
-			setInternalPixelsWidth( (int)mDrawable->getSize().getWidth() + mRealPadding.Left + mRealPadding.Right );
+			setInternalPixelsWidth( (int)PixelDensity::dpToPx( mDrawable->getSize().getWidth() ) + mRealPadding.Left + mRealPadding.Right );
 		}
 
 		if ( mLayoutHeightRules == WRAP_CONTENT ) {
-			setInternalPixelsHeight( (int)mDrawable->getSize().getHeight() + mRealPadding.Top + mRealPadding.Bottom );
+			setInternalPixelsHeight( (int)PixelDensity::dpToPx( mDrawable->getSize().getHeight() ) + mRealPadding.Top + mRealPadding.Bottom );
 		}
 	}
 }
@@ -106,7 +109,7 @@ void UIImage::calcDestSize() {
 		if ( NULL == mDrawable)
 			return;
 
-		mDestSize = mDrawable->getSize();
+		mDestSize = PixelDensity::dpToPx( mDrawable->getSize() );
 	}
 
 	mDestSize = mDestSize.floor();
@@ -219,6 +222,15 @@ bool UIImage::setAttribute( const NodeAttribute& attribute, const Uint32& state 
 				mDrawableOwner = true;
 
 			setDrawable( res );
+		}
+	} else if ( "icon" == name ) {
+		std::string val = attribute.asString();
+		Drawable * icon = NULL;
+
+		if ( NULL != mTheme && NULL != ( icon = mTheme->getIconByName( val ) ) ) {
+			setDrawable( icon );
+		} else if ( NULL != ( icon = DrawableSearcher::searchByName( val ) ) ) {
+			setDrawable( icon );
 		}
 	} else if ( "scale-type" == name || "scaletype" == name ) {
 		std::string val = attribute.asString();
