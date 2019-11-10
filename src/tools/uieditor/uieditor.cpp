@@ -61,15 +61,19 @@ Clock mouseClock;
 
 std::map<std::string,std::string> layouts;
 std::vector<std::string> recentProjects;
+std::vector<std::string> recentFiles;
 IniFile ini;
 Uint32 recentProjectEventClickId = 0xFFFFFFFF;
+Uint32 recentFilesEventClickId = 0xFFFFFFFF;
 
 std::map<Uint32,TextureRegion*> imagesLoaded;
 std::map<Font*,std::string> fontsLoaded;
 
 void closeProject();
 void updateRecentProjects();
+void updateRecentFiles();
 void loadProject(std::string projectPath);
+void loadLayoutFile(std::string layoutPath);
 
 void loadConfig() {
 	std::string path( Sys::getConfigPath( "eepp-uieditor" ) );
@@ -82,10 +86,13 @@ void loadConfig() {
 
 	std::string recent = ini.getValue( "UIEDITOR", "recentprojects", "" );
 	recentProjects = String::split( recent, ';' );
+	recent = ini.getValue( "UIEDITOR", "recentfiles", "" );
+	recentFiles = String::split( recent, ';' );
 }
 
 void saveConfig() {
 	ini.setValue( "UIEDITOR", "recentprojects", String::join( recentProjects, ';' ) );
+	ini.setValue( "UIEDITOR", "recentfiles", String::join( recentFiles, ';' ) );
 	ini.writeFile();
 }
 
@@ -254,6 +261,44 @@ void onRecentProjectClick( const Event * event ) {
 
 	if ( FileSystem::fileExists( path ) && !FileSystem::isDirectory( path ) ) {
 		loadProject( path );
+	}
+}
+
+void onRecentFilesClick( const Event * event ) {
+	if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+		return;
+
+	const String& txt = event->getNode()->asType<UIMenuItem>()->getText();
+	std::string path( txt.toUtf8() );
+
+	if ( FileSystem::fileExists( path ) && !FileSystem::isDirectory( path ) ) {
+		loadLayoutFile( path );
+	}
+}
+
+void updateRecentFiles() {
+	if ( NULL == uiWinMenu )
+		return;
+
+	UIPopUpMenu * fileMenu = uiWinMenu->getPopUpMenu( "File" );
+
+	UINode * node = NULL;
+
+	if ( NULL != fileMenu  && ( node = fileMenu->getItem( "Recent files" ) ) ) {
+		UIMenuSubMenu * uiMenuSubMenu = static_cast<UIMenuSubMenu*>( node );
+		UIMenu * menu = uiMenuSubMenu->getSubMenu();
+
+		menu->removeAll();
+
+		for ( size_t i = 0; i < recentFiles.size(); i++ ) {
+			menu->add( recentFiles[i] );
+		}
+
+		if ( 0xFFFFFFFF != recentFilesEventClickId ) {
+			menu->removeEventListener( recentFilesEventClickId );
+		}
+
+		recentFilesEventClickId = menu->addEventListener( Event::OnItemClicked, cb::Make1( &onRecentFilesClick ) );
 	}
 }
 
@@ -526,6 +571,27 @@ static void loadProjectNodes( pugi::xml_node node ) {
 	}
 }
 
+void loadLayoutFile( std::string layoutPath ) {
+	if ( FileSystem::fileExists( layoutPath ) ) {
+		loadLayout( layoutPath );
+
+		for ( auto pathIt = recentFiles.begin(); pathIt != recentFiles.end(); pathIt++ ) {
+			if ( *pathIt == layoutPath ) {
+				recentFiles.erase(pathIt);
+				break;
+			}
+		}
+
+		recentFiles.insert( recentFiles.begin(), layoutPath );
+
+		if ( recentFiles.size() > 10 ) {
+			recentFiles.resize( 10 );
+		}
+
+		updateRecentFiles();
+	}
+}
+
 void loadProject( std::string projectPath ) {
 	if ( FileSystem::fileExists( projectPath ) ) {
 		closeProject();
@@ -649,7 +715,7 @@ void styleSheetPathOpen( const Event * event ) {
 }
 
 void layoutOpen( const Event * event ) {
-	loadLayout( event->getNode()->asType<UICommonDialog>()->getFullPath() );
+	loadLayoutFile( event->getNode()->asType<UICommonDialog>()->getFullPath() );
 }
 
 void projectOpen( const Event * event ) {
@@ -761,6 +827,7 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 		uiPopMenu->addSeparator();
 		uiPopMenu->add( "Open layout...", theme->getIconByName( "document-open" ) );
 		uiPopMenu->addSeparator();
+		uiPopMenu->addSubMenu( "Recent files", NULL, UIPopUpMenu::New() );
 		uiPopMenu->addSubMenu( "Recent projects", NULL, UIPopUpMenu::New() );
 		uiPopMenu->addSeparator();
 		uiPopMenu->add( "Close", theme->getIconByName( "document-close" ) );
@@ -796,11 +863,11 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 				loadStyleSheet( argv[2] );
 			}
 
-			loadLayout( argv[1] );
+			loadLayoutFile( argv[1] );
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 		} else {
 			loadStyleSheet( "assets/layouts/test.css" );
-			loadLayout( "assets/layouts/test.xml" );
+			loadLayoutFile( "assets/layouts/test.xml" );
 #endif
 		}
 
