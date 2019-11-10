@@ -536,7 +536,7 @@ void UIWidget::removeClass( const std::string& cls ) {
 	}
 }
 
-bool UIWidget::containsClass( const std::string& cls ) {
+bool UIWidget::containsClass( const std::string& cls ) const {
 	return std::find( mClasses.begin(), mClasses.end(), cls ) != mClasses.end();
 }
 
@@ -650,6 +650,94 @@ const Uint32& UIWidget::getStyleState() const {
 
 const Uint32& UIWidget::getStylePreviousState() const {
 	return NULL != mStyle ? mStyle->getPreviousState() : mState;
+}
+
+std::vector<UIWidget*> UIWidget::findAllByClass( const std::string& className ) {
+	std::vector<UIWidget*> widgets;
+
+	if ( containsClass( className ) ) {
+		widgets.push_back( this );
+	}
+
+	Node * child = mChild;
+
+	while ( NULL != child ) {
+		if ( child->isWidget() ) {
+			std::vector<UIWidget*> foundWidgets = child->asType<UIWidget>()->findAllByClass( className );
+
+			if ( !foundWidgets.empty() )
+				widgets.insert( widgets.end(), foundWidgets.begin(), foundWidgets.end() );
+		}
+
+		child = child->getNextNode();
+	}
+
+	return widgets;
+}
+
+std::vector<UIWidget*> UIWidget::findAllByTag( const std::string& tag ) {
+	std::vector<UIWidget*> widgets;
+
+	if ( getElementTag() == tag ) {
+		widgets.push_back( this );
+	}
+
+	Node * child = mChild;
+
+	while ( NULL != child ) {
+		if ( child->isWidget() ) {
+			std::vector<UIWidget*> foundWidgets = child->asType<UIWidget>()->findAllByTag( tag );
+
+			if ( !foundWidgets.empty() )
+				widgets.insert( widgets.end(), foundWidgets.begin(), foundWidgets.end() );
+		}
+
+		child = child->getNextNode();
+	}
+
+	return widgets;
+}
+
+UIWidget* UIWidget::findByClass( const std::string& className ) {
+	if ( containsClass( className ) ) {
+		return this;
+	} else {
+		Node * child = mChild;
+
+		while ( NULL != child ) {
+			if ( child->isWidget() ) {
+				UIWidget * foundWidget = child->asType<UIWidget>()->findByClass( className );
+
+				if ( NULL != foundWidget )
+					return foundWidget;
+			}
+
+			child = child->getNextNode();
+		}
+	}
+
+	return NULL;
+}
+
+UIWidget* UIWidget::findByTag( const std::string& tag ) {
+	if ( getElementTag() == tag ) {
+		return this;
+	} else {
+		Node * child = mChild;
+
+		while ( NULL != child ) {
+			if ( child->isWidget() ) {
+				UIWidget * foundWidget = child->asType<UIWidget>()->findByTag( tag );
+
+				if ( NULL != foundWidget )
+					return foundWidget;
+			}
+
+			child = child->getNextNode();
+		}
+	}
+
+	return NULL;
 }
 
 void UIWidget::setStyleSheetProperty( const std::string& name, const std::string& value, const Uint32& specificity ) {

@@ -13,6 +13,7 @@
 
 namespace EE { namespace Graphics {
 class Texture;
+class DrawableGroup;
 }}
 
 namespace EE { namespace UI { namespace Tools {
@@ -27,23 +28,56 @@ class EE_API UIColorPicker {
 		UIColorPicker( UIWindow * attach = NULL, const ColorPickedCb& colorPickedCb = ColorPickedCb(), const ColorPickerCloseCb& closeCb = ColorPickerCloseCb() );
 
 		virtual ~UIColorPicker();
+
+		void setColor( const Color& color );
+
+		const Color& getColor() const;
+
+		void setHsvColor( const Colorf& color );
+
+		const Colorf& getHsvColor() const;
 	protected:
 		UIWindow *			mUIWindow;
 		Node *				mUIContainer;
 		ColorPickedCb		mPickedCb;
 		ColorPickerCloseCb	mCloseCb;
 		Texture *			mHueTexture;
-		RectangleDrawable * mColorRectangle;
+		DrawableGroup *		mColorRectangle;
 		UIImage *			mColorPicker;
 		UIImage *			mHuePicker;
+		UIWidget *			mVerticalLine;
+		UIWidget *			mHorizontalLine;
+		UIWidget *			mHueLine;
+		UIWidget *			mCurrentColor;
+		UILinearLayout *	mRedContainer;
+		UILinearLayout *	mGreenContainer;
+		UILinearLayout *	mBlueContainer;
+		UILinearLayout *	mAlphaContainer;
+		UILinearLayout *	mFooter;
 		Colorf				mHsv;
 		Color				mRgb;
+		bool				mUpdating;
+		std::map<UIWidget*, Uint32> mEventsIds;
 
 		void windowClose( const Event * Event );
 
 		Texture * createHueTexture( const Sizef& size );
 
 		void updateColorPicker();
+
+		void updateGuideLines();
+
+		void updateChannelWidgets();
+
+		void updateAll();
+
+		void registerEvents();
+
+		void unregisterEvents();
+
+		void onColorPickerEvent( const MouseEvent* mouseEvent );
+
+		void onHuePickerEvent( const MouseEvent* mouseEvent );
 };
 
 }}}

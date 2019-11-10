@@ -1059,6 +1059,15 @@ void UIWindow::onChildCountChange() {
 	}
 }
 
+void UIWindow::onPositionChange() {
+	// Invalidate the buffer since a position change can get childs into a drawable position
+	// (on screen), when the drawable could have been outside the viewport and not drawn in the
+	// previous position.
+	invalidate();
+
+	UIWidget::onPositionChange();
+}
+
 void UIWindow::setBaseAlpha( const Uint8& Alpha ) {
 	if ( mAlpha == mStyleConfig.BaseAlpha ) {
 		UINode::setAlpha( Alpha );

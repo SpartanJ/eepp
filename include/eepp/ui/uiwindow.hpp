@@ -203,6 +203,8 @@ class EE_API UIWindow : public UIWidget {
 
 		virtual void onChildCountChange();
 
+		virtual void onPositionChange();
+
 		virtual Uint32 onKeyDown( const KeyEvent &Event );
 
 		virtual void matrixSet();

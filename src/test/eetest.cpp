@@ -934,7 +934,7 @@ void EETest::createETGEditor() {
 
 void EETest::createColorPicker() {
 	UIWindow * tWin = UIWindow::New();
-	tWin->setSize( 320, 478 )->setPosition( 0, 0 );
+	tWin->setSizeWithDecoration( 320, 478 )->setPosition( 0, 0 );
 	UIWindow::StyleConfig windowStyleConfig = tWin->getStyleConfig();
 	windowStyleConfig.WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER;
 	windowStyleConfig.MinWindowSize = Sizef( 320, 478 );

@@ -11,7 +11,7 @@ DrawableGroup * DrawableGroup::New() {
 DrawableGroup::DrawableGroup() :
 	Drawable( Drawable::GROUP ),
 	mNeedsUpdate(true),
-	mClipEnabled(true),
+	mClipEnabled(false),
 	mDrawableOwner(true)
 {
 }
@@ -80,7 +80,7 @@ void DrawableGroup::draw(const Vector2f & position, const Sizef & size) {
 		return;
 
 	if ( mClipEnabled )
-		GLi->getClippingMask()->clipEnable( mPosition.x, mPosition.y, mSize.x, mSize.y );
+		GLi->getClippingMask()->clipPlaneEnable( mPosition.x, mPosition.y, mSize.x, mSize.y );
 
 	for ( std::size_t i = 0; i < mGroup.size(); i++ ) {
 		Drawable * drawable = mGroup[i];
@@ -88,7 +88,7 @@ void DrawableGroup::draw(const Vector2f & position, const Sizef & size) {
 	}
 
 	if ( mClipEnabled )
-		GLi->getClippingMask()->clipDisable();
+		GLi->getClippingMask()->clipPlaneDisable();
 }
 
 void DrawableGroup::draw(const Vector2f & position) {

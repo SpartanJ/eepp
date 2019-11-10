@@ -120,7 +120,7 @@ class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
 
 		void removeClass( const std::string& cls );
 
-		bool containsClass( const std::string& cls );
+		bool containsClass( const std::string& cls ) const;
 
 		void setElementTag( const std::string& tag );
 
@@ -141,6 +141,24 @@ class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
 		const Uint32& getStyleState() const;
 
 		const Uint32& getStylePreviousState() const;
+
+		std::vector<UIWidget*> findAllByClass( const std::string& className );
+
+		std::vector<UIWidget*> findAllByTag( const std::string& tag );
+
+		UIWidget * findByClass( const std::string& className );
+
+		template<typename T>
+		T * findByClass( const std::string& className ) {
+			return reinterpret_cast<T*>( findByClass( className ) );
+		}
+
+		UIWidget * findByTag( const std::string& tag );
+
+		template<typename T>
+		T * findByTag( const std::string& tag ) {
+			return reinterpret_cast<T*>( findByTag( tag ) );
+		}
 	protected:
 		friend class UIManager;
 		friend class UISceneNode;

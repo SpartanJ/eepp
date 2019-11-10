@@ -216,11 +216,11 @@ class EE_API Color : public tColor<Uint8> {
 
 		Color( const Uint32& Col );
 
-		Colorf toHsv();
+		Colorf toHsv() const;
 
 		static Color fromHsv( const Colorf& hsv );
 
-		Colorf toHsl();
+		Colorf toHsl() const;
 
 		std::string toHexString() const;
 

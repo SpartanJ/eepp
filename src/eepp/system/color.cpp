@@ -127,7 +127,7 @@ Color::Color( const Uint32& Col ) :
 	tColor<Uint8>( Col )
 {}
 
-Colorf Color::toHsv() {
+Colorf Color::toHsv() const {
 	Colorf hsv;
 	Colorf rgba( this->r / 255.f, this->g / 255.f, this->b / 255.f, this->a / 255.f );
 	Float rgbMax = eemax( rgba.r, eemax( rgba.g, rgba.b ) );
@@ -170,68 +170,25 @@ Colorf Color::toHsv() {
 
 Color Color::fromHsv(const Colorf& hsv) {
 	Color rgba(Color::Transparent);
-	Float remainder, p, q, t;
-	int region;
-	Uint8 brightness = static_cast<Uint8>( hsv.hsv.v * 255.f + 0.5f );
-
+	Float c = hsv.hsv.v * hsv.hsv.s;
+	Float k = hsv.hsv.h / 60.f;
+	Float x = c *  ( 1 - eeabs(eemod(k, 2) - 1) );
+	Float r1 =0, g1 = 0, b1 = 0;
+	if( k >= 0 && k <= 1 ) { r1=c; g1=x; }
+	if( k > 1 && k <= 2 ) { r1=x; g1=c; }
+	if( k > 2 && k <= 3 ) { g1=c; b1=x; }
+	if( k > 3 && k <= 4 ) { g1=x; b1=c; }
+	if( k > 4 && k <= 5 ) { r1=x; b1=c; }
+	if( k > 5 && k <= 6 ) { r1=c; b1=x; }
+	Float m = hsv.hsv.v - c;
+	rgba.r = static_cast<Uint8>( eemax( 0.f, eemin( 255.f, r1 + m ) ) * 255.f + 0.5f );
+	rgba.g = static_cast<Uint8>( eemax( 0.f, eemin( 255.f, g1 + m ) ) * 255.f + 0.5f );
+	rgba.b = static_cast<Uint8>( eemax( 0.f, eemin( 255.f, b1 + m ) ) * 255.f + 0.5f );
 	rgba.a = static_cast<Uint8>( hsv.hsv.a * 255.f + 0.5f );
-
-	if (hsv.hsv.s == 0) {
-		rgba.r = brightness;
-		rgba.g = brightness;
-		rgba.b = brightness;
-		return rgba;
-	}
-
-	region = int(hsv.hsv.h / 60) % 6;
-	remainder = (hsv.hsv.h / 60.f) - region;
-
-	p = hsv.hsv.v * (1 - hsv.hsv.s);
-	q = hsv.hsv.v * (1 - hsv.hsv.s * remainder);
-	t = hsv.hsv.v * (1 - (hsv.hsv.s * (1 - remainder)));
-
-
-	p = static_cast<Uint8>( p * 255.f + 0.5f );
-	q = static_cast<Uint8>( q * 255.f + 0.5f );
-	t = static_cast<Uint8>( t * 255.f + 0.5f );
-
-	switch (region) {
-		case 0:
-			rgba.r = brightness;
-			rgba.g = t;
-			rgba.b = p;
-			break;
-		case 1:
-			rgba.r = q;
-			rgba.g = brightness;
-			rgba.b = p;
-			break;
-		case 2:
-			rgba.r = p;
-			rgba.g = brightness;
-			rgba.b = t;
-			break;
-		case 3:
-			rgba.r = p;
-			rgba.g = q;
-			rgba.b = brightness;
-			break;
-		case 4:
-			rgba.r = t;
-			rgba.g = p;
-			rgba.b = brightness;
-			break;
-		default:
-			rgba.r = brightness;
-			rgba.g = p;
-			rgba.b = q;
-			break;
-	}
-
 	return rgba;
 }
 
-Colorf Color::toHsl() {
+Colorf Color::toHsl() const {
 	Colorf hsl;
 	Float r = this->r / 255.f;
 	Float g = this->g / 255.f;
