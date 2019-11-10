@@ -1,4 +1,5 @@
 #include <eepp/system/color.hpp>
+#include <eepp/system/functionstring.hpp>
 #include <eepp/core/string.hpp>
 #include <cstdlib>
 #include <ctype.h>
@@ -126,92 +127,118 @@ Color::Color( const Uint32& Col ) :
 	tColor<Uint8>( Col )
 {}
 
-Color Color::toHsv() {
-	Color hsv;
-	Color rgb( *this );
-	unsigned char rgbMin, rgbMax;
-
-	rgbMin = rgb.r < rgb.g ? (rgb.r < rgb.b ? rgb.r : rgb.b) : (rgb.g < rgb.b ? rgb.g : rgb.b);
-	rgbMax = rgb.r > rgb.g ? (rgb.r > rgb.b ? rgb.r : rgb.b) : (rgb.g > rgb.b ? rgb.g : rgb.b);
-
-	hsv.hsv.a = rgb.a;
+Colorf Color::toHsv() {
+	Colorf hsv;
+	Colorf rgba( this->r / 255.f, this->g / 255.f, this->b / 255.f, this->a / 255.f );
+	Float rgbMax = eemax( rgba.r, eemax( rgba.g, rgba.b ) );
+	Float rgbMin = eemin( rgba.r, eemin( rgba.g, rgba.b ) );
+	Float delta = (rgbMax - rgbMin);
 
 	hsv.hsv.v = rgbMax;
+	hsv.hsv.a = rgba.a;
+
 	if (hsv.hsv.v == 0){
 		hsv.hsv.h = 0;
 		hsv.hsv.s = 0;
 		return hsv;
 	}
 
-	hsv.hsv.s = 255 * long(rgbMax - rgbMin) / hsv.hsv.v;
+	hsv.hsv.s = delta / rgbMax;
 	if (hsv.hsv.s == 0) {
 		hsv.hsv.h = 0;
 		return hsv;
 	}
 
-	if (rgbMax == rgb.r)
-		hsv.hsv.h = 0 + 43 * (rgb.g - rgb.b) / (rgbMax - rgbMin);
-	else if (rgbMax == rgb.g)
-		hsv.hsv.h = 85 + 43 * (rgb.b - rgb.r) / (rgbMax - rgbMin);
-	else
-		hsv.hsv.h = 171 + 43 * (rgb.r - rgb.g) / (rgbMax - rgbMin);
+	if (delta == 0) {
+		hsv.hsv.h = 0;
+		return hsv;
+	} else if ( rgba.r == rgbMax ) {
+		hsv.hsv.h = ( rgba.g - rgba.b ) / delta;
+	} else if ( rgba.g == rgbMax ) {
+		hsv.hsv.h = 2.f + ( rgba.b - rgba.r ) / delta;
+	} else {
+		hsv.hsv.h = 4.f + ( rgba.r - rgba.g ) / delta;
+	}
+
+	hsv.hsv.h *= 60.f;
+
+	if( hsv.hsv.h < 0.f )
+		hsv.hsv.h += 360.f;
 
 	return hsv;
 }
 
-Color Color::fromHsv(const Color & hsv) {
-	Color rgb;
-	unsigned char region, remainder, p, q, t;
+Color Color::fromHsv(const Colorf& hsv) {
+	Color rgba(Color::Transparent);
+	Float remainder, p, q, t;
+	int region;
 
-	rgb.a = hsv.hsv.a;
+	rgba.a = static_cast<Uint8>( hsv.hsv.a * 255.f + 0.5f );
 
 	if (hsv.hsv.s == 0) {
-		rgb.r = hsv.hsv.v;
-		rgb.g = hsv.hsv.v;
-		rgb.b = hsv.hsv.v;
-		return rgb;
+		rgba.r = hsv.hsv.v;
+		rgba.g = hsv.hsv.v;
+		rgba.b = hsv.hsv.v;
+		return rgba;
 	}
 
-	region = hsv.hsv.h / 43;
-	remainder = (hsv.hsv.h - (region * 43)) * 6;
+	region = int(hsv.hsv.h / 60) % 6;
+	remainder = (hsv.hsv.h / 60.f) - region;
 
-	p = (hsv.hsv.v * (255 - hsv.hsv.s)) >> 8;
-	q = (hsv.hsv.v * (255 - ((hsv.hsv.s * remainder) >> 8))) >> 8;
-	t = (hsv.hsv.v * (255 - ((hsv.hsv.s * (255 - remainder)) >> 8))) >> 8;
+	p = hsv.hsv.v * (1 - hsv.hsv.s);
+	q = hsv.hsv.v * (1 - hsv.hsv.s * remainder);
+	t = hsv.hsv.v * (1 - (hsv.hsv.s * (1 - remainder)));
+
+	Uint8 brightness = static_cast<Uint8>( hsv.hsv.v * 255.f + 0.5f );
+	p = static_cast<Uint8>( p * 255.f + 0.5f );
+	q = static_cast<Uint8>( q * 255.f + 0.5f );
+	t = static_cast<Uint8>( t * 255.f + 0.5f );
 
 	switch (region) {
 		case 0:
-			rgb.r = hsv.hsv.v; rgb.g = t; rgb.b = p;
+			rgba.r = brightness;
+			rgba.g = t;
+			rgba.b = p;
 			break;
 		case 1:
-			rgb.r = q; rgb.g = hsv.hsv.v; rgb.b = p;
+			rgba.r = q;
+			rgba.g = brightness;
+			rgba.b = p;
 			break;
 		case 2:
-			rgb.r = p; rgb.g = hsv.hsv.v; rgb.b = t;
+			rgba.r = p;
+			rgba.g = brightness;
+			rgba.b = t;
 			break;
 		case 3:
-			rgb.r = p; rgb.g = q; rgb.b = hsv.hsv.v;
+			rgba.r = p;
+			rgba.g = q;
+			rgba.b = brightness;
 			break;
 		case 4:
-			rgb.r = t; rgb.g = p; rgb.b = hsv.hsv.v;
+			rgba.r = t;
+			rgba.g = p;
+			rgba.b = brightness;
 			break;
 		default:
-			rgb.r = hsv.hsv.v; rgb.g = p; rgb.b = q;
+			rgba.r = brightness;
+			rgba.g = p;
+			rgba.b = q;
 			break;
 	}
 
-	return rgb;
+	return rgba;
 }
 
 Colorf Color::toHsl() {
 	Colorf hsl;
-	float r = this->r / 255.f;
-	float g = this->g / 255.f;
-	float b = this->b / 255.f;
-	float a = this->a / 255.f;
-	float max = eemax(r, eemax( g, b ) );
-	float min = eemin(r, eemin( g, b ) );
-	float h, s, l = (max + min) / 2.f;
+	Float r = this->r / 255.f;
+	Float g = this->g / 255.f;
+	Float b = this->b / 255.f;
+	Float a = this->a / 255.f;
+	Float max = eemax(r, eemax( g, b ) );
+	Float min = eemin(r, eemin( g, b ) );
+	Float h, s, l = (max + min) / 2.f;
 
 	if ( max == min ) {
 		h = s = 0; // achromatic
@@ -245,7 +272,7 @@ std::string Color::toHexString() const {
 	return stream.str();
 }
 
-static Float hue2rgb( Float p, Float q, Float t) {
+static Float hue2rgb( Float p, Float q, Float t ) {
 	if(t < 0.f) t += 1.f;
 	if(t > 1.f) t -= 1.f;
 	if(t < 1.f/6.f) return p + (q - p) * 6.f * t;
@@ -304,7 +331,7 @@ Color Color::fromString( std::string str ) {
 	std::size_t size = str.size();
 
 	if ( 0 == size )
-		return Color::White;
+		return Color::Transparent;
 
 	if ( str[0] == '#' ) {
 		str = str.substr(1);
@@ -312,7 +339,161 @@ Color Color::fromString( std::string str ) {
 		size = str.size();
 
 		if ( 0 == size )
-			return Color::White;
+			return Color::Transparent;
+
+		if ( size < 6 ) {
+			for ( std::size_t i = size; i < 6; i++ )
+				str += str[ size - 1 ];
+
+			size = 6;
+		}
+
+		if ( 6 == size )
+			str += "FF";
+
+		return Color( std::strtoul( str.c_str(), NULL, 16 ) );
+	} else if ( String::startsWith( str, "rgba(" ) || String::startsWith( str, "rgb(" ) ) {
+		FunctionString functionString = FunctionString::parse( str );
+
+		if ( ( functionString.getName() == "rgba" && functionString.getParameters().size() >= 4 ) ||
+			 ( functionString.getName() == "rgb" && functionString.getParameters().size() >= 3 ) ) {
+			Color color(Color::Transparent);
+
+			for ( int i = 0; i < 3; i++ ) {
+				Float val = 0;
+				if ( String::fromString<Float>( val, functionString.getParameters().at(i) ) ) {
+					switch (i) {
+						case 0: color.r = static_cast<Uint8>( eemax( eemin( 255.f, val ), 0.f ) ); break;
+						case 1: color.g = static_cast<Uint8>( eemax( eemin( 255.f, val ), 0.f ) ); break;
+						case 2: color.b = static_cast<Uint8>( eemax( eemin( 255.f, val ), 0.f ) ); break;
+						default: break;
+					}
+				} else {
+					return Color::Transparent;
+				}
+			}
+
+			Float val = 255;
+			if ( functionString.getParameters().size() >= 4 ) {
+				if ( String::fromString<Float>( val, functionString.getParameters().at(3) ) ) {
+					color.a = static_cast<Uint8>( eemax( eemin( 1.f, val ), 0.f ) * 255.f + 0.5f );
+				} else {
+					return Color::Transparent;
+				}
+			} else {
+				color.a = val;
+			}
+
+			return color;
+		} else {
+			return Color::Transparent;
+		}
+	} else if ( String::startsWith( str, "hsla(" ) || String::startsWith( str, "hsl(" ) ) {
+		FunctionString functionString = FunctionString::parse( str );
+
+		if ( ( functionString.getName() == "hsla" && functionString.getParameters().size() >= 4 ) ||
+			 ( functionString.getName() == "hsl" && functionString.getParameters().size() >= 3 ) ) {
+			Colorf color;
+
+			Float hueVal, saturationVal, lightnessVal;
+
+			int hueIntVal;
+			if ( String::fromString<int>( hueIntVal, functionString.getParameters().at(0) ) && hueIntVal >= 0 && hueIntVal <= 360 ) {
+				hueVal = hueIntVal / 360.f;
+			} else {
+				return Color::Transparent;
+			}
+
+			Float saturationFloatVal;
+			std::string saturationString( functionString.getParameters().at(1) );
+			String::replaceAll( saturationString, "%", "" );
+			if ( String::fromString<Float>( saturationFloatVal, saturationString ) && saturationFloatVal >= 0 && saturationFloatVal <= 100 ) {
+				saturationVal = saturationFloatVal / 100.f;
+			} else {
+				return Color::Transparent;
+			}
+
+			Float lightnessFloatVal;
+			std::string lightnessString( functionString.getParameters().at(2) );
+			String::replaceAll( lightnessString, "%", "" );
+			if ( String::fromString<Float>( lightnessFloatVal, lightnessString ) && lightnessFloatVal >= 0 && lightnessFloatVal <= 100 ) {
+				lightnessVal = lightnessFloatVal / 100.f;
+			} else {
+				return Color::Transparent;
+			}
+
+			Float alphaVal = 1;
+
+			if ( functionString.getParameters().size() >= 4 ) {
+				if ( String::fromString<Float>( alphaVal, functionString.getParameters().at(3) ) ) {
+					alphaVal = eemax( eemin( 1.f, alphaVal ), 0.f );
+				} else {
+					return Color::Transparent;
+				}
+			}
+
+			color.hsl.h = hueVal;
+			color.hsl.s = saturationVal;
+			color.hsl.l = lightnessVal;
+			color.hsl.a = alphaVal;
+
+			return Color::fromHsl( color );
+		} else {
+			return Color::Transparent;
+		}
+	} else if ( String::startsWith( str, "hsva(" ) || String::startsWith( str, "hsv(" ) ) {
+		FunctionString functionString = FunctionString::parse( str );
+
+		if ( ( functionString.getName() == "hsva" && functionString.getParameters().size() >= 4 ) ||
+			 ( functionString.getName() == "hsv" && functionString.getParameters().size() >= 3 ) ) {
+			Colorf color;
+
+			Float hueVal, saturationVal, valueVal;
+
+			int hueIntVal;
+			if ( String::fromString<int>( hueIntVal, functionString.getParameters().at(0) ) && hueIntVal >= 0 && hueIntVal <= 360 ) {
+				hueVal = hueIntVal;
+			} else {
+				return Color::Transparent;
+			}
+
+			Float saturationFloatVal;
+			std::string saturationString( functionString.getParameters().at(1) );
+			String::replaceAll( saturationString, "%", "" );
+			if ( String::fromString<Float>( saturationFloatVal, saturationString ) && saturationFloatVal >= 0 && saturationFloatVal <= 100 ) {
+				saturationVal = saturationFloatVal / 100.f;
+			} else {
+				return Color::Transparent;
+			}
+
+			Float valueFloatVal;
+			std::string valueString( functionString.getParameters().at(2) );
+			String::replaceAll( valueString, "%", "" );
+			if ( String::fromString<Float>( valueFloatVal, valueString ) && valueFloatVal >= 0 && valueFloatVal <= 100 ) {
+				valueVal = valueFloatVal / 100.f;
+			} else {
+				return Color::Transparent;
+			}
+
+			Float alphaVal = 1;
+
+			if ( functionString.getParameters().size() >= 4 ) {
+				if ( String::fromString<Float>( alphaVal, functionString.getParameters().at(3) ) ) {
+					alphaVal = eemax( eemin( 1.f, alphaVal ), 0.f );
+				} else {
+					return Color::Transparent;
+				}
+			}
+
+			color.hsv.h = hueVal;
+			color.hsv.s = saturationVal;
+			color.hsv.v = valueVal;
+			color.hsv.a = alphaVal;
+
+			return Color::fromHsv( color );
+		} else {
+			return Color::Transparent;
+		}
 	} else if ( String::startsWith( str, "@color/" ) ) {
 		std::string colorName( String::toLower( str.substr(7) ) );
 		const auto& it = sColors.find( colorName );
@@ -341,19 +522,18 @@ Color Color::fromString( std::string str ) {
 		else if ( "blue" == str )			return Color::Blue;
 		else if ( "teal" == str )			return Color::Teal;
 		else if ( "aqua" == str )			return Color::Aqua;
+	} else {
+		String::toLowerInPlace( str );
+		const auto& it = sColors.find( str );
+
+		if ( it != sColors.end() ) {
+			return it->second;
+		} else {
+			return Color::Transparent;
+		}
 	}
 
-	if ( size < 6 ) {
-		for ( std::size_t i = size; i < 6; i++ )
-			str += str[ size - 1 ];
-
-		size = 6;
-	}
-
-	if ( 6 == size )
-		str += "FF";
-
-	return Color( std::strtoul( str.c_str(), NULL, 16 ) );
+	return Color::Transparent;
 }
 
 bool Color::isColorString( std::string str ) {
@@ -381,6 +561,14 @@ bool Color::isColorString( std::string str ) {
 	else if ( "blue" == str )			return true;
 	else if ( "teal" == str )			return true;
 	else if ( "aqua" == str )			return true;
+	else if ( String::startsWith( str, "rgb(" ) ) return true;
+	else if ( String::startsWith( str, "rgba(" ) ) return true;
+	else if ( String::startsWith( str, "hsl(" ) ) return true;
+	else if ( String::startsWith( str, "hsla(" ) ) return true;
+	else if ( String::startsWith( str, "hsv(" ) ) return true;
+	else if ( String::startsWith( str, "hsva(" ) ) return true;
+	else if ( String::startsWith( str, "@color/" ) ) return true;
+	else if ( sColors.find( str ) != sColors.end() ) return true;
 
 	return false;
 }

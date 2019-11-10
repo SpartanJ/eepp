@@ -2,12 +2,13 @@
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uitooltip.hpp>
+#include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/css/stylesheetproperty.hpp>
 #include <eepp/graphics/drawablesearcher.hpp>
 #include <eepp/graphics/rectangledrawable.hpp>
-#include <eepp/ui/uiscenenode.hpp>
 #include <eepp/scene/actions/actions.hpp>
+#include <eepp/system/functionstring.hpp>
 #include <pugixml/pugixml.hpp>
-#include <eepp/ui/css/stylesheetproperty.hpp>
 #include <algorithm>
 
 namespace EE { namespace UI {
@@ -1256,7 +1257,7 @@ std::string UIWidget::getFlagsString() const {
 }
 
 bool UIWidget::drawablePropertySet(const std::string& propertyName, const std::string& value, std::function<void (Drawable*, bool)> funcSet) {
-	NodeAttribute::FunctionType functionType = NodeAttribute::FunctionType::parse( value );
+	FunctionString functionType = FunctionString::parse( value );
 	Drawable * res = NULL;
 	bool attributeSet = true;
 

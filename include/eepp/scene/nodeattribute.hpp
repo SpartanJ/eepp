@@ -18,59 +18,6 @@ namespace EE { namespace Scene {
 
 class NodeAttribute {
 	public:
-		enum AttributeType
-		{
-			TypeString,
-			TypeInt,
-			TypeUint,
-			TypeDouble,
-			TypeFloat,
-			TypeLongLong,
-			TypeULongLong,
-			TypeBoolean,
-			TypeDimension,
-			TypeDimensionInt,
-			TypeOriginPoint,
-			TypeBlendMode,
-			TypeVector,
-			TypeRect,
-			TypeRectf
-		};
-
-		class Info {
-			public:
-				Info( AttributeType type, const std::string& name );
-
-				Info( AttributeType type, const std::vector<std::string>& names );
-
-				bool isName( const std::string& name );
-
-				const AttributeType& getType() const;
-
-				const std::vector<std::string>& getNames() const;
-			protected:
-				AttributeType type;
-
-				std::vector<std::string> names;
-		};
-
-		class FunctionType {
-			public:
-				static FunctionType parse( const std::string& function );
-
-				FunctionType( const std::string& name, const std::vector<std::string>& parameters );
-
-				const std::string& getName() const;
-
-				const std::vector<std::string>& getParameters() const;
-
-				bool isEmpty() const;
-			protected:
-				std::string name;
-
-				std::vector<std::string> parameters;
-		};
-
 		NodeAttribute();
 
 		NodeAttribute( std::string name, std::string value, bool isVolatile = false );

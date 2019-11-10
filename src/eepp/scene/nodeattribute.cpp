@@ -8,28 +8,6 @@ using namespace EE::Graphics;
 
 namespace EE { namespace Scene {
 
-NodeAttribute::Info::Info( NodeAttribute::AttributeType type, const std::string& name ) :
-	type( type ),
-	names( { name } )
-{}
-
-NodeAttribute::Info::Info( AttributeType type, const std::vector<std::string>& names ) :
-	type( type ),
-	names( names )
-{}
-
-bool NodeAttribute::Info::isName( const std::string& name ) {
-	return std::find(names.begin(), names.end(), name) != names.end();
-}
-
-const NodeAttribute::AttributeType& NodeAttribute::Info::getType() const {
-	return type;
-}
-
-const std::vector<std::string>& NodeAttribute::Info::getNames() const {
-	return names;
-}
-
 NodeAttribute::NodeAttribute() :
 	mVolatile( false )
 {}
@@ -300,83 +278,6 @@ Time NodeAttribute::asTime( const Time & defaultTime ) {
 
 Ease::Interpolation NodeAttribute::asInterpolation( const Ease::Interpolation& defaultInterpolation ) {
 	return Ease::fromName( mValue, defaultInterpolation );
-}
-
-NodeAttribute::FunctionType NodeAttribute::FunctionType::parse( const std::string& function ) {
-	size_t posFuncStart = function.find_first_of( '(' );
-	size_t posFuncEnd = function.find_last_of( ')' );
-	std::string funcName;
-	std::vector<std::string> parameters;
-
-	if ( std::string::npos != posFuncStart && std::string::npos != posFuncEnd && posFuncStart > 1 && posFuncStart + 1 < function.size() ) {
-		funcName = function.substr( 0, posFuncStart );
-
-		if ( !funcName.empty() ) {
-			std::string funcParameters = function.substr( posFuncStart + 1, posFuncEnd - posFuncStart - 1 );
-			std::string curParameter = "";
-			bool parsingString = false;
-			bool lastWasBackslash = false;
-
-			funcParameters = String::trim( funcParameters );
-
-			for ( size_t i = 0; i < funcParameters.size(); i++ ) {
-				const char& curChar = funcParameters.at(i);
-
-				if ( !parsingString ) {
-					if ( ',' == curChar ) {
-						curParameter = String::trim( curParameter );
-
-						if ( !curParameter.empty() ) {
-							parameters.push_back( curParameter );
-							curParameter = "";
-						}
-					} else if ( '"' == curChar ) {
-						parsingString = true;
-					} else {
-						curParameter += curChar;
-					}
-				} else {
-					if ( '"' == curChar && !lastWasBackslash ) {
-						parsingString = false;
-
-						if ( !curParameter.empty() ) {
-							parameters.push_back( curParameter );
-							curParameter = "";
-						}
-					} else {
-						if ( '\\' == curChar )
-							lastWasBackslash = !lastWasBackslash;
-
-						curParameter += curChar;
-					}
-				}
-			}
-
-			curParameter = String::trim( curParameter );
-
-			if ( !curParameter.empty() )
-				parameters.push_back( curParameter );
-		}
-	}
-
-	return NodeAttribute::FunctionType( funcName, parameters );
-}
-
-NodeAttribute::FunctionType::FunctionType( const std::string& name, const std::vector<std::string>& parameters ) :
-	name( name ),
-	parameters( parameters )
-{}
-
-const std::string& NodeAttribute::FunctionType::getName() const {
-	return name;
-}
-
-const std::vector<std::string>& NodeAttribute::FunctionType::getParameters() const {
-	return parameters;
-}
-
-bool NodeAttribute::FunctionType::isEmpty() const {
-	return name.empty();
 }
 
 }}

@@ -402,7 +402,7 @@ class EE_API String {
 	** @return The character at position pos in the string.
 	*/
 	StringBaseType at( std::size_t index ) const;
-	
+
 	/** @brief clear the string
 	** This function removes all the characters from the string.
 	** @see empty, erase
@@ -414,7 +414,7 @@ class EE_API String {
 	** @see empty
 	**/
 	std::size_t size() const;
-	
+
 	/** @see size() */
 	std::size_t length() const;
 
@@ -431,7 +431,6 @@ class EE_API String {
 	** @param count    Number of characters to erase
 	**/
 	void erase(std::size_t position, std::size_t count = 1);
-
 
 	/** @brief Insert one or more characters into the string
 	** This function inserts the characters of \a str
@@ -454,8 +453,7 @@ class EE_API String {
 	void insert ( Iterator p, std::size_t n, char c );
 
 	template<class InputIterator>
-	void insert ( Iterator p, InputIterator first, InputIterator last )
-	{
+	void insert ( Iterator p, InputIterator first, InputIterator last ) {
 		mString.insert( p, first, last );
 	}
 
@@ -482,7 +480,7 @@ class EE_API String {
 	** @return Read-only pointer to the array of characters
 	**/
 	const StringBaseType* c_str() const;
-	
+
 	/** @brief Get string data
 	** Notice that no terminating null character is appended (see member c_str for such a functionality).
 	** The returned array points to an internal location which should not be modified directly in the program.
@@ -520,7 +518,7 @@ class EE_API String {
 	** @see begin
 	**/
 	ConstIterator end() const;
-	
+
 	/** @brief Return an reverse iterator to the beginning of the string
 	** @return Read-write reverse iterator to the beginning of the string characters
 	** @see end
@@ -550,28 +548,28 @@ class EE_API String {
 	** @see begin
 	**/
 	ConstReverseIterator rend() const;
-	
+
 	/** @brief Resize String */
 	void resize ( std::size_t n, StringBaseType c );
-	
+
 	/** @brief Resize String */
 	void resize ( std::size_t n );
-	
+
 	/** @return Maximum size of string */
 	std::size_t max_size() const;
-	
+
 	/** @brief Request a change in capacity */
 	void reserve ( size_t res_arg=0 );
-	
+
 	/** @return Size of allocated storage */
 	std::size_t capacity() const;
 
 	/** @brief Append character to string */
 	void push_back( StringBaseType c );
-	
+
 	/** @brief Swap contents with another string */
 	void swap ( String& str );
-	
+
 	String& assign ( const String& str );
 
 	String& assign ( const String& str, std::size_t pos, std::size_t n );
@@ -583,8 +581,7 @@ class EE_API String {
 	String& assign ( std::size_t n, char c );
 
 	template <class InputIterator>
-	String& assign ( InputIterator first, InputIterator last )
-	{
+	String& assign ( InputIterator first, InputIterator last ) {
 		mString.assign( first, last );
 		return *this;
 	}
@@ -602,8 +599,7 @@ class EE_API String {
 	String& append ( std::size_t n, StringBaseType c );
 
 	template <class InputIterator>
-	String& append ( InputIterator first, InputIterator last )
-	{
+	String& append ( InputIterator first, InputIterator last ) {
 		mString.append( first, last );
 		return *this;
 	}
@@ -627,8 +623,7 @@ class EE_API String {
 	String& replace ( Iterator i1, Iterator i2, std::size_t n2, char c );
 
 	template<class InputIterator>
-	String& replace ( Iterator i1, Iterator i2, InputIterator j1, InputIterator j2 )
-	{
+	String& replace ( Iterator i1, Iterator i2, InputIterator j1, InputIterator j2 ) {
 		mString.replace( i1, i2, j1, j2 );
 		return *this;
 	}
@@ -689,8 +684,8 @@ class EE_API String {
 
 	std::size_t find_last_not_of ( StringBaseType c, std::size_t pos = StringType::npos ) const;
 private :
-    friend EE_API bool operator ==(const String& left, const String& right);
-    friend EE_API bool operator <(const String& left, const String& right);
+	friend EE_API bool operator ==(const String& left, const String& right);
+	friend EE_API bool operator <(const String& left, const String& right);
 
 	StringType mString; ///< Internal string of UTF-32 characters
 };

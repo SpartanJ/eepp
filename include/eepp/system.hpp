@@ -38,5 +38,6 @@
 #include <eepp/system/iostreamdeflate.hpp>
 #include <eepp/system/virtualfilesystem.hpp>
 #include <eepp/system/scopedbuffer.hpp>
+#include <eepp/system/functionstring.hpp>
 
 #endif

@@ -230,6 +230,7 @@
 ../../include/eepp/system/directorypack.hpp
 ../../include/eepp/system/filesystem.hpp
 ../../include/eepp/system.hpp
+../../include/eepp/system/functionstring.hpp
 ../../include/eepp/system/inifile.hpp
 ../../include/eepp/system/iostreamdeflate.hpp
 ../../include/eepp/system/iostreamfile.hpp
@@ -659,6 +660,7 @@
 ../../src/eepp/system/condition.cpp
 ../../src/eepp/system/directorypack.cpp
 ../../src/eepp/system/filesystem.cpp
+../../src/eepp/system/functionstring.cpp
 ../../src/eepp/system/inifile.cpp
 ../../src/eepp/system/iostreamdeflate.cpp
 ../../src/eepp/system/iostreamfile.cpp

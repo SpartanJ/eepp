@@ -216,9 +216,9 @@ class EE_API Color : public tColor<Uint8> {
 
 		Color( const Uint32& Col );
 
-		Color toHsv();
+		Colorf toHsv();
 
-		static Color fromHsv( const Color& hsv );
+		static Color fromHsv( const Colorf& hsv );
 
 		Colorf toHsl();
 
