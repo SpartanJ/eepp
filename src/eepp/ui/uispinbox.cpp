@@ -15,8 +15,6 @@ UISpinBox::UISpinBox() :
 	mValue( 0 ),
 	mClickStep( 1.f )
 {
-	subscribeScheduledUpdate();
-
 	mInput	= UITextInput::NewWithTag( "spinbox::input" );
 	mInput->setVisible( true );
 	mInput->setEnabled( true );
@@ -35,6 +33,7 @@ UISpinBox::UISpinBox() :
 	mPushDown->setSize( 16, 16 );
 
 	mInput->getInputTextBuffer()->setAllowOnlyNumbers( true, false );
+	mInput->addEventListener( Event::OnBufferChange, cb::Make1( this, &UISpinBox::onBufferChange ) );
 
 	internalValue( mValue, true );
 
@@ -215,24 +214,22 @@ const Float& UISpinBox::getMaxValue() const {
 	return mMaxValue;
 }
 
-void UISpinBox::scheduledUpdate( const Time& ) {
-	if ( mInput->getInputTextBuffer()->changedSinceLastUpdate() ) {
-		if ( !mInput->getText().size() ) {
-			setValue( 0 );
+void UISpinBox::onBufferChange( const Event* event ) {
+	if ( !mInput->getText().size() ) {
+		setValue( 0 );
+	} else {
+		Float Val = mValue;
+
+		if ( '.' == mInput->getText()[ mInput->getText().size() - 1 ] ) {
+			Uint32 pos = (Uint32)mInput->getText().find_first_of( "." );
+
+			if ( pos != mInput->getText().size() - 1 )
+				mInput->setText( mInput->getText().substr( 0, mInput->getText().size() - 1 ) );
 		} else {
-			Float Val = mValue;
+			bool Res 	= String::fromString<Float>( Val, mInput->getText() );
 
-			if ( '.' == mInput->getText()[ mInput->getText().size() - 1 ] ) {
-				Uint32 pos = (Uint32)mInput->getText().find_first_of( "." );
-
-				if ( pos != mInput->getText().size() - 1 )
-					mInput->setText( mInput->getText().substr( 0, mInput->getText().size() - 1 ) );
-			} else {
-				bool Res 	= String::fromString<Float>( Val, mInput->getText() );
-
-				if ( Res )
-					setValue( Val );
-			}
+			if ( Res )
+				setValue( Val );
 		}
 	}
 }

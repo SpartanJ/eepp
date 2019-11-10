@@ -614,6 +614,16 @@ void * Renderer::getProcAddress( std::string proc ) {
 	return addr;
 }
 
+void Renderer::readPixels(int x, int y, unsigned int width, unsigned int height, void* pixels) {
+	glReadPixels( x, y, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels );
+}
+
+Color Renderer::readPixel(int x, int y) {
+	Uint8 pixel[4];
+	readPixels( x, y, 1, 1, pixel );
+	return Color( pixel[0], pixel[1], pixel[2], pixel[3] );
+}
+
 void Renderer::genFramebuffers( int n, unsigned int * framebuffers ) {
 	static pglGenFramebuffers eeglGenFramebuffers = NULL;
 

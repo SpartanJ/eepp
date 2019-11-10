@@ -234,6 +234,10 @@ class EE_API Renderer {
 		void discardFramebuffer( unsigned int target, int numAttachments, const unsigned int* attachments );
 
 		void * getProcAddress( std::string proc );
+
+		void readPixels(int x, int y, unsigned int width, unsigned int height, void *pixels);
+
+		Color readPixel(int x, int y);
 	protected:
 		static Renderer * sSingleton;
 

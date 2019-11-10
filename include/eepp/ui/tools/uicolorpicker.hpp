@@ -23,6 +23,8 @@ class EE_API UIColorPicker {
 		typedef std::function<void( Color color )> ColorPickedCb;
 		typedef std::function<void()> ColorPickerCloseCb;
 
+		static UIColorPicker * NewWindow( const ColorPickedCb& colorPickedCb = ColorPickedCb(), const ColorPickerCloseCb& closeCb = ColorPickerCloseCb(), const Uint32& winFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER, const Sizef& winSize = Sizef( 320, 478 ) );
+
 		static UIColorPicker * New( UIWindow * attach = NULL, const ColorPickedCb& colorPickedCb = ColorPickedCb(), const ColorPickerCloseCb& closeCb = ColorPickerCloseCb() );
 
 		UIColorPicker( UIWindow * attach = NULL, const ColorPickedCb& colorPickedCb = ColorPickedCb(), const ColorPickerCloseCb& closeCb = ColorPickerCloseCb() );
@@ -36,9 +38,12 @@ class EE_API UIColorPicker {
 		void setHsvColor( const Colorf& color );
 
 		const Colorf& getHsvColor() const;
+
+		UIWindow* getUIWindow() const;
 	protected:
 		UIWindow *			mUIWindow;
 		Node *				mUIContainer;
+		UIWidget *			mRoot;
 		ColorPickedCb		mPickedCb;
 		ColorPickerCloseCb	mCloseCb;
 		Texture *			mHueTexture;
@@ -56,8 +61,8 @@ class EE_API UIColorPicker {
 		UILinearLayout *	mFooter;
 		Colorf				mHsv;
 		Color				mRgb;
+		std::string			mHexColor;
 		bool				mUpdating;
-		std::map<UIWidget*, Uint32> mEventsIds;
 
 		void windowClose( const Event * Event );
 
@@ -72,8 +77,6 @@ class EE_API UIColorPicker {
 		void updateAll();
 
 		void registerEvents();
-
-		void unregisterEvents();
 
 		void onColorPickerEvent( const MouseEvent* mouseEvent );
 

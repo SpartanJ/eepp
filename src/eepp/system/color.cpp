@@ -224,9 +224,11 @@ Colorf Color::toHsl() const {
 	return hsl;
 }
 
-std::string Color::toHexString() const {
+std::string Color::toHexString( const bool& prependHashtag ) const {
 	std::stringstream stream;
-	stream << "#" << std::setfill ('0') << std::setw(sizeof(Color)*2) << std::hex << getValue();
+	if ( prependHashtag )
+		stream << "#";
+	stream << std::setfill ('0') << std::setw(sizeof(Color)*2) << std::hex << getValue();
 	return stream.str();
 }
 
@@ -537,6 +539,19 @@ void Color::registerColor( const std::string& name, const Color & color ) {
 
 bool Color::unregisterColor( const std::string& name ) {
 	return sColors.erase( String::toLower( name ) ) > 0;
+}
+
+bool Color::validHexColorString( const std::string& hexColor ) {
+	if ( hexColor.size() < 2 || hexColor[0] != '#' )
+		return false;
+
+	for ( size_t i = 1; i < hexColor.size(); i++ ) {
+		if ( !( String::isNumber( hexColor[i] ) || ( hexColor[i] >= 'a' && hexColor[i] <= 'f' ) || ( hexColor[i] >= 'A' && hexColor[i] <= 'F' ) ) ) {
+			return false;
+		}
+	}
+
+	return true;
 }
 
 }}

@@ -5,11 +5,11 @@
 
 namespace EE { namespace UI {
 
-UIMessageBox * UIMessageBox::New(UI_MSGBOX_TYPE type, String message) {
+UIMessageBox * UIMessageBox::New( UIMessageBox::Type type, String message) {
 	return eeNew( UIMessageBox, ( type, message ) );
 }
 
-UIMessageBox::UIMessageBox( UI_MSGBOX_TYPE type , String message ) :
+UIMessageBox::UIMessageBox( UIMessageBox::Type type , String message ) :
 	UIWindow(),
 	mMsgBoxType( type ),
 	mCloseWithKey( KEY_UNKNOWN )
@@ -43,25 +43,25 @@ UIMessageBox::UIMessageBox( UI_MSGBOX_TYPE type , String message ) :
 	mButtonCancel->setLayoutMargin( Rect( 8, 0, 0, 0 ) )->setSize( 90, 0 )->setParent( hlay );
 
 	switch ( mMsgBoxType ) {
-		case MSGBOX_OKCANCEL:
+		case UIMessageBox::OK_CANCEL:
 		{
 			mButtonOK->setText( getUISceneNode()->getTranslatorString( "@string/msg_box_ok", "Ok" ) );
 			mButtonCancel->setText( getUISceneNode()->getTranslatorString( "@string/msg_box_cancel", "Cancel" ) );
 			break;
 		}
-		case MSGBOX_YESNO:
+		case UIMessageBox::YES_NO:
 		{
 			mButtonOK->setText( getUISceneNode()->getTranslatorString( "@string/msg_box_yes", "Yes" ) );
 			mButtonCancel->setText( getUISceneNode()->getTranslatorString( "@string/msg_box_no", "No" ) );
 			break;
 		}
-		case MSGBOX_RETRYCANCEL:
+		case UIMessageBox::RETRY_CANCEL:
 		{
 			mButtonOK->setText( getUISceneNode()->getTranslatorString( "@string/msg_box_retry", "Retry" ) );
 			mButtonCancel->setText( getUISceneNode()->getTranslatorString( "@string/msg_box_cancel", "Cancel" ) );
 			break;
 		}
-		case MSGBOX_OK:
+		case UIMessageBox::OK:
 		{
 			mButtonOK->setText( getUISceneNode()->getTranslatorString( "@string/msg_box_ok", "Ok" ) );
 			mButtonCancel->setVisible( false );

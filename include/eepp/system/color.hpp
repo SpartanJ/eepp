@@ -222,7 +222,7 @@ class EE_API Color : public tColor<Uint8> {
 
 		Colorf toHsl() const;
 
-		std::string toHexString() const;
+		std::string toHexString( const bool& prependHash = true ) const;
 
 		static Color fromHsl( const Colorf& hsl );
 
@@ -243,6 +243,8 @@ class EE_API Color : public tColor<Uint8> {
 		static void registerColor( const std::string& name, const Color& color );
 
 		static bool unregisterColor( const std::string& name );
+
+		static bool validHexColorString( const std::string& hexColor );
 
 		static const Color Transparent;
 		static const Color Black;

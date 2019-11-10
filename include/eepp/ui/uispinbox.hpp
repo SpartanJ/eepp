@@ -44,8 +44,6 @@ class EE_API UISpinBox : public UIWidget {
 
 		const Float& getValue() const;
 
-		virtual void scheduledUpdate( const Time& time );
-
 		UINode * getButtonPushUp() const;
 
 		UINode * getButtonPushDown() const;
@@ -73,10 +71,12 @@ class EE_API UISpinBox : public UIWidget {
 		virtual void onSizeChange();
 
 		virtual void onPositionChange();
-		
+
 		virtual void onAlphaChange();
 
 		virtual void onPaddingChange();
+
+		virtual void onBufferChange( const Event* event );
 };
 
 }}

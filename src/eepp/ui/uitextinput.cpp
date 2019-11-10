@@ -366,6 +366,8 @@ void UITextInput::onBufferChange() {
 	mTextBuffer.setChangedSinceLastUpdate( false );
 
 	invalidateDraw();
+
+	sendCommonEvent( Event::OnBufferChange );
 }
 
 void UITextInput::onInputSelectionChange() {

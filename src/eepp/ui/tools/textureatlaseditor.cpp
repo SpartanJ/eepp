@@ -266,7 +266,7 @@ void TextureAtlasEditor::fileMenuClick( const Event * Event ) {
 		}
 	} else if ( "Close" == txt ) {
 		if ( NULL != mTextureAtlasLoader && mTextureAtlasLoader->isLoaded()  ) {
-			UIMessageBox * MsgBox = UIMessageBox::New( MSGBOX_OKCANCEL, "Do you really want to close the current texture atlas?\nAll changes will be lost." );
+			UIMessageBox * MsgBox = UIMessageBox::New( UIMessageBox::OK_CANCEL, "Do you really want to close the current texture atlas?\nAll changes will be lost." );
 			MsgBox->addEventListener( Event::MsgBoxConfirmClick, cb::Make1( this, &TextureAtlasEditor::onTextureAtlasClose ) );
 			MsgBox->setTitle( "Close Texture Atlas?" );
 			MsgBox->center();

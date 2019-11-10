@@ -654,7 +654,7 @@ bool onCloseRequestCallback( EE::Window::Window * ) {
 	UITheme * prevTheme = UIThemeManager::instance()->getDefaultTheme();
 	UIThemeManager::instance()->setDefaultTheme( theme );
 
-	MsgBox = UIMessageBox::New( MSGBOX_OKCANCEL, "Do you really want to close the current file?\nAll changes will be lost." );
+	MsgBox = UIMessageBox::New( UIMessageBox::OK_CANCEL, "Do you really want to close the current file?\nAll changes will be lost." );
 	MsgBox->setTheme( theme );
 	MsgBox->addEventListener( Event::MsgBoxConfirmClick, cb::Make1<void, const Event*>( []( const Event * ) { window->close(); } ) );
 	MsgBox->addEventListener( Event::OnClose, cb::Make1<void, const Event*>( []( const Event * ) { MsgBox = NULL; } ) );

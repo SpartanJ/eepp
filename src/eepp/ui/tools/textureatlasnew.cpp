@@ -231,13 +231,13 @@ void TextureAtlasNew::onSelectFolder( const Event * Event ) {
 		if ( count ) {
 			mTGPath->setText( FPath );
 		} else {
-			MsgBox = UIMessageBox::New( MSGBOX_OK, "The folder must contain at least one image!" );
+			MsgBox = UIMessageBox::New( UIMessageBox::OK, "The folder must contain at least one image!" );
 			MsgBox->setTitle( "Error" );
 			MsgBox->center();
 			MsgBox->show();
 		}
 	} else {
-		MsgBox = UIMessageBox::New( MSGBOX_OK, "You must select a folder!" );
+		MsgBox = UIMessageBox::New( UIMessageBox::OK, "You must select a folder!" );
 		MsgBox->setTitle( "Error" );
 		MsgBox->center();
 		MsgBox->show();

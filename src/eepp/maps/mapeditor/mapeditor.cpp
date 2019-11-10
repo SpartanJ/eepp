@@ -953,7 +953,7 @@ void MapEditor::fileMenuClick( const Event * Event ) {
 			mUIMap->Map()->saveToFile( mUIMap->Map()->getPath() );
 		}
 	} else if ( "Close" == txt ) {
-		UIMessageBox * MsgBox = UIMessageBox::New( MSGBOX_OKCANCEL, "Do you really want to close the current map?\nAll changes will be lost." );
+		UIMessageBox * MsgBox = UIMessageBox::New( UIMessageBox::OK_CANCEL, "Do you really want to close the current map?\nAll changes will be lost." );
 		MsgBox->addEventListener( Event::MsgBoxConfirmClick, cb::Make1( this, &MapEditor::onMapClose ) );
 		MsgBox->setTitle( "Close Map?" );
 		MsgBox->center();
@@ -1119,7 +1119,7 @@ void MapEditor::layerMenuClick( const Event * Event ) {
 }
 
 UIMessageBox * MapEditor::createAlert( const String& title, const String& text ) {
-	UIMessageBox * MsgBox = UIMessageBox::New( MSGBOX_OK, text );
+	UIMessageBox * MsgBox = UIMessageBox::New( UIMessageBox::OK, text );
 	MsgBox->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_RESIZEABLE | UI_WIN_MODAL );
 	MsgBox->setTitle( title );
 	MsgBox->center();

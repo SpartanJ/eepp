@@ -53,6 +53,7 @@ class EE_API Event {
 			OnDragStart,
 			OnDragStop,
 			OnPaddingChange,
+			OnBufferChange,
 			UserEvent,
 			NoEvent = eeINDEX_NOT_FOUND
 		};

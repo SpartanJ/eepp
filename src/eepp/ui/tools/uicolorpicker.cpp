@@ -8,8 +8,21 @@
 #include <eepp/graphics/image.hpp>
 #include <eepp/graphics/rectangledrawable.hpp>
 #include <eepp/graphics/drawablegroup.hpp>
+#include <eepp/graphics/renderer/renderer.hpp>
 
 namespace EE { namespace UI { namespace Tools {
+
+UIColorPicker* UIColorPicker::NewWindow( const ColorPickedCb& colorPickedCb, const ColorPickerCloseCb& closeCb, const Uint32& winFlags, const Sizef& winSize ) {
+	UIWindow * tWin = UIWindow::New();
+	tWin->setSizeWithDecoration( winSize )->setPosition( 0, 0 );
+	UIWindow::StyleConfig windowStyleConfig = tWin->getStyleConfig();
+	windowStyleConfig.WinFlags = winFlags;
+	windowStyleConfig.MinWindowSize = winSize;
+	tWin->setStyleConfig( windowStyleConfig );
+	UIColorPicker * colorPicker = Tools::UIColorPicker::New( tWin, colorPickedCb, closeCb );
+	tWin->show();
+	return colorPicker;
+}
 
 UIColorPicker* UIColorPicker::New( UIWindow* attachTo, const UIColorPicker::ColorPickedCb& colorPickedCb, const UIColorPicker::ColorPickerCloseCb& closeCb ) {
 	return eeNew( UIColorPicker, ( attachTo, colorPickedCb, closeCb ) );
@@ -17,6 +30,8 @@ UIColorPicker* UIColorPicker::New( UIWindow* attachTo, const UIColorPicker::Colo
 
 UIColorPicker::UIColorPicker( UIWindow* attachTo, const UIColorPicker::ColorPickedCb& colorPickedCb, const UIColorPicker::ColorPickerCloseCb& closeCb ) :
 	mUIWindow( attachTo ),
+	mUIContainer( NULL ),
+	mRoot( NULL ),
 	mPickedCb( colorPickedCb ),
 	mCloseCb( closeCb ),
 	mHueTexture( NULL ),
@@ -34,6 +49,7 @@ UIColorPicker::UIColorPicker( UIWindow* attachTo, const UIColorPicker::ColorPick
 	mFooter( NULL ),
 	mHsv(0, 1, 1, 1),
 	mRgb(Color::fromHsv(mHsv)),
+	mHexColor(mRgb.toHexString( false )),
 	mUpdating(false)
 {
 	if ( NULL == mUIWindow ) {
@@ -50,6 +66,9 @@ UIColorPicker::UIColorPicker( UIWindow* attachTo, const UIColorPicker::ColorPick
 	}
 	#color_picker > .header {
 		margin-bottom: 4dp;
+	}
+	#color_picker > .header > .current_color {
+		background-color: white;
 	}
 	#color_picker > .header > .picker_icon {
 		icon: color-picker-white;
@@ -77,6 +96,7 @@ UIColorPicker::UIColorPicker( UIWindow* attachTo, const UIColorPicker::ColorPick
 		background-color: #FFFFFF88;
 	}
 	#color_picker > .pickers > .hue_picker_container > .hue_picker {
+		background-color: white;
 		scale-type: expand;
 	}
 	#color_picker > .pickers > .hue_picker_container > .hue_line {
@@ -102,7 +122,7 @@ UIColorPicker::UIColorPicker( UIWindow* attachTo, const UIColorPicker::ColorPick
 		<LinearLayout class="header" orientation="horizontal" layout_width="match_parent" layout_height="28dp">
 			<Widget id="current_color" class="current_color" layout_width="256dp" layout_height="match_parent" />
 			<Widget class="separator" layout_width="1dp" layout_height="256dp" />
-			<PushButton class="picker_icon" layout_width="0dp" layout_weight="1" layout_height="match_parent" />
+			<PushButton id="picker_icon" class="picker_icon" layout_width="0dp" layout_weight="1" layout_height="match_parent" />
 		</LinearLayout>
 		<LinearLayout class="pickers" orientation="horizontal" layout_width="match_parent" layout_height="256dp">
 			<RelativeLayout class="color_picker_container" orientation="horizontal" layout_width="256dp" layout_height="256dp">
@@ -119,7 +139,7 @@ UIColorPicker::UIColorPicker( UIWindow* attachTo, const UIColorPicker::ColorPick
 		<Widget class="separator" layout_width="match_parent" layout_height="1dp" />
 		<LinearLayout id="red_container" class="slider_container" orientation="horizontal" ayout_width="match_parent" layout_height="wrap_content">
 			<TextView layout_width="16dp" layout_height="wrap_content" text="R" layout_gravity="center" />
-			<Slider layout_width="0dp" layout_weight="1" layout_height="wrap_content" orientation="horizontal" layout_gravity="center" />
+			<Slider layout_width="0dp" layout_weight="1" layout_height="wrap_content" orientation="horizontal" layout_gravity="center" minValue="0" maxValue="255" />
 			<SpinBox layout_width="48dp" layout_height="wrap_content" minValue="0" maxValue="255" />
 		</LinearLayout>
 		<LinearLayout id="green_container" class="slider_container" orientation="horizontal" ayout_width="match_parent" layout_height="wrap_content">
@@ -138,17 +158,16 @@ UIColorPicker::UIColorPicker( UIWindow* attachTo, const UIColorPicker::ColorPick
 			<SpinBox layout_width="48dp" layout_height="wrap_content" minValue="0" maxValue="255" />
 		</LinearLayout>
 		<LinearLayout id="footer" class="footer" orientation="horizontal" ayout_width="match_parent" layout_height="wrap_content">
-			<TextView layout_width="wrap_content" layout_height="wrap_content" text="HTML Notation #" layout_gravity="center" />
-			<TextInput layout_width="120dp" layout_height="wrap_content" />
 			<Widget layout_width="0dp" layout_weight="1" layout_height="match_parent" />
+			<TextView layout_width="wrap_content" layout_height="wrap_content" text="#" layout_gravity="center" />
+			<TextInput layout_width="120dp" layout_height="wrap_content" />
 			<PushButton layout_width="wrap_content" layout_height="wrap_content" text="OK" />
 		</LinearLayout>
 	</LinearLayout>
 	)xml";
 
-	UIWidget * root = NULL;
 	if ( NULL != mUIContainer->getSceneNode() && mUIContainer->getSceneNode()->isUISceneNode() )
-		root = mUIContainer->getSceneNode()->asType<UISceneNode>()->loadLayoutFromString( layout, mUIContainer );
+		mRoot = mUIContainer->getSceneNode()->asType<UISceneNode>()->loadLayoutFromString( layout, mUIContainer );
 
 	if ( NULL != mUIWindow ) {
 		mUIWindow->setTitle( "Color Picker" );
@@ -157,33 +176,26 @@ UIColorPicker::UIColorPicker( UIWindow* attachTo, const UIColorPicker::ColorPick
 		mUIContainer->addEventListener( Event::OnClose, cb::Make1( this, &UIColorPicker::windowClose ) );
 	}
 
-	root->bind( "color_picker_rect", mColorPicker );
-	root->bind( "hue_picker", mHuePicker );
-	root->bind( "vertical_line", mVerticalLine );
-	root->bind( "horizontal_line", mHorizontalLine );
-	root->bind( "hue_line", mHueLine );
-	root->bind( "current_color", mCurrentColor );
-	root->bind( "red_container", mRedContainer );
-	root->bind( "green_container", mGreenContainer );
-	root->bind( "blue_container", mBlueContainer );
-	root->bind( "alpha_container", mAlphaContainer );
-	root->bind( "footer", mFooter );
+	mRoot->bind( "color_picker_rect", mColorPicker );
+	mRoot->bind( "hue_picker", mHuePicker );
+	mRoot->bind( "vertical_line", mVerticalLine );
+	mRoot->bind( "horizontal_line", mHorizontalLine );
+	mRoot->bind( "hue_line", mHueLine );
+	mRoot->bind( "current_color", mCurrentColor );
+	mRoot->bind( "red_container", mRedContainer );
+	mRoot->bind( "green_container", mGreenContainer );
+	mRoot->bind( "blue_container", mBlueContainer );
+	mRoot->bind( "alpha_container", mAlphaContainer );
+	mRoot->bind( "footer", mFooter );
 
-	root->addEventListener( Event::OnSizeChange, [&] ( const Event * event ) {
+	mRoot->addEventListener( Event::OnSizeChange, [&] ( const Event * event ) {
 		updateAll();
 	} );
+
 	mHueTexture = createHueTexture( mHuePicker->getPixelsSize() );
 	mHuePicker->setDrawable( mHueTexture );
 
 	updateAll();
-
-	mColorPicker->addEventListener( Event::MouseDown, [&]( const Event * event ) {
-		onColorPickerEvent( reinterpret_cast<const MouseEvent*>( event ) );
-	} );
-
-	mHuePicker->addEventListener( Event::MouseDown, [&]( const Event * event ) {
-		onHuePickerEvent( reinterpret_cast<const MouseEvent*>( event ) );
-	} );
 
 	registerEvents();
 }
@@ -197,6 +209,7 @@ UIColorPicker::~UIColorPicker() {
 void UIColorPicker::setColor( const Color& color ) {
 	mRgb = color;
 	mHsv = color.toHsv();
+	mHexColor = mRgb.toHexString( false );
 	updateAll();
 }
 
@@ -207,11 +220,17 @@ const Color& UIColorPicker::getColor() const {
 void UIColorPicker::setHsvColor(const Colorf& color) {
 	mHsv = color;
 	mRgb = Color::fromHsv( mHsv );
+	mHexColor = mRgb.toHexString( false );
 	updateAll();
 }
 
 const Colorf& UIColorPicker::getHsvColor() const {
 	return mHsv;
+}
+
+UIWindow* UIColorPicker::getUIWindow() const
+{
+	return mUIWindow;
 }
 
 void UIColorPicker::windowClose( const Event * ) {
@@ -271,8 +290,7 @@ void UIColorPicker::updateGuideLines() {
 	mVerticalLine->setLayoutMargin( Rect( mColorPicker->getSize().getWidth() * mHsv.hsv.s, 0.f, 0.f, 0.f ) );
 	mHorizontalLine->setLayoutMargin( Rect( 0.f, mColorPicker->getSize().getHeight() - mColorPicker->getSize().getHeight() * mHsv.hsv.v, 0.f, 0.f ) );
 	mHueLine->setLayoutMargin( Rect( 0.f, mHuePicker->getSize().getHeight() - mHsv.hsv.h / 360.f * mHuePicker->getSize().getHeight(), 0.f, 0.f ) );
-	mCurrentColor->setBackgroundColor( Color::fromHsv( mHsv ) );
-
+	mCurrentColor->setForegroundColor( Color::fromHsv( mHsv ) );
 }
 
 void UIColorPicker::updateChannelWidgets() {
@@ -284,7 +302,7 @@ void UIColorPicker::updateChannelWidgets() {
 	mGreenContainer->findByTag<UISpinBox>( "spinbox" )->setValue( mRgb.g );
 	mBlueContainer->findByTag<UISpinBox>( "spinbox" )->setValue( mRgb.b );
 	mAlphaContainer->findByTag<UISpinBox>( "spinbox" )->setValue( mRgb.a );
-	mFooter->findByTag<UITextInput>( "textinput" )->setText( mRgb.toHexString() );
+	mFooter->findByTag<UITextInput>( "textinput" )->setText( mHexColor );
 }
 
 void UIColorPicker::updateAll() {
@@ -296,13 +314,105 @@ void UIColorPicker::updateAll() {
 }
 
 void UIColorPicker::registerEvents() {
+	mColorPicker->addEventListener( Event::MouseDown, [&]( const Event * event ) {
+		onColorPickerEvent( reinterpret_cast<const MouseEvent*>( event ) );
+	} );
 
-}
+	mHuePicker->addEventListener( Event::MouseDown, [&]( const Event * event ) {
+		onHuePickerEvent( reinterpret_cast<const MouseEvent*>( event ) );
+	} );
 
-void UIColorPicker::unregisterEvents() {
-	for ( auto& event : mEventsIds ) {
-		event.first->removeEventListener( event.second );
-	}
+	UISlider * redSlider = mRedContainer->findByTag<UISlider>( "slider" );
+
+	redSlider->addEventListener( Event::OnValueChange, [&]( const Event* event ) {
+		if ( mUpdating ) return;
+		setColor( Color( event->getNode()->asType<UISlider>()->getValue(), mRgb.g, mRgb.b, mRgb.a ) );
+	} );
+
+	UISlider * greenSlider = mGreenContainer->findByTag<UISlider>( "slider" );
+
+	greenSlider->addEventListener( Event::OnValueChange, [&]( const Event* event ) {
+		if ( mUpdating ) return;
+		setColor( Color( mRgb.r, event->getNode()->asType<UISlider>()->getValue(), mRgb.b, mRgb.a ) );
+	} );
+
+	UISlider * blueSlider = mBlueContainer->findByTag<UISlider>( "slider" );
+
+	blueSlider->addEventListener( Event::OnValueChange, [&]( const Event* event ) {
+		if ( mUpdating ) return;
+		setColor( Color( mRgb.r, mRgb.g, event->getNode()->asType<UISlider>()->getValue(), mRgb.a ) );
+	} );
+
+	UISlider * alphaSlider = mAlphaContainer->findByTag<UISlider>( "slider" );
+
+	alphaSlider->addEventListener( Event::OnValueChange, [&]( const Event* event ) {
+		if ( mUpdating ) return;
+		setColor( Color( mRgb.r, mRgb.g, mRgb.b, event->getNode()->asType<UISlider>()->getValue() ) );
+	} );
+
+	UISpinBox * redSpinBox = mRedContainer->findByTag<UISpinBox>( "spinbox" );
+
+	redSpinBox->addEventListener( Event::OnValueChange, [&]( const Event* event ) {
+		if ( mUpdating ) return;
+		setColor( Color( event->getNode()->asType<UISpinBox>()->getValue(), mRgb.g, mRgb.b, mRgb.a ) );
+	} );
+
+	UISpinBox * greenSpinBox = mGreenContainer->findByTag<UISpinBox>( "spinbox" );
+
+	greenSpinBox->addEventListener( Event::OnValueChange, [&]( const Event* event ) {
+		if ( mUpdating ) return;
+		setColor( Color( mRgb.r, event->getNode()->asType<UISpinBox>()->getValue(), mRgb.b, mRgb.a ) );
+	} );
+
+	UISpinBox * blueSpinBox = mBlueContainer->findByTag<UISpinBox>( "spinbox" );
+
+	blueSpinBox->addEventListener( Event::OnValueChange, [&]( const Event* event ) {
+		if ( mUpdating ) return;
+		setColor( Color( mRgb.r, mRgb.g, event->getNode()->asType<UISpinBox>()->getValue(), mRgb.a ) );
+	} );
+
+	UISpinBox * alphaSpinBox = mAlphaContainer->findByTag<UISpinBox>( "spinbox" );
+
+	alphaSpinBox->addEventListener( Event::OnValueChange, [&]( const Event* event ) {
+		if ( mUpdating ) return;
+		setColor( Color( mRgb.r, mRgb.g, mRgb.b, event->getNode()->asType<UISpinBox>()->getValue() ) );
+	} );
+
+	mFooter->findByTag<UIPushButton>( "pushbutton" )->addEventListener( Event::MouseClick, [&]( const Event* ) {
+		if ( mPickedCb )
+			mPickedCb( mRgb );
+
+		if ( NULL != mUIWindow )
+			mUIWindow->closeWindow();
+	} );
+
+	mFooter->findByTag<UITextInput>( "textinput" )->addEventListener( Event::OnPressEnter, [&]( const Event* event ) {
+		if ( mUpdating ) return;
+		UITextInput * textInput = event->getNode()->asType<UITextInput>();
+		std::string buffer( textInput->getText().toUtf8() );
+		std::string colorString = "#" + buffer;
+
+		if ( Color::validHexColorString( colorString ) ) {
+			setColor( Color::fromString( colorString ) );
+		} else {
+			setColor( mRgb );
+		}
+	} );
+
+	mRoot->find<UIPushButton>( "picker_icon" )->addEventListener( Event::MouseClick, [&]( const Event* ) {
+		UIWidget * coverWidget = UIWidget::New();
+		coverWidget->setParent( mRoot->getSceneNode() )->setPosition( 0, 0 )->setSize( mRoot->getSceneNode()->getSize() );
+		coverWidget->setAnchors( UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
+		coverWidget->addEventListener( Event::MouseMove, [&]( const Event* event ) {
+			Vector2i position = reinterpret_cast<const MouseEvent*>( event )->getPosition();
+			setColor( GLi->readPixel( position.x, position.y ) );
+		} );
+		coverWidget->addEventListener( Event::MouseClick, [&]( const Event* event ) {
+			Vector2i position = reinterpret_cast<const MouseEvent*>( event )->getPosition();
+			setColor( GLi->readPixel( position.x, position.y ) );
+			event->getNode()->close();
+		} );
+	} );
 }
 
 void UIColorPicker::onColorPickerEvent( const MouseEvent* mouseEvent ) {

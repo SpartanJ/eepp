@@ -9,9 +9,16 @@ namespace EE { namespace UI {
 
 class EE_API UIMessageBox : public UIWindow {
 	public:
-		static UIMessageBox * New( UI_MSGBOX_TYPE type, String message );
+		enum Type {
+			OK_CANCEL,
+			YES_NO,
+			RETRY_CANCEL,
+			OK
+		};
 
-		UIMessageBox( UI_MSGBOX_TYPE type, String message );
+		static UIMessageBox * New( Type type, String message );
+
+		UIMessageBox( Type type, String message );
 
 		virtual ~UIMessageBox();
 
@@ -31,7 +38,7 @@ class EE_API UIMessageBox : public UIWindow {
 
 		void setCloseWithKey(const Uint32 & closeWithKey);
 	protected:
-		UI_MSGBOX_TYPE		mMsgBoxType;
+		Type				mMsgBoxType;
 		UITextView *		mTextBox;
 		UIPushButton *		mButtonOK;
 		UIPushButton *		mButtonCancel;
