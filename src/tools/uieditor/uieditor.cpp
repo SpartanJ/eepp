@@ -213,13 +213,23 @@ static void loadStyleSheet( std::string cssPath ) {
 }
 
 static void loadLayout( std::string file ) {
-	if ( watch != 0 ) {
-		fileWatcher->removeWatch( watch );
-	}
-
 	std::string folder( FileSystem::fileRemoveFileName( file ) );
 
-	watch = fileWatcher->addWatch( folder, listener );
+	bool keepWatch = false;
+
+	for ( auto& directory : fileWatcher->directories() ) {
+		if ( directory == folder ) {
+			keepWatch = true;
+		}
+	}
+
+	if ( !keepWatch ) {
+		if ( watch != 0 ) {
+			fileWatcher->removeWatch( watch );
+		}
+
+		watch = fileWatcher->addWatch( folder, listener );
+	}
 
 	uiContainer->childsCloseAll();
 

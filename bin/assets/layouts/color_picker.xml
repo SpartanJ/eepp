@@ -1,6 +1,6 @@
 <style>
 #color_picker {
-	min-window-size: 320dp, 470dp;
+	min-window-size: 320dp, 478dp;
 }
 #color_picker .container {
 	margin: 4dp;
@@ -43,7 +43,7 @@
 	icon: ok;
 }
 </style>
-<window id="color_picker" layout_width="320dp" layout_height="470dp">
+<window id="color_picker" layout_width="320dp" layout_height="478dp">
 	<LinearLayout class="container" orientation="vertical" layout_width="match_parent" layout_height="wrap_content">
 		<LinearLayout class="header" orientation="horizontal" layout_width="match_parent" layout_height="28dp">
 			<Widget class="current_color" layout_width="256dp" layout_height="match_parent" />
