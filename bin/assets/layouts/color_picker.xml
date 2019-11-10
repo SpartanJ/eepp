@@ -4,6 +4,7 @@
 }
 #color_picker .container {
 	margin: 4dp;
+	min-window-size: 320dp, 478dp;
 }
 #color_picker .container > .header > .current_color {
 	background-color: white;
@@ -16,8 +17,20 @@
 	icon: color-picker-white;
 	gravity: center;
 }
-#color_picker .container > .pickers > .color_picker {
+#color_picker .container > .pickers > .color_picker_container > .color_picker {
 	background-image: linear-gradient(white, black);
+}
+#color_picker .container > .pickers > .color_picker_container > .vertical_line {
+	background-color: black;
+	border-width: 1dp;
+	border-color: white;
+	margin-left: 128dp;
+}
+#color_picker .container > .pickers > .color_picker_container > .horizontal_line {
+	background-color: black;
+	border-width: 1dp;
+	border-color: white;
+	margin-top: 128dp;
 }
 #color_picker .container > .pickers > .separator,
 #color_picker .container > .header > .separator {
@@ -26,8 +39,13 @@
 #color_picker .container > .pickers > .separator {
 	background-color: #FFFFFF88;
 }
-#color_picker .container > .pickers > .hue_picker {
-	background-image: linear-gradient(white, black);
+#color_picker .container > .pickers > .hue_picker_container > .hue_picker {
+	background-image: linear-gradient(red, black);
+}
+#color_picker .container > .pickers > .hue_picker_container > .hue_line {
+	background-color: black;
+	border-width: 1dp;
+	border-color: white;
 }
 #color_picker .container > .separator {
 	margin: 0dp 8dp 0dp 4dp;
@@ -43,17 +61,24 @@
 	icon: ok;
 }
 </style>
-<window id="color_picker" layout_width="320dp" layout_height="478dp">
+<window id="color_picker" layout_width="320dp" layout_height="478dp" title="Select a color...">
 	<LinearLayout class="container" orientation="vertical" layout_width="match_parent" layout_height="wrap_content">
 		<LinearLayout class="header" orientation="horizontal" layout_width="match_parent" layout_height="28dp">
 			<Widget class="current_color" layout_width="256dp" layout_height="match_parent" />
 			<Widget class="separator" layout_width="1dp" layout_height="256dp" />
-			<Image class="picker_icon" layout_width="0dp" layout_weight="1" layout_height="match_parent" />
+			<PushButton class="picker_icon" layout_width="0dp" layout_weight="1" layout_height="match_parent" />
 		</LinearLayout>
 		<LinearLayout class="pickers" orientation="horizontal" layout_width="match_parent" layout_height="256dp">
-			<Widget class="color_picker" layout_width="256dp" layout_height="256dp" />
+			<RelativeLayout class="color_picker_container" orientation="horizontal" layout_width="256dp" layout_height="256dp">
+				<Widget class="color_picker" layout_width="match_parent" layout_height="match_parent" />
+				<Widget class="vertical_line" layout_width="1dp" layout_height="match_parent" />
+				<Widget class="horizontal_line" layout_width="match_parent" layout_height="1dp" />
+			</RelativeLayout>
 			<Widget class="separator" layout_width="1dp" layout_height="256dp" />
-			<Widget class="hue_picker" layout_width="0dp" layout_weight="1" layout_height="256dp" />
+			<RelativeLayout class="hue_picker_container" orientation="horizontal" layout_width="0dp" layout_weight="1" layout_height="256dp">
+				<Widget class="hue_picker" layout_width="match_parent" layout_height="match_parent" />
+				<Widget class="hue_line" layout_width="match_parent" layout_height="1dp" />
+			</RelativeLayout>
 		</LinearLayout>
 		<Widget class="separator" layout_width="match_parent" layout_height="1dp" />
 		<LinearLayout class="slider_container" orientation="horizontal" ayout_width="match_parent" layout_height="wrap_content">
