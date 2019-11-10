@@ -21,9 +21,9 @@ class EE_API TextureAtlasEditor {
 	public:
 		typedef std::function<void()> TGEditorCloseCb;
 
-		static TextureAtlasEditor * New( UIWindow * AttatchTo = NULL, const TGEditorCloseCb& callback = TGEditorCloseCb() );
+		static TextureAtlasEditor * New( UIWindow * attachTo = NULL, const TGEditorCloseCb& callback = TGEditorCloseCb() );
 
-		TextureAtlasEditor( UIWindow * AttatchTo = NULL, const TGEditorCloseCb& callback = TGEditorCloseCb() );
+		TextureAtlasEditor( UIWindow * attachTo = NULL, const TGEditorCloseCb& callback = TGEditorCloseCb() );
 
 		virtual ~TextureAtlasEditor();
 

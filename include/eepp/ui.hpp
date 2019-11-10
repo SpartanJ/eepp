@@ -45,6 +45,7 @@
 #include <eepp/ui/uiscrollview.hpp>
 #include <eepp/ui/uigridlayout.hpp>
 #include <eepp/ui/tools/textureatlaseditor.hpp>
+#include <eepp/ui/tools/uicolorpicker.hpp>
 
 #include <eepp/ui/uiwidgetcreator.hpp>
 

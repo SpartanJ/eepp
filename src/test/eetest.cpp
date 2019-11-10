@@ -113,6 +113,7 @@ void EETest::init() {
 	mCurDemo			= eeINDEX_NOT_FOUND;
 	mMapEditor			= NULL;
 	mETGEditor			= NULL;
+	mColorPicker		= NULL;
 	Mus					= NULL;
 	mUIWindow			= NULL;
 	mTerrainBut			= NULL;
@@ -500,6 +501,7 @@ void EETest::createBaseUI() {
 	Menu->addSeparator();
 	Menu->add( "Map Editor" );
 	Menu->add( "Texture Atlas Editor" );
+	Menu->add( "Color Picker" );
 	Menu->addSeparator();
 	Menu->add( "Show Screen 1" );
 	Menu->add( "Show Screen 2" );
@@ -925,13 +927,22 @@ void EETest::createETGEditor() {
 	windowStyleConfig.MinWindowSize = Sizef( 1024, 768 );
 	tWin->setStyleConfig( windowStyleConfig );
 
-	mETGEditor = Tools::TextureAtlasEditor::New( tWin, cb::Make0( this, &EETest::onETGEditorClose ) );
+	mETGEditor = Tools::TextureAtlasEditor::New( tWin, [&] { mETGEditor = NULL; } );
 	tWin->center();
 	tWin->show();
 }
 
-void EETest::onETGEditorClose() {
-	mETGEditor = NULL;
+void EETest::createColorPicker() {
+	UIWindow * tWin = UIWindow::New();
+	tWin->setSize( 320, 478 )->setPosition( 0, 0 );
+	UIWindow::StyleConfig windowStyleConfig = tWin->getStyleConfig();
+	windowStyleConfig.WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER;
+	windowStyleConfig.MinWindowSize = Sizef( 320, 478 );
+	tWin->setStyleConfig( windowStyleConfig );
+
+	mColorPicker = Tools::UIColorPicker::New( tWin, [&](Color color) {}, [&] { mColorPicker = NULL; } );
+	tWin->center();
+	tWin->show();
 }
 
 void EETest::createCommonDialog() {
@@ -1114,6 +1125,8 @@ void EETest::onItemClick( const Event * Event ) {
 		createMapEditor();
 	} else if ( "Texture Atlas Editor" == txt ) {
 		createETGEditor();
+	} else if ( "Color Picker" == txt ) {
+		createColorPicker();
 	} else if ( "Multi Viewport" == txt ) {
 		MultiViewportMode = !MultiViewportMode;
 	} else if ( "Open..." == txt ) {

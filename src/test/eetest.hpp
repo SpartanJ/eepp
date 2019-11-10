@@ -168,6 +168,7 @@ class EETest : private Thread {
 		UIWindow * mUIWindow;
 		MapEditor * mMapEditor;
 		TextureAtlasEditor * mETGEditor;
+		UIColorPicker * mColorPicker;
 
 		Text mEEText;
 		Text mFBOText;
@@ -236,9 +237,9 @@ class EETest : private Thread {
 
 		void createMapEditor();
 
-		void onMapEditorClose();
+		void createColorPicker();
 
-		void onETGEditorClose();
+		void onMapEditorClose();
 
 		void createETGEditor();
 

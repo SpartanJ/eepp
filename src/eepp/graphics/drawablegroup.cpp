@@ -124,4 +124,4 @@ void DrawableGroup::update() {
 	mNeedsUpdate = false;
 }
 
-}} 
+}}

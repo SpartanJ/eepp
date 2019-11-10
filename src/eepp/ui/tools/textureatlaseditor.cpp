@@ -19,12 +19,12 @@ UIWidget * TextureAtlasEditor::createTextureAtlasTextureRegionEditor( std::strin
 	return mTextureRegionEditor;
 }
 
-TextureAtlasEditor *TextureAtlasEditor::New(UIWindow * AttatchTo, const TextureAtlasEditor::TGEditorCloseCb & callback) {
-	return eeNew( TextureAtlasEditor, ( AttatchTo, callback ) );
+TextureAtlasEditor *TextureAtlasEditor::New(UIWindow * attachTo, const TextureAtlasEditor::TGEditorCloseCb & callback) {
+	return eeNew( TextureAtlasEditor, ( attachTo, callback ) );
 }
 
-TextureAtlasEditor::TextureAtlasEditor( UIWindow * AttatchTo, const TGEditorCloseCb& callback ) :
-	mUIWindow( AttatchTo ),
+TextureAtlasEditor::TextureAtlasEditor( UIWindow * attachTo, const TGEditorCloseCb& callback ) :
+	mUIWindow( attachTo ),
 	mCloseCb( callback ),
 	mTexturePacker( NULL ),
 	mTextureAtlasLoader( NULL ),

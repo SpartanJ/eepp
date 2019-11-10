@@ -172,13 +172,14 @@ Color Color::fromHsv(const Colorf& hsv) {
 	Color rgba(Color::Transparent);
 	Float remainder, p, q, t;
 	int region;
+	Uint8 brightness = static_cast<Uint8>( hsv.hsv.v * 255.f + 0.5f );
 
 	rgba.a = static_cast<Uint8>( hsv.hsv.a * 255.f + 0.5f );
 
 	if (hsv.hsv.s == 0) {
-		rgba.r = hsv.hsv.v;
-		rgba.g = hsv.hsv.v;
-		rgba.b = hsv.hsv.v;
+		rgba.r = brightness;
+		rgba.g = brightness;
+		rgba.b = brightness;
 		return rgba;
 	}
 
@@ -189,7 +190,7 @@ Color Color::fromHsv(const Colorf& hsv) {
 	q = hsv.hsv.v * (1 - hsv.hsv.s * remainder);
 	t = hsv.hsv.v * (1 - (hsv.hsv.s * (1 - remainder)));
 
-	Uint8 brightness = static_cast<Uint8>( hsv.hsv.v * 255.f + 0.5f );
+
 	p = static_cast<Uint8>( p * 255.f + 0.5f );
 	q = static_cast<Uint8>( q * 255.f + 0.5f );
 	t = static_cast<Uint8>( t * 255.f + 0.5f );

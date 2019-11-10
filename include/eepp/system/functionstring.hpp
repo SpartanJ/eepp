@@ -1,12 +1,13 @@
 #ifndef EE_SYSTEM_FUNCTIONSTRING_HPP
 #define EE_SYSTEM_FUNCTIONSTRING_HPP
 
+#include <eepp/config.hpp>
 #include <string>
 #include <vector>
 
 namespace EE { namespace System {
 
-class FunctionString {
+class EE_API FunctionString {
 	public:
 		static FunctionString parse( const std::string& function );
 
