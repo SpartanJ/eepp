@@ -692,6 +692,9 @@ void EETest::createNewUI() {
 	pushButton->setPosition( 50, 560 )->setSize( 200, 0 )->setParent( container );
 	pushButton->setText( "PushButton" );
 	pushButton->setIcon( mTheme->getIconByName( "ok" ) );
+	pushButton->addEventListener( Event::MouseClick, [&, pushButton] ( const Event* event ) {
+		createColorPicker( pushButton );
+	} );
 
 	UISprite * sprite = UISprite::New();
 	sprite->setFlags( UI_AUTO_SIZE );
@@ -932,13 +935,13 @@ void EETest::createETGEditor() {
 	tWin->show();
 }
 
-void EETest::createColorPicker() {
-	mColorPicker = Tools::UIColorPicker::NewWindow( [&](Color color) {
+void EETest::createColorPicker( Node * node ) {
+	mColorPicker = Tools::UIColorPicker::NewModal( node, [&](Color color) {
 		UIMessageBox * msgBox = UIMessageBox::New( UIMessageBox::OK, color.toHexString() );
 		msgBox->center();
 		msgBox->show();
-	}, [&] { mColorPicker = NULL; } );
-	mColorPicker->getUIWindow()->center();
+	} );
+	//mColorPicker->getUIWindow()->center();
 }
 
 void EETest::createCommonDialog() {
@@ -1003,10 +1006,10 @@ void EETest::createDecoratedWindow() {
 		const String& txt = menuItem->getText();
 
 		if ( "Hide Border" == txt ) {
-			win->setWinFlags( win->getWinFlags() | UI_WIN_NO_BORDER );
+			win->setWinFlags( win->getWinFlags() | UI_WIN_NO_DECORATION );
 			menuItem->setText( "Show Border" );
 		} else if ( "Show Border" == txt ) {
-			win->setWinFlags( win->getWinFlags() & ~UI_WIN_NO_BORDER );
+			win->setWinFlags( win->getWinFlags() & ~UI_WIN_NO_DECORATION );
 			menuItem->setText( "Hide Border" );
 		} else if ( "Close" == txt ) {
 			win->closeWindow();
@@ -1061,11 +1064,11 @@ void EETest::onCloseClick( const Event * ) {
 	mUIWindow = NULL;
 }
 
-void EETest::onItemClick( const Event * Event ) {
-	if ( !Event->getNode()->isType( UI_TYPE_MENUITEM ) )
+void EETest::onItemClick( const Event * event ) {
+	if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 		return;
 
-	const String& txt = Event->getNode()->asType<UIMenuItem>()->getText();
+	const String& txt = event->getNode()->asType<UIMenuItem>()->getText();
 
 	if ( "Show Screen 1" == txt ) {
 		setScreen( 0 );
@@ -1088,7 +1091,7 @@ void EETest::onItemClick( const Event * Event ) {
 			mWindow->stopTextInput();
 		}
 	} else if ( "Show Window" == txt ) {
-		UIMenuCheckBox * Chk = Event->getNode()->asType<UIMenuCheckBox>();
+		UIMenuCheckBox * Chk = event->getNode()->asType<UIMenuCheckBox>();
 
 		C->toFront();
 		C->setVisible( true );
@@ -1122,7 +1125,7 @@ void EETest::onItemClick( const Event * Event ) {
 	} else if ( "Texture Atlas Editor" == txt ) {
 		createETGEditor();
 	} else if ( "Color Picker" == txt ) {
-		createColorPicker();
+		createColorPicker( event->getNode() );
 	} else if ( "Multi Viewport" == txt ) {
 		MultiViewportMode = !MultiViewportMode;
 	} else if ( "Open..." == txt ) {

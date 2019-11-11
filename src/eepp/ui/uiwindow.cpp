@@ -126,7 +126,7 @@ void UIWindow::updateWinFlags() {
 		setDragEnabled( false );
 	}
 
-	if ( !( mStyleConfig.WinFlags & UI_WIN_NO_BORDER ) ) {
+	if ( !( mStyleConfig.WinFlags & UI_WIN_NO_DECORATION ) ) {
 		if ( NULL == mWindowDecoration ) {
 			mWindowDecoration = UINode::New();
 			mWindowDecoration->writeNodeFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
@@ -381,49 +381,6 @@ void UIWindow::createModalControl() {
 		mModalCtrl->setSize( Ctrl->getSize() );
 		mModalCtrl->updateAnchorsDistances();
 	}
-
-	mModalCtrl->setEnabled( false );
-	mModalCtrl->setVisible( false );
-
-	disableByModal();
-}
-
-void UIWindow::enableByModal() {
-	if ( isModal() && NULL != mSceneNode ) {
-		Node * CtrlChild = mSceneNode->getFirstChild();
-
-		while ( NULL != CtrlChild )
-		{
-			if ( CtrlChild != mModalCtrl &&
-				 CtrlChild != this &&
-				 CtrlChild->getNodeFlags() & NODE_FLAG_DISABLED_BY_NODE )
-			{
-				CtrlChild->setEnabled( true );
-				CtrlChild->writeNodeFlag( NODE_FLAG_DISABLED_BY_NODE, 0 );
-			}
-
-			CtrlChild = CtrlChild->getNextNode();
-		}
-	}
-}
-
-void UIWindow::disableByModal() {
-	if ( isModal() && NULL != mSceneNode ) {
-		Node * CtrlChild = mSceneNode->getFirstChild();
-
-		while ( NULL != CtrlChild )
-		{
-			if ( CtrlChild != mModalCtrl &&
-				 CtrlChild != this &&
-				 CtrlChild->isEnabled() )
-			{
-				CtrlChild->setEnabled( false );
-				CtrlChild->writeNodeFlag( NODE_FLAG_DISABLED_BY_NODE, 1 );
-			}
-
-			CtrlChild = CtrlChild->getNextNode();
-		}
-	}
 }
 
 Uint32 UIWindow::getType() const {
@@ -444,11 +401,6 @@ void UIWindow::closeWindow() {
 	if ( NULL != mButtonMinimize )
 		mButtonMinimize->setEnabled( false );
 
-	if ( NULL != mModalCtrl ) {
-		mModalCtrl->close();
-		mModalCtrl = NULL;
-	}
-
 	if ( Time::Zero != UIThemeManager::instance()->getControlsFadeOutTime() )
 		runAction( Actions::Sequence::New( Actions::FadeOut::New( UIThemeManager::instance()->getControlsFadeOutTime() ), Actions::Close::New() ) );
 	else
@@ -458,7 +410,12 @@ void UIWindow::closeWindow() {
 void UIWindow::close() {
 	UIWidget::close();
 
-	enableByModal();
+	if ( NULL != mModalCtrl ) {
+		mModalCtrl->setEnabled( false );
+		mModalCtrl->setVisible( false );
+		mModalCtrl->close();
+		mModalCtrl = NULL;
+	}
 }
 
 void UIWindow::setTheme( UITheme * Theme ) {
@@ -467,7 +424,7 @@ void UIWindow::setTheme( UITheme * Theme ) {
 	if ( NULL != mContainer )
 		mContainer->setThemeSkin			( Theme, "winback"			);
 
-	if ( !( mStyleConfig.WinFlags & UI_WIN_NO_BORDER ) ) {
+	if ( !( mStyleConfig.WinFlags & UI_WIN_NO_DECORATION ) ) {
 		mWindowDecoration->setThemeSkin	( Theme, "windeco"			);
 		mBorderLeft->setThemeSkin		( Theme, "winborderleft"	);
 		mBorderRight->setThemeSkin		( Theme, "winborderright"	);
@@ -977,6 +934,18 @@ UINode * UIWindow::getButtonMinimize() const {
 	return mButtonMinimize;
 }
 
+void UIWindow::setupModal() {
+	if ( isModal() ) {
+		createModalControl();
+
+		mModalCtrl->setEnabled( true );
+		mModalCtrl->setVisible( true );
+		mModalCtrl->toFront();
+
+		toFront();
+	}
+}
+
 bool UIWindow::show() {
 	if ( !isVisible() ) {
 		setEnabled( true );
@@ -986,18 +955,12 @@ bool UIWindow::show() {
 
 		runAction( Actions::Fade::New( mStyleConfig.BaseAlpha == getAlpha() ? 0.f : mAlpha, mStyleConfig.BaseAlpha, UIThemeManager::instance()->getControlsFadeOutTime() ) );
 
-		if ( isModal() ) {
-			createModalControl();
-
-			mModalCtrl->setEnabled( true );
-			mModalCtrl->setVisible( true );
-			mModalCtrl->toFront();
-
-			toFront();
-		}
+		setupModal();
 
 		return true;
 	}
+
+	setupModal();
 
 	return false;
 }
@@ -1089,7 +1052,7 @@ void UIWindow::setTitle( const String& text ) {
 		mTitle->setHorizontalAlign( getHorizontalAlign() );
 		mTitle->setVerticalAlign( getVerticalAlign() );
 		mTitle->setEnabled( false );
-		mTitle->setVisible( !( mStyleConfig.WinFlags & UI_WIN_NO_BORDER ) );
+		mTitle->setVisible( !( mStyleConfig.WinFlags & UI_WIN_NO_DECORATION ) );
 	}
 
 	fixTitleSize();
@@ -1364,7 +1327,7 @@ UIWidget * UIWindow::getModalControl() const {
 void UIWindow::resizeCursor() {
 	UISceneNode * sceneNode = getUISceneNode();
 
-	if ( NULL == sceneNode || !isMouseOverMeOrChilds() || !sceneNode->getUseGlobalCursors() || ( mStyleConfig.WinFlags & UI_WIN_NO_BORDER ) || !isResizeable() )
+	if ( NULL == sceneNode || !isMouseOverMeOrChilds() || !sceneNode->getUseGlobalCursors() || ( mStyleConfig.WinFlags & UI_WIN_NO_DECORATION ) || !isResizeable() )
 		return;
 
 	EventDispatcher * eventDispatcher = sceneNode->getEventDispatcher();
@@ -1447,7 +1410,7 @@ bool UIWindow::setAttribute( const NodeAttribute& attribute, const Uint32& state
 				else if ( "dragable" == cur ) winflags |= UI_WIN_DRAGABLE_CONTAINER;
 				else if ( "shadow" == cur ) winflags |= UI_WIN_SHADOW;
 				else if ( "modal" == cur ) winflags |= UI_WIN_MODAL;
-				else if ( "noborder" == cur || "borderless" == cur ) winflags |= UI_WIN_NO_BORDER;
+				else if ( "noborder" == cur || "borderless" == cur ) winflags |= UI_WIN_NO_DECORATION;
 				else if ( "resizeable" == cur ) winflags |= UI_WIN_RESIZEABLE;
 				else if ( "sharealpha" == cur ) winflags |= UI_WIN_SHARE_ALPHA_WITH_CHILDS;
 				else if ( "buttonactions" == cur ) winflags |= UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS;

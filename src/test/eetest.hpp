@@ -237,7 +237,7 @@ class EETest : private Thread {
 
 		void createMapEditor();
 
-		void createColorPicker();
+		void createColorPicker( Node * node );
 
 		void onMapEditorClose();
 

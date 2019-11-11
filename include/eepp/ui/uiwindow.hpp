@@ -239,10 +239,6 @@ class EE_API UIWindow : public UIWidget {
 
 		void createModalControl();
 
-		void enableByModal();
-
-		void disableByModal();
-
 		void resizeCursor();
 
 		void applyMinWinSize();
@@ -268,6 +264,8 @@ class EE_API UIWindow : public UIWidget {
 		UISceneNode * getUISceneNode();
 
 		void onContainerPositionChange(const Event * Event);
+
+		void setupModal();
 };
 
 }}

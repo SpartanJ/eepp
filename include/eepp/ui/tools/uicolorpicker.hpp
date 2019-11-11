@@ -16,13 +16,14 @@ namespace EE { namespace UI { namespace Tools {
 class EE_API UIColorPicker {
 	public:
 		typedef std::function<void( Color color )> ColorPickedCb;
-		typedef std::function<void()> ColorPickerCloseCb;
 
-		static UIColorPicker * NewWindow( const ColorPickedCb& colorPickedCb = ColorPickedCb(), const ColorPickerCloseCb& closeCb = ColorPickerCloseCb(), const Uint32& winFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER, const Sizef& winSize = Sizef( 320, 478 ) );
+		static UIColorPicker * NewModal( Node* nodeCreator, const ColorPickedCb& colorPickedCb = ColorPickedCb(), const Uint8& modalAlpha = 120, const Uint32& winFlags = UI_WIN_NO_DECORATION | UI_WIN_MODAL | UI_WIN_DRAGABLE_CONTAINER | UI_WIN_FRAME_BUFFER, const Sizef& winSize = Sizef( 320, 470 ) );
 
-		static UIColorPicker * New( UIWindow * attach = NULL, const ColorPickedCb& colorPickedCb = ColorPickedCb(), const ColorPickerCloseCb& closeCb = ColorPickerCloseCb() );
+		static UIColorPicker * NewWindow( const ColorPickedCb& colorPickedCb = ColorPickedCb(), const Uint32& winFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER, const Sizef& winSize = Sizef( 320, 478 ), const Uint8& modalAlpha = 0 );
 
-		UIColorPicker( UIWindow * attach = NULL, const ColorPickedCb& colorPickedCb = ColorPickedCb(), const ColorPickerCloseCb& closeCb = ColorPickerCloseCb() );
+		static UIColorPicker * New( UIWindow * attach = NULL, const ColorPickedCb& colorPickedCb = ColorPickedCb(), const Uint8& modalAlpha = 0 );
+
+		UIColorPicker( UIWindow * attach = NULL, const ColorPickedCb& colorPickedCb = ColorPickedCb(), const Uint8& modalAlpha = 0 );
 
 		void setColor( const Color& color );
 
@@ -38,7 +39,6 @@ class EE_API UIColorPicker {
 		Node *				mUIContainer;
 		UIWidget *			mRoot;
 		ColorPickedCb		mPickedCb;
-		ColorPickerCloseCb	mCloseCb;
 		UIImage *			mColorPicker;
 		UIImage *			mHuePicker;
 		UIWidget *			mVerticalLine;
@@ -53,6 +53,7 @@ class EE_API UIColorPicker {
 		Colorf				mHsv;
 		Color				mRgb;
 		std::string			mHexColor;
+		Uint8				mModalAlpha;
 		bool				mUpdating;
 
 		void windowClose( const Event * Event );
@@ -74,6 +75,10 @@ class EE_API UIColorPicker {
 		void onColorPickerEvent( const MouseEvent* mouseEvent );
 
 		void onHuePickerEvent( const MouseEvent* mouseEvent );
+
+		Uint8 getModalAlpha() const;
+
+		void setModalAlpha( const Uint8& modalAlpha );
 };
 
 }}}

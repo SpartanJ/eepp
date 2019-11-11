@@ -9,31 +9,63 @@
 #include <eepp/graphics/rectangledrawable.hpp>
 #include <eepp/graphics/drawablegroup.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
+#include <eepp/scene/actions/fade.hpp>
 
 namespace EE { namespace UI { namespace Tools {
 
-UIColorPicker* UIColorPicker::NewWindow( const ColorPickedCb& colorPickedCb, const ColorPickerCloseCb& closeCb, const Uint32& winFlags, const Sizef& winSize ) {
+UIColorPicker* UIColorPicker::NewModal( Node* nodeCreator, const UIColorPicker::ColorPickedCb& colorPickedCb, const Uint8& modalAlpha, const Uint32& winFlags, const Sizef& winSize ) {
+	UIColorPicker * colorPicker = NewWindow( colorPickedCb, winFlags, winSize, modalAlpha );
+	UIWindow * pickerWin = colorPicker->getUIWindow();
+	Sizef windowSize( pickerWin->getSceneNode()->getSize() );
+	Sizef nodeSize( nodeCreator->getSize() );
+	Vector2f nodePos( nodeCreator->getPosition() );
+	nodeCreator->getParent()->nodeToWorld( nodePos );
+	nodePos = PixelDensity::pxToDp( nodePos );
+
+
+	if ( nodePos.y + nodeSize.getHeight() + winSize.getHeight() <= windowSize.getHeight() &&
+		 nodePos.x + winSize.getWidth() <= windowSize.getWidth() ) {
+		pickerWin->setPosition( nodePos.x, nodePos.y + nodeSize.getHeight() );
+	} else if ( nodePos.y - winSize.getHeight() >= 0.f &&
+				nodePos.x + winSize.getWidth() <= windowSize.getWidth() ) {
+		pickerWin->setPosition( nodePos.x, nodePos.y - winSize.getHeight() );
+	} else if ( nodePos.y + nodeSize.getHeight() / 2 - winSize.getHeight() / 2 >= 0 &&
+				nodePos.y + nodeSize.getHeight() / 2 - winSize.getHeight() / 2 + winSize.getHeight() <= windowSize.getHeight() ) {
+		if ( nodePos.x - winSize.getWidth() >= 0 ) {
+			pickerWin->setPosition( nodePos.x - winSize.getWidth(), nodePos.y + nodeSize.getHeight() / 2 - winSize.getHeight() / 2 );
+		} else if ( nodePos.x + nodeSize.getWidth() + winSize.getWidth() <= windowSize.getWidth() ) {
+			pickerWin->setPosition( nodePos.x + nodeSize.getWidth(), nodePos.y + nodeSize.getHeight() / 2 - winSize.getHeight() / 2 );
+		} else {
+			pickerWin->center();
+		}
+	} else {
+		pickerWin->center();
+	}
+
+	return colorPicker;
+}
+
+UIColorPicker* UIColorPicker::NewWindow( const ColorPickedCb& colorPickedCb, const Uint32& winFlags, const Sizef& winSize, const Uint8& modalAlpha ) {
 	UIWindow * tWin = UIWindow::New();
 	tWin->setSizeWithDecoration( winSize )->setPosition( 0, 0 );
 	UIWindow::StyleConfig windowStyleConfig = tWin->getStyleConfig();
 	windowStyleConfig.WinFlags = winFlags;
 	windowStyleConfig.MinWindowSize = winSize;
 	tWin->setStyleConfig( windowStyleConfig );
-	UIColorPicker * colorPicker = Tools::UIColorPicker::New( tWin, colorPickedCb, closeCb );
+	UIColorPicker * colorPicker = Tools::UIColorPicker::New( tWin, colorPickedCb, modalAlpha );
 	tWin->show();
 	return colorPicker;
 }
 
-UIColorPicker* UIColorPicker::New( UIWindow* attachTo, const UIColorPicker::ColorPickedCb& colorPickedCb, const UIColorPicker::ColorPickerCloseCb& closeCb ) {
-	return eeNew( UIColorPicker, ( attachTo, colorPickedCb, closeCb ) );
+UIColorPicker* UIColorPicker::New( UIWindow* attachTo, const UIColorPicker::ColorPickedCb& colorPickedCb, const Uint8& modalAlpha ) {
+	return eeNew( UIColorPicker, ( attachTo, colorPickedCb, modalAlpha ) );
 }
 
-UIColorPicker::UIColorPicker( UIWindow* attachTo, const UIColorPicker::ColorPickedCb& colorPickedCb, const UIColorPicker::ColorPickerCloseCb& closeCb ) :
+UIColorPicker::UIColorPicker(UIWindow* attachTo, const UIColorPicker::ColorPickedCb& colorPickedCb, const Uint8& modalAlpha ) :
 	mUIWindow( attachTo ),
 	mUIContainer( NULL ),
 	mRoot( NULL ),
 	mPickedCb( colorPickedCb ),
-	mCloseCb( closeCb ),
 	mColorPicker( NULL ),
 	mHuePicker( NULL ),
 	mVerticalLine( NULL ),
@@ -48,6 +80,7 @@ UIColorPicker::UIColorPicker( UIWindow* attachTo, const UIColorPicker::ColorPick
 	mHsv(0, 1, 1, 1),
 	mRgb(Color::fromHsv(mHsv)),
 	mHexColor(mRgb.toHexString( false )),
+	mModalAlpha(modalAlpha),
 	mUpdating(false)
 {
 	if ( NULL == mUIWindow ) {
@@ -173,6 +206,18 @@ UIColorPicker::UIColorPicker( UIWindow* attachTo, const UIColorPicker::ColorPick
 		mUIContainer->addEventListener( Event::OnClose, cb::Make1( this, &UIColorPicker::windowClose ) );
 	}
 
+	if ( mUIWindow->isModal() ) {
+		if ( mModalAlpha != 0.f ) {
+			mUIWindow->getModalControl()->setBackgroundColor( Color( 0, 0, 0, mModalAlpha ) );
+			mUIWindow->getModalControl()->runAction( Actions::Fade::New( 0.f, mModalAlpha, UIThemeManager::instance()->getControlsFadeOutTime() ) );
+		}
+		mUIWindow->getModalControl()->addEventListener( Event::MouseClick, [&] ( const Event* event ) {
+			if ( mModalAlpha != 0.f )
+				mUIWindow->getModalControl()->runAction( Actions::FadeOut::New( UIThemeManager::instance()->getControlsFadeOutTime() ) );
+			mUIWindow->closeWindow();
+		} );
+	}
+
 	mRoot->bind( "color_picker_rect", mColorPicker );
 	mRoot->bind( "hue_picker", mHuePicker );
 	mRoot->bind( "vertical_line", mVerticalLine );
@@ -227,10 +272,15 @@ UIWindow* UIColorPicker::getUIWindow() const {
 	return mUIWindow;
 }
 
-void UIColorPicker::windowClose( const Event * ) {
-	if ( mCloseCb )
-		mCloseCb();
+Uint8 UIColorPicker::getModalAlpha() const {
+	return mModalAlpha;
+}
 
+void UIColorPicker::setModalAlpha( const Uint8& modalAlpha ) {
+	mModalAlpha = modalAlpha;
+}
+
+void UIColorPicker::windowClose( const Event * ) {
 	eeDelete( this );
 }
 

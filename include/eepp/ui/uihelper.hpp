@@ -104,7 +104,7 @@ enum UI_MANAGER_FLAGS {
 };
 
 enum UI_WINDOW_FLAGS {
-	UI_WIN_NO_BORDER					= ( 1 << 0 ),
+	UI_WIN_NO_DECORATION				= ( 1 << 0 ),
 	UI_WIN_CLOSE_BUTTON					= ( 1 << 1 ),
 	UI_WIN_MINIMIZE_BUTTON				= ( 1 << 2 ),
 	UI_WIN_MAXIMIZE_BUTTON				= ( 1 << 3 ),
