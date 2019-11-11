@@ -4,6 +4,7 @@
 #include <eepp/scene/nodeattribute.hpp>
 #include <eepp/ui/uinode.hpp>
 #include <eepp/ui/css/stylesheetelement.hpp>
+#include <eepp/ui/css/stylesheetselector.hpp>
 
 namespace pugi {
 class xml_node;
@@ -159,6 +160,15 @@ class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
 		T * findByTag( const std::string& tag ) {
 			return reinterpret_cast<T*>( findByTag( tag ) );
 		}
+
+		UIWidget * querySelector( const std::string& selector );
+
+		template<typename T>
+		T * querySelector( const std::string& selector ) {
+			return reinterpret_cast<T*>( querySelector( selector ) );
+		}
+
+		std::vector<UIWidget*> querySelectorAll( const std::string& selector );
 	protected:
 		friend class UIManager;
 		friend class UISceneNode;
@@ -230,6 +240,10 @@ class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
 		std::string getFlagsString() const;
 
 		bool drawablePropertySet( const std::string& propertyName, const std::string& value, std::function<void(Drawable * drawable, bool ownIt)> funcSet);
+
+		UIWidget * querySelector( const CSS::StyleSheetSelector& selector );
+
+		std::vector<UIWidget*> querySelectorAll( const CSS::StyleSheetSelector& selector );
 };
 
 }}

@@ -4,6 +4,7 @@
 #include <eepp/ui/uitooltip.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
+#include <eepp/ui/css/stylesheetselector.hpp>
 #include <eepp/graphics/drawablesearcher.hpp>
 #include <eepp/graphics/rectangledrawable.hpp>
 #include <eepp/scene/actions/actions.hpp>
@@ -738,6 +739,58 @@ UIWidget* UIWidget::findByTag( const std::string& tag ) {
 	}
 
 	return NULL;
+}
+
+UIWidget* UIWidget::querySelector( const CSS::StyleSheetSelector& selector ) {
+	if ( selector.select( this ) ) {
+		return this;
+	} else {
+		Node * child = mChild;
+
+		while ( NULL != child ) {
+			if ( child->isWidget() ) {
+				UIWidget * foundWidget = child->asType<UIWidget>()->querySelector( selector );
+
+				if ( NULL != foundWidget )
+					return foundWidget;
+			}
+
+			child = child->getNextNode();
+		}
+	}
+
+	return NULL;
+}
+
+std::vector<UIWidget*> UIWidget::querySelectorAll( const CSS::StyleSheetSelector& selector ) {
+	std::vector<UIWidget*> widgets;
+
+	if ( selector.select( this ) ) {
+		widgets.push_back( this );
+	}
+
+	Node * child = mChild;
+
+	while ( NULL != child ) {
+		if ( child->isWidget() ) {
+			std::vector<UIWidget*> foundWidgets = child->asType<UIWidget>()->querySelectorAll( selector );
+
+			if ( !foundWidgets.empty() )
+				widgets.insert( widgets.end(), foundWidgets.begin(), foundWidgets.end() );
+		}
+
+		child = child->getNextNode();
+	}
+
+	return widgets;
+}
+
+UIWidget* UIWidget::querySelector( const std::string& selector ) {
+	return querySelector( CSS::StyleSheetSelector( selector ) );
+}
+
+std::vector<UIWidget*> UIWidget::querySelectorAll( const std::string& selector ) {
+	return querySelectorAll( CSS::StyleSheetSelector( selector ) );
 }
 
 void UIWidget::setStyleSheetProperty( const std::string& name, const std::string& value, const Uint32& specificity ) {
