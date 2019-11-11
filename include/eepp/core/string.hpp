@@ -154,6 +154,20 @@ class EE_API String {
 	*/
 	static bool startsWith( const String& haystack, const String& needle );
 
+	/** Compare two strings from its end.
+	* @param haystack The string to search in.
+	* @param needle The searched string.
+	* @return true if string starts with the substring
+	*/
+	static bool endsWith( const std::string& haystack, const std::string& needle );
+
+	/** Compare two strings from its end.
+	* @param haystack The string to search in.
+	* @param needle The searched string.
+	* @return true if string starts with the substring
+	*/
+	static bool endsWith( const String& haystack, const String& needle );
+
 	/** Replace all occurrences of the search string with the replacement string. */
 	static void replaceAll( std::string &target, const std::string& that, const std::string& with );
 

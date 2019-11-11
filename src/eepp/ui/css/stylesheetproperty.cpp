@@ -1,23 +1,34 @@
 #include <eepp/ui/css/stylesheetproperty.hpp>
+#include <eepp/ui/css/stylesheetselectorrule.hpp>
 #include <eepp/core/string.hpp>
 
 namespace EE { namespace UI { namespace CSS {
 
-StyleSheetProperty::StyleSheetProperty()
+StyleSheetProperty::StyleSheetProperty() :
+	mSpecificity( 0 ),
+	mVolatile( false ),
+	mImportant( false )
 {}
 
 StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::string& value ) :
 	mName( String::toLower( String::trim( name ) ) ),
 	mValue( String::trim( value ) ),
-	mSpecificity( 0 )
-{}
+	mSpecificity( 0 ),
+	mVolatile( false ),
+	mImportant( false )
+{
+	checkImportant();
+}
 
 StyleSheetProperty::StyleSheetProperty( const std::string & name, const std::string& value, const Uint32 & specificity, const bool& isVolatile ) :
 	mName( String::toLower( String::trim( name ) ) ),
 	mValue( String::trim( value ) ),
 	mSpecificity( specificity ),
-	mVolatile( isVolatile )
-{}
+	mVolatile( isVolatile ),
+	mImportant( false )
+{
+	checkImportant();
+}
 
 const std::string &StyleSheetProperty::getName() const {
 	return mName;
@@ -32,7 +43,11 @@ const Uint32 &StyleSheetProperty::getSpecificity() const {
 }
 
 void StyleSheetProperty::setSpecificity( const Uint32 & specificity ) {
-	mSpecificity = specificity;
+	// Don't allow set specificity if is an important property,
+	// force the specificity in this case.
+	if ( !mImportant ) {
+		mSpecificity = specificity;
+	}
 }
 
 bool StyleSheetProperty::isEmpty() const {
@@ -53,6 +68,14 @@ const bool &StyleSheetProperty::isVolatile() const {
 
 void StyleSheetProperty::setVolatile( const bool & isVolatile ) {
 	mVolatile = isVolatile;
+}
+
+void StyleSheetProperty::checkImportant() {
+	if ( String::endsWith( mValue, "!important" ) ) {
+		mImportant = true;
+		mSpecificity = StyleSheetSelectorRule::SpecificityImportant;
+		mValue = String::trim( mValue.substr( 0, mValue.size() - 10/*!important*/ ) );
+	}
 }
 
 }}}

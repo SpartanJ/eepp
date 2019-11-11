@@ -37,6 +37,9 @@ class EE_API StyleSheetProperty {
 		std::string mValue;
 		Uint32 mSpecificity;
 		bool mVolatile;
+		bool mImportant;
+
+		void checkImportant();
 };
 
 typedef std::map<std::string, StyleSheetProperty> StyleSheetProperties;

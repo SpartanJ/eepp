@@ -1,4 +1,4 @@
-#ifndef STYLESHEETSELECTORRULE_HPP
+﻿#ifndef STYLESHEETSELECTORRULE_HPP
 #define STYLESHEETSELECTORRULE_HPP
 
 #include <eepp/core.hpp>
@@ -68,7 +68,7 @@ class EE_API StyleSheetSelectorRule {
 		const std::vector<std::string>& getStructuralPseudoClasses() const;
 
 		bool hasStructuralPseudoClass(const std::string & cls) const;
-
+	protected:
 		int mSpecificity;
 		PatternMatch mPatternMatch;
 		std::string mTagName;

@@ -185,6 +185,14 @@ bool String::startsWith( const String& haystack, const String & needle ) {
 	return needle.length() <= haystack.length() && std::equal(needle.begin(), needle.end(), haystack.begin() );
 }
 
+bool String::endsWith( const std::string& haystack, const std::string & needle ) {
+	return needle.length() <= haystack.length() && haystack.compare(haystack.size() - needle.size(), needle.size(), needle) == 0;
+}
+
+bool String::endsWith( const String& haystack, const String & needle ) {
+	return needle.length() <= haystack.length() && haystack.compare(haystack.size() - needle.size(), needle.size(), needle) == 0;
+}
+
 void String::replaceAll( std::string &target, const std::string& that, const std::string& with ) {
 	std::string::size_type pos=0;
 
