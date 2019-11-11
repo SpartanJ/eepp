@@ -11,11 +11,6 @@
 #include <eepp/ui/uislider.hpp>
 #include <eepp/ui/uispinbox.hpp>
 
-namespace EE { namespace Graphics {
-class Texture;
-class DrawableGroup;
-}}
-
 namespace EE { namespace UI { namespace Tools {
 
 class EE_API UIColorPicker {
@@ -28,8 +23,6 @@ class EE_API UIColorPicker {
 		static UIColorPicker * New( UIWindow * attach = NULL, const ColorPickedCb& colorPickedCb = ColorPickedCb(), const ColorPickerCloseCb& closeCb = ColorPickerCloseCb() );
 
 		UIColorPicker( UIWindow * attach = NULL, const ColorPickedCb& colorPickedCb = ColorPickedCb(), const ColorPickerCloseCb& closeCb = ColorPickerCloseCb() );
-
-		virtual ~UIColorPicker();
 
 		void setColor( const Color& color );
 
@@ -46,8 +39,6 @@ class EE_API UIColorPicker {
 		UIWidget *			mRoot;
 		ColorPickedCb		mPickedCb;
 		ColorPickerCloseCb	mCloseCb;
-		Texture *			mHueTexture;
-		DrawableGroup *		mColorRectangle;
 		UIImage *			mColorPicker;
 		UIImage *			mHuePicker;
 		UIWidget *			mVerticalLine;
@@ -67,6 +58,8 @@ class EE_API UIColorPicker {
 		void windowClose( const Event * Event );
 
 		Texture * createHueTexture( const Sizef& size );
+
+		Texture * createGridTexture();
 
 		void updateColorPicker();
 

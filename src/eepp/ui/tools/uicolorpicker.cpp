@@ -34,8 +34,6 @@ UIColorPicker::UIColorPicker( UIWindow* attachTo, const UIColorPicker::ColorPick
 	mRoot( NULL ),
 	mPickedCb( colorPickedCb ),
 	mCloseCb( closeCb ),
-	mHueTexture( NULL ),
-	mColorRectangle( NULL ),
 	mColorPicker( NULL ),
 	mHuePicker( NULL ),
 	mVerticalLine( NULL ),
@@ -68,7 +66,6 @@ UIColorPicker::UIColorPicker( UIWindow* attachTo, const UIColorPicker::ColorPick
 		margin-bottom: 4dp;
 	}
 	#color_picker > .header > .current_color {
-		background-color: white;
 	}
 	#color_picker > .header > .picker_icon {
 		icon: color-picker-white;
@@ -192,18 +189,12 @@ UIColorPicker::UIColorPicker( UIWindow* attachTo, const UIColorPicker::ColorPick
 		updateAll();
 	} );
 
-	mHueTexture = createHueTexture( mHuePicker->getPixelsSize() );
-	mHuePicker->setDrawable( mHueTexture );
+	mHuePicker->setDrawable( createHueTexture( mHuePicker->getPixelsSize() ), true );
+	mCurrentColor->setBackgroundDrawable( createGridTexture(), true );
 
 	updateAll();
 
 	registerEvents();
-}
-
-UIColorPicker::~UIColorPicker() {
-	TextureFactory::instance()->remove( mHueTexture->getTextureId() );
-	mColorPicker->setDrawable( NULL );
-	eeSAFE_DELETE( mColorRectangle );
 }
 
 void UIColorPicker::setColor( const Color& color ) {
@@ -232,8 +223,7 @@ const Colorf& UIColorPicker::getHsvColor() const {
 	return mHsv;
 }
 
-UIWindow* UIColorPicker::getUIWindow() const
-{
+UIWindow* UIColorPicker::getUIWindow() const {
 	return mUIWindow;
 }
 
@@ -262,9 +252,28 @@ Texture * UIColorPicker::createHueTexture( const Sizef& size ) {
 	return TF->getTexture( texId );
 }
 
+Texture * UIColorPicker::createGridTexture() {
+	Sizef size( PixelDensity::dpToPx( Sizef( 26, 24 ) ) );
+	Image image( size.getWidth(), size.getHeight(), 3, Color( 128, 128, 128, 255 ) );
+	Color highlightColor( 204, 204, 204, 255 );
+	int hWidth = size.getWidth() / 2;
+	int hHeight = size.getHeight() / 2;
+	for ( int y = 0; y < hHeight; y++ ) {
+		for ( int x = 0; x < hWidth; x++ ) {
+			image.setPixel( x, y, highlightColor );
+			image.setPixel( hWidth + x, hHeight + y, highlightColor );
+		}
+	}
+
+	TextureFactory * TF = TextureFactory::instance();
+	Uint32 texId = TF->loadFromPixels( image.getPixelsPtr(), image.getWidth(), image.getHeight(),
+									   image.getChannels(), false, Texture::ClampMode::ClampRepeat );
+
+	return TF->getTexture( texId );
+}
+
 void UIColorPicker::updateColorPicker() {
-	Drawable * oldDrawable = mColorRectangle;
-	mColorRectangle = DrawableGroup::New();
+	DrawableGroup * colorRectangle = DrawableGroup::New();
 
 	RectangleDrawable * rectDrawable = RectangleDrawable::New();
 
@@ -275,7 +284,7 @@ void UIColorPicker::updateColorPicker() {
 	rectColors.BottomRight = Color::fromHsv( Colorf( mHsv.hsv.h, 1, 1, 1 ) );
 	rectColors.TopRight = Color::fromHsv( Colorf( mHsv.hsv.h, 1, 1, 1 ) );
 	rectDrawable->setRectColors( rectColors );
-	mColorRectangle->addDrawable( rectDrawable );
+	colorRectangle->addDrawable( rectDrawable );
 
 	rectDrawable = RectangleDrawable::New();
 	rectDrawable->setSize( mColorPicker->getPixelsSize() );
@@ -284,10 +293,9 @@ void UIColorPicker::updateColorPicker() {
 	rectColors.BottomRight = Color::Black;
 	rectColors.TopRight = Color::Transparent;
 	rectDrawable->setRectColors( rectColors );
-	mColorRectangle->addDrawable( rectDrawable );
+	colorRectangle->addDrawable( rectDrawable );
 
-	mColorPicker->setDrawable( mColorRectangle );
-	eeSAFE_DELETE( oldDrawable );
+	mColorPicker->setDrawable( colorRectangle, true );
 }
 
 void UIColorPicker::updateGuideLines() {

@@ -46,10 +46,11 @@ bool UIImage::isType( const Uint32& type ) const {
 	return UIImage::getType() == type ? true : UIWidget::isType( type );
 }
 
-UIImage * UIImage::setDrawable( Drawable * drawable ) {
+UIImage * UIImage::setDrawable(Drawable * drawable , bool ownIt ) {
 	safeDeleteDrawable();
 
 	mDrawable = drawable;
+	mDrawableOwner = ownIt;
 
 	if ( NULL != mDrawable && mDrawable->isDrawableResource() ) {
 		mResourceChangeCb = static_cast<DrawableResource*>( mDrawable )->pushResourceChangeCallback( cb::Make2( this, &UIImage::onDrawableResourceEvent ) );
@@ -178,10 +179,7 @@ void UIImage::safeDeleteDrawable() {
 	}
 
 	if ( NULL != mDrawable && mDrawableOwner ) {
-		if ( mDrawable->getDrawableType() == Drawable::SPRITE ) {
-			Sprite * spr = reinterpret_cast<Sprite*>( mDrawable );
-			eeSAFE_DELETE( spr );
-		}
+		eeSAFE_DELETE( mDrawable );
 
 		mDrawableOwner = false;
 	}

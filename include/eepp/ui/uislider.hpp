@@ -2,7 +2,6 @@
 #define EE_UIUISlider_HPP
 
 #include <eepp/ui/uiwidget.hpp>
-#include <eepp/ui/uisliderbutton.hpp>
 
 namespace EE { namespace UI {
 
@@ -70,13 +69,11 @@ class EE_API UISlider : public UIWidget {
 
 		Sizef getMinimumSize();
 	protected:
-		friend class Private::UISliderButton;
-
 		UI_ORIENTATION		mOrientation;
 		bool				mAllowHalfSliderOut;
 		bool				mExpandBackground;
-		UINode *		mBackSlider;
-		Private::UISliderButton * 	mSlider;
+		UINode *			mBackSlider;
+		UIWidget *			mSlider;
 		Float				mMinValue;
 		Float				mMaxValue;
 		Float				mValue;
@@ -95,13 +92,13 @@ class EE_API UISlider : public UIWidget {
 
 		void fixSliderPos();
 
+		void adjustSliderPos();
+
 		virtual Uint32 onKeyDown( const KeyEvent &Event );
 
 		virtual void onAlphaChange();
 
 		virtual Uint32 onMessage( const NodeMessage * Msg );
-
-		void updateSliderPosition();
 };
 
 }}

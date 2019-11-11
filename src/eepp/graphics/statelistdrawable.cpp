@@ -26,11 +26,19 @@ StateListDrawable::~StateListDrawable() {
 }
 
 void StateListDrawable::clearDrawables() {
+	std::vector<Drawable*> removeOwnershipState;
+
 	for ( auto it = mDrawables.begin(); it != mDrawables.end(); ++it ) {
 		Drawable * drawable = it->second;
 
-		if ( mDrawablesOwnership[ drawable ] )
+		if ( mDrawablesOwnership[ drawable ] ) {
+			removeOwnershipState.push_back( drawable );
 			eeSAFE_DELETE( drawable );
+		}
+	}
+
+	for ( auto& removeOwnership : removeOwnershipState ) {
+		mDrawablesOwnership.erase( removeOwnership );
 	}
 
 	mDrawables.clear();

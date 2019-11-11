@@ -27,7 +27,7 @@ class EE_API UIImage : public UIWidget {
 
 		Drawable * getDrawable() const;
 
-		UIImage * setDrawable( Drawable * drawable );
+		UIImage * setDrawable( Drawable * drawable, bool ownIt = false );
 
 		const Color& getColor() const;
 

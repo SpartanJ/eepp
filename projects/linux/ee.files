@@ -335,7 +335,6 @@
 ../../include/eepp/ui/uiselectbutton.hpp
 ../../include/eepp/ui/uiskin.hpp
 ../../include/eepp/ui/uiskinstate.hpp
-../../include/eepp/ui/uisliderbutton.hpp
 ../../include/eepp/ui/uislider.hpp
 ../../include/eepp/ui/uispinbox.hpp
 ../../include/eepp/ui/uisprite.hpp
@@ -754,7 +753,6 @@
 ../../src/eepp/ui/uiselectbutton.cpp
 ../../src/eepp/ui/uiskin.cpp
 ../../src/eepp/ui/uiskinstate.cpp
-../../src/eepp/ui/uisliderbutton.cpp
 ../../src/eepp/ui/uislider.cpp
 ../../src/eepp/ui/uispinbox.cpp
 ../../src/eepp/ui/uisprite.cpp

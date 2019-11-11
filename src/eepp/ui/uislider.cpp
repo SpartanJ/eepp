@@ -44,13 +44,16 @@ UISlider::UISlider( const UI_ORIENTATION& orientation ) :
 	mBackSlider->setSize( bgSize );
 	mBackSlider->center();
 
-	mSlider = Private::UISliderButton::New();
+	mSlider = UIWidget::NewWithTag( "slider::button" );
 	mSlider->setParent( this );
 	mSlider->setEnabled( true );
 	mSlider->setVisible( true );
 	mSlider->setDragEnabled( true );
 	mSlider->setSize( 16, 16 );
 	mSlider->setPosition( 0, 0 );
+	mSlider->addEventListener( Event::OnPositionChange, [&] ( const Event* event ) {
+		fixSliderPos();
+	} );
 
 	if ( UI_HORIZONTAL == mOrientation )
 		mSlider->centerVertical();
@@ -162,7 +165,7 @@ void UISlider::adjustChilds() {
 		mBackSlider->center();
 	}
 
-	fixSliderPos();
+	adjustSliderPos();
 }
 
 void UISlider::fixSliderPos() {
@@ -184,6 +187,11 @@ void UISlider::fixSliderPos() {
 			}
 
 			mSlider->centerVertical();
+
+			if ( mAllowHalfSliderOut )
+				setValue( mMinValue + ( mSlider->getPosition().x - mPadding.Left ) * ( mMaxValue - mMinValue ) / (Float)mBackSlider->getSize().getWidth() );
+			else
+				setValue( mMinValue + ( mSlider->getPosition().x - mPadding.Left ) * ( mMaxValue - mMinValue ) / ( (Float)mDpSize.getWidth() - mSlider->getSize().getWidth() ) );
 		} else {
 			mSlider->setPosition( 0, mSlider->getPosition().y );
 
@@ -200,16 +208,20 @@ void UISlider::fixSliderPos() {
 			}
 
 			mSlider->centerHorizontal();
-		}
 
-		updateSliderPosition();
+			if ( mAllowHalfSliderOut )
+				setValue( mMinValue + ( mSlider->getPosition().y - mPadding.Top ) * ( mMaxValue - mMinValue ) / (Float)mBackSlider->getSize().getHeight() );
+			else
+				setValue( mMinValue + ( mSlider->getPosition().y - mPadding.Top ) * ( mMaxValue - mMinValue ) / ( (Float)mDpSize.getHeight() - mSlider->getSize().getHeight() ) );
+		}
 
 		mOnPosChange = false;
 	}
 }
 
-void UISlider::updateSliderPosition() {
+void UISlider::adjustSliderPos() {
 	Float Percent = ( mValue - mMinValue ) / ( mMaxValue - mMinValue );
+	mOnPosChange = true;
 
 	if ( UI_HORIZONTAL == mOrientation ) {
 		if ( mAllowHalfSliderOut )
@@ -223,6 +235,7 @@ void UISlider::updateSliderPosition() {
 			mSlider->setPosition( mSlider->getPosition().x, mPadding.Top + (Int32)( ( (Float)mDpSize.getHeight() - mPadding.Top - mPadding.Bottom - mSlider->getSize().getHeight() ) * Percent ) );
 	}
 
+	mOnPosChange = false;
 }
 
 void UISlider::setValue( Float Val ) {
@@ -237,7 +250,9 @@ void UISlider::setValue( Float Val ) {
 
 		if ( !mOnPosChange ) {
 			mOnPosChange = true;
-			updateSliderPosition();
+
+			adjustSliderPos();
+
 			mOnPosChange = false;
 		}
 
