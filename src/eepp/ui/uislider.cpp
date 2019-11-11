@@ -184,11 +184,6 @@ void UISlider::fixSliderPos() {
 			}
 
 			mSlider->centerVertical();
-
-			if ( mAllowHalfSliderOut )
-				setValue( mMinValue + ( mSlider->getPosition().x - mPadding.Left ) * ( mMaxValue - mMinValue ) / (Float)mBackSlider->getSize().getWidth() );
-			else
-				setValue( mMinValue + ( mSlider->getPosition().x - mPadding.Left ) * ( mMaxValue - mMinValue ) / ( (Float)mDpSize.getWidth() - mSlider->getSize().getWidth() ) );
 		} else {
 			mSlider->setPosition( 0, mSlider->getPosition().y );
 
@@ -205,15 +200,29 @@ void UISlider::fixSliderPos() {
 			}
 
 			mSlider->centerHorizontal();
-
-			if ( mAllowHalfSliderOut )
-				setValue( mMinValue + ( mSlider->getPosition().y - mPadding.Top ) * ( mMaxValue - mMinValue ) / (Float)mBackSlider->getSize().getHeight() );
-			else
-				setValue( mMinValue + ( mSlider->getPosition().y - mPadding.Top ) * ( mMaxValue - mMinValue ) / ( (Float)mDpSize.getHeight() - mSlider->getSize().getHeight() ) );
 		}
+
+		updateSliderPosition();
 
 		mOnPosChange = false;
 	}
+}
+
+void UISlider::updateSliderPosition() {
+	Float Percent = ( mValue - mMinValue ) / ( mMaxValue - mMinValue );
+
+	if ( UI_HORIZONTAL == mOrientation ) {
+		if ( mAllowHalfSliderOut )
+			mSlider->setPosition( mPadding.Left + (Int32)( (Float)mBackSlider->getSize().getWidth() * Percent ), mSlider->getPosition().y );
+		else
+			mSlider->setPosition( mPadding.Left + (Int32)( ( (Float)mDpSize.getWidth() - mPadding.Left - mPadding.Right - mSlider->getSize().getWidth() ) * Percent ), mSlider->getPosition().y );
+	} else {
+		if ( mAllowHalfSliderOut )
+			mSlider->setPosition( mSlider->getPosition().x, mPadding.Top + (Int32)( (Float)mBackSlider->getSize().getHeight() * Percent ) );
+		else
+			mSlider->setPosition( mSlider->getPosition().x, mPadding.Top + (Int32)( ( (Float)mDpSize.getHeight() - mPadding.Top - mPadding.Bottom - mSlider->getSize().getHeight() ) * Percent ) );
+	}
+
 }
 
 void UISlider::setValue( Float Val ) {
@@ -227,22 +236,8 @@ void UISlider::setValue( Float Val ) {
 		mValue = Val;
 
 		if ( !mOnPosChange ) {
-			Float Percent = ( mValue - mMinValue ) / ( mMaxValue - mMinValue );
-
 			mOnPosChange = true;
-
-			if ( UI_HORIZONTAL == mOrientation ) {
-				if ( mAllowHalfSliderOut )
-					mSlider->setPosition( mPadding.Left + (Int32)( (Float)mBackSlider->getSize().getWidth() * Percent ), mSlider->getPosition().y );
-				else
-					mSlider->setPosition( mPadding.Left + (Int32)( ( (Float)mDpSize.getWidth() - mPadding.Left - mPadding.Right - mSlider->getSize().getWidth() ) * Percent ), mSlider->getPosition().y );
-			} else {
-				if ( mAllowHalfSliderOut )
-					mSlider->setPosition( mSlider->getPosition().x, mPadding.Top + (Int32)( (Float)mBackSlider->getSize().getHeight() * Percent ) );
-				else
-					mSlider->setPosition( mSlider->getPosition().x, mPadding.Top + (Int32)( ( (Float)mDpSize.getHeight() - mPadding.Top - mPadding.Bottom - mSlider->getSize().getHeight() ) * Percent ) );
-			}
-
+			updateSliderPosition();
 			mOnPosChange = false;
 		}
 

@@ -96,10 +96,12 @@ class EE_API UISlider : public UIWidget {
 		void fixSliderPos();
 
 		virtual Uint32 onKeyDown( const KeyEvent &Event );
-		
+
 		virtual void onAlphaChange();
 
 		virtual Uint32 onMessage( const NodeMessage * Msg );
+
+		void updateSliderPosition();
 };
 
 }}

@@ -207,10 +207,12 @@ UIColorPicker::~UIColorPicker() {
 }
 
 void UIColorPicker::setColor( const Color& color ) {
-	mRgb = color;
-	mHsv = color.toHsv();
-	mHexColor = mRgb.toHexString( false );
-	updateAll();
+	if ( color != mRgb ) {
+		mRgb = color;
+		mHsv = color.toHsv();
+		mHexColor = mRgb.toHexString( false );
+		updateAll();
+	}
 }
 
 const Color& UIColorPicker::getColor() const {
@@ -218,10 +220,12 @@ const Color& UIColorPicker::getColor() const {
 }
 
 void UIColorPicker::setHsvColor(const Colorf& color) {
-	mHsv = color;
-	mRgb = Color::fromHsv( mHsv );
-	mHexColor = mRgb.toHexString( false );
-	updateAll();
+	if ( color != mHsv ) {
+		mHsv = color;
+		mRgb = Color::fromHsv( mHsv );
+		mHexColor = mRgb.toHexString( false );
+		updateAll();
+	}
 }
 
 const Colorf& UIColorPicker::getHsvColor() const {
