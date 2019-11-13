@@ -58,6 +58,10 @@ void DrawableGroup::setDrawableOwner(bool drawableOwner) {
 	mDrawableOwner = drawableOwner;
 }
 
+std::vector<Drawable*>& DrawableGroup::getGroup() {
+	return mGroup;
+}
+
 Sizef DrawableGroup::getSize() {
 	return mSize;
 }

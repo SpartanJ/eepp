@@ -13,16 +13,16 @@ ScrollParallax::ScrollParallax() :
 ScrollParallax::~ScrollParallax()
 {}
 
-ScrollParallax::ScrollParallax( Graphics::TextureRegion * TextureRegion, const Vector2f& Position, const Sizef& Size, const Vector2f& Speed, const Color& Color, const BlendMode& Blend ) {
-	create( TextureRegion, Position, Size, Speed, Color, Blend );
+ScrollParallax::ScrollParallax( TextureRegion * textureRegion, const Vector2f& Position, const Sizef& Size, const Vector2f& Speed, const Color& Color, const BlendMode& Blend ) {
+	create( textureRegion, Position, Size, Speed, Color, Blend );
 }
 
-Graphics::TextureRegion * ScrollParallax::getTextureRegion() const {
+TextureRegion * ScrollParallax::getTextureRegion() const {
 	return mTextureRegion;
 }
 
-void ScrollParallax::setTextureRegion( Graphics::TextureRegion * TextureRegion ) {
-	mTextureRegion = TextureRegion;
+void ScrollParallax::setTextureRegion( TextureRegion * textureRegion ) {
+	mTextureRegion = textureRegion;
 
 	setTextureRegion();
 }
@@ -41,8 +41,8 @@ void ScrollParallax::setAABB() {
 	mAABB		= Rectf( mInitPos.x, mInitPos.y, mInitPos.x + mSize.getWidth(), mInitPos.y + mSize.getHeight() );
 }
 
-bool ScrollParallax::create( Graphics::TextureRegion * TextureRegion, const Vector2f& Position, const Sizef& Size, const Vector2f& Speed, const Color& Color, const BlendMode& Blend ) {
-	mTextureRegion		= TextureRegion;
+bool ScrollParallax::create( TextureRegion * textureRegion, const Vector2f& Position, const Sizef& Size, const Vector2f& Speed, const Color& Color, const BlendMode& Blend ) {
+	mTextureRegion		= textureRegion;
 	mPos		= Position;
 	mSize 		= Size;
 	mInitPos	= mPos;

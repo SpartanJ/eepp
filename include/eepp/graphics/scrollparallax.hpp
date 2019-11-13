@@ -26,7 +26,7 @@ class EE_API ScrollParallax {
 		* @param Speed Speed of movement ( in Pixels Per Second )
 		* @param Color The Texture Color
 		* @param Blend The Blend Mode ( default BlendAlpha ) */
-		ScrollParallax( Graphics::TextureRegion * TextureRegion, const Vector2f& position = Vector2f(), const Sizef& size = Sizef(), const Vector2f& speed = Vector2f(), const Color& color = Color::White, const BlendMode& Blend = BlendAlpha );
+		ScrollParallax( TextureRegion * textureRegion, const Vector2f& position = Vector2f(), const Sizef& size = Sizef(), const Vector2f& speed = Vector2f(), const Color& color = Color::White, const BlendMode& Blend = BlendAlpha );
 
 		/** Create's the Scroll Parallax
 		* @param TextureRegion The TextureRegion to Draw
@@ -37,7 +37,7 @@ class EE_API ScrollParallax {
 		* @param Blend The Blend Mode ( default BlendAlpha )
 		* @return True if success
 		*/
-		bool create( Graphics::TextureRegion * TextureRegion, const Vector2f& position = Vector2f(), const Sizef& size = Sizef(), const Vector2f& speed = Vector2f(), const Color& color = Color::White, const BlendMode& Blend = BlendAlpha );
+		bool create( TextureRegion * textureRegion, const Vector2f& position = Vector2f(), const Sizef& size = Sizef(), const Vector2f& speed = Vector2f(), const Color& color = Color::White, const BlendMode& Blend = BlendAlpha );
 
 		/** Set the parallax texture color. */
 		void setColor( const Color& Color ) { mColor = Color; }
@@ -53,48 +53,48 @@ class EE_API ScrollParallax {
 
 		/** Draw the Scroll Parallax. */
 		void draw();
-		
+
 		/** Change the size of the current parallax
 		* @param size The new size */
 		void setSize( const Sizef& size );
-		
+
 		/** @return Size */
 		const Sizef& getSize() const;
-		
+
 		/** Change the Parallax position
 		* @param Pos The new parallax position */
 		void setPosition( const Vector2f& Pos );
-		
+
 		/** @return The parallax position */
 		const Vector2f& getPosition() const;
-		
+
 		/** @return The TextureRegion used for the parallax.*/
-		Graphics::TextureRegion * getTextureRegion() const;
-		
+		TextureRegion * getTextureRegion() const;
+
 		/** Set Change the TextureRegion used for the parallax. */
-		void setTextureRegion( Graphics::TextureRegion * TextureRegion );
-		
+		void setTextureRegion( TextureRegion * textureRegion );
+
 		/** Set the parallax speed movement. */
 		void setSpeed( const Vector2f& speed );
-		
+
 		/** @return The parallax movement speed. */
 		const Vector2f& getSpeed() const;
 	private:
-		Graphics::TextureRegion * 		mTextureRegion;
+		TextureRegion * mTextureRegion;
 		BlendMode		mBlend;
-		Color				mColor;
-		Vector2f			mInitPos;
-		Vector2f			mPos;
-		Vector2f			mSpeed;
-		Sizef				mSize;
-		Rect				mRect;
-		Clock				mElapsed;
-		Vector2i			mTiles;
-		Rectf				mAABB;
-		Sizef				mRealSize;
-		
+		Color			mColor;
+		Vector2f		mInitPos;
+		Vector2f		mPos;
+		Vector2f		mSpeed;
+		Sizef			mSize;
+		Rect			mRect;
+		Clock			mElapsed;
+		Vector2i		mTiles;
+		Rectf			mAABB;
+		Sizef			mRealSize;
+
 		void setTextureRegion();
-		
+
 		void setAABB();
 };
 

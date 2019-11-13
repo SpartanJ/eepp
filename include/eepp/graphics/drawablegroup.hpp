@@ -25,9 +25,9 @@ class EE_API DrawableGroup : public Drawable {
 		virtual bool isStateful() { return false; }
 
 		void clearDrawables();
-		
+
 		Drawable * addDrawable( Drawable * drawable );
-		
+
 		Uint32 getDrawableCount() const;
 
 		bool isClipEnabled() const;
@@ -37,6 +37,8 @@ class EE_API DrawableGroup : public Drawable {
 		bool isDrawableOwner() const;
 
 		void setDrawableOwner(bool drawableOwner);
+
+		std::vector<Drawable*>& getGroup();
 	protected:
 		std::vector<Drawable*> mGroup;
 		std::vector<Vector2f> mPos;
@@ -44,7 +46,7 @@ class EE_API DrawableGroup : public Drawable {
 		bool mNeedsUpdate;
 		bool mClipEnabled;
 		bool mDrawableOwner;
-		
+
 		virtual void onPositionChange();
 
 		void update();
@@ -52,4 +54,4 @@ class EE_API DrawableGroup : public Drawable {
 
 }}
 
-#endif 
+#endif
