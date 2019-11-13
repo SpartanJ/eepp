@@ -75,8 +75,7 @@ Tooltip {
 	margin-top: 0dp;
 	border-width: 2dp;
 	border-color: #66666666;
-	background-color: #33FF3333;
-	background-image: linear-gradient( #8c8886, #585857 );
+	background-color: #33FF3310;
 	border-radius: 12;
 	font-size: 24dp;
 	padding: 12dp;
@@ -86,7 +85,7 @@ Tooltip {
 #lvbox > #tpad:hover {
 	scale: 1.1;
 	rotation: -3;
-	background-color: #FF333333;
+	background-color: #FF333310;
 	border-color: #99999999;
 	border-radius: 4;
 }

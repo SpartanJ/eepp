@@ -53,6 +53,7 @@ bool updateStyleSheet = false;
 Clock waitClock;
 Clock cssWaitClock;
 efsw::WatchID watch = 0;
+efsw::WatchID styleSheetWatch = 0;
 std::map<std::string, std::string> widgetRegistered;
 std::string basePath;
 
@@ -209,6 +210,25 @@ static void loadStyleSheet( std::string cssPath ) {
 		uiSceneNode->setStyleSheet( parser.getStyleSheet() );
 
 		currentStyleSheet = cssPath;
+
+		std::string folder( FileSystem::fileRemoveFileName( cssPath ) );
+
+		bool keepWatch = false;
+
+		for ( auto& directory : fileWatcher->directories() ) {
+			if ( directory == folder ) {
+				keepWatch = true;
+			}
+		}
+
+		if ( !keepWatch ) {
+			if ( styleSheetWatch != 0 ) {
+				fileWatcher->removeWatch( styleSheetWatch );
+			}
+
+			styleSheetWatch = fileWatcher->addWatch( folder, listener );
+		}
+
 	}
 }
 
@@ -519,8 +539,8 @@ static void loadProjectNodes( pugi::xml_node node ) {
 			if ( !styleSheetNode.empty() ) {
 				std::string cssPath( styleSheetNode.attribute( "path" ).as_string() );
 
-				if ( isCSS( cssPath ) && FileSystem::fileExists( cssPath ) ) {
-					loadStyleSheet( cssPath );
+				if ( isCSS( cssPath ) && FileSystem::fileExists( basePath + cssPath ) ) {
+					loadStyleSheet( basePath + cssPath );
 				}
 			}
 
@@ -607,6 +627,8 @@ void loadProject( std::string projectPath ) {
 		closeProject();
 
 		basePath = FileSystem::fileRemoveFileName( projectPath );
+
+		FileSystem::changeWorkingDirectory( basePath );
 
 		pugi::xml_document doc;
 		pugi::xml_parse_result result = doc.load_file( projectPath.c_str() );

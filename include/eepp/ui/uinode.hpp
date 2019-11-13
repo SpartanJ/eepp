@@ -22,6 +22,7 @@ using namespace EE::Scene;
 namespace EE { namespace UI {
 
 class UITheme;
+class UINodeDrawable;
 
 class EE_API UINode : public Node {
 	public:
@@ -85,11 +86,15 @@ class EE_API UINode : public Node {
 
 		UINode * setGravity( Uint32 hvalign );
 
-		UISkin * setBackgroundFillEnabled( bool enabled );
+		UINodeDrawable * setBackgroundFillEnabled( bool enabled );
 
-		UINode * setBackgroundDrawable( Drawable * drawable , bool ownIt = false );
+		UINode * setBackgroundDrawable( Drawable * drawable, bool ownIt = false, int index = 0 );
 
 		UINode * setBackgroundColor( const Color& color );
+
+		UINode * setBackgroundPosition( const std::string& positionEq, int index = 0 );
+
+		UINode * setBackgroundRepeat( const std::string& repeatRule, int index = 0 );
 
 		Color getBackgroundColor() const;
 
@@ -97,11 +102,15 @@ class EE_API UINode : public Node {
 
 		Uint32 getBorderRadius() const;
 
-		UISkin * setForegroundFillEnabled( bool enabled );
+		UINodeDrawable * setForegroundFillEnabled( bool enabled );
 
-		UINode * setForegroundDrawable( Drawable * drawable , bool ownIt = false );
+		UINode * setForegroundDrawable( Drawable * drawable , bool ownIt = false, int index = 0 );
 
 		UINode * setForegroundColor( const Color& color );
+
+		UINode * setForegroundPosition( const std::string& positionEq, int index = 0 );
+
+		UINode * setForegroundRepeat( const std::string& repeatRule, int index = 0 ) ;
 
 		Color getForegroundColor() const;
 
@@ -127,9 +136,9 @@ class EE_API UINode : public Node {
 
 		virtual UINode * resetFlags( Uint32 newFlags = 0 );
 
-		UISkin * getBackground();
+		UINodeDrawable * getBackground();
 
-		UISkin * getForeground();
+		UINodeDrawable* getForeground();
 
 		RectangleDrawable * getBorder();
 
@@ -188,8 +197,8 @@ class EE_API UINode : public Node {
 		Uint32			mFlags;
 		Uint32			mState;
 		UISkinState *	mSkinState;
-		UISkinState *	mBackgroundState;
-		UISkinState *	mForegroundState;
+		UINodeDrawable *	mBackground;
+		UINodeDrawable *	mForegroundState;
 		RectangleDrawable *	mBorder;
 		Vector2f		mDragPoint;
 		Uint32			mDragButton;

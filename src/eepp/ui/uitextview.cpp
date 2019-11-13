@@ -659,6 +659,12 @@ bool UITextView::setAttribute( const NodeAttribute& attribute, const Uint32& sta
 		}
 	} else if ( "text-selection" == name || "textselection" == name ) {
 		mFlags|= UI_TEXT_SELECTION_ENABLED;
+	} else if ( "text-align" == name || "textalign" == name ) {
+		std::string align = String::toLower( attribute.value() );
+
+		if ( align == "center" ) setFlags( UI_HALIGN_CENTER );
+		else if ( align == "left" ) setFlags( UI_HALIGN_LEFT );
+		else if ( align == "right" ) setFlags( UI_HALIGN_RIGHT );
 	} else {
 		return UIWidget::setAttribute( attribute, state );
 	}

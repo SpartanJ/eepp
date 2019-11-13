@@ -248,8 +248,10 @@ bool StyleSheetSelectorRule::matches( StyleSheetElement * element, const bool& a
 
 	if ( !mClasses.empty() && !element->getStyleSheetClasses().empty() ) {
 		bool hasClasses = true;
-		for ( const auto& cls : element->getStyleSheetClasses() ) {
-			if ( !hasClass( cls ) ) {
+		const std::vector<std::string>& elClasses = element->getStyleSheetClasses();
+
+		for ( const auto& cls : mClasses ) {
+			if ( std::find(elClasses.begin(), elClasses.end(), cls) == elClasses.end() ) {
 				hasClasses = false;
 				break;
 			}

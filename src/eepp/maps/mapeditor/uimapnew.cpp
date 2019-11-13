@@ -202,21 +202,21 @@ UIMapNew::~UIMapNew() {
 }
 
 void UIMapNew::onRedChange( const Event * ) {
-	Color Col = mUIBaseColor->getBackground()->getColor();
+	Color Col = mUIBaseColor->getBackgroundColor();
 	Col.r = (Uint8)mUIRedSlider->getValue();
 	mUIBaseColor->setBackgroundColor( Col );
 	mUIRedTxt->setText( String::toStr( (Int32)mUIRedSlider->getValue() ) );
 }
 
 void UIMapNew::onGreenChange( const Event * ) {
-	Color Col = mUIBaseColor->getBackground()->getColor();
+	Color Col = mUIBaseColor->getBackgroundColor();
 	Col.g = (Uint8)mUIGreenSlider->getValue();
 	mUIBaseColor->setBackgroundColor( Col );
 	mUIGreenTxt->setText( String::toStr( (Uint32)mUIGreenSlider->getValue() ) );
 }
 
 void UIMapNew::onBlueChange( const Event * ) {
-	Color Col = mUIBaseColor->getBackground()->getColor();
+	Color Col = mUIBaseColor->getBackgroundColor();
 	Col.b = (Uint8)mUIBlueSlider->getValue();
 	mUIBaseColor->setBackgroundColor( Col );
 	mUIBlueTxt->setText( String::toStr( (Uint32)mUIBlueSlider->getValue() ) );
@@ -246,7 +246,7 @@ void UIMapNew::onOKClick( const Event * ) {
 	if ( w > 0 && h > 0 && tw > 0 && th > 0 && ml > 0 ) {
 		if ( !mResizeMap ) {
 			mUIMap->Map()->create( Sizei( w, h ), ml, Sizei( tw, th ), Flags, mUIMap->Map()->getViewSize() );
-			mUIMap->Map()->setBaseColor( mUIBaseColor->getBackground()->getColor() );
+			mUIMap->Map()->setBaseColor( mUIBaseColor->getBackgroundColor() );
 		} else {
 			std::string oldPath( mUIMap->Map()->getPath() );
 			std::string mapPath( Sys::getTempPath() + "temp.eepp.map.eem" );

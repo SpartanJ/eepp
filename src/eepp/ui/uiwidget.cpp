@@ -920,9 +920,13 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 			setBackgroundColor( color );
 		}
 	} else if ( "background-image" == name || "backgroundimage" == name ) {
-		drawablePropertySet( "background", attribute.getValue(), [&] ( Drawable * drawable, bool ownIt ) {
-			setBackgroundDrawable( drawable, ownIt );
+		drawablePropertySet( "background", attribute.getValue(), [&] ( Drawable * drawable, bool ownIt, int index ) {
+			setBackgroundDrawable( drawable, ownIt, index );
 		} );
+	} else if ( "background-position" == name || "backgroundposition" == name ) {
+		setBackgroundPosition( attribute.value(), 0 );
+	} else if ( "background-repeat" == name || "backgroundrepeat" == name ) {
+		setBackgroundRepeat( attribute.value(), 0 );
 	} else if ( "foreground" == name ) {
 		if ( Color::isColorString( attribute.getValue() ) ) {
 			setAttribute( NodeAttribute( "foreground-color", attribute.getValue() ) );
@@ -948,8 +952,8 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 			setForegroundColor( color );
 		}
 	} else if ( "foreground-image" == name || "foregroundimage" == name ) {
-		drawablePropertySet( "foreground", attribute.getValue(), [&] ( Drawable * drawable, bool ownIt ) {
-			setForegroundDrawable( drawable, ownIt );
+		drawablePropertySet( "foreground", attribute.getValue(), [&] ( Drawable * drawable, bool ownIt, int index ) {
+			setForegroundDrawable( drawable, ownIt, index );
 		} );
 	} else if ( "foreground-radius" == name || "foregroundradius" == name ) {
 		SAVE_NORMAL_STATE_ATTR( String::toStr( getForegroundRadius() ) );
@@ -1397,9 +1401,10 @@ std::string UIWidget::getFlagsString() const {
 	return String::join( flagvec, '|' );
 }
 
-bool UIWidget::drawablePropertySet(const std::string& propertyName, const std::string& value, std::function<void (Drawable*, bool)> funcSet) {
+bool UIWidget::drawablePropertySet(const std::string& propertyName, const std::string& value, std::function<void (Drawable*, bool, int)> funcSet) {
 	FunctionString functionType = FunctionString::parse( value );
 	Drawable * res = NULL;
+	int index = 0;
 	bool attributeSet = true;
 
 	if ( !functionType.isEmpty() ) {
@@ -1438,14 +1443,14 @@ bool UIWidget::drawablePropertySet(const std::string& propertyName, const std::s
 
 			drawable->setRectColors( rectColors );
 
-			funcSet( drawable, true );
+			funcSet( drawable, true, index );
 		} else if ( functionType.getName() == "url" && functionType.getParameters().size() >= 1 ) {
 			if ( NULL != ( res = DrawableSearcher::searchByName( functionType.getParameters().at(0) ) ) ) {
-				funcSet( res, res->getDrawableType() == Drawable::SPRITE );
+				funcSet( res, res->getDrawableType() == Drawable::SPRITE, index );
 			}
 		}
 	} else if ( NULL != ( res = DrawableSearcher::searchByName( value ) ) ) {
-		funcSet( res, res->getDrawableType() == Drawable::SPRITE );
+		funcSet( res, res->getDrawableType() == Drawable::SPRITE, index );
 	} else {
 		attributeSet = false;
 	}

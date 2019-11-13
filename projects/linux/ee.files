@@ -324,6 +324,7 @@
 ../../include/eepp/ui/uimenusubmenu.hpp
 ../../include/eepp/ui/uimessagebox.hpp
 ../../include/eepp/ui/uinode.hpp
+../../include/eepp/ui/uinodedrawable.hpp
 ../../include/eepp/ui/uipopupmenu.hpp
 ../../include/eepp/ui/uiprogressbar.hpp
 ../../include/eepp/ui/uipushbutton.hpp
@@ -742,6 +743,7 @@
 ../../src/eepp/ui/uimenusubmenu.cpp
 ../../src/eepp/ui/uimessagebox.cpp
 ../../src/eepp/ui/uinode.cpp
+../../src/eepp/ui/uinodedrawable.cpp
 ../../src/eepp/ui/uipopupmenu.cpp
 ../../src/eepp/ui/uiprogressbar.cpp
 ../../src/eepp/ui/uipushbutton.cpp
