@@ -984,7 +984,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 	} else if ( "border-radius" == name || "borderradius" == name ) {
 		SAVE_NORMAL_STATE_ATTR( String::format( "%d", getBorderRadius() ) );
 
-		Uint32 borderRadius = attribute.asUint();
+		Uint32 borderRadius = PixelDensity::dpToPxI( attribute.asDpDimensionUint() );
 
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
 			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( attribute.getName() ) );
@@ -997,7 +997,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 
 			runAction( action );
 		} else {
-			setBorderRadius( attribute.asUint() );
+			setBorderRadius( borderRadius );
 		}
 	} else if ( "visible" == name ) {
 		SAVE_NORMAL_STATE_ATTR( isVisible() ? "true" : "false" );
