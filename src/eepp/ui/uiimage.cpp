@@ -236,7 +236,7 @@ bool UIImage::setAttribute( const NodeAttribute& attribute, const Uint32& state 
 
 		if ( "expand" == val ) {
 			setScaleType( UIScaleType::Expand );
-		} else if ( "fit_inside" == val || "fitinside" == val ) {
+		} else if ( "fit-inside" == val || "fit_inside" == val || "fitinside" == val ) {
 			setScaleType( UIScaleType::FitInside );
 		} else if ( "none" == val ) {
 			setScaleType( UIScaleType::None );

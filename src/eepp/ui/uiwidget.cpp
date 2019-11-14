@@ -1173,9 +1173,9 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		std::string val = attribute.asString();
 		String::toLowerInPlace( val );
 
-		if ( "match_parent" == val ) {
+		if ( "match_parent" == val || "match-parent" == val ) {
 			setLayoutWidthRules( MATCH_PARENT );
-		} else if ( "wrap_content" == val ) {
+		} else if ( "wrap_content" == val || "wrap-content" == val ) {
 			setLayoutWidthRules( WRAP_CONTENT );
 		} else if ( "fixed" == val ) {
 			setLayoutWidthRules( FIXED );
