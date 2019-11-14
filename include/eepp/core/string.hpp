@@ -171,8 +171,14 @@ class EE_API String {
 	/** Replace all occurrences of the search string with the replacement string. */
 	static void replaceAll( std::string &target, const std::string& that, const std::string& with );
 
+	/** Replace all occurrences of the search string with the replacement string. */
+	static void replaceAll( String &target, const String& that, const String& with );
+
 	/** Replace the first ocurrence of the search string with the replacement string. */
 	static void replace( std::string& target, const std::string& that, const std::string& with );
+
+	/** Replace the first ocurrence of the search string with the replacement string. */
+	static void replace( String& target, const String& that, const String& with );
 
 	/** Removes the numbers at the end of the string */
 	static std::string removeNumbersAtEnd( std::string txt );

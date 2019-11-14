@@ -203,10 +203,29 @@ void String::replaceAll( std::string &target, const std::string& that, const std
 	}
 }
 
+void String::replaceAll( String &target, const String& that, const String& with ) {
+	std::string::size_type pos=0;
+
+	while( ( pos = target.find( that, pos ) ) != String::InvalidPos ) {
+		target.erase( pos, that.length() );
+		target.insert( pos, with );
+		pos += with.length();
+	}
+}
+
 void String::replace( std::string& target, const std::string& that, const std::string& with ) {
 	std::size_t start_pos = target.find( that );
 
 	if( start_pos == std::string::npos )
+		return;
+
+	target.replace( start_pos, that.length(), with );
+}
+
+void String::replace( String& target, const String& that, const String& with ) {
+	std::size_t start_pos = target.find( that );
+
+	if( start_pos == String::InvalidPos )
 		return;
 
 	target.replace( start_pos, that.length(), with );

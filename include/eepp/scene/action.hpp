@@ -50,6 +50,8 @@ class EE_API Action {
 
 		Uint32 addEventListener( const ActionType & actionType, const ActionCallback & callback );
 
+		Action * on( const ActionType & actionType, const ActionCallback & callback );
+
 		void removeEventListener( const Uint32 & callbackId );
 
 		void sendEvent( const ActionType & actionType );

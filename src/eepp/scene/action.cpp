@@ -54,6 +54,11 @@ Uint32 Action::addEventListener( const ActionType& actionType, const ActionCallb
 	return mNumCallBacks;
 }
 
+Action * Action::on(const Action::ActionType& actionType, const Action::ActionCallback& callback) {
+	addEventListener( actionType, callback );
+	return this;
+}
+
 void Action::removeEventListener( const Uint32& callbackId ) {
 	for ( auto it = mCallbacks.begin(); it != mCallbacks.end(); ++it ) {
 		std::map<Uint32, ActionCallback> event = it->second;
