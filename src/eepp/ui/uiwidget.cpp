@@ -537,6 +537,24 @@ void UIWidget::removeClass( const std::string& cls ) {
 	}
 }
 
+void UIWidget::removeClasses( const std::vector<std::string>& classes ) {
+	if ( !classes.empty() ) {
+		for ( auto cit = classes.begin(); cit != classes.end(); ++cit ) {
+			const std::string& cls = *cit;
+
+			if ( !cls.empty() ) {
+				auto found = std::find( mClasses.begin(), mClasses.end(), cls );
+
+				if ( found != mClasses.end() ) {
+					mClasses.erase(found);
+				}
+			}
+		}
+
+		reloadStyle( true );
+	}
+}
+
 bool UIWidget::containsClass( const std::string& cls ) const {
 	return std::find( mClasses.begin(), mClasses.end(), cls ) != mClasses.end();
 }

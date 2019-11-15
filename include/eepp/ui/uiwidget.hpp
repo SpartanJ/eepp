@@ -121,6 +121,8 @@ class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
 
 		void removeClass( const std::string& cls );
 
+		void removeClasses( const std::vector<std::string>& classes );
+
 		bool containsClass( const std::string& cls ) const;
 
 		void setElementTag( const std::string& tag );
