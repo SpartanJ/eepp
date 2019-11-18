@@ -194,6 +194,10 @@ UINodeDrawable::LayerDrawable::LayerDrawable( UINodeDrawable * container ) :
 {}
 
 UINodeDrawable::LayerDrawable::~LayerDrawable() {
+	if ( NULL != mDrawable && 0 != mResourceChangeCbId && mDrawable->isDrawableResource() ) {
+		reinterpret_cast<DrawableResource*>( mDrawable )->popResourceChangeCallback( mResourceChangeCbId );
+	}
+
 	if ( mOwnsDrawable )
 		eeSAFE_DELETE( mDrawable );
 }
@@ -260,8 +264,13 @@ void UINodeDrawable::LayerDrawable::setDrawable( Drawable* drawable, const bool&
 	mOwnsDrawable = ownIt;
 
 	if ( mDrawable->isDrawableResource() ) {
-		mResourceChangeCbId = reinterpret_cast<DrawableResource*>( mDrawable )->pushResourceChangeCallback( [&] ( DrawableResource::Event, DrawableResource* ) {
+		mResourceChangeCbId = reinterpret_cast<DrawableResource*>( mDrawable )->pushResourceChangeCallback( [&] ( DrawableResource::Event event, DrawableResource* ) {
 			mNeedsUpdate = true;
+			if ( event == DrawableResource::Event::Unload ) {
+				mResourceChangeCbId = 0;
+				mDrawable = NULL;
+				mOwnsDrawable = false;
+			}
 		} );
 	}
 }
