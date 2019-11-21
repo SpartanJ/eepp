@@ -673,6 +673,7 @@ void closeProject() {
 }
 
 bool onCloseRequestCallback( EE::Window::Window * ) {
+	SceneManager::instance()->setCurrentUISceneNode( appUiSceneNode );
 	UITheme * prevTheme = UIThemeManager::instance()->getDefaultTheme();
 	UIThemeManager::instance()->setDefaultTheme( theme );
 
@@ -685,7 +686,7 @@ bool onCloseRequestCallback( EE::Window::Window * ) {
 	MsgBox->show();
 
 	UIThemeManager::instance()->setDefaultTheme( prevTheme );
-
+	SceneManager::instance()->setCurrentUISceneNode( uiSceneNode );
 	return false;
 }
 
