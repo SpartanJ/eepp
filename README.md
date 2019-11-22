@@ -326,6 +326,7 @@ Rebuild the map editor with undo/redo support ( or deprecate it in favor of TMX,
   *  Sean  Barrett  for  stb_image and all the [stb](https://github.com/nothings/stb) libraries.
 
   *  Sam  Latinga  for [Simple DirectMedia Layer](https://www.libsdl.org/).
+
   *  Jonathan  Dummer  for  the  [Simple  OpenGL  Image  Library](https://www.lonesock.net/soil.html).
 
   *  Laurent  Gomila  for [SFML](https://www.sfml-dev.org/)
