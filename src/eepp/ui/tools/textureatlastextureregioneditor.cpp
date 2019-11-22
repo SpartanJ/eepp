@@ -90,7 +90,7 @@ UITextureRegion * TextureAtlasTextureRegionEditor::getGfx() const {
 }
 
 void TextureAtlasTextureRegionEditor::getCenter() {
-	mUICenter = Vector2f( mDpSize.getWidth() / 2, mDpSize.getHeight() / 2 );
+	mUICenter = Vector2f( getSize().getWidth() / 2, getSize().getHeight() / 2 );
 }
 
 }}}

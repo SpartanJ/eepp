@@ -9,8 +9,12 @@
 #include <eepp/graphics/rectangledrawable.hpp>
 #include <eepp/scene/actions/actions.hpp>
 #include <eepp/system/functionstring.hpp>
+#include <eepp/window/window.hpp>
+#include <eepp/window/engine.hpp>
 #include <pugixml/pugixml.hpp>
 #include <algorithm>
+
+using namespace EE::Window;
 
 namespace EE { namespace UI {
 
@@ -371,7 +375,7 @@ void UIWidget::updateAnchors( const Vector2f& SizeChange ) {
 	if ( !( mFlags & ( UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM ) ) )
 		return;
 
-	Sizef newSize( mDpSize );
+	Sizef newSize( getSize() );
 
 	if ( !( mFlags & UI_ANCHOR_LEFT ) ) {
 		setInternalPosition( Vector2f( mDpPos.x += SizeChange.x, mDpPos.y ) );
@@ -399,7 +403,7 @@ void UIWidget::updateAnchors( const Vector2f& SizeChange ) {
 		}
 	}
 
-	if ( newSize != mDpSize )
+	if ( newSize != getSize() )
 		setSize( newSize );
 }
 
@@ -408,7 +412,7 @@ void UIWidget::alignAgainstLayout() {
 
 	switch ( fontHAlignGet( mLayoutGravity ) ) {
 		case UI_HALIGN_CENTER:
-			pos.x = ( getParent()->getSize().getWidth() - mDpSize.getWidth() ) / 2;
+			pos.x = ( getParent()->getSize().getWidth() - getSize().getWidth() ) / 2;
 			break;
 		case UI_HALIGN_RIGHT:
 			pos.x = getParent()->getSize().getWidth() - mLayoutMargin.Right;
@@ -420,7 +424,7 @@ void UIWidget::alignAgainstLayout() {
 
 	switch ( fontVAlignGet( mLayoutGravity ) ) {
 		case UI_VALIGN_CENTER:
-			pos.y = ( getParent()->getSize().getHeight() - mDpSize.getHeight() ) / 2;
+			pos.y = ( getParent()->getSize().getHeight() - getSize().getHeight() ) / 2;
 			break;
 		case UI_VALIGN_BOTTOM:
 			pos.y = getParent()->getSize().getHeight() - mLayoutMargin.Bottom;
@@ -803,6 +807,23 @@ std::vector<UIWidget*> UIWidget::querySelectorAll( const CSS::StyleSheetSelector
 	return widgets;
 }
 
+Float UIWidget::lengthAsPixels( const CSS::StyleSheetLength& length, const bool& percentAsWidth ) {
+	return length.asPixels(
+		percentAsWidth ? getParent()->getPixelsSize().getWidth() :
+						 getParent()->getPixelsSize().getHeight(),
+		getSceneNode()->getPixelsSize(),
+		Engine::instance()->getDisplayManager()->getDisplayIndex(
+			getSceneNode()->getWindow()->getCurrentDisplayIndex()
+		)->getDPI(),
+		12,
+		12
+	);
+}
+
+Float UIWidget::lengthAsDp( const CSS::StyleSheetLength& length, const bool& percentAsWidth ) {
+	return PixelDensity::pxToDp( lengthAsPixels( length, percentAsWidth ) );
+}
+
 UIWidget* UIWidget::querySelector( const std::string& selector ) {
 	return querySelector( CSS::StyleSheetSelector( selector ) );
 }
@@ -834,7 +855,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 	} else if ( "class" == name ) {
 		addClasses( String::split( attribute.getValue(), ' ' ) );
 	} else if ( "x" == name ) {
-		SAVE_NORMAL_STATE_ATTR( String::format( "%.2f", mDpSize.getWidth() ) );
+		SAVE_NORMAL_STATE_ATTR( String::format( "%.2f", getSize().getWidth() ) );
 
 		setLayoutWidthRules( FIXED );
 
@@ -854,7 +875,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 			notifyLayoutAttrChange();
 		}
 	} else if ( "y" == name ) {
-		SAVE_NORMAL_STATE_ATTR( String::format( "%.2f", mDpSize.getWidth() ) );
+		SAVE_NORMAL_STATE_ATTR( String::format( "%.2f", getSize().getWidth() ) );
 
 		setLayoutWidthRules( FIXED );
 
@@ -874,7 +895,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 			notifyLayoutAttrChange();
 		}
 	} else if ( "width" == name ) {
-		SAVE_NORMAL_STATE_ATTR( String::format( "%.2f", mDpSize.getWidth() ) );
+		SAVE_NORMAL_STATE_ATTR( String::format( "%.2f", getSize().getWidth() ) );
 
 		setLayoutWidthRules( FIXED );
 
@@ -894,7 +915,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 			notifyLayoutAttrChange();
 		}
 	} else if ( "height" == name ) {
-		SAVE_NORMAL_STATE_ATTR( String::format( "%.2f", mDpSize.getHeight() ) );
+		SAVE_NORMAL_STATE_ATTR( String::format( "%.2f", getSize().getHeight() ) );
 
 		setLayoutHeightRules( FIXED );
 

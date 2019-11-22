@@ -74,7 +74,7 @@ void UIPushButton::onAutoSize() {
 		setInternalHeight( getSkinSize().getHeight() );
 	}
 
-	if ( ( mFlags & UI_AUTO_SIZE ) && NULL != getSkin() && ( 0 == mDpSize.getHeight() || mLayoutHeightRules == WRAP_CONTENT ) ) {
+	if ( ( mFlags & UI_AUTO_SIZE ) && NULL != getSkin() && ( 0 == getSize().getHeight() || mLayoutHeightRules == WRAP_CONTENT ) ) {
 		Float h = eemax<Float>( PixelDensity::dpToPx( getSkinSize().getHeight() ), mTextBox->getTextHeight() );
 
 		setInternalPixelsHeight( h + mRealPadding.Top + mRealPadding.Bottom );
@@ -267,9 +267,9 @@ void UIPushButton::setIconMinimumSize( const Sizei & minIconSize ) {
 		mStyleConfig.IconMinSize = minIconSize;
 
 		if ( mStyleConfig.IconMinSize.x != 0 && mStyleConfig.IconMinSize.y != 0 ) {
-			Sizef minSize( eemax( mDpSize.x, (Float)mStyleConfig.IconMinSize.x ), eemax( mDpSize.y, (Float)mStyleConfig.IconMinSize.y ) );
+			Sizef minSize( eemax( getSize().getWidth(), (Float)mStyleConfig.IconMinSize.x ), eemax( getSize().getHeight(), (Float)mStyleConfig.IconMinSize.y ) );
 
-			if ( minSize != mDpSize ) {
+			if ( minSize != getSize() ) {
 				mIcon->setSize( minSize );
 				onSizeChange();
 			}

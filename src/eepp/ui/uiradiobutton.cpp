@@ -79,11 +79,11 @@ void UIRadioButton::onThemeLoaded() {
 
 void UIRadioButton::onAutoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
-		if ( mDpSize.getWidth() == 0 ) {
+		if ( getSize().getWidth() == 0 ) {
 			setInternalPixelsWidth( (int)mTextCache->getTextWidth() + mActiveButton->getPixelsSize().getWidth() + mTextSeparation + mRealPadding.Left + mRealPadding.Right );
 		}
 
-		if ( mDpSize.getHeight() == 0 ) {
+		if ( getSize().getHeight() == 0 ) {
 			setInternalHeight( mActiveButton->getSize().getHeight() + mRealPadding.Top + mRealPadding.Bottom );
 		}
 

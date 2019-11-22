@@ -27,9 +27,9 @@ bool UIMenuSeparator::isType( const Uint32& type ) const {
 void UIMenuSeparator::setTheme( UITheme * Theme ) {
 	UIWidget::setTheme( Theme );
 	setThemeSkin( Theme, "separator" );
-	
+
 	if ( NULL != getSkin() ) {
-		setSize( Sizef( mDpSize.getWidth(), getSkinSize().getHeight() ) );
+		setSize( Sizef( getSize().getWidth(), getSkinSize().getHeight() ) );
 	}
 
 	onThemeLoaded();

@@ -126,7 +126,7 @@ void UIGridLayout::onParentSizeChange(const Vector2f& SizeChange) {
 }
 
 void UIGridLayout::pack() {
-	Sizef oldSize( mDpSize );
+	Sizef oldSize( getSize() );
 
 	setInternalPosition( Vector2f( mLayoutMargin.Left, mLayoutMargin.Top ) );
 
@@ -144,7 +144,7 @@ void UIGridLayout::pack() {
 	Sizef targetSize( getTargetElementSize() );
 
 	if ( getHorizontalAlign() == UI_HALIGN_RIGHT )
-		pos.x = mDpSize.getWidth() - mPadding.Right;
+		pos.x = getSize().getWidth() - mPadding.Right;
 
 	bool usedLastRow = true;
 
@@ -154,7 +154,7 @@ void UIGridLayout::pack() {
 			usedLastRow = true;
 
 			if ( widget->getLayoutWeight() != 0.f )
-				targetSize.x = widget->getLayoutWeight() * ( mDpSize.getWidth() - mPadding.Left - mPadding.Right );
+				targetSize.x = widget->getLayoutWeight() * ( getSize().getWidth() - mPadding.Left - mPadding.Right );
 
 			widget->setLayoutSizeRules( FIXED, FIXED );
 			widget->setSize( targetSize );
@@ -162,8 +162,8 @@ void UIGridLayout::pack() {
 
 			pos.x += getHorizontalAlign() == UI_HALIGN_RIGHT ? -targetSize.getWidth() : targetSize.getWidth();
 
-			if ( pos.x < mPadding.Left || pos.x + targetSize.x > mDpSize.getWidth() - mPadding.Right || pos.x + targetSize.x + mSpan.x > mDpSize.getWidth() - mPadding.Right ) {
-				pos.x = getHorizontalAlign() == UI_HALIGN_RIGHT ? mDpSize.getWidth() - mPadding.Right : mPadding.Left;
+			if ( pos.x < mPadding.Left || pos.x + targetSize.x > getSize().getWidth() - mPadding.Right || pos.x + targetSize.x + mSpan.x > getSize().getWidth() - mPadding.Right ) {
+				pos.x = getHorizontalAlign() == UI_HALIGN_RIGHT ? getSize().getWidth() - mPadding.Right : mPadding.Left;
 
 				pos.y += targetSize.getHeight() + mSpan.y;
 				usedLastRow = false;
@@ -179,7 +179,7 @@ void UIGridLayout::pack() {
 		setInternalHeight( pos.y + ( usedLastRow ? targetSize.getHeight() : 0 ) + mPadding.Bottom );
 	}
 
-	if ( oldSize != mDpSize ) {
+	if ( oldSize != getSize() ) {
 		notifyLayoutAttrChangeParent();
 	}
 
@@ -199,8 +199,8 @@ Uint32 UIGridLayout::onMessage(const NodeMessage * Msg) {
 }
 
 Sizef UIGridLayout::getTargetElementSize() const {
-	return Sizef( mColumnMode == Size ? mColumnWidth : ( ( getLayoutHeightRules() == WRAP_CONTENT ? getParent()->getSize().getWidth() : mDpSize.getWidth() ) - mPadding.Left - mPadding.Right ) * mColumnWeight,
-				  mRowMode == Size ? mRowHeight : ( ( getLayoutHeightRules() == WRAP_CONTENT ? getParent()->getSize().getHeight() : mDpSize.getHeight() ) - mPadding.Top - mPadding.Bottom ) * mRowWeight );
+	return Sizef( mColumnMode == Size ? mColumnWidth : ( ( getLayoutHeightRules() == WRAP_CONTENT ? getParent()->getSize().getWidth() : getSize().getWidth() ) - mPadding.Left - mPadding.Right ) * mColumnWeight,
+				  mRowMode == Size ? mRowHeight : ( ( getLayoutHeightRules() == WRAP_CONTENT ? getParent()->getSize().getHeight() : getSize().getHeight() ) - mPadding.Top - mPadding.Bottom ) * mRowWeight );
 }
 
 bool UIGridLayout::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {

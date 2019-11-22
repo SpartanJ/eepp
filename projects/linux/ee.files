@@ -291,6 +291,7 @@
 ../../include/eepp/ui.hpp
 ../../include/eepp/ui/css/stylesheet.hpp
 ../../include/eepp/ui/css/stylesheetelement.hpp
+../../include/eepp/ui/css/stylesheetlength.hpp
 ../../include/eepp/ui/css/stylesheetparser.hpp
 ../../include/eepp/ui/css/stylesheetpropertiesparser.hpp
 ../../include/eepp/ui/css/stylesheetproperty.hpp
@@ -710,6 +711,7 @@
 ../../src/eepp/system/virtualfilesystem.cpp
 ../../src/eepp/system/zip.cpp
 ../../src/eepp/ui/css/stylesheet.cpp
+../../src/eepp/ui/css/stylesheetlength.cpp
 ../../src/eepp/ui/css/stylesheetparser.cpp
 ../../src/eepp/ui/css/stylesheetpropertiesparser.cpp
 ../../src/eepp/ui/css/stylesheetproperty.cpp

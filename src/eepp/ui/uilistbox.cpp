@@ -44,7 +44,7 @@ UIListBox::UIListBox( const std::string& tag ) :
 
 	mContainer = eeNew( UIItemContainer<UIListBox>, () );
 	mContainer->setParent( this );
-	mContainer->setSize( mDpSize.getWidth(), mDpSize.getHeight() );
+	mContainer->setSize( getSize() );
 	mContainer->setVisible( true );
 	mContainer->setEnabled( true );
 	mContainer->setFlags( mFlags );
@@ -54,15 +54,15 @@ UIListBox::UIListBox( const std::string& tag ) :
 	mVScrollBar = UIScrollBar::New();
 	mVScrollBar->setOrientation( UI_VERTICAL );
 	mVScrollBar->setParent( this );
-	mVScrollBar->setPosition( mDpSize.getWidth() - 16, 0 );
-	mVScrollBar->setSize( 16, mDpSize.getHeight() );
+	mVScrollBar->setPosition( getSize().getWidth() - 16, 0 );
+	mVScrollBar->setSize( 16, getSize().getHeight() );
 	mVScrollBar->setEnabled( false )->setVisible( false );
 
 	mHScrollBar = UIScrollBar::New();
 	mHScrollBar->setOrientation( UI_HORIZONTAL );
 	mHScrollBar->setParent( this );
-	mHScrollBar->setSize( mDpSize.getWidth() - mVScrollBar->getSize().getWidth(), 16 );
-	mHScrollBar->setPosition( 0, mDpSize.getHeight() - 16 );
+	mHScrollBar->setSize( getSize().getWidth() - mVScrollBar->getSize().getWidth(), 16 );
+	mHScrollBar->setPosition( 0, getSize().getHeight() - 16 );
 	mHScrollBar->setEnabled( false )->setVisible( false );
 
 	mVScrollBar->addEventListener( Event::OnValueChange, cb::Make1( this, &UIListBox::onScrollValueChange ) );
@@ -296,11 +296,11 @@ void UIListBox::onHScrollValueChange( const Event * ) {
 }
 
 void UIListBox::onSizeChange() {
-	mVScrollBar->setPosition( mDpSize.getWidth() - mVScrollBar->getSize().getWidth() + mVScrollPadding.Left, mVScrollPadding.Top );
-	mVScrollBar->setSize( mVScrollBar->getSize().getWidth() + mVScrollPadding.Right, mDpSize.getHeight() + mVScrollPadding.Bottom );
+	mVScrollBar->setPosition( getSize().getWidth() - mVScrollBar->getSize().getWidth() + mVScrollPadding.Left, mVScrollPadding.Top );
+	mVScrollBar->setSize( mVScrollBar->getSize().getWidth() + mVScrollPadding.Right, getSize().getHeight() + mVScrollPadding.Bottom );
 
-	mHScrollBar->setPosition( mHScrollPadding.Left, mDpSize.getHeight() - mHScrollBar->getSize().getHeight() + mHScrollPadding.Top );
-	mHScrollBar->setSize( mDpSize.getWidth() - mVScrollBar->getSize().getWidth() + mHScrollPadding.Right, mHScrollBar->getSize().getHeight() + mHScrollPadding.Bottom );
+	mHScrollBar->setPosition( mHScrollPadding.Left, getSize().getHeight() - mHScrollBar->getSize().getHeight() + mHScrollPadding.Top );
+	mHScrollBar->setSize( getSize().getWidth() - mVScrollBar->getSize().getWidth() + mHScrollPadding.Right, mHScrollBar->getSize().getHeight() + mHScrollPadding.Bottom );
 
 	if ( mContainer->isClipped() && UI_SCROLLBAR_AUTO == mHScrollMode ) {
 		if ( (Int32)mMaxTextWidth <= mContainer->getPixelsSize().getWidth() ) {
@@ -624,11 +624,11 @@ void UIListBox::updateScroll( bool fromScrollChange ) {
 
 
 	if ( mHScrollBar->isVisible() && !mVScrollBar->isVisible() ) {
-		mHScrollBar->setPosition( mHScrollPadding.Left, mDpSize.getHeight() - mHScrollBar->getSize().getHeight() + mHScrollPadding.Top );
-		mHScrollBar->setSize( mDpSize.getWidth() + mHScrollPadding.Right, mHScrollBar->getSize().getHeight() + mHScrollPadding.Bottom );
+		mHScrollBar->setPosition( mHScrollPadding.Left, getSize().getHeight() - mHScrollBar->getSize().getHeight() + mHScrollPadding.Top );
+		mHScrollBar->setSize( getSize().getWidth() + mHScrollPadding.Right, mHScrollBar->getSize().getHeight() + mHScrollPadding.Bottom );
 	} else {
-		mHScrollBar->setPosition( mHScrollPadding.Left, mDpSize.getHeight() - mHScrollBar->getSize().getHeight() + mHScrollPadding.Top );
-		mHScrollBar->setSize( mDpSize.getWidth() - mVScrollBar->getSize().getWidth() + mHScrollPadding.Right, mHScrollBar->getSize().getHeight() + mHScrollPadding.Bottom );
+		mHScrollBar->setPosition( mHScrollPadding.Left, getSize().getHeight() - mHScrollBar->getSize().getHeight() + mHScrollPadding.Top );
+		mHScrollBar->setSize( getSize().getWidth() - mVScrollBar->getSize().getWidth() + mHScrollPadding.Right, mHScrollBar->getSize().getHeight() + mHScrollPadding.Bottom );
 	}
 
 	setHScrollStep();

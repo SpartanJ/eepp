@@ -190,7 +190,7 @@ void UITextInput::onThemeLoaded() {
 }
 
 void UITextInput::onAutoSize() {
-	if ( ( mFlags & UI_AUTO_SIZE ) && 0 == mDpSize.getHeight() ) {
+	if ( ( mFlags & UI_AUTO_SIZE ) && 0 == getSize().getHeight() ) {
 		setInternalPixelsHeight( PixelDensity::dpToPxI( getSkinSize().getHeight() ) + mRealPadding.Top + mRealPadding.Bottom );
 	}
 

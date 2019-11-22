@@ -254,7 +254,7 @@ void UITabWidget::setTabContainerSize() {
 			mTabContainer->centerHorizontal();
 			break;
 		case UI_HALIGN_RIGHT:
-			mTabContainer->setPosition( mDpSize.getWidth() - mTabContainer->getSize().getWidth(), 0 );
+			mTabContainer->setPosition( getSize().getWidth() - mTabContainer->getSize().getWidth(), 0 );
 			break;
 	}
 }

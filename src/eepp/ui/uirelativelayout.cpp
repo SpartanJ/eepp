@@ -103,10 +103,10 @@ void UIRelativeLayout::fixChildPos( UIWidget * widget ) {
 	} else {
 		switch ( fontHAlignGet( widget->getLayoutGravity() ) ) {
 			case UI_HALIGN_CENTER:
-				pos.x = ( mDpSize.getWidth() - widget->getSize().getWidth() ) / 2 + widget->getLayoutMargin().Left;
+				pos.x = ( getSize().getWidth() - widget->getSize().getWidth() ) / 2 + widget->getLayoutMargin().Left;
 				break;
 			case UI_HALIGN_RIGHT:
-				pos.x = mDpSize.getWidth() - widget->getSize().getWidth() - widget->getLayoutMargin().Right - mPadding.Right;
+				pos.x = getSize().getWidth() - widget->getSize().getWidth() - widget->getLayoutMargin().Right - mPadding.Right;
 				break;
 			case UI_HALIGN_LEFT:
 			default:
@@ -116,10 +116,10 @@ void UIRelativeLayout::fixChildPos( UIWidget * widget ) {
 
 		switch ( fontVAlignGet( widget->getLayoutGravity() ) ) {
 			case UI_VALIGN_CENTER:
-				pos.y = ( mDpSize.getHeight() - widget->getSize().getHeight() ) / 2 + widget->getLayoutMargin().Top;
+				pos.y = ( getSize().getHeight() - widget->getSize().getHeight() ) / 2 + widget->getLayoutMargin().Top;
 				break;
 			case UI_VALIGN_BOTTOM:
-				pos.y = mDpSize.getHeight() - widget->getSize().getHeight() - widget->getLayoutMargin().Bottom - mPadding.Bottom;
+				pos.y = getSize().getHeight() - widget->getSize().getHeight() - widget->getLayoutMargin().Bottom - mPadding.Bottom;
 				break;
 			case UI_VALIGN_TOP:
 			default:
@@ -140,7 +140,7 @@ void UIRelativeLayout::fixChildSize( UIWidget * widget ) {
 		}
 		case MATCH_PARENT:
 		{
-			widget->setSize( mDpSize.getWidth() - widget->getLayoutMargin().Left - widget->getLayoutMargin().Right - mPadding.Left - mPadding.Right, widget->getSize().getHeight() );
+			widget->setSize( getSize().getWidth() - widget->getLayoutMargin().Left - widget->getLayoutMargin().Right - mPadding.Left - mPadding.Right, widget->getSize().getHeight() );
 			break;
 		}
 		case FIXED:
@@ -157,7 +157,7 @@ void UIRelativeLayout::fixChildSize( UIWidget * widget ) {
 		}
 		case MATCH_PARENT:
 		{
-			widget->setSize( widget->getSize().getWidth(), mDpSize.getHeight() - widget->getLayoutMargin().Top - widget->getLayoutMargin().Bottom - mPadding.Top - mPadding.Bottom );
+			widget->setSize( widget->getSize().getWidth(), getSize().getHeight() - widget->getLayoutMargin().Top - widget->getLayoutMargin().Bottom - mPadding.Top - mPadding.Bottom );
 			break;
 		}
 		case FIXED:

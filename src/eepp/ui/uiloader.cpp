@@ -144,13 +144,13 @@ void UILoader::onPaddingChange() {
 
 void UILoader::updateRadius() {
 	if ( mRadius == 0 ) {
-		setRadius( eemin( mDpSize.x - mPadding.Left - mPadding.Right, mDpSize.y - mPadding.Top - mPadding.Bottom ) / 2.f );
+		setRadius( eemin( getSize().getWidth() - mPadding.Left - mPadding.Right, getSize().getHeight() - mPadding.Top - mPadding.Bottom ) / 2.f );
 	}
 }
 
 void UILoader::onAutoSize() {
 	if ( mLayoutWidthRules == WRAP_CONTENT || mLayoutHeightRules == WRAP_CONTENT ) {
-		Sizef minSize( mDpSize );
+		Sizef minSize( getSize() );
 
 		if ( mLayoutWidthRules == WRAP_CONTENT ) {
 			minSize.x = eemax( minSize.x, 64.f );

@@ -71,7 +71,7 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const StyleConfig& w
 	mContainer->setParent( this );
 	mContainer->clipEnable();
 	mContainer->enableReportSizeChangeToChilds();
-	mContainer->setSize( mDpSize );
+	mContainer->setSize( getSize() );
 	mContainer->addEventListener( Event::OnPositionChange, cb::Make1( this, &UIWindow::onContainerPositionChange ) );
 
 	updateWinFlags();
@@ -478,23 +478,23 @@ void UIWindow::calcMinWinSize() {
 }
 
 void UIWindow::applyMinWinSize() {
-	if ( mDpSize.x < mStyleConfig.MinWindowSize.x && mDpSize.y < mStyleConfig.MinWindowSize.y ) {
+	if ( getSize().getWidth() < mStyleConfig.MinWindowSize.getWidth() && getSize().getHeight() < mStyleConfig.MinWindowSize.getHeight() ) {
 		setSize( mStyleConfig.MinWindowSize );
-	} else if ( mDpSize.x < mStyleConfig.MinWindowSize.x ) {
-		setSize( Sizef( mStyleConfig.MinWindowSize.x, mDpSize.y ) );
-	} else if ( mDpSize.y < mStyleConfig.MinWindowSize.y ) {
-		setSize( Sizef( mDpSize.x, mStyleConfig.MinWindowSize.y ) );
+	} else if ( getSize().getWidth() < mStyleConfig.MinWindowSize.getWidth() ) {
+		setSize( Sizef( mStyleConfig.MinWindowSize.getWidth(), getSize().getHeight() ) );
+	} else if ( getSize().getHeight() < mStyleConfig.MinWindowSize.getHeight() ) {
+		setSize( Sizef( getSize().getWidth(), mStyleConfig.MinWindowSize.getHeight() ) );
 	}
 }
 
 void UIWindow::onSizeChange() {
-	if ( mDpSize.x < mStyleConfig.MinWindowSize.x || mDpSize.y < mStyleConfig.MinWindowSize.y ) {
-		if ( mDpSize.x < mStyleConfig.MinWindowSize.x && mDpSize.y < mStyleConfig.MinWindowSize.y ) {
+	if ( getSize().getWidth() < mStyleConfig.MinWindowSize.getWidth() || getSize().getHeight() < mStyleConfig.MinWindowSize.getHeight() ) {
+		if ( getSize().getWidth() < mStyleConfig.MinWindowSize.getWidth() && getSize().getHeight() < mStyleConfig.MinWindowSize.getHeight() ) {
 			setSize( mStyleConfig.MinWindowSize );
-		} else if ( mDpSize.x < mStyleConfig.MinWindowSize.x ) {
-			setSize( Sizef( mStyleConfig.MinWindowSize.x, mDpSize.y ) );
+		} else if ( getSize().getWidth() < mStyleConfig.MinWindowSize.getHeight() ) {
+			setSize( Sizef( mStyleConfig.MinWindowSize.getWidth(), getSize().getHeight() ) );
 		} else {
-			setSize( Sizef( mDpSize.x, mStyleConfig.MinWindowSize.y ) );
+			setSize( Sizef( getSize().getWidth(), mStyleConfig.MinWindowSize.getHeight() ) );
 		}
 	} else {
 		fixChildsSize();
@@ -560,7 +560,7 @@ void UIWindow::fixChildsSize() {
 	Sizei decoSize = mStyleConfig.DecorationSize;
 
 	if ( mStyleConfig.DecorationAutoSize ) {
-		decoSize = mStyleConfig.DecorationSize = Sizei( mDpSize.getWidth(), mWindowDecoration->getSkinSize().getHeight() );
+		decoSize = mStyleConfig.DecorationSize = Sizei( getSize().getWidth(), mWindowDecoration->getSkinSize().getHeight() );
 	}
 
 	mWindowDecoration->setPixelsSize( mSize.getWidth(), PixelDensity::dpToPx( mStyleConfig.DecorationSize.getHeight() ) );
@@ -716,12 +716,12 @@ void UIWindow::decideResizeType( Node * Control ) {
 	if ( Control == this ) {
 		if ( Pos.x <= mBorderLeft->getSize().getWidth() ) {
 			tryResize( RESIZE_TOPLEFT );
-		} else if ( Pos.x >= ( mDpSize.getWidth() - mBorderRight->getSize().getWidth() ) ) {
+		} else if ( Pos.x >= ( getSize().getWidth() - mBorderRight->getSize().getWidth() ) ) {
 			tryResize( RESIZE_TOPRIGHT );
 		} else if ( Pos.y <= mBorderBottom->getSize().getHeight() ) {
 			if ( Pos.x < mStyleConfig.MinCornerDistance ) {
 				tryResize( RESIZE_TOPLEFT );
-			} else if ( Pos.x > mDpSize.getWidth() - mStyleConfig.MinCornerDistance ) {
+			} else if ( Pos.x > getSize().getWidth() - mStyleConfig.MinCornerDistance ) {
 				tryResize( RESIZE_TOPRIGHT );
 			} else {
 				tryResize( RESIZE_TOP );
@@ -730,19 +730,19 @@ void UIWindow::decideResizeType( Node * Control ) {
 	} else if ( Control == mBorderBottom ) {
 		if ( Pos.x < mStyleConfig.MinCornerDistance ) {
 			tryResize( RESIZE_LEFTBOTTOM );
-		} else if ( Pos.x > mDpSize.getWidth() - mStyleConfig.MinCornerDistance ) {
+		} else if ( Pos.x > getSize().getWidth() - mStyleConfig.MinCornerDistance ) {
 			tryResize( RESIZE_RIGHTBOTTOM );
 		} else {
 			tryResize( RESIZE_BOTTOM );
 		}
 	} else if ( Control == mBorderLeft )  {
-		if ( Pos.y >= mDpSize.getHeight() - mStyleConfig.MinCornerDistance ) {
+		if ( Pos.y >= getSize().getHeight() - mStyleConfig.MinCornerDistance ) {
 			tryResize( RESIZE_LEFTBOTTOM );
 		} else {
 			tryResize( RESIZE_LEFT );
 		}
 	} else if ( Control == mBorderRight ) {
-		if ( Pos.y >= mDpSize.getHeight() - mStyleConfig.MinCornerDistance ) {
+		if ( Pos.y >= getSize().getHeight() - mStyleConfig.MinCornerDistance ) {
 			tryResize( RESIZE_RIGHTBOTTOM );
 		} else {
 			tryResize( RESIZE_RIGHT );
@@ -1084,7 +1084,7 @@ void UIWindow::maximize() {
 	if ( NULL == Ctrl )
 		return;
 
-	if ( Ctrl->getSize() == mDpSize ) {
+	if ( Ctrl->getSize() == getSize() ) {
 		setPixelsPosition( mNonMaxPos );
 		internalSize( mNonMaxSize );
 	} else {
@@ -1341,12 +1341,12 @@ void UIWindow::resizeCursor() {
 	if ( Control == this ) {
 		if ( Pos.x <= mBorderLeft->getSize().getWidth() ) {
 			sceneNode->setCursor( Cursor::SizeNWSE ); // RESIZE_TOPLEFT
-		} else if ( Pos.x >= ( mDpSize.getWidth() - mBorderRight->getSize().getWidth() ) ) {
+		} else if ( Pos.x >= ( getSize().getWidth() - mBorderRight->getSize().getWidth() ) ) {
 			sceneNode->setCursor( Cursor::SizeNESW ); // RESIZE_TOPRIGHT
 		} else if ( Pos.y <= mBorderBottom->getSize().getHeight() ) {
 			if ( Pos.x < mStyleConfig.MinCornerDistance ) {
 				sceneNode->setCursor( Cursor::SizeNWSE ); // RESIZE_TOPLEFT
-			} else if ( Pos.x > mDpSize.getWidth() - mStyleConfig.MinCornerDistance ) {
+			} else if ( Pos.x > getSize().getWidth() - mStyleConfig.MinCornerDistance ) {
 				sceneNode->setCursor( Cursor::SizeNESW ); // RESIZE_TOPRIGHT
 			} else {
 				sceneNode->setCursor( Cursor::SizeNS ); // RESIZE_TOP
@@ -1357,19 +1357,19 @@ void UIWindow::resizeCursor() {
 	} else if ( Control == mBorderBottom ) {
 		if ( Pos.x < mStyleConfig.MinCornerDistance ) {
 			sceneNode->setCursor( Cursor::SizeNESW ); // RESIZE_LEFTBOTTOM
-		} else if ( Pos.x > mDpSize.getWidth() - mStyleConfig.MinCornerDistance ) {
+		} else if ( Pos.x > getSize().getWidth() - mStyleConfig.MinCornerDistance ) {
 			sceneNode->setCursor( Cursor::SizeNWSE ); // RESIZE_RIGHTBOTTOM
 		} else {
 			sceneNode->setCursor( Cursor::SizeNS ); // RESIZE_BOTTOM
 		}
 	} else if ( Control == mBorderLeft )  {
-		if ( Pos.y >= mDpSize.getHeight() - mStyleConfig.MinCornerDistance ) {
+		if ( Pos.y >= getSize().getHeight() - mStyleConfig.MinCornerDistance ) {
 			sceneNode->setCursor( Cursor::SizeNESW ); // RESIZE_LEFTBOTTOM
 		} else {
 			sceneNode->setCursor( Cursor::SizeWE ); // RESIZE_LEFT
 		}
 	} else if ( Control == mBorderRight ) {
-		if ( Pos.y >= mDpSize.getHeight() - mStyleConfig.MinCornerDistance ) {
+		if ( Pos.y >= getSize().getHeight() - mStyleConfig.MinCornerDistance ) {
 			sceneNode->setCursor( Cursor::SizeNWSE ); // RESIZE_RIGHTBOTTOM
 		} else {
 			sceneNode->setCursor( Cursor::SizeWE ); // RESIZE_RIGHT
@@ -1381,9 +1381,9 @@ bool UIWindow::setAttribute( const NodeAttribute& attribute, const Uint32& state
 	const std::string& name = attribute.getName();
 
 	if ( "width" == name ) {
-		setSize( attribute.asDpDimension(), mDpSize.getHeight() );
+		setSize( attribute.asDpDimension(), getSize().getHeight() );
 	} else if ( "height" == name ) {
-		setSize( mDpSize.getWidth(), attribute.asDpDimension() );
+		setSize( getSize().getWidth(), attribute.asDpDimension() );
 	} else if ( "title" == name ) {
 		setTitle( attribute.asString() );
 	} else if ( "base-alpha" == name || "basealpha" == name ) {

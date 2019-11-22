@@ -302,7 +302,7 @@ Uint32 UIMenu::onMessage( const NodeMessage * Msg ) {
 }
 
 void UIMenu::onSizeChange() {
-	if ( 0 != mStyleConfig.MinWidth && mDpSize.getWidth() < (Int32)mStyleConfig.MinWidth ) {
+	if ( 0 != mStyleConfig.MinWidth && getSize().getWidth() < (Int32)mStyleConfig.MinWidth ) {
 		setSize( mStyleConfig.MinWidth, PixelDensity::pxToDpI( mNextPosY ) + mPadding.Top + mPadding.Bottom );
 	}
 

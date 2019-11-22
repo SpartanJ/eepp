@@ -121,7 +121,7 @@ void UILinearLayout::packVertical() {
 				}
 				case MATCH_PARENT:
 				{
-					int w = mDpSize.getWidth() - widget->getLayoutMargin().Left - widget->getLayoutMargin().Right - mPadding.Left - mPadding.Right;
+					int w = getSize().getWidth() - widget->getLayoutMargin().Left - widget->getLayoutMargin().Right - mPadding.Left - mPadding.Right;
 
 					if ( (int)widget->getSize().getWidth() != w && w > 0 )
 						widget->setSize( w, widget->getSize().getHeight() );
@@ -135,8 +135,8 @@ void UILinearLayout::packVertical() {
 			}
 
 			if ( widget->getLayoutHeightRules() == MATCH_PARENT && widget->getLayoutWeight() == 0 &&
-				 widget->getSize().getHeight() != mDpSize.getHeight() - widget->getLayoutMargin().Top - widget->getLayoutMargin().Bottom - mPadding.Top - mPadding.Bottom ) {
-				widget->setSize( widget->getSize().getWidth(), mDpSize.getHeight() - widget->getLayoutMargin().Top - widget->getLayoutMargin().Bottom - mPadding.Top - mPadding.Bottom );
+				 widget->getSize().getHeight() != getSize().getHeight() - widget->getLayoutMargin().Top - widget->getLayoutMargin().Bottom - mPadding.Top - mPadding.Bottom ) {
+				widget->setSize( widget->getSize().getWidth(), getSize().getHeight() - widget->getLayoutMargin().Top - widget->getLayoutMargin().Bottom - mPadding.Top - mPadding.Bottom );
 			}
 		}
 
@@ -159,7 +159,7 @@ void UILinearLayout::packVertical() {
 			Vector2f pos( mPadding.Left, curY );
 
 			if ( widget->getLayoutWeight() != 0 ) {
-				Int32 totSize = ( getLayoutHeightRules() == MATCH_PARENT ) ? mDpSize.getHeight() - mPadding.Top - mPadding.Bottom :
+				Int32 totSize = ( getLayoutHeightRules() == MATCH_PARENT ) ? getSize().getHeight() - mPadding.Top - mPadding.Bottom :
 																			 getParent()->getSize().getHeight() - mLayoutMargin.Bottom - mLayoutMargin.Top - mPadding.Top - mPadding.Bottom;
 				Float size = (Float)( totSize - freeSize.getHeight() ) * widget->getLayoutWeight();
 
@@ -168,10 +168,10 @@ void UILinearLayout::packVertical() {
 
 			switch ( fontHAlignGet( widget->getLayoutGravity() ) ) {
 				case UI_HALIGN_CENTER:
-					pos.x = ( mDpSize.getWidth() - mPadding.Left - mPadding.Right - widget->getSize().getWidth() ) / 2;
+					pos.x = ( getSize().getWidth() - mPadding.Left - mPadding.Right - widget->getSize().getWidth() ) / 2;
 					break;
 				case UI_HALIGN_RIGHT:
-					pos.x = mDpSize.getWidth() - mPadding.Left - mPadding.Right - widget->getSize().getWidth() - widget->getLayoutMargin().Right;
+					pos.x = getSize().getWidth() - mPadding.Left - mPadding.Right - widget->getSize().getWidth() - widget->getLayoutMargin().Right;
 					break;
 				case UI_HALIGN_LEFT:
 				default:
@@ -192,7 +192,7 @@ void UILinearLayout::packVertical() {
 	if ( getLayoutHeightRules() == WRAP_CONTENT ) {
 		curY += mPadding.Bottom;
 
-		if ( curY != (int)mDpSize.getHeight() ) {
+		if ( curY != (int)getSize().getHeight() ) {
 			setInternalHeight( curY );
 			notifyLayoutAttrChangeParent();
 		}
@@ -204,11 +204,11 @@ void UILinearLayout::packVertical() {
 			h = h - pLay->getPadding().Top - pLay->getPadding().Bottom;
 		}
 
-		if ( h != (int)mDpSize.getHeight() )
+		if ( h != (int)getSize().getHeight() )
 			setInternalHeight( h );
 	}
 
-	if ( getLayoutWidthRules() == WRAP_CONTENT && mDpSize.getWidth() != maxX ) {
+	if ( getLayoutWidthRules() == WRAP_CONTENT && getSize().getWidth() != maxX ) {
 		if ( !(0 != getLayoutWeight() && getParent()->isType( UI_TYPE_LINEAR_LAYOUT ) &&
 			 getParent()->asType<UILinearLayout>()->getOrientation() == UI_HORIZONTAL) ) {
 			setInternalWidth( maxX );
@@ -276,7 +276,7 @@ void UILinearLayout::packHorizontal() {
 				}
 				case MATCH_PARENT:
 				{
-					int h = mDpSize.getHeight() - widget->getLayoutMargin().Top - widget->getLayoutMargin().Bottom - mPadding.Top - mPadding.Bottom;
+					int h = getSize().getHeight() - widget->getLayoutMargin().Top - widget->getLayoutMargin().Bottom - mPadding.Top - mPadding.Bottom;
 
 					if ( h != (int)widget->getSize().getHeight() && h > 0 )
 						widget->setSize( widget->getSize().getWidth(), h );
@@ -290,8 +290,8 @@ void UILinearLayout::packHorizontal() {
 			}
 
 			if ( widget->getLayoutWidthRules() == MATCH_PARENT && widget->getLayoutWeight() == 0 &&
-				 widget->getSize().getWidth() != mDpSize.getWidth() - widget->getLayoutMargin().Left  - widget->getLayoutMargin().Top - mPadding.Left - mPadding.Right ) {
-				widget->setSize( mDpSize.getWidth(), widget->getSize().getWidth() - widget->getLayoutMargin().Left  - widget->getLayoutMargin().Top - mPadding.Left - mPadding.Right );
+				 widget->getSize().getWidth() != getSize().getWidth() - widget->getLayoutMargin().Left  - widget->getLayoutMargin().Top - mPadding.Left - mPadding.Right ) {
+				widget->setSize( getSize().getWidth(), widget->getSize().getWidth() - widget->getLayoutMargin().Left  - widget->getLayoutMargin().Top - mPadding.Left - mPadding.Right );
 			}
 		}
 
@@ -314,7 +314,7 @@ void UILinearLayout::packHorizontal() {
 			Vector2f pos( curX, mPadding.Top );
 
 			if ( widget->getLayoutWeight() != 0 ) {
-				Int32 totSize = ( getLayoutWidthRules() == MATCH_PARENT ) ? mDpSize.getWidth() - mPadding.Left - mPadding.Right :
+				Int32 totSize = ( getLayoutWidthRules() == MATCH_PARENT ) ? getSize().getWidth() - mPadding.Left - mPadding.Right :
 																			getParent()->getSize().getWidth() - mLayoutMargin.Right - mLayoutMargin.Left - mPadding.Left - mPadding.Right;
 				Float size = (Float)( totSize - freeSize.getWidth() ) * widget->getLayoutWeight();
 
@@ -323,10 +323,10 @@ void UILinearLayout::packHorizontal() {
 
 			switch ( fontVAlignGet( widget->getLayoutGravity() ) ) {
 				case UI_VALIGN_CENTER:
-					pos.y = ( mDpSize.getHeight() - mPadding.Top - mPadding.Bottom - widget->getSize().getHeight() ) / 2;
+					pos.y = ( getSize().getHeight() - mPadding.Top - mPadding.Bottom - widget->getSize().getHeight() ) / 2;
 					break;
 				case UI_VALIGN_BOTTOM:
-					pos.y = mDpSize.getHeight() - mPadding.Top - mPadding.Bottom - widget->getSize().getHeight() - widget->getLayoutMargin().Bottom;
+					pos.y = getSize().getHeight() - mPadding.Top - mPadding.Bottom - widget->getSize().getHeight() - widget->getLayoutMargin().Bottom;
 					break;
 				case UI_VALIGN_TOP:
 				default:
@@ -347,7 +347,7 @@ void UILinearLayout::packHorizontal() {
 	if ( getLayoutWidthRules() == WRAP_CONTENT ) {
 		curX += mPadding.Right;
 
-		if ( curX != (int)mDpSize.getWidth() ) {
+		if ( curX != (int)getSize().getWidth() ) {
 			setInternalWidth( curX );
 			notifyLayoutAttrChangeParent();
 		}
@@ -359,11 +359,11 @@ void UILinearLayout::packHorizontal() {
 			w = w - pLay->getPadding().Left - pLay->getPadding().Right;
 		}
 
-		if ( w != (int)mDpSize.getWidth() )
+		if ( w != (int)getSize().getWidth() )
 			setInternalWidth( w );
 	}
 
-	if ( getLayoutHeightRules() == WRAP_CONTENT && mDpSize.getHeight() != maxY ) {
+	if ( getLayoutHeightRules() == WRAP_CONTENT && getSize().getHeight() != maxY ) {
 		if ( !(0 != getLayoutWeight() && getParent()->isType( UI_TYPE_LINEAR_LAYOUT ) &&
 			 getParent()->asType<UILinearLayout>()->getOrientation() == UI_VERTICAL) ) {
 			setInternalHeight( maxY );

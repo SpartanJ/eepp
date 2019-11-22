@@ -58,7 +58,7 @@ UIImage * UIImage::setDrawable(Drawable * drawable , bool ownIt ) {
 
 	onAutoSize();
 
-	if ( NULL != mDrawable && mDpSize.x == 0 && mDpSize.y == 0 ) {
+	if ( NULL != mDrawable && getSize().getWidth() == 0 && getSize().getHeight() == 0 ) {
 		setSize( mDrawable->getSize() );
 	}
 
@@ -73,7 +73,7 @@ UIImage * UIImage::setDrawable(Drawable * drawable , bool ownIt ) {
 
 void UIImage::onAutoSize() {
 	if ( NULL != mDrawable ) {
-		if ( ( mFlags & UI_AUTO_SIZE ) && Sizef::Zero == mDpSize ) {
+		if ( ( mFlags & UI_AUTO_SIZE ) && Sizef::Zero == getSize() ) {
 			setInternalSize( mDrawable->getSize() );
 		}
 

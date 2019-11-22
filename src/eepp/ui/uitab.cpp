@@ -91,7 +91,7 @@ void UITab::onStateChange() {
 			skinSize = getSkinSize().getHeight();
 		}
 
-		setSize( mDpSize.getWidth(), skinSize );
+		setSize( getSize().getWidth(), skinSize );
 	}
 }
 

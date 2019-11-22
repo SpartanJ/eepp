@@ -127,7 +127,7 @@ void UISprite::setRenderMode( const RenderMode& render ) {
 void UISprite::updateSize() {
 	if ( NULL != mSprite ) {
 		if ( mFlags & UI_AUTO_SIZE ) {
-			if ( NULL != mSprite->getCurrentTextureRegion() && mSprite->getCurrentTextureRegion()->getDpSize().asFloat() != mDpSize )
+			if ( NULL != mSprite->getCurrentTextureRegion() && mSprite->getCurrentTextureRegion()->getDpSize().asFloat() != getSize() )
 				setSize( mSprite->getCurrentTextureRegion()->getDpSize().asFloat() );
 		}
 

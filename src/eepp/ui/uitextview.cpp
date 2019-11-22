@@ -256,7 +256,7 @@ void UITextView::shrinkText( const Uint32& MaxWidth ) {
 }
 
 void UITextView::onAutoSize() {
-	if ( ( mFlags & UI_AUTO_SIZE && 0 == mDpSize.getWidth() ) ) {
+	if ( ( mFlags & UI_AUTO_SIZE && 0 == getSize().getWidth() ) ) {
 		setInternalPixelsSize( Sizef( mTextCache->getTextWidth(), mTextCache->getTextHeight() ) );
 	}
 

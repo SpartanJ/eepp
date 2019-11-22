@@ -115,7 +115,7 @@ void UIProgressBar::onThemeLoaded() {
 	mMinControlSize.y = eemax( mMinControlSize.y, getSkinSize().getHeight() );
 
 	if ( mFlags & UI_AUTO_SIZE ) {
-		setSize( mDpSize.x, getSkinSize().getHeight() );
+		setSize( getSize().getWidth(), getSkinSize().getHeight() );
 	}
 
 	UIWidget::onThemeLoaded();

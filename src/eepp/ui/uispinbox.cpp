@@ -81,22 +81,22 @@ void UISpinBox::setTheme( UITheme * Theme ) {
 }
 
 void UISpinBox::adjustChilds() {
-	mInput->setSize( mDpSize.getWidth() - mPushUp->getSize().getWidth(), mInput->getSize().getHeight() );
+	mInput->setSize( getSize().getWidth() - mPushUp->getSize().getWidth(), mInput->getSize().getHeight() );
 
 	if ( mInput->getSize().getHeight() < mInput->getSkinSize().getHeight() ) {
-		mInput->setSize( mDpSize.getWidth() - mPushUp->getSize().getWidth(), mInput->getSkinSize().getHeight() );
+		mInput->setSize( getSize().getWidth() - mPushUp->getSize().getWidth(), mInput->getSkinSize().getHeight() );
 	}
 
-	if ( ( mFlags & UI_AUTO_SIZE ) || mDpSize.getHeight() < mInput->getSize().getHeight() ) {
+	if ( ( mFlags & UI_AUTO_SIZE ) || getSize().getHeight() < mInput->getSize().getHeight() ) {
 		setInternalHeight( mInput->getSize().getHeight() );
 	}
 
 	mInput->centerVertical();
 
-	int posY = ( mDpSize.getHeight() - mPushUp->getSize().getHeight() - mPushDown->getSize().getHeight() ) / 2;
+	int posY = ( getSize().getHeight() - mPushUp->getSize().getHeight() - mPushDown->getSize().getHeight() ) / 2;
 
-	mPushUp->setPosition( mDpSize.getWidth() - mPushUp->getSize().getWidth(), posY );
-	mPushDown->setPosition( mDpSize.getWidth() - mPushDown->getSize().getWidth(), posY + mPushUp->getSize().getHeight() );
+	mPushUp->setPosition( getSize().getWidth() - mPushUp->getSize().getWidth(), posY );
+	mPushDown->setPosition( getSize().getWidth() - mPushDown->getSize().getWidth(), posY + mPushUp->getSize().getHeight() );
 }
 
 void UISpinBox::setPadding( const Rectf& padding ) {

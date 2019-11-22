@@ -37,7 +37,7 @@ UITextureRegion * UITextureRegion::setTextureRegion( Graphics::TextureRegion * T
 
 	onAutoSize();
 
-	if ( NULL != mTextureRegion && mDpSize.x == 0 && mDpSize.y == 0 ) {
+	if ( NULL != mTextureRegion && getSize().getWidth() == 0 && getSize().getHeight() == 0 ) {
 		setSize( mTextureRegion->getDpSize().asFloat() );
 	}
 
@@ -52,7 +52,7 @@ UITextureRegion * UITextureRegion::setTextureRegion( Graphics::TextureRegion * T
 
 void UITextureRegion::onAutoSize() {
 	if ( NULL != mTextureRegion ) {
-		if ( ( mFlags & UI_AUTO_SIZE ) && Sizef::Zero == mDpSize ) {
+		if ( ( mFlags & UI_AUTO_SIZE ) && Sizef::Zero == getSize() ) {
 			setInternalSize( mTextureRegion->getDpSize().asFloat() );
 			autoAlign();
 		}

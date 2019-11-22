@@ -31,7 +31,7 @@ UITextEdit::UITextEdit() :
 	mTextInput->getInputTextBuffer()->isNewLineEnabled( true );
 	mTextInput->setVisible( true );
 	mTextInput->setEnabled( true );
-	mTextInput->setSize( mDpSize );
+	mTextInput->setSize( getSize() );
 
 	mTextInput->addEventListener( Event::OnSizeChange		, cb::Make1( this, &UITextEdit::onInputSizeChange ) );
 	mTextInput->addEventListener( Event::OnTextChanged		, cb::Make1( this, &UITextEdit::onInputSizeChange ) );
@@ -41,15 +41,15 @@ UITextEdit::UITextEdit() :
 	mVScrollBar = UIScrollBar::New();
 	mVScrollBar->setOrientation( UI_VERTICAL );
 	mVScrollBar->setParent( this );
-	mVScrollBar->setPosition( mDpSize.getWidth() - 16, 0 );
-	mVScrollBar->setSize( 16, mDpSize.getHeight() );
+	mVScrollBar->setPosition( getSize().getWidth() - 16, 0 );
+	mVScrollBar->setSize( 16, getSize().getHeight() );
 	mVScrollBar->setValue( 1 );
 
 	mHScrollBar = UIScrollBar::New();
 	mHScrollBar->setOrientation( UI_HORIZONTAL );
 	mHScrollBar->setParent( this );
-	mHScrollBar->setSize( mDpSize.getWidth() - mVScrollBar->getSize().getWidth(), 16 );
-	mHScrollBar->setPosition( 0, mDpSize.getHeight() - 16 );
+	mHScrollBar->setSize( getSize().getWidth() - mVScrollBar->getSize().getWidth(), 16 );
+	mHScrollBar->setPosition( 0, getSize().getHeight() - 16 );
 
 	mVScrollBar->addEventListener( Event::OnValueChange, cb::Make1( this, &UITextEdit::onVScrollValueChange ) );
 	mHScrollBar->addEventListener( Event::OnValueChange, cb::Make1( this, &UITextEdit::onHScrollValueChange ) );
@@ -85,11 +85,11 @@ void UITextEdit::setTheme( UITheme * Theme ) {
 }
 
 void UITextEdit::onSizeChange() {
-	mHScrollBar->setPosition( 0, mDpSize.getHeight() - mHScrollBar->getSize().getHeight() );
-	mVScrollBar->setPosition( mDpSize.getWidth() - mVScrollBar->getSize().getWidth(), 0 );
+	mHScrollBar->setPosition( 0, getSize().getHeight() - mHScrollBar->getSize().getHeight() );
+	mVScrollBar->setPosition( getSize().getWidth() - mVScrollBar->getSize().getWidth(), 0 );
 
-	mHScrollBar->setSize( mDpSize.getWidth(), mHScrollBar->getSize().getHeight() );
-	mVScrollBar->setSize( mVScrollBar->getSize().getWidth(), mDpSize.getHeight() );
+	mHScrollBar->setSize( getSize().getWidth(), mHScrollBar->getSize().getHeight() );
+	mVScrollBar->setSize( mVScrollBar->getSize().getWidth(), getSize().getHeight() );
 
 	mTextInput->setPixelsPosition( mContainerPadding.Left, mContainerPadding.Top );
 
@@ -185,9 +185,9 @@ void UITextEdit::scrollbarsSet() {
 	}
 
 	if ( !mVScrollBar->isVisible() && mHScrollBar->isVisible() ) {
-		mHScrollBar->setSize( mDpSize.getWidth(), mHScrollBar->getSize().getHeight() );
+		mHScrollBar->setSize( getSize().getWidth(), mHScrollBar->getSize().getHeight() );
 	} else {
-		mHScrollBar->setSize( mDpSize.getWidth() - mVScrollBar->getSize().getWidth(), mHScrollBar->getSize().getHeight() );
+		mHScrollBar->setSize( getSize().getWidth() - mVScrollBar->getSize().getWidth(), mHScrollBar->getSize().getHeight() );
 	}
 
 	if ( UI_SCROLLBAR_AUTO == mHScrollBarMode && mVScrollBar->isVisible() && !mHScrollBar->isVisible() ) {
