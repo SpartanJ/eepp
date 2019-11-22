@@ -1,0 +1,6 @@
+[submodule "src/thirdparty/efsw"]
+	path = src/thirdparty/efsw
+	url = https://github.com/SpartanJ/efsw.git
+[submodule "src/thirdparty/SOIL2"]
+	path = src/thirdparty/SOIL2
+	url = https://github.com/SpartanJ/SOIL2.git
