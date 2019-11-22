@@ -79,11 +79,12 @@ class WindowSettings {
 class ContextSettings {
 	public:
 
-	inline ContextSettings( bool vsync, EEGL_version version = GLv_default, bool doubleBuffering = true, Uint32 depthBufferSize = 24, Uint32 stencilBufferSize = 1, Uint32 multisamples = 0, bool sharedGLContext = true ) :
+	inline ContextSettings( bool vsync, EEGL_version version = GLv_default, bool doubleBuffering = true, Uint32 depthBufferSize = 24, Uint32 stencilBufferSize = 1, Uint32 multisamples = 0, bool sharedGLContext = true, Int32 frameRateLimit = 0 ) :
 		Version( version ),
 		DepthBufferSize( depthBufferSize ),
 		StencilBufferSize( stencilBufferSize ),
 		Multisamples( multisamples ),
+		FrameRateLimit( frameRateLimit ),
 		VSync( vsync ),
 		DoubleBuffering( doubleBuffering ),
 		SharedGLContext( sharedGLContext )
@@ -94,6 +95,7 @@ class ContextSettings {
 		DepthBufferSize( 24 ),
 		StencilBufferSize( 1 ),
 		Multisamples( 0 ),
+		FrameRateLimit( 0 ),
 		VSync( false ),
 		DoubleBuffering( true ),
 		SharedGLContext( true )
@@ -103,6 +105,7 @@ class ContextSettings {
 	Uint32			DepthBufferSize;
 	Uint32			StencilBufferSize;
 	Uint32			Multisamples;
+	Int32			FrameRateLimit;
 	bool			VSync;
 	bool			DoubleBuffering;
 	bool			SharedGLContext;

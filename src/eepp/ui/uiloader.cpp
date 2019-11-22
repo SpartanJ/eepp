@@ -12,7 +12,7 @@ UILoader::UILoader() :
 	UIWidget( "loader" ),
 	mRadius(0),
 	mOutlineThickness( PixelDensity::dpToPx(8) ),
-	mColor( Color::Green ),
+	mColor( Color::Transparent ),
 	mArcAngle(0),
 	mArcStartAngle(0),
 	mProgress(0),
@@ -25,7 +25,7 @@ UILoader::UILoader() :
 
 	mArc.setFillMode( DRAW_FILL );
 	mCircle.setFillMode( DRAW_FILL );
-	setFillColor( mColor );
+	setFillColor( Color::White );
 }
 
 UILoader::~UILoader() {
@@ -63,7 +63,7 @@ void UILoader::draw() {
 }
 
 void UILoader::scheduledUpdate( const Time& time ) {
-	if ( mVisible && isMeOrParentTreeVisible() )
+	if ( mVisible && isMeOrParentTreeVisible() && mAnimationSpeed != 0.f )
 		invalidateDraw();
 
 	if ( mIndeterminate ) {
@@ -87,8 +87,11 @@ void UILoader::scheduledUpdate( const Time& time ) {
 }
 
 UILoader * UILoader::setOutlineThickness( const Float& thickness ) {
-	mOutlineThickness = thickness;
-	mCircle.setRadius( PixelDensity::dpToPx( mRadius ) - PixelDensity::dpToPx( mOutlineThickness ) );
+	if ( thickness != mOutlineThickness ) {
+		mOutlineThickness = thickness;
+		mCircle.setRadius( PixelDensity::dpToPx( mRadius ) - PixelDensity::dpToPx( mOutlineThickness ) );
+		invalidateDraw();
+	}
 	return this;
 }
 
@@ -97,10 +100,13 @@ const Float& UILoader::getOutlineThickness() const {
 }
 
 UILoader * UILoader::setRadius( const Float& radius ) {
-	mRadius = radius;
-	Float rRadius = PixelDensity::dpToPx( radius );
-	mCircle.setRadius( rRadius - PixelDensity::dpToPx( mOutlineThickness ) );
-	mArc.setRadius( rRadius );
+	if ( radius != mRadius ) {
+		mRadius = radius;
+		Float rRadius = PixelDensity::dpToPx( radius );
+		mCircle.setRadius( rRadius - PixelDensity::dpToPx( mOutlineThickness ) );
+		mArc.setRadius( rRadius );
+		invalidateDraw();
+	}
 	return this;
 }
 
@@ -109,9 +115,12 @@ const Float& UILoader::getRadius() const {
 }
 
 UILoader * UILoader::setFillColor( const Color& color ) {
-	mColor = color;
-	mArc.setColor( mColor );
-	mCircle.setColor( mColor );
+	if ( color != mColor ) {
+		mColor = color;
+		mArc.setColor( mColor );
+		mCircle.setColor( mColor );
+		invalidateDraw();
+	}
 	return this;
 }
 
@@ -162,18 +171,24 @@ const bool& UILoader::isIndeterminate() const {
 }
 
 UILoader * UILoader::setIndeterminate( const bool& indeterminate ) {
-	mIndeterminate = indeterminate;
+	if ( indeterminate != mIndeterminate ) {
+		mIndeterminate = indeterminate;
+		invalidateDraw();
+	}
 	return this;
 }
 
 UILoader * UILoader::setProgress( const Float& progress ) {
-	mProgress = eemax( 0.f, eemin( progress, mMaxProgress ) );
+	if ( progress != mProgress ) {
+		mProgress = eemax( 0.f, eemin( progress, mMaxProgress ) );
 
-	if ( !mIndeterminate ) {
-		mArcAngle = progress / mMaxProgress * 360.f;
-		mArc.setArcAngle( mArcAngle );
+		if ( !mIndeterminate ) {
+			mArcAngle = progress / mMaxProgress * 360.f;
+			mArc.setArcAngle( mArcAngle );
+		}
+
+		invalidateDraw();
 	}
-
 	return this;
 }
 
@@ -186,7 +201,10 @@ const Float& UILoader::getMaxProgress() const {
 }
 
 UILoader * UILoader::setMaxProgress( const Float& maxProgress ) {
-	mMaxProgress = maxProgress;
+	if ( maxProgress != mMaxProgress ) {
+		mMaxProgress = maxProgress;
+		invalidateDraw();
+	}
 	return this;
 }
 
@@ -195,7 +213,10 @@ const Float& UILoader::getAnimationSpeed() const {
 }
 
 UILoader * UILoader::setAnimationSpeed( const Float& animationSpeed ) {
-	mAnimationSpeed = animationSpeed;
+	if ( animationSpeed != mAnimationSpeed ) {
+		mAnimationSpeed = animationSpeed;
+		invalidateDraw();
+	}
 	return this;
 }
 
@@ -230,7 +251,10 @@ Float UILoader::getArcStartAngle() const {
 }
 
 UILoader * UILoader::setArcStartAngle( const Float& arcStartAngle ) {
-	mArcStartAngle = arcStartAngle;
+	if ( arcStartAngle != mArcStartAngle ) {
+		mArcStartAngle = arcStartAngle;
+		invalidateDraw();
+	}
 	return this;
 }
 

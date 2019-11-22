@@ -50,6 +50,7 @@ Window::Window( WindowSettings Settings, ContextSettings Context, Clipboard * Cl
 {
 	mWindow.WindowConfig	= Settings;
 	mWindow.ContextConfig	= Context;
+	setFrameRateLimit( Context.FrameRateLimit );
 }
 
 Window::~Window() {

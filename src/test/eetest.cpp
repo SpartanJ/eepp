@@ -135,6 +135,7 @@ void EETest::init() {
 #endif
 
 	mMusEnabled			= Ini.getValueB( "EEPP", "Music", false );
+	mLastFPSLimit		= Ini.getValueI( "EEPP", "FrameRateLimit", 0 );
 	Int32 StartScreen	= Ini.getValueI( "EEPP", "StartScreen", 5 );
 
 	WindowSettings WinSettings	= EE->createWindowSettings( &Ini );
@@ -1996,7 +1997,7 @@ void EETest::process() {
 	if ( NULL != mWindow && mWindow->isOpen() ) {
 		TestInstance = this;
 
-		mWindow->runMainLoop( &mainLoop );
+		mWindow->runMainLoop( &mainLoop, mLastFPSLimit );
 	}
 
 	end();

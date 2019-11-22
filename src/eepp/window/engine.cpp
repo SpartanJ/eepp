@@ -309,13 +309,14 @@ ContextSettings Engine::createContextSettings( IniFile * ini, std::string iniKey
 	else if (	"2" == GLVersion || "opengl 2" == GLVersion || "gl2" == GLVersion || "gl 2" == GLVersion )										GLVer = GLv_2;
 	else																																		GLVer = GLv_default;
 
-	bool doubleBuffering 		= ini->getValueB( iniKeyName, "DoubleBuffering", true );
 	int depthBufferSize 		= ini->getValueI( iniKeyName, "DepthBufferSize", 24 );
 	int stencilBufferSize 		= ini->getValueI( iniKeyName, "StencilBufferSize", 1 );
 	int multisamples			= ini->getValueI( iniKeyName, "Multisamples", 0 );
-	bool sharedGLContext			= ini->getValueB( iniKeyName, "SharedGLContext", false );
+	int frameRateLimit			= ini->getValueI( iniKeyName, "FrameRateLimit", 0 );
+	bool doubleBuffering 		= ini->getValueB( iniKeyName, "DoubleBuffering", true );
+	bool sharedGLContext		= ini->getValueB( iniKeyName, "SharedGLContext", false );
 
-	return ContextSettings( VSync, GLVer, doubleBuffering, depthBufferSize, stencilBufferSize, multisamples, sharedGLContext );
+	return ContextSettings( VSync, GLVer, doubleBuffering, depthBufferSize, stencilBufferSize, multisamples, sharedGLContext, frameRateLimit );
 }
 
 ContextSettings Engine::createContextSettings( std::string iniPath, std::string iniKeyName ) {
