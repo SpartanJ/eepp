@@ -104,7 +104,7 @@ void UIImage::calcDestSize() {
 
 			mDestSize = Sizef( pxSize.x * Scale1, pxSize.y * Scale1 );
 		} else {
-			mDestSize = Sizef( pxSize.x, pxSize.y );
+			mDestSize = pxSize;
 		}
 	} else {
 		if ( NULL == mDrawable)

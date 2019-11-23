@@ -2,6 +2,8 @@
 #include <eepp/core/core.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/drawableresource.hpp>
+#include <eepp/ui/css/stylesheetlength.hpp>
+#include <eepp/ui/uinode.hpp>
 
 namespace EE { namespace UI {
 
@@ -12,12 +14,13 @@ UINodeDrawable::Repeat UINodeDrawable::repeatFromText( const std::string& text )
 	return UINodeDrawable::Repeat::NoRepeat;
 }
 
-UINodeDrawable * UINodeDrawable::New() {
-	return eeNew( UINodeDrawable, () );
+UINodeDrawable * UINodeDrawable::New( UINode * owner ) {
+	return eeNew( UINodeDrawable, ( owner ) );
 }
 
-UINodeDrawable::UINodeDrawable() :
+UINodeDrawable::UINodeDrawable( UINode * owner ) :
 	Drawable( Drawable::UINODEDRAWABLE ),
+	mOwner( owner ),
 	mNeedsUpdate(true),
 	mClipEnabled(false)
 {
@@ -72,6 +75,13 @@ void UINodeDrawable::setDrawableRepeat( int index, const std::string& repeatRule
 	getLayer( index )->setRepeat( repeatFromText( repeatRule ) );
 }
 
+void UINodeDrawable::setDrawableSize( int index, const std::string& sizeEq ) {
+	if ( mSizeEq[index] != sizeEq ) {
+		mSizeEq[index] = sizeEq;
+		mNeedsUpdate = true;
+	}
+}
+
 void UINodeDrawable::setBackgroundColor(const Color& color) {
 	mBackgroundColor.setColor( color );
 }
@@ -86,6 +96,10 @@ bool UINodeDrawable::getClipEnabled() const {
 
 void UINodeDrawable::setClipEnabled(bool clipEnabled) {
 	mClipEnabled = clipEnabled;
+}
+
+void UINodeDrawable::invalidate() {
+	mNeedsUpdate = true;
 }
 
 Sizef UINodeDrawable::getSize() {
@@ -106,12 +120,12 @@ void UINodeDrawable::draw( const Vector2f& position, const Sizef& size ) {
 void UINodeDrawable::draw( const Vector2f& position, const Sizef& size, const Uint32& alpha ) {
 	if ( position != mPosition ) {
 		mPosition = position;
-		mNeedsUpdate = true;
+		invalidate();
 	}
 
 	if ( size != mSize ) {
 		mSize = size;
-		mNeedsUpdate = true;
+		invalidate();
 	}
 
 	if ( mNeedsUpdate )
@@ -158,11 +172,11 @@ void UINodeDrawable::draw() {
 }
 
 void UINodeDrawable::onPositionChange() {
-	mNeedsUpdate = true;
+	invalidate();
 }
 
 void UINodeDrawable::onSizeChange() {
-	mNeedsUpdate = true;
+	invalidate();
 }
 
 void UINodeDrawable::update() {
@@ -172,12 +186,15 @@ void UINodeDrawable::update() {
 	for ( size_t i = 0; i < mGroup.size(); i++ ) {
 		UINodeDrawable::LayerDrawable * drawable = mGroup[i];
 		drawable->setPosition( mPosition );
+		drawable->setSizeEq( mSizeEq[i].empty() ? "auto" : mSizeEq[i] );
 		drawable->setPositionEq( mPosEq[i] );
 		drawable->setSize( mSize );
 	}
 
 	mNeedsUpdate = false;
 }
+
+/**** UINodeDrawable::LayerDrawable ****/
 
 UINodeDrawable::LayerDrawable * UINodeDrawable::LayerDrawable::New( UINodeDrawable * container ) {
 	return eeNew( UINodeDrawable::LayerDrawable, ( container ) );
@@ -186,6 +203,7 @@ UINodeDrawable::LayerDrawable * UINodeDrawable::LayerDrawable::New( UINodeDrawab
 UINodeDrawable::LayerDrawable::LayerDrawable( UINodeDrawable * container ) :
 	Drawable(UINODEDRAWABLE_LAYERDRAWABLE),
 	mContainer(container),
+	mDrawableSizeEq("auto"),
 	mNeedsUpdate(false),
 	mUpdatePosEq(false),
 	mOwnsDrawable(false),
@@ -213,12 +231,12 @@ void UINodeDrawable::LayerDrawable::draw( const Vector2f& position ) {
 void UINodeDrawable::LayerDrawable::draw( const Vector2f& position, const Sizef& size ) {
 	if ( position != mPosition ) {
 		mPosition = position;
-		mNeedsUpdate = true;
+		invalidate();
 	}
 
 	if ( size != mSize ) {
 		mSize = size;
-		mNeedsUpdate = true;
+		invalidate();
 	}
 
 	if ( mDrawable == NULL )
@@ -227,7 +245,7 @@ void UINodeDrawable::LayerDrawable::draw( const Vector2f& position, const Sizef&
 	if ( mNeedsUpdate )
 		update();
 
-	mDrawable->draw( mPosition + mOffset, mSize );
+	mDrawable->draw( mPosition + mOffset, mDrawableSize );
 }
 
 Sizef UINodeDrawable::LayerDrawable::getSize() {
@@ -237,8 +255,7 @@ Sizef UINodeDrawable::LayerDrawable::getSize() {
 void UINodeDrawable::LayerDrawable::setSize(const Sizef& size) {
 	if ( size != mSize ) {
 		mSize = size;
-		mNeedsUpdate = true;
-		mUpdatePosEq = true;
+		invalidate();
 	}
 }
 
@@ -282,8 +299,14 @@ const Vector2f& UINodeDrawable::LayerDrawable::getOffset() const {
 void UINodeDrawable::LayerDrawable::setPositionEq( const std::string& positionEq ) {
 	if ( mPositionEq != positionEq ) {
 		mPositionEq = positionEq;
-		mUpdatePosEq = true;
-		mNeedsUpdate = true;
+		invalidate();
+	}
+}
+
+void UINodeDrawable::LayerDrawable::setSizeEq(const std::string& size) {
+	if ( mDrawableSizeEq != size ) {
+		mDrawableSizeEq = String::trim( size );
+		invalidate();
 	}
 }
 
@@ -293,21 +316,99 @@ const UINodeDrawable::Repeat& UINodeDrawable::LayerDrawable::getRepeat() const {
 
 void UINodeDrawable::LayerDrawable::setRepeat( const UINodeDrawable::Repeat& repeat ) {
 	mRepeat = repeat;
+	invalidate();
+}
+
+void UINodeDrawable::LayerDrawable::invalidate() {
 	mNeedsUpdate = true;
 	mUpdatePosEq = true;
 }
 
 void UINodeDrawable::LayerDrawable::onPositionChange() {
-	mNeedsUpdate = true;
-	mUpdatePosEq = true;
+	invalidate();
 }
 
 void UINodeDrawable::LayerDrawable::update() {
-	// TODO: Implement background-position and background-repeat
+	if ( mDrawable == NULL )
+		return;
+
+	if ( mDrawableSizeEq == "auto" ) {
+		if ( mDrawable->getDrawableType() == Drawable::RECTANGLE ) {
+			mDrawableSize = mSize;
+		} else {
+			mDrawableSize = PixelDensity::dpToPx( mDrawable->getSize() );
+		}
+	} else if ( mDrawableSizeEq == "expand" ) {
+		mDrawableSize = mSize;
+	} else if ( mDrawableSizeEq == "contain" ) {
+		Sizef pxSize( PixelDensity::dpToPx( mDrawable->getSize() ) );
+		Float Scale1 = mSize.getWidth() / pxSize.getWidth();
+		Float Scale2 = mSize.getHeight() / pxSize.getHeight();
+		if ( Scale1 < 1 || Scale2 < 1 ) {
+			Scale1 = eemin( Scale1, Scale2 );
+			mDrawableSize = Sizef( pxSize.getWidth() * Scale1, pxSize.getHeight() * Scale1 );
+		} else {
+			mDrawableSize = pxSize;
+		}
+	} else if ( mDrawableSizeEq == "cover" ) {
+		Sizef pxSize( PixelDensity::dpToPx( mDrawable->getSize() ) );
+		Float Scale1 = mSize.getWidth() / pxSize.getWidth();
+		Float Scale2 = mSize.getHeight() / pxSize.getHeight();
+		Scale1 = eemax( Scale1, Scale2 );
+		mDrawableSize = Sizef( pxSize.getWidth() * Scale1, pxSize.getHeight() * Scale1 );
+	} else {
+		std::vector<std::string> sizePart = String::split( mDrawableSizeEq, ' ' );
+
+		if ( sizePart.size() == 1 ) {
+			sizePart.push_back( "auto" );
+		}
+
+		if ( sizePart.size() == 2 ) {
+			if ( sizePart[0] == "auto" && sizePart[1] == "auto" ) {
+				if ( mDrawable->getDrawableType() == Drawable::RECTANGLE ) {
+					mDrawableSize = mSize;
+				} else {
+					mDrawableSize = PixelDensity::dpToPx( mDrawable->getSize() );
+				}
+			} else if ( sizePart[0] != "auto" ) {
+				CSS::StyleSheetLength wl( CSS::StyleSheetLength::fromString( sizePart[0] ) );
+				mDrawableSize.x = mContainer->getOwner()->lengthAsPixels( wl, Sizef::Zero, true );
+
+				if ( sizePart[1] == "auto" ) {
+					Sizef pxSize( PixelDensity::dpToPx( mDrawable->getSize() ) );
+					mDrawableSize.y = pxSize.y * ( mDrawableSize.getWidth() / pxSize.getWidth() );
+				} else {
+					CSS::StyleSheetLength hl( CSS::StyleSheetLength::fromString( sizePart[1] ) );
+					mDrawableSize.y = mContainer->getOwner()->lengthAsPixels( hl, Sizef::Zero, false );
+				}
+			} else {
+				CSS::StyleSheetLength hl( CSS::StyleSheetLength::fromString( sizePart[1] ) );
+				mDrawableSize.y = mContainer->getOwner()->lengthAsPixels( hl, Sizef::Zero, false );
+
+				Sizef pxSize( PixelDensity::dpToPx( mDrawable->getSize() ) );
+				mDrawableSize.x = pxSize.x * ( mDrawableSize.y / pxSize.getHeight()  );
+			}
+		}
+	}
+
 	if ( mUpdatePosEq ) {
+		std::vector<std::string> pos = String::split( mPositionEq, ' ' );
+
+		if ( pos.size() == 1 ) {
+			pos.push_back( "center" );
+		}
+
+		if ( pos.size() == 2 ) {
+			CSS::StyleSheetLength xl( CSS::StyleSheetLength::fromString( pos[0] ) );
+			CSS::StyleSheetLength yl( CSS::StyleSheetLength::fromString( pos[1] ) );
+			mOffset.x = mContainer->getOwner()->lengthAsPixels( xl, mDrawableSize, true );
+			mOffset.y = mContainer->getOwner()->lengthAsPixels( yl, mDrawableSize, false );
+		}
 
 		mUpdatePosEq = false;
 	}
+
+	mNeedsUpdate = false;
 }
 
 }}

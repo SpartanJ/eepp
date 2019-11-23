@@ -10,6 +10,8 @@ using namespace EE::Graphics;
 
 namespace EE { namespace UI {
 
+class UINode;
+
 class EE_API UINodeDrawable : public Drawable {
 	public:
 		enum Repeat {
@@ -49,14 +51,20 @@ class EE_API UINodeDrawable : public Drawable {
 
 				void setPositionEq( const std::string& offset );
 
+				void setSizeEq( const std::string& size );
+
 				const Repeat& getRepeat() const;
 
 				void setRepeat( const Repeat& repeat );
+
+				void invalidate();
 			protected:
 				UINodeDrawable * mContainer;
 				Sizef mSize;
+				Sizef mDrawableSize;
 				Vector2f mOffset;
 				std::string mPositionEq;
+				std::string mDrawableSizeEq;
 				bool mNeedsUpdate;
 				bool mUpdatePosEq;
 				bool mOwnsDrawable;
@@ -69,9 +77,9 @@ class EE_API UINodeDrawable : public Drawable {
 				void update();
 		};
 
-		static UINodeDrawable * New();
+		static UINodeDrawable * New( UINode * owner );
 
-		UINodeDrawable();
+		UINodeDrawable( UINode * owner );
 
 		virtual ~UINodeDrawable();
 
@@ -103,6 +111,8 @@ class EE_API UINodeDrawable : public Drawable {
 
 		void setDrawableRepeat( int index, const std::string& repeatRule );
 
+		void setDrawableSize( int index, const std::string& sizeEq );
+
 		void setBackgroundColor( const Color& color );
 
 		Color getBackgroundColor() const;
@@ -110,10 +120,16 @@ class EE_API UINodeDrawable : public Drawable {
 		bool getClipEnabled() const;
 
 		void setClipEnabled(bool clipEnabled);
+
+		void invalidate();
+
+		UINode * getOwner() { return mOwner; }
 	protected:
+		UINode * mOwner;
 		RectangleDrawable mBackgroundColor;
 		std::map<int,LayerDrawable*> mGroup;
 		std::map<int,std::string> mPosEq;
+		std::map<int,std::string> mSizeEq;
 		Sizef mSize;
 		bool mNeedsUpdate;
 		bool mClipEnabled;

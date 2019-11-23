@@ -3,7 +3,6 @@
 
 #include <eepp/scene/nodeattribute.hpp>
 #include <eepp/ui/uinode.hpp>
-#include <eepp/ui/css/stylesheetlength.hpp>
 #include <eepp/ui/css/stylesheetelement.hpp>
 #include <eepp/ui/css/stylesheetselector.hpp>
 
@@ -247,10 +246,6 @@ class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
 		UIWidget * querySelector( const CSS::StyleSheetSelector& selector );
 
 		std::vector<UIWidget*> querySelectorAll( const CSS::StyleSheetSelector& selector );
-
-		virtual Float lengthAsPixels( const CSS::StyleSheetLength& length, const bool& percentAsWidth = true );
-
-		Float lengthAsDp( const CSS::StyleSheetLength& length, const bool& percentAsWidth = true );
 };
 
 }}

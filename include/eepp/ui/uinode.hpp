@@ -7,6 +7,7 @@
 #include <eepp/ui/uiskin.hpp>
 #include <eepp/ui/uiskinstate.hpp>
 #include <eepp/scene/node.hpp>
+#include <eepp/ui/css/stylesheetlength.hpp>
 
 namespace EE { namespace Graphics {
 class Drawable;
@@ -95,6 +96,8 @@ class EE_API UINode : public Node {
 		UINode * setBackgroundPosition( const std::string& positionEq, int index = 0 );
 
 		UINode * setBackgroundRepeat( const std::string& repeatRule, int index = 0 );
+
+		UINode * setBackgroundSize( const std::string& sizeEq, int index = 0 );
 
 		Color getBackgroundColor() const;
 
@@ -191,6 +194,10 @@ class EE_API UINode : public Node {
 		const Uint32& getDragButton() const;
 
 		virtual void setFocus();
+
+		virtual Float lengthAsPixels( const CSS::StyleSheetLength& length, const Sizef& drawableSize, const bool& percentAsWidth = true );
+
+		Float lengthAsDp( const CSS::StyleSheetLength& length, const Sizef& drawableSize, const bool& percentAsWidth = true );
 	protected:
 		Vector2f		mDpPos;
 		Sizef			mDpSize;

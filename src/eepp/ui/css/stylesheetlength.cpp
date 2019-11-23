@@ -118,10 +118,19 @@ StyleSheetLength& StyleSheetLength::operator=( const StyleSheetLength& val) {
 	return *this;
 }
 
-StyleSheetLength StyleSheetLength::fromString( const std::string& str , const Float& defaultValue ) {
+static std::string positionToPercentage( const std::string& pos ) {
+	if ( pos == "center" ) return "50%";
+	if ( pos == "left" || pos == "top" ) return "0%";
+	if ( pos == "right" || pos == "bottom" ) return "100%";
+	return pos;
+}
+
+StyleSheetLength StyleSheetLength::fromString( std::string str , const Float& defaultValue ) {
 	StyleSheetLength length;
+	length.setValue( defaultValue, Unit::Px );
 	std::string num;
 	std::string unit;
+	str = positionToPercentage( str );
 
 	for ( std::size_t i = 0; i < str.size(); i++ ) {
 		if ( String::isNumber( str[i], true ) || ( '-' == str[i] && i == 0 ) || ( '+' == str[i] && i == 0 ) ) {

@@ -411,6 +411,11 @@ UINode* UINode::setBackgroundRepeat( const std::string& repeatRule, int index ) 
 	return this;
 }
 
+UINode* UINode::setBackgroundSize( const std::string& sizeEq, int index ) {
+	setBackgroundFillEnabled( true )->setDrawableSize( index, sizeEq );
+	return this;
+}
+
 Color UINode::getBackgroundColor() const {
 	return NULL != mBackground ? mBackground->getBackgroundColor() : Color::Transparent;
 }
@@ -602,7 +607,7 @@ void UINode::internalDraw() {
 
 UINodeDrawable * UINode::getBackground() {
 	if ( NULL == mBackground ) {
-		mBackground = UINodeDrawable::New();
+		mBackground = UINodeDrawable::New( this );
 	}
 
 	return mBackground;
@@ -610,7 +615,7 @@ UINodeDrawable * UINode::getBackground() {
 
 UINodeDrawable * UINode::getForeground() {
 	if ( NULL == mForegroundState ) {
-		mForegroundState = UINodeDrawable::New();
+		mForegroundState = UINodeDrawable::New( this );
 	}
 
 	return mForegroundState;
@@ -973,6 +978,23 @@ Uint32 UINode::onFocusLoss() {
 	popState( UIState::StateFocus );
 
 	return Node::onFocusLoss();
+}
+
+Float UINode::lengthAsPixels( const CSS::StyleSheetLength& length, const Sizef& drawableSize, const bool& percentAsWidth ) {
+	return length.asPixels(
+		percentAsWidth ? getParent()->getPixelsSize().getWidth() - drawableSize.getWidth() :
+						 getParent()->getPixelsSize().getHeight() - drawableSize.getHeight(),
+		getSceneNode()->getPixelsSize(),
+		Engine::instance()->getDisplayManager()->getDisplayIndex(
+			getSceneNode()->getWindow()->getCurrentDisplayIndex()
+		)->getDPI(),
+		12,
+		12
+	);
+}
+
+Float UINode::lengthAsDp( const CSS::StyleSheetLength& length, const Sizef& drawableSize, const bool& percentAsWidth ) {
+	return PixelDensity::pxToDp( lengthAsPixels( length, drawableSize, percentAsWidth ) );
 }
 
 }}

@@ -807,23 +807,6 @@ std::vector<UIWidget*> UIWidget::querySelectorAll( const CSS::StyleSheetSelector
 	return widgets;
 }
 
-Float UIWidget::lengthAsPixels( const CSS::StyleSheetLength& length, const bool& percentAsWidth ) {
-	return length.asPixels(
-		percentAsWidth ? getParent()->getPixelsSize().getWidth() :
-						 getParent()->getPixelsSize().getHeight(),
-		getSceneNode()->getPixelsSize(),
-		Engine::instance()->getDisplayManager()->getDisplayIndex(
-			getSceneNode()->getWindow()->getCurrentDisplayIndex()
-		)->getDPI(),
-		12,
-		12
-	);
-}
-
-Float UIWidget::lengthAsDp( const CSS::StyleSheetLength& length, const bool& percentAsWidth ) {
-	return PixelDensity::pxToDp( lengthAsPixels( length, percentAsWidth ) );
-}
-
 UIWidget* UIWidget::querySelector( const std::string& selector ) {
 	return querySelector( CSS::StyleSheetSelector( selector ) );
 }
@@ -966,6 +949,8 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		setBackgroundPosition( attribute.value(), 0 );
 	} else if ( "background-repeat" == name || "backgroundrepeat" == name ) {
 		setBackgroundRepeat( attribute.value(), 0 );
+	} else if ( "background-size" == name || "backgroundsize" == name ) {
+		setBackgroundSize( attribute.value(), 0 );
 	} else if ( "foreground" == name ) {
 		if ( Color::isColorString( attribute.getValue() ) ) {
 			setAttribute( NodeAttribute( "foreground-color", attribute.getValue() ) );

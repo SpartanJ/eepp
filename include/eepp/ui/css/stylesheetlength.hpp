@@ -52,7 +52,7 @@ class StyleSheetLength {
 
 		StyleSheetLength& operator=( const Float& val );
 
-		static StyleSheetLength fromString( const std::string& str, const Float& defaultValue = 0 );
+		static StyleSheetLength fromString( std::string str, const Float& defaultValue = 0 );
 	protected:
 		Unit mUnit;
 		Float mValue;
