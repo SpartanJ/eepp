@@ -48,27 +48,27 @@ UITheme * UITheme::load( const std::string & name, const std::string & abbr, con
 	return loadFromTextureAtlas( theme, tgl.getTextureAtlas() );
 }
 
-UITheme * UITheme::loadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtlas * TextureAtlas ) {
-	eeASSERT( NULL != tTheme && NULL != TextureAtlas );
+UITheme * UITheme::loadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtlas * textureAtlas ) {
+	eeASSERT( NULL != tTheme && NULL != textureAtlas );
 
 	/** Themes use nearest filter by default, force the filter to the textures. */
-	for ( Uint32 tC = 0; tC < TextureAtlas->getTexturesCount(); tC++ ) {
-		TextureAtlas->getTexture( tC )->setFilter( Texture::TextureFilter::Nearest );
+	for ( Uint32 tC = 0; tC < textureAtlas->getTexturesCount(); tC++ ) {
+		textureAtlas->getTexture( tC )->setFilter( Texture::TextureFilter::Nearest );
 	}
 
 	Clock TE;
 
-	tTheme->setTextureAtlas( TextureAtlas );
+	tTheme->setTextureAtlas( textureAtlas );
 
-	std::list<TextureRegion*>& resources = TextureAtlas->getResources();
+	std::list<TextureRegion*>& resources = textureAtlas->getResources();
 	std::list<TextureRegion*>::iterator it;
 	std::string sAbbr( tTheme->getAbbr() + "_" );
 	std::map<std::string, UISkin*> skins;
 
 	for ( it = resources.begin(); it != resources.end(); ++it ) {
-		TextureRegion* TextureRegion = *it;
+		TextureRegion* textureRegion = *it;
 
-		std::string name( TextureRegion->getName() );
+		std::string name( textureRegion->getName() );
 
 		if ( String::startsWith( name, sAbbr ) ) {
 			std::vector<std::string> dotParts = String::split( name, '.' );
@@ -98,7 +98,7 @@ UITheme * UITheme::loadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtla
 
 				std::string skinName( elemNameFromSkin( nameParts ) );
 
-				Drawable * drawable = NinePatchManager::instance()->add( NinePatch::New( TextureRegion, l, t, r, b, realName ) );
+				Drawable * drawable = NinePatchManager::instance()->add( NinePatch::New( textureRegion, l, t, r, b, realName ) );
 
 				if ( skins.find( skinName ) == skins.end() )
 					skins[ skinName ] = tTheme->add( UISkin::New( skinName ) );
@@ -121,7 +121,7 @@ UITheme * UITheme::loadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtla
 							skins[ skinName ] = tTheme->add( UISkin::New( skinName ) );
 
 						if ( -1 != stateNum )
-							skins[ skinName ]->setStateDrawable( stateNum, TextureRegion );
+							skins[ skinName ]->setStateDrawable( stateNum, textureRegion );
 					}
 				}
 			}

@@ -51,7 +51,7 @@ TextureRegion::TextureRegion( const Uint32& TexId, const std::string& name ) :
 	mTexId( TexId ),
 	mTexture( TextureFactory::instance()->getTexture( TexId ) ),
 	mSrcRect( Rect( 0, 0, NULL != mTexture ? mTexture->getImageWidth() : 0, NULL != mTexture ? mTexture->getImageHeight() : 0 ) ),
-	mOriDestSize( (Float)mSrcRect.getSize().getWidth(), (Float)mSrcRect.getSize().getHeight() ),
+	mOriDestSize( PixelDensity::dpToPx( Sizef( (Float)mSrcRect.getSize().getWidth(), (Float)mSrcRect.getSize().getHeight() ) ) ),
 	mDestSize( mOriDestSize ),
 	mOffset(0,0),
 	mPixelDensity(1)
@@ -65,7 +65,7 @@ TextureRegion::TextureRegion( const Uint32& TexId, const Rect& SrcRect, const st
 	mTexId( TexId ),
 	mTexture( TextureFactory::instance()->getTexture( TexId ) ),
 	mSrcRect( SrcRect ),
-	mOriDestSize( (Float)( mSrcRect.Right - mSrcRect.Left ), (Float)( mSrcRect.Bottom - mSrcRect.Top ) ),
+	mOriDestSize( PixelDensity::dpToPx( Sizef( (Float)( mSrcRect.Right - mSrcRect.Left ), (Float)( mSrcRect.Bottom - mSrcRect.Top ) ) ) ),
 	mDestSize( mOriDestSize ),
 	mOffset(0,0),
 	mPixelDensity(1)
@@ -367,6 +367,14 @@ Sizef TextureRegion::getSize() {
 	return Sizef( (Float)((Int32)( mOriDestSize.getWidth() / mPixelDensity )), (Float)((Int32)( mOriDestSize.getHeight() / mPixelDensity )) );
 }
 
+Sizei TextureRegion::getDpSize() {
+	return Sizei( (Int32)( mOriDestSize.getWidth() / mPixelDensity ), (Int32)( mOriDestSize.getHeight() / mPixelDensity ) );
+}
+
+Sizei TextureRegion::getPxSize() {
+	return Sizei( (Int32)( mOriDestSize.getWidth() / mPixelDensity * PixelDensity::getPixelDensity() ), (Int32)( mOriDestSize.getHeight() / mPixelDensity * PixelDensity::getPixelDensity() ) );
+}
+
 const Uint8* TextureRegion::getPixelsPtr() {
 	if ( mPixels == NULL ) {
 		lock();
@@ -407,14 +415,6 @@ Float TextureRegion::getPixelDensity() const {
 
 void TextureRegion::setPixelDensity( const Float & pixelDensity ) {
 	mPixelDensity = pixelDensity;
-}
-
-Sizei TextureRegion::getDpSize() {
-	return Sizei( (Int32)( mOriDestSize.getWidth() / mPixelDensity ), (Int32)( mOriDestSize.getHeight() / mPixelDensity ) );
-}
-
-Sizei TextureRegion::getPxSize() {
-	return Sizei( (Int32)( mOriDestSize.getWidth() / mPixelDensity * PixelDensity::getPixelDensity() ), (Int32)( mOriDestSize.getHeight() / mPixelDensity * PixelDensity::getPixelDensity() ) );
 }
 
 Sizef TextureRegion::getOriDestSize() const {

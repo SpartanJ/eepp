@@ -282,7 +282,7 @@ void UINodeDrawable::LayerDrawable::setDrawable( Drawable* drawable, const bool&
 
 	if ( mDrawable->isDrawableResource() ) {
 		mResourceChangeCbId = reinterpret_cast<DrawableResource*>( mDrawable )->pushResourceChangeCallback( [&] ( DrawableResource::Event event, DrawableResource* ) {
-			mNeedsUpdate = true;
+			invalidate();
 			if ( event == DrawableResource::Event::Unload ) {
 				mResourceChangeCbId = 0;
 				mDrawable = NULL;
@@ -336,26 +336,26 @@ void UINodeDrawable::LayerDrawable::update() {
 		if ( mDrawable->getDrawableType() == Drawable::RECTANGLE ) {
 			mDrawableSize = mSize;
 		} else {
-			mDrawableSize = PixelDensity::dpToPx( mDrawable->getSize() );
+			mDrawableSize = mDrawable->getSize();
 		}
 	} else if ( mDrawableSizeEq == "expand" ) {
 		mDrawableSize = mSize;
 	} else if ( mDrawableSizeEq == "contain" ) {
-		Sizef pxSize( PixelDensity::dpToPx( mDrawable->getSize() ) );
-		Float Scale1 = mSize.getWidth() / pxSize.getWidth();
-		Float Scale2 = mSize.getHeight() / pxSize.getHeight();
+		Sizef drawableSize( mDrawable->getSize() );
+		Float Scale1 = mSize.getWidth() / drawableSize.getWidth();
+		Float Scale2 = mSize.getHeight() / drawableSize.getHeight();
 		if ( Scale1 < 1 || Scale2 < 1 ) {
 			Scale1 = eemin( Scale1, Scale2 );
-			mDrawableSize = Sizef( pxSize.getWidth() * Scale1, pxSize.getHeight() * Scale1 );
+			mDrawableSize = Sizef( drawableSize.getWidth() * Scale1, drawableSize.getHeight() * Scale1 );
 		} else {
-			mDrawableSize = pxSize;
+			mDrawableSize = drawableSize;
 		}
 	} else if ( mDrawableSizeEq == "cover" ) {
-		Sizef pxSize( PixelDensity::dpToPx( mDrawable->getSize() ) );
-		Float Scale1 = mSize.getWidth() / pxSize.getWidth();
-		Float Scale2 = mSize.getHeight() / pxSize.getHeight();
+		Sizef drawableSize( mDrawable->getSize() );
+		Float Scale1 = mSize.getWidth() / drawableSize.getWidth();
+		Float Scale2 = mSize.getHeight() / drawableSize.getHeight();
 		Scale1 = eemax( Scale1, Scale2 );
-		mDrawableSize = Sizef( pxSize.getWidth() * Scale1, pxSize.getHeight() * Scale1 );
+		mDrawableSize = Sizef( drawableSize.getWidth() * Scale1, drawableSize.getHeight() * Scale1 );
 	} else {
 		std::vector<std::string> sizePart = String::split( mDrawableSizeEq, ' ' );
 
@@ -368,15 +368,15 @@ void UINodeDrawable::LayerDrawable::update() {
 				if ( mDrawable->getDrawableType() == Drawable::RECTANGLE ) {
 					mDrawableSize = mSize;
 				} else {
-					mDrawableSize = PixelDensity::dpToPx( mDrawable->getSize() );
+					mDrawableSize = mDrawable->getSize();
 				}
 			} else if ( sizePart[0] != "auto" ) {
 				CSS::StyleSheetLength wl( CSS::StyleSheetLength::fromString( sizePart[0] ) );
 				mDrawableSize.x = mContainer->getOwner()->lengthAsPixels( wl, Sizef::Zero, true );
 
 				if ( sizePart[1] == "auto" ) {
-					Sizef pxSize( PixelDensity::dpToPx( mDrawable->getSize() ) );
-					mDrawableSize.y = pxSize.y * ( mDrawableSize.getWidth() / pxSize.getWidth() );
+					Sizef drawableSize( mDrawable->getSize() );
+					mDrawableSize.y = drawableSize.getHeight() * ( mDrawableSize.getWidth() / drawableSize.getWidth() );
 				} else {
 					CSS::StyleSheetLength hl( CSS::StyleSheetLength::fromString( sizePart[1] ) );
 					mDrawableSize.y = mContainer->getOwner()->lengthAsPixels( hl, Sizef::Zero, false );
@@ -385,8 +385,8 @@ void UINodeDrawable::LayerDrawable::update() {
 				CSS::StyleSheetLength hl( CSS::StyleSheetLength::fromString( sizePart[1] ) );
 				mDrawableSize.y = mContainer->getOwner()->lengthAsPixels( hl, Sizef::Zero, false );
 
-				Sizef pxSize( PixelDensity::dpToPx( mDrawable->getSize() ) );
-				mDrawableSize.x = pxSize.x * ( mDrawableSize.y / pxSize.getHeight()  );
+				Sizef drawableSize( mDrawable->getSize() );
+				mDrawableSize.x = drawableSize.getWidth() * ( mDrawableSize.getHeight() / drawableSize.getHeight()  );
 			}
 		}
 	}
