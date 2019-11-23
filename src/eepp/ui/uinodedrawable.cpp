@@ -403,6 +403,33 @@ void UINodeDrawable::LayerDrawable::update() {
 			CSS::StyleSheetLength yl( CSS::StyleSheetLength::fromString( pos[1] ) );
 			mOffset.x = mContainer->getOwner()->lengthAsPixels( xl, mDrawableSize, true );
 			mOffset.y = mContainer->getOwner()->lengthAsPixels( yl, mDrawableSize, false );
+		} else if ( pos.size() > 2 ) {
+			if ( pos.size() == 3 ) {
+				pos.push_back( "0dp" );
+			}
+
+			int xFloatIndex = 0;
+			int yFloatIndex = 2;
+
+			if ( "bottom" == pos[0] || "top" == pos[0] ) {
+				xFloatIndex = 2;
+				yFloatIndex = 0;
+			}
+
+			CSS::StyleSheetLength xl1( CSS::StyleSheetLength::fromString( pos[xFloatIndex] ) );
+			CSS::StyleSheetLength xl2( CSS::StyleSheetLength::fromString( pos[xFloatIndex+1] ) );
+			CSS::StyleSheetLength yl1( CSS::StyleSheetLength::fromString( pos[yFloatIndex] ) );
+			CSS::StyleSheetLength yl2( CSS::StyleSheetLength::fromString( pos[yFloatIndex+1] ) );
+
+			mOffset.x = mContainer->getOwner()->lengthAsPixels( xl1, mDrawableSize, true );
+
+			Float xl2Val = mContainer->getOwner()->lengthAsPixels( xl2, mDrawableSize, true );
+			mOffset.x += ( pos[xFloatIndex] == "right" ) ? -xl2Val : xl2Val;
+
+			mOffset.y = mContainer->getOwner()->lengthAsPixels( yl1, mDrawableSize, false );
+
+			Float yl2Val = mContainer->getOwner()->lengthAsPixels( yl2, mDrawableSize, false );
+			mOffset.y += ( pos[yFloatIndex] == "bottom" ) ? -yl2Val : yl2Val;
 		}
 
 		mUpdatePosEq = false;

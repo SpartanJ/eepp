@@ -54,7 +54,7 @@
 			<RelativeLayout id="rtest" layout_width="match_parent" layout_height="match_parent"
 				 backgroundImage="file://assets/sprites/4.png"
 				 backgroundSize="auto"
-				 backgroundPosition="top left">
+				 backgroundPosition="bottom 10% right 10%">
 				<TextView id="rttv" layout_width="wrap_content" layout_height="wrap_content" text="Hello World!" layout_gravity="center" />
 			</RelativeLayout>
 		</hbox>
