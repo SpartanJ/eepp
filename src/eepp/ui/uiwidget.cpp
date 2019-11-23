@@ -983,6 +983,8 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		SAVE_NORMAL_STATE_ATTR( String::toStr( getForegroundRadius() ) );
 
 		setForegroundRadius( attribute.asUint() );
+	} else if ( "foreground-size" == name || "foregroundsize" == name ) {
+		setForegroundSize( attribute.value(), 0 );
 	} else if ( "border-color" == name || "bordercolor" == name ) {
 		SAVE_NORMAL_STATE_ATTR( getBorderColor().toHexString() )
 

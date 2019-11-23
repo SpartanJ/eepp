@@ -115,6 +115,8 @@ class EE_API UINode : public Node {
 
 		UINode * setForegroundRepeat( const std::string& repeatRule, int index = 0 ) ;
 
+		UINode * setForegroundSize( const std::string& sizeEq, int index = 0 );
+
 		Color getForegroundColor() const;
 
 		UINode * setForegroundRadius( const unsigned int& corners );

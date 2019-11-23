@@ -271,12 +271,10 @@ void UINode::drawSkin() {
 }
 
 void UINode::draw() {
-	if ( mVisible && 0.f != mAlpha ) {
+	if ( 0.f != mAlpha ) {
 		drawBackground();
 
 		drawSkin();
-
-		drawForeground();
 	}
 }
 
@@ -462,7 +460,12 @@ UINode* UINode::setForegroundPosition( const std::string& positionEq, int index 
 }
 
 UINode* UINode::setForegroundRepeat( const std::string& repeatRule, int index ) {
-	setBackgroundFillEnabled( true )->setDrawableRepeat( index, repeatRule );
+	setForegroundFillEnabled( true )->setDrawableRepeat( index, repeatRule );
+	return this;
+}
+
+UINode* UINode::setForegroundSize( const std::string& sizeEq, int index ) {
+	setForegroundFillEnabled( true )->setDrawableSize( index, sizeEq );
 	return this;
 }
 
@@ -585,6 +588,9 @@ void UINode::internalDraw() {
 			draw();
 
 			drawChilds();
+
+			if ( 0.f != mAlpha )
+				drawForeground();
 		} else if ( !isClipped() ) {
 			drawChilds();
 		}
