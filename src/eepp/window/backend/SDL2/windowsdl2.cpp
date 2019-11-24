@@ -253,7 +253,14 @@ void WindowSDL::unsetGLContextThread() {
 }
 
 int WindowSDL::getCurrentDisplayIndex() {
-	return SDL_GetWindowDisplayIndex( mSDLWindow );
+	int index = SDL_GetWindowDisplayIndex( mSDLWindow );
+
+	if ( index < 0 ) {
+		eePRINTL( SDL_GetError() );
+		return 0;
+	}
+
+	return index;
 }
 
 std::string WindowSDL::getVersion() {
@@ -407,7 +414,7 @@ void WindowSDL::setSize( Uint32 Width, Uint32 Height, bool Windowed ) {
 	sendVideoResizeCb();
 }
 
-void WindowSDL::swapBuffers() {	
+void WindowSDL::swapBuffers() {
 	SDL_GL_SwapWindow( mSDLWindow );
 }
 

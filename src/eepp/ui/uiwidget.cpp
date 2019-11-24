@@ -3,6 +3,7 @@
 #include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uitooltip.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uinodedrawable.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
 #include <eepp/ui/css/stylesheetselector.hpp>
 #include <eepp/graphics/drawablesearcher.hpp>
@@ -886,12 +887,15 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
 			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( attribute.getName() ) );
+			Uint32 tag = String::hash("width");
 
 			Action * action = Actions::ResizeWidth::New( getSize().getWidth(), newWidth, transitionInfo.duration, transitionInfo.timingFunction );
 
 			if ( Time::Zero != transitionInfo.delay )
 				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
 
+			action->setTag( tag );
+			removeActionByTag( tag );
 			runAction( action );
 		} else {
 			setInternalWidth( newWidth );
@@ -905,6 +909,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		Float newHeight = attribute.asDpDimensionI();
 
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
+			Uint32 tag = String::hash("height");
 			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( attribute.getName() ) );
 
 			Action * action = Actions::ResizeHeight::New( getSize().getHeight(), newHeight, transitionInfo.duration, transitionInfo.timingFunction );
@@ -912,6 +917,8 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 			if ( Time::Zero != transitionInfo.delay )
 				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
 
+			action->setTag( tag );
+			removeActionByTag( tag );
 			runAction( action );
 		} else {
 			setInternalHeight( newHeight );
@@ -946,10 +953,14 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 			setBackgroundDrawable( drawable, ownIt, index );
 		} );
 	} else if ( "background-position" == name || "backgroundposition" == name ) {
+		SAVE_NORMAL_STATE_ATTR( getBackground()->getLayer(0)->getPositionEq() );
+
 		setBackgroundPosition( attribute.value(), 0 );
 	} else if ( "background-repeat" == name || "backgroundrepeat" == name ) {
 		setBackgroundRepeat( attribute.value(), 0 );
 	} else if ( "background-size" == name || "backgroundsize" == name ) {
+		SAVE_NORMAL_STATE_ATTR( getBackground()->getLayer(0)->getSizeEq() );
+
 		setBackgroundSize( attribute.value(), 0 );
 	} else if ( "foreground" == name ) {
 		if ( Color::isColorString( attribute.getValue() ) ) {
@@ -983,6 +994,8 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		SAVE_NORMAL_STATE_ATTR( String::toStr( getForegroundRadius() ) );
 
 		setForegroundRadius( attribute.asUint() );
+	} else if ( "foreground-position" == name || "foregroundposition" == name ) {
+		setForegroundPosition( attribute.value(), 0 );
 	} else if ( "foreground-size" == name || "foregroundsize" == name ) {
 		setForegroundSize( attribute.value(), 0 );
 	} else if ( "border-color" == name || "bordercolor" == name ) {

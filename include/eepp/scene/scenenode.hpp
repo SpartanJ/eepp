@@ -112,6 +112,8 @@ class EE_API SceneNode : public Node {
 		const bool& getUpdateAllChilds() const;
 
 		void setUpdateAllChilds( const bool& updateAllChilds );
+
+		const Float& getDPI() const;
 	protected:
 		friend class Node;
 		typedef std::list<Node*> CloseList;
@@ -138,6 +140,7 @@ class EE_API SceneNode : public Node {
 		std::list<Node*>	mScheduledUpdate;
 		std::list<Node*>	mScheduledUpdateRemove;
 		std::list<Node*>	mMouseOverNodes;
+		Float mDPI;
 
 		virtual void onSizeChange();
 

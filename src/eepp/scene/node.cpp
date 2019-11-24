@@ -1288,6 +1288,18 @@ Node * Node::runAction( Action * action ) {
 	return this;
 }
 
+void Node::removeAction( Action * action ) {
+	getActionManager()->removeAction( action );
+}
+
+void Node::removeActionByTag( const Uint32& tag ) {
+	getActionManager()->removeActionByTag( tag );
+}
+
+void Node::clearActions() {
+	getActionManager()->removeAllActionsFromTarget( this );
+}
+
 void Node::runOnMainThread( Actions::Runnable::RunnableFunc runnable, const Time& delay ) {
 	runAction( Actions::Runnable::New( runnable, delay ) );
 }

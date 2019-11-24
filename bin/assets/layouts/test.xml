@@ -30,6 +30,8 @@
 			</vbox>
 			<vbox id="rvbox" layout_width="match_parent" layout_weight="0.5" layout_height="match_parent">
 				<RelativeLayout id="rrl" layout_width="match_parent" layout_height="match_parent">
+					<Widget class="real_back" layout_width="match_parent" layout_height="match_parent" />
+					<Widget class="back" />
 					<TextView id="tmap" layout_width="match_parent" layout_height="match_parent" text="testing match_parent" gravity="center" />
 					<TextView class="eltv" id="el1" layout_width="wrap_content" layout_height="wrap_content" text="testing padding" />
 					<TextView class="eltv" id="el2" layout_width="wrap_content" layout_height="wrap_content" text="testing margin" layout_gravity="top|right" />

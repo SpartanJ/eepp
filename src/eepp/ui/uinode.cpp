@@ -991,12 +991,7 @@ Float UINode::lengthAsPixels( const CSS::StyleSheetLength& length, const Sizef& 
 		percentAsWidth ? getParent()->getPixelsSize().getWidth() - drawableSize.getWidth() :
 						 getParent()->getPixelsSize().getHeight() - drawableSize.getHeight(),
 		getSceneNode()->getPixelsSize(),
-		Engine::instance()->getDisplayManager()->getDisplayIndex(
-			getSceneNode()->getWindow()->getCurrentDisplayIndex()
-		)->getDPI(),
-		12,
-		12
-	);
+		getSceneNode()->getDPI(), 12, 12 );
 }
 
 Float UINode::lengthAsDp( const CSS::StyleSheetLength& length, const Sizef& drawableSize, const bool& percentAsWidth ) {

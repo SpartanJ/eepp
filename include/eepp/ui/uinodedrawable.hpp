@@ -51,7 +51,11 @@ class EE_API UINodeDrawable : public Drawable {
 
 				void setPositionEq( const std::string& offset );
 
+				const std::string& getPositionEq() const { return mPositionEq; }
+
 				void setSizeEq( const std::string& size );
+
+				const std::string& getSizeEq() const { return mDrawableSizeEq; }
 
 				const Repeat& getRepeat() const;
 
@@ -62,6 +66,10 @@ class EE_API UINodeDrawable : public Drawable {
 				const Sizef& getDrawableSize() const;
 
 				void setDrawableSize( const Sizef& drawableSize );
+
+				Sizef calcDrawableSize( const std::string& drawableSizeEq );
+
+				Vector2f calcPosition( const std::string& positionEq );
 			protected:
 				UINodeDrawable * mContainer;
 				Sizef mSize;
@@ -70,7 +78,6 @@ class EE_API UINodeDrawable : public Drawable {
 				std::string mPositionEq;
 				std::string mDrawableSizeEq;
 				bool mNeedsUpdate;
-				bool mUpdatePosEq;
 				bool mOwnsDrawable;
 				Drawable * mDrawable;
 				Uint32 mResourceChangeCbId;
@@ -107,6 +114,8 @@ class EE_API UINodeDrawable : public Drawable {
 
 		Uint32 getBorderRadius() const;
 
+		bool layerExists( int index );
+
 		LayerDrawable * getLayer( int index );
 
 		void setDrawable( int index, Drawable * drawable, bool ownIt );
@@ -132,8 +141,6 @@ class EE_API UINodeDrawable : public Drawable {
 		UINode * mOwner;
 		RectangleDrawable mBackgroundColor;
 		std::map<int,LayerDrawable*> mGroup;
-		std::map<int,std::string> mPosEq;
-		std::map<int,std::string> mSizeEq;
 		Sizef mSize;
 		bool mNeedsUpdate;
 		bool mClipEnabled;

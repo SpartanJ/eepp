@@ -274,6 +274,12 @@ class EE_API Node : public Transformable {
 
 		Node * runAction( Action * action );
 
+		void removeAction( Action * action );
+
+		void removeActionByTag( const Uint32& tag );
+
+		void clearActions();
+
 		Transform getLocalTransform() const;
 
 		Transform getGlobalTransform() const;

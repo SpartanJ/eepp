@@ -34,28 +34,28 @@ const int& DisplaySDL2::getIndex() const {
 const std::vector<DisplayMode>& DisplaySDL2::getModes() const {
 	if ( displayModes.empty() ) {
 		int count = SDL_GetNumDisplayModes( index );
-		
+
 		if ( count > 0 ) {
 			for ( int mode_index = 0; mode_index < count; mode_index++ ) {
 				SDL_DisplayMode mode;
-				
+
 				if ( SDL_GetDisplayMode( index, mode_index, &mode ) == 0 ) {
 					displayModes.push_back( DisplayMode( mode.w, mode.h, mode.refresh_rate, index ) );
 				}
 			}
 		}
 	}
-	
+
 	return displayModes;
 }
 
 DisplayMode DisplaySDL2::getCurrentMode() {
 	SDL_DisplayMode mode;
-	
+
 	if ( SDL_GetCurrentDisplayMode(index, &mode) == 0 ) {
 		return DisplayMode( mode.w, mode.h, mode.refresh_rate, index );
 	}
-	
+
 	return DisplayMode(0,0,0,0);
 }
 
@@ -67,11 +67,11 @@ DisplayMode DisplaySDL2::getClosestDisplayMode( DisplayMode wantedMode ) {
 	target.format = 0;
 	target.refresh_rate = wantedMode.RefreshRate;
 	target.driverdata   = 0;
-	
+
 	if ( SDL_GetClosestDisplayMode(0, &target, &mode) != NULL ) {
 		return DisplayMode( mode.w, mode.h, mode.refresh_rate, index );
 	}
-	
+
 	return DisplayMode(0,0,0,0);
 }
 
@@ -85,13 +85,11 @@ Rect DisplaySDL2::getUsableBounds() {
 }
 
 int DisplayManagerSDL2::getDisplayCount() {
-	SDL_Init(SDL_INIT_VIDEO);
+	if ( !SDL_WasInit(SDL_INIT_VIDEO) ) SDL_Init(SDL_INIT_VIDEO);
 	return SDL_GetNumVideoDisplays();
 }
 
 Display * DisplayManagerSDL2::getDisplayIndex( int index ) {
-	SDL_Init(SDL_INIT_VIDEO);
-
 	if ( displays.empty() ) {
 		int count = getDisplayCount();
 

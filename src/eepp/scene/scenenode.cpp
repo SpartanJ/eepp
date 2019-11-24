@@ -46,6 +46,11 @@ SceneNode::SceneNode( EE::Window::Window * window ) :
 
 	mResizeCb = mWindow->pushResizeCallback( cb::Make1( this, &SceneNode::resizeControl ) );
 
+	DisplayManager * displayManager = Engine::instance()->getDisplayManager();
+	int currentDisplayIndex = getWindow()->getCurrentDisplayIndex();
+	Display * currentDisplay = displayManager->getDisplayIndex( currentDisplayIndex );
+	mDPI = currentDisplay->getDPI();
+
 	resizeControl( window );
 }
 
@@ -446,6 +451,10 @@ const bool& SceneNode::getUpdateAllChilds() const {
 
 void SceneNode::setUpdateAllChilds( const bool& updateAllChilds ) {
 	mUpdateAllChilds = updateAllChilds;
+}
+
+const Float& SceneNode::getDPI() const {
+	return mDPI;
 }
 
 }}

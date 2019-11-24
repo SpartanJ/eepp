@@ -290,6 +290,7 @@ TabWidget {
 	background-size: auto;
 	background-position: bottom right;
 	padding: 24dp;
+	transition: all 1s;
 }
 
 #rrl:hover {
@@ -297,10 +298,27 @@ TabWidget {
 	background-position: top left;
 }
 
+#rrl > .real_back {
+	background-color: #333;
+}
+
+#rrl > .back {
+	width: 250dp;
+	height: 40dp;
+	layout-gravity: center;
+	background-color: #333;
+	transition: all 0.5s;
+}
+
+#rrl:hover > .back {
+	width: 300dp;
+	height: 300dp;
+	background-color: black;
+}
+
 #rrl > #tmap {
 	font-size: 24dp;
 	padding: 12dp;
-	background-color: #333;
 }
 
 .eltv {
