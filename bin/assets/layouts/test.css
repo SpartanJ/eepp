@@ -303,11 +303,14 @@ TabWidget {
 }
 
 #rrl > .back {
-	width: 250dp;
-	height: 40dp;
+	width: 1dp;
+	height: 1dp;
+	background-image: url(file://assets/icon/ee.png);
+	background-position: center;
 	layout-gravity: center;
 	background-color: #333;
 	transition: all 0.5s;
+	clip: true;
 }
 
 #rrl:hover > .back {

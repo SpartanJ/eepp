@@ -988,8 +988,8 @@ Uint32 UINode::onFocusLoss() {
 
 Float UINode::lengthAsPixels( const CSS::StyleSheetLength& length, const Sizef& drawableSize, const bool& percentAsWidth ) {
 	return length.asPixels(
-		percentAsWidth ? getParent()->getPixelsSize().getWidth() - drawableSize.getWidth() :
-						 getParent()->getPixelsSize().getHeight() - drawableSize.getHeight(),
+		percentAsWidth ? getPixelsSize().getWidth() - drawableSize.getWidth() :
+						 getPixelsSize().getHeight() - drawableSize.getHeight(),
 		getSceneNode()->getPixelsSize(),
 		getSceneNode()->getDPI(), 12, 12 );
 }
