@@ -58,6 +58,10 @@ class EE_API UINodeDrawable : public Drawable {
 				void setRepeat( const Repeat& repeat );
 
 				void invalidate();
+
+				const Sizef& getDrawableSize() const;
+
+				void setDrawableSize( const Sizef& drawableSize );
 			protected:
 				UINodeDrawable * mContainer;
 				Sizef mSize;

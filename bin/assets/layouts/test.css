@@ -286,7 +286,15 @@ TabWidget {
 
 #rrl {
 	background-color: #999;
+	background-image: url("file://assets/sprites/4.png");
+	background-size: auto;
+	background-position: bottom right;
 	padding: 24dp;
+}
+
+#rrl:hover {
+	background-size: 100% 100%;
+	background-position: top left;
 }
 
 #rrl > #tmap {

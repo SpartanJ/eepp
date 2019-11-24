@@ -324,6 +324,14 @@ void UINodeDrawable::LayerDrawable::invalidate() {
 	mUpdatePosEq = true;
 }
 
+const Sizef& UINodeDrawable::LayerDrawable::getDrawableSize() const {
+	return mDrawableSize;
+}
+
+void UINodeDrawable::LayerDrawable::setDrawableSize( const Sizef& drawableSize ) {
+	mDrawableSize = drawableSize;
+}
+
 void UINodeDrawable::LayerDrawable::onPositionChange() {
 	invalidate();
 }
