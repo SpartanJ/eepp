@@ -276,7 +276,7 @@ class EE_API Node : public Transformable {
 
 		void removeAction( Action * action );
 
-		void removeActionByTag( const Uint32& tag );
+		void removeActionsByTag( const Uint32& tag );
 
 		void clearActions();
 

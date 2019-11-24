@@ -19,9 +19,9 @@ class EE_API ActionManager {
 		ActionManager();
 
 		~ActionManager();
-		
+
 		void addAction( Action * action );
-		
+
 		Action * getActionByTag( const Uint32& tag );
 
 		void removeActionByTag( const Uint32& tag );
@@ -29,6 +29,10 @@ class EE_API ActionManager {
 		void removeAction( Action * action );
 
 		void removeAllActionsFromTarget( Node * target );
+
+		void removeActionsByTagFromTarget( Node * target, const Uint32& tag );
+
+		std::vector<Action *> getActionsByTagFromTarget( Node * target, const Uint32& tag );
 
 		void update( const Time& time );
 

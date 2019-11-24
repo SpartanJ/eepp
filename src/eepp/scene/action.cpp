@@ -11,8 +11,9 @@ Action::Action() :
 {
 }
 
-Action::~Action()
-{}
+Action::~Action() {
+	sendEvent( ActionType::OnDelete );
+}
 
 Uint32 Action::getFlags() const {
 	return mFlags;

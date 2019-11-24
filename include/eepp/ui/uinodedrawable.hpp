@@ -3,10 +3,13 @@
 
 #include <eepp/graphics/drawable.hpp>
 #include <eepp/graphics/rectangledrawable.hpp>
+#include <eepp/scene/action.hpp>
+#include <eepp/math/ease.hpp>
 #include <vector>
 #include <map>
 
 using namespace EE::Graphics;
+using namespace EE::Scene;
 
 namespace EE { namespace UI {
 
@@ -22,6 +25,38 @@ class EE_API UINodeDrawable : public Drawable {
 		};
 
 		static Repeat repeatFromText( const std::string& text );
+
+		class EE_API MoveAction : public Action {
+			public:
+				static MoveAction * New( const std::string& posEqStart, const std::string& posEqEnd, const Time& duration, const Ease::Interpolation& type = Ease::Linear );
+
+				void start() override;
+
+				void stop() override;
+
+				void update( const Time& time ) override;
+
+				bool isDone() override;
+
+				Action * clone() const override;
+
+				Action * reverse() const override;
+
+				const Vector2f& getOffset() const { return mOffset; }
+			protected:
+				MoveAction( const std::string& posEqStart, const std::string& posEqEnd, const Time& duration, const Ease::Interpolation& type = Ease::Linear );
+
+				void onStart() override;
+
+				void onUpdate( const Time& time ) override;
+
+				std::string mStart;
+				std::string mEnd;
+				Time mDuration;
+				Ease::Interpolation mType;
+				Time mElapsed;
+				Vector2f mOffset;
+		};
 
 		class EE_API LayerDrawable : public Drawable {
 			public:
@@ -47,6 +82,8 @@ class EE_API UINodeDrawable : public Drawable {
 
 				void setDrawable( Drawable* drawable, const bool& ownIt );
 
+				void setOffset(const Vector2f & offset);
+
 				const Vector2f& getOffset() const;
 
 				void setPositionEq( const std::string& offset );
@@ -70,6 +107,11 @@ class EE_API UINodeDrawable : public Drawable {
 				Sizef calcDrawableSize( const std::string& drawableSizeEq );
 
 				Vector2f calcPosition( const std::string& positionEq );
+
+				MoveAction * getMoveAction() const;
+
+				void setMoveAction(MoveAction * moveAction);
+
 			protected:
 				UINodeDrawable * mContainer;
 				Sizef mSize;
@@ -82,6 +124,8 @@ class EE_API UINodeDrawable : public Drawable {
 				Drawable * mDrawable;
 				Uint32 mResourceChangeCbId;
 				Repeat mRepeat;
+				MoveAction * mMoveAction;
+				Uint32 mMoveActionCbId;
 
 				virtual void onPositionChange();
 

@@ -294,7 +294,7 @@ TabWidget {
 }
 
 #rrl:hover {
-	background-size: 100% 100%;
+	background-size: 50% 50%;
 	background-position: top left;
 }
 
@@ -317,6 +317,7 @@ TabWidget {
 	width: 300dp;
 	height: 300dp;
 	background-color: black;
+	background-position: bottom right;
 }
 
 #rrl > #tmap {

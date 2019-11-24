@@ -1292,8 +1292,8 @@ void Node::removeAction( Action * action ) {
 	getActionManager()->removeAction( action );
 }
 
-void Node::removeActionByTag( const Uint32& tag ) {
-	getActionManager()->removeActionByTag( tag );
+void Node::removeActionsByTag( const Uint32& tag ) {
+	getActionManager()->removeActionsByTagFromTarget( this, tag );
 }
 
 void Node::clearActions() {

@@ -40,8 +40,41 @@ Action * ActionManager::getActionByTag( const Uint32& tag ) {
 	return NULL;
 }
 
+std::vector<Action *> ActionManager::getActionsByTagFromTarget( Node * target, const Uint32& tag ) {
+	Lock lock( mMutex );
+	std::vector<Action*> actions;
+
+	for ( auto it = mActions.begin(); it != mActions.end(); ++it ) {
+		Action * action = (*it);
+
+		if ( action->getTarget() == target && action->getTag() == tag )
+			actions.push_back( action );
+	}
+
+	return actions;
+}
+
 void ActionManager::removeActionByTag( const Uint32& tag ) {
 	removeAction( getActionByTag( tag ) );
+}
+
+void ActionManager::removeActionsByTagFromTarget( Node * target, const Uint32& tag ) {
+	std::vector<Action*> removeList;
+
+	{
+		Lock lock( mMutex );
+
+		for ( auto it = mActions.begin(); it != mActions.end(); ++it ) {
+			Action * action = (*it);
+
+			if ( action->getTarget() == target && action->getTag() == tag ) {
+				removeList.push_back( *it );
+			}
+		}
+	}
+
+	for ( auto it = removeList.begin(); it != removeList.end(); ++it )
+		removeAction( (*it) );
 }
 
 void ActionManager::update( const Time& time ) {

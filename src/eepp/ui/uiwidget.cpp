@@ -895,7 +895,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
 
 			action->setTag( tag );
-			removeActionByTag( tag );
+			removeActionsByTag( tag );
 			runAction( action );
 		} else {
 			setInternalWidth( newWidth );
@@ -918,7 +918,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
 
 			action->setTag( tag );
-			removeActionByTag( tag );
+			removeActionsByTag( tag );
 			runAction( action );
 		} else {
 			setInternalHeight( newHeight );
@@ -955,7 +955,22 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 	} else if ( "background-position" == name || "backgroundposition" == name ) {
 		SAVE_NORMAL_STATE_ATTR( getBackground()->getLayer(0)->getPositionEq() );
 
-		setBackgroundPosition( attribute.value(), 0 );
+		/*if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
+			Uint32 tag = String::hash( "background-position" );
+
+			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( attribute.getName() ) );
+
+			Action * action = UINodeDrawable::MoveAction::New( getBackground()->getLayer(0)->getPositionEq(), attribute.value(), transitionInfo.duration, transitionInfo.timingFunction );
+
+			if ( Time::Zero != transitionInfo.delay )
+				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
+
+			action->setTag( tag );
+			removeActionsByTag( tag );
+			runAction( action );
+		} else*/ {
+			setBackgroundPosition( attribute.value(), 0 );
+		}
 	} else if ( "background-repeat" == name || "backgroundrepeat" == name ) {
 		setBackgroundRepeat( attribute.value(), 0 );
 	} else if ( "background-size" == name || "backgroundsize" == name ) {

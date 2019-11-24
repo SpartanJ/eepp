@@ -17,7 +17,8 @@ class EE_API Action {
 			OnStart,
 			OnStop,
 			OnDone,
-			OnStep
+			OnStep,
+			OnDelete
 		};
 
 		typedef std::function<void(Action*,const ActionType&)> ActionCallback;
