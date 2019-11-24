@@ -86,6 +86,8 @@ class EE_API UINodeDrawable : public Drawable {
 
 				const Vector2f& getOffset() const;
 
+				std::string getOffsetEq();
+
 				void setPositionEq( const std::string& offset );
 
 				const std::string& getPositionEq() const { return mPositionEq; }
@@ -111,7 +113,6 @@ class EE_API UINodeDrawable : public Drawable {
 				MoveAction * getMoveAction() const;
 
 				void setMoveAction(MoveAction * moveAction);
-
 			protected:
 				UINodeDrawable * mContainer;
 				Sizef mSize;

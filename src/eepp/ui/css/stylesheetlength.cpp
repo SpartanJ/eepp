@@ -35,6 +35,10 @@ StyleSheetLength::StyleSheetLength() :
 	mValue(0)
 {}
 
+StyleSheetLength::StyleSheetLength( std::string val, const Float& defaultValue ) :
+	StyleSheetLength( fromString( val, defaultValue ) ) {
+}
+
 StyleSheetLength::StyleSheetLength(const StyleSheetLength& val) {
 	mUnit = val.mUnit;
 	mValue = val.mValue;

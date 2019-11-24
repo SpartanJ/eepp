@@ -36,6 +36,8 @@ class StyleSheetLength {
 
 		StyleSheetLength();
 
+		StyleSheetLength( std::string val, const Float& defaultValue = 0 );
+
 		StyleSheetLength( const StyleSheetLength& val );
 
 		void setValue( const Float& val, const Unit& units );

@@ -96,6 +96,8 @@ class Vector2 {
 
 		Vector2<T> floor();
 
+		Vector2<T> abs();
+
 		Vector2<Float> asFloat();
 
 		Vector2<int> asInt();
@@ -433,6 +435,10 @@ Vector2<T> Vector2<T>::floor() {
 	return Vector2<T>( eefloor( x ), eefloor( y ) );
 }
 
+template <typename T>
+Vector2<T> Vector2<T>::abs() {
+	return Vector2<T>( eeabs( x ), eeabs( y ) );
+}
 
 template <typename T>
 Vector2<Float> Vector2<T>::asFloat() {

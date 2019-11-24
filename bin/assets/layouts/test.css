@@ -320,6 +320,18 @@ TabWidget {
 	background-position: bottom right;
 }
 
+#lvbox {
+	background-image: url(file://assets/icon/ee.png);
+	background-position: bottom right;
+	background-size: 128px 128px;
+	transition: all 1s;
+	clip: true;
+}
+
+#lvbox:hover {
+	background-position: top right;
+}
+
 #rrl > #tmap {
 	font-size: 24dp;
 	padding: 12dp;

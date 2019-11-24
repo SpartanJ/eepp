@@ -887,7 +887,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
 			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( attribute.getName() ) );
-			Uint32 tag = String::hash("width");
+			constexpr Uint32 tag = String::hash("width");
 
 			Action * action = Actions::ResizeWidth::New( getSize().getWidth(), newWidth, transitionInfo.duration, transitionInfo.timingFunction );
 
@@ -909,7 +909,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		Float newHeight = attribute.asDpDimensionI();
 
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			Uint32 tag = String::hash("height");
+			constexpr Uint32 tag = String::hash("height");
 			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( attribute.getName() ) );
 
 			Action * action = Actions::ResizeHeight::New( getSize().getHeight(), newHeight, transitionInfo.duration, transitionInfo.timingFunction );
@@ -956,7 +956,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		SAVE_NORMAL_STATE_ATTR( getBackground()->getLayer(0)->getPositionEq() );
 
 		/*if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			Uint32 tag = String::hash( "background-position" );
+			constexpr Uint32 tag = String::hash( "background-position" );
 
 			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( attribute.getName() ) );
 

@@ -371,18 +371,18 @@ Sizef UINodeDrawable::LayerDrawable::calcDrawableSize( const std::string& drawab
 					size = mDrawable->getSize();
 				}
 			} else if ( sizePart[0] != "auto" ) {
-				CSS::StyleSheetLength wl( CSS::StyleSheetLength::fromString( sizePart[0] ) );
+				CSS::StyleSheetLength wl( sizePart[0] );
 				size.x = mContainer->getOwner()->lengthAsPixels( wl, Sizef::Zero, true );
 
 				if ( sizePart[1] == "auto" ) {
 					Sizef drawableSize( mDrawable->getSize() );
 					size.y = drawableSize.getHeight() * ( size.getWidth() / drawableSize.getWidth() );
 				} else {
-					CSS::StyleSheetLength hl( CSS::StyleSheetLength::fromString( sizePart[1] ) );
+					CSS::StyleSheetLength hl( sizePart[1] );
 					size.y = mContainer->getOwner()->lengthAsPixels( hl, Sizef::Zero, false );
 				}
 			} else {
-				CSS::StyleSheetLength hl( CSS::StyleSheetLength::fromString( sizePart[1] ) );
+				CSS::StyleSheetLength hl( sizePart[1] );
 				size.y = mContainer->getOwner()->lengthAsPixels( hl, Sizef::Zero, false );
 
 				Sizef drawableSize( mDrawable->getSize() );
@@ -410,8 +410,8 @@ Vector2f UINodeDrawable::LayerDrawable::calcPosition( const std::string& positio
 			yFloatIndex = 0;
 		}
 
-		CSS::StyleSheetLength xl( CSS::StyleSheetLength::fromString( pos[xFloatIndex] ) );
-		CSS::StyleSheetLength yl( CSS::StyleSheetLength::fromString( pos[yFloatIndex] ) );
+		CSS::StyleSheetLength xl( pos[xFloatIndex] );
+		CSS::StyleSheetLength yl( pos[yFloatIndex] );
 		position.x = mContainer->getOwner()->lengthAsPixels( xl, mDrawableSize, true );
 		position.y = mContainer->getOwner()->lengthAsPixels( yl, mDrawableSize, false );
 	} else if ( pos.size() > 2 ) {
@@ -427,10 +427,10 @@ Vector2f UINodeDrawable::LayerDrawable::calcPosition( const std::string& positio
 			yFloatIndex = 0;
 		}
 
-		CSS::StyleSheetLength xl1( CSS::StyleSheetLength::fromString( pos[xFloatIndex] ) );
-		CSS::StyleSheetLength xl2( CSS::StyleSheetLength::fromString( pos[xFloatIndex+1] ) );
-		CSS::StyleSheetLength yl1( CSS::StyleSheetLength::fromString( pos[yFloatIndex] ) );
-		CSS::StyleSheetLength yl2( CSS::StyleSheetLength::fromString( pos[yFloatIndex+1] ) );
+		CSS::StyleSheetLength xl1( pos[xFloatIndex]  );
+		CSS::StyleSheetLength xl2( pos[xFloatIndex+1]  );
+		CSS::StyleSheetLength yl1( pos[yFloatIndex]  );
+		CSS::StyleSheetLength yl2( pos[yFloatIndex+1]  );
 
 		position.x = mContainer->getOwner()->lengthAsPixels( xl1, mDrawableSize, true );
 
@@ -463,6 +463,10 @@ void UINodeDrawable::LayerDrawable::setMoveAction(MoveAction * moveAction) {
 
 void UINodeDrawable::LayerDrawable::setOffset( const Vector2f& offset ) {
 	mOffset = offset;
+}
+
+std::string UINodeDrawable::LayerDrawable::getOffsetEq() {
+	return String::format( "%.fpx %.fpx", mOffset.x, mOffset.y );
 }
 
 void UINodeDrawable::LayerDrawable::onPositionChange() {
