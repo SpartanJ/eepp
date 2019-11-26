@@ -75,6 +75,16 @@ bool Spawn::isDone() {
 	return mAllDone;
 }
 
+Float Spawn::getCurrentProgress() {
+	Float min = 1.f;
+
+	for ( size_t i = 0; i < mSpawn.size(); i++ ) {
+		min = eemin( min, mSpawn[ i ]->getCurrentProgress() );
+	}
+
+	return min;
+}
+
 Action * Spawn::clone() const {
 	return Spawn::New( mSpawn );
 }
@@ -101,4 +111,4 @@ Spawn::Spawn( const std::vector<Action*> spawn ) :
 	mAllDone( false )
 {}
 
-}}} 
+}}}

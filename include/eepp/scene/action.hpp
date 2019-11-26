@@ -35,6 +35,8 @@ class EE_API Action {
 
 		virtual bool isDone() = 0;
 
+		virtual Float getCurrentProgress() = 0;
+
 		virtual Action * clone() const;
 
 		virtual Action * reverse() const;

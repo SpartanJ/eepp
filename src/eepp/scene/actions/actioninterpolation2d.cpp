@@ -36,6 +36,10 @@ bool ActionInterpolation2d::isDone() {
 	return mInterpolation.ended();
 }
 
+Float ActionInterpolation2d::getCurrentProgress() {
+	return mInterpolation.getCurrentProgress();
+}
+
 Interpolation2d * ActionInterpolation2d::getInterpolation() {
 	return &mInterpolation;
 }

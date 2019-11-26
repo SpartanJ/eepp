@@ -70,6 +70,10 @@ bool Sequence::isDone() {
 	return mCurPos == mSequence.size() - 1 && mSequence[ mCurPos ]->isDone();
 }
 
+Float Sequence::getCurrentProgress() {
+	return mCurPos / static_cast<Float>( mSequence.size() );
+}
+
 Action * Sequence::clone() const {
 	return Sequence::New( mSequence );
 }
@@ -96,4 +100,4 @@ Sequence::Sequence( const std::vector<Action*> sequence ) :
 	mCurPos( 0 )
 {}
 
-}}} 
+}}}

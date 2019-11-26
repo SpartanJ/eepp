@@ -33,25 +33,6 @@ class EE_API TextureAtlasEditor {
 
 		bool				isEdited() { return mEdited; }
 	protected:
-		class UITGEUpdater : public UINode
-		{
-			public:
-				explicit UITGEUpdater( TextureAtlasEditor * TGEditor ) :
-					UINode(),
-					mTGEditor( TGEditor )
-				{
-					subscribeScheduledUpdate();
-				}
-
-				~UITGEUpdater() {
-				}
-
-				virtual void scheduledUpdate( const Time& ) { mTGEditor->update(); }
-			protected:
-				TextureAtlasEditor * mTGEditor;
-		};
-		friend class UITGEUpdater;
-
 		UIWindow *			mUIWindow;
 		Node *				mUIContainer;
 		UITheme *			mTheme;
@@ -68,7 +49,6 @@ class EE_API TextureAtlasEditor {
 		UIWinMenu *			mWinMenu;
 		UIDropDownList *	mTextureFilterList;
 		TextureAtlasTextureRegionEditor * mTextureRegionEditor;
-		UITGEUpdater *		mTGEU;
 		bool mEdited;
 
 		void windowClose( const Event * Event );

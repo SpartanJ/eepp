@@ -38,6 +38,8 @@ class EE_API UINodeDrawable : public Drawable {
 
 				bool isDone() override;
 
+				Float getCurrentProgress();
+
 				Action * clone() const override;
 
 				Action * reverse() const override;

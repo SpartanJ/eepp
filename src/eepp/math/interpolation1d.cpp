@@ -293,6 +293,10 @@ void Interpolation1d::setData(const UintPtr & data) {
 	mData = data;
 }
 
+Float Interpolation1d::getCurrentProgress() {
+	return mCurTime >= mActP->t ? 1.f : mCurTime.asMilliseconds() / mActP->t.asMilliseconds();
+}
+
 const bool& Interpolation1d::getLoop() const {
 	return mLoop;
 }

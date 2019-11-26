@@ -617,7 +617,8 @@ bool UITextView::setAttribute( const NodeAttribute& attribute, const Uint32& sta
 		SAVE_NORMAL_STATE_ATTR( String::format( "%dpx", getCharacterSize() ) );
 
 		setCharacterSize( attribute.asDpDimensionI() );
-	} else if ( "font-style" == name || "textstyle" == name || "fontstyle" == name ) {
+	} else if ( "font-style" == name || "textstyle" == name || "fontstyle" == name ||
+				"text-decoration" == name || "textdecoration" == name ) {
 		Uint32 flags = attribute.asFontStyle();
 
 		SAVE_NORMAL_STATE_ATTR( Text::styleFlagToString( getFontStyle() ) );

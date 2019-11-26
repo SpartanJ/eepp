@@ -119,6 +119,10 @@ Action * Tint::reverse() const {
 	return NULL;
 }
 
+Float Tint::getCurrentProgress() {
+	return mInterpolationR.getCurrentProgress();
+}
+
 void Tint::onUpdate( const Time& ) {
 	if ( NULL != mNode && mNode->isWidget() ) {
 		UIWidget * widget = static_cast<UIWidget*>( mNode );

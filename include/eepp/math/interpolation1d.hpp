@@ -126,6 +126,8 @@ class EE_API Interpolation1d {
 		UintPtr getData() const;
 
 		void setData(const UintPtr & data);
+
+		Float getCurrentProgress();
 	protected:
 		UintPtr mData;
 		int mType;

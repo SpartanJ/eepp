@@ -10,7 +10,7 @@ namespace EE { namespace Scene { namespace Actions {
 class EE_API Delay : public Action {
 	public:
 		static Delay * New( const Time& time );
-		
+
 		void start() override;
 
 		void stop() override;
@@ -19,6 +19,8 @@ class EE_API Delay : public Action {
 
 		bool isDone() override;
 
+		Float getCurrentProgress() override;
+
 		Action * clone() const override;
 
 		Action * reverse() const override;
@@ -26,11 +28,11 @@ class EE_API Delay : public Action {
 	protected:
 		Clock mClock;
 		Time mTime;
-		
+
 		Delay( const Time& time );
-		
+
 };
 
-}}} 
+}}}
 
 #endif

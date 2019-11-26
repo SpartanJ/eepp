@@ -117,11 +117,6 @@ void TextureAtlasLoader::setTextureFilter(const Texture::TextureFilter & texture
 	}
 }
 
-void TextureAtlasLoader::update() {
-	if ( mRL.isLoaded() && !mLoaded )
-		createTextureRegions();
-}
-
 void TextureAtlasLoader::loadFromStream( IOStream& IOS ) {
 	mRL.setThreaded( mThreaded );
 
@@ -158,12 +153,13 @@ void TextureAtlasLoader::loadFromStream( IOStream& IOS ) {
 			}
 		}
 
-		if ( !mSkipResourceLoad || ( !mSkipResourceLoad && 0 == mRL.getCount() ) ) {
+		if ( !mSkipResourceLoad ) {
 			mIsLoading = true;
-			mRL.load();
-
-			if ( !mThreaded || ( !mSkipResourceLoad && 0 == mRL.getCount() ) )
-				createTextureRegions();
+			mRL.load( [&]( ResourceLoader * ) {
+				if ( !mLoaded ) {
+					createTextureRegions();
+				}
+			} );
 		}
 	}
 }
@@ -215,7 +211,7 @@ TextureAtlas * TextureAtlasLoader::getTextureAtlas() const {
 void TextureAtlasLoader::createTextureRegions() {
 	mIsLoading = false;
 	bool IsAlreadyLoaded = false;
-	
+
 	for ( Uint32 z = 0; z < mTempAtlass.size(); z++ ) {
 		sTempTexAtlas * tTexAtlas 	= &mTempAtlass[z];
 		sTextureHdr * tTexHdr 		= &tTexAtlas->Texture;

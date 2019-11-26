@@ -385,7 +385,10 @@ void UITabWidget::remove( const Uint32& Index ) {
 		mTabSelected->getControlOwned()->setEnabled( false );
 	}
 
-	eeSAFE_DELETE( mTabs[ Index ] );
+	mTabs[ Index ]->close();
+	mTabs[ Index ]->setVisible( false );
+	mTabs[ Index ]->setEnabled( false );
+	mTabs[ Index ] = NULL;
 
 	mTabs.erase( mTabs.begin() + Index );
 
@@ -417,7 +420,11 @@ void UITabWidget::remove( UITab * Tab ) {
 
 void UITabWidget::removeAll() {
 	for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
-		eeSAFE_DELETE( mTabs[ i ] );
+		if ( NULL != mTabs[ i ] ) {
+			mTabs[ i ]->close();
+			mTabs[ i ]->setVisible( false );
+			mTabs[ i ]->setEnabled( false );
+		}
 	}
 
 	mTabs.clear();

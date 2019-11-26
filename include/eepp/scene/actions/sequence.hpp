@@ -25,6 +25,8 @@ class EE_API Sequence : public Action {
 
 		bool isDone() override;
 
+		Float getCurrentProgress();
+
 		Action * clone() const override;
 
 		Action * reverse() const override;
@@ -34,11 +36,11 @@ class EE_API Sequence : public Action {
 	protected:
 		std::vector<Action*> mSequence;
 		Uint32 mCurPos;
-		
+
 		Sequence( const std::vector<Action*> sequence );
-		
+
 };
 
-}}} 
+}}}
 
 #endif

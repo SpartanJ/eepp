@@ -25,6 +25,8 @@ class EE_API Spawn : public Action {
 
 		bool isDone() override;
 
+		Float getCurrentProgress();
+
 		Action * clone() const override;
 
 		Action * reverse() const override;
@@ -33,11 +35,11 @@ class EE_API Spawn : public Action {
 	protected:
 		std::vector<Action*> mSpawn;
 		bool mAllDone;
-		
+
 		Spawn( const std::vector<Action*> spawn );
-		
+
 };
 
-}}} 
+}}}
 
 #endif

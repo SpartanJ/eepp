@@ -150,9 +150,6 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow * attachTo, const TGEditorClose
 		mUIContainer->addEventListener( Event::OnClose, cb::Make1( this, &TextureAtlasEditor::windowClose ) );
 		mUIContainer->find<UINode>("texture_atlas_editor_root")->setThemeSkin( mTheme, "winback" );
 	}
-
-	mTGEU = eeNew( UITGEUpdater, ( this ) );
-	mTGEU->setParent( mUIContainer );
 }
 
 TextureAtlasEditor::~TextureAtlasEditor() {
@@ -300,7 +297,8 @@ void TextureAtlasEditor::onTextureAtlasCreate( TexturePacker * TexPacker ) {
 
 	std::string FPath( FileSystem::fileRemoveExtension( mTexturePacker->getFilepath() + EE_TEXTURE_ATLAS_EXTENSION ) );
 
-	mTextureAtlasLoader = TextureAtlasLoader::New( FPath, true, cb::Make1( this, &TextureAtlasEditor::onTextureAtlasLoaded ) );
+	bool threaded = mUIWindow->getSceneNode()->getWindow()->isThreadedGLContext();
+	mTextureAtlasLoader = TextureAtlasLoader::New( FPath, threaded, cb::Make1( this, &TextureAtlasEditor::onTextureAtlasLoaded ) );
 }
 
 void TextureAtlasEditor::updateControls() {
@@ -386,25 +384,20 @@ void TextureAtlasEditor::onTextureRegionChange( const Event * Event ) {
 	}
 }
 
-void TextureAtlasEditor::update() {
-	if ( NULL != mTextureAtlasLoader && !mTextureAtlasLoader->isLoaded() ) {
-		mTextureAtlasLoader->update();
-	}
-}
-
 void TextureAtlasEditor::openTextureAtlas( const Event * Event ) {
 	eeSAFE_DELETE( mTextureAtlasLoader );
-	bool threaded = true;
-	#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
-	threaded = false;
-	#endif
 
+	bool threaded = mUIWindow->getSceneNode()->getWindow()->isThreadedGLContext();
 	mTextureAtlasLoader = TextureAtlasLoader::New( Event->getNode()->asType<UICommonDialog>()->getFullPath(), threaded, cb::Make1( this, &TextureAtlasEditor::onTextureAtlasLoaded ) );
 }
 
-void TextureAtlasEditor::onTextureAtlasLoaded( TextureAtlasLoader * ) {
-	if ( NULL != mTextureAtlasLoader && mTextureAtlasLoader->isLoaded() ) {
-		updateControls();
+void TextureAtlasEditor::onTextureAtlasLoaded( TextureAtlasLoader * textureAtlasLoader ) {
+	mTextureAtlasLoader = textureAtlasLoader;
+
+	if ( mTextureAtlasLoader->isLoaded() ) {
+		mUIContainer->runOnMainThread( [&] {
+			updateControls();
+		} );
 	}
 }
 

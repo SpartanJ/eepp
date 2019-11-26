@@ -233,8 +233,11 @@ void UIListBox::removeListBoxItems( std::vector<Uint32> ItemsIndex ) {
 			if ( !erase ) {
 				ItemsCpy.push_back( mItems[i] );
 				mTexts.push_back( mItems[i]->getText() );
-			} else {
-				eeSAFE_DELETE( mItems[i] ); // doesn't call to mItems[i]->Close(); because is not checking for close.
+			} else if ( NULL != mItems[i] ) {
+				mItems[i]->close();
+				mItems[i]->setVisible( false );
+				mItems[i]->setEnabled( false );
+				mItems[i] = NULL;
 			}
 		}
 
@@ -563,8 +566,11 @@ void UIListBox::updateScroll( bool fromScrollChange ) {
 				}
 
 				mVisibleLast = i;
-			} else {
-				eeSAFE_DELETE( mItems[i] );
+			} else if ( NULL != mItems[i] ) {
+				mItems[i]->close();
+				mItems[i]->setVisible( false );
+				mItems[i]->setEnabled( false );
+				mItems[i] = NULL;
 				item = NULL;
 			}
 
@@ -611,7 +617,10 @@ void UIListBox::updateScroll( bool fromScrollChange ) {
 
 				mVisibleLast = i;
 			} else {
-				eeSAFE_DELETE( mItems[i] );
+				mItems[i]->close();
+				mItems[i]->setVisible( false );
+				mItems[i]->setEnabled( false );
+				mItems[i] = NULL;
 				item = NULL;
 			}
 

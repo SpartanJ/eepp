@@ -288,6 +288,10 @@ void Interpolation2d::setData(const UintPtr & data)
 	mData = data;
 }
 
+Float Interpolation2d::getCurrentProgress() {
+	return mCurTime >= mActP->t ? 1.f : mCurTime.asMilliseconds() / mActP->t.asMilliseconds();
+}
+
 bool Interpolation2d::getLoop() const {
 	return mLoop;
 }

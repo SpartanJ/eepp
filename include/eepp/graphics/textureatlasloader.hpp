@@ -69,9 +69,6 @@ class EE_API TextureAtlasLoader {
 
 		~TextureAtlasLoader();
 
-		/** In the case that the loader is threaded, to know if the texture atlas was loaded, the main thread must call Update to update the state of the load. And finish the job. */
-		void					update();
-
 		/** Loads a texture atlas from its path ( the texture atlas binary is expected, not the texture, the ".eta" file ).
 		*	If the loader is not threaded, it will load the atlas immediately.
 		*	@param TextureAtlasPath The texture atlas path.
@@ -107,7 +104,7 @@ class EE_API TextureAtlasLoader {
 
 		/** @return True if the texture atlas is loaded. */
 		const bool&				isLoaded() const;
-		
+
 		/** @return True if the texture atlas is loading. */
 		const bool&				isLoading() const;
 

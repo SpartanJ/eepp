@@ -28,6 +28,10 @@ bool Delay::isDone() {
 	return mClock.getElapsedTime() >= mTime;
 }
 
+Float Delay::getCurrentProgress() {
+	return !isDone() ? mClock.getElapsedTime().asMilliseconds() / mTime.asMilliseconds() : 1.f;
+}
+
 Action *Delay::clone() const {
 	return New( mTime );
 }

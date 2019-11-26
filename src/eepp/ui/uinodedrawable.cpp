@@ -524,6 +524,10 @@ bool UINodeDrawable::MoveAction::isDone() {
 	return mElapsed.asMicroseconds() >= mDuration.asMicroseconds();
 }
 
+Float UINodeDrawable::MoveAction::getCurrentProgress() {
+	return mElapsed.asMilliseconds() / mDuration.asMilliseconds();
+}
+
 void UINodeDrawable::MoveAction::onStart() {
 	UINode * node = mNode->asType<UINode>();
 	LayerDrawable * layer = node->getBackground()->getLayer(0);

@@ -42,7 +42,7 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 	Display * currentDisplay = Engine::instance()->getDisplayManager()->getDisplayIndex(0);
 	Float pixelDensity = PixelDensity::toFloat( currentDisplay->getPixelDensity() );
 
-	win = Engine::instance()->createWindow( WindowSettings( 1280, 720, "eepp - Texture Atlas Editor", WindowStyle::Default, WindowBackend::Default, 32, "assets/icon/ee.png", pixelDensity ), ContextSettings( true, GLv_default, true, 24, 1, 0, false ) );
+	win = Engine::instance()->createWindow( WindowSettings( 1280, 720, "eepp - Texture Atlas Editor", WindowStyle::Default, WindowBackend::Default, 32, "assets/icon/ee.png", pixelDensity ), ContextSettings( true, GLv_default, true, 24, 1, 0, true ) );
 
 	if ( win->isOpen() ) {
 		PixelDensity::setPixelDensity( eemax( win->getScale(), pixelDensity ) );

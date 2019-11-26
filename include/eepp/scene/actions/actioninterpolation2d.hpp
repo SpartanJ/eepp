@@ -17,6 +17,8 @@ class EE_API ActionInterpolation2d : public Action {
 
 		bool isDone() override;
 
+		Float getCurrentProgress() override;
+
 		Interpolation2d * getInterpolation();
 	protected:
 		mutable Interpolation2d mInterpolation;

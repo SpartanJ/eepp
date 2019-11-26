@@ -183,6 +183,7 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 		}
 	#else
 		mGLContext			= SDL_GL_CreateContext( mSDLWindow );
+		mWindow.ContextConfig.SharedGLContext = false;
 	#endif
 
 	if ( NULL == mGLContext

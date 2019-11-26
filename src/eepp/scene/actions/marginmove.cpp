@@ -151,4 +151,8 @@ Action * MarginMove::reverse() const {
 	return NULL;
 }
 
-}}} 
+Float MarginMove::getCurrentProgress() {
+	return mInterpolationLeft.getCurrentProgress();
+}
+
+}}}

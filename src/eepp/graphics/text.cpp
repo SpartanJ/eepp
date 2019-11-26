@@ -40,7 +40,7 @@ std::string Text::styleFlagToString( const Uint32& flags ) {
 }
 
 Uint32 Text::stringToStyleFlag( const std::string& str ) {
-	std::string valStr = str;
+	std::string valStr = String::trim( str );
 	String::toLowerInPlace( valStr );
 	std::vector<std::string> strings = String::split( valStr, '|' );
 	Uint32 flags = Text::Regular;
