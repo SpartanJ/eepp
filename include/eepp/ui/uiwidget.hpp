@@ -63,6 +63,14 @@ class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
 
 		UIWidget * setLayoutMargin(const Rect & margin);
 
+		UIWidget * setLayoutMarginLeft(const Float& marginLeft);
+
+		UIWidget * setLayoutMarginRight(const Float& marginRight);
+
+		UIWidget * setLayoutMarginTop(const Float& marginTop);
+
+		UIWidget * setLayoutMarginBottom(const Float& marginBottom);
+
 		Float getLayoutWeight() const;
 
 		UIWidget * setLayoutWeight(const Float & weight);
@@ -100,6 +108,14 @@ class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
 		const Rectf& getPadding() const;
 
 		UIWidget * setPadding(const Rectf& padding);
+
+		UIWidget * setPaddingLeft(const Float& paddingLeft);
+
+		UIWidget * setPaddingRight(const Float& paddingRight);
+
+		UIWidget * setPaddingTop(const Float& paddingTop);
+
+		UIWidget * setPaddingBottom(const Float& paddingBottom);
 
 		const std::string& getStyleSheetTag() const;
 

@@ -197,7 +197,7 @@ class EE_API UINode : public Node {
 
 		virtual void setFocus();
 
-		virtual Float lengthAsPixels( const CSS::StyleSheetLength& length, const Sizef& drawableSize, const bool& percentAsWidth = true );
+		virtual Float convertLength( const CSS::StyleSheetLength& length, const Sizef& drawableSize, const bool& percentAsWidth = true );
 
 		Float lengthAsDp( const CSS::StyleSheetLength& length, const Sizef& drawableSize, const bool& percentAsWidth = true );
 	protected:

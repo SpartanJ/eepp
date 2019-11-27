@@ -372,18 +372,18 @@ Sizef UINodeDrawable::LayerDrawable::calcDrawableSize( const std::string& drawab
 				}
 			} else if ( sizePart[0] != "auto" ) {
 				CSS::StyleSheetLength wl( sizePart[0] );
-				size.x = mContainer->getOwner()->lengthAsPixels( wl, Sizef::Zero, true );
+				size.x = mContainer->getOwner()->convertLength( wl, Sizef::Zero, true );
 
 				if ( sizePart[1] == "auto" ) {
 					Sizef drawableSize( mDrawable->getSize() );
 					size.y = drawableSize.getHeight() * ( size.getWidth() / drawableSize.getWidth() );
 				} else {
 					CSS::StyleSheetLength hl( sizePart[1] );
-					size.y = mContainer->getOwner()->lengthAsPixels( hl, Sizef::Zero, false );
+					size.y = mContainer->getOwner()->convertLength( hl, Sizef::Zero, false );
 				}
 			} else {
 				CSS::StyleSheetLength hl( sizePart[1] );
-				size.y = mContainer->getOwner()->lengthAsPixels( hl, Sizef::Zero, false );
+				size.y = mContainer->getOwner()->convertLength( hl, Sizef::Zero, false );
 
 				Sizef drawableSize( mDrawable->getSize() );
 				size.x = drawableSize.getWidth() * ( size.getHeight() / drawableSize.getHeight()  );
@@ -412,8 +412,8 @@ Vector2f UINodeDrawable::LayerDrawable::calcPosition( const std::string& positio
 
 		CSS::StyleSheetLength xl( pos[xFloatIndex] );
 		CSS::StyleSheetLength yl( pos[yFloatIndex] );
-		position.x = mContainer->getOwner()->lengthAsPixels( xl, mDrawableSize, true );
-		position.y = mContainer->getOwner()->lengthAsPixels( yl, mDrawableSize, false );
+		position.x = mContainer->getOwner()->convertLength( xl, mDrawableSize, true );
+		position.y = mContainer->getOwner()->convertLength( yl, mDrawableSize, false );
 	} else if ( pos.size() > 2 ) {
 		if ( pos.size() == 3 ) {
 			pos.push_back( "0dp" );
@@ -432,14 +432,14 @@ Vector2f UINodeDrawable::LayerDrawable::calcPosition( const std::string& positio
 		CSS::StyleSheetLength yl1( pos[yFloatIndex]  );
 		CSS::StyleSheetLength yl2( pos[yFloatIndex+1]  );
 
-		position.x = mContainer->getOwner()->lengthAsPixels( xl1, mDrawableSize, true );
+		position.x = mContainer->getOwner()->convertLength( xl1, mDrawableSize, true );
 
-		Float xl2Val = mContainer->getOwner()->lengthAsPixels( xl2, mDrawableSize, true );
+		Float xl2Val = mContainer->getOwner()->convertLength( xl2, mDrawableSize, true );
 		position.x += ( pos[xFloatIndex] == "right" ) ? -xl2Val : xl2Val;
 
-		position.y = mContainer->getOwner()->lengthAsPixels( yl1, mDrawableSize, false );
+		position.y = mContainer->getOwner()->convertLength( yl1, mDrawableSize, false );
 
-		Float yl2Val = mContainer->getOwner()->lengthAsPixels( yl2, mDrawableSize, false );
+		Float yl2Val = mContainer->getOwner()->convertLength( yl2, mDrawableSize, false );
 		position.y += ( pos[yFloatIndex] == "bottom" ) ? -yl2Val : yl2Val;
 	}
 

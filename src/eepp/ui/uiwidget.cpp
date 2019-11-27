@@ -84,6 +84,42 @@ UIWidget * UIWidget::setLayoutMargin(const Rect & margin) {
 	return this;
 }
 
+UIWidget * UIWidget::setLayoutMarginLeft(const Float& marginLeft) {
+	if ( mLayoutMargin.Left != marginLeft ) {
+		mLayoutMargin.Left = marginLeft;
+		notifyLayoutAttrChange();
+	}
+
+	return this;
+}
+
+UIWidget * UIWidget::setLayoutMarginRight(const Float& marginRight) {
+	if ( mLayoutMargin.Right != marginRight ) {
+		mLayoutMargin.Right = marginRight;
+		notifyLayoutAttrChange();
+	}
+
+	return this;
+}
+
+UIWidget * UIWidget::setLayoutMarginTop(const Float& marginTop) {
+	if ( mLayoutMargin.Top != marginTop ) {
+		mLayoutMargin.Top = marginTop;
+		notifyLayoutAttrChange();
+	}
+
+	return this;
+}
+
+UIWidget * UIWidget::setLayoutMarginBottom(const Float& marginBottom) {
+	if ( mLayoutMargin.Bottom != marginBottom ) {
+		mLayoutMargin.Bottom = marginBottom;
+		notifyLayoutAttrChange();
+	}
+
+	return this;
+}
+
 Float UIWidget::getLayoutWeight() const {
 	return mLayoutWeight;
 }
@@ -455,6 +491,54 @@ UIWidget * UIWidget::setPadding(const Rectf& padding) {
 	if ( padding != mPadding ) {
 		mPadding = padding;
 		mRealPadding = PixelDensity::dpToPx( mPadding );
+		onAutoSize();
+		onPaddingChange();
+		notifyLayoutAttrChange();
+	}
+
+	return this;
+}
+
+UIWidget * UIWidget::setPaddingLeft(const Float& paddingLeft) {
+	if ( paddingLeft != mPadding.Left ) {
+		mPadding.Left = paddingLeft;
+		mRealPadding.Left = PixelDensity::dpToPx( mPadding.Left );
+		onAutoSize();
+		onPaddingChange();
+		notifyLayoutAttrChange();
+	}
+
+	return this;
+}
+
+UIWidget * UIWidget::setPaddingRight(const Float& paddingRight) {
+	if ( paddingRight != mPadding.Right ) {
+		mPadding.Right = paddingRight;
+		mRealPadding.Right = PixelDensity::dpToPx( mPadding.Right );
+		onAutoSize();
+		onPaddingChange();
+		notifyLayoutAttrChange();
+	}
+
+	return this;
+}
+
+UIWidget * UIWidget::setPaddingTop(const Float& paddingTop) {
+	if ( paddingTop != mPadding.Top ) {
+		mPadding.Top = paddingTop;
+		mRealPadding.Top = PixelDensity::dpToPx( mPadding.Top );
+		onAutoSize();
+		onPaddingChange();
+		notifyLayoutAttrChange();
+	}
+
+	return this;
+}
+
+UIWidget * UIWidget::setPaddingBottom(const Float& paddingBottom) {
+	if ( paddingBottom != mPadding.Bottom ) {
+		mPadding.Bottom = paddingBottom;
+		mRealPadding.Bottom = PixelDensity::dpToPx( mPadding.Bottom );
 		onAutoSize();
 		onPaddingChange();
 		notifyLayoutAttrChange();
