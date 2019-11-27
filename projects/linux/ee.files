@@ -292,6 +292,7 @@
 ../../include/eepp/ui/css/stylesheet.hpp
 ../../include/eepp/ui/css/stylesheetelement.hpp
 ../../include/eepp/ui/css/stylesheetlength.hpp
+../../include/eepp/ui/css/stylesheetlengthtransition.hpp
 ../../include/eepp/ui/css/stylesheetparser.hpp
 ../../include/eepp/ui/css/stylesheetpropertiesparser.hpp
 ../../include/eepp/ui/css/stylesheetproperty.hpp
@@ -299,6 +300,7 @@
 ../../include/eepp/ui/css/stylesheetselectorparser.hpp
 ../../include/eepp/ui/css/stylesheetselectorrule.hpp
 ../../include/eepp/ui/css/stylesheetstyle.hpp
+../../include/eepp/ui/css/transitiondefinition.hpp
 ../../include/eepp/ui/marginmove/scale.hpp
 ../../include/eepp/ui/tools/textureatlaseditor.hpp
 ../../include/eepp/ui/tools/uicolorpicker.hpp
@@ -712,6 +714,7 @@
 ../../src/eepp/system/zip.cpp
 ../../src/eepp/ui/css/stylesheet.cpp
 ../../src/eepp/ui/css/stylesheetlength.cpp
+../../src/eepp/ui/css/stylesheetlengthtransition.cpp
 ../../src/eepp/ui/css/stylesheetparser.cpp
 ../../src/eepp/ui/css/stylesheetpropertiesparser.cpp
 ../../src/eepp/ui/css/stylesheetproperty.cpp
@@ -719,6 +722,7 @@
 ../../src/eepp/ui/css/stylesheetselectorparser.cpp
 ../../src/eepp/ui/css/stylesheetselectorrule.cpp
 ../../src/eepp/ui/css/stylesheetstyle.cpp
+../../src/eepp/ui/css/transitiondefinition.cpp
 ../../src/eepp/ui/tools/textureatlaseditor.cpp
 ../../src/eepp/ui/tools/textureatlasnew.cpp
 ../../src/eepp/ui/tools/textureatlasnew.hpp

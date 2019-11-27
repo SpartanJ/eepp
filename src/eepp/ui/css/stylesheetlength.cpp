@@ -110,6 +110,10 @@ Float StyleSheetLength::asDp( const Float& parentSize, const Sizef& viewSize, co
 	return PixelDensity::pxToDp( asPixels( parentSize, viewSize, displayDpi, elFontSize, globalFontSize ) );
 }
 
+bool StyleSheetLength::operator==( const StyleSheetLength& length ) {
+	return mValue == length.mValue && mUnit == length.mUnit;
+}
+
 StyleSheetLength& StyleSheetLength::operator=( const Float& val ) {
 	mValue = val;
 	mUnit = Unit::Px;

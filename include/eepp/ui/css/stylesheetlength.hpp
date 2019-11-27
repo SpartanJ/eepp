@@ -50,6 +50,8 @@ class StyleSheetLength {
 
 		Float asDp( const Float& parentSize, const Sizef& viewSize, const Float& displayDpi, const Float& elFontSize = 12, const Float& globalFontSize = 12 ) const;
 
+		bool operator==( const StyleSheetLength& val );
+
 		StyleSheetLength& operator=( const StyleSheetLength& val );
 
 		StyleSheetLength& operator=( const Float& val );

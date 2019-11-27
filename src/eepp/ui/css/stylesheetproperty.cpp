@@ -12,6 +12,7 @@ StyleSheetProperty::StyleSheetProperty() :
 
 StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::string& value ) :
 	mName( String::toLower( String::trim( name ) ) ),
+	mNameHash( String::hash( mName ) ),
 	mValue( String::trim( value ) ),
 	mSpecificity( 0 ),
 	mVolatile( false ),
@@ -22,6 +23,7 @@ StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::stri
 
 StyleSheetProperty::StyleSheetProperty( const std::string & name, const std::string& value, const Uint32 & specificity, const bool& isVolatile ) :
 	mName( String::toLower( String::trim( name ) ) ),
+	mNameHash( String::hash( mName ) ),
 	mValue( String::trim( value ) ),
 	mSpecificity( specificity ),
 	mVolatile( isVolatile ),
@@ -56,6 +58,7 @@ bool StyleSheetProperty::isEmpty() const {
 
 void StyleSheetProperty::setName( const std::string& name ) {
 	mName = name;
+	mNameHash = String::hash( mName );
 }
 
 void StyleSheetProperty::setValue( const std::string& value ) {
@@ -68,6 +71,14 @@ const bool &StyleSheetProperty::isVolatile() const {
 
 void StyleSheetProperty::setVolatile( const bool & isVolatile ) {
 	mVolatile = isVolatile;
+}
+
+bool StyleSheetProperty::operator==( const StyleSheetProperty& property ) {
+	return mNameHash == property.mNameHash && mValue == property.mValue;
+}
+
+const Uint32& StyleSheetProperty::getNameHash() const {
+	return mNameHash;
 }
 
 void StyleSheetProperty::checkImportant() {

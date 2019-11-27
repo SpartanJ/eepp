@@ -26,40 +26,6 @@ class EE_API UINodeDrawable : public Drawable {
 
 		static Repeat repeatFromText( const std::string& text );
 
-		class EE_API MoveAction : public Action {
-			public:
-				static MoveAction * New( const std::string& posEqStart, const std::string& posEqEnd, const Time& duration, const Ease::Interpolation& type = Ease::Linear );
-
-				void start() override;
-
-				void stop() override;
-
-				void update( const Time& time ) override;
-
-				bool isDone() override;
-
-				Float getCurrentProgress();
-
-				Action * clone() const override;
-
-				Action * reverse() const override;
-
-				const Vector2f& getOffset() const { return mOffset; }
-			protected:
-				MoveAction( const std::string& posEqStart, const std::string& posEqEnd, const Time& duration, const Ease::Interpolation& type = Ease::Linear );
-
-				void onStart() override;
-
-				void onUpdate( const Time& time ) override;
-
-				std::string mStart;
-				std::string mEnd;
-				Time mDuration;
-				Ease::Interpolation mType;
-				Time mElapsed;
-				Vector2f mOffset;
-		};
-
 		class EE_API LayerDrawable : public Drawable {
 			public:
 				static LayerDrawable * New( UINodeDrawable * container );
@@ -111,10 +77,6 @@ class EE_API UINodeDrawable : public Drawable {
 				Sizef calcDrawableSize( const std::string& drawableSizeEq );
 
 				Vector2f calcPosition( const std::string& positionEq );
-
-				MoveAction * getMoveAction() const;
-
-				void setMoveAction(MoveAction * moveAction);
 			protected:
 				UINodeDrawable * mContainer;
 				Sizef mSize;
@@ -127,8 +89,6 @@ class EE_API UINodeDrawable : public Drawable {
 				Drawable * mDrawable;
 				Uint32 mResourceChangeCbId;
 				Repeat mRepeat;
-				MoveAction * mMoveAction;
-				Uint32 mMoveActionCbId;
 
 				virtual void onPositionChange();
 

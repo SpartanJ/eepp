@@ -198,9 +198,7 @@ UINodeDrawable::LayerDrawable::LayerDrawable( UINodeDrawable * container ) :
 	mNeedsUpdate(false),
 	mOwnsDrawable(false),
 	mDrawable(NULL),
-	mResourceChangeCbId(0),
-	mMoveAction(NULL),
-	mMoveActionCbId(0)
+	mResourceChangeCbId(0)
 {}
 
 UINodeDrawable::LayerDrawable::~LayerDrawable() {
@@ -236,12 +234,6 @@ void UINodeDrawable::LayerDrawable::draw( const Vector2f& position, const Sizef&
 
 	if ( mNeedsUpdate )
 		update();
-
-	if ( NULL != mMoveAction ) {
-		update();
-		mMoveAction->update( Time::Zero );
-		setOffset( mMoveAction->getOffset() );
-	}
 
 	mDrawable->draw( mPosition + mOffset, mDrawableSize );
 }
@@ -372,18 +364,18 @@ Sizef UINodeDrawable::LayerDrawable::calcDrawableSize( const std::string& drawab
 				}
 			} else if ( sizePart[0] != "auto" ) {
 				CSS::StyleSheetLength wl( sizePart[0] );
-				size.x = mContainer->getOwner()->convertLength( wl, Sizef::Zero, true );
+				size.x = mContainer->getOwner()->convertLength( wl, mContainer->getOwner()->getPixelsSize().getWidth() );
 
 				if ( sizePart[1] == "auto" ) {
 					Sizef drawableSize( mDrawable->getSize() );
 					size.y = drawableSize.getHeight() * ( size.getWidth() / drawableSize.getWidth() );
 				} else {
 					CSS::StyleSheetLength hl( sizePart[1] );
-					size.y = mContainer->getOwner()->convertLength( hl, Sizef::Zero, false );
+					size.y = mContainer->getOwner()->convertLength( hl, mContainer->getOwner()->getPixelsSize().getHeight() );
 				}
 			} else {
 				CSS::StyleSheetLength hl( sizePart[1] );
-				size.y = mContainer->getOwner()->convertLength( hl, Sizef::Zero, false );
+				size.y = mContainer->getOwner()->convertLength( hl, mContainer->getOwner()->getPixelsSize().getHeight() );
 
 				Sizef drawableSize( mDrawable->getSize() );
 				size.x = drawableSize.getWidth() * ( size.getHeight() / drawableSize.getHeight()  );
@@ -412,8 +404,8 @@ Vector2f UINodeDrawable::LayerDrawable::calcPosition( const std::string& positio
 
 		CSS::StyleSheetLength xl( pos[xFloatIndex] );
 		CSS::StyleSheetLength yl( pos[yFloatIndex] );
-		position.x = mContainer->getOwner()->convertLength( xl, mDrawableSize, true );
-		position.y = mContainer->getOwner()->convertLength( yl, mDrawableSize, false );
+		position.x = mContainer->getOwner()->convertLength( xl, mContainer->getOwner()->getPixelsSize().getWidth() - mDrawableSize.getWidth() );
+		position.y = mContainer->getOwner()->convertLength( yl, mContainer->getOwner()->getPixelsSize().getHeight() - mDrawableSize.getHeight() );
 	} else if ( pos.size() > 2 ) {
 		if ( pos.size() == 3 ) {
 			pos.push_back( "0dp" );
@@ -432,33 +424,18 @@ Vector2f UINodeDrawable::LayerDrawable::calcPosition( const std::string& positio
 		CSS::StyleSheetLength yl1( pos[yFloatIndex]  );
 		CSS::StyleSheetLength yl2( pos[yFloatIndex+1]  );
 
-		position.x = mContainer->getOwner()->convertLength( xl1, mDrawableSize, true );
+		position.x = mContainer->getOwner()->convertLength( xl1, mContainer->getOwner()->getPixelsSize().getWidth() - mDrawableSize.getWidth() );
 
-		Float xl2Val = mContainer->getOwner()->convertLength( xl2, mDrawableSize, true );
+		Float xl2Val = mContainer->getOwner()->convertLength( xl2, mContainer->getOwner()->getPixelsSize().getWidth() - mDrawableSize.getWidth() );
 		position.x += ( pos[xFloatIndex] == "right" ) ? -xl2Val : xl2Val;
 
-		position.y = mContainer->getOwner()->convertLength( yl1, mDrawableSize, false );
+		position.y = mContainer->getOwner()->convertLength( yl1, mContainer->getOwner()->getPixelsSize().getWidth() - mDrawableSize.getHeight() );
 
-		Float yl2Val = mContainer->getOwner()->convertLength( yl2, mDrawableSize, false );
+		Float yl2Val = mContainer->getOwner()->convertLength( yl2, mContainer->getOwner()->getPixelsSize().getWidth() - mDrawableSize.getHeight() );
 		position.y += ( pos[yFloatIndex] == "bottom" ) ? -yl2Val : yl2Val;
 	}
 
 	return position;
-}
-
-UINodeDrawable::MoveAction * UINodeDrawable::LayerDrawable::getMoveAction() const {
-	return mMoveAction;
-}
-
-void UINodeDrawable::LayerDrawable::setMoveAction(MoveAction * moveAction) {
-	mMoveAction = moveAction;
-	if ( mMoveAction != NULL ) {
-		auto delCb = [&] ( Action *, const Action::ActionType& ) {
-			mMoveAction = NULL;
-		};
-		mMoveAction->addEventListener( Action::OnDone, delCb );
-		mMoveAction->addEventListener( Action::OnDelete, delCb );
-	}
 }
 
 void UINodeDrawable::LayerDrawable::setOffset( const Vector2f& offset ) {
@@ -481,75 +458,6 @@ void UINodeDrawable::LayerDrawable::update() {
 	mOffset = calcPosition( mPositionEq );
 
 	mNeedsUpdate = false;
-}
-
-UINodeDrawable::MoveAction * UINodeDrawable::MoveAction::New( const std::string& posEqStart, const std::string& posEqEnd, const Time& duration, const Ease::Interpolation& type ) {
-	return eeNew( MoveAction, ( posEqStart, posEqEnd, duration, type ) );
-}
-
-UINodeDrawable::MoveAction::MoveAction( const std::string& posEqStart, const std::string& posEqEnd, const Time& duration, const Ease::Interpolation& type ) :
-	mStart( posEqStart ),
-	mEnd( posEqEnd ),
-	mDuration( duration ),
-	mType( type )
-{}
-
-Action * UINodeDrawable::MoveAction::clone() const {
-	return MoveAction::New( mStart, mEnd, mDuration, mType );
-}
-
-Action * UINodeDrawable::MoveAction::reverse() const {
-	return MoveAction::New( mEnd, mStart, mDuration, mType );
-}
-
-void UINodeDrawable::MoveAction::start() {
-	onStart();
-
-	sendEvent( ActionType::OnStart );
-}
-
-void UINodeDrawable::MoveAction::stop() {
-	onStop();
-
-	sendEvent( ActionType::OnStop );
-}
-
-void UINodeDrawable::MoveAction::update( const Time& time ) {
-	mElapsed += time;
-
-	onUpdate( time );
-}
-
-bool UINodeDrawable::MoveAction::isDone() {
-	return mElapsed.asMicroseconds() >= mDuration.asMicroseconds();
-}
-
-Float UINodeDrawable::MoveAction::getCurrentProgress() {
-	return mElapsed.asMilliseconds() / mDuration.asMilliseconds();
-}
-
-void UINodeDrawable::MoveAction::onStart() {
-	UINode * node = mNode->asType<UINode>();
-	LayerDrawable * layer = node->getBackground()->getLayer(0);
-	layer->setMoveAction( this );
-	onUpdate( Time::Zero );
-}
-
-void UINodeDrawable::MoveAction::onUpdate( const Time& ) {
-	if ( NULL != mNode && mNode->isUINode() ) {
-		UINode * node = mNode->asType<UINode>();
-		LayerDrawable * layer = node->getBackground()->getLayer(0);
-		Vector2f start = layer->calcPosition( mStart );
-		Vector2f end = layer->calcPosition( mEnd );
-		Time time = mElapsed.asMicroseconds() > mDuration.asMicroseconds() ? mDuration : mElapsed;
-		Float x = easingCb[ mType ]( time.asMilliseconds(), start.x, end.x - start.x, mDuration.asMilliseconds() );
-		Float y = easingCb[ mType ]( time.asMilliseconds(), start.y, end.y - start.y, mDuration.asMilliseconds() );
-		mOffset = Vector2f( x, y );
-		if ( isDone() ) {
-			layer->setMoveAction( NULL );
-			layer->setPositionEq( mEnd );
-		}
-	}
 }
 
 }}

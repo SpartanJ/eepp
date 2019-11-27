@@ -90,7 +90,7 @@ bool UIStyle::hasTransition( const std::string& propertyName ) {
 	return mTransitions.find( propertyName ) != mTransitions.end() || mTransitions.find( "all" ) != mTransitions.end();
 }
 
-UIStyle::TransitionInfo UIStyle::getTransition( const std::string& propertyName ) {
+TransitionDefinition UIStyle::getTransition( const std::string& propertyName ) {
 	auto propertyTransitionIt = mTransitions.find( propertyName );
 
 	if ( propertyTransitionIt != mTransitions.end() ) {
@@ -99,7 +99,7 @@ UIStyle::TransitionInfo UIStyle::getTransition( const std::string& propertyName 
 		return propertyTransitionIt->second;
 	}
 
-	return TransitionInfo();
+	return TransitionDefinition();
 }
 
 const bool& UIStyle::isChangingState() const {
@@ -147,7 +147,7 @@ void UIStyle::onStateChange() {
 			tryApplyStyle( style );
 		}
 
-		parseTransitions();
+		mTransitions = TransitionDefinition::parseTransitionProperties( mTransitionAttributes );
 
 		mWidget->beginAttributesTransaction();
 
@@ -261,117 +261,6 @@ void UIStyle::removeRelatedWidgets() {
 	}
 
 	mRelatedWidgets.clear();
-}
-
-void UIStyle::parseTransitions() {
-	std::vector<std::string> properties;
-	std::vector<Time> durations;
-	std::vector<Time> delays;
-	std::vector<Ease::Interpolation> timingFunctions;
-	TransitionsMap transitions;
-
-	for ( auto& attr : mTransitionAttributes ) {
-		if ( attr.getName() == "transition" ) {
-			auto strTransitions = String::split( attr.getValue(), ',' );
-
-			for ( auto tit = strTransitions.begin(); tit != strTransitions.end(); ++tit ) {
-				auto strTransition = String::trim( *tit );
-				auto splitTransition = String::split( strTransition, ' ' );
-
-				if ( !splitTransition.empty() ) {
-					TransitionInfo transitionInfo;
-
-					if ( splitTransition.size() >= 2 ) {
-						std::string property  = String::trim( splitTransition[0] );
-						String::toLowerInPlace( property );
-
-						Time duration = NodeAttribute( attr.getName(), String::toLower( splitTransition[1] ) ).asTime();
-
-						transitionInfo.property = property;
-						transitionInfo.duration = duration;
-
-						if ( splitTransition.size() >= 3 ) {
-							transitionInfo.timingFunction = Ease::fromName( String::toLower( splitTransition[2] ) );
-
-							if (  transitionInfo.timingFunction == Ease::Linear && splitTransition[2] != "linear" && splitTransition.size() == 3 ) {
-								transitionInfo.delay = NodeAttribute( attr.getName(), String::toLower( splitTransition[2] ) ).asTime();
-							} else if ( splitTransition.size() >= 4 ) {
-								transitionInfo.delay = NodeAttribute( attr.getName(), String::toLower( splitTransition[3] ) ).asTime();
-							}
-						}
-
-						transitions[ transitionInfo.getProperty() ] = transitionInfo;
-					}
-				}
-			}
-		} else if ( attr.getName() == "transitionduration" || attr.getName() == "transition-duration" ) {
-			auto strDurations = String::split( attr.getValue(), ',' );
-
-			for ( auto dit = strDurations.begin(); dit != strDurations.end(); ++dit ) {
-				std::string duration( String::trim( *dit ) );
-				String::toLowerInPlace( duration );
-				durations.push_back( NodeAttribute( attr.getName(), duration ).asTime() );
-			}
-		} else if ( attr.getName() == "transitiondelay" || attr.getName() == "transition-delay" ) {
-			auto strDelays = String::split( attr.getValue(), ',' );
-
-			for ( auto dit = strDelays.begin(); dit != strDelays.end(); ++dit ) {
-				std::string delay( String::trim( *dit ) );
-				String::toLowerInPlace( delay );
-				delays.push_back( NodeAttribute( attr.getName(), delay ).asTime() );
-			}
-		} else if ( attr.getName() == "transitiontimingfunction" || attr.getName() == "transition-timing-function" ) {
-			auto strTimingFuncs = String::split( attr.getValue(), ',' );
-
-			for ( auto dit = strTimingFuncs.begin(); dit != strTimingFuncs.end(); ++dit ) {
-				std::string timingFunction( String::trim( *dit ) );
-				String::toLowerInPlace( timingFunction );
-				timingFunctions.push_back( Ease::fromName( timingFunction ) );
-			}
-		} else if ( attr.getName() == "transitionproperty" || attr.getName() == "transition-property" ) {
-			auto strProperties = String::split( attr.getValue(), ',' );
-
-			for ( auto dit = strProperties.begin(); dit != strProperties.end(); ++dit ) {
-				std::string property( String::trim( *dit ) );
-				String::toLowerInPlace( property );
-				properties.push_back( property );
-			}
-		}
-	}
-
-	if ( properties.empty() ) {
-		if ( !transitions.empty() )
-			mTransitions = transitions;
-
-		return;
-	}
-
-	for ( size_t i = 0; i < properties.size(); i++ ) {
-		const std::string& property = properties.at( i );
-		TransitionInfo transitionInfo;
-
-		transitionInfo.property = property;
-
-		if ( durations.size() < i ) {
-			transitionInfo.duration = durations[i];
-		} else if ( !durations.empty() ) {
-			transitionInfo.duration = durations[0];
-		}
-
-		if ( delays.size() < i ) {
-			transitionInfo.delay = delays[i];
-		} else if ( !delays.empty() ) {
-			transitionInfo.delay = delays[0];
-		}
-
-		if ( timingFunctions.size() < i ) {
-			transitionInfo.timingFunction = timingFunctions[i];
-		} else if ( !delays.empty() ) {
-			transitionInfo.timingFunction = timingFunctions[0];
-		}
-
-		mTransitions[ property ] = transitionInfo;
-	}
 }
 
 }}

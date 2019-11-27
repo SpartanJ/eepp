@@ -986,16 +986,12 @@ Uint32 UINode::onFocusLoss() {
 	return Node::onFocusLoss();
 }
 
-Float UINode::convertLength( const CSS::StyleSheetLength& length, const Sizef& drawableSize, const bool& percentAsWidth ) {
-	return length.asPixels(
-		percentAsWidth ? getPixelsSize().getWidth() - drawableSize.getWidth() :
-						 getPixelsSize().getHeight() - drawableSize.getHeight(),
-		getSceneNode()->getPixelsSize(),
-		getSceneNode()->getDPI(), 12, 12 );
+Float UINode::convertLength( const CSS::StyleSheetLength& length, const Float& containerLength ) {
+	return length.asPixels( containerLength, getSceneNode()->getPixelsSize(), getSceneNode()->getDPI(), 12, 12 );
 }
 
-Float UINode::lengthAsDp( const CSS::StyleSheetLength& length, const Sizef& drawableSize, const bool& percentAsWidth ) {
-	return PixelDensity::pxToDp( convertLength( length, drawableSize, percentAsWidth ) );
+Float UINode::convertLengthAsDp( const CSS::StyleSheetLength& length, const Float& containerLength ) {
+	return PixelDensity::pxToDp( convertLength( length, containerLength ) );
 }
 
 }}

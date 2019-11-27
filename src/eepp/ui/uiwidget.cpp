@@ -4,6 +4,7 @@
 #include <eepp/ui/uitooltip.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uinodedrawable.hpp>
+#include <eepp/ui/css/transitiondefinition.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
 #include <eepp/ui/css/stylesheetselector.hpp>
 #include <eepp/graphics/drawablesearcher.hpp>
@@ -930,7 +931,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		Float newX = attribute.asDpDimensionI();
 
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( attribute.getName() ) );
+			CSS::TransitionDefinition transitionInfo( mStyle->getTransition( attribute.getName() ) );
 
 			Action * action = Actions::MoveCoordinate::New( getPosition().x, newX, transitionInfo.duration, transitionInfo.timingFunction, Actions::MoveCoordinate::CoordinateX );
 
@@ -950,7 +951,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		Float newY = attribute.asDpDimensionI();
 
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( attribute.getName() ) );
+			CSS::TransitionDefinition transitionInfo( mStyle->getTransition( attribute.getName() ) );
 
 			Action * action = Actions::MoveCoordinate::New( getPosition().y, newY, transitionInfo.duration, transitionInfo.timingFunction, Actions::MoveCoordinate::CoordinateY );
 
@@ -970,7 +971,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		Float newWidth = attribute.asDpDimensionI();
 
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( attribute.getName() ) );
+			CSS::TransitionDefinition transitionInfo( mStyle->getTransition( attribute.getName() ) );
 			constexpr Uint32 tag = String::hash("width");
 
 			Action * action = Actions::ResizeWidth::New( getSize().getWidth(), newWidth, transitionInfo.duration, transitionInfo.timingFunction );
@@ -994,7 +995,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
 			constexpr Uint32 tag = String::hash("height");
-			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( attribute.getName() ) );
+			CSS::TransitionDefinition transitionInfo( mStyle->getTransition( attribute.getName() ) );
 
 			Action * action = Actions::ResizeHeight::New( getSize().getHeight(), newHeight, transitionInfo.duration, transitionInfo.timingFunction );
 
@@ -1020,7 +1021,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		Color color = attribute.asColor();
 
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( attribute.getName() ) );
+			CSS::TransitionDefinition transitionInfo( mStyle->getTransition( attribute.getName() ) );
 			Color start( getBackgroundColor() );
 
 			Action * action = Actions::Tint::New( start, color, true, transitionInfo.duration, transitionInfo.timingFunction, Actions::Tint::Background );
@@ -1042,7 +1043,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		/*if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
 			constexpr Uint32 tag = String::hash( "background-position" );
 
-			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( attribute.getName() ) );
+			CSS::TransitionDefinition transitionInfo( mStyle->getTransition( attribute.getName() ) );
 
 			Action * action = UINodeDrawable::MoveAction::New( getBackground()->getLayer(0)->getPositionEq(), attribute.value(), transitionInfo.duration, transitionInfo.timingFunction );
 
@@ -1073,7 +1074,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		Color color = attribute.asColor();
 
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( attribute.getName() ) );
+			CSS::TransitionDefinition transitionInfo( mStyle->getTransition( attribute.getName() ) );
 			Color start( getForegroundColor() );
 
 			Action * action = Actions::Tint::New( start, color, true, transitionInfo.duration, transitionInfo.timingFunction, Actions::Tint::Foreground );
@@ -1103,7 +1104,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		Color color = attribute.asColor();
 
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( attribute.getName() ) );
+			CSS::TransitionDefinition transitionInfo( mStyle->getTransition( attribute.getName() ) );
 			Color start( getBorderColor() );
 
 			Action * action = Actions::Tint::New( start, color, false, transitionInfo.duration, transitionInfo.timingFunction, Actions::Tint::Border );
@@ -1125,7 +1126,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		Uint32 borderRadius = PixelDensity::dpToPxI( attribute.asDpDimensionUint() );
 
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( attribute.getName() ) );
+			CSS::TransitionDefinition transitionInfo( mStyle->getTransition( attribute.getName() ) );
 			Uint32 start( getBorderRadius() );
 
 			Action * action = Actions::ResizeBorderRadius::New( start, borderRadius, transitionInfo.duration, transitionInfo.timingFunction );
@@ -1164,7 +1165,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		Color color = attribute.asColor();
 
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( attribute.getName() ) );
+			CSS::TransitionDefinition transitionInfo( mStyle->getTransition( attribute.getName() ) );
 			Color start( getSkinColor() );
 
 			Action * action = Actions::Tint::New( start, color, true, transitionInfo.duration, transitionInfo.timingFunction, Actions::Tint::Skin );
@@ -1257,7 +1258,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		}
 
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( attribute.getName() ) );
+			CSS::TransitionDefinition transitionInfo( mStyle->getTransition( attribute.getName() ) );
 			Action * action = Actions::MarginMove::New( mLayoutMargin, margin, transitionInfo.duration, transitionInfo.timingFunction, marginFlag );
 
 			if ( Time::Zero != transitionInfo.delay )
@@ -1372,7 +1373,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		SAVE_NORMAL_STATE_ATTR( String::format( "%2.f", mRotation ) )
 
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( attribute.getName() ) );
+			CSS::TransitionDefinition transitionInfo( mStyle->getTransition( attribute.getName() ) );
 			Float newRotation( mStyle->getNodeAttribute( attribute.getName() ).asFloat() );
 			Action * action = Actions::Rotate::New( mRotation, newRotation, transitionInfo.duration, transitionInfo.timingFunction );
 
@@ -1387,7 +1388,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		SAVE_NORMAL_STATE_ATTR( String::format( "%2.f, %2.f", mScale.x, mScale.y ) )
 
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( attribute.getName() ) );
+			CSS::TransitionDefinition transitionInfo( mStyle->getTransition( attribute.getName() ) );
 			Vector2f newScale( mStyle->getNodeAttribute( attribute.getName() ).asVector2f() );
 			Action * action = Actions::Scale::New( mScale, newScale, transitionInfo.duration, transitionInfo.timingFunction );
 
@@ -1433,7 +1434,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		}
 
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( attribute.getName() ) );
+			CSS::TransitionDefinition transitionInfo( mStyle->getTransition( attribute.getName() ) );
 			Action * action = Actions::PaddingTransition::New( mPadding, padding, transitionInfo.duration, transitionInfo.timingFunction, paddingFlag );
 
 			if ( Time::Zero != transitionInfo.delay )
@@ -1449,7 +1450,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		Float alpha = eemin( attribute.asFloat() * 255.f, 255.f );
 
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( attribute.getName() ) );
+			CSS::TransitionDefinition transitionInfo( mStyle->getTransition( attribute.getName() ) );
 			Action * action = Actions::Fade::New( mAlpha, alpha, transitionInfo.duration, transitionInfo.timingFunction );
 
 			if ( Time::Zero != transitionInfo.delay )

@@ -9,6 +9,7 @@
 #include <eepp/window/clipboard.hpp>
 #include <eepp/scene/actions/actions.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
+#include <eepp/ui/css/transitiondefinition.hpp>
 
 namespace EE { namespace UI {
 
@@ -577,7 +578,7 @@ bool UITextView::setAttribute( const NodeAttribute& attribute, const Uint32& sta
 		Color color = attribute.asColor();
 
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( attribute.getName() ) );
+			CSS::TransitionDefinition transitionInfo( mStyle->getTransition( attribute.getName() ) );
 
 			Action * action = Actions::Tint::New( getFontColor(), color, true, transitionInfo.duration, transitionInfo.timingFunction, Actions::Tint::Text );
 
@@ -594,7 +595,7 @@ bool UITextView::setAttribute( const NodeAttribute& attribute, const Uint32& sta
 		Color color = attribute.asColor();
 
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( attribute.getName() ) );
+			CSS::TransitionDefinition transitionInfo( mStyle->getTransition( attribute.getName() ) );
 
 			Action * action = Actions::Tint::New( getFontShadowColor(), color, true, transitionInfo.duration, transitionInfo.timingFunction, Actions::Tint::TextShadow );
 
@@ -647,7 +648,7 @@ bool UITextView::setAttribute( const NodeAttribute& attribute, const Uint32& sta
 		Color color = attribute.asColor();
 
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( attribute.getName() ) );
+			CSS::TransitionDefinition transitionInfo( mStyle->getTransition( attribute.getName() ) );
 
 			Action * action = Actions::Tint::New( getOutlineColor(), color, true, transitionInfo.duration, transitionInfo.timingFunction, Actions::Tint::TextOutline );
 

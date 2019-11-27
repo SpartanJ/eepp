@@ -17,6 +17,8 @@ class EE_API StyleSheetProperty {
 
 		const std::string& getName() const;
 
+		const Uint32& getNameHash() const;
+
 		const std::string& getValue() const;
 
 		const Uint32& getSpecificity() const;
@@ -32,8 +34,11 @@ class EE_API StyleSheetProperty {
 		const bool& isVolatile() const;
 
 		void setVolatile( const bool& isVolatile );
+
+		bool operator==( const StyleSheetProperty& property );
 	protected:
 		std::string mName;
+		Uint32 mNameHash;
 		std::string mValue;
 		Uint32 mSpecificity;
 		bool mVolatile;

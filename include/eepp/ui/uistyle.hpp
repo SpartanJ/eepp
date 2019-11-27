@@ -5,6 +5,7 @@
 #include <eepp/scene/nodeattribute.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
 #include <eepp/ui/css/stylesheetstyle.hpp>
+#include <eepp/ui/css/transitiondefinition.hpp>
 #include <eepp/graphics/fontstyleconfig.hpp>
 #include <eepp/math/ease.hpp>
 #include <set>
@@ -22,27 +23,6 @@ class UIWidget;
 
 class EE_API UIStyle : public UIState {
 	public:
-		class TransitionInfo
-		{
-			public:
-				TransitionInfo() :
-					timingFunction( Ease::Linear )
-				{}
-
-				const std::string& getProperty() const { return property; }
-
-				Ease::Interpolation getTimingFunction() const { return timingFunction; }
-
-				const Time& getDelay() const { return delay; }
-
-				const Time& getDuration() const { return duration; }
-
-				std::string property;
-				Ease::Interpolation timingFunction;
-				Time delay;
-				Time duration;
-		};
-
 		static UIStyle * New( UIWidget * widget );
 
 		explicit UIStyle( UIWidget * widget );
@@ -67,19 +47,17 @@ class EE_API UIStyle : public UIState {
 
 		bool hasTransition( const std::string& propertyName );
 
-		TransitionInfo getTransition( const std::string& propertyName );
+		CSS::TransitionDefinition getTransition( const std::string& propertyName );
 
 		const bool& isChangingState() const;
 	protected:
-		typedef std::map<std::string, TransitionInfo> TransitionsMap;
-
 		UIWidget * mWidget;
 		CSS::StyleSheetStyleVector mCacheableStyles;
 		CSS::StyleSheetStyleVector mNoncacheableStyles;
 		CSS::StyleSheetStyle mElementStyle;
 		CSS::StyleSheetProperties mProperties;
 		std::vector<CSS::StyleSheetProperty> mTransitionAttributes;
-		TransitionsMap mTransitions;
+		CSS::TransitionsMap mTransitions;
 		std::set<UIWidget*> mRelatedWidgets;
 		std::set<UIWidget*> mSubscribedWidgets;
 		bool mChangingState;
@@ -87,8 +65,6 @@ class EE_API UIStyle : public UIState {
 		void tryApplyStyle( const CSS::StyleSheetStyle& style );
 
 		void updateState();
-
-		void parseTransitions();
 
 		void subscribeNonCacheableStyles();
 
