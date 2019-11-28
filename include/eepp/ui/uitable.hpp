@@ -77,7 +77,7 @@ class EE_API UITable : public UITouchDragableWidget {
 
 		Rectf getContainerPadding() const;
 
-		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
+		virtual bool setAttribute( const StyleSheetProperty& attribute, const Uint32& state = UIState::StateFlagNormal );
 	protected:
 		friend class UIItemContainer<UITable>;
 		friend class UITableCell;

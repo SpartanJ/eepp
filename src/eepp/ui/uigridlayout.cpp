@@ -203,7 +203,7 @@ Sizef UIGridLayout::getTargetElementSize() const {
 				  mRowMode == Size ? mRowHeight : ( ( getLayoutHeightRules() == WRAP_CONTENT ? getParent()->getSize().getHeight() : getSize().getHeight() ) - mPadding.Top - mPadding.Bottom ) * mRowWeight );
 }
 
-bool UIGridLayout::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
+bool UIGridLayout::setAttribute( const StyleSheetProperty& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "column-span" == name || "columnspan" == name ) {

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 4.10.1, 2019-11-07T16:36:44. -->
+<!-- Written by QtCreator 4.10.1, 2019-11-27T22:26:00. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -79,7 +79,7 @@
    <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">{6d057187-158a-4883-8d5b-d470a6b6b025}</value>
    <value type="int" key="ProjectExplorer.Target.ActiveBuildConfiguration">10</value>
    <value type="int" key="ProjectExplorer.Target.ActiveDeployConfiguration">0</value>
-   <value type="int" key="ProjectExplorer.Target.ActiveRunConfiguration">0</value>
+   <value type="int" key="ProjectExplorer.Target.ActiveRunConfiguration">15</value>
    <valuemap type="QVariantMap" key="ProjectExplorer.Target.BuildConfiguration.0">
     <value type="QString" key="ProjectExplorer.BuildConfiguration.BuildDirectory">../../make/linux</value>
     <valuemap type="QVariantMap" key="ProjectExplorer.BuildConfiguration.BuildStepList.0">

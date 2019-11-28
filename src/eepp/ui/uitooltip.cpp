@@ -327,7 +327,7 @@ void UITooltip::setFontStyleConfig(const UIFontStyleConfig & styleConfig) {
 	mTextCache->setOutlineColor( mStyleConfig.OutlineColor );
 }
 
-bool UITooltip::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
+bool UITooltip::setAttribute( const StyleSheetProperty& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "color" == name ) {

@@ -1378,7 +1378,7 @@ void UIWindow::resizeCursor() {
 	}
 }
 
-bool UIWindow::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
+bool UIWindow::setAttribute( const StyleSheetProperty& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "width" == name ) {

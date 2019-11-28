@@ -435,7 +435,7 @@ Uint32 UISlider::onMessage(const NodeMessage * Msg) {
 	return 0;
 }
 
-bool UISlider::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
+bool UISlider::setAttribute( const StyleSheetProperty& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "orientation" == name ) {

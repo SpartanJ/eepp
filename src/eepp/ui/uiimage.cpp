@@ -209,7 +209,7 @@ const Vector2f& UIImage::getAlignOffset() const {
 	return mAlignOffset;
 }
 
-bool UIImage::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
+bool UIImage::setAttribute( const StyleSheetProperty& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "src" == name ) {

@@ -240,7 +240,7 @@ bool UIScrollView::isTouchOverAllowedChilds() {
 	return isMouseOverMeOrChilds() && mScrollView->isMouseOverMeOrChilds() && ret;
 }
 
-bool UIScrollView::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
+bool UIScrollView::setAttribute( const StyleSheetProperty& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "type" == name ) {

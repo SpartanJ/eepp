@@ -196,7 +196,7 @@ const Vector2f& UITextureRegion::getAlignOffset() const {
 	return mAlignOffset;
 }
 
-bool UITextureRegion::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
+bool UITextureRegion::setAttribute( const StyleSheetProperty& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "src" == name ) {

@@ -1,9 +1,7 @@
 #include <eepp/ui/css/stylesheetpropertiesparser.hpp>
 #include <eepp/math/rect.hpp>
-#include <eepp/scene/nodeattribute.hpp>
 
 using namespace EE::UI;
-using namespace EE::Scene;
 
 namespace EE { namespace UI { namespace CSS {
 
@@ -131,14 +129,14 @@ int StyleSheetPropertiesParser::readComment(StyleSheetPropertiesParser::ReadStat
 void StyleSheetPropertiesParser::addProperty( const std::string& name, std::string value ) {
 	if ( name == "padding" ) {
 		value = String::toLower( String::trim( value ) );
-		Rectf rect( NodeAttribute( name, value ).asRectf() );
+		Rectf rect( StyleSheetProperty( name, value ).asRectf() );
 		mProperties[ "padding-left" ] = StyleSheetProperty( "padding-left", String::toStr( rect.Left ) );
 		mProperties[ "padding-right" ] = StyleSheetProperty( "padding-right", String::toStr( rect.Right ) );
 		mProperties[ "padding-top" ] = StyleSheetProperty( "padding-top", String::toStr( rect.Top ) );
 		mProperties[ "padding-bottom" ] = StyleSheetProperty( "padding-bottom", String::toStr( rect.Bottom ) );
 	} else if ( name == "margin" ) {
 		value = String::toLower( String::trim( value ) );
-		Rect rect( NodeAttribute( name, value ).asRect() );
+		Rect rect( StyleSheetProperty( name, value ).asRect() );
 		mProperties[ "margin-left" ] = StyleSheetProperty( "margin-left", String::toStr( rect.Left ) );
 		mProperties[ "margin-right" ] = StyleSheetProperty( "margin-right", String::toStr( rect.Right ) );
 		mProperties[ "margin-top" ] = StyleSheetProperty( "margin-top", String::toStr( rect.Top ) );

@@ -118,7 +118,7 @@ void UITabWidget::setStyleConfig(const StyleConfig & styleConfig) {
 	orderTabs();
 }
 
-bool UITabWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
+bool UITabWidget::setAttribute( const StyleSheetProperty& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "max-text-length" == name || "maxtextlength" == name ) {

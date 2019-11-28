@@ -283,7 +283,7 @@ void UIPushButton::setStyleConfig(const StyleConfig & styleConfig) {
 	onStateChange();
 }
 
-bool UIPushButton::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
+bool UIPushButton::setAttribute( const StyleSheetProperty& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	bool attributeSet = true;

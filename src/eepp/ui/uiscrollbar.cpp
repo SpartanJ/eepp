@@ -304,7 +304,7 @@ void UIScrollBar::setExpandBackground( bool expandBackground ) {
 	}
 }
 
-bool UIScrollBar::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
+bool UIScrollBar::setAttribute( const StyleSheetProperty& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "orientation" == name ) {

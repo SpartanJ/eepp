@@ -1,8 +1,5 @@
 #include <eepp/ui/css/transitiondefinition.hpp>
 #include <eepp/core/string.hpp>
-#include <eepp/scene/nodeattribute.hpp>
-
-using namespace EE::Scene;
 
 namespace EE { namespace UI { namespace CSS {
 
@@ -28,7 +25,7 @@ std::map<std::string, TransitionDefinition> TransitionDefinition::parseTransitio
 						std::string property  = String::trim( splitTransition[0] );
 						String::toLowerInPlace( property );
 
-						Time duration = NodeAttribute( prop.getName(), String::toLower( splitTransition[1] ) ).asTime();
+						Time duration = StyleSheetProperty( prop.getName(), String::toLower( splitTransition[1] ) ).asTime();
 
 						transitionDef.property = property;
 						transitionDef.duration = duration;
@@ -37,9 +34,9 @@ std::map<std::string, TransitionDefinition> TransitionDefinition::parseTransitio
 							transitionDef.timingFunction = Ease::fromName( String::toLower( splitTransition[2] ) );
 
 							if (  transitionDef.timingFunction == Ease::Linear && splitTransition[2] != "linear" && splitTransition.size() == 3 ) {
-								transitionDef.delay = NodeAttribute( prop.getName(), String::toLower( splitTransition[2] ) ).asTime();
+								transitionDef.delay = StyleSheetProperty( prop.getName(), String::toLower( splitTransition[2] ) ).asTime();
 							} else if ( splitTransition.size() >= 4 ) {
-								transitionDef.delay = NodeAttribute( prop.getName(), String::toLower( splitTransition[3] ) ).asTime();
+								transitionDef.delay = StyleSheetProperty( prop.getName(), String::toLower( splitTransition[3] ) ).asTime();
 							}
 						}
 
@@ -53,7 +50,7 @@ std::map<std::string, TransitionDefinition> TransitionDefinition::parseTransitio
 			for ( auto dit = strDurations.begin(); dit != strDurations.end(); ++dit ) {
 				std::string duration( String::trim( *dit ) );
 				String::toLowerInPlace( duration );
-				durations.push_back( NodeAttribute( prop.getName(), duration ).asTime() );
+				durations.push_back( StyleSheetProperty( prop.getName(), duration ).asTime() );
 			}
 		} else if ( prop.getName() == "transitiondelay" || prop.getName() == "transition-delay" ) {
 			auto strDelays = String::split( prop.getValue(), ',' );
@@ -61,7 +58,7 @@ std::map<std::string, TransitionDefinition> TransitionDefinition::parseTransitio
 			for ( auto dit = strDelays.begin(); dit != strDelays.end(); ++dit ) {
 				std::string delay( String::trim( *dit ) );
 				String::toLowerInPlace( delay );
-				delays.push_back( NodeAttribute( prop.getName(), delay ).asTime() );
+				delays.push_back( StyleSheetProperty( prop.getName(), delay ).asTime() );
 			}
 		} else if ( prop.getName() == "transitiontimingfunction" || prop.getName() == "transition-timing-function" ) {
 			auto strTimingFuncs = String::split( prop.getValue(), ',' );

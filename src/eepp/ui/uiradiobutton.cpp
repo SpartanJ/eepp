@@ -263,7 +263,7 @@ void UIRadioButton::setTextSeparation(const Int32 & textSeparation) {
 	setPadding( getPadding() );
 }
 
-bool UIRadioButton::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
+bool UIRadioButton::setAttribute( const StyleSheetProperty& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "selected" == name || "active" == name ) {

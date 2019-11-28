@@ -570,7 +570,7 @@ void UIMenu::loadFromXmlNode( const pugi::xml_node& node ) {
 	endAttributesTransaction();
 }
 
-bool UIMenu::setAttribute(const NodeAttribute & attribute, const Uint32 & state) {
+bool UIMenu::setAttribute(const StyleSheetProperty & attribute, const Uint32 & state) {
 	const std::string& name = attribute.getName();
 
 	if ( "min-width" == name || "minwidth" == name ) {

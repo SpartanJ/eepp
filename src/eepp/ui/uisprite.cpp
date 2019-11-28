@@ -184,7 +184,7 @@ void UISprite::onSizeChange() {
 	UIWidget::onSizeChange();
 }
 
-bool UISprite::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
+bool UISprite::setAttribute( const StyleSheetProperty& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "src" == name ) {

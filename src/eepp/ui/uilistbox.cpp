@@ -965,7 +965,7 @@ const UI_SCROLLBAR_MODE& UIListBox::getHorizontalScrollMode() {
 	return mHScrollMode;
 }
 
-bool UIListBox::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
+bool UIListBox::setAttribute( const StyleSheetProperty& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "row-height" == name || "rowheight" == name ) {

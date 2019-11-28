@@ -220,7 +220,7 @@ UILoader * UILoader::setAnimationSpeed( const Float& animationSpeed ) {
 	return this;
 }
 
-bool UILoader::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
+bool UILoader::setAttribute( const StyleSheetProperty& attribute, const Uint32& state ) {
 	std::string name = attribute.getName();
 
 	if ( "indeterminate" == name ) {

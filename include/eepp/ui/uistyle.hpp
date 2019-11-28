@@ -2,7 +2,6 @@
 #define EE_UI_UISTYLE_HPP
 
 #include <eepp/ui/uistate.hpp>
-#include <eepp/scene/nodeattribute.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
 #include <eepp/ui/css/stylesheetstyle.hpp>
 #include <eepp/ui/css/transitiondefinition.hpp>
@@ -10,8 +9,6 @@
 #include <eepp/math/ease.hpp>
 #include <set>
 #include <functional>
-
-using namespace EE::Scene;
 
 namespace EE { namespace Graphics {
 class Font;
@@ -38,8 +35,6 @@ class EE_API UIStyle : public UIState {
 		CSS::StyleSheetProperty getStatelessStyleSheetProperty( const std::string& propertyName ) const;
 
 		CSS::StyleSheetProperty getStyleSheetProperty( const std::string& propertyName ) const;
-
-		NodeAttribute getNodeAttribute(const std::string& attributeName ) const;
 
 		void setStyleSheetProperties( const CSS::StyleSheetProperties& properties );
 

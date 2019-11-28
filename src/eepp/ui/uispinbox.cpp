@@ -269,7 +269,7 @@ void UISpinBox::onPaddingChange() {
 	UIWidget::onPaddingChange();
 }
 
-bool UISpinBox::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
+bool UISpinBox::setAttribute( const StyleSheetProperty& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	bool attributeSet = true;

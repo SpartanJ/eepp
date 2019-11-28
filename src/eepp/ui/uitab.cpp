@@ -143,7 +143,7 @@ void UITab::onAutoSize() {
 	}
 }
 
-bool UITab::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
+bool UITab::setAttribute( const StyleSheetProperty& attribute, const Uint32& state ) {
 	std::string name = attribute.getName();
 
 	if ( "name" == name || "text" == name ) {

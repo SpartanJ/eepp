@@ -206,7 +206,7 @@ UITextView * UIProgressBar::getTextBox() const {
 	return mTextBox;
 }
 
-bool UIProgressBar::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
+bool UIProgressBar::setAttribute( const StyleSheetProperty& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "total-steps" == name || "totalsteps" == name ) {

@@ -407,7 +407,7 @@ Sizei UILinearLayout::getTotalUsedSize() {
 	return size;
 }
 
-bool UILinearLayout::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
+bool UILinearLayout::setAttribute( const StyleSheetProperty& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "orientation" == name ) {

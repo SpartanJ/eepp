@@ -622,7 +622,7 @@ bool UITable::isTouchOverAllowedChilds() {
 	return isMouseOverMeOrChilds() && !mVScrollBar->isMouseOverMeOrChilds() && !mHScrollBar->isMouseOverMeOrChilds();
 }
 
-bool UITable::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
+bool UITable::setAttribute( const StyleSheetProperty& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "row-height" == name || "rowheight" == name ) {

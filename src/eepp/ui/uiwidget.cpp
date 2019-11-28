@@ -15,6 +15,7 @@
 #include <eepp/window/engine.hpp>
 #include <pugixml/pugixml.hpp>
 #include <algorithm>
+#include <eepp/ui/css/propertydefinition.hpp>
 
 using namespace EE::Window;
 
@@ -914,7 +915,7 @@ void UIWidget::setStyleSheetProperty( const std::string& name, const std::string
 		} \
 	}
 
-bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
+bool UIWidget::setAttribute( const StyleSheetProperty& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	bool attributeSet = true;
@@ -1011,9 +1012,9 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		}
 	} else if ( "background" == name ) {
 		if ( Color::isColorString( attribute.getValue() ) ) {
-			setAttribute( NodeAttribute( "background-color", attribute.getValue() ) );
+			setAttribute( StyleSheetProperty( "background-color", attribute.getValue() ) );
 		} else {
-			setAttribute( NodeAttribute( "background-image", attribute.getValue() ) );
+			setAttribute( StyleSheetProperty( "background-image", attribute.getValue() ) );
 		}
 	} else if ( "background-color" == name || "backgroundcolor" == name ) {
 		SAVE_NORMAL_STATE_ATTR( getBackgroundColor().toHexString() );
@@ -1064,9 +1065,9 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		setBackgroundSize( attribute.value(), 0 );
 	} else if ( "foreground" == name ) {
 		if ( Color::isColorString( attribute.getValue() ) ) {
-			setAttribute( NodeAttribute( "foreground-color", attribute.getValue() ) );
+			setAttribute( StyleSheetProperty( "foreground-color", attribute.getValue() ) );
 		} else {
-			setAttribute( NodeAttribute( "foreground-image", attribute.getValue() ) );
+			setAttribute( StyleSheetProperty( "foreground-image", attribute.getValue() ) );
 		}
 	} else if ( "foreground-color" == name || "foregroundcolor" == name ) {
 		SAVE_NORMAL_STATE_ATTR( getForegroundColor().toHexString() );
@@ -1374,7 +1375,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
 			CSS::TransitionDefinition transitionInfo( mStyle->getTransition( attribute.getName() ) );
-			Float newRotation( mStyle->getNodeAttribute( attribute.getName() ).asFloat() );
+			Float newRotation( mStyle->getStyleSheetProperty( attribute.getName() ).asFloat() );
 			Action * action = Actions::Rotate::New( mRotation, newRotation, transitionInfo.duration, transitionInfo.timingFunction );
 
 			if ( Time::Zero != transitionInfo.delay )
@@ -1389,7 +1390,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
 			CSS::TransitionDefinition transitionInfo( mStyle->getTransition( attribute.getName() ) );
-			Vector2f newScale( mStyle->getNodeAttribute( attribute.getName() ).asVector2f() );
+			Vector2f newScale( mStyle->getStyleSheetProperty( attribute.getName() ).asVector2f() );
 			Action * action = Actions::Scale::New( mScale, newScale, transitionInfo.duration, transitionInfo.timingFunction );
 
 			if ( Time::Zero != transitionInfo.delay )
@@ -1476,7 +1477,7 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 	beginAttributesTransaction();
 
 	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
-		setAttribute( NodeAttribute( ait->name(), ait->value() ) );
+		setAttribute( StyleSheetProperty( ait->name(), ait->value() ) );
 	}
 
 	endAttributesTransaction();
@@ -1577,7 +1578,7 @@ bool UIWidget::drawablePropertySet(const std::string& propertyName, const std::s
 					rectColors.BottomLeft = rectColors.BottomRight = Color::fromString( params.at(2) );
 				}
 			} else {
-				return setAttribute( NodeAttribute( propertyName + "-color", params.at(0) ) );
+				return setAttribute( StyleSheetProperty( propertyName + "-color", params.at(0) ) );
 			}
 
 			drawable->setRectColors( rectColors );

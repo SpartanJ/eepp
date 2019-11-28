@@ -566,7 +566,7 @@ void UITextView::resetSelCache() {
 		} \
 	}
 
-bool UITextView::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
+bool UITextView::setAttribute( const StyleSheetProperty& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "text" == name ) {

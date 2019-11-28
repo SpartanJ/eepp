@@ -31,13 +31,13 @@ bool UIStyle::stateExists( const EE::Uint32&  ) const {
 
 void UIStyle::setStyleSheetProperty( const StyleSheetProperty& attribute ) {
 	if ( attribute.getName() == "padding" ) {
-		Rectf rect(  NodeAttribute( attribute.getName(), attribute.getValue() ).asRectf() );
+		Rectf rect(  StyleSheetProperty( attribute.getName(), attribute.getValue() ).asRectf() );
 		mElementStyle.setProperty( StyleSheetProperty( "padding-left", String::toStr( rect.Left ), attribute.getSpecificity(), attribute.isVolatile() ) );
 		mElementStyle.setProperty( StyleSheetProperty( "padding-right", String::toStr( rect.Right ), attribute.getSpecificity(), attribute.isVolatile() ) );
 		mElementStyle.setProperty( StyleSheetProperty( "padding-top", String::toStr( rect.Top ), attribute.getSpecificity(), attribute.isVolatile() ) );
 		mElementStyle.setProperty( StyleSheetProperty( "padding-bottom", String::toStr( rect.Bottom ), attribute.getSpecificity(), attribute.isVolatile() ) );
 	} else if ( attribute.getName() == "margin" ) {
-		Rect rect(  NodeAttribute( attribute.getName(), attribute.getValue() ).asRect() );
+		Rect rect(  StyleSheetProperty( attribute.getName(), attribute.getValue() ).asRect() );
 		mElementStyle.setProperty( StyleSheetProperty( "margin-left", String::toStr( rect.Left ), attribute.getSpecificity(), attribute.isVolatile() ) );
 		mElementStyle.setProperty( StyleSheetProperty( "margin-right", String::toStr( rect.Right ), attribute.getSpecificity(), attribute.isVolatile() ) );
 		mElementStyle.setProperty( StyleSheetProperty( "margin-top", String::toStr( rect.Top ), attribute.getSpecificity(), attribute.isVolatile() ) );
@@ -154,7 +154,7 @@ void UIStyle::onStateChange() {
 		for ( const auto& prop : mProperties ) {
 			const StyleSheetProperty& property = prop.second;
 
-			mWidget->setAttribute( NodeAttribute( property.getName(), property.getValue(), property.isVolatile() ), mCurrentState );
+			mWidget->setAttribute( property, mCurrentState );
 		}
 
 		mWidget->endAttributesTransaction();
@@ -198,11 +198,6 @@ StyleSheetProperty UIStyle::getStyleSheetProperty( const std::string& propertyNa
 		return propertyIt->second;
 
 	return StyleSheetProperty();
-}
-
-NodeAttribute UIStyle::getNodeAttribute( const std::string& attributeName ) const {
-	StyleSheetProperty property( getStyleSheetProperty( attributeName ) );
-	return NodeAttribute( property.getName(), property.getValue() );
 }
 
 void UIStyle::updateState() {

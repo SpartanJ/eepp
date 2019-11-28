@@ -194,7 +194,7 @@ void UICheckBox::setTextSeparation(const Int32 & textSeparation) {
 	setPadding( getPadding() );
 }
 
-bool UICheckBox::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
+bool UICheckBox::setAttribute( const StyleSheetProperty& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "selected" == name || "active" == name ) {

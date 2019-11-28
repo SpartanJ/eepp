@@ -145,7 +145,7 @@ void UITouchDragableWidget::scheduledUpdate( const Time& time ) {
 	}
 }
 
-bool UITouchDragableWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
+bool UITouchDragableWidget::setAttribute( const StyleSheetProperty& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "touch-drag" == name || "touchdrag" == name ) {

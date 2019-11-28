@@ -1,14 +1,16 @@
 #ifndef EE_UIUIWIDGET_HPP
 #define EE_UIUIWIDGET_HPP
 
-#include <eepp/scene/nodeattribute.hpp>
 #include <eepp/ui/uinode.hpp>
 #include <eepp/ui/css/stylesheetelement.hpp>
 #include <eepp/ui/css/stylesheetselector.hpp>
+#include <eepp/ui/css/stylesheetproperty.hpp>
 
 namespace pugi {
 class xml_node;
 }
+
+using namespace EE::UI::CSS;
 
 namespace EE { namespace UI {
 
@@ -103,7 +105,7 @@ class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
 
 		void setStyleSheetProperty( const std::string& name, const std::string& value, const Uint32& specificity = UINT32_MAX - 1/*SpecificityInline*/ );
 
-		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
+		virtual bool setAttribute( const StyleSheetProperty& attribute, const Uint32& state = UIState::StateFlagNormal );
 
 		const Rectf& getPadding() const;
 

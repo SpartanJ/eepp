@@ -392,7 +392,7 @@ bool UITextInput::isFreeEditingEnabled() {
 	return mTextBuffer.isFreeEditingEnabled();
 }
 
-bool UITextInput::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
+bool UITextInput::setAttribute( const StyleSheetProperty& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "text" == name ) {

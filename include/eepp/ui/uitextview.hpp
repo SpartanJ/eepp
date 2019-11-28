@@ -79,7 +79,7 @@ class EE_API UITextView : public UIWidget {
 
 		void setFontStyleConfig( const UIFontStyleConfig& fontStyleConfig );
 
-		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
+		virtual bool setAttribute( const StyleSheetProperty& attribute, const Uint32& state = UIState::StateFlagNormal );
 	protected:
 		Text *		mTextCache;
 		String			mString;

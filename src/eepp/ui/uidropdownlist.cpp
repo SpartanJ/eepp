@@ -260,7 +260,7 @@ void UIDropDownList::destroyListBox() {
 	}
 }
 
-bool UIDropDownList::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
+bool UIDropDownList::setAttribute( const StyleSheetProperty& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "popup-to-main-control" == name || "popuptomaincontrol" == name ) {
