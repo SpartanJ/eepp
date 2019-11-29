@@ -111,7 +111,7 @@ void UIImage::calcDestSize() {
 		if ( NULL == mDrawable)
 			return;
 
-		mDestSize = PixelDensity::dpToPx( mDrawable->getSize() );
+		mDestSize = mDrawable->getSize();
 	}
 
 	mDestSize = mDestSize.floor();
