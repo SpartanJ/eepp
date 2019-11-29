@@ -53,10 +53,10 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "y", "", false ).setType( PropertyType::NumberFloat );
 	registerProperty( "width", "", false )
 		.setType( PropertyType::NumberLength )
-		.setRelativeTarget( PropertyDefinition::RelativeTarget::ContainingBlockWidth );
+		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockWidth );
 	registerProperty( "height", "", false )
 		.setType( PropertyType::NumberLength )
-		.setRelativeTarget( PropertyDefinition::RelativeTarget::ContainingBlockHeight );
+		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockHeight );
 	registerProperty( "background-color", "", false ).setType( PropertyType::Color );
 	registerProperty( "background-image", "", false );
 	registerProperty( "background-position-x", "center", false )
@@ -89,25 +89,25 @@ void StyleSheetSpecification::registerDefaultProperties() {
 		.addAlias( "layout-margin-top" )
 		.addAlias( "layout_margintop" )
 		.addAlias( "margintop" )
-		.setRelativeTarget( PropertyDefinition::RelativeTarget::ContainingBlockHeight );
+		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockHeight );
 	registerProperty( "margin-left", "0px", false )
 		.setType( PropertyType::NumberLength )
 		.addAlias( "layout-margin-left" )
 		.addAlias( "layout_marginleft" )
 		.addAlias( "marginleft" )
-		.setRelativeTarget( PropertyDefinition::RelativeTarget::ContainingBlockWidth );
+		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockWidth );
 	registerProperty( "margin-right", "0px", false )
 		.setType( PropertyType::NumberLength )
 		.addAlias( "layout-margin-right" )
 		.addAlias( "layout_marginright" )
 		.addAlias( "marginright" )
-		.setRelativeTarget( PropertyDefinition::RelativeTarget::ContainingBlockWidth );
+		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockWidth );
 	registerProperty( "margin-bottom", "0px", false )
 		.setType( PropertyType::NumberLength )
 		.addAlias( "layout-margin-bottom" )
 		.addAlias( "layout_marginbottom" )
 		.addAlias( "marginbottom" )
-		.setRelativeTarget( PropertyDefinition::RelativeTarget::ContainingBlockHeight );
+		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockHeight );
 	registerProperty( "tooltip", "", false ).setType( PropertyType::String );
 	registerProperty( "layout-weight", "", false )
 		.addAlias( "layout_weight" )
@@ -129,16 +129,16 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "blend-mode", "", false );
 	registerProperty( "padding-left", "", false )
 		.setType( PropertyType::NumberLength )
-		.setRelativeTarget( PropertyDefinition::RelativeTarget::ContainingBlockWidth );
+		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockWidth );
 	registerProperty( "padding-right", "", false )
 		.setType( PropertyType::NumberLength )
-		.setRelativeTarget( PropertyDefinition::RelativeTarget::ContainingBlockWidth );
+		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockWidth );
 	registerProperty( "padding-top", "", false )
 		.setType( PropertyType::NumberLength )
-		.setRelativeTarget( PropertyDefinition::RelativeTarget::ContainingBlockHeight );
+		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockHeight );
 	registerProperty( "padding-bottom", "", false )
 		.setType( PropertyType::NumberLength )
-		.setRelativeTarget( PropertyDefinition::RelativeTarget::ContainingBlockHeight );
+		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockHeight );
 	registerProperty( "opacity", "", false ).setType( PropertyType::NumberFloat );
 	registerProperty( "cursor", "arrow", false );
 	registerProperty( "text", "", false ).setType( PropertyType::String );

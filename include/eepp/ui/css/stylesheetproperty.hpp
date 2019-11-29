@@ -25,6 +25,8 @@ class EE_API StyleSheetProperty {
   public:
 	StyleSheetProperty();
 
+	explicit StyleSheetProperty( const PropertyDefinition* definition, const std::string& value );
+
 	explicit StyleSheetProperty( const std::string& name, const std::string& value );
 
 	explicit StyleSheetProperty( const std::string& name, const std::string& value,

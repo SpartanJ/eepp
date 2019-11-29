@@ -2,17 +2,34 @@
 #include <eepp/core/string.hpp>
 #include <eepp/graphics/pixeldensity.hpp>
 #include <eepp/graphics/text.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/css/shorthanddefinition.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
 #include <eepp/ui/css/stylesheetselectorrule.hpp>
 #include <eepp/ui/css/stylesheetspecification.hpp>
-#include <eepp/ui/css/propertydefinition.hpp>
-#include <eepp/ui/css/shorthanddefinition.hpp>
 #include <eepp/ui/uihelper.hpp>
 
 namespace EE { namespace UI { namespace CSS {
 
 StyleSheetProperty::StyleSheetProperty() :
 	mSpecificity( 0 ), mVolatile( false ), mImportant( false ) {}
+
+StyleSheetProperty::StyleSheetProperty( const PropertyDefinition* definition,
+										const std::string& value ) :
+	mName( definition->getName() ),
+	mNameHash( definition->getId() ),
+	mValue( String::trim( value ) ),
+	mSpecificity( 0 ),
+	mVolatile( false ),
+	mImportant( false ),
+	mPropertyDefinition( definition ),
+	mShorthandDefinition( NULL ) {
+	checkImportant();
+
+	if ( NULL == mShorthandDefinition && NULL == mPropertyDefinition ) {
+		eePRINTL( "Property %s is not defined!", mName.c_str() );
+	}
+}
 
 StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::string& value ) :
 	mName( String::toLower( String::trim( name ) ) ),

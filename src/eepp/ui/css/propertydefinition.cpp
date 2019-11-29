@@ -47,11 +47,11 @@ bool PropertyDefinition::getInherited() const {
 	return mInherited;
 }
 
-const PropertyDefinition::RelativeTarget& PropertyDefinition::getRelativeTarget() const {
+const PropertyRelativeTarget& PropertyDefinition::getRelativeTarget() const {
 	return mRelativeTarget;
 }
 
-PropertyDefinition& PropertyDefinition::setRelativeTarget( const RelativeTarget& relativeTarget ) {
+PropertyDefinition& PropertyDefinition::setRelativeTarget( const PropertyRelativeTarget& relativeTarget ) {
 	mRelativeTarget = relativeTarget;
 	return *this;
 }

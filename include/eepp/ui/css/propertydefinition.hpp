@@ -194,17 +194,19 @@ enum class PropertyType : Uint32 {
 	BackgroundSize
 };
 
+enum class PropertyRelativeTarget : Uint32 {
+	None,
+	ContainingBlockWidth,
+	ContainingBlockHeight,
+	FontSize,
+	ParentFontSize,
+	LineHeight,
+	LocalBlockWidth,
+	LocalBlockHeight
+};
+
 class EE_API PropertyDefinition {
   public:
-	enum RelativeTarget {
-		None,
-		ContainingBlockWidth,
-		ContainingBlockHeight,
-		FontSize,
-		ParentFontSize,
-		LineHeight
-	};
-
 	static PropertyDefinition* New( const std::string& name, const std::string& defaultValue,
 									const bool& inherited = false );
 
@@ -221,9 +223,9 @@ class EE_API PropertyDefinition {
 
 	bool getInherited() const;
 
-	const RelativeTarget& getRelativeTarget() const;
+	const PropertyRelativeTarget& getRelativeTarget() const;
 
-	PropertyDefinition& setRelativeTarget( const RelativeTarget& relativeTarget );
+	PropertyDefinition& setRelativeTarget( const PropertyRelativeTarget& relativeTarget );
 
 	PropertyDefinition& setType( const PropertyType& propertyType );
 
@@ -246,7 +248,7 @@ class EE_API PropertyDefinition {
 	std::vector<Uint32> mAliasesHash;
 	std::string mDefaultValue;
 	bool mInherited;
-	RelativeTarget mRelativeTarget;
+	PropertyRelativeTarget mRelativeTarget;
 	PropertyType mPropertyType;
 };
 
