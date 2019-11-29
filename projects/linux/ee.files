@@ -290,6 +290,7 @@
 ../../include/eepp/ui.hpp
 ../../include/eepp/ui/css/propertydefinition.hpp
 ../../include/eepp/ui/css/propertyspecification.hpp
+../../include/eepp/ui/css/shorthanddefinition.hpp
 ../../include/eepp/ui/css/stylesheet.hpp
 ../../include/eepp/ui/css/stylesheetelement.hpp
 ../../include/eepp/ui/css/stylesheetlength.hpp
@@ -715,6 +716,7 @@
 ../../src/eepp/system/zip.cpp
 ../../src/eepp/ui/css/propertydefinition.cpp
 ../../src/eepp/ui/css/propertyspecification.cpp
+../../src/eepp/ui/css/shorthanddefinition.cpp
 ../../src/eepp/ui/css/stylesheet.cpp
 ../../src/eepp/ui/css/stylesheetlength.cpp
 ../../src/eepp/ui/css/stylesheetlengthtransition.cpp

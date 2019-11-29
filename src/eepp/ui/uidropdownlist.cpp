@@ -260,7 +260,7 @@ void UIDropDownList::destroyListBox() {
 	}
 }
 
-bool UIDropDownList::setAttribute( const StyleSheetProperty& attribute, const Uint32& state ) {
+bool UIDropDownList::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "popup-to-main-control" == name || "popuptomaincontrol" == name ) {
@@ -273,9 +273,9 @@ bool UIDropDownList::setAttribute( const StyleSheetProperty& attribute, const Ui
 				"selectedindex" == name || "selectedtext" == name ||
 				"scrollbartype" == name || "rowheight" == name ||
 				"vscrollmode" == name || "hscrollmode" == name) {
-		mListBox->setAttribute( attribute, state );
+		mListBox->applyProperty( attribute, state );
 	} else {
-		return UITextInput::setAttribute( attribute, state );
+		return UITextInput::applyProperty( attribute, state );
 	}
 
 	return true;

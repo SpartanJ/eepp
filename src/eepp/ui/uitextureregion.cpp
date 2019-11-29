@@ -196,7 +196,7 @@ const Vector2f& UITextureRegion::getAlignOffset() const {
 	return mAlignOffset;
 }
 
-bool UITextureRegion::setAttribute( const StyleSheetProperty& attribute, const Uint32& state ) {
+bool UITextureRegion::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "src" == name ) {
@@ -219,7 +219,7 @@ bool UITextureRegion::setAttribute( const StyleSheetProperty& attribute, const U
 	} else if ( "tint" == name ) {
 		setColor( attribute.asColor() );
 	} else {
-		return UIWidget::setAttribute( attribute, state );
+		return UIWidget::applyProperty( attribute, state );
 	}
 
 	return true;

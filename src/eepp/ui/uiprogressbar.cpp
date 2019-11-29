@@ -206,7 +206,7 @@ UITextView * UIProgressBar::getTextBox() const {
 	return mTextBox;
 }
 
-bool UIProgressBar::setAttribute( const StyleSheetProperty& attribute, const Uint32& state ) {
+bool UIProgressBar::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "total-steps" == name || "totalsteps" == name ) {
@@ -231,7 +231,7 @@ bool UIProgressBar::setAttribute( const StyleSheetProperty& attribute, const Uin
 	} else if ( "movement-speed" == name || "movementspeed" == name ) {
 		setMovementSpeed( attribute.asVector2f() );
 	} else {
-		return UIWidget::setAttribute( attribute, state );
+		return UIWidget::applyProperty( attribute, state );
 	}
 
 	return true;

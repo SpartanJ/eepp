@@ -269,7 +269,7 @@ void UISpinBox::onPaddingChange() {
 	UIWidget::onPaddingChange();
 }
 
-bool UISpinBox::setAttribute( const StyleSheetProperty& attribute, const Uint32& state ) {
+bool UISpinBox::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	bool attributeSet = true;
@@ -283,10 +283,10 @@ bool UISpinBox::setAttribute( const StyleSheetProperty& attribute, const Uint32&
 	} else if ( "click-step" == name || "clickstep" == name ) {
 		setClickStep(attribute.asFloat() );
 	} else {
-		attributeSet = UIWidget::setAttribute( attribute, state );
+		attributeSet = UIWidget::applyProperty( attribute, state );
 	}
 
-	mInput->setAttribute( attribute );
+	mInput->applyProperty( attribute );
 
 	return attributeSet;
 }

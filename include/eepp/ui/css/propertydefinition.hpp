@@ -57,10 +57,10 @@ enum class PropertyId : Uint32 {
 	LayoutGravity = String::hash( "layout-gravity" ),
 	LayoutWidth = String::hash( "layout-width" ),
 	LayoutHeight = String::hash( "layout-height" ),
-	LayoutToLeftOf = String::hash( "layout_to_left_of" ),
-	LayoutToRightOf = String::hash( "layout_to_right_of" ),
-	LayoutToTopOf = String::hash( "layout_to_top_of" ),
-	LayoutToBottomOf = String::hash( "layout_to_bottom_of" ),
+	LayoutToLeftOf = String::hash( "layout-to-left-of" ),
+	LayoutToRightOf = String::hash( "layout-to-right-of" ),
+	LayoutToTopOf = String::hash( "layout-to-top-of" ),
+	LayoutToBottomOf = String::hash( "layout-to-bottom-of" ),
 	Clip = String::hash( "clip" ),
 	Rotation = String::hash( "rotation" ),
 	Scale = String::hash( "scale" ),
@@ -88,7 +88,22 @@ enum class PropertyId : Uint32 {
 	TextStrokeWidth = String::hash( "text-stroke-width" ),
 	TextStrokeColor = String::hash( "text-stroke-color" ),
 	TextSelection = String::hash( "text-selection" ),
-	TextAlign = String::hash( "text-align" )
+	TextAlign = String::hash( "text-align" ),
+	Icon = String::hash( "icon" ),
+	MinIconSize = String::hash( "min-icon-size" ),
+	IconHorizontalMargin = String::hash( "icon-horizontal-margin" ),
+	IconAutoMargin = String::hash( "icon-auto-margin" ),
+	Src = String::hash( "src" ),
+	ScaleType = String::hash( "scale-type" ),
+	Tint = String::hash( "tint" ),
+	// Possible shorthand
+	Background = String::hash( "background" ),
+	Foreground = String::hash( "foreground" ),
+	Padding = String::hash( "padding" ),
+	BackgroundPosition = String::hash( "background-position" ),
+	ForegroundPosition = String::hash( "foreground-position" ),
+	RotationOriginPoint = String::hash( "rotation-origin-point" ),
+	ScaleOriginPoint = String::hash( "scale-origin-point" )
 };
 
 class EE_API PropertyDefinition {
@@ -103,7 +118,7 @@ class EE_API PropertyDefinition {
 	};
 
 	static PropertyDefinition* New( const std::string& name, const std::string& defaultValue,
-							 const bool& inherited = false );
+									const bool& inherited = false );
 
 	PropertyDefinition( const std::string& name, const std::string& defaultValue,
 						const bool& inherited = false );
@@ -111,6 +126,8 @@ class EE_API PropertyDefinition {
 	const std::string& getName() const;
 
 	const Uint32& getId() const;
+
+	PropertyId getPropertyId() const;
 
 	const std::string& getDefaultValue() const;
 

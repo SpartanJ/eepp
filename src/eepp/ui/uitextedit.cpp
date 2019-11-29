@@ -473,7 +473,7 @@ UIFontStyleConfig UITextEdit::getFontStyleConfig() const {
 	return mTextInput->getFontStyleConfig();
 }
 
-bool UITextEdit::setAttribute( const StyleSheetProperty& attribute, const Uint32& state ) {
+bool UITextEdit::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	bool attributeSet = true;
@@ -495,11 +495,11 @@ bool UITextEdit::setAttribute( const StyleSheetProperty& attribute, const Uint32
 		else if ( "on" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
 		else if ( "off" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_OFF );
 	} else {
-		attributeSet = UIWidget::setAttribute( attribute, state );
+		attributeSet = UIWidget::applyProperty( attribute, state );
 	}
 
 	if ( !attributeSet && ( String::startsWith( name, "text" ) || String::startsWith( name, "font" ) ) )
-		mTextInput->setAttribute( attribute, state );
+		mTextInput->applyProperty( attribute, state );
 
 	return attributeSet;
 }

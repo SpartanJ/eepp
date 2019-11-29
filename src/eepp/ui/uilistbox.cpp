@@ -965,7 +965,7 @@ const UI_SCROLLBAR_MODE& UIListBox::getHorizontalScrollMode() {
 	return mHScrollMode;
 }
 
-bool UIListBox::setAttribute( const StyleSheetProperty& attribute, const Uint32& state ) {
+bool UIListBox::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "row-height" == name || "rowheight" == name ) {
@@ -996,7 +996,7 @@ bool UIListBox::setAttribute( const StyleSheetProperty& attribute, const Uint32&
 			mHScrollBar->setScrollBarType( UIScrollBar::NoButtons );
 		}
 	} else {
-		return UITouchDragableWidget::setAttribute( attribute, state );
+		return UITouchDragableWidget::applyProperty( attribute, state );
 	}
 
 	return true;

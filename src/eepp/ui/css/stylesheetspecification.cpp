@@ -24,15 +24,137 @@ const PropertyDefinition* StyleSheetSpecification::getProperty( const std::strin
 	return mPropertySpecification.getProperty( name );
 }
 
+ShorthandDefinition& StyleSheetSpecification::registerShorthand(
+	const std::string& name, const std::vector<std::string>& properties,
+	const ShorthandDefinition::ShorthandType& shorthandType ) {
+	return mPropertySpecification.registerShorthand( name, properties, shorthandType );
+}
+
+const ShorthandDefinition* StyleSheetSpecification::getShorthand( const Uint32& id ) const {
+	return mPropertySpecification.getShorthand( id );
+}
+
+const ShorthandDefinition* StyleSheetSpecification::getShorthand( const std::string& name ) const {
+	return mPropertySpecification.getShorthand( name );
+}
+
+bool StyleSheetSpecification::isShorthand( const Uint32& id ) const {
+	return mPropertySpecification.isShorthand( id );
+}
+
+bool StyleSheetSpecification::isShorthand( const std::string& name ) const {
+	return mPropertySpecification.isShorthand( name );
+}
+
 void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "id", "", false );
 	registerProperty( "class", "", false );
 	registerProperty( "x", "", false );
 	registerProperty( "y", "", false );
-	registerProperty( "margin-top", "0px", false );
-	registerProperty( "margin-left", "0px", false );
-	registerProperty( "margin-right", "0px", false );
-	registerProperty( "margin-bottom", "0px", false );
+	registerProperty( "width", "", false )
+		.setRelativeTarget( PropertyDefinition::RelativeTarget::ContainingBlockWidth );
+	registerProperty( "height", "", false )
+		.setRelativeTarget( PropertyDefinition::RelativeTarget::ContainingBlockHeight );
+	registerProperty( "background-color", "", false );
+	registerProperty( "background-image", "", false );
+	registerProperty( "background-position-x", "center", false );
+	registerProperty( "background-position-y", "center", false );
+	registerProperty( "background-repeat", "no-repeat", false );
+	registerProperty( "background-size", "auto", false );
+	registerProperty( "foreground-color", "", false );
+	registerProperty( "foreground-image", "", false );
+	registerProperty( "foreground-position-x", "center", false );
+	registerProperty( "foreground-position-y", "center", false );
+	registerProperty( "foreground-repeat", "no-repeat", false );
+	registerProperty( "foreground-size", "", false );
+	registerProperty( "foreground-radius", "0px", false );
+	registerProperty( "border-color", "", false );
+	registerProperty( "border-width", "", false );
+	registerProperty( "border-radius", "0px", false );
+	registerProperty( "visible", "true", false );
+	registerProperty( "enabled", "true", false );
+	registerProperty( "theme", "", false );
+	registerProperty( "skin", "", false );
+	registerProperty( "skin-color", "", false );
+	registerProperty( "gravity", "", false );
+	registerProperty( "flags", "", false );
+	registerProperty( "margin-top", "0px", false )
+		.setRelativeTarget( PropertyDefinition::RelativeTarget::ContainingBlockHeight );
+	registerProperty( "margin-left", "0px", false )
+		.setRelativeTarget( PropertyDefinition::RelativeTarget::ContainingBlockWidth );
+	registerProperty( "margin-right", "0px", false )
+		.setRelativeTarget( PropertyDefinition::RelativeTarget::ContainingBlockWidth );
+	registerProperty( "margin-bottom", "0px", false )
+		.setRelativeTarget( PropertyDefinition::RelativeTarget::ContainingBlockHeight );
+	registerProperty( "tooltip", "", false );
+	registerProperty( "layout-weight", "", false ).addAlias( "layout_weight" );
+	registerProperty( "layout-gravity", "", false ).addAlias( "layout_gravity" );
+	registerProperty( "layout-width", "", false ).addAlias( "layout_width" );
+	registerProperty( "layout-height", "", false ).addAlias( "layout_height" );
+	registerProperty( "layout-to-left-of", "", false ).addAlias( "layout_to_left_of" );
+	registerProperty( "layout-to-right-of", "", false ).addAlias( "layout_to_right_of" );
+	registerProperty( "layout-to-top-of", "", false ).addAlias( "layout_to_top_of" );
+	registerProperty( "layout-to-bottom-of", "", false ).addAlias( "layout_to_bottom_of" );
+	registerProperty( "clip", "", false );
+	registerProperty( "rotation", "", false );
+	registerProperty( "scale", "", false );
+	registerProperty( "rotation-origin-point-x", "", false );
+	registerProperty( "rotation-origin-point-y", "", false );
+	registerProperty( "scale-origin-point-x", "", false );
+	registerProperty( "scale-origin-point-y", "", false );
+	registerProperty( "blend-mode", "", false );
+	registerProperty( "padding-left", "", false )
+		.setRelativeTarget( PropertyDefinition::RelativeTarget::ContainingBlockWidth );
+	registerProperty( "padding-right", "", false )
+		.setRelativeTarget( PropertyDefinition::RelativeTarget::ContainingBlockWidth );
+	registerProperty( "padding-top", "", false )
+		.setRelativeTarget( PropertyDefinition::RelativeTarget::ContainingBlockHeight );
+	registerProperty( "padding-bottom", "", false )
+		.setRelativeTarget( PropertyDefinition::RelativeTarget::ContainingBlockHeight );
+	registerProperty( "opacity", "", false );
+	registerProperty( "cursor", "arrow", false );
+	registerProperty( "text", "", false );
+	registerProperty( "color", "", false ).addAlias( "text-color" );
+	registerProperty( "shadow-color", "", false );
+	registerProperty( "selected-color", "", false );
+	registerProperty( "selection-back-color", "", false );
+	registerProperty( "font-family", "", false ).addAlias( "font-name" );
+	registerProperty( "font-size", "", false ).addAlias( "text-size" );
+	registerProperty( "font-style", "", false )
+		.addAlias( "text-style" )
+		.addAlias( "text-decoration" );
+	registerProperty( "text-stroke-width", "", false ).addAlias( "fontoutlinethickness" );
+	registerProperty( "text-stroke-color", "", false ).addAlias( "fontoutlinecolor" );
+	registerProperty( "text-selection", "", false );
+	registerProperty( "text-align", "", false );
+	registerProperty( "icon", "", false );
+	registerProperty( "min-icon-size", "", false );
+	registerProperty( "icon-horizontal-margin", "", false );
+	registerProperty( "icon-auto-margin", "", false );
+	registerProperty( "src", "", false );
+	registerProperty( "scale-type", "", false );
+	registerProperty( "tint", "", false );
+	registerProperty( "rotation-origin-point", "", false );
+	registerProperty( "scale-origin-point", "", false );
+
+	// Shorthands
+	registerProperty( "background-position", "", false );
+	registerProperty( "transition", "", false );
+	//registerProperty( "background", "", false );
+	//registerProperty( "padding", "", false );
+	registerShorthand( "margin", {"margin-left", "margin-top", "margin-right", "margin-bottom"},
+					   ShorthandDefinition::ShorthandType::Box );
+	registerShorthand( "padding",
+					   {"padding-left", "padding-top", "padding-right", "padding-bottom"},
+					   ShorthandDefinition::ShorthandType::Box );
+	registerShorthand( "background", {"background-color", "background-image"},
+					   ShorthandDefinition::ShorthandType::Background );
+	registerShorthand( "foreground", {"foreground-color", "foreground-image"},
+					   ShorthandDefinition::ShorthandType::Background );
+	/*registerShorthand( "rotation-origin-point", {"rotation-origin-point-x", "rotation-origin-point-y"},
+					   ShorthandDefinition::ShorthandType::Vector2 );
+	registerShorthand( "scale-origin-point", {"scale-origin-point-x", "scale-origin-point-y"},
+					   ShorthandDefinition::ShorthandType::Vector2 );*/
 }
 
 }}} // namespace EE::UI::CSS

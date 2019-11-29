@@ -407,7 +407,7 @@ Sizei UILinearLayout::getTotalUsedSize() {
 	return size;
 }
 
-bool UILinearLayout::setAttribute( const StyleSheetProperty& attribute, const Uint32& state ) {
+bool UILinearLayout::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "orientation" == name ) {
@@ -419,7 +419,7 @@ bool UILinearLayout::setAttribute( const StyleSheetProperty& attribute, const Ui
 		else if ( "vertical" == val )
 			setOrientation( UI_VERTICAL );
 	} else {
-		return UILayout::setAttribute( attribute, state );
+		return UILayout::applyProperty( attribute, state );
 	}
 
 	return true;

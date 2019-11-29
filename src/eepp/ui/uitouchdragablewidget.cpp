@@ -145,7 +145,7 @@ void UITouchDragableWidget::scheduledUpdate( const Time& time ) {
 	}
 }
 
-bool UITouchDragableWidget::setAttribute( const StyleSheetProperty& attribute, const Uint32& state ) {
+bool UITouchDragableWidget::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "touch-drag" == name || "touchdrag" == name ) {
@@ -153,7 +153,7 @@ bool UITouchDragableWidget::setAttribute( const StyleSheetProperty& attribute, c
 	} else if ( "touchdrag-deceleration" == name || "touchdragdeceleration" == name ) {
 		setTouchDragDeceleration( Vector2f( attribute.asFloat(), attribute.asFloat() ) );
 	} else {
-		return UIWidget::setAttribute( attribute, state );
+		return UIWidget::applyProperty( attribute, state );
 	}
 
 	return true;

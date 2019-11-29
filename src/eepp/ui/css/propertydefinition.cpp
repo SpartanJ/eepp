@@ -34,6 +34,10 @@ const Uint32& PropertyDefinition::getId() const {
 	return mId;
 }
 
+PropertyId PropertyDefinition::getPropertyId() const {
+	return static_cast<PropertyId>( mId );
+}
+
 const std::string& PropertyDefinition::getDefaultValue() const {
 	return mDefaultValue;
 }

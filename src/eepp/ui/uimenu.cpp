@@ -570,7 +570,7 @@ void UIMenu::loadFromXmlNode( const pugi::xml_node& node ) {
 	endAttributesTransaction();
 }
 
-bool UIMenu::setAttribute(const StyleSheetProperty & attribute, const Uint32 & state) {
+bool UIMenu::applyProperty(const StyleSheetProperty & attribute, const Uint32 & state) {
 	const std::string& name = attribute.getName();
 
 	if ( "min-width" == name || "minwidth" == name ) {
@@ -581,7 +581,7 @@ bool UIMenu::setAttribute(const StyleSheetProperty & attribute, const Uint32 & s
 	} else if ( "min-icon-space" == name || "miniconspace" == name ) {
 		setMinSpaceForIcons( attribute.asDpDimensionUint() );
 	} else {
-		return UIWidget::setAttribute( attribute, state );
+		return UIWidget::applyProperty( attribute, state );
 	}
 
 	return true;

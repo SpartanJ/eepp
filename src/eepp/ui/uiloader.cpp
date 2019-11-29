@@ -220,7 +220,7 @@ UILoader * UILoader::setAnimationSpeed( const Float& animationSpeed ) {
 	return this;
 }
 
-bool UILoader::setAttribute( const StyleSheetProperty& attribute, const Uint32& state ) {
+bool UILoader::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
 	std::string name = attribute.getName();
 
 	if ( "indeterminate" == name ) {
@@ -240,7 +240,7 @@ bool UILoader::setAttribute( const StyleSheetProperty& attribute, const Uint32& 
 	} else if ( "arc-start-angle" == name || "arcstartangle" == name ) {
 		setArcStartAngle( attribute.asFloat() );
 	} else {
-		return UIWidget::setAttribute( attribute, state );
+		return UIWidget::applyProperty( attribute, state );
 	}
 
 	return true;

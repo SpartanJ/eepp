@@ -1378,7 +1378,7 @@ void UIWindow::resizeCursor() {
 	}
 }
 
-bool UIWindow::setAttribute( const StyleSheetProperty& attribute, const Uint32& state ) {
+bool UIWindow::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "width" == name ) {
@@ -1444,7 +1444,7 @@ bool UIWindow::setAttribute( const StyleSheetProperty& attribute, const Uint32& 
 		mStyleConfig.BorderAutoSize = attribute.asBool();
 		fixChildsSize();
 	} else {
-		return UIWidget::setAttribute( attribute, state );
+		return UIWidget::applyProperty( attribute, state );
 	}
 
 	return true;

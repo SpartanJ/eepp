@@ -158,7 +158,7 @@ void UIWinMenu::setFirstButtonMargin( const Uint32& buttonMargin ) {
 	refreshButtons();
 }
 
-bool UIWinMenu::setAttribute( const StyleSheetProperty& attribute, const Uint32 & state ) {
+bool UIWinMenu::applyProperty( const StyleSheetProperty& attribute, const Uint32 & state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "margin-between-buttons" == name || "marginbetweenbuttons" == name ) {
@@ -170,7 +170,7 @@ bool UIWinMenu::setAttribute( const StyleSheetProperty& attribute, const Uint32 
 	} else if ( "first-button-margin-left" == name || "firstbuttonmarginleft" == name ) {
 		setFirstButtonMargin( attribute.asDpDimensionUint() );
 	} else {
-		return UIWidget::setAttribute( attribute, state );
+		return UIWidget::applyProperty( attribute, state );
 	}
 
 	return true;

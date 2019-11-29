@@ -75,7 +75,7 @@ class EE_API UIMenu : public UIWidget {
 
 		virtual void loadFromXmlNode( const pugi::xml_node& node );
 
-		virtual bool setAttribute( const StyleSheetProperty& attribute, const Uint32& state = UIState::StateFlagNormal );
+		virtual bool applyProperty( const StyleSheetProperty& attribute, const Uint32& state = UIState::StateFlagNormal );
 
 		UINode * getOwnerNode() const;
 

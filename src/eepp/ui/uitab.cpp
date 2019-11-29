@@ -143,7 +143,7 @@ void UITab::onAutoSize() {
 	}
 }
 
-bool UITab::setAttribute( const StyleSheetProperty& attribute, const Uint32& state ) {
+bool UITab::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
 	std::string name = attribute.getName();
 
 	if ( "name" == name || "text" == name ) {
@@ -153,7 +153,7 @@ bool UITab::setAttribute( const StyleSheetProperty& attribute, const Uint32& sta
 		mOwnedName = attribute.asString();
 		setOwnedControl();
 	} else {
-		return UISelectButton::setAttribute( attribute, state );
+		return UISelectButton::applyProperty( attribute, state );
 	}
 
 	return true;

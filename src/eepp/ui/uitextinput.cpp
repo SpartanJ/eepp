@@ -392,7 +392,7 @@ bool UITextInput::isFreeEditingEnabled() {
 	return mTextBuffer.isFreeEditingEnabled();
 }
 
-bool UITextInput::setAttribute( const StyleSheetProperty& attribute, const Uint32& state ) {
+bool UITextInput::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "text" == name ) {
@@ -410,7 +410,7 @@ bool UITextInput::setAttribute( const StyleSheetProperty& attribute, const Uint3
 	} else if ( "allow-dot" == name || "allowdot" == name ) {
 		getInputTextBuffer()->setAllowOnlyNumbers( getInputTextBuffer()->onlyNumbersAllowed(), attribute.asBool() );
 	} else {
-		return UITextView::setAttribute( attribute, state );
+		return UITextView::applyProperty( attribute, state );
 	}
 
 	return true;

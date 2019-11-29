@@ -1,18 +1,18 @@
-#include <eepp/ui/css/stylesheetproperty.hpp>
-#include <eepp/ui/css/stylesheetselectorrule.hpp>
+#include <algorithm>
 #include <eepp/core/string.hpp>
 #include <eepp/graphics/pixeldensity.hpp>
 #include <eepp/graphics/text.hpp>
+#include <eepp/ui/css/stylesheetproperty.hpp>
+#include <eepp/ui/css/stylesheetselectorrule.hpp>
+#include <eepp/ui/css/stylesheetspecification.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/css/shorthanddefinition.hpp>
 #include <eepp/ui/uihelper.hpp>
-#include <algorithm>
 
 namespace EE { namespace UI { namespace CSS {
 
 StyleSheetProperty::StyleSheetProperty() :
-	mSpecificity( 0 ),
-	mVolatile( false ),
-	mImportant( false )
-{}
+	mSpecificity( 0 ), mVolatile( false ), mImportant( false ) {}
 
 StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::string& value ) :
 	mName( String::toLower( String::trim( name ) ) ),
@@ -20,27 +20,42 @@ StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::stri
 	mValue( String::trim( value ) ),
 	mSpecificity( 0 ),
 	mVolatile( false ),
-	mImportant( false )
-{
+	mImportant( false ),
+	mPropertyDefinition( StyleSheetSpecification::instance()->getProperty( mNameHash ) ),
+	mShorthandDefinition( NULL == mPropertyDefinition
+							  ? StyleSheetSpecification::instance()->getShorthand( mNameHash )
+							  : NULL ) {
 	checkImportant();
+
+	if ( NULL == mShorthandDefinition && NULL == mPropertyDefinition ) {
+		eePRINTL( "Property %s is not defined!", mName.c_str() );
+	}
 }
 
-StyleSheetProperty::StyleSheetProperty( const std::string & name, const std::string& value, const Uint32 & specificity, const bool& isVolatile ) :
+StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::string& value,
+										const Uint32& specificity, const bool& isVolatile ) :
 	mName( String::toLower( String::trim( name ) ) ),
 	mNameHash( String::hash( mName ) ),
 	mValue( String::trim( value ) ),
 	mSpecificity( specificity ),
 	mVolatile( isVolatile ),
-	mImportant( false )
-{
+	mImportant( false ),
+	mPropertyDefinition( StyleSheetSpecification::instance()->getProperty( mNameHash ) ),
+	mShorthandDefinition( NULL == mPropertyDefinition
+							  ? StyleSheetSpecification::instance()->getShorthand( mNameHash )
+							  : NULL ) {
 	checkImportant();
+
+	if ( NULL == mShorthandDefinition && NULL == mPropertyDefinition ) {
+		eePRINTL( "Property %s is not defined!" );
+	}
 }
 
-const std::string &StyleSheetProperty::getName() const {
+const std::string& StyleSheetProperty::getName() const {
 	return mName;
 }
 
-const std::string &StyleSheetProperty::getValue() const {
+const std::string& StyleSheetProperty::getValue() const {
 	return mValue;
 }
 
@@ -48,11 +63,11 @@ const std::string& StyleSheetProperty::value() const {
 	return mValue;
 }
 
-const Uint32 &StyleSheetProperty::getSpecificity() const {
+const Uint32& StyleSheetProperty::getSpecificity() const {
 	return mSpecificity;
 }
 
-void StyleSheetProperty::setSpecificity( const Uint32 & specificity ) {
+void StyleSheetProperty::setSpecificity( const Uint32& specificity ) {
 	// Don't allow set specificity if is an important property,
 	// force the specificity in this case.
 	if ( !mImportant ) {
@@ -73,11 +88,11 @@ void StyleSheetProperty::setValue( const std::string& value ) {
 	mValue = value;
 }
 
-const bool &StyleSheetProperty::isVolatile() const {
+const bool& StyleSheetProperty::isVolatile() const {
 	return mVolatile;
 }
 
-void StyleSheetProperty::setVolatile( const bool & isVolatile ) {
+void StyleSheetProperty::setVolatile( const bool& isVolatile ) {
 	mVolatile = isVolatile;
 }
 
@@ -93,7 +108,7 @@ void StyleSheetProperty::checkImportant() {
 	if ( String::endsWith( mValue, "!important" ) ) {
 		mImportant = true;
 		mSpecificity = StyleSheetSelectorRule::SpecificityImportant;
-		mValue = String::trim( mValue.substr( 0, mValue.size() - 10/*!important*/ ) );
+		mValue = String::trim( mValue.substr( 0, mValue.size() - 10 /*!important*/ ) );
 	}
 }
 
@@ -113,15 +128,15 @@ double StyleSheetProperty::asDouble( double defaultValue ) const {
 	return asType<double>( defaultValue );
 }
 
-float StyleSheetProperty::asFloat(float defaultValue) const {
+float StyleSheetProperty::asFloat( float defaultValue ) const {
 	return asType<float>( defaultValue );
 }
 
-long long StyleSheetProperty::asLlong(long long defaultValue) const {
+long long StyleSheetProperty::asLlong( long long defaultValue ) const {
 	return asType<long long>( defaultValue );
 }
 
-unsigned long long StyleSheetProperty::asUllong(unsigned long long defaultValue) const {
+unsigned long long StyleSheetProperty::asUllong( unsigned long long defaultValue ) const {
 	return asType<unsigned long long>( defaultValue );
 }
 
@@ -133,7 +148,7 @@ bool StyleSheetProperty::asBool( bool defaultValue ) const {
 	char first = mValue[0];
 
 	// 1*, t* (true), T* (True), y* (yes), Y* (YES)
-	return (first == '1' || first == 't' || first == 'T' || first == 'y' || first == 'Y');
+	return ( first == '1' || first == 't' || first == 'T' || first == 'y' || first == 'Y' );
 }
 
 Color StyleSheetProperty::asColor() const {
@@ -168,8 +183,8 @@ static OriginPoint toOriginPoint( std::string val ) {
 			Float x = 0;
 			Float y = 0;
 
-			bool Res1 = String::fromString<Float>( x, String::trim(parts[0]) );
-			bool Res2 = String::fromString<Float>( y, String::trim(parts[1]) );
+			bool Res1 = String::fromString<Float>( x, String::trim( parts[0] ) );
+			bool Res2 = String::fromString<Float>( y, String::trim( parts[1] ) );
 
 			if ( Res1 && Res2 ) {
 				return OriginPoint( x, y );
@@ -185,10 +200,14 @@ static BlendMode toBlendMode( std::string val ) {
 
 	BlendMode blendMode;
 
-	if ( val == "add" ) blendMode = BlendAdd;
-	else if ( val == "alpha" ) blendMode = BlendAlpha;
-	else if ( val == "multiply" ) blendMode = BlendMultiply;
-	else if ( val == "none" ) blendMode = BlendNone;
+	if ( val == "add" )
+		blendMode = BlendAdd;
+	else if ( val == "alpha" )
+		blendMode = BlendAlpha;
+	else if ( val == "multiply" )
+		blendMode = BlendMultiply;
+	else if ( val == "none" )
+		blendMode = BlendNone;
 
 	return blendMode;
 }
@@ -201,7 +220,7 @@ BlendMode StyleSheetProperty::asBlendMode() const {
 	return toBlendMode( mValue );
 }
 
-Vector2f StyleSheetProperty::asVector2f( const Vector2f & defaultValue ) const {
+Vector2f StyleSheetProperty::asVector2f( const Vector2f& defaultValue ) const {
 	if ( !mValue.empty() ) {
 		Vector2f vector;
 		auto xySplit = String::split( mValue, ',', true );
@@ -209,14 +228,17 @@ Vector2f StyleSheetProperty::asVector2f( const Vector2f & defaultValue ) const {
 		if ( xySplit.size() == 2 ) {
 			Float val;
 
-			vector.x = String::fromString<Float>( val, String::trim(xySplit[0]) ) ? val : defaultValue.x;
-			vector.y = String::fromString<Float>( val, String::trim(xySplit[1]) ) ? val : defaultValue.y;
+			vector.x =
+				String::fromString<Float>( val, String::trim( xySplit[0] ) ) ? val : defaultValue.x;
+			vector.y =
+				String::fromString<Float>( val, String::trim( xySplit[1] ) ) ? val : defaultValue.y;
 
 			return vector;
 		} else if ( xySplit.size() == 1 ) {
 			Float val;
 
-			vector.x = vector.y = String::fromString<Float>( val, xySplit[0] ) ? val : defaultValue.x;
+			vector.x = vector.y =
+				String::fromString<Float>( val, xySplit[0] ) ? val : defaultValue.x;
 
 			return vector;
 		}
@@ -225,7 +247,7 @@ Vector2f StyleSheetProperty::asVector2f( const Vector2f & defaultValue ) const {
 	return defaultValue;
 }
 
-Vector2i StyleSheetProperty::asVector2i( const Vector2i & defaultValue ) const {
+Vector2i StyleSheetProperty::asVector2i( const Vector2i& defaultValue ) const {
 	if ( !mValue.empty() ) {
 		Vector2i vector;
 		auto xySplit = String::split( mValue, ',', true );
@@ -233,8 +255,10 @@ Vector2i StyleSheetProperty::asVector2i( const Vector2i & defaultValue ) const {
 		if ( xySplit.size() == 2 ) {
 			int val;
 
-			vector.x = String::fromString<int>( val, String::trim(xySplit[0]) ) ? val : defaultValue.x;
-			vector.y = String::fromString<int>( val, String::trim(xySplit[1]) ) ? val : defaultValue.y;
+			vector.x =
+				String::fromString<int>( val, String::trim( xySplit[0] ) ) ? val : defaultValue.x;
+			vector.y =
+				String::fromString<int>( val, String::trim( xySplit[1] ) ) ? val : defaultValue.y;
 
 			return vector;
 		} else if ( xySplit.size() == 1 ) {
@@ -276,7 +300,8 @@ Rect StyleSheetProperty::asRect( const Rect& defaultValue ) const {
 			rect.Left = PixelDensity::toDpFromStringI( ltrbSplit[0] );
 			rect.Top = PixelDensity::toDpFromStringI( ltrbSplit[1] );
 		} else if ( ltrbSplit.size() == 1 ) {
-			rect.Left = rect.Top = rect.Right = rect.Bottom = PixelDensity::toDpFromStringI( ltrbSplit[0] );
+			rect.Left = rect.Top = rect.Right = rect.Bottom =
+				PixelDensity::toDpFromStringI( ltrbSplit[0] );
 		}
 
 		return rect;
@@ -304,7 +329,8 @@ Rectf StyleSheetProperty::asRectf( const Rectf& defaultValue ) const {
 			rect.Left = PixelDensity::toDpFromString( ltrbSplit[0] );
 			rect.Top = PixelDensity::toDpFromString( ltrbSplit[1] );
 		} else if ( ltrbSplit.size() == 1 ) {
-			rect.Left = rect.Top = rect.Right = rect.Bottom = PixelDensity::toDpFromString( mValue );
+			rect.Left = rect.Top = rect.Right = rect.Bottom =
+				PixelDensity::toDpFromString( mValue );
 		}
 	}
 
@@ -315,9 +341,9 @@ Uint32 StyleSheetProperty::asFontStyle() const {
 	return Text::stringToStyleFlag( getValue() );
 }
 
-Time StyleSheetProperty::asTime( const Time & defaultTime ) {
+Time StyleSheetProperty::asTime( const Time& defaultTime ) {
 	if ( !mValue.empty() ) {
-		if ( mValue[ mValue.size() -1 ] == 'm' ) {
+		if ( mValue[mValue.size() - 1] == 'm' ) {
 			return Milliseconds( asFloat() );
 		} else {
 			return Seconds( asFloat() );
@@ -327,8 +353,17 @@ Time StyleSheetProperty::asTime( const Time & defaultTime ) {
 	return defaultTime;
 }
 
-Ease::Interpolation StyleSheetProperty::asInterpolation( const Ease::Interpolation& defaultInterpolation ) {
+Ease::Interpolation
+StyleSheetProperty::asInterpolation( const Ease::Interpolation& defaultInterpolation ) {
 	return Ease::fromName( mValue, defaultInterpolation );
 }
 
-}}}
+const PropertyDefinition* StyleSheetProperty::getPropertyDefinition() const {
+	return mPropertyDefinition;
+}
+
+const ShorthandDefinition* StyleSheetProperty::getShorthandDefinition() const {
+	return mShorthandDefinition;
+}
+
+}}} // namespace EE::UI::CSS

@@ -51,7 +51,7 @@ class EE_API UITextInput : public UITextView {
 
 		bool isFreeEditingEnabled();
 
-		virtual bool setAttribute( const StyleSheetProperty& attribute, const Uint32& state = UIState::StateFlagNormal );
+		virtual bool applyProperty( const StyleSheetProperty& attribute, const Uint32& state = UIState::StateFlagNormal );
 
 		virtual UIWidget * setPadding(const Rectf& padding);
 	protected:

@@ -2,6 +2,7 @@
 #include <eepp/ui/uiwidget.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#include <eepp/ui/css/stylesheetspecification.hpp>
 #include <eepp/graphics/fontmanager.hpp>
 
 using namespace EE::UI::CSS;
@@ -30,18 +31,13 @@ bool UIStyle::stateExists( const EE::Uint32&  ) const {
 }
 
 void UIStyle::setStyleSheetProperty( const StyleSheetProperty& attribute ) {
-	if ( attribute.getName() == "padding" ) {
-		Rectf rect(  StyleSheetProperty( attribute.getName(), attribute.getValue() ).asRectf() );
-		mElementStyle.setProperty( StyleSheetProperty( "padding-left", String::toStr( rect.Left ), attribute.getSpecificity(), attribute.isVolatile() ) );
-		mElementStyle.setProperty( StyleSheetProperty( "padding-right", String::toStr( rect.Right ), attribute.getSpecificity(), attribute.isVolatile() ) );
-		mElementStyle.setProperty( StyleSheetProperty( "padding-top", String::toStr( rect.Top ), attribute.getSpecificity(), attribute.isVolatile() ) );
-		mElementStyle.setProperty( StyleSheetProperty( "padding-bottom", String::toStr( rect.Bottom ), attribute.getSpecificity(), attribute.isVolatile() ) );
-	} else if ( attribute.getName() == "margin" ) {
-		Rect rect(  StyleSheetProperty( attribute.getName(), attribute.getValue() ).asRect() );
-		mElementStyle.setProperty( StyleSheetProperty( "margin-left", String::toStr( rect.Left ), attribute.getSpecificity(), attribute.isVolatile() ) );
-		mElementStyle.setProperty( StyleSheetProperty( "margin-right", String::toStr( rect.Right ), attribute.getSpecificity(), attribute.isVolatile() ) );
-		mElementStyle.setProperty( StyleSheetProperty( "margin-top", String::toStr( rect.Top ), attribute.getSpecificity(), attribute.isVolatile() ) );
-		mElementStyle.setProperty( StyleSheetProperty( "margin-bottom", String::toStr( rect.Bottom ), attribute.getSpecificity(), attribute.isVolatile() ) );
+	if ( StyleSheetSpecification::instance()->isShorthand( attribute.getName() ) ) {
+		std::vector<StyleSheetProperty> properties = ShorthandDefinition::parseShorthand(
+			StyleSheetSpecification::instance()->getShorthand( attribute.getName() ),
+															   attribute.getValue() );
+
+		for ( auto& property : properties )
+			mElementStyle.setProperty( property );
 	} else {
 		mElementStyle.setProperty( attribute );
 	}
@@ -154,7 +150,7 @@ void UIStyle::onStateChange() {
 		for ( const auto& prop : mProperties ) {
 			const StyleSheetProperty& property = prop.second;
 
-			mWidget->setAttribute( property, mCurrentState );
+			mWidget->applyProperty( property, mCurrentState );
 		}
 
 		mWidget->endAttributesTransaction();

@@ -435,7 +435,7 @@ Uint32 UISlider::onMessage(const NodeMessage * Msg) {
 	return 0;
 }
 
-bool UISlider::setAttribute( const StyleSheetProperty& attribute, const Uint32& state ) {
+bool UISlider::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "orientation" == name ) {
@@ -461,7 +461,7 @@ bool UISlider::setAttribute( const StyleSheetProperty& attribute, const Uint32& 
 	} else if ( "background-expand" == name || "backgroundexpand" == name ) {
 		setExpandBackground( attribute.asBool() );
 	} else {
-		return UIWidget::setAttribute( attribute, state );
+		return UIWidget::applyProperty( attribute, state );
 	}
 
 	return true;

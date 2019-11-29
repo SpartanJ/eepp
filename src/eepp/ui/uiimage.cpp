@@ -209,7 +209,7 @@ const Vector2f& UIImage::getAlignOffset() const {
 	return mAlignOffset;
 }
 
-bool UIImage::setAttribute( const StyleSheetProperty& attribute, const Uint32& state ) {
+bool UIImage::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "src" == name ) {
@@ -244,7 +244,7 @@ bool UIImage::setAttribute( const StyleSheetProperty& attribute, const Uint32& s
 	} else if ( "tint" == name ) {
 		setColor( attribute.asColor() );
 	} else {
-		return UIWidget::setAttribute( attribute, state );
+		return UIWidget::applyProperty( attribute, state );
 	}
 
 	return true;

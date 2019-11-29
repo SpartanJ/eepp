@@ -118,7 +118,7 @@ void UITabWidget::setStyleConfig(const StyleConfig & styleConfig) {
 	orderTabs();
 }
 
-bool UITabWidget::setAttribute( const StyleSheetProperty& attribute, const Uint32& state ) {
+bool UITabWidget::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "max-text-length" == name || "maxtextlength" == name ) {
@@ -140,7 +140,7 @@ bool UITabWidget::setAttribute( const StyleSheetProperty& attribute, const Uint3
 	} else if ( "tab-separation" == name || "tabseparation" == name ) {
 		setTabSeparation( attribute.asDpDimensionI() );
 	} else {
-		return UIWidget::setAttribute( attribute, state );
+		return UIWidget::applyProperty( attribute, state );
 	}
 
 	return true;

@@ -327,7 +327,7 @@ void UITooltip::setFontStyleConfig(const UIFontStyleConfig & styleConfig) {
 	mTextCache->setOutlineColor( mStyleConfig.OutlineColor );
 }
 
-bool UITooltip::setAttribute( const StyleSheetProperty& attribute, const Uint32& state ) {
+bool UITooltip::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "color" == name ) {
@@ -345,7 +345,7 @@ bool UITooltip::setAttribute( const StyleSheetProperty& attribute, const Uint32&
 	} else if ( "text-stroke-color" == name || "fontoutlinecolor" == name ) {
 		setOutlineColor( attribute.asColor() );
 	} else {
-		return UIWidget::setAttribute( attribute, state );
+		return UIWidget::applyProperty( attribute, state );
 	}
 
 	return true;

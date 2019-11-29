@@ -21,6 +21,7 @@
 #include <eepp/window/backend/SDL2/platformhelpersdl2.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#include <eepp/ui/css/stylesheetspecification.hpp>
 
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
 #include <eepp/system/zip.hpp>
@@ -73,6 +74,8 @@ Engine::~Engine() {
 	Scene::SceneManager::destroySingleton();
 
 	UIThemeManager::destroySingleton();
+
+	CSS::StyleSheetSpecification::destroySingleton();
 
 	FontManager::destroySingleton();
 

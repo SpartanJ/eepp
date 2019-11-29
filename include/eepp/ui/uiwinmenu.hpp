@@ -58,7 +58,7 @@ class EE_API UIWinMenu : public UIWidget {
 
 		void setStyleConfig(const StyleConfig & styleConfig);
 
-		virtual bool setAttribute( const StyleSheetProperty& attribute, const Uint32& state = UIState::StateFlagNormal );
+		virtual bool applyProperty( const StyleSheetProperty& attribute, const Uint32& state = UIState::StateFlagNormal );
 
 		virtual void loadFromXmlNode( const pugi::xml_node& node );
 	protected:

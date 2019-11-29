@@ -157,7 +157,8 @@ void UIGridLayout::pack() {
 				targetSize.x = widget->getLayoutWeight() * ( getSize().getWidth() - mPadding.Left - mPadding.Right );
 
 			widget->setLayoutSizeRules( FIXED, FIXED );
-			widget->setSize( targetSize );
+			if ( targetSize >= Sizef::Zero )
+				widget->setSize( targetSize );
 			widget->setPosition( pos );
 
 			pos.x += getHorizontalAlign() == UI_HALIGN_RIGHT ? -targetSize.getWidth() : targetSize.getWidth();
@@ -203,7 +204,7 @@ Sizef UIGridLayout::getTargetElementSize() const {
 				  mRowMode == Size ? mRowHeight : ( ( getLayoutHeightRules() == WRAP_CONTENT ? getParent()->getSize().getHeight() : getSize().getHeight() ) - mPadding.Top - mPadding.Bottom ) * mRowWeight );
 }
 
-bool UIGridLayout::setAttribute( const StyleSheetProperty& attribute, const Uint32& state ) {
+bool UIGridLayout::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "column-span" == name || "columnspan" == name ) {
@@ -231,7 +232,7 @@ bool UIGridLayout::setAttribute( const StyleSheetProperty& attribute, const Uint
 	} else if ( "reverse-draw" == name || "reversedraw" == name ) {
 		setReverseDraw( attribute.asBool() );
 	} else {
-		return UILayout::setAttribute( attribute, state );
+		return UILayout::applyProperty( attribute, state );
 	}
 
 	return true;
