@@ -79,12 +79,24 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "gravity", "", false );
 	registerProperty( "flags", "", false );
 	registerProperty( "margin-top", "0px", false )
+		.addAlias( "layout-margin-top" )
+		.addAlias( "layout_margintop" )
+		.addAlias( "margintop" )
 		.setRelativeTarget( PropertyDefinition::RelativeTarget::ContainingBlockHeight );
 	registerProperty( "margin-left", "0px", false )
+		.addAlias( "layout-margin-left" )
+		.addAlias( "layout_marginleft" )
+		.addAlias( "marginleft" )
 		.setRelativeTarget( PropertyDefinition::RelativeTarget::ContainingBlockWidth );
 	registerProperty( "margin-right", "0px", false )
+		.addAlias( "layout-margin-right" )
+		.addAlias( "layout_marginright" )
+		.addAlias( "marginright" )
 		.setRelativeTarget( PropertyDefinition::RelativeTarget::ContainingBlockWidth );
 	registerProperty( "margin-bottom", "0px", false )
+		.addAlias( "layout-margin-bottom" )
+		.addAlias( "layout_marginbottom" )
+		.addAlias( "marginbottom" )
 		.setRelativeTarget( PropertyDefinition::RelativeTarget::ContainingBlockHeight );
 	registerProperty( "tooltip", "", false );
 	registerProperty( "layout-weight", "", false ).addAlias( "layout_weight" );
@@ -114,7 +126,7 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "opacity", "", false );
 	registerProperty( "cursor", "arrow", false );
 	registerProperty( "text", "", false );
-	registerProperty( "color", "", false ).addAlias( "text-color" );
+	registerProperty( "color", "", false ).addAlias( "text-color" ).addAlias( "textcolor" );
 	registerProperty( "shadow-color", "", false );
 	registerProperty( "selected-color", "", false );
 	registerProperty( "selection-back-color", "", false );
@@ -205,7 +217,7 @@ void StyleSheetSpecification::registerDefaultProperties() {
 
 	registerProperty( "base-alpha", "", false );
 	registerProperty( "buttons-position-offset", "", false );
-	registerProperty( "window-flags", "", false );
+	registerProperty( "window-flags", "", false ).addAlias( "winflags" );
 	registerProperty( "decoration-size", "", false );
 	registerProperty( "border-size", "", false );
 	registerProperty( "min-window-size", "", false );
@@ -226,6 +238,12 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "transition", "", false );
 
 	registerShorthand( "margin", {"margin-left", "margin-top", "margin-right", "margin-bottom"},
+					   ShorthandDefinition::ShorthandType::Box );
+	registerShorthand( "layout-margin",
+					   {"margin-left", "margin-top", "margin-right", "margin-bottom"},
+					   ShorthandDefinition::ShorthandType::Box );
+	registerShorthand( "layout_margin",
+					   {"margin-left", "margin-top", "margin-right", "margin-bottom"},
 					   ShorthandDefinition::ShorthandType::Box );
 	registerShorthand( "padding",
 					   {"padding-left", "padding-top", "padding-right", "padding-bottom"},
