@@ -10,9 +10,12 @@ namespace EE { namespace UI { namespace CSS {
 enum class ShorthandId : Uint32 {
 	Margin = String::hash( "margin" ),
 	Padding = String::hash( "padding" ),
+	Transition = String::hash( "transition" ),
 	Background = String::hash( "background" ),
 	Foreground = String::hash( "foreground" ),
 	LayoutMargin = String::hash( "layout-margin" ),
+	LayoutMarginUnderscore = String::hash( "layout_margin" ),
+	FillerPadding = String::hash( "filler-padding" ),
 	RotationOriginPoint = String::hash( "rotation-origin-point" ),
 	ScaleOriginPoint = String::hash( "scale-origin-point" )
 };
