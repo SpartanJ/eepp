@@ -6,6 +6,7 @@
 #include <eepp/graphics/text.hpp>
 #include <pugixml/pugixml.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
 
 namespace EE { namespace UI {
 
@@ -393,24 +394,31 @@ bool UITextInput::isFreeEditingEnabled() {
 }
 
 bool UITextInput::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
-	const std::string& name = attribute.getName();
+	if ( !checkPropertyDefinition( attribute ) ) return false;
 
-	if ( "text" == name ) {
-		if ( NULL != mSceneNode && mSceneNode->isUISceneNode() ) {
-			setText( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( attribute.asString() ) );
-		}
-	} else if ( "allow-editing" == name || "allowediting" == name ) {
-		setAllowEditing( attribute.asBool() );
-	} else if ( "max-length" == name || "maxlength" == name ) {
-		setMaxLength( attribute.asUint() );
-	} else if ( "free-editing" == name || "freeediting" == name ) {
-		setFreeEditing( attribute.asBool() );
-	} else if ( "only-numbers" == name || "onlynumbers" == name ) {
-		getInputTextBuffer()->setAllowOnlyNumbers( attribute.asBool(), getInputTextBuffer()->dotsInNumbersAllowed() );
-	} else if ( "allow-dot" == name || "allowdot" == name ) {
-		getInputTextBuffer()->setAllowOnlyNumbers( getInputTextBuffer()->onlyNumbersAllowed(), attribute.asBool() );
-	} else {
-		return UITextView::applyProperty( attribute, state );
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::Text:
+			if ( NULL != mSceneNode && mSceneNode->isUISceneNode() ) {
+				setText( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( attribute.asString() ) );
+			}
+			break;
+		case PropertyId::AllowEditing:
+			setAllowEditing( attribute.asBool() );
+			break;
+		case PropertyId::MaxLength:
+			setMaxLength( attribute.asUint() );
+			break;
+		case PropertyId::FreeEditing:
+			setFreeEditing( attribute.asBool() );
+			break;
+		case PropertyId::OnlyNumbers:
+			getInputTextBuffer()->setAllowOnlyNumbers( attribute.asBool(), getInputTextBuffer()->dotsInNumbersAllowed() );
+			break;
+		case PropertyId::AllowDot:
+			getInputTextBuffer()->setAllowOnlyNumbers( getInputTextBuffer()->onlyNumbersAllowed(), attribute.asBool() );
+			break;
+		default:
+			return UITextView::applyProperty( attribute, state );
 	}
 
 	return true;

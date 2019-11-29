@@ -1,6 +1,7 @@
 #include <eepp/ui/uitab.hpp>
 #include <eepp/ui/uitabwidget.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
 
 namespace EE { namespace UI {
 
@@ -144,16 +145,20 @@ void UITab::onAutoSize() {
 }
 
 bool UITab::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
-	std::string name = attribute.getName();
+	if ( !checkPropertyDefinition( attribute ) ) return false;
 
-	if ( "name" == name || "text" == name ) {
-		if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
-			setText( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( attribute.asString() ) );
-	} else if ( "owns" == name ) {
-		mOwnedName = attribute.asString();
-		setOwnedControl();
-	} else {
-		return UISelectButton::applyProperty( attribute, state );
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::Text:
+		case PropertyId::Name:
+			if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
+				setText( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( attribute.asString() ) );
+			break;
+		case PropertyId::Owns:
+			mOwnedName = attribute.asString();
+			setOwnedControl();
+			break;
+		default:
+			return UISelectButton::applyProperty( attribute, state );
 	}
 
 	return true;

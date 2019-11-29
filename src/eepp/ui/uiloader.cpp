@@ -1,6 +1,7 @@
 #include <eepp/ui/uiloader.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/scene/scenenode.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
 
 namespace EE { namespace UI {
 
@@ -221,26 +222,35 @@ UILoader * UILoader::setAnimationSpeed( const Float& animationSpeed ) {
 }
 
 bool UILoader::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
-	std::string name = attribute.getName();
+	if ( !checkPropertyDefinition( attribute ) ) return false;
 
-	if ( "indeterminate" == name ) {
-		setIndeterminate( attribute.asBool() );
-	} else if ( "max-progress" == name || "maxprogress" == name ) {
-		setMaxProgress( attribute.asFloat() );
-	} else if ( "progress" == name ) {
-		setProgress( attribute.asFloat() );
-	} else if ( "fill-color" == name || "fillcolor" == name ) {
-		setFillColor( attribute.asColor() );
-	} else if ( "radius" == name ) {
-		setRadius( attribute.asDpDimension() );
-	} else if ( "outline-thickness" == name || "outlinethickness" == name ) {
-		setOutlineThickness( attribute.asDpDimension() );
-	} else if ( "animation-speed" == name || "animationspeed" == name ) {
-		setAnimationSpeed( attribute.asFloat() );
-	} else if ( "arc-start-angle" == name || "arcstartangle" == name ) {
-		setArcStartAngle( attribute.asFloat() );
-	} else {
-		return UIWidget::applyProperty( attribute, state );
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::Indeterminate:
+			setIndeterminate( attribute.asBool() );
+			break;
+		case PropertyId::MaxProgress:
+			setMaxProgress( attribute.asFloat() );
+			break;
+		case PropertyId::Progress:
+			setProgress( attribute.asFloat() );
+			break;
+		case PropertyId::FillColor:
+			setFillColor( attribute.asColor() );
+			break;
+		case PropertyId::Radius:
+			setRadius( attribute.asDpDimension() );
+			break;
+		case PropertyId::OutlineThickness:
+			setOutlineThickness( attribute.asDpDimension() );
+			break;
+		case PropertyId::AnimationSpeed:
+			setAnimationSpeed( attribute.asFloat() );
+			break;
+		case PropertyId::ArcStartAngle:
+			setArcStartAngle( attribute.asFloat() );
+			break;
+		default:
+			return UIWidget::applyProperty( attribute, state );
 	}
 
 	return true;

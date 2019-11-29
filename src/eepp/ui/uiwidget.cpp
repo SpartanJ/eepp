@@ -895,6 +895,14 @@ std::vector<UIWidget*> UIWidget::querySelectorAll( const CSS::StyleSheetSelector
 	return widgets;
 }
 
+bool UIWidget::checkPropertyDefinition( const StyleSheetProperty& property ) {
+	if ( property.getPropertyDefinition() == NULL ) {
+		eePRINTL( "applyProperty: Property %s not defined!", property.getName().c_str() );
+		return false;
+	}
+	return true;
+}
+
 UIWidget* UIWidget::querySelector( const std::string& selector ) {
 	return querySelector( CSS::StyleSheetSelector( selector ) );
 }
@@ -917,12 +925,8 @@ void UIWidget::setStyleSheetProperty( const std::string& name, const std::string
 	}
 
 bool UIWidget::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
+	if ( !checkPropertyDefinition( attribute ) ) return false;
 	bool attributeSet = true;
-
-	if ( attribute.getPropertyDefinition() == NULL ) {
-		eePRINTL( "applyProperty: Property %s not defined!", attribute.getName().c_str() );
-		return false;
-	}
 
 	switch ( static_cast<PropertyId>( attribute.getPropertyDefinition()->getId() ) ) {
 		case PropertyId::Id:
@@ -1255,20 +1259,6 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute, const Uint32&
 		case PropertyId::ForegroundPosition:
 			SAVE_NORMAL_STATE_ATTR( getForeground()->getLayer(0)->getPositionEq() );
 			setForegroundPosition( attribute.value(), 0 );
-			break;
-		case PropertyId::Background:
-			if ( Color::isColorString( attribute.getValue() ) ) {
-				applyProperty( StyleSheetProperty( "background-color", attribute.getValue() ) );
-			} else {
-				applyProperty( StyleSheetProperty( "background-image", attribute.getValue() ) );
-			}
-			break;
-		case PropertyId::Foreground:
-			if ( Color::isColorString( attribute.getValue() ) ) {
-				applyProperty( StyleSheetProperty( "foreground-color", attribute.getValue() ) );
-			} else {
-				applyProperty( StyleSheetProperty( "foreground-image", attribute.getValue() ) );
-			}
 			break;
 		case PropertyId::RotationOriginPoint:
 			SAVE_NORMAL_STATE_ATTR( getRotationOriginPoint().toString() );

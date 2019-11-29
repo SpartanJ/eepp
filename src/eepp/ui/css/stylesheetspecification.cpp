@@ -135,13 +135,96 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "scale-type", "", false );
 	registerProperty( "tint", "", false );
 	registerProperty( "rotation-origin-point", "", false );
+	registerProperty( "max-text-length", "", false );
+	registerProperty( "min-tab-width", "", false );
+	registerProperty( "max-tab-width", "", false );
+	registerProperty( "tab-closable", "", false );
+	registerProperty( "special-border-tabs", "", false );
+	registerProperty( "line-below-tabs", "", false );
+	registerProperty( "line-below-tabs-color", "", false );
+	registerProperty( "line-below-tabs-y-offset", "", false );
+	registerProperty( "tab-separation", "", false );
+	registerProperty( "selected", "", false ).addAlias( "active" );
+	registerProperty( "popup-to-main-control", "", false );
+	registerProperty( "max-visible-items", "", false );
+	registerProperty( "selected-index", "", false );
+	registerProperty( "selected-text", "", false );
+	registerProperty( "scrollbar-type", "", false );
+	registerProperty( "row-height", "", false );
+	registerProperty( "vscroll-mode", "", false );
+	registerProperty( "hscroll-mode", "", false );
+
+	registerProperty( "column-span", "", false );
+	registerProperty( "row-span", "", false );
+	registerProperty( "span", "", false );
+	registerProperty( "column-mode", "", false );
+	registerProperty( "row-mode", "", false );
+	registerProperty( "column-weight", "", false );
+	registerProperty( "column-width", "", false );
+	registerProperty( "row-weight", "", false );
+	registerProperty( "reverse-draw", "", false );
+
+	registerProperty( "orientation", "", false );
+	registerProperty( "indeterminate", "", false );
+	registerProperty( "max-progress", "", false );
+	registerProperty( "progress", "", false );
+	registerProperty( "fill-color", "", false );
+	registerProperty( "radius", "", false );
+	registerProperty( "outline-thickness", "", false );
+	registerProperty( "animation-speed", "", false );
+	registerProperty( "arc-start-angle", "", false );
+	registerProperty( "min-width", "", false );
+	registerProperty( "min-margin-right", "", false );
+	registerProperty( "min-icon-space", "", false );
+
+	registerProperty( "total-steps", "", false );
+	registerProperty( "vertical-expand", "", false );
+	registerProperty( "display-percent", "", false );
+	registerProperty( "filler-padding-left", "", false );
+	registerProperty( "filler-padding-top", "", false );
+	registerProperty( "filler-padding-right", "", false );
+	registerProperty( "filler-padding-bottom", "", false );
+	registerProperty( "movement-speed", "", false );
+	registerProperty( "min-value", "", false );
+	registerProperty( "max-value", "", false );
+	registerProperty( "value", "", false );
+	registerProperty( "click-step", "", false );
+	registerProperty( "page-step", "", false );
+	registerProperty( "background-expand", "", false );
+	registerProperty( "scrollbar-mode", "", false );
+	registerProperty( "half-slider", "", false );
+	registerProperty( "name", "", false );
+	registerProperty( "owns", "", false );
+	registerProperty( "allow-editing", "", false );
+	registerProperty( "max-length", "", false );
+	registerProperty( "free-editing", "", false );
+	registerProperty( "only-numbers", "", false );
+	registerProperty( "allow-dot", "", false );
+	registerProperty( "touch-drag", "", false );
+	registerProperty( "touch-drag-deceleration", "", false );
+
+	registerProperty( "base-alpha", "", false );
+	registerProperty( "buttons-position-offset", "", false );
+	registerProperty( "window-flags", "", false );
+	registerProperty( "decoration-size", "", false );
+	registerProperty( "border-size", "", false );
+	registerProperty( "min-window-size", "", false );
+	registerProperty( "buttons-separation", "", false );
+	registerProperty( "min-corner-distance", "", false );
+	registerProperty( "decoration-auto-size", "", false );
+	registerProperty( "border-auto-size", "", false );
+
+	registerProperty( "margin-between-buttons", "", false );
+	registerProperty( "button-margin", "", false );
+	registerProperty( "menu-height", "", false );
+	registerProperty( "first-button-margin-left", "", false );
+
 	registerProperty( "scale-origin-point", "", false );
 
 	// Shorthands
 	registerProperty( "background-position", "", false );
 	registerProperty( "transition", "", false );
-	//registerProperty( "background", "", false );
-	//registerProperty( "padding", "", false );
+
 	registerShorthand( "margin", {"margin-left", "margin-top", "margin-right", "margin-bottom"},
 					   ShorthandDefinition::ShorthandType::Box );
 	registerShorthand( "padding",
@@ -151,9 +234,13 @@ void StyleSheetSpecification::registerDefaultProperties() {
 					   ShorthandDefinition::ShorthandType::Background );
 	registerShorthand( "foreground", {"foreground-color", "foreground-image"},
 					   ShorthandDefinition::ShorthandType::Background );
-	/*registerShorthand( "rotation-origin-point", {"rotation-origin-point-x", "rotation-origin-point-y"},
-					   ShorthandDefinition::ShorthandType::Vector2 );
-	registerShorthand( "scale-origin-point", {"scale-origin-point-x", "scale-origin-point-y"},
+	registerShorthand( "filler-padding",
+					   {"filler-padding-left", "filler-padding-top", "filler-padding-right",
+						"filler-padding-bottom"},
+					   ShorthandDefinition::ShorthandType::Box );
+	/*registerShorthand( "rotation-origin-point", {"rotation-origin-point-x",
+	"rotation-origin-point-y"}, ShorthandDefinition::ShorthandType::Vector2 ); registerShorthand(
+	"scale-origin-point", {"scale-origin-point-x", "scale-origin-point-y"},
 					   ShorthandDefinition::ShorthandType::Vector2 );*/
 }
 

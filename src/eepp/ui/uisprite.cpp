@@ -1,4 +1,5 @@
 #include <eepp/ui/uisprite.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/graphics/sprite.hpp>
 #include <eepp/scene/scenenode.hpp>
 #include <eepp/graphics/globaltextureatlas.hpp>
@@ -185,17 +186,21 @@ void UISprite::onSizeChange() {
 }
 
 bool UISprite::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
-	const std::string& name = attribute.getName();
+	if ( !checkPropertyDefinition( attribute ) ) return false;
 
-	if ( "src" == name ) {
-		std::string val = attribute.asString();
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::Src:
+		{
+			std::string val = attribute.asString();
 
-		if ( val.size() ) {
-			setIsSpriteOwner( true );
-			setSprite( Sprite::New( val ) );
+			if ( val.size() ) {
+				setIsSpriteOwner( true );
+				setSprite( Sprite::New( val ) );
+			}
+			break;
 		}
-	} else {
-		return UIWidget::applyProperty( attribute, state );
+		default:
+			return UIWidget::applyProperty( attribute, state );
 	}
 
 	return true;

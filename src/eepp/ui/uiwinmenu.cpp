@@ -1,8 +1,9 @@
 #include <eepp/ui/uiwinmenu.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/graphics/textureregion.hpp>
 #include <eepp/scene/scenemanager.hpp>
-#include <eepp/ui/uiscenenode.hpp>
 #include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
@@ -159,18 +160,23 @@ void UIWinMenu::setFirstButtonMargin( const Uint32& buttonMargin ) {
 }
 
 bool UIWinMenu::applyProperty( const StyleSheetProperty& attribute, const Uint32 & state ) {
-	const std::string& name = attribute.getName();
+	if ( !checkPropertyDefinition( attribute ) ) return false;
 
-	if ( "margin-between-buttons" == name || "marginbetweenbuttons" == name ) {
-		setMarginBetweenButtons( attribute.asDpDimensionUint() );
-	} else if ( "button-margin" == name || "buttonmargin" == name ) {
-		setButtonMargin( attribute.asDpDimensionUint() );
-	} else if ( "menu-height" == name || "menuheight" == name ) {
-		setMenuHeight( attribute.asDpDimensionUint() );
-	} else if ( "first-button-margin-left" == name || "firstbuttonmarginleft" == name ) {
-		setFirstButtonMargin( attribute.asDpDimensionUint() );
-	} else {
-		return UIWidget::applyProperty( attribute, state );
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::MarginBetweenButtons:
+			setMarginBetweenButtons( attribute.asDpDimensionUint() );
+			break;
+		case PropertyId::ButtonMargin:
+			setButtonMargin( attribute.asDpDimensionUint() );
+			break;
+		case PropertyId::MenuHeight:
+			setMenuHeight( attribute.asDpDimensionUint() );
+			break;
+		case PropertyId::FirstButtonMarginLeft:
+			setFirstButtonMargin( attribute.asDpDimensionUint() );
+			break;
+		default:
+			return UIWidget::applyProperty( attribute, state );
 	}
 
 	return true;

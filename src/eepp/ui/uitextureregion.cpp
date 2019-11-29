@@ -1,4 +1,5 @@
 #include <eepp/ui/uitextureregion.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/graphics/textureregion.hpp>
 #include <eepp/graphics/globaltextureatlas.hpp>
 #include <eepp/graphics/textureatlasmanager.hpp>
@@ -197,29 +198,37 @@ const Vector2f& UITextureRegion::getAlignOffset() const {
 }
 
 bool UITextureRegion::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
-	const std::string& name = attribute.getName();
+	if ( !checkPropertyDefinition( attribute ) ) return false;
 
-	if ( "src" == name ) {
-		Drawable * res = NULL;
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::Src:
+		{
+			Drawable * res = NULL;
 
-		if ( NULL != ( res = TextureAtlasManager::instance()->getTextureRegionByName( attribute.asString() ) ) && res->getDrawableType() == Drawable::TEXTUREREGION ) {
-			setTextureRegion( static_cast<TextureRegion*>( res ) );
+			if ( NULL != ( res = TextureAtlasManager::instance()->getTextureRegionByName( attribute.asString() ) ) && res->getDrawableType() == Drawable::TEXTUREREGION ) {
+				setTextureRegion( static_cast<TextureRegion*>( res ) );
+			}
+			break;
 		}
-	} else if ( "scale-type" == name || "scaletype" == name ) {
-		std::string val = attribute.asString();
-		String::toLowerInPlace( val );
+		case PropertyId::ScaleType:
+		{
+			std::string val = attribute.asString();
+			String::toLowerInPlace( val );
 
-		if ( "expand" == val ) {
-			setScaleType( UIScaleType::Expand );
-		} else if ( "fit_inside" == val || "fitinside" == val ) {
-			setScaleType( UIScaleType::FitInside );
-		} else if ( "none" == val ) {
-			setScaleType( UIScaleType::None );
+			if ( "expand" == val ) {
+				setScaleType( UIScaleType::Expand );
+			} else if ( "fit_inside" == val || "fitinside" == val ) {
+				setScaleType( UIScaleType::FitInside );
+			} else if ( "none" == val ) {
+				setScaleType( UIScaleType::None );
+			}
+			break;
 		}
-	} else if ( "tint" == name ) {
-		setColor( attribute.asColor() );
-	} else {
-		return UIWidget::applyProperty( attribute, state );
+		case PropertyId::Tint:
+			setColor( attribute.asColor() );
+			break;
+		default:
+			return UIWidget::applyProperty( attribute, state );
 	}
 
 	return true;

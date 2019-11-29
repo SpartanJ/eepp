@@ -1,4 +1,5 @@
 #include <eepp/ui/uiradiobutton.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/graphics/textureregion.hpp>
 #include <eepp/graphics/text.hpp>
 
@@ -264,12 +265,14 @@ void UIRadioButton::setTextSeparation(const Int32 & textSeparation) {
 }
 
 bool UIRadioButton::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
-	const std::string& name = attribute.getName();
+	if ( !checkPropertyDefinition( attribute ) ) return false;
 
-	if ( "selected" == name || "active" == name ) {
-		setActive( attribute.asBool() );
-	} else {
-		return UITextView::applyProperty( attribute, state );
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::Selected:
+			setActive( attribute.asBool() );
+			break;
+		default:
+			return UITextView::applyProperty( attribute, state );
 	}
 
 	return true;

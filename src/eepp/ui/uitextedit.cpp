@@ -1,5 +1,6 @@
 #include <eepp/ui/uitextedit.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/graphics/font.hpp>
@@ -474,31 +475,40 @@ UIFontStyleConfig UITextEdit::getFontStyleConfig() const {
 }
 
 bool UITextEdit::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
-	const std::string& name = attribute.getName();
+	if ( !checkPropertyDefinition( attribute ) ) return false;
 
 	bool attributeSet = true;
 
-	if ( "text" == name ) {
-		if ( NULL != mSceneNode && mSceneNode->isUISceneNode() ) {
-			setText( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( attribute.asString() ) );
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::Text:
+			if ( NULL != mSceneNode && mSceneNode->isUISceneNode() ) {
+				setText( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( attribute.asString() ) );
+			}
+			break;
+		case PropertyId::AllowEditing:
+			setAllowEditing( attribute.asBool() );
+			break;
+		case PropertyId::VScrollMode:
+		{
+			std::string val = attribute.asString();
+			if ( "auto" == val ) setVerticalScrollMode( UI_SCROLLBAR_AUTO );
+			else if ( "on" == val ) setVerticalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
+			else if ( "off" == val ) setVerticalScrollMode( UI_SCROLLBAR_ALWAYS_OFF );
+			break;
 		}
-	} else if ( "allow-editing" == name || "allowediting" == name ) {
-		setAllowEditing( attribute.asBool() );
-	} else if ( "vscroll-mode" == name || "vscrollmode" == name ) {
-		std::string val = attribute.asString();
-		if ( "auto" == val ) setVerticalScrollMode( UI_SCROLLBAR_AUTO );
-		else if ( "on" == val ) setVerticalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
-		else if ( "off" == val ) setVerticalScrollMode( UI_SCROLLBAR_ALWAYS_OFF );
-	} else if ( "hscroll-mode" == name || "hscrollmode" == name ) {
-		std::string val = attribute.asString();
-		if ( "auto" == val ) setHorizontalScrollMode( UI_SCROLLBAR_AUTO );
-		else if ( "on" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
-		else if ( "off" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_OFF );
-	} else {
-		attributeSet = UIWidget::applyProperty( attribute, state );
+		case PropertyId::HScrollMode:
+		{
+			std::string val = attribute.asString();
+			if ( "auto" == val ) setHorizontalScrollMode( UI_SCROLLBAR_AUTO );
+			else if ( "on" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
+			else if ( "off" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_OFF );
+			break;
+		}
+		default:
+			attributeSet = UIWidget::applyProperty( attribute, state );
 	}
 
-	if ( !attributeSet && ( String::startsWith( name, "text" ) || String::startsWith( name, "font" ) ) )
+	if ( !attributeSet && ( String::startsWith( attribute.getName(), "text" ) || String::startsWith( attribute.getName(), "font" ) ) )
 		mTextInput->applyProperty( attribute, state );
 
 	return attributeSet;

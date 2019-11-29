@@ -1,4 +1,5 @@
 #include <eepp/ui/uiscrollbar.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/graphics/textureregion.hpp>
 
 namespace EE { namespace UI {
@@ -305,39 +306,52 @@ void UIScrollBar::setExpandBackground( bool expandBackground ) {
 }
 
 bool UIScrollBar::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
-	const std::string& name = attribute.getName();
+	if ( !checkPropertyDefinition( attribute ) ) return false;
 
-	if ( "orientation" == name ) {
-		std::string val = attribute.asString();
-		String::toLowerInPlace( val );
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::Orientation:
+		{
+			std::string val = attribute.asString();
+			String::toLowerInPlace( val );
 
-		if ( "horizontal" == val )
-			setOrientation( UI_HORIZONTAL );
-		else if ( "vertical" == val )
-			setOrientation( UI_VERTICAL );
-	} else if ( "min-value" == name || "minvalue" == name ) {
-		setMinValue( attribute.asFloat() );
-	} else if ( "max-value" == name || "maxvalue" == name ) {
-		setMaxValue( attribute.asFloat() );
-	} else if ( "value" == name ) {
-		setValue( attribute.asFloat() );
-	} else if ( "click-step" == name || "clickstep" == name ) {
-		setClickStep( attribute.asFloat() );
-	} else if ( "page-step" == name || "pagestep" == name ) {
-		setPageStep( attribute.asFloat() );
-	} else if ( "scrollbar-type" == name || "scrollbartype" == name ) {
-		std::string val = attribute.asString();
-		String::toLowerInPlace( val );
-
-		if ( "no-buttons" == val || "nobuttons" == val ) {
-			setScrollBarType( NoButtons );
-		} else if ( "two-buttons" == val || "twobuttons" == val ) {
-			setScrollBarType( TwoButtons );
+			if ( "horizontal" == val )
+				setOrientation( UI_HORIZONTAL );
+			else if ( "vertical" == val )
+				setOrientation( UI_VERTICAL );
+			break;
 		}
-	} else if ( "background-expand" == name || "backgroundexpand" == name ) {
-		setExpandBackground( attribute.asBool() );
-	} else {
-		return UIWidget::applyProperty( attribute, state );
+		case PropertyId::MinValue:
+			setMinValue( attribute.asFloat() );
+			break;
+		case PropertyId::MaxValue:
+			setMaxValue( attribute.asFloat() );
+			break;
+		case PropertyId::Value:
+			setValue( attribute.asFloat() );
+			break;
+		case PropertyId::ClickStep:
+			setClickStep( attribute.asFloat() );
+			break;
+		case PropertyId::PageStep:
+			setPageStep( attribute.asFloat() );
+			break;
+		case PropertyId::ScrollBarType:
+		{
+			std::string val = attribute.asString();
+			String::toLowerInPlace( val );
+
+			if ( "no-buttons" == val || "nobuttons" == val ) {
+				setScrollBarType( NoButtons );
+			} else if ( "two-buttons" == val || "twobuttons" == val ) {
+				setScrollBarType( TwoButtons );
+			}
+			break;
+		}
+		case PropertyId::BackgroundExpand:
+			setExpandBackground( attribute.asBool() );
+			break;
+		default:
+			return UIWidget::applyProperty( attribute, state );
 	}
 
 	return true;

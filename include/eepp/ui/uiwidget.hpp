@@ -264,6 +264,8 @@ class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
 		UIWidget * querySelector( const CSS::StyleSheetSelector& selector );
 
 		std::vector<UIWidget*> querySelectorAll( const CSS::StyleSheetSelector& selector );
+
+		bool checkPropertyDefinition( const StyleSheetProperty& property );
 };
 
 }}

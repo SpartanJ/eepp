@@ -1,4 +1,5 @@
 #include <eepp/ui/uispinbox.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/graphics/textureregion.hpp>
 #include <eepp/scene/scenenode.hpp>
 
@@ -270,20 +271,26 @@ void UISpinBox::onPaddingChange() {
 }
 
 bool UISpinBox::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
-	const std::string& name = attribute.getName();
+	if ( !checkPropertyDefinition( attribute ) ) return false;
 
 	bool attributeSet = true;
 
-	if ( "min-value" == name || "minvalue" == name ) {
-		setMinValue(attribute.asFloat() );
-	} else if ( "max-value" == name || "maxvalue" == name ) {
-		setMaxValue(attribute.asFloat() );
-	} else if ( "value" == name ) {
-		setValue(attribute.asFloat() );
-	} else if ( "click-step" == name || "clickstep" == name ) {
-		setClickStep(attribute.asFloat() );
-	} else {
-		attributeSet = UIWidget::applyProperty( attribute, state );
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::MinValue:
+			setMinValue(attribute.asFloat() );
+			break;
+		case PropertyId::MaxValue:
+			setMaxValue(attribute.asFloat() );
+			break;
+		case PropertyId::Value:
+			setValue(attribute.asFloat() );
+			break;
+		case PropertyId::ClickStep:
+			setClickStep(attribute.asFloat() );
+			break;
+		default:
+			attributeSet = UIWidget::applyProperty( attribute, state );
+			break;
 	}
 
 	mInput->applyProperty( attribute );

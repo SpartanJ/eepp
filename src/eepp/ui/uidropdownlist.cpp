@@ -1,5 +1,6 @@
 #include <eepp/ui/uidropdownlist.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/scene/scenenode.hpp>
 #include <eepp/scene/actions/actions.hpp>
@@ -261,21 +262,24 @@ void UIDropDownList::destroyListBox() {
 }
 
 bool UIDropDownList::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
-	const std::string& name = attribute.getName();
+	if ( !checkPropertyDefinition( attribute ) ) return false;
 
-	if ( "popup-to-main-control" == name || "popuptomaincontrol" == name ) {
-		setPopUpToMainControl( attribute.asBool() );
-	} else if ( "max-visible-items" == name || "maxvisibleitems" == name ) {
-		setMaxNumVisibleItems( attribute.asUint() );
-	} else if ( "selected-index" == name || "selected-text" == name ||
-				"scrollbar-type" == name || "row-height" == name ||
-				"vscroll-mode" == name || "hscroll-mode" == name ||
-				"selectedindex" == name || "selectedtext" == name ||
-				"scrollbartype" == name || "rowheight" == name ||
-				"vscrollmode" == name || "hscrollmode" == name) {
-		mListBox->applyProperty( attribute, state );
-	} else {
-		return UITextInput::applyProperty( attribute, state );
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::PopUpToMainControl:
+			setPopUpToMainControl( attribute.asBool() );
+			break;
+		case PropertyId::MaxVisibleItems:
+			setMaxNumVisibleItems( attribute.asUint() );
+			break;
+		case PropertyId::SelectedIndex:
+		case PropertyId::SelectedText:
+		case PropertyId::ScrollBarType:
+		case PropertyId::RowHeight:
+		case PropertyId::VScrollMode:
+		case PropertyId::HScrollMode:
+			return mListBox->applyProperty( attribute, state );
+		default:
+			return UITextInput::applyProperty( attribute, state );
 	}
 
 	return true;

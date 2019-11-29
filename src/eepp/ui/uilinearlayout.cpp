@@ -1,4 +1,5 @@
 #include <eepp/ui/uilinearlayout.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
 
 namespace  EE { namespace UI {
 
@@ -408,18 +409,22 @@ Sizei UILinearLayout::getTotalUsedSize() {
 }
 
 bool UILinearLayout::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
-	const std::string& name = attribute.getName();
+	if ( !checkPropertyDefinition( attribute ) ) return false;
 
-	if ( "orientation" == name ) {
-		std::string val = attribute.asString();
-		String::toLowerInPlace( val );
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::Orientation:
+		{
+			std::string val = attribute.asString();
+			String::toLowerInPlace( val );
 
-		if ( "horizontal" == val )
-			setOrientation( UI_HORIZONTAL );
-		else if ( "vertical" == val )
-			setOrientation( UI_VERTICAL );
-	} else {
-		return UILayout::applyProperty( attribute, state );
+			if ( "horizontal" == val )
+				setOrientation( UI_HORIZONTAL );
+			else if ( "vertical" == val )
+				setOrientation( UI_VERTICAL );
+			break;
+		}
+		default:
+			return UILayout::applyProperty( attribute, state );
 	}
 
 	return true;

@@ -1,18 +1,19 @@
 #include <eepp/ui/uiwindow.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#include <eepp/ui/uilinearlayout.hpp>
+#include <eepp/ui/uirelativelayout.hpp>
+#include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/graphics/framebuffer.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/textureregion.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
-#include <eepp/ui/uilinearlayout.hpp>
-#include <eepp/ui/uirelativelayout.hpp>
 #include <eepp/scene/scenenode.hpp>
-#include <eepp/ui/uiscenenode.hpp>
-#include <pugixml/pugixml.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/scene/actions/actions.hpp>
+#include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 
@@ -1379,72 +1380,86 @@ void UIWindow::resizeCursor() {
 }
 
 bool UIWindow::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
-	const std::string& name = attribute.getName();
+	if ( !checkPropertyDefinition( attribute ) ) return false;
 
-	if ( "width" == name ) {
-		setSize( attribute.asDpDimension(), getSize().getHeight() );
-	} else if ( "height" == name ) {
-		setSize( getSize().getWidth(), attribute.asDpDimension() );
-	} else if ( "title" == name ) {
-		setTitle( attribute.asString() );
-	} else if ( "base-alpha" == name || "basealpha" == name ) {
-		unsigned int val = attribute.asUint();
-		if ( val <= 255 )
-			setBaseAlpha( (Uint8)val );
-	} else if ( "buttons-position-offset" == name || "buttonspositionoffset" == name ) {
-		mStyleConfig.ButtonsPositionFixer = attribute.asVector2i();
-		fixChildsSize();
-	} else if ( "window-flags" == name || "winflags" == name ) {
-		std::string flagsStr = attribute.asString();
-		String::toLowerInPlace( flagsStr );
-		std::vector<std::string> strings = String::split( flagsStr, '|' );
-		Uint32 winflags = 0;
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::Width:
+			setSize( attribute.asDpDimension(), getSize().getHeight() );
+			break;
+		case PropertyId::Height:
+			setSize( getSize().getWidth(), attribute.asDpDimension() );
+			break;
+		case PropertyId::Title:
+			setTitle( attribute.asString() );
+			break;
+		case PropertyId::BaseAlpha:
+			setBaseAlpha( (Uint8)eemin( attribute.asUint(), 255u ) );
+			break;
+		case PropertyId::ButtonsPositionOffset:
+			mStyleConfig.ButtonsPositionFixer = attribute.asVector2i();
+			fixChildsSize();
+			break;
+		case PropertyId::WindowFlags:
+		{
+			std::string flagsStr = attribute.asString();
+			String::toLowerInPlace( flagsStr );
+			std::vector<std::string> strings = String::split( flagsStr, '|' );
+			Uint32 winflags = 0;
 
-		if ( strings.size() ) {
-			for ( std::size_t i = 0; i < strings.size(); i++ ) {
-				std::string cur = strings[i];
+			if ( strings.size() ) {
+				for ( std::size_t i = 0; i < strings.size(); i++ ) {
+					std::string cur = strings[i];
 
-				if ( "default" == cur ) winflags |= UI_WIN_DEFAULT_FLAGS;
-				else if ( "close" == cur ) winflags |= UI_WIN_CLOSE_BUTTON;
-				else if ( "maximize" == cur ) winflags |= UI_WIN_MAXIMIZE_BUTTON;
-				else if ( "minimize" == cur ) winflags |= UI_WIN_MINIMIZE_BUTTON;
-				else if ( "dragable" == cur ) winflags |= UI_WIN_DRAGABLE_CONTAINER;
-				else if ( "shadow" == cur ) winflags |= UI_WIN_SHADOW;
-				else if ( "modal" == cur ) winflags |= UI_WIN_MODAL;
-				else if ( "noborder" == cur || "borderless" == cur ) winflags |= UI_WIN_NO_DECORATION;
-				else if ( "resizeable" == cur ) winflags |= UI_WIN_RESIZEABLE;
-				else if ( "sharealpha" == cur ) winflags |= UI_WIN_SHARE_ALPHA_WITH_CHILDS;
-				else if ( "buttonactions" == cur ) winflags |= UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS;
-				else if ( "framebuffer"== cur ) winflags |= UI_WIN_FRAME_BUFFER;
-				else if ( "colorbuffer"== cur ) winflags |= UI_WIN_COLOR_BUFFER;
+					if ( "default" == cur ) winflags |= UI_WIN_DEFAULT_FLAGS;
+					else if ( "close" == cur ) winflags |= UI_WIN_CLOSE_BUTTON;
+					else if ( "maximize" == cur ) winflags |= UI_WIN_MAXIMIZE_BUTTON;
+					else if ( "minimize" == cur ) winflags |= UI_WIN_MINIMIZE_BUTTON;
+					else if ( "dragable" == cur ) winflags |= UI_WIN_DRAGABLE_CONTAINER;
+					else if ( "shadow" == cur ) winflags |= UI_WIN_SHADOW;
+					else if ( "modal" == cur ) winflags |= UI_WIN_MODAL;
+					else if ( "noborder" == cur || "borderless" == cur ) winflags |= UI_WIN_NO_DECORATION;
+					else if ( "resizeable" == cur ) winflags |= UI_WIN_RESIZEABLE;
+					else if ( "sharealpha" == cur ) winflags |= UI_WIN_SHARE_ALPHA_WITH_CHILDS;
+					else if ( "buttonactions" == cur ) winflags |= UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS;
+					else if ( "framebuffer"== cur ) winflags |= UI_WIN_FRAME_BUFFER;
+					else if ( "colorbuffer"== cur ) winflags |= UI_WIN_COLOR_BUFFER;
+				}
+
+				/// TODO: WinFlags should replace old winFlags
+				mStyleConfig.WinFlags |= winflags;
+				updateWinFlags();
 			}
-
-			/// TODO: WinFlags should replace old winFlags
-			mStyleConfig.WinFlags |= winflags;
-			updateWinFlags();
+			break;
 		}
-	} else if ( "decoration-size" == name || "decorationsize" == name ) {
-		mStyleConfig.DecorationSize = attribute.asSizei();
-		fixChildsSize();
-	} else if ( "border-size" == name || "bordersize" == name ) {
-		mStyleConfig.BorderSize = attribute.asSizei();
-		fixChildsSize();
-	} else if ( "min-window-size" == name || "minwindowsize" == name ) {
-		mStyleConfig.MinWindowSize = attribute.asSizef();
-		fixChildsSize();
-	} else if ( "buttons-separation" == name || "buttonsseparation" == name ) {
-		mStyleConfig.ButtonsSeparation = attribute.asDpDimensionUint();
-		fixChildsSize();
-	} else if ( "min-corner-distance" == name || "mincornerdistance" == name ) {
-		mStyleConfig.MinCornerDistance = attribute.asDpDimensionI();
-	} else if ( "decoration-auto-size" == name || "decorationautosize" == name ) {
-		mStyleConfig.DecorationAutoSize = attribute.asBool();
-		fixChildsSize();
-	} else if ( "border-auto-size" == name || "borderautosize" == name ) {
-		mStyleConfig.BorderAutoSize = attribute.asBool();
-		fixChildsSize();
-	} else {
-		return UIWidget::applyProperty( attribute, state );
+		case PropertyId::DecorationSize:
+			mStyleConfig.DecorationSize = attribute.asSizei();
+			fixChildsSize();
+			break;
+		case PropertyId::BorderSize:
+			mStyleConfig.BorderSize = attribute.asSizei();
+			fixChildsSize();
+			break;
+		case PropertyId::MinWindowSize:
+			mStyleConfig.MinWindowSize = attribute.asSizef();
+			fixChildsSize();
+			break;
+		case PropertyId::ButtonsSeparation:
+			mStyleConfig.ButtonsSeparation = attribute.asDpDimensionUint();
+			fixChildsSize();
+			break;
+		case PropertyId::MinCornerDistance:
+			mStyleConfig.MinCornerDistance = attribute.asDpDimensionI();
+			break;
+		case PropertyId::DecorationAutoSize:
+			mStyleConfig.DecorationAutoSize = attribute.asBool();
+			fixChildsSize();
+			break;
+		case PropertyId::BorderAutoSize:
+			mStyleConfig.BorderAutoSize = attribute.asBool();
+			fixChildsSize();
+			break;
+		default:
+			return UIWidget::applyProperty( attribute, state );
 	}
 
 	return true;

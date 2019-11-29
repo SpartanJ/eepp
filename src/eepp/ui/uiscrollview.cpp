@@ -1,5 +1,6 @@
 #include <eepp/ui/uiscrollview.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
 
 namespace EE { namespace UI {
 
@@ -241,41 +242,53 @@ bool UIScrollView::isTouchOverAllowedChilds() {
 }
 
 bool UIScrollView::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
-	const std::string& name = attribute.getName();
+	if ( !checkPropertyDefinition( attribute ) ) return false;
 
-	if ( "type" == name ) {
-		std::string val( attribute.asString() );
-		String::toLowerInPlace( val );
-
-		if ( "inclusive" == val ) setViewType( Inclusive );
-		else if ( "exclusive" == val ) setViewType( Exclusive );
-	} else if ( "vscroll-mode" == name || "vscrollmode" == name ) {
-		std::string val( attribute.asString() );
-		String::toLowerInPlace( val );
-
-		if ( "on" == val ) setVerticalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
-		else if ( "off" == val ) setVerticalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
-		else if ( "auto" == val ) setVerticalScrollMode( UI_SCROLLBAR_AUTO );
-	} else if ( "hscroll-mode" == name || "hscrollmode" == name ) {
-		std::string val( attribute.asString() );
-		String::toLowerInPlace( val );
-
-		if ( "on" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
-		else if ( "off" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
-		else if ( "auto" == val ) setHorizontalScrollMode( UI_SCROLLBAR_AUTO );
-	} else if ( "scrollbar-type" == name || "scrollbartype" == name ) {
-		std::string val( attribute.asString() );
-		String::toLowerInPlace( val );
-
-		if ( "no-buttons" == val || "nobuttons" == val ) {
-			mVScroll->setScrollBarType( UIScrollBar::NoButtons );
-			mHScroll->setScrollBarType( UIScrollBar::NoButtons );
-		} else if ( "two-buttons" == val || "twobuttons" == val ) {
-			mVScroll->setScrollBarType( UIScrollBar::TwoButtons );
-			mHScroll->setScrollBarType( UIScrollBar::NoButtons );
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::ScrollBarMode:
+		{
+			std::string val( attribute.asString() );
+			String::toLowerInPlace( val );
+			if ( "inclusive" == val ) setViewType( Inclusive );
+			else if ( "exclusive" == val ) setViewType( Exclusive );
+			break;
 		}
-	} else {
-		return UITouchDragableWidget::applyProperty( attribute, state );
+		case PropertyId::VScrollMode:
+		{
+			std::string val( attribute.asString() );
+			String::toLowerInPlace( val );
+
+			if ( "on" == val ) setVerticalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
+			else if ( "off" == val ) setVerticalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
+			else if ( "auto" == val ) setVerticalScrollMode( UI_SCROLLBAR_AUTO );
+			break;
+		}
+		case PropertyId::HScrollMode:
+		{
+			std::string val( attribute.asString() );
+			String::toLowerInPlace( val );
+
+			if ( "on" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
+			else if ( "off" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
+			else if ( "auto" == val ) setHorizontalScrollMode( UI_SCROLLBAR_AUTO );
+			break;
+		}
+		case PropertyId::ScrollBarType:
+		{
+			std::string val( attribute.asString() );
+			String::toLowerInPlace( val );
+
+			if ( "no-buttons" == val || "nobuttons" == val ) {
+				mVScroll->setScrollBarType( UIScrollBar::NoButtons );
+				mHScroll->setScrollBarType( UIScrollBar::NoButtons );
+			} else if ( "two-buttons" == val || "twobuttons" == val ) {
+				mVScroll->setScrollBarType( UIScrollBar::TwoButtons );
+				mHScroll->setScrollBarType( UIScrollBar::NoButtons );
+			}
+			break;
+		}
+		default:
+			return UITouchDragableWidget::applyProperty( attribute, state );
 	}
 
 	return true;

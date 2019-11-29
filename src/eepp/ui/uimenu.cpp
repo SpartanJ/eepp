@@ -5,6 +5,7 @@
 #include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
 
 namespace EE { namespace UI {
 
@@ -571,17 +572,21 @@ void UIMenu::loadFromXmlNode( const pugi::xml_node& node ) {
 }
 
 bool UIMenu::applyProperty(const StyleSheetProperty & attribute, const Uint32 & state) {
-	const std::string& name = attribute.getName();
+	if ( !checkPropertyDefinition( attribute ) ) return false;
 
-	if ( "min-width" == name || "minwidth" == name ) {
-		mStyleConfig.MinWidth = attribute.asInt();
-		onSizeChange();
-	} else if ( "min-margin-right" == name || "minmarginright" == name ) {
-		setMinRightMargin( attribute.asDpDimensionUint() );
-	} else if ( "min-icon-space" == name || "miniconspace" == name ) {
-		setMinSpaceForIcons( attribute.asDpDimensionUint() );
-	} else {
-		return UIWidget::applyProperty( attribute, state );
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::MinWidth:
+			mStyleConfig.MinWidth = attribute.asInt();
+			onSizeChange();
+			break;
+		case PropertyId::MinMarginRight:
+			setMinRightMargin( attribute.asDpDimensionUint() );
+			break;
+		case PropertyId::MinIconSpace:
+			setMinSpaceForIcons( attribute.asDpDimensionUint() );
+			break;
+		default:
+			return UIWidget::applyProperty( attribute, state );
 	}
 
 	return true;

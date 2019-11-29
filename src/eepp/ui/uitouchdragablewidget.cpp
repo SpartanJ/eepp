@@ -1,4 +1,5 @@
 #include <eepp/ui/uitouchdragablewidget.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/scene/scenenode.hpp>
 
 namespace EE { namespace UI {
@@ -146,14 +147,17 @@ void UITouchDragableWidget::scheduledUpdate( const Time& time ) {
 }
 
 bool UITouchDragableWidget::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
-	const std::string& name = attribute.getName();
+	if ( !checkPropertyDefinition( attribute ) ) return false;
 
-	if ( "touch-drag" == name || "touchdrag" == name ) {
-		setTouchDragEnabled( attribute.asBool() );
-	} else if ( "touchdrag-deceleration" == name || "touchdragdeceleration" == name ) {
-		setTouchDragDeceleration( Vector2f( attribute.asFloat(), attribute.asFloat() ) );
-	} else {
-		return UIWidget::applyProperty( attribute, state );
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::TouchDrag:
+			setTouchDragEnabled( attribute.asBool() );
+			break;
+		case PropertyId::TouchDragDeceleration:
+			setTouchDragDeceleration( attribute.asVector2f() );
+			break;
+		default:
+			return UIWidget::applyProperty( attribute, state );
 	}
 
 	return true;

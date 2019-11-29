@@ -1,4 +1,5 @@
 #include <eepp/ui/uiimage.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/graphics/drawable.hpp>
 #include <eepp/graphics/sprite.hpp>
 #include <eepp/graphics/drawablesearcher.hpp>
@@ -210,41 +211,49 @@ const Vector2f& UIImage::getAlignOffset() const {
 }
 
 bool UIImage::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
-	const std::string& name = attribute.getName();
+	if ( !checkPropertyDefinition( attribute ) ) return false;
 
-	if ( "src" == name ) {
-		Drawable * res = NULL;
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::Src:
+		{
+			Drawable * res = NULL;
+			if ( NULL != ( res = DrawableSearcher::searchByName( attribute.asString() ) ) ) {
+				if ( res->getDrawableType() == Drawable::SPRITE )
+					mDrawableOwner = true;
 
-		if ( NULL != ( res = DrawableSearcher::searchByName( attribute.asString() ) ) ) {
-			if ( res->getDrawableType() == Drawable::SPRITE )
-				mDrawableOwner = true;
-
-			setDrawable( res );
+				setDrawable( res );
+			}
+			break;
 		}
-	} else if ( "icon" == name ) {
-		std::string val = attribute.asString();
-		Drawable * icon = NULL;
-
-		if ( NULL != mTheme && NULL != ( icon = mTheme->getIconByName( val ) ) ) {
-			setDrawable( icon );
-		} else if ( NULL != ( icon = DrawableSearcher::searchByName( val ) ) ) {
-			setDrawable( icon );
+		case PropertyId::Icon:
+		{
+			std::string val = attribute.asString();
+			Drawable * icon = NULL;
+			if ( NULL != mTheme && NULL != ( icon = mTheme->getIconByName( val ) ) ) {
+				setDrawable( icon );
+			} else if ( NULL != ( icon = DrawableSearcher::searchByName( val ) ) ) {
+				setDrawable( icon );
+			}
+			break;
 		}
-	} else if ( "scale-type" == name || "scaletype" == name ) {
-		std::string val = attribute.asString();
-		String::toLowerInPlace( val );
-
-		if ( "expand" == val ) {
-			setScaleType( UIScaleType::Expand );
-		} else if ( "fit-inside" == val || "fit_inside" == val || "fitinside" == val ) {
-			setScaleType( UIScaleType::FitInside );
-		} else if ( "none" == val ) {
-			setScaleType( UIScaleType::None );
+		case PropertyId::ScaleType:
+		{
+			std::string val = attribute.asString();
+			String::toLowerInPlace( val );
+			if ( "expand" == val ) {
+				setScaleType( UIScaleType::Expand );
+			} else if ( "fit-inside" == val || "fit_inside" == val || "fitinside" == val ) {
+				setScaleType( UIScaleType::FitInside );
+			} else if ( "none" == val ) {
+				setScaleType( UIScaleType::None );
+			}
+			break;
 		}
-	} else if ( "tint" == name ) {
-		setColor( attribute.asColor() );
-	} else {
-		return UIWidget::applyProperty( attribute, state );
+		case PropertyId::Tint:
+			setColor( attribute.asColor() );
+			break;
+		default:
+			return UIWidget::applyProperty( attribute, state );
 	}
 
 	return true;

@@ -568,10 +568,7 @@ void UITextView::resetSelCache() {
 	}
 
 bool UITextView::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
-	if ( attribute.getPropertyDefinition() == NULL ) {
-		eePRINTL( "applyProperty: Property %s not defined!", attribute.getName().c_str() );
-		return false;
-	}
+	if ( !checkPropertyDefinition( attribute ) ) return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::Text:
