@@ -10,6 +10,10 @@ namespace pugi {
 class xml_node;
 }
 
+namespace EE { namespace UI { namespace CSS {
+class PropertyDefinition;
+}}}
+
 using namespace EE::UI::CSS;
 
 namespace EE { namespace UI {
@@ -189,6 +193,10 @@ class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
 		}
 
 		std::vector<UIWidget*> querySelectorAll( const std::string& selector );
+
+		virtual std::string getPropertyString( const std::string& property );
+
+		virtual std::string getPropertyString( const PropertyDefinition* propertyDef );
 	protected:
 		friend class UIManager;
 		friend class UISceneNode;

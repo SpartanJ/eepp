@@ -182,6 +182,18 @@ enum class PropertyId : Uint32 {
 	FirstButtonMarginLeft = String::hash( "first-button-margin-left" )
 };
 
+enum class PropertyType : Uint32 {
+	Undefined,
+	String,
+	Bool,
+	NumberInt,
+	NumberFloat,
+	NumberLength,
+	Color,
+	Vector2,
+	BackgroundSize
+};
+
 class EE_API PropertyDefinition {
   public:
 	enum RelativeTarget {
@@ -213,6 +225,10 @@ class EE_API PropertyDefinition {
 
 	PropertyDefinition& setRelativeTarget( const RelativeTarget& relativeTarget );
 
+	PropertyDefinition& setType( const PropertyType& propertyType );
+
+	const PropertyType& getType() const;
+
 	PropertyDefinition& addAlias( const std::string& alias );
 
 	bool isAlias( const std::string& alias ) const;
@@ -231,6 +247,7 @@ class EE_API PropertyDefinition {
 	std::string mDefaultValue;
 	bool mInherited;
 	RelativeTarget mRelativeTarget;
+	PropertyType mPropertyType;
 };
 
 }}} // namespace EE::UI::CSS

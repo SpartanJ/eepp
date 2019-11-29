@@ -15,8 +15,8 @@
 #include <eepp/window/engine.hpp>
 #include <pugixml/pugixml.hpp>
 #include <algorithm>
-#include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/css/shorthanddefinition.hpp>
+#include <eepp/ui/css/stylesheetspecification.hpp>
 
 using namespace EE::Window;
 
@@ -909,6 +909,61 @@ UIWidget* UIWidget::querySelector( const std::string& selector ) {
 
 std::vector<UIWidget*> UIWidget::querySelectorAll( const std::string& selector ) {
 	return querySelectorAll( CSS::StyleSheetSelector( selector ) );
+}
+
+std::string UIWidget::getPropertyString( const std::string& property ) {
+	return getPropertyString( StyleSheetSpecification::instance()->getProperty( property ) );
+}
+
+std::string UIWidget::getPropertyString( const PropertyDefinition* propertyDef ) {
+	if ( NULL == propertyDef ) return "";
+
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::X:
+			return String::format( "%fdp", getPosition().x );
+		case PropertyId::Y:
+			return String::format( "%fdp", getPosition().y );
+		case PropertyId::Width:
+			return String::format( "%fdp", getSize().getWidth() );
+		case PropertyId::Height:
+			return String::format( "%fdp", getSize().getHeight() );
+		case PropertyId::MarginLeft:
+			return String::format( "%ddp", getLayoutMargin().Left );
+		case PropertyId::MarginTop:
+			return String::format( "%ddp", getLayoutMargin().Top );
+		case PropertyId::MarginRight:
+			return String::format( "%ddp", getLayoutMargin().Right );
+		case PropertyId::MarginBottom:
+			return String::format( "%ddp", getLayoutMargin().Bottom );
+		case PropertyId::PaddingLeft:
+			return String::format( "%fdp", getPadding().Left );
+		case PropertyId::PaddingTop:
+			return String::format( "%fdp", getPadding().Top );
+		case PropertyId::PaddingRight:
+			return String::format( "%fdp", getPadding().Right );
+		case PropertyId::PaddingBottom:
+			return String::format( "%fdp", getPadding().Bottom );
+		case PropertyId::BackgroundColor:
+			return getBackgroundColor().toHexString();
+		case PropertyId::ForegroundColor:
+			return getForegroundColor().toHexString();
+		case PropertyId::BorderColor:
+			return getBorderColor().toHexString();
+		case PropertyId::BorderRadius:
+			return String::format( "%ud", getBorderRadius() );
+		case PropertyId::SkinColor:
+			return getSkinColor().toHexString();
+		case PropertyId::Rotation:
+			return String::format( "%f", getRotation() );
+		case PropertyId::Scale:
+			return String::format( "%f, %f", getScale().x, getScale().y );
+		case PropertyId::Opacity:
+			return String::format( "%f", getAlpha() );
+		default:
+			break;
+	}
+
+	return "";
 }
 
 void UIWidget::setStyleSheetProperty( const std::string& name, const std::string& value, const Uint32& specificity ) {

@@ -15,7 +15,8 @@ PropertyDefinition::PropertyDefinition( const std::string& name, const std::stri
 	mName( name ),
 	mId( String::hash( name ) ),
 	mDefaultValue( defaultValue ),
-	mInherited( inherited ) {
+	mInherited( inherited ),
+	mPropertyType( PropertyType::Undefined ) {
 
 	for ( auto& sep : {"-", "_"} ) {
 		if ( mName.find( sep ) != std::string::npos ) {
@@ -53,6 +54,15 @@ const PropertyDefinition::RelativeTarget& PropertyDefinition::getRelativeTarget(
 PropertyDefinition& PropertyDefinition::setRelativeTarget( const RelativeTarget& relativeTarget ) {
 	mRelativeTarget = relativeTarget;
 	return *this;
+}
+
+PropertyDefinition& PropertyDefinition::setType( const PropertyType& propertyType ) {
+	mPropertyType = propertyType;
+	return *this;
+}
+
+const PropertyType& PropertyDefinition::getType() const {
+	return mPropertyType;
 }
 
 PropertyDefinition& PropertyDefinition::addAlias( const std::string& alias ) {
