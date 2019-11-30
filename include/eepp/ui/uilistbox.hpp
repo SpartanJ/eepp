@@ -98,6 +98,8 @@ class EE_API UIListBox : public UITouchDragableWidget {
 		void loadItemsFromXmlNode(const pugi::xml_node & node);
 
 		virtual bool applyProperty( const StyleSheetProperty& attribute );
+
+		virtual std::string getPropertyString(const PropertyDefinition* propertyDef);
 	protected:
 		friend class UIListBoxItem;
 		friend class UIItemContainer<UIListBox>;

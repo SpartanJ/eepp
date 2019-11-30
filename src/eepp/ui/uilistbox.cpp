@@ -966,6 +966,32 @@ const UI_SCROLLBAR_MODE& UIListBox::getHorizontalScrollMode() {
 	return mHScrollMode;
 }
 
+std::string UIListBox::getPropertyString( const PropertyDefinition* propertyDef ) {
+	if ( NULL == propertyDef ) return "";
+
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::RowHeight:
+			return String::format( "%ddp", getRowHeight() );
+		case PropertyId::VScrollMode:
+			return getVerticalScrollMode() == UI_SCROLLBAR_AUTO ? "auto" : (
+				getVerticalScrollMode() == UI_SCROLLBAR_ALWAYS_ON ? "on" : "off"
+			);
+		case PropertyId::HScrollMode:
+			return getHorizontalScrollMode() == UI_SCROLLBAR_AUTO ? "auto" : (
+				getHorizontalScrollMode() == UI_SCROLLBAR_ALWAYS_ON ? "on" : "off"
+			);
+		case PropertyId::SelectedIndex:
+			return String::toStr( getItemSelectedIndex() );
+		case PropertyId::SelectedText:
+			return getItemSelectedText();
+		case PropertyId::ScrollBarType:
+			return mVScrollBar->getScrollBarType() == UIScrollBar::NoButtons ? "no-buttons" :
+																			   "two-buttons";
+		default:
+			return UITouchDragableWidget::getPropertyString( propertyDef );
+	}
+}
+
 bool UIListBox::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) ) return false;
 

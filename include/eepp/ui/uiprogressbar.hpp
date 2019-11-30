@@ -56,10 +56,12 @@ class EE_API UIProgressBar : public UIWidget {
 		void setDisplayPercent( const bool& displayPercent );
 
 		const bool& getDisplayPercent() const;
-		
+
 		UITextView * getTextBox() const;
 
 		virtual bool applyProperty( const StyleSheetProperty& attribute );
+
+		virtual std::string getPropertyString(const PropertyDefinition* propertyDef);
 
 		const StyleConfig& getStyleConfig() const;
 	protected:
@@ -75,9 +77,9 @@ class EE_API UIProgressBar : public UIWidget {
 		virtual void onSizeChange();
 
 		virtual void onThemeLoaded();
-		
+
 		void updateTextBox();
-		
+
 		virtual void onAlphaChange();
 };
 

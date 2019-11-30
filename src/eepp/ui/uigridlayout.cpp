@@ -205,6 +205,33 @@ Sizef UIGridLayout::getTargetElementSize() const {
 				  mRowMode == Size ? mRowHeight : ( ( getLayoutHeightRules() == WRAP_CONTENT ? getParent()->getSize().getHeight() : getSize().getHeight() ) - mPadding.Top - mPadding.Bottom ) * mRowWeight );
 }
 
+std::string UIGridLayout::getPropertyString( const PropertyDefinition* propertyDef ) {
+	if ( NULL == propertyDef ) return "";
+
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::ColumnSpan:
+			return String::format( "%ddp", mSpan.x );
+		case PropertyId::RowSpan:
+			return String::format( "%ddp", mSpan.y );
+		case PropertyId::ColumnMode:
+			return getColumnMode() == Size ? "size" : "weight";
+		case PropertyId::RowMode:
+			return getRowMode() == Size ? "size" : "weight";
+		case PropertyId::ColumnWeight:
+			return String::fromFloat( getColumnWeight() );
+		case PropertyId::RowWeight:
+			return String::fromFloat( getRowWeight() );
+		case PropertyId::ColumnWidth:
+			return String::format( "%ddp", getColumnWidth() );
+		case PropertyId::RowHeight:
+			return String::format( "%ddp", getRowHeight() );
+		case PropertyId::ReverseDraw:
+			return isReverseDraw() ? "true" : "false";
+		default:
+			return UILayout::getPropertyString( propertyDef );
+	}
+}
+
 bool UIGridLayout::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) ) return false;
 
@@ -214,9 +241,6 @@ bool UIGridLayout::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		case PropertyId::RowSpan:
 			setSpan( Sizei( mSpan.x, attribute.asDpDimensionI() ) );
-			break;
-		case PropertyId::Span:
-			setSpan( Sizei( attribute.asDpDimension(), attribute.asDpDimensionI() ) );
 			break;
 		case PropertyId::ColumnMode:
 		{

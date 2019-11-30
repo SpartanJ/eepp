@@ -53,6 +53,8 @@ class EE_API UILoader : public UIWidget {
 
 		virtual bool applyProperty( const StyleSheetProperty& attribute );
 
+		virtual std::string getPropertyString(const PropertyDefinition* propertyDef);
+
 		Float getArcStartAngle() const;
 
 		UILoader * setArcStartAngle( const Float& arcStartAngle );

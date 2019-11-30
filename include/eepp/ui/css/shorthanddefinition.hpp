@@ -22,7 +22,7 @@ enum class ShorthandId : Uint32 {
 
 class ShorthandDefinition {
   public:
-	enum ShorthandType { Box, Background, Transition, Vector2 };
+	enum ShorthandType { Box, Background, Vector2, SingleValueVector };
 
 	static std::vector<StyleSheetProperty> parseShorthand(const ShorthandDefinition* shorthand,
 														   std::string value );

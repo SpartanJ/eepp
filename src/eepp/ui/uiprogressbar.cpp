@@ -207,6 +207,33 @@ UITextView * UIProgressBar::getTextBox() const {
 	return mTextBox;
 }
 
+std::string UIProgressBar::getPropertyString( const PropertyDefinition* propertyDef ) {
+	if ( NULL == propertyDef ) return "";
+
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::TotalSteps:
+			return String::fromFloat( getTotalSteps() );
+		case PropertyId::Progress:
+			return String::fromFloat( getProgress() );
+		case PropertyId::VerticalExpand:
+			return mStyleConfig.VerticalExpand ? "true" : "false";
+		case PropertyId::DisplayPercent:
+			return mStyleConfig.DisplayPercent ? "true" : "false";
+		case PropertyId::FillerPaddingLeft:
+			return String::fromFloat( mStyleConfig.FillerPadding.Left, "dp" );
+		case PropertyId::FillerPaddingTop:
+			return String::fromFloat( mStyleConfig.FillerPadding.Top, "dp" );
+		case PropertyId::FillerPaddingRight:
+			return String::fromFloat( mStyleConfig.FillerPadding.Right, "dp" );
+		case PropertyId::FillerPaddingBottom:
+			return String::fromFloat( mStyleConfig.FillerPadding.Bottom, "dp" );
+		case PropertyId::MovementSpeed:
+			return String::fromFloat( getMovementSpeed().x ) + ", " + String::fromFloat( getMovementSpeed().y );
+		default:
+			return UIWidget::getPropertyString( propertyDef );
+	}
+}
+
 bool UIProgressBar::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) ) return false;
 

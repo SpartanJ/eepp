@@ -285,6 +285,26 @@ bool UIDropDownList::applyProperty( const StyleSheetProperty& attribute ) {
 	return true;
 }
 
+std::string UIDropDownList::getPropertyString( const PropertyDefinition* propertyDef ) {
+	if ( NULL == propertyDef ) return "";
+
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::PopUpToMainControl:
+			return mStyleConfig.PopUpToMainControl ? "true" : "false";
+		case PropertyId::MaxVisibleItems:
+			return String::toStr( mStyleConfig.MaxNumVisibleItems );
+		case PropertyId::SelectedIndex:
+		case PropertyId::SelectedText:
+		case PropertyId::ScrollBarType:
+		case PropertyId::RowHeight:
+		case PropertyId::VScrollMode:
+		case PropertyId::HScrollMode:
+			return mListBox->getPropertyString( propertyDef );
+		default:
+			return UITextInput::getPropertyString( propertyDef );
+	}
+}
+
 void UIDropDownList::loadFromXmlNode( const pugi::xml_node& node ) {
 	beginAttributesTransaction();
 

@@ -85,10 +85,28 @@ ShorthandDefinition::parseShorthand( const ShorthandDefinition* shorthand, std::
 			}
 			break;
 		}
-		case ShorthandType::Transition: {
+		case ShorthandType::SingleValueVector: {
+			for ( auto& prop : propNames ) {
+				properties.emplace_back( StyleSheetProperty( prop, value ) );
+			}
 			break;
 		}
 		case ShorthandType::Vector2: {
+			if ( propNames.size() != 2 ) {
+				eePRINTL( "ShorthandType::Vector2 properties must be 2 for %s",
+						  shorthand->getName().c_str() );
+				return properties;
+			}
+
+			auto values = String::split( value, ',' );
+
+			if ( values.size() >= 2 ) {
+				properties.emplace_back( StyleSheetProperty( propNames[0], values[0] ) );
+				properties.emplace_back( StyleSheetProperty( propNames[1], values[1] ) );
+			} else if ( values.size() == 1 ) {
+				properties.emplace_back( StyleSheetProperty( propNames[0], values[0] ) );
+				properties.emplace_back( StyleSheetProperty( propNames[1], values[0] ) );
+			}
 			break;
 		}
 		default:

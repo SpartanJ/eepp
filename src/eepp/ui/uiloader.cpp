@@ -221,6 +221,31 @@ UILoader * UILoader::setAnimationSpeed( const Float& animationSpeed ) {
 	return this;
 }
 
+std::string UILoader::getPropertyString( const PropertyDefinition* propertyDef ) {
+	if ( NULL == propertyDef ) return "";
+
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::Indeterminate:
+			return isIndeterminate() ? "true" : "false";
+		case PropertyId::MaxProgress:
+			return String::fromFloat( getMaxProgress() );
+		case PropertyId::Progress:
+			return String::fromFloat( getProgress() );
+		case PropertyId::FillColor:
+			return getFillColor().toHexString();
+		case PropertyId::Radius:
+			return String::fromFloat( getRadius(), "dp" );
+		case PropertyId::OutlineThickness:
+			return String::fromFloat( getOutlineThickness(), "dp" );
+		case PropertyId::AnimationSpeed:
+			return String::fromFloat( getAnimationSpeed() );
+		case PropertyId::ArcStartAngle:
+			return String::fromFloat( getArcStartAngle() );
+		default:
+			return UIWidget::getPropertyString( propertyDef );
+	}
+}
+
 bool UILoader::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) ) return false;
 

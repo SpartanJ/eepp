@@ -408,6 +408,17 @@ Sizei UILinearLayout::getTotalUsedSize() {
 	return size;
 }
 
+std::string UILinearLayout::getPropertyString( const PropertyDefinition* propertyDef ) {
+	if ( NULL == propertyDef ) return "";
+
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::Orientation:
+			return getOrientation() == UI_HORIZONTAL ? "horizontal" : "vertical";
+		default:
+			return UILayout::getPropertyString( propertyDef );
+	}
+}
+
 bool UILinearLayout::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) ) return false;
 

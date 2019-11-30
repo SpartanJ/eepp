@@ -120,7 +120,6 @@ enum class PropertyId : Uint32 {
 	HScrollMode = String::hash( "hscroll-mode" ),
 	ColumnSpan = String::hash( "column-span" ),
 	RowSpan = String::hash( "row-span" ),
-	Span = String::hash( "span" ),
 	ColumnMode = String::hash( "column-mode" ),
 	RowMode = String::hash( "row-mode" ),
 	ColumnWeight = String::hash( "column-weight" ),

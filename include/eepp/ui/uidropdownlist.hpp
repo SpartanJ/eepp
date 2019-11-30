@@ -44,6 +44,8 @@ class EE_API UIDropDownList : public UITextInput {
 
 		virtual bool applyProperty( const StyleSheetProperty& attribute );
 
+		virtual std::string getPropertyString( const PropertyDefinition* propertyDef );
+
 		virtual void loadFromXmlNode(const pugi::xml_node & node);
 	protected:
 		friend class UIComboBox;

@@ -281,6 +281,8 @@ void StyleSheetSpecification::registerDefaultProperties() {
 					   {"filler-padding-left", "filler-padding-top", "filler-padding-right",
 						"filler-padding-bottom"},
 					   ShorthandDefinition::ShorthandType::Box );
+	registerShorthand( "span", {"column-span", "row-span"},
+					   ShorthandDefinition::ShorthandType::SingleValueVector );
 	/*registerShorthand( "rotation-origin-point", {"rotation-origin-point-x",
 	"rotation-origin-point-y"}, ShorthandDefinition::ShorthandType::Vector2 ); registerShorthand(
 	"scale-origin-point", {"scale-origin-point-x", "scale-origin-point-y"},

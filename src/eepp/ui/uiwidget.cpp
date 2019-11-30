@@ -1005,7 +1005,7 @@ std::string UIWidget::getPropertyString( const PropertyDefinition* propertyDef )
 	return "";
 }
 
-void UIWidget::setStyleSheetProperty( const std::string& name, const std::string& value, const Uint32& specificity ) {
+void UIWidget::setStyleSheetInlineProperty( const std::string& name, const std::string& value, const Uint32& specificity ) {
 	if ( mStyle != NULL )
 		mStyle->setStyleSheetProperty( CSS::StyleSheetProperty( name, value, specificity ) );
 }
