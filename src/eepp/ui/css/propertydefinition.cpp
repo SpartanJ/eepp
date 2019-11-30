@@ -51,7 +51,8 @@ const PropertyRelativeTarget& PropertyDefinition::getRelativeTarget() const {
 	return mRelativeTarget;
 }
 
-PropertyDefinition& PropertyDefinition::setRelativeTarget( const PropertyRelativeTarget& relativeTarget ) {
+PropertyDefinition&
+PropertyDefinition::setRelativeTarget( const PropertyRelativeTarget& relativeTarget ) {
 	mRelativeTarget = relativeTarget;
 	return *this;
 }

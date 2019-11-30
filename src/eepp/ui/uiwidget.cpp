@@ -920,13 +920,13 @@ std::string UIWidget::getPropertyString( const PropertyDefinition* propertyDef )
 
 	switch ( propertyDef->getPropertyId() ) {
 		case PropertyId::X:
-			return String::format( "%fdp", getPosition().x );
+			return String::format( "%.2fdp", getPosition().x );
 		case PropertyId::Y:
-			return String::format( "%fdp", getPosition().y );
+			return String::format( "%.2fdp", getPosition().y );
 		case PropertyId::Width:
-			return String::format( "%fdp", getSize().getWidth() );
+			return String::format( "%.2fdp", getSize().getWidth() );
 		case PropertyId::Height:
-			return String::format( "%fdp", getSize().getHeight() );
+			return String::format( "%.2fdp", getSize().getHeight() );
 		case PropertyId::MarginLeft:
 			return String::format( "%ddp", getLayoutMargin().Left );
 		case PropertyId::MarginTop:
@@ -936,13 +936,13 @@ std::string UIWidget::getPropertyString( const PropertyDefinition* propertyDef )
 		case PropertyId::MarginBottom:
 			return String::format( "%ddp", getLayoutMargin().Bottom );
 		case PropertyId::PaddingLeft:
-			return String::format( "%fdp", getPadding().Left );
+			return String::format( "%.2fdp", getPadding().Left );
 		case PropertyId::PaddingTop:
-			return String::format( "%fdp", getPadding().Top );
+			return String::format( "%.2fdp", getPadding().Top );
 		case PropertyId::PaddingRight:
-			return String::format( "%fdp", getPadding().Right );
+			return String::format( "%.2fdp", getPadding().Right );
 		case PropertyId::PaddingBottom:
-			return String::format( "%fdp", getPadding().Bottom );
+			return String::format( "%.2fdp", getPadding().Bottom );
 		case PropertyId::BackgroundColor:
 			return getBackgroundColor().toHexString();
 		case PropertyId::ForegroundColor:
@@ -950,7 +950,7 @@ std::string UIWidget::getPropertyString( const PropertyDefinition* propertyDef )
 		case PropertyId::BorderColor:
 			return getBorderColor().toHexString();
 		case PropertyId::BorderRadius:
-			return String::format( "%ud", getBorderRadius() );
+			return String::format( "%u", getBorderRadius() );
 		case PropertyId::SkinColor:
 			return getSkinColor().toHexString();
 		case PropertyId::Rotation:
@@ -970,7 +970,7 @@ void UIWidget::setStyleSheetProperty( const std::string& name, const std::string
 	if ( mStyle != NULL )
 		mStyle->setStyleSheetProperty( CSS::StyleSheetProperty( name, value, specificity ) );
 }
-
+/*
 #define SAVE_NORMAL_STATE_ATTR( ATTR_FORMATED ) \
 	if ( state != UIState::StateFlagNormal || ( state == UIState::StateFlagNormal && attribute.isVolatile() ) ) { \
 		CSS::StyleSheetProperty oldAttribute = mStyle->getStatelessStyleSheetProperty( attribute.getName() ); \
@@ -978,6 +978,8 @@ void UIWidget::setStyleSheetProperty( const std::string& name, const std::string
 			mStyle->setStyleSheetProperty( CSS::StyleSheetProperty( attribute.getName(), ATTR_FORMATED ) ); \
 		} \
 	}
+*/
+#define SAVE_NORMAL_STATE_ATTR( ATTR_FORMATED );
 
 bool UIWidget::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
 	if ( !checkPropertyDefinition( attribute ) ) return false;

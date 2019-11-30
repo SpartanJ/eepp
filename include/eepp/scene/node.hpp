@@ -278,6 +278,8 @@ class EE_API Node : public Transformable {
 
 		void removeActionsByTag( const Uint32& tag );
 
+		std::vector<Action *> getActionsByTag( const Uint32& tag );
+
 		void clearActions();
 
 		Transform getLocalTransform() const;

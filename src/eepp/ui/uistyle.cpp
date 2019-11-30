@@ -1,23 +1,22 @@
-#include <eepp/ui/uistyle.hpp>
-#include <eepp/ui/uiwidget.hpp>
-#include <eepp/ui/uiscenenode.hpp>
-#include <eepp/ui/uithememanager.hpp>
-#include <eepp/ui/css/stylesheetspecification.hpp>
 #include <eepp/graphics/fontmanager.hpp>
+#include <eepp/scene/actions/actions.hpp>
+#include <eepp/ui/css/stylesheetpropertytransition.hpp>
+#include <eepp/ui/css/stylesheetspecification.hpp>
+#include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uistyle.hpp>
+#include <eepp/ui/uithememanager.hpp>
+#include <eepp/ui/uiwidget.hpp>
 
 using namespace EE::UI::CSS;
+using namespace EE::Scene;
 
 namespace EE { namespace UI {
 
-UIStyle * UIStyle::New( UIWidget * widget ) {
+UIStyle* UIStyle::New( UIWidget* widget ) {
 	return eeNew( UIStyle, ( widget ) );
 }
 
-UIStyle::UIStyle( UIWidget * widget ) :
-	UIState(),
-	mWidget( widget ),
-	mChangingState( false )
-{
+UIStyle::UIStyle( UIWidget* widget ) : UIState(), mWidget( widget ), mChangingState( false ) {
 	load();
 }
 
@@ -26,7 +25,7 @@ UIStyle::~UIStyle() {
 	unsubscribeNonCacheableStyles();
 }
 
-bool UIStyle::stateExists( const EE::Uint32&  ) const {
+bool UIStyle::stateExists( const EE::Uint32& ) const {
 	return true;
 }
 
@@ -34,7 +33,7 @@ void UIStyle::setStyleSheetProperty( const StyleSheetProperty& attribute ) {
 	if ( StyleSheetSpecification::instance()->isShorthand( attribute.getName() ) ) {
 		std::vector<StyleSheetProperty> properties = ShorthandDefinition::parseShorthand(
 			StyleSheetSpecification::instance()->getShorthand( attribute.getName() ),
-															   attribute.getValue() );
+			attribute.getValue() );
 
 		for ( auto& property : properties )
 			mElementStyle.setProperty( property );
@@ -51,7 +50,9 @@ void UIStyle::load() {
 	mElementStyle.clearProperties();
 	mProperties.clear();
 
-	UISceneNode * uiSceneNode = mWidget->getSceneNode()->isUISceneNode() ? static_cast<UISceneNode*>( mWidget->getSceneNode() ) : NULL;
+	UISceneNode* uiSceneNode = mWidget->getSceneNode()->isUISceneNode()
+								   ? static_cast<UISceneNode*>( mWidget->getSceneNode() )
+								   : NULL;
 
 	if ( NULL != uiSceneNode ) {
 		CSS::StyleSheet& styleSheet = uiSceneNode->getStyleSheet();
@@ -83,7 +84,8 @@ void UIStyle::setStyleSheetProperties( const CSS::StyleSheetProperties& properti
 }
 
 bool UIStyle::hasTransition( const std::string& propertyName ) {
-	return mTransitions.find( propertyName ) != mTransitions.end() || mTransitions.find( "all" ) != mTransitions.end();
+	return mTransitions.find( propertyName ) != mTransitions.end() ||
+		   mTransitions.find( "all" ) != mTransitions.end();
 }
 
 TransitionDefinition UIStyle::getTransition( const std::string& propertyName ) {
@@ -102,11 +104,11 @@ const bool& UIStyle::isChangingState() const {
 	return mChangingState;
 }
 
-void UIStyle::subscribeRelated( UIWidget * widget ) {
+void UIStyle::subscribeRelated( UIWidget* widget ) {
 	mRelatedWidgets.insert( widget );
 }
 
-void UIStyle::unsubscribeRelated( UIWidget * widget ) {
+void UIStyle::unsubscribeRelated( UIWidget* widget ) {
 	mRelatedWidgets.erase( widget );
 }
 
@@ -116,8 +118,9 @@ void UIStyle::tryApplyStyle( const StyleSheetStyle& style ) {
 			const StyleSheetProperty& property = prop.second;
 			const auto& it = mProperties.find( property.getName() );
 
-			if ( it == mProperties.end() || property.getSpecificity() >= it->second.getSpecificity() ) {
-				mProperties[ property.getName() ] = property;
+			if ( it == mProperties.end() ||
+				 property.getSpecificity() >= it->second.getSpecificity() ) {
+				mProperties[property.getName()] = property;
 
 				if ( String::startsWith( property.getName(), "transition" ) )
 					mTransitionAttributes.push_back( property );
@@ -149,8 +152,74 @@ void UIStyle::onStateChange() {
 
 		for ( const auto& prop : mProperties ) {
 			const StyleSheetProperty& property = prop.second;
+			const PropertyDefinition* propertyDefinition = property.getPropertyDefinition();
 
-			mWidget->applyProperty( property, mCurrentState );
+			// Save default value if possible and not available.
+			if ( mCurrentState != UIState::StateFlagNormal ||
+				 ( mCurrentState == UIState::StateFlagNormal && property.isVolatile() ) ) {
+				StyleSheetProperty oldAttribute =
+					getStatelessStyleSheetProperty( property.getName() );
+				if ( oldAttribute.isEmpty() && getPreviousState() == UIState::StateFlagNormal ) {
+					std::string value( mWidget->getPropertyString( propertyDefinition ) );
+					if ( !value.empty() ) {
+						setStyleSheetProperty( StyleSheetProperty( propertyDefinition, value ) );
+					}
+				}
+			}
+
+			if ( StyleSheetPropertyTransition::transitionSupported(
+					 propertyDefinition->getType() ) ) {
+
+				if ( !mWidget->isSceneNodeLoading() && hasTransition( property.getName() ) ) {
+					std::string startValue = mWidget->getPropertyString( propertyDefinition );
+
+					if ( !startValue.empty() && startValue != property.getValue() ) {
+						TransitionDefinition transitionInfo( getTransition( property.getName() ) );
+
+						std::vector<Action*> previousTransitions =
+							mWidget->getActionsByTag( propertyDefinition->getId() );
+
+						Time duration( transitionInfo.getDuration() );
+						if ( !previousTransitions.empty() ) {
+							StyleSheetPropertyTransition* prevTransition =
+								dynamic_cast<StyleSheetPropertyTransition*>(
+									previousTransitions[0] );
+
+							if ( NULL != prevTransition ) {
+								if ( prevTransition->getEndValue() != property.getValue() ) {
+									Float currentProgress =
+										prevTransition->getElapsed().asMilliseconds() /
+										transitionInfo.getDuration().asMilliseconds();
+									currentProgress = 1.f - eemin( 1.f, currentProgress );
+									duration = Milliseconds(
+										transitionInfo.getDuration().asMilliseconds() *
+										currentProgress );
+
+									mWidget->removeAction( prevTransition );
+								} else {
+									continue;
+								}
+							}
+						}
+
+						Action* newTransition = StyleSheetPropertyTransition::New(
+							propertyDefinition, startValue, property.getValue(),
+							transitionInfo.getDuration(), transitionInfo.getTimingFunction() );
+
+						if ( transitionInfo.getDelay().asMicroseconds() > 0 ) {
+							newTransition = Actions::Sequence::New(
+								Actions::Delay::New( transitionInfo.getDelay() ), newTransition );
+						}
+						newTransition->setTag( propertyDefinition->getId() );
+						mWidget->runAction( newTransition );
+						continue;
+					}
+				}
+
+				mWidget->applyProperty( property, mCurrentState );
+			} else {
+				mWidget->applyProperty( property, mCurrentState );
+			}
 		}
 
 		mWidget->endAttributesTransaction();
@@ -165,9 +234,10 @@ void UIStyle::onStateChange() {
 	}
 }
 
-StyleSheetProperty UIStyle::getStatelessStyleSheetProperty( const std::string& propertyName ) const {
+StyleSheetProperty
+UIStyle::getStatelessStyleSheetProperty( const std::string& propertyName ) const {
 	if ( !propertyName.empty() ) {
-		if  ( !mElementStyle.getSelector().hasPseudoClasses() ) {
+		if ( !mElementStyle.getSelector().hasPseudoClasses() ) {
 			StyleSheetProperty property = mElementStyle.getPropertyByName( propertyName );
 
 			if ( !property.isEmpty() )
@@ -175,7 +245,7 @@ StyleSheetProperty UIStyle::getStatelessStyleSheetProperty( const std::string& p
 		}
 
 		for ( const StyleSheetStyle& style : mCacheableStyles ) {
-			if  ( !style.getSelector().hasPseudoClasses() ) {
+			if ( !style.getSelector().hasPseudoClasses() ) {
 				StyleSheetProperty property = style.getPropertyByName( propertyName );
 
 				if ( !property.isEmpty() )
@@ -198,11 +268,11 @@ StyleSheetProperty UIStyle::getStyleSheetProperty( const std::string& propertyNa
 
 void UIStyle::updateState() {
 	for ( int i = StateFlagCount - 1; i >= 0; i-- ) {
-		if ( ( mState & getStateFlag(i) ) == getStateFlag(i) ) {
-			if ( stateExists( getStateFlag(i) ) ) {
-				if ( mCurrentState != getStateFlag(i) ) {
+		if ( ( mState & getStateFlag( i ) ) == getStateFlag( i ) ) {
+			if ( stateExists( getStateFlag( i ) ) ) {
+				if ( mCurrentState != getStateFlag( i ) ) {
 					mPreviousState = mCurrentState;
-					mCurrentState = getStateFlag(i);
+					mCurrentState = getStateFlag( i );
 					break;
 				}
 			}
@@ -214,11 +284,12 @@ void UIStyle::updateState() {
 
 void UIStyle::subscribeNonCacheableStyles() {
 	for ( auto& style : mNoncacheableStyles ) {
-		std::vector<CSS::StyleSheetElement*> elements = style.getSelector().getRelatedElements( mWidget, false );
+		std::vector<CSS::StyleSheetElement*> elements =
+			style.getSelector().getRelatedElements( mWidget, false );
 
 		if ( !elements.empty() ) {
 			for ( auto& element : elements ) {
-				UIWidget * widget = dynamic_cast<UIWidget*>( element );
+				UIWidget* widget = dynamic_cast<UIWidget*>( element );
 
 				if ( NULL != widget && NULL != widget->getUIStyle() ) {
 					widget->getUIStyle()->subscribeRelated( mWidget );
@@ -240,7 +311,7 @@ void UIStyle::unsubscribeNonCacheableStyles() {
 	mSubscribedWidgets.clear();
 }
 
-void UIStyle::removeFromSubscribedWidgets( UIWidget * widget ) {
+void UIStyle::removeFromSubscribedWidgets( UIWidget* widget ) {
 	mSubscribedWidgets.erase( widget );
 }
 
@@ -254,4 +325,4 @@ void UIStyle::removeRelatedWidgets() {
 	mRelatedWidgets.clear();
 }
 
-}}
+}} // namespace EE::UI

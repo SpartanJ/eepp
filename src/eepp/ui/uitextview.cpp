@@ -559,14 +559,6 @@ void UITextView::resetSelCache() {
 	onSelectionChange();
 }
 
-#define SAVE_NORMAL_STATE_ATTR( ATTR_FORMATED ) \
-	if ( state != UIState::StateFlagNormal || ( state == UIState::StateFlagNormal && attribute.isVolatile() ) ) { \
-		CSS::StyleSheetProperty oldAttribute = mStyle->getStatelessStyleSheetProperty( attribute.getName() ); \
-		if ( oldAttribute.isEmpty() && mStyle->getPreviousState() == UIState::StateFlagNormal ) { \
-			mStyle->setStyleSheetProperty( CSS::StyleSheetProperty( attribute.getName(), ATTR_FORMATED ) ); \
-		} \
-	}
-
 bool UITextView::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
 	if ( !checkPropertyDefinition( attribute ) ) return false;
 
@@ -576,11 +568,9 @@ bool UITextView::applyProperty( const StyleSheetProperty& attribute, const Uint3
 				setText( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( attribute.asString() ) );
 			break;
 		case PropertyId::Color:
-			SAVE_NORMAL_STATE_ATTR( getFontColor().toHexString() );
 			setFontColor( attribute.asColor() );
 			break;
 		case PropertyId::ShadowColor:
-			SAVE_NORMAL_STATE_ATTR( getFontShadowColor().toHexString() );
 			setFontShadowColor( attribute.asColor() );
 			break;
 		case PropertyId::SelectedColor:
@@ -590,18 +580,14 @@ bool UITextView::applyProperty( const StyleSheetProperty& attribute, const Uint3
 			setSelectionBackColor( attribute.asColor() );
 			break;
 		case PropertyId::FontFamily:
-			SAVE_NORMAL_STATE_ATTR( getFont()->getName() );
 			setFont( FontManager::instance()->getByName( attribute.asString() ) );
 			break;
 		case PropertyId::FontSize:
-			SAVE_NORMAL_STATE_ATTR( String::format( "%dpx", getCharacterSize() ) );
 			setCharacterSize( attribute.asDpDimensionI() );
 			break;
 		case PropertyId::FontStyle:
 		{
 			Uint32 flags = attribute.asFontStyle();
-
-			SAVE_NORMAL_STATE_ATTR( Text::styleFlagToString( getFontStyle() ) );
 
 			if ( flags & UI_WORD_WRAP ) {
 				mFlags |= UI_WORD_WRAP;
@@ -620,11 +606,9 @@ bool UITextView::applyProperty( const StyleSheetProperty& attribute, const Uint3
 			autoShrink();
 			break;
 		case PropertyId::TextStrokeWidth:
-			SAVE_NORMAL_STATE_ATTR( String::toStr( PixelDensity::dpToPx( getOutlineThickness() ) ) )
 			setOutlineThickness( PixelDensity::dpToPx( attribute.asDpDimension() ) );
 			break;
 		case PropertyId::TextStrokeColor:
-			SAVE_NORMAL_STATE_ATTR( getOutlineColor().toHexString() );
 			setOutlineColor( attribute.asColor() );
 			break;
 		case PropertyId::TextSelection:
@@ -643,6 +627,33 @@ bool UITextView::applyProperty( const StyleSheetProperty& attribute, const Uint3
 	}
 
 	return true;
+}
+
+std::string UITextView::getPropertyString( const PropertyDefinition* propertyDef ) {
+	if ( NULL == propertyDef ) return "";
+
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::Color:
+			return getFontColor().toHexString();
+		case PropertyId::ShadowColor:
+			return getFontShadowColor().toHexString();
+		case PropertyId::SelectedColor:
+			return mFontStyleConfig.FontSelectedColor.toHexString();
+		case PropertyId::SelectionBackColor:
+			return getSelectionBackColor().toHexString();
+		case PropertyId::FontFamily:
+			return NULL != getFont() ? getFont()->getName() : "";
+		case PropertyId::FontSize:
+			return String::format( "%ddp", getCharacterSize() );
+		case PropertyId::FontStyle:
+			return Text::styleFlagToString( getFontStyle() );
+		case PropertyId::TextStrokeWidth:
+			return String::toStr( PixelDensity::dpToPx( getOutlineThickness() ) );
+		case PropertyId::TextStrokeColor:
+			return getOutlineColor().toHexString();
+		default:
+			return UIWidget::getPropertyString( propertyDef );
+	}
 }
 
 }}

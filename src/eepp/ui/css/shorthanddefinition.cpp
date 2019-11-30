@@ -54,45 +54,45 @@ ShorthandDefinition::parseShorthand( const ShorthandDefinition* shorthand, std::
 	const std::vector<std::string> propNames( shorthand->getProperties() );
 
 	switch ( shorthand->getType() ) {
-	case ShorthandType::Box: {
-		if ( propNames.size() != 4 ) {
-			eePRINTL( "ShorthandType::Box properties must be 4 for %s",
-					  shorthand->getName().c_str() );
-			return properties;
-		}
+		case ShorthandType::Box: {
+			if ( propNames.size() != 4 ) {
+				eePRINTL( "ShorthandType::Box properties must be 4 for %s",
+						  shorthand->getName().c_str() );
+				return properties;
+			}
 
-		auto ltrbSplit = String::split( value, ' ', true );
+			auto ltrbSplit = String::split( value, ' ', true );
 
-		if ( ltrbSplit.size() >= 2 ) {
-			for ( size_t i = 0; i < ltrbSplit.size(); i++ )
-				properties.emplace_back( StyleSheetProperty( propNames[i], ltrbSplit[i] ) );
-		} else if ( ltrbSplit.size() == 1 ) {
-			for ( size_t i = 0; i < propNames.size(); i++ )
-				properties.emplace_back( StyleSheetProperty( propNames[i], ltrbSplit[0] ) );
-		}
+			if ( ltrbSplit.size() >= 2 ) {
+				for ( size_t i = 0; i < ltrbSplit.size(); i++ )
+					properties.emplace_back( StyleSheetProperty( propNames[i], ltrbSplit[i] ) );
+			} else if ( ltrbSplit.size() == 1 ) {
+				for ( size_t i = 0; i < propNames.size(); i++ )
+					properties.emplace_back( StyleSheetProperty( propNames[i], ltrbSplit[0] ) );
+			}
 
-		break;
-	}
-	case ShorthandType::Background: {
-		if ( Color::isColorString( value ) ) {
-			int pos = getIndexEndingWith( propNames, "-color" );
-			if ( pos != -1 )
-				properties.emplace_back( StyleSheetProperty( propNames[pos], value ) );
-		} else {
-			int pos = getIndexEndingWith( propNames, "-image" );
-			if ( pos != -1 )
-				properties.emplace_back( StyleSheetProperty( propNames[pos], value ) );
+			break;
 		}
-		break;
-	}
-	case ShorthandType::Transition: {
-		break;
-	}
-	case ShorthandType::Vector2: {
-		break;
-	}
-	default:
-		break;
+		case ShorthandType::Background: {
+			if ( Color::isColorString( value ) ) {
+				int pos = getIndexEndingWith( propNames, "-color" );
+				if ( pos != -1 )
+					properties.emplace_back( StyleSheetProperty( propNames[pos], value ) );
+			} else {
+				int pos = getIndexEndingWith( propNames, "-image" );
+				if ( pos != -1 )
+					properties.emplace_back( StyleSheetProperty( propNames[pos], value ) );
+			}
+			break;
+		}
+		case ShorthandType::Transition: {
+			break;
+		}
+		case ShorthandType::Vector2: {
+			break;
+		}
+		default:
+			break;
 	}
 
 	return properties;

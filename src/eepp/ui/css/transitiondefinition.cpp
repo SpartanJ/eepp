@@ -1,9 +1,10 @@
-#include <eepp/ui/css/transitiondefinition.hpp>
 #include <eepp/core/string.hpp>
+#include <eepp/ui/css/transitiondefinition.hpp>
 
 namespace EE { namespace UI { namespace CSS {
 
-std::map<std::string, TransitionDefinition> TransitionDefinition::parseTransitionProperties( const std::vector<StyleSheetProperty>& styleSheetProperties ) {
+std::map<std::string, TransitionDefinition> TransitionDefinition::parseTransitionProperties(
+	const std::vector<StyleSheetProperty>& styleSheetProperties ) {
 	std::vector<std::string> properties;
 	std::vector<Time> durations;
 	std::vector<Time> delays;
@@ -22,29 +23,40 @@ std::map<std::string, TransitionDefinition> TransitionDefinition::parseTransitio
 					TransitionDefinition transitionDef;
 
 					if ( splitTransition.size() >= 2 ) {
-						std::string property  = String::trim( splitTransition[0] );
+						std::string property = String::trim( splitTransition[0] );
 						String::toLowerInPlace( property );
 
-						Time duration = StyleSheetProperty( prop.getName(), String::toLower( splitTransition[1] ) ).asTime();
+						Time duration = StyleSheetProperty( prop.getName(),
+															String::toLower( splitTransition[1] ) )
+											.asTime();
 
 						transitionDef.property = property;
 						transitionDef.duration = duration;
 
 						if ( splitTransition.size() >= 3 ) {
-							transitionDef.timingFunction = Ease::fromName( String::toLower( splitTransition[2] ) );
+							transitionDef.timingFunction =
+								Ease::fromName( String::toLower( splitTransition[2] ) );
 
-							if (  transitionDef.timingFunction == Ease::Linear && splitTransition[2] != "linear" && splitTransition.size() == 3 ) {
-								transitionDef.delay = StyleSheetProperty( prop.getName(), String::toLower( splitTransition[2] ) ).asTime();
+							if ( transitionDef.timingFunction == Ease::Linear &&
+								 splitTransition[2] != "linear" && splitTransition.size() == 3 ) {
+								transitionDef.delay =
+									StyleSheetProperty( prop.getName(),
+														String::toLower( splitTransition[2] ) )
+										.asTime();
 							} else if ( splitTransition.size() >= 4 ) {
-								transitionDef.delay = StyleSheetProperty( prop.getName(), String::toLower( splitTransition[3] ) ).asTime();
+								transitionDef.delay =
+									StyleSheetProperty( prop.getName(),
+														String::toLower( splitTransition[3] ) )
+										.asTime();
 							}
 						}
 
-						transitions[ transitionDef.getProperty() ] = transitionDef;
+						transitions[transitionDef.getProperty()] = transitionDef;
 					}
 				}
 			}
-		} else if ( prop.getName() == "transitionduration" || prop.getName() == "transition-duration" ) {
+		} else if ( prop.getName() == "transitionduration" ||
+					prop.getName() == "transition-duration" ) {
 			auto strDurations = String::split( prop.getValue(), ',' );
 
 			for ( auto dit = strDurations.begin(); dit != strDurations.end(); ++dit ) {
@@ -60,7 +72,8 @@ std::map<std::string, TransitionDefinition> TransitionDefinition::parseTransitio
 				String::toLowerInPlace( delay );
 				delays.push_back( StyleSheetProperty( prop.getName(), delay ).asTime() );
 			}
-		} else if ( prop.getName() == "transitiontimingfunction" || prop.getName() == "transition-timing-function" ) {
+		} else if ( prop.getName() == "transitiontimingfunction" ||
+					prop.getName() == "transition-timing-function" ) {
 			auto strTimingFuncs = String::split( prop.getValue(), ',' );
 
 			for ( auto dit = strTimingFuncs.begin(); dit != strTimingFuncs.end(); ++dit ) {
@@ -68,7 +81,8 @@ std::map<std::string, TransitionDefinition> TransitionDefinition::parseTransitio
 				String::toLowerInPlace( timingFunction );
 				timingFunctions.push_back( Ease::fromName( timingFunction ) );
 			}
-		} else if ( prop.getName() == "transitionproperty" || prop.getName() == "transition-property" ) {
+		} else if ( prop.getName() == "transitionproperty" ||
+					prop.getName() == "transition-property" ) {
 			auto strProperties = String::split( prop.getValue(), ',' );
 
 			for ( auto dit = strProperties.begin(); dit != strProperties.end(); ++dit ) {
@@ -103,10 +117,10 @@ std::map<std::string, TransitionDefinition> TransitionDefinition::parseTransitio
 			transitionDef.timingFunction = timingFunctions[0];
 		}
 
-		transitions[ property ] = transitionDef;
+		transitions[property] = transitionDef;
 	}
 
 	return transitions;
 }
 
-}}}
+}}} // namespace EE::UI::CSS

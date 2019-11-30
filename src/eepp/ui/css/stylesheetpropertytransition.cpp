@@ -8,13 +8,14 @@ namespace EE { namespace UI { namespace CSS {
 
 bool StyleSheetPropertyTransition::transitionSupported( const PropertyType& type ) {
 	switch ( type ) {
-	case PropertyType::NumberFloat:
-	case PropertyType::NumberInt:
-	case PropertyType::NumberLength:
-	case PropertyType::Color:
-		return true;
-	default:
-		return false;
+		case PropertyType::NumberFloat:
+		case PropertyType::NumberInt:
+		case PropertyType::NumberLength:
+		case PropertyType::Color:
+		case PropertyType::Vector2:
+			return true;
+		default:
+			return false;
 	}
 }
 
@@ -39,13 +40,11 @@ StyleSheetPropertyTransition::StyleSheetPropertyTransition( const PropertyDefini
 	mType( type ) {}
 
 Action* StyleSheetPropertyTransition::clone() const {
-	return StyleSheetPropertyTransition::New( mProperty, mStartValue, mEndValue, mDuration,
-											   mType );
+	return StyleSheetPropertyTransition::New( mProperty, mStartValue, mEndValue, mDuration, mType );
 }
 
 Action* StyleSheetPropertyTransition::reverse() const {
-	return StyleSheetPropertyTransition::New( mProperty, mEndValue, mStartValue, mDuration,
-											   mType );
+	return StyleSheetPropertyTransition::New( mProperty, mEndValue, mStartValue, mDuration, mType );
 }
 
 void StyleSheetPropertyTransition::start() {
@@ -83,53 +82,87 @@ void StyleSheetPropertyTransition::onUpdate( const Time& ) {
 		UIWidget* node = mNode->asType<UIWidget>();
 
 		switch ( mProperty->getType() ) {
-		case PropertyType::NumberFloat:
-		case PropertyType::NumberInt: {
-			Float start = node->convertLength( mStartValue, 0 );
-			Float end = node->convertLength( mEndValue, 0 );
-			Time time =
-				mElapsed.asMicroseconds() > mDuration.asMicroseconds() ? mDuration : mElapsed;
-			Float value = easingCb[mType]( time.asMilliseconds(), start, end - start,
-										   mDuration.asMilliseconds() );
-			if ( mProperty->getType() == PropertyType::NumberFloat ) {
-				node->applyProperty(
-					StyleSheetProperty( mProperty, String::format( "%fpx", value ) ) );
-			} else {
-				node->applyProperty( StyleSheetProperty(
-					mProperty, String::format( "%dpx", static_cast<int>( value ) ) ) );
+			case PropertyType::NumberFloat:
+			case PropertyType::NumberInt: {
+				Float start = node->convertLength( mStartValue, 0 );
+				Float end = node->convertLength( mEndValue, 0 );
+				Time time =
+					mElapsed.asMicroseconds() > mDuration.asMicroseconds() ? mDuration : mElapsed;
+				Float value = easingCb[mType]( time.asMilliseconds(), start, end - start,
+											   mDuration.asMilliseconds() );
+				if ( mProperty->getType() == PropertyType::NumberFloat ) {
+					node->applyProperty(
+						StyleSheetProperty( mProperty, String::format( "%.2fpx", value ) ) );
+				} else {
+					node->applyProperty( StyleSheetProperty(
+						mProperty, String::format( "%dpx", static_cast<int>( value ) ) ) );
+				}
+				break;
 			}
-			break;
-		}
-		case PropertyType::Color: {
-			break;
-		}
-		case PropertyType::NumberLength: {
-			Float containerLength = 0;
-			switch ( mProperty->getRelativeTarget() ) {
-			case PropertyRelativeTarget::ContainingBlockWidth:
-				containerLength = node->getParent()->getPixelsSize().getWidth();
+			case PropertyType::Color: {
+				Color startColor( mStartValue );
+				Color endColor( mEndValue );
+				Time time =
+					mElapsed.asMicroseconds() > mDuration.asMicroseconds() ? mDuration : mElapsed;
+				Float progress =
+					easingCb[mType]( time.asMilliseconds(), 0, 1, mDuration.asMilliseconds() );
+				Color resColor( startColor );
+				resColor.r = static_cast<Uint8>( eemin(
+					static_cast<Int32>( startColor.r + ( endColor.r - startColor.r ) * progress ),
+					255 ) );
+				resColor.g = static_cast<Uint8>( eemin(
+					static_cast<Int32>( startColor.g + ( endColor.g - startColor.g ) * progress ),
+					255 ) );
+				resColor.b = static_cast<Uint8>( eemin(
+					static_cast<Int32>( startColor.b + ( endColor.b - startColor.b ) * progress ),
+					255 ) );
+				resColor.a = static_cast<Uint8>( eemin(
+					static_cast<Int32>( startColor.a + ( endColor.a - startColor.a ) * progress ),
+					255 ) );
+				node->applyProperty( StyleSheetProperty( mProperty, resColor.toHexString() ) );
 				break;
-			case PropertyRelativeTarget::ContainingBlockHeight:
-				containerLength = node->getParent()->getPixelsSize().getHeight();
-			case PropertyRelativeTarget::LocalBlockWidth:
-				containerLength = node->getPixelsSize().getWidth();
+			}
+			case PropertyType::NumberLength: {
+				Float containerLength = 0;
+				switch ( mProperty->getRelativeTarget() ) {
+					case PropertyRelativeTarget::ContainingBlockWidth:
+						containerLength = node->getParent()->getPixelsSize().getWidth();
+						break;
+					case PropertyRelativeTarget::ContainingBlockHeight:
+						containerLength = node->getParent()->getPixelsSize().getHeight();
+					case PropertyRelativeTarget::LocalBlockWidth:
+						containerLength = node->getPixelsSize().getWidth();
+						break;
+					case PropertyRelativeTarget::LocalBlockHeight:
+						containerLength = node->getPixelsSize().getHeight();
+					default:
+						break;
+				}
+				Float start = node->convertLength( mStartValue, containerLength );
+				Float end = node->convertLength( mEndValue, containerLength );
+				Time time =
+					mElapsed.asMicroseconds() > mDuration.asMicroseconds() ? mDuration : mElapsed;
+				Float value = easingCb[mType]( time.asMilliseconds(), start, end - start,
+											   mDuration.asMilliseconds() );
+				node->applyProperty(
+					StyleSheetProperty( mProperty, String::format( "%.2fpx", value ) ) );
 				break;
-			case PropertyRelativeTarget::LocalBlockHeight:
-				containerLength = node->getPixelsSize().getHeight();
+			}
+			case PropertyType::Vector2: {
+				Vector2f start( StyleSheetProperty( mProperty, mStartValue ).asVector2f() );
+				Vector2f end( StyleSheetProperty( mProperty, mEndValue ).asVector2f() );
+				Time time =
+					mElapsed.asMicroseconds() > mDuration.asMicroseconds() ? mDuration : mElapsed;
+				Float x = easingCb[mType]( time.asMilliseconds(), start.x, end.x - start.x,
+										   mDuration.asMilliseconds() );
+				Float y = easingCb[mType]( time.asMilliseconds(), start.y, end.y - start.y,
+										   mDuration.asMilliseconds() );
+				node->applyProperty(
+					StyleSheetProperty( mProperty, String::format( "%.2f, %.2f", x, y ) ) );
+				break;
+			}
 			default:
 				break;
-			}
-			Float start = node->convertLength( mStartValue, containerLength );
-			Float end = node->convertLength( mEndValue, containerLength );
-			Time time =
-				mElapsed.asMicroseconds() > mDuration.asMicroseconds() ? mDuration : mElapsed;
-			Float value = easingCb[mType]( time.asMilliseconds(), start, end - start,
-										   mDuration.asMilliseconds() );
-			node->applyProperty( StyleSheetProperty( mProperty, String::format( "%fpx", value ) ) );
-			break;
-		}
-		default:
-			break;
 		}
 	}
 }

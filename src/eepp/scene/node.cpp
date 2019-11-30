@@ -1296,6 +1296,10 @@ void Node::removeActionsByTag( const Uint32& tag ) {
 	getActionManager()->removeActionsByTagFromTarget( this, tag );
 }
 
+std::vector<Action*> Node::getActionsByTag( const Uint32& tag ) {
+	return getActionManager()->getActionsByTagFromTarget( this, tag );
+}
+
 void Node::clearActions() {
 	getActionManager()->removeAllActionsFromTarget( this );
 }

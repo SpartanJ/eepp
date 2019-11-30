@@ -194,9 +194,11 @@ class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
 
 		std::vector<UIWidget*> querySelectorAll( const std::string& selector );
 
-		virtual std::string getPropertyString( const std::string& property );
+		std::string getPropertyString( const std::string& property );
 
 		virtual std::string getPropertyString( const PropertyDefinition* propertyDef );
+
+		bool isSceneNodeLoading() const;
 	protected:
 		friend class UIManager;
 		friend class UISceneNode;
@@ -254,8 +256,6 @@ class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
 		void alignAgainstLayout();
 
 		void reportStyleStateChange();
-
-		bool isSceneNodeLoading() const;
 
 		std::string getLayoutWidthRulesString() const;
 

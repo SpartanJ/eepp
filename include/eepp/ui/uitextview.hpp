@@ -80,6 +80,8 @@ class EE_API UITextView : public UIWidget {
 		void setFontStyleConfig( const UIFontStyleConfig& fontStyleConfig );
 
 		virtual bool applyProperty( const StyleSheetProperty& attribute, const Uint32& state = UIState::StateFlagNormal );
+
+		virtual std::string getPropertyString( const PropertyDefinition* propertyDef );
 	protected:
 		Text *		mTextCache;
 		String			mString;
