@@ -217,10 +217,10 @@ void UIStyle::onStateChange() {
 					newTransition->setTag( propertyDefinition->getId() );
 					mWidget->runAction( newTransition );
 				} else {
-					mWidget->applyProperty( property, mCurrentState );
+					mWidget->applyProperty( property );
 				}
 			} else {
-				mWidget->applyProperty( property, mCurrentState );
+				mWidget->applyProperty( property );
 			}
 		}
 

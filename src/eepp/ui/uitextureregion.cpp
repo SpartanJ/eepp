@@ -197,7 +197,7 @@ const Vector2f& UITextureRegion::getAlignOffset() const {
 	return mAlignOffset;
 }
 
-bool UITextureRegion::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
+bool UITextureRegion::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) ) return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
@@ -228,7 +228,7 @@ bool UITextureRegion::applyProperty( const StyleSheetProperty& attribute, const 
 			setColor( attribute.asColor() );
 			break;
 		default:
-			return UIWidget::applyProperty( attribute, state );
+			return UIWidget::applyProperty( attribute );
 	}
 
 	return true;

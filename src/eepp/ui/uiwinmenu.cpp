@@ -159,7 +159,7 @@ void UIWinMenu::setFirstButtonMargin( const Uint32& buttonMargin ) {
 	refreshButtons();
 }
 
-bool UIWinMenu::applyProperty( const StyleSheetProperty& attribute, const Uint32 & state ) {
+bool UIWinMenu::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) ) return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
@@ -176,7 +176,7 @@ bool UIWinMenu::applyProperty( const StyleSheetProperty& attribute, const Uint32
 			setFirstButtonMargin( attribute.asDpDimensionUint() );
 			break;
 		default:
-			return UIWidget::applyProperty( attribute, state );
+			return UIWidget::applyProperty( attribute );
 	}
 
 	return true;

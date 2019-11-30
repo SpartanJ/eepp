@@ -966,7 +966,7 @@ const UI_SCROLLBAR_MODE& UIListBox::getHorizontalScrollMode() {
 	return mHScrollMode;
 }
 
-bool UIListBox::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
+bool UIListBox::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) ) return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
@@ -1010,7 +1010,7 @@ bool UIListBox::applyProperty( const StyleSheetProperty& attribute, const Uint32
 			break;
 		}
 		default:
-			return UITouchDragableWidget::applyProperty( attribute, state );
+			return UITouchDragableWidget::applyProperty( attribute );
 	}
 
 	return true;

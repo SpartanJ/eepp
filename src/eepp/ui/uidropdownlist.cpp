@@ -261,7 +261,7 @@ void UIDropDownList::destroyListBox() {
 	}
 }
 
-bool UIDropDownList::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
+bool UIDropDownList::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) ) return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
@@ -277,15 +277,15 @@ bool UIDropDownList::applyProperty( const StyleSheetProperty& attribute, const U
 		case PropertyId::RowHeight:
 		case PropertyId::VScrollMode:
 		case PropertyId::HScrollMode:
-			return mListBox->applyProperty( attribute, state );
+			return mListBox->applyProperty( attribute );
 		default:
-			return UITextInput::applyProperty( attribute, state );
+			return UITextInput::applyProperty( attribute );
 	}
 
 	return true;
 }
 
-void UIDropDownList::loadFromXmlNode(const pugi::xml_node & node) {
+void UIDropDownList::loadFromXmlNode( const pugi::xml_node& node ) {
 	beginAttributesTransaction();
 
 	mListBox->loadItemsFromXmlNode( node );

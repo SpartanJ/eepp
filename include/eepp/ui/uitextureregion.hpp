@@ -43,7 +43,7 @@ class EE_API UITextureRegion : public UIWidget {
 
 		UITextureRegion * setScaleType(const Uint32 & scaleType);
 
-		virtual bool applyProperty( const StyleSheetProperty& attribute, const Uint32& state = UIState::StateFlagNormal );
+		virtual bool applyProperty( const StyleSheetProperty& attribute );
 	protected:
 		Uint32					mScaleType;
 		Graphics::TextureRegion * 	mTextureRegion;

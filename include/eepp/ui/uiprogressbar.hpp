@@ -59,7 +59,7 @@ class EE_API UIProgressBar : public UIWidget {
 		
 		UITextView * getTextBox() const;
 
-		virtual bool applyProperty( const StyleSheetProperty& attribute, const Uint32& state = UIState::StateFlagNormal );
+		virtual bool applyProperty( const StyleSheetProperty& attribute );
 
 		const StyleConfig& getStyleConfig() const;
 	protected:

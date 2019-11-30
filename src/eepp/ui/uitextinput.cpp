@@ -393,7 +393,7 @@ bool UITextInput::isFreeEditingEnabled() {
 	return mTextBuffer.isFreeEditingEnabled();
 }
 
-bool UITextInput::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
+bool UITextInput::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) ) return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
@@ -418,7 +418,7 @@ bool UITextInput::applyProperty( const StyleSheetProperty& attribute, const Uint
 			getInputTextBuffer()->setAllowOnlyNumbers( getInputTextBuffer()->onlyNumbersAllowed(), attribute.asBool() );
 			break;
 		default:
-			return UITextView::applyProperty( attribute, state );
+			return UITextView::applyProperty( attribute );
 	}
 
 	return true;

@@ -91,7 +91,7 @@ class EE_API UITooltip : public UIWidget {
 
 		UITooltip * setOutlineColor( const Color& outlineColor );
 
-		virtual bool applyProperty( const StyleSheetProperty& attribute, const Uint32& state = UIState::StateFlagNormal );
+		virtual bool applyProperty( const StyleSheetProperty& attribute );
 	protected:
 		Text *	mTextCache;
 		UIFontStyleConfig mStyleConfig;

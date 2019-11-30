@@ -1010,7 +1010,7 @@ void UIWidget::setStyleSheetProperty( const std::string& name, const std::string
 		mStyle->setStyleSheetProperty( CSS::StyleSheetProperty( name, value, specificity ) );
 }
 
-bool UIWidget::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
+bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) ) return false;
 	bool attributeSet = true;
 

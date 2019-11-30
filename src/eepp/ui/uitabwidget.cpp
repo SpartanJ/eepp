@@ -119,7 +119,7 @@ void UITabWidget::setStyleConfig(const StyleConfig & styleConfig) {
 	orderTabs();
 }
 
-bool UITabWidget::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
+bool UITabWidget::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( attribute.getPropertyDefinition() == NULL ) {
 		eePRINTL( "applyProperty: Property %s not defined!", attribute.getName().c_str() );
 		return false;
@@ -154,7 +154,7 @@ bool UITabWidget::applyProperty( const StyleSheetProperty& attribute, const Uint
 			setTabSeparation( attribute.asDpDimensionI() );
 			break;
 		default:
-			return UIWidget::applyProperty( attribute, state );
+			return UIWidget::applyProperty( attribute );
 	}
 
 	return true;

@@ -1379,7 +1379,7 @@ void UIWindow::resizeCursor() {
 	}
 }
 
-bool UIWindow::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
+bool UIWindow::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) ) return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
@@ -1459,7 +1459,7 @@ bool UIWindow::applyProperty( const StyleSheetProperty& attribute, const Uint32&
 			fixChildsSize();
 			break;
 		default:
-			return UIWidget::applyProperty( attribute, state );
+			return UIWidget::applyProperty( attribute );
 	}
 
 	return true;

@@ -270,7 +270,7 @@ void UISpinBox::onPaddingChange() {
 	UIWidget::onPaddingChange();
 }
 
-bool UISpinBox::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
+bool UISpinBox::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) ) return false;
 
 	bool attributeSet = true;
@@ -289,7 +289,7 @@ bool UISpinBox::applyProperty( const StyleSheetProperty& attribute, const Uint32
 			setClickStep(attribute.asFloat() );
 			break;
 		default:
-			attributeSet = UIWidget::applyProperty( attribute, state );
+			attributeSet = UIWidget::applyProperty( attribute );
 			break;
 	}
 

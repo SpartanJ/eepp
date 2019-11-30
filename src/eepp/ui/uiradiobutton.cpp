@@ -264,7 +264,7 @@ void UIRadioButton::setTextSeparation(const Int32 & textSeparation) {
 	setPadding( getPadding() );
 }
 
-bool UIRadioButton::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
+bool UIRadioButton::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) ) return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
@@ -272,7 +272,7 @@ bool UIRadioButton::applyProperty( const StyleSheetProperty& attribute, const Ui
 			setActive( attribute.asBool() );
 			break;
 		default:
-			return UITextView::applyProperty( attribute, state );
+			return UITextView::applyProperty( attribute );
 	}
 
 	return true;

@@ -205,7 +205,7 @@ Sizef UIGridLayout::getTargetElementSize() const {
 				  mRowMode == Size ? mRowHeight : ( ( getLayoutHeightRules() == WRAP_CONTENT ? getParent()->getSize().getHeight() : getSize().getHeight() ) - mPadding.Top - mPadding.Bottom ) * mRowWeight );
 }
 
-bool UIGridLayout::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
+bool UIGridLayout::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) ) return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
@@ -248,7 +248,7 @@ bool UIGridLayout::applyProperty( const StyleSheetProperty& attribute, const Uin
 			setReverseDraw( attribute.asBool() );
 			break;
 		default:
-			return UILayout::applyProperty( attribute, state );
+			return UILayout::applyProperty( attribute );
 	}
 
 	return true;

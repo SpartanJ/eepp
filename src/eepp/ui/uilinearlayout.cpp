@@ -408,7 +408,7 @@ Sizei UILinearLayout::getTotalUsedSize() {
 	return size;
 }
 
-bool UILinearLayout::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
+bool UILinearLayout::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) ) return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
@@ -424,7 +424,7 @@ bool UILinearLayout::applyProperty( const StyleSheetProperty& attribute, const U
 			break;
 		}
 		default:
-			return UILayout::applyProperty( attribute, state );
+			return UILayout::applyProperty( attribute );
 	}
 
 	return true;

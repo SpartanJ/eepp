@@ -241,7 +241,7 @@ bool UIScrollView::isTouchOverAllowedChilds() {
 	return isMouseOverMeOrChilds() && mScrollView->isMouseOverMeOrChilds() && ret;
 }
 
-bool UIScrollView::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
+bool UIScrollView::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) ) return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
@@ -288,7 +288,7 @@ bool UIScrollView::applyProperty( const StyleSheetProperty& attribute, const Uin
 			break;
 		}
 		default:
-			return UITouchDragableWidget::applyProperty( attribute, state );
+			return UITouchDragableWidget::applyProperty( attribute );
 	}
 
 	return true;

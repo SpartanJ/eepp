@@ -474,7 +474,7 @@ UIFontStyleConfig UITextEdit::getFontStyleConfig() const {
 	return mTextInput->getFontStyleConfig();
 }
 
-bool UITextEdit::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
+bool UITextEdit::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) ) return false;
 
 	bool attributeSet = true;
@@ -505,11 +505,11 @@ bool UITextEdit::applyProperty( const StyleSheetProperty& attribute, const Uint3
 			break;
 		}
 		default:
-			attributeSet = UIWidget::applyProperty( attribute, state );
+			attributeSet = UIWidget::applyProperty( attribute );
 	}
 
 	if ( !attributeSet && ( String::startsWith( attribute.getName(), "text" ) || String::startsWith( attribute.getName(), "font" ) ) )
-		mTextInput->applyProperty( attribute, state );
+		mTextInput->applyProperty( attribute );
 
 	return attributeSet;
 }

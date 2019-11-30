@@ -25,7 +25,7 @@ class EE_API UILinearLayout : public UILayout {
 
 		UILinearLayout * add( UIWidget * widget );
 
-		virtual bool applyProperty( const StyleSheetProperty& attribute, const Uint32& state = UIState::StateFlagNormal );
+		virtual bool applyProperty( const StyleSheetProperty& attribute );
 	protected:
 		UI_ORIENTATION mOrientation;
 

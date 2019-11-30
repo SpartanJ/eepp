@@ -221,7 +221,7 @@ UILoader * UILoader::setAnimationSpeed( const Float& animationSpeed ) {
 	return this;
 }
 
-bool UILoader::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
+bool UILoader::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) ) return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
@@ -250,7 +250,7 @@ bool UILoader::applyProperty( const StyleSheetProperty& attribute, const Uint32&
 			setArcStartAngle( attribute.asFloat() );
 			break;
 		default:
-			return UIWidget::applyProperty( attribute, state );
+			return UIWidget::applyProperty( attribute );
 	}
 
 	return true;

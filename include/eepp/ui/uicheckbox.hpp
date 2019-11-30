@@ -32,7 +32,7 @@ class EE_API UICheckBox : public UITextView {
 
 		void setTextSeparation(const Int32 & textSeparation);
 
-		virtual bool applyProperty( const StyleSheetProperty& attribute, const Uint32& state = UIState::StateFlagNormal );
+		virtual bool applyProperty( const StyleSheetProperty& attribute );
 	protected:
 		UINode *	mActiveButton;
 		UINode *	mInactiveButton;

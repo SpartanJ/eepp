@@ -284,7 +284,7 @@ void UIPushButton::setStyleConfig(const StyleConfig & styleConfig) {
 	onStateChange();
 }
 
-bool UIPushButton::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
+bool UIPushButton::applyProperty( const StyleSheetProperty& attribute ) {
 	bool attributeSet = true;
 
 	if ( attribute.getPropertyDefinition() == NULL ) {
@@ -321,7 +321,7 @@ bool UIPushButton::applyProperty( const StyleSheetProperty& attribute, const Uin
 				mNodeFlags |= NODE_FLAG_FREE_USE;
 			break;
 		default:
-			attributeSet = UIWidget::applyProperty( attribute, state );
+			attributeSet = UIWidget::applyProperty( attribute );
 			break;
 	}
 

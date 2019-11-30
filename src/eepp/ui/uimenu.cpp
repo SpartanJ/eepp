@@ -571,7 +571,7 @@ void UIMenu::loadFromXmlNode( const pugi::xml_node& node ) {
 	endAttributesTransaction();
 }
 
-bool UIMenu::applyProperty(const StyleSheetProperty & attribute, const Uint32 & state) {
+bool UIMenu::applyProperty( const StyleSheetProperty & attribute ) {
 	if ( !checkPropertyDefinition( attribute ) ) return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
@@ -586,7 +586,7 @@ bool UIMenu::applyProperty(const StyleSheetProperty & attribute, const Uint32 & 
 			setMinSpaceForIcons( attribute.asDpDimensionUint() );
 			break;
 		default:
-			return UIWidget::applyProperty( attribute, state );
+			return UIWidget::applyProperty( attribute );
 	}
 
 	return true;

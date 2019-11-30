@@ -144,7 +144,7 @@ void UITab::onAutoSize() {
 	}
 }
 
-bool UITab::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
+bool UITab::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) ) return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
@@ -158,7 +158,7 @@ bool UITab::applyProperty( const StyleSheetProperty& attribute, const Uint32& st
 			setOwnedControl();
 			break;
 		default:
-			return UISelectButton::applyProperty( attribute, state );
+			return UISelectButton::applyProperty( attribute );
 	}
 
 	return true;

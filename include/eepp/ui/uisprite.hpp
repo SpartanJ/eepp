@@ -46,7 +46,7 @@ class EE_API UISprite : public UIWidget {
 
 		bool getDeallocSprite();
 
-		virtual bool applyProperty( const StyleSheetProperty& attribute, const Uint32& state = UIState::StateFlagNormal );
+		virtual bool applyProperty( const StyleSheetProperty& attribute );
 	protected:
 		Graphics::Sprite * 	mSprite;
 		RenderMode			mRender;

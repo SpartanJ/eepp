@@ -210,7 +210,7 @@ const Vector2f& UIImage::getAlignOffset() const {
 	return mAlignOffset;
 }
 
-bool UIImage::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
+bool UIImage::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) ) return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
@@ -253,7 +253,7 @@ bool UIImage::applyProperty( const StyleSheetProperty& attribute, const Uint32& 
 			setColor( attribute.asColor() );
 			break;
 		default:
-			return UIWidget::applyProperty( attribute, state );
+			return UIWidget::applyProperty( attribute );
 	}
 
 	return true;

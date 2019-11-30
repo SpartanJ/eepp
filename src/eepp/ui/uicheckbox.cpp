@@ -195,7 +195,7 @@ void UICheckBox::setTextSeparation(const Int32 & textSeparation) {
 	setPadding( getPadding() );
 }
 
-bool UICheckBox::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
+bool UICheckBox::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) ) return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
@@ -203,7 +203,7 @@ bool UICheckBox::applyProperty( const StyleSheetProperty& attribute, const Uint3
 			setActive( attribute.asBool() );
 			break;
 		default:
-			return UITextView::applyProperty( attribute, state );
+			return UITextView::applyProperty( attribute );
 	}
 
 	return true;

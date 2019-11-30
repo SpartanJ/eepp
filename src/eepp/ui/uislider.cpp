@@ -436,7 +436,7 @@ Uint32 UISlider::onMessage(const NodeMessage * Msg) {
 	return 0;
 }
 
-bool UISlider::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
+bool UISlider::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) ) return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
@@ -473,7 +473,7 @@ bool UISlider::applyProperty( const StyleSheetProperty& attribute, const Uint32&
 			setAllowHalfSliderOut( attribute.asBool() );
 			break;
 		default:
-			return UIWidget::applyProperty( attribute, state );
+			return UIWidget::applyProperty( attribute );
 	}
 
 	return true;

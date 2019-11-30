@@ -623,7 +623,7 @@ bool UITable::isTouchOverAllowedChilds() {
 	return isMouseOverMeOrChilds() && !mVScrollBar->isMouseOverMeOrChilds() && !mHScrollBar->isMouseOverMeOrChilds();
 }
 
-bool UITable::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
+bool UITable::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) ) return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
@@ -661,7 +661,7 @@ bool UITable::applyProperty( const StyleSheetProperty& attribute, const Uint32& 
 			break;
 		}
 		default:
-			return UITouchDragableWidget::applyProperty( attribute, state );
+			return UITouchDragableWidget::applyProperty( attribute );
 	}
 
 	return true;
