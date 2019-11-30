@@ -187,6 +187,8 @@ void UIStyle::onStateChange() {
 
 						if ( NULL != prevTransition ) {
 							if ( prevTransition->getEndValue() == property.getValue() ) {
+								continue;
+							} else if ( prevTransition->getStartValue() == property.getValue() ) {
 								Float currentProgress =
 									prevTransition->getElapsed().asMilliseconds() /
 									prevTransition->getDuration().asMilliseconds();
