@@ -167,56 +167,56 @@ void UIStyle::onStateChange() {
 				}
 			}
 
-			if ( StyleSheetPropertyTransition::transitionSupported(
-					 propertyDefinition->getType() ) ) {
+			if ( !mWidget->isSceneNodeLoading() &&
+				 StyleSheetPropertyTransition::transitionSupported(
+					 propertyDefinition->getType() ) &&
+				 hasTransition( property.getName() ) ) {
+				std::string startValue = mWidget->getPropertyString( propertyDefinition );
 
-				if ( !mWidget->isSceneNodeLoading() && hasTransition( property.getName() ) ) {
-					std::string startValue = mWidget->getPropertyString( propertyDefinition );
+				if ( !startValue.empty() ) {
+					TransitionDefinition transitionInfo( getTransition( property.getName() ) );
 
-					if ( !startValue.empty() && startValue != property.getValue() ) {
-						TransitionDefinition transitionInfo( getTransition( property.getName() ) );
+					std::vector<Action*> previousTransitions =
+						mWidget->getActionsByTag( propertyDefinition->getId() );
 
-						std::vector<Action*> previousTransitions =
-							mWidget->getActionsByTag( propertyDefinition->getId() );
+					Time duration( transitionInfo.getDuration() );
 
-						Time duration( transitionInfo.getDuration() );
-						if ( !previousTransitions.empty() ) {
-							StyleSheetPropertyTransition* prevTransition =
-								dynamic_cast<StyleSheetPropertyTransition*>(
-									previousTransitions[0] );
+					if ( !previousTransitions.empty() ) {
+						StyleSheetPropertyTransition* prevTransition =
+							dynamic_cast<StyleSheetPropertyTransition*>( previousTransitions[0] );
 
-							if ( NULL != prevTransition ) {
-								if ( prevTransition->getEndValue() != property.getValue() ) {
-									Float currentProgress =
-										prevTransition->getElapsed().asMilliseconds() /
-										transitionInfo.getDuration().asMilliseconds();
-									currentProgress = 1.f - eemin( 1.f, currentProgress );
+						if ( NULL != prevTransition ) {
+							if ( prevTransition->getEndValue() == property.getValue() ) {
+								Float currentProgress =
+									prevTransition->getElapsed().asMilliseconds() /
+									prevTransition->getDuration().asMilliseconds();
+								currentProgress = eemin( 1.f, currentProgress );
+								if ( 0.f != currentProgress ) {
 									duration = Milliseconds(
 										transitionInfo.getDuration().asMilliseconds() *
 										currentProgress );
-
-									mWidget->removeAction( prevTransition );
-								} else {
-									continue;
 								}
 							}
 						}
 
-						Action* newTransition = StyleSheetPropertyTransition::New(
-							propertyDefinition, startValue, property.getValue(),
-							transitionInfo.getDuration(), transitionInfo.getTimingFunction() );
-
-						if ( transitionInfo.getDelay().asMicroseconds() > 0 ) {
-							newTransition = Actions::Sequence::New(
-								Actions::Delay::New( transitionInfo.getDelay() ), newTransition );
+						for ( auto& prev : previousTransitions ) {
+							mWidget->removeAction( prev );
 						}
-						newTransition->setTag( propertyDefinition->getId() );
-						mWidget->runAction( newTransition );
-						continue;
 					}
-				}
 
-				mWidget->applyProperty( property, mCurrentState );
+					Action* newTransition = StyleSheetPropertyTransition::New(
+						propertyDefinition, startValue, property.getValue(), duration,
+						transitionInfo.getTimingFunction() );
+
+					if ( transitionInfo.getDelay().asMicroseconds() > 0 ) {
+						newTransition = Actions::Sequence::New(
+							Actions::Delay::New( transitionInfo.getDelay() ), newTransition );
+					}
+					newTransition->setTag( propertyDefinition->getId() );
+					mWidget->runAction( newTransition );
+				} else {
+					mWidget->applyProperty( property, mCurrentState );
+				}
 			} else {
 				mWidget->applyProperty( property, mCurrentState );
 			}

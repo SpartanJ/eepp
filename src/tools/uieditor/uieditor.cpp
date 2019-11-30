@@ -59,6 +59,7 @@ std::string basePath;
 
 Vector2i mousePos;
 Clock mouseClock;
+Console * console = NULL;
 
 std::map<std::string,std::string> layouts;
 std::vector<std::string> recentProjects;
@@ -697,6 +698,10 @@ void mainLoop() {
 		window->close();
 	}
 
+	if (  window->getInput()->isKeyUp( KEY_F3 ) || window->getInput()->isKeyUp( KEY_WORLD_26 ) || window->getInput()->isKeyUp( KEY_BACKSLASH ) ) {
+		console->toggle();
+	}
+
 	if ( NULL != uiContainer && window->getInput()->isKeyUp( KEY_F1 ) ) {
 		resizeWindowToLayout();
 	}
@@ -722,12 +727,19 @@ void mainLoop() {
 		refreshStyleSheet();
 	}
 
+	if ( console->isActive() || console->isFading() ) {
+		appUiSceneNode->invalidate();
+		uiSceneNode->invalidate();
+	}
+
 	SceneManager::instance()->update();
 
 	if ( appUiSceneNode->invalidated() || uiSceneNode->invalidated() ) {
 		window->clear();
 
 		SceneManager::instance()->draw();
+
+		console->draw();
 
 		window->display();
 	} else {
@@ -828,6 +840,16 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 
 		window->setCloseRequestCallback( cb::Make1( onCloseRequestCallback ) );
 
+		std::string pd;
+		if ( PixelDensity::getPixelDensity() >= 1.5f ) pd = "1.5x";
+		else if ( PixelDensity::getPixelDensity() >= 2.f ) pd = "2x";
+
+		FontTrueType * font = FontTrueType::New( "NotoSans-Regular", "assets/fonts/NotoSans-Regular.ttf" );
+
+		console = eeNew( Console, ( font, true, true, 1024 * 1000, 0, window ) );
+
+		theme = UITheme::load( "uitheme" + pd, "uitheme" + pd, "assets/ui/uitheme" + pd + ".eta", font, "assets/ui/uitheme.css" );
+
 		uiSceneNode = UISceneNode::New();
 		SceneManager::instance()->add( uiSceneNode );
 
@@ -836,14 +858,6 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 
 		appUiSceneNode->enableDrawInvalidation();
 		uiSceneNode->enableDrawInvalidation();
-
-		std::string pd;
-		if ( PixelDensity::getPixelDensity() >= 1.5f ) pd = "1.5x";
-		else if ( PixelDensity::getPixelDensity() >= 2.f ) pd = "2x";
-
-		FontTrueType * font = FontTrueType::New( "NotoSans-Regular", "assets/fonts/NotoSans-Regular.ttf" );
-
-		theme = UITheme::load( "uitheme" + pd, "uitheme" + pd, "assets/ui/uitheme" + pd + ".eta", font, "assets/ui/uitheme.css" );
 
 		appUiSceneNode->combineStyleSheet( theme->getStyleSheet() );
 
@@ -908,6 +922,8 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 	}
 
 	saveConfig();
+
+	eeSAFE_DELETE( console );
 
 	Engine::destroySingleton();
 

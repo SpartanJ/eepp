@@ -920,13 +920,13 @@ std::string UIWidget::getPropertyString( const PropertyDefinition* propertyDef )
 
 	switch ( propertyDef->getPropertyId() ) {
 		case PropertyId::X:
-			return String::format( "%.2fdp", getPosition().x );
+			return String::fromFloat( getPosition().x, "dp" );
 		case PropertyId::Y:
-			return String::format( "%.2fdp", getPosition().y );
+			return String::fromFloat( getPosition().y, "dp" );
 		case PropertyId::Width:
-			return String::format( "%.2fdp", getSize().getWidth() );
+			return String::fromFloat( getSize().getWidth(), "dp" );
 		case PropertyId::Height:
-			return String::format( "%.2fdp", getSize().getHeight() );
+			return String::fromFloat( getSize().getHeight(), "dp" );
 		case PropertyId::MarginLeft:
 			return String::format( "%ddp", getLayoutMargin().Left );
 		case PropertyId::MarginTop:
@@ -936,29 +936,68 @@ std::string UIWidget::getPropertyString( const PropertyDefinition* propertyDef )
 		case PropertyId::MarginBottom:
 			return String::format( "%ddp", getLayoutMargin().Bottom );
 		case PropertyId::PaddingLeft:
-			return String::format( "%.2fdp", getPadding().Left );
+			return String::fromFloat( getPadding().Left, "dp" );
 		case PropertyId::PaddingTop:
-			return String::format( "%.2fdp", getPadding().Top );
+			return String::fromFloat( getPadding().Top, "dp" );
 		case PropertyId::PaddingRight:
-			return String::format( "%.2fdp", getPadding().Right );
+			return String::fromFloat( getPadding().Right, "dp" );
 		case PropertyId::PaddingBottom:
-			return String::format( "%.2fdp", getPadding().Bottom );
+			return String::fromFloat( getPadding().Bottom, "dp" );
 		case PropertyId::BackgroundColor:
 			return getBackgroundColor().toHexString();
 		case PropertyId::ForegroundColor:
 			return getForegroundColor().toHexString();
+		case PropertyId::ForegroundRadius:
+			return String::toStr( getForegroundRadius() );
 		case PropertyId::BorderColor:
 			return getBorderColor().toHexString();
 		case PropertyId::BorderRadius:
-			return String::format( "%u", getBorderRadius() );
+			return String::toStr( getBorderRadius() );
+		case PropertyId::BorderWidth:
+			return String::fromFloat( getBorderWidth() );
 		case PropertyId::SkinColor:
 			return getSkinColor().toHexString();
 		case PropertyId::Rotation:
-			return String::format( "%f", getRotation() );
+			return String::fromFloat( getRotation() );
 		case PropertyId::Scale:
-			return String::format( "%f, %f", getScale().x, getScale().y );
+			return String::fromFloat( getScale().x ) + ", " + String::fromFloat( getScale().y );
 		case PropertyId::Opacity:
-			return String::format( "%f", getAlpha() );
+			return String::fromFloat( getAlpha() );
+		case PropertyId::Cursor:
+			return "arrow";
+		case PropertyId::Visible:
+			return isVisible() ? "true" : "false";
+		case PropertyId::Enabled:
+			return isEnabled() ? "true" : "false";
+		case PropertyId::Theme:
+			return NULL != mTheme ? mTheme->getName() : "";
+		case PropertyId::Skin:
+			return mSkinName;
+		case PropertyId::Flags:
+			return getFlagsString();
+		case PropertyId::BackgroundSize:
+			//return getBackground()->getLayer(0)->getSizeEq();
+			break;
+		case PropertyId::LayoutWeight:
+			return String::fromFloat( getLayoutWeight() );
+		case PropertyId::LayoutGravity:
+			return getLayoutGravityString();
+		case PropertyId::LayoutWidth:
+			return getLayoutWidthRulesString();
+		case PropertyId::LayoutHeight:
+			return getLayoutHeightRulesString();
+		case PropertyId::Clip:
+			return isClipped() ? "true" : "false";
+		case PropertyId::BackgroundPosition:
+			//return getBackground()->getLayer(0)->getPositionEq();
+			break;
+		case PropertyId::ForegroundPosition:
+			//return getForeground()->getLayer(0)->getPositionEq();
+			break;
+		case PropertyId::ScaleOriginPoint:
+			return getScaleOriginPoint().toString();
+		case PropertyId::BlendMode:
+			return "";
 		default:
 			break;
 	}
@@ -970,22 +1009,12 @@ void UIWidget::setStyleSheetProperty( const std::string& name, const std::string
 	if ( mStyle != NULL )
 		mStyle->setStyleSheetProperty( CSS::StyleSheetProperty( name, value, specificity ) );
 }
-/*
-#define SAVE_NORMAL_STATE_ATTR( ATTR_FORMATED ) \
-	if ( state != UIState::StateFlagNormal || ( state == UIState::StateFlagNormal && attribute.isVolatile() ) ) { \
-		CSS::StyleSheetProperty oldAttribute = mStyle->getStatelessStyleSheetProperty( attribute.getName() ); \
-		if ( oldAttribute.isEmpty() && mStyle->getPreviousState() == UIState::StateFlagNormal ) { \
-			mStyle->setStyleSheetProperty( CSS::StyleSheetProperty( attribute.getName(), ATTR_FORMATED ) ); \
-		} \
-	}
-*/
-#define SAVE_NORMAL_STATE_ATTR( ATTR_FORMATED );
 
 bool UIWidget::applyProperty( const StyleSheetProperty& attribute, const Uint32& state ) {
 	if ( !checkPropertyDefinition( attribute ) ) return false;
 	bool attributeSet = true;
 
-	switch ( static_cast<PropertyId>( attribute.getPropertyDefinition()->getId() ) ) {
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::Id:
 			setId( attribute.value() );
 			break;
@@ -993,31 +1022,26 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute, const Uint32&
 			addClasses( String::split( attribute.getValue(), ' ' ) );
 			break;
 		case PropertyId::X:
-			SAVE_NORMAL_STATE_ATTR( String::format( "%.2f", getSize().getWidth() ) );
 			setLayoutWidthRules( FIXED );
 			setInternalPosition( Vector2f( attribute.asDpDimension(), mDpPos.y ) );
 			notifyLayoutAttrChange();
 			break;
 		case PropertyId::Y:
-			SAVE_NORMAL_STATE_ATTR( String::format( "%.2f", getSize().getHeight() ) );
 			setLayoutWidthRules( FIXED );
 			setInternalPosition( Vector2f( mDpPos.x, attribute.asDpDimensionI() ) );
 			notifyLayoutAttrChange();
 			break;
 		case PropertyId::Width:
-			SAVE_NORMAL_STATE_ATTR( String::format( "%.2f", getSize().getWidth() ) );
 			setLayoutWidthRules( FIXED );
 			setInternalWidth( attribute.asDpDimensionI() );
 			notifyLayoutAttrChange();
 			break;
 		case PropertyId::Height:
-			SAVE_NORMAL_STATE_ATTR( String::format( "%.2f", getSize().getHeight() ) );
 			setLayoutHeightRules( FIXED );
 			setInternalHeight( attribute.asDpDimensionI() );
 			notifyLayoutAttrChange();
 			break;
 		case PropertyId::BackgroundColor:
-			SAVE_NORMAL_STATE_ATTR( getBackgroundColor().toHexString() );
 			setBackgroundColor( attribute.asColor() );
 			break;
 		case PropertyId::BackgroundImage:
@@ -1029,11 +1053,9 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute, const Uint32&
 			setBackgroundRepeat( attribute.value(), 0 );
 			break;
 		case PropertyId::BackgroundSize:
-			SAVE_NORMAL_STATE_ATTR( getBackground()->getLayer(0)->getSizeEq() );
 			setBackgroundSize( attribute.value(), 0 );
 			break;
 		case PropertyId::ForegroundColor:
-			SAVE_NORMAL_STATE_ATTR( getForegroundColor().toHexString() );
 			setForegroundColor( attribute.asColor() );
 			break;
 		case PropertyId::ForegroundImage:
@@ -1042,44 +1064,35 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute, const Uint32&
 			} );
 			break;
 		case PropertyId::ForegroundRadius:
-			SAVE_NORMAL_STATE_ATTR( String::toStr( getForegroundRadius() ) );
 			setForegroundRadius( attribute.asUint() );
 			break;
 		case PropertyId::ForegroundSize:
 			setForegroundSize( attribute.value(), 0 );
 			break;
 		case PropertyId::BorderColor:
-			SAVE_NORMAL_STATE_ATTR( getBorderColor().toHexString() )
 			setBorderColor( attribute.asColor() );
 			break;
 		case PropertyId::BorderWidth:
-			SAVE_NORMAL_STATE_ATTR( String::toStr( getBorderWidth() ) );
 			setBorderWidth( attribute.asDpDimensionI("1") );
 			break;
 		case PropertyId::BorderRadius:
-			SAVE_NORMAL_STATE_ATTR( String::format( "%d", getBorderRadius() ) );
 			setBorderRadius( PixelDensity::dpToPxI( attribute.asDpDimensionUint() ));
 			break;
 		case PropertyId::Visible:
-			SAVE_NORMAL_STATE_ATTR( isVisible() ? "true" : "false" );
 			setVisible( attribute.asBool() );
 			break;
 		case PropertyId::Enabled:
-			SAVE_NORMAL_STATE_ATTR( isEnabled() ? "true" : "false" );
 			setEnabled( attribute.asBool() );
 			break;
 		case PropertyId::Theme:
-			if ( NULL != mTheme ) SAVE_NORMAL_STATE_ATTR( mTheme->getName() );
 			setThemeByName( attribute.asString() );
 			if ( !mSkinName.empty() ) setThemeSkin( mSkinName );
 			break;
 		case PropertyId::Skin:
-			SAVE_NORMAL_STATE_ATTR( mSkinName );
 			mSkinName = attribute.asString();
 			setThemeSkin( mSkinName );
 			break;
 		case PropertyId::SkinColor:
-			SAVE_NORMAL_STATE_ATTR( getSkinColor().toHexString() );
 			setSkinColor( attribute.asColor() );
 			break;
 		case PropertyId::Gravity:
@@ -1117,8 +1130,6 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute, const Uint32&
 		}
 		case PropertyId::Flags:
 		{
-			SAVE_NORMAL_STATE_ATTR( getFlagsString() );
-
 			std::string flags = attribute.asString();
 			String::toLowerInPlace( flags );
 			std::vector<std::string> strings = String::split( flags, '|' );
@@ -1146,31 +1157,25 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute, const Uint32&
 			break;
 		}
 		case PropertyId::MarginLeft:
-			SAVE_NORMAL_STATE_ATTR( String::format( "%d", mLayoutMargin.Left ) );
 			setLayoutMarginLeft( attribute.asDpDimensionI() );
 			break;
 		case PropertyId::MarginRight:
-			SAVE_NORMAL_STATE_ATTR( String::format( "%d", mLayoutMargin.Right ) );
 			setLayoutMarginRight( attribute.asDpDimensionI() );
 			break;
 		case PropertyId::MarginTop:
-			SAVE_NORMAL_STATE_ATTR( String::format( "%d", mLayoutMargin.Top ) );
 			setLayoutMarginTop( attribute.asDpDimensionI() );
 			break;
 		case PropertyId::MarginBottom:
-			SAVE_NORMAL_STATE_ATTR( String::format( "%d", mLayoutMargin.Bottom ) );
 			setLayoutMarginBottom( attribute.asDpDimensionI() );
 			break;
 		case PropertyId::Tooltip:
 			setTooltipText( attribute.asString() );
 			break;
 		case PropertyId::LayoutWeight:
-			SAVE_NORMAL_STATE_ATTR( String::toStr( getLayoutWeight() ) );
 			setLayoutWeight( attribute.asFloat() );
 			break;
 		case PropertyId::LayoutGravity:
 		{
-			SAVE_NORMAL_STATE_ATTR( getLayoutGravityString() );
 			std::string gravityStr = attribute.asString();
 			String::toLowerInPlace( gravityStr );
 			std::vector<std::string> strings = String::split( gravityStr, '|' );
@@ -1203,8 +1208,6 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute, const Uint32&
 		}
 		case PropertyId::LayoutWidth:
 		{
-			SAVE_NORMAL_STATE_ATTR( getLayoutWidthRulesString() );
-
 			std::string val = attribute.asString();
 			String::toLowerInPlace( val );
 
@@ -1225,8 +1228,6 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute, const Uint32&
 		}
 		case PropertyId::LayoutHeight:
 		{
-			SAVE_NORMAL_STATE_ATTR( getLayoutHeightRulesString() );
-
 			std::string val = attribute.asString();
 			String::toLowerInPlace( val );
 
@@ -1265,64 +1266,50 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute, const Uint32&
 			break;
 		}
 		case PropertyId::Clip:
-			SAVE_NORMAL_STATE_ATTR( isClipped() ? "true" : "false" );
 			if ( attribute.asBool() ) clipEnable();
 			else clipDisable();
 			break;
 		case PropertyId::Rotation:
-			SAVE_NORMAL_STATE_ATTR( String::format( "%2.f", mRotation ) )
 			setRotation( attribute.asFloat() );
 			break;
 		case PropertyId::Scale:
-			SAVE_NORMAL_STATE_ATTR( String::format( "%2.f, %2.f", mScale.x, mScale.y ) )
 			setScale( attribute.asVector2f() );
 			break;
 		case PropertyId::BlendMode:
-			// TODO: SAVE_NORMAL_STATE_ATTR
 			setBlendMode( attribute.asBlendMode() );
 			break;
 		case PropertyId::PaddingLeft:
-			SAVE_NORMAL_STATE_ATTR( String::format( "%2.f", mPadding.Left ) );
 			setPaddingLeft( attribute.asDpDimension() );
 			break;
 		case PropertyId::PaddingRight:
-			SAVE_NORMAL_STATE_ATTR( String::format( "%2.f", mPadding.Right ) );
 			setPaddingRight( attribute.asDpDimension() );
 			break;
 		case PropertyId::PaddingTop:
-			SAVE_NORMAL_STATE_ATTR( String::format( "%2.f", mPadding.Top ) );
 			setPaddingTop( attribute.asDpDimension() );
 			break;
 		case PropertyId::PaddingBottom:
-			SAVE_NORMAL_STATE_ATTR( String::format( "%2.f", mPadding.Bottom ) );
 			setPaddingBottom( attribute.asDpDimension() );
 			break;
 		case PropertyId::Opacity:
 		{
-			SAVE_NORMAL_STATE_ATTR( String::format( "%2.f", mAlpha ) )
 			Float alpha = eemin( attribute.asFloat() * 255.f, 255.f );
 			setAlpha( alpha );
 			setChildsAlpha( alpha );
 			break;
 		}
 		case PropertyId::Cursor:
-			SAVE_NORMAL_STATE_ATTR( "arrow" );
 			mSceneNode->setCursor( Cursor::fromName( attribute.getValue() ) );
 			break;
 		case PropertyId::BackgroundPosition:
-			SAVE_NORMAL_STATE_ATTR( getBackground()->getLayer(0)->getPositionEq() );
 			setBackgroundPosition( attribute.value(), 0 );
 			break;
 		case PropertyId::ForegroundPosition:
-			SAVE_NORMAL_STATE_ATTR( getForeground()->getLayer(0)->getPositionEq() );
 			setForegroundPosition( attribute.value(), 0 );
 			break;
 		case PropertyId::RotationOriginPoint:
-			SAVE_NORMAL_STATE_ATTR( getRotationOriginPoint().toString() );
 			setRotationOriginPoint( attribute.asOriginPoint() );
 			break;
 		case PropertyId::ScaleOriginPoint:
-			SAVE_NORMAL_STATE_ATTR( getScaleOriginPoint().toString() );
 			setScaleOriginPoint( attribute.asOriginPoint() );
 			break;
 		default:
