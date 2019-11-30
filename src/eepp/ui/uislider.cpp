@@ -436,6 +436,31 @@ Uint32 UISlider::onMessage(const NodeMessage * Msg) {
 	return 0;
 }
 
+std::string UISlider::getPropertyString( const PropertyDefinition* propertyDef ) {
+	if ( NULL == propertyDef ) return "";
+
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::Orientation:
+			return getOrientation() == UI_HORIZONTAL ? "horizontal" : "vertical";
+		case PropertyId::MinValue:
+			return String::fromFloat( getMinValue() );
+		case PropertyId::MaxValue:
+			return String::fromFloat( getMaxValue() );
+		case PropertyId::Value:
+			return String::fromFloat( getValue() );
+		case PropertyId::ClickStep:
+			return String::fromFloat( getClickStep() );
+		case PropertyId::PageStep:
+			return String::fromFloat( getPageStep() );
+		case PropertyId::HalfSlider:
+			return getAllowHalfSliderOut() ? "true" : "false";
+		case PropertyId::BackgroundExpand:
+			return getExpandBackground() ? "true" : "false";
+		default:
+			return UIWidget::getPropertyString( propertyDef );
+	}
+}
+
 bool UISlider::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) ) return false;
 

@@ -185,6 +185,18 @@ void UISprite::onSizeChange() {
 	UIWidget::onSizeChange();
 }
 
+std::string UISprite::getPropertyString( const PropertyDefinition* propertyDef ) {
+	if ( NULL == propertyDef ) return "";
+
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::Src:
+			// TODO: Implement src
+			return "";
+		default:
+			return UIWidget::getPropertyString( propertyDef );
+	}
+}
+
 bool UISprite::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) ) return false;
 

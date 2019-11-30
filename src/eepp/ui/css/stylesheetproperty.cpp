@@ -237,6 +237,39 @@ BlendMode StyleSheetProperty::asBlendMode() const {
 	return toBlendMode( mValue );
 }
 
+Vector2f StyleSheetProperty::asDpDimensionVector2f( const Vector2f& defaultValue ) const {
+	if ( !mValue.empty() ) {
+		Vector2f vector;
+		auto xySplit = String::split( mValue, ',', true );
+
+		if ( xySplit.size() == 2 ) {
+			vector.x = PixelDensity::toDpFromString("0");
+			vector.y = PixelDensity::toDpFromString("0");
+			return vector;
+		} else if ( xySplit.size() == 1 ) {
+			vector.x = vector.y = PixelDensity::toDpFromString("0");
+			return vector;
+		}
+	}
+
+	return defaultValue;
+}
+
+Vector2i StyleSheetProperty::asDpDimensionVector2i( const Vector2i& defaultValue ) const {
+	Vector2f v( asDpDimensionVector2f( Vector2f( defaultValue.x, defaultValue.y ) ) );
+	return Vector2i( v.x, v.y );
+}
+
+Vector2f StyleSheetProperty::asDpDimensionSizef( const Sizef& defaultValue ) const {
+	Vector2f v( asDpDimensionVector2f( defaultValue ) );
+	return Sizef( v.x, v.y );
+}
+
+Vector2i StyleSheetProperty::asDpDimensionSizei( const Sizei& defaultValue ) const {
+	Vector2i v( asDpDimensionVector2i( defaultValue ) );
+	return Sizei( v.x, v.y );
+}
+
 Vector2f StyleSheetProperty::asVector2f( const Vector2f& defaultValue ) const {
 	if ( !mValue.empty() ) {
 		Vector2f vector;

@@ -159,6 +159,23 @@ void UIWinMenu::setFirstButtonMargin( const Uint32& buttonMargin ) {
 	refreshButtons();
 }
 
+std::string UIWinMenu::getPropertyString( const PropertyDefinition* propertyDef ) {
+	if ( NULL == propertyDef ) return "";
+
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::MarginBetweenButtons:
+			return String::format( "%ddp", getMarginBetweenButtons() );
+		case PropertyId::ButtonMargin:
+			return String::format( "%ddp", getButtonMargin() );
+		case PropertyId::MenuHeight:
+			return String::format( "%ddp", getMenuHeight() );
+		case PropertyId::FirstButtonMarginLeft:
+			return String::format( "%ddp", getFirstButtonMargin() );
+		default:
+			return UIWidget::getPropertyString( propertyDef );
+	}
+}
+
 bool UIWinMenu::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) ) return false;
 

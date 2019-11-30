@@ -218,8 +218,13 @@ std::string UIImage::getPropertyString( const PropertyDefinition* propertyDef ) 
 	if ( NULL == propertyDef )
 		return "";
 
-	// TODO: Implement src and icon.
 	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::Src:
+			// TODO: Implement src.
+			return "";
+		case PropertyId::Icon:
+			// TODO: Implement icon.
+			return "";
 		case PropertyId::ScaleType:
 			return getScaleType() == UIScaleType::FitInside
 					   ? "fit-inside"

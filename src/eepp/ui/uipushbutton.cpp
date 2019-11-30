@@ -284,6 +284,27 @@ void UIPushButton::setStyleConfig(const StyleConfig & styleConfig) {
 	onStateChange();
 }
 
+std::string UIPushButton::getPropertyString( const PropertyDefinition* propertyDef ) {
+	if ( NULL == propertyDef ) return "";
+
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::Text:
+			return getText().toUtf8();
+		case PropertyId::Icon:
+			// TODO: Implement icon
+			return "";
+		case PropertyId::MinIconSize:
+			return String::format( "%ddp", mStyleConfig.IconMinSize.getWidth() ) + ", " +
+				   String::format( "%ddp", mStyleConfig.IconMinSize.getHeight() );
+		case PropertyId::IconHorizontalMargin:
+			return String::format( "%ddp", mStyleConfig.IconHorizontalMargin );
+		case PropertyId::IconAutoMargin:
+			return mStyleConfig.IconAutoMargin ? "true" : "false";
+		default:
+			return UIWidget::getPropertyString( propertyDef );
+	}
+}
+
 bool UIPushButton::applyProperty( const StyleSheetProperty& attribute ) {
 	bool attributeSet = true;
 

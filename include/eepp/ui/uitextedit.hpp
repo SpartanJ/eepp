@@ -46,6 +46,8 @@ class EE_API UITextEdit : public UIWidget {
 		UIFontStyleConfig getFontStyleConfig() const;
 
 		virtual bool applyProperty( const StyleSheetProperty& attribute );
+
+		virtual std::string getPropertyString(const PropertyDefinition* propertyDef);
 	protected:
 		UITextInput *		mTextInput;
 		UIScrollBar *		mHScrollBar;

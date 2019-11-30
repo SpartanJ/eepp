@@ -8,7 +8,7 @@ namespace EE { namespace UI {
 class EE_API UITouchDragableWidget : public UIWidget {
 	public:
 		static UITouchDragableWidget * New();
-		
+
 		UITouchDragableWidget();
 
 		~UITouchDragableWidget();
@@ -30,6 +30,8 @@ class EE_API UITouchDragableWidget : public UIWidget {
 		UITouchDragableWidget * setTouchDragDeceleration( const Vector2f& touchDragDeceleration );
 
 		virtual bool applyProperty( const StyleSheetProperty& attribute );
+
+		virtual std::string getPropertyString(const PropertyDefinition* propertyDef);
 	protected:
 		Vector2f mTouchDragPoint;
 		Vector2f mTouchDragAcceleration;

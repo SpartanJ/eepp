@@ -146,6 +146,20 @@ void UITouchDragableWidget::scheduledUpdate( const Time& time ) {
 	}
 }
 
+std::string UITouchDragableWidget::getPropertyString( const PropertyDefinition* propertyDef ) {
+	if ( NULL == propertyDef ) return "";
+
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::TouchDrag:
+			return isTouchDragEnabled() ? "true" : "false";
+		case PropertyId::TouchDragDeceleration:
+			return String::fromFloat( getTouchDragDeceleration().x ) + ", " +
+				   String::fromFloat( getTouchDragDeceleration().y );
+		default:
+			return UIWidget::getPropertyString( propertyDef );
+	}
+}
+
 bool UITouchDragableWidget::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) ) return false;
 

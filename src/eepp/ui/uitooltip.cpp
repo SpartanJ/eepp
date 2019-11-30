@@ -328,6 +328,33 @@ void UITooltip::setFontStyleConfig(const UIFontStyleConfig & styleConfig) {
 	mTextCache->setOutlineColor( mStyleConfig.OutlineColor );
 }
 
+std::string UITooltip::getPropertyString( const PropertyDefinition* propertyDef ) {
+	if ( NULL == propertyDef ) return "";
+
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::Color:
+			return getFontColor().toHexString();
+		case PropertyId::ShadowColor:
+			return getFontShadowColor().toHexString();
+		case PropertyId::FontFamily:
+			return NULL != getFont() ? getFont()->getName() : "";
+		case PropertyId::FontSize:
+			return String::format( "%ddp", getCharacterSize() );
+		case PropertyId::FontStyle:
+			return Text::styleFlagToString( getFontStyle() );
+		case PropertyId::TextStrokeWidth:
+			return String::toStr( PixelDensity::dpToPx( getOutlineThickness() ) );
+		case PropertyId::TextStrokeColor:
+			return getOutlineColor().toHexString();
+		case PropertyId::TextAlign:
+			return fontHAlignGet( getFlags() ) == UI_HALIGN_CENTER ? "center" : (
+				fontHAlignGet( getFlags() ) == UI_HALIGN_RIGHT ? "right" : "left"
+			);
+		default:
+			return UIWidget::getPropertyString( propertyDef );
+	}
+}
+
 bool UITooltip::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) ) return false;
 

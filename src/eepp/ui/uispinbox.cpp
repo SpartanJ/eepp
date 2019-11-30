@@ -270,6 +270,23 @@ void UISpinBox::onPaddingChange() {
 	UIWidget::onPaddingChange();
 }
 
+std::string UISpinBox::getPropertyString( const PropertyDefinition* propertyDef ) {
+	if ( NULL == propertyDef ) return "";
+
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::MinValue:
+			return String::fromFloat( getMinValue() );
+		case PropertyId::MaxValue:
+			return String::fromFloat( getMaxValue() );
+		case PropertyId::Value:
+			return String::fromFloat( getValue() );
+		case PropertyId::ClickStep:
+			return String::fromFloat( getClickStep() );
+		default:
+			return UIWidget::getPropertyString( propertyDef );
+	}
+}
+
 bool UISpinBox::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) ) return false;
 

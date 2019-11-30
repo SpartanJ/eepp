@@ -305,6 +305,31 @@ void UIScrollBar::setExpandBackground( bool expandBackground ) {
 	}
 }
 
+std::string UIScrollBar::getPropertyString( const PropertyDefinition* propertyDef ) {
+	if ( NULL == propertyDef ) return "";
+
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::Orientation:
+			return getOrientation() == UI_HORIZONTAL ? "horizontal" : "vertical";
+		case PropertyId::MinValue:
+			return String::fromFloat( getMinValue() );
+		case PropertyId::MaxValue:
+			return String::fromFloat( getMaxValue() );
+		case PropertyId::Value:
+			return String::fromFloat( getValue() );
+		case PropertyId::ClickStep:
+			return String::fromFloat( getClickStep() );
+		case PropertyId::PageStep:
+			return String::fromFloat( getPageStep() );
+		case PropertyId::ScrollBarType:
+			return getScrollBarType() == NoButtons ? "no-buttons" : "two-buttons";
+		case PropertyId::BackgroundExpand:
+			return getExpandBackground() ? "true" : "false";
+		default:
+			return UIWidget::getPropertyString( propertyDef );
+	}
+}
+
 bool UIScrollBar::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) ) return false;
 

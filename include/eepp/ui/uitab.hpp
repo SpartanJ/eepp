@@ -30,6 +30,8 @@ class EE_API UITab : public UISelectButton {
 		virtual UIPushButton * setText( const String& text );
 
 		virtual bool applyProperty( const StyleSheetProperty& attribute );
+
+		virtual std::string getPropertyString( const PropertyDefinition* propertyDef );
 	protected:
 		Node * mControlOwned;
 		std::string mOwnedName;

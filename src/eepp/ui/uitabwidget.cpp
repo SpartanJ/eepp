@@ -119,21 +119,45 @@ void UITabWidget::setStyleConfig(const StyleConfig & styleConfig) {
 	orderTabs();
 }
 
-bool UITabWidget::applyProperty( const StyleSheetProperty& attribute ) {
-	if ( attribute.getPropertyDefinition() == NULL ) {
-		eePRINTL( "applyProperty: Property %s not defined!", attribute.getName().c_str() );
-		return false;
+std::string UITabWidget::getPropertyString( const PropertyDefinition* propertyDef ) {
+	if ( NULL == propertyDef ) return "";
+
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::MaxTextLength:
+			return String::toStr( getMaxTextLength() );
+		case PropertyId::MinTabWidth:
+			return String::format( "%ddp", getMinTabWidth() );
+		case PropertyId::MaxTabWidth:
+			return String::format( "%ddp", getMaxTabWidth() );
+		case PropertyId::TabClosable:
+			return getTabsClosable() ? "true" : "false";
+		case PropertyId::SpecialBorderTabs:
+			return getSpecialBorderTabs() ? "true" : "false";
+		case PropertyId::LineBelowTabs:
+			return getDrawLineBelowTabs() ? "true" : "false";
+		case PropertyId::LineBelowTabsColor:
+			return getLineBelowTabsColor().toHexString();
+		case PropertyId::LineBelowTabsYOffset:
+			return String::format( "%ddp", getLineBelowTabsYOffset() );
+		case PropertyId::TabSeparation:
+			return String::format( "%ddp", getTabSeparation() );
+		default:
+			return UIWidget::getPropertyString( propertyDef );
 	}
+}
+
+bool UITabWidget::applyProperty( const StyleSheetProperty& attribute ) {
+	if ( !checkPropertyDefinition( attribute ) ) return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::MaxTextLength:
 			setMaxTextLength( attribute.asUint(1) );
 			break;
 		case PropertyId::MinTabWidth:
-			setMinTabWidth( attribute.asUint(1) );
+			setMinTabWidth( attribute.asDpDimensionUint("1") );
 			break;
 		case PropertyId::MaxTabWidth:
-			setMaxTabWidth( attribute.asUint() );
+			setMaxTabWidth( attribute.asDpDimensionUint() );
 			break;
 		case PropertyId::TabClosable:
 			setTabsClosable( attribute.asBool() );

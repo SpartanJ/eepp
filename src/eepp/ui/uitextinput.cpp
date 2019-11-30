@@ -220,7 +220,7 @@ UITextInput * UITextInput::setAllowEditing( const bool& allow ) {
 	return this;
 }
 
-const bool& UITextInput::getAllowEditing() const {
+const bool& UITextInput::isEditingAllowed() const {
 	return mAllowEditing;
 }
 
@@ -391,6 +391,27 @@ UITextInput * UITextInput::setFreeEditing( bool support ) {
 
 bool UITextInput::isFreeEditingEnabled() {
 	return mTextBuffer.isFreeEditingEnabled();
+}
+
+std::string UITextInput::getPropertyString( const PropertyDefinition* propertyDef ) {
+	if ( NULL == propertyDef ) return "";
+
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::Text:
+			return getText().toUtf8();
+		case PropertyId::AllowEditing:
+			return isEditingAllowed() ? "true" : "false";
+		case PropertyId::MaxLength:
+			return String::toStr( getMaxLength() );
+		case PropertyId::FreeEditing:
+			return isFreeEditingEnabled() ? "true" : "false";
+		case PropertyId::OnlyNumbers:
+			return getInputTextBuffer()->onlyNumbersAllowed() ? "true" : "false";
+		case PropertyId::AllowDot:
+			return getInputTextBuffer()->dotsInNumbersAllowed() ? "true" : "false";
+		default:
+			return UITextView::getPropertyString( propertyDef );
+	}
 }
 
 bool UITextInput::applyProperty( const StyleSheetProperty& attribute ) {

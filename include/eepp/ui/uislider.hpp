@@ -67,6 +67,8 @@ class EE_API UISlider : public UIWidget {
 
 		virtual bool applyProperty( const StyleSheetProperty& attribute );
 
+		virtual std::string getPropertyString(const PropertyDefinition* propertyDef);
+
 		Sizef getMinimumSize();
 	protected:
 		UI_ORIENTATION		mOrientation;

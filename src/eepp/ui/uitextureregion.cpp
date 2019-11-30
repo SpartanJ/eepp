@@ -197,6 +197,25 @@ const Vector2f& UITextureRegion::getAlignOffset() const {
 	return mAlignOffset;
 }
 
+std::string UITextureRegion::getPropertyString( const PropertyDefinition* propertyDef ) {
+	if ( NULL == propertyDef )
+		return "";
+
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::Src:
+			// TODO: Implement src.
+			return "";
+		case PropertyId::ScaleType:
+			return getScaleType() == UIScaleType::FitInside
+					   ? "fit-inside"
+					   : ( getScaleType() == UIScaleType::Expand ? "expand" : "none" );
+		case PropertyId::Tint:
+			return getColor().toHexString();
+		default:
+			return UIWidget::getPropertyString( propertyDef );
+	}
+}
+
 bool UITextureRegion::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) ) return false;
 

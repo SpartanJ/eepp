@@ -89,6 +89,14 @@ class EE_API StyleSheetProperty {
 
 	BlendMode asBlendMode() const;
 
+	Vector2f asDpDimensionVector2f( const Vector2f& defaultValue = Vector2f::Zero ) const;
+
+	Vector2i asDpDimensionVector2i( const Vector2i& defaultValue = Vector2i::Zero ) const;
+
+	Vector2f asDpDimensionSizef( const Sizef& defaultValue = Sizef::Zero ) const;
+
+	Vector2i asDpDimensionSizei( const Sizei& defaultValue = Sizei::Zero ) const;
+
 	Vector2f asVector2f( const Vector2f& defaultValue = Vector2f::Zero ) const;
 
 	Vector2i asVector2i( const Vector2i& defaultValue = Vector2i::Zero ) const;

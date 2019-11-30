@@ -144,6 +144,20 @@ void UITab::onAutoSize() {
 	}
 }
 
+std::string UITab::getPropertyString( const PropertyDefinition* propertyDef ) {
+	if ( NULL == propertyDef ) return "";
+
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::Text:
+		case PropertyId::Name:
+			return getText().toUtf8();
+		case PropertyId::Owns:
+			return mOwnedName;
+		default:
+			return UISelectButton::getPropertyString( propertyDef );
+	}
+}
+
 bool UITab::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) ) return false;
 

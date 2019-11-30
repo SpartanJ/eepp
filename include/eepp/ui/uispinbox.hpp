@@ -55,6 +55,8 @@ class EE_API UISpinBox : public UIWidget {
 		bool dotsInNumbersAllowed();
 
 		virtual bool applyProperty( const StyleSheetProperty& attribute );
+
+		virtual std::string getPropertyString(const PropertyDefinition* propertyDef);
 	protected:
 		UITextInput * 		mInput;
 		UINode * 	mPushUp;

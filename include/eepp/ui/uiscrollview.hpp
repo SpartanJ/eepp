@@ -41,6 +41,8 @@ class EE_API UIScrollView : public UITouchDragableWidget {
 		UIWidget * getContainer() const;
 
 		virtual bool applyProperty( const StyleSheetProperty& attribute );
+
+		virtual std::string getPropertyString(const PropertyDefinition* propertyDef);
 	protected:
 		ScrollViewType mViewType;
 		UI_SCROLLBAR_MODE mVScrollMode;

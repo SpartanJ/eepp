@@ -1379,6 +1379,62 @@ void UIWindow::resizeCursor() {
 	}
 }
 
+std::string UIWindow::getWindowFlagsString() {
+	std::vector<std::string> flags;
+	if ( getWinFlags() & UI_WIN_DEFAULT_FLAGS) flags.push_back( "default" );
+	if ( getWinFlags() & UI_WIN_CLOSE_BUTTON ) flags.push_back( "close" );
+	if ( getWinFlags() & UI_WIN_MAXIMIZE_BUTTON ) flags.push_back( "maximize" );
+	if ( getWinFlags() & UI_WIN_DRAGABLE_CONTAINER ) flags.push_back( "dragable" );
+	if ( getWinFlags() & UI_WIN_SHADOW ) flags.push_back( "shadow" );
+	if ( getWinFlags() & UI_WIN_MODAL ) flags.push_back( "modal" );
+	if ( getWinFlags() & UI_WIN_NO_DECORATION ) flags.push_back( "borderless" );
+	if ( getWinFlags() & UI_WIN_RESIZEABLE ) flags.push_back( "resizeable" );
+	if ( getWinFlags() & UI_WIN_SHARE_ALPHA_WITH_CHILDS ) flags.push_back( "sharealpha" );
+	if ( getWinFlags() & UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS ) flags.push_back( "buttonactions" );
+	if ( getWinFlags() & UI_WIN_FRAME_BUFFER ) flags.push_back( "framebuffer" );
+	if ( getWinFlags() & UI_WIN_COLOR_BUFFER ) flags.push_back( "colorbuffer" );
+	return String::join( flags, '|' );
+}
+
+std::string UIWindow::getPropertyString( const PropertyDefinition* propertyDef ) {
+	if ( NULL == propertyDef ) return "";
+
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::Width:
+			return String::fromFloat( getSize().getWidth(), "dp" );
+		case PropertyId::Height:
+			return String::fromFloat( getSize().getHeight(), "dp" );
+		case PropertyId::Title:
+			return getTitle().toUtf8();
+		case PropertyId::BaseAlpha:
+			return String::toStr( getBaseAlpha() );
+		case PropertyId::ButtonsPositionOffset:
+			return String::format( "%ddp", mStyleConfig.ButtonsPositionFixer.x ) + ", " +
+				   String::format( "%ddp", mStyleConfig.ButtonsPositionFixer.y );
+		case PropertyId::WindowFlags:
+			return getWindowFlagsString();
+		case PropertyId::DecorationSize:
+			return String::format( "%ddp", mStyleConfig.DecorationSize.x ) + ", " +
+				   String::format( "%ddp", mStyleConfig.DecorationSize.y );
+		case PropertyId::BorderSize:
+			return String::format( "%ddp", mStyleConfig.BorderSize.x ) + ", " +
+				   String::format( "%ddp", mStyleConfig.BorderSize.y );
+		case PropertyId::MinWindowSize:
+			return String::fromFloat( mStyleConfig.MinWindowSize.x, "dp" ) + ", " +
+				   String::fromFloat( mStyleConfig.MinWindowSize.y, "dp" );
+		case PropertyId::ButtonsSeparation:
+			return String::format( "%ddp", mStyleConfig.ButtonsSeparation );
+		case PropertyId::MinCornerDistance:
+			return String::format( "%ddp", mStyleConfig.MinCornerDistance );
+		case PropertyId::DecorationAutoSize:
+			return mStyleConfig.DecorationAutoSize ? "true" : "false";
+		case PropertyId::BorderAutoSize:
+			return mStyleConfig.BorderAutoSize ? "true" : "false";
+		default:
+			return UIWidget::getPropertyString( propertyDef );
+	}
+}
+
 bool UIWindow::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) ) return false;
 
@@ -1396,7 +1452,7 @@ bool UIWindow::applyProperty( const StyleSheetProperty& attribute ) {
 			setBaseAlpha( (Uint8)eemin( attribute.asUint(), 255u ) );
 			break;
 		case PropertyId::ButtonsPositionOffset:
-			mStyleConfig.ButtonsPositionFixer = attribute.asVector2i();
+			mStyleConfig.ButtonsPositionFixer = attribute.asDpDimensionVector2i();
 			fixChildsSize();
 			break;
 		case PropertyId::WindowFlags:
@@ -1432,15 +1488,15 @@ bool UIWindow::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		}
 		case PropertyId::DecorationSize:
-			mStyleConfig.DecorationSize = attribute.asSizei();
+			mStyleConfig.DecorationSize = attribute.asDpDimensionSizei();
 			fixChildsSize();
 			break;
 		case PropertyId::BorderSize:
-			mStyleConfig.BorderSize = attribute.asSizei();
+			mStyleConfig.BorderSize = attribute.asDpDimensionSizei();
 			fixChildsSize();
 			break;
 		case PropertyId::MinWindowSize:
-			mStyleConfig.MinWindowSize = attribute.asSizef();
+			mStyleConfig.MinWindowSize = attribute.asDpDimensionSizef();
 			fixChildsSize();
 			break;
 		case PropertyId::ButtonsSeparation:

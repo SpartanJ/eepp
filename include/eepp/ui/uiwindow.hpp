@@ -140,6 +140,10 @@ class EE_API UIWindow : public UIWidget {
 		FrameBuffer * getFrameBuffer() const;
 
 		virtual bool isDrawInvalidator() const;
+
+		virtual std::string getPropertyString(const PropertyDefinition* propertyDef);
+
+		std::string getWindowFlagsString();
 	protected:
 		class KeyboardShortcut {
 			public:

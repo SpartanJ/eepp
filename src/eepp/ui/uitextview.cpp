@@ -633,6 +633,8 @@ std::string UITextView::getPropertyString( const PropertyDefinition* propertyDef
 	if ( NULL == propertyDef ) return "";
 
 	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::Text:
+			return getText().toUtf8();
 		case PropertyId::Color:
 			return getFontColor().toHexString();
 		case PropertyId::ShadowColor:
@@ -651,6 +653,14 @@ std::string UITextView::getPropertyString( const PropertyDefinition* propertyDef
 			return String::toStr( PixelDensity::dpToPx( getOutlineThickness() ) );
 		case PropertyId::TextStrokeColor:
 			return getOutlineColor().toHexString();
+		case PropertyId::Wordwrap:
+			return mFlags & UI_WORD_WRAP ? "true" : "false";
+		case PropertyId::TextSelection:
+			return isTextSelectionEnabled() ? "true" : "false";
+		case PropertyId::TextAlign:
+			return fontHAlignGet( getFlags() ) == UI_HALIGN_CENTER ? "center" : (
+				fontHAlignGet( getFlags() ) == UI_HALIGN_RIGHT ? "right" : "left"
+			);
 		default:
 			return UIWidget::getPropertyString( propertyDef );
 	}

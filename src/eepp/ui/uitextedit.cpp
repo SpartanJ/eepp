@@ -443,7 +443,7 @@ void UITextEdit::setAllowEditing( const bool& allow ) {
 }
 
 const bool& UITextEdit::isEditingAllowed() const {
-	return mTextInput->getAllowEditing();
+	return mTextInput->isEditingAllowed();
 }
 
 void UITextEdit::setVerticalScrollMode( const UI_SCROLLBAR_MODE& Mode ) {
@@ -472,6 +472,27 @@ const UI_SCROLLBAR_MODE& UITextEdit::getHorizontalScrollMode() {
 
 UIFontStyleConfig UITextEdit::getFontStyleConfig() const {
 	return mTextInput->getFontStyleConfig();
+}
+
+std::string UITextEdit::getPropertyString( const PropertyDefinition* propertyDef ) {
+	if ( NULL == propertyDef ) return "";
+
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::Text:
+			return getText().toUtf8();
+		case PropertyId::AllowEditing:
+			return isEditingAllowed() ? "true" : "false";
+		case PropertyId::VScrollMode:
+			return getVerticalScrollMode() == UI_SCROLLBAR_AUTO ? "auto" : (
+				getVerticalScrollMode() == UI_SCROLLBAR_ALWAYS_ON ? "on" : "off"
+			);
+		case PropertyId::HScrollMode:
+			return getHorizontalScrollMode() == UI_SCROLLBAR_AUTO ? "auto" : (
+				getHorizontalScrollMode() == UI_SCROLLBAR_ALWAYS_ON ? "on" : "off"
+			);
+		default:
+			return UIWidget::getPropertyString( propertyDef );
+	}
 }
 
 bool UITextEdit::applyProperty( const StyleSheetProperty& attribute ) {

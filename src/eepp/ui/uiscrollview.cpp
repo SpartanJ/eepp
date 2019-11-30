@@ -241,6 +241,28 @@ bool UIScrollView::isTouchOverAllowedChilds() {
 	return isMouseOverMeOrChilds() && mScrollView->isMouseOverMeOrChilds() && ret;
 }
 
+std::string UIScrollView::getPropertyString( const PropertyDefinition* propertyDef ) {
+	if ( NULL == propertyDef ) return "";
+
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::VScrollMode:
+			return getVerticalScrollMode() == UI_SCROLLBAR_AUTO ? "auto" : (
+				getVerticalScrollMode() == UI_SCROLLBAR_ALWAYS_ON ? "on" : "off"
+			);
+		case PropertyId::HScrollMode:
+			return getHorizontalScrollMode() == UI_SCROLLBAR_AUTO ? "auto" : (
+				getHorizontalScrollMode() == UI_SCROLLBAR_ALWAYS_ON ? "on" : "off"
+			);
+		case PropertyId::ScrollBarType:
+			return mVScroll->getScrollBarType() == UIScrollBar::NoButtons ? "no-buttons" :
+																			   "two-buttons";
+		case PropertyId::ScrollBarMode:
+			return getViewType() == Inclusive ? "inclusive" : "exclusive";
+		default:
+			return UITouchDragableWidget::getPropertyString( propertyDef );
+	}
+}
+
 bool UIScrollView::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) ) return false;
 

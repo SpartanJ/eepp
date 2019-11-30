@@ -111,6 +111,8 @@ class EE_API UITabWidget : public UIWidget {
 		void setStyleConfig(const StyleConfig & styleConfig);
 
 		virtual bool applyProperty( const StyleSheetProperty& attribute );
+
+		virtual std::string getPropertyString(const PropertyDefinition* propertyDef);
 	protected:
 		friend class UITab;
 
