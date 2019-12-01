@@ -10,7 +10,7 @@ using namespace EE::Math;
 
 namespace EE { namespace UI { namespace CSS {
 
-class StyleSheetLength {
+class EE_API StyleSheetLength {
 	public:
 		enum Unit {
 			Percentage,
@@ -61,8 +61,6 @@ class StyleSheetLength {
 		Unit mUnit;
 		Float mValue;
 };
-
-typedef StyleSheetLength CSSLength;
 
 }}}
 

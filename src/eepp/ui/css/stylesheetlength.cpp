@@ -85,16 +85,16 @@ Float StyleSheetLength::asPixels( const Float& parentSize, const Sizef& viewSize
 			ret = mValue * displayDpi * 0.3937f / 10.f;
 			break;
 		case Unit::Vw:
-			ret = viewSize.getWidth() * mValue / 100.0;
+			ret = viewSize.getWidth() * mValue / 100.f;
 			break;
 		case Unit::Vh:
 			ret = viewSize.getHeight() * mValue / 100.f;
 			break;
 		case Unit::Vmin:
-			ret = std::min( viewSize.getHeight(), viewSize.getWidth() ) * mValue / 100.f;
+			ret = eemin( viewSize.getHeight(), viewSize.getWidth() ) * mValue / 100.f;
 			break;
 		case Unit::Vmax:
-			ret = std::max( viewSize.getHeight(), viewSize.getWidth() ) * mValue / 100.f;
+			ret = eemax( viewSize.getHeight(), viewSize.getWidth() ) * mValue / 100.f;
 			break;
 		case Unit::Rem:
 			ret = globalFontSize * mValue;
