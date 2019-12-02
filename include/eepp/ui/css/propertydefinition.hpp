@@ -96,8 +96,6 @@ enum class PropertyId : Uint32 {
 	Src = String::hash( "src" ),
 	ScaleType = String::hash( "scale-type" ),
 	Tint = String::hash( "tint" ),
-	BackgroundPosition = String::hash( "background-position" ),
-	ForegroundPosition = String::hash( "foreground-position" ),
 	RotationOriginPoint = String::hash( "rotation-origin-point" ),
 	ScaleOriginPoint = String::hash( "scale-origin-point" ),
 	MaxTextLength = String::hash( "max-text-length" ),
@@ -190,7 +188,8 @@ enum class PropertyType : Uint32 {
 	NumberLength,
 	Color,
 	Vector2,
-	BackgroundSize
+	BackgroundSize,
+	ForegroundSize
 };
 
 enum class PropertyRelativeTarget : Uint32 {
@@ -201,7 +200,11 @@ enum class PropertyRelativeTarget : Uint32 {
 	ParentFontSize,
 	LineHeight,
 	LocalBlockWidth,
-	LocalBlockHeight
+	LocalBlockHeight,
+	BackgroundWidth,
+	BackgroundHeight,
+	ForegroundWidth,
+	ForegroundHeight
 };
 
 class EE_API PropertyDefinition {

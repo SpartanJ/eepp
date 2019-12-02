@@ -976,8 +976,9 @@ std::string UIWidget::getPropertyString( const PropertyDefinition* propertyDef )
 		case PropertyId::Flags:
 			return getFlagsString();
 		case PropertyId::BackgroundSize:
-			//return getBackground()->getLayer(0)->getSizeEq();
-			break;
+			return getBackground()->getLayer(0)->getSizeEq();
+		case PropertyId::ForegroundSize:
+			return getForeground()->getLayer(0)->getSizeEq();
 		case PropertyId::LayoutWeight:
 			return String::fromFloat( getLayoutWeight() );
 		case PropertyId::LayoutGravity:
@@ -988,12 +989,14 @@ std::string UIWidget::getPropertyString( const PropertyDefinition* propertyDef )
 			return getLayoutHeightRulesString();
 		case PropertyId::Clip:
 			return isClipped() ? "true" : "false";
-		case PropertyId::BackgroundPosition:
-			//return getBackground()->getLayer(0)->getPositionEq();
-			break;
-		case PropertyId::ForegroundPosition:
-			//return getForeground()->getLayer(0)->getPositionEq();
-			break;
+		case PropertyId::BackgroundPositionX:
+			return getBackground()->getLayer(0)->getPositionX();
+		case PropertyId::BackgroundPositionY:
+			return getBackground()->getLayer(0)->getPositionY();
+		case PropertyId::ForegroundPositionX:
+			return getForeground()->getLayer(0)->getPositionX();
+		case PropertyId::ForegroundPositionY:
+			return getForeground()->getLayer(0)->getPositionY();
 		case PropertyId::ScaleOriginPoint:
 			return getScaleOriginPoint().toString();
 		case PropertyId::BlendMode:
@@ -1300,11 +1303,17 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::Cursor:
 			mSceneNode->setCursor( Cursor::fromName( attribute.getValue() ) );
 			break;
-		case PropertyId::BackgroundPosition:
-			setBackgroundPosition( attribute.value(), 0 );
+		case PropertyId::BackgroundPositionX:
+			setBackgroundPositionX( attribute.value(), 0 );
 			break;
-		case PropertyId::ForegroundPosition:
-			setForegroundPosition( attribute.value(), 0 );
+		case PropertyId::BackgroundPositionY:
+			setBackgroundPositionY( attribute.value(), 0 );
+			break;
+		case PropertyId::ForegroundPositionX:
+			setForegroundPositionX( attribute.value(), 0 );
+			break;
+		case PropertyId::ForegroundPositionY:
+			setForegroundPositionY( attribute.value(), 0 );
 			break;
 		case PropertyId::RotationOriginPoint:
 			setRotationOriginPoint( attribute.asOriginPoint() );

@@ -9,6 +9,10 @@
 using namespace EE::Math;
 using namespace EE::Scene;
 
+namespace EE { namespace UI {
+class UIWidget;
+}} // namespace EE::UI
+
 namespace EE { namespace UI { namespace CSS {
 
 class EE_API StyleSheetPropertyTransition : public Action {
@@ -61,6 +65,8 @@ class EE_API StyleSheetPropertyTransition : public Action {
 	Time mDuration;
 	Time mElapsed;
 	Ease::Interpolation mType;
+
+	Float getContainerLength( UIWidget* node );
 };
 
 }}} // namespace EE::UI::CSS

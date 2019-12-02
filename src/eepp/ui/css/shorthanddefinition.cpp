@@ -6,15 +6,15 @@ using namespace EE::System;
 
 namespace EE { namespace UI { namespace CSS {
 
-ShorthandDefinition*
-ShorthandDefinition::New( const std::string& name, const std::vector<std::string>& properties,
-						  const ShorthandDefinition::ShorthandType& shorthandType ) {
+ShorthandDefinition* ShorthandDefinition::New( const std::string& name,
+											   const std::vector<std::string>& properties,
+											   const ShorthandType& shorthandType ) {
 	return eeNew( ShorthandDefinition, ( name, properties, shorthandType ) );
 }
 
-ShorthandDefinition::ShorthandDefinition(
-	const std::string& name, const std::vector<std::string>& properties,
-	const ShorthandDefinition::ShorthandType& shorthandType ) :
+ShorthandDefinition::ShorthandDefinition( const std::string& name,
+										  const std::vector<std::string>& properties,
+										  const ShorthandType& shorthandType ) :
 	mName( name ), mId( String::hash( name ) ), mProperties( properties ), mType( shorthandType ) {}
 
 const std::string& ShorthandDefinition::getName() const {
@@ -33,7 +33,7 @@ const std::vector<std::string>& ShorthandDefinition::getProperties() const {
 	return mProperties;
 }
 
-const ShorthandDefinition::ShorthandType& ShorthandDefinition::getType() const {
+const ShorthandType& ShorthandDefinition::getType() const {
 	return mType;
 }
 
@@ -107,6 +107,44 @@ ShorthandDefinition::parseShorthand( const ShorthandDefinition* shorthand, std::
 				properties.emplace_back( StyleSheetProperty( propNames[0], values[0] ) );
 				properties.emplace_back( StyleSheetProperty( propNames[1], values[0] ) );
 			}
+			break;
+		}
+		case ShorthandType::BackgroundPosition: {
+			std::vector<std::string> pos = String::split( value, ' ' );
+
+			if ( pos.size() == 1 )
+				pos.push_back( "center" );
+
+			if ( pos.size() == 2 ) {
+				int xFloatIndex = 0;
+				int yFloatIndex = 1;
+
+				if ( "bottom" == pos[0] || "top" == pos[0] ) {
+					xFloatIndex = 1;
+					yFloatIndex = 0;
+				}
+
+				properties.push_back( StyleSheetProperty( propNames[0], pos[xFloatIndex] ) );
+				properties.push_back( StyleSheetProperty( propNames[1], pos[yFloatIndex] ) );
+			} else if ( pos.size() > 2 ) {
+				if ( pos.size() == 3 ) {
+					pos.push_back( "0dp" );
+				}
+
+				int xFloatIndex = 0;
+				int yFloatIndex = 2;
+
+				if ( "bottom" == pos[0] || "top" == pos[0] ) {
+					xFloatIndex = 2;
+					yFloatIndex = 0;
+				}
+
+				properties.push_back( StyleSheetProperty(
+					propNames[0], pos[xFloatIndex] + " " + pos[xFloatIndex + 1] ) );
+				properties.push_back( StyleSheetProperty(
+					propNames[1], pos[yFloatIndex] + " " + pos[yFloatIndex + 1] ) );
+			}
+
 			break;
 		}
 		default:

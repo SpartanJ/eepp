@@ -13,6 +13,8 @@ enum class ShorthandId : Uint32 {
 	Transition = String::hash( "transition" ),
 	Background = String::hash( "background" ),
 	Foreground = String::hash( "foreground" ),
+	BackgroundPosition = String::hash( "background-position" ),
+	ForegroundPosition = String::hash( "foreground-position" ),
 	LayoutMargin = String::hash( "layout-margin" ),
 	LayoutMarginUnderscore = String::hash( "layout_margin" ),
 	FillerPadding = String::hash( "filler-padding" ),
@@ -20,11 +22,17 @@ enum class ShorthandId : Uint32 {
 	ScaleOriginPoint = String::hash( "scale-origin-point" )
 };
 
+enum class ShorthandType : Uint32 {
+	Box,
+	Background,
+	Vector2,
+	SingleValueVector,
+	BackgroundPosition
+};
+
 class ShorthandDefinition {
   public:
-	enum ShorthandType { Box, Background, Vector2, SingleValueVector };
-
-	static std::vector<StyleSheetProperty> parseShorthand(const ShorthandDefinition* shorthand,
+	static std::vector<StyleSheetProperty> parseShorthand( const ShorthandDefinition* shorthand,
 														   std::string value );
 
 	static ShorthandDefinition* New( const std::string& name,

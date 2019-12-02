@@ -44,7 +44,7 @@ const PropertyDefinition* PropertySpecification::getProperty( const std::string&
 
 ShorthandDefinition& PropertySpecification::registerShorthand(
 	const std::string& name, const std::vector<std::string>& properties,
-	const ShorthandDefinition::ShorthandType& shorthandType ) {
+	const ShorthandType& shorthandType ) {
 	ShorthandDefinition* shorthand = const_cast<ShorthandDefinition*>( getShorthand( name ) );
 
 	if ( NULL != shorthand ) {

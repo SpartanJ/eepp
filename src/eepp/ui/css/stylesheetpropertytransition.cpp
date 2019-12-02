@@ -1,5 +1,6 @@
 #include <eepp/math/easing.hpp>
 #include <eepp/ui/css/stylesheetpropertytransition.hpp>
+#include <eepp/ui/uinodedrawable.hpp>
 #include <eepp/ui/uiwidget.hpp>
 
 using namespace EE::Math::easing;
@@ -13,6 +14,8 @@ bool StyleSheetPropertyTransition::transitionSupported( const PropertyType& type
 		case PropertyType::NumberLength:
 		case PropertyType::Color:
 		case PropertyType::Vector2:
+		case PropertyType::BackgroundSize:
+		case PropertyType::ForegroundSize:
 			return true;
 		default:
 			return false;
@@ -92,7 +95,7 @@ void StyleSheetPropertyTransition::onUpdate( const Time& ) {
 											   mDuration.asMilliseconds() );
 				if ( mProperty->getType() == PropertyType::NumberFloat ) {
 					node->applyProperty(
-						StyleSheetProperty( mProperty, String::format( "%.2fpx", value ) ) );
+						StyleSheetProperty( mProperty, String::fromFloat( value, "px" ) ) );
 				} else {
 					node->applyProperty( StyleSheetProperty(
 						mProperty, String::format( "%dpx", static_cast<int>( value ) ) ) );
@@ -123,21 +126,7 @@ void StyleSheetPropertyTransition::onUpdate( const Time& ) {
 				break;
 			}
 			case PropertyType::NumberLength: {
-				Float containerLength = 0;
-				switch ( mProperty->getRelativeTarget() ) {
-					case PropertyRelativeTarget::ContainingBlockWidth:
-						containerLength = node->getParent()->getPixelsSize().getWidth();
-						break;
-					case PropertyRelativeTarget::ContainingBlockHeight:
-						containerLength = node->getParent()->getPixelsSize().getHeight();
-					case PropertyRelativeTarget::LocalBlockWidth:
-						containerLength = node->getPixelsSize().getWidth();
-						break;
-					case PropertyRelativeTarget::LocalBlockHeight:
-						containerLength = node->getPixelsSize().getHeight();
-					default:
-						break;
-				}
+				Float containerLength = getContainerLength( node );
 				Float start = node->convertLength( mStartValue, containerLength );
 				Float end = node->convertLength( mEndValue, containerLength );
 				Time time =
@@ -145,7 +134,11 @@ void StyleSheetPropertyTransition::onUpdate( const Time& ) {
 				Float value = easingCb[mType]( time.asMilliseconds(), start, end - start,
 											   mDuration.asMilliseconds() );
 				node->applyProperty(
-					StyleSheetProperty( mProperty, String::format( "%.2fpx", value ) ) );
+					StyleSheetProperty( mProperty, String::fromFloat( value, "px" ) ) );
+
+				if ( isDone() ) {
+					node->applyProperty( StyleSheetProperty( mProperty, mEndValue ) );
+				}
 				break;
 			}
 			case PropertyType::Vector2: {
@@ -157,14 +150,89 @@ void StyleSheetPropertyTransition::onUpdate( const Time& ) {
 										   mDuration.asMilliseconds() );
 				Float y = easingCb[mType]( time.asMilliseconds(), start.y, end.y - start.y,
 										   mDuration.asMilliseconds() );
+				node->applyProperty( StyleSheetProperty( mProperty, String::fromFloat( x ) + ", " +
+																		String::fromFloat( y ) ) );
+				if ( isDone() ) {
+					node->applyProperty( StyleSheetProperty( mProperty, mEndValue ) );
+				}
+				break;
+			}
+			case PropertyType::BackgroundSize: {
+				Sizef start(
+					node->getBackground()->getLayer( 0 )->calcDrawableSize( mStartValue ) );
+				Sizef end( node->getBackground()->getLayer( 0 )->calcDrawableSize( mEndValue ) );
+				Time time =
+					mElapsed.asMicroseconds() > mDuration.asMicroseconds() ? mDuration : mElapsed;
+				Float x = easingCb[mType]( time.asMilliseconds(), start.x, end.x - start.x,
+										   mDuration.asMilliseconds() );
+				Float y = easingCb[mType]( time.asMilliseconds(), start.y, end.y - start.y,
+										   mDuration.asMilliseconds() );
 				node->applyProperty(
-					StyleSheetProperty( mProperty, String::format( "%.2f, %.2f", x, y ) ) );
+					StyleSheetProperty( mProperty, String::fromFloat( x, "px" ) + " " +
+													   String::fromFloat( y, "px" ) ) );
+				if ( isDone() ) {
+					node->applyProperty( StyleSheetProperty( mProperty, mEndValue ) );
+				}
+				break;
+			}
+			case PropertyType::ForegroundSize: {
+				Sizef start(
+					node->getForeground()->getLayer( 0 )->calcDrawableSize( mStartValue ) );
+				Sizef end( node->getForeground()->getLayer( 0 )->calcDrawableSize( mEndValue ) );
+				Time time =
+					mElapsed.asMicroseconds() > mDuration.asMicroseconds() ? mDuration : mElapsed;
+				Float x = easingCb[mType]( time.asMilliseconds(), start.x, end.x - start.x,
+										   mDuration.asMilliseconds() );
+				Float y = easingCb[mType]( time.asMilliseconds(), start.y, end.y - start.y,
+										   mDuration.asMilliseconds() );
+				node->applyProperty(
+					StyleSheetProperty( mProperty, String::fromFloat( x, "px" ) + " " +
+													   String::fromFloat( y, "px" ) ) );
+				if ( isDone() ) {
+					node->applyProperty( StyleSheetProperty( mProperty, mEndValue ) );
+				}
 				break;
 			}
 			default:
 				break;
 		}
 	}
+}
+
+Float StyleSheetPropertyTransition::getContainerLength( UIWidget* node ) {
+	Float containerLength = 0;
+	switch ( mProperty->getRelativeTarget() ) {
+		case PropertyRelativeTarget::ContainingBlockWidth:
+			containerLength = node->getParent()->getPixelsSize().getWidth();
+			break;
+		case PropertyRelativeTarget::ContainingBlockHeight:
+			containerLength = node->getParent()->getPixelsSize().getHeight();
+		case PropertyRelativeTarget::LocalBlockWidth:
+			containerLength = node->getPixelsSize().getWidth();
+			break;
+		case PropertyRelativeTarget::LocalBlockHeight:
+			containerLength = node->getPixelsSize().getHeight();
+			break;
+		case PropertyRelativeTarget::BackgroundWidth:
+			containerLength = node->getPixelsSize().getWidth() -
+							  node->getBackground()->getLayer( 0 )->getDrawableSize().getWidth();
+			break;
+		case PropertyRelativeTarget::BackgroundHeight:
+			containerLength = node->getPixelsSize().getHeight() -
+							  node->getBackground()->getLayer( 0 )->getDrawableSize().getHeight();
+			break;
+		case PropertyRelativeTarget::ForegroundWidth:
+			containerLength = node->getPixelsSize().getWidth() -
+							  node->getForeground()->getLayer( 0 )->getDrawableSize().getWidth();
+			break;
+		case PropertyRelativeTarget::ForegroundHeight:
+			containerLength = node->getPixelsSize().getHeight() -
+							  node->getForeground()->getLayer( 0 )->getDrawableSize().getHeight();
+			break;
+		default:
+			break;
+	}
+	return containerLength;
 }
 
 const Time& StyleSheetPropertyTransition::getElapsed() const {

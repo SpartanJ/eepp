@@ -24,9 +24,10 @@ const PropertyDefinition* StyleSheetSpecification::getProperty( const std::strin
 	return mPropertySpecification.getProperty( name );
 }
 
-ShorthandDefinition& StyleSheetSpecification::registerShorthand(
-	const std::string& name, const std::vector<std::string>& properties,
-	const ShorthandDefinition::ShorthandType& shorthandType ) {
+ShorthandDefinition&
+StyleSheetSpecification::registerShorthand( const std::string& name,
+											const std::vector<std::string>& properties,
+											const ShorthandType& shorthandType ) {
 	return mPropertySpecification.registerShorthand( name, properties, shorthandType );
 }
 
@@ -60,19 +61,23 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "background-color", "", false ).setType( PropertyType::Color );
 	registerProperty( "background-image", "", false );
 	registerProperty( "background-position-x", "center", false )
+		.setRelativeTarget( PropertyRelativeTarget::BackgroundWidth )
 		.setType( PropertyType::NumberLength );
 	registerProperty( "background-position-y", "center", false )
+		.setRelativeTarget( PropertyRelativeTarget::BackgroundHeight )
 		.setType( PropertyType::NumberLength );
 	registerProperty( "background-repeat", "no-repeat", false );
 	registerProperty( "background-size", "auto", false ).setType( PropertyType::BackgroundSize );
 	registerProperty( "foreground-color", "", false ).setType( PropertyType::Color );
 	registerProperty( "foreground-image", "", false );
 	registerProperty( "foreground-position-x", "center", false )
+		.setRelativeTarget( PropertyRelativeTarget::ForegroundWidth )
 		.setType( PropertyType::NumberLength );
 	registerProperty( "foreground-position-y", "center", false )
+		.setRelativeTarget( PropertyRelativeTarget::ForegroundHeight )
 		.setType( PropertyType::NumberLength );
 	registerProperty( "foreground-repeat", "no-repeat", false );
-	registerProperty( "foreground-size", "", false ).setType( PropertyType::BackgroundSize );
+	registerProperty( "foreground-size", "", false ).setType( PropertyType::ForegroundSize );
 	registerProperty( "foreground-radius", "0px", false ).setType( PropertyType::NumberInt );
 	registerProperty( "border-color", "", false ).setType( PropertyType::Color );
 	registerProperty( "border-width", "", false ).setType( PropertyType::NumberFloat );
@@ -122,10 +127,18 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "clip", "", false ).setType( PropertyType::Bool );
 	registerProperty( "rotation", "", false ).setType( PropertyType::NumberFloat );
 	registerProperty( "scale", "", false ).setType( PropertyType::Vector2 );
-	registerProperty( "rotation-origin-point-x", "", false ).setType( PropertyType::NumberLength );
-	registerProperty( "rotation-origin-point-y", "", false ).setType( PropertyType::NumberLength );
-	registerProperty( "scale-origin-point-x", "", false ).setType( PropertyType::NumberLength );
-	registerProperty( "scale-origin-point-y", "", false ).setType( PropertyType::NumberLength );
+	registerProperty( "rotation-origin-point-x", "50%", false )
+		.setRelativeTarget( PropertyRelativeTarget::LocalBlockWidth )
+		.setType( PropertyType::NumberLength );
+	registerProperty( "rotation-origin-point-y", "50%", false )
+		.setRelativeTarget( PropertyRelativeTarget::LocalBlockHeight )
+		.setType( PropertyType::NumberLength );
+	registerProperty( "scale-origin-point-x", "50%", false )
+		.setRelativeTarget( PropertyRelativeTarget::LocalBlockWidth )
+		.setType( PropertyType::NumberLength );
+	registerProperty( "scale-origin-point-y", "50%", false )
+		.setRelativeTarget( PropertyRelativeTarget::LocalBlockHeight )
+		.setType( PropertyType::NumberLength );
 	registerProperty( "blend-mode", "", false );
 	registerProperty( "padding-left", "", false )
 		.setType( PropertyType::NumberLength )
@@ -263,30 +276,33 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "transition", "", false );
 
 	registerShorthand( "margin", {"margin-left", "margin-top", "margin-right", "margin-bottom"},
-					   ShorthandDefinition::ShorthandType::Box );
+					   ShorthandType::Box );
 	registerShorthand( "layout-margin",
 					   {"margin-left", "margin-top", "margin-right", "margin-bottom"},
-					   ShorthandDefinition::ShorthandType::Box );
+					   ShorthandType::Box );
 	registerShorthand( "layout_margin",
 					   {"margin-left", "margin-top", "margin-right", "margin-bottom"},
-					   ShorthandDefinition::ShorthandType::Box );
+					   ShorthandType::Box );
 	registerShorthand( "padding",
 					   {"padding-left", "padding-top", "padding-right", "padding-bottom"},
-					   ShorthandDefinition::ShorthandType::Box );
+					   ShorthandType::Box );
 	registerShorthand( "background", {"background-color", "background-image"},
-					   ShorthandDefinition::ShorthandType::Background );
+					   ShorthandType::Background );
 	registerShorthand( "foreground", {"foreground-color", "foreground-image"},
-					   ShorthandDefinition::ShorthandType::Background );
+					   ShorthandType::Background );
 	registerShorthand( "filler-padding",
 					   {"filler-padding-left", "filler-padding-top", "filler-padding-right",
 						"filler-padding-bottom"},
-					   ShorthandDefinition::ShorthandType::Box );
-	registerShorthand( "span", {"column-span", "row-span"},
-					   ShorthandDefinition::ShorthandType::SingleValueVector );
+					   ShorthandType::Box );
+	registerShorthand( "span", {"column-span", "row-span"}, ShorthandType::SingleValueVector );
+	registerShorthand( "background-position", {"background-position-x", "background-position-y"},
+					   ShorthandType::BackgroundPosition );
+	registerShorthand( "foreground-position", {"foreground-position-x", "foreground-position-y"},
+					   ShorthandType::BackgroundPosition );
 	/*registerShorthand( "rotation-origin-point", {"rotation-origin-point-x",
-	"rotation-origin-point-y"}, ShorthandDefinition::ShorthandType::Vector2 ); registerShorthand(
+	"rotation-origin-point-y"}, ShorthandType::Vector2 ); registerShorthand(
 	"scale-origin-point", {"scale-origin-point-x", "scale-origin-point-y"},
-					   ShorthandDefinition::ShorthandType::Vector2 );*/
+					   ShorthandType::Vector2 );*/
 }
 
 }}} // namespace EE::UI::CSS
