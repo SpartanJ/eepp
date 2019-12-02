@@ -81,6 +81,13 @@ void UINodeDrawable::setDrawablePositionY( int index, const std::string& positio
 
 void UINodeDrawable::setDrawableRepeat( int index, const std::string& repeatRule ) {
 	getLayer( index )->setRepeat( repeatFromText( repeatRule ) );
+
+	for ( auto& layIt : mGroup ) {
+		if ( layIt.second->getRepeat() != Repeat::NoRepeat ) {
+			setClipEnabled( true );
+			break;
+		}
+	}
 }
 
 void UINodeDrawable::setDrawableSize( int index, const std::string& sizeEq ) {
@@ -205,7 +212,8 @@ UINodeDrawable::LayerDrawable::LayerDrawable( UINodeDrawable* container ) :
 	mNeedsUpdate( false ),
 	mOwnsDrawable( false ),
 	mDrawable( NULL ),
-	mResourceChangeCbId( 0 ) {}
+	mResourceChangeCbId( 0 ),
+	mRepeat( Repeat::NoRepeat ) {}
 
 UINodeDrawable::LayerDrawable::~LayerDrawable() {
 	if ( NULL != mDrawable && 0 != mResourceChangeCbId && mDrawable->isDrawableResource() ) {
@@ -225,6 +233,21 @@ void UINodeDrawable::LayerDrawable::draw( const Vector2f& position ) {
 	draw( position, mSize );
 }
 
+static void repeatYdraw( Drawable* drawable, const Vector2f& position, const Vector2f& offset,
+						 const Sizef& size, const Sizef& drawableSize ) {
+	Float startY = position.y + offset.y - drawableSize.getHeight();
+	while ( startY > position.y - drawableSize.getHeight() ) {
+		drawable->draw( Vector2f( position.x + offset.x, startY ), drawableSize );
+		startY -= drawableSize.getHeight();
+	};
+	drawable->draw( position + offset, drawableSize );
+	startY = position.y + offset.y + drawableSize.getHeight();
+	while ( startY < position.y + size.getHeight() ) {
+		drawable->draw( Vector2f( position.x + offset.x, startY ), drawableSize );
+		startY += drawableSize.getHeight();
+	};
+}
+
 void UINodeDrawable::LayerDrawable::draw( const Vector2f& position, const Sizef& size ) {
 	if ( position != mPosition ) {
 		mPosition = position;
@@ -242,7 +265,45 @@ void UINodeDrawable::LayerDrawable::draw( const Vector2f& position, const Sizef&
 	if ( mNeedsUpdate )
 		update();
 
-	mDrawable->draw( mPosition + mOffset, mDrawableSize );
+	switch ( mRepeat ) {
+		case Repeat::NoRepeat:
+			mDrawable->draw( mPosition + mOffset, mDrawableSize );
+			break;
+		case Repeat::RepeatX: {
+			Float startX = mPosition.x + mOffset.x - mDrawableSize.getWidth();
+			while ( startX > mPosition.x - mDrawableSize.getWidth() ) {
+				mDrawable->draw( Vector2f( startX, mPosition.y + mOffset.y ), mDrawableSize );
+				startX -= mDrawableSize.getWidth();
+			};
+			mDrawable->draw( mPosition + mOffset, mDrawableSize );
+			startX = mPosition.x + mOffset.x + mDrawableSize.getWidth();
+			while ( startX < mPosition.x + mSize.getWidth() ) {
+				mDrawable->draw( Vector2f( startX, mPosition.y + mOffset.y ), mDrawableSize );
+				startX += mDrawableSize.getWidth();
+			};
+			break;
+		}
+		case Repeat::RepeatY: {
+			repeatYdraw( mDrawable, mPosition, mOffset, mSize, mDrawableSize );
+			break;
+		}
+		case Repeat::RepeatXY: {
+			Float startX = mPosition.x + mOffset.x - mDrawableSize.getWidth();
+			while ( startX > mPosition.x - mDrawableSize.getWidth() ) {
+				repeatYdraw( mDrawable, mPosition, Vector2f( startX - mPosition.x, mOffset.y ), mSize,
+							 mDrawableSize );
+				startX -= mDrawableSize.getWidth();
+			};
+			repeatYdraw( mDrawable, mPosition, mOffset, mSize, mDrawableSize );
+			startX = mPosition.x + mOffset.x + mDrawableSize.getWidth();
+			while ( startX < mPosition.x + mSize.getWidth() ) {
+				repeatYdraw( mDrawable, mPosition, Vector2f( startX - mPosition.x, mOffset.y ), mSize,
+							 mDrawableSize );
+				startX += mDrawableSize.getWidth();
+			};
+			break;
+		}
+	}
 }
 
 Sizef UINodeDrawable::LayerDrawable::getSize() {
@@ -277,6 +338,7 @@ void UINodeDrawable::LayerDrawable::setDrawable( Drawable* drawable, const bool&
 
 	mDrawable = drawable;
 	mOwnsDrawable = ownIt;
+	invalidate();
 
 	if ( mDrawable->isDrawableResource() ) {
 		mResourceChangeCbId = reinterpret_cast<DrawableResource*>( mDrawable )

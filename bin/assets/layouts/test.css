@@ -289,6 +289,7 @@ TabWidget {
 	background-image: url("file://assets/sprites/4.png");
 	background-size: auto;
 	background-position: bottom right;
+	background-repeat: repeat;
 	padding: 24dp;
 	transition: all 1s;
 }
@@ -306,6 +307,7 @@ TabWidget {
 	width: 1dp;
 	height: 1dp;
 	background-image: url(file://assets/icon/ee.png);
+	background-repeat: repeat;
 	background-position: center;
 	layout-gravity: center;
 	background-color: #333;
@@ -324,6 +326,7 @@ TabWidget {
 	background-image: url(file://assets/icon/ee.png);
 	background-position: bottom right;
 	background-size: 128px 128px;
+	background-repeat: no-repeat;
 	transition: all 1s;
 	clip: true;
 }
