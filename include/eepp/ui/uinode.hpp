@@ -93,11 +93,13 @@ class EE_API UINode : public Node {
 
 		UINode * setBackgroundColor( const Color& color );
 
-		UINode * setBackgroundPosition( const std::string& positionEq, int index = 0 );
+		UINode * setBackgroundPositionX( const std::string& positionX, int index = 0 );
+
+		UINode * setBackgroundPositionY( const std::string& positionY, int index = 0 );
 
 		UINode * setBackgroundRepeat( const std::string& repeatRule, int index = 0 );
 
-		UINode * setBackgroundSize( const std::string& sizeEq, int index = 0 );
+		UINode * setBackgroundSize( const std::string& size, int index = 0 );
 
 		Color getBackgroundColor() const;
 
@@ -111,11 +113,13 @@ class EE_API UINode : public Node {
 
 		UINode * setForegroundColor( const Color& color );
 
-		UINode * setForegroundPosition( const std::string& positionEq, int index = 0 );
+		UINode * setForegroundPositionX( const std::string& positionX, int index = 0 );
+
+		UINode * setForegroundPositionY( const std::string& positionY, int index = 0 );
 
 		UINode * setForegroundRepeat( const std::string& repeatRule, int index = 0 ) ;
 
-		UINode * setForegroundSize( const std::string& sizeEq, int index = 0 );
+		UINode * setForegroundSize( const std::string& size, int index = 0 );
 
 		Color getForegroundColor() const;
 

@@ -3,6 +3,7 @@
 #include <eepp/graphics/drawablesearcher.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
 
 namespace EE { namespace UI {
 
@@ -283,38 +284,70 @@ void UIPushButton::setStyleConfig(const StyleConfig & styleConfig) {
 	onStateChange();
 }
 
-bool UIPushButton::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
-	const std::string& name = attribute.getName();
+std::string UIPushButton::getPropertyString( const PropertyDefinition* propertyDef ) {
+	if ( NULL == propertyDef ) return "";
 
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::Text:
+			return getText().toUtf8();
+		case PropertyId::Icon:
+			// TODO: Implement icon
+			return "";
+		case PropertyId::MinIconSize:
+			return String::format( "%ddp", mStyleConfig.IconMinSize.getWidth() ) + ", " +
+				   String::format( "%ddp", mStyleConfig.IconMinSize.getHeight() );
+		case PropertyId::IconHorizontalMargin:
+			return String::format( "%ddp", mStyleConfig.IconHorizontalMargin );
+		case PropertyId::IconAutoMargin:
+			return mStyleConfig.IconAutoMargin ? "true" : "false";
+		default:
+			return UIWidget::getPropertyString( propertyDef );
+	}
+}
+
+bool UIPushButton::applyProperty( const StyleSheetProperty& attribute ) {
 	bool attributeSet = true;
 
-	if ( "text" == name ) {
-		if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
-			setText( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( attribute.asString() ) );
-	} else if ( "icon" == name ) {
-		std::string val = attribute.asString();
-		Drawable * icon = NULL;
-
-		if ( NULL != mTheme && NULL != ( icon = mTheme->getIconByName( val ) ) ) {
-			setIcon( icon );
-		} else if ( NULL != ( icon = DrawableSearcher::searchByName( val ) ) ) {
-			setIcon( icon );
-		}
-	} else if ( "min-icon-size" == name || "miniconsize" == name ) {
-		setIconMinimumSize( attribute.asSizei() );
-	} else if ( "icon-horizontal-margin" == name || "iconhorizontalmargin" == name ) {
-		setIconHorizontalMargin( attribute.asDpDimensionI() );
-	} else if ( "icon-auto-margin" == name || "iconautomargin" == name ) {
-		mStyleConfig.IconAutoMargin = attribute.asBool();
-
-		if ( mStyleConfig.IconAutoMargin )
-			mNodeFlags |= NODE_FLAG_FREE_USE;
-	} else {
-		attributeSet = UIWidget::setAttribute( attribute, state );
+	if ( attribute.getPropertyDefinition() == NULL ) {
+		return false;
 	}
 
-	if ( !attributeSet && ( String::startsWith( name, "text" ) || String::startsWith( name, "font" ) ) )
-		mTextBox->setAttribute( attribute );
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::Text:
+			if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
+				setText( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( attribute.asString() ) );
+			break;
+		case PropertyId::Icon:
+		{
+			std::string val = attribute.asString();
+			Drawable * icon = NULL;
+
+			if ( NULL != mTheme && NULL != ( icon = mTheme->getIconByName( val ) ) ) {
+				setIcon( icon );
+			} else if ( NULL != ( icon = DrawableSearcher::searchByName( val ) ) ) {
+				setIcon( icon );
+			}
+			break;
+		}
+		case PropertyId::MinIconSize:
+			setIconMinimumSize( attribute.asSizei() );
+			break;
+		case PropertyId::IconHorizontalMargin:
+			setIconHorizontalMargin( attribute.asDpDimensionI() );
+			break;
+		case PropertyId::IconAutoMargin:
+			mStyleConfig.IconAutoMargin = attribute.asBool();
+
+			if ( mStyleConfig.IconAutoMargin )
+				mNodeFlags |= NODE_FLAG_FREE_USE;
+			break;
+		default:
+			attributeSet = UIWidget::applyProperty( attribute );
+			break;
+	}
+
+	if ( !attributeSet && ( String::startsWith( attribute.getName(), "text" ) || String::startsWith( attribute.getName(), "font" ) ) )
+		attributeSet = mTextBox->applyProperty( attribute );
 
 	return attributeSet;
 }

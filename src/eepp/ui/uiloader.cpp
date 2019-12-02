@@ -1,6 +1,7 @@
 #include <eepp/ui/uiloader.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/scene/scenenode.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
 
 namespace EE { namespace UI {
 
@@ -220,27 +221,61 @@ UILoader * UILoader::setAnimationSpeed( const Float& animationSpeed ) {
 	return this;
 }
 
-bool UILoader::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
-	std::string name = attribute.getName();
+std::string UILoader::getPropertyString( const PropertyDefinition* propertyDef ) {
+	if ( NULL == propertyDef ) return "";
 
-	if ( "indeterminate" == name ) {
-		setIndeterminate( attribute.asBool() );
-	} else if ( "max-progress" == name || "maxprogress" == name ) {
-		setMaxProgress( attribute.asFloat() );
-	} else if ( "progress" == name ) {
-		setProgress( attribute.asFloat() );
-	} else if ( "fill-color" == name || "fillcolor" == name ) {
-		setFillColor( attribute.asColor() );
-	} else if ( "radius" == name ) {
-		setRadius( attribute.asDpDimension() );
-	} else if ( "outline-thickness" == name || "outlinethickness" == name ) {
-		setOutlineThickness( attribute.asDpDimension() );
-	} else if ( "animation-speed" == name || "animationspeed" == name ) {
-		setAnimationSpeed( attribute.asFloat() );
-	} else if ( "arc-start-angle" == name || "arcstartangle" == name ) {
-		setArcStartAngle( attribute.asFloat() );
-	} else {
-		return UIWidget::setAttribute( attribute, state );
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::Indeterminate:
+			return isIndeterminate() ? "true" : "false";
+		case PropertyId::MaxProgress:
+			return String::fromFloat( getMaxProgress() );
+		case PropertyId::Progress:
+			return String::fromFloat( getProgress() );
+		case PropertyId::FillColor:
+			return getFillColor().toHexString();
+		case PropertyId::Radius:
+			return String::fromFloat( getRadius(), "dp" );
+		case PropertyId::OutlineThickness:
+			return String::fromFloat( getOutlineThickness(), "dp" );
+		case PropertyId::AnimationSpeed:
+			return String::fromFloat( getAnimationSpeed() );
+		case PropertyId::ArcStartAngle:
+			return String::fromFloat( getArcStartAngle() );
+		default:
+			return UIWidget::getPropertyString( propertyDef );
+	}
+}
+
+bool UILoader::applyProperty( const StyleSheetProperty& attribute ) {
+	if ( !checkPropertyDefinition( attribute ) ) return false;
+
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::Indeterminate:
+			setIndeterminate( attribute.asBool() );
+			break;
+		case PropertyId::MaxProgress:
+			setMaxProgress( attribute.asFloat() );
+			break;
+		case PropertyId::Progress:
+			setProgress( attribute.asFloat() );
+			break;
+		case PropertyId::FillColor:
+			setFillColor( attribute.asColor() );
+			break;
+		case PropertyId::Radius:
+			setRadius( attribute.asDpDimension() );
+			break;
+		case PropertyId::OutlineThickness:
+			setOutlineThickness( attribute.asDpDimension() );
+			break;
+		case PropertyId::AnimationSpeed:
+			setAnimationSpeed( attribute.asFloat() );
+			break;
+		case PropertyId::ArcStartAngle:
+			setArcStartAngle( attribute.asFloat() );
+			break;
+		default:
+			return UIWidget::applyProperty( attribute );
 	}
 
 	return true;

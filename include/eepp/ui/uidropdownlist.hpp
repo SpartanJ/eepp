@@ -42,7 +42,9 @@ class EE_API UIDropDownList : public UITextInput {
 
 		void setStyleConfig(const StyleConfig & styleConfig);
 
-		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
+		virtual bool applyProperty( const StyleSheetProperty& attribute );
+
+		virtual std::string getPropertyString( const PropertyDefinition* propertyDef );
 
 		virtual void loadFromXmlNode(const pugi::xml_node & node);
 	protected:

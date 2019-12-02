@@ -44,7 +44,7 @@ class EE_API UIMenu : public UIWidget {
 		Uint32 addSubMenu( const String& Text, Drawable * Icon = NULL, UIMenu * SubMenu = NULL );
 
 		UINode * getItem( const Uint32& Index );
-		
+
 		UINode * getItem( const String& Text );
 
 		Uint32 getItemIndex( UINode * Item );
@@ -75,7 +75,9 @@ class EE_API UIMenu : public UIWidget {
 
 		virtual void loadFromXmlNode( const pugi::xml_node& node );
 
-		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
+		virtual bool applyProperty( const StyleSheetProperty& attribute );
+
+		virtual std::string getPropertyString(const PropertyDefinition* propertyDef);
 
 		UINode * getOwnerNode() const;
 
@@ -104,19 +106,19 @@ class EE_API UIMenu : public UIWidget {
 		virtual Uint32 onMessage( const NodeMessage * Msg );
 
 		void setControlSize( UINode * Control, const Uint32& position );
-		
+
 		void resizeControls();
-		
+
 		void rePosControls();
-		
+
 		void resizeMe();
-		
+
 		UIMenuItem * createMenuItem( const String& Text, Drawable * Icon );
 
 		UIMenuCheckBox * createMenuCheckBox( const String& Text, const bool& Active );
 
 		UIMenuSubMenu * createSubMenu( const String& Text, Drawable * Icon, UIMenu * SubMenu );
-		
+
 		void onThemeLoaded();
 
 		bool checkControlSize( UINode * Control, const bool& Resize = true );

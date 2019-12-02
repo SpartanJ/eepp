@@ -25,7 +25,7 @@ class EE_API Console : protected LogReaderInterface {
 		/** Creates the console */
 		Console( Font* Font, const bool& MakeDefaultCommands = true, const bool& AttachToLog = true, const unsigned int& MaxLogLines = 1024, const Uint32& textureId = 0, EE::Window::Window * window = NULL );
 
-		~Console();
+		virtual ~Console();
 
 		/** Set the Console Height ( percent, between 0 and 1 ) when it's not in fullscreen  */
 		void setConsoleMinimizedHeight( const Float& MinHeight );
@@ -128,6 +128,8 @@ class EE_API Console : protected LogReaderInterface {
 		FontStyleConfig getFontStyleConfig() const;
 
 		void setFontStyleConfig(const FontStyleConfig & fontStyleConfig);
+
+		const bool& isFading() const { return mFading; }
 	protected:
 		std::map < String, ConsoleCallback > mCallbacks;
 		std::deque < String > mCmdLog;

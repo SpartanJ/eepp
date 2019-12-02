@@ -1,5 +1,6 @@
 #include <eepp/ui/uislider.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/graphics/textureregion.hpp>
 
 namespace EE { namespace UI {
@@ -435,33 +436,69 @@ Uint32 UISlider::onMessage(const NodeMessage * Msg) {
 	return 0;
 }
 
-bool UISlider::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
-	const std::string& name = attribute.getName();
+std::string UISlider::getPropertyString( const PropertyDefinition* propertyDef ) {
+	if ( NULL == propertyDef ) return "";
 
-	if ( "orientation" == name ) {
-		std::string val = attribute.asString();
-		String::toLowerInPlace( val );
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::Orientation:
+			return getOrientation() == UI_HORIZONTAL ? "horizontal" : "vertical";
+		case PropertyId::MinValue:
+			return String::fromFloat( getMinValue() );
+		case PropertyId::MaxValue:
+			return String::fromFloat( getMaxValue() );
+		case PropertyId::Value:
+			return String::fromFloat( getValue() );
+		case PropertyId::ClickStep:
+			return String::fromFloat( getClickStep() );
+		case PropertyId::PageStep:
+			return String::fromFloat( getPageStep() );
+		case PropertyId::HalfSlider:
+			return getAllowHalfSliderOut() ? "true" : "false";
+		case PropertyId::BackgroundExpand:
+			return getExpandBackground() ? "true" : "false";
+		default:
+			return UIWidget::getPropertyString( propertyDef );
+	}
+}
 
-		if ( "horizontal" == val )
-			setOrientation( UI_HORIZONTAL );
-		else if ( "vertical" == val )
-			setOrientation( UI_VERTICAL );
-	} else if ( "min-value" == name || "minvalue" == name ) {
-		setMinValue( attribute.asFloat() );
-	} else if ( "max-value" == name || "maxvalue" == name ) {
-		setMaxValue( attribute.asFloat() );
-	} else if ( "value" == name ) {
-		setValue( attribute.asFloat() );
-	} else if ( "click-step" == name || "clickstep" == name ) {
-		setClickStep( attribute.asFloat() );
-	} else if ( "page-step" == name || "pagestep" == name ) {
-		setPageStep( attribute.asFloat() );
-	} else if ( "half-slider" == name || "halfslider" == name ) {
-		setAllowHalfSliderOut( attribute.asBool() );
-	} else if ( "background-expand" == name || "backgroundexpand" == name ) {
-		setExpandBackground( attribute.asBool() );
-	} else {
-		return UIWidget::setAttribute( attribute, state );
+bool UISlider::applyProperty( const StyleSheetProperty& attribute ) {
+	if ( !checkPropertyDefinition( attribute ) ) return false;
+
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::Orientation:
+		{
+			std::string val = attribute.asString();
+			String::toLowerInPlace( val );
+
+			if ( "horizontal" == val )
+				setOrientation( UI_HORIZONTAL );
+			else if ( "vertical" == val )
+				setOrientation( UI_VERTICAL );
+			break;
+		}
+		case PropertyId::MinValue:
+			setMinValue( attribute.asFloat() );
+			break;
+		case PropertyId::MaxValue:
+			setMaxValue( attribute.asFloat() );
+			break;
+		case PropertyId::Value:
+			setValue( attribute.asFloat() );
+			break;
+		case PropertyId::ClickStep:
+			setClickStep( attribute.asFloat() );
+			break;
+		case PropertyId::PageStep:
+			setPageStep( attribute.asFloat() );
+			break;
+		case PropertyId::BackgroundExpand:
+			setExpandBackground( attribute.asBool() );
+			break;
+		case PropertyId::HalfSlider:
+			setAllowHalfSliderOut( attribute.asBool() );
+			break;
+		default:
+			return UIWidget::applyProperty( attribute );
 	}
 
 	return true;

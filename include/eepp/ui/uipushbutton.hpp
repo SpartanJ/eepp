@@ -48,7 +48,9 @@ class EE_API UIPushButton : public UIWidget {
 
 		void setStyleConfig(const StyleConfig & styleConfig);
 
-		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
+		virtual bool applyProperty( const StyleSheetProperty& attribute );
+
+		virtual std::string getPropertyString(const PropertyDefinition* propertyDef);
 	protected:
 		StyleConfig mStyleConfig;
 		UIImage * 	mIcon;

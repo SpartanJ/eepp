@@ -14,9 +14,9 @@ class EE_API UIGridLayout : public UILayout {
 		};
 
 		static UIGridLayout * New();
-		
+
 		UIGridLayout();
-		
+
 		virtual Uint32 getType() const;
 
 		virtual bool isType( const Uint32& type ) const;
@@ -49,7 +49,9 @@ class EE_API UIGridLayout : public UILayout {
 
 		UIGridLayout * setRowWeight(const Float & rowWeight);
 
-		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
+		virtual std::string getPropertyString( const PropertyDefinition* propertyDef );
+
+		virtual bool applyProperty( const StyleSheetProperty& attribute );
 	protected:
 		Sizei mSpan;
 		ElementMode mColumnMode;
@@ -60,11 +62,11 @@ class EE_API UIGridLayout : public UILayout {
 		int mRowHeight;
 
 		virtual void onSizeChange();
-		
+
 		virtual void onChildCountChange();
 
 		virtual void onPaddingChange();
-		
+
 		virtual void onParentSizeChange( const Vector2f& SizeChange );
 
 		virtual Uint32 onMessage( const NodeMessage * Msg );

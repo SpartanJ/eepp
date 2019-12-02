@@ -129,7 +129,7 @@ class EE_API UIWindow : public UIWidget {
 
 		virtual void loadFromXmlNode( const pugi::xml_node& node );
 
-		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
+		virtual bool applyProperty( const StyleSheetProperty& attribute );
 
 		virtual void internalDraw();
 
@@ -140,6 +140,10 @@ class EE_API UIWindow : public UIWidget {
 		FrameBuffer * getFrameBuffer() const;
 
 		virtual bool isDrawInvalidator() const;
+
+		virtual std::string getPropertyString(const PropertyDefinition* propertyDef);
+
+		std::string getWindowFlagsString();
 	protected:
 		class KeyboardShortcut {
 			public:

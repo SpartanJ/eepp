@@ -1,13 +1,12 @@
-#include <eepp/ui/css/stylesheetpropertiesparser.hpp>
 #include <eepp/math/rect.hpp>
-#include <eepp/scene/nodeattribute.hpp>
+#include <eepp/ui/css/stylesheetpropertiesparser.hpp>
+#include <eepp/ui/css/stylesheetspecification.hpp>
 
 using namespace EE::UI;
-using namespace EE::Scene;
 
 namespace EE { namespace UI { namespace CSS {
 
-StyleSheetPropertiesParser::StyleSheetPropertiesParser(){}
+StyleSheetPropertiesParser::StyleSheetPropertiesParser() {}
 
 StyleSheetPropertiesParser::StyleSheetPropertiesParser( const std::string& propsstr ) {
 	std::vector<std::string> props = String::split( propsstr, ';' );
@@ -17,7 +16,7 @@ StyleSheetPropertiesParser::StyleSheetPropertiesParser( const std::string& props
 	}
 }
 
-const StyleSheetProperties & StyleSheetPropertiesParser::getProperties() const {
+const StyleSheetProperties& StyleSheetPropertiesParser::getProperties() const {
 	return mProperties;
 }
 
@@ -28,33 +27,32 @@ void StyleSheetPropertiesParser::parse( std::string propsstr ) {
 	std::string buffer;
 
 	while ( pos < propsstr.size() ) {
-		switch (rs) {
-			case ReadingPropertyName:
-			{
-				pos = readPropertyName(rs, pos, buffer, propsstr);
-				break;
-			}
-			case ReadingPropertyValue:
-			{
-				pos = readPropertyValue(rs, pos, buffer, propsstr);
-				break;
-			}
-			case ReadingComment:
-			{
-				pos = readComment(rs, pos, buffer, propsstr);
-			}
-			default:
-				break;
+		switch ( rs ) {
+		case ReadingPropertyName: {
+			pos = readPropertyName( rs, pos, buffer, propsstr );
+			break;
+		}
+		case ReadingPropertyValue: {
+			pos = readPropertyValue( rs, pos, buffer, propsstr );
+			break;
+		}
+		case ReadingComment: {
+			pos = readComment( rs, pos, buffer, propsstr );
+		}
+		default:
+			break;
 		}
 	}
 }
 
-int StyleSheetPropertiesParser::readPropertyName(StyleSheetPropertiesParser::ReadState & rs, std::size_t pos, std::string & buffer, const std::string& str) {
+int StyleSheetPropertiesParser::readPropertyName( StyleSheetPropertiesParser::ReadState& rs,
+												  std::size_t pos, std::string& buffer,
+												  const std::string& str ) {
 	mPrevRs = rs;
 	buffer.clear();
 
 	while ( pos < str.size() ) {
-		if ( str[pos] == '/' && str.size() > pos + 1 && str[pos+1] == '*' ) {
+		if ( str[pos] == '/' && str.size() > pos + 1 && str[pos + 1] == '*' ) {
 			rs = ReadingComment;
 			return pos;
 		}
@@ -73,7 +71,9 @@ int StyleSheetPropertiesParser::readPropertyName(StyleSheetPropertiesParser::Rea
 	return pos;
 }
 
-int StyleSheetPropertiesParser::readPropertyValue(StyleSheetPropertiesParser::ReadState & rs, std::size_t pos, std::string & buffer, const std::string& str) {
+int StyleSheetPropertiesParser::readPropertyValue( StyleSheetPropertiesParser::ReadState& rs,
+												   std::size_t pos, std::string& buffer,
+												   const std::string& str ) {
 	std::string propName( buffer );
 
 	buffer.clear();
@@ -81,7 +81,7 @@ int StyleSheetPropertiesParser::readPropertyValue(StyleSheetPropertiesParser::Re
 	mPrevRs = rs;
 
 	while ( pos < str.size() ) {
-		if ( str[pos] == '/' && str.size() > pos + 1 && str[pos+1] == '*' ) {
+		if ( str[pos] == '/' && str.size() > pos + 1 && str[pos + 1] == '*' ) {
 			rs = ReadingComment;
 			return pos;
 		}
@@ -111,11 +111,13 @@ int StyleSheetPropertiesParser::readPropertyValue(StyleSheetPropertiesParser::Re
 	return pos;
 }
 
-int StyleSheetPropertiesParser::readComment(StyleSheetPropertiesParser::ReadState & rs, std::size_t pos, std::string & buffer, const std::string & str) {
+int StyleSheetPropertiesParser::readComment( StyleSheetPropertiesParser::ReadState& rs,
+											 std::size_t pos, std::string& buffer,
+											 const std::string& str ) {
 	buffer.clear();
 
 	while ( pos < str.size() ) {
-		if ( str[pos] == '*' && str.size() > pos + 1 && str[pos+1] == '/' ) {
+		if ( str[pos] == '*' && str.size() > pos + 1 && str[pos + 1] == '/' ) {
 			rs = mPrevRs;
 			return pos + 2;
 		}
@@ -129,24 +131,15 @@ int StyleSheetPropertiesParser::readComment(StyleSheetPropertiesParser::ReadStat
 }
 
 void StyleSheetPropertiesParser::addProperty( const std::string& name, std::string value ) {
-	if ( name == "padding" ) {
-		value = String::toLower( String::trim( value ) );
-		Rectf rect( NodeAttribute( name, value ).asRectf() );
-		mProperties[ "padding-left" ] = StyleSheetProperty( "padding-left", String::toStr( rect.Left ) );
-		mProperties[ "padding-right" ] = StyleSheetProperty( "padding-right", String::toStr( rect.Right ) );
-		mProperties[ "padding-top" ] = StyleSheetProperty( "padding-top", String::toStr( rect.Top ) );
-		mProperties[ "padding-bottom" ] = StyleSheetProperty( "padding-bottom", String::toStr( rect.Bottom ) );
-	} else if ( name == "margin" ) {
-		value = String::toLower( String::trim( value ) );
-		Rect rect( NodeAttribute( name, value ).asRect() );
-		mProperties[ "margin-left" ] = StyleSheetProperty( "margin-left", String::toStr( rect.Left ) );
-		mProperties[ "margin-right" ] = StyleSheetProperty( "margin-right", String::toStr( rect.Right ) );
-		mProperties[ "margin-top" ] = StyleSheetProperty( "margin-top", String::toStr( rect.Top ) );
-		mProperties[ "margin-bottom" ] = StyleSheetProperty( "margin-bottom", String::toStr( rect.Bottom ) );
+	if ( StyleSheetSpecification::instance()->isShorthand( name ) ) {
+		std::vector<StyleSheetProperty> properties = ShorthandDefinition::parseShorthand(
+			StyleSheetSpecification::instance()->getShorthand( name ), value );
+
+		for ( auto& property : properties )
+			mProperties[ property.getName() ] = property;
 	} else {
-		mProperties[ name ] = StyleSheetProperty( name, value );
+		mProperties[name] = StyleSheetProperty( name, value );
 	}
 }
 
-}}}
-
+}}} // namespace EE::UI::CSS

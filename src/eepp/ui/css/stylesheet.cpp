@@ -1,7 +1,7 @@
 #include <eepp/ui/css/stylesheet.hpp>
-#include <eepp/ui/css/stylesheetselector.hpp>
-#include <eepp/ui/css/stylesheetproperty.hpp>
 #include <eepp/ui/css/stylesheetelement.hpp>
+#include <eepp/ui/css/stylesheetproperty.hpp>
+#include <eepp/ui/css/stylesheetselector.hpp>
 #include <iostream>
 
 namespace EE { namespace UI { namespace CSS {
@@ -12,7 +12,7 @@ void StyleSheet::addStyle( const StyleSheetStyle& node ) {
 	auto nodeIt = mNodes.find( node.getSelector().getName() );
 
 	if ( nodeIt == mNodes.end() ) {
-		mNodes[ node.getSelector().getName() ] = node;
+		mNodes[node.getSelector().getName()] = node;
 	} else {
 		StyleSheetStyle& currentNode = nodeIt->second;
 
@@ -54,7 +54,8 @@ void StyleSheet::combineStyleSheet( const StyleSheet& styleSheet ) {
 	}
 }
 
-StyleSheetStyleVector StyleSheet::getElementStyles( StyleSheetElement * element , const bool& applyPseudo ) {
+StyleSheetStyleVector StyleSheet::getElementStyles( StyleSheetElement* element,
+													const bool& applyPseudo ) {
 	StyleSheetStyleVector styles;
 
 	for ( const auto& it : mNodes ) {
@@ -73,4 +74,4 @@ const StyleSheetStyleList& StyleSheet::getStyles() const {
 	return mNodes;
 }
 
-}}}
+}}} // namespace EE::UI::CSS

@@ -1,8 +1,9 @@
 #include <eepp/ui/uitooltip.hpp>
 #include <eepp/ui/uiwidget.hpp>
-#include <eepp/graphics/text.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/scene/actions/actions.hpp>
+#include <eepp/graphics/text.hpp>
 #include <eepp/graphics/fontmanager.hpp>
 
 namespace EE { namespace UI {
@@ -327,25 +328,68 @@ void UITooltip::setFontStyleConfig(const UIFontStyleConfig & styleConfig) {
 	mTextCache->setOutlineColor( mStyleConfig.OutlineColor );
 }
 
-bool UITooltip::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
-	const std::string& name = attribute.getName();
+std::string UITooltip::getPropertyString( const PropertyDefinition* propertyDef ) {
+	if ( NULL == propertyDef ) return "";
 
-	if ( "color" == name ) {
-		setFontColor( attribute.asColor() );
-	} else if ( "shadow-color" == name  || "textshadowcolor" == name ) {
-		setFontShadowColor( attribute.asColor() );
-	} else if ( "font-family" == name || "font-name" == name || "fontfamily" == name || "fontname" == name ) {
-		setFont( FontManager::instance()->getByName( attribute.asString() ) );
-	} else if ( "font-size" == name || "textsize" == name || "fontsize" == name ) {
-		setCharacterSize( attribute.asDpDimensionI() );
-	} else if ( "font-style" == name || "textstyle" == name || "fontstyle" == name ) {
-		setFontStyle( attribute.asFontStyle() );
-	} else if ( "text-stroke-width" == name || "fontoutlinethickness" == name ) {
-		setOutlineThickness( attribute.asDpDimension() );
-	} else if ( "text-stroke-color" == name || "fontoutlinecolor" == name ) {
-		setOutlineColor( attribute.asColor() );
-	} else {
-		return UIWidget::setAttribute( attribute, state );
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::Color:
+			return getFontColor().toHexString();
+		case PropertyId::ShadowColor:
+			return getFontShadowColor().toHexString();
+		case PropertyId::FontFamily:
+			return NULL != getFont() ? getFont()->getName() : "";
+		case PropertyId::FontSize:
+			return String::format( "%ddp", getCharacterSize() );
+		case PropertyId::FontStyle:
+			return Text::styleFlagToString( getFontStyle() );
+		case PropertyId::TextStrokeWidth:
+			return String::toStr( PixelDensity::dpToPx( getOutlineThickness() ) );
+		case PropertyId::TextStrokeColor:
+			return getOutlineColor().toHexString();
+		case PropertyId::TextAlign:
+			return fontHAlignGet( getFlags() ) == UI_HALIGN_CENTER ? "center" : (
+				fontHAlignGet( getFlags() ) == UI_HALIGN_RIGHT ? "right" : "left"
+			);
+		default:
+			return UIWidget::getPropertyString( propertyDef );
+	}
+}
+
+bool UITooltip::applyProperty( const StyleSheetProperty& attribute ) {
+	if ( !checkPropertyDefinition( attribute ) ) return false;
+
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::Color:
+			setFontColor( attribute.asColor() );
+			break;
+		case PropertyId::ShadowColor:
+			setFontShadowColor( attribute.asColor() );
+			break;
+		case PropertyId::FontFamily:
+			setFont( FontManager::instance()->getByName( attribute.asString() ) );
+			break;
+		case PropertyId::FontSize:
+			setCharacterSize( attribute.asDpDimensionI() );
+			break;
+		case PropertyId::FontStyle:
+			setFontStyle( attribute.asFontStyle() );
+			break;
+		case PropertyId::TextStrokeWidth:
+			setOutlineThickness( PixelDensity::dpToPx( attribute.asDpDimension() ) );
+			break;
+		case PropertyId::TextStrokeColor:
+			setOutlineColor( attribute.asColor() );
+			break;
+		case PropertyId::TextAlign:
+		{
+			std::string align = String::toLower( attribute.value() );
+			if ( align == "center" ) setFlags( UI_HALIGN_CENTER );
+			else if ( align == "left" ) setFlags( UI_HALIGN_LEFT );
+			else if ( align == "right" ) setFlags( UI_HALIGN_RIGHT );
+			break;
+		}
+		default:
+			return UIWidget::applyProperty( attribute );
 	}
 
 	return true;

@@ -1,5 +1,6 @@
 #include <eepp/ui/uiprogressbar.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/scene/scenenode.hpp>
 #include <eepp/graphics/globaltextureatlas.hpp>
 
@@ -206,32 +207,66 @@ UITextView * UIProgressBar::getTextBox() const {
 	return mTextBox;
 }
 
-bool UIProgressBar::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
-	const std::string& name = attribute.getName();
+std::string UIProgressBar::getPropertyString( const PropertyDefinition* propertyDef ) {
+	if ( NULL == propertyDef ) return "";
 
-	if ( "total-steps" == name || "totalsteps" == name ) {
-		setTotalSteps( attribute.asFloat() );
-	} else if ( "progress" == name ) {
-		setProgress( attribute.asFloat() );
-	} else if ( "vertical-expand" == name || "verticalexpand" == name ) {
-		setVerticalExpand( attribute.asBool() );
-	} else if ( "display-percent" == name || "displaypercent" == name ) {
-		setDisplayPercent( attribute.asBool() );
-	} else if ( "filler-padding" == name || "fillerpadding" == name ) {
-		Float val = attribute.asDpDimension();
-		setFillerPadding( Rectf( val, val, val, val ) );
-	} else if ( "filler-padding-left" == name || "fillerpaddingleft" == name ) {
-		setFillerPadding( Rectf( attribute.asDpDimension(), mStyleConfig.FillerPadding.Top, mStyleConfig.FillerPadding.Right, mStyleConfig.FillerPadding.Bottom ) );
-	} else if ( "filler-padding-right" == name || "fillerpaddingright" == name ) {
-		setFillerPadding( Rectf( mStyleConfig.FillerPadding.Left, mStyleConfig.FillerPadding.Top, attribute.asDpDimension(), mStyleConfig.FillerPadding.Bottom ) );
-	} else if ( "filler-padding-top" == name || "fillerpaddingtop" == name ) {
-		setFillerPadding( Rectf( mStyleConfig.FillerPadding.Left, attribute.asDpDimension(), mStyleConfig.FillerPadding.Right, mStyleConfig.FillerPadding.Bottom ) );
-	} else if ( "filler-padding-bottom" == name || "fillerpaddingbottom" == name ) {
-		setFillerPadding( Rectf( mStyleConfig.FillerPadding.Left, mStyleConfig.FillerPadding.Top, mStyleConfig.FillerPadding.Right, attribute.asDpDimension() ) );
-	} else if ( "movement-speed" == name || "movementspeed" == name ) {
-		setMovementSpeed( attribute.asVector2f() );
-	} else {
-		return UIWidget::setAttribute( attribute, state );
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::TotalSteps:
+			return String::fromFloat( getTotalSteps() );
+		case PropertyId::Progress:
+			return String::fromFloat( getProgress() );
+		case PropertyId::VerticalExpand:
+			return mStyleConfig.VerticalExpand ? "true" : "false";
+		case PropertyId::DisplayPercent:
+			return mStyleConfig.DisplayPercent ? "true" : "false";
+		case PropertyId::FillerPaddingLeft:
+			return String::fromFloat( mStyleConfig.FillerPadding.Left, "dp" );
+		case PropertyId::FillerPaddingTop:
+			return String::fromFloat( mStyleConfig.FillerPadding.Top, "dp" );
+		case PropertyId::FillerPaddingRight:
+			return String::fromFloat( mStyleConfig.FillerPadding.Right, "dp" );
+		case PropertyId::FillerPaddingBottom:
+			return String::fromFloat( mStyleConfig.FillerPadding.Bottom, "dp" );
+		case PropertyId::MovementSpeed:
+			return String::fromFloat( getMovementSpeed().x ) + ", " + String::fromFloat( getMovementSpeed().y );
+		default:
+			return UIWidget::getPropertyString( propertyDef );
+	}
+}
+
+bool UIProgressBar::applyProperty( const StyleSheetProperty& attribute ) {
+	if ( !checkPropertyDefinition( attribute ) ) return false;
+
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::TotalSteps:
+			setTotalSteps( attribute.asFloat() );
+			break;
+		case PropertyId::Progress:
+			setProgress( attribute.asFloat() );
+			break;
+		case PropertyId::VerticalExpand:
+			setVerticalExpand( attribute.asBool() );
+			break;
+		case PropertyId::DisplayPercent:
+			setDisplayPercent( attribute.asBool() );
+			break;
+		case PropertyId::FillerPaddingLeft:
+			setFillerPadding( Rectf( attribute.asDpDimension(), mStyleConfig.FillerPadding.Top, mStyleConfig.FillerPadding.Right, mStyleConfig.FillerPadding.Bottom ) );
+			break;
+		case PropertyId::FillerPaddingTop:
+			setFillerPadding( Rectf( mStyleConfig.FillerPadding.Left, attribute.asDpDimension(), mStyleConfig.FillerPadding.Right, mStyleConfig.FillerPadding.Bottom ) );
+			break;
+		case PropertyId::FillerPaddingRight:
+			setFillerPadding( Rectf( mStyleConfig.FillerPadding.Left, mStyleConfig.FillerPadding.Top, attribute.asDpDimension(), mStyleConfig.FillerPadding.Bottom ) );
+			break;
+		case PropertyId::FillerPaddingBottom:
+			setFillerPadding( Rectf( mStyleConfig.FillerPadding.Left, mStyleConfig.FillerPadding.Top, mStyleConfig.FillerPadding.Right, attribute.asDpDimension() ) );
+			break;
+		case PropertyId::MovementSpeed:
+			setMovementSpeed( attribute.asVector2f() );
+			break;
+		default:
+			return UIWidget::applyProperty( attribute );
 	}
 
 	return true;

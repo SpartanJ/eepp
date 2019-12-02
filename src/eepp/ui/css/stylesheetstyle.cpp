@@ -2,13 +2,11 @@
 
 namespace EE { namespace UI { namespace CSS {
 
-StyleSheetStyle::StyleSheetStyle()
-{}
+StyleSheetStyle::StyleSheetStyle() {}
 
-StyleSheetStyle::StyleSheetStyle( const std::string& selector, const StyleSheetProperties& properties ) :
-	mSelector( selector ),
-	mProperties( properties )
-{
+StyleSheetStyle::StyleSheetStyle( const std::string& selector,
+								  const StyleSheetProperties& properties ) :
+	mSelector( selector ), mProperties( properties ) {
 	for ( auto& it : mProperties ) {
 		it.second.setSpecificity( mSelector.getSpecificity() );
 		it.second.setVolatile( !mSelector.isCacheable() );
@@ -20,7 +18,6 @@ std::string StyleSheetStyle::build() {
 
 	css += mSelector.getName() + " {";
 
-
 	for ( auto& it : mProperties ) {
 		StyleSheetProperty& prop = it.second;
 
@@ -31,7 +28,6 @@ std::string StyleSheetStyle::build() {
 
 	return css;
 }
-
 
 const StyleSheetSelector& StyleSheetStyle::getSelector() const {
 	return mSelector;
@@ -50,12 +46,12 @@ StyleSheetProperty StyleSheetStyle::getPropertyByName( const std::string& name )
 	return StyleSheetProperty();
 }
 
-void StyleSheetStyle::setProperty( const StyleSheetProperty & property ) {
-	mProperties[ property.getName() ] = property;
+void StyleSheetStyle::setProperty( const StyleSheetProperty& property ) {
+	mProperties[property.getName()] = property;
 }
 
 void StyleSheetStyle::clearProperties() {
 	mProperties.clear();
 }
 
-}}}
+}}} // namespace EE::UI::CSS

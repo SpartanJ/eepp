@@ -65,7 +65,9 @@ class EE_API UISlider : public UIWidget {
 
 		void setPageStep( const Float & pageStep );
 
-		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
+		virtual bool applyProperty( const StyleSheetProperty& attribute );
+
+		virtual std::string getPropertyString(const PropertyDefinition* propertyDef);
 
 		Sizef getMinimumSize();
 	protected:

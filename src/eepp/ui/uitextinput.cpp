@@ -6,6 +6,7 @@
 #include <eepp/graphics/text.hpp>
 #include <pugixml/pugixml.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
 
 namespace EE { namespace UI {
 
@@ -219,7 +220,7 @@ UITextInput * UITextInput::setAllowEditing( const bool& allow ) {
 	return this;
 }
 
-const bool& UITextInput::getAllowEditing() const {
+const bool& UITextInput::isEditingAllowed() const {
 	return mAllowEditing;
 }
 
@@ -392,25 +393,53 @@ bool UITextInput::isFreeEditingEnabled() {
 	return mTextBuffer.isFreeEditingEnabled();
 }
 
-bool UITextInput::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
-	const std::string& name = attribute.getName();
+std::string UITextInput::getPropertyString( const PropertyDefinition* propertyDef ) {
+	if ( NULL == propertyDef ) return "";
 
-	if ( "text" == name ) {
-		if ( NULL != mSceneNode && mSceneNode->isUISceneNode() ) {
-			setText( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( attribute.asString() ) );
-		}
-	} else if ( "allow-editing" == name || "allowediting" == name ) {
-		setAllowEditing( attribute.asBool() );
-	} else if ( "max-length" == name || "maxlength" == name ) {
-		setMaxLength( attribute.asUint() );
-	} else if ( "free-editing" == name || "freeediting" == name ) {
-		setFreeEditing( attribute.asBool() );
-	} else if ( "only-numbers" == name || "onlynumbers" == name ) {
-		getInputTextBuffer()->setAllowOnlyNumbers( attribute.asBool(), getInputTextBuffer()->dotsInNumbersAllowed() );
-	} else if ( "allow-dot" == name || "allowdot" == name ) {
-		getInputTextBuffer()->setAllowOnlyNumbers( getInputTextBuffer()->onlyNumbersAllowed(), attribute.asBool() );
-	} else {
-		return UITextView::setAttribute( attribute, state );
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::Text:
+			return getText().toUtf8();
+		case PropertyId::AllowEditing:
+			return isEditingAllowed() ? "true" : "false";
+		case PropertyId::MaxLength:
+			return String::toStr( getMaxLength() );
+		case PropertyId::FreeEditing:
+			return isFreeEditingEnabled() ? "true" : "false";
+		case PropertyId::OnlyNumbers:
+			return getInputTextBuffer()->onlyNumbersAllowed() ? "true" : "false";
+		case PropertyId::AllowDot:
+			return getInputTextBuffer()->dotsInNumbersAllowed() ? "true" : "false";
+		default:
+			return UITextView::getPropertyString( propertyDef );
+	}
+}
+
+bool UITextInput::applyProperty( const StyleSheetProperty& attribute ) {
+	if ( !checkPropertyDefinition( attribute ) ) return false;
+
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::Text:
+			if ( NULL != mSceneNode && mSceneNode->isUISceneNode() ) {
+				setText( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( attribute.asString() ) );
+			}
+			break;
+		case PropertyId::AllowEditing:
+			setAllowEditing( attribute.asBool() );
+			break;
+		case PropertyId::MaxLength:
+			setMaxLength( attribute.asUint() );
+			break;
+		case PropertyId::FreeEditing:
+			setFreeEditing( attribute.asBool() );
+			break;
+		case PropertyId::OnlyNumbers:
+			getInputTextBuffer()->setAllowOnlyNumbers( attribute.asBool(), getInputTextBuffer()->dotsInNumbersAllowed() );
+			break;
+		case PropertyId::AllowDot:
+			getInputTextBuffer()->setAllowOnlyNumbers( getInputTextBuffer()->onlyNumbersAllowed(), attribute.asBool() );
+			break;
+		default:
+			return UITextView::applyProperty( attribute );
 	}
 
 	return true;

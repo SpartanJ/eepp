@@ -1,4 +1,5 @@
 #include <eepp/ui/uisprite.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/graphics/sprite.hpp>
 #include <eepp/scene/scenenode.hpp>
 #include <eepp/graphics/globaltextureatlas.hpp>
@@ -184,18 +185,34 @@ void UISprite::onSizeChange() {
 	UIWidget::onSizeChange();
 }
 
-bool UISprite::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
-	const std::string& name = attribute.getName();
+std::string UISprite::getPropertyString( const PropertyDefinition* propertyDef ) {
+	if ( NULL == propertyDef ) return "";
 
-	if ( "src" == name ) {
-		std::string val = attribute.asString();
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::Src:
+			// TODO: Implement src
+			return "";
+		default:
+			return UIWidget::getPropertyString( propertyDef );
+	}
+}
 
-		if ( val.size() ) {
-			setIsSpriteOwner( true );
-			setSprite( Sprite::New( val ) );
+bool UISprite::applyProperty( const StyleSheetProperty& attribute ) {
+	if ( !checkPropertyDefinition( attribute ) ) return false;
+
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::Src:
+		{
+			std::string val = attribute.asString();
+
+			if ( val.size() ) {
+				setIsSpriteOwner( true );
+				setSprite( Sprite::New( val ) );
+			}
+			break;
 		}
-	} else {
-		return UIWidget::setAttribute( attribute, state );
+		default:
+			return UIWidget::applyProperty( attribute );
 	}
 
 	return true;

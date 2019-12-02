@@ -4,6 +4,7 @@
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/ui/uistyle.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
 
 namespace EE { namespace UI {
 
@@ -118,29 +119,66 @@ void UITabWidget::setStyleConfig(const StyleConfig & styleConfig) {
 	orderTabs();
 }
 
-bool UITabWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
-	const std::string& name = attribute.getName();
+std::string UITabWidget::getPropertyString( const PropertyDefinition* propertyDef ) {
+	if ( NULL == propertyDef ) return "";
 
-	if ( "max-text-length" == name || "maxtextlength" == name ) {
-		setMaxTextLength( attribute.asUint(1) );
-	} else if ( "min-tab-width" == name || "mintabwidth" == name ) {
-		setMinTabWidth( attribute.asUint(1) );
-	} else if ( "max-tab-width" == name || "maxtabwidth" == name ) {
-		setMaxTabWidth( attribute.asUint() );
-	} else if ( "tab-closable" == name || "tabclosable" == name ) {
-		setTabsClosable( attribute.asBool() );
-	} else if ( "special-border-tabs" == name || "specialbordertabs" == name ) {
-		setSpecialBorderTabs( attribute.asBool() );
-	} else if ( "line-below-tabs" == name || "linebelowtabs" == name ) {
-		setDrawLineBelowTabs( attribute.asBool() );
-	} else if ( "line-below-tabs-color" == name || "linebelowtabscolor" == name ) {
-		setLineBelowTabsColor( attribute.asColor() );
-	} else if ( "line-below-tabs-y-offset" == name || "linebelowtabsyoffset" == name ) {
-		setLineBelowTabsYOffset( attribute.asDpDimensionI() );
-	} else if ( "tab-separation" == name || "tabseparation" == name ) {
-		setTabSeparation( attribute.asDpDimensionI() );
-	} else {
-		return UIWidget::setAttribute( attribute, state );
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::MaxTextLength:
+			return String::toStr( getMaxTextLength() );
+		case PropertyId::MinTabWidth:
+			return String::format( "%ddp", getMinTabWidth() );
+		case PropertyId::MaxTabWidth:
+			return String::format( "%ddp", getMaxTabWidth() );
+		case PropertyId::TabClosable:
+			return getTabsClosable() ? "true" : "false";
+		case PropertyId::SpecialBorderTabs:
+			return getSpecialBorderTabs() ? "true" : "false";
+		case PropertyId::LineBelowTabs:
+			return getDrawLineBelowTabs() ? "true" : "false";
+		case PropertyId::LineBelowTabsColor:
+			return getLineBelowTabsColor().toHexString();
+		case PropertyId::LineBelowTabsYOffset:
+			return String::format( "%ddp", getLineBelowTabsYOffset() );
+		case PropertyId::TabSeparation:
+			return String::format( "%ddp", getTabSeparation() );
+		default:
+			return UIWidget::getPropertyString( propertyDef );
+	}
+}
+
+bool UITabWidget::applyProperty( const StyleSheetProperty& attribute ) {
+	if ( !checkPropertyDefinition( attribute ) ) return false;
+
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::MaxTextLength:
+			setMaxTextLength( attribute.asUint(1) );
+			break;
+		case PropertyId::MinTabWidth:
+			setMinTabWidth( attribute.asDpDimensionUint("1") );
+			break;
+		case PropertyId::MaxTabWidth:
+			setMaxTabWidth( attribute.asDpDimensionUint() );
+			break;
+		case PropertyId::TabClosable:
+			setTabsClosable( attribute.asBool() );
+			break;
+		case PropertyId::SpecialBorderTabs:
+			setSpecialBorderTabs( attribute.asBool() );
+			break;
+		case PropertyId::LineBelowTabs:
+			setDrawLineBelowTabs( attribute.asBool() );
+			break;
+		case PropertyId::LineBelowTabsColor:
+			setLineBelowTabsColor( attribute.asColor() );
+			break;
+		case PropertyId::LineBelowTabsYOffset:
+			setLineBelowTabsYOffset( attribute.asDpDimensionI() );
+			break;
+		case PropertyId::TabSeparation:
+			setTabSeparation( attribute.asDpDimensionI() );
+			break;
+		default:
+			return UIWidget::applyProperty( attribute );
 	}
 
 	return true;

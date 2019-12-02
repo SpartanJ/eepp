@@ -35,7 +35,7 @@ class EE_API UITextInput : public UITextView {
 
 		UITextInput * setAllowEditing( const bool& allow );
 
-		const bool& getAllowEditing() const;
+		const bool& isEditingAllowed() const;
 
 		virtual const String& getText();
 
@@ -51,7 +51,9 @@ class EE_API UITextInput : public UITextView {
 
 		bool isFreeEditingEnabled();
 
-		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
+		virtual bool applyProperty( const StyleSheetProperty& attribute );
+
+		virtual std::string getPropertyString(const PropertyDefinition* propertyDef);
 
 		virtual UIWidget * setPadding(const Rectf& padding);
 	protected:

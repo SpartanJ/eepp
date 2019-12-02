@@ -25,7 +25,9 @@ class EE_API UILinearLayout : public UILayout {
 
 		UILinearLayout * add( UIWidget * widget );
 
-		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
+		virtual bool applyProperty( const StyleSheetProperty& attribute );
+
+		virtual std::string getPropertyString(const PropertyDefinition* propertyDef);
 	protected:
 		UI_ORIENTATION mOrientation;
 

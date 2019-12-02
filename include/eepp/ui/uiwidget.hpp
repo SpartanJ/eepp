@@ -1,14 +1,20 @@
 #ifndef EE_UIUIWIDGET_HPP
 #define EE_UIUIWIDGET_HPP
 
-#include <eepp/scene/nodeattribute.hpp>
 #include <eepp/ui/uinode.hpp>
 #include <eepp/ui/css/stylesheetelement.hpp>
 #include <eepp/ui/css/stylesheetselector.hpp>
+#include <eepp/ui/css/stylesheetproperty.hpp>
 
 namespace pugi {
 class xml_node;
 }
+
+namespace EE { namespace UI { namespace CSS {
+class PropertyDefinition;
+}}}
+
+using namespace EE::UI::CSS;
 
 namespace EE { namespace UI {
 
@@ -101,9 +107,9 @@ class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
 
 		void notifyLayoutAttrChangeParent();
 
-		void setStyleSheetProperty( const std::string& name, const std::string& value, const Uint32& specificity = UINT32_MAX - 1/*SpecificityInline*/ );
+		void setStyleSheetInlineProperty( const std::string& name, const std::string& value, const Uint32& specificity = UINT32_MAX - 1/*SpecificityInline*/ );
 
-		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
+		virtual bool applyProperty( const StyleSheetProperty& attribute );
 
 		const Rectf& getPadding() const;
 
@@ -187,6 +193,12 @@ class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
 		}
 
 		std::vector<UIWidget*> querySelectorAll( const std::string& selector );
+
+		std::string getPropertyString( const std::string& property );
+
+		virtual std::string getPropertyString( const PropertyDefinition* propertyDef );
+
+		bool isSceneNodeLoading() const;
 	protected:
 		friend class UIManager;
 		friend class UISceneNode;
@@ -245,8 +257,6 @@ class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
 
 		void reportStyleStateChange();
 
-		bool isSceneNodeLoading() const;
-
 		std::string getLayoutWidthRulesString() const;
 
 		std::string getLayoutHeightRulesString() const;
@@ -262,6 +272,8 @@ class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
 		UIWidget * querySelector( const CSS::StyleSheetSelector& selector );
 
 		std::vector<UIWidget*> querySelectorAll( const CSS::StyleSheetSelector& selector );
+
+		bool checkPropertyDefinition( const StyleSheetProperty& property );
 };
 
 }}

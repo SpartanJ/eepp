@@ -1,16 +1,17 @@
-#include <eepp/ui/uiimage.hpp>
 #include <eepp/graphics/drawable.hpp>
-#include <eepp/graphics/sprite.hpp>
 #include <eepp/graphics/drawablesearcher.hpp>
+#include <eepp/graphics/sprite.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/uiimage.hpp>
 #include <eepp/ui/uithememanager.hpp>
 
 namespace EE { namespace UI {
 
-UIImage * UIImage::New() {
+UIImage* UIImage::New() {
 	return eeNew( UIImage, () );
 }
 
-UIImage *UIImage::NewWithTag( const std::string& tag ) {
+UIImage* UIImage::NewWithTag( const std::string& tag ) {
 	return eeNew( UIImage, ( tag ) );
 }
 
@@ -19,10 +20,9 @@ UIImage::UIImage( const std::string& tag ) :
 	mScaleType( UIScaleType::None ),
 	mDrawable( NULL ),
 	mColor(),
-	mAlignOffset(0,0),
-	mResourceChangeCb(0),
-	mDrawableOwner(false)
-{
+	mAlignOffset( 0, 0 ),
+	mResourceChangeCb( 0 ),
+	mDrawableOwner( false ) {
 	mFlags |= UI_AUTO_SIZE;
 
 	onAutoSize();
@@ -30,9 +30,7 @@ UIImage::UIImage( const std::string& tag ) :
 	applyDefaultTheme();
 }
 
-UIImage::UIImage() :
-	UIImage( "image" )
-{}
+UIImage::UIImage() : UIImage( "image" ) {}
 
 UIImage::~UIImage() {
 	safeDeleteDrawable();
@@ -46,14 +44,16 @@ bool UIImage::isType( const Uint32& type ) const {
 	return UIImage::getType() == type ? true : UIWidget::isType( type );
 }
 
-UIImage * UIImage::setDrawable(Drawable * drawable , bool ownIt ) {
+UIImage* UIImage::setDrawable( Drawable* drawable, bool ownIt ) {
 	safeDeleteDrawable();
 
 	mDrawable = drawable;
 	mDrawableOwner = ownIt;
 
 	if ( NULL != mDrawable && mDrawable->isDrawableResource() ) {
-		mResourceChangeCb = static_cast<DrawableResource*>( mDrawable )->pushResourceChangeCallback( cb::Make2( this, &UIImage::onDrawableResourceEvent ) );
+		mResourceChangeCb = static_cast<DrawableResource*>( mDrawable )
+								->pushResourceChangeCallback(
+									cb::Make2( this, &UIImage::onDrawableResourceEvent ) );
 	}
 
 	onAutoSize();
@@ -78,20 +78,23 @@ void UIImage::onAutoSize() {
 		}
 
 		if ( mLayoutWidthRules == WRAP_CONTENT ) {
-			setInternalPixelsWidth( (int)PixelDensity::dpToPx( mDrawable->getSize().getWidth() ) + mRealPadding.Left + mRealPadding.Right );
+			setInternalPixelsWidth( (int)PixelDensity::dpToPx( mDrawable->getSize().getWidth() ) +
+									mRealPadding.Left + mRealPadding.Right );
 		}
 
 		if ( mLayoutHeightRules == WRAP_CONTENT ) {
-			setInternalPixelsHeight( (int)PixelDensity::dpToPx( mDrawable->getSize().getHeight() ) + mRealPadding.Top + mRealPadding.Bottom );
+			setInternalPixelsHeight( (int)PixelDensity::dpToPx( mDrawable->getSize().getHeight() ) +
+									 mRealPadding.Top + mRealPadding.Bottom );
 		}
 	}
 }
 
 void UIImage::calcDestSize() {
 	if ( mScaleType == UIScaleType::Expand ) {
-		mDestSize = Sizef( mSize.x - mRealPadding.Left - mRealPadding.Right, mSize.y - mRealPadding.Top - mRealPadding.Bottom );
+		mDestSize = Sizef( mSize.x - mRealPadding.Left - mRealPadding.Right,
+						   mSize.y - mRealPadding.Top - mRealPadding.Bottom );
 	} else if ( mScaleType == UIScaleType::FitInside ) {
-		if ( NULL == mDrawable)
+		if ( NULL == mDrawable )
 			return;
 
 		Sizef pxSize( PixelDensity::dpToPx( mDrawable->getSize() ) );
@@ -107,7 +110,7 @@ void UIImage::calcDestSize() {
 			mDestSize = pxSize;
 		}
 	} else {
-		if ( NULL == mDrawable)
+		if ( NULL == mDrawable )
 			return;
 
 		mDestSize = mDrawable->getSize();
@@ -126,7 +129,9 @@ void UIImage::draw() {
 			calcDestSize();
 
 			mDrawable->setColor( mColor );
-			mDrawable->draw( Vector2f( (Float)mScreenPosi.x + (int)mAlignOffset.x, (Float)mScreenPosi.y + (int)mAlignOffset.y ), mDestSize );
+			mDrawable->draw( Vector2f( (Float)mScreenPosi.x + (int)mAlignOffset.x,
+									   (Float)mScreenPosi.y + (int)mAlignOffset.y ),
+							 mDestSize );
 			mDrawable->clearColor();
 		}
 	}
@@ -137,7 +142,7 @@ void UIImage::setAlpha( const Float& alpha ) {
 	mColor.a = (Uint8)alpha;
 }
 
-Drawable * UIImage::getDrawable() const {
+Drawable* UIImage::getDrawable() const {
 	return mDrawable;
 }
 
@@ -145,7 +150,7 @@ const Color& UIImage::getColor() const {
 	return mColor;
 }
 
-UIImage * UIImage::setColor( const Color& col ) {
+UIImage* UIImage::setColor( const Color& col ) {
 	mColor = col;
 	setAlpha( col.a );
 	return this;
@@ -156,9 +161,9 @@ void UIImage::autoAlign() {
 		return;
 
 	if ( HAlignGet( mFlags ) == UI_HALIGN_CENTER ) {
-		mAlignOffset.x = ( mSize.getWidth()- mDestSize.x ) / 2;
+		mAlignOffset.x = ( mSize.getWidth() - mDestSize.x ) / 2;
 	} else if ( fontHAlignGet( mFlags ) == UI_HALIGN_RIGHT ) {
-		mAlignOffset.x =  mSize.getWidth() - mDestSize.x - mRealPadding.Right;
+		mAlignOffset.x = mSize.getWidth() - mDestSize.x - mRealPadding.Right;
 	} else {
 		mAlignOffset.x = mRealPadding.Left;
 	}
@@ -185,7 +190,7 @@ void UIImage::safeDeleteDrawable() {
 	}
 }
 
-void UIImage::onDrawableResourceEvent( DrawableResource::Event event, DrawableResource * ) {
+void UIImage::onDrawableResourceEvent( DrawableResource::Event event, DrawableResource* ) {
 	if ( event == DrawableResource::Change ) {
 		invalidateDraw();
 	} else if ( event == DrawableResource::Unload ) {
@@ -209,42 +214,70 @@ const Vector2f& UIImage::getAlignOffset() const {
 	return mAlignOffset;
 }
 
-bool UIImage::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
-	const std::string& name = attribute.getName();
+std::string UIImage::getPropertyString( const PropertyDefinition* propertyDef ) {
+	if ( NULL == propertyDef )
+		return "";
 
-	if ( "src" == name ) {
-		Drawable * res = NULL;
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::Src:
+			// TODO: Implement src.
+			return "";
+		case PropertyId::Icon:
+			// TODO: Implement icon.
+			return "";
+		case PropertyId::ScaleType:
+			return getScaleType() == UIScaleType::FitInside
+					   ? "fit-inside"
+					   : ( getScaleType() == UIScaleType::Expand ? "expand" : "none" );
+		case PropertyId::Tint:
+			return getColor().toHexString();
+		default:
+			return UIWidget::getPropertyString( propertyDef );
+	}
+}
 
-		if ( NULL != ( res = DrawableSearcher::searchByName( attribute.asString() ) ) ) {
-			if ( res->getDrawableType() == Drawable::SPRITE )
-				mDrawableOwner = true;
+bool UIImage::applyProperty( const StyleSheetProperty& attribute ) {
+	if ( !checkPropertyDefinition( attribute ) )
+		return false;
 
-			setDrawable( res );
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::Src: {
+			Drawable* res = NULL;
+			if ( NULL != ( res = DrawableSearcher::searchByName( attribute.asString() ) ) ) {
+				if ( res->getDrawableType() == Drawable::SPRITE )
+					mDrawableOwner = true;
+
+				setDrawable( res );
+			}
+			break;
 		}
-	} else if ( "icon" == name ) {
-		std::string val = attribute.asString();
-		Drawable * icon = NULL;
-
-		if ( NULL != mTheme && NULL != ( icon = mTheme->getIconByName( val ) ) ) {
-			setDrawable( icon );
-		} else if ( NULL != ( icon = DrawableSearcher::searchByName( val ) ) ) {
-			setDrawable( icon );
+		case PropertyId::Icon: {
+			std::string val = attribute.asString();
+			Drawable* icon = NULL;
+			if ( NULL != mTheme && NULL != ( icon = mTheme->getIconByName( val ) ) ) {
+				setDrawable( icon );
+			} else if ( NULL != ( icon = DrawableSearcher::searchByName( val ) ) ) {
+				setDrawable( icon );
+			}
+			break;
 		}
-	} else if ( "scale-type" == name || "scaletype" == name ) {
-		std::string val = attribute.asString();
-		String::toLowerInPlace( val );
-
-		if ( "expand" == val ) {
-			setScaleType( UIScaleType::Expand );
-		} else if ( "fit-inside" == val || "fit_inside" == val || "fitinside" == val ) {
-			setScaleType( UIScaleType::FitInside );
-		} else if ( "none" == val ) {
-			setScaleType( UIScaleType::None );
+		case PropertyId::ScaleType: {
+			std::string val = attribute.asString();
+			String::toLowerInPlace( val );
+			if ( "expand" == val ) {
+				setScaleType( UIScaleType::Expand );
+			} else if ( "fit-inside" == val || "fit_inside" == val || "fitinside" == val ) {
+				setScaleType( UIScaleType::FitInside );
+			} else if ( "none" == val ) {
+				setScaleType( UIScaleType::None );
+			}
+			break;
 		}
-	} else if ( "tint" == name ) {
-		setColor( attribute.asColor() );
-	} else {
-		return UIWidget::setAttribute( attribute, state );
+		case PropertyId::Tint:
+			setColor( attribute.asColor() );
+			break;
+		default:
+			return UIWidget::applyProperty( attribute );
 	}
 
 	return true;
@@ -254,11 +287,11 @@ Uint32 UIImage::getScaleType() const {
 	return mScaleType;
 }
 
-UIImage * UIImage::setScaleType(const Uint32& scaleType) {
+UIImage* UIImage::setScaleType( const Uint32& scaleType ) {
 	mScaleType = scaleType;
 	calcDestSize();
 	invalidateDraw();
 	return this;
 }
 
-}}
+}} // namespace EE::UI

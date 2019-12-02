@@ -5,6 +5,7 @@
 #include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
 
 namespace EE { namespace UI {
 
@@ -570,18 +571,37 @@ void UIMenu::loadFromXmlNode( const pugi::xml_node& node ) {
 	endAttributesTransaction();
 }
 
-bool UIMenu::setAttribute(const NodeAttribute & attribute, const Uint32 & state) {
-	const std::string& name = attribute.getName();
+std::string UIMenu::getPropertyString( const PropertyDefinition* propertyDef ) {
+	if ( NULL == propertyDef ) return "";
 
-	if ( "min-width" == name || "minwidth" == name ) {
-		mStyleConfig.MinWidth = attribute.asInt();
-		onSizeChange();
-	} else if ( "min-margin-right" == name || "minmarginright" == name ) {
-		setMinRightMargin( attribute.asDpDimensionUint() );
-	} else if ( "min-icon-space" == name || "miniconspace" == name ) {
-		setMinSpaceForIcons( attribute.asDpDimensionUint() );
-	} else {
-		return UIWidget::setAttribute( attribute, state );
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::MinWidth:
+			return String::format( "%udp", mStyleConfig.MinWidth );
+		case PropertyId::MinMarginRight:
+			return String::format( "%udp", getMinRightMargin() );
+		case PropertyId::MinIconSpace:
+			return String::format( "%udp", mStyleConfig.MinSpaceForIcons );
+		default:
+			return UIWidget::getPropertyString( propertyDef );
+	}
+}
+
+bool UIMenu::applyProperty( const StyleSheetProperty & attribute ) {
+	if ( !checkPropertyDefinition( attribute ) ) return false;
+
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::MinWidth:
+			mStyleConfig.MinWidth = attribute.asDpDimensionI();
+			onSizeChange();
+			break;
+		case PropertyId::MinMarginRight:
+			setMinRightMargin( attribute.asDpDimensionUint() );
+			break;
+		case PropertyId::MinIconSpace:
+			setMinSpaceForIcons( attribute.asDpDimensionUint() );
+			break;
+		default:
+			return UIWidget::applyProperty( attribute );
 	}
 
 	return true;

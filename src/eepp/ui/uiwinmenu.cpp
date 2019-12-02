@@ -1,8 +1,9 @@
 #include <eepp/ui/uiwinmenu.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/graphics/textureregion.hpp>
 #include <eepp/scene/scenemanager.hpp>
-#include <eepp/ui/uiscenenode.hpp>
 #include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
@@ -158,19 +159,41 @@ void UIWinMenu::setFirstButtonMargin( const Uint32& buttonMargin ) {
 	refreshButtons();
 }
 
-bool UIWinMenu::setAttribute( const NodeAttribute& attribute, const Uint32 & state ) {
-	const std::string& name = attribute.getName();
+std::string UIWinMenu::getPropertyString( const PropertyDefinition* propertyDef ) {
+	if ( NULL == propertyDef ) return "";
 
-	if ( "margin-between-buttons" == name || "marginbetweenbuttons" == name ) {
-		setMarginBetweenButtons( attribute.asDpDimensionUint() );
-	} else if ( "button-margin" == name || "buttonmargin" == name ) {
-		setButtonMargin( attribute.asDpDimensionUint() );
-	} else if ( "menu-height" == name || "menuheight" == name ) {
-		setMenuHeight( attribute.asDpDimensionUint() );
-	} else if ( "first-button-margin-left" == name || "firstbuttonmarginleft" == name ) {
-		setFirstButtonMargin( attribute.asDpDimensionUint() );
-	} else {
-		return UIWidget::setAttribute( attribute, state );
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::MarginBetweenButtons:
+			return String::format( "%ddp", getMarginBetweenButtons() );
+		case PropertyId::ButtonMargin:
+			return String::format( "%ddp", getButtonMargin() );
+		case PropertyId::MenuHeight:
+			return String::format( "%ddp", getMenuHeight() );
+		case PropertyId::FirstButtonMarginLeft:
+			return String::format( "%ddp", getFirstButtonMargin() );
+		default:
+			return UIWidget::getPropertyString( propertyDef );
+	}
+}
+
+bool UIWinMenu::applyProperty( const StyleSheetProperty& attribute ) {
+	if ( !checkPropertyDefinition( attribute ) ) return false;
+
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::MarginBetweenButtons:
+			setMarginBetweenButtons( attribute.asDpDimensionUint() );
+			break;
+		case PropertyId::ButtonMargin:
+			setButtonMargin( attribute.asDpDimensionUint() );
+			break;
+		case PropertyId::MenuHeight:
+			setMenuHeight( attribute.asDpDimensionUint() );
+			break;
+		case PropertyId::FirstButtonMarginLeft:
+			setFirstButtonMargin( attribute.asDpDimensionUint() );
+			break;
+		default:
+			return UIWidget::applyProperty( attribute );
 	}
 
 	return true;

@@ -244,11 +244,11 @@ Tooltip {
 }
 
 #test_4 > RelativeLayout > TextView {
-	transition: all 0.125s;
+	transition: all 10s;
 }
 
 #test_4 > RelativeLayout:hover > TextView {
-	margin-left: 8dp;
+	margin-left: 800dp;
 }
 
 TabWidget {

@@ -58,9 +58,11 @@ class EE_API UIWinMenu : public UIWidget {
 
 		void setStyleConfig(const StyleConfig & styleConfig);
 
-		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
+		virtual bool applyProperty( const StyleSheetProperty& attribute );
 
 		virtual void loadFromXmlNode( const pugi::xml_node& node );
+
+		virtual std::string getPropertyString(const PropertyDefinition* propertyDef);
 	protected:
 		typedef std::list< std::pair< UISelectButton *, UIPopUpMenu * > > WinMenuList;
 

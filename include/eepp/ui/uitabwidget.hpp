@@ -110,7 +110,9 @@ class EE_API UITabWidget : public UIWidget {
 
 		void setStyleConfig(const StyleConfig & styleConfig);
 
-		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
+		virtual bool applyProperty( const StyleSheetProperty& attribute );
+
+		virtual std::string getPropertyString(const PropertyDefinition* propertyDef);
 	protected:
 		friend class UITab;
 

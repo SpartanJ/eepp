@@ -8,6 +8,7 @@ ColumnLimit: '100'
 CompactNamespaces: 'true'
 ConstructorInitializerAllOnOneLineOrOnePerLine: 'true'
 ContinuationIndentWidth: '4'
+IndentCaseLabels: 'true'
 IndentWidth: '4'
 PointerAlignment: Left
 SpacesInParentheses: 'true'

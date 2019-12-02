@@ -1,4 +1,5 @@
 #include <eepp/ui/uitextureregion.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/graphics/textureregion.hpp>
 #include <eepp/graphics/globaltextureatlas.hpp>
 #include <eepp/graphics/textureatlasmanager.hpp>
@@ -196,30 +197,57 @@ const Vector2f& UITextureRegion::getAlignOffset() const {
 	return mAlignOffset;
 }
 
-bool UITextureRegion::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
-	const std::string& name = attribute.getName();
+std::string UITextureRegion::getPropertyString( const PropertyDefinition* propertyDef ) {
+	if ( NULL == propertyDef )
+		return "";
 
-	if ( "src" == name ) {
-		Drawable * res = NULL;
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::Src:
+			// TODO: Implement src.
+			return "";
+		case PropertyId::ScaleType:
+			return getScaleType() == UIScaleType::FitInside
+					   ? "fit-inside"
+					   : ( getScaleType() == UIScaleType::Expand ? "expand" : "none" );
+		case PropertyId::Tint:
+			return getColor().toHexString();
+		default:
+			return UIWidget::getPropertyString( propertyDef );
+	}
+}
 
-		if ( NULL != ( res = TextureAtlasManager::instance()->getTextureRegionByName( attribute.asString() ) ) && res->getDrawableType() == Drawable::TEXTUREREGION ) {
-			setTextureRegion( static_cast<TextureRegion*>( res ) );
+bool UITextureRegion::applyProperty( const StyleSheetProperty& attribute ) {
+	if ( !checkPropertyDefinition( attribute ) ) return false;
+
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::Src:
+		{
+			Drawable * res = NULL;
+
+			if ( NULL != ( res = TextureAtlasManager::instance()->getTextureRegionByName( attribute.asString() ) ) && res->getDrawableType() == Drawable::TEXTUREREGION ) {
+				setTextureRegion( static_cast<TextureRegion*>( res ) );
+			}
+			break;
 		}
-	} else if ( "scale-type" == name || "scaletype" == name ) {
-		std::string val = attribute.asString();
-		String::toLowerInPlace( val );
+		case PropertyId::ScaleType:
+		{
+			std::string val = attribute.asString();
+			String::toLowerInPlace( val );
 
-		if ( "expand" == val ) {
-			setScaleType( UIScaleType::Expand );
-		} else if ( "fit_inside" == val || "fitinside" == val ) {
-			setScaleType( UIScaleType::FitInside );
-		} else if ( "none" == val ) {
-			setScaleType( UIScaleType::None );
+			if ( "expand" == val ) {
+				setScaleType( UIScaleType::Expand );
+			} else if ( "fit_inside" == val || "fitinside" == val ) {
+				setScaleType( UIScaleType::FitInside );
+			} else if ( "none" == val ) {
+				setScaleType( UIScaleType::None );
+			}
+			break;
 		}
-	} else if ( "tint" == name ) {
-		setColor( attribute.asColor() );
-	} else {
-		return UIWidget::setAttribute( attribute, state );
+		case PropertyId::Tint:
+			setColor( attribute.asColor() );
+			break;
+		default:
+			return UIWidget::applyProperty( attribute );
 	}
 
 	return true;

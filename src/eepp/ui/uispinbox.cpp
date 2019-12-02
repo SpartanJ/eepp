@@ -1,4 +1,5 @@
 #include <eepp/ui/uispinbox.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/graphics/textureregion.hpp>
 #include <eepp/scene/scenenode.hpp>
 
@@ -269,24 +270,47 @@ void UISpinBox::onPaddingChange() {
 	UIWidget::onPaddingChange();
 }
 
-bool UISpinBox::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
-	const std::string& name = attribute.getName();
+std::string UISpinBox::getPropertyString( const PropertyDefinition* propertyDef ) {
+	if ( NULL == propertyDef ) return "";
+
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::MinValue:
+			return String::fromFloat( getMinValue() );
+		case PropertyId::MaxValue:
+			return String::fromFloat( getMaxValue() );
+		case PropertyId::Value:
+			return String::fromFloat( getValue() );
+		case PropertyId::ClickStep:
+			return String::fromFloat( getClickStep() );
+		default:
+			return UIWidget::getPropertyString( propertyDef );
+	}
+}
+
+bool UISpinBox::applyProperty( const StyleSheetProperty& attribute ) {
+	if ( !checkPropertyDefinition( attribute ) ) return false;
 
 	bool attributeSet = true;
 
-	if ( "min-value" == name || "minvalue" == name ) {
-		setMinValue(attribute.asFloat() );
-	} else if ( "max-value" == name || "maxvalue" == name ) {
-		setMaxValue(attribute.asFloat() );
-	} else if ( "value" == name ) {
-		setValue(attribute.asFloat() );
-	} else if ( "click-step" == name || "clickstep" == name ) {
-		setClickStep(attribute.asFloat() );
-	} else {
-		attributeSet = UIWidget::setAttribute( attribute, state );
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::MinValue:
+			setMinValue(attribute.asFloat() );
+			break;
+		case PropertyId::MaxValue:
+			setMaxValue(attribute.asFloat() );
+			break;
+		case PropertyId::Value:
+			setValue(attribute.asFloat() );
+			break;
+		case PropertyId::ClickStep:
+			setClickStep(attribute.asFloat() );
+			break;
+		default:
+			attributeSet = UIWidget::applyProperty( attribute );
+			break;
 	}
 
-	mInput->setAttribute( attribute );
+	mInput->applyProperty( attribute );
 
 	return attributeSet;
 }

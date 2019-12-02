@@ -57,7 +57,7 @@ class EE_API Log : protected Mutex {
 		/** @brief Removes the reader interface */
 		void removeLogReader( LogReaderInterface * reader );
 
-		~Log();
+		virtual ~Log();
 	protected:
 		Log();
 

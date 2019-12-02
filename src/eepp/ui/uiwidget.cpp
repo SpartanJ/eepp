@@ -15,6 +15,8 @@
 #include <eepp/window/engine.hpp>
 #include <pugixml/pugixml.hpp>
 #include <algorithm>
+#include <eepp/ui/css/shorthanddefinition.hpp>
+#include <eepp/ui/css/stylesheetspecification.hpp>
 
 using namespace EE::Window;
 
@@ -893,6 +895,14 @@ std::vector<UIWidget*> UIWidget::querySelectorAll( const CSS::StyleSheetSelector
 	return widgets;
 }
 
+bool UIWidget::checkPropertyDefinition( const StyleSheetProperty& property ) {
+	if ( property.getPropertyDefinition() == NULL ) {
+		eePRINTL( "applyProperty: Property %s not defined!", property.getName().c_str() );
+		return false;
+	}
+	return true;
+}
+
 UIWidget* UIWidget::querySelector( const std::string& selector ) {
 	return querySelector( CSS::StyleSheetSelector( selector ) );
 }
@@ -901,572 +911,419 @@ std::vector<UIWidget*> UIWidget::querySelectorAll( const std::string& selector )
 	return querySelectorAll( CSS::StyleSheetSelector( selector ) );
 }
 
-void UIWidget::setStyleSheetProperty( const std::string& name, const std::string& value, const Uint32& specificity ) {
+std::string UIWidget::getPropertyString( const std::string& property ) {
+	return getPropertyString( StyleSheetSpecification::instance()->getProperty( property ) );
+}
+
+std::string UIWidget::getPropertyString( const PropertyDefinition* propertyDef ) {
+	if ( NULL == propertyDef ) return "";
+
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::X:
+			return String::fromFloat( getPosition().x, "dp" );
+		case PropertyId::Y:
+			return String::fromFloat( getPosition().y, "dp" );
+		case PropertyId::Width:
+			return String::fromFloat( getSize().getWidth(), "dp" );
+		case PropertyId::Height:
+			return String::fromFloat( getSize().getHeight(), "dp" );
+		case PropertyId::MarginLeft:
+			return String::format( "%ddp", getLayoutMargin().Left );
+		case PropertyId::MarginTop:
+			return String::format( "%ddp", getLayoutMargin().Top );
+		case PropertyId::MarginRight:
+			return String::format( "%ddp", getLayoutMargin().Right );
+		case PropertyId::MarginBottom:
+			return String::format( "%ddp", getLayoutMargin().Bottom );
+		case PropertyId::PaddingLeft:
+			return String::fromFloat( getPadding().Left, "dp" );
+		case PropertyId::PaddingTop:
+			return String::fromFloat( getPadding().Top, "dp" );
+		case PropertyId::PaddingRight:
+			return String::fromFloat( getPadding().Right, "dp" );
+		case PropertyId::PaddingBottom:
+			return String::fromFloat( getPadding().Bottom, "dp" );
+		case PropertyId::BackgroundColor:
+			return getBackgroundColor().toHexString();
+		case PropertyId::ForegroundColor:
+			return getForegroundColor().toHexString();
+		case PropertyId::ForegroundRadius:
+			return String::toStr( getForegroundRadius() );
+		case PropertyId::BorderColor:
+			return getBorderColor().toHexString();
+		case PropertyId::BorderRadius:
+			return String::toStr( getBorderRadius() );
+		case PropertyId::BorderWidth:
+			return String::fromFloat( getBorderWidth() );
+		case PropertyId::SkinColor:
+			return getSkinColor().toHexString();
+		case PropertyId::Rotation:
+			return String::fromFloat( getRotation() );
+		case PropertyId::Scale:
+			return String::fromFloat( getScale().x ) + ", " + String::fromFloat( getScale().y );
+		case PropertyId::Opacity:
+			return String::fromFloat( getAlpha() );
+		case PropertyId::Cursor:
+			return "arrow";
+		case PropertyId::Visible:
+			return isVisible() ? "true" : "false";
+		case PropertyId::Enabled:
+			return isEnabled() ? "true" : "false";
+		case PropertyId::Theme:
+			return NULL != mTheme ? mTheme->getName() : "";
+		case PropertyId::Skin:
+			return mSkinName;
+		case PropertyId::Flags:
+			return getFlagsString();
+		case PropertyId::BackgroundSize:
+			return getBackground()->getLayer(0)->getSizeEq();
+		case PropertyId::ForegroundSize:
+			return getForeground()->getLayer(0)->getSizeEq();
+		case PropertyId::LayoutWeight:
+			return String::fromFloat( getLayoutWeight() );
+		case PropertyId::LayoutGravity:
+			return getLayoutGravityString();
+		case PropertyId::LayoutWidth:
+			return getLayoutWidthRulesString();
+		case PropertyId::LayoutHeight:
+			return getLayoutHeightRulesString();
+		case PropertyId::Clip:
+			return isClipped() ? "true" : "false";
+		case PropertyId::BackgroundPositionX:
+			return getBackground()->getLayer(0)->getPositionX();
+		case PropertyId::BackgroundPositionY:
+			return getBackground()->getLayer(0)->getPositionY();
+		case PropertyId::ForegroundPositionX:
+			return getForeground()->getLayer(0)->getPositionX();
+		case PropertyId::ForegroundPositionY:
+			return getForeground()->getLayer(0)->getPositionY();
+		case PropertyId::ScaleOriginPoint:
+			return getScaleOriginPoint().toString();
+		case PropertyId::BlendMode:
+			return "";
+		default:
+			break;
+	}
+
+	return "";
+}
+
+void UIWidget::setStyleSheetInlineProperty( const std::string& name, const std::string& value, const Uint32& specificity ) {
 	if ( mStyle != NULL )
 		mStyle->setStyleSheetProperty( CSS::StyleSheetProperty( name, value, specificity ) );
 }
 
-#define SAVE_NORMAL_STATE_ATTR( ATTR_FORMATED ) \
-	if ( state != UIState::StateFlagNormal || ( state == UIState::StateFlagNormal && attribute.isVolatile() ) ) { \
-		CSS::StyleSheetProperty oldAttribute = mStyle->getStatelessStyleSheetProperty( attribute.getName() ); \
-		if ( oldAttribute.isEmpty() && mStyle->getPreviousState() == UIState::StateFlagNormal ) { \
-			mStyle->setStyleSheetProperty( CSS::StyleSheetProperty( attribute.getName(), ATTR_FORMATED ) ); \
-		} \
-	}
-
-bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
-	const std::string& name = attribute.getName();
-
+bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
+	if ( !checkPropertyDefinition( attribute ) ) return false;
 	bool attributeSet = true;
 
-	if ( "id" == name ) {
-		setId( attribute.value() );
-	} else if ( "class" == name ) {
-		addClasses( String::split( attribute.getValue(), ' ' ) );
-	} else if ( "x" == name ) {
-		SAVE_NORMAL_STATE_ATTR( String::format( "%.2f", getSize().getWidth() ) );
-
-		setLayoutWidthRules( FIXED );
-
-		Float newX = attribute.asDpDimensionI();
-
-		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			CSS::TransitionDefinition transitionInfo( mStyle->getTransition( attribute.getName() ) );
-
-			Action * action = Actions::MoveCoordinate::New( getPosition().x, newX, transitionInfo.duration, transitionInfo.timingFunction, Actions::MoveCoordinate::CoordinateX );
-
-			if ( Time::Zero != transitionInfo.delay )
-				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
-
-			runAction( action );
-		} else {
-			setInternalPosition( Vector2f( newX, mDpPos.y ) );
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::Id:
+			setId( attribute.value() );
+			break;
+		case PropertyId::Class:
+			addClasses( String::split( attribute.getValue(), ' ' ) );
+			break;
+		case PropertyId::X:
+			setLayoutWidthRules( FIXED );
+			setInternalPosition( Vector2f( attribute.asDpDimension(), mDpPos.y ) );
 			notifyLayoutAttrChange();
-		}
-	} else if ( "y" == name ) {
-		SAVE_NORMAL_STATE_ATTR( String::format( "%.2f", getSize().getWidth() ) );
-
-		setLayoutWidthRules( FIXED );
-
-		Float newY = attribute.asDpDimensionI();
-
-		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			CSS::TransitionDefinition transitionInfo( mStyle->getTransition( attribute.getName() ) );
-
-			Action * action = Actions::MoveCoordinate::New( getPosition().y, newY, transitionInfo.duration, transitionInfo.timingFunction, Actions::MoveCoordinate::CoordinateY );
-
-			if ( Time::Zero != transitionInfo.delay )
-				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
-
-			runAction( action );
-		} else {
-			setInternalPosition( Vector2f( mDpPos.x, newY ) );
+			break;
+		case PropertyId::Y:
+			setLayoutWidthRules( FIXED );
+			setInternalPosition( Vector2f( mDpPos.x, attribute.asDpDimensionI() ) );
 			notifyLayoutAttrChange();
-		}
-	} else if ( "width" == name ) {
-		SAVE_NORMAL_STATE_ATTR( String::format( "%.2f", getSize().getWidth() ) );
-
-		setLayoutWidthRules( FIXED );
-
-		Float newWidth = attribute.asDpDimensionI();
-
-		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			CSS::TransitionDefinition transitionInfo( mStyle->getTransition( attribute.getName() ) );
-			constexpr Uint32 tag = String::hash("width");
-
-			Action * action = Actions::ResizeWidth::New( getSize().getWidth(), newWidth, transitionInfo.duration, transitionInfo.timingFunction );
-
-			if ( Time::Zero != transitionInfo.delay )
-				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
-
-			action->setTag( tag );
-			removeActionsByTag( tag );
-			runAction( action );
-		} else {
-			setInternalWidth( newWidth );
+			break;
+		case PropertyId::Width:
+			setLayoutWidthRules( FIXED );
+			setInternalWidth( attribute.asDpDimensionI() );
 			notifyLayoutAttrChange();
-		}
-	} else if ( "height" == name ) {
-		SAVE_NORMAL_STATE_ATTR( String::format( "%.2f", getSize().getHeight() ) );
-
-		setLayoutHeightRules( FIXED );
-
-		Float newHeight = attribute.asDpDimensionI();
-
-		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			constexpr Uint32 tag = String::hash("height");
-			CSS::TransitionDefinition transitionInfo( mStyle->getTransition( attribute.getName() ) );
-
-			Action * action = Actions::ResizeHeight::New( getSize().getHeight(), newHeight, transitionInfo.duration, transitionInfo.timingFunction );
-
-			if ( Time::Zero != transitionInfo.delay )
-				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
-
-			action->setTag( tag );
-			removeActionsByTag( tag );
-			runAction( action );
-		} else {
-			setInternalHeight( newHeight );
+			break;
+		case PropertyId::Height:
+			setLayoutHeightRules( FIXED );
+			setInternalHeight( attribute.asDpDimensionI() );
 			notifyLayoutAttrChange();
-		}
-	} else if ( "background" == name ) {
-		if ( Color::isColorString( attribute.getValue() ) ) {
-			setAttribute( NodeAttribute( "background-color", attribute.getValue() ) );
-		} else {
-			setAttribute( NodeAttribute( "background-image", attribute.getValue() ) );
-		}
-	} else if ( "background-color" == name || "backgroundcolor" == name ) {
-		SAVE_NORMAL_STATE_ATTR( getBackgroundColor().toHexString() );
-
-		Color color = attribute.asColor();
-
-		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			CSS::TransitionDefinition transitionInfo( mStyle->getTransition( attribute.getName() ) );
-			Color start( getBackgroundColor() );
-
-			Action * action = Actions::Tint::New( start, color, true, transitionInfo.duration, transitionInfo.timingFunction, Actions::Tint::Background );
-
-			if ( Time::Zero != transitionInfo.delay )
-				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
-
-			runAction( action );
-		} else {
-			setBackgroundColor( color );
-		}
-	} else if ( "background-image" == name || "backgroundimage" == name ) {
-		drawablePropertySet( "background", attribute.getValue(), [&] ( Drawable * drawable, bool ownIt, int index ) {
-			setBackgroundDrawable( drawable, ownIt, index );
-		} );
-	} else if ( "background-position" == name || "backgroundposition" == name ) {
-		SAVE_NORMAL_STATE_ATTR( getBackground()->getLayer(0)->getPositionEq() );
-
-		/*if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			constexpr Uint32 tag = String::hash( "background-position" );
-
-			CSS::TransitionDefinition transitionInfo( mStyle->getTransition( attribute.getName() ) );
-
-			Action * action = UINodeDrawable::MoveAction::New( getBackground()->getLayer(0)->getPositionEq(), attribute.value(), transitionInfo.duration, transitionInfo.timingFunction );
-
-			if ( Time::Zero != transitionInfo.delay )
-				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
-
-			action->setTag( tag );
-			removeActionsByTag( tag );
-			runAction( action );
-		} else*/ {
-			setBackgroundPosition( attribute.value(), 0 );
-		}
-	} else if ( "background-repeat" == name || "backgroundrepeat" == name ) {
-		setBackgroundRepeat( attribute.value(), 0 );
-	} else if ( "background-size" == name || "backgroundsize" == name ) {
-		SAVE_NORMAL_STATE_ATTR( getBackground()->getLayer(0)->getSizeEq() );
-
-		setBackgroundSize( attribute.value(), 0 );
-	} else if ( "foreground" == name ) {
-		if ( Color::isColorString( attribute.getValue() ) ) {
-			setAttribute( NodeAttribute( "foreground-color", attribute.getValue() ) );
-		} else {
-			setAttribute( NodeAttribute( "foreground-image", attribute.getValue() ) );
-		}
-	} else if ( "foreground-color" == name || "foregroundcolor" == name ) {
-		SAVE_NORMAL_STATE_ATTR( getForegroundColor().toHexString() );
-
-		Color color = attribute.asColor();
-
-		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			CSS::TransitionDefinition transitionInfo( mStyle->getTransition( attribute.getName() ) );
-			Color start( getForegroundColor() );
-
-			Action * action = Actions::Tint::New( start, color, true, transitionInfo.duration, transitionInfo.timingFunction, Actions::Tint::Foreground );
-
-			if ( Time::Zero != transitionInfo.delay )
-				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
-
-			runAction( action );
-		} else {
-			setForegroundColor( color );
-		}
-	} else if ( "foreground-image" == name || "foregroundimage" == name ) {
-		drawablePropertySet( "foreground", attribute.getValue(), [&] ( Drawable * drawable, bool ownIt, int index ) {
-			setForegroundDrawable( drawable, ownIt, index );
-		} );
-	} else if ( "foreground-radius" == name || "foregroundradius" == name ) {
-		SAVE_NORMAL_STATE_ATTR( String::toStr( getForegroundRadius() ) );
-
-		setForegroundRadius( attribute.asUint() );
-	} else if ( "foreground-position" == name || "foregroundposition" == name ) {
-		setForegroundPosition( attribute.value(), 0 );
-	} else if ( "foreground-size" == name || "foregroundsize" == name ) {
-		setForegroundSize( attribute.value(), 0 );
-	} else if ( "border-color" == name || "bordercolor" == name ) {
-		SAVE_NORMAL_STATE_ATTR( getBorderColor().toHexString() )
-
-		Color color = attribute.asColor();
-
-		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			CSS::TransitionDefinition transitionInfo( mStyle->getTransition( attribute.getName() ) );
-			Color start( getBorderColor() );
-
-			Action * action = Actions::Tint::New( start, color, false, transitionInfo.duration, transitionInfo.timingFunction, Actions::Tint::Border );
-
-			if ( Time::Zero != transitionInfo.delay )
-				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
-
-			runAction( action );
-		} else {
-			setBorderColor( color );
-		}
-	} else if ( "border-width" == name || "borderwidth" == name ) {
-		SAVE_NORMAL_STATE_ATTR( String::toStr( getBorderWidth() ) );
-
-		setBorderWidth( attribute.asDpDimensionI("1") );
-	} else if ( "border-radius" == name || "borderradius" == name ) {
-		SAVE_NORMAL_STATE_ATTR( String::format( "%d", getBorderRadius() ) );
-
-		Uint32 borderRadius = PixelDensity::dpToPxI( attribute.asDpDimensionUint() );
-
-		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			CSS::TransitionDefinition transitionInfo( mStyle->getTransition( attribute.getName() ) );
-			Uint32 start( getBorderRadius() );
-
-			Action * action = Actions::ResizeBorderRadius::New( start, borderRadius, transitionInfo.duration, transitionInfo.timingFunction );
-
-			if ( Time::Zero != transitionInfo.delay )
-				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
-
-			runAction( action );
-		} else {
-			setBorderRadius( borderRadius );
-		}
-	} else if ( "visible" == name ) {
-		SAVE_NORMAL_STATE_ATTR( isVisible() ? "true" : "false" );
-
-		setVisible( attribute.asBool() );
-	} else if ( "enabled" == name ) {
-		SAVE_NORMAL_STATE_ATTR( isEnabled() ? "true" : "false" );
-
-		setEnabled( attribute.asBool() );
-	} else if ( "theme" == name ) {
-		if ( NULL != mTheme ) {
-			SAVE_NORMAL_STATE_ATTR( mTheme->getName() );
-		}
-
-		setThemeByName( attribute.asString() );
-
-		if ( !mSkinName.empty() )
+			break;
+		case PropertyId::BackgroundColor:
+			setBackgroundColor( attribute.asColor() );
+			break;
+		case PropertyId::BackgroundImage:
+			drawablePropertySet( "background", attribute.getValue(), [&] ( Drawable * drawable, bool ownIt, int index ) {
+				setBackgroundDrawable( drawable, ownIt, index );
+			} );
+			break;
+		case PropertyId::BackgroundRepeat:
+			setBackgroundRepeat( attribute.value(), 0 );
+			break;
+		case PropertyId::BackgroundSize:
+			setBackgroundSize( attribute.value(), 0 );
+			break;
+		case PropertyId::ForegroundColor:
+			setForegroundColor( attribute.asColor() );
+			break;
+		case PropertyId::ForegroundImage:
+			drawablePropertySet( "foreground", attribute.getValue(), [&] ( Drawable * drawable, bool ownIt, int index ) {
+				setForegroundDrawable( drawable, ownIt, index );
+			} );
+			break;
+		case PropertyId::ForegroundRadius:
+			setForegroundRadius( attribute.asUint() );
+			break;
+		case PropertyId::ForegroundSize:
+			setForegroundSize( attribute.value(), 0 );
+			break;
+		case PropertyId::BorderColor:
+			setBorderColor( attribute.asColor() );
+			break;
+		case PropertyId::BorderWidth:
+			setBorderWidth( attribute.asDpDimensionI("1") );
+			break;
+		case PropertyId::BorderRadius:
+			setBorderRadius( PixelDensity::dpToPxI( attribute.asDpDimensionUint() ));
+			break;
+		case PropertyId::Visible:
+			setVisible( attribute.asBool() );
+			break;
+		case PropertyId::Enabled:
+			setEnabled( attribute.asBool() );
+			break;
+		case PropertyId::Theme:
+			setThemeByName( attribute.asString() );
+			if ( !mSkinName.empty() ) setThemeSkin( mSkinName );
+			break;
+		case PropertyId::Skin:
+			mSkinName = attribute.asString();
 			setThemeSkin( mSkinName );
-	} else if ( "skin" == name ) {
-		SAVE_NORMAL_STATE_ATTR( mSkinName );
-		mSkinName = attribute.asString();
-		setThemeSkin( mSkinName );
-	} else if ( "skin-color" == name || "skincolor" == name ) {
-		SAVE_NORMAL_STATE_ATTR( getSkinColor().toHexString() );
+			break;
+		case PropertyId::SkinColor:
+			setSkinColor( attribute.asColor() );
+			break;
+		case PropertyId::Gravity:
+		{
+			std::string gravity = attribute.asString();
+			String::toLowerInPlace( gravity );
+			std::vector<std::string> strings = String::split( gravity, '|' );
 
-		Color color = attribute.asColor();
+			if ( strings.size() ) {
+				for ( std::size_t i = 0; i < strings.size(); i++ ) {
+					std::string cur = strings[i];
+					String::toLowerInPlace( cur );
 
-		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			CSS::TransitionDefinition transitionInfo( mStyle->getTransition( attribute.getName() ) );
-			Color start( getSkinColor() );
+					if ( "left" == cur )
+						setHorizontalAlign( UI_HALIGN_LEFT );
+					else if ( "right" == cur )
+						setHorizontalAlign( UI_HALIGN_RIGHT );
+					else if ( "center_horizontal" == cur )
+						setHorizontalAlign( UI_HALIGN_CENTER );
+					else if ( "top" == cur )
+						setVerticalAlign( UI_VALIGN_TOP );
+					else if ( "bottom" == cur )
+						setVerticalAlign( UI_VALIGN_BOTTOM );
+					else if ( "center_vertical" == cur ) {
+						setVerticalAlign( UI_VALIGN_CENTER );
+					} else if ( "center" == cur ) {
+						setHorizontalAlign( UI_HALIGN_CENTER );
+						setVerticalAlign( UI_VALIGN_CENTER );
+					}
+				}
 
-			Action * action = Actions::Tint::New( start, color, true, transitionInfo.duration, transitionInfo.timingFunction, Actions::Tint::Skin );
-
-			if ( Time::Zero != transitionInfo.delay )
-				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
-
-			runAction( action );
-		} else {
-			setSkinColor( color );
+				notifyLayoutAttrChange();
+			}
+			break;
 		}
-	} else if ( "gravity" == name ) {
-		std::string gravity = attribute.asString();
-		String::toLowerInPlace( gravity );
-		std::vector<std::string> strings = String::split( gravity, '|' );
+		case PropertyId::Flags:
+		{
+			std::string flags = attribute.asString();
+			String::toLowerInPlace( flags );
+			std::vector<std::string> strings = String::split( flags, '|' );
 
-		if ( strings.size() ) {
-			for ( std::size_t i = 0; i < strings.size(); i++ ) {
-				std::string cur = strings[i];
-				String::toLowerInPlace( cur );
+			if ( strings.size() ) {
+				for ( std::size_t i = 0; i < strings.size(); i++ ) {
+					std::string cur = strings[i];
+					String::toLowerInPlace( cur );
 
-				if ( "left" == cur )
-					setHorizontalAlign( UI_HALIGN_LEFT );
-				else if ( "right" == cur )
-					setHorizontalAlign( UI_HALIGN_RIGHT );
-				else if ( "center_horizontal" == cur )
-					setHorizontalAlign( UI_HALIGN_CENTER );
-				else if ( "top" == cur )
-					setVerticalAlign( UI_VALIGN_TOP );
-				else if ( "bottom" == cur )
-					setVerticalAlign( UI_VALIGN_BOTTOM );
-				else if ( "center_vertical" == cur ) {
-					setVerticalAlign( UI_VALIGN_CENTER );
-				} else if ( "center" == cur ) {
-					setHorizontalAlign( UI_HALIGN_CENTER );
-					setVerticalAlign( UI_VALIGN_CENTER );
+					if ( "auto_size" == cur || "autosize" == cur ) {
+						setFlags( UI_AUTO_SIZE );
+						notifyLayoutAttrChange();
+					} else if ( "clip" == cur ) {
+						clipEnable();
+					} else if ( "multi" == cur ) {
+						setFlags(  UI_MULTI_SELECT );
+					} else if ( "auto_padding" == cur || "autopadding" == cur ) {
+						setFlags( UI_AUTO_PADDING );
+						notifyLayoutAttrChange();
+					} else if ( "reportsizechangetochilds" == cur || "report_size_change_to_childs" == cur ) {
+						enableReportSizeChangeToChilds();
+					}
 				}
 			}
-
-			notifyLayoutAttrChange();
+			break;
 		}
-	} else if ( "flags" == name ) {
-		SAVE_NORMAL_STATE_ATTR( getFlagsString() );
+		case PropertyId::MarginLeft:
+			setLayoutMarginLeft( attribute.asDpDimensionI() );
+			break;
+		case PropertyId::MarginRight:
+			setLayoutMarginRight( attribute.asDpDimensionI() );
+			break;
+		case PropertyId::MarginTop:
+			setLayoutMarginTop( attribute.asDpDimensionI() );
+			break;
+		case PropertyId::MarginBottom:
+			setLayoutMarginBottom( attribute.asDpDimensionI() );
+			break;
+		case PropertyId::Tooltip:
+			setTooltipText( attribute.asString() );
+			break;
+		case PropertyId::LayoutWeight:
+			setLayoutWeight( attribute.asFloat() );
+			break;
+		case PropertyId::LayoutGravity:
+		{
+			std::string gravityStr = attribute.asString();
+			String::toLowerInPlace( gravityStr );
+			std::vector<std::string> strings = String::split( gravityStr, '|' );
+			Uint32 gravity = 0;
+			if ( strings.size() ) {
+				for ( std::size_t i = 0; i < strings.size(); i++ ) {
+					std::string cur = strings[i];
+					String::toLowerInPlace( cur );
 
-		std::string flags = attribute.asString();
-		String::toLowerInPlace( flags );
-		std::vector<std::string> strings = String::split( flags, '|' );
-
-		if ( strings.size() ) {
-			for ( std::size_t i = 0; i < strings.size(); i++ ) {
-				std::string cur = strings[i];
-				String::toLowerInPlace( cur );
-
-				if ( "auto_size" == cur || "autosize" == cur ) {
-					setFlags( UI_AUTO_SIZE );
-					notifyLayoutAttrChange();
-				} else if ( "clip" == cur ) {
-					clipEnable();
-				} else if ( "multi" == cur ) {
-					setFlags(  UI_MULTI_SELECT );
-				} else if ( "auto_padding" == cur || "autopadding" == cur ) {
-					setFlags( UI_AUTO_PADDING );
-					notifyLayoutAttrChange();
-				} else if ( "reportsizechangetochilds" == cur || "report_size_change_to_childs" == cur ) {
-					enableReportSizeChangeToChilds();
+					if ( "left" == cur )
+						gravity |= UI_HALIGN_LEFT;
+					else if ( "right" == cur )
+						gravity |= UI_HALIGN_RIGHT;
+					else if ( "center_horizontal" == cur )
+						gravity |= UI_HALIGN_CENTER;
+					else if ( "top" == cur )
+						gravity |= UI_VALIGN_TOP;
+					else if ( "bottom" == cur )
+						gravity |= UI_VALIGN_BOTTOM;
+					else if ( "center_vertical" == cur ) {
+						gravity |= UI_VALIGN_CENTER;
+					} else if ( "center" == cur ) {
+						gravity |= UI_VALIGN_CENTER | UI_HALIGN_CENTER;
+					}
 				}
+
+				setLayoutGravity( gravity );
 			}
+			break;
 		}
-	} else if ( String::startsWith( name, "margin" ) || String::startsWith( name, "layout_margin" ) ) {
-		SAVE_NORMAL_STATE_ATTR( String::format( "%d %d %d %d", mLayoutMargin.Left, mLayoutMargin.Top, mLayoutMargin.Right, mLayoutMargin.Bottom ) );
+		case PropertyId::LayoutWidth:
+		{
+			std::string val = attribute.asString();
+			String::toLowerInPlace( val );
 
-		Rect margin;
-		Uint32 marginFlag = 0;
-
-		if ( "margin" == name || "layout_margin" == name ) {
-			margin = attribute.asRect();
-			marginFlag = Actions::MarginMove::All;
-		} else if ( "margin-left" == name || "layout_marginleft" == name ) {
-			margin = Rect( attribute.asDpDimensionI(), mLayoutMargin.Top, mLayoutMargin.Right, mLayoutMargin.Bottom );
-			marginFlag = Actions::MarginMove::Left;
-		} else if ( "margin-right" == name || "layout_marginright" == name ) {
-			margin = Rect( mLayoutMargin.Left, mLayoutMargin.Top, attribute.asDpDimensionI(), mLayoutMargin.Bottom );
-			marginFlag = Actions::MarginMove::Right;
-		} else if ( "margin-top" == name || "layout_margintop" == name ) {
-			margin = Rect( mLayoutMargin.Left, attribute.asDpDimensionI(), mLayoutMargin.Right, mLayoutMargin.Bottom );
-			marginFlag = Actions::MarginMove::Top;
-		} else if ( "margin-bottom" == name || "layout_marginbottom" == name ) {
-			margin = Rect( mLayoutMargin.Left, mLayoutMargin.Top, mLayoutMargin.Right, attribute.asDpDimensionI() );
-			marginFlag = Actions::MarginMove::Bottom;
-		}
-
-		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			CSS::TransitionDefinition transitionInfo( mStyle->getTransition( attribute.getName() ) );
-			Action * action = Actions::MarginMove::New( mLayoutMargin, margin, transitionInfo.duration, transitionInfo.timingFunction, marginFlag );
-
-			if ( Time::Zero != transitionInfo.delay )
-				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
-
-			runAction( action );
-		} else {
-			setLayoutMargin( margin );
-		}
-	} else if ( "tooltip" == name ) {
-		setTooltipText( attribute.asString() );
-	} else if ( "layout_weight" == name || "layout-weight" == name ) {
-		SAVE_NORMAL_STATE_ATTR( String::toStr( getLayoutWeight() ) );
-
-		setLayoutWeight( attribute.asFloat() );
-	} else if ( "layout_gravity" == name || "layout-gravity" == name ) {
-		SAVE_NORMAL_STATE_ATTR( getLayoutGravityString() );
-
-		std::string gravityStr = attribute.asString();
-		String::toLowerInPlace( gravityStr );
-		std::vector<std::string> strings = String::split( gravityStr, '|' );
-		Uint32 gravity = 0;
-
-		if ( strings.size() ) {
-			for ( std::size_t i = 0; i < strings.size(); i++ ) {
-				std::string cur = strings[i];
-				String::toLowerInPlace( cur );
-
-				if ( "left" == cur )
-					gravity |= UI_HALIGN_LEFT;
-				else if ( "right" == cur )
-					gravity |= UI_HALIGN_RIGHT;
-				else if ( "center_horizontal" == cur )
-					gravity |= UI_HALIGN_CENTER;
-				else if ( "top" == cur )
-					gravity |= UI_VALIGN_TOP;
-				else if ( "bottom" == cur )
-					gravity |= UI_VALIGN_BOTTOM;
-				else if ( "center_vertical" == cur ) {
-					gravity |= UI_VALIGN_CENTER;
-				} else if ( "center" == cur ) {
-					gravity |= UI_VALIGN_CENTER | UI_HALIGN_CENTER;
-				}
+			if ( "match_parent" == val || "match-parent" == val ) {
+				setLayoutWidthRules( MATCH_PARENT );
+			} else if ( "wrap_content" == val || "wrap-content" == val ) {
+				setLayoutWidthRules( WRAP_CONTENT );
+			} else if ( "fixed" == val ) {
+				setLayoutWidthRules( FIXED );
+				unsetFlags( UI_AUTO_SIZE );
+			} else {
+				unsetFlags( UI_AUTO_SIZE );
+				setLayoutWidthRules( FIXED );
+				setInternalWidth( PixelDensity::toDpFromStringI( val ) );
+				onSizeChange();
 			}
-
-			setLayoutGravity( gravity );
+			break;
 		}
-	} else if ( "layout_width" == name || "layout-width" == name ) {
-		SAVE_NORMAL_STATE_ATTR( getLayoutWidthRulesString() );
+		case PropertyId::LayoutHeight:
+		{
+			std::string val = attribute.asString();
+			String::toLowerInPlace( val );
 
-		std::string val = attribute.asString();
-		String::toLowerInPlace( val );
-
-		if ( "match_parent" == val || "match-parent" == val ) {
-			setLayoutWidthRules( MATCH_PARENT );
-		} else if ( "wrap_content" == val || "wrap-content" == val ) {
-			setLayoutWidthRules( WRAP_CONTENT );
-		} else if ( "fixed" == val ) {
-			setLayoutWidthRules( FIXED );
-			unsetFlags( UI_AUTO_SIZE );
-		} else {
-			unsetFlags( UI_AUTO_SIZE );
-			setLayoutWidthRules( FIXED );
-			setInternalWidth( PixelDensity::toDpFromStringI( val ) );
-			onSizeChange();
+			if ( "match_parent" == val ) {
+				setLayoutHeightRules( MATCH_PARENT );
+			} else if ( "wrap_content" == val ) {
+				setLayoutHeightRules( WRAP_CONTENT );
+			} else if ( "fixed" == val ) {
+				setLayoutHeightRules( FIXED );
+				unsetFlags( UI_AUTO_SIZE );
+			} else {
+				unsetFlags( UI_AUTO_SIZE );
+				setLayoutHeightRules( FIXED );
+				setInternalHeight( PixelDensity::toDpFromStringI( val ) );
+				onSizeChange();
+			}
+			break;
 		}
-	} else if ( "layout_height" == name || "layout-height" == name ) {
-		SAVE_NORMAL_STATE_ATTR( getLayoutHeightRulesString() );
-
-		std::string val = attribute.asString();
-		String::toLowerInPlace( val );
-
-		if ( "match_parent" == val ) {
-			setLayoutHeightRules( MATCH_PARENT );
-		} else if ( "wrap_content" == val ) {
-			setLayoutHeightRules( WRAP_CONTENT );
-		} else if ( "fixed" == val ) {
-			setLayoutHeightRules( FIXED );
-			unsetFlags( UI_AUTO_SIZE );
-		} else {
-			unsetFlags( UI_AUTO_SIZE );
-			setLayoutHeightRules( FIXED );
-			setInternalHeight( PixelDensity::toDpFromStringI( val ) );
-			onSizeChange();
+		case PropertyId::LayoutToBottomOf:
+		case PropertyId::LayoutToLeftOf:
+		case PropertyId::LayoutToRightOf:
+		case PropertyId::LayoutToTopOf:
+		{
+			LayoutPositionRules rule = NONE;
+			PropertyId layoutId = static_cast<PropertyId>( attribute.getPropertyDefinition()->getId() );
+			if ( layoutId == PropertyId::LayoutToLeftOf ) rule = LEFT_OF;
+			else if ( layoutId == PropertyId::LayoutToRightOf ) rule = RIGHT_OF;
+			else if ( layoutId == PropertyId::LayoutToTopOf ) rule = TOP_OF;
+			else if ( layoutId == PropertyId::LayoutToBottomOf ) rule = BOTTOM_OF;
+			std::string id = attribute.asString();
+			Node * control = getParent()->find( id );
+			if ( NULL != control && control->isWidget() ) {
+				UIWidget * widget = static_cast<UIWidget*>( control );
+				setLayoutPositionRule( rule, widget );
+			}
+			break;
 		}
-	} else if ( String::startsWith( name, "layout_to_" ) || String::startsWith( name, "layoutto" ) ) {
-		// TODO: SAVE_NORMAL_STATE_ATTR
-
-		LayoutPositionRules rule = NONE;
-		if ( "layout_to_left_of" == name || "layouttoleftof" == name ) rule = LEFT_OF;
-		else if ( "layout_to_right_of" == name || "layouttorightof" == name ) rule = RIGHT_OF;
-		else if ( "layout_to_top_of" == name || "layouttotopof" == name ) rule = TOP_OF;
-		else if ( "layout_to_bottom_of" == name || "layouttobottomof" == name ) rule = BOTTOM_OF;
-
-		std::string id = attribute.asString();
-
-		Node * control = getParent()->find( id );
-
-		if ( NULL != control && control->isWidget() ) {
-			UIWidget * widget = static_cast<UIWidget*>( control );
-
-			setLayoutPositionRule( rule, widget );
-		}
-	} else if ( "clip" == name ) {
-		SAVE_NORMAL_STATE_ATTR( isClipped() ? "true" : "false" );
-
-		if ( attribute.asBool() )
-			clipEnable();
-		else
-			clipDisable();
-	} else if ( "rotation" == name ) {
-		SAVE_NORMAL_STATE_ATTR( String::format( "%2.f", mRotation ) )
-
-		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			CSS::TransitionDefinition transitionInfo( mStyle->getTransition( attribute.getName() ) );
-			Float newRotation( mStyle->getNodeAttribute( attribute.getName() ).asFloat() );
-			Action * action = Actions::Rotate::New( mRotation, newRotation, transitionInfo.duration, transitionInfo.timingFunction );
-
-			if ( Time::Zero != transitionInfo.delay )
-				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
-
-			runAction( action );
-		} else {
+		case PropertyId::Clip:
+			if ( attribute.asBool() ) clipEnable();
+			else clipDisable();
+			break;
+		case PropertyId::Rotation:
 			setRotation( attribute.asFloat() );
-		}
-	} else if ( "scale" == name ) {
-		SAVE_NORMAL_STATE_ATTR( String::format( "%2.f, %2.f", mScale.x, mScale.y ) )
-
-		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			CSS::TransitionDefinition transitionInfo( mStyle->getTransition( attribute.getName() ) );
-			Vector2f newScale( mStyle->getNodeAttribute( attribute.getName() ).asVector2f() );
-			Action * action = Actions::Scale::New( mScale, newScale, transitionInfo.duration, transitionInfo.timingFunction );
-
-			if ( Time::Zero != transitionInfo.delay )
-				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
-
-			runAction( action );
-		} else {
+			break;
+		case PropertyId::Scale:
 			setScale( attribute.asVector2f() );
-		}
-	} else if ( "rotation-origin-point" == name || "rotationoriginpoint" == name ) {
-		SAVE_NORMAL_STATE_ATTR( getRotationOriginPoint().toString() );
-
-		setRotationOriginPoint( attribute.asOriginPoint() );
-	} else if ( "scale-origin-point" == name || "scaleoriginpoint" == name ) {
-		SAVE_NORMAL_STATE_ATTR( getScaleOriginPoint().toString() );
-
-		setScaleOriginPoint( attribute.asOriginPoint() );
-	} else if ( "blend-mode" == name || "blendmode" == name ) {
-		// TODO: SAVE_NORMAL_STATE_ATTR
-		setBlendMode( attribute.asBlendMode() );
-	} else if ( String::startsWith( name, "padding" ) ) {
-		SAVE_NORMAL_STATE_ATTR( String::format( "%2.f %2.f %2.f %2.f", mPadding.Left, mPadding.Top, mPadding.Right, mPadding.Bottom ) );
-
-		Rectf padding;
-		Uint32 paddingFlag = 0;
-
-		if ( "padding" == name ) {
-			padding = ( attribute.asRectf() );
-			paddingFlag = Actions::PaddingTransition::All;
-		} else if ( "padding-left" == name || "paddingleft" == name ) {
-			padding = Rectf( attribute.asDpDimension(), mPadding.Top, mPadding.Right, mPadding.Bottom );
-			paddingFlag = Actions::PaddingTransition::Left;
-		} else if ( "padding-right" == name || "paddingright" == name ) {
-			padding = Rectf( mPadding.Left, mPadding.Top, attribute.asDpDimension(), mPadding.Bottom );
-			paddingFlag = Actions::PaddingTransition::Right;
-		} else if ( "padding-top" == name || "paddingtop" == name ) {
-			padding = Rectf( mPadding.Left, attribute.asDpDimension(), mPadding.Right, mPadding.Bottom );
-			paddingFlag = Actions::PaddingTransition::Top;
-		} else if ( "padding-bottom" == name || "paddingbottom" == name ) {
-			padding = Rectf( mPadding.Left, mPadding.Top, mPadding.Right, attribute.asDpDimension() );
-			paddingFlag = Actions::PaddingTransition::Bottom;
-		}
-
-		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			CSS::TransitionDefinition transitionInfo( mStyle->getTransition( attribute.getName() ) );
-			Action * action = Actions::PaddingTransition::New( mPadding, padding, transitionInfo.duration, transitionInfo.timingFunction, paddingFlag );
-
-			if ( Time::Zero != transitionInfo.delay )
-				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
-
-			runAction( action );
-		} else {
-			setPadding( padding );
-		}
-	} else if ( "opacity" == name ) {
-		SAVE_NORMAL_STATE_ATTR( String::format( "%2.f", mAlpha ) )
-
-		Float alpha = eemin( attribute.asFloat() * 255.f, 255.f );
-
-		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			CSS::TransitionDefinition transitionInfo( mStyle->getTransition( attribute.getName() ) );
-			Action * action = Actions::Fade::New( mAlpha, alpha, transitionInfo.duration, transitionInfo.timingFunction );
-
-			if ( Time::Zero != transitionInfo.delay )
-				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
-
-			runAction( action );
-		} else {
+			break;
+		case PropertyId::BlendMode:
+			setBlendMode( attribute.asBlendMode() );
+			break;
+		case PropertyId::PaddingLeft:
+			setPaddingLeft( attribute.asDpDimension() );
+			break;
+		case PropertyId::PaddingRight:
+			setPaddingRight( attribute.asDpDimension() );
+			break;
+		case PropertyId::PaddingTop:
+			setPaddingTop( attribute.asDpDimension() );
+			break;
+		case PropertyId::PaddingBottom:
+			setPaddingBottom( attribute.asDpDimension() );
+			break;
+		case PropertyId::Opacity:
+		{
+			Float alpha = eemin( attribute.asFloat() * 255.f, 255.f );
 			setAlpha( alpha );
 			setChildsAlpha( alpha );
+			break;
 		}
-	} else if ( "cursor" == name ) {
-		SAVE_NORMAL_STATE_ATTR( "arrow" );
-
-		mSceneNode->setCursor( Cursor::fromName( attribute.getValue() ) );
-	} else {
-		attributeSet = false;
+		case PropertyId::Cursor:
+			mSceneNode->setCursor( Cursor::fromName( attribute.getValue() ) );
+			break;
+		case PropertyId::BackgroundPositionX:
+			setBackgroundPositionX( attribute.value(), 0 );
+			break;
+		case PropertyId::BackgroundPositionY:
+			setBackgroundPositionY( attribute.value(), 0 );
+			break;
+		case PropertyId::ForegroundPositionX:
+			setForegroundPositionX( attribute.value(), 0 );
+			break;
+		case PropertyId::ForegroundPositionY:
+			setForegroundPositionY( attribute.value(), 0 );
+			break;
+		case PropertyId::RotationOriginPoint:
+			setRotationOriginPoint( attribute.asOriginPoint() );
+			break;
+		case PropertyId::ScaleOriginPoint:
+			setScaleOriginPoint( attribute.asOriginPoint() );
+			break;
+		default:
+			attributeSet = false;
+			break;
 	}
 
 	return attributeSet;
@@ -1476,7 +1333,16 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 	beginAttributesTransaction();
 
 	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
-		setAttribute( NodeAttribute( ait->name(), ait->value() ) );
+		StyleSheetProperty prop( ait->name(), ait->value() );
+
+		if ( prop.getShorthandDefinition() != NULL ) {
+			auto properties = ShorthandDefinition::parseShorthand( prop.getShorthandDefinition(), ait->value() );
+
+			for ( auto& property : properties )
+				applyProperty( property );
+		} else {
+			applyProperty( prop );
+		}
 	}
 
 	endAttributesTransaction();
@@ -1577,7 +1443,7 @@ bool UIWidget::drawablePropertySet(const std::string& propertyName, const std::s
 					rectColors.BottomLeft = rectColors.BottomRight = Color::fromString( params.at(2) );
 				}
 			} else {
-				return setAttribute( NodeAttribute( propertyName + "-color", params.at(0) ) );
+				return applyProperty( StyleSheetProperty( propertyName + "-color", params.at(0) ) );
 			}
 
 			drawable->setRectColors( rectColors );

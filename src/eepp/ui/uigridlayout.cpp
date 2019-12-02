@@ -1,4 +1,5 @@
 #include <eepp/ui/uigridlayout.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
 
 namespace EE { namespace UI {
 
@@ -157,7 +158,8 @@ void UIGridLayout::pack() {
 				targetSize.x = widget->getLayoutWeight() * ( getSize().getWidth() - mPadding.Left - mPadding.Right );
 
 			widget->setLayoutSizeRules( FIXED, FIXED );
-			widget->setSize( targetSize );
+			if ( targetSize >= Sizef::Zero )
+				widget->setSize( targetSize );
 			widget->setPosition( pos );
 
 			pos.x += getHorizontalAlign() == UI_HALIGN_RIGHT ? -targetSize.getWidth() : targetSize.getWidth();
@@ -203,35 +205,74 @@ Sizef UIGridLayout::getTargetElementSize() const {
 				  mRowMode == Size ? mRowHeight : ( ( getLayoutHeightRules() == WRAP_CONTENT ? getParent()->getSize().getHeight() : getSize().getHeight() ) - mPadding.Top - mPadding.Bottom ) * mRowWeight );
 }
 
-bool UIGridLayout::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
-	const std::string& name = attribute.getName();
+std::string UIGridLayout::getPropertyString( const PropertyDefinition* propertyDef ) {
+	if ( NULL == propertyDef ) return "";
 
-	if ( "column-span" == name || "columnspan" == name ) {
-		setSpan( Sizei( attribute.asDpDimensionI(), mSpan.y ) );
-	} else if ( "row-span" == name || "rowspan" == name ) {
-		setSpan( Sizei( mSpan.x, attribute.asDpDimensionI() ) );
-	} else if ( "span" == name ) {
-		setSpan( Sizei( attribute.asDpDimension(), attribute.asDpDimensionI() ) );
-	} else if ( "column-mode" == name || "columnmode" == name ) {
-		std::string val( attribute.asString() );
-		String::toLowerInPlace( val );
-		setColumnMode( "size" == val ? Size : Weight );
-	} else if ( "row-mode" == name || "rowmode" == name ) {
-		std::string val( attribute.asString() );
-		String::toLowerInPlace( val );
-		setRowMode( "size" == val ? Size : Weight );
-	} else if ( "column-weight" == name || "columnweight" == name ) {
-		setColumnWeight( attribute.asFloat() );
-	} else if ( "column-width" == name || "columnwidth" == name ) {
-		setColumnWidth( attribute.asDpDimensionI() );
-	} else if ( "row-weight" == name || "rowweight" == name ) {
-		setRowWeight( attribute.asDpDimension() );
-	} else if ( "row-height" == name || "rowheight" == name ) {
-		setRowHeight( attribute.asDpDimensionI() );
-	} else if ( "reverse-draw" == name || "reversedraw" == name ) {
-		setReverseDraw( attribute.asBool() );
-	} else {
-		return UILayout::setAttribute( attribute, state );
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::ColumnSpan:
+			return String::format( "%ddp", mSpan.x );
+		case PropertyId::RowSpan:
+			return String::format( "%ddp", mSpan.y );
+		case PropertyId::ColumnMode:
+			return getColumnMode() == Size ? "size" : "weight";
+		case PropertyId::RowMode:
+			return getRowMode() == Size ? "size" : "weight";
+		case PropertyId::ColumnWeight:
+			return String::fromFloat( getColumnWeight() );
+		case PropertyId::RowWeight:
+			return String::fromFloat( getRowWeight() );
+		case PropertyId::ColumnWidth:
+			return String::format( "%ddp", getColumnWidth() );
+		case PropertyId::RowHeight:
+			return String::format( "%ddp", getRowHeight() );
+		case PropertyId::ReverseDraw:
+			return isReverseDraw() ? "true" : "false";
+		default:
+			return UILayout::getPropertyString( propertyDef );
+	}
+}
+
+bool UIGridLayout::applyProperty( const StyleSheetProperty& attribute ) {
+	if ( !checkPropertyDefinition( attribute ) ) return false;
+
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::ColumnSpan:
+			setSpan( Sizei( attribute.asDpDimensionI(), mSpan.y ) );
+			break;
+		case PropertyId::RowSpan:
+			setSpan( Sizei( mSpan.x, attribute.asDpDimensionI() ) );
+			break;
+		case PropertyId::ColumnMode:
+		{
+			std::string val( attribute.asString() );
+			String::toLowerInPlace( val );
+			setColumnMode( "size" == val ? Size : Weight );
+			break;
+		}
+		case PropertyId::RowMode:
+		{
+			std::string val( attribute.asString() );
+			String::toLowerInPlace( val );
+			setRowMode( "size" == val ? Size : Weight );
+			break;
+		}
+		case PropertyId::ColumnWeight:
+			setColumnWeight( attribute.asFloat() );
+			break;
+		case PropertyId::ColumnWidth:
+			setColumnWidth( attribute.asDpDimensionI() );
+			break;
+		case PropertyId::RowWeight:
+			setRowWeight( attribute.asDpDimension() );
+			break;
+		case PropertyId::RowHeight:
+			setRowHeight( attribute.asDpDimensionI() );
+			break;
+		case PropertyId::ReverseDraw:
+			setReverseDraw( attribute.asBool() );
+			break;
+		default:
+			return UILayout::applyProperty( attribute );
 	}
 
 	return true;

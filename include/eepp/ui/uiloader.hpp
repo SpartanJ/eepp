@@ -51,7 +51,9 @@ class EE_API UILoader : public UIWidget {
 
 		UILoader * setAnimationSpeed( const Float& animationSpeed );
 
-		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
+		virtual bool applyProperty( const StyleSheetProperty& attribute );
+
+		virtual std::string getPropertyString(const PropertyDefinition* propertyDef);
 
 		Float getArcStartAngle() const;
 

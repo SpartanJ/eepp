@@ -1,4 +1,5 @@
 #include <eepp/ui/uilinearlayout.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
 
 namespace  EE { namespace UI {
 
@@ -407,19 +408,34 @@ Sizei UILinearLayout::getTotalUsedSize() {
 	return size;
 }
 
-bool UILinearLayout::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
-	const std::string& name = attribute.getName();
+std::string UILinearLayout::getPropertyString( const PropertyDefinition* propertyDef ) {
+	if ( NULL == propertyDef ) return "";
 
-	if ( "orientation" == name ) {
-		std::string val = attribute.asString();
-		String::toLowerInPlace( val );
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::Orientation:
+			return getOrientation() == UI_HORIZONTAL ? "horizontal" : "vertical";
+		default:
+			return UILayout::getPropertyString( propertyDef );
+	}
+}
 
-		if ( "horizontal" == val )
-			setOrientation( UI_HORIZONTAL );
-		else if ( "vertical" == val )
-			setOrientation( UI_VERTICAL );
-	} else {
-		return UILayout::setAttribute( attribute, state );
+bool UILinearLayout::applyProperty( const StyleSheetProperty& attribute ) {
+	if ( !checkPropertyDefinition( attribute ) ) return false;
+
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::Orientation:
+		{
+			std::string val = attribute.asString();
+			String::toLowerInPlace( val );
+
+			if ( "horizontal" == val )
+				setOrientation( UI_HORIZONTAL );
+			else if ( "vertical" == val )
+				setOrientation( UI_VERTICAL );
+			break;
+		}
+		default:
+			return UILayout::applyProperty( attribute );
 	}
 
 	return true;

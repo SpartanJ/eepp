@@ -1,4 +1,5 @@
 #include <eepp/ui/uitouchdragablewidget.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/scene/scenenode.hpp>
 
 namespace EE { namespace UI {
@@ -145,15 +146,32 @@ void UITouchDragableWidget::scheduledUpdate( const Time& time ) {
 	}
 }
 
-bool UITouchDragableWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
-	const std::string& name = attribute.getName();
+std::string UITouchDragableWidget::getPropertyString( const PropertyDefinition* propertyDef ) {
+	if ( NULL == propertyDef ) return "";
 
-	if ( "touch-drag" == name || "touchdrag" == name ) {
-		setTouchDragEnabled( attribute.asBool() );
-	} else if ( "touchdrag-deceleration" == name || "touchdragdeceleration" == name ) {
-		setTouchDragDeceleration( Vector2f( attribute.asFloat(), attribute.asFloat() ) );
-	} else {
-		return UIWidget::setAttribute( attribute, state );
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::TouchDrag:
+			return isTouchDragEnabled() ? "true" : "false";
+		case PropertyId::TouchDragDeceleration:
+			return String::fromFloat( getTouchDragDeceleration().x ) + ", " +
+				   String::fromFloat( getTouchDragDeceleration().y );
+		default:
+			return UIWidget::getPropertyString( propertyDef );
+	}
+}
+
+bool UITouchDragableWidget::applyProperty( const StyleSheetProperty& attribute ) {
+	if ( !checkPropertyDefinition( attribute ) ) return false;
+
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::TouchDrag:
+			setTouchDragEnabled( attribute.asBool() );
+			break;
+		case PropertyId::TouchDragDeceleration:
+			setTouchDragDeceleration( attribute.asVector2f() );
+			break;
+		default:
+			return UIWidget::applyProperty( attribute );
 	}
 
 	return true;

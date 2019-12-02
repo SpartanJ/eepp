@@ -239,6 +239,10 @@ std::string String::removeNumbersAtEnd( std::string txt ) {
 	return txt;
 }
 
+std::string String::fromFloat( const Float& value, const std::string& append, const std::string& prepend ) {
+	return prepend + toStr( value ) + append;
+}
+
 void String::insertChar( String& str, const unsigned int& pos, const Uint32& tchar ) {
 	str.insert( str.begin() + pos, tchar );
 }

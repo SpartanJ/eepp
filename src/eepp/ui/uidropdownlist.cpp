@@ -1,5 +1,6 @@
 #include <eepp/ui/uidropdownlist.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/scene/scenenode.hpp>
 #include <eepp/scene/actions/actions.hpp>
@@ -260,28 +261,51 @@ void UIDropDownList::destroyListBox() {
 	}
 }
 
-bool UIDropDownList::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
-	const std::string& name = attribute.getName();
+bool UIDropDownList::applyProperty( const StyleSheetProperty& attribute ) {
+	if ( !checkPropertyDefinition( attribute ) ) return false;
 
-	if ( "popup-to-main-control" == name || "popuptomaincontrol" == name ) {
-		setPopUpToMainControl( attribute.asBool() );
-	} else if ( "max-visible-items" == name || "maxvisibleitems" == name ) {
-		setMaxNumVisibleItems( attribute.asUint() );
-	} else if ( "selected-index" == name || "selected-text" == name ||
-				"scrollbar-type" == name || "row-height" == name ||
-				"vscroll-mode" == name || "hscroll-mode" == name ||
-				"selectedindex" == name || "selectedtext" == name ||
-				"scrollbartype" == name || "rowheight" == name ||
-				"vscrollmode" == name || "hscrollmode" == name) {
-		mListBox->setAttribute( attribute, state );
-	} else {
-		return UITextInput::setAttribute( attribute, state );
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::PopUpToMainControl:
+			setPopUpToMainControl( attribute.asBool() );
+			break;
+		case PropertyId::MaxVisibleItems:
+			setMaxNumVisibleItems( attribute.asUint() );
+			break;
+		case PropertyId::SelectedIndex:
+		case PropertyId::SelectedText:
+		case PropertyId::ScrollBarType:
+		case PropertyId::RowHeight:
+		case PropertyId::VScrollMode:
+		case PropertyId::HScrollMode:
+			return mListBox->applyProperty( attribute );
+		default:
+			return UITextInput::applyProperty( attribute );
 	}
 
 	return true;
 }
 
-void UIDropDownList::loadFromXmlNode(const pugi::xml_node & node) {
+std::string UIDropDownList::getPropertyString( const PropertyDefinition* propertyDef ) {
+	if ( NULL == propertyDef ) return "";
+
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::PopUpToMainControl:
+			return mStyleConfig.PopUpToMainControl ? "true" : "false";
+		case PropertyId::MaxVisibleItems:
+			return String::toStr( mStyleConfig.MaxNumVisibleItems );
+		case PropertyId::SelectedIndex:
+		case PropertyId::SelectedText:
+		case PropertyId::ScrollBarType:
+		case PropertyId::RowHeight:
+		case PropertyId::VScrollMode:
+		case PropertyId::HScrollMode:
+			return mListBox->getPropertyString( propertyDef );
+		default:
+			return UITextInput::getPropertyString( propertyDef );
+	}
+}
+
+void UIDropDownList::loadFromXmlNode( const pugi::xml_node& node ) {
 	beginAttributesTransaction();
 
 	mListBox->loadItemsFromXmlNode( node );

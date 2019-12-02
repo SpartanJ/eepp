@@ -1,6 +1,7 @@
 #include <eepp/ui/uitab.hpp>
 #include <eepp/ui/uitabwidget.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
 
 namespace EE { namespace UI {
 
@@ -143,17 +144,35 @@ void UITab::onAutoSize() {
 	}
 }
 
-bool UITab::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
-	std::string name = attribute.getName();
+std::string UITab::getPropertyString( const PropertyDefinition* propertyDef ) {
+	if ( NULL == propertyDef ) return "";
 
-	if ( "name" == name || "text" == name ) {
-		if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
-			setText( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( attribute.asString() ) );
-	} else if ( "owns" == name ) {
-		mOwnedName = attribute.asString();
-		setOwnedControl();
-	} else {
-		return UISelectButton::setAttribute( attribute, state );
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::Text:
+		case PropertyId::Name:
+			return getText().toUtf8();
+		case PropertyId::Owns:
+			return mOwnedName;
+		default:
+			return UISelectButton::getPropertyString( propertyDef );
+	}
+}
+
+bool UITab::applyProperty( const StyleSheetProperty& attribute ) {
+	if ( !checkPropertyDefinition( attribute ) ) return false;
+
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::Text:
+		case PropertyId::Name:
+			if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
+				setText( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( attribute.asString() ) );
+			break;
+		case PropertyId::Owns:
+			mOwnedName = attribute.asString();
+			setOwnedControl();
+			break;
+		default:
+			return UISelectButton::applyProperty( attribute );
 	}
 
 	return true;

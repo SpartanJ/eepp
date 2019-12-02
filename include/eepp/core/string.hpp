@@ -191,6 +191,8 @@ class EE_API String {
 		return ss.str();
 	}
 
+	static std::string fromFloat( const Float& value, const std::string& append = "", const std::string& prepend = "" );
+
 	/** Converts from a string to type */
 	template <class T>
 	static bool fromString(T& t, const std::string& s, std::ios_base& (*f)(std::ios_base&) = std::dec  ) {

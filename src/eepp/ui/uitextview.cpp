@@ -10,6 +10,7 @@
 #include <eepp/scene/actions/actions.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
 #include <eepp/ui/css/transitiondefinition.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
 
 namespace EE { namespace UI {
 
@@ -558,120 +559,111 @@ void UITextView::resetSelCache() {
 	onSelectionChange();
 }
 
-#define SAVE_NORMAL_STATE_ATTR( ATTR_FORMATED ) \
-	if ( state != UIState::StateFlagNormal || ( state == UIState::StateFlagNormal && attribute.isVolatile() ) ) { \
-		CSS::StyleSheetProperty oldAttribute = mStyle->getStatelessStyleSheetProperty( attribute.getName() ); \
-		if ( oldAttribute.isEmpty() && mStyle->getPreviousState() == UIState::StateFlagNormal ) { \
-			mStyle->setStyleSheetProperty( CSS::StyleSheetProperty( attribute.getName(), ATTR_FORMATED ) ); \
-		} \
-	}
+bool UITextView::applyProperty( const StyleSheetProperty& attribute ) {
+	if ( !checkPropertyDefinition( attribute ) ) return false;
 
-bool UITextView::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
-	const std::string& name = attribute.getName();
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::Text:
+			if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
+				setText( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( attribute.asString() ) );
+			break;
+		case PropertyId::Color:
+			setFontColor( attribute.asColor() );
+			break;
+		case PropertyId::ShadowColor:
+			setFontShadowColor( attribute.asColor() );
+			break;
+		case PropertyId::SelectedColor:
+			mFontStyleConfig.FontSelectedColor = attribute.asColor();
+			break;
+		case PropertyId::SelectionBackColor:
+			setSelectionBackColor( attribute.asColor() );
+			break;
+		case PropertyId::FontFamily:
+			setFont( FontManager::instance()->getByName( attribute.asString() ) );
+			break;
+		case PropertyId::FontSize:
+			setCharacterSize( attribute.asDpDimensionI() );
+			break;
+		case PropertyId::FontStyle:
+		{
+			Uint32 flags = attribute.asFontStyle();
 
-	if ( "text" == name ) {
-		if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
-			setText( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( attribute.asString() ) );
-	} else if ( "color" == name || "textcolor" == name ) {
-		SAVE_NORMAL_STATE_ATTR( getFontColor().toHexString() );
+			if ( flags & UI_WORD_WRAP ) {
+				mFlags |= UI_WORD_WRAP;
+				flags &= ~ UI_WORD_WRAP;
+				autoShrink();
+			}
 
-		Color color = attribute.asColor();
-
-		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			CSS::TransitionDefinition transitionInfo( mStyle->getTransition( attribute.getName() ) );
-
-			Action * action = Actions::Tint::New( getFontColor(), color, true, transitionInfo.duration, transitionInfo.timingFunction, Actions::Tint::Text );
-
-			if ( Time::Zero != transitionInfo.delay )
-				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
-
-			runAction( action );
-		} else {
-			setFontColor( color );
+			setFontStyle( flags );
+			break;
 		}
-	} else if ( "shadow-color" == name || "textshadowcolor" == name ) {
-		SAVE_NORMAL_STATE_ATTR( getFontShadowColor().toHexString() );
-
-		Color color = attribute.asColor();
-
-		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			CSS::TransitionDefinition transitionInfo( mStyle->getTransition( attribute.getName() ) );
-
-			Action * action = Actions::Tint::New( getFontShadowColor(), color, true, transitionInfo.duration, transitionInfo.timingFunction, Actions::Tint::TextShadow );
-
-			if ( Time::Zero != transitionInfo.delay )
-				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
-
-			runAction( action );
-		} else {
-			setFontShadowColor( color );
-		}
-	} else if ( "selected-color" == name || "textselectedcolor" == name ) {
-		mFontStyleConfig.FontSelectedColor = attribute.asColor();
-	} else if ( "selection-back-color" == name || "textselectionbackcolor" == name ) {
-		setSelectionBackColor( attribute.asColor() );
-	} else if ( "font-family" == name || "font-name" == name || "fontfamily" == name || "fontname" == name ) {
-		SAVE_NORMAL_STATE_ATTR( getFont()->getName() );
-
-		setFont( FontManager::instance()->getByName( attribute.asString() ) );
-	} else if ( "font-size" == name || "textsize" == name || "fontsize" == name ) {
-		SAVE_NORMAL_STATE_ATTR( String::format( "%dpx", getCharacterSize() ) );
-
-		setCharacterSize( attribute.asDpDimensionI() );
-	} else if ( "font-style" == name || "textstyle" == name || "fontstyle" == name ||
-				"text-decoration" == name || "textdecoration" == name ) {
-		Uint32 flags = attribute.asFontStyle();
-
-		SAVE_NORMAL_STATE_ATTR( Text::styleFlagToString( getFontStyle() ) );
-
-		if ( flags & UI_WORD_WRAP ) {
-			mFlags |= UI_WORD_WRAP;
-			flags &= ~ UI_WORD_WRAP;
+		case PropertyId::Wordwrap:
+			if ( attribute.asBool() )
+				mFlags |= UI_WORD_WRAP;
+			else
+				mFlags &= ~UI_WORD_WRAP;
 			autoShrink();
+			break;
+		case PropertyId::TextStrokeWidth:
+			setOutlineThickness( PixelDensity::dpToPx( attribute.asDpDimension() ) );
+			break;
+		case PropertyId::TextStrokeColor:
+			setOutlineColor( attribute.asColor() );
+			break;
+		case PropertyId::TextSelection:
+			mFlags|= UI_TEXT_SELECTION_ENABLED;
+			break;
+		case PropertyId::TextAlign:
+		{
+			std::string align = String::toLower( attribute.value() );
+			if ( align == "center" ) setFlags( UI_HALIGN_CENTER );
+			else if ( align == "left" ) setFlags( UI_HALIGN_LEFT );
+			else if ( align == "right" ) setFlags( UI_HALIGN_RIGHT );
+			break;
 		}
-
-		setFontStyle( flags );
-	} else if ( "wordwrap" == name || "word-wrap" == name ) {
-		if ( attribute.asBool() )
-			mFlags |= UI_WORD_WRAP;
-		else
-			mFlags &= ~UI_WORD_WRAP;
-
-		autoShrink();
-	} else if ( "text-stroke-width" == name || "fontoutlinethickness" == name ) {
-		SAVE_NORMAL_STATE_ATTR( String::toStr( PixelDensity::dpToPx( getOutlineThickness() ) ) )
-
-		setOutlineThickness( PixelDensity::dpToPx( attribute.asDpDimension() ) );
-	} else if ( "text-stroke-color" == name || "fontoutlinecolor" == name ) {
-		SAVE_NORMAL_STATE_ATTR( getOutlineColor().toHexString() );
-
-		Color color = attribute.asColor();
-
-		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			CSS::TransitionDefinition transitionInfo( mStyle->getTransition( attribute.getName() ) );
-
-			Action * action = Actions::Tint::New( getOutlineColor(), color, true, transitionInfo.duration, transitionInfo.timingFunction, Actions::Tint::TextOutline );
-
-			if ( Time::Zero != transitionInfo.delay )
-				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
-
-			runAction( action );
-		} else {
-			setOutlineColor( color );
-		}
-	} else if ( "text-selection" == name || "textselection" == name ) {
-		mFlags|= UI_TEXT_SELECTION_ENABLED;
-	} else if ( "text-align" == name || "textalign" == name ) {
-		std::string align = String::toLower( attribute.value() );
-
-		if ( align == "center" ) setFlags( UI_HALIGN_CENTER );
-		else if ( align == "left" ) setFlags( UI_HALIGN_LEFT );
-		else if ( align == "right" ) setFlags( UI_HALIGN_RIGHT );
-	} else {
-		return UIWidget::setAttribute( attribute, state );
+		default:
+			return UIWidget::applyProperty( attribute );
 	}
 
 	return true;
+}
+
+std::string UITextView::getPropertyString( const PropertyDefinition* propertyDef ) {
+	if ( NULL == propertyDef ) return "";
+
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::Text:
+			return getText().toUtf8();
+		case PropertyId::Color:
+			return getFontColor().toHexString();
+		case PropertyId::ShadowColor:
+			return getFontShadowColor().toHexString();
+		case PropertyId::SelectedColor:
+			return mFontStyleConfig.FontSelectedColor.toHexString();
+		case PropertyId::SelectionBackColor:
+			return getSelectionBackColor().toHexString();
+		case PropertyId::FontFamily:
+			return NULL != getFont() ? getFont()->getName() : "";
+		case PropertyId::FontSize:
+			return String::format( "%ddp", getCharacterSize() );
+		case PropertyId::FontStyle:
+			return Text::styleFlagToString( getFontStyle() );
+		case PropertyId::TextStrokeWidth:
+			return String::toStr( PixelDensity::dpToPx( getOutlineThickness() ) );
+		case PropertyId::TextStrokeColor:
+			return getOutlineColor().toHexString();
+		case PropertyId::Wordwrap:
+			return mFlags & UI_WORD_WRAP ? "true" : "false";
+		case PropertyId::TextSelection:
+			return isTextSelectionEnabled() ? "true" : "false";
+		case PropertyId::TextAlign:
+			return fontHAlignGet( getFlags() ) == UI_HALIGN_CENTER ? "center" : (
+				fontHAlignGet( getFlags() ) == UI_HALIGN_RIGHT ? "right" : "left"
+			);
+		default:
+			return UIWidget::getPropertyString( propertyDef );
+	}
 }
 
 }}

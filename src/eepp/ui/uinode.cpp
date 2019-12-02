@@ -399,8 +399,13 @@ UINode * UINode::setBackgroundColor( const Color& color ) {
 	return this;
 }
 
-UINode* UINode::setBackgroundPosition( const std::string& positionEq, int index ) {
-	setBackgroundFillEnabled( true )->setDrawablePosition( index, positionEq );
+UINode* UINode::setBackgroundPositionX( const std::string& positionX, int index ) {
+	setBackgroundFillEnabled( true )->setDrawablePositionX( index, positionX );
+	return this;
+}
+
+UINode* UINode::setBackgroundPositionY( const std::string& positionY, int index ) {
+	setBackgroundFillEnabled( true )->setDrawablePositionY( index, positionY );
 	return this;
 }
 
@@ -409,8 +414,8 @@ UINode* UINode::setBackgroundRepeat( const std::string& repeatRule, int index ) 
 	return this;
 }
 
-UINode* UINode::setBackgroundSize( const std::string& sizeEq, int index ) {
-	setBackgroundFillEnabled( true )->setDrawableSize( index, sizeEq );
+UINode* UINode::setBackgroundSize( const std::string& size, int index ) {
+	setBackgroundFillEnabled( true )->setDrawableSize( index, size );
 	return this;
 }
 
@@ -454,8 +459,13 @@ UINode * UINode::setForegroundColor( const Color& color ) {
 	return this;
 }
 
-UINode* UINode::setForegroundPosition( const std::string& positionEq, int index ) {
-	setForegroundFillEnabled( true )->setDrawablePosition( index, positionEq );
+UINode* UINode::setForegroundPositionX( const std::string& positionX, int index ) {
+	setForegroundFillEnabled( true )->setDrawablePositionX( index, positionX );
+	return this;
+}
+
+UINode* UINode::setForegroundPositionY( const std::string& positionY, int index ) {
+	setForegroundFillEnabled( true )->setDrawablePositionY( index, positionY );
 	return this;
 }
 
@@ -464,8 +474,8 @@ UINode* UINode::setForegroundRepeat( const std::string& repeatRule, int index ) 
 	return this;
 }
 
-UINode* UINode::setForegroundSize( const std::string& sizeEq, int index ) {
-	setForegroundFillEnabled( true )->setDrawableSize( index, sizeEq );
+UINode* UINode::setForegroundSize( const std::string& size, int index ) {
+	setForegroundFillEnabled( true )->setDrawableSize( index, size );
 	return this;
 }
 
