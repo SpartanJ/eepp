@@ -165,7 +165,8 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "font-family", "", false ).addAlias( "font-name" );
 	registerProperty( "font-size", "", false )
 		.setType( PropertyType::NumberFloat )
-		.addAlias( "text-size" );
+		.addAlias( "text-size" )
+		.addAlias( "textsize" );
 	registerProperty( "font-style", "", false )
 		.addAlias( "text-style" )
 		.addAlias( "text-decoration" );
@@ -270,6 +271,8 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "first-button-margin-left", "", false ).setType( PropertyType::NumberInt );
 
 	registerProperty( "scale-origin-point", "", false ).setType( PropertyType::Vector2 );
+
+	registerProperty( "word-wrap", "", false ).setType( PropertyType::Bool );
 
 	// Shorthands
 	registerProperty( "background-position", "", false ).setType( PropertyType::NumberLength );

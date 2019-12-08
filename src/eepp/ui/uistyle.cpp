@@ -167,7 +167,7 @@ void UIStyle::onStateChange() {
 				}
 			}
 
-			if ( !mWidget->isSceneNodeLoading() &&
+			if ( !mWidget->isSceneNodeLoading() && NULL != propertyDefinition &&
 				 StyleSheetPropertyTransition::transitionSupported(
 					 propertyDefinition->getType() ) &&
 				 hasTransition( property.getName() ) ) {
