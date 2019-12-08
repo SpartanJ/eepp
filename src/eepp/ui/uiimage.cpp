@@ -78,12 +78,12 @@ void UIImage::onAutoSize() {
 		}
 
 		if ( mLayoutWidthRules == WRAP_CONTENT ) {
-			setInternalPixelsWidth( (int)PixelDensity::dpToPx( mDrawable->getSize().getWidth() ) +
+			setInternalPixelsWidth( (int)mDrawable->getSize().getWidth() +
 									mRealPadding.Left + mRealPadding.Right );
 		}
 
 		if ( mLayoutHeightRules == WRAP_CONTENT ) {
-			setInternalPixelsHeight( (int)PixelDensity::dpToPx( mDrawable->getSize().getHeight() ) +
+			setInternalPixelsHeight( (int)mDrawable->getSize().getHeight() +
 									 mRealPadding.Top + mRealPadding.Bottom );
 		}
 	}
