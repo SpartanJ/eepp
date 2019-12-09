@@ -6,6 +6,7 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
 #include <eepp/ui/css/stylesheetparser.hpp>
+#include <eepp/ui/uithememanager.hpp>
 #include <pugixml/pugixml.hpp>
 #include <algorithm>
 
@@ -17,7 +18,8 @@ UISceneNode * UISceneNode::New( EE::Window::Window * window ) {
 
 UISceneNode::UISceneNode( EE::Window::Window * window ) :
 	SceneNode( window ),
-	mIsLoading( false )
+	mIsLoading( false ),
+	mUIThemeManager( UIThemeManager::New() )
 {
 	// Update only UI elements that requires it.
 	setUpdateAllChilds( false );
@@ -27,6 +29,10 @@ UISceneNode::UISceneNode( EE::Window::Window * window ) :
 	setEventDispatcher( UIEventDispatcher::New( this ) );
 
 	resizeControl( mWindow );
+}
+
+UISceneNode::~UISceneNode() {
+	eeSAFE_DELETE( mUIThemeManager );
 }
 
 void UISceneNode::resizeControl( EE::Window::Window * ) {
@@ -287,6 +293,10 @@ const Sizef &UISceneNode::getSize() const {
 
 const bool& UISceneNode::isLoading() const {
 	return mIsLoading;
+}
+
+UIThemeManager* UISceneNode::getUIThemeManager() const {
+	return mUIThemeManager;
 }
 
 }}

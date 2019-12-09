@@ -73,8 +73,6 @@ Engine::~Engine() {
 
 	Scene::SceneManager::destroySingleton();
 
-	UIThemeManager::destroySingleton();
-
 	CSS::StyleSheetSpecification::destroySingleton();
 
 	FontManager::destroySingleton();

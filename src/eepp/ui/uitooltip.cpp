@@ -5,6 +5,7 @@
 #include <eepp/scene/actions/actions.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/graphics/fontmanager.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 
 namespace EE { namespace UI {
 
@@ -22,15 +23,15 @@ UITooltip::UITooltip() :
 
 	mTextCache = Text::New();
 
-	UITheme * theme = UIThemeManager::instance()->getDefaultTheme();
+	UITheme * theme = getUISceneNode()->getUIThemeManager()->getDefaultTheme();
 
 	if ( NULL != theme ) {
 		mStyleConfig.Font = theme->getDefaultFont();
 	}
 
 	if ( NULL == getFont() ) {
-		if ( NULL != UIThemeManager::instance()->getDefaultFont() )
-			setFont( UIThemeManager::instance()->getDefaultFont() );
+		if ( NULL != getUISceneNode()->getUIThemeManager()->getDefaultFont() )
+			setFont( getUISceneNode()->getUIThemeManager()->getDefaultFont() );
 		else
 			eePRINTL( "UITooltip::UITooltip : Created a without a defined font." );
 	}
@@ -75,8 +76,8 @@ void UITooltip::show() {
 
 		setVisible( true );
 
-		if ( UIThemeManager::instance()->getDefaultEffectsEnabled() ) {
-			runAction( Actions::Sequence::New( Actions::Fade::New( 255.f == mAlpha ? 0.f : mAlpha, 255.f, UIThemeManager::instance()->getControlsFadeOutTime() ),
+		if ( getUISceneNode()->getUIThemeManager()->getDefaultEffectsEnabled() ) {
+			runAction( Actions::Sequence::New( Actions::Fade::New( 255.f == mAlpha ? 0.f : mAlpha, 255.f, getUISceneNode()->getUIThemeManager()->getControlsFadeOutTime() ),
 											   Actions::Spawn::New( Actions::Enable::New(), Actions::Visible::New( true ) ) ) );
 		}
 	}
@@ -84,8 +85,8 @@ void UITooltip::show() {
 
 void UITooltip::hide() {
 	if ( isVisible() ) {
-		if ( UIThemeManager::instance()->getDefaultEffectsEnabled() ) {
-			runAction( Actions::Sequence::New( Actions::FadeOut::New( UIThemeManager::instance()->getControlsFadeOutTime() ), Actions::Spawn::New( Actions::Disable::New(), Actions::Visible::New( false ) ) ) );
+		if ( getUISceneNode()->getUIThemeManager()->getDefaultEffectsEnabled() ) {
+			runAction( Actions::Sequence::New( Actions::FadeOut::New( getUISceneNode()->getUIThemeManager()->getControlsFadeOutTime() ), Actions::Spawn::New( Actions::Disable::New(), Actions::Visible::New( false ) ) ) );
 		} else {
 			setVisible( false );
 		}

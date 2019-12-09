@@ -219,7 +219,7 @@ Uint32 UIWidget::onMouseMove( const Vector2i & Pos, const Uint32& Flags ) {
 		if ( NULL == eventDispatcher )
 			return 1;
 
-		UIThemeManager * themeManager = UIThemeManager::instance();
+		UIThemeManager * themeManager = getUISceneNode()->getUIThemeManager();
 
 		Vector2f Pos = eventDispatcher->getMousePosf();
 		Pos.x += themeManager->getCursorSize().x;
@@ -343,7 +343,7 @@ void UIWidget::setTheme( UITheme * Theme ) {
 }
 
 UINode * UIWidget::setThemeSkin( const std::string& skinName ) {
-	return setThemeSkin( NULL != mTheme ? mTheme : UIThemeManager::instance()->getDefaultTheme(), skinName );
+	return setThemeSkin( NULL != mTheme ? mTheme : getUISceneNode()->getUIThemeManager()->getDefaultTheme(), skinName );
 }
 
 UINode * UIWidget::setThemeSkin( UITheme * Theme, const std::string& skinName ) {

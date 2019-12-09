@@ -46,7 +46,7 @@ MapEditor *MapEditor::New(UIWindow * AttatchTo, const MapEditor::MapEditorCloseC
 
 MapEditor::MapEditor( UIWindow * AttatchTo, const MapEditorCloseCb& callback ) :
 	mUIWindow( AttatchTo ),
-	mTheme( UIThemeManager::instance()->getDefaultTheme() ),
+	mTheme( NULL ),
 	mUIMap( NULL ),
 	mCloseCb( callback ),
 	mGOTypeList( NULL ),
@@ -55,6 +55,11 @@ MapEditor::MapEditor( UIWindow * AttatchTo, const MapEditorCloseCb& callback ) :
 	mLastSelButtonY(2),
 	mMouseScrolling( false )
 {
+	if ( SceneManager::instance()->getUISceneNode() == NULL )
+		return;
+
+	mTheme = SceneManager::instance()->getUISceneNode()->getUIThemeManager()->getDefaultTheme();
+
 	if ( NULL == mTheme ) {
 		eePRINTL( "MapEditor needs a default theme seted to work." );
 		return;

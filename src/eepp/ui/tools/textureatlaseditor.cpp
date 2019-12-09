@@ -31,15 +31,18 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow * attachTo, const TGEditorClose
 	mCurTextureRegion( NULL ),
 	mEdited( false )
 {
-	if ( NULL == UIThemeManager::instance()->getDefaultTheme() ) {
+	UISceneNode * uiSceneNode = NULL != attachTo ? attachTo->getUISceneNode() : SceneManager::instance()->getUISceneNode();
+
+	if ( NULL == uiSceneNode || NULL == uiSceneNode->getUIThemeManager() ||
+		 NULL == uiSceneNode->getUIThemeManager()->getDefaultTheme() ) {
 		eePRINTL( "TextureAtlasEditor needs a default theme assigned to work." );
 		return;
 	}
 
-	mTheme = UIThemeManager::instance()->getDefaultTheme();
+	mTheme = uiSceneNode->getUIThemeManager()->getDefaultTheme();
 
 	if ( NULL == mUIWindow ) {
-		mUIContainer = SceneManager::instance()->getUISceneNode();
+		mUIContainer = uiSceneNode;
 	} else {
 		mUIContainer = mUIWindow->getContainer();
 	}
@@ -108,8 +111,8 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow * attachTo, const TGEditorClose
 
 	UIWidgetCreator::addCustomWidgetCallback( "TextureAtlasTextureRegionEditor", cb::Make1( this, &TextureAtlasEditor::createTextureAtlasTextureRegionEditor ) );
 
-	if ( NULL != mUIContainer->getSceneNode() && mUIContainer->getSceneNode()->isUISceneNode() )
-		static_cast<UISceneNode*>( mUIContainer->getSceneNode() )->loadLayoutFromString( layout, mUIContainer );
+	if ( NULL != mUIContainer->getSceneNode()->asType<UISceneNode>()->getUIThemeManager() )
+		mUIContainer->getSceneNode()->asType<UISceneNode>()->loadLayoutFromString( layout, mUIContainer );
 
 	UIWidgetCreator::removeCustomWidgetCallback( "TextureAtlasTextureRegionEditor" );
 
@@ -148,7 +151,7 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow * attachTo, const TGEditorClose
 		mUIWindow->addEventListener( Event::OnWindowClose, cb::Make1( this, &TextureAtlasEditor::windowClose ) );
 	} else {
 		mUIContainer->addEventListener( Event::OnClose, cb::Make1( this, &TextureAtlasEditor::windowClose ) );
-		mUIContainer->find<UINode>("texture_atlas_editor_root")->setThemeSkin( mTheme, "winback" );
+		mUIContainer->find<UINode>("texture_atlas_editor_root")->setThemeSkin( mUIContainer->getSceneNode()->asType<UISceneNode>()->getUIThemeManager()->getDefaultTheme(), "winback" );
 	}
 }
 

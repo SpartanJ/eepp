@@ -15,12 +15,6 @@ TextureAtlasTextureRegionEditor::TextureAtlasTextureRegionEditor( TextureAtlasEd
 	mGfx( NULL ),
 	mEditor( Editor )
 {
-	if ( NULL == UIThemeManager::instance()->getDefaultTheme() ) {
-		return;
-	}
-
-	mTheme = UIThemeManager::instance()->getDefaultTheme();
-
 	mGfx = UITextureRegion::New();
 	mGfx->setParent( this );
 	mGfx->setVisible( true );

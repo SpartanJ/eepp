@@ -2,6 +2,7 @@
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/scene/scenenode.hpp>
 #include <eepp/scene/actions/actions.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 
 namespace EE { namespace UI {
 
@@ -47,8 +48,8 @@ bool UIPopUpMenu::show() {
 
 		toFront();
 
-		if ( UIThemeManager::instance()->getDefaultEffectsEnabled() ) {
-			runAction( Actions::Sequence::New( Actions::Fade::New( 255.f == mAlpha ? 0.f : mAlpha, 255.f, UIThemeManager::instance()->getControlsFadeOutTime() ),
+		if ( NULL != getUISceneNode() && getUISceneNode()->getUIThemeManager()->getDefaultEffectsEnabled() ) {
+			runAction( Actions::Sequence::New( Actions::Fade::New( 255.f == mAlpha ? 0.f : mAlpha, 255.f, getUISceneNode()->getUIThemeManager()->getControlsFadeOutTime() ),
 										  Actions::Spawn::New( Actions::Enable::New(), Actions::Visible::New( true ) ) ) );
 		}
 
@@ -68,8 +69,8 @@ bool UIPopUpMenu::hide() {
 		mItemSelected		= NULL;
 		mItemSelectedIndex	= eeINDEX_NOT_FOUND;
 
-		if ( UIThemeManager::instance()->getDefaultEffectsEnabled() ) {
-			runAction( Actions::Sequence::New( Actions::FadeOut::New( UIThemeManager::instance()->getControlsFadeOutTime() ),
+		if ( NULL != getUISceneNode() && getUISceneNode()->getUIThemeManager()->getDefaultEffectsEnabled() ) {
+			runAction( Actions::Sequence::New( Actions::FadeOut::New( getUISceneNode()->getUIThemeManager()->getControlsFadeOutTime() ),
 											   Actions::Spawn::New( Actions::Disable::New(), Actions::Visible::New( false ) ) ) );
 		} else {
 			setEnabled( false );

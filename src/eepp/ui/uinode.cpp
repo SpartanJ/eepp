@@ -649,7 +649,7 @@ RectangleDrawable * UINode::getBorder() {
 }
 
 void UINode::setThemeByName( const std::string& Theme ) {
-	setTheme( UIThemeManager::instance()->getByName( Theme ) );
+	setTheme( getUISceneNode()->getUIThemeManager()->getByName( Theme ) );
 }
 
 void UINode::setTheme( UITheme * Theme ) {
@@ -657,7 +657,7 @@ void UINode::setTheme( UITheme * Theme ) {
 }
 
 UINode * UINode::setThemeSkin( const std::string& skinName ) {
-	return setThemeSkin( UIThemeManager::instance()->getDefaultTheme(), skinName );
+	return setThemeSkin( getUISceneNode()->getUIThemeManager()->getDefaultTheme(), skinName );
 }
 
 UINode * UINode::setThemeSkin( UITheme * Theme, const std::string& skinName ) {
@@ -807,7 +807,7 @@ void UINode::writeFlag( const Uint32& Flag, const Uint32& Val ) {
 }
 
 void UINode::applyDefaultTheme() {
-	UIThemeManager::instance()->applyDefaultTheme( this );
+	getUISceneNode()->getUIThemeManager()->applyDefaultTheme( this );
 }
 
 Rectf UINode::makePadding( bool PadLeft, bool PadRight, bool PadTop, bool PadBottom, bool SkipFlags ) {
@@ -1004,6 +1004,10 @@ Float UINode::convertLength( const CSS::StyleSheetLength& length, const Float& c
 
 Float UINode::convertLengthAsDp( const CSS::StyleSheetLength& length, const Float& containerLength ) {
 	return PixelDensity::pxToDp( convertLength( length, containerLength ) );
+}
+
+UISceneNode* UINode::getUISceneNode() {
+	return ( NULL != mSceneNode && mSceneNode->isUISceneNode() ) ? static_cast<UISceneNode*>( mSceneNode ) : NULL;
 }
 
 }}

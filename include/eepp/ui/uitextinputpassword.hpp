@@ -33,6 +33,8 @@ class EE_API UITextInputPassword : public UITextInput
 		void updateFontStyleConfig();
 
 		virtual void onStateChange();
+
+		virtual void onFontChanged();
 };
 
 }}

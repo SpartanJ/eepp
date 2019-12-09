@@ -1,5 +1,7 @@
 #include <eepp/maps/mapeditor/uimapnew.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#include <eepp/scene/scenemanager.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 
 namespace EE { namespace Maps { namespace Private {
 
@@ -18,7 +20,10 @@ UIMapNew::UIMapNew( UIMap * Map, std::function<void()> NewMapCb, bool ResizeMap 
 	mNewMapCb( NewMapCb ),
 	mResizeMap( ResizeMap )
 {
-	mTheme		= UIThemeManager::instance()->getDefaultTheme();
+	if ( SceneManager::instance()->getUISceneNode() == NULL )
+		return;
+
+	mTheme		= SceneManager::instance()->getUISceneNode()->getUIThemeManager()->getDefaultTheme();
 
 	if ( NULL == mTheme )
 		return;

@@ -265,8 +265,6 @@ class EE_API UIWindow : public UIWidget {
 
 		virtual Sizei getFrameBufferSize();
 
-		UISceneNode * getUISceneNode();
-
 		void onContainerPositionChange(const Event * Event);
 
 		void setupModal();

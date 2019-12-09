@@ -1,5 +1,6 @@
 #include <eepp/ee.hpp>
 #include <efsw/efsw.hpp>
+#include <args/args.hxx>
 #include <pugixml/pugixml.hpp>
 
 /**
@@ -50,6 +51,7 @@ std::string currentStyleSheet;
 bool layoutExpanded = true;
 bool updateLayout = false;
 bool updateStyleSheet = false;
+bool useDefaultTheme = false;
 Clock waitClock;
 Clock cssWaitClock;
 efsw::WatchID watch = 0;
@@ -308,6 +310,8 @@ void onRecentFilesClick( const Event * event ) {
 }
 
 void updateRecentFiles() {
+	SceneManager::instance()->setCurrentUISceneNode( appUiSceneNode );
+
 	if ( NULL == uiWinMenu )
 		return;
 
@@ -331,9 +335,13 @@ void updateRecentFiles() {
 
 		recentFilesEventClickId = menu->addEventListener( Event::OnItemClicked, cb::Make1( &onRecentFilesClick ) );
 	}
+
+	SceneManager::instance()->setCurrentUISceneNode( uiSceneNode );
 }
 
 void updateRecentProjects() {
+	SceneManager::instance()->setCurrentUISceneNode( appUiSceneNode );
+
 	if ( NULL == uiWinMenu )
 		return;
 
@@ -357,6 +365,8 @@ void updateRecentProjects() {
 
 		recentProjectEventClickId = menu->addEventListener( Event::OnItemClicked, cb::Make1( &onRecentProjectClick ) );
 	}
+
+	SceneManager::instance()->setCurrentUISceneNode( uiSceneNode );
 }
 
 void resizeCb(EE::Window::Window *) {
@@ -408,7 +418,7 @@ static void loadUITheme( std::string themePath ) {
 
 	UITheme * uitheme = UITheme::loadFromTextureAtlas( UITheme::New( name, name ), TextureAtlasManager::instance()->getByName( name ) );
 
-	UIThemeManager::instance()->setDefaultTheme( uitheme )->add( uitheme );
+	uiSceneNode->getUIThemeManager()->setDefaultTheme( uitheme )->add( uitheme );
 }
 
 void onLayoutSelected( const Event * event ) {
@@ -471,6 +481,8 @@ void refreshLayoutList() {
 }
 
 static void loadProjectNodes( pugi::xml_node node ) {
+	uiSceneNode->getUIThemeManager()->setDefaultTheme( useDefaultTheme ? theme : NULL );
+
 	for ( pugi::xml_node resources = node; resources; resources = resources.next_sibling() ) {
 		std::string name = String::toLower( resources.name() );
 
@@ -675,8 +687,6 @@ void closeProject() {
 
 bool onCloseRequestCallback( EE::Window::Window * ) {
 	SceneManager::instance()->setCurrentUISceneNode( appUiSceneNode );
-	UITheme * prevTheme = UIThemeManager::instance()->getDefaultTheme();
-	UIThemeManager::instance()->setDefaultTheme( theme );
 
 	MsgBox = UIMessageBox::New( UIMessageBox::OK_CANCEL, "Do you really want to close the current file?\nAll changes will be lost." );
 	MsgBox->setTheme( theme );
@@ -686,7 +696,6 @@ bool onCloseRequestCallback( EE::Window::Window * ) {
 	MsgBox->center();
 	MsgBox->show();
 
-	UIThemeManager::instance()->setDefaultTheme( prevTheme );
 	SceneManager::instance()->setCurrentUISceneNode( uiSceneNode );
 	return false;
 }
@@ -773,8 +782,7 @@ void fileMenuClick( const Event * event ) {
 
 	const String& txt = event->getNode()->asType<UIMenuItem>()->getText();
 
-	UITheme * prevTheme = UIThemeManager::instance()->getDefaultTheme();
-	UIThemeManager::instance()->setDefaultTheme( theme );
+	SceneManager::instance()->setCurrentUISceneNode( appUiSceneNode );
 
 	if ( "Open project..." == txt ) {
 		UICommonDialog * TGDialog = UICommonDialog::New( UI_CDL_DEFAULT_FLAGS, "*.xml" );
@@ -822,10 +830,63 @@ void fileMenuClick( const Event * event ) {
 		TGDialog->show();
 	}
 
-	UIThemeManager::instance()->setDefaultTheme( prevTheme );
+	SceneManager::instance()->setCurrentUISceneNode( uiSceneNode );
+}
+
+void createAppMenu() {
+	SceneManager::instance()->setCurrentUISceneNode( appUiSceneNode );
+
+	uiWinMenu = UIWinMenu::New();
+
+	UIPopUpMenu * uiPopMenu = UIPopUpMenu::New();
+	uiPopMenu->add( "Open project...", theme->getIconByName( "document-open" ) );
+	uiPopMenu->addSeparator();
+	uiPopMenu->add( "Open layout...", theme->getIconByName( "document-open" ) );
+	uiPopMenu->addSeparator();
+	uiPopMenu->addSubMenu( "Recent files", NULL, UIPopUpMenu::New() );
+	uiPopMenu->addSubMenu( "Recent projects", NULL, UIPopUpMenu::New() );
+	uiPopMenu->addSeparator();
+	uiPopMenu->add( "Close", theme->getIconByName( "document-close" ) );
+	uiPopMenu->addSeparator();
+	uiPopMenu->add( "Quit", theme->getIconByName( "quit" ) );
+	uiWinMenu->addMenuButton( "File", uiPopMenu );
+	uiPopMenu->addEventListener( Event::OnItemClicked, cb::Make1( fileMenuClick ) );
+
+	UIPopUpMenu * uiResourceMenu = UIPopUpMenu::New();
+	uiResourceMenu->add( "Load images from path...", theme->getIconByName( "document-open" ) );
+	uiResourceMenu->addSeparator();
+	uiResourceMenu->add( "Load fonts from path...", theme->getIconByName( "document-open" ) );
+	uiResourceMenu->addSeparator();
+	uiResourceMenu->add( "Load style sheet from path...", theme->getIconByName( "document-open" ) );
+	uiWinMenu->addMenuButton( "Resources", uiResourceMenu );
+	uiResourceMenu->addEventListener( Event::OnItemClicked, cb::Make1( fileMenuClick ) );
+
+	SceneManager::instance()->setCurrentUISceneNode( uiSceneNode );
 }
 
 EE_MAIN_FUNC int main (int argc, char * argv []) {
+	args::ArgumentParser parser("eepp UIEditor");
+	args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
+	args::ValueFlag<std::string> xmlFile(parser, "xml", "Loads XML file", {'x', "xml"});
+	args::ValueFlag<std::string> cssFile(parser, "css", "Loads CSS file", {'c', "css"});
+	args::ValueFlag<std::string> projectFile(parser, "project", "Loads project file", {'p', "project"});
+	args::Flag useAppTheme(parser, "use-app-theme", "Use the default application theme in the editor.", {'u',"use-app-theme"});
+
+	try {
+		parser.ParseCLI(argc, argv);
+	} catch (const args::Help&) {
+		std::cout << parser;
+		return EXIT_SUCCESS;
+	} catch (const args::ParseError& e) {
+		std::cerr << e.what() << std::endl;
+		std::cerr << parser;
+		return EXIT_FAILURE;
+	} catch (args::ValidationError& e) {
+		std::cerr << e.what() << std::endl;
+		std::cerr << parser;
+		return EXIT_FAILURE;
+	}
+
 	fileWatcher = new efsw::FileWatcher();
 	listener = new UpdateListener();
 	fileWatcher->watch();
@@ -860,39 +921,19 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 		uiSceneNode->enableDrawInvalidation();
 
 		appUiSceneNode->combineStyleSheet( theme->getStyleSheet() );
+		appUiSceneNode->getUIThemeManager()->setDefaultEffectsEnabled( true )->setDefaultTheme( theme )->setDefaultFont( font )->add( theme );
 
-		UIThemeManager::instance()->setDefaultEffectsEnabled( true )->setDefaultTheme( theme )->setDefaultFont( font )->add( theme );
+		uiSceneNode->combineStyleSheet( theme->getStyleSheet() );
+		uiSceneNode->getUIThemeManager()->setDefaultFont( font )->setDefaultEffectsEnabled( true );
+
+		if ( useAppTheme.Get() ) {
+			useDefaultTheme = true;
+			uiSceneNode->getUIThemeManager()->setDefaultTheme( theme );
+		}
 
 		loadConfig();
 
-		SceneManager::instance()->setCurrentUISceneNode( appUiSceneNode );
-
-		uiWinMenu = UIWinMenu::New();
-
-		UIPopUpMenu * uiPopMenu = UIPopUpMenu::New();
-		uiPopMenu->add( "Open project...", theme->getIconByName( "document-open" ) );
-		uiPopMenu->addSeparator();
-		uiPopMenu->add( "Open layout...", theme->getIconByName( "document-open" ) );
-		uiPopMenu->addSeparator();
-		uiPopMenu->addSubMenu( "Recent files", NULL, UIPopUpMenu::New() );
-		uiPopMenu->addSubMenu( "Recent projects", NULL, UIPopUpMenu::New() );
-		uiPopMenu->addSeparator();
-		uiPopMenu->add( "Close", theme->getIconByName( "document-close" ) );
-		uiPopMenu->addSeparator();
-		uiPopMenu->add( "Quit", theme->getIconByName( "quit" ) );
-		uiWinMenu->addMenuButton( "File", uiPopMenu );
-		uiPopMenu->addEventListener( Event::OnItemClicked, cb::Make1( fileMenuClick ) );
-
-		UIPopUpMenu * uiResourceMenu = UIPopUpMenu::New();
-		uiResourceMenu->add( "Load images from path...", theme->getIconByName( "document-open" ) );
-		uiResourceMenu->addSeparator();
-		uiResourceMenu->add( "Load fonts from path...", theme->getIconByName( "document-open" ) );
-		uiResourceMenu->addSeparator();
-		uiResourceMenu->add( "Load style sheet from path...", theme->getIconByName( "document-open" ) );
-		uiWinMenu->addMenuButton( "Resources", uiResourceMenu );
-		uiResourceMenu->addEventListener( Event::OnItemClicked, cb::Make1( fileMenuClick ) );
-
-		SceneManager::instance()->setCurrentUISceneNode( uiSceneNode );
+		createAppMenu();
 
 		uiContainer = UIWidget::New();
 		uiContainer->setId( "appContainer" )->setSize( uiSceneNode->getSize() );
@@ -905,18 +946,24 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 
 		window->pushResizeCallback( cb::Make1( resizeCb ) );
 
-		if ( argc >= 2 ) {
-			if ( argc >= 3 ) {
-				loadStyleSheet( argv[2] );
-			}
+		if ( cssFile ) {
+			loadStyleSheet( cssFile.Get() );
+		}
 
-			loadLayoutFile( argv[1] );
+		if ( xmlFile ) {
+			loadLayoutFile( xmlFile.Get() );
+		}
+
+		if ( projectFile ) {
+			loadProject( projectFile.Get() );
+		}
+
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
-		} else {
+		if ( !xmlFile && !cssFile )
 			loadStyleSheet( "assets/layouts/test.css" );
 			loadLayoutFile( "assets/layouts/test.xml" );
-#endif
 		}
+#endif
 
 		window->runMainLoop( &mainLoop );
 	}

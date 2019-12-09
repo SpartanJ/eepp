@@ -26,7 +26,6 @@ class EE_API TextureAtlasTextureRegionEditor : public UIWidget {
 
 		UITextureRegion * getGfx() const;
 	protected:
-		UITheme * mTheme;
 		UITextureRegion * mGfx;
 		UINode * mDrag;
 		Vector2f mUICenter;

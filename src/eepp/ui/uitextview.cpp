@@ -34,15 +34,15 @@ UITextView::UITextView( const std::string& tag ) :
 {
 	mTextCache = Text::New();
 
-	UITheme * theme = UIThemeManager::instance()->getDefaultTheme();
+	UITheme * theme = getUISceneNode()->getUIThemeManager()->getDefaultTheme();
 
-	if ( NULL != theme ) {
-		mFontStyleConfig.Font = theme->getDefaultFont();
+	if ( NULL != theme && NULL != theme->getDefaultFont() ) {
+		setFont( theme->getDefaultFont() );
 	}
 
 	if ( NULL == getFont() ) {
-		if ( NULL != UIThemeManager::instance()->getDefaultFont() )
-			setFont( UIThemeManager::instance()->getDefaultFont() );
+		if ( NULL != getUISceneNode()->getUIThemeManager()->getDefaultFont() )
+			setFont( getUISceneNode()->getUIThemeManager()->getDefaultFont() );
 		else
 			eePRINTL( "UITextView::UITextView : Created a without a defined font." );
 	}
@@ -101,6 +101,7 @@ Graphics::Font * UITextView::getFont() const {
 UITextView * UITextView::setFont( Graphics::Font * font ) {
 	if ( NULL != font && mTextCache->getFont() != font ) {
 		mTextCache->setFont( font );
+		mFontStyleConfig.Font = font;
 		recalculate();
 		onFontChanged();
 		notifyLayoutAttrChange();

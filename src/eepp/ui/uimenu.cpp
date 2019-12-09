@@ -516,9 +516,8 @@ const UIMenu::StyleConfig& UIMenu::getStyleConfig() const {
 	return mStyleConfig;
 }
 
-static Drawable * getIconDrawable( const std::string& name ) {
+static Drawable * getIconDrawable( const std::string& name, UITheme * theme ) {
 	Drawable * iconDrawable = NULL;
-	UITheme * theme = UIThemeManager::instance()->getDefaultTheme();
 
 	if ( NULL != theme )
 		iconDrawable = theme->getIconByName( name );
@@ -543,7 +542,7 @@ void UIMenu::loadFromXmlNode( const pugi::xml_node& node ) {
 			std::string icon( item.attribute("icon").as_string() );
 
 			if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
-				add( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( text ), getIconDrawable( icon ) );
+				add( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( text ), getIconDrawable( icon, getUISceneNode()->getUIThemeManager()->getDefaultTheme() ) );
 		} else if ( name == "menuseparator" || name == "separator" ) {
 			addSeparator();
 		} else if ( name == "menucheckbox" || name == "checkbox" ) {
@@ -564,7 +563,7 @@ void UIMenu::loadFromXmlNode( const pugi::xml_node& node ) {
 			subMenu->loadFromXmlNode( item );
 
 			if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
-				addSubMenu( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( text ), getIconDrawable( icon ), subMenu );
+				addSubMenu( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( text ), getIconDrawable( icon, getUISceneNode()->getUIThemeManager()->getDefaultTheme() ), subMenu );
 		}
 	}
 

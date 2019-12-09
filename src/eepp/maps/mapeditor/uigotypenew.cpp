@@ -1,5 +1,7 @@
 #include <eepp/maps/mapeditor/uigotypenew.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#include <eepp/scene/scenemanager.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 
 namespace EE { namespace Maps { namespace Private {
 
@@ -9,7 +11,10 @@ UIGOTypeNew::UIGOTypeNew( std::function<void( std::string, Uint32 )> Cb ) :
 	mUIInput( NULL ),
 	mCb( Cb )
 {
-	mUITheme		= UIThemeManager::instance()->getDefaultTheme();
+	if ( SceneManager::instance()->getUISceneNode() == NULL )
+		return;
+
+	mUITheme		= SceneManager::instance()->getUISceneNode()->getUIThemeManager()->getDefaultTheme();
 
 	if ( NULL == mUITheme )
 		return;

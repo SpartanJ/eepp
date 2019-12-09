@@ -1,5 +1,7 @@
 #include <eepp/maps/mapeditor/mapobjectproperties.hpp>
 #include <eepp/maps/mapeditor/mapeditor.hpp>
+#include <eepp/scene/scenemanager.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 
 namespace EE { namespace Maps { namespace Private {
 
@@ -22,7 +24,10 @@ MapObjectProperties::MapObjectProperties( GameObjectObject * Obj ) :
 		return;
 	}
 
-	mUITheme		= UIThemeManager::instance()->getDefaultTheme();
+	if ( SceneManager::instance()->getUISceneNode() == NULL )
+		return;
+
+	mUITheme		= SceneManager::instance()->getUISceneNode()->getUIThemeManager()->getDefaultTheme();
 
 	if ( NULL == mUITheme )
 		return;

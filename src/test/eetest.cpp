@@ -603,10 +603,9 @@ void EETest::createUI() {
 
 	sceneNode->combineStyleSheet( mTheme->getStyleSheet() );
 
-	UIThemeManager::instance()->add( mTheme );
-	UIThemeManager::instance()->setDefaultEffectsEnabled( true );
-	UIThemeManager::instance()->setDefaultFont( TTF );
-	UIThemeManager::instance()->setDefaultTheme( mThemeName );
+	UIThemeManager * uiThemeManager = sceneNode->getUIThemeManager();
+	uiThemeManager->add( mTheme );
+	uiThemeManager->setDefaultEffectsEnabled( true )->setDefaultFont( TTF )->setDefaultTheme( mThemeName );
 
 	createBaseUI();
 	createNewUI();

@@ -7,6 +7,7 @@
 
 namespace EE { namespace UI {
 
+class UIThemeManager;
 class UIWidget;
 class UIWindow;
 
@@ -15,6 +16,8 @@ class EE_API UISceneNode : public SceneNode {
 		static UISceneNode * New( EE::Window::Window * window = NULL );
 
 		explicit UISceneNode( EE::Window::Window * window = NULL );
+
+		virtual ~UISceneNode();
 
 		virtual Node * setSize( const Sizef& size );
 
@@ -55,6 +58,8 @@ class EE_API UISceneNode : public SceneNode {
 		bool hasStyleSheet();
 
 		const bool& isLoading() const;
+
+		UIThemeManager * getUIThemeManager() const;
 	protected:
 		friend class EE::UI::UIWindow;
 		Sizef				mDpSize;
@@ -63,6 +68,7 @@ class EE_API UISceneNode : public SceneNode {
 		std::list<UIWindow*> mWindowsList;
 		CSS::StyleSheet mStyleSheet;
 		bool				mIsLoading;
+		UIThemeManager *	mUIThemeManager;
 
 		virtual void resizeControl( EE::Window::Window * win );
 

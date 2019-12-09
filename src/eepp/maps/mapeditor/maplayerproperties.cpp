@@ -1,5 +1,7 @@
 #include <eepp/maps/mapeditor/maplayerproperties.hpp>
 #include <eepp/maps/mapeditor/mapeditor.hpp>
+#include <eepp/scene/scenemanager.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 
 namespace EE { namespace Maps { namespace Private {
 
@@ -15,7 +17,10 @@ MapLayerProperties::MapLayerProperties( MapLayer * Map, RefreshLayerListCb Cb ) 
 		return;
 	}
 
-	mUITheme		= UIThemeManager::instance()->getDefaultTheme();
+	if ( SceneManager::instance()->getUISceneNode() == NULL )
+		return;
+
+	mUITheme		= SceneManager::instance()->getUISceneNode()->getUIThemeManager()->getDefaultTheme();
 
 	if ( NULL == mUITheme )
 		return;

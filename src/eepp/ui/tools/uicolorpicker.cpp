@@ -209,11 +209,11 @@ UIColorPicker::UIColorPicker(UIWindow* attachTo, const UIColorPicker::ColorPicke
 	if ( mUIWindow->isModal() ) {
 		if ( mModalAlpha != 0.f ) {
 			mUIWindow->getModalControl()->setBackgroundColor( Color( 0, 0, 0, mModalAlpha ) );
-			mUIWindow->getModalControl()->runAction( Actions::Fade::New( 0.f, mModalAlpha, UIThemeManager::instance()->getControlsFadeOutTime() ) );
+			mUIWindow->getModalControl()->runAction( Actions::Fade::New( 0.f, mModalAlpha, mRoot->getUISceneNode()->getUIThemeManager()->getControlsFadeOutTime() ) );
 		}
 		mUIWindow->getModalControl()->addEventListener( Event::MouseClick, [&] ( const Event* event ) {
 			if ( mModalAlpha != 0.f )
-				mUIWindow->getModalControl()->runAction( Actions::FadeOut::New( UIThemeManager::instance()->getControlsFadeOutTime() ) );
+				mUIWindow->getModalControl()->runAction( Actions::FadeOut::New( mRoot->getUISceneNode()->getUIThemeManager()->getControlsFadeOutTime() ) );
 			mUIWindow->closeWindow();
 		} );
 	}

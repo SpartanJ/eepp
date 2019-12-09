@@ -9,9 +9,9 @@ namespace EE { namespace UI {
 class UINode;
 
 class EE_API UIThemeManager : public ResourceManager<UITheme> {
-	SINGLETON_DECLARE_HEADERS(UIThemeManager)
-
 	public:
+		static UIThemeManager * New();
+
 		virtual ~UIThemeManager();
 
 		UIThemeManager * setDefaultFont( Font * Font );

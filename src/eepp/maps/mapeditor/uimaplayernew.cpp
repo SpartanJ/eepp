@@ -1,5 +1,7 @@
 #include <eepp/maps/mapeditor/uimaplayernew.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#include <eepp/scene/scenemanager.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 
 namespace EE { namespace Maps { namespace Private {
 
@@ -11,7 +13,10 @@ UIMapLayerNew::UIMapLayerNew( UIMap * Map, EE_LAYER_TYPE Type, NewLayerCb newLay
 	mUIWindow( NULL ),
 	mLayer( NULL )
 {
-	mTheme		= UIThemeManager::instance()->getDefaultTheme();
+	if ( SceneManager::instance()->getUISceneNode() == NULL )
+		return;
+
+	mTheme		= SceneManager::instance()->getUISceneNode()->getUIThemeManager()->getDefaultTheme();
 
 	if ( NULL == mTheme )
 		return;

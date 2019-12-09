@@ -363,10 +363,6 @@ Sizei UIWindow::getFrameBufferSize() {
 	return isResizeable() && (Node*)this != mSceneNode ? Sizei( Math::nextPowOfTwo( (int)mSize.getWidth() ), Math::nextPowOfTwo( (int)mSize.getHeight() ) ) : mSize.ceil().asInt();
 }
 
-UISceneNode *UIWindow::getUISceneNode() {
-	return ( NULL != mSceneNode && mSceneNode->isUISceneNode() ) ? static_cast<UISceneNode*>( mSceneNode ) : NULL;
-}
-
 void UIWindow::createModalControl() {
 	Node * Ctrl = mSceneNode;
 
@@ -403,8 +399,8 @@ void UIWindow::closeWindow() {
 	if ( NULL != mButtonMinimize )
 		mButtonMinimize->setEnabled( false );
 
-	if ( Time::Zero != UIThemeManager::instance()->getControlsFadeOutTime() )
-		runAction( Actions::Sequence::New( Actions::FadeOut::New( UIThemeManager::instance()->getControlsFadeOutTime() ), Actions::Close::New() ) );
+	if ( Time::Zero != getUISceneNode()->getUIThemeManager()->getControlsFadeOutTime() )
+		runAction( Actions::Sequence::New( Actions::FadeOut::New( getUISceneNode()->getUIThemeManager()->getControlsFadeOutTime() ), Actions::Close::New() ) );
 	else
 		close();
 }
@@ -955,7 +951,7 @@ bool UIWindow::show() {
 
 		setFocus();
 
-		runAction( Actions::Fade::New( mStyleConfig.BaseAlpha == getAlpha() ? 0.f : mAlpha, mStyleConfig.BaseAlpha, UIThemeManager::instance()->getControlsFadeOutTime() ) );
+		runAction( Actions::Fade::New( mStyleConfig.BaseAlpha == getAlpha() ? 0.f : mAlpha, mStyleConfig.BaseAlpha, getUISceneNode()->getUIThemeManager()->getControlsFadeOutTime() ) );
 
 		setupModal();
 
@@ -969,8 +965,8 @@ bool UIWindow::show() {
 
 bool UIWindow::hide() {
 	if ( isVisible() ) {
-		if ( UIThemeManager::instance()->getDefaultEffectsEnabled() ) {
-			runAction( Actions::Sequence::New( Actions::FadeOut::New( UIThemeManager::instance()->getControlsFadeOutTime() ), Actions::Spawn::New( Actions::Disable::New(), Actions::Visible::New( false ) ) ) );
+		if ( getUISceneNode()->getUIThemeManager()->getDefaultEffectsEnabled() ) {
+			runAction( Actions::Sequence::New( Actions::FadeOut::New( getUISceneNode()->getUIThemeManager()->getControlsFadeOutTime() ), Actions::Spawn::New( Actions::Disable::New(), Actions::Visible::New( false ) ) ) );
 		} else {
 			setEnabled( false );
 			setVisible( false );

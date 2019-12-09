@@ -140,6 +140,12 @@ void UITextInputPassword::onStateChange() {
 	UITextInput::onStateChange();
 }
 
+void UITextInputPassword::onFontChanged() {
+	onStateChange();
+
+	UITextInput::onFontChanged();
+}
+
 const String& UITextInputPassword::getText() {
 	return UITextView::getText();
 }

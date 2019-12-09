@@ -20,6 +20,8 @@
 using namespace EE::Graphics;
 
 #include <eepp/ui/uithememanager.hpp>
+#include <eepp/scene/scenemanager.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 
 namespace EE { namespace Maps {
 
@@ -1397,7 +1399,7 @@ std::vector<std::string> TileMap::getTextureAtlases() {
 
 	//! Ugly ugly ugly, but i don't see another way
 	Uint32 Restricted1 = String::hash( std::string( "global" ) );
-	Uint32 Restricted2 = String::hash( UI::UIThemeManager::instance()->getDefaultTheme()->getTextureAtlas()->getName() );
+	Uint32 Restricted2 = String::hash( SceneManager::instance()->getUISceneNode()->getUIThemeManager()->getDefaultTheme()->getTextureAtlas()->getName() );
 
 	for ( std::list<TextureAtlas*>::iterator it = Res.begin(); it != Res.end(); ++it ) {
 		if ( (*it)->getId() != Restricted1 && (*it)->getId() != Restricted2 )

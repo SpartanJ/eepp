@@ -18,7 +18,6 @@ class EE_API TextureAtlasNew {
 
 		virtual ~TextureAtlasNew();
 	protected:
-		UITheme *			mTheme;
 		UIWindow *			mUIWindow;
 		TGCreateCb			mNewTGCb;
 		UIComboBox *		mComboWidth;

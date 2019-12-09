@@ -84,7 +84,8 @@ void UIComboBox::loadFromXmlNode(const pugi::xml_node& node) {
 
 	UIWidget::loadFromXmlNode( node );
 
-	mDropDownList->loadFromXmlNode( node );
+	if ( NULL != mDropDownList )
+		mDropDownList->loadFromXmlNode( node );
 
 	endAttributesTransaction();
 
@@ -92,7 +93,7 @@ void UIComboBox::loadFromXmlNode(const pugi::xml_node& node) {
 }
 
 Uint32 UIComboBox::onMessage( const NodeMessage * Msg ) {
-	if ( Msg->getMsg() == NodeMessage::Click && Msg->getSender() == mButton && ( Msg->getFlags() & EE_BUTTON_LMASK ) ) {
+	if ( Msg->getMsg() == NodeMessage::Click && Msg->getSender() == mButton && ( Msg->getFlags() & EE_BUTTON_LMASK && NULL != mDropDownList ) ) {
 		mDropDownList->showList();
 	}
 
@@ -100,17 +101,21 @@ Uint32 UIComboBox::onMessage( const NodeMessage * Msg ) {
 }
 
 void UIComboBox::updateControls() {
-	if ( ( mFlags & UI_AUTO_SIZE ) || getSize().getHeight() < mDropDownList->getSkinSize().getHeight() ) {
-		onAutoSize();
+	if ( NULL != mDropDownList ) {
+		if ( ( mFlags & UI_AUTO_SIZE ) || getSize().getHeight() < mDropDownList->getSkinSize().getHeight() ) {
+			onAutoSize();
+		}
+
+		mDropDownList->setPosition( 0, 0 );
+		mDropDownList->setSize( getSize().getWidth() - mButton->getSize().getWidth(), 0 );
+		mDropDownList->getListBox()->setSize( getSize().getWidth(), mDropDownList->getListBox()->getSize().getHeight() );
+		mDropDownList->centerVertical();
 	}
 
-	mDropDownList->setPosition( 0, 0 );
-	mDropDownList->setSize( getSize().getWidth() - mButton->getSize().getWidth(), 0 );
-	mDropDownList->getListBox()->setSize( getSize().getWidth(), mDropDownList->getListBox()->getSize().getHeight() );
-	mDropDownList->centerVertical();
-
-	mButton->setPosition( getSize().getWidth() - mButton->getSize().getWidth(), 0 );
-	mButton->centerVertical();
+	if ( NULL != mButton ) {
+		mButton->setPosition( getSize().getWidth() - mButton->getSize().getWidth(), 0 );
+		mButton->centerVertical();
+	}
 }
 
 void UIComboBox::onSizeChange() {

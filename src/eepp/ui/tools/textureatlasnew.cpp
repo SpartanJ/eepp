@@ -10,15 +10,9 @@
 namespace EE { namespace UI { namespace Tools {
 
 TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) :
-	mTheme( NULL ),
 	mUIWindow( NULL ),
 	mNewTGCb( NewTGCb )
 {
-	mTheme		= UIThemeManager::instance()->getDefaultTheme();
-
-	if ( NULL == mTheme )
-		return;
-
 	mUIWindow	= UIWindow::New();
 	mUIWindow->setSizeWithDecoration( 378, 303 )
 			 ->setMinWindowSize( 378, 303 )

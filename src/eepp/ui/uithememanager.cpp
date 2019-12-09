@@ -3,7 +3,9 @@
 
 namespace EE { namespace UI {
 
-SINGLETON_DECLARE_IMPLEMENTATION(UIThemeManager)
+UIThemeManager* UIThemeManager::New() {
+	return eeNew( UIThemeManager, () );
+}
 
 UIThemeManager::UIThemeManager() :
 	ResourceManager<UITheme>( true ),
@@ -46,7 +48,7 @@ UIThemeManager *  UIThemeManager::setDefaultTheme( UITheme * Theme ) {
 }
 
 UIThemeManager *  UIThemeManager::setDefaultTheme( const std::string& Theme ) {
-	setDefaultTheme( UIThemeManager::instance()->getByName( Theme ) );
+	setDefaultTheme( getByName( Theme ) );
 	return this;
 }
 

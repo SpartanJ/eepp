@@ -22,6 +22,7 @@ using namespace EE::Scene;
 
 namespace EE { namespace UI {
 
+class UISceneNode;
 class UITheme;
 class UINodeDrawable;
 
@@ -204,6 +205,8 @@ class EE_API UINode : public Node {
 		virtual Float convertLength( const CSS::StyleSheetLength& length, const Float& containerLength );
 
 		Float convertLengthAsDp( const CSS::StyleSheetLength& length, const Float& containerLength );
+
+		UISceneNode * getUISceneNode();
 	protected:
 		Vector2f		mDpPos;
 		Sizef			mDpSize;

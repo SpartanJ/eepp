@@ -64,7 +64,7 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 
 			uiSceneNode->combineStyleSheet( theme->getStyleSheet() );
 
-			UIThemeManager::instance()->setDefaultEffectsEnabled( true )->setDefaultTheme( theme )->setDefaultFont( font )->add( theme );
+			uiSceneNode->getUIThemeManager()->setDefaultEffectsEnabled( true )->setDefaultTheme( theme )->setDefaultFont( font )->add( theme );
 		}
 
 		Editor = MapEditor::New();
