@@ -12,7 +12,11 @@ class EE_API UIListBoxItem : public UITextView {
 	public:
 		static UIListBoxItem * New();
 
+		static UIListBoxItem * NewWithTag( const std::string& tag );
+
 		UIListBoxItem();
+
+		UIListBoxItem( const std::string& tag );
 
 		virtual ~UIListBoxItem();
 

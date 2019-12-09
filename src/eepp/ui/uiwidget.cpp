@@ -1093,7 +1093,11 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		case PropertyId::Skin:
 			mSkinName = attribute.asString();
-			setThemeSkin( mSkinName );
+			if ( "none" == mSkinName || mSkinName.empty() ) {
+				removeSkin();
+			} else {
+				setThemeSkin( mSkinName );
+			}
 			break;
 		case PropertyId::SkinColor:
 			setSkinColor( attribute.asColor() );

@@ -8,8 +8,19 @@ UIListBoxItem * UIListBoxItem::New() {
 	return eeNew( UIListBoxItem, () );
 }
 
+UIListBoxItem * UIListBoxItem::NewWithTag( const std::string& tag ) {
+	return eeNew( UIListBoxItem, ( tag ) );
+}
+
 UIListBoxItem::UIListBoxItem() :
 	UITextView( "listbox::item" )
+{
+	setLayoutSizeRules( FIXED, FIXED );
+	applyDefaultTheme();
+}
+
+UIListBoxItem::UIListBoxItem( const std::string& tag ) :
+	UITextView( tag )
 {
 	setLayoutSizeRules( FIXED, FIXED );
 	applyDefaultTheme();

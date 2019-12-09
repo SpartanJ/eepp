@@ -16,14 +16,14 @@ UIRadioButton::UIRadioButton() :
 	mActive( false ),
 	mTextSeparation( 4 )
 {
-	mActiveButton 	= UINode::New();
+	mActiveButton 	= UIWidget::NewWithTag( "radiobutton::active" );
 	mActiveButton->setVisible( false );
 	mActiveButton->setEnabled( true );
 	mActiveButton->setParent( this );
 	mActiveButton->setPosition( 0, 0 );
 	mActiveButton->setSize( 16, 16 );
 
-	mInactiveButton = UINode::New();
+	mInactiveButton = UIWidget::NewWithTag( "radiobutton::inactive" );
 	mInactiveButton->setVisible( true );
 	mInactiveButton->setEnabled( true );
 	mInactiveButton->setParent( this );
@@ -113,7 +113,7 @@ void UIRadioButton::onSizeChange() {
 
 Uint32 UIRadioButton::onMessage( const NodeMessage * Msg ) {
 	switch ( Msg->getMsg() ) {
-		case NodeMessage::Click: {
+		case NodeMessage::MouseUp: {
 			if ( Msg->getFlags() & EE_BUTTON_LMASK ) {
 				switchState();
 			}

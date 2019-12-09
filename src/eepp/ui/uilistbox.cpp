@@ -188,7 +188,7 @@ Uint32 UIListBox::addListBoxItem( const String& text ) {
 }
 
 UIListBoxItem * UIListBox::createListBoxItem( const String& Name ) {
-	UIListBoxItem * tItem		= UIListBoxItem::New();
+	UIListBoxItem * tItem		= UIListBoxItem::NewWithTag( mTag + "::item" );
 	tItem->setParent( mContainer );
 	tItem->setTheme( mTheme );
 	tItem->setHorizontalAlign( UI_HALIGN_LEFT )->setVerticalAlign( UI_VALIGN_CENTER );

@@ -699,6 +699,8 @@ UINode * UINode::setSkin( UISkin * skin ) {
 		mSkinState->setState( InitialState );
 
 		onThemeLoaded();
+	} else {
+		removeSkin();
 	}
 
 	return this;
