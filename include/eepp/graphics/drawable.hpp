@@ -20,6 +20,7 @@ class EE_API Drawable {
 			SPRITE,
 			ARC,
 			RECTANGLE,
+			TRIANGLE,
 			CONVEXSHAPE,
 			GROUP,
 			NINEPATCH,

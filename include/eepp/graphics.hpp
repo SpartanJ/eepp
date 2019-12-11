@@ -48,6 +48,7 @@
 #include <eepp/graphics/arcdrawable.hpp>
 #include <eepp/graphics/circledrawable.hpp>
 #include <eepp/graphics/rectangledrawable.hpp>
+#include <eepp/graphics/triangledrawable.hpp>
 #include <eepp/graphics/convexshapedrawable.hpp>
 #include <eepp/graphics/drawablegroup.hpp>
 #include <eepp/graphics/ninepatch.hpp>

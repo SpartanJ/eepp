@@ -102,6 +102,7 @@
 ../../include/eepp/graphics/textureloader.hpp
 ../../include/eepp/graphics/texturepacker.hpp
 ../../include/eepp/graphics/textureregion.hpp
+../../include/eepp/graphics/triangledrawable.hpp
 ../../include/eepp/graphics/vertexbufferhelper.hpp
 ../../include/eepp/graphics/vertexbuffer.hpp
 ../../include/eepp/graphics/vertexbuffermanager.hpp
@@ -536,6 +537,7 @@
 ../../src/eepp/graphics/texturepackertex.hpp
 ../../src/eepp/graphics/textureregion.cpp
 ../../src/eepp/graphics/scopedtexture.hpp
+../../src/eepp/graphics/triangledrawable.cpp
 ../../src/eepp/graphics/vertexbuffer.cpp
 ../../src/eepp/graphics/vertexbuffermanager.cpp
 ../../src/eepp/graphics/vertexbuffermanager.hpp

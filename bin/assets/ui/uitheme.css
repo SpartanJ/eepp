@@ -17,7 +17,7 @@ ProgressBar {
 	display-percent: true;
 	vertical-expand: true;
 	filler-padding: 2dp;
-	movement-speed: 32, 0;
+	movement-speed: 32 0;
 }
 
 WinMenu {
@@ -54,7 +54,7 @@ ScrollBar {
 
 Window {
 	window-flags: shadow;
-	buttons-position-offset: -2, 0;
+	buttons-position-offset: -2 0;
 }
 
 Window::title {

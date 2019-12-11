@@ -146,9 +146,9 @@ void UIDropDownList::showList() {
 
 			Float sliderValue = mListBox->getVerticalScrollBar()->getValue();
 
-			if ( mStyleConfig.MaxNumVisibleItems < mListBox->getCount() )
+			if ( mStyleConfig.MaxNumVisibleItems < mListBox->getCount() ) {
 				mListBox->setSize( NULL != mFriendCtrl ? mFriendCtrl->getSize().getWidth() : getSize().getWidth(), (Int32)( mStyleConfig.MaxNumVisibleItems * mListBox->getRowHeight() ) + tPadding.Top + tPadding.Bottom );
-			else {
+			} else {
 				mListBox->setSize( NULL != mFriendCtrl ? mFriendCtrl->getSize().getWidth() : getSize().getWidth(), (Int32)( mListBox->getCount() * mListBox->getRowHeight() ) + tPadding.Top + tPadding.Bottom );
 			}
 

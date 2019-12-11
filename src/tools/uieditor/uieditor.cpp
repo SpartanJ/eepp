@@ -42,7 +42,7 @@ EE::Window::Window * window = NULL;
 UIMessageBox * MsgBox = NULL;
 efsw::FileWatcher * fileWatcher = NULL;
 UITheme * theme = NULL;
-UIWidget * uiContainer = NULL;
+UIWindow * uiContainer = NULL;
 UIWinMenu * uiWinMenu = NULL;
 UISceneNode * uiSceneNode = NULL;
 UISceneNode * appUiSceneNode = NULL;
@@ -52,6 +52,7 @@ bool layoutExpanded = true;
 bool updateLayout = false;
 bool updateStyleSheet = false;
 bool useDefaultTheme = false;
+bool preserveContainerSize = false;
 Clock waitClock;
 Clock cssWaitClock;
 efsw::WatchID watch = 0;
@@ -254,7 +255,7 @@ static void loadLayout( std::string file ) {
 		watch = fileWatcher->addWatch( folder, listener );
 	}
 
-	uiContainer->childsCloseAll();
+	uiContainer->getContainer()->childsCloseAll();
 
 	uiSceneNode->loadLayoutFromFile( file, uiContainer );
 
@@ -369,15 +370,17 @@ void updateRecentProjects() {
 	SceneManager::instance()->setCurrentUISceneNode( uiSceneNode );
 }
 
-void resizeCb(EE::Window::Window *) {
+void resizeCb(EE::Window::Window * window) {
 	if ( layoutExpanded ) {
 		uiContainer->setSize( uiSceneNode->getSize() );
-	} else {
+	} else if ( !preserveContainerSize ) {
 		Float scaleW = (Float)uiSceneNode->getSize().getWidth() / (Float)uiContainer->getSize().getWidth();
 		Float scaleH = (Float)uiSceneNode->getSize().getHeight() / (Float)uiContainer->getSize().getHeight();
 
 		uiContainer->setScale( scaleW < scaleH ? scaleW : scaleH );
 		uiContainer->center();
+	} else {
+		window->setSize( uiContainer->getPixelsSize().getWidth(), uiContainer->getPixelsSize().getHeight() );
 	}
 }
 
@@ -674,7 +677,7 @@ void loadProject( std::string projectPath ) {
 void closeProject() {
 	currentLayout = "";
 	currentStyleSheet = "";
-	uiContainer->childsCloseAll();
+	uiContainer->getContainer()->childsCloseAll();
 	uiSceneNode->setStyleSheet( CSS::StyleSheet() );
 
 	layouts.clear();
@@ -870,7 +873,9 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 	args::ValueFlag<std::string> xmlFile(parser, "xml", "Loads XML file", {'x', "xml"});
 	args::ValueFlag<std::string> cssFile(parser, "css", "Loads CSS file", {'c', "css"});
 	args::ValueFlag<std::string> projectFile(parser, "project", "Loads project file", {'p', "project"});
+	args::ValueFlag<Float> pixelDenstiyConf(parser, "pixel-density", "Set default application pixel density", {'d', "pixel-density"});
 	args::Flag useAppTheme(parser, "use-app-theme", "Use the default application theme in the editor.", {'u',"use-app-theme"});
+	args::Flag preserveContainerSizeFlag(parser, "preserve-container-size", "Using this flag the application will respect the window size set in the project and won't scale the window.", {'s',"preserve-container-size"});
 
 	try {
 		parser.ParseCLI(argc, argv);
@@ -893,6 +898,14 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 
 	Display * currentDisplay = Engine::instance()->getDisplayManager()->getDisplayIndex(0);
 	Float pixelDensity = PixelDensity::toFloat( currentDisplay->getPixelDensity() );
+
+	if ( pixelDenstiyConf ) {
+		pixelDensity = pixelDenstiyConf.Get();
+	}
+
+	if ( preserveContainerSizeFlag ) {
+		preserveContainerSize = true;
+	}
 
 	window = Engine::instance()->createWindow( WindowSettings( 1280, 720, "eepp - UI Editor", WindowStyle::Default, WindowBackend::Default, 32, "assets/icon/ee.png", pixelDensity ), ContextSettings( true, GLv_default, true, 24, 1, 0, true ) );
 
@@ -935,10 +948,9 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 
 		createAppMenu();
 
-		uiContainer = UIWidget::New();
+		UIWindow::StyleConfig winStyle( UI_CONTROL_DEFAULT_FLAGS | UI_WIN_NO_DECORATION );
+		uiContainer = UIWindow::NewOpt( UIWindow::SIMPLE_LAYOUT, winStyle );
 		uiContainer->setId( "appContainer" )->setSize( uiSceneNode->getSize() );
-		uiContainer->clipDisable();
-		uiContainer->enableReportSizeChangeToChilds();
 
 		updateRecentProjects();
 

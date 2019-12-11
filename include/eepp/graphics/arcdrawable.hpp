@@ -1,4 +1,4 @@
-#ifndef EE_GRAPHICS_ARCDRAWABLE 
+#ifndef EE_GRAPHICS_ARCDRAWABLE
 #define EE_GRAPHICS_ARCDRAWABLE
 
 #include <eepp/core.hpp>
@@ -41,11 +41,16 @@ class EE_API ArcDrawable : public PrimitiveDrawable {
 		Uint32 getSegmentsCount() const;
 
 		void setSegmentsCount(const Uint32 & segmentsCount);
+
+		const Vector2f& getOffset() const;
+
+		void setOffset(const Vector2f& offset);
 	protected:
 		Float mRadius;
 		Uint32 mSegmentsCount;
 		Float mArcAngle;
 		Float mArcStartAngle;
+		Vector2f mOffset;
 
 		void updateVertex();
 };

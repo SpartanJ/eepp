@@ -37,6 +37,7 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const StyleConfig& w
 	mBorderLeft( NULL ),
 	mBorderRight( NULL ),
 	mBorderBottom( NULL ),
+	mContainer( NULL ),
 	mButtonClose( NULL ),
 	mButtonMinimize( NULL ),
 	mButtonMaximize( NULL ),

@@ -194,7 +194,7 @@ static OriginPoint toOriginPoint( std::string val ) {
 	} else if ( "topleft" == val ) {
 		return OriginPoint::OriginTopLeft;
 	} else {
-		std::vector<std::string> parts = String::split( val, ',' );
+		std::vector<std::string> parts = String::split( val, ' ' );
 
 		if ( parts.size() == 2 ) {
 			Float x = 0;
@@ -240,7 +240,7 @@ BlendMode StyleSheetProperty::asBlendMode() const {
 Vector2f StyleSheetProperty::asDpDimensionVector2f( const Vector2f& defaultValue ) const {
 	if ( !mValue.empty() ) {
 		Vector2f vector;
-		auto xySplit = String::split( mValue, ',', true );
+		auto xySplit = String::split( mValue, ' ', true );
 
 		if ( xySplit.size() == 2 ) {
 			vector.x = PixelDensity::toDpFromString("0");
@@ -273,7 +273,7 @@ Vector2i StyleSheetProperty::asDpDimensionSizei( const Sizei& defaultValue ) con
 Vector2f StyleSheetProperty::asVector2f( const Vector2f& defaultValue ) const {
 	if ( !mValue.empty() ) {
 		Vector2f vector;
-		auto xySplit = String::split( mValue, ',', true );
+		auto xySplit = String::split( mValue, ' ', true );
 
 		if ( xySplit.size() == 2 ) {
 			Float val;
@@ -300,7 +300,7 @@ Vector2f StyleSheetProperty::asVector2f( const Vector2f& defaultValue ) const {
 Vector2i StyleSheetProperty::asVector2i( const Vector2i& defaultValue ) const {
 	if ( !mValue.empty() ) {
 		Vector2i vector;
-		auto xySplit = String::split( mValue, ',', true );
+		auto xySplit = String::split( mValue, ' ', true );
 
 		if ( xySplit.size() == 2 ) {
 			int val;

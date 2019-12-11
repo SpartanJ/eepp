@@ -98,7 +98,7 @@ ShorthandDefinition::parseShorthand( const ShorthandDefinition* shorthand, std::
 				return properties;
 			}
 
-			auto values = String::split( value, ',' );
+			auto values = String::split( value, ' ' );
 
 			if ( values.size() >= 2 ) {
 				properties.emplace_back( StyleSheetProperty( propNames[0], values[0] ) );

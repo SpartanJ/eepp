@@ -49,7 +49,7 @@ void ArcDrawable::draw( const Vector2f& position, const Sizef& size ) {
 		mNeedsUpdate = true;
 	}
 
-	PrimitiveDrawable::draw( position, size );
+	PrimitiveDrawable::draw( mOffset + position, size );
 }
 
 Float ArcDrawable::getRadius() const {
@@ -57,8 +57,10 @@ Float ArcDrawable::getRadius() const {
 }
 
 void ArcDrawable::setRadius(const Float & radius) {
-	mRadius = radius;
-	mNeedsUpdate = true;
+	if ( mRadius != radius ) {
+		mRadius = radius;
+		mNeedsUpdate = true;
+	}
 }
 
 Float ArcDrawable::getArcAngle() const {
@@ -66,8 +68,10 @@ Float ArcDrawable::getArcAngle() const {
 }
 
 void ArcDrawable::setArcAngle(const Float & arcAngle) {
-	mArcAngle = arcAngle;
-	mNeedsUpdate = true;
+	if ( mArcAngle != arcAngle ) {
+		mArcAngle = arcAngle;
+		mNeedsUpdate = true;
+	}
 }
 
 Float ArcDrawable::getArcStartAngle() const {
@@ -75,8 +79,10 @@ Float ArcDrawable::getArcStartAngle() const {
 }
 
 void ArcDrawable::setArcStartAngle(const Float & arcStartAngle) {
-	mArcStartAngle = arcStartAngle;
-	mNeedsUpdate = true;
+	if ( mArcStartAngle != arcStartAngle ) {
+		mArcStartAngle = arcStartAngle;
+		mNeedsUpdate = true;
+	}
 }
 
 Uint32 ArcDrawable::getSegmentsCount() const {
@@ -88,6 +94,17 @@ void ArcDrawable::setSegmentsCount(const Uint32 & segmentsCount) {
 	if(mSegmentsCount < 6) mSegmentsCount = 6;
 	mSegmentsCount = mSegmentsCount > 360 ? 360 : mSegmentsCount;
 	mNeedsUpdate = true;
+}
+
+const Vector2f& ArcDrawable::getOffset() const {
+	return mOffset;
+}
+
+void ArcDrawable::setOffset( const Vector2f& offset ) {
+	if ( mOffset != offset ) {
+		mOffset = offset;
+		mNeedsUpdate = true;
+	}
 }
 
 void ArcDrawable::updateVertex() {
