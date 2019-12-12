@@ -49,12 +49,15 @@ UIWidget::UIWidget( const std::string & tag ) :
 {
 	mNodeFlags |= NODE_FLAG_WIDGET;
 
+	reloadStyle( false );
+
 	updateAnchorsDistances();
 }
 
 UIWidget::UIWidget() :
 	UIWidget( "widget" )
 {
+	reloadStyle( false );
 }
 
 UIWidget::~UIWidget() {
@@ -724,7 +727,7 @@ void UIWidget::reloadStyle( const bool& reloadChilds ) {
 
 			while ( NULL != ChildLoop ) {
 				if ( ChildLoop->isWidget() )
-					static_cast<UIWidget*>( ChildLoop )->reloadStyle( reloadChilds );
+					ChildLoop->asType<UIWidget>()->reloadStyle( reloadChilds );
 
 				ChildLoop = ChildLoop->getNextNode();
 			}

@@ -304,6 +304,7 @@
 ../../include/eepp/ui/css/stylesheetselectorrule.hpp
 ../../include/eepp/ui/css/stylesheetspecification.hpp
 ../../include/eepp/ui/css/stylesheetstyle.hpp
+../../include/eepp/ui/css/stylesheetvariable.hpp
 ../../include/eepp/ui/css/transitiondefinition.hpp
 ../../include/eepp/ui/marginmove/scale.hpp
 ../../include/eepp/ui/tools/textureatlaseditor.hpp
@@ -730,6 +731,7 @@
 ../../src/eepp/ui/css/stylesheetselectorrule.cpp
 ../../src/eepp/ui/css/stylesheetspecification.cpp
 ../../src/eepp/ui/css/stylesheetstyle.cpp
+../../src/eepp/ui/css/stylesheetvariable.cpp
 ../../src/eepp/ui/css/transitiondefinition.cpp
 ../../src/eepp/ui/tools/textureatlaseditor.cpp
 ../../src/eepp/ui/tools/textureatlasnew.cpp

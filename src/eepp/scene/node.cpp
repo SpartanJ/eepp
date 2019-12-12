@@ -1418,6 +1418,20 @@ Node * Node::getNextWidget() const {
 	return NULL;
 }
 
+Node * Node::getParentWidget() const {
+	Node * parentNode = mParentCtrl;
+
+	while ( NULL != parentNode ) {
+		if ( parentNode->isWidget() ) {
+			return parentNode;
+		}
+
+		parentNode = parentNode->getParent();
+	}
+
+	return NULL;
+}
+
 void Node::sendParentSizeChange( const Vector2f& SizeChange ) {
 	if ( reportSizeChangeToChilds() )	{
 		Node * ChildLoop = mChild;

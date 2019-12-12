@@ -20,6 +20,10 @@ const StyleSheetProperties& StyleSheetPropertiesParser::getProperties() const {
 	return mProperties;
 }
 
+const StyleSheetVariables& StyleSheetPropertiesParser::getVariables() const {
+	return mVariables;
+}
+
 void StyleSheetPropertiesParser::parse( std::string propsstr ) {
 	ReadState rs = ReadingPropertyName;
 	mPrevRs = rs;
@@ -138,7 +142,11 @@ void StyleSheetPropertiesParser::addProperty( const std::string& name, std::stri
 		for ( auto& property : properties )
 			mProperties[ property.getName() ] = property;
 	} else {
-		mProperties[name] = StyleSheetProperty( name, value );
+		if ( String::startsWith( name, "--" ) ) {
+			mVariables[name] = StyleSheetVariable( name, value );
+		} else {
+			mProperties[name] = StyleSheetProperty( name, value );
+		}
 	}
 }
 

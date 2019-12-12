@@ -2,6 +2,7 @@
 #define EE_UI_CSS_STYLESHEETPROPERTIESPARSER_HPP
 
 #include <eepp/ui/css/stylesheetproperty.hpp>
+#include <eepp/ui/css/stylesheetvariable.hpp>
 #include <eepp/core/string.hpp>
 #include <map>
 #include <vector>
@@ -18,6 +19,7 @@ class EE_API StyleSheetPropertiesParser {
 
 		const StyleSheetProperties& getProperties() const;
 
+		const StyleSheetVariables& getVariables() const;
 	protected:
 		enum ReadState {
 			ReadingPropertyName,
@@ -28,6 +30,7 @@ class EE_API StyleSheetPropertiesParser {
 		ReadState mPrevRs;
 
 		StyleSheetProperties mProperties;
+		StyleSheetVariables mVariables;
 
 		void parse( std::string propsstr );
 

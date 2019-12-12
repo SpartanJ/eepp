@@ -302,6 +302,8 @@ class EE_API Node : public Transformable {
 
 		Node * getNextWidget() const;
 
+		Node * getParentWidget() const;
+
 		void enableReportSizeChangeToChilds();
 
 		void disableReportSizeChangeToChilds();

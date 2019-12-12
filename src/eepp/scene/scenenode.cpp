@@ -1,21 +1,21 @@
-#include <eepp/scene/scenenode.hpp>
-#include <eepp/window/window.hpp>
-#include <eepp/window/engine.hpp>
-#include <eepp/window/cursormanager.hpp>
-#include <eepp/graphics/globalbatchrenderer.hpp>
-#include <eepp/graphics/textureregion.hpp>
-#include <eepp/graphics/framebuffer.hpp>
-#include <eepp/graphics/renderer/renderer.hpp>
-#include <eepp/scene/actionmanager.hpp>
 #include <algorithm>
+#include <eepp/graphics/framebuffer.hpp>
+#include <eepp/graphics/globalbatchrenderer.hpp>
+#include <eepp/graphics/renderer/renderer.hpp>
+#include <eepp/graphics/textureregion.hpp>
+#include <eepp/scene/actionmanager.hpp>
+#include <eepp/scene/scenenode.hpp>
+#include <eepp/window/cursormanager.hpp>
+#include <eepp/window/engine.hpp>
+#include <eepp/window/window.hpp>
 
 namespace EE { namespace Scene {
 
-SceneNode * SceneNode::New( EE::Window::Window * window ) {
+SceneNode* SceneNode::New( EE::Window::Window* window ) {
 	return eeNew( SceneNode, ( window ) );
 }
 
-SceneNode::SceneNode( EE::Window::Window * window ) :
+SceneNode::SceneNode( EE::Window::Window* window ) :
 	Node(),
 	mWindow( window ),
 	mActionManager( ActionManager::New() ),
@@ -33,8 +33,7 @@ SceneNode::SceneNode( EE::Window::Window * window ) :
 	mHighlightInvalidation( false ),
 	mHighlightFocusColor( 234, 195, 123, 255 ),
 	mHighlightOverColor( 195, 123, 234, 255 ),
-	mHighlightInvalidationColor( 220, 0, 0, 255 )
-{
+	mHighlightInvalidationColor( 220, 0, 0, 255 ) {
 	mNodeFlags |= NODE_FLAG_SCENENODE;
 	mSceneNode = this;
 
@@ -46,16 +45,17 @@ SceneNode::SceneNode( EE::Window::Window * window ) :
 
 	mResizeCb = mWindow->pushResizeCallback( cb::Make1( this, &SceneNode::resizeControl ) );
 
-	DisplayManager * displayManager = Engine::instance()->getDisplayManager();
+	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
 	int currentDisplayIndex = getWindow()->getCurrentDisplayIndex();
-	Display * currentDisplay = displayManager->getDisplayIndex( currentDisplayIndex );
+	Display* currentDisplay = displayManager->getDisplayIndex( currentDisplayIndex );
 	mDPI = currentDisplay->getDPI();
 
 	resizeControl( window );
 }
 
 SceneNode::~SceneNode() {
-	if ( -1 != mResizeCb && NULL != Engine::existsSingleton() && Engine::instance()->existsWindow( mWindow ) ) {
+	if ( -1 != mResizeCb && NULL != Engine::existsSingleton() &&
+		 Engine::instance()->existsWindow( mWindow ) ) {
 		mWindow->popResizeCallback( mResizeCb );
 	}
 
@@ -95,7 +95,7 @@ void SceneNode::draw() {
 
 		preDraw();
 
-		ClippingMask * clippingMask = GLi->getClippingMask();
+		ClippingMask* clippingMask = GLi->getClippingMask();
 
 		std::list<Rectf> clips = clippingMask->getPlanesClipped();
 
@@ -146,21 +146,22 @@ void SceneNode::update( const Time& time ) {
 
 	if ( !mScheduledUpdate.empty() ) {
 		for ( auto it = mScheduledUpdate.begin(); it != mScheduledUpdate.end(); ++it )
-			(*it)->scheduledUpdate( time );
+			( *it )->scheduledUpdate( time );
 	}
 
 	if ( mUpdateAllChilds ) {
 		Node::update( time );
 	} else {
 		for ( auto it = mMouseOverNodes.begin(); it != mMouseOverNodes.end(); ++it )
-			(*it)->writeNodeFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 0 );
+			( *it )->writeNodeFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 0 );
 	}
 
 	mMouseOverNodes.clear();
 }
 
 void SceneNode::onSizeChange() {
-	if ( NULL != mFrameBuffer && ( mFrameBuffer->getWidth() < mSize.getWidth() || mFrameBuffer->getHeight() < mSize.getHeight() ) ) {
+	if ( NULL != mFrameBuffer && ( mFrameBuffer->getWidth() < mSize.getWidth() ||
+								   mFrameBuffer->getHeight() < mSize.getHeight() ) ) {
 		if ( NULL == mFrameBuffer ) {
 			createFrameBuffer();
 		} else {
@@ -172,10 +173,10 @@ void SceneNode::onSizeChange() {
 	Node::onSizeChange();
 }
 
-void SceneNode::addToCloseQueue( Node * Ctrl ) {
+void SceneNode::addToCloseQueue( Node* Ctrl ) {
 	eeASSERT( NULL != Ctrl );
 
-	Node * itCtrl = NULL;
+	Node* itCtrl = NULL;
 
 	for ( auto it = mCloseList.begin(); it != mCloseList.end(); ++it ) {
 		itCtrl = *it;
@@ -188,7 +189,7 @@ void SceneNode::addToCloseQueue( Node * Ctrl ) {
 		}
 	}
 
-	std::vector< CloseList::iterator > itEraseList;
+	std::vector<CloseList::iterator> itEraseList;
 
 	for ( auto it = mCloseList.begin(); it != mCloseList.end(); ++it ) {
 		itCtrl = *it;
@@ -209,7 +210,7 @@ void SceneNode::addToCloseQueue( Node * Ctrl ) {
 		mCloseList.erase( *ite );
 	}
 
-	if ( std::find(mCloseList.begin(), mCloseList.end(), Ctrl) == mCloseList.end() ) {
+	if ( std::find( mCloseList.begin(), mCloseList.end(), Ctrl ) == mCloseList.end() ) {
 		mCloseList.push_back( Ctrl );
 	}
 }
@@ -232,9 +233,12 @@ void SceneNode::createFrameBuffer() {
 	writeNodeFlag( NODE_FLAG_FRAME_BUFFER, 1 );
 	eeSAFE_DELETE( mFrameBuffer );
 	Sizei fboSize( getFrameBufferSize() );
-	if ( fboSize.getWidth() < 1 ) fboSize.setWidth(1);
-	if ( fboSize.getHeight() < 1 ) fboSize.setHeight(1);
-	mFrameBuffer = FrameBuffer::New( fboSize.getWidth(), fboSize.getHeight(), true, false, false, 4, mWindow );
+	if ( fboSize.getWidth() < 1 )
+		fboSize.setWidth( 1 );
+	if ( fboSize.getHeight() < 1 )
+		fboSize.setHeight( 1 );
+	mFrameBuffer =
+		FrameBuffer::New( fboSize.getWidth(), fboSize.getHeight(), true, false, false, 4, mWindow );
 
 	// Frame buffer failed to create?
 	if ( !mFrameBuffer->created() ) {
@@ -245,11 +249,15 @@ void SceneNode::createFrameBuffer() {
 void SceneNode::drawFrameBuffer() {
 	if ( NULL != mFrameBuffer ) {
 		if ( mFrameBuffer->hasColorBuffer() ) {
-			mFrameBuffer->draw( Rect( 0, 0, mSize.getWidth(), mSize.getHeight() ), Rect( mScreenPos.x, mScreenPos.y, mScreenPos.x + mSize.getWidth(), mScreenPos.y + mSize.getHeight() ) );
+			mFrameBuffer->draw( Rect( 0, 0, mSize.getWidth(), mSize.getHeight() ),
+								Rect( mScreenPos.x, mScreenPos.y, mScreenPos.x + mSize.getWidth(),
+									  mScreenPos.y + mSize.getHeight() ) );
 		} else {
 			Rect r = Rect( 0, 0, mSize.getWidth(), mSize.getHeight() );
-			TextureRegion textureRegion( mFrameBuffer->getTexture()->getTextureId(), r, r.getSize().asFloat() );
-			textureRegion.draw( mScreenPosi.x, mScreenPosi.y, Color::White, getRotation(), getScale() );
+			TextureRegion textureRegion( mFrameBuffer->getTexture()->getTextureId(), r,
+										 r.getSize().asFloat() );
+			textureRegion.draw( mScreenPosi.x, mScreenPosi.y, Color::White, getRotation(),
+								getScale() );
 		}
 	}
 }
@@ -262,7 +270,7 @@ void SceneNode::disableDrawInvalidation() {
 	mUseInvalidation = false;
 }
 
-EE::Window::Window * SceneNode::getWindow() {
+EE::Window::Window* SceneNode::getWindow() {
 	return mWindow;
 }
 
@@ -278,9 +286,9 @@ void SceneNode::matrixSet() {
 
 		if ( 0.f != mScreenPos ) {
 			GLi->pushMatrix();
-			GLi->translatef( -mScreenPos.x , -mScreenPos.y, 0.f );
+			GLi->translatef( -mScreenPos.x, -mScreenPos.y, 0.f );
 		}
-	}  else {
+	} else {
 		Node::matrixSet();
 	}
 }
@@ -304,25 +312,25 @@ void SceneNode::matrixUnset() {
 	}
 }
 
-void SceneNode::sendMsg( Node * Ctrl, const Uint32& Msg, const Uint32& Flags ) {
+void SceneNode::sendMsg( Node* Ctrl, const Uint32& Msg, const Uint32& Flags ) {
 	NodeMessage tMsg( Ctrl, Msg, Flags );
 	Ctrl->messagePost( &tMsg );
 }
 
-void SceneNode::resizeControl( EE::Window::Window * ) {
-	setSize( (Float)mWindow->getWidth() , (Float)mWindow->getHeight() );
+void SceneNode::resizeControl( EE::Window::Window* ) {
+	setSize( (Float)mWindow->getWidth(), (Float)mWindow->getHeight() );
 	sendMsg( this, NodeMessage::WindowResize );
 }
 
-FrameBuffer * SceneNode::getFrameBuffer() const {
+FrameBuffer* SceneNode::getFrameBuffer() const {
 	return mFrameBuffer;
 }
 
-void SceneNode::setEventDispatcher( EventDispatcher * eventDispatcher ) {
+void SceneNode::setEventDispatcher( EventDispatcher* eventDispatcher ) {
 	mEventDispatcher = eventDispatcher;
 }
 
-EventDispatcher * SceneNode::getEventDispatcher() const {
+EventDispatcher* SceneNode::getEventDispatcher() const {
 	return mEventDispatcher;
 }
 
@@ -390,7 +398,7 @@ const Color& SceneNode::getHighlightInvalidationColor() const {
 	return mHighlightInvalidationColor;
 }
 
-const Time &SceneNode::getElapsed() const {
+const Time& SceneNode::getElapsed() const {
 	return mElapsed;
 }
 
@@ -416,33 +424,32 @@ bool SceneNode::isDrawInvalidator() const {
 	return true;
 }
 
-ActionManager * SceneNode::getActionManager() const {
+ActionManager* SceneNode::getActionManager() const {
 	return mActionManager;
 }
 
-void SceneNode::preDraw() {
-}
+void SceneNode::preDraw() {}
 
-void SceneNode::postDraw() {
-}
+void SceneNode::postDraw() {}
 
-void SceneNode::subscribeScheduledUpdate( Node * node ) {
+void SceneNode::subscribeScheduledUpdate( Node* node ) {
 	mScheduledUpdate.push_back( node );
 }
 
-void SceneNode::unsubscribeScheduledUpdate( Node * node ) {
+void SceneNode::unsubscribeScheduledUpdate( Node* node ) {
 	mScheduledUpdateRemove.push_back( node );
 }
 
-bool SceneNode::isSubscribedForScheduledUpdate( Node * node ) {
-	return std::find( mScheduledUpdate.begin(), mScheduledUpdate.end(), node ) != mScheduledUpdate.end();
+bool SceneNode::isSubscribedForScheduledUpdate( Node* node ) {
+	return std::find( mScheduledUpdate.begin(), mScheduledUpdate.end(), node ) !=
+		   mScheduledUpdate.end();
 }
 
-void SceneNode::addMouseOverNode( Node * node ) {
+void SceneNode::addMouseOverNode( Node* node ) {
 	mMouseOverNodes.push_back( node );
 }
 
-void SceneNode::removeMouseOverNode(Node * node) {
+void SceneNode::removeMouseOverNode( Node* node ) {
 	mMouseOverNodes.remove( node );
 }
 
@@ -458,4 +465,4 @@ const Float& SceneNode::getDPI() const {
 	return mDPI;
 }
 
-}}
+}} // namespace EE::Scene

@@ -18,6 +18,9 @@ void StyleSheet::addStyle( const StyleSheetStyle& node ) {
 
 		for ( auto& pit : node.getProperties() )
 			currentNode.setProperty( pit.second );
+
+		for ( auto& vit : node.getVariables() )
+			currentNode.setVariable( vit.second );
 	}
 }
 
@@ -32,6 +35,9 @@ void StyleSheet::combineStyle( const StyleSheetStyle& node ) {
 		if ( node.getSelector().getSpecificity() >= currentNode.getSelector().getSpecificity() ) {
 			for ( auto& pit : node.getProperties() )
 				currentNode.setProperty( pit.second );
+
+			for ( auto& vit : node.getVariables() )
+				currentNode.setVariable( vit.second );
 		}
 	}
 }

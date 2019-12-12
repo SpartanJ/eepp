@@ -5,11 +5,15 @@ namespace EE { namespace UI { namespace CSS {
 StyleSheetStyle::StyleSheetStyle() {}
 
 StyleSheetStyle::StyleSheetStyle( const std::string& selector,
-								  const StyleSheetProperties& properties ) :
-	mSelector( selector ), mProperties( properties ) {
+								  const StyleSheetProperties& properties,
+								  const StyleSheetVariables& variables ) :
+	mSelector( selector ), mProperties( properties ), mVariables( variables ) {
 	for ( auto& it : mProperties ) {
 		it.second.setSpecificity( mSelector.getSpecificity() );
 		it.second.setVolatile( !mSelector.isCacheable() );
+	}
+	for ( auto& it : mVariables ) {
+		it.second.setSpecificity( mSelector.getSpecificity() );
 	}
 }
 
@@ -37,6 +41,14 @@ const StyleSheetProperties& StyleSheetStyle::getProperties() const {
 	return mProperties;
 }
 
+StyleSheetProperties& StyleSheetStyle::getPropertiesRef() {
+	return mProperties;
+}
+
+const StyleSheetVariables& StyleSheetStyle::getVariables() const {
+	return mVariables;
+}
+
 StyleSheetProperty StyleSheetStyle::getPropertyByName( const std::string& name ) const {
 	auto it = mProperties.find( name );
 
@@ -52,6 +64,19 @@ void StyleSheetStyle::setProperty( const StyleSheetProperty& property ) {
 
 void StyleSheetStyle::clearProperties() {
 	mProperties.clear();
+}
+
+StyleSheetVariable StyleSheetStyle::getVariableByName( const std::string& name ) const {
+	auto it = mVariables.find( name );
+
+	if ( it != mVariables.end() )
+		return it->second;
+
+	return StyleSheetVariable();
+}
+
+void StyleSheetStyle::setVariable( const StyleSheetVariable& variable ) {
+	mVariables[variable.getName()] = variable;
 }
 
 }}} // namespace EE::UI::CSS

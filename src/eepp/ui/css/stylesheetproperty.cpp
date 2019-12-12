@@ -22,6 +22,7 @@ StyleSheetProperty::StyleSheetProperty( const PropertyDefinition* definition,
 	mSpecificity( 0 ),
 	mVolatile( false ),
 	mImportant( false ),
+	mIsVarValue( String::startsWith( mValue, "var(" ) ),
 	mPropertyDefinition( definition ),
 	mShorthandDefinition( NULL ) {
 	checkImportant();
@@ -38,6 +39,7 @@ StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::stri
 	mSpecificity( 0 ),
 	mVolatile( false ),
 	mImportant( false ),
+	mIsVarValue( String::startsWith( mValue, "var(" ) ),
 	mPropertyDefinition( StyleSheetSpecification::instance()->getProperty( mNameHash ) ),
 	mShorthandDefinition( NULL == mPropertyDefinition
 							  ? StyleSheetSpecification::instance()->getShorthand( mNameHash )
@@ -57,6 +59,7 @@ StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::stri
 	mSpecificity( specificity ),
 	mVolatile( isVolatile ),
 	mImportant( false ),
+	mIsVarValue( String::startsWith( mValue, "var(" ) ),
 	mPropertyDefinition( StyleSheetSpecification::instance()->getProperty( mNameHash ) ),
 	mShorthandDefinition( NULL == mPropertyDefinition
 							  ? StyleSheetSpecification::instance()->getShorthand( mNameHash )
@@ -103,6 +106,7 @@ void StyleSheetProperty::setName( const std::string& name ) {
 
 void StyleSheetProperty::setValue( const std::string& value ) {
 	mValue = value;
+	mIsVarValue = String::startsWith( mValue, "var(" );
 }
 
 const bool& StyleSheetProperty::isVolatile() const {
@@ -414,6 +418,10 @@ const PropertyDefinition* StyleSheetProperty::getPropertyDefinition() const {
 
 const ShorthandDefinition* StyleSheetProperty::getShorthandDefinition() const {
 	return mShorthandDefinition;
+}
+
+const bool& StyleSheetProperty::isVarValue() const {
+	return mIsVarValue;
 }
 
 }}} // namespace EE::UI::CSS

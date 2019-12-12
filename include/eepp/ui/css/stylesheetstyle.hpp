@@ -1,36 +1,47 @@
 #ifndef EE_UI_CSS_STYLESHEETSTYLE_HPP
 #define EE_UI_CSS_STYLESHEETSTYLE_HPP
 
-#include <eepp/ui/css/stylesheetselector.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
+#include <eepp/ui/css/stylesheetselector.hpp>
+#include <eepp/ui/css/stylesheetvariable.hpp>
 
 namespace EE { namespace UI { namespace CSS {
 
 class EE_API StyleSheetStyle {
-	public:
-		StyleSheetStyle();
+  public:
+	StyleSheetStyle();
 
-		explicit StyleSheetStyle( const std::string& selector, const StyleSheetProperties& properties );
+	explicit StyleSheetStyle( const std::string& selector, const StyleSheetProperties& properties, const StyleSheetVariables& variables );
 
-		std::string build();
+	std::string build();
 
-		const StyleSheetSelector& getSelector() const;
+	const StyleSheetSelector& getSelector() const;
 
-		const StyleSheetProperties& getProperties() const;
+	const StyleSheetProperties& getProperties() const;
 
-		StyleSheetProperty getPropertyByName( const std::string& name ) const;
+	StyleSheetProperties& getPropertiesRef();
 
-		void setProperty( const StyleSheetProperty& property );
+	const StyleSheetVariables& getVariables() const;
 
-		void clearProperties();
-	protected:
-		StyleSheetSelector mSelector;
-		StyleSheetProperties mProperties;
+	StyleSheetProperty getPropertyByName( const std::string& name ) const;
+
+	void setProperty( const StyleSheetProperty& property );
+
+	void clearProperties();
+
+	StyleSheetVariable getVariableByName( const std::string& name ) const;
+
+	void setVariable( const StyleSheetVariable& variable );
+
+  protected:
+	StyleSheetSelector mSelector;
+	StyleSheetProperties mProperties;
+	StyleSheetVariables mVariables;
 };
 
 typedef std::map<std::string, StyleSheetStyle> StyleSheetStyleList;
 typedef std::vector<StyleSheetStyle> StyleSheetStyleVector;
 
-}}}
+}}} // namespace EE::UI::CSS
 
 #endif

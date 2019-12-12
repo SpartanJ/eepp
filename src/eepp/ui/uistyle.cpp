@@ -1,5 +1,6 @@
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/scene/actions/actions.hpp>
+#include <eepp/system/functionstring.hpp>
 #include <eepp/ui/css/stylesheetpropertytransition.hpp>
 #include <eepp/ui/css/stylesheetspecification.hpp>
 #include <eepp/ui/uiscenenode.hpp>
@@ -17,7 +18,6 @@ UIStyle* UIStyle::New( UIWidget* widget ) {
 }
 
 UIStyle::UIStyle( UIWidget* widget ) : UIState(), mWidget( widget ), mChangingState( false ) {
-	load();
 }
 
 UIStyle::~UIStyle() {
@@ -49,10 +49,9 @@ void UIStyle::load() {
 	mNoncacheableStyles.clear();
 	mElementStyle.clearProperties();
 	mProperties.clear();
+	mVariables.clear();
 
-	UISceneNode* uiSceneNode = mWidget->getSceneNode()->isUISceneNode()
-								   ? static_cast<UISceneNode*>( mWidget->getSceneNode() )
-								   : NULL;
+	UISceneNode* uiSceneNode = mWidget->getUISceneNode();
 
 	if ( NULL != uiSceneNode ) {
 		CSS::StyleSheet& styleSheet = uiSceneNode->getStyleSheet();
@@ -68,6 +67,16 @@ void UIStyle::load() {
 				} else {
 					mNoncacheableStyles.push_back( style );
 				}
+
+				findVariables( style );
+			}
+
+			for ( auto& style : mCacheableStyles ) {
+				applyVarValues( style );
+			}
+
+			for ( auto& style : mNoncacheableStyles ) {
+				applyVarValues( style );
 			}
 
 			subscribeNonCacheableStyles();
@@ -104,6 +113,26 @@ const bool& UIStyle::isChangingState() const {
 	return mChangingState;
 }
 
+StyleSheetVariable UIStyle::getVariable( const std::string& variable ) {
+	auto it = mVariables.find( variable );
+
+	if ( it != mVariables.end() ) {
+		return it->second;
+	} else {
+		Node* parentWidget = mWidget->getParentWidget();
+
+		if ( NULL != parentWidget ) {
+			UIStyle * style = parentWidget->asType<UIWidget>()->getUIStyle();
+
+			if ( NULL != style ) {
+				return style->getVariable( variable );
+			}
+		}
+	}
+
+	return StyleSheetVariable();
+}
+
 void UIStyle::subscribeRelated( UIWidget* widget ) {
 	mRelatedWidgets.insert( widget );
 }
@@ -125,6 +154,52 @@ void UIStyle::tryApplyStyle( const StyleSheetStyle& style ) {
 				if ( String::startsWith( property.getName(), "transition" ) )
 					mTransitionAttributes.push_back( property );
 			}
+		}
+	}
+}
+
+void UIStyle::findVariables( const StyleSheetStyle& style ) {
+	if ( style.getSelector().select( mWidget, false ) ) {
+		for ( const auto& vars : style.getVariables() ) {
+			const StyleSheetVariable& variable = vars.second;
+			const auto& it = mVariables.find( variable.getName() );
+
+			if ( it == mVariables.end() ||
+				 variable.getSpecificity() >= it->second.getSpecificity() ) {
+				mVariables[variable.getName()] = variable;
+			}
+		}
+	}
+}
+
+void UIStyle::setVariableFromValue( StyleSheetProperty& property, const std::string& value ) {
+	FunctionString functionType = FunctionString::parse( value );
+
+	if ( !functionType.getParameters().empty() ) {
+		for ( auto& val : functionType.getParameters() ) {
+			if ( String::startsWith( val, "--" ) ) {
+				StyleSheetVariable variable( getVariable( val ) );
+
+				if ( !variable.isEmpty() ) {
+					property.setValue( variable.getValue() );
+					break;
+				}
+			} else if ( String::startsWith( val, "var(" ) ) {
+				return setVariableFromValue( property, val );
+			} else {
+				property.setValue( val );
+				break;
+			}
+		}
+	}
+}
+
+void UIStyle::applyVarValues( StyleSheetStyle& style ) {
+	for ( auto& prop : style.getPropertiesRef() ) {
+		StyleSheetProperty& property = prop.second;
+
+		if ( property.isVarValue() ) {
+			setVariableFromValue( property, property.getValue() );
 		}
 	}
 }

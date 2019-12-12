@@ -12,81 +12,83 @@ class UIWidget;
 class UIWindow;
 
 class EE_API UISceneNode : public SceneNode {
-	public:
-		static UISceneNode * New( EE::Window::Window * window = NULL );
+  public:
+	static UISceneNode* New( EE::Window::Window* window = NULL );
 
-		explicit UISceneNode( EE::Window::Window * window = NULL );
+	explicit UISceneNode( EE::Window::Window* window = NULL );
 
-		virtual ~UISceneNode();
+	virtual ~UISceneNode();
 
-		virtual Node * setSize( const Sizef& size );
+	virtual Node* setSize( const Sizef& size );
 
-		virtual Node * setSize( const Float& Width, const Float& Height );
+	virtual Node* setSize( const Float& Width, const Float& Height );
 
-		const Sizef& getSize() const;
+	const Sizef& getSize() const;
 
-		void setTranslator( Translator translator );
+	void setTranslator( Translator translator );
 
-		Translator& getTranslator();
+	Translator& getTranslator();
 
-		String getTranslatorString( const std::string& str );
+	String getTranslatorString( const std::string& str );
 
-		String getTranslatorString( const std::string& str, const String& defaultValue );
+	String getTranslatorString( const std::string& str, const String& defaultValue );
 
-		UIWidget * loadLayoutFromFile( const std::string& layoutPath, Node * parent = NULL );
+	UIWidget* loadLayoutFromFile( const std::string& layoutPath, Node* parent = NULL );
 
-		UIWidget * loadLayoutFromString( const std::string& layoutString, Node * parent = NULL );
+	UIWidget* loadLayoutFromString( const std::string& layoutString, Node* parent = NULL );
 
-		UIWidget * loadLayoutFromMemory( const void * buffer, Int32 bufferSize, Node * parent = NULL );
+	UIWidget* loadLayoutFromMemory( const void* buffer, Int32 bufferSize, Node* parent = NULL );
 
-		UIWidget * loadLayoutFromStream( IOStream& stream, Node * parent = NULL );
+	UIWidget* loadLayoutFromStream( IOStream& stream, Node* parent = NULL );
 
-		UIWidget * loadLayoutFromPack( Pack * pack, const std::string& FilePackPath, Node * parent = NULL );
+	UIWidget* loadLayoutFromPack( Pack* pack, const std::string& FilePackPath,
+								  Node* parent = NULL );
 
-		UIWidget * loadLayoutNodes( pugi::xml_node node, Node * parent );
+	UIWidget* loadLayoutNodes( pugi::xml_node node, Node* parent );
 
-		void setStyleSheet( const CSS::StyleSheet& styleSheet );
+	void setStyleSheet( const CSS::StyleSheet& styleSheet );
 
-		void setStyleSheet( const std::string& inlineStyleSheet );
+	void setStyleSheet( const std::string& inlineStyleSheet );
 
-		void combineStyleSheet( const CSS::StyleSheet& styleSheet );
+	void combineStyleSheet( const CSS::StyleSheet& styleSheet );
 
-		void combineStyleSheet( const std::string& inlineStyleSheet );
+	void combineStyleSheet( const std::string& inlineStyleSheet );
 
-		CSS::StyleSheet& getStyleSheet();
+	CSS::StyleSheet& getStyleSheet();
 
-		bool hasStyleSheet();
+	bool hasStyleSheet();
 
-		const bool& isLoading() const;
+	const bool& isLoading() const;
 
-		UIThemeManager * getUIThemeManager() const;
-	protected:
-		friend class EE::UI::UIWindow;
-		Sizef				mDpSize;
-		Uint32				mFlags;
-		Translator			mTranslator;
-		std::list<UIWindow*> mWindowsList;
-		CSS::StyleSheet mStyleSheet;
-		bool				mIsLoading;
-		UIThemeManager *	mUIThemeManager;
+	UIThemeManager* getUIThemeManager() const;
 
-		virtual void resizeControl( EE::Window::Window * win );
+  protected:
+	friend class EE::UI::UIWindow;
+	Sizef mDpSize;
+	Uint32 mFlags;
+	Translator mTranslator;
+	std::list<UIWindow*> mWindowsList;
+	CSS::StyleSheet mStyleSheet;
+	bool mIsLoading;
+	UIThemeManager* mUIThemeManager;
 
-		void				setActiveWindow( UIWindow * window );
+	virtual void resizeControl( EE::Window::Window* win );
 
-		void				setFocusLastWindow( UIWindow * window  );
+	void setActiveWindow( UIWindow* window );
 
-		void				windowAdd( UIWindow * win );
+	void setFocusLastWindow( UIWindow* window );
 
-		void				windowRemove( UIWindow * win );
+	void windowAdd( UIWindow* win );
 
-		bool				windowExists( UIWindow * win );
+	void windowRemove( UIWindow* win );
 
-		virtual void setInternalSize(const Sizef& size );
+	bool windowExists( UIWindow* win );
 
-		void reloadStyle();
+	virtual void setInternalSize( const Sizef& size );
+
+	void reloadStyle();
 };
 
-}}
+}} // namespace EE::UI
 
 #endif

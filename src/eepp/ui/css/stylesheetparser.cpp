@@ -1,18 +1,17 @@
-#include <eepp/ui/css/stylesheetparser.hpp>
-#include <eepp/ui/css/stylesheetselectorparser.hpp>
-#include <eepp/ui/css/stylesheetpropertiesparser.hpp>
+#include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/iostreammemory.hpp>
 #include <eepp/system/pack.hpp>
 #include <eepp/system/packmanager.hpp>
-#include <eepp/system/filesystem.hpp>
+#include <eepp/ui/css/stylesheetparser.hpp>
+#include <eepp/ui/css/stylesheetpropertiesparser.hpp>
+#include <eepp/ui/css/stylesheetselectorparser.hpp>
 
 using namespace EE::System;
 
 namespace EE { namespace UI { namespace CSS {
 
-StyleSheetParser::StyleSheetParser() {
-}
+StyleSheetParser::StyleSheetParser() {}
 
 bool StyleSheetParser::loadFromStream( IOStream& stream ) {
 	mCSS.resize( stream.getSize(), '\0' );
@@ -21,9 +20,10 @@ bool StyleSheetParser::loadFromStream( IOStream& stream ) {
 }
 
 bool StyleSheetParser::loadFromFile( const std::string& filename ) {
-	if ( !FileSystem::fileExists( filename ) && PackManager::instance()->isFallbackToPacksActive() ) {
+	if ( !FileSystem::fileExists( filename ) &&
+		 PackManager::instance()->isFallbackToPacksActive() ) {
 		std::string path( filename );
-		Pack * pack = PackManager::instance()->exists( path );
+		Pack* pack = PackManager::instance()->exists( path );
 
 		if ( NULL != pack ) {
 			return loadFromPack( pack, path );
@@ -36,7 +36,7 @@ bool StyleSheetParser::loadFromFile( const std::string& filename ) {
 	return loadFromStream( stream );
 }
 
-bool StyleSheetParser::loadFromPack( Pack * pack, std::string filePackPath ) {
+bool StyleSheetParser::loadFromPack( Pack* pack, std::string filePackPath ) {
 	if ( NULL == pack )
 		return false;
 
@@ -73,7 +73,7 @@ bool StyleSheetParser::loadFromString( const std::string& str ) {
 	return loadFromMemory( (const Uint8*)&str[0], str.size() );
 }
 
-StyleSheet &StyleSheetParser::getStyleSheet() {
+StyleSheet& StyleSheetParser::getStyleSheet() {
 	return mStyleSheet;
 }
 
@@ -83,20 +83,17 @@ bool StyleSheetParser::parse() {
 	std::string buffer;
 
 	while ( pos < mCSS.size() ) {
-		switch (rs) {
-			case ReadingStyle:
-			{
-				pos = readStyle(rs, pos, buffer);
+		switch ( rs ) {
+			case ReadingStyle: {
+				pos = readStyle( rs, pos, buffer );
 				break;
 			}
-			case ReadingComment:
-			{
-				pos = readComment(rs, pos, buffer);
+			case ReadingComment: {
+				pos = readComment( rs, pos, buffer );
 				break;
 			}
-			case ReadingProperty:
-			{
-				pos = readProperty(rs, pos, buffer);
+			case ReadingProperty: {
+				pos = readProperty( rs, pos, buffer );
 				break;
 			}
 			default:
@@ -107,11 +104,11 @@ bool StyleSheetParser::parse() {
 	return true;
 }
 
-int StyleSheetParser::readStyle(ReadState& rs, std::size_t pos, std::string& buffer) {
+int StyleSheetParser::readStyle( ReadState& rs, std::size_t pos, std::string& buffer ) {
 	buffer.clear();
 
 	while ( pos < mCSS.size() ) {
-		if ( mCSS[pos] == '/' && mCSS.size() > pos + 1 && mCSS[pos+1] == '*' ) {
+		if ( mCSS[pos] == '/' && mCSS.size() > pos + 1 && mCSS[pos + 1] == '*' ) {
 			rs = ReadingComment;
 			return pos;
 		}
@@ -130,15 +127,15 @@ int StyleSheetParser::readStyle(ReadState& rs, std::size_t pos, std::string& buf
 	return pos;
 }
 
-int StyleSheetParser::readComment(ReadState& rs, std::size_t pos, std::string& buffer) {
+int StyleSheetParser::readComment( ReadState& rs, std::size_t pos, std::string& buffer ) {
 	buffer.clear();
 
 	while ( pos < mCSS.size() ) {
-		if ( mCSS[pos] == '*' && mCSS.size() > pos + 1 && mCSS[pos+1] == '/' ) {
+		if ( mCSS[pos] == '*' && mCSS.size() > pos + 1 && mCSS[pos + 1] == '/' ) {
 			rs = ReadingStyle;
 
 			buffer += mCSS[pos];
-			buffer += mCSS[pos+1];
+			buffer += mCSS[pos + 1];
 
 			mComments.push_back( buffer );
 
@@ -169,8 +166,10 @@ int StyleSheetParser::readProperty( ReadState& rs, std::size_t pos, std::string&
 			StyleSheetPropertiesParser propertiesParse( buffer );
 
 			if ( !selectorParse.selectors.empty() ) {
-				for ( auto it = selectorParse.selectors.begin(); it != selectorParse.selectors.end(); ++it ) {
-					StyleSheetStyle node( it->getName(), propertiesParse.getProperties() );
+				for ( auto it = selectorParse.selectors.begin();
+					  it != selectorParse.selectors.end(); ++it ) {
+					StyleSheetStyle node( it->getName(), propertiesParse.getProperties(),
+										  propertiesParse.getVariables() );
 
 					mStyleSheet.addStyle( node );
 				}
@@ -189,4 +188,4 @@ int StyleSheetParser::readProperty( ReadState& rs, std::size_t pos, std::string&
 	return pos;
 }
 
-}}}
+}}} // namespace EE::UI::CSS

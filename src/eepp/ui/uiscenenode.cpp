@@ -1,26 +1,23 @@
-#include <eepp/ui/uiscenenode.hpp>
+#include <algorithm>
+#include <eepp/system/filesystem.hpp>
+#include <eepp/system/packmanager.hpp>
+#include <eepp/ui/css/stylesheetparser.hpp>
 #include <eepp/ui/uieventdispatcher.hpp>
+#include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uithememanager.hpp>
+#include <eepp/ui/uiwidgetcreator.hpp>
 #include <eepp/ui/uiwindow.hpp>
 #include <eepp/window/window.hpp>
-#include <eepp/system/packmanager.hpp>
-#include <eepp/system/filesystem.hpp>
-#include <eepp/ui/uiwidgetcreator.hpp>
-#include <eepp/ui/css/stylesheetparser.hpp>
-#include <eepp/ui/uithememanager.hpp>
 #include <pugixml/pugixml.hpp>
-#include <algorithm>
 
 namespace EE { namespace UI {
 
-UISceneNode * UISceneNode::New( EE::Window::Window * window ) {
+UISceneNode* UISceneNode::New( EE::Window::Window* window ) {
 	return eeNew( UISceneNode, ( window ) );
 }
 
-UISceneNode::UISceneNode( EE::Window::Window * window ) :
-	SceneNode( window ),
-	mIsLoading( false ),
-	mUIThemeManager( UIThemeManager::New() )
-{
+UISceneNode::UISceneNode( EE::Window::Window* window ) :
+	SceneNode( window ), mIsLoading( false ), mUIThemeManager( UIThemeManager::New() ) {
 	// Update only UI elements that requires it.
 	setUpdateAllChilds( false );
 
@@ -35,8 +32,9 @@ UISceneNode::~UISceneNode() {
 	eeSAFE_DELETE( mUIThemeManager );
 }
 
-void UISceneNode::resizeControl( EE::Window::Window * ) {
-	setSize( eefloor( mWindow->getWidth() / PixelDensity::getPixelDensity() ), eefloor(mWindow->getHeight() / PixelDensity::getPixelDensity()) );
+void UISceneNode::resizeControl( EE::Window::Window* ) {
+	setSize( eefloor( mWindow->getWidth() / PixelDensity::getPixelDensity() ),
+			 eefloor( mWindow->getHeight() / PixelDensity::getPixelDensity() ) );
 	sendMsg( this, NodeMessage::WindowResize );
 }
 
@@ -66,13 +64,13 @@ String UISceneNode::getTranslatorString( const std::string& str, const String& d
 	return defaultValue;
 }
 
-void UISceneNode::setFocusLastWindow( UIWindow * window ) {
+void UISceneNode::setFocusLastWindow( UIWindow* window ) {
 	if ( NULL != mEventDispatcher && !mWindowsList.empty() && window != mWindowsList.front() ) {
 		mEventDispatcher->setFocusControl( mWindowsList.front() );
 	}
 }
 
-void UISceneNode::windowAdd( UIWindow * win ) {
+void UISceneNode::windowAdd( UIWindow* win ) {
 	if ( !windowExists( win ) ) {
 		mWindowsList.push_front( win );
 	} else {
@@ -82,25 +80,25 @@ void UISceneNode::windowAdd( UIWindow * win ) {
 	}
 }
 
-void UISceneNode::windowRemove( UIWindow * win ) {
+void UISceneNode::windowRemove( UIWindow* win ) {
 	if ( windowExists( win ) ) {
 		mWindowsList.remove( win );
 	}
 }
 
-bool UISceneNode::windowExists( UIWindow * win ) {
+bool UISceneNode::windowExists( UIWindow* win ) {
 	return mWindowsList.end() != std::find( mWindowsList.begin(), mWindowsList.end(), win );
 }
 
-UIWidget * UISceneNode::loadLayoutNodes( pugi::xml_node node, Node * parent ) {
+UIWidget* UISceneNode::loadLayoutNodes( pugi::xml_node node, Node* parent ) {
 	mIsLoading = true;
-	UIWidget * firstWidget = NULL;
+	UIWidget* firstWidget = NULL;
 
 	if ( NULL == parent )
 		parent = this;
 
 	for ( pugi::xml_node widget = node; widget; widget = widget.next_sibling() ) {
-		UIWidget * uiwidget = UIWidgetCreator::createFromName( widget.name() );
+		UIWidget* uiwidget = UIWidgetCreator::createFromName( widget.name() );
 
 		if ( NULL != uiwidget ) {
 			if ( NULL == firstWidget ) {
@@ -162,7 +160,7 @@ bool UISceneNode::hasStyleSheet() {
 
 void UISceneNode::reloadStyle() {
 	if ( NULL != mChild ) {
-		Node * ChildLoop = mChild;
+		Node* ChildLoop = mChild;
 
 		while ( NULL != ChildLoop ) {
 			if ( ChildLoop->isWidget() )
@@ -173,7 +171,7 @@ void UISceneNode::reloadStyle() {
 	}
 }
 
-UIWidget * UISceneNode::loadLayoutFromFile( const std::string& layoutPath, Node * parent ) {
+UIWidget* UISceneNode::loadLayoutFromFile( const std::string& layoutPath, Node* parent ) {
 	if ( FileSystem::fileExists( layoutPath ) ) {
 		pugi::xml_document doc;
 		pugi::xml_parse_result result = doc.load_file( layoutPath.c_str() );
@@ -187,7 +185,7 @@ UIWidget * UISceneNode::loadLayoutFromFile( const std::string& layoutPath, Node 
 		}
 	} else if ( PackManager::instance()->isFallbackToPacksActive() ) {
 		std::string path( layoutPath );
-		Pack * pack = PackManager::instance()->exists( path );
+		Pack* pack = PackManager::instance()->exists( path );
 
 		if ( NULL != pack ) {
 			return loadLayoutFromPack( pack, path, parent );
@@ -197,7 +195,7 @@ UIWidget * UISceneNode::loadLayoutFromFile( const std::string& layoutPath, Node 
 	return NULL;
 }
 
-UIWidget * UISceneNode::loadLayoutFromString( const std::string& layoutString, Node * parent ) {
+UIWidget* UISceneNode::loadLayoutFromString( const std::string& layoutString, Node* parent ) {
 	pugi::xml_document doc;
 	pugi::xml_parse_result result = doc.load_string( layoutString.c_str() );
 
@@ -212,9 +210,9 @@ UIWidget * UISceneNode::loadLayoutFromString( const std::string& layoutString, N
 	return NULL;
 }
 
-UIWidget * UISceneNode::loadLayoutFromMemory( const void * buffer, Int32 bufferSize, Node * parent ) {
+UIWidget* UISceneNode::loadLayoutFromMemory( const void* buffer, Int32 bufferSize, Node* parent ) {
 	pugi::xml_document doc;
-	pugi::xml_parse_result result = doc.load_buffer( buffer, bufferSize);
+	pugi::xml_parse_result result = doc.load_buffer( buffer, bufferSize );
 
 	if ( result ) {
 		return loadLayoutNodes( doc.first_child(), NULL != parent ? parent : this );
@@ -227,7 +225,7 @@ UIWidget * UISceneNode::loadLayoutFromMemory( const void * buffer, Int32 bufferS
 	return NULL;
 }
 
-UIWidget * UISceneNode::loadLayoutFromStream( IOStream& stream, Node * parent ) {
+UIWidget* UISceneNode::loadLayoutFromStream( IOStream& stream, Node* parent ) {
 	if ( !stream.isOpen() )
 		return NULL;
 
@@ -249,7 +247,8 @@ UIWidget * UISceneNode::loadLayoutFromStream( IOStream& stream, Node * parent ) 
 	return NULL;
 }
 
-UIWidget * UISceneNode::loadLayoutFromPack( Pack * pack, const std::string& FilePackPath, Node * parent ) {
+UIWidget* UISceneNode::loadLayoutFromPack( Pack* pack, const std::string& FilePackPath,
+										   Node* parent ) {
 	ScopedBuffer buffer;
 
 	if ( pack->isOpen() && pack->extractFileToMemory( FilePackPath, buffer ) ) {
@@ -267,7 +266,7 @@ void UISceneNode::setInternalSize( const Sizef& size ) {
 	invalidateDraw();
 }
 
-Node * UISceneNode::setSize( const Sizef & Size ) {
+Node* UISceneNode::setSize( const Sizef& Size ) {
 	if ( Size != mDpSize ) {
 		Vector2f sizeChange( Size.x - mDpSize.x, Size.y - mDpSize.y );
 
@@ -283,11 +282,11 @@ Node * UISceneNode::setSize( const Sizef & Size ) {
 	return this;
 }
 
-Node * UISceneNode::setSize(const Float & Width, const Float & Height) {
+Node* UISceneNode::setSize( const Float& Width, const Float& Height ) {
 	return setSize( Vector2f( Width, Height ) );
 }
 
-const Sizef &UISceneNode::getSize() const {
+const Sizef& UISceneNode::getSize() const {
 	return mDpSize;
 }
 
@@ -299,4 +298,4 @@ UIThemeManager* UISceneNode::getUIThemeManager() const {
 	return mUIThemeManager;
 }
 
-}}
+}} // namespace EE::UI

@@ -45,12 +45,15 @@ class EE_API UIStyle : public UIState {
 		CSS::TransitionDefinition getTransition( const std::string& propertyName );
 
 		const bool& isChangingState() const;
+
+		CSS::StyleSheetVariable getVariable( const std::string& variable );
 	protected:
 		UIWidget * mWidget;
 		CSS::StyleSheetStyleVector mCacheableStyles;
 		CSS::StyleSheetStyleVector mNoncacheableStyles;
 		CSS::StyleSheetStyle mElementStyle;
 		CSS::StyleSheetProperties mProperties;
+		CSS::StyleSheetVariables mVariables;
 		std::vector<CSS::StyleSheetProperty> mTransitionAttributes;
 		CSS::TransitionsMap mTransitions;
 		std::set<UIWidget*> mRelatedWidgets;
@@ -58,6 +61,12 @@ class EE_API UIStyle : public UIState {
 		bool mChangingState;
 
 		void tryApplyStyle( const CSS::StyleSheetStyle& style );
+
+		void findVariables( const CSS::StyleSheetStyle& style );
+
+		void applyVarValues( CSS::StyleSheetStyle& style );
+
+		void setVariableFromValue( CSS::StyleSheetProperty& property, const std::string& value );
 
 		void updateState();
 
