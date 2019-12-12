@@ -4,6 +4,7 @@
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/text.hpp>
+#include <eepp/graphics/fontmanager.hpp>
 #include <pugixml/pugixml.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
@@ -24,6 +25,8 @@ UITextInput::UITextInput( const std::string& tag ) :
 	mAllowEditing( true ),
 	mShowingWait( true )
 {
+	mHintCache = Text::New();
+
 	subscribeScheduledUpdate();
 
 	setFlags( UI_AUTO_PADDING | UI_AUTO_SIZE | UI_TEXT_SELECTION_ENABLED );
@@ -46,6 +49,7 @@ UITextInput::UITextInput() :
 {}
 
 UITextInput::~UITextInput() {
+	eeSAFE_DELETE( mHintCache );
 }
 
 Uint32 UITextInput::getType() const {
@@ -105,7 +109,44 @@ void UITextInput::updateWaitingCursor( const Time& time ) {
 }
 
 void UITextInput::draw() {
-	UITextView::draw();
+	if ( mVisible && 0.f != mAlpha ) {
+		UINode::draw();
+
+		if ( mTextCache->getTextWidth() ) {
+			drawSelection( mTextCache );
+
+			if ( isClipped() ) {
+				clipSmartEnable(
+						mScreenPos.x + mRealPadding.Left,
+						mScreenPos.y + mRealPadding.Top,
+						mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
+						mSize.getHeight() - mRealPadding.Top - mRealPadding.Bottom
+				);
+			}
+
+			mTextCache->setAlign( getFlags() );
+			mTextCache->draw( (Float)mScreenPosi.x + (int)mRealAlignOffset.x + (int)mRealPadding.Left, mFontLineCenter + (Float)mScreenPosi.y + (int)mRealAlignOffset.y + (int)mRealPadding.Top, Vector2f::One, 0.f, getBlendMode() );
+
+			if ( isClipped() ) {
+				clipSmartDisable();
+			}
+		} else if ( !mHintCache->getString().empty() && !mTextBuffer.isActive() ) {
+			if ( isClipped() ) {
+				clipSmartEnable(
+						mScreenPos.x + mRealPadding.Left,
+						mScreenPos.y + mRealPadding.Top,
+						mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
+						mSize.getHeight() - mRealPadding.Top - mRealPadding.Bottom
+				);
+			}
+
+			mHintCache->draw( (Float)mScreenPosi.x + (int)mRealAlignOffset.x + (int)mRealPadding.Left, mFontLineCenter + (Float)mScreenPosi.y + (int)mRealAlignOffset.y + (int)mRealPadding.Top, Vector2f::One, 0.f, getBlendMode() );
+
+			if ( isClipped() ) {
+				clipSmartDisable();
+			}
+		}
+	}
 
 	drawWaitingCursor();
 }
@@ -409,6 +450,22 @@ std::string UITextInput::getPropertyString( const PropertyDefinition* propertyDe
 			return getInputTextBuffer()->onlyNumbersAllowed() ? "true" : "false";
 		case PropertyId::AllowDot:
 			return getInputTextBuffer()->dotsInNumbersAllowed() ? "true" : "false";
+		case PropertyId::Hint:
+			return getHint().toUtf8();
+		case PropertyId::HintColor:
+			return getHintColor().toHexString();
+		case PropertyId::HintShadowColor:
+			return getHintShadowColor().toHexString();
+		case PropertyId::HintFontSize:
+			return String::format( "%ddp", getHintCharacterSize() );
+		case PropertyId::HintFontFamily:
+			return NULL != getHintFont() ? getFont()->getName() : "";
+		case PropertyId::HintFontStyle:
+			return Text::styleFlagToString( getHintFontStyle() );
+		case PropertyId::HintStrokeWidth:
+			return String::toStr( PixelDensity::dpToPx( getHintOutlineThickness() ) );
+		case PropertyId::HintStrokeColor:
+			return getHintOutlineColor().toHexString();
 		default:
 			return UITextView::getPropertyString( propertyDef );
 	}
@@ -419,9 +476,8 @@ bool UITextInput::applyProperty( const StyleSheetProperty& attribute ) {
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::Text:
-			if ( NULL != mSceneNode && mSceneNode->isUISceneNode() ) {
-				setText( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( attribute.asString() ) );
-			}
+			if ( NULL != getUISceneNode() )
+				setText( getUISceneNode()->getTranslatorString( attribute.asString() ) );
 			break;
 		case PropertyId::AllowEditing:
 			setAllowEditing( attribute.asBool() );
@@ -438,6 +494,31 @@ bool UITextInput::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::AllowDot:
 			getInputTextBuffer()->setAllowOnlyNumbers( getInputTextBuffer()->onlyNumbersAllowed(), attribute.asBool() );
 			break;
+		case PropertyId::Hint:
+			if ( NULL != getUISceneNode() )
+				setHint( getUISceneNode()->getTranslatorString( attribute.asString() ) );
+			break;
+		case PropertyId::HintColor:
+			setHintColor( attribute.asColor() );
+			break;
+		case PropertyId::HintShadowColor:
+			setHintShadowColor( attribute.asColor() );
+			break;
+		case PropertyId::HintFontSize:
+			setHintCharacterSize( attribute.asDpDimensionI() );
+			break;
+		case PropertyId::HintFontFamily:
+			setHintFont( FontManager::instance()->getByName( attribute.asString() ) );
+			break;
+		case PropertyId::HintFontStyle:
+			setHintFontStyle( attribute.asFontStyle() );
+			break;
+		case PropertyId::HintStrokeWidth:
+			setHintOutlineThickness( PixelDensity::dpToPx( attribute.asDpDimension() ) );
+			break;
+		case PropertyId::HintStrokeColor:
+			setHintOutlineColor( attribute.asColor() );
+			break;
 		default:
 			return UITextView::applyProperty( attribute );
 	}
@@ -453,6 +534,124 @@ UIWidget * UITextInput::setPadding( const Rectf& padding ) {
 	}
 
 	UITextView::setPadding( autoPadding + padding );
+
+	return this;
+}
+
+void UITextInput::onFontChanged() {
+	if ( getHintFont() == NULL ) {
+		setHintFont( getFont() );
+	}
+}
+
+const String& UITextInput::getHint() const {
+	return mHintCache->getString();
+}
+
+UITextInput* UITextInput::setHint(const String& hint) {
+	if ( hint != mHintCache->getString() ) {
+		mHintCache->setString( hint );
+		invalidateDraw();
+	}
+
+	return this;
+}
+
+const Color& UITextInput::getHintColor() const {
+	return mHintStyleConfig.getFontColor();
+}
+
+UITextInput* UITextInput::setHintColor(const Color& hintColor) {
+	if ( hintColor != mHintStyleConfig.getFontColor() ) {
+		mHintCache->setFillColor( hintColor );
+		mHintStyleConfig.FontColor = hintColor;
+		invalidateDraw();
+	}
+
+	return this;
+}
+
+const Color& UITextInput::getHintShadowColor() const {
+	return mHintStyleConfig.getFontShadowColor();
+}
+
+UITextInput* UITextInput::setHintShadowColor(const Color& shadowColor) {
+	if ( shadowColor != mHintStyleConfig.getFontShadowColor() ) {
+		mHintCache->setShadowColor( shadowColor );
+		mHintStyleConfig.ShadowColor = shadowColor;
+		invalidateDraw();
+	}
+
+	return this;
+}
+
+Font* UITextInput::getHintFont() {
+	return mHintStyleConfig.getFont();
+}
+
+UITextInput* UITextInput::setHintFont( Font* font ) {
+	if ( mHintStyleConfig.getFont() != font ) {
+		mHintCache->setFont( font );
+		mHintStyleConfig.Font = font;
+		invalidateDraw();
+	}
+
+	return this;
+}
+
+Uint32 UITextInput::getHintCharacterSize() const {
+	return mHintStyleConfig.getFontCharacterSize();
+}
+
+UITextView * UITextInput::setHintCharacterSize( const Uint32 & characterSize ) {
+	if ( mHintCache->getCharacterSize() != characterSize ) {
+		mHintCache->setCharacterSize( characterSize );
+		mHintStyleConfig.CharacterSize = characterSize;
+		invalidateDraw();
+	}
+
+	return this;
+}
+
+const Uint32 &UITextInput::getHintFontStyle() const {
+	return mHintStyleConfig.Style;
+}
+
+const Float &UITextInput::getHintOutlineThickness() const {
+	return mHintStyleConfig.OutlineThickness;
+}
+
+UITextView * UITextInput::setHintOutlineThickness( const Float & outlineThickness ) {
+	if ( mHintStyleConfig.OutlineThickness != outlineThickness ) {
+		mHintCache->setOutlineThickness( outlineThickness );
+		mHintStyleConfig.OutlineThickness = outlineThickness;
+		invalidateDraw();
+	}
+
+	return this;
+}
+
+const Color &UITextInput::getHintOutlineColor() const {
+	return mHintStyleConfig.OutlineColor;
+}
+
+UITextView * UITextInput::setHintOutlineColor(const Color & outlineColor) {
+	if ( mHintStyleConfig.OutlineColor != outlineColor ) {
+		mHintStyleConfig.OutlineColor = outlineColor;
+		Color newColor( outlineColor.r, outlineColor.g, outlineColor.b, outlineColor.a * mAlpha / 255.f );
+		mHintCache->setOutlineColor( newColor );
+		invalidateDraw();
+	}
+
+	return this;
+}
+
+UITextView * UITextInput::setHintFontStyle(const Uint32 & fontStyle) {
+	if ( mHintStyleConfig.Style != fontStyle ) {
+		mHintCache->setStyle( fontStyle );
+		mHintStyleConfig.Style = fontStyle;
+		invalidateDraw();
+	}
 
 	return this;
 }

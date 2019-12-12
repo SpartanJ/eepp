@@ -274,6 +274,18 @@ void StyleSheetSpecification::registerDefaultProperties() {
 
 	registerProperty( "word-wrap", "", false ).setType( PropertyType::Bool );
 
+	registerProperty( "hint", "", false ).setType( PropertyType::String );
+	registerProperty( "hint-color", "", false ).setType( PropertyType::Color );
+	registerProperty( "hint-shadow-color", "", false ).setType( PropertyType::Color );
+	registerProperty( "hint-font-size", "", false ).setType( PropertyType::NumberFloat );
+	registerProperty( "hint-font-style", "", false ).setType( PropertyType::String );
+	registerProperty( "hint-stroke-width", "", false )
+		.setType( PropertyType::NumberFloat )
+		.addAlias( "hintoutlinethickness" );
+	registerProperty( "hint-stroke-color", "", false )
+		.setType( PropertyType::Color );
+	registerProperty( "hint-font-family", "", false ).addAlias( "hint-font-name" );
+
 	// Shorthands
 	registerProperty( "background-position", "", false ).setType( PropertyType::NumberLength );
 	registerProperty( "transition", "", false );

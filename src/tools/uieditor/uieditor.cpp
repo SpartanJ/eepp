@@ -718,6 +718,18 @@ void mainLoop() {
 		resizeWindowToLayout();
 	}
 
+	if ( window->getInput()->isKeyUp( KEY_F6 ) ) {
+		uiSceneNode->setHighlightOver( !uiSceneNode->getHighlightOver() );
+	}
+
+	if ( window->getInput()->isKeyUp( KEY_F7 ) ) {
+		uiSceneNode->setDrawBoxes( !uiSceneNode->getDrawBoxes() );
+	}
+
+	if ( window->getInput()->isKeyUp( KEY_F8 ) ) {
+		uiSceneNode->setDrawDebugData( !uiSceneNode->getDrawDebugData() );
+	}
+
 	if ( mousePos != window->getInput()->getMousePos() ) {
 		mousePos = window->getInput()->getMousePos();
 		mouseClock.restart();

@@ -72,9 +72,9 @@ void UITextView::draw() {
 	if ( mVisible && 0.f != mAlpha ) {
 		UINode::draw();
 
-		drawSelection( mTextCache );
-
 		if ( mTextCache->getTextWidth() ) {
+			drawSelection( mTextCache );
+
 			if ( isClipped() ) {
 				clipSmartEnable(
 						mScreenPos.x + mRealPadding.Left,
@@ -105,6 +105,7 @@ UITextView * UITextView::setFont( Graphics::Font * font ) {
 		recalculate();
 		onFontChanged();
 		notifyLayoutAttrChange();
+		invalidateDraw();
 	}
 
 	return this;

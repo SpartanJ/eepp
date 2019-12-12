@@ -176,7 +176,15 @@ enum class PropertyId : Uint32 {
 	MarginBetweenButtons = String::hash( "margin-between-buttons" ),
 	ButtonMargin = String::hash( "button-margin" ),
 	MenuHeight = String::hash( "menu-height" ),
-	FirstButtonMarginLeft = String::hash( "first-button-margin-left" )
+	FirstButtonMarginLeft = String::hash( "first-button-margin-left" ),
+	Hint = String::hash( "hint" ),
+	HintColor = String::hash( "hint-color" ),
+	HintShadowColor = String::hash( "hint-shadow-color" ),
+	HintFontFamily = String::hash( "hint-font-family" ),
+	HintFontSize = String::hash( "hint-font-size" ),
+	HintFontStyle = String::hash( "hint-font-style" ),
+	HintStrokeWidth = String::hash( "hint-stroke-width" ),
+	HintStrokeColor = String::hash( "hint-stroke-color" ),
 };
 
 enum class PropertyType : Uint32 {

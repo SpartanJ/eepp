@@ -27,9 +27,9 @@ void UITextInputPassword::draw() {
 	if ( mVisible && 0.f != mAlpha ) {
 		UINode::draw();
 
-		drawSelection( mPassCache );
-
 		if ( mPassCache->getTextWidth() ) {
+			drawSelection( mPassCache );
+
 			if ( isClipped() ) {
 				clipSmartEnable(
 						mScreenPos.x + mRealPadding.Left,
@@ -41,6 +41,21 @@ void UITextInputPassword::draw() {
 
 			mPassCache->setAlign( getFlags() );
 			mPassCache->draw( (Float)mScreenPosi.x + (int)mRealAlignOffset.x + (int)mRealPadding.Left, (Float)mScreenPosi.y + (int)mRealAlignOffset.y + (int)mRealPadding.Top, Vector2f::One, 0.f, getBlendMode() );
+
+			if ( isClipped() ) {
+				clipSmartDisable();
+			}
+		} else if ( !mHintCache->getString().empty() && !mTextBuffer.isActive() ) {
+			if ( isClipped() ) {
+				clipSmartEnable(
+						mScreenPos.x + mRealPadding.Left,
+						mScreenPos.y + mRealPadding.Top,
+						mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
+						mSize.getHeight() - mRealPadding.Top - mRealPadding.Bottom
+				);
+			}
+
+			mHintCache->draw( (Float)mScreenPosi.x + (int)mRealAlignOffset.x + (int)mRealPadding.Left, mFontLineCenter + (Float)mScreenPosi.y + (int)mRealAlignOffset.y + (int)mRealPadding.Top, Vector2f::One, 0.f, getBlendMode() );
 
 			if ( isClipped() ) {
 				clipSmartDisable();
@@ -133,6 +148,8 @@ void UITextInputPassword::updateFontStyleConfig() {
 	mPassCache->setFont( mFontStyleConfig.getFont() );
 	mPassCache->setFillColor( mFontStyleConfig.getFontColor() );
 	mPassCache->setShadowColor( mFontStyleConfig.getFontShadowColor() );
+	mPassCache->setOutlineColor( mFontStyleConfig.getOutlineColor() );
+	mPassCache->setOutlineThickness( mFontStyleConfig.getOutlineThickness() );
 }
 
 void UITextInputPassword::onStateChange() {

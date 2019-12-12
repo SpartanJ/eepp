@@ -56,10 +56,45 @@ class EE_API UITextInput : public UITextView {
 		virtual std::string getPropertyString(const PropertyDefinition* propertyDef);
 
 		virtual UIWidget * setPadding(const Rectf& padding);
+
+		const String& getHint() const;
+
+		UITextInput* setHint(const String& hint);
+
+		const Color& getHintColor() const;
+
+		UITextInput* setHintColor(const Color& hintColor);
+
+		const Color& getHintShadowColor() const;
+
+		UITextInput* setHintShadowColor(const Color& shadowColor);
+
+		Font * getHintFont();
+
+		UITextInput* setHintFont( Font * font );
+
+		Uint32 getHintCharacterSize() const;
+
+		UITextView* setHintCharacterSize(const Uint32& characterSize);
+
+		const Uint32& getHintFontStyle() const;
+
+		UITextView * setHintFontStyle( const Uint32& fontStyle );
+
+		const Float & getHintOutlineThickness() const;
+
+		UITextView * setHintOutlineThickness( const Float& outlineThickness );
+
+		const Color& getHintOutlineColor() const;
+
+		UITextView * setHintOutlineColor( const Color& outlineColor );
+
 	protected:
 		InputTextBuffer	mTextBuffer;
 		Float			mWaitCursorTime;
 		Vector2f		mCurPos;
+		Text *			mHintCache;
+		FontStyleConfig mHintStyleConfig;
 		int				mCursorPos;
 		bool			mAllowEditing;
 		bool			mShowingWait;
@@ -86,6 +121,8 @@ class EE_API UITextInput : public UITextView {
 		virtual Uint32 onFocusLoss();
 
 		virtual Uint32 onPressEnter();
+
+		virtual void onFontChanged();
 
 		void onThemeLoaded();
 
