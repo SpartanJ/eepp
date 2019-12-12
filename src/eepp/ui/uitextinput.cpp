@@ -600,7 +600,7 @@ UITextInput* UITextInput::setHintFont( Font* font ) {
 }
 
 Uint32 UITextInput::getHintCharacterSize() const {
-	return mHintStyleConfig.getFontCharacterSize();
+	return mHintCache->getCharacterSize();
 }
 
 UITextView * UITextInput::setHintCharacterSize( const Uint32 & characterSize ) {
