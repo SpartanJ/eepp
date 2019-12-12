@@ -1078,7 +1078,7 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			setBorderColor( attribute.asColor() );
 			break;
 		case PropertyId::BorderWidth:
-			setBorderWidth( attribute.asDpDimensionI("1") );
+			setBorderWidth( PixelDensity::dpToPxI( attribute.asDpDimensionI("1") ) );
 			break;
 		case PropertyId::BorderRadius:
 			setBorderRadius( PixelDensity::dpToPxI( attribute.asDpDimensionUint() ));

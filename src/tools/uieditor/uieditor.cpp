@@ -256,6 +256,7 @@ static void loadLayout( std::string file ) {
 	}
 
 	uiContainer->getContainer()->childsCloseAll();
+	uiSceneNode->update(Time::Zero);
 
 	uiSceneNode->loadLayoutFromFile( file, uiContainer );
 
@@ -678,6 +679,7 @@ void closeProject() {
 	currentLayout = "";
 	currentStyleSheet = "";
 	uiContainer->getContainer()->childsCloseAll();
+	uiSceneNode->update(Time::Zero);
 	uiSceneNode->setStyleSheet( CSS::StyleSheet() );
 
 	layouts.clear();

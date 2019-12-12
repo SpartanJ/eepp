@@ -988,9 +988,9 @@ void Node::removeEventListener( const Uint32& CallbackId ) {
 	EventsMap::iterator it;
 
 	for ( it = mEvents.begin(); it != mEvents.end(); ++it ) {
-		std::map<Uint32, EventCallback> event = it->second;
+		std::map<Uint32, EventCallback>& event = it->second;
 
-		if ( event.erase( CallbackId ) )
+		if ( event.erase( CallbackId ) > 0 )
 			break;
 	}
 }
