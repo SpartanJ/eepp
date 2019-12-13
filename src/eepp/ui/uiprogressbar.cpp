@@ -228,7 +228,7 @@ std::string UIProgressBar::getPropertyString( const PropertyDefinition* property
 		case PropertyId::FillerPaddingBottom:
 			return String::fromFloat( mStyleConfig.FillerPadding.Bottom, "dp" );
 		case PropertyId::MovementSpeed:
-			return String::fromFloat( getMovementSpeed().x ) + ", " + String::fromFloat( getMovementSpeed().y );
+			return String::fromFloat( getMovementSpeed().x ) + " " + String::fromFloat( getMovementSpeed().y );
 		default:
 			return UIWidget::getPropertyString( propertyDef );
 	}

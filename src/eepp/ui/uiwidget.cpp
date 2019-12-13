@@ -965,7 +965,7 @@ std::string UIWidget::getPropertyString( const PropertyDefinition* propertyDef )
 		case PropertyId::Rotation:
 			return String::fromFloat( getRotation() );
 		case PropertyId::Scale:
-			return String::fromFloat( getScale().x ) + ", " + String::fromFloat( getScale().y );
+			return String::fromFloat( getScale().x ) + " " + String::fromFloat( getScale().y );
 		case PropertyId::Opacity:
 			return String::fromFloat( getAlpha() );
 		case PropertyId::Cursor:

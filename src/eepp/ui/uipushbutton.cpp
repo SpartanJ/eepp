@@ -294,7 +294,7 @@ std::string UIPushButton::getPropertyString( const PropertyDefinition* propertyD
 			// TODO: Implement icon
 			return "";
 		case PropertyId::MinIconSize:
-			return String::format( "%ddp", mStyleConfig.IconMinSize.getWidth() ) + ", " +
+			return String::format( "%ddp", mStyleConfig.IconMinSize.getWidth() ) + " " +
 				   String::format( "%ddp", mStyleConfig.IconMinSize.getHeight() );
 		case PropertyId::IconHorizontalMargin:
 			return String::format( "%ddp", mStyleConfig.IconHorizontalMargin );

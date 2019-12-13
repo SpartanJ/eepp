@@ -1406,18 +1406,18 @@ std::string UIWindow::getPropertyString( const PropertyDefinition* propertyDef )
 		case PropertyId::BaseAlpha:
 			return String::toStr( getBaseAlpha() );
 		case PropertyId::ButtonsPositionOffset:
-			return String::format( "%ddp", mStyleConfig.ButtonsPositionFixer.x ) + ", " +
+			return String::format( "%ddp", mStyleConfig.ButtonsPositionFixer.x ) + " " +
 				   String::format( "%ddp", mStyleConfig.ButtonsPositionFixer.y );
 		case PropertyId::WindowFlags:
 			return getWindowFlagsString();
 		case PropertyId::DecorationSize:
-			return String::format( "%ddp", mStyleConfig.DecorationSize.x ) + ", " +
+			return String::format( "%ddp", mStyleConfig.DecorationSize.x ) + " " +
 				   String::format( "%ddp", mStyleConfig.DecorationSize.y );
 		case PropertyId::BorderSize:
-			return String::format( "%ddp", mStyleConfig.BorderSize.x ) + ", " +
+			return String::format( "%ddp", mStyleConfig.BorderSize.x ) + " " +
 				   String::format( "%ddp", mStyleConfig.BorderSize.y );
 		case PropertyId::MinWindowSize:
-			return String::fromFloat( mStyleConfig.MinWindowSize.x, "dp" ) + ", " +
+			return String::fromFloat( mStyleConfig.MinWindowSize.x, "dp" ) + " " +
 				   String::fromFloat( mStyleConfig.MinWindowSize.y, "dp" );
 		case PropertyId::ButtonsSeparation:
 			return String::format( "%ddp", mStyleConfig.ButtonsSeparation );

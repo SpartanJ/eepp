@@ -153,7 +153,7 @@ std::string UITouchDragableWidget::getPropertyString( const PropertyDefinition* 
 		case PropertyId::TouchDrag:
 			return isTouchDragEnabled() ? "true" : "false";
 		case PropertyId::TouchDragDeceleration:
-			return String::fromFloat( getTouchDragDeceleration().x ) + ", " +
+			return String::fromFloat( getTouchDragDeceleration().x ) + " " +
 				   String::fromFloat( getTouchDragDeceleration().y );
 		default:
 			return UIWidget::getPropertyString( propertyDef );

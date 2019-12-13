@@ -150,7 +150,7 @@ void StyleSheetPropertyTransition::onUpdate( const Time& ) {
 										   mDuration.asMilliseconds() );
 				Float y = easingCb[mType]( time.asMilliseconds(), start.y, end.y - start.y,
 										   mDuration.asMilliseconds() );
-				node->applyProperty( StyleSheetProperty( mProperty, String::fromFloat( x ) + ", " +
+				node->applyProperty( StyleSheetProperty( mProperty, String::fromFloat( x ) + " " +
 																		String::fromFloat( y ) ) );
 				if ( isDone() ) {
 					node->applyProperty( StyleSheetProperty( mProperty, mEndValue ) );
