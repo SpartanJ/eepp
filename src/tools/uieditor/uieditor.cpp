@@ -753,14 +753,10 @@ void mainLoop() {
 		refreshStyleSheet();
 	}
 
-	if ( console->isActive() || console->isFading() ) {
-		appUiSceneNode->invalidate();
-		uiSceneNode->invalidate();
-	}
-
 	SceneManager::instance()->update();
 
-	if ( appUiSceneNode->invalidated() || uiSceneNode->invalidated() ) {
+	if ( appUiSceneNode->invalidated() || uiSceneNode->invalidated() || console->isActive() ||
+		 console->isFading() ) {
 		window->clear();
 
 		SceneManager::instance()->draw();
@@ -933,8 +929,9 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 		else if ( PixelDensity::getPixelDensity() >= 2.f ) pd = "2x";
 
 		FontTrueType * font = FontTrueType::New( "NotoSans-Regular", "assets/fonts/NotoSans-Regular.ttf" );
+		FontTrueType * fontMono = FontTrueType::New( "DejaVuSansMono", "assets/fonts/DejaVuSansMono.ttf" );
 
-		console = eeNew( Console, ( font, true, true, 1024 * 1000, 0, window ) );
+		console = eeNew( Console, ( fontMono, true, true, 1024 * 1000, 0, window ) );
 
 		theme = UITheme::load( "uitheme" + pd, "uitheme" + pd, "assets/ui/uitheme" + pd + ".eta", font, "assets/ui/uitheme.css" );
 

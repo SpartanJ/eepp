@@ -31,39 +31,39 @@ class EE_API Console : protected LogReaderInterface {
 		void setConsoleMinimizedHeight( const Float& MinHeight );
 
 		/** Get the Console Height when it's Minimized ( Not Maximized ) */
-		Float getConsoleMinimizedHeight() const { return mHeightMin; }
+		const Float& getConsoleMinimizedHeight() const;
 
 		/** Set the Texture Id for the Background, 0 will disable texture background */
-		void setBackgroundTextureId( const Uint32& TexId ) { mTexId = TexId; }
+		void setBackgroundTextureId( const Uint32& TexId );
 
 		/** Get the Background Texture Id */
-		Uint32 getBackgroundTextureId() const { return mTexId; }
+		Uint32 getBackgroundTextureId() const;
 
 		/** Set the Console Background Color */
-		void setBackgroundColor( const Color& BackColor ) { mConColor = BackColor; mMaxAlpha = mConColor.a; }
+		void setBackgroundColor( const Color& BackColor );
 
 		void setCharacterSize( const Uint32& characterSize );
 
 		/** Get the Console Background Color */
-		const Color& getBackgroundColor() const { return mConColor; }
+		const Color& getBackgroundColor() const;
 
 		/** Set the Console Border Line Background Color */
-		void setBackgroundLineColor( const Color& BackColor ) { mConLineColor = BackColor; }
+		void setBackgroundLineColor( const Color& BackColor );
 
 		/** Get the Console Border Line Background Color */
-		const Color& getBackgroundLineColor() const { return mConLineColor; }
+		const Color& getBackgroundLineColor() const;
 
 		/** Set the Console Font Color */
-		void setFontColor( const Color& FntColor ) { mFontStyleConfig.FontColor = FntColor; }
+		void setFontColor( const Color& FntColor );
 
 		/** Get the Console Font Color */
-		const Color& getFontColor() const { return mFontStyleConfig.FontColor; }
+		const Color& getFontColor() const;
 
 		/** Set the Console Client Input ( Writeable Line ) Font Color */
-		void setFontLineColor( const Color& FntColor ) { mFontLineColor = FntColor; }
+		void setFontLineColor( const Color& FntColor );
 
 		/** Get the Console Client Input ( Writeable Line ) Font Color */
-		const Color& getFontLineColor() const { return mFontLineColor; }
+		const Color& getFontLineColor() const;
 
 		/** Toogle the console between visible and hided with Fade In or Fade Out effect. */
 		void toggle();
@@ -75,19 +75,19 @@ class EE_API Console : protected LogReaderInterface {
 		void fadeOut();
 
 		/** @return If Console Active ( Visible ) */
-		bool isActive() const { return mVisible; }
+		bool isActive() const;
 
 		/** Maximize or Minimize the Console */
-		void setExpanded(const bool& Exp) { mExpand = Exp; }
+		void setExpanded(const bool& Exp);
 
 		/** @return If console is maximized */
-		bool isExpanded() const { return mExpand; }
+		bool isExpanded() const;
 
 		/** Set the fade time */
-		void setFadeSpeed( const Time& fadespeed ) { mFadeSpeed = fadespeed; }
+		void setFadeSpeed( const Time& fadespeed );
 
 		/** @return The fading speed in ms */
-		const Time& getFadeSpeed() const { return mFadeSpeed; }
+		const Time& getFadeSpeed() const;
 
 		/** @brief Creates the new console
 		* @param Font The Font pointer to class
@@ -114,7 +114,7 @@ class EE_API Console : protected LogReaderInterface {
 		void draw();
 
 		/** Set the line height ( distance between lines ) */
-		void setLineHeight( const Float& LineHeight ) { mFontSize = LineHeight; }
+		void setLineHeight( const Float& LineHeight );
 
 		/** Use this if you need to ignore some char to activate the console, for example '~'. A common char to activate a console. */
 		void ignoreCharOnPrompt( const Uint32& ch );
@@ -129,7 +129,7 @@ class EE_API Console : protected LogReaderInterface {
 
 		void setFontStyleConfig(const FontStyleConfig & fontStyleConfig);
 
-		const bool& isFading() const { return mFading; }
+		const bool& isFading() const;
 	protected:
 		std::map < String, ConsoleCallback > mCallbacks;
 		std::deque < String > mCmdLog;

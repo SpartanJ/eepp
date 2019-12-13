@@ -152,23 +152,23 @@ class EE_API Node : public Transformable {
 		/** Use it at your own risk */
 		void setNodeFlags( const Uint32& flags );
 
-		Uint32 isSceneNode() const;
+		bool isSceneNode() const;
 
-		Uint32 isUISceneNode() const;
+		bool isUISceneNode() const;
 
-		Uint32 isUINode() const;
+		bool isUINode() const;
 
-		Uint32 isWidget() const;
+		bool isWidget() const;
 
-		Uint32 isWindow() const;
+		bool isWindow() const;
 
-		Uint32 isClipped() const;
+		bool isClipped() const;
 
-		Uint32 isRotated() const;
+		bool isRotated() const;
 
-		Uint32 isScaled() const;
+		bool isScaled() const;
 
-		Uint32 isFrameBuffer() const;
+		bool isFrameBuffer() const;
 
 		bool isMouseOver() const;
 
@@ -393,7 +393,7 @@ class EE_API Node : public Transformable {
 
 		virtual Uint32 onCalculateDrag( const Vector2f& position, const Uint32& flags );
 
-		virtual void onClose();
+		void onClose();
 
 		virtual void onVisibilityChange();
 
@@ -407,9 +407,9 @@ class EE_API Node : public Transformable {
 
 		virtual void onParentChange();
 
-		virtual void updateWorldPolygon();
+		void updateWorldPolygon();
 
-		virtual void updateCenter();
+		void updateCenter();
 
 		virtual void matrixSet();
 
@@ -429,7 +429,7 @@ class EE_API Node : public Transformable {
 
 		virtual void onSceneChange();
 
-		virtual void clipStart();
+		void clipStart();
 
 		virtual Uint32 onFocus();
 
@@ -437,9 +437,9 @@ class EE_API Node : public Transformable {
 
 		virtual void internalDraw();
 
-		virtual void clipEnd();
+		void clipEnd();
 
-		virtual void updateScreenPos();
+		void updateScreenPos();
 
 		virtual void setInternalSize(const Sizef& size );
 

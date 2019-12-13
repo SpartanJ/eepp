@@ -46,7 +46,11 @@ UIMap::UIMap( UITheme * Theme, TileMap * Map ) :
 	mDragButton = EE_BUTTON_MMASK;
 	setDragEnabled( true );
 
-	updateScreenPos();
+	onUpdateScreenPos();
+
+	addEventListener( Event::OnUpdateScreenPosition, [&] (const Event*) {
+		onUpdateScreenPos();
+	} );
 }
 
 UIMap::~UIMap() {
@@ -93,9 +97,7 @@ void UIMap::draw() {
 	}
 }
 
-void UIMap::updateScreenPos() {
-	UIWindow::updateScreenPos();
-
+void UIMap::onUpdateScreenPos() {
 	if ( NULL != mMap ) {
 		mMap->setPosition( Vector2i( mScreenPos.x, mScreenPos.y ) );
 	}

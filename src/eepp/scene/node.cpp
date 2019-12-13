@@ -831,40 +831,40 @@ void Node::onSceneChange() {
 	}
 }
 
-Uint32 Node::isWidget() const {
-	return mNodeFlags & NODE_FLAG_WIDGET;
+bool Node::isWidget() const {
+	return 0 != ( mNodeFlags & NODE_FLAG_WIDGET );
 }
 
-Uint32 Node::isWindow() const {
-	return mNodeFlags & NODE_FLAG_WINDOW;
+bool Node::isWindow() const {
+	return 0 != ( mNodeFlags & NODE_FLAG_WINDOW );
 }
 
-Uint32 Node::isClipped() const {
-	return mNodeFlags & NODE_FLAG_CLIP_ENABLE;
+bool Node::isClipped() const {
+	return 0 != ( mNodeFlags & NODE_FLAG_CLIP_ENABLE );
 }
 
-Uint32 Node::isRotated() const {
-	return mNodeFlags & NODE_FLAG_ROTATED;
+bool Node::isRotated() const {
+	return 0 != ( mNodeFlags & NODE_FLAG_ROTATED );
 }
 
-Uint32 Node::isScaled() const {
-	return mNodeFlags & NODE_FLAG_SCALED;
+bool Node::isScaled() const {
+	return 0 != ( mNodeFlags & NODE_FLAG_SCALED );
 }
 
-Uint32 Node::isFrameBuffer() const {
-	return mNodeFlags & NODE_FLAG_FRAME_BUFFER;
+bool Node::isFrameBuffer() const {
+	return 0 != ( mNodeFlags & NODE_FLAG_FRAME_BUFFER );
 }
 
-Uint32 Node::isSceneNode() const {
-	return mNodeFlags & NODE_FLAG_SCENENODE;
+bool Node::isSceneNode() const {
+	return 0 != ( mNodeFlags & NODE_FLAG_SCENENODE );
 }
 
-Uint32 Node::isUISceneNode() const {
-	return mNodeFlags & NODE_FLAG_UISCENENODE;
+bool Node::isUISceneNode() const {
+	return 0 != ( mNodeFlags & NODE_FLAG_UISCENENODE );
 }
 
-Uint32 Node::isUINode() const {
-	return mNodeFlags & NODE_FLAG_UINODE;
+bool Node::isUINode() const {
+	return 0 != ( mNodeFlags & NODE_FLAG_UINODE );
 }
 
 bool Node::isMeOrParentTreeVisible() const {
@@ -1025,6 +1025,8 @@ void Node::updateScreenPos() {
 	updateCenter();
 
 	mNodeFlags &= ~NODE_FLAG_POSITION_DIRTY;
+
+	sendCommonEvent( Event::OnUpdateScreenPosition );
 }
 
 void Node::writeNodeFlag( const Uint32& Flag, const Uint32& Val ) {

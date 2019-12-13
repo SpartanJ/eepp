@@ -88,7 +88,7 @@ class EE_API UIMap : public UIWindow {
 		void setTileBox( UITextView * tilebox );
 
 		void replaceMap( TileMap * newMap );
-	protected:		
+	protected:
 		enum EDITING_MODE {
 			EDITING_LIGHT = 1,
 			EDITING_OBJECT
@@ -139,7 +139,7 @@ class EE_API UIMap : public UIWindow {
 
 		virtual void onSizeChange();
 
-		virtual void updateScreenPos();
+		void onUpdateScreenPos();
 
 		virtual void onAlphaChange();
 
