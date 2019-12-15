@@ -10,6 +10,7 @@ namespace EE { namespace UI {
 class UIThemeManager;
 class UIWidget;
 class UIWindow;
+class UIWidget;
 
 class EE_API UISceneNode : public SceneNode {
   public:
@@ -62,8 +63,11 @@ class EE_API UISceneNode : public SceneNode {
 
 	UIThemeManager* getUIThemeManager() const;
 
+	UIWidget* getRoot() const;
+
   protected:
 	friend class EE::UI::UIWindow;
+	UIWidget* mRoot;
 	Sizef mDpSize;
 	Uint32 mFlags;
 	Translator mTranslator;
@@ -89,6 +93,10 @@ class EE_API UISceneNode : public SceneNode {
 	void reloadStyle();
 
 	bool onMediaChanged();
+
+	virtual void onChildCountChange();
+
+	virtual void onSizeChange();
 };
 
 }} // namespace EE::UI

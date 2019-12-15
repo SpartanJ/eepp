@@ -43,7 +43,7 @@ UINode::UINode() :
 	mNodeFlags |= NODE_FLAG_UINODE | NODE_FLAG_OVER_FIND_ALLOWED;
 
 	if ( NULL != SceneManager::instance()->getUISceneNode() )
-		setParent( (Node*)SceneManager::instance()->getUISceneNode() );
+		setParent( (Node*)SceneManager::instance()->getUISceneNode()->getRoot() );
 }
 
 UINode::~UINode() {
@@ -889,7 +889,11 @@ Node * UINode::getWindowContainer() const {
 		if ( Ctrl->isType( UI_TYPE_WINDOW ) ) {
 			return static_cast<const UIWindow*>( Ctrl )->getContainer();
 		} else if ( mSceneNode == Ctrl ) {
-			return mSceneNode;
+			if ( mSceneNode->isUISceneNode() ) {
+				return static_cast<UISceneNode*>( mSceneNode )->getRoot();
+			} else {
+				return mSceneNode;
+			}
 		}
 
 		Ctrl = Ctrl->getParent();

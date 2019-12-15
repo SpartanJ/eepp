@@ -18,13 +18,23 @@ UISceneNode* UISceneNode::New( EE::Window::Window* window ) {
 }
 
 UISceneNode::UISceneNode( EE::Window::Window* window ) :
-	SceneNode( window ), mIsLoading( false ), mUIThemeManager( UIThemeManager::New() ) {
+	SceneNode( window ),
+	mRoot( NULL ),
+	mIsLoading( false ),
+	mUIThemeManager( UIThemeManager::New() ) {
 	// Update only UI elements that requires it.
 	setUpdateAllChilds( false );
 
 	mNodeFlags |= NODE_FLAG_UISCENENODE | NODE_FLAG_OVER_FIND_ALLOWED;
 
 	setEventDispatcher( UIEventDispatcher::New( this ) );
+
+	mRoot = UIWidget::NewWithTag( ":root" );
+	mRoot->setLayoutSizeRules( FIXED, FIXED );
+	mRoot->writeNodeFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
+	mRoot->setParent( this );
+	mRoot->clipEnable();
+	mRoot->enableReportSizeChangeToChilds();
 
 	resizeControl( mWindow );
 }
@@ -166,7 +176,7 @@ void UISceneNode::reloadStyle() {
 
 		while ( NULL != ChildLoop ) {
 			if ( ChildLoop->isWidget() )
-				static_cast<UIWidget*>( ChildLoop )->reloadStyle();
+				ChildLoop->asType<UIWidget>()->reloadStyle();
 
 			ChildLoop = ChildLoop->getNextNode();
 		}
@@ -300,6 +310,10 @@ UIThemeManager* UISceneNode::getUIThemeManager() const {
 	return mUIThemeManager;
 }
 
+UIWidget* UISceneNode::getRoot() const {
+	return mRoot;
+}
+
 bool UISceneNode::onMediaChanged() {
 	if ( !mStyleSheet.isMediaQueryListEmpty() ) {
 		MediaFeatures media;
@@ -320,6 +334,33 @@ bool UISceneNode::onMediaChanged() {
 	}
 
 	return false;
+}
+
+void UISceneNode::onChildCountChange() {
+	if ( NULL == mRoot )
+		return;
+
+	Node* child = mChild;
+	bool found = false;
+
+	while ( NULL != child ) {
+		if ( !( child->getNodeFlags() & NODE_FLAG_OWNED_BY_NODE ) ) {
+			found = true;
+			break;
+		}
+
+		child = child->getNextNode();
+	}
+
+	if ( found ) {
+		child->setParent( mRoot );
+	}
+}
+
+void UISceneNode::onSizeChange() {
+	SceneNode::onSizeChange();
+
+	mRoot->setPixelsSize( getPixelsSize() );
 }
 
 }} // namespace EE::UI

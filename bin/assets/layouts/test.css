@@ -3,9 +3,13 @@
 	src: url("file://assets/fonts/OpenSans-Regular.ttf");
 }
 
+:root {
+	--font-color: #E6E6E6FF;
+}
+
 /* Global rules */
 * {
-	color: #E6E6E6FF;
+	color: var(--font-color);
 	shadow-color: #32323296;
 	selected-color: #000;
 	selection-back-color: #969696FF;
@@ -31,7 +35,7 @@ WinMenu {
 
 Menu,
 PopUpMenu {
-	color: #E6E6E6FF;
+	color: var(--font-color);
 	min-width: 100dp;
 	min-icon-space: 24dp;
 	min-margin-right: 8dp;
@@ -63,7 +67,7 @@ Window {
 }
 
 Window::title {
-	color: #E6E6E6FF;
+	color: var(--font-color);
 	font-style: shadow;
 }
 

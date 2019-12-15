@@ -713,7 +713,7 @@ UIStyle * UIWidget::getUIStyle() const {
 }
 
 void UIWidget::reloadStyle( const bool& reloadChilds ) {
-	if ( NULL == mStyle && getSceneNode()->isUISceneNode() && static_cast<UISceneNode*>( getSceneNode() )->hasStyleSheet() ) {
+	if ( NULL == mStyle && NULL != getSceneNode() && getSceneNode()->isUISceneNode() && getUISceneNode()->hasStyleSheet() ) {
 		mStyle = UIStyle::New( this );
 		mStyle->setState( mState );
 	}
