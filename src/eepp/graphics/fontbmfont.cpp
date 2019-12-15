@@ -20,7 +20,7 @@ FontBMFont * FontBMFont::New(const std::string FontName, const std::string & fil
 }
 
 FontBMFont::FontBMFont( const std::string FontName ) :
-	Font( FONT_TYPE_BMF, FontName ),
+	Font( FontType::BMF, FontName ),
 	mInfo(),
 	mFontSize(0)
 {}
@@ -222,4 +222,4 @@ FontBMFont& FontBMFont::operator =(const FontBMFont& right) {
 	return *this;
 }
 
-}} 
+}}

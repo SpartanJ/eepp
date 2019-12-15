@@ -17,7 +17,7 @@ ParticleSystem::ParticleSystem() :
 	mTexture( 0 ),
 	mPLeft( 0 ),
 	mLoops( 0 ),
-	mEffect( PSE_Nofx ),
+	mEffect( ParticleEffect::Nofx ),
 	mBlend( BlendAdd ),
 	mColor(),
 	mProgression( 0 ),
@@ -40,7 +40,7 @@ ParticleSystem::~ParticleSystem() {
 	eeSAFE_DELETE_ARRAY( mParticle );
 }
 
-void ParticleSystem::create( const EE_PARTICLE_EFFECT& Effect, const Uint32& NumParticles, const Uint32& TexId, const Vector2f& Pos, const Float& PartSize, const bool& AnimLoop, const Uint32& NumLoops, const ColorAf& Color, const Vector2f& Pos2, const Float& AlphaDecay, const Vector2f& Speed, const Vector2f& Acc ) {
+void ParticleSystem::create( const ParticleEffect& Effect, const Uint32& NumParticles, const Uint32& TexId, const Vector2f& Pos, const Float& PartSize, const bool& AnimLoop, const Uint32& NumLoops, const ColorAf& Color, const Vector2f& Pos2, const Float& AlphaDecay, const Vector2f& Speed, const Vector2f& Acc ) {
 	mPointsSup		= GLi->pointSpriteSupported();
 	mEffect			= Effect;
 	mPos			= Pos;
@@ -98,19 +98,19 @@ void ParticleSystem::reset( Particle * P ) {
 	Float x, y, radio, q, z, w;
 
 	switch ( mEffect ) {
-		case PSE_Nofx:
+		case ParticleEffect::Nofx:
 		{
 			P->reset( mPos.x, mPos.y, mSpeed.x, mSpeed.y, mAcc.x, mAcc.y, mSize );
 			P->setColor( mColor , mAlphaDecay );
 			break;
 		}
-		case PSE_BlueBall:
+		case ParticleEffect::BlueBall:
 		{
 			P->reset( mPos.x, mPos.y, -10, ( -1 * Math::randf() ), 0.01f, Math::randf(), mSize );
 			P->setColor( ColorAf( 0.25f ,0.25f ,1 ,1 ), 0.1f + ( 0.1f * Math::randf() ) );
 			break;
 		}
-		case PSE_Fire:
+		case ParticleEffect::Fire:
 		{
 			x = ( mPos2.x - mPos.x + 1 ) * Math::randf() + mPos.x;
 			y = ( mPos2.y - mPos.y + 1 ) * Math::randf() + mPos.y;
@@ -119,7 +119,7 @@ void ParticleSystem::reset( Particle * P ) {
 			P->setColor( ColorAf( 1.f, 0.5f, 0.1f, ( Math::randf() * 0.5f ) ), Math::randf() * 0.4f + 0.01f );
 			break;
 		}
-		case PSE_Smoke:
+		case ParticleEffect::Smoke:
 		{
 			x = ( mPos2.x - mPos.x + 1 ) * Math::randf() + mPos.x;
 			y = ( mPos2.y - mPos.y + 1 ) * Math::randf() + mPos.y;
@@ -128,7 +128,7 @@ void ParticleSystem::reset( Particle * P ) {
 			P->setColor( ColorAf( 0.8f, 0.8f, 0.8f, 0.3f ), ( Math::randf() * 0.005f ) + 0.005f );
 			break;
 		}
-		case PSE_Snow:
+		case ParticleEffect::Snow:
 		{
 			x = ( mPos2.x - mPos.x + 1 ) * Math::randf() + mPos.x;
 			y = ( mPos2.y - mPos.y + 1 ) * Math::randf() + mPos.y;
@@ -138,31 +138,31 @@ void ParticleSystem::reset( Particle * P ) {
 			P->setColor( ColorAf( 1.f, 1.f, 1.f, 0.5f ), 0 );
 			break;
 		}
-		case PSE_MagicFire:
+		case ParticleEffect::MagicFire:
 		{
 			P->reset( mPos.x + Math::randf() , mPos.y, -0.4f + Math::randf() * 0.8f, -0.5f - Math::randf() * 0.4f, 0.f, -( Math::randf() * 0.3f ) );
 			P->setColor( ColorAf( 1.f, 0.5f, 0.1f, 0.7f + 0.2f * Math::randf() ), 0.01f + Math::randf() * 0.05f );
 			break;
 		}
-		case PSE_LevelUp:
+		case ParticleEffect::LevelUp:
 		{
 			P->reset( mPos.x, mPos.y, Math::randf() * 1.5f - 0.75f, Math::randf() * 1.5f - 0.75f, Math::randf() * 4 - 2, Math::randf() * -4 + 2 );
 			P->setColor( ColorAf( 1.f, 0.5f, 0.1f, 1.f ), 0.07f + Math::randf() * 0.01f );
 			break;
 		}
-		case PSE_LevelUp2:
+		case ParticleEffect::LevelUp2:
 		{
 			P->reset( mPos.x + Math::randf() * 32 - 16, mPos.y + Math::randf() * 64 - 32, Math::randf() - 0.5f, Math::randf() - 0.5f, Math::randf() - 0.5f, Math::randf() * -0.9f + 0.45f );
 			P->setColor( ColorAf( 0.1f + Math::randf() * 0.1f, 0.1f + Math::randf() * 0.1f, 0.8f + Math::randf() * 0.3f, 1 ), 0.07f + Math::randf() * 0.01f );
 			break;
 		}
-		case PSE_Heal:
+		case ParticleEffect::Heal:
 		{
 			P->reset( mPos.x, mPos.y, Math::randf() * 1.4f - 0.7f, Math::randf() * -0.4f - 1.5f, Math::randf() - 0.5f, Math::randf() * -0.2f + 0.1f );
 			P->setColor( ColorAf( 0.2f, 0.3f, 0.9f, 0.4f ), 0.01f + Math::randf() * 0.01f );
 			break;
 		}
-		case PSE_WormHole:
+		case ParticleEffect::WormHole:
 		{
 			int lo, la;
 			Float VarB[4];
@@ -184,7 +184,7 @@ void ParticleSystem::reset( Particle * P ) {
 			P->setColor( ColorAf( 1.f, 0.6f, 0.3f, 1.f ), 0.02f + Math::randf() * 0.3f );
 			break;
 		}
-		case PSE_Twirl:
+		case ParticleEffect::Twirl:
 		{
 			z		= 10.f + (Float)mProgression;
 			w		= 10.f + (Float)mProgression;
@@ -204,7 +204,7 @@ void ParticleSystem::reset( Particle * P ) {
 			P->setColor( ColorAf( 1.f, 0.25f, 0.25f, 1 ), 0.6f + Math::randf() * 0.3f );
 			break;
 		}
-		case PSE_Flower:
+		case ParticleEffect::Flower:
 		{
 			radio	= eecos( 2 * ( (Float)P->getId() * 0.1f ) ) * 50;
 			x		= mPos.x + radio * eecos( (Float)P->getId() * 0.1f );
@@ -214,7 +214,7 @@ void ParticleSystem::reset( Particle * P ) {
 			P->setColor( ColorAf( 1.f, 0.25f, 0.1f, 0.1f ), 0.3f + ( 0.2f * Math::randf()) + Math::randf() * 0.3f );
 			break;
 		}
-		case PSE_Galaxy:
+		case ParticleEffect::Galaxy:
 		{
 			radio	= ( Math::randf( 1.f, 1.2f ) + eesin( 20.f / (Float)P->getId() ) ) * 60;
 			x		= mPos.x + radio * eecos( (Float)P->getId() );
@@ -224,7 +224,7 @@ void ParticleSystem::reset( Particle * P ) {
 			P->setColor( ColorAf( 0.2f, 0.2f, 0.6f + 0.4f * Math::randf(), 1.f ), Math::randf( 0.05f, 0.15f ) );
 			break;
 		}
-		case PSE_Heart:
+		case ParticleEffect::Heart:
 		{
 			q		= P->getId() * 0.01f;
 			x		= mPos.x - 50 * eesin( q * 2 ) * eesqrt( eeabs( eecos( q ) ) );
@@ -234,7 +234,7 @@ void ParticleSystem::reset( Particle * P ) {
 			P->setColor( ColorAf( 1.f, 0.5f, 0.2f, 0.6f + 0.2f * Math::randf() ), 0.01f + Math::randf() * 0.08f );
 			break;
 		}
-		case PSE_BlueExplosion:
+		case ParticleEffect::BlueExplosion:
 		{
 			if ( P->getId() == 0 )
 				mProgression += 10;
@@ -247,7 +247,7 @@ void ParticleSystem::reset( Particle * P ) {
 			P->setColor( ColorAf( 0.3f, 0.6f, 1.f, 1.f ), 0.03f );
 			break;
 		}
-		case PSE_GP:
+		case ParticleEffect::GP:
 		{
 			radio	= 50 + Math::randf() * 15 * eecos( (Float)P->getId() * 3.5f );
 			x		= mPos.x + ( radio * eecos( (Float)P->getId() * (Float)0.01428571428 ) );
@@ -257,7 +257,7 @@ void ParticleSystem::reset( Particle * P ) {
 			P->setColor( ColorAf( 0.2f, 0.8f, 0.4f, 0.5f ), Math::randf() * 0.3f );
 			break;
 		}
-		case PSE_BTwirl:
+		case ParticleEffect::BTwirl:
 		{
 			w		= 10.f + (Float)mProgression;
 
@@ -276,7 +276,7 @@ void ParticleSystem::reset( Particle * P ) {
 			P->setColor( ColorAf( 0.25f, 0.25f, 1.f, 1.f ), 0.1f + Math::randf() * 0.3f + Math::randf() * 0.3f );
 			break;
 		}
-		case PSE_BT:
+		case ParticleEffect::BT:
 		{
 			w		= 10.f + (Float)mProgression;
 
@@ -295,7 +295,7 @@ void ParticleSystem::reset( Particle * P ) {
 			P->setColor( ColorAf( 0.25f, 0.25f, 1.f, 1.f ), 0.1f + Math::randf() * 0.1f + Math::randf() * 0.3f );
 			break;
 		}
-		case PSE_Atomic:
+		case ParticleEffect::Atomic:
 		{
 			radio	= 10 + eesin( 2 * ( (Float)P->getId() * 0.1f ) ) * 50;
 			x		= mPos.x + radio * eecos( (Float)P->getId() * 0.033333 );
@@ -305,7 +305,7 @@ void ParticleSystem::reset( Particle * P ) {
 			P->setColor( ColorAf( 0.4f, 0.25f, 1.f, 1.f ), 0.3f + Math::randf() * 0.2f + Math::randf() * 0.3f );
 			break;
 		}
-		case PSE_Callback:
+		case ParticleEffect::Callback:
 		{
 			if ( mPC.IsSet() ) {
 				mPC(P, this);

@@ -22,13 +22,13 @@ class EE_API UIScrollView : public UITouchDragableWidget {
 
 		virtual bool isType( const Uint32& type ) const;
 
-		void setVerticalScrollMode( const UI_SCROLLBAR_MODE& Mode );
+		void setVerticalScrollMode( const ScrollBarMode& Mode );
 
-		const UI_SCROLLBAR_MODE& getVerticalScrollMode();
+		const ScrollBarMode& getVerticalScrollMode();
 
-		void setHorizontalScrollMode( const UI_SCROLLBAR_MODE& Mode );
+		void setHorizontalScrollMode( const ScrollBarMode& Mode );
 
-		const UI_SCROLLBAR_MODE& getHorizontalScrollMode();
+		const ScrollBarMode& getHorizontalScrollMode();
 
 		const ScrollViewType& getViewType() const;
 
@@ -45,8 +45,8 @@ class EE_API UIScrollView : public UITouchDragableWidget {
 		virtual std::string getPropertyString(const PropertyDefinition* propertyDef);
 	protected:
 		ScrollViewType mViewType;
-		UI_SCROLLBAR_MODE mVScrollMode;
-		UI_SCROLLBAR_MODE mHScrollMode;
+		ScrollBarMode mVScrollMode;
+		ScrollBarMode mHScrollMode;
 		UIScrollBar * mVScroll;
 		UIScrollBar * mHScroll;
 		UIWidget * mContainer;

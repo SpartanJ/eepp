@@ -2,7 +2,6 @@
 #define EE_GRAPHICS_TEXT_HPP
 
 #include <eepp/graphics/font.hpp>
-#include <eepp/graphics/fonthelper.hpp>
 #include <eepp/graphics/fontstyleconfig.hpp>
 
 namespace EE { namespace Graphics {
@@ -83,7 +82,7 @@ class EE_API Text {
 		Vector2f findCharacterPos(std::size_t index) const;
 
 		Rectf getLocalBounds();
-		
+
 		/** @return The cached text width */
 		Float getTextWidth();
 

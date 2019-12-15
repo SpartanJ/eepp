@@ -19,9 +19,9 @@ class EE_API UILinearLayout : public UILayout {
 
 		virtual bool isType( const Uint32& type ) const;
 
-		UI_ORIENTATION getOrientation() const;
+		UIOrientation getOrientation() const;
 
-		UILinearLayout * setOrientation(const UI_ORIENTATION & getOrientation);
+		UILinearLayout * setOrientation(const UIOrientation & getOrientation);
 
 		UILinearLayout * add( UIWidget * widget );
 
@@ -29,7 +29,7 @@ class EE_API UILinearLayout : public UILayout {
 
 		virtual std::string getPropertyString(const PropertyDefinition* propertyDef);
 	protected:
-		UI_ORIENTATION mOrientation;
+		UIOrientation mOrientation;
 
 		virtual Uint32 onMessage( const NodeMessage * Msg );
 

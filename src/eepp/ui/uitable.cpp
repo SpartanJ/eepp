@@ -14,8 +14,8 @@ UITable::UITable() :
 	mContainer( NULL ),
 	mVScrollBar( NULL ),
 	mHScrollBar( NULL ),
-	mVScrollMode( UI_SCROLLBAR_AUTO ),
-	mHScrollMode( UI_SCROLLBAR_AUTO ),
+	mVScrollMode( ScrollBarMode::Auto ),
+	mHScrollMode( ScrollBarMode::Auto ),
 	mCollumnsCount( 0 ),
 	mRowHeight( 0 ),
 	mTotalWidth( 0 ),
@@ -38,21 +38,21 @@ UITable::UITable() :
 	mContainer->setSize( getSize().getWidth() - mContainerPadding.Right - mContainerPadding.Left, getSize().getHeight() - mContainerPadding.Top - mContainerPadding.Bottom );
 
 	mVScrollBar = UIScrollBar::New();
-	mVScrollBar->setOrientation( UI_VERTICAL );
+	mVScrollBar->setOrientation( UIOrientation::Vertical );
 	mVScrollBar->setParent( this );
 	mVScrollBar->setPosition( getSize().getWidth() - 16, 0 );
 	mVScrollBar->setSize( 16, getSize().getHeight() );
 
 	mHScrollBar = UIScrollBar::New();
-	mHScrollBar->setOrientation( UI_HORIZONTAL );
+	mHScrollBar->setOrientation( UIOrientation::Horizontal );
 	mHScrollBar->setParent( this );
 	mHScrollBar->setSize( getSize().getWidth() - mVScrollBar->getSize().getWidth(), 16 );
 	mHScrollBar->setPosition( 0, getSize().getHeight() - 16 );
 
-	mHScrollBar->setVisible( UI_SCROLLBAR_ALWAYS_ON == mHScrollMode );
-	mHScrollBar->setEnabled( UI_SCROLLBAR_ALWAYS_ON == mHScrollMode );
-	mVScrollBar->setVisible( UI_SCROLLBAR_ALWAYS_ON == mVScrollMode );
-	mVScrollBar->setEnabled( UI_SCROLLBAR_ALWAYS_ON == mVScrollMode );
+	mHScrollBar->setVisible( ScrollBarMode::AlwaysOn == mHScrollMode );
+	mHScrollBar->setEnabled( ScrollBarMode::AlwaysOn == mHScrollMode );
+	mVScrollBar->setVisible( ScrollBarMode::AlwaysOn == mVScrollMode );
+	mVScrollBar->setEnabled( ScrollBarMode::AlwaysOn == mVScrollMode );
 
 	mVScrollBar->addEventListener( Event::OnValueChange, cb::Make1( this, &UITable::onScrollValueChange ) );
 	mHScrollBar->addEventListener( Event::OnValueChange, cb::Make1( this, &UITable::onScrollValueChange ) );
@@ -128,7 +128,7 @@ void UITable::onSizeChange() {
 	mHScrollBar->setPosition( 0, getSize().getHeight() - mHScrollBar->getSize().getHeight() );
 	mHScrollBar->setSize( getSize().getWidth() - mVScrollBar->getSize().getWidth(), mHScrollBar->getSize().getHeight() );
 
-	if ( mContainer->isClipped() && UI_SCROLLBAR_AUTO == mHScrollMode ) {
+	if ( mContainer->isClipped() && ScrollBarMode::Auto == mHScrollMode ) {
 		if ( (Int32)mTotalWidth <= mContainer->getSize().getWidth() ) {
 			mHScrollBar->setVisible( false );
 			mHScrollBar->setEnabled( false );
@@ -159,7 +159,7 @@ void UITable::containerResize() {
 
 void UITable::updateVScroll() {
 	if ( mItemsNotVisible <= 0 ) {
-		if ( UI_SCROLLBAR_ALWAYS_ON == mVScrollMode ) {
+		if ( ScrollBarMode::AlwaysOn == mVScrollMode ) {
 			mVScrollBar->setVisible( true );
 			mVScrollBar->setEnabled( true );
 		} else {
@@ -167,7 +167,7 @@ void UITable::updateVScroll() {
 			mVScrollBar->setEnabled( false );
 		}
 	} else {
-		if ( UI_SCROLLBAR_AUTO == mVScrollMode || UI_SCROLLBAR_ALWAYS_ON == mVScrollMode ) {
+		if ( ScrollBarMode::Auto == mVScrollMode || ScrollBarMode::AlwaysOn == mVScrollMode ) {
 			mVScrollBar->setVisible( true );
 			mVScrollBar->setEnabled( true );
 		} else {
@@ -180,7 +180,7 @@ void UITable::updateVScroll() {
 }
 
 void UITable::updateHScroll() {
-	if ( mContainer->isClipped() && ( UI_SCROLLBAR_AUTO == mHScrollMode || UI_SCROLLBAR_ALWAYS_ON == mHScrollMode ) ) {
+	if ( mContainer->isClipped() && ( ScrollBarMode::Auto == mHScrollMode || ScrollBarMode::AlwaysOn == mHScrollMode ) ) {
 		if ( mContainer->getSize().getWidth() < (Int32)mTotalWidth ) {
 				mHScrollBar->setVisible( true );
 				mHScrollBar->setEnabled( true );
@@ -193,7 +193,7 @@ void UITable::updateHScroll() {
 
 				mHScrollInit = -HScrolleable;
 		} else {
-			if ( UI_SCROLLBAR_AUTO == mHScrollMode ) {
+			if ( ScrollBarMode::Auto == mHScrollMode ) {
 				mHScrollBar->setVisible( false );
 				mHScrollBar->setEnabled( false );
 
@@ -208,7 +208,7 @@ void UITable::updateHScroll() {
 void UITable::setHScrollStep() {
 	Float width = (Float)mContainer->getPixelsSize().getWidth();
 
-	if ( ( mItemsNotVisible > 0 && UI_SCROLLBAR_AUTO == mVScrollMode ) || UI_SCROLLBAR_ALWAYS_ON == mVScrollMode )
+	if ( ( mItemsNotVisible > 0 && ScrollBarMode::Auto == mVScrollMode ) || ScrollBarMode::AlwaysOn == mVScrollMode )
 		width -= mVScrollBar->getPixelsSize().getWidth();
 
 	Float maxWidth = 0;
@@ -496,7 +496,7 @@ void UITable::onAlphaChange() {
 	mHScrollBar->setAlpha( mAlpha );
 }
 
-void UITable::setVerticalScrollMode( const UI_SCROLLBAR_MODE& Mode ) {
+void UITable::setVerticalScrollMode( const ScrollBarMode& Mode ) {
 	if ( Mode != mVScrollMode ) {
 		mVScrollMode = Mode;
 
@@ -504,19 +504,19 @@ void UITable::setVerticalScrollMode( const UI_SCROLLBAR_MODE& Mode ) {
 	}
 }
 
-const UI_SCROLLBAR_MODE& UITable::getVerticalScrollMode() {
+const ScrollBarMode& UITable::getVerticalScrollMode() {
 	return mVScrollMode;
 }
 
-void UITable::setHorizontalScrollMode( const UI_SCROLLBAR_MODE& Mode ) {
+void UITable::setHorizontalScrollMode( const ScrollBarMode& Mode ) {
 	if ( Mode != mHScrollMode ) {
 		mHScrollMode = Mode;
 
-		if ( UI_SCROLLBAR_ALWAYS_ON == mHScrollMode ) {
+		if ( ScrollBarMode::AlwaysOn == mHScrollMode ) {
 			mHScrollBar->setVisible( true );
 			mHScrollBar->setEnabled( true );
 			containerResize();
-		} else if ( UI_SCROLLBAR_ALWAYS_OFF == mHScrollMode ) {
+		} else if ( ScrollBarMode::AlwaysOff == mHScrollMode ) {
 			mHScrollBar->setVisible( false );
 			mHScrollBar->setEnabled( false );
 			containerResize();
@@ -526,7 +526,7 @@ void UITable::setHorizontalScrollMode( const UI_SCROLLBAR_MODE& Mode ) {
 	}
 }
 
-const UI_SCROLLBAR_MODE& UITable::getHorizontalScrollMode() {
+const ScrollBarMode& UITable::getHorizontalScrollMode() {
 	return mHScrollMode;
 }
 
@@ -630,12 +630,12 @@ std::string UITable::getPropertyString( const PropertyDefinition* propertyDef ) 
 		case PropertyId::RowHeight:
 			return String::format( "%ddp", getRowHeight() );
 		case PropertyId::VScrollMode:
-			return getVerticalScrollMode() == UI_SCROLLBAR_AUTO ? "auto" : (
-				getVerticalScrollMode() == UI_SCROLLBAR_ALWAYS_ON ? "on" : "off"
+			return getVerticalScrollMode() == ScrollBarMode::Auto ? "auto" : (
+				getVerticalScrollMode() == ScrollBarMode::AlwaysOn ? "on" : "off"
 			);
 		case PropertyId::HScrollMode:
-			return getHorizontalScrollMode() == UI_SCROLLBAR_AUTO ? "auto" : (
-				getHorizontalScrollMode() == UI_SCROLLBAR_ALWAYS_ON ? "on" : "off"
+			return getHorizontalScrollMode() == ScrollBarMode::Auto ? "auto" : (
+				getHorizontalScrollMode() == ScrollBarMode::AlwaysOn ? "on" : "off"
 			);
 		case PropertyId::ScrollBarType:
 			return mVScrollBar->getScrollBarType() == UIScrollBar::NoButtons ? "no-buttons" :
@@ -655,17 +655,17 @@ bool UITable::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::VScrollMode:
 		{
 			std::string val = attribute.asString();
-			if ( "auto" == val ) setVerticalScrollMode( UI_SCROLLBAR_AUTO );
-			else if ( "on" == val ) setVerticalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
-			else if ( "off" == val ) setVerticalScrollMode( UI_SCROLLBAR_ALWAYS_OFF );
+			if ( "auto" == val ) setVerticalScrollMode( ScrollBarMode::Auto );
+			else if ( "on" == val ) setVerticalScrollMode( ScrollBarMode::AlwaysOn );
+			else if ( "off" == val ) setVerticalScrollMode( ScrollBarMode::AlwaysOff );
 			break;
 		}
 		case PropertyId::HScrollMode:
 		{
 			std::string val = attribute.asString();
-			if ( "auto" == val ) setHorizontalScrollMode( UI_SCROLLBAR_AUTO );
-			else if ( "on" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
-			else if ( "off" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_OFF );
+			if ( "auto" == val ) setHorizontalScrollMode( ScrollBarMode::Auto );
+			else if ( "on" == val ) setHorizontalScrollMode( ScrollBarMode::AlwaysOn );
+			else if ( "off" == val ) setHorizontalScrollMode( ScrollBarMode::AlwaysOff );
 			break;
 		}
 		case PropertyId::ScrollBarType:

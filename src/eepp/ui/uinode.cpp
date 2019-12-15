@@ -536,7 +536,7 @@ UINode * UINode::setFlags( const Uint32& flags ) {
 	if ( NULL == mBorder && ( flags & UI_BORDER ) )
 		setBorderEnabled( true );
 
-	if ( fontHAlignGet( flags ) || fontVAlignGet( flags ) ) {
+	if ( Font::getHorizontalAlign( flags ) || Font::getVerticalAlign( flags ) ) {
 		onAlignChange();
 	}
 
@@ -549,7 +549,7 @@ UINode * UINode::unsetFlags(const Uint32 & flags) {
 	if ( mFlags & flags )
 		mFlags &= ~flags;
 
-	if ( fontHAlignGet( flags ) || fontVAlignGet( flags ) ) {
+	if ( Font::getHorizontalAlign( flags ) || Font::getVerticalAlign( flags ) ) {
 		onAlignChange();
 	}
 

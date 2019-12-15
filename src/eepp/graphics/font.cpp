@@ -5,7 +5,7 @@
 
 namespace EE { namespace Graphics {
 
-Font::Font( const Uint32& Type, const std::string& Name ) :
+Font::Font( const FontType& Type, const std::string& Name ) :
 	mType( Type )
 {
 	this->setName( Name );
@@ -18,7 +18,7 @@ Font::~Font() {
 	}
 }
 
-const Uint32& Font::getType() const {
+const FontType& Font::getType() const {
 	return mType;
 }
 

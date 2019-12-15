@@ -23,7 +23,6 @@ using namespace EE::System;
 using namespace EE::Window;
 
 #include <eepp/graphics/rendermode.hpp>
-#include <eepp/graphics/fonthelper.hpp>
 #include <eepp/graphics/pixeldensity.hpp>
 using namespace EE::Graphics;
 

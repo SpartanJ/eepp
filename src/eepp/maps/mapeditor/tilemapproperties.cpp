@@ -55,7 +55,7 @@ TileMapProperties::TileMapProperties( TileMap * Map ) :
 		mUIBaseColor->setBorderColor( Color( 100, 100, 100, 200 ) );
 
 		Txt = createTextBox( "Red Color:", mUIWindow->getContainer(), Sizef(), Vector2f( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIBaseColor->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
-		mUIRedSlider = UISlider::New()->setOrientation( UI_HORIZONTAL );
+		mUIRedSlider = UISlider::New()->setOrientation( UIOrientation::Horizontal );
 		mUIRedSlider->setParent( mUIWindow->getContainer() )->setSize( 255, 20 )->setPosition( Txt->getPosition().x + Txt->getSize().getWidth() + 16, Txt->getPosition().y );
 		mUIRedSlider->setMaxValue( 255 );
 		mUIRedSlider->setValue( mMap->getBaseColor().r );
@@ -65,7 +65,7 @@ TileMapProperties::TileMapProperties( TileMap * Map ) :
 
 		Txt = createTextBox( "Green Color:", mUIWindow->getContainer(), Sizef(), Vector2f( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIRedSlider->getPosition().y + mUIRedSlider->getSize().getHeight() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
-		mUIGreenSlider = UISlider::New()->setOrientation( UI_HORIZONTAL );
+		mUIGreenSlider = UISlider::New()->setOrientation( UIOrientation::Horizontal );
 		mUIGreenSlider->setParent( mUIWindow->getContainer() )->setSize( 255, 20 )->setPosition( mUIRedSlider->getPosition().x, Txt->getPosition().y );
 		mUIGreenSlider->setMaxValue( 255 );
 		mUIGreenSlider->setValue( mMap->getBaseColor().g );
@@ -74,7 +74,7 @@ TileMapProperties::TileMapProperties( TileMap * Map ) :
 		mUIGreenTxt = createTextBox( String::toStr( (Uint32)mMap->getBaseColor().g ), mUIWindow->getContainer(), Sizef(), Vector2f( mUIGreenSlider->getPosition().x + mUIGreenSlider->getSize().getWidth() + 4, mUIGreenSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
 		Txt = createTextBox( "Blue Color:", mUIWindow->getContainer(), Sizef(), Vector2f( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIGreenSlider->getPosition().y + mUIGreenSlider->getSize().getHeight() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
-		mUIBlueSlider = UISlider::New()->setOrientation( UI_HORIZONTAL );
+		mUIBlueSlider = UISlider::New()->setOrientation( UIOrientation::Horizontal );
 		mUIBlueSlider->setParent( mUIWindow->getContainer() )->setSize( 255, 20 )->setPosition( mUIRedSlider->getPosition().x, Txt->getPosition().y );
 		mUIBlueSlider->setMaxValue( 255 );
 		mUIBlueSlider->setValue( mMap->getBaseColor().b );

@@ -15,14 +15,14 @@ UIListBoxItem * UIListBoxItem::NewWithTag( const std::string& tag ) {
 UIListBoxItem::UIListBoxItem() :
 	UITextView( "listbox::item" )
 {
-	setLayoutSizeRules( FIXED, FIXED );
+	setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::Fixed );
 	applyDefaultTheme();
 }
 
 UIListBoxItem::UIListBoxItem( const std::string& tag ) :
 	UITextView( tag )
 {
-	setLayoutSizeRules( FIXED, FIXED );
+	setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::Fixed );
 	applyDefaultTheme();
 }
 

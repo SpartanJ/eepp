@@ -51,7 +51,7 @@ class EE_API TexturePacker {
 	public:
 		static TexturePacker * New();
 
-		static TexturePacker * New( const Uint32& MaxWidth, const Uint32& MaxHeight, const EE_PIXEL_DENSITY& PixelDensity = PD_MDPI, const bool& ForcePowOfTwo = true, const bool& scalableSVG = false, const Uint32& PixelBorder = 0, const Texture::TextureFilter& textureFilter = Texture::TextureFilter::Linear, const bool& AllowFlipping = false );
+		static TexturePacker * New( const Uint32& MaxWidth, const Uint32& MaxHeight, const PixelDensitySize& PixelDensity = PixelDensitySize::MDPI, const bool& ForcePowOfTwo = true, const bool& scalableSVG = false, const Uint32& PixelBorder = 0, const Texture::TextureFilter& textureFilter = Texture::TextureFilter::Linear, const bool& AllowFlipping = false );
 
 		/** Creates a new texture packer ( you will need to call SetOptions before adding any texture or image ). */
 		TexturePacker();
@@ -66,7 +66,7 @@ class EE_API TexturePacker {
 		*	@param PixelBorder Indicates how many pixels will be added to separate one image to another in the texture atlas. Usefull to avoid artifacts when rendered scaled TextureRegions. Use at least 1 pixel to separate images if you will scale any TextureRegion.
 		*	@param AllowFlipping Indicates if the images can be flipped inside the texture atlas. This is not compatible with eepp ( since it can't flip the textures back to the original orientation ). So avoid it for eepp.
 		*/
-		TexturePacker( const Uint32& MaxWidth, const Uint32& MaxHeight, const EE_PIXEL_DENSITY& PixelDensity = PD_MDPI, const bool& ForcePowOfTwo = true, const bool& scalableSVG = false, const Uint32& PixelBorder = 0, const Texture::TextureFilter& textureFilter = Texture::TextureFilter::Linear, const bool& AllowFlipping = false );
+		TexturePacker( const Uint32& MaxWidth, const Uint32& MaxHeight, const PixelDensitySize& PixelDensity = PixelDensitySize::MDPI, const bool& ForcePowOfTwo = true, const bool& scalableSVG = false, const Uint32& PixelBorder = 0, const Texture::TextureFilter& textureFilter = Texture::TextureFilter::Linear, const bool& AllowFlipping = false );
 
 		~TexturePacker();
 
@@ -105,7 +105,7 @@ class EE_API TexturePacker {
 		*	@param ForcePowOfTwo Indicates that if the max with and height must be adjusted to fit a power of two texture.
 		*	@param AllowFlipping Indicates if the images can be flipped inside the texture atlas. This is not compatible with eepp ( since it can't flip the textures back to the original orientation ). So avoid it for eepp.
 		*/
-		void setOptions( const Uint32& MaxWidth, const Uint32& MaxHeight, const EE_PIXEL_DENSITY& PixelDensity = PD_MDPI, const bool& ForcePowOfTwo = true, const bool& scalableSVG = false, const Uint32& PixelBorder = 0, const Texture::TextureFilter& textureFilter = Texture::TextureFilter::Linear, const bool& AllowFlipping = false );
+		void setOptions( const Uint32& MaxWidth, const Uint32& MaxHeight, const PixelDensitySize& PixelDensity = PixelDensitySize::MDPI, const bool& ForcePowOfTwo = true, const bool& scalableSVG = false, const Uint32& PixelBorder = 0, const Texture::TextureFilter& textureFilter = Texture::TextureFilter::Linear, const bool& AllowFlipping = false );
 
 		/** @return The texture atlas to generate width. */
 		const Int32& getWidth() const;
@@ -139,7 +139,7 @@ class EE_API TexturePacker {
 		Int32							mPlacedCount;
 		bool							mForcePowOfTwo;
 		Int32							mPixelBorder;
-		EE_PIXEL_DENSITY				mPixelDensity;
+		PixelDensitySize				mPixelDensity;
 		Texture::TextureFilter			mTextureFilter;
 		bool							mSaveExtensions;
 		bool							mScalableSVG;

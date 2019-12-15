@@ -169,7 +169,7 @@ void UITooltip::autoAlign() {
 	Uint32 Width	= mSize.getWidth()	- mRealPadding.Left - mRealPadding.Right;
 	Uint32 Height	= mSize.getHeight()	- mRealPadding.Top	- mRealPadding.Bottom;
 
-	switch ( fontHAlignGet( getFlags() ) ) {
+	switch ( Font::getHorizontalAlign( getFlags() ) ) {
 		case UI_HALIGN_CENTER:
 			mAlignOffset.x = mRealPadding.Left + (Float)( (Int32)( Width - mTextCache->getTextWidth() ) / 2 );
 			break;
@@ -181,7 +181,7 @@ void UITooltip::autoAlign() {
 			break;
 	}
 
-	switch ( fontVAlignGet( getFlags() ) ) {
+	switch ( Font::getVerticalAlign( getFlags() ) ) {
 		case UI_VALIGN_CENTER:
 			mAlignOffset.y = mRealPadding.Top + (Float)( ( (Int32)( Height - mTextCache->getTextHeight() ) ) / 2 );
 			break;
@@ -348,8 +348,8 @@ std::string UITooltip::getPropertyString( const PropertyDefinition* propertyDef 
 		case PropertyId::TextStrokeColor:
 			return getOutlineColor().toHexString();
 		case PropertyId::TextAlign:
-			return fontHAlignGet( getFlags() ) == UI_HALIGN_CENTER ? "center" : (
-				fontHAlignGet( getFlags() ) == UI_HALIGN_RIGHT ? "right" : "left"
+			return Font::getHorizontalAlign( getFlags() ) == UI_HALIGN_CENTER ? "center" : (
+				Font::getHorizontalAlign( getFlags() ) == UI_HALIGN_RIGHT ? "right" : "left"
 			);
 		default:
 			return UIWidget::getPropertyString( propertyDef );

@@ -12,11 +12,11 @@ TexturePacker * TexturePacker::New() {
 	return eeNew( TexturePacker, ( ) );
 }
 
-TexturePacker * TexturePacker::New( const Uint32& MaxWidth, const Uint32& MaxHeight, const EE_PIXEL_DENSITY& PixelDensity, const bool& ForcePowOfTwo, const bool& scalableSVG, const Uint32& PixelBorder, const Texture::TextureFilter& textureFilter, const bool& AllowFlipping ) {
+TexturePacker * TexturePacker::New( const Uint32& MaxWidth, const Uint32& MaxHeight, const PixelDensitySize& PixelDensity, const bool& ForcePowOfTwo, const bool& scalableSVG, const Uint32& PixelBorder, const Texture::TextureFilter& textureFilter, const bool& AllowFlipping ) {
 	return eeNew( TexturePacker, ( MaxWidth, MaxHeight, PixelDensity, ForcePowOfTwo, scalableSVG, PixelBorder, textureFilter, AllowFlipping ) );
 }
 
-TexturePacker::TexturePacker(const Uint32& MaxWidth, const Uint32& MaxHeight, const EE_PIXEL_DENSITY& PixelDensity, const bool& ForcePowOfTwo, const bool& scalableSVG, const Uint32& PixelBorder, const Texture::TextureFilter& textureFilter, const bool& AllowFlipping ) :
+TexturePacker::TexturePacker(const Uint32& MaxWidth, const Uint32& MaxHeight, const PixelDensitySize& PixelDensity, const bool& ForcePowOfTwo, const bool& scalableSVG, const Uint32& PixelBorder, const Texture::TextureFilter& textureFilter, const bool& AllowFlipping ) :
 	mTotalArea(0),
 	mFreeList(NULL),
 	mWidth(128),
@@ -54,7 +54,7 @@ TexturePacker::TexturePacker() :
 	mPlacedCount(0),
 	mForcePowOfTwo(true),
 	mPixelBorder(0),
-	mPixelDensity(PD_MDPI),
+	mPixelDensity(PixelDensitySize::MDPI),
 	mTextureFilter(Texture::TextureFilter::Linear),
 	mSaveExtensions(false),
 	mScalableSVG(false),
@@ -124,7 +124,7 @@ Uint32 TexturePacker::getAtlasNumChannels() {
 	return maxChannels;
 }
 
-void TexturePacker::setOptions( const Uint32& MaxWidth, const Uint32& MaxHeight, const EE_PIXEL_DENSITY& PixelDensity, const bool& ForcePowOfTwo, const bool& scalableSVG, const Uint32& PixelBorder, const Texture::TextureFilter& textureFilter, const bool& AllowFlipping ) {
+void TexturePacker::setOptions( const Uint32& MaxWidth, const Uint32& MaxHeight, const PixelDensitySize& PixelDensity, const bool& ForcePowOfTwo, const bool& scalableSVG, const Uint32& PixelBorder, const Texture::TextureFilter& textureFilter, const bool& AllowFlipping ) {
 	if ( !mTextures.size() ) { // only can change the dimensions before adding any texture
 		mMaxSize.x = MaxWidth;
 		mMaxSize.y = MaxHeight;

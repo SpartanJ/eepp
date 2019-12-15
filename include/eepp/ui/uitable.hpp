@@ -47,13 +47,13 @@ class EE_API UITable : public UITouchDragableWidget {
 
 		UITableCell * getCell( const Uint32& CellIndex ) const;
 
-		void setVerticalScrollMode( const UI_SCROLLBAR_MODE& Mode );
+		void setVerticalScrollMode( const ScrollBarMode& Mode );
 
-		const UI_SCROLLBAR_MODE& getVerticalScrollMode();
+		const ScrollBarMode& getVerticalScrollMode();
 
-		void setHorizontalScrollMode( const UI_SCROLLBAR_MODE& Mode );
+		void setHorizontalScrollMode( const ScrollBarMode& Mode );
 
-		const UI_SCROLLBAR_MODE& getHorizontalScrollMode();
+		const ScrollBarMode& getHorizontalScrollMode();
 
 		Uint32 getCellPosition( const Uint32& CollumnIndex );
 
@@ -88,8 +88,8 @@ class EE_API UITable : public UITouchDragableWidget {
 		UIItemContainer<UITable> *	mContainer;
 		UIScrollBar *				mVScrollBar;
 		UIScrollBar *				mHScrollBar;
-		UI_SCROLLBAR_MODE			mVScrollMode;
-		UI_SCROLLBAR_MODE			mHScrollMode;
+		ScrollBarMode			mVScrollMode;
+		ScrollBarMode			mHScrollMode;
 		std::vector<UITableCell*>	mItems;
 		Uint32						mCollumnsCount;
 		Uint32						mRowHeight;

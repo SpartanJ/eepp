@@ -150,14 +150,14 @@ void UILoader::updateRadius() {
 }
 
 void UILoader::onAutoSize() {
-	if ( mLayoutWidthRules == WRAP_CONTENT || mLayoutHeightRules == WRAP_CONTENT ) {
+	if ( mLayoutWidthRule == LayoutSizeRule::WrapContent || mLayoutHeightRule == LayoutSizeRule::WrapContent ) {
 		Sizef minSize( getSize() );
 
-		if ( mLayoutWidthRules == WRAP_CONTENT ) {
+		if ( mLayoutWidthRule == LayoutSizeRule::WrapContent ) {
 			minSize.x = eemax( minSize.x, 64.f );
 		}
 
-		if ( mLayoutHeightRules == WRAP_CONTENT ) {
+		if ( mLayoutHeightRule == LayoutSizeRule::WrapContent ) {
 			minSize.y = eemax( minSize.y, 64.f );
 		}
 

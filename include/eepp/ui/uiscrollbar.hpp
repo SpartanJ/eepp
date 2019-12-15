@@ -19,7 +19,7 @@ class EE_API UIScrollBar : public UIWidget {
 
 		static UIScrollBar * NewVertical();
 
-		explicit UIScrollBar( const UI_ORIENTATION& orientation = UI_VERTICAL );
+		explicit UIScrollBar( const UIOrientation& orientation = UIOrientation::Vertical );
 
 		virtual ~UIScrollBar();
 
@@ -57,9 +57,9 @@ class EE_API UIScrollBar : public UIWidget {
 
 		UINode * getButtonDown() const;
 
-		UI_ORIENTATION getOrientation() const;
+		UIOrientation getOrientation() const;
 
-		UINode * setOrientation( const UI_ORIENTATION & orientation );
+		UINode * setOrientation( const UIOrientation & orientation );
 
 		ScrollBarType getScrollBarType() const;
 

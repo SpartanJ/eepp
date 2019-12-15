@@ -24,8 +24,8 @@ UIListBox * UIListBox::NewWithTag( const std::string& tag ) {
 UIListBox::UIListBox( const std::string& tag ) :
 	UITouchDragableWidget( tag ),
 	mRowHeight(0),
-	mVScrollMode( UI_SCROLLBAR_AUTO ),
-	mHScrollMode( UI_SCROLLBAR_AUTO ),
+	mVScrollMode( ScrollBarMode::Auto ),
+	mHScrollMode( ScrollBarMode::Auto ),
 	mContainerPadding(),
 	mHScrollPadding(),
 	mVScrollPadding(),
@@ -53,14 +53,14 @@ UIListBox::UIListBox( const std::string& tag ) :
 	mContainer->clipEnable();
 
 	mVScrollBar = UIScrollBar::New();
-	mVScrollBar->setOrientation( UI_VERTICAL );
+	mVScrollBar->setOrientation( UIOrientation::Vertical );
 	mVScrollBar->setParent( this );
 	mVScrollBar->setPosition( getSize().getWidth() - 16, 0 );
 	mVScrollBar->setSize( 16, getSize().getHeight() );
 	mVScrollBar->setEnabled( false )->setVisible( false );
 
 	mHScrollBar = UIScrollBar::New();
-	mHScrollBar->setOrientation( UI_HORIZONTAL );
+	mHScrollBar->setOrientation( UIOrientation::Horizontal );
 	mHScrollBar->setParent( this );
 	mHScrollBar->setSize( getSize().getWidth() - mVScrollBar->getSize().getWidth(), 16 );
 	mHScrollBar->setPosition( 0, getSize().getHeight() - 16 );
@@ -306,7 +306,7 @@ void UIListBox::onSizeChange() {
 	mHScrollBar->setPosition( mHScrollPadding.Left, getSize().getHeight() - mHScrollBar->getSize().getHeight() + mHScrollPadding.Top );
 	mHScrollBar->setSize( getSize().getWidth() - mVScrollBar->getSize().getWidth() + mHScrollPadding.Right, mHScrollBar->getSize().getHeight() + mHScrollPadding.Bottom );
 
-	if ( mContainer->isClipped() && UI_SCROLLBAR_AUTO == mHScrollMode ) {
+	if ( mContainer->isClipped() && ScrollBarMode::Auto == mHScrollMode ) {
 		if ( (Int32)mMaxTextWidth <= mContainer->getPixelsSize().getWidth() ) {
 			mHScrollBar->setVisible( false );
 			mHScrollBar->setEnabled( false );
@@ -350,7 +350,7 @@ void UIListBox::setRowHeight() {
 void UIListBox::setHScrollStep() {
 	Float width = (Float)mContainer->getPixelsSize().getWidth();
 
-	if ( ( mItemsNotVisible > 0 && UI_SCROLLBAR_AUTO == mVScrollMode ) || UI_SCROLLBAR_ALWAYS_ON == mVScrollMode )
+	if ( ( mItemsNotVisible > 0 && ScrollBarMode::Auto == mVScrollMode ) || ScrollBarMode::AlwaysOn == mVScrollMode )
 		width -= mVScrollBar->getPixelsSize().getWidth();
 
 	Float stepVal = width / (Float)mMaxTextWidth;
@@ -419,7 +419,7 @@ void UIListBox::itemUpdateSize( UIListBoxItem * Item ) {
 			if ( width < mContainer->getSize().getWidth() )
 				width = mContainer->getSize().getWidth();
 
-			if ( ( mItemsNotVisible > 0 && UI_SCROLLBAR_AUTO == mVScrollMode ) || UI_SCROLLBAR_ALWAYS_ON == mVScrollMode )
+			if ( ( mItemsNotVisible > 0 && ScrollBarMode::Auto == mVScrollMode ) || ScrollBarMode::AlwaysOn == mVScrollMode )
 				width -= mVScrollBar->getSize().getWidth();
 		} else {
 			width = mMaxTextWidth;
@@ -463,7 +463,7 @@ void UIListBox::updateScrollBarState() {
 	mItemsNotVisible 		= (Int32)mItems.size() - visibleItems;
 
 	if ( mItemsNotVisible <= 0 ) {
-		if ( UI_SCROLLBAR_ALWAYS_ON == mVScrollMode ) {
+		if ( ScrollBarMode::AlwaysOn == mVScrollMode ) {
 			mVScrollBar->setVisible( true );
 			mVScrollBar->setEnabled( true );
 		} else {
@@ -471,7 +471,7 @@ void UIListBox::updateScrollBarState() {
 			mVScrollBar->setEnabled( false );
 		}
 	} else {
-		if ( UI_SCROLLBAR_AUTO == mVScrollMode || UI_SCROLLBAR_ALWAYS_ON == mVScrollMode ) {
+		if ( ScrollBarMode::Auto == mVScrollMode || ScrollBarMode::AlwaysOn == mVScrollMode ) {
 			mVScrollBar->setVisible( true );
 			mVScrollBar->setEnabled( true );
 		} else {
@@ -480,7 +480,7 @@ void UIListBox::updateScrollBarState() {
 		}
 	}
 
-	if ( clipped && ( UI_SCROLLBAR_AUTO == mHScrollMode || UI_SCROLLBAR_ALWAYS_ON == mHScrollMode ) ) {
+	if ( clipped && ( ScrollBarMode::Auto == mHScrollMode || ScrollBarMode::AlwaysOn == mHScrollMode ) ) {
 		if ( ( mVScrollBar->isVisible() && mContainer->getPixelsSize().getWidth() - mVScrollBar->getPixelsSize().getWidth() < (Int32)mMaxTextWidth ) ||
 			( !mVScrollBar->isVisible() && mContainer->getPixelsSize().getWidth() < (Int32)mMaxTextWidth ) ) {
 				mHScrollBar->setVisible( true );
@@ -499,7 +499,7 @@ void UIListBox::updateScrollBarState() {
 
 				mHScrollInit = -HScrolleable;
 		} else {
-			if ( UI_SCROLLBAR_AUTO == mHScrollMode ) {
+			if ( ScrollBarMode::Auto == mHScrollMode ) {
 				mHScrollBar->setVisible( false );
 				mHScrollBar->setEnabled( false );
 
@@ -932,7 +932,7 @@ void UIListBox::onAlphaChange() {
 	mHScrollBar->setAlpha( mAlpha );
 }
 
-void UIListBox::setVerticalScrollMode( const UI_SCROLLBAR_MODE& Mode ) {
+void UIListBox::setVerticalScrollMode( const ScrollBarMode& Mode ) {
 	if ( Mode != mVScrollMode ) {
 		mVScrollMode = Mode;
 
@@ -940,19 +940,19 @@ void UIListBox::setVerticalScrollMode( const UI_SCROLLBAR_MODE& Mode ) {
 	}
 }
 
-const UI_SCROLLBAR_MODE& UIListBox::getVerticalScrollMode() {
+const ScrollBarMode& UIListBox::getVerticalScrollMode() {
 	return mVScrollMode;
 }
 
-void UIListBox::setHorizontalScrollMode( const UI_SCROLLBAR_MODE& Mode ) {
+void UIListBox::setHorizontalScrollMode( const ScrollBarMode& Mode ) {
 	if ( Mode != mHScrollMode ) {
 		mHScrollMode = Mode;
 
-		if ( UI_SCROLLBAR_ALWAYS_ON == mHScrollMode ) {
+		if ( ScrollBarMode::AlwaysOn == mHScrollMode ) {
 			mHScrollBar->setVisible( true );
 			mHScrollBar->setEnabled( true );
 			containerResize();
-		} else if ( UI_SCROLLBAR_ALWAYS_OFF == mHScrollMode ) {
+		} else if ( ScrollBarMode::AlwaysOff == mHScrollMode ) {
 			mHScrollBar->setVisible( false );
 			mHScrollBar->setEnabled( false );
 			containerResize();
@@ -962,7 +962,7 @@ void UIListBox::setHorizontalScrollMode( const UI_SCROLLBAR_MODE& Mode ) {
 	}
 }
 
-const UI_SCROLLBAR_MODE& UIListBox::getHorizontalScrollMode() {
+const ScrollBarMode& UIListBox::getHorizontalScrollMode() {
 	return mHScrollMode;
 }
 
@@ -973,12 +973,12 @@ std::string UIListBox::getPropertyString( const PropertyDefinition* propertyDef 
 		case PropertyId::RowHeight:
 			return String::format( "%ddp", getRowHeight() );
 		case PropertyId::VScrollMode:
-			return getVerticalScrollMode() == UI_SCROLLBAR_AUTO ? "auto" : (
-				getVerticalScrollMode() == UI_SCROLLBAR_ALWAYS_ON ? "on" : "off"
+			return getVerticalScrollMode() == ScrollBarMode::Auto ? "auto" : (
+				getVerticalScrollMode() == ScrollBarMode::AlwaysOn ? "on" : "off"
 			);
 		case PropertyId::HScrollMode:
-			return getHorizontalScrollMode() == UI_SCROLLBAR_AUTO ? "auto" : (
-				getHorizontalScrollMode() == UI_SCROLLBAR_ALWAYS_ON ? "on" : "off"
+			return getHorizontalScrollMode() == ScrollBarMode::Auto ? "auto" : (
+				getHorizontalScrollMode() == ScrollBarMode::AlwaysOn ? "on" : "off"
 			);
 		case PropertyId::SelectedIndex:
 			return String::toStr( getItemSelectedIndex() );
@@ -1002,17 +1002,17 @@ bool UIListBox::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::VScrollMode:
 		{
 			std::string val = attribute.asString();
-			if ( "auto" == val ) setVerticalScrollMode( UI_SCROLLBAR_AUTO );
-			else if ( "on" == val ) setVerticalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
-			else if ( "off" == val ) setVerticalScrollMode( UI_SCROLLBAR_ALWAYS_OFF );
+			if ( "auto" == val ) setVerticalScrollMode( ScrollBarMode::Auto );
+			else if ( "on" == val ) setVerticalScrollMode( ScrollBarMode::AlwaysOn );
+			else if ( "off" == val ) setVerticalScrollMode( ScrollBarMode::AlwaysOff );
 			break;
 		}
 		case PropertyId::HScrollMode:
 		{
 			std::string val = attribute.asString();
-			if ( "auto" == val ) setHorizontalScrollMode( UI_SCROLLBAR_AUTO );
-			else if ( "on" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
-			else if ( "off" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_OFF );
+			if ( "auto" == val ) setHorizontalScrollMode( ScrollBarMode::Auto );
+			else if ( "on" == val ) setHorizontalScrollMode( ScrollBarMode::AlwaysOn );
+			else if ( "off" == val ) setHorizontalScrollMode( ScrollBarMode::AlwaysOff );
 			break;
 		}
 		case PropertyId::SelectedIndex:

@@ -1,8 +1,8 @@
 #include <eepp/ui/css/mediaquery.hpp>
 #include <eepp/ui/css/stylesheetlength.hpp>
+#include <eepp/window/displaymanager.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/window.hpp>
-#include <eepp/window/displaymanager.hpp>
 
 using namespace EE::Window;
 
@@ -28,18 +28,18 @@ MediaQuery::ptr MediaQuery::parse( const std::string& str ) {
 
 	std::vector<std::string> tokens = String::split( str, " \t\r\n", "", "(" );
 
-	for ( std::vector<std::string>::iterator tok = tokens.begin(); tok != tokens.end(); tok++ ) {
-		if ( ( *tok ) == "not" ) {
+	for ( auto& tok : tokens ) {
+		if ( tok == "not" ) {
 			query->mNot = true;
-		} else if ( tok->at( 0 ) == '(' ) {
-			tok->erase( 0, 1 );
+		} else if ( tok.at( 0 ) == '(' ) {
+			tok.erase( 0, 1 );
 
-			if ( tok->at( tok->length() - 1 ) == ')' ) {
-				tok->erase( tok->length() - 1, 1 );
+			if ( tok.at( tok.length() - 1 ) == ')' ) {
+				tok.erase( tok.length() - 1, 1 );
 			}
 
 			MediaQueryExpression expr;
-			std::vector<std::string> exprTokens = String::split( *tok, ':' );
+			std::vector<std::string> exprTokens = String::split( tok, ':' );
 			if ( !exprTokens.empty() ) {
 				String::trimInPlace( exprTokens[0] );
 
@@ -54,9 +54,8 @@ MediaQuery::ptr MediaQuery::parse( const std::string& str ) {
 						expr.checkAsBool = false;
 
 						if ( expr.feature == media_feature_orientation ) {
-							expr.val =
-								String::valueIndex( exprTokens[1], media_orientation_strings,
-													media_orientation_landscape );
+							expr.val = String::valueIndex( exprTokens[1], media_orientation_strings,
+														   media_orientation_landscape );
 						} else {
 							std::string::size_type slash_pos = exprTokens[1].find( '/' );
 							if ( slash_pos != std::string::npos ) {
@@ -64,8 +63,14 @@ MediaQuery::ptr MediaQuery::parse( const std::string& str ) {
 								std::string val2 = exprTokens[1].substr( slash_pos + 1 );
 								String::trimInPlace( val1 );
 								String::trimInPlace( val2 );
-								expr.val = atoi( val1.c_str() );
-								expr.val2 = atoi( val2.c_str() );
+
+								int intVal1, intVal2;
+
+								if ( String::fromString( intVal1, val1 ) &&
+									 String::fromString( intVal2, val2 ) ) {
+									expr.val = intVal1;
+									expr.val2 = intVal2;
+								}
 							} else {
 								StyleSheetLength length =
 									StyleSheetLength::fromString( exprTokens[1] );
@@ -84,7 +89,7 @@ MediaQuery::ptr MediaQuery::parse( const std::string& str ) {
 			}
 		} else {
 			query->mMediaType =
-				(MediaType)String::valueIndex( ( *tok ), media_type_strings, media_type_all );
+				(MediaType)String::valueIndex( tok, media_type_strings, media_type_all );
 		}
 	}
 
@@ -97,8 +102,8 @@ bool MediaQuery::check( const MediaFeatures& features ) const {
 	if ( mMediaType == media_type_all || mMediaType == features.type ) {
 		res = true;
 
-		for ( auto expr = mExpressions.begin(); expr != mExpressions.end() && res; expr++ ) {
-			if ( !expr->check( features ) ) {
+		for ( auto& expr : mExpressions ) {
+			if ( !expr.check( features ) ) {
 				res = false;
 				break;
 			}
@@ -112,23 +117,22 @@ bool MediaQuery::check( const MediaFeatures& features ) const {
 	return res;
 }
 
-//////////////////////////////////////////////////////////////////////////
-
 MediaQueryList::ptr MediaQueryList::parse( const std::string& str ) {
 	MediaQueryList::ptr list = std::make_shared<MediaQueryList>();
 
 	std::vector<std::string> tokens = String::split( str, "," );
 
-	for ( std::vector<std::string>::iterator tok = tokens.begin(); tok != tokens.end(); tok++ ) {
-		String::trimInPlace( *tok );
-		String::toLowerInPlace( *tok );
+	for ( auto& tok : tokens ) {
+		String::trimInPlace( tok );
+		String::toLowerInPlace( tok );
 
-		MediaQuery::ptr query = MediaQuery::parse( *tok );
+		MediaQuery::ptr query = MediaQuery::parse( tok );
 
 		if ( query ) {
 			list->mQueries.push_back( query );
 		}
 	}
+
 	if ( list->mQueries.empty() ) {
 		list = 0;
 	}
@@ -139,10 +143,10 @@ MediaQueryList::ptr MediaQueryList::parse( const std::string& str ) {
 bool MediaQueryList::applyMediaFeatures( const MediaFeatures& features ) {
 	bool apply = false;
 
-	for ( MediaQuery::vector::iterator iter = mQueries.begin(); iter != mQueries.end() && !apply;
-		  iter++ ) {
-		if ( ( *iter )->check( features ) ) {
+	for ( auto& query : mQueries ) {
+		if ( query->check( features ) ) {
 			apply = true;
+			break;
 		}
 	}
 

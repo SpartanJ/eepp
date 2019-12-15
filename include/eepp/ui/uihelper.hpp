@@ -2,6 +2,9 @@
 #define EE_UIHELPER_HPP
 
 #include <eepp/ui/base.hpp>
+#include <eepp/graphics/font.hpp>
+
+using namespace EE::Graphics;
 
 namespace EE { namespace UI {
 
@@ -10,15 +13,7 @@ namespace EE { namespace UI {
 #define UI_VALIGN_TOP		TEXT_ALIGN_TOP
 #define UI_VALIGN_MASK		TEXT_VALIGN_MASK
 
-inline Uint32 HAlignGet( Uint32 Flags ) {
-	return Flags & UI_HALIGN_MASK;
-}
-
-inline Uint32 VAlignGet( Uint32 Flags ) {
-	return Flags & UI_VALIGN_MASK;
-}
-
-enum UI_FLAGS {
+enum UIFlag {
 	UI_HALIGN_RIGHT					= TEXT_ALIGN_RIGHT,
 	UI_HALIGN_CENTER				= TEXT_ALIGN_CENTER,
 	UI_VALIGN_BOTTOM				= TEXT_ALIGN_BOTTOM,
@@ -41,7 +36,7 @@ enum UI_FLAGS {
 	UI_TEXT_SELECTION_ENABLED		= (1 << 19)
 };
 
-enum UI_NODE_TYPES {
+enum UINodeType {
 	UI_TYPE_NODE	= 0,
 	UI_TYPE_UINODE,
 	UI_TYPE_WIDGET,
@@ -86,71 +81,35 @@ enum UI_NODE_TYPES {
 	UI_TYPE_USER = 10000
 };
 
-enum UI_SCROLLBAR_MODE {
-	UI_SCROLLBAR_AUTO,
-	UI_SCROLLBAR_ALWAYS_ON,
-	UI_SCROLLBAR_ALWAYS_OFF
+enum class ScrollBarMode : Uint32 {
+	Auto,
+	AlwaysOn,
+	AlwaysOff
 };
 
-enum UI_MANAGER_FLAGS {
-	UI_MANAGER_HIGHLIGHT_FOCUS	= ( 1 << 0 ),
-	UI_MANAGER_HIGHLIGHT_OVER	= ( 1 << 1 ),
-	UI_MANAGER_DRAW_DEBUG_DATA	= ( 1 << 2 ),
-	UI_MANAGER_DRAW_BOXES		= ( 1 << 3 ),
-	UI_MANAGER_USE_DRAW_INVALIDATION = ( 1 << 4 ),
-	UI_MANAGER_HIGHLIGHT_INVALIDATION = ( 1 << 5 ),
-	UI_MANAGER_MAIN_CONTROL_IN_FRAME_BUFFER = ( 1 << 6 ),
-	UI_MANAGER_MAIN_CONTROL_IN_COLOR_BUFFER = ( 1 << 7 )
+enum class UIOrientation : Uint32 {
+	Vertical,
+	Horizontal
 };
 
-enum UI_WINDOW_FLAGS {
-	UI_WIN_NO_DECORATION				= ( 1 << 0 ),
-	UI_WIN_CLOSE_BUTTON					= ( 1 << 1 ),
-	UI_WIN_MINIMIZE_BUTTON				= ( 1 << 2 ),
-	UI_WIN_MAXIMIZE_BUTTON				= ( 1 << 3 ),
-	UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS	= ( 1 << 4 ),
-	UI_WIN_RESIZEABLE					= ( 1 << 5 ),
-	UI_WIN_DRAGABLE_CONTAINER			= ( 1 << 6 ),
-	UI_WIN_SHARE_ALPHA_WITH_CHILDS		= ( 1 << 7 ),
-	UI_WIN_MODAL						= ( 1 << 8 ),
-	UI_WIN_SHADOW						= ( 1 << 9 ),
-	UI_WIN_FRAME_BUFFER					= ( 1 << 10 ),
-	UI_WIN_COLOR_BUFFER					= ( 1 << 11 )
+enum class LayoutSizeRule : Uint32 {
+	Fixed,
+	MatchParent,
+	WrapContent
 };
 
-enum UI_COMMON_DIALOG_FLAGS {
-	CDL_FLAG_SAVE_DIALOG			= ( 1 << 0 ),
-	CDL_FLAG_FOLDERS_FISRT			= ( 1 << 1 ),
-	CDL_FLAG_SORT_ALPHABETICALLY	= ( 1 << 2 ),
-	CDL_FLAG_ALLOW_FOLDER_SELECT	= ( 1 << 3 )
+enum class LayoutPositionRule : Uint32 {
+	None,
+	LeftOf,
+	RightOf,
+	TopOf,
+	BottomOf
 };
 
-enum UI_ORIENTATION {
-	UI_VERTICAL,
-	UI_HORIZONTAL
-};
-
-enum LayoutSizeRules {
-	FIXED,
-	MATCH_PARENT,
-	WRAP_CONTENT
-};
-
-enum LayoutPositionRules {
-	NONE,
-	LEFT_OF,
-	RIGHT_OF,
-	TOP_OF,
-	BOTTOM_OF
-};
-
-class UIScaleType {
-	public:
-		enum Type {
-			None,
-			Expand,
-			FitInside
-		};
+enum class UIScaleType : Uint32 {
+	None,
+	Expand,
+	FitInside
 };
 
 static const Uint32 UI_CONTROL_DEFAULT_ALIGN = UI_HALIGN_LEFT | UI_VALIGN_CENTER;
@@ -162,10 +121,6 @@ static const Uint32 UI_CONTROL_DEFAULT_ANCHOR = UI_ANCHOR_LEFT | UI_ANCHOR_TOP;
 static const Uint32 UI_CONTROL_DEFAULT_FLAGS = UI_CONTROL_DEFAULT_ANCHOR | UI_CONTROL_DEFAULT_ALIGN;
 
 static const Uint32 UI_CONTROL_DEFAULT_FLAGS_CENTERED = UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_HALIGN_CENTER | UI_VALIGN_CENTER;
-
-static const Uint32 UI_WIN_DEFAULT_FLAGS = UI_WIN_CLOSE_BUTTON | UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS | UI_WIN_RESIZEABLE | UI_WIN_SHARE_ALPHA_WITH_CHILDS;
-
-static const Uint32 UI_CDL_DEFAULT_FLAGS = CDL_FLAG_FOLDERS_FISRT | CDL_FLAG_SORT_ALPHABETICALLY;
 
 }}
 

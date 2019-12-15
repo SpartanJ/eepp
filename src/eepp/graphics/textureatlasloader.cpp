@@ -373,7 +373,7 @@ bool TextureAtlasLoader::updateTextureAtlas( std::string TextureAtlasPath, std::
 	Int32 x, y, c;
 
 	Int32 NeedUpdate = 0;
-	EE_PIXEL_DENSITY pixelDensity = PD_MDPI;
+	PixelDensitySize pixelDensity = PixelDensitySize::MDPI;
 
 	FileSystem::dirPathAddSlashAtEnd( ImagesPath );
 
@@ -384,7 +384,7 @@ bool TextureAtlasLoader::updateTextureAtlas( std::string TextureAtlasPath, std::
 		totalTextureRegions += mTempAtlass[z].Texture.TextureRegionCount;
 
 		if ( mTempAtlass[z].Texture.TextureRegionCount > 0 ) {
-			pixelDensity = (EE_PIXEL_DENSITY)mTempAtlass[z].TextureRegions[0].PixelDensity;
+			pixelDensity = (PixelDensitySize)mTempAtlass[z].TextureRegions[0].PixelDensity;
 		}
 	}
 

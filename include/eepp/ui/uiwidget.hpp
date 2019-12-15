@@ -85,21 +85,21 @@ class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
 
 		UIWidget * setLayoutGravity(const Uint32 & layoutGravity);
 
-		LayoutSizeRules getLayoutWidthRules() const;
+		LayoutSizeRule getLayoutWidthRule() const;
 
-		UIWidget * setLayoutWidthRules(const LayoutSizeRules & layoutWidthRules);
+		UIWidget * setLayoutWidthRule(const LayoutSizeRule & layoutWidthRules);
 
-		LayoutSizeRules getLayoutHeightRules() const;
+		LayoutSizeRule getLayoutHeightRule() const;
 
-		UIWidget * setLayoutHeightRules(const LayoutSizeRules & layoutHeightRules);
+		UIWidget * setLayoutHeightRule(const LayoutSizeRule & layoutHeightRules);
 
-		UIWidget * setLayoutSizeRules( const LayoutSizeRules & layoutWidthRules, const LayoutSizeRules & layoutHeightRules );
+		UIWidget * setLayoutSizeRules( const LayoutSizeRule & layoutWidthRules, const LayoutSizeRule & layoutHeightRules );
 
-		UIWidget * setLayoutPositionRule( const LayoutPositionRules& layoutPositionRule, UIWidget * of );
+		UIWidget * setLayoutPositionRule( const LayoutPositionRule& layoutPositionRule, UIWidget * of );
 
 		UIWidget * getLayoutPositionRuleWidget() const;
 
-		LayoutPositionRules getLayoutPositionRule() const;
+		LayoutPositionRule getLayoutPositionRule() const;
 
 		virtual void loadFromXmlNode( const pugi::xml_node& node );
 
@@ -214,9 +214,9 @@ class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
 		Rectf		mRealPadding;
 		Float		mLayoutWeight;
 		Uint32		mLayoutGravity;
-		LayoutSizeRules mLayoutWidthRules;
-		LayoutSizeRules mLayoutHeightRules;
-		LayoutPositionRules mLayoutPositionRule;
+		LayoutSizeRule mLayoutWidthRule;
+		LayoutSizeRule mLayoutHeightRule;
+		LayoutPositionRule mLayoutPositionRule;
 		UIWidget * mLayoutPositionRuleWidget;
 		int	mAttributesTransactionCount;
 		std::string mSkinName;

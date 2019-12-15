@@ -85,13 +85,13 @@ class EE_API UIListBox : public UITouchDragableWidget {
 
 		void selectNext();
 
-		void setVerticalScrollMode( const UI_SCROLLBAR_MODE& Mode );
+		void setVerticalScrollMode( const ScrollBarMode& Mode );
 
-		const UI_SCROLLBAR_MODE& getVerticalScrollMode();
+		const ScrollBarMode& getVerticalScrollMode();
 
-		void setHorizontalScrollMode( const UI_SCROLLBAR_MODE& Mode );
+		void setHorizontalScrollMode( const ScrollBarMode& Mode );
 
-		const UI_SCROLLBAR_MODE& getHorizontalScrollMode();
+		const ScrollBarMode& getHorizontalScrollMode();
 
 		void loadFromXmlNode(const pugi::xml_node & node);
 
@@ -106,8 +106,8 @@ class EE_API UIListBox : public UITouchDragableWidget {
 		friend class UIDropDownList;
 
 		Uint32 				mRowHeight;
-		UI_SCROLLBAR_MODE	mVScrollMode;
-		UI_SCROLLBAR_MODE	mHScrollMode;
+		ScrollBarMode	mVScrollMode;
+		ScrollBarMode	mHScrollMode;
 		Rectf				mContainerPadding;
 		Rectf				mHScrollPadding;
 		Rectf				mVScrollPadding;

@@ -34,16 +34,16 @@ class EE_API Input {
 		virtual void injectMousePos( const Uint16& x, const Uint16& y ) = 0;
 
 		/** @return If keyboard key was released */
-		bool isKeyUp( const EE_KEY& Key );
+		bool isKeyUp( const KeyTable& Key );
 
 		/** @return If keyboard key it's pressed */
-		bool isKeyDown( const EE_KEY& Key );
+		bool isKeyDown( const KeyTable& Key );
 
 		/** Inject the key state of a key as KEY UP or RELEASE */
-		void injectKeyUp( const EE_KEY& Key );
+		void injectKeyUp( const KeyTable& Key );
 
 		/** Inject the key state of a key as KEY DOWN or PRESSED */
-		void injectKeyDown( const EE_KEY& Key );
+		void injectKeyDown( const KeyTable& Key );
 
 		/** Inject the mouse position given */
 		void injectMousePos( const Vector2i& Pos );

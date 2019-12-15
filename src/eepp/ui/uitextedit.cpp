@@ -16,15 +16,15 @@ UITextEdit::UITextEdit() :
 	mTextInput( NULL ),
 	mHScrollBar( NULL ),
 	mVScrollBar( NULL ),
-	mHScrollBarMode( UI_SCROLLBAR_AUTO ),
-	mVScrollBarMode( UI_SCROLLBAR_AUTO ),
+	mHScrollBarMode( ScrollBarMode::Auto ),
+	mVScrollBarMode( ScrollBarMode::Auto ),
 	mSkipValueChange( false )
 {
 	setFlags( UI_AUTO_PADDING | UI_TEXT_SELECTION_ENABLED );
 	clipEnable();
 
 	mTextInput	= UITextInput::New();
-	mTextInput->setLayoutSizeRules( LayoutSizeRules::FIXED, LayoutSizeRules::FIXED );
+	mTextInput->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::Fixed );
 	mTextInput->setParent( this );
 	mTextInput->setFlags( UI_TEXT_SELECTION_ENABLED | UI_VALIGN_TOP );
 	mTextInput->unsetFlags( UI_VALIGN_CENTER | UI_AUTO_SIZE );
@@ -40,14 +40,14 @@ UITextEdit::UITextEdit() :
 	mTextInput->addEventListener( Event::OnCursorPosChange	, cb::Make1( this, &UITextEdit::onCursorPosChange ) );
 
 	mVScrollBar = UIScrollBar::New();
-	mVScrollBar->setOrientation( UI_VERTICAL );
+	mVScrollBar->setOrientation( UIOrientation::Vertical );
 	mVScrollBar->setParent( this );
 	mVScrollBar->setPosition( getSize().getWidth() - 16, 0 );
 	mVScrollBar->setSize( 16, getSize().getHeight() );
 	mVScrollBar->setValue( 1 );
 
 	mHScrollBar = UIScrollBar::New();
-	mHScrollBar->setOrientation( UI_HORIZONTAL );
+	mHScrollBar->setOrientation( UIOrientation::Horizontal );
 	mHScrollBar->setParent( this );
 	mHScrollBar->setSize( getSize().getWidth() - mVScrollBar->getSize().getWidth(), 16 );
 	mHScrollBar->setPosition( 0, getSize().getHeight() - 16 );
@@ -129,19 +129,19 @@ void UITextEdit::onAlphaChange() {
 
 void UITextEdit::scrollbarsSet() {
 	switch ( mHScrollBarMode ) {
-		case UI_SCROLLBAR_ALWAYS_OFF:
+		case ScrollBarMode::AlwaysOff:
 		{
 			mHScrollBar->setVisible( false );
 			mHScrollBar->setEnabled( false );
 			break;
 		}
-		case UI_SCROLLBAR_ALWAYS_ON:
+		case ScrollBarMode::AlwaysOn:
 		{
 			mHScrollBar->setVisible( true );
 			mHScrollBar->setEnabled( true );
 			break;
 		}
-		case UI_SCROLLBAR_AUTO:
+		case ScrollBarMode::Auto:
 		{
 			if ( mTextInput->getPixelsSize().getWidth() > mSize.getWidth() - mContainerPadding.Left - mContainerPadding.Right ) {
 				mHScrollBar->setVisible( true );
@@ -155,19 +155,19 @@ void UITextEdit::scrollbarsSet() {
 	}
 
 	switch ( mVScrollBarMode ) {
-		case UI_SCROLLBAR_ALWAYS_OFF:
+		case ScrollBarMode::AlwaysOff:
 		{
 			mVScrollBar->setVisible( false );
 			mVScrollBar->setEnabled( false );
 			break;
 		}
-		case UI_SCROLLBAR_ALWAYS_ON:
+		case ScrollBarMode::AlwaysOn:
 		{
 			mVScrollBar->setVisible( true );
 			mVScrollBar->setEnabled( true );
 			break;
 		}
-		case UI_SCROLLBAR_AUTO:
+		case ScrollBarMode::Auto:
 		{
 			int extraH = 0;
 
@@ -191,7 +191,7 @@ void UITextEdit::scrollbarsSet() {
 		mHScrollBar->setSize( getSize().getWidth() - mVScrollBar->getSize().getWidth(), mHScrollBar->getSize().getHeight() );
 	}
 
-	if ( UI_SCROLLBAR_AUTO == mHScrollBarMode && mVScrollBar->isVisible() && !mHScrollBar->isVisible() ) {
+	if ( ScrollBarMode::Auto == mHScrollBarMode && mVScrollBar->isVisible() && !mHScrollBar->isVisible() ) {
 		if ( mTextInput->getTextWidth() > mSize.getWidth() - mContainerPadding.Left - mContainerPadding.Right - mVScrollBar->getPixelsSize().getWidth() ) {
 			mHScrollBar->setVisible( true );
 			mHScrollBar->setEnabled( true );
@@ -370,7 +370,7 @@ void UITextEdit::fixScroll() {
 }
 
 void UITextEdit::fixScrollToCursor() {
-	if ( fontHAlignGet( mTextInput->getFlags() ) == UI_HALIGN_LEFT ) {
+	if ( Font::getHorizontalAlign( mTextInput->getFlags() ) == UI_HALIGN_LEFT ) {
 		int Width	= mSize.getWidth()	- mContainerPadding.Left - mContainerPadding.Right;
 		int Height	= mSize.getHeight()	- mContainerPadding.Top	- mContainerPadding.Bottom;
 
@@ -446,7 +446,7 @@ const bool& UITextEdit::isEditingAllowed() const {
 	return mTextInput->isEditingAllowed();
 }
 
-void UITextEdit::setVerticalScrollMode( const UI_SCROLLBAR_MODE& Mode ) {
+void UITextEdit::setVerticalScrollMode( const ScrollBarMode& Mode ) {
 	if ( Mode != mVScrollBarMode ) {
 		mVScrollBarMode = Mode;
 
@@ -454,11 +454,11 @@ void UITextEdit::setVerticalScrollMode( const UI_SCROLLBAR_MODE& Mode ) {
 	}
 }
 
-const UI_SCROLLBAR_MODE& UITextEdit::getVerticalScrollMode() {
+const ScrollBarMode& UITextEdit::getVerticalScrollMode() {
 	return mVScrollBarMode;
 }
 
-void UITextEdit::setHorizontalScrollMode( const UI_SCROLLBAR_MODE& Mode ) {
+void UITextEdit::setHorizontalScrollMode( const ScrollBarMode& Mode ) {
 	if ( Mode != mHScrollBarMode ) {
 		mHScrollBarMode = Mode;
 
@@ -466,7 +466,7 @@ void UITextEdit::setHorizontalScrollMode( const UI_SCROLLBAR_MODE& Mode ) {
 	}
 }
 
-const UI_SCROLLBAR_MODE& UITextEdit::getHorizontalScrollMode() {
+const ScrollBarMode& UITextEdit::getHorizontalScrollMode() {
 	return mHScrollBarMode;
 }
 
@@ -483,12 +483,12 @@ std::string UITextEdit::getPropertyString( const PropertyDefinition* propertyDef
 		case PropertyId::AllowEditing:
 			return isEditingAllowed() ? "true" : "false";
 		case PropertyId::VScrollMode:
-			return getVerticalScrollMode() == UI_SCROLLBAR_AUTO ? "auto" : (
-				getVerticalScrollMode() == UI_SCROLLBAR_ALWAYS_ON ? "on" : "off"
+			return getVerticalScrollMode() == ScrollBarMode::Auto ? "auto" : (
+				getVerticalScrollMode() == ScrollBarMode::AlwaysOn ? "on" : "off"
 			);
 		case PropertyId::HScrollMode:
-			return getHorizontalScrollMode() == UI_SCROLLBAR_AUTO ? "auto" : (
-				getHorizontalScrollMode() == UI_SCROLLBAR_ALWAYS_ON ? "on" : "off"
+			return getHorizontalScrollMode() == ScrollBarMode::Auto ? "auto" : (
+				getHorizontalScrollMode() == ScrollBarMode::AlwaysOn ? "on" : "off"
 			);
 		default:
 			return UIWidget::getPropertyString( propertyDef );
@@ -512,17 +512,17 @@ bool UITextEdit::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::VScrollMode:
 		{
 			std::string val = attribute.asString();
-			if ( "auto" == val ) setVerticalScrollMode( UI_SCROLLBAR_AUTO );
-			else if ( "on" == val ) setVerticalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
-			else if ( "off" == val ) setVerticalScrollMode( UI_SCROLLBAR_ALWAYS_OFF );
+			if ( "auto" == val ) setVerticalScrollMode( ScrollBarMode::Auto );
+			else if ( "on" == val ) setVerticalScrollMode( ScrollBarMode::AlwaysOn );
+			else if ( "off" == val ) setVerticalScrollMode( ScrollBarMode::AlwaysOff );
 			break;
 		}
 		case PropertyId::HScrollMode:
 		{
 			std::string val = attribute.asString();
-			if ( "auto" == val ) setHorizontalScrollMode( UI_SCROLLBAR_AUTO );
-			else if ( "on" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
-			else if ( "off" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_OFF );
+			if ( "auto" == val ) setHorizontalScrollMode( ScrollBarMode::Auto );
+			else if ( "on" == val ) setHorizontalScrollMode( ScrollBarMode::AlwaysOn );
+			else if ( "off" == val ) setHorizontalScrollMode( ScrollBarMode::AlwaysOff );
 			break;
 		}
 		default:

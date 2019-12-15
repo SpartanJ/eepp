@@ -146,7 +146,7 @@ UIMapNew::UIMapNew( UIMap * Map, std::function<void()> NewMapCb, bool ResizeMap 
 
 	Txt = createTextBox( "Red Color:", mUIWindow->getContainer(), Sizef(), Vector2f( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIBaseColor->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
-	mUIRedSlider = UISlider::New()->setOrientation( UI_HORIZONTAL );
+	mUIRedSlider = UISlider::New()->setOrientation( UIOrientation::Horizontal );
 	mUIRedSlider->setParent( mUIWindow->getContainer() )->setSize( 128, 20 )->setPosition( Txt->getPosition().x + Txt->getSize().getWidth() + 16, Txt->getPosition().y );
 	mUIRedSlider->setMaxValue( 255 );
 	mUIRedSlider->setValue( 255 );
@@ -160,7 +160,7 @@ UIMapNew::UIMapNew( UIMap * Map, std::function<void()> NewMapCb, bool ResizeMap 
 
 	Txt = createTextBox( "Green Color:", mUIWindow->getContainer(), Sizef(), Vector2f( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIRedSlider->getPosition().y + mUIRedSlider->getSize().getHeight() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
-	mUIGreenSlider = UISlider::New()->setOrientation( UI_HORIZONTAL );
+	mUIGreenSlider = UISlider::New()->setOrientation( UIOrientation::Horizontal );
 	mUIGreenSlider->setParent( mUIWindow->getContainer() )->setSize( 128, 20 )->setPosition( mUIRedSlider->getPosition().x, Txt->getPosition().y );
 	mUIGreenSlider->setMaxValue( 255 );
 	mUIGreenSlider->setValue( 255 );
@@ -174,7 +174,7 @@ UIMapNew::UIMapNew( UIMap * Map, std::function<void()> NewMapCb, bool ResizeMap 
 
 	Txt = createTextBox( "Blue Color:", mUIWindow->getContainer(), Sizef(), Vector2f( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIGreenSlider->getPosition().y + mUIGreenSlider->getSize().getHeight() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
-	mUIBlueSlider = UISlider::New()->setOrientation( UI_HORIZONTAL );
+	mUIBlueSlider = UISlider::New()->setOrientation( UIOrientation::Horizontal );
 	mUIBlueSlider->setParent( mUIWindow->getContainer() )->setSize( 128, 20 )->setPosition( mUIRedSlider->getPosition().x, Txt->getPosition().y );
 	mUIBlueSlider->setMaxValue( 255 );
 	mUIBlueSlider->setValue( 255 );

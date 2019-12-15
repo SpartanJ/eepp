@@ -12,12 +12,12 @@ UILinearLayout * UILinearLayout::NewVertical() {
 }
 
 UILinearLayout * UILinearLayout::NewHorizontal() {
-	return ( eeNew( UILinearLayout, () ) )->setOrientation( UI_HORIZONTAL );
+	return ( eeNew( UILinearLayout, () ) )->setOrientation( UIOrientation::Horizontal );
 }
 
 UILinearLayout::UILinearLayout() :
 	UILayout( "linearlayout" ),
-	mOrientation( UI_VERTICAL )
+	mOrientation( UIOrientation::Vertical )
 {
 	clipEnable();
 }
@@ -30,11 +30,11 @@ bool UILinearLayout::isType( const Uint32& type ) const {
 	return UILinearLayout::getType() == type ? true : UILayout::isType( type );
 }
 
-UI_ORIENTATION UILinearLayout::getOrientation() const {
+UIOrientation UILinearLayout::getOrientation() const {
 	return mOrientation;
 }
 
-UILinearLayout * UILinearLayout::setOrientation(const UI_ORIENTATION & orientation) {
+UILinearLayout * UILinearLayout::setOrientation(const UIOrientation & orientation) {
 	mOrientation = orientation;
 	return this;
 }
@@ -60,7 +60,7 @@ void UILinearLayout::onChildCountChange() {
 }
 
 void UILinearLayout::pack() {
-	if ( mOrientation == UI_VERTICAL )
+	if ( mOrientation == UIOrientation::Vertical )
 		packVertical();
 	else
 		packHorizontal();
@@ -70,7 +70,7 @@ void UILinearLayout::packVertical() {
 	bool sizeChanged = false;
 	Sizef size( getSize() );
 
-	if ( getLayoutWidthRules() == MATCH_PARENT && 0 == getLayoutWeight() ) {
+	if ( getLayoutWidthRule() == LayoutSizeRule::MatchParent && 0 == getLayoutWeight() ) {
 		Float w = getParent()->getSize().getWidth() - mLayoutMargin.Left - mLayoutMargin.Right;
 
 		if ( getParent()->isType( UI_TYPE_LAYOUT ) ) {
@@ -85,7 +85,7 @@ void UILinearLayout::packVertical() {
 		}
 	}
 
-	if ( getLayoutHeightRules() == MATCH_PARENT ) {
+	if ( getLayoutHeightRule() == LayoutSizeRule::MatchParent ) {
 		Float h = getParent()->getSize().getHeight() - mLayoutMargin.Top - mLayoutMargin.Bottom;
 
 		if ( getParent()->isType( UI_TYPE_LAYOUT ) ) {
@@ -110,17 +110,17 @@ void UILinearLayout::packVertical() {
 		if ( ChildLoop->isWidget() && ChildLoop->isVisible() ) {
 			UIWidget * widget = static_cast<UIWidget*>( ChildLoop );
 
-			if ( widget->getLayoutHeightRules() == WRAP_CONTENT ) {
+			if ( widget->getLayoutHeightRule() == LayoutSizeRule::WrapContent ) {
 				widget->setFlags( UI_AUTO_SIZE );
 			}
 
-			switch ( widget->getLayoutWidthRules() ) {
-				case WRAP_CONTENT:
+			switch ( widget->getLayoutWidthRule() ) {
+				case LayoutSizeRule::WrapContent:
 				{
 					widget->setFlags( UI_AUTO_SIZE );
 					break;
 				}
-				case MATCH_PARENT:
+				case LayoutSizeRule::MatchParent:
 				{
 					int w = getSize().getWidth() - widget->getLayoutMargin().Left - widget->getLayoutMargin().Right - mPadding.Left - mPadding.Right;
 
@@ -129,13 +129,13 @@ void UILinearLayout::packVertical() {
 
 					break;
 				}
-				case FIXED:
+				case LayoutSizeRule::Fixed:
 				default:
 				{
 				}
 			}
 
-			if ( widget->getLayoutHeightRules() == MATCH_PARENT && widget->getLayoutWeight() == 0 &&
+			if ( widget->getLayoutHeightRule() == LayoutSizeRule::MatchParent && widget->getLayoutWeight() == 0 &&
 				 widget->getSize().getHeight() != getSize().getHeight() - widget->getLayoutMargin().Top - widget->getLayoutMargin().Bottom - mPadding.Top - mPadding.Bottom ) {
 				widget->setSize( widget->getSize().getWidth(), getSize().getHeight() - widget->getLayoutMargin().Top - widget->getLayoutMargin().Bottom - mPadding.Top - mPadding.Bottom );
 			}
@@ -160,14 +160,14 @@ void UILinearLayout::packVertical() {
 			Vector2f pos( mPadding.Left, curY );
 
 			if ( widget->getLayoutWeight() != 0 ) {
-				Int32 totSize = ( getLayoutHeightRules() == MATCH_PARENT ) ? getSize().getHeight() - mPadding.Top - mPadding.Bottom :
+				Int32 totSize = ( getLayoutHeightRule() == LayoutSizeRule::MatchParent ) ? getSize().getHeight() - mPadding.Top - mPadding.Bottom :
 																			 getParent()->getSize().getHeight() - mLayoutMargin.Bottom - mLayoutMargin.Top - mPadding.Top - mPadding.Bottom;
 				Float size = (Float)( totSize - freeSize.getHeight() ) * widget->getLayoutWeight();
 
 				widget->setSize( widget->getSize().getWidth(), (Int32)size );
 			}
 
-			switch ( fontHAlignGet( widget->getLayoutGravity() ) ) {
+			switch ( Font::getHorizontalAlign( widget->getLayoutGravity() ) ) {
 				case UI_HALIGN_CENTER:
 					pos.x = ( getSize().getWidth() - mPadding.Left - mPadding.Right - widget->getSize().getWidth() ) / 2;
 					break;
@@ -190,14 +190,14 @@ void UILinearLayout::packVertical() {
 		ChildLoop = ChildLoop->getNextNode();
 	}
 
-	if ( getLayoutHeightRules() == WRAP_CONTENT ) {
+	if ( getLayoutHeightRule() == LayoutSizeRule::WrapContent ) {
 		curY += mPadding.Bottom;
 
 		if ( curY != (int)getSize().getHeight() ) {
 			setInternalHeight( curY );
 			notifyLayoutAttrChangeParent();
 		}
-	} else if ( getLayoutHeightRules() == MATCH_PARENT ) {
+	} else if ( getLayoutHeightRule() == LayoutSizeRule::MatchParent ) {
 		int h = getParent()->getSize().getHeight() - mLayoutMargin.Top - mLayoutMargin.Bottom;
 
 		if ( getParent()->isType( UI_TYPE_LAYOUT ) ) {
@@ -209,9 +209,9 @@ void UILinearLayout::packVertical() {
 			setInternalHeight( h );
 	}
 
-	if ( getLayoutWidthRules() == WRAP_CONTENT && getSize().getWidth() != maxX ) {
+	if ( getLayoutWidthRule() == LayoutSizeRule::WrapContent && getSize().getWidth() != maxX ) {
 		if ( !(0 != getLayoutWeight() && getParent()->isType( UI_TYPE_LINEAR_LAYOUT ) &&
-			 getParent()->asType<UILinearLayout>()->getOrientation() == UI_HORIZONTAL) ) {
+			 getParent()->asType<UILinearLayout>()->getOrientation() == UIOrientation::Horizontal) ) {
 			setInternalWidth( maxX );
 			packVertical();
 			notifyLayoutAttrChangeParent();
@@ -225,7 +225,7 @@ void UILinearLayout::packHorizontal() {
 	bool sizeChanged = false;
 	Sizef size( getSize() );
 
-	if ( getLayoutWidthRules() == MATCH_PARENT ) {
+	if ( getLayoutWidthRule() == LayoutSizeRule::MatchParent ) {
 		Float w = getParent()->getSize().getWidth() - mLayoutMargin.Left - mLayoutMargin.Right;
 
 		if ( getParent()->isType( UI_TYPE_LAYOUT ) ) {
@@ -240,7 +240,7 @@ void UILinearLayout::packHorizontal() {
 		}
 	}
 
-	if ( getLayoutHeightRules() == MATCH_PARENT && 0 == getLayoutWeight() ) {
+	if ( getLayoutHeightRule() == LayoutSizeRule::MatchParent && 0 == getLayoutWeight() ) {
 		Float h = getParent()->getSize().getHeight() - mLayoutMargin.Top - mLayoutMargin.Bottom;
 
 		if ( getParent()->isType( UI_TYPE_LAYOUT ) ) {
@@ -265,17 +265,17 @@ void UILinearLayout::packHorizontal() {
 		if ( ChildLoop->isWidget() ) {
 			UIWidget * widget = static_cast<UIWidget*>( ChildLoop );
 
-			if ( widget->getLayoutWidthRules() == WRAP_CONTENT ) {
+			if ( widget->getLayoutWidthRule() == LayoutSizeRule::WrapContent ) {
 				widget->setFlags( UI_AUTO_SIZE );
 			}
 
-			switch ( widget->getLayoutHeightRules() ) {
-				case WRAP_CONTENT:
+			switch ( widget->getLayoutHeightRule() ) {
+				case LayoutSizeRule::WrapContent:
 				{
 					widget->setFlags( UI_AUTO_SIZE );
 					break;
 				}
-				case MATCH_PARENT:
+				case LayoutSizeRule::MatchParent:
 				{
 					int h = getSize().getHeight() - widget->getLayoutMargin().Top - widget->getLayoutMargin().Bottom - mPadding.Top - mPadding.Bottom;
 
@@ -284,13 +284,13 @@ void UILinearLayout::packHorizontal() {
 
 					break;
 				}
-				case FIXED:
+				case LayoutSizeRule::Fixed:
 				default:
 				{
 				}
 			}
 
-			if ( widget->getLayoutWidthRules() == MATCH_PARENT && widget->getLayoutWeight() == 0 &&
+			if ( widget->getLayoutWidthRule() == LayoutSizeRule::MatchParent && widget->getLayoutWeight() == 0 &&
 				 widget->getSize().getWidth() != getSize().getWidth() - widget->getLayoutMargin().Left  - widget->getLayoutMargin().Top - mPadding.Left - mPadding.Right ) {
 				widget->setSize( getSize().getWidth(), widget->getSize().getWidth() - widget->getLayoutMargin().Left  - widget->getLayoutMargin().Top - mPadding.Left - mPadding.Right );
 			}
@@ -315,14 +315,14 @@ void UILinearLayout::packHorizontal() {
 			Vector2f pos( curX, mPadding.Top );
 
 			if ( widget->getLayoutWeight() != 0 ) {
-				Int32 totSize = ( getLayoutWidthRules() == MATCH_PARENT ) ? getSize().getWidth() - mPadding.Left - mPadding.Right :
+				Int32 totSize = ( getLayoutWidthRule() == LayoutSizeRule::MatchParent ) ? getSize().getWidth() - mPadding.Left - mPadding.Right :
 																			getParent()->getSize().getWidth() - mLayoutMargin.Right - mLayoutMargin.Left - mPadding.Left - mPadding.Right;
 				Float size = (Float)( totSize - freeSize.getWidth() ) * widget->getLayoutWeight();
 
 				widget->setSize( (Int32)size, widget->getSize().getHeight() );
 			}
 
-			switch ( fontVAlignGet( widget->getLayoutGravity() ) ) {
+			switch ( Font::getVerticalAlign( widget->getLayoutGravity() ) ) {
 				case UI_VALIGN_CENTER:
 					pos.y = ( getSize().getHeight() - mPadding.Top - mPadding.Bottom - widget->getSize().getHeight() ) / 2;
 					break;
@@ -345,14 +345,14 @@ void UILinearLayout::packHorizontal() {
 		ChildLoop = ChildLoop->getNextNode();
 	}
 
-	if ( getLayoutWidthRules() == WRAP_CONTENT ) {
+	if ( getLayoutWidthRule() == LayoutSizeRule::WrapContent ) {
 		curX += mPadding.Right;
 
 		if ( curX != (int)getSize().getWidth() ) {
 			setInternalWidth( curX );
 			notifyLayoutAttrChangeParent();
 		}
-	} else if ( getLayoutWidthRules() == MATCH_PARENT ) {
+	} else if ( getLayoutWidthRule() == LayoutSizeRule::MatchParent ) {
 		int w = getParent()->getSize().getWidth() - mLayoutMargin.Left - mLayoutMargin.Right;
 
 		if ( getParent()->isType( UI_TYPE_LAYOUT ) ) {
@@ -364,9 +364,9 @@ void UILinearLayout::packHorizontal() {
 			setInternalWidth( w );
 	}
 
-	if ( getLayoutHeightRules() == WRAP_CONTENT && getSize().getHeight() != maxY ) {
+	if ( getLayoutHeightRule() == LayoutSizeRule::WrapContent && getSize().getHeight() != maxY ) {
 		if ( !(0 != getLayoutWeight() && getParent()->isType( UI_TYPE_LINEAR_LAYOUT ) &&
-			 getParent()->asType<UILinearLayout>()->getOrientation() == UI_VERTICAL) ) {
+			 getParent()->asType<UILinearLayout>()->getOrientation() == UIOrientation::Vertical) ) {
 			setInternalHeight( maxY );
 			packHorizontal();
 			notifyLayoutAttrChangeParent();
@@ -389,14 +389,14 @@ Sizei UILinearLayout::getTotalUsedSize() {
 
 			size.y += margin.Top + margin.Bottom;
 
-			if ( widget->getLayoutWidthRules() == FIXED || widget->getLayoutWidthRules() == WRAP_CONTENT ) {
-				if ( 0 == widget->getLayoutWeight() && mOrientation == UI_HORIZONTAL ) {
+			if ( widget->getLayoutWidthRule() == LayoutSizeRule::Fixed || widget->getLayoutWidthRule() == LayoutSizeRule::WrapContent ) {
+				if ( 0 == widget->getLayoutWeight() && mOrientation == UIOrientation::Horizontal ) {
 					size.x += widget->getSize().getWidth();
 				}
 			}
 
-			if ( widget->getLayoutHeightRules() == FIXED || widget->getLayoutHeightRules() == WRAP_CONTENT ) {
-				if ( 0 == widget->getLayoutWeight() && mOrientation == UI_VERTICAL ) {
+			if ( widget->getLayoutHeightRule() == LayoutSizeRule::Fixed || widget->getLayoutHeightRule() == LayoutSizeRule::WrapContent ) {
+				if ( 0 == widget->getLayoutWeight() && mOrientation == UIOrientation::Vertical ) {
 					size.y += widget->getSize().getHeight();
 				}
 			}
@@ -413,7 +413,7 @@ std::string UILinearLayout::getPropertyString( const PropertyDefinition* propert
 
 	switch ( propertyDef->getPropertyId() ) {
 		case PropertyId::Orientation:
-			return getOrientation() == UI_HORIZONTAL ? "horizontal" : "vertical";
+			return getOrientation() == UIOrientation::Horizontal ? "horizontal" : "vertical";
 		default:
 			return UILayout::getPropertyString( propertyDef );
 	}
@@ -429,9 +429,9 @@ bool UILinearLayout::applyProperty( const StyleSheetProperty& attribute ) {
 			String::toLowerInPlace( val );
 
 			if ( "horizontal" == val )
-				setOrientation( UI_HORIZONTAL );
+				setOrientation( UIOrientation::Horizontal );
 			else if ( "vertical" == val )
-				setOrientation( UI_VERTICAL );
+				setOrientation( UIOrientation::Vertical );
 			break;
 		}
 		default:

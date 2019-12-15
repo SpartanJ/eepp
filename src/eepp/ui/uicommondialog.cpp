@@ -44,52 +44,52 @@ UICommonDialog::UICommonDialog( Uint32 CDLFlags , std::string DefaultFilePattern
 	}
 
 	UILinearLayout * linearLayout = UILinearLayout::NewVertical();
-	linearLayout->setLayoutSizeRules( MATCH_PARENT, MATCH_PARENT )->setLayoutMargin( Rect( 4, 2, 4, 2 ) )->setParent( getContainer() );
+	linearLayout->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::MatchParent )->setLayoutMargin( Rect( 4, 2, 4, 2 ) )->setParent( getContainer() );
 
 	UILinearLayout * hLayout = UILinearLayout::NewHorizontal();
-	hLayout->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setLayoutMargin( Rect(0,0,0,4) )->setParent( linearLayout );
+	hLayout->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )->setLayoutMargin( Rect(0,0,0,4) )->setParent( linearLayout );
 
-	UITextView::New()->setText( "Look in:" )->setLayoutSizeRules( WRAP_CONTENT, MATCH_PARENT )->setLayoutMargin( Rect( 0, 0, 4, 0 ) )
+	UITextView::New()->setText( "Look in:" )->setLayoutSizeRules( LayoutSizeRule::WrapContent, LayoutSizeRule::MatchParent )->setLayoutMargin( Rect( 0, 0, 4, 0 ) )
 			->setParent( hLayout )->setEnabled( false );
 
 	mPath = UITextInput::New();
-	mPath->setText( mCurPath )->setLayoutSizeRules( WRAP_CONTENT, MATCH_PARENT )->setLayoutWeight( 1 )->setParent( hLayout );
+	mPath->setText( mCurPath )->setLayoutSizeRules( LayoutSizeRule::WrapContent, LayoutSizeRule::MatchParent )->setLayoutWeight( 1 )->setParent( hLayout );
 	mPath->addEventListener( Event::OnPressEnter, cb::Make1( this, &UICommonDialog::onPressEnter ) );
 
 	mButtonUp = UIPushButton::New();
-	mButtonUp->setText( "Up" )->setLayoutSizeRules( WRAP_CONTENT, MATCH_PARENT )->setParent( hLayout );
+	mButtonUp->setText( "Up" )->setLayoutSizeRules( LayoutSizeRule::WrapContent, LayoutSizeRule::MatchParent )->setParent( hLayout );
 
 	mList = UIListBox::New();
 	mList->setParent( linearLayout );
-	mList->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setLayoutWeight( 1 )->setLayoutMargin( Rect(0,0,0,4) );
+	mList->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )->setLayoutWeight( 1 )->setLayoutMargin( Rect(0,0,0,4) );
 
 	hLayout = UILinearLayout::NewHorizontal();
-	hLayout->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setLayoutMargin( Rect(0,0,0,4) )->setParent( linearLayout );
+	hLayout->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )->setLayoutMargin( Rect(0,0,0,4) )->setParent( linearLayout );
 
-	UITextView::New()->setText( "File Name:" )->setLayoutSizeRules( FIXED, MATCH_PARENT )->setSize(74,0)->setParent( hLayout )->setEnabled( false );
+	UITextView::New()->setText( "File Name:" )->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::MatchParent )->setSize(74,0)->setParent( hLayout )->setEnabled( false );
 
 	mFile = UITextInput::New();
-	mFile->setLayoutSizeRules( WRAP_CONTENT, MATCH_PARENT )->setLayoutWeight( 1 )->setParent( hLayout );
+	mFile->setLayoutSizeRules( LayoutSizeRule::WrapContent, LayoutSizeRule::MatchParent )->setLayoutWeight( 1 )->setParent( hLayout );
 	mFile->setLayoutMargin( Rect( 0, 0, 4, 0 ) );
 	mFile->addEventListener( Event::OnPressEnter, cb::Make1( this, &UICommonDialog::onPressFileEnter ) );
 
 	mButtonOpen = UIPushButton::New();
-	mButtonOpen->setText( isSaveDialog() ? "Save" : "Open" )->setLayoutSizeRules( FIXED, WRAP_CONTENT )->setSize(80,0)->setParent( hLayout );
+	mButtonOpen->setText( isSaveDialog() ? "Save" : "Open" )->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::WrapContent )->setSize(80,0)->setParent( hLayout );
 
 	hLayout = UILinearLayout::NewHorizontal();
-	hLayout->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setParent( linearLayout );
+	hLayout->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )->setParent( linearLayout );
 
-	UITextView::New()->setText( "Files of type:" )->setLayoutSizeRules( FIXED, MATCH_PARENT )->setSize(74,0)->setParent( hLayout )->setEnabled( false );
+	UITextView::New()->setText( "Files of type:" )->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::MatchParent )->setSize(74,0)->setParent( hLayout )->setEnabled( false );
 
 	mFiletype = UIDropDownList::New();
-	mFiletype->setLayoutSizeRules( WRAP_CONTENT, MATCH_PARENT )->setLayoutWeight( 1 )->setParent( hLayout );
+	mFiletype->setLayoutSizeRules( LayoutSizeRule::WrapContent, LayoutSizeRule::MatchParent )->setLayoutWeight( 1 )->setParent( hLayout );
 	mFiletype->setPopUpToMainControl( true );
 	mFiletype->getListBox()->addListBoxItem( DefaultFilePattern );
 	mFiletype->getListBox()->setSelected(0);
 	mFiletype->setLayoutMargin( Rect( 0, 0, 4, 0 ) );
 
 	mButtonCancel = UIPushButton::New();
-	mButtonCancel->setText( "Cancel" )->setLayoutSizeRules( FIXED, WRAP_CONTENT )->setSize(80,0)->setParent( hLayout );
+	mButtonCancel->setText( "Cancel" )->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::WrapContent )->setSize(80,0)->setParent( hLayout );
 
 	applyDefaultTheme();
 

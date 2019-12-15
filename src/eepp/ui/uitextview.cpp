@@ -264,17 +264,17 @@ void UITextView::onAutoSize() {
 		setInternalPixelsSize( Sizef( mTextCache->getTextWidth(), mTextCache->getTextHeight() ) );
 	}
 
-	if ( mLayoutWidthRules == WRAP_CONTENT ) {
+	if ( mLayoutWidthRule == LayoutSizeRule::WrapContent ) {
 		setInternalPixelsWidth( (int)mTextCache->getTextWidth() + mRealPadding.Left + mRealPadding.Right );
 	}
 
-	if ( mLayoutHeightRules == WRAP_CONTENT ) {
+	if ( mLayoutHeightRule == LayoutSizeRule::WrapContent ) {
 		setInternalPixelsHeight( (int)mTextCache->getTextHeight() + mRealPadding.Top + mRealPadding.Bottom );
 	}
 }
 
 void UITextView::alignFix() {
-	switch ( fontHAlignGet( getFlags() ) ) {
+	switch ( Font::getHorizontalAlign( getFlags() ) ) {
 		case UI_HALIGN_CENTER:
 			mRealAlignOffset.x = (Float)( (Int32)( ( mSize.x - mRealPadding.Left - mRealPadding.Right ) / 2 - mTextCache->getTextWidth() / 2 ) );
 			break;
@@ -286,7 +286,7 @@ void UITextView::alignFix() {
 			break;
 	}
 
-	switch ( fontVAlignGet( getFlags() ) ) {
+	switch ( Font::getVerticalAlign( getFlags() ) ) {
 		case UI_VALIGN_CENTER:
 			mRealAlignOffset.y = (Float)( (Int32)( ( mSize.y - mRealPadding.Top - mRealPadding.Bottom ) / 2 - mTextCache->getTextHeight() / 2 ) ) - 1;
 			break;
@@ -660,8 +660,8 @@ std::string UITextView::getPropertyString( const PropertyDefinition* propertyDef
 		case PropertyId::TextSelection:
 			return isTextSelectionEnabled() ? "true" : "false";
 		case PropertyId::TextAlign:
-			return fontHAlignGet( getFlags() ) == UI_HALIGN_CENTER ? "center" : (
-				fontHAlignGet( getFlags() ) == UI_HALIGN_RIGHT ? "right" : "left"
+			return Font::getHorizontalAlign( getFlags() ) == UI_HALIGN_CENTER ? "center" : (
+				Font::getHorizontalAlign( getFlags() ) == UI_HALIGN_RIGHT ? "right" : "left"
 			);
 		default:
 			return UIWidget::getPropertyString( propertyDef );

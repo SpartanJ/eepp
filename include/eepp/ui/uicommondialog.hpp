@@ -11,6 +11,15 @@
 
 namespace EE { namespace UI {
 
+enum UICommonDialogFlags {
+	CDL_FLAG_SAVE_DIALOG			= ( 1 << 0 ),
+	CDL_FLAG_FOLDERS_FISRT			= ( 1 << 1 ),
+	CDL_FLAG_SORT_ALPHABETICALLY	= ( 1 << 2 ),
+	CDL_FLAG_ALLOW_FOLDER_SELECT	= ( 1 << 3 )
+};
+
+static const Uint32 UI_CDL_DEFAULT_FLAGS = CDL_FLAG_FOLDERS_FISRT | CDL_FLAG_SORT_ALPHABETICALLY;
+
 class EE_API UICommonDialog : public UIWindow {
 	public:
 		static UICommonDialog * New( Uint32 CDLFlags = UI_CDL_DEFAULT_FLAGS, std::string DefaultFilePattern = "*", std::string DefaultDirectory = Sys::getProcessPath() );

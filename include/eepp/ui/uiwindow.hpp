@@ -13,6 +13,23 @@ namespace EE { namespace UI {
 
 class UISceneNode;
 
+enum UIWindowFlags {
+	UI_WIN_NO_DECORATION				= ( 1 << 0 ),
+	UI_WIN_CLOSE_BUTTON					= ( 1 << 1 ),
+	UI_WIN_MINIMIZE_BUTTON				= ( 1 << 2 ),
+	UI_WIN_MAXIMIZE_BUTTON				= ( 1 << 3 ),
+	UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS	= ( 1 << 4 ),
+	UI_WIN_RESIZEABLE					= ( 1 << 5 ),
+	UI_WIN_DRAGABLE_CONTAINER			= ( 1 << 6 ),
+	UI_WIN_SHARE_ALPHA_WITH_CHILDS		= ( 1 << 7 ),
+	UI_WIN_MODAL						= ( 1 << 8 ),
+	UI_WIN_SHADOW						= ( 1 << 9 ),
+	UI_WIN_FRAME_BUFFER					= ( 1 << 10 ),
+	UI_WIN_COLOR_BUFFER					= ( 1 << 11 )
+};
+
+static const Uint32 UI_WIN_DEFAULT_FLAGS = UI_WIN_CLOSE_BUTTON | UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS | UI_WIN_RESIZEABLE | UI_WIN_SHARE_ALPHA_WITH_CHILDS;
+
 class EE_API UIWindow : public UIWidget {
 	public:
 		class StyleConfig {

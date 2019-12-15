@@ -5,18 +5,18 @@
 namespace EE { namespace UI {
 
 UIScrollBar * UIScrollBar::New() {
-	return eeNew( UIScrollBar, ( UI_VERTICAL ) );
+	return eeNew( UIScrollBar, ( UIOrientation::Vertical ) );
 }
 
 UIScrollBar * UIScrollBar::NewHorizontal() {
-	return eeNew( UIScrollBar, ( UI_HORIZONTAL ) );
+	return eeNew( UIScrollBar, ( UIOrientation::Horizontal ) );
 }
 
 UIScrollBar * UIScrollBar::NewVertical() {
-	return eeNew( UIScrollBar, ( UI_VERTICAL ) );
+	return eeNew( UIScrollBar, ( UIOrientation::Vertical ) );
 }
 
-UIScrollBar::UIScrollBar( const UI_ORIENTATION& orientation ) :
+UIScrollBar::UIScrollBar( const UIOrientation& orientation ) :
 	UIWidget( "scrollbar" ),
 #ifdef EE_PLATFORM_TOUCH
 	mScrollBarType( NoButtons )
@@ -26,7 +26,7 @@ UIScrollBar::UIScrollBar( const UI_ORIENTATION& orientation ) :
 {
 	mFlags |= UI_AUTO_SIZE;
 
-	setLayoutSizeRules( FIXED, FIXED );
+	setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::Fixed );
 
 	mBtnDown	= UINode::New();
 	mBtnUp		= UINode::New();
@@ -131,7 +131,7 @@ void UIScrollBar::onAutoSize() {
 		}
 	}
 
-	if ( mLayoutWidthRules == WRAP_CONTENT || mLayoutHeightRules == WRAP_CONTENT ) {
+	if ( mLayoutWidthRule == LayoutSizeRule::WrapContent || mLayoutHeightRule == LayoutSizeRule::WrapContent ) {
 		size =  PixelDensity::dpToPx( mSlider->getMinimumSize() ) + mRealPadding;
 
 		if (  mScrollBarType == TwoButtons ) {
@@ -142,11 +142,11 @@ void UIScrollBar::onAutoSize() {
 			}
 		}
 
-		if ( mLayoutWidthRules == WRAP_CONTENT ) {
+		if ( mLayoutWidthRule == LayoutSizeRule::WrapContent ) {
 			setInternalPixelsWidth( size.getWidth() );
 		}
 
-		if ( mLayoutHeightRules == WRAP_CONTENT ) {
+		if ( mLayoutHeightRule == LayoutSizeRule::WrapContent ) {
 			setInternalPixelsHeight( size.getHeight() );
 		}
 
@@ -310,7 +310,7 @@ std::string UIScrollBar::getPropertyString( const PropertyDefinition* propertyDe
 
 	switch ( propertyDef->getPropertyId() ) {
 		case PropertyId::Orientation:
-			return getOrientation() == UI_HORIZONTAL ? "horizontal" : "vertical";
+			return getOrientation() == UIOrientation::Horizontal ? "horizontal" : "vertical";
 		case PropertyId::MinValue:
 			return String::fromFloat( getMinValue() );
 		case PropertyId::MaxValue:
@@ -340,9 +340,9 @@ bool UIScrollBar::applyProperty( const StyleSheetProperty& attribute ) {
 			String::toLowerInPlace( val );
 
 			if ( "horizontal" == val )
-				setOrientation( UI_HORIZONTAL );
+				setOrientation( UIOrientation::Horizontal );
 			else if ( "vertical" == val )
-				setOrientation( UI_VERTICAL );
+				setOrientation( UIOrientation::Vertical );
 			break;
 		}
 		case PropertyId::MinValue:
@@ -396,11 +396,11 @@ void UIScrollBar::setScrollBarType( const ScrollBarType & scrollBarType ) {
 	}
 }
 
-UI_ORIENTATION UIScrollBar::getOrientation() const {
+UIOrientation UIScrollBar::getOrientation() const {
 	return mSlider->getOrientation();
 }
 
-UINode * UIScrollBar::setOrientation( const UI_ORIENTATION & orientation ) {
+UINode * UIScrollBar::setOrientation( const UIOrientation & orientation ) {
 	if ( mSlider->getOrientation() != orientation ) {
 		mSlider->setOrientation( orientation );
 

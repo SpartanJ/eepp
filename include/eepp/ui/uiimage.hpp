@@ -39,11 +39,11 @@ class EE_API UIImage : public UIWidget {
 
 		virtual bool applyProperty( const StyleSheetProperty& attribute );
 
-		Uint32 getScaleType() const;
+		const UIScaleType& getScaleType() const;
 
-		UIImage * setScaleType(const Uint32 & scaleType);
+		UIImage * setScaleType(const UIScaleType& scaleType);
 	protected:
-		Uint32			mScaleType;
+		UIScaleType		mScaleType;
 		Drawable *		mDrawable;
 		Color			mColor;
 		Vector2f		mAlignOffset;

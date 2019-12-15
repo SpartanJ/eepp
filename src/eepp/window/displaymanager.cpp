@@ -4,7 +4,7 @@ namespace EE { namespace Window {
 
 Display::Display( int displayIndex ) : index ( displayIndex ) {}
 
-EE_PIXEL_DENSITY Display::getPixelDensity() {
+PixelDensitySize Display::getPixelDensity() {
 	return PixelDensity::fromDPI( getDPI() );
 }
 

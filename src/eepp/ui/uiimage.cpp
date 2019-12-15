@@ -77,12 +77,12 @@ void UIImage::onAutoSize() {
 			setInternalSize( mDrawable->getSize() );
 		}
 
-		if ( mLayoutWidthRules == WRAP_CONTENT ) {
+		if ( mLayoutWidthRule == LayoutSizeRule::WrapContent ) {
 			setInternalPixelsWidth( (int)mDrawable->getSize().getWidth() +
 									mRealPadding.Left + mRealPadding.Right );
 		}
 
-		if ( mLayoutHeightRules == WRAP_CONTENT ) {
+		if ( mLayoutHeightRule == LayoutSizeRule::WrapContent ) {
 			setInternalPixelsHeight( (int)mDrawable->getSize().getHeight() +
 									 mRealPadding.Top + mRealPadding.Bottom );
 		}
@@ -160,17 +160,17 @@ void UIImage::autoAlign() {
 	if ( NULL == mDrawable )
 		return;
 
-	if ( HAlignGet( mFlags ) == UI_HALIGN_CENTER ) {
+	if ( Font::getHorizontalAlign( mFlags ) == UI_HALIGN_CENTER ) {
 		mAlignOffset.x = ( mSize.getWidth() - mDestSize.x ) / 2;
-	} else if ( fontHAlignGet( mFlags ) == UI_HALIGN_RIGHT ) {
+	} else if ( Font::getHorizontalAlign( mFlags ) == UI_HALIGN_RIGHT ) {
 		mAlignOffset.x = mSize.getWidth() - mDestSize.x - mRealPadding.Right;
 	} else {
 		mAlignOffset.x = mRealPadding.Left;
 	}
 
-	if ( VAlignGet( mFlags ) == UI_VALIGN_CENTER ) {
+	if ( Font::getVerticalAlign( mFlags ) == UI_VALIGN_CENTER ) {
 		mAlignOffset.y = ( mSize.getHeight() - mDestSize.y ) / 2;
-	} else if ( fontVAlignGet( mFlags ) == UI_VALIGN_BOTTOM ) {
+	} else if ( Font::getVerticalAlign( mFlags ) == UI_VALIGN_BOTTOM ) {
 		mAlignOffset.y = mSize.getHeight() - mDestSize.y - mRealPadding.Bottom;
 	} else {
 		mAlignOffset.y = mRealPadding.Top;
@@ -283,11 +283,11 @@ bool UIImage::applyProperty( const StyleSheetProperty& attribute ) {
 	return true;
 }
 
-Uint32 UIImage::getScaleType() const {
+const UIScaleType& UIImage::getScaleType() const {
 	return mScaleType;
 }
 
-UIImage* UIImage::setScaleType( const Uint32& scaleType ) {
+UIImage* UIImage::setScaleType( const UIScaleType& scaleType ) {
 	mScaleType = scaleType;
 	calcDestSize();
 	invalidateDraw();

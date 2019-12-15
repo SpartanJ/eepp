@@ -30,7 +30,7 @@ UISceneNode::UISceneNode( EE::Window::Window* window ) :
 	setEventDispatcher( UIEventDispatcher::New( this ) );
 
 	mRoot = UIWidget::NewWithTag( ":root" );
-	mRoot->setLayoutSizeRules( FIXED, FIXED );
+	mRoot->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::Fixed );
 	mRoot->writeNodeFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 	mRoot->setParent( this );
 	mRoot->clipEnable();

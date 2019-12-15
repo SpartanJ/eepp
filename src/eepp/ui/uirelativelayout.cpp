@@ -41,7 +41,7 @@ void UIRelativeLayout::onParentSizeChange( const Vector2f& ) {
 void UIRelativeLayout::fixChilds() {
 	setInternalPosition( Vector2f( mLayoutMargin.Left, mLayoutMargin.Top ) );
 
-	if ( getLayoutWidthRules() == MATCH_PARENT ) {
+	if ( getLayoutWidthRule() == LayoutSizeRule::MatchParent ) {
 		Rectf padding = Rectf();
 
 		if ( getParent()->isWidget() )
@@ -50,7 +50,7 @@ void UIRelativeLayout::fixChilds() {
 		setInternalWidth( getParent()->getSize().getWidth() - mLayoutMargin.Left - mLayoutMargin.Right - padding.Left - padding.Right );
 	}
 
-	if ( getLayoutHeightRules() == MATCH_PARENT ) {
+	if ( getLayoutHeightRule() == LayoutSizeRule::MatchParent ) {
 		Rectf padding = Rectf();
 
 		if ( getParent()->isWidget() )
@@ -77,23 +77,23 @@ void UIRelativeLayout::fixChilds() {
 void UIRelativeLayout::fixChildPos( UIWidget * widget ) {
 	Vector2f pos( widget->getPosition() );
 
-	if ( widget->getLayoutPositionRule() != NONE && widget->getParent() == widget->getLayoutPositionRuleWidget()->getParent() ) {
+	if ( widget->getLayoutPositionRule() != LayoutPositionRule::None && widget->getParent() == widget->getLayoutPositionRuleWidget()->getParent() ) {
 		UIWidget * of = widget->getLayoutPositionRuleWidget();
 
 		switch ( widget->getLayoutPositionRule() ) {
-			case LEFT_OF:
+			case LayoutPositionRule::LeftOf:
 				pos.x = of->getPosition().x - widget->getSize().getWidth() - widget->getLayoutMargin().Right - of->getLayoutMargin().Left;
 				pos.y = of->getPosition().y + widget->getLayoutMargin().Top;
 				break;
-			case RIGHT_OF:
+			case LayoutPositionRule::RightOf:
 				pos.x = of->getPosition().x + of->getSize().getWidth() + widget->getLayoutMargin().Left + of->getLayoutMargin().Right;
 				pos.y = of->getPosition().y + widget->getLayoutMargin().Top;
 				break;
-			case TOP_OF:
+			case LayoutPositionRule::TopOf:
 				pos.x = of->getPosition().x + widget->getLayoutMargin().Left;
 				pos.y = of->getPosition().y - widget->getSize().getHeight() - widget->getLayoutMargin().Bottom - of->getLayoutMargin().Top;
 				break;
-			case BOTTOM_OF:
+			case LayoutPositionRule::BottomOf:
 				pos.x = of->getPosition().x + widget->getLayoutMargin().Left;
 				pos.y = of->getPosition().y + of->getSize().getHeight() + widget->getLayoutMargin().Top + of->getLayoutMargin().Bottom;
 				break;
@@ -101,7 +101,7 @@ void UIRelativeLayout::fixChildPos( UIWidget * widget ) {
 				break;
 		}
 	} else {
-		switch ( fontHAlignGet( widget->getLayoutGravity() ) ) {
+		switch ( Font::getHorizontalAlign( widget->getLayoutGravity() ) ) {
 			case UI_HALIGN_CENTER:
 				pos.x = ( getSize().getWidth() - widget->getSize().getWidth() ) / 2 + widget->getLayoutMargin().Left;
 				break;
@@ -114,7 +114,7 @@ void UIRelativeLayout::fixChildPos( UIWidget * widget ) {
 				break;
 		}
 
-		switch ( fontVAlignGet( widget->getLayoutGravity() ) ) {
+		switch ( Font::getVerticalAlign( widget->getLayoutGravity() ) ) {
 			case UI_VALIGN_CENTER:
 				pos.y = ( getSize().getHeight() - widget->getSize().getHeight() ) / 2 + widget->getLayoutMargin().Top;
 				break;
@@ -132,35 +132,35 @@ void UIRelativeLayout::fixChildPos( UIWidget * widget ) {
 }
 
 void UIRelativeLayout::fixChildSize( UIWidget * widget ) {
-	switch ( widget->getLayoutWidthRules() ) {
-		case WRAP_CONTENT:
+	switch ( widget->getLayoutWidthRule() ) {
+		case LayoutSizeRule::WrapContent:
 		{
 			widget->setFlags( UI_AUTO_SIZE );
 			break;
 		}
-		case MATCH_PARENT:
+		case LayoutSizeRule::MatchParent:
 		{
 			widget->setSize( getSize().getWidth() - widget->getLayoutMargin().Left - widget->getLayoutMargin().Right - mPadding.Left - mPadding.Right, widget->getSize().getHeight() );
 			break;
 		}
-		case FIXED:
+		case LayoutSizeRule::Fixed:
 		default:
 		{
 		}
 	}
 
-	switch ( widget->getLayoutHeightRules() ) {
-		case WRAP_CONTENT:
+	switch ( widget->getLayoutHeightRule() ) {
+		case LayoutSizeRule::WrapContent:
 		{
 			widget->setFlags( UI_AUTO_SIZE );
 			break;
 		}
-		case MATCH_PARENT:
+		case LayoutSizeRule::MatchParent:
 		{
 			widget->setSize( widget->getSize().getWidth(), getSize().getHeight() - widget->getLayoutMargin().Top - widget->getLayoutMargin().Bottom - mPadding.Top - mPadding.Bottom );
 			break;
 		}
-		case FIXED:
+		case LayoutSizeRule::Fixed:
 		default:
 		{
 		}

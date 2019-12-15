@@ -97,7 +97,7 @@ void MapEditor::createWinMenu() {
 	WinMenu->setParent( mUIContainer );
 
 	mTileBox = createTextBox( "", mUIContainer, Sizef(), Vector2f(), UI_HALIGN_RIGHT | UI_VALIGN_CENTER | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT );
-	mTileBox->setLayoutSizeRules( FIXED, FIXED );
+	mTileBox->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::Fixed );
 	mTileBox->setSize( 100, WinMenu->getSize().getHeight() );
 	mTileBox->setPosition( Vector2f( mUIContainer->getSize().getWidth() - mTileBox->getSize().getWidth(), 0 ) );
 	mTileBox->setVisible( true );
@@ -363,7 +363,7 @@ void MapEditor::createTextureRegionContainer( Int32 Width ) {
 
 	mGfxPreview = UITextureRegion::New();
 	mGfxPreview->setScaleType( UIScaleType::FitInside )
-			   ->setLayoutSizeRules( FIXED, FIXED )
+			   ->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::Fixed )
 			   ->resetFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP )
 			   ->setParent( mSGCont )->setSize( Width, Width )
 			   ->setPosition( 0, mTextureRegionList->getPosition().y + mTextureRegionList->getSize().getHeight() + 4 );
@@ -404,7 +404,7 @@ void MapEditor::createLighContainer() {
 
 	Txt = createTextBox( "R:", mLightCont, Sizef(), Vector2f( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIBaseColor->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
-	mUIRedSlider = UISlider::New()->setOrientation( UI_HORIZONTAL );
+	mUIRedSlider = UISlider::New()->setOrientation( UIOrientation::Horizontal );
 	mUIRedSlider->setParent( mLightCont )->setSize( 100, 20 )->setPosition( Txt->getPosition().x + Txt->getSize().getWidth(), Txt->getPosition().y );
 	mUIRedSlider->setMaxValue( 255 );
 	mUIRedSlider->setValue( 255 );
@@ -413,7 +413,7 @@ void MapEditor::createLighContainer() {
 	mUIRedTxt = createTextBox( String::toStr( (Uint32)255 ), mLightCont, Sizef(), Vector2f( mUIRedSlider->getPosition().x + mUIRedSlider->getSize().getWidth() + 4, mUIRedSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
 	Txt = createTextBox( "G:", mLightCont, Sizef(), Vector2f( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIRedSlider->getPosition().y + mUIRedSlider->getSize().getHeight() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
-	mUIGreenSlider = UISlider::New()->setOrientation( UI_HORIZONTAL );
+	mUIGreenSlider = UISlider::New()->setOrientation( UIOrientation::Horizontal );
 	mUIGreenSlider->setParent( mLightCont )->setSize( 100, 20 )->setPosition( mUIRedSlider->getPosition().x, Txt->getPosition().y );
 	mUIGreenSlider->setMaxValue( 255 );
 	mUIGreenSlider->setValue( 255 );
@@ -422,7 +422,7 @@ void MapEditor::createLighContainer() {
 	mUIGreenTxt = createTextBox( String::toStr( (Uint32)255 ), mLightCont, Sizef(), Vector2f( mUIGreenSlider->getPosition().x + mUIGreenSlider->getSize().getWidth() + 4, mUIGreenSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
 	Txt = createTextBox( "B:", mLightCont, Sizef(), Vector2f( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIGreenSlider->getPosition().y + mUIGreenSlider->getSize().getHeight() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
-	mUIBlueSlider = UISlider::New()->setOrientation( UI_HORIZONTAL );
+	mUIBlueSlider = UISlider::New()->setOrientation( UIOrientation::Horizontal );
 	mUIBlueSlider->setParent( mLightCont )->setSize( 100, 20 )->setPosition( mUIRedSlider->getPosition().x, Txt->getPosition().y );
 	mUIBlueSlider->setMaxValue( 255 );
 	mUIBlueSlider->setValue( 255 );
@@ -527,7 +527,7 @@ void MapEditor::createUIMap() {
 	mUIMap->setTileBox( mTileBox );
 
 	mMapHScroll = UIScrollBar::New();
-	mMapHScroll->setOrientation( UI_HORIZONTAL )
+	mMapHScroll->setOrientation( UIOrientation::Horizontal )
 			   ->setParent( mWinContainer )
 			   ->setSize( mWinContainer->getSize().getWidth() - 225 - ScrollV, ScrollH )
 			   ->setPosition( 0, mWinContainer->getSize().getHeight() - ScrollH );

@@ -41,9 +41,9 @@ UIWidget::UIWidget( const std::string & tag ) :
 	mMinControlSize(),
 	mLayoutWeight(0),
 	mLayoutGravity(0),
-	mLayoutWidthRules(WRAP_CONTENT),
-	mLayoutHeightRules(WRAP_CONTENT),
-	mLayoutPositionRule(NONE),
+	mLayoutWidthRule(LayoutSizeRule::WrapContent),
+	mLayoutHeightRule(LayoutSizeRule::WrapContent),
+	mLayoutPositionRule(LayoutPositionRule::None),
 	mLayoutPositionRuleWidget(NULL),
 	mAttributesTransactionCount(0)
 {
@@ -154,43 +154,43 @@ UIWidget * UIWidget::setLayoutGravity(const Uint32 & layoutGravity) {
 	return this;
 }
 
-LayoutSizeRules UIWidget::getLayoutWidthRules() const {
-	return mLayoutWidthRules;
+LayoutSizeRule UIWidget::getLayoutWidthRule() const {
+	return mLayoutWidthRule;
 }
 
-UIWidget * UIWidget::setLayoutWidthRules(const LayoutSizeRules & layoutWidthRules) {
-	if ( mLayoutWidthRules != layoutWidthRules ) {
-		mLayoutWidthRules = layoutWidthRules;
+UIWidget * UIWidget::setLayoutWidthRule(const LayoutSizeRule & layoutWidthRules) {
+	if ( mLayoutWidthRule != layoutWidthRules ) {
+		mLayoutWidthRule = layoutWidthRules;
 		notifyLayoutAttrChange();
 	}
 
 	return this;
 }
 
-LayoutSizeRules UIWidget::getLayoutHeightRules() const {
-	return mLayoutHeightRules;
+LayoutSizeRule UIWidget::getLayoutHeightRule() const {
+	return mLayoutHeightRule;
 }
 
-UIWidget * UIWidget::setLayoutHeightRules(const LayoutSizeRules & layoutHeightRules) {
-	if ( mLayoutHeightRules != layoutHeightRules ) {
-		mLayoutHeightRules = layoutHeightRules;
+UIWidget * UIWidget::setLayoutHeightRule(const LayoutSizeRule & layoutHeightRules) {
+	if ( mLayoutHeightRule != layoutHeightRules ) {
+		mLayoutHeightRule = layoutHeightRules;
 		notifyLayoutAttrChange();
 	}
 
 	return this;
 }
 
-UIWidget * UIWidget::setLayoutSizeRules(const LayoutSizeRules & layoutWidthRules, const LayoutSizeRules & layoutHeightRules) {
-	if ( mLayoutWidthRules != layoutWidthRules || mLayoutHeightRules != layoutHeightRules ) {
-		mLayoutWidthRules = layoutWidthRules;
-		mLayoutHeightRules = layoutHeightRules;
+UIWidget * UIWidget::setLayoutSizeRules(const LayoutSizeRule & layoutWidthRules, const LayoutSizeRule & layoutHeightRules) {
+	if ( mLayoutWidthRule != layoutWidthRules || mLayoutHeightRule != layoutHeightRules ) {
+		mLayoutWidthRule = layoutWidthRules;
+		mLayoutHeightRule = layoutHeightRules;
 		notifyLayoutAttrChange();
 	}
 
 	return this;
 }
 
-UIWidget * UIWidget::setLayoutPositionRule(const LayoutPositionRules & layoutPositionRule, UIWidget * of) {
+UIWidget * UIWidget::setLayoutPositionRule(const LayoutPositionRule & layoutPositionRule, UIWidget * of) {
 	if ( mLayoutPositionRule != layoutPositionRule || mLayoutPositionRuleWidget != of ) {
 		mLayoutPositionRule = layoutPositionRule;
 		mLayoutPositionRuleWidget = of;
@@ -204,7 +204,7 @@ UIWidget * UIWidget::getLayoutPositionRuleWidget() const {
 	return mLayoutPositionRuleWidget;
 }
 
-LayoutPositionRules UIWidget::getLayoutPositionRule() const {
+LayoutPositionRule UIWidget::getLayoutPositionRule() const {
 	return mLayoutPositionRule;
 }
 
@@ -455,7 +455,7 @@ void UIWidget::updateAnchors( const Vector2f& SizeChange ) {
 void UIWidget::alignAgainstLayout() {
 	Vector2f pos = mDpPos;
 
-	switch ( fontHAlignGet( mLayoutGravity ) ) {
+	switch ( Font::getHorizontalAlign( mLayoutGravity ) ) {
 		case UI_HALIGN_CENTER:
 			pos.x = ( getParent()->getSize().getWidth() - getSize().getWidth() ) / 2;
 			break;
@@ -467,7 +467,7 @@ void UIWidget::alignAgainstLayout() {
 			break;
 	}
 
-	switch ( fontVAlignGet( mLayoutGravity ) ) {
+	switch ( Font::getVerticalAlign( mLayoutGravity ) ) {
 		case UI_VALIGN_CENTER:
 			pos.y = ( getParent()->getSize().getHeight() - getSize().getHeight() ) / 2;
 			break;
@@ -1030,22 +1030,22 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			addClasses( String::split( attribute.getValue(), ' ' ) );
 			break;
 		case PropertyId::X:
-			setLayoutWidthRules( FIXED );
+			setLayoutWidthRule( LayoutSizeRule::Fixed );
 			setInternalPosition( Vector2f( attribute.asDpDimension(), mDpPos.y ) );
 			notifyLayoutAttrChange();
 			break;
 		case PropertyId::Y:
-			setLayoutWidthRules( FIXED );
+			setLayoutWidthRule( LayoutSizeRule::Fixed );
 			setInternalPosition( Vector2f( mDpPos.x, attribute.asDpDimensionI() ) );
 			notifyLayoutAttrChange();
 			break;
 		case PropertyId::Width:
-			setLayoutWidthRules( FIXED );
+			setLayoutWidthRule( LayoutSizeRule::Fixed );
 			setInternalWidth( attribute.asDpDimensionI() );
 			notifyLayoutAttrChange();
 			break;
 		case PropertyId::Height:
-			setLayoutHeightRules( FIXED );
+			setLayoutHeightRule( LayoutSizeRule::Fixed );
 			setInternalHeight( attribute.asDpDimensionI() );
 			notifyLayoutAttrChange();
 			break;
@@ -1224,15 +1224,15 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			String::toLowerInPlace( val );
 
 			if ( "match_parent" == val || "match-parent" == val ) {
-				setLayoutWidthRules( MATCH_PARENT );
+				setLayoutWidthRule( LayoutSizeRule::MatchParent );
 			} else if ( "wrap_content" == val || "wrap-content" == val ) {
-				setLayoutWidthRules( WRAP_CONTENT );
+				setLayoutWidthRule( LayoutSizeRule::WrapContent );
 			} else if ( "fixed" == val ) {
-				setLayoutWidthRules( FIXED );
+				setLayoutWidthRule( LayoutSizeRule::Fixed );
 				unsetFlags( UI_AUTO_SIZE );
 			} else {
 				unsetFlags( UI_AUTO_SIZE );
-				setLayoutWidthRules( FIXED );
+				setLayoutWidthRule( LayoutSizeRule::Fixed );
 				setInternalWidth( PixelDensity::toDpFromStringI( val ) );
 				onSizeChange();
 			}
@@ -1244,15 +1244,15 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			String::toLowerInPlace( val );
 
 			if ( "match_parent" == val ) {
-				setLayoutHeightRules( MATCH_PARENT );
+				setLayoutHeightRule( LayoutSizeRule::MatchParent );
 			} else if ( "wrap_content" == val ) {
-				setLayoutHeightRules( WRAP_CONTENT );
+				setLayoutHeightRule( LayoutSizeRule::WrapContent );
 			} else if ( "fixed" == val ) {
-				setLayoutHeightRules( FIXED );
+				setLayoutHeightRule( LayoutSizeRule::Fixed );
 				unsetFlags( UI_AUTO_SIZE );
 			} else {
 				unsetFlags( UI_AUTO_SIZE );
-				setLayoutHeightRules( FIXED );
+				setLayoutHeightRule( LayoutSizeRule::Fixed );
 				setInternalHeight( PixelDensity::toDpFromStringI( val ) );
 				onSizeChange();
 			}
@@ -1263,12 +1263,12 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::LayoutToRightOf:
 		case PropertyId::LayoutToTopOf:
 		{
-			LayoutPositionRules rule = NONE;
+			LayoutPositionRule rule = LayoutPositionRule::None;
 			PropertyId layoutId = static_cast<PropertyId>( attribute.getPropertyDefinition()->getId() );
-			if ( layoutId == PropertyId::LayoutToLeftOf ) rule = LEFT_OF;
-			else if ( layoutId == PropertyId::LayoutToRightOf ) rule = RIGHT_OF;
-			else if ( layoutId == PropertyId::LayoutToTopOf ) rule = TOP_OF;
-			else if ( layoutId == PropertyId::LayoutToBottomOf ) rule = BOTTOM_OF;
+			if ( layoutId == PropertyId::LayoutToLeftOf ) rule = LayoutPositionRule::LeftOf;
+			else if ( layoutId == PropertyId::LayoutToRightOf ) rule = LayoutPositionRule::RightOf;
+			else if ( layoutId == PropertyId::LayoutToTopOf ) rule = LayoutPositionRule::TopOf;
+			else if ( layoutId == PropertyId::LayoutToBottomOf ) rule = LayoutPositionRule::BottomOf;
 			std::string id = attribute.asString();
 			Node * control = getParent()->find( id );
 			if ( NULL != control && control->isWidget() ) {
@@ -1358,35 +1358,35 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 }
 
 std::string UIWidget::getLayoutWidthRulesString() const {
-	LayoutSizeRules rules = getLayoutWidthRules();
+	LayoutSizeRule rules = getLayoutWidthRule();
 
-	if ( rules == LayoutSizeRules::MATCH_PARENT ) return "match_parent";
-	else if ( rules == LayoutSizeRules::WRAP_CONTENT ) return "wrap_content";
+	if ( rules == LayoutSizeRule::MatchParent ) return "match_parent";
+	else if ( rules == LayoutSizeRule::WrapContent ) return "wrap_content";
 	return String::toStr( getSize().getHeight() ) + "dp";
 }
 
 std::string UIWidget::getLayoutHeightRulesString() const {
-	LayoutSizeRules rules = getLayoutHeightRules();
+	LayoutSizeRule rules = getLayoutHeightRule();
 
-	if ( rules == LayoutSizeRules::MATCH_PARENT ) return "match_parent";
-	else if ( rules == LayoutSizeRules::WRAP_CONTENT ) return "wrap_content";
+	if ( rules == LayoutSizeRule::MatchParent ) return "match_parent";
+	else if ( rules == LayoutSizeRule::WrapContent ) return "wrap_content";
 	return String::toStr( getSize().getHeight() ) + "dp";
 }
 
 static std::string getGravityStringFromUint( const Uint32& gravity ) {
 	std::vector<std::string> gravec;
 
-	if ( HAlignGet( gravity ) == UI_HALIGN_RIGHT ) {
+	if ( Font::getHorizontalAlign( gravity ) == UI_HALIGN_RIGHT ) {
 		gravec.push_back( "right" );
-	} else if ( HAlignGet( gravity ) == UI_HALIGN_CENTER ) {
+	} else if ( Font::getHorizontalAlign( gravity ) == UI_HALIGN_CENTER ) {
 		gravec.push_back( "center_horizontal" );
 	} else {
 		gravec.push_back( "left" );
 	}
 
-	if ( VAlignGet( gravity ) == UI_VALIGN_BOTTOM ) {
+	if ( Font::getVerticalAlign( gravity ) == UI_VALIGN_BOTTOM ) {
 		gravec.push_back( "bottom" );
-	} else if ( VAlignGet( gravity ) == UI_VALIGN_CENTER ) {
+	} else if ( Font::getVerticalAlign( gravity ) == UI_VALIGN_CENTER ) {
 		gravec.push_back( "center_vertical" );
 	} else {
 		gravec.push_back( "top" );

@@ -189,7 +189,7 @@ void UITextInput::resetWaitCursor() {
 void UITextInput::alignFix() {
 	UITextView::alignFix();
 
-	if ( fontHAlignGet( getFlags() ) == UI_HALIGN_LEFT ) {
+	if ( Font::getHorizontalAlign( getFlags() ) == UI_HALIGN_LEFT ) {
 		Uint32 NLPos	= 0;
 		Uint32 LineNum	= mTextBuffer.getCurPosLinePos( NLPos );
 
@@ -236,7 +236,7 @@ void UITextInput::onAutoSize() {
 		setInternalPixelsHeight( PixelDensity::dpToPxI( getSkinSize().getHeight() ) + mRealPadding.Top + mRealPadding.Bottom );
 	}
 
-	if ( mLayoutHeightRules == WRAP_CONTENT ) {
+	if ( mLayoutHeightRule == LayoutSizeRule::WrapContent ) {
 		int minHeight = eemax<int>( mTextCache->getTextHeight(), PixelDensity::dpToPxI( getSkinSize().getHeight() ) );
 		setInternalPixelsHeight( minHeight + mRealPadding.Top + mRealPadding.Bottom );
 	}

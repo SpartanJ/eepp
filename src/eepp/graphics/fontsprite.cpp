@@ -20,7 +20,7 @@ FontSprite * FontSprite::New(const std::string FontName, const std::string & fil
 }
 
 FontSprite::FontSprite( const std::string FontName ) :
-	Font( FONT_TYPE_SPRITE, FontName ),
+	Font( FontType::Sprite, FontName ),
 	mInfo(),
 	mFontSize(0)
 {}

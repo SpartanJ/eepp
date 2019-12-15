@@ -6,18 +6,18 @@
 namespace EE { namespace UI {
 
 UISlider * UISlider::New() {
-	return eeNew( UISlider, ( UI_VERTICAL ) );
+	return eeNew( UISlider, ( UIOrientation::Vertical ) );
 }
 
 UISlider * UISlider::NewVertical() {
-	return eeNew( UISlider, ( UI_VERTICAL ) );
+	return eeNew( UISlider, ( UIOrientation::Vertical ) );
 }
 
 UISlider * UISlider::NewHorizontal() {
-	return eeNew( UISlider, ( UI_HORIZONTAL ) );
+	return eeNew( UISlider, ( UIOrientation::Horizontal ) );
 }
 
-UISlider::UISlider( const UI_ORIENTATION& orientation ) :
+UISlider::UISlider( const UIOrientation& orientation ) :
 	UIWidget( "slider" ),
 	mOrientation( orientation ),
 	mAllowHalfSliderOut( false ),
@@ -33,7 +33,7 @@ UISlider::UISlider( const UI_ORIENTATION& orientation ) :
 {
 	Sizef bgSize;
 
-	if ( UI_HORIZONTAL == mOrientation )
+	if ( UIOrientation::Horizontal == mOrientation )
 		bgSize = Sizef( getSize().getWidth() - 16, 8 );
 	else
 		bgSize = Sizef( 8, getSize().getHeight() - 16 );
@@ -56,7 +56,7 @@ UISlider::UISlider( const UI_ORIENTATION& orientation ) :
 		fixSliderPos();
 	} );
 
-	if ( UI_HORIZONTAL == mOrientation )
+	if ( UIOrientation::Horizontal == mOrientation )
 		mSlider->centerVertical();
 	else
 		mSlider->centerHorizontal();
@@ -78,7 +78,7 @@ bool UISlider::isType( const Uint32& type ) const {
 void UISlider::setTheme( UITheme * Theme ) {
 	UIWidget::setTheme( Theme );
 
-	if ( UI_HORIZONTAL == mOrientation ) {
+	if ( UIOrientation::Horizontal == mOrientation ) {
 		setThemeSkin( Theme, "hslider" );
 
 		mBackSlider->setThemeSkin( Theme, "hslider_bg" );
@@ -116,7 +116,7 @@ void UISlider::adjustChilds() {
 		} else {
 			Float percent = ( mPageStep / ( mMaxValue - mMinValue ) );
 
-			if ( UI_HORIZONTAL == mOrientation ) {
+			if ( UIOrientation::Horizontal == mOrientation ) {
 				Float size = eemax( ( (Float)getSize().getWidth() * percent ), tSkin->getSize().getWidth() );
 
 				mSlider->setSize( size, tSkin->getSize().getHeight() );
@@ -127,7 +127,7 @@ void UISlider::adjustChilds() {
 			}
 		}
 
-		if ( UI_HORIZONTAL == mOrientation ) {
+		if ( UIOrientation::Horizontal == mOrientation ) {
 			mSlider->centerVertical();
 		} else {
 			mSlider->centerHorizontal();
@@ -137,7 +137,7 @@ void UISlider::adjustChilds() {
 	tSkin = mBackSlider->getSkin();
 
 	if ( NULL != tSkin ) {
-		if ( UI_HORIZONTAL == mOrientation ) {
+		if ( UIOrientation::Horizontal == mOrientation ) {
 			Float Height;
 
 			if ( mExpandBackground )
@@ -173,7 +173,7 @@ void UISlider::fixSliderPos() {
 	if ( !mOnPosChange ) {
 		mOnPosChange = true;
 
-		if ( UI_HORIZONTAL == mOrientation ) {
+		if ( UIOrientation::Horizontal == mOrientation ) {
 			mSlider->setPosition( mSlider->getPosition().x, 0 );
 
 			if ( mSlider->getPosition().x < mPadding.Left )
@@ -224,7 +224,7 @@ void UISlider::adjustSliderPos() {
 	Float Percent = ( mValue - mMinValue ) / ( mMaxValue - mMinValue );
 	mOnPosChange = true;
 
-	if ( UI_HORIZONTAL == mOrientation ) {
+	if ( UIOrientation::Horizontal == mOrientation ) {
 		if ( mAllowHalfSliderOut )
 			mSlider->setPosition( mPadding.Left + (Int32)( (Float)mBackSlider->getSize().getWidth() * Percent ), mSlider->getPosition().y );
 		else
@@ -300,7 +300,7 @@ const Float& UISlider::getClickStep() const {
 }
 
 bool UISlider::isVertical() const {
-	return mOrientation == UI_VERTICAL;
+	return mOrientation == UIOrientation::Vertical;
 }
 
 Uint32 UISlider::onKeyDown( const KeyEvent &Event ) {
@@ -333,7 +333,7 @@ void UISlider::manageClick( const Uint32& Flags ) {
 		mSlider->worldToNode( ControlPos );
 
 		if ( Flags & EE_BUTTON_LMASK && !mSlider->isMouseOver()  ) {
-			if ( UI_HORIZONTAL == mOrientation ) {
+			if ( UIOrientation::Horizontal == mOrientation ) {
 				if ( ControlPos.x < 0 )
 					setValue( mValue - mClickStep );
 				else
@@ -353,11 +353,11 @@ void UISlider::manageClick( const Uint32& Flags ) {
 	}
 }
 
-UI_ORIENTATION UISlider::getOrientation() const {
+UIOrientation UISlider::getOrientation() const {
 	return mOrientation;
 }
 
-UISlider * UISlider::setOrientation( const UI_ORIENTATION & orientation ) {
+UISlider * UISlider::setOrientation( const UIOrientation & orientation ) {
 	if ( orientation != mOrientation ) {
 		mOrientation = orientation;
 
@@ -441,7 +441,7 @@ std::string UISlider::getPropertyString( const PropertyDefinition* propertyDef )
 
 	switch ( propertyDef->getPropertyId() ) {
 		case PropertyId::Orientation:
-			return getOrientation() == UI_HORIZONTAL ? "horizontal" : "vertical";
+			return getOrientation() == UIOrientation::Horizontal ? "horizontal" : "vertical";
 		case PropertyId::MinValue:
 			return String::fromFloat( getMinValue() );
 		case PropertyId::MaxValue:
@@ -471,9 +471,9 @@ bool UISlider::applyProperty( const StyleSheetProperty& attribute ) {
 			String::toLowerInPlace( val );
 
 			if ( "horizontal" == val )
-				setOrientation( UI_HORIZONTAL );
+				setOrientation( UIOrientation::Horizontal );
 			else if ( "vertical" == val )
-				setOrientation( UI_VERTICAL );
+				setOrientation( UIOrientation::Vertical );
 			break;
 		}
 		case PropertyId::MinValue:
@@ -511,16 +511,16 @@ Sizef UISlider::getMinimumSize() {
 }
 
 void UISlider::onAutoSize() {
-	if ( mLayoutWidthRules == WRAP_CONTENT || mLayoutHeightRules == WRAP_CONTENT ) {
+	if ( mLayoutWidthRule == LayoutSizeRule::WrapContent || mLayoutHeightRule == LayoutSizeRule::WrapContent ) {
 		Sizef total( getMinimumSize() );
 
 		total = PixelDensity::dpToPx( total );
 
-		if ( mLayoutWidthRules == WRAP_CONTENT ) {
+		if ( mLayoutWidthRule == LayoutSizeRule::WrapContent ) {
 			setInternalPixelsWidth( total.getWidth() );
 		}
 
-		if ( mLayoutHeightRules == WRAP_CONTENT ) {
+		if ( mLayoutHeightRule == LayoutSizeRule::WrapContent ) {
 			setInternalPixelsHeight( total.getHeight() );
 		}
 

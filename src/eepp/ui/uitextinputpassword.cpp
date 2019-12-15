@@ -67,7 +67,7 @@ void UITextInputPassword::draw() {
 }
 
 void UITextInputPassword::alignFix() {
-	switch ( fontHAlignGet( getFlags() ) ) {
+	switch ( Font::getHorizontalAlign( getFlags() ) ) {
 		case UI_HALIGN_CENTER:
 			mRealAlignOffset.x = (Float)( (Int32)( mSize.x - mPassCache->getTextWidth() ) / 2 );
 			break;
@@ -79,7 +79,7 @@ void UITextInputPassword::alignFix() {
 			break;
 	}
 
-	switch ( fontVAlignGet( getFlags() ) ) {
+	switch ( Font::getVerticalAlign( getFlags() ) ) {
 		case UI_VALIGN_CENTER:
 			mRealAlignOffset.y = (Float)( ( (Int32)( mSize.y - mPassCache->getTextHeight() ) ) / 2 ) - 1;
 			break;
@@ -91,7 +91,7 @@ void UITextInputPassword::alignFix() {
 			break;
 	}
 
-	if ( fontHAlignGet( getFlags() ) == UI_HALIGN_LEFT ) {
+	if ( Font::getHorizontalAlign( getFlags() ) == UI_HALIGN_LEFT ) {
 		Uint32 NLPos	= 0;
 		Uint32 LineNum	= mTextBuffer.getCurPosLinePos( NLPos );
 

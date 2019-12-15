@@ -28,7 +28,7 @@ UIPushButton::UIPushButton( const std::string& tag ) :
 
 	mIcon = UIImage::NewWithTag( "pushbutton::image" );
 	mIcon->setParent( this );
-	mIcon->setLayoutSizeRules( FIXED, FIXED );
+	mIcon->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::Fixed );
 	mIcon->setFlags( GfxFlags );
 	mIcon->unsetFlags( UI_AUTO_SIZE );
 	mIcon->setScaleType( UIScaleType::FitInside );
@@ -41,7 +41,7 @@ UIPushButton::UIPushButton( const std::string& tag ) :
 	mIcon->setEnabled( false );
 
 	mTextBox = UITextView::NewWithTag( "pushbutton::text" );
-	mTextBox->setLayoutSizeRules( WRAP_CONTENT, WRAP_CONTENT );
+	mTextBox->setLayoutSizeRules( LayoutSizeRule::WrapContent, LayoutSizeRule::WrapContent );
 	mTextBox->setParent( this );
 	mTextBox->setVisible( true );
 	mTextBox->setEnabled( false );
@@ -75,13 +75,13 @@ void UIPushButton::onAutoSize() {
 		setInternalHeight( getSkinSize().getHeight() );
 	}
 
-	if ( ( mFlags & UI_AUTO_SIZE ) && NULL != getSkin() && ( 0 == getSize().getHeight() || mLayoutHeightRules == WRAP_CONTENT ) ) {
+	if ( ( mFlags & UI_AUTO_SIZE ) && NULL != getSkin() && ( 0 == getSize().getHeight() || mLayoutHeightRule == LayoutSizeRule::WrapContent ) ) {
 		Float h = eemax<Float>( PixelDensity::dpToPx( getSkinSize().getHeight() ), mTextBox->getTextHeight() );
 
 		setInternalPixelsHeight( h + mRealPadding.Top + mRealPadding.Bottom );
 	}
 
-	if ( ( mFlags & UI_AUTO_SIZE ) || mLayoutWidthRules == WRAP_CONTENT ) {
+	if ( ( mFlags & UI_AUTO_SIZE ) || mLayoutWidthRule == LayoutSizeRule::WrapContent ) {
 		Int32 txtW = NULL != mTextBox ? mTextBox->getTextWidth() : 0;
 
 		Int32 minSize = txtW +
@@ -121,7 +121,7 @@ void UIPushButton::onSizeChange() {
 	if ( NULL != mTextBox ) {
 		Vector2f position;
 
-		switch ( fontVAlignGet( getFlags() ) ) {
+		switch ( Font::getVerticalAlign( getFlags() ) ) {
 			case UI_VALIGN_CENTER:
 				position.y = ( mSize.getHeight() - mTextBox->getPixelsSize().getHeight() ) / 2;
 				break;
@@ -133,7 +133,7 @@ void UIPushButton::onSizeChange() {
 				break;
 		}
 
-		switch ( fontHAlignGet( getFlags() ) ) {
+		switch ( Font::getHorizontalAlign( getFlags() ) ) {
 			case UI_HALIGN_RIGHT:
 				position.x = mSize.getWidth() - mTextBox->getPixelsSize().getWidth() - autoPadding.Right;
 				break;

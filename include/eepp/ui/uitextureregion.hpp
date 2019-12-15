@@ -39,15 +39,15 @@ class EE_API UITextureRegion : public UIWidget {
 
 		const Vector2f& getAlignOffset() const;
 
-		Uint32 getScaleType() const;
+		const UIScaleType& getScaleType() const;
 
-		UITextureRegion * setScaleType(const Uint32 & scaleType);
+		UITextureRegion * setScaleType(const UIScaleType& scaleType);
 
 		virtual bool applyProperty( const StyleSheetProperty& attribute );
 
 		virtual std::string getPropertyString(const PropertyDefinition* propertyDef);
 	protected:
-		Uint32					mScaleType;
+		UIScaleType					mScaleType;
 		Graphics::TextureRegion * 	mTextureRegion;
 		Color					mColor;
 		RenderMode				mRender;

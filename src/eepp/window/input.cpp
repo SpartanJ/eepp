@@ -238,19 +238,19 @@ void Input::resetFingerWasDown() {
 	}
 }
 
-bool Input::isKeyDown( const EE_KEY& Key ) {
+bool Input::isKeyDown( const KeyTable& Key ) {
 	return 0 != BitOp::readBitKey( &mKeysDown[ Key / 8 ], Key % 8 );
 }
 
-bool Input::isKeyUp( const EE_KEY& Key ) {
+bool Input::isKeyUp( const KeyTable& Key ) {
 	return 0 != BitOp::readBitKey( &mKeysUp[ Key / 8 ], Key % 8 );
 }
 
-void Input::injectKeyDown( const EE_KEY& Key ) {
+void Input::injectKeyDown( const KeyTable& Key ) {
 	BitOp::writeBitKey( &mKeysDown	[ Key / 8 ], Key % 8, 1 );
 }
 
-void Input::injectKeyUp( const EE_KEY& Key ) {
+void Input::injectKeyUp( const KeyTable& Key ) {
 	BitOp::writeBitKey( &mKeysUp	[ Key / 8 ], Key % 8, 1 );
 }
 

@@ -711,7 +711,7 @@ void Text::ensureGeometryUpdate() {
 	Float centerDiffX = 0;
 	unsigned int Line = 0;
 
-	switch ( fontHAlignGet( mAlign ) ) {
+	switch ( Font::getHorizontalAlign( mAlign ) ) {
 		case TEXT_ALIGN_CENTER:
 			centerDiffX = (Float)( (Int32)( ( mCachedWidth - mLinesWidth[ Line ] ) * 0.5f ) );
 			Line++;
@@ -746,7 +746,7 @@ void Text::ensureGeometryUpdate() {
 		}
 
 		if ( curChar == L'\n' ) {
-			switch ( fontHAlignGet( mAlign ) ) {
+			switch ( Font::getHorizontalAlign( mAlign ) ) {
 				case TEXT_ALIGN_CENTER:
 					centerDiffX = (Float)( (Int32)( ( mCachedWidth - mLinesWidth[ Line ] ) * 0.5f ) );
 					break;

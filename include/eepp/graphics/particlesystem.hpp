@@ -13,27 +13,27 @@ namespace EE { namespace Graphics {
 class Texture;
 
 /** @enum EE_PARTICLE_EFFECT Predefined effects for the particle system. Use Callback when wan't to create a new effect, o set the parameters using NoFx, but it's much more limited. */
-enum EE_PARTICLE_EFFECT {
-	PSE_Nofx = 0, //!< User defined effect
-	PSE_BlueBall,
-	PSE_Fire,
-	PSE_Smoke,
-	PSE_Snow,
-	PSE_MagicFire,
-	PSE_LevelUp,
-	PSE_LevelUp2,
-	PSE_Heal,
-	PSE_WormHole,
-	PSE_Twirl,
-	PSE_Flower,
-	PSE_Galaxy,
-	PSE_Heart,
-	PSE_BlueExplosion,
-	PSE_GP,
-	PSE_BTwirl,
-	PSE_BT,
-	PSE_Atomic,
-	PSE_Callback //!< Callback defined effect. Set the callback before creating the effect.
+enum class ParticleEffect : Uint32 {
+	Nofx = 0, //!< User defined effect
+	BlueBall,
+	Fire,
+	Smoke,
+	Snow,
+	MagicFire,
+	LevelUp,
+	LevelUp2,
+	Heal,
+	WormHole,
+	Twirl,
+	Flower,
+	Galaxy,
+	Heart,
+	BlueExplosion,
+	GP,
+	BTwirl,
+	BT,
+	Atomic,
+	Callback //!< Callback defined effect. Set the callback before creating the effect.
 };
 
 /** @brief Basic but powerfull Particle System */
@@ -60,7 +60,7 @@ class EE_API ParticleSystem {
 		* @param Acc The acceleration of the particle (used for NoFx)
 		*/
 		void create(
-			const EE_PARTICLE_EFFECT& Effect,
+			const ParticleEffect& Effect,
 			const Uint32& NumParticles,
 			const Uint32& TexId,
 			const Vector2f& Pos,
@@ -163,7 +163,7 @@ class EE_API ParticleSystem {
 		Uint32				mPLeft;
 		Uint32				mLoops;
 
-		EE_PARTICLE_EFFECT	mEffect;
+		ParticleEffect	mEffect;
 		BlendMode	mBlend;
 
 		ColorAf			mColor;

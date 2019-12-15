@@ -221,11 +221,11 @@ It should look really familiar to any Android developer. This is a window with t
 How does it look with real code?
 
 ```c++
-UITextView::New()->setText(  "Text  on  test  1"  )
-				 ->setCharacterSize(  12  )
-				 ->setLayoutMargin(  Rect(  10,  10,  10,  10  )  )
-				 ->setLayoutSizeRules(  WRAP_CONTENT,  WRAP_CONTENT  )
-				 ->setParent(  layout  );
+UITextView::New()->setText( "Text  on  test  1" )
+                 ->setCharacterSize( 12 )
+                 ->setLayoutMargin( Rect( 10, 10, 10, 10 ) )
+                 ->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )
+                 ->setParent( layout );
 ```
 
 **How can i learn to use the library?**

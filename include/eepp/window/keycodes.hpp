@@ -4,7 +4,7 @@
 namespace EE { namespace Window {
 
 /** @enum EE_KEY Enum of keyboard keys. */
-enum EE_KEY {
+enum KeyTable {
 	KEY_UNKNOWN			=	0,
 	KEY_FIRST			=	0,
 	KEY_BACKSPACE		=	8,
@@ -181,7 +181,7 @@ enum EE_KEY {
 	KEY_WORLD_93		=	253,
 	KEY_WORLD_94		=	254,
 	KEY_WORLD_95		=	255,
-	
+
 	/* Numeric keypad */
 	KEY_KP0				=	256,
 	KEY_KP1				=	257,
@@ -245,7 +245,7 @@ enum EE_KEY {
 	KEY_RSUPER			=	312,	///< Right "Windows" key
 	KEY_MODE			=	313,	///< "Alt Gr" key
 	KEY_COMPOSE			=	314,	///< Multi-key compose key
-	
+
 	/* Miscellaneous function keys */
 	KEY_HELP			=	315,
 	KEY_PRINT			=	316,
@@ -255,12 +255,12 @@ enum EE_KEY {
 	KEY_POWER			=	320,	///< Power Macintosh power key
 	KEY_EURO			=	321,	///< Some european keyboards
 	KEY_UNDO			=	322,	///< Atari keyboard has Undo
-	
+
 	KEY_LAST
 };
 
 /** @enum EE_KEY_MOD Keyboard Modes */
-enum EE_KEY_MOD {
+enum KeyModTable {
 	KEYMOD_NONE			=	0x0000,
 	KEYMOD_LSHIFT		=	0x0001,
 	KEYMOD_RSHIFT		=	0x0002,
@@ -283,7 +283,7 @@ enum EE_KEY_MOD {
 #define KEYMOD_META		(	KEYMOD_LMETA	| KEYMOD_RMETA		)
 
 /** @enum EE_BUTTON Mouse buttons */
-enum EE_BUTTON {
+enum MouseButton {
 	EE_BUTTON_LEFT		= 1,
 	EE_BUTTON_MIDDLE	= 2,
 	EE_BUTTON_RIGHT		= 3,
@@ -296,7 +296,7 @@ enum EE_BUTTON {
 #define EE_BUTTON_MASK(X)		( 1 << ( ( X ) - 1 ) )
 
 /** @enum EE_BUTTON_MASKS Mouse buttons mask, to check the current state of every button. */
-enum EE_BUTTON_MASKS {
+enum MouseButtonsMask {
 	EE_BUTTON_LMASK		= EE_BUTTON_MASK( EE_BUTTON_LEFT ),
 	EE_BUTTON_MMASK		= EE_BUTTON_MASK( EE_BUTTON_MIDDLE ),
 	EE_BUTTON_RMASK		= EE_BUTTON_MASK( EE_BUTTON_RIGHT ),
@@ -311,4 +311,4 @@ enum EE_BUTTON_MASKS {
 
 }}
 
-#endif 
+#endif

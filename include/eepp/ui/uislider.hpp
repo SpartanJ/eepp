@@ -13,7 +13,7 @@ class EE_API UISlider : public UIWidget {
 
 		static UISlider * NewHorizontal();
 
-		UISlider( const UI_ORIENTATION& orientation = UI_HORIZONTAL );
+		UISlider( const UIOrientation& orientation = UIOrientation::Horizontal );
 
 		virtual ~UISlider();
 
@@ -49,9 +49,9 @@ class EE_API UISlider : public UIWidget {
 
 		void manageClick( const Uint32& flags );
 
-		UI_ORIENTATION getOrientation() const;
+		UIOrientation getOrientation() const;
 
-		UISlider * setOrientation( const UI_ORIENTATION & orientation );
+		UISlider * setOrientation( const UIOrientation & orientation );
 
 		bool getAllowHalfSliderOut() const;
 
@@ -71,7 +71,7 @@ class EE_API UISlider : public UIWidget {
 
 		Sizef getMinimumSize();
 	protected:
-		UI_ORIENTATION		mOrientation;
+		UIOrientation		mOrientation;
 		bool				mAllowHalfSliderOut;
 		bool				mExpandBackground;
 		UINode *			mBackSlider;

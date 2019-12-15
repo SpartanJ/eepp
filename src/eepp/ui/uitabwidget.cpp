@@ -283,7 +283,7 @@ void UITabWidget::setTabContainerSize() {
 
 	mTabContainer->setPixelsSize( s, PixelDensity::dpToPx( mStyleConfig.TabWidgetHeight ) );
 
-	switch ( HAlignGet( mFlags ) )
+	switch ( Font::getHorizontalAlign( mFlags ) )
 	{
 		case UI_HALIGN_LEFT:
 			mTabContainer->setPosition( 0, 0 );
@@ -300,7 +300,7 @@ void UITabWidget::setTabContainerSize() {
 void UITabWidget::posTabs() {
 	Uint32 w	= 0;
 	Int32 h	= 0;
-	Int32 VA	= VAlignGet( mFlags );
+	Int32 VA	= Font::getVerticalAlign( mFlags );
 
 	for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
 		switch ( VA )
@@ -360,7 +360,7 @@ UITab * UITabWidget::createTab( const String& Text, UINode * CtrlOwned, Drawable
 	if ( CtrlOwned->isWidget() ) {
 		UIWidget * widgetOwned = static_cast<UIWidget*>( CtrlOwned );
 
-		widgetOwned->setLayoutSizeRules( FIXED, FIXED );
+		widgetOwned->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::Fixed );
 	}
 
 	return tCtrl;

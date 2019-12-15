@@ -11,8 +11,8 @@ UIScrollView * UIScrollView::New() {
 UIScrollView::UIScrollView() :
 	UITouchDragableWidget( "scrollview" ),
 	mViewType( Exclusive ),
-	mVScrollMode( UI_SCROLLBAR_AUTO ),
-	mHScrollMode( UI_SCROLLBAR_AUTO ),
+	mVScrollMode( ScrollBarMode::Auto ),
+	mHScrollMode( ScrollBarMode::Auto ),
 	mVScroll( UIScrollBar::NewVertical() ),
 	mHScroll( UIScrollBar::NewHorizontal() ),
 	mContainer( UIWidget::NewWithTag( "scrollview::container" ) ),
@@ -95,25 +95,25 @@ void UIScrollView::onPaddingChange() {
 	UIWidget::onPaddingChange();
 }
 
-void UIScrollView::setVerticalScrollMode( const UI_SCROLLBAR_MODE& Mode ) {
+void UIScrollView::setVerticalScrollMode( const ScrollBarMode& Mode ) {
 	if ( Mode != mVScrollMode ) {
 		mVScrollMode = Mode;
 		containerUpdate();
 	}
 }
 
-const UI_SCROLLBAR_MODE& UIScrollView::getVerticalScrollMode() {
+const ScrollBarMode& UIScrollView::getVerticalScrollMode() {
 	return mVScrollMode;
 }
 
-void UIScrollView::setHorizontalScrollMode( const UI_SCROLLBAR_MODE& Mode ) {
+void UIScrollView::setHorizontalScrollMode( const ScrollBarMode& Mode ) {
 	if ( Mode != mHScrollMode ) {
 		mHScrollMode = Mode;
 		containerUpdate();
 	}
 }
 
-const UI_SCROLLBAR_MODE& UIScrollView::getHorizontalScrollMode() {
+const ScrollBarMode& UIScrollView::getHorizontalScrollMode() {
 	return mHScrollMode;
 }
 
@@ -144,10 +144,10 @@ void UIScrollView::containerUpdate() {
 	if ( NULL == mScrollView )
 		return;
 
-	if ( UI_SCROLLBAR_ALWAYS_ON == mHScrollMode ) {
+	if ( ScrollBarMode::AlwaysOn == mHScrollMode ) {
 		mHScroll->setVisible( true );
 		mHScroll->setEnabled( true );
-	} else if ( UI_SCROLLBAR_ALWAYS_OFF == mHScrollMode ) {
+	} else if ( ScrollBarMode::AlwaysOff == mHScrollMode ) {
 		mHScroll->setVisible( false );
 		mHScroll->setEnabled( false );
 	} else {
@@ -157,10 +157,10 @@ void UIScrollView::containerUpdate() {
 		mHScroll->setEnabled( visible );
 	}
 
-	if ( UI_SCROLLBAR_ALWAYS_ON == mVScrollMode ) {
+	if ( ScrollBarMode::AlwaysOn == mVScrollMode ) {
 		mVScroll->setVisible( true );
 		mVScroll->setEnabled( true );
-	} else if ( UI_SCROLLBAR_ALWAYS_OFF == mVScrollMode ) {
+	} else if ( ScrollBarMode::AlwaysOff == mVScrollMode ) {
 		mVScroll->setVisible( false );
 		mVScroll->setEnabled( false );
 	} else {
@@ -246,12 +246,12 @@ std::string UIScrollView::getPropertyString( const PropertyDefinition* propertyD
 
 	switch ( propertyDef->getPropertyId() ) {
 		case PropertyId::VScrollMode:
-			return getVerticalScrollMode() == UI_SCROLLBAR_AUTO ? "auto" : (
-				getVerticalScrollMode() == UI_SCROLLBAR_ALWAYS_ON ? "on" : "off"
+			return getVerticalScrollMode() == ScrollBarMode::Auto ? "auto" : (
+				getVerticalScrollMode() == ScrollBarMode::AlwaysOn ? "on" : "off"
 			);
 		case PropertyId::HScrollMode:
-			return getHorizontalScrollMode() == UI_SCROLLBAR_AUTO ? "auto" : (
-				getHorizontalScrollMode() == UI_SCROLLBAR_ALWAYS_ON ? "on" : "off"
+			return getHorizontalScrollMode() == ScrollBarMode::Auto ? "auto" : (
+				getHorizontalScrollMode() == ScrollBarMode::AlwaysOn ? "on" : "off"
 			);
 		case PropertyId::ScrollBarType:
 			return mVScroll->getScrollBarType() == UIScrollBar::NoButtons ? "no-buttons" :
@@ -280,9 +280,9 @@ bool UIScrollView::applyProperty( const StyleSheetProperty& attribute ) {
 			std::string val( attribute.asString() );
 			String::toLowerInPlace( val );
 
-			if ( "on" == val ) setVerticalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
-			else if ( "off" == val ) setVerticalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
-			else if ( "auto" == val ) setVerticalScrollMode( UI_SCROLLBAR_AUTO );
+			if ( "on" == val ) setVerticalScrollMode( ScrollBarMode::AlwaysOn );
+			else if ( "off" == val ) setVerticalScrollMode( ScrollBarMode::AlwaysOn );
+			else if ( "auto" == val ) setVerticalScrollMode( ScrollBarMode::Auto );
 			break;
 		}
 		case PropertyId::HScrollMode:
@@ -290,9 +290,9 @@ bool UIScrollView::applyProperty( const StyleSheetProperty& attribute ) {
 			std::string val( attribute.asString() );
 			String::toLowerInPlace( val );
 
-			if ( "on" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
-			else if ( "off" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
-			else if ( "auto" == val ) setHorizontalScrollMode( UI_SCROLLBAR_AUTO );
+			if ( "on" == val ) setHorizontalScrollMode( ScrollBarMode::AlwaysOn );
+			else if ( "off" == val ) setHorizontalScrollMode( ScrollBarMode::AlwaysOn );
+			else if ( "auto" == val ) setHorizontalScrollMode( ScrollBarMode::Auto );
 			break;
 		}
 		case PropertyId::ScrollBarType:

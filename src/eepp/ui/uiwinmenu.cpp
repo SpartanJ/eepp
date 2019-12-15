@@ -216,7 +216,7 @@ void UIWinMenu::refreshButtons() {
 			if ( NULL != skin ) {
 				th = skin->getSize( UIState::StateFlagSelected ).getHeight();
 
-				switch ( VAlignGet( getFlags() ) ) {
+				switch ( Font::getVerticalAlign( getFlags() ) ) {
 					case UI_VALIGN_CENTER:
 						ycenter = ( h - th ) / 2;
 						break;
@@ -235,7 +235,7 @@ void UIWinMenu::refreshButtons() {
 		UISelectButton * pbut	= it->first;
 		UITextView * tbox		= pbut->getTextBox();
 
-		pbut->setLayoutSizeRules( FIXED, FIXED );
+		pbut->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::Fixed );
 		pbut->setPixelsSize( tbox->getTextWidth() + PixelDensity::dpToPx( mStyleConfig.ButtonMargin ), getPixelsSize().getHeight() );
 		pbut->setPosition( xpos, ycenter );
 

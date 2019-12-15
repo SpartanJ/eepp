@@ -12,31 +12,31 @@ using namespace EE::Math;
 
 namespace EE { namespace Graphics {
 
-enum EE_PIXEL_DENSITY {
-	PD_MDPI = 1,	//!< 1dp = 1px
-	PD_HDPI = 2,	//!< 1dp = 1.5px
-	PD_XHDPI = 3,	//!< 1dp = 2px
-	PD_XXHDPI = 4,	//!< 1dp = 3px
-	PD_XXXHDPI = 5	//!< 1dp = 4px
+enum class PixelDensitySize : Uint32 {
+	MDPI = 1,	//!< 1dp = 1px
+	HDPI = 2,	//!< 1dp = 1.5px
+	XHDPI = 3,	//!< 1dp = 2px
+	XXHDPI = 4,	//!< 1dp = 3px
+	XXXHDPI = 5	//!< 1dp = 4px
 };
 
 class EE_API PixelDensity {
 	public:
-		static Float toFloat( EE_PIXEL_DENSITY pd );
+		static Float toFloat( PixelDensitySize pd );
 
 		static Float toFloat( Uint32 pd );
 
-		static EE_PIXEL_DENSITY fromString( std::string str );
+		static PixelDensitySize fromString( std::string str );
 
-		static EE_PIXEL_DENSITY fromString( String str );
+		static PixelDensitySize fromString( String str );
 
-		static EE_PIXEL_DENSITY fromDPI( Float dpi );
+		static PixelDensitySize fromDPI( Float dpi );
 
 		static const Float& getPixelDensity();
 
 		static void setPixelDensity( const Float& pixelDensity );
 
-		static void setPixelDensity( const EE_PIXEL_DENSITY& pixelDensity );
+		static void setPixelDensity( const PixelDensitySize& pixelDensity );
 
 		static Float pxToDp( Float px );
 

@@ -91,11 +91,11 @@ void UICheckBox::onAutoSize() {
 		mInactiveButton->centerVertical();
 	}
 
-	if ( mLayoutWidthRules == WRAP_CONTENT ) {
+	if ( mLayoutWidthRule == LayoutSizeRule::WrapContent ) {
 		setInternalPixelsWidth( (int)mTextCache->getTextWidth() + mRealPadding.Left + mRealPadding.Right + mActiveButton->getPixelsSize().getWidth() + mTextSeparation );
 	}
 
-	if ( mLayoutHeightRules == WRAP_CONTENT ) {
+	if ( mLayoutHeightRule == LayoutSizeRule::WrapContent ) {
 		setInternalPixelsHeight( (int)mTextCache->getTextHeight() + mRealPadding.Top + mRealPadding.Bottom );
 
 		mActiveButton->centerVertical();
@@ -162,7 +162,7 @@ void UICheckBox::onPaddingChange() {
 void UICheckBox::alignFix() {
 	UITextView::alignFix();
 
-	switch ( fontHAlignGet( getFlags() ) ) {
+	switch ( Font::getHorizontalAlign( getFlags() ) ) {
 		case UI_HALIGN_CENTER:
 			mRealAlignOffset.x = (Float)( (Int32)( ( mSize.x - mRealPadding.Left - mRealPadding.Right - mTextCache->getTextWidth() - mActiveButton->getPixelsSize().getWidth() + PixelDensity::dpToPx( mTextSeparation ) ) / 2.f ) ) + mActiveButton->getPixelsSize().getWidth() + PixelDensity::dpToPx( mTextSeparation );
 			break;

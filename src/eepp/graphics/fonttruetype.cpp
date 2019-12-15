@@ -45,7 +45,7 @@ FontTrueType * FontTrueType::New( const std::string& FontName, const std::string
 }
 
 FontTrueType::FontTrueType( const std::string& FontName ) :
-	Font( FONT_TYPE_TTF, FontName ),
+	Font( FontType::TTF, FontName ),
 	mLibrary  (NULL),
 	mFace     (NULL),
 	mStreamRec(NULL),
@@ -676,7 +676,7 @@ bool FontTrueType::setCurrentSize(unsigned int characterSize) const {
 FontTrueType::Page::Page() :
 	texture(NULL),
 	nextRow(3)
-{	
+{
 	// Make sure that the texture is initialized by default
 	Image image;
 	image.create(128, 128, 4);

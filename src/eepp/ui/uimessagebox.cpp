@@ -19,20 +19,20 @@ UIMessageBox::UIMessageBox( UIMessageBox::Type type , String message ) :
 	updateWinFlags();
 
 	UILinearLayout * rlay = UILinearLayout::New();
-	rlay->setLayoutSizeRules( WRAP_CONTENT, WRAP_CONTENT )->setParent( mContainer );
+	rlay->setLayoutSizeRules( LayoutSizeRule::WrapContent, LayoutSizeRule::WrapContent )->setParent( mContainer );
 
 	UILinearLayout * vlay = UILinearLayout::NewVertical();
-	vlay->setLayoutSizeRules( WRAP_CONTENT, WRAP_CONTENT )
+	vlay->setLayoutSizeRules( LayoutSizeRule::WrapContent, LayoutSizeRule::WrapContent )
 		->setLayoutMargin( Rect( 8, 8, 8, 8) )->setParent( rlay );
 
 	mTextBox = UITextView::New();
 	mTextBox->setText( message )
-			->setLayoutSizeRules( WRAP_CONTENT, WRAP_CONTENT )
+			->setLayoutSizeRules( LayoutSizeRule::WrapContent, LayoutSizeRule::WrapContent )
 			->setParent( vlay );
 
 	UILinearLayout * hlay = UILinearLayout::NewHorizontal();
 	hlay->setLayoutMargin( Rect( 0, 8, 0, 0 ) )
-		->setLayoutSizeRules( WRAP_CONTENT, WRAP_CONTENT )
+		->setLayoutSizeRules( LayoutSizeRule::WrapContent, LayoutSizeRule::WrapContent )
 		->setLayoutGravity( UI_HALIGN_RIGHT | UI_VALIGN_CENTER )
 		->setParent( vlay );
 

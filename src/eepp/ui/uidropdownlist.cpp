@@ -76,7 +76,7 @@ void UIDropDownList::setFriendControl( UINode * friendCtrl ) {
 }
 
 void UIDropDownList::onAutoSize() {
-	if ( mLayoutHeightRules == WRAP_CONTENT ) {
+	if ( mLayoutHeightRule == LayoutSizeRule::WrapContent ) {
 		setInternalPixelsHeight( PixelDensity::dpToPxI( getSkinSize().getHeight() ) + mRealPadding.Top + mRealPadding.Bottom );
 	} else if ( ( mFlags & UI_AUTO_SIZE || 0 == getSize().getHeight() ) && 0 != getSkinSize().getHeight() ) {
 		setInternalHeight( getSkinSize().getHeight() );

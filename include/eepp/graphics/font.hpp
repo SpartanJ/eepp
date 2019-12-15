@@ -2,7 +2,6 @@
 #define EE_GRAPHICSCFONT_H
 
 #include <eepp/graphics/base.hpp>
-#include <eepp/graphics/fonthelper.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 
 namespace EE { namespace Graphics {
@@ -16,21 +15,48 @@ class EE_API Glyph {
 		Rect textureRect; ///< Texture coordinates of the glyph inside the font's texture
 };
 
+enum class FontType {
+	TTF,
+	BMF,
+	Sprite
+};
+
+enum FontHorizontalAlign {
+	TEXT_ALIGN_LEFT		= (0 << 0),
+	TEXT_ALIGN_RIGHT	= (1 << 0),
+	TEXT_ALIGN_CENTER	= (2 << 0),
+	TEXT_HALIGN_MASK	= (3 << 0)
+};
+
+enum FontVerticalAlign {
+	TEXT_ALIGN_TOP		= (0 << 2),
+	TEXT_ALIGN_BOTTOM	= (1 << 2),
+	TEXT_ALIGN_MIDDLE	= (2 << 2),
+	TEXT_VALIGN_MASK	= (3 << 2)
+};
+
 /** @brief Font interface class. */
 class EE_API Font {
 	public:
-		struct Info
-		{
+		struct Info {
 			std::string family; ///< The font family
 		};
+
+		static inline Uint32 getHorizontalAlign( const Uint32& flags ) {
+			return flags & TEXT_HALIGN_MASK;
+		}
+
+		static inline Uint32 getVerticalAlign( const Uint32& flags ) {
+			return flags & TEXT_VALIGN_MASK;
+		}
 
 		virtual ~Font();
 
 		/** @return The current font height */
 		virtual Uint32 getFontHeight( const Uint32& characterSize ) = 0;
 
-		/** @return The type of the instance of the font, can be FONT_TYPE_TTF ( true type font ) or FONT_TYPE_TEX ( texture font ) */
-		const Uint32& getType() const;
+		/** @return The type of the instance of the font */
+		const FontType& getType() const;
 
 		/** @return The font name */
 		const std::string&	getName() const;
@@ -55,11 +81,11 @@ class EE_API Font {
 
 		virtual Texture * getTexture(unsigned int characterSize) const = 0;
 	protected:
-		Uint32 						mType;
+		FontType					mType;
 		std::string					mFontName;
 		Uint32						mFontHash;
 
-		Font( const Uint32& Type, const std::string& setName );
+		Font( const FontType& Type, const std::string& setName );
 };
 
 }}

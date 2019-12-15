@@ -237,9 +237,9 @@ void EETest::createUIThemeTextureAtlas() {
 	std::string Path( MyPath + "ui/" + mThemeName );
 
 	if ( !FileSystem::fileExists( tgpath + EE_TEXTURE_ATLAS_EXTENSION ) ) {
-		EE_PIXEL_DENSITY PD = PD_MDPI;
-		if ( mThemeName.find( "2x" ) != std::string::npos ) PD = PD_XHDPI;
-		else if  ( mThemeName.find( "1.5x" ) != std::string::npos ) PD = PD_HDPI;
+		PixelDensitySize PD = PixelDensitySize::MDPI;
+		if ( mThemeName.find( "2x" ) != std::string::npos ) PD = PixelDensitySize::XHDPI;
+		else if  ( mThemeName.find( "1.5x" ) != std::string::npos ) PD = PixelDensitySize::HDPI;
 
 		TexturePacker tp( 2048, 2048, PD, true, false, 2 );
 		tp.addTexturesPath( Path );
@@ -376,7 +376,7 @@ void EETest::createBaseUI() {
 	sprite->setIsSpriteOwner( true );
 
 	UITextView * Text = UITextView::New();
-	Text->setLayoutSizeRules( FIXED, FIXED )->setHorizontalAlign( UI_HALIGN_RIGHT )->setVerticalAlign( UI_VALIGN_TOP )->setParent( C )->setEnabled( false )->setSize( 320, 240 );
+	Text->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::Fixed )->setHorizontalAlign( UI_HALIGN_RIGHT )->setVerticalAlign( UI_VALIGN_TOP )->setParent( C )->setEnabled( false )->setSize( 320, 240 );
 	Text->setText( "Turn around\nJust Turn Around\nAround!" );
 
 	UITextInput::New()->setParent( C )->setPosition( 20, 216 )->setSize( 200, 0 );
@@ -401,12 +401,12 @@ void EETest::createBaseUI() {
 	RadioButton->setText( "Check Me 2" );
 
 	mSlider = UISlider::New();
-	mSlider->setOrientation( UI_HORIZONTAL )->setParent( C )->setPosition( 220, 80 )->setSize( 80, 24 );
+	mSlider->setOrientation( UIOrientation::Horizontal )->setParent( C )->setPosition( 220, 80 )->setSize( 80, 24 );
 	mSlider->addEventListener( Event::OnValueChange, cb::Make1( this, &EETest::onSliderValueChange ) );
 
-	UISlider::New()->setOrientation( UI_VERTICAL )->setParent( C )->setPosition( 40, 110 )->setSize( 24, 80 );
+	UISlider::New()->setOrientation( UIOrientation::Vertical )->setParent( C )->setPosition( 40, 110 )->setSize( 24, 80 );
 
-	UISlider::New()->setOrientation( UI_HORIZONTAL )->setParent( C )->setPosition( 60, 110 )->setSize( 80, 24 );
+	UISlider::New()->setOrientation( UIOrientation::Horizontal )->setParent( C )->setPosition( 60, 110 )->setSize( 80, 24 );
 
 	UISpinBox::New()->setAllowOnlyNumbers( true )->setParent( C )->setPosition( 80, 150 )->setSize( 80, 24 );
 
@@ -614,14 +614,14 @@ void EETest::createNewUI() {
 	std::vector<String> str = getTestStringArr();
 
 	relLay = UIRelativeLayout::New();
-	relLay->setLayoutSizeRules( MATCH_PARENT, MATCH_PARENT );
+	relLay->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::MatchParent );
 
 	UIWidget * container = UIWidget::New();
 	container->setSize( relLay->getSize() - 32.f );
 
 	UIScrollView * scrollView = UIScrollView::New();
 	scrollView->setTouchDragEnabled( true );
-	scrollView->setLayoutSizeRules( MATCH_PARENT, MATCH_PARENT )->setParent( relLay );
+	scrollView->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::MatchParent )->setParent( relLay );
 	scrollView->getContainer()->addEventListener( Event::MouseClick, cb::Make1( this, &EETest::onMainClick ) );
 	container->setParent( scrollView );
 	container->addEventListener( Event::MouseClick, cb::Make1( this, &EETest::onMainClick ) );
@@ -636,7 +636,7 @@ void EETest::createNewUI() {
 
 	UIRadioButton * ctrl = UIRadioButton::New();
 	ctrl->setId( "happy_radio" );
-	ctrl->setLayoutSizeRules( FIXED, FIXED )->setPosition( 50, 100 )->setSize( 200, 32 )->setParent( container );
+	ctrl->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::Fixed )->setPosition( 50, 100 )->setSize( 200, 32 )->setParent( container );
 	ctrl->setBackgroundColor( 0x33333333 );
 	ctrl->setBorderColor( 0x66666666 );
 	ctrl->setText( "Happy RadioButon :)" );
@@ -644,7 +644,7 @@ void EETest::createNewUI() {
 
 	UICheckBox * cbox = UICheckBox::New();
 	cbox->setId( "happy_check" );
-	cbox->setLayoutSizeRules( FIXED, FIXED )->setPosition( 50, 164 )->setSize( 200, 32 )->setParent( container );
+	cbox->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::Fixed )->setPosition( 50, 164 )->setSize( 200, 32 )->setParent( container );
 	cbox->setBackgroundColor( 0x33333333 );
 	cbox->setBorderColor( 0x66666666 );
 	cbox->setText( "Happy CheckBox :)" );
@@ -663,11 +663,11 @@ void EETest::createNewUI() {
 	gfx->setDrawable( mTheme->getIconByName( "ok" ) );
 
 	UISlider * slider = UISlider::New();
-	slider->setOrientation( UI_HORIZONTAL )->setPosition( 50, 0 )->setSize( 100, 100 )->setParent( container );
+	slider->setOrientation( UIOrientation::Horizontal )->setPosition( 50, 0 )->setSize( 100, 100 )->setParent( container );
 	slider->setAllowHalfSliderOut( true );
 
 	UISlider * slider2 = UISlider::New();
-	slider2->setOrientation( UI_VERTICAL )->setPosition( 100, 0 )->setSize( 100, 100 )->setParent( container );
+	slider2->setOrientation( UIOrientation::Vertical )->setPosition( 100, 0 )->setSize( 100, 100 )->setParent( container );
 	slider2->setAllowHalfSliderOut( true );
 
 	UITextInput * textInput = UITextInput::New();
@@ -699,10 +699,10 @@ void EETest::createNewUI() {
 	sprite->setSprite( &SP );
 
 	UIScrollBar * scrollBar = UIScrollBar::New();
-	scrollBar->setOrientation( UI_HORIZONTAL )->setPosition( 200, 0 )->setSize( 100, 0 )->setParent( container );
+	scrollBar->setOrientation( UIOrientation::Horizontal )->setPosition( 200, 0 )->setSize( 100, 0 )->setParent( container );
 
 	UIScrollBar * scrollBar2 = UIScrollBar::New();
-	scrollBar2->setOrientation( UI_VERTICAL )->setPosition( 300, 0 )->setSize( 0, 100 )->setParent( container );
+	scrollBar2->setOrientation( UIOrientation::Vertical )->setPosition( 300, 0 )->setSize( 0, 100 )->setParent( container );
 
 	UIDropDownList * dropdownList = UIDropDownList::New();
 	dropdownList->setPosition( 50, 320 )->setSize( 200, 100 )->setParent( container );
@@ -785,44 +785,44 @@ void EETest::createNewUI() {
 	win->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_RESIZEABLE | UI_WIN_MAXIMIZE_BUTTON );
 
 	UILinearLayout * layWin = UILinearLayout::NewVertical();
-	layWin->setLayoutSizeRules( MATCH_PARENT, MATCH_PARENT );
+	layWin->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::MatchParent );
 	layWin->setParent( win );
 
 	UILinearLayout * layPar = UILinearLayout::NewHorizontal();
 	layPar->setParent( layWin );
 	layPar->setLayoutMargin( Rect( 10, 10, 10, 10 ) );
-	layPar->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT );
+	layPar->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent );
 	layPar->setLayoutGravity( UI_VALIGN_CENTER | UI_HALIGN_CENTER );
 	layPar->setBackgroundColor( 0x999999FF );
 
 	UILinearLayout * lay = UILinearLayout::NewVertical();
 	lay->setLayoutGravity( UI_HALIGN_CENTER | UI_VALIGN_CENTER );
-	lay->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT );
+	lay->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent );
 	lay->setBackgroundColor( 0x333333FF );
 	lay->setLayoutWeight( 0.7f );
 
-	UITextView::New()->setText( "Text on test 1" )->setLayoutMargin( Rect( 10, 10, 10, 10 ) )->setLayoutSizeRules( WRAP_CONTENT, WRAP_CONTENT )->setParent( lay );
-	UITextView::New()->setText( "Text on test 2" )->setLayoutMargin( Rect( 10, 10, 10, 10 ) )->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setParent( lay );
-	UICheckBox::New()->setText( "Checkbox" )->setLayoutMargin( Rect( 10, 10, 10, 10 ) )->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setParent( lay );
-	UITextView::New()->setText( "Text on test 3" )->setLayoutMargin( Rect( 10, 10, 10, 10 ) )->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setParent( lay );
-	UITextView::New()->setText( "Text on test 4" )->setLayoutMargin( Rect( 10, 10, 10, 10 ) )->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setParent( lay );
-	UITextInput::New()->setLayoutMargin( Rect( 10, 10, 10, 10 ) )->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setParent( lay );
+	UITextView::New()->setText( "Text on test 1" )->setLayoutMargin( Rect( 10, 10, 10, 10 ) )->setLayoutSizeRules( LayoutSizeRule::WrapContent, LayoutSizeRule::WrapContent )->setParent( lay );
+	UITextView::New()->setText( "Text on test 2" )->setLayoutMargin( Rect( 10, 10, 10, 10 ) )->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )->setParent( lay );
+	UICheckBox::New()->setText( "Checkbox" )->setLayoutMargin( Rect( 10, 10, 10, 10 ) )->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )->setParent( lay );
+	UITextView::New()->setText( "Text on test 3" )->setLayoutMargin( Rect( 10, 10, 10, 10 ) )->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )->setParent( lay );
+	UITextView::New()->setText( "Text on test 4" )->setLayoutMargin( Rect( 10, 10, 10, 10 ) )->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )->setParent( lay );
+	UITextInput::New()->setLayoutMargin( Rect( 10, 10, 10, 10 ) )->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )->setParent( lay );
 
 	UILinearLayout * lay2 = UILinearLayout::NewVertical();
 	lay2->setLayoutGravity( UI_HALIGN_CENTER | UI_VALIGN_CENTER );
-	lay2->setLayoutSizeRules( FIXED, WRAP_CONTENT );
+	lay2->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::WrapContent );
 	lay2->setBackgroundColor( Color::Black );
 	lay2->setLayoutWeight( 0.3f );
 
-	UIPushButton::New()->setText( "PushButton" )->setLayoutMargin( Rect( 10, 10, 10, 10 ) )->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setLayoutGravity( UI_VALIGN_CENTER )->setParent( lay2 );
+	UIPushButton::New()->setText( "PushButton" )->setLayoutMargin( Rect( 10, 10, 10, 10 ) )->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )->setLayoutGravity( UI_VALIGN_CENTER )->setParent( lay2 );
 	UIListBox * lbox = UIListBox::New();
-	lbox->setLayoutMargin( Rect( 10, 10, 10, 10 ) )->setLayoutSizeRules( MATCH_PARENT, FIXED )->setSize( 0, 105 )->setParent( lay2 );
+	lbox->setLayoutMargin( Rect( 10, 10, 10, 10 ) )->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::Fixed )->setSize( 0, 105 )->setParent( lay2 );
 	lbox->addListBoxItems( { "This", "is", "a", "ListBox" } );
 	lay2->setParent( layPar );
 	lay->setParent( layPar );
 
 	UIDropDownList * drop = UIDropDownList::New();
-	drop->setLayoutMargin( Rect( 10, 10, 10, 10 ) )->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setParent( layWin );
+	drop->setLayoutMargin( Rect( 10, 10, 10, 10 ) )->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )->setParent( layWin );
 	drop->getListBox()->addListBoxItems( { "Car", "Bus", "Plane", "Submarine" } );
 	drop->getListBox()->setSelected(0);
 	win->show();
@@ -833,7 +833,7 @@ void EETest::createNewUI() {
 
 	UIRelativeLayout * rlay = UIRelativeLayout::New();
 	rlay->setParent( win2 );
-	rlay->setLayoutSizeRules( MATCH_PARENT, MATCH_PARENT );
+	rlay->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::MatchParent );
 	rlay->setLayoutMargin( Rect( 16, 16, 16, 16 ) );
 	rlay->setBackgroundColor( 0x333333CC );
 
@@ -841,7 +841,7 @@ void EETest::createNewUI() {
 	ofBut->setText( "OK" )->setLayoutGravity( UI_VALIGN_BOTTOM | UI_HALIGN_RIGHT )->setLayoutMargin( Rect( 0, 0, 16, 16 ) )->setParent( rlay );
 
 	UIPushButton::New()->setText( "Cancel" )->setLayoutGravity( UI_VALIGN_BOTTOM | UI_HALIGN_RIGHT )->setLayoutMargin( Rect( 0, 0, 8, 0 ) )
-			->setLayoutPositionRule( LEFT_OF, ofBut )->setParent( rlay );
+			->setLayoutPositionRule( LayoutPositionRule::LeftOf, ofBut )->setParent( rlay );
 
 	win2->show();
 
@@ -972,11 +972,11 @@ void EETest::createDecoratedWindow() {
 	mUIWindow->addEventListener( Event::OnDragStop, cb::Make1( &onWinDragStop ) );
 
 	UILinearLayout * lay = UILinearLayout::NewVertical();
-	lay->setLayoutSizeRules( MATCH_PARENT, MATCH_PARENT );
+	lay->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::MatchParent );
 	lay->setParent( mUIWindow->getContainer() );
 
 	UIWinMenu * WinMenu = UIWinMenu::New();
-	WinMenu->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setParent( lay );
+	WinMenu->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )->setParent( lay );
 
 	UIPopUpMenu * PopMenu = UIPopUpMenu::New();
 	PopMenu->add( "Hide Border" );
@@ -1025,7 +1025,7 @@ void EETest::createDecoratedWindow() {
 	UIPushButton * Button = UIPushButton::New();
 	Button->setLayoutMargin( Rect( 5, 5, 5, 5 ) );
 	Button->setText( "Click Me" );
-	Button->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setParent( lay );
+	Button->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )->setParent( lay );
 	Button->addEventListener( Event::MouseClick, cb::Make1( this, &EETest::onButtonClick ) );
 
 	mUIWindow->addShortcut( KEY_C, KEYMOD_ALT, Button );
@@ -1033,7 +1033,7 @@ void EETest::createDecoratedWindow() {
 	UITabWidget * TabWidget = UITabWidget::New();
 	TabWidget->setLayoutMargin( Rect( 5, 5, 5, 5 ) )
 			->setLayoutWeight( 1 )
-			->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )
+			->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )
 			->setFlags( UI_HALIGN_CENTER | UI_VALIGN_CENTER )
 			->setParent( lay );
 
@@ -1210,7 +1210,7 @@ void EETest::cmdSetPartsNum ( const std::vector < String >& params ) {
 		bool Res = String::fromString<Int32>( tInt, params[1] );
 
 		if ( Res && ( tInt >= 0 && tInt <= 100000 ) ) {
-			PS[2].create( PSE_WormHole, tInt, TN[5], Vector2f( mWindow->getWidth() * 0.5f, mWindow->getHeight() * 0.5f ), 32, true );
+			PS[2].create( ParticleEffect::WormHole, tInt, TN[5], Vector2f( mWindow->getWidth() * 0.5f, mWindow->getHeight() * 0.5f ), 32, true );
 			Con.pushText( "Wormhole Particles Number Changed to: " + String::toStr(tInt) );
 		} else
 			Con.pushText( "Valid parameters are between 0 and 100000 (0 = no limit)." );
@@ -1223,13 +1223,13 @@ void EETest::onTextureLoaded( ResourceLoader * ) {
 
 void EETest::loadTextures() {
 	if ( !FileSystem::fileExists( MyPath + "atlases/bnb.eta" ) ) {
-		TexturePacker tp( 1024, 512, PD_MDPI, true, false, 1 );
+		TexturePacker tp( 1024, 512, PixelDensitySize::MDPI, true, false, 1 );
 		tp.addTexturesPath( MyPath + "atlases/bnb/" );
 		tp.save( MyPath + "atlases/bnb.png" );
 	}
 
 	if ( !FileSystem::fileExists( MyPath + "atlases/tiles.eta" ) ) {
-		TexturePacker tp( 256, 32, PD_MDPI, true, false, 0 );
+		TexturePacker tp( 256, 32, PixelDensitySize::MDPI, true, false, 0 );
 		tp.addTexturesPath( MyPath + "atlases/tiles/" );
 		tp.save( MyPath + "atlases/tiles.png" );
 	}
@@ -1294,11 +1294,11 @@ void EETest::loadTextures() {
 			SP.addFrame( TN[4], Sizef( 0, 0 ), Vector2i( 0, 0 ), Rect( mx * 64, my * 64, mx * 64 + 64, my * 64 + 64 ) );
 
 	PS[0].setCallbackReset( cb::Make2( this, &EETest::particlesCallback ) );
-	PS[0].create( PSE_Callback, 500, TN[5], Vector2f( 0, 0 ), 16, true );
-	PS[1].create( PSE_Heal, 250, TN[5], Vector2f( mWindow->getWidth() * 0.5f, mWindow->getHeight() * 0.5f ), 16, true );
-	PS[2].create( PSE_WormHole, PartsNum, TN[5], Vector2f( mWindow->getWidth() * 0.5f, mWindow->getHeight() * 0.5f ), 32, true );
-	PS[3].create( PSE_Fire, 350, TN[5], Vector2f( -50.f, -50.f ), 32, true );
-	PS[4].create( PSE_Fire, 350, TN[5], Vector2f( -50.f, -50.f ), 32, true );
+	PS[0].create( ParticleEffect::Callback, 500, TN[5], Vector2f( 0, 0 ), 16, true );
+	PS[1].create( ParticleEffect::Heal, 250, TN[5], Vector2f( mWindow->getWidth() * 0.5f, mWindow->getHeight() * 0.5f ), 16, true );
+	PS[2].create( ParticleEffect::WormHole, PartsNum, TN[5], Vector2f( mWindow->getWidth() * 0.5f, mWindow->getHeight() * 0.5f ), 32, true );
+	PS[3].create( ParticleEffect::Fire, 350, TN[5], Vector2f( -50.f, -50.f ), 32, true );
+	PS[4].create( ParticleEffect::Fire, 350, TN[5], Vector2f( -50.f, -50.f ), 32, true );
 
 	Con.addCommand( "setparticlesnum", cb::Make1( this, &EETest::cmdSetPartsNum ) );
 

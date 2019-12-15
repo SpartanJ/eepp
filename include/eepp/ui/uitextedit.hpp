@@ -35,13 +35,13 @@ class EE_API UITextEdit : public UIWidget {
 
 		const bool& isEditingAllowed() const;
 
-		void setVerticalScrollMode( const UI_SCROLLBAR_MODE& Mode );
+		void setVerticalScrollMode( const ScrollBarMode& Mode );
 
-		const UI_SCROLLBAR_MODE& getVerticalScrollMode();
+		const ScrollBarMode& getVerticalScrollMode();
 
-		void setHorizontalScrollMode( const UI_SCROLLBAR_MODE& Mode );
+		void setHorizontalScrollMode( const ScrollBarMode& Mode );
 
-		const UI_SCROLLBAR_MODE& getHorizontalScrollMode();
+		const ScrollBarMode& getHorizontalScrollMode();
 
 		UIFontStyleConfig getFontStyleConfig() const;
 
@@ -52,8 +52,8 @@ class EE_API UITextEdit : public UIWidget {
 		UITextInput *		mTextInput;
 		UIScrollBar *		mHScrollBar;
 		UIScrollBar *		mVScrollBar;
-		UI_SCROLLBAR_MODE	mHScrollBarMode;
-		UI_SCROLLBAR_MODE	mVScrollBarMode;
+		ScrollBarMode	mHScrollBarMode;
+		ScrollBarMode	mVScrollBarMode;
 		bool				mSkipValueChange;
 		Rectf				mContainerPadding;
 

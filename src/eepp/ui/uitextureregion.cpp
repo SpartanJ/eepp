@@ -58,12 +58,12 @@ void UITextureRegion::onAutoSize() {
 			autoAlign();
 		}
 
-		if ( mLayoutWidthRules == WRAP_CONTENT || mLayoutHeightRules == WRAP_CONTENT ) {
-			if ( mLayoutWidthRules == WRAP_CONTENT ) {
+		if ( mLayoutWidthRule == LayoutSizeRule::WrapContent || mLayoutHeightRule == LayoutSizeRule::WrapContent ) {
+			if ( mLayoutWidthRule == LayoutSizeRule::WrapContent ) {
 				setInternalPixelsWidth( mTextureRegion->getPxSize().getWidth() + mRealPadding.Left + mRealPadding.Right );
 			}
 
-			if ( mLayoutHeightRules == WRAP_CONTENT ) {
+			if ( mLayoutHeightRule == LayoutSizeRule::WrapContent ) {
 				setInternalPixelsHeight( mTextureRegion->getPxSize().getHeight() + mRealPadding.Top + mRealPadding.Bottom );
 			}
 
@@ -165,17 +165,17 @@ void UITextureRegion::autoAlign() {
 	if ( NULL == mTextureRegion )
 		return;
 
-	if ( HAlignGet( mFlags ) == UI_HALIGN_CENTER ) {
+	if ( Font::getHorizontalAlign( mFlags ) == UI_HALIGN_CENTER ) {
 		mAlignOffset.x = ( mSize.getWidth() - mTextureRegion->getDestSize().x ) / 2;
-	} else if ( fontHAlignGet( mFlags ) == UI_HALIGN_RIGHT ) {
+	} else if ( Font::getHorizontalAlign( mFlags ) == UI_HALIGN_RIGHT ) {
 		mAlignOffset.x =  mSize.getWidth() - mTextureRegion->getDestSize().x - mRealPadding.Right;
 	} else {
 		mAlignOffset.x = mRealPadding.Left;
 	}
 
-	if ( VAlignGet( mFlags ) == UI_VALIGN_CENTER ) {
+	if ( Font::getVerticalAlign( mFlags ) == UI_VALIGN_CENTER ) {
 		mAlignOffset.y = ( mSize.getHeight() - mTextureRegion->getDestSize().y ) / 2;
-	} else if ( fontVAlignGet( mFlags ) == UI_VALIGN_BOTTOM ) {
+	} else if ( Font::getVerticalAlign( mFlags ) == UI_VALIGN_BOTTOM ) {
 		mAlignOffset.y = mSize.getHeight() - mTextureRegion->getDestSize().y - mRealPadding.Bottom;
 	} else {
 		mAlignOffset.y = mRealPadding.Top;
@@ -253,11 +253,11 @@ bool UITextureRegion::applyProperty( const StyleSheetProperty& attribute ) {
 	return true;
 }
 
-Uint32 UITextureRegion::getScaleType() const {
+const UIScaleType& UITextureRegion::getScaleType() const {
 	return mScaleType;
 }
 
-UITextureRegion * UITextureRegion::setScaleType(const Uint32& scaleType) {
+UITextureRegion * UITextureRegion::setScaleType(const UIScaleType& scaleType) {
 	mScaleType = scaleType;
 	invalidateDraw();
 	return this;

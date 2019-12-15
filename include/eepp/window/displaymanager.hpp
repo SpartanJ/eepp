@@ -31,7 +31,7 @@ class EE_API Display {
 
 		virtual ~Display();
 
-		EE_PIXEL_DENSITY getPixelDensity();
+		PixelDensitySize getPixelDensity();
 	protected:
 		int index;
 		mutable std::vector<DisplayMode> displayModes;
