@@ -289,6 +289,7 @@
 ../../include/eepp/thirdparty/PlusCallback/callback.hpp
 ../../include/eepp/ui/base.hpp
 ../../include/eepp/ui.hpp
+../../include/eepp/ui/css/mediaquery.hpp
 ../../include/eepp/ui/css/propertydefinition.hpp
 ../../include/eepp/ui/css/propertyspecification.hpp
 ../../include/eepp/ui/css/shorthanddefinition.hpp
@@ -717,6 +718,7 @@
 ../../src/eepp/system/translator.cpp
 ../../src/eepp/system/virtualfilesystem.cpp
 ../../src/eepp/system/zip.cpp
+../../src/eepp/ui/css/mediaquery.cpp
 ../../src/eepp/ui/css/propertydefinition.cpp
 ../../src/eepp/ui/css/propertyspecification.cpp
 ../../src/eepp/ui/css/shorthanddefinition.cpp

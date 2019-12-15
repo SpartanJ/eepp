@@ -94,6 +94,12 @@ class EE_API String {
 	/** Split a string and hold it on a vector */
 	static std::vector < std::string > split( const std::string& str, const Int8& splitchar = '\n', const bool& pushEmptyString = false );
 
+	/** Split a string and hold it on a vector. This function is meant to be used for code splitting,
+	 *  detects functions, arrays, braces and quotes for the splitting. */
+	static std::vector<std::string> split( const std::string& str, const std::string& delims,
+										   const std::string& delimsPreserve = "",
+										   const std::string& quote = "\"" );
+
 	/** Joins a string vector into a single string */
 	static std::string join( const std::vector<std::string>& strArray, const Int8& joinchar = ' ', const bool& appendLastJoinChar = false );
 
@@ -106,11 +112,17 @@ class EE_API String {
 	/** Removes all spaces ( or the specified character ) on the string */
 	static std::string trim( const std::string & str, char character = ' ' );
 
+	/** Removes all spaces ( or the specified character ) on the string */
+	static void trimInPlace( std::string& str, char character = ' ' );
+
 	/** Remove the first space ( or the specified character ) on the string */
 	static String lTrim(const String & str, char character = ' ' );
 
 	/** Removes all spaces ( or the specified character ) on the string */
 	static String trim( const String & str, char character = ' ' );
+
+	/** Removes all spaces ( or the specified character ) on the string */
+	static void trimInPlace( String& str, char character = ' ' );
 
 	/** Convert the string into upper case string */
 	static void toUpperInPlace( std::string & str );
@@ -182,6 +194,12 @@ class EE_API String {
 
 	/** Removes the numbers at the end of the string */
 	static std::string removeNumbersAtEnd( std::string txt );
+
+	/** Searchs the position of the corresponding close bracket in a string. */
+	static std::size_t findCloseBracket( const std::string& string, std::size_t startOffset, char openBracket, char closeBracket );
+
+	/** Having a string of values separated by a delimiter, returns the corresponding index of the searched value */
+	static int valueIndex( const std::string& val, const std::string& strings, int defValue = -1, char delim = ';' );
 
 	/** Converts from any basic type to std::string */
 	template <class T>

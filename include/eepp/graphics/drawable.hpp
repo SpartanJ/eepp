@@ -67,8 +67,6 @@ class EE_API Drawable {
 
 		void setPosition( const Vector2f& position );
 
-		StatefulDrawable * asStatefulDrawable();
-
 		virtual bool isDrawableResource() const;
 	protected:
 		Type mDrawableType;

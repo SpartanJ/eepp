@@ -16,7 +16,7 @@ StyleSheetParser::StyleSheetParser() {}
 bool StyleSheetParser::loadFromStream( IOStream& stream ) {
 	mCSS.resize( stream.getSize(), '\0' );
 	stream.read( &mCSS[0], stream.getSize() );
-	return parse();
+	return parse( mCSS );
 }
 
 bool StyleSheetParser::loadFromFile( const std::string& filename ) {
@@ -77,23 +77,38 @@ StyleSheet& StyleSheetParser::getStyleSheet() {
 	return mStyleSheet;
 }
 
-bool StyleSheetParser::parse() {
-	ReadState rs = ReadingStyle;
+bool StyleSheetParser::parse( const std::string& css ) {
+	ReadState rs = ReadingSelector;
 	std::size_t pos = 0;
 	std::string buffer;
 
-	while ( pos < mCSS.size() ) {
+	while ( pos < css.size() ) {
 		switch ( rs ) {
-			case ReadingStyle: {
-				pos = readStyle( rs, pos, buffer );
+			case ReadingSelector: {
+				pos = readSelector( css, rs, pos, buffer );
+
+				if ( String::startsWith( buffer, "@media" ) ) {
+					std::size_t mediaClosePos = String::findCloseBracket( css, pos - 1, '{', '}' );
+
+					if ( mediaClosePos != std::string::npos ) {
+						std::string mediaStr = css.substr( pos, mediaClosePos - 1 );
+						MediaQueryList::ptr& oldQueryList = mMediaQueryList;
+						mMediaQueryList = MediaQueryList::parse( buffer );
+						rs = ReadingSelector;
+						parse( mediaStr );
+						mMediaQueryList = oldQueryList;
+						pos = mediaClosePos + 1;
+					}
+				}
+
 				break;
 			}
 			case ReadingComment: {
-				pos = readComment( rs, pos, buffer );
+				pos = readComment( css, rs, pos, buffer );
 				break;
 			}
 			case ReadingProperty: {
-				pos = readProperty( rs, pos, buffer );
+				pos = readProperty( css, rs, pos, buffer );
 				break;
 			}
 			default:
@@ -104,22 +119,23 @@ bool StyleSheetParser::parse() {
 	return true;
 }
 
-int StyleSheetParser::readStyle( ReadState& rs, std::size_t pos, std::string& buffer ) {
+int StyleSheetParser::readSelector( const std::string& css, ReadState& rs, std::size_t pos,
+									std::string& buffer ) {
 	buffer.clear();
 
-	while ( pos < mCSS.size() ) {
-		if ( mCSS[pos] == '/' && mCSS.size() > pos + 1 && mCSS[pos + 1] == '*' ) {
+	while ( pos < css.size() ) {
+		if ( css[pos] == '/' && css.size() > pos + 1 && css[pos + 1] == '*' ) {
 			rs = ReadingComment;
 			return pos;
 		}
 
-		if ( mCSS[pos] == '{' ) {
+		if ( css[pos] == '{' ) {
 			rs = ReadingProperty;
 			return pos + 1;
 		}
 
-		if ( mCSS[pos] != '\n' && mCSS[pos] != '\t' )
-			buffer += mCSS[pos];
+		if ( css[pos] != '\n' && css[pos] != '\t' )
+			buffer += css[pos];
 
 		pos++;
 	}
@@ -127,22 +143,23 @@ int StyleSheetParser::readStyle( ReadState& rs, std::size_t pos, std::string& bu
 	return pos;
 }
 
-int StyleSheetParser::readComment( ReadState& rs, std::size_t pos, std::string& buffer ) {
+int StyleSheetParser::readComment( const std::string& css, ReadState& rs, std::size_t pos,
+								   std::string& buffer ) {
 	buffer.clear();
 
-	while ( pos < mCSS.size() ) {
-		if ( mCSS[pos] == '*' && mCSS.size() > pos + 1 && mCSS[pos + 1] == '/' ) {
-			rs = ReadingStyle;
+	while ( pos < css.size() ) {
+		if ( css[pos] == '*' && css.size() > pos + 1 && css[pos + 1] == '/' ) {
+			rs = ReadingSelector;
 
-			buffer += mCSS[pos];
-			buffer += mCSS[pos + 1];
+			buffer += css[pos];
+			buffer += css[pos + 1];
 
 			mComments.push_back( buffer );
 
 			return pos + 2;
 		}
 
-		buffer += mCSS[pos];
+		buffer += css[pos];
 
 		pos++;
 	}
@@ -150,16 +167,17 @@ int StyleSheetParser::readComment( ReadState& rs, std::size_t pos, std::string& 
 	return pos;
 }
 
-int StyleSheetParser::readProperty( ReadState& rs, std::size_t pos, std::string& buffer ) {
+int StyleSheetParser::readProperty( const std::string& css, ReadState& rs, std::size_t pos,
+									std::string& buffer ) {
 	std::string selectorName( buffer );
 
 	buffer.clear();
 
-	while ( pos < mCSS.size() ) {
-		if ( mCSS[pos] == '{' ) {
+	while ( pos < css.size() ) {
+		if ( css[pos] == '{' ) {
 			pos++;
 			continue;
-		} else if ( mCSS[pos] == '}' ) {
+		} else if ( css[pos] == '}' ) {
 			selectorName = String::trim( selectorName );
 
 			StyleSheetSelectorParser selectorParse( selectorName );
@@ -169,18 +187,19 @@ int StyleSheetParser::readProperty( ReadState& rs, std::size_t pos, std::string&
 				for ( auto it = selectorParse.selectors.begin();
 					  it != selectorParse.selectors.end(); ++it ) {
 					StyleSheetStyle node( it->getName(), propertiesParse.getProperties(),
-										  propertiesParse.getVariables() );
+										  propertiesParse.getVariables(),
+										  mMediaQueryList );
 
 					mStyleSheet.addStyle( node );
 				}
 			}
 
-			rs = ReadingStyle;
+			rs = ReadingSelector;
 			return pos + 1;
 		}
 
-		if ( mCSS[pos] != '\n' && mCSS[pos] != '\t' )
-			buffer += mCSS[pos];
+		if ( css[pos] != '\n' && css[pos] != '\t' )
+			buffer += css[pos];
 
 		pos++;
 	}

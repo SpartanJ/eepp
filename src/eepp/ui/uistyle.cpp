@@ -142,7 +142,7 @@ void UIStyle::unsubscribeRelated( UIWidget* widget ) {
 }
 
 void UIStyle::tryApplyStyle( const StyleSheetStyle& style ) {
-	if ( style.getSelector().select( mWidget ) ) {
+	if ( style.isMediaValid() && style.getSelector().select( mWidget ) ) {
 		for ( const auto& prop : style.getProperties() ) {
 			const StyleSheetProperty& property = prop.second;
 			const auto& it = mProperties.find( property.getName() );

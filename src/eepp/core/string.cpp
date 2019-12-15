@@ -68,6 +68,65 @@ std::vector < String > String::split ( const String& str, const Uint32& splitcha
 	return tmp;
 }
 
+std::vector<std::string> String::split( const std::string& str, const std::string& delims,
+										const std::string& delimsPreserve,
+										const std::string& quote) {
+	std::vector<std::string> tokens;
+	if ( str.empty() || ( delims.empty() && delimsPreserve.empty() ) ) {
+		return tokens;
+	}
+
+	std::string allDelims = delims + delimsPreserve + quote;
+
+	std::string::size_type tokenStart = 0;
+	std::string::size_type tokenEnd = str.find_first_of( allDelims, tokenStart );
+	std::string::size_type tokenLen = 0;
+	std::string token;
+
+	while ( true ) {
+		while ( tokenEnd != std::string::npos &&
+				quote.find_first_of( str[tokenEnd] ) != std::string::npos ) {
+			if ( str[tokenEnd] == '(' ) {
+				tokenEnd = findCloseBracket( str, tokenEnd, '(', ')' );
+			} else if ( str[tokenEnd] == '[' ) {
+				tokenEnd = findCloseBracket( str, tokenEnd, '[', ']' );
+			} else if ( str[tokenEnd] == '{' ) {
+				tokenEnd = findCloseBracket( str, tokenEnd, '{', '}' );
+			} else {
+				tokenEnd = str.find_first_of( str[tokenEnd], tokenEnd + 1 );
+			}
+			if ( tokenEnd != std::string::npos ) {
+				tokenEnd = str.find_first_of( allDelims, tokenEnd + 1 );
+			}
+		}
+
+		if ( tokenEnd == std::string::npos ) {
+			tokenLen = std::string::npos;
+		} else {
+			tokenLen = tokenEnd - tokenStart;
+		}
+
+		token = str.substr( tokenStart, tokenLen );
+		if ( !token.empty() ) {
+			tokens.push_back( token );
+		}
+		if ( tokenEnd != std::string::npos && !delimsPreserve.empty() &&
+			 delimsPreserve.find_first_of( str[tokenEnd] ) != std::string::npos ) {
+			tokens.push_back( str.substr( tokenEnd, 1 ) );
+		}
+
+		tokenStart = tokenEnd;
+		if ( tokenStart == std::string::npos )
+			break;
+		tokenStart++;
+		if ( tokenStart == str.length() )
+			break;
+		tokenEnd = str.find_first_of( allDelims, tokenStart );
+	}
+
+	return tokens;
+}
+
 std::vector < std::string > String::split ( const std::string& str, const Int8& splitchar, const bool& pushEmptyString ) {
 	std::vector < std::string > tmp;
 	std::string tmpstr;
@@ -134,6 +193,10 @@ std::string String::trim(const std::string & str , char character) {
 	return str.substr(pos1 == std::string::npos ? 0 : pos1, pos2 == std::string::npos ? str.length() - 1 : pos2 - pos1 + 1);
 }
 
+void String::trimInPlace(std::string& str, char character) {
+	str = trim( str, character );
+}
+
 String String::lTrim(const String & str , char character) {
 	StringType::size_type pos1 = str.find_first_not_of(character);
 	return ( pos1 == String::InvalidPos ) ? str : str.substr( pos1 );
@@ -143,6 +206,10 @@ String String::trim(const String & str , char character) {
 	StringType::size_type pos1 = str.find_first_not_of(character);
 	StringType::size_type pos2 = str.find_last_not_of(character);
 	return str.substr(pos1 == String::InvalidPos ? 0 : pos1, pos2 == String::InvalidPos ? str.length() - 1 : pos2 - pos1 + 1);
+}
+
+void String::trimInPlace( String& str, char character ) {
+	str = trim( str, character );
 }
 
 void String::toUpperInPlace( std::string & str ) {
@@ -237,6 +304,55 @@ std::string String::removeNumbersAtEnd( std::string txt ) {
 	}
 
 	return txt;
+}
+
+std::size_t String::findCloseBracket( const std::string& string, std::size_t startOffset, char openBracket, char closeBracket ) {
+	int count = 0;
+
+	for ( size_t i = startOffset; i < string.size(); i++ ) {
+		if ( string[i] == openBracket ) {
+			count++;
+		} else if ( string[i] == closeBracket ) {
+			count--;
+			if ( 0 == count ) {
+				return i;
+			}
+		}
+	}
+
+	return std::string::npos;
+}
+
+int String::valueIndex( const std::string& val, const std::string& strings, int defValue, char delim ) {
+	if ( val.empty() || strings.empty() || !delim ) {
+		return defValue;
+	}
+
+	int idx = 0;
+	std::string::size_type delimStart = 0;
+	std::string::size_type delimEnd = strings.find( delim, delimStart );
+	std::string::size_type itemLen = 0;
+	while ( true ) {
+		if ( delimEnd == std::string::npos ) {
+			itemLen = strings.length() - delimStart;
+		} else {
+			itemLen = delimEnd - delimStart;
+		}
+		if ( itemLen == val.length() ) {
+			if ( val == strings.substr( delimStart, itemLen ) ) {
+				return idx;
+			}
+		}
+		idx++;
+		delimStart = delimEnd;
+		if ( delimStart == std::string::npos )
+			break;
+		delimStart++;
+		if ( delimStart == strings.length() )
+			break;
+		delimEnd = strings.find( delim, delimStart );
+	}
+	return defValue;
 }
 
 std::string String::fromFloat( const Float& value, const std::string& append, const std::string& prepend ) {

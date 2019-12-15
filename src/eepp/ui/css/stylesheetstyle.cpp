@@ -6,8 +6,12 @@ StyleSheetStyle::StyleSheetStyle() {}
 
 StyleSheetStyle::StyleSheetStyle( const std::string& selector,
 								  const StyleSheetProperties& properties,
-								  const StyleSheetVariables& variables ) :
-	mSelector( selector ), mProperties( properties ), mVariables( variables ) {
+								  const StyleSheetVariables& variables,
+								  MediaQueryList::ptr mediaQueryList ) :
+	mSelector( selector ),
+	mProperties( properties ),
+	mVariables( variables ),
+	mMediaQueryList( mediaQueryList ) {
 	for ( auto& it : mProperties ) {
 		it.second.setSpecificity( mSelector.getSpecificity() );
 		it.second.setVolatile( !mSelector.isCacheable() );
@@ -77,6 +81,18 @@ StyleSheetVariable StyleSheetStyle::getVariableByName( const std::string& name )
 
 void StyleSheetStyle::setVariable( const StyleSheetVariable& variable ) {
 	mVariables[variable.getName()] = variable;
+}
+
+bool StyleSheetStyle::isMediaValid() const {
+	if ( !mMediaQueryList ) {
+		return true;
+	}
+
+	return mMediaQueryList->isUsed();
+}
+
+const MediaQueryList::ptr& StyleSheetStyle::getMediaQueryList() const {
+	return mMediaQueryList;
 }
 
 }}} // namespace EE::UI::CSS

@@ -87,6 +87,8 @@ class EE_API UISceneNode : public SceneNode {
 	virtual void setInternalSize( const Sizef& size );
 
 	void reloadStyle();
+
+	bool onMediaChanged();
 };
 
 }} // namespace EE::UI

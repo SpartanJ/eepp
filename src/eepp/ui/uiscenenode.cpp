@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/packmanager.hpp>
+#include <eepp/ui/css/mediaquery.hpp>
 #include <eepp/ui/css/stylesheetparser.hpp>
 #include <eepp/ui/uieventdispatcher.hpp>
 #include <eepp/ui/uiscenenode.hpp>
@@ -35,6 +36,7 @@ UISceneNode::~UISceneNode() {
 void UISceneNode::resizeControl( EE::Window::Window* ) {
 	setSize( eefloor( mWindow->getWidth() / PixelDensity::getPixelDensity() ),
 			 eefloor( mWindow->getHeight() / PixelDensity::getPixelDensity() ) );
+	onMediaChanged();
 	sendMsg( this, NodeMessage::WindowResize );
 }
 
@@ -296,6 +298,28 @@ const bool& UISceneNode::isLoading() const {
 
 UIThemeManager* UISceneNode::getUIThemeManager() const {
 	return mUIThemeManager;
+}
+
+bool UISceneNode::onMediaChanged() {
+	if ( !mStyleSheet.isMediaQueryListEmpty() ) {
+		MediaFeatures media;
+		media.type = media_type_screen;
+		media.width = mWindow->getWidth();
+		media.height = mWindow->getHeight();
+		media.deviceWidth = mWindow->getDesktopResolution().getWidth();
+		media.deviceHeight = mWindow->getDesktopResolution().getHeight();
+		media.color = 8;
+		media.monochrome = 0;
+		media.colorIndex = 256;
+		media.resolution = static_cast<int>( getDPI() );
+
+		if ( mStyleSheet.updateMediaLists( media ) ) {
+			reloadStyle();
+			return true;
+		}
+	}
+
+	return false;
 }
 
 }} // namespace EE::UI

@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <eepp/ui/css/stylesheet.hpp>
 #include <eepp/ui/css/stylesheetelement.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
@@ -9,37 +10,9 @@ namespace EE { namespace UI { namespace CSS {
 StyleSheet::StyleSheet() {}
 
 void StyleSheet::addStyle( const StyleSheetStyle& node ) {
-	auto nodeIt = mNodes.find( node.getSelector().getName() );
+	mNodes.push_back( node );
 
-	if ( nodeIt == mNodes.end() ) {
-		mNodes[node.getSelector().getName()] = node;
-	} else {
-		StyleSheetStyle& currentNode = nodeIt->second;
-
-		for ( auto& pit : node.getProperties() )
-			currentNode.setProperty( pit.second );
-
-		for ( auto& vit : node.getVariables() )
-			currentNode.setVariable( vit.second );
-	}
-}
-
-void StyleSheet::combineStyle( const StyleSheetStyle& node ) {
-	auto nodeIt = mNodes.find( node.getSelector().getName() );
-
-	if ( nodeIt == mNodes.end() ) {
-		addStyle( node );
-	} else {
-		auto& currentNode = nodeIt->second;
-
-		if ( node.getSelector().getSpecificity() >= currentNode.getSelector().getSpecificity() ) {
-			for ( auto& pit : node.getProperties() )
-				currentNode.setProperty( pit.second );
-
-			for ( auto& vit : node.getVariables() )
-				currentNode.setVariable( vit.second );
-		}
-	}
+	addMediaQueryList( node.getMediaQueryList() );
 }
 
 bool StyleSheet::isEmpty() const {
@@ -47,16 +20,14 @@ bool StyleSheet::isEmpty() const {
 }
 
 void StyleSheet::print() {
-	for ( auto& it : mNodes ) {
-		StyleSheetStyle& style = it.second;
-
+	for ( auto& style : mNodes ) {
 		std::cout << style.build();
 	}
 }
 
 void StyleSheet::combineStyleSheet( const StyleSheet& styleSheet ) {
-	for ( auto& it : styleSheet.getStyles() ) {
-		combineStyle( it.second );
+	for ( auto& style : styleSheet.getStyles() ) {
+		addStyle( style );
 	}
 }
 
@@ -64,8 +35,7 @@ StyleSheetStyleVector StyleSheet::getElementStyles( StyleSheetElement* element,
 													const bool& applyPseudo ) {
 	StyleSheetStyleVector styles;
 
-	for ( const auto& it : mNodes ) {
-		const StyleSheetStyle& node = it.second;
+	for ( const auto& node : mNodes ) {
 		const StyleSheetSelector& selector = node.getSelector();
 
 		if ( selector.select( element, applyPseudo ) ) {
@@ -76,8 +46,37 @@ StyleSheetStyleVector StyleSheet::getElementStyles( StyleSheetElement* element,
 	return styles;
 }
 
-const StyleSheetStyleList& StyleSheet::getStyles() const {
+const StyleSheetStyleVector& StyleSheet::getStyles() const {
 	return mNodes;
+}
+
+bool StyleSheet::updateMediaLists( const MediaFeatures& features ) {
+	if ( mMediaQueryList.empty() )
+		return false;
+
+	bool updateStyles = false;
+
+	for ( auto iter = mMediaQueryList.begin(); iter != mMediaQueryList.end(); iter++ ) {
+		if ( ( *iter )->applyMediaFeatures( features ) ) {
+			updateStyles = true;
+			break;
+		}
+	}
+
+	return updateStyles;
+}
+
+bool StyleSheet::isMediaQueryListEmpty() {
+	return mMediaQueryList.empty();
+}
+
+void StyleSheet::addMediaQueryList( MediaQueryList::ptr list ) {
+	if ( list ) {
+		if ( std::find( mMediaQueryList.begin(), mMediaQueryList.end(), list ) ==
+			 mMediaQueryList.end() ) {
+			mMediaQueryList.push_back( list );
+		}
+	}
 }
 
 }}} // namespace EE::UI::CSS

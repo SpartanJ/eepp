@@ -91,11 +91,6 @@ void Drawable::setPosition( const Vector2f& position ) {
 	}
 }
 
-StatefulDrawable * Drawable::asStatefulDrawable() {
-	eeASSERT( isStateful() );
-	return static_cast<StatefulDrawable*>( this );
-}
-
 bool Drawable::isDrawableResource() const {
 	return false;
 }
