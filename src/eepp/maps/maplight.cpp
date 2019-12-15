@@ -5,7 +5,7 @@ namespace EE { namespace Maps {
 MapLight::MapLight() :
 	mRadius( 0 ),
 	mColor( 255, 255, 255 ),
-	mType( LIGHT_NORMAL ),
+	mType( MapLightType::Normal ),
 	mActive( true )
 {
 }
@@ -13,13 +13,13 @@ MapLight::MapLight() :
 MapLight::~MapLight() {
 }
 
-MapLight::MapLight( const Float& Radius, const Float& x, const Float& y, const RGB& Color, LIGHT_TYPE Type ) :
+MapLight::MapLight( const Float& Radius, const Float& x, const Float& y, const RGB& Color, MapLightType Type ) :
 	mActive( true )
 {
 	create( Radius, x, y, Color, Type );
 }
 
-void MapLight::create( const Float& Radius, const Float& x, const Float& y, const RGB& Color, LIGHT_TYPE Type ) {
+void MapLight::create( const Float& Radius, const Float& x, const Float& y, const RGB& Color, MapLightType Type ) {
 	mRadius	= Radius;
 	mColor	= Color;
 	mType	= Type;
@@ -31,7 +31,7 @@ RGB MapLight::processVertex( const Float& PointX, const Float& PointY, const RGB
 	Float VertexDist;
 
 	if ( mActive ) {
-		if ( mType == LIGHT_NORMAL )
+		if ( mType == MapLightType::Normal )
 			VertexDist = eeabs( mPos.distance( Vector2f( PointX, PointY ) ) );
 		else {
 			Float XDist = eeabs(mPos.x - PointX) * 0.5f;
@@ -71,7 +71,7 @@ Color MapLight::processVertex( const Float& PointX, const Float& PointY, const C
 	Float VertexDist;
 
 	if ( mActive ) {
-		if ( mType == LIGHT_NORMAL )
+		if ( mType == MapLightType::Normal )
 			VertexDist = eeabs( mPos.distance( Vector2f( PointX, PointY ) ) );
 		else {
 			Float XDist = eeabs(mPos.x - PointX) * 0.5f;
@@ -138,7 +138,7 @@ Rectf MapLight::getAABB() const {
 }
 
 void MapLight::updateAABB() {
-	if ( mType == LIGHT_NORMAL )
+	if ( mType == MapLightType::Normal )
 		mAABB = Rectf( mPos.x - mRadius, mPos.y - mRadius, mPos.x + mRadius, mPos.y + mRadius );
 	else
 		mAABB = Rectf( mPos.x - mRadius, mPos.y - mRadius * 0.5f, mPos.x + mRadius, mPos.y + mRadius * 0.5f );
@@ -171,12 +171,12 @@ const RGB& MapLight::getColor() const {
 	return mColor;
 }
 
-void MapLight::setType( const LIGHT_TYPE& type ) {
+void MapLight::setType( const MapLightType& type ) {
 	mType = type;
 	updateAABB();
 }
 
-const LIGHT_TYPE& MapLight::getType() const {
+const MapLightType& MapLight::getType() const {
 	return mType;
 }
 

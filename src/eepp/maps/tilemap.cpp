@@ -1028,7 +1028,7 @@ bool TileMap::loadFromStream( IOStream& IOS ) {
 						RGB rgb( color.toRGB() );
 
 						mLightManager->addLight(
-							eeNew( MapLight, ( tLightHdr->Radius, tLightHdr->PosX, tLightHdr->PosY, rgb, (LIGHT_TYPE)tLightHdr->Type ) )
+							eeNew( MapLight, ( tLightHdr->Radius, tLightHdr->PosX, tLightHdr->PosY, rgb, (MapLightType)tLightHdr->Type ) )
 						);
 					}
 

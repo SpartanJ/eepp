@@ -37,7 +37,7 @@ class EE_API Cursor {
 
 		static Cursor::Type fromName( std::string name );
 
-		/** @enum EE_SYSTEM_CURSOR list the system cursors that can be used */
+		/** @enum SysType list the system cursors that can be used */
 		enum SysType {
 			SysArrow = 0, /**< Arrow */
 			SysIBeam,     /**< I-beam */
@@ -66,7 +66,7 @@ class EE_API Cursor {
 
 		/** @return The pointer to the image that represents the cursor */
 		Graphics::Image * getImage() const;
-		
+
 		virtual ~Cursor();
 	protected:
 		friend class CursorManager;

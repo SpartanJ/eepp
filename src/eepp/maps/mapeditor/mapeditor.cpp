@@ -571,7 +571,7 @@ void MapEditor::onAddObject( Uint32 Type, Polygon2f poly ) {
 
 void MapEditor::onLightTypeChange( const Event * Event ) {
 	if ( NULL != mUIMap->getSelectedLight() ) {
-		mUIMap->getSelectedLight()->setType( mLightTypeChk->isActive() ? LIGHT_ISOMETRIC : LIGHT_NORMAL );
+		mUIMap->getSelectedLight()->setType( mLightTypeChk->isActive() ? MapLightType::Isometric : MapLightType::Normal );
 	}
 }
 
@@ -592,7 +592,7 @@ void MapEditor::onLightSelect( MapLight * Light ) {
 	mUIGreenSlider->setValue( Col.g );
 	mUIBlueSlider->setValue( Col.b );
 	mLightRadius->setValue( Light->getRadius() );
-	mLightTypeChk->setActive( Light->getType() == LIGHT_ISOMETRIC ? true : false );
+	mLightTypeChk->setActive( Light->getType() == MapLightType::Isometric ? true : false );
 }
 
 void MapEditor::onNewLight( const Event * Event ) {
@@ -600,7 +600,7 @@ void MapEditor::onNewLight( const Event * Event ) {
 
 	if ( MEvent->getFlags() & EE_BUTTON_LMASK ) {
 		Vector2f Pos = mUIMap->Map()->getMouseMapPosf();
-		mUIMap->addLight( eeNew( MapLight, ( mLightRadius->getValue(), Pos.x, Pos.y, mUIBaseColor->getBackgroundColor().toRGB(), mLightTypeChk->isActive() ? LIGHT_ISOMETRIC : LIGHT_NORMAL ) ) );
+		mUIMap->addLight( eeNew( MapLight, ( mLightRadius->getValue(), Pos.x, Pos.y, mUIBaseColor->getBackgroundColor().toRGB(), mLightTypeChk->isActive() ? MapLightType::Isometric : MapLightType::Normal ) ) );
 	}
 }
 

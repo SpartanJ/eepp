@@ -5,21 +5,21 @@
 
 namespace EE { namespace Maps {
 
-/** @enum LIGHT_TYPE Define the light spot type */
-enum LIGHT_TYPE {
-	LIGHT_NORMAL	= 0,
-	LIGHT_ISOMETRIC = 1
+/** @enum MapLightType Define the light spot type */
+enum MapLightType {
+	Normal	= 0,
+	Isometric = 1
 };
 
 class EE_API MapLight {
 	public:
 		MapLight();
 
-		MapLight( const Float& Radius, const Float& x, const Float& y, const RGB& Color = RGB(255,255,255), LIGHT_TYPE Type = LIGHT_NORMAL );
+		MapLight( const Float& Radius, const Float& x, const Float& y, const RGB& Color = RGB(255,255,255), MapLightType Type = MapLightType::Normal );
 
 		virtual ~MapLight();
 
-		void create( const Float& Radius, const Float& x, const Float& y, const RGB& Color = RGB(255,255,255), LIGHT_TYPE Type = LIGHT_NORMAL );
+		void create( const Float& Radius, const Float& x, const Float& y, const RGB& Color = RGB(255,255,255), MapLightType Type = MapLightType::Normal );
 
 		virtual RGB processVertex( const Float& PointX, const Float& PointY, const RGB& VertexColor, const RGB& BaseColor );
 
@@ -49,9 +49,9 @@ class EE_API MapLight {
 
 		const RGB& getColor() const;
 
-		void setType( const LIGHT_TYPE& type );
+		void setType( const MapLightType& type );
 
-		const LIGHT_TYPE& getType() const;
+		const MapLightType& getType() const;
 
 		const Vector2f& getPosition() const;
 
@@ -60,7 +60,7 @@ class EE_API MapLight {
 		Float		mRadius;
 		Vector2f	mPos;
 		RGB		mColor;
-		LIGHT_TYPE	mType;
+		MapLightType	mType;
 		Rectf		mAABB;
 		bool		mActive;
 

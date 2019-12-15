@@ -3,7 +3,7 @@
 
 namespace EE { namespace Window {
 
-/** @enum EE_KEY Enum of keyboard keys. */
+/** @enum KeyTable Enum of keyboard keys. */
 enum KeyTable {
 	KEY_UNKNOWN			=	0,
 	KEY_FIRST			=	0,
@@ -259,7 +259,7 @@ enum KeyTable {
 	KEY_LAST
 };
 
-/** @enum EE_KEY_MOD Keyboard Modes */
+/** @enum KeyModTable Keyboard Modes */
 enum KeyModTable {
 	KEYMOD_NONE			=	0x0000,
 	KEYMOD_LSHIFT		=	0x0001,
@@ -282,7 +282,7 @@ enum KeyModTable {
 #define KEYMOD_ALT		(	KEYMOD_LALT		| KEYMOD_RALT		)
 #define KEYMOD_META		(	KEYMOD_LMETA	| KEYMOD_RMETA		)
 
-/** @enum EE_BUTTON Mouse buttons */
+/** @enum MouseButton Mouse buttons */
 enum MouseButton {
 	EE_BUTTON_LEFT		= 1,
 	EE_BUTTON_MIDDLE	= 2,
@@ -295,7 +295,7 @@ enum MouseButton {
 
 #define EE_BUTTON_MASK(X)		( 1 << ( ( X ) - 1 ) )
 
-/** @enum EE_BUTTON_MASKS Mouse buttons mask, to check the current state of every button. */
+/** @enum MouseButtonsMask Mouse buttons mask, to check the current state of every button. */
 enum MouseButtonsMask {
 	EE_BUTTON_LMASK		= EE_BUTTON_MASK( EE_BUTTON_LEFT ),
 	EE_BUTTON_MMASK		= EE_BUTTON_MASK( EE_BUTTON_MIDDLE ),

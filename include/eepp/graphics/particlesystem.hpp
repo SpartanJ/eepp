@@ -12,7 +12,7 @@ namespace EE { namespace Graphics {
 
 class Texture;
 
-/** @enum EE_PARTICLE_EFFECT Predefined effects for the particle system. Use Callback when wan't to create a new effect, o set the parameters using NoFx, but it's much more limited. */
+/** @enum ParticleEffect Predefined effects for the particle system. Use Callback when wan't to create a new effect, o set the parameters using NoFx, but it's much more limited. */
 enum class ParticleEffect : Uint32 {
 	Nofx = 0, //!< User defined effect
 	BlueBall,
