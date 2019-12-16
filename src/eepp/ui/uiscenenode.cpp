@@ -387,38 +387,40 @@ void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles ) {
 			Font* fontSearch = FontManager::instance()->getByName( familyProp.getValue() );
 
 			if ( NULL == fontSearch ) {
-				FunctionString func( FunctionString::parse( srcProp.getValue() ) );
+				std::string path( srcProp.getValue() );
+				FunctionString func( FunctionString::parse( path ) );
 
-				if ( !func.getParameters().empty() ) {
-					std::string path( func.getParameters().at( 0 ) );
+				if ( !func.getParameters().empty() && func.getName() == "url" ) {
+					path = func.getParameters().at( 0 );
+				}
 
-					if ( String::startsWith( path, "file://" ) ) {
-						std::string filePath( path.substr( 7 ) );
+				if ( String::startsWith( path, "file://" ) ) {
 
-						FontTrueType* font =
-							FontTrueType::New( String::trim( familyProp.getValue(), '"' ) );
+					std::string filePath( path.substr( 7 ) );
 
-						font->loadFromFile( filePath );
+					FontTrueType* font =
+						FontTrueType::New( String::trim( familyProp.getValue(), '"' ) );
 
-						mFontFaces.push_back( font );
-					} else if ( String::startsWith( path, "http://" ) ||
-								String::startsWith( path, "https://" ) ) {
+					font->loadFromFile( filePath );
 
-						FontTrueType* font =
-							FontTrueType::New( String::trim( familyProp.getValue(), '"' ) );
+					mFontFaces.push_back( font );
+				} else if ( String::startsWith( path, "http://" ) ||
+							String::startsWith( path, "https://" ) ) {
 
-						Http::getAsync(
-							[&, font]( const Http&, Http::Request&, Http::Response& response ) {
-								if ( !response.getBody().empty() ) {
-									font->loadFromMemory( &response.getBody()[0],
-														  response.getBody().size() );
-									mFontFaces.push_back( font );
-									getRoot()->runOnMainThread( [&] { reloadStyle(); } );
-								}
-							},
-							URI( path ), Http::Request::ProgressCallback(),
-							Http::Request::FieldTable(), "", Seconds( 5 ) );
-					}
+					FontTrueType* font =
+						FontTrueType::New( String::trim( familyProp.getValue(), '"' ) );
+
+					Http::getAsync(
+						[&, font]( const Http&, Http::Request&, Http::Response& response ) {
+							if ( !response.getBody().empty() ) {
+								font->loadFromMemory( &response.getBody()[0],
+													  response.getBody().size() );
+								mFontFaces.push_back( font );
+								getRoot()->runOnMainThread( [&] { reloadStyle(); } );
+							}
+						},
+						URI( path ), Http::Request::ProgressCallback(), Http::Request::FieldTable(),
+						"", Seconds( 5 ) );
 				}
 			}
 		}

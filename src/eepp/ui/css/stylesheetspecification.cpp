@@ -184,7 +184,7 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "min-icon-size", "", false ).setType( PropertyType::Vector2 );
 	registerProperty( "icon-horizontal-margin", "", false ).setType( PropertyType::NumberFloat );
 	registerProperty( "icon-auto-margin", "", false ).setType( PropertyType::NumberFloat );
-	registerProperty( "src", "", false );
+	registerProperty( "src", "", false ).setType( PropertyType::String );
 	registerProperty( "scale-type", "", false );
 	registerProperty( "tint", "", false ).setType( PropertyType::Color );
 	registerProperty( "rotation-origin-point", "", false ).setType( PropertyType::Vector2 );
