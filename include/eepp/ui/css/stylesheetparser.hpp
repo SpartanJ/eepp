@@ -46,13 +46,21 @@ class EE_API StyleSheetParser {
 
 	MediaQueryList::ptr mMediaQueryList;
 
-	bool parse( const std::string& css );
+	bool parse( std::string& css, std::vector<std::string>& importedList );
 
 	int readSelector( const std::string& css, ReadState& rs, std::size_t pos, std::string& buffer );
 
 	int readComment( const std::string& css, ReadState& rs, std::size_t pos, std::string& buffer );
 
 	int readProperty( const std::string& css, ReadState& rs, std::size_t pos, std::string& buffer );
+
+	std::string importCSS( std::string path, std::vector<std::string>& importedList );
+
+	void mediaParse( std::string& css, ReadState& rs, std::size_t& pos, std::string& buffer,
+					 std::vector<std::string>& importedList );
+
+	void importParse( std::string& css, std::size_t& pos, std::string& buffer,
+					  std::vector<std::string>& importedList );
 };
 
 }}} // namespace EE::UI::CSS

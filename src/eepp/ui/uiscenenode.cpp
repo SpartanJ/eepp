@@ -7,6 +7,7 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/functionstring.hpp>
 #include <eepp/system/packmanager.hpp>
+#include <eepp/system/virtualfilesystem.hpp>
 #include <eepp/ui/css/mediaquery.hpp>
 #include <eepp/ui/css/stylesheetparser.hpp>
 #include <eepp/ui/uieventdispatcher.hpp>
@@ -16,6 +17,7 @@
 #include <eepp/ui/uiwindow.hpp>
 #include <eepp/window/window.hpp>
 #include <pugixml/pugixml.hpp>
+
 using namespace EE::Network;
 
 namespace EE { namespace UI {
@@ -150,6 +152,7 @@ UIWidget* UISceneNode::loadLayoutNodes( pugi::xml_node node, Node* parent ) {
 void UISceneNode::setStyleSheet( const CSS::StyleSheet& styleSheet ) {
 	mStyleSheet = styleSheet;
 	processStyleSheetAtRules( styleSheet );
+	onMediaChanged();
 	reloadStyle();
 }
 
@@ -163,6 +166,7 @@ void UISceneNode::setStyleSheet( const std::string& inlineStyleSheet ) {
 void UISceneNode::combineStyleSheet( const CSS::StyleSheet& styleSheet ) {
 	mStyleSheet.combineStyleSheet( styleSheet );
 	processStyleSheetAtRules( styleSheet );
+	onMediaChanged();
 	reloadStyle();
 }
 
@@ -416,11 +420,19 @@ void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles ) {
 								font->loadFromMemory( &response.getBody()[0],
 													  response.getBody().size() );
 								mFontFaces.push_back( font );
-								getRoot()->runOnMainThread( [&] { reloadStyle(); } );
+								runOnMainThread( [&] { reloadStyle(); } );
 							}
 						},
-						URI( path ), Http::Request::ProgressCallback(), Http::Request::FieldTable(),
-						"", Seconds( 5 ) );
+						URI( path ), Seconds( 5 ) );
+				} else if ( VFS::instance()->fileExists( path ) ) {
+					FontTrueType* font =
+						FontTrueType::New( String::trim( familyProp.getValue(), '"' ) );
+
+					IOStream * stream = VFS::instance()->getFileFromPath( path );
+
+					font->loadFromStream( *stream );
+
+					mFontFaces.push_back( font );
 				}
 			}
 		}

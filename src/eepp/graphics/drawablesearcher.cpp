@@ -90,7 +90,7 @@ Drawable * DrawableSearcher::searchByName( const std::string& name ) {
 						if ( image.getPixels() != NULL )
 							texture->replace( &image );
 					}
-				}, URI(name), Http::Request::ProgressCallback(), Http::Request::FieldTable(), "", Seconds(5) );
+				}, URI(name), Seconds(5) );
 			}
 
 			drawable = texture;

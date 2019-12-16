@@ -1,12 +1,18 @@
+#include <algorithm>
+#include <eepp/network/http.hpp>
+#include <eepp/network/uri.hpp>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/functionstring.hpp>
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/iostreammemory.hpp>
 #include <eepp/system/pack.hpp>
 #include <eepp/system/packmanager.hpp>
+#include <eepp/system/virtualfilesystem.hpp>
 #include <eepp/ui/css/stylesheetparser.hpp>
 #include <eepp/ui/css/stylesheetpropertiesparser.hpp>
 #include <eepp/ui/css/stylesheetselectorparser.hpp>
 
+using namespace EE::Network;
 using namespace EE::System;
 
 namespace EE { namespace UI { namespace CSS {
@@ -14,9 +20,10 @@ namespace EE { namespace UI { namespace CSS {
 StyleSheetParser::StyleSheetParser() {}
 
 bool StyleSheetParser::loadFromStream( IOStream& stream ) {
+	std::vector<std::string> importedList;
 	mCSS.resize( stream.getSize(), '\0' );
 	stream.read( &mCSS[0], stream.getSize() );
-	return parse( mCSS );
+	return parse( mCSS, importedList );
 }
 
 bool StyleSheetParser::loadFromFile( const std::string& filename ) {
@@ -77,7 +84,7 @@ StyleSheet& StyleSheetParser::getStyleSheet() {
 	return mStyleSheet;
 }
 
-bool StyleSheetParser::parse( const std::string& css ) {
+bool StyleSheetParser::parse( std::string& css, std::vector<std::string>& importedList ) {
 	ReadState rs = ReadingSelector;
 	std::size_t pos = 0;
 	std::string buffer;
@@ -88,17 +95,9 @@ bool StyleSheetParser::parse( const std::string& css ) {
 				pos = readSelector( css, rs, pos, buffer );
 
 				if ( String::startsWith( buffer, "@media" ) ) {
-					std::size_t mediaClosePos = String::findCloseBracket( css, pos - 1, '{', '}' );
-
-					if ( mediaClosePos != std::string::npos ) {
-						std::string mediaStr = css.substr( pos, mediaClosePos - 1 );
-						MediaQueryList::ptr& oldQueryList = mMediaQueryList;
-						mMediaQueryList = MediaQueryList::parse( buffer );
-						rs = ReadingSelector;
-						parse( mediaStr );
-						mMediaQueryList = oldQueryList;
-						pos = mediaClosePos + 1;
-					}
+					mediaParse( css, rs, pos, buffer, importedList );
+				} else if ( String::startsWith( buffer, "@import" ) ) {
+					importParse( css, pos, buffer, importedList );
 				}
 
 				break;
@@ -121,6 +120,7 @@ bool StyleSheetParser::parse( const std::string& css ) {
 
 int StyleSheetParser::readSelector( const std::string& css, ReadState& rs, std::size_t pos,
 									std::string& buffer ) {
+	std::size_t initialPos = pos;
 	buffer.clear();
 
 	while ( pos < css.size() ) {
@@ -136,6 +136,10 @@ int StyleSheetParser::readSelector( const std::string& css, ReadState& rs, std::
 
 		if ( css[pos] != '\n' && css[pos] != '\t' )
 			buffer += css[pos];
+
+		if ( css[pos] == ';' && String::startsWith( buffer, "@import" ) ) {
+			return initialPos;
+		}
 
 		pos++;
 	}
@@ -187,8 +191,7 @@ int StyleSheetParser::readProperty( const std::string& css, ReadState& rs, std::
 				for ( auto it = selectorParse.selectors.begin();
 					  it != selectorParse.selectors.end(); ++it ) {
 					StyleSheetStyle node( it->getName(), propertiesParse.getProperties(),
-										  propertiesParse.getVariables(),
-										  mMediaQueryList );
+										  propertiesParse.getVariables(), mMediaQueryList );
 
 					mStyleSheet.addStyle( node );
 				}
@@ -205,6 +208,125 @@ int StyleSheetParser::readProperty( const std::string& css, ReadState& rs, std::
 	}
 
 	return pos;
+}
+
+std::string StyleSheetParser::importCSS( std::string path,
+										 std::vector<std::string>& importedList ) {
+	if ( String::startsWith( path, "file://" ) ) {
+		path = path.substr( 7 );
+	}
+
+	if ( FileSystem::fileExists( path ) ) {
+		ScopedBuffer buffer;
+
+		if ( FileSystem::fileGet( path, buffer ) ) {
+			importedList.push_back( path );
+			return std::string( reinterpret_cast<const char*>( buffer.get() ) );
+		}
+	} else if ( String::startsWith( path, "http://" ) || String::startsWith( path, "https://" ) ) {
+		Http::Response response = Http::get( URI( path ), Seconds( 5 ) );
+		if ( response.getStatus() == Http::Response::Status::Ok ) {
+			importedList.push_back( path );
+			return response.getBody();
+		}
+	} else if ( VFS::instance()->fileExists( path ) ) {
+		IOStream* stream = VFS::instance()->getFileFromPath( path );
+		ScopedBuffer buffer( stream->getSize() );
+		stream->read( reinterpret_cast<char*>( buffer.get() ), buffer.size() );
+		importedList.push_back( path );
+		return std::string( reinterpret_cast<const char*>( buffer.get() ) );
+	} else {
+		if ( PackManager::instance()->isFallbackToPacksActive() ) {
+			Pack* pack = PackManager::instance()->exists( path );
+
+			if ( std::find( importedList.begin(), importedList.end(), path ) ==
+				 importedList.end() ) {
+				if ( NULL != pack ) {
+					eePRINTL( "Loading css from pack: %s", path.c_str() );
+					ScopedBuffer buffer;
+					if ( pack->isOpen() && pack->extractFileToMemory( path, buffer ) ) {
+						importedList.push_back( path );
+						return std::string( reinterpret_cast<const char*>( buffer.get() ) );
+					}
+				}
+			}
+		}
+	}
+
+	return std::string();
+}
+
+void StyleSheetParser::mediaParse( std::string& css, ReadState& rs, std::size_t& pos,
+								   std::string& buffer, std::vector<std::string>& importedList ) {
+	std::size_t mediaClosePos = String::findCloseBracket( css, pos - 1, '{', '}' );
+
+	if ( mediaClosePos != std::string::npos ) {
+		std::string mediaStr = css.substr( pos, mediaClosePos - pos );
+		MediaQueryList::ptr oldQueryList = mMediaQueryList;
+		mMediaQueryList = MediaQueryList::parse( buffer );
+		rs = ReadingSelector;
+		parse( mediaStr, importedList );
+		mMediaQueryList = oldQueryList;
+		pos = mediaClosePos + 1;
+	}
+}
+
+void StyleSheetParser::importParse( std::string& css, std::size_t& pos, std::string& buffer,
+									std::vector<std::string>& importedList ) {
+	std::string::size_type endImport = css.find_first_of( ";", pos );
+
+	if ( endImport == std::string::npos ) {
+		endImport = css.find_first_of( "\n", pos );
+		if ( endImport == std::string::npos ) {
+			endImport = css.size() - 1;
+		}
+	}
+
+	std::string import( css.substr( pos, endImport - pos ) );
+	std::vector<std::string> tokens = String::split( import, ' ' );
+
+	if ( tokens.size() >= 2 ) {
+		std::string path( tokens[1] );
+		std::string mediaStr;
+
+		if ( tokens.size() > 2 ) {
+			for ( size_t i = 2; i < tokens.size(); i++ ) {
+				mediaStr += tokens[i] + " ";
+			}
+		}
+
+		FunctionString function( FunctionString::parse( path ) );
+
+		if ( function.getName() == "url" && !function.getParameters().empty() ) {
+			path = function.getParameters().at( 0 );
+		}
+
+		if ( std::find( importedList.begin(), importedList.end(), path ) == importedList.end() ) {
+
+			std::string newCss( importCSS( path, importedList ) );
+
+			if ( !newCss.empty() ) {
+				if ( !mediaStr.empty() ) {
+					mediaStr.insert( 0, "@media " );
+					mediaStr.append( "{\n" );
+					newCss = mediaStr + newCss + "\n}";
+				}
+
+				std::string head( css.substr( 0, pos ) );
+				std::string tail( css.substr( endImport + 1 ) );
+				css = head + newCss + tail;
+
+				buffer.clear();
+			} else {
+				pos = endImport + 1;
+			}
+
+		} else {
+			pos = endImport + 1;
+		}
+	} else {
+		pos = endImport + 1;
+	}
 }
 
 }}} // namespace EE::UI::CSS

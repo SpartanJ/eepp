@@ -4,6 +4,8 @@
 	/*src: url("file://assets/fonts/OpenSans-Regular.ttf");*/
 }
 
+@import url("assets/layouts/imported.css") screen and (min-width: 800px);
+
 :root {
 	--font-color: #E6E6E6FF;
 }
@@ -82,7 +84,6 @@ Tooltip {
 }
 
 #lvbox > #tpad {
-	font-family: "OpenSans Regular";
 	margin-top: 0dp;
 	border-width: 2dp;
 	border-color: #66666666;

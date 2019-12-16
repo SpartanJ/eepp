@@ -488,36 +488,36 @@ class EE_API Http : NonCopyable {
 		};
 
 		/** Creates an HTTP Request using the global HTTP Client Pool */
-		static Response request( const URI& uri, Request::Method method = Request::Method::Get, const Request::ProgressCallback& progressCallback = Request::ProgressCallback(),
-								  const Request::FieldTable& headers = Request::FieldTable(), const std::string& body = "", const Time& timeout = Time::Zero,
+		static Response request( const URI& uri, Request::Method method = Request::Method::Get, const Time& timeout = Time::Zero, const Request::ProgressCallback& progressCallback = Request::ProgressCallback(),
+								  const Request::FieldTable& headers = Request::FieldTable(), const std::string& body = "",
 								  const bool& validateCertificate = true, const URI& proxy = URI() );
 
 		/** Creates an HTTP GET Request using the global HTTP Client Pool */
-		static Response get( const URI& uri, const Request::ProgressCallback& progressCallback = Request::ProgressCallback(),
-							  const Request::FieldTable& headers = Request::FieldTable(), const std::string& body = "", const Time& timeout = Time::Zero,
+		static Response get( const URI& uri, const Time& timeout = Time::Zero, const Request::ProgressCallback& progressCallback = Request::ProgressCallback(),
+							  const Request::FieldTable& headers = Request::FieldTable(), const std::string& body = "",
 							  const bool& validateCertificate = true, const URI& proxy = URI() );
 
 		/** Creates an HTTP POST Request using the global HTTP Client Pool */
-		static Response post( const URI& uri, const Request::ProgressCallback& progressCallback = Request::ProgressCallback(),
-							  const Request::FieldTable& headers = Request::FieldTable(), const std::string& body = "", const Time& timeout = Time::Zero,
+		static Response post( const URI& uri, const Time& timeout = Time::Zero, const Request::ProgressCallback& progressCallback = Request::ProgressCallback(),
+							  const Request::FieldTable& headers = Request::FieldTable(), const std::string& body = "",
 							  const bool& validateCertificate = true, const URI& proxy = URI() );
 
 		/** Creates an async HTTP Request using the global HTTP Client Pool */
 		static void requestAsync( const Http::AsyncResponseCallback& cb,
-								  const URI& uri, Request::Method method = Request::Method::Get, const Request::ProgressCallback& progressCallback = Request::ProgressCallback(),
-								  const Request::FieldTable& headers = Request::FieldTable(), const std::string& body = "", const Time& timeout = Time::Zero,
+								  const URI& uri, const Time& timeout = Time::Zero, Request::Method method = Request::Method::Get, const Request::ProgressCallback& progressCallback = Request::ProgressCallback(),
+								  const Request::FieldTable& headers = Request::FieldTable(), const std::string& body = "",
 								  const bool& validateCertificate = true, const URI& proxy = URI() );
 
 		/** Creates an async HTTP GET Request using the global HTTP Client Pool */
 		static void getAsync( const Http::AsyncResponseCallback& cb,
-							  const URI& uri, const Request::ProgressCallback& progressCallback = Request::ProgressCallback(),
-							  const Request::FieldTable& headers = Request::FieldTable(), const std::string& body = "", const Time& timeout = Time::Zero,
+							  const URI& uri, const Time& timeout = Time::Zero, const Request::ProgressCallback& progressCallback = Request::ProgressCallback(),
+							  const Request::FieldTable& headers = Request::FieldTable(), const std::string& body = "",
 							  const bool& validateCertificate = true, const URI& proxy = URI() );
 
 		/** Creates an async HTTP POST Request using the global HTTP Client Pool */
 		static void postAsync( const Http::AsyncResponseCallback& cb,
-							   const URI& uri, const Request::ProgressCallback& progressCallback = Request::ProgressCallback(),
-							   const Request::FieldTable& headers = Request::FieldTable(), const std::string& body = "", const Time& timeout = Time::Zero,
+							   const URI& uri, const Time& timeout = Time::Zero, const Request::ProgressCallback& progressCallback = Request::ProgressCallback(),
+							   const Request::FieldTable& headers = Request::FieldTable(), const std::string& body = "",
 							   const bool& validateCertificate = true, const URI& proxy = URI() );
 
 	private:

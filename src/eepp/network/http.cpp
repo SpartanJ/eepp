@@ -402,8 +402,8 @@ void Http::Response::parseFields(std::istream &in) {
 
 static Http::Pool sGlobalHttpPool = Http::Pool();
 
-Http::Response Http::request( const URI& uri, Request::Method method, const Http::Request::ProgressCallback& progressCallback,
-							  const Http::Request::FieldTable& headers, const std::string& body, const Time& timeout,
+Http::Response Http::request( const URI& uri, Request::Method method, const Time& timeout, const Http::Request::ProgressCallback& progressCallback,
+							  const Http::Request::FieldTable& headers, const std::string& body,
 							  const bool& validateCertificate, const URI& proxy ) {
 	Http * http = sGlobalHttpPool.get( uri, proxy );
 	Request request( uri.getPathAndQuery(), method, body, validateCertificate, validateCertificate, true, true );
@@ -415,21 +415,21 @@ Http::Response Http::request( const URI& uri, Request::Method method, const Http
 	return http->sendRequest( request, timeout );
 }
 
-Http::Response Http::get( const URI& uri, const Http::Request::ProgressCallback& progressCallback,
-							  const Http::Request::FieldTable& headers, const std::string& body, const Time& timeout,
+Http::Response Http::get( const URI& uri, const Time& timeout, const Http::Request::ProgressCallback& progressCallback,
+							  const Http::Request::FieldTable& headers, const std::string& body,
 							  const bool& validateCertificate, const URI& proxy ) {
-	return request( uri, Request::Method::Get, progressCallback, headers, body, timeout, validateCertificate, proxy );
+	return request( uri, Request::Method::Get, timeout, progressCallback, headers, body, validateCertificate, proxy );
 }
 
-Http::Response Http::post( const URI& uri, const Http::Request::ProgressCallback& progressCallback,
-							  const Http::Request::FieldTable& headers, const std::string& body, const Time& timeout,
+Http::Response Http::post( const URI& uri, const Time& timeout, const Http::Request::ProgressCallback& progressCallback,
+							  const Http::Request::FieldTable& headers, const std::string& body,
 							  const bool& validateCertificate, const URI& proxy ) {
-	return request( uri, Request::Method::Post, progressCallback, headers, body, timeout, validateCertificate, proxy );
+	return request( uri, Request::Method::Post, timeout, progressCallback, headers, body, validateCertificate, proxy );
 }
 
 void Http::requestAsync( const Http::AsyncResponseCallback& cb,
-						 const URI& uri, Request::Method method, const Http::Request::ProgressCallback& progressCallback,
-						 const Http::Request::FieldTable& headers, const std::string& body, const Time& timeout,
+						 const URI& uri, const Time& timeout, Request::Method method, const Http::Request::ProgressCallback& progressCallback,
+						 const Http::Request::FieldTable& headers, const std::string& body,
 						 const bool& validateCertificate, const URI& proxy ) {
 	Http * http = sGlobalHttpPool.get( uri, proxy );
 	Request request( uri.getPathAndQuery(), method, body, validateCertificate, validateCertificate, true, true );
@@ -441,16 +441,16 @@ void Http::requestAsync( const Http::AsyncResponseCallback& cb,
 	http->sendAsyncRequest( cb, request, timeout );
 }
 
-void Http::getAsync( const Http::AsyncResponseCallback& cb, const URI& uri, const Http::Request::ProgressCallback& progressCallback,
-							  const Http::Request::FieldTable& headers, const std::string& body, const Time& timeout,
+void Http::getAsync( const Http::AsyncResponseCallback& cb, const URI& uri, const Time& timeout, const Http::Request::ProgressCallback& progressCallback,
+							  const Http::Request::FieldTable& headers, const std::string& body,
 							  const bool& validateCertificate, const URI& proxy ) {
-	requestAsync( cb, uri, Request::Method::Get, progressCallback, headers, body, timeout, validateCertificate, proxy );
+	requestAsync( cb, uri, timeout, Request::Method::Get, progressCallback, headers, body, validateCertificate, proxy );
 }
 
-void Http::postAsync( const Http::AsyncResponseCallback& cb, const URI& uri, const Http::Request::ProgressCallback& progressCallback,
-							  const Http::Request::FieldTable& headers, const std::string& body, const Time& timeout,
+void Http::postAsync( const Http::AsyncResponseCallback& cb, const URI& uri, const Time& timeout, const Http::Request::ProgressCallback& progressCallback,
+							  const Http::Request::FieldTable& headers, const std::string& body,
 							  const bool& validateCertificate, const URI& proxy ) {
-	requestAsync( cb, uri, Request::Method::Post, progressCallback, headers, body, timeout, validateCertificate, proxy );
+	requestAsync( cb, uri, timeout, Request::Method::Post, progressCallback, headers, body, validateCertificate, proxy );
 }
 
 Http::Http() :
