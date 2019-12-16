@@ -26,6 +26,8 @@ FontBMFont::FontBMFont( const std::string FontName ) :
 {}
 
 void FontBMFont::cleanup() {
+	sendEvent( Event::Unload );
+
 	Texture * texture = mPages[ mFontSize ].texture;
 
 	if ( NULL != texture && TextureFactory::existsSingleton() )
@@ -142,6 +144,8 @@ bool FontBMFont::loadFromStream( IOStream& stream ) {
 			glyph.bounds = Rectf( charOffsetX, -fontSize + charOffsetY, charWidth, charHeight );
 			glyph.textureRect = Rect( charX, charY, charWidth, charHeight );
 		}
+
+		sendEvent( Event::Load );
 	}
 
 	return true;
@@ -211,6 +215,10 @@ Float FontBMFont::getUnderlineThickness(unsigned int characterSize) const {
 
 Texture * FontBMFont::getTexture(unsigned int characterSize) const {
 	return mPages[ mFontSize ].texture;
+}
+
+bool FontBMFont::loaded() const {
+	return !mPages.empty();
 }
 
 FontBMFont& FontBMFont::operator =(const FontBMFont& right) {

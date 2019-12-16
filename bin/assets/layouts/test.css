@@ -1,6 +1,7 @@
 @font-face {
 	font-family: "OpenSans Regular";
-	src: url("file://assets/fonts/OpenSans-Regular.ttf");
+	src: url("https://raw.githubusercontent.com/SpartanJ/eepp/develop/bin/assets/fonts/OpenSans-Regular.ttf");
+	/*src: url("file://assets/fonts/OpenSans-Regular.ttf");*/
 }
 
 :root {
@@ -81,6 +82,7 @@ Tooltip {
 }
 
 #lvbox > #tpad {
+	font-family: "OpenSans Regular";
 	margin-top: 0dp;
 	border-width: 2dp;
 	border-color: #66666666;

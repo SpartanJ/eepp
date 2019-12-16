@@ -17,8 +17,7 @@ UIStyle* UIStyle::New( UIWidget* widget ) {
 	return eeNew( UIStyle, ( widget ) );
 }
 
-UIStyle::UIStyle( UIWidget* widget ) : UIState(), mWidget( widget ), mChangingState( false ) {
-}
+UIStyle::UIStyle( UIWidget* widget ) : UIState(), mWidget( widget ), mChangingState( false ) {}
 
 UIStyle::~UIStyle() {
 	removeRelatedWidgets();
@@ -122,7 +121,7 @@ StyleSheetVariable UIStyle::getVariable( const std::string& variable ) {
 		Node* parentWidget = mWidget->getParentWidget();
 
 		if ( NULL != parentWidget ) {
-			UIStyle * style = parentWidget->asType<UIWidget>()->getUIStyle();
+			UIStyle* style = parentWidget->asType<UIWidget>()->getUIStyle();
 
 			if ( NULL != style ) {
 				return style->getVariable( variable );

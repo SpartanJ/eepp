@@ -366,9 +366,14 @@ bool UITooltip::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::ShadowColor:
 			setFontShadowColor( attribute.asColor() );
 			break;
-		case PropertyId::FontFamily:
-			setFont( FontManager::instance()->getByName( attribute.asString() ) );
+		case PropertyId::FontFamily: {
+			Font * font = FontManager::instance()->getByName( attribute.asString() );
+
+			if ( NULL != font && font->loaded() ) {
+				setFont( font );
+			}
 			break;
+		}
 		case PropertyId::FontSize:
 			setCharacterSize( attribute.asDpDimensionI() );
 			break;

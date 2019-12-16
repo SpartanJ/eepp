@@ -38,6 +38,13 @@ enum FontVerticalAlign {
 /** @brief Font interface class. */
 class EE_API Font {
 	public:
+		enum Event {
+			Load,
+			Unload
+		};
+
+		typedef std::function<void( Uint32, Event, Font* )> FontEventCallback;
+
 		struct Info {
 			std::string family; ///< The font family
 		};
@@ -80,12 +87,26 @@ class EE_API Font {
 		virtual Float getUnderlineThickness(unsigned int characterSize) const = 0;
 
 		virtual Texture * getTexture(unsigned int characterSize) const = 0;
+
+		virtual bool loaded() const = 0;
+
+		/** Push a new on resource change callback.
+		* @return The Callback Id
+		*/
+		Uint32 pushFontEventCallback( const FontEventCallback& cb );
+
+		/** Pop the on resource change callback id indicated. */
+		void popFontEventCallback( const Uint32& callbackId );
 	protected:
 		FontType					mType;
 		std::string					mFontName;
 		Uint32						mFontHash;
+		Uint32						mNumCallBacks;
+		std::map<Uint32, FontEventCallback> mCallbacks;
 
 		Font( const FontType& Type, const std::string& setName );
+
+		void sendEvent( const Event& event );
 };
 
 }}

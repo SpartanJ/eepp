@@ -31,7 +31,7 @@ class EE_API ThreadPool : NonCopyable {
 
 		ThreadPool();
 
-		void ThreadFunc();
+		void threadFunc();
 
 		std::vector<std::unique_ptr<Thread>> mThreads;
 		std::deque<std::unique_ptr<Work>> mWork;

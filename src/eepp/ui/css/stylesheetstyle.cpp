@@ -11,7 +11,8 @@ StyleSheetStyle::StyleSheetStyle( const std::string& selector,
 	mSelector( selector ),
 	mProperties( properties ),
 	mVariables( variables ),
-	mMediaQueryList( mediaQueryList ) {
+	mMediaQueryList( mediaQueryList ),
+	mAtRuleType( checkAtRule() ) {
 	for ( auto& it : mProperties ) {
 		it.second.setSpecificity( mSelector.getSpecificity() );
 		it.second.setVolatile( !mSelector.isCacheable() );
@@ -51,6 +52,28 @@ StyleSheetProperties& StyleSheetStyle::getPropertiesRef() {
 
 const StyleSheetVariables& StyleSheetStyle::getVariables() const {
 	return mVariables;
+}
+
+StyleSheetProperty StyleSheetStyle::getPropertyById( const PropertyId& id ) const {
+	for ( auto& prop : mProperties ) {
+		if ( NULL != prop.second.getPropertyDefinition() &&
+			 prop.second.getPropertyDefinition()->getPropertyId() == id ) {
+			return prop.second;
+		}
+	}
+
+	return StyleSheetProperty();
+}
+
+StyleSheetProperty StyleSheetStyle::getPropertyByDefinition( const PropertyDefinition* def ) const {
+	for ( auto& prop : mProperties ) {
+		if ( NULL != prop.second.getPropertyDefinition() &&
+			 prop.second.getPropertyDefinition() == def ) {
+			return prop.second;
+		}
+	}
+
+	return StyleSheetProperty();
 }
 
 StyleSheetProperty StyleSheetStyle::getPropertyByName( const std::string& name ) const {
@@ -93,6 +116,22 @@ bool StyleSheetStyle::isMediaValid() const {
 
 const MediaQueryList::ptr& StyleSheetStyle::getMediaQueryList() const {
 	return mMediaQueryList;
+}
+
+bool StyleSheetStyle::isAtRule() const {
+	return mAtRuleType != AtRuleType::None;
+}
+
+const AtRuleType& StyleSheetStyle::getAtRuleType() const {
+	return mAtRuleType;
+}
+
+AtRuleType StyleSheetStyle::checkAtRule() {
+	if ( mSelector.getName() == "@font-face" ) {
+		return AtRuleType::FontFace;
+	}
+
+	return AtRuleType::None;
 }
 
 }}} // namespace EE::UI::CSS

@@ -545,6 +545,12 @@ void Text::invalidateColors() {
 	mColorsNeedUpdate = true;
 }
 
+void Text::invalidate() {
+	mCachedWidthNeedUpdate = true;
+	mGeometryNeedUpdate = true;
+	mColorsNeedUpdate = true;
+}
+
 Rectf Text::getLocalBounds() {
 	ensureGeometryUpdate();
 

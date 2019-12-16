@@ -6,7 +6,7 @@ std::unique_ptr<ThreadPool> ThreadPool::create( Uint32 numThreads ) {
 	std::unique_ptr<ThreadPool> pool(new ThreadPool());
 
 	for (Uint32 i = 0; i < numThreads; ++i) {
-		pool->mThreads.emplace_back(std::make_unique<Thread>(&ThreadPool::ThreadFunc, pool.get()));
+		pool->mThreads.emplace_back(std::make_unique<Thread>(&ThreadPool::threadFunc, pool.get()));
 		pool->mThreads.back().get()->launch();
 	}
 
@@ -28,7 +28,7 @@ ThreadPool::~ThreadPool() {
 	}
 }
 
-void ThreadPool::ThreadFunc() {
+void ThreadPool::threadFunc() {
 	while (true) {
 		std::unique_ptr<Work> work;
 		{

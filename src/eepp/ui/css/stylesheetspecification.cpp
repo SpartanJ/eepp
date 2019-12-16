@@ -162,7 +162,9 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "shadow-color", "", false ).setType( PropertyType::Color );
 	registerProperty( "selected-color", "", false ).setType( PropertyType::Color );
 	registerProperty( "selection-back-color", "", false ).setType( PropertyType::Color );
-	registerProperty( "font-family", "", false ).addAlias( "font-name" );
+	registerProperty( "font-family", "", false )
+		.addAlias( "font-name" )
+		.setType( PropertyType::String );
 	registerProperty( "font-size", "", false )
 		.setType( PropertyType::NumberFloat )
 		.addAlias( "text-size" )
@@ -282,8 +284,7 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "hint-stroke-width", "", false )
 		.setType( PropertyType::NumberFloat )
 		.addAlias( "hintoutlinethickness" );
-	registerProperty( "hint-stroke-color", "", false )
-		.setType( PropertyType::Color );
+	registerProperty( "hint-stroke-color", "", false ).setType( PropertyType::Color );
 	registerProperty( "hint-font-family", "", false ).addAlias( "hint-font-name" );
 
 	// Shorthands

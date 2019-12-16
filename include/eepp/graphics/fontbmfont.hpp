@@ -45,6 +45,8 @@ class EE_API FontBMFont : public Font {
 
 		Texture * getTexture(unsigned int characterSize) const;
 
+		bool loaded() const;
+
 		FontBMFont& operator =(const FontBMFont& right);
 	protected:
 		FontBMFont(const std::string FontName);

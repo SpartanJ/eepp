@@ -2,11 +2,14 @@
 #define EE_UI_CSS_STYLESHEETSTYLE_HPP
 
 #include <eepp/ui/css/mediaquery.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
 #include <eepp/ui/css/stylesheetselector.hpp>
 #include <eepp/ui/css/stylesheetvariable.hpp>
 
 namespace EE { namespace UI { namespace CSS {
+
+enum class AtRuleType : Uint32 { None, FontFace };
 
 class EE_API StyleSheetStyle {
   public:
@@ -26,6 +29,10 @@ class EE_API StyleSheetStyle {
 
 	const StyleSheetVariables& getVariables() const;
 
+	StyleSheetProperty getPropertyById( const PropertyId& id ) const;
+
+	StyleSheetProperty getPropertyByDefinition( const PropertyDefinition* def ) const;
+
 	StyleSheetProperty getPropertyByName( const std::string& name ) const;
 
 	void setProperty( const StyleSheetProperty& property );
@@ -40,11 +47,18 @@ class EE_API StyleSheetStyle {
 
 	const MediaQueryList::ptr& getMediaQueryList() const;
 
+	bool isAtRule() const;
+
+	const AtRuleType& getAtRuleType() const;
+
   protected:
 	StyleSheetSelector mSelector;
 	StyleSheetProperties mProperties;
 	StyleSheetVariables mVariables;
 	MediaQueryList::ptr mMediaQueryList;
+	AtRuleType mAtRuleType;
+
+	AtRuleType checkAtRule();
 };
 
 typedef std::map<std::string, StyleSheetStyle> StyleSheetStyleList;

@@ -25,6 +25,7 @@ StyleSheetProperty::StyleSheetProperty( const PropertyDefinition* definition,
 	mIsVarValue( String::startsWith( mValue, "var(" ) ),
 	mPropertyDefinition( definition ),
 	mShorthandDefinition( NULL ) {
+	cleanValue();
 	checkImportant();
 
 	if ( NULL == mShorthandDefinition && NULL == mPropertyDefinition ) {
@@ -44,6 +45,7 @@ StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::stri
 	mShorthandDefinition( NULL == mPropertyDefinition
 							  ? StyleSheetSpecification::instance()->getShorthand( mNameHash )
 							  : NULL ) {
+	cleanValue();
 	checkImportant();
 
 	if ( NULL == mShorthandDefinition && NULL == mPropertyDefinition ) {
@@ -64,6 +66,7 @@ StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::stri
 	mShorthandDefinition( NULL == mPropertyDefinition
 							  ? StyleSheetSpecification::instance()->getShorthand( mNameHash )
 							  : NULL ) {
+	cleanValue();
 	checkImportant();
 
 	if ( NULL == mShorthandDefinition && NULL == mPropertyDefinition ) {
@@ -247,11 +250,11 @@ Vector2f StyleSheetProperty::asDpDimensionVector2f( const Vector2f& defaultValue
 		auto xySplit = String::split( mValue, ' ', true );
 
 		if ( xySplit.size() == 2 ) {
-			vector.x = PixelDensity::toDpFromString("0");
-			vector.y = PixelDensity::toDpFromString("0");
+			vector.x = PixelDensity::toDpFromString( "0" );
+			vector.y = PixelDensity::toDpFromString( "0" );
 			return vector;
 		} else if ( xySplit.size() == 1 ) {
-			vector.x = vector.y = PixelDensity::toDpFromString("0");
+			vector.x = vector.y = PixelDensity::toDpFromString( "0" );
 			return vector;
 		}
 	}
@@ -422,6 +425,12 @@ const ShorthandDefinition* StyleSheetProperty::getShorthandDefinition() const {
 
 const bool& StyleSheetProperty::isVarValue() const {
 	return mIsVarValue;
+}
+
+void StyleSheetProperty::cleanValue() {
+	if ( NULL != mPropertyDefinition && mPropertyDefinition->getType() == PropertyType::String ) {
+		String::trimInPlace( mValue, '"' );
+	}
 }
 
 }}} // namespace EE::UI::CSS

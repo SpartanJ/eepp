@@ -48,6 +48,9 @@ class TScopedBuffer : NonCopyable {
 
 		void reset(const std::size_t& size = 0);
 
+		/** creates a copy of p */
+		void reset(const T * p = 0, const std::size_t& size = 0);
+
 		bool isEmpty() const;
 
 		const std::size_t& size() const;
@@ -137,6 +140,13 @@ void TScopedBuffer<T>::reset(T * p, const std::size_t& size) {
 	clear();
 	mData = p;
 	mSize = size;
+}
+
+template <typename T>
+void TScopedBuffer<T>::reset(const T * p, const std::size_t& size) {
+	eeASSERT( p == 0 || p != mData );
+	reset( size );
+	memcpy( mData, p, size );
 }
 
 template <typename T>

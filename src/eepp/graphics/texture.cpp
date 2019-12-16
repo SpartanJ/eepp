@@ -81,7 +81,16 @@ Texture::~Texture() {
 void Texture::deleteTexture() {
 	if ( mTexture ) {
 		unsigned int Texture = static_cast<unsigned int>(mTexture);
+		bool threaded = Engine::instance()->isSharedGLContextEnabled() &&
+						Thread::getCurrentThreadId() != Engine::instance()->getMainThreadId();
+
+		if ( threaded )
+			Engine::instance()->getCurrentWindow()->setGLContextThread();
+
 		glDeleteTextures(1, &Texture);
+
+		if ( threaded )
+			Engine::instance()->getCurrentWindow()->unsetGLContextThread();
 
 		mTexture = 0;
 		mFlags = 0;

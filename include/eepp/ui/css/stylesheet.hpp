@@ -21,13 +21,15 @@ class EE_API StyleSheet {
 	void combineStyleSheet( const StyleSheet& styleSheet );
 
 	StyleSheetStyleVector getElementStyles( StyleSheetElement* element,
-											const bool& applyPseudo = false );
+											const bool& applyPseudo = false ) const;
 
 	const StyleSheetStyleVector& getStyles() const;
 
 	bool updateMediaLists( const MediaFeatures& features );
 
-	bool isMediaQueryListEmpty();
+	bool isMediaQueryListEmpty() const;
+
+	StyleSheetStyleVector getStyleSheetStyleByAtRule( const AtRuleType& atRuleType ) const;
 
   protected:
 	StyleSheetStyleVector mNodes;

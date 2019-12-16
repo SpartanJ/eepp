@@ -5,6 +5,10 @@
 #include <eepp/system/translator.hpp>
 #include <eepp/ui/css/stylesheet.hpp>
 
+namespace EE { namespace Graphics {
+class Font;
+}}
+
 namespace EE { namespace UI {
 
 class UIThemeManager;
@@ -75,6 +79,7 @@ class EE_API UISceneNode : public SceneNode {
 	CSS::StyleSheet mStyleSheet;
 	bool mIsLoading;
 	UIThemeManager* mUIThemeManager;
+	std::vector<Font*> mFontFaces;
 
 	virtual void resizeControl( EE::Window::Window* win );
 
@@ -97,6 +102,10 @@ class EE_API UISceneNode : public SceneNode {
 	virtual void onChildCountChange();
 
 	virtual void onSizeChange();
+
+	void processStyleSheetAtRules( const CSS::StyleSheet& styleSheet );
+
+	void loadFontFaces( const CSS::StyleSheetStyleVector& styles );
 };
 
 }} // namespace EE::UI

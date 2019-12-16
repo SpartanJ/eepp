@@ -22,7 +22,7 @@ class EE_API FontTrueType : public Font {
 
 		bool loadFromFile(const std::string& filename);
 
-		bool loadFromMemory(const void* data, std::size_t sizeInBytes);
+		bool loadFromMemory(const void* data, std::size_t sizeInBytes, bool copyData = true);
 
 		bool loadFromStream( IOStream& stream );
 
@@ -43,6 +43,8 @@ class EE_API FontTrueType : public Font {
 		Float getUnderlineThickness(unsigned int characterSize) const;
 
 		Texture * getTexture(unsigned int characterSize) const;
+
+		bool loaded() const;
 
 		FontTrueType& operator =(const FontTrueType& right);
 	protected:

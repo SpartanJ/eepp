@@ -45,6 +45,8 @@ class EE_API FontSprite : public Font {
 
 		Texture * getTexture(unsigned int characterSize) const;
 
+		bool loaded() const;
+
 		FontSprite& operator =(const FontSprite& right);
 	protected:
 		FontSprite(const std::string FontName);

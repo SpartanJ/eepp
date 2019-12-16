@@ -26,6 +26,8 @@ FontSprite::FontSprite( const std::string FontName ) :
 {}
 
 void FontSprite::cleanup() {
+	sendEvent( Event::Unload );
+
 	Texture * texture = mPages[ mFontSize ].texture;
 
 	if ( NULL != texture && TextureFactory::existsSingleton() )
@@ -139,6 +141,8 @@ bool FontSprite::loadFromStream( IOStream& stream, Color key, Uint32 firstChar, 
 	if ( NULL != mPages[ mFontSize ].texture )
 		mPages[ mFontSize ].texture->setFilter( Texture::TextureFilter::Nearest );
 
+	sendEvent( Event::Load );
+
 	return true;
 }
 
@@ -206,6 +210,10 @@ Float FontSprite::getUnderlineThickness(unsigned int characterSize) const {
 
 Texture * FontSprite::getTexture(unsigned int characterSize) const {
 	return mPages[ mFontSize ].texture;
+}
+
+bool FontSprite::loaded() const {
+	return !mPages.empty();
 }
 
 FontSprite& FontSprite::operator =(const FontSprite& right) {

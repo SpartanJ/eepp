@@ -127,6 +127,8 @@ class EE_API Text {
 		void shrinkText( const Uint32& MaxWidth );
 
 		void invalidateColors();
+
+		void invalidate();
 	protected:
 		struct VertexCoords {
 			Vector2f texCoords;

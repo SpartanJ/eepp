@@ -132,6 +132,7 @@ class EE_API StyleSheetProperty {
 	const PropertyDefinition* mPropertyDefinition;
 	const ShorthandDefinition* mShorthandDefinition;
 
+	void cleanValue();
 	void checkImportant();
 };
 

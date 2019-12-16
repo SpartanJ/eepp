@@ -32,7 +32,7 @@ void StyleSheet::combineStyleSheet( const StyleSheet& styleSheet ) {
 }
 
 StyleSheetStyleVector StyleSheet::getElementStyles( StyleSheetElement* element,
-													const bool& applyPseudo ) {
+													const bool& applyPseudo ) const {
 	StyleSheetStyleVector styles;
 
 	for ( const auto& node : mNodes ) {
@@ -66,7 +66,7 @@ bool StyleSheet::updateMediaLists( const MediaFeatures& features ) {
 	return updateStyles;
 }
 
-bool StyleSheet::isMediaQueryListEmpty() {
+bool StyleSheet::isMediaQueryListEmpty() const {
 	return mMediaQueryList.empty();
 }
 
@@ -77,6 +77,18 @@ void StyleSheet::addMediaQueryList( MediaQueryList::ptr list ) {
 			mMediaQueryList.push_back( list );
 		}
 	}
+}
+
+StyleSheetStyleVector StyleSheet::getStyleSheetStyleByAtRule( const AtRuleType& atRuleType ) const {
+	StyleSheetStyleVector vector;
+
+	for ( auto& node : mNodes ) {
+		if ( node.getAtRuleType() == atRuleType ) {
+			vector.push_back( node );
+		}
+	}
+
+	return vector;
 }
 
 }}} // namespace EE::UI::CSS

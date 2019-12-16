@@ -1,5 +1,11 @@
 #include <algorithm>
+#include <eepp/core/string.hpp>
+#include <eepp/graphics/fontmanager.hpp>
+#include <eepp/graphics/fonttruetype.hpp>
+#include <eepp/network/http.hpp>
+#include <eepp/network/uri.hpp>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/functionstring.hpp>
 #include <eepp/system/packmanager.hpp>
 #include <eepp/ui/css/mediaquery.hpp>
 #include <eepp/ui/css/stylesheetparser.hpp>
@@ -10,6 +16,7 @@
 #include <eepp/ui/uiwindow.hpp>
 #include <eepp/window/window.hpp>
 #include <pugixml/pugixml.hpp>
+using namespace EE::Network;
 
 namespace EE { namespace UI {
 
@@ -41,6 +48,10 @@ UISceneNode::UISceneNode( EE::Window::Window* window ) :
 
 UISceneNode::~UISceneNode() {
 	eeSAFE_DELETE( mUIThemeManager );
+
+	for ( auto& font : mFontFaces ) {
+		FontManager::instance()->remove( font );
+	}
 }
 
 void UISceneNode::resizeControl( EE::Window::Window* ) {
@@ -138,7 +149,7 @@ UIWidget* UISceneNode::loadLayoutNodes( pugi::xml_node node, Node* parent ) {
 
 void UISceneNode::setStyleSheet( const CSS::StyleSheet& styleSheet ) {
 	mStyleSheet = styleSheet;
-
+	processStyleSheetAtRules( styleSheet );
 	reloadStyle();
 }
 
@@ -151,7 +162,7 @@ void UISceneNode::setStyleSheet( const std::string& inlineStyleSheet ) {
 
 void UISceneNode::combineStyleSheet( const CSS::StyleSheet& styleSheet ) {
 	mStyleSheet.combineStyleSheet( styleSheet );
-
+	processStyleSheetAtRules( styleSheet );
 	reloadStyle();
 }
 
@@ -361,6 +372,57 @@ void UISceneNode::onSizeChange() {
 	SceneNode::onSizeChange();
 
 	mRoot->setPixelsSize( getPixelsSize() );
+}
+
+void UISceneNode::processStyleSheetAtRules( const StyleSheet& styleSheet ) {
+	loadFontFaces( styleSheet.getStyleSheetStyleByAtRule( AtRuleType::FontFace ) );
+}
+
+void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles ) {
+	for ( auto& style : styles ) {
+		CSS::StyleSheetProperty familyProp( style.getPropertyById( PropertyId::FontFamily ) );
+		CSS::StyleSheetProperty srcProp( style.getPropertyById( PropertyId::Src ) );
+
+		if ( !familyProp.isEmpty() && !srcProp.isEmpty() ) {
+			Font* fontSearch = FontManager::instance()->getByName( familyProp.getValue() );
+
+			if ( NULL == fontSearch ) {
+				FunctionString func( FunctionString::parse( srcProp.getValue() ) );
+
+				if ( !func.getParameters().empty() ) {
+					std::string path( func.getParameters().at( 0 ) );
+
+					if ( String::startsWith( path, "file://" ) ) {
+						std::string filePath( path.substr( 7 ) );
+
+						FontTrueType* font =
+							FontTrueType::New( String::trim( familyProp.getValue(), '"' ) );
+
+						font->loadFromFile( filePath );
+
+						mFontFaces.push_back( font );
+					} else if ( String::startsWith( path, "http://" ) ||
+								String::startsWith( path, "https://" ) ) {
+
+						FontTrueType* font =
+							FontTrueType::New( String::trim( familyProp.getValue(), '"' ) );
+
+						Http::getAsync(
+							[&, font]( const Http&, Http::Request&, Http::Response& response ) {
+								if ( !response.getBody().empty() ) {
+									font->loadFromMemory( &response.getBody()[0],
+														  response.getBody().size() );
+									mFontFaces.push_back( font );
+									getRoot()->runOnMainThread( [&] { reloadStyle(); } );
+								}
+							},
+							URI( path ), Http::Request::ProgressCallback(),
+							Http::Request::FieldTable(), "", Seconds( 5 ) );
+					}
+				}
+			}
+		}
+	}
 }
 
 }} // namespace EE::UI

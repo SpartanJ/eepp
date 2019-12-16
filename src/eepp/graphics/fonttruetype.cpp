@@ -115,10 +115,20 @@ bool FontTrueType::loadFromFile(const std::string& filename) {
 	// Store the font information
 	mInfo.family = face->family_name ? face->family_name : std::string();
 
+	sendEvent( Event::Load );
+
 	return true;
 }
 
-bool FontTrueType::loadFromMemory(const void* data, std::size_t sizeInBytes) {
+bool FontTrueType::loadFromMemory(const void* data, std::size_t sizeInBytes, bool copyData) {
+	const void* ptr = data;
+
+	if ( copyData ) {
+		mMemCopy.reset( reinterpret_cast<const Uint8*>( data ), sizeInBytes );
+
+		ptr = mMemCopy.get();
+	}
+
 	// Cleanup the previous resources
 	cleanup();
 	mRefCount = new int(1);
@@ -133,7 +143,7 @@ bool FontTrueType::loadFromMemory(const void* data, std::size_t sizeInBytes) {
 
 	// Load the new font face from the specified file
 	FT_Face face;
-	if (FT_New_Memory_Face(static_cast<FT_Library>(mLibrary), reinterpret_cast<const FT_Byte*>(data), static_cast<FT_Long>(sizeInBytes), 0, &face) != 0) {
+	if (FT_New_Memory_Face(static_cast<FT_Library>(mLibrary), reinterpret_cast<const FT_Byte*>(ptr), static_cast<FT_Long>(sizeInBytes), 0, &face) != 0) {
 		eePRINTL( "Failed to load font from memory (failed to create the font face)" );
 		return false;
 	}
@@ -160,6 +170,8 @@ bool FontTrueType::loadFromMemory(const void* data, std::size_t sizeInBytes) {
 
 	// Store the font information
 	mInfo.family = face->family_name ? face->family_name : std::string();
+
+	sendEvent( Event::Load );
 
 	return true;
 }
@@ -230,6 +242,8 @@ bool FontTrueType::loadFromStream(IOStream& stream) {
 	// Store the font information
 	mInfo.family = face->family_name ? face->family_name : std::string();
 
+	sendEvent( Event::Load );
+
 	return true;
 }
 
@@ -242,7 +256,7 @@ bool FontTrueType::loadFromPack( Pack * pack, std::string filePackPath ) {
 	mMemCopy.clear();
 
 	if ( pack->isOpen() && pack->extractFileToMemory( filePackPath, mMemCopy ) ) {
-		Ret = loadFromMemory( mMemCopy.get(), mMemCopy.length() );
+		Ret = loadFromMemory( mMemCopy.get(), mMemCopy.length(), false );
 	}
 
 	return Ret;
@@ -366,6 +380,10 @@ Texture* FontTrueType::getTexture(unsigned int characterSize) const {
 	return mPages[characterSize].texture;
 }
 
+bool FontTrueType::loaded() const {
+	return NULL != mFace;
+}
+
 FontTrueType& FontTrueType::operator =(const FontTrueType& right) {
 	FontTrueType temp(right.getName());
 
@@ -382,6 +400,8 @@ FontTrueType& FontTrueType::operator =(const FontTrueType& right) {
 }
 
 void FontTrueType::cleanup() {
+	sendEvent( Event::Unload );
+
 	// Check if we must destroy the FreeType pointers
 	if (mRefCount) {
 		// Decrease the reference counter
