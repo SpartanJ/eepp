@@ -695,8 +695,8 @@ bool onCloseRequestCallback( EE::Window::Window * ) {
 
 	MsgBox = UIMessageBox::New( UIMessageBox::OK_CANCEL, "Do you really want to close the current file?\nAll changes will be lost." );
 	MsgBox->setTheme( theme );
-	MsgBox->addEventListener( Event::MsgBoxConfirmClick, cb::Make1<void, const Event*>( []( const Event * ) { window->close(); } ) );
-	MsgBox->addEventListener( Event::OnClose, cb::Make1<void, const Event*>( []( const Event * ) { MsgBox = NULL; } ) );
+	MsgBox->addEventListener( Event::MsgBoxConfirmClick, []( const Event * ) { window->close(); } );
+	MsgBox->addEventListener( Event::OnClose, []( const Event * ) { MsgBox = NULL; } );
 	MsgBox->setTitle( "Close Editor?" );
 	MsgBox->center();
 	MsgBox->show();

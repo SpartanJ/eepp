@@ -372,7 +372,6 @@ void UIWindow::createModalControl() {
 
 	if ( NULL == mModalCtrl ) {
 		mModalCtrl = UIWidget::NewWithTag( "window::modaldialog" );
-		mModalCtrl->writeNodeFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 		mModalCtrl->setParent( Ctrl )->setPosition(0,0)->setSize( Ctrl->getSize() );
 		mModalCtrl->setAnchors( UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
 	} else {

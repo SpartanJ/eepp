@@ -7,6 +7,8 @@
 
 namespace EE { namespace UI {
 
+#define UI_MESSAGE_BOX_DEFAULT_FLAGS UI_WIN_CLOSE_BUTTON | UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS | UI_WIN_MODAL | UI_WIN_SHARE_ALPHA_WITH_CHILDS
+
 class EE_API UIMessageBox : public UIWindow {
 	public:
 		enum Type {
@@ -16,9 +18,9 @@ class EE_API UIMessageBox : public UIWindow {
 			OK
 		};
 
-		static UIMessageBox * New( Type type, String message );
+		static UIMessageBox * New( const Type& type, const String& message, const Uint32& windowFlags = UI_MESSAGE_BOX_DEFAULT_FLAGS );
 
-		UIMessageBox( Type type, String message );
+		UIMessageBox( const Type& type, const String& message, const Uint32& windowFlags = UI_MESSAGE_BOX_DEFAULT_FLAGS );
 
 		virtual ~UIMessageBox();
 

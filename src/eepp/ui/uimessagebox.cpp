@@ -5,16 +5,16 @@
 
 namespace EE { namespace UI {
 
-UIMessageBox * UIMessageBox::New( UIMessageBox::Type type, String message) {
-	return eeNew( UIMessageBox, ( type, message ) );
+UIMessageBox * UIMessageBox::New( const Type& type, const String& message, const Uint32& windowFlags ) {
+	return eeNew( UIMessageBox, ( type, message, windowFlags ) );
 }
 
-UIMessageBox::UIMessageBox( UIMessageBox::Type type , String message ) :
+UIMessageBox::UIMessageBox( const Type& type, const String& message, const Uint32& windowFlags ) :
 	UIWindow(),
 	mMsgBoxType( type ),
 	mCloseWithKey( KEY_UNKNOWN )
 {
-	mStyleConfig.WinFlags &= ~UI_WIN_RESIZEABLE;
+	mStyleConfig.WinFlags = windowFlags;
 
 	updateWinFlags();
 
