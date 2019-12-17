@@ -406,6 +406,8 @@ void UIWidget::notifyLayoutAttrChange() {
 	if ( 0 == mAttributesTransactionCount ) {
 		NodeMessage msg( this, NodeMessage::LayoutAttributeChange );
 		messagePost( &msg );
+	} else {
+		mFlags |= UI_ATTRIBUTE_CHANGED;
 	}
 }
 
@@ -756,7 +758,11 @@ void UIWidget::endAttributesTransaction() {
 	mAttributesTransactionCount--;
 
 	if ( 0 == mAttributesTransactionCount ) {
-		notifyLayoutAttrChange();
+		if ( mFlags & UI_ATTRIBUTE_CHANGED ) {
+			notifyLayoutAttrChange();
+
+			mFlags &= ~UI_ATTRIBUTE_CHANGED;
+		}
 	}
 }
 
