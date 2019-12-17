@@ -283,7 +283,7 @@ void StyleSheetParser::importParse( std::string& css, std::size_t& pos, std::str
 	}
 
 	std::string import( css.substr( pos, endImport - pos ) );
-	std::vector<std::string> tokens = String::split( import, ' ' );
+	std::vector<std::string> tokens = String::split( import, " " );
 
 	if ( tokens.size() >= 2 ) {
 		std::string path( tokens[1] );
