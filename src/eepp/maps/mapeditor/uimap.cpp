@@ -589,9 +589,8 @@ void UIMap::createObjPopUpMenu() {
 
 	if ( Menu->show() ) {
 		Vector2f Pos = getEventDispatcher()->getMousePosf();
-		UIMenu::fixMenuPos( Pos , Menu );
-		Pos = PixelDensity::pxToDp( Pos );
-		Menu->setPosition( Pos );
+		UIMenu::fixMenuPos( Pos, Menu );
+		Menu->setPixelsPosition( Pos );
 	}
 }
 

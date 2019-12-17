@@ -63,7 +63,7 @@ void UINode::worldToNodeTranslation( Vector2f& Pos ) const {
 	Pos -= mPosition;
 
 	while ( NULL != ParentLoop ) {
-		const Vector2f& ParentPos = ParentLoop->isUINode() ? static_cast<UINode*>( ParentLoop )->getPixelsPosition() : ParentLoop->getPosition();
+		const Vector2f& ParentPos = ParentLoop->isUINode() ? ParentLoop->asType<UINode>()->getPixelsPosition() : ParentLoop->getPosition();
 
 		Pos -= ParentPos;
 
@@ -75,7 +75,7 @@ void UINode::nodeToWorldTranslation( Vector2f& Pos ) const {
 	Node * ParentLoop = mParentCtrl;
 
 	while ( NULL != ParentLoop ) {
-		const Vector2f& ParentPos = ParentLoop->isUINode() ? static_cast<UINode*>( ParentLoop )->getPixelsPosition() : ParentLoop->getPosition();
+		const Vector2f& ParentPos = ParentLoop->isUINode() ? ParentLoop->asType<UINode>()->getPixelsPosition() : ParentLoop->getPosition();
 
 		Pos += ParentPos;
 

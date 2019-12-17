@@ -39,10 +39,7 @@ UISceneNode::UISceneNode( EE::Window::Window* window ) :
 	setEventDispatcher( UIEventDispatcher::New( this ) );
 
 	mRoot = UIWidget::NewWithTag( ":root" );
-	mRoot->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::Fixed );
-	mRoot->writeNodeFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
-	mRoot->setParent( this );
-	mRoot->clipEnable();
+	mRoot->setParent( this )->setPosition( 0, 0 );
 	mRoot->enableReportSizeChangeToChilds();
 
 	resizeControl( mWindow );
@@ -352,14 +349,11 @@ bool UISceneNode::onMediaChanged() {
 }
 
 void UISceneNode::onChildCountChange() {
-	if ( NULL == mRoot )
-		return;
-
 	Node* child = mChild;
 	bool found = false;
 
 	while ( NULL != child ) {
-		if ( !( child->getNodeFlags() & NODE_FLAG_OWNED_BY_NODE ) ) {
+		if ( child != mRoot ) {
 			found = true;
 			break;
 		}
