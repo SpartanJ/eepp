@@ -12,15 +12,15 @@ class EE_API SSLSocket : public TcpSocket {
 		static std::string CertificatesPath;
 
 		static bool init();
-		
+
 		static bool end();
 
 		/** @return True when the library was compiled with SSL support. */
 		static bool isSupported();
 
-		static SSLSocket * New( std::string hostname, bool validateCertificate, bool validateHostname );
+		static SSLSocket * New( std::string hostname, bool validateCertificate, bool validateHostname, SSLSocket * restoreSession = NULL );
 
-		SSLSocket( std::string hostname, bool validateCertificate, bool validateHostname );
+		SSLSocket( std::string hostname, bool validateCertificate, bool validateHostname, SSLSocket * restoreSession = NULL );
 
 		virtual ~SSLSocket();
 
@@ -56,6 +56,7 @@ class EE_API SSLSocket : public TcpSocket {
 		std::string				mHostName;
 		bool					mValidateCertificate;
 		bool					mValidateHostname;
+		SSLSocket *				mRestoreSession;
 };
 
 }}}

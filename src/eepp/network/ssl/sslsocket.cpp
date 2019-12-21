@@ -108,11 +108,11 @@ bool SSLSocket::isSupported() {
 #endif
 }
 
-SSLSocket * SSLSocket::New( std::string hostname, bool validateCertificate, bool validateHostname ) {
-	return eeNew( SSLSocket, ( hostname, validateCertificate, validateHostname ) );
+SSLSocket * SSLSocket::New(std::string hostname, bool validateCertificate, bool validateHostname , SSLSocket * restoreSession) {
+	return eeNew( SSLSocket, ( hostname, validateCertificate, validateHostname, restoreSession ) );
 }
 
-SSLSocket::SSLSocket( std::string hostname , bool validateCertificate, bool validateHostname ) :
+SSLSocket::SSLSocket( std::string hostname , bool validateCertificate, bool validateHostname, SSLSocket * restoreSession ) :
 #ifdef EE_MBEDTLS
 	mImpl( eeNew( MbedTLSSocket, ( this ) ) ),
 #elif defined( EE_OPENSSL )
@@ -122,7 +122,8 @@ SSLSocket::SSLSocket( std::string hostname , bool validateCertificate, bool vali
 #endif
 	mHostName( hostname ),
 	mValidateCertificate( validateCertificate ),
-	mValidateHostname( validateHostname )
+	mValidateHostname( validateHostname ),
+	mRestoreSession( restoreSession )
 {
 	init();
 }
@@ -133,11 +134,11 @@ SSLSocket::~SSLSocket() {
 
 Socket::Status SSLSocket::connect( const IpAddress& remoteAddress, unsigned short remotePort, Time timeout ) {
 	Status status = Socket::Disconnected;
-	
+
 	if ( ( status = tcpConnect( remoteAddress, remotePort, timeout ) ) == Socket::Done ) {
 		status = sslConnect( remoteAddress, remotePort, timeout );
 	}
-	
+
 	return status;
 }
 
