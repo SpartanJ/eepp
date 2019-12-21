@@ -18,20 +18,17 @@ class IpAddress;
 class EE_API Ftp : NonCopyable {
 public:
 	/** @brief Enumeration of transfer modes */
-	enum TransferMode
-	{
+	enum TransferMode {
 		Binary, ///< Binary mode (file is transfered as a sequence of bytes)
 		Ascii,  ///< Text mode using ASCII encoding
 		Ebcdic  ///< Text mode using EBCDIC encoding
 	};
 
 	/** @brief Define a FTP response */
-	class EE_API Response
-	{
+	class EE_API Response {
 		public:
 			/** @brief Status codes possibly returned by a FTP response */
-			enum Status
-			{
+			enum Status {
 				// 1xx: the requested action is being initiated,
 				// expect another reply before proceeding with a new command
 				RestartMarkerReply          = 110, ///< Restart marker reply
@@ -142,8 +139,7 @@ public:
 	};
 
 	/**  @brief Specialization of FTP response returning a filename lisiting */
-	class EE_API ListingResponse : public Response
-	{
+	class EE_API ListingResponse : public Response {
 	public:
 		/** @brief Default constructor
 		**
@@ -161,6 +157,8 @@ public:
 		std::vector<std::string> mListing; ///< Directory/file names extracted from the data
 	};
 
+	Ftp();
+
 	/** @brief Destructor
 	**  Automatically closes the connection with the server if
 	**  it is still opened. */
@@ -176,12 +174,15 @@ public:
 	**  reachable. To avoid blocking your application for too long,
 	**  you can use a timeout. The default value, Time::Zero, means that the
 	**  system timeout will be used (which is usually pretty long).
-	**  @param server  Name or address of the FTP server to connect to
+	**  @param server  Hostname or address of the FTP server to connect to
 	**  @param port    Port used for the connection
+	**  @param useTLS force TLS connection for FTPS.
+	**  @param validateCertificate Enables certificate validation for https request
+	**  @param validateHostname Enables hostname validation for https request
 	**  @param timeout Maximum time to wait
 	**  @return Server response to the request
 	**  @see Disconnect */
-	Response connect(const IpAddress& server, unsigned short port = 21, Time timeout = Time::Zero);
+	Response connect(const std::string& server, unsigned short port = 21, bool useTLS = false, bool validateCertificate = true, bool validateHostname = true, const Time& timeout = Time::Zero );
 
 	/** @brief Close the connection with the server
 	**  @return Server response to the request
@@ -201,7 +202,6 @@ public:
 	**  @param password Password
 	**  @return Server response to the request */
 	Response login(const std::string& name, const std::string& password);
-
 
 	/** @brief Send a null command to keep the connection alive
 	**  This command is useful because the server may close the
@@ -303,6 +303,12 @@ public:
 	**  @return Server response to the request
 	**  @see Download */
 	Response upload(const std::string& localFile, const std::string& remotePath, TransferMode mode = Binary, bool append = false);
+
+	/** @return The server hostname (available only after connect). */
+	const std::string& getHostname() const;
+
+	/** @return True if connection is using TLS (available only after connect). */
+	const bool& isTLS() const;
 private :
 	/** @brief Send a command to the FTP server
 	**  @param command   Command to send
@@ -321,8 +327,11 @@ private :
 	friend class DataChannel;
 
 	// Member data
-	TcpSocket mCommandSocket; ///< Socket holding the control connection with the server
+	TcpSocket * mCommandSocket; ///< Socket holding the control connection with the server
 	std::string mReceiveBuffer; ///< Received command data that is yet to be processed
+	std::string mHostName;
+	bool mConnected;
+	bool mIsTLS;
 };
 
 }}
@@ -357,7 +366,7 @@ Usage example:
 Ftp ftp;
 
 // Connect to the server
-Ftp::Response response = ftp.Connect("ftp://ftp.myserver.com");
+Ftp::Response response = ftp.connect("ftp://ftp.myserver.com");
 if (response.isOk())
 	std::cout << "Connected" << std::endl;
 

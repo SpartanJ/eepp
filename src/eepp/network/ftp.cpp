@@ -1,9 +1,12 @@
 #include <eepp/network/ftp.hpp>
 #include <eepp/network/ipaddress.hpp>
+#include <eepp/network/ssl/sslsocket.hpp>
 #include <algorithm>
 #include <fstream>
 #include <iterator>
 #include <sstream>
+
+using namespace EE::Network::SSL;
 
 namespace EE { namespace Network {
 
@@ -12,22 +15,31 @@ class Ftp::DataChannel : NonCopyable {
 
 		DataChannel(Ftp& owner);
 
-		Ftp::Response Open(Ftp::TransferMode mode);
+		~DataChannel();
 
-		void Send(std::istream& stream);
+		Ftp::Response setup(Ftp::TransferMode mode);
 
-		void Receive(std::ostream& stream);
+		void send(std::istream& stream);
+
+		void connect();
+
+		void receive(std::ostream& stream);
 	private:
+
 		// Member data
 		Ftp&		mFtp;		///< Reference to the owner Ftp instance
-		TcpSocket	mDataSocket; ///< Socket used for data transfers
+		bool		mConnected;
+		bool		mIsTLS;
+		bool		mTLSHandkShake;
+		TcpSocket *	mDataSocket; ///< Socket used for data transfers
+		IpAddress	mIpAddress;
+		int			mPort;
 };
 
 Ftp::Response::Response(Status code, const std::string& message) :
 	mStatus (code),
 	mMessage(message)
-{
-}
+{}
 
 bool Ftp::Response::isOk() const {
 	return mStatus < 400;
@@ -73,17 +85,67 @@ const std::vector<std::string>& Ftp::ListingResponse::getListing() const {
 	return mListing;
 }
 
+Ftp::Ftp() :
+	mCommandSocket( NULL ),
+	mConnected( false ),
+	mIsTLS( false )
+{}
+
 Ftp::~Ftp() {
 	disconnect();
 }
 
-Ftp::Response Ftp::connect(const IpAddress& server, unsigned short port, Time timeout) {
+Ftp::Response Ftp::connect(const std::string& server, unsigned short port, bool useTLS, bool validateCertificate, bool validateHostname, const Time& timeout) {
 	// Connect to the server
-	if (mCommandSocket.connect(server, port, timeout) != Socket::Done)
-		return Response(Response::ConnectionFailed);
 
-	// Get the response to the connection
-	return getResponse();
+	if (String::toLower(server.substr(0, 7)) == "ftps://") {
+		mHostName = server.substr(7);
+		mIsTLS = true;
+	} else if (String::toLower(server.substr(0, 6)) == "ftp://") {
+		mHostName = server.substr(6);
+		mIsTLS = useTLS;
+	} else {
+		mHostName = server;
+		mIsTLS = useTLS;
+	}
+
+	if ( mIsTLS ) {
+		mCommandSocket = SSLSocket::New( mHostName, validateCertificate, validateHostname );
+	} else {
+		mCommandSocket = TcpSocket::New();
+	}
+
+	IpAddress address( mHostName );
+
+	if ( mIsTLS ) {
+		SSLSocket * ssl = reinterpret_cast<SSLSocket*>( mCommandSocket );
+
+		if ( ssl->tcpConnect( address, port, timeout ) == Socket::Done ) {
+			Response response = getResponse();
+
+			if ( response.isOk() ) {
+				Response authResponse = sendCommand( "AUTH", "TLS" );
+
+				if ( authResponse.isOk() ) {
+					if ( ssl->sslConnect(address, port, timeout) == Socket::Done ) {
+						mConnected = true;
+
+						return response;
+					}
+				}
+			}
+		}
+	} else {
+		if (mCommandSocket->connect(address, port, timeout) != Socket::Done)
+			return Response(Response::ConnectionFailed);
+
+		mConnected = true;
+
+		// Get the response to the connection
+		return getResponse();
+	}
+
+	return Response(Response::ConnectionFailed);
 }
 
 Ftp::Response Ftp::login() {
@@ -95,6 +157,16 @@ Ftp::Response Ftp::login(const std::string& name, const std::string& password) {
 	if (response.isOk())
 		response = sendCommand("PASS", password);
 
+	if ( mIsTLS ) {
+		Response PBSZResponse = sendCommand( "PBSZ", "0" );
+		if ( !PBSZResponse.isOk() )
+			return PBSZResponse;
+
+		Response PROTResponse = sendCommand( "PROT", "P" );
+		if ( !PROTResponse.isOk() )
+			return PROTResponse;
+	}
+
 	return response;
 }
 
@@ -102,8 +174,8 @@ Ftp::Response Ftp::disconnect() {
 	// Send the exit command
 	Response response = sendCommand("QUIT");
 	if (response.isOk())
-		mCommandSocket.disconnect();
-
+		mCommandSocket->disconnect();
+	eeSAFE_DELETE( mCommandSocket );
 	return response;
 }
 
@@ -119,14 +191,15 @@ Ftp::ListingResponse Ftp::getDirectoryListing(const std::string& directory) {
 	// Open a data channel on default port (20) using ASCII transfer mode
 	std::ostringstream directoryData;
 	DataChannel data(*this);
-	Response response = data.Open(Ascii);
+	Response response = data.setup(Ascii);
 
 	if (response.isOk()) {
 		// Tell the server to send us the listing
 		response = sendCommand("NLST", directory);
+
 		if (response.isOk()) {
 			// Receive the listing
-			data.Receive(directoryData);
+			data.receive(directoryData);
 
 			// Get the response from the server
 			response = getResponse();
@@ -167,7 +240,7 @@ Ftp::Response Ftp::deleteFile(const std::string& name) {
 Ftp::Response Ftp::download(const std::string& remoteFile, const std::string& localPath, TransferMode mode) {
 	// Open a data channel using the given transfer mode
 	DataChannel data(*this);
-	Response response = data.Open(mode);
+	Response response = data.setup(mode);
 
 	if ( response.isOk() ) {
 		// Tell the server to start the transfer
@@ -192,7 +265,7 @@ Ftp::Response Ftp::download(const std::string& remoteFile, const std::string& lo
 				return Response(Response::InvalidFile);
 
 			// Receive the file data
-			data.Receive(file);
+			data.receive(file);
 
 			// Close the file
 			file.close();
@@ -228,13 +301,13 @@ Ftp::Response Ftp::upload(const std::string& localFile, const std::string& remot
 
 	// Open a data channel using the given transfer mode
 	DataChannel data(*this);
-	Response response = data.Open(mode);
+	Response response = data.setup(mode);
 	if (response.isOk()) {
 		// Tell the server to start the transfer
 		response = sendCommand(append ? "APPE" : "STOR", path + filename);
 		if (response.isOk()) {
 			// Send the file data
-			data.Send(file);
+			data.send(file);
 
 			// Get the response from the server
 			response = getResponse();
@@ -242,6 +315,14 @@ Ftp::Response Ftp::upload(const std::string& localFile, const std::string& remot
 	}
 
 	return response;
+}
+
+const std::string& Ftp::getHostname() const {
+	return mHostName;
+}
+
+const bool& Ftp::isTLS() const {
+	return mIsTLS;
 }
 
 Ftp::Response Ftp::sendCommand(const std::string& command, const std::string& parameter) {
@@ -252,9 +333,18 @@ Ftp::Response Ftp::sendCommand(const std::string& command, const std::string& pa
 	else
 		commandStr = command + "\r\n";
 
+	eePRINTL( "Command: %s", commandStr.c_str() );
+
 	// Send it to the server
-	if (mCommandSocket.send(commandStr.c_str(), commandStr.length()) != Socket::Done)
-		return Response(Response::ConnectionClosed);
+	if ( mIsTLS && !mConnected ) {
+		SSLSocket * sslSocket = reinterpret_cast<SSLSocket*>( mCommandSocket );
+		std::size_t sent = 0;
+		if (sslSocket->tcpSend(commandStr.c_str(), commandStr.length(), sent) != Socket::Done)
+			return Response(Response::ConnectionClosed);
+	} else {
+		if (mCommandSocket->send(commandStr.c_str(), commandStr.length()) != Socket::Done)
+			return Response(Response::ConnectionClosed);
+	}
 
 	// Get the response
 	return getResponse();
@@ -274,8 +364,15 @@ Ftp::Response Ftp::getResponse() {
 		std::size_t length;
 
 		if (mReceiveBuffer.empty()) {
-			if (mCommandSocket.receive(buffer, sizeof(buffer), length) != Socket::Done)
-				return Response(Response::ConnectionClosed);
+			if ( mIsTLS && !mConnected ) {
+				SSLSocket * sslSocket = reinterpret_cast<SSLSocket*>( mCommandSocket );
+
+				if (sslSocket->tcpReceive(buffer, sizeof(buffer), length) != Socket::Done)
+					return Response(Response::ConnectionClosed);
+			} else {
+				if (mCommandSocket->receive(buffer, sizeof(buffer), length) != Socket::Done)
+					return Response(Response::ConnectionClosed);
+			}
 		} else {
 			std::copy(mReceiveBuffer.begin(), mReceiveBuffer.end(), buffer);
 			length = mReceiveBuffer.size();
@@ -328,6 +425,8 @@ Ftp::Response Ftp::getResponse() {
 							message = separator + line;
 						}
 
+						eePRINTL( "Response: %d - %s", code, message.c_str() );
+
 						// Return the response code and message
 						return Response(static_cast<Response::Status>(code), message);
 					} else {
@@ -377,13 +476,36 @@ Ftp::Response Ftp::getResponse() {
 }
 
 Ftp::DataChannel::DataChannel(Ftp& owner) :
-	mFtp(owner)
-{
+	mFtp(owner),
+	mConnected(false),
+	mIsTLS(mFtp.isTLS()),
+	mTLSHandkShake(false),
+	mDataSocket( mIsTLS ? SSLSocket::New( mFtp.getHostname(), false, false, reinterpret_cast<SSLSocket*>( mFtp.mCommandSocket ) ) :
+						  TcpSocket::New() ),
+	mPort(0)
+{}
+
+Ftp::DataChannel::~DataChannel() {
+	eeSAFE_DELETE( mDataSocket );
 }
 
-Ftp::Response Ftp::DataChannel::Open(Ftp::TransferMode mode) {
+Ftp::Response Ftp::DataChannel::setup(Ftp::TransferMode mode) {
+	// Translate the transfer mode to the corresponding FTP parameter
+	std::string modeStr;
+	switch (mode) {
+		case Ftp::Binary: modeStr = "I"; break;
+		case Ftp::Ascii:  modeStr = "A"; break;
+		case Ftp::Ebcdic: modeStr = "E"; break;
+	}
+
+	// Set the transfer mode
+	Ftp::Response response = mFtp.sendCommand("TYPE", modeStr);
+
+	if ( !response.isOk() )
+		return response;
+
 	// Open a data connection in active mode (we connect to the server)
-	Ftp::Response response = mFtp.sendCommand("PASV");
+	response = mFtp.sendCommand("PASV");
 
 	if (response.isOk()) {
 		// Extract the connection address and port from the response
@@ -413,34 +535,48 @@ Ftp::Response Ftp::DataChannel::Open(Ftp::TransferMode mode) {
 							  static_cast<Uint8>(data[2]),
 							  static_cast<Uint8>(data[3]));
 
-			// Connect the data channel to the server
-			if (mDataSocket.connect(address, port) == Socket::Done) {
-				// Translate the transfer mode to the corresponding FTP parameter
-				std::string modeStr;
-				switch (mode) {
-					case Ftp::Binary	: modeStr = "I"; break;
-					case Ftp::Ascii	:  modeStr = "A"; break;
-					case Ftp::Ebcdic	: modeStr = "E"; break;
-				}
+			mIpAddress = address;
+			mPort = port;
 
-				// Set the transfer mode
-				response = mFtp.sendCommand("TYPE", modeStr);
-			} else {
-				// Failed to connect to the server
-				response = Ftp::Response(Ftp::Response::ConnectionFailed);
-			}
+			connect();
 		}
 	}
 
 	return response;
 }
 
-void Ftp::DataChannel::Receive(std::ostream& stream) {
+void Ftp::DataChannel::connect() {
+	if ( !mConnected ) {
+		if ( mIsTLS ) {
+			SSLSocket * sslSocket = reinterpret_cast<SSLSocket*>( mDataSocket );
+
+			if ( sslSocket->tcpConnect( mIpAddress, mPort ) == Socket::Done ) {
+				mConnected = true;
+			}
+		} else {
+			if ( mDataSocket->connect( mIpAddress, mPort ) == Socket::Done ) {
+				mConnected = true;
+			}
+		}
+	} else {
+		if ( mIsTLS && !mTLSHandkShake ) {
+			SSLSocket * sslSocket = reinterpret_cast<SSLSocket*>( mDataSocket );
+
+			if ( sslSocket->sslConnect( mIpAddress, mPort ) == Socket::Done ) {
+				mTLSHandkShake = true;
+			}
+		}
+	}
+}
+
+void Ftp::DataChannel::receive(std::ostream& stream) {
+	connect();
+
 	// Receive data
 	char buffer[1024];
 	std::size_t received;
 
-	while (mDataSocket.receive(buffer, sizeof(buffer), received) == Socket::Done) {
+	while (mDataSocket->receive(buffer, sizeof(buffer), received) == Socket::Done) {
 		stream.write(buffer, static_cast<std::streamsize>(received));
 
 		if (!stream.good()) {
@@ -450,10 +586,13 @@ void Ftp::DataChannel::Receive(std::ostream& stream) {
 	}
 
 	// Close the data socket
-	mDataSocket.disconnect();
+	mDataSocket->disconnect();
+	mConnected = false;
 }
 
-void Ftp::DataChannel::Send( std::istream& stream ) {
+void Ftp::DataChannel::send( std::istream& stream ) {
+	connect();
+
 	// Send data
 	char buffer[1024];
 	std::size_t count;
@@ -471,7 +610,7 @@ void Ftp::DataChannel::Send( std::istream& stream ) {
 
 		if (count > 0) {
 			// we could read more data from the stream: send them
-			if (mDataSocket.send(buffer, count) != Socket::Done)
+			if (mDataSocket->send(buffer, count) != Socket::Done)
 				break;
 		} else {
 			// no more data: exit the loop
@@ -480,7 +619,8 @@ void Ftp::DataChannel::Send( std::istream& stream ) {
 	}
 
 	// Close the data socket
-	mDataSocket.disconnect();
+	mDataSocket->disconnect();
+	mConnected = false;
 }
 
 }}

@@ -56,7 +56,9 @@ bool MbedTLSSocket::end() {
 MbedTLSSocket::MbedTLSSocket( SSLSocket * socket ) :
 	SSLSocketImpl( socket ),
 	mConnected( false ),
-	mStatus( Socket::Disconnected )
+	mSessionOwner( false ),
+	mStatus( Socket::Disconnected ),
+	mSSLSession( NULL )
 {
 	mSSLSocket = socket;
 }
@@ -113,7 +115,7 @@ Socket::Status MbedTLSSocket::connect( const IpAddress& remoteAddress, unsigned 
 	mbedtls_ssl_config_init(&mSSLConfig);
 	mbedtls_ctr_drbg_init(&mCtrDrbg);
 	mbedtls_entropy_init(&mEntropy);
-	
+
 	ret = mbedtls_ctr_drbg_seed(&mCtrDrbg, mbedtls_entropy_func, &mEntropy, NULL, 0);
 
 	if (ret != 0) {
@@ -129,12 +131,29 @@ Socket::Status MbedTLSSocket::connect( const IpAddress& remoteAddress, unsigned 
 	mbedtls_ssl_setup(&mSSLContext, &mSSLConfig);
 	mbedtls_ssl_set_hostname(&mSSLContext, mSSLSocket->mHostName.c_str() );
 	mbedtls_ssl_set_bio(&mSSLContext, this, bio_send, bio_recv, NULL);
+	mbedtls_ssl_conf_session_tickets(&mSSLConfig, MBEDTLS_SSL_SESSION_TICKETS_DISABLED);
 
-	while ((ret = mbedtls_ssl_handshake(&mSSLContext)) != 0) {
-		if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
-			mStatus = Socket::Error;
-			return mStatus;
+	if ( mSSLSocket->mRestoreSession == NULL ) {
+		while ((ret = mbedtls_ssl_handshake(&mSSLContext)) != 0) {
+			if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
+				mStatus = Socket::Error;
+				return mStatus;
+			}
 		}
+
+		mSSLSession = (mbedtls_ssl_session*)eeMalloc(sizeof(mbedtls_ssl_session));
+		mbedtls_ssl_session_init(mSSLSession);
+		ret = mbedtls_ssl_get_session( &mSSLContext, mSSLSession );
+		if ( ret ) {
+			if( ret != MBEDTLS_ERR_SSL_ALLOC_FAILED )
+				mbedtls_ssl_session_free(mSSLSession);
+			eeSAFE_FREE(mSSLSession);
+		} else {
+			mSessionOwner = true;
+		}
+	} else {
+		MbedTLSSocket * oldSocket = reinterpret_cast<MbedTLSSocket*>( mSSLSocket->mRestoreSession->mImpl );
+		mbedtls_ssl_set_session(&mSSLContext, oldSocket->mSSLSession);
 	}
 
 	mConnected = true;
@@ -151,6 +170,12 @@ void MbedTLSSocket::disconnect() {
 	mbedtls_ssl_config_free(&mSSLConfig);
 	mbedtls_ctr_drbg_free(&mCtrDrbg);
 	mbedtls_entropy_free(&mEntropy);
+
+	if ( mSessionOwner && NULL != mSSLSession ) {
+		mbedtls_ssl_session_free( mSSLSession );
+		eeSAFE_FREE( mSSLSession );
+	}
+
 	mStatus		= Socket::Disconnected;
 }
 

@@ -39,8 +39,10 @@ class EE_API MbedTLSSocket : public SSLSocketImpl {
 		mbedtls_ctr_drbg_context mCtrDrbg;
 		mbedtls_ssl_context mSSLContext;
 		mbedtls_ssl_config mSSLConfig;
-		bool			mConnected;
+		bool mConnected;
+		bool mSessionOwner;
 		Socket::Status mStatus;
+		mbedtls_ssl_session* mSSLSession;
 		static int bio_send(void * ctx, const unsigned char * buf, size_t len);
 		static int bio_recv(void * ctx, unsigned char * buf, size_t len);
 };
