@@ -214,6 +214,8 @@ Socket::Status OpenSSLSocket::connect( const IpAddress& remoteAddress, unsigned 
 	// Set up a SSL_CTX object, which will tell our BIO object how to do its work
 	mCTX = SSL_CTX_new( SSLv23_client_method() );
 
+	SSL_CTX_set_options(mCTX, SSL_OP_NO_TICKET);
+
 	if ( mSSLSocket->mValidateCertificate ) {
 		if (!sCerts.empty()) {
 			//yay for undocumented OpenSSL functions
@@ -262,8 +264,20 @@ Socket::Status OpenSSLSocket::connect( const IpAddress& remoteAddress, unsigned 
 
 	mStatus		= Socket::Done;
 
+	int result = SSL_set_tlsext_host_name( mSSL, mSSLSocket->mHostName.c_str() );
+
+	if( 1 != result ) {
+		ERR_print_errors_fp(stdout);
+
+		printError(result);
+
+		mStatus	= Socket::Error;
+
+		return mStatus;
+	}
+
 	// Same as before, try to connect.
-	int result	= SSL_connect( mSSL );
+	result	= SSL_connect( mSSL );
 
 	if ( result < 1 ) {
 		ERR_print_errors_fp(stdout);
@@ -357,30 +371,23 @@ Socket::Status OpenSSLSocket::receive( void * data, std::size_t size, std::size_
 
 	Uint8 * buf = (Uint8*)data;
 
-	while( size > 0 ) {
-		int ret = SSL_read( mSSL, buf, size );
+	int ret = SSL_read( mSSL, buf, size );
 
-		if ( ret < 0 ) {
-			printError(ret);
-
-			disconnect();
-
+	if ( ret < 0 ) {
+		printError(ret);
+		disconnect();
+		return Socket::Disconnected;
+	} else if ( 0 >= ret ) {
+		if ( size == iniSize ) {
 			return Socket::Disconnected;
-		} else if ( 0 == ret ) {
-			if ( size == iniSize ) {
-				return Socket::Disconnected;
-			}
-
-			received = iniSize - size;
-
-			return Socket::Done;
 		}
 
-		buf+=ret;
-		size-=ret;
+		received = iniSize - size;
+
+		return Socket::Done;
 	}
 
-	received = iniSize;
+	received = ret;
 
 	return Socket::Done;
 }
