@@ -20,6 +20,7 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 	args::Flag resume(parser, "continue", "Resume getting a partially-downloaded file", {'c',"continue"});
 	args::Flag compressed(parser, "compressed", "Request compressed response", {"compressed"});
 	args::ValueFlag<std::string> postData(parser, "data", "HTTP POST data", {'d', "data"});
+	args::ValueFlagList<std::string> multipartData(parser, "multipart-data", "Specify multipart MIME data", {'F', "form"});
 	args::ValueFlagList<std::string> headers(parser, "header", "Pass custom header(s) to server", {'H', "header"});
 	args::Flag includeHead(parser, "include", "Include protocol response headers in the output", {'i',"include"});
 	args::Flag insecure(parser, "insecure", "Allow insecure server connections when using SSL", {'k',"insecure"});
@@ -86,15 +87,42 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 				}
 			}
 
-			// Set the request method
-			if ( requestMethod ) {
-				request.setMethod( Http::Request::methodFromString( requestMethod.Get() ) );
-			}
-
 			// Set the post data / body
 			if ( postData ) {
 				request.setMethod( Http::Request::Method::Post );
 				request.setBody( postData.Get() );
+			}
+
+			// Set the multipart data
+			if ( multipartData ) {
+				Http::MultipartEntitiesBuilder builder;
+				for ( const std::string& part : args::get(multipartData) ) {
+					std::string::size_type pos = part.find_first_of( "=" );
+					if ( std::string::npos != pos ) {
+						std::string name( part.substr( 0, pos ) );
+						std::string val( part.substr( pos + 1 ) );
+						if ( !val.empty() ) {
+							if ( val[0] == '@' ) {
+								val = val.substr( 1 );
+								String::trimInPlace( val, '"' );
+								if ( FileSystem::fileExists( val ) ) {
+									builder.addFile( name, val );
+								}
+							} else {
+								String::trimInPlace( val, '"' );
+								builder.addParameter( name, val );
+							}
+						}
+					}
+				}
+				request.setMethod( Http::Request::Method::Post );
+				request.setField( "Content-Type", builder.getContentType() );
+				request.setBody( builder.build() );
+			}
+
+			// Set the request method
+			if ( requestMethod ) {
+				request.setMethod( Http::Request::methodFromString( requestMethod.Get() ) );
 			}
 
 			// If progress requested print a progress on screen

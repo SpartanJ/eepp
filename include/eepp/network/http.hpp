@@ -193,6 +193,9 @@ class EE_API Http : NonCopyable {
 			**  @param value Value of the field */
 			void setField(const std::string& field, const std::string& value);
 
+			/** @see setField */
+			void setHeader(const std::string& field, const std::string& value);
+
 			/** @brief Check if the request defines a field
 			**  This function uses case-insensitive comparisons.
 			**  @param field Name of the field to test
@@ -449,6 +452,58 @@ class EE_API Http : NonCopyable {
 
 		/** @return Is a proxy is need to be used */
 		bool isProxied() const;
+
+		/** Helper class to build the body of a multipart/form-data request. */
+		class EE_API MultipartEntitiesBuilder {
+			public:
+				MultipartEntitiesBuilder();
+
+				/** @param boundary The boundary to use in the multipart data. */
+				MultipartEntitiesBuilder( const std::string& boundary );
+
+				/** @returns The corresponding request Content-Type needed.
+				* This Content-Type header must be set to the request in order to work correctly.
+				*
+				* For example:
+				* ```
+				* Http::Request request;
+				* Http::MultipartEntitiesBuilder builder;
+				* ...
+				* request.setField( "Content-Type", builder.getContentType() );
+				* ```
+				*/
+				std::string getContentType();
+
+				/** @return The boundary used to build the multipart data. */
+				const std::string& getBoundary() const;
+
+				/** Adds a text multipart form field. */
+				void addParameter( const std::string& name, const std::string& value );
+
+				/** Adds a file to the multipart data.
+				* @param parameterName The field name.
+				* @param fileName The file name of the stream.
+				* @param stream The stream were the file is located and is going to be read.
+				*/
+				void addFile( const std::string& parameterName, const std::string& fileName, IOStream* stream );
+
+				/** Adds a file to the multipart data.
+				* @param parameterName The field name.
+				* @param filePath The local file path.
+				*/
+				void addFile( const std::string& parameterName, const std::string& filePath );
+
+				std::string build();
+			protected:
+				void buildFilePart( std::ostream& ostream, IOStream* stream, const std::string& fieldName, const std::string& fileName, const std::string& contentType );
+
+				void buildTextPart( std::ostream& ostream, const std::string& parameterName, const std::string& parameterValue );
+
+				std::string mBoundary;
+				std::map<std::string, std::pair<std::string, IOStream*>> mStreamParams;
+				std::map<std::string, std::string> mFileParams;
+				std::map<std::string, std::string> mParams;
+		};
 
 		/** HTTP Client Pool
 		* Will keep the instances of the HTTP clients until the Pool is destroyed.

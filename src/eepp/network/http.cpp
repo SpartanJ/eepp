@@ -2,11 +2,13 @@
 #include <eepp/network/ssl/sslsocket.hpp>
 #include <eepp/network/uri.hpp>
 #include <eepp/network/http/httpstreamchunked.hpp>
+#include <eepp/system/compression.hpp>
+#include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostream.hpp>
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/iostreaminflate.hpp>
 #include <eepp/system/iostreamstring.hpp>
-#include <eepp/system/compression.hpp>
+#include <eepp/system/sys.hpp>
 #include <cctype>
 #include <algorithm>
 #include <iterator>
@@ -65,6 +67,10 @@ Http::Request::Request(const std::string& uri, Method method, const std::string&
 
 void Http::Request::setField(const std::string& field, const std::string& value) {
 	mFields[String::toLower(field)] = value;
+}
+
+void Http::Request::setHeader(const std::string& field, const std::string& value) {
+	setField(field, value);
 }
 
 void Http::Request::setMethod(Http::Request::Method method) {
@@ -1185,6 +1191,100 @@ Http *Http::Pool::get(const URI & host, const URI & proxy) {
 	Http * http = eeNew( Http,( host.getHost(), host.getPort(), host.getScheme() == "https" ) );
 	mHttps[ getHostHash( host, proxy ) ] = http;
 	return http;
+}
+
+static constexpr const char* TWO_HYPHENS = "--";
+static constexpr const char* LINE_END = "\r\n";
+
+Http::MultipartEntitiesBuilder::MultipartEntitiesBuilder() :
+	MultipartEntitiesBuilder( "eepp-client-boundary-" + String::toStr( (Uint64)Sys::getSystemTime() ) )
+{}
+
+Http::MultipartEntitiesBuilder::MultipartEntitiesBuilder( const std::string& boundary ) :
+	mBoundary( boundary )
+{}
+
+std::string Http::MultipartEntitiesBuilder::getContentType() {
+	return "multipart/form-data;boundary=" + getBoundary();
+}
+
+const std::string& Http::MultipartEntitiesBuilder::getBoundary() const {
+	return mBoundary;
+}
+
+void Http::MultipartEntitiesBuilder::addParameter( const std::string& name, const std::string& value ) {
+	mParams[name] = value;
+}
+
+void Http::MultipartEntitiesBuilder::addFile( const std::string& parameterName, const std::string& fileName, IOStream* stream ) {
+	auto pair = std::make_pair( fileName, stream );
+
+	mStreamParams[ parameterName ] = pair;
+}
+
+void Http::MultipartEntitiesBuilder::addFile( const std::string& parameterName, const std::string& filePath ) {
+	mFileParams[ parameterName ] = filePath;
+}
+
+std::string Http::MultipartEntitiesBuilder::build() {
+	std::ostringstream ostream;
+
+	for ( auto& file : mStreamParams ) {
+		buildFilePart( ostream, file.second.second, file.first, file.second.first, "" );
+	}
+
+	for ( auto& file : mFileParams ) {
+		IOStreamFile f( file.second );
+		buildFilePart( ostream, &f, file.first, FileSystem::fileNameFromPath( file.second ), "" );
+	}
+
+	for ( auto& text : mParams ) {
+		buildTextPart( ostream, text.first, text.second );
+	}
+
+	ostream << TWO_HYPHENS << getBoundary() << TWO_HYPHENS << LINE_END;
+
+	return ostream.str();
+}
+
+void Http::MultipartEntitiesBuilder::buildFilePart( std::ostream& ostream, IOStream* stream, const std::string& fieldName, const std::string& fileName, const std::string& contentType ) {
+	size_t initialPos = stream->tell();
+	stream->seek( 0 );
+	int bytesAvailable = stream->getSize();
+	int maxBufferSize = 1024 * 1024;
+	int bufferSize = eemin( bytesAvailable, maxBufferSize );
+	TScopedBuffer<char> buffer( bufferSize );
+
+	ostream << TWO_HYPHENS << getBoundary() << LINE_END;
+	ostream << "Content-Disposition: form-data; name=\"" << fieldName << "\"; filename=\"" << fileName << "\"" << LINE_END;
+	ostream << "Content-Transfer-Encoding: binary" << LINE_END;
+	ostream << "Content-Length: " << bytesAvailable << LINE_END;
+	if ( !contentType.empty() ) {
+		ostream << "Content-Type: " << contentType << LINE_END;
+	}
+	ostream << LINE_END;
+
+	// read file and write it into form...
+	int bytesRead = stream->read( buffer.get(), bufferSize );
+
+	while ( bytesRead > 0 ) {
+		ostream.write( buffer.get(), bufferSize );
+		bytesAvailable -= bytesRead;
+		bufferSize = eemin(bytesAvailable, maxBufferSize);
+		bytesRead = stream->read( buffer.get(), bufferSize );
+	}
+
+	ostream << LINE_END;
+	stream->seek( initialPos );
+}
+
+void Http::MultipartEntitiesBuilder::buildTextPart( std::ostream& ostream, const std::string& parameterName, const std::string& parameterValue ) {
+	ostream << TWO_HYPHENS << getBoundary() << LINE_END;
+	ostream << "Content-Disposition: form-data; name=\"" << parameterName << "\"" << LINE_END;
+	ostream << "Content-Type: text/plain; charset=UTF-8" << LINE_END;
+	ostream << LINE_END;
+	ostream << parameterValue;
+	ostream << LINE_END;
 }
 
 }}
