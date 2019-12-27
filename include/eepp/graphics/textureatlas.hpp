@@ -67,12 +67,12 @@ class EE_API TextureAtlas : public ResourceManager<TextureRegion> {
 
 		/** @return The texture atlas Id. The Id is the String::hash of the texture atlas name. */
 		const Uint32& getId() const;
-		
+
 		/** @return The number of TextureRegions inside the texture atlas. */
 		Uint32 getCount();
 
 		/** @return The texture that corresponds to the texture atlas.
-		* @param texnum The texture index. A texture atlas can use more than one texture, so it can be 0 to GetTexturesLoadedCount(). Usually a texture atlas corresponds to only one texture, so the texture index is 0.
+		* @param texnum The texture index. A texture atlas can use more than one texture, so it can be 0 to getTexturesCount(). Usually a texture atlas corresponds to only one texture, so the texture index is 0.
 		* @note Some texture atlases could not have any texture, since you can use it as a container of TextureRegions from any texture. \n
 		* The texture atlases loaded from a file always will be linked to a texture. \n
 		* The Global Texture Atlas for example doesn't have any texture linked to it.

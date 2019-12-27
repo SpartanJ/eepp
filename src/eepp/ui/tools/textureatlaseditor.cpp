@@ -300,7 +300,7 @@ void TextureAtlasEditor::onTextureAtlasCreate( TexturePacker * TexPacker ) {
 
 	std::string FPath( FileSystem::fileRemoveExtension( mTexturePacker->getFilepath() + EE_TEXTURE_ATLAS_EXTENSION ) );
 
-	bool threaded = mUIWindow->getSceneNode()->getWindow()->isThreadedGLContext();
+	bool threaded = mUIContainer->getSceneNode()->getWindow()->isThreadedGLContext();
 	mTextureAtlasLoader = TextureAtlasLoader::New( FPath, threaded, cb::Make1( this, &TextureAtlasEditor::onTextureAtlasLoaded ) );
 }
 
@@ -390,7 +390,7 @@ void TextureAtlasEditor::onTextureRegionChange( const Event * Event ) {
 void TextureAtlasEditor::openTextureAtlas( const Event * Event ) {
 	eeSAFE_DELETE( mTextureAtlasLoader );
 
-	bool threaded = mUIWindow->getSceneNode()->getWindow()->isThreadedGLContext();
+	bool threaded = mUIContainer->getSceneNode()->getWindow()->isThreadedGLContext();
 	mTextureAtlasLoader = TextureAtlasLoader::New( Event->getNode()->asType<UICommonDialog>()->getFullPath(), threaded, cb::Make1( this, &TextureAtlasEditor::onTextureAtlasLoaded ) );
 }
 

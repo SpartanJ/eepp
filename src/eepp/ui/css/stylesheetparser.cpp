@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <eepp/network/http.hpp>
 #include <eepp/network/uri.hpp>
+#include <eepp/system/clock.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/functionstring.hpp>
 #include <eepp/system/iostreamfile.hpp>
@@ -20,10 +21,13 @@ namespace EE { namespace UI { namespace CSS {
 StyleSheetParser::StyleSheetParser() {}
 
 bool StyleSheetParser::loadFromStream( IOStream& stream ) {
+	Clock elapsed;
 	std::vector<std::string> importedList;
 	mCSS.resize( stream.getSize(), '\0' );
 	stream.read( &mCSS[0], stream.getSize() );
-	return parse( mCSS, importedList );
+	bool ok = parse( mCSS, importedList );
+	eePRINTL( "StyleSheet loaded in: %4.3f ms.", elapsed.getElapsedTime().asMilliseconds() );
+	return ok;
 }
 
 bool StyleSheetParser::loadFromFile( const std::string& filename ) {
