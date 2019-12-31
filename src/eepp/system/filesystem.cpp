@@ -510,15 +510,15 @@ std::string FileSystem::sizeToString( const Int64& Size ) {
 	}
 
 	switch (c) {
-		case 0: size = " bytes"; break;
-		case 1: size = " KiB"; break;
-		case 2: size = " MiB"; break;
-		case 3: size = " GiB"; break;
-		case 4: size = " TiB"; break;
-		default: size = " WTF";
+		case 0: size = "bytes"; break;
+		case 1: size = "KiB"; break;
+		case 2: size = "MiB"; break;
+		case 3: size = "GiB"; break;
+		case 4: size = "TiB"; break;
+		default: size = "WTF";
 	}
 
-	return std::string( String::toStr( mem ) + size );
+	return String::format( "%4.2f %s", mem, size.c_str() );
 }
 
 bool FileSystem::changeWorkingDirectory( const std::string & path ) {

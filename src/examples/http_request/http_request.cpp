@@ -129,8 +129,32 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 			if ( progress ) {
 				request.setProgressCallback( []( const Http&, const Http::Request&, const Http::Response&, const Http::Request::Status& status, size_t totalBytes, size_t currentBytes ) {
 					if ( status == Http::Request::ContentReceived ) {
-						std::cout << "\rDownloaded " << FileSystem::sizeToString( currentBytes ).c_str() << " of " << FileSystem::sizeToString( totalBytes ).c_str() << "          ";
+						static Clock elapsed;
+						static Clock tickElapsed;
+						if ( tickElapsed.getElapsedTime().asMilliseconds() < 100.f && totalBytes != currentBytes )
+							return true;
+						tickElapsed.restart();
+						double progress = currentBytes / static_cast<double>( totalBytes );
+						Time eta( elapsed.getElapsedTime() / progress - elapsed.getElapsedTime() );
+						int percent = static_cast<int>( eefloor( progress * 100. ) );
+						std::string bytesProgress(
+							String::format(
+								"%s of %s", FileSystem::sizeToString( currentBytes ).c_str(),
+								FileSystem::sizeToString( totalBytes ).c_str() ) );
+						double downloadSpeed = currentBytes / elapsed.getElapsedTime().asSeconds();
+						std::cout << "\rDownloaded " << percent << "% (" <<  bytesProgress << ").";
+
+						if ( totalBytes != currentBytes ) {
+							std::cout << " ETA: " << eta.toString() << ".";
+						} else {
+							std::cout << " Downloaded in: " << elapsed.getElapsedTime().toString() << ".";
+						}
+
+						std::cout << " Download Speed: " << FileSystem::sizeToString( downloadSpeed ) << "/s.";
+						std::cout << "          ";
 						std::cout << std::flush;
+						if ( totalBytes == currentBytes )
+							std::cout << std::endl;
 					}
 					return true;
 				});
@@ -191,7 +215,7 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 					if ( !lastPathSegment.empty() ) {
 
 						// Save with the path end segment name
-						if ( !FileSystem::fileExists( path + lastPathSegment ) ) {
+						if ( !FileSystem::fileExists( path + lastPathSegment ) || resume ) {
 							path += lastPathSegment;
 						} else {
 							path += FileSystem::fileGetNumberedFileNameFromPath( path, lastPathSegment );

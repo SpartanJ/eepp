@@ -3,6 +3,7 @@
 #define EE_SYSTEMCTIME_HPP
 
 #include <eepp/config.hpp>
+#include <string>
 
 namespace EE { namespace System {
 
@@ -31,6 +32,9 @@ class EE_API Time
 		Int64 asMicroseconds() const;
 
 		static const Time Zero; ///< Predefined "zero" time value
+
+		/** Converts the time into a human readable string. */
+		std::string toString();
 	private :
 
 		friend EE_API Time Seconds(double);
@@ -276,13 +280,13 @@ value, times can also be negative.
 Usage example:
 @code
 Time t1 = Seconds(0.1f);
-double milli = t1.AsMilliseconds(); // 100
+double milli = t1.asMilliseconds(); // 100
 
 Time t2 = Milliseconds(30);
-Int64 micro = t2.AsMicroseconds(); // 30000
+Int64 micro = t2.asMicroseconds(); // 30000
 
 Time t3 = Microseconds(-800000);
-double sec = t3.AsSeconds(); // -0.8
+double sec = t3.asSeconds(); // -0.8
 @endcode
 
 @code
