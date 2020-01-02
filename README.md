@@ -237,9 +237,10 @@ UITextView::New()->setText( "Text  on  test  1" )
 --------------
 Element styling can be done with a custom implementation of Cascading Style Sheets, most common CSS2 rules are available,
 plus several CSS3 rules (some examples: [transitions](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Transitions),
-custom properties](https://developer.mozilla.org/en-US/docs/Web/CSS/Using_CSS_custom_properties),
+[custom properties](https://developer.mozilla.org/en-US/docs/Web/CSS/Using_CSS_custom_properties),
 [media queries](https://developer.mozilla.org/en-US/docs/Web/CSS/Media_Queries/Using_media_queries),
-[@font-face at rule](https://developer.mozilla.org/en-US/docs/Web/CSS/@font-face), [:root element](https://developer.mozilla.org/en-US/docs/Web/CSS/:root)).
+[@font-face at rule](https://developer.mozilla.org/en-US/docs/Web/CSS/@font-face),
+[:root element](https://developer.mozilla.org/en-US/docs/Web/CSS/:root)).
 Here is a small example on how the CSS looks like:
 
 ```css
