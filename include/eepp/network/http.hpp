@@ -465,12 +465,12 @@ class EE_API Http : NonCopyable {
 				* This Content-Type header must be set to the request in order to work correctly.
 				*
 				* For example:
-				* ```
+				* @code
 				* Http::Request request;
 				* Http::MultipartEntitiesBuilder builder;
 				* ...
 				* request.setField( "Content-Type", builder.getContentType() );
-				* ```
+				* @endcode
 				*/
 				std::string getContentType();
 
