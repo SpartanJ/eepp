@@ -51,6 +51,7 @@ Entropia Engine++
 
   * Many image formats supported ( included rasterized SVG ), compressed textures support ( direct upload to the GPU  when possible ).
 
+
 **Window Module:**
 ------------------
 
@@ -111,17 +112,21 @@ Entropia Engine++
 
 **Network Module:**
 ------------------
-  * Web Requests with HTTP client, with **SSL support** ( provided by mbedtls or openssl ).
+  * Web Requests with HTTP client, with **TLS support** ( provided by mbedtls or openssl ).
 
   * Asynchronous HTTP requests.
 
-  * File Transfers with FTP client.
+  * File Transfers with FTP client and FTPS client ( FTP with explicit TLS ).
 
   * TCP and UDP sockets.
 
   * HTTP Content-Encoding and Transfer-Encoding support.
 
   * HTTP Proxy Support.
+
+  * HTTP Compressed response support.
+
+  * Also HTTP resume/continue download support and automatic follow redirects.
 
 Module was originally based on the SFML Network module implementation, though currently differs a lot from it.
 
@@ -176,7 +181,7 @@ Module was originally based on the SFML Network module implementation, though cu
 
   * Texture Atlas Editor. A very simple tool to allow the developer to create and edit texture atlases.
 
-  * Map Editor: A advanced but simple map editor for the game engine. It lacks several features since i didn't have the time to work on it, this particular tool will probably die in favor of TMX map support in the near future ( but i'm not a fan of TMX maps, so there's no decision for the moment ).
+  * Map Editor: A advanced but simple map editor for the game engine. It lacks several features since I didn't have the time to work on it, this particular tool will probably die in favor of TMX map support in the near future ( but i'm not a fan of TMX maps, so there's no decision for the moment ).
 
 **General Features:**
 ---------------------
@@ -222,15 +227,97 @@ How does it look with real code?
 
 ```c++
 UITextView::New()->setText( "Text  on  test  1" )
-                 ->setCharacterSize( 12 )
-                 ->setLayoutMargin( Rect( 10, 10, 10, 10 ) )
-                 ->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )
-                 ->setParent( layout );
+				 ->setCharacterSize( 12 )
+				 ->setLayoutMargin( Rect( 10, 10, 10, 10 ) )
+				 ->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )
+				 ->setParent( layout );
 ```
 
-**How can i learn to use the library?**
+**UI Styling**
+--------------
+Element styling can be done with a custom implementation of Cascading Style Sheets, most common CSS2 rules are available,
+plus several CSS3 rules (some examples: [transitions](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Transitions),
+custom properties](https://developer.mozilla.org/en-US/docs/Web/CSS/Using_CSS_custom_properties),
+[media queries](https://developer.mozilla.org/en-US/docs/Web/CSS/Media_Queries/Using_media_queries),
+[@font-face at rule](https://developer.mozilla.org/en-US/docs/Web/CSS/@font-face), [:root element](https://developer.mozilla.org/en-US/docs/Web/CSS/:root)).
+Here is a small example on how the CSS looks like:
+
+```css
+@font-face {
+	font-family: "OpenSans Regular";
+	src: url("https://raw.githubusercontent.com/SpartanJ/eepp/develop/bin/assets/fonts/OpenSans-Regular.ttf");
+}
+
+@import url("assets/layouts/imported.css") screen and (min-width: 800px);
+
+:root {
+	--font-color: black;
+	--background-input-color: rgba(255, 255, 255, 0.7);
+	--border-color: black;
+	--border-width: 1dp;
+}
+
+.screen TextView {
+	color: var(--font-color);
+}
+
+.form {
+	background-image: @drawable/back;
+	background-repeat: no-repeat;
+	background-size: cover;
+}
+
+.form .form_inputs {
+	background-color: var(--non-existent, var(--background-input-color));
+	margin-left: 100dp;
+	margin-right: 100dp;
+	padding-top: 72dp;
+	padding-left: 57dp;
+	padding-right: 57dp;
+	padding-bottom: 115dp;
+}
+
+.screen TextView.input,
+.screen TextInput.input {
+	font-family: AkzidenzGroteskBQ-Cnd;
+	layout-width: match_parent;
+	layout-height: 80dp;
+	border-color: var(--border-color);
+	border-width: var(--border-width);
+	color: var(--font-color);
+	padding-left: 40dp;
+	padding-right: 40dp;
+	margin-bottom: 32dp;
+	skin: none;
+	hint-font-family: AkzidenzGroteskBQ-Cnd;
+	hint-font-size: 46dp;
+	hint-color: #818285;
+	background-color: #FFFFFF00;
+	transition: all 0.125s;
+}
+
+.screen TextInput.input:focus {
+	background-color: #FFFFFF66;
+	border-color: #796500;
+}
+
+.screen TextInput.input:hover {
+	background-color: #FFFFFF66;
+}
+
+@media screen and (max-width: 1024px) {
+
+.form .form_inputs {
+	background-color: red;
+}
+
+}
+```
+
+
+**How can I learn to use the library?**
 ----------------------------------------------
-This is the current big issue with the library. Since i'm solo working, it's really difficult keep up the documentation updated. But i'll work to improve that in the near future. For the moment you have two options: build the documentation and read code examples. The documentation is not complete but most modules are documented. Sadly not the UI module ( the biggest one ), but it's easy to get along with the examples. The library is supper easy to use, but is kind of big, so, knowing about everything i'll take time. I you're interested you can contact me anytime.
+This is the current big issue with the library. Since I'm solo working, it's really difficult keep up the documentation updated. But I'll work to improve that in the near future. For the moment you have two options: build the documentation and read code examples. The documentation is not complete but most modules are documented. Sadly not the UI module ( the biggest one ), but it's easy to get along with the examples. The library is supper easy to use, but is kind of big, so, knowing about everything I'll take time. I you're interested you can contact me anytime.
 
 **How to build it?**
 ------------------------
@@ -301,23 +388,33 @@ There's a script for building the *emscripten* project in `projects/emscripten/m
 
 **Author comment:**
 ------------------------
-The library has been being developed for several years, it suffered many changes since its beginnings, i make any change that i find necessary to improve it. It's being used in several applications oriented to publicity campaigns mostly developed for Android devices and Windows PCs. I personally never had the time to use it to develop a real game with the library ( several frustrated projects ). The current project focus is on the UI module. And i'll continue to work mostly on this, the plan is to provide an alternative UI toolkit fully hardware accelerated similar to the Android toolkit but simpler and also oriented to desktop apps.
+The library has been being developed for several years, it suffered many changes since its beginnings,
+I'm making any changes that I find necessary to improve it, so the API still not totally stable (but close to be).
+It's being used in several applications oriented to publicity campaigns mostly developed for Android devices and Windows PCs.
+I personally never had the time to use it to develop a real game with the library ( several frustrated projects ).
+The current project focus is on the UI module. And I'll continue working putting my focus on this.
+The plan is to provide an alternative UI toolkit fully hardware accelerated similar to the Android toolkit but simpler ( as in easy to use ) and also oriented to desktop apps.
 
-Audio and Network modules are almost exactly the same that the ones in SFML2 with some minor differences ( for example Network module supports SSL/TLS ). I like to use what's well done and fit my needs, but since i have my personal views on how to implement some things i prefer to take the code, to have full control over it. Also many ideas were/are taken from other projects. Some i can think about: *cocos2d-x*, *raylib*, *Android SDK*, *libgdx*, *Godot*, *XNA*, *LÖVE*, and many other projects.
+Audio and Network modules were based the modules in SFML with several important differences mentioned above.
+I like to use what's well done and fit my needs, but since I have my personal views on how to implement some things I prefer to take the code, to have full control over it.
+Also many ideas were/are taken from other projects. Some I can think about: *cocos2d-x*, *raylib*, *Android SDK*, *libgdx*, *Godot*, *XNA*, *LÖVE*, and many other projects.
 
-If all this sounds interesting to you for some crazy reason, contact me and let me know if i can help you to get into the library, and may be, contribute to it in the future. This project needs *contributors* more than anything else.
+If all this sounds interesting to you for some crazy reason, contact me and let me know if I can help you to get into the library, and may be, contribute to it in the future.
+This project needs *contributors* more than anything else.
 
-The current state of the library/engine is decent. In terms of features should be in a similar position than the most used 2d game engines out there. But lacks of course of the support+community that you can get from *Godot* or *cocos2d-x* to mention a couple. The idea of this library is to focus on a better general approach to develop heavily UI based apps/games than the other options, with cleaner code and implementation.
+The current state of the library is decent. In terms of features should be in a similar position than the most used 2D game engines out there.
+But lacks of course of the support+community that you can get from *Godot* or *cocos2d-x* to mention a couple.
+The main idea of this library is to focus on a better general approach to develop heavily UI based apps/games than the other options, with cleaner code and implementation.
 
 
 **_Plans/ideas for the future:_**
 
-Improve documentation ( Scene, UI, Physics and Maps modules are undocumented ).
+Keep improving the UI system, adding new widgets and improving the CSS support, also simplify and improve the widgets skinning/theming.
+Improve/create documentation for the UI module.
 Add more examples and also some tools.
-There's planned some kind of style-sheet support similar to QSS or CSS ( this would be *great* but seems a lot of work needs to be done ).
-Support 2D skeletal animations ( probably Spine2D, shouldn't be much work to implement ).
-Scripting support ( first i would like to stabilize the library, but i'm getting there ).
-Rebuild the map editor with undo/redo support ( or deprecate it in favor of TMX, but it's limited ).
+Add Scripting support ( first i would like to stabilize the library, but i'm getting there ).
+Add 2D skeletal animations support ( probably Spine2D, shouldn't be much work to implement ).
+Probably deprecate the Maps module, since i will focus my efforts on the UI system.
 
 **Acknowledgements**
 -----------------------------
