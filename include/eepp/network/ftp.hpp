@@ -339,8 +339,7 @@ private :
 #endif // EE_NETWORKCFTP_HPP
 
 /**
-@class Ftp
-@ingroup Network
+@class EE::Network::Ftp
 
 Ftp is a very simple FTP client that allows you
 to communicate with a FTP server. The FTP protocol allows
@@ -353,7 +352,7 @@ Using the FTP client consists of 4 parts:
 @li Disconnecting (this part can be done implicitely by the destructor)
 Every command returns a FTP response, which contains the
 status code as well as a message from the server. Some
-commands such as GetWorkingDirectory and GetDirectoryListing
+commands such as getWorkingDirectory and getDirectoryListing
 return additional data, and use a class derived from
 Ftp::Response to provide this data.
 All commands, especially upload and download, may take some

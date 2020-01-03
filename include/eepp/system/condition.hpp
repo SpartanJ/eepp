@@ -22,14 +22,14 @@ class EE_API Condition : NonCopyable {
 		 * Thus using WaitAndLock(value, ...) will immediately return.
 		 */
 		Condition( int value = 0 );
-		
+
 		/** Default destructor
 		 * The Condition is invalidated before destruction
 		 */
 		~Condition();
-		
+
 		void lock();
-		
+
 		/** Waits until the Condition's value == awaitedValue and protects the Condition.
 		 * You're responsible for unlocking the Condition with Unlock() after
 		 * WaitAndLock() returned and after you're done working on protected data,
@@ -53,7 +53,7 @@ class EE_API Condition : NonCopyable {
 		 * invalidated Condition always returns in an unlocked state.
 		 */
 		bool waitAndLock( int awaitedValue, int autoUnlock = false );
-		
+
 		/** Unlocks a previously locked Condition with value as
 		 * internal value. When the condition is unlocked, it is assumed
 		 * to have the given value. The condition is thereafter signaled.
@@ -62,11 +62,11 @@ class EE_API Condition : NonCopyable {
 		 * @param value the value the Condition should have when it is unlocked
 		 */
 		void unlock( int value );
-		
+
 		void unlock();
-		
+
 		/** Performs an assignement followed by a Signal() call.
-		 * The internal Condition value is updated to @value and the Condition is
+		 * The internal Condition value is updated to value() and the Condition is
 		 * signaled. Note that the Condition must be unlocked in order
 		 * to be updated, otherwise it'll block until the Condition
 		 * is unlocked.
@@ -76,28 +76,28 @@ class EE_API Condition : NonCopyable {
 		 * @return value
 		 */
 		int operator=(int value);
-		
+
 		/** Get the current internal Condition value.
 		 * This is a non-blocking call.
 		 *
 		 * @return: the current internal state
 		 */
 		int value() const;
-		
+
 		/** Signals that the Condition state has changed and that
 		 * threads waiting on this Condition should check
 		 * the new internal value.
 		 */
 		void signal();
-		
+
 		/** Signals the Condition and disables blocking calls,
 		 * thus WaitAndLock() does no more wait whatever
 		 * the awaitedValue is and waiting calls are unlocked, returning false.
 		 */
 		void invalidate();
-		
+
 		/** Restores the blocking capabilities of the Condition,
-		 * possibly previously disabled with Invalidate() 
+		 * possibly previously disabled with Invalidate()
 		 */
 		void restore();
 	protected:

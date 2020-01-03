@@ -1,6 +1,8 @@
 #ifndef EE_GRAPHICSGLHELPER_HPP
 #define EE_GRAPHICSGLHELPER_HPP
 
+namespace EE { namespace Graphics {
+
 /** Just for reference */
 enum EEGL_ARRAY_STATES {
 	EEGL_VERTEX_ARRAY			= 0,
@@ -39,5 +41,7 @@ enum EEGL_version {
 	GLv_ES2,
 	GLv_default
 };
+
+}}
 
 #endif

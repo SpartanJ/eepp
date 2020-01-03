@@ -262,8 +262,7 @@ class EE_API SoundSource : AlResource {
 #endif
 
 ////////////////////////////////////////////////////////////
-/// \class SoundSource
-/// \ingroup audio
+/// @class EE::Audio::SoundSource
 ///
 /// SoundSource is not meant to be used directly, it
 /// only serves as a common base for all audio objects

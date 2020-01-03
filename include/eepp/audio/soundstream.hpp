@@ -19,8 +19,7 @@ class EE_API SoundStream : public SoundSource {
 		/// \brief Structure defining a chunk of audio data to stream
 		///
 		////////////////////////////////////////////////////////////
-		struct Chunk
-		{
+		struct Chunk {
 			const Int16* samples;	 ///< Pointer to the audio samples
 			std::size_t  sampleCount; ///< Number of samples pointed by Samples
 		};
@@ -289,8 +288,7 @@ class EE_API SoundStream : public SoundSource {
 #endif
 
 ////////////////////////////////////////////////////////////
-/// \class SoundStream
-/// \ingroup audio
+/// @class EE::Audio::SoundStream
 ///
 /// Unlike audio buffers (see SoundBuffer), audio streams
 /// are never completely loaded in memory. Instead, the audio

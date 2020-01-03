@@ -50,8 +50,7 @@ class EE_API OutputSoundFile : NonCopyable {
 #endif
 
 ////////////////////////////////////////////////////////////
-/// \class OutputSoundFile
-/// \ingroup audio
+/// @class EE::Audio::OutputSoundFile
 ///
 /// This class encodes audio samples to a sound file. It is
 /// used internally by higher-level classes such as SoundBuffer,

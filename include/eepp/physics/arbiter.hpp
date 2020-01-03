@@ -5,9 +5,9 @@
 #include <eepp/physics/shape.hpp>
 #include <eepp/physics/body.hpp>
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
-class CP_API Arbiter {
+class EE_API Arbiter {
 	public:
 		Arbiter( cpArbiter * arbiter );
 
@@ -56,6 +56,6 @@ class CP_API Arbiter {
 		cpArbiter *		mArbiter;
 };
 
-CP_NAMESPACE_END
+}}
 
 #endif

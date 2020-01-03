@@ -28,13 +28,11 @@
 ../../include/eepp/audio/soundsource.hpp
 ../../include/eepp/audio/soundstream.hpp
 ../../include/eepp/config.hpp
-../../include/eepp/core/allocator.hpp
 ../../include/eepp/core/core.hpp
 ../../include/eepp/core/debug.hpp
 ../../include/eepp/core.hpp
 ../../include/eepp/core/memorymanager.hpp
 ../../include/eepp/core/noncopyable.hpp
-../../include/eepp/core/stlcontainers.hpp
 ../../include/eepp/core/string.hpp
 ../../include/eepp/core/utf.hpp
 ../../include/eepp/core/utf.inl

@@ -4,14 +4,14 @@
 #include <eepp/physics/base.hpp>
 #include <eepp/physics/body.hpp>
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
 class ShapeCircle;
 class ShapeSegment;
 class ShapePoly;
 class Space;
 
-class CP_API Shape {
+class EE_API Shape {
 	public:
 		static void resetShapeIdCounter();
 
@@ -97,6 +97,6 @@ class CP_API Shape {
 		void setData();
 };
 
-CP_NAMESPACE_END
+}}
 
 #endif

@@ -3,9 +3,9 @@
 
 #include <eepp/physics/shape.hpp>
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
-class CP_API ShapeCircle : public Shape {
+class EE_API ShapeCircle : public Shape {
 	public:
 		static ShapeCircle * New( Physics::Body * body, cpFloat radius, cVect offset );
 
@@ -22,6 +22,6 @@ class CP_API ShapeCircle : public Shape {
 		virtual void draw( Space * space );
 };
 
-CP_NAMESPACE_END
+}}
 
 #endif

@@ -169,8 +169,8 @@ class EE_API Texture : public DrawableResource, public Image, private NonCopyabl
 		* @param x The x position on screen
 		* @param y The y position on screen
 		* @param Angle The Angle of the texture rendered
-		* @param Scale The Scale factor of the rendered texture
-		* @param Color The texture color
+		* @param scale The Scale factor of the rendered texture
+		* @param color The texture color
 		* @param Blend Set the Blend Mode ( default BlendAlpha )
 		* @param width The width of the texture rendered
 		* @param height The height of the texture rendered
@@ -181,8 +181,8 @@ class EE_API Texture : public DrawableResource, public Image, private NonCopyabl
 		* @param x The x position on screen
 		* @param y The y position on screen
 		* @param Angle The Angle of the texture rendered
-		* @param Scale The Scale factor of the rendered texture
-		* @param Color The texture color
+		* @param scale The Scale factor of the rendered texture
+		* @param color The texture color
 		* @param Blend Set the Blend Mode ( default BlendAlpha )
 		* @param Effect Set the Render Effect ( default RN_NORMAL, no effect )
 		* @param Center The rotation and scaling center. The center point is relative to the top-left corner of the object.
@@ -196,7 +196,7 @@ class EE_API Texture : public DrawableResource, public Image, private NonCopyabl
 		* @param width The width of the texture rendered ( when Scale = 1, otherwise this width will be scaled like width * Scale )
 		* @param height The height of the texture rendered ( when Scale = 1, otherwise this height will be scaled like height * Scale )
 		* @param Angle The Angle of the texture rendered
-		* @param Scale The Scale factor of the rendered texture
+		* @param scale The Scale factor of the rendered texture
 		* @param Color0 The Left - Top vertex color
 		* @param Color1 The Left - Bottom vertex color
 		* @param Color2 The Right - Bottom vertex color
@@ -212,8 +212,8 @@ class EE_API Texture : public DrawableResource, public Image, private NonCopyabl
 		* @param Q The Quad2f
 		* @param Offset The Offset applied to all the coordinates on Quad2f
 		* @param Angle The Angle of the Quad2f rendered
-		* @param Scale The Scale of the Quad2f rendered
-		* @param Color The Quad2f color
+		* @param scale The Scale of the Quad2f rendered
+		* @param color The Quad2f color
 		* @param Blend Set the Blend Mode ( default BlendAlpha )
 		* @param texSector The texture sector to render. You can render only a part of the texture. ( default render all the texture )
 		*/
@@ -223,7 +223,7 @@ class EE_API Texture : public DrawableResource, public Image, private NonCopyabl
 		* @param Q The Quad2f
 		* @param Offset The Offset applied to all the coordinates on Quad2f
 		* @param Angle The Angle of the Quad2f rendered
-		* @param Scale The Scale of the Quad2f rendered
+		* @param scale The Scale of the Quad2f rendered
 		* @param Color0 The Left - Top vertex color
 		* @param Color1 The Left - Bottom vertex color
 		* @param Color2 The Right - Bottom vertex color

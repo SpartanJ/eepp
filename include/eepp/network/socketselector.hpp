@@ -9,9 +9,8 @@ namespace EE { namespace Network {
 
 class Socket;
 
-/** @brief Multiplexer that allows to read from multiple sockets */
-class EE_API SocketSelector
-{
+/** Multiplexer that allows to read from multiple sockets */
+class EE_API SocketSelector {
 	public :
 		/** @brief Default constructor */
 		SocketSelector();
@@ -85,8 +84,7 @@ class EE_API SocketSelector
 #endif // EE_NETWORKCSOCKETSELECTOR_HPP
 
 /**
-@class SocketSelector
-@ingroup Network
+@class EE::Network::SocketSelector
 
 Socket selectors provide a way to wait until some data is
 available on a set of sockets, instead of just one. This
@@ -97,9 +95,9 @@ for each socket; with selectors, a single thread can handle
 all the sockets.
 
 All types of sockets can be used in a selector:
-@li TcpListener
-@li TcpSocket
-@li UdpSocket
+@li EE::NetworkTcpListener
+@li EE::NetworkTcpSocket
+@li EE::NetworkUdpSocket
 
 A selector doesn't store its own copies of the sockets
 (socket classes are not copyable anyway), it simply keeps
@@ -117,7 +115,7 @@ Usage example:
 @code
 // Create a socket to listen to new connections
 TcpListener listener;
-listener.Listen(55001);
+listener.listen(55001);
 
 // Create a list to store the future clients
 std::list<TcpSocket*> clients;
@@ -126,46 +124,35 @@ std::list<TcpSocket*> clients;
 SocketSelector selector;
 
 // Add the listener to the selector
-selector.Add(listener);
+selector.add(listener);
 
 // Endless loop that waits for new connections
-while (running)
-{
+while (running) {
 	 // Make the selector wait for data on any socket
-	 if (selector.Wait())
-	 {
+	 if (selector.wait()) {
 		 // Test the listener
-		 if (selector.IsReady(listener))
-		 {
+		 if (selector.isReady(listener)) {
 			 // The listener is ready: there is a pending connection
 			 TcpSocket* client = new TcpSocket;
-			 if (listener.Accept(*client) == Socket::Done)
-			 {
+			 if (listener.accept(*client) == Socket::Done) {
 				 // Add the new client to the clients list
 				 clients.push_back(client);
 
 				 // Add the new client to the selector so that we will
 				 // be notified when he sends something
-				 selector.Add(*client);
-			 }
-			 else
-			 {
+				 selector.add(*client);
+			 } else {
 				 // Error, we won't get a new connection, delete the socket
 				 delete client;
 			 }
-		 }
-		 else
-		 {
+		 } else {
 			 // The listener socket is not ready, test all other sockets (the clients)
-			 for (std::list<TcpSocket*>::iterator it = clients.begin(); it != clients.end(); ++it)
-			 {
+			 for (std::list<TcpSocket*>::iterator it = clients.begin(); it != clients.end(); ++it) {
 				 TcpSocket& client = **it;
-				 if (selector.IsReady(client))
-				 {
+				 if (selector.isReady(client)) {
 					 // The client has sent some data, we can receive it
 					 Packet packet;
-					 if (client.Receive(packet) == Socket::Done)
-					 {
+					 if (client.Receive(packet) == Socket::Done) {
 						 ...
 					 }
 				 }
@@ -175,5 +162,5 @@ while (running)
 }
 @endcode
 
-@see Socket
+@see EE::Network::Socket
 */

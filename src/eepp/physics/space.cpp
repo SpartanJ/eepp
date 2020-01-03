@@ -7,14 +7,14 @@
 using namespace EE::Graphics;
 #endif
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
 Space * Space::New() {
-	return cpNew( Space, () );
+	return eeNew( Space, () );
 }
 
 void Space::Free( Space * space ) {
-	cpSAFE_DELETE( space );
+	eeSAFE_DELETE( space );
 }
 
 Space::Space() :
@@ -22,7 +22,7 @@ Space::Space() :
 {
 	mSpace = cpSpaceNew();
 	mSpace->data = (void*)this;
-	mStatiBody = cpNew( Body, ( mSpace->staticBody ) );
+	mStatiBody = eeNew( Body, ( mSpace->staticBody ) );
 
 	PhysicsManager::instance()->removeBodyFree( mStatiBody );
 	PhysicsManager::instance()->addSpace( this );
@@ -33,19 +33,19 @@ Space::~Space() {
 
 	std::list<Constraint*>::iterator itc = mConstraints.begin();
 	for ( ; itc != mConstraints.end(); ++itc )
-		cpSAFE_DELETE( *itc );
+		eeSAFE_DELETE( *itc );
 
 	std::list<Shape*>::iterator its = mShapes.begin();
 	for ( ; its != mShapes.end(); ++its )
-		cpSAFE_DELETE( *its );
+		eeSAFE_DELETE( *its );
 
 	std::list<Body*>::iterator itb = mBodys.begin();
 	for ( ; itb != mBodys.end(); ++itb )
-		cpSAFE_DELETE( *itb );
+		eeSAFE_DELETE( *itb );
 
 	mStatiBody->mBody = NULL; // The body has been released by cpSpaceFree( mSpace )
 
-	cpSAFE_DELETE( mStatiBody );
+	eeSAFE_DELETE( mStatiBody );
 
 	PhysicsManager::instance()->removeSpace( this );
 }
@@ -498,7 +498,7 @@ void Space::onPostStepCallback( void * obj, void * data ) {
 	}
 
 	mPostStepCallbacks.remove( Cb );
-	cpSAFE_DELETE( Cb );
+	eeSAFE_DELETE( Cb );
 }
 
 void Space::onBBQuery( Shape * shape, BBQuery * query ) {
@@ -551,7 +551,7 @@ void Space::setDefaultCollisionHandler( const CollisionHandler& handler ) {
 }
 
 void Space::addPostStepCallback(PostStepCallback postStep, void * obj, void * data ) {
-	PostStepCallbackCont * PostStepCb	= cpNew( PostStepCallbackCont, () );
+	PostStepCallbackCont * PostStepCb	= eeNew( PostStepCallbackCont, () );
 	PostStepCb->Callback			= postStep,
 	PostStepCb->Data				= data;
 
@@ -643,4 +643,4 @@ void Space::convertBodyToStatic(Body * body ) {
 	cpSpaceConvertBodyToStatic( mSpace, body->getBody() );
 }
 
-CP_NAMESPACE_END
+}}

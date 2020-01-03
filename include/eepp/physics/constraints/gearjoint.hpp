@@ -3,9 +3,9 @@
 
 #include <eepp/physics/constraints/constraint.hpp>
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
-class CP_API GearJoint : public Constraint {
+class EE_API GearJoint : public Constraint {
 	public:
 		GearJoint( Body * a, Body * b, cpFloat phase, cpFloat ratio );
 
@@ -20,6 +20,6 @@ class CP_API GearJoint : public Constraint {
 		virtual void draw();
 };
 
-CP_NAMESPACE_END
+}}
 
 #endif

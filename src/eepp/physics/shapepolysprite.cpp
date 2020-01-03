@@ -4,14 +4,14 @@
 
 #include <eepp/graphics/sprite.hpp>
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
 ShapePolySprite * ShapePolySprite::New( Physics::Body * body, int numVerts, cVect *verts, cVect offset, Sprite * Sprite, bool AutoDeleteSprite ) {
-	return cpNew( ShapePolySprite, ( body, numVerts, verts, offset, Sprite, AutoDeleteSprite ) );
+	return eeNew( ShapePolySprite, ( body, numVerts, verts, offset, Sprite, AutoDeleteSprite ) );
 }
 
 ShapePolySprite * ShapePolySprite::New( Physics::Body * body, cpFloat width, cpFloat height, Sprite * Sprite, bool AutoDeleteSprite ) {
-	return cpNew( ShapePolySprite, ( body, width, height, Sprite, AutoDeleteSprite ) );
+	return eeNew( ShapePolySprite, ( body, width, height, Sprite, AutoDeleteSprite ) );
 }
 
 ShapePolySprite::ShapePolySprite( Physics::Body * body, int numVerts, cVect *verts, cVect offset, Sprite * Sprite, bool AutoDeleteSprite ) :
@@ -55,6 +55,6 @@ Sprite * ShapePolySprite::getSprite() const {
 	return mSprite;
 }
 
-CP_NAMESPACE_END
+}}
 
 #endif

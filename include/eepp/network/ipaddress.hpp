@@ -168,8 +168,8 @@ EE_API std::ostream& operator <<(std::ostream& stream, const IpAddress& address)
 #endif // EE_NETWORKCIPADDRESS_HPP
 
 /**
-@class IpAddress
-@ingroup Network
+@class EE::Network::IpAddress
+
 IpAddress is a utility class for manipulating network
 addresses. It provides a set a implicit constructors and
 conversion functions to easily build or transform an IP

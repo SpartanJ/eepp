@@ -3,9 +3,9 @@
 
 #include <eepp/physics/shape.hpp>
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
-class CP_API ShapePoly : public Shape {
+class EE_API ShapePoly : public Shape {
 	public:
 		static ShapePoly * New( Physics::Body * body, int numVerts, cVect *verts, cVect offset );
 
@@ -32,6 +32,6 @@ class CP_API ShapePoly : public Shape {
 		static cVect centroid( int numVerts, const cVect * verts );
 };
 
-CP_NAMESPACE_END
+}}
 
 #endif

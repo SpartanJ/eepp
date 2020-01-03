@@ -106,6 +106,7 @@ class EE_API Image {
 		* @param width the var to store the image width
 		* @param height the var to store the image height
 		* @param channels the var to store the image channels count
+		* @param imageFormatConfiguration The specific image format configuration to use when decoding the image.
 		*/
 		static bool getInfo( const std::string& path, int * width, int * height, int * channels, const FormatConfiguration& imageFormatConfiguration = FormatConfiguration() );
 
@@ -157,7 +158,7 @@ class EE_API Image {
 		/** Load an image from path
 		* @param Path The path to the file.
 		* @param forceChannels Number of channels to use for the image, default 0 means that it use the default image channels.
-		* @param formatConfiguration Set the format configuration if needed
+		* @param formatConfiguration The specific image format configuration to use when decoding the image.
 		*/
 		Image( std::string Path, const unsigned int& forceChannels = 0, const FormatConfiguration& formatConfiguration = FormatConfiguration() );
 
@@ -165,6 +166,7 @@ class EE_API Image {
 		* @param imageData The image data
 		* @param imageDataSize The image size
 		* @param forceChannels Number of channels to use for the image, default 0 means that it use the default image channels.
+		* @param formatConfiguration The specific image format configuration to use when decoding the image.
 		*/
 		Image( const Uint8* imageData, const unsigned int& imageDataSize, const unsigned int& forceChannels = 0, const FormatConfiguration& formatConfiguration = FormatConfiguration() );
 
@@ -172,12 +174,14 @@ class EE_API Image {
 		* @param Pack The pack file to use to load the image.
 		* @param FilePackPath The path of the file inside the pack file.
 		* @param forceChannels Number of channels to use for the image, default 0 means that it use the default image channels.
+		* @param formatConfiguration The specific image format configuration to use when decoding the image.
 		*/
 		Image( Pack * Pack, std::string FilePackPath, const unsigned int& forceChannels = 0, const FormatConfiguration& formatConfiguration = FormatConfiguration() );
 
 		/** Load an image from stream
 		* @param stream The stream to read the image
 		* @param forceChannels Number of channels to use for the image, default 0 means that it use the default image channels.
+		* @param formatConfiguration The specific image format configuration to use when decoding the image.
 		*/
 		Image( IOStream& stream, const unsigned int& forceChannels = 0, const FormatConfiguration& formatConfiguration = FormatConfiguration() );
 

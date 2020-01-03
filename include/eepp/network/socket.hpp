@@ -92,8 +92,8 @@ protected :
 #endif // EE_NETWORKCSOCKET_HPP
 
 /**
-@class Socket
-@ingroup Network
+@class EE::Network::Socket
+
 This class mainly defines internal stuff to be used by
 derived classes.
 
@@ -120,5 +120,5 @@ applications that run an endless loop that can poll
 the socket often enough, and cannot afford blocking
 this loop.
 
-@see TcpListener, TcpSocket, UdpSocket
+@see EE::Network::TcpListener, EE::Network::TcpSocket, EE::Network::UdpSocket
 */

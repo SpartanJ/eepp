@@ -7,8 +7,7 @@ namespace EE { namespace System {
 
 /** @brief Pointer to a thread-local variable */
 template <typename T>
-class ThreadLocalPtr : private ThreadLocal
-{
+class ThreadLocalPtr : private ThreadLocal {
 	public :
 		/** @brief Default constructor
 		**  @param value Optional value to initalize the variable */
@@ -33,7 +32,7 @@ class ThreadLocalPtr : private ThreadLocal
 		/** @brief Assignment operator for a raw pointer parameter
 		**  @param value Pointer to assign
 		**  @return Reference to self */
-		ThreadLocalPtr<T>& operator =(T* setValue);
+		ThreadLocalPtr<T>& operator =(T* value);
 
 		/** @brief Assignment operator for a ThreadLocalPtr parameter
 		**  @param right ThreadLocalPtr to assign
@@ -79,8 +78,7 @@ ThreadLocalPtr<T>& ThreadLocalPtr<T>::operator =(const ThreadLocalPtr<T>& right)
 #endif
 
 /**
-@class ThreadLocalPtr
-@ingroup System
+@class EE::System::ThreadLocalPtr
 
 ThreadLocalPtr is a type-safe wrapper for storing
 pointers to thread-local variables. A thread-local
@@ -96,20 +94,17 @@ MyClass object1;
 MyClass object2;
 ThreadLocalPtr<MyClass> objectPtr;
 
-void thread1()
-{
+void thread1() {
 	objectPtr = &object1; // doesn't impact thread2
 	...
 }
 
-void thread2()
-{
+void thread2() {
 	objectPtr = &object2; // doesn't impact thread1
 	...
 }
 
-int main()
-{
+int main() {
 	// Create and launch the two threads
 	Thread t1(&thread1);
 	Thread t2(&thread2);

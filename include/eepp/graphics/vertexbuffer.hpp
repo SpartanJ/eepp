@@ -144,7 +144,6 @@ class EE_API VertexBuffer {
 #endif
 
 /** @class EE::Graphics::VertexBuffer
-*	@ingroup Graphics
 *
 *	Some example usage of this class:
 *	@code

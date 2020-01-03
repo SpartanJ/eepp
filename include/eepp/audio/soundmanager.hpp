@@ -1,6 +1,7 @@
 #ifndef EE_AUDIOT_SOUNDMANAGER_H
 #define EE_AUDIOT_SOUNDMANAGER_H
 
+#include <map>
 #include <eepp/audio/sound.hpp>
 #include <eepp/audio/soundbuffer.hpp>
 

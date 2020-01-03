@@ -393,6 +393,7 @@ class EE_API Http : NonCopyable {
 		**  of Time::Zero means that the client will use the system defaut timeout
 		**  (which is usually pretty long).
 		**  @param request Request to send
+		**  @param writeTo The IO stream to write the downloaded content
 		**  @param timeout Maximum time to wait
 		**  @return Server's response */
 		Response downloadRequest(const Request& request, IOStream& writeTo, Time timeout = Time::Zero);
@@ -407,6 +408,7 @@ class EE_API Http : NonCopyable {
 		**  of Time::Zero means that the client will use the system defaut timeout
 		**  (which is usually pretty long).
 		**  @param request Request to send
+		**  @param writePath The path of the file to write the downloaded content
 		**  @param timeout Maximum time to wait
 		**  @return Server's response */
 		Response downloadRequest(const Request& request, std::string writePath, Time timeout = Time::Zero);
@@ -656,29 +658,29 @@ class EE_API Http : NonCopyable {
 #endif // EE_NETWORKCHTTP_HPP
 
 /**
-@class Http
-@ingroup Network
+@class EE::Network::Http
+
 Http is a very simple HTTP client that allows you
 to communicate with a web server. You can retrieve
 web pages, send data to an interactive resource,
 download a remote file, etc.
 The HTTP client is split into 3 classes:
-@li Http::Request
-@li Http::Response
-@li Http
-Http::Request builds the request that will be
+@li EE::Network::Http::Request
+@li EE::Network::Http::Response
+@li EE::Network::Http
+EE::Network::Http::Request builds the request that will be
 sent to the server. A request is made of:
 @li a method (what you want to do)
 @li a target URI (usually the name of the web page or file)
 @li one or more header fields (options that you can pass to the server)
 @li an optional body (for POST requests)
-Http::Response parse the response from the web server
+EE::Network::Http::Response parse the response from the web server
 and provides getters to read them. The response contains:
 @li a status code
 @li header fields (that may be answers to the ones that you requested)
 @li a body, which contains the contents of the requested resource
-Http provides a simple function, SendRequest, to send a
-Http::Request and return the corresponding Http::Response
+Http provides a simple function, sendRequest, to send a
+EE::Network::Http::Request and return the corresponding EE::Network::Http::Response
 from the server.
 Usage example:
 @code
@@ -696,12 +698,9 @@ Http::Response response = http.sendRequest(request);
 
 // Check the status code and display the result
 Http::Response::Status status = response.getStatus();
-if (status == Http::Response::Ok)
-{
+if (status == Http::Response::Ok) {
 	std::cout << response.getBody() << std::endl;
-}
-else
-{
+} else {
 	std::cout << "Error " << status << std::endl;
 }
 @endcode

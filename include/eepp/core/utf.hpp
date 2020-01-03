@@ -746,7 +746,7 @@ typedef Utf<32> Utf32;
 #endif
 
 ////////////////////////////////////////////////////////////
-/// \class EE::Utf
+/// @class EE::Utf
 ///
 /// Utility class providing generic functions for UTF conversions.
 ///
@@ -759,8 +759,8 @@ typedef Utf<32> Utf32;
 /// can use any character / string type for a given encoding.
 ///
 /// It has 3 specializations:
-/// \li EE::Utf<8> (typedef'd to EE::Utf8)
-/// \li EE::Utf<16> (typedef'd to EE::Utf16)
-/// \li EE::Utf<32> (typedef'd to EE::Utf32)
+/// @li EE::Utf<8> (typedef'd to EE::Utf8)
+/// @li EE::Utf<16> (typedef'd to EE::Utf16)
+/// @li EE::Utf<32> (typedef'd to EE::Utf32)
 ///
 ////////////////////////////////////////////////////////////

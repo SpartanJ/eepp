@@ -3,9 +3,9 @@
 
 #include <eepp/physics/shape.hpp>
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
-class CP_API ShapePoint : public Shape {
+class EE_API ShapePoint : public Shape {
 	public:
 		static ShapePoint * New( Physics::Body * body, cpFloat radius, cVect offset );
 
@@ -30,6 +30,6 @@ class CP_API ShapePoint : public Shape {
 		#endif
 };
 
-CP_NAMESPACE_END
+}}
 
 #endif

@@ -6,7 +6,8 @@
 
 namespace EE { namespace Network {
 
-/** A Uniform Resource Identifier, as specified in RFC 3986.
+/** @class EE::Network::URI
+* A Uniform Resource Identifier, as specified in RFC 3986.
 *
 * The URI class provides methods for building URIs from their
 * parts, as well as for splitting URIs into their parts.
@@ -20,6 +21,7 @@ namespace EE { namespace Network {
 * optionally, dot segments are removed from paths (see Normalize())
 * Examples of URI structure:
 
+@code
   foo://username:password@example.com:8042/over/there/index.dtb?type=animal&name=narwhal#nose
   \_/   \_______________/ \_________/ \__/            \___/ \_/ \______________________/ \__/
    |           |               |       |                |    |            |                |
@@ -44,6 +46,7 @@ scheme              authority                    path   |    |    interpretable 
   _|__   ___|__   ____|____   _____|_____
  /    \ /      \ /         \ /           \
  mailto:username@example.com?subject=Topic
+@endcode
 
 This class is based on the Poco library URI class.
 */

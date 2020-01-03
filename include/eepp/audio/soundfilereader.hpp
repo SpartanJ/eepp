@@ -74,8 +74,7 @@ class EE_API SoundFileReader {
 
 
 ////////////////////////////////////////////////////////////
-/// \class SoundFileReader
-/// \ingroup audio
+/// @class EE::Audio::SoundFileReader
 ///
 /// This class allows users to read audio file formats not natively
 /// supported by EEPP, and thus extend the set of supported readable

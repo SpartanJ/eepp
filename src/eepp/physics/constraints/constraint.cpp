@@ -1,10 +1,10 @@
 #include <eepp/physics/constraints/constraint.hpp>
 #include <eepp/physics/physicsmanager.hpp>
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
 void Constraint::Free( Constraint * constraint ) {
-	cpSAFE_DELETE( constraint );
+	eeSAFE_DELETE( constraint );
 }
 
 Constraint::Constraint( cpConstraint * Constraint ) :
@@ -82,4 +82,4 @@ cpFloat Constraint::getImpulse() {
 void Constraint::draw() {
 }
 
-CP_NAMESPACE_END
+}}

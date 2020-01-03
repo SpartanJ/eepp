@@ -3,13 +3,13 @@
 
 #include <eepp/physics/base.hpp>
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
 class Shape;
 class Constraint;
 class Arbiter;
 
-class CP_API Body {
+class EE_API Body {
 	public:
 		typedef std::function<void( Body *, Shape *, void * )>			ShapeIteratorFunc;
 		typedef std::function<void( Body *, Constraint *, void *)>		ConstraintIteratorFunc;
@@ -186,6 +186,6 @@ class CP_API Body {
 		void setData();
 };
 
-CP_NAMESPACE_END
+}}
 
 #endif

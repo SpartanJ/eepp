@@ -396,7 +396,7 @@ cpBool stickyPreSolve( Arbiter *arb, Space *space, void *data )
 		arb->getBodies( &bodyA, &bodyB );
 
 		// Create a joint at the contact point to hold the body in place.
-		PivotJoint * joint = cpNew( PivotJoint, ( bodyA, bodyB, tovect( contacts.points[0].point ) ) );
+		PivotJoint * joint = eeNew( PivotJoint, ( bodyA, bodyB, tovect( contacts.points[0].point ) ) );
 
 		// Dont draw the constraint
 		joint->setDrawPointSize( 0 );

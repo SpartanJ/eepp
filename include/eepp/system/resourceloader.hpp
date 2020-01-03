@@ -23,12 +23,12 @@ class EE_API ResourceLoader {
 		/** @brief Adds a resource to load.
 		**	Must be called before the loading starts.
 		**	Once an object loader is added to the resource loader, the instance of that object will be managed and released by the loader.
-		**	@param Object The function callback of the load process
+		**	@param objectLoaderTask The function callback of the load process
 		*/
 		void			add( const ObjectLoaderTask& objectLoaderTask );
 
 		/** @brief Starts loading the resources.
-		**	@param Cb A callback that is called when the resources finished loading. */
+		**	@param callback A callback that is called when the resources finished loading. */
 		void 			load( const ResLoadCallback& callback );
 
 		/** @brief Starts loading the resources. */

@@ -8,10 +8,10 @@
 using namespace EE::Graphics;
 #endif
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
 ShapeCircle * ShapeCircle::New( Physics::Body * body, cpFloat radius, cVect offset ) {
-	return cpNew( ShapeCircle, ( body, radius, offset ) );
+	return eeNew( ShapeCircle, ( body, radius, offset ) );
 }
 
 ShapeCircle::ShapeCircle( Physics::Body * body, cpFloat radius, cVect offset ) {
@@ -47,4 +47,4 @@ void ShapeCircle::draw( Space * space ) {
 	#endif
 }
 
-CP_NAMESPACE_END
+}}

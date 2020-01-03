@@ -217,7 +217,7 @@ class EE_API Window {
 		/** Change the window size or the screen resolution
 		* @param Width New screen width
 		* @param Height New screen height
-		* @param Windowed Windowed or Fullscreen
+		* @param isWindowed Windowed or Fullscreen
 		*/
 		virtual void setSize( Uint32 Width, Uint32 Height, bool isWindowed ) = 0;
 
@@ -292,7 +292,8 @@ class EE_API Window {
 		virtual void close();
 
 		/** Set the current active view
-		@param View New view to use (pass GetDefaultView() to set the default view)
+		* @param view New view to use (pass GetDefaultView() to set the default view)
+		* @param forceRefresh Forces the view refresh even if is the same as the last one.
 		*/
 		void setView( const View& view, bool forceRefresh = false );
 

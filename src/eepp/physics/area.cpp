@@ -1,6 +1,6 @@
 #include <eepp/physics/area.hpp>
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
 cpFloat Area::forCircle( cpFloat r1, cpFloat r2 ) {
 	return cpAreaForCircle( r1, r2 );
@@ -14,4 +14,4 @@ cpFloat Area::forPoly( const int numVerts, const cVect * verts ) {
 	return cpAreaForPoly( numVerts, constcasttocpv( verts ) );
 }
 
-CP_NAMESPACE_END
+}}

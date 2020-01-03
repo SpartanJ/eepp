@@ -8,7 +8,7 @@ using namespace EE::Graphics;
 #endif
 
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
 DampedSpring::DampedSpring( Body * a, Body * b, cVect anchr1, cVect anchr2, cpFloat restLength, cpFloat stiffness, cpFloat damping )
 #ifdef PHYSICS_RENDERER_ENABLED
@@ -144,4 +144,4 @@ void DampedSpring::setDrawPointSize( const cpFloat& size ) {
 }
 #endif
 
-CP_NAMESPACE_END
+}}

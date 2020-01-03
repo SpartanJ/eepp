@@ -185,8 +185,7 @@ class EE_API InputSoundFile : NonCopyable {
 #endif
 
 ////////////////////////////////////////////////////////////
-/// \class InputSoundFile
-/// \ingroup audio
+/// @class EE::Audio::InputSoundFile
 ///
 /// This class decodes audio samples from a sound file. It is
 /// used internally by higher-level classes such as SoundBuffer

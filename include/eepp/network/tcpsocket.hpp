@@ -143,8 +143,7 @@ class EE_API TcpSocket : public Socket {
 #endif // EE_NETWORKCTCPSOCKET_HPP
 
 /**
-@class TcpSocket
-@ingroup Network
+@class EE::Network::TcpSocket
 
 TCP is a connected protocol, which means that a TCP
 socket can only communicate with the host it is connected
@@ -216,5 +215,5 @@ std::string message = "Welcome, client";
 socket.send(message.c_str(), message.size() + 1);
 @endcode
 
-@see Socket, UdpSocket, Packet
+@see EE::Network::Socket, EE::Network::UdpSocket, EE::Network::Packet
 */

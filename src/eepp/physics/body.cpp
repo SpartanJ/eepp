@@ -4,22 +4,22 @@
 #include <eepp/physics/constraints/constraint.hpp>
 #include <eepp/physics/arbiter.hpp>
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
 Body * Body::New( cpFloat m, cpFloat i ) {
-	return cpNew( Body, ( m, i ) );
+	return eeNew( Body, ( m, i ) );
 }
 
 Body * Body::New( cpBody * body ) {
-	return cpNew( Body, ( body ) );
+	return eeNew( Body, ( body ) );
 }
 
 Body * Body::New() {
-	return cpNew( Body, () );
+	return eeNew( Body, () );
 }
 
 void Body::Free( Body * body ) {
-	cpSAFE_DELETE( body );
+	eeSAFE_DELETE( body );
 }
 
 Body::Body( cpBody * body ) :
@@ -297,4 +297,4 @@ void Body::onEachArbiter( Arbiter * Arbiter, ArbiterIterator * it ) {
 	}
 }
 
-CP_NAMESPACE_END
+}}

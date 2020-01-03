@@ -5,7 +5,7 @@
 #include <eepp/physics/constraints/constraint.hpp>
 #include <algorithm>
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
 SINGLETON_DECLARE_IMPLEMENTATION(PhysicsManager)
 
@@ -20,19 +20,19 @@ PhysicsManager::~PhysicsManager() {
 
 		std::list<Space*>::iterator its = mSpaces.begin();
 		for ( ; its != mSpaces.end(); ++its )
-			cpSAFE_DELETE( *its );
+			eeSAFE_DELETE( *its );
 
 		std::list<Body*>::iterator itb = mBodysFree.begin();
 		for ( ; itb != mBodysFree.end(); ++itb )
-			cpSAFE_DELETE( *itb );
+			eeSAFE_DELETE( *itb );
 
 		std::list<Shape*>::iterator itp = mShapesFree.begin();
 		for ( ; itp != mShapesFree.end(); ++itp )
-			cpSAFE_DELETE( *itp );
+			eeSAFE_DELETE( *itp );
 
 		std::list<Constraint*>::iterator itc = mConstraintFree.begin();
 		for ( ; itc != mConstraintFree.end(); ++itc )
-			cpSAFE_DELETE( *itc );
+			eeSAFE_DELETE( *itc );
 	}
 }
 
@@ -100,4 +100,4 @@ void PhysicsManager::removeSpace( Space * space ) {
 	}
 }
 
-CP_NAMESPACE_END
+}}

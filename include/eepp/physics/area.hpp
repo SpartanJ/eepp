@@ -3,9 +3,9 @@
 
 #include <eepp/physics/base.hpp>
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
-class CP_API Area {
+class EE_API Area {
 	public:
 		cpFloat forCircle( cpFloat r1, cpFloat r2 );
 
@@ -14,6 +14,6 @@ class CP_API Area {
 		cpFloat forPoly( const int numVerts, const cVect * verts );
 };
 
-CP_NAMESPACE_END
+}}
 
 #endif

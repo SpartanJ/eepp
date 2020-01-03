@@ -7,14 +7,14 @@
 using namespace EE::Graphics;
 #endif
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
 ShapePoly * ShapePoly::New( Physics::Body * body, int numVerts, cVect *verts, cVect offset ) {
-	return cpNew( ShapePoly, ( body, numVerts, verts, offset ) );
+	return eeNew( ShapePoly, ( body, numVerts, verts, offset ) );
 }
 
 ShapePoly * ShapePoly::New( Physics::Body * body, cpFloat width, cpFloat height ) {
-	return cpNew( ShapePoly, ( body, width, height ) );
+	return eeNew( ShapePoly, ( body, width, height ) );
 }
 
 ShapePoly::ShapePoly( Physics::Body * body, int numVerts, cVect *verts, cVect offset ) {
@@ -104,4 +104,4 @@ void ShapePoly::drawBorder( Space *space ) {
 #endif
 }
 
-CP_NAMESPACE_END
+}}

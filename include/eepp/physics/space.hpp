@@ -8,9 +8,9 @@
 #include <eepp/physics/arbiter.hpp>
 #include <eepp/physics/constraints/constraint.hpp>
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
-class CP_API Space {
+class EE_API Space {
 	public:
 		typedef std::function<int	( Arbiter *, Space *	, void * )>				CollisionBeginFunc;
 		typedef std::function<int	( Arbiter *, Space *	, void * )>				CollisionPreSolveFunc;
@@ -270,6 +270,6 @@ class CP_API Space {
 		std::list< PostStepCallbackCont* >			mPostStepCallbacks;
 };
 
-CP_NAMESPACE_END
+}}
 
 #endif

@@ -5,7 +5,7 @@
 using namespace EE::Graphics;
 #endif
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
 SlideJoint::SlideJoint( Body * a, Body *b, cVect anchr1, cVect anchr2, cpFloat min, cpFloat max )
 #ifdef PHYSICS_RENDERER_ENABLED
@@ -86,4 +86,4 @@ void SlideJoint::setDrawPointSize( const cpFloat& size ) {
 }
 #endif
 
-CP_NAMESPACE_END
+}}

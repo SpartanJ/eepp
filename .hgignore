@@ -5,7 +5,11 @@ syntax: regexp
 ^libs$
 ^make$
 ^data$
-^docs$
+^docs/doxygen-html$
+^docs/html$
+^docs/rst$
+^docs/xml$
+^docs/doxyrest/sphinx/__pycache__$
 ^projects/android-project/.gradle$
 ^projects/android-project/build$
 ^projects/android-project/local.properties$

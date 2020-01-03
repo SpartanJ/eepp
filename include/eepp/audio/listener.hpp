@@ -170,8 +170,7 @@ class EE_API Listener {
 #endif
 
 ////////////////////////////////////////////////////////////
-/// \class Listener
-/// \ingroup audio
+/// @class EE::Audio::Listener
 ///
 /// The audio listener defines the global properties of the
 /// audio environment, it defines where and how sounds and musics

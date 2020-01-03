@@ -4,9 +4,9 @@
 #include <eepp/physics/base.hpp>
 #include <eepp/physics/body.hpp>
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
-class CP_API Constraint {
+class EE_API Constraint {
 	public:
 		static void Free( Constraint * constraint );
 
@@ -49,6 +49,6 @@ class CP_API Constraint {
 		void setData();
 };
 
-CP_NAMESPACE_END
+}}
 
 #endif

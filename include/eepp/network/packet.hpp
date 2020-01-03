@@ -178,8 +178,7 @@ private:
 #endif // EE_NETWORKCPACKET_HPP
 
 /**
-@class Packet
-@ingroup Network
+@class EE::Network::Packet
 
 Packets provide a safe and easy way to serialize data,
 in order to send it over the network using sockets
@@ -222,8 +221,7 @@ socket.receive(packet);
 Uint32 x;
 std::string s;
 double d;
-if (packet >> x >> s >> d)
-{
+if (packet >> x >> s >> d) {
 	 // Data extracted successfully...
 }
 @endcode
@@ -240,20 +238,17 @@ overloads of operators >> and << in order to handle your
 custom types.
 
 @code
-struct MyStruct
-{
+struct MyStruct {
 	 float	   number;
 	 Int8	integer;
 	 std::string str;
 };
 
-Packet& operator <<(Packet& packet, const MyStruct& m)
-{
+Packet& operator <<(Packet& packet, const MyStruct& m) {
 	 return packet << m.number << m.integer << m.str;
 }
 
-Packet& operator >>(Packet& packet, MyStruct& m)
-{
+Packet& operator >>(Packet& packet, MyStruct& m) {
 	 return packet >> m.number >> m.integer >> m.str;
 }
 @endcode
@@ -263,22 +258,19 @@ custom transformations to the data before it is sent,
 and after it is received. This is typically used to
 handle automatic compression or encryption of the data.
 This is achieved by inheriting from Packet, and overriding
-the OnSend and OnReceive functions.
+the onSend and onReceive functions.
 
 Here is an example:
 @code
-class ZipPacket : public Packet
-{
-	 virtual const void* onSend(std::size_t& size)
-	 {
+class ZipPacket : public Packet {
+	 virtual const void* onSend(std::size_t& size) {
 		 const void* srcData = getData();
 		 std::size_t srcSize = getDataSize();
 
 		 return MySuperZipFunction(srcData, srcSize, &size);
 	 }
 
-	 virtual void onReceive(const void* data, std::size_t size)
-	 {
+	 virtual void onReceive(const void* data, std::size_t size) {
 		 std::size_t dstSize;
 		 const void* dstData = MySuperUnzipFunction(data, size, &dstSize);
 
@@ -292,5 +284,5 @@ packet << x << s << d;
 ...
 @endcode
 
-@see TcpSocket, UdpSocket
+@see EE::Network::TcpSocket, EE::Network::UdpSocket
 */

@@ -23,7 +23,7 @@ class EE_API TextureLoader {
 		TextureLoader( IOStream& Stream, const bool& Mipmap = false, const Texture::ClampMode& ClampMode = Texture::ClampMode::ClampToEdge, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
 
 		/** Load a Texture from a file path
-		* @param Filepath The path for the texture
+		* @param filepath The path for the texture
 		* @param Mipmap Use mipmaps?
 		* @param ClampMode Defines the CLAMP MODE
 		* @param CompressTexture If use the DXT compression on the texture loading ( if the card can display them, will convert RGB to DXT1, RGBA to DXT5 )

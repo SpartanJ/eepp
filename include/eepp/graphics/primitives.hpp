@@ -32,7 +32,9 @@ class EE_API Primitives {
 		/** Draw an arc on the screen
 		* @param p The coordinates ( x and y represents the center of the circle )
 		* @param radius The Circle Radius
-		* @param segmentsCount Number of segments to represent the circle.
+		* @param segmentsCount Number of segments to represent the circle
+		* @param arcAngle The arc angle
+		* @param arcStartAngle The arc starting point angle
 		*/
 		void drawArc( const Vector2f& p, const Float& radius, Uint32 segmentsCount = 0, const Float& arcAngle = 360.f , const Float& arcStartAngle = 0.f );
 

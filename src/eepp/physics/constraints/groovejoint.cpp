@@ -5,7 +5,7 @@
 using namespace EE::Graphics;
 #endif
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
 GrooveJoint::GrooveJoint( Body * a, Body * b, cVect groove_a, cVect groove_b, cVect anchr2 )
 #ifdef PHYSICS_RENDERER_ENABLED
@@ -78,4 +78,4 @@ void GrooveJoint::setDrawPointSize( const cpFloat& size ) {
 }
 #endif
 
-CP_NAMESPACE_END
+}}

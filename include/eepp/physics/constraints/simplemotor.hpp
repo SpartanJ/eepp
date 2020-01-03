@@ -3,9 +3,9 @@
 
 #include <eepp/physics/constraints/constraint.hpp>
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
-class CP_API SimpleMotor : public Constraint {
+class EE_API SimpleMotor : public Constraint {
 	public:
 		SimpleMotor( Body * a, Body * b, cpFloat rate );
 
@@ -16,6 +16,6 @@ class CP_API SimpleMotor : public Constraint {
 		virtual void draw();
 };
 
-CP_NAMESPACE_END
+}}
 
 #endif

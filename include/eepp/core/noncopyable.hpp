@@ -36,7 +36,6 @@ class EE_API NonCopyable {
 #endif
 
 /** @class EE::NonCopyable
-** @ingroup Base
 **	This class makes its instances non-copyable, by explicitely
 **	disabling its copy constructor and its assignment operator.
 **	To create a non-copyable class, simply inherit from

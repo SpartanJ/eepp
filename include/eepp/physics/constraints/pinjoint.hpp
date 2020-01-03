@@ -3,9 +3,9 @@
 
 #include <eepp/physics/constraints/constraint.hpp>
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
-class CP_API PinJoint : public Constraint {
+class EE_API PinJoint : public Constraint {
 	public:
 		PinJoint( Body * a, Body * b, cVect anchr1, cVect anchr2 );
 
@@ -32,6 +32,6 @@ class CP_API PinJoint : public Constraint {
 #endif
 };
 
-CP_NAMESPACE_END
+}}
 
 #endif

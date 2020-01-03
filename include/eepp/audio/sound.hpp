@@ -173,8 +173,7 @@ class EE_API Sound : public SoundSource {
 #endif
 
 ////////////////////////////////////////////////////////////
-/// \class Sound
-/// \ingroup audio
+/// @class EE::Audio::Sound
 ///
 /// Sound is the class to use to play sounds.
 /// It provides:

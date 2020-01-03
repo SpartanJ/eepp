@@ -84,7 +84,7 @@ class EE_API FileSystem {
 
 		/** @return The size of a file */
 		static Uint64 fileSize( const std::string& Filepath );
-		
+
 		/** @return If directory exists, and is a directory */
 		static bool isDirectory( const std::string& path );
 
@@ -112,7 +112,7 @@ class EE_API FileSystem {
 		static Int64 getDiskFreeSpace(const std::string& path);
 
 		/** Creates a file name available for the directory path.
-		* @example For file name "file-name-" will search the first available name
+		* For file name "file-name-" will search the first available name
 		* in the file system starting from file-name-1, file-name-2, and so on.
 		* @return The file name found, otherwise empty string if error.
 		*/

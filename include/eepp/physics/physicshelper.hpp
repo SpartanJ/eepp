@@ -4,7 +4,7 @@
 #include <eepp/physics/base.hpp>
 #include <eepp/graphics/base.hpp>
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
 const cpFloat cpPI		= 3.14159265358979323846;
 const cpFloat cpPI_180	= cpPI / 180;
@@ -125,6 +125,6 @@ inline Color colorForShape( cpShape *shape, cpSpace *space ) {
 
 #endif
 
-CP_NAMESPACE_END
+}}
 
 #endif

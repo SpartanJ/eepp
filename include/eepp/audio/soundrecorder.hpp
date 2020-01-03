@@ -263,8 +263,7 @@ class EE_API SoundRecorder : AlResource {
 #endif
 
 ////////////////////////////////////////////////////////////
-/// \class SoundRecorder
-/// \ingroup audio
+/// @class EE::Audio::SoundRecorder
 ///
 /// SoundBuffer provides a simple interface to access
 /// the audio recording capabilities of the computer

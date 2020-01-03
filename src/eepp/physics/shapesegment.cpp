@@ -9,10 +9,10 @@
 using namespace EE::Graphics;
 #endif
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
 ShapeSegment * ShapeSegment::New( Physics::Body * body, cVect a, cVect b, cpFloat radius ) {
-	return cpNew( ShapeSegment, ( body, a, b, radius ) );
+	return eeNew( ShapeSegment, ( body, a, b, radius ) );
 }
 
 ShapeSegment::ShapeSegment( Physics::Body * body, cVect a, cVect b, cpFloat radius ) {
@@ -142,4 +142,4 @@ void ShapeSegment::draw( Space * space ) {
 	#endif
 }
 
-CP_NAMESPACE_END
+}}

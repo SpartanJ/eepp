@@ -20,6 +20,7 @@ class EE_API FrameBuffer {
 		**	@param StencilBuffer Indicates if a stencil buffer is used
 		**	@param DepthBuffer Indicates if a depth buffer is used
 		**	@param useColorBuffer Indicates if the frame buffer uses a color attachment render buffer ( instead of a texture )
+		**	@param channels Number of channels of the frame buffer to create
 		**	@param window In case that the application is using more than one window, the user can indicate which one to use ( by default uses the current active window )
 		*/
 		static FrameBuffer * New( const Uint32& Width, const Uint32& Height, bool StencilBuffer = true, bool DepthBuffer = false, bool useColorBuffer = false, const Uint32& channels = 4, EE::Window::Window * window = NULL );

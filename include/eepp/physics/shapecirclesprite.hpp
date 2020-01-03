@@ -10,9 +10,9 @@ class Sprite;
 }}
 using namespace EE::Graphics;
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
-class CP_API ShapeCircleSprite : public ShapeCircle {
+class EE_API ShapeCircleSprite : public ShapeCircle {
 	public:
 		static ShapeCircleSprite * New( Physics::Body * body, cpFloat radius, cVect offset, Sprite * Sprite, bool AutoDeleteSprite = false );
 
@@ -34,7 +34,7 @@ class CP_API ShapeCircleSprite : public ShapeCircle {
 		void offsetSet();
 };
 
-CP_NAMESPACE_END
+}}
 
 #endif
 

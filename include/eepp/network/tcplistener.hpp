@@ -9,8 +9,7 @@ namespace EE { namespace Network {
 class TcpSocket;
 
 /** @brief Socket that listens to new TCP connections */
-class EE_API TcpListener : public Socket
-{
+class EE_API TcpListener : public Socket {
 public :
 
 	/** @brief Default constructor */
@@ -54,8 +53,7 @@ public :
 #endif // EE_NETWORKCTCPLISTENER_HPP
 
 /**
-@class TcpListener
-@ingroup Network
+@class EE::Network::TcpListener
 
 A listener socket is a special type of socket that listens to
 a given port and waits for connections on that port.
@@ -84,11 +82,9 @@ TcpListener listener;
 listener.listen(55001);
 
 // Endless loop that waits for new connections
-while (running)
-{
+while (running) {
 	 TcpSocket client;
-	 if (listener.accept(client) == Socket::Done)
-	 {
+	 if (listener.accept(client) == Socket::Done) {
 		 // A new client just connected!
 		 std::cout << "New connection received from " << client.getRemoteAddress() << std::endl;
 		 doSomethingWith(client);
@@ -96,5 +92,5 @@ while (running)
 }
 @endcode
 
-@see TcpSocket, Socket
+@see EE::Network::TcpSocket, EE::Network::Socket
 */

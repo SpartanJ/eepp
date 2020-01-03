@@ -5,7 +5,7 @@
 using namespace EE::Graphics;
 #endif
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
 PivotJoint::PivotJoint( Body * a, Body * b, cVect pivot )
 #ifdef PHYSICS_RENDERER_ENABLED
@@ -75,4 +75,4 @@ void PivotJoint::setDrawPointSize( const cpFloat& size ) {
 }
 #endif
 
-CP_NAMESPACE_END
+}}

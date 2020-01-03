@@ -35,7 +35,7 @@ class EE_API TextureAtlasLoader {
 		/** Loads a texture atlas from its path ( the texture atlas binary is expected, not the texture, the ".eta" file ).
 		*	If the loader is not threaded, it will load the atlas immediately.
 		*	@param TextureAtlasPath The texture atlas path.
-		*	@param Threaded Indicates if the loading is done in another thread.
+		*	@param threaded Indicates if the loading is done in another thread.
 		*	@param LoadCallback The load notification callback.
 		*/
 		TextureAtlasLoader( const std::string& TextureAtlasPath, const bool& threaded = false, GLLoadCallback LoadCallback = GLLoadCallback() );
@@ -45,7 +45,7 @@ class EE_API TextureAtlasLoader {
 		*	@param Data The texture atlas buffer pointer
 		*	@param DataSize The texture atlas buffer pointer size
 		*	@param TextureAtlasName Since the texture atlas is loaded from memory, the name can't be obtained from the file name. So it needs to be indicated manually.
-		*	@param Threaded Indicates if the loading is done in another thread.
+		*	@param threaded Indicates if the loading is done in another thread.
 		*	@param LoadCallback The load notification callback.
 		*/
 		TextureAtlasLoader( const Uint8* Data, const Uint32& DataSize, const std::string& TextureAtlasName, const bool& threaded = false, GLLoadCallback LoadCallback = GLLoadCallback() );
@@ -54,7 +54,7 @@ class EE_API TextureAtlasLoader {
 		*	If the loader is not threaded, it will load the atlas immediately.
 		*	@param Pack The pointer of the pack instance to be used to load the file.
 		*	@param FilePackPath The path of the file inside the pack.
-		*	@param Threaded Indicates if the loading is done in another thread.
+		*	@param threaded Indicates if the loading is done in another thread.
 		*	@param LoadCallback The load notification callback.
 		*/
 		TextureAtlasLoader( Pack * Pack, const std::string& FilePackPath, const bool& threaded = false, GLLoadCallback LoadCallback = GLLoadCallback() );
@@ -62,7 +62,7 @@ class EE_API TextureAtlasLoader {
 		/** Loads a texture atlas from a io stream.
 		*	If the loader is not threaded, it will load the atlas immediately.
 		*	@param IOS The io stream to use for the loading.
-		*	@param Threaded Indicates if the loading is done in another thread.
+		*	@param threaded Indicates if the loading is done in another thread.
 		*	@param LoadCallback The load notification callback.
 		*/
 		TextureAtlasLoader( IOStream& IOS, const bool& threaded = false, GLLoadCallback LoadCallback = GLLoadCallback() );

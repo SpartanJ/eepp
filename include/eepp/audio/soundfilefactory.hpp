@@ -125,8 +125,7 @@ class EE_API SoundFileFactory {
 
 
 ////////////////////////////////////////////////////////////
-/// \class SoundFileFactory
-/// \ingroup audio
+/// @class EE::Audio::SoundFileFactory
 ///
 /// This class is where all the sound file readers and writers are
 /// registered. You should normally only need to use its registration

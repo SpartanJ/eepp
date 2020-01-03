@@ -16,6 +16,7 @@ class EE_API IOStreamPak : public IOStream {
 		/** @brief Open a file from a zip file
 		**	@param pack Pack to open from path
 		**	@param path Path of the file in the pack file
+		**	@param writeMode Set true if the PAK is in write mode
 		**/
 		IOStreamPak( Pak * pack, const std::string& path, bool writeMode = false );
 

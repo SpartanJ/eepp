@@ -3,9 +3,9 @@
 
 #include <eepp/physics/constraints/constraint.hpp>
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
-class CP_API SlideJoint : public Constraint {
+class EE_API SlideJoint : public Constraint {
 	public:
 		SlideJoint( Body * a, Body *b, cVect anchr1, cVect anchr2, cpFloat min, cpFloat max );
 
@@ -36,6 +36,6 @@ class CP_API SlideJoint : public Constraint {
 #endif
 };
 
-CP_NAMESPACE_END
+}}
 
 #endif

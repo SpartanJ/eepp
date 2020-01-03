@@ -52,7 +52,7 @@ class EE_API Sys {
 		static void * loadObject( const std::string& sofile );
 
 		/** Unloads a shared object from memory.
-		**	@param The object handle of the shared object to unload */
+		**	@param handle The object handle of the shared object to unload */
 		static void unloadObject( void * handle );
 
 		/** Looks up the address of the named function in the shared object and return it.

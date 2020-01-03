@@ -4,10 +4,10 @@
 
 #include <eepp/graphics/sprite.hpp>
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
 ShapeCircleSprite * ShapeCircleSprite::New( Physics::Body * body, cpFloat radius, cVect offset, Sprite * Sprite, bool AutoDeleteSprite ) {
-	return cpNew( ShapeCircleSprite, ( body, radius, offset, Sprite, AutoDeleteSprite ) );
+	return eeNew( ShapeCircleSprite, ( body, radius, offset, Sprite, AutoDeleteSprite ) );
 }
 
 ShapeCircleSprite::ShapeCircleSprite( Physics::Body * body, cpFloat radius, cVect offset, Sprite * Sprite, bool AutoDeleteSprite ) :
@@ -50,6 +50,6 @@ void ShapeCircleSprite::setOffset( const cVect &offset ) {
 	offsetSet();
 }
 
-CP_NAMESPACE_END
+}}
 
 #endif

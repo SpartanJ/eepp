@@ -1,6 +1,6 @@
 #include <eepp/physics/arbiter.hpp>
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
 Arbiter::Arbiter( cpArbiter * arbiter ) {
 	mArbiter = arbiter;
@@ -116,4 +116,4 @@ cpDataPointer Arbiter::getUserData() const {
 	return cpArbiterGetUserData( mArbiter );
 }
 
-CP_NAMESPACE_END
+}}

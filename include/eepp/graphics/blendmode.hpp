@@ -37,7 +37,7 @@ class EE_API BlendMode {
 				  Factor alphaDestinationFactor, Equation alphaBlendEquation);
 
 		/** Set a Predefined Blend Function
-		* @param blend The Blend Mode
+		* @param mode The Blend Mode
 		* @param force If force to apply the blend ( no matters if the last blend was the same blend )
 		*/
 		static void setMode( const BlendMode& mode, bool force = false );

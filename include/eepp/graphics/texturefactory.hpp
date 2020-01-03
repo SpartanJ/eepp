@@ -26,7 +26,7 @@ class EE_API TextureFactory : protected Mutex {
 		* @param ClampMode Defines the CLAMP MODE
 		* @param CompressTexture If use the DXT compression on the texture loading ( if the card can display them, will convert RGB to DXT1, RGBA to DXT5 )
 		* @param KeepLocalCopy Keep the array data copy. ( useful if want to reload the texture )
-		* @param FileName A filename to recognize the texture.
+		* @param Filename A filename to recognize the texture.
 		* @return Internal Texture Id
 		*/
 		Uint32 createEmptyTexture( const unsigned int& Width, const unsigned int& Height, const unsigned int& Channels = 4, const Color& DefaultColor = Color(0,0,0,255), const bool& Mipmap = false, const Texture::ClampMode& ClampMode = Texture::ClampMode::ClampToEdge, const bool& CompressTexture = false, const bool& KeepLocalCopy = false, const std::string& Filename = std::string("") );
@@ -52,6 +52,7 @@ class EE_API TextureFactory : protected Mutex {
 		* @param ClampMode Defines the CLAMP MODE
 		* @param CompressTexture If use the DXT compression on the texture loading ( if the card can display them, will convert RGB to DXT1, RGBA to DXT5 )
 		* @param KeepLocalCopy Keep the array data copy. ( useful if want to reload the texture )
+		* @param imageformatConfiguration The specific image format configuration to use when decoding the image.
 		* @return Internal Texture Id
 		*/
 		Uint32 loadFromPack( Pack* Pack, const std::string& FilePackPath, const bool& Mipmap = false, const Texture::ClampMode& ClampMode = Texture::ClampMode::ClampToEdge, const bool& CompressTexture = false, const bool& KeepLocalCopy = false, const Image::FormatConfiguration& imageformatConfiguration = Image::FormatConfiguration() );
@@ -63,6 +64,7 @@ class EE_API TextureFactory : protected Mutex {
 		* @param ClampMode Defines the CLAMP MODE
 		* @param CompressTexture If use the DXT compression on the texture loading ( if the card can display them, will convert RGB to DXT1, RGBA to DXT5 )
 		* @param KeepLocalCopy Keep the array data copy. ( useful if want to reload the texture )
+		* @param imageformatConfiguration The specific image format configuration to use when decoding the image.
 		* @return The internal Texture Id
 		*/
 		Uint32 loadFromMemory( const unsigned char* ImagePtr, const unsigned int& Size, const bool& Mipmap = false, const Texture::ClampMode& ClampMode = Texture::ClampMode::ClampToEdge, const bool& CompressTexture = false, const bool& KeepLocalCopy = false, const Image::FormatConfiguration& imageformatConfiguration = Image::FormatConfiguration() );
@@ -73,6 +75,7 @@ class EE_API TextureFactory : protected Mutex {
 		* @param ClampMode Defines the CLAMP MODE
 		* @param CompressTexture If use the DXT compression on the texture loading ( if the card can display them, will convert RGB to DXT1, RGBA to DXT5 )
 		* @param KeepLocalCopy Keep the array data copy. ( useful if want to reload the texture )
+		* @param imageformatConfiguration The specific image format configuration to use when decoding the image.
 		* @return The internal Texture Id
 		*/
 		Uint32 loadFromStream( IOStream& Stream, const bool& Mipmap = false, const Texture::ClampMode& ClampMode = Texture::ClampMode::ClampToEdge, const bool& CompressTexture = false, const bool& KeepLocalCopy = false, const Image::FormatConfiguration& imageformatConfiguration = Image::FormatConfiguration() );
@@ -83,6 +86,7 @@ class EE_API TextureFactory : protected Mutex {
 		* @param ClampMode Defines the CLAMP MODE
 		* @param CompressTexture If use the DXT compression on the texture loading ( if the card can display them, will convert RGB to DXT1, RGBA to DXT5 )
 		* @param KeepLocalCopy Keep the array data copy. ( useful if want to reload the texture )
+		* @param imageformatConfiguration The specific image format configuration to use when decoding the image.
 		* @return The internal Texture Id
 		*/
 		Uint32 loadFromFile( const std::string& Filepath, const bool& Mipmap = false, const Texture::ClampMode& ClampMode = Texture::ClampMode::ClampToEdge, const bool& CompressTexture = false, const bool& KeepLocalCopy = false, const Image::FormatConfiguration& imageformatConfiguration = Image::FormatConfiguration() );
@@ -99,14 +103,16 @@ class EE_API TextureFactory : protected Mutex {
 		/** Bind the the internal Texture Id indicated. This is useful if you are rendering a texture outside this class.
 		* @param TexId The internal Texture Id
 		* @param coordinateType Use normalized or pixel coordinates
-		* @param TextureUnit The Texture Unit binded
-		* @param forceRebind Force the texture bind
+		* @param textureUnit The Texture Unit binded
+		* @param forceRebind Force the texture bind (even if is already binded ).
 		*/
 		void bind( const Uint32& TexId, Texture::CoordinateType coordinateType = Texture::CoordinateType::Normalized, const Uint32& textureUnit = 0, const bool& forceRebind = false );
 
 		/** Bind the the Texture indicated. This is useful if you are rendering a texture outside this class.
 		* @param Tex The Texture Pointer
+		* @param coordinateType Selects the coordinate type to use with the binded texture.
 		* @param TextureUnit The Texture Unit binded
+		* @param forceRebind Force the texture bind (even if is already binded ).
 		*/
 		void bind( const Texture* Tex, Texture::CoordinateType coordinateType = Texture::CoordinateType::Normalized, const Uint32& TextureUnit = 0, const bool& forceRebind = false );
 

@@ -8,10 +8,10 @@
 using namespace EE::Graphics;
 #endif
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
 ShapePoint * ShapePoint::New( Physics::Body * body, cpFloat radius, cVect offset ) {
-	return cpNew( ShapePoint, ( body, radius, offset ) );
+	return eeNew( ShapePoint, ( body, radius, offset ) );
 }
 
 ShapePoint::ShapePoint( Physics::Body * body, cpFloat radius, cVect offset )
@@ -67,4 +67,4 @@ void ShapePoint::setDrawRadius( const cpFloat& radius ) {
 }
 #endif
 
-CP_NAMESPACE_END
+}}

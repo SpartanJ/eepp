@@ -3,9 +3,9 @@
 
 #include <eepp/physics/constraints/constraint.hpp>
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
-class CP_API PivotJoint : public Constraint {
+class EE_API PivotJoint : public Constraint {
 	public:
 		PivotJoint( Body * a, Body * b, cVect pivot );
 
@@ -30,6 +30,6 @@ class CP_API PivotJoint : public Constraint {
 #endif
 };
 
-CP_NAMESPACE_END
+}}
 
 #endif

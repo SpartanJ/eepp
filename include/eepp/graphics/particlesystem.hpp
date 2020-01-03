@@ -12,7 +12,7 @@ namespace EE { namespace Graphics {
 
 class Texture;
 
-/** @enum ParticleEffect Predefined effects for the particle system. Use Callback when wan't to create a new effect, o set the parameters using NoFx, but it's much more limited. */
+/** @enum EE::Graphics::ParticleEffect Predefined effects for the particle system. Use Callback when wan't to create a new effect, o set the parameters using NoFx, but it's much more limited. */
 enum class ParticleEffect : Uint32 {
 	Nofx = 0, //!< User defined effect
 	BlueBall,
@@ -53,10 +53,10 @@ class EE_API ParticleSystem {
 		* @param PartSize Size of the particles
 		* @param AnimLoop Loop the animation?
 		* @param NumLoops If AnimLoop is false, set the number of times to render the effect
-		* @param Color Particles Color (used for NoFx)
+		* @param color Particles Color (used for NoFx)
 		* @param Pos2 Extended position for some effects to define the expansion over the screen (used by fire,smoke,snow)
-		* @param AlphaDecay The Alpha Decay for the particles (used for NoFx)
-		* @param Speed The speed on x axis (used for NoFx)
+		* @param alphaDecay The Alpha Decay for the particles (used for NoFx)
+		* @param speed The speed on x axis (used for NoFx)
 		* @param Acc The acceleration of the particle (used for NoFx)
 		*/
 		void create(
@@ -78,7 +78,7 @@ class EE_API ParticleSystem {
 		void draw();
 
 		/** Update the particles effect
-		* @param Time The time transcurred between the last update.
+		* @param time The time transcurred between the last update.
 		*/
 		void update(const Time& time);
 

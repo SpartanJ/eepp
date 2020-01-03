@@ -3,9 +3,9 @@
 
 #include <eepp/physics/base.hpp>
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
-class CP_API Moment {
+class EE_API Moment {
 	public:
 		static cpFloat forCircle( cpFloat m, cpFloat r1, cpFloat r2, cVect offset );
 
@@ -16,6 +16,6 @@ class CP_API Moment {
 		static cpFloat forBox( cpFloat m, cpFloat width, cpFloat height );
 };
 
-CP_NAMESPACE_END
+}}
 
 #endif

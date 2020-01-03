@@ -65,8 +65,7 @@ class EE_API SoundBufferRecorder : public SoundRecorder {
 #endif
 
 ////////////////////////////////////////////////////////////
-/// \class SoundBufferRecorder
-/// \ingroup audio
+/// @class EE::Audio::SoundBufferRecorder
 ///
 /// SoundBufferRecorder allows to access a recorded sound
 /// through a SoundBuffer, so that it can be played, saved

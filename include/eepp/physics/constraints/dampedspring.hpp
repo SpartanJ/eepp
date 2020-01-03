@@ -3,9 +3,9 @@
 
 #include <eepp/physics/constraints/constraint.hpp>
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
-class CP_API DampedSpring : public Constraint {
+class EE_API DampedSpring : public Constraint {
 	public:
 		DampedSpring( Body * a, Body * b, cVect anchr1, cVect anchr2, cpFloat restLength, cpFloat stiffness, cpFloat damping );
 
@@ -40,6 +40,6 @@ class CP_API DampedSpring : public Constraint {
 #endif
 };
 
-CP_NAMESPACE_END
+}}
 
 #endif

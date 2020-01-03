@@ -5,9 +5,9 @@
 #include <string>
 
 #define EEPP_MAJOR_VERSION	2
-#define EEPP_MINOR_VERSION	1
+#define EEPP_MINOR_VERSION	2
 #define EEPP_PATCH_LEVEL	0
-#define EEPP_CODENAME		"Metta"
+#define EEPP_CODENAME		"Vipāka"
 
 /** The compiled version of the library */
 #define EEPP_VERSION(x)						\
@@ -30,13 +30,13 @@ class EE_API Version {
 		Uint8 major; /**< major version */
 		Uint8 minor; /**< minor version */
 		Uint8 patch; /**< update version */
-		
+
 		/** @return The linked version of the library */
 		static Version getVersion();
-		
+
 		/** @return The linked version number of the library */
 		static Uint32 getVersionNum();
-		
+
 		/** @return The library version name: "eepp version major.minor.patch" */
 		static std::string getVersionName();
 

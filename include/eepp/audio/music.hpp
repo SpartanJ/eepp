@@ -247,8 +247,7 @@ class EE_API Music : public SoundStream
 #endif
 
 ////////////////////////////////////////////////////////////
-/// \class Music
-/// \ingroup audio
+/// @class EE::Audio::Music
 ///
 /// Musics are sounds that are streamed rather than completely
 /// loaded in memory. This is especially useful for compressed

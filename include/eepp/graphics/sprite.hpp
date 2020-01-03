@@ -53,7 +53,7 @@ class EE_API Sprite : public Drawable {
 		/** Creates a Sprite instance that holds a new TextureRegion from a texture already loaded.
 		*	@param TexId The texture Id used to create the TextureRegion
 		*	@param DestSize The destination size of the TextureRegion created
-		*	@param Offset The offset added to the position of the frame ( the TextureRegion )
+		*	@param offset The offset added to the position of the frame ( the TextureRegion )
 		*	@param TexSector The sector of the texture used by the TextureRegion to be rendered
 		*/
 		Sprite( const Uint32& TexId, const Sizef &DestSize = Sizef(0,0), const Vector2i &offset = Vector2i(0,0), const Rect& TexSector = Rect(0,0,0,0) );
@@ -93,7 +93,7 @@ class EE_API Sprite : public Drawable {
 		const OriginPoint& getOrigin() const;
 
 		/** Set the Frame Number Sprite Size
-		* @param Size The new size
+		* @param size The new size
 		* @param FrameNum If the Frame Number is 0 it will use the Current Frame Number
 		* @param SubFrame If the Sub Frame Number is 0 it will use the Current Sub Frame Number
 		*/
@@ -181,7 +181,7 @@ class EE_API Sprite : public Drawable {
 		/** Creates an static sprite (no animation). It creates a new TextureRegion.
 		* @param TexId The internal Texture Id
 		* @param DestSize The destination size of the TextureRegion created
-		* @param Offset The offset added to the position of the frame ( the TextureRegion )
+		* @param offset The offset added to the position of the frame ( the TextureRegion )
 		* @param TexSector The texture sector to be rendered ( default all the texture )
 		* @return True if success
 		*/
@@ -195,7 +195,7 @@ class EE_API Sprite : public Drawable {
 		/** Add a frame to the sprite (on the current sub frame)
 		* @param TexId The internal Texture Id
 		* @param DestSize The destination size of the frame
-		* @param Offset The offset added to the position of the frame
+		* @param offset The offset added to the position of the frame
 		* @param TexSector The texture sector to be rendered ( default all the texture )
 		* @return The frame position or 0 if fails
 		*/
@@ -222,7 +222,7 @@ class EE_API Sprite : public Drawable {
 		* @param NumFrame The Frame Number
 		* @param NumSubFrame The Sub Frame Number
 		* @param DestSize The destination size of the frame
-		* @param Offset The offset added to the x position of the frame
+		* @param offset The offset added to the x position of the frame
 		* @param TexSector The texture sector to be rendered ( default all the texture )
 		* @return True if success
 		*/

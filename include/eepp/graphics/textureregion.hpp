@@ -26,31 +26,31 @@ class EE_API TextureRegion : public DrawableResource {
 
 		/** Creates a TextureRegion from a Texture. It will use the full Texture as a TextureRegion.
 		*	@param TexId The texture id
-		*	@param Name The texture name ( if any )
+		*	@param name The texture name ( if any )
 		*/
 		TextureRegion( const Uint32& TexId, const std::string& name = "" );
 
 		/** Creates a TextureRegion of the indicated part of the texture.
 		*	@param TexId The texture id
-		*	@param SrcRect The texture part that will be used as the TextureRegion.
-		*	@param Name The texture name ( if any )
+		*	@param srcRect The texture part that will be used as the TextureRegion.
+		*	@param name The texture name ( if any )
 		*/
 		TextureRegion( const Uint32& TexId, const Rect& srcRect, const std::string& name = "" );
 
 		/** Creates a TextureRegion of the indicated part of the texture.
 		*	@param TexId The texture id
-		*	@param SrcRect The texture part that will be used as the TextureRegion.
-		*	@param DestSize The destination size that the TextureRegion will have when rendered.
-		*	@param Name The texture name ( if any )
+		*	@param srcRect The texture part that will be used as the TextureRegion.
+		*	@param destSize The destination size that the TextureRegion will have when rendered.
+		*	@param name The texture name ( if any )
 		*/
 		TextureRegion( const Uint32& TexId, const Rect& srcRect, const Sizef& destSize, const std::string& name = "" );
 
 		/** Creates a TextureRegion of the indicated part of the texture.
 		*	@param TexId The texture id
-		*	@param SrcRect The texture part that will be used as the TextureRegion.
-		*	@param DestSize The destination size that the TextureRegion will have when rendered.
-		*	@param Offset The offset that will be added to the position passed when any Draw call is used.
-		*	@param Name The texture name ( if any )
+		*	@param srcRect The texture part that will be used as the TextureRegion.
+		*	@param destSize The destination size that the TextureRegion will have when rendered.
+		*	@param offset The offset that will be added to the position passed when any Draw call is used.
+		*	@param name The texture name ( if any )
 		*/
 		TextureRegion( const Uint32& TexId, const Rect& srcRect, const Sizef& destSize, const Vector2i& offset, const std::string& name = "" );
 

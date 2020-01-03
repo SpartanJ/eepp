@@ -9,7 +9,7 @@
 using namespace EE::Graphics;
 #endif
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
 void Shape::resetShapeIdCounter() {
 	cpResetShapeIdCounter();
@@ -18,10 +18,10 @@ void Shape::resetShapeIdCounter() {
 void Shape::Free( Shape * shape, bool DeleteBody ) {
 	if ( DeleteBody ) {
 		Physics::Body * b = shape->getBody();
-		cpSAFE_DELETE( b );
+		eeSAFE_DELETE( b );
 	}
 
-	cpSAFE_DELETE( shape );
+	eeSAFE_DELETE( shape );
 }
 
 Shape::Shape() :
@@ -192,4 +192,4 @@ void Shape::draw( Space * space ) {
 void Shape::drawBorder( Space * space ) {
 }
 
-CP_NAMESPACE_END
+}}

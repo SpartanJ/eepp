@@ -38,8 +38,7 @@ class EE_API SoundFileWriter {
 #endif
 
 ////////////////////////////////////////////////////////////
-/// \class SoundFileWriter
-/// \ingroup audio
+/// @class EE::Audio::SoundFileWriter
 ///
 /// This class allows users to write audio file formats not natively
 /// supported by EEPP, and thus extend the set of supported writable

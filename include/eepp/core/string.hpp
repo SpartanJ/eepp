@@ -42,7 +42,7 @@
 
 namespace EE {
 
-/** @brief Utility string class that automatically handles conversions between types and encodings **/
+/** Utility string class that automatically handles conversions between types and encodings **/
 class EE_API String {
 	public :
 	typedef Uint32								StringBaseType;

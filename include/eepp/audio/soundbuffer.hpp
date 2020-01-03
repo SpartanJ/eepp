@@ -247,8 +247,7 @@ class EE_API SoundBuffer : AlResource {
 
 
 ////////////////////////////////////////////////////////////
-/// \class SoundBuffer
-/// \ingroup audio
+/// @class EE::Audio::SoundBuffer
 ///
 /// A sound buffer holds the data of a sound, which is
 /// an array of audio samples. A sample is a 16 bits signed integer

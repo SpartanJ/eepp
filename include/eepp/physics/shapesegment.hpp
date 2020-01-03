@@ -3,9 +3,9 @@
 
 #include <eepp/physics/shape.hpp>
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
-class CP_API ShapeSegment : public Shape {
+class EE_API ShapeSegment : public Shape {
 	public:
 		static ShapeSegment * New( Physics::Body * body, cVect a, cVect b, cpFloat radius );
 
@@ -32,6 +32,6 @@ class CP_API ShapeSegment : public Shape {
 		virtual void draw( Space * space );
 };
 
-CP_NAMESPACE_END
+}}
 
 #endif

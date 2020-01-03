@@ -116,8 +116,7 @@ private:
 #endif // EE_NETWORKCUDPSOCKET_HPP
 
 /**
-@class UdpSocket
-@ingroup Network
+@class EE::Network::UdpSocket
 
 A UDP socket is a connectionless socket. Instead of
 connecting once to a remote host, like TCP sockets,
@@ -166,7 +165,7 @@ Usage example:
 
 // Create a socket and bind it to the port 55001
 UdpSocket socket;
-socket.Bind(55001);
+socket.bind(55001);
 
 // Send a message to 192.168.1.50 on port 55002
 std::string message = "Hi, I am " + IpAddress::getLocalAddress().toString();
@@ -199,5 +198,5 @@ std::string message = "Welcome " + sender.toString();
 socket.send(message.c_str(), message.size() + 1, sender, port);
 @endcode
 
-@see Socket, TcpSocket, Packet
+@see EE::Network::Socket, EE::Network::TcpSocket, EE::Network::Packet
 */

@@ -4,14 +4,14 @@
 #include <eepp/physics/base.hpp>
 #include <list>
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
 class Body;
 class Shape;
 class Constraint;
 class Space;
 
-class CP_API PhysicsManager {
+class EE_API PhysicsManager {
 	SINGLETON_DECLARE_HEADERS(PhysicsManager)
 
 	public:
@@ -82,6 +82,6 @@ class CP_API PhysicsManager {
 		void removeSpace( Space * space );
 };
 
-CP_NAMESPACE_END
+}}
 
 #endif

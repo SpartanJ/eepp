@@ -20,20 +20,20 @@ class EE_API ScrollParallax {
 		~ScrollParallax();
 
 		/** Constructor that create's the Scroll Parallax
-		* @param TextureRegion The TextureRegion to Draw
-		* @param Position The position of the parallax
-		* @param Size The size of the parallax
-		* @param Speed Speed of movement ( in Pixels Per Second )
-		* @param Color The Texture Color
+		* @param textureRegion The TextureRegion to Draw
+		* @param position The position of the parallax
+		* @param size The size of the parallax
+		* @param speed Speed of movement ( in Pixels Per Second )
+		* @param color The Texture Color
 		* @param Blend The Blend Mode ( default BlendAlpha ) */
 		ScrollParallax( TextureRegion * textureRegion, const Vector2f& position = Vector2f(), const Sizef& size = Sizef(), const Vector2f& speed = Vector2f(), const Color& color = Color::White, const BlendMode& Blend = BlendAlpha );
 
 		/** Create's the Scroll Parallax
-		* @param TextureRegion The TextureRegion to Draw
-		* @param Position The position of the parallax
-		* @param Size The size of the parallax
-		* @param Speed Speed of movement ( in Pixels Per Second )
-		* @param Color The Texture Color
+		* @param textureRegion The TextureRegion to Draw
+		* @param position The position of the parallax
+		* @param size The size of the parallax
+		* @param speed Speed of movement ( in Pixels Per Second )
+		* @param color The Texture Color
 		* @param Blend The Blend Mode ( default BlendAlpha )
 		* @return True if success
 		*/
