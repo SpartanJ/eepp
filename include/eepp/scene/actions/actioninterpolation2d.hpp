@@ -1,34 +1,34 @@
 #ifndef EE_SCENE_ACTIONINTERPOLATION2D_HPP
 #define EE_SCENE_ACTIONINTERPOLATION2D_HPP
 
-#include <eepp/scene/action.hpp>
 #include <eepp/math/interpolation2d.hpp>
+#include <eepp/scene/action.hpp>
 using namespace EE::Math;
 
 namespace EE { namespace Scene { namespace Actions {
 
 class EE_API ActionInterpolation2d : public Action {
-	public:
-		void start() override;
+  public:
+	void start() override;
 
-		void stop() override;
+	void stop() override;
 
-		void update( const Time& time ) override;
+	void update( const Time& time ) override;
 
-		bool isDone() override;
+	bool isDone() override;
 
-		Float getCurrentProgress() override;
+	Float getCurrentProgress() override;
 
-		Interpolation2d * getInterpolation();
-	protected:
-		mutable Interpolation2d mInterpolation;
+	Interpolation2d* getInterpolation();
 
-		ActionInterpolation2d();
+  protected:
+	mutable Interpolation2d mInterpolation;
 
-		void setInterpolation( Interpolation2d interpolation );
+	ActionInterpolation2d();
+
+	void setInterpolation( Interpolation2d interpolation );
 };
 
-}}}
+}}} // namespace EE::Scene::Actions
 
 #endif
-

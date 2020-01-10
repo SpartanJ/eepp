@@ -3,8 +3,8 @@
 
 #include <eepp/config.hpp>
 #include <eepp/system/bitop.hpp>
-#include <string>
 #include <map>
+#include <string>
 #if EE_PLATFORM == EE_PLATFORM_WIN
 #undef RGB
 #endif
@@ -12,312 +12,244 @@
 namespace EE { namespace System {
 
 /** @brief Template class for a RGB color */
-template<typename T>
-class tRGB {
-	public:
-		T r;
-		T g;
-		T b;
+template <typename T> class tRGB {
+  public:
+	T r;
+	T g;
+	T b;
 
-		tRGB() :
-			r(255),
-			g(255),
-			b(255)
-		{
-		}
+	tRGB() : r( 255 ), g( 255 ), b( 255 ) {}
 
-		/** Creates an RGB color from each component.
-		**	@param r Red component
-		**	@param g Green component
-		**	@param b Blue component
-		*/
-		tRGB(T r, T g, T b) :
-			r(r),
-			g(g),
-			b(b)
-		{
-		}
+	/** Creates an RGB color from each component.
+	**	@param r Red component
+	**	@param g Green component
+	**	@param b Blue component
+	*/
+	tRGB( T r, T g, T b ) : r( r ), g( g ), b( b ) {}
 
-		/** From 32 bits value with RGB(A) byte order */
-		tRGB( Uint32 Col )
-		{
-			Col		= BitOp::swapLE32( Col );
-			r	= static_cast<T>( Col >> 16	);
-			g	= static_cast<T>( Col >> 8	);
-			b	= static_cast<T>( Col >> 0	);
-		}
+	/** From 32 bits value with RGB(A) byte order */
+	tRGB( Uint32 Col ) {
+		Col = BitOp::swapLE32( Col );
+		r = static_cast<T>( Col >> 16 );
+		g = static_cast<T>( Col >> 8 );
+		b = static_cast<T>( Col >> 0 );
+	}
 
-		bool operator==( const tRGB<T>& Col ) {
-			return ( r == Col.r && g == Col.g && b == Col.b );
-		}
+	bool operator==( const tRGB<T>& Col ) { return ( r == Col.r && g == Col.g && b == Col.b ); }
 
-		bool operator!=( const tRGB<T>& Col ) {
-			return !( r == Col.r && g == Col.g && b == Col.b );
-		}
+	bool operator!=( const tRGB<T>& Col ) { return !( r == Col.r && g == Col.g && b == Col.b ); }
 };
 
 /** @brief Template class for a RGBA color */
-template<typename T>
-class tColor {
-	public:
-		union {
-			Uint32 Value;
+template <typename T> class tColor {
+  public:
+	union {
+		Uint32 Value;
 
-			struct
-			{
-				T r;
-				T g;
-				T b;
-				T a;	//! Alpha color component ( transparency )
-			};
-
-			struct
-			{
-				T h;
-				T s;
-				T v;
-				T a;
-			} hsv;
-
-			struct
-			{
-				T h;
-				T s;
-				T l;
-				T a;
-			} hsl;
+		struct {
+			T r;
+			T g;
+			T b;
+			T a; //! Alpha color component ( transparency )
 		};
 
-		tColor() :
-			r(255),
-			g(255),
-			b(255),
-			a(255)
-		{
-		}
+		struct {
+			T h;
+			T s;
+			T v;
+			T a;
+		} hsv;
 
-		/** Creates an RGBA color from each component.
-		**	@param r Red component
-		**	@param g Green component
-		**	@param b Blue component
-		**  @param a Alpha component
-		*/
-		tColor(T r, T g, T b, T a) :
-			r(r),
-			g(g),
-			b(b),
-			a(a)
-		{
-		}
+		struct {
+			T h;
+			T s;
+			T l;
+			T a;
+		} hsl;
+	};
 
-		/** @brief Creates a RGBA color from a RGB color, the Alpha component is set as non-transparent. */
-		tColor( const tRGB<T>& Col ) :
-			r( Col.r ),
-			g( Col.g ),
-			b( Col.b ),
-			a( 255 )
-		{
-		}
+	tColor() : r( 255 ), g( 255 ), b( 255 ), a( 255 ) {}
 
-		/** @brief Creates a RGBA color from a RGB color.
-		**	@param Col The RGB color
-		**	@param a The Alpha component value
-		*/
-		tColor( const tRGB<T>& Col, T a ) :
-			r( Col.r ),
-			g( Col.g ),
-			b( Col.b ),
-			a( a )
-		{
-		}
+	/** Creates an RGBA color from each component.
+	**	@param r Red component
+	**	@param g Green component
+	**	@param b Blue component
+	**  @param a Alpha component
+	*/
+	tColor( T r, T g, T b, T a ) : r( r ), g( g ), b( b ), a( a ) {}
 
-		tColor( const tColor<T>& Col ) :
-			Value( Col.Value )
-		{
-		}
+	/** @brief Creates a RGBA color from a RGB color, the Alpha component is set as non-transparent.
+	 */
+	tColor( const tRGB<T>& Col ) : r( Col.r ), g( Col.g ), b( Col.b ), a( 255 ) {}
 
-		/** From a 32 bits value with RGBA byte order */
-		tColor( const Uint32& Col ) :
-			Value( BitOp::swapBE32( Col ) )
-		{
-		}
+	/** @brief Creates a RGBA color from a RGB color.
+	**	@param Col The RGB color
+	**	@param a The Alpha component value
+	*/
+	tColor( const tRGB<T>& Col, T a ) : r( Col.r ), g( Col.g ), b( Col.b ), a( a ) {}
 
-		 //! @return The color represented as an Uint32 ( as 0xRRGGBBAA for Little Endian )
-		Uint32 getValue() const {
-			return BitOp::swapBE32( Value );
-		}
+	tColor( const tColor<T>& Col ) : Value( Col.Value ) {}
 
-		/** @brief Assign the RGBA colors, from each component. */
-		void assign( T r, T g, T b, T a ) {
-			this->r = r; this->g = g; this->b = b; this->a = a;
-		}
+	/** From a 32 bits value with RGBA byte order */
+	tColor( const Uint32& Col ) : Value( BitOp::swapBE32( Col ) ) {}
 
-		/** @brief Assign the color value from other RGBA color. */
-		void assign( const tColor<T>& Col ) {
-			Value = Col.Value;
-		}
+	//! @return The color represented as an Uint32 ( as 0xRRGGBBAA for Little Endian )
+	Uint32 getValue() const { return BitOp::swapBE32( Value ); }
 
-		bool operator==( const tColor<T>& Col ) const {
-			return ( r == Col.r && g == Col.g && b == Col.b && a == Col.a );
-		}
+	/** @brief Assign the RGBA colors, from each component. */
+	void assign( T r, T g, T b, T a ) {
+		this->r = r;
+		this->g = g;
+		this->b = b;
+		this->a = a;
+	}
 
-		bool operator!=( const tColor<T>& Col ) const {
-			return !(*this == Col);
-		}
+	/** @brief Assign the color value from other RGBA color. */
+	void assign( const tColor<T>& Col ) { Value = Col.Value; }
 
-		tColor<T> operator+( const tColor<T>& Col ) const {
-			return tColor<T>(	std::abs( this->r	+ Col.r ),
-								std::abs( this->g	+ Col.g ),
-								std::abs( this->b	+ Col.b ),
-								std::abs( this->a	+ Col.a )
-			);
-		}
+	bool operator==( const tColor<T>& Col ) const {
+		return ( r == Col.r && g == Col.g && b == Col.b && a == Col.a );
+	}
 
-		tColor<T> operator-( const tColor<T>& Col ) const {
-			return tColor<T>(	std::abs( this->r	- Col.r ),
-								std::abs( this->g	- Col.g ),
-								std::abs( this->b	- Col.b ),
-								std::abs( this->a	- Col.a )
-			);
-		}
+	bool operator!=( const tColor<T>& Col ) const { return !( *this == Col ); }
 
-		tColor<T> operator*( const tColor<T>& Col ) const {
-			return tColor<T>(	( this->r	* Col.r	/ 255 ),
-								( this->g	* Col.g	/ 255 ),
-								( this->b	* Col.b	/ 255 ),
-								( this->a	* Col.a	/ 255 )
-			);
-		}
+	tColor<T> operator+( const tColor<T>& Col ) const {
+		return tColor<T>( std::abs( this->r + Col.r ), std::abs( this->g + Col.g ),
+						  std::abs( this->b + Col.b ), std::abs( this->a + Col.a ) );
+	}
 
-		tRGB<T> toRGB() {
-			return tRGB<T>( r, g, b );
-		}
+	tColor<T> operator-( const tColor<T>& Col ) const {
+		return tColor<T>( std::abs( this->r - Col.r ), std::abs( this->g - Col.g ),
+						  std::abs( this->b - Col.b ), std::abs( this->a - Col.a ) );
+	}
+
+	tColor<T> operator*( const tColor<T>& Col ) const {
+		return tColor<T>( ( this->r * Col.r / 255 ), ( this->g * Col.g / 255 ),
+						  ( this->b * Col.b / 255 ), ( this->a * Col.a / 255 ) );
+	}
+
+	tRGB<T> toRGB() { return tRGB<T>( r, g, b ); }
 };
-
 
 typedef tColor<Float> ColorAf;
 typedef tColor<Float> Colorf;
 
 class EE_API Color : public tColor<Uint8> {
-	public:
-		Color();
+  public:
+	Color();
 
-		Color( std::string colorString );
+	Color( std::string colorString );
 
-		Color( Uint8 r, Uint8 g, Uint8 b, Uint8 a = 255 );
+	Color( Uint8 r, Uint8 g, Uint8 b, Uint8 a = 255 );
 
-		Color( const tRGB<Uint8>& Col );
+	Color( const tRGB<Uint8>& Col );
 
-		Color( const tRGB<Uint8>& Col, Uint8 a );
+	Color( const tRGB<Uint8>& Col, Uint8 a );
 
-		Color( const tColor<Uint8>& Col, Uint8 a );
+	Color( const tColor<Uint8>& Col, Uint8 a );
 
-		Color( const tColor<Uint8>& Col );
+	Color( const tColor<Uint8>& Col );
 
-		Color( const Uint32& Col );
+	Color( const Uint32& Col );
 
-		Colorf toHsv() const;
+	Colorf toHsv() const;
 
-		static Color fromHsv( const Colorf& hsv );
+	static Color fromHsv( const Colorf& hsv );
 
-		Colorf toHsl() const;
+	Colorf toHsl() const;
 
-		std::string toHexString( const bool& prependHash = true ) const;
+	std::string toHexString( const bool& prependHash = true ) const;
 
-		static Color fromHsl( const Colorf& hsl );
+	static Color fromHsl( const Colorf& hsl );
 
-		/** Blend a source color to destination color */
-		static ColorAf blend( ColorAf srcf, ColorAf dstf );
+	/** Blend a source color to destination color */
+	static ColorAf blend( ColorAf srcf, ColorAf dstf );
 
-		/** Blend a source color to destination color */
-		static Color blend( Color src, Color dst );
+	/** Blend a source color to destination color */
+	static Color blend( Color src, Color dst );
 
-		static Color fromPointer( void *ptr );
+	static Color fromPointer( void* ptr );
 
-		static Color fromString( const char * str );
+	static Color fromString( const char* str );
 
-		static Color fromString( std::string str );
+	static Color fromString( std::string str );
 
-		static bool isColorString( std::string str );
+	static bool isColorString( std::string str );
 
-		static void registerColor( const std::string& name, const Color& color );
+	static void registerColor( const std::string& name, const Color& color );
 
-		static bool unregisterColor( const std::string& name );
+	static bool unregisterColor( const std::string& name );
 
-		static bool validHexColorString( const std::string& hexColor );
+	static bool validHexColorString( const std::string& hexColor );
 
-		static const Color Transparent;
-		static const Color Black;
-		static const Color Silver;
-		static const Color Gray;
-		static const Color White;
-		static const Color Maroon;
-		static const Color Red;
-		static const Color Purple;
-		static const Color Fuchsia;
-		static const Color Green;
-		static const Color Lime;
-		static const Color Olive;
-		static const Color Yellow;
-		static const Color Navy;
-		static const Color Blue;
-		static const Color Teal;
-		static const Color Aqua;
-	private:
-		static std::map<std::string, Color> sColors;
+	static const Color Transparent;
+	static const Color Black;
+	static const Color Silver;
+	static const Color Gray;
+	static const Color White;
+	static const Color Maroon;
+	static const Color Red;
+	static const Color Purple;
+	static const Color Fuchsia;
+	static const Color Green;
+	static const Color Lime;
+	static const Color Olive;
+	static const Color Yellow;
+	static const Color Navy;
+	static const Color Blue;
+	static const Color Teal;
+	static const Color Aqua;
+
+  private:
+	static std::map<std::string, Color> sColors;
 };
 
 typedef Color ColorA;
-typedef tColor<Float>		ColorAf;
+typedef tColor<Float> ColorAf;
 
 //! @brief Small class to help in some color operations
 class EE_API RGB : public tRGB<Uint8> {
-	public:
-		RGB();
+  public:
+	RGB();
 
-		/** Creates an RGB color from each component.
-		**	@param r Red component
-		**	@param g Green component
-		**	@param b Blue component
-		*/
-		RGB( Uint8 r, Uint8 g, Uint8 b );
+	/** Creates an RGB color from each component.
+	**	@param r Red component
+	**	@param g Green component
+	**	@param b Blue component
+	*/
+	RGB( Uint8 r, Uint8 g, Uint8 b );
 
-		RGB( const tRGB<Uint8>& color );
+	RGB( const tRGB<Uint8>& color );
 
-		RGB( Uint32 Col );
+	RGB( Uint32 Col );
 
-		Color toColor();
+	Color toColor();
 };
 
 class EE_API RectColors {
-	public:
-		RectColors() :
-			TopLeft( Color::White ),
-			TopRight( Color::White ),
-			BottomLeft( Color::White ),
-			BottomRight( Color::White )
-		{}
+  public:
+	RectColors() :
+		TopLeft( Color::White ),
+		TopRight( Color::White ),
+		BottomLeft( Color::White ),
+		BottomRight( Color::White ) {}
 
-		RectColors( const Color& color ) :
-			TopLeft( color ),
-			TopRight( color ),
-			BottomLeft( color ),
-			BottomRight( color )
-		{}
+	RectColors( const Color& color ) :
+		TopLeft( color ), TopRight( color ), BottomLeft( color ), BottomRight( color ) {}
 
-		RectColors( const Color& topLeft, const Color& topRight, const Color& bottomLeft, const Color& bottomRight ) :
-			TopLeft( topLeft ),
-			TopRight( topRight ),
-			BottomLeft( bottomLeft ),
-			BottomRight( bottomRight )
-		{}
+	RectColors( const Color& topLeft, const Color& topRight, const Color& bottomLeft,
+				const Color& bottomRight ) :
+		TopLeft( topLeft ),
+		TopRight( topRight ),
+		BottomLeft( bottomLeft ),
+		BottomRight( bottomRight ) {}
 
-		Color TopLeft;
-		Color TopRight;
-		Color BottomLeft;
-		Color BottomRight;
+	Color TopLeft;
+	Color TopRight;
+	Color BottomLeft;
+	Color BottomRight;
 };
 
-}}
+}} // namespace EE::System
 
 #endif

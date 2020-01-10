@@ -7,26 +7,25 @@
 namespace EE { namespace Scene { namespace Actions {
 
 class EE_API Runnable : public Delay {
-	public:
-		typedef std::function<void()> RunnableFunc;
+  public:
+	typedef std::function<void()> RunnableFunc;
 
-		static Runnable * New( RunnableFunc callback, const Time& time = Seconds(0) );
+	static Runnable* New( RunnableFunc callback, const Time& time = Seconds( 0 ) );
 
-		void update( const Time& time ) override;
+	void update( const Time& time ) override;
 
-		Action * clone() const override;
+	Action* clone() const override;
 
-		Action * reverse() const override;
+	Action* reverse() const override;
 
-	protected:
-		RunnableFunc mCallback;
+  protected:
+	RunnableFunc mCallback;
 
-		explicit Runnable( RunnableFunc callback, const Time& time = Seconds(0) );
+	explicit Runnable( RunnableFunc callback, const Time& time = Seconds( 0 ) );
 
-		void onStart() override;
-
+	void onStart() override;
 };
 
-}}}
+}}} // namespace EE::Scene::Actions
 
 #endif

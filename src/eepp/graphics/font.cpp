@@ -5,10 +5,7 @@
 
 namespace EE { namespace Graphics {
 
-Font::Font( const FontType& Type, const std::string& Name ) :
-	mType( Type ),
-	mNumCallBacks( 0 )
-{
+Font::Font( const FontType& Type, const std::string& Name ) : mType( Type ), mNumCallBacks( 0 ) {
 	this->setName( Name );
 	FontManager::instance()->add( this );
 }
@@ -38,12 +35,12 @@ const Uint32& Font::getId() {
 
 Uint32 Font::pushFontEventCallback( const FontEventCallback& cb ) {
 	mNumCallBacks++;
-	mCallbacks[ mNumCallBacks ] = cb;
+	mCallbacks[mNumCallBacks] = cb;
 	return mNumCallBacks;
 }
 
 void Font::popFontEventCallback( const Uint32& callbackId ) {
-	mCallbacks[ callbackId ] = 0;
+	mCallbacks[callbackId] = 0;
 	mCallbacks.erase( mCallbacks.find( callbackId ) );
 }
 
@@ -53,4 +50,4 @@ void Font::sendEvent( const Event& event ) {
 	}
 }
 
-}}
+}} // namespace EE::Graphics

@@ -8,22 +8,23 @@
 namespace EE { namespace System {
 
 class EE_API FunctionString {
-	public:
-		static FunctionString parse( const std::string& function );
+  public:
+	static FunctionString parse( const std::string& function );
 
-		FunctionString( const std::string& name, const std::vector<std::string>& parameters );
+	FunctionString( const std::string& name, const std::vector<std::string>& parameters );
 
-		const std::string& getName() const;
+	const std::string& getName() const;
 
-		const std::vector<std::string>& getParameters() const;
+	const std::vector<std::string>& getParameters() const;
 
-		bool isEmpty() const;
-	protected:
-		std::string name;
+	bool isEmpty() const;
 
-		std::vector<std::string> parameters;
+  protected:
+	std::string name;
+
+	std::vector<std::string> parameters;
 };
 
-}}
+}} // namespace EE::System
 
 #endif

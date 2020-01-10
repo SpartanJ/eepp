@@ -6,24 +6,23 @@
 namespace EE { namespace Scene { namespace Actions {
 
 class EE_API Visible : public Delay {
-	public:
-		static Visible * New( bool visible, const Time& time = Seconds(0) );
+  public:
+	static Visible* New( bool visible, const Time& time = Seconds( 0 ) );
 
-		void update( const Time& time ) override;
+	void update( const Time& time ) override;
 
-		Action * clone() const override;
+	Action* clone() const override;
 
-		Action * reverse() const override;
+	Action* reverse() const override;
 
-	protected:
-		bool mVisible;
+  protected:
+	bool mVisible;
 
-		explicit Visible( bool visible, const Time& time );
+	explicit Visible( bool visible, const Time& time );
 
-		void onStart() override;
-
+	void onStart() override;
 };
 
-}}}
+}}} // namespace EE::Scene::Actions
 
 #endif

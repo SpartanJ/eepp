@@ -7,178 +7,187 @@
 namespace EE { namespace Graphics {
 
 class EE_API Text {
-	public:
-		enum Style
-		{
-			Regular	   		= 0,	  ///< Regular characters, no style
-			Bold			= 1 << 0, ///< Bold characters
-			Italic			= 1 << 1, ///< Italic characters
-			Underlined		= 1 << 2, ///< Underlined characters
-			StrikeThrough	= 1 << 3, ///< Strike through characters
-			Shadow			= 1 << 4  ///< Draw a shadow below the text
-		};
+  public:
+	enum Style {
+		Regular = 0,			///< Regular characters, no style
+		Bold = 1 << 0,			///< Bold characters
+		Italic = 1 << 1,		///< Italic characters
+		Underlined = 1 << 2,	///< Underlined characters
+		StrikeThrough = 1 << 3, ///< Strike through characters
+		Shadow = 1 << 4			///< Draw a shadow below the text
+	};
 
-		static std::string styleFlagToString( const Uint32& flags );
+	static std::string styleFlagToString( const Uint32& flags );
 
-		static Uint32 stringToStyleFlag( const std::string& str );
+	static Uint32 stringToStyleFlag( const std::string& str );
 
-		static Text * New();
+	static Text* New();
 
-		static Text * New(const String& string, Font * font, unsigned int characterSize = 30);
+	static Text* New( const String& string, Font* font, unsigned int characterSize = 30 );
 
-		static Text * New(Font * font, unsigned int characterSize = 30);
+	static Text* New( Font* font, unsigned int characterSize = 30 );
 
-		Text();
+	Text();
 
-		Text(const String& string, Font * font, unsigned int characterSize = 30);
+	Text( const String& string, Font* font, unsigned int characterSize = 30 );
 
-		Text(Font * font, unsigned int characterSize = 30);
+	Text( Font* font, unsigned int characterSize = 30 );
 
-		/** Create a text from a font */
-		void create(Graphics::Font * font, const String& text = "", Color FontColor = Color(255,255,255,255), Color FontShadowColor = Color(0,0,0,255) , Uint32 characterSize = 12);
+	/** Create a text from a font */
+	void create( Graphics::Font* font, const String& text = "",
+				 Color FontColor = Color( 255, 255, 255, 255 ),
+				 Color FontShadowColor = Color( 0, 0, 0, 255 ), Uint32 characterSize = 12 );
 
-		void setString(const String& string);
+	void setString( const String& string );
 
-		void setFont(Font * font);
+	void setFont( Font* font );
 
-		void setCharacterSize(unsigned int size);
+	void setCharacterSize( unsigned int size );
 
-		void setStyle(Uint32 style);
+	void setStyle( Uint32 style );
 
-		void setColor(const Color& color);
+	void setColor( const Color& color );
 
-		void setFillColor(const Color& color);
+	void setFillColor( const Color& color );
 
-		void setFillColor(const Color& color, Uint32 from, Uint32 to);
+	void setFillColor( const Color& color, Uint32 from, Uint32 to );
 
-		void setOutlineColor(const Color& color);
+	void setOutlineColor( const Color& color );
 
-		void setOutlineThickness(Float thickness);
+	void setOutlineThickness( Float thickness );
 
-		String& getString();
+	String& getString();
 
-		Font * getFont() const;
+	Font* getFont() const;
 
-		unsigned int getCharacterSize() const;
+	unsigned int getCharacterSize() const;
 
-		unsigned int getCharacterSizePx() const;
+	unsigned int getCharacterSizePx() const;
 
-		const Uint32& getFontHeight() const;
+	const Uint32& getFontHeight() const;
 
-		Uint32 getStyle() const;
+	Uint32 getStyle() const;
 
-		/** @see Set the alpha of each individual character.
-		**	This doesn't break any custom color per-character setted. */
-		void setAlpha( const Uint8& alpha );
+	/** @see Set the alpha of each individual character.
+	**	This doesn't break any custom color per-character setted. */
+	void setAlpha( const Uint8& alpha );
 
-		const Color& getFillColor() const;
+	const Color& getFillColor() const;
 
-		const Color& getColor() const;
+	const Color& getColor() const;
 
-		const Color& getOutlineColor() const;
+	const Color& getOutlineColor() const;
 
-		Float getOutlineThickness() const;
+	Float getOutlineThickness() const;
 
-		Vector2f findCharacterPos(std::size_t index) const;
+	Vector2f findCharacterPos( std::size_t index ) const;
 
-		Rectf getLocalBounds();
+	Rectf getLocalBounds();
 
-		/** @return The cached text width */
-		Float getTextWidth();
+	/** @return The cached text width */
+	Float getTextWidth();
 
-		/** @return The cached text height */
-		Float getTextHeight();
+	/** @return The cached text height */
+	Float getTextHeight();
 
-		/** Draw the cached text on screen */
-		void draw( const Float& X, const Float& Y, const Vector2f& Scale = Vector2f::One, const Float& Rotation = 0, BlendMode Effect = BlendAlpha, const OriginPoint& rotationCenter = OriginPoint::OriginCenter, const OriginPoint& scaleCenter = OriginPoint::OriginCenter );
+	/** Draw the cached text on screen */
+	void draw( const Float& X, const Float& Y, const Vector2f& Scale = Vector2f::One,
+			   const Float& Rotation = 0, BlendMode Effect = BlendAlpha,
+			   const OriginPoint& rotationCenter = OriginPoint::OriginCenter,
+			   const OriginPoint& scaleCenter = OriginPoint::OriginCenter );
 
-		/** @return The Shadow Font Color */
-		const Color& getShadowColor() const;
+	/** @return The Shadow Font Color */
+	const Color& getShadowColor() const;
 
-		/** Set the shadow color of the string rendered */
-		void setShadowColor(const Color& color);
+	/** Set the shadow color of the string rendered */
+	void setShadowColor( const Color& color );
 
-		/** @return Every cached text line width */
-		const std::vector<Float>& getLinesWidth();
+	/** @return Every cached text line width */
+	const std::vector<Float>& getLinesWidth();
 
-		/** Set the text draw align */
-		void setAlign( const Uint32& align );
+	/** Set the text draw align */
+	void setAlign( const Uint32& align );
 
-		/** @return The text align */
-		const Uint32& getAlign() const;
+	/** @return The text align */
+	const Uint32& getAlign() const;
 
-		/** @return The number of lines that the cached text contains */
-		const int& getNumLines();
+	/** @return The number of lines that the cached text contains */
+	const int& getNumLines();
 
-		void setStyleConfig( const FontStyleConfig& styleConfig );
+	void setStyleConfig( const FontStyleConfig& styleConfig );
 
-		/** Finds the closest cursor position to the point position */
-		Int32 findCharacterFromPos( const Vector2i& pos );
+	/** Finds the closest cursor position to the point position */
+	Int32 findCharacterFromPos( const Vector2i& pos );
 
-		/** Simulates a selection request and return the initial and end cursor position when the selection worked. Otherwise both parameters will be -1. */
-		void findWordFromCharacterIndex( const Int32& characterIndex, Int32& InitCur, Int32& EndCur );
+	/** Simulates a selection request and return the initial and end cursor position when the
+	 * selection worked. Otherwise both parameters will be -1. */
+	void findWordFromCharacterIndex( const Int32& characterIndex, Int32& InitCur, Int32& EndCur );
 
-		/** Cache the with of the current text */
-		void getWidthInfo( std::vector<Float>& LinesWidth, Float& CachedWidth, int& NumLines, int& LargestLineCharCount );
+	/** Cache the with of the current text */
+	void getWidthInfo( std::vector<Float>& LinesWidth, Float& CachedWidth, int& NumLines,
+					   int& LargestLineCharCount );
 
-		/** Shrink the String to a max width
-		* @param MaxWidth The Max Width posible
-		*/
-		void shrinkText( const Uint32& MaxWidth );
+	/** Shrink the String to a max width
+	 * @param MaxWidth The maximum possible width
+	 */
+	void shrinkText( const Uint32& MaxWidth );
 
-		void invalidateColors();
+	void invalidateColors();
 
-		void invalidate();
-	protected:
-		struct VertexCoords {
-			Vector2f texCoords;
-			Vector2f position;
-		};
+	void invalidate();
 
-		String				mString;			 ///< String to display
-		Font *				mFont;			   ///< FontTrueType used to display the string
-		unsigned int		mCharacterSize;	  ///< Base size of characters, in pixels
-		unsigned int		mRealCharacterSize;
-		Uint32				mStyle;			  ///< Text style (see Style enum)
-		Color				mFillColor;		  ///< Text fill color
-		Color				mOutlineColor;	   ///< Text outline color
-		Float				mOutlineThickness;   ///< Thickness of the text's outline
-		Sizei				mTextureSize;
+  protected:
+	struct VertexCoords {
+		Vector2f texCoords;
+		Vector2f position;
+	};
 
-		mutable Rectf   	mBounds;			 ///< Bounding rectangle of the text (in local coordinates)
-		mutable bool		mGeometryNeedUpdate; ///< Does the geometry need to be recomputed?
-		mutable bool		mCachedWidthNeedUpdate;
-		mutable bool		mColorsNeedUpdate;
+	String mString;				 ///< String to display
+	Font* mFont;				 ///< FontTrueType used to display the string
+	unsigned int mCharacterSize; ///< Base size of characters, in pixels
+	unsigned int mRealCharacterSize;
+	Uint32 mStyle;			 ///< Text style (see Style enum)
+	Color mFillColor;		 ///< Text fill color
+	Color mOutlineColor;	 ///< Text outline color
+	Float mOutlineThickness; ///< Thickness of the text's outline
+	Sizei mTextureSize;
 
-		Float				mCachedWidth;
-		int					mNumLines;
-		int					mLargestLineCharCount;
-		Color				mFontShadowColor;
-		Uint32				mAlign;
-		Uint32				mFontHeight;
+	mutable Rectf mBounds;			  ///< Bounding rectangle of the text (in local coordinates)
+	mutable bool mGeometryNeedUpdate; ///< Does the geometry need to be recomputed?
+	mutable bool mCachedWidthNeedUpdate;
+	mutable bool mColorsNeedUpdate;
 
-		std::vector<VertexCoords>	mVertices;
-		std::vector<Color> mColors;
+	Float mCachedWidth;
+	int mNumLines;
+	int mLargestLineCharCount;
+	Color mFontShadowColor;
+	Uint32 mAlign;
+	Uint32 mFontHeight;
 
-		std::vector<VertexCoords>	mOutlineVertices;
-		std::vector<Color> mOutlineColors;
-		std::vector<Float> mLinesWidth;
+	std::vector<VertexCoords> mVertices;
+	std::vector<Color> mColors;
 
-		void ensureGeometryUpdate();
+	std::vector<VertexCoords> mOutlineVertices;
+	std::vector<Color> mOutlineColors;
+	std::vector<Float> mLinesWidth;
 
-		void ensureColorUpdate();
+	void ensureGeometryUpdate();
 
-		/** Force to cache the width of the current text */
-		void cacheWidth();
+	void ensureColorUpdate();
 
-		static void addLine(std::vector<VertexCoords>& vertice, Float lineLength, Float lineTop, Float offset, Float thickness, Float outlineThickness, Int32 centerDiffX);
+	/** Force to cache the width of the current text */
+	void cacheWidth();
 
-		static void addGlyphQuad(std::vector<VertexCoords>& vertices, Vector2f position, const EE::Graphics::Glyph& glyph, Float italic, Float outlineThickness, Int32 centerDiffX);
+	static void addLine( std::vector<VertexCoords>& vertice, Float lineLength, Float lineTop,
+						 Float offset, Float thickness, Float outlineThickness, Int32 centerDiffX );
 
-		Uint32 getTotalVertices();
+	static void addGlyphQuad( std::vector<VertexCoords>& vertices, Vector2f position,
+							  const EE::Graphics::Glyph& glyph, Float italic,
+							  Float outlineThickness, Int32 centerDiffX );
+
+	Uint32 getTotalVertices();
 };
 
-}}
-
+}} // namespace EE::Graphics
 
 #endif

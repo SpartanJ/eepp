@@ -6,32 +6,33 @@
 namespace EE { namespace UI {
 
 class EE_API UIRelativeLayout : public UILayout {
-	public:
-		static UIRelativeLayout * New();
+  public:
+	static UIRelativeLayout* New();
 
-		UIRelativeLayout();
+	UIRelativeLayout();
 
-		virtual Uint32 getType() const;
+	virtual Uint32 getType() const;
 
-		virtual bool isType( const Uint32& type ) const;
+	virtual bool isType( const Uint32& type ) const;
 
-		UIRelativeLayout * add( UIWidget * widget );
-	protected:
-		virtual Uint32 onMessage(const NodeMessage * Msg);
+	UIRelativeLayout* add( UIWidget* widget );
 
-		virtual void onSizeChange();
+  protected:
+	virtual Uint32 onMessage( const NodeMessage* Msg );
 
-		virtual void onChildCountChange();
+	virtual void onSizeChange();
 
-		virtual void onParentSizeChange( const Vector2f& SizeChange );
+	virtual void onChildCountChange();
 
-		void fixChilds();
+	virtual void onParentSizeChange( const Vector2f& SizeChange );
 
-		void fixChildPos( UIWidget * widget );
+	void fixChilds();
 
-		void fixChildSize( UIWidget * widget );
+	void fixChildPos( UIWidget* widget );
+
+	void fixChildSize( UIWidget* widget );
 };
 
-}}
+}} // namespace EE::UI
 
 #endif

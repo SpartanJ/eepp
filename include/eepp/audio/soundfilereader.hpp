@@ -6,7 +6,7 @@
 
 namespace EE { namespace System {
 class IOStream;
-}}
+}} // namespace EE::System
 
 using namespace EE::System;
 
@@ -14,64 +14,61 @@ namespace EE { namespace Audio {
 
 /// \brief Abstract base class for sound file decoding
 class EE_API SoundFileReader {
-	public:
+  public:
+	/// \brief Structure holding the audio properties of a sound file
+	struct Info {
+		Uint64 sampleCount;		   ///< Total number of samples in the file
+		unsigned int channelCount; ///< Number of channels of the sound
+		unsigned int sampleRate;   ///< Samples rate of the sound, in samples per second
+	};
 
-		/// \brief Structure holding the audio properties of a sound file
-		struct Info
-		{
-			Uint64	   sampleCount;  ///< Total number of samples in the file
-			unsigned int channelCount; ///< Number of channels of the sound
-			unsigned int sampleRate;   ///< Samples rate of the sound, in samples per second
-		};
+	virtual ~SoundFileReader() {}
 
-		virtual ~SoundFileReader() {}
+	////////////////////////////////////////////////////////////
+	/// \brief Open a sound file for reading
+	///
+	/// The provided stream reference is valid as long as the
+	/// SoundFileReader is alive, so it is safe to use/store it
+	/// during the whole lifetime of the reader.
+	///
+	/// \param stream Source stream to read from
+	/// \param info   Structure to fill with the properties of the loaded sound
+	///
+	/// \return True if the file was successfully opened
+	///
+	////////////////////////////////////////////////////////////
+	virtual bool open( IOStream& stream, Info& info ) = 0;
 
-		////////////////////////////////////////////////////////////
-		/// \brief Open a sound file for reading
-		///
-		/// The provided stream reference is valid as long as the
-		/// SoundFileReader is alive, so it is safe to use/store it
-		/// during the whole lifetime of the reader.
-		///
-		/// \param stream Source stream to read from
-		/// \param info   Structure to fill with the properties of the loaded sound
-		///
-		/// \return True if the file was successfully opened
-		///
-		////////////////////////////////////////////////////////////
-		virtual bool open(IOStream& stream, Info& info) = 0;
+	////////////////////////////////////////////////////////////
+	/// \brief Change the current read position to the given sample offset
+	///
+	/// The sample offset takes the channels into account.
+	/// If you have a time offset instead, you can easily find
+	/// the corresponding sample offset with the following formula:
+	/// `timeInSeconds * sampleRate * channelCount`
+	/// If the given offset exceeds to total number of samples,
+	/// this function must jump to the end of the file.
+	///
+	/// \param sampleOffset Index of the sample to jump to, relative to the beginning
+	///
+	////////////////////////////////////////////////////////////
+	virtual void seek( Uint64 sampleOffset ) = 0;
 
-		////////////////////////////////////////////////////////////
-		/// \brief Change the current read position to the given sample offset
-		///
-		/// The sample offset takes the channels into account.
-		/// If you have a time offset instead, you can easily find
-		/// the corresponding sample offset with the following formula:
-		/// `timeInSeconds * sampleRate * channelCount`
-		/// If the given offset exceeds to total number of samples,
-		/// this function must jump to the end of the file.
-		///
-		/// \param sampleOffset Index of the sample to jump to, relative to the beginning
-		///
-		////////////////////////////////////////////////////////////
-		virtual void seek(Uint64 sampleOffset) = 0;
-
-		////////////////////////////////////////////////////////////
-		/// \brief Read audio samples from the open file
-		///
-		/// \param samples  Pointer to the sample array to fill
-		/// \param maxCount Maximum number of samples to read
-		///
-		/// \return Number of samples actually read (may be less than \a maxCount)
-		///
-		////////////////////////////////////////////////////////////
-		virtual Uint64 read(Int16* samples, Uint64 maxCount) = 0;
+	////////////////////////////////////////////////////////////
+	/// \brief Read audio samples from the open file
+	///
+	/// \param samples  Pointer to the sample array to fill
+	/// \param maxCount Maximum number of samples to read
+	///
+	/// \return Number of samples actually read (may be less than \a maxCount)
+	///
+	////////////////////////////////////////////////////////////
+	virtual Uint64 read( Int16* samples, Uint64 maxCount ) = 0;
 };
 
-}}
+}} // namespace EE::Audio
 
 #endif
-
 
 ////////////////////////////////////////////////////////////
 /// @class EE::Audio::SoundFileReader

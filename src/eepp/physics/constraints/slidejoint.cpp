@@ -7,12 +7,14 @@ using namespace EE::Graphics;
 
 namespace EE { namespace Physics {
 
-SlideJoint::SlideJoint( Body * a, Body *b, cVect anchr1, cVect anchr2, cpFloat min, cpFloat max )
+SlideJoint::SlideJoint( Body* a, Body* b, cVect anchr1, cVect anchr2, cpFloat min, cpFloat max )
 #ifdef PHYSICS_RENDERER_ENABLED
-	: mDrawPointSize( 5.f )
+	:
+	mDrawPointSize( 5.f )
 #endif
 {
-	mConstraint = cpSlideJointNew( a->getBody(), b->getBody(), tocpv( anchr1 ), tocpv( anchr2 ), min, max );
+	mConstraint =
+		cpSlideJointNew( a->getBody(), b->getBody(), tocpv( anchr1 ), tocpv( anchr2 ), min, max );
 	setData();
 }
 
@@ -49,18 +51,18 @@ void SlideJoint::setMax( const cpFloat& max ) {
 }
 
 void SlideJoint::draw() {
-	#ifdef PHYSICS_RENDERER_ENABLED
+#ifdef PHYSICS_RENDERER_ENABLED
 	if ( mDrawPointSize <= 0 )
 		return;
 
-	cpBody * body_a		= mConstraint->a;
-	cpBody * body_b		= mConstraint->b;
-	cpSlideJoint *joint = (cpSlideJoint *)mConstraint;
-	cVect a				= tovect( cpvadd( body_a->p, cpvrotate( joint->anchr1, body_a->rot ) ) );
-	cVect b				= tovect( cpvadd( body_b->p, cpvrotate( joint->anchr2, body_b->rot ) ) );
+	cpBody* body_a = mConstraint->a;
+	cpBody* body_b = mConstraint->b;
+	cpSlideJoint* joint = (cpSlideJoint*)mConstraint;
+	cVect a = tovect( cpvadd( body_a->p, cpvrotate( joint->anchr1, body_a->rot ) ) );
+	cVect b = tovect( cpvadd( body_b->p, cpvrotate( joint->anchr2, body_b->rot ) ) );
 
-	BatchRenderer * BR = GlobalBatchRenderer::instance();
-	cpFloat ps			= BR->getPointSize();
+	BatchRenderer* BR = GlobalBatchRenderer::instance();
+	cpFloat ps = BR->getPointSize();
 
 	BR->setTexture( NULL );
 	BR->setPointSize( mDrawPointSize );
@@ -73,7 +75,7 @@ void SlideJoint::draw() {
 	BR->batchLine( a.x, a.y, b.x, b.y );
 	BR->draw();
 	BR->setPointSize( ps );
-	#endif
+#endif
 }
 
 #ifdef PHYSICS_RENDERER_ENABLED
@@ -86,4 +88,4 @@ void SlideJoint::setDrawPointSize( const cpFloat& size ) {
 }
 #endif
 
-}}
+}} // namespace EE::Physics

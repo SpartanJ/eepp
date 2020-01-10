@@ -1,22 +1,19 @@
+#include <eepp/network/platform/platformimpl.hpp>
 #include <eepp/network/tcplistener.hpp>
 #include <eepp/network/tcpsocket.hpp>
-#include <eepp/network/platform/platformimpl.hpp>
 
 namespace EE { namespace Network {
 
-TcpListener::TcpListener() :
-	Socket(Tcp)
-{
-}
+TcpListener::TcpListener() : Socket( Tcp ) {}
 
 unsigned short TcpListener::getLocalPort() const {
-	if (getHandle() != Private::SocketImpl::invalidSocket()) {
+	if ( getHandle() != Private::SocketImpl::invalidSocket() ) {
 		// Retrieve informations about the local end of the socket
 		sockaddr_in address;
-		Private::SocketImpl::AddrLength size = sizeof(address);
+		Private::SocketImpl::AddrLength size = sizeof( address );
 
-		if (getsockname(getHandle(), reinterpret_cast<sockaddr*>(&address), &size) != -1) {
-			return ntohs(address.sin_port);
+		if ( getsockname( getHandle(), reinterpret_cast<sockaddr*>( &address ), &size ) != -1 ) {
+			return ntohs( address.sin_port );
 		}
 	}
 
@@ -24,7 +21,7 @@ unsigned short TcpListener::getLocalPort() const {
 	return 0;
 }
 
-Socket::Status TcpListener::listen(unsigned short port, const IpAddress& address) {
+Socket::Status TcpListener::listen( unsigned short port, const IpAddress& address ) {
 	// Close the socket if it is already bound
 	close();
 
@@ -32,19 +29,19 @@ Socket::Status TcpListener::listen(unsigned short port, const IpAddress& address
 	create();
 
 	// Check if the address is valid
-	if ((address == IpAddress::None) || (address == IpAddress::Broadcast))
+	if ( ( address == IpAddress::None ) || ( address == IpAddress::Broadcast ) )
 		return Error;
 
 	// Bind the socket to the specified port
-	sockaddr_in addr = Private::SocketImpl::createAddress(address.toInteger(), port);
-	if (bind(getHandle(), reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) == -1) {
+	sockaddr_in addr = Private::SocketImpl::createAddress( address.toInteger(), port );
+	if ( bind( getHandle(), reinterpret_cast<sockaddr*>( &addr ), sizeof( addr ) ) == -1 ) {
 		// Not likely to happen, but...
 		eePRINTL( "Failed to bind listener socket to port %d", port );
 		return Error;
 	}
 
 	// Listen to the bound port
-	if (::listen(getHandle(), SOMAXCONN) == -1) {
+	if ( ::listen( getHandle(), SOMAXCONN ) == -1 ) {
 		// Oops, socket is deaf
 		eePRINTL( "Failed to Listen to port %d", port );
 		return Error;
@@ -58,27 +55,27 @@ void TcpListener::close() {
 	Socket::close();
 }
 
-Socket::Status TcpListener::accept(TcpSocket& socket) {
+Socket::Status TcpListener::accept( TcpSocket& socket ) {
 	// Make sure that we're listening
-	if (getHandle() == Private::SocketImpl::invalidSocket()) {
+	if ( getHandle() == Private::SocketImpl::invalidSocket() ) {
 		eePRINTL( "Failed to accept a new connection, the socket is not listening" );
 		return Error;
 	}
 
 	// Accept a new connection
 	sockaddr_in address;
-	Private::SocketImpl::AddrLength length = sizeof(address);
-	SocketHandle remote = ::accept(getHandle(), reinterpret_cast<sockaddr*>(&address), &length);
+	Private::SocketImpl::AddrLength length = sizeof( address );
+	SocketHandle remote = ::accept( getHandle(), reinterpret_cast<sockaddr*>( &address ), &length );
 
 	// Check for errors
-	if (remote == Private::SocketImpl::invalidSocket())
+	if ( remote == Private::SocketImpl::invalidSocket() )
 		return Private::SocketImpl::getErrorStatus();
 
 	// Initialize the new connected socket
 	socket.close();
-	socket.create(remote);
+	socket.create( remote );
 
 	return Done;
 }
 
-}}
+}} // namespace EE::Network

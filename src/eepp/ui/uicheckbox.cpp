@@ -1,20 +1,16 @@
-#include <eepp/ui/uicheckbox.hpp>
-#include <eepp/ui/css/propertydefinition.hpp>
-#include <eepp/graphics/textureregion.hpp>
 #include <eepp/graphics/text.hpp>
+#include <eepp/graphics/textureregion.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/uicheckbox.hpp>
 
 namespace EE { namespace UI {
 
-UICheckBox * UICheckBox::New() {
+UICheckBox* UICheckBox::New() {
 	return eeNew( UICheckBox, () );
 }
 
-UICheckBox::UICheckBox() :
-	UITextView( "checkbox" ),
-	mActive( false ),
-	mTextSeparation( 4 )
-{
-	mActiveButton 	= UINode::New();
+UICheckBox::UICheckBox() : UITextView( "checkbox" ), mActive( false ), mTextSeparation( 4 ) {
+	mActiveButton = UINode::New();
 	mActiveButton->setVisible( false );
 	mActiveButton->setEnabled( true );
 	mActiveButton->setParent( this );
@@ -33,8 +29,7 @@ UICheckBox::UICheckBox() :
 	applyDefaultTheme();
 }
 
-UICheckBox::~UICheckBox() {
-}
+UICheckBox::~UICheckBox() {}
 
 Uint32 UICheckBox::getType() const {
 	return UI_TYPE_CHECKBOX;
@@ -44,19 +39,19 @@ bool UICheckBox::isType( const Uint32& type ) const {
 	return UICheckBox::getType() == type ? true : UITextView::isType( type );
 }
 
-void UICheckBox::setTheme( UITheme * Theme ) {
+void UICheckBox::setTheme( UITheme* Theme ) {
 	UIWidget::setTheme( Theme );
 
 	setThemeSkin( Theme, "checkbox" );
 
-	mActiveButton->setThemeSkin	( Theme, "checkbox_active" );
+	mActiveButton->setThemeSkin( Theme, "checkbox_active" );
 	mInactiveButton->setThemeSkin( Theme, "checkbox_inactive" );
 
 	onThemeLoaded();
 }
 
 void UICheckBox::onThemeLoaded() {
-	UISkin * tSkin = mActiveButton->getSkin();
+	UISkin* tSkin = mActiveButton->getSkin();
 
 	if ( tSkin ) {
 		mActiveButton->setSize( tSkin->getSize() );
@@ -80,11 +75,14 @@ void UICheckBox::onThemeLoaded() {
 void UICheckBox::onAutoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
 		if ( getSize().getWidth() == 0 ) {
-			setInternalPixelsWidth( (int)mTextCache->getTextWidth() + mActiveButton->getPixelsSize().getWidth() + mTextSeparation + mRealPadding.Left + mRealPadding.Right );
+			setInternalPixelsWidth( (int)mTextCache->getTextWidth() +
+									mActiveButton->getPixelsSize().getWidth() + mTextSeparation +
+									mRealPadding.Left + mRealPadding.Right );
 		}
 
 		if ( getSize().getHeight() == 0 ) {
-			setInternalHeight( mActiveButton->getSize().getHeight() + mRealPadding.Top + mRealPadding.Bottom );
+			setInternalHeight( mActiveButton->getSize().getHeight() + mRealPadding.Top +
+							   mRealPadding.Bottom );
 		}
 
 		mActiveButton->centerVertical();
@@ -92,11 +90,14 @@ void UICheckBox::onAutoSize() {
 	}
 
 	if ( mLayoutWidthRule == LayoutSizeRule::WrapContent ) {
-		setInternalPixelsWidth( (int)mTextCache->getTextWidth() + mRealPadding.Left + mRealPadding.Right + mActiveButton->getPixelsSize().getWidth() + mTextSeparation );
+		setInternalPixelsWidth( (int)mTextCache->getTextWidth() + mRealPadding.Left +
+								mRealPadding.Right + mActiveButton->getPixelsSize().getWidth() +
+								mTextSeparation );
 	}
 
 	if ( mLayoutHeightRule == LayoutSizeRule::WrapContent ) {
-		setInternalPixelsHeight( (int)mTextCache->getTextHeight() + mRealPadding.Top + mRealPadding.Bottom );
+		setInternalPixelsHeight( (int)mTextCache->getTextHeight() + mRealPadding.Top +
+								 mRealPadding.Bottom );
 
 		mActiveButton->centerVertical();
 		mInactiveButton->centerVertical();
@@ -110,15 +111,17 @@ void UICheckBox::onSizeChange() {
 	mInactiveButton->centerVertical();
 }
 
-Uint32 UICheckBox::onMessage( const NodeMessage * Msg ) {
+Uint32 UICheckBox::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
 		case NodeMessage::Click: {
 			if ( Msg->getFlags() & EE_BUTTON_LMASK ) {
 				switchState();
 			}
 
-			if ( NULL != getEventDispatcher() && ( Msg->getSender() == mActiveButton || Msg->getSender() == mInactiveButton ) ) {
-				sendMouseEvent( Event::MouseClick, getEventDispatcher()->getMousePos(), getEventDispatcher()->getPressTrigger() );
+			if ( NULL != getEventDispatcher() &&
+				 ( Msg->getSender() == mActiveButton || Msg->getSender() == mInactiveButton ) ) {
+				sendMouseEvent( Event::MouseClick, getEventDispatcher()->getMousePos(),
+								getEventDispatcher()->getPressTrigger() );
 			}
 
 			return 1;
@@ -164,24 +167,32 @@ void UICheckBox::alignFix() {
 
 	switch ( Font::getHorizontalAlign( getFlags() ) ) {
 		case UI_HALIGN_CENTER:
-			mRealAlignOffset.x = (Float)( (Int32)( ( mSize.x - mRealPadding.Left - mRealPadding.Right - mTextCache->getTextWidth() - mActiveButton->getPixelsSize().getWidth() + PixelDensity::dpToPx( mTextSeparation ) ) / 2.f ) ) + mActiveButton->getPixelsSize().getWidth() + PixelDensity::dpToPx( mTextSeparation );
+			mRealAlignOffset.x =
+				( Float )( ( Int32 )( ( mSize.x - mRealPadding.Left - mRealPadding.Right -
+										mTextCache->getTextWidth() -
+										mActiveButton->getPixelsSize().getWidth() +
+										PixelDensity::dpToPx( mTextSeparation ) ) /
+									  2.f ) ) +
+				mActiveButton->getPixelsSize().getWidth() + PixelDensity::dpToPx( mTextSeparation );
 			break;
 		case UI_HALIGN_RIGHT:
-			mRealAlignOffset.x = ( (Float)mSize.x - mRealPadding.Left - mRealPadding.Right - (Float)mTextCache->getTextWidth() );
+			mRealAlignOffset.x = ( (Float)mSize.x - mRealPadding.Left - mRealPadding.Right -
+								   (Float)mTextCache->getTextWidth() );
 			break;
 		case UI_HALIGN_LEFT:
-			mRealAlignOffset.x = mActiveButton->getPixelsSize().getWidth() + PixelDensity::dpToPx( mTextSeparation );
+			mRealAlignOffset.x =
+				mActiveButton->getPixelsSize().getWidth() + PixelDensity::dpToPx( mTextSeparation );
 			break;
 	}
 
 	mAlignOffset = PixelDensity::pxToDp( mRealAlignOffset );
 }
 
-UINode * UICheckBox::getActiveButton() const {
+UINode* UICheckBox::getActiveButton() const {
 	return mActiveButton;
 }
 
-UINode * UICheckBox::getInactiveButton() const {
+UINode* UICheckBox::getInactiveButton() const {
 	return mInactiveButton;
 }
 
@@ -189,14 +200,15 @@ Int32 UICheckBox::getTextSeparation() const {
 	return mTextSeparation;
 }
 
-void UICheckBox::setTextSeparation(const Int32 & textSeparation) {
+void UICheckBox::setTextSeparation( const Int32& textSeparation ) {
 	mTextSeparation = textSeparation;
 
 	setPadding( getPadding() );
 }
 
 std::string UICheckBox::getPropertyString( const PropertyDefinition* propertyDef ) {
-	if ( NULL == propertyDef ) return "";
+	if ( NULL == propertyDef )
+		return "";
 
 	switch ( propertyDef->getPropertyId() ) {
 		case PropertyId::Selected:
@@ -208,7 +220,8 @@ std::string UICheckBox::getPropertyString( const PropertyDefinition* propertyDef
 }
 
 bool UICheckBox::applyProperty( const StyleSheetProperty& attribute ) {
-	if ( !checkPropertyDefinition( attribute ) ) return false;
+	if ( !checkPropertyDefinition( attribute ) )
+		return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::Selected:
@@ -242,4 +255,4 @@ void UICheckBox::onAlphaChange() {
 	mInactiveButton->setAlpha( mAlpha );
 }
 
-}}
+}} // namespace EE::UI

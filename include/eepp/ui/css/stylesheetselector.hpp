@@ -9,38 +9,42 @@ namespace EE { namespace UI { namespace CSS {
 class StyleSheetElement;
 
 class EE_API StyleSheetSelector {
-	public:
-		StyleSheetSelector();
+  public:
+	StyleSheetSelector();
 
-		explicit StyleSheetSelector( const std::string& selectorName );
+	explicit StyleSheetSelector( const std::string& selectorName );
 
-		const std::string& getName() const;
+	const std::string& getName() const;
 
-		const std::string& getPseudoClass() const;
+	const std::string& getPseudoClass() const;
 
-		const Uint32& getSpecificity() const;
+	const Uint32& getSpecificity() const;
 
-		bool select( StyleSheetElement * element, const bool& applyPseudo = true ) const;
+	bool select( StyleSheetElement* element, const bool& applyPseudo = true ) const;
 
-		const bool& isCacheable() const;
+	const bool& isCacheable() const;
 
-		bool hasPseudoClass(const std::string& cls) const;
+	bool hasPseudoClass( const std::string& cls ) const;
 
-		bool hasPseudoClasses() const;
+	bool hasPseudoClasses() const;
 
-		std::vector<StyleSheetElement*> getRelatedElements( StyleSheetElement * element, const bool& applyPseudo = true ) const;
-	protected:
-		std::string mName;
-		std::string mPseudoClass;
-		Uint32 mSpecificity;
-		std::vector<StyleSheetSelectorRule> mSelectorRules;
-		bool mCacheable;
+	std::vector<StyleSheetElement*> getRelatedElements( StyleSheetElement* element,
+														const bool& applyPseudo = true ) const;
 
-		void addSelectorRule(std::string& buffer, StyleSheetSelectorRule::PatternMatch& curPatternMatch, const StyleSheetSelectorRule::PatternMatch & newPatternMatch );
+  protected:
+	std::string mName;
+	std::string mPseudoClass;
+	Uint32 mSpecificity;
+	std::vector<StyleSheetSelectorRule> mSelectorRules;
+	bool mCacheable;
 
-		void parseSelector( std::string selector );
+	void addSelectorRule( std::string& buffer,
+						  StyleSheetSelectorRule::PatternMatch& curPatternMatch,
+						  const StyleSheetSelectorRule::PatternMatch& newPatternMatch );
+
+	void parseSelector( std::string selector );
 };
 
-}}}
+}}} // namespace EE::UI::CSS
 
 #endif

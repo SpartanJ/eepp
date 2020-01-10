@@ -12,91 +12,92 @@ class ShapePoly;
 class Space;
 
 class EE_API Shape {
-	public:
-		static void resetShapeIdCounter();
+  public:
+	static void resetShapeIdCounter();
 
-		static void Free( Shape * shape, bool DeleteBody = false );
+	static void Free( Shape* shape, bool DeleteBody = false );
 
-		cpShape * getShape() const;
+	cpShape* getShape() const;
 
-		virtual ~Shape();
+	virtual ~Shape();
 
-		Physics::Body * getBody() const;
+	Physics::Body* getBody() const;
 
-		void setBody( Physics::Body * body );
+	void setBody( Physics::Body* body );
 
-		cBB getBB() const;
+	cBB getBB() const;
 
-		void setBB( const cBB& bb );
+	void setBB( const cBB& bb );
 
-		bool isSensor();
+	bool isSensor();
 
-		void setSensor( const bool& sensor );
+	void setSensor( const bool& sensor );
 
-		cpFloat getE() const;
+	cpFloat getE() const;
 
-		void setE( const cpFloat& e );
+	void setE( const cpFloat& e );
 
-		cpFloat getElasticity() const;
+	cpFloat getElasticity() const;
 
-		void setElasticity( const cpFloat& e );
+	void setElasticity( const cpFloat& e );
 
-		cpFloat getU() const;
+	cpFloat getU() const;
 
-		void setU( const cpFloat& u );
+	void setU( const cpFloat& u );
 
-		cpFloat getFriction() const;
+	cpFloat getFriction() const;
 
-		void setFriction( const cpFloat& u );
+	void setFriction( const cpFloat& u );
 
-		cVect getSurfaceVel() const;
+	cVect getSurfaceVel() const;
 
-		void getSurfaceVel( const cVect& vel );
+	void getSurfaceVel( const cVect& vel );
 
-		cpCollisionType getCollisionType()	 const;
+	cpCollisionType getCollisionType() const;
 
-		void setCollisionType( const cpCollisionType& type );
+	void setCollisionType( const cpCollisionType& type );
 
-		cpGroup getGroup() const;
+	cpGroup getGroup() const;
 
-		void setGroup( const cpGroup& group );
+	void setGroup( const cpGroup& group );
 
-		cpLayers getLayers() const;
+	cpLayers getLayers() const;
 
-		void setLayers( const cpLayers& layers );
+	void setLayers( const cpLayers& layers );
 
-		cBB cacheBB();
+	cBB cacheBB();
 
-		cBB update( cVect pos, cVect rot );
+	cBB update( cVect pos, cVect rot );
 
-		bool pointQuery( cVect p );
+	bool pointQuery( cVect p );
 
-		cpShapeType getType() const;
+	cpShapeType getType() const;
 
-		ShapePoly * getAsPoly();
+	ShapePoly* getAsPoly();
 
-		ShapeCircle * getAsCircle();
+	ShapeCircle* getAsCircle();
 
-		ShapeSegment * getAsSegment();
+	ShapeSegment* getAsSegment();
 
-		virtual void draw( Space * space );
+	virtual void draw( Space* space );
 
-		virtual void drawBorder( Space * space );
+	virtual void drawBorder( Space* space );
 
-		virtual void drawBB();
+	virtual void drawBB();
 
-		void * getData() const;
+	void* getData() const;
 
-		void setData( void * data );
-	protected:
-		Shape();
+	void setData( void* data );
 
-		cpShape *		mShape;
-		void *			mData;
+  protected:
+	Shape();
 
-		void setData();
+	cpShape* mShape;
+	void* mData;
+
+	void setData();
 };
 
-}}
+}} // namespace EE::Physics
 
 #endif

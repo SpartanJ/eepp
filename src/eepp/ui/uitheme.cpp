@@ -1,18 +1,18 @@
-#include <eepp/ui/uitheme.hpp>
-#include <eepp/ui/uithememanager.hpp>
-#include <eepp/ui/uistate.hpp>
-#include <eepp/graphics/sprite.hpp>
 #include <eepp/graphics/drawable.hpp>
-#include <eepp/graphics/textureatlas.hpp>
 #include <eepp/graphics/font.hpp>
-#include <eepp/graphics/texturefactory.hpp>
-#include <eepp/graphics/textureatlasmanager.hpp>
 #include <eepp/graphics/ninepatch.hpp>
 #include <eepp/graphics/ninepatchmanager.hpp>
+#include <eepp/graphics/sprite.hpp>
 #include <eepp/graphics/statelistdrawable.hpp>
-#include <eepp/system/filesystem.hpp>
+#include <eepp/graphics/textureatlas.hpp>
 #include <eepp/graphics/textureatlasloader.hpp>
+#include <eepp/graphics/textureatlasmanager.hpp>
+#include <eepp/graphics/texturefactory.hpp>
+#include <eepp/system/filesystem.hpp>
 #include <eepp/ui/css/stylesheetparser.hpp>
+#include <eepp/ui/uistate.hpp>
+#include <eepp/ui/uitheme.hpp>
+#include <eepp/ui/uithememanager.hpp>
 
 namespace EE { namespace UI {
 
@@ -31,12 +31,14 @@ static std::string elemNameFromSkin( const std::vector<std::string>& nameParts )
 	return str;
 }
 
-UITheme * UITheme::New( const std::string & name, const std::string & abbr, Font * defaultFont ) {
+UITheme* UITheme::New( const std::string& name, const std::string& abbr, Font* defaultFont ) {
 	return eeNew( UITheme, ( name, abbr, defaultFont ) );
 }
 
-UITheme * UITheme::load( const std::string & name, const std::string & abbr, const std::string & textureAtlasPath, Font * defaultFont, const std::string & styleSheetPath ) {
-	UITheme * theme = UITheme::New( name, abbr, defaultFont );
+UITheme* UITheme::load( const std::string& name, const std::string& abbr,
+						const std::string& textureAtlasPath, Font* defaultFont,
+						const std::string& styleSheetPath ) {
+	UITheme* theme = UITheme::New( name, abbr, defaultFont );
 	TextureAtlasLoader tgl( textureAtlasPath );
 
 	CSS::StyleSheetParser styleSheetParser;
@@ -48,7 +50,7 @@ UITheme * UITheme::load( const std::string & name, const std::string & abbr, con
 	return loadFromTextureAtlas( theme, tgl.getTextureAtlas() );
 }
 
-UITheme * UITheme::loadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtlas * textureAtlas ) {
+UITheme* UITheme::loadFromTextureAtlas( UITheme* tTheme, Graphics::TextureAtlas* textureAtlas ) {
 	eeASSERT( NULL != tTheme && NULL != textureAtlas );
 
 	/** Themes use nearest filter by default, force the filter to the textures. */
@@ -73,10 +75,10 @@ UITheme * UITheme::loadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtla
 		if ( String::startsWith( name, sAbbr ) ) {
 			std::vector<std::string> dotParts = String::split( name, '.' );
 
-			if ( dotParts.size() >= 3 && dotParts[ dotParts.size() - 1 ] == "9" ) {
+			if ( dotParts.size() >= 3 && dotParts[dotParts.size() - 1] == "9" ) {
 				std::string realName;
 
-				for ( size_t i = 0; i <  dotParts.size() - 2; i++ ) {
+				for ( size_t i = 0; i < dotParts.size() - 2; i++ ) {
 					realName += dotParts[i];
 
 					if ( i != dotParts.size() - 3 ) {
@@ -86,7 +88,8 @@ UITheme * UITheme::loadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtla
 
 				std::vector<std::string> nameParts = String::split( realName, '_' );
 
-				std::vector<std::string> srcRect = String::split( dotParts[ dotParts.size() - 2 ], '_' );
+				std::vector<std::string> srcRect =
+					String::split( dotParts[dotParts.size() - 2], '_' );
 				int l = 0, t = 0, r = 0, b = 0;
 
 				if ( srcRect.size() == 4 ) {
@@ -98,42 +101,45 @@ UITheme * UITheme::loadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtla
 
 				std::string skinName( elemNameFromSkin( nameParts ) );
 
-				Drawable * drawable = NinePatchManager::instance()->add( NinePatch::New( textureRegion, l, t, r, b, realName ) );
+				Drawable* drawable = NinePatchManager::instance()->add(
+					NinePatch::New( textureRegion, l, t, r, b, realName ) );
 
 				if ( skins.find( skinName ) == skins.end() )
-					skins[ skinName ] = tTheme->add( UISkin::New( skinName ) );
+					skins[skinName] = tTheme->add( UISkin::New( skinName ) );
 
-				int stateNum = UIState::getStateNumber( nameParts[ nameParts.size() - 1 ] );
+				int stateNum = UIState::getStateNumber( nameParts[nameParts.size() - 1] );
 
 				if ( -1 != stateNum )
-					skins[ skinName ]->setStateDrawable( stateNum, drawable );
+					skins[skinName]->setStateDrawable( stateNum, drawable );
 			} else {
 				std::vector<std::string> nameParts = String::split( name, '_' );
 
 				if ( nameParts.size() >= 3 ) {
 					int lPart = nameParts.size() - 1;
 
-					if ( UIState::isStateName( nameParts[ lPart ] ) ) {
+					if ( UIState::isStateName( nameParts[lPart] ) ) {
 						std::string skinName( elemNameFromSkin( nameParts ) );
-						int stateNum = UIState::getStateNumber( nameParts[ lPart ] );
+						int stateNum = UIState::getStateNumber( nameParts[lPart] );
 
 						if ( skins.find( skinName ) == skins.end() )
-							skins[ skinName ] = tTheme->add( UISkin::New( skinName ) );
+							skins[skinName] = tTheme->add( UISkin::New( skinName ) );
 
 						if ( -1 != stateNum )
-							skins[ skinName ]->setStateDrawable( stateNum, textureRegion );
+							skins[skinName]->setStateDrawable( stateNum, textureRegion );
 					}
 				}
 			}
 		}
 	}
 
-	eePRINTL( "UI Theme Loaded in: %4.3f ms ( from TextureAtlas )", TE.getElapsed().asMilliseconds() );
+	eePRINTL( "UI Theme Loaded in: %4.3f ms ( from TextureAtlas )",
+			  TE.getElapsed().asMilliseconds() );
 
 	return tTheme;
 }
 
-UITheme * UITheme::loadFromDirectroy( UITheme * tTheme, const std::string& Path , const Float & pixelDensity ) {
+UITheme* UITheme::loadFromDirectroy( UITheme* tTheme, const std::string& Path,
+									 const Float& pixelDensity ) {
 	Clock TE;
 
 	std::string RPath( Path );
@@ -143,7 +149,7 @@ UITheme * UITheme::loadFromDirectroy( UITheme * tTheme, const std::string& Path 
 	if ( !FileSystem::isDirectory( RPath ) )
 		return NULL;
 
-	Graphics::TextureAtlas * tSG = Graphics::TextureAtlas::New( tTheme->getAbbr() );
+	Graphics::TextureAtlas* tSG = Graphics::TextureAtlas::New( tTheme->getAbbr() );
 
 	tTheme->setTextureAtlas( tSG );
 
@@ -154,19 +160,20 @@ UITheme * UITheme::loadFromDirectroy( UITheme * tTheme, const std::string& Path 
 	std::map<std::string, UISkin*> skins;
 
 	for ( it = resources.begin(); it != resources.end(); ++it ) {
-		std::string fpath( RPath + (*it) );
+		std::string fpath( RPath + ( *it ) );
 		std::string name( FileSystem::fileRemoveExtension( *it ) );
 
 		if ( !FileSystem::isDirectory( fpath ) ) {
 			if ( String::startsWith( name, sAbbrIcon ) ) {
-				tSG->add( TextureRegion::New( TextureFactory::instance()->loadFromFile( fpath ), name ) );
+				tSG->add(
+					TextureRegion::New( TextureFactory::instance()->loadFromFile( fpath ), name ) );
 			} else if ( String::startsWith( name, sAbbr ) ) {
 				std::vector<std::string> dotParts = String::split( name, '.' );
 
-				if ( dotParts.size() >= 3 && dotParts[ dotParts.size() - 1 ] == "9" ) {
+				if ( dotParts.size() >= 3 && dotParts[dotParts.size() - 1] == "9" ) {
 					std::string realName;
 
-					for ( size_t i = 0; i <  dotParts.size() - 2; i++ ) {
+					for ( size_t i = 0; i < dotParts.size() - 2; i++ ) {
 						realName += dotParts[i];
 
 						if ( i != dotParts.size() - 3 ) {
@@ -176,7 +183,8 @@ UITheme * UITheme::loadFromDirectroy( UITheme * tTheme, const std::string& Path 
 
 					std::vector<std::string> nameParts = String::split( realName, '_' );
 
-					std::vector<std::string> srcRect = String::split( dotParts[ dotParts.size() - 2 ], '_' );
+					std::vector<std::string> srcRect =
+						String::split( dotParts[dotParts.size() - 2], '_' );
 					int l = 0, t = 0, r = 0, b = 0;
 
 					if ( srcRect.size() == 4 ) {
@@ -188,32 +196,35 @@ UITheme * UITheme::loadFromDirectroy( UITheme * tTheme, const std::string& Path 
 
 					std::string skinName( elemNameFromSkin( nameParts ) );
 
-					Drawable * drawable = NinePatchManager::instance()->add( NinePatch::New( TextureFactory::instance()->loadFromFile( fpath ), l, t, r, b, pixelDensity, realName ) );
+					Drawable* drawable = NinePatchManager::instance()->add(
+						NinePatch::New( TextureFactory::instance()->loadFromFile( fpath ), l, t, r,
+										b, pixelDensity, realName ) );
 
 					if ( skins.find( skinName ) == skins.end() )
-						skins[ skinName ] = tTheme->add( UISkin::New( skinName ) );
+						skins[skinName] = tTheme->add( UISkin::New( skinName ) );
 
-					int stateNum = UIState::getStateNumber( nameParts[ nameParts.size() - 1 ] );
+					int stateNum = UIState::getStateNumber( nameParts[nameParts.size() - 1] );
 
 					if ( -1 != stateNum )
-						skins[ skinName ]->setStateDrawable( stateNum, drawable );
+						skins[skinName]->setStateDrawable( stateNum, drawable );
 				} else {
 					std::vector<std::string> nameParts = String::split( name, '_' );
 
 					if ( nameParts.size() >= 3 ) {
 						int lPart = nameParts.size() - 1;
 
-						if ( UIState::isStateName( nameParts[ lPart ] ) ) {
-							TextureRegion * textureRegion = tSG->add( TextureRegion::New( TextureFactory::instance()->loadFromFile( fpath ), name ) );
+						if ( UIState::isStateName( nameParts[lPart] ) ) {
+							TextureRegion* textureRegion = tSG->add( TextureRegion::New(
+								TextureFactory::instance()->loadFromFile( fpath ), name ) );
 
 							std::string skinName( elemNameFromSkin( nameParts ) );
-							int stateNum = UIState::getStateNumber( nameParts[ lPart ] );
+							int stateNum = UIState::getStateNumber( nameParts[lPart] );
 
 							if ( skins.find( skinName ) == skins.end() )
-								skins[ skinName ] = tTheme->add( UISkin::New( skinName ) );
+								skins[skinName] = tTheme->add( UISkin::New( skinName ) );
 
 							if ( -1 != stateNum )
-								skins[ skinName ]->setStateDrawable( stateNum, textureRegion );
+								skins[skinName]->setStateDrawable( stateNum, textureRegion );
 						}
 					}
 				}
@@ -231,27 +242,25 @@ UITheme * UITheme::loadFromDirectroy( UITheme * tTheme, const std::string& Path 
 	return tTheme;
 }
 
-UITheme * UITheme::loadFromDirectroy( const std::string& Path, const std::string& Name, const std::string& NameAbbr, const Float& pixelDensity ) {
+UITheme* UITheme::loadFromDirectroy( const std::string& Path, const std::string& Name,
+									 const std::string& NameAbbr, const Float& pixelDensity ) {
 	return loadFromDirectroy( UITheme::New( Name, NameAbbr ), Path, pixelDensity );
 }
 
-UITheme * UITheme::loadFromTextureAtlas( Graphics::TextureAtlas * TextureAtlas, const std::string& Name, const std::string & NameAbbr ) {
+UITheme* UITheme::loadFromTextureAtlas( Graphics::TextureAtlas* TextureAtlas,
+										const std::string& Name, const std::string& NameAbbr ) {
 	return loadFromTextureAtlas( UITheme::New( Name, NameAbbr ), TextureAtlas );
 }
 
-UITheme::UITheme(const std::string& name, const std::string& Abbr, Graphics::Font * defaultFont ) :
-	ResourceManager<UISkin> ( false ),
+UITheme::UITheme( const std::string& name, const std::string& Abbr, Graphics::Font* defaultFont ) :
+	ResourceManager<UISkin>( false ),
 	mName( name ),
 	mNameHash( String::hash( mName ) ),
 	mAbbr( Abbr ),
 	mTextureAtlas( NULL ),
-	mDefaultFont( defaultFont )
-{
-}
+	mDefaultFont( defaultFont ) {}
 
-UITheme::~UITheme() {
-
-}
+UITheme::~UITheme() {}
 
 const std::string& UITheme::getName() const {
 	return mName;
@@ -270,26 +279,26 @@ const std::string& UITheme::getAbbr() const {
 	return mAbbr;
 }
 
-UISkin * UITheme::add( UISkin * Resource ) {
+UISkin* UITheme::add( UISkin* Resource ) {
 	return ResourceManager<UISkin>::add( Resource );
 }
 
-Graphics::TextureAtlas * UITheme::getTextureAtlas() const {
+Graphics::TextureAtlas* UITheme::getTextureAtlas() const {
 	return mTextureAtlas;
 }
 
-void UITheme::setTextureAtlas( Graphics::TextureAtlas * SG ) {
+void UITheme::setTextureAtlas( Graphics::TextureAtlas* SG ) {
 	mTextureAtlas = SG;
 }
 
-Drawable * UITheme::getIconByName( const std::string& name ) {
+Drawable* UITheme::getIconByName( const std::string& name ) {
 	if ( NULL != mTextureAtlas )
 		return mTextureAtlas->getByName( mAbbr + "_icon_" + name );
 
 	return NULL;
 }
 
-UISkin * UITheme::getSkin(const std::string & controlName) {
+UISkin* UITheme::getSkin( const std::string& controlName ) {
 	return getByName( mAbbr + "_" + controlName );
 }
 
@@ -297,16 +306,16 @@ const CSS::StyleSheet& UITheme::getStyleSheet() const {
 	return mStyleSheet;
 }
 
-void UITheme::setStyleSheet(const CSS::StyleSheet & styleSheet) {
+void UITheme::setStyleSheet( const CSS::StyleSheet& styleSheet ) {
 	mStyleSheet = styleSheet;
 }
 
-Font * UITheme::getDefaultFont() const {
+Font* UITheme::getDefaultFont() const {
 	return mDefaultFont;
 }
 
-void UITheme::setDefaultFont( Font * font ) {
+void UITheme::setDefaultFont( Font* font ) {
 	mDefaultFont = font;
 }
 
-}}
+}} // namespace EE::UI

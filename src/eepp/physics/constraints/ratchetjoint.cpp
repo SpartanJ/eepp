@@ -2,7 +2,7 @@
 
 namespace EE { namespace Physics {
 
-RatchetJoint::RatchetJoint( Body * a, Body * b, cpFloat phase, cpFloat ratchet ) {
+RatchetJoint::RatchetJoint( Body* a, Body* b, cpFloat phase, cpFloat ratchet ) {
 	mConstraint = cpRatchetJointNew( a->getBody(), b->getBody(), phase, ratchet );
 	setData();
 }
@@ -35,4 +35,4 @@ void RatchetJoint::draw() {
 	// Not implemented
 }
 
-}}
+}} // namespace EE::Physics

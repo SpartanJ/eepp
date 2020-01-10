@@ -1,22 +1,19 @@
-#include <eepp/ui/uiwinmenu.hpp>
-#include <eepp/ui/uithememanager.hpp>
-#include <eepp/ui/uiscenenode.hpp>
-#include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/graphics/textureregion.hpp>
 #include <eepp/scene/scenemanager.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uithememanager.hpp>
+#include <eepp/ui/uiwinmenu.hpp>
 #include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 
-UIWinMenu * UIWinMenu::New() {
+UIWinMenu* UIWinMenu::New() {
 	return eeNew( UIWinMenu, () );
 }
 
-UIWinMenu::UIWinMenu() :
-	UIWidget( "winmenu" ),
-	mCurrentMenu( NULL )
-{
-	if ( !(mFlags & UI_ANCHOR_RIGHT) )
+UIWinMenu::UIWinMenu() : UIWidget( "winmenu" ), mCurrentMenu( NULL ) {
+	if ( !( mFlags & UI_ANCHOR_RIGHT ) )
 		mFlags |= UI_ANCHOR_RIGHT;
 
 	onParentChange();
@@ -36,10 +33,10 @@ bool UIWinMenu::isType( const Uint32& type ) const {
 	return UIWinMenu::getType() == type ? true : UIWidget::isType( type );
 }
 
-void UIWinMenu::addMenuButton( const String& ButtonText, UIPopUpMenu * Menu ) {
+void UIWinMenu::addMenuButton( const String& ButtonText, UIPopUpMenu* Menu ) {
 	eeASSERT( NULL != Menu );
 
-	UISelectButton * Button = UISelectButton::NewWithTag( "winmenu::button" );
+	UISelectButton* Button = UISelectButton::NewWithTag( "winmenu::button" );
 	Button->setParent( this );
 	Button->setText( ButtonText );
 	Button->setVisible( true );
@@ -51,7 +48,8 @@ void UIWinMenu::addMenuButton( const String& ButtonText, UIPopUpMenu * Menu ) {
 	Menu->setVisible( false );
 	Menu->setEnabled( false );
 	Menu->setParent( getWindowContainer() );
-	Menu->addEventListener( Event::OnWidgetFocusLoss, cb::Make1( this, &UIWinMenu::onMenuFocusLoss ) );
+	Menu->addEventListener( Event::OnWidgetFocusLoss,
+							cb::Make1( this, &UIWinMenu::onMenuFocusLoss ) );
 	Menu->addEventListener( Event::OnHideByClick, cb::Make1( this, &UIWinMenu::onHideByClick ) );
 
 	mButtons.push_back( std::make_pair( Button, Menu ) );
@@ -59,7 +57,7 @@ void UIWinMenu::addMenuButton( const String& ButtonText, UIPopUpMenu * Menu ) {
 	refreshButtons();
 }
 
-void UIWinMenu::setTheme( UITheme * Theme ) {
+void UIWinMenu::setTheme( UITheme* Theme ) {
 	UIWidget::setTheme( Theme );
 
 	setThemeSkin( Theme, "winmenu" );
@@ -87,7 +85,7 @@ void UIWinMenu::removeMenuButton( const String& ButtonText ) {
 	}
 }
 
-UISelectButton * UIWinMenu::getButton( const String& ButtonText ) {
+UISelectButton* UIWinMenu::getButton( const String& ButtonText ) {
 	for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); ++it ) {
 		if ( it->first->getText() == ButtonText ) {
 			return it->first;
@@ -97,7 +95,7 @@ UISelectButton * UIWinMenu::getButton( const String& ButtonText ) {
 	return NULL;
 }
 
-UIPopUpMenu * UIWinMenu::getPopUpMenu( const String& ButtonText ) {
+UIPopUpMenu* UIWinMenu::getPopUpMenu( const String& ButtonText ) {
 	for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); ++it ) {
 		if ( it->first->getText() == ButtonText ) {
 			return it->second;
@@ -111,7 +109,7 @@ Uint32 UIWinMenu::getMarginBetweenButtons() const {
 	return mStyleConfig.MarginBetweenButtons;
 }
 
-void UIWinMenu::setMarginBetweenButtons(const Uint32 & marginBetweenButtons) {
+void UIWinMenu::setMarginBetweenButtons( const Uint32& marginBetweenButtons ) {
 	mStyleConfig.MarginBetweenButtons = marginBetweenButtons;
 	refreshButtons();
 }
@@ -129,7 +127,7 @@ const UIWinMenu::StyleConfig& UIWinMenu::getStyleConfig() const {
 	return mStyleConfig;
 }
 
-void UIWinMenu::setStyleConfig(const StyleConfig & styleConfig) {
+void UIWinMenu::setStyleConfig( const StyleConfig& styleConfig ) {
 	mStyleConfig = styleConfig;
 	refreshButtons();
 }
@@ -160,7 +158,8 @@ void UIWinMenu::setFirstButtonMargin( const Uint32& buttonMargin ) {
 }
 
 std::string UIWinMenu::getPropertyString( const PropertyDefinition* propertyDef ) {
-	if ( NULL == propertyDef ) return "";
+	if ( NULL == propertyDef )
+		return "";
 
 	switch ( propertyDef->getPropertyId() ) {
 		case PropertyId::MarginBetweenButtons:
@@ -177,7 +176,8 @@ std::string UIWinMenu::getPropertyString( const PropertyDefinition* propertyDef 
 }
 
 bool UIWinMenu::applyProperty( const StyleSheetProperty& attribute ) {
-	if ( !checkPropertyDefinition( attribute ) ) return false;
+	if ( !checkPropertyDefinition( attribute ) )
+		return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::MarginBetweenButtons:
@@ -203,13 +203,13 @@ void UIWinMenu::refreshButtons() {
 	Uint32 xpos = mStyleConfig.FirstButtonMargin;
 	Int32 h = 0, th = 0, ycenter = 0;
 
-	UISkin * skin = getSkin();
+	UISkin* skin = getSkin();
 
 	if ( NULL != skin ) {
 		h = skin->getSize().getHeight();
 
 		if ( mButtons.begin() != mButtons.end() ) {
-			UISelectButton * tbut = mButtons.begin()->first;
+			UISelectButton* tbut = mButtons.begin()->first;
 
 			skin = tbut->getSkin();
 
@@ -232,27 +232,29 @@ void UIWinMenu::refreshButtons() {
 	}
 
 	for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); ++it ) {
-		UISelectButton * pbut	= it->first;
-		UITextView * tbox		= pbut->getTextBox();
+		UISelectButton* pbut = it->first;
+		UITextView* tbox = pbut->getTextBox();
 
 		pbut->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::Fixed );
-		pbut->setPixelsSize( tbox->getTextWidth() + PixelDensity::dpToPx( mStyleConfig.ButtonMargin ), getPixelsSize().getHeight() );
+		pbut->setPixelsSize( tbox->getTextWidth() +
+								 PixelDensity::dpToPx( mStyleConfig.ButtonMargin ),
+							 getPixelsSize().getHeight() );
 		pbut->setPosition( xpos, ycenter );
 
 		xpos += pbut->getSize().getWidth() + mStyleConfig.MarginBetweenButtons;
 	}
 }
 
-Uint32 UIWinMenu::onMessage( const NodeMessage * Msg ) {
+Uint32 UIWinMenu::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
 		case NodeMessage::MouseUp:
-		case NodeMessage::MouseOver:
-		{
+		case NodeMessage::MouseOver: {
 			if ( Msg->getSender()->isType( UI_TYPE_SELECTBUTTON ) ) {
-				UISelectButton * tbut	= Msg->getSender()->asType<UISelectButton>();
-				UIPopUpMenu * tpop		= getMenuFromButton( tbut );
+				UISelectButton* tbut = Msg->getSender()->asType<UISelectButton>();
+				UIPopUpMenu* tpop = getMenuFromButton( tbut );
 
-				Vector2f pos( tbut->getPosition().x, tbut->getPosition().y + tbut->getSize().getHeight() );
+				Vector2f pos( tbut->getPosition().x,
+							  tbut->getPosition().y + tbut->getSize().getHeight() );
 				tpop->setPosition( pos );
 
 				if ( Msg->getMsg() == NodeMessage::MouseOver ) {
@@ -283,8 +285,7 @@ Uint32 UIWinMenu::onMessage( const NodeMessage * Msg ) {
 
 			break;
 		}
-		case NodeMessage::Selected:
-		{
+		case NodeMessage::Selected: {
 			for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); ++it ) {
 				if ( it->first != Msg->getSender() ) {
 					it->first->unselect();
@@ -293,10 +294,9 @@ Uint32 UIWinMenu::onMessage( const NodeMessage * Msg ) {
 
 			return 1;
 		}
-		case NodeMessage::FocusLoss:
-		{
+		case NodeMessage::FocusLoss: {
 			if ( NULL != getEventDispatcher() ) {
-				Node * FocusCtrl = getEventDispatcher()->getFocusControl();
+				Node* FocusCtrl = getEventDispatcher()->getFocusControl();
 
 				if ( !isParentOf( FocusCtrl ) && !isPopUpMenuChild( FocusCtrl ) ) {
 					onWidgetFocusLoss();
@@ -324,7 +324,7 @@ void UIWinMenu::unselectButtons() {
 	}
 }
 
-UIPopUpMenu * UIWinMenu::getMenuFromButton( UISelectButton * Button ) {
+UIPopUpMenu* UIWinMenu::getMenuFromButton( UISelectButton* Button ) {
 	for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); ++it ) {
 		if ( it->first == Button ) {
 			return it->second;
@@ -334,7 +334,7 @@ UIPopUpMenu * UIWinMenu::getMenuFromButton( UISelectButton * Button ) {
 	return NULL;
 }
 
-bool UIWinMenu::isPopUpMenuChild( Node * Ctrl ) {
+bool UIWinMenu::isPopUpMenuChild( Node* Ctrl ) {
 	for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); ++it ) {
 		if ( it->second == Ctrl || it->second->isParentOf( Ctrl ) ) {
 			return true;
@@ -344,15 +344,15 @@ bool UIWinMenu::isPopUpMenuChild( Node * Ctrl ) {
 	return false;
 }
 
-void UIWinMenu::onMenuFocusLoss( const Event * ) {
-	Node * FocusCtrl = getEventDispatcher()->getFocusControl();
+void UIWinMenu::onMenuFocusLoss( const Event* ) {
+	Node* FocusCtrl = getEventDispatcher()->getFocusControl();
 
 	if ( !isParentOf( FocusCtrl ) && !isPopUpMenuChild( FocusCtrl ) ) {
 		onWidgetFocusLoss();
 	}
 }
 
-void UIWinMenu::onHideByClick( const Event * ) {
+void UIWinMenu::onHideByClick( const Event* ) {
 	onWidgetFocusLoss();
 }
 
@@ -396,9 +396,9 @@ void UIWinMenu::loadFromXmlNode( const pugi::xml_node& node ) {
 		String::toLowerInPlace( name );
 
 		if ( "menu" == name ) {
-			std::string text( item.attribute("text").as_string() );
+			std::string text( item.attribute( "text" ).as_string() );
 
-			UIPopUpMenu * subMenu = UIPopUpMenu::New();
+			UIPopUpMenu* subMenu = UIPopUpMenu::New();
 
 			if ( NULL != getDrawInvalidator() )
 				subMenu->setParent( getDrawInvalidator() );
@@ -406,11 +406,12 @@ void UIWinMenu::loadFromXmlNode( const pugi::xml_node& node ) {
 			subMenu->loadFromXmlNode( item );
 
 			if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
-				addMenuButton( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( text ), subMenu );
+				addMenuButton( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( text ),
+							   subMenu );
 		}
 	}
 
 	endAttributesTransaction();
 }
 
-}}
+}} // namespace EE::UI

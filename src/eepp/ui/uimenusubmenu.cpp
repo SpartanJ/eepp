@@ -1,10 +1,10 @@
-#include <eepp/ui/uimenusubmenu.hpp>
-#include <eepp/ui/uimenu.hpp>
 #include <eepp/scene/scenenode.hpp>
+#include <eepp/ui/uimenu.hpp>
+#include <eepp/ui/uimenusubmenu.hpp>
 
 namespace EE { namespace UI {
 
-UIMenuSubMenu * UIMenuSubMenu::New() {
+UIMenuSubMenu* UIMenuSubMenu::New() {
 	return eeNew( UIMenuSubMenu, () );
 }
 
@@ -15,8 +15,7 @@ UIMenuSubMenu::UIMenuSubMenu() :
 	mTimeOver( 0.f ),
 	mMaxTime( 200.f ),
 	mCbId( 0 ),
-	mCbId2( 0 )
-{
+	mCbId2( 0 ) {
 	mArrow = UINode::New();
 	mArrow->setParent( this );
 	mArrow->setFlags( UI_AUTO_SIZE );
@@ -26,8 +25,7 @@ UIMenuSubMenu::UIMenuSubMenu() :
 	applyDefaultTheme();
 }
 
-UIMenuSubMenu::~UIMenuSubMenu() {
-}
+UIMenuSubMenu::~UIMenuSubMenu() {}
 
 Uint32 UIMenuSubMenu::getType() const {
 	return UI_TYPE_MENUSUBMENU;
@@ -37,7 +35,7 @@ bool UIMenuSubMenu::isType( const Uint32& type ) const {
 	return UIMenuSubMenu::getType() == type ? true : UIMenuItem::isType( type );
 }
 
-void UIMenuSubMenu::setTheme( UITheme * Theme ) {
+void UIMenuSubMenu::setTheme( UITheme* Theme ) {
 	UIMenuItem::setTheme( Theme );
 
 	mArrow->setThemeSkin( "menuarrow" );
@@ -51,7 +49,9 @@ void UIMenuSubMenu::setTheme( UITheme * Theme ) {
 void UIMenuSubMenu::onSizeChange() {
 	UIMenuItem::onSizeChange();
 
-	mArrow->setPosition( getParent()->getSize().getWidth() - mArrow->getSize().getWidth() - PixelDensity::dpToPx( 1 ), 0 );
+	mArrow->setPosition( getParent()->getSize().getWidth() - mArrow->getSize().getWidth() -
+							 PixelDensity::dpToPx( 1 ),
+						 0 );
 	mArrow->centerVertical();
 }
 
@@ -67,7 +67,7 @@ void UIMenuSubMenu::onStateChange() {
 	onSizeChange();
 }
 
-void UIMenuSubMenu::setSubMenu( UIMenu * SubMenu ) {
+void UIMenuSubMenu::setSubMenu( UIMenu* SubMenu ) {
 	if ( NULL != mSubMenu && mSubMenu != SubMenu ) {
 		mSubMenu->removeEventListener( mCbId );
 		mSubMenu->removeEventListener( mCbId2 );
@@ -77,17 +77,19 @@ void UIMenuSubMenu::setSubMenu( UIMenu * SubMenu ) {
 	mSubMenu = SubMenu;
 
 	if ( NULL != mSubMenu ) {
-		mCbId	= mSubMenu->addEventListener( Event::OnEnabledChange, cb::Make1( this, &UIMenuSubMenu::onSubMenuFocusLoss ) );
-		mCbId2	= mSubMenu->addEventListener( Event::OnHideByClick, cb::Make1( this, &UIMenuSubMenu::onHideByClick ) );
+		mCbId = mSubMenu->addEventListener( Event::OnEnabledChange,
+											cb::Make1( this, &UIMenuSubMenu::onSubMenuFocusLoss ) );
+		mCbId2 = mSubMenu->addEventListener( Event::OnHideByClick,
+											 cb::Make1( this, &UIMenuSubMenu::onHideByClick ) );
 		mSubMenu->setOwnerNode( this );
 	}
 }
 
-UIMenu * UIMenuSubMenu::getSubMenu() const {
+UIMenu* UIMenuSubMenu::getSubMenu() const {
 	return mSubMenu;
 }
 
-Uint32 UIMenuSubMenu::onMouseMove( const Vector2i &Pos, const Uint32& Flags ) {
+Uint32 UIMenuSubMenu::onMouseMove( const Vector2i& Pos, const Uint32& Flags ) {
 	UIMenuItem::onMouseMove( Pos, Flags );
 
 	if ( NULL != mSceneNode && NULL != mSubMenu && !mSubMenu->isVisible() ) {
@@ -118,7 +120,7 @@ void UIMenuSubMenu::showSubMenu() {
 	}
 }
 
-Uint32 UIMenuSubMenu::onMouseLeave( const Vector2i &Pos, const Uint32& Flags ) {
+Uint32 UIMenuSubMenu::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
 	UIMenuItem::onMouseLeave( Pos, Flags );
 
 	mTimeOver = 0;
@@ -126,12 +128,12 @@ Uint32 UIMenuSubMenu::onMouseLeave( const Vector2i &Pos, const Uint32& Flags ) {
 	return 1;
 }
 
-UINode * UIMenuSubMenu::getArrow() const {
+UINode* UIMenuSubMenu::getArrow() const {
 	return mArrow;
 }
 
-void UIMenuSubMenu::onSubMenuFocusLoss( const Event * ) {
-	Node * focusCtrl = NULL;
+void UIMenuSubMenu::onSubMenuFocusLoss( const Event* ) {
+	Node* focusCtrl = NULL;
 
 	if ( NULL != getEventDispatcher() ) {
 		focusCtrl = getEventDispatcher()->getFocusControl();
@@ -142,7 +144,7 @@ void UIMenuSubMenu::onSubMenuFocusLoss( const Event * ) {
 	}
 
 	if ( mSubMenu->mClickHide ) {
-		UIMenu * parentMenu = getParent()->asType<UIMenu>();
+		UIMenu* parentMenu = getParent()->asType<UIMenu>();
 
 		if ( !parentMenu->isSubMenu( focusCtrl ) && focusCtrl != this ) {
 			parentMenu->sendCommonEvent( Event::OnHideByClick );
@@ -153,8 +155,8 @@ void UIMenuSubMenu::onSubMenuFocusLoss( const Event * ) {
 	}
 }
 
-void UIMenuSubMenu::onHideByClick( const Event * ) {
-	UIMenu * tMenu = getParent()->asType<UIMenu>();
+void UIMenuSubMenu::onHideByClick( const Event* ) {
+	UIMenu* tMenu = getParent()->asType<UIMenu>();
 
 	tMenu->mClickHide = true;
 	tMenu->sendCommonEvent( Event::OnHideByClick );
@@ -172,8 +174,8 @@ Float UIMenuSubMenu::getMouseOverTimeShowMenu() const {
 	return mMaxTime;
 }
 
-void UIMenuSubMenu::setMouseOverTimeShowMenu(const Float & maxTime) {
+void UIMenuSubMenu::setMouseOverTimeShowMenu( const Float& maxTime ) {
 	mMaxTime = maxTime;
 }
 
-}}
+}} // namespace EE::UI

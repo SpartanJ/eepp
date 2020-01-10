@@ -7,23 +7,26 @@
 namespace EE { namespace Scene { namespace Actions {
 
 class EE_API Scale : public ActionInterpolation2d {
-	public:
-		static Scale * New( const Vector2f& start, const Vector2f& end, const Time& duration, const Ease::Interpolation& type = Ease::Linear );
+  public:
+	static Scale* New( const Vector2f& start, const Vector2f& end, const Time& duration,
+					   const Ease::Interpolation& type = Ease::Linear );
 
-		Action * clone() const override;
+	Action* clone() const override;
 
-		Action * reverse() const override;
-	protected:
-		Scale( const Vector2f& start, const Vector2f& end, const Time& duration, const Ease::Interpolation& type );
+	Action* reverse() const override;
 
-		void onStart() override;
+  protected:
+	Scale( const Vector2f& start, const Vector2f& end, const Time& duration,
+		   const Ease::Interpolation& type );
 
-		void onUpdate( const Time& time ) override;
-	private:
-		Scale();
+	void onStart() override;
+
+	void onUpdate( const Time& time ) override;
+
+  private:
+	Scale();
 };
 
-}}}
+}}} // namespace EE::Scene::Actions
 
 #endif
-

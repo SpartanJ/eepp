@@ -1,29 +1,29 @@
-#include <eepp/window/window.hpp>
-#include <eepp/window/clipboard.hpp>
-#include <eepp/window/input.hpp>
-#include <eepp/window/cursormanager.hpp>
-#include <eepp/window/engine.hpp>
+#include <SOIL2/src/SOIL2/SOIL2.h>
+#include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/renderer/openglext.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/texturefactory.hpp>
-#include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/version.hpp>
-#include <SOIL2/src/SOIL2/SOIL2.h>
+#include <eepp/window/clipboard.hpp>
+#include <eepp/window/cursormanager.hpp>
+#include <eepp/window/engine.hpp>
+#include <eepp/window/input.hpp>
+#include <eepp/window/window.hpp>
 
 #ifdef EE_GLES1_LATE_INCLUDE
-	#if EE_PLATFORM == EE_PLATFORM_IOS
-		#include <OpenGLES/ES1/gl.h>
-		#include <OpenGLES/ES1/glext.h>
-	#else
-		#include <GLES/gl.h>
+#if EE_PLATFORM == EE_PLATFORM_IOS
+#include <OpenGLES/ES1/gl.h>
+#include <OpenGLES/ES1/glext.h>
+#else
+#include <GLES/gl.h>
 
-		#ifndef GL_GLEXT_PROTOTYPES
-			#define GL_GLEXT_PROTOTYPES
-		#endif
+#ifndef GL_GLEXT_PROTOTYPES
+#define GL_GLEXT_PROTOTYPES
+#endif
 
-		#include <GLES/glext.h>
-	#endif
+#include <GLES/glext.h>
+#endif
 #endif
 
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
@@ -32,24 +32,21 @@
 
 namespace EE { namespace Window {
 
-Window::FrameData::FrameData() :
-	FrameElapsed(NULL),
-	ElapsedTime()
-{}
+Window::FrameData::FrameData() : FrameElapsed( NULL ), ElapsedTime() {}
 
 Window::FrameData::~FrameData() {
 	eeSAFE_DELETE( FrameElapsed );
 }
 
-Window::Window( WindowSettings Settings, ContextSettings Context, Clipboard * Clipboard, Input * Input, CursorManager * CursorManager ) :
+Window::Window( WindowSettings Settings, ContextSettings Context, Clipboard* Clipboard,
+				Input* Input, CursorManager* CursorManager ) :
 	mClipboard( Clipboard ),
 	mInput( Input ),
 	mCursorManager( CursorManager ),
 	mCurrentView( NULL ),
-	mNumCallBacks( 0 )
-{
-	mWindow.WindowConfig	= Settings;
-	mWindow.ContextConfig	= Context;
+	mNumCallBacks( 0 ) {
+	mWindow.WindowConfig = Settings;
+	mWindow.ContextConfig = Context;
 	setFrameRateLimit( Context.FrameRateLimit );
 }
 
@@ -101,7 +98,7 @@ void Window::set2DProjection( const Uint32& Width, const Uint32& Height ) {
 	GLi->loadIdentity();
 }
 
-void Window::setProjection(const Transform & transform) {
+void Window::setProjection( const Transform& transform ) {
 	GLi->matrixMode( GL_PROJECTION );
 	GLi->loadMatrixf( transform.getMatrix() );
 
@@ -109,59 +106,60 @@ void Window::setProjection(const Transform & transform) {
 	GLi->loadIdentity();
 }
 
-Vector2f Window::mapPixelToCoords(const Vector2i& point) {
-	return mapPixelToCoords(point, getView());
+Vector2f Window::mapPixelToCoords( const Vector2i& point ) {
+	return mapPixelToCoords( point, getView() );
 }
 
-Vector2f Window::mapPixelToCoords(const Vector2i& point, const View& view) {
+Vector2f Window::mapPixelToCoords( const Vector2i& point, const View& view ) {
 	// First, convert from viewport coordinates to homogeneous coordinates
 	Vector2f normalized;
-	Rect viewport = getViewport(view);
-	normalized.x = -1.f + 2.f * (point.x - viewport.Left) / viewport.Right;
-	normalized.y =  1.f - 2.f * (point.y - viewport.Top)  / viewport.Bottom;
+	Rect viewport = getViewport( view );
+	normalized.x = -1.f + 2.f * ( point.x - viewport.Left ) / viewport.Right;
+	normalized.y = 1.f - 2.f * ( point.y - viewport.Top ) / viewport.Bottom;
 
 	// Then transform by the inverse of the view matrix
-	return view.getInverseTransform().transformPoint(normalized);
+	return view.getInverseTransform().transformPoint( normalized );
 }
 
-Vector2i Window::mapCoordsToPixel(const Vector2f& point) {
-	return mapCoordsToPixel(point, getView());
+Vector2i Window::mapCoordsToPixel( const Vector2f& point ) {
+	return mapCoordsToPixel( point, getView() );
 }
 
-Vector2i Window::mapCoordsToPixel(const Vector2f& point, const View& view) {
+Vector2i Window::mapCoordsToPixel( const Vector2f& point, const View& view ) {
 	// First, transform the point by the view matrix
-	Vector2f normalized = view.getTransform().transformPoint(point);
+	Vector2f normalized = view.getTransform().transformPoint( point );
 
 	// Then convert to viewport coordinates
 	Vector2i pixel;
-	Rect viewport = getViewport(view);
-	pixel.x = static_cast<int>(( normalized.x + 1.f) / 2.f * viewport.Right  + viewport.Left);
-	pixel.y = static_cast<int>((-normalized.y + 1.f) / 2.f * viewport.Bottom + viewport.Top);
+	Rect viewport = getViewport( view );
+	pixel.x = static_cast<int>( ( normalized.x + 1.f ) / 2.f * viewport.Right + viewport.Left );
+	pixel.y = static_cast<int>( ( -normalized.y + 1.f ) / 2.f * viewport.Bottom + viewport.Top );
 
 	return pixel;
 }
 
-void Window::setCloseRequestCallback( const WindowRequestCloseCallback & closeRequestCallback ) {
+void Window::setCloseRequestCallback( const WindowRequestCloseCallback& closeRequestCallback ) {
 	mCloseRequestCallback = closeRequestCallback;
 }
 
-void Window::setViewport( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height ) {
+void Window::setViewport( const Int32& x, const Int32& y, const Uint32& Width,
+						  const Uint32& Height ) {
 	GLi->viewport( x, getHeight() - ( y + Height ), Width, Height );
 }
 
 Rect Window::getViewport( const View& view ) {
-	float width  = static_cast<float>(getSize().getWidth());
-	float height = static_cast<float>(getSize().getHeight());
+	float width = static_cast<float>( getSize().getWidth() );
+	float height = static_cast<float>( getSize().getHeight() );
 	const Rectf& viewport = view.getViewport();
 
-	return Rect(   static_cast<int>(0.5f + width  * viewport.Left),
-				   static_cast<int>(0.5f + height * viewport.Top),
-				   static_cast<int>(0.5f + width  * viewport.Right),
-				   static_cast<int>(0.5f + height * viewport.Bottom));
+	return Rect( static_cast<int>( 0.5f + width * viewport.Left ),
+				 static_cast<int>( 0.5f + height * viewport.Top ),
+				 static_cast<int>( 0.5f + width * viewport.Right ),
+				 static_cast<int>( 0.5f + height * viewport.Bottom ) );
 }
 
-void Window::setView( const View& view , bool forceRefresh ) {
-	const View * viewPtr = &view;
+void Window::setView( const View& view, bool forceRefresh ) {
+	const View* viewPtr = &view;
 
 	if ( viewPtr != mCurrentView || viewPtr->isDirty() || forceRefresh ) {
 		mCurrentView = viewPtr;
@@ -195,7 +193,7 @@ void Window::setup2D( const bool& KeepView ) {
 
 	GLi->lineSmooth();
 
-	GLi->enable	( GL_TEXTURE_2D ); 						// Enable Textures
+	GLi->enable( GL_TEXTURE_2D ); // Enable Textures
 	GLi->disable( GL_DEPTH_TEST );
 
 	if ( GLv_2 == GLi->version() || GLv_ES1 == GLi->version() ) {
@@ -209,9 +207,9 @@ void Window::setup2D( const bool& KeepView ) {
 	BlendMode::setMode( BlendAlpha, true );
 
 	if ( GLv_3CP != GLi->version() && GLv_3 != GLi->version() && GLv_ES2 != GLi->version() ) {
-		#if !defined( EE_GLES2 ) || defined( EE_GLES_BOTH )
+#if !defined( EE_GLES2 ) || defined( EE_GLES_BOTH )
 		glTexEnvi( GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE );
-		#endif
+#endif
 	}
 
 	if ( GLv_2 == GLi->version() || GLv_ES1 == GLi->version() ) {
@@ -221,28 +219,30 @@ void Window::setup2D( const bool& KeepView ) {
 	}
 }
 
-const WindowInfo * Window::getWindowInfo() const {
+const WindowInfo* Window::getWindowInfo() const {
 	return &mWindow;
 }
 
 void Window::setClearColor( const RGB& Color ) {
 	mWindow.ClearColor = Color;
-	GLi->clearColor( static_cast<Float>( mWindow.ClearColor.r ) / 255.0f, static_cast<Float>( mWindow.ClearColor.g ) / 255.0f, static_cast<Float>( mWindow.ClearColor.b ) / 255.0f, 255.0f );
+	GLi->clearColor( static_cast<Float>( mWindow.ClearColor.r ) / 255.0f,
+					 static_cast<Float>( mWindow.ClearColor.g ) / 255.0f,
+					 static_cast<Float>( mWindow.ClearColor.b ) / 255.0f, 255.0f );
 }
 
 RGB Window::getClearColor() const {
 	return mWindow.ClearColor;
 }
 
-bool Window::takeScreenshot(std::string filepath, const Image::SaveType & Format ) {
+bool Window::takeScreenshot( std::string filepath, const Image::SaveType& Format ) {
 	GlobalBatchRenderer::instance()->draw();
 
 	bool CreateNewFile = false;
 	std::string File, Ext;
 
 	if ( filepath.size() ) {
-		File = filepath.substr( filepath.find_last_of("/\\") + 1 );
-		Ext = File.substr( File.find_last_of(".") + 1 );
+		File = filepath.substr( filepath.find_last_of( "/\\" ) + 1 );
+		Ext = File.substr( File.find_last_of( "." ) + 1 );
 
 		if ( FileSystem::isDirectory( filepath ) || !Ext.size() )
 			CreateNewFile = true;
@@ -273,14 +273,16 @@ bool Window::takeScreenshot(std::string filepath, const Image::SaveType & Format
 				return false;
 		}
 
-		return 0 != SOIL_save_screenshot(TmpPath.c_str(), Format, 0, 0, mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
+		return 0 != SOIL_save_screenshot( TmpPath.c_str(), Format, 0, 0, mWindow.WindowConfig.Width,
+										  mWindow.WindowConfig.Height );
 	} else {
 		std::string Direc = FileSystem::fileRemoveFileName( filepath );
 
 		if ( !FileSystem::isDirectory( Direc ) )
 			FileSystem::makeDir( Direc );
 
-		return 0 != SOIL_save_screenshot(filepath.c_str(), Format, 0, 0, mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
+		return 0 != SOIL_save_screenshot( filepath.c_str(), Format, 0, 0,
+										  mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
 	}
 }
 
@@ -344,7 +346,7 @@ void Window::calculateFps() {
 
 void Window::limitFps() {
 	if ( mFrameData.FPS.Limit > 0 ) {
-		Time frameTime(Milliseconds(1000.0 / mFrameData.FPS.Limit));
+		Time frameTime( Milliseconds( 1000.0 / mFrameData.FPS.Limit ) );
 		Time remainingTime = frameTime - mFrameData.FPS.FrameTime;
 
 		if ( frameTime - mFrameData.ElapsedTime > Time::Zero ) {
@@ -382,10 +384,10 @@ void Window::display( bool clear ) {
 	if ( mCurrentView->isDirty() )
 		setView( *mCurrentView );
 
-	#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	if ( clear )
 		this->clear();
-	#endif
+#endif
 
 	mFrameData.FPS.FrameTime = mFrameData.FPS.RenderClock.getElapsedTime();
 	mFrameData.FPS.RenderTime += mFrameData.FPS.FrameTime;
@@ -399,63 +401,63 @@ void Window::display( bool clear ) {
 	mFrameData.FPS.RenderClock.restart();
 }
 
-Clipboard * Window::getClipboard() const {
+Clipboard* Window::getClipboard() const {
 	return mClipboard;
 }
 
-Input * Window::getInput() const {
+Input* Window::getInput() const {
 	return mInput;
 }
 
-CursorManager * Window::getCursorManager() const {
+CursorManager* Window::getCursorManager() const {
 	return mCursorManager;
 }
 
 Uint32 Window::pushResizeCallback( const WindowResizeCallback& cb ) {
 	mNumCallBacks++;
-	mCallbacks[ mNumCallBacks ] = cb;
+	mCallbacks[mNumCallBacks] = cb;
 	return mNumCallBacks;
 }
 
 void Window::popResizeCallback( const Uint32& CallbackId ) {
-	mCallbacks[ CallbackId ] = 0;
-	mCallbacks.erase( mCallbacks.find(CallbackId) );
+	mCallbacks[CallbackId] = 0;
+	mCallbacks.erase( mCallbacks.find( CallbackId ) );
 }
 
 void Window::sendVideoResizeCb() {
-	for ( std::map<Uint32, WindowResizeCallback>::iterator i = mCallbacks.begin(); i != mCallbacks.end(); ++i ) {
+	for ( std::map<Uint32, WindowResizeCallback>::iterator i = mCallbacks.begin();
+		  i != mCallbacks.end(); ++i ) {
 		i->second( this );
 	}
 }
 
-void Window::logSuccessfulInit(const std::string& BackendName ) {
-	std::string msg( "Engine Initialized Succesfully.\n\tVersion: " + Version::getVersionName() + " (codename: \"" + Version::getCodename() + "\")" +
-							 "\n\tBuild time: " + Version::getBuildTime() +
-							 "\n\tPlatform: " + Sys::getPlatform() +
-							 "\n\tOS: " + Sys::getOSName(true) +
-							 "\n\tArch: " + Sys::getOSArchitecture() +
-							 "\n\tCPU Cores: " + String::toStr( Sys::getCPUCount() ) +
-							 "\n\tProcess Path: " + Sys::getProcessPath() +
-							 "\n\tCurrent Working Directory: " + FileSystem::getCurrentWorkingDirectory() +
-							 "\n\tDisk Free Space: " + String::toStr( FileSystem::sizeToString( FileSystem::getDiskFreeSpace( Sys::getProcessPath() ) ) ) +
-							 "\n\tWindow/Input Backend: " + BackendName +
-							 "\n\tGL Backend: " + GLi->versionStr() +
-							 "\n\tGL Vendor: " + GLi->getVendor() +
-							 "\n\tGL Renderer: " + GLi->getRenderer() +
-							 "\n\tGL Version: " + GLi->getVersion() +
-							 "\n\tGL Shading Language Version: " + GLi->getShadingLanguageVersion() +
-							 "\n\tResolution: " + String::toStr( getWidth() ) + "x" + String::toStr( getHeight() )
-	);
+void Window::logSuccessfulInit( const std::string& BackendName ) {
+	std::string msg(
+		"Engine Initialized Succesfully.\n\tVersion: " + Version::getVersionName() +
+		" (codename: \"" + Version::getCodename() + "\")" +
+		"\n\tBuild time: " + Version::getBuildTime() + "\n\tPlatform: " + Sys::getPlatform() +
+		"\n\tOS: " + Sys::getOSName( true ) + "\n\tArch: " + Sys::getOSArchitecture() +
+		"\n\tCPU Cores: " + String::toStr( Sys::getCPUCount() ) +
+		"\n\tProcess Path: " + Sys::getProcessPath() + "\n\tCurrent Working Directory: " +
+		FileSystem::getCurrentWorkingDirectory() + "\n\tDisk Free Space: " +
+		String::toStr(
+			FileSystem::sizeToString( FileSystem::getDiskFreeSpace( Sys::getProcessPath() ) ) ) +
+		"\n\tWindow/Input Backend: " + BackendName + "\n\tGL Backend: " + GLi->versionStr() +
+		"\n\tGL Vendor: " + GLi->getVendor() + "\n\tGL Renderer: " + GLi->getRenderer() +
+		"\n\tGL Version: " + GLi->getVersion() +
+		"\n\tGL Shading Language Version: " + GLi->getShadingLanguageVersion() +
+		"\n\tResolution: " + String::toStr( getWidth() ) + "x" + String::toStr( getHeight() ) );
 
-	#ifndef EE_SILENT
+#ifndef EE_SILENT
 	eePRINTL( msg.c_str() );
-	#else
+#else
 	Log::instance()->write( msg );
-	#endif
+#endif
 }
 
 void Window::logFailureInit( const std::string& ClassName, const std::string& BackendName ) {
-	eePRINTL( "Error on %s::Init. Backend %s failed to start.", ClassName.c_str(), BackendName.c_str() );
+	eePRINTL( "Error on %s::Init. Backend %s failed to start.", ClassName.c_str(),
+			  BackendName.c_str() );
 }
 
 void Window::onCloseRequest() {
@@ -471,15 +473,16 @@ std::string Window::getCaption() {
 }
 
 eeWindowContex Window::getContext() const {
-#if defined( EE_GLEW_AVAILABLE  ) && ( EE_PLATFORM == EE_PLATFORM_WIN || defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_MACOSX )
+#if defined( EE_GLEW_AVAILABLE ) &&                                   \
+	( EE_PLATFORM == EE_PLATFORM_WIN || defined( EE_X11_PLATFORM ) || \
+	  EE_PLATFORM == EE_PLATFORM_MACOSX )
 	return mWindow.Context;
 #else
 	return 0;
 #endif
 }
 
-void Window::getMainContext() {
-}
+void Window::getMainContext() {}
 
 void Window::setDefaultContext() {
 #if defined( EE_GLEW_AVAILABLE ) && ( EE_PLATFORM == EE_PLATFORM_WIN || defined( EE_X11_PLATFORM ) )
@@ -509,12 +512,12 @@ Vector2i Window::getPosition() {
 
 void Window::setCurrentContext( eeWindowContex Context ) {}
 
-void Window::setCurrent() {
-}
+void Window::setCurrent() {}
 
 void Window::centerToDisplay() {
 	if ( isWindowed() ) {
-		setPosition( mWindow.DesktopResolution.getWidth() / 2 - mWindow.WindowConfig.Width / 2, mWindow.DesktopResolution.getHeight() / 2 - mWindow.WindowConfig.Height / 2 );
+		setPosition( mWindow.DesktopResolution.getWidth() / 2 - mWindow.WindowConfig.Width / 2,
+					 mWindow.DesktopResolution.getHeight() / 2 - mWindow.WindowConfig.Height / 2 );
 	}
 }
 
@@ -526,21 +529,17 @@ Float Window::getScale() {
 	return 1.f;
 }
 
-void Window::startTextInput() {
-}
+void Window::startTextInput() {}
 
 bool Window::isTextInputActive() {
 	return false;
 }
 
-void Window::stopTextInput() {
-}
+void Window::stopTextInput() {}
 
-void Window::setTextInputRect( Rect& ) {
-}
+void Window::setTextInputRect( Rect& ) {}
 
-bool Window::hasScreenKeyboardSupport()
-{
+bool Window::hasScreenKeyboardSupport() {
 	return false;
 }
 
@@ -552,15 +551,13 @@ bool Window::isThreadedGLContext() {
 	return false;
 }
 
-void Window::setGLContextThread() {
-}
+void Window::setGLContextThread() {}
 
-void Window::unsetGLContextThread() {
-}
+void Window::unsetGLContextThread() {}
 
-void Window::runMainLoop( void (*func)(), int fps ) {
+void Window::runMainLoop( void ( *func )(), int fps ) {
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
-	emscripten_set_main_loop(func, fps, 1);
+	emscripten_set_main_loop( func, fps, 1 );
 #else
 	setFrameRateLimit( fps );
 
@@ -574,4 +571,4 @@ int Window::getCurrentDisplayIndex() {
 	return 0;
 }
 
-}}
+}} // namespace EE::Window

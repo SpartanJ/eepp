@@ -1,72 +1,71 @@
 #ifndef EE_UICUIRADIOBUTTON_H
 #define EE_UICUIRADIOBUTTON_H
 
-#include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uipushbutton.hpp>
+#include <eepp/ui/uitextview.hpp>
 
 namespace EE { namespace UI {
 
 class EE_API UIRadioButton : public UITextView {
-	public:
-		static UIRadioButton * New();
+  public:
+	static UIRadioButton* New();
 
-		UIRadioButton();
+	UIRadioButton();
 
-		virtual ~UIRadioButton();
+	virtual ~UIRadioButton();
 
-		virtual Uint32 getType() const;
+	virtual Uint32 getType() const;
 
-		virtual bool isType( const Uint32& type ) const;
+	virtual bool isType( const Uint32& type ) const;
 
-		virtual void setTheme( UITheme * Theme );
+	virtual void setTheme( UITheme* Theme );
 
-		const bool& isActive() const;
+	const bool& isActive() const;
 
-		void setActive( const bool& active );
+	void setActive( const bool& active );
 
-		UINode * getActiveButton() const;
+	UINode* getActiveButton() const;
 
-		UINode * getInactiveButton() const;
+	UINode* getInactiveButton() const;
 
-		Int32 getTextSeparation() const;
+	Int32 getTextSeparation() const;
 
-		void setTextSeparation(const Int32 & textSeparation);
+	void setTextSeparation( const Int32& textSeparation );
 
-		virtual bool applyProperty( const StyleSheetProperty& attribute );
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
-		virtual std::string getPropertyString(const PropertyDefinition* propertyDef);
-	protected:
-		UINode *	mActiveButton;
-		UINode *	mInactiveButton;
-		bool			mActive;
-		Uint32			mLastTick;
-		Int32			mTextSeparation;
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef );
 
-		virtual void onSizeChange();
+  protected:
+	UINode* mActiveButton;
+	UINode* mInactiveButton;
+	bool mActive;
+	Uint32 mLastTick;
+	Int32 mTextSeparation;
 
-		void switchState();
+	virtual void onSizeChange();
 
-		void autoActivate();
+	void switchState();
 
-		bool checkActives();
+	void autoActivate();
 
-		virtual void onAlphaChange();
+	bool checkActives();
 
-		virtual Uint32 onKeyDown( const KeyEvent& Event );
+	virtual void onAlphaChange();
 
-		virtual Uint32 onMessage( const NodeMessage * Msg );
+	virtual Uint32 onKeyDown( const KeyEvent& Event );
 
-		virtual void onAutoSize();
+	virtual Uint32 onMessage( const NodeMessage* Msg );
 
-		virtual void onThemeLoaded();
+	virtual void onAutoSize();
 
-		virtual void onPaddingChange();
+	virtual void onThemeLoaded();
 
-		virtual void alignFix();
+	virtual void onPaddingChange();
+
+	virtual void alignFix();
 };
 
-}}
+}} // namespace EE::UI
 
 #endif
-
-

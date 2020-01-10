@@ -3,24 +3,20 @@
 
 namespace EE { namespace Graphics { namespace Private {
 
-SINGLETON_DECLARE_IMPLEMENTATION(FrameBufferManager)
+SINGLETON_DECLARE_IMPLEMENTATION( FrameBufferManager )
 
-FrameBufferManager::FrameBufferManager()
-{
-}
+FrameBufferManager::FrameBufferManager() {}
 
-FrameBufferManager::~FrameBufferManager()
-{
-}
+FrameBufferManager::~FrameBufferManager() {}
 
 void FrameBufferManager::reload() {
 	std::list<FrameBuffer*>::iterator it;
 
 	for ( it = mResources.begin(); it != mResources.end(); ++it )
-		(*it)->reload();
+		( *it )->reload();
 }
 
-FrameBuffer * FrameBufferManager::getCurrentlyBound() {
+FrameBuffer* FrameBufferManager::getCurrentlyBound() {
 	int curFB;
 
 	glGetIntegerv( GL_FRAMEBUFFER_BINDING, &curFB );
@@ -29,8 +25,8 @@ FrameBuffer * FrameBufferManager::getCurrentlyBound() {
 		std::list<FrameBuffer*>::iterator it;
 
 		for ( it = mResources.begin(); it != mResources.end(); ++it ) {
-			if ( (*it)->getFrameBufferId() == curFB ) {
-				return (*it);
+			if ( ( *it )->getFrameBufferId() == curFB ) {
+				return ( *it );
 			}
 		}
 	}
@@ -38,20 +34,20 @@ FrameBuffer * FrameBufferManager::getCurrentlyBound() {
 	return NULL;
 }
 
-FrameBuffer * FrameBufferManager::getFromName( const std::string& name ) {
+FrameBuffer* FrameBufferManager::getFromName( const std::string& name ) {
 	return getFromId( String::hash( name ) );
 }
 
-FrameBuffer * FrameBufferManager::getFromId( const Uint32& id ) {
+FrameBuffer* FrameBufferManager::getFromId( const Uint32& id ) {
 	std::list<FrameBuffer*>::iterator it;
 
 	for ( it = mResources.begin(); it != mResources.end(); ++it ) {
-		if ( (*it)->getId() == id ) {
-			return (*it);
+		if ( ( *it )->getId() == id ) {
+			return ( *it );
 		}
 	}
 
 	return NULL;
 }
 
-}}}
+}}} // namespace EE::Graphics::Private

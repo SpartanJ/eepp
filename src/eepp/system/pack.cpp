@@ -4,10 +4,7 @@
 
 namespace EE { namespace System {
 
-Pack::Pack() :
-	Mutex(),
-	mIsOpen(false)
-{
+Pack::Pack() : Mutex(), mIsOpen( false ) {
 	PackManager::instance()->add( this );
 }
 
@@ -27,4 +24,4 @@ void Pack::onPackClosed() {
 	VirtualFileSystem::instance()->onResourceRemove( this );
 }
 
-}}
+}} // namespace EE::System

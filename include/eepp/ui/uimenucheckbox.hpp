@@ -6,36 +6,37 @@
 namespace EE { namespace UI {
 
 class EE_API UIMenuCheckBox : public UIMenuItem {
-	public:
-		static UIMenuCheckBox * New();
+  public:
+	static UIMenuCheckBox* New();
 
-		UIMenuCheckBox();
+	UIMenuCheckBox();
 
-		virtual ~UIMenuCheckBox();
+	virtual ~UIMenuCheckBox();
 
-		virtual Uint32 getType() const;
+	virtual Uint32 getType() const;
 
-		virtual bool isType( const Uint32& type ) const;
+	virtual bool isType( const Uint32& type ) const;
 
-		virtual void setTheme( UITheme * Theme );
+	virtual void setTheme( UITheme* Theme );
 
-		const bool& isActive() const;
+	const bool& isActive() const;
 
-		void setActive( const bool& active );
+	void setActive( const bool& active );
 
-		void switchActive();
+	void switchActive();
 
-		virtual bool inheritsFrom( const Uint32 getType );
-	protected:
-		bool		mActive;
-		UISkin *	mSkinActive;
-		UISkin *	mSkinInactive;
+	virtual bool inheritsFrom( const Uint32 getType );
 
-		virtual Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
+  protected:
+	bool mActive;
+	UISkin* mSkinActive;
+	UISkin* mSkinInactive;
 
-		virtual void onStateChange();
+	virtual Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
+
+	virtual void onStateChange();
 };
 
-}}
+}} // namespace EE::UI
 
 #endif

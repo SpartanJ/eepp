@@ -1,42 +1,44 @@
-#include <eepp/ui/uiwidgetcreator.hpp>
-#include <eepp/ui/uilinearlayout.hpp>
-#include <eepp/ui/uirelativelayout.hpp>
-#include <eepp/ui/uitextview.hpp>
-#include <eepp/ui/uipushbutton.hpp>
-#include <eepp/ui/uiselectbutton.hpp>
 #include <eepp/ui/uicheckbox.hpp>
-#include <eepp/ui/uiradiobutton.hpp>
 #include <eepp/ui/uicombobox.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
-#include <eepp/ui/uitextureregion.hpp>
+#include <eepp/ui/uigridlayout.hpp>
+#include <eepp/ui/uiimage.hpp>
+#include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uilistbox.hpp>
-#include <eepp/ui/uiwinmenu.hpp>
+#include <eepp/ui/uiloader.hpp>
 #include <eepp/ui/uiprogressbar.hpp>
+#include <eepp/ui/uipushbutton.hpp>
+#include <eepp/ui/uiradiobutton.hpp>
+#include <eepp/ui/uirelativelayout.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
+#include <eepp/ui/uiscrollview.hpp>
+#include <eepp/ui/uiselectbutton.hpp>
 #include <eepp/ui/uislider.hpp>
 #include <eepp/ui/uispinbox.hpp>
 #include <eepp/ui/uisprite.hpp>
 #include <eepp/ui/uitab.hpp>
-#include <eepp/ui/uitabwidget.hpp>
 #include <eepp/ui/uitable.hpp>
 #include <eepp/ui/uitablecell.hpp>
+#include <eepp/ui/uitabwidget.hpp>
 #include <eepp/ui/uitextedit.hpp>
 #include <eepp/ui/uitextinput.hpp>
 #include <eepp/ui/uitextinputpassword.hpp>
-#include <eepp/ui/uiloader.hpp>
-#include <eepp/ui/uiwindow.hpp>
-#include <eepp/ui/uiscrollview.hpp>
-#include <eepp/ui/uiimage.hpp>
+#include <eepp/ui/uitextureregion.hpp>
+#include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uitouchdragablewidget.hpp>
-#include <eepp/ui/uigridlayout.hpp>
+#include <eepp/ui/uiwidgetcreator.hpp>
+#include <eepp/ui/uiwindow.hpp>
+#include <eepp/ui/uiwinmenu.hpp>
 
-namespace  EE { namespace UI {
+namespace EE { namespace UI {
 
 static bool sBaseListCreated = false;
 
-UIWidgetCreator::WidgetCallbackMap UIWidgetCreator::widgetCallback = UIWidgetCreator::WidgetCallbackMap();
+UIWidgetCreator::WidgetCallbackMap UIWidgetCreator::widgetCallback =
+	UIWidgetCreator::WidgetCallbackMap();
 
-UIWidgetCreator::RegisteredWidgetCallbackMap UIWidgetCreator::registeredWidget = UIWidgetCreator::RegisteredWidgetCallbackMap();
+UIWidgetCreator::RegisteredWidgetCallbackMap UIWidgetCreator::registeredWidget =
+	UIWidgetCreator::RegisteredWidgetCallbackMap();
 
 void UIWidgetCreator::createBaseWidgetList() {
 	if ( !sBaseListCreated ) {
@@ -82,24 +84,25 @@ void UIWidgetCreator::createBaseWidgetList() {
 	}
 }
 
-UIWidget * UIWidgetCreator::createFromName( std::string widgetName ) {
+UIWidget* UIWidgetCreator::createFromName( std::string widgetName ) {
 	createBaseWidgetList();
 
 	String::toLowerInPlace( widgetName );
 
 	if ( registeredWidget.find( widgetName ) != registeredWidget.end() ) {
-		return registeredWidget[ widgetName ]();
+		return registeredWidget[widgetName]();
 	}
 
 	if ( widgetCallback.find( widgetName ) != widgetCallback.end() ) {
-		return widgetCallback[ widgetName ]( widgetName );
+		return widgetCallback[widgetName]( widgetName );
 	}
 
 	return NULL;
 }
 
-void UIWidgetCreator::addCustomWidgetCallback( std::string widgetName, const UIWidgetCreator::CustomWidgetCb& cb ) {
-	widgetCallback[ String::toLower( widgetName ) ] = cb;
+void UIWidgetCreator::addCustomWidgetCallback( std::string widgetName,
+											   const UIWidgetCreator::CustomWidgetCb& cb ) {
+	widgetCallback[String::toLower( widgetName )] = cb;
 }
 
 void UIWidgetCreator::removeCustomWidgetCallback( std::string widgetName ) {
@@ -110,8 +113,9 @@ bool UIWidgetCreator::existsCustomWidgetCallback( std::string widgetName ) {
 	return widgetCallback.find( String::toLower( widgetName ) ) != widgetCallback.end();
 }
 
-void UIWidgetCreator::registerWidget( std::string widgetName, const UIWidgetCreator::RegisterWidgetCb & cb ) {
-	registeredWidget[ String::toLower( widgetName ) ] = cb;
+void UIWidgetCreator::registerWidget( std::string widgetName,
+									  const UIWidgetCreator::RegisterWidgetCb& cb ) {
+	registeredWidget[String::toLower( widgetName )] = cb;
 }
 
 void UIWidgetCreator::unregisterWidget( std::string widgetName ) {
@@ -126,4 +130,4 @@ const UIWidgetCreator::RegisteredWidgetCallbackMap& UIWidgetCreator::getRegister
 	return registeredWidget;
 }
 
-}}
+}} // namespace EE::UI

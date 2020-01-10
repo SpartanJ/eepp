@@ -1,85 +1,85 @@
 #ifndef EE_UICUIPUSHBUTTON_HPP
 #define EE_UICUIPUSHBUTTON_HPP
 
-#include <eepp/ui/uiwidget.hpp>
-#include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uiimage.hpp>
+#include <eepp/ui/uitextview.hpp>
+#include <eepp/ui/uiwidget.hpp>
 
 namespace EE { namespace UI {
 
 class EE_API UIPushButton : public UIWidget {
-	public:
-		class StyleConfig {
-			public:
-				Int32 IconHorizontalMargin = 4;
-				bool IconAutoMargin = true;
-				Sizei IconMinSize;
-		};
+  public:
+	class StyleConfig {
+	  public:
+		Int32 IconHorizontalMargin = 4;
+		bool IconAutoMargin = true;
+		Sizei IconMinSize;
+	};
 
-		static UIPushButton * New();
+	static UIPushButton* New();
 
-		UIPushButton();
+	UIPushButton();
 
-		virtual ~UIPushButton();
+	virtual ~UIPushButton();
 
-		virtual Uint32 getType() const;
+	virtual Uint32 getType() const;
 
-		virtual bool isType( const Uint32& type ) const;
+	virtual bool isType( const Uint32& type ) const;
 
-		virtual void setTheme( UITheme * Theme );
+	virtual void setTheme( UITheme* Theme );
 
-		virtual UIPushButton * setIcon( Drawable * icon );
+	virtual UIPushButton* setIcon( Drawable* icon );
 
-		virtual UIImage * getIcon() const;
+	virtual UIImage* getIcon() const;
 
-		virtual UIPushButton * setText( const String& text );
+	virtual UIPushButton* setText( const String& text );
 
-		virtual const String& getText();
+	virtual const String& getText();
 
-		void setIconHorizontalMargin( Int32 margin );
+	void setIconHorizontalMargin( Int32 margin );
 
-		const Int32& getIconHorizontalMargin() const;
+	const Int32& getIconHorizontalMargin() const;
 
-		UITextView * getTextBox() const;
+	UITextView* getTextBox() const;
 
-		const StyleConfig& getStyleConfig() const;
+	const StyleConfig& getStyleConfig() const;
 
-		void setIconMinimumSize( const Sizei& minIconSize );
+	void setIconMinimumSize( const Sizei& minIconSize );
 
-		void setStyleConfig(const StyleConfig & styleConfig);
+	void setStyleConfig( const StyleConfig& styleConfig );
 
-		virtual bool applyProperty( const StyleSheetProperty& attribute );
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
-		virtual std::string getPropertyString(const PropertyDefinition* propertyDef);
-	protected:
-		StyleConfig mStyleConfig;
-		UIImage * 	mIcon;
-		UITextView * 	mTextBox;
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef );
 
-		explicit UIPushButton( const std::string& tag );
+  protected:
+	StyleConfig mStyleConfig;
+	UIImage* mIcon;
+	UITextView* mTextBox;
 
-		virtual void onSizeChange();
+	explicit UIPushButton( const std::string& tag );
 
-		virtual void onAlphaChange();
+	virtual void onSizeChange();
 
-		virtual void onStateChange();
+	virtual void onAlphaChange();
 
-		virtual void onAlignChange();
+	virtual void onStateChange();
 
-		virtual void onThemeLoaded();
+	virtual void onAlignChange();
 
-		virtual void onAutoSize();
+	virtual void onThemeLoaded();
 
-		virtual void onPaddingChange();
+	virtual void onAutoSize();
 
-		virtual Uint32 onKeyDown( const KeyEvent& Event );
+	virtual void onPaddingChange();
 
-		virtual Uint32 onKeyUp( const KeyEvent& Event );
+	virtual Uint32 onKeyDown( const KeyEvent& Event );
 
-		void autoIconHorizontalMargin();
+	virtual Uint32 onKeyUp( const KeyEvent& Event );
+
+	void autoIconHorizontalMargin();
 };
 
-}}
+}} // namespace EE::UI
 
 #endif
-

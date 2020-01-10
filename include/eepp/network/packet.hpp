@@ -13,9 +13,9 @@ class UdpSocket;
 /** @brief Utility class to build blocks of data to transfer over the network */
 class EE_API Packet {
 	// A bool-like type that cannot be converted to integer or pointer types
-	typedef bool (Packet::*BoolType)(std::size_t);
-	public:
+	typedef bool ( Packet::*BoolType )( std::size_t );
 
+  public:
 	/** @brief Default constructor
 	**  Creates an empty packet. */
 	Packet();
@@ -27,7 +27,7 @@ class EE_API Packet {
 	**  @param data		Pointer to the sequence of bytes to append
 	**  @param sizeInBytes Number of bytes to append
 	**  @see Clear */
-	void append(const void* data, std::size_t sizeInBytes);
+	void append( const void* data, std::size_t sizeInBytes );
 
 	/** @brief Clear the packet
 	**  After calling Clear, the packet is empty.
@@ -92,41 +92,42 @@ class EE_API Packet {
 	operator BoolType() const;
 
 	/**  Overloads of operator >> to read data from the packet */
-	Packet& operator >>(bool&		 data);
-	Packet& operator >>(Int8&		 data);
-	Packet& operator >>(Uint8&		data);
-	Packet& operator >>(Int16&		data);
-	Packet& operator >>(Uint16&	   data);
-	Packet& operator >>(Int32&		data);
-	Packet& operator >>(Uint32&	   data);
-	Packet& operator >>(float&		data);
-	Packet& operator >>(double&	   data);
-	Packet& operator >>(char*		 data);
-	Packet& operator >>(std::string&  data);
-	#ifndef EE_NO_WIDECHAR
-	Packet& operator >>(wchar_t*	  data);
-	Packet& operator >>(std::wstring& data);
-	#endif
-	Packet& operator >>(String&	   data);
+	Packet& operator>>( bool& data );
+	Packet& operator>>( Int8& data );
+	Packet& operator>>( Uint8& data );
+	Packet& operator>>( Int16& data );
+	Packet& operator>>( Uint16& data );
+	Packet& operator>>( Int32& data );
+	Packet& operator>>( Uint32& data );
+	Packet& operator>>( float& data );
+	Packet& operator>>( double& data );
+	Packet& operator>>( char* data );
+	Packet& operator>>( std::string& data );
+#ifndef EE_NO_WIDECHAR
+	Packet& operator>>( wchar_t* data );
+	Packet& operator>>( std::wstring& data );
+#endif
+	Packet& operator>>( String& data );
 
 	/**  Overloads of operator << to write data into the packet */
-	Packet& operator <<(bool				data);
-	Packet& operator <<(Int8				data);
-	Packet& operator <<(Uint8			   data);
-	Packet& operator <<(Int16			   data);
-	Packet& operator <<(Uint16			  data);
-	Packet& operator <<(Int32			   data);
-	Packet& operator <<(Uint32			  data);
-	Packet& operator <<(float			   data);
-	Packet& operator <<(double			  data);
-	Packet& operator <<(const char*		 data);
-	Packet& operator <<(const std::string&  data);
-	#ifndef EE_NO_WIDECHAR
-	Packet& operator <<(const wchar_t*	  data);
-	Packet& operator <<(const std::wstring& data);
-	#endif
-	Packet& operator <<(const String&	   data);
-protected:
+	Packet& operator<<( bool data );
+	Packet& operator<<( Int8 data );
+	Packet& operator<<( Uint8 data );
+	Packet& operator<<( Int16 data );
+	Packet& operator<<( Uint16 data );
+	Packet& operator<<( Int32 data );
+	Packet& operator<<( Uint32 data );
+	Packet& operator<<( float data );
+	Packet& operator<<( double data );
+	Packet& operator<<( const char* data );
+	Packet& operator<<( const std::string& data );
+#ifndef EE_NO_WIDECHAR
+	Packet& operator<<( const wchar_t* data );
+	Packet& operator<<( const std::wstring& data );
+#endif
+	Packet& operator<<( const String& data );
+
+  protected:
 	friend class TcpSocket;
 	friend class UdpSocket;
 
@@ -141,7 +142,7 @@ protected:
 	**  @param size Variable to fill with the size of data to send
 	**  @return Pointer to the array of bytes to send
 	**  @see OnReceive */
-	virtual const void* onSend(std::size_t& size);
+	virtual const void* onSend( std::size_t& size );
 
 	/** @brief Called after the packet is received over the network
 	**  This function can be defined by derived classes to
@@ -154,26 +155,27 @@ protected:
 	**  @param data Pointer to the received bytes
 	**  @param size Number of bytes
 	**  @see OnSend */
-	virtual void onReceive(const void* data, std::size_t size);
-private:
+	virtual void onReceive( const void* data, std::size_t size );
+
+  private:
 	/**  Disallow comparisons between packets */
-	bool operator ==(const Packet& right) const;
-	bool operator !=(const Packet& right) const;
+	bool operator==( const Packet& right ) const;
+	bool operator!=( const Packet& right ) const;
 
 	/** @brief Check if the packet can extract a given number of bytes
 	**  This function updates accordingly the state of the packet.
 	**  @param size Size to check
 	**  @return True if @a size bytes can be read from the packet */
-	bool checkSize(std::size_t size);
+	bool checkSize( std::size_t size );
 
 	// Member data
-	std::vector<char>	mData;	///< Data stored in the packet
-	std::size_t			mReadPos; ///< Current reading position in the packet
-	std::size_t			mSendPos; ///< Current send position in the packet (for handling partial sends)
-	bool				mIsValid; ///< Reading state of the packet
+	std::vector<char> mData; ///< Data stored in the packet
+	std::size_t mReadPos;	 ///< Current reading position in the packet
+	std::size_t mSendPos;	 ///< Current send position in the packet (for handling partial sends)
+	bool mIsValid;			 ///< Reading state of the packet
 };
 
-}}
+}} // namespace EE::Network
 
 #endif // EE_NETWORKCPACKET_HPP
 

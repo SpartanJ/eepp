@@ -1,10 +1,10 @@
 #ifndef EE_UIUIWIDGET_HPP
 #define EE_UIUIWIDGET_HPP
 
-#include <eepp/ui/uinode.hpp>
 #include <eepp/ui/css/stylesheetelement.hpp>
-#include <eepp/ui/css/stylesheetselector.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
+#include <eepp/ui/css/stylesheetselector.hpp>
+#include <eepp/ui/uinode.hpp>
 
 namespace pugi {
 class xml_node;
@@ -12,7 +12,7 @@ class xml_node;
 
 namespace EE { namespace UI { namespace CSS {
 class PropertyDefinition;
-}}}
+}}} // namespace EE::UI::CSS
 
 using namespace EE::UI::CSS;
 
@@ -22,260 +22,263 @@ class UITooltip;
 class UIStyle;
 
 class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
-	public:
-		static UIWidget * New();
+  public:
+	static UIWidget* New();
 
-		static UIWidget * NewWithTag( const std::string& tag );
+	static UIWidget* NewWithTag( const std::string& tag );
 
-		UIWidget();
+	UIWidget();
 
-		virtual ~UIWidget();
+	virtual ~UIWidget();
 
-		virtual Uint32 getType() const;
+	virtual Uint32 getType() const;
 
-		virtual bool isType( const Uint32& type ) const;
+	virtual bool isType( const Uint32& type ) const;
 
-		virtual Node * setSize( const Sizef& size );
+	virtual Node* setSize( const Sizef& size );
 
-		virtual UINode * setFlags( const Uint32& flags );
+	virtual UINode* setFlags( const Uint32& flags );
 
-		virtual UINode * unsetFlags( const Uint32& flags );
+	virtual UINode* unsetFlags( const Uint32& flags );
 
-		virtual UIWidget * setAnchors( const Uint32& flags );
+	virtual UIWidget* setAnchors( const Uint32& flags );
 
-		virtual void setTheme( UITheme * Theme );
+	virtual void setTheme( UITheme* Theme );
 
-		virtual UINode * setThemeSkin( const std::string& skinName );
+	virtual UINode* setThemeSkin( const std::string& skinName );
 
-		virtual UINode * setThemeSkin( UITheme * Theme, const std::string& skinName );
+	virtual UINode* setThemeSkin( UITheme* Theme, const std::string& skinName );
 
-		virtual Node * setSize( const Float& Width, const Float& Height );
+	virtual Node* setSize( const Float& Width, const Float& Height );
 
-		virtual Node * setId( const std::string & id );
+	virtual Node* setId( const std::string& id );
 
-		const Sizef& getSize() const;
+	const Sizef& getSize() const;
 
-		UITooltip * getTooltip();
+	UITooltip* getTooltip();
 
-		void tooltipRemove();
+	void tooltipRemove();
 
-		UIWidget * setTooltipText( const String& Text );
+	UIWidget* setTooltipText( const String& Text );
 
-		String getTooltipText();
+	String getTooltipText();
 
-		void updateAnchorsDistances();
+	void updateAnchorsDistances();
 
-		Rect getLayoutMargin() const;
+	Rect getLayoutMargin() const;
 
-		UIWidget * setLayoutMargin(const Rect & margin);
+	UIWidget* setLayoutMargin( const Rect& margin );
 
-		UIWidget * setLayoutMarginLeft(const Float& marginLeft);
+	UIWidget* setLayoutMarginLeft( const Float& marginLeft );
 
-		UIWidget * setLayoutMarginRight(const Float& marginRight);
+	UIWidget* setLayoutMarginRight( const Float& marginRight );
 
-		UIWidget * setLayoutMarginTop(const Float& marginTop);
+	UIWidget* setLayoutMarginTop( const Float& marginTop );
 
-		UIWidget * setLayoutMarginBottom(const Float& marginBottom);
+	UIWidget* setLayoutMarginBottom( const Float& marginBottom );
 
-		Float getLayoutWeight() const;
+	Float getLayoutWeight() const;
 
-		UIWidget * setLayoutWeight(const Float & weight);
+	UIWidget* setLayoutWeight( const Float& weight );
 
-		Uint32 getLayoutGravity() const;
+	Uint32 getLayoutGravity() const;
 
-		UIWidget * setLayoutGravity(const Uint32 & layoutGravity);
+	UIWidget* setLayoutGravity( const Uint32& layoutGravity );
 
-		LayoutSizeRule getLayoutWidthRule() const;
+	LayoutSizeRule getLayoutWidthRule() const;
 
-		UIWidget * setLayoutWidthRule(const LayoutSizeRule & layoutWidthRules);
+	UIWidget* setLayoutWidthRule( const LayoutSizeRule& layoutWidthRules );
 
-		LayoutSizeRule getLayoutHeightRule() const;
+	LayoutSizeRule getLayoutHeightRule() const;
 
-		UIWidget * setLayoutHeightRule(const LayoutSizeRule & layoutHeightRules);
+	UIWidget* setLayoutHeightRule( const LayoutSizeRule& layoutHeightRules );
 
-		UIWidget * setLayoutSizeRules( const LayoutSizeRule & layoutWidthRules, const LayoutSizeRule & layoutHeightRules );
+	UIWidget* setLayoutSizeRules( const LayoutSizeRule& layoutWidthRules,
+								  const LayoutSizeRule& layoutHeightRules );
 
-		UIWidget * setLayoutPositionRule( const LayoutPositionRule& layoutPositionRule, UIWidget * of );
+	UIWidget* setLayoutPositionRule( const LayoutPositionRule& layoutPositionRule, UIWidget* of );
 
-		UIWidget * getLayoutPositionRuleWidget() const;
+	UIWidget* getLayoutPositionRuleWidget() const;
 
-		LayoutPositionRule getLayoutPositionRule() const;
+	LayoutPositionRule getLayoutPositionRule() const;
 
-		virtual void loadFromXmlNode( const pugi::xml_node& node );
+	virtual void loadFromXmlNode( const pugi::xml_node& node );
 
-		void notifyLayoutAttrChange();
+	void notifyLayoutAttrChange();
 
-		void notifyLayoutAttrChangeParent();
+	void notifyLayoutAttrChangeParent();
 
-		void setStyleSheetInlineProperty( const std::string& name, const std::string& value, const Uint32& specificity = UINT32_MAX - 1/*SpecificityInline*/ );
+	void setStyleSheetInlineProperty( const std::string& name, const std::string& value,
+									  const Uint32& specificity = UINT32_MAX -
+																  1 /*SpecificityInline*/ );
 
-		virtual bool applyProperty( const StyleSheetProperty& attribute );
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
-		const Rectf& getPadding() const;
+	const Rectf& getPadding() const;
 
-		UIWidget * setPadding(const Rectf& padding);
+	UIWidget* setPadding( const Rectf& padding );
 
-		UIWidget * setPaddingLeft(const Float& paddingLeft);
+	UIWidget* setPaddingLeft( const Float& paddingLeft );
 
-		UIWidget * setPaddingRight(const Float& paddingRight);
+	UIWidget* setPaddingRight( const Float& paddingRight );
 
-		UIWidget * setPaddingTop(const Float& paddingTop);
+	UIWidget* setPaddingTop( const Float& paddingTop );
 
-		UIWidget * setPaddingBottom(const Float& paddingBottom);
+	UIWidget* setPaddingBottom( const Float& paddingBottom );
 
-		const std::string& getStyleSheetTag() const;
+	const std::string& getStyleSheetTag() const;
 
-		const std::string& getStyleSheetId() const;
+	const std::string& getStyleSheetId() const;
 
-		const std::vector<std::string>& getStyleSheetClasses() const;
+	const std::vector<std::string>& getStyleSheetClasses() const;
 
-		StyleSheetElement * getStyleSheetParentElement() const;
+	StyleSheetElement* getStyleSheetParentElement() const;
 
-		StyleSheetElement * getStyleSheetPreviousSiblingElement() const;
+	StyleSheetElement* getStyleSheetPreviousSiblingElement() const;
 
-		StyleSheetElement * getStyleSheetNextSiblingElement() const;
+	StyleSheetElement* getStyleSheetNextSiblingElement() const;
 
-		const std::vector<std::string>& getStyleSheetPseudoClasses() const;
+	const std::vector<std::string>& getStyleSheetPseudoClasses() const;
 
-		void addClass( const std::string& cls );
+	void addClass( const std::string& cls );
 
-		void addClasses( const std::vector<std::string>& classes );
+	void addClasses( const std::vector<std::string>& classes );
 
-		void removeClass( const std::string& cls );
+	void removeClass( const std::string& cls );
 
-		void removeClasses( const std::vector<std::string>& classes );
+	void removeClasses( const std::vector<std::string>& classes );
 
-		bool containsClass( const std::string& cls ) const;
+	bool containsClass( const std::string& cls ) const;
 
-		void setElementTag( const std::string& tag );
+	void setElementTag( const std::string& tag );
 
-		const std::string& getElementTag() const;
+	const std::string& getElementTag() const;
 
-		virtual void pushState( const Uint32& State, bool emitEvent = true );
+	virtual void pushState( const Uint32& State, bool emitEvent = true );
 
-		virtual void popState( const Uint32& State, bool emitEvent = true );
+	virtual void popState( const Uint32& State, bool emitEvent = true );
 
-		UIStyle * getUIStyle() const;
+	UIStyle* getUIStyle() const;
 
-		void reloadStyle( const bool& reloadChilds = true );
+	void reloadStyle( const bool& reloadChilds = true );
 
-		void beginAttributesTransaction();
+	void beginAttributesTransaction();
 
-		void endAttributesTransaction();
+	void endAttributesTransaction();
 
-		const Uint32& getStyleState() const;
+	const Uint32& getStyleState() const;
 
-		const Uint32& getStylePreviousState() const;
+	const Uint32& getStylePreviousState() const;
 
-		std::vector<UIWidget*> findAllByClass( const std::string& className );
+	std::vector<UIWidget*> findAllByClass( const std::string& className );
 
-		std::vector<UIWidget*> findAllByTag( const std::string& tag );
+	std::vector<UIWidget*> findAllByTag( const std::string& tag );
 
-		UIWidget * findByClass( const std::string& className );
+	UIWidget* findByClass( const std::string& className );
 
-		template<typename T>
-		T * findByClass( const std::string& className ) {
-			return reinterpret_cast<T*>( findByClass( className ) );
-		}
+	template <typename T> T* findByClass( const std::string& className ) {
+		return reinterpret_cast<T*>( findByClass( className ) );
+	}
 
-		UIWidget * findByTag( const std::string& tag );
+	UIWidget* findByTag( const std::string& tag );
 
-		template<typename T>
-		T * findByTag( const std::string& tag ) {
-			return reinterpret_cast<T*>( findByTag( tag ) );
-		}
+	template <typename T> T* findByTag( const std::string& tag ) {
+		return reinterpret_cast<T*>( findByTag( tag ) );
+	}
 
-		UIWidget * querySelector( const std::string& selector );
+	UIWidget* querySelector( const std::string& selector );
 
-		template<typename T>
-		T * querySelector( const std::string& selector ) {
-			return reinterpret_cast<T*>( querySelector( selector ) );
-		}
+	template <typename T> T* querySelector( const std::string& selector ) {
+		return reinterpret_cast<T*>( querySelector( selector ) );
+	}
 
-		std::vector<UIWidget*> querySelectorAll( const std::string& selector );
+	std::vector<UIWidget*> querySelectorAll( const std::string& selector );
 
-		std::string getPropertyString( const std::string& property );
+	std::string getPropertyString( const std::string& property );
 
-		virtual std::string getPropertyString( const PropertyDefinition* propertyDef );
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef );
 
-		bool isSceneNodeLoading() const;
-	protected:
-		friend class UIManager;
-		friend class UISceneNode;
+	bool isSceneNodeLoading() const;
 
-		std::string mTag;
-		UITheme *	mTheme;
-		UIStyle *	mStyle;
-		UITooltip *	mTooltip;
-		Sizef		mMinControlSize;
-		Rect		mDistToBorder;
-		Rect		mLayoutMargin;
-		Rectf		mPadding;
-		Rectf		mRealPadding;
-		Float		mLayoutWeight;
-		Uint32		mLayoutGravity;
-		LayoutSizeRule mLayoutWidthRule;
-		LayoutSizeRule mLayoutHeightRule;
-		LayoutPositionRule mLayoutPositionRule;
-		UIWidget * mLayoutPositionRuleWidget;
-		int	mAttributesTransactionCount;
-		std::string mSkinName;
-		std::vector<std::string> mClasses;
-		std::vector<std::string> mPseudoClasses;
+  protected:
+	friend class UIManager;
+	friend class UISceneNode;
 
-		explicit UIWidget( const std::string& tag );
+	std::string mTag;
+	UITheme* mTheme;
+	UIStyle* mStyle;
+	UITooltip* mTooltip;
+	Sizef mMinControlSize;
+	Rect mDistToBorder;
+	Rect mLayoutMargin;
+	Rectf mPadding;
+	Rectf mRealPadding;
+	Float mLayoutWeight;
+	Uint32 mLayoutGravity;
+	LayoutSizeRule mLayoutWidthRule;
+	LayoutSizeRule mLayoutHeightRule;
+	LayoutPositionRule mLayoutPositionRule;
+	UIWidget* mLayoutPositionRuleWidget;
+	int mAttributesTransactionCount;
+	std::string mSkinName;
+	std::vector<std::string> mClasses;
+	std::vector<std::string> mPseudoClasses;
 
-		void updatePseudoClasses();
+	explicit UIWidget( const std::string& tag );
 
-		void createTooltip();
+	void updatePseudoClasses();
 
-		virtual Uint32 onMouseMove( const Vector2i& Pos, const Uint32& Flags );
+	void createTooltip();
 
-		virtual Uint32 onMouseLeave( const Vector2i& Pos, const Uint32& Flags );
+	virtual Uint32 onMouseMove( const Vector2i& Pos, const Uint32& Flags );
 
-		virtual void onParentSizeChange( const Vector2f& SizeChange );
+	virtual Uint32 onMouseLeave( const Vector2i& Pos, const Uint32& Flags );
 
-		virtual void onPositionChange();
+	virtual void onParentSizeChange( const Vector2f& SizeChange );
 
-		virtual void onVisibilityChange();
+	virtual void onPositionChange();
 
-		virtual void onSizeChange();
+	virtual void onVisibilityChange();
 
-		virtual void onAutoSize();
+	virtual void onSizeChange();
 
-		virtual void onWidgetCreated();
+	virtual void onAutoSize();
 
-		virtual void onPaddingChange();
+	virtual void onWidgetCreated();
 
-		virtual void onThemeLoaded();
+	virtual void onPaddingChange();
 
-		virtual void onParentChange();
+	virtual void onThemeLoaded();
 
-		void updateAnchors( const Vector2f & SizeChange );
+	virtual void onParentChange();
 
-		void alignAgainstLayout();
+	void updateAnchors( const Vector2f& SizeChange );
 
-		void reportStyleStateChange();
+	void alignAgainstLayout();
 
-		std::string getLayoutWidthRulesString() const;
+	void reportStyleStateChange();
 
-		std::string getLayoutHeightRulesString() const;
+	std::string getLayoutWidthRulesString() const;
 
-		std::string getLayoutGravityString() const;
+	std::string getLayoutHeightRulesString() const;
 
-		std::string getGravityString() const;
+	std::string getLayoutGravityString() const;
 
-		std::string getFlagsString() const;
+	std::string getGravityString() const;
 
-		bool drawablePropertySet( const std::string& propertyName, const std::string& value, std::function<void(Drawable * drawable, bool ownIt, int index)> funcSet);
+	std::string getFlagsString() const;
 
-		UIWidget * querySelector( const CSS::StyleSheetSelector& selector );
+	bool
+	drawablePropertySet( const std::string& propertyName, const std::string& value,
+						 std::function<void( Drawable* drawable, bool ownIt, int index )> funcSet );
 
-		std::vector<UIWidget*> querySelectorAll( const CSS::StyleSheetSelector& selector );
+	UIWidget* querySelector( const CSS::StyleSheetSelector& selector );
 
-		bool checkPropertyDefinition( const StyleSheetProperty& property );
+	std::vector<UIWidget*> querySelectorAll( const CSS::StyleSheetSelector& selector );
+
+	bool checkPropertyDefinition( const StyleSheetProperty& property );
 };
 
-}}
+}} // namespace EE::UI
 
 #endif

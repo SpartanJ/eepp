@@ -1,5 +1,5 @@
-#include <eepp/system/thread.hpp>
 #include <eepp/system/platform/platformimpl.hpp>
+#include <eepp/system/thread.hpp>
 
 namespace EE { namespace System {
 
@@ -7,11 +7,7 @@ Uint32 Thread::getCurrentThreadId() {
 	return Platform::ThreadImpl::getCurrentThreadId();
 }
 
-Thread::Thread() :
-	mThreadImpl(NULL),
-	mEntryPoint(NULL)
-{
-}
+Thread::Thread() : mThreadImpl( NULL ), mEntryPoint( NULL ) {}
 
 Thread::~Thread() {
 	wait();
@@ -50,4 +46,4 @@ void Thread::run() {
 	mEntryPoint->run();
 }
 
-}}
+}} // namespace EE::System

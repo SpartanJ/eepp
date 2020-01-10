@@ -1,88 +1,89 @@
 #ifndef EE_UI_UISTYLE_HPP
 #define EE_UI_UISTYLE_HPP
 
-#include <eepp/ui/uistate.hpp>
+#include <eepp/graphics/fontstyleconfig.hpp>
+#include <eepp/math/ease.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
 #include <eepp/ui/css/stylesheetstyle.hpp>
 #include <eepp/ui/css/transitiondefinition.hpp>
-#include <eepp/graphics/fontstyleconfig.hpp>
-#include <eepp/math/ease.hpp>
-#include <set>
+#include <eepp/ui/uistate.hpp>
 #include <functional>
+#include <set>
 
 namespace EE { namespace Graphics {
 class Font;
-}}
+}} // namespace EE::Graphics
 
 namespace EE { namespace UI {
 
 class UIWidget;
 
 class EE_API UIStyle : public UIState {
-	public:
-		static UIStyle * New( UIWidget * widget );
+  public:
+	static UIStyle* New( UIWidget* widget );
 
-		explicit UIStyle( UIWidget * widget );
+	explicit UIStyle( UIWidget* widget );
 
-		virtual ~UIStyle();
+	virtual ~UIStyle();
 
-		bool stateExists( const Uint32& state ) const;
+	bool stateExists( const Uint32& state ) const;
 
-		void load();
+	void load();
 
-		void onStateChange();
+	void onStateChange();
 
-		CSS::StyleSheetProperty getStatelessStyleSheetProperty( const std::string& propertyName ) const;
+	CSS::StyleSheetProperty getStatelessStyleSheetProperty( const std::string& propertyName ) const;
 
-		CSS::StyleSheetProperty getStyleSheetProperty( const std::string& propertyName ) const;
+	CSS::StyleSheetProperty getStyleSheetProperty( const std::string& propertyName ) const;
 
-		void setStyleSheetProperties( const CSS::StyleSheetProperties& properties );
+	void setStyleSheetProperties( const CSS::StyleSheetProperties& properties );
 
-		void setStyleSheetProperty( const CSS::StyleSheetProperty& property );
+	void setStyleSheetProperty( const CSS::StyleSheetProperty& property );
 
-		bool hasTransition( const std::string& propertyName );
+	bool hasTransition( const std::string& propertyName );
 
-		CSS::TransitionDefinition getTransition( const std::string& propertyName );
+	CSS::TransitionDefinition getTransition( const std::string& propertyName );
 
-		const bool& isChangingState() const;
+	const bool& isChangingState() const;
 
-		CSS::StyleSheetVariable getVariable( const std::string& variable );
-	protected:
-		UIWidget * mWidget;
-		CSS::StyleSheetStyleVector mCacheableStyles;
-		CSS::StyleSheetStyleVector mNoncacheableStyles;
-		CSS::StyleSheetStyle mElementStyle;
-		CSS::StyleSheetProperties mProperties;
-		CSS::StyleSheetVariables mVariables;
-		std::vector<CSS::StyleSheetProperty> mTransitionAttributes;
-		CSS::TransitionsMap mTransitions;
-		std::set<UIWidget*> mRelatedWidgets;
-		std::set<UIWidget*> mSubscribedWidgets;
-		bool mChangingState;
+	CSS::StyleSheetVariable getVariable( const std::string& variable );
 
-		void tryApplyStyle( const CSS::StyleSheetStyle& style );
+  protected:
+	UIWidget* mWidget;
+	CSS::StyleSheetStyleVector mCacheableStyles;
+	CSS::StyleSheetStyleVector mNoncacheableStyles;
+	CSS::StyleSheetStyle mElementStyle;
+	CSS::StyleSheetProperties mProperties;
+	CSS::StyleSheetVariables mVariables;
+	std::vector<CSS::StyleSheetProperty> mTransitionAttributes;
+	CSS::TransitionsMap mTransitions;
+	std::set<UIWidget*> mRelatedWidgets;
+	std::set<UIWidget*> mSubscribedWidgets;
+	bool mChangingState;
 
-		void findVariables( const CSS::StyleSheetStyle& style );
+	void tryApplyStyle( const CSS::StyleSheetStyle& style );
 
-		void applyVarValues( CSS::StyleSheetStyle& style );
+	void findVariables( const CSS::StyleSheetStyle& style );
 
-		void setVariableFromValue( CSS::StyleSheetProperty& property, const std::string& value );
+	void applyVarValues( CSS::StyleSheetStyle& style );
 
-		void updateState();
+	void setVariableFromValue( CSS::StyleSheetProperty& property, const std::string& value );
 
-		void subscribeNonCacheableStyles();
+	void updateState();
 
-		void unsubscribeNonCacheableStyles();
+	void subscribeNonCacheableStyles();
 
-		void subscribeRelated( UIWidget * widget );
+	void unsubscribeNonCacheableStyles();
 
-		void unsubscribeRelated( UIWidget * widget );
+	void subscribeRelated( UIWidget* widget );
 
-		void removeFromSubscribedWidgets( UIWidget * widget );
+	void unsubscribeRelated( UIWidget* widget );
 
-		void removeRelatedWidgets();
+	void removeFromSubscribedWidgets( UIWidget* widget );
+
+	void removeRelatedWidgets();
 };
 
-}}
+}} // namespace EE::UI
 
 #endif

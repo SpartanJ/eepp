@@ -2,13 +2,11 @@
 
 #if defined( EE_PLATFORM_POSIX )
 
-namespace EE { namespace System { namespace Platform { 
+namespace EE { namespace System { namespace Platform {
 
-ClockImpl::ClockImpl() {
-}
+ClockImpl::ClockImpl() {}
 
-ClockImpl::~ClockImpl() {
-}
+ClockImpl::~ClockImpl() {}
 
 void ClockImpl::restart() {
 #ifdef EE_HAVE_CLOCK_GETTIME
@@ -22,7 +20,8 @@ unsigned long ClockImpl::getElapsedTime() {
 #ifdef EE_HAVE_CLOCK_GETTIME
 	timespec time;
 	clock_gettime( CLOCK_MONOTONIC, &time );
-	return ( static_cast<Uint64>( time.tv_sec - mStart.tv_sec ) * 1000000 + ( time.tv_nsec - mStart.tv_nsec ) / 1000 );
+	return ( static_cast<Uint64>( time.tv_sec - mStart.tv_sec ) * 1000000 +
+			 ( time.tv_nsec - mStart.tv_nsec ) / 1000 );
 #else
 	struct timeval now;
 	gettimeofday( &now, NULL );
@@ -30,6 +29,6 @@ unsigned long ClockImpl::getElapsedTime() {
 #endif
 }
 
-}}}
+}}} // namespace EE::System::Platform
 
 #endif

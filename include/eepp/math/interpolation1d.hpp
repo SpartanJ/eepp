@@ -11,148 +11,157 @@ using namespace EE::System;
 namespace EE { namespace Math {
 
 /** @brief The basic 1d point template. */
-template <typename T>
-class tPoint1d {
-	public:
-		tPoint1d() { p = 0; t = 0.f; }
-		tPoint1d( const T& pos, const Time& time ) { p = pos; t = time; }
-		T p;
-		Time t;
+template <typename T> class tPoint1d {
+  public:
+	tPoint1d() {
+		p = 0;
+		t = 0.f;
+	}
+	tPoint1d( const T& pos, const Time& time ) {
+		p = pos;
+		t = time;
+	}
+	T p;
+	Time t;
 };
 typedef tPoint1d<Float> Point1d;
 
 /** @brief A interpolation movement manager, used for movement interpolations. */
 class EE_API Interpolation1d {
-	public:
-		Interpolation1d();
+  public:
+	Interpolation1d();
 
-		Interpolation1d( std::vector<Point1d> points );
+	Interpolation1d( std::vector<Point1d> points );
 
-		~Interpolation1d();
+	~Interpolation1d();
 
-		typedef std::function<void(Interpolation1d&)> OnPathEndCallback;
+	typedef std::function<void( Interpolation1d& )> OnPathEndCallback;
 
-		typedef std::function<void(Interpolation1d&)> OnStepCallback;
+	typedef std::function<void( Interpolation1d& )> OnStepCallback;
 
-		/** Add a new point */
-		Interpolation1d& add( const Float& pos, const Time& Time = Time::Zero );
+	/** Add a new point */
+	Interpolation1d& add( const Float& pos, const Time& Time = Time::Zero );
 
-		/** Edit a point */
-		Interpolation1d& edit( const unsigned int& PointNum, const Float& pos, const Time& time = Time::Zero );
+	/** Edit a point */
+	Interpolation1d& edit( const unsigned int& PointNum, const Float& pos,
+						   const Time& time = Time::Zero );
 
-		/** Erase a point */
-		Interpolation1d& erase( const unsigned int& PointNum );
+	/** Erase a point */
+	Interpolation1d& erase( const unsigned int& PointNum );
 
-		/** Same as add( pos, time ).add( pos ); */
-		Interpolation1d& wait( const Float& pos, const Time& time );
+	/** Same as add( pos, time ).add( pos ); */
+	Interpolation1d& wait( const Float& pos, const Time& time );
 
-		/** Same as add( pos, waitTime ).add( pos, addTime ); */
-		Interpolation1d& waitAndAdd( const Float& pos, const Time& waitTime, const Time& addTime );
+	/** Same as add( pos, waitTime ).add( pos, addTime ); */
+	Interpolation1d& waitAndAdd( const Float& pos, const Time& waitTime, const Time& addTime );
 
-		/** Start the animation */
-		Interpolation1d& start();
+	/** Start the animation */
+	Interpolation1d& start();
 
-		/** Start the animation */
-		Interpolation1d& start( OnPathEndCallback PathEndCallback, OnStepCallback StepCallback = OnStepCallback() );
+	/** Start the animation */
+	Interpolation1d& start( OnPathEndCallback PathEndCallback,
+							OnStepCallback StepCallback = OnStepCallback() );
 
-		/** Stop the animation */
-		Interpolation1d& stop();
+	/** Stop the animation */
+	Interpolation1d& stop();
 
-		/** Sets a path end callback */
-		Interpolation1d& setPathEndCallback( OnPathEndCallback PathEndCallback );
+	/** Sets a path end callback */
+	Interpolation1d& setPathEndCallback( OnPathEndCallback PathEndCallback );
 
-		/** Sets a step callback */
-		Interpolation1d& setStepCallback( OnStepCallback StepCallback );
+	/** Sets a step callback */
+	Interpolation1d& setStepCallback( OnStepCallback StepCallback );
 
-		/** Update the movement interpolation */
-		void update( const Time& Elapsed );
+	/** Update the movement interpolation */
+	void update( const Time& Elapsed );
 
-		/** Reset the class */
-		Interpolation1d& reset();
+	/** Reset the class */
+	Interpolation1d& reset();
 
-		/** @return The Current Position */
-		const Float& getPosition();
+	/** @return The Current Position */
+	const Float& getPosition();
 
-		/** @return If movement interpolation is a loop */
-		const bool&	getLoop() const;
+	/** @return If movement interpolation is a loop */
+	const bool& getLoop() const;
 
-		/** Set if loop the movement interpolation */
-		Interpolation1d& setLoop( const bool& loop );
+	/** Set if loop the movement interpolation */
+	Interpolation1d& setLoop( const bool& loop );
 
-		/** Clear all the points */
-		Interpolation1d& clear();
+	/** Clear all the points */
+	Interpolation1d& clear();
 
-		/** @return If the animation ended */
-		const bool& ended() const;
+	/** @return If the animation ended */
+	const bool& ended() const;
 
-		/** Set the current interpolation speed */
-		Interpolation1d& setSpeed( const Float speed );
+	/** Set the current interpolation speed */
+	Interpolation1d& setSpeed( const Float speed );
 
-		/** Get the current interpolation speed */
-		const Float& getSpeed() const;
+	/** Get the current interpolation speed */
+	const Float& getSpeed() const;
 
-		/** @return If enabled */
-		const bool& isEnabled() const;
+	/** @return If enabled */
+	const bool& isEnabled() const;
 
-		Interpolation1d& setEnabled( const bool& enabled );
+	Interpolation1d& setEnabled( const bool& enabled );
 
-		/** Instead if setting the time between each waypoint, this set a total time for all the movement interpolation. */
-		Interpolation1d& setDuration( const Time& TotTime );
+	/** Instead if setting the time between each waypoint, this set a total time for all the
+	 * movement interpolation. */
+	Interpolation1d& setDuration( const Time& TotTime );
 
-		/** @return the vector of points */
-		const std::vector<Point1d>& getPoints() const;
+	/** @return the vector of points */
+	const std::vector<Point1d>& getPoints() const;
 
-		/** @return the vector of points reversed */
-		std::vector<Point1d> getReversePoints();
+	/** @return the vector of points reversed */
+	std::vector<Point1d> getReversePoints();
 
-		/** @return The Current Node */
-		Point1d* getCurrentActual() const;
+	/** @return The Current Node */
+	Point1d* getCurrentActual() const;
 
-		/** @return The Next Node */
-		Point1d* getCurrentNext() const;
+	/** @return The Next Node */
+	Point1d* getCurrentNext() const;
 
-		/** @return The Current Position in the vector */
-		const unsigned int& getCurrentPositionIndex() const;
+	/** @return The Current Position in the vector */
+	const unsigned int& getCurrentPositionIndex() const;
 
-		/** @return The path end position */
-		const Float& getFinalPosition();
+	/** @return The path end position */
+	const Float& getFinalPosition();
 
-		/** Set the type of interpolation to be used */
-		Interpolation1d& setType( Ease::Interpolation InterpolationType );
+	/** Set the type of interpolation to be used */
+	Interpolation1d& setType( Ease::Interpolation InterpolationType );
 
-		/** @return The type of the interpolation */
-		const int& getType() const;
+	/** @return The type of the interpolation */
+	const int& getType() const;
 
-		UintPtr getData() const;
+	UintPtr getData() const;
 
-		void setData(const UintPtr & data);
+	void setData( const UintPtr& data );
 
-		Float getCurrentProgress();
-	protected:
-		UintPtr mData;
-		int mType;
-		bool mEnable;
-		bool mUpdate;
-		bool mLoop;
-		bool mEnded;
+	Float getCurrentProgress();
 
-		Float mTotDist;
-		Float mCurPos;
-		unsigned int mCurPoint;
-		Time mCurTime;
+  protected:
+	UintPtr mData;
+	int mType;
+	bool mEnable;
+	bool mUpdate;
+	bool mLoop;
+	bool mEnded;
 
-		Float mSpeed;
+	Float mTotDist;
+	Float mCurPos;
+	unsigned int mCurPoint;
+	Time mCurTime;
 
-		std::vector<Point1d> mPoints;
+	Float mSpeed;
 
-		Point1d* mActP;
-		Point1d* mNexP;
+	std::vector<Point1d> mPoints;
 
-		OnPathEndCallback		mOnPathEndCallback;
+	Point1d* mActP;
+	Point1d* mNexP;
 
-		OnStepCallback			mOnStepCallback;
+	OnPathEndCallback mOnPathEndCallback;
+
+	OnStepCallback mOnStepCallback;
 };
 
-}}
+}} // namespace EE::Math
 
 #endif

@@ -1,32 +1,30 @@
-#include <eepp/system/iostreamfile.hpp>
 #include <eepp/core/memorymanager.hpp>
+#include <eepp/system/iostreamfile.hpp>
 
 namespace EE { namespace System {
 
-IOStreamFile * IOStreamFile::New( const std::string& path, const char * modes ) {
+IOStreamFile* IOStreamFile::New( const std::string& path, const char* modes ) {
 	return eeNew( IOStreamFile, ( path, modes ) );
 }
 
-IOStreamFile::IOStreamFile( const std::string& path, const char * modes ) :
-	mFS(NULL),
-	mSize(0)
-{
-	mFS = std::fopen(path.c_str(), modes);;
+IOStreamFile::IOStreamFile( const std::string& path, const char* modes ) : mFS( NULL ), mSize( 0 ) {
+	mFS = std::fopen( path.c_str(), modes );
+	;
 }
 
 IOStreamFile::~IOStreamFile() {
 	close();
 }
 
-ios_size IOStreamFile::read( char * data, ios_size size ) {
+ios_size IOStreamFile::read( char* data, ios_size size ) {
 	if ( isOpen() ) {
-		return std::fread(data, 1, static_cast<std::size_t>(size), mFS);
+		return std::fread( data, 1, static_cast<std::size_t>( size ), mFS );
 	}
 
 	return 0;
 }
 
-ios_size IOStreamFile::write( const char * data, ios_size size ) {
+ios_size IOStreamFile::write( const char* data, ios_size size ) {
 	if ( isOpen() ) {
 		std::fwrite( data, 1, size, mFS );
 	}
@@ -56,11 +54,11 @@ ios_size IOStreamFile::getSize() {
 		if ( 0 == mSize && mFS ) {
 			Int64 position = tell();
 
-			std::fseek(mFS, 0, SEEK_END);
+			std::fseek( mFS, 0, SEEK_END );
 
 			mSize = tell();
 
-			seek(position);
+			seek( position );
 		}
 
 		return mSize;
@@ -80,10 +78,10 @@ void IOStreamFile::flush() {
 
 void IOStreamFile::close() {
 	if ( isOpen() ) {
-		std::fclose(mFS);
+		std::fclose( mFS );
 
 		mFS = NULL;
 	}
 }
 
-}}
+}} // namespace EE::System

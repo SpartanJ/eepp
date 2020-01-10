@@ -8,84 +8,85 @@ namespace EE { namespace UI {
 class UIScrollBar;
 
 class EE_API UITextEdit : public UIWidget {
-	public:
-		static UITextEdit * New();
+  public:
+	static UITextEdit* New();
 
-		UITextEdit();
+	UITextEdit();
 
-		virtual ~UITextEdit();
+	virtual ~UITextEdit();
 
-		virtual Uint32 getType() const;
+	virtual Uint32 getType() const;
 
-		virtual bool isType( const Uint32& type ) const;
+	virtual bool isType( const Uint32& type ) const;
 
-		virtual void setTheme( UITheme * Theme );
+	virtual void setTheme( UITheme* Theme );
 
-		const String& getText() const;
+	const String& getText() const;
 
-		void setText( const String& Txt );
+	void setText( const String& Txt );
 
-		UITextInput * getTextInput() const;
+	UITextInput* getTextInput() const;
 
-		UIScrollBar * getHScrollBar() const;
+	UIScrollBar* getHScrollBar() const;
 
-		UIScrollBar * getVScrollBar() const;
+	UIScrollBar* getVScrollBar() const;
 
-		void setAllowEditing( const bool& allow );
+	void setAllowEditing( const bool& allow );
 
-		const bool& isEditingAllowed() const;
+	const bool& isEditingAllowed() const;
 
-		void setVerticalScrollMode( const ScrollBarMode& Mode );
+	void setVerticalScrollMode( const ScrollBarMode& Mode );
 
-		const ScrollBarMode& getVerticalScrollMode();
+	const ScrollBarMode& getVerticalScrollMode();
 
-		void setHorizontalScrollMode( const ScrollBarMode& Mode );
+	void setHorizontalScrollMode( const ScrollBarMode& Mode );
 
-		const ScrollBarMode& getHorizontalScrollMode();
+	const ScrollBarMode& getHorizontalScrollMode();
 
-		UIFontStyleConfig getFontStyleConfig() const;
+	UIFontStyleConfig getFontStyleConfig() const;
 
-		virtual bool applyProperty( const StyleSheetProperty& attribute );
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
-		virtual std::string getPropertyString(const PropertyDefinition* propertyDef);
-	protected:
-		UITextInput *		mTextInput;
-		UIScrollBar *		mHScrollBar;
-		UIScrollBar *		mVScrollBar;
-		ScrollBarMode	mHScrollBarMode;
-		ScrollBarMode	mVScrollBarMode;
-		bool				mSkipValueChange;
-		Rectf				mContainerPadding;
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef );
 
-		virtual void onSizeChange();
+  protected:
+	UITextInput* mTextInput;
+	UIScrollBar* mHScrollBar;
+	UIScrollBar* mVScrollBar;
+	ScrollBarMode mHScrollBarMode;
+	ScrollBarMode mVScrollBarMode;
+	bool mSkipValueChange;
+	Rectf mContainerPadding;
 
-		virtual void onAlphaChange();
+	virtual void onSizeChange();
 
-		virtual void onParentSizeChange( const Vector2f& SizeChange );
+	virtual void onAlphaChange();
 
-		virtual void onPaddingChange();
+	virtual void onParentSizeChange( const Vector2f& SizeChange );
 
-		virtual Uint32 onMessage( const NodeMessage * Msg );
+	virtual void onPaddingChange();
 
-		void onVScrollValueChange( const Event * Event );
+	virtual Uint32 onMessage( const NodeMessage* Msg );
 
-		void onHScrollValueChange( const Event * Event );
+	void onVScrollValueChange( const Event* Event );
 
-		void onInputSizeChange( const Event * Event = NULL );
+	void onHScrollValueChange( const Event* Event );
 
-		void onCursorPosChange( const Event * Event );
+	void onInputSizeChange( const Event* Event = NULL );
 
-		void autoPadding();
+	void onCursorPosChange( const Event* Event );
 
-		void scrollbarsSet();
+	void autoPadding();
 
-		void fixScroll();
+	void scrollbarsSet();
 
-		void fixScrollToCursor();
+	void fixScroll();
 
-		void shrinkText( const Uint32& Width );
+	void fixScrollToCursor();
+
+	void shrinkText( const Uint32& Width );
 };
 
-}}
+}} // namespace EE::UI
 
 #endif

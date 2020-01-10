@@ -13,9 +13,8 @@ class Packet;
 
 /** @brief Specialized socket using the TCP protocol */
 class EE_API TcpSocket : public Socket {
-	public:
-
-	static TcpSocket * New();
+  public:
+	static TcpSocket* New();
 
 	/** @brief Default constructor */
 	TcpSocket();
@@ -50,7 +49,8 @@ class EE_API TcpSocket : public Socket {
 	**  @param timeout	   Optional maximum time to wait
 	**  @return Status code
 	**  @see Disconnect */
-	virtual Status connect(const IpAddress& remoteAddress, unsigned short remotePort, Time timeout = Time::Zero);
+	virtual Status connect( const IpAddress& remoteAddress, unsigned short remotePort,
+							Time timeout = Time::Zero );
 
 	/** @brief Disconnect the socket from its remote peer
 	**  This function gracefully closes the connection. If the
@@ -69,7 +69,7 @@ class EE_API TcpSocket : public Socket {
 	**  @param size Number of bytes to send
 	**  @return Status code
 	**  @see Receive */
-	virtual Status send(const void* data, std::size_t size);
+	virtual Status send( const void* data, std::size_t size );
 
 	/** @brief Send raw data to the remote peer
 	**  This function will fail if the socket is not connected.
@@ -78,7 +78,7 @@ class EE_API TcpSocket : public Socket {
 	**  @param sent The number of bytes sent will be written here
 	**  @return Status code
 	**  @see receive */
-	virtual Status send(const void* data, std::size_t size, std::size_t& sent);
+	virtual Status send( const void* data, std::size_t size, std::size_t& sent );
 
 	/** @brief Receive raw data from the remote peer
 	**  In blocking mode, this function will wait until some
@@ -89,20 +89,20 @@ class EE_API TcpSocket : public Socket {
 	**  @param received This variable is filled with the actual number of bytes received
 	**  @return Status code
 	**  @see Send */
-	virtual Status receive(void* data, std::size_t size, std::size_t& received);
+	virtual Status receive( void* data, std::size_t size, std::size_t& received );
 
 	/** @brief Send a formatted packet of data to the remote peer
 	 *
-	**  In non-blocking mode, if this function returns sf::Socket::Partial,
-	**  you \em must retry sending the same unmodified packet before sending
-	**  anything else in order to guarantee the packet arrives at the remote
-	**  peer uncorrupted.
-	**
-	**  This function will fail if the socket is not connected.
-	**  @param packet Packet to send
-	**  @return Status code
-	**  @see Receive */
-	virtual Status send(Packet& packet);
+	 **  In non-blocking mode, if this function returns sf::Socket::Partial,
+	 **  you \em must retry sending the same unmodified packet before sending
+	 **  anything else in order to guarantee the packet arrives at the remote
+	 **  peer uncorrupted.
+	 **
+	 **  This function will fail if the socket is not connected.
+	 **  @param packet Packet to send
+	 **  @return Status code
+	 **  @see Receive */
+	virtual Status send( Packet& packet );
 
 	/** @brief Receive a formatted packet of data from the remote peer
 	**  In blocking mode, this function will wait until the whole packet
@@ -111,34 +111,33 @@ class EE_API TcpSocket : public Socket {
 	**  @param packet Packet to fill with the received data
 	**  @return Status code
 	**  @see Send */
-	virtual Status receive(Packet& packet);
+	virtual Status receive( Packet& packet );
 
 	/** Set the send timeout. Only callable after connect ( after the socket
 	 ** has been initialized ). */
-	void setSendTimeout(SocketHandle sock, const Time& timeout);
+	void setSendTimeout( SocketHandle sock, const Time& timeout );
 
 	/** Set the receive timeout Only callable after connect ( after the socket
 	 ** has been initialized ). */
-	void setReceiveTimeout(SocketHandle sock, const Time& timeout);
+	void setReceiveTimeout( SocketHandle sock, const Time& timeout );
 
-	private:
-
+  private:
 	friend class TcpListener;
 
 	/** @brief Structure holding the data of a pending packet */
 	struct PendingPacket {
 		PendingPacket();
 
-		Uint32			Size;		 ///< Data of packet size
-		std::size_t		SizeReceived; ///< Number of size bytes received so far
-		std::vector<char> Data;		 ///< Data of the packet
+		Uint32 Size;			  ///< Data of packet size
+		std::size_t SizeReceived; ///< Number of size bytes received so far
+		std::vector<char> Data;	  ///< Data of the packet
 	};
 
 	// Member data
 	PendingPacket mPendingPacket; ///< Temporary data of the packet currently being received
 };
 
-}}
+}} // namespace EE::Network
 
 #endif // EE_NETWORKCTCPSOCKET_HPP
 

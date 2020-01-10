@@ -1,22 +1,20 @@
-#include <eepp/ui/uigridlayout.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/uigridlayout.hpp>
 
 namespace EE { namespace UI {
 
-UIGridLayout * UIGridLayout::New() {
+UIGridLayout* UIGridLayout::New() {
 	return eeNew( UIGridLayout, () );
 }
 
 UIGridLayout::UIGridLayout() :
 	UILayout( "gridlayout" ),
 	mColumnMode( Weight ),
-	mRowMode( Weight  ),
+	mRowMode( Weight ),
 	mColumnWeight( 0.25f ),
 	mColumnWidth( 0 ),
 	mRowWeight( 0.25f ),
-	mRowHeight( 0 )
-{
-}
+	mRowHeight( 0 ) {}
 
 Uint32 UIGridLayout::getType() const {
 	return UI_TYPE_GRID_LAYOUT;
@@ -30,7 +28,7 @@ Sizei UIGridLayout::getSpan() const {
 	return mSpan;
 }
 
-UIGridLayout * UIGridLayout::setSpan(const Sizei & span) {
+UIGridLayout* UIGridLayout::setSpan( const Sizei& span ) {
 	mSpan = span;
 	invalidateDraw();
 	return this;
@@ -40,7 +38,7 @@ UIGridLayout::ElementMode UIGridLayout::getColumnMode() const {
 	return mColumnMode;
 }
 
-UIGridLayout * UIGridLayout::setColumnMode(const UIGridLayout::ElementMode & mode) {
+UIGridLayout* UIGridLayout::setColumnMode( const UIGridLayout::ElementMode& mode ) {
 	mColumnMode = mode;
 	pack();
 	invalidateDraw();
@@ -51,7 +49,7 @@ UIGridLayout::ElementMode UIGridLayout::getRowMode() const {
 	return mRowMode;
 }
 
-UIGridLayout *UIGridLayout::setRowMode(const UIGridLayout::ElementMode & mode) {
+UIGridLayout* UIGridLayout::setRowMode( const UIGridLayout::ElementMode& mode ) {
 	mRowMode = mode;
 	pack();
 	invalidateDraw();
@@ -62,7 +60,7 @@ Float UIGridLayout::getColumnWeight() const {
 	return mColumnWeight;
 }
 
-UIGridLayout * UIGridLayout::setColumnWeight(const Float & columnWeight) {
+UIGridLayout* UIGridLayout::setColumnWeight( const Float& columnWeight ) {
 	mColumnWeight = columnWeight;
 	if ( mColumnMode == Weight )
 		pack();
@@ -74,7 +72,7 @@ int UIGridLayout::getColumnWidth() const {
 	return mColumnWidth;
 }
 
-UIGridLayout * UIGridLayout::setColumnWidth(int columnWidth) {
+UIGridLayout* UIGridLayout::setColumnWidth( int columnWidth ) {
 	mColumnWidth = columnWidth;
 	if ( mColumnMode == Size )
 		pack();
@@ -86,7 +84,7 @@ int UIGridLayout::getRowHeight() const {
 	return mRowHeight;
 }
 
-UIGridLayout * UIGridLayout::setRowHeight(int rowHeight) {
+UIGridLayout* UIGridLayout::setRowHeight( int rowHeight ) {
 	mRowHeight = rowHeight;
 	if ( mRowMode == Size )
 		pack();
@@ -98,7 +96,7 @@ Float UIGridLayout::getRowWeight() const {
 	return mRowWeight;
 }
 
-UIGridLayout * UIGridLayout::setRowWeight(const Float & rowWeight) {
+UIGridLayout* UIGridLayout::setRowWeight( const Float& rowWeight ) {
 	mRowWeight = rowWeight;
 	if ( mRowMode == Weight )
 		pack();
@@ -121,7 +119,7 @@ void UIGridLayout::onPaddingChange() {
 	UILayout::onPaddingChange();
 }
 
-void UIGridLayout::onParentSizeChange(const Vector2f& SizeChange) {
+void UIGridLayout::onParentSizeChange( const Vector2f& SizeChange ) {
 	pack();
 	UIWidget::onParentSizeChange( SizeChange );
 }
@@ -132,16 +130,18 @@ void UIGridLayout::pack() {
 	setInternalPosition( Vector2f( mLayoutMargin.Left, mLayoutMargin.Top ) );
 
 	if ( getLayoutWidthRule() == LayoutSizeRule::MatchParent ) {
-		setInternalWidth( getParent()->getSize().getWidth() - mLayoutMargin.Left - mLayoutMargin.Right );
+		setInternalWidth( getParent()->getSize().getWidth() - mLayoutMargin.Left -
+						  mLayoutMargin.Right );
 	}
 
 	if ( getLayoutHeightRule() == LayoutSizeRule::MatchParent ) {
-		setInternalHeight( getParent()->getSize().getHeight() - mLayoutMargin.Top - mLayoutMargin.Bottom );
+		setInternalHeight( getParent()->getSize().getHeight() - mLayoutMargin.Top -
+						   mLayoutMargin.Bottom );
 	}
 
-	Node * ChildLoop = mChild;
+	Node* ChildLoop = mChild;
 
-	Vector2f pos(mPadding.Left,mPadding.Top);
+	Vector2f pos( mPadding.Left, mPadding.Top );
 	Sizef targetSize( getTargetElementSize() );
 
 	if ( getHorizontalAlign() == UI_HALIGN_RIGHT )
@@ -151,21 +151,27 @@ void UIGridLayout::pack() {
 
 	while ( NULL != ChildLoop ) {
 		if ( ChildLoop->isWidget() && ChildLoop->isVisible() ) {
-			UIWidget * widget = static_cast<UIWidget*>( ChildLoop );
+			UIWidget* widget = static_cast<UIWidget*>( ChildLoop );
 			usedLastRow = true;
 
 			if ( widget->getLayoutWeight() != 0.f )
-				targetSize.x = widget->getLayoutWeight() * ( getSize().getWidth() - mPadding.Left - mPadding.Right );
+				targetSize.x = widget->getLayoutWeight() *
+							   ( getSize().getWidth() - mPadding.Left - mPadding.Right );
 
 			widget->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::Fixed );
 			if ( targetSize >= Sizef::Zero )
 				widget->setSize( targetSize );
 			widget->setPosition( pos );
 
-			pos.x += getHorizontalAlign() == UI_HALIGN_RIGHT ? -targetSize.getWidth() : targetSize.getWidth();
+			pos.x += getHorizontalAlign() == UI_HALIGN_RIGHT ? -targetSize.getWidth()
+															 : targetSize.getWidth();
 
-			if ( pos.x < mPadding.Left || pos.x + targetSize.x > getSize().getWidth() - mPadding.Right || pos.x + targetSize.x + mSpan.x > getSize().getWidth() - mPadding.Right ) {
-				pos.x = getHorizontalAlign() == UI_HALIGN_RIGHT ? getSize().getWidth() - mPadding.Right : mPadding.Left;
+			if ( pos.x < mPadding.Left ||
+				 pos.x + targetSize.x > getSize().getWidth() - mPadding.Right ||
+				 pos.x + targetSize.x + mSpan.x > getSize().getWidth() - mPadding.Right ) {
+				pos.x = getHorizontalAlign() == UI_HALIGN_RIGHT
+							? getSize().getWidth() - mPadding.Right
+							: mPadding.Left;
 
 				pos.y += targetSize.getHeight() + mSpan.y;
 				usedLastRow = false;
@@ -188,10 +194,9 @@ void UIGridLayout::pack() {
 	invalidateDraw();
 }
 
-Uint32 UIGridLayout::onMessage(const NodeMessage * Msg) {
-	switch( Msg->getMsg() ) {
-		case NodeMessage::LayoutAttributeChange:
-		{
+Uint32 UIGridLayout::onMessage( const NodeMessage* Msg ) {
+	switch ( Msg->getMsg() ) {
+		case NodeMessage::LayoutAttributeChange: {
 			pack();
 			break;
 		}
@@ -201,12 +206,23 @@ Uint32 UIGridLayout::onMessage(const NodeMessage * Msg) {
 }
 
 Sizef UIGridLayout::getTargetElementSize() const {
-	return Sizef( mColumnMode == Size ? mColumnWidth : ( ( getLayoutHeightRule() == LayoutSizeRule::WrapContent ? getParent()->getSize().getWidth() : getSize().getWidth() ) - mPadding.Left - mPadding.Right ) * mColumnWeight,
-				  mRowMode == Size ? mRowHeight : ( ( getLayoutHeightRule() == LayoutSizeRule::WrapContent ? getParent()->getSize().getHeight() : getSize().getHeight() ) - mPadding.Top - mPadding.Bottom ) * mRowWeight );
+	return Sizef( mColumnMode == Size ? mColumnWidth
+									  : ( ( getLayoutHeightRule() == LayoutSizeRule::WrapContent
+												? getParent()->getSize().getWidth()
+												: getSize().getWidth() ) -
+										  mPadding.Left - mPadding.Right ) *
+											mColumnWeight,
+				  mRowMode == Size ? mRowHeight
+								   : ( ( getLayoutHeightRule() == LayoutSizeRule::WrapContent
+											 ? getParent()->getSize().getHeight()
+											 : getSize().getHeight() ) -
+									   mPadding.Top - mPadding.Bottom ) *
+										 mRowWeight );
 }
 
 std::string UIGridLayout::getPropertyString( const PropertyDefinition* propertyDef ) {
-	if ( NULL == propertyDef ) return "";
+	if ( NULL == propertyDef )
+		return "";
 
 	switch ( propertyDef->getPropertyId() ) {
 		case PropertyId::ColumnSpan:
@@ -233,7 +249,8 @@ std::string UIGridLayout::getPropertyString( const PropertyDefinition* propertyD
 }
 
 bool UIGridLayout::applyProperty( const StyleSheetProperty& attribute ) {
-	if ( !checkPropertyDefinition( attribute ) ) return false;
+	if ( !checkPropertyDefinition( attribute ) )
+		return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::ColumnSpan:
@@ -242,15 +259,13 @@ bool UIGridLayout::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::RowSpan:
 			setSpan( Sizei( mSpan.x, attribute.asDpDimensionI() ) );
 			break;
-		case PropertyId::ColumnMode:
-		{
+		case PropertyId::ColumnMode: {
 			std::string val( attribute.asString() );
 			String::toLowerInPlace( val );
 			setColumnMode( "size" == val ? Size : Weight );
 			break;
 		}
-		case PropertyId::RowMode:
-		{
+		case PropertyId::RowMode: {
 			std::string val( attribute.asString() );
 			String::toLowerInPlace( val );
 			setRowMode( "size" == val ? Size : Weight );
@@ -278,4 +293,4 @@ bool UIGridLayout::applyProperty( const StyleSheetProperty& attribute ) {
 	return true;
 }
 
-}}
+}} // namespace EE::UI

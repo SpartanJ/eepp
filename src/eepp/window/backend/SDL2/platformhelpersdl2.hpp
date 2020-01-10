@@ -6,28 +6,27 @@
 
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
-class EE_API PlatformHelperSDL2 : public PlatformHelper
-{
-	public:
-		PlatformHelperSDL2();
+class EE_API PlatformHelperSDL2 : public PlatformHelper {
+  public:
+	PlatformHelperSDL2();
 
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
-		void * getActivity();
+	void* getActivity();
 
-		void * getJNIEnv();
+	void* getJNIEnv();
 
-		std::string getExternalStoragePath();
+	std::string getExternalStoragePath();
 
-		std::string getInternalStoragePath();
+	std::string getInternalStoragePath();
 
-		std::string getApkPath();
+	std::string getApkPath();
 
-		bool isExternalStorageReadable();
+	bool isExternalStorageReadable();
 
-		bool isExternalStorageWritable();
+	bool isExternalStorageWritable();
 #endif
 };
 
-}}}}
+}}}} // namespace EE::Window::Backend::SDL2
 
 #endif

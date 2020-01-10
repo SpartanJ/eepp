@@ -2,8 +2,8 @@
 #define EE_NETWORKCFTP_HPP
 
 #include <eepp/core.hpp>
-#include <eepp/network/tcpsocket.hpp>
 #include <eepp/core/noncopyable.hpp>
+#include <eepp/network/tcpsocket.hpp>
 #include <eepp/system/time.hpp>
 #include <string>
 #include <vector>
@@ -16,143 +16,146 @@ class IpAddress;
 
 /** @brief A FTP client */
 class EE_API Ftp : NonCopyable {
-public:
+  public:
 	/** @brief Enumeration of transfer modes */
 	enum TransferMode {
 		Binary, ///< Binary mode (file is transfered as a sequence of bytes)
-		Ascii,  ///< Text mode using ASCII encoding
-		Ebcdic  ///< Text mode using EBCDIC encoding
+		Ascii,	///< Text mode using ASCII encoding
+		Ebcdic	///< Text mode using EBCDIC encoding
 	};
 
 	/** @brief Define a FTP response */
 	class EE_API Response {
-		public:
-			/** @brief Status codes possibly returned by a FTP response */
-			enum Status {
-				// 1xx: the requested action is being initiated,
-				// expect another reply before proceeding with a new command
-				RestartMarkerReply          = 110, ///< Restart marker reply
-				ServiceReadySoon            = 120, ///< Service ready in N minutes
-				DataConnectionAlreadyOpened = 125, ///< Data connection already opened, transfer starting
-				OpeningDataConnection       = 150, ///< File status ok, about to open data connection
+	  public:
+		/** @brief Status codes possibly returned by a FTP response */
+		enum Status {
+			// 1xx: the requested action is being initiated,
+			// expect another reply before proceeding with a new command
+			RestartMarkerReply = 110, ///< Restart marker reply
+			ServiceReadySoon = 120,	  ///< Service ready in N minutes
+			DataConnectionAlreadyOpened =
+				125,					 ///< Data connection already opened, transfer starting
+			OpeningDataConnection = 150, ///< File status ok, about to open data connection
 
-				// 2xx: the requested action has been successfully completed
-				Ok                    = 200, ///< Command ok
-				PointlessCommand      = 202, ///< Command not implemented
-				SystemStatus          = 211, ///< System status, or system help reply
-				DirectoryStatus       = 212, ///< Directory status
-				FileStatus            = 213, ///< File status
-				HelpMessage           = 214, ///< Help message
-				SystemType            = 215, ///< NAME system type, where NAME is an official system name from the list in the Assigned Numbers document
-				ServiceReady          = 220, ///< Service ready for new user
-				ClosingConnection     = 221, ///< Service closing control connection
-				DataConnectionOpened  = 225, ///< Data connection open, no transfer in progress
-				ClosingDataConnection = 226, ///< Closing data connection, requested file action successful
-				EnteringPassiveMode   = 227, ///< Entering passive mode
-				LoggedIn              = 230, ///< User logged in, proceed. Logged out if appropriate
-				FileActionOk          = 250, ///< Requested file action ok
-				DirectoryOk           = 257, ///< PATHNAME created
+			// 2xx: the requested action has been successfully completed
+			Ok = 200,				///< Command ok
+			PointlessCommand = 202, ///< Command not implemented
+			SystemStatus = 211,		///< System status, or system help reply
+			DirectoryStatus = 212,	///< Directory status
+			FileStatus = 213,		///< File status
+			HelpMessage = 214,		///< Help message
+			SystemType = 215, ///< NAME system type, where NAME is an official system name from the
+							  ///< list in the Assigned Numbers document
+			ServiceReady = 220,			///< Service ready for new user
+			ClosingConnection = 221,	///< Service closing control connection
+			DataConnectionOpened = 225, ///< Data connection open, no transfer in progress
+			ClosingDataConnection =
+				226, ///< Closing data connection, requested file action successful
+			EnteringPassiveMode = 227, ///< Entering passive mode
+			LoggedIn = 230,			   ///< User logged in, proceed. Logged out if appropriate
+			FileActionOk = 250,		   ///< Requested file action ok
+			DirectoryOk = 257,		   ///< PATHNAME created
 
-				// 3xx: the command has been accepted, but the requested action
-				// is dormant, pending receipt of further information
-				NeedPassword       = 331, ///< User name ok, need password
-				NeedAccountToLogIn = 332, ///< Need account for login
-				NeedInformation    = 350, ///< Requested file action pending further information
+			// 3xx: the command has been accepted, but the requested action
+			// is dormant, pending receipt of further information
+			NeedPassword = 331,		  ///< User name ok, need password
+			NeedAccountToLogIn = 332, ///< Need account for login
+			NeedInformation = 350,	  ///< Requested file action pending further information
 
-				// 4xx: the command was not accepted and the requested action did not take place,
-				// but the error condition is temporary and the action may be requested again
-				ServiceUnavailable        = 421, ///< Service not available, closing control connection
-				DataConnectionUnavailable = 425, ///< Can't open data connection
-				TransferAborted           = 426, ///< Connection closed, transfer aborted
-				FileActionAborted         = 450, ///< Requested file action not taken
-				LocalError                = 451, ///< Requested action aborted, local error in processing
-				InsufficientStorageSpace  = 452, ///< Requested action not taken; insufficient storage space in system, file unavailable
+			// 4xx: the command was not accepted and the requested action did not take place,
+			// but the error condition is temporary and the action may be requested again
+			ServiceUnavailable = 421,		 ///< Service not available, closing control connection
+			DataConnectionUnavailable = 425, ///< Can't open data connection
+			TransferAborted = 426,			 ///< Connection closed, transfer aborted
+			FileActionAborted = 450,		 ///< Requested file action not taken
+			LocalError = 451,				///< Requested action aborted, local error in processing
+			InsufficientStorageSpace = 452, ///< Requested action not taken; insufficient storage
+											///< space in system, file unavailable
 
-				// 5xx: the command was not accepted and
-				// the requested action did not take place
-				CommandUnknown          = 500, ///< Syntax error, command unrecognized
-				ParametersUnknown       = 501, ///< Syntax error in parameters or arguments
-				CommandNotImplemented   = 502, ///< Command not implemented
-				BadCommandSequence      = 503, ///< Bad sequence of commands
-				ParameterNotImplemented = 504, ///< Command not implemented for that parameter
-				NotLoggedIn             = 530, ///< Not logged in
-				NeedAccountToStore      = 532, ///< Need account for storing files
-				FileUnavailable         = 550, ///< Requested action not taken, file unavailable
-				PageTypeUnknown         = 551, ///< Requested action aborted, page type unknown
-				NotEnoughMemory         = 552, ///< Requested file action aborted, exceeded storage allocation
-				FilenameNotAllowed      = 553, ///< Requested action not taken, file name not allowed
+			// 5xx: the command was not accepted and
+			// the requested action did not take place
+			CommandUnknown = 500,		   ///< Syntax error, command unrecognized
+			ParametersUnknown = 501,	   ///< Syntax error in parameters or arguments
+			CommandNotImplemented = 502,   ///< Command not implemented
+			BadCommandSequence = 503,	   ///< Bad sequence of commands
+			ParameterNotImplemented = 504, ///< Command not implemented for that parameter
+			NotLoggedIn = 530,			   ///< Not logged in
+			NeedAccountToStore = 532,	   ///< Need account for storing files
+			FileUnavailable = 550,		   ///< Requested action not taken, file unavailable
+			PageTypeUnknown = 551,		   ///< Requested action aborted, page type unknown
+			NotEnoughMemory = 552, ///< Requested file action aborted, exceeded storage allocation
+			FilenameNotAllowed = 553, ///< Requested action not taken, file name not allowed
 
-				// 10xx: Custom codes
-				InvalidResponse  = 1000, ///< Response is not a valid FTP one
-				ConnectionFailed = 1001, ///< Connection with server failed
-				ConnectionClosed = 1002, ///< Connection with server closed
-				InvalidFile      = 1003  ///< Invalid file to upload / download
-			};
+			// 10xx: Custom codes
+			InvalidResponse = 1000,	 ///< Response is not a valid FTP one
+			ConnectionFailed = 1001, ///< Connection with server failed
+			ConnectionClosed = 1002, ///< Connection with server closed
+			InvalidFile = 1003		 ///< Invalid file to upload / download
+		};
 
-			/** @brief Default constructor
-			**
-			** This constructor is used by the FTP client to build
-			** the response.
-			**
-			** @param code    Response status code
-			** @param message Response message */
-			explicit Response(Status code = InvalidResponse, const std::string& message = "");
+		/** @brief Default constructor
+		**
+		** This constructor is used by the FTP client to build
+		** the response.
+		**
+		** @param code    Response status code
+		** @param message Response message */
+		explicit Response( Status code = InvalidResponse, const std::string& message = "" );
 
+		/** @brief Check if the status code means a success
+		**
+		** This function is defined for convenience, it is
+		** equivalent to testing if the status code is < 400.
+		**
+		** @return True if the status is a success, false if it is a failure */
+		bool isOk() const;
 
-			/** @brief Check if the status code means a success
-			**
-			** This function is defined for convenience, it is
-			** equivalent to testing if the status code is < 400.
-			**
-			** @return True if the status is a success, false if it is a failure */
-			bool isOk() const;
+		/** @brief Get the status code of the response
+		**
+		** @return Status code */
+		Status getStatus() const;
 
+		/** @brief Get the full message contained in the response
+		**  @return The response message */
+		const std::string& getMessage() const;
 
-			/** @brief Get the status code of the response
-			**
-			** @return Status code */
-			Status getStatus() const;
-
-			/** @brief Get the full message contained in the response
-			**  @return The response message */
-			const std::string& getMessage() const;
-		private:
-			// Member data
-			Status		mStatus;  ///< Status code returned from the server
-			std::string	mMessage; ///< Last message received from the server
+	  private:
+		// Member data
+		Status mStatus;		  ///< Status code returned from the server
+		std::string mMessage; ///< Last message received from the server
 	};
 
 	/** @brief Specialization of FTP response returning a directory */
 	class EE_API DirectoryResponse : public Response {
-		public:
-			/** @brief Default constructor
-			** @param response Source response */
-			DirectoryResponse(const Response& response);
+	  public:
+		/** @brief Default constructor
+		** @param response Source response */
+		DirectoryResponse( const Response& response );
 
+		/** @brief Get the directory returned in the response
+		** @return Directory name */
+		const std::string& getDirectory() const;
 
-			/** @brief Get the directory returned in the response
-			** @return Directory name */
-			const std::string& getDirectory() const;
-		private:
-			// Member data
-			std::string mDirectory; ///< Directory extracted from the response message
+	  private:
+		// Member data
+		std::string mDirectory; ///< Directory extracted from the response message
 	};
 
 	/**  @brief Specialization of FTP response returning a filename lisiting */
 	class EE_API ListingResponse : public Response {
-	public:
+	  public:
 		/** @brief Default constructor
 		**
 		** @param response  Source response
 		** @param data      Data containing the raw listing */
-		ListingResponse(const Response& response, const std::string & data);
-
+		ListingResponse( const Response& response, const std::string& data );
 
 		/** @brief Return the array of directory/file names
 		**
 		** @return Array containing the requested listing */
 		const std::vector<std::string>& getListing() const;
-	private:
+
+	  private:
 		// Member data
 		std::vector<std::string> mListing; ///< Directory/file names extracted from the data
 	};
@@ -163,7 +166,6 @@ public:
 	**  Automatically closes the connection with the server if
 	**  it is still opened. */
 	~Ftp();
-
 
 	/** @brief Connect to the specified FTP server
 	**  The port has a default value of 21, which is the standard
@@ -181,12 +183,14 @@ public:
 	**  @param validateHostname Enables hostname validation for https request
 	**  @param timeout Maximum time to wait
 	**  @return Server response to the request
-	**  @see Disconnect */
-	Response connect(const std::string& server, unsigned short port = 21, bool useTLS = false, bool validateCertificate = true, bool validateHostname = true, const Time& timeout = Time::Zero );
+	**  @see disconnect */
+	Response connect( const std::string& server, unsigned short port = 21, bool useTLS = false,
+					  bool validateCertificate = true, bool validateHostname = true,
+					  const Time& timeout = Time::Zero );
 
 	/** @brief Close the connection with the server
 	**  @return Server response to the request
-	**  @see Connect */
+	**  @see connect */
 	Response disconnect();
 
 	/** @brief Log in using an anonymous account
@@ -201,7 +205,7 @@ public:
 	**  @param name     User name
 	**  @param password Password
 	**  @return Server response to the request */
-	Response login(const std::string& name, const std::string& password);
+	Response login( const std::string& name, const std::string& password );
 
 	/** @brief Send a null command to keep the connection alive
 	**  This command is useful because the server may close the
@@ -213,7 +217,7 @@ public:
 	**  The working directory is the root path for subsequent
 	**  operations involving directories and/or filenames.
 	**  @return Server response to the request
-	**  @see GetDirectoryListing, ChangeDirectory, ParentDirectory */
+	**  @see getDirectoryListing, changeDirectory, parentDirectory */
 	DirectoryResponse getWorkingDirectory();
 
 	/** @brief Get the contents of the given directory
@@ -223,20 +227,19 @@ public:
 	**  working directory.
 	**  @param directory Directory to list
 	**  @return Server response to the request
-	**  @see GetWorkingDirectory, ChangeDirectory, ParentDirectory */
-	ListingResponse getDirectoryListing(const std::string& directory = "");
+	**  @see getWorkingDirectory, changeDirectory, parentDirectory */
+	ListingResponse getDirectoryListing( const std::string& directory = "" );
 
 	/**  @brief Change the current working directory
 	**  The new directory must be relative to the current one.
 	**  @param directory New working directory
 	**  @return Server response to the request
-	**  @see GetWorkingDirectory, GetDirectoryListing, ParentDirectory */
-	Response changeDirectory(const std::string& directory);
-
+	**  @see getWorkingDirectory, getDirectoryListing, parentDirectory */
+	Response changeDirectory( const std::string& directory );
 
 	/** @brief Go to the parent directory of the current one
 	**  @return Server response to the request
-	**  @see GetWorkingDirectory, GetDirectoryListing, ChangeDirectory */
+	**  @see getWorkingDirectory, getDirectoryListing, changeDirectory */
 	Response parentDirectory();
 
 	/**  @brief Create a new directory
@@ -244,8 +247,8 @@ public:
 	**  working directory.
 	**  @param name Name of the directory to create
 	**  @return Server response to the request
-	**  @see DeleteDirectory */
-	Response createDirectory(const std::string& name);
+	**  @see deleteDirectory */
+	Response createDirectory( const std::string& name );
 
 	/**  @brief Remove an existing directory
 	**  The directory to remove must be relative to the
@@ -254,8 +257,8 @@ public:
 	**  be removed permanently!
 	**  @param name Name of the directory to remove
 	**  @return Server response to the request
-	**  @see CreateDirectory */
-	Response deleteDirectory(const std::string& name);
+	**  @see createDirectory */
+	Response deleteDirectory( const std::string& name );
 
 	/** @brief Rename an existing file
 	**  The filenames must be relative to the current working
@@ -263,8 +266,8 @@ public:
 	**  @param file    File to rename
 	**  @param newName New name of the file
 	**  @return Server response to the request
-	**  @see DeleteFile */
-	Response renameFile(const std::string& file, const std::string& newName);
+	**  @see deleteFile */
+	Response renameFile( const std::string& file, const std::string& newName );
 
 	/** @brief Remove an existing file
 	**  The file name must be relative to the current working
@@ -274,7 +277,7 @@ public:
 	**  @param name File to remove
 	**  @return Server response to the request
 	**  @see RenameFile */
-	Response deleteFile(const std::string& name);
+	Response deleteFile( const std::string& name );
 
 	/**  @brief Download a file from the server
 	**  The filename of the distant file is relative to the
@@ -288,8 +291,9 @@ public:
 	**  @param localPath  Where to put to file on the local computer
 	**  @param mode       Transfer mode
 	**  @return Server response to the request
-	**  @see Upload */
-	Response download(const std::string& remoteFile, const std::string& localPath, TransferMode mode = Binary);
+	**  @see upload */
+	Response download( const std::string& remoteFile, const std::string& localPath,
+					   TransferMode mode = Binary );
 
 	/**  @brief Upload a file to the server
 	**  The name of the local file is relative to the current
@@ -299,22 +303,25 @@ public:
 	**  @param localFile  Path of the local file to upload
 	**  @param remotePath Where to put to file on the server
 	**  @param mode       Transfer mode
-	**  @param append     Pass true to append to or false to overwrite the remote file if it already exists
+	**  @param append     Pass true to append to or false to overwrite the remote file if it already
+	*exists
 	**  @return Server response to the request
-	**  @see Download */
-	Response upload(const std::string& localFile, const std::string& remotePath, TransferMode mode = Binary, bool append = false);
+	**  @see download */
+	Response upload( const std::string& localFile, const std::string& remotePath,
+					 TransferMode mode = Binary, bool append = false );
 
 	/** @return The server hostname (available only after connect). */
 	const std::string& getHostname() const;
 
 	/** @return True if connection is using TLS (available only after connect). */
 	const bool& isTLS() const;
-private :
+
+  private:
 	/** @brief Send a command to the FTP server
 	**  @param command   Command to send
 	**  @param parameter Command parameter
 	**  @return Server response to the request */
-	Response sendCommand(const std::string& command, const std::string& parameter = "");
+	Response sendCommand( const std::string& command, const std::string& parameter = "" );
 
 	/** @brief Receive a response from the server
 	**  This function must be called after each call to
@@ -327,14 +334,14 @@ private :
 	friend class DataChannel;
 
 	// Member data
-	TcpSocket * mCommandSocket; ///< Socket holding the control connection with the server
+	TcpSocket* mCommandSocket;	///< Socket holding the control connection with the server
 	std::string mReceiveBuffer; ///< Received command data that is yet to be processed
 	std::string mHostName;
 	bool mConnected;
 	bool mIsTLS;
 };
 
-}}
+}} // namespace EE::Network
 
 #endif // EE_NETWORKCFTP_HPP
 

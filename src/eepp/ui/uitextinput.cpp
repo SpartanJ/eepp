@@ -1,30 +1,26 @@
+#include <eepp/graphics/font.hpp>
+#include <eepp/graphics/fontmanager.hpp>
+#include <eepp/graphics/primitives.hpp>
+#include <eepp/graphics/renderer/renderer.hpp>
+#include <eepp/graphics/text.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitextinput.hpp>
 #include <eepp/window/engine.hpp>
-#include <eepp/graphics/renderer/renderer.hpp>
-#include <eepp/graphics/primitives.hpp>
-#include <eepp/graphics/font.hpp>
-#include <eepp/graphics/text.hpp>
-#include <eepp/graphics/fontmanager.hpp>
 #include <pugixml/pugixml.hpp>
-#include <eepp/ui/uiscenenode.hpp>
-#include <eepp/ui/css/propertydefinition.hpp>
 
 namespace EE { namespace UI {
 
-UITextInput * UITextInput::New() {
+UITextInput* UITextInput::New() {
 	return eeNew( UITextInput, () );
 }
 
-UITextInput * UITextInput::NewWithTag( const std::string& tag ) {
+UITextInput* UITextInput::NewWithTag( const std::string& tag ) {
 	return eeNew( UITextInput, ( tag ) );
 }
 
 UITextInput::UITextInput( const std::string& tag ) :
-	UITextView( tag ),
-	mCursorPos(0),
-	mAllowEditing( true ),
-	mShowingWait( true )
-{
+	UITextView( tag ), mCursorPos( 0 ), mAllowEditing( true ), mShowingWait( true ) {
 	mHintCache = Text::New();
 
 	subscribeScheduledUpdate();
@@ -37,16 +33,16 @@ UITextInput::UITextInput( const std::string& tag ) :
 	mTextBuffer.setFreeEditing( true );
 	mTextBuffer.setTextSelectionEnabled( isTextSelectionEnabled() );
 	mTextBuffer.setReturnCallback( cb::Make0( this, &UITextInput::privOnPressEnter ) );
-	mTextBuffer.setCursorPositionChangeCallback( cb::Make0( this, &UITextInput::onCursorPositionChange ) );
+	mTextBuffer.setCursorPositionChangeCallback(
+		cb::Make0( this, &UITextInput::onCursorPositionChange ) );
 	mTextBuffer.setBufferChangeCallback( cb::Make0( this, &UITextInput::onBufferChange ) );
-	mTextBuffer.setSelectionChangeCallback( cb::Make0( this, &UITextInput::onInputSelectionChange ) );
+	mTextBuffer.setSelectionChangeCallback(
+		cb::Make0( this, &UITextInput::onInputSelectionChange ) );
 
 	applyDefaultTheme();
 }
 
-UITextInput::UITextInput() :
-	UITextInput( "textinput" )
-{}
+UITextInput::UITextInput() : UITextInput( "textinput" ) {}
 
 UITextInput::~UITextInput() {
 	eeSAFE_DELETE( mHintCache );
@@ -74,7 +70,8 @@ void UITextInput::onCursorPosChange() {
 }
 
 void UITextInput::drawWaitingCursor() {
-	if ( mVisible && mTextBuffer.isActive() && mTextBuffer.isFreeEditingEnabled() && mShowingWait ) {
+	if ( mVisible && mTextBuffer.isActive() && mTextBuffer.isFreeEditingEnabled() &&
+		 mShowingWait ) {
 		bool disableSmooth = mShowingWait && GLi->isLineSmooth();
 
 		if ( disableSmooth )
@@ -83,13 +80,17 @@ void UITextInput::drawWaitingCursor() {
 		Primitives P;
 		P.setColor( mFontStyleConfig.FontColor );
 
-		Float CurPosX = eefloor( mScreenPos.x + mRealAlignOffset.x + mCurPos.x + PixelDensity::dpToPx( 1.f ) + mRealPadding.Left );
+		Float CurPosX = eefloor( mScreenPos.x + mRealAlignOffset.x + mCurPos.x +
+								 PixelDensity::dpToPx( 1.f ) + mRealPadding.Left );
 		Float CurPosY = mScreenPos.y + mRealAlignOffset.y + mCurPos.y + mRealPadding.Top;
 
 		if ( CurPosX > (Float)mScreenPos.x + (Float)mSize.x )
 			CurPosX = (Float)mScreenPos.x + (Float)mSize.x;
 
-		P.drawLine( Line2f( Vector2f( CurPosX, CurPosY ), Vector2f( CurPosX, CurPosY + mTextCache->getFont()->getFontHeight( mTextCache->getCharacterSizePx() ) ) ) );
+		P.drawLine(
+			Line2f( Vector2f( CurPosX, CurPosY ),
+					Vector2f( CurPosX, CurPosY + mTextCache->getFont()->getFontHeight(
+													 mTextCache->getCharacterSizePx() ) ) ) );
 
 		if ( disableSmooth )
 			GLi->lineSmooth( true );
@@ -116,31 +117,33 @@ void UITextInput::draw() {
 			drawSelection( mTextCache );
 
 			if ( isClipped() ) {
-				clipSmartEnable(
-						mScreenPos.x + mRealPadding.Left,
-						mScreenPos.y + mRealPadding.Top,
-						mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
-						mSize.getHeight() - mRealPadding.Top - mRealPadding.Bottom
-				);
+				clipSmartEnable( mScreenPos.x + mRealPadding.Left, mScreenPos.y + mRealPadding.Top,
+								 mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
+								 mSize.getHeight() - mRealPadding.Top - mRealPadding.Bottom );
 			}
 
 			mTextCache->setAlign( getFlags() );
-			mTextCache->draw( (Float)mScreenPosi.x + (int)mRealAlignOffset.x + (int)mRealPadding.Left, mFontLineCenter + (Float)mScreenPosi.y + (int)mRealAlignOffset.y + (int)mRealPadding.Top, Vector2f::One, 0.f, getBlendMode() );
+			mTextCache->draw( (Float)mScreenPosi.x + (int)mRealAlignOffset.x +
+								  (int)mRealPadding.Left,
+							  mFontLineCenter + (Float)mScreenPosi.y + (int)mRealAlignOffset.y +
+								  (int)mRealPadding.Top,
+							  Vector2f::One, 0.f, getBlendMode() );
 
 			if ( isClipped() ) {
 				clipSmartDisable();
 			}
 		} else if ( !mHintCache->getString().empty() && !mTextBuffer.isActive() ) {
 			if ( isClipped() ) {
-				clipSmartEnable(
-						mScreenPos.x + mRealPadding.Left,
-						mScreenPos.y + mRealPadding.Top,
-						mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
-						mSize.getHeight() - mRealPadding.Top - mRealPadding.Bottom
-				);
+				clipSmartEnable( mScreenPos.x + mRealPadding.Left, mScreenPos.y + mRealPadding.Top,
+								 mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
+								 mSize.getHeight() - mRealPadding.Top - mRealPadding.Bottom );
 			}
 
-			mHintCache->draw( (Float)mScreenPosi.x + (int)mRealAlignOffset.x + (int)mRealPadding.Left, mFontLineCenter + (Float)mScreenPosi.y + (int)mRealAlignOffset.y + (int)mRealPadding.Top, Vector2f::One, 0.f, getBlendMode() );
+			mHintCache->draw( (Float)mScreenPosi.x + (int)mRealAlignOffset.x +
+								  (int)mRealPadding.Left,
+							  mFontLineCenter + (Float)mScreenPosi.y + (int)mRealAlignOffset.y +
+								  (int)mRealPadding.Top,
+							  Vector2f::One, 0.f, getBlendMode() );
 
 			if ( isClipped() ) {
 				clipSmartDisable();
@@ -190,29 +193,32 @@ void UITextInput::alignFix() {
 	UITextView::alignFix();
 
 	if ( Font::getHorizontalAlign( getFlags() ) == UI_HALIGN_LEFT ) {
-		Uint32 NLPos	= 0;
-		Uint32 LineNum	= mTextBuffer.getCurPosLinePos( NLPos );
+		Uint32 NLPos = 0;
+		Uint32 LineNum = mTextBuffer.getCurPosLinePos( NLPos );
 
 		Text textCache( mTextCache->getFont(), mTextCache->getCharacterSize() );
 
-		textCache.setString( mTextBuffer.getBuffer().substr( NLPos, mTextBuffer.getCursorPosition() - NLPos ) );
+		textCache.setString(
+			mTextBuffer.getBuffer().substr( NLPos, mTextBuffer.getCursorPosition() - NLPos ) );
 
-		Float tW	= textCache.getTextWidth();
-		Float tX	= mRealAlignOffset.x + tW;
+		Float tW = textCache.getTextWidth();
+		Float tX = mRealAlignOffset.x + tW;
 
-		mCurPos.x	= tW;
-		mCurPos.y	= (Float)LineNum * (Float)mTextCache->getFont()->getLineSpacing( mTextCache->getCharacterSizePx() );
+		mCurPos.x = tW;
+		mCurPos.y = (Float)LineNum * (Float)mTextCache->getFont()->getLineSpacing(
+										 mTextCache->getCharacterSizePx() );
 
 		if ( !mTextBuffer.setSupportNewLine() ) {
 			if ( tX < 0.f )
 				mRealAlignOffset.x = -( mRealAlignOffset.x + ( tW - mRealAlignOffset.x ) );
 			else if ( tX > mSize.getWidth() - mRealPadding.Left - mRealPadding.Right )
-				mRealAlignOffset.x = mSize.getWidth() - mRealPadding.Left - mRealPadding.Right - ( mRealAlignOffset.x + ( tW - mRealAlignOffset.x ) );
+				mRealAlignOffset.x = mSize.getWidth() - mRealPadding.Left - mRealPadding.Right -
+									 ( mRealAlignOffset.x + ( tW - mRealAlignOffset.x ) );
 		}
 	}
 }
 
-void UITextInput::setTheme( UITheme * Theme ) {
+void UITextInput::setTheme( UITheme* Theme ) {
 	UIWidget::setTheme( Theme );
 
 	setThemeSkin( Theme, "textinput" );
@@ -233,11 +239,13 @@ void UITextInput::onThemeLoaded() {
 
 void UITextInput::onAutoSize() {
 	if ( ( mFlags & UI_AUTO_SIZE ) && 0 == getSize().getHeight() ) {
-		setInternalPixelsHeight( PixelDensity::dpToPxI( getSkinSize().getHeight() ) + mRealPadding.Top + mRealPadding.Bottom );
+		setInternalPixelsHeight( PixelDensity::dpToPxI( getSkinSize().getHeight() ) +
+								 mRealPadding.Top + mRealPadding.Bottom );
 	}
 
 	if ( mLayoutHeightRule == LayoutSizeRule::WrapContent ) {
-		int minHeight = eemax<int>( mTextCache->getTextHeight(), PixelDensity::dpToPxI( getSkinSize().getHeight() ) );
+		int minHeight = eemax<int>( mTextCache->getTextHeight(),
+									PixelDensity::dpToPxI( getSkinSize().getHeight() ) );
 		setInternalPixelsHeight( minHeight + mRealPadding.Top + mRealPadding.Bottom );
 	}
 }
@@ -248,11 +256,11 @@ void UITextInput::autoPadding() {
 	}
 }
 
-InputTextBuffer * UITextInput::getInputTextBuffer() {
+InputTextBuffer* UITextInput::getInputTextBuffer() {
 	return &mTextBuffer;
 }
 
-UITextInput * UITextInput::setAllowEditing( const bool& allow ) {
+UITextInput* UITextInput::setAllowEditing( const bool& allow ) {
 	mAllowEditing = allow;
 
 	if ( !mAllowEditing && mTextBuffer.isActive() )
@@ -265,7 +273,7 @@ const bool& UITextInput::isEditingAllowed() const {
 	return mAllowEditing;
 }
 
-UITextView * UITextInput::setText( const String& text ) {
+UITextView* UITextInput::setText( const String& text ) {
 	UITextView::setText( text );
 
 	mTextBuffer.setBuffer( text );
@@ -289,8 +297,7 @@ void UITextInput::shrinkText( const Uint32& MaxWidth ) {
 	alignFix();
 }
 
-void UITextInput::updateText() {
-}
+void UITextInput::updateText() {}
 
 Uint32 UITextInput::onMouseClick( const Vector2i& Pos, const Uint32& Flags ) {
 	UITextView::onMouseClick( Pos, Flags );
@@ -301,7 +308,8 @@ Uint32 UITextInput::onMouseClick( const Vector2i& Pos, const Uint32& Flags ) {
 			worldToNode( controlPos );
 			controlPos = PixelDensity::dpToPx( controlPos ) - mRealAlignOffset;
 
-			Int32 curPos = mTextCache->findCharacterFromPos( Vector2i( controlPos.x, controlPos.y ) );
+			Int32 curPos =
+				mTextCache->findCharacterFromPos( Vector2i( controlPos.x, controlPos.y ) );
 
 			if ( -1 != curPos ) {
 				mTextBuffer.setCursorPosition( curPos );
@@ -318,7 +326,7 @@ Uint32 UITextInput::onMouseClick( const Vector2i& Pos, const Uint32& Flags ) {
 	return 1;
 }
 
-Uint32 UITextInput::onMouseDown(const Vector2i& position, const Uint32& flags) {
+Uint32 UITextInput::onMouseDown( const Vector2i& position, const Uint32& flags ) {
 	int endPos = selCurEnd();
 
 	UITextView::onMouseDown( position, flags );
@@ -416,7 +424,7 @@ void UITextInput::onInputSelectionChange() {
 	onSelectionChange();
 }
 
-UITextInput * UITextInput::setMaxLength( Uint32 maxLength ) {
+UITextInput* UITextInput::setMaxLength( Uint32 maxLength ) {
 	mTextBuffer.setMaxLength( maxLength );
 	return this;
 }
@@ -425,7 +433,7 @@ Uint32 UITextInput::getMaxLength() {
 	return mTextBuffer.getMaxLength();
 }
 
-UITextInput * UITextInput::setFreeEditing( bool support ) {
+UITextInput* UITextInput::setFreeEditing( bool support ) {
 	mTextBuffer.setFreeEditing( support );
 	return this;
 }
@@ -435,7 +443,8 @@ bool UITextInput::isFreeEditingEnabled() {
 }
 
 std::string UITextInput::getPropertyString( const PropertyDefinition* propertyDef ) {
-	if ( NULL == propertyDef ) return "";
+	if ( NULL == propertyDef )
+		return "";
 
 	switch ( propertyDef->getPropertyId() ) {
 		case PropertyId::Text:
@@ -472,7 +481,8 @@ std::string UITextInput::getPropertyString( const PropertyDefinition* propertyDe
 }
 
 bool UITextInput::applyProperty( const StyleSheetProperty& attribute ) {
-	if ( !checkPropertyDefinition( attribute ) ) return false;
+	if ( !checkPropertyDefinition( attribute ) )
+		return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::Text:
@@ -489,10 +499,12 @@ bool UITextInput::applyProperty( const StyleSheetProperty& attribute ) {
 			setFreeEditing( attribute.asBool() );
 			break;
 		case PropertyId::OnlyNumbers:
-			getInputTextBuffer()->setAllowOnlyNumbers( attribute.asBool(), getInputTextBuffer()->dotsInNumbersAllowed() );
+			getInputTextBuffer()->setAllowOnlyNumbers(
+				attribute.asBool(), getInputTextBuffer()->dotsInNumbersAllowed() );
 			break;
 		case PropertyId::AllowDot:
-			getInputTextBuffer()->setAllowOnlyNumbers( getInputTextBuffer()->onlyNumbersAllowed(), attribute.asBool() );
+			getInputTextBuffer()->setAllowOnlyNumbers( getInputTextBuffer()->onlyNumbersAllowed(),
+													   attribute.asBool() );
 			break;
 		case PropertyId::Hint:
 			if ( NULL != getUISceneNode() )
@@ -526,7 +538,7 @@ bool UITextInput::applyProperty( const StyleSheetProperty& attribute ) {
 	return true;
 }
 
-UIWidget * UITextInput::setPadding( const Rectf& padding ) {
+UIWidget* UITextInput::setPadding( const Rectf& padding ) {
 	Rectf autoPadding;
 
 	if ( mFlags & UI_AUTO_PADDING ) {
@@ -548,7 +560,7 @@ const String& UITextInput::getHint() const {
 	return mHintCache->getString();
 }
 
-UITextInput* UITextInput::setHint(const String& hint) {
+UITextInput* UITextInput::setHint( const String& hint ) {
 	if ( hint != mHintCache->getString() ) {
 		mHintCache->setString( hint );
 		invalidateDraw();
@@ -561,7 +573,7 @@ const Color& UITextInput::getHintColor() const {
 	return mHintStyleConfig.getFontColor();
 }
 
-UITextInput* UITextInput::setHintColor(const Color& hintColor) {
+UITextInput* UITextInput::setHintColor( const Color& hintColor ) {
 	if ( hintColor != mHintStyleConfig.getFontColor() ) {
 		mHintCache->setFillColor( hintColor );
 		mHintStyleConfig.FontColor = hintColor;
@@ -575,7 +587,7 @@ const Color& UITextInput::getHintShadowColor() const {
 	return mHintStyleConfig.getFontShadowColor();
 }
 
-UITextInput* UITextInput::setHintShadowColor(const Color& shadowColor) {
+UITextInput* UITextInput::setHintShadowColor( const Color& shadowColor ) {
 	if ( shadowColor != mHintStyleConfig.getFontShadowColor() ) {
 		mHintCache->setShadowColor( shadowColor );
 		mHintStyleConfig.ShadowColor = shadowColor;
@@ -603,7 +615,7 @@ Uint32 UITextInput::getHintCharacterSize() const {
 	return mHintCache->getCharacterSize();
 }
 
-UITextView * UITextInput::setHintCharacterSize( const Uint32 & characterSize ) {
+UITextView* UITextInput::setHintCharacterSize( const Uint32& characterSize ) {
 	if ( mHintCache->getCharacterSize() != characterSize ) {
 		mHintCache->setCharacterSize( characterSize );
 		mHintStyleConfig.CharacterSize = characterSize;
@@ -613,15 +625,15 @@ UITextView * UITextInput::setHintCharacterSize( const Uint32 & characterSize ) {
 	return this;
 }
 
-const Uint32 &UITextInput::getHintFontStyle() const {
+const Uint32& UITextInput::getHintFontStyle() const {
 	return mHintStyleConfig.Style;
 }
 
-const Float &UITextInput::getHintOutlineThickness() const {
+const Float& UITextInput::getHintOutlineThickness() const {
 	return mHintStyleConfig.OutlineThickness;
 }
 
-UITextView * UITextInput::setHintOutlineThickness( const Float & outlineThickness ) {
+UITextView* UITextInput::setHintOutlineThickness( const Float& outlineThickness ) {
 	if ( mHintStyleConfig.OutlineThickness != outlineThickness ) {
 		mHintCache->setOutlineThickness( outlineThickness );
 		mHintStyleConfig.OutlineThickness = outlineThickness;
@@ -631,14 +643,15 @@ UITextView * UITextInput::setHintOutlineThickness( const Float & outlineThicknes
 	return this;
 }
 
-const Color &UITextInput::getHintOutlineColor() const {
+const Color& UITextInput::getHintOutlineColor() const {
 	return mHintStyleConfig.OutlineColor;
 }
 
-UITextView * UITextInput::setHintOutlineColor(const Color & outlineColor) {
+UITextView* UITextInput::setHintOutlineColor( const Color& outlineColor ) {
 	if ( mHintStyleConfig.OutlineColor != outlineColor ) {
 		mHintStyleConfig.OutlineColor = outlineColor;
-		Color newColor( outlineColor.r, outlineColor.g, outlineColor.b, outlineColor.a * mAlpha / 255.f );
+		Color newColor( outlineColor.r, outlineColor.g, outlineColor.b,
+						outlineColor.a * mAlpha / 255.f );
 		mHintCache->setOutlineColor( newColor );
 		invalidateDraw();
 	}
@@ -646,7 +659,7 @@ UITextView * UITextInput::setHintOutlineColor(const Color & outlineColor) {
 	return this;
 }
 
-UITextView * UITextInput::setHintFontStyle(const Uint32 & fontStyle) {
+UITextView* UITextInput::setHintFontStyle( const Uint32& fontStyle ) {
 	if ( mHintStyleConfig.Style != fontStyle ) {
 		mHintCache->setStyle( fontStyle );
 		mHintStyleConfig.Style = fontStyle;
@@ -656,4 +669,4 @@ UITextView * UITextInput::setHintFontStyle(const Uint32 & fontStyle) {
 	return this;
 }
 
-}}
+}} // namespace EE::UI

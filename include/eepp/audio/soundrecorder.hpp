@@ -1,264 +1,264 @@
 #ifndef EE_AUDIO_SOUNDRECORDER_HPP
 #define EE_AUDIO_SOUNDRECORDER_HPP
 
-#include <eepp/config.hpp>
 #include <eepp/audio/alresource.hpp>
+#include <eepp/config.hpp>
 #include <eepp/system/thread.hpp>
 #include <eepp/system/time.hpp>
-#include <vector>
 #include <string>
+#include <vector>
 using namespace EE::System;
 
 namespace EE { namespace Audio {
 
 /// \brief Abstract base class for capturing sound data
 class EE_API SoundRecorder : AlResource {
-	public:
-		virtual ~SoundRecorder();
+  public:
+	virtual ~SoundRecorder();
 
-		////////////////////////////////////////////////////////////
-		/// \brief Start the capture
-		///
-		/// The \a sampleRate parameter defines the number of audio samples
-		/// captured per second. The higher, the better the quality
-		/// (for example, 44100 samples/sec is CD quality).
-		/// This function uses its own thread so that it doesn't block
-		/// the rest of the program while the capture runs.
-		/// Please note that only one capture can happen at the same time.
-		/// You can select which capture device will be used, by passing
-		/// the name to the setDevice() method. If none was selected
-		/// before, the default capture device will be used. You can get a
-		/// list of the names of all available capture devices by calling
-		/// getAvailableDevices().
-		///
-		/// \param sampleRate Desired capture rate, in number of samples per second
-		///
-		/// \return True, if start of capture was successful
-		///
-		/// \see stop, getAvailableDevices
-		///
-		////////////////////////////////////////////////////////////
-		bool start(unsigned int sampleRate = 44100);
+	////////////////////////////////////////////////////////////
+	/// \brief Start the capture
+	///
+	/// The \a sampleRate parameter defines the number of audio samples
+	/// captured per second. The higher, the better the quality
+	/// (for example, 44100 samples/sec is CD quality).
+	/// This function uses its own thread so that it doesn't block
+	/// the rest of the program while the capture runs.
+	/// Please note that only one capture can happen at the same time.
+	/// You can select which capture device will be used, by passing
+	/// the name to the setDevice() method. If none was selected
+	/// before, the default capture device will be used. You can get a
+	/// list of the names of all available capture devices by calling
+	/// getAvailableDevices().
+	///
+	/// \param sampleRate Desired capture rate, in number of samples per second
+	///
+	/// \return True, if start of capture was successful
+	///
+	/// \see stop, getAvailableDevices
+	///
+	////////////////////////////////////////////////////////////
+	bool start( unsigned int sampleRate = 44100 );
 
-		////////////////////////////////////////////////////////////
-		/// \brief Stop the capture
-		///
-		/// \see start
-		///
-		////////////////////////////////////////////////////////////
-		void stop();
+	////////////////////////////////////////////////////////////
+	/// \brief Stop the capture
+	///
+	/// \see start
+	///
+	////////////////////////////////////////////////////////////
+	void stop();
 
-		////////////////////////////////////////////////////////////
-		/// \brief Get the sample rate
-		///
-		/// The sample rate defines the number of audio samples
-		/// captured per second. The higher, the better the quality
-		/// (for example, 44100 samples/sec is CD quality).
-		///
-		/// \return Sample rate, in samples per second
-		///
-		////////////////////////////////////////////////////////////
-		unsigned int getSampleRate() const;
+	////////////////////////////////////////////////////////////
+	/// \brief Get the sample rate
+	///
+	/// The sample rate defines the number of audio samples
+	/// captured per second. The higher, the better the quality
+	/// (for example, 44100 samples/sec is CD quality).
+	///
+	/// \return Sample rate, in samples per second
+	///
+	////////////////////////////////////////////////////////////
+	unsigned int getSampleRate() const;
 
-		////////////////////////////////////////////////////////////
-		/// \brief Get a list of the names of all available audio capture devices
-		///
-		/// This function returns a vector of strings, containing
-		/// the names of all available audio capture devices.
-		///
-		/// \return A vector of strings containing the names
-		///
-		////////////////////////////////////////////////////////////
-		static std::vector<std::string> getAvailableDevices();
+	////////////////////////////////////////////////////////////
+	/// \brief Get a list of the names of all available audio capture devices
+	///
+	/// This function returns a vector of strings, containing
+	/// the names of all available audio capture devices.
+	///
+	/// \return A vector of strings containing the names
+	///
+	////////////////////////////////////////////////////////////
+	static std::vector<std::string> getAvailableDevices();
 
-		////////////////////////////////////////////////////////////
-		/// \brief Get the name of the default audio capture device
-		///
-		/// This function returns the name of the default audio
-		/// capture device. If none is available, an empty string
-		/// is returned.
-		///
-		/// \return The name of the default audio capture device
-		///
-		////////////////////////////////////////////////////////////
-		static std::string getDefaultDevice();
+	////////////////////////////////////////////////////////////
+	/// \brief Get the name of the default audio capture device
+	///
+	/// This function returns the name of the default audio
+	/// capture device. If none is available, an empty string
+	/// is returned.
+	///
+	/// \return The name of the default audio capture device
+	///
+	////////////////////////////////////////////////////////////
+	static std::string getDefaultDevice();
 
-		////////////////////////////////////////////////////////////
-		/// \brief Set the audio capture device
-		///
-		/// This function sets the audio capture device to the device
-		/// with the given \a name. It can be called on the fly (i.e:
-		/// while recording). If you do so while recording and
-		/// opening the device fails, it stops the recording.
-		///
-		/// \param name The name of the audio capture device
-		///
-		/// \return True, if it was able to set the requested device
-		///
-		/// \see getAvailableDevices, getDefaultDevice
-		///
-		////////////////////////////////////////////////////////////
-		bool setDevice(const std::string& name);
+	////////////////////////////////////////////////////////////
+	/// \brief Set the audio capture device
+	///
+	/// This function sets the audio capture device to the device
+	/// with the given \a name. It can be called on the fly (i.e:
+	/// while recording). If you do so while recording and
+	/// opening the device fails, it stops the recording.
+	///
+	/// \param name The name of the audio capture device
+	///
+	/// \return True, if it was able to set the requested device
+	///
+	/// \see getAvailableDevices, getDefaultDevice
+	///
+	////////////////////////////////////////////////////////////
+	bool setDevice( const std::string& name );
 
-		////////////////////////////////////////////////////////////
-		/// \brief Get the name of the current audio capture device
-		///
-		/// \return The name of the current audio capture device
-		///
-		////////////////////////////////////////////////////////////
-		const std::string& getDevice() const;
+	////////////////////////////////////////////////////////////
+	/// \brief Get the name of the current audio capture device
+	///
+	/// \return The name of the current audio capture device
+	///
+	////////////////////////////////////////////////////////////
+	const std::string& getDevice() const;
 
-		////////////////////////////////////////////////////////////
-		/// \brief Set the channel count of the audio capture device
-		///
-		/// This method allows you to specify the number of channels
-		/// used for recording. Currently only 16-bit mono and
-		/// 16-bit stereo are supported.
-		///
-		/// \param channelCount Number of channels. Currently only
-		///					 mono (1) and stereo (2) are supported.
-		///
-		/// \see getChannelCount
-		///
-		////////////////////////////////////////////////////////////
-		void setChannelCount(unsigned int channelCount);
+	////////////////////////////////////////////////////////////
+	/// \brief Set the channel count of the audio capture device
+	///
+	/// This method allows you to specify the number of channels
+	/// used for recording. Currently only 16-bit mono and
+	/// 16-bit stereo are supported.
+	///
+	/// \param channelCount Number of channels. Currently only
+	///					 mono (1) and stereo (2) are supported.
+	///
+	/// \see getChannelCount
+	///
+	////////////////////////////////////////////////////////////
+	void setChannelCount( unsigned int channelCount );
 
-		////////////////////////////////////////////////////////////
-		/// \brief Get the number of channels used by this recorder
-		///
-		/// Currently only mono and stereo are supported, so the
-		/// value is either 1 (for mono) or 2 (for stereo).
-		///
-		/// \return Number of channels
-		///
-		/// \see setChannelCount
-		///
-		////////////////////////////////////////////////////////////
-		unsigned int getChannelCount() const;
+	////////////////////////////////////////////////////////////
+	/// \brief Get the number of channels used by this recorder
+	///
+	/// Currently only mono and stereo are supported, so the
+	/// value is either 1 (for mono) or 2 (for stereo).
+	///
+	/// \return Number of channels
+	///
+	/// \see setChannelCount
+	///
+	////////////////////////////////////////////////////////////
+	unsigned int getChannelCount() const;
 
-		bool isCapturing();
+	bool isCapturing();
 
-		////////////////////////////////////////////////////////////
-		/// \brief Check if the system supports audio capture
-		///
-		/// This function should always be called before using
-		/// the audio capture features. If it returns false, then
-		/// any attempt to use SoundRecorder or one of its derived
-		/// classes will fail.
-		///
-		/// \return True if audio capture is supported, false otherwise
-		///
-		////////////////////////////////////////////////////////////
-		static bool isAvailable();
-	protected:
+	////////////////////////////////////////////////////////////
+	/// \brief Check if the system supports audio capture
+	///
+	/// This function should always be called before using
+	/// the audio capture features. If it returns false, then
+	/// any attempt to use SoundRecorder or one of its derived
+	/// classes will fail.
+	///
+	/// \return True if audio capture is supported, false otherwise
+	///
+	////////////////////////////////////////////////////////////
+	static bool isAvailable();
 
-		////////////////////////////////////////////////////////////
-		/// \brief Default constructor
-		///
-		/// This constructor is only meant to be called by derived classes.
-		///
-		////////////////////////////////////////////////////////////
-		SoundRecorder();
+  protected:
+	////////////////////////////////////////////////////////////
+	/// \brief Default constructor
+	///
+	/// This constructor is only meant to be called by derived classes.
+	///
+	////////////////////////////////////////////////////////////
+	SoundRecorder();
 
-		////////////////////////////////////////////////////////////
-		/// \brief Set the processing interval
-		///
-		/// The processing interval controls the period
-		/// between calls to the onProcessSamples function. You may
-		/// want to use a small interval if you want to process the
-		/// recorded data in real time, for example.
-		///
-		/// Note: this is only a hint, the actual period may vary.
-		/// So don't rely on this parameter to implement precise timing.
-		///
-		/// The default processing interval is 100 ms.
-		///
-		/// \param interval Processing interval
-		///
-		////////////////////////////////////////////////////////////
-		void setProcessingInterval(Time interval);
+	////////////////////////////////////////////////////////////
+	/// \brief Set the processing interval
+	///
+	/// The processing interval controls the period
+	/// between calls to the onProcessSamples function. You may
+	/// want to use a small interval if you want to process the
+	/// recorded data in real time, for example.
+	///
+	/// Note: this is only a hint, the actual period may vary.
+	/// So don't rely on this parameter to implement precise timing.
+	///
+	/// The default processing interval is 100 ms.
+	///
+	/// \param interval Processing interval
+	///
+	////////////////////////////////////////////////////////////
+	void setProcessingInterval( Time interval );
 
-		////////////////////////////////////////////////////////////
-		/// \brief Start capturing audio data
-		///
-		/// This virtual function may be overridden by a derived class
-		/// if something has to be done every time a new capture
-		/// starts. If not, this function can be ignored; the default
-		/// implementation does nothing.
-		///
-		/// \return True to start the capture, or false to abort it
-		///
-		////////////////////////////////////////////////////////////
-		virtual bool onStart();
+	////////////////////////////////////////////////////////////
+	/// \brief Start capturing audio data
+	///
+	/// This virtual function may be overridden by a derived class
+	/// if something has to be done every time a new capture
+	/// starts. If not, this function can be ignored; the default
+	/// implementation does nothing.
+	///
+	/// \return True to start the capture, or false to abort it
+	///
+	////////////////////////////////////////////////////////////
+	virtual bool onStart();
 
-		////////////////////////////////////////////////////////////
-		/// \brief Process a new chunk of recorded samples
-		///
-		/// This virtual function is called every time a new chunk of
-		/// recorded data is available. The derived class can then do
-		/// whatever it wants with it (storing it, playing it, sending
-		/// it over the network, etc.).
-		///
-		/// \param samples	 Pointer to the new chunk of recorded samples
-		/// \param sampleCount Number of samples pointed by \a samples
-		///
-		/// \return True to continue the capture, or false to stop it
-		///
-		////////////////////////////////////////////////////////////
-		virtual bool onProcessSamples(const Int16* samples, std::size_t sampleCount) = 0;
+	////////////////////////////////////////////////////////////
+	/// \brief Process a new chunk of recorded samples
+	///
+	/// This virtual function is called every time a new chunk of
+	/// recorded data is available. The derived class can then do
+	/// whatever it wants with it (storing it, playing it, sending
+	/// it over the network, etc.).
+	///
+	/// \param samples	 Pointer to the new chunk of recorded samples
+	/// \param sampleCount Number of samples pointed by \a samples
+	///
+	/// \return True to continue the capture, or false to stop it
+	///
+	////////////////////////////////////////////////////////////
+	virtual bool onProcessSamples( const Int16* samples, std::size_t sampleCount ) = 0;
 
-		////////////////////////////////////////////////////////////
-		/// \brief Stop capturing audio data
-		///
-		/// This virtual function may be overridden by a derived class
-		/// if something has to be done every time the capture
-		/// ends. If not, this function can be ignored; the default
-		/// implementation does nothing.
-		///
-		////////////////////////////////////////////////////////////
-		virtual void onStop();
-	private:
+	////////////////////////////////////////////////////////////
+	/// \brief Stop capturing audio data
+	///
+	/// This virtual function may be overridden by a derived class
+	/// if something has to be done every time the capture
+	/// ends. If not, this function can be ignored; the default
+	/// implementation does nothing.
+	///
+	////////////////////////////////////////////////////////////
+	virtual void onStop();
 
-		////////////////////////////////////////////////////////////
-		/// \brief Function called as the entry point of the thread
-		///
-		/// This function starts the recording loop, and returns
-		/// only when the capture is stopped.
-		///
-		////////////////////////////////////////////////////////////
-		void record();
+  private:
+	////////////////////////////////////////////////////////////
+	/// \brief Function called as the entry point of the thread
+	///
+	/// This function starts the recording loop, and returns
+	/// only when the capture is stopped.
+	///
+	////////////////////////////////////////////////////////////
+	void record();
 
-		////////////////////////////////////////////////////////////
-		/// \brief Get the new available audio samples and process them
-		///
-		/// This function is called continuously during the
-		/// capture loop. It retrieves the captured samples and
-		/// forwards them to the derived class.
-		///
-		////////////////////////////////////////////////////////////
-		void processCapturedSamples();
+	////////////////////////////////////////////////////////////
+	/// \brief Get the new available audio samples and process them
+	///
+	/// This function is called continuously during the
+	/// capture loop. It retrieves the captured samples and
+	/// forwards them to the derived class.
+	///
+	////////////////////////////////////////////////////////////
+	void processCapturedSamples();
 
-		////////////////////////////////////////////////////////////
-		/// \brief Clean up the recorder's internal resources
-		///
-		/// This function is called when the capture stops.
-		///
-		////////////////////////////////////////////////////////////
-		void cleanup();
+	////////////////////////////////////////////////////////////
+	/// \brief Clean up the recorder's internal resources
+	///
+	/// This function is called when the capture stops.
+	///
+	////////////////////////////////////////////////////////////
+	void cleanup();
 
-		////////////////////////////////////////////////////////////
-		// Member data
-		////////////////////////////////////////////////////////////
-		Thread				mThread;			 ///< Thread running the background recording task
-		std::vector<Int16>	mSamples;			///< Buffer to store captured samples
-		unsigned int		mSampleRate;		 ///< Sample rate
-		Time				mProcessingInterval; ///< Time period between calls to onProcessSamples
-		bool				mIsCapturing;		///< Capturing state
-		std::string			mDeviceName;		 ///< Name of the audio capture device
-		unsigned int		mChannelCount;	   ///< Number of recording channels
+	////////////////////////////////////////////////////////////
+	// Member data
+	////////////////////////////////////////////////////////////
+	Thread mThread;				 ///< Thread running the background recording task
+	std::vector<Int16> mSamples; ///< Buffer to store captured samples
+	unsigned int mSampleRate;	 ///< Sample rate
+	Time mProcessingInterval;	 ///< Time period between calls to onProcessSamples
+	bool mIsCapturing;			 ///< Capturing state
+	std::string mDeviceName;	 ///< Name of the audio capture device
+	unsigned int mChannelCount;	 ///< Number of recording channels
 };
 
-}}
+}} // namespace EE::Audio
 
 #endif
 

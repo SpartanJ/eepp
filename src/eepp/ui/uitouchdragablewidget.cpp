@@ -1,23 +1,19 @@
-#include <eepp/ui/uitouchdragablewidget.hpp>
-#include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/scene/scenenode.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/uitouchdragablewidget.hpp>
 
 namespace EE { namespace UI {
 
-UITouchDragableWidget * UITouchDragableWidget::New() {
+UITouchDragableWidget* UITouchDragableWidget::New() {
 	return eeNew( UITouchDragableWidget, () );
 }
 
 UITouchDragableWidget::UITouchDragableWidget( const std::string& tag ) :
-	UIWidget( tag ),
-	mTouchDragDeceleration( 5.f, 5.f )
-{
+	UIWidget( tag ), mTouchDragDeceleration( 5.f, 5.f ) {
 	subscribeScheduledUpdate();
 }
 
-UITouchDragableWidget::UITouchDragableWidget() :
-	UITouchDragableWidget( "touchdragable" )
-{}
+UITouchDragableWidget::UITouchDragableWidget() : UITouchDragableWidget( "touchdragable" ) {}
 
 UITouchDragableWidget::~UITouchDragableWidget() {
 	if ( NULL != getEventDispatcher() && isTouchDragging() )
@@ -36,7 +32,7 @@ bool UITouchDragableWidget::isTouchDragEnabled() const {
 	return 0 != ( mFlags & UI_TOUCH_DRAG_ENABLED );
 }
 
-UITouchDragableWidget * UITouchDragableWidget::setTouchDragEnabled( const bool& enable ) {
+UITouchDragableWidget* UITouchDragableWidget::setTouchDragEnabled( const bool& enable ) {
 	writeFlag( UI_TOUCH_DRAG_ENABLED, true == enable );
 	return this;
 }
@@ -45,7 +41,7 @@ bool UITouchDragableWidget::isTouchDragging() const {
 	return 0 != ( mNodeFlags & NODE_FLAG_TOUCH_DRAGGING );
 }
 
-UITouchDragableWidget * UITouchDragableWidget::setTouchDragging( const bool& dragging ) {
+UITouchDragableWidget* UITouchDragableWidget::setTouchDragging( const bool& dragging ) {
 	writeNodeFlag( NODE_FLAG_TOUCH_DRAGGING, true == dragging );
 	return this;
 }
@@ -54,13 +50,13 @@ Vector2f UITouchDragableWidget::getTouchDragDeceleration() const {
 	return mTouchDragDeceleration;
 }
 
-UITouchDragableWidget * UITouchDragableWidget::setTouchDragDeceleration( const Vector2f& touchDragDeceleration ) {
+UITouchDragableWidget*
+UITouchDragableWidget::setTouchDragDeceleration( const Vector2f& touchDragDeceleration ) {
 	mTouchDragDeceleration = touchDragDeceleration;
 	return this;
 }
 
-void UITouchDragableWidget::onTouchDragValueChange( Vector2f )
-{}
+void UITouchDragableWidget::onTouchDragValueChange( Vector2f ) {}
 
 bool UITouchDragableWidget::isTouchOverAllowedChilds() {
 	return isMouseOverMeOrChilds();
@@ -69,8 +65,8 @@ bool UITouchDragableWidget::isTouchOverAllowedChilds() {
 void UITouchDragableWidget::scheduledUpdate( const Time& time ) {
 	if ( mEnabled && mVisible && NULL != getEventDispatcher() ) {
 		if ( isTouchDragEnabled() ) {
-			EventDispatcher * eventDispatcher = getEventDispatcher();
-			Uint32 Press	= eventDispatcher->getPressTrigger();
+			EventDispatcher* eventDispatcher = getEventDispatcher();
+			Uint32 Press = eventDispatcher->getPressTrigger();
 
 			if ( isTouchDragging() ) {
 				// Mouse Not Down
@@ -104,8 +100,9 @@ void UITouchDragableWidget::scheduledUpdate( const Time& time ) {
 						setTouchDragging( true );
 						eventDispatcher->setNodeDragging( this );
 
-						mTouchDragPoint			= Vector2f( eventDispatcher->getMousePos().x, eventDispatcher->getMousePos().y );
-						mTouchDragAcceleration	= Vector2f(0,0);
+						mTouchDragPoint = Vector2f( eventDispatcher->getMousePos().x,
+													eventDispatcher->getMousePos().y );
+						mTouchDragAcceleration = Vector2f( 0, 0 );
 					}
 				}
 
@@ -121,9 +118,10 @@ void UITouchDragableWidget::scheduledUpdate( const Time& time ) {
 						else
 							mTouchDragAcceleration.x += mTouchDragDeceleration.x * ms;
 
-
-						if ( wasPositiveX && mTouchDragAcceleration.x < 0 ) mTouchDragAcceleration.x = 0;
-						else if ( !wasPositiveX && mTouchDragAcceleration.x > 0 ) mTouchDragAcceleration.x = 0;
+						if ( wasPositiveX && mTouchDragAcceleration.x < 0 )
+							mTouchDragAcceleration.x = 0;
+						else if ( !wasPositiveX && mTouchDragAcceleration.x > 0 )
+							mTouchDragAcceleration.x = 0;
 					}
 
 					if ( 0 != mTouchDragAcceleration.y ) {
@@ -134,9 +132,10 @@ void UITouchDragableWidget::scheduledUpdate( const Time& time ) {
 						else
 							mTouchDragAcceleration.y += mTouchDragDeceleration.y * ms;
 
-
-						if ( wasPositiveY && mTouchDragAcceleration.y < 0 ) mTouchDragAcceleration.y = 0;
-						else if ( !wasPositiveY && mTouchDragAcceleration.y > 0 ) mTouchDragAcceleration.y = 0;
+						if ( wasPositiveY && mTouchDragAcceleration.y < 0 )
+							mTouchDragAcceleration.y = 0;
+						else if ( !wasPositiveY && mTouchDragAcceleration.y > 0 )
+							mTouchDragAcceleration.y = 0;
 					}
 
 					onTouchDragValueChange( mTouchDragAcceleration );
@@ -147,7 +146,8 @@ void UITouchDragableWidget::scheduledUpdate( const Time& time ) {
 }
 
 std::string UITouchDragableWidget::getPropertyString( const PropertyDefinition* propertyDef ) {
-	if ( NULL == propertyDef ) return "";
+	if ( NULL == propertyDef )
+		return "";
 
 	switch ( propertyDef->getPropertyId() ) {
 		case PropertyId::TouchDrag:
@@ -161,7 +161,8 @@ std::string UITouchDragableWidget::getPropertyString( const PropertyDefinition* 
 }
 
 bool UITouchDragableWidget::applyProperty( const StyleSheetProperty& attribute ) {
-	if ( !checkPropertyDefinition( attribute ) ) return false;
+	if ( !checkPropertyDefinition( attribute ) )
+		return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::TouchDrag:
@@ -177,4 +178,4 @@ bool UITouchDragableWidget::applyProperty( const StyleSheetProperty& attribute )
 	return true;
 }
 
-}}
+}} // namespace EE::UI

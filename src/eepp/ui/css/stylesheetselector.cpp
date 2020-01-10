@@ -1,25 +1,18 @@
-#include <eepp/ui/css/stylesheetselector.hpp>
 #include <eepp/ui/css/stylesheetelement.hpp>
+#include <eepp/ui/css/stylesheetselector.hpp>
 
 namespace EE { namespace UI { namespace CSS {
 
-StyleSheetSelector::StyleSheetSelector() :
-	mName( "*" ),
-	mSpecificity(0),
-	mCacheable(true)
-{
+StyleSheetSelector::StyleSheetSelector() : mName( "*" ), mSpecificity( 0 ), mCacheable( true ) {
 	parseSelector( mName );
 }
 
 StyleSheetSelector::StyleSheetSelector( const std::string& selectorName ) :
-	mName( String::toLower( selectorName ) ),
-	mSpecificity(0),
-	mCacheable(true)
-{
+	mName( String::toLower( selectorName ) ), mSpecificity( 0 ), mCacheable( true ) {
 	parseSelector( mName );
 }
 
-const std::string &StyleSheetSelector::getName() const {
+const std::string& StyleSheetSelector::getName() const {
 	return mName;
 }
 
@@ -41,7 +34,9 @@ void removeExtraSpaces( std::string& string ) {
 	String::replaceAll( string, " ~ ", "~" );
 }
 
-void StyleSheetSelector::addSelectorRule(std::string& buffer, StyleSheetSelectorRule::PatternMatch& curPatternMatch , const StyleSheetSelectorRule::PatternMatch& newPatternMatch ) {
+void StyleSheetSelector::addSelectorRule(
+	std::string& buffer, StyleSheetSelectorRule::PatternMatch& curPatternMatch,
+	const StyleSheetSelectorRule::PatternMatch& newPatternMatch ) {
 	StyleSheetSelectorRule selectorRule( buffer, curPatternMatch );
 	mSelectorRules.push_back( selectorRule );
 	curPatternMatch = newPatternMatch;
@@ -72,7 +67,8 @@ void StyleSheetSelector::parseSelector( std::string selector ) {
 					addSelectorRule( buffer, curPatternMatch, StyleSheetSelectorRule::CHILD );
 					break;
 				case StyleSheetSelectorRule::DIRECT_SIBLING:
-					addSelectorRule( buffer, curPatternMatch, StyleSheetSelectorRule::DIRECT_SIBLING );
+					addSelectorRule( buffer, curPatternMatch,
+									 StyleSheetSelectorRule::DIRECT_SIBLING );
 					break;
 				case StyleSheetSelectorRule::SIBLING:
 					addSelectorRule( buffer, curPatternMatch, StyleSheetSelectorRule::SIBLING );
@@ -96,7 +92,8 @@ void StyleSheetSelector::parseSelector( std::string selector ) {
 			mCacheable = true;
 
 			for ( size_t i = 1; i < mSelectorRules.size(); i++ ) {
-				if ( mSelectorRules[i].hasPseudoClasses() || mSelectorRules[i].hasStructuralPseudoClasses() ) {
+				if ( mSelectorRules[i].hasPseudoClasses() ||
+					 mSelectorRules[i].hasStructuralPseudoClasses() ) {
 					mCacheable = false;
 					break;
 				}
@@ -105,43 +102,43 @@ void StyleSheetSelector::parseSelector( std::string selector ) {
 	}
 }
 
-const bool &StyleSheetSelector::isCacheable() const {
+const bool& StyleSheetSelector::isCacheable() const {
 	return mCacheable;
 }
 
 bool StyleSheetSelector::hasPseudoClass( const std::string& cls ) const {
-	return mSelectorRules.empty() ? false : ( cls.empty() ? true : mSelectorRules[0].hasPseudoClass( cls ) );
+	return mSelectorRules.empty()
+			   ? false
+			   : ( cls.empty() ? true : mSelectorRules[0].hasPseudoClass( cls ) );
 }
 
 bool StyleSheetSelector::hasPseudoClasses() const {
 	return mSelectorRules.empty() || mSelectorRules[0].hasPseudoClasses();
 }
 
-bool StyleSheetSelector::select( StyleSheetElement * element, const bool& applyPseudo ) const {
+bool StyleSheetSelector::select( StyleSheetElement* element, const bool& applyPseudo ) const {
 	if ( mSelectorRules.empty() )
 		return false;
 
-	StyleSheetElement * curElement = element;
+	StyleSheetElement* curElement = element;
 
 	for ( size_t i = 0; i < mSelectorRules.size(); i++ ) {
 		const StyleSheetSelectorRule& selectorRule = mSelectorRules[i];
 
 		switch ( selectorRule.getPatternMatch() ) {
-			case StyleSheetSelectorRule::ANY:
-			{
+			case StyleSheetSelectorRule::ANY: {
 				if ( !selectorRule.matches( curElement, applyPseudo ) )
 					return false;
 
 				break; // continue evaluating
 			}
-			case StyleSheetSelectorRule::DESCENDANT:
-			{
+			case StyleSheetSelectorRule::DESCENDANT: {
 				bool foundDescendant = false;
 
 				curElement = curElement->getStyleSheetParentElement();
 
 				while ( NULL != curElement && !foundDescendant ) {
-					if  ( selectorRule.matches( curElement, applyPseudo ) ) {
+					if ( selectorRule.matches( curElement, applyPseudo ) ) {
 						foundDescendant = true;
 					} else {
 						curElement = curElement->getStyleSheetParentElement();
@@ -153,8 +150,7 @@ bool StyleSheetSelector::select( StyleSheetElement * element, const bool& applyP
 
 				break; // continue evaluating
 			}
-			case StyleSheetSelectorRule::CHILD:
-			{
+			case StyleSheetSelectorRule::CHILD: {
 				curElement = curElement->getStyleSheetParentElement();
 
 				if ( NULL == curElement || !selectorRule.matches( curElement, applyPseudo ) )
@@ -162,8 +158,7 @@ bool StyleSheetSelector::select( StyleSheetElement * element, const bool& applyP
 
 				break; // continue evaluating
 			}
-			case StyleSheetSelectorRule::DIRECT_SIBLING:
-			{
+			case StyleSheetSelectorRule::DIRECT_SIBLING: {
 				curElement = curElement->getStyleSheetPreviousSiblingElement();
 
 				if ( NULL == curElement || !selectorRule.matches( curElement, applyPseudo ) )
@@ -171,11 +166,10 @@ bool StyleSheetSelector::select( StyleSheetElement * element, const bool& applyP
 
 				break; // continue evaluating
 			}
-			case StyleSheetSelectorRule::SIBLING:
-			{
+			case StyleSheetSelectorRule::SIBLING: {
 				bool foundSibling = false;
-				StyleSheetElement * prevSibling = curElement->getStyleSheetPreviousSiblingElement();
-				StyleSheetElement * nextSibling = curElement->getStyleSheetNextSiblingElement();
+				StyleSheetElement* prevSibling = curElement->getStyleSheetPreviousSiblingElement();
+				StyleSheetElement* nextSibling = curElement->getStyleSheetNextSiblingElement();
 
 				while ( NULL != prevSibling && !foundSibling ) {
 					if ( selectorRule.matches( prevSibling, applyPseudo ) ) {
@@ -206,33 +200,33 @@ bool StyleSheetSelector::select( StyleSheetElement * element, const bool& applyP
 	return true;
 }
 
-std::vector<StyleSheetElement*> StyleSheetSelector::getRelatedElements( StyleSheetElement * element, const bool& applyPseudo ) const {
+std::vector<StyleSheetElement*>
+StyleSheetSelector::getRelatedElements( StyleSheetElement* element,
+										const bool& applyPseudo ) const {
 	static std::vector<StyleSheetElement*> EMPTY_ELEMENTS;
 	std::vector<StyleSheetElement*> elements;
 	if ( mSelectorRules.empty() )
 		return elements;
 
-	StyleSheetElement * curElement = element;
+	StyleSheetElement* curElement = element;
 
 	for ( size_t i = 0; i < mSelectorRules.size(); i++ ) {
 		const StyleSheetSelectorRule& selectorRule = mSelectorRules[i];
 
 		switch ( selectorRule.getPatternMatch() ) {
-			case StyleSheetSelectorRule::ANY:
-			{
+			case StyleSheetSelectorRule::ANY: {
 				if ( !selectorRule.matches( curElement, applyPseudo ) )
 					return EMPTY_ELEMENTS;
 
 				break; // continue evaluating
 			}
-			case StyleSheetSelectorRule::DESCENDANT:
-			{
+			case StyleSheetSelectorRule::DESCENDANT: {
 				bool foundDescendant = false;
 
 				curElement = curElement->getStyleSheetParentElement();
 
 				while ( NULL != curElement && !foundDescendant ) {
-					if  ( selectorRule.matches( curElement, applyPseudo ) ) {
+					if ( selectorRule.matches( curElement, applyPseudo ) ) {
 						foundDescendant = true;
 					} else {
 						curElement = curElement->getStyleSheetParentElement();
@@ -242,43 +236,43 @@ std::vector<StyleSheetElement*> StyleSheetSelector::getRelatedElements( StyleShe
 				if ( !foundDescendant )
 					return EMPTY_ELEMENTS;
 
-				if ( 0 != i && ( selectorRule.hasPseudoClasses() || selectorRule.hasStructuralPseudoClasses() ) ) {
+				if ( 0 != i && ( selectorRule.hasPseudoClasses() ||
+								 selectorRule.hasStructuralPseudoClasses() ) ) {
 					elements.push_back( curElement );
 				}
 
 				break; // continue evaluating
 			}
-			case StyleSheetSelectorRule::CHILD:
-			{
+			case StyleSheetSelectorRule::CHILD: {
 				curElement = curElement->getStyleSheetParentElement();
 
 				if ( NULL == curElement || !selectorRule.matches( curElement, applyPseudo ) )
 					return EMPTY_ELEMENTS;
 
-				if ( 0 != i && ( selectorRule.hasPseudoClasses() || selectorRule.hasStructuralPseudoClasses() ) ) {
+				if ( 0 != i && ( selectorRule.hasPseudoClasses() ||
+								 selectorRule.hasStructuralPseudoClasses() ) ) {
 					elements.push_back( curElement );
 				}
 
 				break; // continue evaluating
 			}
-			case StyleSheetSelectorRule::DIRECT_SIBLING:
-			{
+			case StyleSheetSelectorRule::DIRECT_SIBLING: {
 				curElement = curElement->getStyleSheetPreviousSiblingElement();
 
 				if ( NULL == curElement || !selectorRule.matches( curElement, applyPseudo ) )
 					return EMPTY_ELEMENTS;
 
-				if ( 0 != i && ( selectorRule.hasPseudoClasses() || selectorRule.hasStructuralPseudoClasses() ) ) {
+				if ( 0 != i && ( selectorRule.hasPseudoClasses() ||
+								 selectorRule.hasStructuralPseudoClasses() ) ) {
 					elements.push_back( curElement );
 				}
 
 				break; // continue evaluating
 			}
-			case StyleSheetSelectorRule::SIBLING:
-			{
+			case StyleSheetSelectorRule::SIBLING: {
 				bool foundSibling = false;
-				StyleSheetElement * prevSibling = curElement->getStyleSheetPreviousSiblingElement();
-				StyleSheetElement * nextSibling = curElement->getStyleSheetNextSiblingElement();
+				StyleSheetElement* prevSibling = curElement->getStyleSheetPreviousSiblingElement();
+				StyleSheetElement* nextSibling = curElement->getStyleSheetNextSiblingElement();
 
 				while ( NULL != prevSibling && !foundSibling ) {
 					if ( selectorRule.matches( prevSibling, applyPseudo ) ) {
@@ -303,7 +297,8 @@ std::vector<StyleSheetElement*> StyleSheetSelector::getRelatedElements( StyleShe
 				if ( !foundSibling )
 					return EMPTY_ELEMENTS;
 
-				if ( 0 != i && ( selectorRule.hasPseudoClasses() || selectorRule.hasStructuralPseudoClasses() ) ) {
+				if ( 0 != i && ( selectorRule.hasPseudoClasses() ||
+								 selectorRule.hasStructuralPseudoClasses() ) ) {
 					elements.push_back( curElement );
 				}
 
@@ -315,4 +310,4 @@ std::vector<StyleSheetElement*> StyleSheetSelector::getRelatedElements( StyleShe
 	return elements;
 }
 
-}}}
+}}} // namespace EE::UI::CSS

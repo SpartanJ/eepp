@@ -1,117 +1,118 @@
 #ifndef EE_UICUITOOLTIP_HPP
 #define EE_UICUITOOLTIP_HPP
 
-#include <eepp/ui/uiwidget.hpp>
 #include <eepp/ui/uifontstyleconfig.hpp>
+#include <eepp/ui/uiwidget.hpp>
 
 namespace EE { namespace Graphics {
 class Text;
 class Font;
-}}
+}} // namespace EE::Graphics
 
 namespace EE { namespace UI {
 
 class EE_API UITooltip : public UIWidget {
-	public:
-		static UITooltip * New();
+  public:
+	static UITooltip* New();
 
-		UITooltip();
+	UITooltip();
 
-		virtual ~UITooltip();
+	virtual ~UITooltip();
 
-		virtual Uint32 getType() const;
+	virtual Uint32 getType() const;
 
-		virtual bool isType( const Uint32& type ) const;
+	virtual bool isType( const Uint32& type ) const;
 
-		virtual void setTheme( UITheme * Theme );
+	virtual void setTheme( UITheme* Theme );
 
-		void show();
+	void show();
 
-		void hide();
+	void hide();
 
-		virtual void draw();
+	virtual void draw();
 
-		Graphics::Font * getFont() const;
+	Graphics::Font* getFont() const;
 
-		void setFont( Graphics::Font * font );
+	void setFont( Graphics::Font* font );
 
-		virtual const String& getText();
+	virtual const String& getText();
 
-		virtual void setText( const String& text );
+	virtual void setText( const String& text );
 
-		const Color& getFontColor() const;
+	const Color& getFontColor() const;
 
-		void setFontColor( const Color& color );
+	void setFontColor( const Color& color );
 
-		const Color& getFontShadowColor() const;
+	const Color& getFontShadowColor() const;
 
-		void setFontShadowColor( const Color& color );
+	void setFontShadowColor( const Color& color );
 
-		virtual void onTextChanged();
+	virtual void onTextChanged();
 
-		virtual void onFontChanged();
+	virtual void onFontChanged();
 
-		Text * getTextCache();
+	Text* getTextCache();
 
-		Float getTextWidth();
+	Float getTextWidth();
 
-		Float getTextHeight();
+	Float getTextHeight();
 
-		const int& getNumLines() const;
+	const int& getNumLines() const;
 
-		Vector2f getAlignOffset();
+	Vector2f getAlignOffset();
 
-		void setTooltipTime( const Time& Time );
+	void setTooltipTime( const Time& Time );
 
-		void addTooltipTime( const Time & Time );
+	void addTooltipTime( const Time& Time );
 
-		const Time & getTooltipTime() const;
+	const Time& getTooltipTime() const;
 
-		UINode * getTooltipOf() const;
+	UINode* getTooltipOf() const;
 
-		void setTooltipOf(UINode * tooltipOf);
+	void setTooltipOf( UINode* tooltipOf );
 
-		const UIFontStyleConfig & getFontStyleConfig() const;
+	const UIFontStyleConfig& getFontStyleConfig() const;
 
-		void setFontStyleConfig(const UIFontStyleConfig & styleConfig);
+	void setFontStyleConfig( const UIFontStyleConfig& styleConfig );
 
-		Uint32 getCharacterSize() const;
+	Uint32 getCharacterSize() const;
 
-		UITooltip * setCharacterSize( const Uint32& characterSize );
+	UITooltip* setCharacterSize( const Uint32& characterSize );
 
-		UITooltip * setFontStyle( const Uint32 & fontStyle );
+	UITooltip* setFontStyle( const Uint32& fontStyle );
 
-		const Uint32& getFontStyle() const;
+	const Uint32& getFontStyle() const;
 
-		const Float& getOutlineThickness() const;
+	const Float& getOutlineThickness() const;
 
-		UITooltip * setOutlineThickness( const Float& outlineThickness );
+	UITooltip* setOutlineThickness( const Float& outlineThickness );
 
-		const Color& getOutlineColor() const;
+	const Color& getOutlineColor() const;
 
-		UITooltip * setOutlineColor( const Color& outlineColor );
+	UITooltip* setOutlineColor( const Color& outlineColor );
 
-		virtual bool applyProperty( const StyleSheetProperty& attribute );
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
-		virtual std::string getPropertyString(const PropertyDefinition* propertyDef);
-	protected:
-		Text *	mTextCache;
-		UIFontStyleConfig mStyleConfig;
-		Vector2f 	mAlignOffset;
-		Time		mTooltipTime;
-		UINode *	mTooltipOf;
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef );
 
-		virtual void onAlphaChange();
+  protected:
+	Text* mTextCache;
+	UIFontStyleConfig mStyleConfig;
+	Vector2f mAlignOffset;
+	Time mTooltipTime;
+	UINode* mTooltipOf;
 
-		virtual void onSizeChange();
+	virtual void onAlphaChange();
 
-		virtual void onAutoSize();
+	virtual void onSizeChange();
 
-		virtual void autoAlign();
+	virtual void onAutoSize();
 
-		virtual void autoPadding();
+	virtual void autoAlign();
+
+	virtual void autoPadding();
 };
 
-}}
+}} // namespace EE::UI
 
 #endif

@@ -5,12 +5,12 @@
 
 #include <eepp/maps/gameobject.hpp>
 #include <eepp/maps/gameobjectobject.hpp>
+#include <eepp/maps/maplayer.hpp>
 #include <eepp/maps/maplight.hpp>
 #include <eepp/maps/maplightmanager.hpp>
-#include <eepp/maps/maplayer.hpp>
 
-#include <eepp/window/input.hpp>
 #include <eepp/window/engine.hpp>
+#include <eepp/window/input.hpp>
 #include <eepp/window/window.hpp>
 using namespace EE::Window;
 
@@ -19,298 +19,300 @@ using namespace EE::Graphics;
 
 namespace EE { namespace Maps {
 
-namespace Private { class UIMapNew; }
+namespace Private {
+class UIMapNew;
+}
 
 #define EE_MAP_LAYER_UNKNOWN eeINDEX_NOT_FOUND
 #define EE_MAP_MAGIC ( ( 'E' << 0 ) | ( 'E' << 8 ) | ( 'M' << 16 ) | ( 'P' << 24 ) )
 
 class EE_API TileMap {
-	public:
-		typedef std::map<std::string, std::string>	PropertiesMap;
-		typedef std::list<std::string>				GOTypesList;		//! Special object types used in this map
-		typedef std::function< GameObject *( const Uint32&, const Uint32&, MapLayer *, const Uint32& )>		CreateGOCb;
-		typedef std::function<void()>	MapDrawCb;
-		typedef std::function<void()> MapUpdateCb;
+  public:
+	typedef std::map<std::string, std::string> PropertiesMap;
+	typedef std::list<std::string> GOTypesList; //! Special object types used in this map
+	typedef std::function<GameObject*( const Uint32&, const Uint32&, MapLayer*, const Uint32& )>
+		CreateGOCb;
+	typedef std::function<void()> MapDrawCb;
+	typedef std::function<void()> MapUpdateCb;
 
-		TileMap();
+	TileMap();
 
-		virtual ~TileMap();
+	virtual ~TileMap();
 
-		virtual void create( Sizei Size, Uint32 MaxLayers, Sizei TileSize, Uint32 Flags = 0, Sizef viewSize = Sizef( 800, 600 ), EE::Window::Window * Window = NULL );
+	virtual void create( Sizei Size, Uint32 MaxLayers, Sizei TileSize, Uint32 Flags = 0,
+						 Sizef viewSize = Sizef( 800, 600 ), EE::Window::Window* Window = NULL );
 
-		virtual MapLayer * addLayer( Uint32 Type, Uint32 flags, std::string name );
+	virtual MapLayer* addLayer( Uint32 Type, Uint32 flags, std::string name );
 
-		virtual MapLayer * getLayer( Uint32 index );
+	virtual MapLayer* getLayer( Uint32 index );
 
-		virtual Uint32 getLayerIndex( MapLayer * Layer );
+	virtual Uint32 getLayerIndex( MapLayer* Layer );
 
-		virtual MapLayer * getLayerByHash( Uint32 hash );
+	virtual MapLayer* getLayerByHash( Uint32 hash );
 
-		virtual MapLayer * getLayer( const std::string& name );
+	virtual MapLayer* getLayer( const std::string& name );
 
-		virtual bool loadFromFile( const std::string& path );
+	virtual bool loadFromFile( const std::string& path );
 
-		virtual bool loadFromStream( IOStream& IOS );
+	virtual bool loadFromStream( IOStream& IOS );
 
-		virtual bool loadFromPack( Pack * Pack, const std::string& FilePackPath );
+	virtual bool loadFromPack( Pack* Pack, const std::string& FilePackPath );
 
-		virtual bool loadFromMemory( const char * Data, const Uint32& DataSize );
+	virtual bool loadFromMemory( const char* Data, const Uint32& DataSize );
 
-		virtual void saveToFile( const std::string& path );
+	virtual void saveToFile( const std::string& path );
 
-		virtual void saveToStream( IOStream& IOS );
+	virtual void saveToStream( IOStream& IOS );
 
-		virtual void draw();
+	virtual void draw();
 
-		virtual void update();
+	virtual void update();
 
-		const Sizei& getTileSize() const;
+	const Sizei& getTileSize() const;
 
-		const Sizei& getSize() const;
+	const Sizei& getSize() const;
 
-		const Uint32& getLayerCount() const;
+	const Uint32& getLayerCount() const;
 
-		const Uint32& getMaxLayers() const;
+	const Uint32& getMaxLayers() const;
 
-		const Sizef& getViewSize() const;
+	const Sizef& getViewSize() const;
 
-		void setViewSize( const Sizef& viewSize );
+	void setViewSize( const Sizef& viewSize );
 
-		const Vector2f& getOffset() const;
+	const Vector2f& getOffset() const;
 
-		void setOffset( const Vector2f& offset );
+	void setOffset( const Vector2f& offset );
 
-		const Vector2i& getPosition() const;
+	const Vector2i& getPosition() const;
 
-		void setPosition( const Vector2i& position );
+	void setPosition( const Vector2i& position );
 
-		void move( const Vector2f& offset );
+	void move( const Vector2f& offset );
 
-		void move( const Float& offsetx, const Float& offsety );
+	void move( const Float& offsetx, const Float& offsety );
 
-		const Vector2i& getStartTile() const;
+	const Vector2i& getStartTile() const;
 
-		const Vector2i& getEndTile() const;
+	const Vector2i& getEndTile() const;
 
-		const Uint32& getFlags() const;
+	const Uint32& getFlags() const;
 
-		bool getClampBorders() const;
+	bool getClampBorders() const;
 
-		void setClampBorders( const bool& clamp );
+	void setClampBorders( const bool& clamp );
 
-		bool getClipedArea() const;
+	bool getClipedArea() const;
 
-		void setClipedArea( const bool& clip );
+	void setClipedArea( const bool& clip );
 
-		Uint32 getDrawGrid() const;
+	Uint32 getDrawGrid() const;
 
-		void setDrawGrid( const bool& draw );
+	void setDrawGrid( const bool& draw );
 
-		Uint32 getShowBlocked() const;
+	Uint32 getShowBlocked() const;
 
-		void setShowBlocked( const bool& show );
+	void setShowBlocked( const bool& show );
 
-		Uint32 getDrawBackground() const;
+	Uint32 getDrawBackground() const;
 
-		void setDrawBackground( const bool& draw );
+	void setDrawBackground( const bool& draw );
 
-		Uint32 getDrawTileOver() const;
+	Uint32 getDrawTileOver() const;
 
-		void setDrawTileOver( const bool& draw );
+	void setDrawTileOver( const bool& draw );
 
-		bool getLightsEnabled();
+	bool getLightsEnabled();
 
-		void setLightsEnabled( const bool& enabled );
+	void setLightsEnabled( const bool& enabled );
 
-		bool getLightsByVertex();
+	bool getLightsByVertex();
 
-		void reset();
+	void reset();
 
-		bool moveLayerUp( MapLayer * Layer );
+	bool moveLayerUp( MapLayer* Layer );
 
-		bool moveLayerDown( MapLayer * Layer );
+	bool moveLayerDown( MapLayer* Layer );
 
-		bool removeLayer( MapLayer * Layer );
+	bool removeLayer( MapLayer* Layer );
 
-		const Vector2i& getMouseTilePos() const;
+	const Vector2i& getMouseTilePos() const;
 
-		Vector2i getMouseTilePosCoords();
+	Vector2i getMouseTilePosCoords();
 
-		Vector2f getMouseTilePosCoordsf();
+	Vector2f getMouseTilePosCoordsf();
 
-		Vector2i getTileCoords( const Vector2i& TilePos );
+	Vector2i getTileCoords( const Vector2i& TilePos );
 
-		Vector2f getTileCoords( const Vector2f& TilePos );
+	Vector2f getTileCoords( const Vector2f& TilePos );
 
-		const Vector2i& getRealMouseTilePos() const;
+	const Vector2i& getRealMouseTilePos() const;
 
-		const Vector2i& getMouseMapPos() const;
+	const Vector2i& getMouseMapPos() const;
 
-		Vector2f getMouseMapPosf() const;
+	Vector2f getMouseMapPosf() const;
 
-		const Sizei& getTotalSize() const;
+	const Sizei& getTotalSize() const;
 
-		void addProperty( std::string Text, std::string Value );
+	void addProperty( std::string Text, std::string Value );
 
-		void editProperty( std::string Text, std::string Value );
+	void editProperty( std::string Text, std::string Value );
 
-		void removeProperty( std::string Text );
+	void removeProperty( std::string Text );
 
-		void clearProperties();
+	void clearProperties();
 
-		PropertiesMap& getProperties();
+	PropertiesMap& getProperties();
 
-		void addVirtualObjectType( const std::string& name );
+	void addVirtualObjectType( const std::string& name );
 
-		void removeVirtualObjectType( const std::string& name );
+	void removeVirtualObjectType( const std::string& name );
 
-		void clearVirtualObjectTypes();
+	void clearVirtualObjectTypes();
 
-		GOTypesList& getVirtualObjectTypes();
+	GOTypesList& getVirtualObjectTypes();
 
-		void setCreateGameObjectCallback( const CreateGOCb& Cb );
+	void setCreateGameObjectCallback( const CreateGOCb& Cb );
 
-		const std::string& getPath() const;
+	const std::string& getPath() const;
 
-		void setBaseColor( const Color& color );
+	void setBaseColor( const Color& color );
 
-		const Color& getBaseColor() const;
+	const Color& getBaseColor() const;
 
-		const Rectf& getViewAreaAABB() const;
+	const Rectf& getViewAreaAABB() const;
 
-		MapLightManager * getLightManager() const;
+	MapLightManager* getLightManager() const;
 
-		/** Tiles to add or subtract from the real values of StartTile and EndTile ( so it will loop over more/less tiles than the required to render every tile on screen ). */
-		void setExtraTiles( const Vector2i& extra );
+	/** Tiles to add or subtract from the real values of StartTile and EndTile ( so it will loop
+	 * over more/less tiles than the required to render every tile on screen ). */
+	void setExtraTiles( const Vector2i& extra );
 
-		const Vector2i& getExtraTiles() const;
+	const Vector2i& getExtraTiles() const;
 
-		void setDrawCallback( MapDrawCb Cb );
+	void setDrawCallback( MapDrawCb Cb );
 
-		void setUpdateCallback( MapUpdateCb Cb );
+	void setUpdateCallback( MapUpdateCb Cb );
 
-		Texture * getBlankTileTexture();
+	Texture* getBlankTileTexture();
 
-		bool isTileBlocked( const Vector2i& TilePos );
+	bool isTileBlocked( const Vector2i& TilePos );
 
-		void setData( void * value );
+	void setData( void* value );
 
-		void * getData() const;
+	void* getData() const;
 
-		const bool& isMouseOver() const;
+	const bool& isMouseOver() const;
 
-		GameObject * IsTypeInTilePos( const Uint32& Type, const Vector2i& TilePos );
+	GameObject* IsTypeInTilePos( const Uint32& Type, const Vector2i& TilePos );
 
-		const Uint8& getBackAlpha() const;
+	const Uint8& getBackAlpha() const;
 
-		void setBackAlpha( const Uint8& alpha );
+	void setBackAlpha( const Uint8& alpha );
 
-		const Color& getBackColor() const;
+	const Color& getBackColor() const;
 
-		void setBackColor( const Color& col );
+	void setBackColor( const Color& col );
 
-		const Float& getScale() const;
+	const Float& getScale() const;
 
-		void setScale( const Float& scale );
+	void setScale( const Float& scale );
 
-		Vector2i getMaxOffset();
+	Vector2i getMaxOffset();
 
-		Uint32 getNewObjectId();
+	Uint32 getNewObjectId();
 
-		GameObjectPolyData& getPolyObjData( Uint32 Id );
+	GameObjectPolyData& getPolyObjData( Uint32 Id );
 
-		void forceHeadersOnLoad( Sizei mapSize, Sizei tileSize, Uint32 numLayers, Uint32 flags );
+	void forceHeadersOnLoad( Sizei mapSize, Sizei tileSize, Uint32 numLayers, Uint32 flags );
 
-		void disableForcedHeaders();
+	void disableForcedHeaders();
 
-		void setGridLinesColor( const Color& Col );
+	void setGridLinesColor( const Color& Col );
 
-		const Color& setGridLinesColor() const;
-	protected:
-		friend class EE::Maps::Private::UIMapNew;
+	const Color& setGridLinesColor() const;
 
-		class ForcedHeaders
-		{
-			public:
-				ForcedHeaders( Sizei mapSize, Sizei tileSize, Uint32 numLayers, Uint32 flags ) :
-					MapSize( mapSize ),
-					TileSize( tileSize ),
-					NumLayers( numLayers ),
-					Flags( flags )
-				{}
+  protected:
+	friend class EE::Maps::Private::UIMapNew;
 
-				Sizei MapSize;
-				Sizei TileSize;
-				Uint32 NumLayers;
-				Uint32 Flags;
-		};
+	class ForcedHeaders {
+	  public:
+		ForcedHeaders( Sizei mapSize, Sizei tileSize, Uint32 numLayers, Uint32 flags ) :
+			MapSize( mapSize ), TileSize( tileSize ), NumLayers( numLayers ), Flags( flags ) {}
 
-		typedef std::map<Uint32, GameObjectPolyData> PolyObjMap;
+		Sizei MapSize;
+		Sizei TileSize;
+		Uint32 NumLayers;
+		Uint32 Flags;
+	};
 
-		EE::Window::Window *		mWindow;
-		MapLayer**		mLayers;
-		Uint32			mFlags;
-		Uint32			mMaxLayers;
-		Uint32			mLayerCount;
-		Sizei			mSize;
-		Sizei			mPixelSize;
-		Sizei			mTileSize;
-		Sizef			mViewSize;
-		Vector2f		mOffset;
-		Vector2i		mScreenPos;
-		Vector2i		mStartTile;
-		Vector2i		mEndTile;
-		Vector2i		mExtraTiles;
-		Vector2i		mMouseOverTile;
-		Vector2i		mMouseOverTileFinal;
-		Vector2i		mMouseMapPos;
-		Color		mBaseColor;
-		PropertiesMap	mProperties;
-		GOTypesList		mObjTypes;
-		CreateGOCb		mCreateGOCb;
-		Texture *		mTileTex;
-		Rectf			mScreenAABB;
-		MapLightManager *	mLightManager;
-		MapDrawCb		mDrawCb;
-		MapUpdateCb		mUpdateCb;
-		void *			mData;
-		Color		mTileOverColor;
-		Color		mBackColor;
-		Color		mGridLinesColor;
-		Uint8			mBackAlpha;
-		bool			mMouseOver;
-		std::string		mPath;
-		Float			mScale;
-		Vector2f		mOffscale;
-		Uint32			mLastObjId;
-		PolyObjMap		mPolyObjs;
-		ForcedHeaders*	mForcedHeaders;
+	typedef std::map<Uint32, GameObjectPolyData> PolyObjMap;
 
-		virtual GameObject *	createGameObject( const Uint32& Type, const Uint32& Flags, MapLayer * Layer, const Uint32& DataId = 0 );
+	EE::Window::Window* mWindow;
+	MapLayer** mLayers;
+	Uint32 mFlags;
+	Uint32 mMaxLayers;
+	Uint32 mLayerCount;
+	Sizei mSize;
+	Sizei mPixelSize;
+	Sizei mTileSize;
+	Sizef mViewSize;
+	Vector2f mOffset;
+	Vector2i mScreenPos;
+	Vector2i mStartTile;
+	Vector2i mEndTile;
+	Vector2i mExtraTiles;
+	Vector2i mMouseOverTile;
+	Vector2i mMouseOverTileFinal;
+	Vector2i mMouseMapPos;
+	Color mBaseColor;
+	PropertiesMap mProperties;
+	GOTypesList mObjTypes;
+	CreateGOCb mCreateGOCb;
+	Texture* mTileTex;
+	Rectf mScreenAABB;
+	MapLightManager* mLightManager;
+	MapDrawCb mDrawCb;
+	MapUpdateCb mUpdateCb;
+	void* mData;
+	Color mTileOverColor;
+	Color mBackColor;
+	Color mGridLinesColor;
+	Uint8 mBackAlpha;
+	bool mMouseOver;
+	std::string mPath;
+	Float mScale;
+	Vector2f mOffscale;
+	Uint32 mLastObjId;
+	PolyObjMap mPolyObjs;
+	ForcedHeaders* mForcedHeaders;
 
-		void			calcTilesClip();
+	virtual GameObject* createGameObject( const Uint32& Type, const Uint32& Flags, MapLayer* Layer,
+										  const Uint32& DataId = 0 );
 
-		void			clamp();
+	void calcTilesClip();
 
-		void			getMouseOverTile();
+	void clamp();
 
-		void			gridDraw();
+	void getMouseOverTile();
 
-		void			mouseOverDraw();
+	void gridDraw();
 
-		void			deleteLayers();
+	void mouseOverDraw();
 
-		std::vector<std::string> getTextureAtlases();
+	void deleteLayers();
 
-		void			createEmptyTile();
+	std::vector<std::string> getTextureAtlases();
 
-		void			updateScreenAABB();
+	void createEmptyTile();
 
-		void			createLightManager();
+	void updateScreenAABB();
 
-		virtual void	onMapLoaded();
+	void createLightManager();
+
+	virtual void onMapLoaded();
 };
 
-}}
+}} // namespace EE::Maps
 
 #endif

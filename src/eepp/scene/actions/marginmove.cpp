@@ -4,18 +4,18 @@ using namespace EE::UI;
 
 namespace EE { namespace Scene { namespace Actions {
 
-MarginMove * MarginMove::New( const Rect & start, const Rect & end, const Time& duration, const Ease::Interpolation& type, const Uint32& interpolateFlag ) {
+MarginMove* MarginMove::New( const Rect& start, const Rect& end, const Time& duration,
+							 const Ease::Interpolation& type, const Uint32& interpolateFlag ) {
 	return eeNew( MarginMove, ( start, end, duration, type, interpolateFlag ) );
 }
 
-MarginMove::MarginMove()
-{}
+MarginMove::MarginMove() {}
 
 Interpolation1d MarginMove::getInterpolationBottom() const {
 	return mInterpolationBottom;
 }
 
-void MarginMove::setInterpolationBottom(const Interpolation1d & interpolationBottom) {
+void MarginMove::setInterpolationBottom( const Interpolation1d& interpolationBottom ) {
 	mInterpolationBottom = interpolationBottom;
 }
 
@@ -23,7 +23,7 @@ Interpolation1d MarginMove::getInterpolationTop() const {
 	return mInterpolationTop;
 }
 
-void MarginMove::setInterpolationTop(const Interpolation1d & interpolationTop) {
+void MarginMove::setInterpolationTop( const Interpolation1d& interpolationTop ) {
 	mInterpolationTop = interpolationTop;
 }
 
@@ -31,7 +31,7 @@ Interpolation1d MarginMove::getInterpolationRight() const {
 	return mInterpolationRight;
 }
 
-void MarginMove::setInterpolationRight(const Interpolation1d & interpolationRight) {
+void MarginMove::setInterpolationRight( const Interpolation1d& interpolationRight ) {
 	mInterpolationRight = interpolationRight;
 }
 
@@ -39,13 +39,13 @@ Interpolation1d MarginMove::getInterpolationLeft() const {
 	return mInterpolationLeft;
 }
 
-void MarginMove::setInterpolationLeft(const Interpolation1d & interpolationLeft) {
+void MarginMove::setInterpolationLeft( const Interpolation1d& interpolationLeft ) {
 	mInterpolationLeft = interpolationLeft;
 }
 
-MarginMove::MarginMove( const Rect& start, const Rect & end, const Time& duration, const Ease::Interpolation& type, const Uint32& interpolateFlag ) :
-	mFlags( interpolateFlag )
-{
+MarginMove::MarginMove( const Rect& start, const Rect& end, const Time& duration,
+						const Ease::Interpolation& type, const Uint32& interpolateFlag ) :
+	mFlags( interpolateFlag ) {
 	if ( mFlags & InterpolateFlag::Left )
 		mInterpolationLeft.clear().add( start.Left, duration ).add( end.Left ).setType( type );
 
@@ -56,7 +56,10 @@ MarginMove::MarginMove( const Rect& start, const Rect & end, const Time& duratio
 		mInterpolationTop.clear().add( start.Top, duration ).add( end.Top ).setType( type );
 
 	if ( mFlags & InterpolateFlag::Bottom )
-		mInterpolationBottom.clear().add( start.Bottom, duration ).add( end.Bottom ).setType( type );
+		mInterpolationBottom.clear()
+			.add( start.Bottom, duration )
+			.add( end.Bottom )
+			.setType( type );
 }
 
 void MarginMove::start() {
@@ -126,19 +129,22 @@ void MarginMove::onStart() {
 
 void MarginMove::onUpdate( const Time& ) {
 	if ( NULL != mNode && mNode->isWidget() ) {
-		UIWidget * widget = static_cast<UIWidget*>( mNode );
+		UIWidget* widget = static_cast<UIWidget*>( mNode );
 
 		widget->setLayoutMargin(
-				Rect( ( mFlags & InterpolateFlag::Left ) ? mInterpolationLeft.getPosition() : widget->getLayoutMargin().Left,
-					  ( mFlags & InterpolateFlag::Top ) ? mInterpolationTop.getPosition() : widget->getLayoutMargin().Top,
-					  ( mFlags & InterpolateFlag::Right ) ? mInterpolationRight.getPosition() : widget->getLayoutMargin().Right,
-					  ( mFlags & InterpolateFlag::Bottom ) ? mInterpolationBottom.getPosition() : widget->getLayoutMargin().Bottom
-				) );
+			Rect( ( mFlags & InterpolateFlag::Left ) ? mInterpolationLeft.getPosition()
+													 : widget->getLayoutMargin().Left,
+				  ( mFlags & InterpolateFlag::Top ) ? mInterpolationTop.getPosition()
+													: widget->getLayoutMargin().Top,
+				  ( mFlags & InterpolateFlag::Right ) ? mInterpolationRight.getPosition()
+													  : widget->getLayoutMargin().Right,
+				  ( mFlags & InterpolateFlag::Bottom ) ? mInterpolationBottom.getPosition()
+													   : widget->getLayoutMargin().Bottom ) );
 	}
 }
 
-Action * MarginMove::clone() const {
-	MarginMove * action = eeNew( MarginMove, () );
+Action* MarginMove::clone() const {
+	MarginMove* action = eeNew( MarginMove, () );
 	action->mFlags = mFlags;
 	action->setInterpolationLeft( mInterpolationLeft );
 	action->setInterpolationRight( mInterpolationRight );
@@ -147,7 +153,7 @@ Action * MarginMove::clone() const {
 	return action;
 }
 
-Action * MarginMove::reverse() const {
+Action* MarginMove::reverse() const {
 	return NULL;
 }
 
@@ -155,4 +161,4 @@ Float MarginMove::getCurrentProgress() {
 	return mInterpolationLeft.getCurrentProgress();
 }
 
-}}}
+}}} // namespace EE::Scene::Actions

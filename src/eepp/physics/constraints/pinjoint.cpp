@@ -7,9 +7,10 @@ using namespace EE::Graphics;
 
 namespace EE { namespace Physics {
 
-PinJoint::PinJoint( Body * a, Body * b, cVect anchr1, cVect anchr2 )
+PinJoint::PinJoint( Body* a, Body* b, cVect anchr1, cVect anchr2 )
 #ifdef PHYSICS_RENDERER_ENABLED
-	: mDrawPointSize( 5.f )
+	:
+	mDrawPointSize( 5.f )
 #endif
 {
 	mConstraint = cpPinJointNew( a->getBody(), b->getBody(), tocpv( anchr1 ), tocpv( anchr2 ) );
@@ -41,16 +42,16 @@ void PinJoint::setDist( const cpFloat& dist ) {
 }
 
 void PinJoint::draw() {
-	#ifdef PHYSICS_RENDERER_ENABLED
+#ifdef PHYSICS_RENDERER_ENABLED
 	if ( mDrawPointSize <= 0 )
 		return;
 
-	cpPinJoint *joint	= (cpPinJoint *)mConstraint;
-	cpBody * body_a		= mConstraint->a;
-	cpBody * body_b		= mConstraint->b;
-	cVect a				= tovect( cpvadd( body_a->p, cpvrotate( joint->anchr1, body_a->rot ) ) );
-	cVect b				= tovect( cpvadd( body_b->p, cpvrotate(joint->anchr2, body_b->rot ) ) );
-	BatchRenderer * BR = GlobalBatchRenderer::instance();
+	cpPinJoint* joint = (cpPinJoint*)mConstraint;
+	cpBody* body_a = mConstraint->a;
+	cpBody* body_b = mConstraint->b;
+	cVect a = tovect( cpvadd( body_a->p, cpvrotate( joint->anchr1, body_a->rot ) ) );
+	cVect b = tovect( cpvadd( body_b->p, cpvrotate( joint->anchr2, body_b->rot ) ) );
+	BatchRenderer* BR = GlobalBatchRenderer::instance();
 
 	cpFloat ps = BR->getPointSize();
 	BR->setTexture( NULL );
@@ -67,7 +68,7 @@ void PinJoint::draw() {
 	BR->draw();
 
 	BR->setPointSize( ps );
-	#endif
+#endif
 }
 
 #ifdef PHYSICS_RENDERER_ENABLED
@@ -80,4 +81,4 @@ void PinJoint::setDrawPointSize( const cpFloat& size ) {
 }
 #endif
 
-}}
+}} // namespace EE::Physics

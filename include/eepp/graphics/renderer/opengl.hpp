@@ -4,103 +4,103 @@
 #include <eepp/config.hpp>
 
 #ifdef EE_USE_DOUBLES
-#define GL_FP	GL_DOUBLE
+#define GL_FP GL_DOUBLE
 #else
-#define GL_FP	GL_FLOAT
+#define GL_FP GL_FLOAT
 #endif
 
 #ifndef EE_GLES
-	//! GL2 and GL3 ( PC platform )
+//! GL2 and GL3 ( PC platform )
 
-	#if EE_PLATFORM == EE_PLATFORM_MACOSX
-		#include <OpenGL/gl.h>
-	#else
-		#if EE_PLATFORM == EE_PLATFORM_WIN
-			#define APIENTRY __stdcall
-			#define WINGDIAPI __declspec(dllimport)
-		#endif
+#if EE_PLATFORM == EE_PLATFORM_MACOSX
+#include <OpenGL/gl.h>
+#else
+#if EE_PLATFORM == EE_PLATFORM_WIN
+#define APIENTRY __stdcall
+#define WINGDIAPI __declspec( dllimport )
+#endif
 
-		#include <GL/gl.h>
-	#endif
+#include <GL/gl.h>
+#endif
 
-	#ifndef EE_GLEW_AVAILABLE
-		#if defined( EE_X11_PLATFORM )
-			#include <GL/glext.h>
-		#elif EE_PLATFORM == EE_PLATFORM_MACOSX
-			#include <OpenGL/glext.h>
-		#endif
-	#endif
+#ifndef EE_GLEW_AVAILABLE
+#if defined( EE_X11_PLATFORM )
+#include <GL/glext.h>
+#elif EE_PLATFORM == EE_PLATFORM_MACOSX
+#include <OpenGL/glext.h>
+#endif
+#endif
 
 #else
-	//! Mobile platform ( Android / iPhone / Maemo )
-	#ifndef GL_GLEXT_PROTOTYPES
-		#define GL_GLEXT_PROTOTYPES
-	#endif
+//! Mobile platform ( Android / iPhone / Maemo )
+#ifndef GL_GLEXT_PROTOTYPES
+#define GL_GLEXT_PROTOTYPES
+#endif
 
-	#ifdef EE_GLES_BOTH
-		#if EE_PLATFORM == EE_PLATFORM_IOS
-			#include <OpenGLES/ES2/gl.h>
-			#include <OpenGLES/ES2/glext.h>
-		#else
-			#include <GLES2/gl2.h>
-			#include <GLES2/gl2ext.h>
-		#endif
+#ifdef EE_GLES_BOTH
+#if EE_PLATFORM == EE_PLATFORM_IOS
+#include <OpenGLES/ES2/gl.h>
+#include <OpenGLES/ES2/glext.h>
+#else
+#include <GLES2/gl2.h>
+#include <GLES2/gl2ext.h>
+#endif
 
-		#define EE_GLES1_LATE_INCLUDE
-	#else
-		//! GLES2 ( programmable pipeline )
-		#ifdef EE_GLES2
-			#if EE_PLATFORM == EE_PLATFORM_IOS
-				#include <OpenGLES/ES2/gl.h>
-				#include <OpenGLES/ES2/glext.h>
-			#else
-				#include <GLES2/gl2.h>
-				#include <GLES2/gl2ext.h>
-			#endif
-		#endif
+#define EE_GLES1_LATE_INCLUDE
+#else
+//! GLES2 ( programmable pipeline )
+#ifdef EE_GLES2
+#if EE_PLATFORM == EE_PLATFORM_IOS
+#include <OpenGLES/ES2/gl.h>
+#include <OpenGLES/ES2/glext.h>
+#else
+#include <GLES2/gl2.h>
+#include <GLES2/gl2ext.h>
+#endif
+#endif
 
-		//! GLES1 ( fixed pipeline )
-		#ifdef EE_GLES1
-			#if EE_PLATFORM == EE_PLATFORM_IOS
-				#include <OpenGLES/ES1/gl.h>
-				#include <OpenGLES/ES1/glext.h>
-			#else
-				#include <GLES/gl.h>
-				#include <GLES/glext.h>
-			#endif
-		#endif
-	#endif
+//! GLES1 ( fixed pipeline )
+#ifdef EE_GLES1
+#if EE_PLATFORM == EE_PLATFORM_IOS
+#include <OpenGLES/ES1/gl.h>
+#include <OpenGLES/ES1/glext.h>
+#else
+#include <GLES/gl.h>
+#include <GLES/glext.h>
+#endif
+#endif
+#endif
 #endif
 
 #ifdef EE_GLES
-	typedef char		GLchar;
+typedef char GLchar;
 
-	#define glDeleteBuffersARB glDeleteBuffers
-	#define glGenBuffersARB glGenBuffers
-	#define glBindBufferARB glBindBuffer
-	#define glBufferDataARB glBufferData
-	#define glBufferSubDataARB glBufferSubData
+#define glDeleteBuffersARB glDeleteBuffers
+#define glGenBuffersARB glGenBuffers
+#define glBindBufferARB glBindBuffer
+#define glBufferDataARB glBufferData
+#define glBufferSubDataARB glBufferSubData
 
-	#define GL_QUADS 0x0007
-	#ifndef GL_RGB8
-	#define GL_RGB8 GL_RGB8_OES
-	#endif
+#define GL_QUADS 0x0007
+#ifndef GL_RGB8
+#define GL_RGB8 GL_RGB8_OES
+#endif
 
-	#ifndef GL_RGBA8
-	#define GL_RGBA8 GL_RGBA8_OES
-	#endif
+#ifndef GL_RGBA8
+#define GL_RGBA8 GL_RGBA8_OES
+#endif
 
-	#ifndef GL_READ_FRAMEBUFFER
-	#define GL_READ_FRAMEBUFFER GL_READ_FRAMEBUFFER_APPLE
-	#endif
+#ifndef GL_READ_FRAMEBUFFER
+#define GL_READ_FRAMEBUFFER GL_READ_FRAMEBUFFER_APPLE
+#endif
 
-	#ifndef GL_DRAW_FRAMEBUFFER
-	#define GL_DRAW_FRAMEBUFFER GL_DRAW_FRAMEBUFFER_APPLE
-	#endif
+#ifndef GL_DRAW_FRAMEBUFFER
+#define GL_DRAW_FRAMEBUFFER GL_DRAW_FRAMEBUFFER_APPLE
+#endif
 
-	#ifndef glBlitFramebufferEXT
-	#define glBlitFramebufferEXT( p1, p2, p3, p4, p5, p6, p7, p8, p9, p10 )
-	#endif
+#ifndef glBlitFramebufferEXT
+#define glBlitFramebufferEXT( p1, p2, p3, p4, p5, p6, p7, p8, p9, p10 )
+#endif
 #endif
 
 /// Wrap GLES2 functions
@@ -196,7 +196,8 @@
 #define GL_FRAMEBUFFER_ATTACHMENT_TEXTURE_CUBE_MAP_FACEGL_FRAMEBUFFER_ATTACHMENT_TEXTURE_CUBE_MAP_FACE_OES
 #define GL_FRAMEBUFFER_COMPLETE GL_FRAMEBUFFER_COMPLETE_OES
 #define GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT_OES
-#define GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_OES
+#define GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT \
+	GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_OES
 #define GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_OES
 #define GL_FRAMEBUFFER_INCOMPLETE_FORMATS GL_FRAMEBUFFER_INCOMPLETE_FORMATS_OES
 #define GL_FRAMEBUFFER_UNSUPPORTED GL_FRAMEBUFFER_UNSUPPORTED_OES

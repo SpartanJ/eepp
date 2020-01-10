@@ -2,7 +2,7 @@
 
 namespace EE { namespace Physics {
 
-SimpleMotor::SimpleMotor( Body * a, Body * b, cpFloat rate ) {
+SimpleMotor::SimpleMotor( Body* a, Body* b, cpFloat rate ) {
 	mConstraint = cpSimpleMotorNew( a->getBody(), b->getBody(), rate );
 	setData();
 }
@@ -19,4 +19,4 @@ void SimpleMotor::draw() {
 	// Not implemented
 }
 
-}}
+}} // namespace EE::Physics

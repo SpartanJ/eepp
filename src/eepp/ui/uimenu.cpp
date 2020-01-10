@@ -1,15 +1,15 @@
-#include <eepp/ui/uimenu.hpp>
-#include <eepp/graphics/font.hpp>
 #include <eepp/graphics/drawablesearcher.hpp>
-#include <pugixml/pugixml.hpp>
-#include <eepp/ui/uipopupmenu.hpp>
-#include <eepp/ui/uithememanager.hpp>
-#include <eepp/ui/uiscenenode.hpp>
+#include <eepp/graphics/font.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/uimenu.hpp>
+#include <eepp/ui/uipopupmenu.hpp>
+#include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uithememanager.hpp>
+#include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 
-UIMenu *UIMenu::New() {
+UIMenu* UIMenu::New() {
 	return eeNew( UIMenu, () );
 }
 
@@ -22,8 +22,7 @@ UIMenu::UIMenu() :
 	mItemSelectedIndex( eeINDEX_NOT_FOUND ),
 	mClickHide( false ),
 	mLastTickMove( 0 ),
-	mOwnerNode( NULL )
-{
+	mOwnerNode( NULL ) {
 	mFlags |= UI_AUTO_SIZE;
 
 	onSizeChange();
@@ -31,8 +30,7 @@ UIMenu::UIMenu() :
 	applyDefaultTheme();
 }
 
-UIMenu::~UIMenu() {
-}
+UIMenu::~UIMenu() {}
 
 Uint32 UIMenu::getType() const {
 	return UI_TYPE_MENU;
@@ -42,7 +40,7 @@ bool UIMenu::isType( const Uint32& type ) const {
 	return UIMenu::getType() == type ? true : UIWidget::isType( type );
 }
 
-void UIMenu::setTheme( UITheme * Theme ) {
+void UIMenu::setTheme( UITheme* Theme ) {
 	UIWidget::setTheme( Theme );
 
 	setThemeSkin( Theme, "menu" );
@@ -57,26 +55,28 @@ void UIMenu::onThemeLoaded() {
 	onSizeChange();
 }
 
-UIMenuItem * UIMenu::createMenuItem( const String& Text, Drawable * Icon ) {
-	UIMenuItem * tCtrl 	= UIMenuItem::New();
+UIMenuItem* UIMenu::createMenuItem( const String& Text, Drawable* Icon ) {
+	UIMenuItem* tCtrl = UIMenuItem::New();
 	tCtrl->setHorizontalAlign( UI_HALIGN_LEFT );
 	tCtrl->setParent( this );
-	tCtrl->setIconMinimumSize( Sizei( mStyleConfig.MinSpaceForIcons, mStyleConfig.MinSpaceForIcons ) );
+	tCtrl->setIconMinimumSize(
+		Sizei( mStyleConfig.MinSpaceForIcons, mStyleConfig.MinSpaceForIcons ) );
 	tCtrl->setIcon( Icon );
 	tCtrl->setText( Text );
 
 	return tCtrl;
 }
 
-Uint32 UIMenu::add( const String& Text, Drawable * Icon ) {
+Uint32 UIMenu::add( const String& Text, Drawable* Icon ) {
 	return add( createMenuItem( Text, Icon ) );
 }
 
-UIMenuCheckBox * UIMenu::createMenuCheckBox( const String& Text, const bool &Active ) {
-	UIMenuCheckBox * tCtrl 	= UIMenuCheckBox::New();
+UIMenuCheckBox* UIMenu::createMenuCheckBox( const String& Text, const bool& Active ) {
+	UIMenuCheckBox* tCtrl = UIMenuCheckBox::New();
 	tCtrl->setHorizontalAlign( UI_HALIGN_LEFT );
 	tCtrl->setParent( this );
-	tCtrl->setIconMinimumSize( Sizei( mStyleConfig.MinSpaceForIcons, mStyleConfig.MinSpaceForIcons ) );
+	tCtrl->setIconMinimumSize(
+		Sizei( mStyleConfig.MinSpaceForIcons, mStyleConfig.MinSpaceForIcons ) );
 	tCtrl->setText( Text );
 
 	if ( Active )
@@ -89,11 +89,12 @@ Uint32 UIMenu::addCheckBox( const String& Text, const bool& Active ) {
 	return add( createMenuCheckBox( Text, Active ) );
 }
 
-UIMenuSubMenu * UIMenu::createSubMenu( const String& Text, Drawable * Icon, UIMenu * SubMenu ) {
-	UIMenuSubMenu * tCtrl 	= UIMenuSubMenu::New();
+UIMenuSubMenu* UIMenu::createSubMenu( const String& Text, Drawable* Icon, UIMenu* SubMenu ) {
+	UIMenuSubMenu* tCtrl = UIMenuSubMenu::New();
 	tCtrl->setHorizontalAlign( UI_HALIGN_LEFT );
 	tCtrl->setParent( this );
-	tCtrl->setIconMinimumSize( Sizei( mStyleConfig.MinSpaceForIcons, mStyleConfig.MinSpaceForIcons ) );
+	tCtrl->setIconMinimumSize(
+		Sizei( mStyleConfig.MinSpaceForIcons, mStyleConfig.MinSpaceForIcons ) );
 	tCtrl->setIcon( Icon );
 	tCtrl->setText( Text );
 	tCtrl->setSubMenu( SubMenu );
@@ -101,26 +102,35 @@ UIMenuSubMenu * UIMenu::createSubMenu( const String& Text, Drawable * Icon, UIMe
 	return tCtrl;
 }
 
-Uint32 UIMenu::addSubMenu( const String& Text, Drawable * Icon, UIMenu * SubMenu ) {
+Uint32 UIMenu::addSubMenu( const String& Text, Drawable* Icon, UIMenu* SubMenu ) {
 	return add( createSubMenu( Text, Icon, SubMenu ) );
 }
 
-bool UIMenu::checkControlSize( UINode * Control, const bool& Resize ) {
+bool UIMenu::checkControlSize( UINode* Control, const bool& Resize ) {
 	if ( Control->isType( UI_TYPE_MENUITEM ) ) {
-		UIMenuItem * tItem = Control->asType<UIMenuItem>();
+		UIMenuItem* tItem = Control->asType<UIMenuItem>();
 
-		if ( NULL != tItem->getIcon() && tItem->getIconHorizontalMargin() + tItem->getIcon()->getSize().getWidth() > (Int32)mBiggestIcon ) {
-			mBiggestIcon = tItem->getIconHorizontalMargin() + tItem->getIcon()->getSize().getWidth();
+		if ( NULL != tItem->getIcon() &&
+			 tItem->getIconHorizontalMargin() + tItem->getIcon()->getSize().getWidth() >
+				 (Int32)mBiggestIcon ) {
+			mBiggestIcon =
+				tItem->getIconHorizontalMargin() + tItem->getIcon()->getSize().getWidth();
 		}
 
 		if ( mFlags & UI_AUTO_SIZE ) {
 			if ( Control->isType( UI_TYPE_MENUSUBMENU ) ) {
 				Int32 textWidth = tItem->getTextBox()->getTextWidth();
 
-				UIMenuSubMenu * tMenu = tItem->asType<UIMenuSubMenu>();
+				UIMenuSubMenu* tMenu = tItem->asType<UIMenuSubMenu>();
 
-				if ( textWidth + PixelDensity::dpToPxI( mBiggestIcon ) + tMenu->getArrow()->getPixelsSize().getWidth() + PixelDensity::dpToPxI( mStyleConfig.MinRightMargin ) > (Int32)mMaxWidth ) {
-					mMaxWidth = textWidth + mRealPadding.Left + mRealPadding.Right + PixelDensity::dpToPxI( mBiggestIcon + mStyleConfig.MinRightMargin ) + tMenu->getArrow()->getPixelsSize().getWidth();
+				if ( textWidth + PixelDensity::dpToPxI( mBiggestIcon ) +
+						 tMenu->getArrow()->getPixelsSize().getWidth() +
+						 PixelDensity::dpToPxI( mStyleConfig.MinRightMargin ) >
+					 (Int32)mMaxWidth ) {
+					mMaxWidth =
+						textWidth + mRealPadding.Left + mRealPadding.Right +
+						PixelDensity::dpToPxI( mBiggestIcon + mStyleConfig.MinRightMargin ) +
+						tMenu->getArrow()->getPixelsSize().getWidth();
 
 					if ( Resize ) {
 						resizeControls();
@@ -145,7 +155,7 @@ bool UIMenu::checkControlSize( UINode * Control, const bool& Resize ) {
 	return false;
 }
 
-Uint32 UIMenu::add( UINode * Control ) {
+Uint32 UIMenu::add( UINode* Control ) {
 	if ( this != Control->getParent() )
 		Control->setParent( this );
 
@@ -164,15 +174,16 @@ Uint32 UIMenu::add( UINode * Control ) {
 	return mItems.size() - 1;
 }
 
-void UIMenu::setControlSize( UINode * Control, const Uint32& ) {
+void UIMenu::setControlSize( UINode* Control, const Uint32& ) {
 	Control->setPixelsSize( mSize.getWidth(), Control->getPixelsSize().getHeight() );
 }
 
 Uint32 UIMenu::addSeparator() {
-	UIMenuSeparator * Control = UIMenuSeparator::New();
+	UIMenuSeparator* Control = UIMenuSeparator::New();
 	Control->setParent( this );
 	Control->setPixelsPosition( mRealPadding.Left, mRealPadding.Top + mNextPosY );
-	Control->setPixelsSize( mSize.getWidth() - mRealPadding.Left - mRealPadding.Right, PixelDensity::dpToPxI( Control->getSkinSize().getHeight() ) );
+	Control->setPixelsSize( mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
+							PixelDensity::dpToPxI( Control->getSkinSize().getHeight() ) );
 
 	mNextPosY += Control->getPixelsSize().getHeight();
 
@@ -183,15 +194,15 @@ Uint32 UIMenu::addSeparator() {
 	return mItems.size() - 1;
 }
 
-UINode * UIMenu::getItem( const Uint32& Index ) {
+UINode* UIMenu::getItem( const Uint32& Index ) {
 	eeASSERT( Index < mItems.size() );
-	return mItems[ Index ];
+	return mItems[Index];
 }
 
-UINode * UIMenu::getItem( const String& Text ) {
+UINode* UIMenu::getItem( const String& Text ) {
 	for ( Uint32 i = 0; i < mItems.size(); i++ ) {
 		if ( mItems[i]->isType( UI_TYPE_MENUITEM ) ) {
-			UIMenuItem * tMenuItem = mItems[i]->asType<UIMenuItem>();
+			UIMenuItem* tMenuItem = mItems[i]->asType<UIMenuItem>();
 
 			if ( tMenuItem->getText() == Text )
 				return tMenuItem;
@@ -201,7 +212,7 @@ UINode * UIMenu::getItem( const String& Text ) {
 	return NULL;
 }
 
-Uint32 UIMenu::getItemIndex( UINode * Item ) {
+Uint32 UIMenu::getItemIndex( UINode* Item ) {
 	for ( Uint32 i = 0; i < mItems.size(); i++ ) {
 		if ( mItems[i] == Item )
 			return i;
@@ -217,7 +228,7 @@ Uint32 UIMenu::getCount() const {
 void UIMenu::remove( const Uint32& Index ) {
 	eeASSERT( Index < mItems.size() );
 
-	mItems[ Index ]->close();
+	mItems[Index]->close();
 
 	mItems.erase( mItems.begin() + Index );
 
@@ -225,7 +236,7 @@ void UIMenu::remove( const Uint32& Index ) {
 	resizeControls();
 }
 
-void UIMenu::remove( UINode * Ctrl ) {
+void UIMenu::remove( UINode* Ctrl ) {
 	for ( Uint32 i = 0; i < mItems.size(); i++ ) {
 		if ( mItems[i] == Ctrl ) {
 			remove( i );
@@ -236,7 +247,7 @@ void UIMenu::remove( UINode * Ctrl ) {
 
 void UIMenu::removeAll() {
 	for ( Uint32 i = 0; i < mItems.size(); i++ ) {
-		mItems[ i ]->close();
+		mItems[i]->close();
 	}
 
 	mItems.clear();
@@ -246,11 +257,11 @@ void UIMenu::removeAll() {
 	resizeMe();
 }
 
-void UIMenu::insert( const String& Text, Drawable * Icon, const Uint32& Index ) {
+void UIMenu::insert( const String& Text, Drawable* Icon, const Uint32& Index ) {
 	insert( createMenuItem( Text, Icon ), Index );
 }
 
-void UIMenu::insert( UINode * Control, const Uint32& Index ) {
+void UIMenu::insert( UINode* Control, const Uint32& Index ) {
 	mItems.insert( mItems.begin() + Index, Control );
 
 	childAddAt( Control, Index );
@@ -259,10 +270,10 @@ void UIMenu::insert( UINode * Control, const Uint32& Index ) {
 	resizeControls();
 }
 
-bool UIMenu::isSubMenu( Node * Ctrl ) {
+bool UIMenu::isSubMenu( Node* Ctrl ) {
 	for ( Uint32 i = 0; i < mItems.size(); i++ ) {
 		if ( NULL != mItems[i] && mItems[i]->isType( UI_TYPE_MENUSUBMENU ) ) {
-			UIMenuSubMenu * tMenu = mItems[i]->asType<UIMenuSubMenu>();
+			UIMenuSubMenu* tMenu = mItems[i]->asType<UIMenuSubMenu>();
 
 			if ( tMenu->getSubMenu() == Ctrl )
 				return true;
@@ -272,10 +283,9 @@ bool UIMenu::isSubMenu( Node * Ctrl ) {
 	return false;
 }
 
-Uint32 UIMenu::onMessage( const NodeMessage * Msg ) {
+Uint32 UIMenu::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
-		case NodeMessage::MouseUp:
-		{
+		case NodeMessage::MouseUp: {
 			if ( Msg->getSender()->getParent() == this && ( Msg->getFlags() & EE_BUTTONS_LRM ) ) {
 				Event ItemEvent( Msg->getSender(), Event::OnItemClicked );
 				sendEvent( &ItemEvent );
@@ -283,12 +293,12 @@ Uint32 UIMenu::onMessage( const NodeMessage * Msg ) {
 
 			return 1;
 		}
-		case NodeMessage::FocusLoss:
-		{
+		case NodeMessage::FocusLoss: {
 			if ( NULL != getEventDispatcher() ) {
-				Node * focusCtrl = getEventDispatcher()->getFocusControl();
+				Node* focusCtrl = getEventDispatcher()->getFocusControl();
 
-				if ( this != focusCtrl && !isParentOf( focusCtrl ) && !isSubMenu( focusCtrl ) && mOwnerNode != focusCtrl ) {
+				if ( this != focusCtrl && !isParentOf( focusCtrl ) && !isSubMenu( focusCtrl ) &&
+					 mOwnerNode != focusCtrl ) {
 					mClickHide = true;
 
 					onWidgetFocusLoss();
@@ -304,7 +314,8 @@ Uint32 UIMenu::onMessage( const NodeMessage * Msg ) {
 
 void UIMenu::onSizeChange() {
 	if ( 0 != mStyleConfig.MinWidth && getSize().getWidth() < (Int32)mStyleConfig.MinWidth ) {
-		setSize( mStyleConfig.MinWidth, PixelDensity::pxToDpI( mNextPosY ) + mPadding.Top + mPadding.Bottom );
+		setSize( mStyleConfig.MinWidth,
+				 PixelDensity::pxToDpI( mNextPosY ) + mPadding.Top + mPadding.Bottom );
 	}
 
 	UIWidget::onSizeChange();
@@ -338,7 +349,7 @@ void UIMenu::rePosControls() {
 	}
 
 	for ( i = 0; i < mItems.size(); i++ ) {
-		UINode * ctrl = mItems[i];
+		UINode* ctrl = mItems[i];
 
 		ctrl->setPixelsPosition( mRealPadding.Left, mRealPadding.Top + mNextPosY );
 
@@ -370,16 +381,16 @@ bool UIMenu::hide() {
 	if ( NULL != mItemSelected )
 		mItemSelected->popState( UIState::StateSelected );
 
-	mItemSelected		= NULL;
-	mItemSelectedIndex	= eeINDEX_NOT_FOUND;
+	mItemSelected = NULL;
+	mItemSelectedIndex = eeINDEX_NOT_FOUND;
 
 	return true;
 }
 
-void UIMenu::setItemSelected( UINode * Item ) {
+void UIMenu::setItemSelected( UINode* Item ) {
 	if ( NULL != mItemSelected ) {
 		if ( mItemSelected->isType( UI_TYPE_MENUSUBMENU ) ) {
-			UIMenuSubMenu * tMenu = mItemSelected->asType<UIMenuSubMenu>();
+			UIMenuSubMenu* tMenu = mItemSelected->asType<UIMenuSubMenu>();
 
 			if ( NULL != tMenu->getSubMenu() )
 				tMenu->getSubMenu()->hide();
@@ -392,12 +403,12 @@ void UIMenu::setItemSelected( UINode * Item ) {
 		Item->pushState( UIState::StateSelected );
 
 	if ( mItemSelected != Item ) {
-		mItemSelected		= Item;
-		mItemSelectedIndex	= getItemIndex( mItemSelected );
+		mItemSelected = Item;
+		mItemSelectedIndex = getItemIndex( mItemSelected );
 	}
 }
 
-void UIMenu::trySelect( UINode * Ctrl, bool Up ) {
+void UIMenu::trySelect( UINode* Ctrl, bool Up ) {
 	if ( mItems.size() ) {
 		if ( !Ctrl->isType( UI_TYPE_MENU_SEPARATOR ) ) {
 			setItemSelected( Ctrl );
@@ -415,7 +426,7 @@ void UIMenu::trySelect( UINode * Ctrl, bool Up ) {
 						}
 					}
 
-					setItemSelected( mItems[ mItems.size() ] );
+					setItemSelected( mItems[mItems.size()] );
 				} else {
 					for ( Uint32 i = Index + 1; i < mItems.size(); i++ ) {
 						if ( !mItems[i]->isType( UI_TYPE_MENU_SEPARATOR ) ) {
@@ -435,7 +446,7 @@ void UIMenu::nextSel() {
 	if ( mItems.size() ) {
 		if ( mItemSelectedIndex != eeINDEX_NOT_FOUND ) {
 			if ( mItemSelectedIndex + 1 < mItems.size() ) {
-				trySelect( mItems[ mItemSelectedIndex + 1 ], false );
+				trySelect( mItems[mItemSelectedIndex + 1], false );
 			} else {
 				trySelect( mItems[0], false );
 			}
@@ -447,11 +458,11 @@ void UIMenu::nextSel() {
 
 void UIMenu::prevSel() {
 	if ( mItems.size() ) {
-		if (  mItemSelectedIndex != eeINDEX_NOT_FOUND  ) {
+		if ( mItemSelectedIndex != eeINDEX_NOT_FOUND ) {
 			if ( mItemSelectedIndex >= 1 ) {
-				trySelect( mItems[ mItemSelectedIndex - 1 ], true );
+				trySelect( mItems[mItemSelectedIndex - 1], true );
 			} else {
-				trySelect( mItems[ mItems.size() - 1 ], true );
+				trySelect( mItems[mItems.size() - 1], true );
 			}
 		} else {
 			trySelect( mItems[0], true );
@@ -474,7 +485,7 @@ Uint32 UIMenu::onKeyDown( const KeyEvent& Event ) {
 				break;
 			case KEY_RIGHT:
 				if ( NULL != mItemSelected && ( mItemSelected->isType( UI_TYPE_MENUSUBMENU ) ) ) {
-					UIMenuSubMenu * tMenu = mItemSelected->asType<UIMenuSubMenu>();
+					UIMenuSubMenu* tMenu = mItemSelected->asType<UIMenuSubMenu>();
 
 					tMenu->showSubMenu();
 				}
@@ -490,7 +501,8 @@ Uint32 UIMenu::onKeyDown( const KeyEvent& Event ) {
 				break;
 			case KEY_RETURN:
 				if ( NULL != mItemSelected && NULL != getEventDispatcher() ) {
-					mItemSelected->sendMouseEvent(Event::MouseClick, getEventDispatcher()->getMousePos(), EE_BUTTONS_ALL );
+					mItemSelected->sendMouseEvent(
+						Event::MouseClick, getEventDispatcher()->getMousePos(), EE_BUTTONS_ALL );
 
 					NodeMessage Msg( mItemSelected, NodeMessage::MouseUp, EE_BUTTONS_ALL );
 					mItemSelected->messagePost( &Msg );
@@ -507,7 +519,7 @@ Uint32 UIMenu::getMinRightMargin() const {
 	return mStyleConfig.MinRightMargin;
 }
 
-void UIMenu::setMinRightMargin(const Uint32 & minRightMargin) {
+void UIMenu::setMinRightMargin( const Uint32& minRightMargin ) {
 	mStyleConfig.MinRightMargin = minRightMargin;
 	rePosControls();
 }
@@ -516,8 +528,8 @@ const UIMenu::StyleConfig& UIMenu::getStyleConfig() const {
 	return mStyleConfig;
 }
 
-static Drawable * getIconDrawable( const std::string& name, UITheme * theme ) {
-	Drawable * iconDrawable = NULL;
+static Drawable* getIconDrawable( const std::string& name, UITheme* theme ) {
+	Drawable* iconDrawable = NULL;
 
 	if ( NULL != theme )
 		iconDrawable = theme->getIconByName( name );
@@ -538,24 +550,27 @@ void UIMenu::loadFromXmlNode( const pugi::xml_node& node ) {
 		String::toLowerInPlace( name );
 
 		if ( name == "menuitem" || name == "item" ) {
-			std::string text( item.attribute("text").as_string() );
-			std::string icon( item.attribute("icon").as_string() );
+			std::string text( item.attribute( "text" ).as_string() );
+			std::string icon( item.attribute( "icon" ).as_string() );
 
 			if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
-				add( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( text ), getIconDrawable( icon, getUISceneNode()->getUIThemeManager()->getDefaultTheme() ) );
+				add( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( text ),
+					 getIconDrawable( icon,
+									  getUISceneNode()->getUIThemeManager()->getDefaultTheme() ) );
 		} else if ( name == "menuseparator" || name == "separator" ) {
 			addSeparator();
 		} else if ( name == "menucheckbox" || name == "checkbox" ) {
-			std::string text( item.attribute("text").as_string() );
-			bool active( item.attribute("active").as_bool() );
+			std::string text( item.attribute( "text" ).as_string() );
+			bool active( item.attribute( "active" ).as_bool() );
 
 			if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
-				addCheckBox( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( text ), active );
+				addCheckBox( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( text ),
+							 active );
 		} else if ( name == "menusubmenu" || name == "submenu" ) {
-			std::string text( item.attribute("text").as_string() );
-			std::string icon( item.attribute("icon").as_string() );
+			std::string text( item.attribute( "text" ).as_string() );
+			std::string icon( item.attribute( "icon" ).as_string() );
 
-			UIPopUpMenu * subMenu = UIPopUpMenu::New();
+			UIPopUpMenu* subMenu = UIPopUpMenu::New();
 
 			if ( NULL != getDrawInvalidator() )
 				subMenu->setParent( getDrawInvalidator() );
@@ -563,7 +578,10 @@ void UIMenu::loadFromXmlNode( const pugi::xml_node& node ) {
 			subMenu->loadFromXmlNode( item );
 
 			if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
-				addSubMenu( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( text ), getIconDrawable( icon, getUISceneNode()->getUIThemeManager()->getDefaultTheme() ), subMenu );
+				addSubMenu( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( text ),
+							getIconDrawable(
+								icon, getUISceneNode()->getUIThemeManager()->getDefaultTheme() ),
+							subMenu );
 		}
 	}
 
@@ -571,7 +589,8 @@ void UIMenu::loadFromXmlNode( const pugi::xml_node& node ) {
 }
 
 std::string UIMenu::getPropertyString( const PropertyDefinition* propertyDef ) {
-	if ( NULL == propertyDef ) return "";
+	if ( NULL == propertyDef )
+		return "";
 
 	switch ( propertyDef->getPropertyId() ) {
 		case PropertyId::MinWidth:
@@ -585,8 +604,9 @@ std::string UIMenu::getPropertyString( const PropertyDefinition* propertyDef ) {
 	}
 }
 
-bool UIMenu::applyProperty( const StyleSheetProperty & attribute ) {
-	if ( !checkPropertyDefinition( attribute ) ) return false;
+bool UIMenu::applyProperty( const StyleSheetProperty& attribute ) {
+	if ( !checkPropertyDefinition( attribute ) )
+		return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::MinWidth:
@@ -606,23 +626,23 @@ bool UIMenu::applyProperty( const StyleSheetProperty & attribute ) {
 	return true;
 }
 
-UINode * UIMenu::getOwnerNode() const {
+UINode* UIMenu::getOwnerNode() const {
 	return mOwnerNode;
 }
 
-void UIMenu::setOwnerNode( UINode * ownerNode ) {
+void UIMenu::setOwnerNode( UINode* ownerNode ) {
 	mOwnerNode = ownerNode;
 }
 
-void UIMenu::setMinSpaceForIcons(const Uint32 & minSpaceForIcons) {
-	//if ( minSpaceForIcons != mStyleConfig.MinSpaceForIcons )
+void UIMenu::setMinSpaceForIcons( const Uint32& minSpaceForIcons ) {
+	// if ( minSpaceForIcons != mStyleConfig.MinSpaceForIcons )
 	{
 		mStyleConfig.MinSpaceForIcons = minSpaceForIcons;
 		mBiggestIcon = eemax( mBiggestIcon, mStyleConfig.MinSpaceForIcons );
 
 		for ( Uint32 i = 0; i < mItems.size(); i++ ) {
 			if ( mItems[i]->isType( UI_TYPE_MENUITEM ) ) {
-				UIMenuItem * menuItem = static_cast<UIMenuItem*>( mItems[i] );
+				UIMenuItem* menuItem = static_cast<UIMenuItem*>( mItems[i] );
 
 				menuItem->setIconMinimumSize( Sizei( minSpaceForIcons, minSpaceForIcons ) );
 			}
@@ -633,14 +653,16 @@ void UIMenu::setMinSpaceForIcons(const Uint32 & minSpaceForIcons) {
 	}
 }
 
-void UIMenu::fixMenuPos( Vector2f& Pos, UIMenu * Menu, UIMenu * Parent, UIMenuSubMenu * SubMenu ) {
-	SceneNode * sceneNode = Menu->getSceneNode();
+void UIMenu::fixMenuPos( Vector2f& Pos, UIMenu* Menu, UIMenu* Parent, UIMenuSubMenu* SubMenu ) {
+	SceneNode* sceneNode = Menu->getSceneNode();
 
 	if ( NULL == sceneNode )
 		return;
 
-	Rectf qScreen( 0.f, 0.f, sceneNode->getPixelsSize().getWidth(), sceneNode->getPixelsSize().getHeight() );
-	Rectf qPos( Pos.x, Pos.y, Pos.x + Menu->getPixelsSize().getWidth(), Pos.y + Menu->getPixelsSize().getHeight() );
+	Rectf qScreen( 0.f, 0.f, sceneNode->getPixelsSize().getWidth(),
+				   sceneNode->getPixelsSize().getHeight() );
+	Rectf qPos( Pos.x, Pos.y, Pos.x + Menu->getPixelsSize().getWidth(),
+				Pos.y + Menu->getPixelsSize().getHeight() );
 
 	if ( NULL != Parent && NULL != SubMenu ) {
 		Vector2f sPos = SubMenu->getPixelsPosition();
@@ -649,54 +671,57 @@ void UIMenu::fixMenuPos( Vector2f& Pos, UIMenu * Menu, UIMenu * Parent, UIMenuSu
 		Vector2f pPos = Parent->getPixelsPosition();
 		Parent->nodeToWorldTranslation( pPos );
 
-		Rectf qParent( pPos.x, pPos.y, pPos.x + Parent->getPixelsSize().getWidth(), pPos.y + Parent->getPixelsSize().getHeight() );
+		Rectf qParent( pPos.x, pPos.y, pPos.x + Parent->getPixelsSize().getWidth(),
+					   pPos.y + Parent->getPixelsSize().getHeight() );
 
-		Pos.x		= qParent.Right;
-		Pos.y		= sPos.y;
-		qPos.Left	= Pos.x;
-		qPos.Right	= qPos.Left + Menu->getPixelsSize().getWidth();
-		qPos.Top	= Pos.y;
-		qPos.Bottom	= qPos.Top + Menu->getPixelsSize().getHeight();
+		Pos.x = qParent.Right;
+		Pos.y = sPos.y;
+		qPos.Left = Pos.x;
+		qPos.Right = qPos.Left + Menu->getPixelsSize().getWidth();
+		qPos.Top = Pos.y;
+		qPos.Bottom = qPos.Top + Menu->getPixelsSize().getHeight();
 
 		if ( !qScreen.contains( qPos ) ) {
-			Pos.y		= sPos.y + SubMenu->getPixelsSize().getHeight() - Menu->getPixelsSize().getHeight();
-			qPos.Top	= Pos.y;
-			qPos.Bottom	= qPos.Top + Menu->getPixelsSize().getHeight();
+			Pos.y =
+				sPos.y + SubMenu->getPixelsSize().getHeight() - Menu->getPixelsSize().getHeight();
+			qPos.Top = Pos.y;
+			qPos.Bottom = qPos.Top + Menu->getPixelsSize().getHeight();
 
 			if ( !qScreen.contains( qPos ) ) {
-				Pos.x 		= qParent.Left - Menu->getPixelsSize().getWidth();
-				Pos.y 		= sPos.y;
-				qPos.Left	= Pos.x;
-				qPos.Right	= qPos.Left + Menu->getPixelsSize().getWidth();
-				qPos.Top	= Pos.y;
-				qPos.Bottom	= qPos.Top + Menu->getPixelsSize().getHeight();
+				Pos.x = qParent.Left - Menu->getPixelsSize().getWidth();
+				Pos.y = sPos.y;
+				qPos.Left = Pos.x;
+				qPos.Right = qPos.Left + Menu->getPixelsSize().getWidth();
+				qPos.Top = Pos.y;
+				qPos.Bottom = qPos.Top + Menu->getPixelsSize().getHeight();
 
 				if ( !qScreen.contains( qPos ) ) {
-					Pos.y		= sPos.y + SubMenu->getPixelsSize().getHeight() - Menu->getPixelsSize().getHeight();
-					qPos.Top	= Pos.y;
-					qPos.Bottom	= qPos.Top + Menu->getPixelsSize().getHeight();
+					Pos.y = sPos.y + SubMenu->getPixelsSize().getHeight() -
+							Menu->getPixelsSize().getHeight();
+					qPos.Top = Pos.y;
+					qPos.Bottom = qPos.Top + Menu->getPixelsSize().getHeight();
 				}
 			}
 		}
 	} else {
 		if ( !qScreen.contains( qPos ) ) {
-			Pos.y		-= Menu->getPixelsSize().getHeight();
-			qPos.Top	-= Menu->getPixelsSize().getHeight();
-			qPos.Bottom	-= Menu->getPixelsSize().getHeight();
+			Pos.y -= Menu->getPixelsSize().getHeight();
+			qPos.Top -= Menu->getPixelsSize().getHeight();
+			qPos.Bottom -= Menu->getPixelsSize().getHeight();
 
 			if ( !qScreen.contains( qPos ) ) {
-				Pos.x		-= Menu->getPixelsSize().getWidth();
-				qPos.Left	-= Menu->getPixelsSize().getWidth();
-				qPos.Right	-= Menu->getPixelsSize().getWidth();
+				Pos.x -= Menu->getPixelsSize().getWidth();
+				qPos.Left -= Menu->getPixelsSize().getWidth();
+				qPos.Right -= Menu->getPixelsSize().getWidth();
 
 				if ( !qScreen.contains( qPos ) ) {
-					Pos.y		+= Menu->getPixelsSize().getHeight();
-					qPos.Top	+= Menu->getPixelsSize().getHeight();
-					qPos.Bottom	+= Menu->getPixelsSize().getHeight();
+					Pos.y += Menu->getPixelsSize().getHeight();
+					qPos.Top += Menu->getPixelsSize().getHeight();
+					qPos.Bottom += Menu->getPixelsSize().getHeight();
 				}
 			}
 		}
 	}
 }
 
-}}
+}} // namespace EE::UI

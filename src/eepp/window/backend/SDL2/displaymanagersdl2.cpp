@@ -1,11 +1,9 @@
-#include <eepp/window/backend/SDL2/displaymanagersdl2.hpp>
 #include <eepp/window/backend/SDL2/base.hpp>
+#include <eepp/window/backend/SDL2/displaymanagersdl2.hpp>
 
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
-DisplaySDL2::DisplaySDL2( int index ) :
-	Display( index )
-{}
+DisplaySDL2::DisplaySDL2( int index ) : Display( index ) {}
 
 std::string DisplaySDL2::getName() {
 	return std::string( SDL_GetDisplayName( index ) );
@@ -19,7 +17,7 @@ Rect DisplaySDL2::getBounds() {
 }
 
 Float DisplaySDL2::getDPI() {
-#if SDL_VERSION_ATLEAST(2,0,4)
+#if SDL_VERSION_ATLEAST( 2, 0, 4 )
 	float ddpi, hdpi, vdpi;
 	if ( 0 == SDL_GetDisplayDPI( 0, &ddpi, &hdpi, &vdpi ) )
 		return ddpi;
@@ -40,7 +38,8 @@ const std::vector<DisplayMode>& DisplaySDL2::getModes() const {
 				SDL_DisplayMode mode;
 
 				if ( SDL_GetDisplayMode( index, mode_index, &mode ) == 0 ) {
-					displayModes.push_back( DisplayMode( mode.w, mode.h, mode.refresh_rate, index ) );
+					displayModes.push_back(
+						DisplayMode( mode.w, mode.h, mode.refresh_rate, index ) );
 				}
 			}
 		}
@@ -52,11 +51,11 @@ const std::vector<DisplayMode>& DisplaySDL2::getModes() const {
 DisplayMode DisplaySDL2::getCurrentMode() {
 	SDL_DisplayMode mode;
 
-	if ( SDL_GetCurrentDisplayMode(index, &mode) == 0 ) {
+	if ( SDL_GetCurrentDisplayMode( index, &mode ) == 0 ) {
 		return DisplayMode( mode.w, mode.h, mode.refresh_rate, index );
 	}
 
-	return DisplayMode(0,0,0,0);
+	return DisplayMode( 0, 0, 0, 0 );
 }
 
 DisplayMode DisplaySDL2::getClosestDisplayMode( DisplayMode wantedMode ) {
@@ -66,17 +65,17 @@ DisplayMode DisplaySDL2::getClosestDisplayMode( DisplayMode wantedMode ) {
 	target.h = wantedMode.Height;
 	target.format = 0;
 	target.refresh_rate = wantedMode.RefreshRate;
-	target.driverdata   = 0;
+	target.driverdata = 0;
 
-	if ( SDL_GetClosestDisplayMode(0, &target, &mode) != NULL ) {
+	if ( SDL_GetClosestDisplayMode( 0, &target, &mode ) != NULL ) {
 		return DisplayMode( mode.w, mode.h, mode.refresh_rate, index );
 	}
 
-	return DisplayMode(0,0,0,0);
+	return DisplayMode( 0, 0, 0, 0 );
 }
 
 Rect DisplaySDL2::getUsableBounds() {
-#if SDL_VERSION_ATLEAST(2,0,5)
+#if SDL_VERSION_ATLEAST( 2, 0, 5 )
 	SDL_Rect r;
 	if ( SDL_GetDisplayUsableBounds( index, &r ) == 0 )
 		return Rect( r.x, r.y, r.w, r.h );
@@ -85,11 +84,12 @@ Rect DisplaySDL2::getUsableBounds() {
 }
 
 int DisplayManagerSDL2::getDisplayCount() {
-	if ( !SDL_WasInit(SDL_INIT_VIDEO) ) SDL_Init(SDL_INIT_VIDEO);
+	if ( !SDL_WasInit( SDL_INIT_VIDEO ) )
+		SDL_Init( SDL_INIT_VIDEO );
 	return SDL_GetNumVideoDisplays();
 }
 
-Display * DisplayManagerSDL2::getDisplayIndex( int index ) {
+Display* DisplayManagerSDL2::getDisplayIndex( int index ) {
 	if ( displays.empty() ) {
 		int count = getDisplayCount();
 
@@ -100,9 +100,8 @@ Display * DisplayManagerSDL2::getDisplayIndex( int index ) {
 		}
 	}
 
-	return index >= 0 && index < (Int32)displays.size() ? displays[ index ] : NULL;
+	return index >= 0 && index < (Int32)displays.size() ? displays[index] : NULL;
 }
-
 
 void DisplayManagerSDL2::enableScreenSaver() {
 	SDL_EnableScreenSaver();
@@ -112,4 +111,4 @@ void DisplayManagerSDL2::disableScreenSaver() {
 	SDL_DisableScreenSaver();
 }
 
-}}}}
+}}}} // namespace EE::Window::Backend::SDL2

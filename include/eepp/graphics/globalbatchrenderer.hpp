@@ -9,16 +9,18 @@ using namespace EE::System;
 
 namespace EE { namespace Graphics {
 
-/** @brief The global Batch Renderer class. This class will be used by the engine for the rendering. */
+/** @brief The global Batch Renderer class. This class will be used by the engine for the rendering.
+ */
 class EE_API GlobalBatchRenderer : public BatchRenderer {
-	SINGLETON_DECLARE_HEADERS(GlobalBatchRenderer)
+	SINGLETON_DECLARE_HEADERS( GlobalBatchRenderer )
 
-	public:
-		~GlobalBatchRenderer();
-	protected:
-		GlobalBatchRenderer();
+  public:
+	~GlobalBatchRenderer();
+
+  protected:
+	GlobalBatchRenderer();
 };
 
-}}
+}} // namespace EE::Graphics
 
 #endif

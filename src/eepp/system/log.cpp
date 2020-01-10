@@ -1,32 +1,27 @@
-#include <eepp/system/log.hpp>
 #include <cstdarg>
+#include <eepp/system/log.hpp>
 #include <iostream>
 
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
-	#include <android/log.h>
+#include <android/log.h>
 #endif
 
 #if defined( EE_COMPILER_MSVC )
-	#ifndef WIN32_LEAN_AND_MEAN
-		#define WIN32_LEAN_AND_MEAN
-	#endif
-	#ifndef NOMINMAX
-		#define NOMINMAX
-	#endif
-	#include <windows.h>
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
 #endif
 
 namespace EE { namespace System {
 
-SINGLETON_DECLARE_IMPLEMENTATION(Log)
+SINGLETON_DECLARE_IMPLEMENTATION( Log )
 
-Log::Log() :
-	mSave( false ),
-	mConsoleOutput( false ),
-	mLiveWrite( false ),
-	mFS( NULL )
-{
-	write("...::: Entropia Engine++ Loaded :::...");
+Log::Log() : mSave( false ), mConsoleOutput( false ), mLiveWrite( false ), mFS( NULL ) {
+	write( "...::: Entropia Engine++ Loaded :::..." );
 	write( "Loaded on " + Sys::getDateTimeStr() + "\n" );
 }
 
@@ -45,12 +40,12 @@ Log::~Log() {
 
 void Log::save( const std::string& filepath ) {
 	if ( filepath.size() ) {
-		mFilePath	= filepath;
+		mFilePath = filepath;
 	} else {
-		mFilePath	= Sys::getProcessPath();
+		mFilePath = Sys::getProcessPath();
 	}
 
-	mSave		= true;
+	mSave = true;
 }
 
 void Log::write( std::string Text, const bool& newLine ) {
@@ -63,19 +58,19 @@ void Log::write( std::string Text, const bool& newLine ) {
 	writeToReaders( Text );
 
 	if ( mConsoleOutput ) {
-	#if EE_PLATFORM == EE_PLATFORM_ANDROID
+#if EE_PLATFORM == EE_PLATFORM_ANDROID
 		__android_log_print( ANDROID_LOG_INFO, "eepp", "%s", Text.c_str() );
-	#elif defined( EE_COMPILER_MSVC )
-		#ifdef UNICODE
+#elif defined( EE_COMPILER_MSVC )
+#ifdef UNICODE
 		OutputDebugString( String::fromUtf8( Text ).toWideString().c_str() );
-		#else
+#else
 		OutputDebugString( Text.c_str() );
-		#endif
-	#else
+#endif
+#else
 		std::cout << Text;
-	#endif
+#endif
 	}
-	
+
 	if ( mLiveWrite ) {
 		openFS();
 
@@ -111,7 +106,7 @@ void Log::writef( const char* format, ... ) {
 
 	va_list args;
 
-	while (1) {
+	while ( 1 ) {
 		va_start( args, format );
 
 		n = vsnprintf( &tstr[0], size, format, args );
@@ -125,17 +120,17 @@ void Log::writef( const char* format, ... ) {
 			writeToReaders( tstr );
 
 			if ( mConsoleOutput ) {
-			#if EE_PLATFORM == EE_PLATFORM_ANDROID
+#if EE_PLATFORM == EE_PLATFORM_ANDROID
 				__android_log_print( ANDROID_LOG_INFO, "eepp", "%s", tstr.c_str() );
-			#elif defined( EE_COMPILER_MSVC )
-				#ifdef UNICODE
-				OutputDebugString( String::fromUtf8(tstr).toWideString().c_str() );
-				#else
-				OutputDebugString(tstr.c_str());
-				#endif
-			#else
+#elif defined( EE_COMPILER_MSVC )
+#ifdef UNICODE
+				OutputDebugString( String::fromUtf8( tstr ).toWideString().c_str() );
+#else
+				OutputDebugString( tstr.c_str() );
+#endif
+#else
 				std::cout << tstr;
-			#endif
+#endif
 			}
 
 			if ( mLiveWrite ) {
@@ -151,10 +146,10 @@ void Log::writef( const char* format, ... ) {
 			return;
 		}
 
-		if ( n > -1 )	// glibc 2.1
-			size = n+1; // precisely what is needed
-		else			// glibc 2.0
-			size *= 2;	// twice the old size
+		if ( n > -1 )	  // glibc 2.1
+			size = n + 1; // precisely what is needed
+		else			  // glibc 2.0
+			size *= 2;	  // twice the old size
 
 		tstr.resize( size, '\0' );
 	}
@@ -178,7 +173,6 @@ void Log::setConsoleOutput( const bool& output ) {
 		mData = "";
 		write( data, false );
 	}
-
 }
 
 const bool& Log::isLiveWrite() const {
@@ -189,18 +183,19 @@ void Log::setLiveWrite( const bool& lw ) {
 	mLiveWrite = lw;
 }
 
-void Log::addLogReader( LogReaderInterface * reader ) {
+void Log::addLogReader( LogReaderInterface* reader ) {
 	mReaders.push_back( reader );
 }
 
-void Log::removeLogReader( LogReaderInterface * reader ) {
+void Log::removeLogReader( LogReaderInterface* reader ) {
 	mReaders.remove( reader );
 }
 
 void Log::writeToReaders( std::string& text ) {
-	for ( std::list<LogReaderInterface*>::iterator it = mReaders.begin(); it != mReaders.end(); ++it ) {
-		(*it)->writeLog( text );
+	for ( std::list<LogReaderInterface*>::iterator it = mReaders.begin(); it != mReaders.end();
+		  ++it ) {
+		( *it )->writeLog( text );
 	}
 }
 
-}}
+}} // namespace EE::System

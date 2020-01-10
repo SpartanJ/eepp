@@ -1,8 +1,8 @@
+#include <eepp/physics/physicsmanager.hpp>
 #include <eepp/physics/shape.hpp>
 #include <eepp/physics/shapecircle.hpp>
-#include <eepp/physics/shapesegment.hpp>
 #include <eepp/physics/shapepoly.hpp>
-#include <eepp/physics/physicsmanager.hpp>
+#include <eepp/physics/shapesegment.hpp>
 
 #ifdef PHYSICS_RENDERER_ENABLED
 #include <eepp/graphics/primitives.hpp>
@@ -15,19 +15,16 @@ void Shape::resetShapeIdCounter() {
 	cpResetShapeIdCounter();
 }
 
-void Shape::Free( Shape * shape, bool DeleteBody ) {
+void Shape::Free( Shape* shape, bool DeleteBody ) {
 	if ( DeleteBody ) {
-		Physics::Body * b = shape->getBody();
+		Physics::Body* b = shape->getBody();
 		eeSAFE_DELETE( b );
 	}
 
 	eeSAFE_DELETE( shape );
 }
 
-Shape::Shape() :
-	mData( NULL )
-{
-}
+Shape::Shape() : mData( NULL ) {}
 
 Shape::~Shape() {
 	cpShapeFree( mShape );
@@ -36,11 +33,11 @@ Shape::~Shape() {
 }
 
 void Shape::setData() {
-	mShape->data	= (void*)this;
+	mShape->data = (void*)this;
 	PhysicsManager::instance()->addShapeFree( this );
 }
 
-cpShape * Shape::getShape() const {
+cpShape* Shape::getShape() const {
 	return mShape;
 }
 
@@ -56,11 +53,11 @@ bool Shape::pointQuery( cVect p ) {
 	return 0 != cpShapePointQuery( mShape, tocpv( p ) );
 }
 
-Physics::Body * Shape::getBody() const {
+Physics::Body* Shape::getBody() const {
 	return reinterpret_cast<Physics::Body*>( mShape->body->data );
 }
 
-void Shape::setBody( Physics::Body * body ) {
+void Shape::setBody( Physics::Body* body ) {
 	mShape->body = body->getBody();
 }
 
@@ -120,7 +117,7 @@ void Shape::getSurfaceVel( const cVect& vel ) {
 	mShape->surface_v = tocpv( vel );
 }
 
-cpCollisionType Shape::getCollisionType()	 const {
+cpCollisionType Shape::getCollisionType() const {
 	return mShape->collision_type;
 }
 
@@ -145,51 +142,53 @@ void Shape::setLayers( const cpLayers& layers ) {
 }
 
 cpShapeType Shape::getType() const {
-	return mShape->CP_PRIVATE(klass)->type;
+	return mShape->CP_PRIVATE( klass )->type;
 }
 
-ShapePoly * Shape::getAsPoly() {
+ShapePoly* Shape::getAsPoly() {
 	eeASSERT( getType() == CP_POLY_SHAPE );
 
 	return reinterpret_cast<ShapePoly*>( this );
 }
 
-ShapeCircle * Shape::getAsCircle() {
+ShapeCircle* Shape::getAsCircle() {
 	eeASSERT( getType() == CP_CIRCLE_SHAPE );
 
 	return reinterpret_cast<ShapeCircle*>( this );
 }
 
-ShapeSegment * Shape::getAsSegment() {
+ShapeSegment* Shape::getAsSegment() {
 	eeASSERT( getType() == CP_SEGMENT_SHAPE );
 
 	return reinterpret_cast<ShapeSegment*>( this );
 }
 
 void Shape::drawBB() {
-	#ifdef PHYSICS_RENDERER_ENABLED
+#ifdef PHYSICS_RENDERER_ENABLED
 	Primitives P;
 	P.setColor( Color( 76, 128, 76, 255 ) );
 	P.setForceDraw( false );
-	P.drawLine( Line2f( Vector2f( mShape->bb.l, mShape->bb.t ), Vector2f( mShape->bb.r, mShape->bb.t ) ) );
-	P.drawLine( Line2f( Vector2f( mShape->bb.l, mShape->bb.t ), Vector2f( mShape->bb.l, mShape->bb.b ) ) );
-	P.drawLine( Line2f( Vector2f( mShape->bb.l, mShape->bb.b ), Vector2f( mShape->bb.r, mShape->bb.b ) ) );
-	P.drawLine( Line2f( Vector2f( mShape->bb.r, mShape->bb.t ), Vector2f( mShape->bb.r, mShape->bb.b ) ) );
-	#endif
+	P.drawLine(
+		Line2f( Vector2f( mShape->bb.l, mShape->bb.t ), Vector2f( mShape->bb.r, mShape->bb.t ) ) );
+	P.drawLine(
+		Line2f( Vector2f( mShape->bb.l, mShape->bb.t ), Vector2f( mShape->bb.l, mShape->bb.b ) ) );
+	P.drawLine(
+		Line2f( Vector2f( mShape->bb.l, mShape->bb.b ), Vector2f( mShape->bb.r, mShape->bb.b ) ) );
+	P.drawLine(
+		Line2f( Vector2f( mShape->bb.r, mShape->bb.t ), Vector2f( mShape->bb.r, mShape->bb.b ) ) );
+#endif
 }
 
-void * Shape::getData() const {
+void* Shape::getData() const {
 	return mData;
 }
 
-void Shape::setData( void * data ) {
+void Shape::setData( void* data ) {
 	mData = data;
 }
 
-void Shape::draw( Space * space ) {
-}
+void Shape::draw( Space* space ) {}
 
-void Shape::drawBorder( Space * space ) {
-}
+void Shape::drawBorder( Space* space ) {}
 
-}}
+}} // namespace EE::Physics

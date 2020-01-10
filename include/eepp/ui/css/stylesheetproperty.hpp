@@ -121,6 +121,7 @@ class EE_API StyleSheetProperty {
 	const ShorthandDefinition* getShorthandDefinition() const;
 
 	const bool& isVarValue() const;
+
   protected:
 	std::string mName;
 	Uint32 mNameHash;

@@ -1,5 +1,5 @@
-#include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uinode.hpp>
+#include <eepp/ui/uithememanager.hpp>
 
 namespace EE { namespace UI {
 
@@ -14,17 +14,14 @@ UIThemeManager::UIThemeManager() :
 	mAutoApplyDefaultTheme( true ),
 	mEnableDefaultEffects( false ),
 	mFadeInTime( Milliseconds( 100.f ) ),
-	mFadeOutTime( Milliseconds ( 100.f ) ),
+	mFadeOutTime( Milliseconds( 100.f ) ),
 	mTooltipTimeToShow( Milliseconds( 200 ) ),
 	mTooltipFollowMouse( true ),
-	mCursorSize( 16, 16 )
-{
-}
+	mCursorSize( 16, 16 ) {}
 
-UIThemeManager::~UIThemeManager() {
-}
+UIThemeManager::~UIThemeManager() {}
 
-UIThemeManager *  UIThemeManager::setDefaultFont( Font * Font ) {
+UIThemeManager* UIThemeManager::setDefaultFont( Font* Font ) {
 	mFont = Font;
 
 	if ( NULL != mFont && NULL != mThemeDefault && NULL == mThemeDefault->getDefaultFont() ) {
@@ -34,11 +31,11 @@ UIThemeManager *  UIThemeManager::setDefaultFont( Font * Font ) {
 	return this;
 }
 
-Font * UIThemeManager::getDefaultFont() const {
+Font* UIThemeManager::getDefaultFont() const {
 	return mFont;
 }
 
-UIThemeManager *  UIThemeManager::setDefaultTheme( UITheme * Theme ) {
+UIThemeManager* UIThemeManager::setDefaultTheme( UITheme* Theme ) {
 	mThemeDefault = Theme;
 
 	if ( NULL != mThemeDefault && NULL == mThemeDefault->getDefaultFont() ) {
@@ -47,23 +44,23 @@ UIThemeManager *  UIThemeManager::setDefaultTheme( UITheme * Theme ) {
 	return this;
 }
 
-UIThemeManager *  UIThemeManager::setDefaultTheme( const std::string& Theme ) {
+UIThemeManager* UIThemeManager::setDefaultTheme( const std::string& Theme ) {
 	setDefaultTheme( getByName( Theme ) );
 	return this;
 }
 
-UITheme * UIThemeManager::getDefaultTheme() const {
+UITheme* UIThemeManager::getDefaultTheme() const {
 	return mThemeDefault;
 }
 
-UIThemeManager *  UIThemeManager::applyDefaultTheme( UINode * Control ) {
+UIThemeManager* UIThemeManager::applyDefaultTheme( UINode* Control ) {
 	if ( mAutoApplyDefaultTheme && NULL != mThemeDefault && NULL != Control )
 		Control->setTheme( mThemeDefault );
 
 	return this;
 }
 
-UIThemeManager *  UIThemeManager::setAutoApplyDefaultTheme( const bool& apply ) {
+UIThemeManager* UIThemeManager::setAutoApplyDefaultTheme( const bool& apply ) {
 	mAutoApplyDefaultTheme = apply;
 	return this;
 }
@@ -72,7 +69,7 @@ const bool& UIThemeManager::getAutoApplyDefaultTheme() const {
 	return mAutoApplyDefaultTheme;
 }
 
-UIThemeManager *  UIThemeManager::setDefaultEffectsEnabled( const bool& Enabled ) {
+UIThemeManager* UIThemeManager::setDefaultEffectsEnabled( const bool& Enabled ) {
 	mEnableDefaultEffects = Enabled;
 	return this;
 }
@@ -85,7 +82,7 @@ const Time& UIThemeManager::getControlsFadeInTime() const {
 	return mFadeInTime;
 }
 
-UIThemeManager *  UIThemeManager::setControlsFadeInTime( const Time& Time ) {
+UIThemeManager* UIThemeManager::setControlsFadeInTime( const Time& Time ) {
 	mFadeInTime = Time;
 	return this;
 }
@@ -94,12 +91,12 @@ const Time& UIThemeManager::getControlsFadeOutTime() const {
 	return mFadeOutTime;
 }
 
-UIThemeManager *  UIThemeManager::setControlsFadeOutTime( const Time& Time ) {
+UIThemeManager* UIThemeManager::setControlsFadeOutTime( const Time& Time ) {
 	mFadeOutTime = Time;
 	return this;
 }
 
-UIThemeManager *  UIThemeManager::setTooltipTimeToShow( const Time& Time ) {
+UIThemeManager* UIThemeManager::setTooltipTimeToShow( const Time& Time ) {
 	mTooltipTimeToShow = Time;
 	return this;
 }
@@ -108,7 +105,7 @@ const Time& UIThemeManager::getTooltipTimeToShow() const {
 	return mTooltipTimeToShow;
 }
 
-UIThemeManager *  UIThemeManager::setTooltipFollowMouse( const bool& Follow ) {
+UIThemeManager* UIThemeManager::setTooltipFollowMouse( const bool& Follow ) {
 	mTooltipFollowMouse = Follow;
 	return this;
 }
@@ -117,7 +114,7 @@ const bool& UIThemeManager::getTooltipFollowMouse() const {
 	return mTooltipFollowMouse;
 }
 
-UIThemeManager *  UIThemeManager::setCursorSize( const Sizei& Size ) {
+UIThemeManager* UIThemeManager::setCursorSize( const Sizei& Size ) {
 	mCursorSize = Size;
 	return this;
 }
@@ -126,4 +123,4 @@ const Sizei& UIThemeManager::getCursorSize() const {
 	return mCursorSize;
 }
 
-}}
+}} // namespace EE::UI

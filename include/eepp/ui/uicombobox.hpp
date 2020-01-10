@@ -6,47 +6,48 @@
 namespace EE { namespace UI {
 
 class EE_API UIComboBox : public UIWidget {
-	public:
-		static UIComboBox * New();
+  public:
+	static UIComboBox* New();
 
-		UIComboBox();
+	UIComboBox();
 
-		virtual ~UIComboBox();
+	virtual ~UIComboBox();
 
-		virtual Uint32 getType() const;
+	virtual Uint32 getType() const;
 
-		virtual bool isType( const Uint32& type ) const;
+	virtual bool isType( const Uint32& type ) const;
 
-		virtual void setTheme( UITheme * Theme );
+	virtual void setTheme( UITheme* Theme );
 
-		UIListBox * getListBox();
+	UIListBox* getListBox();
 
-		UIDropDownList * getDropDownList() const { return mDropDownList; }
+	UIDropDownList* getDropDownList() const { return mDropDownList; }
 
-		UINode * getButton() const { return mButton; }
+	UINode* getButton() const { return mButton; }
 
-		InputTextBuffer * getInputTextBuffer();
+	InputTextBuffer* getInputTextBuffer();
 
-		const String& getText();
+	const String& getText();
 
-		void loadFromXmlNode(const pugi::xml_node & node);
-	protected:
-		UIDropDownList * mDropDownList;
-		UINode * mButton;
+	void loadFromXmlNode( const pugi::xml_node& node );
 
-		Uint32 onMessage(const NodeMessage *Msg);
+  protected:
+	UIDropDownList* mDropDownList;
+	UINode* mButton;
 
-		void updateControls();
+	Uint32 onMessage( const NodeMessage* Msg );
 
-		virtual void onSizeChange();
+	void updateControls();
 
-		virtual void onPositionChange();
+	virtual void onSizeChange();
 
-		virtual void onPaddingChange();
+	virtual void onPositionChange();
 
-		virtual void onAutoSize();
+	virtual void onPaddingChange();
+
+	virtual void onAutoSize();
 };
 
-}}
+}} // namespace EE::UI
 
 #endif

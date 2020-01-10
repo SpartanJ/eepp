@@ -1,27 +1,26 @@
-#include <eepp/ui/uiloader.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/scene/scenenode.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/uiloader.hpp>
 
 namespace EE { namespace UI {
 
-UILoader * UILoader::New() {
+UILoader* UILoader::New() {
 	return eeNew( UILoader, () );
 }
 
 UILoader::UILoader() :
 	UIWidget( "loader" ),
-	mRadius(0),
-	mOutlineThickness( PixelDensity::dpToPx(8) ),
+	mRadius( 0 ),
+	mOutlineThickness( PixelDensity::dpToPx( 8 ) ),
 	mColor( Color::Transparent ),
-	mArcAngle(0),
-	mArcStartAngle(0),
-	mProgress(0),
-	mMaxProgress(100),
-	mAnimationSpeed(0.5f),
-	mOp(1),
-	mIndeterminate(true)
-{
+	mArcAngle( 0 ),
+	mArcStartAngle( 0 ),
+	mProgress( 0 ),
+	mMaxProgress( 100 ),
+	mAnimationSpeed( 0.5f ),
+	mOp( 1 ),
+	mIndeterminate( true ) {
 	subscribeScheduledUpdate();
 
 	mArc.setFillMode( DRAW_FILL );
@@ -29,8 +28,7 @@ UILoader::UILoader() :
 	setFillColor( Color::White );
 }
 
-UILoader::~UILoader() {
-}
+UILoader::~UILoader() {}
 
 Uint32 UILoader::getType() const {
 	return UI_TYPE_LOADER;
@@ -47,7 +45,7 @@ void UILoader::draw() {
 	mArc.setPosition( rect.getCenter() );
 	mCircle.setPosition( rect.getCenter() );
 
-	ClippingMask * clippingMask = Renderer::instance()->getClippingMask();
+	ClippingMask* clippingMask = Renderer::instance()->getClippingMask();
 
 	if ( mCircle.getRadius() > 0 ) {
 		clippingMask->setMaskMode( ClippingMask::Exclusive );
@@ -69,7 +67,7 @@ void UILoader::scheduledUpdate( const Time& time ) {
 
 	if ( mIndeterminate ) {
 		mArcAngle += time.asMilliseconds() * mAnimationSpeed * mOp;
-		mArcStartAngle += time.asMilliseconds() * (mAnimationSpeed*1.5f);
+		mArcStartAngle += time.asMilliseconds() * ( mAnimationSpeed * 1.5f );
 
 		if ( mOp == 1 && mArcAngle > 340 ) {
 			mOp = -1;
@@ -82,15 +80,16 @@ void UILoader::scheduledUpdate( const Time& time ) {
 		mArc.setArcAngle( mArcAngle );
 		mArc.setArcStartAngle( mArcStartAngle );
 	} else {
-		mArcStartAngle += time.asMilliseconds() * (mAnimationSpeed*1.5f);
+		mArcStartAngle += time.asMilliseconds() * ( mAnimationSpeed * 1.5f );
 		mArc.setArcStartAngle( mArcStartAngle );
 	}
 }
 
-UILoader * UILoader::setOutlineThickness( const Float& thickness ) {
+UILoader* UILoader::setOutlineThickness( const Float& thickness ) {
 	if ( thickness != mOutlineThickness ) {
 		mOutlineThickness = thickness;
-		mCircle.setRadius( PixelDensity::dpToPx( mRadius ) - PixelDensity::dpToPx( mOutlineThickness ) );
+		mCircle.setRadius( PixelDensity::dpToPx( mRadius ) -
+						   PixelDensity::dpToPx( mOutlineThickness ) );
 		invalidateDraw();
 	}
 	return this;
@@ -100,7 +99,7 @@ const Float& UILoader::getOutlineThickness() const {
 	return mOutlineThickness;
 }
 
-UILoader * UILoader::setRadius( const Float& radius ) {
+UILoader* UILoader::setRadius( const Float& radius ) {
 	if ( radius != mRadius ) {
 		mRadius = radius;
 		Float rRadius = PixelDensity::dpToPx( radius );
@@ -115,7 +114,7 @@ const Float& UILoader::getRadius() const {
 	return mRadius;
 }
 
-UILoader * UILoader::setFillColor( const Color& color ) {
+UILoader* UILoader::setFillColor( const Color& color ) {
 	if ( color != mColor ) {
 		mColor = color;
 		mArc.setColor( mColor );
@@ -145,12 +144,15 @@ void UILoader::onPaddingChange() {
 
 void UILoader::updateRadius() {
 	if ( mRadius == 0 ) {
-		setRadius( eemin( getSize().getWidth() - mPadding.Left - mPadding.Right, getSize().getHeight() - mPadding.Top - mPadding.Bottom ) / 2.f );
+		setRadius( eemin( getSize().getWidth() - mPadding.Left - mPadding.Right,
+						  getSize().getHeight() - mPadding.Top - mPadding.Bottom ) /
+				   2.f );
 	}
 }
 
 void UILoader::onAutoSize() {
-	if ( mLayoutWidthRule == LayoutSizeRule::WrapContent || mLayoutHeightRule == LayoutSizeRule::WrapContent ) {
+	if ( mLayoutWidthRule == LayoutSizeRule::WrapContent ||
+		 mLayoutHeightRule == LayoutSizeRule::WrapContent ) {
 		Sizef minSize( getSize() );
 
 		if ( mLayoutWidthRule == LayoutSizeRule::WrapContent ) {
@@ -171,7 +173,7 @@ const bool& UILoader::isIndeterminate() const {
 	return mIndeterminate;
 }
 
-UILoader * UILoader::setIndeterminate( const bool& indeterminate ) {
+UILoader* UILoader::setIndeterminate( const bool& indeterminate ) {
 	if ( indeterminate != mIndeterminate ) {
 		mIndeterminate = indeterminate;
 		invalidateDraw();
@@ -179,7 +181,7 @@ UILoader * UILoader::setIndeterminate( const bool& indeterminate ) {
 	return this;
 }
 
-UILoader * UILoader::setProgress( const Float& progress ) {
+UILoader* UILoader::setProgress( const Float& progress ) {
 	if ( progress != mProgress ) {
 		mProgress = eemax( 0.f, eemin( progress, mMaxProgress ) );
 
@@ -201,7 +203,7 @@ const Float& UILoader::getMaxProgress() const {
 	return mMaxProgress;
 }
 
-UILoader * UILoader::setMaxProgress( const Float& maxProgress ) {
+UILoader* UILoader::setMaxProgress( const Float& maxProgress ) {
 	if ( maxProgress != mMaxProgress ) {
 		mMaxProgress = maxProgress;
 		invalidateDraw();
@@ -213,7 +215,7 @@ const Float& UILoader::getAnimationSpeed() const {
 	return mAnimationSpeed;
 }
 
-UILoader * UILoader::setAnimationSpeed( const Float& animationSpeed ) {
+UILoader* UILoader::setAnimationSpeed( const Float& animationSpeed ) {
 	if ( animationSpeed != mAnimationSpeed ) {
 		mAnimationSpeed = animationSpeed;
 		invalidateDraw();
@@ -222,7 +224,8 @@ UILoader * UILoader::setAnimationSpeed( const Float& animationSpeed ) {
 }
 
 std::string UILoader::getPropertyString( const PropertyDefinition* propertyDef ) {
-	if ( NULL == propertyDef ) return "";
+	if ( NULL == propertyDef )
+		return "";
 
 	switch ( propertyDef->getPropertyId() ) {
 		case PropertyId::Indeterminate:
@@ -247,7 +250,8 @@ std::string UILoader::getPropertyString( const PropertyDefinition* propertyDef )
 }
 
 bool UILoader::applyProperty( const StyleSheetProperty& attribute ) {
-	if ( !checkPropertyDefinition( attribute ) ) return false;
+	if ( !checkPropertyDefinition( attribute ) )
+		return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::Indeterminate:
@@ -285,7 +289,7 @@ Float UILoader::getArcStartAngle() const {
 	return mArcStartAngle;
 }
 
-UILoader * UILoader::setArcStartAngle( const Float& arcStartAngle ) {
+UILoader* UILoader::setArcStartAngle( const Float& arcStartAngle ) {
 	if ( arcStartAngle != mArcStartAngle ) {
 		mArcStartAngle = arcStartAngle;
 		invalidateDraw();
@@ -293,4 +297,4 @@ UILoader * UILoader::setArcStartAngle( const Float& arcStartAngle ) {
 	return this;
 }
 
-}}
+}} // namespace EE::UI

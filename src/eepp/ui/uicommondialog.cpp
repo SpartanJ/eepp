@@ -1,24 +1,23 @@
+#include <algorithm>
+#include <eepp/system/filesystem.hpp>
 #include <eepp/ui/uicommondialog.hpp>
+#include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uilistboxitem.hpp>
 #include <eepp/ui/uithememanager.hpp>
-#include <eepp/ui/uilinearlayout.hpp>
-#include <eepp/system/filesystem.hpp>
-#include <algorithm>
 
 namespace EE { namespace UI {
 
 #define CDLG_MIN_WIDTH 420
 #define CDLG_MIN_HEIGHT 320
 
-UICommonDialog * UICommonDialog::New(Uint32 CDLFlags, std::string DefaultFilePattern, std::string DefaultDirectory) {
+UICommonDialog* UICommonDialog::New( Uint32 CDLFlags, std::string DefaultFilePattern,
+									 std::string DefaultDirectory ) {
 	return eeNew( UICommonDialog, ( CDLFlags, DefaultFilePattern, DefaultDirectory ) );
 }
 
-UICommonDialog::UICommonDialog( Uint32 CDLFlags , std::string DefaultFilePattern, std::string DefaultDirectory ) :
-	UIWindow(),
-	mCurPath( DefaultDirectory ),
-	mCDLFlags( CDLFlags )
-{
+UICommonDialog::UICommonDialog( Uint32 CDLFlags, std::string DefaultFilePattern,
+								std::string DefaultDirectory ) :
+	UIWindow(), mCurPath( DefaultDirectory ), mCDLFlags( CDLFlags ) {
 	if ( getSize().getWidth() < CDLG_MIN_WIDTH ) {
 		mDpSize.x = CDLG_MIN_WIDTH;
 		mSize.x = PixelDensity::dpToPxI( CDLG_MIN_WIDTH );
@@ -43,61 +42,100 @@ UICommonDialog::UICommonDialog( Uint32 CDLFlags , std::string DefaultFilePattern
 		setTitle( "Select a file" );
 	}
 
-	UILinearLayout * linearLayout = UILinearLayout::NewVertical();
-	linearLayout->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::MatchParent )->setLayoutMargin( Rect( 4, 2, 4, 2 ) )->setParent( getContainer() );
+	UILinearLayout* linearLayout = UILinearLayout::NewVertical();
+	linearLayout->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::MatchParent )
+		->setLayoutMargin( Rect( 4, 2, 4, 2 ) )
+		->setParent( getContainer() );
 
-	UILinearLayout * hLayout = UILinearLayout::NewHorizontal();
-	hLayout->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )->setLayoutMargin( Rect(0,0,0,4) )->setParent( linearLayout );
+	UILinearLayout* hLayout = UILinearLayout::NewHorizontal();
+	hLayout->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )
+		->setLayoutMargin( Rect( 0, 0, 0, 4 ) )
+		->setParent( linearLayout );
 
-	UITextView::New()->setText( "Look in:" )->setLayoutSizeRules( LayoutSizeRule::WrapContent, LayoutSizeRule::MatchParent )->setLayoutMargin( Rect( 0, 0, 4, 0 ) )
-			->setParent( hLayout )->setEnabled( false );
+	UITextView::New()
+		->setText( "Look in:" )
+		->setLayoutSizeRules( LayoutSizeRule::WrapContent, LayoutSizeRule::MatchParent )
+		->setLayoutMargin( Rect( 0, 0, 4, 0 ) )
+		->setParent( hLayout )
+		->setEnabled( false );
 
 	mPath = UITextInput::New();
-	mPath->setText( mCurPath )->setLayoutSizeRules( LayoutSizeRule::WrapContent, LayoutSizeRule::MatchParent )->setLayoutWeight( 1 )->setParent( hLayout );
-	mPath->addEventListener( Event::OnPressEnter, cb::Make1( this, &UICommonDialog::onPressEnter ) );
+	mPath->setText( mCurPath )
+		->setLayoutSizeRules( LayoutSizeRule::WrapContent, LayoutSizeRule::MatchParent )
+		->setLayoutWeight( 1 )
+		->setParent( hLayout );
+	mPath->addEventListener( Event::OnPressEnter,
+							 cb::Make1( this, &UICommonDialog::onPressEnter ) );
 
 	mButtonUp = UIPushButton::New();
-	mButtonUp->setText( "Up" )->setLayoutSizeRules( LayoutSizeRule::WrapContent, LayoutSizeRule::MatchParent )->setParent( hLayout );
+	mButtonUp->setText( "Up" )
+		->setLayoutSizeRules( LayoutSizeRule::WrapContent, LayoutSizeRule::MatchParent )
+		->setParent( hLayout );
 
 	mList = UIListBox::New();
 	mList->setParent( linearLayout );
-	mList->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )->setLayoutWeight( 1 )->setLayoutMargin( Rect(0,0,0,4) );
+	mList->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )
+		->setLayoutWeight( 1 )
+		->setLayoutMargin( Rect( 0, 0, 0, 4 ) );
 
 	hLayout = UILinearLayout::NewHorizontal();
-	hLayout->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )->setLayoutMargin( Rect(0,0,0,4) )->setParent( linearLayout );
+	hLayout->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )
+		->setLayoutMargin( Rect( 0, 0, 0, 4 ) )
+		->setParent( linearLayout );
 
-	UITextView::New()->setText( "File Name:" )->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::MatchParent )->setSize(74,0)->setParent( hLayout )->setEnabled( false );
+	UITextView::New()
+		->setText( "File Name:" )
+		->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::MatchParent )
+		->setSize( 74, 0 )
+		->setParent( hLayout )
+		->setEnabled( false );
 
 	mFile = UITextInput::New();
-	mFile->setLayoutSizeRules( LayoutSizeRule::WrapContent, LayoutSizeRule::MatchParent )->setLayoutWeight( 1 )->setParent( hLayout );
+	mFile->setLayoutSizeRules( LayoutSizeRule::WrapContent, LayoutSizeRule::MatchParent )
+		->setLayoutWeight( 1 )
+		->setParent( hLayout );
 	mFile->setLayoutMargin( Rect( 0, 0, 4, 0 ) );
-	mFile->addEventListener( Event::OnPressEnter, cb::Make1( this, &UICommonDialog::onPressFileEnter ) );
+	mFile->addEventListener( Event::OnPressEnter,
+							 cb::Make1( this, &UICommonDialog::onPressFileEnter ) );
 
 	mButtonOpen = UIPushButton::New();
-	mButtonOpen->setText( isSaveDialog() ? "Save" : "Open" )->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::WrapContent )->setSize(80,0)->setParent( hLayout );
+	mButtonOpen->setText( isSaveDialog() ? "Save" : "Open" )
+		->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::WrapContent )
+		->setSize( 80, 0 )
+		->setParent( hLayout );
 
 	hLayout = UILinearLayout::NewHorizontal();
-	hLayout->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )->setParent( linearLayout );
+	hLayout->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )
+		->setParent( linearLayout );
 
-	UITextView::New()->setText( "Files of type:" )->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::MatchParent )->setSize(74,0)->setParent( hLayout )->setEnabled( false );
+	UITextView::New()
+		->setText( "Files of type:" )
+		->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::MatchParent )
+		->setSize( 74, 0 )
+		->setParent( hLayout )
+		->setEnabled( false );
 
 	mFiletype = UIDropDownList::New();
-	mFiletype->setLayoutSizeRules( LayoutSizeRule::WrapContent, LayoutSizeRule::MatchParent )->setLayoutWeight( 1 )->setParent( hLayout );
+	mFiletype->setLayoutSizeRules( LayoutSizeRule::WrapContent, LayoutSizeRule::MatchParent )
+		->setLayoutWeight( 1 )
+		->setParent( hLayout );
 	mFiletype->setPopUpToMainControl( true );
 	mFiletype->getListBox()->addListBoxItem( DefaultFilePattern );
-	mFiletype->getListBox()->setSelected(0);
+	mFiletype->getListBox()->setSelected( 0 );
 	mFiletype->setLayoutMargin( Rect( 0, 0, 4, 0 ) );
 
 	mButtonCancel = UIPushButton::New();
-	mButtonCancel->setText( "Cancel" )->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::WrapContent )->setSize(80,0)->setParent( hLayout );
+	mButtonCancel->setText( "Cancel" )
+		->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::WrapContent )
+		->setSize( 80, 0 )
+		->setParent( hLayout );
 
 	applyDefaultTheme();
 
 	refreshFolder();
 }
 
-UICommonDialog::~UICommonDialog() {
-}
+UICommonDialog::~UICommonDialog() {}
 
 Uint32 UICommonDialog::getType() const {
 	return UI_TYPE_COMMONDIALOG;
@@ -107,7 +145,7 @@ bool UICommonDialog::isType( const Uint32& type ) const {
 	return UICommonDialog::getType() == type ? true : UIWindow::isType( type );
 }
 
-void UICommonDialog::setTheme( UITheme * Theme ) {
+void UICommonDialog::setTheme( UITheme* Theme ) {
 	UIWindow::setTheme( Theme );
 
 	mButtonOpen->setTheme( Theme );
@@ -118,7 +156,7 @@ void UICommonDialog::setTheme( UITheme * Theme ) {
 	mFile->setTheme( Theme );
 	mFiletype->setTheme( Theme );
 
-	Drawable * Icon = Theme->getIconByName( "go-up" );
+	Drawable* Icon = Theme->getIconByName( "go-up" );
 
 	if ( NULL != Icon ) {
 		mButtonUp->setText( "" );
@@ -129,11 +167,11 @@ void UICommonDialog::setTheme( UITheme * Theme ) {
 }
 
 void UICommonDialog::refreshFolder() {
-	std::vector<String>			flist = FileSystem::filesGetInPath( String( mCurPath ) );
-	std::vector<String>			files;
-	std::vector<String>			folders;
-	std::vector<std::string>	patterns;
-	bool						accepted;
+	std::vector<String> flist = FileSystem::filesGetInPath( String( mCurPath ) );
+	std::vector<String> files;
+	std::vector<String> folders;
+	std::vector<std::string> patterns;
+	bool accepted;
 	Uint32 i, z;
 
 	if ( "*" != mFiletype->getText() ) {
@@ -179,7 +217,9 @@ void UICommonDialog::refreshFolder() {
 	mList->addListBoxItems( files );
 
 	if ( NULL != mList->getVerticalScrollBar() ) {
-		mList->getVerticalScrollBar()->setClickStep( 1.f / ( ( mList->getCount() * mList->getRowHeight() ) / (Float)mList->getSize().getHeight() ) );
+		mList->getVerticalScrollBar()->setClickStep(
+			1.f / ( ( mList->getCount() * mList->getRowHeight() ) /
+					(Float)mList->getSize().getHeight() ) );
 	}
 }
 
@@ -191,7 +231,7 @@ void UICommonDialog::openSaveClick() {
 	}
 }
 
-void UICommonDialog::onPressFileEnter( const Event * ) {
+void UICommonDialog::onPressFileEnter( const Event* ) {
 	openSaveClick();
 }
 
@@ -210,10 +250,9 @@ void UICommonDialog::disableButtons() {
 		mButtonMaximize->setEnabled( false );
 }
 
-Uint32 UICommonDialog::onMessage( const NodeMessage * Msg ) {
+Uint32 UICommonDialog::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
-		case NodeMessage::Click:
-		{
+		case NodeMessage::Click: {
 			if ( Msg->getFlags() & EE_BUTTON_LMASK ) {
 				if ( Msg->getSender() == mButtonOpen ) {
 					openSaveClick();
@@ -230,8 +269,7 @@ Uint32 UICommonDialog::onMessage( const NodeMessage * Msg ) {
 
 			break;
 		}
-		case NodeMessage::DoubleClick:
-		{
+		case NodeMessage::DoubleClick: {
 			if ( Msg->getFlags() & EE_BUTTON_LMASK ) {
 				if ( Msg->getSender()->isType( UI_TYPE_LISTBOXITEM ) ) {
 					std::string newPath = mCurPath + mList->getItemSelectedText();
@@ -248,8 +286,7 @@ Uint32 UICommonDialog::onMessage( const NodeMessage * Msg ) {
 
 			break;
 		}
-		case NodeMessage::Selected:
-		{
+		case NodeMessage::Selected: {
 			if ( Msg->getSender() == mList ) {
 				if ( !isSaveDialog() ) {
 					if ( getAllowFolderSelect() ) {
@@ -289,7 +326,8 @@ void UICommonDialog::open() {
 			if ( FileSystem::isDirectory( getFullPath() ) )
 				return;
 		} else {
-			if ( !FileSystem::isDirectory( getFullPath() ) && !FileSystem::isDirectory( getCurPath() ) )
+			if ( !FileSystem::isDirectory( getFullPath() ) &&
+				 !FileSystem::isDirectory( getCurPath() ) )
 				return;
 		}
 
@@ -301,7 +339,7 @@ void UICommonDialog::open() {
 	}
 }
 
-void UICommonDialog::onPressEnter( const Event * ) {
+void UICommonDialog::onPressEnter( const Event* ) {
 	if ( FileSystem::isDirectory( mPath->getText() ) ) {
 		std::string tpath = mPath->getText();
 		FileSystem::dirPathAddSlashAtEnd( tpath );
@@ -343,7 +381,7 @@ void UICommonDialog::setSortAlphabetically( const bool& sortAlphabetically ) {
 }
 
 void UICommonDialog::setFoldersFirst( const bool& foldersFirst ) {
-	BitOp::setBitFlagValue( &mCDLFlags, CDL_FLAG_FOLDERS_FISRT , foldersFirst ? 1 : 0 );
+	BitOp::setBitFlagValue( &mCDLFlags, CDL_FLAG_FOLDERS_FISRT, foldersFirst ? 1 : 0 );
 	refreshFolder();
 }
 
@@ -361,7 +399,7 @@ std::string UICommonDialog::getFullPath() {
 	return tPath;
 }
 
-std::string	UICommonDialog::getTempFullPath() {
+std::string UICommonDialog::getTempFullPath() {
 	std::string tPath = mCurPath;
 
 	FileSystem::dirPathAddSlashAtEnd( tPath );
@@ -382,32 +420,32 @@ std::string UICommonDialog::getCurFile() const {
 	return mList->getItemSelectedText().toUtf8();
 }
 
-UIPushButton *	UICommonDialog::getButtonOpen() const {
+UIPushButton* UICommonDialog::getButtonOpen() const {
 	return mButtonOpen;
 }
 
-UIPushButton *	UICommonDialog::getButtonCancel() const {
+UIPushButton* UICommonDialog::getButtonCancel() const {
 	return mButtonCancel;
 }
 
-UIPushButton *	UICommonDialog::getButtonUp() const {
+UIPushButton* UICommonDialog::getButtonUp() const {
 	return mButtonUp;
 }
 
-UIListBox * UICommonDialog::getList() const {
+UIListBox* UICommonDialog::getList() const {
 	return mList;
 }
 
-UITextInput * UICommonDialog::getPathInput() const {
+UITextInput* UICommonDialog::getPathInput() const {
 	return mPath;
 }
 
-UITextInput * UICommonDialog::getFileInput() const {
+UITextInput* UICommonDialog::getFileInput() const {
 	return mFile;
 }
 
-UIDropDownList * UICommonDialog::getFiletypeList() const {
+UIDropDownList* UICommonDialog::getFiletypeList() const {
 	return mFiletype;
 }
 
-}}
+}} // namespace EE::UI

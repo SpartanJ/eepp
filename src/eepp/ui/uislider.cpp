@@ -1,19 +1,19 @@
+#include <eepp/graphics/textureregion.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/uislider.hpp>
 #include <eepp/ui/uithememanager.hpp>
-#include <eepp/ui/css/propertydefinition.hpp>
-#include <eepp/graphics/textureregion.hpp>
 
 namespace EE { namespace UI {
 
-UISlider * UISlider::New() {
+UISlider* UISlider::New() {
 	return eeNew( UISlider, ( UIOrientation::Vertical ) );
 }
 
-UISlider * UISlider::NewVertical() {
+UISlider* UISlider::NewVertical() {
 	return eeNew( UISlider, ( UIOrientation::Vertical ) );
 }
 
-UISlider * UISlider::NewHorizontal() {
+UISlider* UISlider::NewHorizontal() {
 	return eeNew( UISlider, ( UIOrientation::Horizontal ) );
 }
 
@@ -29,8 +29,7 @@ UISlider::UISlider( const UIOrientation& orientation ) :
 	mValue( 0.f ),
 	mClickStep( 0.1f ),
 	mPageStep( 0 ),
-	mOnPosChange( false )
-{
+	mOnPosChange( false ) {
 	Sizef bgSize;
 
 	if ( UIOrientation::Horizontal == mOrientation )
@@ -52,9 +51,8 @@ UISlider::UISlider( const UIOrientation& orientation ) :
 	mSlider->setDragEnabled( true );
 	mSlider->setSize( 16, 16 );
 	mSlider->setPosition( 0, 0 );
-	mSlider->addEventListener( Event::OnPositionChange, [&] ( const Event* event ) {
-		fixSliderPos();
-	} );
+	mSlider->addEventListener( Event::OnPositionChange,
+							   [&]( const Event* event ) { fixSliderPos(); } );
 
 	if ( UIOrientation::Horizontal == mOrientation )
 		mSlider->centerVertical();
@@ -64,8 +62,7 @@ UISlider::UISlider( const UIOrientation& orientation ) :
 	applyDefaultTheme();
 }
 
-UISlider::~UISlider() {
-}
+UISlider::~UISlider() {}
 
 Uint32 UISlider::getType() const {
 	return UI_TYPE_SLIDER;
@@ -75,7 +72,7 @@ bool UISlider::isType( const Uint32& type ) const {
 	return UISlider::getType() == type ? true : UIWidget::isType( type );
 }
 
-void UISlider::setTheme( UITheme * Theme ) {
+void UISlider::setTheme( UITheme* Theme ) {
 	UIWidget::setTheme( Theme );
 
 	if ( UIOrientation::Horizontal == mOrientation ) {
@@ -108,7 +105,7 @@ void UISlider::onPaddingChange() {
 }
 
 void UISlider::adjustChilds() {
-	UISkin * tSkin = mSlider->getSkin();
+	UISkin* tSkin = mSlider->getSkin();
 
 	if ( NULL != tSkin ) {
 		if ( mPageStep == 0 ) {
@@ -117,11 +114,13 @@ void UISlider::adjustChilds() {
 			Float percent = ( mPageStep / ( mMaxValue - mMinValue ) );
 
 			if ( UIOrientation::Horizontal == mOrientation ) {
-				Float size = eemax( ( (Float)getSize().getWidth() * percent ), tSkin->getSize().getWidth() );
+				Float size =
+					eemax( ( (Float)getSize().getWidth() * percent ), tSkin->getSize().getWidth() );
 
 				mSlider->setSize( size, tSkin->getSize().getHeight() );
 			} else {
-				Float size = eemax( ( (Float)getSize().getHeight() * percent ), tSkin->getSize().getHeight() );
+				Float size = eemax( ( (Float)getSize().getHeight() * percent ),
+									tSkin->getSize().getHeight() );
 
 				mSlider->setSize( tSkin->getSize().getWidth(), size );
 			}
@@ -146,9 +145,12 @@ void UISlider::adjustChilds() {
 				Height = tSkin->getSize().getHeight();
 
 			if ( mAllowHalfSliderOut )
-				mBackSlider->setSize( Sizef( getSize().getWidth() - mSlider->getSize().getWidth() - mPadding.Left - mPadding.Right, Height ) );
+				mBackSlider->setSize( Sizef( getSize().getWidth() - mSlider->getSize().getWidth() -
+												 mPadding.Left - mPadding.Right,
+											 Height ) );
 			else
-				mBackSlider->setSize( Sizef( getSize().getWidth() - mPadding.Left - mPadding.Right, Height ) );
+				mBackSlider->setSize(
+					Sizef( getSize().getWidth() - mPadding.Left - mPadding.Right, Height ) );
 		} else {
 			Float Width;
 
@@ -158,7 +160,9 @@ void UISlider::adjustChilds() {
 				Width = tSkin->getSize().getWidth();
 
 			if ( mAllowHalfSliderOut )
-				mBackSlider->setSize( Sizef( Width, getSize().getHeight() - mSlider->getSize().getHeight() - mPadding.Top - mPadding.Bottom ) );
+				mBackSlider->setSize( Sizef( Width, getSize().getHeight() -
+														mSlider->getSize().getHeight() -
+														mPadding.Top - mPadding.Bottom ) );
 			else
 				mBackSlider->setSize( Sizef( Width, getSize().getHeight() ) );
 		}
@@ -180,19 +184,27 @@ void UISlider::fixSliderPos() {
 				mSlider->setPosition( mPadding.Left, 0 );
 
 			if ( mAllowHalfSliderOut ) {
-				if ( mSlider->getPosition().x > mBackSlider->getSize().getWidth() + mPadding.Left  )
+				if ( mSlider->getPosition().x > mBackSlider->getSize().getWidth() + mPadding.Left )
 					mSlider->setPosition( mBackSlider->getSize().getWidth() + mPadding.Left, 0 );
 			} else {
-				if ( mSlider->getPosition().x > mBackSlider->getSize().getWidth() - mSlider->getSize().getWidth() + mPadding.Left )
-					mSlider->setPosition( eemax(0.f, mBackSlider->getSize().getWidth() - mSlider->getSize().getWidth()) + mPadding.Left, 0 );
+				if ( mSlider->getPosition().x > mBackSlider->getSize().getWidth() -
+													mSlider->getSize().getWidth() + mPadding.Left )
+					mSlider->setPosition( eemax( 0.f, mBackSlider->getSize().getWidth() -
+														  mSlider->getSize().getWidth() ) +
+											  mPadding.Left,
+										  0 );
 			}
 
 			mSlider->centerVertical();
 
 			if ( mAllowHalfSliderOut )
-				setValue( mMinValue + ( mSlider->getPosition().x - mPadding.Left ) * ( mMaxValue - mMinValue ) / (Float)mBackSlider->getSize().getWidth() );
+				setValue( mMinValue + ( mSlider->getPosition().x - mPadding.Left ) *
+										  ( mMaxValue - mMinValue ) /
+										  (Float)mBackSlider->getSize().getWidth() );
 			else
-				setValue( mMinValue + ( mSlider->getPosition().x - mPadding.Left ) * ( mMaxValue - mMinValue ) / ( (Float)getSize().getWidth() - mSlider->getSize().getWidth() ) );
+				setValue( mMinValue +
+						  ( mSlider->getPosition().x - mPadding.Left ) * ( mMaxValue - mMinValue ) /
+							  ( (Float)getSize().getWidth() - mSlider->getSize().getWidth() ) );
 		} else {
 			mSlider->setPosition( 0, mSlider->getPosition().y );
 
@@ -203,17 +215,25 @@ void UISlider::fixSliderPos() {
 				if ( mSlider->getPosition().y > mBackSlider->getSize().getHeight() + mPadding.Top )
 					mSlider->setPosition( 0, mBackSlider->getSize().getHeight() + mPadding.Top );
 			} else {
-				if ( mSlider->getPosition().y > mBackSlider->getSize().getHeight() - mSlider->getSize().getHeight() + mPadding.Top ) {
-					mSlider->setPosition( 0, eemax(0.f, mBackSlider->getSize().getHeight() - mSlider->getSize().getHeight()) + mPadding.Top );
+				if ( mSlider->getPosition().y > mBackSlider->getSize().getHeight() -
+													mSlider->getSize().getHeight() +
+													mPadding.Top ) {
+					mSlider->setPosition( 0, eemax( 0.f, mBackSlider->getSize().getHeight() -
+															 mSlider->getSize().getHeight() ) +
+												 mPadding.Top );
 				}
 			}
 
 			mSlider->centerHorizontal();
 
 			if ( mAllowHalfSliderOut )
-				setValue( mMinValue + ( mSlider->getPosition().y - mPadding.Top ) * ( mMaxValue - mMinValue ) / (Float)mBackSlider->getSize().getHeight() );
+				setValue( mMinValue + ( mSlider->getPosition().y - mPadding.Top ) *
+										  ( mMaxValue - mMinValue ) /
+										  (Float)mBackSlider->getSize().getHeight() );
 			else
-				setValue( mMinValue + ( mSlider->getPosition().y - mPadding.Top ) * ( mMaxValue - mMinValue ) / ( (Float)getSize().getHeight() - mSlider->getSize().getHeight() ) );
+				setValue( mMinValue +
+						  ( mSlider->getPosition().y - mPadding.Top ) * ( mMaxValue - mMinValue ) /
+							  ( (Float)getSize().getHeight() - mSlider->getSize().getHeight() ) );
 		}
 
 		mOnPosChange = false;
@@ -226,22 +246,36 @@ void UISlider::adjustSliderPos() {
 
 	if ( UIOrientation::Horizontal == mOrientation ) {
 		if ( mAllowHalfSliderOut )
-			mSlider->setPosition( mPadding.Left + (Int32)( (Float)mBackSlider->getSize().getWidth() * Percent ), mSlider->getPosition().y );
+			mSlider->setPosition(
+				mPadding.Left + ( Int32 )( (Float)mBackSlider->getSize().getWidth() * Percent ),
+				mSlider->getPosition().y );
 		else
-			mSlider->setPosition( mPadding.Left + (Int32)( ( (Float)getSize().getWidth() - mPadding.Left - mPadding.Right - mSlider->getSize().getWidth() ) * Percent ), mSlider->getPosition().y );
+			mSlider->setPosition(
+				mPadding.Left + ( Int32 )( ( (Float)getSize().getWidth() - mPadding.Left -
+											 mPadding.Right - mSlider->getSize().getWidth() ) *
+										   Percent ),
+				mSlider->getPosition().y );
 	} else {
 		if ( mAllowHalfSliderOut )
-			mSlider->setPosition( mSlider->getPosition().x, mPadding.Top + (Int32)( (Float)mBackSlider->getSize().getHeight() * Percent ) );
+			mSlider->setPosition(
+				mSlider->getPosition().x,
+				mPadding.Top + ( Int32 )( (Float)mBackSlider->getSize().getHeight() * Percent ) );
 		else
-			mSlider->setPosition( mSlider->getPosition().x, mPadding.Top + (Int32)( ( (Float)getSize().getHeight() - mPadding.Top - mPadding.Bottom - mSlider->getSize().getHeight() ) * Percent ) );
+			mSlider->setPosition(
+				mSlider->getPosition().x,
+				mPadding.Top + ( Int32 )( ( (Float)getSize().getHeight() - mPadding.Top -
+											mPadding.Bottom - mSlider->getSize().getHeight() ) *
+										  Percent ) );
 	}
 
 	mOnPosChange = false;
 }
 
 void UISlider::setValue( Float Val ) {
-	if ( Val < mMinValue ) Val = mMinValue;
-	if ( Val > mMaxValue ) Val = mMaxValue;
+	if ( Val < mMinValue )
+		Val = mMinValue;
+	if ( Val > mMaxValue )
+		Val = mMaxValue;
 
 	if ( mValue == Val )
 		return;
@@ -303,7 +337,7 @@ bool UISlider::isVertical() const {
 	return mOrientation == UIOrientation::Vertical;
 }
 
-Uint32 UISlider::onKeyDown( const KeyEvent &Event ) {
+Uint32 UISlider::onKeyDown( const KeyEvent& Event ) {
 	if ( Sys::getTicks() - mLastTickMove > 100 ) {
 		if ( Event.getKeyCode() == KEY_DOWN ) {
 			mLastTickMove = Sys::getTicks();
@@ -332,7 +366,7 @@ void UISlider::manageClick( const Uint32& Flags ) {
 		Vector2f ControlPos = getEventDispatcher()->getMousePosf();
 		mSlider->worldToNode( ControlPos );
 
-		if ( Flags & EE_BUTTON_LMASK && !mSlider->isMouseOver()  ) {
+		if ( Flags & EE_BUTTON_LMASK && !mSlider->isMouseOver() ) {
 			if ( UIOrientation::Horizontal == mOrientation ) {
 				if ( ControlPos.x < 0 )
 					setValue( mValue - mClickStep );
@@ -357,7 +391,7 @@ UIOrientation UISlider::getOrientation() const {
 	return mOrientation;
 }
 
-UISlider * UISlider::setOrientation( const UIOrientation & orientation ) {
+UISlider* UISlider::setOrientation( const UIOrientation& orientation ) {
 	if ( orientation != mOrientation ) {
 		mOrientation = orientation;
 
@@ -399,7 +433,7 @@ Float UISlider::getPageStep() const {
 	return mPageStep;
 }
 
-void UISlider::setPageStep(const Float & pageStep) {
+void UISlider::setPageStep( const Float& pageStep ) {
 	if ( pageStep != mPageStep ) {
 		mPageStep = eemin( eemax( pageStep, mMinValue ), mMaxValue );
 
@@ -409,11 +443,11 @@ void UISlider::setPageStep(const Float & pageStep) {
 	}
 }
 
-UINode * UISlider::getBackSlider() const {
+UINode* UISlider::getBackSlider() const {
 	return mBackSlider;
 }
 
-UINode * UISlider::getSliderButton() const {
+UINode* UISlider::getSliderButton() const {
 	return mSlider;
 }
 
@@ -424,10 +458,9 @@ void UISlider::onAlphaChange() {
 	mSlider->setAlpha( mAlpha );
 }
 
-Uint32 UISlider::onMessage(const NodeMessage * Msg) {
+Uint32 UISlider::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
-		case NodeMessage::MouseUp:
-		{
+		case NodeMessage::MouseUp: {
 			manageClick( Msg->getFlags() );
 			return 1;
 		}
@@ -437,7 +470,8 @@ Uint32 UISlider::onMessage(const NodeMessage * Msg) {
 }
 
 std::string UISlider::getPropertyString( const PropertyDefinition* propertyDef ) {
-	if ( NULL == propertyDef ) return "";
+	if ( NULL == propertyDef )
+		return "";
 
 	switch ( propertyDef->getPropertyId() ) {
 		case PropertyId::Orientation:
@@ -462,11 +496,11 @@ std::string UISlider::getPropertyString( const PropertyDefinition* propertyDef )
 }
 
 bool UISlider::applyProperty( const StyleSheetProperty& attribute ) {
-	if ( !checkPropertyDefinition( attribute ) ) return false;
+	if ( !checkPropertyDefinition( attribute ) )
+		return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
-		case PropertyId::Orientation:
-		{
+		case PropertyId::Orientation: {
 			std::string val = attribute.asString();
 			String::toLowerInPlace( val );
 
@@ -507,11 +541,13 @@ bool UISlider::applyProperty( const StyleSheetProperty& attribute ) {
 Sizef UISlider::getMinimumSize() {
 	Float w = eemax( mBackSlider->getSkinSize().getWidth(), mSlider->getSkinSize().getWidth() );
 	Float h = eemax( mBackSlider->getSkinSize().getHeight(), mSlider->getSkinSize().getHeight() );
-	return Sizef( w + ( mAllowHalfSliderOut ? w : 0 ) + mPadding.Left + mPadding.Right, h + mPadding.Top + mPadding.Bottom );
+	return Sizef( w + ( mAllowHalfSliderOut ? w : 0 ) + mPadding.Left + mPadding.Right,
+				  h + mPadding.Top + mPadding.Bottom );
 }
 
 void UISlider::onAutoSize() {
-	if ( mLayoutWidthRule == LayoutSizeRule::WrapContent || mLayoutHeightRule == LayoutSizeRule::WrapContent ) {
+	if ( mLayoutWidthRule == LayoutSizeRule::WrapContent ||
+		 mLayoutHeightRule == LayoutSizeRule::WrapContent ) {
 		Sizef total( getMinimumSize() );
 
 		total = PixelDensity::dpToPx( total );
@@ -528,4 +564,4 @@ void UISlider::onAutoSize() {
 	}
 }
 
-}}
+}} // namespace EE::UI

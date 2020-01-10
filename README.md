@@ -20,8 +20,8 @@ Cross platform functionality
   * It should work on FreeBSD, Solaris and Haiku.
 
 
-Graphic Module
---------------
+Graphics Module
+---------------
 
   * Renderers for OpenGL 2 ( fixed-pipeline ), OpenGL 3 ( programmable-pipeline ), OpenGL ES 2, OpenGL ES 1, and OpenGL Core Profile.
 
@@ -356,7 +356,7 @@ or
 For *mingw*:
 `premake4.exe gmake`
 
-Then you will need the prebuild binaries and development libraries of [*SDL2*](http://libsdl.org/download-2.0.php) and [*openal-soft*](http://kcat.strangesoft.net/openal.html#download). Download the ones needed ( *VS* or *mingw* ).
+Then you will need the prebuild binaries and development libraries of [SDL2](http://libsdl.org/download-2.0.php) and [openal-soft](http://kcat.strangesoft.net/openal.html#download). Download the ones needed ( *VS* or *mingw* ).
 
 Then the project files should be found in `make/windows/`. A solution (sln) for *Visual Studio* or the corresponding `Makefiles` for *mingw*.
 
@@ -367,7 +367,7 @@ _**macOS**_
 
 You have two options to build the project: with XCode or with gcc/clang manually.
 To build with any of both options first you will also need to build the project files with [premake4](https://premake.github.io/download.html).
-Then you will need the prebuild binaries and development libraries of [*SDL2*](http://libsdl.org/download-2.0.php), OpenAL is included with the OS. Install the *SDL2* framework and you should be able to build the project.
+Then you will need the prebuild binaries and development libraries of [SDL2](http://libsdl.org/download-2.0.php), OpenAL is included with the OS. Install the *SDL2* framework and you should be able to build the project.
 
 For a CLI build you can use the `projects/osx/make.sh` script, that generates the *Makefiles* and builds the project, also fix the dylibs generated.
 

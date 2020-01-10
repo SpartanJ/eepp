@@ -11,38 +11,37 @@ MTRand::MTRand() {
 }
 
 MTRand::MTRand( const MTRand& o ) {
-	const Uint32 *t	= o.mState;
-	Uint32	* s			= mState;
-	int	i			= N;
+	const Uint32* t = o.mState;
+	Uint32* s = mState;
+	int i = N;
 
-	for ( ; i--; *s++ = *t++ )
-	{
+	for ( ; i--; *s++ = *t++ ) {
 	}
 
 	mLeft = o.mLeft;
 
-	mNext = &mState[ N - mLeft ];
+	mNext = &mState[N - mLeft];
 }
 
 void MTRand::initialize( const Uint32 seed ) {
-	Uint32 *s = mState;
+	Uint32* s = mState;
 
-	Uint32 *r = mState;
+	Uint32* r = mState;
 
 	Int32 i = 1;
 
 	*s++ = seed & 0xffffffffUL;
 
 	for ( ; i < N; ++i ) {
-		*s++ = ( 1812433253UL * ( *r ^ (*r >> 30) ) + i ) & 0xffffffffUL;
+		*s++ = ( 1812433253UL * ( *r ^ ( *r >> 30 ) ) + i ) & 0xffffffffUL;
 		r++;
 	}
 }
 
 void MTRand::reload() {
-	static const int MmN = int(M) - int(N);
+	static const int MmN = int( M ) - int( N );
 
-	Uint32 *p = mState;
+	Uint32* p = mState;
 
 	int i;
 
@@ -79,15 +78,15 @@ Uint32 MTRand::loBits( const Uint32 u ) const {
 }
 
 Uint32 MTRand::mixBits( const Uint32 u, const Uint32 v ) const {
-	return hiBit(u) | loBits(v);
+	return hiBit( u ) | loBits( v );
 }
 
 Uint32 MTRand::magic( const Uint32 u ) const {
-	return loBit(u) ? 0x9908b0dfUL : 0x0UL;
+	return loBit( u ) ? 0x9908b0dfUL : 0x0UL;
 }
 
 Uint32 MTRand::twist( const Uint32 m, const Uint32 s0, const Uint32 s1 ) const {
-	return m ^ ( mixBits( s0, s1 )>>1 ) ^ magic(s1);
+	return m ^ ( mixBits( s0, s1 ) >> 1 ) ^ magic( s1 );
 }
 
 Uint32 MTRand::getRandi() {
@@ -98,11 +97,11 @@ Uint32 MTRand::getRandi() {
 
 	Uint32 s1;
 	s1 = *mNext++;
-	s1 ^= (s1 >> 11);
-	s1 ^= (s1 <<  7) & 0x9d2c5680UL;
-	s1 ^= (s1 << 15) & 0xefc60000UL;
+	s1 ^= ( s1 >> 11 );
+	s1 ^= ( s1 << 7 ) & 0x9d2c5680UL;
+	s1 ^= ( s1 << 15 ) & 0xefc60000UL;
 
-	return ( s1 ^ (s1 >> 18) );
+	return ( s1 ^ ( s1 >> 18 ) );
 }
 
 Uint32 MTRand::getRandi( const Uint32 n ) {
@@ -130,55 +129,56 @@ double MTRand::getRand( const double n ) {
 	return getRand() * n;
 }
 
-Float	MTRand::getRandf() {
+Float MTRand::getRandf() {
 	return (Float)getRand();
 }
 
-Float	MTRand::getRandf( const Float n ) {
-	return (Float)getRand(n);
+Float MTRand::getRandf( const Float n ) {
+	return (Float)getRand( n );
 }
 
 int MTRand::getRandFromRange( int Min, int Max ) {
 	return Min + getRandi( Max - Min );
 }
 
-Float	MTRand::getRandFromRange( Float Min, Float Max ) {
+Float MTRand::getRandFromRange( Float Min, Float Max ) {
 	return Min + getRandf( Max - Min );
 }
 
 MTRand& MTRand::operator=( const MTRand& o ) {
 	if ( this == &o )
-		return (*this);
+		return ( *this );
 
-	const Uint32 *t	= o.mState;
-	Uint32 *s			= mState;
-	int i			= N;
+	const Uint32* t = o.mState;
+	Uint32* s = mState;
+	int i = N;
 
-	for ( ; i--; *s++ = *t++ )
-	{
+	for ( ; i--; *s++ = *t++ ) {
 	}
 
-	mLeft		= o.mLeft;
-	mNext		= &mState[ N - mLeft ];
+	mLeft = o.mLeft;
+	mNext = &mState[N - mLeft];
 
-	return (*this);
+	return ( *this );
 }
 
 void MTRand::save( Uint32* saveArray ) const {
-	const Uint32 *s = mState;
-	Uint32 *sa = saveArray;
+	const Uint32* s = mState;
+	Uint32* sa = saveArray;
 	int i = N;
-	for( ; i--; *sa++ = *s++ ) {}
+	for ( ; i--; *sa++ = *s++ ) {
+	}
 	*sa = mLeft;
 }
 
-void MTRand::load( Uint32 *const loadArray ) {
-	Uint32 *s = mState;
-	Uint32 *la = loadArray;
+void MTRand::load( Uint32* const loadArray ) {
+	Uint32* s = mState;
+	Uint32* la = loadArray;
 	int i = N;
-	for( ; i--; *s++ = *la++ ) {}
+	for ( ; i--; *s++ = *la++ ) {
+	}
 	mLeft = *la;
-	mNext = &mState[N-mLeft];
+	mNext = &mState[N - mLeft];
 }
 
-}}
+}} // namespace EE::Math

@@ -1,37 +1,37 @@
 #ifndef EE_MATH_EASINGEASING_H
 #define EE_MATH_EASINGEASING_H
 
-#include <eepp/config.hpp>
 #include <cmath>
+#include <eepp/config.hpp>
 
 namespace EE { namespace Math { namespace easing {
 
-typedef double( *easingCbFunc )( double, double, double, double );
+typedef double ( *easingCbFunc )( double, double, double, double );
 
 extern EE_API easingCbFunc easingCb[];
 
 /**
-*  Calculate the position of a point from a linear interpolation.
-*
-*  @param t Specifies the current time, between 0 and duration inclusive.
-*  @param b Specifies the initial value of the animation property.
-*  @param c Specifies the total change in the animation property.
-*  @param d Specifies the duration of the motion.
-*  @return The value of the interpolated property at the specified time.
-*/
+ *  Calculate the position of a point from a linear interpolation.
+ *
+ *  @param t Specifies the current time, between 0 and duration inclusive.
+ *  @param b Specifies the initial value of the animation property.
+ *  @param c Specifies the total change in the animation property.
+ *  @param d Specifies the duration of the motion.
+ *  @return The value of the interpolated property at the specified time.
+ */
 inline double linearInterpolation( double t, double b, double c, double d ) {
 	return b + t * c / d;
 }
 
 /**
-*  The <code>QuadraticIn()</code> method starts motion from a zero velocity
-*  and then accelerates motion as it executes.
-*  @param t Specifies the current time, between 0 and duration inclusive.
-*  @param b Specifies the initial value of the animation property.
-*  @param c Specifies the total change in the animation property.
-*  @param d Specifies the duration of the motion.
-*  @return The value of the interpolated property at the specified time.
-*/
+ *  The <code>QuadraticIn()</code> method starts motion from a zero velocity
+ *  and then accelerates motion as it executes.
+ *  @param t Specifies the current time, between 0 and duration inclusive.
+ *  @param b Specifies the initial value of the animation property.
+ *  @param c Specifies the total change in the animation property.
+ *  @param d Specifies the duration of the motion.
+ *  @return The value of the interpolated property at the specified time.
+ */
 inline double quadraticIn( double t, double b, double c, double d ) {
 	t /= d;
 
@@ -39,15 +39,15 @@ inline double quadraticIn( double t, double b, double c, double d ) {
 }
 
 /**
-*  The <code>QuadraticOut()</code> method starts motion fast
-*  and then decelerates motion to a zero velocity as it executes.
-*
-*  @param t Specifies the current time, between 0 and duration inclusive.
-*  @param b Specifies the initial value of the animation property.
-*  @param c Specifies the total change in the animation property.
-*  @param d Specifies the duration of the motion.
-*  @return The value of the interpolated property at the specified time.
-*/
+ *  The <code>QuadraticOut()</code> method starts motion fast
+ *  and then decelerates motion to a zero velocity as it executes.
+ *
+ *  @param t Specifies the current time, between 0 and duration inclusive.
+ *  @param b Specifies the initial value of the animation property.
+ *  @param c Specifies the total change in the animation property.
+ *  @param d Specifies the duration of the motion.
+ *  @return The value of the interpolated property at the specified time.
+ */
 inline double quadraticOut( double t, double b, double c, double d ) {
 	t /= d;
 
@@ -55,17 +55,17 @@ inline double quadraticOut( double t, double b, double c, double d ) {
 }
 
 /**
-*  The <code>QuadraticInOut()</code> method combines the motion
-*  of the <code>QuadraticIn()</code> and <code>QuadraticOut()</code> methods
-*  to start the motion from a zero velocity,
-*  accelerate motion, then decelerate to a zero velocity.
-*
-*  @param t Specifies the current time, between 0 and duration inclusive.
-*  @param b Specifies the initial value of the animation property.
-*  @param c Specifies the total change in the animation property.
-*  @param d Specifies the duration of the motion.
-*  @return The value of the interpolated property at the specified time.
-*/
+ *  The <code>QuadraticInOut()</code> method combines the motion
+ *  of the <code>QuadraticIn()</code> and <code>QuadraticOut()</code> methods
+ *  to start the motion from a zero velocity,
+ *  accelerate motion, then decelerate to a zero velocity.
+ *
+ *  @param t Specifies the current time, between 0 and duration inclusive.
+ *  @param b Specifies the initial value of the animation property.
+ *  @param c Specifies the total change in the animation property.
+ *  @param d Specifies the duration of the motion.
+ *  @return The value of the interpolated property at the specified time.
+ */
 inline double quadraticInOut( double t, double b, double c, double d ) {
 	t /= d / 2;
 
@@ -78,98 +78,98 @@ inline double quadraticInOut( double t, double b, double c, double d ) {
 }
 
 /**
-*  The <code>SineIn()</code> method starts motion from zero velocity
-*  and then accelerates motion as it executes.
-*
-*  @param t Specifies the current time, between 0 and duration inclusive.
-*  @param b Specifies the initial value of the animation property.
-*  @param c Specifies the total change in the animation property.
-*  @param d Specifies the duration of the motion.
-*  @return The value of the interpolated property at the specified time.
-*/
+ *  The <code>SineIn()</code> method starts motion from zero velocity
+ *  and then accelerates motion as it executes.
+ *
+ *  @param t Specifies the current time, between 0 and duration inclusive.
+ *  @param b Specifies the initial value of the animation property.
+ *  @param c Specifies the total change in the animation property.
+ *  @param d Specifies the duration of the motion.
+ *  @return The value of the interpolated property at the specified time.
+ */
 inline double sineIn( double t, double b, double c, double d ) {
 	return -c * eecos( t / d * ( EE_PI / 2 ) ) + c + b;
 }
 
 /**
-*  The <code>easeOut()</code> method starts motion fast
-*  and then decelerates motion to a zero velocity as it executes.
-*
-*  @param t Specifies the current time, between 0 and duration inclusive.
-*  @param b Specifies the initial value of the animation property.
-*  @param c Specifies the total change in the animation property.
-*  @param d Specifies the duration of the motion.
-*  @return The value of the interpolated property at the specified time.
-*/
+ *  The <code>easeOut()</code> method starts motion fast
+ *  and then decelerates motion to a zero velocity as it executes.
+ *
+ *  @param t Specifies the current time, between 0 and duration inclusive.
+ *  @param b Specifies the initial value of the animation property.
+ *  @param c Specifies the total change in the animation property.
+ *  @param d Specifies the duration of the motion.
+ *  @return The value of the interpolated property at the specified time.
+ */
 inline double sineOut( double t, double b, double c, double d ) {
 	return c * eesin( t / d * ( EE_PI / 2 ) ) + b;
 }
 
 /**
-*  The <code>easeInOut()</code> method combines the motion
-*  of the <code>easeIn()</code> and <code>easeOut()</code> methods
-*  to start the motion from a zero velocity, accelerate motion,
-*  then decelerate to a zero velocity.
-*
-*  @param t Specifies the current time, between 0 and duration inclusive.
-*  @param b Specifies the initial value of the animation property.
-*  @param c Specifies the total change in the animation property.
-*  @param d Specifies the duration of the motion.
-*  @return The value of the interpolated property at the specified time.
-*/
+ *  The <code>easeInOut()</code> method combines the motion
+ *  of the <code>easeIn()</code> and <code>easeOut()</code> methods
+ *  to start the motion from a zero velocity, accelerate motion,
+ *  then decelerate to a zero velocity.
+ *
+ *  @param t Specifies the current time, between 0 and duration inclusive.
+ *  @param b Specifies the initial value of the animation property.
+ *  @param c Specifies the total change in the animation property.
+ *  @param d Specifies the duration of the motion.
+ *  @return The value of the interpolated property at the specified time.
+ */
 inline double sineInOut( double t, double b, double c, double d ) {
 	return -c / 2 * ( cos( EE_PI * t / d ) - 1 ) + b;
 }
 
 /**
-*  The <code>ExponentialIn()</code> method starts motion slowly
-*  and then accelerates motion as it executes.
-*
-*  @param t Specifies the current time, between 0 and duration inclusive.
-*  @param b Specifies the initial position of a component.
-*  @param c Specifies the total change in position of the component.
-*  @param d Specifies the duration of the effect, in milliseconds.
-*  @return Number corresponding to the position of the component.
-*/
+ *  The <code>ExponentialIn()</code> method starts motion slowly
+ *  and then accelerates motion as it executes.
+ *
+ *  @param t Specifies the current time, between 0 and duration inclusive.
+ *  @param b Specifies the initial position of a component.
+ *  @param c Specifies the total change in position of the component.
+ *  @param d Specifies the duration of the effect, in milliseconds.
+ *  @return Number corresponding to the position of the component.
+ */
 inline double exponentialIn( double t, double b, double c, double d ) {
 	return t == 0 ? b : c * pow( 2, 10 * ( t / d - 1 ) ) + b;
 }
 
 /**
-*  The <code>ExponentialOut()</code> method starts motion fast
-*  and then decelerates motion to a zero velocity as it executes.
-*
-*  @param t Specifies the current time, between 0 and duration inclusive.
-*  @param b Specifies the initial value of the animation property.
-*  @param c Specifies the total change in the animation property.
-*  @param d Specifies the duration of the motion.
-*  @return The value of the interpolated property at the specified time.
-*/
+ *  The <code>ExponentialOut()</code> method starts motion fast
+ *  and then decelerates motion to a zero velocity as it executes.
+ *
+ *  @param t Specifies the current time, between 0 and duration inclusive.
+ *  @param b Specifies the initial value of the animation property.
+ *  @param c Specifies the total change in the animation property.
+ *  @param d Specifies the duration of the motion.
+ *  @return The value of the interpolated property at the specified time.
+ */
 inline double exponentialOut( double t, double b, double c, double d ) {
 	return t == d ? b + c : c * ( -pow( 2, -10 * t / d ) + 1 ) + b;
 }
 
 /**
-*  The <code>ExponentialInOut()</code> method combines the motion
-*  of the <code>ExponentialIn()</code> and <code>ExponentialOut()</code> methods
-*  to start the motion from a zero velocity, accelerate motion,
-*  then decelerate to a zero velocity.
-*
-*  @param t Specifies the current time, between 0 and duration inclusive.
-*  @param b Specifies the initial value of the animation property.
-*  @param c Specifies the total change in the animation property.
-*  @param d Specifies the duration of the motion.
-*  @return The value of the interpolated property at the specified time.
-*/
+ *  The <code>ExponentialInOut()</code> method combines the motion
+ *  of the <code>ExponentialIn()</code> and <code>ExponentialOut()</code> methods
+ *  to start the motion from a zero velocity, accelerate motion,
+ *  then decelerate to a zero velocity.
+ *
+ *  @param t Specifies the current time, between 0 and duration inclusive.
+ *  @param b Specifies the initial value of the animation property.
+ *  @param c Specifies the total change in the animation property.
+ *  @param d Specifies the duration of the motion.
+ *  @return The value of the interpolated property at the specified time.
+ */
 inline double exponentialInOut( double t, double b, double c, double d ) {
-	if (t == 0)
+	if ( t == 0 )
 		return b;
 
-	if (t == d)
+	if ( t == d )
 		return b + c;
 
 	if ( ( t /= d / 2 ) < 1 )
-		return c / 2 * pow( 2, 10 * (t - 1) ) + b;
+		return c / 2 * pow( 2, 10 * ( t - 1 ) ) + b;
 
 	return c / 2 * ( -pow( 2, -10 * --t ) + 2 ) + b;
 }
@@ -189,7 +189,7 @@ inline double quarticOut( double t, double b, double c, double d ) {
 inline double quarticInOut( double t, double b, double c, double d ) {
 	t /= d / 2;
 
-	if ( t < 1)
+	if ( t < 1 )
 		return c / 2 * t * t * t * t + b;
 
 	t -= 2;
@@ -206,7 +206,7 @@ inline double quinticIn( double t, double b, double c, double d ) {
 inline double quinticOut( double t, double b, double c, double d ) {
 	t = t / d - 1;
 
-	return c * ( t * t * t * t * t + 1) + b;
+	return c * ( t * t * t * t * t + 1 ) + b;
 }
 
 inline double quinticInOut( double t, double b, double c, double d ) {
@@ -217,13 +217,13 @@ inline double quinticInOut( double t, double b, double c, double d ) {
 
 	t -= 2;
 
-	return c / 2 * ( t * t * t * t * t + 2) + b;
+	return c / 2 * ( t * t * t * t * t + 2 ) + b;
 }
 
 inline double circularIn( double t, double b, double c, double d ) {
 	t /= d;
 
-	return -c * ( sqrt( 1 - t * t ) - 1) + b;
+	return -c * ( sqrt( 1 - t * t ) - 1 ) + b;
 }
 
 inline double circularOut( double t, double b, double c, double d ) {
@@ -240,7 +240,7 @@ inline double circularInOut( double t, double b, double c, double d ) {
 
 	t -= 2;
 
-	return c / 2 * ( sqrt( 1 - t * t ) + 1) + b;
+	return c / 2 * ( sqrt( 1 - t * t ) + 1 ) + b;
 }
 
 inline double cubicIn( double t, double b, double c, double d ) {
@@ -252,7 +252,7 @@ inline double cubicIn( double t, double b, double c, double d ) {
 inline double cubicOut( double t, double b, double c, double d ) {
 	t = t / d - 1;
 
-	return c * ( t * t * t + 1) + b;
+	return c * ( t * t * t + 1 ) + b;
 }
 
 inline double cubicInOut( double t, double b, double c, double d ) {
@@ -271,11 +271,11 @@ inline double backIn( double t, double b, double c, double d ) {
 
 	t /= d;
 
-	return c * t * t * ( ( s + 1 ) * t - s) + b;
+	return c * t * t * ( ( s + 1 ) * t - s ) + b;
 }
 
 inline double backOut( double t, double b, double c, double d ) {
-	double	s = 1.70158f;
+	double s = 1.70158f;
 
 	t = t / d - 1;
 
@@ -293,7 +293,7 @@ inline double backInOut( double t, double b, double c, double d ) {
 
 	t -= 2;
 
-	return c / 2 * ( t * t * ( ( s + 1 ) * t + s ) + 2) + b;
+	return c / 2 * ( t * t * ( ( s + 1 ) * t + s ) + 2 ) + b;
 }
 
 inline double bounceOut( double t, double b, double c, double d ) {
@@ -301,11 +301,11 @@ inline double bounceOut( double t, double b, double c, double d ) {
 
 	if ( t < ( 1.f / 2.75f ) ) {
 		return c * ( 7.5625f * t * t ) + b;
-	} else if ( t < ( 2.f / 2.75f) ) {
+	} else if ( t < ( 2.f / 2.75f ) ) {
 		t -= ( 1.5f / 2.75f );
 
 		return c * ( 7.5625f * t * t + 0.75f ) + b;
-	} else if (t < ( 2.5f / 2.75f ) ) {
+	} else if ( t < ( 2.5f / 2.75f ) ) {
 		t -= ( 2.25f / 2.75f );
 
 		return c * ( 7.5625f * t * t + 0.9375f ) + b;
@@ -342,7 +342,7 @@ inline double elasticIn( double t, double b, double c, double d ) {
 
 	t -= 1.f;
 
-	return -( a * eepow( 2.f , 10.f * t ) * eesin( ( t * d - s ) * ( 2.f * EE_PI ) / p ) ) + b;
+	return -( a * eepow( 2.f, 10.f * t ) * eesin( ( t * d - s ) * ( 2.f * EE_PI ) / p ) ) + b;
 }
 
 inline double elasticOut( double t, double b, double c, double d ) {
@@ -351,7 +351,7 @@ inline double elasticOut( double t, double b, double c, double d ) {
 
 	t /= d;
 
-	if ( t ==1 )
+	if ( t == 1 )
 		return b + c;
 
 	double p = d * 0.3f;
@@ -377,14 +377,17 @@ inline double elasticInOut( double t, double b, double c, double d ) {
 	if ( t < 1 ) {
 		t -= 1.f;
 
-		return -0.5f * ( a * eepow( 2.f, 10.f * t ) * eesin( ( t * d - s ) * ( 2.f * EE_PI ) / p ) ) + b;
+		return -0.5f *
+				   ( a * eepow( 2.f, 10.f * t ) * eesin( ( t * d - s ) * ( 2.f * EE_PI ) / p ) ) +
+			   b;
 	}
 
 	t -= 1.f;
 
-	return a * eepow( 2.f, -10.f * t ) * eesin( ( t * d - s ) * ( 2.f * EE_PI ) / p ) * 0.5f + c + b;
+	return a * eepow( 2.f, -10.f * t ) * eesin( ( t * d - s ) * ( 2.f * EE_PI ) / p ) * 0.5f + c +
+		   b;
 }
 
-}}}
+}}} // namespace EE::Math::easing
 
 #endif

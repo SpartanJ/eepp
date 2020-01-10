@@ -1,155 +1,151 @@
 #ifndef EE_UICUITEXTBOX_H
 #define EE_UICUITEXTBOX_H
 
-#include <eepp/ui/uiwidget.hpp>
-#include <eepp/ui/uifontstyleconfig.hpp>
 #include <eepp/graphics/text.hpp>
+#include <eepp/ui/uifontstyleconfig.hpp>
+#include <eepp/ui/uiwidget.hpp>
 
 namespace EE { namespace UI {
 
 class EE_API UITextView : public UIWidget {
-	public:
-		static UITextView * New();
+  public:
+	static UITextView* New();
 
-		static UITextView * NewWithTag( const std::string& tag );
+	static UITextView* NewWithTag( const std::string& tag );
 
-		UITextView();
+	UITextView();
 
-		explicit UITextView( const std::string& tag );
+	explicit UITextView( const std::string& tag );
 
-		virtual ~UITextView();
+	virtual ~UITextView();
 
-		virtual Uint32 getType() const;
+	virtual Uint32 getType() const;
 
-		virtual bool isType( const Uint32& type ) const;
+	virtual bool isType( const Uint32& type ) const;
 
-		virtual void draw();
+	virtual void draw();
 
-		Graphics::Font * getFont() const;
+	Graphics::Font* getFont() const;
 
-		UITextView * setFont( Graphics::Font * font );
+	UITextView* setFont( Graphics::Font* font );
 
-		Uint32 getCharacterSize() const;
+	Uint32 getCharacterSize() const;
 
-		UITextView * setCharacterSize( const Uint32& characterSize );
+	UITextView* setCharacterSize( const Uint32& characterSize );
 
-		const Uint32& getFontStyle() const;
+	const Uint32& getFontStyle() const;
 
-		UITextView * setFontStyle( const Uint32& fontStyle );
+	UITextView* setFontStyle( const Uint32& fontStyle );
 
-		const Float & getOutlineThickness() const;
+	const Float& getOutlineThickness() const;
 
-		UITextView * setOutlineThickness( const Float& outlineThickness );
+	UITextView* setOutlineThickness( const Float& outlineThickness );
 
-		const Color& getOutlineColor() const;
+	const Color& getOutlineColor() const;
 
-		UITextView * setOutlineColor( const Color& outlineColor );
+	UITextView* setOutlineColor( const Color& outlineColor );
 
-		virtual const String& getText();
+	virtual const String& getText();
 
-		virtual UITextView * setText( const String& text );
+	virtual UITextView* setText( const String& text );
 
-		const Color& getFontColor() const;
+	const Color& getFontColor() const;
 
-		UITextView * setFontColor( const Color& color );
+	UITextView* setFontColor( const Color& color );
 
-		const Color& getFontShadowColor() const;
+	const Color& getFontShadowColor() const;
 
-		UITextView * setFontShadowColor( const Color& color );
+	UITextView* setFontShadowColor( const Color& color );
 
-		const Color& getSelectionBackColor() const;
+	const Color& getSelectionBackColor() const;
 
-		UITextView * setSelectionBackColor( const Color& color );
+	UITextView* setSelectionBackColor( const Color& color );
 
-		virtual void setTheme( UITheme * Theme );
+	virtual void setTheme( UITheme* Theme );
 
-		Float getTextWidth();
+	Float getTextWidth();
 
-		Float getTextHeight();
+	Float getTextHeight();
 
-		const int& getNumLines() const;
+	const int& getNumLines() const;
 
-		const Vector2f & getAlignOffset() const;
+	const Vector2f& getAlignOffset() const;
 
-		virtual void shrinkText( const Uint32& MaxWidth );
+	virtual void shrinkText( const Uint32& MaxWidth );
 
-		bool isTextSelectionEnabled() const;
+	bool isTextSelectionEnabled() const;
 
-		const UIFontStyleConfig & getFontStyleConfig() const;
+	const UIFontStyleConfig& getFontStyleConfig() const;
 
-		void setFontStyleConfig( const UIFontStyleConfig& fontStyleConfig );
+	void setFontStyleConfig( const UIFontStyleConfig& fontStyleConfig );
 
-		virtual bool applyProperty( const StyleSheetProperty& attribute );
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
-		virtual std::string getPropertyString( const PropertyDefinition* propertyDef );
-	protected:
-		Text *		mTextCache;
-		String			mString;
-		UIFontStyleConfig mFontStyleConfig;
-		Vector2f 		mAlignOffset;
-		Vector2f 		mRealAlignOffset;
-		Int32			mSelCurInit;
-		Int32			mSelCurEnd;
-		struct SelPosCache
-		{
-			SelPosCache( Vector2f ip, Vector2f ep ) :
-				initPos( ip ),
-				endPos( ep )
-			{}
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef );
 
-			Vector2f initPos;
-			Vector2f endPos;
-		};
-		std::vector<SelPosCache> mSelPosCache;
-		Int32		mLastSelCurInit;
-		Int32		mLastSelCurEnd;
-		Int32		mFontLineCenter;
-		bool		mSelecting;
+  protected:
+	Text* mTextCache;
+	String mString;
+	UIFontStyleConfig mFontStyleConfig;
+	Vector2f mAlignOffset;
+	Vector2f mRealAlignOffset;
+	Int32 mSelCurInit;
+	Int32 mSelCurEnd;
+	struct SelPosCache {
+		SelPosCache( Vector2f ip, Vector2f ep ) : initPos( ip ), endPos( ep ) {}
 
-		virtual void drawSelection(Text * textCache);
+		Vector2f initPos;
+		Vector2f endPos;
+	};
+	std::vector<SelPosCache> mSelPosCache;
+	Int32 mLastSelCurInit;
+	Int32 mLastSelCurEnd;
+	Int32 mFontLineCenter;
+	bool mSelecting;
 
-		virtual void onSizeChange();
+	virtual void drawSelection( Text* textCache );
 
-		virtual void autoShrink();
+	virtual void onSizeChange();
 
-		virtual void onAutoSize();
+	virtual void autoShrink();
 
-		virtual void alignFix();
+	virtual void onAutoSize();
 
-		virtual void onTextChanged();
+	virtual void alignFix();
 
-		virtual void onFontChanged();
+	virtual void onTextChanged();
 
-		virtual void onAlphaChange();
+	virtual void onFontChanged();
 
-		virtual Uint32 onFocusLoss();
+	virtual void onAlphaChange();
 
-		virtual Uint32 onMouseDoubleClick( const Vector2i& position, const Uint32& flags );
+	virtual Uint32 onFocusLoss();
 
-		virtual Uint32 onMouseClick( const Vector2i& position, const Uint32& flags );
+	virtual Uint32 onMouseDoubleClick( const Vector2i& position, const Uint32& flags );
 
-		virtual Uint32 onMouseDown( const Vector2i& position, const Uint32& flags );
+	virtual Uint32 onMouseClick( const Vector2i& position, const Uint32& flags );
 
-		virtual void selCurInit( const Int32& init );
+	virtual Uint32 onMouseDown( const Vector2i& position, const Uint32& flags );
 
-		virtual void selCurEnd( const Int32& end );
+	virtual void selCurInit( const Int32& init );
 
-		virtual Int32 selCurInit();
+	virtual void selCurEnd( const Int32& end );
 
-		virtual Int32 selCurEnd();
+	virtual Int32 selCurInit();
 
-		virtual void onAlignChange();
+	virtual Int32 selCurEnd();
 
-		virtual void onSelectionChange();
+	virtual void onAlignChange();
 
-		const Int32& getFontLineCenter();
+	virtual void onSelectionChange();
 
-		void recalculate();
+	const Int32& getFontLineCenter();
 
-		void resetSelCache();
+	void recalculate();
 
+	void resetSelCache();
 };
 
-}}
+}} // namespace EE::UI
 
 #endif

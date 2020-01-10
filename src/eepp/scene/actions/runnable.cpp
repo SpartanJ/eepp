@@ -2,30 +2,27 @@
 
 namespace EE { namespace Scene { namespace Actions {
 
-Runnable * Runnable::New( RunnableFunc callback, const Time & time ) {
+Runnable* Runnable::New( RunnableFunc callback, const Time& time ) {
 	return eeNew( Runnable, ( callback, time ) );
 }
 
-Runnable::Runnable( Runnable::RunnableFunc callback, const Time & time ) :
-	Delay( time ),
-	mCallback( callback )
-{}
+Runnable::Runnable( Runnable::RunnableFunc callback, const Time& time ) :
+	Delay( time ), mCallback( callback ) {}
 
-void Runnable::update(const Time &) {
+void Runnable::update( const Time& ) {
 	if ( mCallback && isDone() ) {
 		mCallback();
 	}
 }
 
-Action * Runnable::clone() const {
+Action* Runnable::clone() const {
 	return New( mCallback, mTime );
 }
 
-Action * Runnable::reverse() const {
+Action* Runnable::reverse() const {
 	return NULL; // or a time machine
 }
 
-void Runnable::onStart() {
-}
+void Runnable::onStart() {}
 
-}}}
+}}} // namespace EE::Scene::Actions

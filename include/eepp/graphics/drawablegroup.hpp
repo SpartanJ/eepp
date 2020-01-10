@@ -7,51 +7,52 @@
 namespace EE { namespace Graphics {
 
 class EE_API DrawableGroup : public Drawable {
-	public:
-		static DrawableGroup * New();
+  public:
+	static DrawableGroup* New();
 
-		DrawableGroup();
+	DrawableGroup();
 
-		virtual ~DrawableGroup();
+	virtual ~DrawableGroup();
 
-		virtual Sizef getSize();
+	virtual Sizef getSize();
 
-		virtual void draw();
+	virtual void draw();
 
-		virtual void draw( const Vector2f& position );
+	virtual void draw( const Vector2f& position );
 
-		virtual void draw( const Vector2f& position, const Sizef& size );
+	virtual void draw( const Vector2f& position, const Sizef& size );
 
-		virtual bool isStateful() { return false; }
+	virtual bool isStateful() { return false; }
 
-		void clearDrawables();
+	void clearDrawables();
 
-		Drawable * addDrawable( Drawable * drawable );
+	Drawable* addDrawable( Drawable* drawable );
 
-		Uint32 getDrawableCount() const;
+	Uint32 getDrawableCount() const;
 
-		bool isClipEnabled() const;
+	bool isClipEnabled() const;
 
-		void setClipEnabled(bool clipEnabled);
+	void setClipEnabled( bool clipEnabled );
 
-		bool isDrawableOwner() const;
+	bool isDrawableOwner() const;
 
-		void setDrawableOwner(bool drawableOwner);
+	void setDrawableOwner( bool drawableOwner );
 
-		std::vector<Drawable*>& getGroup();
-	protected:
-		std::vector<Drawable*> mGroup;
-		std::vector<Vector2f> mPos;
-		Sizef mSize;
-		bool mNeedsUpdate;
-		bool mClipEnabled;
-		bool mDrawableOwner;
+	std::vector<Drawable*>& getGroup();
 
-		virtual void onPositionChange();
+  protected:
+	std::vector<Drawable*> mGroup;
+	std::vector<Vector2f> mPos;
+	Sizef mSize;
+	bool mNeedsUpdate;
+	bool mClipEnabled;
+	bool mDrawableOwner;
 
-		void update();
+	virtual void onPositionChange();
+
+	void update();
 };
 
-}}
+}} // namespace EE::Graphics
 
 #endif

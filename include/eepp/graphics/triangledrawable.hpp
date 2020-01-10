@@ -33,6 +33,7 @@ class EE_API TriangleDrawable : public PrimitiveDrawable {
 	void setTriangle( const Triangle2f& triangle );
 
 	void setTriangleColors( const Color& color1, const Color& color2, const Color& color3 );
+
   protected:
 	Triangle2f mTriangle;
 	Triangle2f mComputedTriangle;

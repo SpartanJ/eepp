@@ -3,18 +3,12 @@
 namespace EE { namespace Graphics {
 
 DrawableResource::DrawableResource( Type drawableType ) :
-	Drawable( drawableType ),
-	mId(0),
-	mNumCallBacks(0)
-{
+	Drawable( drawableType ), mId( 0 ), mNumCallBacks( 0 ) {
 	createUnnamed();
 }
 
 DrawableResource::DrawableResource( Type drawableType, const std::string& name ) :
-	Drawable( drawableType ),
-	mId(0),
-	mNumCallBacks(0)
-{
+	Drawable( drawableType ), mId( 0 ), mNumCallBacks( 0 ) {
 	setName( name );
 }
 
@@ -56,13 +50,13 @@ void DrawableResource::sendEvent( const Event& event ) {
 
 Uint32 DrawableResource::pushResourceChangeCallback( const OnResourceChangeCallback& cb ) {
 	mNumCallBacks++;
-	mCallbacks[ mNumCallBacks ] = cb;
+	mCallbacks[mNumCallBacks] = cb;
 	return mNumCallBacks;
 }
 
 void DrawableResource::popResourceChangeCallback( const Uint32& callbackId ) {
-	mCallbacks[ callbackId ] = 0;
+	mCallbacks[callbackId] = 0;
 	mCallbacks.erase( mCallbacks.find( callbackId ) );
 }
 
-}}
+}} // namespace EE::Graphics

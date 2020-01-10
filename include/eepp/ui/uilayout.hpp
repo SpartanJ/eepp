@@ -6,19 +6,19 @@
 namespace EE { namespace UI {
 
 class EE_API UILayout : public UIWidget {
-	public:
-		static UILayout * New();
+  public:
+	static UILayout* New();
 
-		UILayout();
+	UILayout();
 
-		virtual Uint32 getType() const;
+	virtual Uint32 getType() const;
 
-		virtual bool isType( const Uint32& type ) const;
-	protected:
-		UILayout( const std::string& tag );
+	virtual bool isType( const Uint32& type ) const;
 
+  protected:
+	UILayout( const std::string& tag );
 };
 
-}}
+}} // namespace EE::UI
 
 #endif

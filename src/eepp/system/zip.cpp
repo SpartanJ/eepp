@@ -1,26 +1,23 @@
+#include <eepp/system/filesystem.hpp>
+#include <eepp/system/iostreamzip.hpp>
 #include <eepp/system/zip.hpp>
 #include <libzip/zip.h>
 #include <libzip/zipint.h>
-#include <eepp/system/filesystem.hpp>
-#include <eepp/system/iostreamzip.hpp>
 
 namespace EE { namespace System {
 
-Zip * Zip::New() {
+Zip* Zip::New() {
 	return eeNew( Zip, () );
 }
 
-Zip::Zip() :
-	mZip(NULL)
-{
-}
+Zip::Zip() : mZip( NULL ) {}
 
 Zip::~Zip() {
 	close();
 }
 
 bool Zip::create( const std::string& path ) {
-	if ( !FileSystem::fileExists(path) ) {
+	if ( !FileSystem::fileExists( path ) ) {
 		int err;
 		mZip = zip_open( path.c_str(), ZIP_CREATE, &err );
 
@@ -87,9 +84,9 @@ bool Zip::addFile( const std::string& path, const std::string& inpack ) {
 	return addFile( file.get(), file.length(), inpack );
 }
 
-bool Zip::addFile( const Uint8 * data, const Uint32& dataSize, const std::string& inpack ) {
+bool Zip::addFile( const Uint8* data, const Uint32& dataSize, const std::string& inpack ) {
 	if ( 0 == checkPack() ) {
-		struct zip_source * zs = zip_source_buffer( mZip, (const void*)data, dataSize, 0 );
+		struct zip_source* zs = zip_source_buffer( mZip, (const void*)data, dataSize, 0 );
 
 		if ( NULL != zs ) {
 			Int32 Result = (Int32)zip_add( mZip, inpack.c_str(), zs );
@@ -108,11 +105,12 @@ bool Zip::addFile( const Uint8 * data, const Uint32& dataSize, const std::string
 }
 
 bool Zip::addFile( std::vector<Uint8>& data, const std::string& inpack ) {
-	return addFile( reinterpret_cast<const Uint8*> ( &data[0] ), (Uint32)data.size(), inpack );
+	return addFile( reinterpret_cast<const Uint8*>( &data[0] ), (Uint32)data.size(), inpack );
 }
 
 bool Zip::addFiles( std::map<std::string, std::string> paths ) {
-	for( std::map<std::string, std::string>::iterator itr = paths.begin(); itr != paths.end(); ++itr )
+	for ( std::map<std::string, std::string>::iterator itr = paths.begin(); itr != paths.end();
+		  ++itr )
 		if ( !addFile( itr->first, itr->second ) )
 			return false;
 	return true;
@@ -132,7 +130,7 @@ bool Zip::eraseFiles( const std::vector<std::string>& paths ) {
 	for ( i = 0; i < paths.size(); i++ ) {
 		Ex = exists( paths[i] );
 
-		if ( Ex  == -1 )
+		if ( Ex == -1 )
 			return false;
 		else {
 			if ( zip_delete( mZip, Ex ) == -1 )
@@ -143,7 +141,7 @@ bool Zip::eraseFiles( const std::vector<std::string>& paths ) {
 	return false;
 }
 
-bool Zip::extractFile( const std::string& path , const std::string& dest ) {
+bool Zip::extractFile( const std::string& path, const std::string& dest ) {
 	lock();
 
 	bool Ret;
@@ -157,7 +155,7 @@ bool Zip::extractFile( const std::string& path , const std::string& dest ) {
 
 	unlock();
 
-	return  Ret;
+	return Ret;
 }
 
 bool Zip::extractFileToMemory( const std::string& path, std::vector<Uint8>& data ) {
@@ -174,14 +172,15 @@ bool Zip::extractFileToMemory( const std::string& path, std::vector<Uint8>& data
 		int err = zip_stat( mZip, path.c_str(), 0, &zs );
 
 		if ( !err ) {
-			struct zip_file * zf = zip_fopen_index( mZip, zs.index, 0 );
+			struct zip_file* zf = zip_fopen_index( mZip, zs.index, 0 );
 
 			if ( NULL != zf ) {
 				data.resize( zs.size );
 
-				int Result = (Int32)zip_fread( zf, reinterpret_cast<void*> (&data[0]), data.size() );
+				int Result =
+					(Int32)zip_fread( zf, reinterpret_cast<void*>( &data[0] ), data.size() );
 
-				zip_fclose(zf);
+				zip_fclose( zf );
 
 				if ( -1 != Result )
 					Ret = true;
@@ -201,20 +200,19 @@ bool Zip::extractFileToMemory( const std::string& path, ScopedBuffer& data ) {
 	Int32 Pos = exists( path );
 	Int32 Result = 0;
 
-
 	if ( 0 == checkPack() && -1 != Pos ) {
 		struct zip_stat zs;
 		int err = zip_stat( mZip, path.c_str(), 0, &zs );
 
 		if ( !err ) {
-			struct zip_file * zf = zip_fopen_index( mZip, zs.index, 0 );
+			struct zip_file* zf = zip_fopen_index( mZip, zs.index, 0 );
 
 			if ( NULL != zf ) {
 				data.reset( zs.size );
 
 				Result = (Int32)zip_fread( zf, (void*)data.get(), data.length() );
 
-				zip_fclose(zf);
+				zip_fclose( zf );
 
 				if ( -1 != Result )
 					Ret = true;
@@ -248,7 +246,7 @@ std::vector<std::string> Zip::getFileList() {
 
 		if ( -1 != zip_stat_index( mZip, i, 0, &zs ) ) {
 			if ( zs.size > 0 ) {
-				tmpv.push_back( std::string ( zs.name ) );
+				tmpv.push_back( std::string( zs.name ) );
 			}
 		}
 	}
@@ -261,13 +259,12 @@ std::string Zip::getPackPath() {
 	return mZipPath;
 }
 
-IOStream * Zip::getFileStream( const std::string & path ) {
+IOStream* Zip::getFileStream( const std::string& path ) {
 	return eeNew( IOStreamZip, ( this, path ) );
 }
 
-zip * Zip::getZip()
-{
+zip* Zip::getZip() {
 	return mZip;
 }
 
-}}
+}} // namespace EE::System

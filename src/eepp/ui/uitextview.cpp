@@ -1,24 +1,24 @@
-#include <eepp/ui/uitextview.hpp>
-#include <eepp/ui/uithememanager.hpp>
-#include <eepp/ui/uiscenenode.hpp>
-#include <eepp/ui/uistyle.hpp>
 #include <eepp/graphics/font.hpp>
+#include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/text.hpp>
-#include <eepp/graphics/fontmanager.hpp>
-#include <eepp/window/clipboard.hpp>
 #include <eepp/scene/actions/actions.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
 #include <eepp/ui/css/transitiondefinition.hpp>
-#include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uistyle.hpp>
+#include <eepp/ui/uitextview.hpp>
+#include <eepp/ui/uithememanager.hpp>
+#include <eepp/window/clipboard.hpp>
 
 namespace EE { namespace UI {
 
-UITextView * UITextView::New() {
+UITextView* UITextView::New() {
 	return eeNew( UITextView, () );
 }
 
-UITextView * UITextView::NewWithTag( const std::string& tag ) {
+UITextView* UITextView::NewWithTag( const std::string& tag ) {
 	return eeNew( UITextView, ( tag ) );
 }
 
@@ -30,11 +30,10 @@ UITextView::UITextView( const std::string& tag ) :
 	mLastSelCurInit( -1 ),
 	mLastSelCurEnd( -1 ),
 	mFontLineCenter( 0 ),
-	mSelecting( false )
-{
+	mSelecting( false ) {
 	mTextCache = Text::New();
 
-	UITheme * theme = getUISceneNode()->getUIThemeManager()->getDefaultTheme();
+	UITheme* theme = getUISceneNode()->getUIThemeManager()->getDefaultTheme();
 
 	if ( NULL != theme && NULL != theme->getDefaultFont() ) {
 		setFont( theme->getDefaultFont() );
@@ -52,9 +51,7 @@ UITextView::UITextView( const std::string& tag ) :
 	applyDefaultTheme();
 }
 
-UITextView::UITextView() :
-	UITextView( "textview" )
-{}
+UITextView::UITextView() : UITextView( "textview" ) {}
 
 UITextView::~UITextView() {
 	eeSAFE_DELETE( mTextCache );
@@ -76,16 +73,17 @@ void UITextView::draw() {
 			drawSelection( mTextCache );
 
 			if ( isClipped() ) {
-				clipSmartEnable(
-						mScreenPos.x + mRealPadding.Left,
-						mScreenPos.y + mRealPadding.Top,
-						mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
-						mSize.getHeight() - mRealPadding.Top - mRealPadding.Bottom
-				);
+				clipSmartEnable( mScreenPos.x + mRealPadding.Left, mScreenPos.y + mRealPadding.Top,
+								 mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
+								 mSize.getHeight() - mRealPadding.Top - mRealPadding.Bottom );
 			}
 
 			mTextCache->setAlign( getFlags() );
-			mTextCache->draw( (Float)mScreenPosi.x + (int)mRealAlignOffset.x + (int)mRealPadding.Left, mFontLineCenter + (Float)mScreenPosi.y + (int)mRealAlignOffset.y + (int)mRealPadding.Top, Vector2f::One, 0.f, getBlendMode() );
+			mTextCache->draw( (Float)mScreenPosi.x + (int)mRealAlignOffset.x +
+								  (int)mRealPadding.Left,
+							  mFontLineCenter + (Float)mScreenPosi.y + (int)mRealAlignOffset.y +
+								  (int)mRealPadding.Top,
+							  Vector2f::One, 0.f, getBlendMode() );
 
 			if ( isClipped() ) {
 				clipSmartDisable();
@@ -94,11 +92,11 @@ void UITextView::draw() {
 	}
 }
 
-Graphics::Font * UITextView::getFont() const {
+Graphics::Font* UITextView::getFont() const {
 	return mTextCache->getFont();
 }
 
-UITextView * UITextView::setFont( Graphics::Font * font ) {
+UITextView* UITextView::setFont( Graphics::Font* font ) {
 	if ( NULL != font && mTextCache->getFont() != font ) {
 		mTextCache->setFont( font );
 		mFontStyleConfig.Font = font;
@@ -115,7 +113,7 @@ Uint32 UITextView::getCharacterSize() const {
 	return mTextCache->getCharacterSize();
 }
 
-UITextView *UITextView::setCharacterSize( const Uint32 & characterSize ) {
+UITextView* UITextView::setCharacterSize( const Uint32& characterSize ) {
 	if ( mTextCache->getCharacterSize() != characterSize ) {
 		mFontStyleConfig.CharacterSize = characterSize;
 		mTextCache->setCharacterSize( characterSize );
@@ -127,15 +125,15 @@ UITextView *UITextView::setCharacterSize( const Uint32 & characterSize ) {
 	return this;
 }
 
-const Uint32 &UITextView::getFontStyle() const {
+const Uint32& UITextView::getFontStyle() const {
 	return mFontStyleConfig.Style;
 }
 
-const Float &UITextView::getOutlineThickness() const {
+const Float& UITextView::getOutlineThickness() const {
 	return mFontStyleConfig.OutlineThickness;
 }
 
-UITextView * UITextView::setOutlineThickness( const Float & outlineThickness ) {
+UITextView* UITextView::setOutlineThickness( const Float& outlineThickness ) {
 	if ( mFontStyleConfig.OutlineThickness != outlineThickness ) {
 		mTextCache->setOutlineThickness( outlineThickness );
 		mFontStyleConfig.OutlineThickness = outlineThickness;
@@ -147,14 +145,15 @@ UITextView * UITextView::setOutlineThickness( const Float & outlineThickness ) {
 	return this;
 }
 
-const Color &UITextView::getOutlineColor() const {
+const Color& UITextView::getOutlineColor() const {
 	return mFontStyleConfig.OutlineColor;
 }
 
-UITextView * UITextView::setOutlineColor(const Color & outlineColor) {
+UITextView* UITextView::setOutlineColor( const Color& outlineColor ) {
 	if ( mFontStyleConfig.OutlineColor != outlineColor ) {
 		mFontStyleConfig.OutlineColor = outlineColor;
-		Color newColor( outlineColor.r, outlineColor.g, outlineColor.b, outlineColor.a * mAlpha / 255.f );
+		Color newColor( outlineColor.r, outlineColor.g, outlineColor.b,
+						outlineColor.a * mAlpha / 255.f );
 		mTextCache->setOutlineColor( newColor );
 		invalidateDraw();
 	}
@@ -162,7 +161,7 @@ UITextView * UITextView::setOutlineColor(const Color & outlineColor) {
 	return this;
 }
 
-UITextView * UITextView::setFontStyle(const Uint32 & fontStyle) {
+UITextView* UITextView::setFontStyle( const Uint32& fontStyle ) {
 	if ( mFontStyleConfig.Style != fontStyle ) {
 		mTextCache->setStyle( fontStyle );
 		mFontStyleConfig.Style = fontStyle;
@@ -181,7 +180,7 @@ const String& UITextView::getText() {
 	return mTextCache->getString();
 }
 
-UITextView * UITextView::setText( const String& text ) {
+UITextView* UITextView::setText( const String& text ) {
 	if ( ( mFlags & UI_WORD_WRAP ) ) {
 		if ( mString != text ) {
 			mString = text;
@@ -206,7 +205,7 @@ const Color& UITextView::getFontColor() const {
 	return mFontStyleConfig.FontColor;
 }
 
-UITextView * UITextView::setFontColor( const Color& color ) {
+UITextView* UITextView::setFontColor( const Color& color ) {
 	if ( mFontStyleConfig.FontColor != color ) {
 		mFontStyleConfig.FontColor = color;
 		Color newColor( color.r, color.g, color.b, color.a * mAlpha / 255.f );
@@ -220,7 +219,7 @@ const Color& UITextView::getFontShadowColor() const {
 	return mFontStyleConfig.ShadowColor;
 }
 
-UITextView * UITextView::setFontShadowColor( const Color& color ) {
+UITextView* UITextView::setFontShadowColor( const Color& color ) {
 	if ( mFontStyleConfig.ShadowColor != color ) {
 		mFontStyleConfig.ShadowColor = color;
 		Color newColor( color.r, color.g, color.b, color.a * mAlpha / 255.f );
@@ -235,7 +234,7 @@ const Color& UITextView::getSelectionBackColor() const {
 	return mFontStyleConfig.FontSelectionBackColor;
 }
 
-UITextView * UITextView::setSelectionBackColor( const Color& color ) {
+UITextView* UITextView::setSelectionBackColor( const Color& color ) {
 	if ( mFontStyleConfig.FontSelectionBackColor != color ) {
 		mFontStyleConfig.FontSelectionBackColor = color;
 		invalidateDraw();
@@ -265,21 +264,26 @@ void UITextView::onAutoSize() {
 	}
 
 	if ( mLayoutWidthRule == LayoutSizeRule::WrapContent ) {
-		setInternalPixelsWidth( (int)mTextCache->getTextWidth() + mRealPadding.Left + mRealPadding.Right );
+		setInternalPixelsWidth( (int)mTextCache->getTextWidth() + mRealPadding.Left +
+								mRealPadding.Right );
 	}
 
 	if ( mLayoutHeightRule == LayoutSizeRule::WrapContent ) {
-		setInternalPixelsHeight( (int)mTextCache->getTextHeight() + mRealPadding.Top + mRealPadding.Bottom );
+		setInternalPixelsHeight( (int)mTextCache->getTextHeight() + mRealPadding.Top +
+								 mRealPadding.Bottom );
 	}
 }
 
 void UITextView::alignFix() {
 	switch ( Font::getHorizontalAlign( getFlags() ) ) {
 		case UI_HALIGN_CENTER:
-			mRealAlignOffset.x = (Float)( (Int32)( ( mSize.x - mRealPadding.Left - mRealPadding.Right ) / 2 - mTextCache->getTextWidth() / 2 ) );
+			mRealAlignOffset.x =
+				( Float )( ( Int32 )( ( mSize.x - mRealPadding.Left - mRealPadding.Right ) / 2 -
+									  mTextCache->getTextWidth() / 2 ) );
 			break;
 		case UI_HALIGN_RIGHT:
-			mRealAlignOffset.x = ( (Float)mSize.x - mRealPadding.Left - mRealPadding.Right - (Float)mTextCache->getTextWidth() );
+			mRealAlignOffset.x = ( (Float)mSize.x - mRealPadding.Left - mRealPadding.Right -
+								   (Float)mTextCache->getTextWidth() );
 			break;
 		case UI_HALIGN_LEFT:
 			mRealAlignOffset.x = 0;
@@ -288,10 +292,14 @@ void UITextView::alignFix() {
 
 	switch ( Font::getVerticalAlign( getFlags() ) ) {
 		case UI_VALIGN_CENTER:
-			mRealAlignOffset.y = (Float)( (Int32)( ( mSize.y - mRealPadding.Top - mRealPadding.Bottom ) / 2 - mTextCache->getTextHeight() / 2 ) ) - 1;
+			mRealAlignOffset.y =
+				( Float )( ( Int32 )( ( mSize.y - mRealPadding.Top - mRealPadding.Bottom ) / 2 -
+									  mTextCache->getTextHeight() / 2 ) ) -
+				1;
 			break;
 		case UI_VALIGN_BOTTOM:
-			mRealAlignOffset.y = ( (Float)mSize.y - mRealPadding.Top - mRealPadding.Bottom - (Float)mTextCache->getTextHeight() );
+			mRealAlignOffset.y = ( (Float)mSize.y - mRealPadding.Top - mRealPadding.Bottom -
+								   (Float)mTextCache->getTextHeight() );
 			break;
 		case UI_VALIGN_TOP:
 			mRealAlignOffset.y = 0;
@@ -342,7 +350,7 @@ void UITextView::onAlphaChange() {
 	invalidateDraw();
 }
 
-void UITextView::setTheme( UITheme * Theme ) {
+void UITextView::setTheme( UITheme* Theme ) {
 	UIWidget::setTheme( Theme );
 
 	onThemeLoaded();
@@ -403,7 +411,8 @@ Uint32 UITextView::onMouseClick( const Vector2i& Pos, const Uint32& Flags ) {
 }
 
 Uint32 UITextView::onMouseDown( const Vector2i& Pos, const Uint32& Flags ) {
-	if ( NULL != getEventDispatcher() && isTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) && getEventDispatcher()->getDownControl() == this ) {
+	if ( NULL != getEventDispatcher() && isTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) &&
+		 getEventDispatcher()->getDownControl() == this ) {
 		Vector2f controlPos( Vector2f( Pos.x, Pos.y ) );
 		worldToNode( controlPos );
 		controlPos = PixelDensity::dpToPx( controlPos ) - mRealAlignOffset;
@@ -427,10 +436,10 @@ Uint32 UITextView::onMouseDown( const Vector2i& Pos, const Uint32& Flags ) {
 	return UIWidget::onMouseDown( Pos, Flags );
 }
 
-void UITextView::drawSelection( Text * textCache ) {
+void UITextView::drawSelection( Text* textCache ) {
 	if ( selCurInit() != selCurEnd() ) {
-		Int32 init		= eemin( selCurInit(), selCurEnd() );
-		Int32 end		= eemax( selCurInit(), selCurEnd() );
+		Int32 init = eemin( selCurInit(), selCurEnd() );
+		Int32 end = eemax( selCurInit(), selCurEnd() );
 
 		if ( init < 0 && end > (Int32)textCache->getString().size() ) {
 			return;
@@ -445,14 +454,14 @@ void UITextView::drawSelection( Text * textCache ) {
 			mLastSelCurEnd = selCurEnd();
 
 			do {
-				initPos	= textCache->findCharacterPos( init );
+				initPos = textCache->findCharacterPos( init );
 				lastEnd = textCache->getString().find_first_of( '\n', init );
 
 				if ( lastEnd < end && -1 != lastEnd ) {
-					endPos	= textCache->findCharacterPos( lastEnd );
-					init	= lastEnd + 1;
+					endPos = textCache->findCharacterPos( lastEnd );
+					init = lastEnd + 1;
 				} else {
-					endPos	= textCache->findCharacterPos( end );
+					endPos = textCache->findCharacterPos( end );
 					lastEnd = end;
 				}
 
@@ -469,11 +478,11 @@ void UITextView::drawSelection( Text * textCache ) {
 				initPos = mSelPosCache[i].initPos;
 				endPos = mSelPosCache[i].endPos;
 
-				P.drawRectangle( Rectf( mScreenPos.x + initPos.x + mRealAlignOffset.x + mRealPadding.Left,
-										  mScreenPos.y + initPos.y + mRealAlignOffset.y + mRealPadding.Top,
-										  mScreenPos.x + endPos.x + mRealAlignOffset.x + mRealPadding.Left,
-										  mScreenPos.y + endPos.y + vspace + mRealAlignOffset.y + mRealPadding.Top )
-				);
+				P.drawRectangle( Rectf(
+					mScreenPos.x + initPos.x + mRealAlignOffset.x + mRealPadding.Left,
+					mScreenPos.y + initPos.y + mRealAlignOffset.y + mRealPadding.Top,
+					mScreenPos.x + endPos.x + mRealAlignOffset.x + mRealPadding.Left,
+					mScreenPos.y + endPos.y + vspace + mRealAlignOffset.y + mRealPadding.Top ) );
 			}
 		}
 	}
@@ -530,24 +539,26 @@ void UITextView::onSelectionChange() {
 
 	if ( selCurInit() != selCurEnd() ) {
 		Color color( mFontStyleConfig.getFontSelectedColor() );
-		color.a =  mFontStyleConfig.getFontSelectedColor().a * mAlpha / 255.f;
-		mTextCache->setFillColor( color, eemin<Int32>( selCurInit(), selCurEnd() ), eemax<Int32>( selCurInit(), selCurEnd() ) - 1 );
+		color.a = mFontStyleConfig.getFontSelectedColor().a * mAlpha / 255.f;
+		mTextCache->setFillColor( color, eemin<Int32>( selCurInit(), selCurEnd() ),
+								  eemax<Int32>( selCurInit(), selCurEnd() ) - 1 );
 	} else {
 		Color color( mFontStyleConfig.getFontColor() );
-		color.a =  mFontStyleConfig.getFontColor().a * mAlpha / 255.f;
+		color.a = mFontStyleConfig.getFontColor().a * mAlpha / 255.f;
 		mTextCache->setFillColor( color );
 	}
 
 	invalidateDraw();
 }
 
-const Int32 &UITextView::getFontLineCenter() {
+const Int32& UITextView::getFontLineCenter() {
 	return mFontLineCenter;
 }
 
 void UITextView::recalculate() {
 	int fontHeight = mTextCache->getCharacterSizePx();
-	mFontLineCenter = eefloor((Float)( ( mTextCache->getFont()->getLineSpacing(fontHeight) - fontHeight ) / 2 ));
+	mFontLineCenter = eefloor(
+		( Float )( ( mTextCache->getFont()->getLineSpacing( fontHeight ) - fontHeight ) / 2 ) );
 
 	autoShrink();
 	onAutoSize();
@@ -562,12 +573,14 @@ void UITextView::resetSelCache() {
 }
 
 bool UITextView::applyProperty( const StyleSheetProperty& attribute ) {
-	if ( !checkPropertyDefinition( attribute ) ) return false;
+	if ( !checkPropertyDefinition( attribute ) )
+		return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::Text:
 			if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
-				setText( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( attribute.asString() ) );
+				setText( static_cast<UISceneNode*>( mSceneNode )
+							 ->getTranslatorString( attribute.asString() ) );
 			break;
 		case PropertyId::Color:
 			setFontColor( attribute.asColor() );
@@ -582,7 +595,7 @@ bool UITextView::applyProperty( const StyleSheetProperty& attribute ) {
 			setSelectionBackColor( attribute.asColor() );
 			break;
 		case PropertyId::FontFamily: {
-			Font * font = FontManager::instance()->getByName( attribute.asString() );
+			Font* font = FontManager::instance()->getByName( attribute.asString() );
 
 			if ( NULL != font && font->loaded() ) {
 				setFont( font );
@@ -592,13 +605,12 @@ bool UITextView::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::FontSize:
 			setCharacterSize( attribute.asDpDimensionI() );
 			break;
-		case PropertyId::FontStyle:
-		{
+		case PropertyId::FontStyle: {
 			Uint32 flags = attribute.asFontStyle();
 
 			if ( flags & UI_WORD_WRAP ) {
 				mFlags |= UI_WORD_WRAP;
-				flags &= ~ UI_WORD_WRAP;
+				flags &= ~UI_WORD_WRAP;
 				autoShrink();
 			}
 
@@ -619,14 +631,16 @@ bool UITextView::applyProperty( const StyleSheetProperty& attribute ) {
 			setOutlineColor( attribute.asColor() );
 			break;
 		case PropertyId::TextSelection:
-			mFlags|= UI_TEXT_SELECTION_ENABLED;
+			mFlags |= UI_TEXT_SELECTION_ENABLED;
 			break;
-		case PropertyId::TextAlign:
-		{
+		case PropertyId::TextAlign: {
 			std::string align = String::toLower( attribute.value() );
-			if ( align == "center" ) setFlags( UI_HALIGN_CENTER );
-			else if ( align == "left" ) setFlags( UI_HALIGN_LEFT );
-			else if ( align == "right" ) setFlags( UI_HALIGN_RIGHT );
+			if ( align == "center" )
+				setFlags( UI_HALIGN_CENTER );
+			else if ( align == "left" )
+				setFlags( UI_HALIGN_LEFT );
+			else if ( align == "right" )
+				setFlags( UI_HALIGN_RIGHT );
 			break;
 		}
 		default:
@@ -637,7 +651,8 @@ bool UITextView::applyProperty( const StyleSheetProperty& attribute ) {
 }
 
 std::string UITextView::getPropertyString( const PropertyDefinition* propertyDef ) {
-	if ( NULL == propertyDef ) return "";
+	if ( NULL == propertyDef )
+		return "";
 
 	switch ( propertyDef->getPropertyId() ) {
 		case PropertyId::Text:
@@ -665,12 +680,13 @@ std::string UITextView::getPropertyString( const PropertyDefinition* propertyDef
 		case PropertyId::TextSelection:
 			return isTextSelectionEnabled() ? "true" : "false";
 		case PropertyId::TextAlign:
-			return Font::getHorizontalAlign( getFlags() ) == UI_HALIGN_CENTER ? "center" : (
-				Font::getHorizontalAlign( getFlags() ) == UI_HALIGN_RIGHT ? "right" : "left"
-			);
+			return Font::getHorizontalAlign( getFlags() ) == UI_HALIGN_CENTER
+					   ? "center"
+					   : ( Font::getHorizontalAlign( getFlags() ) == UI_HALIGN_RIGHT ? "right"
+																					 : "left" );
 		default:
 			return UIWidget::getPropertyString( propertyDef );
 	}
 }
 
-}}
+}} // namespace EE::UI

@@ -6,30 +6,31 @@
 namespace EE { namespace UI {
 
 class EE_API UISelectButton : public UIPushButton {
-	public:
-		static UISelectButton * New();
+  public:
+	static UISelectButton* New();
 
-		static UISelectButton * NewWithTag(const std::string & tag);
+	static UISelectButton* NewWithTag( const std::string& tag );
 
-		UISelectButton();
+	UISelectButton();
 
-		explicit UISelectButton( const std::string& tag );
+	explicit UISelectButton( const std::string& tag );
 
-		virtual ~UISelectButton();
+	virtual ~UISelectButton();
 
-		virtual Uint32 getType() const;
+	virtual Uint32 getType() const;
 
-		virtual bool isType( const Uint32& type ) const;
+	virtual bool isType( const Uint32& type ) const;
 
-		virtual bool isSelected() const;
+	virtual bool isSelected() const;
 
-		virtual void unselect();
+	virtual void unselect();
 
-		virtual void select();
-	protected:
-		virtual void onStateChange();
+	virtual void select();
+
+  protected:
+	virtual void onStateChange();
 };
 
-}}
+}} // namespace EE::UI
 
 #endif

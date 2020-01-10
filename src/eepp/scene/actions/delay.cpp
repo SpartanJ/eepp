@@ -2,7 +2,7 @@
 
 namespace EE { namespace Scene { namespace Actions {
 
-Delay * Delay::New(const Time & time) {
+Delay* Delay::New( const Time& time ) {
 	return eeNew( Delay, ( time ) );
 }
 
@@ -21,8 +21,7 @@ void Delay::stop() {
 	sendEvent( ActionType::OnStop );
 }
 
-void Delay::update(const Time & time)
-{}
+void Delay::update( const Time& time ) {}
 
 bool Delay::isDone() {
 	return mClock.getElapsedTime() >= mTime;
@@ -32,16 +31,14 @@ Float Delay::getCurrentProgress() {
 	return !isDone() ? mClock.getElapsedTime().asMilliseconds() / mTime.asMilliseconds() : 1.f;
 }
 
-Action *Delay::clone() const {
+Action* Delay::clone() const {
 	return New( mTime );
 }
 
-Action *Delay::reverse() const {
+Action* Delay::reverse() const {
 	return NULL; // or a time machine
 }
 
-Delay::Delay(const Time & time) :
-	mTime( time )
-{}
+Delay::Delay( const Time& time ) : mTime( time ) {}
 
-}}}
+}}} // namespace EE::Scene::Actions

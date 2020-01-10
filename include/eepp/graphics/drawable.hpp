@@ -1,10 +1,10 @@
 #ifndef EE_GRAPHICS_DRAWABLE_HPP
 #define EE_GRAPHICS_DRAWABLE_HPP
 
-#include <eepp/math/size.hpp>
-#include <eepp/system/color.hpp>
 #include <eepp/graphics/blendmode.hpp>
 #include <eepp/graphics/rendermode.hpp>
+#include <eepp/math/size.hpp>
+#include <eepp/system/color.hpp>
 using namespace EE::Math;
 using namespace EE::System;
 
@@ -13,75 +13,76 @@ namespace EE { namespace Graphics {
 class StatefulDrawable;
 
 class EE_API Drawable {
-	public:
-		enum Type {
-			TEXTURE,
-			TEXTUREREGION,
-			SPRITE,
-			ARC,
-			RECTANGLE,
-			TRIANGLE,
-			CONVEXSHAPE,
-			GROUP,
-			NINEPATCH,
-			STATELIST,
-			SKIN,
-			UINODEDRAWABLE,
-			UINODEDRAWABLE_LAYERDRAWABLE,
-			CUSTOM
-		};
+  public:
+	enum Type {
+		TEXTURE,
+		TEXTUREREGION,
+		SPRITE,
+		ARC,
+		RECTANGLE,
+		TRIANGLE,
+		CONVEXSHAPE,
+		GROUP,
+		NINEPATCH,
+		STATELIST,
+		SKIN,
+		UINODEDRAWABLE,
+		UINODEDRAWABLE_LAYERDRAWABLE,
+		CUSTOM
+	};
 
-		virtual ~Drawable();
+	virtual ~Drawable();
 
-		virtual Sizef getSize() = 0;
+	virtual Sizef getSize() = 0;
 
-		virtual void draw() = 0;
+	virtual void draw() = 0;
 
-		virtual void draw( const Vector2f& position ) = 0;
+	virtual void draw( const Vector2f& position ) = 0;
 
-		virtual void draw( const Vector2f& position, const Sizef& size ) = 0;
+	virtual void draw( const Vector2f& position, const Sizef& size ) = 0;
 
-		virtual bool isStateful() = 0;
+	virtual bool isStateful() = 0;
 
-		void setAlpha( Uint8 alpha );
+	void setAlpha( Uint8 alpha );
 
-		const Uint8& getAlpha();
+	const Uint8& getAlpha();
 
-		void setColor( const Color& color );
+	void setColor( const Color& color );
 
-		Color getColor() const;
+	Color getColor() const;
 
-		void setColorFilter( const Color& color );
+	void setColorFilter( const Color& color );
 
-		RGB getColorFilter();
+	RGB getColorFilter();
 
-		void clearColor();
+	void clearColor();
 
-		void clearColorFilter();
+	void clearColorFilter();
 
-		void resetAlpha();
+	void resetAlpha();
 
-		Type getDrawableType() const;
+	Type getDrawableType() const;
 
-		const Vector2f& getPosition() const;
+	const Vector2f& getPosition() const;
 
-		void setPosition( const Vector2f& position );
+	void setPosition( const Vector2f& position );
 
-		virtual bool isDrawableResource() const;
-	protected:
-		Type mDrawableType;
-		Color mColor;
-		Vector2f mPosition;
+	virtual bool isDrawableResource() const;
 
-		Drawable( Type drawableType );
+  protected:
+	Type mDrawableType;
+	Color mColor;
+	Vector2f mPosition;
 
-		virtual void onAlphaChange();
+	Drawable( Type drawableType );
 
-		virtual void onColorFilterChange();
+	virtual void onAlphaChange();
 
-		virtual void onPositionChange();
+	virtual void onColorFilterChange();
+
+	virtual void onPositionChange();
 };
 
-}}
+}} // namespace EE::Graphics
 
 #endif

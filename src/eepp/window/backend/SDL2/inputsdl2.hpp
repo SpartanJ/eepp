@@ -11,28 +11,29 @@
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
 class EE_API InputSDL : public Input {
-	public:
-		virtual ~InputSDL();
-		
-		void update();
+  public:
+	virtual ~InputSDL();
 
-		bool grabInput();
+	void update();
 
-		void grabInput( const bool& Grab );
+	bool grabInput();
 
-		void injectMousePos( const Uint16& x, const Uint16& y );
-	protected:
-		friend class WindowSDL;
-		Float mDPIScale;
+	void grabInput( const bool& Grab );
 
-		InputSDL( EE::Window::Window * window );
-		
-		virtual void init();
+	void injectMousePos( const Uint16& x, const Uint16& y );
 
-		void initializeTables();
+  protected:
+	friend class WindowSDL;
+	Float mDPIScale;
+
+	InputSDL( EE::Window::Window* window );
+
+	virtual void init();
+
+	void initializeTables();
 };
 
-}}}}
+}}}} // namespace EE::Window::Backend::SDL2
 
 #endif
 

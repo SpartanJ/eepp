@@ -8,49 +8,50 @@ namespace EE { namespace UI {
 class UITabWidget;
 
 class EE_API UITab : public UISelectButton {
-	public:
-		static UITab * New();
+  public:
+	static UITab* New();
 
-		UITab();
+	UITab();
 
-		Node * getControlOwned() const;
+	Node* getControlOwned() const;
 
-		void setControlOwned( Node * controlOwned );
+	void setControlOwned( Node* controlOwned );
 
-		virtual ~UITab();
+	virtual ~UITab();
 
-		virtual Uint32 getType() const;
+	virtual Uint32 getType() const;
 
-		virtual bool isType( const Uint32& type ) const;
+	virtual bool isType( const Uint32& type ) const;
 
-		virtual void setTheme( UITheme * Theme );
+	virtual void setTheme( UITheme* Theme );
 
-		virtual const String& getText();
+	virtual const String& getText();
 
-		virtual UIPushButton * setText( const String& text );
+	virtual UIPushButton* setText( const String& text );
 
-		virtual bool applyProperty( const StyleSheetProperty& attribute );
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
-		virtual std::string getPropertyString( const PropertyDefinition* propertyDef );
-	protected:
-		Node * mControlOwned;
-		std::string mOwnedName;
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef );
 
-		virtual Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
+  protected:
+	Node* mControlOwned;
+	std::string mOwnedName;
 
-		virtual Uint32 onMouseClick( const Vector2i& position, const Uint32& flags );
+	virtual Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
 
-		virtual void onStateChange();
+	virtual Uint32 onMouseClick( const Vector2i& position, const Uint32& flags );
 
-		virtual void onAutoSize();
+	virtual void onStateChange();
 
-		UITabWidget * getTabWidget();
+	virtual void onAutoSize();
 
-		virtual void onParentChange();
+	UITabWidget* getTabWidget();
 
-		void setOwnedControl();
+	virtual void onParentChange();
+
+	void setOwnedControl();
 };
 
-}}
+}} // namespace EE::UI
 
 #endif

@@ -7,12 +7,14 @@ using namespace EE::Graphics;
 
 namespace EE { namespace Physics {
 
-GrooveJoint::GrooveJoint( Body * a, Body * b, cVect groove_a, cVect groove_b, cVect anchr2 )
+GrooveJoint::GrooveJoint( Body* a, Body* b, cVect groove_a, cVect groove_b, cVect anchr2 )
 #ifdef PHYSICS_RENDERER_ENABLED
-	: mDrawPointSize( 5.f )
+	:
+	mDrawPointSize( 5.f )
 #endif
 {
-	mConstraint = cpGrooveJointNew( a->getBody(), b->getBody(), tocpv( groove_a ), tocpv( groove_b ), tocpv( anchr2 ) );
+	mConstraint = cpGrooveJointNew( a->getBody(), b->getBody(), tocpv( groove_a ),
+									tocpv( groove_b ), tocpv( anchr2 ) );
 	setData();
 }
 
@@ -41,17 +43,17 @@ void GrooveJoint::setGrooveB( const cVect& groove_b ) {
 }
 
 void GrooveJoint::draw() {
-	#ifdef PHYSICS_RENDERER_ENABLED
+#ifdef PHYSICS_RENDERER_ENABLED
 	if ( mDrawPointSize <= 0 )
 		return;
 
-	cpGrooveJoint *joint= (cpGrooveJoint *)mConstraint;
-	cpBody * body_a		= mConstraint->a;
-	cpBody * body_b		= mConstraint->b;
-	cVect a				= tovect( cpvadd(body_a->p, cpvrotate(joint->grv_a, body_a->rot)) );
-	cVect b				= tovect( cpvadd(body_a->p, cpvrotate(joint->grv_b, body_a->rot)) );
-	cVect c				= tovect( cpvadd(body_b->p, cpvrotate(joint->anchr2, body_b->rot)) );
-	BatchRenderer * BR = GlobalBatchRenderer::instance();
+	cpGrooveJoint* joint = (cpGrooveJoint*)mConstraint;
+	cpBody* body_a = mConstraint->a;
+	cpBody* body_b = mConstraint->b;
+	cVect a = tovect( cpvadd( body_a->p, cpvrotate( joint->grv_a, body_a->rot ) ) );
+	cVect b = tovect( cpvadd( body_a->p, cpvrotate( joint->grv_b, body_a->rot ) ) );
+	cVect c = tovect( cpvadd( body_b->p, cpvrotate( joint->anchr2, body_b->rot ) ) );
+	BatchRenderer* BR = GlobalBatchRenderer::instance();
 
 	cpFloat ps = BR->getPointSize();
 	BR->setTexture( NULL );
@@ -65,7 +67,7 @@ void GrooveJoint::draw() {
 	BR->batchLine( a.x, a.y, b.x, b.y );
 	BR->draw();
 	BR->setPointSize( ps );
-	#endif
+#endif
 }
 
 #ifdef PHYSICS_RENDERER_ENABLED
@@ -78,4 +80,4 @@ void GrooveJoint::setDrawPointSize( const cpFloat& size ) {
 }
 #endif
 
-}}
+}} // namespace EE::Physics

@@ -1,146 +1,147 @@
 #ifndef EE_UICUIGENERICGRID_HPP
 #define EE_UICUIGENERICGRID_HPP
 
-#include <eepp/ui/uinode.hpp>
-#include <eepp/ui/uitablecell.hpp>
-#include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uiitemcontainer.hpp>
+#include <eepp/ui/uinode.hpp>
+#include <eepp/ui/uiscrollbar.hpp>
+#include <eepp/ui/uitablecell.hpp>
 #include <eepp/ui/uitouchdragablewidget.hpp>
 
 namespace EE { namespace UI {
 
 class EE_API UITable : public UITouchDragableWidget {
-	public:
-		static UITable * New();
+  public:
+	static UITable* New();
 
-		UITable();
+	UITable();
 
-		~UITable();
+	~UITable();
 
-		virtual Uint32 getType() const;
+	virtual Uint32 getType() const;
 
-		virtual bool isType( const Uint32& type ) const;
+	virtual bool isType( const Uint32& type ) const;
 
-		virtual void setTheme( UITheme * Theme );
+	virtual void setTheme( UITheme* Theme );
 
-		void add( UITableCell * Cell );
+	void add( UITableCell* Cell );
 
-		void remove( UITableCell * Cell );
+	void remove( UITableCell* Cell );
 
-		void remove( std::vector<Uint32> ItemsIndex );
+	void remove( std::vector<Uint32> ItemsIndex );
 
-		void remove( Uint32 ItemIndex );
+	void remove( Uint32 ItemIndex );
 
-		UITable * setCollumnWidth( const Uint32& CollumnIndex, const Uint32& collumnWidth );
+	UITable* setCollumnWidth( const Uint32& CollumnIndex, const Uint32& collumnWidth );
 
-		const Uint32& getCollumnWidth( const Uint32& CollumnIndex ) const;
+	const Uint32& getCollumnWidth( const Uint32& CollumnIndex ) const;
 
-		Uint32 getCount() const;
+	Uint32 getCount() const;
 
-		UITable * setCollumnsCount(const Uint32 & collumnsCount);
+	UITable* setCollumnsCount( const Uint32& collumnsCount );
 
-		const Uint32& getCollumnsCount() const;
+	const Uint32& getCollumnsCount() const;
 
-		UITable * setRowHeight( const Uint32& height );
+	UITable* setRowHeight( const Uint32& height );
 
-		const Uint32& getRowHeight() const;
+	const Uint32& getRowHeight() const;
 
-		UITableCell * getCell( const Uint32& CellIndex ) const;
+	UITableCell* getCell( const Uint32& CellIndex ) const;
 
-		void setVerticalScrollMode( const ScrollBarMode& Mode );
+	void setVerticalScrollMode( const ScrollBarMode& Mode );
 
-		const ScrollBarMode& getVerticalScrollMode();
+	const ScrollBarMode& getVerticalScrollMode();
 
-		void setHorizontalScrollMode( const ScrollBarMode& Mode );
+	void setHorizontalScrollMode( const ScrollBarMode& Mode );
 
-		const ScrollBarMode& getHorizontalScrollMode();
+	const ScrollBarMode& getHorizontalScrollMode();
 
-		Uint32 getCellPosition( const Uint32& CollumnIndex );
+	Uint32 getCellPosition( const Uint32& CollumnIndex );
 
-		UIScrollBar * getVerticalScrollBar() const;
+	UIScrollBar* getVerticalScrollBar() const;
 
-		UIScrollBar * getHorizontalScrollBar() const;
+	UIScrollBar* getHorizontalScrollBar() const;
 
-		Uint32 getItemIndex( UITableCell * Item );
+	Uint32 getItemIndex( UITableCell* Item );
 
-		UITableCell * getItemSelected();
+	UITableCell* getItemSelected();
 
-		Uint32 getItemSelectedIndex() const;
+	Uint32 getItemSelectedIndex() const;
 
-		Uint32 onMessage( const NodeMessage * Msg );
+	Uint32 onMessage( const NodeMessage* Msg );
 
-		UIItemContainer<UITable> * getContainer() const;
+	UIItemContainer<UITable>* getContainer() const;
 
-		bool getSmoothScroll() const;
+	bool getSmoothScroll() const;
 
-		UITable * setSmoothScroll(bool smoothScroll);
+	UITable* setSmoothScroll( bool smoothScroll );
 
-		Rectf getContainerPadding() const;
+	Rectf getContainerPadding() const;
 
-		virtual bool applyProperty( const StyleSheetProperty& attribute );
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
-		virtual std::string getPropertyString(const PropertyDefinition* propertyDef);
-	protected:
-		friend class UIItemContainer<UITable>;
-		friend class UITableCell;
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef );
 
-		Rectf						mContainerPadding;
-		UIItemContainer<UITable> *	mContainer;
-		UIScrollBar *				mVScrollBar;
-		UIScrollBar *				mHScrollBar;
-		ScrollBarMode			mVScrollMode;
-		ScrollBarMode			mHScrollMode;
-		std::vector<UITableCell*>	mItems;
-		Uint32						mCollumnsCount;
-		Uint32						mRowHeight;
-		std::vector<Uint32>			mCollumnsWidth;
-		std::vector<Uint32>			mCollumnsPos;
-		Uint32						mTotalWidth;
-		Uint32						mTotalHeight;
-		Uint32						mLastPos;
-		Uint32						mVisibleFirst;
-		Uint32						mVisibleLast;
-		Int32						mHScrollInit;
-		Int32						mItemsNotVisible;
-		Int32						mSelected;
-		bool						mSmoothScroll;
-		bool						mCollWidthAssigned;
+  protected:
+	friend class UIItemContainer<UITable>;
+	friend class UITableCell;
 
-		void updateCells();
+	Rectf mContainerPadding;
+	UIItemContainer<UITable>* mContainer;
+	UIScrollBar* mVScrollBar;
+	UIScrollBar* mHScrollBar;
+	ScrollBarMode mVScrollMode;
+	ScrollBarMode mHScrollMode;
+	std::vector<UITableCell*> mItems;
+	Uint32 mCollumnsCount;
+	Uint32 mRowHeight;
+	std::vector<Uint32> mCollumnsWidth;
+	std::vector<Uint32> mCollumnsPos;
+	Uint32 mTotalWidth;
+	Uint32 mTotalHeight;
+	Uint32 mLastPos;
+	Uint32 mVisibleFirst;
+	Uint32 mVisibleLast;
+	Int32 mHScrollInit;
+	Int32 mItemsNotVisible;
+	Int32 mSelected;
+	bool mSmoothScroll;
+	bool mCollWidthAssigned;
 
-		void updateCollumnsPos();
+	void updateCells();
 
-		void autoPadding();
+	void updateCollumnsPos();
 
-		virtual void onSizeChange();
+	void autoPadding();
 
-		virtual void onAlphaChange();
+	virtual void onSizeChange();
 
-		virtual void onPaddingChange();
+	virtual void onAlphaChange();
 
-		void containerResize();
+	virtual void onPaddingChange();
 
-		void onScrollValueChange( const Event * Event );
+	void containerResize();
 
-		void setDefaultCollumnsWidth();
+	void onScrollValueChange( const Event* Event );
 
-		void updateScroll( bool FromScrollChange = false );
+	void setDefaultCollumnsWidth();
 
-		void updateSize();
+	void updateScroll( bool FromScrollChange = false );
 
-		virtual Uint32 onSelected();
+	void updateSize();
 
-		void updateVScroll();
+	virtual Uint32 onSelected();
 
-		void updateHScroll();
+	void updateVScroll();
 
-		void setHScrollStep();
+	void updateHScroll();
 
-		virtual void onTouchDragValueChange( Vector2f diff );
+	void setHScrollStep();
 
-		virtual bool isTouchOverAllowedChilds();
+	virtual void onTouchDragValueChange( Vector2f diff );
+
+	virtual bool isTouchOverAllowedChilds();
 };
 
-}}
+}} // namespace EE::UI
 
 #endif

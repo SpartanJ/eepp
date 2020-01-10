@@ -1,7 +1,7 @@
-#include <eepp/core/debug.hpp>
-#include <eepp/system/log.hpp>
 #include <cassert>
 #include <cstdarg>
+#include <eepp/core/debug.hpp>
+#include <eepp/system/log.hpp>
 
 using namespace EE::System;
 
@@ -9,8 +9,8 @@ using namespace EE::System;
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
-#include <windows.h>
 #include <crtdbg.h>
+#include <windows.h>
 #endif
 
 namespace EE {
@@ -19,14 +19,14 @@ bool PrintDebugInLog = true;
 
 #ifdef EE_DEBUG
 
-void eeREPORT_ASSERT( const char * File, int Line, const char * Exp ) {
-	#ifdef EE_COMPILER_MSVC
+void eeREPORT_ASSERT( const char* File, int Line, const char* Exp ) {
+#ifdef EE_COMPILER_MSVC
 
-	_CrtDbgReport( _CRT_ASSERT, File, Line, "", Exp);
+	_CrtDbgReport( _CRT_ASSERT, File, Line, "", Exp );
 
 	DebugBreak();
 
-	#else
+#else
 
 	if ( PrintDebugInLog ) {
 		Log::instance()->writef( "ASSERT: %s file:%s line:%d", Exp, File, Line );
@@ -37,13 +37,13 @@ void eeREPORT_ASSERT( const char * File, int Line, const char * Exp ) {
 		printf( "ASSERT: %s file:%s line:%d", Exp, File, Line );
 	}
 
-	#if defined(EE_COMPILER_GCC) && defined(EE_32BIT) && !defined(EE_ARM)
-	asm("int3");
-	#else
+#if defined( EE_COMPILER_GCC ) && defined( EE_32BIT ) && !defined( EE_ARM )
+	asm( "int3" );
+#else
 	assert( false );
-	#endif
+#endif
 
-	#endif
+#endif
 }
 
 #endif
@@ -54,26 +54,26 @@ static void print_buffer( std::string& buf, bool newLine ) {
 	if ( newLine )
 		buf += "\n";
 
-	#ifdef EE_COMPILER_MSVC
-		OutputDebugStringA( buf.c_str() );
-	#else
-		if ( PrintDebugInLog && Log::instance()->isConsoleOutput() ) {
-			Log::instance()->write( buf, false );
-			return;
-		} else {
-			printf("%s", buf.c_str() );
-		}
-	#endif
+#ifdef EE_COMPILER_MSVC
+	OutputDebugStringA( buf.c_str() );
+#else
+	if ( PrintDebugInLog && Log::instance()->isConsoleOutput() ) {
+		Log::instance()->write( buf, false );
+		return;
+	} else {
+		printf( "%s", buf.c_str() );
+	}
+#endif
 
 	if ( PrintDebugInLog )
 		Log::instance()->write( buf, false );
 }
 
-void eePRINT( const char * format, ... ) {
+void eePRINT( const char* format, ... ) {
 	int n, size = 2048;
 	std::string buf( size, '\0' );
 
-	va_list		args;
+	va_list args;
 
 	while ( 1 ) {
 		va_start( args, format );
@@ -90,20 +90,20 @@ void eePRINT( const char * format, ... ) {
 			return;
 		}
 
-		if ( n > -1 )	// glibc 2.1
-			size = n+1; // precisely what is needed
-		else			// glibc 2.0
-			size *= 2;	// twice the old size
+		if ( n > -1 )	  // glibc 2.1
+			size = n + 1; // precisely what is needed
+		else			  // glibc 2.0
+			size *= 2;	  // twice the old size
 
 		buf.resize( size );
 	}
 }
 
-void eePRINTL( const char * format, ... ) {
+void eePRINTL( const char* format, ... ) {
 	int n, size = 2048;
 	std::string buf( size, '\0' );
 
-	va_list		args;
+	va_list args;
 
 	while ( 1 ) {
 		va_start( args, format );
@@ -120,23 +120,23 @@ void eePRINTL( const char * format, ... ) {
 			return;
 		}
 
-		if ( n > -1 )	// glibc 2.1
-			size = n+1; // precisely what is needed
-		else			// glibc 2.0
-			size *= 2;	// twice the old size
+		if ( n > -1 )	  // glibc 2.1
+			size = n + 1; // precisely what is needed
+		else			  // glibc 2.0
+			size *= 2;	  // twice the old size
 
 		buf.resize( size );
 	}
 }
 
-void eePRINTC( unsigned int cond, const char * format, ...) {
+void eePRINTC( unsigned int cond, const char* format, ... ) {
 	if ( 0 == cond )
 		return;
 
 	int n, size = 2048;
 	std::string buf( size, '\0' );
 
-	va_list		args;
+	va_list args;
 
 	while ( 1 ) {
 		va_start( args, format );
@@ -153,10 +153,10 @@ void eePRINTC( unsigned int cond, const char * format, ...) {
 			return;
 		}
 
-		if ( n > -1 )	// glibc 2.1
-			size = n+1; // precisely what is needed
-		else			// glibc 2.0
-			size *= 2;	// twice the old size
+		if ( n > -1 )	  // glibc 2.1
+			size = n + 1; // precisely what is needed
+		else			  // glibc 2.0
+			size *= 2;	  // twice the old size
 
 		buf.resize( size );
 	}
@@ -164,4 +164,4 @@ void eePRINTC( unsigned int cond, const char * format, ...) {
 
 #endif
 
-}
+} // namespace EE

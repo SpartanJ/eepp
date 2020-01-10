@@ -2,30 +2,29 @@
 
 namespace EE { namespace Window {
 
-CursorManager::CursorManager( EE::Window::Window * window ) :
+CursorManager::CursorManager( EE::Window::Window* window ) :
 	mWindow( window ),
 	mCurrent( NULL ),
 	mSysCursor( Cursor::SysCursorNone ),
 	mCursors(),
 	mCurSysCursor( false ),
-	mVisible( true )
-{
+	mVisible( true ) {
 	initGlobalCursors();
 }
 
 CursorManager::~CursorManager() {
 	for ( CursorsList::iterator it = mCursors.begin(); it != mCursors.end(); ++it ) {
-		Cursor * tCursor = *it;
+		Cursor* tCursor = *it;
 		eeSAFE_DELETE( tCursor );
 	}
 }
 
-Cursor * CursorManager::add( Cursor * cursor ) {
+Cursor* CursorManager::add( Cursor* cursor ) {
 	mCursors.insert( cursor );
 	return cursor;
 }
 
-void CursorManager::remove( Cursor * cursor, bool Delete ) {
+void CursorManager::remove( Cursor* cursor, bool Delete ) {
 	mCursors.erase( cursor );
 
 	if ( Delete )
@@ -38,24 +37,24 @@ void CursorManager::remove( const std::string& name, bool Delete ) {
 
 void CursorManager::remove( const Uint32& id, bool Delete ) {
 	for ( CursorsList::iterator it = mCursors.begin(); it != mCursors.end(); ++it ) {
-		if ( (*it)->getId() == id ) {
-			remove( (*it), Delete );
-			break;	
+		if ( ( *it )->getId() == id ) {
+			remove( ( *it ), Delete );
+			break;
 		}
 	}
 }
 
-Cursor * CursorManager::get( const std::string& name ) {
+Cursor* CursorManager::get( const std::string& name ) {
 	return getById( String::hash( name ) );
 }
 
-Cursor * CursorManager::getById( const Uint32& id ) {
+Cursor* CursorManager::getById( const Uint32& id ) {
 	for ( CursorsList::iterator it = mCursors.begin(); it != mCursors.end(); ++it ) {
-		if ( (*it)->getId() == id ) {
-			return (*it);
+		if ( ( *it )->getId() == id ) {
+			return ( *it );
 		}
 	}
-	
+
 	return NULL;
 }
 
@@ -65,30 +64,30 @@ void CursorManager::set( const std::string& name ) {
 
 void CursorManager::setById( const Uint32& id ) {
 	for ( CursorsList::iterator it = mCursors.begin(); it != mCursors.end(); ++it ) {
-		if ( (*it)->getId() == id ) {
+		if ( ( *it )->getId() == id ) {
 			set( *it );
-			break;	
+			break;
 		}
 	}
 }
 
-void CursorManager::setGlobalCursor( Cursor::Type cursor, Cursor * fromCursor ) {
+void CursorManager::setGlobalCursor( Cursor::Type cursor, Cursor* fromCursor ) {
 	if ( cursor < Cursor::CursorCount ) {
-		mGlobalCursors[ cursor ].SysCur	= Cursor::SysCursorNone;
-		mGlobalCursors[ cursor ].Cur	= fromCursor;
+		mGlobalCursors[cursor].SysCur = Cursor::SysCursorNone;
+		mGlobalCursors[cursor].Cur = fromCursor;
 	}
 }
 
 void CursorManager::setGlobalCursor( Cursor::Type cursor, Cursor::SysType fromCursor ) {
 	if ( cursor < Cursor::CursorCount ) {
-		mGlobalCursors[ cursor ].SysCur	= fromCursor;
-		mGlobalCursors[ cursor ].Cur	= NULL;
+		mGlobalCursors[cursor].SysCur = fromCursor;
+		mGlobalCursors[cursor].Cur = NULL;
 	}
 }
 
 void CursorManager::set( Cursor::Type cursor ) {
 	if ( cursor < Cursor::CursorCount ) {
-		GlobalCursor& Cursor = mGlobalCursors[ cursor ];
+		GlobalCursor& Cursor = mGlobalCursors[cursor];
 
 		if ( Cursor::SysCursorNone != Cursor.SysCur ) {
 			set( Cursor.SysCur );
@@ -99,10 +98,10 @@ void CursorManager::set( Cursor::Type cursor ) {
 }
 
 bool CursorManager::getVisible() {
-	return mVisible;	
+	return mVisible;
 }
 
-Cursor * CursorManager::getCurrent() const {
+Cursor* CursorManager::getCurrent() const {
 	return mCurrent;
 }
 
@@ -116,9 +115,8 @@ bool CursorManager::currentIsSysCursor() const {
 
 void CursorManager::initGlobalCursors() {
 	for ( int i = 0; i < Cursor::CursorCount; i++ ) {
-		mGlobalCursors[ i ].SysCur = static_cast<Cursor::SysType>( i );
+		mGlobalCursors[i].SysCur = static_cast<Cursor::SysType>( i );
 	}
 }
 
-}}
- 
+}} // namespace EE::Window

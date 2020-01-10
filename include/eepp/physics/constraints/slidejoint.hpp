@@ -6,36 +6,37 @@
 namespace EE { namespace Physics {
 
 class EE_API SlideJoint : public Constraint {
-	public:
-		SlideJoint( Body * a, Body *b, cVect anchr1, cVect anchr2, cpFloat min, cpFloat max );
+  public:
+	SlideJoint( Body* a, Body* b, cVect anchr1, cVect anchr2, cpFloat min, cpFloat max );
 
-		cVect getAnchr1();
+	cVect getAnchr1();
 
-		void setAnchr1( const cVect& anchr1 );
+	void setAnchr1( const cVect& anchr1 );
 
-		cVect getAnchr2();
+	cVect getAnchr2();
 
-		void setAnchr2( const cVect& anchr2 );
+	void setAnchr2( const cVect& anchr2 );
 
-		cpFloat getMin();
+	cpFloat getMin();
 
-		void setMin( const cpFloat& min );
+	void setMin( const cpFloat& min );
 
-		cpFloat getMax();
+	cpFloat getMax();
 
-		void setMax( const cpFloat& max );
+	void setMax( const cpFloat& max );
 
-		virtual void draw();
+	virtual void draw();
 
 #ifdef PHYSICS_RENDERER_ENABLED
-		cpFloat getDrawPointSize();
+	cpFloat getDrawPointSize();
 
-		virtual void setDrawPointSize( const cpFloat& size );
-	protected:
-		cpFloat mDrawPointSize;
+	virtual void setDrawPointSize( const cpFloat& size );
+
+  protected:
+	cpFloat mDrawPointSize;
 #endif
 };
 
-}}
+}} // namespace EE::Physics
 
 #endif

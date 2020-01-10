@@ -1,15 +1,13 @@
-#include <eepp/ui/uitablecell.hpp>
 #include <eepp/ui/uitable.hpp>
+#include <eepp/ui/uitablecell.hpp>
 
 namespace EE { namespace UI {
 
-UITableCell * UITableCell::New() {
+UITableCell* UITableCell::New() {
 	return eeNew( UITableCell, () );
 }
 
-UITableCell::UITableCell() :
-	UIWidget( "tablecell" )
-{
+UITableCell::UITableCell() : UIWidget( "tablecell" ) {
 	applyDefaultTheme();
 }
 
@@ -23,7 +21,7 @@ UITableCell::~UITableCell() {
 	}
 }
 
-void UITableCell::setTheme( UITheme * Theme ) {
+void UITableCell::setTheme( UITheme* Theme ) {
 	UIWidget::setTheme( Theme );
 
 	setThemeSkin( Theme, "gridcell" );
@@ -31,22 +29,23 @@ void UITableCell::setTheme( UITheme * Theme ) {
 	onThemeLoaded();
 }
 
-UITable * UITableCell::gridParent() const {
+UITable* UITableCell::gridParent() const {
 	return mParentCtrl->getParent()->asType<UITable>();
 }
 
-void UITableCell::setCell( const Uint32& CollumnIndex, UINode * Ctrl ) {
+void UITableCell::setCell( const Uint32& CollumnIndex, UINode* Ctrl ) {
 	eeASSERT( CollumnIndex < gridParent()->getCollumnsCount() );
 
-	UITable * P = gridParent();
+	UITable* P = gridParent();
 
-	mCells[ CollumnIndex ] = Ctrl;
+	mCells[CollumnIndex] = Ctrl;
 
 	if ( Ctrl->getParent() != this )
 		Ctrl->setParent( this );
 
 	if ( Ctrl->isWidget() )
-		static_cast<UIWidget*>( Ctrl )->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::Fixed );
+		static_cast<UIWidget*>( Ctrl )->setLayoutSizeRules( LayoutSizeRule::Fixed,
+															LayoutSizeRule::Fixed );
 
 	Ctrl->setPosition( P->getCellPosition( CollumnIndex ), 0 );
 	Ctrl->setSize( P->getCollumnWidth( CollumnIndex ), P->getRowHeight() );
@@ -55,25 +54,25 @@ void UITableCell::setCell( const Uint32& CollumnIndex, UINode * Ctrl ) {
 	Ctrl->setEnabled( true );
 }
 
-UINode * UITableCell::getCell( const Uint32& CollumnIndex ) const {
+UINode* UITableCell::getCell( const Uint32& CollumnIndex ) const {
 	eeASSERT( CollumnIndex < gridParent()->getCollumnsCount() );
 
-	return mCells[ CollumnIndex ];
+	return mCells[CollumnIndex];
 }
 
 void UITableCell::fixCell() {
 	onAutoSize();
 
-	UITable * P = gridParent();
+	UITable* P = gridParent();
 
 	for ( Uint32 i = 0; i < mCells.size(); i++ ) {
-		mCells[i]->setPosition	( P->getCellPosition( i )	, 0					);
-		mCells[i]->setSize		( P->getCollumnWidth( i )	, P->getRowHeight()	);
+		mCells[i]->setPosition( P->getCellPosition( i ), 0 );
+		mCells[i]->setSize( P->getCollumnWidth( i ), P->getRowHeight() );
 	}
 }
 
 void UITableCell::select() {
-	UITable * MyParent 	= getParent()->getParent()->asType<UITable>();
+	UITable* MyParent = getParent()->getParent()->asType<UITable>();
 
 	if ( MyParent->getItemSelected() != this ) {
 		if ( NULL != MyParent->getItemSelected() )
@@ -97,7 +96,7 @@ void UITableCell::unselect() {
 	if ( mNodeFlags & NODE_FLAG_SELECTED )
 		mNodeFlags &= ~NODE_FLAG_SELECTED;
 
-	popState( UIState::StateSelected);
+	popState( UIState::StateSelected );
 }
 
 bool UITableCell::isSelected() const {
@@ -113,10 +112,9 @@ Uint32 UITableCell::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
 	return 1;
 }
 
-Uint32 UITableCell::onMessage( const NodeMessage * Msg ) {
-	switch( Msg->getMsg() ) {
-		case NodeMessage::Click:
-		{
+Uint32 UITableCell::onMessage( const NodeMessage* Msg ) {
+	switch ( Msg->getMsg() ) {
+		case NodeMessage::Click: {
 			if ( Msg->getFlags() & EE_BUTTONS_LRM ) {
 				select();
 
@@ -129,11 +127,11 @@ Uint32 UITableCell::onMessage( const NodeMessage * Msg ) {
 
 			break;
 		}
-		case NodeMessage::MouseUp:
-		{
-			UITable * MyParent 	= getParent()->getParent()->asType<UITable>();
+		case NodeMessage::MouseUp: {
+			UITable* MyParent = getParent()->getParent()->asType<UITable>();
 
-			if ( ( Msg->getFlags() & EE_BUTTONS_WUWD ) && MyParent->getVerticalScrollBar()->isVisible() ) {
+			if ( ( Msg->getFlags() & EE_BUTTONS_WUWD ) &&
+				 MyParent->getVerticalScrollBar()->isVisible() ) {
 				MyParent->getVerticalScrollBar()->getSlider()->manageClick( Msg->getFlags() );
 			}
 
@@ -145,7 +143,7 @@ Uint32 UITableCell::onMessage( const NodeMessage * Msg ) {
 }
 
 void UITableCell::onAutoSize() {
-	UITable * MyParent 	= getParent()->getParent()->asType<UITable>();
+	UITable* MyParent = getParent()->getParent()->asType<UITable>();
 
 	setInternalSize( Sizef( MyParent->mTotalWidth, MyParent->mRowHeight ) );
 }
@@ -165,7 +163,7 @@ void UITableCell::onParentChange() {
 
 void UITableCell::onAlphaChange() {
 	if ( mEnabled && mVisible ) {
-		UITable * MyParent 	= getParent()->getParent()->asType<UITable>();
+		UITable* MyParent = getParent()->getParent()->asType<UITable>();
 
 		if ( NULL != MyParent && MyParent->getAlpha() != mAlpha ) {
 			setAlpha( MyParent->getAlpha() );
@@ -179,4 +177,4 @@ void UITableCell::onAlphaChange() {
 	}
 }
 
-}}
+}} // namespace EE::UI

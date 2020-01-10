@@ -1,55 +1,56 @@
 #ifndef EE_UICUIGRIDCELL_HPP
 #define EE_UICUIGRIDCELL_HPP
 
-#include <eepp/ui/uiwidget.hpp>
 #include <eepp/ui/uiitemcontainer.hpp>
+#include <eepp/ui/uiwidget.hpp>
 
 namespace EE { namespace UI {
 
 class UITable;
 
 class EE_API UITableCell : public UIWidget {
-	public:
-		static UITableCell * New();
+  public:
+	static UITableCell* New();
 
-		UITableCell();
+	UITableCell();
 
-		virtual ~UITableCell();
+	virtual ~UITableCell();
 
-		virtual void setTheme( UITheme * Theme );
+	virtual void setTheme( UITheme* Theme );
 
-		void setCell( const Uint32& CollumnIndex, UINode * Ctrl );
+	void setCell( const Uint32& CollumnIndex, UINode* Ctrl );
 
-		UINode * getCell( const Uint32& CollumnIndex ) const;
+	UINode* getCell( const Uint32& CollumnIndex ) const;
 
-		bool isSelected() const;
+	bool isSelected() const;
 
-		void unselect();
+	void unselect();
 
-		void select();
+	void select();
 
-		virtual Uint32 onMessage( const NodeMessage * Msg );
-	protected:
-		friend class UIItemContainer<UITable>;
-		friend class UITable;
+	virtual Uint32 onMessage( const NodeMessage* Msg );
 
-		std::vector<UINode*> mCells;
+  protected:
+	friend class UIItemContainer<UITable>;
+	friend class UITable;
 
-		UITable * gridParent() const;
+	std::vector<UINode*> mCells;
 
-		void fixCell();
+	UITable* gridParent() const;
 
-		virtual Uint32 onMouseLeave( const Vector2i& position, const Uint32& flags );
+	void fixCell();
 
-		virtual void onStateChange();
+	virtual Uint32 onMouseLeave( const Vector2i& position, const Uint32& flags );
 
-		virtual void onParentChange();
+	virtual void onStateChange();
 
-		virtual void onAlphaChange();
+	virtual void onParentChange();
 
-		virtual void onAutoSize();
+	virtual void onAlphaChange();
+
+	virtual void onAutoSize();
 };
 
-}}
+}} // namespace EE::UI
 
 #endif

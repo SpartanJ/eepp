@@ -1,8 +1,8 @@
 #ifndef EE_NETWORKCTCPLISTENER_HPP
 #define EE_NETWORKCTCPLISTENER_HPP
 
-#include <eepp/network/socket.hpp>
 #include <eepp/network/ipaddress.hpp>
+#include <eepp/network/socket.hpp>
 
 namespace EE { namespace Network {
 
@@ -10,8 +10,7 @@ class TcpSocket;
 
 /** @brief Socket that listens to new TCP connections */
 class EE_API TcpListener : public Socket {
-public :
-
+  public:
 	/** @brief Default constructor */
 	TcpListener();
 
@@ -31,7 +30,7 @@ public :
 	**  @param address Address of the interface to listen on
 	**  @return Status code
 	**  @see Accept, Close */
-	Status listen(unsigned short port, const IpAddress& address = IpAddress::Any);
+	Status listen( unsigned short port, const IpAddress& address = IpAddress::Any );
 
 	/** @brief Stop listening and close the socket
 	**  This function gracefully stops the listener. If the
@@ -45,10 +44,10 @@ public :
 	**  @param socket Socket that will hold the new connection
 	**  @return Status code
 	**  @see Listen */
-	Status accept(TcpSocket& socket);
+	Status accept( TcpSocket& socket );
 };
 
-}}
+}} // namespace EE::Network
 
 #endif // EE_NETWORKCTCPLISTENER_HPP
 

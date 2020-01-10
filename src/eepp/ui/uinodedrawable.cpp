@@ -290,15 +290,15 @@ void UINodeDrawable::LayerDrawable::draw( const Vector2f& position, const Sizef&
 		case Repeat::RepeatXY: {
 			Float startX = mPosition.x + mOffset.x - mDrawableSize.getWidth();
 			while ( startX > mPosition.x - mDrawableSize.getWidth() ) {
-				repeatYdraw( mDrawable, mPosition, Vector2f( startX - mPosition.x, mOffset.y ), mSize,
-							 mDrawableSize );
+				repeatYdraw( mDrawable, mPosition, Vector2f( startX - mPosition.x, mOffset.y ),
+							 mSize, mDrawableSize );
 				startX -= mDrawableSize.getWidth();
 			};
 			repeatYdraw( mDrawable, mPosition, mOffset, mSize, mDrawableSize );
 			startX = mPosition.x + mOffset.x + mDrawableSize.getWidth();
 			while ( startX < mPosition.x + mSize.getWidth() ) {
-				repeatYdraw( mDrawable, mPosition, Vector2f( startX - mPosition.x, mOffset.y ), mSize,
-							 mDrawableSize );
+				repeatYdraw( mDrawable, mPosition, Vector2f( startX - mPosition.x, mOffset.y ),
+							 mSize, mDrawableSize );
 				startX += mDrawableSize.getWidth();
 			};
 			break;

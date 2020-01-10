@@ -3,15 +3,9 @@
 
 namespace EE { namespace Maps {
 
-GameObject::GameObject(  const Uint32& Flags, MapLayer * Layer ) :
-	mFlags( Flags ),
-	mLayer( Layer )
-{
-}
+GameObject::GameObject( const Uint32& Flags, MapLayer* Layer ) : mFlags( Flags ), mLayer( Layer ) {}
 
-GameObject::~GameObject()
-{
-}
+GameObject::~GameObject() {}
 
 Uint32 GameObject::getType() const {
 	return GAMEOBJECT_TYPE_BASE;
@@ -54,7 +48,8 @@ bool GameObject::isRotated() const {
 }
 
 void GameObject::setRotated( bool rotated ) {
-	rotated ? setFlag( GObjFlags::GAMEOBJECT_ROTATE_90DEG ) : clearFlag( GObjFlags::GAMEOBJECT_ROTATE_90DEG );
+	rotated ? setFlag( GObjFlags::GAMEOBJECT_ROTATE_90DEG )
+			: clearFlag( GObjFlags::GAMEOBJECT_ROTATE_90DEG );
 }
 
 bool GameObject::isMirrored() const {
@@ -62,7 +57,8 @@ bool GameObject::isMirrored() const {
 }
 
 void GameObject::setMirrored( bool mirrored ) {
-	mirrored ? setFlag( GObjFlags::GAMEOBJECT_MIRRORED ) : clearFlag( GObjFlags::GAMEOBJECT_MIRRORED );
+	mirrored ? setFlag( GObjFlags::GAMEOBJECT_MIRRORED )
+			 : clearFlag( GObjFlags::GAMEOBJECT_MIRRORED );
 }
 
 bool GameObject::isFliped() const {
@@ -77,15 +73,14 @@ bool GameObject::isBlendAdd() const {
 	return 0 != ( mFlags & GObjFlags::GAMEOBJECT_BLEND_ADD );
 }
 
-void GameObject::setBlendAdd(bool blendAdd) {
-	blendAdd ? setFlag( GObjFlags::GAMEOBJECT_BLEND_ADD ) : clearFlag( GObjFlags::GAMEOBJECT_BLEND_ADD );
+void GameObject::setBlendAdd( bool blendAdd ) {
+	blendAdd ? setFlag( GObjFlags::GAMEOBJECT_BLEND_ADD )
+			 : clearFlag( GObjFlags::GAMEOBJECT_BLEND_ADD );
 }
 
-void GameObject::draw() {
-}
+void GameObject::draw() {}
 
-void GameObject::update( const Time & dt ) {
-}
+void GameObject::update( const Time& dt ) {}
 
 Vector2f GameObject::getPosition() const {
 	return Vector2f();
@@ -99,8 +94,7 @@ Vector2i GameObject::getTilePosition() const {
 	return Vector2i();
 }
 
-void GameObject::setTilePosition( Vector2i pos ) {
-}
+void GameObject::setTilePosition( Vector2i pos ) {}
 
 Sizei GameObject::getSize() {
 	return Sizei();
@@ -110,13 +104,13 @@ Uint32 GameObject::getDataId() {
 	return 0;
 }
 
-void GameObject::setDataId( Uint32 Id ){
-}
+void GameObject::setDataId( Uint32 Id ) {}
 
 RenderMode GameObject::getRenderModeFromFlags() {
 	RenderMode Render = RENDER_NORMAL;
 
-	if ( ( mFlags & GObjFlags::GAMEOBJECT_MIRRORED ) && ( mFlags & GObjFlags::GAMEOBJECT_FLIPED ) ) {
+	if ( ( mFlags & GObjFlags::GAMEOBJECT_MIRRORED ) &&
+		 ( mFlags & GObjFlags::GAMEOBJECT_FLIPED ) ) {
 		Render = RENDER_FLIPPED_MIRRORED;
 	} else if ( mFlags & GObjFlags::GAMEOBJECT_MIRRORED ) {
 		Render = RENDER_MIRROR;
@@ -131,12 +125,13 @@ BlendMode GameObject::getBlendModeFromFlags() {
 	return isBlendAdd() ? BlendMode( BlendMode::DstColor, BlendMode::One ) : BlendAlpha;
 }
 
-MapLayer * GameObject::getLayer() const {
+MapLayer* GameObject::getLayer() const {
 	return mLayer;
 }
 
 void GameObject::autoFixTilePos() {
-	if ( ( mFlags & GObjFlags::GAMEOBJECT_AUTO_FIX_TILE_POS ) && NULL != mLayer && mLayer->getType() == MAP_LAYER_TILED ) {
+	if ( ( mFlags & GObjFlags::GAMEOBJECT_AUTO_FIX_TILE_POS ) && NULL != mLayer &&
+		 mLayer->getType() == MAP_LAYER_TILED ) {
 		Vector2i CurPos = getTilePosition();
 
 		assignTilePos();
@@ -144,7 +139,7 @@ void GameObject::autoFixTilePos() {
 		Vector2i NewPos = getTilePosition();
 
 		if ( CurPos != NewPos ) {
-			TileMapLayer * TLayer = static_cast<TileMapLayer *> ( mLayer );
+			TileMapLayer* TLayer = static_cast<TileMapLayer*>( mLayer );
 
 			if ( TLayer->getGameObject( CurPos ) == this ) {
 				TLayer->moveTileObject( CurPos, NewPos );
@@ -154,7 +149,7 @@ void GameObject::autoFixTilePos() {
 }
 
 void GameObject::assignTilePos() {
-	TileMapLayer * TLayer = static_cast<TileMapLayer *> ( mLayer );
+	TileMapLayer* TLayer = static_cast<TileMapLayer*>( mLayer );
 
 	setTilePosition( TLayer->getTilePosFromPos( getPosition() ) );
 }
@@ -163,4 +158,4 @@ Float GameObject::getRotation() {
 	return isRotated() ? 90 : 0;
 }
 
-}}
+}} // namespace EE::Maps

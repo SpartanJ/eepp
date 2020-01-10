@@ -2,7 +2,7 @@
 
 namespace EE { namespace Physics {
 
-GearJoint::GearJoint( Body * a, Body * b, cpFloat phase, cpFloat ratio ) {
+GearJoint::GearJoint( Body* a, Body* b, cpFloat phase, cpFloat ratio ) {
 	mConstraint = cpGearJointNew( a->getBody(), b->getBody(), phase, ratio );
 	setData();
 }
@@ -27,4 +27,4 @@ void GearJoint::draw() {
 	// Not implemented
 }
 
-}}
+}} // namespace EE::Physics

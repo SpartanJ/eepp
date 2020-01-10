@@ -10,52 +10,53 @@ namespace EE { namespace Maps {
 class TileMap;
 
 class EE_API MapLightManager {
-	public:
-		typedef std::list<MapLight*> LightsList;
+  public:
+	typedef std::list<MapLight*> LightsList;
 
-		MapLightManager( TileMap * Map, bool ByVertex );
+	MapLightManager( TileMap* Map, bool ByVertex );
 
-		virtual ~MapLightManager();
+	virtual ~MapLightManager();
 
-		virtual void update();
+	virtual void update();
 
-		void addLight( MapLight * Light );
+	void addLight( MapLight* Light );
 
-		void removeLight( const Vector2f& OverPos );
+	void removeLight( const Vector2f& OverPos );
 
-		void removeLight( MapLight * Light );
+	void removeLight( MapLight* Light );
 
-		Uint32 getCount();
+	Uint32 getCount();
 
-		const Color * getTileColor( const Vector2i& TilePos );
+	const Color* getTileColor( const Vector2i& TilePos );
 
-		const Color * getTileColor( const Vector2i& TilePos, const Uint32& Vertex );
+	const Color* getTileColor( const Vector2i& TilePos, const Uint32& Vertex );
 
-		Color getColorFromPos( const Vector2f& Pos );
+	Color getColorFromPos( const Vector2f& Pos );
 
-		const bool& isByVertex() const;
+	const bool& isByVertex() const;
 
-		LightsList& getLights();
+	LightsList& getLights();
 
-		MapLight * getLightOver( const Vector2f& OverPos, MapLight * LightCurrent = NULL );
-	protected:
-		TileMap *		mMap;
-		Int32			mNumVertex;
-		Color****		mTileColors;
-		LightsList		mLights;
-		bool			mIsByVertex;
+	MapLight* getLightOver( const Vector2f& OverPos, MapLight* LightCurrent = NULL );
 
-		void allocateColors();
+  protected:
+	TileMap* mMap;
+	Int32 mNumVertex;
+	Color**** mTileColors;
+	LightsList mLights;
+	bool mIsByVertex;
 
-		void deallocateColors();
+	void allocateColors();
 
-		void destroyLights();
+	void deallocateColors();
 
-		virtual void updateByVertex();
+	void destroyLights();
 
-		virtual void updateByTile();
+	virtual void updateByVertex();
+
+	virtual void updateByTile();
 };
 
-}}
+}} // namespace EE::Maps
 
 #endif

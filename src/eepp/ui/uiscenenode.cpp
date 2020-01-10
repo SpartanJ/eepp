@@ -422,7 +422,7 @@ void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles ) {
 					FontTrueType* font =
 						FontTrueType::New( String::trim( familyProp.getValue(), '"' ) );
 
-					IOStream * stream = VFS::instance()->getFileFromPath( path );
+					IOStream* stream = VFS::instance()->getFileFromPath( path );
 
 					font->loadFromStream( *stream );
 

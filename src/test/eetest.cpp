@@ -1,6 +1,6 @@
 #include "eetest.hpp"
 
-Demo_Test::EETest * TestInstance = NULL;
+Demo_Test::EETest* TestInstance = NULL;
 
 static void mainLoop() {
 	TestInstance->update();
@@ -9,77 +9,70 @@ static void mainLoop() {
 namespace Demo_Test {
 
 class UIBlurredWindow : public UIWindow {
-	public:
-		static UIBlurredWindow * New( ShaderProgram * blurShader ) {
-			return eeNew( UIBlurredWindow, ( blurShader ) );
-		}
+  public:
+	static UIBlurredWindow* New( ShaderProgram* blurShader ) {
+		return eeNew( UIBlurredWindow, ( blurShader ) );
+	}
 
-		explicit UIBlurredWindow( ShaderProgram * blurShader ) :
-			UIWindow(),
-			mBlurShader( blurShader ),
-			mFboBlur( NULL )
-		{
-		}
+	explicit UIBlurredWindow( ShaderProgram* blurShader ) :
+		UIWindow(), mBlurShader( blurShader ), mFboBlur( NULL ) {}
 
-		~UIBlurredWindow()
-		{
-			eeSAFE_DELETE( mFboBlur );
-		}
+	~UIBlurredWindow() { eeSAFE_DELETE( mFboBlur ); }
 
-	protected:
-		ShaderProgram * mBlurShader;
-		FrameBuffer * mFboBlur;
+  protected:
+	ShaderProgram* mBlurShader;
+	FrameBuffer* mFboBlur;
 
-		void preDraw()
-		{
-			if ( !ownsFrameBuffer() )
-				return;
+	void preDraw() {
+		if ( !ownsFrameBuffer() )
+			return;
 
-			FrameBuffer * curFBO = getSceneNode()->getFrameBuffer();
+		FrameBuffer* curFBO = getSceneNode()->getFrameBuffer();
 
-			if ( NULL != curFBO && NULL != curFBO->getTexture() && NULL != mBlurShader ) {
-				static int fboDiv = 2;
+		if ( NULL != curFBO && NULL != curFBO->getTexture() && NULL != mBlurShader ) {
+			static int fboDiv = 2;
 
-				if ( NULL == mFboBlur ) {
-					mFboBlur = FrameBuffer::New( mSize.x / fboDiv, mSize.y / fboDiv );
-				} else if ( mFboBlur->getSize().getWidth() != (int)( mSize.x / fboDiv ) || mFboBlur->getSize().getHeight() != (int)( mSize.y / fboDiv ) ) {
-					mFboBlur->resize( mSize.x / fboDiv, mSize.y / fboDiv );
-				}
-
-				TextureRegion textureRegion( curFBO->getTexture()->getTextureId(),
-									   Rect(	mScreenPos.x, mScreenPos.y,
-												mScreenPos.x + mSize.x, mScreenPos.y + mSize.y
-				) );
-
-				RGB cc = getSceneNode()->getWindow()->getClearColor();
-				mFboBlur->setClearColor( ColorAf( cc.r / 255.f, cc.g / 255.f, cc.b / 255.f, 0 ) );
-				mFboBlur->bind();
-				mFboBlur->clear();
-				textureRegion.draw(Vector2f(0,0),mFboBlur->getSizef());
-				mFboBlur->unbind();
-
-				mBlurShader->bind();
-
-				mBlurShader->setUniform( "radius", 16.f );
-				mBlurShader->setUniform( "dir", (Int32)0 );
-				mBlurShader->setUniform( "textureRes", mFboBlur->getSizef() );
-
-				mFboBlur->bind();
-				mFboBlur->getTexture()->draw(Vector2f(0,0),mFboBlur->getSizef());
-				mFboBlur->unbind();
-
-				mBlurShader->setUniform( "dir", (Int32)1 );
-				mBlurShader->setUniform( "textureRes", mFboBlur->getSizef() );
-
-				mFboBlur->bind();
-				mFboBlur->getTexture()->draw(Vector2f(0,0),mFboBlur->getSizef());
-				mFboBlur->unbind();
-
-				mBlurShader->unbind();
-
-				mFboBlur->getTexture()->draw(Vector2f(mScreenPos.x,mScreenPos.y),Sizef(mSize.x,mSize.y));
+			if ( NULL == mFboBlur ) {
+				mFboBlur = FrameBuffer::New( mSize.x / fboDiv, mSize.y / fboDiv );
+			} else if ( mFboBlur->getSize().getWidth() != (int)( mSize.x / fboDiv ) ||
+						mFboBlur->getSize().getHeight() != (int)( mSize.y / fboDiv ) ) {
+				mFboBlur->resize( mSize.x / fboDiv, mSize.y / fboDiv );
 			}
+
+			TextureRegion textureRegion( curFBO->getTexture()->getTextureId(),
+										 Rect( mScreenPos.x, mScreenPos.y, mScreenPos.x + mSize.x,
+											   mScreenPos.y + mSize.y ) );
+
+			RGB cc = getSceneNode()->getWindow()->getClearColor();
+			mFboBlur->setClearColor( ColorAf( cc.r / 255.f, cc.g / 255.f, cc.b / 255.f, 0 ) );
+			mFboBlur->bind();
+			mFboBlur->clear();
+			textureRegion.draw( Vector2f( 0, 0 ), mFboBlur->getSizef() );
+			mFboBlur->unbind();
+
+			mBlurShader->bind();
+
+			mBlurShader->setUniform( "radius", 16.f );
+			mBlurShader->setUniform( "dir", (Int32)0 );
+			mBlurShader->setUniform( "textureRes", mFboBlur->getSizef() );
+
+			mFboBlur->bind();
+			mFboBlur->getTexture()->draw( Vector2f( 0, 0 ), mFboBlur->getSizef() );
+			mFboBlur->unbind();
+
+			mBlurShader->setUniform( "dir", (Int32)1 );
+			mBlurShader->setUniform( "textureRes", mFboBlur->getSizef() );
+
+			mFboBlur->bind();
+			mFboBlur->getTexture()->draw( Vector2f( 0, 0 ), mFboBlur->getSizef() );
+			mFboBlur->unbind();
+
+			mBlurShader->unbind();
+
+			mFboBlur->getTexture()->draw( Vector2f( mScreenPos.x, mScreenPos.y ),
+										  Sizef( mSize.x, mSize.y ) );
 		}
+	}
 };
 
 void EETest::init() {
@@ -88,58 +81,56 @@ void EETest::init() {
 	Log::instance()->setLiveWrite( true );
 	Log::instance()->setConsoleOutput( true );
 
-	mTranslator.loadFromString(
-		"<resources language='en'>"
-		"		<string name='app_name'>eepp</string>"
-		"		<string name='formatted'>Test %d %s</string>"
-		"		<string name='test_item'>Test Item 2</string>"
-		"</resources>"
-	);
+	mTranslator.loadFromString( "<resources language='en'>"
+								"		<string name='app_name'>eepp</string>"
+								"		<string name='formatted'>Test %d %s</string>"
+								"		<string name='test_item'>Test Item 2</string>"
+								"</resources>" );
 
-	DrawBack 			= false;
-	MultiViewportMode 	= false;
+	DrawBack = false;
+	MultiViewportMode = false;
 
-	side = aside 		= true;
-	ShowParticles 		= true;
-	scale 				= 1.0f;
-	Ang = ang = alpha 	= 0;
-	lasttick 			= 0;
-	AnimVal 			= 0.5f;
-	mLastFPSLimit 		= 0;
-	mWasMinimized 		= false;
+	side = aside = true;
+	ShowParticles = true;
+	scale = 1.0f;
+	Ang = ang = alpha = 0;
+	lasttick = 0;
+	AnimVal = 0.5f;
+	mLastFPSLimit = 0;
+	mWasMinimized = false;
 
-	mAxisX				= 0;
-	mAxisY				= 0;
-	mCurDemo			= eeINDEX_NOT_FOUND;
-	mMapEditor			= NULL;
-	mETGEditor			= NULL;
-	mColorPicker		= NULL;
-	Mus					= NULL;
-	mUIWindow			= NULL;
-	mTerrainBut			= NULL;
-	mShowMenu			= NULL;
-	mTerrainUp			= true;
-	relLay				= NULL;
+	mAxisX = 0;
+	mAxisY = 0;
+	mCurDemo = eeINDEX_NOT_FOUND;
+	mMapEditor = NULL;
+	mETGEditor = NULL;
+	mColorPicker = NULL;
+	Mus = NULL;
+	mUIWindow = NULL;
+	mTerrainBut = NULL;
+	mShowMenu = NULL;
+	mTerrainUp = true;
+	relLay = NULL;
 
-	MyPath 				= "assets/";
+	MyPath = "assets/";
 
 	IniFile Ini( MyPath + "ee.ini" );
 
-	PartsNum			= Ini.getValueI( "EEPP", "ParticlesNum", 1000 );
-	mUseShaders			= Ini.getValueB( "EEPP", "UseShaders", false );
-	mJoyEnabled			= Ini.getValueB( "EEPP", "JoystickEnabled", false );
-	mDebugUI			= Ini.getValueB( "EEPP", "DebugUI", false );
+	PartsNum = Ini.getValueI( "EEPP", "ParticlesNum", 1000 );
+	mUseShaders = Ini.getValueB( "EEPP", "UseShaders", false );
+	mJoyEnabled = Ini.getValueB( "EEPP", "JoystickEnabled", false );
+	mDebugUI = Ini.getValueB( "EEPP", "DebugUI", false );
 
 #if defined( EE_PLATFORM_TOUCH )
 	mJoyEnabled = false;
 #endif
 
-	mMusEnabled			= Ini.getValueB( "EEPP", "Music", false );
-	mLastFPSLimit		= Ini.getValueI( "EEPP", "FrameRateLimit", 0 );
-	Int32 StartScreen	= Ini.getValueI( "EEPP", "StartScreen", 5 );
+	mMusEnabled = Ini.getValueB( "EEPP", "Music", false );
+	mLastFPSLimit = Ini.getValueI( "EEPP", "FrameRateLimit", 0 );
+	Int32 StartScreen = Ini.getValueI( "EEPP", "StartScreen", 5 );
 
-	WindowSettings WinSettings	= EE->createWindowSettings( &Ini );
-	ContextSettings ConSettings	= EE->createContextSettings( &Ini );
+	WindowSettings WinSettings = EE->createWindowSettings( &Ini );
+	ContextSettings ConSettings = EE->createContextSettings( &Ini );
 
 	mWindow = EE->createWindow( WinSettings, ConSettings );
 
@@ -150,13 +141,13 @@ void EETest::init() {
 		mWindow->pushResizeCallback( cb::Make1( this, &EETest::onWindowResize ) );
 
 		TF = TextureFactory::instance();
-		TF->allocate(40);
+		TF->allocate( 40 );
 
-		Log		= Log::instance();
-		KM		= mWindow->getInput();
-		JM		= KM->getJoystickManager();
+		Log = Log::instance();
+		KM = mWindow->getInput();
+		JM = KM->getJoystickManager();
 
-		PS.resize(5);
+		PS.resize( 5 );
 
 		Scenes[0] = cb::Make0( this, &EETest::physicsUpdate );
 		Scenes[1] = cb::Make0( this, &EETest::screen1 );
@@ -183,14 +174,14 @@ void EETest::init() {
 		}
 
 		WP.setType( Ease::QuarticInOut );
-		WP.add( Vector2f(0,0), Milliseconds(100) );
-		WP.add( Vector2f(800,0), Milliseconds(100) );
-		WP.add( Vector2f(0,0), Milliseconds(100) );
-		WP.add( Vector2f(1024,768), Milliseconds(100) );
-		WP.add( Vector2f(0,600), Milliseconds(100) );
-		WP.edit( 2, Vector2f(800,600), Milliseconds(100) );
+		WP.add( Vector2f( 0, 0 ), Milliseconds( 100 ) );
+		WP.add( Vector2f( 800, 0 ), Milliseconds( 100 ) );
+		WP.add( Vector2f( 0, 0 ), Milliseconds( 100 ) );
+		WP.add( Vector2f( 1024, 768 ), Milliseconds( 100 ) );
+		WP.add( Vector2f( 0, 600 ), Milliseconds( 100 ) );
+		WP.edit( 2, Vector2f( 800, 600 ), Milliseconds( 100 ) );
 		WP.erase( 3 );
-		WP.setLoop(true);
+		WP.setLoop( true );
 		WP.setDuration( Milliseconds( 5000 ) );
 		WP.start();
 
@@ -224,22 +215,24 @@ void EETest::init() {
 	} else {
 		Engine::destroySingleton();
 
-		exit(0);
+		exit( 0 );
 	}
 }
 
 void EETest::createUIThemeTextureAtlas() {
-	#if !defined( EE_DEBUG ) || defined( EE_GLES )
+#if !defined( EE_DEBUG ) || defined( EE_GLES )
 	return;
-	#endif
+#endif
 
 	std::string tgpath( MyPath + "ui/" + mThemeName );
 	std::string Path( MyPath + "ui/" + mThemeName );
 
 	if ( !FileSystem::fileExists( tgpath + EE_TEXTURE_ATLAS_EXTENSION ) ) {
 		PixelDensitySize PD = PixelDensitySize::MDPI;
-		if ( mThemeName.find( "2x" ) != std::string::npos ) PD = PixelDensitySize::XHDPI;
-		else if  ( mThemeName.find( "1.5x" ) != std::string::npos ) PD = PixelDensitySize::HDPI;
+		if ( mThemeName.find( "2x" ) != std::string::npos )
+			PD = PixelDensitySize::XHDPI;
+		else if ( mThemeName.find( "1.5x" ) != std::string::npos )
+			PD = PixelDensitySize::HDPI;
 
 		TexturePacker tp( 2048, 2048, PD, true, false, 2 );
 		tp.addTexturesPath( Path );
@@ -261,8 +254,8 @@ void EETest::loadFonts() {
 }
 
 void EETest::onFontLoaded() {
-	TTF		= FontManager::instance()->getByName( "NotoSans-Regular" );
-	Font * DBSM	= FontManager::instance()->getByName( "DejaVuSansMono" );
+	TTF = FontManager::instance()->getByName( "NotoSans-Regular" );
+	Font* DBSM = FontManager::instance()->getByName( "DejaVuSansMono" );
 
 	eePRINTL( "Fonts loading time: %4.3f ms.", mFTE.getElapsed().asMilliseconds() );
 
@@ -272,18 +265,24 @@ void EETest::onFontLoaded() {
 	Con.create( DBSM, true );
 	Con.ignoreCharOnPrompt( 186 ); // 'º'
 
-	mBuda = String::fromUtf8( "El mono ve el pez en el agua y sufre. Piensa que su mundo es el único que existe, el mejor, el real. Sufre porque es bueno y tiene compasión, lo ve y piensa: \"Pobre se está ahogando no puede respirar\". Y lo saca, lo saca y se queda tranquilo, por fin lo salvé. Pero el pez se retuerce de dolor y muere. Por eso te mostré el sueño, es imposible meter el mar en tu cabeza, que es un balde." );
+	mBuda = String::fromUtf8(
+		"El mono ve el pez en el agua y sufre. Piensa que su mundo es el único que existe, el "
+		"mejor, el real. Sufre porque es bueno y tiene compasión, lo ve y piensa: \"Pobre se está "
+		"ahogando no puede respirar\". Y lo saca, lo saca y se queda tranquilo, por fin lo salvé. "
+		"Pero el pez se retuerce de dolor y muere. Por eso te mostré el sueño, es imposible meter "
+		"el mar en tu cabeza, que es un balde." );
 
 	createUI();
 
-	mEEText.create( TTF, "Entropia Engine++\nCTRL + Number to change Demo Screen\nRight click to see the PopUp Menu" );
+	mEEText.create( TTF, "Entropia Engine++\nCTRL + Number to change Demo Screen\nRight click to "
+						 "see the PopUp Menu" );
 	mEEText.setOutlineThickness( 1 );
-	mEEText.setOutlineColor( Color(0,0,0,255) );
+	mEEText.setOutlineColor( Color( 0, 0, 0, 255 ) );
 	mFBOText.create( TTF, "This is a VBO\nInside of a FBO" );
 	mFBOText.setOutlineThickness( 1 );
-	mFBOText.setOutlineColor( Color(0,0,0,255) );
+	mFBOText.setOutlineColor( Color( 0, 0, 0, 255 ) );
 
-	mInfoText.create( DBSM, "", Color(100,100,100,255) );
+	mInfoText.create( DBSM, "", Color( 100, 100, 100, 255 ) );
 	mInfoText.setOutlineThickness( 1 );
 }
 
@@ -294,15 +293,17 @@ void EETest::createShaders() {
 
 	if ( mUseShaders ) {
 		mBlurFactor = 0.01f;
-		mShaderProgram = ShaderProgram::New( MyPath + "shaders/blur.vert", MyPath + "shaders/blur.frag", "blur" );
-		mBlur = ShaderProgram::New( MyPath + "shaders/blur.vert", MyPath + "shaders/gaussian_blur.frag", "gaussian_blur" );
+		mShaderProgram = ShaderProgram::New( MyPath + "shaders/blur.vert",
+											 MyPath + "shaders/blur.frag", "blur" );
+		mBlur = ShaderProgram::New( MyPath + "shaders/blur.vert",
+									MyPath + "shaders/gaussian_blur.frag", "gaussian_blur" );
 	}
 }
 
-void EETest::onWinMouseUp( const Event * Event ) {
-	const MouseEvent * MEvent = reinterpret_cast<const MouseEvent*> ( Event );
+void EETest::onWinMouseUp( const Event* Event ) {
+	const MouseEvent* MEvent = reinterpret_cast<const MouseEvent*>( Event );
 
-	Node * CtrlAnim;
+	Node* CtrlAnim;
 
 	if ( Event->getNode()->isType( UI_TYPE_WINDOW ) ) {
 		CtrlAnim = reinterpret_cast<Node*>( Event->getNode() );
@@ -317,8 +318,8 @@ void EETest::onWinMouseUp( const Event * Event ) {
 	}
 }
 
-void EETest::onShowMenu( const Event * Event ) {
-	UIPushButton * PB = static_cast<UIPushButton*>( Event->getNode() );
+void EETest::onShowMenu( const Event* Event ) {
+	UIPushButton* PB = static_cast<UIPushButton*>( Event->getNode() );
 
 	if ( Menu->show() ) {
 		Vector2f pos( Vector2f::Zero );
@@ -329,17 +330,17 @@ void EETest::onShowMenu( const Event * Event ) {
 	}
 }
 
-void EETest::onWindowResize(EE::Window::Window * win) {
+void EETest::onWindowResize( EE::Window::Window* win ) {
 	Map.setViewSize( win->getSize().asFloat() );
 }
 
 static std::vector<String> getTestStringArr() {
 	Int32 wsize = 15;
-	std::vector<String> str(wsize);
+	std::vector<String> str( wsize );
 
 	if ( wsize ) {
 		for ( Int32 i = 1; i <= wsize; i++ )
-			str[i-1] = "Test ListBox " + String::toStr(i) + " testing it right now!";
+			str[i - 1] = "Test ListBox " + String::toStr( i ) + " testing it right now!";
 	}
 
 	return str;
@@ -349,10 +350,13 @@ void EETest::createBaseUI() {
 	std::vector<String> str = getTestStringArr();
 
 	// ActionManager test
-	UINode::New()->setSize(10,10)->runAction( Actions::Fade::New( 0, 255, Seconds(5) ) )->close();
+	UINode::New()
+		->setSize( 10, 10 )
+		->runAction( Actions::Fade::New( 0, 255, Seconds( 5 ) ) )
+		->close();
 
 	/**/
-	UIWindow * tWin = UIWindow::New();
+	UIWindow* tWin = UIWindow::New();
 	tWin->setSize( 530, 405 )->setPosition( 320, 240 );
 	UIWindow::StyleConfig windowStyleConfig = tWin->getStyleConfig();
 	windowStyleConfig.WinFlags = UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER;
@@ -368,31 +372,36 @@ void EETest::createBaseUI() {
 	tWin->addEventListener( Event::MouseUp, cb::Make1( this, &EETest::onWinMouseUp ) );
 	C->addEventListener( Event::MouseUp, cb::Make1( this, &EETest::onWinMouseUp ) );
 
-	UISprite * sprite = UISprite::New();
+	UISprite* sprite = UISprite::New();
 	sprite->setFlags( UI_AUTO_SIZE );
 	sprite->setSprite( Sprite::New( "gn" ) );
 	sprite->setParent( C );
 	sprite->setPosition( 160, 100 );
 	sprite->setIsSpriteOwner( true );
 
-	UITextView * Text = UITextView::New();
-	Text->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::Fixed )->setHorizontalAlign( UI_HALIGN_RIGHT )->setVerticalAlign( UI_VALIGN_TOP )->setParent( C )->setEnabled( false )->setSize( 320, 240 );
+	UITextView* Text = UITextView::New();
+	Text->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::Fixed )
+		->setHorizontalAlign( UI_HALIGN_RIGHT )
+		->setVerticalAlign( UI_VALIGN_TOP )
+		->setParent( C )
+		->setEnabled( false )
+		->setSize( 320, 240 );
 	Text->setText( "Turn around\nJust Turn Around\nAround!" );
 
 	UITextInput::New()->setParent( C )->setPosition( 20, 216 )->setSize( 200, 0 );
 
-	UIPushButton * Button = UIPushButton::New();
+	UIPushButton* Button = UIPushButton::New();
 	Button->setParent( C )->setPosition( 225, 215 )->setSize( 90, 0 );
 	Button->setIcon( mTheme->getIconByName( "ok" ) );
 	Button->setText( "Click Me" );
 	Button->addEventListener( Event::MouseClick, cb::Make1( this, &EETest::onButtonClick ) );
 	Button->setTooltipText( "Click and see what happens..." );
 
-	UICheckBox * Checkbox = UICheckBox::New();
+	UICheckBox* Checkbox = UICheckBox::New();
 	Checkbox->setParent( C )->setPosition( 130, 20 )->setSize( 80, 22 );
 	Checkbox->setText( "Check Me" );
 
-	UIRadioButton * RadioButton = UIRadioButton::New();
+	UIRadioButton* RadioButton = UIRadioButton::New();
 	RadioButton->setParent( C )->setPosition( 130, 40 )->setSize( 80, 22 );
 	RadioButton->setText( "Check Me" );
 
@@ -401,14 +410,27 @@ void EETest::createBaseUI() {
 	RadioButton->setText( "Check Me 2" );
 
 	mSlider = UISlider::New();
-	mSlider->setOrientation( UIOrientation::Horizontal )->setParent( C )->setPosition( 220, 80 )->setSize( 80, 24 );
-	mSlider->addEventListener( Event::OnValueChange, cb::Make1( this, &EETest::onSliderValueChange ) );
+	mSlider->setOrientation( UIOrientation::Horizontal )
+		->setParent( C )
+		->setPosition( 220, 80 )
+		->setSize( 80, 24 );
+	mSlider->addEventListener( Event::OnValueChange,
+							   cb::Make1( this, &EETest::onSliderValueChange ) );
 
-	UISlider::New()->setOrientation( UIOrientation::Vertical )->setParent( C )->setPosition( 40, 110 )->setSize( 24, 80 );
+	UISlider::New()
+		->setOrientation( UIOrientation::Vertical )
+		->setParent( C )
+		->setPosition( 40, 110 )
+		->setSize( 24, 80 );
 
-	UISlider::New()->setOrientation( UIOrientation::Horizontal )->setParent( C )->setPosition( 60, 110 )->setSize( 80, 24 );
+	UISlider::New()
+		->setOrientation( UIOrientation::Horizontal )
+		->setParent( C )
+		->setPosition( 60, 110 )
+		->setSize( 80, 24 );
 
-	UISpinBox::New()->setAllowOnlyNumbers( true )->setParent( C )->setPosition( 80, 150 )->setSize( 80, 24 );
+	UISpinBox::New()->setAllowOnlyNumbers( true )->setParent( C )->setPosition( 80, 150 )->setSize(
+		80, 24 );
 
 	mScrollBar = UIScrollBar::New();
 	mScrollBar->setParent( C )->setSize( 0, 240 );
@@ -427,7 +449,7 @@ void EETest::createBaseUI() {
 	mListBox->setFlags( UI_TOUCH_DRAG_ENABLED );
 	mListBox->addListBoxItems( str );
 
-	UIDropDownList * dropDownList = UIDropDownList::New();
+	UIDropDownList* dropDownList = UIDropDownList::New();
 	dropDownList->setParent( C )->setPosition( 20, 50 )->setSize( 100, 21 );
 	dropDownList->getListBox()->setFlags( UI_TOUCH_DRAG_ENABLED );
 	dropDownList->setMaxNumVisibleItems( 4 );
@@ -445,32 +467,32 @@ void EETest::createBaseUI() {
 	dropDownList->getListBox()->addListBoxItems( combostrs );
 	dropDownList->getListBox()->setSelected( 0 );
 
-	UIComboBox * comboBox = UIComboBox::New();
-	comboBox->setParent( C )->setPosition( 20, 80 )->setSize(  100, 1 );
+	UIComboBox* comboBox = UIComboBox::New();
+	comboBox->setParent( C )->setPosition( 20, 80 )->setSize( 100, 1 );
 	comboBox->getListBox()->addListBoxItems( combostrs );
 	comboBox->getListBox()->setSelected( 0 );
 
-	UITextEdit * TextEdit = UITextEdit::New();
+	UITextEdit* TextEdit = UITextEdit::New();
 	TextEdit->setFlags( UI_WORD_WRAP );
 	TextEdit->setParent( C )->setPosition( 5, 245 )->setSize( 315, 130 );
 	TextEdit->setText( mBuda );
 
-	UITable * genGrid = UITable::New();
+	UITable* genGrid = UITable::New();
 	genGrid->setSmoothScroll( true )->setFlags( UI_TOUCH_DRAG_ENABLED );
 	genGrid->setParent( C )->setPosition( 325, 245 )->setSize( 200, 130 );
 	genGrid->setCollumnsCount( 3 )->setRowHeight( 24 );
 
 	for ( Uint32 i = 0; i < 15; i++ ) {
-		UITableCell * Cell			= UITableCell::New();
-		UITextView * TxtBox			= UITextView::New();
-		UITextInput * TxtInput		= UITextInput::New();
-		UIImage * TxtGfx			= UIImage::New();
+		UITableCell* Cell = UITableCell::New();
+		UITextView* TxtBox = UITextView::New();
+		UITextInput* TxtInput = UITextInput::New();
+		UIImage* TxtGfx = UIImage::New();
 
 		Cell->setParent( genGrid->getContainer() );
 
 		TxtGfx->setVerticalAlign( UI_VALIGN_CENTER );
 		TxtGfx->setDrawable( mTheme->getIconByName( "ok" ) );
-		TxtBox->setText( "Test " + String::toStr( i+1 ) );
+		TxtBox->setText( "Test " + String::toStr( i + 1 ) );
 
 		Cell->setCell( 0, TxtBox );
 		Cell->setCell( 1, TxtGfx );
@@ -483,12 +505,12 @@ void EETest::createBaseUI() {
 	genGrid->setCollumnWidth( 1, 24 );
 	genGrid->setCollumnWidth( 2, 100 );
 
-	UIWidget * w = UIWidget::New();
+	UIWidget* w = UIWidget::New();
 	w->setParent( C )->setSize( 20, 20 )->setPosition( 260, 130 );
 	w->setBackgroundColor( Color::Green );
 	w->setRotation( 45 );
-	//w->setBackgroundColor( UIState::StateFlagHover, Color::Yellow );
-	//w->setBackgroundColor( UIState::StateFlagPressed, Color::Red );
+	// w->setBackgroundColor( UIState::StateFlagHover, Color::Yellow );
+	// w->setBackgroundColor( UIState::StateFlagPressed, Color::Red );
 
 	C = C->getParent()->asType<UINode>();
 
@@ -514,13 +536,13 @@ void EETest::createBaseUI() {
 	Menu->add( "Show Window 2" );
 	Menu->addCheckBox( "Multi Viewport" );
 
-	UIPopUpMenu * Menu3 = UIPopUpMenu::New();
+	UIPopUpMenu* Menu3 = UIPopUpMenu::New();
 	Menu3->add( "Hello World 1" );
 	Menu3->add( "Hello World 2" );
 	Menu3->add( "Hello World 3" );
 	Menu3->add( "Hello World 4" );
 
-	UIPopUpMenu * Menu2 = UIPopUpMenu::New();
+	UIPopUpMenu* Menu2 = UIPopUpMenu::New();
 	Menu2->add( "Test 1" );
 	Menu2->add( "Test 2" );
 	Menu2->add( "Test 3" );
@@ -528,21 +550,25 @@ void EETest::createBaseUI() {
 	Menu2->addSubMenu( "Hello World", NULL, Menu3 );
 
 	Menu->addSeparator();
-	Menu->addSubMenu( "Sub-Menu", NULL, Menu2 ) ;
+	Menu->addSubMenu( "Sub-Menu", NULL, Menu2 );
 
 	Menu->addSeparator();
 	Menu->add( "Quit" );
 
 	Menu->addEventListener( Event::OnItemClicked, cb::Make1( this, &EETest::onItemClick ) );
-	Menu->getItem( "Quit" )->addEventListener( Event::MouseUp, cb::Make1( this, &EETest::onQuitClick ) );
-	SceneManager::instance()->getUISceneNode()->addEventListener( Event::MouseClick, cb::Make1( this, &EETest::onMainClick ) );
+	Menu->getItem( "Quit" )->addEventListener( Event::MouseUp,
+											   cb::Make1( this, &EETest::onQuitClick ) );
+	SceneManager::instance()->getUISceneNode()->addEventListener(
+		Event::MouseClick, cb::Make1( this, &EETest::onMainClick ) );
 
 #ifdef EE_PLATFORM_TOUCH
 	UISkin nSkin( "button-te" );
-	nSkin.setStateDrawable( UIState::getStateNumber("normal"),
-							TF->getTexture( TF->loadFromFile( MyPath + "sprites/button-te_normal.png" ) ) );
-	nSkin.setStateDrawable( UIState::getStateNumber("pressed"),
-							TF->getTexture( TF->loadFromFile( MyPath + "sprites/button-te_mdown.png" ) ) );
+	nSkin.setStateDrawable(
+		UIState::getStateNumber( "normal" ),
+		TF->getTexture( TF->loadFromFile( MyPath + "sprites/button-te_normal.png" ) ) );
+	nSkin.setStateDrawable(
+		UIState::getStateNumber( "pressed" ),
+		TF->getTexture( TF->loadFromFile( MyPath + "sprites/button-te_mdown.png" ) ) );
 	Sizef screenSize = SceneManager::instance()->getUISceneNode()->getSize();
 
 	mShowMenu = UIPushButton::New();
@@ -551,8 +577,8 @@ void EETest::createBaseUI() {
 	Sizef skinSize = mShowMenu->getSkinSize();
 
 	mShowMenu->setSize( skinSize )
-			->setPosition( screenSize.getWidth() - skinSize.getWidth() - 40,
-						   screenSize.getHeight() - skinSize.getHeight() - 10 );
+		->setPosition( screenSize.getWidth() - skinSize.getWidth() - 40,
+					   screenSize.getHeight() - skinSize.getHeight() - 10 );
 
 	mShowMenu->setText( "Show Menu" );
 	mShowMenu->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
@@ -575,7 +601,7 @@ void EETest::createUI() {
 
 	eePRINTL( "Texture Atlas Loading Time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
 
-	UISceneNode * sceneNode = UISceneNode::New();
+	UISceneNode* sceneNode = UISceneNode::New();
 
 	sceneNode->enableDrawInvalidation();
 	sceneNode->enableFrameBuffer();
@@ -592,17 +618,20 @@ void EETest::createUI() {
 
 	SceneManager::instance()->add( sceneNode );
 
-	eePRINTL("Node size: %d", sizeof(Node));
-	eePRINTL("UINode size: %d", sizeof(UINode));
-	eePRINTL("UIWidget size: %d", sizeof(UIWidget));
+	eePRINTL( "Node size: %d", sizeof( Node ) );
+	eePRINTL( "UINode size: %d", sizeof( UINode ) );
+	eePRINTL( "UIWidget size: %d", sizeof( UIWidget ) );
 
-	mTheme = UITheme::load( mThemeName, mThemeName, MyPath + "ui/" + mThemeName + EE_TEXTURE_ATLAS_EXTENSION, TTF, MyPath + "ui/uitheme.css" );
+	mTheme = UITheme::load( mThemeName, mThemeName,
+							MyPath + "ui/" + mThemeName + EE_TEXTURE_ATLAS_EXTENSION, TTF,
+							MyPath + "ui/uitheme.css" );
 
 	sceneNode->combineStyleSheet( mTheme->getStyleSheet() );
 
-	UIThemeManager * uiThemeManager = sceneNode->getUIThemeManager();
+	UIThemeManager* uiThemeManager = sceneNode->getUIThemeManager();
 	uiThemeManager->add( mTheme );
-	uiThemeManager->setDefaultEffectsEnabled( true )->setDefaultFont( TTF )->setDefaultTheme( mThemeName );
+	uiThemeManager->setDefaultEffectsEnabled( true )->setDefaultFont( TTF )->setDefaultTheme(
+		mThemeName );
 
 	createBaseUI();
 	createNewUI();
@@ -616,35 +645,43 @@ void EETest::createNewUI() {
 	relLay = UIRelativeLayout::New();
 	relLay->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::MatchParent );
 
-	UIWidget * container = UIWidget::New();
+	UIWidget* container = UIWidget::New();
 	container->setSize( relLay->getSize() - 32.f );
 
-	UIScrollView * scrollView = UIScrollView::New();
+	UIScrollView* scrollView = UIScrollView::New();
 	scrollView->setTouchDragEnabled( true );
-	scrollView->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::MatchParent )->setParent( relLay );
-	scrollView->getContainer()->addEventListener( Event::MouseClick, cb::Make1( this, &EETest::onMainClick ) );
+	scrollView->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::MatchParent )
+		->setParent( relLay );
+	scrollView->getContainer()->addEventListener( Event::MouseClick,
+												  cb::Make1( this, &EETest::onMainClick ) );
 	container->setParent( scrollView );
 	container->addEventListener( Event::MouseClick, cb::Make1( this, &EETest::onMainClick ) );
 
-	UILoader * loader = UILoader::New();
+	UILoader* loader = UILoader::New();
 	loader->setOutlineThickness( 4 )
-			->setRadius( 25 )
-			->setPosition( 800, 0 )
-			->setSize( 100, 100 )
-			->setParent( container );
+		->setRadius( 25 )
+		->setPosition( 800, 0 )
+		->setSize( 100, 100 )
+		->setParent( container );
 	loader->setBackgroundColor( 0xCCCCCCCC );
 
-	UIRadioButton * ctrl = UIRadioButton::New();
+	UIRadioButton* ctrl = UIRadioButton::New();
 	ctrl->setId( "happy_radio" );
-	ctrl->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::Fixed )->setPosition( 50, 100 )->setSize( 200, 32 )->setParent( container );
+	ctrl->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::Fixed )
+		->setPosition( 50, 100 )
+		->setSize( 200, 32 )
+		->setParent( container );
 	ctrl->setBackgroundColor( 0x33333333 );
 	ctrl->setBorderColor( 0x66666666 );
 	ctrl->setText( "Happy RadioButon :)" );
 	ctrl->setFontColor( Color::Black );
 
-	UICheckBox * cbox = UICheckBox::New();
+	UICheckBox* cbox = UICheckBox::New();
 	cbox->setId( "happy_check" );
-	cbox->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::Fixed )->setPosition( 50, 164 )->setSize( 200, 32 )->setParent( container );
+	cbox->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::Fixed )
+		->setPosition( 50, 164 )
+		->setSize( 200, 32 )
+		->setParent( container );
 	cbox->setBackgroundColor( 0x33333333 );
 	cbox->setBorderColor( 0x66666666 );
 	cbox->setText( "Happy CheckBox :)" );
@@ -655,77 +692,89 @@ void EETest::createNewUI() {
 		#happy_radio {
 			textColor: black;
 		}
-	)css");
+	)css" );
 
-	UIImage * gfx = UIImage::New();
+	UIImage* gfx = UIImage::New();
 	gfx->setPosition( 50, 140 )->setSize( 16, 16 )->setParent( container );
 	gfx->setBackgroundColor( 0x33333333 );
 	gfx->setDrawable( mTheme->getIconByName( "ok" ) );
 
-	UISlider * slider = UISlider::New();
-	slider->setOrientation( UIOrientation::Horizontal )->setPosition( 50, 0 )->setSize( 100, 100 )->setParent( container );
+	UISlider* slider = UISlider::New();
+	slider->setOrientation( UIOrientation::Horizontal )
+		->setPosition( 50, 0 )
+		->setSize( 100, 100 )
+		->setParent( container );
 	slider->setAllowHalfSliderOut( true );
 
-	UISlider * slider2 = UISlider::New();
-	slider2->setOrientation( UIOrientation::Vertical )->setPosition( 100, 0 )->setSize( 100, 100 )->setParent( container );
+	UISlider* slider2 = UISlider::New();
+	slider2->setOrientation( UIOrientation::Vertical )
+		->setPosition( 100, 0 )
+		->setSize( 100, 100 )
+		->setParent( container );
 	slider2->setAllowHalfSliderOut( true );
 
-	UITextInput * textInput = UITextInput::New();
+	UITextInput* textInput = UITextInput::New();
 	textInput->setPosition( 50, 210 )->setSize( 200, 0 )->setParent( container );
 
-	UITextInputPassword * textInputPass = UITextInputPassword::New();
+	UITextInputPassword* textInputPass = UITextInputPassword::New();
 	textInputPass->setPosition( 50, 245 )->setSize( 200, 0 )->setParent( container );
 
-	UIListBox * listBox = UIListBox::New();
+	UIListBox* listBox = UIListBox::New();
 	listBox->setPosition( 50, 360 )->setSize( 200, 160 )->setParent( container );
 	listBox->addListBoxItems( str );
 
-	UIProgressBar * progressBar = UIProgressBar::New();
+	UIProgressBar* progressBar = UIProgressBar::New();
 	progressBar->setPosition( 50, 530 )->setSize( 200, 0 )->setParent( container );
 	progressBar->setProgress( 60.f );
 	progressBar->setDisplayPercent( true );
 
-	UIPushButton * pushButton = UIPushButton::New();
+	UIPushButton* pushButton = UIPushButton::New();
 	pushButton->setPosition( 50, 560 )->setSize( 200, 0 )->setParent( container );
 	pushButton->setText( "PushButton" );
 	pushButton->setIcon( mTheme->getIconByName( "ok" ) );
-	pushButton->addEventListener( Event::MouseClick, [&, pushButton] ( const Event* event ) {
+	pushButton->addEventListener( Event::MouseClick, [&, pushButton]( const Event* event ) {
 		createColorPicker( pushButton );
 	} );
 
-	UISprite * sprite = UISprite::New();
+	UISprite* sprite = UISprite::New();
 	sprite->setFlags( UI_AUTO_SIZE );
 	sprite->setPosition( 50, 600 )->setParent( container );
 	sprite->setSprite( &SP );
 
-	UIScrollBar * scrollBar = UIScrollBar::New();
-	scrollBar->setOrientation( UIOrientation::Horizontal )->setPosition( 200, 0 )->setSize( 100, 0 )->setParent( container );
+	UIScrollBar* scrollBar = UIScrollBar::New();
+	scrollBar->setOrientation( UIOrientation::Horizontal )
+		->setPosition( 200, 0 )
+		->setSize( 100, 0 )
+		->setParent( container );
 
-	UIScrollBar * scrollBar2 = UIScrollBar::New();
-	scrollBar2->setOrientation( UIOrientation::Vertical )->setPosition( 300, 0 )->setSize( 0, 100 )->setParent( container );
+	UIScrollBar* scrollBar2 = UIScrollBar::New();
+	scrollBar2->setOrientation( UIOrientation::Vertical )
+		->setPosition( 300, 0 )
+		->setSize( 0, 100 )
+		->setParent( container );
 
-	UIDropDownList * dropdownList = UIDropDownList::New();
+	UIDropDownList* dropdownList = UIDropDownList::New();
 	dropdownList->setPosition( 50, 320 )->setSize( 200, 100 )->setParent( container );
 	dropdownList->getListBox()->addListBoxItem( "Test 1" );
 	dropdownList->getListBox()->addListBoxItem( "Test 2" );
 	dropdownList->getListBox()->addListBoxItem( "Test 3" );
 
-	UIComboBox * comboBox = UIComboBox::New();
+	UIComboBox* comboBox = UIComboBox::New();
 	comboBox->setPosition( 50, 280 )->setSize( 200, 0 )->setParent( container );
 	comboBox->getListBox()->addListBoxItem( "Test 1234" );
 	comboBox->getListBox()->addListBoxItem( "Test 2345" );
 	comboBox->getListBox()->addListBoxItem( "Test 3567" );
 	comboBox->getListBox()->setSelected( 0 );
 
-	UITextEdit * textEdit = UITextEdit::New();
+	UITextEdit* textEdit = UITextEdit::New();
 	textEdit->setFlags( UI_WORD_WRAP );
 	textEdit->setPosition( 350, 4 )->setSize( 200, 200 )->setParent( container );
 	textEdit->setText( mBuda );
 
-	UISpinBox * spinBox = UISpinBox::New();
+	UISpinBox* spinBox = UISpinBox::New();
 	spinBox->setPosition( 350, 210 )->setSize( 200, 0 )->setParent( container );
 
-	UITable * genGrid = UITable::New();
+	UITable* genGrid = UITable::New();
 	genGrid->setSmoothScroll( true );
 	genGrid->setPosition( 350, 250 )->setSize( 200, 130 )->setParent( container );
 	genGrid->setCollumnsCount( 3 )->setRowHeight( 24 );
@@ -734,10 +783,10 @@ void EETest::createNewUI() {
 	genGrid->setCollumnWidth( 2, 100 );
 
 	for ( Uint32 i = 0; i < 15; i++ ) {
-		UITableCell * Cell			= UITableCell::New();
-		UITextView * TxtBox			= UITextView::New();
-		UITextInput * TxtInput		= UITextInput::New();
-		UIImage * TxtGfx				= UIImage::New();
+		UITableCell* Cell = UITableCell::New();
+		UITextView* TxtBox = UITextView::New();
+		UITextInput* TxtInput = UITextInput::New();
+		UIImage* TxtGfx = UIImage::New();
 		TxtGfx->unsetFlags( UI_AUTO_SIZE );
 
 		Cell->setParent( genGrid->getContainer() );
@@ -747,31 +796,34 @@ void EETest::createNewUI() {
 		Cell->setCell( 2, TxtInput );
 
 		TxtGfx->setDrawable( mTheme->getIconByName( "ok" ) );
-		TxtBox->setText( "Test " + String::toStr( i+1 ) );
+		TxtBox->setText( "Test " + String::toStr( i + 1 ) );
 
 		genGrid->add( Cell );
 	}
 
-	UITabWidget * TabWidget = UITabWidget::New();
+	UITabWidget* TabWidget = UITabWidget::New();
 	TabWidget->setPosition( 350, 530 )->setSize( 200, 64 )->setParent( container );
 
-	TabWidget->add( "Tab 1", UIWidget::New()->setThemeSkin( "winback" ), mTheme->getIconByName( "ok" ) );
-	TabWidget->add( "Tab 2", UIWidget::New()->setThemeSkin( "winback" ), mTheme->getIconByName( "go-up" ) );
-	TabWidget->add( "Tab 3", UIWidget::New()->setThemeSkin( "winback" ), mTheme->getIconByName( "add" ) );
+	TabWidget->add( "Tab 1", UIWidget::New()->setThemeSkin( "winback" ),
+					mTheme->getIconByName( "ok" ) );
+	TabWidget->add( "Tab 2", UIWidget::New()->setThemeSkin( "winback" ),
+					mTheme->getIconByName( "go-up" ) );
+	TabWidget->add( "Tab 3", UIWidget::New()->setThemeSkin( "winback" ),
+					mTheme->getIconByName( "add" ) );
 
-	UIWindow * MenuCont = UIWindow::New();
+	UIWindow* MenuCont = UIWindow::New();
 	MenuCont->setPosition( 350, 390 )->setSize( 200, 115 );
 
-	UIWinMenu * WinMenu = UIWinMenu::New();
+	UIWinMenu* WinMenu = UIWinMenu::New();
 	WinMenu->setParent( MenuCont->getContainer() );
 
-	UIPopUpMenu * PopMenu = UIPopUpMenu::New();
+	UIPopUpMenu* PopMenu = UIPopUpMenu::New();
 	PopMenu->add( "File" );
 	PopMenu->add( "Open" );
 	PopMenu->add( "Close" );
 	PopMenu->add( "Quit" );
 
-	UIPopUpMenu * PopMenu2 = UIPopUpMenu::New();
+	UIPopUpMenu* PopMenu2 = UIPopUpMenu::New();
 	PopMenu2->add( "Bla" );
 	PopMenu2->add( "Bla 2" );
 	PopMenu2->add( "Bla 3" );
@@ -780,68 +832,108 @@ void EETest::createNewUI() {
 	WinMenu->addMenuButton( "File", PopMenu );
 	WinMenu->addMenuButton( "Edit", PopMenu2 );
 
-	UIWindow * win = UIWindow::New();
+	UIWindow* win = UIWindow::New();
 	win->setSize( 500, 500 );
 	win->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_RESIZEABLE | UI_WIN_MAXIMIZE_BUTTON );
 
-	UILinearLayout * layWin = UILinearLayout::NewVertical();
+	UILinearLayout* layWin = UILinearLayout::NewVertical();
 	layWin->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::MatchParent );
 	layWin->setParent( win );
 
-	UILinearLayout * layPar = UILinearLayout::NewHorizontal();
+	UILinearLayout* layPar = UILinearLayout::NewHorizontal();
 	layPar->setParent( layWin );
 	layPar->setLayoutMargin( Rect( 10, 10, 10, 10 ) );
 	layPar->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent );
 	layPar->setLayoutGravity( UI_VALIGN_CENTER | UI_HALIGN_CENTER );
 	layPar->setBackgroundColor( 0x999999FF );
 
-	UILinearLayout * lay = UILinearLayout::NewVertical();
+	UILinearLayout* lay = UILinearLayout::NewVertical();
 	lay->setLayoutGravity( UI_HALIGN_CENTER | UI_VALIGN_CENTER );
 	lay->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent );
 	lay->setBackgroundColor( 0x333333FF );
 	lay->setLayoutWeight( 0.7f );
 
-	UITextView::New()->setText( "Text on test 1" )->setLayoutMargin( Rect( 10, 10, 10, 10 ) )->setLayoutSizeRules( LayoutSizeRule::WrapContent, LayoutSizeRule::WrapContent )->setParent( lay );
-	UITextView::New()->setText( "Text on test 2" )->setLayoutMargin( Rect( 10, 10, 10, 10 ) )->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )->setParent( lay );
-	UICheckBox::New()->setText( "Checkbox" )->setLayoutMargin( Rect( 10, 10, 10, 10 ) )->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )->setParent( lay );
-	UITextView::New()->setText( "Text on test 3" )->setLayoutMargin( Rect( 10, 10, 10, 10 ) )->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )->setParent( lay );
-	UITextView::New()->setText( "Text on test 4" )->setLayoutMargin( Rect( 10, 10, 10, 10 ) )->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )->setParent( lay );
-	UITextInput::New()->setLayoutMargin( Rect( 10, 10, 10, 10 ) )->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )->setParent( lay );
+	UITextView::New()
+		->setText( "Text on test 1" )
+		->setLayoutMargin( Rect( 10, 10, 10, 10 ) )
+		->setLayoutSizeRules( LayoutSizeRule::WrapContent, LayoutSizeRule::WrapContent )
+		->setParent( lay );
+	UITextView::New()
+		->setText( "Text on test 2" )
+		->setLayoutMargin( Rect( 10, 10, 10, 10 ) )
+		->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )
+		->setParent( lay );
+	UICheckBox::New()
+		->setText( "Checkbox" )
+		->setLayoutMargin( Rect( 10, 10, 10, 10 ) )
+		->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )
+		->setParent( lay );
+	UITextView::New()
+		->setText( "Text on test 3" )
+		->setLayoutMargin( Rect( 10, 10, 10, 10 ) )
+		->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )
+		->setParent( lay );
+	UITextView::New()
+		->setText( "Text on test 4" )
+		->setLayoutMargin( Rect( 10, 10, 10, 10 ) )
+		->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )
+		->setParent( lay );
+	UITextInput::New()
+		->setLayoutMargin( Rect( 10, 10, 10, 10 ) )
+		->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )
+		->setParent( lay );
 
-	UILinearLayout * lay2 = UILinearLayout::NewVertical();
+	UILinearLayout* lay2 = UILinearLayout::NewVertical();
 	lay2->setLayoutGravity( UI_HALIGN_CENTER | UI_VALIGN_CENTER );
 	lay2->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::WrapContent );
 	lay2->setBackgroundColor( Color::Black );
 	lay2->setLayoutWeight( 0.3f );
 
-	UIPushButton::New()->setText( "PushButton" )->setLayoutMargin( Rect( 10, 10, 10, 10 ) )->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )->setLayoutGravity( UI_VALIGN_CENTER )->setParent( lay2 );
-	UIListBox * lbox = UIListBox::New();
-	lbox->setLayoutMargin( Rect( 10, 10, 10, 10 ) )->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::Fixed )->setSize( 0, 105 )->setParent( lay2 );
-	lbox->addListBoxItems( { "This", "is", "a", "ListBox" } );
+	UIPushButton::New()
+		->setText( "PushButton" )
+		->setLayoutMargin( Rect( 10, 10, 10, 10 ) )
+		->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )
+		->setLayoutGravity( UI_VALIGN_CENTER )
+		->setParent( lay2 );
+	UIListBox* lbox = UIListBox::New();
+	lbox->setLayoutMargin( Rect( 10, 10, 10, 10 ) )
+		->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::Fixed )
+		->setSize( 0, 105 )
+		->setParent( lay2 );
+	lbox->addListBoxItems( {"This", "is", "a", "ListBox"} );
 	lay2->setParent( layPar );
 	lay->setParent( layPar );
 
-	UIDropDownList * drop = UIDropDownList::New();
-	drop->setLayoutMargin( Rect( 10, 10, 10, 10 ) )->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )->setParent( layWin );
-	drop->getListBox()->addListBoxItems( { "Car", "Bus", "Plane", "Submarine" } );
-	drop->getListBox()->setSelected(0);
+	UIDropDownList* drop = UIDropDownList::New();
+	drop->setLayoutMargin( Rect( 10, 10, 10, 10 ) )
+		->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )
+		->setParent( layWin );
+	drop->getListBox()->addListBoxItems( {"Car", "Bus", "Plane", "Submarine"} );
+	drop->getListBox()->setSelected( 0 );
 	win->show();
 
-	UIWindow * win2 = UIWindow::New();
+	UIWindow* win2 = UIWindow::New();
 	win2->setSize( 500, 500 );
 	win2->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_RESIZEABLE | UI_WIN_MAXIMIZE_BUTTON );
 
-	UIRelativeLayout * rlay = UIRelativeLayout::New();
+	UIRelativeLayout* rlay = UIRelativeLayout::New();
 	rlay->setParent( win2 );
 	rlay->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::MatchParent );
 	rlay->setLayoutMargin( Rect( 16, 16, 16, 16 ) );
 	rlay->setBackgroundColor( 0x333333CC );
 
-	UIPushButton * ofBut = UIPushButton::New();
-	ofBut->setText( "OK" )->setLayoutGravity( UI_VALIGN_BOTTOM | UI_HALIGN_RIGHT )->setLayoutMargin( Rect( 0, 0, 16, 16 ) )->setParent( rlay );
+	UIPushButton* ofBut = UIPushButton::New();
+	ofBut->setText( "OK" )
+		->setLayoutGravity( UI_VALIGN_BOTTOM | UI_HALIGN_RIGHT )
+		->setLayoutMargin( Rect( 0, 0, 16, 16 ) )
+		->setParent( rlay );
 
-	UIPushButton::New()->setText( "Cancel" )->setLayoutGravity( UI_VALIGN_BOTTOM | UI_HALIGN_RIGHT )->setLayoutMargin( Rect( 0, 0, 8, 0 ) )
-			->setLayoutPositionRule( LayoutPositionRule::LeftOf, ofBut )->setParent( rlay );
+	UIPushButton::New()
+		->setText( "Cancel" )
+		->setLayoutGravity( UI_VALIGN_BOTTOM | UI_HALIGN_RIGHT )
+		->setLayoutMargin( Rect( 0, 0, 8, 0 ) )
+		->setLayoutPositionRule( LayoutPositionRule::LeftOf, ofBut )
+		->setParent( rlay );
 
 	win2->show();
 
@@ -875,7 +967,7 @@ void EETest::createNewUI() {
 		</window>
 	)xml" );
 
-	UIGridLayout * gridLayout = NULL;
+	UIGridLayout* gridLayout = NULL;
 	SceneManager::instance()->getUISceneNode()->bind( "gridlayout", gridLayout );
 
 	if ( NULL != gridLayout ) {
@@ -883,12 +975,12 @@ void EETest::createNewUI() {
 
 		if ( textures.size() > 0 ) {
 			for ( std::size_t i = 0; i < textures.size(); i++ ) {
-				UIImage * img = UIImage::New();
-						img->setDrawable( textures[i] )
-						->setScaleType( UIScaleType::FitInside )
-						->setGravity( UI_HALIGN_CENTER | UI_VALIGN_CENTER )
-						->setEnabled( false )
-						->setParent( gridLayout );
+				UIImage* img = UIImage::New();
+				img->setDrawable( textures[i] )
+					->setScaleType( UIScaleType::FitInside )
+					->setGravity( UI_HALIGN_CENTER | UI_VALIGN_CENTER )
+					->setEnabled( false )
+					->setParent( gridLayout );
 
 				img->setBackgroundColor( Color::fromPointer( textures[i] ) );
 			}
@@ -903,10 +995,11 @@ void EETest::createMapEditor() {
 	if ( NULL != mMapEditor )
 		return;
 
-	UIWindow * tWin = UIWindow::New();
+	UIWindow* tWin = UIWindow::New();
 	tWin->setSizeWithDecoration( 1024, 768 )->setPosition( 0, 0 );
 	UIWindow::StyleConfig windowStyleConfig = tWin->getStyleConfig();
-	windowStyleConfig.WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER;
+	windowStyleConfig.WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON |
+								 UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER;
 	windowStyleConfig.MinWindowSize = Sizef( 1024, 768 );
 	tWin->setStyleConfig( windowStyleConfig );
 
@@ -920,10 +1013,11 @@ void EETest::onMapEditorClose() {
 }
 
 void EETest::createETGEditor() {
-	UIWindow * tWin = UIWindow::New();
+	UIWindow* tWin = UIWindow::New();
 	tWin->setSizeWithDecoration( 1024, 768 )->setPosition( 0, 0 );
 	UIWindow::StyleConfig windowStyleConfig = tWin->getStyleConfig();
-	windowStyleConfig.WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER;
+	windowStyleConfig.WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON |
+								 UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER;
 	windowStyleConfig.MinWindowSize = Sizef( 1024, 768 );
 	tWin->setStyleConfig( windowStyleConfig );
 
@@ -932,61 +1026,69 @@ void EETest::createETGEditor() {
 	tWin->show();
 }
 
-void EETest::createColorPicker( Node * node ) {
-	mColorPicker = Tools::UIColorPicker::NewModal( node, [&](Color color) {
-		UIMessageBox * msgBox = UIMessageBox::New( UIMessageBox::OK, color.toHexString() );
+void EETest::createColorPicker( Node* node ) {
+	mColorPicker = Tools::UIColorPicker::NewModal( node, [&]( Color color ) {
+		UIMessageBox* msgBox = UIMessageBox::New( UIMessageBox::OK, color.toHexString() );
 		msgBox->center();
 		msgBox->show();
 	} );
-	//mColorPicker->getUIWindow()->center();
+	// mColorPicker->getUIWindow()->center();
 }
 
 void EETest::createCommonDialog() {
-	UICommonDialog * CDialog = UICommonDialog::New();
+	UICommonDialog* CDialog = UICommonDialog::New();
 	CDialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON );
 	CDialog->addFilePattern( "*.hpp;*.cpp", true );
 	CDialog->center();
 	CDialog->show();
 }
 
-static void onWinDragStart( const Event * event ) {
-	UINode * ctrl = static_cast<UINode*>( event->getNode() );
-	UIWindow * window = ctrl->isType(UI_TYPE_WINDOW) ? static_cast<UIWindow*>( ctrl ) : static_cast<UIWindow*>( ctrl->getWindowContainer()->getParent() );
-	window->runAction( Actions::Fade::New( window->getAlpha(), 100, Seconds(0.2f) ) );
+static void onWinDragStart( const Event* event ) {
+	UINode* ctrl = static_cast<UINode*>( event->getNode() );
+	UIWindow* window = ctrl->isType( UI_TYPE_WINDOW )
+						   ? static_cast<UIWindow*>( ctrl )
+						   : static_cast<UIWindow*>( ctrl->getWindowContainer()->getParent() );
+	window->runAction( Actions::Fade::New( window->getAlpha(), 100, Seconds( 0.2f ) ) );
 }
 
-static void onWinDragStop( const Event * event ) {
-	UINode * ctrl = static_cast<UINode*>( event->getNode() );
-	UIWindow * window = ctrl->isType(UI_TYPE_WINDOW) ? static_cast<UIWindow*>( ctrl ) : static_cast<UIWindow*>( ctrl->getWindowContainer()->getParent() );
-	window->runAction( Actions::Fade::New( window->getAlpha(), 255, Seconds(0.2f) ) );
+static void onWinDragStop( const Event* event ) {
+	UINode* ctrl = static_cast<UINode*>( event->getNode() );
+	UIWindow* window = ctrl->isType( UI_TYPE_WINDOW )
+						   ? static_cast<UIWindow*>( ctrl )
+						   : static_cast<UIWindow*>( ctrl->getWindowContainer()->getParent() );
+	window->runAction( Actions::Fade::New( window->getAlpha(), 255, Seconds( 0.2f ) ) );
 }
 
 void EETest::createDecoratedWindow() {
 	mUIWindow = UIBlurredWindow::New( mBlur );
-	mUIWindow->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER )
-			->setMinWindowSize( 530, 350 )->setPosition( 200, 50 );
+	mUIWindow
+		->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_SHADOW |
+					   UI_WIN_FRAME_BUFFER )
+		->setMinWindowSize( 530, 350 )
+		->setPosition( 200, 50 );
 
 	mUIWindow->addEventListener( Event::OnWindowClose, cb::Make1( this, &EETest::onCloseClick ) );
 	mUIWindow->setTitle( "Test Window" );
 	mUIWindow->addEventListener( Event::OnDragStart, cb::Make1( &onWinDragStart ) );
 	mUIWindow->addEventListener( Event::OnDragStop, cb::Make1( &onWinDragStop ) );
 
-	UILinearLayout * lay = UILinearLayout::NewVertical();
+	UILinearLayout* lay = UILinearLayout::NewVertical();
 	lay->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::MatchParent );
 	lay->setParent( mUIWindow->getContainer() );
 
-	UIWinMenu * WinMenu = UIWinMenu::New();
-	WinMenu->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )->setParent( lay );
+	UIWinMenu* WinMenu = UIWinMenu::New();
+	WinMenu->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )
+		->setParent( lay );
 
-	UIPopUpMenu * PopMenu = UIPopUpMenu::New();
+	UIPopUpMenu* PopMenu = UIPopUpMenu::New();
 	PopMenu->add( "Hide Border" );
 	PopMenu->add( "Close" );
-	PopMenu->addEventListener( Event::OnItemClicked, []( const Event * Event ) {
+	PopMenu->addEventListener( Event::OnItemClicked, []( const Event* Event ) {
 		if ( !Event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
 
-		Node * node = Event->getNode();
-		UIWindow * win = NULL;
+		Node* node = Event->getNode();
+		UIWindow* win = NULL;
 
 		while ( NULL != node && NULL == win ) {
 			if ( node->isWindow() ) {
@@ -1013,7 +1115,7 @@ void EETest::createDecoratedWindow() {
 		}
 	} );
 
-	UIPopUpMenu * PopMenu2 = UIPopUpMenu::New();
+	UIPopUpMenu* PopMenu2 = UIPopUpMenu::New();
 	PopMenu2->add( "Bla" );
 	PopMenu2->add( "Bla 2" );
 	PopMenu2->add( "Bla 3" );
@@ -1022,46 +1124,48 @@ void EETest::createDecoratedWindow() {
 	WinMenu->addMenuButton( "File", PopMenu );
 	WinMenu->addMenuButton( "Edit", PopMenu2 );
 
-	UIPushButton * Button = UIPushButton::New();
+	UIPushButton* Button = UIPushButton::New();
 	Button->setLayoutMargin( Rect( 5, 5, 5, 5 ) );
 	Button->setText( "Click Me" );
-	Button->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )->setParent( lay );
+	Button->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )
+		->setParent( lay );
 	Button->addEventListener( Event::MouseClick, cb::Make1( this, &EETest::onButtonClick ) );
 
 	mUIWindow->addShortcut( KEY_C, KEYMOD_ALT, Button );
 
-	UITabWidget * TabWidget = UITabWidget::New();
+	UITabWidget* TabWidget = UITabWidget::New();
 	TabWidget->setLayoutMargin( Rect( 5, 5, 5, 5 ) )
-			->setLayoutWeight( 1 )
-			->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )
-			->setFlags( UI_HALIGN_CENTER | UI_VALIGN_CENTER )
-			->setParent( lay );
+		->setLayoutWeight( 1 )
+		->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )
+		->setFlags( UI_HALIGN_CENTER | UI_VALIGN_CENTER )
+		->setParent( lay );
 
-	UITextEdit * TEdit = UITextEdit::New();
+	UITextEdit* TEdit = UITextEdit::New();
 	TEdit->setFlags( UI_WORD_WRAP );
 	TEdit->setParent( TabWidget );
 	TEdit->setText( mBuda );
 	TabWidget->add( "TextEdit", TEdit );
 
-	UITextInput * Txt = UITextInput::New();
+	UITextInput* Txt = UITextInput::New();
 	Txt->setFlags( UI_WORD_WRAP );
 	Txt->setParent( TabWidget );
 	Txt->setText( mBuda );
 	TabWidget->add( "TextInput", Txt );
 
-	UITextView * txtBox = UITextView::New();
-	txtBox->resetFlags( UI_HALIGN_LEFT | UI_VALIGN_TOP | UI_AUTO_PADDING | UI_WORD_WRAP | UI_TEXT_SELECTION_ENABLED );
+	UITextView* txtBox = UITextView::New();
+	txtBox->resetFlags( UI_HALIGN_LEFT | UI_VALIGN_TOP | UI_AUTO_PADDING | UI_WORD_WRAP |
+						UI_TEXT_SELECTION_ENABLED );
 	txtBox->setParent( TabWidget );
 	txtBox->setText( mBuda );
 
 	TabWidget->add( "TextBox", txtBox );
 }
 
-void EETest::onCloseClick( const Event * ) {
+void EETest::onCloseClick( const Event* ) {
 	mUIWindow = NULL;
 }
 
-void EETest::onItemClick( const Event * event ) {
+void EETest::onItemClick( const Event* event ) {
 	if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 		return;
 
@@ -1088,28 +1192,28 @@ void EETest::onItemClick( const Event * event ) {
 			mWindow->stopTextInput();
 		}
 	} else if ( "Show Window" == txt ) {
-		UIMenuCheckBox * Chk = event->getNode()->asType<UIMenuCheckBox>();
+		UIMenuCheckBox* Chk = event->getNode()->asType<UIMenuCheckBox>();
 
 		C->toFront();
 		C->setVisible( true );
 		C->setEnabled( true );
 
 		if ( Chk->isActive() ) {
-			if ( C->getScale() == 1.f ) C->setScale( 0.f );
+			if ( C->getScale() == 1.f )
+				C->setScale( 0.f );
 
 			C->runAction( Actions::Spawn::New(
-					Actions::Scale::New( C->getScale(), Vector2f::One, Milliseconds( 500.f ), Ease::SineOut ),
-					Actions::Fade::New( C->getAlpha(), 255.f, Milliseconds( 500.f ) ),
-					Actions::Rotate::New( 0, 360, Milliseconds( 500.f ), Ease::SineOut )
-				)
-			);
+				Actions::Scale::New( C->getScale(), Vector2f::One, Milliseconds( 500.f ),
+									 Ease::SineOut ),
+				Actions::Fade::New( C->getAlpha(), 255.f, Milliseconds( 500.f ) ),
+				Actions::Rotate::New( 0, 360, Milliseconds( 500.f ), Ease::SineOut ) ) );
 		} else {
 			C->runAction( Actions::Spawn::New(
-					Actions::Scale::New( C->getScale(), Vector2f::Zero, Milliseconds( 500.f ), Ease::SineIn ),
-					Actions::Sequence::New( Actions::FadeOut::New( Milliseconds( 500 ) ), Actions::Disable::New() ),
-					Actions::Rotate::New( 0, 360, Milliseconds( 500.f ), Ease::SineIn )
-			  )
-			);
+				Actions::Scale::New( C->getScale(), Vector2f::Zero, Milliseconds( 500.f ),
+									 Ease::SineIn ),
+				Actions::Sequence::New( Actions::FadeOut::New( Milliseconds( 500 ) ),
+										Actions::Disable::New() ),
+				Actions::Rotate::New( 0, 360, Milliseconds( 500.f ), Ease::SineIn ) ) );
 		}
 	} else if ( "Show Window 2" == txt ) {
 		if ( NULL == mUIWindow ) {
@@ -1134,20 +1238,20 @@ void EETest::onItemClick( const Event * event ) {
 	}
 }
 
-void EETest::onValueChange( const Event * ) {
+void EETest::onValueChange( const Event* ) {
 	mTextBoxValue->setText( "Scroll Value:\n" + String::toStr( mScrollBar->getValue() ) );
 
 	mProgressBar->setProgress( mScrollBar->getValue() * 100.f );
 }
 
-void EETest::onSliderValueChange( const Event * Event ) {
-	UISlider * slider = static_cast<UISlider*>( Event->getNode() );
+void EETest::onSliderValueChange( const Event* Event ) {
+	UISlider* slider = static_cast<UISlider*>( Event->getNode() );
 
 	C->setRotation( slider->getValue() * 90.f );
 }
 
-void EETest::onQuitClick( const Event * event ) {
-	const MouseEvent * mouseEvent = reinterpret_cast<const MouseEvent*> ( event );
+void EETest::onQuitClick( const Event* event ) {
+	const MouseEvent* mouseEvent = reinterpret_cast<const MouseEvent*>( event );
 
 	if ( mouseEvent->getFlags() & EE_BUTTON_LMASK ) {
 		mWindow->close();
@@ -1157,13 +1261,14 @@ void EETest::onQuitClick( const Event * event ) {
 void EETest::showMenu() {
 	if ( NULL != Menu && Menu->show() ) {
 		Vector2f Pos = mWindow->getInput()->getMousePosf();
-		UIMenu::fixMenuPos( Pos , Menu );
-		Menu->setPosition( Vector2f( Pos.x / PixelDensity::getPixelDensity(), Pos.y / PixelDensity::getPixelDensity() ) );
+		UIMenu::fixMenuPos( Pos, Menu );
+		Menu->setPosition( Vector2f( Pos.x / PixelDensity::getPixelDensity(),
+									 Pos.y / PixelDensity::getPixelDensity() ) );
 	}
 }
 
-void EETest::onMainClick( const Event * event ) {
-	const MouseEvent * mouseEvent = reinterpret_cast<const MouseEvent*> ( event );
+void EETest::onMainClick( const Event* event ) {
+	const MouseEvent* mouseEvent = reinterpret_cast<const MouseEvent*>( event );
 
 	if ( mouseEvent->getFlags() & EE_BUTTON_RMASK ) {
 		showMenu();
@@ -1172,25 +1277,29 @@ void EETest::onMainClick( const Event * event ) {
 
 using namespace EE::Scene::Actions;
 
-void EETest::onButtonClick( const Event * event ) {
-	const MouseEvent * mouseEvent = reinterpret_cast<const MouseEvent*> ( event );
+void EETest::onButtonClick( const Event* event ) {
+	const MouseEvent* mouseEvent = reinterpret_cast<const MouseEvent*>( event );
 
 	if ( mouseEvent->getFlags() & EE_BUTTONS_LRM ) {
-		UIImage * Gfx = UIImage::New();
+		UIImage* Gfx = UIImage::New();
 		Gfx->setDrawable( mTheme->getIconByName( "ok" ) );
 		Gfx->setEnabled( false );
 
 		Gfx->runAction( Spawn::New(
-							Move::New( Vector2f( Math::randi( 0, mWindow->getWidth() ), -64 ), Vector2f( Math::randi( 0, mWindow->getWidth() ), mWindow->getHeight() + 64 ), Milliseconds( 2500 ) ),
-							Rotate::New( 0.f, 2500.f, Milliseconds( 2500 ) ),
-							Sequence::New( Scale::New( Vector2f(1.f,1.f), Vector2f(2.f,2.f), Seconds( 0.5f ) ), Scale::New( Vector2f(2.f,2.f), Vector2f(1.f,1.f), Seconds( 0.5f ) ) ),
-							Sequence::New( FadeOut::New( Milliseconds( 3500 ) ), Close::New() )
-						) );
+			Move::New( Vector2f( Math::randi( 0, mWindow->getWidth() ), -64 ),
+					   Vector2f( Math::randi( 0, mWindow->getWidth() ), mWindow->getHeight() + 64 ),
+					   Milliseconds( 2500 ) ),
+			Rotate::New( 0.f, 2500.f, Milliseconds( 2500 ) ),
+			Sequence::New(
+				Scale::New( Vector2f( 1.f, 1.f ), Vector2f( 2.f, 2.f ), Seconds( 0.5f ) ),
+				Scale::New( Vector2f( 2.f, 2.f ), Vector2f( 1.f, 1.f ), Seconds( 0.5f ) ) ),
+			Sequence::New( FadeOut::New( Milliseconds( 3500 ) ), Close::New() ) ) );
 	}
 }
 
 void EETest::setScreen( Uint32 num ) {
-	if ( NULL != mTerrainBut ) mTerrainBut->setVisible( 1 == num );
+	if ( NULL != mTerrainBut )
+		mTerrainBut->setVisible( 1 == num );
 
 	if ( 0 == num || 5 == num )
 		mWindow->setClearColor( RGB( 240, 240, 240 ) );
@@ -1200,24 +1309,27 @@ void EETest::setScreen( Uint32 num ) {
 	if ( num < 6 )
 		Screen = num;
 
-	if ( NULL != relLay ) relLay->setVisible( Screen == 5 );
+	if ( NULL != relLay )
+		relLay->setVisible( Screen == 5 );
 }
 
-void EETest::cmdSetPartsNum ( const std::vector < String >& params ) {
+void EETest::cmdSetPartsNum( const std::vector<String>& params ) {
 	if ( params.size() >= 2 ) {
 		Int32 tInt = 0;
 
 		bool Res = String::fromString<Int32>( tInt, params[1] );
 
 		if ( Res && ( tInt >= 0 && tInt <= 100000 ) ) {
-			PS[2].create( ParticleEffect::WormHole, tInt, TN[5], Vector2f( mWindow->getWidth() * 0.5f, mWindow->getHeight() * 0.5f ), 32, true );
-			Con.pushText( "Wormhole Particles Number Changed to: " + String::toStr(tInt) );
+			PS[2].create( ParticleEffect::WormHole, tInt, TN[5],
+						  Vector2f( mWindow->getWidth() * 0.5f, mWindow->getHeight() * 0.5f ), 32,
+						  true );
+			Con.pushText( "Wormhole Particles Number Changed to: " + String::toStr( tInt ) );
 		} else
 			Con.pushText( "Valid parameters are between 0 and 100000 (0 = no limit)." );
 	}
 }
 
-void EETest::onTextureLoaded( ResourceLoader * ) {
+void EETest::onTextureLoaded( ResourceLoader* ) {
 	SndMng.play( "mysound" );
 }
 
@@ -1238,7 +1350,7 @@ void EETest::loadTextures() {
 
 	Uint32 i;
 
-	#ifndef EE_GLES
+#ifndef EE_GLES
 
 	PakTest = Zip::New();
 	PakTest->open( MyPath + "test.zip" );
@@ -1252,91 +1364,105 @@ void EETest::loadTextures() {
 			mResLoad.add( [=] { TextureFactory::instance()->loadFromPack( PakTest, name ); } );
 		}
 	}
-	#endif
+#endif
 
 	SndMng.loadFromFile( "mysound", MyPath + "sounds/sound.ogg" );
 
 	mResLoad.setThreaded( EE->isSharedGLContextEnabled() );
 	mResLoad.load( cb::Make1( this, &EETest::onTextureLoaded ) );
 
-	TN.resize(12);
-	TNP.resize(12);
+	TN.resize( 12 );
+	TNP.resize( 12 );
 
 	for ( i = 0; i <= 6; i++ ) {
-		TN[i] = TF->loadFromFile( MyPath + "sprites/" + String::toStr(i+1) + ".png", (i+1) == 7 ? true : false, ( (i+1) == 4 ) ? Texture::ClampMode::ClampRepeat : Texture::ClampMode::ClampToEdge );
+		TN[i] = TF->loadFromFile( MyPath + "sprites/" + String::toStr( i + 1 ) + ".png",
+								  ( i + 1 ) == 7 ? true : false,
+								  ( ( i + 1 ) == 4 ) ? Texture::ClampMode::ClampRepeat
+													 : Texture::ClampMode::ClampToEdge );
 		TNP[i] = TF->getTexture( TN[i] );
 	}
 
-	Tiles.resize(10);
+	Tiles.resize( 10 );
 
 	TextureAtlasLoader tgl( MyPath + "atlases/tiles.eta" );
-	TextureAtlas * SG = TextureAtlasManager::instance()->getByName( "tiles" );
+	TextureAtlas* SG = TextureAtlasManager::instance()->getByName( "tiles" );
 
 	if ( NULL != SG ) {
 		for ( i = 0; i < 6; i++ ) {
-			Tiles[i] = SG->getByName( String::toStr( i+1 ) );
+			Tiles[i] = SG->getByName( String::toStr( i + 1 ) );
 		}
 
 		Tiles[6] = SG->add( TF->loadFromFile( MyPath + "sprites/objects/1.png" ), "7" );
 
-		#ifdef EE_GLES
+#ifdef EE_GLES
 		Image tImg( MyPath + "sprites/objects/2.png", 4 );
-		tImg.createMaskFromColor( ColorA(0,0,0,255), 0 );
-		Tiles[7] = SG->add( TF->loadFromPixels( tImg.getPixelsPtr(), tImg.getWidth(), tImg.getHeight(), tImg.getChannels() ), "8" );
-		#else
+		tImg.createMaskFromColor( ColorA( 0, 0, 0, 255 ), 0 );
+		Tiles[7] = SG->add( TF->loadFromPixels( tImg.getPixelsPtr(), tImg.getWidth(),
+												tImg.getHeight(), tImg.getChannels() ),
+							"8" );
+#else
 		Tiles[7] = SG->add( TF->loadFromFile( MyPath + "sprites/objects/2.png" ), "8" );
-		Tiles[7]->getTexture()->createMaskFromColor( Color(0,0,0,255), 0 );
-		#endif
+		Tiles[7]->getTexture()->createMaskFromColor( Color( 0, 0, 0, 255 ), 0 );
+#endif
 	}
 
 	for ( Int32 my = 0; my < 4; my++ )
-		for( Int32 mx = 0; mx < 8; mx++ )
-			SP.addFrame( TN[4], Sizef( 0, 0 ), Vector2i( 0, 0 ), Rect( mx * 64, my * 64, mx * 64 + 64, my * 64 + 64 ) );
+		for ( Int32 mx = 0; mx < 8; mx++ )
+			SP.addFrame( TN[4], Sizef( 0, 0 ), Vector2i( 0, 0 ),
+						 Rect( mx * 64, my * 64, mx * 64 + 64, my * 64 + 64 ) );
 
 	PS[0].setCallbackReset( cb::Make2( this, &EETest::particlesCallback ) );
 	PS[0].create( ParticleEffect::Callback, 500, TN[5], Vector2f( 0, 0 ), 16, true );
-	PS[1].create( ParticleEffect::Heal, 250, TN[5], Vector2f( mWindow->getWidth() * 0.5f, mWindow->getHeight() * 0.5f ), 16, true );
-	PS[2].create( ParticleEffect::WormHole, PartsNum, TN[5], Vector2f( mWindow->getWidth() * 0.5f, mWindow->getHeight() * 0.5f ), 32, true );
+	PS[1].create( ParticleEffect::Heal, 250, TN[5],
+				  Vector2f( mWindow->getWidth() * 0.5f, mWindow->getHeight() * 0.5f ), 16, true );
+	PS[2].create( ParticleEffect::WormHole, PartsNum, TN[5],
+				  Vector2f( mWindow->getWidth() * 0.5f, mWindow->getHeight() * 0.5f ), 32, true );
 	PS[3].create( ParticleEffect::Fire, 350, TN[5], Vector2f( -50.f, -50.f ), 32, true );
 	PS[4].create( ParticleEffect::Fire, 350, TN[5], Vector2f( -50.f, -50.f ), 32, true );
 
 	Con.addCommand( "setparticlesnum", cb::Make1( this, &EETest::cmdSetPartsNum ) );
 
-	Texture * Tex = TNP[2];
+	Texture* Tex = TNP[2];
 
 	if ( NULL != Tex && Tex->lock() ) {
 		int w = (int)Tex->getWidth();
 		int h = (int)Tex->getHeight();
 
-		for ( y = 0; y < h; y++) {
-			for ( x = 0; x < w; x++) {
-				Color C = Tex->getPixel(x, y);
+		for ( y = 0; y < h; y++ ) {
+			for ( x = 0; x < w; x++ ) {
+				Color C = Tex->getPixel( x, y );
 
 				if ( C.r > 200 && C.g > 200 && C.b > 200 )
-					Tex->setPixel(x, y, Color( Math::randi(0, 255), Math::randi(0, 255), Math::randi(0, 255), C.a ) );
+					Tex->setPixel( x, y,
+								   Color( Math::randi( 0, 255 ), Math::randi( 0, 255 ),
+										  Math::randi( 0, 255 ), C.a ) );
 				else
-					Tex->setPixel(x, y, Color( Math::randi(200, 255), Math::randi(200, 255), Math::randi(200, 255), C.a ) );
+					Tex->setPixel( x, y,
+								   Color( Math::randi( 200, 255 ), Math::randi( 200, 255 ),
+										  Math::randi( 200, 255 ), C.a ) );
 			}
 		}
 
-		Tex->unlock(false, true);
+		Tex->unlock( false, true );
 	}
 
 	Cursor[0] = TF->loadFromFile( MyPath + "cursors/cursor.tga" );
 	CursorP[0] = TF->getTexture( Cursor[0] );
 
-	CursorManager * CurMan = mWindow->getCursorManager();
+	CursorManager* CurMan = mWindow->getCursorManager();
 	CurMan->setVisible( false );
 	CurMan->setVisible( true );
 	CurMan->set( Cursor::SysHand );
-	CurMan->setGlobalCursor( Cursor::Arrow, CurMan->add( CurMan->create( CursorP[0], Vector2i( 1, 1 ), "cursor_special" ) ) );
+	CurMan->setGlobalCursor(
+		Cursor::Arrow,
+		CurMan->add( CurMan->create( CursorP[0], Vector2i( 1, 1 ), "cursor_special" ) ) );
 	CurMan->set( Cursor::Arrow );
 
 	CL1.addFrame( TN[2] );
 	CL1.setPosition( Vector2f( 500, 400 ) );
 	CL1.setScale( 0.5f );
 
-	CL2.addFrame(TN[0], Sizef(96, 96) );
+	CL2.addFrame( TN[0], Sizef( 96, 96 ) );
 	CL2.setColor( Color( 255, 255, 255, 255 ) );
 
 	mTGL = TextureAtlasLoader::New( MyPath + "atlases/bnb" + EE_TEXTURE_ATLAS_EXTENSION );
@@ -1344,8 +1470,10 @@ void EETest::loadTextures() {
 	mBlindy.addFramesByPattern( "rn" );
 	mBlindy.setPosition( Vector2f( 320.f, 0.f ) );
 
-	mBoxSprite = Sprite::New( GlobalTextureAtlas::instance()->add( TextureRegion::New( TN[3], "ilmare" ) ) );
-	mCircleSprite = Sprite::New( GlobalTextureAtlas::instance()->add( TextureRegion::New( TN[1], "thecircle" ) ) );
+	mBoxSprite =
+		Sprite::New( GlobalTextureAtlas::instance()->add( TextureRegion::New( TN[3], "ilmare" ) ) );
+	mCircleSprite = Sprite::New(
+		GlobalTextureAtlas::instance()->add( TextureRegion::New( TN[1], "thecircle" ) ) );
 
 	eePRINTL( "Textures loading time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
 
@@ -1365,7 +1493,7 @@ void EETest::run() {
 void EETest::particlesThread() {
 	while ( mWindow->isRunning() ) {
 		updateParticles();
-		Sys::sleep( Milliseconds(10) );
+		Sys::sleep( Milliseconds( 10 ) );
 	}
 }
 
@@ -1385,7 +1513,7 @@ void EETest::screen1() {
 
 void EETest::screen2() {
 	if ( mResLoad.isLoaded() ) {
-		Texture * TexLoaded = TF->getByName( "1.jpg" );
+		Texture* TexLoaded = TF->getByName( "1.jpg" );
 
 		if ( NULL != TexLoaded )
 			TexLoaded->draw( 0, 0 );
@@ -1394,21 +1522,21 @@ void EETest::screen2() {
 	if ( KM->isMouseLeftPressed() )
 		TNP[3]->drawEx( 0.f, 0.f, (Float)mWindow->getWidth(), (Float)mWindow->getHeight() );
 
-	ang+=et.asMilliseconds() * 0.1f;
-	ang = (ang>=360) ? 0 : ang;
+	ang += et.asMilliseconds() * 0.1f;
+	ang = ( ang >= 360 ) ? 0 : ang;
 
 	ConvexShapeDrawable shape;
 	Polygon2f polygon( Polygon2f::createRoundedRectangle( 0, 0, 50, 50, 8 ) );
-	polygon.rotate( ang , polygon.getBounds().getCenter() );
+	polygon.rotate( ang, polygon.getBounds().getCenter() );
 	shape.setPolygon( polygon );
-	shape.setPosition( Vector2f( 150, 150 ));
+	shape.setPosition( Vector2f( 150, 150 ) );
 	shape.setColor( Color::Fuchsia );
 	shape.setAlpha( 100 );
 	shape.draw();
 
 	Batch.setTexture( TNP[2] );
 	Batch.quadsBegin();
-	Batch.quadsSetColor( Color(150,150,150,100) );
+	Batch.quadsSetColor( Color( 150, 150, 150, 100 ) );
 	Batch.quadsSetTexCoord( 0.0f, 0.0f, 0.5f, 0.5f );
 
 	Batch.setBatchRotation( ang );
@@ -1417,12 +1545,8 @@ void EETest::screen2() {
 
 	Float aX = HWidth - 256.f;
 	Float aY = HHeight - 256.f;
-	Quad2f TmpQuad(
-		Vector2f( aX	   , aY 		),
-		Vector2f( aX	   , aY + 32.f  ),
-		Vector2f( aX + 32.f, aY + 32.f  ),
-		Vector2f( aX + 32.f, aY 		)
-	);
+	Quad2f TmpQuad( Vector2f( aX, aY ), Vector2f( aX, aY + 32.f ), Vector2f( aX + 32.f, aY + 32.f ),
+					Vector2f( aX + 32.f, aY ) );
 	TmpQuad.rotate( ang, Vector2f( aX + 16.f, aY + 16.f ) );
 
 	for ( Uint32 z = 0; z < 16; z++ ) {
@@ -1430,7 +1554,9 @@ void EETest::screen2() {
 			Float tmpx = (Float)z * 32.f;
 			Float tmpy = (Float)y * 32.f;
 
-			Batch.batchQuadFree( TmpQuad[0].x + tmpx, TmpQuad[0].y + tmpy, TmpQuad[1].x + tmpx, TmpQuad[1].y + tmpy, TmpQuad[2].x + tmpx, TmpQuad[2].y + tmpy, TmpQuad[3].x + tmpx, TmpQuad[3].y + tmpy );
+			Batch.batchQuadFree( TmpQuad[0].x + tmpx, TmpQuad[0].y + tmpy, TmpQuad[1].x + tmpx,
+								 TmpQuad[1].y + tmpy, TmpQuad[2].x + tmpx, TmpQuad[2].y + tmpy,
+								 TmpQuad[3].x + tmpx, TmpQuad[3].y + tmpy );
 		}
 	}
 
@@ -1440,68 +1566,75 @@ void EETest::screen2() {
 	Batch.setBatchScale( 1.0f );
 	Batch.setBatchCenter( Vector2f( 0, 0 ) );
 
-	Float PlanetX = HWidth  - TNP[6]->getWidth() * 0.5f;
+	Float PlanetX = HWidth - TNP[6]->getWidth() * 0.5f;
 	Float PlanetY = HHeight - TNP[6]->getHeight() * 0.5f;
 
-	if (scale>=1.5f) {
+	if ( scale >= 1.5f ) {
 		scale = 1.5f;
 		side = true;
-	} else if (scale<=0.5f) {
+	} else if ( scale <= 0.5f ) {
 		side = false;
 		scale = 0.5f;
 	}
-	scale = (!side) ? scale+et.asMilliseconds() * 0.00025f : scale-et.asMilliseconds() * 0.00025f;
+	scale =
+		( !side ) ? scale + et.asMilliseconds() * 0.00025f : scale - et.asMilliseconds() * 0.00025f;
 
 	if ( mUseShaders ) {
 		mBlurFactor = ( 1.5f * 0.01f ) - ( scale * 0.01f );
 		mShaderProgram->bind();
-		mShaderProgram->setUniform( "blurfactor" , (float)mBlurFactor );
+		mShaderProgram->setUniform( "blurfactor", (float)mBlurFactor );
 	}
 
-	TNP[6]->drawFast( PlanetX, PlanetY, ang, Vector2f(scale,scale));
+	TNP[6]->drawFast( PlanetX, PlanetY, ang, Vector2f( scale, scale ) );
 
 	if ( mUseShaders )
 		mShaderProgram->unbind();
 
-	TNP[3]->draw( HWidth - 128, HHeight, 0, Vector2f::One, Color(255,255,255,150), BlendAlpha, RENDER_ISOMETRIC);
-	TNP[3]->draw( HWidth - 128, HHeight - 128, 0, Vector2f::One, Color(255,255,255,50), BlendAlpha, RENDER_ISOMETRIC);
-	TNP[3]->draw( HWidth - 128, HHeight, 0, Vector2f::One, Color(255,255,255,50), BlendAlpha, RENDER_ISOMETRIC_VERTICAL);
-	TNP[3]->draw( HWidth, HHeight, 0, Vector2f::One, Color(255,255,255,50), BlendAlpha, RENDER_ISOMETRIC_VERTICAL_NEGATIVE);
+	TNP[3]->draw( HWidth - 128, HHeight, 0, Vector2f::One, Color( 255, 255, 255, 150 ), BlendAlpha,
+				  RENDER_ISOMETRIC );
+	TNP[3]->draw( HWidth - 128, HHeight - 128, 0, Vector2f::One, Color( 255, 255, 255, 50 ),
+				  BlendAlpha, RENDER_ISOMETRIC );
+	TNP[3]->draw( HWidth - 128, HHeight, 0, Vector2f::One, Color( 255, 255, 255, 50 ), BlendAlpha,
+				  RENDER_ISOMETRIC_VERTICAL );
+	TNP[3]->draw( HWidth, HHeight, 0, Vector2f::One, Color( 255, 255, 255, 50 ), BlendAlpha,
+				  RENDER_ISOMETRIC_VERTICAL_NEGATIVE );
 
-	alpha = (!aside) ? alpha+et.asMilliseconds() * 0.1f : alpha-et.asMilliseconds() * 0.1f;
-	if (alpha>=255) {
+	alpha = ( !aside ) ? alpha + et.asMilliseconds() * 0.1f : alpha - et.asMilliseconds() * 0.1f;
+	if ( alpha >= 255 ) {
 		aside = true;
 		alpha = 255;
-	} else if (alpha<=0) {
+	} else if ( alpha <= 0 ) {
 		alpha = 0;
 		aside = false;
 	}
 
-	Color Col(255,255,255,(int)alpha);
-	TNP[1]->drawEx( (Float)mWindow->getWidth() - 128.f, (Float)mWindow->getHeight() - 128.f, 128.f, 128.f, ang, Vector2f::One, Col, Col, Col, Col, BlendAdd, RENDER_FLIPPED_MIRRORED);
+	Color Col( 255, 255, 255, (int)alpha );
+	TNP[1]->drawEx( (Float)mWindow->getWidth() - 128.f, (Float)mWindow->getHeight() - 128.f, 128.f,
+					128.f, ang, Vector2f::One, Col, Col, Col, Col, BlendAdd,
+					RENDER_FLIPPED_MIRRORED );
 
 	SP.setPosition( Vector2f( alpha, alpha ) );
 	SP.draw();
 
-	#ifndef EE_GLES
+#ifndef EE_GLES
 	CL1.setRenderMode( RENDER_ISOMETRIC );
 
 	if ( CL1.getAABB().intersectCircle( Mousef, 80.f ) )
-		CL1.setColor( Color(255, 0, 0, 200) );
+		CL1.setColor( Color( 255, 0, 0, 200 ) );
 	else
-		CL1.setColor( Color(255, 255, 255, 200) );
+		CL1.setColor( Color( 255, 255, 255, 200 ) );
 
-	if ( Polygon2f::intersectQuad2( CL1.getQuad() , CL2.getQuad() ) ) {
-		CL1.setColor( Color(0, 255, 0, 255) );
-		CL2.setColor( Color(0, 255, 0, 255) );
+	if ( Polygon2f::intersectQuad2( CL1.getQuad(), CL2.getQuad() ) ) {
+		CL1.setColor( Color( 0, 255, 0, 255 ) );
+		CL2.setColor( Color( 0, 255, 0, 255 ) );
 	} else
-		CL2.setColor( Color(255, 255, 255, 255) );
+		CL2.setColor( Color( 255, 255, 255, 255 ) );
 
-	CL1.setRotation(ang);
-	CL1.setScale(scale * 0.5f);
+	CL1.setRotation( ang );
+	CL1.setScale( scale * 0.5f );
 
 	CL2.setPosition( Vector2f( (Float)Mousef.x - 64.f, (Float)Mousef.y + 128.f ) );
-	CL2.setRotation(-ang);
+	CL2.setRotation( -ang );
 
 	CL1.draw();
 	CL2.draw();
@@ -1510,20 +1643,25 @@ void EETest::screen2() {
 	PR.drawRectangle( CL1.getAABB() );
 
 	PR.drawQuad( CL1.getQuad() );
-	#endif
+#endif
 
 	Ang = Ang + mWindow->getElapsed().asMilliseconds() * 0.1f;
-	if (Ang > 360.f) Ang = 1.f;
+	if ( Ang > 360.f )
+		Ang = 1.f;
 
 	if ( ShowParticles )
 		particles();
 
-	PR.setColor( Color(0, 255, 0, 50) );
+	PR.setColor( Color( 0, 255, 0, 50 ) );
 
-	Line2f Line( Vector2f(0.f, 0.f), Vector2f( (Float)mWindow->getWidth(), (Float)mWindow->getHeight() ) );
-	Line2f Line2( Vector2f(Mousef.x - 80.f, Mousef.y - 80.f), Vector2f(Mousef.x + 80.f, Mousef.y + 80.f) );
-	Line2f Line3( Vector2f((Float)mWindow->getWidth(), 0.f), Vector2f( 0.f, (Float)mWindow->getHeight() ) );
-	Line2f Line4( Vector2f(Mousef.x - 80.f, Mousef.y + 80.f), Vector2f(Mousef.x + 80.f, Mousef.y - 80.f) );
+	Line2f Line( Vector2f( 0.f, 0.f ),
+				 Vector2f( (Float)mWindow->getWidth(), (Float)mWindow->getHeight() ) );
+	Line2f Line2( Vector2f( Mousef.x - 80.f, Mousef.y - 80.f ),
+				  Vector2f( Mousef.x + 80.f, Mousef.y + 80.f ) );
+	Line2f Line3( Vector2f( (Float)mWindow->getWidth(), 0.f ),
+				  Vector2f( 0.f, (Float)mWindow->getHeight() ) );
+	Line2f Line4( Vector2f( Mousef.x - 80.f, Mousef.y + 80.f ),
+				  Vector2f( Mousef.x + 80.f, Mousef.y - 80.f ) );
 
 	if ( Line.intersect( Line2 ) )
 		iL1 = true;
@@ -1535,46 +1673,63 @@ void EETest::screen2() {
 	else
 		iL2 = false;
 
-	if (iL1 && iL2)
-		PR.setColor( Color(255, 0, 0, 255) );
-	else if (iL1)
-		PR.setColor( Color(0, 0, 255, 255) );
-	else if (iL2)
-		PR.setColor( Color(255, 255, 0, 255) );
+	if ( iL1 && iL2 )
+		PR.setColor( Color( 255, 0, 0, 255 ) );
+	else if ( iL1 )
+		PR.setColor( Color( 0, 0, 255, 255 ) );
+	else if ( iL2 )
+		PR.setColor( Color( 255, 255, 0, 255 ) );
 
 	PR.setFillMode( DRAW_LINE );
-	PR.drawCircle( Vector2f( Mousef.x, Mousef.y ), 80.f, (Uint32)(Ang/3) );
-	PR.drawTriangle( Triangle2f( Vector2f( Mousef.x, Mousef.y - 10.f ), Vector2f( Mousef.x - 10.f, Mousef.y + 10.f ), Vector2f( Mousef.x + 10.f, Mousef.y + 10.f ) ) );
-	PR.drawLine( Line2f( Vector2f(Mousef.x - 80.f, Mousef.y - 80.f), Vector2f(Mousef.x + 80.f, Mousef.y + 80.f) ) );
-	PR.drawLine( Line2f( Vector2f(Mousef.x - 80.f, Mousef.y + 80.f), Vector2f(Mousef.x + 80.f, Mousef.y - 80.f) ) );
-	PR.drawLine( Line2f( Vector2f((Float)mWindow->getWidth(), 0.f), Vector2f( 0.f, (Float)mWindow->getHeight() ) ) );
+	PR.drawCircle( Vector2f( Mousef.x, Mousef.y ), 80.f, ( Uint32 )( Ang / 3 ) );
+	PR.drawTriangle( Triangle2f( Vector2f( Mousef.x, Mousef.y - 10.f ),
+								 Vector2f( Mousef.x - 10.f, Mousef.y + 10.f ),
+								 Vector2f( Mousef.x + 10.f, Mousef.y + 10.f ) ) );
+	PR.drawLine( Line2f( Vector2f( Mousef.x - 80.f, Mousef.y - 80.f ),
+						 Vector2f( Mousef.x + 80.f, Mousef.y + 80.f ) ) );
+	PR.drawLine( Line2f( Vector2f( Mousef.x - 80.f, Mousef.y + 80.f ),
+						 Vector2f( Mousef.x + 80.f, Mousef.y - 80.f ) ) );
+	PR.drawLine( Line2f( Vector2f( (Float)mWindow->getWidth(), 0.f ),
+						 Vector2f( 0.f, (Float)mWindow->getHeight() ) ) );
 	PR.setFillMode( DRAW_FILL );
-	PR.drawQuad( Quad2f( Vector2f(0.f, 0.f), Vector2f(0.f, 100.f), Vector2f(150.f, 150.f), Vector2f(200.f, 150.f) ), Color(220, 240, 0, 125), Color(100, 0, 240, 125), Color(250, 50, 25, 125), Color(50, 150, 150, 125) );
+	PR.drawQuad( Quad2f( Vector2f( 0.f, 0.f ), Vector2f( 0.f, 100.f ), Vector2f( 150.f, 150.f ),
+						 Vector2f( 200.f, 150.f ) ),
+				 Color( 220, 240, 0, 125 ), Color( 100, 0, 240, 125 ), Color( 250, 50, 25, 125 ),
+				 Color( 50, 150, 150, 125 ) );
 	PR.setFillMode( DRAW_LINE );
-	PR.drawRectangle( Rectf( Vector2f( Mousef.x - 80.f, Mousef.y - 80.f ), Sizef( 160.f, 160.f ) ), 45.f );
-	PR.drawLine( Line2f( Vector2f(0.f, 0.f), Vector2f( (Float)mWindow->getWidth(), (Float)mWindow->getHeight() ) ) );
+	PR.drawRectangle( Rectf( Vector2f( Mousef.x - 80.f, Mousef.y - 80.f ), Sizef( 160.f, 160.f ) ),
+					  45.f );
+	PR.drawLine( Line2f( Vector2f( 0.f, 0.f ),
+						 Vector2f( (Float)mWindow->getWidth(), (Float)mWindow->getHeight() ) ) );
 
-	TNP[3]->drawQuadEx( Quad2f( Vector2f(0.f, 0.f), Vector2f(0.f, 100.f), Vector2f(150.f, 150.f), Vector2f(200.f, 150.f) ), Vector2f(), ang, Vector2f(scale,scale), Color(220, 240, 0, 125), Color(100, 0, 240, 125), Color(250, 50, 25, 125), Color(50, 150, 150, 125) );
+	TNP[3]->drawQuadEx( Quad2f( Vector2f( 0.f, 0.f ), Vector2f( 0.f, 100.f ),
+								Vector2f( 150.f, 150.f ), Vector2f( 200.f, 150.f ) ),
+						Vector2f(), ang, Vector2f( scale, scale ), Color( 220, 240, 0, 125 ),
+						Color( 100, 0, 240, 125 ), Color( 250, 50, 25, 125 ),
+						Color( 50, 150, 150, 125 ) );
 
 	WP.update( et );
-	PR.setColor( Color(0, 255, 0, 255) );
+	PR.setColor( Color( 0, 255, 0, 255 ) );
 	PR.drawPoint( WP.getPosition(), 10.f );
 }
 
 void EETest::screen3() {
-	if (AnimVal>=300.0f) {
+	if ( AnimVal >= 300.0f ) {
 		AnimVal = 300.0f;
 		AnimSide = true;
-	} else if (AnimVal<=0.5f) {
+	} else if ( AnimVal <= 0.5f ) {
 		AnimVal = 0.5f;
 		AnimSide = false;
 	}
-	AnimVal = (!AnimSide) ? AnimVal+et.asMilliseconds() * 0.1f : AnimVal-et.asMilliseconds() * 0.1f;
+	AnimVal =
+		( !AnimSide ) ? AnimVal + et.asMilliseconds() * 0.1f : AnimVal - et.asMilliseconds() * 0.1f;
 
 	Batch.setTexture( TNP[3] );
 	Batch.lineLoopBegin();
 	for ( Float j = 0; j < 360; j++ ) {
-		Batch.batchLineLoop( HWidth + 350 * Math::sinAng(j), HHeight + 350 * Math::cosAng(j), HWidth + AnimVal * Math::sinAng(j+1), HHeight + AnimVal * Math::cosAng(j+1) );
+		Batch.batchLineLoop( HWidth + 350 * Math::sinAng( j ), HHeight + 350 * Math::cosAng( j ),
+							 HWidth + AnimVal * Math::sinAng( j + 1 ),
+							 HHeight + AnimVal * Math::cosAng( j + 1 ) );
 	}
 	Batch.draw();
 }
@@ -1586,7 +1741,7 @@ void EETest::screen4() {
 	}
 
 	if ( NULL != mVBO ) {
-		mBlindy.setPosition( Vector2f( 128-16, 128-16 ) );
+		mBlindy.setPosition( Vector2f( 128 - 16, 128 - 16 ) );
 		mBlindy.draw();
 
 		mVBO->bind();
@@ -1594,10 +1749,11 @@ void EETest::screen4() {
 		mVBO->unbind();
 
 		mFBOText.setAlign( TEXT_ALIGN_CENTER );
-		mFBOText.draw( 128.f - (Float)(Int32)( mFBOText.getTextWidth() * 0.5f ), 25.f - (Float)(Int32)( mFBOText.getTextHeight() * 0.5f ) );
+		mFBOText.draw( 128.f - ( Float )( Int32 )( mFBOText.getTextWidth() * 0.5f ),
+					   25.f - ( Float )( Int32 )( mFBOText.getTextHeight() * 0.5f ) );
 	}
 
-	Vector2f center(mFBO->getWidth() * 0.5f,mFBO->getHeight() * 0.5f);
+	Vector2f center( mFBO->getWidth() * 0.5f, mFBO->getHeight() * 0.5f );
 	CircleDrawable r;
 	r.setPosition( center );
 	r.setRadius( 18 );
@@ -1615,7 +1771,9 @@ void EETest::screen4() {
 		mFBO->unbind();
 
 		if ( NULL != mFBO->getTexture() ) {
-			mFBO->getTexture()->draw( (Float)mWindow->getWidth() * 0.5f - (Float)mFBO->getWidth() * 0.5f, (Float)mWindow->getHeight() * 0.5f - (Float)mFBO->getHeight() * 0.5f, Ang );
+			mFBO->getTexture()->draw(
+				(Float)mWindow->getWidth() * 0.5f - (Float)mFBO->getWidth() * 0.5f,
+				(Float)mWindow->getHeight() * 0.5f - (Float)mFBO->getHeight() * 0.5f, Ang );
 			GlobalBatchRenderer::instance()->draw();
 		}
 	}
@@ -1625,26 +1783,26 @@ void EETest::screen5() {
 	Color col( 0x000000CC );
 
 	if ( drawableGroup.getDrawableCount() == 0 ) {
-		ArcDrawable * arc = ArcDrawable::New();
+		ArcDrawable* arc = ArcDrawable::New();
 		arc->setPosition( Vector2f( 60, 60 ) );
 		arc->setArcStartAngle( 90 );
 		arc->setArcAngle( 180 );
 		arc->setRadius( 60 );
 		arc->setColor( col );
 
-		RectangleDrawable * rect = RectangleDrawable::New();
+		RectangleDrawable* rect = RectangleDrawable::New();
 		rect->setPosition( Vector2f( 0, 60 ) );
 		rect->setSize( Sizef( 120, 60 ) );
 		rect->setColor( col );
 
-		ArcDrawable * arc2 = ArcDrawable::New();
+		ArcDrawable* arc2 = ArcDrawable::New();
 		arc2->setPosition( Vector2f( 60, 120 ) );
 		arc2->setArcStartAngle( -90 );
 		arc2->setArcAngle( 180 );
 		arc2->setRadius( 60 );
 		arc2->setColor( col );
 
-		ConvexShapeDrawable * poly = ConvexShapeDrawable::New();
+		ConvexShapeDrawable* poly = ConvexShapeDrawable::New();
 		poly->setPosition( Vector2f( 60, 90 ) );
 		poly->addPoint( Vector2f( -10, -10 ) );
 		poly->addPoint( Vector2f( -10, 10 ) );
@@ -1658,7 +1816,7 @@ void EETest::screen5() {
 		drawableGroup.addDrawable( rect );
 		drawableGroup.addDrawable( arc2 );
 		drawableGroup.addDrawable( poly );
-		drawableGroup.setPosition( Vector2f( 800*2, 400*2 ) );
+		drawableGroup.setPosition( Vector2f( 800 * 2, 400 * 2 ) );
 	}
 
 	drawableGroup.draw();
@@ -1670,27 +1828,23 @@ void EETest::render() {
 
 	if ( Sys::getTicks() - lasttick >= 50 ) {
 		lasttick = Sys::getTicks();
-		#ifdef EE_DEBUG
-		mInfo = String::format( "EE - FPS: %d Frame Time: %4.2f Sleep Time: %4.2f Render Time: %4.2f\nMouse X: %d Mouse Y: %d\nTexture Memory Usage: %s\nApp Memory Usage: %s\nApp Peak Memory Usage: %s",
-							mWindow->getFPS(),
-							et.asMilliseconds(),
-							mWindow->getSleepTimePerSecond().asMilliseconds(),
-							mWindow->getRenderTimePerSecond().asMilliseconds(),
-							(Int32)Mouse.x,
-							(Int32)Mouse.y,
-							FileSystem::sizeToString( TF->getTextureMemorySize() ).c_str(),
-							FileSystem::sizeToString( (Uint32)MemoryManager::getTotalMemoryUsage() ).c_str(),
-							FileSystem::sizeToString( (Uint32)MemoryManager::getPeakMemoryUsage() ).c_str()
-						);
-		#else
-		mInfo = String::format( "EE - FPS: %d Elapsed Time: %4.2f\nMouse X: %d Mouse Y: %d\nTexture Memory Usage: %s",
-							mWindow->getFPS(),
-							et.asMilliseconds(),
-							(Int32)Mouse.x,
-							(Int32)Mouse.y,
-							FileSystem::sizeToString( TF->getTextureMemorySize() ).c_str()
-						);
-		#endif
+#ifdef EE_DEBUG
+		mInfo = String::format(
+			"EE - FPS: %d Frame Time: %4.2f Sleep Time: %4.2f Render Time: %4.2f\nMouse X: %d "
+			"Mouse Y: %d\nTexture Memory Usage: %s\nApp Memory Usage: %s\nApp Peak Memory Usage: "
+			"%s",
+			mWindow->getFPS(), et.asMilliseconds(),
+			mWindow->getSleepTimePerSecond().asMilliseconds(),
+			mWindow->getRenderTimePerSecond().asMilliseconds(), (Int32)Mouse.x, (Int32)Mouse.y,
+			FileSystem::sizeToString( TF->getTextureMemorySize() ).c_str(),
+			FileSystem::sizeToString( (Uint32)MemoryManager::getTotalMemoryUsage() ).c_str(),
+			FileSystem::sizeToString( (Uint32)MemoryManager::getPeakMemoryUsage() ).c_str() );
+#else
+		mInfo = String::format(
+			"EE - FPS: %d Elapsed Time: %4.2f\nMouse X: %d Mouse Y: %d\nTexture Memory Usage: %s",
+			mWindow->getFPS(), et.asMilliseconds(), (Int32)Mouse.x, (Int32)Mouse.y,
+			FileSystem::sizeToString( TF->getTextureMemorySize() ).c_str() );
+#endif
 
 		mInfoText.setString( mInfo );
 
@@ -1704,7 +1858,7 @@ void EETest::render() {
 	}
 
 	if ( !MultiViewportMode ) {
-		Scenes[ Screen ]();
+		Scenes[Screen]();
 	} else {
 		Views[0].reset( Rectf( 0, 0, mWindow->getWidth(), HHeight ) );
 		Views[0].setViewport( Rectf( 0, 0, 1, 0.5f ) );
@@ -1735,21 +1889,11 @@ void EETest::render() {
 
 	mEEText.setAlign( TEXT_ALIGN_CENTER );
 
-	PR.setColor( Color(150, 150, 150, 220) );
+	PR.setColor( Color( 150, 150, 150, 220 ) );
 	PR.setFillMode( DRAW_FILL );
-	PR.drawRectangle(
-				Rectf(
-					Vector2f(
-						0.f,
-						(Float)mWindow->getHeight() - mEEText.getTextHeight()
-					),
-					Vector2f(
-						mEEText.getTextWidth(),
-						mEEText.getTextHeight()
-					)
-				),
-				ColRR1, ColRR2, ColRR3, ColRR4
-	);
+	PR.drawRectangle( Rectf( Vector2f( 0.f, (Float)mWindow->getHeight() - mEEText.getTextHeight() ),
+							 Vector2f( mEEText.getTextWidth(), mEEText.getTextHeight() ) ),
+					  ColRR1, ColRR2, ColRR3, ColRR4 );
 
 	mEEText.draw( 0.f, (Float)mWindow->getHeight() - mEEText.getTextHeight() );
 
@@ -1810,7 +1954,7 @@ void EETest::input() {
 			mWindow->maximize();
 	}
 
-	if ( KM->isKeyUp(KEY_F4) )
+	if ( KM->isKeyUp( KEY_F4 ) )
 		TF->reloadAllTextures();
 
 	if ( KM->isAltPressed() && KM->isKeyUp( KEY_RETURN ) ) {
@@ -1826,45 +1970,56 @@ void EETest::input() {
 		}
 	}
 
-	if ( KM->isControlPressed() && KM->isKeyUp(KEY_G) )
-		KM->grabInput(  !KM->grabInput() );
+	if ( KM->isControlPressed() && KM->isKeyUp( KEY_G ) )
+		KM->grabInput( !KM->grabInput() );
 
 	if ( KM->isKeyUp( KEY_F3 ) || KM->isKeyUp( KEY_WORLD_26 ) || KM->isKeyUp( KEY_BACKSLASH ) ) {
 		Con.toggle();
 	}
 
-	if ( KM->isKeyUp(KEY_1) && KM->isControlPressed() )
+	if ( KM->isKeyUp( KEY_1 ) && KM->isControlPressed() )
 		setScreen( 0 );
 
-	if ( KM->isKeyUp(KEY_2) && KM->isControlPressed() )
+	if ( KM->isKeyUp( KEY_2 ) && KM->isControlPressed() )
 		setScreen( 1 );
 
-	if ( KM->isKeyUp(KEY_3) && KM->isControlPressed() )
+	if ( KM->isKeyUp( KEY_3 ) && KM->isControlPressed() )
 		setScreen( 2 );
 
-	if ( KM->isKeyUp(KEY_4) && KM->isControlPressed() )
+	if ( KM->isKeyUp( KEY_4 ) && KM->isControlPressed() )
 		setScreen( 3 );
 
-	if ( KM->isKeyUp(KEY_5) && KM->isControlPressed() )
+	if ( KM->isKeyUp( KEY_5 ) && KM->isControlPressed() )
 		setScreen( 4 );
 
-	if ( KM->isKeyUp(KEY_6) && KM->isControlPressed() )
+	if ( KM->isKeyUp( KEY_6 ) && KM->isControlPressed() )
 		setScreen( 5 );
 
-	Joystick * Joy = JM->getJoystick(0);
+	Joystick* Joy = JM->getJoystick( 0 );
 
 	if ( mJoyEnabled && NULL != Joy ) {
-		if ( Joy->isButtonDown(0) )		KM->injectButtonPress(EE_BUTTON_LEFT);
-		if ( Joy->isButtonDown(1) )		KM->injectButtonPress(EE_BUTTON_RIGHT);
-		if ( Joy->isButtonDown(2) )		KM->injectButtonPress(EE_BUTTON_MIDDLE);
-		if ( Joy->isButtonUp(0) )		KM->injectButtonRelease(EE_BUTTON_LEFT);
-		if ( Joy->isButtonUp(1) )		KM->injectButtonRelease(EE_BUTTON_RIGHT);
-		if ( Joy->isButtonUp(2) )		KM->injectButtonRelease(EE_BUTTON_MIDDLE);
-		if ( Joy->isButtonUp(3) )		KM->injectButtonRelease(EE_BUTTON_WHEELUP);
-		if ( Joy->isButtonUp(7) )		KM->injectButtonRelease(EE_BUTTON_WHEELDOWN);
-		if ( Joy->isButtonUp(4) )		setScreen( 0 );
-		if ( Joy->isButtonUp(5) )		setScreen( 1 );
-		if ( Joy->isButtonUp(6) )		setScreen( 2 );
+		if ( Joy->isButtonDown( 0 ) )
+			KM->injectButtonPress( EE_BUTTON_LEFT );
+		if ( Joy->isButtonDown( 1 ) )
+			KM->injectButtonPress( EE_BUTTON_RIGHT );
+		if ( Joy->isButtonDown( 2 ) )
+			KM->injectButtonPress( EE_BUTTON_MIDDLE );
+		if ( Joy->isButtonUp( 0 ) )
+			KM->injectButtonRelease( EE_BUTTON_LEFT );
+		if ( Joy->isButtonUp( 1 ) )
+			KM->injectButtonRelease( EE_BUTTON_RIGHT );
+		if ( Joy->isButtonUp( 2 ) )
+			KM->injectButtonRelease( EE_BUTTON_MIDDLE );
+		if ( Joy->isButtonUp( 3 ) )
+			KM->injectButtonRelease( EE_BUTTON_WHEELUP );
+		if ( Joy->isButtonUp( 7 ) )
+			KM->injectButtonRelease( EE_BUTTON_WHEELDOWN );
+		if ( Joy->isButtonUp( 4 ) )
+			setScreen( 0 );
+		if ( Joy->isButtonUp( 5 ) )
+			setScreen( 1 );
+		if ( Joy->isButtonUp( 6 ) )
+			setScreen( 2 );
 
 		Float aX = Joy->getAxis( AXIS_X );
 		Float aY = Joy->getAxis( AXIS_Y );
@@ -1875,7 +2030,8 @@ void EETest::input() {
 			mAxisY += aY * rE;
 		}
 
-		if ( ( mAxisX != 0 && ( mAxisX >= 1.f || mAxisX <= -1.f ) ) || ( mAxisY != 0 && ( mAxisY >= 1.f || mAxisY <= -1.f )  ) ) {
+		if ( ( mAxisX != 0 && ( mAxisX >= 1.f || mAxisX <= -1.f ) ) ||
+			 ( mAxisY != 0 && ( mAxisY >= 1.f || mAxisY <= -1.f ) ) ) {
 			Float nmX = Mousef.x + mAxisX;
 			Float nmY = Mousef.y + mAxisY;
 
@@ -1889,12 +2045,12 @@ void EETest::input() {
 			nmX -= (Int32)nmX;
 			nmY -= (Int32)nmY;
 
-			mAxisX 		= nmX;
-			mAxisY	 	= nmY;
+			mAxisX = nmX;
+			mAxisY = nmY;
 		}
 	}
 
-	switch (Screen) {
+	switch ( Screen ) {
 		case 0:
 			if ( KM->isKeyUp( KEY_R ) ) {
 				physicsDestroy();
@@ -1911,46 +2067,46 @@ void EETest::input() {
 				Uint8 hat = Joy->getHat();
 
 				if ( HAT_LEFT == hat || HAT_LEFTDOWN == hat || HAT_LEFTUP == hat )
-					Map.move( (mWindow->getElapsed().asMilliseconds() * 0.2f), 0 );
+					Map.move( ( mWindow->getElapsed().asMilliseconds() * 0.2f ), 0 );
 
 				if ( HAT_RIGHT == hat || HAT_RIGHTDOWN == hat || HAT_RIGHTUP == hat )
 					Map.move( -mWindow->getElapsed().asMilliseconds() * 0.2f, 0 );
 
 				if ( HAT_UP == hat || HAT_LEFTUP == hat || HAT_RIGHTUP == hat )
-					Map.move( 0, (mWindow->getElapsed().asMilliseconds() * 0.2f) );
+					Map.move( 0, ( mWindow->getElapsed().asMilliseconds() * 0.2f ) );
 
 				if ( HAT_DOWN == hat || HAT_LEFTDOWN == hat || HAT_RIGHTDOWN == hat )
 					Map.move( 0, -mWindow->getElapsed().asMilliseconds() * 0.2f );
 			}
 
-			if ( KM->isKeyDown(KEY_LEFT) ) {
+			if ( KM->isKeyDown( KEY_LEFT ) ) {
 				Map.move( mWindow->getElapsed().asMilliseconds() * 0.2f, 0 );
 			}
 
-			if ( KM->isKeyDown(KEY_RIGHT) ) {
+			if ( KM->isKeyDown( KEY_RIGHT ) ) {
 				Map.move( -mWindow->getElapsed().asMilliseconds() * 0.2f, 0 );
 			}
 
-			if ( KM->isKeyDown(KEY_UP) ) {
+			if ( KM->isKeyDown( KEY_UP ) ) {
 				Map.move( 0, mWindow->getElapsed().asMilliseconds() * 0.2f );
 			}
 
-			if ( KM->isKeyDown(KEY_DOWN) ) {
+			if ( KM->isKeyDown( KEY_DOWN ) ) {
 				Map.move( 0, -mWindow->getElapsed().asMilliseconds() * 0.2f );
 			}
 
-			if ( KM->isKeyUp(KEY_F8) )
+			if ( KM->isKeyUp( KEY_F8 ) )
 				Map.reset();
 
 			break;
 		case 2:
-			if ( KM->isKeyUp(KEY_S) )
-				SP.setRepetitions(1);
+			if ( KM->isKeyUp( KEY_S ) )
+				SP.setRepetitions( 1 );
 
-			if ( KM->isKeyUp(KEY_A) )
-				SP.setRepetitions(-1);
+			if ( KM->isKeyUp( KEY_A ) )
+				SP.setRepetitions( -1 );
 
-			if ( KM->isKeyUp(KEY_D) )
+			if ( KM->isKeyUp( KEY_D ) )
 				SP.setReverseAnimation( !SP.getReverseAnimation() );
 
 			if ( KM->isMouseRightPressed() )
@@ -1961,7 +2117,7 @@ void EETest::input() {
 			if ( KM->isKeyUp( KEY_P ) )
 				SndMng.play( "mysound" );
 
-			if ( KM->isControlPressed() && KM->isKeyUp(KEY_P) ) {
+			if ( KM->isControlPressed() && KM->isKeyUp( KEY_P ) ) {
 				ShowParticles = !ShowParticles;
 			}
 
@@ -1982,9 +2138,10 @@ void EETest::update() {
 	updateParticles();
 #endif
 
-	if ( KM->isKeyUp(KEY_F12) ) mWindow->takeScreenshot( MyPath + "screenshots/" ); //After render and before Display
+	if ( KM->isKeyUp( KEY_F12 ) )
+		mWindow->takeScreenshot( MyPath + "screenshots/" ); // After render and before Display
 
-	mWindow->display(false);
+	mWindow->display( false );
 }
 
 void EETest::process() {
@@ -1999,15 +2156,16 @@ void EETest::process() {
 	end();
 }
 
-void EETest::particlesCallback( Particle * P, ParticleSystem * Me ) {
+void EETest::particlesCallback( Particle* P, ParticleSystem* Me ) {
 	Float x, y, radio;
 	Vector2f MePos( Me->getPosition() );
 
-	radio = (Math::randf(1.f, 1.2f) + sin( 20.0f / P->getId() )) * 24;
+	radio = ( Math::randf( 1.f, 1.2f ) + sin( 20.0f / P->getId() ) ) * 24;
 	x = MePos.x + radio * cos( (Float)P->getId() );
 	y = MePos.y + radio * sin( (Float)P->getId() );
-	P->reset(x, y, Math::randf(-10.f, 10.f), Math::randf(-10.f, 10.f), Math::randf(-10.f, 10.f), Math::randf(-10.f, 10.f));
-	P->setColor( ColorAf(1.f, 0.6f, 0.3f, 1.f), 0.02f + Math::randf() * 0.3f );
+	P->reset( x, y, Math::randf( -10.f, 10.f ), Math::randf( -10.f, 10.f ),
+			  Math::randf( -10.f, 10.f ), Math::randf( -10.f, 10.f ) );
+	P->setColor( ColorAf( 1.f, 0.6f, 0.3f, 1.f ), 0.02f + Math::randf() * 0.3f );
 }
 
 void EETest::particles() {
@@ -2017,26 +2175,28 @@ void EETest::particles() {
 		PS[1].setPosition( Mousef );
 
 	PS[2].setPosition( HWidth, HHeight );
-	PS[3].setPosition(  Math::cosAng(Ang) * 220.f + HWidth + Math::randf(0.f, 10.f),  Math::sinAng(Ang) * 220.f + HHeight + Math::randf(0.f, 10.f) );
-	PS[4].setPosition( -Math::cosAng(Ang) * 220.f + HWidth + Math::randf(0.f, 10.f), -Math::sinAng(Ang) * 220.f + HHeight + Math::randf(0.f, 10.f) );
+	PS[3].setPosition( Math::cosAng( Ang ) * 220.f + HWidth + Math::randf( 0.f, 10.f ),
+					   Math::sinAng( Ang ) * 220.f + HHeight + Math::randf( 0.f, 10.f ) );
+	PS[4].setPosition( -Math::cosAng( Ang ) * 220.f + HWidth + Math::randf( 0.f, 10.f ),
+					   -Math::sinAng( Ang ) * 220.f + HHeight + Math::randf( 0.f, 10.f ) );
 
 	for ( Uint32 i = 0; i < PS.size(); i++ )
 		PS[i].draw();
 }
 
-#define GRABABLE_MASK_BIT (1u<<31u)
-#define NOT_GRABABLE_MASK (~GRABABLE_MASK_BIT)
+#define GRABABLE_MASK_BIT ( 1u << 31u )
+#define NOT_GRABABLE_MASK ( ~GRABABLE_MASK_BIT )
 
 void EETest::createJointAndBody() {
-	#ifndef EE_PLATFORM_TOUCH
-	mMouseJoint	= NULL;
-	mMouseBody	= Body::New( INFINITY, INFINITY );
-	#else
+#ifndef EE_PLATFORM_TOUCH
+	mMouseJoint = NULL;
+	mMouseBody = Body::New( INFINITY, INFINITY );
+#else
 	for ( Uint32 i = 0; i < EE_MAX_FINGERS; i++ ) {
 		mMouseJoint[i] = NULL;
 		mMouseBody[i] = Body::New( INFINITY, INFINITY );
 	}
-	#endif
+#endif
 }
 
 void EETest::demo1Create() {
@@ -2049,36 +2209,42 @@ void EETest::demo1Create() {
 	mSpace->setSleepTimeThreshold( 0.5f );
 
 	Body *body, *statiBody = mSpace->getStaticBody();
-	Shape * shape;
+	Shape* shape;
 
-	shape = mSpace->addShape( ShapeSegment::New( statiBody, cVectNew( 0, mWindow->getHeight() ), cVectNew( mWindow->getWidth(), mWindow->getHeight() ), 0.0f ) );
+	shape = mSpace->addShape(
+		ShapeSegment::New( statiBody, cVectNew( 0, mWindow->getHeight() ),
+						   cVectNew( mWindow->getWidth(), mWindow->getHeight() ), 0.0f ) );
 	shape->setE( 1.0f );
 	shape->setU( 1.0f );
 	shape->setLayers( NOT_GRABABLE_MASK );
 
-	shape = mSpace->addShape( ShapeSegment::New( statiBody, cVectNew( mWindow->getWidth(), 0 ), cVectNew( mWindow->getWidth(), mWindow->getHeight() ), 0.0f ) );
+	shape = mSpace->addShape(
+		ShapeSegment::New( statiBody, cVectNew( mWindow->getWidth(), 0 ),
+						   cVectNew( mWindow->getWidth(), mWindow->getHeight() ), 0.0f ) );
 	shape->setE( 1.0f );
 	shape->setU( 1.0f );
 	shape->setLayers( NOT_GRABABLE_MASK );
 
-	shape = mSpace->addShape( ShapeSegment::New( statiBody, cVectNew( 0, 0 ), cVectNew( 0, mWindow->getHeight() ), 0.0f ) );
+	shape = mSpace->addShape( ShapeSegment::New( statiBody, cVectNew( 0, 0 ),
+												 cVectNew( 0, mWindow->getHeight() ), 0.0f ) );
 	shape->setE( 1.0f );
 	shape->setU( 1.0f );
 	shape->setLayers( NOT_GRABABLE_MASK );
 
-	shape = mSpace->addShape( ShapeSegment::New( statiBody, cVectNew( 0, 0 ), cVectNew( mWindow->getWidth(), 0 ), 0.0f ) );
+	shape = mSpace->addShape( ShapeSegment::New( statiBody, cVectNew( 0, 0 ),
+												 cVectNew( mWindow->getWidth(), 0 ), 0.0f ) );
 	shape->setE( 1.0f );
 	shape->setU( 1.0f );
 	shape->setLayers( NOT_GRABABLE_MASK );
 
 	Float hw = mWindow->getWidth() / 2;
 
-	for(int i=0; i<14; i++){
-		for(int j=0; j<=i; j++){
+	for ( int i = 0; i < 14; i++ ) {
+		for ( int j = 0; j <= i; j++ ) {
 			body = mSpace->addBody( Body::New( 1.0f, Moment::forBox( 1.0f, 30.0f, 30.0f ) ) );
 			body->setPos( cVectNew( hw + j * 32 - i * 16, 100 + i * 32 ) );
 
-			//shape = mSpace->AddShape( ShapePolySprite::New( body, 30.f, 30.f, mBoxSprite ) );
+			// shape = mSpace->AddShape( ShapePolySprite::New( body, 30.f, 30.f, mBoxSprite ) );
 			shape = mSpace->addShape( ShapePoly::New( body, 30.f, 30.f ) );
 			shape->setE( 0.0f );
 			shape->setU( 0.8f );
@@ -2087,27 +2253,26 @@ void EETest::demo1Create() {
 
 	cpFloat radius = 15.0f;
 
-	body = mSpace->addBody( Body::New( 10.0f, Moment::forCircle( 10.0f, 0.0f, radius, cVectZero ) ) );
+	body =
+		mSpace->addBody( Body::New( 10.0f, Moment::forCircle( 10.0f, 0.0f, radius, cVectZero ) ) );
 	body->setPos( cVectNew( hw, mWindow->getHeight() - radius - 5 ) );
 
-	//shape = mSpace->AddShape( ShapeCircleSprite::New( body, radius, cVectZero, mCircleSprite ) );
+	// shape = mSpace->AddShape( ShapeCircleSprite::New( body, radius, cVectZero, mCircleSprite ) );
 	shape = mSpace->addShape( ShapeCircle::New( body, radius, cVectZero ) );
 	shape->setE( 0.0f );
 	shape->setU( 0.9f );
 }
 
-void EETest::demo1Update() {
-
-}
+void EETest::demo1Update() {}
 
 void EETest::destroyBody() {
-	#ifndef EE_PLATFORM_TOUCH
+#ifndef EE_PLATFORM_TOUCH
 	eeSAFE_DELETE( mMouseBody );
-	#else
+#else
 	for ( Uint32 i = 0; i < EE_MAX_FINGERS; i++ ) {
 		eeSAFE_DELETE( mMouseBody[i] );
 	}
-	#endif
+#endif
 }
 
 void EETest::demo1Destroy() {
@@ -2116,53 +2281,55 @@ void EETest::demo1Destroy() {
 	eeSAFE_DELETE( mSpace );
 }
 
-cpBool EETest::blockerBegin( Arbiter * arb, Space *, void * ) {
-	Shape * a, * b;
+cpBool EETest::blockerBegin( Arbiter* arb, Space*, void* ) {
+	Shape *a, *b;
 	arb->getShapes( &a, &b );
 
-	Emitter * emitter = reinterpret_cast<Emitter*>(a->getData());
+	Emitter* emitter = reinterpret_cast<Emitter*>( a->getData() );
 
 	emitter->blocked++;
 
 	return cpFalse; // Return values from sensors callbacks are ignored,
 }
 
-void EETest::blockerSeparate( Arbiter * arb, Space *, void * ) {
-	Shape * a, * b;
+void EETest::blockerSeparate( Arbiter* arb, Space*, void* ) {
+	Shape *a, *b;
 	arb->getShapes( &a, &b );
 
-	Emitter * emitter = reinterpret_cast<Emitter*>(a->getData());
+	Emitter* emitter = reinterpret_cast<Emitter*>( a->getData() );
 
 	emitter->blocked--;
 }
 
-void EETest::postStepRemove( Space *, void * tshape, void * ) {
-	Shape * shape = reinterpret_cast<Shape*>( tshape );
+void EETest::postStepRemove( Space*, void* tshape, void* ) {
+	Shape* shape = reinterpret_cast<Shape*>( tshape );
 
-	#ifndef EE_PLATFORM_TOUCH
-	if ( NULL != mMouseJoint && ( mMouseJoint->getA() == shape->getBody() || mMouseJoint->getB() == shape->getBody() ) ) {
+#ifndef EE_PLATFORM_TOUCH
+	if ( NULL != mMouseJoint &&
+		 ( mMouseJoint->getA() == shape->getBody() || mMouseJoint->getB() == shape->getBody() ) ) {
 		mSpace->removeConstraint( mMouseJoint );
 		eeSAFE_DELETE( mMouseJoint );
 	}
-	#else
+#else
 	for ( Uint32 i = 0; i < EE_MAX_FINGERS; i++ ) {
-		if ( NULL != mMouseJoint[i] && ( mMouseJoint[i]->getA() == shape->getBody() || mMouseJoint[i]->getB() == shape->getBody() ) ) {
+		if ( NULL != mMouseJoint[i] && ( mMouseJoint[i]->getA() == shape->getBody() ||
+										 mMouseJoint[i]->getB() == shape->getBody() ) ) {
 			mSpace->removeConstraint( mMouseJoint[i] );
 			eeSAFE_DELETE( mMouseJoint[i] );
 		}
 	}
-	#endif
+#endif
 
 	mSpace->removeBody( shape->getBody() );
 	mSpace->removeShape( shape );
 	Shape::Free( shape, true );
 }
 
-cpBool EETest::catcherBarBegin(Arbiter *arb, Physics::Space *, void *) {
-	Shape * a, * b;
+cpBool EETest::catcherBarBegin( Arbiter* arb, Physics::Space*, void* ) {
+	Shape *a, *b;
 	arb->getShapes( &a, &b );
 
-	Emitter * emitter = reinterpret_cast<Emitter*>(a->getData());
+	Emitter* emitter = reinterpret_cast<Emitter*>( a->getData() );
 
 	emitter->queue++;
 
@@ -2180,12 +2347,12 @@ void EETest::demo2Create() {
 	mSpace->setIterations( 10 );
 	mSpace->setGravity( cVectNew( 0, 100 ) );
 
-	Body * statiBody = mSpace->getStaticBody();
-	Shape * shape;
+	Body* statiBody = mSpace->getStaticBody();
+	Shape* shape;
 
 	emitterInstance.queue = 5;
 	emitterInstance.blocked = 0;
-	emitterInstance.position = cVectNew( mWindow->getWidth() / 2 , 150);
+	emitterInstance.position = cVectNew( mWindow->getWidth() / 2, 150 );
 
 	shape = mSpace->addShape( ShapeCircle::New( statiBody, 15.0f, emitterInstance.position ) );
 	shape->setSensor( 1 );
@@ -2193,35 +2360,37 @@ void EETest::demo2Create() {
 	shape->setData( &emitterInstance );
 
 	// Create our catch sensor to requeue the balls when they reach the bottom of the screen
-	shape = mSpace->addShape( ShapeSegment::New( statiBody, cVectNew(-4000, 600), cVectNew(4000, 600), 15.0f ) );
+	shape = mSpace->addShape(
+		ShapeSegment::New( statiBody, cVectNew( -4000, 600 ), cVectNew( 4000, 600 ), 15.0f ) );
 	shape->setSensor( 1 );
 	shape->setCollisionType( CATCH_SENSOR_TYPE );
 	shape->setData( &emitterInstance );
 
 	Space::CollisionHandler handler;
-	handler.a			= BLOCKING_SENSOR_TYPE;
-	handler.b			= BALL_TYPE;
-	handler.begin		= cb::Make3( this, &EETest::blockerBegin );
-	handler.separate	= cb::Make3( this, &EETest::blockerSeparate );
+	handler.a = BLOCKING_SENSOR_TYPE;
+	handler.b = BALL_TYPE;
+	handler.begin = cb::Make3( this, &EETest::blockerBegin );
+	handler.separate = cb::Make3( this, &EETest::blockerSeparate );
 	mSpace->addCollisionHandler( handler );
 
 	handler.reset(); // Reset all the values and the callbacks ( set the callbacks as !IsSet()
 
-	handler.a			= CATCH_SENSOR_TYPE;
-	handler.b			= BALL_TYPE;
-	handler.begin		= cb::Make3( this, &EETest::catcherBarBegin );
+	handler.a = CATCH_SENSOR_TYPE;
+	handler.b = BALL_TYPE;
+	handler.begin = cb::Make3( this, &EETest::catcherBarBegin );
 	mSpace->addCollisionHandler( handler );
 }
 
 void EETest::demo2Update() {
-	if( !emitterInstance.blocked && emitterInstance.queue ){
+	if ( !emitterInstance.blocked && emitterInstance.queue ) {
 		emitterInstance.queue--;
 
-		Body * body = mSpace->addBody( Body::New( 1.0f, Moment::forCircle(1.0f, 15.0f, 0.0f, cVectZero ) ) );
+		Body* body =
+			mSpace->addBody( Body::New( 1.0f, Moment::forCircle( 1.0f, 15.0f, 0.0f, cVectZero ) ) );
 		body->setPos( emitterInstance.position );
-		body->setVel( cVectNew( Math::randf(-1,1), Math::randf(-1,1) ) * (cpFloat)100 );
+		body->setVel( cVectNew( Math::randf( -1, 1 ), Math::randf( -1, 1 ) ) * (cpFloat)100 );
 
-		Shape *shape = mSpace->addShape( ShapeCircle::New( body, 15.0f, cVectZero ) );
+		Shape* shape = mSpace->addShape( ShapeCircle::New( body, 15.0f, cVectZero ) );
 		shape->setCollisionType( BALL_TYPE );
 	}
 }
@@ -2234,44 +2403,44 @@ void EETest::demo2Destroy() {
 void EETest::changeDemo( Uint32 num ) {
 	if ( num < mDemo.size() ) {
 		if ( eeINDEX_NOT_FOUND != mCurDemo )
-			mDemo[ mCurDemo ].destroy();
+			mDemo[mCurDemo].destroy();
 
 		mCurDemo = num;
 
-		mDemo[ mCurDemo ].init();
+		mDemo[mCurDemo].init();
 	}
 }
 
 void EETest::physicsCreate() {
 	PhysicsManager::createSingleton();
-	PhysicsManager * PM = PhysicsManager::instance();
-	PhysicsManager::DrawSpaceOptions * DSO = PM->getDrawOptions();
+	PhysicsManager* PM = PhysicsManager::instance();
+	PhysicsManager::DrawSpaceOptions* DSO = PM->getDrawOptions();
 
-	DSO->DrawBBs			= false;
-	DSO->DrawShapes			= true;
-	DSO->CollisionPointSize	= 0;
-	DSO->BodyPointSize		= 0;
-	DSO->LineThickness		= 1;
+	DSO->DrawBBs = false;
+	DSO->DrawShapes = true;
+	DSO->CollisionPointSize = 0;
+	DSO->BodyPointSize = 0;
+	DSO->LineThickness = 1;
 
 	mDemo.clear();
 
 	physicDemo demo;
 
-	demo.init		= cb::Make0( this, &EETest::demo1Create );
-	demo.update		= cb::Make0( this, &EETest::demo1Update );
-	demo.destroy	= cb::Make0( this, &EETest::demo1Destroy );
+	demo.init = cb::Make0( this, &EETest::demo1Create );
+	demo.update = cb::Make0( this, &EETest::demo1Update );
+	demo.destroy = cb::Make0( this, &EETest::demo1Destroy );
 	mDemo.push_back( demo );
 
-	demo.init		= cb::Make0( this, &EETest::demo2Create );
-	demo.update		= cb::Make0( this, &EETest::demo2Update );
-	demo.destroy	= cb::Make0( this, &EETest::demo2Destroy );
+	demo.init = cb::Make0( this, &EETest::demo2Create );
+	demo.update = cb::Make0( this, &EETest::demo2Update );
+	demo.destroy = cb::Make0( this, &EETest::demo2Destroy );
 	mDemo.push_back( demo );
 
 	changeDemo( 0 );
 }
 
 void EETest::physicsUpdate() {
-	#ifndef EE_PLATFORM_TOUCH
+#ifndef EE_PLATFORM_TOUCH
 	mMousePoint = cVectNew( KM->getMousePosf().x, KM->getMousePosf().y );
 	cVect newPoint = tovect( cpvlerp( tocpv( mMousePoint_last ), tocpv( mMousePoint ), 0.25 ) );
 	mMouseBody->setPos( newPoint );
@@ -2282,10 +2451,11 @@ void EETest::physicsUpdate() {
 		if ( NULL == mMouseJoint ) {
 			cVect point = cVectNew( KM->getMousePosf().x, KM->getMousePosf().y );
 
-			Shape * shape = mSpace->pointQueryFirst( point, GRABABLE_MASK_BIT, CP_NO_GROUP );
+			Shape* shape = mSpace->pointQueryFirst( point, GRABABLE_MASK_BIT, CP_NO_GROUP );
 
-			if( NULL != shape ){
-				mMouseJoint = eeNew( PivotJoint, ( mMouseBody, shape->getBody(), cVectZero, shape->getBody()->world2Local( point ) ) );
+			if ( NULL != shape ) {
+				mMouseJoint = eeNew( PivotJoint, ( mMouseBody, shape->getBody(), cVectZero,
+												   shape->getBody()->world2Local( point ) ) );
 
 				mMouseJoint->setMaxForce( 50000.0f );
 				mSpace->addConstraint( mMouseJoint );
@@ -2295,11 +2465,12 @@ void EETest::physicsUpdate() {
 		mSpace->removeConstraint( mMouseJoint );
 		eeSAFE_DELETE( mMouseJoint );
 	}
-	#else
+#else
 	for ( Uint32 i = 0; i < EE_MAX_FINGERS; i++ ) {
-		InputFinger * Finger = KM->getFingerIndex(i);
+		InputFinger* Finger = KM->getFingerIndex( i );
 		mMousePoint[i] = cVectNew( Finger->x, Finger->y );
-		cVect newPoint = tovect( cpvlerp( tocpv( mMousePoint_last[i] ), tocpv( mMousePoint[i] ), 0.25 ) );
+		cVect newPoint =
+			tovect( cpvlerp( tocpv( mMousePoint_last[i] ), tocpv( mMousePoint[i] ), 0.25 ) );
 		mMouseBody[i]->setPos( newPoint );
 		mMouseBody[i]->setVel( ( newPoint - mMousePoint_last[i] ) * (cpFloat)mWindow->getFPS() );
 		mMousePoint_last[i] = newPoint;
@@ -2308,10 +2479,12 @@ void EETest::physicsUpdate() {
 			if ( NULL == mMouseJoint[i] ) {
 				cVect point = cVectNew( Finger->x, Finger->y );
 
-				Shape * shape = mSpace->pointQueryFirst( point, GRABABLE_MASK_BIT, CP_NO_GROUP );
+				Shape* shape = mSpace->pointQueryFirst( point, GRABABLE_MASK_BIT, CP_NO_GROUP );
 
-				if( NULL != shape ){
-					mMouseJoint[i] = eeNew( PivotJoint, ( mMouseBody[i], shape->getBody(), cVectZero, shape->getBody()->world2Local( point ) ) );
+				if ( NULL != shape ) {
+					mMouseJoint[i] =
+						eeNew( PivotJoint, ( mMouseBody[i], shape->getBody(), cVectZero,
+											 shape->getBody()->world2Local( point ) ) );
 
 					mMouseJoint[i]->setMaxForce( 50000.0f );
 					mSpace->addConstraint( mMouseJoint[i] );
@@ -2322,15 +2495,15 @@ void EETest::physicsUpdate() {
 			eeSAFE_DELETE( mMouseJoint[i] );
 		}
 	}
-	#endif
+#endif
 
-	mDemo[ mCurDemo ].update();
+	mDemo[mCurDemo].update();
 	mSpace->update();
 	mSpace->draw();
 }
 
 void EETest::physicsDestroy() {
-	mDemo[ mCurDemo ].destroy();
+	mDemo[mCurDemo].destroy();
 }
 
 void EETest::end() {
@@ -2349,10 +2522,10 @@ void EETest::end() {
 	Log::instance()->save();
 }
 
-}
+} // namespace Demo_Test
 
-EE_MAIN_FUNC int main (int , char *  []) {
-	Demo_Test::EETest * Test = eeNew( Demo_Test::EETest, () );
+EE_MAIN_FUNC int main( int, char*[] ) {
+	Demo_Test::EETest* Test = eeNew( Demo_Test::EETest, () );
 
 	Test->process();
 

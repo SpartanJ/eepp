@@ -8,147 +8,147 @@
 namespace EE { namespace UI {
 
 class EE_API UITextInput : public UITextView {
-	public:
-		static UITextInput * New();
+  public:
+	static UITextInput* New();
 
-		static UITextInput * NewWithTag( const std::string& tag );
+	static UITextInput* NewWithTag( const std::string& tag );
 
-		UITextInput();
+	UITextInput();
 
-		explicit UITextInput( const std::string& tag );
+	explicit UITextInput( const std::string& tag );
 
-		virtual ~UITextInput();
+	virtual ~UITextInput();
 
-		virtual Uint32 getType() const;
+	virtual Uint32 getType() const;
 
-		virtual bool isType( const Uint32& type ) const;
+	virtual bool isType( const Uint32& type ) const;
 
-		virtual void scheduledUpdate( const Time& time );
+	virtual void scheduledUpdate( const Time& time );
 
-		virtual void draw();
+	virtual void draw();
 
-		void pushIgnoredChar( const Uint32& ch );
+	void pushIgnoredChar( const Uint32& ch );
 
-		virtual void setTheme( UITheme * Theme );
+	virtual void setTheme( UITheme* Theme );
 
-		InputTextBuffer * getInputTextBuffer();
+	InputTextBuffer* getInputTextBuffer();
 
-		UITextInput * setAllowEditing( const bool& allow );
+	UITextInput* setAllowEditing( const bool& allow );
 
-		const bool& isEditingAllowed() const;
+	const bool& isEditingAllowed() const;
 
-		virtual const String& getText();
+	virtual const String& getText();
 
-		virtual UITextView * setText( const String& text );
+	virtual UITextView* setText( const String& text );
 
-		virtual void shrinkText( const Uint32& MaxWidth );
+	virtual void shrinkText( const Uint32& MaxWidth );
 
-		UITextInput * setMaxLength( Uint32 maxLength );
+	UITextInput* setMaxLength( Uint32 maxLength );
 
-		Uint32 getMaxLength();
+	Uint32 getMaxLength();
 
-		UITextInput * setFreeEditing( bool support );
+	UITextInput* setFreeEditing( bool support );
 
-		bool isFreeEditingEnabled();
+	bool isFreeEditingEnabled();
 
-		virtual bool applyProperty( const StyleSheetProperty& attribute );
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
-		virtual std::string getPropertyString(const PropertyDefinition* propertyDef);
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef );
 
-		virtual UIWidget * setPadding(const Rectf& padding);
+	virtual UIWidget* setPadding( const Rectf& padding );
 
-		const String& getHint() const;
+	const String& getHint() const;
 
-		UITextInput* setHint(const String& hint);
+	UITextInput* setHint( const String& hint );
 
-		const Color& getHintColor() const;
+	const Color& getHintColor() const;
 
-		UITextInput* setHintColor(const Color& hintColor);
+	UITextInput* setHintColor( const Color& hintColor );
 
-		const Color& getHintShadowColor() const;
+	const Color& getHintShadowColor() const;
 
-		UITextInput* setHintShadowColor(const Color& shadowColor);
+	UITextInput* setHintShadowColor( const Color& shadowColor );
 
-		Font * getHintFont();
+	Font* getHintFont();
 
-		UITextInput* setHintFont( Font * font );
+	UITextInput* setHintFont( Font* font );
 
-		Uint32 getHintCharacterSize() const;
+	Uint32 getHintCharacterSize() const;
 
-		UITextView* setHintCharacterSize(const Uint32& characterSize);
+	UITextView* setHintCharacterSize( const Uint32& characterSize );
 
-		const Uint32& getHintFontStyle() const;
+	const Uint32& getHintFontStyle() const;
 
-		UITextView * setHintFontStyle( const Uint32& fontStyle );
+	UITextView* setHintFontStyle( const Uint32& fontStyle );
 
-		const Float & getHintOutlineThickness() const;
+	const Float& getHintOutlineThickness() const;
 
-		UITextView * setHintOutlineThickness( const Float& outlineThickness );
+	UITextView* setHintOutlineThickness( const Float& outlineThickness );
 
-		const Color& getHintOutlineColor() const;
+	const Color& getHintOutlineColor() const;
 
-		UITextView * setHintOutlineColor( const Color& outlineColor );
+	UITextView* setHintOutlineColor( const Color& outlineColor );
 
-	protected:
-		InputTextBuffer	mTextBuffer;
-		Float			mWaitCursorTime;
-		Vector2f		mCurPos;
-		Text *			mHintCache;
-		FontStyleConfig mHintStyleConfig;
-		int				mCursorPos;
-		bool			mAllowEditing;
-		bool			mShowingWait;
-		void resetWaitCursor();
+  protected:
+	InputTextBuffer mTextBuffer;
+	Float mWaitCursorTime;
+	Vector2f mCurPos;
+	Text* mHintCache;
+	FontStyleConfig mHintStyleConfig;
+	int mCursorPos;
+	bool mAllowEditing;
+	bool mShowingWait;
+	void resetWaitCursor();
 
-		virtual void alignFix();
+	virtual void alignFix();
 
-		virtual void onAutoSize();
+	virtual void onAutoSize();
 
-		void privOnPressEnter();
+	void privOnPressEnter();
 
-		void autoPadding();
+	void autoPadding();
 
-		virtual Uint32 onMouseClick( const Vector2i& position, const Uint32& flags );
+	virtual Uint32 onMouseClick( const Vector2i& position, const Uint32& flags );
 
-		virtual Uint32 onMouseDown( const Vector2i& position, const Uint32& flags );
+	virtual Uint32 onMouseDown( const Vector2i& position, const Uint32& flags );
 
-		virtual Uint32 onMouseDoubleClick( const Vector2i& position, const Uint32& flags );
+	virtual Uint32 onMouseDoubleClick( const Vector2i& position, const Uint32& flags );
 
-		virtual Uint32 onMouseLeave( const Vector2i& position, const Uint32& flags );
+	virtual Uint32 onMouseLeave( const Vector2i& position, const Uint32& flags );
 
-		virtual Uint32 onFocus();
+	virtual Uint32 onFocus();
 
-		virtual Uint32 onFocusLoss();
+	virtual Uint32 onFocusLoss();
 
-		virtual Uint32 onPressEnter();
+	virtual Uint32 onPressEnter();
 
-		virtual void onFontChanged();
+	virtual void onFontChanged();
 
-		void onThemeLoaded();
+	void onThemeLoaded();
 
-		virtual void onCursorPosChange();
+	virtual void onCursorPosChange();
 
-		void drawWaitingCursor();
+	void drawWaitingCursor();
 
-		void updateWaitingCursor(const Time & time);
+	void updateWaitingCursor( const Time& time );
 
-		virtual void updateText();
+	virtual void updateText();
 
-		virtual void selCurInit( const Int32& init );
+	virtual void selCurInit( const Int32& init );
 
-		virtual void selCurEnd( const Int32& end );
+	virtual void selCurEnd( const Int32& end );
 
-		virtual Int32 selCurInit();
+	virtual Int32 selCurInit();
 
-		virtual Int32 selCurEnd();
+	virtual Int32 selCurEnd();
 
-		void onCursorPositionChange();
+	void onCursorPositionChange();
 
-		void onBufferChange();
+	void onBufferChange();
 
-		void onInputSelectionChange();
+	void onInputSelectionChange();
 };
 
-}}
+}} // namespace EE::UI
 
 #endif

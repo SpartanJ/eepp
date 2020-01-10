@@ -2,75 +2,79 @@
 #define EE_GRAPHICS_FONTBMFONT_HPP
 
 #include <eepp/graphics/base.hpp>
-#include <eepp/graphics/texture.hpp>
 #include <eepp/graphics/font.hpp>
+#include <eepp/graphics/texture.hpp>
 
 namespace EE { namespace System {
 class Pack;
 class IOStream;
-}}
+}} // namespace EE::System
 
 namespace EE { namespace Graphics {
 
 /** @brief Implementation of AngelCode BMFont fonts. */
 class EE_API FontBMFont : public Font {
-	public:
-		static FontBMFont * New( const std::string FontName );
+  public:
+	static FontBMFont* New( const std::string FontName );
 
-		static  FontBMFont * New( const std::string FontName, const std::string& filename );
+	static FontBMFont* New( const std::string FontName, const std::string& filename );
 
-		~FontBMFont();
+	~FontBMFont();
 
-		bool loadFromFile(const std::string& filename);
+	bool loadFromFile( const std::string& filename );
 
-		bool loadFromMemory(const void* data, std::size_t sizeInBytes, const std::string & imageFileBasePath);
+	bool loadFromMemory( const void* data, std::size_t sizeInBytes,
+						 const std::string& imageFileBasePath );
 
-		bool loadFromStream( IOStream& stream );
+	bool loadFromStream( IOStream& stream );
 
-		bool loadFromPack( Pack * pack, std::string filePackPath );
+	bool loadFromPack( Pack* pack, std::string filePackPath );
 
-		const Font::Info& getInfo() const;
+	const Font::Info& getInfo() const;
 
-		const Glyph& getGlyph(Uint32 codePoint, unsigned int characterSize, bool bold, Float outlineThickness = 0) const;
+	const Glyph& getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
+						   Float outlineThickness = 0 ) const;
 
-		Float getKerning(Uint32 first, Uint32 second, unsigned int characterSize) const;
+	Float getKerning( Uint32 first, Uint32 second, unsigned int characterSize ) const;
 
-		Float getLineSpacing(unsigned int characterSize) const;
+	Float getLineSpacing( unsigned int characterSize ) const;
 
-		Uint32 getFontHeight( const Uint32& characterSize );
+	Uint32 getFontHeight( const Uint32& characterSize );
 
-		Float getUnderlinePosition(unsigned int characterSize) const;
+	Float getUnderlinePosition( unsigned int characterSize ) const;
 
-		Float getUnderlineThickness(unsigned int characterSize) const;
+	Float getUnderlineThickness( unsigned int characterSize ) const;
 
-		Texture * getTexture(unsigned int characterSize) const;
+	Texture* getTexture( unsigned int characterSize ) const;
 
-		bool loaded() const;
+	bool loaded() const;
 
-		FontBMFont& operator =(const FontBMFont& right);
-	protected:
-		FontBMFont(const std::string FontName);
+	FontBMFont& operator=( const FontBMFont& right );
 
-		typedef std::map<Uint64, Glyph> GlyphTable; ///< Table mapping a codepoint to its glyph
+  protected:
+	FontBMFont( const std::string FontName );
 
-		struct Page
-		{
-			GlyphTable       glyphs;  ///< Table mapping code points to their corresponding glyph
-			Texture *        texture; ///< Texture containing the pixels of the glyphs
-		};
+	typedef std::map<Uint64, Glyph> GlyphTable; ///< Table mapping a codepoint to its glyph
 
-		void cleanup();
+	struct Page {
+		GlyphTable glyphs; ///< Table mapping code points to their corresponding glyph
+		Texture* texture;  ///< Texture containing the pixels of the glyphs
+	};
 
-		typedef std::map<unsigned int, Page> PageTable; ///< Table mapping a character size to its page (texture)
+	void cleanup();
 
-		Font::Info                 mInfo;        ///< Information about the font
-		mutable PageTable          mPages;       ///< Table containing the glyphs pages by character size
-		std::string mFilePath;
-		Uint32 mFontSize;
+	typedef std::map<unsigned int, Page>
+		PageTable; ///< Table mapping a character size to its page (texture)
 
-		Glyph loadGlyph(Uint32 codePoint, unsigned int characterSize, bool bold, Float outlineThickness) const;
+	Font::Info mInfo;		  ///< Information about the font
+	mutable PageTable mPages; ///< Table containing the glyphs pages by character size
+	std::string mFilePath;
+	Uint32 mFontSize;
+
+	Glyph loadGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
+					 Float outlineThickness ) const;
 };
 
-}}
+}} // namespace EE::Graphics
 
 #endif

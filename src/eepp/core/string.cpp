@@ -1,15 +1,15 @@
-#include <iterator>
-#include <cctype>
 #include <algorithm>
+#include <cctype>
 #include <cstdarg>
 #include <eepp/core/string.hpp>
 #include <eepp/core/utf.hpp>
+#include <iterator>
 
 namespace EE {
 
 const std::size_t String::InvalidPos = StringType::npos;
 
-constexpr Uint32 String::hash( const Uint8 * str ) {
+constexpr Uint32 String::hash( const Uint8* str ) {
 	//! djb2
 	if ( NULL != str ) {
 		Uint32 hash = 5381;
@@ -33,7 +33,7 @@ Uint32 String::hash( const String& str ) {
 }
 
 bool String::isCharacter( const int& value ) {
-	return (value >= 32 && value <= 126) || (value >= 161 && value <= 255) || (value == 9);
+	return ( value >= 32 && value <= 126 ) || ( value >= 161 && value <= 255 ) || ( value == 9 );
 }
 
 bool String::isNumber( const int& value, bool AllowDot ) {
@@ -44,17 +44,20 @@ bool String::isNumber( const int& value, bool AllowDot ) {
 }
 
 bool String::isLetter( const int& value ) {
-	return ( ( (value >= 65 && value <= 90) || (value >= 97 && value <= 122) || (value >= 192 && value <= 255) ) && (value != 215) && (value != 247) );
+	return ( ( ( value >= 65 && value <= 90 ) || ( value >= 97 && value <= 122 ) ||
+			   ( value >= 192 && value <= 255 ) ) &&
+			 ( value != 215 ) && ( value != 247 ) );
 }
 
-std::vector < String > String::split ( const String& str, const Uint32& splitchar, const bool& pushEmptyString ) {
-	std::vector < String > tmp;
+std::vector<String> String::split( const String& str, const Uint32& splitchar,
+								   const bool& pushEmptyString ) {
+	std::vector<String> tmp;
 	String tmpstr;
 
 	for ( unsigned int i = 0; i < str.size(); i++ ) {
 		if ( str[i] == splitchar ) {
 			if ( pushEmptyString || tmpstr.size() ) {
-				tmp.push_back(tmpstr);
+				tmp.push_back( tmpstr );
 				tmpstr = "";
 			}
 		} else {
@@ -63,14 +66,14 @@ std::vector < String > String::split ( const String& str, const Uint32& splitcha
 	}
 
 	if ( tmpstr.size() )
-		tmp.push_back(tmpstr);
+		tmp.push_back( tmpstr );
 
 	return tmp;
 }
 
 std::vector<std::string> String::split( const std::string& str, const std::string& delims,
 										const std::string& delimsPreserve,
-										const std::string& quote) {
+										const std::string& quote ) {
 	std::vector<std::string> tokens;
 	if ( str.empty() || ( delims.empty() && delimsPreserve.empty() ) ) {
 		return tokens;
@@ -127,14 +130,15 @@ std::vector<std::string> String::split( const std::string& str, const std::strin
 	return tokens;
 }
 
-std::vector < std::string > String::split ( const std::string& str, const Int8& splitchar, const bool& pushEmptyString ) {
-	std::vector < std::string > tmp;
+std::vector<std::string> String::split( const std::string& str, const Int8& splitchar,
+										const bool& pushEmptyString ) {
+	std::vector<std::string> tmp;
 	std::string tmpstr;
 
 	for ( unsigned int i = 0; i < str.size(); i++ ) {
 		if ( str[i] == splitchar ) {
 			if ( pushEmptyString || tmpstr.size() ) {
-				tmp.push_back(tmpstr);
+				tmp.push_back( tmpstr );
 				tmpstr = "";
 			}
 		} else {
@@ -148,7 +152,8 @@ std::vector < std::string > String::split ( const std::string& str, const Int8& 
 	return tmp;
 }
 
-std::string String::join( const std::vector<std::string> & strArray, const Int8 & joinchar, const bool& appendLastJoinChar ) {
+std::string String::join( const std::vector<std::string>& strArray, const Int8& joinchar,
+						  const bool& appendLastJoinChar ) {
 	size_t s = strArray.size();
 	std::string str;
 
@@ -165,7 +170,8 @@ std::string String::join( const std::vector<std::string> & strArray, const Int8 
 	return str;
 }
 
-String String::join( const std::vector<String> & strArray, const Int8 & joinchar, const bool& appendLastJoinChar ) {
+String String::join( const std::vector<String>& strArray, const Int8& joinchar,
+					 const bool& appendLastJoinChar ) {
 	size_t s = strArray.size();
 	String str;
 
@@ -182,53 +188,55 @@ String String::join( const std::vector<String> & strArray, const Int8 & joinchar
 	return str;
 }
 
-std::string String::lTrim(const std::string & str , char character) {
-	std::string::size_type pos1 = str.find_first_not_of(character);
+std::string String::lTrim( const std::string& str, char character ) {
+	std::string::size_type pos1 = str.find_first_not_of( character );
 	return ( pos1 == std::string::npos ) ? str : str.substr( pos1 );
 }
 
-std::string String::trim(const std::string & str , char character) {
-	std::string::size_type pos1 = str.find_first_not_of(character);
-	std::string::size_type pos2 = str.find_last_not_of(character);
-	return str.substr(pos1 == std::string::npos ? 0 : pos1, pos2 == std::string::npos ? str.length() - 1 : pos2 - pos1 + 1);
+std::string String::trim( const std::string& str, char character ) {
+	std::string::size_type pos1 = str.find_first_not_of( character );
+	std::string::size_type pos2 = str.find_last_not_of( character );
+	return str.substr( pos1 == std::string::npos ? 0 : pos1,
+					   pos2 == std::string::npos ? str.length() - 1 : pos2 - pos1 + 1 );
 }
 
-void String::trimInPlace(std::string& str, char character) {
+void String::trimInPlace( std::string& str, char character ) {
 	str = trim( str, character );
 }
 
-String String::lTrim(const String & str , char character) {
-	StringType::size_type pos1 = str.find_first_not_of(character);
+String String::lTrim( const String& str, char character ) {
+	StringType::size_type pos1 = str.find_first_not_of( character );
 	return ( pos1 == String::InvalidPos ) ? str : str.substr( pos1 );
 }
 
-String String::trim(const String & str , char character) {
-	StringType::size_type pos1 = str.find_first_not_of(character);
-	StringType::size_type pos2 = str.find_last_not_of(character);
-	return str.substr(pos1 == String::InvalidPos ? 0 : pos1, pos2 == String::InvalidPos ? str.length() - 1 : pos2 - pos1 + 1);
+String String::trim( const String& str, char character ) {
+	StringType::size_type pos1 = str.find_first_not_of( character );
+	StringType::size_type pos2 = str.find_last_not_of( character );
+	return str.substr( pos1 == String::InvalidPos ? 0 : pos1,
+					   pos2 == String::InvalidPos ? str.length() - 1 : pos2 - pos1 + 1 );
 }
 
 void String::trimInPlace( String& str, char character ) {
 	str = trim( str, character );
 }
 
-void String::toUpperInPlace( std::string & str ) {
-	std::transform(str.begin(), str.end(), str.begin(), (int(*)(int)) std::toupper);
+void String::toUpperInPlace( std::string& str ) {
+	std::transform( str.begin(), str.end(), str.begin(), (int ( * )( int ))std::toupper );
 }
 
 std::string String::toUpper( std::string str ) {
-	for (std::string::iterator i = str.begin(); i != str.end(); ++i)
-		*i = static_cast<char>(std::toupper(*i));
+	for ( std::string::iterator i = str.begin(); i != str.end(); ++i )
+		*i = static_cast<char>( std::toupper( *i ) );
 	return str;
 }
 
-void String::toLowerInPlace( std::string & str ) {
-	std::transform(str.begin(), str.end(), str.begin(), (int(*)(int)) std::tolower);
+void String::toLowerInPlace( std::string& str ) {
+	std::transform( str.begin(), str.end(), str.begin(), (int ( * )( int ))std::tolower );
 }
 
 std::string String::toLower( std::string str ) {
-	for (std::string::iterator i = str.begin(); i != str.end(); ++i)
-		*i = static_cast<char>(std::tolower(*i));
+	for ( std::string::iterator i = str.begin(); i != str.end(); ++i )
+		*i = static_cast<char>( std::tolower( *i ) );
 	return str;
 }
 
@@ -240,40 +248,44 @@ std::string String::Uint8ToString( const std::vector<Uint8>& v ) {
 	return std::string( v.begin(), v.end() );
 }
 
-void String::strCopy( char * Dst, const char * Src, unsigned int DstSize ) {
+void String::strCopy( char* Dst, const char* Src, unsigned int DstSize ) {
 	strncpy( Dst, Src, DstSize );
 }
 
-bool String::startsWith( const std::string& haystack, const std::string & needle ) {
-	return needle.length() <= haystack.length() && std::equal(needle.begin(), needle.end(), haystack.begin() );
+bool String::startsWith( const std::string& haystack, const std::string& needle ) {
+	return needle.length() <= haystack.length() &&
+		   std::equal( needle.begin(), needle.end(), haystack.begin() );
 }
 
-bool String::startsWith( const String& haystack, const String & needle ) {
-	return needle.length() <= haystack.length() && std::equal(needle.begin(), needle.end(), haystack.begin() );
+bool String::startsWith( const String& haystack, const String& needle ) {
+	return needle.length() <= haystack.length() &&
+		   std::equal( needle.begin(), needle.end(), haystack.begin() );
 }
 
-bool String::endsWith( const std::string& haystack, const std::string & needle ) {
-	return needle.length() <= haystack.length() && haystack.compare(haystack.size() - needle.size(), needle.size(), needle) == 0;
+bool String::endsWith( const std::string& haystack, const std::string& needle ) {
+	return needle.length() <= haystack.length() &&
+		   haystack.compare( haystack.size() - needle.size(), needle.size(), needle ) == 0;
 }
 
-bool String::endsWith( const String& haystack, const String & needle ) {
-	return needle.length() <= haystack.length() && haystack.compare(haystack.size() - needle.size(), needle.size(), needle) == 0;
+bool String::endsWith( const String& haystack, const String& needle ) {
+	return needle.length() <= haystack.length() &&
+		   haystack.compare( haystack.size() - needle.size(), needle.size(), needle ) == 0;
 }
 
-void String::replaceAll( std::string &target, const std::string& that, const std::string& with ) {
-	std::string::size_type pos=0;
+void String::replaceAll( std::string& target, const std::string& that, const std::string& with ) {
+	std::string::size_type pos = 0;
 
-	while( ( pos = target.find( that, pos ) ) != std::string::npos ) {
+	while ( ( pos = target.find( that, pos ) ) != std::string::npos ) {
 		target.erase( pos, that.length() );
 		target.insert( pos, with );
 		pos += with.length();
 	}
 }
 
-void String::replaceAll( String &target, const String& that, const String& with ) {
-	std::string::size_type pos=0;
+void String::replaceAll( String& target, const String& that, const String& with ) {
+	std::string::size_type pos = 0;
 
-	while( ( pos = target.find( that, pos ) ) != String::InvalidPos ) {
+	while ( ( pos = target.find( that, pos ) ) != String::InvalidPos ) {
 		target.erase( pos, that.length() );
 		target.insert( pos, with );
 		pos += with.length();
@@ -283,7 +295,7 @@ void String::replaceAll( String &target, const String& that, const String& with 
 void String::replace( std::string& target, const std::string& that, const std::string& with ) {
 	std::size_t start_pos = target.find( that );
 
-	if( start_pos == std::string::npos )
+	if ( start_pos == std::string::npos )
 		return;
 
 	target.replace( start_pos, that.length(), with );
@@ -292,21 +304,22 @@ void String::replace( std::string& target, const std::string& that, const std::s
 void String::replace( String& target, const String& that, const String& with ) {
 	std::size_t start_pos = target.find( that );
 
-	if( start_pos == String::InvalidPos )
+	if ( start_pos == String::InvalidPos )
 		return;
 
 	target.replace( start_pos, that.length(), with );
 }
 
 std::string String::removeNumbersAtEnd( std::string txt ) {
-	while ( txt.size() && txt[ txt.size() - 1 ] >= '0' && txt[ txt.size() - 1 ] <= '9' ) {
+	while ( txt.size() && txt[txt.size() - 1] >= '0' && txt[txt.size() - 1] <= '9' ) {
 		txt.resize( txt.size() - 1 );
 	}
 
 	return txt;
 }
 
-std::size_t String::findCloseBracket( const std::string& string, std::size_t startOffset, char openBracket, char closeBracket ) {
+std::size_t String::findCloseBracket( const std::string& string, std::size_t startOffset,
+									  char openBracket, char closeBracket ) {
 	int count = 0;
 
 	for ( size_t i = startOffset; i < string.size(); i++ ) {
@@ -323,7 +336,8 @@ std::size_t String::findCloseBracket( const std::string& string, std::size_t sta
 	return std::string::npos;
 }
 
-int String::valueIndex( const std::string& val, const std::string& strings, int defValue, char delim ) {
+int String::valueIndex( const std::string& val, const std::string& strings, int defValue,
+						char delim ) {
 	if ( val.empty() || strings.empty() || !delim ) {
 		return defValue;
 	}
@@ -355,7 +369,8 @@ int String::valueIndex( const std::string& val, const std::string& strings, int 
 	return defValue;
 }
 
-std::string String::fromFloat( const Float& value, const std::string& append, const std::string& prepend ) {
+std::string String::fromFloat( const Float& value, const std::string& append,
+							   const std::string& prepend ) {
 	return prepend + toStr( value ) + append;
 }
 
@@ -363,24 +378,24 @@ void String::insertChar( String& str, const unsigned int& pos, const Uint32& tch
 	str.insert( str.begin() + pos, tchar );
 }
 
-void String::formatBuffer( char * Buffer, int BufferSize, const char * format, ... ) {
-	va_list	args;
+void String::formatBuffer( char* Buffer, int BufferSize, const char* format, ... ) {
+	va_list args;
 	va_start( args, format );
 #ifdef EE_COMPILER_MSVC
 	_vsnprintf_s( Buffer, BufferSize, BufferSize, format, args );
 #else
-	vsnprintf( Buffer, BufferSize-1, format, args );
+	vsnprintf( Buffer, BufferSize - 1, format, args );
 #endif
 	va_end( args );
 }
 
-std::string String::format( const char * format, ... ) {
+std::string String::format( const char* format, ... ) {
 	int n, size = 256;
 	std::string tstr( size, '\0' );
 
 	va_list args;
 
-	while (1) {
+	while ( 1 ) {
 		va_start( args, format );
 
 		n = vsnprintf( &tstr[0], size, format, args );
@@ -393,40 +408,39 @@ std::string String::format( const char * format, ... ) {
 			return tstr;
 		}
 
-		if ( n > -1 )	// glibc 2.1
-			size = n+1; // precisely what is needed
-		else			// glibc 2.0
-			size *= 2;	// twice the old size
+		if ( n > -1 )	  // glibc 2.1
+			size = n + 1; // precisely what is needed
+		else			  // glibc 2.0
+			size *= 2;	  // twice the old size
 
 		tstr.resize( size );
 	}
 }
 
-String::String()
-{}
+String::String() {}
 
-String::String(char ansiChar, const std::locale& locale) {
-	mString += Utf32::decodeAnsi(ansiChar, locale);
+String::String( char ansiChar, const std::locale& locale ) {
+	mString += Utf32::decodeAnsi( ansiChar, locale );
 }
 
 #ifndef EE_NO_WIDECHAR
-String::String(wchar_t wideChar) {
-	mString += Utf32::decodeWide(wideChar);
+String::String( wchar_t wideChar ) {
+	mString += Utf32::decodeWide( wideChar );
 }
 #endif
 
-String::String(StringBaseType utf32Char) {
+String::String( StringBaseType utf32Char ) {
 	mString += utf32Char;
 }
 
 String::String( const char* uf8String ) {
-	if (uf8String) {
-		std::size_t length = strlen(uf8String);
+	if ( uf8String ) {
+		std::size_t length = strlen( uf8String );
 
-		if (length > 0) {
-			mString.reserve(length + 1);
+		if ( length > 0 ) {
+			mString.reserve( length + 1 );
 
-			Utf8::toUtf32(uf8String, uf8String + length, std::back_inserter(mString));
+			Utf8::toUtf32( uf8String, uf8String + length, std::back_inserter( mString ) );
 		}
 	}
 }
@@ -437,50 +451,47 @@ String::String( const std::string& utf8String ) {
 	Utf8::toUtf32( utf8String.begin(), utf8String.end(), std::back_inserter( mString ) );
 }
 
-String::String(const char* ansiString, const std::locale& locale) {
-	if (ansiString) {
-		std::size_t length = strlen(ansiString);
-		if (length > 0) {
-			mString.reserve(length + 1);
-			Utf32::fromAnsi(ansiString, ansiString + length, std::back_inserter(mString), locale);
+String::String( const char* ansiString, const std::locale& locale ) {
+	if ( ansiString ) {
+		std::size_t length = strlen( ansiString );
+		if ( length > 0 ) {
+			mString.reserve( length + 1 );
+			Utf32::fromAnsi( ansiString, ansiString + length, std::back_inserter( mString ),
+							 locale );
 		}
 	}
 }
 
-String::String(const std::string& ansiString, const std::locale& locale) {
-	mString.reserve(ansiString.length() + 1);
-	Utf32::fromAnsi(ansiString.begin(), ansiString.end(), std::back_inserter(mString), locale);
+String::String( const std::string& ansiString, const std::locale& locale ) {
+	mString.reserve( ansiString.length() + 1 );
+	Utf32::fromAnsi( ansiString.begin(), ansiString.end(), std::back_inserter( mString ), locale );
 }
 
 #ifndef EE_NO_WIDECHAR
-String::String(const wchar_t* wideString) {
-	if (wideString) {
-		std::size_t length = std::wcslen(wideString);
-		if (length > 0) {
-			mString.reserve(length + 1);
-			Utf32::fromWide(wideString, wideString + length, std::back_inserter(mString));
+String::String( const wchar_t* wideString ) {
+	if ( wideString ) {
+		std::size_t length = std::wcslen( wideString );
+		if ( length > 0 ) {
+			mString.reserve( length + 1 );
+			Utf32::fromWide( wideString, wideString + length, std::back_inserter( mString ) );
 		}
 	}
 }
 
-String::String(const std::wstring& wideString) {
-	mString.reserve(wideString.length() + 1);
-	Utf32::fromWide(wideString.begin(), wideString.end(), std::back_inserter(mString));
+String::String( const std::wstring& wideString ) {
+	mString.reserve( wideString.length() + 1 );
+	Utf32::fromWide( wideString.begin(), wideString.end(), std::back_inserter( mString ) );
 }
 #endif
 
-String::String(const StringBaseType* utf32String) {
-	if (utf32String)
+String::String( const StringBaseType* utf32String ) {
+	if ( utf32String )
 		mString = utf32String;
 }
 
-String::String(const StringType& utf32String) :
-mString(utf32String)
-{}
+String::String( const StringType& utf32String ) : mString( utf32String ) {}
 
-String::String(const String& str) :
-mString(str.mString)
-{}
+String::String( const String& str ) : mString( str.mString ) {}
 
 String String::fromUtf8( const std::string& utf8String ) {
 	String::StringType utf32;
@@ -496,13 +507,13 @@ String::operator std::string() const {
 	return toAnsiString();
 }
 
-std::string String::toAnsiString(const std::locale& locale) const {
+std::string String::toAnsiString( const std::locale& locale ) const {
 	// Prepare the output string
 	std::string output;
-	output.reserve(mString.length() + 1);
+	output.reserve( mString.length() + 1 );
 
 	// Convert
-	Utf32::toAnsi(mString.begin(), mString.end(), std::back_inserter(output), 0, locale);
+	Utf32::toAnsi( mString.begin(), mString.end(), std::back_inserter( output ), 0, locale );
 
 	return output;
 }
@@ -511,10 +522,10 @@ std::string String::toAnsiString(const std::locale& locale) const {
 std::wstring String::toWideString() const {
 	// Prepare the output string
 	std::wstring output;
-	output.reserve(mString.length() + 1);
+	output.reserve( mString.length() + 1 );
 
 	// Convert
-	Utf32::toWide(mString.begin(), mString.end(), std::back_inserter(output), 0);
+	Utf32::toWide( mString.begin(), mString.end(), std::back_inserter( output ), 0 );
 
 	return output;
 }
@@ -523,10 +534,10 @@ std::wstring String::toWideString() const {
 std::string String::toUtf8() const {
 	// Prepare the output string
 	std::string output;
-	output.reserve(mString.length() + 1);
+	output.reserve( mString.length() + 1 );
 
 	// Convert
-	Utf32::toUtf8(mString.begin(), mString.end(), std::back_inserter(output) );
+	Utf32::toUtf8( mString.begin(), mString.end(), std::back_inserter( output ) );
 
 	return output;
 }
@@ -534,10 +545,10 @@ std::string String::toUtf8() const {
 std::basic_string<Uint16> String::toUtf16() const {
 	// Prepare the output string
 	std::basic_string<Uint16> output;
-	output.reserve(mString.length());
+	output.reserve( mString.length() );
 
 	// Convert
-	Utf32::toUtf16(mString.begin(), mString.end(), std::back_inserter(output));
+	Utf32::toUtf16( mString.begin(), mString.end(), std::back_inserter( output ) );
 
 	return output;
 }
@@ -546,32 +557,31 @@ Uint32 String::getHash() const {
 	return String::hash( *this );
 }
 
-String& String::operator =(const String& right) {
+String& String::operator=( const String& right ) {
 	mString = right.mString;
 	return *this;
 }
 
-String& String::operator =( const StringBaseType& right ) {
+String& String::operator=( const StringBaseType& right ) {
 	mString = right;
 	return *this;
 }
 
-String& String::operator +=(const String& right) {
+String& String::operator+=( const String& right ) {
 	mString += right.mString;
 	return *this;
 }
 
-String& String::operator +=( const StringBaseType& right ) {
+String& String::operator+=( const StringBaseType& right ) {
 	mString += right;
 	return *this;
 }
 
-
-String::StringBaseType String::operator [](std::size_t index) const {
+String::StringBaseType String::operator[]( std::size_t index ) const {
 	return mString[index];
 }
 
-String::StringBaseType& String::operator [](std::size_t index) {
+String::StringBaseType& String::operator[]( std::size_t index ) {
 	return mString[index];
 }
 
@@ -583,7 +593,7 @@ void String::push_back( StringBaseType c ) {
 	mString.push_back( c );
 }
 
-void String::swap ( String& str ) {
+void String::swap( String& str ) {
 	mString.swap( str.mString );
 }
 
@@ -603,12 +613,12 @@ bool String::empty() const {
 	return mString.empty();
 }
 
-void String::erase(std::size_t position, std::size_t count) {
-	mString.erase(position, count);
+void String::erase( std::size_t position, std::size_t count ) {
+	mString.erase( position, count );
 }
 
-String& String::insert(std::size_t position, const String& str) {
-	mString.insert(position, str.mString);
+String& String::insert( std::size_t position, const String& str ) {
+	mString.insert( position, str.mString );
 	return *this;
 }
 
@@ -617,7 +627,7 @@ String& String::insert( std::size_t pos1, const String& str, std::size_t pos2, s
 	return *this;
 }
 
-String& String::insert ( size_t pos1, const char* s, size_t n ) {
+String& String::insert( size_t pos1, const char* s, size_t n ) {
 	String tmp( s );
 
 	mString.insert( pos1, tmp.data(), n );
@@ -625,12 +635,12 @@ String& String::insert ( size_t pos1, const char* s, size_t n ) {
 	return *this;
 }
 
-String& String::insert ( size_t pos1, size_t n, char c ) {
+String& String::insert( size_t pos1, size_t n, char c ) {
 	mString.insert( pos1, n, c );
 	return *this;
 }
 
-String& String::insert ( size_t pos1, const char* s ) {
+String& String::insert( size_t pos1, const char* s ) {
 	String tmp( s );
 
 	mString.insert( pos1, tmp.data() );
@@ -638,11 +648,11 @@ String& String::insert ( size_t pos1, const char* s ) {
 	return *this;
 }
 
-String::Iterator String::insert ( Iterator p, char c ) {
+String::Iterator String::insert( Iterator p, char c ) {
 	return mString.insert( p, c );
 }
 
-void String::insert ( Iterator p, size_t n, char c ) {
+void String::insert( Iterator p, size_t n, char c ) {
 	mString.insert( p, n, c );
 }
 
@@ -716,8 +726,7 @@ String& String::assign( const String& str, size_t pos, size_t n ) {
 	return *this;
 }
 
-String& String::assign( const char* s, size_t n )
-{
+String& String::assign( const char* s, size_t n ) {
 	String tmp( s );
 
 	mString.assign( tmp.mString );
@@ -821,7 +830,7 @@ String& String::replace( size_t pos1, size_t n1, const char* s ) {
 	return *this;
 }
 
-String& String::replace ( Iterator i1, Iterator i2, const char* s ) {
+String& String::replace( Iterator i1, Iterator i2, const char* s ) {
 	String tmp( s );
 
 	mString.replace( i1, i2, tmp.mString );
@@ -835,7 +844,7 @@ String& String::replace( size_t pos1, size_t n1, size_t n2, char c ) {
 	return *this;
 }
 
-String& String::replace ( Iterator i1, Iterator i2, size_t n2, char c ) {
+String& String::replace( Iterator i1, Iterator i2, size_t n2, char c ) {
 	mString.replace( i1, i2, n2, (StringBaseType)c );
 
 	return *this;
@@ -853,7 +862,7 @@ std::size_t String::find( const char* s, std::size_t pos ) const {
 	return find( String( s ), pos );
 }
 
-size_t String::find ( char c, std::size_t pos ) const {
+size_t String::find( char c, std::size_t pos ) const {
 	return mString.find( (StringBaseType)c, pos );
 }
 
@@ -893,15 +902,16 @@ int String::compare( std::size_t pos1, std::size_t n1, const String& str ) const
 	return mString.compare( pos1, n1, str.mString );
 }
 
-int String::compare( std::size_t pos1, std::size_t n1, const char* s) const {
+int String::compare( std::size_t pos1, std::size_t n1, const char* s ) const {
 	return compare( pos1, n1, String( s ) );
 }
 
-int String::compare( std::size_t pos1, std::size_t n1, const String& str, std::size_t pos2, std::size_t n2 ) const {
+int String::compare( std::size_t pos1, std::size_t n1, const String& str, std::size_t pos2,
+					 std::size_t n2 ) const {
 	return mString.compare( pos1, n1, str.mString, pos2, n2 );
 }
 
-int String::compare( std::size_t pos1, std::size_t n1, const char* s, std::size_t n2) const {
+int String::compare( std::size_t pos1, std::size_t n1, const char* s, std::size_t n2 ) const {
 	return compare( pos1, n1, String( s ), 0, n2 );
 }
 
@@ -933,7 +943,7 @@ std::size_t String::find_last_of( const char* s, std::size_t pos ) const {
 	return find_last_of( String( s ), pos );
 }
 
-std::size_t String::find_last_of( StringBaseType c, std::size_t pos) const {
+std::size_t String::find_last_of( StringBaseType c, std::size_t pos ) const {
 	return mString.find_last_of( c, pos );
 }
 
@@ -969,35 +979,35 @@ std::size_t String::find_last_not_of( StringBaseType c, std::size_t pos ) const 
 	return mString.find_last_not_of( c, pos );
 }
 
-bool operator ==(const String& left, const String& right) {
+bool operator==( const String& left, const String& right ) {
 	return left.mString == right.mString;
 }
 
-bool operator !=(const String& left, const String& right) {
-	return !(left == right);
+bool operator!=( const String& left, const String& right ) {
+	return !( left == right );
 }
 
-bool operator <(const String& left, const String& right) {
+bool operator<( const String& left, const String& right ) {
 	return left.mString < right.mString;
 }
 
-bool operator >(const String& left, const String& right) {
+bool operator>( const String& left, const String& right ) {
 	return right < left;
 }
 
-bool operator <=(const String& left, const String& right) {
-	return !(right < left);
+bool operator<=( const String& left, const String& right ) {
+	return !( right < left );
 }
 
-bool operator >=(const String& left, const String& right) {
-	return !(left < right);
+bool operator>=( const String& left, const String& right ) {
+	return !( left < right );
 }
 
-String operator +(const String& left, const String& right) {
+String operator+( const String& left, const String& right ) {
 	String string = left;
 	string += right;
 
 	return string;
 }
 
-}
+} // namespace EE

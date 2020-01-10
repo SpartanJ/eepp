@@ -21,9 +21,9 @@ class StyleSheetSpecification {
 
 	const PropertyDefinition* getProperty( const std::string& name ) const;
 
-	ShorthandDefinition&
-	registerShorthand( const std::string& name, const std::vector<std::string>& properties,
-					   const ShorthandType& shorthandType );
+	ShorthandDefinition& registerShorthand( const std::string& name,
+											const std::vector<std::string>& properties,
+											const ShorthandType& shorthandType );
 
 	const ShorthandDefinition* getShorthand( const Uint32& id ) const;
 
@@ -32,6 +32,7 @@ class StyleSheetSpecification {
 	bool isShorthand( const Uint32& id ) const;
 
 	bool isShorthand( const std::string& name ) const;
+
   protected:
 	PropertySpecification mPropertySpecification;
 

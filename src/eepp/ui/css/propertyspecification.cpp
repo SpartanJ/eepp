@@ -42,9 +42,10 @@ const PropertyDefinition* PropertySpecification::getProperty( const std::string&
 	return getProperty( String::hash( name ) );
 }
 
-ShorthandDefinition& PropertySpecification::registerShorthand(
-	const std::string& name, const std::vector<std::string>& properties,
-	const ShorthandType& shorthandType ) {
+ShorthandDefinition&
+PropertySpecification::registerShorthand( const std::string& name,
+										  const std::vector<std::string>& properties,
+										  const ShorthandType& shorthandType ) {
 	ShorthandDefinition* shorthand = const_cast<ShorthandDefinition*>( getShorthand( name ) );
 
 	if ( NULL != shorthand ) {

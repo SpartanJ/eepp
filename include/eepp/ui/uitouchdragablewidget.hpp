@@ -6,46 +6,47 @@
 namespace EE { namespace UI {
 
 class EE_API UITouchDragableWidget : public UIWidget {
-	public:
-		static UITouchDragableWidget * New();
+  public:
+	static UITouchDragableWidget* New();
 
-		UITouchDragableWidget();
+	UITouchDragableWidget();
 
-		~UITouchDragableWidget();
+	~UITouchDragableWidget();
 
-		virtual Uint32 getType() const;
+	virtual Uint32 getType() const;
 
-		virtual bool isType( const Uint32& type ) const;
+	virtual bool isType( const Uint32& type ) const;
 
-		bool isTouchDragEnabled() const;
+	bool isTouchDragEnabled() const;
 
-		UITouchDragableWidget * setTouchDragEnabled( const bool& enable );
+	UITouchDragableWidget* setTouchDragEnabled( const bool& enable );
 
-		bool isTouchDragging() const;
+	bool isTouchDragging() const;
 
-		UITouchDragableWidget * setTouchDragging( const bool& dragging );
+	UITouchDragableWidget* setTouchDragging( const bool& dragging );
 
-		Vector2f getTouchDragDeceleration() const;
+	Vector2f getTouchDragDeceleration() const;
 
-		UITouchDragableWidget * setTouchDragDeceleration( const Vector2f& touchDragDeceleration );
+	UITouchDragableWidget* setTouchDragDeceleration( const Vector2f& touchDragDeceleration );
 
-		virtual bool applyProperty( const StyleSheetProperty& attribute );
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
-		virtual std::string getPropertyString(const PropertyDefinition* propertyDef);
-	protected:
-		Vector2f mTouchDragPoint;
-		Vector2f mTouchDragAcceleration;
-		Vector2f mTouchDragDeceleration;
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef );
 
-		UITouchDragableWidget( const std::string& tag );
+  protected:
+	Vector2f mTouchDragPoint;
+	Vector2f mTouchDragAcceleration;
+	Vector2f mTouchDragDeceleration;
 
-		virtual void onTouchDragValueChange( Vector2f diff );
+	UITouchDragableWidget( const std::string& tag );
 
-		virtual bool isTouchOverAllowedChilds();
+	virtual void onTouchDragValueChange( Vector2f diff );
 
-		virtual void scheduledUpdate( const Time& time );
+	virtual bool isTouchOverAllowedChilds();
+
+	virtual void scheduledUpdate( const Time& time );
 };
 
-}}
+}} // namespace EE::UI
 
 #endif

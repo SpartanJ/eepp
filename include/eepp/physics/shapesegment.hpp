@@ -6,32 +6,33 @@
 namespace EE { namespace Physics {
 
 class EE_API ShapeSegment : public Shape {
-	public:
-		static ShapeSegment * New( Physics::Body * body, cVect a, cVect b, cpFloat radius );
+  public:
+	static ShapeSegment* New( Physics::Body* body, cVect a, cVect b, cpFloat radius );
 
-		ShapeSegment( Physics::Body * body, cVect a, cVect b, cpFloat radius );
+	ShapeSegment( Physics::Body* body, cVect a, cVect b, cpFloat radius );
 
-		cVect getA();
+	cVect getA();
 
-		cVect getB();
+	cVect getB();
 
-		cVect getNormal();
+	cVect getNormal();
 
-		cpFloat getRadius();
+	cpFloat getRadius();
 
-		void setRadius( const cpFloat& radius );
+	void setRadius( const cpFloat& radius );
 
-		void setEndpoints( const cVect& a, const cVect& b );
+	void setEndpoints( const cVect& a, const cVect& b );
 
-		bool query( cVect a, cVect b, cpSegmentQueryInfo * info );
+	bool query( cVect a, cVect b, cpSegmentQueryInfo* info );
 
-		static cVect queryHitPoint( const cVect start, const cVect end, const cpSegmentQueryInfo info );
+	static cVect queryHitPoint( const cVect start, const cVect end, const cpSegmentQueryInfo info );
 
-		static cpFloat queryHitDist( const cVect start, const cVect end, const cpSegmentQueryInfo info );
+	static cpFloat queryHitDist( const cVect start, const cVect end,
+								 const cpSegmentQueryInfo info );
 
-		virtual void draw( Space * space );
+	virtual void draw( Space* space );
 };
 
-}}
+}} // namespace EE::Physics
 
 #endif

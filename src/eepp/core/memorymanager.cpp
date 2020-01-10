@@ -1,13 +1,12 @@
+#include <eepp/core/debug.hpp>
+#include <eepp/core/memorymanager.hpp>
+#include <eepp/system/filesystem.hpp>
+#include <eepp/system/lock.hpp>
+#include <eepp/system/log.hpp>
+#include <eepp/system/mutex.hpp>
+#include <eepp/window/engine.hpp>
 #include <iostream>
 #include <sstream>
-#include <eepp/core/memorymanager.hpp>
-#include <eepp/core/debug.hpp>
-#include <eepp/system/log.hpp>
-#include <eepp/system/filesystem.hpp>
-#include <eepp/system/mutex.hpp>
-#include <eepp/system/lock.hpp>
-#include <eepp/window/engine.hpp>
-
 
 using namespace EE::System;
 using namespace EE::Window;
@@ -20,14 +19,14 @@ static size_t sPeakMemoryUsage = 0;
 static AllocatedPointer sBiggestAllocation = AllocatedPointer( NULL, "", 0, 0 );
 static Mutex sAlloMutex;
 
-AllocatedPointer::AllocatedPointer( void * Data, const std::string& File, int Line, size_t Memory ) {
-	mData 		= Data;
-	mFile 		= File;
-	mLine 		= Line;
-	mMemory 	= Memory;
+AllocatedPointer::AllocatedPointer( void* Data, const std::string& File, int Line, size_t Memory ) {
+	mData = Data;
+	mFile = File;
+	mLine = Line;
+	mMemory = Memory;
 }
 
-void * MemoryManager::addPointerInPlace( void * Place, const AllocatedPointer& aAllocatedPointer ) {
+void* MemoryManager::addPointerInPlace( void* Place, const AllocatedPointer& aAllocatedPointer ) {
 	AllocatedPointerMapIt it = sMapPointers.find( Place );
 
 	if ( it != sMapPointers.end() ) {
@@ -37,10 +36,11 @@ void * MemoryManager::addPointerInPlace( void * Place, const AllocatedPointer& a
 	return addPointer( aAllocatedPointer );
 }
 
-void * MemoryManager::addPointer( const AllocatedPointer& aAllocatedPointer ) {
+void* MemoryManager::addPointer( const AllocatedPointer& aAllocatedPointer ) {
 	Lock l( sAlloMutex );
 
-	sMapPointers.insert( AllocatedPointerMap::value_type( aAllocatedPointer.mData, aAllocatedPointer ) );
+	sMapPointers.insert(
+		AllocatedPointerMap::value_type( aAllocatedPointer.mData, aAllocatedPointer ) );
 
 	sTotalMemoryUsage += aAllocatedPointer.mMemory;
 
@@ -55,7 +55,7 @@ void * MemoryManager::addPointer( const AllocatedPointer& aAllocatedPointer ) {
 	return aAllocatedPointer.mData;
 }
 
-bool MemoryManager::removePointer( void * Data ) {
+bool MemoryManager::removePointer( void* Data ) {
 	Lock l( sAlloMutex );
 
 	AllocatedPointerMapIt it = sMapPointers.find( Data );
@@ -86,7 +86,7 @@ const AllocatedPointer& MemoryManager::getBiggestAllocation() {
 }
 
 void MemoryManager::showResults() {
-	#ifdef EE_MEMORY_MANAGER
+#ifdef EE_MEMORY_MANAGER
 
 	if ( EE::PrintDebugInLog ) {
 		Log::destroySingleton();
@@ -95,31 +95,31 @@ void MemoryManager::showResults() {
 
 	Engine::destroySingleton();
 
-	eePRINTL("\n|--Memory Manager Report-------------------------------------|");
-	eePRINTL("|");
+	eePRINTL( "\n|--Memory Manager Report-------------------------------------|" );
+	eePRINTL( "|" );
 
-	if( sMapPointers.empty() ) {
+	if ( sMapPointers.empty() ) {
 		eePRINTL( "| No memory leaks detected." );
 	} else {
 		eePRINTL( "| Memory leaks detected: " );
-		eePRINTL( "|");
+		eePRINTL( "|" );
 		eePRINTL( "| address\t file" );
 
-		//Get max length of file name
-		int lMax =0;
+		// Get max length of file name
+		int lMax = 0;
 		AllocatedPointerMapIt it = sMapPointers.begin();
 
-		for( ; it != sMapPointers.end(); ++it ){
-			AllocatedPointer &ap = it->second;
+		for ( ; it != sMapPointers.end(); ++it ) {
+			AllocatedPointer& ap = it->second;
 
-			if( (int)ap.mFile.length() > lMax )
+			if ( (int)ap.mFile.length() > lMax )
 				lMax = (int)ap.mFile.length();
 		}
 
 		lMax += 5;
 
-		for( int i = 0; i < lMax - 4; ++i )
-			eePRINT(" ");
+		for ( int i = 0; i < lMax - 4; ++i )
+			eePRINT( " " );
 
 		eePRINTL( "line\t\t memory usage\t  " );
 
@@ -127,26 +127,29 @@ void MemoryManager::showResults() {
 
 		it = sMapPointers.begin();
 
-		for( ; it != sMapPointers.end(); ++it ) {
-			AllocatedPointer &ap = it->second;
+		for ( ; it != sMapPointers.end(); ++it ) {
+			AllocatedPointer& ap = it->second;
 
 			eePRINT( "| %p\t %s", ap.mData, ap.mFile.c_str() );
 
-			for ( int i=0; i < lMax - (int)ap.mFile.length(); ++i )
-				eePRINT(" ");
+			for ( int i = 0; i < lMax - (int)ap.mFile.length(); ++i )
+				eePRINT( " " );
 
 			eePRINTL( "%d\t\t %d\t", ap.mLine, ap.mMemory );
 		}
 	}
 
 	eePRINTL( "|" );
-	eePRINTL( "| Memory left: %s", FileSystem::sizeToString( static_cast<Int64>( sTotalMemoryUsage ) ).c_str() );
+	eePRINTL( "| Memory left: %s",
+			  FileSystem::sizeToString( static_cast<Int64>( sTotalMemoryUsage ) ).c_str() );
 	eePRINTL( "| Biggest allocation:" );
-	eePRINTL( "| %s in file: %s at line: %d", FileSystem::sizeToString( sBiggestAllocation.mMemory ).c_str(), sBiggestAllocation.mFile.c_str(), sBiggestAllocation.mLine );
+	eePRINTL( "| %s in file: %s at line: %d",
+			  FileSystem::sizeToString( sBiggestAllocation.mMemory ).c_str(),
+			  sBiggestAllocation.mFile.c_str(), sBiggestAllocation.mLine );
 	eePRINTL( "| Peak Memory Usage: %s", FileSystem::sizeToString( sPeakMemoryUsage ).c_str() );
 	eePRINTL( "|------------------------------------------------------------|\n" );
 
-	#endif
+#endif
 }
 
-}
+} // namespace EE

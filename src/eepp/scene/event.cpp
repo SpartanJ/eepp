@@ -3,17 +3,11 @@
 
 namespace EE { namespace Scene {
 
-Event::Event( Node * node, const Uint32& eventType ) :
-	mNode( node ),
-	mEventType( eventType )
-{
-}
+Event::Event( Node* node, const Uint32& eventType ) : mNode( node ), mEventType( eventType ) {}
 
-Event::~Event()
-{
-}
+Event::~Event() {}
 
-Node * Event::getNode() const {
+Node* Event::getNode() const {
 	return mNode;
 }
 
@@ -21,4 +15,4 @@ const Uint32& Event::getType() const {
 	return mEventType;
 }
 
-}}
+}} // namespace EE::Scene

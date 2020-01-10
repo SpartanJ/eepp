@@ -1,14 +1,11 @@
- #include <eepp/network/http/httpstreamchunked.hpp>
+#include <eepp/network/http/httpstreamchunked.hpp>
 
 namespace EE { namespace Network { namespace Private {
 
-HttpStreamChunked::HttpStreamChunked(IOStream & mWriteTo) :
-	mWriteTo( mWriteTo ),
-	mChunkNewBuffer(false),
-	mChunkEnded(false)
-{}
+HttpStreamChunked::HttpStreamChunked( IOStream& mWriteTo ) :
+	mWriteTo( mWriteTo ), mChunkNewBuffer( false ), mChunkEnded( false ) {}
 
-ios_size HttpStreamChunked::write(const char * data, ios_size size) {
+ios_size HttpStreamChunked::write( const char* data, ios_size size ) {
 	ios_size writeTotal = 0;
 
 	// If the chunk reading ended we just add the buffer received as a header
@@ -34,14 +31,14 @@ ios_size HttpStreamChunked::write(const char * data, ios_size size) {
 			retry = false;
 
 			// Check for the first \r\n to find the end of the length definition
-			std::string::size_type lenEnd = mChunkBuffer.find_first_of("\r\n");
+			std::string::size_type lenEnd = mChunkBuffer.find_first_of( "\r\n" );
 
 			if ( lenEnd != std::string::npos ) {
 				std::string::size_type firstCharPos = lenEnd + 2;
 				unsigned long length;
 
 				// Get the length of the chunk
-				bool res = String::fromString( length, mChunkBuffer.substr(0, lenEnd), std::hex );
+				bool res = String::fromString( length, mChunkBuffer.substr( 0, lenEnd ), std::hex );
 
 				// If the length is solved...
 				if ( res ) {
@@ -60,7 +57,8 @@ ios_size HttpStreamChunked::write(const char * data, ios_size size) {
 								std::size_t pos = 0;
 
 								// Remove al the \r\n remaining
-								while ( pos < mChunkBuffer.size() && 0 == strncmp( &mChunkBuffer[pos], "\r\n", 2 ) ) {
+								while ( pos < mChunkBuffer.size() &&
+										0 == strncmp( &mChunkBuffer[pos], "\r\n", 2 ) ) {
 									pos += 2;
 								}
 
@@ -72,10 +70,12 @@ ios_size HttpStreamChunked::write(const char * data, ios_size size) {
 								// If still the chunk is not empty it could be another chunk
 								// already received, so we check that retrying
 								if ( !mChunkBuffer.empty() ) {
-									std::string::size_type lenEnd = mChunkBuffer.find_first_of("\r\n");
+									std::string::size_type lenEnd =
+										mChunkBuffer.find_first_of( "\r\n" );
 
 									if ( lenEnd != std::string::npos ) {
-										bool res = String::fromString( length, mChunkBuffer.substr(0, lenEnd), std::hex );
+										bool res = String::fromString(
+											length, mChunkBuffer.substr( 0, lenEnd ), std::hex );
 
 										if ( res && length > 0 ) {
 											retry = true;
@@ -109,4 +109,4 @@ const std::string& HttpStreamChunked::getHeaderBuffer() const {
 	return mHeaderBuffer;
 }
 
-}}}
+}}} // namespace EE::Network::Private

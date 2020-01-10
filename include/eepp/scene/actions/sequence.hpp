@@ -6,41 +6,46 @@
 namespace EE { namespace Scene { namespace Actions {
 
 class EE_API Sequence : public Action {
-	public:
-		static Sequence * New( const std::vector<Action*> sequence );
-		static Sequence * New( Action * action, Action * action2 );
-		static Sequence * New( Action * action, Action * action2, Action * action3 );
-		static Sequence * New( Action * action, Action * action2, Action * action3, Action * action4 );
-		static Sequence * New( Action * action, Action * action2, Action * action3, Action * action4, Action * action5 );
-		static Sequence * New( Action * action, Action * action2, Action * action3, Action * action4, Action * action5, Action * action6 );
-		static Sequence * New( Action * action, Action * action2, Action * action3, Action * action4, Action * action5, Action * action6, Action * action7 );
-		static Sequence * New( Action * action, Action * action2, Action * action3, Action * action4, Action * action5, Action * action6, Action * action7, Action * action8 );
-		static Sequence * New( Action * action, Action * action2, Action * action3, Action * action4, Action * action5, Action * action6, Action * action7, Action * action8, Action * action9 );
+  public:
+	static Sequence* New( const std::vector<Action*> sequence );
+	static Sequence* New( Action* action, Action* action2 );
+	static Sequence* New( Action* action, Action* action2, Action* action3 );
+	static Sequence* New( Action* action, Action* action2, Action* action3, Action* action4 );
+	static Sequence* New( Action* action, Action* action2, Action* action3, Action* action4,
+						  Action* action5 );
+	static Sequence* New( Action* action, Action* action2, Action* action3, Action* action4,
+						  Action* action5, Action* action6 );
+	static Sequence* New( Action* action, Action* action2, Action* action3, Action* action4,
+						  Action* action5, Action* action6, Action* action7 );
+	static Sequence* New( Action* action, Action* action2, Action* action3, Action* action4,
+						  Action* action5, Action* action6, Action* action7, Action* action8 );
+	static Sequence* New( Action* action, Action* action2, Action* action3, Action* action4,
+						  Action* action5, Action* action6, Action* action7, Action* action8,
+						  Action* action9 );
 
-		void start() override;
+	void start() override;
 
-		void stop() override;
+	void stop() override;
 
-		void update( const Time& time ) override;
+	void update( const Time& time ) override;
 
-		bool isDone() override;
+	bool isDone() override;
 
-		Float getCurrentProgress();
+	Float getCurrentProgress();
 
-		Action * clone() const override;
+	Action* clone() const override;
 
-		Action * reverse() const override;
+	Action* reverse() const override;
 
-		virtual ~Sequence();
+	virtual ~Sequence();
 
-	protected:
-		std::vector<Action*> mSequence;
-		Uint32 mCurPos;
+  protected:
+	std::vector<Action*> mSequence;
+	Uint32 mCurPos;
 
-		Sequence( const std::vector<Action*> sequence );
-
+	Sequence( const std::vector<Action*> sequence );
 };
 
-}}}
+}}} // namespace EE::Scene::Actions
 
 #endif

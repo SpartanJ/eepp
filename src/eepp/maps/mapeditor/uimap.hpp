@@ -1,14 +1,14 @@
 #ifndef EE_GAMINGCUIMAP_HPP
 #define EE_GAMINGCUIMAP_HPP
 
-#include <eepp/maps/base.hpp>
-#include <eepp/ui/uiwidget.hpp>
-#include <eepp/ui/uitextview.hpp>
-#include <eepp/ui/uimessagebox.hpp>
-#include <eepp/maps/tilemap.hpp>
-#include <eepp/maps/maplightmanager.hpp>
-#include <eepp/maps/maplight.hpp>
 #include <eepp/graphics/primitives.hpp>
+#include <eepp/maps/base.hpp>
+#include <eepp/maps/maplight.hpp>
+#include <eepp/maps/maplightmanager.hpp>
+#include <eepp/maps/tilemap.hpp>
+#include <eepp/ui/uimessagebox.hpp>
+#include <eepp/ui/uitextview.hpp>
+#include <eepp/ui/uiwidget.hpp>
 
 using namespace EE::UI;
 
@@ -19,151 +19,150 @@ class GameObjectObject;
 namespace Private {
 
 class EE_API UIMap : public UIWindow {
-	public:
-		static UIMap * New( UITheme * Theme, TileMap * Map = NULL );
+  public:
+	static UIMap* New( UITheme* Theme, TileMap* Map = NULL );
 
-		enum EDITING_OBJ_MODE {
-			SELECT_OBJECTS,
-			EDIT_POLYGONS,
-			INSERT_OBJECT,
-			INSERT_POLYGON,
-			INSERT_POLYLINE
-		};
+	enum EDITING_OBJ_MODE {
+		SELECT_OBJECTS,
+		EDIT_POLYGONS,
+		INSERT_OBJECT,
+		INSERT_POLYGON,
+		INSERT_POLYLINE
+	};
 
-		typedef std::function<void( MapLight * )> LightSelectCb;
-		typedef std::function<void( MapLight * )> LightRadiusChangeCb;
-		typedef std::function<void( Uint32, Polygon2f )> ObjAddCb;
-		typedef std::function<UIMessageBox*( const String&, const String& )> AlertCb;
-		typedef std::function<void()> OnMapLoadCb;
-		typedef std::function<void()> UpdateScrollCb;
+	typedef std::function<void( MapLight* )> LightSelectCb;
+	typedef std::function<void( MapLight* )> LightRadiusChangeCb;
+	typedef std::function<void( Uint32, Polygon2f )> ObjAddCb;
+	typedef std::function<UIMessageBox*( const String&, const String& )> AlertCb;
+	typedef std::function<void()> OnMapLoadCb;
+	typedef std::function<void()> UpdateScrollCb;
 
-		UIMap( UITheme * Theme, TileMap * Map = NULL );
+	UIMap( UITheme* Theme, TileMap* Map = NULL );
 
-		virtual ~UIMap();
+	virtual ~UIMap();
 
-		virtual void draw();
+	virtual void draw();
 
-		virtual void scheduledUpdate( const Time& time );
+	virtual void scheduledUpdate( const Time& time );
 
-		TileMap * Map() const;
+	TileMap* Map() const;
 
-		void setEditingLights( const bool& editing );
+	void setEditingLights( const bool& editing );
 
-		bool isEditingLights();
+	bool isEditingLights();
 
-		void setEditingObjects( const bool& editing );
+	void setEditingObjects( const bool& editing );
 
-		bool isEditingObjects();
+	bool isEditingObjects();
 
-		void editingDisable();
+	void editingDisable();
 
-		MapLight * getSelectedLight();
+	MapLight* getSelectedLight();
 
-		MapLight * getAddLight();
+	MapLight* getAddLight();
 
-		void addLight( MapLight * Light );
+	void addLight( MapLight* Light );
 
-		void setLightSelectCb( LightSelectCb Cb );
+	void setLightSelectCb( LightSelectCb Cb );
 
-		void setLightRadiusChangeCb( LightRadiusChangeCb Cb );
+	void setLightRadiusChangeCb( LightRadiusChangeCb Cb );
 
-		void setAddObjectCallback( ObjAddCb Cb );
+	void setAddObjectCallback( ObjAddCb Cb );
 
-		void setAlertCb( AlertCb Cb );
+	void setAlertCb( AlertCb Cb );
 
-		void setUpdateScrollCb( UpdateScrollCb Cb );
+	void setUpdateScrollCb( UpdateScrollCb Cb );
 
-		void clearLights();
+	void clearLights();
 
-		void setClampToTile( const bool& clamp );
+	void setClampToTile( const bool& clamp );
 
-		const bool& getClampToTile() const;
+	const bool& getClampToTile() const;
 
-		void setEditingObjMode( EDITING_OBJ_MODE mode );
+	void setEditingObjMode( EDITING_OBJ_MODE mode );
 
-		void setCurLayer( MapLayer * layer );
+	void setCurLayer( MapLayer* layer );
 
-		void createObjPopUpMenu();
+	void createObjPopUpMenu();
 
-		void setTileBox( UITextView * tilebox );
+	void setTileBox( UITextView* tilebox );
 
-		void replaceMap( TileMap * newMap );
-	protected:
-		enum EDITING_MODE {
-			EDITING_LIGHT = 1,
-			EDITING_OBJECT
-		};
+	void replaceMap( TileMap* newMap );
 
-		TileMap *			mMap;
-		MapLayer *			mCurLayer;
-		Uint32				mEditingMode;
-		Primitives			mP;
+  protected:
+	enum EDITING_MODE { EDITING_LIGHT = 1, EDITING_OBJECT };
 
-		Uint32				mEditingObjMode;
+	TileMap* mMap;
+	MapLayer* mCurLayer;
+	Uint32 mEditingMode;
+	Primitives mP;
 
-		MapLight *			mAddLight;
-		MapLight *			mSelLight;
+	Uint32 mEditingObjMode;
 
-		LightSelectCb		mLightSelCb;
-		LightRadiusChangeCb	mLightRadiusChangeCb;
-		ObjAddCb			mAddObjectCallback;
+	MapLight* mAddLight;
+	MapLight* mSelLight;
 
-		bool				mClampToTile;
+	LightSelectCb mLightSelCb;
+	LightRadiusChangeCb mLightRadiusChangeCb;
+	ObjAddCb mAddObjectCallback;
 
-		bool				mObjRECTEditing;
-		Rectf				mObjRECT;
+	bool mClampToTile;
 
-		bool				mObjPolyEditing;
-		Polygon2f			mObjPoly;
+	bool mObjRECTEditing;
+	Rectf mObjRECT;
 
-		bool				mObjDragging;
+	bool mObjPolyEditing;
+	Polygon2f mObjPoly;
 
-		GameObjectObject *	mSelObj;
-		Vector2f			mObjDragDist;
+	bool mObjDragging;
 
-		AlertCb				mAlertCb;
-		UITheme *			mTheme;
+	GameObjectObject* mSelObj;
+	Vector2f mObjDragDist;
 
-		Uint32				mSelPointIndex;
-		Rectf				mSelPointRect;
-		bool				mSelPoint;
+	AlertCb mAlertCb;
+	UITheme* mTheme;
 
-		UITextView *			mTileBox;
-		Vector2i			mLastMouseTilePos;
+	Uint32 mSelPointIndex;
+	Rectf mSelPointRect;
+	bool mSelPoint;
 
-		UpdateScrollCb		mUpdateScrollCb;
+	UITextView* mTileBox;
+	Vector2i mLastMouseTilePos;
 
-		virtual Uint32 onMessage( const NodeMessage * Msg );
+	UpdateScrollCb mUpdateScrollCb;
 
-		virtual Uint32 onMouseMove( const Vector2i& position, const Uint32& flags );
+	virtual Uint32 onMessage( const NodeMessage* Msg );
 
-		virtual void onSizeChange();
+	virtual Uint32 onMouseMove( const Vector2i& position, const Uint32& flags );
 
-		void onUpdateScreenPos();
+	virtual void onSizeChange();
 
-		virtual void onAlphaChange();
+	void onUpdateScreenPos();
 
-		virtual Uint32 onDrag( const Vector2f& Pos , const Uint32 & flags );
+	virtual void onAlphaChange();
 
-		void objItemClick( const Event * Event );
+	virtual Uint32 onDrag( const Vector2f& Pos, const Uint32& flags );
 
-		void mapDraw();
+	void objItemClick( const Event* Event );
 
-		void tryToSelectLight();
+	void mapDraw();
 
-		void manageObject( Uint32 flags );
+	void tryToSelectLight();
 
-		Vector2f getMouseMapPos();
+	void manageObject( Uint32 flags );
 
-		void selectPolyObj();
+	Vector2f getMouseMapPos();
 
-		void selectPolyPoint();
+	void selectPolyObj();
 
-		void setPointRect( Vector2f p );
+	void selectPolyPoint();
 
-		void dragPoly( Uint32 flags, Uint32 PFlags );
+	void setPointRect( Vector2f p );
+
+	void dragPoly( Uint32 flags, Uint32 PFlags );
 };
 
-}}}
+} // namespace Private
+}} // namespace EE::Maps
 
 #endif

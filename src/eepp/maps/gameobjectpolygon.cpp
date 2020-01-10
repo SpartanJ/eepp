@@ -1,19 +1,18 @@
 #include <eepp/maps/gameobjectpolygon.hpp>
 
-#include <eepp/maps/maplayer.hpp>
 #include <eepp/graphics/primitives.hpp>
+#include <eepp/maps/maplayer.hpp>
 using namespace EE::Graphics;
 
 namespace EE { namespace Maps {
 
-GameObjectPolygon::GameObjectPolygon( Uint32 DataId, Polygon2f poly, MapLayer * Layer, const Uint32& Flags ) :
-	GameObjectObject( DataId, poly.getBounds(), Layer, Flags )
-{
+GameObjectPolygon::GameObjectPolygon( Uint32 DataId, Polygon2f poly, MapLayer* Layer,
+									  const Uint32& Flags ) :
+	GameObjectObject( DataId, poly.getBounds(), Layer, Flags ) {
 	mPoly = Polygon2f( poly );
 }
 
-GameObjectPolygon::~GameObjectPolygon() {
-}
+GameObjectPolygon::~GameObjectPolygon() {}
 
 Uint32 GameObjectPolygon::getType() const {
 	return GAMEOBJECT_TYPE_POLYGON;
@@ -28,8 +27,8 @@ Sizei GameObjectPolygon::getSize() {
 }
 
 void GameObjectPolygon::draw() {
-	Int32 selAdd	= mSelected ? 50 : 0;
-	Int32 colFill	= 100 + selAdd;
+	Int32 selAdd = mSelected ? 50 : 0;
+	Int32 colFill = 100 + selAdd;
 
 	Primitives P;
 	P.setFillMode( DRAW_FILL );
@@ -43,8 +42,8 @@ void GameObjectPolygon::draw() {
 
 void GameObjectPolygon::setPolygonPoint( Uint32 index, Vector2f p ) {
 	mPoly.setAt( index, p );
-	mRect	= mPoly.getBounds();
-	mPos	= Vector2f( mRect.Left, mRect.Top );
+	mRect = mPoly.getBounds();
+	mPos = Vector2f( mRect.Left, mRect.Top );
 }
 
 bool GameObjectPolygon::pointInside( const Vector2f& p ) {
@@ -55,8 +54,8 @@ bool GameObjectPolygon::pointInside( const Vector2f& p ) {
 	return false;
 }
 
-GameObjectObject * GameObjectPolygon::clone() {
+GameObjectObject* GameObjectPolygon::clone() {
 	return eeNew( GameObjectPolygon, ( mDataId, mPoly, mLayer, mFlags ) );
 }
 
-}}
+}} // namespace EE::Maps

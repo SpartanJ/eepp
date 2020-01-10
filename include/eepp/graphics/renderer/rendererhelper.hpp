@@ -5,15 +5,15 @@ namespace EE { namespace Graphics {
 
 /** Just for reference */
 enum EEGL_ARRAY_STATES {
-	EEGL_VERTEX_ARRAY			= 0,
+	EEGL_VERTEX_ARRAY = 0,
 	EEGL_NORMAL_ARRAY,
 	EEGL_COLOR_ARRAY,
 	EEGL_ARRAY_STATES_COUNT,
 	EEGL_TEXTURE_COORD_ARRAY
 };
 
-enum EEGL_extensions  {
-	EEGL_ARB_texture_non_power_of_two	= 0,
+enum EEGL_extensions {
+	EEGL_ARB_texture_non_power_of_two = 0,
 	EEGL_ARB_point_parameters,
 	EEGL_ARB_point_sprite,
 	EEGL_ARB_shading_language_100,
@@ -33,15 +33,8 @@ enum EEGL_extensions  {
 	EEGL_EXT_blend_subtract
 };
 
-enum EEGL_version {
-	GLv_2,
-	GLv_3,
-	GLv_3CP,
-	GLv_ES1,
-	GLv_ES2,
-	GLv_default
-};
+enum EEGL_version { GLv_2, GLv_3, GLv_3CP, GLv_ES1, GLv_ES2, GLv_default };
 
-}}
+}} // namespace EE::Graphics
 
 #endif

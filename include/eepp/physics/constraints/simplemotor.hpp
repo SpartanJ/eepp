@@ -6,16 +6,16 @@
 namespace EE { namespace Physics {
 
 class EE_API SimpleMotor : public Constraint {
-	public:
-		SimpleMotor( Body * a, Body * b, cpFloat rate );
+  public:
+	SimpleMotor( Body* a, Body* b, cpFloat rate );
 
-		cpFloat getRate();
+	cpFloat getRate();
 
-		void setRate( const cpFloat& rate );
+	void setRate( const cpFloat& rate );
 
-		virtual void draw();
+	virtual void draw();
 };
 
-}}
+}} // namespace EE::Physics
 
 #endif

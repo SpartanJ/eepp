@@ -1,22 +1,17 @@
-#include <eepp/ui/uicombobox.hpp>
 #include <eepp/graphics/textureregion.hpp>
+#include <eepp/ui/uicombobox.hpp>
 
 namespace EE { namespace UI {
 
-UIComboBox * UIComboBox::New() {
+UIComboBox* UIComboBox::New() {
 	return eeNew( UIComboBox, () );
 }
 
-UIComboBox::UIComboBox() :
-	UIWidget( "combobox" ),
-	mDropDownList( NULL ),
-	mButton( NULL )
-{
+UIComboBox::UIComboBox() : UIWidget( "combobox" ), mDropDownList( NULL ), mButton( NULL ) {
 	applyDefaultTheme();
 }
 
-UIComboBox::~UIComboBox() {
-}
+UIComboBox::~UIComboBox() {}
 
 Uint32 UIComboBox::getType() const {
 	return UI_TYPE_COMBOBOX;
@@ -26,7 +21,7 @@ bool UIComboBox::isType( const Uint32& type ) const {
 	return UIComboBox::getType() == type ? true : UIWidget::isType( type );
 }
 
-void UIComboBox::setTheme( UITheme * Theme ) {
+void UIComboBox::setTheme( UITheme* Theme ) {
 	UIWidget::setTheme( Theme );
 
 	if ( NULL == mDropDownList ) {
@@ -37,9 +32,8 @@ void UIComboBox::setTheme( UITheme * Theme ) {
 		mDropDownList->setEnabled( true );
 		mDropDownList->setAllowEditing( true );
 		mDropDownList->getInputTextBuffer()->setFreeEditing( true );
-		mDropDownList->addEventListener( Event::OnPaddingChange, [this](const Event*) {
-			this->onPaddingChange();
-		});
+		mDropDownList->addEventListener( Event::OnPaddingChange,
+										 [this]( const Event* ) { this->onPaddingChange(); } );
 	}
 
 	if ( NULL == mButton ) {
@@ -67,11 +61,11 @@ void UIComboBox::setTheme( UITheme * Theme ) {
 	onThemeLoaded();
 }
 
-UIListBox * UIComboBox::getListBox() {
+UIListBox* UIComboBox::getListBox() {
 	return mDropDownList->getListBox();
 }
 
-InputTextBuffer * UIComboBox::getInputTextBuffer() {
+InputTextBuffer* UIComboBox::getInputTextBuffer() {
 	return mDropDownList->getInputTextBuffer();
 }
 
@@ -79,7 +73,7 @@ const String& UIComboBox::getText() {
 	return mDropDownList->getText();
 }
 
-void UIComboBox::loadFromXmlNode(const pugi::xml_node& node) {
+void UIComboBox::loadFromXmlNode( const pugi::xml_node& node ) {
 	beginAttributesTransaction();
 
 	UIWidget::loadFromXmlNode( node );
@@ -92,8 +86,9 @@ void UIComboBox::loadFromXmlNode(const pugi::xml_node& node) {
 	updateControls();
 }
 
-Uint32 UIComboBox::onMessage( const NodeMessage * Msg ) {
-	if ( Msg->getMsg() == NodeMessage::Click && Msg->getSender() == mButton && ( Msg->getFlags() & EE_BUTTON_LMASK && NULL != mDropDownList ) ) {
+Uint32 UIComboBox::onMessage( const NodeMessage* Msg ) {
+	if ( Msg->getMsg() == NodeMessage::Click && Msg->getSender() == mButton &&
+		 ( Msg->getFlags() & EE_BUTTON_LMASK && NULL != mDropDownList ) ) {
 		mDropDownList->showList();
 	}
 
@@ -102,13 +97,15 @@ Uint32 UIComboBox::onMessage( const NodeMessage * Msg ) {
 
 void UIComboBox::updateControls() {
 	if ( NULL != mDropDownList ) {
-		if ( ( mFlags & UI_AUTO_SIZE ) || getSize().getHeight() < mDropDownList->getSkinSize().getHeight() ) {
+		if ( ( mFlags & UI_AUTO_SIZE ) ||
+			 getSize().getHeight() < mDropDownList->getSkinSize().getHeight() ) {
 			onAutoSize();
 		}
 
 		mDropDownList->setPosition( 0, 0 );
 		mDropDownList->setSize( getSize().getWidth() - mButton->getSize().getWidth(), 0 );
-		mDropDownList->getListBox()->setSize( getSize().getWidth(), mDropDownList->getListBox()->getSize().getHeight() );
+		mDropDownList->getListBox()->setSize( getSize().getWidth(),
+											  mDropDownList->getListBox()->getSize().getHeight() );
 		mDropDownList->centerVertical();
 	}
 
@@ -138,7 +135,8 @@ void UIComboBox::onPaddingChange() {
 
 void UIComboBox::onAutoSize() {
 	if ( NULL != mDropDownList )
-		setInternalHeight( mDropDownList->getSkinSize().getHeight() + mDropDownList->getPadding().Top + mDropDownList->getPadding().Bottom );
+		setInternalHeight( mDropDownList->getSkinSize().getHeight() +
+						   mDropDownList->getPadding().Top + mDropDownList->getPadding().Bottom );
 }
 
-}}
+}} // namespace EE::UI

@@ -3,19 +3,17 @@
 namespace EE { namespace Window {
 
 InputFinger::InputFinger() :
-	id(-1),
-	x(0),
-	y(0),
-	pressure(0),
-	xdelta(0),
-	ydelta(0),
-	last_x(0),
-	last_y(0),
-	lastPressure(0),
-	down(false),
-	wasDown(false)
-{	
-}
+	id( -1 ),
+	x( 0 ),
+	y( 0 ),
+	pressure( 0 ),
+	xdelta( 0 ),
+	ydelta( 0 ),
+	last_x( 0 ),
+	last_y( 0 ),
+	lastPressure( 0 ),
+	down( false ),
+	wasDown( false ) {}
 
 bool InputFinger::isDown() {
 	return down;
@@ -35,4 +33,4 @@ void InputFinger::writeLast() {
 	lastPressure = pressure;
 }
 
-}} 
+}} // namespace EE::Window

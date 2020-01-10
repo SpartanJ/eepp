@@ -1,275 +1,256 @@
 #ifndef EE_PHYSICS_CSPACE_HPP
 #define EE_PHYSICS_CSPACE_HPP
 
-#include <list>
+#include <eepp/physics/arbiter.hpp>
 #include <eepp/physics/base.hpp>
 #include <eepp/physics/body.hpp>
-#include <eepp/physics/shape.hpp>
-#include <eepp/physics/arbiter.hpp>
 #include <eepp/physics/constraints/constraint.hpp>
+#include <eepp/physics/shape.hpp>
+#include <list>
 
 namespace EE { namespace Physics {
 
 class EE_API Space {
-	public:
-		typedef std::function<int	( Arbiter *, Space *	, void * )>				CollisionBeginFunc;
-		typedef std::function<int	( Arbiter *, Space *	, void * )>				CollisionPreSolveFunc;
-		typedef std::function<void	( Arbiter *, Space *	, void * )>				CollisionPostSolveFunc;
-		typedef std::function<void	( Arbiter *, Space *	, void * )>				CollisionSeparateFunc;
-		typedef std::function<void	( Space *	, void *	, void * )>				PostStepCallback;
-		typedef std::function<void	( Shape *	, void * )>							BBQueryFunc;
-		typedef std::function<void	( Shape *	, cpFloat	, cVect	, void * )>		SegmentQueryFunc;
-		typedef std::function<void	( Shape *	, void * )>							PointQueryFunc;
-		typedef std::function<void	( Space *	, Body *	, void * )>				BodyIteratorFunc;
-		typedef std::function<void	( Space *	, Shape *	, void * )>				ShapeIteratorFunc;
-
-		class CollisionHandler {
-			public:
-				CollisionHandler() :
-					a( 0 ),
-					b( 0  ),
-					data( NULL )
-				{
-				}
-
-				inline void reset() {
-					a			= 0;
-					b			= 0;
-					data		= NULL;
-					begin		= CollisionBeginFunc();
-					preSolve	= CollisionPreSolveFunc();
-					postSolve	= CollisionPostSolveFunc();
-					separate	= CollisionSeparateFunc();
-				}
-
-				cpCollisionType a;
-				cpCollisionType b;
-				CollisionBeginFunc begin;
-				CollisionPreSolveFunc preSolve;
-				CollisionPostSolveFunc postSolve;
-				CollisionSeparateFunc separate;
-				void * data;
-		};
-
-		class PostStepCallbackCont {
-			public:
-				PostStepCallbackCont() :
-					Data( NULL )
-				{}
-
-				PostStepCallback	Callback;
-				void *				Data;
-		};
-
-		class BBQuery {
-			public:
-				BBQuery() :
-					Space( NULL ),
-					Data( NULL )
-				{}
-
-				Physics::Space *	Space;
-				BBQueryFunc			Func;
-				void *				Data;
-		};
-
-		class SegmentQuery {
-			public:
-				SegmentQuery() :
-					Space( NULL ),
-					Data( NULL )
-				{}
+  public:
+	typedef std::function<int( Arbiter*, Space*, void* )> CollisionBeginFunc;
+	typedef std::function<int( Arbiter*, Space*, void* )> CollisionPreSolveFunc;
+	typedef std::function<void( Arbiter*, Space*, void* )> CollisionPostSolveFunc;
+	typedef std::function<void( Arbiter*, Space*, void* )> CollisionSeparateFunc;
+	typedef std::function<void( Space*, void*, void* )> PostStepCallback;
+	typedef std::function<void( Shape*, void* )> BBQueryFunc;
+	typedef std::function<void( Shape*, cpFloat, cVect, void* )> SegmentQueryFunc;
+	typedef std::function<void( Shape*, void* )> PointQueryFunc;
+	typedef std::function<void( Space*, Body*, void* )> BodyIteratorFunc;
+	typedef std::function<void( Space*, Shape*, void* )> ShapeIteratorFunc;
+
+	class CollisionHandler {
+	  public:
+		CollisionHandler() : a( 0 ), b( 0 ), data( NULL ) {}
+
+		inline void reset() {
+			a = 0;
+			b = 0;
+			data = NULL;
+			begin = CollisionBeginFunc();
+			preSolve = CollisionPreSolveFunc();
+			postSolve = CollisionPostSolveFunc();
+			separate = CollisionSeparateFunc();
+		}
 
-				Physics::Space *	Space;
-				SegmentQueryFunc	Func;
-				void *				Data;
-		};
+		cpCollisionType a;
+		cpCollisionType b;
+		CollisionBeginFunc begin;
+		CollisionPreSolveFunc preSolve;
+		CollisionPostSolveFunc postSolve;
+		CollisionSeparateFunc separate;
+		void* data;
+	};
 
-		class PointQuery {
-			public:
-				PointQuery() :
-					Space( NULL ),
-					Data( NULL )
-				{}
+	class PostStepCallbackCont {
+	  public:
+		PostStepCallbackCont() : Data( NULL ) {}
 
-				Physics::Space *	Space;
-				PointQueryFunc		Func;
-				void *				Data;
-		};
+		PostStepCallback Callback;
+		void* Data;
+	};
 
-		class BodyIterator {
-			public:
-				BodyIterator( Physics::Space * space, void * data, BodyIteratorFunc func ) :
-					Space( space ),
-					Data( data ),
-					Func( func )
-				{}
+	class BBQuery {
+	  public:
+		BBQuery() : Space( NULL ), Data( NULL ) {}
 
-				Physics::Space *		Space;
-				void *					Data;
-				BodyIteratorFunc		Func;
-		};
+		Physics::Space* Space;
+		BBQueryFunc Func;
+		void* Data;
+	};
 
-		class ShapeIterator {
-			public:
-				ShapeIterator( Physics::Space * space, void * data, ShapeIteratorFunc func ) :
-					Space( space ),
-					Data( data ),
-					Func( func )
-				{}
+	class SegmentQuery {
+	  public:
+		SegmentQuery() : Space( NULL ), Data( NULL ) {}
 
-				Physics::Space *			Space;
-				void *						Data;
-				ShapeIteratorFunc			Func;
-		};
+		Physics::Space* Space;
+		SegmentQueryFunc Func;
+		void* Data;
+	};
 
-		static Space * New();
+	class PointQuery {
+	  public:
+		PointQuery() : Space( NULL ), Data( NULL ) {}
 
-		static void Free( Space * space );
+		Physics::Space* Space;
+		PointQueryFunc Func;
+		void* Data;
+	};
 
-		Space();
+	class BodyIterator {
+	  public:
+		BodyIterator( Physics::Space* space, void* data, BodyIteratorFunc func ) :
+			Space( space ), Data( data ), Func( func ) {}
 
-		virtual ~Space();
+		Physics::Space* Space;
+		void* Data;
+		BodyIteratorFunc Func;
+	};
 
-		void step( const cpFloat& dt );
+	class ShapeIterator {
+	  public:
+		ShapeIterator( Physics::Space* space, void* data, ShapeIteratorFunc func ) :
+			Space( space ), Data( data ), Func( func ) {}
 
-		void update();
+		Physics::Space* Space;
+		void* Data;
+		ShapeIteratorFunc Func;
+	};
 
-		Body * getStaticBody() const;
+	static Space* New();
 
-		const int& getIterations() const;
+	static void Free( Space* space );
 
-		void setIterations( const int& iterations );
+	Space();
 
-		cVect getGravity() const;
+	virtual ~Space();
 
-		void setGravity( const cVect& gravity );
+	void step( const cpFloat& dt );
 
-		const cpFloat& getDamping() const;
+	void update();
 
-		void setDamping( const cpFloat& damping );
+	Body* getStaticBody() const;
 
-		const cpFloat& getIdleSpeedThreshold() const;
+	const int& getIterations() const;
 
-		void setIdleSpeedThreshold( const cpFloat& idleSpeedThreshold );
+	void setIterations( const int& iterations );
 
-		const cpFloat& getSleepTimeThreshold() const;
+	cVect getGravity() const;
 
-		void setSleepTimeThreshold( const cpFloat& sleepTimeThreshold );
+	void setGravity( const cVect& gravity );
 
-		void setCollisionSlop( cpFloat slop );
+	const cpFloat& getDamping() const;
 
-		cpFloat getCollisionSlop() const;
+	void setDamping( const cpFloat& damping );
 
-		void setCollisionBias( cpFloat bias );
+	const cpFloat& getIdleSpeedThreshold() const;
 
-		cpFloat getCollisionBias() const;
+	void setIdleSpeedThreshold( const cpFloat& idleSpeedThreshold );
 
-		cpTimestamp getCollisionPersistence();
+	const cpFloat& getSleepTimeThreshold() const;
 
-		void setCollisionPersistence( cpTimestamp value );
+	void setSleepTimeThreshold( const cpFloat& sleepTimeThreshold );
 
-		bool getEnableContactGraph();
+	void setCollisionSlop( cpFloat slop );
 
-		void setEnableContactGraph( bool value );
+	cpFloat getCollisionSlop() const;
 
-		bool contains( Shape * shape );
+	void setCollisionBias( cpFloat bias );
 
-		bool contains( Body * body );
+	cpFloat getCollisionBias() const;
 
-		bool contains( Constraint * constraint );
+	cpTimestamp getCollisionPersistence();
 
-		Shape * addShape( Shape * shape );
+	void setCollisionPersistence( cpTimestamp value );
 
-		Shape * addStaticShape( Shape *shape );
+	bool getEnableContactGraph();
 
-		Body * addBody( Body * body );
+	void setEnableContactGraph( bool value );
 
-		Constraint * addConstraint( Constraint * constraint );
+	bool contains( Shape* shape );
 
-		void removeShape( Shape * shape );
+	bool contains( Body* body );
 
-		void removeStatiShape( Shape * shape );
+	bool contains( Constraint* constraint );
 
-		void removeBody( Body * body );
+	Shape* addShape( Shape* shape );
 
-		void removeConstraint( Constraint * constraint );
+	Shape* addStaticShape( Shape* shape );
 
-		cpSpace * getSpace() const;
+	Body* addBody( Body* body );
 
-		void activateShapesTouchingShape( Shape * shape );
+	Constraint* addConstraint( Constraint* constraint );
 
-		virtual void draw();
+	void removeShape( Shape* shape );
 
-		Shape * pointQueryFirst( cVect point, cpLayers layers, cpGroup group );
+	void removeStatiShape( Shape* shape );
 
-		Shape * segmentQueryFirst( cVect start, cVect end, cpLayers layers, cpGroup group, cpSegmentQueryInfo * out );
+	void removeBody( Body* body );
 
-		void addCollisionHandler( const CollisionHandler& handler );
+	void removeConstraint( Constraint* constraint );
 
-		void removeCollisionHandler( cpCollisionType a, cpCollisionType b );
+	cpSpace* getSpace() const;
 
-		void setDefaultCollisionHandler( const CollisionHandler& handler );
+	void activateShapesTouchingShape( Shape* shape );
 
-		void addPostStepCallback( PostStepCallback postStep, void * obj, void * data );
+	virtual void draw();
 
-		virtual cpBool onCollisionBegin( Arbiter * arb, void * data );
+	Shape* pointQueryFirst( cVect point, cpLayers layers, cpGroup group );
 
-		virtual cpBool onCollisionPreSolve( Arbiter * arb, void * data );
+	Shape* segmentQueryFirst( cVect start, cVect end, cpLayers layers, cpGroup group,
+							  cpSegmentQueryInfo* out );
 
-		virtual void onCollisionPostSolve( Arbiter * arb, void * data );
+	void addCollisionHandler( const CollisionHandler& handler );
 
-		virtual void onCollisionSeparate( Arbiter * arb, void * data );
+	void removeCollisionHandler( cpCollisionType a, cpCollisionType b );
 
-		virtual void onPostStepCallback( void * obj, void * data );
+	void setDefaultCollisionHandler( const CollisionHandler& handler );
 
-		virtual void onBBQuery( Shape * shape, BBQuery * query );
+	void addPostStepCallback( PostStepCallback postStep, void* obj, void* data );
 
-		virtual void onSegmentQuery( Shape * shape, cpFloat t, cVect n , SegmentQuery * query );
+	virtual cpBool onCollisionBegin( Arbiter* arb, void* data );
 
-		virtual void onPointQuery( Shape * shape, PointQuery * query );
+	virtual cpBool onCollisionPreSolve( Arbiter* arb, void* data );
 
-		void bbQuery( cBB bb, cpLayers layers, cpGroup group, BBQueryFunc func, void * data );
+	virtual void onCollisionPostSolve( Arbiter* arb, void* data );
 
-		void segmentQuery( cVect start, cVect end, cpLayers layers, cpGroup group, SegmentQueryFunc func, void * data );
+	virtual void onCollisionSeparate( Arbiter* arb, void* data );
 
-		void pointQuery( cVect point, cpLayers layers, cpGroup group, PointQueryFunc func, void * data );
+	virtual void onPostStepCallback( void* obj, void* data );
 
-		void setData( void * data );
+	virtual void onBBQuery( Shape* shape, BBQuery* query );
 
-		void * getData() const;
+	virtual void onSegmentQuery( Shape* shape, cpFloat t, cVect n, SegmentQuery* query );
 
-		void reindexShape( Shape * shape );
+	virtual void onPointQuery( Shape* shape, PointQuery* query );
 
-		void reindexShapesForBody( Body *body );
+	void bbQuery( cBB bb, cpLayers layers, cpGroup group, BBQueryFunc func, void* data );
 
-		void reindexStatic();
+	void segmentQuery( cVect start, cVect end, cpLayers layers, cpGroup group,
+					   SegmentQueryFunc func, void* data );
 
-		void useSpatialHash( cpFloat dim, int count );
+	void pointQuery( cVect point, cpLayers layers, cpGroup group, PointQueryFunc func, void* data );
 
-		void eachShape( ShapeIteratorFunc Func, void * data );
+	void setData( void* data );
 
-		virtual void onEachShape( Shape * Shape, ShapeIterator * it );
+	void* getData() const;
 
-		void eachBody( BodyIteratorFunc Func, void * data );
+	void reindexShape( Shape* shape );
 
-		virtual void onEachBody( Body * Body, BodyIterator * it );
+	void reindexShapesForBody( Body* body );
 
-		void convertBodyToDynamic( Body * body, cpFloat mass, cpFloat moment );
+	void reindexStatic();
 
-		void convertBodyToStatic( Body * body );
-	protected:
-		cpSpace *									mSpace;
-		Body *										mStatiBody;
-		void *										mData;
-		std::list<Body*>							mBodys;
-		std::list<Shape*>							mShapes;
-		std::list<Constraint*>						mConstraints;
-		std::map< cpHashValue, CollisionHandler >	mCollisions;
-		CollisionHandler							mCollisionsDefault;
-		std::list< PostStepCallbackCont* >			mPostStepCallbacks;
+	void useSpatialHash( cpFloat dim, int count );
+
+	void eachShape( ShapeIteratorFunc Func, void* data );
+
+	virtual void onEachShape( Shape* Shape, ShapeIterator* it );
+
+	void eachBody( BodyIteratorFunc Func, void* data );
+
+	virtual void onEachBody( Body* Body, BodyIterator* it );
+
+	void convertBodyToDynamic( Body* body, cpFloat mass, cpFloat moment );
+
+	void convertBodyToStatic( Body* body );
+
+  protected:
+	cpSpace* mSpace;
+	Body* mStatiBody;
+	void* mData;
+	std::list<Body*> mBodys;
+	std::list<Shape*> mShapes;
+	std::list<Constraint*> mConstraints;
+	std::map<cpHashValue, CollisionHandler> mCollisions;
+	CollisionHandler mCollisionsDefault;
+	std::list<PostStepCallbackCont*> mPostStepCallbacks;
 };
 
-}}
+}} // namespace EE::Physics
 
 #endif

@@ -1,21 +1,17 @@
+#include <eepp/graphics/globaltextureatlas.hpp>
+#include <eepp/scene/scenenode.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/uiprogressbar.hpp>
 #include <eepp/ui/uithememanager.hpp>
-#include <eepp/ui/css/propertydefinition.hpp>
-#include <eepp/scene/scenenode.hpp>
-#include <eepp/graphics/globaltextureatlas.hpp>
 
 namespace EE { namespace UI {
 
-UIProgressBar *UIProgressBar::New() {
+UIProgressBar* UIProgressBar::New() {
 	return eeNew( UIProgressBar, () );
 }
 
 UIProgressBar::UIProgressBar() :
-	UIWidget( "progressbar" ),
-	mProgress( 0.f ),
-	mTotalSteps( 100.f ),
-	mFillerSkin( NULL )
-{
+	UIWidget( "progressbar" ), mProgress( 0.f ), mTotalSteps( 100.f ), mFillerSkin( NULL ) {
 	subscribeScheduledUpdate();
 
 	setFlags( UI_AUTO_PADDING | UI_AUTO_SIZE );
@@ -30,8 +26,7 @@ UIProgressBar::UIProgressBar() :
 	applyDefaultTheme();
 }
 
-UIProgressBar::~UIProgressBar() {
-}
+UIProgressBar::~UIProgressBar() {}
 
 Uint32 UIProgressBar::getType() const {
 	return UI_TYPE_PROGRESSBAR;
@@ -57,16 +52,23 @@ void UIProgressBar::draw() {
 	if ( Height > mSize.getHeight() )
 		Height = mSize.getHeight();
 
-	Sizef fSize( ( ( mSize.getWidth() - fillerPadding.Left - fillerPadding.Right ) * mProgress ) / mTotalSteps, Height - fillerPadding.Top - fillerPadding.Bottom );
+	Sizef fSize( ( ( mSize.getWidth() - fillerPadding.Left - fillerPadding.Right ) * mProgress ) /
+					 mTotalSteps,
+				 Height - fillerPadding.Top - fillerPadding.Bottom );
 	Sizei rSize( PixelDensity::dpToPxI( mFillerSkin->getSize() ) );
 	Sizei numTiles( (Int32)eeceil( (Float)fSize.getWidth() / (Float)rSize.getWidth() + 2 ),
-				(Int32)eeceil( (Float)fSize.getHeight() / (Float)rSize.getHeight() ) + 2 );
+					(Int32)eeceil( (Float)fSize.getHeight() / (Float)rSize.getHeight() ) + 2 );
 
-	clipSmartEnable( mScreenPos.x + fillerPadding.Left, mScreenPos.y + fillerPadding.Top, fSize.getWidth(), fSize.getHeight() );
+	clipSmartEnable( mScreenPos.x + fillerPadding.Left, mScreenPos.y + fillerPadding.Top,
+					 fSize.getWidth(), fSize.getHeight() );
 
 	for ( int y = -1; y < numTiles.y; y++ ) {
 		for ( int x = -1; x < numTiles.x; x++ ) {
-			mFillerSkin->draw( Vector2f( (Int32)mOffset.x + mScreenPosi.x + fillerPadding.Left + x * rSize.getWidth(), mOffset.y + mScreenPosi.y + fillerPadding.Top + y * rSize.getHeight() ), Sizef( rSize.getWidth(), rSize.getHeight() ) );
+			mFillerSkin->draw(
+				Vector2f( (Int32)mOffset.x + mScreenPosi.x + fillerPadding.Left +
+							  x * rSize.getWidth(),
+						  mOffset.y + mScreenPosi.y + fillerPadding.Top + y * rSize.getHeight() ),
+				Sizef( rSize.getWidth(), rSize.getHeight() ) );
 		}
 	}
 
@@ -79,7 +81,7 @@ void UIProgressBar::scheduledUpdate( const Time& time ) {
 
 	Vector2f offset( mOffset );
 
-	mOffset += mStyleConfig.MovementSpeed * (Float)( time.asSeconds() );
+	mOffset += mStyleConfig.MovementSpeed * ( Float )( time.asSeconds() );
 
 	Sizei rSize( PixelDensity::dpToPxI( mFillerSkin->getSize() ) );
 
@@ -93,7 +95,7 @@ void UIProgressBar::scheduledUpdate( const Time& time ) {
 		invalidateDraw();
 }
 
-void UIProgressBar::setTheme( UITheme * Theme ) {
+void UIProgressBar::setTheme( UITheme* Theme ) {
 	UIWidget::setTheme( Theme );
 	setThemeSkin( Theme, "progressbar" );
 
@@ -199,16 +201,17 @@ const bool& UIProgressBar::getDisplayPercent() const {
 
 void UIProgressBar::updateTextBox() {
 	mTextBox->setVisible( mStyleConfig.DisplayPercent );
-	mTextBox->setText( String::toStr( (Int32)( ( mProgress / mTotalSteps ) * 100.f ) ) + "%" );
+	mTextBox->setText( String::toStr( ( Int32 )( ( mProgress / mTotalSteps ) * 100.f ) ) + "%" );
 	mTextBox->center();
 }
 
-UITextView * UIProgressBar::getTextBox() const {
+UITextView* UIProgressBar::getTextBox() const {
 	return mTextBox;
 }
 
 std::string UIProgressBar::getPropertyString( const PropertyDefinition* propertyDef ) {
-	if ( NULL == propertyDef ) return "";
+	if ( NULL == propertyDef )
+		return "";
 
 	switch ( propertyDef->getPropertyId() ) {
 		case PropertyId::TotalSteps:
@@ -228,14 +231,16 @@ std::string UIProgressBar::getPropertyString( const PropertyDefinition* property
 		case PropertyId::FillerPaddingBottom:
 			return String::fromFloat( mStyleConfig.FillerPadding.Bottom, "dp" );
 		case PropertyId::MovementSpeed:
-			return String::fromFloat( getMovementSpeed().x ) + " " + String::fromFloat( getMovementSpeed().y );
+			return String::fromFloat( getMovementSpeed().x ) + " " +
+				   String::fromFloat( getMovementSpeed().y );
 		default:
 			return UIWidget::getPropertyString( propertyDef );
 	}
 }
 
 bool UIProgressBar::applyProperty( const StyleSheetProperty& attribute ) {
-	if ( !checkPropertyDefinition( attribute ) ) return false;
+	if ( !checkPropertyDefinition( attribute ) )
+		return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::TotalSteps:
@@ -251,16 +256,24 @@ bool UIProgressBar::applyProperty( const StyleSheetProperty& attribute ) {
 			setDisplayPercent( attribute.asBool() );
 			break;
 		case PropertyId::FillerPaddingLeft:
-			setFillerPadding( Rectf( attribute.asDpDimension(), mStyleConfig.FillerPadding.Top, mStyleConfig.FillerPadding.Right, mStyleConfig.FillerPadding.Bottom ) );
+			setFillerPadding( Rectf( attribute.asDpDimension(), mStyleConfig.FillerPadding.Top,
+									 mStyleConfig.FillerPadding.Right,
+									 mStyleConfig.FillerPadding.Bottom ) );
 			break;
 		case PropertyId::FillerPaddingTop:
-			setFillerPadding( Rectf( mStyleConfig.FillerPadding.Left, attribute.asDpDimension(), mStyleConfig.FillerPadding.Right, mStyleConfig.FillerPadding.Bottom ) );
+			setFillerPadding( Rectf( mStyleConfig.FillerPadding.Left, attribute.asDpDimension(),
+									 mStyleConfig.FillerPadding.Right,
+									 mStyleConfig.FillerPadding.Bottom ) );
 			break;
 		case PropertyId::FillerPaddingRight:
-			setFillerPadding( Rectf( mStyleConfig.FillerPadding.Left, mStyleConfig.FillerPadding.Top, attribute.asDpDimension(), mStyleConfig.FillerPadding.Bottom ) );
+			setFillerPadding( Rectf( mStyleConfig.FillerPadding.Left,
+									 mStyleConfig.FillerPadding.Top, attribute.asDpDimension(),
+									 mStyleConfig.FillerPadding.Bottom ) );
 			break;
 		case PropertyId::FillerPaddingBottom:
-			setFillerPadding( Rectf( mStyleConfig.FillerPadding.Left, mStyleConfig.FillerPadding.Top, mStyleConfig.FillerPadding.Right, attribute.asDpDimension() ) );
+			setFillerPadding(
+				Rectf( mStyleConfig.FillerPadding.Left, mStyleConfig.FillerPadding.Top,
+					   mStyleConfig.FillerPadding.Right, attribute.asDpDimension() ) );
 			break;
 		case PropertyId::MovementSpeed:
 			setMovementSpeed( attribute.asVector2f() );
@@ -272,7 +285,7 @@ bool UIProgressBar::applyProperty( const StyleSheetProperty& attribute ) {
 	return true;
 }
 
-const UIProgressBar::StyleConfig & UIProgressBar::getStyleConfig() const {
+const UIProgressBar::StyleConfig& UIProgressBar::getStyleConfig() const {
 	return mStyleConfig;
 }
 
@@ -282,4 +295,4 @@ void UIProgressBar::onAlphaChange() {
 	mTextBox->setAlpha( mAlpha );
 }
 
-}}
+}} // namespace EE::UI

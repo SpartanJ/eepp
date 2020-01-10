@@ -6,105 +6,104 @@
 namespace EE { namespace UI {
 
 class EE_API UISlider : public UIWidget {
-	public:
-		static UISlider * New();
+  public:
+	static UISlider* New();
 
-		static UISlider * NewVertical();
+	static UISlider* NewVertical();
 
-		static UISlider * NewHorizontal();
+	static UISlider* NewHorizontal();
 
-		UISlider( const UIOrientation& orientation = UIOrientation::Horizontal );
+	UISlider( const UIOrientation& orientation = UIOrientation::Horizontal );
 
-		virtual ~UISlider();
+	virtual ~UISlider();
 
-		virtual Uint32 getType() const;
+	virtual Uint32 getType() const;
 
-		virtual bool isType( const Uint32& type ) const;
+	virtual bool isType( const Uint32& type ) const;
 
-		virtual void setTheme( UITheme * Theme );
+	virtual void setTheme( UITheme* Theme );
 
-		virtual void setValue( Float Val );
+	virtual void setValue( Float Val );
 
-		const Float& getValue() const;
+	const Float& getValue() const;
 
-		virtual void setMinValue( const Float& MinVal );
+	virtual void setMinValue( const Float& MinVal );
 
-		const Float& getMinValue() const;
+	const Float& getMinValue() const;
 
-		virtual void setMaxValue( const Float& MaxVal );
+	virtual void setMaxValue( const Float& MaxVal );
 
-		const Float& getMaxValue() const;
+	const Float& getMaxValue() const;
 
-		virtual void setClickStep( const Float& step );
+	virtual void setClickStep( const Float& step );
 
-		const Float& getClickStep() const;
+	const Float& getClickStep() const;
 
-		bool isVertical() const;
+	bool isVertical() const;
 
-		UINode * getBackSlider() const;
+	UINode* getBackSlider() const;
 
-		UINode * getSliderButton() const;
+	UINode* getSliderButton() const;
 
-		void adjustChilds();
+	void adjustChilds();
 
-		void manageClick( const Uint32& flags );
+	void manageClick( const Uint32& flags );
 
-		UIOrientation getOrientation() const;
+	UIOrientation getOrientation() const;
 
-		UISlider * setOrientation( const UIOrientation & orientation );
+	UISlider* setOrientation( const UIOrientation& orientation );
 
-		bool getAllowHalfSliderOut() const;
+	bool getAllowHalfSliderOut() const;
 
-		void setAllowHalfSliderOut( bool allowHalfSliderOut );
+	void setAllowHalfSliderOut( bool allowHalfSliderOut );
 
-		bool getExpandBackground() const;
+	bool getExpandBackground() const;
 
-		void setExpandBackground( bool expandBackground );
+	void setExpandBackground( bool expandBackground );
 
-		Float getPageStep() const;
+	Float getPageStep() const;
 
-		void setPageStep( const Float & pageStep );
+	void setPageStep( const Float& pageStep );
 
-		virtual bool applyProperty( const StyleSheetProperty& attribute );
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
-		virtual std::string getPropertyString(const PropertyDefinition* propertyDef);
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef );
 
-		Sizef getMinimumSize();
-	protected:
-		UIOrientation		mOrientation;
-		bool				mAllowHalfSliderOut;
-		bool				mExpandBackground;
-		UINode *			mBackSlider;
-		UIWidget *			mSlider;
-		Float				mMinValue;
-		Float				mMaxValue;
-		Float				mValue;
-		Float				mClickStep;
-		Float				mPageStep;
+	Sizef getMinimumSize();
 
-		bool				mOnPosChange;
+  protected:
+	UIOrientation mOrientation;
+	bool mAllowHalfSliderOut;
+	bool mExpandBackground;
+	UINode* mBackSlider;
+	UIWidget* mSlider;
+	Float mMinValue;
+	Float mMaxValue;
+	Float mValue;
+	Float mClickStep;
+	Float mPageStep;
 
-		Uint32				mLastTickMove;
+	bool mOnPosChange;
 
-		virtual void onAutoSize();
+	Uint32 mLastTickMove;
 
-		virtual void onSizeChange();
+	virtual void onAutoSize();
 
-		virtual void onPaddingChange();
+	virtual void onSizeChange();
 
-		void fixSliderPos();
+	virtual void onPaddingChange();
 
-		void adjustSliderPos();
+	void fixSliderPos();
 
-		virtual Uint32 onKeyDown( const KeyEvent &Event );
+	void adjustSliderPos();
 
-		virtual void onAlphaChange();
+	virtual Uint32 onKeyDown( const KeyEvent& Event );
 
-		virtual Uint32 onMessage( const NodeMessage * Msg );
+	virtual void onAlphaChange();
+
+	virtual Uint32 onMessage( const NodeMessage* Msg );
 };
 
-}}
+}} // namespace EE::UI
 
 #endif
-
-

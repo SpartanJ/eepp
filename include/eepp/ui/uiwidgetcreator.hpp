@@ -7,37 +7,37 @@
 namespace EE { namespace UI {
 
 class EE_API UIWidgetCreator {
-	public:
-		typedef std::function<UIWidget*( std::string )> CustomWidgetCb;
-		typedef std::function<UIWidget*()> RegisterWidgetCb;
+  public:
+	typedef std::function<UIWidget*( std::string )> CustomWidgetCb;
+	typedef std::function<UIWidget*()> RegisterWidgetCb;
 
-		typedef std::map<std::string, UIWidgetCreator::CustomWidgetCb> WidgetCallbackMap;
-		typedef std::map<std::string, UIWidgetCreator::RegisterWidgetCb> RegisteredWidgetCallbackMap;
+	typedef std::map<std::string, UIWidgetCreator::CustomWidgetCb> WidgetCallbackMap;
+	typedef std::map<std::string, UIWidgetCreator::RegisterWidgetCb> RegisteredWidgetCallbackMap;
 
-		static UIWidget * createFromName( std::string widgetName );
+	static UIWidget* createFromName( std::string widgetName );
 
-		static void addCustomWidgetCallback( std::string widgetName, const CustomWidgetCb& cb );
+	static void addCustomWidgetCallback( std::string widgetName, const CustomWidgetCb& cb );
 
-		static void removeCustomWidgetCallback( std::string widgetName );
+	static void removeCustomWidgetCallback( std::string widgetName );
 
-		static bool existsCustomWidgetCallback( std::string widgetName );
+	static bool existsCustomWidgetCallback( std::string widgetName );
 
-		static void registerWidget( std::string widgetName, const RegisterWidgetCb& cb );
+	static void registerWidget( std::string widgetName, const RegisterWidgetCb& cb );
 
-		static void unregisterWidget( std::string widgetName );
+	static void unregisterWidget( std::string widgetName );
 
-		static bool isWidgetRegistered( std::string widgetName );
+	static bool isWidgetRegistered( std::string widgetName );
 
-		static const RegisteredWidgetCallbackMap& getRegisteredWidgets();
-	protected:
+	static const RegisteredWidgetCallbackMap& getRegisteredWidgets();
 
-		static RegisteredWidgetCallbackMap registeredWidget;
+  protected:
+	static RegisteredWidgetCallbackMap registeredWidget;
 
-		static WidgetCallbackMap widgetCallback;
+	static WidgetCallbackMap widgetCallback;
 
-		static void createBaseWidgetList();
+	static void createBaseWidgetList();
 };
 
-}}
+}} // namespace EE::UI
 
-#endif 
+#endif

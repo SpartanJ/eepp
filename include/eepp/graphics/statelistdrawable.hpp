@@ -7,60 +7,62 @@
 namespace EE { namespace Graphics {
 
 class EE_API StateListDrawable : public StatefulDrawable {
-	public:
-		static StateListDrawable * New( const std::string& name = "" );
+  public:
+	static StateListDrawable* New( const std::string& name = "" );
 
-		explicit StateListDrawable( const std::string& name = "" );
+	explicit StateListDrawable( const std::string& name = "" );
 
-		virtual ~StateListDrawable();
+	virtual ~StateListDrawable();
 
-		virtual Sizef getSize();
+	virtual Sizef getSize();
 
-		virtual Sizef getSize( const Uint32& state );
+	virtual Sizef getSize( const Uint32& state );
 
-		virtual void draw();
+	virtual void draw();
 
-		virtual void draw( const Vector2f& position );
+	virtual void draw( const Vector2f& position );
 
-		virtual void draw( const Vector2f& position, const Sizef& size );
+	virtual void draw( const Vector2f& position, const Sizef& size );
 
-		virtual bool isStateful();
+	virtual bool isStateful();
 
-		virtual StatefulDrawable * setState( Uint32 state );
+	virtual StatefulDrawable* setState( Uint32 state );
 
-		virtual const Uint32& getState() const;
+	virtual const Uint32& getState() const;
 
-		virtual Drawable * getStateDrawable( const Uint32& state );
+	virtual Drawable* getStateDrawable( const Uint32& state );
 
-		virtual StateListDrawable * setStateDrawable( const Uint32& state, Drawable * drawable, bool ownIt = false );
+	virtual StateListDrawable* setStateDrawable( const Uint32& state, Drawable* drawable,
+												 bool ownIt = false );
 
-		virtual Sizef getStateSize( const Uint32& state );
+	virtual Sizef getStateSize( const Uint32& state );
 
-		virtual StateListDrawable * setStateColor( const Uint32& state, const Color& color );
+	virtual StateListDrawable* setStateColor( const Uint32& state, const Color& color );
 
-		virtual Color getStateColor( const Uint32& state );
+	virtual Color getStateColor( const Uint32& state );
 
-		virtual StateListDrawable * setStateAlpha( const Uint32& state, const Uint8& alpha );
+	virtual StateListDrawable* setStateAlpha( const Uint32& state, const Uint8& alpha );
 
-		virtual Uint8 getStateAlpha( const Uint32& state );
+	virtual Uint8 getStateAlpha( const Uint32& state );
 
-		bool hasDrawableState(const Uint32 & state ) const;
+	bool hasDrawableState( const Uint32& state ) const;
 
-		bool hasDrawableStateColor(const Uint32 & state ) const;
+	bool hasDrawableStateColor( const Uint32& state ) const;
 
-		void clearDrawables();
-	protected:
-		Uint32 mCurrentState;
-		Drawable * mCurrentDrawable;
-		std::map<Uint32,Drawable*> mDrawables;
-		std::map<Drawable*,bool> mDrawablesOwnership;
-		std::map<Uint32, Color> mDrawableColors;
+	void clearDrawables();
 
-		StateListDrawable( Type type, const std::string& name = "" );
+  protected:
+	Uint32 mCurrentState;
+	Drawable* mCurrentDrawable;
+	std::map<Uint32, Drawable*> mDrawables;
+	std::map<Drawable*, bool> mDrawablesOwnership;
+	std::map<Uint32, Color> mDrawableColors;
 
-		virtual void onColorFilterChange();
+	StateListDrawable( Type type, const std::string& name = "" );
+
+	virtual void onColorFilterChange();
 };
 
-}}
+}} // namespace EE::Graphics
 
 #endif

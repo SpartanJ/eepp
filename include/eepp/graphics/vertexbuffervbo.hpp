@@ -5,40 +5,45 @@
 
 namespace EE { namespace Graphics {
 
-/** @brief The Vertex Buffer VBO class is the implementation of a Vertex Buffer using the OpenGL VBOs.
+/** @brief The Vertex Buffer VBO class is the implementation of a Vertex Buffer using the OpenGL
+   VBOs.
 	@see VertexBuffer
 	More information in http://en.wikipedia.org/wiki/Vertex_Buffer_Object
 */
 class EE_API VertexBufferVBO : public VertexBuffer {
-	public:
-		VertexBufferVBO( const Uint32& VertexFlags = VERTEX_FLAGS_DEFAULT, PrimitiveType DrawType = PRIMITIVE_QUADS, const Int32& ReserveVertexSize = 0, const Int32& ReserveIndexSize = 0, EE_VBO_USAGE_TYPE UsageType = VBO_USAGE_TYPE_STATIC );
+  public:
+	VertexBufferVBO( const Uint32& VertexFlags = VERTEX_FLAGS_DEFAULT,
+					 PrimitiveType DrawType = PRIMITIVE_QUADS, const Int32& ReserveVertexSize = 0,
+					 const Int32& ReserveIndexSize = 0,
+					 EE_VBO_USAGE_TYPE UsageType = VBO_USAGE_TYPE_STATIC );
 
-		virtual ~VertexBufferVBO();
+	virtual ~VertexBufferVBO();
 
-		void bind();
+	void bind();
 
-		void draw();
+	void draw();
 
-		bool compile();
+	bool compile();
 
-		void update( const Uint32& Types, bool Indices );
+	void update( const Uint32& Types, bool Indices );
 
-		void reload();
+	void reload();
 
-		void unbind();
+	void unbind();
 
-		void clear();
-	protected:
-		bool mCompiled;
-		bool mBuffersSet;
-		bool mTextured;
-		Uint32 mVAO;
-		Uint32 mElementHandle;
-		Uint32 mArrayHandle[ VERTEX_FLAGS_COUNT ];
+	void clear();
 
-		void setVertexStates();
+  protected:
+	bool mCompiled;
+	bool mBuffersSet;
+	bool mTextured;
+	Uint32 mVAO;
+	Uint32 mElementHandle;
+	Uint32 mArrayHandle[VERTEX_FLAGS_COUNT];
+
+	void setVertexStates();
 };
 
-}}
+}} // namespace EE::Graphics
 
 #endif

@@ -4,7 +4,8 @@
 // Copyright (C) 2007-2009 Laurent Gomila (laurent.gom@gmail.com)
 //
 // This software is provided 'as-is', without any express or implied warranty.
-// In no event will the authors be held liable for any damages arising from the use of this software.
+// In no event will the authors be held liable for any damages arising from the use of this
+// software.
 //
 // Permission is granted to anyone to use this software for any purpose,
 // including commercial applications, and to alter it and redistribute it freely,
@@ -31,23 +32,21 @@
 ////////////////////////////////////////////////////////////
 // Headers
 ////////////////////////////////////////////////////////////
-#include <locale>
-#include <string>
 #include <cstdlib>
 #include <eepp/config.hpp>
+#include <locale>
+#include <string>
 
 namespace EE {
 
-template <unsigned int N>
-class Utf;
+template <unsigned int N> class Utf;
 
 ////////////////////////////////////////////////////////////
 /// \brief Specialization of the Utf template for UTF-8
 ///
 ////////////////////////////////////////////////////////////
-template <>
-class Utf<8> {
-public :
+template <> class Utf<8> {
+  public:
 	////////////////////////////////////////////////////////////
 	/// \brief Decode a single UTF-8 character
 	///
@@ -63,7 +62,7 @@ public :
 	///
 	////////////////////////////////////////////////////////////
 	template <typename In>
-	static In decode(In begin, In end, Uint32& output, Uint32 replacement = 0);
+	static In decode( In begin, In end, Uint32& output, Uint32 replacement = 0 );
 
 	////////////////////////////////////////////////////////////
 	/// \brief Encode a single UTF-8 character
@@ -78,8 +77,7 @@ public :
 	/// \return Iterator to the end of the output sequence which has been written
 	///
 	////////////////////////////////////////////////////////////
-	template <typename Out>
-	static Out encode(Uint32 input, Out output, Uint8 replacement = 0);
+	template <typename Out> static Out encode( Uint32 input, Out output, Uint8 replacement = 0 );
 
 	////////////////////////////////////////////////////////////
 	/// \brief Advance to the next UTF-8 character
@@ -93,8 +91,7 @@ public :
 	/// \return Iterator pointing to one past the last read element of the input sequence
 	///
 	////////////////////////////////////////////////////////////
-	template <typename In>
-	static In next(In begin, In end);
+	template <typename In> static In next( In begin, In end );
 
 	////////////////////////////////////////////////////////////
 	/// \brief Count the number of characters of a UTF-8 sequence
@@ -109,8 +106,7 @@ public :
 	/// \return Iterator pointing to one past the last read element of the input sequence
 	///
 	////////////////////////////////////////////////////////////
-	template <typename In>
-	static std::size_t count(In begin, In end);
+	template <typename In> static std::size_t count( In begin, In end );
 
 	////////////////////////////////////////////////////////////
 	/// \brief Convert an ANSI characters range to UTF-8
@@ -127,7 +123,7 @@ public :
 	///
 	////////////////////////////////////////////////////////////
 	template <typename In, typename Out>
-	static Out fromAnsi(In begin, In end, Out output, const std::locale& locale = std::locale());
+	static Out fromAnsi( In begin, In end, Out output, const std::locale& locale = std::locale() );
 
 	////////////////////////////////////////////////////////////
 	/// \brief Convert a wide characters range to UTF-8
@@ -139,8 +135,7 @@ public :
 	/// \return Iterator to the end of the output sequence which has been written
 	///
 	////////////////////////////////////////////////////////////
-	template <typename In, typename Out>
-	static Out fromWide(In begin, In end, Out output);
+	template <typename In, typename Out> static Out fromWide( In begin, In end, Out output );
 
 	////////////////////////////////////////////////////////////
 	/// \brief Convert a latin-1 (ISO-5589-1) characters range to UTF-8
@@ -152,8 +147,7 @@ public :
 	/// \return Iterator to the end of the output sequence which has been written
 	///
 	////////////////////////////////////////////////////////////
-	template <typename In, typename Out>
-	static Out fromLatin1(In begin, In end, Out output);
+	template <typename In, typename Out> static Out fromLatin1( In begin, In end, Out output );
 
 	////////////////////////////////////////////////////////////
 	/// \brief Convert an UTF-8 characters range to ANSI characters
@@ -171,7 +165,8 @@ public :
 	///
 	////////////////////////////////////////////////////////////
 	template <typename In, typename Out>
-	static Out toAnsi(In begin, In end, Out output, char replacement = 0, const std::locale& locale = std::locale());
+	static Out toAnsi( In begin, In end, Out output, char replacement = 0,
+					   const std::locale& locale = std::locale() );
 
 #ifndef EE_NO_WIDECHAR
 	////////////////////////////////////////////////////////////
@@ -186,7 +181,7 @@ public :
 	///
 	////////////////////////////////////////////////////////////
 	template <typename In, typename Out>
-	static Out toWide(In begin, In end, Out output, wchar_t replacement = 0);
+	static Out toWide( In begin, In end, Out output, wchar_t replacement = 0 );
 #endif
 
 	////////////////////////////////////////////////////////////
@@ -201,7 +196,7 @@ public :
 	///
 	////////////////////////////////////////////////////////////
 	template <typename In, typename Out>
-	static Out toLatin1(In begin, In end, Out output, char replacement = 0);
+	static Out toLatin1( In begin, In end, Out output, char replacement = 0 );
 
 	////////////////////////////////////////////////////////////
 	/// \brief Convert a UTF-8 characters range to UTF-8
@@ -218,8 +213,7 @@ public :
 	/// \return Iterator to the end of the output sequence which has been written
 	///
 	////////////////////////////////////////////////////////////
-	template <typename In, typename Out>
-	static Out toUtf8(In begin, In end, Out output);
+	template <typename In, typename Out> static Out toUtf8( In begin, In end, Out output );
 
 	////////////////////////////////////////////////////////////
 	/// \brief Convert a UTF-8 characters range to UTF-16
@@ -231,8 +225,7 @@ public :
 	/// \return Iterator to the end of the output sequence which has been written
 	///
 	////////////////////////////////////////////////////////////
-	template <typename In, typename Out>
-	static Out toUtf16(In begin, In end, Out output);
+	template <typename In, typename Out> static Out toUtf16( In begin, In end, Out output );
 
 	////////////////////////////////////////////////////////////
 	/// \brief Convert a UTF-8 characters range to UTF-32
@@ -244,19 +237,15 @@ public :
 	/// \return Iterator to the end of the output sequence which has been written
 	///
 	////////////////////////////////////////////////////////////
-	template <typename In, typename Out>
-	static Out toUtf32(In begin, In end, Out output);
+	template <typename In, typename Out> static Out toUtf32( In begin, In end, Out output );
 };
 
 ////////////////////////////////////////////////////////////
 /// \brief Specialization of the Utf template for UTF-16
 ///
 ////////////////////////////////////////////////////////////
-template <>
-class Utf<16>
-{
-public :
-
+template <> class Utf<16> {
+  public:
 	////////////////////////////////////////////////////////////
 	/// \brief Decode a single UTF-16 character
 	///
@@ -272,7 +261,7 @@ public :
 	///
 	////////////////////////////////////////////////////////////
 	template <typename In>
-	static In decode(In begin, In end, Uint32& output, Uint32 replacement = 0);
+	static In decode( In begin, In end, Uint32& output, Uint32 replacement = 0 );
 
 	////////////////////////////////////////////////////////////
 	/// \brief Encode a single UTF-16 character
@@ -287,8 +276,7 @@ public :
 	/// \return Iterator to the end of the output sequence which has been written
 	///
 	////////////////////////////////////////////////////////////
-	template <typename Out>
-	static Out encode(Uint32 input, Out output, Uint16 replacement = 0);
+	template <typename Out> static Out encode( Uint32 input, Out output, Uint16 replacement = 0 );
 
 	////////////////////////////////////////////////////////////
 	/// \brief Advance to the next UTF-16 character
@@ -302,8 +290,7 @@ public :
 	/// \return Iterator pointing to one past the last read element of the input sequence
 	///
 	////////////////////////////////////////////////////////////
-	template <typename In>
-	static In next(In begin, In end);
+	template <typename In> static In next( In begin, In end );
 
 	////////////////////////////////////////////////////////////
 	/// \brief Count the number of characters of a UTF-16 sequence
@@ -318,8 +305,7 @@ public :
 	/// \return Iterator pointing to one past the last read element of the input sequence
 	///
 	////////////////////////////////////////////////////////////
-	template <typename In>
-	static std::size_t count(In begin, In end);
+	template <typename In> static std::size_t count( In begin, In end );
 
 	////////////////////////////////////////////////////////////
 	/// \brief Convert an ANSI characters range to UTF-16
@@ -336,7 +322,7 @@ public :
 	///
 	////////////////////////////////////////////////////////////
 	template <typename In, typename Out>
-	static Out fromAnsi(In begin, In end, Out output, const std::locale& locale = std::locale());
+	static Out fromAnsi( In begin, In end, Out output, const std::locale& locale = std::locale() );
 
 	////////////////////////////////////////////////////////////
 	/// \brief Convert a wide characters range to UTF-16
@@ -348,8 +334,7 @@ public :
 	/// \return Iterator to the end of the output sequence which has been written
 	///
 	////////////////////////////////////////////////////////////
-	template <typename In, typename Out>
-	static Out fromWide(In begin, In end, Out output);
+	template <typename In, typename Out> static Out fromWide( In begin, In end, Out output );
 
 	////////////////////////////////////////////////////////////
 	/// \brief Convert a latin-1 (ISO-5589-1) characters range to UTF-16
@@ -361,8 +346,7 @@ public :
 	/// \return Iterator to the end of the output sequence which has been written
 	///
 	////////////////////////////////////////////////////////////
-	template <typename In, typename Out>
-	static Out fromLatin1(In begin, In end, Out output);
+	template <typename In, typename Out> static Out fromLatin1( In begin, In end, Out output );
 
 	////////////////////////////////////////////////////////////
 	/// \brief Convert an UTF-16 characters range to ANSI characters
@@ -380,7 +364,8 @@ public :
 	///
 	////////////////////////////////////////////////////////////
 	template <typename In, typename Out>
-	static Out toAnsi(In begin, In end, Out output, char replacement = 0, const std::locale& locale = std::locale());
+	static Out toAnsi( In begin, In end, Out output, char replacement = 0,
+					   const std::locale& locale = std::locale() );
 
 #ifndef EE_NO_WIDECHAR
 	////////////////////////////////////////////////////////////
@@ -395,7 +380,7 @@ public :
 	///
 	////////////////////////////////////////////////////////////
 	template <typename In, typename Out>
-	static Out toWide(In begin, In end, Out output, wchar_t replacement = 0);
+	static Out toWide( In begin, In end, Out output, wchar_t replacement = 0 );
 #endif
 
 	////////////////////////////////////////////////////////////
@@ -410,7 +395,7 @@ public :
 	///
 	////////////////////////////////////////////////////////////
 	template <typename In, typename Out>
-	static Out toLatin1(In begin, In end, Out output, char replacement = 0);
+	static Out toLatin1( In begin, In end, Out output, char replacement = 0 );
 
 	////////////////////////////////////////////////////////////
 	/// \brief Convert a UTF-16 characters range to UTF-8
@@ -422,8 +407,7 @@ public :
 	/// \return Iterator to the end of the output sequence which has been written
 	///
 	////////////////////////////////////////////////////////////
-	template <typename In, typename Out>
-	static Out toUtf8(In begin, In end, Out output);
+	template <typename In, typename Out> static Out toUtf8( In begin, In end, Out output );
 
 	////////////////////////////////////////////////////////////
 	/// \brief Convert a UTF-16 characters range to UTF-16
@@ -440,8 +424,7 @@ public :
 	/// \return Iterator to the end of the output sequence which has been written
 	///
 	////////////////////////////////////////////////////////////
-	template <typename In, typename Out>
-	static Out toUtf16(In begin, In end, Out output);
+	template <typename In, typename Out> static Out toUtf16( In begin, In end, Out output );
 
 	////////////////////////////////////////////////////////////
 	/// \brief Convert a UTF-16 characters range to UTF-32
@@ -453,19 +436,15 @@ public :
 	/// \return Iterator to the end of the output sequence which has been written
 	///
 	////////////////////////////////////////////////////////////
-	template <typename In, typename Out>
-	static Out toUtf32(In begin, In end, Out output);
+	template <typename In, typename Out> static Out toUtf32( In begin, In end, Out output );
 };
 
 ////////////////////////////////////////////////////////////
 /// \brief Specialization of the Utf template for UTF-32
 ///
 ////////////////////////////////////////////////////////////
-template <>
-class Utf<32>
-{
-public :
-
+template <> class Utf<32> {
+  public:
 	////////////////////////////////////////////////////////////
 	/// \brief Decode a single UTF-32 character
 	///
@@ -482,7 +461,7 @@ public :
 	///
 	////////////////////////////////////////////////////////////
 	template <typename In>
-	static In decode(In begin, In end, Uint32& output, Uint32 replacement = 0);
+	static In decode( In begin, In end, Uint32& output, Uint32 replacement = 0 );
 
 	////////////////////////////////////////////////////////////
 	/// \brief Encode a single UTF-32 character
@@ -498,8 +477,7 @@ public :
 	/// \return Iterator to the end of the output sequence which has been written
 	///
 	////////////////////////////////////////////////////////////
-	template <typename Out>
-	static Out encode(Uint32 input, Out output, Uint32 replacement = 0);
+	template <typename Out> static Out encode( Uint32 input, Out output, Uint32 replacement = 0 );
 
 	////////////////////////////////////////////////////////////
 	/// \brief Advance to the next UTF-32 character
@@ -513,8 +491,7 @@ public :
 	/// \return Iterator pointing to one past the last read element of the input sequence
 	///
 	////////////////////////////////////////////////////////////
-	template <typename In>
-	static In next(In begin, In end);
+	template <typename In> static In next( In begin, In end );
 
 	////////////////////////////////////////////////////////////
 	/// \brief Count the number of characters of a UTF-32 sequence
@@ -528,8 +505,7 @@ public :
 	/// \return Iterator pointing to one past the last read element of the input sequence
 	///
 	////////////////////////////////////////////////////////////
-	template <typename In>
-	static std::size_t count(In begin, In end);
+	template <typename In> static std::size_t count( In begin, In end );
 
 	////////////////////////////////////////////////////////////
 	/// \brief Convert an ANSI characters range to UTF-32
@@ -546,7 +522,7 @@ public :
 	///
 	////////////////////////////////////////////////////////////
 	template <typename In, typename Out>
-	static Out fromAnsi(In begin, In end, Out output, const std::locale& locale = std::locale());
+	static Out fromAnsi( In begin, In end, Out output, const std::locale& locale = std::locale() );
 
 	////////////////////////////////////////////////////////////
 	/// \brief Convert a wide characters range to UTF-32
@@ -558,8 +534,7 @@ public :
 	/// \return Iterator to the end of the output sequence which has been written
 	///
 	////////////////////////////////////////////////////////////
-	template <typename In, typename Out>
-	static Out fromWide(In begin, In end, Out output);
+	template <typename In, typename Out> static Out fromWide( In begin, In end, Out output );
 
 	////////////////////////////////////////////////////////////
 	/// \brief Convert a latin-1 (ISO-5589-1) characters range to UTF-32
@@ -571,8 +546,7 @@ public :
 	/// \return Iterator to the end of the output sequence which has been written
 	///
 	////////////////////////////////////////////////////////////
-	template <typename In, typename Out>
-	static Out fromLatin1(In begin, In end, Out output);
+	template <typename In, typename Out> static Out fromLatin1( In begin, In end, Out output );
 
 	////////////////////////////////////////////////////////////
 	/// \brief Convert an UTF-32 characters range to ANSI characters
@@ -590,7 +564,8 @@ public :
 	///
 	////////////////////////////////////////////////////////////
 	template <typename In, typename Out>
-	static Out toAnsi(In begin, In end, Out output, char replacement = 0, const std::locale& locale = std::locale());
+	static Out toAnsi( In begin, In end, Out output, char replacement = 0,
+					   const std::locale& locale = std::locale() );
 
 #ifndef EE_NO_WIDECHAR
 	////////////////////////////////////////////////////////////
@@ -605,7 +580,7 @@ public :
 	///
 	////////////////////////////////////////////////////////////
 	template <typename In, typename Out>
-	static Out toWide(In begin, In end, Out output, wchar_t replacement = 0);
+	static Out toWide( In begin, In end, Out output, wchar_t replacement = 0 );
 #endif
 
 	////////////////////////////////////////////////////////////
@@ -620,7 +595,7 @@ public :
 	///
 	////////////////////////////////////////////////////////////
 	template <typename In, typename Out>
-	static Out toLatin1(In begin, In end, Out output, char replacement = 0);
+	static Out toLatin1( In begin, In end, Out output, char replacement = 0 );
 
 	////////////////////////////////////////////////////////////
 	/// \brief Convert a UTF-32 characters range to UTF-8
@@ -632,8 +607,7 @@ public :
 	/// \return Iterator to the end of the output sequence which has been written
 	///
 	////////////////////////////////////////////////////////////
-	template <typename In, typename Out>
-	static Out toUtf8(In begin, In end, Out output);
+	template <typename In, typename Out> static Out toUtf8( In begin, In end, Out output );
 
 	////////////////////////////////////////////////////////////
 	/// \brief Convert a UTF-32 characters range to UTF-16
@@ -645,8 +619,7 @@ public :
 	/// \return Iterator to the end of the output sequence which has been written
 	///
 	////////////////////////////////////////////////////////////
-	template <typename In, typename Out>
-	static Out toUtf16(In begin, In end, Out output);
+	template <typename In, typename Out> static Out toUtf16( In begin, In end, Out output );
 
 	////////////////////////////////////////////////////////////
 	/// \brief Convert a UTF-32 characters range to UTF-32
@@ -663,8 +636,7 @@ public :
 	/// \return Iterator to the end of the output sequence which has been written
 	///
 	////////////////////////////////////////////////////////////
-	template <typename In, typename Out>
-	static Out toUtf32(In begin, In end, Out output);
+	template <typename In, typename Out> static Out toUtf32( In begin, In end, Out output );
 
 	////////////////////////////////////////////////////////////
 	/// \brief Decode a single ANSI character to UTF-32
@@ -680,7 +652,7 @@ public :
 	///
 	////////////////////////////////////////////////////////////
 	template <typename In>
-	static Uint32 decodeAnsi(In input, const std::locale& locale = std::locale());
+	static Uint32 decodeAnsi( In input, const std::locale& locale = std::locale() );
 
 	////////////////////////////////////////////////////////////
 	/// \brief Decode a single wide character to UTF-32
@@ -694,8 +666,7 @@ public :
 	/// \return Converted character
 	///
 	////////////////////////////////////////////////////////////
-	template <typename In>
-	static Uint32 decodeWide(In input);
+	template <typename In> static Uint32 decodeWide( In input );
 
 	////////////////////////////////////////////////////////////
 	/// \brief Encode a single UTF-32 character to ANSI
@@ -706,14 +677,15 @@ public :
 	///
 	/// \param codepoint   Iterator pointing to the beginning of the input sequence
 	/// \param output	  Iterator pointing to the beginning of the output sequence
-	/// \param replacement Replacement if the input character is not convertible to ANSI (use 0 to skip it)
-	/// \param locale	  Locale to use for conversion
+	/// \param replacement Replacement if the input character is not convertible to ANSI (use 0 to
+	/// skip it) \param locale	  Locale to use for conversion
 	///
 	/// \return Iterator to the end of the output sequence which has been written
 	///
 	////////////////////////////////////////////////////////////
 	template <typename Out>
-	static Out encodeAnsi(Uint32 codepoint, Out output, char replacement = 0, const std::locale& locale = std::locale());
+	static Out encodeAnsi( Uint32 codepoint, Out output, char replacement = 0,
+						   const std::locale& locale = std::locale() );
 
 #ifndef EE_NO_WIDECHAR
 	////////////////////////////////////////////////////////////
@@ -725,24 +697,25 @@ public :
 	///
 	/// \param codepoint   Iterator pointing to the beginning of the input sequence
 	/// \param output	  Iterator pointing to the beginning of the output sequence
-	/// \param replacement Replacement if the input character is not convertible to wide (use 0 to skip it)
+	/// \param replacement Replacement if the input character is not convertible to wide (use 0 to
+	/// skip it)
 	///
 	/// \return Iterator to the end of the output sequence which has been written
 	///
 	////////////////////////////////////////////////////////////
 	template <typename Out>
-	static Out encodeWide(Uint32 codepoint, Out output, wchar_t replacement = 0);
+	static Out encodeWide( Uint32 codepoint, Out output, wchar_t replacement = 0 );
 #endif
 };
 
 #include "utf.inl"
 
 // Make typedefs to get rid of the template syntax
-typedef Utf<8>  Utf8;
+typedef Utf<8> Utf8;
 typedef Utf<16> Utf16;
 typedef Utf<32> Utf32;
 
-}
+} // namespace EE
 #endif
 
 ////////////////////////////////////////////////////////////

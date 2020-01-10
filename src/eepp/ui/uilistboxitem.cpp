@@ -1,33 +1,29 @@
-#include <eepp/ui/uilistboxitem.hpp>
 #include <eepp/ui/uilistbox.hpp>
+#include <eepp/ui/uilistboxitem.hpp>
 #include <eepp/ui/uiskinstate.hpp>
 
 namespace EE { namespace UI {
 
-UIListBoxItem * UIListBoxItem::New() {
+UIListBoxItem* UIListBoxItem::New() {
 	return eeNew( UIListBoxItem, () );
 }
 
-UIListBoxItem * UIListBoxItem::NewWithTag( const std::string& tag ) {
+UIListBoxItem* UIListBoxItem::NewWithTag( const std::string& tag ) {
 	return eeNew( UIListBoxItem, ( tag ) );
 }
 
-UIListBoxItem::UIListBoxItem() :
-	UITextView( "listbox::item" )
-{
+UIListBoxItem::UIListBoxItem() : UITextView( "listbox::item" ) {
 	setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::Fixed );
 	applyDefaultTheme();
 }
 
-UIListBoxItem::UIListBoxItem( const std::string& tag ) :
-	UITextView( tag )
-{
+UIListBoxItem::UIListBoxItem( const std::string& tag ) : UITextView( tag ) {
 	setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::Fixed );
 	applyDefaultTheme();
 }
 
 UIListBoxItem::~UIListBoxItem() {
-	EventDispatcher * eventDispatcher = getEventDispatcher();
+	EventDispatcher* eventDispatcher = getEventDispatcher();
 
 	if ( NULL != eventDispatcher ) {
 		if ( eventDispatcher->getFocusControl() == this )
@@ -46,7 +42,7 @@ bool UIListBoxItem::isType( const Uint32& type ) const {
 	return UIListBoxItem::getType() == type ? true : UITextView::isType( type );
 }
 
-void UIListBoxItem::setTheme( UITheme * Theme ) {
+void UIListBoxItem::setTheme( UITheme* Theme ) {
 	UIWidget::setTheme( Theme );
 
 	setThemeSkin( Theme, "listboxitem" );
@@ -58,7 +54,7 @@ Uint32 UIListBoxItem::onMouseUp( const Vector2i& Pos, const Uint32& Flags ) {
 	UITextView::onMouseUp( Pos, Flags );
 
 	if ( mEnabled && mVisible ) {
-		UIListBox * LBParent 	= getParent()->getParent()->asType<UIListBox>();
+		UIListBox* LBParent = getParent()->getParent()->asType<UIListBox>();
 
 		if ( Flags & EE_BUTTONS_WUWD && LBParent->getVerticalScrollBar()->isVisible() ) {
 			// Manage click can delete _this_
@@ -80,7 +76,7 @@ Uint32 UIListBoxItem::onMouseClick( const Vector2i& Pos, const Uint32& Flags ) {
 }
 
 void UIListBoxItem::select() {
-	UIListBox * LBParent = getParent()->getParent()->asType<UIListBox>();
+	UIListBox* LBParent = getParent()->getParent()->asType<UIListBox>();
 
 	bool wasSelected = 0 != ( mNodeFlags & NODE_FLAG_SELECTED );
 
@@ -140,4 +136,4 @@ void UIListBoxItem::onStateChange() {
 	UITextView::onStateChange();
 }
 
-}}
+}} // namespace EE::UI

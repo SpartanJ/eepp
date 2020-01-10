@@ -1,44 +1,44 @@
 #ifndef EE_UIHELPER_HPP
 #define EE_UIHELPER_HPP
 
-#include <eepp/ui/base.hpp>
 #include <eepp/graphics/font.hpp>
+#include <eepp/ui/base.hpp>
 
 using namespace EE::Graphics;
 
 namespace EE { namespace UI {
 
-#define UI_HALIGN_LEFT		TEXT_ALIGN_LEFT
-#define UI_HALIGN_MASK		TEXT_HALIGN_MASK
-#define UI_VALIGN_TOP		TEXT_ALIGN_TOP
-#define UI_VALIGN_MASK		TEXT_VALIGN_MASK
+#define UI_HALIGN_LEFT TEXT_ALIGN_LEFT
+#define UI_HALIGN_MASK TEXT_HALIGN_MASK
+#define UI_VALIGN_TOP TEXT_ALIGN_TOP
+#define UI_VALIGN_MASK TEXT_VALIGN_MASK
 
 enum UIFlag {
-	UI_HALIGN_RIGHT					= TEXT_ALIGN_RIGHT,
-	UI_HALIGN_CENTER				= TEXT_ALIGN_CENTER,
-	UI_VALIGN_BOTTOM				= TEXT_ALIGN_BOTTOM,
-	UI_VALIGN_CENTER				= TEXT_ALIGN_MIDDLE,
-	UI_AUTO_SIZE					= (1 << 4),
-	UI_SKIN_KEEP_SIZE_ON_DRAW		= (1 << 5),
-	UI_FILL_BACKGROUND				= (1 << 6),
-	UI_FILL_FOREGROUND				= (1 << 7),
-	UI_BORDER						= (1 << 8),
-	UI_TAB_STOP						= (1 << 9),
-	UI_WORD_WRAP					= (1 << 10),
-	UI_MULTI_SELECT					= (1 << 11),
-	UI_AUTO_PADDING					= (1 << 12),
-	UI_DRAG_ENABLE					= (1 << 13),
-	UI_ANCHOR_TOP					= (1 << 14),
-	UI_ANCHOR_BOTTOM				= (1 << 15),
-	UI_ANCHOR_LEFT					= (1 << 16),
-	UI_ANCHOR_RIGHT					= (1 << 17),
-	UI_TOUCH_DRAG_ENABLED			= (1 << 18),
-	UI_TEXT_SELECTION_ENABLED		= (1 << 19),
-	UI_ATTRIBUTE_CHANGED			= (1 << 20)
+	UI_HALIGN_RIGHT = TEXT_ALIGN_RIGHT,
+	UI_HALIGN_CENTER = TEXT_ALIGN_CENTER,
+	UI_VALIGN_BOTTOM = TEXT_ALIGN_BOTTOM,
+	UI_VALIGN_CENTER = TEXT_ALIGN_MIDDLE,
+	UI_AUTO_SIZE = ( 1 << 4 ),
+	UI_SKIN_KEEP_SIZE_ON_DRAW = ( 1 << 5 ),
+	UI_FILL_BACKGROUND = ( 1 << 6 ),
+	UI_FILL_FOREGROUND = ( 1 << 7 ),
+	UI_BORDER = ( 1 << 8 ),
+	UI_TAB_STOP = ( 1 << 9 ),
+	UI_WORD_WRAP = ( 1 << 10 ),
+	UI_MULTI_SELECT = ( 1 << 11 ),
+	UI_AUTO_PADDING = ( 1 << 12 ),
+	UI_DRAG_ENABLE = ( 1 << 13 ),
+	UI_ANCHOR_TOP = ( 1 << 14 ),
+	UI_ANCHOR_BOTTOM = ( 1 << 15 ),
+	UI_ANCHOR_LEFT = ( 1 << 16 ),
+	UI_ANCHOR_RIGHT = ( 1 << 17 ),
+	UI_TOUCH_DRAG_ENABLED = ( 1 << 18 ),
+	UI_TEXT_SELECTION_ENABLED = ( 1 << 19 ),
+	UI_ATTRIBUTE_CHANGED = ( 1 << 20 )
 };
 
 enum UINodeType {
-	UI_TYPE_NODE	= 0,
+	UI_TYPE_NODE = 0,
 	UI_TYPE_UINODE,
 	UI_TYPE_WIDGET,
 	UI_TYPE_IMAGE,
@@ -82,36 +82,15 @@ enum UINodeType {
 	UI_TYPE_USER = 10000
 };
 
-enum class ScrollBarMode : Uint32 {
-	Auto,
-	AlwaysOn,
-	AlwaysOff
-};
+enum class ScrollBarMode : Uint32 { Auto, AlwaysOn, AlwaysOff };
 
-enum class UIOrientation : Uint32 {
-	Vertical,
-	Horizontal
-};
+enum class UIOrientation : Uint32 { Vertical, Horizontal };
 
-enum class LayoutSizeRule : Uint32 {
-	Fixed,
-	MatchParent,
-	WrapContent
-};
+enum class LayoutSizeRule : Uint32 { Fixed, MatchParent, WrapContent };
 
-enum class LayoutPositionRule : Uint32 {
-	None,
-	LeftOf,
-	RightOf,
-	TopOf,
-	BottomOf
-};
+enum class LayoutPositionRule : Uint32 { None, LeftOf, RightOf, TopOf, BottomOf };
 
-enum class UIScaleType : Uint32 {
-	None,
-	Expand,
-	FitInside
-};
+enum class UIScaleType : Uint32 { None, Expand, FitInside };
 
 static const Uint32 UI_CONTROL_DEFAULT_ALIGN = UI_HALIGN_LEFT | UI_VALIGN_CENTER;
 
@@ -121,8 +100,9 @@ static const Uint32 UI_CONTROL_DEFAULT_ANCHOR = UI_ANCHOR_LEFT | UI_ANCHOR_TOP;
 
 static const Uint32 UI_CONTROL_DEFAULT_FLAGS = UI_CONTROL_DEFAULT_ANCHOR | UI_CONTROL_DEFAULT_ALIGN;
 
-static const Uint32 UI_CONTROL_DEFAULT_FLAGS_CENTERED = UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_HALIGN_CENTER | UI_VALIGN_CENTER;
+static const Uint32 UI_CONTROL_DEFAULT_FLAGS_CENTERED =
+	UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_HALIGN_CENTER | UI_VALIGN_CENTER;
 
-}}
+}} // namespace EE::UI
 
 #endif

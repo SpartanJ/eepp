@@ -5,65 +5,66 @@
 
 namespace EE { namespace Graphics {
 class TextureRegion;
-}}
+}} // namespace EE::Graphics
 
 namespace EE { namespace UI {
 
 class EE_API UITextureRegion : public UIWidget {
-	public:
-		static UITextureRegion * New();
+  public:
+	static UITextureRegion* New();
 
-		UITextureRegion();
+	UITextureRegion();
 
-		virtual ~UITextureRegion();
+	virtual ~UITextureRegion();
 
-		virtual Uint32 getType() const;
+	virtual Uint32 getType() const;
 
-		virtual bool isType( const Uint32& type ) const;
+	virtual bool isType( const Uint32& type ) const;
 
-		virtual void draw();
+	virtual void draw();
 
-		virtual void setAlpha( const Float& alpha );
+	virtual void setAlpha( const Float& alpha );
 
-		Graphics::TextureRegion * getTextureRegion() const;
+	Graphics::TextureRegion* getTextureRegion() const;
 
-		UITextureRegion * setTextureRegion( Graphics::TextureRegion * TextureRegion );
+	UITextureRegion* setTextureRegion( Graphics::TextureRegion* TextureRegion );
 
-		const Color& getColor() const;
+	const Color& getColor() const;
 
-		void setColor( const Color& col );
+	void setColor( const Color& col );
 
-		const RenderMode& getRenderMode() const;
+	const RenderMode& getRenderMode() const;
 
-		void setRenderMode( const RenderMode& render );
+	void setRenderMode( const RenderMode& render );
 
-		const Vector2f& getAlignOffset() const;
+	const Vector2f& getAlignOffset() const;
 
-		const UIScaleType& getScaleType() const;
+	const UIScaleType& getScaleType() const;
 
-		UITextureRegion * setScaleType(const UIScaleType& scaleType);
+	UITextureRegion* setScaleType( const UIScaleType& scaleType );
 
-		virtual bool applyProperty( const StyleSheetProperty& attribute );
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
-		virtual std::string getPropertyString(const PropertyDefinition* propertyDef);
-	protected:
-		UIScaleType					mScaleType;
-		Graphics::TextureRegion * 	mTextureRegion;
-		Color					mColor;
-		RenderMode				mRender;
-		Vector2f				mAlignOffset;
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef );
 
-		virtual void onSizeChange();
+  protected:
+	UIScaleType mScaleType;
+	Graphics::TextureRegion* mTextureRegion;
+	Color mColor;
+	RenderMode mRender;
+	Vector2f mAlignOffset;
 
-		virtual void onAlignChange();
+	virtual void onSizeChange();
 
-		void onAutoSize();
+	virtual void onAlignChange();
 
-		void autoAlign();
+	void onAutoSize();
 
-		void drawTextureRegion();
+	void autoAlign();
+
+	void drawTextureRegion();
 };
 
-}}
+}} // namespace EE::UI
 
 #endif

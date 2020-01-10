@@ -1,12 +1,12 @@
-#include <eepp/ui/uisprite.hpp>
-#include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/graphics/globaltextureatlas.hpp>
 #include <eepp/graphics/sprite.hpp>
 #include <eepp/scene/scenenode.hpp>
-#include <eepp/graphics/globaltextureatlas.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/uisprite.hpp>
 
 namespace EE { namespace UI {
 
-UISprite * UISprite::New() {
+UISprite* UISprite::New() {
 	return eeNew( UISprite, () );
 }
 
@@ -14,9 +14,8 @@ UISprite::UISprite() :
 	UIWidget( "sprite" ),
 	mSprite( NULL ),
 	mRender( RENDER_NORMAL ),
-	mAlignOffset(0,0),
-	mTextureRegionLast(NULL)
-{
+	mAlignOffset( 0, 0 ),
+	mTextureRegionLast( NULL ) {
 	subscribeScheduledUpdate();
 }
 
@@ -37,7 +36,7 @@ Uint32 UISprite::deallocSprite() {
 	return mNodeFlags & NODE_FLAG_FREE_USE;
 }
 
-void UISprite::setSprite( Graphics::Sprite * sprite ) {
+void UISprite::setSprite( Graphics::Sprite* sprite ) {
 	if ( deallocSprite() )
 		eeSAFE_DELETE( mSprite );
 
@@ -54,9 +53,10 @@ void UISprite::draw() {
 		if ( NULL != mSprite && 0.f != mAlpha ) {
 			checkTextureRegionUpdate();
 
-			mSprite->setPosition( Vector2f( (Float)( mScreenPosi.x + (int)mAlignOffset.x ), (Float)( mScreenPosi.y + (int)mAlignOffset.y ) ) );
+			mSprite->setPosition( Vector2f( ( Float )( mScreenPosi.x + (int)mAlignOffset.x ),
+											( Float )( mScreenPosi.y + (int)mAlignOffset.y ) ) );
 
-			TextureRegion * textureRegion = mSprite->getCurrentTextureRegion();
+			TextureRegion* textureRegion = mSprite->getCurrentTextureRegion();
 
 			if ( NULL != textureRegion ) {
 				Sizef oDestSize = textureRegion->getDestSize();
@@ -74,7 +74,7 @@ void UISprite::draw() {
 
 void UISprite::scheduledUpdate( const Time& time ) {
 	if ( NULL != mSprite ) {
-		TextureRegion * textureRegion = mSprite->getCurrentTextureRegion();
+		TextureRegion* textureRegion = mSprite->getCurrentTextureRegion();
 
 		mSprite->update( time );
 
@@ -84,7 +84,8 @@ void UISprite::scheduledUpdate( const Time& time ) {
 }
 
 void UISprite::checkTextureRegionUpdate() {
-	if ( NULL != mSprite && NULL != mSprite->getCurrentTextureRegion() && mSprite->getCurrentTextureRegion() != mTextureRegionLast ) {
+	if ( NULL != mSprite && NULL != mSprite->getCurrentTextureRegion() &&
+		 mSprite->getCurrentTextureRegion() != mTextureRegionLast ) {
 		updateSize();
 		autoAlign();
 		mTextureRegionLast = mSprite->getCurrentTextureRegion();
@@ -98,7 +99,7 @@ void UISprite::setAlpha( const Float& alpha ) {
 	UIWidget::setAlpha( alpha );
 }
 
-Graphics::Sprite * UISprite::getSprite() const {
+Graphics::Sprite* UISprite::getSprite() const {
 	return mSprite;
 }
 
@@ -128,17 +129,21 @@ void UISprite::setRenderMode( const RenderMode& render ) {
 void UISprite::updateSize() {
 	if ( NULL != mSprite ) {
 		if ( mFlags & UI_AUTO_SIZE ) {
-			if ( NULL != mSprite->getCurrentTextureRegion() && mSprite->getCurrentTextureRegion()->getDpSize().asFloat() != getSize() )
+			if ( NULL != mSprite->getCurrentTextureRegion() &&
+				 mSprite->getCurrentTextureRegion()->getDpSize().asFloat() != getSize() )
 				setSize( mSprite->getCurrentTextureRegion()->getDpSize().asFloat() );
 		}
 
 		if ( NULL != mSprite->getCurrentTextureRegion() ) {
 			if ( mLayoutWidthRule == LayoutSizeRule::WrapContent ) {
-				setInternalPixelsWidth( mSprite->getCurrentTextureRegion()->getPxSize().getWidth() + mRealPadding.Left + mRealPadding.Right );
+				setInternalPixelsWidth( mSprite->getCurrentTextureRegion()->getPxSize().getWidth() +
+										mRealPadding.Left + mRealPadding.Right );
 			}
 
 			if ( mLayoutHeightRule == LayoutSizeRule::WrapContent ) {
-				setInternalPixelsHeight( mSprite->getCurrentTextureRegion()->getPxSize().getHeight() + mRealPadding.Top + mRealPadding.Bottom );
+				setInternalPixelsHeight(
+					mSprite->getCurrentTextureRegion()->getPxSize().getHeight() + mRealPadding.Top +
+					mRealPadding.Bottom );
 			}
 		}
 	}
@@ -148,12 +153,13 @@ void UISprite::autoAlign() {
 	if ( NULL == mSprite || NULL == mSprite->getCurrentTextureRegion() )
 		return;
 
-	TextureRegion * tTextureRegion = mSprite->getCurrentTextureRegion();
+	TextureRegion* tTextureRegion = mSprite->getCurrentTextureRegion();
 
 	if ( Font::getHorizontalAlign( mFlags ) == UI_HALIGN_CENTER ) {
 		mAlignOffset.x = ( mSize.getWidth() - tTextureRegion->getPxSize().getWidth() ) / 2;
 	} else if ( Font::getHorizontalAlign( mFlags ) == UI_HALIGN_RIGHT ) {
-		mAlignOffset.x =  mSize.getWidth() - tTextureRegion->getPxSize().getWidth() - mRealPadding.Right;
+		mAlignOffset.x =
+			mSize.getWidth() - tTextureRegion->getPxSize().getWidth() - mRealPadding.Right;
 	} else {
 		mAlignOffset.x = mRealPadding.Left;
 	}
@@ -161,7 +167,8 @@ void UISprite::autoAlign() {
 	if ( Font::getVerticalAlign( mFlags ) == UI_VALIGN_CENTER ) {
 		mAlignOffset.y = ( mSize.getHeight() - tTextureRegion->getPxSize().getHeight() ) / 2;
 	} else if ( Font::getVerticalAlign( mFlags ) == UI_VALIGN_BOTTOM ) {
-		mAlignOffset.y = mSize.getHeight() - tTextureRegion->getPxSize().getHeight() - mRealPadding.Bottom;
+		mAlignOffset.y =
+			mSize.getHeight() - tTextureRegion->getPxSize().getHeight() - mRealPadding.Bottom;
 	} else {
 		mAlignOffset.y = mRealPadding.Top;
 	}
@@ -186,7 +193,8 @@ void UISprite::onSizeChange() {
 }
 
 std::string UISprite::getPropertyString( const PropertyDefinition* propertyDef ) {
-	if ( NULL == propertyDef ) return "";
+	if ( NULL == propertyDef )
+		return "";
 
 	switch ( propertyDef->getPropertyId() ) {
 		case PropertyId::Src:
@@ -198,11 +206,11 @@ std::string UISprite::getPropertyString( const PropertyDefinition* propertyDef )
 }
 
 bool UISprite::applyProperty( const StyleSheetProperty& attribute ) {
-	if ( !checkPropertyDefinition( attribute ) ) return false;
+	if ( !checkPropertyDefinition( attribute ) )
+		return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
-		case PropertyId::Src:
-		{
+		case PropertyId::Src: {
 			std::string val = attribute.asString();
 
 			if ( val.size() ) {
@@ -218,4 +226,4 @@ bool UISprite::applyProperty( const StyleSheetProperty& attribute ) {
 	return true;
 }
 
-}}
+}} // namespace EE::UI

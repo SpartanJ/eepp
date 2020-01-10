@@ -8,34 +8,36 @@ namespace EE { namespace UI {
 class UISkin;
 
 class EE_API UISkinState : public UIState {
-	public:
-		static UISkinState * New( UISkin * skin );
+  public:
+	static UISkinState* New( UISkin* skin );
 
-		explicit UISkinState( UISkin * Skin );
+	explicit UISkinState( UISkin* Skin );
 
-		virtual ~UISkinState();
+	virtual ~UISkinState();
 
-		UISkin * getSkin() const;
+	UISkin* getSkin() const;
 
-		void draw( const Float& X, const Float& Y, const Float& Width, const Float& Height, const Uint32& Alpha );
+	void draw( const Float& X, const Float& Y, const Float& Width, const Float& Height,
+			   const Uint32& Alpha );
 
-		bool stateExists( const Uint32& State ) const;
+	bool stateExists( const Uint32& State ) const;
 
-		void setStateColor( const Uint32& state, const Color& color );
+	void setStateColor( const Uint32& state, const Color& color );
 
-		Color getStateColor( const Uint32& state ) const;
+	Color getStateColor( const Uint32& state ) const;
 
-		bool hasStateColor( const Uint32& state ) const;
-	protected:
-		UISkin * mSkin;
-		std::map<Uint32,Color> mColors;
-		Color mCurrentColor;
+	bool hasStateColor( const Uint32& state ) const;
 
-		void updateState();
+  protected:
+	UISkin* mSkin;
+	std::map<Uint32, Color> mColors;
+	Color mCurrentColor;
 
-		void onStateChange();
+	void updateState();
+
+	void onStateChange();
 };
 
-}}
+}} // namespace EE::UI
 
 #endif

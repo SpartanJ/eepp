@@ -18,9 +18,9 @@ class EE_API PropertySpecification {
 
 	const PropertyDefinition* getProperty( const std::string& name ) const;
 
-	ShorthandDefinition&
-	registerShorthand( const std::string& name, const std::vector<std::string>& properties,
-					   const ShorthandType& shorthandType );
+	ShorthandDefinition& registerShorthand( const std::string& name,
+											const std::vector<std::string>& properties,
+											const ShorthandType& shorthandType );
 
 	const ShorthandDefinition* getShorthand( const Uint32& id ) const;
 

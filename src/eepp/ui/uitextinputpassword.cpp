@@ -1,17 +1,15 @@
+#include <eepp/graphics/font.hpp>
+#include <eepp/graphics/text.hpp>
 #include <eepp/ui/uitextinputpassword.hpp>
 #include <eepp/ui/uithememanager.hpp>
-#include <eepp/graphics/text.hpp>
-#include <eepp/graphics/font.hpp>
 
 namespace EE { namespace UI {
 
-UITextInputPassword * UITextInputPassword::New() {
+UITextInputPassword* UITextInputPassword::New() {
 	return eeNew( UITextInputPassword, () );
 }
 
-UITextInputPassword::UITextInputPassword() :
-	UITextInput( "textinputpassword" )
-{
+UITextInputPassword::UITextInputPassword() : UITextInput( "textinputpassword" ) {
 	mPassCache = Text::New();
 
 	updateFontStyleConfig();
@@ -31,31 +29,32 @@ void UITextInputPassword::draw() {
 			drawSelection( mPassCache );
 
 			if ( isClipped() ) {
-				clipSmartEnable(
-						mScreenPos.x + mRealPadding.Left,
-						mScreenPos.y + mRealPadding.Top,
-						mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
-						mSize.getHeight() - mRealPadding.Top - mRealPadding.Bottom
-				);
+				clipSmartEnable( mScreenPos.x + mRealPadding.Left, mScreenPos.y + mRealPadding.Top,
+								 mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
+								 mSize.getHeight() - mRealPadding.Top - mRealPadding.Bottom );
 			}
 
 			mPassCache->setAlign( getFlags() );
-			mPassCache->draw( (Float)mScreenPosi.x + (int)mRealAlignOffset.x + (int)mRealPadding.Left, (Float)mScreenPosi.y + (int)mRealAlignOffset.y + (int)mRealPadding.Top, Vector2f::One, 0.f, getBlendMode() );
+			mPassCache->draw(
+				(Float)mScreenPosi.x + (int)mRealAlignOffset.x + (int)mRealPadding.Left,
+				(Float)mScreenPosi.y + (int)mRealAlignOffset.y + (int)mRealPadding.Top,
+				Vector2f::One, 0.f, getBlendMode() );
 
 			if ( isClipped() ) {
 				clipSmartDisable();
 			}
 		} else if ( !mHintCache->getString().empty() && !mTextBuffer.isActive() ) {
 			if ( isClipped() ) {
-				clipSmartEnable(
-						mScreenPos.x + mRealPadding.Left,
-						mScreenPos.y + mRealPadding.Top,
-						mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
-						mSize.getHeight() - mRealPadding.Top - mRealPadding.Bottom
-				);
+				clipSmartEnable( mScreenPos.x + mRealPadding.Left, mScreenPos.y + mRealPadding.Top,
+								 mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
+								 mSize.getHeight() - mRealPadding.Top - mRealPadding.Bottom );
 			}
 
-			mHintCache->draw( (Float)mScreenPosi.x + (int)mRealAlignOffset.x + (int)mRealPadding.Left, mFontLineCenter + (Float)mScreenPosi.y + (int)mRealAlignOffset.y + (int)mRealPadding.Top, Vector2f::One, 0.f, getBlendMode() );
+			mHintCache->draw( (Float)mScreenPosi.x + (int)mRealAlignOffset.x +
+								  (int)mRealPadding.Left,
+							  mFontLineCenter + (Float)mScreenPosi.y + (int)mRealAlignOffset.y +
+								  (int)mRealPadding.Top,
+							  Vector2f::One, 0.f, getBlendMode() );
 
 			if ( isClipped() ) {
 				clipSmartDisable();
@@ -69,7 +68,7 @@ void UITextInputPassword::draw() {
 void UITextInputPassword::alignFix() {
 	switch ( Font::getHorizontalAlign( getFlags() ) ) {
 		case UI_HALIGN_CENTER:
-			mRealAlignOffset.x = (Float)( (Int32)( mSize.x - mPassCache->getTextWidth() ) / 2 );
+			mRealAlignOffset.x = ( Float )( ( Int32 )( mSize.x - mPassCache->getTextWidth() ) / 2 );
 			break;
 		case UI_HALIGN_RIGHT:
 			mRealAlignOffset.x = ( (Float)mSize.x - (Float)mPassCache->getTextWidth() );
@@ -81,7 +80,8 @@ void UITextInputPassword::alignFix() {
 
 	switch ( Font::getVerticalAlign( getFlags() ) ) {
 		case UI_VALIGN_CENTER:
-			mRealAlignOffset.y = (Float)( ( (Int32)( mSize.y - mPassCache->getTextHeight() ) ) / 2 ) - 1;
+			mRealAlignOffset.y =
+				( Float )( ( ( Int32 )( mSize.y - mPassCache->getTextHeight() ) ) / 2 ) - 1;
 			break;
 		case UI_VALIGN_BOTTOM:
 			mRealAlignOffset.y = ( (Float)mSize.y - (Float)mPassCache->getTextHeight() );
@@ -92,10 +92,11 @@ void UITextInputPassword::alignFix() {
 	}
 
 	if ( Font::getHorizontalAlign( getFlags() ) == UI_HALIGN_LEFT ) {
-		Uint32 NLPos	= 0;
-		Uint32 LineNum	= mTextBuffer.getCurPosLinePos( NLPos );
+		Uint32 NLPos = 0;
+		Uint32 LineNum = mTextBuffer.getCurPosLinePos( NLPos );
 
-		String curStr( mTextBuffer.getBuffer().substr( NLPos, mTextBuffer.getCursorPosition() - NLPos ) );
+		String curStr(
+			mTextBuffer.getBuffer().substr( NLPos, mTextBuffer.getCursorPosition() - NLPos ) );
 		String pasStr;
 
 		for ( size_t i = 0; i < curStr.size(); i++ )
@@ -103,17 +104,19 @@ void UITextInputPassword::alignFix() {
 
 		mPassCache->setString( pasStr );
 
-		Float tW	= mPassCache->getTextWidth();
-		Float tX	= mRealAlignOffset.x + tW;
+		Float tW = mPassCache->getTextWidth();
+		Float tX = mRealAlignOffset.x + tW;
 
-		mCurPos.x	= tW;
-		mCurPos.y	= (Float)LineNum * (Float)mPassCache->getFont()->getLineSpacing( mPassCache->getCharacterSizePx() );
+		mCurPos.x = tW;
+		mCurPos.y = (Float)LineNum * (Float)mPassCache->getFont()->getLineSpacing(
+										 mPassCache->getCharacterSizePx() );
 
 		if ( !mTextBuffer.setSupportNewLine() ) {
 			if ( tX < 0.f )
 				mRealAlignOffset.x = -( mRealAlignOffset.x + ( tW - mRealAlignOffset.x ) );
 			else if ( tX > mSize.getWidth() - mRealPadding.Left - mRealPadding.Right )
-				mRealAlignOffset.x = mSize.getWidth() - mRealPadding.Left - mRealPadding.Right - ( mRealAlignOffset.x + ( tW - mRealAlignOffset.x ) );
+				mRealAlignOffset.x = mSize.getWidth() - mRealPadding.Left - mRealPadding.Right -
+									 ( mRealAlignOffset.x + ( tW - mRealAlignOffset.x ) );
 		}
 	}
 }
@@ -131,7 +134,7 @@ void UITextInputPassword::updatePass( const String& pass ) {
 	mPassCache->setString( newTxt );
 }
 
-UITextView * UITextInputPassword::setText( const String& text ) {
+UITextView* UITextInputPassword::setText( const String& text ) {
 	UITextInput::setText( text );
 
 	updatePass( text );
@@ -139,7 +142,7 @@ UITextView * UITextInputPassword::setText( const String& text ) {
 	return this;
 }
 
-Text *UITextInputPassword::getPassCache() const {
+Text* UITextInputPassword::getPassCache() const {
 	return mPassCache;
 }
 
@@ -167,5 +170,4 @@ const String& UITextInputPassword::getText() {
 	return UITextView::getText();
 }
 
-
-}}
+}} // namespace EE::UI

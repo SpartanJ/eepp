@@ -1,26 +1,22 @@
+#include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitab.hpp>
 #include <eepp/ui/uitabwidget.hpp>
-#include <eepp/ui/uiscenenode.hpp>
-#include <eepp/ui/css/propertydefinition.hpp>
 
 namespace EE { namespace UI {
 
-UITab *UITab::New() {
+UITab* UITab::New() {
 	return eeNew( UITab, () );
 }
 
-UITab::UITab() :
-	UISelectButton( "tab" ),
-	mControlOwned( NULL )
-{
+UITab::UITab() : UISelectButton( "tab" ), mControlOwned( NULL ) {
 	mTextBox->setElementTag( "tab::text" );
 	mIcon->setElementTag( "tab::icon" );
 
 	applyDefaultTheme();
 }
 
-UITab::~UITab() {
-}
+UITab::~UITab() {}
 
 Uint32 UITab::getType() const {
 	return UI_TYPE_TAB;
@@ -30,8 +26,9 @@ bool UITab::isType( const Uint32& type ) const {
 	return UITab::getType() == type ? true : UISelectButton::isType( type );
 }
 
-UITabWidget * UITab::getTabWidget() {
-	if ( NULL != getParent() && NULL != getParent()->getParent() && getParent()->getParent()->isType( UI_TYPE_TABWIDGET ) ) {
+UITabWidget* UITab::getTabWidget() {
+	if ( NULL != getParent() && NULL != getParent()->getParent() &&
+		 getParent()->getParent()->isType( UI_TYPE_TABWIDGET ) ) {
 		return getParent()->getParent()->asType<UITabWidget>();
 	}
 
@@ -43,18 +40,19 @@ void UITab::onParentChange() {
 	UISelectButton::onParentChange();
 }
 
-void UITab::setTheme( UITheme * Theme ) {
+void UITab::setTheme( UITheme* Theme ) {
 	UIWidget::setTheme( Theme );
 
 	std::string tabPos = "tab";
 
-	UITabWidget * tTabW = getTabWidget();
+	UITabWidget* tTabW = getTabWidget();
 
 	if ( NULL != tTabW ) {
 		if ( tTabW->getSpecialBorderTabs() ) {
 			if ( 0 == tTabW->getTabIndex( this ) ) {
 				tabPos = "tab_left";
-			} else if ( tTabW->getCount() > 0 && ( tTabW->getCount() - 1 ) == tTabW->getTabIndex( this ) ) {
+			} else if ( tTabW->getCount() > 0 &&
+						( tTabW->getCount() - 1 ) == tTabW->getTabIndex( this ) ) {
 				tabPos = "tab_right";
 			}
 		}
@@ -66,10 +64,10 @@ void UITab::setTheme( UITheme * Theme ) {
 	onStateChange();
 }
 
-Uint32 UITab::onMouseClick( const Vector2i &Pos, const Uint32& Flags ) {
+Uint32 UITab::onMouseClick( const Vector2i& Pos, const Uint32& Flags ) {
 	UISelectButton::onMouseClick( Pos, Flags );
 
-	UITabWidget * tTabW = getTabWidget();
+	UITabWidget* tTabW = getTabWidget();
 
 	if ( NULL != tTabW ) {
 		if ( Flags & EE_BUTTON_LMASK ) {
@@ -83,7 +81,7 @@ Uint32 UITab::onMouseClick( const Vector2i &Pos, const Uint32& Flags ) {
 void UITab::onStateChange() {
 	UISelectButton::onStateChange();
 
-	UITabWidget * tTabW = getTabWidget();
+	UITabWidget* tTabW = getTabWidget();
 
 	if ( NULL != tTabW && NULL != mSkinState ) {
 		Int32 skinSize = getSkinSize( getSkin(), mSkinState->getCurrentState() ).getHeight();
@@ -100,8 +98,8 @@ const String& UITab::getText() {
 	return UIPushButton::getText();
 }
 
-UIPushButton * UITab::setText( const String &text ) {
-	UITabWidget * tTabW = getTabWidget();
+UIPushButton* UITab::setText( const String& text ) {
+	UITabWidget* tTabW = getTabWidget();
 
 	if ( NULL != tTabW ) {
 		if ( text.size() > tTabW->getMaxTextLength() ) {
@@ -115,7 +113,6 @@ UIPushButton * UITab::setText( const String &text ) {
 
 			return this;
 		}
-
 	}
 
 	UIPushButton::setText( text );
@@ -131,9 +128,11 @@ UIPushButton * UITab::setText( const String &text ) {
 
 void UITab::onAutoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
-		Uint32 w = PixelDensity::pxToDpI( mTextBox->getTextWidth() ) + mStyleConfig.IconHorizontalMargin + ( NULL != mIcon ? mIcon->getSize().getWidth() : 0 ) + getSkinSize().getWidth();
+		Uint32 w = PixelDensity::pxToDpI( mTextBox->getTextWidth() ) +
+				   mStyleConfig.IconHorizontalMargin +
+				   ( NULL != mIcon ? mIcon->getSize().getWidth() : 0 ) + getSkinSize().getWidth();
 
-		UITabWidget * tTabW = getTabWidget();
+		UITabWidget* tTabW = getTabWidget();
 
 		if ( NULL != tTabW ) {
 			w = eemax( w, tTabW->getMinTabWidth() );
@@ -145,7 +144,8 @@ void UITab::onAutoSize() {
 }
 
 std::string UITab::getPropertyString( const PropertyDefinition* propertyDef ) {
-	if ( NULL == propertyDef ) return "";
+	if ( NULL == propertyDef )
+		return "";
 
 	switch ( propertyDef->getPropertyId() ) {
 		case PropertyId::Text:
@@ -159,13 +159,15 @@ std::string UITab::getPropertyString( const PropertyDefinition* propertyDef ) {
 }
 
 bool UITab::applyProperty( const StyleSheetProperty& attribute ) {
-	if ( !checkPropertyDefinition( attribute ) ) return false;
+	if ( !checkPropertyDefinition( attribute ) )
+		return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::Text:
 		case PropertyId::Name:
 			if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
-				setText( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( attribute.asString() ) );
+				setText( static_cast<UISceneNode*>( mSceneNode )
+							 ->getTranslatorString( attribute.asString() ) );
 			break;
 		case PropertyId::Owns:
 			mOwnedName = attribute.asString();
@@ -184,7 +186,7 @@ Uint32 UITab::onMouseUp( const Vector2i& Pos, const Uint32& Flags ) {
 			setOwnedControl();
 		}
 
-		UITabWidget * tTabW	= getTabWidget();
+		UITabWidget* tTabW = getTabWidget();
 
 		if ( NULL != tTabW ) {
 			if ( Flags & EE_BUTTONS_WUWD ) {
@@ -203,21 +205,21 @@ Uint32 UITab::onMouseUp( const Vector2i& Pos, const Uint32& Flags ) {
 }
 
 void UITab::setOwnedControl() {
-	Node * ctrl = getParent()->getParent()->find( mOwnedName );
+	Node* ctrl = getParent()->getParent()->find( mOwnedName );
 
 	if ( NULL != ctrl ) {
 		setControlOwned( ctrl );
 	}
 }
 
-Node * UITab::getControlOwned() const {
+Node* UITab::getControlOwned() const {
 	return mControlOwned;
 }
 
-void UITab::setControlOwned( Node * controlOwned ) {
+void UITab::setControlOwned( Node* controlOwned ) {
 	mControlOwned = controlOwned;
 
-	UITabWidget * tTabW = getTabWidget();
+	UITabWidget* tTabW = getTabWidget();
 
 	if ( NULL != tTabW ) {
 		tTabW->refreshControlOwned( this );
@@ -227,4 +229,4 @@ void UITab::setControlOwned( Node * controlOwned ) {
 	}
 }
 
-}}
+}} // namespace EE::UI

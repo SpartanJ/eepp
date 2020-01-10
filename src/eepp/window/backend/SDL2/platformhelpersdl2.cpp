@@ -1,5 +1,5 @@
-#include <eepp/window/backend/SDL2/platformhelpersdl2.hpp>
 #include <eepp/window/backend/SDL2/base.hpp>
+#include <eepp/window/backend/SDL2/platformhelpersdl2.hpp>
 
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
 #include <jni.h>
@@ -7,16 +7,14 @@
 
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
-PlatformHelperSDL2::PlatformHelperSDL2()
-{
-}
+PlatformHelperSDL2::PlatformHelperSDL2() {}
 
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
-void * PlatformHelperSDL2::getActivity() {
+void* PlatformHelperSDL2::getActivity() {
 	return SDL_AndroidGetActivity();
 }
 
-void * PlatformHelperSDL2::getJNIEnv() {
+void* PlatformHelperSDL2::getJNIEnv() {
 	return SDL_AndroidGetJNIEnv();
 }
 
@@ -35,31 +33,32 @@ std::string PlatformHelperSDL2::getApkPath() {
 		jmethodID mid;
 		jobject context;
 		jstring fileObject;
-		const char *path;
+		const char* path;
 
-		JNIEnv *env = (JNIEnv*)getJNIEnv();
+		JNIEnv* env = (JNIEnv*)getJNIEnv();
 
 		jobject activity = (jobject)getActivity();
-		jclass ActivityClass = env->GetObjectClass(activity);
+		jclass ActivityClass = env->GetObjectClass( activity );
 
 		// context = SDLActivity.getContext();
-		mid = env->GetStaticMethodID(ActivityClass,"getContext","()Landroid/content/Context;");
+		mid = env->GetStaticMethodID( ActivityClass, "getContext", "()Landroid/content/Context;" );
 
-		context = env->CallStaticObjectMethod(ActivityClass, mid);
+		context = env->CallStaticObjectMethod( ActivityClass, mid );
 
 		// fileObj = context.getFilesDir();
-		mid = env->GetMethodID(env->GetObjectClass(context),"getPackageCodePath", "()Ljava/lang/String;");
+		mid = env->GetMethodID( env->GetObjectClass( context ), "getPackageCodePath",
+								"()Ljava/lang/String;" );
 
-		fileObject = (jstring)env->CallObjectMethod(context, mid);
+		fileObject = (jstring)env->CallObjectMethod( context, mid );
 
 		jboolean isCopy;
-		path = env->GetStringUTFChars(fileObject, &isCopy);
+		path = env->GetStringUTFChars( fileObject, &isCopy );
 
 		apkPath = std::string( path );
 
-		env->ReleaseStringUTFChars(fileObject, path);
-		env->DeleteLocalRef(activity);
-		env->DeleteLocalRef(ActivityClass);
+		env->ReleaseStringUTFChars( fileObject, path );
+		env->DeleteLocalRef( activity );
+		env->DeleteLocalRef( ActivityClass );
 	}
 
 	return apkPath;
@@ -75,4 +74,4 @@ bool PlatformHelperSDL2::isExternalStorageWritable() {
 
 #endif
 
-}}}}
+}}}} // namespace EE::Window::Backend::SDL2

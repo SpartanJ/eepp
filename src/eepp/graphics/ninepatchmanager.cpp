@@ -2,10 +2,8 @@
 
 namespace EE { namespace Graphics {
 
-SINGLETON_DECLARE_IMPLEMENTATION(NinePatchManager)
+SINGLETON_DECLARE_IMPLEMENTATION( NinePatchManager )
 
-NinePatchManager::~NinePatchManager()
-{
-}
+NinePatchManager::~NinePatchManager() {}
 
-}}
+}} // namespace EE::Graphics

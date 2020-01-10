@@ -6,12 +6,12 @@
 namespace EE { namespace Window { namespace Backend {
 
 class EE_API WindowBackend {
-	public:
-		inline WindowBackend() {}
-		
-		inline virtual ~WindowBackend() {}
+  public:
+	inline WindowBackend() {}
+
+	inline virtual ~WindowBackend() {}
 };
 
-}}}
+}}} // namespace EE::Window::Backend
 
 #endif

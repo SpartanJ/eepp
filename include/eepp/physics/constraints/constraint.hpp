@@ -7,48 +7,49 @@
 namespace EE { namespace Physics {
 
 class EE_API Constraint {
-	public:
-		static void Free( Constraint * constraint );
+  public:
+	static void Free( Constraint* constraint );
 
-		Constraint( cpConstraint * Constraint );
+	Constraint( cpConstraint* Constraint );
 
-		virtual ~Constraint();
+	virtual ~Constraint();
 
-		cpConstraint * getConstraint() const;
+	cpConstraint* getConstraint() const;
 
-		Body * getA();
+	Body* getA();
 
-		Body * getB();
+	Body* getB();
 
-		cpFloat getMaxForce();
+	cpFloat getMaxForce();
 
-		void setMaxForce( const cpFloat& maxforce );
+	void setMaxForce( const cpFloat& maxforce );
 
-		cpFloat getMaxBias();
+	cpFloat getMaxBias();
 
-		void setMaxBias( const cpFloat& maxbias );
+	void setMaxBias( const cpFloat& maxbias );
 
-		virtual void draw();
+	virtual void draw();
 
-		cpFloat getErrorBias();
+	cpFloat getErrorBias();
 
-		void setErrorBias( cpFloat value );
+	void setErrorBias( cpFloat value );
 
-		void setData( void * data );
+	void setData( void* data );
 
-		void * getData() const;
+	void* getData() const;
 
-		cpFloat getImpulse();
-	protected:
-		cpConstraint *		mConstraint;
+	cpFloat getImpulse();
 
-		void *				mData;
+  protected:
+	cpConstraint* mConstraint;
 
-		Constraint();
+	void* mData;
 
-		void setData();
+	Constraint();
+
+	void setData();
 };
 
-}}
+}} // namespace EE::Physics
 
 #endif

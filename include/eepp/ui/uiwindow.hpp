@@ -1,292 +1,282 @@
 #ifndef EE_UICUIWINDOW_HPP
 #define EE_UICUIWINDOW_HPP
 
-#include <eepp/ui/uiwidget.hpp>
 #include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uitextview.hpp>
+#include <eepp/ui/uiwidget.hpp>
 
 namespace EE { namespace Graphics {
 class FrameBuffer;
-}}
+}} // namespace EE::Graphics
 
 namespace EE { namespace UI {
 
 class UISceneNode;
 
 enum UIWindowFlags {
-	UI_WIN_NO_DECORATION				= ( 1 << 0 ),
-	UI_WIN_CLOSE_BUTTON					= ( 1 << 1 ),
-	UI_WIN_MINIMIZE_BUTTON				= ( 1 << 2 ),
-	UI_WIN_MAXIMIZE_BUTTON				= ( 1 << 3 ),
-	UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS	= ( 1 << 4 ),
-	UI_WIN_RESIZEABLE					= ( 1 << 5 ),
-	UI_WIN_DRAGABLE_CONTAINER			= ( 1 << 6 ),
-	UI_WIN_SHARE_ALPHA_WITH_CHILDS		= ( 1 << 7 ),
-	UI_WIN_MODAL						= ( 1 << 8 ),
-	UI_WIN_SHADOW						= ( 1 << 9 ),
-	UI_WIN_FRAME_BUFFER					= ( 1 << 10 ),
-	UI_WIN_COLOR_BUFFER					= ( 1 << 11 )
+	UI_WIN_NO_DECORATION = ( 1 << 0 ),
+	UI_WIN_CLOSE_BUTTON = ( 1 << 1 ),
+	UI_WIN_MINIMIZE_BUTTON = ( 1 << 2 ),
+	UI_WIN_MAXIMIZE_BUTTON = ( 1 << 3 ),
+	UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS = ( 1 << 4 ),
+	UI_WIN_RESIZEABLE = ( 1 << 5 ),
+	UI_WIN_DRAGABLE_CONTAINER = ( 1 << 6 ),
+	UI_WIN_SHARE_ALPHA_WITH_CHILDS = ( 1 << 7 ),
+	UI_WIN_MODAL = ( 1 << 8 ),
+	UI_WIN_SHADOW = ( 1 << 9 ),
+	UI_WIN_FRAME_BUFFER = ( 1 << 10 ),
+	UI_WIN_COLOR_BUFFER = ( 1 << 11 )
 };
 
-static const Uint32 UI_WIN_DEFAULT_FLAGS = UI_WIN_CLOSE_BUTTON | UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS | UI_WIN_RESIZEABLE | UI_WIN_SHARE_ALPHA_WITH_CHILDS;
+static const Uint32 UI_WIN_DEFAULT_FLAGS = UI_WIN_CLOSE_BUTTON |
+										   UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS | UI_WIN_RESIZEABLE |
+										   UI_WIN_SHARE_ALPHA_WITH_CHILDS;
 
 class EE_API UIWindow : public UIWidget {
-	public:
-		class StyleConfig {
-			public:
-				StyleConfig() {}
+  public:
+	class StyleConfig {
+	  public:
+		StyleConfig() {}
 
-				StyleConfig( Uint32 winFlags ) :
-					WinFlags( winFlags )
-				{}
+		StyleConfig( Uint32 winFlags ) : WinFlags( winFlags ) {}
 
-				Uint32		WinFlags = UI_WIN_DEFAULT_FLAGS;
-				Sizei		DecorationSize;
-				Sizei		BorderSize;
-				Sizef		MinWindowSize;
-				Vector2i	ButtonsPositionFixer;
-				Uint32		ButtonsSeparation = 4;
-				Int32		MinCornerDistance = 24;
-				Uint8		BaseAlpha = 255;
-				bool		DecorationAutoSize = true;
-				bool		BorderAutoSize = true;
-		};
+		Uint32 WinFlags = UI_WIN_DEFAULT_FLAGS;
+		Sizei DecorationSize;
+		Sizei BorderSize;
+		Sizef MinWindowSize;
+		Vector2i ButtonsPositionFixer;
+		Uint32 ButtonsSeparation = 4;
+		Int32 MinCornerDistance = 24;
+		Uint8 BaseAlpha = 255;
+		bool DecorationAutoSize = true;
+		bool BorderAutoSize = true;
+	};
 
-		enum WindowBaseContainerType {
-			SIMPLE_LAYOUT,
-			LINEAR_LAYOUT,
-			RELATIVE_LAYOUT
-		};
+	enum WindowBaseContainerType { SIMPLE_LAYOUT, LINEAR_LAYOUT, RELATIVE_LAYOUT };
 
-		static UIWindow * NewOpt( WindowBaseContainerType type, const StyleConfig& windowStyleConfig );
+	static UIWindow* NewOpt( WindowBaseContainerType type, const StyleConfig& windowStyleConfig );
 
-		static UIWindow * New();
+	static UIWindow* New();
 
-		explicit UIWindow( WindowBaseContainerType type, const StyleConfig& windowStyleConfig );
+	explicit UIWindow( WindowBaseContainerType type, const StyleConfig& windowStyleConfig );
 
-		explicit UIWindow( WindowBaseContainerType type = SIMPLE_LAYOUT );
+	explicit UIWindow( WindowBaseContainerType type = SIMPLE_LAYOUT );
 
-		virtual ~UIWindow();
+	virtual ~UIWindow();
 
-		virtual Uint32 getType() const;
+	virtual Uint32 getType() const;
 
-		virtual bool isType( const Uint32& type ) const;
+	virtual bool isType( const Uint32& type ) const;
 
-		virtual UINode * setSize( const Sizef& size );
+	virtual UINode* setSize( const Sizef& size );
 
-		UINode * setSize( const Float& Width, const Float& Height );
+	UINode* setSize( const Float& Width, const Float& Height );
 
-		UIWindow * setSizeWithDecoration( const Float& Width, const Float& Height );
+	UIWindow* setSizeWithDecoration( const Float& Width, const Float& Height );
 
-		UIWindow * setSizeWithDecoration( const Sizef& size );
+	UIWindow* setSizeWithDecoration( const Sizef& size );
 
-		const Sizef& getSize() const;
+	const Sizef& getSize() const;
 
-		virtual void setTheme( UITheme * Theme );
+	virtual void setTheme( UITheme* Theme );
 
-		virtual Uint32 onMessage( const NodeMessage *Msg );
+	virtual Uint32 onMessage( const NodeMessage* Msg );
 
-		UIWidget * getContainer() const;
+	UIWidget* getContainer() const;
 
-		UINode * getButtonClose() const;
+	UINode* getButtonClose() const;
 
-		UINode * getButtonMaximize() const;
+	UINode* getButtonMaximize() const;
 
-		UINode * getButtonMinimize() const;
+	UINode* getButtonMinimize() const;
 
-		virtual bool show();
+	virtual bool show();
 
-		virtual bool hide();
+	virtual bool hide();
 
-		virtual void scheduledUpdate( const Time& time );
+	virtual void scheduledUpdate( const Time& time );
 
-		virtual void closeWindow();
+	virtual void closeWindow();
 
-		virtual void close();
+	virtual void close();
 
-		void setBaseAlpha( const Uint8& alpha );
+	void setBaseAlpha( const Uint8& alpha );
 
-		const Uint8& getBaseAlpha() const;
+	const Uint8& getBaseAlpha() const;
 
-		void setTitle( const String& Text );
+	void setTitle( const String& Text );
 
-		String getTitle() const;
+	String getTitle() const;
 
-		UITextView * getTitleTextBox() const;
+	UITextView* getTitleTextBox() const;
 
-		bool addShortcut( const Uint32& KeyCode, const Uint32& Mod, UIPushButton * Button );
+	bool addShortcut( const Uint32& KeyCode, const Uint32& Mod, UIPushButton* Button );
 
-		bool removeShortcut( const Uint32& KeyCode, const Uint32& Mod );
+	bool removeShortcut( const Uint32& KeyCode, const Uint32& Mod );
 
-		bool isModal();
+	bool isModal();
 
-		UIWidget * getModalControl() const;
+	UIWidget* getModalControl() const;
 
-		void maximize();
+	void maximize();
 
-		bool isMaximizable();
+	bool isMaximizable();
 
-		bool isResizeable();
+	bool isResizeable();
 
-		Uint32 getWinFlags() const;
+	Uint32 getWinFlags() const;
 
-		UIWindow * setWinFlags(const Uint32 & winFlags);
+	UIWindow* setWinFlags( const Uint32& winFlags );
 
-		const StyleConfig& getStyleConfig() const;
+	const StyleConfig& getStyleConfig() const;
 
-		UIWindow * setStyleConfig(const StyleConfig & styleConfig);
+	UIWindow* setStyleConfig( const StyleConfig& styleConfig );
 
-		UIWindow * setMinWindowSize( Sizef size );
+	UIWindow* setMinWindowSize( Sizef size );
 
-		UIWindow * setMinWindowSize( const Float& width, const Float& height );
+	UIWindow* setMinWindowSize( const Float& width, const Float& height );
 
-		const Sizef& getMinWindowSize();
+	const Sizef& getMinWindowSize();
 
-		bool ownsFrameBuffer();
+	bool ownsFrameBuffer();
 
-		virtual void loadFromXmlNode( const pugi::xml_node& node );
+	virtual void loadFromXmlNode( const pugi::xml_node& node );
 
-		virtual bool applyProperty( const StyleSheetProperty& attribute );
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
-		virtual void internalDraw();
+	virtual void internalDraw();
 
-		void invalidate();
+	void invalidate();
 
-		bool invalidated();
+	bool invalidated();
 
-		FrameBuffer * getFrameBuffer() const;
+	FrameBuffer* getFrameBuffer() const;
 
-		virtual bool isDrawInvalidator() const;
+	virtual bool isDrawInvalidator() const;
 
-		virtual std::string getPropertyString(const PropertyDefinition* propertyDef);
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef );
 
-		std::string getWindowFlagsString();
-	protected:
-		class KeyboardShortcut {
-			public:
-				KeyboardShortcut() :
-					KeyCode(0),
-					Mod(0),
-					Button(NULL)
-				{}
+	std::string getWindowFlagsString();
 
-				KeyboardShortcut( const Uint32& KeyCode, const Uint32& Mod, UIPushButton * Button ) :
-					KeyCode( KeyCode ),
-					Mod( Mod ),
-					Button( Button )
-				{}
+  protected:
+	class KeyboardShortcut {
+	  public:
+		KeyboardShortcut() : KeyCode( 0 ), Mod( 0 ), Button( NULL ) {}
 
-				Uint32 KeyCode;
-				Uint32 Mod;
-				UIPushButton * Button;
-		};
+		KeyboardShortcut( const Uint32& KeyCode, const Uint32& Mod, UIPushButton* Button ) :
+			KeyCode( KeyCode ), Mod( Mod ), Button( Button ) {}
 
-		typedef std::list< KeyboardShortcut > KeyboardShortcuts;
+		Uint32 KeyCode;
+		Uint32 Mod;
+		UIPushButton* Button;
+	};
 
-		enum UI_RESIZE_TYPE {
-			RESIZE_NONE,
-			RESIZE_LEFT,
-			RESIZE_RIGHT,
-			RESIZE_TOP,
-			RESIZE_BOTTOM,
-			RESIZE_LEFTBOTTOM,
-			RESIZE_RIGHTBOTTOM,
-			RESIZE_TOPLEFT,
-			RESIZE_TOPRIGHT
-		};
+	typedef std::list<KeyboardShortcut> KeyboardShortcuts;
 
-		FrameBuffer * mFrameBuffer;
-		StyleConfig	mStyleConfig;
-		UINode *	mWindowDecoration;
-		UINode *	mBorderLeft;
-		UINode *	mBorderRight;
-		UINode *	mBorderBottom;
-		UIWidget *	mContainer;
+	enum UI_RESIZE_TYPE {
+		RESIZE_NONE,
+		RESIZE_LEFT,
+		RESIZE_RIGHT,
+		RESIZE_TOP,
+		RESIZE_BOTTOM,
+		RESIZE_LEFTBOTTOM,
+		RESIZE_RIGHTBOTTOM,
+		RESIZE_TOPLEFT,
+		RESIZE_TOPRIGHT
+	};
 
-		UINode *	mButtonClose;
-		UINode *	mButtonMinimize;
-		UINode *	mButtonMaximize;
-		UITextView *		mTitle;
+	FrameBuffer* mFrameBuffer;
+	StyleConfig mStyleConfig;
+	UINode* mWindowDecoration;
+	UINode* mBorderLeft;
+	UINode* mBorderRight;
+	UINode* mBorderBottom;
+	UIWidget* mContainer;
 
-		UIWidget *	mModalCtrl;
+	UINode* mButtonClose;
+	UINode* mButtonMinimize;
+	UINode* mButtonMaximize;
+	UITextView* mTitle;
 
-		Vector2f			mNonMaxPos;
-		Sizef				mNonMaxSize;
-		UI_RESIZE_TYPE		mResizeType;
-		Vector2f			mResizePos;
-		KeyboardShortcuts	mKbShortcuts;
+	UIWidget* mModalCtrl;
 
-		bool				mFrameBufferBound;
+	Vector2f mNonMaxPos;
+	Sizef mNonMaxSize;
+	UI_RESIZE_TYPE mResizeType;
+	Vector2f mResizePos;
+	KeyboardShortcuts mKbShortcuts;
 
-		virtual void onSizeChange();
+	bool mFrameBufferBound;
 
-		virtual void onAlphaChange();
+	virtual void onSizeChange();
 
-		virtual void onChildCountChange();
+	virtual void onAlphaChange();
 
-		virtual void onPositionChange();
+	virtual void onChildCountChange();
 
-		virtual Uint32 onKeyDown( const KeyEvent &Event );
+	virtual void onPositionChange();
 
-		virtual void matrixSet();
+	virtual Uint32 onKeyDown( const KeyEvent& Event );
 
-		virtual void matrixUnset();
+	virtual void matrixSet();
 
-		void fixChildsSize();
+	virtual void matrixUnset();
 
-		void doResize( const NodeMessage * Msg );
+	void fixChildsSize();
 
-		void decideResizeType( Node * Control );
+	void doResize( const NodeMessage* Msg );
 
-		void tryResize( const UI_RESIZE_TYPE& getType );
+	void decideResizeType( Node* Control );
 
-		void endResize();
+	void tryResize( const UI_RESIZE_TYPE& getType );
 
-		void updateResize();
+	void endResize();
 
-		void internalSize( Sizef size );
+	void updateResize();
 
-		void internalSize( const Float& w, const Float& h );
+	void internalSize( Sizef size );
 
-		void calcMinWinSize();
+	void internalSize( const Float& w, const Float& h );
 
-		void fixTitleSize();
+	void calcMinWinSize();
 
-		Uint32 onMouseDoubleClick( const Vector2i &position, const Uint32& flags );
+	void fixTitleSize();
 
-		void checkShortcuts( const Uint32& KeyCode, const Uint32& Mod );
+	Uint32 onMouseDoubleClick( const Vector2i& position, const Uint32& flags );
 
-		KeyboardShortcuts::iterator existsShortcut( const Uint32& KeyCode, const Uint32& Mod );
+	void checkShortcuts( const Uint32& KeyCode, const Uint32& Mod );
 
-		void createModalControl();
+	KeyboardShortcuts::iterator existsShortcut( const Uint32& KeyCode, const Uint32& Mod );
 
-		void resizeCursor();
+	void createModalControl();
 
-		void applyMinWinSize();
+	void resizeCursor();
 
-		void updateWinFlags();
+	void applyMinWinSize();
 
-		void createFrameBuffer();
+	void updateWinFlags();
 
-		void drawFrameBuffer();
+	void createFrameBuffer();
 
-		void drawHighlightInvalidation();
+	void drawFrameBuffer();
 
-		virtual void drawShadow();
+	void drawHighlightInvalidation();
 
-		virtual void onPaddingChange();
+	virtual void drawShadow();
 
-		virtual void preDraw();
+	virtual void onPaddingChange();
 
-		virtual void postDraw();
+	virtual void preDraw();
 
-		virtual Sizei getFrameBufferSize();
+	virtual void postDraw();
 
-		void onContainerPositionChange(const Event * Event);
+	virtual Sizei getFrameBufferSize();
 
-		void setupModal();
+	void onContainerPositionChange( const Event* Event );
+
+	void setupModal();
 };
 
-}}
+}} // namespace EE::UI
 
 #endif

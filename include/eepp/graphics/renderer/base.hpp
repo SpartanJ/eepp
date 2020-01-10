@@ -5,7 +5,7 @@
 #include <eepp/graphics/rendermode.hpp>
 
 #if defined( EE_SHADERS_SUPPORTED )
-	#define EE_GL3_ENABLED 1
+#define EE_GL3_ENABLED 1
 #endif
 
 #endif

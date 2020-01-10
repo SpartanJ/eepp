@@ -1,14 +1,17 @@
 #include <eepp/ee.hpp>
 
-EE::Window::Window * win = NULL;
-UIMessageBox * MsgBox = NULL;
-TextureAtlasEditor * Editor = NULL;
+EE::Window::Window* win = NULL;
+UIMessageBox* MsgBox = NULL;
+TextureAtlasEditor* Editor = NULL;
 
-bool onCloseRequestCallback( EE::Window::Window * w ) {
+bool onCloseRequestCallback( EE::Window::Window* w ) {
 	if ( NULL != Editor && Editor->isEdited() ) {
-		MsgBox = UIMessageBox::New( UIMessageBox::OK_CANCEL, "Do you really want to close the texture atlas editor?\nAll changes will be lost." );
-		MsgBox->addEventListener( Event::MsgBoxConfirmClick, []( const Event * event ) { win->close(); } );
-		MsgBox->addEventListener( Event::OnClose, []( const Event * event ) { MsgBox = NULL; } );
+		MsgBox = UIMessageBox::New(
+			UIMessageBox::OK_CANCEL,
+			"Do you really want to close the texture atlas editor?\nAll changes will be lost." );
+		MsgBox->addEventListener( Event::MsgBoxConfirmClick,
+								  []( const Event* event ) { win->close(); } );
+		MsgBox->addEventListener( Event::OnClose, []( const Event* event ) { MsgBox = NULL; } );
 		MsgBox->setTitle( "Close Texture Atlas Editor?" );
 		MsgBox->center();
 		MsgBox->show();
@@ -21,7 +24,8 @@ bool onCloseRequestCallback( EE::Window::Window * w ) {
 void mainLoop() {
 	win->getInput()->update();
 
-	if ( win->getInput()->isKeyUp( KEY_ESCAPE ) && NULL == MsgBox && onCloseRequestCallback( win ) ) {
+	if ( win->getInput()->isKeyUp( KEY_ESCAPE ) && NULL == MsgBox &&
+		 onCloseRequestCallback( win ) ) {
 		win->close();
 	}
 
@@ -34,37 +38,49 @@ void mainLoop() {
 
 		win->display();
 	} else {
-		Sys::sleep( Milliseconds(8) );
+		Sys::sleep( Milliseconds( 8 ) );
 	}
 }
 
-EE_MAIN_FUNC int main (int argc, char * argv []) {
-	Display * currentDisplay = Engine::instance()->getDisplayManager()->getDisplayIndex(0);
+EE_MAIN_FUNC int main( int argc, char* argv[] ) {
+	Display* currentDisplay = Engine::instance()->getDisplayManager()->getDisplayIndex( 0 );
 	Float pixelDensity = PixelDensity::toFloat( currentDisplay->getPixelDensity() );
 
-	win = Engine::instance()->createWindow( WindowSettings( 1280, 720, "eepp - Texture Atlas Editor", WindowStyle::Default, WindowBackend::Default, 32, "assets/icon/ee.png", pixelDensity ), ContextSettings( true, GLv_default, true, 24, 1, 0, true ) );
+	win = Engine::instance()->createWindow(
+		WindowSettings( 1280, 720, "eepp - Texture Atlas Editor", WindowStyle::Default,
+						WindowBackend::Default, 32, "assets/icon/ee.png", pixelDensity ),
+		ContextSettings( true, GLv_default, true, 24, 1, 0, true ) );
 
 	if ( win->isOpen() ) {
 		PixelDensity::setPixelDensity( eemax( win->getScale(), pixelDensity ) );
 
 		win->setCloseRequestCallback( cb::Make1( onCloseRequestCallback ) );
 
-		UISceneNode * uiSceneNode = UISceneNode::New();
+		UISceneNode* uiSceneNode = UISceneNode::New();
 
 		SceneManager::instance()->add( uiSceneNode );
 
 		{
 			std::string pd;
-			if ( PixelDensity::getPixelDensity() >= 1.5f ) pd = "1.5x";
-			else if ( PixelDensity::getPixelDensity() >= 2.f ) pd = "2x";
+			if ( PixelDensity::getPixelDensity() >= 1.5f )
+				pd = "1.5x";
+			else if ( PixelDensity::getPixelDensity() >= 2.f )
+				pd = "2x";
 
-			FontTrueType * font = FontTrueType::New( "NotoSans-Regular", "assets/fonts/NotoSans-Regular.ttf" );
+			FontTrueType* font =
+				FontTrueType::New( "NotoSans-Regular", "assets/fonts/NotoSans-Regular.ttf" );
 
-			UITheme * theme = UITheme::load( "uitheme" + pd, "uitheme" + pd, "assets/ui/uitheme" + pd + ".eta", font, "assets/ui/uitheme.css" );
+			UITheme* theme =
+				UITheme::load( "uitheme" + pd, "uitheme" + pd, "assets/ui/uitheme" + pd + ".eta",
+							   font, "assets/ui/uitheme.css" );
 
 			uiSceneNode->combineStyleSheet( theme->getStyleSheet() );
 
-			uiSceneNode->getUIThemeManager()->setDefaultEffectsEnabled( true )->setDefaultTheme( theme )->setDefaultFont( font )->add( theme );
+			uiSceneNode->getUIThemeManager()
+				->setDefaultEffectsEnabled( true )
+				->setDefaultTheme( theme )
+				->setDefaultFont( font )
+				->add( theme );
 		}
 
 		Editor = TextureAtlasEditor::New();

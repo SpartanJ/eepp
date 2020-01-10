@@ -2,7 +2,7 @@
 
 namespace EE { namespace Physics {
 
-RotaryLimitJoint::RotaryLimitJoint( Body * a, Body * b, cpFloat min, cpFloat max ) {
+RotaryLimitJoint::RotaryLimitJoint( Body* a, Body* b, cpFloat min, cpFloat max ) {
 	mConstraint = cpRotaryLimitJointNew( a->getBody(), b->getBody(), min, max );
 	setData();
 }
@@ -27,4 +27,4 @@ void RotaryLimitJoint::draw() {
 	// Not implemented
 }
 
-}}
+}} // namespace EE::Physics

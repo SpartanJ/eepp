@@ -1,48 +1,47 @@
 #ifndef EE_UI_CSS_STYLESHEETPROPERTIESPARSER_HPP
 #define EE_UI_CSS_STYLESHEETPROPERTIESPARSER_HPP
 
+#include <eepp/core/string.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
 #include <eepp/ui/css/stylesheetvariable.hpp>
-#include <eepp/core/string.hpp>
 #include <map>
 #include <vector>
 
 namespace EE { namespace UI { namespace CSS {
 
 class EE_API StyleSheetPropertiesParser {
-	public:
-		StyleSheetPropertiesParser();
+  public:
+	StyleSheetPropertiesParser();
 
-		explicit StyleSheetPropertiesParser( const std::string& propsstr );
+	explicit StyleSheetPropertiesParser( const std::string& propsstr );
 
-		void print();
+	void print();
 
-		const StyleSheetProperties& getProperties() const;
+	const StyleSheetProperties& getProperties() const;
 
-		const StyleSheetVariables& getVariables() const;
-	protected:
-		enum ReadState {
-			ReadingPropertyName,
-			ReadingPropertyValue,
-			ReadingComment
-		};
+	const StyleSheetVariables& getVariables() const;
 
-		ReadState mPrevRs;
+  protected:
+	enum ReadState { ReadingPropertyName, ReadingPropertyValue, ReadingComment };
 
-		StyleSheetProperties mProperties;
-		StyleSheetVariables mVariables;
+	ReadState mPrevRs;
 
-		void parse( std::string propsstr );
+	StyleSheetProperties mProperties;
+	StyleSheetVariables mVariables;
 
-		int readPropertyName( ReadState& rs, std::size_t pos, std::string& buffer, const std::string& str );
+	void parse( std::string propsstr );
 
-		int readPropertyValue( ReadState& rs, std::size_t pos, std::string& buffer, const std::string& str );
+	int readPropertyName( ReadState& rs, std::size_t pos, std::string& buffer,
+						  const std::string& str );
 
-		int readComment( ReadState& rs, std::size_t pos, std::string& buffer, const std::string& str );
+	int readPropertyValue( ReadState& rs, std::size_t pos, std::string& buffer,
+						   const std::string& str );
 
-		void addProperty( const std::string& name, std::string value );
+	int readComment( ReadState& rs, std::size_t pos, std::string& buffer, const std::string& str );
+
+	void addProperty( const std::string& name, std::string value );
 };
 
-}}}
+}}} // namespace EE::UI::CSS
 
 #endif

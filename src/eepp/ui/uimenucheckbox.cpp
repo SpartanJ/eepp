@@ -1,25 +1,20 @@
-#include <eepp/ui/uimenucheckbox.hpp>
 #include <eepp/ui/uimenu.hpp>
+#include <eepp/ui/uimenucheckbox.hpp>
 #include <eepp/ui/uitheme.hpp>
 
 namespace EE { namespace UI {
 
-UIMenuCheckBox * UIMenuCheckBox::New() {
+UIMenuCheckBox* UIMenuCheckBox::New() {
 	return eeNew( UIMenuCheckBox, () );
 }
 
 UIMenuCheckBox::UIMenuCheckBox() :
-	UIMenuItem( "menu::checkbox" ),
-	mActive( false ),
-	mSkinActive( NULL ),
-	mSkinInactive( NULL )
-{
+	UIMenuItem( "menu::checkbox" ), mActive( false ), mSkinActive( NULL ), mSkinInactive( NULL ) {
 	applyDefaultTheme();
 	mIcon->setFlags( UI_SKIN_KEEP_SIZE_ON_DRAW );
 }
 
-UIMenuCheckBox::~UIMenuCheckBox() {
-}
+UIMenuCheckBox::~UIMenuCheckBox() {}
 
 Uint32 UIMenuCheckBox::getType() const {
 	return UI_TYPE_MENUCHECKBOX;
@@ -29,13 +24,13 @@ bool UIMenuCheckBox::isType( const Uint32& type ) const {
 	return UIMenuCheckBox::getType() == type ? true : UIMenuItem::isType( type );
 }
 
-void UIMenuCheckBox::setTheme( UITheme * Theme ) {
+void UIMenuCheckBox::setTheme( UITheme* Theme ) {
 	UIWidget::setTheme( Theme );
 
 	setThemeSkin( Theme, "menuitem" );
 
-	mSkinActive		= Theme->getSkin( "menucheckbox_active" );
-	mSkinInactive	= Theme->getSkin( "menucheckbox_inactive" );
+	mSkinActive = Theme->getSkin( "menucheckbox_active" );
+	mSkinInactive = Theme->getSkin( "menucheckbox_inactive" );
 
 	setActive( mActive );
 
@@ -64,7 +59,8 @@ void UIMenuCheckBox::setActive( const bool& active ) {
 		}
 	} else {
 		if ( NULL != mSkinInactive ) {
-			if ( NULL == mIcon->getSkin() || mIcon->getSkin()->getName() != mSkinInactive->getName() )
+			if ( NULL == mIcon->getSkin() ||
+				 mIcon->getSkin()->getName() != mSkinInactive->getName() )
 				mIcon->setSkin( mSkinInactive );
 
 			if ( mSkinState->getState() & UIState::StateFlagSelected )
@@ -77,7 +73,7 @@ void UIMenuCheckBox::setActive( const bool& active ) {
 	}
 
 	if ( oActive != active ) {
-		UIMenu * Menu = getParent()->asType<UIMenu>();
+		UIMenu* Menu = getParent()->asType<UIMenu>();
 
 		if ( !Menu->checkControlSize( this ) ) {
 			if ( NULL != getIcon()->getDrawable() ) {
@@ -93,7 +89,7 @@ void UIMenuCheckBox::switchActive() {
 	setActive( !mActive );
 }
 
-Uint32 UIMenuCheckBox::onMouseUp( const Vector2i &Pos, const Uint32& Flags ) {
+Uint32 UIMenuCheckBox::onMouseUp( const Vector2i& Pos, const Uint32& Flags ) {
 	UIMenuItem::onMouseUp( Pos, Flags );
 
 	if ( getParent()->isVisible() && ( Flags & EE_BUTTONS_LRM ) )
@@ -115,4 +111,4 @@ bool UIMenuCheckBox::inheritsFrom( const Uint32 Type ) {
 	return false;
 }
 
-}}
+}} // namespace EE::UI

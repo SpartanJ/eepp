@@ -32,19 +32,19 @@ void StyleSheetPropertiesParser::parse( std::string propsstr ) {
 
 	while ( pos < propsstr.size() ) {
 		switch ( rs ) {
-		case ReadingPropertyName: {
-			pos = readPropertyName( rs, pos, buffer, propsstr );
-			break;
-		}
-		case ReadingPropertyValue: {
-			pos = readPropertyValue( rs, pos, buffer, propsstr );
-			break;
-		}
-		case ReadingComment: {
-			pos = readComment( rs, pos, buffer, propsstr );
-		}
-		default:
-			break;
+			case ReadingPropertyName: {
+				pos = readPropertyName( rs, pos, buffer, propsstr );
+				break;
+			}
+			case ReadingPropertyValue: {
+				pos = readPropertyValue( rs, pos, buffer, propsstr );
+				break;
+			}
+			case ReadingComment: {
+				pos = readComment( rs, pos, buffer, propsstr );
+			}
+			default:
+				break;
 		}
 	}
 }
@@ -140,7 +140,7 @@ void StyleSheetPropertiesParser::addProperty( const std::string& name, std::stri
 			StyleSheetSpecification::instance()->getShorthand( name ), value );
 
 		for ( auto& property : properties )
-			mProperties[ property.getName() ] = property;
+			mProperties[property.getName()] = property;
 	} else {
 		if ( String::startsWith( name, "--" ) ) {
 			mVariables[name] = StyleSheetVariable( name, value );

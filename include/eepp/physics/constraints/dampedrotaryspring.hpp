@@ -6,24 +6,24 @@
 namespace EE { namespace Physics {
 
 class EE_API DampedRotarySpring : public Constraint {
-	public:
-		DampedRotarySpring( Body * a, Body * b, cpFloat restAngle, cpFloat stiffness, cpFloat damping );
+  public:
+	DampedRotarySpring( Body* a, Body* b, cpFloat restAngle, cpFloat stiffness, cpFloat damping );
 
-		cpFloat getRestAngle();
+	cpFloat getRestAngle();
 
-		void setRestAngle( const cpFloat& restangle );
+	void setRestAngle( const cpFloat& restangle );
 
-		cpFloat getStiffness();
+	cpFloat getStiffness();
 
-		void setStiffness( const cpFloat& stiffness );
+	void setStiffness( const cpFloat& stiffness );
 
-		cpFloat getDamping();
+	cpFloat getDamping();
 
-		void setDamping( const cpFloat& damping );
+	void setDamping( const cpFloat& damping );
 
-		virtual void draw();
+	virtual void draw();
 };
 
-}}
+}} // namespace EE::Physics
 
 #endif

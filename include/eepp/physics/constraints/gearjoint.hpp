@@ -6,20 +6,20 @@
 namespace EE { namespace Physics {
 
 class EE_API GearJoint : public Constraint {
-	public:
-		GearJoint( Body * a, Body * b, cpFloat phase, cpFloat ratio );
+  public:
+	GearJoint( Body* a, Body* b, cpFloat phase, cpFloat ratio );
 
-		cpFloat getPhase();
+	cpFloat getPhase();
 
-		void setPhase( const cpFloat& phase );
+	void setPhase( const cpFloat& phase );
 
-		cpFloat getRatio();
+	cpFloat getRatio();
 
-		void setRatio( const cpFloat& ratio );
+	void setRatio( const cpFloat& ratio );
 
-		virtual void draw();
+	virtual void draw();
 };
 
-}}
+}} // namespace EE::Physics
 
 #endif

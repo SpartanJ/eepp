@@ -2,97 +2,98 @@
 #define EE_UICUIWINMENU_HPP
 
 #include <eepp/ui/base.hpp>
-#include <eepp/ui/uiwidget.hpp>
-#include <eepp/ui/uiselectbutton.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
+#include <eepp/ui/uiselectbutton.hpp>
+#include <eepp/ui/uiwidget.hpp>
 
 namespace EE { namespace UI {
 
 class EE_API UIWinMenu : public UIWidget {
-	public:
-		class StyleConfig {
-			public:
-				Uint32 MarginBetweenButtons = 0;
-				Uint32 ButtonMargin = 4;
-				Uint32 MenuHeight = 0;
-				Uint32 FirstButtonMargin = 1;
-		};
+  public:
+	class StyleConfig {
+	  public:
+		Uint32 MarginBetweenButtons = 0;
+		Uint32 ButtonMargin = 4;
+		Uint32 MenuHeight = 0;
+		Uint32 FirstButtonMargin = 1;
+	};
 
-		static UIWinMenu * New();
+	static UIWinMenu* New();
 
-		UIWinMenu();
+	UIWinMenu();
 
-		virtual ~UIWinMenu();
+	virtual ~UIWinMenu();
 
-		virtual Uint32 getType() const;
+	virtual Uint32 getType() const;
 
-		virtual bool isType( const Uint32& type ) const;
+	virtual bool isType( const Uint32& type ) const;
 
-		void addMenuButton( const String& ButtonText, UIPopUpMenu * Menu );
+	void addMenuButton( const String& ButtonText, UIPopUpMenu* Menu );
 
-		void removeMenuButton( const String& ButtonText );
+	void removeMenuButton( const String& ButtonText );
 
-		virtual void setTheme( UITheme * Theme );
+	virtual void setTheme( UITheme* Theme );
 
-		UISelectButton * getButton( const String& ButtonText );
+	UISelectButton* getButton( const String& ButtonText );
 
-		UIPopUpMenu * getPopUpMenu( const String& ButtonText );
+	UIPopUpMenu* getPopUpMenu( const String& ButtonText );
 
-		Uint32 getMarginBetweenButtons() const;
+	Uint32 getMarginBetweenButtons() const;
 
-		void setMarginBetweenButtons(const Uint32 & marginBetweenButtons);
+	void setMarginBetweenButtons( const Uint32& marginBetweenButtons );
 
-		Uint32 getButtonMargin() const;
+	Uint32 getButtonMargin() const;
 
-		void setButtonMargin( const Uint32& buttonMargin );
+	void setButtonMargin( const Uint32& buttonMargin );
 
-		Uint32 getMenuHeight() const;
+	Uint32 getMenuHeight() const;
 
-		void setMenuHeight( const Uint32& menuHeight );
+	void setMenuHeight( const Uint32& menuHeight );
 
-		Uint32 getFirstButtonMargin() const;
+	Uint32 getFirstButtonMargin() const;
 
-		void setFirstButtonMargin( const Uint32& buttonMargin );
+	void setFirstButtonMargin( const Uint32& buttonMargin );
 
-		const StyleConfig& getStyleConfig() const;
+	const StyleConfig& getStyleConfig() const;
 
-		void setStyleConfig(const StyleConfig & styleConfig);
+	void setStyleConfig( const StyleConfig& styleConfig );
 
-		virtual bool applyProperty( const StyleSheetProperty& attribute );
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
-		virtual void loadFromXmlNode( const pugi::xml_node& node );
+	virtual void loadFromXmlNode( const pugi::xml_node& node );
 
-		virtual std::string getPropertyString(const PropertyDefinition* propertyDef);
-	protected:
-		typedef std::list< std::pair< UISelectButton *, UIPopUpMenu * > > WinMenuList;
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef );
 
-		StyleConfig mStyleConfig;
-		UIPopUpMenu *	mCurrentMenu;
-		WinMenuList		mButtons;
+  protected:
+	typedef std::list<std::pair<UISelectButton*, UIPopUpMenu*>> WinMenuList;
 
-		void refreshButtons();
+	StyleConfig mStyleConfig;
+	UIPopUpMenu* mCurrentMenu;
+	WinMenuList mButtons;
 
-		virtual Uint32 onMessage( const NodeMessage * Msg );
+	void refreshButtons();
 
-		virtual void onParentChange();
+	virtual Uint32 onMessage( const NodeMessage* Msg );
 
-		virtual void onWidgetFocusLoss();
+	virtual void onParentChange();
 
-		UIPopUpMenu * getMenuFromButton( UISelectButton * Button );
+	virtual void onWidgetFocusLoss();
 
-		bool isPopUpMenuChild( Node * Ctrl );
+	UIPopUpMenu* getMenuFromButton( UISelectButton* Button );
 
-		void onMenuFocusLoss( const Event * Event );
+	bool isPopUpMenuChild( Node* Ctrl );
 
-		void onHideByClick( const Event * Event );
+	void onMenuFocusLoss( const Event* Event );
 
-		void unselectButtons();
+	void onHideByClick( const Event* Event );
 
-		void destroyMenues();
+	void unselectButtons();
 
-		void autoHeight();
+	void destroyMenues();
+
+	void autoHeight();
 };
 
-}}
+}} // namespace EE::UI
 
 #endif

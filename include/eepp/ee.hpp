@@ -6,7 +6,8 @@
 	Developed by: Martín Lucas Golini
 
 	2D Game Engine designed for an easy cross-platform game development.
-	The project aims to provide a simple and powerfull framework that takes advantage of C++, OpenGL, OpenAL, SDL and more.
+	The project aims to provide a simple and powerfull framework that takes advantage of C++,
+   OpenGL, OpenAL, SDL and more.
 
 	Thanks to:
 		* Sean Barrett for the stb_vorbis and stb_image libraries.
@@ -21,50 +22,50 @@
 		* And a lot more people!
 */
 
-	// General includes and declarations
-	#include <eepp/core.hpp>
-	#include <eepp/version.hpp>
-	using namespace EE;
+// General includes and declarations
+#include <eepp/core.hpp>
+#include <eepp/version.hpp>
+using namespace EE;
 
-	// Math
-	#include <eepp/math.hpp>
-	using namespace EE::Math;
+// Math
+#include <eepp/math.hpp>
+using namespace EE::Math;
 
-	// System
-	#include <eepp/system.hpp>
-	using namespace EE::System;
+// System
+#include <eepp/system.hpp>
+using namespace EE::System;
 
-	// Audio
-	#include <eepp/audio.hpp>
-	using namespace EE::Audio;
+// Audio
+#include <eepp/audio.hpp>
+using namespace EE::Audio;
 
-	// Window
-	#include <eepp/window.hpp>
-	using namespace EE::Window;
+// Window
+#include <eepp/window.hpp>
+using namespace EE::Window;
 
-	// Graphics
-	#include <eepp/graphics.hpp>
-	using namespace EE::Graphics;
+// Graphics
+#include <eepp/graphics.hpp>
+using namespace EE::Graphics;
 
-	// Network
-	#include <eepp/network.hpp>
-	using namespace EE::Network;
-	using namespace EE::Network::SSL;
+// Network
+#include <eepp/network.hpp>
+using namespace EE::Network;
+using namespace EE::Network::SSL;
 
-	// Scnee
-	#include <eepp/scene.hpp>
-	using namespace EE::Scene;
+// Scnee
+#include <eepp/scene.hpp>
+using namespace EE::Scene;
 
-	// UI
-	#include <eepp/ui.hpp>
-	using namespace EE::UI;
-	using namespace EE::UI::Tools;
+// UI
+#include <eepp/ui.hpp>
+using namespace EE::UI;
+using namespace EE::UI::Tools;
 
-	// Maps
-	#include <eepp/maps.hpp>
-	using namespace EE::Maps;
+// Maps
+#include <eepp/maps.hpp>
+using namespace EE::Maps;
 
-	// Physics
-	#include <eepp/physics.hpp>
-	using namespace EE::Physics;
+// Physics
+#include <eepp/physics.hpp>
+using namespace EE::Physics;
 #endif

@@ -1,99 +1,96 @@
 #ifndef EE_UICUISCROLLBAR_HPP
 #define EE_UICUISCROLLBAR_HPP
 
-#include <eepp/ui/uiwidget.hpp>
 #include <eepp/ui/uislider.hpp>
+#include <eepp/ui/uiwidget.hpp>
 
 namespace EE { namespace UI {
 
 class EE_API UIScrollBar : public UIWidget {
-	public:
-		enum ScrollBarType {
-			TwoButtons,
-			NoButtons
-		};
+  public:
+	enum ScrollBarType { TwoButtons, NoButtons };
 
-		static UIScrollBar * New();
+	static UIScrollBar* New();
 
-		static UIScrollBar * NewHorizontal();
+	static UIScrollBar* NewHorizontal();
 
-		static UIScrollBar * NewVertical();
+	static UIScrollBar* NewVertical();
 
-		explicit UIScrollBar( const UIOrientation& orientation = UIOrientation::Vertical );
+	explicit UIScrollBar( const UIOrientation& orientation = UIOrientation::Vertical );
 
-		virtual ~UIScrollBar();
+	virtual ~UIScrollBar();
 
-		virtual Uint32 getType() const;
+	virtual Uint32 getType() const;
 
-		virtual bool isType( const Uint32& type ) const;
+	virtual bool isType( const Uint32& type ) const;
 
-		virtual void setValue( Float Val );
+	virtual void setValue( Float Val );
 
-		const Float& getValue() const;
+	const Float& getValue() const;
 
-		virtual void setMinValue( const Float& MinVal );
+	virtual void setMinValue( const Float& MinVal );
 
-		const Float& getMinValue() const;
+	const Float& getMinValue() const;
 
-		virtual void setMaxValue( const Float& MaxVal );
+	virtual void setMaxValue( const Float& MaxVal );
 
-		const Float& getMaxValue() const;
+	const Float& getMaxValue() const;
 
-		virtual void setClickStep( const Float& step );
+	virtual void setClickStep( const Float& step );
 
-		const Float& getClickStep() const;
+	const Float& getClickStep() const;
 
-		Float getPageStep() const;
+	Float getPageStep() const;
 
-		void setPageStep( const Float& pageStep );
+	void setPageStep( const Float& pageStep );
 
-		virtual void setTheme( UITheme * Theme );
+	virtual void setTheme( UITheme* Theme );
 
-		bool isVertical() const;
+	bool isVertical() const;
 
-		UISlider * getSlider() const;
+	UISlider* getSlider() const;
 
-		UINode * getButtonUp() const;
+	UINode* getButtonUp() const;
 
-		UINode * getButtonDown() const;
+	UINode* getButtonDown() const;
 
-		UIOrientation getOrientation() const;
+	UIOrientation getOrientation() const;
 
-		UINode * setOrientation( const UIOrientation & orientation );
+	UINode* setOrientation( const UIOrientation& orientation );
 
-		ScrollBarType getScrollBarType() const;
+	ScrollBarType getScrollBarType() const;
 
-		void setScrollBarType(const ScrollBarType & scrollBarType);
+	void setScrollBarType( const ScrollBarType& scrollBarType );
 
-		bool getExpandBackground() const;
+	bool getExpandBackground() const;
 
-		void setExpandBackground( bool expandBackground );
+	void setExpandBackground( bool expandBackground );
 
-		virtual bool applyProperty( const StyleSheetProperty& attribute );
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
-		virtual std::string getPropertyString(const PropertyDefinition* propertyDef);
-	protected:
-		ScrollBarType	mScrollBarType;
-		UISlider * 		mSlider;
-		UINode *	mBtnUp;
-		UINode * mBtnDown;
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef );
 
-		virtual void onSizeChange();
+  protected:
+	ScrollBarType mScrollBarType;
+	UISlider* mSlider;
+	UINode* mBtnUp;
+	UINode* mBtnDown;
 
-		virtual void onAutoSize();
+	virtual void onSizeChange();
 
-		void adjustChilds();
+	virtual void onAutoSize();
 
-		void onValueChangeCb( const Event * Event );
+	void adjustChilds();
 
-		virtual void onAlphaChange();
+	void onValueChangeCb( const Event* Event );
 
-		virtual Uint32 onMessage( const NodeMessage * Msg );
+	virtual void onAlphaChange();
 
-		virtual void onPaddingChange();
+	virtual Uint32 onMessage( const NodeMessage* Msg );
+
+	virtual void onPaddingChange();
 };
 
-}}
+}} // namespace EE::UI
 
 #endif
-

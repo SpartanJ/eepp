@@ -6,33 +6,33 @@
 namespace EE { namespace UI {
 
 class EE_API UIPopUpMenu : public UIMenu {
-	public:
-		static UIPopUpMenu * New();
+  public:
+	static UIPopUpMenu* New();
 
-		UIPopUpMenu();
+	UIPopUpMenu();
 
-		virtual ~UIPopUpMenu();
+	virtual ~UIPopUpMenu();
 
-		virtual Uint32 getType() const;
+	virtual Uint32 getType() const;
 
-		virtual bool isType( const Uint32& type ) const;
+	virtual bool isType( const Uint32& type ) const;
 
-		virtual void setTheme( UITheme * Theme );
+	virtual void setTheme( UITheme* Theme );
 
-		virtual bool show();
+	virtual bool show();
 
-		virtual bool hide();
-	protected:
-		virtual void onWidgetFocusLoss();
+	virtual bool hide();
 
-		virtual Uint32 onMessage( const NodeMessage * Msg );
+  protected:
+	virtual void onWidgetFocusLoss();
 
-		#ifdef EE_PLATFORM_TOUCH
-		Clock mTE;
-		#endif
+	virtual Uint32 onMessage( const NodeMessage* Msg );
+
+#ifdef EE_PLATFORM_TOUCH
+	Clock mTE;
+#endif
 };
 
-}}
+}} // namespace EE::UI
 
 #endif
-

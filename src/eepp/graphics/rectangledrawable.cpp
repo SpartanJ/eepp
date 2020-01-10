@@ -1,14 +1,14 @@
-#include <eepp/graphics/rectangledrawable.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
+#include <eepp/graphics/rectangledrawable.hpp>
 #include <eepp/graphics/vertexbuffer.hpp>
 
 namespace EE { namespace Graphics {
 
-RectangleDrawable * RectangleDrawable::New() {
+RectangleDrawable* RectangleDrawable::New() {
 	return eeNew( RectangleDrawable, () );
 }
 
-RectangleDrawable * RectangleDrawable::New( const Vector2f& position, const Sizef& size ) {
+RectangleDrawable* RectangleDrawable::New( const Vector2f& position, const Sizef& size ) {
 	return eeNew( RectangleDrawable, ( position, size ) );
 }
 
@@ -17,18 +17,15 @@ RectangleDrawable::RectangleDrawable() :
 	mRotation( 0 ),
 	mScale( 1, 1 ),
 	mCorners( 0 ),
-	mUsingRectColors( false )
-{
-}
+	mUsingRectColors( false ) {}
 
-RectangleDrawable::RectangleDrawable(const Vector2f & position, const Sizef & size) :
+RectangleDrawable::RectangleDrawable( const Vector2f& position, const Sizef& size ) :
 	PrimitiveDrawable( Drawable::RECTANGLE ),
 	mSize( size ),
 	mRotation( 0 ),
 	mScale( 1, 1 ),
 	mCorners( 0 ),
-	mUsingRectColors( false )
-{
+	mUsingRectColors( false ) {
 	mPosition = position;
 }
 
@@ -40,11 +37,11 @@ void RectangleDrawable::draw() {
 	draw( mPosition );
 }
 
-void RectangleDrawable::draw(const Vector2f &) {
+void RectangleDrawable::draw( const Vector2f& ) {
 	draw( mPosition, mSize );
 }
 
-void RectangleDrawable::draw(const Vector2f & position, const Sizef & size) {
+void RectangleDrawable::draw( const Vector2f& position, const Sizef& size ) {
 	if ( size != mSize ) {
 		mSize = size;
 		mNeedsUpdate = true;
@@ -57,9 +54,11 @@ void RectangleDrawable::draw(const Vector2f & position, const Sizef & size) {
 
 	if ( mCorners == 0 ) {
 		if ( mUsingRectColors ) {
-			drawRectangle( Rectf( mPosition, mSize ), mRectColors.TopLeft, mRectColors.BottomLeft, mRectColors.BottomRight, mRectColors.TopRight, mRotation, mScale );
+			drawRectangle( Rectf( mPosition, mSize ), mRectColors.TopLeft, mRectColors.BottomLeft,
+						   mRectColors.BottomRight, mRectColors.TopRight, mRotation, mScale );
 		} else {
-			drawRectangle( Rectf( mPosition, mSize ), mColor, mColor, mColor, mColor, mRotation, mScale );
+			drawRectangle( Rectf( mPosition, mSize ), mColor, mColor, mColor, mColor, mRotation,
+						   mScale );
 		}
 	} else {
 		PrimitiveDrawable::draw( position, size );
@@ -70,7 +69,7 @@ Float RectangleDrawable::getRotation() const {
 	return mRotation;
 }
 
-void RectangleDrawable::setRotation(const Float & rotation) {
+void RectangleDrawable::setRotation( const Float& rotation ) {
 	mRotation = rotation;
 	mNeedsUpdate = true;
 }
@@ -79,12 +78,12 @@ Vector2f RectangleDrawable::getScale() const {
 	return mScale;
 }
 
-void RectangleDrawable::setScale(const Vector2f & scale) {
+void RectangleDrawable::setScale( const Vector2f& scale ) {
 	mScale = scale;
 	mNeedsUpdate = true;
 }
 
-void RectangleDrawable::setSize(const Sizef & size) {
+void RectangleDrawable::setSize( const Sizef& size ) {
 	mSize = size;
 	mNeedsUpdate = true;
 }
@@ -93,7 +92,7 @@ Uint32 RectangleDrawable::getCorners() const {
 	return mCorners;
 }
 
-void RectangleDrawable::setCorners(const Uint32 & corners) {
+void RectangleDrawable::setCorners( const Uint32& corners ) {
 	if ( corners != mCorners ) {
 		mCorners = corners;
 		mNeedsUpdate = true;
@@ -105,29 +104,30 @@ RectColors RectangleDrawable::getRectColors() const {
 	return mRectColors;
 }
 
-void RectangleDrawable::setRectColors(const RectColors & rectColors) {
+void RectangleDrawable::setRectColors( const RectColors& rectColors ) {
 	mRectColors = rectColors;
 	mUsingRectColors = true;
 }
 
-void RectangleDrawable::drawRectangle( const Rectf& R, const Color& TopLeft, const Color& BottomLeft, const Color& BottomRight, const Color& TopRight, const Float& Angle, const Vector2f& Scale ) {
-	BatchRenderer * sBR = GlobalBatchRenderer::instance();
+void RectangleDrawable::drawRectangle( const Rectf& R, const Color& TopLeft,
+									   const Color& BottomLeft, const Color& BottomRight,
+									   const Color& TopRight, const Float& Angle,
+									   const Vector2f& Scale ) {
+	BatchRenderer* sBR = GlobalBatchRenderer::instance();
 	sBR->setTexture( NULL );
 	sBR->setBlendMode( mBlendMode );
 
-	switch( mFillMode ) {
-		case DRAW_FILL:
-		{
+	switch ( mFillMode ) {
+		case DRAW_FILL: {
 			sBR->quadsBegin();
 			sBR->quadsSetColorFree( TopLeft, BottomLeft, BottomRight, TopRight );
 
-			Sizef size = const_cast<Rectf*>(&R)->getSize();
+			Sizef size = const_cast<Rectf*>( &R )->getSize();
 
 			sBR->batchQuadEx( R.Left, R.Top, size.getWidth(), size.getHeight(), Angle, Scale );
 			break;
 		}
-		case DRAW_LINE:
-		{
+		case DRAW_LINE: {
 			sBR->setLineWidth( mLineWidth );
 
 			sBR->lineLoopBegin();
@@ -135,10 +135,11 @@ void RectangleDrawable::drawRectangle( const Rectf& R, const Color& TopLeft, con
 
 			if ( Scale != 1.0f || Angle != 0.0f ) {
 				Quad2f Q( R );
-				Sizef size = const_cast<Rectf*>(&R)->getSize();
+				Sizef size = const_cast<Rectf*>( &R )->getSize();
 
 				Q.scale( Scale );
-				Q.rotate( Angle, Vector2f( R.Left + size.getWidth() * 0.5f, R.Top + size.getHeight() * 0.5f ) );
+				Q.rotate( Angle, Vector2f( R.Left + size.getWidth() * 0.5f,
+										   R.Top + size.getHeight() * 0.5f ) );
 
 				sBR->batchLineLoop( Q[0].x, Q[0].y, Q[1].x, Q[1].y );
 				sBR->lineLoopSetColorFree( BottomRight, TopRight );
@@ -163,11 +164,14 @@ void RectangleDrawable::updateVertex() {
 	prepareVertexBuffer( mFillMode == DRAW_LINE ? PRIMITIVE_LINE_LOOP : PRIMITIVE_TRIANGLE_FAN );
 
 	unsigned int i;
-	Sizef size			= mSize;
-	Float xscalediff	= size.getWidth()	* mScale.x - size.getWidth();
-	Float yscalediff	= size.getHeight()	* mScale.y - size.getHeight();
-	Vector2f Center( mPosition.x + size.getWidth() * 0.5f + xscalediff, mPosition.y + size.getHeight() * 0.5f + yscalediff );
-	Polygon2f Poly	= Polygon2f::createRoundedRectangle( mPosition.x - xscalediff, mPosition.y - yscalediff, size.getWidth() + xscalediff, size.getHeight() + yscalediff, mCorners );
+	Sizef size = mSize;
+	Float xscalediff = size.getWidth() * mScale.x - size.getWidth();
+	Float yscalediff = size.getHeight() * mScale.y - size.getHeight();
+	Vector2f Center( mPosition.x + size.getWidth() * 0.5f + xscalediff,
+					 mPosition.y + size.getHeight() * 0.5f + yscalediff );
+	Polygon2f Poly = Polygon2f::createRoundedRectangle(
+		mPosition.x - xscalediff, mPosition.y - yscalediff, size.getWidth() + xscalediff,
+		size.getHeight() + yscalediff, mCorners );
 	Vector2f poly;
 	Poly.rotate( mRotation, Center );
 
@@ -203,4 +207,4 @@ void RectangleDrawable::onColorFilterChange() {
 	mUsingRectColors = false;
 }
 
-}}
+}} // namespace EE::Graphics

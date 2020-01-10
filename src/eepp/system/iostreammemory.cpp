@@ -1,37 +1,26 @@
-#include <eepp/system/iostreammemory.hpp>
-#include <eepp/core/memorymanager.hpp>
 #include <cstring>
+#include <eepp/core/memorymanager.hpp>
+#include <eepp/system/iostreammemory.hpp>
 
 namespace EE { namespace System {
 
-IOStreamMemory * IOStreamMemory::New( const char * data, ios_size size ) {
+IOStreamMemory* IOStreamMemory::New( const char* data, ios_size size ) {
 	return eeNew( IOStreamMemory, ( data, size ) );
 }
 
-IOStreamMemory * IOStreamMemory::New( char * data, ios_size size ) {
+IOStreamMemory* IOStreamMemory::New( char* data, ios_size size ) {
 	return eeNew( IOStreamMemory, ( data, size ) );
 }
 
-IOStreamMemory::IOStreamMemory( const char * data, ios_size size ) :
-	mReadPtr( data ),
-	mWritePtr( NULL ),
-	mPos( 0 ),
-	mSize( size )
-{
-}
+IOStreamMemory::IOStreamMemory( const char* data, ios_size size ) :
+	mReadPtr( data ), mWritePtr( NULL ), mPos( 0 ), mSize( size ) {}
 
-IOStreamMemory::IOStreamMemory( char * data, ios_size size ) :
-	mReadPtr( const_cast<const char*>( data ) ),
-	mWritePtr( data ),
-	mPos( 0 ),
-	mSize( size )
-{
-}
+IOStreamMemory::IOStreamMemory( char* data, ios_size size ) :
+	mReadPtr( const_cast<const char*>( data ) ), mWritePtr( data ), mPos( 0 ), mSize( size ) {}
 
-IOStreamMemory::~IOStreamMemory() {
-}
+IOStreamMemory::~IOStreamMemory() {}
 
-ios_size IOStreamMemory::read( char * data, ios_size size ) {
+ios_size IOStreamMemory::read( char* data, ios_size size ) {
 	Int64 endPosition = mPos + size;
 	Int64 count = endPosition <= mSize ? size : mSize - mPos;
 
@@ -43,7 +32,7 @@ ios_size IOStreamMemory::read( char * data, ios_size size ) {
 	return count;
 }
 
-ios_size IOStreamMemory::write( const char * data, ios_size size ) {
+ios_size IOStreamMemory::write( const char* data, ios_size size ) {
 	if ( NULL != mWritePtr && mPos + size <= mSize ) {
 		memcpy( mWritePtr + mPos, data, size );
 
@@ -71,4 +60,4 @@ bool IOStreamMemory::isOpen() {
 	return NULL != mReadPtr;
 }
 
-}}
+}} // namespace EE::System

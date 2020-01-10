@@ -1,10 +1,10 @@
 #include <eepp/ee.hpp>
 
+#include <eepp/audio/music.hpp>
 #include <eepp/audio/sound.hpp>
 #include <eepp/audio/soundbuffer.hpp>
-#include <eepp/audio/music.hpp>
 
-EE::Window::Window * win = NULL;
+EE::Window::Window* win = NULL;
 
 void mainLoop() {
 	// Clear the screen buffer
@@ -33,9 +33,10 @@ void mainLoop() {
 }
 
 // EE_MAIN_FUNC is needed by some platforms to be able to find the real application main
-EE_MAIN_FUNC int main (int argc, char * argv []) {
+EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	// Create a new window with vsync enabled
-	win = Engine::instance()->createWindow( WindowSettings( 960, 640, "eepp - Empty Window" ), ContextSettings( true ) );
+	win = Engine::instance()->createWindow( WindowSettings( 960, 640, "eepp - Empty Window" ),
+											ContextSettings( true ) );
 
 	// Check if created
 	if ( win->isOpen() ) {

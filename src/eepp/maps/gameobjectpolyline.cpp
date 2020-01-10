@@ -1,18 +1,16 @@
 #include <eepp/maps/gameobjectpolyline.hpp>
 
-#include <eepp/maps/maplayer.hpp>
 #include <eepp/graphics/primitives.hpp>
+#include <eepp/maps/maplayer.hpp>
 using namespace EE::Graphics;
 
 namespace EE { namespace Maps {
 
-GameObjectPolyline::GameObjectPolyline( Uint32 DataId, Polygon2f poly, MapLayer * Layer, const Uint32& Flags ) :
-	GameObjectPolygon( DataId, poly, Layer, Flags )
-{
-}
+GameObjectPolyline::GameObjectPolyline( Uint32 DataId, Polygon2f poly, MapLayer* Layer,
+										const Uint32& Flags ) :
+	GameObjectPolygon( DataId, poly, Layer, Flags ) {}
 
-GameObjectPolyline::~GameObjectPolyline() {
-}
+GameObjectPolyline::~GameObjectPolyline() {}
 
 Uint32 GameObjectPolyline::getType() const {
 	return GAMEOBJECT_TYPE_POLYGON;
@@ -36,8 +34,8 @@ void GameObjectPolyline::draw() {
 	P.drawPolygon( mPoly );
 }
 
-GameObjectObject * GameObjectPolyline::clone() {
+GameObjectObject* GameObjectPolyline::clone() {
 	return eeNew( GameObjectPolyline, ( mDataId, mPoly, mLayer, mFlags ) );
 }
 
-}}
+}} // namespace EE::Maps

@@ -1,45 +1,45 @@
 #ifndef EE_SYSTEM_THREADPOOL_HPP
 #define EE_SYSTEM_THREADPOOL_HPP
 
-#include <eepp/system/mutex.hpp>
-#include <eepp/system/lock.hpp>
-#include <eepp/system/thread.hpp>
-#include <eepp/core/noncopyable.hpp>
-#include <memory>
-#include <functional>
-#include <deque>
 #include <condition_variable>
+#include <deque>
+#include <eepp/core/noncopyable.hpp>
+#include <eepp/system/lock.hpp>
+#include <eepp/system/mutex.hpp>
+#include <eepp/system/thread.hpp>
+#include <functional>
+#include <memory>
 #include <mutex>
 
 namespace EE { namespace System {
 
 class EE_API ThreadPool : NonCopyable {
-	public:
-		static std::unique_ptr<ThreadPool> create(Uint32 numThreads);
+  public:
+	static std::unique_ptr<ThreadPool> create( Uint32 numThreads );
 
-		virtual ~ThreadPool();
+	virtual ~ThreadPool();
 
-		void run(const std::function<void()>& func,
-				 const std::function<void()>& doneCallback);
+	void run( const std::function<void()>& func, const std::function<void()>& doneCallback );
 
-		Uint32 numThreads() const;
-	private:
-		struct Work {
-			const std::function<void()> func;
-			const std::function<void()> callback;
-		};
+	Uint32 numThreads() const;
 
-		ThreadPool();
+  private:
+	struct Work {
+		const std::function<void()> func;
+		const std::function<void()> callback;
+	};
 
-		void threadFunc();
+	ThreadPool();
 
-		std::vector<std::unique_ptr<Thread>> mThreads;
-		std::deque<std::unique_ptr<Work>> mWork;
-		bool mShuttingDown = false;
-		mutable std::mutex mMutex;
-		std::condition_variable mWorkAvailable;
+	void threadFunc();
+
+	std::vector<std::unique_ptr<Thread>> mThreads;
+	std::deque<std::unique_ptr<Work>> mWork;
+	bool mShuttingDown = false;
+	mutable std::mutex mMutex;
+	std::condition_variable mWorkAvailable;
 };
 
-}}
+}} // namespace EE::System
 
 #endif

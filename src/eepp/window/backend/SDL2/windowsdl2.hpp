@@ -6,110 +6,113 @@
 
 #ifdef EE_BACKEND_SDL2
 
-#include <eepp/window/window.hpp>
 #include <eepp/window/backend/SDL2/wminfo.hpp>
+#include <eepp/window/window.hpp>
 
-#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_IOS || EE_PLATFORM == EE_PLATFORM_ANDROID
+#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || \
+	defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_IOS ||        \
+	EE_PLATFORM == EE_PLATFORM_ANDROID
 #define EE_USE_WMINFO
 #endif
 
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
 class EE_API WindowSDL : public Window {
-	public:
-		WindowSDL( WindowSettings Settings, ContextSettings Context );
-		
-		virtual ~WindowSDL();
-		
-		bool create( WindowSettings Settings, ContextSettings Context );
-		
-		void toggleFullscreen();
-		
-		void setCaption( const std::string& setCaption );
+  public:
+	WindowSDL( WindowSettings Settings, ContextSettings Context );
 
-		bool setIcon( const std::string& Path );
+	virtual ~WindowSDL();
 
-		bool isActive();
+	bool create( WindowSettings Settings, ContextSettings Context );
 
-		bool isVisible();
+	void toggleFullscreen();
 
-		void setSize( Uint32 Width, Uint32 Height, bool isWindowed );
+	void setCaption( const std::string& setCaption );
 
-		std::vector<DisplayMode> getDisplayModes() const;
+	bool setIcon( const std::string& Path );
 
-		void setGamma( Float Red, Float Green, Float Blue );
+	bool isActive();
 
-		eeWindowHandle	getWindowHandler();
+	bool isVisible();
 
-		virtual void minimize();
+	void setSize( Uint32 Width, Uint32 Height, bool isWindowed );
 
-		virtual void maximize();
+	std::vector<DisplayMode> getDisplayModes() const;
 
-		virtual bool isMaximized();
+	void setGamma( Float Red, Float Green, Float Blue );
 
-		virtual void hide();
+	eeWindowHandle getWindowHandler();
 
-		virtual void raise();
+	virtual void minimize();
 
-		virtual void show();
+	virtual void maximize();
 
-		virtual void setPosition( Int16 Left, Int16 Top );
+	virtual bool isMaximized();
 
-		virtual Vector2i getPosition();
+	virtual void hide();
 
-		const Sizei& getDesktopResolution();
+	virtual void raise();
 
-		virtual Rect getBorderSize();
+	virtual void show();
 
-		virtual Float getScale();
+	virtual void setPosition( Int16 Left, Int16 Top );
 
-		SDL_Window *	GetSDLWindow() const;
+	virtual Vector2i getPosition();
 
-		void startTextInput();
+	const Sizei& getDesktopResolution();
 
-		bool isTextInputActive();
+	virtual Rect getBorderSize();
 
-		void stopTextInput();
+	virtual Float getScale();
 
-		void setTextInputRect( Rect& rect );
+	SDL_Window* GetSDLWindow() const;
 
-		bool hasScreenKeyboardSupport();
+	void startTextInput();
 
-		bool isScreenKeyboardShown();
+	bool isTextInputActive();
 
-		bool isThreadedGLContext();
+	void stopTextInput();
 
-		void setGLContextThread();
+	void setTextInputRect( Rect& rect );
 
-		void unsetGLContextThread();
+	bool hasScreenKeyboardSupport();
 
-		int getCurrentDisplayIndex();
-	protected:
-		friend class ClipboardSDL;
+	bool isScreenKeyboardShown();
 
-		SDL_Window *	mSDLWindow;
-		SDL_GLContext	mGLContext;
-		SDL_GLContext	mGLContextThread;
-		Mutex			mGLContextMutex;
+	bool isThreadedGLContext();
 
-		#ifdef EE_USE_WMINFO
-		WMInfo *		mWMinfo;
-		#endif
+	void setGLContextThread();
 
-		Vector2i		mWinPos;
+	void unsetGLContextThread();
 
-		void swapBuffers();
+	int getCurrentDisplayIndex();
 
-		void setGLConfig();
+  protected:
+	friend class ClipboardSDL;
 
-		std::string getVersion();
+	SDL_Window* mSDLWindow;
+	SDL_GLContext mGLContext;
+	SDL_GLContext mGLContextThread;
+	Mutex mGLContextMutex;
 
-		void updateDesktopResolution();
+#ifdef EE_USE_WMINFO
+	WMInfo* mWMinfo;
+#endif
 
-		void onWindowResize( Uint32 Width, Uint32 Height );
+	Vector2i mWinPos;
+
+	void swapBuffers();
+
+	void setGLConfig();
+
+	std::string getVersion();
+
+	void updateDesktopResolution();
+
+	void onWindowResize( Uint32 Width, Uint32 Height );
 };
 
-}}}}
+}}}} // namespace EE::Window::Backend::SDL2
 
 #endif
 

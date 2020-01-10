@@ -8,42 +8,43 @@ namespace EE { namespace Window {
 
 /** @brief A Joystick Manager class */
 class EE_API JoystickManager {
-	public:
-		JoystickManager();
+  public:
+	JoystickManager();
 
-		virtual ~JoystickManager();
+	virtual ~JoystickManager();
 
-		/** @return The number of joysticks attached to the system */
-		virtual Uint32 getCount();
+	/** @return The number of joysticks attached to the system */
+	virtual Uint32 getCount();
 
-		/** Update the states of all joysticks */
-		virtual void 	update() = 0;
+	/** Update the states of all joysticks */
+	virtual void update() = 0;
 
-		/** @return The joystick instante of the joystick index */
-		Joystick * 	getJoystick( const Uint32& index );
+	/** @return The joystick instante of the joystick index */
+	Joystick* getJoystick( const Uint32& index );
 
-		/** Rescan all joysticks to look for new joystick connected.
-		* This could be slow on some backends, and unnecessary on others.
-		*/
-		virtual void	rescan();
+	/** Rescan all joysticks to look for new joystick connected.
+	 * This could be slow on some backends, and unnecessary on others.
+	 */
+	virtual void rescan();
 
-		/** Close all the joysticks */
-		virtual void 	close();
+	/** Close all the joysticks */
+	virtual void close();
 
-		/** Open all the joysticks */
-		virtual void 	open();
-	protected:
-		friend class Joystick;
-		
-		bool			mInit;
+	/** Open all the joysticks */
+	virtual void open();
 
-		Joystick * 	mJoysticks[ MAX_JOYSTICKS ];
+  protected:
+	friend class Joystick;
 
-		Uint32			mCount;
+	bool mInit;
 
-		virtual void 	create( const Uint32& index ) = 0;
+	Joystick* mJoysticks[MAX_JOYSTICKS];
+
+	Uint32 mCount;
+
+	virtual void create( const Uint32& index ) = 0;
 };
 
-}}
+}} // namespace EE::Window
 
 #endif

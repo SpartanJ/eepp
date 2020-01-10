@@ -3,63 +3,62 @@
 namespace EE { namespace Maps {
 
 MapLight::MapLight() :
-	mRadius( 0 ),
-	mColor( 255, 255, 255 ),
-	mType( MapLightType::Normal ),
-	mActive( true )
-{
-}
+	mRadius( 0 ), mColor( 255, 255, 255 ), mType( MapLightType::Normal ), mActive( true ) {}
 
-MapLight::~MapLight() {
-}
+MapLight::~MapLight() {}
 
-MapLight::MapLight( const Float& Radius, const Float& x, const Float& y, const RGB& Color, MapLightType Type ) :
-	mActive( true )
-{
+MapLight::MapLight( const Float& Radius, const Float& x, const Float& y, const RGB& Color,
+					MapLightType Type ) :
+	mActive( true ) {
 	create( Radius, x, y, Color, Type );
 }
 
-void MapLight::create( const Float& Radius, const Float& x, const Float& y, const RGB& Color, MapLightType Type ) {
-	mRadius	= Radius;
-	mColor	= Color;
-	mType	= Type;
+void MapLight::create( const Float& Radius, const Float& x, const Float& y, const RGB& Color,
+					   MapLightType Type ) {
+	mRadius = Radius;
+	mColor = Color;
+	mType = Type;
 
 	updatePos( x, y );
 }
 
-RGB MapLight::processVertex( const Float& PointX, const Float& PointY, const RGB& VertexColor, const RGB& BaseColor ) {
+RGB MapLight::processVertex( const Float& PointX, const Float& PointY, const RGB& VertexColor,
+							 const RGB& BaseColor ) {
 	Float VertexDist;
 
 	if ( mActive ) {
 		if ( mType == MapLightType::Normal )
 			VertexDist = eeabs( mPos.distance( Vector2f( PointX, PointY ) ) );
 		else {
-			Float XDist = eeabs(mPos.x - PointX) * 0.5f;
-			Float YDist = eeabs(mPos.y - PointY);
+			Float XDist = eeabs( mPos.x - PointX ) * 0.5f;
+			Float YDist = eeabs( mPos.y - PointY );
 			VertexDist = eesqrt( XDist * XDist + YDist * YDist ) * 2.0f;
 		}
 
 		if ( VertexDist <= mRadius ) {
-			RGB	TmpRGB;
-			Uint8	TmpColor;
-			Float	LightC;
+			RGB TmpRGB;
+			Uint8 TmpColor;
+			Float LightC;
 
-			LightC			= eeabs( static_cast<Float> ( mColor.r - BaseColor.r ) ) / mRadius;
-			TmpColor		= Uint8( (Float)mColor.r - (VertexDist * LightC) );
-			TmpRGB.r		= VertexColor.r + ( TmpColor - VertexColor.r );
+			LightC = eeabs( static_cast<Float>( mColor.r - BaseColor.r ) ) / mRadius;
+			TmpColor = Uint8( (Float)mColor.r - ( VertexDist * LightC ) );
+			TmpRGB.r = VertexColor.r + ( TmpColor - VertexColor.r );
 
-			LightC			= eeabs( static_cast<Float> ( mColor.g - BaseColor.g ) ) / mRadius;
-			TmpColor		= Uint8( (Float)mColor.g - (VertexDist * LightC) );
-			TmpRGB.g	= VertexColor.g + ( TmpColor - VertexColor.g );
+			LightC = eeabs( static_cast<Float>( mColor.g - BaseColor.g ) ) / mRadius;
+			TmpColor = Uint8( (Float)mColor.g - ( VertexDist * LightC ) );
+			TmpRGB.g = VertexColor.g + ( TmpColor - VertexColor.g );
 
-			LightC			= eeabs( static_cast<Float> ( mColor.b - BaseColor.b ) ) / mRadius;
-			TmpColor		= Uint8( (Float)mColor.b - (VertexDist * LightC) );
-			TmpRGB.b		= VertexColor.b + ( TmpColor - VertexColor.b );
+			LightC = eeabs( static_cast<Float>( mColor.b - BaseColor.b ) ) / mRadius;
+			TmpColor = Uint8( (Float)mColor.b - ( VertexDist * LightC ) );
+			TmpRGB.b = VertexColor.b + ( TmpColor - VertexColor.b );
 
-			if ( TmpRGB.r < VertexColor.r ) TmpRGB.r		= VertexColor.r;
-			if ( TmpRGB.g < VertexColor.g ) TmpRGB.g	= VertexColor.g;
-			if ( TmpRGB.b < VertexColor.b ) TmpRGB.b		= VertexColor.b;
-			
+			if ( TmpRGB.r < VertexColor.r )
+				TmpRGB.r = VertexColor.r;
+			if ( TmpRGB.g < VertexColor.g )
+				TmpRGB.g = VertexColor.g;
+			if ( TmpRGB.b < VertexColor.b )
+				TmpRGB.b = VertexColor.b;
+
 			return TmpRGB;
 		}
 	}
@@ -67,38 +66,42 @@ RGB MapLight::processVertex( const Float& PointX, const Float& PointY, const RGB
 	return BaseColor;
 }
 
-Color MapLight::processVertex( const Float& PointX, const Float& PointY, const Color& VertexColor, const Color& BaseColor ) {
+Color MapLight::processVertex( const Float& PointX, const Float& PointY, const Color& VertexColor,
+							   const Color& BaseColor ) {
 	Float VertexDist;
 
 	if ( mActive ) {
 		if ( mType == MapLightType::Normal )
 			VertexDist = eeabs( mPos.distance( Vector2f( PointX, PointY ) ) );
 		else {
-			Float XDist = eeabs(mPos.x - PointX) * 0.5f;
-			Float YDist = eeabs(mPos.y - PointY);
+			Float XDist = eeabs( mPos.x - PointX ) * 0.5f;
+			Float YDist = eeabs( mPos.y - PointY );
 			VertexDist = eesqrt( XDist * XDist + YDist * YDist ) * 2.0f;
 		}
 
 		if ( VertexDist <= mRadius ) {
-			Color	TmpRGB;
-			Uint8		TmpColor;
-			Float		LightC;
+			Color TmpRGB;
+			Uint8 TmpColor;
+			Float LightC;
 
-			LightC			= eeabs( static_cast<Float> ( mColor.r - BaseColor.r ) ) / mRadius;
-			TmpColor		= Uint8( (Float)mColor.r - (VertexDist * LightC) );
-			TmpRGB.r		= VertexColor.r + ( TmpColor - VertexColor.r );
+			LightC = eeabs( static_cast<Float>( mColor.r - BaseColor.r ) ) / mRadius;
+			TmpColor = Uint8( (Float)mColor.r - ( VertexDist * LightC ) );
+			TmpRGB.r = VertexColor.r + ( TmpColor - VertexColor.r );
 
-			LightC			= eeabs( static_cast<Float> ( mColor.g - BaseColor.g ) ) / mRadius;
-			TmpColor		= Uint8( (Float)mColor.g - (VertexDist * LightC) );
-			TmpRGB.g	= VertexColor.g + ( TmpColor - VertexColor.g );
+			LightC = eeabs( static_cast<Float>( mColor.g - BaseColor.g ) ) / mRadius;
+			TmpColor = Uint8( (Float)mColor.g - ( VertexDist * LightC ) );
+			TmpRGB.g = VertexColor.g + ( TmpColor - VertexColor.g );
 
-			LightC			= eeabs( static_cast<Float> ( mColor.b - BaseColor.b ) ) / mRadius;
-			TmpColor		= Uint8( (Float)mColor.b - (VertexDist * LightC) );
-			TmpRGB.b		= VertexColor.b + ( TmpColor - VertexColor.b );
+			LightC = eeabs( static_cast<Float>( mColor.b - BaseColor.b ) ) / mRadius;
+			TmpColor = Uint8( (Float)mColor.b - ( VertexDist * LightC ) );
+			TmpRGB.b = VertexColor.b + ( TmpColor - VertexColor.b );
 
-			if ( TmpRGB.r < VertexColor.r ) TmpRGB.r		= VertexColor.r;
-			if ( TmpRGB.g < VertexColor.g ) TmpRGB.g	= VertexColor.g;
-			if ( TmpRGB.b < VertexColor.b ) TmpRGB.b		= VertexColor.b;
+			if ( TmpRGB.r < VertexColor.r )
+				TmpRGB.r = VertexColor.r;
+			if ( TmpRGB.g < VertexColor.g )
+				TmpRGB.g = VertexColor.g;
+			if ( TmpRGB.b < VertexColor.b )
+				TmpRGB.b = VertexColor.b;
 
 			return TmpRGB;
 		}
@@ -111,7 +114,8 @@ RGB MapLight::processVertex( const Vector2f& Pos, const RGB& VertexColor, const 
 	return processVertex( Pos.x, Pos.y, VertexColor, BaseColor );
 }
 
-Color MapLight::processVertex( const Vector2f& Pos, const Color& VertexColor, const Color& BaseColor ) {
+Color MapLight::processVertex( const Vector2f& Pos, const Color& VertexColor,
+							   const Color& BaseColor ) {
 	return processVertex( Pos.x, Pos.y, VertexColor, BaseColor );
 }
 
@@ -141,7 +145,8 @@ void MapLight::updateAABB() {
 	if ( mType == MapLightType::Normal )
 		mAABB = Rectf( mPos.x - mRadius, mPos.y - mRadius, mPos.x + mRadius, mPos.y + mRadius );
 	else
-		mAABB = Rectf( mPos.x - mRadius, mPos.y - mRadius * 0.5f, mPos.x + mRadius, mPos.y + mRadius * 0.5f );
+		mAABB = Rectf( mPos.x - mRadius, mPos.y - mRadius * 0.5f, mPos.x + mRadius,
+					   mPos.y + mRadius * 0.5f );
 }
 
 const Float& MapLight::getRadius() const {
@@ -184,4 +189,4 @@ const Vector2f& MapLight::getPosition() const {
 	return mPos;
 }
 
-}}
+}} // namespace EE::Maps

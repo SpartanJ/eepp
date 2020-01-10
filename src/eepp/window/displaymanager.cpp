@@ -2,7 +2,7 @@
 
 namespace EE { namespace Window {
 
-Display::Display( int displayIndex ) : index ( displayIndex ) {}
+Display::Display( int displayIndex ) : index( displayIndex ) {}
 
 PixelDensitySize Display::getPixelDensity() {
 	return PixelDensity::fromDPI( getDPI() );
@@ -22,4 +22,4 @@ void DisplayManager::enableScreenSaver() {}
 
 void DisplayManager::disableScreenSaver() {}
 
-}}
+}} // namespace EE::Window

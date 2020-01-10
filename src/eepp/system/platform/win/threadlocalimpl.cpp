@@ -9,17 +9,17 @@ ThreadLocalImpl::ThreadLocalImpl() {
 }
 
 ThreadLocalImpl::~ThreadLocalImpl() {
-	TlsFree(mIndex);
+	TlsFree( mIndex );
 }
 
-void ThreadLocalImpl::setValue(void* val) {
-	TlsSetValue(mIndex, val);
+void ThreadLocalImpl::setValue( void* val ) {
+	TlsSetValue( mIndex, val );
 }
 
 void* ThreadLocalImpl::getValue() const {
-	return TlsGetValue(mIndex);
+	return TlsGetValue( mIndex );
 }
 
-}}}
+}}} // namespace EE::System::Private
 
 #endif

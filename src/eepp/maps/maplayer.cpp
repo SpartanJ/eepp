@@ -3,19 +3,15 @@
 
 namespace EE { namespace Maps {
 
-MapLayer::MapLayer( TileMap * map, Uint32 type, Uint32 flags, std::string name, Vector2f offset ) :
+MapLayer::MapLayer( TileMap* map, Uint32 type, Uint32 flags, std::string name, Vector2f offset ) :
 	mMap( map ),
 	mType( type ),
 	mFlags( flags ),
 	mOffset( offset ),
 	mNameHash( String::hash( name ) ),
-	mName( name )
-{
-}
+	mName( name ) {}
 
-MapLayer::~MapLayer() {
-
-}
+MapLayer::~MapLayer() {}
 
 const Uint32& MapLayer::getFlags() const {
 	return mFlags;
@@ -41,7 +37,7 @@ const Uint32& MapLayer::getType() const {
 	return mType;
 }
 
-TileMap * MapLayer::getMap() const {
+TileMap* MapLayer::getMap() const {
 	return mMap;
 }
 
@@ -54,8 +50,8 @@ void MapLayer::setOffset( const Vector2f& offset ) {
 }
 
 void MapLayer::setName( const std::string& name ) {
-	mName		= name;
-	mNameHash	= String::hash( mName );
+	mName = name;
+	mNameHash = String::hash( mName );
 }
 
 const std::string& MapLayer::getName() const {
@@ -71,11 +67,11 @@ void MapLayer::clearProperties() {
 }
 
 void MapLayer::addProperty( std::string Text, std::string Value ) {
-	mProperties[ Text ] = Value;
+	mProperties[Text] = Value;
 }
 
 void MapLayer::editProperty( std::string Text, std::string Value ) {
-	mProperties[ Text ] = Value;
+	mProperties[Text] = Value;
 }
 
 void MapLayer::removeProperty( std::string Text ) {
@@ -102,5 +98,4 @@ void MapLayer::setLightsEnabled( const bool& enabled ) {
 	enabled ? setFlag( LAYER_FLAG_LIGHTS_ENABLED ) : clearFlag( LAYER_FLAG_LIGHTS_ENABLED );
 }
 
-}}
-
+}} // namespace EE::Maps

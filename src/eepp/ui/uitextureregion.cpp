@@ -1,12 +1,12 @@
-#include <eepp/ui/uitextureregion.hpp>
-#include <eepp/ui/css/propertydefinition.hpp>
-#include <eepp/graphics/textureregion.hpp>
 #include <eepp/graphics/globaltextureatlas.hpp>
 #include <eepp/graphics/textureatlasmanager.hpp>
+#include <eepp/graphics/textureregion.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/uitextureregion.hpp>
 
 namespace EE { namespace UI {
 
-UITextureRegion * UITextureRegion::New() {
+UITextureRegion* UITextureRegion::New() {
 	return eeNew( UITextureRegion, () );
 }
 
@@ -15,15 +15,13 @@ UITextureRegion::UITextureRegion() :
 	mTextureRegion( NULL ),
 	mColor(),
 	mRender( RENDER_NORMAL ),
-	mAlignOffset(0,0)
-{
+	mAlignOffset( 0, 0 ) {
 	mFlags |= UI_AUTO_SIZE;
 
 	onAutoSize();
 }
 
-UITextureRegion::~UITextureRegion() {
-}
+UITextureRegion::~UITextureRegion() {}
 
 Uint32 UITextureRegion::getType() const {
 	return UI_TYPE_TEXTUREREGION;
@@ -33,7 +31,7 @@ bool UITextureRegion::isType( const Uint32& type ) const {
 	return UITextureRegion::getType() == type ? true : UIWidget::isType( type );
 }
 
-UITextureRegion * UITextureRegion::setTextureRegion( Graphics::TextureRegion * TextureRegion ) {
+UITextureRegion* UITextureRegion::setTextureRegion( Graphics::TextureRegion* TextureRegion ) {
 	mTextureRegion = TextureRegion;
 
 	onAutoSize();
@@ -58,13 +56,16 @@ void UITextureRegion::onAutoSize() {
 			autoAlign();
 		}
 
-		if ( mLayoutWidthRule == LayoutSizeRule::WrapContent || mLayoutHeightRule == LayoutSizeRule::WrapContent ) {
+		if ( mLayoutWidthRule == LayoutSizeRule::WrapContent ||
+			 mLayoutHeightRule == LayoutSizeRule::WrapContent ) {
 			if ( mLayoutWidthRule == LayoutSizeRule::WrapContent ) {
-				setInternalPixelsWidth( mTextureRegion->getPxSize().getWidth() + mRealPadding.Left + mRealPadding.Right );
+				setInternalPixelsWidth( mTextureRegion->getPxSize().getWidth() + mRealPadding.Left +
+										mRealPadding.Right );
 			}
 
 			if ( mLayoutHeightRule == LayoutSizeRule::WrapContent ) {
-				setInternalPixelsHeight( mTextureRegion->getPxSize().getHeight() + mRealPadding.Top + mRealPadding.Bottom );
+				setInternalPixelsHeight( mTextureRegion->getPxSize().getHeight() +
+										 mRealPadding.Top + mRealPadding.Bottom );
 			}
 
 			autoAlign();
@@ -77,12 +78,14 @@ void UITextureRegion::draw() {
 		UINode::draw();
 
 		if ( NULL != mTextureRegion && 0.f != mAlpha ) {
-			Sizef oDestSize	= mTextureRegion->getDestSize();
-			Vector2i oOff	= mTextureRegion->getOffset();
+			Sizef oDestSize = mTextureRegion->getDestSize();
+			Vector2i oOff = mTextureRegion->getOffset();
 
 			if ( mScaleType == UIScaleType::Expand ) {
 				mTextureRegion->setOffset( Vector2i( 0, 0 ) );
-				mTextureRegion->setDestSize( Vector2f( (int)mSize.x - mRealPadding.Left - mRealPadding.Right, (int)mSize.y - mRealPadding.Top - mRealPadding.Bottom ) );
+				mTextureRegion->setDestSize(
+					Vector2f( (int)mSize.x - mRealPadding.Left - mRealPadding.Right,
+							  (int)mSize.y - mRealPadding.Top - mRealPadding.Bottom ) );
 
 				autoAlign();
 
@@ -92,8 +95,10 @@ void UITextureRegion::draw() {
 				mTextureRegion->setOffset( Vector2i( 0, 0 ) );
 
 				Sizei pxSize = mTextureRegion->getPxSize();
-				Float Scale1 = ( mSize.x - mRealPadding.Left - mRealPadding.Right ) / (Float)pxSize.x;
-				Float Scale2 = ( mSize.y - mRealPadding.Top - mRealPadding.Bottom ) / (Float)pxSize.y;
+				Float Scale1 =
+					( mSize.x - mRealPadding.Left - mRealPadding.Right ) / (Float)pxSize.x;
+				Float Scale2 =
+					( mSize.y - mRealPadding.Top - mRealPadding.Bottom ) / (Float)pxSize.y;
 
 				if ( Scale1 < 1 || Scale2 < 1 ) {
 					if ( Scale2 < Scale1 )
@@ -113,11 +118,14 @@ void UITextureRegion::draw() {
 					drawTextureRegion();
 				}
 			} else {
-				mTextureRegion->setOffset( Vector2i( (Int32)( (Float)oOff.x / mTextureRegion->getPixelDensity() * PixelDensity::getPixelDensity() ),
-												  (Int32)( (Float)oOff.y / mTextureRegion->getPixelDensity() * PixelDensity::getPixelDensity() )
-										) );
+				mTextureRegion->setOffset(
+					Vector2i( ( Int32 )( (Float)oOff.x / mTextureRegion->getPixelDensity() *
+										 PixelDensity::getPixelDensity() ),
+							  ( Int32 )( (Float)oOff.y / mTextureRegion->getPixelDensity() *
+										 PixelDensity::getPixelDensity() ) ) );
 
-				mTextureRegion->setDestSize( Vector2f( (Float)mTextureRegion->getPxSize().x, (Float)mTextureRegion->getPxSize().y ) );
+				mTextureRegion->setDestSize( Vector2f( (Float)mTextureRegion->getPxSize().x,
+													   (Float)mTextureRegion->getPxSize().y ) );
 
 				autoAlign();
 
@@ -131,7 +139,9 @@ void UITextureRegion::draw() {
 }
 
 void UITextureRegion::drawTextureRegion() {
-	mTextureRegion->draw( (Float)mScreenPosi.x + (int)mAlignOffset.x, (Float)mScreenPosi.y + (int)mAlignOffset.y, mColor, 0.f, Vector2f::One, getBlendMode(), mRender );
+	mTextureRegion->draw( (Float)mScreenPosi.x + (int)mAlignOffset.x,
+						  (Float)mScreenPosi.y + (int)mAlignOffset.y, mColor, 0.f, Vector2f::One,
+						  getBlendMode(), mRender );
 }
 
 void UITextureRegion::setAlpha( const Float& alpha ) {
@@ -139,7 +149,7 @@ void UITextureRegion::setAlpha( const Float& alpha ) {
 	mColor.a = (Uint8)alpha;
 }
 
-Graphics::TextureRegion * UITextureRegion::getTextureRegion() const {
+Graphics::TextureRegion* UITextureRegion::getTextureRegion() const {
 	return mTextureRegion;
 }
 
@@ -168,7 +178,7 @@ void UITextureRegion::autoAlign() {
 	if ( Font::getHorizontalAlign( mFlags ) == UI_HALIGN_CENTER ) {
 		mAlignOffset.x = ( mSize.getWidth() - mTextureRegion->getDestSize().x ) / 2;
 	} else if ( Font::getHorizontalAlign( mFlags ) == UI_HALIGN_RIGHT ) {
-		mAlignOffset.x =  mSize.getWidth() - mTextureRegion->getDestSize().x - mRealPadding.Right;
+		mAlignOffset.x = mSize.getWidth() - mTextureRegion->getDestSize().x - mRealPadding.Right;
 	} else {
 		mAlignOffset.x = mRealPadding.Left;
 	}
@@ -217,20 +227,21 @@ std::string UITextureRegion::getPropertyString( const PropertyDefinition* proper
 }
 
 bool UITextureRegion::applyProperty( const StyleSheetProperty& attribute ) {
-	if ( !checkPropertyDefinition( attribute ) ) return false;
+	if ( !checkPropertyDefinition( attribute ) )
+		return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
-		case PropertyId::Src:
-		{
-			Drawable * res = NULL;
+		case PropertyId::Src: {
+			Drawable* res = NULL;
 
-			if ( NULL != ( res = TextureAtlasManager::instance()->getTextureRegionByName( attribute.asString() ) ) && res->getDrawableType() == Drawable::TEXTUREREGION ) {
+			if ( NULL != ( res = TextureAtlasManager::instance()->getTextureRegionByName(
+							   attribute.asString() ) ) &&
+				 res->getDrawableType() == Drawable::TEXTUREREGION ) {
 				setTextureRegion( static_cast<TextureRegion*>( res ) );
 			}
 			break;
 		}
-		case PropertyId::ScaleType:
-		{
+		case PropertyId::ScaleType: {
 			std::string val = attribute.asString();
 			String::toLowerInPlace( val );
 
@@ -257,10 +268,10 @@ const UIScaleType& UITextureRegion::getScaleType() const {
 	return mScaleType;
 }
 
-UITextureRegion * UITextureRegion::setScaleType(const UIScaleType& scaleType) {
+UITextureRegion* UITextureRegion::setScaleType( const UIScaleType& scaleType ) {
 	mScaleType = scaleType;
 	invalidateDraw();
 	return this;
 }
 
-}}
+}} // namespace EE::UI

@@ -7,7 +7,7 @@
 
 namespace EE { namespace Graphics {
 class Font;
-}}
+}} // namespace EE::Graphics
 
 namespace EE { namespace UI {
 

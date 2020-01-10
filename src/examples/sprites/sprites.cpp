@@ -1,6 +1,6 @@
 #include <eepp/ee.hpp>
 
-EE::Window::Window * win = NULL;
+EE::Window::Window* win = NULL;
 
 // Define a interpolation to control the Rock sprite angle
 Interpolation1d RockAngle;
@@ -17,19 +17,20 @@ Sprite Blindy;
 static const Uint32 USER_SPRITE_EVENT = Sprite::SPRITE_EVENT_USER + 1;
 
 // Get the sprite event callback
-void spriteCallback( Uint32 Event, Sprite * Sprite, void * UserData ) {
+void spriteCallback( Uint32 Event, Sprite* Sprite, void* UserData ) {
 	// Sprite Animation entered the first frame?
 	if ( Event == Sprite::SPRITE_EVENT_FIRST_FRAME ) {
 		// Fire a user Event
 		Sprite->fireEvent( USER_SPRITE_EVENT );
 	} else if ( Event == USER_SPRITE_EVENT ) {
 		// Create an interpolation to change the angle of the sprite
-		Interpolation1d * RotationInterpolation = reinterpret_cast<Interpolation1d*>( UserData );
+		Interpolation1d* RotationInterpolation = reinterpret_cast<Interpolation1d*>( UserData );
 		RotationInterpolation->clear();
 		RotationInterpolation->add( Sprite->getRotation() );
 		RotationInterpolation->add( Sprite->getRotation() + 45.f );
 		RotationInterpolation->setDuration( Milliseconds( 500 ) );
-		RotationInterpolation->setType( Ease::BounceOut ); // Set the easing effect used for the interpolation
+		RotationInterpolation->setType(
+			Ease::BounceOut ); // Set the easing effect used for the interpolation
 		RotationInterpolation->start();
 
 		// Scale the sprite
@@ -39,8 +40,7 @@ void spriteCallback( Uint32 Event, Sprite * Sprite, void * UserData ) {
 	}
 }
 
-void mainLoop()
-{
+void mainLoop() {
 	// Clear the screen buffer
 	win->clear();
 
@@ -88,34 +88,36 @@ void mainLoop()
 	win->display();
 }
 
-EE_MAIN_FUNC int main (int argc, char * argv [])
-{
+EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	// Create a new window
-	win = Engine::instance()->createWindow( WindowSettings( 640, 480, "eepp - Sprites" ), ContextSettings( true ) );
+	win = Engine::instance()->createWindow( WindowSettings( 640, 480, "eepp - Sprites" ),
+											ContextSettings( true ) );
 
 	// Check if created
 	if ( win->isOpen() ) {
 		// Load the rock texture
-		Uint32 PlanetId	= TextureFactory::instance()->loadFromFile( "assets/sprites/7.png" );
-		Uint32 RockId	= TextureFactory::instance()->loadFromFile( "assets/sprites/5.png" );
+		Uint32 PlanetId = TextureFactory::instance()->loadFromFile( "assets/sprites/7.png" );
+		Uint32 RockId = TextureFactory::instance()->loadFromFile( "assets/sprites/5.png" );
 
-		// Load a previously generated texture atlas that contains the TextureRegions needed to load an animated sprite
+		// Load a previously generated texture atlas that contains the TextureRegions needed to load
+		// an animated sprite
 		TextureAtlasLoader Blindies( "assets/atlases/bnb.eta" );
 
 		// Create the animated rock spriteR
 		// Load the rock frames from the texture, adding the frames manually
 		for ( Int32 my = 0; my < 4; my++ ) {
-			for( Int32 mx = 0; mx < 8; mx++ ) {
+			for ( Int32 mx = 0; mx < 8; mx++ ) {
 				// DestSize as 0,0 will use the TextureRegion size
-				Rock.addFrame( RockId, Sizef( 0, 0 ), Vector2i( 0, 0 ), Rect( mx * 64, my * 64, mx * 64 + 64, my * 64 + 64 ) );
+				Rock.addFrame( RockId, Sizef( 0, 0 ), Vector2i( 0, 0 ),
+							   Rect( mx * 64, my * 64, mx * 64 + 64, my * 64 + 64 ) );
 			}
 		}
 
 		// Create a static sprite
 		Planet.createStatic( PlanetId );
 
-		// It will look for a TextureRegion ( in any Texture Atlas loaded, or the GlobalTextureAtlas ) animation by its name, it will search
-		// for "gn00" to "gnXX" to create a new animation
+		// It will look for a TextureRegion ( in any Texture Atlas loaded, or the GlobalTextureAtlas
+		// ) animation by its name, it will search for "gn00" to "gnXX" to create a new animation
 		// see TextureAtlasManager::GetTextureRegionsByPattern for more information.
 		// This is the easiest way to load animated sprites.
 		Blindy.addFramesByPattern( "gn" );
@@ -134,16 +136,19 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		P.setFillMode( DRAW_LINE );
 
 		// Set the sprites position to the screen center
-		Vector2i ScreenCenter( Engine::instance()->getCurrentWindow()->getWidth() / 2, Engine::instance()->getCurrentWindow()->getHeight() / 2 );
+		Vector2i ScreenCenter( Engine::instance()->getCurrentWindow()->getWidth() / 2,
+							   Engine::instance()->getCurrentWindow()->getHeight() / 2 );
 
-		Planet.setPosition( Vector2f( ScreenCenter.x - Planet.getAABB().getSize().getWidth() / 2,
-									  ScreenCenter.y - Planet.getAABB().getSize().getHeight() / 2 ) );
+		Planet.setPosition(
+			Vector2f( ScreenCenter.x - Planet.getAABB().getSize().getWidth() / 2,
+					  ScreenCenter.y - Planet.getAABB().getSize().getHeight() / 2 ) );
 
 		Rock.setPosition( Vector2f( ScreenCenter.x - Rock.getAABB().getSize().getWidth() / 2,
-						  ScreenCenter.y - Rock.getAABB().getSize().getHeight() / 2 ) );
+									ScreenCenter.y - Rock.getAABB().getSize().getHeight() / 2 ) );
 
-		Blindy.setPosition( Vector2f( ScreenCenter.x - Blindy.getAABB().getSize().getWidth() / 2,
-							ScreenCenter.y - Blindy.getAABB().getSize().getHeight() / 2 ) );
+		Blindy.setPosition(
+			Vector2f( ScreenCenter.x - Blindy.getAABB().getSize().getWidth() / 2,
+					  ScreenCenter.y - Blindy.getAABB().getSize().getHeight() / 2 ) );
 
 		// Set the planet angle interpolation
 		PlanetAngle.add( 0 );

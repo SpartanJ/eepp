@@ -2,7 +2,7 @@
 
 namespace EE { namespace Physics {
 
-Arbiter::Arbiter( cpArbiter * arbiter ) {
+Arbiter::Arbiter( cpArbiter* arbiter ) {
 	mArbiter = arbiter;
 }
 
@@ -18,9 +18,9 @@ void Arbiter::ignore() {
 	return cpArbiterIgnore( mArbiter );
 }
 
-void Arbiter::getShapes( Shape ** a, Shape ** b ) {
-	cpShape * tA;
-	cpShape * tB;
+void Arbiter::getShapes( Shape** a, Shape** b ) {
+	cpShape* tA;
+	cpShape* tB;
 
 	cpArbiterGetShapes( mArbiter, &tA, &tB );
 
@@ -35,9 +35,9 @@ void Arbiter::getShapes( Shape ** a, Shape ** b ) {
 		*b = NULL;
 }
 
-void Arbiter::getBodies( Body ** a, Body ** b) {
-	cpBody * tA;
-	cpBody * tB;
+void Arbiter::getBodies( Body** a, Body** b ) {
+	cpBody* tA;
+	cpBody* tB;
 
 	cpArbiterGetBodies( mArbiter, &tA, &tB );
 
@@ -76,16 +76,16 @@ cpContactPointSet Arbiter::getContactPointSet() {
 	return cpArbiterGetContactPointSet( mArbiter );
 }
 
-void Arbiter::setContactPointSet( cpContactPointSet * contact ) {
+void Arbiter::setContactPointSet( cpContactPointSet* contact ) {
 	cpArbiterSetContactPointSet( mArbiter, contact );
 }
 
-cpArbiter *	Arbiter::getArbiter() const {
+cpArbiter* Arbiter::getArbiter() const {
 	return mArbiter;
 }
 
 cpFloat Arbiter::getElasticity() {
-	return cpArbiterGetElasticity( mArbiter);
+	return cpArbiterGetElasticity( mArbiter );
 }
 
 void Arbiter::setElasticity( cpFloat value ) {
@@ -116,4 +116,4 @@ cpDataPointer Arbiter::getUserData() const {
 	return cpArbiterGetUserData( mArbiter );
 }
 
-}}
+}} // namespace EE::Physics

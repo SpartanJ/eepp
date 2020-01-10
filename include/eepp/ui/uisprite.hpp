@@ -6,67 +6,68 @@
 namespace EE { namespace Graphics {
 class Sprite;
 class TextureRegion;
-}}
+}} // namespace EE::Graphics
 
 namespace EE { namespace UI {
 
 class EE_API UISprite : public UIWidget {
-	public:
-		static UISprite * New();
+  public:
+	static UISprite* New();
 
-		UISprite();
+	UISprite();
 
-		virtual ~UISprite();
+	virtual ~UISprite();
 
-		virtual Uint32 getType() const;
+	virtual Uint32 getType() const;
 
-		virtual bool isType( const Uint32& type ) const;
+	virtual bool isType( const Uint32& type ) const;
 
-		virtual void draw();
+	virtual void draw();
 
-		virtual void scheduledUpdate( const Time& time );
+	virtual void scheduledUpdate( const Time& time );
 
-		virtual void setAlpha( const Float& alpha );
+	virtual void setAlpha( const Float& alpha );
 
-		Graphics::Sprite * getSprite() const;
+	Graphics::Sprite* getSprite() const;
 
-		void setSprite( Graphics::Sprite * sprite );
+	void setSprite( Graphics::Sprite* sprite );
 
-		Color getColor() const;
+	Color getColor() const;
 
-		void setColor( const Color& color );
+	void setColor( const Color& color );
 
-		const RenderMode& getRenderMode() const;
+	const RenderMode& getRenderMode() const;
 
-		void setRenderMode( const RenderMode& render );
+	void setRenderMode( const RenderMode& render );
 
-		const Vector2f& getAlignOffset() const;
+	const Vector2f& getAlignOffset() const;
 
-		void setIsSpriteOwner( const bool& dealloc );
+	void setIsSpriteOwner( const bool& dealloc );
 
-		bool getDeallocSprite();
+	bool getDeallocSprite();
 
-		virtual bool applyProperty( const StyleSheetProperty& attribute );
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
-		virtual std::string getPropertyString(const PropertyDefinition* propertyDef);
-	protected:
-		Graphics::Sprite * 	mSprite;
-		RenderMode			mRender;
-		Vector2f			mAlignOffset;
-		TextureRegion *		mTextureRegionLast;
-		bool				mDealloc;
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef );
 
-		void updateSize();
+  protected:
+	Graphics::Sprite* mSprite;
+	RenderMode mRender;
+	Vector2f mAlignOffset;
+	TextureRegion* mTextureRegionLast;
+	bool mDealloc;
 
-		void autoAlign();
+	void updateSize();
 
-		void checkTextureRegionUpdate();
+	void autoAlign();
 
-		virtual void onSizeChange();
+	void checkTextureRegionUpdate();
 
-		Uint32 deallocSprite();
+	virtual void onSizeChange();
+
+	Uint32 deallocSprite();
 };
 
-}}
+}} // namespace EE::UI
 
 #endif

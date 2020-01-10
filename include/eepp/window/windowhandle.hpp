@@ -13,22 +13,21 @@ namespace EE { namespace Window {
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
 
-	typedef HWND__*			eeWindowHandle;
+typedef HWND__* eeWindowHandle;
 
 #elif defined( EE_X11_PLATFORM )
 
-	typedef unsigned long			X11Window;
-	typedef unsigned long			X11Cursor;
+typedef unsigned long X11Window;
+typedef unsigned long X11Cursor;
 
-	typedef struct _XDisplay *		eeWindowHandle;
+typedef struct _XDisplay* eeWindowHandle;
 
 #elif EE_PLATFORM == EE_PLATFORM_MACOSX
-	typedef void *			eeWindowHandle; // NSWindow *
+typedef void* eeWindowHandle; // NSWindow *
 #else
-	typedef unsigned int	eeWindowHandle; //! Fallback
+typedef unsigned int eeWindowHandle; //! Fallback
 #endif
 
-}}
+}} // namespace EE::Window
 
 #endif
-

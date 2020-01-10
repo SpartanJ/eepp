@@ -9,68 +9,68 @@ namespace EE { namespace UI {
 class UINode;
 
 class EE_API UIThemeManager : public ResourceManager<UITheme> {
-	public:
-		static UIThemeManager * New();
+  public:
+	static UIThemeManager* New();
 
-		virtual ~UIThemeManager();
+	virtual ~UIThemeManager();
 
-		UIThemeManager * setDefaultFont( Font * Font );
+	UIThemeManager* setDefaultFont( Font* Font );
 
-		Font * getDefaultFont() const;
+	Font* getDefaultFont() const;
 
-		UIThemeManager * setDefaultTheme( UITheme * Theme );
+	UIThemeManager* setDefaultTheme( UITheme* Theme );
 
-		UIThemeManager * setDefaultTheme( const std::string& Theme );
+	UIThemeManager* setDefaultTheme( const std::string& Theme );
 
-		UITheme * getDefaultTheme() const;
+	UITheme* getDefaultTheme() const;
 
-		UIThemeManager * applyDefaultTheme( UINode * Control );
+	UIThemeManager* applyDefaultTheme( UINode* Control );
 
-		UIThemeManager * setAutoApplyDefaultTheme( const bool& apply );
+	UIThemeManager* setAutoApplyDefaultTheme( const bool& apply );
 
-		const bool& getAutoApplyDefaultTheme() const;
+	const bool& getAutoApplyDefaultTheme() const;
 
-		UIThemeManager * setDefaultEffectsEnabled( const bool& Enabled );
+	UIThemeManager* setDefaultEffectsEnabled( const bool& Enabled );
 
-		const bool& getDefaultEffectsEnabled() const;
+	const bool& getDefaultEffectsEnabled() const;
 
-		const Time& getControlsFadeInTime() const;
+	const Time& getControlsFadeInTime() const;
 
-		UIThemeManager * setControlsFadeInTime( const Time & Time );
+	UIThemeManager* setControlsFadeInTime( const Time& Time );
 
-		const Time& getControlsFadeOutTime() const;
+	const Time& getControlsFadeOutTime() const;
 
-		UIThemeManager * setControlsFadeOutTime( const Time& Time );
+	UIThemeManager* setControlsFadeOutTime( const Time& Time );
 
-		UIThemeManager * setTooltipTimeToShow( const Time & Time );
+	UIThemeManager* setTooltipTimeToShow( const Time& Time );
 
-		const Time& getTooltipTimeToShow() const;
+	const Time& getTooltipTimeToShow() const;
 
-		UIThemeManager * setTooltipFollowMouse( const bool& Follow );
+	UIThemeManager* setTooltipFollowMouse( const bool& Follow );
 
-		const bool& getTooltipFollowMouse() const;
+	const bool& getTooltipFollowMouse() const;
 
-		UIThemeManager * setCursorSize( const Sizei& Size );
+	UIThemeManager* setCursorSize( const Sizei& Size );
 
-		const Sizei& getCursorSize() const;
-	protected:
-		Font *				mFont;
-		UITheme * 			mThemeDefault;
-		bool				mAutoApplyDefaultTheme;
+	const Sizei& getCursorSize() const;
 
-		bool				mEnableDefaultEffects;
-		Time				mFadeInTime;
-		Time				mFadeOutTime;
+  protected:
+	Font* mFont;
+	UITheme* mThemeDefault;
+	bool mAutoApplyDefaultTheme;
 
-		Time				mTooltipTimeToShow;
-		bool				mTooltipFollowMouse;
+	bool mEnableDefaultEffects;
+	Time mFadeInTime;
+	Time mFadeOutTime;
 
-		Sizei				mCursorSize;
+	Time mTooltipTimeToShow;
+	bool mTooltipFollowMouse;
 
-		UIThemeManager();
+	Sizei mCursorSize;
+
+	UIThemeManager();
 };
 
-}}
+}} // namespace EE::UI
 
 #endif
-

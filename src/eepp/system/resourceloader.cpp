@@ -5,13 +5,12 @@
 namespace EE { namespace System {
 
 ResourceLoader::ResourceLoader( const Uint32& maxThreads ) :
-	mLoaded(false),
-	mLoading(false),
-	mThreaded(true),
-	mThreads(maxThreads),
-	mTotalLoaded(0),
-	mThread( &ResourceLoader::taskRunner, this )
-{
+	mLoaded( false ),
+	mLoading( false ),
+	mThreaded( true ),
+	mThreads( maxThreads ),
+	mTotalLoaded( 0 ),
+	mThread( &ResourceLoader::taskRunner, this ) {
 	setThreads();
 }
 
@@ -93,12 +92,12 @@ bool ResourceLoader::isLoading() {
 }
 
 void ResourceLoader::setLoaded() {
-	mLoaded		= true;
-	mLoading	= false;
+	mLoaded = true;
+	mLoading = false;
 
 	if ( mLoadCbs.size() ) {
 		for ( auto it = mLoadCbs.begin(); it != mLoadCbs.end(); ++it ) {
-			(*it)( this );
+			( *it )( this );
 		}
 
 		mLoadCbs.clear();
@@ -110,7 +109,7 @@ void ResourceLoader::taskRunner() {
 		auto pool = ThreadPool::create( eemin( mThreads, (Uint32)mTasks.size() ) );
 
 		for ( auto& task : mTasks ) {
-			pool->run(task, [&] { mTotalLoaded++; });
+			pool->run( task, [&] { mTotalLoaded++; } );
 		}
 	}
 
@@ -135,5 +134,4 @@ Float ResourceLoader::getProgress() {
 	return mTotalLoaded / (float)mTasks.size() * 100.f;
 }
 
-}}
-
+}} // namespace EE::System

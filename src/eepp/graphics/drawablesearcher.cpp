@@ -1,13 +1,13 @@
 #include <eepp/graphics/drawablesearcher.hpp>
 #include <eepp/graphics/globaltextureatlas.hpp>
-#include <eepp/graphics/textureatlasmanager.hpp>
-#include <eepp/graphics/texturefactory.hpp>
 #include <eepp/graphics/ninepatchmanager.hpp>
 #include <eepp/graphics/sprite.hpp>
+#include <eepp/graphics/textureatlasmanager.hpp>
+#include <eepp/graphics/texturefactory.hpp>
 
-#include <eepp/window/engine.hpp>
 #include <eepp/network/http.hpp>
 #include <eepp/network/uri.hpp>
+#include <eepp/window/engine.hpp>
 using namespace EE::Window;
 using namespace EE::Network;
 
@@ -15,11 +15,12 @@ namespace EE { namespace Graphics {
 
 bool DrawableSearcher::sPrintWarnings = false;
 
-static Drawable * getSprite( const std::string& sprite ) {
-	std::vector<TextureRegion*> tTextureRegionVec = TextureAtlasManager::instance()->getTextureRegionsByPattern( sprite );
+static Drawable* getSprite( const std::string& sprite ) {
+	std::vector<TextureRegion*> tTextureRegionVec =
+		TextureAtlasManager::instance()->getTextureRegionsByPattern( sprite );
 
 	if ( tTextureRegionVec.size() ) {
-		Sprite * tSprite = Graphics::Sprite::New();
+		Sprite* tSprite = Graphics::Sprite::New();
 		tSprite->createAnimation();
 		tSprite->addFrames( tTextureRegionVec );
 
@@ -29,11 +30,11 @@ static Drawable * getSprite( const std::string& sprite ) {
 	return NULL;
 }
 
-static Drawable * searchByNameInternal( const std::string& name ) {
+static Drawable* searchByNameInternal( const std::string& name ) {
 	Uint32 id = String::hash( name );
-	Drawable * drawable = TextureAtlasManager::instance()->getTextureRegionById( id );
+	Drawable* drawable = TextureAtlasManager::instance()->getTextureRegionById( id );
 
-	if ( NULL == drawable) {
+	if ( NULL == drawable ) {
 		drawable = NinePatchManager::instance()->getById( id );
 	}
 
@@ -44,13 +45,14 @@ static Drawable * searchByNameInternal( const std::string& name ) {
 	return drawable;
 }
 
-Drawable * DrawableSearcher::searchByName( const std::string& name ) {
-	Drawable * drawable = NULL;
+Drawable* DrawableSearcher::searchByName( const std::string& name ) {
+	Drawable* drawable = NULL;
 
 	if ( name.size() ) {
 		if ( name[0] == '@' ) {
 			if ( String::startsWith( name, "@textureregion/" ) ) {
-				drawable = TextureAtlasManager::instance()->getTextureRegionByName( name.substr( 12 ) );
+				drawable =
+					TextureAtlasManager::instance()->getTextureRegionByName( name.substr( 12 ) );
 			} else if ( String::startsWith( name, "@image/" ) ) {
 				drawable = TextureFactory::instance()->getByName( name.substr( 7 ) );
 			} else if ( String::startsWith( name, "@texture/" ) ) {
@@ -75,22 +77,28 @@ Drawable * DrawableSearcher::searchByName( const std::string& name ) {
 				if ( texId > 0 )
 					drawable = TextureFactory::instance()->getTexture( texId );
 			}
-		} else if ( String::startsWith( name, "http://" ) || String::startsWith( name, "https://" ) ) {
-			Texture * texture = TextureFactory::instance()->getByName( name );
+		} else if ( String::startsWith( name, "http://" ) ||
+					String::startsWith( name, "https://" ) ) {
+			Texture* texture = TextureFactory::instance()->getByName( name );
 
 			if ( NULL == texture && Engine::instance()->isSharedGLContextEnabled() ) {
-				Uint32 texId = TextureFactory::instance()->createEmptyTexture( 1, 1, 4, Color::Transparent, false, Texture::ClampMode::ClampToEdge, false, false, name );
+				Uint32 texId = TextureFactory::instance()->createEmptyTexture(
+					1, 1, 4, Color::Transparent, false, Texture::ClampMode::ClampToEdge, false,
+					false, name );
 
 				texture = TextureFactory::instance()->getTexture( texId );
 
-				Http::getAsync( [=]( const Http&, Http::Request&, Http::Response& response ) {
-					if ( !response.getBody().empty() ) {
-						Image image( (const Uint8*)&response.getBody()[0], response.getBody().size() );
+				Http::getAsync(
+					[=]( const Http&, Http::Request&, Http::Response& response ) {
+						if ( !response.getBody().empty() ) {
+							Image image( (const Uint8*)&response.getBody()[0],
+										 response.getBody().size() );
 
-						if ( image.getPixels() != NULL )
-							texture->replace( &image );
-					}
-				}, URI(name), Seconds(5) );
+							if ( image.getPixels() != NULL )
+								texture->replace( &image );
+						}
+					},
+					URI( name ), Seconds( 5 ) );
 			}
 
 			drawable = texture;
@@ -105,8 +113,8 @@ Drawable * DrawableSearcher::searchByName( const std::string& name ) {
 	return drawable;
 }
 
-Drawable * DrawableSearcher::searchById( const Uint32& id ) {
-	Drawable * drawable = TextureAtlasManager::instance()->getTextureRegionById( id );
+Drawable* DrawableSearcher::searchById( const Uint32& id ) {
+	Drawable* drawable = TextureAtlasManager::instance()->getTextureRegionById( id );
 
 	if ( NULL == drawable ) {
 		drawable = TextureFactory::instance()->getByHash( id );
@@ -126,4 +134,4 @@ bool DrawableSearcher::getPrintWarnings() {
 	return sPrintWarnings;
 }
 
-}}
+}} // namespace EE::Graphics

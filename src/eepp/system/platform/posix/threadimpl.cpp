@@ -1,7 +1,7 @@
+#include <eepp/core.hpp>
 #include <eepp/system/platform/posix/threadimpl.hpp>
 #include <eepp/system/thread.hpp>
 #include <iostream>
-#include <eepp/core.hpp>
 
 namespace EE { namespace System { namespace Platform {
 
@@ -11,9 +11,7 @@ UintPtr ThreadImpl::getCurrentThreadId() {
 	return (UintPtr)pthread_self();
 }
 
-ThreadImpl::ThreadImpl( Thread * owner ) :
-	mIsActive(false)
-{
+ThreadImpl::ThreadImpl( Thread* owner ) : mIsActive( false ) {
 	mIsActive = pthread_create( &mThread, NULL, &ThreadImpl::entryPoint, owner ) == 0;
 
 	if ( !mIsActive )
@@ -33,11 +31,11 @@ void ThreadImpl::wait() {
 
 void ThreadImpl::terminate() {
 	if ( mIsActive ) {
-		#if EE_PLATFORM != EE_PLATFORM_ANDROID
-			pthread_cancel( mThread );
-		#else
-			pthread_kill( mThread , SIGUSR1 );
-		#endif
+#if EE_PLATFORM != EE_PLATFORM_ANDROID
+		pthread_cancel( mThread );
+#else
+		pthread_kill( mThread, SIGUSR1 );
+#endif
 
 		mIsActive = false;
 	}
@@ -47,14 +45,14 @@ UintPtr ThreadImpl::getId() {
 	return (UintPtr)mThread;
 }
 
-void * ThreadImpl::entryPoint( void * userData ) {
+void* ThreadImpl::entryPoint( void* userData ) {
 	// The Thread instance is stored in the user data
-	Thread * owner = static_cast<Thread*>( userData );
+	Thread* owner = static_cast<Thread*>( userData );
 
-	// Tell the thread to handle cancel requests immediatly
-	#ifdef PTHREAD_CANCEL_ASYNCHRONOUS
-		pthread_setcanceltype( PTHREAD_CANCEL_ASYNCHRONOUS, NULL );
-	#endif
+// Tell the thread to handle cancel requests immediatly
+#ifdef PTHREAD_CANCEL_ASYNCHRONOUS
+	pthread_setcanceltype( PTHREAD_CANCEL_ASYNCHRONOUS, NULL );
+#endif
 
 	// Forward to the owner
 	owner->run();
@@ -64,4 +62,4 @@ void * ThreadImpl::entryPoint( void * userData ) {
 
 #endif
 
-}}}
+}}} // namespace EE::System::Platform

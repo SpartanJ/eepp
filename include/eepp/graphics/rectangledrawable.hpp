@@ -7,57 +7,60 @@
 namespace EE { namespace Graphics {
 
 class EE_API RectangleDrawable : public PrimitiveDrawable {
-	public:
-		static RectangleDrawable * New();
+  public:
+	static RectangleDrawable* New();
 
-		static RectangleDrawable * New( const Vector2f& position, const Sizef& size );
+	static RectangleDrawable* New( const Vector2f& position, const Sizef& size );
 
-		RectangleDrawable();
+	RectangleDrawable();
 
-		RectangleDrawable( const Vector2f& position, const Sizef& size );
+	RectangleDrawable( const Vector2f& position, const Sizef& size );
 
-		virtual Sizef getSize();
+	virtual Sizef getSize();
 
-		virtual void draw();
+	virtual void draw();
 
-		virtual void draw( const Vector2f& position );
+	virtual void draw( const Vector2f& position );
 
-		virtual void draw( const Vector2f& position, const Sizef& size );
+	virtual void draw( const Vector2f& position, const Sizef& size );
 
-		virtual bool isStateful() { return false; }
+	virtual bool isStateful() { return false; }
 
-		Float getRotation() const;
+	Float getRotation() const;
 
-		void setRotation(const Float & rotation);
+	void setRotation( const Float& rotation );
 
-		Vector2f getScale() const;
+	Vector2f getScale() const;
 
-		void setScale(const Vector2f & scale);
+	void setScale( const Vector2f& scale );
 
-		void setSize(const Sizef & size);
+	void setSize( const Sizef& size );
 
-		Uint32 getCorners() const;
+	Uint32 getCorners() const;
 
-		void setCorners(const Uint32 & corners);
+	void setCorners( const Uint32& corners );
 
-		RectColors getRectColors() const;
+	RectColors getRectColors() const;
 
-		void setRectColors(const RectColors & rectColors);
-	protected:
-		Sizef mSize;
-		Float mRotation;
-		Vector2f mScale;
-		Uint32 mCorners;
-		RectColors mRectColors;
-		bool mUsingRectColors;
+	void setRectColors( const RectColors& rectColors );
 
-		void drawRectangle( const Rectf& R, const Color& TopLeft, const Color& BottomLeft, const Color& BottomRight, const Color& TopRight, const Float& Angle, const Vector2f& Scale );
+  protected:
+	Sizef mSize;
+	Float mRotation;
+	Vector2f mScale;
+	Uint32 mCorners;
+	RectColors mRectColors;
+	bool mUsingRectColors;
 
-		void updateVertex();
+	void drawRectangle( const Rectf& R, const Color& TopLeft, const Color& BottomLeft,
+						const Color& BottomRight, const Color& TopRight, const Float& Angle,
+						const Vector2f& Scale );
 
-		virtual void onColorFilterChange();
+	void updateVertex();
+
+	virtual void onColorFilterChange();
 };
 
-}}
+}} // namespace EE::Graphics
 
 #endif

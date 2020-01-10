@@ -5,38 +5,38 @@
 
 namespace EE { namespace UI {
 
-class EE_API UITextInputPassword : public UITextInput
-{
-	public:
-		static UITextInputPassword * New();
+class EE_API UITextInputPassword : public UITextInput {
+  public:
+	static UITextInputPassword* New();
 
-		UITextInputPassword();
+	UITextInputPassword();
 
-		~UITextInputPassword();
+	~UITextInputPassword();
 
-		virtual void draw();
+	virtual void draw();
 
-		virtual const String& getText();
+	virtual const String& getText();
 
-		virtual UITextView * setText( const String& text );
+	virtual UITextView* setText( const String& text );
 
-		Text * getPassCache() const;
-	protected:
-		Text *	mPassCache;
+	Text* getPassCache() const;
 
-		void alignFix();
+  protected:
+	Text* mPassCache;
 
-		void updateText();
+	void alignFix();
 
-		void updatePass( const String& pass );
+	void updateText();
 
-		void updateFontStyleConfig();
+	void updatePass( const String& pass );
 
-		virtual void onStateChange();
+	void updateFontStyleConfig();
 
-		virtual void onFontChanged();
+	virtual void onStateChange();
+
+	virtual void onFontChanged();
 };
 
-}}
+}} // namespace EE::UI
 
 #endif

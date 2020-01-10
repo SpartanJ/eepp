@@ -7,21 +7,21 @@
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
 class WMInfo {
-	public:
-		WMInfo( SDL_Window * win );
+  public:
+	WMInfo( SDL_Window* win );
 
-		~WMInfo();
+	~WMInfo();
 
-		#if defined( EE_X11_PLATFORM )
-		X11Window getWindow();
-		#endif
-
-		eeWindowHandle getWindowHandler();
-	protected:
-		void * mWMInfo;
-};
-
-}}}}
-
+#if defined( EE_X11_PLATFORM )
+	X11Window getWindow();
 #endif
 
+	eeWindowHandle getWindowHandler();
+
+  protected:
+	void* mWMInfo;
+};
+
+}}}} // namespace EE::Window::Backend::SDL2
+
+#endif

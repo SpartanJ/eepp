@@ -1,24 +1,19 @@
-#include <eepp/ui/uiskinstate.hpp>
 #include <eepp/ui/uiskin.hpp>
+#include <eepp/ui/uiskinstate.hpp>
 
 namespace EE { namespace UI {
 
-UISkinState * UISkinState::New( UISkin * skin ) {
-	return eeNew( UISkinState, (  skin ) );
+UISkinState* UISkinState::New( UISkin* skin ) {
+	return eeNew( UISkinState, ( skin ) );
 }
 
-UISkinState::UISkinState( UISkin * Skin ) :
-	mSkin( Skin ),
-	mCurrentColor( Color::White )
-{
+UISkinState::UISkinState( UISkin* Skin ) : mSkin( Skin ), mCurrentColor( Color::White ) {
 	eeASSERT( NULL != mSkin );
 }
 
-UISkinState::~UISkinState() {
-}
+UISkinState::~UISkinState() {}
 
-
-UISkin * UISkinState::getSkin() const {
+UISkin* UISkinState::getSkin() const {
 	return mSkin;
 }
 
@@ -26,8 +21,8 @@ bool UISkinState::stateExists( const Uint32& State ) const {
 	return mSkin->hasDrawableState( State );
 }
 
-void UISkinState::setStateColor(const Uint32 & state, const Color & color) {
-	mColors[ state ] = color;
+void UISkinState::setStateColor( const Uint32& state, const Color& color ) {
+	mColors[state] = color;
 
 	if ( mCurrentState == state )
 		mCurrentColor = color;
@@ -42,11 +37,12 @@ Color UISkinState::getStateColor( const Uint32& state ) const {
 	return mSkin->getColor();
 }
 
-bool UISkinState::hasStateColor(const Uint32 & state) const {
+bool UISkinState::hasStateColor( const Uint32& state ) const {
 	return mColors.find( state ) != mColors.end();
 }
 
-void UISkinState::draw( const Float& X, const Float& Y, const Float& Width, const Float& Height, const Uint32& Alpha ) {
+void UISkinState::draw( const Float& X, const Float& Y, const Float& Width, const Float& Height,
+						const Uint32& Alpha ) {
 	if ( NULL != mSkin ) {
 		Color color = mSkin->getColor();
 		mSkin->setState( mCurrentState );
@@ -62,10 +58,10 @@ void UISkinState::draw( const Float& X, const Float& Y, const Float& Width, cons
 
 void UISkinState::updateState() {
 	for ( int i = StateFlagCount - 1; i >= 0; i-- ) {
-		if ( ( mState & getStateFlag(i) ) == getStateFlag(i) ) {
-			if ( stateExists( getStateFlag(i) ) ) {
+		if ( ( mState & getStateFlag( i ) ) == getStateFlag( i ) ) {
+			if ( stateExists( getStateFlag( i ) ) ) {
 				mPreviousState = mCurrentState;
-				mCurrentState = getStateFlag(i);
+				mCurrentState = getStateFlag( i );
 				onStateChange();
 				return;
 			}
@@ -85,4 +81,4 @@ void UISkinState::onStateChange() {
 	mCurrentColor = getStateColor( mCurrentState );
 }
 
-}}
+}} // namespace EE::UI

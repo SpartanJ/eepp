@@ -6,10 +6,10 @@
 #if EE_PLATFORM == EE_PLATFORM_WIN
 
 #ifndef WIN32_LEAN_AND_MEAN
-	#define WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
 #endif
 #ifndef NOMINMAX
-	#define NOMINMAX
+#define NOMINMAX
 #endif
 #include <windows.h>
 
@@ -18,24 +18,25 @@
 namespace EE { namespace System { namespace Platform {
 
 class ClockImpl {
-	public:
-		ClockImpl();
+  public:
+	ClockImpl();
 
-		~ClockImpl();
+	~ClockImpl();
 
-		void restart();
+	void restart();
 
-		unsigned long getElapsedTime();
-	private:
-		unsigned long		mStartTick;
-		LONGLONG			mLastTime;
-		LARGE_INTEGER		mStartTime;
-		LARGE_INTEGER		mFrequency;
-		unsigned long		mTimerMask;
+	unsigned long getElapsedTime();
 
-		bool isPO2(Uint32 n);
-	};
-}}}
+  private:
+	unsigned long mStartTick;
+	LONGLONG mLastTime;
+	LARGE_INTEGER mStartTime;
+	LARGE_INTEGER mFrequency;
+	unsigned long mTimerMask;
+
+	bool isPO2( Uint32 n );
+};
+}}} // namespace EE::System::Platform
 
 #endif
 

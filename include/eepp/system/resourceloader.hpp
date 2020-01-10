@@ -7,74 +7,79 @@
 
 namespace EE { namespace System {
 
-#define THREADS_AUTO (eeINDEX_NOT_FOUND)
+#define THREADS_AUTO ( eeINDEX_NOT_FOUND )
 
-/** @brief A simple resource loader that can load a batch of resources synchronously or asynchronously */
+/** @brief A simple resource loader that can load a batch of resources synchronously or
+ * asynchronously */
 class EE_API ResourceLoader {
-	public:
-		typedef std::function<void( ResourceLoader * )> ResLoadCallback;
-		typedef std::function<void()> ObjectLoaderTask;
+  public:
+	typedef std::function<void( ResourceLoader* )> ResLoadCallback;
+	typedef std::function<void()> ObjectLoaderTask;
 
-		/** @param MaxThreads Set the maximun simultaneous threads to load resources, THREADS_AUTO will use the cpu number of cores. */
-		ResourceLoader( const Uint32& MaxThreads = THREADS_AUTO );
+	/** @param MaxThreads Set the maximun simultaneous threads to load resources, THREADS_AUTO will
+	 * use the cpu number of cores. */
+	ResourceLoader( const Uint32& MaxThreads = THREADS_AUTO );
 
-		virtual ~ResourceLoader();
+	virtual ~ResourceLoader();
 
-		/** @brief Adds a resource to load.
-		**	Must be called before the loading starts.
-		**	Once an object loader is added to the resource loader, the instance of that object will be managed and released by the loader.
-		**	@param objectLoaderTask The function callback of the load process
-		*/
-		void			add( const ObjectLoaderTask& objectLoaderTask );
+	/** @brief Adds a resource to load.
+	**	Must be called before the loading starts.
+	**	Once an object loader is added to the resource loader, the instance of that object will be
+	*managed and released by the loader. *	@param objectLoaderTask The function callback of the
+	*load process
+	*/
+	void add( const ObjectLoaderTask& objectLoaderTask );
 
-		/** @brief Starts loading the resources.
-		**	@param callback A callback that is called when the resources finished loading. */
-		void 			load( const ResLoadCallback& callback );
+	/** @brief Starts loading the resources.
+	**	@param callback A callback that is called when the resources finished loading. */
+	void load( const ResLoadCallback& callback );
 
-		/** @brief Starts loading the resources. */
-		void 			load();
+	/** @brief Starts loading the resources. */
+	void load();
 
-		/** @returns If the resources were loaded. */
-		virtual bool	isLoaded();
+	/** @returns If the resources were loaded. */
+	virtual bool isLoaded();
 
-		/** @returns If the resources are still loading. */
-		virtual bool	isLoading();
+	/** @returns If the resources are still loading. */
+	virtual bool isLoading();
 
-		/** @returns If the resource loader is asynchronous */
-		bool			isThreaded() const;
+	/** @returns If the resource loader is asynchronous */
+	bool isThreaded() const;
 
-		/** @brief Sets if the resource loader is asynchronous.
-		**	This must be called before the load starts. */
-		void			setThreaded( const bool& setThreaded );
+	/** @brief Sets if the resource loader is asynchronous.
+	**	This must be called before the load starts. */
+	void setThreaded( const bool& setThreaded );
 
-		/** @brief Clears the resources added to load that werent loaded, and delete the instances of the loaders. */
-		bool			clear();
+	/** @brief Clears the resources added to load that werent loaded, and delete the instances of
+	 * the loaders. */
+	bool clear();
 
-		/** @return The aproximate percent of progress ( between 0 and 100 ) */
-		Float			getProgress();
+	/** @return The aproximate percent of progress ( between 0 and 100 ) */
+	Float getProgress();
 
-		/** @returns The number of resources added to load. */
-		Uint32			getCount() const;
-	protected:
-		bool			mLoaded;
-		bool			mLoading;
-		bool			mThreaded;
-		Uint32			mThreads;
-		Uint32			mTotalLoaded;
-		Thread			mThread;
+	/** @returns The number of resources added to load. */
+	Uint32 getCount() const;
 
-		std::vector<ResLoadCallback>	mLoadCbs;
-		std::vector<ObjectLoaderTask>	mTasks;
+  protected:
+	bool mLoaded;
+	bool mLoading;
+	bool mThreaded;
+	Uint32 mThreads;
+	Uint32 mTotalLoaded;
+	Thread mThread;
 
-		void			setThreads();
+	std::vector<ResLoadCallback> mLoadCbs;
+	std::vector<ObjectLoaderTask> mTasks;
 
-		virtual void	setLoaded();
+	void setThreads();
 
-		void			taskRunner();
+	virtual void setLoaded();
 
-		void			serializedLoad();
+	void taskRunner();
+
+	void serializedLoad();
 };
 
-}}
+}} // namespace EE::System
 
 #endif

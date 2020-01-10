@@ -2,21 +2,17 @@
 
 namespace EE { namespace Graphics { namespace Private {
 
-SINGLETON_DECLARE_IMPLEMENTATION(VertexBufferManager)
+SINGLETON_DECLARE_IMPLEMENTATION( VertexBufferManager )
 
-VertexBufferManager::VertexBufferManager()
-{
-}
+VertexBufferManager::VertexBufferManager() {}
 
-VertexBufferManager::~VertexBufferManager()
-{
-}
+VertexBufferManager::~VertexBufferManager() {}
 
 void VertexBufferManager::reload() {
 	std::list<VertexBuffer*>::iterator it;
 
 	for ( it = mResources.begin(); it != mResources.end(); ++it )
-		(*it)->reload();
+		( *it )->reload();
 }
 
-}}}
+}}} // namespace EE::Graphics::Private

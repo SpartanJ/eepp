@@ -1,39 +1,31 @@
 #ifndef EE_UITUIITEMCONTAINER_HPP
 #define EE_UITUIITEMCONTAINER_HPP
 
-#include <eepp/ui/uinode.hpp>
 #include <eepp/scene/scenenode.hpp>
+#include <eepp/ui/uinode.hpp>
 
 namespace EE { namespace UI {
 
-template<class TContainer>
-class UIItemContainer : public UINode {
-	public:
-		UIItemContainer();
+template <class TContainer> class UIItemContainer : public UINode {
+  public:
+	UIItemContainer();
 
-		~UIItemContainer();
+	~UIItemContainer();
 
-		void update( const Time& time );
+	void update( const Time& time );
 
-		void drawChilds();
-	protected:
-		Node * overFind( const Vector2f& Point );
+	void drawChilds();
+
+  protected:
+	Node* overFind( const Vector2f& Point );
 };
 
-template<class TContainer>
-UIItemContainer<TContainer>::UIItemContainer() :
-	UINode()
-{
-}
+template <class TContainer> UIItemContainer<TContainer>::UIItemContainer() : UINode() {}
 
-template<class TContainer>
-UIItemContainer<TContainer>::~UIItemContainer()
-{
-}
+template <class TContainer> UIItemContainer<TContainer>::~UIItemContainer() {}
 
-template<class TContainer>
-void UIItemContainer<TContainer>::update( const Time& time ) {
-	TContainer * tParent = reinterpret_cast<TContainer*> ( getParent() );
+template <class TContainer> void UIItemContainer<TContainer>::update( const Time& time ) {
+	TContainer* tParent = reinterpret_cast<TContainer*>( getParent() );
 
 	if ( tParent->mItems.size() ) {
 		for ( Uint32 i = tParent->mVisibleFirst; i <= tParent->mVisibleLast; i++ ) {
@@ -43,9 +35,8 @@ void UIItemContainer<TContainer>::update( const Time& time ) {
 	}
 }
 
-template<class TContainer>
-void UIItemContainer<TContainer>::drawChilds() {
-	TContainer * tParent = reinterpret_cast<TContainer*> ( getParent() );
+template <class TContainer> void UIItemContainer<TContainer>::drawChilds() {
+	TContainer* tParent = reinterpret_cast<TContainer*>( getParent() );
 
 	if ( tParent->mItems.size() ) {
 		for ( Uint32 i = tParent->mVisibleFirst; i <= tParent->mVisibleLast; i++ )
@@ -54,11 +45,10 @@ void UIItemContainer<TContainer>::drawChilds() {
 	}
 }
 
-template<class TContainer>
-Node * UIItemContainer<TContainer>::overFind( const Vector2f& Point ) {
-	TContainer * tParent = reinterpret_cast<TContainer*> ( getParent() );
+template <class TContainer> Node* UIItemContainer<TContainer>::overFind( const Vector2f& Point ) {
+	TContainer* tParent = reinterpret_cast<TContainer*>( getParent() );
 
-	Node * pOver = NULL;
+	Node* pOver = NULL;
 
 	if ( mEnabled && mVisible && tParent->mItems.size() ) {
 		updateWorldPolygon();
@@ -69,7 +59,7 @@ Node * UIItemContainer<TContainer>::overFind( const Vector2f& Point ) {
 
 			for ( Uint32 i = tParent->mVisibleFirst; i <= tParent->mVisibleLast; i++ ) {
 				if ( NULL != tParent->mItems[i] ) {
-					Node * ChildOver = tParent->mItems[i]->overFind( Point );
+					Node* ChildOver = tParent->mItems[i]->overFind( Point );
 
 					if ( NULL != ChildOver ) {
 						pOver = ChildOver;
@@ -80,13 +70,13 @@ Node * UIItemContainer<TContainer>::overFind( const Vector2f& Point ) {
 			}
 
 			if ( NULL == pOver )
-				pOver = const_cast<Node *>( reinterpret_cast<const Node *>( this ) );
+				pOver = const_cast<Node*>( reinterpret_cast<const Node*>( this ) );
 		}
 	}
 
 	return pOver;
 }
 
-}}
+}} // namespace EE::UI
 
 #endif

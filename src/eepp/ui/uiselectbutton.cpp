@@ -1,27 +1,22 @@
 #include <eepp/ui/uiselectbutton.hpp>
-#include <eepp/ui/uiwinmenu.hpp>
 #include <eepp/ui/uistyle.hpp>
+#include <eepp/ui/uiwinmenu.hpp>
 
 namespace EE { namespace UI {
 
-UISelectButton * UISelectButton::New() {
+UISelectButton* UISelectButton::New() {
 	return eeNew( UISelectButton, () );
 }
 
-UISelectButton * UISelectButton::NewWithTag( const std::string& tag ) {
+UISelectButton* UISelectButton::NewWithTag( const std::string& tag ) {
 	return eeNew( UISelectButton, ( tag ) );
 }
 
-UISelectButton::UISelectButton( const std::string& tag ) :
-	UIPushButton( tag )
-{}
+UISelectButton::UISelectButton( const std::string& tag ) : UIPushButton( tag ) {}
 
-UISelectButton::UISelectButton() :
-	UISelectButton( "selectbutton" )
-{}
+UISelectButton::UISelectButton() : UISelectButton( "selectbutton" ) {}
 
-UISelectButton::~UISelectButton() {
-}
+UISelectButton::~UISelectButton() {}
 
 Uint32 UISelectButton::getType() const {
 	return UI_TYPE_SELECTBUTTON;
@@ -68,4 +63,4 @@ void UISelectButton::onStateChange() {
 	mTextBox->setAlpha( mAlpha );
 }
 
-}}
+}} // namespace EE::UI

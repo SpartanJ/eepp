@@ -1,20 +1,18 @@
 #include <eepp/graphics/drawablegroup.hpp>
-#include <eepp/math/rect.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
+#include <eepp/math/rect.hpp>
 
 namespace EE { namespace Graphics {
 
-DrawableGroup * DrawableGroup::New() {
+DrawableGroup* DrawableGroup::New() {
 	return eeNew( DrawableGroup, () );
 }
 
 DrawableGroup::DrawableGroup() :
 	Drawable( Drawable::GROUP ),
-	mNeedsUpdate(true),
-	mClipEnabled(false),
-	mDrawableOwner(true)
-{
-}
+	mNeedsUpdate( true ),
+	mClipEnabled( false ),
+	mDrawableOwner( true ) {}
 
 DrawableGroup::~DrawableGroup() {
 	clearDrawables();
@@ -23,7 +21,7 @@ DrawableGroup::~DrawableGroup() {
 void DrawableGroup::clearDrawables() {
 	if ( mDrawableOwner ) {
 		for ( std::size_t i = 0; i < mGroup.size(); i++ ) {
-			Drawable * drawable = mGroup[i];
+			Drawable* drawable = mGroup[i];
 			eeSAFE_DELETE( drawable );
 		}
 	}
@@ -32,7 +30,7 @@ void DrawableGroup::clearDrawables() {
 	mPos.clear();
 }
 
-Drawable * DrawableGroup::addDrawable( Drawable * drawable ) {
+Drawable* DrawableGroup::addDrawable( Drawable* drawable ) {
 	mGroup.push_back( drawable );
 	mPos.push_back( drawable->getPosition() );
 	return drawable;
@@ -46,7 +44,7 @@ bool DrawableGroup::isClipEnabled() const {
 	return mClipEnabled;
 }
 
-void DrawableGroup::setClipEnabled(bool clipEnabled) {
+void DrawableGroup::setClipEnabled( bool clipEnabled ) {
 	mClipEnabled = clipEnabled;
 }
 
@@ -54,7 +52,7 @@ bool DrawableGroup::isDrawableOwner() const {
 	return mDrawableOwner;
 }
 
-void DrawableGroup::setDrawableOwner(bool drawableOwner) {
+void DrawableGroup::setDrawableOwner( bool drawableOwner ) {
 	mDrawableOwner = drawableOwner;
 }
 
@@ -66,7 +64,7 @@ Sizef DrawableGroup::getSize() {
 	return mSize;
 }
 
-void DrawableGroup::draw(const Vector2f & position, const Sizef & size) {
+void DrawableGroup::draw( const Vector2f& position, const Sizef& size ) {
 	if ( position != mPosition ) {
 		mPosition = position;
 		mNeedsUpdate = true;
@@ -87,7 +85,7 @@ void DrawableGroup::draw(const Vector2f & position, const Sizef & size) {
 		GLi->getClippingMask()->clipPlaneEnable( mPosition.x, mPosition.y, mSize.x, mSize.y );
 
 	for ( std::size_t i = 0; i < mGroup.size(); i++ ) {
-		Drawable * drawable = mGroup[i];
+		Drawable* drawable = mGroup[i];
 		drawable->draw();
 	}
 
@@ -95,7 +93,7 @@ void DrawableGroup::draw(const Vector2f & position, const Sizef & size) {
 		GLi->getClippingMask()->clipPlaneDisable();
 }
 
-void DrawableGroup::draw(const Vector2f & position) {
+void DrawableGroup::draw( const Vector2f& position ) {
 	draw( position, mSize );
 }
 
@@ -111,7 +109,7 @@ void DrawableGroup::update() {
 	Sizef nSize( mSize );
 
 	for ( std::size_t i = 0; i < mGroup.size(); i++ ) {
-		Drawable * drawable = mGroup[i];
+		Drawable* drawable = mGroup[i];
 		Vector2f pos( mPosition + mPos[i] );
 		Sizef s( mPos[i] + drawable->getSize() );
 
@@ -128,4 +126,4 @@ void DrawableGroup::update() {
 	mNeedsUpdate = false;
 }
 
-}}
+}} // namespace EE::Graphics
