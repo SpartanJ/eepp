@@ -1,6 +1,6 @@
 #include <eepp/physics/shapecircle.hpp>
 #include <eepp/physics/space.hpp>
-#include <chipmunk/chipmunk_unsafe.h>
+#include <eepp/thirdparty/chipmunk/chipmunk_unsafe.h>
 
 #ifdef PHYSICS_RENDERER_ENABLED
 #include <eepp/graphics/renderer/renderer.hpp>
