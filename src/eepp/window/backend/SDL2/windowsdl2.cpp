@@ -8,6 +8,7 @@
 #include <eepp/graphics/shaderprogrammanager.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/graphics/vertexbuffermanager.hpp>
+#include <eepp/system/filesystem.hpp>
 #include <eepp/window/backend/SDL2/clipboardsdl2.hpp>
 #include <eepp/window/backend/SDL2/cursormanagersdl2.hpp>
 #include <eepp/window/backend/SDL2/inputsdl2.hpp>
@@ -122,6 +123,34 @@ int hideOSK() {
 	WIN_OSK_VISIBLE = false;
 	return PostMessage( GetDesktopWindow(), WM_SYSCOMMAND, (int)SC_CLOSE, 0 );
 }
+#elif defined( EE_X11_PLATFORM )
+#include <signal.h>
+#include <unistd.h>
+
+static pid_t ONBOARD_PID = 0;
+
+void showOSK() {
+	if ( ONBOARD_PID == 0 ) {
+		if ( FileSystem::fileExists( "/usr/bin/onboard" ) ) {
+			pid_t pid = fork();
+
+			if ( pid == 0 ) {
+				execl( "/usr/bin/onboard", "onboard", NULL );
+			} else if ( pid != -1 ) {
+				ONBOARD_PID = pid;
+			}
+		} else {
+			EE::eePRINTL( "onboard must be installed to be able to use the On Screen Keyboard" );
+		}
+	}
+}
+
+void hideOSK() {
+	if ( ONBOARD_PID != 0 ) {
+		kill( ONBOARD_PID, SIGTERM );
+		ONBOARD_PID = 0;
+	}
+}
 #endif
 
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
@@ -156,6 +185,10 @@ WindowSDL::~WindowSDL() {
 	if ( NULL != mSDLWindow ) {
 		SDL_DestroyWindow( mSDLWindow );
 	}
+
+#if defined( EE_X11_PLATFORM )
+	hideOSK();
+#endif
 }
 
 bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
@@ -731,6 +764,8 @@ void WindowSDL::startTextInput() {
 	if ( mWindow.WindowConfig.UseScreenKeyboard ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 		showOSK( getWindowHandler() );
+#elif defined( EE_X11_PLATFORM )
+		showOSK();
 #else
 		SDL_StartTextInput();
 #endif
@@ -740,6 +775,8 @@ void WindowSDL::startTextInput() {
 bool WindowSDL::isTextInputActive() {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	return WIN_OSK_VISIBLE;
+#elif defined( EE_X11_PLATFORM )
+	return ONBOARD_PID != 0;
 #else
 	return SDL_TRUE == SDL_IsTextInputActive();
 #endif
@@ -748,6 +785,8 @@ bool WindowSDL::isTextInputActive() {
 void WindowSDL::stopTextInput() {
 	if ( mWindow.WindowConfig.UseScreenKeyboard ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
+		hideOSK();
+#elif defined( EE_X11_PLATFORM )
 		hideOSK();
 #else
 		SDL_StopTextInput();
