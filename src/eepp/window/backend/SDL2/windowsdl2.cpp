@@ -21,6 +21,109 @@
 #define SDL2_THREADED_GLCONTEXT
 #endif
 
+#if EE_PLATFORM == EE_PLATFORM_WIN
+#include <Objbase.h>
+#include <initguid.h>
+#include <shellapi.h>
+#include <tlhelp32.H>
+
+bool WindowsIsProcessRunning( const char* processName, bool killProcess = false ) {
+	bool exists = false;
+	PROCESSENTRY32 entry = {};
+	entry.dwSize = sizeof( PROCESSENTRY32 );
+	HANDLE snapshot = CreateToolhelp32Snapshot( TH32CS_SNAPPROCESS, 0 );
+	if ( Process32First( snapshot, &entry ) ) {
+		while ( Process32Next( snapshot, &entry ) ) {
+			if ( !stricmp( entry.szExeFile, processName ) ) {
+				exists = true;
+				if ( killProcess ) {
+					HANDLE aProc = OpenProcess( PROCESS_TERMINATE, 0, entry.th32ProcessID );
+					if ( aProc ) {
+						TerminateProcess( aProc, 9 );
+						CloseHandle( aProc );
+					}
+				}
+				break;
+			}
+		}
+	}
+	CloseHandle( snapshot );
+	return exists;
+}
+
+#ifndef ERROR_ELEVATION_REQUIRED
+#define ERROR_ELEVATION_REQUIRED ( 740 )
+#endif // ERROR_ELEVATION_REQUIRED
+
+bool WindowsProcessLaunch( std::string command, HWND windowHwnd ) {
+	char expandedCmd[1024] = {};
+	static PROCESS_INFORMATION pi = {};
+	static STARTUPINFO si = {};
+	si.cb = sizeof( si );
+	ExpandEnvironmentStrings( command.c_str(), expandedCmd, 1024 );
+	if ( CreateProcess( NULL, expandedCmd, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi ) ) {
+		// Wait until child process exits.
+		WaitForSingleObject( pi.hProcess, 10000 );
+		CloseHandle( pi.hProcess );
+		CloseHandle( pi.hThread );
+		return true;
+	} else {
+		DWORD error = GetLastError();
+		if ( error == ERROR_ELEVATION_REQUIRED && 0 != windowHwnd ) {
+			if ( reinterpret_cast<std::intptr_t>( ShellExecute( windowHwnd, "open", expandedCmd, "",
+																NULL, SW_SHOWDEFAULT ) ) <= 32 ) {
+				return false;
+			}
+		}
+	}
+	return false;
+}
+
+// 4ce576fa-83dc-4F88-951c-9d0782b4e376
+DEFINE_GUID( CLSID_UIHostNoLaunch, 0x4CE576FA, 0x83DC, 0x4f88, 0x95, 0x1C, 0x9D, 0x07, 0x82, 0xB4,
+			 0xE3, 0x76 );
+
+// 37c994e7_432b_4834_a2f7_dce1f13b834b
+DEFINE_GUID( IID_ITipInvocation, 0x37c994e7, 0x432b, 0x4834, 0xa2, 0xf7, 0xdc, 0xe1, 0xf1, 0x3b,
+			 0x83, 0x4b );
+
+struct ITipInvocation : IUnknown {
+	virtual HRESULT STDMETHODCALLTYPE Toggle( HWND wnd ) = 0;
+};
+
+static bool WIN_OSK_VISIBLE = false;
+
+int showOSK( HWND windowHwnd ) {
+	if ( !WindowsIsProcessRunning( "TabTip.exe" ) ) {
+		WindowsIsProcessRunning(
+			"WindowsInternal.ComposableShell.Experiences.TextInput.InputApp.EXE", true );
+
+		std::string programFiles( Sys::getOSArchitecture() == "x64" ? "%ProgramW6432%"
+																	: "%ProgramFiles(x86)%" );
+		WindowsProcessLaunch( programFiles + "\\Common Files\\microsoft shared\\ink\\TabTip.exe",
+							  windowHwnd );
+	}
+
+	CoInitialize( 0 );
+
+	ITipInvocation* tip;
+	CoCreateInstance( CLSID_UIHostNoLaunch, 0, CLSCTX_INPROC_HANDLER | CLSCTX_LOCAL_SERVER,
+					  IID_ITipInvocation, (void**)&tip );
+	if ( tip != NULL ) {
+		tip->Toggle( GetDesktopWindow() );
+		tip->Release();
+		WIN_OSK_VISIBLE = true;
+	}
+
+	return 0;
+}
+
+int hideOSK() {
+	WIN_OSK_VISIBLE = false;
+	return PostMessage( GetDesktopWindow(), WM_SYSCOMMAND, (int)SC_CLOSE, 0 );
+}
+#endif
+
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
 WindowSDL::WindowSDL( WindowSettings Settings, ContextSettings Context ) :
@@ -46,13 +149,13 @@ WindowSDL::~WindowSDL() {
 		SDL_GL_DeleteContext( mGLContextThread );
 	}
 
-	if ( NULL != mSDLWindow ) {
-		SDL_DestroyWindow( mSDLWindow );
-	}
-
 #ifdef EE_USE_WMINFO
 	eeSAFE_DELETE( mWMinfo );
 #endif
+
+	if ( NULL != mSDLWindow ) {
+		SDL_DestroyWindow( mSDLWindow );
+	}
 }
 
 bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
@@ -207,6 +310,10 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 	SDL_GL_SetSwapInterval( ( mWindow.ContextConfig.VSync ? 1 : 0 ) ); // VSync
 
 	SDL_GL_MakeCurrent( mSDLWindow, mGLContext );
+
+#ifdef EE_USE_WMINFO
+	mWMinfo = eeNew( WMInfo, ( mSDLWindow ) );
+#endif
 
 	if ( NULL == Renderer::existsSingleton() ) {
 		Renderer::createSingleton( mWindow.ContextConfig.Version );
@@ -621,15 +728,31 @@ SDL_Window* WindowSDL::GetSDLWindow() const {
 }
 
 void WindowSDL::startTextInput() {
-	SDL_StartTextInput();
+	if ( mWindow.WindowConfig.UseScreenKeyboard ) {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+		showOSK( getWindowHandler() );
+#else
+		SDL_StartTextInput();
+#endif
+	}
 }
 
 bool WindowSDL::isTextInputActive() {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	return WIN_OSK_VISIBLE;
+#else
 	return SDL_TRUE == SDL_IsTextInputActive();
+#endif
 }
 
 void WindowSDL::stopTextInput() {
-	SDL_StopTextInput();
+	if ( mWindow.WindowConfig.UseScreenKeyboard ) {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+		hideOSK();
+#else
+		SDL_StopTextInput();
+#endif
+	}
 }
 
 void WindowSDL::setTextInputRect( Rect& rect ) {

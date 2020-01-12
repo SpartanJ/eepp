@@ -37,14 +37,22 @@ namespace WindowBackend {
 enum { SDL2, Default };
 }
 
+#ifndef EE_SCREEN_KEYBOARD_ENABLED
+#if EE_PLATFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_IOS
+#define EE_SCREEN_KEYBOARD_ENABLED true
+#else
+#define EE_SCREEN_KEYBOARD_ENABLED false
+#endif
+#endif
+
 /** @brief WindowSettings A small class that contains the window settings */
 class WindowSettings {
   public:
 	inline WindowSettings( Uint32 width, Uint32 height, const std::string& caption = std::string(),
 						   Uint32 style = WindowStyle::Default,
 						   Uint32 backend = WindowBackend::Default, Uint32 bpp = 32,
-						   const std::string& icon = std::string(),
-						   const Float& pixelDensity = 1 ) :
+						   const std::string& icon = std::string(), const Float& pixelDensity = 1,
+						   const bool& useScreenKeyboard = EE_SCREEN_KEYBOARD_ENABLED ) :
 		Style( style ),
 		Width( width ),
 		Height( height ),
@@ -52,7 +60,8 @@ class WindowSettings {
 		Icon( icon ),
 		Caption( caption ),
 		Backend( backend ),
-		PixelDensity( pixelDensity ) {}
+		PixelDensity( pixelDensity ),
+		UseScreenKeyboard( useScreenKeyboard ) {}
 
 	inline WindowSettings() :
 		Style( WindowStyle::Default ),
@@ -60,7 +69,8 @@ class WindowSettings {
 		Height( 600 ),
 		BitsPerPixel( 32 ),
 		Backend( WindowBackend::Default ),
-		PixelDensity( 1 ) {}
+		PixelDensity( 1 ),
+		UseScreenKeyboard( EE_SCREEN_KEYBOARD_ENABLED ) {}
 
 	Uint32 Style;
 	Uint32 Width;
@@ -70,6 +80,7 @@ class WindowSettings {
 	std::string Caption;
 	Uint32 Backend;
 	Float PixelDensity;
+	bool UseScreenKeyboard;
 };
 
 /** @brief ContextSettings Small class that contains the renderer context information */
@@ -405,8 +416,8 @@ class EE_API Window {
 	virtual bool isScreenKeyboardShown();
 
 	/** @return True if the current window support a threaded GL Context. This means that supports
-	*OpenGL Shared Contexts ( multithreaded opengl contexts ). *	Only supported with SDL2
-	*backend.*/
+	 *OpenGL Shared Contexts ( multithreaded opengl contexts ). *	Only supported with SDL2
+	 *backend.*/
 	virtual bool isThreadedGLContext();
 
 	/** Activates the shared GL context in the current thread. */

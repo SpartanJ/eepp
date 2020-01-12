@@ -465,9 +465,9 @@ function generate_os_links()
 			table.insert( os_links, "dl" )
 		end
 	elseif os.is_real("windows") then
-		multiple_insert( os_links, { "OpenAL32", "opengl32", "glu32", "gdi32", "ws2_32", "winmm" } )
+		multiple_insert( os_links, { "OpenAL32", "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32" } )
 	elseif os.is_real("mingw32") then
-		multiple_insert( os_links, { "OpenAL32", "opengl32", "glu32", "gdi32", "ws2_32", "winmm" } )
+		multiple_insert( os_links, { "OpenAL32", "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32" } )
 	elseif os.is_real("macosx") then
 		multiple_insert( os_links, { "OpenGL.framework", "OpenAL.framework", "CoreFoundation.framework" } )
 	elseif os.is_real("freebsd") then
@@ -916,6 +916,7 @@ solution "eepp"
 	project "eepp-ew"
 		set_kind()
 		language "C++"
+		links { "ole32" }
 		files { "src/examples/empty_window/*.cpp" }
 		build_link_configuration( "eeew", true )
 

@@ -18,7 +18,7 @@
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
 #ifdef EE_WMINFO
-WMInfo::WMInfo( SDL_Window* win ) : mWMInfo( eeNew( SDL_SysWMinfo, () ) ) {
+WMInfo::WMInfo( SDL_Window* win ) : mWMInfo( eeMalloc( sizeof(SDL_SysWMinfo) ) ) {
 	SDL_SysWMinfo* info = static_cast<SDL_SysWMinfo*>( mWMInfo );
 	SDL_VERSION( &info->version );
 	SDL_GetWindowWMInfo( win, info );
@@ -29,8 +29,7 @@ WMInfo::WMInfo( SDL_Window* win ) : mWMInfo( NULL ) {}
 
 WMInfo::~WMInfo() {
 #ifdef EE_WMINFO
-	SDL_SysWMinfo* info = static_cast<SDL_SysWMinfo*>( mWMInfo );
-	eeSAFE_DELETE( info );
+	eeSAFE_FREE( mWMInfo );
 #endif
 }
 

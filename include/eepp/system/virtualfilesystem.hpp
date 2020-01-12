@@ -1,6 +1,7 @@
 #ifndef EE_VIRTUALFILESYSTEM_HPP
 #define EE_VIRTUALFILESYSTEM_HPP
 
+#include <cstddef>
 #include <eepp/system/container.hpp>
 #include <eepp/system/iostream.hpp>
 #include <eepp/system/pack.hpp>

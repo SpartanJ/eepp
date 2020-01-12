@@ -6,7 +6,7 @@
 
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
-class WMInfo {
+class EE_API WMInfo {
   public:
 	WMInfo( SDL_Window* win );
 

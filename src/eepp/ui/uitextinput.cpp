@@ -161,6 +161,8 @@ Uint32 UITextInput::onFocus() {
 		mTextBuffer.setActive( true );
 
 		resetWaitCursor();
+
+		getSceneNode()->getWindow()->startTextInput();
 	}
 
 	return 1;
@@ -168,6 +170,7 @@ Uint32 UITextInput::onFocus() {
 
 Uint32 UITextInput::onFocusLoss() {
 	mTextBuffer.setActive( false );
+	getSceneNode()->getWindow()->stopTextInput();
 	return UITextView::onFocusLoss();
 }
 

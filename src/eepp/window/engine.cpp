@@ -243,6 +243,7 @@ WindowSettings Engine::createWindowSettings( IniFile* ini, std::string iniKeyNam
 	bool UseDesktopResolution = ini->getValueB( iniKeyName, "UseDesktopResolution", false );
 	std::string pixelDensityStr = ini->getValue( iniKeyName, "PixelDensity" );
 	float pixelDensity = PixelDensity::getPixelDensity();
+	bool useScreenKeyboard = ini->getValueB( iniKeyName, "UseScreenKeyboard" );
 
 	if ( !pixelDensityStr.empty() ) {
 		if ( String::toLower( pixelDensityStr ) == "auto" ) {
@@ -283,7 +284,7 @@ WindowSettings Engine::createWindowSettings( IniFile* ini, std::string iniKeyNam
 	std::string Caption = ini->getValue( iniKeyName, "WinCaption", "" );
 
 	WindowSettings WinSettings( Width, Height, Caption, Style, WinBackend, BitColor, Icon,
-								pixelDensity );
+								pixelDensity, useScreenKeyboard );
 
 	return WinSettings;
 }
@@ -339,7 +340,7 @@ ContextSettings Engine::createContextSettings( IniFile* ini, std::string iniKeyN
 ContextSettings Engine::createContextSettings( std::string iniPath, std::string iniKeyName ) {
 	IniFile Ini( iniPath );
 
-	return createContextSettings( &Ini );
+	return createContextSettings( &Ini, iniKeyName );
 }
 
 void Engine::enableSharedGLContext() {
