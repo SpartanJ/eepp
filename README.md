@@ -201,7 +201,8 @@ UI Screenshots
 
 UI Layout XML example
 ---------------------
-It should look really familiar to any Android developer. This is a window with the most basic controls in a vertical linear layout display.
+It should look really familiar to any Android developer. This is a window with
+the most basic controls in a vertical linear layout display.
 
 ```xml
 <window layout_width="300dp" layout_height="300dp" winflags="default|maximize">
@@ -237,8 +238,9 @@ UITextView::New()->setText( "Text  on  test  1" )
 
 UI Styling
 ----------
-Element styling can be done with a custom implementation of Cascading Style Sheets, most common CSS2 rules are available,
-plus several CSS3 rules (some examples: [transitions](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Transitions),
+Element styling can be done with a custom implementation of Cascading Style
+Sheets, most common CSS2 rules are available, plus several CSS3 rules (some
+examples: [transitions](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Transitions),
 [custom properties](https://developer.mozilla.org/en-US/docs/Web/CSS/Using_CSS_custom_properties),
 [media queries](https://developer.mozilla.org/en-US/docs/Web/CSS/Media_Queries/Using_media_queries),
 [@font-face at rule](https://developer.mozilla.org/en-US/docs/Web/CSS/@font-face),
@@ -318,18 +320,34 @@ Here is a small example on how the CSS looks like:
 ```
 
 
-How can I learn to use the library?
------------------------------------
-This is the current big issue with the library. Since I'm solo working, it's really difficult keep up the documentation updated. But I'll work to improve that in the near future. For the moment you have two options: build the documentation and read code examples. The documentation is not complete but most modules are documented. Sadly not the UI module ( the biggest one ), but it's easy to get along with the examples. The library is supper easy to use, but is kind of big, so, knowing about everything I'll take time. I you're interested you can contact me anytime.
+Documentation
+-------------
+Documentation is located [here](https://eepp.ensoft.dev). I'm currently working
+on improving it. About 50% of the project is currently documented so still needs
+a lot of work. Please check the code examples located in `src/examples` and you
+can also check out the test ( `src/test` ) and tools ( `src/tools` ).
+I'm putting my efforts on improving the documentation on the UI module since
+currently is the most important and complex module but lacks of proper
+documentation. If you have any question you can contact me anytime.
+
+Getting the code
+----------------
+The repository uses git submodules so you'll need to clone the repository and
+its submodules, in order to achieve this easily you can simply clone with:
+`git clone --recurse-submodules https://github.com/SpartanJ/eepp.git`
 
 How to build it?
 ----------------
 
-The library has very few external dependencies. Most of the time you will only need SDL2 and OpenAL libraries with the headers installed. Also **premake4** or **premake5** is needed to generate the Makefiles or project files to build the library. I will assume that you know what you are doing and skip the basics.
+The library has very few external dependencies. Most of the time you will only
+need SDL2 and OpenAL libraries with the headers installed. Also **premake4** or
+**premake5** is needed to generate the Makefiles or project files to build the
+library. I will assume that you know what you are doing and skip the basics.
 
 _**GNU/Linux**_
 
-In a Ubuntu system it would be something like ( also you will need gcc and freetype, but it will be installed anyways ):
+In a Ubuntu system it would be something like ( also you will need gcc and freetype,
+but it will be installed anyways ):
 
 `sudo apt-get install premake4 libsdl2-2.0-0 libsdl2-dev libopenal1 libopenal-dev`
 
@@ -346,7 +364,9 @@ That's it. That will build the whole project.
 _**Windows**_
 
 You have two options: build with *Visual Studio* or with *mingw*.
-To build with any of both options first you will need to build the project files with [premake4](https://premake.github.io/download.html). Then add the premake4.exe file to any of the executable paths defined in `PATH` ( or add one ).
+To build with any of both options first you will need to build the project files
+with [premake4](https://premake.github.io/download.html). Then add the
+premake4.exe file to any of the executable paths defined in `PATH` ( or add one ).
 
 For *Visual Studio*:
 `premake5.exe vs2019`
@@ -356,20 +376,29 @@ or
 For *mingw*:
 `premake4.exe gmake`
 
-Then you will need the prebuild binaries and development libraries of [SDL2](http://libsdl.org/download-2.0.php) and [openal-soft](http://kcat.strangesoft.net/openal.html#download). Download the ones needed ( *VS* or *mingw* ).
+Then you will need the prebuild binaries and development libraries of
+[SDL2](http://libsdl.org/download-2.0.php) and
+[openal-soft](http://kcat.strangesoft.net/openal.html#download).
+Download the ones needed ( *VS* or *mingw* ).
 
-Then the project files should be found in `make/windows/`. A solution (sln) for *Visual Studio* or the corresponding `Makefiles` for *mingw*.
+Then the project files should be found in `make/windows/`. A solution (sln) for
+*Visual Studio* or the corresponding `Makefiles` for *mingw*.
 
-Having installed everything, you'll be able to build for *Visual Studio* as any other project.
+Having installed everything, you'll be able to build for *Visual Studio* as any
+other project.
 And for *mingw* just make the project with: `mingw32-make` or any equivalent.
 
 _**macOS**_
 
 You have two options to build the project: with XCode or with gcc/clang manually.
-To build with any of both options first you will also need to build the project files with [premake4](https://premake.github.io/download.html).
-Then you will need the prebuild binaries and development libraries of [SDL2](http://libsdl.org/download-2.0.php), OpenAL is included with the OS. Install the *SDL2* framework and you should be able to build the project.
+To build with any of both options first you will also need to build the project
+files with [premake4](https://premake.github.io/download.html).
+Then you will need the prebuild binaries and development libraries of
+[SDL2](http://libsdl.org/download-2.0.php), OpenAL is included with the OS.
+Install the *SDL2* framework and you should be able to build the project.
 
-For a CLI build you can use the `projects/osx/make.sh` script, that generates the *Makefiles* and builds the project, also fix the dylibs generated.
+For a CLI build you can use the `projects/osx/make.sh` script, that generates
+the *Makefiles* and builds the project, also fix the dylibs generated.
 
 For *XCode* :
 `premake4 xcode4`
@@ -379,40 +408,73 @@ And open the XCode project generated in `make/osx/`
 
 _**Android**_
 
-There's a gradle project in `projects/android-project/`. It will build the library with all the dependencies included. Use the example project as a base for your project. Notice that there's a `eepp.mk` project file that builds the library. That can be used in you projects.
+There's a gradle project in `projects/android-project/`. It will build the
+library with all the dependencies included. Use the example project as a base
+for your project. Notice that there's a `eepp.mk` project file that builds the
+library. That can be used in you projects.
 
 _**iOS**_
 
-I've compiled the project for *iOS* many times in the past but there's not a recent build of it, so it might fail. But you can get the scripts to build it in `projects/ios/`. You'll need some inspiration to make this work, but i promise that i'll work on make this easier in the near future.
+I've compiled the project for *iOS* many times in the past but there's not a
+recent build of it, so it might fail. But you can get the scripts to build it in
+`projects/ios/`. You'll need some inspiration to make this work, but i promise
+that i'll work on make this easier in the near future.
 
 _**emscripten**_
 
-There's a script for building the *emscripten* project in `projects/emscripten/make.sh`. That should be enough in *GNU/Linux* or *macOS* ( only tested this on *Linux* ).
+There's a script for building the *emscripten* project in
+`projects/emscripten/make.sh`. That should be enough in *GNU/Linux* or *macOS*
+( only tested this on *Linux* ).
 
 Author comment
 --------------
-The library has been being developed for several years, it suffered many changes since its beginnings,
-I'm making any changes that I find necessary to improve it, so the API still not totally stable (but close to be).
-It's being used in several applications oriented to publicity campaigns mostly developed for Android devices and Windows PCs.
-I personally never had the time to use it to develop a real game with the library ( several frustrated projects ).
-The current project focus is on the UI module. And I'll continue working putting my focus on this.
-The plan is to provide an alternative UI toolkit fully hardware accelerated similar to the Android toolkit but simpler ( as in easy to use ) and also oriented to desktop apps.
+The library has been being developed for several years, it suffered many changes
+since its beginnings, I'm making any changes that I find necessary to improve
+it, so the API is still not totally stable (but close to be).
+It's being used in several applications oriented to publicity campaigns mostly
+developed for Android devices and Windows PCs.
+I personally never had the time to use it to develop a complex game with the
+library ( several frustrated projects ), but I made several UI oriented games
+for clients.
+The current project focus is on the UI module. And I'll continue working
+putting my focus on this.
+The plan is to provide an alternative UI toolkit fully hardware accelerated
+similar to the Android toolkit but simpler ( as in easy to use ) and also
+oriented to desktop apps.
 
-Audio and Network modules were based the modules in SFML with several important differences mentioned above.
-I like to use what's well done and fit my needs, but since I have my personal views on how to implement some things I prefer to take the code, to have full control over it.
-Also many ideas were/are taken from other projects. Some I can think about: *cocos2d-x*, *raylib*, *Android SDK*, *libgdx*, *Godot*, *XNA*, *LÖVE*, and many other projects.
+Audio and Network modules were based the modules in SFML with several important
+differences mentioned above.
+I like to use what's well done and fit my needs, but since I have my personal
+views on how to implement some things I prefer to take the code, to have full
+control over it.
+Also many ideas were/are taken from other projects. Some I can think about:
+*cocos2d-x*, *raylib*, *Android SDK*, *libgdx*, *Godot*, *XNA*, *LÖVE*, and many
+other projects.
 
-If all this sounds interesting to you for some crazy reason, contact me and let me know if I can help you to get into the library, and may be, contribute to it in the future.
+If all this sounds interesting to you for some crazy reason, contact me and let
+me know if I can help you to get into the library, and may be if you want, you
+can contribute to it in the future.
 This project needs *contributors* more than anything else.
 
-The current state of the library is decent. In terms of features should be in a similar position than the most used 2D game engines out there.
-But lacks of course of the support+community that you can get from *Godot* or *cocos2d-x* to mention a couple.
-The main idea of this library is to focus on a better general approach to develop heavily UI based apps/games than the other options, with cleaner code and implementation.
+The current state of the library is decent. In terms of features should be in a
+similar position than the most used 2D game engines out there.
+But lacks of course of the support+community that you can get from *Godot* or
+*cocos2d-x* to mention a couple.
+The main idea of this library is to focus on a better general approach to
+develop heavily UI based apps/games than the other options, with cleaner code
+and implementation.
+
+The main reason I developed the library is for _fun_ and to _learn_ new
+technologies. I love spending time working on the library, but I know there's
+probably no real reason to develop something like this with the immense number
+of similar alternatives.
 
 
 _**Plans/ideas for the future:**_
 
-Keep improving the UI system, adding new widgets and improving the CSS support, also simplify and improve the widgets skinning/theming.
+Keep improving the UI system, adding new widgets and improving the CSS support.
+Simplify and improve the UI widgets skinning/theming support.
+Add [CSS animations](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Animations/Using_CSS_animations) support.
 Improve/create documentation for the UI module.
 Add more examples and also some tools.
 Add Scripting support ( first i would like to stabilize the library, but i'm getting there ).

@@ -27,7 +27,7 @@ static drflac_bool32 drflac_func_seek( void* data, int offset, drflac_seek_origi
 namespace EE { namespace Audio { namespace Private {
 
 bool SoundFileReaderFlac::check( IOStream& stream ) {
-	drflac* flac = drflac_open( drflac_func_read, drflac_func_seek, &stream );
+	drflac* flac = drflac_open( drflac_func_read, drflac_func_seek, &stream, NULL );
 
 	if ( flac ) {
 		drflac_close( flac );
@@ -47,10 +47,10 @@ SoundFileReaderFlac::~SoundFileReaderFlac() {
 bool SoundFileReaderFlac::open( IOStream& stream, Info& info ) {
 	stream.seek( 0 );
 
-	if ( ( mFlac = drflac_open( drflac_func_read, drflac_func_seek, &stream ) ) ) {
+	if ( ( mFlac = drflac_open( drflac_func_read, drflac_func_seek, &stream, NULL ) ) ) {
 		info.channelCount = mChannelCount = mFlac->channels;
 		info.sampleRate = mFlac->sampleRate;
-		info.sampleCount = mFlac->totalSampleCount;
+		info.sampleCount = mFlac->totalPCMFrameCount * mFlac->channels;
 		return true;
 	}
 
