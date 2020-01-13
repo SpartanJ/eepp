@@ -44,7 +44,7 @@ bool SoundFileReaderMp3::open( IOStream& stream, Info& info ) {
 
 	stream.seek( 0 );
 
-	if ( drmp3_init( mMp3, drmp3_func_read, drmp3_func_seek, &stream, NULL ) ) {
+	if ( drmp3_init( mMp3, drmp3_func_read, drmp3_func_seek, &stream, NULL, NULL ) ) {
 		info.channelCount = mChannelCount = mMp3->channels;
 		info.sampleRate = mMp3->sampleRate;
 		info.sampleCount = mp3info.frames * DRMP3_MAX_SAMPLES_PER_FRAME;

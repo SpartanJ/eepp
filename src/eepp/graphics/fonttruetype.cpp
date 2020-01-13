@@ -530,7 +530,7 @@ Glyph FontTrueType::loadGlyph( Uint32 codePoint, unsigned int characterSize, boo
 	if ( ( width > 0 ) && ( height > 0 ) ) {
 		// Leave a small padding around characters, so that filtering doesn't
 		// pollute them with pixels from neighbors
-		const int padding = 1;
+		const int padding = 2;
 
 		width += 2 * padding;
 		height += 2 * padding;

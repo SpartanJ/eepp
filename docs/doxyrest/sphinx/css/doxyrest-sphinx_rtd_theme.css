@@ -93,7 +93,7 @@ a {
 
 body,
 .wy-body-for-nav {
-    background: #45494d;
+    background: #1a1d1f;
 }
 
 .wy-nav-content {
@@ -101,6 +101,10 @@ body,
 }
 
 @media screen and (min-width: 1100px) {
+    .wy-nav-top {
+        background: transparent;
+    }
+
     .wy-nav-content {
         background: #272b30;
     }
@@ -154,29 +158,33 @@ pre.doxyrest-title-code-block {
     #cfcfcf;
 }
 
-.wy-menu-vertical li.on a:hover, .wy-menu-vertical li.current > a:hover {
-    background: #5c5d5e;
+.wy-menu-vertical li.on a:hover,
+.wy-menu-vertical li.current > a:hover {
+    background: #434a50;
 }
 
 .wy-menu-vertical li.on a, .wy-menu-vertical li.current > a {
     color: #e6e5e5;
-    background: #5c5d5e;
+    background: #2e3337;
 }
 
 .wy-menu-vertical li.toctree-l2.current > a {
-    background: #5f6264;
+    background: #2e3337;
 }
 
-.wy-menu-vertical li.toctree-l2 a, .wy-menu-vertical li.toctree-l3 a, .wy-menu-vertical li.toctree-l4 a {
+.wy-menu-vertical li.toctree-l2 a,
+.wy-menu-vertical li.toctree-l3 a,
+.wy-menu-vertical li.toctree-l4 a {
     color: #dedede;
 }
 
 .wy-menu-vertical li.toctree-l2.current li.toctree-l3 > a {
-    background: #575a5c;
+    background: #2b3033;
 }
 
-.wy-menu-vertical li.toctree-l3.current li.toctree-l4 > a {
-    background: #5a5c5e;
+.wy-menu-vertical li.toctree-l3.current li.toctree-l4 > a,
+.wy-menu-vertical li.current a {
+    background: #2e3337;
 }
 
 .wy-menu-vertical li.current a {
@@ -188,18 +196,26 @@ pre.doxyrest-title-code-block {
 }
 
 .wy-nav-side {
-    background: #45494d;
+    background: #2b3033;
 }
 
 .wy-menu-vertical a:hover {
-    background-color: #5c5f62;
+    background-color: #434a50;
 }
 
-.wy-menu-vertical li.on a:hover span.toctree-expand, .wy-menu-vertical li.current > a:hover span.toctree-expand {
+.wy-menu-vertical li.toctree-l2.current li.toctree-l3 > a:hover,
+.wy-menu-vertical li.toctree-l3.current li.toctree-l4 > a:hover,
+.wy-menu-vertical li.current a:hover {
+    background-color: #434a50;
+}
+
+.wy-menu-vertical li.on a:hover span.toctree-expand,
+.wy-menu-vertical li.current > a:hover span.toctree-expand {
     color: white;
 }
 
-.wy-menu-vertical li.on a span.toctree-expand, .wy-menu-vertical li.current > a span.toctree-expand {
+.wy-menu-vertical li.on a span.toctree-expand,
+.wy-menu-vertical li.current > a span.toctree-expand {
     color: #ccc;
 }
 
@@ -212,7 +228,7 @@ pre.doxyrest-title-code-block {
 }
 
 .wy-menu-vertical li.current a:hover {
-    background: #676a6c;
+    background: #434a50;
 }
 
 .highlight .err {
@@ -242,10 +258,21 @@ code, .rst-content tt, .rst-content code {
     color: white;
 }
 
+.wy-side-nav-search input[type="text"] {
+    box-shadow: none;
+    border-radius: 0px;
+    border-color: #999;
+}
+
 .rst-content .highlighted {
     background: #0F87F130;
 }
 
 .wy-nav-content {
     max-width: 1280px;
+}
+
+.wy-menu-vertical li.toctree-l1.current > a {
+    border-bottom: solid 1px #666;
+    border-top: solid 1px #666;
 }

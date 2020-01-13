@@ -7,8 +7,16 @@ namespace EE { namespace Network { namespace SSL {
 
 class SSLSocketImpl;
 
+/** TLS over TCP socket implementation. **/
 class EE_API SSLSocket : public TcpSocket {
   public:
+	/** @brief This is the certificate location in the file system.
+	** If no certificate path is provided it will try to use the default CA bundle
+	** provided in most OSes. If no CA bundle is found on the current OS it will fallback to
+	** "assets/ca-bundle.pem".
+	** The path can be inside of any open EE::System::Pack.
+	** This should be set before using any SSLSocket connection.
+	*/
 	static std::string CertificatesPath;
 
 	static bool init();

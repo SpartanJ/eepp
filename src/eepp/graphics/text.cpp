@@ -1127,15 +1127,16 @@ void Text::addLine( std::vector<VertexCoords>& vertices, Float lineLength, Float
 void Text::addGlyphQuad( std::vector<VertexCoords>& vertices, Vector2f position,
 						 const EE::Graphics::Glyph& glyph, Float italic, Float outlineThickness,
 						 Int32 centerDiffX ) {
-	Float left = glyph.bounds.Left;
-	Float top = glyph.bounds.Top;
-	Float right = glyph.bounds.Left + glyph.bounds.Right;
-	Float bottom = glyph.bounds.Top + glyph.bounds.Bottom;
+	Float padding = 1.0;
+	Float left = glyph.bounds.Left - padding;
+	Float top = glyph.bounds.Top - padding;
+	Float right = glyph.bounds.Left + glyph.bounds.Right + padding;
+	Float bottom = glyph.bounds.Top + glyph.bounds.Bottom + padding;
 
-	Float u1 = static_cast<Float>( glyph.textureRect.Left );
-	Float v1 = static_cast<Float>( glyph.textureRect.Top );
-	Float u2 = static_cast<Float>( glyph.textureRect.Left + glyph.textureRect.Right );
-	Float v2 = static_cast<Float>( glyph.textureRect.Top + glyph.textureRect.Bottom );
+	Float u1 = static_cast<Float>( glyph.textureRect.Left - padding );
+	Float v1 = static_cast<Float>( glyph.textureRect.Top - padding );
+	Float u2 = static_cast<Float>( glyph.textureRect.Left + glyph.textureRect.Right + padding );
+	Float v2 = static_cast<Float>( glyph.textureRect.Top + glyph.textureRect.Bottom + padding );
 	VertexCoords vc;
 
 	if ( GLi->quadsSupported() ) {

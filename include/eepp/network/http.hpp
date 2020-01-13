@@ -541,7 +541,7 @@ class EE_API Http : NonCopyable {
 		std::map<std::string, std::string> mParams;
 	};
 
-	/** HTTP Client Pool
+	/** HTTP Client Pool.
 	 * Will keep the instances of the HTTP clients until the Pool is destroyed.
 	 * Acts as a host client cache.
 	 */
@@ -741,20 +741,42 @@ Usage example:
 Http http;
 
 // We'll work on http://www.google.com
-http.setHost("http://www.google.com");
+http.setHost( "http://www.google.com" );
 
 // Prepare a request to get the 'features.php' page
-Http::Request request("features.php");
+Http::Request request( "features.php" );
 
 // Send the request
 Http::Response response = http.sendRequest(request);
 
 // Check the status code and display the result
 Http::Response::Status status = response.getStatus();
-if (status == Http::Response::Ok) {
+if ( status == Http::Response::Ok ) {
 	std::cout << response.getBody() << std::endl;
 } else {
 	std::cout << "Error " << status << std::endl;
 }
+@endcode
+
+Shorthand methods are also provided:
+@code
+Http::Response response = Http::get( "http://www.google.com" );
+if ( response.getStatus() == Http::Response::Ok ) {
+	std::cout << response.getBody() << std::endl;
+} else {
+	std::cout << "Error " << response.getStatus() << std::endl;
+}
+@endcode
+
+You can also use the shorthand async alternative method:
+@code
+Http::getAsync(
+	[=]( const Http&, Http::Request&, Http::Response& response ) {
+		if ( response.getStatus() ==  Http::Response::Ok) {
+			std::cout << response.getBody() << std::endl;
+		} else {
+			std::cout << "Error " << response.getStatus() << std::endl;
+		}
+	}, "http://www.google.com" );
 @endcode
 */

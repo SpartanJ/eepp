@@ -56,10 +56,10 @@ class EE_API URI {
 	URI();
 
 	/** Parses an URI from the given string. */
-	explicit URI( const std::string& uri );
+	URI( const std::string& uri );
 
 	/** Parses an URI from the given string. */
-	explicit URI( const char* uri );
+	URI( const char* uri );
 
 	/** Creates an URI from its parts. */
 	URI( const std::string& scheme, const std::string& pathEtc );

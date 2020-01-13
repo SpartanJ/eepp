@@ -1,4 +1,4 @@
-SPHINXOPTS    = -c .
+SPHINXOPTS    = -j auto -c .
 SPHINXBUILD   = sphinx-build
 SOURCEDIR     = ../rst
 BUILDDIR      = ../html
