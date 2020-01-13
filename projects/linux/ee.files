@@ -885,6 +885,7 @@
 ../../src/examples/sound/sound.cpp
 ../../src/examples/sprites/sprites.cpp
 ../../src/examples/strobe/strobe.cpp
+../../src/examples/ui_hello_world/ui_hello_world.cpp
 ../../src/examples/vbo_fbo_batch/vbo_fbo_batch.cpp
 ../../src/test/eetest.cpp
 ../../src/test/eetest.hpp

@@ -30,6 +30,7 @@ class EE_API Event {
 		OnAlphaChange,
 		OnTextChanged,
 		OnFontChanged,
+		OnFontStyleChanged,
 		OnPressEnter,
 		OnValueChange,
 		OnWidgetFocusLoss,

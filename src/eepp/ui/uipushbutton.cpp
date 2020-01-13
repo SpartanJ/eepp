@@ -43,6 +43,13 @@ UIPushButton::UIPushButton( const std::string& tag ) :
 	mTextBox->setVisible( true );
 	mTextBox->setEnabled( false );
 	mTextBox->setFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER );
+	auto cb = [&] (const Event* event) {
+		onSizeChange();
+		notifyLayoutAttrChange();
+	};
+	mTextBox->addEventListener( Event::OnFontChanged, cb );
+	mTextBox->addEventListener( Event::OnFontStyleChanged, cb );
+	mTextBox->addEventListener( Event::OnTextChanged, cb );
 
 	if ( mStyleConfig.IconAutoMargin )
 		mNodeFlags |= NODE_FLAG_FREE_USE;
@@ -69,7 +76,7 @@ void UIPushButton::onAutoSize() {
 		setInternalHeight( getSkinSize().getHeight() );
 	}
 
-	if ( ( mFlags & UI_AUTO_SIZE ) && NULL != getSkin() &&
+	if ( ( mFlags & UI_AUTO_SIZE ) &&
 		 ( 0 == getSize().getHeight() || mLayoutHeightRule == LayoutSizeRule::WrapContent ) ) {
 		Float h = eemax<Float>( PixelDensity::dpToPx( getSkinSize().getHeight() ),
 								mTextBox->getTextHeight() );
@@ -348,14 +355,24 @@ bool UIPushButton::applyProperty( const StyleSheetProperty& attribute ) {
 			if ( mStyleConfig.IconAutoMargin )
 				mNodeFlags |= NODE_FLAG_FREE_USE;
 			break;
+		case PropertyId::Color:
+		case PropertyId::ShadowColor:
+		case PropertyId::SelectedColor:
+		case PropertyId::SelectionBackColor:
+		case PropertyId::FontFamily:
+		case PropertyId::FontSize:
+		case PropertyId::FontStyle:
+		case PropertyId::Wordwrap:
+		case PropertyId::TextStrokeWidth:
+		case PropertyId::TextStrokeColor:
+		case PropertyId::TextSelection:
+		case PropertyId::TextAlign:
+			attributeSet = mTextBox->applyProperty( attribute );
+			break;
 		default:
 			attributeSet = UIWidget::applyProperty( attribute );
 			break;
 	}
-
-	if ( !attributeSet && ( String::startsWith( attribute.getName(), "text" ) ||
-							String::startsWith( attribute.getName(), "font" ) ) )
-		attributeSet = mTextBox->applyProperty( attribute );
 
 	return attributeSet;
 }

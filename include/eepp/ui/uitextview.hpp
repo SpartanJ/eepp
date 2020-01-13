@@ -117,6 +117,8 @@ class EE_API UITextView : public UIWidget {
 
 	virtual void onFontChanged();
 
+	virtual void onFontStyleChanged();
+
 	virtual void onAlphaChange();
 
 	virtual Uint32 onFocusLoss();

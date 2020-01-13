@@ -51,9 +51,10 @@ projects/ios/eepp.app/assets
 projects/ios/eepp.app/eepp
 bin/libeepp-debug.dylib
 bin/libeepp.dylib
+bin/eeui-hello-world*
+bin/eepp-MapEditor*
 *.iml
 .idea
 eepp.kdev4
-bin/eepp-MapEditor*
 eepp.tags
 eepp.geany

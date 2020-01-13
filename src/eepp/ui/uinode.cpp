@@ -549,11 +549,11 @@ UINode* UINode::setFlags( const Uint32& flags ) {
 	if ( NULL == mBorder && ( flags & UI_BORDER ) )
 		setBorderEnabled( true );
 
+	mFlags |= flags;
+
 	if ( Font::getHorizontalAlign( flags ) || Font::getVerticalAlign( flags ) ) {
 		onAlignChange();
 	}
-
-	mFlags |= flags;
 
 	return this;
 }

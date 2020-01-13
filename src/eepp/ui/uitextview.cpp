@@ -118,6 +118,7 @@ UITextView* UITextView::setCharacterSize( const Uint32& characterSize ) {
 		mFontStyleConfig.CharacterSize = characterSize;
 		mTextCache->setCharacterSize( characterSize );
 		recalculate();
+		onFontStyleChanged();
 		notifyLayoutAttrChange();
 		invalidateDraw();
 	}
@@ -138,6 +139,7 @@ UITextView* UITextView::setOutlineThickness( const Float& outlineThickness ) {
 		mTextCache->setOutlineThickness( outlineThickness );
 		mFontStyleConfig.OutlineThickness = outlineThickness;
 		recalculate();
+		onFontStyleChanged();
 		notifyLayoutAttrChange();
 		invalidateDraw();
 	}
@@ -155,6 +157,7 @@ UITextView* UITextView::setOutlineColor( const Color& outlineColor ) {
 		Color newColor( outlineColor.r, outlineColor.g, outlineColor.b,
 						outlineColor.a * mAlpha / 255.f );
 		mTextCache->setOutlineColor( newColor );
+		onFontStyleChanged();
 		invalidateDraw();
 	}
 
@@ -166,6 +169,7 @@ UITextView* UITextView::setFontStyle( const Uint32& fontStyle ) {
 		mTextCache->setStyle( fontStyle );
 		mFontStyleConfig.Style = fontStyle;
 		recalculate();
+		onFontStyleChanged();
 		notifyLayoutAttrChange();
 		invalidateDraw();
 	}
@@ -224,6 +228,7 @@ UITextView* UITextView::setFontShadowColor( const Color& color ) {
 		mFontStyleConfig.ShadowColor = color;
 		Color newColor( color.r, color.g, color.b, color.a * mAlpha / 255.f );
 		mTextCache->setShadowColor( newColor );
+		onFontStyleChanged();
 		invalidateDraw();
 	}
 
@@ -237,6 +242,7 @@ const Color& UITextView::getSelectionBackColor() const {
 UITextView* UITextView::setSelectionBackColor( const Color& color ) {
 	if ( mFontStyleConfig.FontSelectionBackColor != color ) {
 		mFontStyleConfig.FontSelectionBackColor = color;
+		onFontStyleChanged();
 		invalidateDraw();
 	}
 
@@ -331,6 +337,11 @@ void UITextView::onTextChanged() {
 
 void UITextView::onFontChanged() {
 	sendCommonEvent( Event::OnFontChanged );
+	invalidateDraw();
+}
+
+void UITextView::onFontStyleChanged() {
+	sendCommonEvent( Event::OnFontStyleChanged );
 	invalidateDraw();
 }
 
@@ -505,6 +516,7 @@ void UITextView::setFontStyleConfig( const UIFontStyleConfig& fontStyleConfig ) 
 	setOutlineThickness( fontStyleConfig.getOutlineThickness() );
 	setOutlineColor( fontStyleConfig.getOutlineColor() );
 	setFontStyle( fontStyleConfig.getFontStyle() );
+	onFontStyleChanged();
 }
 
 void UITextView::selCurInit( const Int32& init ) {

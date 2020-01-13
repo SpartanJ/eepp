@@ -153,14 +153,14 @@ newoption {
 }
 
 function explode(div,str)
-    if (div=='') then return false end
-    local pos,arr = 0,{}
-    for st,sp in function() return string.find(str,div,pos,true) end do
-        table.insert(arr,string.sub(str,pos,st-1))
-        pos = sp + 1
-    end
-    table.insert(arr,string.sub(str,pos))
-    return arr
+	if (div=='') then return false end
+	local pos,arr = 0,{}
+	for st,sp in function() return string.find(str,div,pos,true) end do
+		table.insert(arr,string.sub(str,pos,st-1))
+		pos = sp + 1
+	end
+	table.insert(arr,string.sub(str,pos))
+	return arr
 end
 
 function os.get_real()
@@ -956,6 +956,13 @@ solution "eepp"
 		files { "src/examples/http_request/*.cpp" }
 		includedirs { "src/thirdparty" }
 		build_link_configuration( "eehttp-request", true )
+
+	project "eepp-ui-hello-world"
+		kind "ConsoleApp"
+		language "C++"
+		files { "src/examples/ui_hello_world/*.cpp" }
+		includedirs { "src/thirdparty" }
+		build_link_configuration( "eeui-hello-world", true )
 
 	-- Tools
 	project "eepp-textureatlaseditor"
