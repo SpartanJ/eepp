@@ -429,6 +429,7 @@ There's a script for building the *emscripten* project in
 `projects/emscripten/make.sh`. That should be enough in *GNU/Linux* or *macOS*
 ( only tested this on *Linux* ).
 
+
 Author comment
 --------------
 The library has been being developed for several years, it suffered many changes
@@ -448,7 +449,6 @@ The plan is to provide an alternative UI toolkit fully hardware accelerated
 similar to the Android toolkit but simpler ( as in easy to use ) and also
 oriented to desktop apps.
 
-
 Audio and Network modules were based the modules in SFML with several important
 differences mentioned above.
 
@@ -460,24 +460,19 @@ Also many ideas were/are taken from other projects. Some I can think about:
 *cocos2d-x*, *raylib*, *Android SDK*, *libgdx*, *Godot*, *XNA*, *LÖVE*, and many
 other projects.
 
-
 If all this sounds interesting to you for some crazy reason, contact me and let
 me know if I can help you to get into the library, and may be if you want, you
-can contribute to it in the future.
-
-This project needs *contributors* more than anything else.
-
+can contribute to it in the future. This project needs *contributors* more than
+anything else.
 
 The current state of the library is decent. In terms of features should be in a
-similar position than the most used 2D game engines out there.
-
-But lacks of course of the support+community that you can get from *Godot* or
-*cocos2d-x* to mention a couple.
+similar position than the most used 2D game engines out there. But lacks of
+course of the support+community that you can get from *Godot* or *cocos2d-x* to
+mention a couple.
 
 The main idea of this library is to focus on a better general approach to
 develop heavily UI based apps/games than the other options, with cleaner code
 and implementation.
-
 
 The main reason I developed the library is for _fun_ and to _learn_ new
 technologies. I love spending time working on the library, but I know there's
