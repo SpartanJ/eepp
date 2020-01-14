@@ -16,7 +16,7 @@ template <typename T> class tPoint2d {
   public:
 	tPoint2d() {
 		p = Vector2<T>( 0, 0 );
-		t = 0;
+		t = Time::Zero;
 	}
 	tPoint2d( const Vector2<T>& pos, const Time& time ) {
 		p = pos;

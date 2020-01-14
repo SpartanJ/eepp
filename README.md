@@ -533,7 +533,7 @@ _**Special thanks to:**_
 
   * Jason Perkins for [premake](https://premake.github.io/)
 
-  * Martín Lucas Golini ( me ) and all the several contributors for [SOIL2](https://bitbucket.org/SpartanJ/soil2) and [efsw](https://bitbucket.org/SpartanJ/efsw)
+  * Martín Lucas Golini ( me ) and all the several contributors for [SOIL2](https://github.com/SpartanJ/SOIL2) and [efsw](https://github.com/SpartanJ/efsw)
 
   * The Xiph open source community for [libogg](https://xiph.org/ogg/) and [libvorbis](https://xiph.org/vorbis/)
 

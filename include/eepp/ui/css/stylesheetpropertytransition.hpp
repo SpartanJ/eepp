@@ -32,7 +32,7 @@ class EE_API StyleSheetPropertyTransition : public Action {
 
 	bool isDone() override;
 
-	Float getCurrentProgress();
+	Float getCurrentProgress() override;
 
 	Action* clone() const override;
 

@@ -916,7 +916,6 @@ solution "eepp"
 	project "eepp-ew"
 		set_kind()
 		language "C++"
-		links { "ole32" }
 		files { "src/examples/empty_window/*.cpp" }
 		build_link_configuration( "eeew", true )
 

@@ -1042,23 +1042,22 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		if ( !xmlFile && !cssFile )
 			loadStyleSheet( "assets/layouts/test.css" );
 		loadLayoutFile( "assets/layouts/test.xml" );
-	}
 #endif
 
-	window->runMainLoop( &mainLoop );
-}
+		window->runMainLoop( &mainLoop );
+	}
 
-saveConfig();
+	saveConfig();
 
-eeSAFE_DELETE( console );
+	eeSAFE_DELETE( console );
 
-Engine::destroySingleton();
+	Engine::destroySingleton();
 
-MemoryManager::showResults();
+	MemoryManager::showResults();
 
-delete fileWatcher;
+	delete fileWatcher;
 
-delete listener;
+	delete listener;
 
-return EXIT_SUCCESS;
+	return EXIT_SUCCESS;
 }

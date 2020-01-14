@@ -258,7 +258,7 @@ void Renderer::init() {
 #endif
 
 #ifdef EE_GLES2
-	if ( GLv_ES2 == version() ) {
+	if ( GLv_ES2 == version() || GLv_3CP == version() ) {
 		writeExtension( EEGL_EXT_framebuffer_object, 1 );
 		writeExtension( EEGL_ARB_vertex_buffer_object, 1 );
 		writeExtension( EEGL_ARB_shader_objects, 1 );

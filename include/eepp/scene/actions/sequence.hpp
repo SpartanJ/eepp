@@ -31,7 +31,7 @@ class EE_API Sequence : public Action {
 
 	bool isDone() override;
 
-	Float getCurrentProgress();
+	Float getCurrentProgress() override;
 
 	Action* clone() const override;
 

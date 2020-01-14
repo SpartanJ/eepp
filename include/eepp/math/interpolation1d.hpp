@@ -15,7 +15,7 @@ template <typename T> class tPoint1d {
   public:
 	tPoint1d() {
 		p = 0;
-		t = 0.f;
+		t = Time::Zero;
 	}
 	tPoint1d( const T& pos, const Time& time ) {
 		p = pos;

@@ -17,7 +17,7 @@ class EE_API ActionInterpolation1d : public Action {
 
 	bool isDone() override;
 
-	Float getCurrentProgress();
+	Float getCurrentProgress() override;
 
 	Interpolation1d* getInterpolation();
 

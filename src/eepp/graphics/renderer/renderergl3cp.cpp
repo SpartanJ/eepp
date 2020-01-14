@@ -256,9 +256,9 @@ void RendererGL3CP::enable( unsigned int cap ) {
 				mPlanesStates[plane] = 1;
 
 				planeStateCheck( true );
-			}
 
-			mCurShader->setUniform( EEGL3CP_PLANES_ENABLED_NAME[plane], 1 );
+				mCurShader->setUniform( EEGL3CP_PLANES_ENABLED_NAME[plane], 1 );
+			}
 
 			return;
 		}
@@ -294,9 +294,9 @@ void RendererGL3CP::disable( unsigned int cap ) {
 				mPlanesStates[plane] = 0;
 
 				planeStateCheck( false );
-			}
 
-			mCurShader->setUniform( EEGL3CP_PLANES_ENABLED_NAME[plane], 0 );
+				mCurShader->setUniform( EEGL3CP_PLANES_ENABLED_NAME[plane], 0 );
+			}
 
 			return;
 		}

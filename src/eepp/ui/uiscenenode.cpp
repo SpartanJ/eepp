@@ -408,6 +408,7 @@ void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles ) {
 					FontTrueType* font =
 						FontTrueType::New( String::trim( familyProp.getValue(), '"' ) );
 
+					#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 					Http::getAsync(
 						[&, font]( const Http&, Http::Request&, Http::Response& response ) {
 							if ( !response.getBody().empty() ) {
@@ -418,6 +419,7 @@ void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles ) {
 							}
 						},
 						URI( path ), Seconds( 5 ) );
+					#endif
 				} else if ( VFS::instance()->fileExists( path ) ) {
 					FontTrueType* font =
 						FontTrueType::New( String::trim( familyProp.getValue(), '"' ) );

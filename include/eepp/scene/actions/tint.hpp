@@ -30,7 +30,7 @@ class EE_API Tint : public Action {
 
 	Action* reverse() const override;
 
-	Float getCurrentProgress();
+	Float getCurrentProgress() override;
 
 	Interpolation1d getInterpolationR() const;
 
