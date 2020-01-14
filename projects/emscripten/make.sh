@@ -1,4 +1,5 @@
 #!/bin/sh
+# Currently latest emsdk tested and working version: 1.38.33
 cd $(dirname "$0")
 premake4 --file=../../premake4.lua --with-gles1 --with-gles2 --with-static-eepp --platform=emscripten --with-backend=SDL2 gmake
 cd ../../make/emscripten/
