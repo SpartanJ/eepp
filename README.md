@@ -2,7 +2,8 @@
 Entropia Engine++
 =================
 
-**Entropia Engine++** is a C++ 2D game engine/library designed for an easy cross-platform game development.
+**Entropia Engine++** is a C++ 2D game engine/library designed for an easy
+cross-platform game development.
 
 **eepp provides:**
 
@@ -478,6 +479,14 @@ The main reason I developed the library is for _fun_ and to _learn_ new
 technologies. I love spending time working on the library, but I know there's
 probably no real reason to develop something like this with the immense number
 of similar alternatives.
+
+Regarding the code quality: this project started very long time ago and suffered
+many modifications over time. A good chunk of the code base still uses old C++
+practices (for example: raw pointers, own implementation of thread, mutex, etc).
+Some of these things can be "modernized" others don't make much sense or
+overhauling them would take too much time to justify the effort. I'm working on
+"modernizing" some parts of the code, and new code usually tend to look more
+modern.
 
 
 _**Plans/ideas for the future:**_
