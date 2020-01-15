@@ -6,3 +6,5 @@ cd ../../make/emscripten/
 ln -sf ../../bin/assets/ ./
 sed -i 's/-rcs/rcs/g' *.make
 emmake make -j`nproc` $@
+# Fix a bug in emscripten, see my patch: https://github.com/emscripten-core/emscripten/pull/10208
+sed 's/function _alGetSource3f(source,/function _alGetSource3f(sourceId,/' ../../bin/*.js
