@@ -1,7 +1,7 @@
 #ifndef EE_HPP
 #define EE_HPP
 /**
-	@mainpage Entropia Engine++
+	@mainpage eepp - Entropia Engine++
 
 	Developed by: Martín Lucas Golini
 

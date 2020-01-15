@@ -1,9 +1,9 @@
 
-Entropia Engine++
-=================
+eepp - Entropia Engine++
+========================
 
-**Entropia Engine++** is a C++ 2D game engine/library designed for an easy
-cross-platform game development.
+**eepp** is an open source cross-platform game and application development
+framework heavily focused on the development of rich graphical user interfaces.
 
 **eepp provides:**
 
@@ -472,7 +472,7 @@ course of the support+community that you can get from *Godot* or *cocos2d-x* to
 mention a couple.
 
 The main idea of this library is to focus on a better general approach to
-develop heavily UI based apps/games than the other options, with cleaner code
+develop heavily UI based apps ands games than the other options, with cleaner code
 and implementation.
 
 The main reason I developed the library is for _fun_ and to _learn_ new

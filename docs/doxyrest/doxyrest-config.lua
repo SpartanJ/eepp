@@ -1,4 +1,4 @@
-INDEX_TITLE = "Entropia Engine++ Documentation"
+INDEX_TITLE = "eepp - Entropia Engine++ Documentation"
 LANGUAGE = "cpp"
 ML_SPECIFIER_MODIFIER_LIST = false
 ML_PARAM_LIST_COUNT_THRESHOLD = 6

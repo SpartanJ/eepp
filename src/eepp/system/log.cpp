@@ -21,13 +21,13 @@ namespace EE { namespace System {
 SINGLETON_DECLARE_IMPLEMENTATION( Log )
 
 Log::Log() : mSave( false ), mConsoleOutput( false ), mLiveWrite( false ), mFS( NULL ) {
-	write( "...::: Entropia Engine++ Loaded :::..." );
+	write( "...::: eepp loaded :::..." );
 	write( "Loaded on " + Sys::getDateTimeStr() + "\n" );
 }
 
 Log::~Log() {
 	write( "\nUnloaded on " + Sys::getDateTimeStr() );
-	write( "...::: Entropia Engine++ Unloaded :::...\n" );
+	write( "...::: eepp unloaded :::...\n" );
 
 	if ( mSave && !mLiveWrite ) {
 		openFS();
