@@ -143,6 +143,7 @@ newoption { trigger = "with-static-eepp", description = "Force to build the demo
 newoption { trigger = "with-static-backend", description = "It will try to compile the library with a static backend (only for gcc and mingw).\n\t\t\t\tThe backend should be placed in libs/your_platform/libYourBackend.a" }
 newoption { trigger = "with-gles2", description = "Compile with GLES2 support" }
 newoption { trigger = "with-gles1", description = "Compile with GLES1 support" }
+newoption { trigger = "with-mojoal", description = "Compile with mojoAL as OpenAL implementation instead of using openal-soft (requires SDL2 backend)" }
 newoption { trigger = "use-frameworks", description = "In macOS it will try to link the external libraries from its frameworks. For example, instead of linking against SDL2 it will link agains SDL2.framework." }
 newoption {
 	trigger = "with-backend",
@@ -442,7 +443,7 @@ function build_link_configuration( package_name, use_ee_icon )
 		add_cross_config_links()
 
 	configuration "emscripten"
-		linkoptions{ "-lopenal -O2 -s TOTAL_MEMORY=67108864 -s ASM_JS=1 -s VERBOSE=1 -s DISABLE_EXCEPTION_CATCHING=0 -s USE_SDL=2 -s ERROR_ON_UNDEFINED_SYMBOLS=0 -s ERROR_ON_MISSING_LIBRARIES=0 -s FULL_ES3=1 -s \"BINARYEN_TRAP_MODE='clamp'\"" }
+		linkoptions{ "-O2 -s TOTAL_MEMORY=67108864 -s ASM_JS=1 -s VERBOSE=1 -s DISABLE_EXCEPTION_CATCHING=0 -s USE_SDL=2 -s ERROR_ON_UNDEFINED_SYMBOLS=0 -s ERROR_ON_MISSING_LIBRARIES=0 -s FULL_ES3=1 -s \"BINARYEN_TRAP_MODE='clamp'\"" }
 		buildoptions { "-fno-strict-aliasing -O2 -s USE_SDL=2 -s PRECISE_F32=1 -s ENVIRONMENT=web" }
 
 		if _OPTIONS["with-gles1"] and ( not _OPTIONS["with-gles2"] or _OPTIONS["force-gles1"] ) then
@@ -465,19 +466,27 @@ function generate_os_links()
 			table.insert( os_links, "dl" )
 		end
 	elseif os.is_real("windows") then
-		multiple_insert( os_links, { "OpenAL32", "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32" } )
+		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32" } )
 	elseif os.is_real("mingw32") then
-		multiple_insert( os_links, { "OpenAL32", "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32" } )
+		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32" } )
 	elseif os.is_real("macosx") then
-		multiple_insert( os_links, { "OpenGL.framework", "OpenAL.framework", "CoreFoundation.framework" } )
+		multiple_insert( os_links, { "OpenGL.framework", "CoreFoundation.framework" } )
 	elseif os.is_real("freebsd") then
-		multiple_insert( os_links, { "rt", "pthread", "X11", "openal", "GL", "Xcursor" } )
+		multiple_insert( os_links, { "rt", "pthread", "X11", "GL", "Xcursor" } )
 	elseif os.is_real("haiku") then
-		multiple_insert( os_links, { "openal", "GL", "network" } )
+		multiple_insert( os_links, { "GL", "network" } )
 	elseif os.is_real("ios") then
-		multiple_insert( os_links, { "OpenGLES.framework", "OpenAL.framework", "AudioToolbox.framework", "CoreAudio.framework", "Foundation.framework", "CoreFoundation.framework", "UIKit.framework", "QuartzCore.framework", "CoreGraphics.framework" } )
-	elseif os.is_real("emscripten") then
-		multiple_insert( os_links, { "openal" } )
+		multiple_insert( os_links, { "OpenGLES.framework""AudioToolbox.framework", "CoreAudio.framework", "Foundation.framework", "CoreFoundation.framework", "UIKit.framework", "QuartzCore.framework", "CoreGraphics.framework" } )
+	end
+
+	if not _OPTIONS["with-mojoal"] then
+		if os.istarget("linux") or os.istarget("freebsd") or os.istarget("haiku") or os.istarget("emscripten") then
+			multiple_insert( os_links, { "openal" } )
+		elseif os.istarget("windows") or os.istarget("mingw32") then
+			multiple_insert( os_links, { "OpenAL32" } )
+		elseif os.istarget("macosx") or os.istarget("ios") then
+			multiple_insert( os_links, { "OpenAL.framework" } )
+		end
 	end
 end
 
@@ -515,6 +524,10 @@ function add_static_links()
 			"pugixml-static",
 			"vorbis-static"
 	}
+
+	if _OPTIONS["with-mojoal"] then
+		links { "mojoal-static"}
+	end
 
 	if not _OPTIONS["with-openssl"] then
 		links { "mbedtls-static" }
@@ -664,6 +677,10 @@ end
 
 function build_eepp( build_name )
 	includedirs { "include", "src", "src/thirdparty", "include/eepp/thirdparty", "src/thirdparty/freetype2/include", "src/thirdparty/zlib", "src/thirdparty/libogg/include", "src/thirdparty/libvorbis/include", "src/thirdparty/mbedtls/include" }
+
+	if _OPTIONS["with-mojoal"] then
+		includedirs { "include/eepp/thirdparty/mojoAL" }
+	end
 
 	set_ios_config()
 	set_xcode_config()
@@ -855,6 +872,16 @@ solution "eepp"
 		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
 		files { "src/thirdparty/imageresampler/*.cpp" }
 		build_base_cpp_configuration( "imageresampler" )
+
+	if _OPTIONS["with-mojoal"] then
+		project "mojoal-static"
+			kind "StaticLib"
+			language "C"
+			set_targetdir("libs/" .. os.target() .. "/thirdparty/")
+			includedirs { "include/eepp/thirdparty/mojoAL" }
+			files { "src/thirdparty/mojoAL/*.c" }
+			build_base_cpp_configuration( "mojoal" )
+	end
 
 	project "efsw-static"
 		kind "StaticLib"
