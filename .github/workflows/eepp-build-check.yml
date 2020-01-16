@@ -6,10 +6,15 @@ jobs:
   Linux:
     runs-on: ubuntu-18.04
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
       with:
-        fetch-depth: 1
-
+        fetch-depth: 2
+        ref: develop
+    - uses: actions/checkout@v2
+    - name: Checkout submodules
+      shell: bash
+      run: |
+        git submodule sync --recursive
     - name: Install dependencies
       run: |
         sudo apt-get update
