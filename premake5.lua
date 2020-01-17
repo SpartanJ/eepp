@@ -125,6 +125,9 @@ function build_base_configuration( package_name )
 		includedirs { "src/thirdparty/libzip/vs" }
 	end
 
+	set_ios_config()
+	set_xcode_config()
+
 	configuration "debug"
 		defines { "DEBUG" }
 		symbols "On"
@@ -139,9 +142,6 @@ function build_base_configuration( package_name )
 			buildoptions{ "-Wall", "-std=gnu99" }
 		end
 		targetname ( package_name )
-
-	set_ios_config()
-	set_xcode_config()
 end
 
 function build_base_cpp_configuration( package_name )
@@ -516,7 +516,7 @@ function check_ssl_support()
 	defines { "EE_SSL_SUPPORT" }
 end
 
-function set_macos_config()
+function set_macos_and_ios_config()
 	if os.istarget("macosx") and ( is_xcode() or _OPTIONS["use-frameworks"] ) then
 		libdirs { "/System/Library/Frameworks", "/Library/Frameworks" }
 	end
@@ -534,7 +534,7 @@ function build_eepp( build_name )
 		includedirs { "src/thirdparty/mojoAL" }
 	end
 
-	set_macos_config()
+	set_macos_and_ios_config()
 	set_ios_config()
 	set_xcode_config()
 

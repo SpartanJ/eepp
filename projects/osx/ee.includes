@@ -5,4 +5,6 @@
 ../../src/thirdparty/efsw/include
 ../../src/thirdparty/libvorbis/include
 /usr/include/freetype2/
-/Library/Frameworks/SDL2.framework/Headers
+../../include/eepp/ui/css
+../../src/eepp/ui/css
+../../src/thirdparty/mbedtls/include

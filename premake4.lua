@@ -119,10 +119,10 @@ newplatform {
 }
 
 newclangtoolchain {
-	name ="ios-arm7",
-	description = "iOS ARMv7",
+	name ="ios-arm64",
+	description = "iOS ARM64",
 	prefix = iif( os.getenv("TOOLCHAINPATH"), os.getenv("TOOLCHAINPATH"), "" ),
-	cppflags = "-arch armv7 -mfpu=neon"
+	cppflags = "-arch arm64"
 }
 
 newclangtoolchain {
@@ -130,6 +130,13 @@ newclangtoolchain {
 	description = "iOS x86",
 	prefix = iif( os.getenv("TOOLCHAINPATH"), os.getenv("TOOLCHAINPATH"), "" ),
 	cppflags = "-m32 -arch i386"
+}
+
+newclangtoolchain {
+	name ="ios-x86_64",
+	description = "iOS x86_64",
+	prefix = iif( os.getenv("TOOLCHAINPATH"), os.getenv("TOOLCHAINPATH"), "" ),
+	cppflags = "-m64 -arch x86_64"
 }
 
 if _OPTIONS.platform then
@@ -165,8 +172,9 @@ function explode(div,str)
 end
 
 function os.get_real()
-	if 	_OPTIONS.platform == "ios-arm7" or
+	if 	_OPTIONS.platform == "ios-arm64" or
 		_OPTIONS.platform == "ios-x86" or
+		_OPTIONS.platform == "ios-x86_64" or
 		_OPTIONS.platform == "ios-cross-arm7" or
 		_OPTIONS.platform == "ios-cross-x86" then
 		return "ios"
@@ -289,6 +297,9 @@ function build_base_configuration( package_name )
 		includedirs { "src/thirdparty/libzip/vs" }
 	end
 
+	set_ios_config()
+	set_xcode_config()
+	
 	configuration "debug"
 		defines { "DEBUG" }
 		flags { "Symbols" }
@@ -304,9 +315,6 @@ function build_base_configuration( package_name )
 			buildoptions{ "-Wall", "-std=gnu99" }
 		end
 		targetname ( package_name )
-
-	set_ios_config()
-	set_xcode_config()
 end
 
 function build_base_cpp_configuration( package_name )
@@ -409,6 +417,10 @@ function build_link_configuration( package_name, use_ee_icon )
 		if _OPTIONS.platform == "ios-cross-x86" then
 			extension = ".x86.ios"
 		end
+		
+		if _OPTIONS.platform == "ios-cross-x86_64" then
+			extension = ".x86_64.ios"
+		end
 	end
 
 	configuration "debug"
@@ -480,11 +492,11 @@ function generate_os_links()
 	end
 
 	if not _OPTIONS["with-mojoal"] then
-		if os.istarget("linux") or os.istarget("freebsd") or os.istarget("haiku") or os.istarget("emscripten") then
+		if os.is_real("linux") or os.is_real("freebsd") or os.is_real("haiku") or os.is_real("emscripten") then
 			multiple_insert( os_links, { "openal" } )
-		elseif os.istarget("windows") or os.istarget("mingw32") then
+		elseif os.is_real("windows") or os.is_real("mingw32") then
 			multiple_insert( os_links, { "OpenAL32" } )
-		elseif os.istarget("macosx") or os.istarget("ios") then
+		elseif os.is_real("macosx") or os.is_real("ios") then
 			multiple_insert( os_links, { "OpenAL.framework" } )
 		end
 	end
@@ -570,7 +582,7 @@ function set_xcode_config()
 end
 
 function set_ios_config()
-	if _OPTIONS.platform == "ios-arm7" or _OPTIONS.platform == "ios-x86" then
+	if _OPTIONS.platform == "ios-arm64" or _OPTIONS.platform == "ios-x86" or _OPTIONS.platform == "ios-x86_64" then
 		local err = false
 
 		if nil == os.getenv("TOOLCHAINPATH") then
@@ -581,13 +593,13 @@ function set_ios_config()
 
 		if nil == os.getenv("SYSROOTPATH") then
 			print("You must set SYSROOTPATH enviroment variable.")
-			print("\tExample: /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS5.0.sdk")
+			print("\tExample: /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS12.1.sdk")
 			err = true
 		end
 
 		if nil == os.getenv("IOSVERSION") then
 			print("You must set IOSVERSION enviroment variable.")
-			print("\tExample: 5.0")
+			print("\tExample: 12.1")
 			err = true
 		end
 
@@ -675,6 +687,16 @@ function check_ssl_support()
 	defines { "EE_SSL_SUPPORT" }
 end
 
+function set_macos_and_ios_config()
+	if os.is_real("macosx") and ( is_xcode() or _OPTIONS["use-frameworks"] ) then
+		libdirs { "/System/Library/Frameworks", "/Library/Frameworks" }
+	end
+
+	if _OPTIONS["use-frameworks"] then
+		defines { "EE_USE_FRAMEWORKS" }
+	end
+end
+
 function build_eepp( build_name )
 	includedirs { "include", "src", "src/thirdparty", "include/eepp/thirdparty", "src/thirdparty/freetype2/include", "src/thirdparty/zlib", "src/thirdparty/libogg/include", "src/thirdparty/libvorbis/include", "src/thirdparty/mbedtls/include" }
 
@@ -683,6 +705,7 @@ function build_eepp( build_name )
 		includedirs { "src/thirdparty/mojoAL" }
 	end
 
+	set_macos_and_ios_config()
 	set_ios_config()
 	set_xcode_config()
 

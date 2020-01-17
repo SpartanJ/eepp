@@ -549,7 +549,7 @@ static std::string sGetProcessPath() {
 #elif EE_PLATFORM == EE_PLATFORM_ANDROID
 	return Window::Engine::instance()->getPlatformHelper()->getExternalStoragePath() + "/";
 #else
-#warning Sys::GetProcessPath() not implemented on this platform. ( will return "./" )
+#warning Sys::getProcessPath() not implemented on this platform. ( will return "./" )
 	return "./";
 #endif
 }
@@ -655,7 +655,7 @@ std::string Sys::getConfigPath( std::string appname ) {
 		snprintf( path, EE_MAX_CFG_PATH_LEN, "%s/.config/%s", home, appname.c_str() );
 	}
 #elif EE_PLATFORM == EE_PLATFORM_IOS
-	return GetProcessPath() + "config";
+    return getProcessPath() + "config";
 #elif EE_PLATFORM == EE_PLATFORM_ANDROID
 	return Window::Engine::instance()->getPlatformHelper()->getInternalStoragePath() + "/";
 #else
