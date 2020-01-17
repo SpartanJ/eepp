@@ -1,4 +1,4 @@
-name: eepp build check
+name: eepp linux build check
 
 on: [push, pull_request]
 
