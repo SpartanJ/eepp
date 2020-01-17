@@ -8,7 +8,6 @@ SDL_MAIN_PATH			:= $(SDL_PATH)/src/main/android/*.c
 
 EEPP_C_INCLUDES			:= \
 	$(EEPP_THIRD_PARTY_PATH) \
-	$(EEPP_THIRD_PARTY_PATH)/openal-soft/include/ \
 	$(EEPP_THIRD_PARTY_PATH)/freetype2/include \
 	$(SDL_PATH)/include \
 	$(EEPP_THIRD_PARTY_PATH)/chipmunk \
@@ -19,7 +18,8 @@ EEPP_C_INCLUDES			:= \
 	$(EEPP_THIRD_PARTY_PATH)/libvorbis/lib \
 	$(EEPP_THIRD_PARTY_PATH)/libvorbis/include \
 	$(EEPP_THIRD_PARTY_PATH)/libogg/include \
-	$(EEPP_THIRD_PARTY_PATH)/mbedtls/include
+	$(EEPP_THIRD_PARTY_PATH)/mbedtls/include \
+	$(EEPP_THIRD_PARTY_PATH)/mojoAL
 
 EEPP_C_FLAGS				:= \
 	-Wl,--undefined=Java_org_libsdl_app_SDLActivity_nativeInit \
@@ -33,6 +33,7 @@ EEPP_C_FLAGS				:= \
 	-DEE_SSL_SUPPORT \
 	-DEE_MBEDTLS \
 	-D$(EE_SDL_VERSION) \
+	-DAL_LIBTYPE_STATIC \
 	-I$(EEPP_INC_PATH) \
 	-I$(EEPP_BASE_PATH)
 
@@ -59,6 +60,7 @@ CODE_SRCS				:=  \
 	../thirdparty/libogg/src/*.c \
 	../thirdparty/libvorbis/lib/*.c \
 	../thirdparty/mbedtls/library/*.c \
+	../thirdparty/mojoAL/*.c \
 	system/*.cpp \
 	system/platform/posix/*.cpp \
 	network/*.cpp \
@@ -88,7 +90,7 @@ LOCAL_C_INCLUDES		:= $(EEPP_C_INCLUDES)
 
 LOCAL_SRC_FILES			:= $(foreach F, $(CODE_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
 
-LOCAL_STATIC_LIBRARIES	:= openal SDL2 chipmunk freetype
+LOCAL_STATIC_LIBRARIES	:= SDL2 chipmunk freetype
 
 include $(BUILD_STATIC_LIBRARY)
 #*************** EEPP ***************
@@ -134,50 +136,6 @@ LOCAL_SRC_FILES			+= $(foreach F, $(APP_SUBDIRS), $(addprefix $(F)/,$(notdir $(w
 
 include $(BUILD_STATIC_LIBRARY)
 #*************** FREETYPE ***************
-
-#*************** OPENAL *****************
-include $(CLEAR_VARS)
-
-LOCAL_PATH				:= $(EEPP_THIRD_PARTY_PATH)/openal-soft
-
-LOCAL_MODULE			:= openal
-
-LOCAL_CFLAGS			:= -O3 -DHAVE_CONFIG_H -DAL_ALEXT_PROTOTYPES -DHAVE_OPENSL
-
-LOCAL_C_INCLUDES		:= $(LOCAL_PATH)/ $(LOCAL_PATH)/include $(LOCAL_PATH)/OpenAL32/Include $(LOCAL_PATH)/Alc $(LOCAL_PATH)/common
-
-LOCAL_SRC_FILES			:= \
-	$(subst $(LOCAL_PATH)/,, \
-	$(wildcard $(LOCAL_PATH)/OpenAL32/*.c) \
-	$(wildcard $(LOCAL_PATH)/common/*.c) \
-	$(wildcard $(LOCAL_PATH)/Alc/effects/*.c) \
-	$(LOCAL_PATH)/Alc/ALc.c \
-	$(LOCAL_PATH)/Alc/alconfig.c \
-	$(LOCAL_PATH)/Alc/ALu.c \
-	$(LOCAL_PATH)/Alc/ambdec.c \
-	$(LOCAL_PATH)/Alc/bformatdec.c \
-	$(LOCAL_PATH)/Alc/bs2b.c \
-	$(LOCAL_PATH)/Alc/converter.c \
-	$(LOCAL_PATH)/Alc/helpers.c \
-	$(LOCAL_PATH)/Alc/hrtf.c \
-	$(LOCAL_PATH)/Alc/mastering.c \
-	$(LOCAL_PATH)/Alc/mixer_c.c \
-	$(LOCAL_PATH)/Alc/mixer.c \
-	$(LOCAL_PATH)/Alc/nfcfilter.c \
-	$(LOCAL_PATH)/Alc/panning.c \
-	$(LOCAL_PATH)/Alc/ringbuffer.c \
-	$(LOCAL_PATH)/Alc/uhjfilter.c \
-	$(LOCAL_PATH)/Alc/backends/base.c \
-	$(LOCAL_PATH)/Alc/backends/opensl.c \
-	$(LOCAL_PATH)/Alc/backends/loopback.c \
-	$(LOCAL_PATH)/Alc/backends/wave.c \
-	$(LOCAL_PATH)/Alc/backends/null.c \
-	$(wildcard $(LOCAL_PATH)/src/video/android/*.c))
-
-LOCAL_LDLIBS			:= -llog -lOpenSLES
-
-include $(BUILD_SHARED_LIBRARY)
-#*************** OPENAL *****************
 
 #**************** SDL 2 ***************
 include $(CLEAR_VARS)
@@ -226,4 +184,3 @@ LOCAL_SRC_FILES := \
 
 include $(BUILD_STATIC_LIBRARY)
 #**************** SDL 2 ***************
-

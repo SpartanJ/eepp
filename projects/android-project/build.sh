@@ -7,6 +7,6 @@ cd $(dirname "$0")
 
 ./gradlew build
 
-#adb install -r app/build/outputs/apk/app-debug.apk
+adb install -r app/build/outputs/apk/debug/app-debug.apk
 
 #ndk-gdb --force --start --verbose

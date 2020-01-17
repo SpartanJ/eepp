@@ -98,7 +98,6 @@ public class SDLActivity extends Activity {
      */
     protected String[] getLibraries() {
         return new String[] {
-			"openal",
             "main"
         };
     }
@@ -208,19 +207,20 @@ public class SDLActivity extends Activity {
 
         setContentView(mLayout);
 
-        /* 
-         * Per SDL_androidwindow.c, Android will only ever have one window, and that window 
-         * is always flagged SDL_WINDOW_FULLSCREEN.  Let's treat it as an immersive fullscreen 
+        /*
+         * Per SDL_androidwindow.c, Android will only ever have one window, and that window
+         * is always flagged SDL_WINDOW_FULLSCREEN.  Let's treat it as an immersive fullscreen
          * window for Android UI purposes, as a result.
          */
-        int iFlags = 
-            //View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY | // Only available since API 19
-            View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
-            View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION |
-            View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN |
-            View.SYSTEM_UI_FLAG_FULLSCREEN;
-
-        getWindow().getDecorView().setSystemUiVisibility(iFlags);        
+        int flags = View.SYSTEM_UI_FLAG_FULLSCREEN |
+                    View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
+                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY |
+                    View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN |
+                    View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION |
+                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.INVISIBLE;
+        getWindow().getDecorView().setSystemUiVisibility(flags);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN);
 
         // Get filename from "Open with" of another application
         Intent intent = getIntent();
@@ -451,7 +451,7 @@ public class SDLActivity extends Activity {
 
                     InputMethodManager imm = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
                     imm.hideSoftInputFromWindow(mTextEdit.getWindowToken(), 0);
-                    
+
                     mScreenKeyboardShown = false;
                 }
                 break;
@@ -522,7 +522,7 @@ public class SDLActivity extends Activity {
     /**
      * This method is called by SDL using JNI.
      * This is a static method for JNI convenience, it calls a non-static method
-     * so that is can be overridden  
+     * so that is can be overridden
      */
     public static void setOrientation(int w, int h, boolean resizable, String hint)
     {
@@ -530,11 +530,11 @@ public class SDLActivity extends Activity {
             mSingleton.setOrientationBis(w, h, resizable, hint);
         }
     }
-   
+
     /**
      * This can be overridden
      */
-    public void setOrientationBis(int w, int h, boolean resizable, String hint) 
+    public void setOrientationBis(int w, int h, boolean resizable, String hint)
     {
         int orientation = -1;
 
@@ -575,7 +575,7 @@ public class SDLActivity extends Activity {
     /**
      * This method is called by SDL using JNI.
      */
-    public static boolean isScreenKeyboardShown() 
+    public static boolean isScreenKeyboardShown()
     {
         if (mTextEdit == null) {
             return false;
@@ -631,7 +631,7 @@ public class SDLActivity extends Activity {
                 }
             }
             /* environment variables set! */
-            return true; 
+            return true;
         } catch (Exception e) {
            Log.v("SDL", "exception " + e.toString());
         }
@@ -688,12 +688,12 @@ public class SDLActivity extends Activity {
     }
 
     public static boolean isTextInputEvent(KeyEvent event) {
-      
+
         // Key pressed with Ctrl should be sent as SDL_KEYDOWN/SDL_KEYUP and not SDL_TEXTINPUT
         if (android.os.Build.VERSION.SDK_INT >= 11) {
             if (event.isCtrlPressed()) {
                 return false;
-            }  
+            }
         }
 
         return event.isPrintingKey() || event.getKeyCode() == KeyEvent.KEYCODE_SPACE;
@@ -1009,7 +1009,7 @@ public class SDLActivity extends Activity {
     public static boolean clipboardHasText() {
         return mClipboardHandler.clipboardHasText();
     }
-    
+
     /**
      * This method is called by SDL using JNI.
      */
@@ -1023,7 +1023,7 @@ public class SDLActivity extends Activity {
     public static void clipboardSetText(String string) {
         mClipboardHandler.clipboardSetText(string);
     }
-	
+
 	@Override
 	public void onBackPressed()
 	{
@@ -1442,7 +1442,7 @@ class DummyEdit extends View implements View.OnKeyListener {
 
     @Override
     public boolean onKey(View v, int keyCode, KeyEvent event) {
-        /* 
+        /*
          * This handles the hardware keyboard input
          */
         if (event.getAction() == KeyEvent.ACTION_DOWN) {
@@ -1562,7 +1562,7 @@ class SDLInputConnection extends BaseInputConnection {
             while (beforeLength-- > 0) {
                boolean ret_key = sendKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL))
                               && sendKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DEL));
-               ret = ret && ret_key; 
+               ret = ret && ret_key;
             }
             return ret;
         }
@@ -1581,7 +1581,7 @@ interface SDLClipboardHandler {
 
 
 class SDLClipboardHandler_API11 implements
-    SDLClipboardHandler, 
+    SDLClipboardHandler,
     android.content.ClipboardManager.OnPrimaryClipChangedListener {
 
     protected android.content.ClipboardManager mClipMgr;
@@ -1612,7 +1612,7 @@ class SDLClipboardHandler_API11 implements
        mClipMgr.setText(string);
        mClipMgr.addPrimaryClipChangedListener(this);
     }
-    
+
     @Override
     public void onPrimaryClipChanged() {
         SDLActivity.onNativeClipboardChanged();
@@ -1622,9 +1622,9 @@ class SDLClipboardHandler_API11 implements
 
 class SDLClipboardHandler_Old implements
     SDLClipboardHandler {
-   
+
     protected android.text.ClipboardManager mClipMgrOld;
-  
+
     SDLClipboardHandler_Old() {
        mClipMgrOld = (android.text.ClipboardManager) SDL.getContext().getSystemService(Context.CLIPBOARD_SERVICE);
     }
@@ -1649,4 +1649,3 @@ class SDLClipboardHandler_Old implements
        mClipMgrOld.setText(string);
     }
 }
-

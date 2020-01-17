@@ -322,11 +322,10 @@ void EETest::onShowMenu( const Event* Event ) {
 	UIPushButton* PB = static_cast<UIPushButton*>( Event->getNode() );
 
 	if ( Menu->show() ) {
-		Vector2f pos( Vector2f::Zero );
+		Vector2f pos( Vector2f( PB->getSize().getWidth(), 0 ) );
 		PB->nodeToWorld( pos );
-		pos = PixelDensity::pxToDp( pos );
-		pos.y -= Menu->getSize().y;
-		Menu->setPosition( pos );
+		UIMenu::fixMenuPos( pos, Menu );
+		Menu->setPixelsPosition( pos );
 	}
 }
 
@@ -558,6 +557,7 @@ void EETest::createBaseUI() {
 	Menu->addEventListener( Event::OnItemClicked, cb::Make1( this, &EETest::onItemClick ) );
 	Menu->getItem( "Quit" )->addEventListener( Event::MouseUp,
 											   cb::Make1( this, &EETest::onQuitClick ) );
+
 	SceneManager::instance()->getUISceneNode()->addEventListener(
 		Event::MouseClick, cb::Make1( this, &EETest::onMainClick ) );
 
@@ -572,15 +572,12 @@ void EETest::createBaseUI() {
 	Sizef screenSize = SceneManager::instance()->getUISceneNode()->getSize();
 
 	mShowMenu = UIPushButton::New();
+	mShowMenu->setLayoutSizeRules( LayoutSizeRule::WrapContent, LayoutSizeRule::WrapContent );
+	mShowMenu->setPadding( Rectf( 16, 0, 16, 0 ) );
 	mShowMenu->setSkin( nSkin );
-
-	Sizef skinSize = mShowMenu->getSkinSize();
-
-	mShowMenu->setSize( skinSize )
-		->setPosition( screenSize.getWidth() - skinSize.getWidth() - 40,
-					   screenSize.getHeight() - skinSize.getHeight() - 10 );
-
 	mShowMenu->setText( "Show Menu" );
+	mShowMenu->setPosition( screenSize.getWidth() - mShowMenu->getSize().getWidth() - 32,
+							screenSize.getHeight() - mShowMenu->getSize().getHeight() - 9 );
 	mShowMenu->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
 	mShowMenu->addEventListener( Event::MouseClick, cb::Make1( this, &EETest::onShowMenu ) );
 #endif
@@ -1262,8 +1259,7 @@ void EETest::showMenu() {
 	if ( NULL != Menu && Menu->show() ) {
 		Vector2f Pos = mWindow->getInput()->getMousePosf();
 		UIMenu::fixMenuPos( Pos, Menu );
-		Menu->setPosition( Vector2f( Pos.x / PixelDensity::getPixelDensity(),
-									 Pos.y / PixelDensity::getPixelDensity() ) );
+		Menu->setPixelsPosition( Pos );
 	}
 }
 
