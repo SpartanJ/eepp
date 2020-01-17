@@ -476,7 +476,7 @@ function generate_os_links()
 	elseif os.is_real("haiku") then
 		multiple_insert( os_links, { "GL", "network" } )
 	elseif os.is_real("ios") then
-		multiple_insert( os_links, { "OpenGLES.framework""AudioToolbox.framework", "CoreAudio.framework", "Foundation.framework", "CoreFoundation.framework", "UIKit.framework", "QuartzCore.framework", "CoreGraphics.framework" } )
+		multiple_insert( os_links, { "OpenGLES.framework", "AudioToolbox.framework", "CoreAudio.framework", "Foundation.framework", "CoreFoundation.framework", "UIKit.framework", "QuartzCore.framework", "CoreGraphics.framework" } )
 	end
 
 	if not _OPTIONS["with-mojoal"] then
@@ -679,7 +679,8 @@ function build_eepp( build_name )
 	includedirs { "include", "src", "src/thirdparty", "include/eepp/thirdparty", "src/thirdparty/freetype2/include", "src/thirdparty/zlib", "src/thirdparty/libogg/include", "src/thirdparty/libvorbis/include", "src/thirdparty/mbedtls/include" }
 
 	if _OPTIONS["with-mojoal"] then
-		includedirs { "include/eepp/thirdparty/mojoAL" }
+		defines( "AL_LIBTYPE_STATIC" )
+		includedirs { "src/thirdparty/mojoAL" }
 	end
 
 	set_ios_config()
@@ -692,7 +693,7 @@ function build_eepp( build_name )
 	end
 
 	if not is_vs() then
-		buildoptions{ "-std=c++11" }
+		buildoptions{ "-std=c++14" }
 	end
 
 	if os.is("windows") then
@@ -877,7 +878,8 @@ solution "eepp"
 		project "mojoal-static"
 			kind "StaticLib"
 			language "C"
-			set_targetdir("libs/" .. os.target() .. "/thirdparty/")
+			defines( "AL_LIBTYPE_STATIC" )
+			set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
 			includedirs { "include/eepp/thirdparty/mojoAL" }
 			files { "src/thirdparty/mojoAL/*.c" }
 			build_base_cpp_configuration( "mojoal" )
@@ -984,7 +986,7 @@ solution "eepp"
 		build_link_configuration( "eehttp-request", true )
 
 	project "eepp-ui-hello-world"
-		kind "ConsoleApp"
+		set_kind()
 		language "C++"
 		files { "src/examples/ui_hello_world/*.cpp" }
 		includedirs { "src/thirdparty" }

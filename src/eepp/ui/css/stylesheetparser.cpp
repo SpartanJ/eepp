@@ -138,7 +138,7 @@ int StyleSheetParser::readSelector( const std::string& css, ReadState& rs, std::
 			return pos + 1;
 		}
 
-		if ( css[pos] != '\n' && css[pos] != '\t' )
+		if ( css[pos] != '\n' && css[pos] != '\r' && css[pos] != '\t' )
 			buffer += css[pos];
 
 		if ( css[pos] == ';' && String::startsWith( buffer, "@import" ) ) {
@@ -205,7 +205,7 @@ int StyleSheetParser::readProperty( const std::string& css, ReadState& rs, std::
 			return pos + 1;
 		}
 
-		if ( css[pos] != '\n' && css[pos] != '\t' )
+		if ( css[pos] != '\n' && css[pos] != '\r' && css[pos] != '\t' )
 			buffer += css[pos];
 
 		pos++;

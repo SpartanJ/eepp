@@ -66,7 +66,7 @@ int StyleSheetPropertiesParser::readPropertyName( StyleSheetPropertiesParser::Re
 			return pos + 1;
 		}
 
-		if ( str[pos] != '\n' && str[pos] != '\t' )
+		if ( str[pos] != '\n' && str[pos] != '\r' && str[pos] != '\t' )
 			buffer += str[pos];
 
 		pos++;
@@ -98,7 +98,7 @@ int StyleSheetPropertiesParser::readPropertyValue( StyleSheetPropertiesParser::R
 			return pos + 1;
 		}
 
-		if ( str[pos] != '\n' && str[pos] != '\t' )
+		if ( str[pos] != '\n' && str[pos] != '\r' && str[pos] != '\t' )
 			buffer += str[pos];
 
 		pos++;

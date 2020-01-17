@@ -530,7 +530,8 @@ function build_eepp( build_name )
 	includedirs { "include", "src", "src/thirdparty", "include/eepp/thirdparty", "src/thirdparty/freetype2/include", "src/thirdparty/zlib", "src/thirdparty/libogg/include", "src/thirdparty/libvorbis/include", "src/thirdparty/mbedtls/include" }
 
 	if _OPTIONS["with-mojoal"] then
-		includedirs { "include/eepp/thirdparty/mojoAL" }
+		defines( "AL_LIBTYPE_STATIC" )
+		includedirs { "src/thirdparty/mojoAL" }
 	end
 
 	set_macos_config()
@@ -738,6 +739,7 @@ workspace "eepp"
 			language "C"
 			set_targetdir("libs/" .. os.target() .. "/thirdparty/")
 			includedirs { "include/eepp/thirdparty/mojoAL" }
+			defines( "AL_LIBTYPE_STATIC" )
 			files { "src/thirdparty/mojoAL/*.c" }
 			build_base_cpp_configuration( "mojoal" )
 	end
@@ -848,7 +850,7 @@ workspace "eepp"
 		build_link_configuration( "eehttp-request", true )
 
 	project "eepp-ui-hello-world"
-		kind "ConsoleApp"
+		set_kind()
 		language "C++"
 		files { "src/examples/ui_hello_world/*.cpp" }
 		includedirs { "src/thirdparty" }

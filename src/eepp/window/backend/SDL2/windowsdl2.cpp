@@ -35,7 +35,11 @@ bool WindowsIsProcessRunning( const char* processName, bool killProcess = false 
 	HANDLE snapshot = CreateToolhelp32Snapshot( TH32CS_SNAPPROCESS, 0 );
 	if ( Process32First( snapshot, &entry ) ) {
 		while ( Process32Next( snapshot, &entry ) ) {
+#ifdef UNICODE
+			if ( EE::String( entry.szExeFile ).toUtf8() == std::string( processName ) ) {
+#else
 			if ( !stricmp( entry.szExeFile, processName ) ) {
+#endif
 				exists = true;
 				if ( killProcess ) {
 					HANDLE aProc = OpenProcess( PROCESS_TERMINATE, 0, entry.th32ProcessID );
@@ -57,11 +61,20 @@ bool WindowsIsProcessRunning( const char* processName, bool killProcess = false 
 #endif // ERROR_ELEVATION_REQUIRED
 
 bool WindowsProcessLaunch( std::string command, HWND windowHwnd ) {
+#ifdef UNICODE
+	wchar_t expandedCmd[1024] = {};
+#else
 	char expandedCmd[1024] = {};
+#endif
 	static PROCESS_INFORMATION pi = {};
 	static STARTUPINFO si = {};
 	si.cb = sizeof( si );
+#if UNICODE
+	ExpandEnvironmentStrings( EE::String::fromUtf8( command ).toWideString().c_str(), expandedCmd,
+							  1024 );
+#else
 	ExpandEnvironmentStrings( command.c_str(), expandedCmd, 1024 );
+#endif
 	if ( CreateProcess( NULL, expandedCmd, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi ) ) {
 		// Wait until child process exits.
 		WaitForSingleObject( pi.hProcess, 10000 );
@@ -71,8 +84,14 @@ bool WindowsProcessLaunch( std::string command, HWND windowHwnd ) {
 	} else {
 		DWORD error = GetLastError();
 		if ( error == ERROR_ELEVATION_REQUIRED && 0 != windowHwnd ) {
-			if ( reinterpret_cast<std::intptr_t>( ShellExecute( windowHwnd, "open", expandedCmd, "",
-																NULL, SW_SHOWDEFAULT ) ) <= 32 ) {
+#ifdef UNICODE
+			std::intptr_t res = reinterpret_cast<std::intptr_t>(
+				ShellExecute( windowHwnd, L"open", expandedCmd, L"", NULL, SW_SHOWDEFAULT ) );
+#else
+			std::intptr_t res = reinterpret_cast<std::intptr_t>(
+				ShellExecute( windowHwnd, "open", expandedCmd, "", NULL, SW_SHOWDEFAULT ) );
+#endif
+			if ( res <= 32 ) {
 				return false;
 			}
 		}
