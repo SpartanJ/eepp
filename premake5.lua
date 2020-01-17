@@ -56,7 +56,7 @@ function multiple_insert( parent_table, insert_table )
 end
 
 function get_ios_arch()
-	local archs = explode( "-", _OPTIONS.platform )
+	local archs = explode( "-", os.target() )
 	return archs[ table_length( archs ) ]
 end
 
@@ -619,7 +619,7 @@ workspace "eepp"
 	end
 
 	if os.istarget("ios") then
-		location("./make/" .. _OPTIONS.platform .. "/" )
+		location("./make/" .. os.target() .. "/" )
 		objdir("obj/" .. os.target() .. "/" .. get_ios_arch() .. "/" )
 	else
 		location("./make/" .. os.target() .. "/")
