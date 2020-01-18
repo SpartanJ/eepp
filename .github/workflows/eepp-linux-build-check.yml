@@ -1,4 +1,4 @@
-name: eepp linux build check
+name: Linux
 
 on: [push, pull_request]
 
@@ -17,11 +17,9 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y wget g++-8 libsdl2-2.0-0 libsdl2-dev libopenal1 libopenal-dev
-    - name: Download and extract premake5
-      run: |
         wget https://github.com/premake/premake-core/releases/download/v5.0.0-alpha14/premake-5.0.0-alpha14-linux.tar.gz
         tar xvzf premake-5.0.0-alpha14-linux.tar.gz
-    - name: Build gcc
+    - name: Build
       run: |
         ./premake5 gmake2
         cd make/linux
