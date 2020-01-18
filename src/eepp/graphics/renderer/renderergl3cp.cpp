@@ -71,7 +71,7 @@ RendererGL3CP::~RendererGL3CP() {
 #endif
 }
 
-EEGL_version RendererGL3CP::version() {
+GraphicsLibraryVersion RendererGL3CP::version() {
 	return GLv_3CP;
 }
 

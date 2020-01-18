@@ -47,7 +47,7 @@ RendererGL3::RendererGL3() :
 
 RendererGL3::~RendererGL3() {}
 
-EEGL_version RendererGL3::version() {
+GraphicsLibraryVersion RendererGL3::version() {
 	return GLv_3;
 }
 

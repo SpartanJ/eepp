@@ -19,7 +19,7 @@ class EE_API RendererGL3 : public RendererGLShader {
 
 	~RendererGL3();
 
-	EEGL_version version();
+	GraphicsLibraryVersion version();
 
 	std::string versionStr();
 

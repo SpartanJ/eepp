@@ -55,7 +55,7 @@ RendererGLES2::RendererGLES2() :
 
 RendererGLES2::~RendererGLES2() {}
 
-EEGL_version RendererGLES2::version() {
+GraphicsLibraryVersion RendererGLES2::version() {
 	return GLv_ES2;
 }
 

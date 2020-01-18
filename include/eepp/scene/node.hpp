@@ -31,7 +31,7 @@ using namespace EE::Scene;
 
 namespace EE { namespace Scene {
 
-enum NODE_FLAGS_VALUES {
+enum NodeFlags {
 	NODE_FLAG_SCHEDULED_UPDATE = ( 1 << 0 ),
 	NODE_FLAG_VIEW_DIRTY = ( 1 << 1 ),
 	NODE_FLAG_POSITION_DIRTY = ( 1 << 2 ),

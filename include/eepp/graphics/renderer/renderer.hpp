@@ -19,7 +19,7 @@ class RendererGL3CP;
 class RendererGLES2;
 
 /** @brief This class is an abstraction of some OpenGL functionality.
- *	eepp have 4 different rendering pipelines: OpenGL 2, OpenGL 3, OpenGL 3 Core Profile and OpenGL
+ *	eepp has 4 different rendering pipelines: OpenGL 2, OpenGL 3, OpenGL 3 Core Profile and OpenGL
  *ES 2. This abstraction is to encapsulate this pipelines. eepp implements its own state machine to
  *simulate fixed-pipeline commands with OpenGL 3 and OpenGL ES 2. Most of the commands can be found
  *in the OpenGL documentation. This is only useful for advanced users that want some control of the
@@ -27,7 +27,7 @@ class RendererGLES2;
  */
 class EE_API Renderer {
   public:
-	static Renderer* createSingleton( EEGL_version ver );
+	static Renderer* createSingleton( GraphicsLibraryVersion ver );
 
 	static Renderer* createSingleton();
 
@@ -60,7 +60,7 @@ class EE_API Renderer {
 	bool isExtension( const std::string& name );
 
 	/** @return If the extension from the EEGL_extensions is present on the GPU. */
-	bool isExtension( EEGL_extensions name );
+	bool isExtension( GraphicsLibraryExtension name );
 
 	bool pointSpriteSupported();
 
@@ -133,7 +133,7 @@ class EE_API Renderer {
 
 	virtual void enable( unsigned int cap );
 
-	virtual EEGL_version version() = 0;
+	virtual GraphicsLibraryVersion version() = 0;
 
 	virtual std::string versionStr() = 0;
 

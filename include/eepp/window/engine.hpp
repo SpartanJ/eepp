@@ -12,7 +12,7 @@ class IniFile;
 class Pack;
 }} // namespace EE::System
 namespace EE { namespace Window { namespace Backend {
-class WindowBackend;
+class WindowBackendLibrary;
 }}} // namespace EE::Window::Backend
 
 namespace EE { namespace Window {
@@ -104,10 +104,10 @@ class EE_API Engine {
 	ContextSettings createContextSettings( IniFile* ini, std::string iniKeyName = "EEPP" );
 
 	/** Enabling Shared GL Context allows asynchronous OpenGL resource loading ( only if is
-	*supported by the backend and the OS, SDL 2 backend is the only one supported ). *	If the
-	*TextureLoader is threaded, will upload the texture in another thread to the GPU. So, it will
-	*not block the main rendering thread. *	Shared GL Context is disabled by default.
-	*/
+	 *supported by the backend and the OS, SDL 2 backend is the only one supported ). *	If the
+	 *TextureLoader is threaded, will upload the texture in another thread to the GPU. So, it will
+	 *not block the main rendering thread. *	Shared GL Context is disabled by default.
+	 */
 	void enableSharedGLContext();
 
 	/** Disable the Shared GL Context
@@ -130,7 +130,7 @@ class EE_API Engine {
   protected:
 	friend class Window;
 
-	Backend::WindowBackend* mBackend;
+	Backend::WindowBackendLibrary* mBackend;
 	std::list<Window*> mWindows;
 	EE::Window::Window* mWindow;
 	bool mSharedGLContext;
@@ -143,7 +143,7 @@ class EE_API Engine {
 
 	void destroy();
 
-	Backend::WindowBackend* createSDL2Backend( const WindowSettings& Settings );
+	Backend::WindowBackendLibrary* createSDL2Backend( const WindowSettings& Settings );
 
 	EE::Window::Window* createSDL2Window( const WindowSettings& Settings,
 										  const ContextSettings& Context );
@@ -151,7 +151,7 @@ class EE_API Engine {
 	EE::Window::Window* createDefaultWindow( const WindowSettings& Settings,
 											 const ContextSettings& Context );
 
-	Uint32 getDefaultBackend() const;
+	WindowBackend getDefaultBackend() const;
 };
 
 }} // namespace EE::Window

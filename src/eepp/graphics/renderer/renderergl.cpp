@@ -61,7 +61,7 @@ RendererGL::RendererGL() {
 
 RendererGL::~RendererGL() {}
 
-EEGL_version RendererGL::version() {
+GraphicsLibraryVersion RendererGL::version() {
 #ifndef EE_GLES1
 	return GLv_2;
 #else

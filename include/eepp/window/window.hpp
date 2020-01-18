@@ -16,9 +16,7 @@ class Clipboard;
 class Input;
 class CursorManager;
 
-/** @namespace EE::Window::WindowStyle Define the Windows Styles */
-namespace WindowStyle {
-enum {
+enum WindowStyle {
 	Borderless = ( 1 << 0 ),
 	Titlebar = ( 1 << 1 ),
 	Resize = ( 1 << 2 ),
@@ -30,12 +28,8 @@ enum {
 	Default = Titlebar | Resize
 #endif
 };
-} // namespace WindowStyle
 
-/** @namespace EE::Window::WindowBackend Define the window backends supported by eepp */
-namespace WindowBackend {
-enum { SDL2, Default };
-}
+enum class WindowBackend : Uint32 { SDL2, Default };
 
 #ifndef EE_SCREEN_KEYBOARD_ENABLED
 #if EE_PLATFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_IOS
@@ -50,7 +44,7 @@ class WindowSettings {
   public:
 	inline WindowSettings( Uint32 width, Uint32 height, const std::string& caption = std::string(),
 						   Uint32 style = WindowStyle::Default,
-						   Uint32 backend = WindowBackend::Default, Uint32 bpp = 32,
+						   WindowBackend backend = WindowBackend::Default, Uint32 bpp = 32,
 						   const std::string& icon = std::string(), const Float& pixelDensity = 1,
 						   const bool& useScreenKeyboard = EE_SCREEN_KEYBOARD_ENABLED ) :
 		Style( style ),
@@ -78,7 +72,7 @@ class WindowSettings {
 	Uint32 BitsPerPixel;
 	std::string Icon;
 	std::string Caption;
-	Uint32 Backend;
+	WindowBackend Backend;
 	Float PixelDensity;
 	bool UseScreenKeyboard;
 };
@@ -86,7 +80,7 @@ class WindowSettings {
 /** @brief ContextSettings Small class that contains the renderer context information */
 class ContextSettings {
   public:
-	inline ContextSettings( bool vsync, EEGL_version version = GLv_default,
+	inline ContextSettings( bool vsync, GraphicsLibraryVersion version = GLv_default,
 							bool doubleBuffering = true, Uint32 depthBufferSize = 24,
 							Uint32 stencilBufferSize = 1, Uint32 multisamples = 0,
 							bool sharedGLContext = true, Int32 frameRateLimit = 0 ) :
@@ -109,7 +103,7 @@ class ContextSettings {
 		DoubleBuffering( true ),
 		SharedGLContext( true ) {}
 
-	EEGL_version Version;
+	GraphicsLibraryVersion Version;
 	Uint32 DepthBufferSize;
 	Uint32 StencilBufferSize;
 	Uint32 Multisamples;
@@ -132,7 +126,7 @@ class WindowInfo {
 
 	WindowSettings WindowConfig;
 	ContextSettings ContextConfig;
-	Uint32 Backend;
+	WindowBackend Backend;
 	Sizei DesktopResolution;
 	Sizei WindowSize;
 	Uint32 Flags;

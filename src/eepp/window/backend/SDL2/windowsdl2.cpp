@@ -23,10 +23,10 @@
 #endif
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
-#include <Objbase.h>
+#include <objbase.h>
 #include <initguid.h>
 #include <shellapi.h>
-#include <tlhelp32.H>
+#include <tlhelp32.h>
 
 bool WindowsIsProcessRunning( const char* processName, bool killProcess = false ) {
 	bool exists = false;

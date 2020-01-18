@@ -3,14 +3,14 @@
 
 namespace EE { namespace Graphics {
 
-enum EE_VBO_USAGE_TYPE {
-	VBO_USAGE_TYPE_STATIC,
-	VBO_USAGE_TYPE_DYNAMIC,
-	VBO_USAGE_TYPE_STREAM,
-	VBO_USAGE_TYPE_COUNT
+/// VBO default usage type
+enum class VertexBufferUsageType : int {
+	Static,
+	Dynamic,
+	Stream,
 };
 
-enum EE_VERTEX_FLAGS {
+enum VertexFlags {
 	VERTEX_FLAG_POSITION = 0,
 	VERTEX_FLAG_TEXTURE0 = 1,
 	VERTEX_FLAG_TEXTURE1 = 2,
@@ -23,7 +23,7 @@ enum EE_VERTEX_FLAGS {
 #define VERTEX_FLAGS_COUNT_ARR ( 5 )
 #define VERTEX_FLAGS_COUNT ( 6 )
 
-const int eeVertexElements[] = {
+const int VertexElementCount[] = {
 	2, // Position
 	2, // Texture0
 	2, // Texture1
@@ -38,9 +38,12 @@ const int eeVertexElements[] = {
 		F |= VERTEX_FLAG_GET( X );
 #define VERTEX_FLAG_QUERY( F, X ) ( F & VERTEX_FLAG_GET( X ) )
 
+/// Vertex data will have position, color and texture UV.
 #define VERTEX_FLAGS_DEFAULT                                                              \
 	( VERTEX_FLAG_GET( VERTEX_FLAG_POSITION ) | VERTEX_FLAG_GET( VERTEX_FLAG_TEXTURE0 ) | \
 	  VERTEX_FLAG_GET( VERTEX_FLAG_COLOR ) )
+
+/// Vertex data will have position and color.
 #define VERTEX_FLAGS_PRIMITIVE \
 	( VERTEX_FLAG_GET( VERTEX_FLAG_POSITION ) | VERTEX_FLAG_GET( VERTEX_FLAG_COLOR ) )
 

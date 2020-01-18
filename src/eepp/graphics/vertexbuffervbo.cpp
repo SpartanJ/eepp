@@ -10,7 +10,7 @@ namespace EE { namespace Graphics {
 
 VertexBufferVBO::VertexBufferVBO( const Uint32& VertexFlags, PrimitiveType DrawType,
 								  const Int32& ReserveVertexSize, const Int32& ReserveIndexSize,
-								  EE_VBO_USAGE_TYPE UsageType ) :
+								  VertexBufferUsageType UsageType ) :
 	VertexBuffer( VertexFlags, DrawType, ReserveVertexSize, ReserveIndexSize, UsageType ),
 	mCompiled( false ),
 	mBuffersSet( false ),
@@ -64,9 +64,9 @@ bool VertexBufferVBO::compile() {
 #endif
 
 	unsigned int usageType = GL_STATIC_DRAW;
-	if ( mUsageType == VBO_USAGE_TYPE_DYNAMIC )
+	if ( mUsageType == VertexBufferUsageType::Dynamic )
 		usageType = GL_DYNAMIC_DRAW;
-	else if ( mUsageType == VBO_USAGE_TYPE_STREAM )
+	else if ( mUsageType == VertexBufferUsageType::Stream )
 		usageType = GL_STREAM_DRAW;
 
 	// Create the VBO vertex arrays
@@ -193,12 +193,12 @@ void VertexBufferVBO::setVertexStates() {
 																EEGL_TEXTURE_COORD_ARRAY ) );
 
 					if ( -1 != index )
-						glVertexAttribPointerARB( index, eeVertexElements[VERTEX_FLAG_TEXTURE0 + i],
+						glVertexAttribPointerARB( index, VertexElementCount[VERTEX_FLAG_TEXTURE0 + i],
 												  GL_FP, GL_FALSE, 0, 0 );
 				} else
 #endif
 				{
-					GLi->texCoordPointer( eeVertexElements[VERTEX_FLAG_TEXTURE0 + i], GL_FP, 0,
+					GLi->texCoordPointer( VertexElementCount[VERTEX_FLAG_TEXTURE0 + i], GL_FP, 0,
 										  (char*)NULL, 0 );
 				}
 
@@ -228,12 +228,12 @@ void VertexBufferVBO::setVertexStates() {
 									  EEGL_TEXTURE_COORD_ARRAY ) );
 
 				if ( -1 != index )
-					glVertexAttribPointerARB( index, eeVertexElements[VERTEX_FLAG_TEXTURE0], GL_FP,
+					glVertexAttribPointerARB( index, VertexElementCount[VERTEX_FLAG_TEXTURE0], GL_FP,
 											  GL_FALSE, 0, 0 );
 			} else
 #endif
 			{
-				GLi->texCoordPointer( eeVertexElements[VERTEX_FLAG_TEXTURE0], GL_FP, 0, (char*)NULL,
+				GLi->texCoordPointer( VertexElementCount[VERTEX_FLAG_TEXTURE0], GL_FP, 0, (char*)NULL,
 									  0 );
 			}
 
@@ -260,12 +260,12 @@ void VertexBufferVBO::setVertexStates() {
 								: GLi->getRendererGLES2()->getStateIndex( EEGL_VERTEX_ARRAY ) );
 
 			if ( -1 != index )
-				glVertexAttribPointerARB( index, eeVertexElements[VERTEX_FLAG_POSITION], GL_FP,
+				glVertexAttribPointerARB( index, VertexElementCount[VERTEX_FLAG_POSITION], GL_FP,
 										  GL_FALSE, 0, 0 );
 		} else
 #endif
 		{
-			GLi->vertexPointer( eeVertexElements[VERTEX_FLAG_POSITION], GL_FP, 0, (char*)NULL, 0 );
+			GLi->vertexPointer( VertexElementCount[VERTEX_FLAG_POSITION], GL_FP, 0, (char*)NULL, 0 );
 		}
 	} else {
 		GLi->disableClientState( GL_VERTEX_ARRAY );
@@ -285,12 +285,12 @@ void VertexBufferVBO::setVertexStates() {
 								: GLi->getRendererGLES2()->getStateIndex( EEGL_COLOR_ARRAY ) );
 
 			if ( -1 != index )
-				glVertexAttribPointerARB( index, eeVertexElements[VERTEX_FLAG_COLOR],
+				glVertexAttribPointerARB( index, VertexElementCount[VERTEX_FLAG_COLOR],
 										  GL_UNSIGNED_BYTE, GL_TRUE, 0, 0 );
 		} else
 #endif
 		{
-			GLi->colorPointer( eeVertexElements[VERTEX_FLAG_COLOR], GL_UNSIGNED_BYTE, 0,
+			GLi->colorPointer( VertexElementCount[VERTEX_FLAG_COLOR], GL_UNSIGNED_BYTE, 0,
 							   (char*)NULL, 0 );
 		}
 	} else {
@@ -306,9 +306,9 @@ void VertexBufferVBO::setVertexStates() {
 
 void VertexBufferVBO::update( const Uint32& Types, bool Indices ) {
 	unsigned int usageType = GL_STATIC_DRAW;
-	if ( mUsageType == VBO_USAGE_TYPE_DYNAMIC )
+	if ( mUsageType == VertexBufferUsageType::Dynamic )
 		usageType = GL_DYNAMIC_DRAW;
-	else if ( mUsageType == VBO_USAGE_TYPE_STREAM )
+	else if ( mUsageType == VertexBufferUsageType::Stream )
 		usageType = GL_STREAM_DRAW;
 
 	for ( Int32 i = 0; i < VERTEX_FLAGS_COUNT; i++ ) {

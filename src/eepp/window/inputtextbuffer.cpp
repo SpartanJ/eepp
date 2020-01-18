@@ -21,7 +21,7 @@ InputTextBuffer::InputTextBuffer( const bool& active, const bool& newLineEnabled
 	mFlags( 0 ),
 	mCallback( 0 ),
 	mPromptPos( 0 ),
-	mMaxLength( INPUT_LENGHT_MAX ),
+	mMaxLength( UINT32_MAX ),
 	mSelCurInit( -1 ),
 	mSelCurEnd( -1 ) {
 	if ( NULL == mWindow ) {
@@ -46,7 +46,7 @@ InputTextBuffer::InputTextBuffer( EE::Window::Window* window ) :
 	mFlags( 0 ),
 	mCallback( 0 ),
 	mPromptPos( 0 ),
-	mMaxLength( INPUT_LENGHT_MAX ),
+	mMaxLength( UINT32_MAX ),
 	mSelCurInit( -1 ),
 	mSelCurEnd( -1 ) {
 	if ( NULL == mWindow ) {
@@ -714,15 +714,15 @@ String InputTextBuffer::getBuffer() const {
 }
 
 bool InputTextBuffer::changedSinceLastUpdate() {
-	return 0 != ( mFlags & ( 1 << INPUT_TB_CHANGE_SINCE_LAST_UPDATE ) );
+	return 0 != ( mFlags & ( 1 << CHANGE_SINCE_LAST_UPDATE ) );
 }
 
 void InputTextBuffer::setChangedSinceLastUpdate( const bool& Changed ) {
-	BitOp::writeBitKey( &mFlags, INPUT_TB_CHANGE_SINCE_LAST_UPDATE, Changed == true );
+	BitOp::writeBitKey( &mFlags, CHANGE_SINCE_LAST_UPDATE, Changed == true );
 }
 
 void InputTextBuffer::autoPrompt( const bool& set ) {
-	BitOp::writeBitKey( &mFlags, INPUT_TB_PROMPT_AUTO_POS, set == true );
+	BitOp::writeBitKey( &mFlags, PROMPT_AUTO_POS, set == true );
 
 	if ( set ) {
 		mPromptPos = (int)mText.size();
@@ -732,60 +732,60 @@ void InputTextBuffer::autoPrompt( const bool& set ) {
 }
 
 bool InputTextBuffer::autoPrompt() {
-	return 0 != ( mFlags & ( 1 << INPUT_TB_PROMPT_AUTO_POS ) );
+	return 0 != ( mFlags & ( 1 << PROMPT_AUTO_POS ) );
 }
 
 bool InputTextBuffer::isActive() const {
-	return 0 != ( mFlags & ( 1 << INPUT_TB_ACTIVE ) );
+	return 0 != ( mFlags & ( 1 << ACTIVE ) );
 }
 
 void InputTextBuffer::setActive( const bool& active ) {
-	BitOp::writeBitKey( &mFlags, INPUT_TB_ACTIVE, active == true );
+	BitOp::writeBitKey( &mFlags, ACTIVE, active == true );
 }
 
 bool InputTextBuffer::setSupportNewLine() {
-	return 0 != ( mFlags & ( 1 << INPUT_TB_SUPPORT_NEW_LINE ) );
+	return 0 != ( mFlags & ( 1 << SUPPORT_NEW_LINE ) );
 }
 
 void InputTextBuffer::isNewLineEnabled( const bool& enabled ) {
-	BitOp::writeBitKey( &mFlags, INPUT_TB_SUPPORT_NEW_LINE, enabled == true );
+	BitOp::writeBitKey( &mFlags, SUPPORT_NEW_LINE, enabled == true );
 }
 
 void InputTextBuffer::setAllowOnlyNumbers( const bool& onlynums, const bool& allowdots ) {
-	BitOp::writeBitKey( &mFlags, INPUT_TB_ALLOW_ONLY_NUMBERS, onlynums == true );
-	BitOp::writeBitKey( &mFlags, INPUT_TB_ALLOW_DOT_IN_NUMBERS, allowdots == true );
+	BitOp::writeBitKey( &mFlags, ALLOW_ONLY_NUMBERS, onlynums == true );
+	BitOp::writeBitKey( &mFlags, ALLOW_DOT_IN_NUMBERS, allowdots == true );
 }
 
 bool InputTextBuffer::onlyNumbersAllowed() {
-	return 0 != ( mFlags & ( 1 << INPUT_TB_ALLOW_ONLY_NUMBERS ) );
+	return 0 != ( mFlags & ( 1 << ALLOW_ONLY_NUMBERS ) );
 }
 
 bool InputTextBuffer::dotsInNumbersAllowed() {
-	return 0 != ( mFlags & ( 1 << INPUT_TB_ALLOW_DOT_IN_NUMBERS ) );
+	return 0 != ( mFlags & ( 1 << ALLOW_DOT_IN_NUMBERS ) );
 }
 
 bool InputTextBuffer::isFreeEditingEnabled() const {
-	return 0 != ( mFlags & ( 1 << INPUT_TB_FREE_EDITING ) );
+	return 0 != ( mFlags & ( 1 << FREE_EDITING ) );
 }
 
 void InputTextBuffer::setFreeEditing( const bool& enabled ) {
-	BitOp::writeBitKey( &mFlags, INPUT_TB_FREE_EDITING, enabled == true );
+	BitOp::writeBitKey( &mFlags, FREE_EDITING, enabled == true );
 }
 
 void InputTextBuffer::supportCopyPaste( const bool& support ) {
-	BitOp::writeBitKey( &mFlags, INPUT_TB_SUPPORT_COPY_PASTE, support == true );
+	BitOp::writeBitKey( &mFlags, SUPPORT_COPY_PASTE, support == true );
 }
 
 bool InputTextBuffer::supportCopyPaste() {
-	return 0 != ( mFlags & ( 1 << INPUT_TB_SUPPORT_COPY_PASTE ) );
+	return 0 != ( mFlags & ( 1 << SUPPORT_COPY_PASTE ) );
 }
 
 bool InputTextBuffer::isTextSelectionEnabled() {
-	return 0 != ( mFlags & ( 1 << INPUT_TB_TEXT_SELECTION_ENABLED ) );
+	return 0 != ( mFlags & ( 1 << TEXT_SELECTION_ENABLED ) );
 }
 
 void InputTextBuffer::setTextSelectionEnabled( const bool& enabled ) {
-	BitOp::writeBitKey( &mFlags, INPUT_TB_TEXT_SELECTION_ENABLED, enabled == true );
+	BitOp::writeBitKey( &mFlags, TEXT_SELECTION_ENABLED, enabled == true );
 }
 
 void InputTextBuffer::cursorToEnd() {

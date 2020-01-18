@@ -9,7 +9,7 @@ namespace EE { namespace Graphics {
 
 VertexBuffer* VertexBuffer::New( const Uint32& VertexFlags, PrimitiveType DrawType,
 								 const Int32& ReserveVertexSize, const Int32& ReserveIndexSize,
-								 EE_VBO_USAGE_TYPE UsageType ) {
+								 VertexBufferUsageType UsageType ) {
 	if ( GLi->isExtension( EEGL_ARB_vertex_buffer_object ) )
 		return eeNew( VertexBufferVBO,
 					  ( VertexFlags, DrawType, ReserveVertexSize, ReserveIndexSize, UsageType ) );
@@ -21,22 +21,22 @@ VertexBuffer* VertexBuffer::New( const Uint32& VertexFlags, PrimitiveType DrawTy
 VertexBuffer* VertexBuffer::NewVertexArray( const Uint32& VertexFlags, PrimitiveType DrawType,
 											const Int32& ReserveVertexSize,
 											const Int32& ReserveIndexSize,
-											EE_VBO_USAGE_TYPE UsageType ) {
+											VertexBufferUsageType UsageType ) {
 	return eeNew( VertexBufferOGL,
 				  ( VertexFlags, DrawType, ReserveVertexSize, ReserveIndexSize, UsageType ) );
 }
 
 VertexBuffer::VertexBuffer( const Uint32& VertexFlags, PrimitiveType DrawType,
 							const Int32& ReserveVertexSize, const Int32& ReserveIndexSize,
-							EE_VBO_USAGE_TYPE UsageType ) :
+							VertexBufferUsageType UsageType ) :
 	mVertexFlags( VertexFlags ), mDrawType( DrawType ), mUsageType( UsageType ), mElemDraw( -1 ) {
 	if ( ReserveVertexSize > 0 ) {
 		for ( Int32 i = 0; i < VERTEX_FLAGS_COUNT; i++ ) {
 			if ( VERTEX_FLAG_QUERY( mVertexFlags, i ) ) {
 				if ( i != VERTEX_FLAG_COLOR )
-					mVertexArray[i].reserve( ReserveVertexSize * eeVertexElements[i] );
+					mVertexArray[i].reserve( ReserveVertexSize * VertexElementCount[i] );
 				else
-					mColorArray.reserve( ReserveVertexSize * eeVertexElements[i] );
+					mColorArray.reserve( ReserveVertexSize * VertexElementCount[i] );
 			}
 		}
 	}
@@ -114,7 +114,7 @@ Uint32* VertexBuffer::getIndices() {
 
 Uint32 VertexBuffer::getVertexCount() {
 	return (Uint32)mVertexArray[VERTEX_FLAG_POSITION].size() /
-		   eeVertexElements[VERTEX_FLAG_POSITION];
+		   VertexElementCount[VERTEX_FLAG_POSITION];
 }
 
 Uint32 VertexBuffer::getIndexCount() {
@@ -124,7 +124,7 @@ Uint32 VertexBuffer::getIndexCount() {
 Vector2f VertexBuffer::getVector2( const Uint32& Type, const Uint32& Index ) {
 	eeASSERT( Type < VERTEX_FLAGS_COUNT_ARR && !VERTEX_FLAG_QUERY( mVertexFlags, Type ) )
 
-		Int32 pos = Index * eeVertexElements[Type];
+		Int32 pos = Index * VertexElementCount[Type];
 
 	return Vector2f( mVertexArray[Type][pos], mVertexArray[Type][pos + 1] );
 }
@@ -132,7 +132,7 @@ Vector2f VertexBuffer::getVector2( const Uint32& Type, const Uint32& Index ) {
 Color VertexBuffer::getColor( const Uint32& Index ) {
 	eeASSERT( !VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_COLOR ) );
 
-	Int32 pos = Index * eeVertexElements[VERTEX_FLAG_COLOR];
+	Int32 pos = Index * VertexElementCount[VERTEX_FLAG_COLOR];
 
 	return Color( mColorArray[pos], mColorArray[pos + 1], mColorArray[pos + 2],
 				  mColorArray[pos + 3] );

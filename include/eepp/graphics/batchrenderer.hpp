@@ -14,7 +14,8 @@ using namespace EE::System;
 
 namespace EE { namespace Graphics {
 
-struct eeVertex {
+/// Holds the position texture UV and color of a vertex.
+struct VertexData {
 	Vector2f pos;
 	Vector2f tex;
 	Color color;
@@ -143,7 +144,7 @@ class EE_API BatchRenderer {
 					 const PrimitiveType& primitiveType = PRIMITIVE_POINTS );
 
 	/** Adds to the batch a point list */
-	void batchPointList( const std::vector<eeVertex>& points,
+	void batchPointList( const std::vector<VertexData>& points,
 						 const PrimitiveType& primitiveType = PRIMITIVE_POINTS );
 
 	/** This will set as the default batch rendering to PRIMITIVE_LINES. And will reset the line
@@ -299,9 +300,9 @@ class EE_API BatchRenderer {
 	const bool& getForceBlendModeChange() const;
 
   protected:
-	eeVertex* mVertex;
+	VertexData* mVertex;
 	unsigned int mVertexSize;
-	eeVertex* mTVertex;
+	VertexData* mTVertex;
 	unsigned int mNumVertex;
 
 	const Texture* mTexture;

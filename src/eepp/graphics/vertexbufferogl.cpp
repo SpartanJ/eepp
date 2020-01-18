@@ -7,7 +7,7 @@ namespace EE { namespace Graphics {
 
 VertexBufferOGL::VertexBufferOGL( const Uint32& VertexFlags, PrimitiveType DrawType,
 								  const Int32& ReserveVertexSize, const Int32& ReserveIndexSize,
-								  EE_VBO_USAGE_TYPE UsageType ) :
+								  VertexBufferUsageType UsageType ) :
 	VertexBuffer( VertexFlags, DrawType, ReserveVertexSize, ReserveIndexSize, UsageType ) {}
 
 void VertexBufferOGL::bind() {
@@ -43,8 +43,8 @@ void VertexBufferOGL::setVertexStates() {
 				GLi->clientActiveTexture( GL_TEXTURE0 + i );
 				GLi->enableClientState( GL_TEXTURE_COORD_ARRAY );
 
-				GLi->texCoordPointer( eeVertexElements[VERTEX_FLAG_TEXTURE0 + i], GL_FP,
-									  sizeof( Float ) * eeVertexElements[VERTEX_FLAG_TEXTURE0 + i],
+				GLi->texCoordPointer( VertexElementCount[VERTEX_FLAG_TEXTURE0 + i], GL_FP,
+									  sizeof( Float ) * VertexElementCount[VERTEX_FLAG_TEXTURE0 + i],
 									  &mVertexArray[VERTEX_FLAG_TEXTURE0 + i][0], alloc );
 			} else {
 				if ( 0 == i ) {
@@ -57,8 +57,8 @@ void VertexBufferOGL::setVertexStates() {
 	} else {
 		if ( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_TEXTURE0 ) ) {
 			GLi->enableClientState( GL_TEXTURE_COORD_ARRAY );
-			GLi->texCoordPointer( eeVertexElements[VERTEX_FLAG_TEXTURE0], GL_FP,
-								  sizeof( Float ) * eeVertexElements[VERTEX_FLAG_TEXTURE0],
+			GLi->texCoordPointer( VertexElementCount[VERTEX_FLAG_TEXTURE0], GL_FP,
+								  sizeof( Float ) * VertexElementCount[VERTEX_FLAG_TEXTURE0],
 								  &mVertexArray[VERTEX_FLAG_TEXTURE0][0], alloc );
 		} else {
 			GLi->disable( GL_TEXTURE_2D );
@@ -69,8 +69,8 @@ void VertexBufferOGL::setVertexStates() {
 	/// POSITION
 	if ( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_POSITION ) ) {
 		GLi->enableClientState( GL_VERTEX_ARRAY );
-		GLi->vertexPointer( eeVertexElements[VERTEX_FLAG_POSITION], GL_FP,
-							sizeof( Float ) * eeVertexElements[VERTEX_FLAG_POSITION],
+		GLi->vertexPointer( VertexElementCount[VERTEX_FLAG_POSITION], GL_FP,
+							sizeof( Float ) * VertexElementCount[VERTEX_FLAG_POSITION],
 							&mVertexArray[VERTEX_FLAG_POSITION][0], alloc );
 	} else {
 		GLi->disableClientState( GL_VERTEX_ARRAY );
@@ -79,8 +79,8 @@ void VertexBufferOGL::setVertexStates() {
 	/// COLOR
 	if ( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_COLOR ) ) {
 		GLi->enableClientState( GL_COLOR_ARRAY );
-		GLi->colorPointer( eeVertexElements[VERTEX_FLAG_COLOR], GL_UNSIGNED_BYTE,
-						   sizeof( Uint8 ) * eeVertexElements[VERTEX_FLAG_COLOR], &mColorArray[0],
+		GLi->colorPointer( VertexElementCount[VERTEX_FLAG_COLOR], GL_UNSIGNED_BYTE,
+						   sizeof( Uint8 ) * VertexElementCount[VERTEX_FLAG_COLOR], &mColorArray[0],
 						   allocC );
 	} else {
 		GLi->disableClientState( GL_COLOR_ARRAY );

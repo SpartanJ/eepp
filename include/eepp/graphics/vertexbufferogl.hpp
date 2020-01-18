@@ -14,7 +14,7 @@ class EE_API VertexBufferOGL : public VertexBuffer {
 	VertexBufferOGL( const Uint32& VertexFlags = VERTEX_FLAGS_DEFAULT,
 					 PrimitiveType DrawType = PRIMITIVE_QUADS, const Int32& ReserveVertexSize = 0,
 					 const Int32& ReserveIndexSize = 0,
-					 EE_VBO_USAGE_TYPE UsageType = VBO_USAGE_TYPE_STATIC );
+					 VertexBufferUsageType UsageType = VertexBufferUsageType::Static );
 
 	void bind();
 

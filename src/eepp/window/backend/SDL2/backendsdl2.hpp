@@ -11,7 +11,7 @@
 
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
-class EE_API WindowBackendSDL2 : public WindowBackend {
+class EE_API WindowBackendSDL2 : public WindowBackendLibrary {
   public:
 	WindowBackendSDL2();
 

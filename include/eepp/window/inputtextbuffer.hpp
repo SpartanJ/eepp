@@ -1,25 +1,12 @@
 #ifndef EE_WINDOWCINPUTTEXTBUFFER_H
 #define EE_WINDOWCINPUTTEXTBUFFER_H
 
+#include <climits>
 #include <eepp/window/base.hpp>
 #include <eepp/window/input.hpp>
 #include <eepp/window/window.hpp>
 
 namespace EE { namespace Window {
-
-enum INPUT_TEXTBUFFER_FLAGS {
-	INPUT_TB_SUPPORT_NEW_LINE = 0,
-	INPUT_TB_ALLOW_ONLY_NUMBERS = 1,
-	INPUT_TB_ALLOW_DOT_IN_NUMBERS = 2,
-	INPUT_TB_ACTIVE = 3,
-	INPUT_TB_CHANGE_SINCE_LAST_UPDATE = 4,
-	INPUT_TB_FREE_EDITING = 5,
-	INPUT_TB_PROMPT_AUTO_POS = 6,
-	INPUT_TB_SUPPORT_COPY_PASTE = 7,
-	INPUT_TB_TEXT_SELECTION_ENABLED = 8
-};
-
-#define INPUT_LENGHT_MAX 0xFFFFFFFF
 
 /** @brief A class to keep a buffer of the user writed text */
 class EE_API InputTextBuffer {
@@ -31,13 +18,12 @@ class EE_API InputTextBuffer {
 
 	static InputTextBuffer* New( const bool& active, const bool& newLineEnabled,
 								 const bool& freeEditing, EE::Window::Window* window = NULL,
-								 const Uint32& maxLength = INPUT_LENGHT_MAX );
+								 const Uint32& maxLength = UINT32_MAX );
 
 	static InputTextBuffer* New( EE::Window::Window* window = NULL );
 
 	InputTextBuffer( const bool& active, const bool& newLineEnabled, const bool& freeEditing,
-					 EE::Window::Window* window = NULL,
-					 const Uint32& maxLength = INPUT_LENGHT_MAX );
+					 EE::Window::Window* window = NULL, const Uint32& maxLength = UINT32_MAX );
 
 	InputTextBuffer( EE::Window::Window* window = NULL );
 
@@ -155,6 +141,18 @@ class EE_API InputTextBuffer {
 	void setSelectionChangeCallback( const SelectionChangeCallback& selectionChangeCallback );
 
   protected:
+	enum Flags {
+		SUPPORT_NEW_LINE = 0,
+		ALLOW_ONLY_NUMBERS = 1,
+		ALLOW_DOT_IN_NUMBERS = 2,
+		ACTIVE = 3,
+		CHANGE_SINCE_LAST_UPDATE = 4,
+		FREE_EDITING = 5,
+		PROMPT_AUTO_POS = 6,
+		SUPPORT_COPY_PASTE = 7,
+		TEXT_SELECTION_ENABLED = 8
+	};
+
 	EE::Window::Window* mWindow;
 	String mText;
 	Uint32 mFlags;

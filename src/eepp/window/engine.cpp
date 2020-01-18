@@ -121,7 +121,7 @@ void Engine::destroy() {
 	mWindow = NULL;
 }
 
-Backend::WindowBackend* Engine::createSDL2Backend( const WindowSettings& Settings ) {
+Backend::WindowBackendLibrary* Engine::createSDL2Backend( const WindowSettings& Settings ) {
 #if defined( EE_SDL_VERSION_2 )
 	return eeNew( Backend::SDL2::WindowBackendSDL2, () );
 #else
@@ -223,7 +223,7 @@ bool Engine::isRunning() const {
 	return NULL != mWindow;
 }
 
-Uint32 Engine::getDefaultBackend() const {
+WindowBackend Engine::getDefaultBackend() const {
 #if DEFAULT_BACKEND == BACKEND_SDL2
 	return WindowBackend::SDL2;
 #endif
@@ -240,10 +240,11 @@ WindowSettings Engine::createWindowSettings( IniFile* ini, std::string iniKeyNam
 	bool Windowed = ini->getValueB( iniKeyName, "Windowed", true );
 	bool Resizeable = ini->getValueB( iniKeyName, "Resizeable", true );
 	bool Borderless = ini->getValueB( iniKeyName, "Borderless", false );
-	bool UseDesktopResolution = ini->getValueB( iniKeyName, "UseDesktopResolution", false );
+	bool useDesktopResolution = ini->getValueB( iniKeyName, "UseDesktopResolution", false );
 	std::string pixelDensityStr = ini->getValue( iniKeyName, "PixelDensity" );
 	float pixelDensity = PixelDensity::getPixelDensity();
-	bool useScreenKeyboard = ini->getValueB( iniKeyName, "UseScreenKeyboard" );
+	bool useScreenKeyboard =
+		ini->getValueB( iniKeyName, "UseScreenKeyboard", EE_SCREEN_KEYBOARD_ENABLED );
 
 	if ( !pixelDensityStr.empty() ) {
 		if ( String::toLower( pixelDensityStr ) == "auto" ) {
@@ -258,20 +259,20 @@ WindowSettings Engine::createWindowSettings( IniFile* ini, std::string iniKeyNam
 		}
 	}
 
-	std::string Backend = ini->getValue( iniKeyName, "Backend", "" );
-	Uint32 WinBackend = getDefaultBackend();
+	std::string backend = ini->getValue( iniKeyName, "Backend", "" );
+	WindowBackend winBackend = getDefaultBackend();
 
-	String::toLowerInPlace( Backend );
+	String::toLowerInPlace( backend );
 
-	if ( "sdl2" == Backend )
-		WinBackend = WindowBackend::SDL2;
+	if ( "sdl2" == backend )
+		winBackend = WindowBackend::SDL2;
 
 	Uint32 Style = WindowStyle::Titlebar;
 
 	if ( Borderless )
 		Style = WindowStyle::Borderless;
 
-	if ( UseDesktopResolution )
+	if ( useDesktopResolution )
 		Style |= WindowStyle::UseDesktopResolution;
 
 	if ( !Windowed )
@@ -283,7 +284,7 @@ WindowSettings Engine::createWindowSettings( IniFile* ini, std::string iniKeyNam
 	std::string Icon = ini->getValue( iniKeyName, "WinIcon", "" );
 	std::string Caption = ini->getValue( iniKeyName, "WinCaption", "" );
 
-	WindowSettings WinSettings( Width, Height, Caption, Style, WinBackend, BitColor, Icon,
+	WindowSettings WinSettings( Width, Height, Caption, Style, winBackend, BitColor, Icon,
 								pixelDensity, useScreenKeyboard );
 
 	return WinSettings;
@@ -305,7 +306,7 @@ ContextSettings Engine::createContextSettings( IniFile* ini, std::string iniKeyN
 
 	String::toLowerInPlace( GLVersion );
 
-	EEGL_version GLVer;
+	GraphicsLibraryVersion GLVer;
 	if ( "3" == GLVersion || "opengl 3" == GLVersion || "gl3" == GLVersion ||
 		 "opengl3" == GLVersion )
 		GLVer = GLv_3;

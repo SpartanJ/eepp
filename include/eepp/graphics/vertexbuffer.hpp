@@ -17,7 +17,7 @@ class EE_API VertexBuffer {
   public:
 	/** @brief Creates a new Vertex Buffer.
 	 *	@param VertexFlags The vertex flags indicates which vertex data will be used. @see
-	 *EE_VERTEX_FLAGS
+	 *VertexFlags
 	 *	@param DrawType The type of the primitive to draw.
 	 *	@param ReserveVertexSize If the vertex size is known is possible to reserve the space in
 	 *memory to avoid resizeing the array.
@@ -30,15 +30,15 @@ class EE_API VertexBuffer {
 	static VertexBuffer* New( const Uint32& VertexFlags = VERTEX_FLAGS_DEFAULT,
 							  PrimitiveType DrawType = PRIMITIVE_QUADS,
 							  const Int32& ReserveVertexSize = 0, const Int32& ReserveIndexSize = 0,
-							  EE_VBO_USAGE_TYPE UsageType = VBO_USAGE_TYPE_STATIC );
+							  VertexBufferUsageType UsageType = VertexBufferUsageType::Static );
 
 	/** Creates the simple vertex array implementation ( without VBOs or VAO ), which it's faster
 	 * for many cases. */
-	static VertexBuffer* NewVertexArray( const Uint32& VertexFlags = VERTEX_FLAGS_DEFAULT,
-										 PrimitiveType DrawType = PRIMITIVE_QUADS,
-										 const Int32& ReserveVertexSize = 0,
-										 const Int32& ReserveIndexSize = 0,
-										 EE_VBO_USAGE_TYPE UsageType = VBO_USAGE_TYPE_STATIC );
+	static VertexBuffer*
+	NewVertexArray( const Uint32& VertexFlags = VERTEX_FLAGS_DEFAULT,
+					PrimitiveType DrawType = PRIMITIVE_QUADS, const Int32& ReserveVertexSize = 0,
+					const Int32& ReserveIndexSize = 0,
+					VertexBufferUsageType UsageType = VertexBufferUsageType::Static );
 
 	virtual ~VertexBuffer();
 
@@ -144,7 +144,7 @@ class EE_API VertexBuffer {
   protected:
 	Uint32 mVertexFlags;
 	PrimitiveType mDrawType;
-	EE_VBO_USAGE_TYPE mUsageType;
+	VertexBufferUsageType mUsageType;
 	Int32 mElemDraw;
 	std::vector<Float> mVertexArray[VERTEX_FLAGS_COUNT - 1];
 	std::vector<Uint8> mColorArray;
@@ -153,7 +153,7 @@ class EE_API VertexBuffer {
 	VertexBuffer( const Uint32& VertexFlags = VERTEX_FLAGS_DEFAULT,
 				  PrimitiveType DrawType = PRIMITIVE_QUADS, const Int32& ReserveVertexSize = 0,
 				  const Int32& ReserveIndexSize = 0,
-				  EE_VBO_USAGE_TYPE UsageType = VBO_USAGE_TYPE_STATIC );
+				  VertexBufferUsageType UsageType = VertexBufferUsageType::Static );
 
 	virtual void setVertexStates() = 0;
 };

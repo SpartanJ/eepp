@@ -16,7 +16,7 @@
 
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
-WindowBackendSDL2::WindowBackendSDL2() : WindowBackend() {}
+WindowBackendSDL2::WindowBackendSDL2() : WindowBackendLibrary() {}
 
 WindowBackendSDL2::~WindowBackendSDL2() {
 #if EE_PLATFORM != EE_PLATFORM_MACOSX

@@ -41,7 +41,7 @@ Renderer* GLi = NULL;
 
 Renderer* Renderer::sSingleton = NULL;
 
-Renderer* Renderer::createSingleton( EEGL_version ver ) {
+Renderer* Renderer::createSingleton( GraphicsLibraryVersion ver ) {
 #if !defined( EE_GLES1 ) && !defined( EE_GLES2 )
 	if ( GLv_default == ver )
 		ver = GLv_2;
@@ -288,7 +288,7 @@ bool Renderer::isExtension( const std::string& name ) {
 #endif
 }
 
-bool Renderer::isExtension( EEGL_extensions name ) {
+bool Renderer::isExtension( GraphicsLibraryExtension name ) {
 	return 0 != ( mExtensions & ( 1 << name ) );
 }
 

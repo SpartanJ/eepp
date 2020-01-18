@@ -25,7 +25,7 @@ class EE_API RendererGLES2 : public RendererGLShader {
 
 	~RendererGLES2();
 
-	EEGL_version version();
+	GraphicsLibraryVersion version();
 
 	std::string versionStr();
 

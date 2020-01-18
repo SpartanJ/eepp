@@ -62,7 +62,7 @@ void BatchRenderer::init() {
 
 void BatchRenderer::allocVertexs( const unsigned int& size ) {
 	eeSAFE_DELETE_ARRAY( mVertex );
-	mVertex = eeNewArray( eeVertex, size );
+	mVertex = eeNewArray( VertexData, size );
 	mVertexSize = size;
 	mNumVertex = 0;
 }
@@ -95,7 +95,7 @@ void BatchRenderer::addVertexs( const unsigned int& num ) {
 	mNumVertex += num;
 
 	if ( ( mNumVertex + num ) >= mVertexSize ) {
-		eeVertex* newVertex = eeNewArray( eeVertex, mVertexSize * 2 );
+		VertexData* newVertex = eeNewArray( VertexData, mVertexSize * 2 );
 
 		for ( Uint32 i = 0; i < mVertexSize; i++ )
 			newVertex[i] = mVertex[i];
@@ -142,21 +142,21 @@ void BatchRenderer::flush() {
 		GLi->translatef( -mCenter.x, -mCenter.y, 0.0f );
 	}
 
-	Uint32 alloc = sizeof( eeVertex ) * NumVertex;
+	Uint32 alloc = sizeof( VertexData ) * NumVertex;
 
 	if ( NULL != mTexture ) {
 		const_cast<Texture*>( mTexture )->bind( mCoordinateType );
-		GLi->texCoordPointer( 2, GL_FP, sizeof( eeVertex ),
+		GLi->texCoordPointer( 2, GL_FP, sizeof( VertexData ),
 							  reinterpret_cast<char*>( &mVertex[0] ) + sizeof( Vector2f ), alloc );
 	} else {
 		GLi->disable( GL_TEXTURE_2D );
 		GLi->disableClientState( GL_TEXTURE_COORD_ARRAY );
 	}
 
-	GLi->vertexPointer( 2, GL_FP, sizeof( eeVertex ), reinterpret_cast<char*>( &mVertex[0] ),
+	GLi->vertexPointer( 2, GL_FP, sizeof( VertexData ), reinterpret_cast<char*>( &mVertex[0] ),
 						alloc );
 	GLi->colorPointer(
-		4, GL_UNSIGNED_BYTE, sizeof( eeVertex ),
+		4, GL_UNSIGNED_BYTE, sizeof( VertexData ),
 		reinterpret_cast<char*>( &mVertex[0] ) + sizeof( Vector2f ) + sizeof( Vector2f ), alloc );
 
 	if ( !GLi->quadsSupported() ) {
@@ -538,7 +538,7 @@ void BatchRenderer::batchPoint( const Float& x, const Float& y,
 	addVertexs( 1 );
 }
 
-void BatchRenderer::batchPointList( const std::vector<eeVertex>& points,
+void BatchRenderer::batchPointList( const std::vector<VertexData>& points,
 									const PrimitiveType& primitiveType ) {
 	setDrawMode( primitiveType, mForceBlendMode );
 
@@ -546,7 +546,7 @@ void BatchRenderer::batchPointList( const std::vector<eeVertex>& points,
 
 	addVertexs( points.size() );
 
-	memcpy( (void*)&mVertex[curNumVertex], (void*)&points[0], sizeof( eeVertex ) * points.size() );
+	memcpy( (void*)&mVertex[curNumVertex], (void*)&points[0], sizeof( VertexData ) * points.size() );
 }
 
 void BatchRenderer::linesBegin() {

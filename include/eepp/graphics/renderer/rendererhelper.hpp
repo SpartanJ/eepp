@@ -3,8 +3,8 @@
 
 namespace EE { namespace Graphics {
 
-/** Just for reference */
-enum EEGL_ARRAY_STATES {
+/** Internal reference of Vertex Arrays States */
+enum VertexArrayStates {
 	EEGL_VERTEX_ARRAY = 0,
 	EEGL_NORMAL_ARRAY,
 	EEGL_COLOR_ARRAY,
@@ -12,7 +12,8 @@ enum EEGL_ARRAY_STATES {
 	EEGL_TEXTURE_COORD_ARRAY
 };
 
-enum EEGL_extensions {
+/// Graphics Library Extensions used by eepp when available.
+enum GraphicsLibraryExtension {
 	EEGL_ARB_texture_non_power_of_two = 0,
 	EEGL_ARB_point_parameters,
 	EEGL_ARB_point_sprite,
@@ -33,7 +34,21 @@ enum EEGL_extensions {
 	EEGL_EXT_blend_subtract
 };
 
-enum EEGL_version { GLv_2, GLv_3, GLv_3CP, GLv_ES1, GLv_ES2, GLv_default };
+/// Graphics Library Renderer version available.
+enum GraphicsLibraryVersion {
+	/// OpenGL 2
+	GLv_2,
+	/// OpenGL 3
+	GLv_3,
+	/// OpenGL 3 Core Profile
+	GLv_3CP,
+	/// OpenGL ES 1
+	GLv_ES1,
+	/// OpenGL ES 2
+	GLv_ES2,
+	/// Selects the most appropriate graphics library version for each platform.
+	GLv_default
+};
 
 }} // namespace EE::Graphics
 
