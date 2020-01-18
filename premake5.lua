@@ -8,6 +8,7 @@ newoption { trigger = "with-gles2", description = "Compile with GLES2 support" }
 newoption { trigger = "with-gles1", description = "Compile with GLES1 support" }
 newoption { trigger = "with-mojoal", description = "Compile with mojoAL as OpenAL implementation instead of using openal-soft (requires SDL2 backend)" }
 newoption { trigger = "use-frameworks", description = "In macOS it will try to link the external libraries from its frameworks. For example, instead of linking against SDL2 it will link against SDL2.framework." }
+newoption { trigger = "windows-vc-build", description = "This is used to build the framework in Visual Studio downloading its external dependencies and making them available to the VS project without having to install them manually." }
 newoption {
 	trigger = "with-backend",
 	description = "Select the backend to use for window and input handling.\n\t\t\tIf no backend is selected or if the selected is not installed the script will search for a backend present in the system, and will use it.",
@@ -25,12 +26,6 @@ function explode(div,str)
 	end
 	table.insert(arr,string.sub(str,pos))
 	return arr
-end
-
-if os.istarget("haiku") and not os.is64bit() then
-	premake.gcc.cc = "gcc-x86"
-	premake.gcc.cxx = "g++-x86"
-	premake.gcc.ar = "ar-x86"
 end
 
 function print_table( table_ref )
@@ -113,6 +108,25 @@ os_links = { }
 backends = { }
 static_backends = { }
 backend_selected = false
+remote_sdl2_version = "SDL2-2.0.10"
+remote_sdl2_devel_vc_url = "https://www.libsdl.org/release/SDL2-devel-2.0.10-VC.zip"
+
+function download_and_extract_dependencies()
+	if _OPTIONS["windows-vc-build"] then
+		print("Downloading: " .. remote_sdl2_devel_vc_url)
+		local dest_dir = "src/thirdparty/"
+		local local_file = dest_dir .. remote_sdl2_version .. ".zip"
+		local result_str, response_code = http.download(remote_sdl2_devel_vc_url, local_file)
+		if response_code == 200 then
+			print("Downloaded successfully to: " .. local_file)
+			zip.extract(local_file, dest_dir)
+			print("Extracted " .. local_file .. " into " .. dest_dir)
+		else
+			print("Failed to download:  " .. remote_sdl2_rul)
+			exit(1)
+		end
+	end
+end
 
 function build_base_configuration( package_name )
 	includedirs { "src/thirdparty/zlib" }
@@ -235,15 +249,10 @@ function build_link_configuration( package_name, use_ee_icon )
 				linkoptions { "--preload-file assets/" }
 			end
 		end
-
-		if _OPTIONS.platform == "ios-cross-arm7" then
-			extension = ".ios"
-		end
-
-		if _OPTIONS.platform == "ios-cross-x86" then
-			extension = ".x86.ios"
-		end
 	end
+
+	set_ios_config()
+	set_xcode_config()
 
 	configuration "debug"
 		defines { "DEBUG", "EE_DEBUG", "EE_MEMORY_MANAGER" }
@@ -275,6 +284,10 @@ function build_link_configuration( package_name, use_ee_icon )
 	configuration "windows"
 		add_cross_config_links()
 
+		if _OPTIONS["windows-vc-build"] then
+			syslibdirs { "src/thirdparty/" .. remote_sdl2_version .."/lib/x86" }
+		end
+
 		if is_vs() and table.contains( backends, "SDL2" ) then
 			links { "SDL2", "SDL2main" }
 		end
@@ -290,9 +303,6 @@ function build_link_configuration( package_name, use_ee_icon )
 		if _OPTIONS["with-gles2"] and not _OPTIONS["force-gles1"] then
 			linkoptions{ "-s FULL_ES2=1" }
 		end
-
-	set_ios_config()
-	set_xcode_config()
 end
 
 function generate_os_links()
@@ -534,6 +544,10 @@ function build_eepp( build_name )
 		includedirs { "src/thirdparty/mojoAL" }
 	end
 
+	if _OPTIONS["windows-vc-build"] then
+		includedirs { "src/thirdparty/" .. remote_sdl2_version .. "/include" }
+	end
+
 	set_macos_and_ios_config()
 	set_ios_config()
 	set_xcode_config()
@@ -611,6 +625,8 @@ workspace "eepp"
 	targetdir("./bin/")
 	configurations { "debug", "release" }
 	rtti "On"
+
+	download_and_extract_dependencies()
 
 	if os.istarget("android") then
 		ndkabi "arm64-v8a"
@@ -738,6 +754,9 @@ workspace "eepp"
 			kind "StaticLib"
 			language "C"
 			set_targetdir("libs/" .. os.target() .. "/thirdparty/")
+			if _OPTIONS["windows-vc-build"] then
+				includedirs { "src/thirdparty/" .. remote_sdl2_version .. "/include" }
+			end
 			includedirs { "include/eepp/thirdparty/mojoAL" }
 			defines( "AL_LIBTYPE_STATIC" )
 			files { "src/thirdparty/mojoAL/*.c" }
