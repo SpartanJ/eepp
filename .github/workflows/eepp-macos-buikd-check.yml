@@ -4,7 +4,7 @@ on: [push, pull_request]
 
 jobs:
   MacOS:
-    runs-on: macOS-latest
+    runs-on: macos-latest
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
@@ -12,9 +12,8 @@ jobs:
         fetch-depth: 2
         ref: develop  
     - name: Checkout submodules
-      uses: srt32/git-actions@v0.0.3
-      with:
-        args: git submodule update --init --recursive
+      run: |
+        git submodule update --init --recursive
     - name: Install dependencies
       run: |
         brew install wget
