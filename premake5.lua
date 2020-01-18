@@ -129,14 +129,14 @@ function download_and_extract_dependencies()
 end
 
 function build_base_configuration( package_name )
-	includedirs { "src/thirdparty/zlib" }
+	sysincludedirs { "src/thirdparty/zlib" }
 
 	if not os.istarget("windows") then
 		buildoptions{ "-fPIC" }
 	end
 
 	if is_vs() then
-		includedirs { "src/thirdparty/libzip/vs" }
+		sysincludedirs { "src/thirdparty/libzip/vs" }
 	end
 
 	set_ios_config()
@@ -207,7 +207,7 @@ function fix_shared_lib_linking_path( package_name, libname )
 end
 
 function build_link_configuration( package_name, use_ee_icon )
-	includedirs { "include" }
+	sysincludedirs { "include" }
 
 	local extension = "";
 
@@ -415,7 +415,7 @@ end
 function set_xcode_config()
 	if is_xcode() or _OPTIONS["use-frameworks"] then
 		linkoptions { "-F /Library/Frameworks" }
-		includedirs { "/Library/Frameworks/SDL2.framework/Headers" }
+		sysincludedirs { "/Library/Frameworks/SDL2.framework/Headers" }
 		defines { "EE_SDL2_FROM_ROOTPATH" }
 	end
 end
@@ -455,11 +455,11 @@ function set_ios_config()
 		linkoptions { sysroot_ver }
 		libdirs { framework_libs_path }
 		linkoptions { " -F" .. framework_path .. " -L" .. framework_libs_path .. " -isysroot " .. sysroot_path }
-		includedirs { "src/thirdparty/SDL2/include" }
+		sysincludedirs { "src/thirdparty/SDL2/include" }
 	end
 
 	if _OPTIONS.platform == "ios-cross-arm7" or _OPTIONS.platform == "ios-cross-x86" then
-		includedirs { "src/thirdparty/SDL2/include" }
+		sysincludedirs { "src/thirdparty/SDL2/include" }
 	end
 end
 
@@ -537,15 +537,15 @@ function set_macos_and_ios_config()
 end
 
 function build_eepp( build_name )
-	includedirs { "include", "src", "src/thirdparty", "include/eepp/thirdparty", "src/thirdparty/freetype2/include", "src/thirdparty/zlib", "src/thirdparty/libogg/include", "src/thirdparty/libvorbis/include", "src/thirdparty/mbedtls/include" }
+	sysincludedirs { "include", "src", "src/thirdparty", "include/eepp/thirdparty", "src/thirdparty/freetype2/include", "src/thirdparty/zlib", "src/thirdparty/libogg/include", "src/thirdparty/libvorbis/include", "src/thirdparty/mbedtls/include" }
 
 	if _OPTIONS["with-mojoal"] then
 		defines( "AL_LIBTYPE_STATIC" )
-		includedirs { "src/thirdparty/mojoAL" }
+		sysincludedirs { "src/thirdparty/mojoAL" }
 	end
 
 	if _OPTIONS["windows-vc-build"] then
-		includedirs { "src/thirdparty/" .. remote_sdl2_version .. "/include" }
+		sysincludedirs { "src/thirdparty/" .. remote_sdl2_version .. "/include" }
 	end
 
 	set_macos_and_ios_config()
@@ -555,7 +555,7 @@ function build_eepp( build_name )
 	add_static_links()
 
 	if is_vs() then
-		includedirs { "src/thirdparty/libzip/vs" }
+		sysincludedirs { "src/thirdparty/libzip/vs" }
 	end
 
 	if not is_vs() then
@@ -657,7 +657,7 @@ workspace "eepp"
 
 		set_targetdir("libs/" .. os.target() .. "/thirdparty/")
 		files { "src/thirdparty/SOIL2/src/SOIL2/*.c" }
-		includedirs { "src/thirdparty/SOIL2" }
+		sysincludedirs { "src/thirdparty/SOIL2" }
 		build_base_configuration( "SOIL2" )
 
 	if not os.istarget("haiku") and not os.istarget("ios") and not os.istarget("android") and not os.istarget("emscripten") then
@@ -667,7 +667,7 @@ workspace "eepp"
 			defines { "GLEW_NO_GLU", "GLEW_STATIC" }
 			set_targetdir("libs/" .. os.target() .. "/thirdparty/")
 			files { "src/thirdparty/glew/*.c" }
-			includedirs { "include/thirdparty/glew" }
+			sysincludedirs { "include/thirdparty/glew" }
 			build_base_configuration( "glew" )
 	end
 
@@ -676,7 +676,7 @@ workspace "eepp"
 			kind "StaticLib"
 			language "C"
 			set_targetdir("libs/" .. os.target() .. "/thirdparty/")
-			includedirs { "src/thirdparty/mbedtls/include/" }
+			sysincludedirs { "src/thirdparty/mbedtls/include/" }
 			files { "src/thirdparty/mbedtls/library/*.c" }
 			build_base_cpp_configuration( "mbedtls" )
 	end
@@ -685,7 +685,7 @@ workspace "eepp"
 		kind "StaticLib"
 		language "C"
 		set_targetdir("libs/" .. os.target() .. "/thirdparty/")
-		includedirs { "src/thirdparty/libvorbis/lib/", "src/thirdparty/libogg/include", "src/thirdparty/libvorbis/include" }
+		sysincludedirs { "src/thirdparty/libvorbis/lib/", "src/thirdparty/libogg/include", "src/thirdparty/libvorbis/include" }
 		files { "src/thirdparty/libogg/**.c", "src/thirdparty/libvorbis/**.c" }
 		build_base_cpp_configuration( "vorbis" )
 
@@ -708,7 +708,7 @@ workspace "eepp"
 		language "C"
 		set_targetdir("libs/" .. os.target() .. "/thirdparty/")
 		files { "src/thirdparty/libzip/*.c" }
-		includedirs { "src/thirdparty/zlib" }
+		sysincludedirs { "src/thirdparty/zlib" }
 		build_base_configuration( "libzip" )
 
 	project "freetype-static"
@@ -717,7 +717,7 @@ workspace "eepp"
 		set_targetdir("libs/" .. os.target() .. "/thirdparty/")
 		defines { "FT2_BUILD_LIBRARY" }
 		files { "src/thirdparty/freetype2/src/**.c" }
-		includedirs { "src/thirdparty/freetype2/include" }
+		sysincludedirs { "src/thirdparty/freetype2/include" }
 		build_base_configuration( "freetype" )
 
 	project "chipmunk-static"
@@ -732,7 +732,7 @@ workspace "eepp"
 
 		set_targetdir("libs/" .. os.target() .. "/thirdparty/")
 		files { "src/thirdparty/chipmunk/*.c", "src/thirdparty/chipmunk/constraints/*.c" }
-		includedirs { "include/eepp/thirdparty/chipmunk" }
+		sysincludedirs { "include/eepp/thirdparty/chipmunk" }
 		build_base_configuration( "chipmunk" )
 
 	project "jpeg-compressor-static"
@@ -755,9 +755,9 @@ workspace "eepp"
 			language "C"
 			set_targetdir("libs/" .. os.target() .. "/thirdparty/")
 			if _OPTIONS["windows-vc-build"] then
-				includedirs { "src/thirdparty/" .. remote_sdl2_version .. "/include" }
+				sysincludedirs { "src/thirdparty/" .. remote_sdl2_version .. "/include" }
 			end
-			includedirs { "include/eepp/thirdparty/mojoAL" }
+			sysincludedirs { "include/eepp/thirdparty/mojoAL" }
 			defines( "AL_LIBTYPE_STATIC" )
 			files { "src/thirdparty/mojoAL/*.c" }
 			build_base_cpp_configuration( "mojoal" )
@@ -767,7 +767,7 @@ workspace "eepp"
 		kind "StaticLib"
 		language "C++"
 		set_targetdir("libs/" .. os.target() .. "/thirdparty/")
-		includedirs { "src/thirdparty/efsw/include", "src/thirdparty/efsw/src" }
+		sysincludedirs { "src/thirdparty/efsw/include", "src/thirdparty/efsw/src" }
 
 		if os.istarget("windows") then
 			osfiles = "src/thirdparty/efsw/src/efsw/platform/win/*.cpp"
@@ -865,14 +865,14 @@ workspace "eepp"
 		kind "ConsoleApp"
 		language "C++"
 		files { "src/examples/http_request/*.cpp" }
-		includedirs { "src/thirdparty" }
+		sysincludedirs { "src/thirdparty" }
 		build_link_configuration( "eehttp-request", true )
 
 	project "eepp-ui-hello-world"
 		set_kind()
 		language "C++"
 		files { "src/examples/ui_hello_world/*.cpp" }
-		includedirs { "src/thirdparty" }
+		sysincludedirs { "src/thirdparty" }
 		build_link_configuration( "eeui-hello-world", true )
 
 	-- Tools
@@ -891,7 +891,7 @@ workspace "eepp"
 	project "eepp-uieditor"
 		set_kind()
 		language "C++"
-		includedirs { "src/thirdparty/efsw/include", "src/thirdparty" }
+		sysincludedirs { "src/thirdparty/efsw/include", "src/thirdparty" }
 
 		if not os.istarget("windows") and not os.istarget("haiku") then
 			links { "pthread" }

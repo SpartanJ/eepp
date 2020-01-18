@@ -915,6 +915,11 @@ void createAppMenu() {
 	SceneManager::instance()->setCurrentUISceneNode( uiSceneNode );
 }
 
+void setUserDefaultTheme() {
+	useDefaultTheme = true;
+	uiSceneNode->getUIThemeManager()->setDefaultTheme( theme );
+}
+
 EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	args::ArgumentParser parser( "eepp UIEditor" );
 	args::HelpFlag help( parser, "help", "Display this help menu", {'h', "help"} );
@@ -1008,8 +1013,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		uiSceneNode->getUIThemeManager()->setDefaultFont( font )->setDefaultEffectsEnabled( true );
 
 		if ( useAppTheme.Get() ) {
-			useDefaultTheme = true;
-			uiSceneNode->getUIThemeManager()->setDefaultTheme( theme );
+			setUserDefaultTheme();
 		}
 
 		loadConfig();
@@ -1039,6 +1043,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		}
 
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+		setUserDefaultTheme();
 		if ( !xmlFile && !cssFile )
 			loadStyleSheet( "assets/layouts/test.css" );
 		loadLayoutFile( "assets/layouts/test.xml" );

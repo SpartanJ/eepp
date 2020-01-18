@@ -11,6 +11,10 @@ doxygen:
 
 doxyrest: doxygen
 	doxyrest -c doxyrest-config.lua
+	perl -i -p0e 's/`(.*?)OS>`__//se' ../rst/page_index.rst
+	perl -i -p0e 's/image:: (?!http)/image:: https:\/\/web.ensoft.dev\/eepp\/screenshots\//g' ../rst/page_index.rst
+	perl -i -p0e 's/`https:\/\/github.com\/SpartanJ\/eepp.git <https:\/\/github.com\/SpartanJ\/eepp.git>`__`/https:\/\/github.com\/SpartanJ\/eepp.git/g' ../rst/page_index.rst
+	perl -i -p0e 's/``git/`git/g' ../rst/page_index.rst
 
 sphinx: doxyrest
 	@$(SPHINXBUILD) -M html "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)

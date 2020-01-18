@@ -35,6 +35,17 @@ td {
     100% { box-shadow: none; }
 }
 
+a:hover {
+    color: #33AEFF;
+}
+
+a,
+a:visited {
+    color: #3E9DDD;
+}
+
+@media (prefers-color-scheme: dark) {
+
 pre.doxyrest-overview-code-block {
     background-color: #201f1f !important;
 }
@@ -79,14 +90,6 @@ pre {
     color: #ffcd8b;
 }
 
-a:hover {
-    color: #70c6ff;
-}
-
-a {
-    color: #33AEFF;
-}
-
 .highlight .cpf {
     color: #ffcd8b;
 }
@@ -98,16 +101,6 @@ body,
 
 .wy-nav-content {
     background: #272b30;
-}
-
-@media screen and (min-width: 1100px) {
-    .wy-nav-top {
-        background: transparent;
-    }
-
-    .wy-nav-content {
-        background: #272b30;
-    }
 }
 
 a:visited {
@@ -127,7 +120,8 @@ pre.doxyrest-title-code-block {
     background-color: #363b42 !important;
 }
 
-a {
+a,
+a:visited {
     color: #70c6ff;
 }
 
@@ -275,4 +269,16 @@ code, .rst-content tt, .rst-content code {
 .wy-menu-vertical li.toctree-l1.current > a {
     border-bottom: solid 1px #666;
     border-top: solid 1px #666;
+}
+
+}
+
+@media screen and (min-width: 1100px) and (prefers-color-scheme: dark) {
+    .wy-nav-top {
+        background: transparent;
+    }
+
+    .wy-nav-content {
+        background: #272b30;
+    }
 }
