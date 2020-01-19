@@ -9,7 +9,7 @@ using namespace EE;
 using namespace EE::System;
 using namespace EE::Graphics;
 
-int main( int argc, char* argv[] ) {
+EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	args::ArgumentParser parser( "Texture Packer - eepp texture atlas creator." );
 	args::HelpFlag help( parser, "help", "Display this help menu", {'h', "help"} );
 	args::ValueFlag<std::string> texturesPath( parser, "textures-path", "Textures directory path.",

@@ -99,7 +99,7 @@ function incdirs( dirs )
 end
 
 function download_and_extract_dependencies()
-	if _OPTIONS["windows-vc-build"] then
+	if _OPTIONS["windows-vc-build"] and not os.isdir("src/thirdparty/" .. remote_sdl2_version) then
 		print("Downloading: " .. remote_sdl2_devel_vc_url)
 		local dest_dir = "src/thirdparty/"
 		local local_file = dest_dir .. remote_sdl2_version .. ".zip"
