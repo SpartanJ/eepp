@@ -125,11 +125,17 @@ class EE_API TextureAtlasLoader {
 	/** @return True if the texture atlas is loading. */
 	const bool& isLoading() const;
 
-	/** @brief The function will check if the texture atlas is updated.
-		Checks if all the images inside the images path are inside the texture atlas, and if they
-	   have the same date and size, otherwise it will recreate or update the texture atlas.
-	*/
-	bool updateTextureAtlas( std::string TextureAtlasPath, std::string ImagesPath );
+	/** The function will check if the texture atlas is updated. Checks if all the images inside the
+	 * images path are inside the texture atlas, and if they have the same date and size, otherwise
+	 * it will recreate or update the texture atlas.
+	 *
+	 * @param TextureAtlasPath The path to the texture atlas ( the ".eta" file )
+	 * @param ImagesPath The directory where the source images are located.
+	 * @param maxImageSize Maximum texture size allowed for the new texture atlas created. Default
+	 * value will use the current image size.
+	 */
+	bool updateTextureAtlas( std::string TextureAtlasPath, std::string ImagesPath,
+							 Sizei maxImageSize = Sizei::Zero );
 
 	/** Rewrites the texture atlas file. Usefull if the TextureRegions where modified and need to be
 	 * updated inside the texture atlas. */

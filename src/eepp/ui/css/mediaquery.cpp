@@ -8,6 +8,19 @@ using namespace EE::Window;
 
 namespace EE { namespace UI { namespace CSS {
 
+#define MediaOrientationStrings "portrait;landscape"
+
+#define MediaFeatureStrings                                                                  \
+	"none;width;min-width;max-width;height;min-height;max-height;device-width;min-device-"     \
+	"width;max-device-width;device-height;min-device-height;max-device-height;orientation;"    \
+	"aspect-ratio;min-aspect-ratio;max-aspect-ratio;device-aspect-ratio;min-device-aspect-"    \
+	"ratio;max-device-aspect-ratio;color;min-color;max-color;color-index;min-color-index;max-" \
+	"color-index;monochrome;min-monochrome;max-monochrome;resolution;min-resolution;max-"      \
+	"resolution"
+
+#define MediaTypeStrings \
+	"none;all;screen;print;braille;embossed;handheld;projection;speech;tty;tv"
+
 MediaQuery::MediaQuery() {
 	mMediaType = media_type_all;
 	mNot = false;
@@ -44,7 +57,7 @@ MediaQuery::ptr MediaQuery::parse( const std::string& str ) {
 				String::trimInPlace( exprTokens[0] );
 
 				expr.feature = (MediaFeature)String::valueIndex(
-					exprTokens[0], media_feature_strings, media_feature_none );
+					exprTokens[0], MediaFeatureStrings, media_feature_none );
 
 				if ( expr.feature != media_feature_none ) {
 					if ( exprTokens.size() == 1 ) {
@@ -54,7 +67,7 @@ MediaQuery::ptr MediaQuery::parse( const std::string& str ) {
 						expr.checkAsBool = false;
 
 						if ( expr.feature == media_feature_orientation ) {
-							expr.val = String::valueIndex( exprTokens[1], media_orientation_strings,
+							expr.val = String::valueIndex( exprTokens[1], MediaOrientationStrings,
 														   media_orientation_landscape );
 						} else {
 							std::string::size_type slash_pos = exprTokens[1].find( '/' );
@@ -89,7 +102,7 @@ MediaQuery::ptr MediaQuery::parse( const std::string& str ) {
 			}
 		} else {
 			query->mMediaType =
-				(MediaType)String::valueIndex( tok, media_type_strings, media_type_all );
+				(MediaType)String::valueIndex( tok, MediaTypeStrings, media_type_all );
 		}
 	}
 

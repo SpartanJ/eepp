@@ -95,10 +95,10 @@ void StyleSheetPropertyTransition::onUpdate( const Time& ) {
 											   mDuration.asMilliseconds() );
 				if ( mProperty->getType() == PropertyType::NumberFloat ) {
 					node->applyProperty(
-						StyleSheetProperty( mProperty, String::fromFloat( value, "px" ) ) );
+						StyleSheetProperty( mProperty, String::fromFloat( value ) ) );
 				} else {
 					node->applyProperty( StyleSheetProperty(
-						mProperty, String::format( "%dpx", static_cast<int>( value ) ) ) );
+						mProperty, String::format( "%d", static_cast<int>( value ) ) ) );
 				}
 				break;
 			}

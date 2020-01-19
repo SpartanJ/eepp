@@ -28,7 +28,22 @@ unsigned long read( FT_Stream rec, unsigned long offset, unsigned char* buffer,
 	} else
 		return count > 0 ? 0 : 1; // error code is 0 if we're reading, or nonzero if we're seeking
 }
+
 void close( FT_Stream ) {}
+
+// Helper to intepret memory as a specific type
+template <typename T, typename U> inline T reinterpret( const U& input ) {
+	T output;
+	std::memcpy( &output, &input, sizeof( U ) );
+	return output;
+}
+
+// Combine outline thickness, boldness and font glyph index into a single 64-bit key
+EE::Uint64 combine( float outlineThickness, bool bold, EE::Uint32 index ) {
+	return ( static_cast<EE::Uint64>( reinterpret<EE::Uint32>( outlineThickness ) ) << 32 ) |
+		   ( static_cast<EE::Uint64>( bold ) << 31 ) | index;
+}
+
 } // namespace
 
 namespace EE { namespace Graphics {
@@ -273,8 +288,8 @@ const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSiz
 	GlyphTable& glyphs = mPages[characterSize].glyphs;
 
 	// Build the key by combining the code point, bold flag, and outline thickness
-	Uint64 key = ( static_cast<Uint64>( *reinterpret_cast<Uint32*>( &outlineThickness ) ) << 32 ) |
-				 ( static_cast<Uint64>( bold ? 1 : 0 ) << 31 ) | static_cast<Uint64>( codePoint );
+	Uint64 key = combine( outlineThickness, bold,
+						  FT_Get_Char_Index( static_cast<FT_Face>( mFace ), codePoint ) );
 
 	// Search the glyph into the cache
 	GlyphTable::const_iterator it = glyphs.find( key );

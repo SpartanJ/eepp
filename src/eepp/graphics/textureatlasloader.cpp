@@ -233,9 +233,6 @@ void TextureAtlasLoader::createTextureRegions() {
 		// Create the Texture Atlas with the name of the real texture, not the Childs ( example
 		// load 1.png and not 1_ch1.png )
 		if ( 0 == z ) {
-			if ( mTexGrHdr.Flags & HDR_TEXTURE_ATLAS_REMOVE_EXTENSION )
-				name = FileSystem::fileRemoveExtension( name );
-
 			std::string etapath =
 				FileSystem::fileRemoveExtension( path ) + EE_TEXTURE_ATLAS_EXTENSION;
 
@@ -260,10 +257,6 @@ void TextureAtlasLoader::createTextureRegions() {
 					sTextureRegionHdr* tSh = &tTexAtlas->TextureRegions[i];
 
 					std::string TextureRegionName( &tSh->Name[0] );
-
-					if ( mTexGrHdr.Flags & HDR_TEXTURE_ATLAS_REMOVE_EXTENSION )
-						TextureRegionName = FileSystem::fileRemoveExtension( TextureRegionName );
-
 					Rect tRect( tSh->X, tSh->Y, tSh->X + tSh->Width, tSh->Y + tSh->Height );
 
 					TextureRegion* tTextureRegion = TextureRegion::New(
@@ -372,8 +365,8 @@ bool TextureAtlasLoader::updateTextureAtlas() {
 	return false;
 }
 
-bool TextureAtlasLoader::updateTextureAtlas( std::string TextureAtlasPath,
-											 std::string ImagesPath ) {
+bool TextureAtlasLoader::updateTextureAtlas( std::string TextureAtlasPath, std::string ImagesPath,
+											 Sizei maxImageSize ) {
 	if ( !TextureAtlasPath.size() || !ImagesPath.size() ||
 		 !FileSystem::fileExists( TextureAtlasPath ) || !FileSystem::isDirectory( ImagesPath ) )
 		return false;
@@ -464,16 +457,19 @@ bool TextureAtlasLoader::updateTextureAtlas( std::string TextureAtlasPath,
 							Image::saveTypeToExtension( mTexGrHdr.Format ) );
 
 		if ( 2 == NeedUpdate ) {
-			TexturePacker tp( mTexGrHdr.Width, mTexGrHdr.Height, pixelDensity,
-							  0 != ( mTexGrHdr.Flags & HDR_TEXTURE_ATLAS_POW_OF_TWO ),
-							  0 != ( mTexGrHdr.Flags & HDR_TEXTURE_ATLAS_SCALABLE_SVG ),
-							  mTexGrHdr.PixelBorder,
-							  (Texture::TextureFilter)mTexGrHdr.TextureFilter,
-							  mTexGrHdr.Flags & HDR_TEXTURE_ATLAS_ALLOW_FLIPPING );
+			TexturePacker tp(
+				maxImageSize.getWidth() == 0 ? mTexGrHdr.Width : maxImageSize.getWidth(),
+				maxImageSize.getHeight() == 0 ? mTexGrHdr.Height : maxImageSize.getHeight(),
+				pixelDensity, 0 != ( mTexGrHdr.Flags & HDR_TEXTURE_ATLAS_POW_OF_TWO ),
+				0 != ( mTexGrHdr.Flags & HDR_TEXTURE_ATLAS_SCALABLE_SVG ), mTexGrHdr.PixelBorder,
+				(Texture::TextureFilter)mTexGrHdr.TextureFilter,
+				mTexGrHdr.Flags & HDR_TEXTURE_ATLAS_ALLOW_FLIPPING );
 
 			tp.addTexturesPath( ImagesPath );
 
-			tp.packTextures();
+			if ( tp.packTextures() <= 0 ) {
+				return false;
+			}
 
 			tp.save( tapath, (Image::SaveType)mTexGrHdr.Format );
 		} else if ( 1 == NeedUpdate ) {

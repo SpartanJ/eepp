@@ -9,20 +9,11 @@ namespace EE { namespace UI { namespace CSS {
 /** Media Queries support is based on the litehtml implementation:
  * https://github.com/litehtml/litehtml licensed under the New BSD License.
  */
-#define media_orientation_strings "portrait;landscape"
 
 enum MediaOrientation {
 	media_orientation_portrait,
 	media_orientation_landscape,
 };
-
-#define media_feature_strings                                                                  \
-	"none;width;min-width;max-width;height;min-height;max-height;device-width;min-device-"     \
-	"width;max-device-width;device-height;min-device-height;max-device-height;orientation;"    \
-	"aspect-ratio;min-aspect-ratio;max-aspect-ratio;device-aspect-ratio;min-device-aspect-"    \
-	"ratio;max-device-aspect-ratio;color;min-color;max-color;color-index;min-color-index;max-" \
-	"color-index;monochrome;min-monochrome;max-monochrome;resolution;min-resolution;max-"      \
-	"resolution"
 
 enum MediaFeature {
 	media_feature_none,
@@ -69,9 +60,6 @@ enum MediaFeature {
 	media_feature_min_resolution,
 	media_feature_max_resolution,
 };
-
-#define media_type_strings \
-	"none;all;screen;print;braille;embossed;handheld;projection;speech;tty;tv"
 
 enum MediaType {
 	media_type_none,

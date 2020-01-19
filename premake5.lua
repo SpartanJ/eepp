@@ -35,11 +35,6 @@ function multiple_insert( parent_table, insert_table )
 	end
 end
 
-function get_ios_arch()
-	local archs = string.explode( os.target(), "-" )
-	return archs[ table_length( archs ) ]
-end
-
 function os_findlib( name )
 	if os.istarget("macosx") and ( is_xcode() or _OPTIONS["use-frameworks"] ) then
 		local path = "/Library/Frameworks/" .. name .. ".framework"
@@ -137,7 +132,7 @@ function build_base_configuration( package_name )
 
 	filter "action:not vs*"
 		cdialect "gnu99"
-		buildoptions{ "-Wall" }
+		buildoptions { "-Wall" }
 
 	filter "action:vs*"
 		incdirs { "src/thirdparty/libzip/vs" }
@@ -151,47 +146,27 @@ function build_base_cpp_configuration( package_name )
 	set_ios_config()
 	set_xcode_config()
 
+	filter "action:not vs*"
+		buildoptions { "-Wall" }
+
 	filter "configurations:debug"
 		defines { "DEBUG" }
 		symbols "On"
-		if not is_vs() then
-			buildoptions{ "-Wall" }
-		end
 		targetname ( package_name .. "-debug" )
 
 	filter "configurations:release"
 		optimize "Speed"
-		if not is_vs() then
-			buildoptions{ "-Wall" }
-		end
 		targetname ( package_name )
-end
-
-function add_cross_config_links()
-	if not is_vs() then
-		if os.istarget("mingw32") or os.istarget("windows") or os.istarget("ios") then -- if is crosscompiling from *nix
-			linkoptions { "-static-libgcc", "-static-libstdc++" }
-		end
-
-		if os.istarget("mingw32") then
-			linkoptions { "-Wl,-Bstatic -lstdc++ -lpthread -Wl,-Bdynamic" }
-		end
-	end
 end
 
 function build_link_configuration( package_name, use_ee_icon )
 	incdirs { "include" }
-
 	local extension = "";
 
 	if package_name == "eepp" then
 		defines { "EE_EXPORTS" }
 	elseif package_name == "eepp-static" then
 		defines { "EE_STATIC" }
-	end
-
-	if not is_vs() then
-		buildoptions{ "-std=c++14" }
 	end
 
 	if package_name ~= "eepp" and package_name ~= "eepp-static" then
@@ -203,63 +178,46 @@ function build_link_configuration( package_name, use_ee_icon )
 			add_static_links()
 			links { link_list }
 		end
-
-		if os.istarget("windows") and not is_vs() then
-			if ( true == use_ee_icon ) then
-				linkoptions { "../../bin/assets/icon/ee.res" }
-			end
-		end
-
-		if os.istarget("emscripten") then
-			extension = ".html"
-
-			if (	package_name ~= "eeew" and
-					package_name ~= "eees" and
-					package_name ~= "eehttp-request" and
-					package_name ~= "eephysics" and
-					package_name ~= "eevbo-fbo-batch"
-			) then
-				linkoptions { "--preload-file assets/" }
-			end
-		end
 	end
 
 	set_ios_config()
 	set_xcode_config()
 
-	filter "configurations:debug"
-		defines { "DEBUG", "EE_DEBUG", "EE_MEMORY_MANAGER" }
-		symbols "On"
-
-		if not is_vs() and not os.istarget("emscripten") then
-			buildoptions{ "-Wall -Wno-long-long" }
+	filter { "system:windows", "action:not vs*" }
+		if ( true == use_ee_icon ) then
+			linkoptions { "../../bin/assets/icon/ee.res" }
 		end
 
+	filter "action:not vs*"
+		cppdialect "C++14"
+		buildoptions { "-Wall" }
+
+	filter { "configurations:debug", "action:not vs*" }
+		buildoptions{ "-Wno-long-long" }
+
+	filter { "configurations:release", "action:not vs*" }
+		buildoptions { "-fno-strict-aliasing -ffast-math" }
+
+	filter { "configurations:release", "action:not vs*", "system:not macosx" }
+		buildoptions { "-s" }
+
+	filter "configurations:debug"
+		defines { "DEBUG", "EE_DEBUG", "EE_MEMORY_MANAGER" }
 		targetname ( package_name .. "-debug" .. extension )
 
 	filter "configurations:release"
-		optimize "Speed"
-
-		if not is_vs() and not os.istarget("emscripten") then
-			buildoptions { "-fno-strict-aliasing -ffast-math" }
-		end
-
-		if not is_vs() and not os.istarget("emscripten") and not os.istarget("macosx") then
-			buildoptions { "-s" }
-		end
-
 		targetname ( package_name .. extension )
 
-	filter "system:windows"
-		add_cross_config_links()
+	filter { "system:windows or system:ios", "action:not vs*" }
+		linkoptions { "-static-libgcc", "-static-libstdc++" }
 
-		if _OPTIONS["windows-vc-build"] then
-			syslibdirs { "src/thirdparty/" .. remote_sdl2_version .."/lib/x86" }
-		end
-
-		if is_vs() and table.contains( backends, "SDL2" ) then
+	filter { "system:windows", "action:vs*" }
+		if table.contains( backends, "SDL2" ) then
 			links { "SDL2", "SDL2main" }
 		end
+
+	filter { "options:windows-vc-build", "system:windows" }
+		syslibdirs { "src/thirdparty/" .. remote_sdl2_version .."/lib/x86" }
 
 	filter "system:emscripten"
 		linkoptions{ "-O2 -s TOTAL_MEMORY=67108864 -s ASM_JS=1 -s VERBOSE=1 -s DISABLE_EXCEPTION_CATCHING=0 -s USE_SDL=2 -s ERROR_ON_UNDEFINED_SYMBOLS=0 -s ERROR_ON_MISSING_LIBRARIES=0 -s FULL_ES3=1 -s \"BINARYEN_TRAP_MODE='clamp'\"" }
@@ -390,7 +348,7 @@ function set_xcode_config()
 end
 
 function set_ios_config()
-	if _OPTIONS.platform == "ios-arm7" or _OPTIONS.platform == "ios-x86" then
+	if os.istarget("ios") then
 		local err = false
 
 		if nil == os.getenv("TOOLCHAINPATH") then
@@ -495,50 +453,7 @@ function check_ssl_support()
 	defines { "EE_SSL_SUPPORT" }
 end
 
-function set_macos_and_ios_config()
-	if os.istarget("macosx") and ( is_xcode() or _OPTIONS["use-frameworks"] ) then
-		libdirs { "/System/Library/Frameworks", "/Library/Frameworks" }
-	end
-
-	if _OPTIONS["use-frameworks"] then
-		defines { "EE_USE_FRAMEWORKS" }
-	end
-end
-
 function build_eepp( build_name )
-	incdirs { "include", "src", "src/thirdparty", "include/eepp/thirdparty", "src/thirdparty/freetype2/include", "src/thirdparty/zlib", "src/thirdparty/libogg/include", "src/thirdparty/libvorbis/include", "src/thirdparty/mbedtls/include" }
-
-	if _OPTIONS["with-mojoal"] then
-		defines( "AL_LIBTYPE_STATIC" )
-		incdirs { "src/thirdparty/mojoAL" }
-	end
-
-	if _OPTIONS["windows-vc-build"] then
-		incdirs { "src/thirdparty/" .. remote_sdl2_version .. "/include" }
-	end
-
-	set_macos_and_ios_config()
-	set_ios_config()
-	set_xcode_config()
-
-	add_static_links()
-
-	if is_vs() then
-		incdirs { "src/thirdparty/libzip/vs" }
-	end
-
-	if not is_vs() then
-		buildoptions{ "-std=c++14" }
-	end
-
-	if os.istarget("windows") then
-		files { "src/eepp/system/platform/win/*.cpp" }
-		files { "src/eepp/network/platform/win/*.cpp" }
-	else
-		files { "src/eepp/system/platform/posix/*.cpp" }
-		files { "src/eepp/network/platform/unix/*.cpp" }
-	end
-
 	files { "src/eepp/core/*.cpp",
 			"src/eepp/math/*.cpp",
 			"src/eepp/system/*.cpp",
@@ -561,13 +476,20 @@ function build_eepp( build_name )
 			"src/eepp/maps/mapeditor/*.cpp"
 	}
 
+	incdirs {	"include",
+				"src",
+				"src/thirdparty",
+				"include/eepp/thirdparty",
+				"src/thirdparty/freetype2/include",
+				"src/thirdparty/zlib",
+				"src/thirdparty/libogg/include",
+				"src/thirdparty/libvorbis/include",
+				"src/thirdparty/mbedtls/include"
+	}
+
+	add_static_links()
 	check_ssl_support()
-
 	select_backend()
-
-	if _OPTIONS["with-dynamic-freetype"] and os_findlib("freetype") then
-		table.insert( link_list, get_backend_link_name( "freetype" ) )
-	end
 
 	multiple_insert( link_list, os_links )
 
@@ -575,43 +497,53 @@ function build_eepp( build_name )
 
 	build_link_configuration( build_name )
 
-	configuration "emscripten"
-		if _OPTIONS["force-gles1"] then
-			defines{ "EE_GLES1_DEFAULT" }
-		end
-end
+	filter "options:use-frameworks"
+		defines { "EE_USE_FRAMEWORKS" }
 
-function set_targetdir( dir )
-	if os.istarget("ios") then
-		targetdir(dir .. get_ios_arch() .. "/" )
-	else
-		targetdir(dir)
-	end
+	filter { "system:macosx", "action:xcode* or options:use-frameworks" }
+		libdirs { "/System/Library/Frameworks", "/Library/Frameworks" }
+
+	filter "with-dynamic-freetype"
+		if os_findlib("freetype") then
+			table.insert( link_list, get_backend_link_name( "freetype" ) )
+		end
+
+	filter "system:windows"
+		files { "src/eepp/system/platform/win/*.cpp" }
+		files { "src/eepp/network/platform/win/*.cpp" }
+
+	filter "system:not windows"
+		files { "src/eepp/system/platform/posix/*.cpp" }
+		files { "src/eepp/network/platform/unix/*.cpp" }
+
+	filter "with-mojoal"
+		defines( "AL_LIBTYPE_STATIC" )
+		incdirs { "src/thirdparty/mojoAL" }
+
+	filter "options:windows-vc-build"
+		incdirs { "src/thirdparty/" .. remote_sdl2_version .. "/include" }
+
+	filter "action:vs*"
+		incdirs { "src/thirdparty/libzip/vs" }
+
+	filter "action:not vs*"
+		cppdialect "C++14"
 end
 
 workspace "eepp"
 	targetdir("./bin/")
 	configurations { "debug", "release" }
 	rtti "On"
-
 	download_and_extract_dependencies()
+	generate_os_links()
+	parse_args()
+	location("./make/" .. os.target() .. "/")
+	objdir("obj/" .. os.target() .. "/")
 
-	if os.istarget("android") then
+	filter "system:android"
 		ndkabi "arm64-v8a"
 		ndkplatform "android-28"
 		ndkstl "c++_static"
-	end
-
-	if os.istarget("ios") then
-		location("./make/" .. os.target() .. "/" )
-		objdir("obj/" .. os.target() .. "/" .. get_ios_arch() .. "/" )
-	else
-		location("./make/" .. os.target() .. "/")
-		objdir("obj/" .. os.target() .. "/")
-	end
-
-	generate_os_links()
-	parse_args()
 
 	filter "configurations:debug"
 		defines { "DEBUG" }
@@ -621,7 +553,7 @@ workspace "eepp"
 
 	project "SOIL2-static"
 		kind "StaticLib"
-		set_targetdir("libs/" .. os.target() .. "/thirdparty/")
+		targetdir("libs/" .. os.target() .. "/thirdparty/")
 		files { "src/thirdparty/SOIL2/src/SOIL2/*.c" }
 		incdirs { "src/thirdparty/SOIL2" }
 		build_base_configuration( "SOIL2" )
@@ -635,7 +567,7 @@ workspace "eepp"
 		kind "StaticLib"
 		language "C"
 		defines { "GLEW_NO_GLU", "GLEW_STATIC" }
-		set_targetdir("libs/" .. os.target() .. "/thirdparty/")
+		targetdir("libs/" .. os.target() .. "/thirdparty/")
 		files { "src/thirdparty/glew/*.c" }
 		incdirs { "include/thirdparty/glew" }
 		build_base_configuration( "glew" )
@@ -643,7 +575,7 @@ workspace "eepp"
 	project "mbedtls-static"
 		kind "StaticLib"
 		language "C"
-		set_targetdir("libs/" .. os.target() .. "/thirdparty/")
+		targetdir("libs/" .. os.target() .. "/thirdparty/")
 		incdirs { "src/thirdparty/mbedtls/include/" }
 		files { "src/thirdparty/mbedtls/library/*.c" }
 		build_base_cpp_configuration( "mbedtls" )
@@ -651,7 +583,7 @@ workspace "eepp"
 	project "vorbis-static"
 		kind "StaticLib"
 		language "C"
-		set_targetdir("libs/" .. os.target() .. "/thirdparty/")
+		targetdir("libs/" .. os.target() .. "/thirdparty/")
 		incdirs { "src/thirdparty/libvorbis/lib/", "src/thirdparty/libogg/include", "src/thirdparty/libvorbis/include" }
 		files { "src/thirdparty/libogg/**.c", "src/thirdparty/libvorbis/**.c" }
 		build_base_cpp_configuration( "vorbis" )
@@ -659,21 +591,21 @@ workspace "eepp"
 	project "pugixml-static"
 		kind "StaticLib"
 		language "C++"
-		set_targetdir("libs/" .. os.target() .. "/thirdparty/")
+		targetdir("libs/" .. os.target() .. "/thirdparty/")
 		files { "src/thirdparty/pugixml/*.cpp" }
 		build_base_cpp_configuration( "pugixml" )
 
 	project "zlib-static"
 		kind "StaticLib"
 		language "C"
-		set_targetdir("libs/" .. os.target() .. "/thirdparty/")
+		targetdir("libs/" .. os.target() .. "/thirdparty/")
 		files { "src/thirdparty/zlib/*.c" }
 		build_base_configuration( "zlib" )
 
 	project "libzip-static"
 		kind "StaticLib"
 		language "C"
-		set_targetdir("libs/" .. os.target() .. "/thirdparty/")
+		targetdir("libs/" .. os.target() .. "/thirdparty/")
 		files { "src/thirdparty/libzip/*.c" }
 		incdirs { "src/thirdparty/zlib" }
 		build_base_configuration( "libzip" )
@@ -681,7 +613,7 @@ workspace "eepp"
 	project "freetype-static"
 		kind "StaticLib"
 		language "C"
-		set_targetdir("libs/" .. os.target() .. "/thirdparty/")
+		targetdir("libs/" .. os.target() .. "/thirdparty/")
 		defines { "FT2_BUILD_LIBRARY" }
 		files { "src/thirdparty/freetype2/src/**.c" }
 		incdirs { "src/thirdparty/freetype2/include" }
@@ -689,7 +621,7 @@ workspace "eepp"
 
 	project "chipmunk-static"
 		kind "StaticLib"
-		set_targetdir("libs/" .. os.target() .. "/thirdparty/")
+		targetdir("libs/" .. os.target() .. "/thirdparty/")
 		files { "src/thirdparty/chipmunk/*.c", "src/thirdparty/chipmunk/constraints/*.c" }
 		incdirs { "include/eepp/thirdparty/chipmunk" }
 		build_base_configuration( "chipmunk" )
@@ -702,21 +634,21 @@ workspace "eepp"
 	project "jpeg-compressor-static"
 		kind "StaticLib"
 		language "C++"
-		set_targetdir("libs/" .. os.target() .. "/thirdparty/")
+		targetdir("libs/" .. os.target() .. "/thirdparty/")
 		files { "src/thirdparty/jpeg-compressor/*.cpp" }
 		build_base_cpp_configuration( "jpeg-compressor" )
 
 	project "imageresampler-static"
 		kind "StaticLib"
 		language "C++"
-		set_targetdir("libs/" .. os.target() .. "/thirdparty/")
+		targetdir("libs/" .. os.target() .. "/thirdparty/")
 		files { "src/thirdparty/imageresampler/*.cpp" }
 		build_base_cpp_configuration( "imageresampler" )
 
 	project "mojoal-static"
 		kind "StaticLib"
 		language "C"
-		set_targetdir("libs/" .. os.target() .. "/thirdparty/")
+		targetdir("libs/" .. os.target() .. "/thirdparty/")
 		incdirs { "include/eepp/thirdparty/mojoAL" }
 		defines( "AL_LIBTYPE_STATIC" )
 		files { "src/thirdparty/mojoAL/*.c" }
@@ -727,38 +659,65 @@ workspace "eepp"
 	project "efsw-static"
 		kind "StaticLib"
 		language "C++"
-		set_targetdir("libs/" .. os.target() .. "/thirdparty/")
+		targetdir("libs/" .. os.target() .. "/thirdparty/")
 		incdirs { "src/thirdparty/efsw/include", "src/thirdparty/efsw/src" }
 		files { "src/thirdparty/efsw/src/efsw/*.cpp" }
 		build_base_cpp_configuration( "efsw" )
 		filter "system:windows"
 			files { "src/thirdparty/efsw/src/efsw/platform/win/*.cpp" }
-			excludes { "src/thirdparty/efsw/src/efsw/WatcherKqueue.cpp", "src/thirdparty/efsw/src/efsw/WatcherFSEvents.cpp", "src/thirdparty/efsw/src/efsw/WatcherInotify.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherKqueue.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherInotify.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherFSEvents.cpp" }
+			excludes {
+				"src/thirdparty/efsw/src/efsw/WatcherKqueue.cpp",
+				"src/thirdparty/efsw/src/efsw/WatcherFSEvents.cpp",
+				"src/thirdparty/efsw/src/efsw/WatcherInotify.cpp",
+				"src/thirdparty/efsw/src/efsw/FileWatcherKqueue.cpp",
+				"src/thirdparty/efsw/src/efsw/FileWatcherInotify.cpp",
+				"src/thirdparty/efsw/src/efsw/FileWatcherFSEvents.cpp"
+			}
 		filter "system:linux"
-			excludes { "src/thirdparty/efsw/src/efsw/WatcherKqueue.cpp", "src/thirdparty/efsw/src/efsw/WatcherFSEvents.cpp", "src/thirdparty/efsw/src/efsw/WatcherWin32.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherKqueue.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherWin32.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherFSEvents.cpp" }
+			excludes {
+				"src/thirdparty/efsw/src/efsw/WatcherKqueue.cpp",
+				"src/thirdparty/efsw/src/efsw/WatcherFSEvents.cpp",
+				"src/thirdparty/efsw/src/efsw/WatcherWin32.cpp",
+				"src/thirdparty/efsw/src/efsw/FileWatcherKqueue.cpp",
+				"src/thirdparty/efsw/src/efsw/FileWatcherWin32.cpp",
+				"src/thirdparty/efsw/src/efsw/FileWatcherFSEvents.cpp"
+			}
 		filter "system:macosx"
-			excludes { "src/thirdparty/efsw/src/efsw/WatcherInotify.cpp", "src/thirdparty/efsw/src/efsw/WatcherWin32.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherInotify.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherWin32.cpp" }
+			excludes {
+				"src/thirdparty/efsw/src/efsw/WatcherInotify.cpp",
+				"src/thirdparty/efsw/src/efsw/WatcherWin32.cpp",
+				"src/thirdparty/efsw/src/efsw/FileWatcherInotify.cpp",
+				"src/thirdparty/efsw/src/efsw/FileWatcherWin32.cpp"
+			}
 		filter "system:bsd"
-			excludes { "src/thirdparty/efsw/src/efsw/WatcherInotify.cpp", "src/thirdparty/efsw/src/efsw/WatcherWin32.cpp", "src/thirdparty/efsw/src/efsw/WatcherFSEvents.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherInotify.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherWin32.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherFSEvents.cpp" }
+			excludes {
+				"src/thirdparty/efsw/src/efsw/WatcherInotify.cpp",
+				"src/thirdparty/efsw/src/efsw/WatcherWin32.cpp",
+				"src/thirdparty/efsw/src/efsw/WatcherFSEvents.cpp",
+				"src/thirdparty/efsw/src/efsw/FileWatcherInotify.cpp",
+				"src/thirdparty/efsw/src/efsw/FileWatcherWin32.cpp",
+				"src/thirdparty/efsw/src/efsw/FileWatcherFSEvents.cpp"
+			}
 		filter "system:not windows"
 			files { "src/thirdparty/efsw/src/efsw/platform/posix/*.cpp" }
 
+	-- Library
 	project "eepp-main"
 		kind "StaticLib"
 		language "C++"
-		set_targetdir("libs/" .. os.target() .. "/")
+		targetdir("libs/" .. os.target() .. "/")
 		files { "src/eepp/main/eepp_main.cpp" }
 
 	project "eepp-static"
 		kind "StaticLib"
 		language "C++"
-		set_targetdir("libs/" .. os.target() .. "/")
+		targetdir("libs/" .. os.target() .. "/")
 		build_eepp( "eepp-static" )
 
 	project "eepp-shared"
 		kind "SharedLib"
 		language "C++"
-		set_targetdir("libs/" .. os.target() .. "/")
+		targetdir("libs/" .. os.target() .. "/")
 		build_eepp( "eepp" )
 
 	-- Examples
@@ -766,63 +725,63 @@ workspace "eepp"
 		set_kind()
 		language "C++"
 		files { "src/test/*.cpp" }
-		build_link_configuration( "eetest", true )
+		build_link_configuration( "eepp-test", true )
 
-	project "eepp-es"
+	project "eepp-external-shader"
 		set_kind()
 		language "C++"
 		files { "src/examples/external_shader/*.cpp" }
-		build_link_configuration( "eees", true )
+		build_link_configuration( "eepp-external-shader", true )
 
-	project "eepp-ew"
+	project "eepp-empty-window"
 		set_kind()
 		language "C++"
 		files { "src/examples/empty_window/*.cpp" }
-		build_link_configuration( "eeew", true )
+		build_link_configuration( "eepp-empty-window", true )
 
 	project "eepp-sound"
 		kind "ConsoleApp"
 		language "C++"
 		files { "src/examples/sound/*.cpp" }
-		build_link_configuration( "eesound", true )
+		build_link_configuration( "eepp-sound", true )
 
 	project "eepp-sprites"
 		set_kind()
 		language "C++"
 		files { "src/examples/sprites/*.cpp" }
-		build_link_configuration( "eesprites", true )
+		build_link_configuration( "eepp-sprites", true )
 
 	project "eepp-fonts"
 		set_kind()
 		language "C++"
 		files { "src/examples/fonts/*.cpp" }
-		build_link_configuration( "eefonts", true )
+		build_link_configuration( "eepp-fonts", true )
 
 	project "eepp-vbo-fbo-batch"
 		set_kind()
 		language "C++"
 		files { "src/examples/vbo_fbo_batch/*.cpp" }
-		build_link_configuration( "eevbo-fbo-batch", true )
+		build_link_configuration( "eepp-vbo-fbo-batch", true )
 
 	project "eepp-physics"
 		set_kind()
 		language "C++"
 		files { "src/examples/physics/*.cpp" }
-		build_link_configuration( "eephysics", true )
+		build_link_configuration( "eepp-physics", true )
 
 	project "eepp-http-request"
 		kind "ConsoleApp"
 		language "C++"
 		files { "src/examples/http_request/*.cpp" }
 		incdirs { "src/thirdparty" }
-		build_link_configuration( "eehttp-request", true )
+		build_link_configuration( "eepp-http-request", true )
 
 	project "eepp-ui-hello-world"
 		set_kind()
 		language "C++"
 		files { "src/examples/ui_hello_world/*.cpp" }
 		incdirs { "src/thirdparty" }
-		build_link_configuration( "eeui-hello-world", true )
+		build_link_configuration( "eepp-ui-hello-world", true )
 
 	-- Tools
 	project "eepp-textureatlaseditor"
@@ -848,6 +807,13 @@ workspace "eepp"
 			links { "CoreFoundation.framework", "CoreServices.framework" }
 		filter { "system:not windows", "system:not haiku" }
 			links { "pthread" }
+
+	project "eepp-texturepacker"
+		kind "ConsoleApp"
+		language "C++"
+		incdirs { "src/thirdparty" }
+		files { "src/tools/texturepacker/*.cpp" }
+		build_link_configuration( "eepp-TexturePacker", true )
 
 if os.isfile("external_projects.lua") then
 	dofile("external_projects.lua")

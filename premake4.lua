@@ -299,7 +299,7 @@ function build_base_configuration( package_name )
 
 	set_ios_config()
 	set_xcode_config()
-	
+
 	configuration "debug"
 		defines { "DEBUG" }
 		flags { "Symbols" }
@@ -417,7 +417,7 @@ function build_link_configuration( package_name, use_ee_icon )
 		if _OPTIONS.platform == "ios-cross-x86" then
 			extension = ".x86.ios"
 		end
-		
+
 		if _OPTIONS.platform == "ios-cross-x86_64" then
 			extension = ".x86_64.ios"
 		end
@@ -455,7 +455,7 @@ function build_link_configuration( package_name, use_ee_icon )
 		add_cross_config_links()
 
 	configuration "emscripten"
-		linkoptions{ "-O2 -s TOTAL_MEMORY=67108864 -s ASM_JS=1 -s VERBOSE=1 -s DISABLE_EXCEPTION_CATCHING=0 -s USE_SDL=2 -s ERROR_ON_UNDEFINED_SYMBOLS=0 -s ERROR_ON_MISSING_LIBRARIES=0 -s FULL_ES3=1 -s \"BINARYEN_TRAP_MODE='clamp'\"" }
+		linkoptions{ "-O2 -s TOTAL_MEMORY=67108864 -s ASM_JS=1 -s VERBOSE=1 -s DISABLE_EXCEPTION_CATCHING=0 -s USE_SDL=2 -s ERROR_ON_UNDEFINED_SYMBOLS=0 -s FULL_ES3=1 -s \"BINARYEN_TRAP_MODE='clamp'\"" }
 		buildoptions { "-fno-strict-aliasing -O2 -s USE_SDL=2 -s PRECISE_F32=1 -s ENVIRONMENT=web" }
 
 		if _OPTIONS["with-gles1"] and ( not _OPTIONS["with-gles2"] or _OPTIONS["force-gles1"] ) then
@@ -567,7 +567,9 @@ function add_sdl2()
 	defines { "EE_BACKEND_SDL_ACTIVE", "EE_SDL_VERSION_2" }
 
 	if not can_add_static_backend("SDL2") then
-		table.insert( link_list, get_backend_link_name( "SDL2" ) )
+		if not os.is_real("emscripten") then
+			table.insert( link_list, get_backend_link_name( "SDL2" ) )
+		end
 	else
 		insert_static_backend( "SDL2" )
 	end
@@ -923,17 +925,44 @@ solution "eepp"
 		files { "src/thirdparty/efsw/src/efsw/*.cpp", osfiles }
 
 		if os.is("windows") then
-			excludes { "src/thirdparty/efsw/src/efsw/WatcherKqueue.cpp", "src/thirdparty/efsw/src/efsw/WatcherFSEvents.cpp", "src/thirdparty/efsw/src/efsw/WatcherInotify.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherKqueue.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherInotify.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherFSEvents.cpp" }
+			excludes {
+				"src/thirdparty/efsw/src/efsw/WatcherKqueue.cpp",
+				"src/thirdparty/efsw/src/efsw/WatcherFSEvents.cpp",
+				"src/thirdparty/efsw/src/efsw/WatcherInotify.cpp",
+				"src/thirdparty/efsw/src/efsw/FileWatcherKqueue.cpp",
+				"src/thirdparty/efsw/src/efsw/FileWatcherInotify.cpp",
+				"src/thirdparty/efsw/src/efsw/FileWatcherFSEvents.cpp"
+			}
 		elseif os.is("linux") then
-			excludes { "src/thirdparty/efsw/src/efsw/WatcherKqueue.cpp", "src/thirdparty/efsw/src/efsw/WatcherFSEvents.cpp", "src/thirdparty/efsw/src/efsw/WatcherWin32.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherKqueue.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherWin32.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherFSEvents.cpp" }
+			excludes {
+				"src/thirdparty/efsw/src/efsw/WatcherKqueue.cpp",
+				"src/thirdparty/efsw/src/efsw/WatcherFSEvents.cpp",
+				"src/thirdparty/efsw/src/efsw/WatcherWin32.cpp",
+				"src/thirdparty/efsw/src/efsw/FileWatcherKqueue.cpp",
+				"src/thirdparty/efsw/src/efsw/FileWatcherWin32.cpp",
+				"src/thirdparty/efsw/src/efsw/FileWatcherFSEvents.cpp"
+			}
 		elseif os.is("macosx") then
-			excludes { "src/thirdparty/efsw/src/efsw/WatcherInotify.cpp", "src/thirdparty/efsw/src/efsw/WatcherWin32.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherInotify.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherWin32.cpp" }
+			excludes {
+				"src/thirdparty/efsw/src/efsw/WatcherInotify.cpp",
+				"src/thirdparty/efsw/src/efsw/WatcherWin32.cpp",
+				"src/thirdparty/efsw/src/efsw/FileWatcherInotify.cpp",
+				"src/thirdparty/efsw/src/efsw/FileWatcherWin32.cpp"
+			}
 		elseif os.is("freebsd") then
-			excludes { "src/thirdparty/efsw/src/efsw/WatcherInotify.cpp", "src/thirdparty/efsw/src/efsw/WatcherWin32.cpp", "src/thirdparty/efsw/src/efsw/WatcherFSEvents.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherInotify.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherWin32.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherFSEvents.cpp" }
+			excludes {
+				"src/thirdparty/efsw/src/efsw/WatcherInotify.cpp",
+				"src/thirdparty/efsw/src/efsw/WatcherWin32.cpp",
+				"src/thirdparty/efsw/src/efsw/WatcherFSEvents.cpp",
+				"src/thirdparty/efsw/src/efsw/FileWatcherInotify.cpp",
+				"src/thirdparty/efsw/src/efsw/FileWatcherWin32.cpp",
+				"src/thirdparty/efsw/src/efsw/FileWatcherFSEvents.cpp"
+			}
 		end
 
 		build_base_cpp_configuration( "efsw" )
 
+	-- Library
 	project "eepp-main"
 		kind "StaticLib"
 		language "C++"
@@ -957,63 +986,63 @@ solution "eepp"
 		set_kind()
 		language "C++"
 		files { "src/test/*.cpp" }
-		build_link_configuration( "eetest", true )
+		build_link_configuration( "eepp-test", true )
 
-	project "eepp-es"
+	project "eepp-external-shader"
 		set_kind()
 		language "C++"
 		files { "src/examples/external_shader/*.cpp" }
-		build_link_configuration( "eees", true )
+		build_link_configuration( "eepp-external-shader", true )
 
-	project "eepp-ew"
+	project "eepp-empty-window"
 		set_kind()
 		language "C++"
 		files { "src/examples/empty_window/*.cpp" }
-		build_link_configuration( "eeew", true )
+		build_link_configuration( "eepp-empty-window", true )
 
 	project "eepp-sound"
 		kind "ConsoleApp"
 		language "C++"
 		files { "src/examples/sound/*.cpp" }
-		build_link_configuration( "eesound", true )
+		build_link_configuration( "eepp-sound", true )
 
 	project "eepp-sprites"
 		set_kind()
 		language "C++"
 		files { "src/examples/sprites/*.cpp" }
-		build_link_configuration( "eesprites", true )
+		build_link_configuration( "eepp-sprites", true )
 
 	project "eepp-fonts"
 		set_kind()
 		language "C++"
 		files { "src/examples/fonts/*.cpp" }
-		build_link_configuration( "eefonts", true )
+		build_link_configuration( "eepp-fonts", true )
 
 	project "eepp-vbo-fbo-batch"
 		set_kind()
 		language "C++"
 		files { "src/examples/vbo_fbo_batch/*.cpp" }
-		build_link_configuration( "eevbo-fbo-batch", true )
+		build_link_configuration( "eepp-vbo-fbo-batch", true )
 
 	project "eepp-physics"
 		set_kind()
 		language "C++"
 		files { "src/examples/physics/*.cpp" }
-		build_link_configuration( "eephysics", true )
+		build_link_configuration( "eepp-physics", true )
 
 	project "eepp-http-request"
 		kind "ConsoleApp"
 		language "C++"
 		files { "src/examples/http_request/*.cpp" }
 		includedirs { "src/thirdparty" }
-		build_link_configuration( "eehttp-request", true )
+		build_link_configuration( "eepp-http-request", true )
 
 	project "eepp-ui-hello-world"
 		set_kind()
 		language "C++"
 		files { "src/examples/ui_hello_world/*.cpp" }
 		includedirs { "src/thirdparty" }
-		build_link_configuration( "eeui-hello-world", true )
+		build_link_configuration( "eepp-ui-hello-world", true )
 
 	-- Tools
 	project "eepp-textureatlaseditor"
@@ -1040,6 +1069,13 @@ solution "eepp"
 		links { "efsw-static", "pugixml-static" }
 		files { "src/tools/uieditor/*.cpp" }
 		build_link_configuration( "eepp-UIEditor", true )
+
+	project "eepp-texturepacker"
+		kind "ConsoleApp"
+		language "C++"
+		includedirs { "src/thirdparty" }
+		files { "src/tools/texturepacker/*.cpp" }
+		build_link_configuration( "eepp-TexturePacker", true )
 
 if os.isfile("external_projects.lua") then
 	dofile("external_projects.lua")

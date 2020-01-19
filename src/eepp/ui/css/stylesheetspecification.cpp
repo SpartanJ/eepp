@@ -50,8 +50,8 @@ bool StyleSheetSpecification::isShorthand( const std::string& name ) const {
 void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "id", "", false ).setType( PropertyType::String );
 	registerProperty( "class", "", false ).setType( PropertyType::String );
-	registerProperty( "x", "", false ).setType( PropertyType::NumberFloat );
-	registerProperty( "y", "", false ).setType( PropertyType::NumberFloat );
+	registerProperty( "x", "", false ).setType( PropertyType::NumberLength );
+	registerProperty( "y", "", false ).setType( PropertyType::NumberLength );
 	registerProperty( "width", "", false )
 		.setType( PropertyType::NumberLength )
 		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockWidth );
@@ -78,10 +78,10 @@ void StyleSheetSpecification::registerDefaultProperties() {
 		.setType( PropertyType::NumberLength );
 	registerProperty( "foreground-repeat", "no-repeat", false );
 	registerProperty( "foreground-size", "", false ).setType( PropertyType::ForegroundSize );
-	registerProperty( "foreground-radius", "0px", false ).setType( PropertyType::NumberInt );
+	registerProperty( "foreground-radius", "0px", false ).setType( PropertyType::NumberLength );
 	registerProperty( "border-color", "", false ).setType( PropertyType::Color );
-	registerProperty( "border-width", "", false ).setType( PropertyType::NumberFloat );
-	registerProperty( "border-radius", "0px", false ).setType( PropertyType::NumberInt );
+	registerProperty( "border-width", "", false ).setType( PropertyType::NumberLength );
+	registerProperty( "border-radius", "0px", false ).setType( PropertyType::NumberLength );
 	registerProperty( "visible", "true", false ).setType( PropertyType::Bool );
 	registerProperty( "enabled", "true", false ).setType( PropertyType::Bool );
 	registerProperty( "theme", "", false );
@@ -166,14 +166,14 @@ void StyleSheetSpecification::registerDefaultProperties() {
 		.addAlias( "font-name" )
 		.setType( PropertyType::String );
 	registerProperty( "font-size", "", false )
-		.setType( PropertyType::NumberFloat )
+		.setType( PropertyType::NumberLength )
 		.addAlias( "text-size" )
 		.addAlias( "textsize" );
 	registerProperty( "font-style", "", false )
 		.addAlias( "text-style" )
 		.addAlias( "text-decoration" );
 	registerProperty( "text-stroke-width", "", false )
-		.setType( PropertyType::NumberFloat )
+		.setType( PropertyType::NumberLength )
 		.addAlias( "fontoutlinethickness" );
 	registerProperty( "text-stroke-color", "", false )
 		.setType( PropertyType::Color )
@@ -182,8 +182,8 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "text-align", "", false );
 	registerProperty( "icon", "", false );
 	registerProperty( "min-icon-size", "", false ).setType( PropertyType::Vector2 );
-	registerProperty( "icon-horizontal-margin", "", false ).setType( PropertyType::NumberFloat );
-	registerProperty( "icon-auto-margin", "", false ).setType( PropertyType::NumberFloat );
+	registerProperty( "icon-horizontal-margin", "", false ).setType( PropertyType::NumberLength );
+	registerProperty( "icon-auto-margin", "", false ).setType( PropertyType::NumberLength );
 	registerProperty( "src", "", false ).setType( PropertyType::String );
 	registerProperty( "scale-type", "", false );
 	registerProperty( "tint", "", false ).setType( PropertyType::Color );
@@ -195,15 +195,15 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "special-border-tabs", "", false ).setType( PropertyType::Bool );
 	registerProperty( "line-below-tabs", "", false ).setType( PropertyType::Bool );
 	registerProperty( "line-below-tabs-color", "", false ).setType( PropertyType::Color );
-	registerProperty( "line-below-tabs-y-offset", "", false ).setType( PropertyType::NumberFloat );
-	registerProperty( "tab-separation", "", false ).setType( PropertyType::NumberInt );
+	registerProperty( "line-below-tabs-y-offset", "", false ).setType( PropertyType::NumberLength );
+	registerProperty( "tab-separation", "", false ).setType( PropertyType::NumberLength );
 	registerProperty( "selected", "", false ).setType( PropertyType::Bool ).addAlias( "active" );
 	registerProperty( "popup-to-main-control", "", false ).setType( PropertyType::Bool );
 	registerProperty( "max-visible-items", "", false ).setType( PropertyType::NumberInt );
 	registerProperty( "selected-index", "", false );
 	registerProperty( "selected-text", "", false );
 	registerProperty( "scrollbar-type", "", false );
-	registerProperty( "row-height", "", false ).setType( PropertyType::NumberInt );
+	registerProperty( "row-height", "", false ).setType( PropertyType::NumberLength );
 	registerProperty( "vscroll-mode", "", false );
 	registerProperty( "hscroll-mode", "", false );
 
@@ -222,21 +222,21 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "max-progress", "", false ).setType( PropertyType::NumberFloat );
 	registerProperty( "progress", "", false ).setType( PropertyType::NumberFloat );
 	registerProperty( "fill-color", "", false ).setType( PropertyType::Color );
-	registerProperty( "radius", "", false ).setType( PropertyType::NumberFloat );
-	registerProperty( "outline-thickness", "", false ).setType( PropertyType::NumberFloat );
+	registerProperty( "radius", "", false ).setType( PropertyType::NumberLength );
+	registerProperty( "outline-thickness", "", false ).setType( PropertyType::NumberLength );
 	registerProperty( "animation-speed", "", false ).setType( PropertyType::Vector2 );
 	registerProperty( "arc-start-angle", "", false ).setType( PropertyType::NumberFloat );
-	registerProperty( "min-width", "", false ).setType( PropertyType::NumberFloat );
-	registerProperty( "min-margin-right", "", false ).setType( PropertyType::NumberInt );
-	registerProperty( "min-icon-space", "", false ).setType( PropertyType::NumberInt );
+	registerProperty( "min-width", "", false ).setType( PropertyType::NumberLength );
+	registerProperty( "min-margin-right", "", false ).setType( PropertyType::NumberLength );
+	registerProperty( "min-icon-space", "", false ).setType( PropertyType::NumberLength );
 
 	registerProperty( "total-steps", "", false ).setType( PropertyType::NumberInt );
 	registerProperty( "vertical-expand", "", false ).setType( PropertyType::Bool );
 	registerProperty( "display-percent", "", false ).setType( PropertyType::Bool );
-	registerProperty( "filler-padding-left", "", false ).setType( PropertyType::NumberFloat );
-	registerProperty( "filler-padding-top", "", false ).setType( PropertyType::NumberFloat );
-	registerProperty( "filler-padding-right", "", false ).setType( PropertyType::NumberFloat );
-	registerProperty( "filler-padding-bottom", "", false ).setType( PropertyType::NumberFloat );
+	registerProperty( "filler-padding-left", "", false ).setType( PropertyType::NumberLength );
+	registerProperty( "filler-padding-top", "", false ).setType( PropertyType::NumberLength );
+	registerProperty( "filler-padding-right", "", false ).setType( PropertyType::NumberLength );
+	registerProperty( "filler-padding-bottom", "", false ).setType( PropertyType::NumberLength );
 	registerProperty( "movement-speed", "", false ).setType( PropertyType::Vector2 );
 	registerProperty( "min-value", "", false ).setType( PropertyType::NumberFloat );
 	registerProperty( "max-value", "", false ).setType( PropertyType::NumberFloat );
@@ -257,20 +257,20 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "touch-drag-deceleration", "", false ).setType( PropertyType::NumberFloat );
 
 	registerProperty( "base-alpha", "", false ).setType( PropertyType::NumberFloat );
-	registerProperty( "buttons-position-offset", "", false ).setType( PropertyType::NumberInt );
+	registerProperty( "buttons-position-offset", "", false ).setType( PropertyType::NumberLength );
 	registerProperty( "window-flags", "", false ).addAlias( "winflags" );
 	registerProperty( "decoration-size", "", false ).setType( PropertyType::Vector2 );
 	registerProperty( "border-size", "", false ).setType( PropertyType::Vector2 );
 	registerProperty( "min-window-size", "", false ).setType( PropertyType::Vector2 );
-	registerProperty( "buttons-separation", "", false ).setType( PropertyType::NumberInt );
+	registerProperty( "buttons-separation", "", false ).setType( PropertyType::NumberLength );
 	registerProperty( "min-corner-distance", "", false );
 	registerProperty( "decoration-auto-size", "", false ).setType( PropertyType::Bool );
 	registerProperty( "border-auto-size", "", false ).setType( PropertyType::Bool );
 
-	registerProperty( "margin-between-buttons", "", false ).setType( PropertyType::NumberInt );
-	registerProperty( "button-margin", "", false ).setType( PropertyType::NumberFloat );
-	registerProperty( "menu-height", "", false ).setType( PropertyType::NumberFloat );
-	registerProperty( "first-button-margin-left", "", false ).setType( PropertyType::NumberInt );
+	registerProperty( "margin-between-buttons", "", false ).setType( PropertyType::NumberLength );
+	registerProperty( "button-margin", "", false ).setType( PropertyType::NumberLength );
+	registerProperty( "menu-height", "", false ).setType( PropertyType::NumberLength );
+	registerProperty( "first-button-margin-left", "", false ).setType( PropertyType::NumberLength );
 
 	registerProperty( "scale-origin-point", "", false ).setType( PropertyType::Vector2 );
 
@@ -279,10 +279,10 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "hint", "", false ).setType( PropertyType::String );
 	registerProperty( "hint-color", "", false ).setType( PropertyType::Color );
 	registerProperty( "hint-shadow-color", "", false ).setType( PropertyType::Color );
-	registerProperty( "hint-font-size", "", false ).setType( PropertyType::NumberFloat );
+	registerProperty( "hint-font-size", "", false ).setType( PropertyType::NumberLength );
 	registerProperty( "hint-font-style", "", false ).setType( PropertyType::String );
 	registerProperty( "hint-stroke-width", "", false )
-		.setType( PropertyType::NumberFloat )
+		.setType( PropertyType::NumberLength )
 		.addAlias( "hintoutlinethickness" );
 	registerProperty( "hint-stroke-color", "", false ).setType( PropertyType::Color );
 	registerProperty( "hint-font-family", "", false ).addAlias( "hint-font-name" );

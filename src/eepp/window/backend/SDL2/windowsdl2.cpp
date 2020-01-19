@@ -23,8 +23,8 @@
 #endif
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
-#include <objbase.h>
 #include <initguid.h>
+#include <objbase.h>
 #include <shellapi.h>
 #include <tlhelp32.h>
 
@@ -266,7 +266,8 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 		SDL_GL_SetAttribute( SDL_GL_MULTISAMPLESAMPLES, mWindow.ContextConfig.Multisamples );
 	}
 
-#if EE_PLATFORM != EE_PLATFORM_MACOSX && EE_PLATFORM != EE_PLATFORM_IOS
+#if EE_PLATFORM != EE_PLATFORM_MACOSX && EE_PLATFORM != EE_PLATFORM_IOS && \
+	EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	mWindow.WindowConfig.Width *= mWindow.WindowConfig.PixelDensity;
 	mWindow.WindowConfig.Height *= mWindow.WindowConfig.PixelDensity;
 #endif

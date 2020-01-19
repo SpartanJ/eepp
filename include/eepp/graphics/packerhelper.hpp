@@ -7,7 +7,7 @@ namespace EE { namespace Graphics { namespace Private {
 
 #pragma pack( push, 1 )
 
-#define HDR_NAME_SIZE 64
+#define HDR_NAME_SIZE 128
 
 struct sTextureRegionHdr {
 	char Name[HDR_NAME_SIZE];

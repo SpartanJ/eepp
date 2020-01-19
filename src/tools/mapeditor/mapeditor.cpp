@@ -1,4 +1,20 @@
-#include <eepp/ee.hpp>
+#include <eepp/graphics/fonttruetype.hpp>
+#include <eepp/maps/mapeditor/mapeditor.hpp>
+#include <eepp/scene/scenemanager.hpp>
+#include <eepp/ui/uimessagebox.hpp>
+#include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uitheme.hpp>
+#include <eepp/ui/uithememanager.hpp>
+#include <eepp/window/engine.hpp>
+#include <eepp/window/window.hpp>
+
+using namespace EE;
+using namespace EE::Graphics;
+using namespace EE::Maps;
+using namespace EE::Scene;
+using namespace EE::Window;
+using namespace EE::UI;
+using namespace EE::UI::Tools;
 
 EE::Window::Window* win = NULL;
 UIMessageBox* MsgBox = NULL;

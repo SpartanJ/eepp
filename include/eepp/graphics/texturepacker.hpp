@@ -50,41 +50,65 @@ class EE_API TexturePacker {
   public:
 	static TexturePacker* New();
 
+	/** Creates a new instance of the texture packer indicating the maximum size of the texture
+	 *atlas.
+	 *	@param maxWidth The maximum width that the texture atlas will use.
+	 *	@param maxHeight The maximum height that the texture atlas will use.
+	 *	@param pixelDensity Indicates the device pixel density that represents the resources that
+	 *will the packer pack.
+	 *	@param textureFilter Indicates with texture filter should be used when the texture of the
+	 *atlas is loaded.
+	 *	@param forcePowOfTwo Indicates that if the max with and height must be adjusted to fit a
+	 *power of two texture.
+	 *	@param scalableSVG True if SVG images are scaled to the packer PixelDensity
+	 *	@param pixelBorder Indicates how many pixels will be added to separate one image to another
+	 *in the texture atlas. Usefull to avoid artifacts when rendered scaled TextureRegions. Use at
+	 *least 1 pixel to separate images if you will scale any TextureRegion.
+	 *	@param allowChilds When enabled if the atlas does not have enough space left in the image to
+	 *put more resources it will create a new image atlas and add the rest of the images in that
+	 *images, repeating this process recursivelly until using all source images.
+	 *	@param allowFlipping Indicates if the images can be flipped inside the texture atlas. This
+	 *is not compatible with eepp ( since it can't flip the textures back to the original
+	 *orientation ). So avoid it for eepp.
+	 */
 	static TexturePacker*
-	New( const Uint32& MaxWidth, const Uint32& MaxHeight,
-		 const PixelDensitySize& PixelDensity = PixelDensitySize::MDPI,
-		 const bool& ForcePowOfTwo = true, const bool& scalableSVG = false,
-		 const Uint32& PixelBorder = 0,
+	New( const Uint32& maxWidth, const Uint32& maxHeight,
+		 const PixelDensitySize& pixelDensity = PixelDensitySize::MDPI,
+		 const bool& forcePowOfTwo = true, const bool& scalableSVG = false,
+		 const Uint32& pixelBorder = 2,
 		 const Texture::TextureFilter& textureFilter = Texture::TextureFilter::Linear,
-		 const bool& AllowFlipping = false );
+		 const bool& allowChilds = false, const bool& allowFlipping = false );
 
 	/** Creates a new texture packer ( you will need to call SetOptions before adding any texture or
 	 * image ). */
 	TexturePacker();
 
-	/** Creates a new texture packer indicating the size of the texture atlas.
-	 *	@param MaxWidth The maximum width that the texture atlas will use.
-	 *	@param MaxHeight The maximum height that the texture atlas will use.
-	 *	@param PixelDensity Indicates the device pixel density that represents the resources that
+	/** Creates a new texture packer indicating the maximum size of the texture atlas.
+	 *	@param maxWidth The maximum width that the texture atlas will use.
+	 *	@param maxHeight The maximum height that the texture atlas will use.
+	 *	@param pixelDensity Indicates the device pixel density that represents the resources that
 	 *will the packer pack.
 	 *	@param textureFilter Indicates with texture filter should be used when the texture of the
-	 *atlas is loaded
-	 *	@param ForcePowOfTwo Indicates that if the max with and height must be adjusted to fit a
+	 *atlas is loaded.
+	 *	@param forcePowOfTwo Indicates that if the max with and height must be adjusted to fit a
 	 *power of two texture.
 	 *	@param scalableSVG True if SVG images are scaled to the packer PixelDensity
-	 *	@param PixelBorder Indicates how many pixels will be added to separate one image to another
+	 *	@param pixelBorder Indicates how many pixels will be added to separate one image to another
 	 *in the texture atlas. Usefull to avoid artifacts when rendered scaled TextureRegions. Use at
 	 *least 1 pixel to separate images if you will scale any TextureRegion.
-	 *	@param AllowFlipping Indicates if the images can be flipped inside the texture atlas. This
+	 *	@param allowChilds When enabled if the atlas does not have enough space left in the image to
+	 *put more resources it will create a new image atlas and add the rest of the images in that
+	 *images, repeating this process recursivelly until using all source images.
+	 *	@param allowFlipping Indicates if the images can be flipped inside the texture atlas. This
 	 *is not compatible with eepp ( since it can't flip the textures back to the original
 	 *orientation ). So avoid it for eepp.
 	 */
-	TexturePacker( const Uint32& MaxWidth, const Uint32& MaxHeight,
-				   const PixelDensitySize& PixelDensity = PixelDensitySize::MDPI,
-				   const bool& ForcePowOfTwo = true, const bool& scalableSVG = false,
-				   const Uint32& PixelBorder = 0,
+	TexturePacker( const Uint32& maxWidth, const Uint32& maxHeight,
+				   const PixelDensitySize& pixelDensity = PixelDensitySize::MDPI,
+				   const bool& forcePowOfTwo = true, const bool& scalableSVG = false,
+				   const Uint32& pixelBorder = 2,
 				   const Texture::TextureFilter& textureFilter = Texture::TextureFilter::Linear,
-				   const bool& AllowFlipping = false );
+				   const bool& allowChilds = false, const bool& allowFlipping = false );
 
 	~TexturePacker();
 
@@ -102,12 +126,14 @@ class EE_API TexturePacker {
 
 	/** After adding all the images that will be used to create the texture atlas. Packing the
 	 * textures will generate the texture atlas information ( it will fit the images inside the
-	 * texture atlas, etc ). */
+	 * texture atlas, etc ).
+	 * @return The amount of pixels used for the new image or the total area used. 0 means it
+	 * failed.
+	 */
 	Int32 packTextures();
 
-	/** @brief Save the texture atlas to a file, in the indicated format.
-	 *	If PackTexture() has not been called, it will be called automatically by the function ( so
-	 *you don't need to call it ).
+	/** Save the texture atlas to a file, in the indicated format. If PackTexture() has not been
+	 *called, it will be called automatically by the function ( so you don't need to call it ).
 	 *	@param Filepath The path were it will be saved the new texture atlas.
 	 *	@param Format The image format of the new texture atlas.
 	 *	@param SaveExtensions Indicates if the extensions of the image files must be saved. Usually
@@ -121,31 +147,34 @@ class EE_API TexturePacker {
 	/** Clear all the textures added */
 	void close();
 
-	/** First of all you need to set at least the max dimensions of the texture atlas.
-	 *	If the instance of the texture packer was created without indicating this data, this must be
-	 *called before adding any texture or image.
-	 *	@param MaxWidth The maximum width that the texture atlas will use.
-	 *	@param MaxHeight The maximum height that the texture atlas will use.
-	 *	@param PixelDensity Indicates the device pixel density that represents the resources that
+	/** First of all you need to set at least the max dimensions of the texture atlas. If the
+	 *instance of the texture packer was created without indicating this data, this must be called
+	 *before adding any texture or image.
+	 *	@param maxWidth The maximum width that the texture atlas will use.
+	 *	@param maxHeight The maximum height that the texture atlas will use.
+	 *	@param pixelDensity Indicates the device pixel density that represents the resources that
 	 *will the packer pack.
-	 * 	@param scalableSVG True if SVG images are scaled to the packer PixelDensity
 	 *	@param textureFilter Indicates with texture filter should be used when the texture of the
-	 *atlas is loaded
-	 *	@param PixelBorder Indicates how many pixels will be added to separate one image to another
+	 *atlas is loaded.
+	 *	@param forcePowOfTwo Indicates that if the max with and height must be adjusted to fit a
+	 *power of two texture.
+	 *	@param scalableSVG True if SVG images are scaled to the packer PixelDensity
+	 *	@param pixelBorder Indicates how many pixels will be added to separate one image to another
 	 *in the texture atlas. Usefull to avoid artifacts when rendered scaled TextureRegions. Use at
 	 *least 1 pixel to separate images if you will scale any TextureRegion.
-	 *	@param ForcePowOfTwo Indicates that if the max with and height must be adjusted to fit a
-	 *power of two texture.
-	 *	@param AllowFlipping Indicates if the images can be flipped inside the texture atlas. This
+	 *	@param allowChilds When enabled if the atlas does not have enough space left in the image to
+	 *put more resources it will create a new image atlas and add the rest of the images in that
+	 *images, repeating this process recursivelly until using all source images.
+	 *	@param allowFlipping Indicates if the images can be flipped inside the texture atlas. This
 	 *is not compatible with eepp ( since it can't flip the textures back to the original
 	 *orientation ). So avoid it for eepp.
 	 */
-	void setOptions( const Uint32& MaxWidth, const Uint32& MaxHeight,
-					 const PixelDensitySize& PixelDensity = PixelDensitySize::MDPI,
-					 const bool& ForcePowOfTwo = true, const bool& scalableSVG = false,
-					 const Uint32& PixelBorder = 0,
+	void setOptions( const Uint32& maxWidth, const Uint32& maxHeight,
+					 const PixelDensitySize& pixelDensity = PixelDensitySize::MDPI,
+					 const bool& forcePowOfTwo = true, const bool& scalableSVG = false,
+					 const Uint32& pixelBorder = 2,
 					 const Texture::TextureFilter& textureFilter = Texture::TextureFilter::Linear,
-					 const bool& AllowFlipping = false );
+					 const bool& allowChilds = false, const bool& allowFlipping = false );
 
 	/** @return The texture atlas to generate width. */
 	const Int32& getWidth() const;
@@ -169,6 +198,7 @@ class EE_API TexturePacker {
 	Sizei mMaxSize;
 	bool mPacked;
 	bool mAllowFlipping;
+	bool mAllowChilds;
 	TexturePacker* mChild;
 	Int32 mStrategy;
 	Int32 mCount;

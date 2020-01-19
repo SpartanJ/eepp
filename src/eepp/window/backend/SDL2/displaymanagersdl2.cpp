@@ -1,6 +1,10 @@
 #include <eepp/window/backend/SDL2/base.hpp>
 #include <eepp/window/backend/SDL2/displaymanagersdl2.hpp>
 
+#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+#include <emscripten.h>
+#endif
+
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
 DisplaySDL2::DisplaySDL2( int index ) : Display( index ) {}
@@ -17,12 +21,16 @@ Rect DisplaySDL2::getBounds() {
 }
 
 Float DisplaySDL2::getDPI() {
+#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+	return 96.f * emscripten_get_device_pixel_ratio();
+#else
 #if SDL_VERSION_ATLEAST( 2, 0, 4 )
 	float ddpi, hdpi, vdpi;
 	if ( 0 == SDL_GetDisplayDPI( 0, &ddpi, &hdpi, &vdpi ) )
 		return ddpi;
 #endif
-	return 92.f;
+	return 96.f;
+#endif
 }
 
 const int& DisplaySDL2::getIndex() const {

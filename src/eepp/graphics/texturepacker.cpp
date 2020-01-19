@@ -12,26 +12,27 @@ TexturePacker* TexturePacker::New() {
 	return eeNew( TexturePacker, () );
 }
 
-TexturePacker* TexturePacker::New( const Uint32& MaxWidth, const Uint32& MaxHeight,
-								   const PixelDensitySize& PixelDensity, const bool& ForcePowOfTwo,
-								   const bool& scalableSVG, const Uint32& PixelBorder,
+TexturePacker* TexturePacker::New( const Uint32& maxWidth, const Uint32& maxHeight,
+								   const PixelDensitySize& pixelDensity, const bool& forcePowOfTwo,
+								   const bool& scalableSVG, const Uint32& pixelBorder,
 								   const Texture::TextureFilter& textureFilter,
-								   const bool& AllowFlipping ) {
-	return eeNew( TexturePacker, ( MaxWidth, MaxHeight, PixelDensity, ForcePowOfTwo, scalableSVG,
-								   PixelBorder, textureFilter, AllowFlipping ) );
+								   const bool& allowChilds, const bool& allowFlipping ) {
+	return eeNew( TexturePacker, ( maxWidth, maxHeight, pixelDensity, forcePowOfTwo, scalableSVG,
+								   pixelBorder, textureFilter, allowChilds, allowFlipping ) );
 }
 
-TexturePacker::TexturePacker( const Uint32& MaxWidth, const Uint32& MaxHeight,
-							  const PixelDensitySize& PixelDensity, const bool& ForcePowOfTwo,
-							  const bool& scalableSVG, const Uint32& PixelBorder,
-							  const Texture::TextureFilter& textureFilter,
-							  const bool& AllowFlipping ) :
+TexturePacker::TexturePacker( const Uint32& maxWidth, const Uint32& maxHeight,
+							  const PixelDensitySize& pixelDensity, const bool& forcePowOfTwo,
+							  const bool& scalableSVG, const Uint32& pixelBorder,
+							  const Texture::TextureFilter& textureFilter, const bool& allowChilds,
+							  const bool& allowFlipping ) :
 	mTotalArea( 0 ),
 	mFreeList( NULL ),
 	mWidth( 128 ),
 	mHeight( 128 ),
 	mPacked( false ),
-	mAllowFlipping( false ),
+	mAllowFlipping( allowFlipping ),
+	mAllowChilds( allowChilds ),
 	mChild( NULL ),
 	mStrategy( PackBig ),
 	mCount( 0 ),
@@ -39,13 +40,13 @@ TexturePacker::TexturePacker( const Uint32& MaxWidth, const Uint32& MaxHeight,
 	mPlacedCount( 0 ),
 	mForcePowOfTwo( true ),
 	mPixelBorder( 0 ),
-	mPixelDensity( PixelDensity ),
+	mPixelDensity( pixelDensity ),
 	mTextureFilter( textureFilter ),
 	mSaveExtensions( false ),
 	mScalableSVG( scalableSVG ),
 	mFormat( Image::SaveType::SAVE_TYPE_PNG ) {
-	setOptions( MaxWidth, MaxHeight, PixelDensity, ForcePowOfTwo, scalableSVG, PixelBorder,
-				textureFilter, AllowFlipping );
+	setOptions( maxWidth, maxHeight, pixelDensity, forcePowOfTwo, scalableSVG, pixelBorder,
+				textureFilter, allowChilds, allowFlipping );
 }
 
 TexturePacker::TexturePacker() :
@@ -131,25 +132,26 @@ Uint32 TexturePacker::getAtlasNumChannels() {
 	return maxChannels;
 }
 
-void TexturePacker::setOptions( const Uint32& MaxWidth, const Uint32& MaxHeight,
-								const PixelDensitySize& PixelDensity, const bool& ForcePowOfTwo,
-								const bool& scalableSVG, const Uint32& PixelBorder,
+void TexturePacker::setOptions( const Uint32& maxWidth, const Uint32& maxHeight,
+								const PixelDensitySize& pixelDensity, const bool& forcePowOfTwo,
+								const bool& scalableSVG, const Uint32& pixelBorder,
 								const Texture::TextureFilter& textureFilter,
-								const bool& AllowFlipping ) {
+								const bool& allowChilds, const bool& allowFlipping ) {
 	if ( !mTextures.size() ) { // only can change the dimensions before adding any texture
-		mMaxSize.x = MaxWidth;
-		mMaxSize.y = MaxHeight;
+		mMaxSize.x = maxWidth;
+		mMaxSize.y = maxHeight;
 
-		if ( ForcePowOfTwo && !Math::isPow2( mMaxSize.x ) )
+		if ( forcePowOfTwo && !Math::isPow2( mMaxSize.x ) )
 			mMaxSize.x = Math::nextPowOfTwo( mMaxSize.x );
 
-		if ( ForcePowOfTwo && !Math::isPow2( mMaxSize.y ) )
+		if ( forcePowOfTwo && !Math::isPow2( mMaxSize.y ) )
 			mMaxSize.y = Math::nextPowOfTwo( mMaxSize.y );
 
-		mForcePowOfTwo = ForcePowOfTwo;
-		mAllowFlipping = AllowFlipping;
-		mPixelBorder = PixelBorder;
-		mPixelDensity = PixelDensity;
+		mForcePowOfTwo = forcePowOfTwo;
+		mAllowFlipping = allowFlipping;
+		mAllowChilds = allowChilds;
+		mPixelBorder = pixelBorder;
+		mPixelDensity = pixelDensity;
 		mTextureFilter = textureFilter;
 		mScalableSVG = scalableSVG;
 	}
@@ -397,8 +399,8 @@ void TexturePacker::insertTexture( TexturePackerTex* t, TexturePackerNode* bestF
 }
 
 void TexturePacker::createChild() {
-	mChild = eeNew( TexturePacker, ( mWidth, mHeight, mPixelDensity, mForcePowOfTwo, mScalableSVG,
-									 mPixelBorder, mTextureFilter, mAllowFlipping ) );
+	mChild = TexturePacker::New( mWidth, mHeight, mPixelDensity, mForcePowOfTwo, mScalableSVG,
+								 mPixelBorder, mTextureFilter, mAllowFlipping );
 
 	std::list<TexturePackerTex*>::iterator it;
 	std::list<std::list<TexturePackerTex*>::iterator> remove;
@@ -504,8 +506,7 @@ bool TexturePacker::addTexture( const std::string& TexturePath ) {
 	return false;
 }
 
-Int32 TexturePacker::packTextures() { // pack the textures, the return code is the amount of
-									  // wasted/unused area.
+Int32 TexturePacker::packTextures() {
 	TexturePackerTex* t = NULL;
 
 	addBorderToTextures( (Int32)mPixelBorder );
@@ -569,8 +570,9 @@ Int32 TexturePacker::packTextures() { // pack the textures, the return code is t
 
 				return packTextures();
 			} else {
-				eePRINTL( "Creating a new image as a child." );
-				createChild();
+				if ( !mAllowChilds ) {
+					return 0;
+				}
 			}
 
 			break;
@@ -578,8 +580,13 @@ Int32 TexturePacker::packTextures() { // pack the textures, the return code is t
 	}
 
 	if ( mCount > 0 ) {
-		eePRINTL( "Creating a new image as a child. Some textures couldn't get it: %d", mCount );
-		createChild();
+		if ( mAllowChilds ) {
+			eePRINTL( "Creating a new image as a child. Some textures couldn't get it: %d",
+					  mCount );
+			createChild();
+		} else {
+			return 0;
+		}
 	}
 
 	addBorderToTextures( -( (Int32)mPixelBorder ) );
@@ -594,7 +601,7 @@ Int32 TexturePacker::packTextures() { // pack the textures, the return code is t
 	eePRINTL( "Total Area Used: %d. This represents the %4.3f percent", mTotalArea,
 			  ( (double)mTotalArea / (double)( mWidth * mHeight ) ) * 100.0 );
 
-	return ( mWidth * mHeight ) - mTotalArea;
+	return mTotalArea;
 }
 
 void TexturePacker::save( const std::string& Filepath, const Image::SaveType& Format,
@@ -671,15 +678,12 @@ Int32 TexturePacker::getChildCount() {
 }
 
 void TexturePacker::saveTextureRegions() {
-	if ( NULL != mParent )
-		return;
-
 	sTextureAtlasHdr TexGrHdr;
 
 	TexGrHdr.Magic = EE_TEXTURE_ATLAS_MAGIC;
-	TexGrHdr.Version = 1000;
+	TexGrHdr.Version = 2000;
 	TexGrHdr.Date = static_cast<Uint64>( Sys::getSystemTime() );
-	TexGrHdr.TextureCount = 1 + getChildCount();
+	TexGrHdr.TextureCount = 1;
 	TexGrHdr.Format = mFormat;
 	TexGrHdr.Width = mWidth;
 	TexGrHdr.Height = mHeight;
@@ -706,15 +710,6 @@ void TexturePacker::saveTextureRegions() {
 
 	TexHdr[0] = createTextureHdr( this );
 
-	Int32 HdrPos = 1;
-	TexturePacker* Child = mChild;
-
-	while ( NULL != Child ) {
-		TexHdr[HdrPos] = createTextureHdr( Child );
-		Child = Child->getChild();
-		HdrPos++;
-	}
-
 	std::vector<sTextureRegionHdr> tTextureRegionsHdr;
 
 	std::string path = FileSystem::fileRemoveExtension( mFilepath ) + EE_TEXTURE_ATLAS_EXTENSION;
@@ -730,24 +725,6 @@ void TexturePacker::saveTextureRegions() {
 		if ( tTextureRegionsHdr.size() )
 			fs.write( reinterpret_cast<const char*>( &tTextureRegionsHdr[0] ),
 					  sizeof( sTextureRegionHdr ) * (std::streamsize)tTextureRegionsHdr.size() );
-
-		Int32 HdrPos = 1;
-		TexturePacker* Child = mChild;
-
-		while ( NULL != Child ) {
-			fs.write( reinterpret_cast<const char*>( &TexHdr[HdrPos] ), sizeof( sTextureHdr ) );
-
-			createTextureRegionsHdr( Child, tTextureRegionsHdr );
-
-			if ( tTextureRegionsHdr.size() )
-				fs.write( reinterpret_cast<const char*>( &tTextureRegionsHdr[0] ),
-						  sizeof( sTextureRegionHdr ) *
-							  (std::streamsize)tTextureRegionsHdr.size() );
-
-			Child = Child->getChild();
-
-			HdrPos++;
-		}
 	}
 }
 
@@ -770,12 +747,15 @@ void TexturePacker::createTextureRegionsHdr( TexturePacker* Packer,
 		if ( tTex->placed() ) {
 			std::string name = FileSystem::fileNameFromPath( tTex->name() );
 
+			if ( !mSaveExtensions )
+				name = FileSystem::fileRemoveExtension( name );
+
+			if ( name.size() > HDR_NAME_SIZE )
+				name.resize( HDR_NAME_SIZE );
+
 			memset( tTextureRegionHdr.Name, 0, HDR_NAME_SIZE );
 
 			String::strCopy( tTextureRegionHdr.Name, name.c_str(), HDR_NAME_SIZE );
-
-			if ( !mSaveExtensions )
-				name = FileSystem::fileRemoveExtension( name );
 
 			tTextureRegionHdr.ResourceID = String::hash( name );
 			tTextureRegionHdr.Width = tTex->width();
@@ -833,7 +813,7 @@ void TexturePacker::childSave( const Image::SaveType& Format ) {
 		if ( NULL != LastParent ) {
 			std::string fFpath = FileSystem::fileRemoveExtension( LastParent->getFilepath() );
 			std::string fExt = FileSystem::fileExtension( LastParent->getFilepath() );
-			std::string fName = fFpath + "_ch" + String::toStr( ParentCount ) + "." + fExt;
+			std::string fName = fFpath + "-ch" + String::toStr( ParentCount ) + "." + fExt;
 
 			mChild->save( fName, Format, mSaveExtensions );
 		}

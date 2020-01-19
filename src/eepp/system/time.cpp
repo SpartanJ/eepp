@@ -27,7 +27,7 @@ std::string Time::toString() {
 	if ( asSeconds() < 1 ) {
 		return String::format( "%4.2fms", asMilliseconds() );
 	} else if ( totalSeconds < 60 ) {
-		return String::format( "%llus", totalSeconds );
+		return String::format( "%lus", static_cast<unsigned long>( totalSeconds ) );
 	}
 
 	long minutesLeft = totalSeconds / 60;
