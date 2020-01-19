@@ -516,7 +516,7 @@ function build_eepp( build_name )
 		files { "src/eepp/system/platform/posix/*.cpp" }
 		files { "src/eepp/network/platform/unix/*.cpp" }
 
-	filter "with-mojoal"
+	filter "options:with-mojoal"
 		defines( "AL_LIBTYPE_STATIC" )
 		incdirs { "src/thirdparty/mojoAL" }
 
@@ -539,6 +539,9 @@ workspace "eepp"
 	parse_args()
 	location("./make/" .. os.target() .. "/")
 	objdir("obj/" .. os.target() .. "/")
+
+	filter "system:macosx"
+		defines { "GL_SILENCE_DEPRECATION" }
 
 	filter "system:android"
 		ndkabi "arm64-v8a"
