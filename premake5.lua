@@ -327,9 +327,6 @@ end
 
 function add_sdl2()
 	print("Using SDL2 backend");
-	files { "src/eepp/window/backend/SDL2/*.cpp" }
-	defines { "EE_BACKEND_SDL_ACTIVE", "EE_SDL_VERSION_2" }
-
 	if not can_add_static_backend("SDL2") then
 		table.insert( link_list, get_backend_link_name( "SDL2" ) )
 	else
@@ -489,7 +486,11 @@ function build_eepp( build_name )
 
 	add_static_links()
 	check_ssl_support()
-	select_backend()
+
+	if table.contains( backends, "SDL2" ) then
+		files { "src/eepp/window/backend/SDL2/*.cpp" }
+		defines { "EE_BACKEND_SDL_ACTIVE", "EE_SDL_VERSION_2" }
+	end
 
 	multiple_insert( link_list, os_links )
 
@@ -535,6 +536,7 @@ workspace "eepp"
 	configurations { "debug", "release" }
 	rtti "On"
 	download_and_extract_dependencies()
+	select_backend()
 	generate_os_links()
 	parse_args()
 	location("./make/" .. os.target() .. "/")
