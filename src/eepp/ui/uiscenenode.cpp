@@ -404,12 +404,11 @@ void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles ) {
 					mFontFaces.push_back( font );
 				} else if ( String::startsWith( path, "http://" ) ||
 							String::startsWith( path, "https://" ) ) {
-					#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 					std::string familyName = familyProp.getValue();
 					Http::getAsync(
 						[&, familyName]( const Http&, Http::Request&, Http::Response& response ) {
 							FontTrueType* font =
-								FontTrueType::New( String::trim( familyName , '"' ) );
+								FontTrueType::New( String::trim( familyName, '"' ) );
 
 							if ( !response.getBody().empty() ) {
 								font->loadFromMemory( &response.getBody()[0],
@@ -419,7 +418,6 @@ void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles ) {
 							}
 						},
 						URI( path ), Seconds( 5 ) );
-					#endif
 				} else if ( VFS::instance()->fileExists( path ) ) {
 					FontTrueType* font =
 						FontTrueType::New( String::trim( familyProp.getValue(), '"' ) );

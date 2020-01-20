@@ -11,8 +11,8 @@ namespace EE { namespace UI { namespace Tools {
 
 TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) : mUIWindow( NULL ), mNewTGCb( NewTGCb ) {
 	mUIWindow = UIWindow::New();
-	mUIWindow->setSizeWithDecoration( 378, 303 )
-		->setMinWindowSize( 378, 303 )
+	mUIWindow->setSizeWithDecoration( 378, 374 )
+		->setMinWindowSize( 378, 374 )
 		->setWinFlags( UI_WIN_CLOSE_BUTTON | UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS |
 					   UI_WIN_SHARE_ALPHA_WITH_CHILDS | UI_WIN_MODAL );
 
@@ -41,7 +41,7 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) : mUIWindow( NULL ), mNew
 			<ComboBox id='maxTAHeight' layout_width='match_parent' layout_weight='0.3' layout_height='wrap_content' layout_gravity='center_vertical' onlyNumbers='true' />
 		</LinearLayout>
 		<LinearLayout layout_width='match_parent' layout_height='wrap_content' orientation='horizontal' margin-bottom='8dp'>
-			<TextView layout_width='match_parent' layout_weight='0.7' layout_height='wrap_content' layout_gravity='center_vertical' text='Space between sub textures (pixels):' />
+			<TextView layout_width='match_parent' layout_weight='0.7' layout_height='wrap_content' layout_gravity='center_vertical' text='Space between images (pixels):' />
 			<SpinBox id='pixelSpace' layout_width='match_parent' layout_weight='0.3' layout_height='wrap_content' layout_gravity='center_vertical' />
 		</LinearLayout>
 		<LinearLayout layout_width='match_parent' layout_height='wrap_content' orientation='horizontal' margin-bottom='8dp'>
@@ -66,9 +66,15 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) : mUIWindow( NULL ), mNew
 			<TextInput id='pathInput' layout_width='match_parent' layout_height='match_parent' layout_weight='1' allowEditing='false' />
 			<PushButton id='openPath' layout_width='32dp' layout_height='wrap_content' text='...'  />
 		</LinearLayout>
-		<LinearLayout layout_gravity='center_vertical|right' layout_width='wrap_content' layout_height='wrap_content' orientation='horizontal' margin-bottom='16dp'>
-			<PushButton id='okButton' layout_width='wrap_content' layout_height='wrap_content' layout_weight='0.2' icon='ok' text='OK' margin-right='4dp' />
-			<PushButton id='cancelButton' layout_width='wrap_content' layout_height='wrap_content' layout_weight='0.2' icon='cancel' text='Cancel'  />
+		<CheckBox id="forcePow2" layout_width='match_parent' layout_height='wrap_content' text="Force power of 2 textures." />
+		<CheckBox id="scalableSVG" layout_width='match_parent' layout_height='wrap_content' text="Scale SVG source files using the pixel-density provided." />
+		<CheckBox id="saveExtensions" layout_width='match_parent' layout_height='wrap_content' text="Save the images extensions in regions names." tooltip="Save the image files extensions as part of the texture regions names." />
+		<CheckBox id="allowChilds" layout_width='match_parent' layout_height='wrap_content' text="Allow create multiple texture atlases on save."
+			tooltip="When enabled in the case of an atlas not having enough space in the&#10;image to fit all the source input images it will create new child&#10;atlas images to save them."
+		/>
+		<LinearLayout layout_gravity='center_vertical|right' layout_width='wrap_content' layout_height='wrap_content' orientation='horizontal' margin-top="8dp" margin-bottom='16dp'>
+			<PushButton id='cancelButton' layout_width='wrap_content' layout_height='wrap_content' layout_weight='0.2' icon='cancel' text='Cancel' margin-right='4dp' />
+			<PushButton id='okButton' layout_width='wrap_content' layout_height='wrap_content' layout_weight='0.2' icon='ok' text='OK' />
 		</LinearLayout>
 	 </LinearLayout>
 	 )xml";
@@ -85,6 +91,10 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) : mUIWindow( NULL ), mNew
 	mUIWindow->bind( "pathInput", mTGPath );
 	mUIWindow->bind( "openPath", mSetPathButton );
 	mUIWindow->bind( "textureFilter", mTextureFilter );
+	mUIWindow->bind( "forcePow2", mForcePow2 );
+	mUIWindow->bind( "scalableSVG", mScalableSVG );
+	mUIWindow->bind( "saveExtensions", mSaveExtensions );
+	mUIWindow->bind( "allowChilds", mAllowChilds );
 
 	std::vector<String> Sizes;
 
@@ -158,9 +168,9 @@ void TextureAtlasNew::textureAtlasSave( const Event* Event ) {
 												   : Texture::TextureFilter::Linear;
 
 		if ( Res1 && Res2 ) {
-			TexturePacker* texturePacker =
-				TexturePacker::New( w, h, PixelDensity::fromString( mPixelDensity->getText() ),
-									false, false, b, textureFilter );
+			TexturePacker* texturePacker = TexturePacker::New(
+				w, h, PixelDensity::fromString( mPixelDensity->getText() ), mForcePow2->isChecked(),
+				mScalableSVG->isChecked(), b, textureFilter, mAllowChilds->isChecked(), false );
 
 			texturePacker->addTexturesPath( mTGPath->getText() );
 
@@ -178,8 +188,10 @@ void TextureAtlasNew::textureAtlasSave( const Event* Event ) {
 				FPath += "." + ext;
 			}
 
-			texturePacker->save( FPath, static_cast<Image::SaveType>(
-											mSaveFileType->getListBox()->getItemSelectedIndex() ) );
+			texturePacker->save(
+				FPath,
+				static_cast<Image::SaveType>( mSaveFileType->getListBox()->getItemSelectedIndex() ),
+				mSaveExtensions->isChecked() );
 
 			if ( mNewTGCb )
 				mNewTGCb( texturePacker );

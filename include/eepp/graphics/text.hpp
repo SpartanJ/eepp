@@ -121,7 +121,7 @@ class EE_API Text {
 
 	/** Simulates a selection request and return the initial and end cursor position when the
 	 * selection worked. Otherwise both parameters will be -1. */
-	void findWordFromCharacterIndex( const Int32& characterIndex, Int32& InitCur, Int32& EndCur );
+	void findWordFromCharacterIndex( Int32 characterIndex, Int32& InitCur, Int32& EndCur );
 
 	/** Cache the with of the current text */
 	void getWidthInfo( std::vector<Float>& LinesWidth, Float& CachedWidth, int& NumLines,

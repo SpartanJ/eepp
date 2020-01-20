@@ -387,7 +387,7 @@ Uint32 UITextView::onMouseDoubleClick( const Vector2i& Pos, const Uint32& Flags 
 	if ( isTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) ) {
 		Vector2f controlPos( Vector2f( Pos.x, Pos.y ) );
 		worldToNode( controlPos );
-		controlPos = PixelDensity::dpToPx( controlPos );
+		controlPos = PixelDensity::dpToPx( controlPos ) - mRealAlignOffset;
 
 		Int32 curPos = mTextCache->findCharacterFromPos( Vector2i( controlPos.x, controlPos.y ) );
 

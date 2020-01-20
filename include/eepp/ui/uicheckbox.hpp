@@ -20,11 +20,11 @@ class EE_API UICheckBox : public UITextView {
 
 	virtual void setTheme( UITheme* Theme );
 
-	const bool& isActive() const;
+	const bool& isChecked() const;
 
-	void setActive( const bool& active );
+	void setChecked( const bool& checked );
 
-	UINode* getActiveButton() const;
+	UINode* getCheckedButton() const;
 
 	UINode* getInactiveButton() const;
 
@@ -39,7 +39,7 @@ class EE_API UICheckBox : public UITextView {
   protected:
 	UINode* mActiveButton;
 	UINode* mInactiveButton;
-	bool mActive;
+	bool mChecked;
 	Uint32 mLastTick;
 	Int32 mTextSeparation;
 

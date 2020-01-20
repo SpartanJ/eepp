@@ -382,8 +382,7 @@ static bool isStopSelChar( Uint32 c ) {
 		   ',' == c || ';' == c || ':' == c || '\n' == c || '"' == c || '\'' == c;
 }
 
-void Text::findWordFromCharacterIndex( const Int32& characterIndex, Int32& InitCur,
-									   Int32& EndCur ) {
+void Text::findWordFromCharacterIndex( Int32 characterIndex, Int32& InitCur, Int32& EndCur ) {
 	InitCur = 0;
 	EndCur = mString.size();
 
@@ -396,6 +395,10 @@ void Text::findWordFromCharacterIndex( const Int32& characterIndex, Int32& InitC
 
 	if ( 0 == characterIndex ) {
 		InitCur = 0;
+	}
+
+	if ( characterIndex >= (Int32)mString.size() ) {
+		characterIndex = mString.size() - 1;
 	}
 
 	for ( Int32 i = characterIndex; i >= 0; i-- ) {

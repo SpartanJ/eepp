@@ -84,6 +84,12 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const StyleConfig& w
 
 UIWindow::~UIWindow() {
 	if ( NULL != getUISceneNode() && !SceneManager::instance()->isShootingDown() ) {
+		if ( NULL != mModalCtrl ) {
+			mModalCtrl->setEnabled( false );
+			mModalCtrl->setVisible( false );
+			mModalCtrl->close();
+		}
+
 		getUISceneNode()->windowRemove( this );
 
 		getUISceneNode()->setFocusLastWindow( this );
@@ -275,7 +281,7 @@ void UIWindow::updateWinFlags() {
 
 	updateDrawInvalidator( true );
 
-	if ( isModal() ) {
+	if ( isModal() && NULL == mModalCtrl ) {
 		createModalControl();
 	}
 
@@ -446,13 +452,14 @@ void UIWindow::closeWindow() {
 	if ( NULL != mButtonMinimize )
 		mButtonMinimize->setEnabled( false );
 
-	if ( Time::Zero != getUISceneNode()->getUIThemeManager()->getControlsFadeOutTime() )
+	if ( Time::Zero != getUISceneNode()->getUIThemeManager()->getControlsFadeOutTime() ) {
 		runAction( Actions::Sequence::New(
 			Actions::FadeOut::New(
 				getUISceneNode()->getUIThemeManager()->getControlsFadeOutTime() ),
 			Actions::Close::New() ) );
-	else
+	} else {
 		close();
+	}
 }
 
 void UIWindow::close() {

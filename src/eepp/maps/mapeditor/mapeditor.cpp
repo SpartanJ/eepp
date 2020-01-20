@@ -596,7 +596,7 @@ void MapEditor::createLighContainer() {
 		->setPosition( mLightRadius->getPosition().x,
 					   mLightRadius->getPosition().y + mLightRadius->getSize().getHeight() + 8 );
 	mLightTypeChk->setText( "Isometric Light" );
-	mLightTypeChk->setActive( false );
+	mLightTypeChk->setChecked( false );
 	mLightTypeChk->addEventListener( Event::OnValueChange,
 									 cb::Make1( this, &MapEditor::onLightTypeChange ) );
 }
@@ -634,7 +634,7 @@ void MapEditor::createObjectsContainer() {
 	mChkClampToTile->setText( "Clamp Position to Tile" );
 	mChkClampToTile->addEventListener( Event::OnValueChange,
 									   cb::Make1( this, &MapEditor::chkClickClampToTile ) );
-	mChkClampToTile->setActive( true );
+	mChkClampToTile->setChecked( true );
 }
 
 void MapEditor::onObjectModeSel( const Event* Event ) {
@@ -738,7 +738,7 @@ void MapEditor::onAddObject( Uint32 Type, Polygon2f poly ) {
 
 void MapEditor::onLightTypeChange( const Event* Event ) {
 	if ( NULL != mUIMap->getSelectedLight() ) {
-		mUIMap->getSelectedLight()->setType( mLightTypeChk->isActive() ? MapLightType::Isometric
+		mUIMap->getSelectedLight()->setType( mLightTypeChk->isChecked() ? MapLightType::Isometric
 																	   : MapLightType::Normal );
 	}
 }
@@ -760,7 +760,7 @@ void MapEditor::onLightSelect( MapLight* Light ) {
 	mUIGreenSlider->setValue( Col.g );
 	mUIBlueSlider->setValue( Col.b );
 	mLightRadius->setValue( Light->getRadius() );
-	mLightTypeChk->setActive( Light->getType() == MapLightType::Isometric ? true : false );
+	mLightTypeChk->setChecked( Light->getType() == MapLightType::Isometric ? true : false );
 }
 
 void MapEditor::onNewLight( const Event* Event ) {
@@ -771,7 +771,7 @@ void MapEditor::onNewLight( const Event* Event ) {
 		mUIMap->addLight( eeNew(
 			MapLight,
 			( mLightRadius->getValue(), Pos.x, Pos.y, mUIBaseColor->getBackgroundColor().toRGB(),
-			  mLightTypeChk->isActive() ? MapLightType::Isometric : MapLightType::Normal ) ) );
+			  mLightTypeChk->isChecked() ? MapLightType::Isometric : MapLightType::Normal ) ) );
 	}
 }
 
@@ -815,7 +815,7 @@ void MapEditor::onBlueChange( const Event* Event ) {
 }
 
 void MapEditor::chkClickDI( const Event* Event ) {
-	if ( mChkDI->isActive() ) {
+	if ( mChkDI->isChecked() ) {
 		mSGCont->setEnabled( false );
 		mSGCont->setVisible( false );
 		mDICont->setEnabled( true );
@@ -830,20 +830,20 @@ void MapEditor::chkClickDI( const Event* Event ) {
 
 void MapEditor::chkClickClampToTile( const Event* Event ) {
 	if ( NULL != mUIMap )
-		mUIMap->setClampToTile( mChkClampToTile->isActive() );
+		mUIMap->setClampToTile( mChkClampToTile->isChecked() );
 }
 
 void MapEditor::updateGfx() {
-	if ( mChkMirrored->isActive() && mChkFliped->isActive() )
+	if ( mChkMirrored->isChecked() && mChkFliped->isChecked() )
 		mGfxPreview->setRenderMode( RENDER_FLIPPED_MIRRORED );
-	else if ( mChkMirrored->isActive() )
+	else if ( mChkMirrored->isChecked() )
 		mGfxPreview->setRenderMode( RENDER_MIRROR );
-	else if ( mChkFliped->isActive() )
+	else if ( mChkFliped->isChecked() )
 		mGfxPreview->setRenderMode( RENDER_FLIPPED );
 	else
 		mGfxPreview->setRenderMode( RENDER_NORMAL );
 
-	if ( mChkRot90->isActive() )
+	if ( mChkRot90->isChecked() )
 		mGfxPreview->setRotation( 90 );
 	else
 		mGfxPreview->setRotation( 0 );
@@ -852,25 +852,25 @@ void MapEditor::updateGfx() {
 void MapEditor::updateFlags() {
 	mCurGOFlags = 0;
 
-	if ( mChkMirrored->isActive() )
+	if ( mChkMirrored->isChecked() )
 		mCurGOFlags |= GObjFlags::GAMEOBJECT_MIRRORED;
 
-	if ( mChkFliped->isActive() )
+	if ( mChkFliped->isChecked() )
 		mCurGOFlags |= GObjFlags::GAMEOBJECT_FLIPED;
 
-	if ( mChkBlocked->isActive() )
+	if ( mChkBlocked->isChecked() )
 		mCurGOFlags |= GObjFlags::GAMEOBJECT_BLOCKED;
 
-	if ( mChkAnim->isActive() )
+	if ( mChkAnim->isChecked() )
 		mCurGOFlags |= GObjFlags::GAMEOBJECT_ANIMATED;
 
-	if ( mChkRot90->isActive() )
+	if ( mChkRot90->isChecked() )
 		mCurGOFlags |= GObjFlags::GAMEOBJECT_ROTATE_90DEG;
 
-	if ( mChkAutoFix->isActive() )
+	if ( mChkAutoFix->isChecked() )
 		mCurGOFlags |= GObjFlags::GAMEOBJECT_AUTO_FIX_TILE_POS;
 
-	if ( mChkBlendAdd->isActive() )
+	if ( mChkBlendAdd->isChecked() )
 		mCurGOFlags |= GObjFlags::GAMEOBJECT_BLEND_ADD;
 }
 
@@ -884,11 +884,11 @@ void MapEditor::onTypeChange( const Event* Event ) {
 	else
 		mCurGOType = String::hash( mGOTypeList->getText().toUtf8() );
 
-	if ( NULL != mChkAnim && NULL != mGOTypeList && mChkAnim->isActive() &&
+	if ( NULL != mChkAnim && NULL != mGOTypeList && mChkAnim->isChecked() &&
 		 mGOTypeList->getText() != "Sprite" ) {
 		if ( mGOTypeList->getText() == "TextureRegion" ||
 			 mGOTypeList->getText() == "TextureRegionEx" ) {
-			mChkAnim->setActive( false );
+			mChkAnim->setChecked( false );
 		}
 	}
 }
@@ -919,7 +919,7 @@ void MapEditor::chkClickAutoFix( const Event* Event ) {
 void MapEditor::chkClickAnimated( const Event* Event ) {
 	updateFlags();
 
-	if ( mChkAnim->isActive() && ( mGOTypeList->getText() == "TextureRegion" ||
+	if ( mChkAnim->isChecked() && ( mGOTypeList->getText() == "TextureRegion" ||
 								   mGOTypeList->getText() == "TextureRegionEx" ) ) {
 		mGOTypeList->getListBox()->setSelected( "Sprite" );
 	}
@@ -1448,7 +1448,7 @@ GameObject* MapEditor::createGameObject() {
 
 	} else if ( GAMEOBJECT_TYPE_SPRITE == mCurGOType ) {
 
-		if ( mChkAnim->isActive() ) {
+		if ( mChkAnim->isChecked() ) {
 
 			Sprite* tAnimSprite = Sprite::New(
 				String::removeNumbersAtEnd( mGfxPreview->getTextureRegion()->getName() ) );
@@ -1464,7 +1464,7 @@ GameObject* MapEditor::createGameObject() {
 		//! Creates an empty game object. The client will interpret the GameObject Type, and
 		//! instanciate the corresponding class.
 
-		if ( mChkDI->isActive() )
+		if ( mChkDI->isChecked() )
 			tObj = eeNew( GameObjectVirtual, ( String::hash( mDataIdInput->getText().toUtf8() ),
 											   mCurLayer, mCurGOFlags, mCurGOType ) );
 		else

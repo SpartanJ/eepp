@@ -144,10 +144,10 @@ UIMapNew::UIMapNew( UIMap* Map, std::function<void()> NewMapCb, bool ResizeMap )
 		->setPosition( Txt->getPosition().x + DistFromTitle,
 					   Txt->getPosition().y + Txt->getSize().getHeight() + 16 );
 	mUILightsEnabled->setText( "Lights Enabled" );
-	mUILightsEnabled->setActive( true );
+	mUILightsEnabled->setChecked( true );
 
 	if ( ResizeMap ) {
-		mUILightsEnabled->setActive( 0 != mUIMap->Map()->getLightsEnabled() );
+		mUILightsEnabled->setChecked( 0 != mUIMap->Map()->getLightsEnabled() );
 	}
 
 	mUILightsByVertex = UICheckBox::New();
@@ -156,10 +156,10 @@ UIMapNew::UIMapNew( UIMap* Map, std::function<void()> NewMapCb, bool ResizeMap )
 		->setPosition( mUIWindow->getContainer()->getSize().getWidth() / 2,
 					   mUILightsEnabled->getPosition().y );
 	mUILightsByVertex->setText( "Lights By Vertex" );
-	mUILightsByVertex->setActive( true );
+	mUILightsByVertex->setChecked( true );
 
 	if ( ResizeMap ) {
-		mUILightsByVertex->setActive( 0 != mUIMap->Map()->getLightsByVertex() );
+		mUILightsByVertex->setChecked( 0 != mUIMap->Map()->getLightsByVertex() );
 	}
 
 	mUIClampBorders = UICheckBox::New();
@@ -169,10 +169,10 @@ UIMapNew::UIMapNew( UIMap* Map, std::function<void()> NewMapCb, bool ResizeMap )
 					   mUILightsEnabled->getPosition().y + mUILightsEnabled->getSize().getHeight() +
 						   16 );
 	mUIClampBorders->setText( "Clamp Borders" );
-	mUIClampBorders->setActive( true );
+	mUIClampBorders->setChecked( true );
 
 	if ( ResizeMap ) {
-		mUIClampBorders->setActive( 0 != mUIMap->Map()->getClampBorders() );
+		mUIClampBorders->setChecked( 0 != mUIMap->Map()->getClampBorders() );
 	}
 
 	mUIClipArea = UICheckBox::New();
@@ -181,10 +181,10 @@ UIMapNew::UIMapNew( UIMap* Map, std::function<void()> NewMapCb, bool ResizeMap )
 		->setPosition( mUIWindow->getContainer()->getSize().getWidth() / 2,
 					   mUIClampBorders->getPosition().y );
 	mUIClipArea->setText( "Clip View Area" );
-	mUIClipArea->setActive( true );
+	mUIClipArea->setChecked( true );
 
 	if ( ResizeMap ) {
-		mUIClipArea->setActive( 0 != mUIMap->Map()->getClipedArea() );
+		mUIClipArea->setChecked( 0 != mUIMap->Map()->getClipedArea() );
 	}
 
 	Txt =
@@ -333,16 +333,16 @@ void UIMapNew::onOKClick( const Event* ) {
 
 	Uint32 Flags = MAP_EDITOR_DEFAULT_FLAGS;
 
-	if ( mUILightsEnabled->isActive() )
+	if ( mUILightsEnabled->isChecked() )
 		Flags |= MAP_FLAG_LIGHTS_ENABLED;
 
-	if ( mUILightsByVertex->isActive() )
+	if ( mUILightsByVertex->isChecked() )
 		Flags |= MAP_FLAG_LIGHTS_BYVERTEX;
 
-	if ( mUIClampBorders->isActive() )
+	if ( mUIClampBorders->isChecked() )
 		Flags |= MAP_FLAG_CLAMP_BORDERS;
 
-	if ( mUIClipArea->isActive() )
+	if ( mUIClipArea->isChecked() )
 		Flags |= MAP_FLAG_CLIP_AREA;
 
 	if ( w > 0 && h > 0 && tw > 0 && th > 0 && ml > 0 ) {

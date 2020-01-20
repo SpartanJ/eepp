@@ -515,11 +515,15 @@ void UIColorPicker::registerEvents() {
 									 UI_ANCHOR_BOTTOM );
 			coverWidget->addEventListener( Event::MouseMove, [&]( const Event* event ) {
 				Vector2i position = reinterpret_cast<const MouseEvent*>( event )->getPosition();
-				setColor( GLi->readPixel( position.x, position.y ) );
+				setColor( GLi->readPixel(
+					position.x,
+					event->getNode()->getSceneNode()->getWindow()->getHeight() - position.y ) );
 			} );
 			coverWidget->addEventListener( Event::MouseClick, [&]( const Event* event ) {
 				Vector2i position = reinterpret_cast<const MouseEvent*>( event )->getPosition();
-				setColor( GLi->readPixel( position.x, position.y ) );
+				setColor( GLi->readPixel(
+					position.x,
+					event->getNode()->getSceneNode()->getWindow()->getHeight() - position.y ) );
 				event->getNode()->close();
 			} );
 		} );

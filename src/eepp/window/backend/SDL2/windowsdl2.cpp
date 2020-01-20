@@ -18,7 +18,7 @@
 
 #if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || \
 	defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_IOS ||        \
-	EE_PLATFORM == EE_PLATFORM_ANDROID
+	EE_PLATFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 #define SDL2_THREADED_GLCONTEXT
 #endif
 
@@ -255,10 +255,10 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 
 	setGLConfig();
 
-	Uint32 mTmpFlags = mWindow.Flags;
+	Uint32 tmpFlags = mWindow.Flags;
 
 	if ( mWindow.WindowConfig.Style & WindowStyle::Fullscreen ) {
-		mTmpFlags |= SDL_WINDOW_FULLSCREEN;
+		tmpFlags |= SDL_WINDOW_FULLSCREEN;
 	}
 
 	if ( mWindow.ContextConfig.Multisamples > 0 ) {
@@ -274,7 +274,7 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 
 	mSDLWindow = SDL_CreateWindow( mWindow.WindowConfig.Caption.c_str(), SDL_WINDOWPOS_CENTERED,
 								   SDL_WINDOWPOS_CENTERED, mWindow.WindowConfig.Width,
-								   mWindow.WindowConfig.Height, mTmpFlags );
+								   mWindow.WindowConfig.Height, tmpFlags );
 
 	if ( NULL == mSDLWindow ) {
 		eePRINTL( "Unable to create window: %s", SDL_GetError() );
@@ -284,15 +284,25 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 		return false;
 	}
 
-/// In some platforms it will not create the desired window size, so we query the real window size
-/// created
+// In some platforms it will not create the desired window size, so we query the real window size
+// created
 #if SDL_VERSION_ATLEAST( 2, 0, 1 )
 	int w, h;
 	SDL_GL_GetDrawableSize( mSDLWindow, &w, &h );
 
-	mWindow.WindowConfig.Width = w;
-	mWindow.WindowConfig.Height = h;
-	mWindow.WindowSize = Sizei( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
+	if ( w > 0 && h > 0 ) {
+		mWindow.WindowConfig.Width = w;
+		mWindow.WindowConfig.Height = h;
+		mWindow.WindowSize = Sizei( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
+	} else {
+		eePRINTL( "Window failed to create!" );
+
+		if ( NULL != SDL_GetError() ) {
+			eePRINTL( "Error: %s", SDL_GetError() );
+		}
+
+		return false;
+	}
 #endif
 
 #if EE_PLATFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_IOS
@@ -360,7 +370,9 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 		return false;
 	}
 
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	SDL_GL_SetSwapInterval( ( mWindow.ContextConfig.VSync ? 1 : 0 ) ); // VSync
+#endif
 
 	SDL_GL_MakeCurrent( mSDLWindow, mGLContext );
 

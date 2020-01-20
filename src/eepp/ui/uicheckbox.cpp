@@ -9,7 +9,7 @@ UICheckBox* UICheckBox::New() {
 	return eeNew( UICheckBox, () );
 }
 
-UICheckBox::UICheckBox() : UITextView( "checkbox" ), mActive( false ), mTextSeparation( 4 ) {
+UICheckBox::UICheckBox() : UITextView( "checkbox" ), mChecked( false ), mTextSeparation( 4 ) {
 	mActiveButton = UINode::New();
 	mActiveButton->setVisible( false );
 	mActiveButton->setEnabled( true );
@@ -132,27 +132,27 @@ Uint32 UICheckBox::onMessage( const NodeMessage* Msg ) {
 }
 
 void UICheckBox::switchState() {
-	setActive( !mActive );
+	setChecked( !mChecked );
 }
 
-void UICheckBox::setActive( const bool& active ) {
-	if ( !active ) {
+void UICheckBox::setChecked( const bool& checked ) {
+	if ( !checked ) {
 		mActiveButton->setVisible( false );
 		mInactiveButton->setVisible( true );
 
-		mActive = false;
+		mChecked = false;
 	} else {
 		mActiveButton->setVisible( true );
 		mInactiveButton->setVisible( false );
 
-		mActive = true;
+		mChecked = true;
 	}
 
 	onValueChange();
 }
 
-const bool& UICheckBox::isActive() const {
-	return mActive;
+const bool& UICheckBox::isChecked() const {
+	return mChecked;
 }
 
 void UICheckBox::onPaddingChange() {
@@ -188,7 +188,7 @@ void UICheckBox::alignFix() {
 	mAlignOffset = PixelDensity::pxToDp( mRealAlignOffset );
 }
 
-UINode* UICheckBox::getActiveButton() const {
+UINode* UICheckBox::getCheckedButton() const {
 	return mActiveButton;
 }
 
@@ -212,7 +212,7 @@ std::string UICheckBox::getPropertyString( const PropertyDefinition* propertyDef
 
 	switch ( propertyDef->getPropertyId() ) {
 		case PropertyId::Selected:
-			return isActive() ? "true" : "false";
+			return isChecked() ? "true" : "false";
 			break;
 		default:
 			return UITextView::getPropertyString( propertyDef );
@@ -225,7 +225,7 @@ bool UICheckBox::applyProperty( const StyleSheetProperty& attribute ) {
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::Selected:
-			setActive( attribute.asBool() );
+			setChecked( attribute.asBool() );
 			break;
 		default:
 			return UITextView::applyProperty( attribute );
@@ -241,7 +241,7 @@ Uint32 UICheckBox::onKeyDown( const KeyEvent& Event ) {
 		if ( Sys::getTicks() - mLastTick > 250 ) {
 			mLastTick = Sys::getTicks();
 
-			setActive( !mActive );
+			setChecked( !mChecked );
 		}
 	}
 

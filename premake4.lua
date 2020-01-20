@@ -289,7 +289,7 @@ backend_selected = false
 function build_base_configuration( package_name )
 	includedirs { "src/thirdparty/zlib" }
 
-	if not os.is("windows") then
+	if not os.is("windows") and not os.is_real("emscripten") then
 		buildoptions{ "-fPIC" }
 	end
 
@@ -318,7 +318,7 @@ function build_base_configuration( package_name )
 end
 
 function build_base_cpp_configuration( package_name )
-	if not os.is("windows") then
+	if not os.is("windows") and not os.is_real("emscripten") then
 		buildoptions{ "-fPIC" }
 	end
 
@@ -455,8 +455,9 @@ function build_link_configuration( package_name, use_ee_icon )
 		add_cross_config_links()
 
 	configuration "emscripten"
-		linkoptions{ "-O2 -s TOTAL_MEMORY=67108864 -s ASM_JS=1 -s VERBOSE=1 -s DISABLE_EXCEPTION_CATCHING=0 -s USE_SDL=2 -s ERROR_ON_UNDEFINED_SYMBOLS=0 -s FULL_ES3=1 -s \"BINARYEN_TRAP_MODE='clamp'\"" }
-		buildoptions { "-fno-strict-aliasing -O2 -s USE_SDL=2 -s PRECISE_F32=1 -s ENVIRONMENT=web" }
+		linkoptions { "-O3 -s TOTAL_MEMORY=67108864 -s VERBOSE=1" }
+		linkoptions { "-s USE_SDL=2 -s \"BINARYEN_TRAP_MODE='clamp'\"" }
+		buildoptions { "-O3 -s USE_SDL=2 -s PRECISE_F32=1 -s ENVIRONMENT=web" }
 
 		if _OPTIONS["with-gles1"] and ( not _OPTIONS["with-gles2"] or _OPTIONS["force-gles1"] ) then
 			linkoptions{ "-s LEGACY_GL_EMULATION=1" }

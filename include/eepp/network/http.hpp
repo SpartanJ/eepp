@@ -79,6 +79,11 @@ class EE_API Http : NonCopyable {
 		/** @return The status string */
 		static const char* statusToString( const Status& status );
 
+		/** Creates a faked response. Useful for testing. */
+		static Response createFakeResponse( const FieldTable& fields, Status& status,
+											const std::string& body, unsigned int majorVersion = 1,
+											unsigned int minorVersion = 1 );
+
 		/** @brief Default constructor
 		**  Constructs an empty response. */
 		Response();
@@ -255,6 +260,9 @@ class EE_API Http : NonCopyable {
 
 		/** @return The request Uri */
 		const std::string& getUri() const;
+
+		/** @return The request Method */
+		const Method& getMethod() const;
 
 		/** @return If SSL certificate validation is enabled */
 		const bool& getValidateCertificate() const;
@@ -444,20 +452,20 @@ class EE_API Http : NonCopyable {
 		AsyncResponseCallback;
 
 	/** @brief Sends the request and creates a new thread, when got the response informs the result
-	*to the callback. *	This function does not lock the caller thread.
-	**  @see sendRequest */
+	 *to the callback. *	This function does not lock the caller thread.
+	 **  @see sendRequest */
 	void sendAsyncRequest( const AsyncResponseCallback& cb, const Http::Request& request,
 						   Time timeout = Time::Zero );
 
 	/** @brief Sends the request and creates a new thread, when got the response informs the result
-	*to the callback. *	This function does not lock the caller thread.
-	**  @see downloadRequest */
+	 *to the callback. *	This function does not lock the caller thread.
+	 **  @see downloadRequest */
 	void downloadAsyncRequest( const AsyncResponseCallback& cb, const Http::Request& request,
 							   IOStream& writeTo, Time timeout = Time::Zero );
 
 	/** @brief Sends the request and creates a new thread, when got the response informs the result
-	*to the callback. *	This function does not lock the caller thread.
-	**  @see downloadRequest */
+	 *to the callback. *	This function does not lock the caller thread.
+	 **  @see downloadRequest */
 	void downloadAsyncRequest( const AsyncResponseCallback& cb, const Http::Request& request,
 							   std::string writePath, Time timeout = Time::Zero );
 

@@ -1257,7 +1257,7 @@ void EETest::onQuitClick( const Event* event ) {
 
 void EETest::showMenu() {
 	if ( NULL != Menu && Menu->show() ) {
-		Vector2f Pos = mWindow->getInput()->getMousePosf();
+		Vector2f Pos = KM->getMousePosf();
 		UIMenu::fixMenuPos( Pos, Menu );
 		Menu->setPixelsPosition( Pos );
 	}
@@ -1895,9 +1895,7 @@ void EETest::render() {
 
 	mInfoText.draw( 6.f, 6.f );
 
-	SceneManager::instance()->update();
 	SceneManager::instance()->draw();
-
 	Con.draw();
 }
 
@@ -1910,6 +1908,17 @@ void EETest::input() {
 
 	if ( KM->isKeyUp( KEY_F1 ) )
 		Graphics::ShaderProgramManager::instance()->reload();
+
+	UISceneNode * uiSceneNode = SceneManager::instance()->getUISceneNode();
+
+	if ( KM->isKeyUp( KEY_F6 ) )
+		uiSceneNode->setHighlightOver( !uiSceneNode->getHighlightOver() );
+
+	if ( KM->isKeyUp( KEY_F7 ) )
+		uiSceneNode->setDrawBoxes( !uiSceneNode->getDrawBoxes() );
+
+	if ( KM->isKeyUp( KEY_F8 ) )
+		uiSceneNode->setDrawDebugData( !uiSceneNode->getDrawDebugData() );
 
 	if ( !mWindow->isVisible() ) {
 		mWasMinimized = true;
@@ -2122,11 +2131,13 @@ void EETest::input() {
 }
 
 void EETest::update() {
-	mWindow->clear();
-
 	et = mWindow->getElapsed();
 
+	SceneManager::instance()->update();
+
 	input();
+
+	mWindow->clear();
 
 	render();
 

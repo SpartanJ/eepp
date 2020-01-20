@@ -3,6 +3,7 @@
 
 #include <eepp/graphics/texturepacker.hpp>
 #include <eepp/ui/base.hpp>
+#include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uicombobox.hpp>
 #include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uispinbox.hpp>
@@ -29,6 +30,10 @@ class EE_API TextureAtlasNew {
 	UIDropDownList* mSaveFileType;
 	UIDropDownList* mPixelDensity;
 	UIDropDownList* mTextureFilter;
+	UICheckBox * mForcePow2;
+	UICheckBox * mScalableSVG;
+	UICheckBox * mSaveExtensions;
+	UICheckBox * mAllowChilds;
 
 	void windowClose( const Event* Event );
 
