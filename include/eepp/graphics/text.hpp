@@ -82,6 +82,7 @@ class EE_API Text {
 
 	Vector2f findCharacterPos( std::size_t index ) const;
 
+	/** @return The current text local bounds. */
 	Rectf getLocalBounds();
 
 	/** @return The cached text width */
@@ -132,9 +133,17 @@ class EE_API Text {
 	 */
 	void shrinkText( const Uint32& MaxWidth );
 
+	/** Invalidates the color cache */
 	void invalidateColors();
 
+	/** Invalidates the text cache */
 	void invalidate();
+
+	/** Sets the tab character width. */
+	void setTabWidth( const Uint32& tabWidth );
+
+	/** @return The tab character width */
+	const Uint32& getTabWidth() const;
 
   protected:
 	struct VertexCoords {
@@ -163,8 +172,10 @@ class EE_API Text {
 	Color mFontShadowColor;
 	Uint32 mAlign;
 	Uint32 mFontHeight;
+	Uint32 mTabWidth;
 
 	std::vector<VertexCoords> mVertices;
+	std::vector<Vector2f> mGlyphPos;
 	std::vector<Color> mColors;
 
 	std::vector<VertexCoords> mOutlineVertices;
