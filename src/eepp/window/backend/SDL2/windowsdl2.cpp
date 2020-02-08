@@ -272,8 +272,12 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 	mWindow.WindowConfig.Height *= mWindow.WindowConfig.PixelDensity;
 #endif
 
-	mSDLWindow = SDL_CreateWindow( mWindow.WindowConfig.Caption.c_str(), SDL_WINDOWPOS_CENTERED,
-								   SDL_WINDOWPOS_CENTERED, mWindow.WindowConfig.Width,
+#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+	tmpFlags = SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI;
+#endif
+
+	mSDLWindow = SDL_CreateWindow( mWindow.WindowConfig.Caption.c_str(), SDL_WINDOWPOS_UNDEFINED,
+								   SDL_WINDOWPOS_UNDEFINED, mWindow.WindowConfig.Width,
 								   mWindow.WindowConfig.Height, tmpFlags );
 
 	if ( NULL == mSDLWindow ) {
