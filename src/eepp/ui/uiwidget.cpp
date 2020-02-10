@@ -577,19 +577,19 @@ const std::vector<std::string>& UIWidget::getStyleSheetClasses() const {
 	return mClasses;
 }
 
-CSS::StyleSheetElement* UIWidget::getStyleSheetParentElement() const {
+UIWidget* UIWidget::getStyleSheetParentElement() const {
 	return NULL != mParentCtrl && mParentCtrl->isWidget()
-			   ? dynamic_cast<CSS::StyleSheetElement*>( mParentCtrl )
+			   ? mParentCtrl->asType<UIWidget>()
 			   : NULL;
 }
 
-CSS::StyleSheetElement* UIWidget::getStyleSheetPreviousSiblingElement() const {
-	return NULL != mPrev && mPrev->isWidget() ? dynamic_cast<CSS::StyleSheetElement*>( mPrev )
+UIWidget* UIWidget::getStyleSheetPreviousSiblingElement() const {
+	return NULL != mPrev && mPrev->isWidget() ? mPrev->asType<UIWidget>()
 											  : NULL;
 }
 
-CSS::StyleSheetElement* UIWidget::getStyleSheetNextSiblingElement() const {
-	return NULL != mNext && mNext->isWidget() ? dynamic_cast<CSS::StyleSheetElement*>( mNext )
+UIWidget* UIWidget::getStyleSheetNextSiblingElement() const {
+	return NULL != mNext && mNext->isWidget() ? mNext->asType<UIWidget>()
 											  : NULL;
 }
 

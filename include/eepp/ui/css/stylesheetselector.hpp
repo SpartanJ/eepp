@@ -1,12 +1,13 @@
 #ifndef EE_UI_CSS_STYLESHEETSELECTOR_HPP
 #define EE_UI_CSS_STYLESHEETSELECTOR_HPP
 
-#include <eepp/core.hpp>
 #include <eepp/ui/css/stylesheetselectorrule.hpp>
 
-namespace EE { namespace UI { namespace CSS {
+namespace EE { namespace UI {
+class UIWidget;
+}} // namespace EE::UI
 
-class StyleSheetElement;
+namespace EE { namespace UI { namespace CSS {
 
 class EE_API StyleSheetSelector {
   public:
@@ -20,7 +21,7 @@ class EE_API StyleSheetSelector {
 
 	const Uint32& getSpecificity() const;
 
-	bool select( StyleSheetElement* element, const bool& applyPseudo = true ) const;
+	bool select( UIWidget* element, const bool& applyPseudo = true ) const;
 
 	const bool& isCacheable() const;
 
@@ -28,8 +29,8 @@ class EE_API StyleSheetSelector {
 
 	bool hasPseudoClasses() const;
 
-	std::vector<StyleSheetElement*> getRelatedElements( StyleSheetElement* element,
-														const bool& applyPseudo = true ) const;
+	std::vector<UIWidget*> getRelatedElements( UIWidget* element,
+											   const bool& applyPseudo = true ) const;
 
   protected:
 	std::string mName;

@@ -50,7 +50,6 @@
 #include <eepp/ui/uiwidgetcreator.hpp>
 
 #include <eepp/ui/css/stylesheet.hpp>
-#include <eepp/ui/css/stylesheetelement.hpp>
 #include <eepp/ui/css/stylesheetparser.hpp>
 #include <eepp/ui/css/stylesheetpropertiesparser.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>

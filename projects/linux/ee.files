@@ -293,7 +293,6 @@
 ../../include/eepp/ui/css/propertyspecification.hpp
 ../../include/eepp/ui/css/shorthanddefinition.hpp
 ../../include/eepp/ui/css/stylesheet.hpp
-../../include/eepp/ui/css/stylesheetelement.hpp
 ../../include/eepp/ui/css/stylesheetlength.hpp
 ../../include/eepp/ui/css/stylesheetparser.hpp
 ../../include/eepp/ui/css/stylesheetpropertiesparser.hpp

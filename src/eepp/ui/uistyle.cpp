@@ -255,23 +255,22 @@ void UIStyle::onStateChange() {
 
 					Time duration( transitionInfo.getDuration() );
 
-					if ( !previousTransitions.empty() ) {
+					if ( !previousTransitions.empty() &&
+						 previousTransitions[0]->getId() == StyleSheetPropertyTransition::ID ) {
 						StyleSheetPropertyTransition* prevTransition =
-							dynamic_cast<StyleSheetPropertyTransition*>( previousTransitions[0] );
+							reinterpret_cast<StyleSheetPropertyTransition*>(
+								previousTransitions[0] );
 
-						if ( NULL != prevTransition ) {
-							if ( prevTransition->getEndValue() == property.getValue() ) {
-								continue;
-							} else if ( prevTransition->getStartValue() == property.getValue() ) {
-								Float currentProgress =
-									prevTransition->getElapsed().asMilliseconds() /
-									prevTransition->getDuration().asMilliseconds();
-								currentProgress = eemin( 1.f, currentProgress );
-								if ( 0.f != currentProgress ) {
-									duration = Milliseconds(
-										transitionInfo.getDuration().asMilliseconds() *
-										currentProgress );
-								}
+						if ( prevTransition->getEndValue() == property.getValue() ) {
+							continue;
+						} else if ( prevTransition->getStartValue() == property.getValue() ) {
+							Float currentProgress = prevTransition->getElapsed().asMilliseconds() /
+													prevTransition->getDuration().asMilliseconds();
+							currentProgress = eemin( 1.f, currentProgress );
+							if ( 0.f != currentProgress ) {
+								duration =
+									Milliseconds( transitionInfo.getDuration().asMilliseconds() *
+												  currentProgress );
 							}
 						}
 
@@ -360,12 +359,11 @@ void UIStyle::updateState() {
 
 void UIStyle::subscribeNonCacheableStyles() {
 	for ( auto& style : mNoncacheableStyles ) {
-		std::vector<CSS::StyleSheetElement*> elements =
-			style.getSelector().getRelatedElements( mWidget, false );
+		std::vector<UIWidget*> elements = style.getSelector().getRelatedElements( mWidget, false );
 
 		if ( !elements.empty() ) {
 			for ( auto& element : elements ) {
-				UIWidget* widget = dynamic_cast<UIWidget*>( element );
+				UIWidget* widget = element->asType<UIWidget>();
 
 				if ( NULL != widget && NULL != widget->getUIStyle() ) {
 					widget->getUIStyle()->subscribeRelated( mWidget );

@@ -54,6 +54,10 @@ class EE_API Action {
 
 	void setTarget( Node* target );
 
+	void setId( const Uint32& id );
+
+	const Uint32& getId();
+
   protected:
 	friend class Node;
 	typedef std::map<ActionType, std::map<Uint32, ActionCallback>> ActionCallbackMap;
@@ -62,6 +66,7 @@ class EE_API Action {
 	Uint32 mFlags;
 	Uint32 mTag;
 	Uint32 mNumCallBacks;
+	Uint32 mId;
 	ActionCallbackMap mCallbacks;
 
 	virtual void onStart();

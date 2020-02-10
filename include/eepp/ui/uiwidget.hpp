@@ -1,7 +1,6 @@
 #ifndef EE_UIUIWIDGET_HPP
 #define EE_UIUIWIDGET_HPP
 
-#include <eepp/ui/css/stylesheetelement.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
 #include <eepp/ui/css/stylesheetselector.hpp>
 #include <eepp/ui/uinode.hpp>
@@ -21,7 +20,7 @@ namespace EE { namespace UI {
 class UITooltip;
 class UIStyle;
 
-class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
+class EE_API UIWidget : public UINode {
   public:
 	static UIWidget* New();
 
@@ -132,11 +131,11 @@ class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
 
 	const std::vector<std::string>& getStyleSheetClasses() const;
 
-	StyleSheetElement* getStyleSheetParentElement() const;
+	UIWidget* getStyleSheetParentElement() const;
 
-	StyleSheetElement* getStyleSheetPreviousSiblingElement() const;
+	UIWidget* getStyleSheetPreviousSiblingElement() const;
 
-	StyleSheetElement* getStyleSheetNextSiblingElement() const;
+	UIWidget* getStyleSheetNextSiblingElement() const;
 
 	const std::vector<std::string>& getStyleSheetPseudoClasses() const;
 

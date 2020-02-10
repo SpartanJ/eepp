@@ -6,8 +6,6 @@
 
 namespace EE { namespace UI { namespace CSS {
 
-class StyleSheetElement;
-
 class EE_API StyleSheet {
   public:
 	StyleSheet();
@@ -20,7 +18,7 @@ class EE_API StyleSheet {
 
 	void combineStyleSheet( const StyleSheet& styleSheet );
 
-	StyleSheetStyleVector getElementStyles( StyleSheetElement* element,
+	StyleSheetStyleVector getElementStyles( UIWidget* element,
 											const bool& applyPseudo = false ) const;
 
 	const StyleSheetStyleVector& getStyles() const;

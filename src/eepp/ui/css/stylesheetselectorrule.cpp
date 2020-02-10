@@ -1,6 +1,6 @@
 #include <algorithm>
-#include <eepp/ui/css/stylesheetelement.hpp>
 #include <eepp/ui/css/stylesheetselectorrule.hpp>
+#include <eepp/ui/uiwidget.hpp>
 
 namespace EE { namespace UI { namespace CSS {
 
@@ -207,7 +207,7 @@ bool StyleSheetSelectorRule::hasStructuralPseudoClass( const std::string& cls ) 
 		   mStructuralPseudoClasses.end();
 }
 
-bool StyleSheetSelectorRule::matches( StyleSheetElement* element, const bool& applyPseudo ) const {
+bool StyleSheetSelectorRule::matches( UIWidget* element, const bool& applyPseudo ) const {
 	Uint32 flags = 0;
 
 	if ( mTagName == "*" ) {

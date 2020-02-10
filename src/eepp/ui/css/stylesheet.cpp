@@ -1,6 +1,5 @@
 #include <algorithm>
 #include <eepp/ui/css/stylesheet.hpp>
-#include <eepp/ui/css/stylesheetelement.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
 #include <eepp/ui/css/stylesheetselector.hpp>
 #include <iostream>
@@ -31,7 +30,7 @@ void StyleSheet::combineStyleSheet( const StyleSheet& styleSheet ) {
 	}
 }
 
-StyleSheetStyleVector StyleSheet::getElementStyles( StyleSheetElement* element,
+StyleSheetStyleVector StyleSheet::getElementStyles( UIWidget* element,
 													const bool& applyPseudo ) const {
 	StyleSheetStyleVector styles;
 

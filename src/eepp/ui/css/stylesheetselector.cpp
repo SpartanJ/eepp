@@ -1,5 +1,5 @@
-#include <eepp/ui/css/stylesheetelement.hpp>
 #include <eepp/ui/css/stylesheetselector.hpp>
+#include <eepp/ui/uiwidget.hpp>
 
 namespace EE { namespace UI { namespace CSS {
 
@@ -116,11 +116,11 @@ bool StyleSheetSelector::hasPseudoClasses() const {
 	return mSelectorRules.empty() || mSelectorRules[0].hasPseudoClasses();
 }
 
-bool StyleSheetSelector::select( StyleSheetElement* element, const bool& applyPseudo ) const {
+bool StyleSheetSelector::select( UIWidget* element, const bool& applyPseudo ) const {
 	if ( mSelectorRules.empty() )
 		return false;
 
-	StyleSheetElement* curElement = element;
+	UIWidget* curElement = element;
 
 	for ( size_t i = 0; i < mSelectorRules.size(); i++ ) {
 		const StyleSheetSelectorRule& selectorRule = mSelectorRules[i];
@@ -168,8 +168,8 @@ bool StyleSheetSelector::select( StyleSheetElement* element, const bool& applyPs
 			}
 			case StyleSheetSelectorRule::SIBLING: {
 				bool foundSibling = false;
-				StyleSheetElement* prevSibling = curElement->getStyleSheetPreviousSiblingElement();
-				StyleSheetElement* nextSibling = curElement->getStyleSheetNextSiblingElement();
+				UIWidget* prevSibling = curElement->getStyleSheetPreviousSiblingElement();
+				UIWidget* nextSibling = curElement->getStyleSheetNextSiblingElement();
 
 				while ( NULL != prevSibling && !foundSibling ) {
 					if ( selectorRule.matches( prevSibling, applyPseudo ) ) {
@@ -200,15 +200,14 @@ bool StyleSheetSelector::select( StyleSheetElement* element, const bool& applyPs
 	return true;
 }
 
-std::vector<StyleSheetElement*>
-StyleSheetSelector::getRelatedElements( StyleSheetElement* element,
-										const bool& applyPseudo ) const {
-	static std::vector<StyleSheetElement*> EMPTY_ELEMENTS;
-	std::vector<StyleSheetElement*> elements;
+std::vector<UIWidget*> StyleSheetSelector::getRelatedElements( UIWidget* element,
+															   const bool& applyPseudo ) const {
+	static std::vector<UIWidget*> EMPTY_ELEMENTS;
+	std::vector<UIWidget*> elements;
 	if ( mSelectorRules.empty() )
 		return elements;
 
-	StyleSheetElement* curElement = element;
+	UIWidget* curElement = element;
 
 	for ( size_t i = 0; i < mSelectorRules.size(); i++ ) {
 		const StyleSheetSelectorRule& selectorRule = mSelectorRules[i];
@@ -271,8 +270,8 @@ StyleSheetSelector::getRelatedElements( StyleSheetElement* element,
 			}
 			case StyleSheetSelectorRule::SIBLING: {
 				bool foundSibling = false;
-				StyleSheetElement* prevSibling = curElement->getStyleSheetPreviousSiblingElement();
-				StyleSheetElement* nextSibling = curElement->getStyleSheetNextSiblingElement();
+				UIWidget* prevSibling = curElement->getStyleSheetPreviousSiblingElement();
+				UIWidget* nextSibling = curElement->getStyleSheetNextSiblingElement();
 
 				while ( NULL != prevSibling && !foundSibling ) {
 					if ( selectorRule.matches( prevSibling, applyPseudo ) ) {

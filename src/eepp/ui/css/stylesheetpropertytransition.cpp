@@ -40,7 +40,9 @@ StyleSheetPropertyTransition::StyleSheetPropertyTransition( const PropertyDefini
 	mStartValue( startValue ),
 	mEndValue( endValue ),
 	mDuration( duration ),
-	mType( type ) {}
+	mType( type ) {
+	mId = ID;
+}
 
 Action* StyleSheetPropertyTransition::clone() const {
 	return StyleSheetPropertyTransition::New( mProperty, mStartValue, mEndValue, mDuration, mType );

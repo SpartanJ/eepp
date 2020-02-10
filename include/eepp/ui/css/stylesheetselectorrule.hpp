@@ -3,9 +3,11 @@
 
 #include <eepp/core.hpp>
 
-namespace EE { namespace UI { namespace CSS {
+namespace EE { namespace UI {
+class UIWidget;
+}} // namespace EE::UI
 
-class StyleSheetElement;
+namespace EE { namespace UI { namespace CSS {
 
 class EE_API StyleSheetSelectorRule {
   public:
@@ -48,7 +50,7 @@ class EE_API StyleSheetSelectorRule {
 
 	const int& getSpecificity() const { return mSpecificity; }
 
-	bool matches( StyleSheetElement* element, const bool& applyPseudo = true ) const;
+	bool matches( UIWidget* element, const bool& applyPseudo = true ) const;
 
 	bool hasClass( const std::string& cls ) const;
 

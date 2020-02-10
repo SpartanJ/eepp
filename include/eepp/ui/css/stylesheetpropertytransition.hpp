@@ -17,6 +17,8 @@ namespace EE { namespace UI { namespace CSS {
 
 class EE_API StyleSheetPropertyTransition : public Action {
   public:
+	static constexpr Uint32 ID = String::hash( "StyleSheetPropertyTransition" );
+
 	static bool transitionSupported( const PropertyType& type );
 
 	static StyleSheetPropertyTransition* New( const PropertyDefinition* property,
