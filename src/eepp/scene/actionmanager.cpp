@@ -10,7 +10,7 @@ ActionManager* ActionManager::New() {
 	return eeNew( ActionManager, () );
 }
 
-ActionManager::ActionManager() {}
+ActionManager::ActionManager() : mUpdating( false ) {}
 
 ActionManager::~ActionManager() {
 	clear();
@@ -84,6 +84,7 @@ void ActionManager::update( const Time& time ) {
 
 	{
 		Lock lock( mMutex );
+		mUpdating = true;
 
 		for ( auto it = mActions.begin(); it != mActions.end(); ++it ) {
 			Action* action = ( *it );
@@ -96,7 +97,14 @@ void ActionManager::update( const Time& time ) {
 				removeList.push_back( action );
 			}
 		}
+
+		mUpdating = false;
 	}
+
+	for ( auto it = mActionsRemoveList.begin(); it != mActionsRemoveList.end(); ++it )
+		removeAction( ( *it ) );
+
+	mActionsRemoveList.clear();
 
 	for ( auto it = removeList.begin(); it != removeList.end(); ++it )
 		removeAction( ( *it ) );
@@ -130,9 +138,17 @@ void ActionManager::removeAction( Action* action ) {
 	Lock lock( mMutex );
 
 	if ( NULL != action ) {
-		mActions.remove( action );
+		if ( !mUpdating ) {
+			bool found = std::find( mActions.begin(), mActions.end(), action ) != mActions.end();
 
-		eeSAFE_DELETE( action );
+			if ( found ) {
+				mActions.remove( action );
+
+				eeSAFE_DELETE( action );
+			}
+		} else {
+			mActionsRemoveList.push_back( action );
+		}
 	}
 }
 

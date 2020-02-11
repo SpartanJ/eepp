@@ -43,7 +43,11 @@ class EE_API UINodeDrawable : public Drawable {
 
 		Drawable* getDrawable() const;
 
+		const std::string& getDrawableRef() const;
+
 		void setDrawable( Drawable* drawable, const bool& ownIt );
+
+		void setDrawable( const std::string& drawableRef );
 
 		void setOffset( const Vector2f& offset );
 
@@ -90,12 +94,15 @@ class EE_API UINodeDrawable : public Drawable {
 		bool mNeedsUpdate;
 		bool mOwnsDrawable;
 		Drawable* mDrawable;
+		std::string mDrawableRef;
 		Uint32 mResourceChangeCbId;
 		Repeat mRepeat;
 
 		virtual void onPositionChange();
 
 		void update();
+
+		Drawable* createDrawable( const std::string& value, const Sizef& size, bool& ownIt );
 	};
 
 	static UINodeDrawable* New( UINode* owner );
@@ -129,6 +136,8 @@ class EE_API UINodeDrawable : public Drawable {
 	LayerDrawable* getLayer( int index );
 
 	void setDrawable( int index, Drawable* drawable, bool ownIt );
+
+	void setDrawable( int index, const std::string& drawable );
 
 	void setDrawablePositionX( int index, const std::string& positionX );
 

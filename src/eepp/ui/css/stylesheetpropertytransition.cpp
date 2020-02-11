@@ -128,7 +128,8 @@ void StyleSheetPropertyTransition::onUpdate( const Time& ) {
 				break;
 			}
 			case PropertyType::NumberLength: {
-				Float containerLength = getContainerLength( node );
+				Float containerLength = node->getPropertyRelativeTargetContainerLength(
+					mProperty->getRelativeTarget() );
 				Float start = node->convertLength( mStartValue, containerLength );
 				Float end = node->convertLength( mEndValue, containerLength );
 				Time time =
@@ -199,42 +200,6 @@ void StyleSheetPropertyTransition::onUpdate( const Time& ) {
 				break;
 		}
 	}
-}
-
-Float StyleSheetPropertyTransition::getContainerLength( UIWidget* node ) {
-	Float containerLength = 0;
-	switch ( mProperty->getRelativeTarget() ) {
-		case PropertyRelativeTarget::ContainingBlockWidth:
-			containerLength = node->getParent()->getPixelsSize().getWidth();
-			break;
-		case PropertyRelativeTarget::ContainingBlockHeight:
-			containerLength = node->getParent()->getPixelsSize().getHeight();
-		case PropertyRelativeTarget::LocalBlockWidth:
-			containerLength = node->getPixelsSize().getWidth();
-			break;
-		case PropertyRelativeTarget::LocalBlockHeight:
-			containerLength = node->getPixelsSize().getHeight();
-			break;
-		case PropertyRelativeTarget::BackgroundWidth:
-			containerLength = node->getPixelsSize().getWidth() -
-							  node->getBackground()->getLayer( 0 )->getDrawableSize().getWidth();
-			break;
-		case PropertyRelativeTarget::BackgroundHeight:
-			containerLength = node->getPixelsSize().getHeight() -
-							  node->getBackground()->getLayer( 0 )->getDrawableSize().getHeight();
-			break;
-		case PropertyRelativeTarget::ForegroundWidth:
-			containerLength = node->getPixelsSize().getWidth() -
-							  node->getForeground()->getLayer( 0 )->getDrawableSize().getWidth();
-			break;
-		case PropertyRelativeTarget::ForegroundHeight:
-			containerLength = node->getPixelsSize().getHeight() -
-							  node->getForeground()->getLayer( 0 )->getDrawableSize().getHeight();
-			break;
-		default:
-			break;
-	}
-	return containerLength;
 }
 
 const Time& StyleSheetPropertyTransition::getElapsed() const {

@@ -1,6 +1,7 @@
 #ifndef EE_UIUIWIDGET_HPP
 #define EE_UIUIWIDGET_HPP
 
+#include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
 #include <eepp/ui/css/stylesheetselector.hpp>
 #include <eepp/ui/uinode.hpp>
@@ -185,11 +186,15 @@ class EE_API UIWidget : public UINode {
 		return reinterpret_cast<T*>( findByTag( tag ) );
 	}
 
+	UIWidget* querySelector( const CSS::StyleSheetSelector& selector );
+
 	UIWidget* querySelector( const std::string& selector );
 
 	template <typename T> T* querySelector( const std::string& selector ) {
 		return reinterpret_cast<T*>( querySelector( selector ) );
 	}
+
+	std::vector<UIWidget*> querySelectorAll( const CSS::StyleSheetSelector& selector );
 
 	std::vector<UIWidget*> querySelectorAll( const std::string& selector );
 
@@ -198,6 +203,17 @@ class EE_API UIWidget : public UINode {
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef );
 
 	bool isSceneNodeLoading() const;
+
+	Float
+	getPropertyRelativeTargetContainerLength( const CSS::PropertyRelativeTarget& relativeTarget,
+											  const Float& defaultValue = 0 );
+
+	Float lengthFromValue( const std::string& value,
+						   const CSS::PropertyRelativeTarget& relativeTarget,
+						   const Float& defaultValue = 0, const Float& defaultContainerValue = 0 );
+
+	Float lengthFromValue( const StyleSheetProperty& property,
+						   const Float& defaultValue = 0, const Float& defaultContainerValue = 0 );
 
   protected:
 	friend class UIManager;
@@ -266,14 +282,6 @@ class EE_API UIWidget : public UINode {
 	std::string getGravityString() const;
 
 	std::string getFlagsString() const;
-
-	bool
-	drawablePropertySet( const std::string& propertyName, const std::string& value,
-						 std::function<void( Drawable* drawable, bool ownIt, int index )> funcSet );
-
-	UIWidget* querySelector( const CSS::StyleSheetSelector& selector );
-
-	std::vector<UIWidget*> querySelectorAll( const CSS::StyleSheetSelector& selector );
 
 	bool checkPropertyDefinition( const StyleSheetProperty& property );
 };

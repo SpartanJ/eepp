@@ -1,7 +1,12 @@
 #include <eepp/core/core.hpp>
+#include <eepp/graphics/circledrawable.hpp>
 #include <eepp/graphics/drawableresource.hpp>
+#include <eepp/graphics/drawablesearcher.hpp>
+#include <eepp/graphics/rectangledrawable.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
+#include <eepp/graphics/triangledrawable.hpp>
 #include <eepp/math/easing.hpp>
+#include <eepp/system/functionstring.hpp>
 #include <eepp/ui/css/stylesheetlength.hpp>
 #include <eepp/ui/uinode.hpp>
 #include <eepp/ui/uinodedrawable.hpp>
@@ -68,6 +73,12 @@ UINodeDrawable::LayerDrawable* UINodeDrawable::getLayer( int index ) {
 void UINodeDrawable::setDrawable( int index, Drawable* drawable, bool ownIt ) {
 	if ( drawable != getLayer( index )->getDrawable() ) {
 		getLayer( index )->setDrawable( drawable, ownIt );
+	}
+}
+
+void UINodeDrawable::setDrawable( int index, const std::string& drawable ) {
+	if ( drawable != getLayer( index )->getDrawableRef() ) {
+		getLayer( index )->setDrawable( drawable );
 	}
 }
 
@@ -321,6 +332,10 @@ Drawable* UINodeDrawable::LayerDrawable::getDrawable() const {
 	return mDrawable;
 }
 
+const std::string& UINodeDrawable::LayerDrawable::getDrawableRef() const {
+	return mDrawableRef;
+}
+
 void UINodeDrawable::LayerDrawable::setDrawable( Drawable* drawable, const bool& ownIt ) {
 	if ( drawable == mDrawable )
 		return;
@@ -337,6 +352,7 @@ void UINodeDrawable::LayerDrawable::setDrawable( Drawable* drawable, const bool&
 	}
 
 	mDrawable = drawable;
+	mDrawableRef = "";
 	mOwnsDrawable = ownIt;
 	invalidate();
 
@@ -352,6 +368,215 @@ void UINodeDrawable::LayerDrawable::setDrawable( Drawable* drawable, const bool&
 										  }
 									  } );
 	}
+}
+
+void UINodeDrawable::LayerDrawable::setDrawable( const std::string& drawableRef ) {
+	bool ownIt;
+	Drawable* drawable = createDrawable( drawableRef, mSize, ownIt );
+
+	if ( NULL != drawable ) {
+		setDrawable( drawable, ownIt );
+
+		mDrawableRef = drawableRef;
+	}
+}
+
+Drawable* UINodeDrawable::LayerDrawable::createDrawable( const std::string& value,
+														 const Sizef& size, bool& ownIt ) {
+	FunctionString functionType = FunctionString::parse( value );
+	Drawable* res = NULL;
+	ownIt = false;
+
+	if ( !functionType.isEmpty() ) {
+		if ( functionType.getName() == "linear-gradient" &&
+			 functionType.getParameters().size() >= 2 ) {
+			RectangleDrawable* drawable = RectangleDrawable::New();
+			RectColors rectColors;
+
+			const std::vector<std::string>& params( functionType.getParameters() );
+
+			if ( Color::isColorString( params.at( 0 ) ) && params.size() >= 2 ) {
+				rectColors.TopLeft = rectColors.TopRight = Color::fromString( params.at( 0 ) );
+				rectColors.BottomLeft = rectColors.BottomRight =
+					Color::fromString( params.at( 1 ) );
+			} else if ( params.size() >= 3 ) {
+				std::string direction = params.at( 0 );
+				String::toLowerInPlace( direction );
+
+				if ( direction == "to bottom" ) {
+					rectColors.TopLeft = rectColors.TopRight = Color::fromString( params.at( 1 ) );
+					rectColors.BottomLeft = rectColors.BottomRight =
+						Color::fromString( params.at( 2 ) );
+				} else if ( direction == "to left" ) {
+					rectColors.TopLeft = rectColors.BottomLeft =
+						Color::fromString( params.at( 2 ) );
+					rectColors.TopRight = rectColors.BottomRight =
+						Color::fromString( params.at( 1 ) );
+				} else if ( direction == "to right" ) {
+					rectColors.TopLeft = rectColors.BottomLeft =
+						Color::fromString( params.at( 1 ) );
+					rectColors.TopRight = rectColors.BottomRight =
+						Color::fromString( params.at( 2 ) );
+				} else if ( direction == "to top" ) {
+					rectColors.TopLeft = rectColors.TopRight = Color::fromString( params.at( 2 ) );
+					rectColors.BottomLeft = rectColors.BottomRight =
+						Color::fromString( params.at( 1 ) );
+				} else {
+					rectColors.TopLeft = rectColors.TopRight = Color::fromString( params.at( 1 ) );
+					rectColors.BottomLeft = rectColors.BottomRight =
+						Color::fromString( params.at( 2 ) );
+				}
+			} else {
+				mContainer->setBackgroundColor( Color::fromString( params.at( 0 ) ) );
+				return NULL;
+			}
+
+			drawable->setRectColors( rectColors );
+			ownIt = true;
+			return drawable;
+		} else if ( functionType.getName() == "circle" &&
+					functionType.getParameters().size() >= 1 ) {
+			CircleDrawable* drawable = CircleDrawable::New();
+
+			const std::vector<std::string>& params( functionType.getParameters() );
+
+			CSS::StyleSheetLength length( params[0] );
+			drawable->setRadius(
+				mContainer->getOwner()->convertLength( length, size.getWidth() / 2.f ) );
+
+			if ( params.size() >= 2 ) {
+				drawable->setColor( Color::fromString( params[1] ) );
+			}
+
+			if ( params.size() >= 3 ) {
+				std::string fillMode( String::toLower( params[2] ) );
+				if ( fillMode == "line" || fillMode == "solid" || fillMode == "fill" ) {
+					drawable->setFillMode( fillMode == "line" ? DRAW_LINE : DRAW_FILL );
+				}
+			}
+
+			drawable->setOffset( drawable->getSize() / 2.f );
+			ownIt = true;
+			return drawable;
+		} else if ( functionType.getName() == "rectangle" &&
+					functionType.getParameters().size() >= 1 ) {
+			RectangleDrawable* drawable = RectangleDrawable::New();
+			RectColors rectColors;
+			std::vector<Color> colors;
+
+			const std::vector<std::string>& params( functionType.getParameters() );
+
+			for ( size_t i = 0; i < params.size(); i++ ) {
+				std::string param( String::toLower( params[i] ) );
+
+				if ( param == "solid" || param == "fill" ) {
+					drawable->setFillMode( DRAW_FILL );
+				} else if ( String::startsWith( param, "line" ) ) {
+					drawable->setFillMode( DRAW_LINE );
+
+					std::vector<std::string> parts( String::split( param, ' ' ) );
+
+					if ( parts.size() >= 2 ) {
+						CSS::StyleSheetLength length( parts[1] );
+						drawable->setLineWidth(
+							mContainer->getOwner()->convertLength( length, size.getWidth() ) );
+					}
+				} else if ( param.find( "º" ) != std::string::npos ) {
+					String::replaceAll( param, "º", "" );
+					Float floatVal;
+					if ( String::fromString( floatVal, param ) ) {
+						drawable->setRotation( floatVal );
+					}
+				} else if ( Color::isColorString( param ) ) {
+					colors.push_back( Color::fromString( param ) );
+				} else {
+					int intVal = 0;
+
+					if ( String::fromString( intVal, param ) ) {
+						drawable->setCorners( intVal );
+					}
+				}
+			}
+
+			if ( colors.size() > 0 ) {
+				while ( colors.size() < 4 ) {
+					colors.push_back( colors[colors.size() - 1] );
+				};
+
+				rectColors.TopLeft = colors[0];
+				rectColors.BottomLeft = colors[1];
+				rectColors.BottomRight = colors[2];
+				rectColors.TopRight = colors[3];
+				drawable->setRectColors( rectColors );
+				ownIt = true;
+				return drawable;
+			} else {
+				eeSAFE_DELETE( drawable );
+			}
+		} else if ( functionType.getName() == "triangle" &&
+					functionType.getParameters().size() >= 2 ) {
+			TriangleDrawable* drawable = TriangleDrawable::New();
+			std::vector<Color> colors;
+			std::vector<Vector2f> vertices;
+
+			const std::vector<std::string>& params( functionType.getParameters() );
+
+			for ( size_t i = 0; i < params.size(); i++ ) {
+				std::string param( String::toLower( params[i] ) );
+
+				if ( Color::isColorString( param ) ) {
+					colors.push_back( Color::fromString( param ) );
+				} else {
+					std::vector<std::string> vertex( String::split( param, ',' ) );
+
+					if ( vertex.size() == 3 ) {
+						for ( size_t v = 0; v < vertex.size(); v++ ) {
+							vertex[v] = String::trim( vertex[v] );
+							std::vector<std::string> coords( String::split( vertex[v], ' ' ) );
+
+							if ( coords.size() == 2 ) {
+								CSS::StyleSheetLength posX( coords[0] );
+								CSS::StyleSheetLength posY( coords[1] );
+								vertices.push_back( Vector2f(
+									mContainer->getOwner()->convertLength( posX, size.getWidth() ),
+									mContainer->getOwner()->convertLength( posY,
+																		   size.getHeight() ) ) );
+							}
+						}
+					}
+				}
+			}
+
+			if ( vertices.size() == 3 && !colors.empty() ) {
+				Triangle2f triangle;
+
+				for ( size_t i = 0; i < 3; i++ ) {
+					triangle.V[i] = vertices[i];
+				}
+
+				if ( colors.size() == 3 ) {
+					drawable->setTriangleColors( colors[0], colors[1], colors[2] );
+				} else {
+					drawable->setColor( colors[0] );
+				}
+
+				drawable->setTriangle( triangle );
+				ownIt = true;
+				return drawable;
+			} else {
+				eeSAFE_DELETE( drawable );
+			}
+		} else if ( functionType.getName() == "url" && functionType.getParameters().size() >= 1 ) {
+			if ( NULL != ( res = DrawableSearcher::searchByName(
+							   functionType.getParameters().at( 0 ) ) ) ) {
+				return res;
+			}
+		}
+	} else if ( NULL != ( res = DrawableSearcher::searchByName( value ) ) ) {
+		return res;
+	}
+
+	return NULL;
 }
 
 const Vector2f& UINodeDrawable::LayerDrawable::getOffset() const {
@@ -562,6 +787,10 @@ void UINodeDrawable::LayerDrawable::onPositionChange() {
 void UINodeDrawable::LayerDrawable::update() {
 	if ( mDrawable == NULL )
 		return;
+
+	if ( !mDrawableRef.empty() ) {
+		setDrawable( mDrawableRef );
+	}
 
 	mDrawableSize = calcDrawableSize( mSizeEq );
 	mOffset = calcPosition( mPositionX + " " + mPositionY );

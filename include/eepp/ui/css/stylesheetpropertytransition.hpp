@@ -67,8 +67,6 @@ class EE_API StyleSheetPropertyTransition : public Action {
 	Time mDuration;
 	Time mElapsed;
 	Ease::Interpolation mType;
-
-	Float getContainerLength( UIWidget* node );
 };
 
 }}} // namespace EE::UI::CSS

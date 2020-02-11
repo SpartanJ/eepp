@@ -1,10 +1,5 @@
 #include <algorithm>
-#include <eepp/graphics/circledrawable.hpp>
-#include <eepp/graphics/drawablesearcher.hpp>
-#include <eepp/graphics/rectangledrawable.hpp>
-#include <eepp/graphics/triangledrawable.hpp>
 #include <eepp/scene/actions/actions.hpp>
-#include <eepp/system/functionstring.hpp>
 #include <eepp/ui/css/shorthanddefinition.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
 #include <eepp/ui/css/stylesheetselector.hpp>
@@ -399,6 +394,13 @@ void UIWidget::onVisibilityChange() {
 
 void UIWidget::onSizeChange() {
 	UINode::onSizeChange();
+
+	if ( mBackground != NULL )
+		mBackground->invalidate();
+
+	if ( mForeground != NULL )
+		mForeground->invalidate();
+
 	notifyLayoutAttrChange();
 }
 
@@ -501,6 +503,58 @@ bool UIWidget::isSceneNodeLoading() const {
 			   : false;
 }
 
+Float UIWidget::getPropertyRelativeTargetContainerLength(
+	const PropertyRelativeTarget& relativeTarget, const Float& defaultValue ) {
+	Float containerLength = defaultValue;
+	switch ( relativeTarget ) {
+		case PropertyRelativeTarget::ContainingBlockWidth:
+			containerLength = getParent()->getPixelsSize().getWidth();
+			break;
+		case PropertyRelativeTarget::ContainingBlockHeight:
+			containerLength = getParent()->getPixelsSize().getHeight();
+		case PropertyRelativeTarget::LocalBlockWidth:
+			containerLength = getPixelsSize().getWidth();
+			break;
+		case PropertyRelativeTarget::LocalBlockHeight:
+			containerLength = getPixelsSize().getHeight();
+			break;
+		case PropertyRelativeTarget::BackgroundWidth:
+			containerLength = getPixelsSize().getWidth() -
+							  getBackground()->getLayer( 0 )->getDrawableSize().getWidth();
+			break;
+		case PropertyRelativeTarget::BackgroundHeight:
+			containerLength = getPixelsSize().getHeight() -
+							  getBackground()->getLayer( 0 )->getDrawableSize().getHeight();
+			break;
+		case PropertyRelativeTarget::ForegroundWidth:
+			containerLength = getPixelsSize().getWidth() -
+							  getForeground()->getLayer( 0 )->getDrawableSize().getWidth();
+			break;
+		case PropertyRelativeTarget::ForegroundHeight:
+			containerLength = getPixelsSize().getHeight() -
+							  getForeground()->getLayer( 0 )->getDrawableSize().getHeight();
+			break;
+		default:
+			break;
+	}
+	return containerLength;
+}
+
+Float UIWidget::lengthFromValue( const std::string& value,
+								 const PropertyRelativeTarget& relativeTarget,
+								 const Float& defaultValue, const Float& defaultContainerValue ) {
+	Float containerLength =
+		getPropertyRelativeTargetContainerLength( relativeTarget, defaultValue );
+	return convertLength( CSS::StyleSheetLength( value, defaultValue ), containerLength );
+}
+
+Float UIWidget::lengthFromValue( const StyleSheetProperty& property, const Float& defaultValue,
+								 const Float& defaultContainerValue ) {
+	return lengthFromValue( property.getValue(),
+							property.getPropertyDefinition()->getRelativeTarget(), defaultValue,
+							defaultContainerValue );
+}
+
 const Rectf& UIWidget::getPadding() const {
 	return mPadding;
 }
@@ -578,19 +632,15 @@ const std::vector<std::string>& UIWidget::getStyleSheetClasses() const {
 }
 
 UIWidget* UIWidget::getStyleSheetParentElement() const {
-	return NULL != mParentCtrl && mParentCtrl->isWidget()
-			   ? mParentCtrl->asType<UIWidget>()
-			   : NULL;
+	return NULL != mParentCtrl && mParentCtrl->isWidget() ? mParentCtrl->asType<UIWidget>() : NULL;
 }
 
 UIWidget* UIWidget::getStyleSheetPreviousSiblingElement() const {
-	return NULL != mPrev && mPrev->isWidget() ? mPrev->asType<UIWidget>()
-											  : NULL;
+	return NULL != mPrev && mPrev->isWidget() ? mPrev->asType<UIWidget>() : NULL;
 }
 
 UIWidget* UIWidget::getStyleSheetNextSiblingElement() const {
-	return NULL != mNext && mNext->isWidget() ? mNext->asType<UIWidget>()
-											  : NULL;
+	return NULL != mNext && mNext->isWidget() ? mNext->asType<UIWidget>() : NULL;
 }
 
 const std::vector<std::string>& UIWidget::getStyleSheetPseudoClasses() const {
@@ -1077,10 +1127,7 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			setBackgroundColor( attribute.asColor() );
 			break;
 		case PropertyId::BackgroundImage:
-			drawablePropertySet( "background", attribute.getValue(),
-								 [&]( Drawable* drawable, bool ownIt, int index ) {
-									 setBackgroundDrawable( drawable, ownIt, index );
-								 } );
+			setBackgroundDrawable( attribute.getValue(), 0 );
 			break;
 		case PropertyId::BackgroundRepeat:
 			setBackgroundRepeat( attribute.value(), 0 );
@@ -1092,10 +1139,7 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			setForegroundColor( attribute.asColor() );
 			break;
 		case PropertyId::ForegroundImage:
-			drawablePropertySet( "foreground", attribute.getValue(),
-								 [&]( Drawable* drawable, bool ownIt, int index ) {
-									 setForegroundDrawable( drawable, ownIt, index );
-								 } );
+			setForegroundDrawable( attribute.getValue(), 0 );
 			break;
 		case PropertyId::ForegroundRadius:
 			setForegroundRadius( attribute.asUint() );
@@ -1107,10 +1151,10 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			setBorderColor( attribute.asColor() );
 			break;
 		case PropertyId::BorderWidth:
-			setBorderWidth( PixelDensity::dpToPxI( attribute.asDpDimensionI( "1" ) ) );
+			setBorderWidth( lengthFromValue( attribute, PixelDensity::dpToPx( 1 ) ) );
 			break;
 		case PropertyId::BorderRadius:
-			setBorderRadius( PixelDensity::dpToPxI( attribute.asDpDimensionUint() ) );
+			setBorderRadius( lengthFromValue( attribute ) );
 			break;
 		case PropertyId::Visible:
 			setVisible( attribute.asBool() );
@@ -1257,8 +1301,12 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			} else {
 				unsetFlags( UI_AUTO_SIZE );
 				setLayoutWidthRule( LayoutSizeRule::Fixed );
-				setInternalWidth( PixelDensity::toDpFromStringI( val ) );
-				onSizeChange();
+				Float newVal = eefloor( PixelDensity::toDpFromString( val ) );
+				if ( !( newVal == 0 && getLayoutWeight() != 0 &&
+						getParent()->isType( UI_TYPE_LINEAR_LAYOUT ) ) ) {
+					setInternalWidth( newVal );
+					onSizeChange();
+				}
 			}
 			break;
 		}
@@ -1276,8 +1324,12 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			} else {
 				unsetFlags( UI_AUTO_SIZE );
 				setLayoutHeightRule( LayoutSizeRule::Fixed );
-				setInternalHeight( PixelDensity::toDpFromStringI( val ) );
-				onSizeChange();
+				Float newVal = eefloor( PixelDensity::toDpFromString( val ) );
+				if ( !( newVal == 0 && getLayoutWeight() != 0 &&
+						getParent()->isType( UI_TYPE_LINEAR_LAYOUT ) ) ) {
+					setInternalHeight( newVal );
+					onSizeChange();
+				}
 			}
 			break;
 		}
@@ -1452,205 +1504,6 @@ std::string UIWidget::getFlagsString() const {
 		flagvec.push_back( "clip" );
 
 	return String::join( flagvec, '|' );
-}
-
-bool UIWidget::drawablePropertySet( const std::string& propertyName, const std::string& value,
-									std::function<void( Drawable*, bool, int )> funcSet ) {
-	FunctionString functionType = FunctionString::parse( value );
-	Drawable* res = NULL;
-	int index = 0;
-	bool attributeSet = true;
-
-	if ( !functionType.isEmpty() ) {
-		if ( functionType.getName() == "linear-gradient" &&
-			 functionType.getParameters().size() >= 2 ) {
-			RectangleDrawable* drawable = RectangleDrawable::New();
-			RectColors rectColors;
-
-			const std::vector<std::string>& params( functionType.getParameters() );
-
-			if ( Color::isColorString( params.at( 0 ) ) && params.size() >= 2 ) {
-				rectColors.TopLeft = rectColors.TopRight = Color::fromString( params.at( 0 ) );
-				rectColors.BottomLeft = rectColors.BottomRight =
-					Color::fromString( params.at( 1 ) );
-			} else if ( params.size() >= 3 ) {
-				std::string direction = params.at( 0 );
-				String::toLowerInPlace( direction );
-
-				if ( direction == "to bottom" ) {
-					rectColors.TopLeft = rectColors.TopRight = Color::fromString( params.at( 1 ) );
-					rectColors.BottomLeft = rectColors.BottomRight =
-						Color::fromString( params.at( 2 ) );
-				} else if ( direction == "to left" ) {
-					rectColors.TopLeft = rectColors.BottomLeft =
-						Color::fromString( params.at( 2 ) );
-					rectColors.TopRight = rectColors.BottomRight =
-						Color::fromString( params.at( 1 ) );
-				} else if ( direction == "to right" ) {
-					rectColors.TopLeft = rectColors.BottomLeft =
-						Color::fromString( params.at( 1 ) );
-					rectColors.TopRight = rectColors.BottomRight =
-						Color::fromString( params.at( 2 ) );
-				} else if ( direction == "to top" ) {
-					rectColors.TopLeft = rectColors.TopRight = Color::fromString( params.at( 2 ) );
-					rectColors.BottomLeft = rectColors.BottomRight =
-						Color::fromString( params.at( 1 ) );
-				} else {
-					rectColors.TopLeft = rectColors.TopRight = Color::fromString( params.at( 1 ) );
-					rectColors.BottomLeft = rectColors.BottomRight =
-						Color::fromString( params.at( 2 ) );
-				}
-			} else {
-				return applyProperty(
-					StyleSheetProperty( propertyName + "-color", params.at( 0 ) ) );
-			}
-
-			drawable->setRectColors( rectColors );
-
-			funcSet( drawable, true, index );
-		} else if ( functionType.getName() == "circle" &&
-					functionType.getParameters().size() >= 1 ) {
-			CircleDrawable* drawable = CircleDrawable::New();
-
-			const std::vector<std::string>& params( functionType.getParameters() );
-
-			CSS::StyleSheetLength length( params[0] );
-			drawable->setRadius( convertLength( length, getPixelsSize().getWidth() / 2.f ) );
-
-			if ( params.size() >= 2 ) {
-				drawable->setColor( Color::fromString( params[1] ) );
-			}
-
-			if ( params.size() >= 3 ) {
-				std::string fillMode( String::toLower( params[2] ) );
-				if ( fillMode == "line" || fillMode == "solid" || fillMode == "fill" ) {
-					drawable->setFillMode( fillMode == "line" ? DRAW_LINE : DRAW_FILL );
-				}
-			}
-
-			drawable->setOffset( drawable->getSize() / 2.f );
-
-			funcSet( drawable, true, index );
-		} else if ( functionType.getName() == "rectangle" &&
-					functionType.getParameters().size() >= 1 ) {
-			RectangleDrawable* drawable = RectangleDrawable::New();
-			RectColors rectColors;
-			std::vector<Color> colors;
-
-			const std::vector<std::string>& params( functionType.getParameters() );
-
-			for ( size_t i = 0; i < params.size(); i++ ) {
-				std::string param( String::toLower( params[i] ) );
-
-				if ( param == "solid" || param == "fill" ) {
-					drawable->setFillMode( DRAW_FILL );
-				} else if ( String::startsWith( param, "line" ) ) {
-					drawable->setFillMode( DRAW_LINE );
-
-					std::vector<std::string> parts( String::split( param, ' ' ) );
-
-					if ( parts.size() >= 2 ) {
-						CSS::StyleSheetLength length( parts[1] );
-						drawable->setLineWidth(
-							convertLength( length, getPixelsSize().getWidth() ) );
-					}
-				} else if ( param.find( "º" ) != std::string::npos ) {
-					String::replaceAll( param, "º", "" );
-					Float floatVal;
-					if ( String::fromString( floatVal, param ) ) {
-						drawable->setRotation( floatVal );
-					}
-				} else if ( Color::isColorString( param ) ) {
-					colors.push_back( Color::fromString( param ) );
-				} else {
-					int intVal = 0;
-
-					if ( String::fromString( intVal, param ) ) {
-						drawable->setCorners( intVal );
-					}
-				}
-			}
-
-			if ( colors.size() > 0 ) {
-				while ( colors.size() < 4 ) {
-					colors.push_back( colors[colors.size() - 1] );
-				};
-
-				rectColors.TopLeft = colors[0];
-				rectColors.BottomLeft = colors[1];
-				rectColors.BottomRight = colors[2];
-				rectColors.TopRight = colors[3];
-				drawable->setRectColors( rectColors );
-
-				funcSet( drawable, true, index );
-			} else {
-				eeSAFE_DELETE( drawable );
-			}
-		} else if ( functionType.getName() == "triangle" &&
-					functionType.getParameters().size() >= 2 ) {
-			TriangleDrawable* drawable = TriangleDrawable::New();
-			std::vector<Color> colors;
-			std::vector<Vector2f> vertices;
-
-			const std::vector<std::string>& params( functionType.getParameters() );
-
-			for ( size_t i = 0; i < params.size(); i++ ) {
-				std::string param( String::toLower( params[i] ) );
-
-				if ( Color::isColorString( param ) ) {
-					colors.push_back( Color::fromString( param ) );
-				} else {
-					std::vector<std::string> vertex( String::split( param, ',' ) );
-
-					if ( vertex.size() == 3 ) {
-						for ( size_t v = 0; v < vertex.size(); v++ ) {
-							vertex[v] = String::trim( vertex[v] );
-							std::vector<std::string> coords( String::split( vertex[v], ' ' ) );
-
-							if ( coords.size() == 2 ) {
-								CSS::StyleSheetLength posX( coords[0] );
-								CSS::StyleSheetLength posY( coords[1] );
-								vertices.push_back( Vector2f(
-									convertLength( posX, getPixelsSize().getWidth() ),
-									convertLength( posY, getPixelsSize().getHeight() ) ) );
-							}
-						}
-					}
-				}
-			}
-
-			if ( vertices.size() == 3 && !colors.empty() ) {
-				Triangle2f triangle;
-
-				for ( size_t i = 0; i < 3; i++ ) {
-					triangle.V[i] = vertices[i];
-				}
-
-				if ( colors.size() == 3 ) {
-					drawable->setTriangleColors( colors[0], colors[1], colors[2] );
-				} else {
-					drawable->setColor( colors[0] );
-				}
-
-				drawable->setTriangle( triangle );
-
-				funcSet( drawable, true, index );
-			} else {
-				eeSAFE_DELETE( drawable );
-			}
-		} else if ( functionType.getName() == "url" && functionType.getParameters().size() >= 1 ) {
-			if ( NULL != ( res = DrawableSearcher::searchByName(
-							   functionType.getParameters().at( 0 ) ) ) ) {
-				funcSet( res, res->getDrawableType() == Drawable::SPRITE, index );
-			}
-		}
-	} else if ( NULL != ( res = DrawableSearcher::searchByName( value ) ) ) {
-		funcSet( res, res->getDrawableType() == Drawable::SPRITE, index );
-	} else {
-		attributeSet = false;
-	}
-
-	return attributeSet;
 }
 
 }} // namespace EE::UI

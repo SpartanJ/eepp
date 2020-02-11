@@ -92,6 +92,8 @@ class EE_API UINode : public Node {
 
 	UINode* setBackgroundDrawable( Drawable* drawable, bool ownIt = false, int index = 0 );
 
+	UINode* setBackgroundDrawable( const std::string& drawable, int index );
+
 	UINode* setBackgroundColor( const Color& color );
 
 	UINode* setBackgroundPositionX( const std::string& positionX, int index = 0 );
@@ -111,6 +113,8 @@ class EE_API UINode : public Node {
 	UINodeDrawable* setForegroundFillEnabled( bool enabled );
 
 	UINode* setForegroundDrawable( Drawable* drawable, bool ownIt = false, int index = 0 );
+
+	UINode* setForegroundDrawable( const std::string& drawable, int index = 0 );
 
 	UINode* setForegroundColor( const Color& color );
 
@@ -216,7 +220,7 @@ class EE_API UINode : public Node {
 	Uint32 mState;
 	UISkinState* mSkinState;
 	UINodeDrawable* mBackground;
-	UINodeDrawable* mForegroundState;
+	UINodeDrawable* mForeground;
 	RectangleDrawable* mBorder;
 	Vector2f mDragPoint;
 	Uint32 mDragButton;
