@@ -273,6 +273,8 @@ void UINodeDrawable::LayerDrawable::draw( const Vector2f& position, const Sizef&
 	if ( mDrawable == NULL )
 		return;
 
+	mDrawable->setAlpha( getAlpha() );
+
 	if ( mNeedsUpdate )
 		update();
 
