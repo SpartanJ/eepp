@@ -18,6 +18,7 @@ class EE_API UIState {
 		StateSelectedHover,
 		StateSelectedPressed,
 		StateDisabled,
+		StateChecked,
 		StateCount
 	};
 
@@ -30,6 +31,7 @@ class EE_API UIState {
 		StateFlagSelectedHover = StateFlagSelected | StateFlagHover,
 		StateFlagSelectedPressed = StateFlagSelected | StateFlagPressed,
 		StateFlagDisabled = 1 << StateDisabled,
+		StateFlagChecked = 1 << StateChecked,
 		StateFlagCount = StateCount
 	};
 

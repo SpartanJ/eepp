@@ -52,6 +52,8 @@ class EE_API StyleSheetPropertyTransition : public Action {
 
 	const Time& getElapsed() const;
 
+	void setElapsed( const Time& elapsed );
+
   protected:
 	StyleSheetPropertyTransition( const PropertyDefinition* property, const std::string& startValue,
 								  const std::string& endValue, const Time& duration,

@@ -141,11 +141,15 @@ void UICheckBox::setChecked( const bool& checked ) {
 		mInactiveButton->setVisible( true );
 
 		mChecked = false;
+		unsetFlags( UI_CHECKED );
+		popState( UIState::StateChecked );
 	} else {
 		mActiveButton->setVisible( true );
 		mInactiveButton->setVisible( false );
 
 		mChecked = true;
+		setFlags( UI_CHECKED );
+		pushState( UIState::StateChecked );
 	}
 
 	onValueChange();

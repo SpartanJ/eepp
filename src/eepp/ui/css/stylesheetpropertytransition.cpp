@@ -202,6 +202,10 @@ void StyleSheetPropertyTransition::onUpdate( const Time& ) {
 	}
 }
 
+void StyleSheetPropertyTransition::setElapsed( const Time& elapsed ) {
+	mElapsed = elapsed;
+}
+
 const Time& StyleSheetPropertyTransition::getElapsed() const {
 	return mElapsed;
 }

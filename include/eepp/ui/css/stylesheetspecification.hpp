@@ -5,7 +5,21 @@
 #include <eepp/system/singleton.hpp>
 #include <eepp/ui/css/propertyspecification.hpp>
 
+namespace EE { namespace UI {
+class UIWidget;
+}} // namespace EE::UI
+
 namespace EE { namespace UI { namespace CSS {
+
+typedef std::function<bool( const UIWidget* node, int a, int b )> StyleSheetNodeSelector;
+
+struct StructuralSelector {
+	StructuralSelector( StyleSheetNodeSelector selector, int a, int b ) :
+		selector( selector ), a( a ), b( b ) {}
+	StyleSheetNodeSelector selector;
+	int a;
+	int b;
+};
 
 class StyleSheetSpecification {
 	SINGLETON_DECLARE_HEADERS( StyleSheetSpecification )
@@ -33,10 +47,17 @@ class StyleSheetSpecification {
 
 	bool isShorthand( const std::string& name ) const;
 
+	void registerNodeSelector( const std::string& name, StyleSheetNodeSelector nodeSelector );
+
+	StructuralSelector getStructuralSelector( const std::string& name );
+
   protected:
 	PropertySpecification mPropertySpecification;
+	std::map<std::string, StyleSheetNodeSelector> mNodeSelectors;
 
 	void registerDefaultProperties();
+
+	void registerDefaultNodeSelectors();
 };
 
 }}} // namespace EE::UI::CSS

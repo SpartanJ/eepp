@@ -32,9 +32,7 @@ class EE_API UIStyle : public UIState {
 
 	void onStateChange();
 
-	CSS::StyleSheetProperty getStatelessStyleSheetProperty( const std::string& propertyName ) const;
-
-	CSS::StyleSheetProperty getStyleSheetProperty( const std::string& propertyName ) const;
+	CSS::StyleSheetProperty getStatelessStyleSheetProperty( const Uint32& propertyId ) const;
 
 	void setStyleSheetProperties( const CSS::StyleSheetProperties& properties );
 

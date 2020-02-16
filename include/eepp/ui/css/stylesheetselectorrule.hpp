@@ -2,6 +2,7 @@
 #define STYLESHEETSELECTORRULE_HPP
 
 #include <eepp/core.hpp>
+#include <eepp/ui/css/stylesheetspecification.hpp>
 
 namespace EE { namespace UI {
 class UIWidget;
@@ -20,7 +21,13 @@ class EE_API StyleSheetSelectorRule {
 		STRUCTURAL_PSEUDO_CLASS = ':'
 	};
 
-	enum SelectorType { TagName = 1 << 0, Id = 1 << 1, Class = 1 << 2, PseudoClass = 1 << 3 };
+	enum SelectorType {
+		TagName = 1 << 0,
+		Id = 1 << 1,
+		Class = 1 << 2,
+		PseudoClass = 1 << 3,
+		StructuralPseudoClass = 1 << 4
+	};
 
 	enum SpecificityVal {
 		SpecificityImportant = UINT32_MAX,
@@ -29,6 +36,7 @@ class EE_API StyleSheetSelectorRule {
 		SpecificityClass = 100000,
 		SpecificityTag = 10000,
 		SpecificityPseudoClass = 100,
+		SpecificityStructuralPseudoClass = 50,
 		SpecificityGlobal = 1
 	};
 
@@ -74,6 +82,7 @@ class EE_API StyleSheetSelectorRule {
 	std::vector<std::string> mClasses;
 	std::vector<std::string> mPseudoClasses;
 	std::vector<std::string> mStructuralPseudoClasses;
+	std::vector<StructuralSelector> mStructuralSelectors;
 	Uint32 mRequirementFlags;
 };
 

@@ -74,6 +74,12 @@ StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::stri
 	}
 }
 
+Uint32 StyleSheetProperty::getId() const {
+	return NULL != mPropertyDefinition
+			   ? mPropertyDefinition->getId()
+			   : ( NULL != mShorthandDefinition ? mShorthandDefinition->getId() : 0 );
+}
+
 const std::string& StyleSheetProperty::getName() const {
 	return mName;
 }
@@ -120,7 +126,7 @@ void StyleSheetProperty::setVolatile( const bool& isVolatile ) {
 	mVolatile = isVolatile;
 }
 
-bool StyleSheetProperty::operator==( const StyleSheetProperty& property ) {
+bool StyleSheetProperty::operator==( const StyleSheetProperty& property ) const {
 	return mNameHash == property.mNameHash && mValue == property.mValue;
 }
 

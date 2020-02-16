@@ -1,4 +1,5 @@
 #include <eepp/ui/css/stylesheetspecification.hpp>
+#include <eepp/ui/uiwidget.hpp>
 
 namespace EE { namespace UI { namespace CSS {
 
@@ -6,6 +7,7 @@ SINGLETON_DECLARE_IMPLEMENTATION( StyleSheetSpecification )
 
 StyleSheetSpecification::StyleSheetSpecification() {
 	registerDefaultProperties();
+	registerDefaultNodeSelectors();
 }
 
 StyleSheetSpecification::~StyleSheetSpecification() {}
@@ -93,25 +95,21 @@ void StyleSheetSpecification::registerDefaultProperties() {
 		.setType( PropertyType::NumberLength )
 		.addAlias( "layout-margin-top" )
 		.addAlias( "layout_margintop" )
-		.addAlias( "margintop" )
 		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockHeight );
 	registerProperty( "margin-left", "0px", false )
 		.setType( PropertyType::NumberLength )
 		.addAlias( "layout-margin-left" )
 		.addAlias( "layout_marginleft" )
-		.addAlias( "marginleft" )
 		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockWidth );
 	registerProperty( "margin-right", "0px", false )
 		.setType( PropertyType::NumberLength )
 		.addAlias( "layout-margin-right" )
 		.addAlias( "layout_marginright" )
-		.addAlias( "marginright" )
 		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockWidth );
 	registerProperty( "margin-bottom", "0px", false )
 		.setType( PropertyType::NumberLength )
 		.addAlias( "layout-margin-bottom" )
 		.addAlias( "layout_marginbottom" )
-		.addAlias( "marginbottom" )
 		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockHeight );
 	registerProperty( "tooltip", "", false ).setType( PropertyType::String );
 	registerProperty( "layout-weight", "", false )
@@ -319,6 +317,178 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	"rotation-origin-point-y"}, ShorthandType::Vector2 ); registerShorthand(
 	"scale-origin-point", {"scale-origin-point-x", "scale-origin-point-y"},
 					   ShorthandType::Vector2 );*/
+}
+
+void StyleSheetSpecification::registerNodeSelector( const std::string& name,
+													StyleSheetNodeSelector nodeSelector ) {
+	mNodeSelectors[String::toLower( name )] = nodeSelector;
+}
+
+static bool isNth( int a, int b, int count ) {
+	int x = count;
+	x -= b;
+	if ( a != 0 )
+		x /= a;
+	return ( x >= 0 && x * a + b == count );
+}
+
+void StyleSheetSpecification::registerDefaultNodeSelectors() {
+	mNodeSelectors["empty"] = []( const UIWidget* node, int a, int b ) -> bool {
+		return node->getFirstChild() == NULL;
+	};
+	mNodeSelectors["first-child"] = []( const UIWidget* node, int a, int b ) -> bool {
+		return NULL != node->getParent() && node->getParent()->getFirstChild() == node;
+	};
+	mNodeSelectors["enabled"] = []( const UIWidget* node, int a, int b ) -> bool {
+		return node->isEnabled();
+	};
+	mNodeSelectors["disabled"] = []( const UIWidget* node, int a, int b ) -> bool {
+		return !node->isEnabled();
+	};
+	mNodeSelectors["first-of-type"] = []( const UIWidget* node, int a, int b ) -> bool {
+		Node* child = NULL != node->getParent() ? node->getParent()->getFirstChild() : NULL;
+		Uint32 type = node->getType();
+		while ( NULL != child ) {
+			if ( type == child->getType() ) {
+				return child == node;
+			}
+			child = child->getNextNode();
+		};
+		return false;
+	};
+	mNodeSelectors["last-child"] = []( const UIWidget* node, int a, int b ) -> bool {
+		return NULL != node->getParent() && node->getParent()->getLastChild() == node;
+	};
+	mNodeSelectors["last-of-type"] = []( const UIWidget* node, int a, int b ) -> bool {
+		Node* child = NULL != node->getParent() ? node->getParent()->getLastChild() : NULL;
+		Uint32 type = node->getType();
+		while ( NULL != child ) {
+			if ( type == child->getType() ) {
+				return child == node;
+			}
+			child = child->getPrevNode();
+		};
+		return false;
+	};
+	mNodeSelectors["only-child"] = []( const UIWidget* node, int a, int b ) -> bool {
+		return NULL != node->getParent() && node->getParent()->getChildCount() == 1;
+	};
+	mNodeSelectors["only-of-type"] = []( const UIWidget* node, int a, int b ) -> bool {
+		Node* child = NULL != node->getParent() ? node->getParent()->getFirstChild() : NULL;
+		Uint32 type = node->getType();
+		Uint32 typeCount = 0;
+		while ( NULL != child ) {
+			if ( child->getType() == type ) {
+				typeCount++;
+			}
+			if ( typeCount > 1 )
+				return false;
+			child = child->getNextNode();
+		};
+		return typeCount == 1;
+	};
+	mNodeSelectors["nth-child"] = []( const UIWidget* node, int a, int b ) -> bool {
+		return isNth( a, b, node->getNodeIndex() + 1 );
+	};
+	mNodeSelectors["nth-last-child"] = []( const UIWidget* node, int a, int b ) -> bool {
+		return isNth( a, b, node->getChildCount() - node->getNodeIndex() );
+	};
+	mNodeSelectors["nth-of-type"] = []( const UIWidget* node, int a, int b ) -> bool {
+		return isNth( a, b, node->getNodeOfTypeIndex() + 1 );
+	};
+	mNodeSelectors["nth-last-of-type"] = []( const UIWidget* node, int a, int b ) -> bool {
+		return node->getParent() != NULL
+				   ? isNth( a, b,
+							node->getParent()->getChildOfTypeCount( node->getType() ) -
+								node->getNodeOfTypeIndex() )
+				   : false;
+	};
+	mNodeSelectors["checked"] = []( const UIWidget* node, int a, int b ) -> bool {
+		return 0 != ( node->getFlags() & UI_CHECKED );
+	};
+}
+
+StructuralSelector StyleSheetSpecification::getStructuralSelector( const std::string& name ) {
+	size_t index = name.find( '(' );
+	if ( index == std::string::npos ) {
+		auto it = mNodeSelectors.find( name );
+		if ( it == mNodeSelectors.end() )
+			return StructuralSelector( nullptr, 0, 0 );
+		// Selector without any function call "()"
+		return StructuralSelector( it->second, 0, 0 );
+	}
+	auto it = mNodeSelectors.find( name.substr( 0, index ) );
+	if ( it == mNodeSelectors.end() )
+		return StructuralSelector( nullptr, 0, 0 );
+
+	// Parse the 'a' and 'b' values.
+	int a = 1;
+	int b = 0;
+	int t = 0;
+
+	size_t parameterStart = name.find( '(' );
+	size_t parameterEnd = name.find( ')' );
+	if ( parameterStart != std::string::npos && parameterEnd != std::string::npos ) {
+		std::string parameters = String::toLower( String::trim(
+			name.substr( parameterStart + 1, parameterEnd - ( parameterStart + 1 ) ) ) );
+
+		// Check for 'even' or 'odd' first.
+		if ( parameters == "even" ) {
+			a = 2;
+			b = 0;
+		} else if ( parameters == "odd" ) {
+			a = 2;
+			b = 1;
+		} else {
+			size_t nIndex = parameters.find( 'n' );
+			if ( nIndex == std::string::npos ) {
+				// The equation is 0n + b. So a = 0, and we only have to parse b.
+				a = 0;
+				if ( String::fromString( t, parameters ) ) {
+					b = t;
+				} else {
+					return StructuralSelector( nullptr, 0, 0 );
+				}
+			} else {
+				if ( nIndex == 0 ) {
+					a = 1;
+				} else {
+					std::string aParameter = parameters.substr( 0, nIndex );
+					if ( String::trim( aParameter ) == "-" ) {
+						a = -1;
+					} else {
+						if ( String::fromString( t, aParameter ) ) {
+							a = t;
+						} else {
+							return StructuralSelector( nullptr, 0, 0 );
+						}
+					}
+				}
+
+				size_t pmIndex = parameters.find( '+', nIndex + 1 );
+				if ( pmIndex != std::string::npos ) {
+					b = 1;
+				} else {
+					pmIndex = parameters.find( '-', nIndex + 1 );
+					if ( pmIndex != std::string::npos ) {
+						b = -1;
+					}
+				}
+
+				if ( nIndex == parameters.size() - 1 || pmIndex == std::string::npos ) {
+					b = 0;
+				} else {
+					if ( String::fromString( t, parameters.substr( pmIndex + 1 ) ) ) {
+						b = b * t;
+					} else {
+						return StructuralSelector( nullptr, 0, 0 );
+					}
+				}
+			}
+		}
+	}
+
+	return StructuralSelector( it->second, a, b );
 }
 
 }}} // namespace EE::UI::CSS

@@ -153,7 +153,7 @@ void UILinearLayout::packVertical() {
 	ChildLoop = mChild;
 
 	while ( NULL != ChildLoop ) {
-		if ( ChildLoop->isWidget() ) {
+		if ( ChildLoop->isWidget() && ChildLoop->isVisible() ) {
 			UIWidget* widget = static_cast<UIWidget*>( ChildLoop );
 			Rect margin = widget->getLayoutMargin();
 
@@ -274,7 +274,7 @@ void UILinearLayout::packHorizontal() {
 	Node* ChildLoop = mChild;
 
 	while ( NULL != ChildLoop ) {
-		if ( ChildLoop->isWidget() ) {
+		if ( ChildLoop->isWidget() && ChildLoop->isVisible() ) {
 			UIWidget* widget = static_cast<UIWidget*>( ChildLoop );
 
 			if ( widget->getLayoutWidthRule() == LayoutSizeRule::WrapContent ) {

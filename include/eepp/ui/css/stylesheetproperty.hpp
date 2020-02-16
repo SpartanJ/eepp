@@ -32,6 +32,8 @@ class EE_API StyleSheetProperty {
 	explicit StyleSheetProperty( const std::string& name, const std::string& value,
 								 const Uint32& specificity, const bool& isVolatile = false );
 
+	Uint32 getId() const;
+
 	const std::string& getName() const;
 
 	const Uint32& getNameHash() const;
@@ -54,7 +56,7 @@ class EE_API StyleSheetProperty {
 
 	void setVolatile( const bool& isVolatile );
 
-	bool operator==( const StyleSheetProperty& property );
+	bool operator==( const StyleSheetProperty& property ) const;
 
 	std::string asString( const std::string& defaultValue = "" ) const;
 
@@ -137,7 +139,7 @@ class EE_API StyleSheetProperty {
 	void checkImportant();
 };
 
-typedef std::map<std::string, StyleSheetProperty> StyleSheetProperties;
+typedef std::map<Uint32, StyleSheetProperty> StyleSheetProperties;
 
 }}} // namespace EE::UI::CSS
 

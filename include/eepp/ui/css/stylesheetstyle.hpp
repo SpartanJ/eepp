@@ -33,7 +33,7 @@ class EE_API StyleSheetStyle {
 
 	StyleSheetProperty getPropertyByDefinition( const PropertyDefinition* def ) const;
 
-	StyleSheetProperty getPropertyByName( const std::string& name ) const;
+	StyleSheetProperty getPropertyById( const Uint32& id ) const;
 
 	void setProperty( const StyleSheetProperty& property );
 

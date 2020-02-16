@@ -327,9 +327,15 @@ class EE_API Node : public Transformable {
 
 	void invalidate();
 
-	Uint32 childCount() const;
+	Uint32 getChildCount() const;
 
-	Node* childAt( Uint32 Index ) const;
+	Uint32 getChildOfTypeCount( const Uint32& type ) const;
+
+	Node* getChildAt( Uint32 Index ) const;
+
+	Uint32 getNodeIndex() const;
+
+	Uint32 getNodeOfTypeIndex() const;
 
 	void runOnMainThread( Actions::Runnable::RunnableFunc runnable,
 						  const Time& delay = Seconds( 0 ) );
@@ -455,10 +461,6 @@ class EE_API Node : public Transformable {
 	bool isChild( Node* ChildCtrl ) const;
 
 	bool inParentTreeOf( Node* Child ) const;
-
-	Node* childPrev( Node* Ctrl, bool Loop = false ) const;
-
-	Node* childNext( Node* Ctrl, bool Loop = false ) const;
 
 	Rectf getScreenBounds();
 

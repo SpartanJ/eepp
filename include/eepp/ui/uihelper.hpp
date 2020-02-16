@@ -34,7 +34,8 @@ enum UIFlag {
 	UI_ANCHOR_RIGHT = ( 1 << 17 ),
 	UI_TOUCH_DRAG_ENABLED = ( 1 << 18 ),
 	UI_TEXT_SELECTION_ENABLED = ( 1 << 19 ),
-	UI_ATTRIBUTE_CHANGED = ( 1 << 20 )
+	UI_ATTRIBUTE_CHANGED = ( 1 << 20 ),
+	UI_CHECKED = ( 1 << 21 )
 };
 
 enum UINodeType {

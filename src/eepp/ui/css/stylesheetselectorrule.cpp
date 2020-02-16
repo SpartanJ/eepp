@@ -18,13 +18,13 @@ static bool isPseudoClassState( const std::string& pseudoClass ) {
 }
 
 static const char* StructuralPseudoClasses[] = {
-	"root",			"nth-child",	  "nth-last-child", "nth-of-type",	"nth-last-of-type",
-	"nth-child",	"nth-last-child", "first-of-type",	"last-of-type", "only-child",
-	"only-of-type", "empty"};
+	"checked",		  "disabled",		  "empty",		  "enabled",	  "first-child",
+	"first-of-type",  "last-child",		  "last-of-type", "not",		  "nth-child",
+	"nth-last-child", "nth-last-of-type", "nth-of-type",  "only-of-type", "only-child"};
 
 static bool isStructuralPseudoClass( const std::string& pseudoClass ) {
 	for ( Uint32 i = 0; i < eeARRAY_SIZE( StructuralPseudoClasses ); i++ ) {
-		if ( String::startsWith( StructuralPseudoClasses[i], pseudoClass ) )
+		if ( String::startsWith( pseudoClass, StructuralPseudoClasses[i] ) )
 			return true;
 	}
 
@@ -113,6 +113,13 @@ void StyleSheetSelectorRule::parseFragment( const std::string& selectorFragment 
 				mPseudoClasses.push_back( pseudoClass );
 			} else if ( isStructuralPseudoClass( pseudoClass ) ) {
 				mStructuralPseudoClasses.push_back( pseudoClass );
+
+				StructuralSelector structuralSelector =
+					StyleSheetSpecification::instance()->getStructuralSelector( pseudoClass );
+
+				if ( structuralSelector.selector ) {
+					mStructuralSelectors.push_back( structuralSelector );
+				}
 			}
 
 			selector = realSelector;
@@ -171,10 +178,12 @@ void StyleSheetSelectorRule::parseFragment( const std::string& selectorFragment 
 
 	if ( !mPseudoClasses.empty() ) {
 		mRequirementFlags |= PseudoClass;
+		mSpecificity += SpecificityPseudoClass * mPseudoClasses.size();
+	}
 
-		for ( auto it = mPseudoClasses.begin(); it != mPseudoClasses.end(); ++it ) {
-			mSpecificity += SpecificityPseudoClass;
-		}
+	if ( !mStructuralPseudoClasses.empty() ) {
+		mRequirementFlags |= StructuralPseudoClass;
+		mSpecificity += SpecificityStructuralPseudoClass * mStructuralPseudoClasses.size();
 	}
 }
 
@@ -261,10 +270,25 @@ bool StyleSheetSelectorRule::matches( UIWidget* element, const bool& applyPseudo
 			}
 		}
 
+		if ( !mStructuralSelectors.empty() ) {
+			bool matchesStructural = true;
+
+			for ( const auto& spc : mStructuralSelectors ) {
+				if ( !spc.selector( element, spc.a, spc.b ) ) {
+					matchesStructural = false;
+					break;
+				}
+			}
+
+			if ( matchesStructural ) {
+				flags |= StructuralPseudoClass;
+			}
+		}
+
 		return mRequirementFlags == flags;
 	}
 
-	return ( mRequirementFlags & ~PseudoClass ) == flags;
+	return ( mRequirementFlags & ~PseudoClass & ~StructuralPseudoClass ) == flags;
 }
 
 }}} // namespace EE::UI::CSS

@@ -99,6 +99,10 @@ void StyleSheetSelector::parseSelector( std::string selector ) {
 				}
 			}
 		}
+
+		if ( !mSelectorRules.empty() && mSelectorRules[0].hasStructuralPseudoClasses() ) {
+			mCacheable = false;
+		}
 	}
 }
 

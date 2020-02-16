@@ -352,7 +352,7 @@ Uint32 Node::onMouseDoubleClick( const Vector2i& Pos, const Uint32& Flags ) {
 }
 
 Uint32 Node::onMouseOver( const Vector2i& Pos, const Uint32& Flags ) {
-	if ( NULL != mParentCtrl )
+	if ( NULL != mParentCtrl && mParentCtrl->isMouseOverMeOrChilds() )
 		mParentCtrl->onMouseOver( Pos, Flags );
 
 	writeNodeFlag( NODE_FLAG_MOUSEOVER, 1 );
@@ -366,7 +366,7 @@ Uint32 Node::onMouseOver( const Vector2i& Pos, const Uint32& Flags ) {
 }
 
 Uint32 Node::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
-	if ( NULL != mParentCtrl )
+	if ( NULL != mParentCtrl && !mParentCtrl->isMouseOverMeOrChilds() )
 		mParentCtrl->onMouseLeave( Pos, Flags );
 
 	writeNodeFlag( NODE_FLAG_MOUSEOVER, 0 );
@@ -739,7 +739,7 @@ bool Node::inParentTreeOf( Node* Child ) const {
 	return false;
 }
 
-Uint32 Node::childCount() const {
+Uint32 Node::getChildCount() const {
 	Node* ChildLoop = mChild;
 	Uint32 Count = 0;
 
@@ -751,7 +751,21 @@ Uint32 Node::childCount() const {
 	return Count;
 }
 
-Node* Node::childAt( Uint32 Index ) const {
+Uint32 Node::getChildOfTypeCount( const Uint32& type ) const {
+	Node* childLoop = mChild;
+	Uint32 count = 0;
+
+	while ( NULL != childLoop ) {
+		if ( childLoop->getType() == type ) {
+			count++;
+		}
+		childLoop = childLoop->mNext;
+	}
+
+	return count;
+}
+
+Node* Node::getChildAt( Uint32 Index ) const {
 	Node* ChildLoop = mChild;
 
 	while ( NULL != ChildLoop && Index ) {
@@ -762,18 +776,34 @@ Node* Node::childAt( Uint32 Index ) const {
 	return ChildLoop;
 }
 
-Node* Node::childPrev( Node* Ctrl, bool Loop ) const {
-	if ( Loop && Ctrl == mChild && NULL != mChild->mNext )
-		return mChildLast;
-
-	return Ctrl->mPrev;
+Uint32 Node::getNodeIndex() const {
+	Uint32 nodeIndex = 0;
+	if ( NULL != mParentCtrl ) {
+		Node* parentChild = mParentCtrl->mChild;
+		while ( parentChild != NULL ) {
+			if ( parentChild == this )
+				return nodeIndex;
+			parentChild = parentChild->mNext;
+			nodeIndex++;
+		};
+	}
+	return nodeIndex;
 }
 
-Node* Node::childNext( Node* Ctrl, bool Loop ) const {
-	if ( NULL == Ctrl->mNext && Loop )
-		return mChild;
-
-	return Ctrl->mNext;
+Uint32 Node::getNodeOfTypeIndex() const {
+	Uint32 nodeIndex = 0;
+	Uint32 type = getType();
+	if ( NULL != mParentCtrl ) {
+		Node* parentChild = mParentCtrl->mChild;
+		while ( parentChild != NULL ) {
+			if ( parentChild == this )
+				return nodeIndex;
+			if ( parentChild->getType() == type )
+				nodeIndex++;
+			parentChild = parentChild->mNext;
+		};
+	}
+	return nodeIndex;
 }
 
 Node* Node::getFirstChild() const {

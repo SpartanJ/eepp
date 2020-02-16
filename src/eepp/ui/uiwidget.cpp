@@ -740,8 +740,10 @@ void UIWidget::pushState( const Uint32& State, bool emitEvent ) {
 			mSkinState->pushState( State );
 
 		if ( NULL != mStyle ) {
-			updatePseudoClasses();
-			mStyle->pushState( State );
+			if ( !( State == UIState::StateHover && !isMouseOverMeOrChilds() ) ) {
+				updatePseudoClasses();
+				mStyle->pushState( State );
+			}
 		}
 
 		if ( emitEvent ) {
@@ -760,8 +762,10 @@ void UIWidget::popState( const Uint32& State, bool emitEvent ) {
 			mSkinState->popState( State );
 
 		if ( NULL != mStyle ) {
-			updatePseudoClasses();
-			mStyle->popState( State );
+			if ( !( State == UIState::StateHover && isMouseOverMeOrChilds() ) ) {
+				updatePseudoClasses();
+				mStyle->popState( State );
+			}
 		}
 
 		if ( emitEvent ) {

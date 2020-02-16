@@ -3,13 +3,14 @@
 
 namespace EE { namespace UI {
 
-static const char* UIStatesNames[] = {"normal",	 "focus",		  "selected",		 "hover",
-									  "pressed", "selectedhover", "selectedpressed", "disabled"};
+static const char* UIStatesNames[] = {"normal",			 "focus",	 "selected",
+									  "hover",			 "pressed",	 "selectedhover",
+									  "selectedpressed", "disabled", "checked"};
 
 static const Uint32 UIStateFlags[] = {
-	UIState::StateFlagNormal,		   UIState::StateFlagFocus,	  UIState::StateFlagSelected,
-	UIState::StateFlagHover,		   UIState::StateFlagPressed, UIState::StateFlagSelectedHover,
-	UIState::StateFlagSelectedPressed, UIState::StateFlagDisabled};
+	UIState::StateFlagNormal,		   UIState::StateFlagFocus,	   UIState::StateFlagSelected,
+	UIState::StateFlagHover,		   UIState::StateFlagPressed,  UIState::StateFlagSelectedHover,
+	UIState::StateFlagSelectedPressed, UIState::StateFlagDisabled, UIState::StateFlagChecked};
 
 const char* UIState::getStateName( const Uint32& State ) {
 	return UIStatesNames[State];

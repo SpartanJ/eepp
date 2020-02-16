@@ -140,12 +140,13 @@ void StyleSheetPropertiesParser::addProperty( const std::string& name, std::stri
 			StyleSheetSpecification::instance()->getShorthand( name ), value );
 
 		for ( auto& property : properties )
-			mProperties[property.getName()] = property;
+			mProperties[property.getId()] = property;
 	} else {
 		if ( String::startsWith( name, "--" ) ) {
 			mVariables[name] = StyleSheetVariable( name, value );
 		} else {
-			mProperties[name] = StyleSheetProperty( name, value );
+			StyleSheetProperty property( StyleSheetProperty( name, value ) );
+			mProperties[property.getId()] = property;
 		}
 	}
 }

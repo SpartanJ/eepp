@@ -79,6 +79,14 @@ Tooltip {
 	color: black;
 }
 
+CheckBox {
+	foreground-color: transparent;
+}
+
+CheckBox:checked {
+	foreground-color: rgba(255,255,255,0.1);
+}
+
 #lvbox > * {
 	margin-top: 8dp;
 }
@@ -238,6 +246,10 @@ Tooltip {
 
 #test_4 {
 	background-color: #221122;
+}
+
+#test_4 > RelativeLayout:nth-child(even) {
+	background-color: #220022;
 }
 
 #test_4 > RelativeLayout {

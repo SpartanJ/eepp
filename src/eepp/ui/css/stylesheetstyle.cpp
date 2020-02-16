@@ -76,8 +76,8 @@ StyleSheetProperty StyleSheetStyle::getPropertyByDefinition( const PropertyDefin
 	return StyleSheetProperty();
 }
 
-StyleSheetProperty StyleSheetStyle::getPropertyByName( const std::string& name ) const {
-	auto it = mProperties.find( name );
+StyleSheetProperty StyleSheetStyle::getPropertyById( const Uint32& id ) const {
+	auto it = mProperties.find( id );
 
 	if ( it != mProperties.end() )
 		return it->second;
@@ -86,7 +86,7 @@ StyleSheetProperty StyleSheetStyle::getPropertyByName( const std::string& name )
 }
 
 void StyleSheetStyle::setProperty( const StyleSheetProperty& property ) {
-	mProperties[property.getName()] = property;
+	mProperties[property.getId()] = property;
 }
 
 void StyleSheetStyle::clearProperties() {
