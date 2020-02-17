@@ -546,6 +546,8 @@ Probably deprecate the Maps module, since i will focus my efforts on the UI syst
 
 * Yuri Kobets for [litehtml](https://github.com/litehtml/litehtml)
 
+* Michael R. P. Ragazzon [RmlUI](https://github.com/mikke89/RmlUi)
+
 * Ryan C. Gordon for [mojoAL](https://icculus.org/mojoAL/)
 
 * Lewis  Van  Winkle  for [PlusCallback](https://github.com/codeplea/pluscallback)

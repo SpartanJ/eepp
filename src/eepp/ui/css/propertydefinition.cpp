@@ -16,6 +16,7 @@ PropertyDefinition::PropertyDefinition( const std::string& name, const std::stri
 	mId( String::hash( name ) ),
 	mDefaultValue( defaultValue ),
 	mInherited( inherited ),
+	mIndexed( false ),
 	mPropertyType( PropertyType::Undefined ) {
 
 	for ( auto& sep : {"-", "_"} ) {
@@ -86,6 +87,15 @@ bool PropertyDefinition::isDefinition( const std::string& name ) const {
 
 bool PropertyDefinition::isDefinition( const Uint32& id ) const {
 	return mId == id || isAlias( id );
+}
+
+PropertyDefinition& PropertyDefinition::setIndexed() {
+	mIndexed = true;
+	return *this;
+}
+
+const bool& PropertyDefinition::isIndexed() const {
+	return mIndexed;
 }
 
 }}} // namespace EE::UI::CSS

@@ -207,7 +207,8 @@ const Vector2f& UITextureRegion::getAlignOffset() const {
 	return mAlignOffset;
 }
 
-std::string UITextureRegion::getPropertyString( const PropertyDefinition* propertyDef ) {
+std::string UITextureRegion::getPropertyString( const PropertyDefinition* propertyDef,
+												const Uint32& propertyIndex ) {
 	if ( NULL == propertyDef )
 		return "";
 
@@ -222,7 +223,7 @@ std::string UITextureRegion::getPropertyString( const PropertyDefinition* proper
 		case PropertyId::Tint:
 			return getColor().toHexString();
 		default:
-			return UIWidget::getPropertyString( propertyDef );
+			return UIWidget::getPropertyString( propertyDef, propertyIndex );
 	}
 }
 

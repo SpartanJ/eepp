@@ -131,7 +131,8 @@ void UITabWidget::setStyleConfig( const StyleConfig& styleConfig ) {
 	orderTabs();
 }
 
-std::string UITabWidget::getPropertyString( const PropertyDefinition* propertyDef ) {
+std::string UITabWidget::getPropertyString( const PropertyDefinition* propertyDef,
+											const Uint32& propertyIndex ) {
 	if ( NULL == propertyDef )
 		return "";
 
@@ -155,7 +156,7 @@ std::string UITabWidget::getPropertyString( const PropertyDefinition* propertyDe
 		case PropertyId::TabSeparation:
 			return String::format( "%ddp", getTabSeparation() );
 		default:
-			return UIWidget::getPropertyString( propertyDef );
+			return UIWidget::getPropertyString( propertyDef, propertyIndex );
 	}
 }
 

@@ -144,13 +144,13 @@ CheckBox:checked {
 	border-radius: 3;
 	cursor: hand;
 	shadow-color: black;
-	padding: 18dp 12dp 100dp 12dp;
+	padding: 12dp 100dp 12dp 18dp;
 }
 
 #tpad3:pressed {
 	background-image: linear-gradient( #4e4f4d, #414141 );
 	border-color: #222320d7;
-	padding: 22dp 12dp 120dp 12dp;
+	padding: 12dp 120dp 12dp 22dp;
 }
 
 #chbox,
@@ -347,16 +347,16 @@ TabWidget {
 }
 
 #lvbox {
-	background-image: url(file://assets/icon/ee.png);
-	background-position: bottom right;
-	background-size: 128px 128px;
+	background-image: url(file://assets/icon/ee.png), url("file://assets/sprites/6.png");
+	background-position: bottom right, top left;
+	background-size: 128px 128px, auto;
 	background-repeat: no-repeat;
 	transition: all 1s;
 	clip: true;
 }
 
 #lvbox:hover {
-	background-position: top right;
+	background-position: top right, bottom left;
 }
 
 #rrl > #tmap {
@@ -391,7 +391,7 @@ TabWidget {
 	background-color: #54345666;
 }
 
-#rrl > TextEdit {
+#rrl > TextEdit:not(.cool) {
 	padding: 16dp;
 	margin-bottom: 140dp;
 }

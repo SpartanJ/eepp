@@ -209,7 +209,8 @@ UITextView* UIProgressBar::getTextBox() const {
 	return mTextBox;
 }
 
-std::string UIProgressBar::getPropertyString( const PropertyDefinition* propertyDef ) {
+std::string UIProgressBar::getPropertyString( const PropertyDefinition* propertyDef,
+											  const Uint32& propertyIndex ) {
 	if ( NULL == propertyDef )
 		return "";
 
@@ -234,7 +235,7 @@ std::string UIProgressBar::getPropertyString( const PropertyDefinition* property
 			return String::fromFloat( getMovementSpeed().x ) + " " +
 				   String::fromFloat( getMovementSpeed().y );
 		default:
-			return UIWidget::getPropertyString( propertyDef );
+			return UIWidget::getPropertyString( propertyDef, propertyIndex );
 	}
 }
 

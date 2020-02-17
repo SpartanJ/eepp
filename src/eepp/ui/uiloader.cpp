@@ -223,7 +223,8 @@ UILoader* UILoader::setAnimationSpeed( const Float& animationSpeed ) {
 	return this;
 }
 
-std::string UILoader::getPropertyString( const PropertyDefinition* propertyDef ) {
+std::string UILoader::getPropertyString( const PropertyDefinition* propertyDef,
+										 const Uint32& propertyIndex ) {
 	if ( NULL == propertyDef )
 		return "";
 
@@ -245,7 +246,7 @@ std::string UILoader::getPropertyString( const PropertyDefinition* propertyDef )
 		case PropertyId::ArcStartAngle:
 			return String::fromFloat( getArcStartAngle() );
 		default:
-			return UIWidget::getPropertyString( propertyDef );
+			return UIWidget::getPropertyString( propertyDef, propertyIndex );
 	}
 }
 

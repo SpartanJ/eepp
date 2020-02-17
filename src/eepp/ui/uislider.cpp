@@ -469,7 +469,8 @@ Uint32 UISlider::onMessage( const NodeMessage* Msg ) {
 	return 0;
 }
 
-std::string UISlider::getPropertyString( const PropertyDefinition* propertyDef ) {
+std::string UISlider::getPropertyString( const PropertyDefinition* propertyDef,
+										 const Uint32& propertyIndex ) {
 	if ( NULL == propertyDef )
 		return "";
 
@@ -491,7 +492,7 @@ std::string UISlider::getPropertyString( const PropertyDefinition* propertyDef )
 		case PropertyId::BackgroundExpand:
 			return getExpandBackground() ? "true" : "false";
 		default:
-			return UIWidget::getPropertyString( propertyDef );
+			return UIWidget::getPropertyString( propertyDef, propertyIndex );
 	}
 }
 

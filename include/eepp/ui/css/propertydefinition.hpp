@@ -251,6 +251,10 @@ class EE_API PropertyDefinition {
 
 	bool isDefinition( const Uint32& id ) const;
 
+	PropertyDefinition& setIndexed();
+
+	const bool& isIndexed() const;
+
   protected:
 	std::string mName;
 	Uint32 mId;
@@ -258,6 +262,7 @@ class EE_API PropertyDefinition {
 	std::vector<Uint32> mAliasesHash;
 	std::string mDefaultValue;
 	bool mInherited;
+	bool mIndexed;
 	PropertyRelativeTarget mRelativeTarget;
 	PropertyType mPropertyType;
 };

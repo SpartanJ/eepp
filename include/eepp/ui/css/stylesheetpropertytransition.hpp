@@ -23,7 +23,8 @@ class EE_API StyleSheetPropertyTransition : public Action {
 
 	static StyleSheetPropertyTransition* New( const PropertyDefinition* property,
 											  const std::string& startValue,
-											  const std::string& endValue, const Time& duration,
+											  const std::string& endValue,
+											  const Uint32& propertyIndex, const Time& duration,
 											  const Ease::Interpolation& type = Ease::Linear );
 
 	void start() override;
@@ -54,9 +55,12 @@ class EE_API StyleSheetPropertyTransition : public Action {
 
 	void setElapsed( const Time& elapsed );
 
+	const Uint32& getPropertyIndex() const;
+
   protected:
 	StyleSheetPropertyTransition( const PropertyDefinition* property, const std::string& startValue,
-								  const std::string& endValue, const Time& duration,
+								  const std::string& endValue, const Uint32& propertyIndex,
+								  const Time& duration,
 								  const Ease::Interpolation& type = Ease::Linear );
 
 	void onStart() override;
@@ -64,6 +68,7 @@ class EE_API StyleSheetPropertyTransition : public Action {
 	void onUpdate( const Time& time ) override;
 
 	const PropertyDefinition* mProperty;
+	Uint32 mPropertyIndex;
 	std::string mStartValue;
 	std::string mEndValue;
 	Time mDuration;

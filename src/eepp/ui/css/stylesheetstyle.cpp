@@ -86,7 +86,38 @@ StyleSheetProperty StyleSheetStyle::getPropertyById( const Uint32& id ) const {
 }
 
 void StyleSheetStyle::setProperty( const StyleSheetProperty& property ) {
-	mProperties[property.getId()] = property;
+	if ( NULL != property.getPropertyDefinition() &&
+		 property.getPropertyDefinition()->isIndexed() ) {
+		// If the property being set is indexed we need to merge any other index set to the new
+		// property set.
+		StyleSheetProperty currentProperty = getPropertyById( property.getId() );
+		std::vector<std::string> values;
+		if ( currentProperty.isEmpty() ) {
+			if ( property.getIndex() > 0 ) {
+				for ( size_t i = 0; i < property.getIndex(); i++ ) {
+					values.emplace_back( property.getPropertyDefinition()->getDefaultValue() );
+				}
+			}
+			values.emplace_back( property.getValue() );
+		} else {
+			size_t maxIndex =
+				eemax( currentProperty.getPropertyIndexCount(), (size_t)property.getIndex() );
+			for ( size_t i = 0; i < maxIndex; i++ ) {
+				if ( property.getIndex() == i ) {
+					values.emplace_back( property.getValue() );
+				} else if ( i < currentProperty.getPropertyIndexCount() ) {
+					values.emplace_back( currentProperty.getPropertyIndex( i ).getValue() );
+				} else {
+					values.emplace_back( property.getPropertyDefinition()->getDefaultValue() );
+				}
+			}
+		}
+		currentProperty =
+			StyleSheetProperty( property.getPropertyDefinition(), String::join( values, ',' ) );
+		mProperties[property.getId()] = currentProperty;
+	} else {
+		mProperties[property.getId()] = property;
+	}
 }
 
 void StyleSheetStyle::clearProperties() {

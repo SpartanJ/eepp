@@ -261,7 +261,8 @@ bool UIScrollView::isTouchOverAllowedChilds() {
 	return isMouseOverMeOrChilds() && mScrollView->isMouseOverMeOrChilds() && ret;
 }
 
-std::string UIScrollView::getPropertyString( const PropertyDefinition* propertyDef ) {
+std::string UIScrollView::getPropertyString( const PropertyDefinition* propertyDef,
+											 const Uint32& propertyIndex ) {
 	if ( NULL == propertyDef )
 		return "";
 
@@ -280,7 +281,7 @@ std::string UIScrollView::getPropertyString( const PropertyDefinition* propertyD
 		case PropertyId::ScrollBarMode:
 			return getViewType() == Inclusive ? "inclusive" : "exclusive";
 		default:
-			return UITouchDragableWidget::getPropertyString( propertyDef );
+			return UITouchDragableWidget::getPropertyString( propertyDef, propertyIndex );
 	}
 }
 

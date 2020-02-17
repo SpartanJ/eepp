@@ -157,7 +157,8 @@ void UIWinMenu::setFirstButtonMargin( const Uint32& buttonMargin ) {
 	refreshButtons();
 }
 
-std::string UIWinMenu::getPropertyString( const PropertyDefinition* propertyDef ) {
+std::string UIWinMenu::getPropertyString( const PropertyDefinition* propertyDef,
+										  const Uint32& propertyIndex ) {
 	if ( NULL == propertyDef )
 		return "";
 
@@ -171,7 +172,7 @@ std::string UIWinMenu::getPropertyString( const PropertyDefinition* propertyDef 
 		case PropertyId::FirstButtonMarginLeft:
 			return String::format( "%ddp", getFirstButtonMargin() );
 		default:
-			return UIWidget::getPropertyString( propertyDef );
+			return UIWidget::getPropertyString( propertyDef, propertyIndex );
 	}
 }
 

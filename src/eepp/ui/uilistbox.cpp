@@ -1007,7 +1007,8 @@ const ScrollBarMode& UIListBox::getHorizontalScrollMode() {
 	return mHScrollMode;
 }
 
-std::string UIListBox::getPropertyString( const PropertyDefinition* propertyDef ) {
+std::string UIListBox::getPropertyString( const PropertyDefinition* propertyDef,
+										  const Uint32& propertyIndex ) {
 	if ( NULL == propertyDef )
 		return "";
 
@@ -1030,7 +1031,7 @@ std::string UIListBox::getPropertyString( const PropertyDefinition* propertyDef 
 			return mVScrollBar->getScrollBarType() == UIScrollBar::NoButtons ? "no-buttons"
 																			 : "two-buttons";
 		default:
-			return UITouchDragableWidget::getPropertyString( propertyDef );
+			return UITouchDragableWidget::getPropertyString( propertyDef, propertyIndex );
 	}
 }
 

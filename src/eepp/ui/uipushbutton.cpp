@@ -43,7 +43,7 @@ UIPushButton::UIPushButton( const std::string& tag ) :
 	mTextBox->setVisible( true );
 	mTextBox->setEnabled( false );
 	mTextBox->setFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER );
-	auto cb = [&] (const Event* event) {
+	auto cb = [&]( const Event* event ) {
 		onSizeChange();
 		notifyLayoutAttrChange();
 	};
@@ -297,7 +297,8 @@ void UIPushButton::setStyleConfig( const StyleConfig& styleConfig ) {
 	onStateChange();
 }
 
-std::string UIPushButton::getPropertyString( const PropertyDefinition* propertyDef ) {
+std::string UIPushButton::getPropertyString( const PropertyDefinition* propertyDef,
+											 const Uint32& propertyIndex ) {
 	if ( NULL == propertyDef )
 		return "";
 
@@ -315,7 +316,7 @@ std::string UIPushButton::getPropertyString( const PropertyDefinition* propertyD
 		case PropertyId::IconAutoMargin:
 			return mStyleConfig.IconAutoMargin ? "true" : "false";
 		default:
-			return UIWidget::getPropertyString( propertyDef );
+			return UIWidget::getPropertyString( propertyDef, propertyIndex );
 	}
 }
 

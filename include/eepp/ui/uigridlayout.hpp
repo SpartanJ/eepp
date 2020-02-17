@@ -45,7 +45,8 @@ class EE_API UIGridLayout : public UILayout {
 
 	UIGridLayout* setRowWeight( const Float& rowWeight );
 
-	virtual std::string getPropertyString( const PropertyDefinition* propertyDef );
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& propertyIndex = 0 );
 
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 

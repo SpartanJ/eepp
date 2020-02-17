@@ -2,6 +2,7 @@
 #define EE_UI_CSS_STYLESHEETSPECIFICATION_HPP
 
 #include <eepp/core.hpp>
+#include <eepp/system/functionstring.hpp>
 #include <eepp/system/singleton.hpp>
 #include <eepp/ui/css/propertyspecification.hpp>
 
@@ -11,14 +12,17 @@ class UIWidget;
 
 namespace EE { namespace UI { namespace CSS {
 
-typedef std::function<bool( const UIWidget* node, int a, int b )> StyleSheetNodeSelector;
+typedef std::function<bool( const UIWidget* node, int a, int b, FunctionString data )>
+	StyleSheetNodeSelector;
 
 struct StructuralSelector {
-	StructuralSelector( StyleSheetNodeSelector selector, int a, int b ) :
-		selector( selector ), a( a ), b( b ) {}
+	StructuralSelector( StyleSheetNodeSelector selector, int a = 0, int b = 0,
+						FunctionString data = FunctionString::parse("") ) :
+		selector( selector ), a( a ), b( b ), data( data ) {}
 	StyleSheetNodeSelector selector;
 	int a;
 	int b;
+	FunctionString data;
 };
 
 class StyleSheetSpecification {

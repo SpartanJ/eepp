@@ -145,7 +145,8 @@ void UITouchDragableWidget::scheduledUpdate( const Time& time ) {
 	}
 }
 
-std::string UITouchDragableWidget::getPropertyString( const PropertyDefinition* propertyDef ) {
+std::string UITouchDragableWidget::getPropertyString( const PropertyDefinition* propertyDef,
+													  const Uint32& propertyIndex ) {
 	if ( NULL == propertyDef )
 		return "";
 
@@ -156,7 +157,7 @@ std::string UITouchDragableWidget::getPropertyString( const PropertyDefinition* 
 			return String::fromFloat( getTouchDragDeceleration().x ) + " " +
 				   String::fromFloat( getTouchDragDeceleration().y );
 		default:
-			return UIWidget::getPropertyString( propertyDef );
+			return UIWidget::getPropertyString( propertyDef, propertyIndex );
 	}
 }
 

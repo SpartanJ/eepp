@@ -80,6 +80,9 @@ class EE_API UIStyle : public UIState {
 	void removeFromSubscribedWidgets( UIWidget* widget );
 
 	void removeRelatedWidgets();
+
+	void applyStyleSheetProperty( const CSS::StyleSheetProperty& property,
+								  CSS::StyleSheetProperties& prevProperties );
 };
 
 }} // namespace EE::UI

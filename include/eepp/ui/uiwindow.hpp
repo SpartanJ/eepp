@@ -154,7 +154,8 @@ class EE_API UIWindow : public UIWidget {
 
 	virtual bool isDrawInvalidator() const;
 
-	virtual std::string getPropertyString( const PropertyDefinition* propertyDef );
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& propertyIndex = 0 );
 
 	std::string getWindowFlagsString();
 

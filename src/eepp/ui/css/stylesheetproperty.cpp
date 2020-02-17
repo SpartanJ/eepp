@@ -15,11 +15,35 @@ StyleSheetProperty::StyleSheetProperty() :
 	mSpecificity( 0 ), mVolatile( false ), mImportant( false ) {}
 
 StyleSheetProperty::StyleSheetProperty( const PropertyDefinition* definition,
-										const std::string& value ) :
+										const std::string& value, const Uint32& index ) :
 	mName( definition->getName() ),
 	mNameHash( definition->getId() ),
 	mValue( String::trim( value ) ),
 	mSpecificity( 0 ),
+	mIndex( index ),
+	mVolatile( false ),
+	mImportant( false ),
+	mIsVarValue( String::startsWith( mValue, "var(" ) ),
+	mPropertyDefinition( definition ),
+	mShorthandDefinition( NULL ) {
+	cleanValue();
+	checkImportant();
+	createIndexed();
+
+	if ( NULL == mShorthandDefinition && NULL == mPropertyDefinition ) {
+		eePRINTL( "Property %s is not defined!", mName.c_str() );
+	}
+}
+
+StyleSheetProperty::StyleSheetProperty( const bool& isVolatile,
+										const PropertyDefinition* definition,
+										const std::string& value, const Uint32& specificity,
+										const Uint32& index ) :
+	mName( definition->getName() ),
+	mNameHash( definition->getId() ),
+	mValue( String::trim( value ) ),
+	mSpecificity( 0 ),
+	mIndex( index ),
 	mVolatile( false ),
 	mImportant( false ),
 	mIsVarValue( String::startsWith( mValue, "var(" ) ),
@@ -38,6 +62,7 @@ StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::stri
 	mNameHash( String::hash( mName ) ),
 	mValue( String::trim( value ) ),
 	mSpecificity( 0 ),
+	mIndex( 0 ),
 	mVolatile( false ),
 	mImportant( false ),
 	mIsVarValue( String::startsWith( mValue, "var(" ) ),
@@ -47,6 +72,7 @@ StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::stri
 							  : NULL ) {
 	cleanValue();
 	checkImportant();
+	createIndexed();
 
 	if ( NULL == mShorthandDefinition && NULL == mPropertyDefinition ) {
 		eePRINTL( "Property %s is not defined!", mName.c_str() );
@@ -54,11 +80,13 @@ StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::stri
 }
 
 StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::string& value,
-										const Uint32& specificity, const bool& isVolatile ) :
+										const Uint32& specificity, const bool& isVolatile,
+										const Uint32& index ) :
 	mName( String::toLower( String::trim( name ) ) ),
 	mNameHash( String::hash( mName ) ),
 	mValue( String::trim( value ) ),
 	mSpecificity( specificity ),
+	mIndex( index ),
 	mVolatile( isVolatile ),
 	mImportant( false ),
 	mIsVarValue( String::startsWith( mValue, "var(" ) ),
@@ -68,6 +96,7 @@ StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::stri
 							  : NULL ) {
 	cleanValue();
 	checkImportant();
+	createIndexed();
 
 	if ( NULL == mShorthandDefinition && NULL == mPropertyDefinition ) {
 		eePRINTL( "Property %s is not defined!" );
@@ -116,6 +145,7 @@ void StyleSheetProperty::setName( const std::string& name ) {
 void StyleSheetProperty::setValue( const std::string& value ) {
 	mValue = value;
 	mIsVarValue = String::startsWith( mValue, "var(" );
+	createIndexed();
 }
 
 const bool& StyleSheetProperty::isVolatile() const {
@@ -139,6 +169,19 @@ void StyleSheetProperty::checkImportant() {
 		mImportant = true;
 		mSpecificity = StyleSheetSelectorRule::SpecificityImportant;
 		mValue = String::trim( mValue.substr( 0, mValue.size() - 10 /*!important*/ ) );
+	}
+}
+
+void StyleSheetProperty::createIndexed() {
+	if ( NULL != mPropertyDefinition && mPropertyDefinition->isIndexed() ) {
+		mIndexedProperty.clear();
+		auto splitValues = String::split( getValue(), ",", "", "(\"" );
+		if ( !splitValues.empty() ) {
+			for ( size_t i = 0; i < splitValues.size(); i++ ) {
+				mIndexedProperty.emplace_back( StyleSheetProperty(
+					isVolatile(), getPropertyDefinition(), splitValues[i], getSpecificity(), i ) );
+			}
+		}
 	}
 }
 
@@ -431,6 +474,19 @@ const ShorthandDefinition* StyleSheetProperty::getShorthandDefinition() const {
 
 const bool& StyleSheetProperty::isVarValue() const {
 	return mIsVarValue;
+}
+
+size_t StyleSheetProperty::getPropertyIndexCount() const {
+	return mIndexedProperty.size();
+}
+
+StyleSheetProperty& StyleSheetProperty::getPropertyIndex( const Uint32& index ) {
+	eeASSERT( index < mIndexedProperty.size() );
+	return mIndexedProperty[index];
+}
+
+const Uint32& StyleSheetProperty::getIndex() const {
+	return mIndex;
 }
 
 void StyleSheetProperty::cleanValue() {

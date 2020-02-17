@@ -214,7 +214,8 @@ const Vector2f& UIImage::getAlignOffset() const {
 	return mAlignOffset;
 }
 
-std::string UIImage::getPropertyString( const PropertyDefinition* propertyDef ) {
+std::string UIImage::getPropertyString( const PropertyDefinition* propertyDef,
+										const Uint32& propertyIndex ) {
 	if ( NULL == propertyDef )
 		return "";
 
@@ -232,7 +233,7 @@ std::string UIImage::getPropertyString( const PropertyDefinition* propertyDef ) 
 		case PropertyId::Tint:
 			return getColor().toHexString();
 		default:
-			return UIWidget::getPropertyString( propertyDef );
+			return UIWidget::getPropertyString( propertyDef, propertyIndex );
 	}
 }
 

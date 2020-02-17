@@ -482,7 +482,8 @@ UIFontStyleConfig UITextEdit::getFontStyleConfig() const {
 	return mTextInput->getFontStyleConfig();
 }
 
-std::string UITextEdit::getPropertyString( const PropertyDefinition* propertyDef ) {
+std::string UITextEdit::getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& propertyIndex ) {
 	if ( NULL == propertyDef )
 		return "";
 
@@ -500,7 +501,7 @@ std::string UITextEdit::getPropertyString( const PropertyDefinition* propertyDef
 					   ? "auto"
 					   : ( getHorizontalScrollMode() == ScrollBarMode::AlwaysOn ? "on" : "off" );
 		default:
-			return UIWidget::getPropertyString( propertyDef );
+			return UIWidget::getPropertyString( propertyDef, propertyIndex );
 	}
 }
 

@@ -22,21 +22,18 @@ bool StyleSheetPropertyTransition::transitionSupported( const PropertyType& type
 	}
 }
 
-StyleSheetPropertyTransition* StyleSheetPropertyTransition::New( const PropertyDefinition* property,
-																 const std::string& startValue,
-																 const std::string& endValue,
-																 const Time& duration,
-																 const Ease::Interpolation& type ) {
+StyleSheetPropertyTransition* StyleSheetPropertyTransition::New(
+	const PropertyDefinition* property, const std::string& startValue, const std::string& endValue,
+	const Uint32& propertyIndex, const Time& duration, const Ease::Interpolation& type ) {
 	return eeNew( StyleSheetPropertyTransition,
-				  ( property, startValue, endValue, duration, type ) );
+				  ( property, startValue, endValue, propertyIndex, duration, type ) );
 }
 
-StyleSheetPropertyTransition::StyleSheetPropertyTransition( const PropertyDefinition* property,
-															const std::string& startValue,
-															const std::string& endValue,
-															const Time& duration,
-															const Ease::Interpolation& type ) :
+StyleSheetPropertyTransition::StyleSheetPropertyTransition(
+	const PropertyDefinition* property, const std::string& startValue, const std::string& endValue,
+	const Uint32& propertyIndex, const Time& duration, const Ease::Interpolation& type ) :
 	mProperty( property ),
+	mPropertyIndex( propertyIndex ),
 	mStartValue( startValue ),
 	mEndValue( endValue ),
 	mDuration( duration ),
@@ -45,11 +42,13 @@ StyleSheetPropertyTransition::StyleSheetPropertyTransition( const PropertyDefini
 }
 
 Action* StyleSheetPropertyTransition::clone() const {
-	return StyleSheetPropertyTransition::New( mProperty, mStartValue, mEndValue, mDuration, mType );
+	return StyleSheetPropertyTransition::New( mProperty, mStartValue, mEndValue, mPropertyIndex,
+											  mDuration, mType );
 }
 
 Action* StyleSheetPropertyTransition::reverse() const {
-	return StyleSheetPropertyTransition::New( mProperty, mEndValue, mStartValue, mDuration, mType );
+	return StyleSheetPropertyTransition::New( mProperty, mEndValue, mStartValue, mPropertyIndex,
+											  mDuration, mType );
 }
 
 void StyleSheetPropertyTransition::start() {
@@ -96,11 +95,12 @@ void StyleSheetPropertyTransition::onUpdate( const Time& ) {
 				Float value = easingCb[mType]( time.asMilliseconds(), start, end - start,
 											   mDuration.asMilliseconds() );
 				if ( mProperty->getType() == PropertyType::NumberFloat ) {
-					node->applyProperty(
-						StyleSheetProperty( mProperty, String::fromFloat( value ) ) );
+					node->applyProperty( StyleSheetProperty( mProperty, String::fromFloat( value ),
+															 mPropertyIndex ) );
 				} else {
 					node->applyProperty( StyleSheetProperty(
-						mProperty, String::format( "%d", static_cast<int>( value ) ) ) );
+						mProperty, String::format( "%d", static_cast<int>( value ) ),
+						mPropertyIndex ) );
 				}
 				break;
 			}
@@ -124,23 +124,25 @@ void StyleSheetPropertyTransition::onUpdate( const Time& ) {
 				resColor.a = static_cast<Uint8>( eemin(
 					static_cast<Int32>( startColor.a + ( endColor.a - startColor.a ) * progress ),
 					255 ) );
-				node->applyProperty( StyleSheetProperty( mProperty, resColor.toHexString() ) );
+				node->applyProperty(
+					StyleSheetProperty( mProperty, resColor.toHexString(), mPropertyIndex ) );
 				break;
 			}
 			case PropertyType::NumberLength: {
 				Float containerLength = node->getPropertyRelativeTargetContainerLength(
-					mProperty->getRelativeTarget() );
+					mProperty->getRelativeTarget(), 0.f, mPropertyIndex );
 				Float start = node->convertLength( mStartValue, containerLength );
 				Float end = node->convertLength( mEndValue, containerLength );
 				Time time =
 					mElapsed.asMicroseconds() > mDuration.asMicroseconds() ? mDuration : mElapsed;
 				Float value = easingCb[mType]( time.asMilliseconds(), start, end - start,
 											   mDuration.asMilliseconds() );
-				node->applyProperty(
-					StyleSheetProperty( mProperty, String::fromFloat( value, "px" ) ) );
+				node->applyProperty( StyleSheetProperty(
+					mProperty, String::fromFloat( value, "px" ), mPropertyIndex ) );
 
 				if ( isDone() ) {
-					node->applyProperty( StyleSheetProperty( mProperty, mEndValue ) );
+					node->applyProperty(
+						StyleSheetProperty( mProperty, mEndValue, mPropertyIndex ) );
 				}
 				break;
 			}
@@ -153,46 +155,56 @@ void StyleSheetPropertyTransition::onUpdate( const Time& ) {
 										   mDuration.asMilliseconds() );
 				Float y = easingCb[mType]( time.asMilliseconds(), start.y, end.y - start.y,
 										   mDuration.asMilliseconds() );
-				node->applyProperty( StyleSheetProperty( mProperty, String::fromFloat( x ) + " " +
-																		String::fromFloat( y ) ) );
+				node->applyProperty( StyleSheetProperty(
+					mProperty, String::fromFloat( x ) + " " + String::fromFloat( y ),
+					mPropertyIndex ) );
 				if ( isDone() ) {
-					node->applyProperty( StyleSheetProperty( mProperty, mEndValue ) );
+					node->applyProperty(
+						StyleSheetProperty( mProperty, mEndValue, mPropertyIndex ) );
 				}
 				break;
 			}
 			case PropertyType::BackgroundSize: {
-				Sizef start(
-					node->getBackground()->getLayer( 0 )->calcDrawableSize( mStartValue ) );
-				Sizef end( node->getBackground()->getLayer( 0 )->calcDrawableSize( mEndValue ) );
+				Sizef start( node->getBackground()
+								 ->getLayer( mPropertyIndex )
+								 ->calcDrawableSize( mStartValue ) );
+				Sizef end( node->getBackground()
+							   ->getLayer( mPropertyIndex )
+							   ->calcDrawableSize( mEndValue ) );
 				Time time =
 					mElapsed.asMicroseconds() > mDuration.asMicroseconds() ? mDuration : mElapsed;
 				Float x = easingCb[mType]( time.asMilliseconds(), start.x, end.x - start.x,
 										   mDuration.asMilliseconds() );
 				Float y = easingCb[mType]( time.asMilliseconds(), start.y, end.y - start.y,
 										   mDuration.asMilliseconds() );
-				node->applyProperty(
-					StyleSheetProperty( mProperty, String::fromFloat( x, "px" ) + " " +
-													   String::fromFloat( y, "px" ) ) );
+				node->applyProperty( StyleSheetProperty(
+					mProperty, String::fromFloat( x, "px" ) + " " + String::fromFloat( y, "px" ),
+					mPropertyIndex ) );
 				if ( isDone() ) {
-					node->applyProperty( StyleSheetProperty( mProperty, mEndValue ) );
+					node->applyProperty(
+						StyleSheetProperty( mProperty, mEndValue, mPropertyIndex ) );
 				}
 				break;
 			}
 			case PropertyType::ForegroundSize: {
-				Sizef start(
-					node->getForeground()->getLayer( 0 )->calcDrawableSize( mStartValue ) );
-				Sizef end( node->getForeground()->getLayer( 0 )->calcDrawableSize( mEndValue ) );
+				Sizef start( node->getForeground()
+								 ->getLayer( mPropertyIndex )
+								 ->calcDrawableSize( mStartValue ) );
+				Sizef end( node->getForeground()
+							   ->getLayer( mPropertyIndex )
+							   ->calcDrawableSize( mEndValue ) );
 				Time time =
 					mElapsed.asMicroseconds() > mDuration.asMicroseconds() ? mDuration : mElapsed;
 				Float x = easingCb[mType]( time.asMilliseconds(), start.x, end.x - start.x,
 										   mDuration.asMilliseconds() );
 				Float y = easingCb[mType]( time.asMilliseconds(), start.y, end.y - start.y,
 										   mDuration.asMilliseconds() );
-				node->applyProperty(
-					StyleSheetProperty( mProperty, String::fromFloat( x, "px" ) + " " +
-													   String::fromFloat( y, "px" ) ) );
+				node->applyProperty( StyleSheetProperty(
+					mProperty, String::fromFloat( x, "px" ) + " " + String::fromFloat( y, "px" ),
+					mPropertyIndex ) );
 				if ( isDone() ) {
-					node->applyProperty( StyleSheetProperty( mProperty, mEndValue ) );
+					node->applyProperty(
+						StyleSheetProperty( mProperty, mEndValue, mPropertyIndex ) );
 				}
 				break;
 			}
@@ -200,6 +212,10 @@ void StyleSheetPropertyTransition::onUpdate( const Time& ) {
 				break;
 		}
 	}
+}
+
+const Uint32& StyleSheetPropertyTransition::getPropertyIndex() const {
+	return mPropertyIndex;
 }
 
 void StyleSheetPropertyTransition::setElapsed( const Time& elapsed ) {

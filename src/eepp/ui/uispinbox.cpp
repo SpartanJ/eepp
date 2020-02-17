@@ -269,7 +269,8 @@ void UISpinBox::onPaddingChange() {
 	UIWidget::onPaddingChange();
 }
 
-std::string UISpinBox::getPropertyString( const PropertyDefinition* propertyDef ) {
+std::string UISpinBox::getPropertyString( const PropertyDefinition* propertyDef,
+										  const Uint32& propertyIndex ) {
 	if ( NULL == propertyDef )
 		return "";
 
@@ -283,7 +284,7 @@ std::string UISpinBox::getPropertyString( const PropertyDefinition* propertyDef 
 		case PropertyId::ClickStep:
 			return String::fromFloat( getClickStep() );
 		default:
-			return UIWidget::getPropertyString( propertyDef );
+			return UIWidget::getPropertyString( propertyDef, propertyIndex );
 	}
 }
 

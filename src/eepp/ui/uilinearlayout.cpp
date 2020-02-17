@@ -434,7 +434,8 @@ Sizei UILinearLayout::getTotalUsedSize() {
 	return size;
 }
 
-std::string UILinearLayout::getPropertyString( const PropertyDefinition* propertyDef ) {
+std::string UILinearLayout::getPropertyString( const PropertyDefinition* propertyDef,
+											   const Uint32& propertyIndex ) {
 	if ( NULL == propertyDef )
 		return "";
 
@@ -442,7 +443,7 @@ std::string UILinearLayout::getPropertyString( const PropertyDefinition* propert
 		case PropertyId::Orientation:
 			return getOrientation() == UIOrientation::Horizontal ? "horizontal" : "vertical";
 		default:
-			return UILayout::getPropertyString( propertyDef );
+			return UILayout::getPropertyString( propertyDef, propertyIndex );
 	}
 }
 

@@ -110,39 +110,49 @@ ShorthandDefinition::parseShorthand( const ShorthandDefinition* shorthand, std::
 			break;
 		}
 		case ShorthandType::BackgroundPosition: {
-			std::vector<std::string> pos = String::split( value, ' ' );
+			std::vector<std::string> values = String::split( value, ',' );
+			std::map<std::string, std::vector<std::string>> tmpProperties;
 
-			if ( pos.size() == 1 )
-				pos.push_back( "center" );
+			for ( auto& val : values ) {
+				std::vector<std::string> pos = String::split( val, ' ' );
 
-			if ( pos.size() == 2 ) {
-				int xFloatIndex = 0;
-				int yFloatIndex = 1;
+				if ( pos.size() == 1 )
+					pos.push_back( "center" );
 
-				if ( "bottom" == pos[0] || "top" == pos[0] ) {
-					xFloatIndex = 1;
-					yFloatIndex = 0;
+				if ( pos.size() == 2 ) {
+					int xFloatIndex = 0;
+					int yFloatIndex = 1;
+
+					if ( "bottom" == pos[0] || "top" == pos[0] ) {
+						xFloatIndex = 1;
+						yFloatIndex = 0;
+					}
+
+					tmpProperties[propNames[0]].emplace_back( pos[xFloatIndex] );
+					tmpProperties[propNames[1]].emplace_back( pos[yFloatIndex] );
+				} else if ( pos.size() > 2 ) {
+					if ( pos.size() == 3 ) {
+						pos.push_back( "0dp" );
+					}
+
+					int xFloatIndex = 0;
+					int yFloatIndex = 2;
+
+					if ( "bottom" == pos[0] || "top" == pos[0] ) {
+						xFloatIndex = 2;
+						yFloatIndex = 0;
+					}
+
+					tmpProperties[propNames[0]].emplace_back( pos[xFloatIndex] + " " +
+															  pos[xFloatIndex + 1] );
+					tmpProperties[propNames[1]].emplace_back( pos[yFloatIndex] + " " +
+															  pos[yFloatIndex + 1] );
 				}
+			}
 
-				properties.push_back( StyleSheetProperty( propNames[0], pos[xFloatIndex] ) );
-				properties.push_back( StyleSheetProperty( propNames[1], pos[yFloatIndex] ) );
-			} else if ( pos.size() > 2 ) {
-				if ( pos.size() == 3 ) {
-					pos.push_back( "0dp" );
-				}
-
-				int xFloatIndex = 0;
-				int yFloatIndex = 2;
-
-				if ( "bottom" == pos[0] || "top" == pos[0] ) {
-					xFloatIndex = 2;
-					yFloatIndex = 0;
-				}
-
-				properties.push_back( StyleSheetProperty(
-					propNames[0], pos[xFloatIndex] + " " + pos[xFloatIndex + 1] ) );
-				properties.push_back( StyleSheetProperty(
-					propNames[1], pos[yFloatIndex] + " " + pos[yFloatIndex + 1] ) );
+			for ( auto& props : tmpProperties ) {
+				properties.push_back(
+					StyleSheetProperty( props.first, String::join( props.second, ',' ) ) );
 			}
 
 			break;

@@ -1497,7 +1497,8 @@ std::string UIWindow::getWindowFlagsString() {
 	return String::join( flags, '|' );
 }
 
-std::string UIWindow::getPropertyString( const PropertyDefinition* propertyDef ) {
+std::string UIWindow::getPropertyString( const PropertyDefinition* propertyDef,
+										 const Uint32& propertyIndex ) {
 	if ( NULL == propertyDef )
 		return "";
 
@@ -1533,7 +1534,7 @@ std::string UIWindow::getPropertyString( const PropertyDefinition* propertyDef )
 		case PropertyId::BorderAutoSize:
 			return mStyleConfig.BorderAutoSize ? "true" : "false";
 		default:
-			return UIWidget::getPropertyString( propertyDef );
+			return UIWidget::getPropertyString( propertyDef, propertyIndex );
 	}
 }
 

@@ -6,6 +6,10 @@ namespace EE { namespace UI { namespace CSS {
 SINGLETON_DECLARE_IMPLEMENTATION( StyleSheetSpecification )
 
 StyleSheetSpecification::StyleSheetSpecification() {
+	// TODO: Support border-color top right bottom left.
+	// TODO: Support border-radius top right bottom left.
+	// TODO: Add support to animations (@keyframes).
+	// TODO: Support box-sizing or something similar.
 	registerDefaultProperties();
 	registerDefaultNodeSelectors();
 }
@@ -61,25 +65,33 @@ void StyleSheetSpecification::registerDefaultProperties() {
 		.setType( PropertyType::NumberLength )
 		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockHeight );
 	registerProperty( "background-color", "", false ).setType( PropertyType::Color );
-	registerProperty( "background-image", "", false );
+	registerProperty( "background-image", "none", false ).setIndexed();
 	registerProperty( "background-position-x", "center", false )
 		.setRelativeTarget( PropertyRelativeTarget::BackgroundWidth )
-		.setType( PropertyType::NumberLength );
+		.setType( PropertyType::NumberLength )
+		.setIndexed();
 	registerProperty( "background-position-y", "center", false )
 		.setRelativeTarget( PropertyRelativeTarget::BackgroundHeight )
-		.setType( PropertyType::NumberLength );
-	registerProperty( "background-repeat", "no-repeat", false );
-	registerProperty( "background-size", "auto", false ).setType( PropertyType::BackgroundSize );
+		.setType( PropertyType::NumberLength )
+		.setIndexed();
+	registerProperty( "background-repeat", "no-repeat", false ).setIndexed();
+	registerProperty( "background-size", "auto", false )
+		.setType( PropertyType::BackgroundSize )
+		.setIndexed();
 	registerProperty( "foreground-color", "", false ).setType( PropertyType::Color );
-	registerProperty( "foreground-image", "", false );
+	registerProperty( "foreground-image", "none", false ).setIndexed();
 	registerProperty( "foreground-position-x", "center", false )
 		.setRelativeTarget( PropertyRelativeTarget::ForegroundWidth )
-		.setType( PropertyType::NumberLength );
+		.setType( PropertyType::NumberLength )
+		.setIndexed();
 	registerProperty( "foreground-position-y", "center", false )
 		.setRelativeTarget( PropertyRelativeTarget::ForegroundHeight )
-		.setType( PropertyType::NumberLength );
-	registerProperty( "foreground-repeat", "no-repeat", false );
-	registerProperty( "foreground-size", "", false ).setType( PropertyType::ForegroundSize );
+		.setType( PropertyType::NumberLength )
+		.setIndexed();
+	registerProperty( "foreground-repeat", "no-repeat", false ).setIndexed();
+	registerProperty( "foreground-size", "auto", false )
+		.setType( PropertyType::ForegroundSize )
+		.setIndexed();
 	registerProperty( "foreground-radius", "0px", false ).setType( PropertyType::NumberLength );
 	registerProperty( "border-color", "", false ).setType( PropertyType::Color );
 	registerProperty( "border-width", "", false ).setType( PropertyType::NumberLength );
@@ -286,27 +298,27 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "hint-font-family", "", false ).addAlias( "hint-font-name" );
 
 	// Shorthands
-	registerProperty( "background-position", "", false ).setType( PropertyType::NumberLength );
+	//registerProperty( "background-position", "", false ).setType( PropertyType::NumberLength );
 	registerProperty( "transition", "", false );
 
-	registerShorthand( "margin", {"margin-left", "margin-top", "margin-right", "margin-bottom"},
+	registerShorthand( "margin", {"margin-top", "margin-right", "margin-bottom", "margin-left"},
 					   ShorthandType::Box );
 	registerShorthand( "layout-margin",
-					   {"margin-left", "margin-top", "margin-right", "margin-bottom"},
+					   {"margin-top", "margin-right", "margin-bottom", "margin-left"},
 					   ShorthandType::Box );
 	registerShorthand( "layout_margin",
-					   {"margin-left", "margin-top", "margin-right", "margin-bottom"},
+					   {"margin-top", "margin-right", "margin-bottom", "margin-left"},
 					   ShorthandType::Box );
 	registerShorthand( "padding",
-					   {"padding-left", "padding-top", "padding-right", "padding-bottom"},
+					   {"padding-top", "padding-right", "padding-bottom", "padding-left"},
 					   ShorthandType::Box );
 	registerShorthand( "background", {"background-color", "background-image"},
 					   ShorthandType::Background );
 	registerShorthand( "foreground", {"foreground-color", "foreground-image"},
 					   ShorthandType::Background );
 	registerShorthand( "filler-padding",
-					   {"filler-padding-left", "filler-padding-top", "filler-padding-right",
-						"filler-padding-bottom"},
+					   {"filler-padding-top", "filler-padding-right", "filler-padding-bottom",
+						"filler-padding-left"},
 					   ShorthandType::Box );
 	registerShorthand( "span", {"column-span", "row-span"}, ShorthandType::SingleValueVector );
 	registerShorthand( "background-position", {"background-position-x", "background-position-y"},
@@ -333,19 +345,20 @@ static bool isNth( int a, int b, int count ) {
 }
 
 void StyleSheetSpecification::registerDefaultNodeSelectors() {
-	mNodeSelectors["empty"] = []( const UIWidget* node, int a, int b ) -> bool {
+	mNodeSelectors["empty"] = []( const UIWidget* node, int a, int b,
+								  FunctionString data ) -> bool {
 		return node->getFirstChild() == NULL;
 	};
-	mNodeSelectors["first-child"] = []( const UIWidget* node, int a, int b ) -> bool {
+	mNodeSelectors["first-child"] = []( const UIWidget* node, int a, int b,
+										FunctionString data ) -> bool {
 		return NULL != node->getParent() && node->getParent()->getFirstChild() == node;
 	};
-	mNodeSelectors["enabled"] = []( const UIWidget* node, int a, int b ) -> bool {
-		return node->isEnabled();
-	};
-	mNodeSelectors["disabled"] = []( const UIWidget* node, int a, int b ) -> bool {
-		return !node->isEnabled();
-	};
-	mNodeSelectors["first-of-type"] = []( const UIWidget* node, int a, int b ) -> bool {
+	mNodeSelectors["enabled"] = []( const UIWidget* node, int a, int b,
+									FunctionString data ) -> bool { return node->isEnabled(); };
+	mNodeSelectors["disabled"] = []( const UIWidget* node, int a, int b,
+									 FunctionString data ) -> bool { return !node->isEnabled(); };
+	mNodeSelectors["first-of-type"] = []( const UIWidget* node, int a, int b,
+										  FunctionString data ) -> bool {
 		Node* child = NULL != node->getParent() ? node->getParent()->getFirstChild() : NULL;
 		Uint32 type = node->getType();
 		while ( NULL != child ) {
@@ -356,10 +369,12 @@ void StyleSheetSpecification::registerDefaultNodeSelectors() {
 		};
 		return false;
 	};
-	mNodeSelectors["last-child"] = []( const UIWidget* node, int a, int b ) -> bool {
+	mNodeSelectors["last-child"] = []( const UIWidget* node, int a, int b,
+									   FunctionString data ) -> bool {
 		return NULL != node->getParent() && node->getParent()->getLastChild() == node;
 	};
-	mNodeSelectors["last-of-type"] = []( const UIWidget* node, int a, int b ) -> bool {
+	mNodeSelectors["last-of-type"] = []( const UIWidget* node, int a, int b,
+										 FunctionString data ) -> bool {
 		Node* child = NULL != node->getParent() ? node->getParent()->getLastChild() : NULL;
 		Uint32 type = node->getType();
 		while ( NULL != child ) {
@@ -370,10 +385,12 @@ void StyleSheetSpecification::registerDefaultNodeSelectors() {
 		};
 		return false;
 	};
-	mNodeSelectors["only-child"] = []( const UIWidget* node, int a, int b ) -> bool {
+	mNodeSelectors["only-child"] = []( const UIWidget* node, int a, int b,
+									   FunctionString data ) -> bool {
 		return NULL != node->getParent() && node->getParent()->getChildCount() == 1;
 	};
-	mNodeSelectors["only-of-type"] = []( const UIWidget* node, int a, int b ) -> bool {
+	mNodeSelectors["only-of-type"] = []( const UIWidget* node, int a, int b,
+										 FunctionString data ) -> bool {
 		Node* child = NULL != node->getParent() ? node->getParent()->getFirstChild() : NULL;
 		Uint32 type = node->getType();
 		Uint32 typeCount = 0;
@@ -387,24 +404,54 @@ void StyleSheetSpecification::registerDefaultNodeSelectors() {
 		};
 		return typeCount == 1;
 	};
-	mNodeSelectors["nth-child"] = []( const UIWidget* node, int a, int b ) -> bool {
+	mNodeSelectors["nth-child"] = []( const UIWidget* node, int a, int b,
+									  FunctionString data ) -> bool {
 		return isNth( a, b, node->getNodeIndex() + 1 );
 	};
-	mNodeSelectors["nth-last-child"] = []( const UIWidget* node, int a, int b ) -> bool {
+	mNodeSelectors["nth-last-child"] = []( const UIWidget* node, int a, int b,
+										   FunctionString data ) -> bool {
 		return isNth( a, b, node->getChildCount() - node->getNodeIndex() );
 	};
-	mNodeSelectors["nth-of-type"] = []( const UIWidget* node, int a, int b ) -> bool {
+	mNodeSelectors["nth-of-type"] = []( const UIWidget* node, int a, int b,
+										FunctionString data ) -> bool {
 		return isNth( a, b, node->getNodeOfTypeIndex() + 1 );
 	};
-	mNodeSelectors["nth-last-of-type"] = []( const UIWidget* node, int a, int b ) -> bool {
+	mNodeSelectors["nth-last-of-type"] = []( const UIWidget* node, int a, int b,
+											 FunctionString data ) -> bool {
 		return node->getParent() != NULL
 				   ? isNth( a, b,
 							node->getParent()->getChildOfTypeCount( node->getType() ) -
 								node->getNodeOfTypeIndex() )
 				   : false;
 	};
-	mNodeSelectors["checked"] = []( const UIWidget* node, int a, int b ) -> bool {
+	mNodeSelectors["checked"] = []( const UIWidget* node, int a, int b,
+									FunctionString data ) -> bool {
 		return 0 != ( node->getFlags() & UI_CHECKED );
+	};
+	mNodeSelectors["not"] = []( const UIWidget* node, int a, int b, FunctionString data ) -> bool {
+		if ( !data.isEmpty() && !data.getParameters().empty() && data.getName() == "not" ) {
+			for ( const auto& param : data.getParameters() ) {
+				if ( !param.empty() ) {
+					if ( param[0] == '.' ) {
+						if ( node->hasClass( param.substr( 1 ) ) ) {
+							return false;
+						}
+					} else if ( param[0] == '#' ) {
+						if ( node->getId() == param.substr( 1 ) ) {
+							return false;
+						}
+					} else {
+						if ( node->getElementTag() == String::toLower( param ) ) {
+							return false;
+						}
+					}
+				} else {
+					return false;
+				}
+			}
+			return true;
+		}
+		return false;
 	};
 }
 
@@ -413,13 +460,13 @@ StructuralSelector StyleSheetSpecification::getStructuralSelector( const std::st
 	if ( index == std::string::npos ) {
 		auto it = mNodeSelectors.find( name );
 		if ( it == mNodeSelectors.end() )
-			return StructuralSelector( nullptr, 0, 0 );
+			return StructuralSelector( nullptr );
 		// Selector without any function call "()"
-		return StructuralSelector( it->second, 0, 0 );
+		return StructuralSelector( it->second );
 	}
 	auto it = mNodeSelectors.find( name.substr( 0, index ) );
 	if ( it == mNodeSelectors.end() )
-		return StructuralSelector( nullptr, 0, 0 );
+		return StructuralSelector( nullptr );
 
 	// Parse the 'a' and 'b' values.
 	int a = 1;
@@ -447,7 +494,7 @@ StructuralSelector StyleSheetSpecification::getStructuralSelector( const std::st
 				if ( String::fromString( t, parameters ) ) {
 					b = t;
 				} else {
-					return StructuralSelector( nullptr, 0, 0 );
+					return StructuralSelector( it->second, 0, 0, FunctionString::parse( name ) );
 				}
 			} else {
 				if ( nIndex == 0 ) {
@@ -460,7 +507,7 @@ StructuralSelector StyleSheetSpecification::getStructuralSelector( const std::st
 						if ( String::fromString( t, aParameter ) ) {
 							a = t;
 						} else {
-							return StructuralSelector( nullptr, 0, 0 );
+							return StructuralSelector( nullptr );
 						}
 					}
 				}
@@ -481,7 +528,7 @@ StructuralSelector StyleSheetSpecification::getStructuralSelector( const std::st
 					if ( String::fromString( t, parameters.substr( pmIndex + 1 ) ) ) {
 						b = b * t;
 					} else {
-						return StructuralSelector( nullptr, 0, 0 );
+						return StructuralSelector( nullptr );
 					}
 				}
 			}

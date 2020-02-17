@@ -192,7 +192,8 @@ void UISprite::onSizeChange() {
 	UIWidget::onSizeChange();
 }
 
-std::string UISprite::getPropertyString( const PropertyDefinition* propertyDef ) {
+std::string UISprite::getPropertyString( const PropertyDefinition* propertyDef,
+										 const Uint32& propertyIndex ) {
 	if ( NULL == propertyDef )
 		return "";
 
@@ -201,7 +202,7 @@ std::string UISprite::getPropertyString( const PropertyDefinition* propertyDef )
 			// TODO: Implement src
 			return "";
 		default:
-			return UIWidget::getPropertyString( propertyDef );
+			return UIWidget::getPropertyString( propertyDef, propertyIndex );
 	}
 }
 

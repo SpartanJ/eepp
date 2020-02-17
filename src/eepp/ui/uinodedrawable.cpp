@@ -169,8 +169,11 @@ void UINodeDrawable::draw( const Vector2f& position, const Sizef& size, const Ui
 		}
 	}
 
-	for ( auto& drawableIt : mGroup ) {
-		UINodeDrawable::LayerDrawable* drawable = drawableIt.second;
+	// Draw in reverse order to respect the background-image specification:
+	// "The background images are drawn on stacking context layers on top of each other. The first
+	// layer specified is drawn as if it is closest to the user."
+	for ( auto drawableIt = mGroup.rbegin(); drawableIt != mGroup.rend(); ++drawableIt ) {
+		UINodeDrawable::LayerDrawable* drawable = drawableIt->second;
 
 		if ( alpha != 255 ) {
 			Color color = drawable->getColor();
@@ -616,6 +619,9 @@ void UINodeDrawable::LayerDrawable::setDrawableSize( const Sizef& drawableSize )
 
 Sizef UINodeDrawable::LayerDrawable::calcDrawableSize( const std::string& drawableSizeEq ) {
 	Sizef size;
+
+	if ( NULL == mDrawable )
+		return Sizef::Zero;
 
 	if ( drawableSizeEq == "auto" ) {
 		if ( mDrawable->getDrawableType() == Drawable::RECTANGLE ) {

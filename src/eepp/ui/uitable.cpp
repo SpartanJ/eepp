@@ -638,7 +638,8 @@ bool UITable::isTouchOverAllowedChilds() {
 		   !mHScrollBar->isMouseOverMeOrChilds();
 }
 
-std::string UITable::getPropertyString( const PropertyDefinition* propertyDef ) {
+std::string UITable::getPropertyString( const PropertyDefinition* propertyDef,
+										const Uint32& propertyIndex ) {
 	if ( NULL == propertyDef )
 		return "";
 
@@ -657,7 +658,7 @@ std::string UITable::getPropertyString( const PropertyDefinition* propertyDef ) 
 			return mVScrollBar->getScrollBarType() == UIScrollBar::NoButtons ? "no-buttons"
 																			 : "two-buttons";
 		default:
-			return UITouchDragableWidget::getPropertyString( propertyDef );
+			return UITouchDragableWidget::getPropertyString( propertyDef, propertyIndex );
 	}
 }
 

@@ -277,7 +277,8 @@ void UIRadioButton::setTextSeparation( const Int32& textSeparation ) {
 	setPadding( getPadding() );
 }
 
-std::string UIRadioButton::getPropertyString( const PropertyDefinition* propertyDef ) {
+std::string UIRadioButton::getPropertyString( const PropertyDefinition* propertyDef,
+											  const Uint32& propertyIndex ) {
 	if ( NULL == propertyDef )
 		return "";
 
@@ -286,7 +287,7 @@ std::string UIRadioButton::getPropertyString( const PropertyDefinition* property
 			return isActive() ? "true" : "false";
 			break;
 		default:
-			return UITextView::getPropertyString( propertyDef );
+			return UITextView::getPropertyString( propertyDef, propertyIndex );
 	}
 }
 

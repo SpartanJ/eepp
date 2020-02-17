@@ -588,7 +588,8 @@ void UIMenu::loadFromXmlNode( const pugi::xml_node& node ) {
 	endAttributesTransaction();
 }
 
-std::string UIMenu::getPropertyString( const PropertyDefinition* propertyDef ) {
+std::string UIMenu::getPropertyString( const PropertyDefinition* propertyDef,
+									   const Uint32& propertyIndex ) {
 	if ( NULL == propertyDef )
 		return "";
 
@@ -600,7 +601,7 @@ std::string UIMenu::getPropertyString( const PropertyDefinition* propertyDef ) {
 		case PropertyId::MinIconSpace:
 			return String::format( "%udp", mStyleConfig.MinSpaceForIcons );
 		default:
-			return UIWidget::getPropertyString( propertyDef );
+			return UIWidget::getPropertyString( propertyDef, propertyIndex );
 	}
 }
 

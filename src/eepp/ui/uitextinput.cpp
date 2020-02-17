@@ -445,7 +445,8 @@ bool UITextInput::isFreeEditingEnabled() {
 	return mTextBuffer.isFreeEditingEnabled();
 }
 
-std::string UITextInput::getPropertyString( const PropertyDefinition* propertyDef ) {
+std::string UITextInput::getPropertyString( const PropertyDefinition* propertyDef,
+											const Uint32& propertyIndex ) {
 	if ( NULL == propertyDef )
 		return "";
 
@@ -479,7 +480,7 @@ std::string UITextInput::getPropertyString( const PropertyDefinition* propertyDe
 		case PropertyId::HintStrokeColor:
 			return getHintOutlineColor().toHexString();
 		default:
-			return UITextView::getPropertyString( propertyDef );
+			return UITextView::getPropertyString( propertyDef, propertyIndex );
 	}
 }
 

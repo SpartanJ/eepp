@@ -274,7 +274,7 @@ bool StyleSheetSelectorRule::matches( UIWidget* element, const bool& applyPseudo
 			bool matchesStructural = true;
 
 			for ( const auto& spc : mStructuralSelectors ) {
-				if ( !spc.selector( element, spc.a, spc.b ) ) {
+				if ( !spc.selector( element, spc.a, spc.b, spc.data ) ) {
 					matchesStructural = false;
 					break;
 				}

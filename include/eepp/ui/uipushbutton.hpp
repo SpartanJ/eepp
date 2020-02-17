@@ -50,7 +50,8 @@ class EE_API UIPushButton : public UIWidget {
 
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
-	virtual std::string getPropertyString( const PropertyDefinition* propertyDef );
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& propertyIndex = 0 );
 
   protected:
 	StyleConfig mStyleConfig;

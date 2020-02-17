@@ -336,7 +336,8 @@ void UITooltip::setFontStyleConfig( const UIFontStyleConfig& styleConfig ) {
 	mTextCache->setOutlineColor( mStyleConfig.OutlineColor );
 }
 
-std::string UITooltip::getPropertyString( const PropertyDefinition* propertyDef ) {
+std::string UITooltip::getPropertyString( const PropertyDefinition* propertyDef,
+										  const Uint32& propertyIndex ) {
 	if ( NULL == propertyDef )
 		return "";
 
@@ -361,7 +362,7 @@ std::string UITooltip::getPropertyString( const PropertyDefinition* propertyDef 
 					   : ( Font::getHorizontalAlign( getFlags() ) == UI_HALIGN_RIGHT ? "right"
 																					 : "left" );
 		default:
-			return UIWidget::getPropertyString( propertyDef );
+			return UIWidget::getPropertyString( propertyDef, propertyIndex );
 	}
 }
 

@@ -148,7 +148,7 @@ class EE_API UIWidget : public UINode {
 
 	void removeClasses( const std::vector<std::string>& classes );
 
-	bool containsClass( const std::string& cls ) const;
+	bool hasClass( const std::string& cls ) const;
 
 	void setElementTag( const std::string& tag );
 
@@ -200,20 +200,23 @@ class EE_API UIWidget : public UINode {
 
 	std::string getPropertyString( const std::string& property );
 
-	virtual std::string getPropertyString( const PropertyDefinition* propertyDef );
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& propertyIndex = 0 );
 
 	bool isSceneNodeLoading() const;
 
 	Float
 	getPropertyRelativeTargetContainerLength( const CSS::PropertyRelativeTarget& relativeTarget,
-											  const Float& defaultValue = 0 );
+											  const Float& defaultValue = 0,
+											  const Uint32& propertyIndex = 0 );
 
 	Float lengthFromValue( const std::string& value,
 						   const CSS::PropertyRelativeTarget& relativeTarget,
-						   const Float& defaultValue = 0, const Float& defaultContainerValue = 0 );
+						   const Float& defaultValue = 0, const Float& defaultContainerValue = 0,
+						   const Uint32& propertyIndex = 0 );
 
-	Float lengthFromValue( const StyleSheetProperty& property,
-						   const Float& defaultValue = 0, const Float& defaultContainerValue = 0 );
+	Float lengthFromValue( const StyleSheetProperty& property, const Float& defaultValue = 0,
+						   const Float& defaultContainerValue = 0 );
 
   protected:
 	friend class UIManager;

@@ -317,7 +317,8 @@ void UIScrollBar::setExpandBackground( bool expandBackground ) {
 	}
 }
 
-std::string UIScrollBar::getPropertyString( const PropertyDefinition* propertyDef ) {
+std::string UIScrollBar::getPropertyString( const PropertyDefinition* propertyDef,
+											const Uint32& propertyIndex ) {
 	if ( NULL == propertyDef )
 		return "";
 
@@ -339,7 +340,7 @@ std::string UIScrollBar::getPropertyString( const PropertyDefinition* propertyDe
 		case PropertyId::BackgroundExpand:
 			return getExpandBackground() ? "true" : "false";
 		default:
-			return UIWidget::getPropertyString( propertyDef );
+			return UIWidget::getPropertyString( propertyDef, propertyIndex );
 	}
 }
 

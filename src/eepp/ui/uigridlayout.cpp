@@ -220,7 +220,8 @@ Sizef UIGridLayout::getTargetElementSize() const {
 										 mRowWeight );
 }
 
-std::string UIGridLayout::getPropertyString( const PropertyDefinition* propertyDef ) {
+std::string UIGridLayout::getPropertyString( const PropertyDefinition* propertyDef,
+											 const Uint32& propertyIndex ) {
 	if ( NULL == propertyDef )
 		return "";
 
@@ -244,7 +245,7 @@ std::string UIGridLayout::getPropertyString( const PropertyDefinition* propertyD
 		case PropertyId::ReverseDraw:
 			return isReverseDraw() ? "true" : "false";
 		default:
-			return UILayout::getPropertyString( propertyDef );
+			return UILayout::getPropertyString( propertyDef, propertyIndex );
 	}
 }
 

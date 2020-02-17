@@ -210,7 +210,8 @@ void UICheckBox::setTextSeparation( const Int32& textSeparation ) {
 	setPadding( getPadding() );
 }
 
-std::string UICheckBox::getPropertyString( const PropertyDefinition* propertyDef ) {
+std::string UICheckBox::getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& propertyIndex ) {
 	if ( NULL == propertyDef )
 		return "";
 
@@ -219,7 +220,7 @@ std::string UICheckBox::getPropertyString( const PropertyDefinition* propertyDef
 			return isChecked() ? "true" : "false";
 			break;
 		default:
-			return UITextView::getPropertyString( propertyDef );
+			return UITextView::getPropertyString( propertyDef, propertyIndex );
 	}
 }
 

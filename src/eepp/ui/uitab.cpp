@@ -143,7 +143,8 @@ void UITab::onAutoSize() {
 	}
 }
 
-std::string UITab::getPropertyString( const PropertyDefinition* propertyDef ) {
+std::string UITab::getPropertyString( const PropertyDefinition* propertyDef,
+									  const Uint32& propertyIndex ) {
 	if ( NULL == propertyDef )
 		return "";
 
@@ -154,7 +155,7 @@ std::string UITab::getPropertyString( const PropertyDefinition* propertyDef ) {
 		case PropertyId::Owns:
 			return mOwnedName;
 		default:
-			return UISelectButton::getPropertyString( propertyDef );
+			return UISelectButton::getPropertyString( propertyDef, propertyIndex );
 	}
 }
 

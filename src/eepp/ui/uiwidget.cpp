@@ -504,7 +504,8 @@ bool UIWidget::isSceneNodeLoading() const {
 }
 
 Float UIWidget::getPropertyRelativeTargetContainerLength(
-	const PropertyRelativeTarget& relativeTarget, const Float& defaultValue ) {
+	const PropertyRelativeTarget& relativeTarget, const Float& defaultValue,
+	const Uint32& propertyIndex ) {
 	Float containerLength = defaultValue;
 	switch ( relativeTarget ) {
 		case PropertyRelativeTarget::ContainingBlockWidth:
@@ -519,20 +520,24 @@ Float UIWidget::getPropertyRelativeTargetContainerLength(
 			containerLength = getPixelsSize().getHeight();
 			break;
 		case PropertyRelativeTarget::BackgroundWidth:
-			containerLength = getPixelsSize().getWidth() -
-							  getBackground()->getLayer( 0 )->getDrawableSize().getWidth();
+			containerLength =
+				getPixelsSize().getWidth() -
+				getBackground()->getLayer( propertyIndex )->getDrawableSize().getWidth();
 			break;
 		case PropertyRelativeTarget::BackgroundHeight:
-			containerLength = getPixelsSize().getHeight() -
-							  getBackground()->getLayer( 0 )->getDrawableSize().getHeight();
+			containerLength =
+				getPixelsSize().getHeight() -
+				getBackground()->getLayer( propertyIndex )->getDrawableSize().getHeight();
 			break;
 		case PropertyRelativeTarget::ForegroundWidth:
-			containerLength = getPixelsSize().getWidth() -
-							  getForeground()->getLayer( 0 )->getDrawableSize().getWidth();
+			containerLength =
+				getPixelsSize().getWidth() -
+				getForeground()->getLayer( propertyIndex )->getDrawableSize().getWidth();
 			break;
 		case PropertyRelativeTarget::ForegroundHeight:
-			containerLength = getPixelsSize().getHeight() -
-							  getForeground()->getLayer( 0 )->getDrawableSize().getHeight();
+			containerLength =
+				getPixelsSize().getHeight() -
+				getForeground()->getLayer( propertyIndex )->getDrawableSize().getHeight();
 			break;
 		default:
 			break;
@@ -542,9 +547,10 @@ Float UIWidget::getPropertyRelativeTargetContainerLength(
 
 Float UIWidget::lengthFromValue( const std::string& value,
 								 const PropertyRelativeTarget& relativeTarget,
-								 const Float& defaultValue, const Float& defaultContainerValue ) {
+								 const Float& defaultValue, const Float& defaultContainerValue,
+								 const Uint32& propertyIndex ) {
 	Float containerLength =
-		getPropertyRelativeTargetContainerLength( relativeTarget, defaultValue );
+		getPropertyRelativeTargetContainerLength( relativeTarget, defaultValue, propertyIndex );
 	return convertLength( CSS::StyleSheetLength( value, defaultValue ), containerLength );
 }
 
@@ -552,7 +558,7 @@ Float UIWidget::lengthFromValue( const StyleSheetProperty& property, const Float
 								 const Float& defaultContainerValue ) {
 	return lengthFromValue( property.getValue(),
 							property.getPropertyDefinition()->getRelativeTarget(), defaultValue,
-							defaultContainerValue );
+							defaultContainerValue, property.getIndex() );
 }
 
 const Rectf& UIWidget::getPadding() const {
@@ -669,7 +675,7 @@ void UIWidget::updatePseudoClasses() {
 }
 
 void UIWidget::addClass( const std::string& cls ) {
-	if ( !cls.empty() && !containsClass( cls ) ) {
+	if ( !cls.empty() && !hasClass( cls ) ) {
 		mClasses.push_back( cls );
 
 		reloadStyle( true );
@@ -681,7 +687,7 @@ void UIWidget::addClasses( const std::vector<std::string>& classes ) {
 		for ( auto cit = classes.begin(); cit != classes.end(); ++cit ) {
 			const std::string& cls = *cit;
 
-			if ( !cls.empty() && !containsClass( cls ) ) {
+			if ( !cls.empty() && !hasClass( cls ) ) {
 				mClasses.push_back( cls );
 			}
 		}
@@ -691,7 +697,7 @@ void UIWidget::addClasses( const std::vector<std::string>& classes ) {
 }
 
 void UIWidget::removeClass( const std::string& cls ) {
-	if ( containsClass( cls ) ) {
+	if ( hasClass( cls ) ) {
 		mClasses.erase( std::find( mClasses.begin(), mClasses.end(), cls ) );
 
 		reloadStyle( true );
@@ -716,7 +722,7 @@ void UIWidget::removeClasses( const std::vector<std::string>& classes ) {
 	}
 }
 
-bool UIWidget::containsClass( const std::string& cls ) const {
+bool UIWidget::hasClass( const std::string& cls ) const {
 	return std::find( mClasses.begin(), mClasses.end(), cls ) != mClasses.end();
 }
 
@@ -844,7 +850,7 @@ const Uint32& UIWidget::getStylePreviousState() const {
 std::vector<UIWidget*> UIWidget::findAllByClass( const std::string& className ) {
 	std::vector<UIWidget*> widgets;
 
-	if ( containsClass( className ) ) {
+	if ( hasClass( className ) ) {
 		widgets.push_back( this );
 	}
 
@@ -889,7 +895,7 @@ std::vector<UIWidget*> UIWidget::findAllByTag( const std::string& tag ) {
 }
 
 UIWidget* UIWidget::findByClass( const std::string& className ) {
-	if ( containsClass( className ) ) {
+	if ( hasClass( className ) ) {
 		return this;
 	} else {
 		Node* child = mChild;
@@ -995,7 +1001,8 @@ std::string UIWidget::getPropertyString( const std::string& property ) {
 	return getPropertyString( StyleSheetSpecification::instance()->getProperty( property ) );
 }
 
-std::string UIWidget::getPropertyString( const PropertyDefinition* propertyDef ) {
+std::string UIWidget::getPropertyString( const PropertyDefinition* propertyDef,
+										 const Uint32& propertyIndex ) {
 	if ( NULL == propertyDef )
 		return "";
 
@@ -1057,9 +1064,9 @@ std::string UIWidget::getPropertyString( const PropertyDefinition* propertyDef )
 		case PropertyId::Flags:
 			return getFlagsString();
 		case PropertyId::BackgroundSize:
-			return getBackground()->getLayer( 0 )->getSizeEq();
+			return getBackground()->getLayer( propertyIndex )->getSizeEq();
 		case PropertyId::ForegroundSize:
-			return getForeground()->getLayer( 0 )->getSizeEq();
+			return getForeground()->getLayer( propertyIndex )->getSizeEq();
 		case PropertyId::LayoutWeight:
 			return String::fromFloat( getLayoutWeight() );
 		case PropertyId::LayoutGravity:
@@ -1071,13 +1078,13 @@ std::string UIWidget::getPropertyString( const PropertyDefinition* propertyDef )
 		case PropertyId::Clip:
 			return isClipped() ? "true" : "false";
 		case PropertyId::BackgroundPositionX:
-			return getBackground()->getLayer( 0 )->getPositionX();
+			return getBackground()->getLayer( propertyIndex )->getPositionX();
 		case PropertyId::BackgroundPositionY:
-			return getBackground()->getLayer( 0 )->getPositionY();
+			return getBackground()->getLayer( propertyIndex )->getPositionY();
 		case PropertyId::ForegroundPositionX:
-			return getForeground()->getLayer( 0 )->getPositionX();
+			return getForeground()->getLayer( propertyIndex )->getPositionX();
 		case PropertyId::ForegroundPositionY:
-			return getForeground()->getLayer( 0 )->getPositionY();
+			return getForeground()->getLayer( propertyIndex )->getPositionY();
 		case PropertyId::ScaleOriginPoint:
 			return getScaleOriginPoint().toString();
 		case PropertyId::BlendMode:
@@ -1092,7 +1099,8 @@ std::string UIWidget::getPropertyString( const PropertyDefinition* propertyDef )
 void UIWidget::setStyleSheetInlineProperty( const std::string& name, const std::string& value,
 											const Uint32& specificity ) {
 	if ( mStyle != NULL )
-		mStyle->setStyleSheetProperty( CSS::StyleSheetProperty( name, value, specificity ) );
+		mStyle->setStyleSheetProperty(
+			CSS::StyleSheetProperty( name, value, specificity, false, 0 ) );
 }
 
 bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
@@ -1131,25 +1139,25 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			setBackgroundColor( attribute.asColor() );
 			break;
 		case PropertyId::BackgroundImage:
-			setBackgroundDrawable( attribute.getValue(), 0 );
+			setBackgroundDrawable( attribute.getValue(), attribute.getIndex() );
 			break;
 		case PropertyId::BackgroundRepeat:
-			setBackgroundRepeat( attribute.value(), 0 );
+			setBackgroundRepeat( attribute.value(), attribute.getIndex() );
 			break;
 		case PropertyId::BackgroundSize:
-			setBackgroundSize( attribute.value(), 0 );
+			setBackgroundSize( attribute.value(), attribute.getIndex() );
 			break;
 		case PropertyId::ForegroundColor:
 			setForegroundColor( attribute.asColor() );
 			break;
 		case PropertyId::ForegroundImage:
-			setForegroundDrawable( attribute.getValue(), 0 );
+			setForegroundDrawable( attribute.getValue(), attribute.getIndex() );
 			break;
 		case PropertyId::ForegroundRadius:
 			setForegroundRadius( attribute.asUint() );
 			break;
 		case PropertyId::ForegroundSize:
-			setForegroundSize( attribute.value(), 0 );
+			setForegroundSize( attribute.value(), attribute.getIndex() );
 			break;
 		case PropertyId::BorderColor:
 			setBorderColor( attribute.asColor() );
@@ -1397,16 +1405,16 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			mSceneNode->setCursor( Cursor::fromName( attribute.getValue() ) );
 			break;
 		case PropertyId::BackgroundPositionX:
-			setBackgroundPositionX( attribute.value(), 0 );
+			setBackgroundPositionX( attribute.value(), attribute.getIndex() );
 			break;
 		case PropertyId::BackgroundPositionY:
-			setBackgroundPositionY( attribute.value(), 0 );
+			setBackgroundPositionY( attribute.value(), attribute.getIndex() );
 			break;
 		case PropertyId::ForegroundPositionX:
-			setForegroundPositionX( attribute.value(), 0 );
+			setForegroundPositionX( attribute.value(), attribute.getIndex() );
 			break;
 		case PropertyId::ForegroundPositionY:
-			setForegroundPositionY( attribute.value(), 0 );
+			setForegroundPositionY( attribute.value(), attribute.getIndex() );
 			break;
 		case PropertyId::RotationOriginPoint:
 			setRotationOriginPoint( attribute.asOriginPoint() );

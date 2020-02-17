@@ -305,7 +305,8 @@ bool UIDropDownList::applyProperty( const StyleSheetProperty& attribute ) {
 	return true;
 }
 
-std::string UIDropDownList::getPropertyString( const PropertyDefinition* propertyDef ) {
+std::string UIDropDownList::getPropertyString( const PropertyDefinition* propertyDef,
+											   const Uint32& propertyIndex ) {
 	if ( NULL == propertyDef )
 		return "";
 
@@ -320,9 +321,9 @@ std::string UIDropDownList::getPropertyString( const PropertyDefinition* propert
 		case PropertyId::RowHeight:
 		case PropertyId::VScrollMode:
 		case PropertyId::HScrollMode:
-			return mListBox->getPropertyString( propertyDef );
+			return mListBox->getPropertyString( propertyDef, propertyIndex );
 		default:
-			return UITextInput::getPropertyString( propertyDef );
+			return UITextInput::getPropertyString( propertyDef, propertyIndex );
 	}
 }
 

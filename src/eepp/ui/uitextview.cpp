@@ -662,7 +662,8 @@ bool UITextView::applyProperty( const StyleSheetProperty& attribute ) {
 	return true;
 }
 
-std::string UITextView::getPropertyString( const PropertyDefinition* propertyDef ) {
+std::string UITextView::getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& propertyIndex ) {
 	if ( NULL == propertyDef )
 		return "";
 
@@ -697,7 +698,7 @@ std::string UITextView::getPropertyString( const PropertyDefinition* propertyDef
 					   : ( Font::getHorizontalAlign( getFlags() ) == UI_HALIGN_RIGHT ? "right"
 																					 : "left" );
 		default:
-			return UIWidget::getPropertyString( propertyDef );
+			return UIWidget::getPropertyString( propertyDef, propertyIndex );
 	}
 }
 

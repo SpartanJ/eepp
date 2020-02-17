@@ -5,21 +5,8 @@
 
 	Developed by: Martín Lucas Golini
 
-	2D Game Engine designed for an easy cross-platform game development.
-	The project aims to provide a simple and powerfull framework that takes advantage of C++,
-   OpenGL, OpenAL, SDL and more.
-
-	Thanks to:
-		* Sean Barrett for the stb_vorbis and stb_image libraries.
-		* Sam Latinga for Simple DirectMedia Layer library.
-		* Jonathan Dummer for the Simple OpenGL Image Library.
-		* Laurent Gomila for the SFML library.
-		* OGRE staff for the Timer implementation.
-		* Lewis Van Winkle for PlusCallback.
-		* Dieter Baron and Thomas Klausner for libzip.
-		* Jean-loup Gailly and Mark Adler for zlib.
-		* Milan Ikits and Marcelo Magallon for GLEW.
-		* And a lot more people!
+	eepp is an open source cross-platform game and application development
+	framework heavily focused on the development of rich graphical user interfaces.
 */
 
 // General includes and declarations

@@ -25,12 +25,14 @@ class EE_API StyleSheetProperty {
   public:
 	StyleSheetProperty();
 
-	explicit StyleSheetProperty( const PropertyDefinition* definition, const std::string& value );
+	explicit StyleSheetProperty( const PropertyDefinition* definition, const std::string& value,
+								 const Uint32& index = 0 );
 
 	explicit StyleSheetProperty( const std::string& name, const std::string& value );
 
 	explicit StyleSheetProperty( const std::string& name, const std::string& value,
-								 const Uint32& specificity, const bool& isVolatile = false );
+								 const Uint32& specificity, const bool& isVolatile = false,
+								 const Uint32& index = 0 );
 
 	Uint32 getId() const;
 
@@ -124,19 +126,32 @@ class EE_API StyleSheetProperty {
 
 	const bool& isVarValue() const;
 
+	size_t getPropertyIndexCount() const;
+
+	StyleSheetProperty& getPropertyIndex( const Uint32& index );
+
+	const Uint32& getIndex() const;
+
   protected:
 	std::string mName;
 	Uint32 mNameHash;
 	std::string mValue;
 	Uint32 mSpecificity;
+	Uint32 mIndex;
 	bool mVolatile;
 	bool mImportant;
 	bool mIsVarValue;
 	const PropertyDefinition* mPropertyDefinition;
 	const ShorthandDefinition* mShorthandDefinition;
+	std::vector<StyleSheetProperty> mIndexedProperty;
+
+	explicit StyleSheetProperty( const bool& isVolatile,
+								 const PropertyDefinition* definition, const std::string& value,
+								 const Uint32& specificity = 0, const Uint32& index = 0 );
 
 	void cleanValue();
 	void checkImportant();
+	void createIndexed();
 };
 
 typedef std::map<Uint32, StyleSheetProperty> StyleSheetProperties;
