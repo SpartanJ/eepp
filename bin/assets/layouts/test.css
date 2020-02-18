@@ -6,6 +6,15 @@
 
 @import url("assets/layouts/imported.css") screen and (min-width: 800px);
 
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
 :root {
 	--font-color: #E6E6E6FF;
 }

@@ -9,6 +9,7 @@
 #include <eepp/system/pack.hpp>
 #include <eepp/system/packmanager.hpp>
 #include <eepp/system/virtualfilesystem.hpp>
+#include <eepp/ui/css/keyframesdefinition.hpp>
 #include <eepp/ui/css/stylesheetparser.hpp>
 #include <eepp/ui/css/stylesheetpropertiesparser.hpp>
 #include <eepp/ui/css/stylesheetselectorparser.hpp>
@@ -102,6 +103,8 @@ bool StyleSheetParser::parse( std::string& css, std::vector<std::string>& import
 					mediaParse( css, rs, pos, buffer, importedList );
 				} else if ( String::startsWith( buffer, "@import" ) ) {
 					importParse( css, pos, buffer, importedList );
+				} else if ( String::startsWith( buffer, "@keyframes" ) ) {
+					keyframesParse( css, rs, pos, buffer, importedList );
 				}
 
 				break;
@@ -306,7 +309,6 @@ void StyleSheetParser::importParse( std::string& css, std::size_t& pos, std::str
 		}
 
 		if ( std::find( importedList.begin(), importedList.end(), path ) == importedList.end() ) {
-
 			std::string newCss( importCSS( path, importedList ) );
 
 			if ( !newCss.empty() ) {
@@ -331,6 +333,27 @@ void StyleSheetParser::importParse( std::string& css, std::size_t& pos, std::str
 	} else {
 		pos = endImport + 1;
 	}
+}
+
+void StyleSheetParser::keyframesParse( std::string& css, ReadState& rs, std::size_t& pos,
+									   std::string& buffer,
+									   std::vector<std::string>& importedList ) {
+	std::size_t keyframesClosePos = String::findCloseBracket( css, pos - 1, '{', '}' );
+
+	if ( keyframesClosePos != std::string::npos ) {
+		StyleSheetParser keyframeParser;
+		keyframeParser.loadFromMemory( reinterpret_cast<const Uint8*>( &css[pos] ),
+									   keyframesClosePos - pos );
+		const StyleSheetStyleVector& styles = keyframeParser.getStyleSheet().getStyles();
+
+		std::string name(
+			String::trim( String::trim( buffer.substr( buffer.find_first_of( " " ) ) ), '"' ) );
+
+		mStyleSheet.addKeyframes( KeyframesDefinition::parseKeyframes( name, styles ) );
+	}
+
+	rs = ReadingSelector;
+	pos = keyframesClosePos + 1;
 }
 
 }}} // namespace EE::UI::CSS

@@ -89,7 +89,7 @@ FontTrueType* font =
 UISceneNode* uiSceneNode = UISceneNode::New();
 
 // Set the default font used in the scene node (otherwise we won't have any font to create
-// text views.
+// text views).
 uiSceneNode->getUIThemeManager()->setDefaultFont( font );
 
 // Add the new scene node to the scene manager.
@@ -124,7 +124,7 @@ if ( SceneManager::instance()->getUISceneNode()->invalidated() ) {
 }
 ```
 
-This example also only redraws the scene when the EE::UI::UISceneNode indicates
+This example only redraws the scene when the EE::UI::UISceneNode indicates
 that changes has been detected that needs to redraw the scene. You can redraw
 the scene on every update or only when is needed. There are several options
 regarding this topic, since each scene node can be drawn into a separated
@@ -171,8 +171,8 @@ is the code you use to style the UI. It's very heavily based on the
 features. Some of the main current differences are: eepp CSS properties don't
 support inheritance (except for
 [Custom properties](https://developer.mozilla.org/en-US/docs/Web/CSS/Using_CSS_custom_properties),
-and `*` is supported), eepp adds new properties mostly oriented to decoration
-related and layout control stuffs and CSS layout properties differ from the
+and `*` is supported), eepp also adds new properties oriented to decoration
+related and layout control stuffs, and CSS layout properties differ from the
 standard since we use a different layout model. But you can learn how style the
 UI following the CSS standards and then reading about the specific eepp UI
 features.
@@ -248,7 +248,7 @@ uiSceneNode->setStyleSheet( R"css(
 )css" );
 ```
 
-To load a CSS from a file we are going to need to first parsed it with the
+To load a CSS from a file we need to first parse it with the
 EE::UI::CSS::StyleSheetParser.
 
 It will look like:

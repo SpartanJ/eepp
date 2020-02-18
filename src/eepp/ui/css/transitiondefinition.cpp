@@ -1,5 +1,6 @@
 #include <eepp/core/string.hpp>
 #include <eepp/ui/css/transitiondefinition.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
 
 namespace EE { namespace UI { namespace CSS {
 
@@ -12,7 +13,11 @@ std::map<std::string, TransitionDefinition> TransitionDefinition::parseTransitio
 	TransitionsMap transitions;
 
 	for ( auto& prop : styleSheetProperties ) {
-		if ( prop.getName() == "transition" ) {
+		if ( prop.getPropertyDefinition() == NULL ) continue;
+
+		const PropertyDefinition * propDef = prop.getPropertyDefinition();
+
+		if ( propDef->getPropertyId() == PropertyId::Transition ) {
 			auto strTransitions = String::split( prop.getValue(), ',' );
 
 			for ( auto tit = strTransitions.begin(); tit != strTransitions.end(); ++tit ) {
@@ -55,8 +60,7 @@ std::map<std::string, TransitionDefinition> TransitionDefinition::parseTransitio
 					}
 				}
 			}
-		} else if ( prop.getName() == "transitionduration" ||
-					prop.getName() == "transition-duration" ) {
+		} else if ( propDef->getPropertyId() == PropertyId::TransitionDuration ) {
 			auto strDurations = String::split( prop.getValue(), ',' );
 
 			for ( auto dit = strDurations.begin(); dit != strDurations.end(); ++dit ) {
@@ -64,7 +68,7 @@ std::map<std::string, TransitionDefinition> TransitionDefinition::parseTransitio
 				String::toLowerInPlace( duration );
 				durations.push_back( StyleSheetProperty( prop.getName(), duration ).asTime() );
 			}
-		} else if ( prop.getName() == "transitiondelay" || prop.getName() == "transition-delay" ) {
+		} else if ( propDef->getPropertyId() == PropertyId::TransitionDelay ) {
 			auto strDelays = String::split( prop.getValue(), ',' );
 
 			for ( auto dit = strDelays.begin(); dit != strDelays.end(); ++dit ) {
@@ -72,8 +76,7 @@ std::map<std::string, TransitionDefinition> TransitionDefinition::parseTransitio
 				String::toLowerInPlace( delay );
 				delays.push_back( StyleSheetProperty( prop.getName(), delay ).asTime() );
 			}
-		} else if ( prop.getName() == "transitiontimingfunction" ||
-					prop.getName() == "transition-timing-function" ) {
+		} else if ( propDef->getPropertyId() == PropertyId::TransitionTimingFunction ) {
 			auto strTimingFuncs = String::split( prop.getValue(), ',' );
 
 			for ( auto dit = strTimingFuncs.begin(); dit != strTimingFuncs.end(); ++dit ) {
@@ -81,8 +84,7 @@ std::map<std::string, TransitionDefinition> TransitionDefinition::parseTransitio
 				String::toLowerInPlace( timingFunction );
 				timingFunctions.push_back( Ease::fromName( timingFunction ) );
 			}
-		} else if ( prop.getName() == "transitionproperty" ||
-					prop.getName() == "transition-property" ) {
+		} else if ( propDef->getPropertyId() == PropertyId::TransitionProperty ) {
 			auto strProperties = String::split( prop.getValue(), ',' );
 
 			for ( auto dit = strProperties.begin(); dit != strProperties.end(); ++dit ) {

@@ -1,6 +1,7 @@
 #ifndef EE_UI_CSS_STYLESHEET_HPP
 #define EE_UI_CSS_STYLESHEET_HPP
 
+#include <eepp/ui/css/keyframesdefinition.hpp>
 #include <eepp/ui/css/mediaquery.hpp>
 #include <eepp/ui/css/stylesheetstyle.hpp>
 
@@ -29,9 +30,16 @@ class EE_API StyleSheet {
 
 	StyleSheetStyleVector getStyleSheetStyleByAtRule( const AtRuleType& atRuleType ) const;
 
+	void addKeyframes( const KeyframesDefinition& keyframes );
+
+	void addKeyframes(const KeyframesDefinitionMap& keyframesMap );
+
+	const KeyframesDefinitionMap& getKeyframes() const;
+
   protected:
 	StyleSheetStyleVector mNodes;
 	MediaQueryList::vector mMediaQueryList;
+	KeyframesDefinitionMap mKeyframesMap;
 
 	void addMediaQueryList( MediaQueryList::ptr list );
 };

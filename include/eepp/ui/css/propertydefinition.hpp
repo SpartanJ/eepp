@@ -185,6 +185,11 @@ enum class PropertyId : Uint32 {
 	HintFontStyle = String::hash( "hint-font-style" ),
 	HintStrokeWidth = String::hash( "hint-stroke-width" ),
 	HintStrokeColor = String::hash( "hint-stroke-color" ),
+	Transition = String::hash( "transition" ),
+	TransitionDelay = String::hash( "transition-delay" ),
+	TransitionDuration = String::hash( "transition-duration" ),
+	TransitionProperty = String::hash( "transition-property" ),
+	TransitionTimingFunction = String::hash( "transition-timing-function" ),
 };
 
 enum class PropertyType : Uint32 {

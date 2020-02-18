@@ -5,6 +5,7 @@
 ../../bin/assets/layouts/test.xml
 ../../bin/assets/layouts/test_widgets.xml
 ../../bin/assets/ui/uitheme.css
+../../docs/articles/uiintroduction.md
 ../../external_projects.lua
 ../../include/eepp/audio/alresource.hpp
 ../../include/eepp/audio/audiodevice.hpp
@@ -288,6 +289,8 @@
 ../../include/eepp/thirdparty/PlusCallback/callback.hpp
 ../../include/eepp/ui/base.hpp
 ../../include/eepp/ui.hpp
+../../include/eepp/ui/css/animationdefinition.hpp
+../../include/eepp/ui/css/keyframesdefinition.hpp
 ../../include/eepp/ui/css/mediaquery.hpp
 ../../include/eepp/ui/css/propertydefinition.hpp
 ../../include/eepp/ui/css/propertyspecification.hpp
@@ -716,6 +719,8 @@
 ../../src/eepp/system/translator.cpp
 ../../src/eepp/system/virtualfilesystem.cpp
 ../../src/eepp/system/zip.cpp
+../../src/eepp/ui/css/animationdefinition.cpp
+../../src/eepp/ui/css/keyframesdefinition.cpp
 ../../src/eepp/ui/css/mediaquery.cpp
 ../../src/eepp/ui/css/propertydefinition.cpp
 ../../src/eepp/ui/css/propertyspecification.cpp

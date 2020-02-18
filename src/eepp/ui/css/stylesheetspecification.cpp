@@ -10,6 +10,7 @@ StyleSheetSpecification::StyleSheetSpecification() {
 	// TODO: Support border-radius top right bottom left.
 	// TODO: Add support to animations (@keyframes).
 	// TODO: Support box-sizing or something similar.
+	// TODO: Add correct "background" and "foreground" shorthand.
 	registerDefaultProperties();
 	registerDefaultNodeSelectors();
 }
@@ -297,10 +298,14 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "hint-stroke-color", "", false ).setType( PropertyType::Color );
 	registerProperty( "hint-font-family", "", false ).addAlias( "hint-font-name" );
 
-	// Shorthands
-	//registerProperty( "background-position", "", false ).setType( PropertyType::NumberLength );
 	registerProperty( "transition", "", false );
+	registerProperty( "transition-duration", "", false ).addAlias( "transitionduration" );
+	registerProperty( "transition-delay", "", false ).addAlias( "transitiondelay" );
+	registerProperty( "transition-timing-function", "", false )
+		.addAlias( "transitiontimingfunction" );
+	registerProperty( "transition-property", "", false ).addAlias( "transitionproperty" );
 
+	// Shorthands
 	registerShorthand( "margin", {"margin-top", "margin-right", "margin-bottom", "margin-left"},
 					   ShorthandType::Box );
 	registerShorthand( "layout-margin",

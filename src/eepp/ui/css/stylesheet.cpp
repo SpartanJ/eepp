@@ -28,6 +28,8 @@ void StyleSheet::combineStyleSheet( const StyleSheet& styleSheet ) {
 	for ( auto& style : styleSheet.getStyles() ) {
 		addStyle( style );
 	}
+
+	addKeyframes( styleSheet.getKeyframes() );
 }
 
 StyleSheetStyleVector StyleSheet::getElementStyles( UIWidget* element,
@@ -88,6 +90,20 @@ StyleSheetStyleVector StyleSheet::getStyleSheetStyleByAtRule( const AtRuleType& 
 	}
 
 	return vector;
+}
+
+void StyleSheet::addKeyframes( const KeyframesDefinition& keyframes ) {
+	mKeyframesMap[keyframes.getName()] = keyframes;
+}
+
+void StyleSheet::addKeyframes( const KeyframesDefinitionMap& keyframesMap ) {
+	for ( auto& keyframe : keyframesMap ) {
+		mKeyframesMap[keyframe.first] = keyframe.second;
+	}
+}
+
+const KeyframesDefinitionMap& StyleSheet::getKeyframes() const {
+	return mKeyframesMap;
 }
 
 }}} // namespace EE::UI::CSS

@@ -237,7 +237,10 @@ void UIStyle::onStateChange() {
 		}
 
 		if ( !mapEquals( mProperties, prevProperties ) ) {
-			mTransitions = TransitionDefinition::parseTransitionProperties( mTransitionAttributes );
+			if ( !mTransitionAttributes.empty() ) {
+				mTransitions =
+					TransitionDefinition::parseTransitionProperties( mTransitionAttributes );
+			}
 
 			mWidget->beginAttributesTransaction();
 
