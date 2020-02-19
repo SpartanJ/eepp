@@ -558,10 +558,15 @@ void Http::postAsync( const Http::AsyncResponseCallback& cb, const URI& uri, con
 				  validateCertificate, proxy );
 }
 
-Http::Http() : mConnection( NULL ), mHost(), mPort( 0 ), mIsSSL( false ) {}
+Http::Http() : mConnection( NULL ), mHost(), mPort( 0 ), mIsSSL( false ), mHostSolved( false ) {}
 
 Http::Http( const std::string& host, unsigned short port, bool useSSL, URI proxy ) :
-	mConnection( NULL ), mHostName( host ), mPort( port ), mIsSSL( useSSL ), mProxy( proxy ) {
+	mConnection( NULL ),
+	mHostName( host ),
+	mPort( port ),
+	mIsSSL( useSSL ),
+	mHostSolved( false ),
+	mProxy( proxy ) {
 	setHost( host, port, useSSL, proxy );
 }
 
@@ -619,10 +624,7 @@ void Http::setHost( const std::string& host, unsigned short port, bool useSSL, U
 		mHostName.erase( mHostName.size() - 1 );
 
 	if ( !mProxy.empty() ) {
-		mHost = IpAddress( mProxy.getHost() );
 		sameHost = false;
-	} else {
-		mHost = IpAddress( mHostName );
 	}
 
 	// If the new host is different to the last set host
@@ -653,6 +655,16 @@ static bool sendProgress( const Http& http, const Http::Request& request,
 
 Http::Response Http::downloadRequest( const Http::Request& request, IOStream& writeTo,
 									  Time timeout ) {
+	// Solve the host IP only when the request starts.
+	if ( !mHostSolved ) {
+		if ( !mProxy.empty() ) {
+			mHost = IpAddress( mProxy.getHost() );
+		} else {
+			mHost = IpAddress( mHostName );
+		}
+		mHostSolved = true;
+	}
+
 	if ( 0 == mHost.toInteger() ) {
 		return Response();
 	}

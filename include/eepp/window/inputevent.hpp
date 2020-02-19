@@ -1,6 +1,9 @@
 #ifndef EE_WINDOWINPUTEVENT_HPP
 #define EE_WINDOWINPUTEVENT_HPP
 
+#include <eepp/config.hpp>
+#include <eepp/core/string.hpp>
+
 namespace EE { namespace Window {
 
 #define EE_TEXT_INPUT_SIZE ( 32 )
@@ -10,6 +13,27 @@ namespace EE { namespace Window {
 
 class InputEvent {
   public:
+	enum WindowEventType {
+		WindowShown,	   /**< Window has been shown */
+		WindowHidden,	   /**< Window has been hidden */
+		WindowExposed,	   /**< Window has been exposed and should be redrawn */
+		WindowMoved,	   /**< Window has been moved to data1, data2 */
+		WindowResized,	   /**< Window has been resized to data1xdata2 */
+		WindowSizeChanged, /**< The window size has changed, either as a result of an API call or
+							  through the system or user changing the window size. */
+		WindowMinimized,   /**< Window has been minimized */
+		WindowMaximized,   /**< Window has been maximized */
+		WindowRestored,	   /**< Window has been restored to normal size and position */
+		WindowMouseEnter,  /**< Window has gained mouse focus */
+		WindowMouseLeave,  /**< Window has lost mouse focus */
+		WindowKeyboardFocusGain, /**< Window has gained keyboard focus */
+		WindowKeyboardFocusLost, /**< Window has lost keyboard focus */
+		WindowClose,			 /**< The window manager requests that the window be closed */
+		WindowTakeFocus, /**< Window is being offered a focus (should SetWindowInputFocus() on
+							itself or a subwindow, or ignore) */
+		WindowHitTest	 /**< Window had a hit test that wasn't SDL_HITTEST_NORMAL. */
+	};
+
 	inline InputEvent() : Type( NoEvent ) {}
 
 	inline InputEvent( Uint32 type ) : Type( type ) {}
@@ -21,9 +45,9 @@ class InputEvent {
 	};
 
 	/** Application visibility event structure */
-	struct ActiveEvent {
-		Uint8 gain;	 /** Whether given states were gained or lost (1/0) */
-		Uint8 state; /** A mask of the focus states */
+	struct WindowEvent {
+		Uint8 gain; /** Whether given states were gained or lost (1/0) */
+		Uint8 type; /** WindowEventType */
 	};
 
 	/** Keyboard event structure */
@@ -138,7 +162,8 @@ class InputEvent {
 
 	enum EventType {
 		NoEvent = 0,
-		Active,
+		EventsSent,
+		Window,
 		KeyDown,
 		KeyUp,
 		TextInput,
@@ -158,7 +183,7 @@ class InputEvent {
 		VideoResize,
 		VideoExpose,
 		EventUser,
-		EventCount = 32
+		EventCount = EventUser - 1
 	};
 
 	/** Event Type */
@@ -166,7 +191,7 @@ class InputEvent {
 
 	/** General event structure */
 	union {
-		ActiveEvent active;
+		WindowEvent window;
 		KeyboardEvent key;
 		TextInputEvent text;
 		MouseMotionEvent motion;

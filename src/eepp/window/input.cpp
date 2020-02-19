@@ -50,6 +50,12 @@ void Input::sendEvent( InputEvent* Event ) {
 
 void Input::processEvent( InputEvent* Event ) {
 	switch ( Event->Type ) {
+		case InputEvent::Window: {
+			if ( Event->window.type == InputEvent::WindowKeyboardFocusGain ) {
+				mMousePos = queryMousePos();
+			}
+			break;
+		}
 		case InputEvent::KeyDown: {
 			if ( Event->key.keysym.sym > EE_KEYS_NUM )
 				break;

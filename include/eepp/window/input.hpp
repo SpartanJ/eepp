@@ -33,6 +33,9 @@ class EE_API Input {
 	/** Inject the mouse position given */
 	virtual void injectMousePos( const Uint16& x, const Uint16& y ) = 0;
 
+	/** Gets the current mouse position relative to the focus window */
+	virtual Vector2i queryMousePos() = 0;
+
 	/** @return If keyboard key was released */
 	bool isKeyUp( const KeyTable& Key );
 

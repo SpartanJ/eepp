@@ -35,6 +35,13 @@ EventDispatcher::~EventDispatcher() {
 
 void EventDispatcher::inputCallback( InputEvent* Event ) {
 	switch ( Event->Type ) {
+		case InputEvent::Window: {
+			if ( Event->window.type == InputEvent::WindowKeyboardFocusGain ) {
+				mMousePosi = mInput->queryMousePos();
+				mMousePos = mMousePosi.asFloat();
+			}
+			break;
+		}
 		case InputEvent::KeyUp:
 			sendKeyUp( Event->key.keysym.sym, Event->key.keysym.unicode, Event->key.keysym.mod );
 			break;

@@ -35,47 +35,97 @@ void InputSDL::update() {
 						EEEvent.Type = InputEvent::VideoResize;
 						EEEvent.resize.w = SDLEvent.window.data1 * mDPIScale;
 						EEEvent.resize.h = SDLEvent.window.data2 * mDPIScale;
+						EEEvent.window.type = InputEvent::WindowResized;
+						break;
+					}
+					case SDL_WINDOWEVENT_HIT_TEST: {
+						EEEvent.Type = InputEvent::Window;
+						EEEvent.window.gain = 1;
+						EEEvent.window.type = InputEvent::WindowHitTest;
+						break;
+					}
+					case SDL_WINDOWEVENT_TAKE_FOCUS: {
+						EEEvent.Type = InputEvent::VideoExpose;
+						EEEvent.expose.type = EEEvent.Type;
+						EEEvent.window.type = InputEvent::WindowTakeFocus;
+						break;
+					}
+					case SDL_WINDOWEVENT_CLOSE: {
+						EEEvent.Type = InputEvent::Window;
+						EEEvent.window.gain = 0;
+						EEEvent.window.type = InputEvent::WindowClose;
+						break;
+					}
+					case SDL_WINDOWEVENT_SIZE_CHANGED: {
+						EEEvent.Type = InputEvent::Window;
+						EEEvent.window.gain = 1;
+						EEEvent.window.type = InputEvent::WindowSizeChanged;
+						break;
+					}
+					case SDL_WINDOWEVENT_MAXIMIZED: {
+						EEEvent.Type = InputEvent::Window;
+						EEEvent.window.gain = 1;
+						EEEvent.window.type = InputEvent::WindowMaximized;
 						break;
 					}
 					case SDL_WINDOWEVENT_EXPOSED: {
 						EEEvent.Type = InputEvent::VideoExpose;
 						EEEvent.expose.type = EEEvent.Type;
+						EEEvent.window.type = InputEvent::WindowExposed;
+						break;
+					}
+					case SDL_WINDOWEVENT_MOVED: {
+						EEEvent.Type = InputEvent::Window;
+						EEEvent.window.gain = 1;
+						EEEvent.window.type = InputEvent::WindowMoved;
+						break;
+					}
+					case SDL_WINDOWEVENT_SHOWN: {
+						EEEvent.Type = InputEvent::Window;
+						EEEvent.window.gain = 1;
+						EEEvent.window.type = InputEvent::WindowShown;
+						break;
+					}
+					case SDL_WINDOWEVENT_HIDDEN: {
+						EEEvent.Type = InputEvent::Window;
+						EEEvent.window.gain = 0;
+						EEEvent.window.type = InputEvent::WindowHidden;
 						break;
 					}
 					case SDL_WINDOWEVENT_MINIMIZED: {
-						EEEvent.Type = InputEvent::Active;
-						EEEvent.active.gain = 0;
-						EEEvent.active.state = EE_APPACTIVE;
+						EEEvent.Type = InputEvent::Window;
+						EEEvent.window.gain = 0;
+						EEEvent.window.type = InputEvent::WindowMinimized;
 						break;
 					}
 					case SDL_WINDOWEVENT_RESTORED: {
-						EEEvent.Type = InputEvent::Active;
-						EEEvent.active.gain = 1;
-						EEEvent.active.state = EE_APPACTIVE;
+						EEEvent.Type = InputEvent::Window;
+						EEEvent.window.gain = 1;
+						EEEvent.window.type = InputEvent::WindowRestored;
 						break;
 					}
 					case SDL_WINDOWEVENT_ENTER: {
-						EEEvent.Type = InputEvent::Active;
-						EEEvent.active.gain = 1;
-						EEEvent.active.state = EE_APPMOUSEFOCUS;
+						EEEvent.Type = InputEvent::Window;
+						EEEvent.window.gain = 1;
+						EEEvent.window.type = InputEvent::WindowMouseEnter;
 						break;
 					}
 					case SDL_WINDOWEVENT_LEAVE: {
-						EEEvent.Type = InputEvent::Active;
-						EEEvent.active.gain = 0;
-						EEEvent.active.state = EE_APPMOUSEFOCUS;
+						EEEvent.Type = InputEvent::Window;
+						EEEvent.window.gain = 0;
+						EEEvent.window.type = InputEvent::WindowMouseLeave;
 						break;
 					}
 					case SDL_WINDOWEVENT_FOCUS_GAINED: {
-						EEEvent.Type = InputEvent::Active;
-						EEEvent.active.gain = 1;
-						EEEvent.active.state = EE_APPINPUTFOCUS;
+						EEEvent.Type = InputEvent::Window;
+						EEEvent.window.gain = 1;
+						EEEvent.window.type = InputEvent::WindowKeyboardFocusGain;
 						break;
 					}
 					case SDL_WINDOWEVENT_FOCUS_LOST: {
-						EEEvent.Type = InputEvent::Active;
-						EEEvent.active.gain = 0;
-						EEEvent.active.state = EE_APPINPUTFOCUS;
+						EEEvent.Type = InputEvent::Window;
+						EEEvent.window.gain = 0;
+						EEEvent.window.type = InputEvent::WindowKeyboardFocusLost;
 						break;
 					}
 				}
@@ -278,6 +328,10 @@ void InputSDL::update() {
 			processEvent( &EEEvent );
 		}
 	}
+
+	InputEvent endProcessingEvent;
+	endProcessingEvent.Type = InputEvent::EventsSent;
+	processEvent( &endProcessingEvent );
 }
 
 bool InputSDL::grabInput() {
@@ -296,23 +350,30 @@ void InputSDL::injectMousePos( const Uint16& x, const Uint16& y ) {
 	SDL_WarpMouseInWindow( reinterpret_cast<WindowSDL*>( mWindow )->GetSDLWindow(), x, y );
 }
 
+Vector2i InputSDL::queryMousePos() {
+#if SDL_VERSION_ATLEAST( 2, 0, 5 )
+	Vector2i mousePos;
+	Vector2i tempMouse;
+	Vector2i tempWinPos;
+	Rect bordersSize;
+	SDL_Window* sdlw = reinterpret_cast<WindowSDL*>( mWindow )->GetSDLWindow();
+	SDL_GetGlobalMouseState( &tempMouse.x, &tempMouse.y );
+	SDL_GetWindowPosition( sdlw, &tempWinPos.x, &tempWinPos.y );
+	SDL_GetWindowBordersSize( sdlw, &bordersSize.Top, &bordersSize.Left, &bordersSize.Bottom,
+							  &bordersSize.Right );
+	mousePos.x = (int)tempMouse.x - tempWinPos.x - bordersSize.Left;
+	mousePos.y = (int)tempMouse.y - tempWinPos.y - bordersSize.Top;
+	return mousePos;
+#else
+	int x, y;
+	SDL_GetMouseState( &x, &y );
+	return Vector2i( x, y );
+#endif
+}
+
 void InputSDL::init() {
 	mDPIScale = mWindow->getScale();
-
-#if SDL_VERSION_ATLEAST( 2, 0, 5 )
-	Vector2i mTempMouse;
-	Vector2i mTempWinPos;
-	Rect mBordersSize;
-
-	SDL_Window* sdlw = reinterpret_cast<WindowSDL*>( mWindow )->GetSDLWindow();
-	SDL_GetGlobalMouseState( &mTempMouse.x, &mTempMouse.y );
-	SDL_GetWindowPosition( sdlw, &mTempWinPos.x, &mTempWinPos.y );
-	SDL_GetWindowBordersSize( sdlw, &mBordersSize.Top, &mBordersSize.Left, &mBordersSize.Bottom,
-							  &mBordersSize.Right );
-
-	mMousePos.x = (int)mTempMouse.x - mTempWinPos.x - mBordersSize.Left;
-	mMousePos.y = (int)mTempMouse.y - mTempWinPos.y - mBordersSize.Top;
-#endif
+	mMousePos = queryMousePos();
 
 	initializeTables();
 

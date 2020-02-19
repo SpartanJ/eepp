@@ -22,6 +22,8 @@ class EE_API InputSDL : public Input {
 
 	void injectMousePos( const Uint16& x, const Uint16& y );
 
+	Vector2i queryMousePos();
+
   protected:
 	friend class WindowSDL;
 	Float mDPIScale;

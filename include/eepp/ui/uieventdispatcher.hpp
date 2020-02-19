@@ -13,6 +13,8 @@ class UIEventDispatcher : public EventDispatcher {
 	UIEventDispatcher( SceneNode* sceneNode );
 
   protected:
+	bool mJustGainedFocus;
+
 	void inputCallback( InputEvent* Event );
 
 	void checkTabPress( const Uint32& KeyCode );

@@ -707,6 +707,7 @@ class EE_API Http : NonCopyable {
 	std::list<AsyncRequest*> mThreads;
 	Mutex mThreadsMutex;
 	bool mIsSSL;
+	bool mHostSolved;
 	URI mProxy;
 
 	void removeOldThreads();

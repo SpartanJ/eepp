@@ -187,11 +187,18 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 
 			// Set the proxy for the request
 			char* http_proxy = getenv( "http_proxy" );
+			std::string httpProxy;
 			if ( !proxy && NULL != http_proxy ) {
-				http.setProxy( URI( http_proxy ) );
+				httpProxy = std::string( http_proxy );
 			} else if ( proxy ) {
-				http.setProxy( URI( proxy.Get() ) );
+				httpProxy = proxy.Get();
 			}
+
+			if ( httpProxy.find( "://" ) == std::string::npos ) {
+				httpProxy = "http://" + httpProxy;
+			}
+
+			http.setProxy( URI( httpProxy ) );
 
 			// Request a compressed response
 			if ( compressed ) {
