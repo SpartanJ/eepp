@@ -67,6 +67,7 @@ class EE_API UIColorPicker {
 	Color mRgb;
 	std::string mHexColor;
 	Uint8 mModalAlpha;
+	Uint8 mDefModalAlpha;
 	bool mUpdating;
 
 	void windowClose( const Event* Event );

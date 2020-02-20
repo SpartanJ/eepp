@@ -796,6 +796,10 @@ solution "eepp"
 	generate_os_links()
 	parse_args()
 
+	if os.is_real("macosx") then
+		defines { "GL_SILENCE_DEPRECATION" }
+	end
+
 	project "SOIL2-static"
 		kind "StaticLib"
 

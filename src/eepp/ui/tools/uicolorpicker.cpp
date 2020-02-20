@@ -94,6 +94,7 @@ UIColorPicker::UIColorPicker( UIWindow* attachTo, const UIColorPicker::ColorPick
 	mRgb( Color::fromHsv( mHsv ) ),
 	mHexColor( mRgb.toHexString( false ) ),
 	mModalAlpha( modalAlpha ),
+	mDefModalAlpha( modalAlpha ),
 	mUpdating( false ) {
 	if ( NULL == mUIWindow ) {
 		mUIContainer = SceneManager::instance()->getUISceneNode();
@@ -132,7 +133,8 @@ UIColorPicker::UIColorPicker( UIWindow* attachTo, const UIColorPicker::ColorPick
 	}
 	#color_picker > .pickers > .separator,
 	#color_picker > .header > .separator {
-		margin: 8dp 0dp 8dp 0dp;
+		margin-left: 8dp;
+		margin-right: 8dp;
 	}
 	#color_picker > .pickers > .separator {
 		background-color: #FFFFFF88;
@@ -147,7 +149,8 @@ UIColorPicker::UIColorPicker( UIWindow* attachTo, const UIColorPicker::ColorPick
 		border-color: white;
 	}
 	#color_picker > .separator {
-		margin: 0dp 8dp 0dp 4dp;
+		margin-top: 8dp;
+		margin-bottom: 4dp;
 		background-color: #FFFFFF88;
 	}
 	#color_picker > .slider_container,
@@ -221,7 +224,7 @@ UIColorPicker::UIColorPicker( UIWindow* attachTo, const UIColorPicker::ColorPick
 										cb::Make1( this, &UIColorPicker::windowClose ) );
 	}
 
-	if ( mUIWindow->isModal() ) {
+	if ( NULL != mUIWindow && mUIWindow->isModal() ) {
 		if ( mModalAlpha != 0.f ) {
 			mUIWindow->getModalControl()->setBackgroundColor( Color( 0, 0, 0, mModalAlpha ) );
 			mUIWindow->getModalControl()->runAction( Actions::Fade::New(
@@ -253,6 +256,7 @@ UIColorPicker::UIColorPicker( UIWindow* attachTo, const UIColorPicker::ColorPick
 
 	mHuePicker->setDrawable( createHueTexture( mHuePicker->getPixelsSize() ), true );
 	mCurrentColor->setBackgroundDrawable( createGridTexture(), true );
+	mCurrentColor->setBackgroundRepeat( "repeat" );
 
 	updateAll();
 
@@ -294,7 +298,13 @@ Uint8 UIColorPicker::getModalAlpha() const {
 }
 
 void UIColorPicker::setModalAlpha( const Uint8& modalAlpha ) {
-	mModalAlpha = modalAlpha;
+	if ( modalAlpha != mModalAlpha ) {
+		mModalAlpha = modalAlpha;
+
+		if ( NULL != mUIWindow && mUIWindow->isModal() ) {
+			mUIWindow->getModalControl()->setBackgroundColor( Color( 0, 0, 0, mModalAlpha ) );
+		}
+	}
 }
 
 void UIColorPicker::windowClose( const Event* ) {
@@ -336,7 +346,7 @@ Texture* UIColorPicker::createGridTexture() {
 	TextureFactory* TF = TextureFactory::instance();
 	Uint32 texId =
 		TF->loadFromPixels( image.getPixelsPtr(), image.getWidth(), image.getHeight(),
-							image.getChannels(), false, Texture::ClampMode::ClampRepeat );
+							image.getChannels() );
 
 	return TF->getTexture( texId );
 }
@@ -508,6 +518,7 @@ void UIColorPicker::registerEvents() {
 	mRoot->find<UIPushButton>( "picker_icon" )
 		->addEventListener( Event::MouseClick, [&]( const Event* ) {
 			UIWidget* coverWidget = UIWidget::New();
+			setModalAlpha( 0 );
 			coverWidget->setParent( mRoot->getSceneNode() )
 				->setPosition( 0, 0 )
 				->setSize( mRoot->getSceneNode()->getSize() );
@@ -525,6 +536,7 @@ void UIColorPicker::registerEvents() {
 					position.x,
 					event->getNode()->getSceneNode()->getWindow()->getHeight() - position.y ) );
 				event->getNode()->close();
+				setModalAlpha( mDefModalAlpha );
 			} );
 		} );
 }
