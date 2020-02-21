@@ -1,23 +1,26 @@
-/***************************************************************************/
-/*                                                                         */
-/*  afmparse.c                                                             */
-/*                                                                         */
-/*    AFM parser (body).                                                   */
-/*                                                                         */
-/*  Copyright 2006-2010, 2012 by                                           */
-/*  David Turner, Robert Wilhelm, and Werner Lemberg.                      */
-/*                                                                         */
-/*  This file is part of the FreeType project, and may only be used,       */
-/*  modified, and distributed under the terms of the FreeType project      */
-/*  license, LICENSE.TXT.  By continuing to use, modify, or distribute     */
-/*  this file you indicate that you have read the license and              */
-/*  understand and accept it fully.                                        */
-/*                                                                         */
-/***************************************************************************/
+/****************************************************************************
+ *
+ * afmparse.c
+ *
+ *   AFM parser (body).
+ *
+ * Copyright (C) 2006-2019 by
+ * David Turner, Robert Wilhelm, and Werner Lemberg.
+ *
+ * This file is part of the FreeType project, and may only be used,
+ * modified, and distributed under the terms of the FreeType project
+ * license, LICENSE.TXT.  By continuing to use, modify, or distribute
+ * this file you indicate that you have read the license and
+ * understand and accept it fully.
+ *
+ */
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
+#include FT_INTERNAL_DEBUG_H
 #include FT_INTERNAL_POSTSCRIPT_AUX_H
+
+#ifndef T1_CONFIG_OPTION_NO_AFM
 
 #include "afmparse.h"
 #include "psconv.h"
@@ -25,13 +28,13 @@
 #include "psauxerr.h"
 
 
-/***************************************************************************/
-/*                                                                         */
-/*    AFM_Stream                                                           */
-/*                                                                         */
-/* The use of AFM_Stream is largely inspired by parseAFM.[ch] from t1lib.  */
-/*                                                                         */
-/*                                                                         */
+  /**************************************************************************
+   *
+   * AFM_Stream
+   *
+   * The use of AFM_Stream is largely inspired by parseAFM.[ch] from t1lib.
+   *
+   */
 
   enum
   {
@@ -74,8 +77,8 @@
 #define AFM_STREAM_KEY_BEGIN( stream )    \
           (char*)( (stream)->cursor - 1 )
 
-#define AFM_STREAM_KEY_LEN( stream, key )       \
-          ( (char*)(stream)->cursor - key - 1 )
+#define AFM_STREAM_KEY_LEN( stream, key )           \
+          (FT_Offset)( (char*)(stream)->cursor - key - 1 )
 
 #define AFM_STATUS_EOC( stream ) \
           ( (stream)->status >= AFM_STREAM_STATUS_EOC )
@@ -119,7 +122,6 @@
   afm_stream_read_one( AFM_Stream  stream )
   {
     char*  str;
-    int    ch;
 
 
     afm_stream_skip_spaces( stream );
@@ -130,7 +132,9 @@
 
     while ( 1 )
     {
-      ch = AFM_GETC();
+      int  ch = AFM_GETC();
+
+
       if ( AFM_IS_SPACE( ch ) )
         break;
       else if ( AFM_IS_NEWLINE( ch ) )
@@ -159,7 +163,6 @@
   afm_stream_read_string( AFM_Stream  stream )
   {
     char*  str;
-    int    ch;
 
 
     afm_stream_skip_spaces( stream );
@@ -171,7 +174,9 @@
     /* scan to eol */
     while ( 1 )
     {
-      ch = AFM_GETC();
+      int  ch = AFM_GETC();
+
+
       if ( AFM_IS_NEWLINE( ch ) )
       {
         stream->status = AFM_STREAM_STATUS_EOL;
@@ -188,11 +193,11 @@
   }
 
 
-  /*************************************************************************/
-  /*                                                                       */
-  /*    AFM_Parser                                                         */
-  /*                                                                       */
-  /*                                                                       */
+  /**************************************************************************
+   *
+   * AFM_Parser
+   *
+   */
 
   /* all keys defined in Ch. 7-10 of 5004.AFM_Spec.pdf */
   typedef enum  AFM_Token_
@@ -366,11 +371,11 @@
   FT_LOCAL_DEF( FT_Int )
   afm_parser_read_vals( AFM_Parser  parser,
                         AFM_Value   vals,
-                        FT_UInt     n )
+                        FT_Int      n )
   {
     AFM_Stream  stream = parser->stream;
     char*       str;
-    FT_UInt     i;
+    FT_Int      i;
 
 
     if ( n > AFM_MAX_ARGUMENTS )
@@ -443,7 +448,7 @@
                        FT_Offset*  len )
   {
     AFM_Stream  stream = parser->stream;
-    char*       key    = 0;  /* make stupid compiler happy */
+    char*       key    = NULL;  /* make stupid compiler happy */
 
 
     if ( line )
@@ -545,7 +550,7 @@
     parser->FontInfo  = NULL;
     parser->get_index = NULL;
 
-    return PSaux_Err_Ok;
+    return FT_Err_Ok;
   }
 
 
@@ -559,7 +564,7 @@
   }
 
 
-  FT_LOCAL_DEF( FT_Error )
+  static FT_Error
   afm_parser_read_int( AFM_Parser  parser,
                        FT_Int*     aint )
   {
@@ -572,10 +577,10 @@
     {
       *aint = val.u.i;
 
-      return PSaux_Err_Ok;
+      return FT_Err_Ok;
     }
     else
-      return PSaux_Err_Syntax_Error;
+      return FT_THROW( Syntax_Error );
   }
 
 
@@ -587,10 +592,16 @@
     char*          key;
     FT_Offset      len;
     int            n = -1;
+    FT_Int         tmp;
 
 
-    if ( afm_parser_read_int( parser, &fi->NumTrackKern ) )
+    if ( afm_parser_read_int( parser, &tmp ) )
         goto Fail;
+
+    if ( tmp < 0 )
+      goto Fail;
+
+    fi->NumTrackKern = (FT_UInt)tmp;
 
     if ( fi->NumTrackKern )
     {
@@ -612,7 +623,7 @@
       case AFM_TOKEN_TRACKKERN:
         n++;
 
-        if ( n >= fi->NumTrackKern )
+        if ( n >= (int)fi->NumTrackKern )
           goto Fail;
 
         tk = fi->TrackKerns + n;
@@ -636,8 +647,8 @@
       case AFM_TOKEN_ENDTRACKKERN:
       case AFM_TOKEN_ENDKERNDATA:
       case AFM_TOKEN_ENDFONTMETRICS:
-        fi->NumTrackKern = n + 1;
-        return PSaux_Err_Ok;
+        fi->NumTrackKern = (FT_UInt)( n + 1 );
+        return FT_Err_Ok;
 
       case AFM_TOKEN_UNKNOWN:
         break;
@@ -648,7 +659,7 @@
     }
 
   Fail:
-    return PSaux_Err_Syntax_Error;
+    return FT_THROW( Syntax_Error );
   }
 
 
@@ -685,10 +696,16 @@
     char*         key;
     FT_Offset     len;
     int           n = -1;
+    FT_Int        tmp;
 
 
-    if ( afm_parser_read_int( parser, &fi->NumKernPair ) )
+    if ( afm_parser_read_int( parser, &tmp ) )
       goto Fail;
+
+    if ( tmp < 0 )
+      goto Fail;
+
+    fi->NumKernPair = (FT_UInt)tmp;
 
     if ( fi->NumKernPair )
     {
@@ -717,7 +734,7 @@
 
           n++;
 
-          if ( n >= fi->NumKernPair )
+          if ( n >= (int)fi->NumKernPair )
             goto Fail;
 
           kp = fi->KernPairs + n;
@@ -730,8 +747,9 @@
           if ( r < 3 )
             goto Fail;
 
-          kp->index1 = shared_vals[0].u.i;
-          kp->index2 = shared_vals[1].u.i;
+          /* index values can't be negative */
+          kp->index1 = shared_vals[0].u.u;
+          kp->index2 = shared_vals[1].u.u;
           if ( token == AFM_TOKEN_KPY )
           {
             kp->x = 0;
@@ -749,11 +767,11 @@
       case AFM_TOKEN_ENDKERNPAIRS:
       case AFM_TOKEN_ENDKERNDATA:
       case AFM_TOKEN_ENDFONTMETRICS:
-        fi->NumKernPair = n + 1;
+        fi->NumKernPair = (FT_UInt)( n + 1 );
         ft_qsort( fi->KernPairs, fi->NumKernPair,
                   sizeof ( AFM_KernPairRec ),
                   afm_compare_kern_pairs );
-        return PSaux_Err_Ok;
+        return FT_Err_Ok;
 
       case AFM_TOKEN_UNKNOWN:
         break;
@@ -764,7 +782,7 @@
     }
 
   Fail:
-    return PSaux_Err_Syntax_Error;
+    return FT_THROW( Syntax_Error );
   }
 
 
@@ -795,7 +813,7 @@
 
       case AFM_TOKEN_ENDKERNDATA:
       case AFM_TOKEN_ENDFONTMETRICS:
-        return PSaux_Err_Ok;
+        return FT_Err_Ok;
 
       case AFM_TOKEN_UNKNOWN:
         break;
@@ -806,13 +824,13 @@
     }
 
   Fail:
-    return PSaux_Err_Syntax_Error;
+    return FT_THROW( Syntax_Error );
   }
 
 
   static FT_Error
   afm_parser_skip_section( AFM_Parser  parser,
-                           FT_UInt     n,
+                           FT_Int      n,
                            AFM_Token   end_section )
   {
     char*      key;
@@ -832,11 +850,11 @@
 
 
       if ( token == end_section || token == AFM_TOKEN_ENDFONTMETRICS )
-        return PSaux_Err_Ok;
+        return FT_Err_Ok;
     }
 
   Fail:
-    return PSaux_Err_Syntax_Error;
+    return FT_THROW( Syntax_Error );
   }
 
 
@@ -845,19 +863,19 @@
   {
     FT_Memory     memory = parser->memory;
     AFM_FontInfo  fi     = parser->FontInfo;
-    FT_Error      error  = PSaux_Err_Syntax_Error;
+    FT_Error      error  = FT_ERR( Syntax_Error );
     char*         key;
     FT_Offset     len;
     FT_Int        metrics_sets = 0;
 
 
     if ( !fi )
-      return PSaux_Err_Invalid_Argument;
+      return FT_THROW( Invalid_Argument );
 
     key = afm_parser_next_key( parser, 1, &len );
     if ( !key || len != 16                              ||
          ft_strncmp( key, "StartFontMetrics", 16 ) != 0 )
-      return PSaux_Err_Unknown_File_Format;
+      return FT_THROW( Unknown_File_Format );
 
     while ( ( key = afm_parser_next_key( parser, 1, &len ) ) != 0 )
     {
@@ -872,7 +890,7 @@
 
         if ( metrics_sets != 0 && metrics_sets != 2 )
         {
-          error = PSaux_Err_Unimplemented_Feature;
+          error = FT_THROW( Unimplemented_Feature );
 
           goto Fail;
         }
@@ -935,10 +953,11 @@
         error = afm_parse_kern_data( parser );
         if ( error )
           goto Fail;
-        /* fall through since we only support kern data */
+        /* we only support kern data, so ... */
+        /* fall through                      */
 
       case AFM_TOKEN_ENDFONTMETRICS:
-        return PSaux_Err_Ok;
+        return FT_Err_Ok;
 
       default:
         break;
@@ -956,6 +975,13 @@
 
     return error;
   }
+
+#else /* T1_CONFIG_OPTION_NO_AFM */
+
+  /* ANSI C doesn't like empty source files */
+  typedef int  _afm_parse_dummy;
+
+#endif /* T1_CONFIG_OPTION_NO_AFM */
 
 
 /* END */

@@ -1,23 +1,23 @@
-/***************************************************************************/
-/*                                                                         */
-/*  t1afm.h                                                                */
-/*                                                                         */
-/*    AFM support for Type 1 fonts (specification).                        */
-/*                                                                         */
-/*  Copyright 1996-2001, 2002, 2006 by                                     */
-/*  David Turner, Robert Wilhelm, and Werner Lemberg.                      */
-/*                                                                         */
-/*  This file is part of the FreeType project, and may only be used,       */
-/*  modified, and distributed under the terms of the FreeType project      */
-/*  license, LICENSE.TXT.  By continuing to use, modify, or distribute     */
-/*  this file you indicate that you have read the license and              */
-/*  understand and accept it fully.                                        */
-/*                                                                         */
-/***************************************************************************/
+/****************************************************************************
+ *
+ * t1afm.h
+ *
+ *   AFM support for Type 1 fonts (specification).
+ *
+ * Copyright (C) 1996-2019 by
+ * David Turner, Robert Wilhelm, and Werner Lemberg.
+ *
+ * This file is part of the FreeType project, and may only be used,
+ * modified, and distributed under the terms of the FreeType project
+ * license, LICENSE.TXT.  By continuing to use, modify, or distribute
+ * this file you indicate that you have read the license and
+ * understand and accept it fully.
+ *
+ */
 
 
-#ifndef __T1AFM_H__
-#define __T1AFM_H__
+#ifndef T1AFM_H_
+#define T1AFM_H_
 
 #include <ft2build.h>
 #include "t1objs.h"
@@ -48,7 +48,7 @@ FT_BEGIN_HEADER
 
 FT_END_HEADER
 
-#endif /* __T1AFM_H__ */
+#endif /* T1AFM_H_ */
 
 
 /* END */

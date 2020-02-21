@@ -1,19 +1,19 @@
-/***************************************************************************/
-/*                                                                         */
-/*  ftcglyph.c                                                             */
-/*                                                                         */
-/*    FreeType Glyph Image (FT_Glyph) cache (body).                        */
-/*                                                                         */
-/*  Copyright 2000-2001, 2003, 2004, 2006, 2009, 2011 by                   */
-/*  David Turner, Robert Wilhelm, and Werner Lemberg.                      */
-/*                                                                         */
-/*  This file is part of the FreeType project, and may only be used,       */
-/*  modified, and distributed under the terms of the FreeType project      */
-/*  license, LICENSE.TXT.  By continuing to use, modify, or distribute     */
-/*  this file you indicate that you have read the license and              */
-/*  understand and accept it fully.                                        */
-/*                                                                         */
-/***************************************************************************/
+/****************************************************************************
+ *
+ * ftcglyph.c
+ *
+ *   FreeType Glyph Image (FT_Glyph) cache (body).
+ *
+ * Copyright (C) 2000-2019 by
+ * David Turner, Robert Wilhelm, and Werner Lemberg.
+ *
+ * This file is part of the FreeType project, and may only be used,
+ * modified, and distributed under the terms of the FreeType project
+ * license, LICENSE.TXT.  By continuing to use, modify, or distribute
+ * this file you indicate that you have read the license and
+ * understand and accept it fully.
+ *
+ */
 
 
 #include <ft2build.h>
@@ -106,7 +106,7 @@
   FTC_Family_Init( FTC_Family  family,
                    FTC_Cache   cache )
   {
-    FTC_GCacheClass  clazz = FTC_CACHE__GCACHE_CLASS( cache );
+    FTC_GCacheClass  clazz = FTC_CACHE_GCACHE_CLASS( cache );
 
 
     family->clazz     = clazz->family_class;
@@ -185,7 +185,7 @@
 
   FT_LOCAL_DEF( FT_Error )
   FTC_GCache_Lookup( FTC_GCache   cache,
-                     FT_PtrDist   hash,
+                     FT_Offset    hash,
                      FT_UInt      gindex,
                      FTC_GQuery   query,
                      FTC_Node    *anode )

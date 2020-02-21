@@ -1,31 +1,32 @@
-/***************************************************************************/
-/*                                                                         */
-/*  gxvalid.h                                                              */
-/*                                                                         */
-/*    TrueTyeeGX/AAT table validation (specification only).                */
-/*                                                                         */
-/*  Copyright 2005 by suzuki toshiya, Masatake YAMATO, Red Hat K.K.,       */
-/*  David Turner, Robert Wilhelm, and Werner Lemberg.                      */
-/*                                                                         */
-/*  This file is part of the FreeType project, and may only be used,       */
-/*  modified, and distributed under the terms of the FreeType project      */
-/*  license, LICENSE.TXT.  By continuing to use, modify, or distribute     */
-/*  this file you indicate that you have read the license and              */
-/*  understand and accept it fully.                                        */
-/*                                                                         */
-/***************************************************************************/
+/****************************************************************************
+ *
+ * gxvalid.h
+ *
+ *   TrueTypeGX/AAT table validation (specification only).
+ *
+ * Copyright (C) 2005-2019 by
+ * suzuki toshiya, Masatake YAMATO, Red Hat K.K.,
+ * David Turner, Robert Wilhelm, and Werner Lemberg.
+ *
+ * This file is part of the FreeType project, and may only be used,
+ * modified, and distributed under the terms of the FreeType project
+ * license, LICENSE.TXT.  By continuing to use, modify, or distribute
+ * this file you indicate that you have read the license and
+ * understand and accept it fully.
+ *
+ */
 
-/***************************************************************************/
-/*                                                                         */
-/* gxvalid is derived from both gxlayout module and otvalid module.        */
-/* Development of gxlayout is supported by the Information-technology      */
-/* Promotion Agency(IPA), Japan.                                           */
-/*                                                                         */
-/***************************************************************************/
+/****************************************************************************
+ *
+ * gxvalid is derived from both gxlayout module and otvalid module.
+ * Development of gxlayout is supported by the Information-technology
+ * Promotion Agency(IPA), Japan.
+ *
+ */
 
 
-#ifndef __GXVALID_H__
-#define __GXVALID_H__
+#ifndef GXVALID_H_
+#define GXVALID_H_
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -101,7 +102,7 @@ FT_BEGIN_HEADER
 FT_END_HEADER
 
 
-#endif /* __GXVALID_H__ */
+#endif /* GXVALID_H_ */
 
 
 /* END */
