@@ -15,6 +15,8 @@ Interpolation1d::Interpolation1d() :
 	mCurPos( 0.f ),
 	mCurPoint( 0 ),
 	mCurTime( Time::Zero ),
+	mElapsed( Time::Zero ),
+	mDuration( Time::Zero ),
 	mSpeed( 1.3f ),
 	mActP( NULL ),
 	mNexP( NULL ),
@@ -32,6 +34,8 @@ Interpolation1d::Interpolation1d( std::vector<Point1d> points ) :
 	mCurPos( 0.f ),
 	mCurPoint( 0 ),
 	mCurTime( Time::Zero ),
+	mElapsed( Time::Zero ),
+	mDuration( Time::Zero ),
 	mSpeed( 1.3f ),
 	mPoints( points ),
 	mActP( NULL ),
@@ -101,6 +105,8 @@ Interpolation1d& Interpolation1d::reset() {
 	mUpdate = true;
 	mEnded = false;
 	mCurTime = Time::Zero;
+	mElapsed = Time::Zero;
+	mDuration = Time::Zero;
 	mOnPathEndCallback = OnPathEndCallback();
 	mOnStepCallback = OnStepCallback();
 
@@ -122,6 +128,8 @@ Interpolation1d& Interpolation1d::add( const Float& pos, const Time& time ) {
 	if ( mPoints.size() >= 2 )
 		mTotDist += eeabs( mPoints[mPoints.size() - 1].p - mPoints[mPoints.size() - 2].p );
 
+	mDuration += time;
+
 	return *this;
 }
 
@@ -134,7 +142,9 @@ Interpolation1d& Interpolation1d::edit( const unsigned int& PointNum, const Floa
 			mTotDist -= eeabs( mPoints[PointNum].p - mPoints[PointNum - 1].p );
 		}
 
+		mDuration -= mPoints[PointNum].t;
 		mPoints[PointNum] = Point1d( pos, time );
+		mDuration += mPoints[PointNum].t;
 
 		if ( 0 == PointNum ) {
 			if ( PointNum + 1 < mPoints.size() ) {
@@ -156,6 +166,8 @@ Interpolation1d& Interpolation1d::erase( const unsigned int& PointNum ) {
 			mTotDist -= eeabs( mPoints[PointNum].p - mPoints[PointNum - 1].p );
 		}
 
+		mDuration -= mPoints[PointNum].t;
+
 		mPoints.erase( mPoints.begin() + PointNum );
 	}
 
@@ -172,6 +184,8 @@ const Float& Interpolation1d::getPosition() {
 
 void Interpolation1d::update( const Time& Elapsed ) {
 	if ( mEnable && mPoints.size() > 1 && mCurPoint != mPoints.size() ) {
+		mElapsed += Elapsed;
+
 		if ( mUpdate ) {
 			mCurTime = Time::Zero;
 			mActP = &mPoints[mCurPoint];
@@ -219,8 +233,10 @@ void Interpolation1d::update( const Time& Elapsed ) {
 
 			mCurPoint++;
 
-			if ( mCurPoint == mPoints.size() && mLoop )
+			if ( mCurPoint == mPoints.size() && mLoop ) {
 				mCurPoint = 0;
+				mElapsed = Time::Zero;
+			}
 		}
 	}
 }
@@ -245,7 +261,13 @@ Interpolation1d& Interpolation1d::setDuration( const Time& TotTime ) {
 		mPoints[i].t = Milliseconds( CurDist * TotTime.asMilliseconds() / tdist );
 	}
 
+	mDuration = TotTime;
+
 	return *this;
+}
+
+const Time& Interpolation1d::getDuration() const {
+	return mDuration;
 }
 
 Interpolation1d& Interpolation1d::setSpeed( const Float Speed ) {
@@ -273,6 +295,8 @@ Interpolation1d& Interpolation1d::setSpeed( const Float Speed ) {
 			CurDist = eeabs( mPoints[i].p - mPoints[i + 1].p );
 			mPoints[i].t = Milliseconds( CurDist * TotTime / tdist );
 		}
+
+		mDuration = Milliseconds( TotTime );
 	}
 
 	return *this;
@@ -296,6 +320,10 @@ void Interpolation1d::setData( const UintPtr& data ) {
 }
 
 Float Interpolation1d::getCurrentProgress() {
+	return mElapsed.asMilliseconds() / mDuration.asMilliseconds();
+}
+
+Float Interpolation1d::getPartialCurrentProgress() {
 	return mCurTime >= mActP->t ? 1.f : mCurTime.asMilliseconds() / mActP->t.asMilliseconds();
 }
 

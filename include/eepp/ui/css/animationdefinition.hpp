@@ -14,6 +14,9 @@ namespace EE { namespace UI { namespace CSS {
 
 class EE_API AnimationDefinition {
   public:
+	static std::map<std::string, AnimationDefinition>
+	parseAnimationProperties( const std::vector<StyleSheetProperty>& stylesheetProperties );
+
 	/* https://developer.mozilla.org/en-US/docs/Web/CSS/animation-direction */
 	enum AnimationDirection {
 		Normal = String::hash( "normal" ),
@@ -21,6 +24,8 @@ class EE_API AnimationDefinition {
 		Alternate = String::hash( "alternate" ),
 		AlternateReverse = String::hash( "alternate-reverse" )
 	};
+
+	static bool isDirectionString( const std::string str );
 
 	static AnimationDirection directionFromString( std::string str );
 
@@ -31,6 +36,8 @@ class EE_API AnimationDefinition {
 		Backwards = String::hash( "backwards" ),
 		Both = String::hash( "both" )
 	};
+
+	static bool isAnimationFillModeString( const std::string& str );
 
 	static AnimationFillMode fillModeFromString( std::string str );
 
@@ -56,8 +63,11 @@ class EE_API AnimationDefinition {
 	Int32 iterations = 1; /* -1 == "infinite" */
 	Ease::Interpolation timingFunction = Ease::Interpolation::Linear;
 	AnimationDirection direction = Normal;
+	AnimationFillMode fillMode = None;
 	bool paused = false;
 };
+
+typedef std::map<std::string, AnimationDefinition> AnimationsMap;
 
 }}} // namespace EE::UI::CSS
 

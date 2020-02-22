@@ -40,7 +40,8 @@ class Ease {
 		BounceInOut,
 		ElasticIn,
 		ElasticOut,
-		ElasticInOut
+		ElasticInOut,
+		None
 	};
 
 	static Interpolation fromName( const std::string& name,

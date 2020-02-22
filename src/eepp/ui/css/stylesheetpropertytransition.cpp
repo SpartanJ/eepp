@@ -77,6 +77,10 @@ Float StyleSheetPropertyTransition::getCurrentProgress() {
 	return mElapsed.asMilliseconds() / mDuration.asMilliseconds();
 }
 
+Time StyleSheetPropertyTransition::getTotalTime() {
+	return mDuration;
+}
+
 void StyleSheetPropertyTransition::onStart() {
 	onUpdate( Time::Zero );
 }

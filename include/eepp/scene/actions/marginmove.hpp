@@ -37,6 +37,8 @@ class EE_API MarginMove : public Action {
 
 	Float getCurrentProgress() override;
 
+	Time getTotalTime() override;
+
 	Interpolation1d getInterpolationLeft() const;
 
 	void setInterpolationLeft( const Interpolation1d& interpolationLeft );

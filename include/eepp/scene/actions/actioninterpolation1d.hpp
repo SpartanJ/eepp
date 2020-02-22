@@ -19,6 +19,8 @@ class EE_API ActionInterpolation1d : public Action {
 
 	Float getCurrentProgress() override;
 
+	Time getTotalTime() override;
+
 	Interpolation1d* getInterpolation();
 
   protected:

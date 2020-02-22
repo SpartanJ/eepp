@@ -39,6 +39,10 @@ Float ActionInterpolation2d::getCurrentProgress() {
 	return mInterpolation.getCurrentProgress();
 }
 
+Time ActionInterpolation2d::getTotalTime() {
+	return mInterpolation.getDuration();
+}
+
 Interpolation2d* ActionInterpolation2d::getInterpolation() {
 	return &mInterpolation;
 }

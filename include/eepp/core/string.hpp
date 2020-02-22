@@ -87,6 +87,9 @@ class EE_API String {
 	/** @return If the value passed is a number */
 	static bool isNumber( const int& value, bool AllowDot = false );
 
+	/** @return If the string represents a number. */
+	static bool isNumber( const std::string& value, bool AllowDot = false );
+
 	/** @return If the value passed is a letter */
 	static bool isLetter( const int& value );
 

@@ -17,7 +17,7 @@ typedef std::function<bool( const UIWidget* node, int a, int b, FunctionString d
 
 struct StructuralSelector {
 	StructuralSelector( StyleSheetNodeSelector selector, int a = 0, int b = 0,
-						FunctionString data = FunctionString::parse("") ) :
+						FunctionString data = FunctionString::parse( "" ) ) :
 		selector( selector ), a( a ), b( b ), data( data ) {}
 	StyleSheetNodeSelector selector;
 	int a;
@@ -33,7 +33,7 @@ class StyleSheetSpecification {
 	~StyleSheetSpecification();
 
 	PropertyDefinition& registerProperty( const std::string& propertyVame,
-										  const std::string& defaultValue, bool inherited );
+										  const std::string& defaultValue, bool inherited = false );
 
 	const PropertyDefinition* getProperty( const Uint32& id ) const;
 

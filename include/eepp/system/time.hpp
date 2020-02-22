@@ -13,6 +13,10 @@ namespace EE { namespace System {
 /** Represents a time value */
 class EE_API Time {
   public:
+	static bool isValid( const std::string& str );
+
+	static Time fromString( const std::string& str );
+
 	/** @brief Default constructor
 	**	Sets the time value to zero. */
 	Time();

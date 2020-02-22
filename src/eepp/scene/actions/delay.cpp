@@ -31,6 +31,10 @@ Float Delay::getCurrentProgress() {
 	return !isDone() ? mClock.getElapsedTime().asMilliseconds() / mTime.asMilliseconds() : 1.f;
 }
 
+Time Delay::getTotalTime() {
+	return mTime;
+}
+
 Action* Delay::clone() const {
 	return New( mTime );
 }

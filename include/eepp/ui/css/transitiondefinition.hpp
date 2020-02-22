@@ -28,9 +28,9 @@ class EE_API TransitionDefinition {
 	const Time& getDuration() const { return duration; }
 
 	std::string property;
-	Ease::Interpolation timingFunction;
-	Time delay;
-	Time duration;
+	Ease::Interpolation timingFunction = Ease::Interpolation::Linear;
+	Time delay = Time::Zero;
+	Time duration = Time::Zero;
 };
 
 typedef std::map<std::string, TransitionDefinition> TransitionsMap;

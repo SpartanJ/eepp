@@ -107,6 +107,9 @@ class EE_API Interpolation1d {
 	 * movement interpolation. */
 	Interpolation1d& setDuration( const Time& TotTime );
 
+	/** @return The total duration of the interpolation. */
+	const Time& getDuration() const;
+
 	/** @return the vector of points */
 	const std::vector<Point1d>& getPoints() const;
 
@@ -135,7 +138,13 @@ class EE_API Interpolation1d {
 
 	void setData( const UintPtr& data );
 
+	/** @return The current progress percentage (between 0 and 1) of the complete interpolation. */
 	Float getCurrentProgress();
+
+	/** @return The current progress porcentage of the current interpolation.
+	 * This is the partial progress, not the global of the whole interpolation.
+	*/
+	Float getPartialCurrentProgress();
 
   protected:
 	UintPtr mData;
@@ -149,6 +158,8 @@ class EE_API Interpolation1d {
 	Float mCurPos;
 	unsigned int mCurPoint;
 	Time mCurTime;
+	Time mElapsed;
+	Time mDuration;
 
 	Float mSpeed;
 

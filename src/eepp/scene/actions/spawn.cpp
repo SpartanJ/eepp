@@ -84,11 +84,21 @@ bool Spawn::isDone() {
 Float Spawn::getCurrentProgress() {
 	Float min = 1.f;
 
-	for ( size_t i = 0; i < mSpawn.size(); i++ ) {
-		min = eemin( min, mSpawn[i]->getCurrentProgress() );
+	for ( auto& spawn : mSpawn ) {
+		min = eemin( min, spawn->getCurrentProgress() );
 	}
 
 	return min;
+}
+
+Time Spawn::getTotalTime() {
+	Int64 max = 0.f;
+
+	for ( auto& spawn : mSpawn ) {
+		max = eemax( max, spawn->getTotalTime().asMicroseconds() );
+	}
+
+	return Microseconds(max);
 }
 
 Action* Spawn::clone() const {

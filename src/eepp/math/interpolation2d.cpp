@@ -14,6 +14,8 @@ Interpolation2d::Interpolation2d() :
 	mTotDist( 0.f ),
 	mCurPoint( 0 ),
 	mCurTime( Time::Zero ),
+	mElapsed( Time::Zero ),
+	mDuration( Time::Zero ),
 	mSpeed( 1.3f ),
 	mOnPathEndCallback(),
 	mOnStepCallback() {}
@@ -28,6 +30,8 @@ Interpolation2d::Interpolation2d( std::vector<Point2d> points ) :
 	mTotDist( 0.f ),
 	mCurPoint( 0 ),
 	mCurTime( Time::Zero ),
+	mElapsed( Time::Zero ),
+	mDuration( Time::Zero ),
 	mSpeed( 1.3f ),
 	mPoints( points ),
 	mOnPathEndCallback(),
@@ -81,6 +85,8 @@ Interpolation2d& Interpolation2d::reset() {
 	mEnable = false;
 	mCurPoint = 0;
 	mCurTime = Time::Zero;
+	mElapsed = Time::Zero;
+	mDuration = Time::Zero;
 	mUpdate = true;
 	mEnded = false;
 	mOnPathEndCallback = OnPathEndCallback();
@@ -106,6 +112,8 @@ Interpolation2d& Interpolation2d::add( const Vector2f& pos, const Time& time ) {
 		mTotDist += mPoints[mPoints.size() - 1].p.distance( mPoints[mPoints.size() - 2].p );
 	}
 
+	mDuration += time;
+
 	return *this;
 }
 
@@ -118,7 +126,9 @@ Interpolation2d& Interpolation2d::edit( const unsigned int& PointNum, const Vect
 			mTotDist -= mPoints[PointNum].p.distance( mPoints[PointNum - 1].p );
 		}
 
+		mDuration -= mPoints[PointNum].t;
 		mPoints[PointNum] = Point2d( pos, time );
+		mDuration += mPoints[PointNum].t;
 
 		if ( 0 == PointNum ) {
 			if ( PointNum + (unsigned int)1 < mPoints.size() )
@@ -138,6 +148,8 @@ Interpolation2d& Interpolation2d::erase( const unsigned int& PointNum ) {
 		} else {
 			mTotDist -= mPoints[PointNum].p.distance( mPoints[PointNum - 1].p );
 		}
+
+		mDuration -= mPoints[PointNum].t;
 
 		mPoints.erase( mPoints.begin() + PointNum );
 	}
@@ -181,6 +193,8 @@ Interpolation2d& Interpolation2d::setSpeed( const Float& Speed ) {
 			CurDist = mPoints[i].p.distance( mPoints[i + 1].p );
 			mPoints[i].t = Milliseconds( CurDist * TotTime / tdist );
 		}
+
+		mDuration = Milliseconds( TotTime );
 	}
 
 	return *this;
@@ -192,6 +206,8 @@ const Vector2f& Interpolation2d::getPosition() {
 
 void Interpolation2d::update( const Time& Elapsed ) {
 	if ( mEnable && mPoints.size() > 1 && mCurPoint != mPoints.size() ) {
+		mElapsed += Elapsed;
+
 		if ( mUpdate ) {
 			mCurTime = Time::Zero;
 			mActP = &mPoints[mCurPoint];
@@ -240,8 +256,10 @@ void Interpolation2d::update( const Time& Elapsed ) {
 
 			mCurPoint++;
 
-			if ( mCurPoint == mPoints.size() && mLoop )
+			if ( mCurPoint == mPoints.size() && mLoop ) {
 				mCurPoint = 0;
+				mElapsed = Time::Zero;
+			}
 		}
 	}
 }
@@ -269,7 +287,13 @@ Interpolation2d& Interpolation2d::setDuration( const Time& TotTime ) {
 		mPoints[i].t = Milliseconds( mPoints[i].p.distance( mPoints[i + 1].p ) *
 									 TotTime.asMilliseconds() / tdist );
 
+	mDuration = TotTime;
+
 	return *this;
+}
+
+const Time& Interpolation2d::getDuration() const {
+	return mDuration;
 }
 
 Interpolation2d& Interpolation2d::setType( Ease::Interpolation InterpolationType ) {
@@ -290,6 +314,10 @@ void Interpolation2d::setData( const UintPtr& data ) {
 }
 
 Float Interpolation2d::getCurrentProgress() {
+	return mElapsed.asMilliseconds() / mDuration.asMilliseconds();
+}
+
+Float Interpolation2d::getPartialCurrentProgress() {
 	return mCurTime >= mActP->t ? 1.f : mCurTime.asMilliseconds() / mActP->t.asMilliseconds();
 }
 

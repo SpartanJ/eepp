@@ -153,6 +153,8 @@ void UIStyle::tryApplyStyle( const StyleSheetStyle& style ) {
 
 				if ( String::startsWith( property.getName(), "transition" ) )
 					mTransitionAttributes.push_back( property );
+				else if ( String::startsWith( property.getName(), "animation" ) )
+					mAnimationAttributes.push_back( property );
 			}
 		}
 	}
@@ -202,7 +204,7 @@ void UIStyle::applyVarValues( StyleSheetStyle& style ) {
 			if ( NULL != property.getPropertyDefinition() &&
 				 property.getPropertyDefinition()->isIndexed() ) {
 				for ( size_t i = 0; i < property.getPropertyIndexCount(); i++ ) {
-					StyleSheetProperty& realProperty = property.getPropertyIndex( i );
+					StyleSheetProperty& realProperty = property.getPropertyIndexRef( i );
 					setVariableFromValue( realProperty, realProperty.getValue() );
 				}
 			} else {
@@ -225,6 +227,7 @@ void UIStyle::onStateChange() {
 
 		mProperties.clear();
 		mTransitionAttributes.clear();
+		mAnimationAttributes.clear();
 
 		tryApplyStyle( mElementStyle );
 
@@ -237,6 +240,10 @@ void UIStyle::onStateChange() {
 		}
 
 		if ( !mapEquals( mProperties, prevProperties ) ) {
+			if ( !mAnimationAttributes.empty() ) {
+				mAnimations = AnimationDefinition::parseAnimationProperties( mAnimationAttributes );
+			}
+
 			if ( !mTransitionAttributes.empty() ) {
 				mTransitions =
 					TransitionDefinition::parseTransitionProperties( mTransitionAttributes );
@@ -420,8 +427,7 @@ void UIStyle::applyStyleSheetProperty( const StyleSheetProperty& property,
 				if ( prevTransition->getEndValue() == property.getValue() ) {
 					return;
 				} else if ( prevTransition->getStartValue() == property.getValue() ) {
-					Float currentProgress = prevTransition->getElapsed().asMilliseconds() /
-											prevTransition->getDuration().asMilliseconds();
+					Float currentProgress = prevTransition->getCurrentProgress();
 					currentProgress = eemin( 1.f, currentProgress );
 					if ( 0.f != currentProgress ) {
 						elapsed = Milliseconds( ( 1.f - currentProgress ) *

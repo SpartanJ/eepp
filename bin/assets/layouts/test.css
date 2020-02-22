@@ -191,6 +191,7 @@ CheckBox:checked {
 #test_2 > #rtest {
 	padding: 8dp;
 	background: #221122;
+	animation: 5s fadeIn;
 }
 
 #test_2 > #rtest #rttv {

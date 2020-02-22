@@ -33,6 +33,8 @@ class EE_API Sequence : public Action {
 
 	Float getCurrentProgress() override;
 
+	Time getTotalTime() override;
+
 	Action* clone() const override;
 
 	Action* reverse() const override;
@@ -41,6 +43,7 @@ class EE_API Sequence : public Action {
 
   protected:
 	std::vector<Action*> mSequence;
+	Time mDuration;
 	Uint32 mCurPos;
 
 	Sequence( const std::vector<Action*> sequence );

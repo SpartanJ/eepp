@@ -128,7 +128,9 @@ class EE_API StyleSheetProperty {
 
 	size_t getPropertyIndexCount() const;
 
-	StyleSheetProperty& getPropertyIndex( const Uint32& index );
+	const StyleSheetProperty& getPropertyIndex( const Uint32& index ) const;
+
+	StyleSheetProperty& getPropertyIndexRef( const Uint32& index );
 
 	const Uint32& getIndex() const;
 
@@ -145,9 +147,9 @@ class EE_API StyleSheetProperty {
 	const ShorthandDefinition* mShorthandDefinition;
 	std::vector<StyleSheetProperty> mIndexedProperty;
 
-	explicit StyleSheetProperty( const bool& isVolatile,
-								 const PropertyDefinition* definition, const std::string& value,
-								 const Uint32& specificity = 0, const Uint32& index = 0 );
+	explicit StyleSheetProperty( const bool& isVolatile, const PropertyDefinition* definition,
+								 const std::string& value, const Uint32& specificity = 0,
+								 const Uint32& index = 0 );
 
 	void cleanValue();
 	void checkImportant();

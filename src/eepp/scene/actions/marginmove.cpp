@@ -161,4 +161,8 @@ Float MarginMove::getCurrentProgress() {
 	return mInterpolationLeft.getCurrentProgress();
 }
 
+Time MarginMove::getTotalTime() {
+	return mInterpolationLeft.getDuration();
+}
+
 }}} // namespace EE::Scene::Actions

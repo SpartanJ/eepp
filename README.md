@@ -12,11 +12,13 @@ framework heavily focused on the development of rich graphical user interfaces.
 
 ### Cross platform functionality
 
-* Official support for Linux, Windows, Mac OS X, iOS and Android.
+* Official support for Linux, Windows, macOS and Android.
 
 * Exports to HTML5 using emscripten with some limitations.
 
-* It should work on FreeBSD and Haiku.
+* iOS current support is limited but should work without issues.
+
+* Also works on BSD and Haiku.
 
 ### UI Module
 
@@ -538,11 +540,11 @@ Probably deprecate the Maps module, since i will focus my efforts on the UI syst
 
 * Sean Barrett for stb_image and all the [stb](https://github.com/nothings/stb) libraries.
 
-* Sam  Latinga  for [Simple DirectMedia Layer](https://www.libsdl.org/).
+* Sam Latinga for [Simple DirectMedia Layer](https://www.libsdl.org/).
 
-* Jonathan  Dummer  for  the  [Simple  OpenGL  Image  Library](https://www.lonesock.net/soil.html).
+* Jonathan Dummer for the [Simple OpenGL Image Library](https://www.lonesock.net/soil.html).
 
-* Laurent  Gomila  for [SFML](https://www.sfml-dev.org/)
+* Laurent Gomila for [SFML](https://www.sfml-dev.org/)
 
 * Yuri Kobets for [litehtml](https://github.com/litehtml/litehtml)
 
@@ -550,13 +552,17 @@ Probably deprecate the Maps module, since i will focus my efforts on the UI syst
 
 * Ryan C. Gordon for [mojoAL](https://icculus.org/mojoAL/)
 
-* Lewis  Van  Winkle  for [PlusCallback](https://github.com/codeplea/pluscallback)
+* David Reid for [dr_libs](https://github.com/mackron/dr_libs)
 
-* Dieter  Baron  and  Thomas  Klausner  for [libbzip](https://libzip.org/)
+* Lion (Lieff) for [minimp3](https://github.com/lieff/minimp3) and more.
 
-* Jean-loup  Gailly  and  Mark  Adler  for [zlib](https://zlib.net/)
+* Lewis Van Winkle for [PlusCallback](https://github.com/codeplea/pluscallback)
 
-* Milan  Ikits  and  Marcelo  Magallon  for [GLEW](http://glew.sourceforge.net/)
+* Dieter Baron and Thomas Klausner for [libbzip](https://libzip.org/)
+
+* Jean-loup Gailly and Mark Adler for [zlib](https://zlib.net/)
+
+* Milan Ikits and Marcelo Magallon for [GLEW](http://glew.sourceforge.net/)
 
 * Mikko Mononen for [nanosvg](https://github.com/memononen/nanosvg)
 

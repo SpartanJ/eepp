@@ -99,6 +99,9 @@ class EE_API Interpolation2d {
 	 * movement interpolation. */
 	Interpolation2d& setDuration( const Time& TotTime );
 
+	/** @return The total duration of the interpolation. */
+	const Time& getDuration() const;
+
 	/** @return The Current Node */
 	Point2d* getCurrentActual() const;
 
@@ -137,7 +140,13 @@ class EE_API Interpolation2d {
 
 	void setData( const UintPtr& data );
 
+	/** @return The current progress percentage (between 0 and 1) of the complete interpolation. */
 	Float getCurrentProgress();
+
+	/** @return The current progress percentage (between 0 and 1) of the current interpolation.
+	 * This is the partial progress, not the global of the whole interpolation.
+	 */
+	Float getPartialCurrentProgress();
 
   protected:
 	UintPtr mData;
@@ -151,6 +160,8 @@ class EE_API Interpolation2d {
 	Vector2f mCurPos;
 	Uint32 mCurPoint;
 	Time mCurTime;
+	Time mElapsed;
+	Time mDuration;
 	Float mSpeed;
 
 	Point2d* mActP;

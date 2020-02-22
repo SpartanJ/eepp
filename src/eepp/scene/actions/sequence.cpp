@@ -49,6 +49,11 @@ void Sequence::start() {
 		mSequence[i]->setTarget( getTarget() );
 	}
 
+	mDuration = Time::Zero;
+	for ( auto& seq : mSequence ) {
+		mDuration += seq->getTotalTime();
+	}
+
 	mSequence[mCurPos]->start();
 
 	sendEvent( ActionType::OnStart );
@@ -77,7 +82,23 @@ bool Sequence::isDone() {
 }
 
 Float Sequence::getCurrentProgress() {
-	return mCurPos / static_cast<Float>( mSequence.size() );
+	Float progress = 0.f;
+	for ( Uint32 i = 0; i <= mCurPos; i++ ) {
+		if ( i < mSequence.size() ) {
+			Float partialProgress =
+				mSequence[i]->getTotalTime().asMilliseconds() / getTotalTime().asMilliseconds();
+			if ( i != mCurPos ) {
+				progress += partialProgress;
+			} else {
+				progress += partialProgress * mSequence[i]->getCurrentProgress();
+			}
+		}
+	}
+	return progress;
+}
+
+Time Sequence::getTotalTime() {
+	return mDuration;
 }
 
 Action* Sequence::clone() const {

@@ -190,6 +190,14 @@ enum class PropertyId : Uint32 {
 	TransitionDuration = String::hash( "transition-duration" ),
 	TransitionProperty = String::hash( "transition-property" ),
 	TransitionTimingFunction = String::hash( "transition-timing-function" ),
+	Animation = String::hash( "animation" ),
+	AnimationName = String::hash( "animation-name" ),
+	AnimationDelay = String::hash( "animation-delay" ),
+	AnimationDuration = String::hash( "animation-duration" ),
+	AnimationFillMode = String::hash( "animation-fill-mode" ),
+	AnimationIterationCount = String::hash( "animation-iteration-count" ),
+	AnimationPlayState = String::hash( "animation-play-state" ),
+	AnimationTimingFunction = String::hash( "animation-timing-function" )
 };
 
 enum class PropertyType : Uint32 {
@@ -202,7 +210,8 @@ enum class PropertyType : Uint32 {
 	Color,
 	Vector2,
 	BackgroundSize,
-	ForegroundSize
+	ForegroundSize,
+	Time
 };
 
 enum class PropertyRelativeTarget : Uint32 {

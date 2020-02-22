@@ -5,6 +5,46 @@ namespace EE { namespace System {
 
 const Time Time::Zero;
 
+bool Time::isValid( const std::string& str ) {
+	if ( String::endsWith( str, "s" ) || String::endsWith( str, "ms" ) ) {
+		size_t to = str.find_last_of( "sm" );
+		for ( size_t pos = 0; pos < to; pos++ ) {
+			if ( !String::isNumber( str[pos], true ) ) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	return false;
+}
+
+Time Time::fromString( const std::string& str ) {
+	bool isMilliseconds = String::endsWith( str, "ms" );
+	if ( isMilliseconds || String::endsWith( str, "s" ) || String::isNumber( str, true ) ) {
+		size_t to = str.find_last_of( "sm" );
+		if ( to == std::string::npos )
+			to = str.size();
+		std::string number;
+		for ( size_t pos = 0; pos < to; pos++ ) {
+			if ( String::isNumber( str[pos], true ) ) {
+				number += str[pos];
+			} else {
+				return Time::Zero;
+			}
+		}
+		double val;
+		if ( String::fromString( val, number ) ) {
+			if ( !isMilliseconds ) {
+				return Seconds( val );
+			} else {
+				return Milliseconds( val );
+			}
+		}
+	}
+	return Time::Zero;
+}
+
 Time::Time() : mMicroseconds( 0 ) {}
 
 double Time::asSeconds() const {

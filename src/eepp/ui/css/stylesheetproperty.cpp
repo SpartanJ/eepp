@@ -449,11 +449,7 @@ Uint32 StyleSheetProperty::asFontStyle() const {
 
 Time StyleSheetProperty::asTime( const Time& defaultTime ) {
 	if ( !mValue.empty() ) {
-		if ( mValue[mValue.size() - 1] == 'm' ) {
-			return Milliseconds( asFloat() );
-		} else {
-			return Seconds( asFloat() );
-		}
+		return Time::fromString( mValue );
 	}
 
 	return defaultTime;
@@ -480,7 +476,12 @@ size_t StyleSheetProperty::getPropertyIndexCount() const {
 	return mIndexedProperty.size();
 }
 
-StyleSheetProperty& StyleSheetProperty::getPropertyIndex( const Uint32& index ) {
+const StyleSheetProperty& StyleSheetProperty::getPropertyIndex( const Uint32& index ) const {
+	eeASSERT( index < mIndexedProperty.size() );
+	return mIndexedProperty[index];
+}
+
+StyleSheetProperty& StyleSheetProperty::getPropertyIndexRef( const Uint32& index ) {
 	eeASSERT( index < mIndexedProperty.size() );
 	return mIndexedProperty[index];
 }

@@ -3,6 +3,7 @@
 
 #include <eepp/graphics/fontstyleconfig.hpp>
 #include <eepp/math/ease.hpp>
+#include <eepp/ui/css/animationdefinition.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
 #include <eepp/ui/css/stylesheetstyle.hpp>
 #include <eepp/ui/css/transitiondefinition.hpp>
@@ -54,7 +55,9 @@ class EE_API UIStyle : public UIState {
 	CSS::StyleSheetProperties mProperties;
 	CSS::StyleSheetVariables mVariables;
 	std::vector<CSS::StyleSheetProperty> mTransitionAttributes;
+	std::vector<CSS::StyleSheetProperty> mAnimationAttributes;
 	CSS::TransitionsMap mTransitions;
+	CSS::AnimationsMap mAnimations;
 	std::set<UIWidget*> mRelatedWidgets;
 	std::set<UIWidget*> mSubscribedWidgets;
 	bool mChangingState;

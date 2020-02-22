@@ -120,6 +120,10 @@ Float Tint::getCurrentProgress() {
 	return mInterpolationR.getCurrentProgress();
 }
 
+Time Tint::getTotalTime() {
+	return mInterpolationR.getDuration();
+}
+
 void Tint::onUpdate( const Time& ) {
 	if ( NULL != mNode && mNode->isWidget() ) {
 		UIWidget* widget = static_cast<UIWidget*>( mNode );

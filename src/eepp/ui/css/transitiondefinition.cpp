@@ -1,6 +1,6 @@
 #include <eepp/core/string.hpp>
-#include <eepp/ui/css/transitiondefinition.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/css/transitiondefinition.hpp>
 
 namespace EE { namespace UI { namespace CSS {
 
@@ -13,9 +13,10 @@ std::map<std::string, TransitionDefinition> TransitionDefinition::parseTransitio
 	TransitionsMap transitions;
 
 	for ( auto& prop : styleSheetProperties ) {
-		if ( prop.getPropertyDefinition() == NULL ) continue;
+		if ( prop.getPropertyDefinition() == NULL )
+			continue;
 
-		const PropertyDefinition * propDef = prop.getPropertyDefinition();
+		const PropertyDefinition* propDef = prop.getPropertyDefinition();
 
 		if ( propDef->getPropertyId() == PropertyId::Transition ) {
 			auto strTransitions = String::split( prop.getValue(), ',' );
@@ -101,23 +102,14 @@ std::map<std::string, TransitionDefinition> TransitionDefinition::parseTransitio
 
 		transitionDef.property = property;
 
-		if ( durations.size() < i ) {
-			transitionDef.duration = durations[i];
-		} else if ( !durations.empty() ) {
-			transitionDef.duration = durations[0];
-		}
+		if ( !durations.empty() )
+			transitionDef.duration = durations[i % durations.size()];
 
-		if ( delays.size() < i ) {
-			transitionDef.delay = delays[i];
-		} else if ( !delays.empty() ) {
-			transitionDef.delay = delays[0];
-		}
+		if ( !delays.empty() )
+			transitionDef.delay = delays[i % delays.size()];
 
-		if ( timingFunctions.size() < i ) {
-			transitionDef.timingFunction = timingFunctions[i];
-		} else if ( !delays.empty() ) {
-			transitionDef.timingFunction = timingFunctions[0];
-		}
+		if ( timingFunctions.empty() )
+			transitionDef.timingFunction = timingFunctions[i % delays.size()];
 
 		transitions[property] = transitionDef;
 	}

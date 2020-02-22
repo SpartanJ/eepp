@@ -21,6 +21,8 @@ class EE_API Delay : public Action {
 
 	Float getCurrentProgress() override;
 
+	Time getTotalTime() override;
+
 	Action* clone() const override;
 
 	Action* reverse() const override;

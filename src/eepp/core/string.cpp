@@ -43,6 +43,15 @@ bool String::isNumber( const int& value, bool AllowDot ) {
 	return value >= 48 && value <= 57;
 }
 
+bool String::isNumber( const std::string& value, bool AllowDot ) {
+	for ( auto& val : value ) {
+		if ( !isNumber( val, AllowDot ) ) {
+			return false;
+		}
+	}
+	return true;
+}
+
 bool String::isLetter( const int& value ) {
 	return ( ( ( value >= 65 && value <= 90 ) || ( value >= 97 && value <= 122 ) ||
 			   ( value >= 192 && value <= 255 ) ) &&

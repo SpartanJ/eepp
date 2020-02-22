@@ -32,6 +32,8 @@ class EE_API Tint : public Action {
 
 	Float getCurrentProgress() override;
 
+	Time getTotalTime() override;
+
 	Interpolation1d getInterpolationR() const;
 
 	void setInterpolationR( const Interpolation1d& interpolationR );
