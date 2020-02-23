@@ -21,11 +21,10 @@ class EE_API StyleSheetPropertyTransition : public Action {
 
 	static bool transitionSupported( const PropertyType& type );
 
-	static StyleSheetPropertyTransition* New( const PropertyDefinition* property,
-											  const std::string& startValue,
-											  const std::string& endValue,
-											  const Uint32& propertyIndex, const Time& duration,
-											  const Ease::Interpolation& type = Ease::Linear );
+	static StyleSheetPropertyTransition*
+	New( const PropertyDefinition* property, const std::string& startValue,
+		 const std::string& endValue, const Uint32& propertyIndex, const Time& duration,
+		 const Time& delay = Time::Zero, const Ease::Interpolation& type = Ease::Linear );
 
 	void start() override;
 
@@ -62,8 +61,8 @@ class EE_API StyleSheetPropertyTransition : public Action {
   protected:
 	StyleSheetPropertyTransition( const PropertyDefinition* property, const std::string& startValue,
 								  const std::string& endValue, const Uint32& propertyIndex,
-								  const Time& duration,
-								  const Ease::Interpolation& type = Ease::Linear );
+								  const Time& duration, const Time& delay,
+								  const Ease::Interpolation& type );
 
 	void onStart() override;
 
@@ -74,6 +73,8 @@ class EE_API StyleSheetPropertyTransition : public Action {
 	std::string mStartValue;
 	std::string mEndValue;
 	Time mDuration;
+	Time mDelay;
+	Time mRealElapsed;
 	Time mElapsed;
 	Ease::Interpolation mType;
 };

@@ -420,7 +420,6 @@ void UIStyle::applyStyleSheetProperty( const StyleSheetProperty& property,
 				}
 			}
 
-			Time duration( transitionInfo.getDuration() );
 			Time elapsed( Time::Zero );
 
 			if ( NULL != prevTransition ) {
@@ -432,6 +431,8 @@ void UIStyle::applyStyleSheetProperty( const StyleSheetProperty& property,
 					if ( 0.f != currentProgress ) {
 						elapsed = Milliseconds( ( 1.f - currentProgress ) *
 												transitionInfo.getDuration().asMilliseconds() );
+					} else {
+						elapsed = transitionInfo.getDuration();
 					}
 				} else if ( startValue == prevTransition->getEndValue() ) {
 					startValue = currentValue;
@@ -443,16 +444,11 @@ void UIStyle::applyStyleSheetProperty( const StyleSheetProperty& property,
 				}
 			}
 
-			Action* newTransition = StyleSheetPropertyTransition::New(
-				propertyDefinition, startValue, property.getValue(), property.getIndex(), duration,
+			StyleSheetPropertyTransition* newTransition = StyleSheetPropertyTransition::New(
+				propertyDefinition, startValue, property.getValue(), property.getIndex(),
+				transitionInfo.getDuration(), transitionInfo.getDelay(),
 				transitionInfo.getTimingFunction() );
-
-			static_cast<StyleSheetPropertyTransition*>( newTransition )->setElapsed( elapsed );
-
-			if ( transitionInfo.getDelay().asMicroseconds() > 0 ) {
-				newTransition = Actions::Sequence::New(
-					Actions::Delay::New( transitionInfo.getDelay() ), newTransition );
-			}
+			newTransition->setElapsed( elapsed );
 			newTransition->setTag( propertyDefinition->getId() );
 			mWidget->runAction( newTransition );
 		} else {

@@ -22,33 +22,39 @@ bool StyleSheetPropertyTransition::transitionSupported( const PropertyType& type
 	}
 }
 
-StyleSheetPropertyTransition* StyleSheetPropertyTransition::New(
-	const PropertyDefinition* property, const std::string& startValue, const std::string& endValue,
-	const Uint32& propertyIndex, const Time& duration, const Ease::Interpolation& type ) {
+StyleSheetPropertyTransition*
+StyleSheetPropertyTransition::New( const PropertyDefinition* property,
+								   const std::string& startValue, const std::string& endValue,
+								   const Uint32& propertyIndex, const Time& duration,
+								   const Time& delay, const Ease::Interpolation& type ) {
 	return eeNew( StyleSheetPropertyTransition,
-				  ( property, startValue, endValue, propertyIndex, duration, type ) );
+				  ( property, startValue, endValue, propertyIndex, duration, delay, type ) );
 }
 
-StyleSheetPropertyTransition::StyleSheetPropertyTransition(
-	const PropertyDefinition* property, const std::string& startValue, const std::string& endValue,
-	const Uint32& propertyIndex, const Time& duration, const Ease::Interpolation& type ) :
+StyleSheetPropertyTransition::StyleSheetPropertyTransition( const PropertyDefinition* property,
+															const std::string& startValue,
+															const std::string& endValue,
+															const Uint32& propertyIndex,
+															const Time& duration, const Time& delay,
+															const Ease::Interpolation& type ) :
 	mProperty( property ),
 	mPropertyIndex( propertyIndex ),
 	mStartValue( startValue ),
 	mEndValue( endValue ),
 	mDuration( duration ),
+	mDelay( delay ),
 	mType( type ) {
 	mId = ID;
 }
 
 Action* StyleSheetPropertyTransition::clone() const {
 	return StyleSheetPropertyTransition::New( mProperty, mStartValue, mEndValue, mPropertyIndex,
-											  mDuration, mType );
+											  mDuration, mDelay, mType );
 }
 
 Action* StyleSheetPropertyTransition::reverse() const {
 	return StyleSheetPropertyTransition::New( mProperty, mEndValue, mStartValue, mPropertyIndex,
-											  mDuration, mType );
+											  mDuration, mDelay, mType );
 }
 
 void StyleSheetPropertyTransition::start() {
@@ -64,9 +70,13 @@ void StyleSheetPropertyTransition::stop() {
 }
 
 void StyleSheetPropertyTransition::update( const Time& time ) {
-	mElapsed += time;
+	mRealElapsed += time;
 
-	onUpdate( time );
+	if ( mRealElapsed >= mDelay ) {
+		mElapsed += time;
+
+		onUpdate( time );
+	}
 }
 
 bool StyleSheetPropertyTransition::isDone() {
@@ -82,20 +92,20 @@ Time StyleSheetPropertyTransition::getTotalTime() {
 }
 
 void StyleSheetPropertyTransition::onStart() {
-	onUpdate( Time::Zero );
+	if ( mRealElapsed >= mDelay ) {
+		onUpdate( Time::Zero );
+	}
 }
 
 void StyleSheetPropertyTransition::onUpdate( const Time& ) {
 	if ( NULL != mNode && mNode->isWidget() ) {
 		UIWidget* node = mNode->asType<UIWidget>();
-
+		Time time = mElapsed.asMicroseconds() > mDuration.asMicroseconds() ? mDuration : mElapsed;
 		switch ( mProperty->getType() ) {
 			case PropertyType::NumberFloat:
 			case PropertyType::NumberInt: {
 				Float start = node->convertLength( mStartValue, 0 );
 				Float end = node->convertLength( mEndValue, 0 );
-				Time time =
-					mElapsed.asMicroseconds() > mDuration.asMicroseconds() ? mDuration : mElapsed;
 				Float value = easingCb[mType]( time.asMilliseconds(), start, end - start,
 											   mDuration.asMilliseconds() );
 				if ( mProperty->getType() == PropertyType::NumberFloat ) {
@@ -111,8 +121,6 @@ void StyleSheetPropertyTransition::onUpdate( const Time& ) {
 			case PropertyType::Color: {
 				Color startColor( mStartValue );
 				Color endColor( mEndValue );
-				Time time =
-					mElapsed.asMicroseconds() > mDuration.asMicroseconds() ? mDuration : mElapsed;
 				Float progress =
 					easingCb[mType]( time.asMilliseconds(), 0, 1, mDuration.asMilliseconds() );
 				Color resColor( startColor );
@@ -137,8 +145,6 @@ void StyleSheetPropertyTransition::onUpdate( const Time& ) {
 					mProperty->getRelativeTarget(), 0.f, mPropertyIndex );
 				Float start = node->convertLength( mStartValue, containerLength );
 				Float end = node->convertLength( mEndValue, containerLength );
-				Time time =
-					mElapsed.asMicroseconds() > mDuration.asMicroseconds() ? mDuration : mElapsed;
 				Float value = easingCb[mType]( time.asMilliseconds(), start, end - start,
 											   mDuration.asMilliseconds() );
 				node->applyProperty( StyleSheetProperty(
@@ -153,8 +159,6 @@ void StyleSheetPropertyTransition::onUpdate( const Time& ) {
 			case PropertyType::Vector2: {
 				Vector2f start( StyleSheetProperty( mProperty, mStartValue ).asVector2f() );
 				Vector2f end( StyleSheetProperty( mProperty, mEndValue ).asVector2f() );
-				Time time =
-					mElapsed.asMicroseconds() > mDuration.asMicroseconds() ? mDuration : mElapsed;
 				Float x = easingCb[mType]( time.asMilliseconds(), start.x, end.x - start.x,
 										   mDuration.asMilliseconds() );
 				Float y = easingCb[mType]( time.asMilliseconds(), start.y, end.y - start.y,
@@ -175,8 +179,6 @@ void StyleSheetPropertyTransition::onUpdate( const Time& ) {
 				Sizef end( node->getBackground()
 							   ->getLayer( mPropertyIndex )
 							   ->calcDrawableSize( mEndValue ) );
-				Time time =
-					mElapsed.asMicroseconds() > mDuration.asMicroseconds() ? mDuration : mElapsed;
 				Float x = easingCb[mType]( time.asMilliseconds(), start.x, end.x - start.x,
 										   mDuration.asMilliseconds() );
 				Float y = easingCb[mType]( time.asMilliseconds(), start.y, end.y - start.y,
@@ -197,8 +199,6 @@ void StyleSheetPropertyTransition::onUpdate( const Time& ) {
 				Sizef end( node->getForeground()
 							   ->getLayer( mPropertyIndex )
 							   ->calcDrawableSize( mEndValue ) );
-				Time time =
-					mElapsed.asMicroseconds() > mDuration.asMicroseconds() ? mDuration : mElapsed;
 				Float x = easingCb[mType]( time.asMilliseconds(), start.x, end.x - start.x,
 										   mDuration.asMilliseconds() );
 				Float y = easingCb[mType]( time.asMilliseconds(), start.y, end.y - start.y,
