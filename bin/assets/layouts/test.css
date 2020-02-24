@@ -6,15 +6,6 @@
 
 @import url("assets/layouts/imported.css") screen and (min-width: 800px);
 
-@keyframes fadeIn {
-	from {
-		opacity: 0;
-	}
-	to {
-		opacity: 1;
-	}
-}
-
 :root {
 	--font-color: #E6E6E6FF;
 }
@@ -188,10 +179,19 @@ CheckBox:checked {
 	skin-color: #66ff44;
 }
 
+@keyframes rtest {
+	from {
+		background-color: #221122;
+	}
+	to {
+		background-color: #332233;
+	}
+}
+
 #test_2 > #rtest {
 	padding: 8dp;
 	background: #221122;
-	animation: 5s fadeIn;
+	animation: 1s infinite alternate rtest;
 }
 
 #test_2 > #rtest #rttv {
@@ -439,6 +439,21 @@ TabWidget {
 	background: #444;
 	scale: 1.1;
 	cursor: hand;
+}
+
+@keyframes pulse {
+	from {
+		scale: 1;
+		foreground-color: transparent;
+	}
+	to {
+		scale: 1.2;
+		foreground-color: rgba(255, 255, 255, 0.2);
+	}
+}
+
+#lvbox:hover .tres2 {
+	animation: 0.5s infinite alternate pulse;
 }
 
 @media screen and (max-width: 1024px) {

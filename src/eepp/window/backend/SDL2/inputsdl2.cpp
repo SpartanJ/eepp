@@ -35,7 +35,6 @@ void InputSDL::update() {
 						EEEvent.Type = InputEvent::VideoResize;
 						EEEvent.resize.w = SDLEvent.window.data1 * mDPIScale;
 						EEEvent.resize.h = SDLEvent.window.data2 * mDPIScale;
-						EEEvent.window.type = InputEvent::WindowResized;
 						break;
 					}
 					case SDL_WINDOWEVENT_HIT_TEST: {
@@ -47,7 +46,6 @@ void InputSDL::update() {
 					case SDL_WINDOWEVENT_TAKE_FOCUS: {
 						EEEvent.Type = InputEvent::VideoExpose;
 						EEEvent.expose.type = EEEvent.Type;
-						EEEvent.window.type = InputEvent::WindowTakeFocus;
 						break;
 					}
 					case SDL_WINDOWEVENT_CLOSE: {
@@ -71,7 +69,6 @@ void InputSDL::update() {
 					case SDL_WINDOWEVENT_EXPOSED: {
 						EEEvent.Type = InputEvent::VideoExpose;
 						EEEvent.expose.type = EEEvent.Type;
-						EEEvent.window.type = InputEvent::WindowExposed;
 						break;
 					}
 					case SDL_WINDOWEVENT_MOVED: {

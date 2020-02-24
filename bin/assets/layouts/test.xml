@@ -10,11 +10,11 @@
 				<TextInput id="tinput" layout_width="300dp" layout_height="wrap_content" text="testing padding" />
 				<Image id="tres" layout_width="32dp" layout_height="32dp" src="file://assets/tiles/1.png" scale-type="fit_inside" />
 				<hbox layout_width="match_parent" layout_height="wrap_content">
-					<Image id="tres2" layout_width="32dp" layout_height="32dp" src="https://raw.githubusercontent.com/SpartanJ/eepp/develop/bin/assets/icon/ee.png" scale-type="fit_inside" />
-					<Image id="tres2" layout_width="32dp" layout_height="32dp" src="https://raw.githubusercontent.com/SpartanJ/eepp/develop/bin/assets/sprites/2.png" scale-type="fit_inside" />
-					<Image id="tres2" layout_width="32dp" layout_height="32dp" src="https://raw.githubusercontent.com/SpartanJ/eepp/develop/bin/assets/sprites/3.png" scale-type="fit_inside" />
-					<Image id="tres2" layout_width="32dp" layout_height="32dp" src="https://raw.githubusercontent.com/SpartanJ/eepp/develop/bin/assets/sprites/4.png" scale-type="fit_inside" />
-					<Image id="tres2" layout_width="32dp" layout_height="32dp" src="file://assets/icon/ee.png" scale-type="fit_inside" />
+					<Image class="tres2" layout_width="32dp" layout_height="32dp" src="https://raw.githubusercontent.com/SpartanJ/eepp/develop/bin/assets/icon/ee.png" scale-type="fit_inside" />
+					<Image class="tres2" layout_width="32dp" layout_height="32dp" src="https://raw.githubusercontent.com/SpartanJ/eepp/develop/bin/assets/sprites/2.png" scale-type="fit_inside" />
+					<Image class="tres2" layout_width="32dp" layout_height="32dp" src="https://raw.githubusercontent.com/SpartanJ/eepp/develop/bin/assets/sprites/3.png" scale-type="fit_inside" />
+					<Image class="tres2" layout_width="32dp" layout_height="32dp" src="https://raw.githubusercontent.com/SpartanJ/eepp/develop/bin/assets/sprites/4.png" scale-type="fit_inside" />
+					<Image class="tres2" layout_width="32dp" layout_height="32dp" src="file://assets/icon/ee.png" scale-type="fit_inside" />
 				</hbox>
 				<DropDownList class="list" layout_width="300dp" layout_height="wrap_content" text="testing padding">
 					<item>Test</item>

@@ -1331,8 +1331,16 @@ void Node::removeAction( Action* action ) {
 	getActionManager()->removeAction( action );
 }
 
+void Node::removeActions( const std::vector<Action*>& actions ) {
+	getActionManager()->removeActions( actions );
+}
+
 void Node::removeActionsByTag( const Uint32& tag ) {
 	getActionManager()->removeActionsByTagFromTarget( this, tag );
+}
+
+std::vector<Action*> Node::getActions() {
+	return getActionManager()->getActionsFromTarget( this );
 }
 
 std::vector<Action*> Node::getActionsByTag( const Uint32& tag ) {

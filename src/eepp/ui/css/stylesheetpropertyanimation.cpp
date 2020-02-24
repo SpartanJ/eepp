@@ -1,0 +1,381 @@
+#include <algorithm>
+#include <eepp/math/easing.hpp>
+#include <eepp/ui/css/stylesheetpropertyanimation.hpp>
+#include <eepp/ui/css/stylesheetspecification.hpp>
+#include <eepp/ui/uinodedrawable.hpp>
+#include <eepp/ui/uiwidget.hpp>
+
+using namespace EE::Math::easing;
+
+namespace EE { namespace UI { namespace CSS {
+
+void StyleSheetPropertyAnimation::tweenProperty( UIWidget* widget, const Float& normalizedProgress,
+												 const PropertyDefinition* property,
+												 const std::string& startValue,
+												 const std::string& endValue,
+												 const Ease::Interpolation& timingFunction,
+												 const Uint32& propertyIndex, const bool& isDone ) {
+	switch ( property->getType() ) {
+		case PropertyType::NumberFloat:
+		case PropertyType::NumberInt: {
+			Float start = widget->convertLength( startValue, 0 );
+			Float end = widget->convertLength( endValue, 0 );
+			Float value = easingCb[timingFunction]( normalizedProgress, start, end - start, 1.f );
+			if ( property->getType() == PropertyType::NumberFloat ) {
+				widget->applyProperty(
+					StyleSheetProperty( property, String::fromFloat( value ), propertyIndex ) );
+			} else {
+				widget->applyProperty( StyleSheetProperty(
+					property, String::format( "%d", static_cast<int>( value ) ), propertyIndex ) );
+			}
+			break;
+		}
+		case PropertyType::Color: {
+			Color startColor( startValue );
+			Color endColor( endValue );
+			Float progress = easingCb[timingFunction]( normalizedProgress, 0, 1, 1.f );
+			Color resColor( startColor );
+			resColor.r = static_cast<Uint8>( eemin(
+				static_cast<Int32>( startColor.r + ( endColor.r - startColor.r ) * progress ),
+				255 ) );
+			resColor.g = static_cast<Uint8>( eemin(
+				static_cast<Int32>( startColor.g + ( endColor.g - startColor.g ) * progress ),
+				255 ) );
+			resColor.b = static_cast<Uint8>( eemin(
+				static_cast<Int32>( startColor.b + ( endColor.b - startColor.b ) * progress ),
+				255 ) );
+			resColor.a = static_cast<Uint8>( eemin(
+				static_cast<Int32>( startColor.a + ( endColor.a - startColor.a ) * progress ),
+				255 ) );
+			widget->applyProperty(
+				StyleSheetProperty( property, resColor.toHexString(), propertyIndex ) );
+			break;
+		}
+		case PropertyType::NumberLength: {
+			Float containerLength = widget->getPropertyRelativeTargetContainerLength(
+				property->getRelativeTarget(), 0.f, propertyIndex );
+			Float start = widget->convertLength( startValue, containerLength );
+			Float end = widget->convertLength( endValue, containerLength );
+			Float value = easingCb[timingFunction]( normalizedProgress, start, end - start, 1.f );
+			widget->applyProperty(
+				StyleSheetProperty( property, String::fromFloat( value, "px" ), propertyIndex ) );
+
+			if ( isDone ) {
+				widget->applyProperty( StyleSheetProperty( property, endValue, propertyIndex ) );
+			}
+			break;
+		}
+		case PropertyType::Vector2: {
+			Vector2f start( StyleSheetProperty( property, startValue ).asVector2f() );
+			Vector2f end( StyleSheetProperty( property, endValue ).asVector2f() );
+			Float x = easingCb[timingFunction]( normalizedProgress, start.x, end.x - start.x, 1.f );
+			Float y = easingCb[timingFunction]( normalizedProgress, start.y, end.y - start.y, 1.f );
+			widget->applyProperty( StyleSheetProperty(
+				property, String::fromFloat( x ) + " " + String::fromFloat( y ), propertyIndex ) );
+			if ( isDone ) {
+				widget->applyProperty( StyleSheetProperty( property, endValue, propertyIndex ) );
+			}
+			break;
+		}
+		case PropertyType::BackgroundSize: {
+			Sizef start( widget->getBackground()
+							 ->getLayer( propertyIndex )
+							 ->calcDrawableSize( startValue ) );
+			Sizef end(
+				widget->getBackground()->getLayer( propertyIndex )->calcDrawableSize( endValue ) );
+			Float x = easingCb[timingFunction]( normalizedProgress, start.x, end.x - start.x, 1.f );
+			Float y = easingCb[timingFunction]( normalizedProgress, start.y, end.y - start.y, 1.f );
+			widget->applyProperty( StyleSheetProperty(
+				property, String::fromFloat( x, "px" ) + " " + String::fromFloat( y, "px" ),
+				propertyIndex ) );
+			if ( isDone ) {
+				widget->applyProperty( StyleSheetProperty( property, endValue, propertyIndex ) );
+			}
+			break;
+		}
+		case PropertyType::ForegroundSize: {
+			Sizef start( widget->getForeground()
+							 ->getLayer( propertyIndex )
+							 ->calcDrawableSize( startValue ) );
+			Sizef end(
+				widget->getForeground()->getLayer( propertyIndex )->calcDrawableSize( endValue ) );
+			Float x = easingCb[timingFunction]( normalizedProgress, start.x, end.x - start.x, 1.f );
+			Float y = easingCb[timingFunction]( normalizedProgress, start.y, end.y - start.y, 1.f );
+			widget->applyProperty( StyleSheetProperty(
+				property, String::fromFloat( x, "px" ) + " " + String::fromFloat( y, "px" ),
+				propertyIndex ) );
+			if ( isDone ) {
+				widget->applyProperty( StyleSheetProperty( property, endValue, propertyIndex ) );
+			}
+			break;
+		}
+		default:
+			break;
+	}
+}
+
+StyleSheetPropertyAnimation* StyleSheetPropertyAnimation::fromAnimationKeyframes(
+	const AnimationDefinition& animation, const KeyframesDefinition& keyframes,
+	const PropertyDefinition* propertyDef, UIWidget* widget, const Uint32& propertyIndex,
+	const AnimationOrigin& animationOrigin ) {
+	std::vector<std::string> properties;
+	std::vector<Float> times;
+
+	for ( auto& blockIt : keyframes.getKeyframeBlocks() ) {
+		const KeyframesDefinition::KeyframeBlock& block = blockIt.second;
+		auto propIt = block.properties.find( propertyDef->getId() );
+
+		if ( propIt != block.properties.end() ) {
+			properties.push_back( propIt->second.getValue() );
+		} else {
+			if ( properties.empty() ) {
+				// Get the start value from the widget.
+				properties.push_back( widget->getPropertyString( propertyDef, propertyIndex ) );
+			} else {
+				// If already exists get the start value from the previous keyframe block.
+				properties.push_back( properties[properties.size() - 1] );
+			}
+		}
+
+		times.push_back( block.normalizedTime );
+	}
+
+	return New( animation, propertyDef, properties, times, propertyIndex,
+				AnimationOrigin::Animation );
+}
+
+bool StyleSheetPropertyAnimation::animationSupported( const PropertyType& type ) {
+	switch ( type ) {
+		case PropertyType::NumberFloat:
+		case PropertyType::NumberInt:
+		case PropertyType::NumberLength:
+		case PropertyType::Color:
+		case PropertyType::Vector2:
+		case PropertyType::BackgroundSize:
+		case PropertyType::ForegroundSize:
+			return true;
+		default:
+			return false;
+	}
+}
+
+StyleSheetPropertyAnimation* StyleSheetPropertyAnimation::New(
+	const AnimationDefinition& animation, const PropertyDefinition* propertyDef,
+	std::vector<std::string> states, std::vector<Float> animationStepsTime,
+	const Uint32& propertyIndex, const AnimationOrigin& animationOrigin ) {
+	return eeNew( StyleSheetPropertyAnimation, ( animation, propertyDef, states, animationStepsTime,
+												 propertyIndex, animationOrigin ) );
+}
+
+StyleSheetPropertyAnimation* StyleSheetPropertyAnimation::New(
+	const PropertyDefinition* property, const std::string& startValue, const std::string& endValue,
+	const Uint32& propertyIndex, const Time& duration, const Time& delay,
+	const Ease::Interpolation& timingFunction, const AnimationOrigin& animationOrigin ) {
+	AnimationDefinition animation;
+	animation.delay = delay;
+	animation.duration = duration;
+	animation.timingFunction = timingFunction;
+	return New( animation, property, {startValue, endValue}, {0, 1}, propertyIndex,
+				animationOrigin );
+}
+
+StyleSheetPropertyAnimation::StyleSheetPropertyAnimation( const AnimationDefinition& animation,
+														  const PropertyDefinition* propertyDef,
+														  std::vector<std::string> states,
+														  std::vector<Float> animationStepsTime,
+														  const Uint32& propertyIndex,
+														  const AnimationOrigin& animationOrigin ) :
+	mAnimation( animation ),
+	mPropertyDef( propertyDef ),
+	mStates( states ),
+	mAnimationStepsTime( animationStepsTime ),
+	mPendingIterations( animation.iterations ),
+	mPropertyIndex( propertyIndex ),
+	mAnimationOrigin( animationOrigin ) {
+	mId = ID;
+}
+
+void StyleSheetPropertyAnimation::start() {
+	onStart();
+
+	sendEvent( ActionType::OnStart );
+}
+
+void StyleSheetPropertyAnimation::stop() {
+	onStop();
+
+	sendEvent( ActionType::OnStop );
+}
+
+void StyleSheetPropertyAnimation::update( const Time& time ) {
+	mRealElapsed += time;
+
+	bool wasDone = false;
+
+	if ( mRealElapsed >= mAnimation.delay ) {
+		mElapsed += time;
+
+		if ( mPendingIterations > 0 ) {
+			while ( mElapsed > mAnimation.duration ) {
+				if ( mPendingIterations > 0 ) {
+					mPendingIterations--;
+
+					if ( mPendingIterations > 0 ) {
+						wasDone = true;
+						mElapsed -= mAnimation.duration;
+					} else {
+						mElapsed = mAnimation.duration;
+					}
+				} else {
+					break;
+				}
+			}
+		} else if ( mPendingIterations == -1 ) {
+			while ( mElapsed > mAnimation.duration ) {
+				mElapsed -= mAnimation.duration;
+				wasDone = true;
+			}
+		}
+
+		if ( wasDone && ( mPendingIterations > 0 || mPendingIterations == -1 ) ) {
+			if ( mAnimation.direction == AnimationDefinition::AnimationDirection::Alternate ||
+				 mAnimation.direction ==
+					 AnimationDefinition::AnimationDirection::AlternateReverse ) {
+				reverseAnimation();
+			}
+		}
+
+		onUpdate( time );
+
+		if ( isDone() ) {
+			notifyClose();
+		}
+	}
+}
+
+bool StyleSheetPropertyAnimation::isDone() {
+	return mElapsed.asMicroseconds() >= mAnimation.duration.asMicroseconds() &&
+		   ( mPendingIterations == 0 || mPendingIterations != -1 );
+}
+
+Float StyleSheetPropertyAnimation::getCurrentProgress() {
+	return eemin( mElapsed.asMilliseconds() / mAnimation.duration.asMilliseconds(), 1. );
+}
+
+Time StyleSheetPropertyAnimation::getTotalTime() {
+	return mAnimation.duration;
+}
+
+Action* StyleSheetPropertyAnimation::clone() const {
+	return New( mAnimation, mPropertyDef, mStates, mAnimationStepsTime, mPropertyIndex,
+				mAnimationOrigin );
+}
+
+Action* StyleSheetPropertyAnimation::reverse() const {
+	std::vector<std::string> vcopy( mStates );
+	std::reverse( vcopy.begin(), vcopy.end() );
+	return New( mAnimation, mPropertyDef, vcopy, mAnimationStepsTime, mPropertyIndex,
+				mAnimationOrigin );
+}
+
+const Uint32& StyleSheetPropertyAnimation::getPropertyIndex() const {
+	return mPropertyIndex;
+}
+
+const std::string& StyleSheetPropertyAnimation::getStartValue() const {
+	return mStates[0];
+}
+
+const std::string& StyleSheetPropertyAnimation::getEndValue() const {
+	return mStates[mStates.size() - 1];
+}
+
+void StyleSheetPropertyAnimation::onStart() {
+	if ( mRealElapsed >= mAnimation.delay ) {
+		onUpdate( Time::Zero );
+	}
+}
+
+void StyleSheetPropertyAnimation::onUpdate( const Time& time ) {
+	if ( NULL != mNode && mNode->isWidget() ) {
+		UIWidget* widget = mNode->asType<UIWidget>();
+
+		Int32 curPos = 1;
+		Float normalizedProgress = getCurrentProgress();
+
+		for ( size_t i = 1; i < mAnimationStepsTime.size(); i++ ) {
+			if ( normalizedProgress < mAnimationStepsTime[i] ) {
+				curPos = i;
+			} else {
+				break;
+			}
+		}
+
+		if ( curPos - 1 >= 0 && curPos < static_cast<Int32>( mStates.size() ) ) {
+			tweenProperty( widget, normalizedProgress, mPropertyDef, mStates[curPos - 1],
+						   mStates[curPos], mAnimation.timingFunction, mPropertyIndex, isDone() );
+		}
+	}
+}
+
+void StyleSheetPropertyAnimation::onTargetChange() {
+	if ( NULL != mNode && mNode->isWidget() && mAnimationOrigin == AnimationOrigin::Animation ) {
+		UIWidget* widget = mNode->asType<UIWidget>();
+		mFillModeValue = widget->getPropertyString( mPropertyDef, mPropertyIndex );
+	}
+}
+
+void StyleSheetPropertyAnimation::setElapsed( const Time& elapsed ) {
+	mElapsed = elapsed;
+
+	if ( mPendingIterations > 0 ) {
+		while ( mElapsed > mAnimation.duration ) {
+			if ( mPendingIterations > 0 ) {
+				mPendingIterations--;
+				mElapsed = mAnimation.duration - mElapsed;
+			} else {
+				break;
+			}
+		}
+	}
+}
+
+const AnimationOrigin& StyleSheetPropertyAnimation::getAnimationOrigin() const {
+	return mAnimationOrigin;
+}
+
+void StyleSheetPropertyAnimation::notifyClose() {
+	if ( mAnimationOrigin == AnimationOrigin::Animation && NULL != mNode && mNode->isWidget() ) {
+		if ( mAnimation.fillMode == AnimationDefinition::AnimationFillMode::None ) {
+			UIWidget* widget = mNode->asType<UIWidget>();
+			widget->applyProperty(
+				StyleSheetProperty( mPropertyDef, mFillModeValue, mPropertyIndex ) );
+		}
+	}
+}
+
+const Time& StyleSheetPropertyAnimation::getElapsed() const {
+	return mElapsed;
+}
+
+void StyleSheetPropertyAnimation::prepareDirection() {
+	if ( mAnimation.direction == AnimationDefinition::AnimationDirection::Reverse ||
+		 mAnimation.direction == AnimationDefinition::AnimationDirection::AlternateReverse ) {
+		reverseAnimation();
+	}
+}
+
+void StyleSheetPropertyAnimation::reverseAnimation() {
+	std::vector<std::string> reverseCopy( mStates );
+	std::reverse( reverseCopy.begin(), reverseCopy.end() );
+	mStates = reverseCopy;
+
+	std::vector<Float> reverseTimes( mAnimationStepsTime );
+	std::reverse( reverseTimes.begin(), reverseTimes.end() );
+	for ( size_t i = 0; i < reverseTimes.size(); i++ ) {
+		reverseTimes[i] = 1.f - reverseTimes[i];
+	}
+	mAnimationStepsTime = reverseTimes;
+}
+
+}}} // namespace EE::UI::CSS

@@ -30,9 +30,13 @@ class EE_API StyleSheet {
 
 	StyleSheetStyleVector getStyleSheetStyleByAtRule( const AtRuleType& atRuleType ) const;
 
+	bool isKeyframesDefined( const std::string& keyframesName );
+
+	const KeyframesDefinition& getKeyframesDefinition( const std::string& keyframesName );
+
 	void addKeyframes( const KeyframesDefinition& keyframes );
 
-	void addKeyframes(const KeyframesDefinitionMap& keyframesMap );
+	void addKeyframes( const KeyframesDefinitionMap& keyframesMap );
 
 	const KeyframesDefinitionMap& getKeyframes() const;
 

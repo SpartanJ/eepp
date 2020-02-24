@@ -28,9 +28,13 @@ class EE_API ActionManager {
 
 	void removeAction( Action* action );
 
+	void removeActions( const std::vector<EE::Scene::Action*>& actions );
+
 	void removeAllActionsFromTarget( Node* target );
 
 	void removeActionsByTagFromTarget( Node* target, const Uint32& tag );
+
+	std::vector<Action*> getActionsFromTarget( Node* target );
 
 	std::vector<Action*> getActionsByTagFromTarget( Node* target, const Uint32& tag );
 

@@ -24,7 +24,11 @@ class EE_API KeyframesDefinition {
 											   const StyleSheetStyleVector& keyframeBlocks );
 
 	const std::string& getName() const;
+
 	const std::map<Float, KeyframeBlock>& getKeyframeBlocks() const;
+
+	/** @return A map containing all the properties involved in the keyframes definition. */
+	std::map<PropertyId, const PropertyDefinition*> getPropertyDefinitionList() const;
 
 	std::string name;
 	std::map<Float, KeyframeBlock> keyframeBlocks;

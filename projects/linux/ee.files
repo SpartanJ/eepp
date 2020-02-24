@@ -300,7 +300,7 @@
 ../../include/eepp/ui/css/stylesheetparser.hpp
 ../../include/eepp/ui/css/stylesheetpropertiesparser.hpp
 ../../include/eepp/ui/css/stylesheetproperty.hpp
-../../include/eepp/ui/css/stylesheetpropertytransition.hpp
+../../include/eepp/ui/css/stylesheetpropertyanimation.hpp
 ../../include/eepp/ui/css/stylesheetselector.hpp
 ../../include/eepp/ui/css/stylesheetselectorparser.hpp
 ../../include/eepp/ui/css/stylesheetselectorrule.hpp
@@ -730,7 +730,7 @@
 ../../src/eepp/ui/css/stylesheetparser.cpp
 ../../src/eepp/ui/css/stylesheetpropertiesparser.cpp
 ../../src/eepp/ui/css/stylesheetproperty.cpp
-../../src/eepp/ui/css/stylesheetpropertytransition.cpp
+../../src/eepp/ui/css/stylesheetpropertyanimation.cpp
 ../../src/eepp/ui/css/stylesheetselector.cpp
 ../../src/eepp/ui/css/stylesheetselectorparser.cpp
 ../../src/eepp/ui/css/stylesheetselectorrule.cpp

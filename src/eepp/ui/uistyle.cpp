@@ -1,7 +1,7 @@
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/scene/actions/actions.hpp>
 #include <eepp/system/functionstring.hpp>
-#include <eepp/ui/css/stylesheetpropertytransition.hpp>
+#include <eepp/ui/css/stylesheetpropertyanimation.hpp>
 #include <eepp/ui/css/stylesheetspecification.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uistyle.hpp>
@@ -223,11 +223,12 @@ void UIStyle::onStateChange() {
 	if ( NULL != mWidget ) {
 		mChangingState = true;
 
+		bool wasAnAnimation = !mAnimations.empty();
 		CSS::StyleSheetProperties prevProperties( mProperties );
-
 		mProperties.clear();
 		mTransitionAttributes.clear();
 		mAnimationAttributes.clear();
+		mAnimations.clear();
 
 		tryApplyStyle( mElementStyle );
 
@@ -240,6 +241,9 @@ void UIStyle::onStateChange() {
 		}
 
 		if ( !mapEquals( mProperties, prevProperties ) ) {
+			if ( wasAnAnimation )
+				removeAllAnimations();
+
 			if ( !mAnimationAttributes.empty() ) {
 				mAnimations = AnimationDefinition::parseAnimationProperties( mAnimationAttributes );
 			}
@@ -250,6 +254,8 @@ void UIStyle::onStateChange() {
 			}
 
 			mWidget->beginAttributesTransaction();
+
+			startAnimations();
 
 			for ( auto& prop : mProperties ) {
 				StyleSheetProperty& property = prop.second;
@@ -375,7 +381,7 @@ void UIStyle::applyStyleSheetProperty( const StyleSheetProperty& property,
 	}
 
 	if ( !mWidget->isSceneNodeLoading() && NULL != propertyDefinition &&
-		 StyleSheetPropertyTransition::transitionSupported( propertyDefinition->getType() ) &&
+		 StyleSheetPropertyAnimation::animationSupported( propertyDefinition->getType() ) &&
 		 hasTransition( property.getName() ) ) {
 		std::string currentValue =
 			mWidget->getPropertyString( propertyDefinition, property.getIndex() );
@@ -399,22 +405,24 @@ void UIStyle::applyStyleSheetProperty( const StyleSheetProperty& property,
 			std::vector<Action*> previousTransitions =
 				mWidget->getActionsByTag( propertyDefinition->getId() );
 			std::vector<Action*> removeTransitions;
-			StyleSheetPropertyTransition* prevTransition = NULL;
+			StyleSheetPropertyAnimation* prevTransition = NULL;
 
 			if ( !previousTransitions.empty() ) {
 				for ( auto& transition : previousTransitions ) {
-					if ( transition->getId() == StyleSheetPropertyTransition::ID ) {
-						StyleSheetPropertyTransition* tmpTransition =
-							static_cast<StyleSheetPropertyTransition*>( transition );
-						if ( propertyDefinition->isIndexed() ) {
-							if ( tmpTransition->getPropertyIndex() == property.getIndex() ) {
+					if ( transition->getId() == StyleSheetPropertyAnimation::ID ) {
+						StyleSheetPropertyAnimation* tmpTransition =
+							static_cast<StyleSheetPropertyAnimation*>( transition );
+						if ( tmpTransition->getAnimationOrigin() == AnimationOrigin::Transition ) {
+							if ( propertyDefinition->isIndexed() ) {
+								if ( tmpTransition->getPropertyIndex() == property.getIndex() ) {
+									prevTransition = tmpTransition;
+									removeTransitions.push_back( prevTransition );
+								}
+							} else {
 								prevTransition = tmpTransition;
 								removeTransitions.push_back( prevTransition );
+								break;
 							}
-						} else {
-							prevTransition = tmpTransition;
-							removeTransitions.push_back( prevTransition );
-							break;
 						}
 					}
 				}
@@ -444,10 +452,10 @@ void UIStyle::applyStyleSheetProperty( const StyleSheetProperty& property,
 				}
 			}
 
-			StyleSheetPropertyTransition* newTransition = StyleSheetPropertyTransition::New(
+			StyleSheetPropertyAnimation* newTransition = StyleSheetPropertyAnimation::New(
 				propertyDefinition, startValue, property.getValue(), property.getIndex(),
 				transitionInfo.getDuration(), transitionInfo.getDelay(),
-				transitionInfo.getTimingFunction() );
+				transitionInfo.getTimingFunction(), AnimationOrigin::Transition );
 			newTransition->setElapsed( elapsed );
 			newTransition->setTag( propertyDefinition->getId() );
 			mWidget->runAction( newTransition );
@@ -456,6 +464,106 @@ void UIStyle::applyStyleSheetProperty( const StyleSheetProperty& property,
 		}
 	} else {
 		mWidget->applyProperty( property );
+	}
+}
+
+void UIStyle::startAnimations() {
+	UISceneNode* uiSceneNode = mWidget->getUISceneNode();
+
+	if ( NULL == uiSceneNode )
+		return;
+
+	CSS::StyleSheet& styleSheet = uiSceneNode->getStyleSheet();
+	for ( auto& anim : mAnimations ) {
+		if ( styleSheet.isKeyframesDefined( anim.first ) ) {
+			const AnimationDefinition& animation = anim.second;
+			const KeyframesDefinition& keyframes = styleSheet.getKeyframesDefinition( anim.first );
+			auto propDefMap = keyframes.getPropertyDefinitionList();
+
+			for ( auto& propertyDef : propDefMap ) {
+				const PropertyDefinition* propDef = propertyDef.second;
+
+				if ( StyleSheetPropertyAnimation::animationSupported( propDef->getType() ) ) {
+					if ( propDef->isIndexed() ) {
+						auto propIt = mProperties.find( propDef->getId() );
+						if ( propIt != mProperties.end() ) {
+							StyleSheetProperty& prop = propIt->second;
+							for ( size_t i = 0; i < prop.getPropertyIndexCount(); i++ ) {
+								removeAnimation( propDef, i );
+								StyleSheetPropertyAnimation* newAnimation =
+									StyleSheetPropertyAnimation::fromAnimationKeyframes(
+										animation, keyframes, propDef, mWidget, i );
+								newAnimation->setTag( propDef->getId() );
+								mWidget->runAction( newAnimation );
+							}
+						} else {
+							removeAnimation( propDef, 0 );
+							StyleSheetPropertyAnimation* newAnimation =
+								StyleSheetPropertyAnimation::fromAnimationKeyframes(
+									animation, keyframes, propDef, mWidget, 0 );
+							newAnimation->setTag( propDef->getId() );
+							mWidget->runAction( newAnimation );
+						}
+					} else {
+						removeAnimation( propDef, 0 );
+						StyleSheetPropertyAnimation* newAnimation =
+							StyleSheetPropertyAnimation::fromAnimationKeyframes(
+								animation, keyframes, propDef, mWidget, 0 );
+						newAnimation->setTag( propDef->getId() );
+						mWidget->runAction( newAnimation );
+					}
+				}
+			}
+		}
+	}
+}
+
+void UIStyle::removeAllAnimations() {
+	std::vector<Action*> actions = mWidget->getActions();
+	std::vector<Action*> removeList;
+	for ( auto& action : actions ) {
+		if ( action->getId() == StyleSheetPropertyAnimation::ID ) {
+			StyleSheetPropertyAnimation* animation =
+				static_cast<StyleSheetPropertyAnimation*>( action );
+			if ( animation->getAnimationOrigin() == AnimationOrigin::Animation ) {
+				removeList.push_back( action );
+			}
+		}
+	}
+	if ( !removeList.empty() ) {
+		for ( auto& action : removeList ) {
+			static_cast<StyleSheetPropertyAnimation*>( action )->notifyClose();
+		}
+		mWidget->removeActions( removeList );
+	}
+}
+
+void UIStyle::removeAnimation( const PropertyDefinition* propertyDefinition,
+							   const Uint32& propertyIndex ) {
+	std::vector<Action*> previousTransitions =
+		mWidget->getActionsByTag( propertyDefinition->getId() );
+	std::vector<Action*> removeTransitions;
+	StyleSheetPropertyAnimation* prevTransition = NULL;
+
+	if ( !previousTransitions.empty() ) {
+		for ( auto& transition : previousTransitions ) {
+			if ( transition->getId() == StyleSheetPropertyAnimation::ID ) {
+				StyleSheetPropertyAnimation* tmpTransition =
+					static_cast<StyleSheetPropertyAnimation*>( transition );
+				if ( propertyDefinition->isIndexed() ) {
+					if ( tmpTransition->getPropertyIndex() == propertyIndex ) {
+						prevTransition = tmpTransition;
+						removeTransitions.push_back( prevTransition );
+					}
+				} else {
+					prevTransition = tmpTransition;
+					removeTransitions.push_back( prevTransition );
+					break;
+				}
+			}
+		}
+
+		mWidget->removeActions( removeTransitions );
 	}
 }
 

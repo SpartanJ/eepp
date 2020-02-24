@@ -39,6 +39,20 @@ Action* ActionManager::getActionByTag( const Uint32& tag ) {
 	return NULL;
 }
 
+std::vector<Action*> ActionManager::getActionsFromTarget( Node* target ) {
+	Lock lock( mMutex );
+	std::vector<Action*> actions;
+
+	for ( auto it = mActions.begin(); it != mActions.end(); ++it ) {
+		Action* action = ( *it );
+
+		if ( action->getTarget() == target )
+			actions.push_back( action );
+	}
+
+	return actions;
+}
+
 std::vector<Action*> ActionManager::getActionsByTagFromTarget( Node* target, const Uint32& tag ) {
 	Lock lock( mMutex );
 	std::vector<Action*> actions;
@@ -149,6 +163,12 @@ void ActionManager::removeAction( Action* action ) {
 		} else {
 			mActionsRemoveList.push_back( action );
 		}
+	}
+}
+
+void ActionManager::removeActions( const std::vector<Action*>& actions ) {
+	for ( auto& action : actions ) {
+		removeAction( action );
 	}
 }
 

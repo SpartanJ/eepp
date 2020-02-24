@@ -26,7 +26,7 @@ KeyframesDefinition::parseKeyframes( const std::string& name,
 			continue;
 		}
 
-		def.keyframeBlocks[blockTime] = { blockTime, block.getProperties() };
+		def.keyframeBlocks[blockTime] = {blockTime, block.getProperties()};
 	}
 
 	return def;
@@ -35,6 +35,18 @@ KeyframesDefinition::parseKeyframes( const std::string& name,
 const std::map<Float, KeyframesDefinition::KeyframeBlock>&
 KeyframesDefinition::getKeyframeBlocks() const {
 	return keyframeBlocks;
+}
+
+std::map<PropertyId, const PropertyDefinition*>
+KeyframesDefinition::getPropertyDefinitionList() const {
+	std::map<PropertyId, const PropertyDefinition*> propDefs;
+	for ( auto& block : keyframeBlocks ) {
+		for ( auto& property : block.second.properties ) {
+			propDefs[property.second.getPropertyDefinition()->getPropertyId()] =
+				property.second.getPropertyDefinition();
+		}
+	}
+	return propDefs;
 }
 
 const std::string& KeyframesDefinition::getName() const {

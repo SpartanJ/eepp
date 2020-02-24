@@ -86,6 +86,13 @@ class EE_API UIStyle : public UIState {
 
 	void applyStyleSheetProperty( const CSS::StyleSheetProperty& property,
 								  CSS::StyleSheetProperties& prevProperties );
+
+	void startAnimations();
+
+	void removeAllAnimations();
+
+	void removeAnimation( const CSS::PropertyDefinition* propertyDefinition,
+						  const Uint32& propertyIndex );
 };
 
 }} // namespace EE::UI

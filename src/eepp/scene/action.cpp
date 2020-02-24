@@ -26,7 +26,10 @@ void Action::setTag( const Uint32& tag ) {
 }
 
 void Action::setTarget( Node* target ) {
-	mNode = target;
+	if ( mNode != target ) {
+		mNode = target;
+		onTargetChange();
+	}
 }
 
 void Action::setId( const Uint32& id ) {
@@ -87,5 +90,7 @@ void Action::onStart() {}
 void Action::onStop() {}
 
 void Action::onUpdate( const Time& ) {}
+
+void Action::onTargetChange() {}
 
 }} // namespace EE::Scene

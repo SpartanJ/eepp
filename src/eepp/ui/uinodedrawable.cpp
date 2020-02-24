@@ -249,17 +249,19 @@ void UINodeDrawable::LayerDrawable::draw( const Vector2f& position ) {
 
 static void repeatYdraw( Drawable* drawable, const Vector2f& position, const Vector2f& offset,
 						 const Sizef& size, const Sizef& drawableSize ) {
-	Float startY = position.y + offset.y - drawableSize.getHeight();
-	while ( startY > position.y - drawableSize.getHeight() ) {
-		drawable->draw( Vector2f( position.x + offset.x, startY ), drawableSize );
-		startY -= drawableSize.getHeight();
-	};
-	drawable->draw( position + offset, drawableSize );
-	startY = position.y + offset.y + drawableSize.getHeight();
-	while ( startY < position.y + size.getHeight() ) {
-		drawable->draw( Vector2f( position.x + offset.x, startY ), drawableSize );
-		startY += drawableSize.getHeight();
-	};
+	if ( drawableSize.getHeight() > 0 ) {
+		Float startY = position.y + offset.y - drawableSize.getHeight();
+		while ( startY > position.y - drawableSize.getHeight() ) {
+			drawable->draw( Vector2f( position.x + offset.x, startY ), drawableSize );
+			startY -= drawableSize.getHeight();
+		};
+		drawable->draw( position + offset, drawableSize );
+		startY = position.y + offset.y + drawableSize.getHeight();
+		while ( startY < position.y + size.getHeight() ) {
+			drawable->draw( Vector2f( position.x + offset.x, startY ), drawableSize );
+			startY += drawableSize.getHeight();
+		};
+	}
 }
 
 void UINodeDrawable::LayerDrawable::draw( const Vector2f& position, const Sizef& size ) {
@@ -286,17 +288,19 @@ void UINodeDrawable::LayerDrawable::draw( const Vector2f& position, const Sizef&
 			mDrawable->draw( mPosition + mOffset, mDrawableSize );
 			break;
 		case Repeat::RepeatX: {
-			Float startX = mPosition.x + mOffset.x - mDrawableSize.getWidth();
-			while ( startX > mPosition.x - mDrawableSize.getWidth() ) {
-				mDrawable->draw( Vector2f( startX, mPosition.y + mOffset.y ), mDrawableSize );
-				startX -= mDrawableSize.getWidth();
-			};
-			mDrawable->draw( mPosition + mOffset, mDrawableSize );
-			startX = mPosition.x + mOffset.x + mDrawableSize.getWidth();
-			while ( startX < mPosition.x + mSize.getWidth() ) {
-				mDrawable->draw( Vector2f( startX, mPosition.y + mOffset.y ), mDrawableSize );
-				startX += mDrawableSize.getWidth();
-			};
+			if ( mDrawableSize.getWidth() > 0 ) {
+				Float startX = mPosition.x + mOffset.x - mDrawableSize.getWidth();
+				while ( startX > mPosition.x - mDrawableSize.getWidth() ) {
+					mDrawable->draw( Vector2f( startX, mPosition.y + mOffset.y ), mDrawableSize );
+					startX -= mDrawableSize.getWidth();
+				};
+				mDrawable->draw( mPosition + mOffset, mDrawableSize );
+				startX = mPosition.x + mOffset.x + mDrawableSize.getWidth();
+				while ( startX < mPosition.x + mSize.getWidth() ) {
+					mDrawable->draw( Vector2f( startX, mPosition.y + mOffset.y ), mDrawableSize );
+					startX += mDrawableSize.getWidth();
+				};
+			}
 			break;
 		}
 		case Repeat::RepeatY: {
@@ -304,19 +308,21 @@ void UINodeDrawable::LayerDrawable::draw( const Vector2f& position, const Sizef&
 			break;
 		}
 		case Repeat::RepeatXY: {
-			Float startX = mPosition.x + mOffset.x - mDrawableSize.getWidth();
-			while ( startX > mPosition.x - mDrawableSize.getWidth() ) {
-				repeatYdraw( mDrawable, mPosition, Vector2f( startX - mPosition.x, mOffset.y ),
-							 mSize, mDrawableSize );
-				startX -= mDrawableSize.getWidth();
-			};
-			repeatYdraw( mDrawable, mPosition, mOffset, mSize, mDrawableSize );
-			startX = mPosition.x + mOffset.x + mDrawableSize.getWidth();
-			while ( startX < mPosition.x + mSize.getWidth() ) {
-				repeatYdraw( mDrawable, mPosition, Vector2f( startX - mPosition.x, mOffset.y ),
-							 mSize, mDrawableSize );
-				startX += mDrawableSize.getWidth();
-			};
+			if ( mDrawableSize.getWidth() > 0 ) {
+				Float startX = mPosition.x + mOffset.x - mDrawableSize.getWidth();
+				while ( startX > mPosition.x - mDrawableSize.getWidth() ) {
+					repeatYdraw( mDrawable, mPosition, Vector2f( startX - mPosition.x, mOffset.y ),
+								 mSize, mDrawableSize );
+					startX -= mDrawableSize.getWidth();
+				};
+				repeatYdraw( mDrawable, mPosition, mOffset, mSize, mDrawableSize );
+				startX = mPosition.x + mOffset.x + mDrawableSize.getWidth();
+				while ( startX < mPosition.x + mSize.getWidth() ) {
+					repeatYdraw( mDrawable, mPosition, Vector2f( startX - mPosition.x, mOffset.y ),
+								 mSize, mDrawableSize );
+					startX += mDrawableSize.getWidth();
+				};
+			}
 			break;
 		}
 	}

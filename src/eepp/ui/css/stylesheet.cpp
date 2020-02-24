@@ -92,6 +92,19 @@ StyleSheetStyleVector StyleSheet::getStyleSheetStyleByAtRule( const AtRuleType& 
 	return vector;
 }
 
+bool StyleSheet::isKeyframesDefined( const std::string& keyframesName ) {
+	return mKeyframesMap.find( keyframesName ) != mKeyframesMap.end();
+}
+
+const KeyframesDefinition& StyleSheet::getKeyframesDefinition( const std::string& keyframesName ) {
+	static KeyframesDefinition EMPTY;
+	const auto& it = mKeyframesMap.find( keyframesName );
+	if ( it != mKeyframesMap.end() ) {
+		return it->second;
+	}
+	return EMPTY;
+}
+
 void StyleSheet::addKeyframes( const KeyframesDefinition& keyframes ) {
 	mKeyframesMap[keyframes.getName()] = keyframes;
 }

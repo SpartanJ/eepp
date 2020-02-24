@@ -104,6 +104,8 @@ class EE_API Action {
 	virtual void onStop();
 
 	virtual void onUpdate( const Time& time );
+
+	virtual void onTargetChange();
 };
 
 }} // namespace EE::Scene
