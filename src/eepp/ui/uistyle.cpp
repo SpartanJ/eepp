@@ -97,6 +97,26 @@ bool UIStyle::hasTransition( const std::string& propertyName ) {
 		   mTransitions.find( "all" ) != mTransitions.end();
 }
 
+StyleSheetPropertyAnimation* UIStyle::getAnimation( const PropertyDefinition* propertyDef ) {
+	std::vector<Action*> actions = mWidget->getActionsByTag( propertyDef->getId() );
+	if ( !actions.empty() ) {
+		for ( auto& action : actions ) {
+			if ( action->getId() == StyleSheetPropertyAnimation::ID ) {
+				StyleSheetPropertyAnimation* animation =
+					static_cast<StyleSheetPropertyAnimation*>( action );
+				if ( animation->getAnimationOrigin() == AnimationOrigin::Animation ) {
+					return animation;
+				}
+			}
+		}
+	}
+	return NULL;
+}
+
+bool UIStyle::hasAnimation( const PropertyDefinition* propertyDef ) {
+	return NULL != getAnimation( propertyDef );
+}
+
 TransitionDefinition UIStyle::getTransition( const std::string& propertyName ) {
 	auto propertyTransitionIt = mTransitions.find( propertyName );
 
@@ -152,9 +172,9 @@ void UIStyle::tryApplyStyle( const StyleSheetStyle& style ) {
 				mProperties[property.getId()] = property;
 
 				if ( String::startsWith( property.getName(), "transition" ) )
-					mTransitionAttributes.push_back( property );
+					mTransitionProperties.push_back( property );
 				else if ( String::startsWith( property.getName(), "animation" ) )
-					mAnimationAttributes.push_back( property );
+					mAnimationProperties.push_back( property );
 			}
 		}
 	}
@@ -223,12 +243,10 @@ void UIStyle::onStateChange() {
 	if ( NULL != mWidget ) {
 		mChangingState = true;
 
-		bool wasAnAnimation = !mAnimations.empty();
 		CSS::StyleSheetProperties prevProperties( mProperties );
 		mProperties.clear();
-		mTransitionAttributes.clear();
-		mAnimationAttributes.clear();
-		mAnimations.clear();
+		mTransitionProperties.clear();
+		mAnimationProperties.clear();
 
 		tryApplyStyle( mElementStyle );
 
@@ -241,21 +259,14 @@ void UIStyle::onStateChange() {
 		}
 
 		if ( !mapEquals( mProperties, prevProperties ) ) {
-			if ( wasAnAnimation )
-				removeAllAnimations();
-
-			if ( !mAnimationAttributes.empty() ) {
-				mAnimations = AnimationDefinition::parseAnimationProperties( mAnimationAttributes );
-			}
-
-			if ( !mTransitionAttributes.empty() ) {
-				mTransitions =
-					TransitionDefinition::parseTransitionProperties( mTransitionAttributes );
-			}
-
 			mWidget->beginAttributesTransaction();
 
-			startAnimations();
+			updateAnimations();
+
+			if ( !mTransitionProperties.empty() ) {
+				mTransitions =
+					TransitionDefinition::parseTransitionProperties( mTransitionProperties );
+			}
 
 			for ( auto& prop : mProperties ) {
 				StyleSheetProperty& property = prop.second;
@@ -382,7 +393,8 @@ void UIStyle::applyStyleSheetProperty( const StyleSheetProperty& property,
 
 	if ( !mWidget->isSceneNodeLoading() && NULL != propertyDefinition &&
 		 StyleSheetPropertyAnimation::animationSupported( propertyDefinition->getType() ) &&
-		 hasTransition( property.getName() ) ) {
+		 hasTransition( property.getName() ) &&
+		 !hasAnimation( property.getPropertyDefinition() ) ) {
 		std::string currentValue =
 			mWidget->getPropertyString( propertyDefinition, property.getIndex() );
 		std::string startValue( currentValue );
@@ -467,14 +479,95 @@ void UIStyle::applyStyleSheetProperty( const StyleSheetProperty& property,
 	}
 }
 
-void UIStyle::startAnimations() {
+void UIStyle::updateAnimations() {
+	bool isDifferent = false;
+	CSS::AnimationsMap animations;
+
+	if ( !mAnimationProperties.empty() ) {
+		animations = AnimationDefinition::parseAnimationProperties( mAnimationProperties );
+		if ( animations.size() == mAnimations.size() ) {
+			for ( auto& animation : animations ) {
+				auto animIt = mAnimations.find( animation.second.getName() );
+				if ( animIt == mAnimations.end() || animIt->second != animation.second ) {
+					isDifferent = true;
+					break;
+				}
+			}
+		} else {
+			isDifferent = true;
+		}
+	} else if ( !mAnimations.empty() && mAnimationProperties.empty() ) {
+		isDifferent = true;
+	}
+
+	if ( isDifferent ) {
+		mAnimations.clear();
+
+		removeAllAnimations();
+
+		startAnimations( animations );
+	} else if ( !mAnimationProperties.empty() ) {
+		updateAnimationsPlayState();
+	}
+}
+
+void UIStyle::updateAnimationsPlayState() {
+	if ( mAnimations.empty() )
+		return;
+	std::vector<Action*> actions = mWidget->getActions();
+	for ( auto& action : actions ) {
+		if ( action->getId() == StyleSheetPropertyAnimation::ID ) {
+			StyleSheetPropertyAnimation* animation =
+				static_cast<StyleSheetPropertyAnimation*>( action );
+			if ( animation->getAnimationOrigin() == AnimationOrigin::Animation ) {
+				// Check all the active animations.
+				size_t animPos = 0;
+				for ( auto anim = mAnimations.begin(); anim != mAnimations.end(); anim++ ) {
+					// Find the animation index by iterating over them...
+					if ( anim->first == animation->getAnimation().getName() ) {
+						// Once found the iteration index of the corresponding keyframe animation
+						// First check if in the current animation properties is there any
+						// "animation-play-state" definition.
+						bool isSet = false;
+						for ( auto& animProp : mAnimationProperties ) {
+							if ( NULL != animProp.getPropertyDefinition() &&
+								 animProp.getPropertyDefinition()->getPropertyId() ==
+									 PropertyId::AnimationPlayState ) {
+								// If found, get the pause/running state of the property, using the
+								// index of the current animation, and set the animation.play-state.
+								size_t animPropCount = animProp.getPropertyIndexCount();
+								bool paused = animProp.getPropertyIndex( animPos % animPropCount )
+														  .getValue() == "paused"
+												  ? true
+												  : false;
+								animation->setPaused( paused );
+								isSet = true;
+								break;
+							}
+						}
+						// If animation-play-state if set, continue with the next action.
+						if ( isSet )
+							break;
+						// Otherwise set the animation-play-state defined on the animation.
+						animation->setPaused( animation->getAnimation().isPaused() );
+					}
+					animPos++;
+				}
+			}
+		}
+	}
+}
+
+void UIStyle::startAnimations( const CSS::AnimationsMap& animations ) {
 	UISceneNode* uiSceneNode = mWidget->getUISceneNode();
 
 	if ( NULL == uiSceneNode )
 		return;
 
+	mAnimations = animations;
+
 	CSS::StyleSheet& styleSheet = uiSceneNode->getStyleSheet();
-	for ( auto& anim : mAnimations ) {
+	for ( auto& anim : animations ) {
 		if ( styleSheet.isKeyframesDefined( anim.first ) ) {
 			const AnimationDefinition& animation = anim.second;
 			const KeyframesDefinition& keyframes = styleSheet.getKeyframesDefinition( anim.first );
@@ -493,6 +586,7 @@ void UIStyle::startAnimations() {
 								StyleSheetPropertyAnimation* newAnimation =
 									StyleSheetPropertyAnimation::fromAnimationKeyframes(
 										animation, keyframes, propDef, mWidget, i );
+								newAnimation->setFlags( animation.getId() );
 								newAnimation->setTag( propDef->getId() );
 								mWidget->runAction( newAnimation );
 							}
@@ -501,6 +595,7 @@ void UIStyle::startAnimations() {
 							StyleSheetPropertyAnimation* newAnimation =
 								StyleSheetPropertyAnimation::fromAnimationKeyframes(
 									animation, keyframes, propDef, mWidget, 0 );
+							newAnimation->setFlags( animation.getId() );
 							newAnimation->setTag( propDef->getId() );
 							mWidget->runAction( newAnimation );
 						}
@@ -509,6 +604,7 @@ void UIStyle::startAnimations() {
 						StyleSheetPropertyAnimation* newAnimation =
 							StyleSheetPropertyAnimation::fromAnimationKeyframes(
 								animation, keyframes, propDef, mWidget, 0 );
+						newAnimation->setFlags( animation.getId() );
 						newAnimation->setTag( propDef->getId() );
 						mWidget->runAction( newAnimation );
 					}

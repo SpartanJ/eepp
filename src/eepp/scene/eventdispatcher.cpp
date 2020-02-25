@@ -52,7 +52,7 @@ void EventDispatcher::inputCallback( InputEvent* Event ) {
 		case InputEvent::VideoResize:
 		case InputEvent::VideoExpose: {
 			if ( NULL != mSceneNode )
-				mSceneNode->invalidate();
+				mSceneNode->invalidate( NULL );
 		}
 	}
 }

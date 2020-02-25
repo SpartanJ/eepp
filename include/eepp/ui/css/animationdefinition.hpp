@@ -4,7 +4,7 @@
 #include <eepp/math/ease.hpp>
 #include <eepp/system/time.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
-#include <map>
+#include <unordered_map>
 #include <vector>
 
 using namespace EE::Math;
@@ -14,7 +14,7 @@ namespace EE { namespace UI { namespace CSS {
 
 class EE_API AnimationDefinition {
   public:
-	static std::map<std::string, AnimationDefinition>
+	static std::unordered_map<std::string, AnimationDefinition>
 	parseAnimationProperties( const std::vector<StyleSheetProperty>& stylesheetProperties );
 
 	/* https://developer.mozilla.org/en-US/docs/Web/CSS/animation-direction */
@@ -57,17 +57,50 @@ class EE_API AnimationDefinition {
 
 	const Ease::Interpolation& getTimingFunction() const;
 
-	std::string name;
-	Time delay = Time::Zero;
-	Time duration = Time::Zero;
-	Int32 iterations = 1; /* -1 == "infinite" */
-	Ease::Interpolation timingFunction = Ease::Interpolation::Linear;
-	AnimationDirection direction = Normal;
-	AnimationFillMode fillMode = None;
-	bool paused = false;
+	const AnimationFillMode& getFillMode() const;
+
+	void setName( const std::string& value );
+
+	void setDelay( const Time& value );
+
+	void setDuration( const Time& value );
+
+	void setIterations( const Int32& value );
+
+	void setTimingFunction( const Ease::Interpolation& value );
+
+	void setDirection( const AnimationDirection& value );
+
+	void setFillMode( const AnimationFillMode& value );
+
+	void setPaused( bool value );
+
+	const Uint32& getId() const;
+
+  protected:
+	Uint32 mId;
+	std::string mName;
+	Time mDelay = Time::Zero;
+	Time mDuration = Time::Zero;
+	Int32 mIterations = 1; /* -1 == "infinite" */
+	Ease::Interpolation mTimingFunction = Ease::Interpolation::Linear;
+	AnimationDirection mDirection = Normal;
+	AnimationFillMode mFillMode = None;
+	bool mPaused = false;
 };
 
-typedef std::map<std::string, AnimationDefinition> AnimationsMap;
+inline bool operator==( const AnimationDefinition& a, const AnimationDefinition& b ) {
+	return a.getDuration() == b.getDuration() && a.getTimingFunction() == b.getTimingFunction() &&
+		   a.getDelay() == b.getDelay() && a.getDirection() == b.getDirection() &&
+		   a.isPaused() == b.isPaused() && a.getIterations() == b.getIterations() &&
+		   a.getName() == b.getName();
+}
+
+inline bool operator!=( const AnimationDefinition& a, const AnimationDefinition& b ) {
+	return !( a == b );
+}
+
+typedef std::unordered_map<std::string, AnimationDefinition> AnimationsMap;
 
 }}} // namespace EE::UI::CSS
 

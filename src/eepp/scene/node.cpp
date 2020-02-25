@@ -1101,7 +1101,7 @@ void Node::setReverseDraw( bool reverseDraw ) {
 
 void Node::invalidateDraw() {
 	if ( NULL != mNodeDrawInvalidator ) {
-		mNodeDrawInvalidator->invalidate();
+		mNodeDrawInvalidator->invalidate( this );
 	}
 }
 
@@ -1572,7 +1572,7 @@ bool Node::isDrawInvalidator() const {
 	return false;
 }
 
-void Node::invalidate() {
+void Node::invalidate( Node* invalidator ) {
 	if ( mVisible && mAlpha != 0.f ) {
 		writeNodeFlag( NODE_FLAG_VIEW_DIRTY, 1 );
 	}

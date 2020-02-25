@@ -233,7 +233,8 @@ UITextView::New()->setText( "Text  on  test  1" )
 
 Element styling can be done with a custom implementation of Cascading Style
 Sheets, most common CSS2 rules are available, plus several CSS3 rules (some
-examples: [transitions](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Transitions),
+examples: [animations](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Animations/),
+[transitions](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Transitions),
 [custom properties](https://developer.mozilla.org/en-US/docs/Web/CSS/Using_CSS_custom_properties),
 [media queries](https://developer.mozilla.org/en-US/docs/Web/CSS/Media_Queries/Using_media_queries),
 [@font-face at rule](https://developer.mozilla.org/en-US/docs/Web/CSS/@font-face),
@@ -522,8 +523,6 @@ Keep improving the UI system, adding new widgets and layouts and improving the C
 
 Simplify and improve the UI widgets skinning/theming support.
 
-Add [CSS animations](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Animations/Using_CSS_animations) support.
-
 Improve/create documentation for the UI module.
 
 Add more examples and some tools.
@@ -532,7 +531,7 @@ Add Scripting support ( first I would like to stabilize the library, but I'm get
 
 Add 2D skeletal animations support ( probably Spine2D, shouldn't be much work to implement ).
 
-Probably deprecate the Maps module, since i will focus my efforts on the UI system.
+Probably deprecate the Maps module, since I will focus my efforts on the UI system.
 
 ## Acknowledgements
 

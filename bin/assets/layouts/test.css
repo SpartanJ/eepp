@@ -184,7 +184,7 @@ CheckBox:checked {
 		background-color: #221122;
 	}
 	to {
-		background-color: #332233;
+		background-color: #110011;
 	}
 }
 
@@ -454,6 +454,16 @@ TabWidget {
 
 #lvbox:hover .tres2 {
 	animation: 0.5s infinite alternate pulse;
+}
+
+#rttv {
+	animation: 0.5s infinite alternate paused ease-in pulse;
+}
+
+#rttv:hover {
+	/** This rule should be ignored. */
+	foreground-color: red;
+	animation-play-state: running;
 }
 
 @media screen and (max-width: 1024px) {

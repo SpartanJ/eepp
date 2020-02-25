@@ -216,8 +216,11 @@ function build_link_configuration( package_name, use_ee_icon )
 			links { "SDL2", "SDL2main" }
 		end
 
-	filter { "options:windows-vc-build", "system:windows" }
+	filter { "options:windows-vc-build", "system:windows", "platforms:x86" }
 		syslibdirs { "src/thirdparty/" .. remote_sdl2_version .."/lib/x86" }
+
+	filter { "options:windows-vc-build", "system:windows", "platforms:x86_64" }
+		syslibdirs { "src/thirdparty/" .. remote_sdl2_version .."/lib/x64" }
 
 	filter "system:emscripten"
 		linkoptions{ "-O2 -s TOTAL_MEMORY=67108864 -s ASM_JS=1 -s VERBOSE=1 -s DISABLE_EXCEPTION_CATCHING=0 -s USE_SDL=2 -s ERROR_ON_UNDEFINED_SYMBOLS=0 -s ERROR_ON_MISSING_LIBRARIES=0 -s FULL_ES3=1 -s \"BINARYEN_TRAP_MODE='clamp'\"" }
@@ -534,6 +537,7 @@ end
 workspace "eepp"
 	targetdir("./bin/")
 	configurations { "debug", "release" }
+	platforms { "x86_64", "x86" }
 	rtti "On"
 	download_and_extract_dependencies()
 	select_backend()
@@ -541,6 +545,12 @@ workspace "eepp"
 	parse_args()
 	location("./make/" .. os.target() .. "/")
 	objdir("obj/" .. os.target() .. "/")
+
+	filter "platforms:x86"
+		architecture "x86"
+
+	filter "platforms:x86_64"
+		architecture "x86_64"
 
 	filter "system:macosx"
 		defines { "GL_SILENCE_DEPRECATION" }
@@ -558,15 +568,11 @@ workspace "eepp"
 
 	project "SOIL2-static"
 		kind "StaticLib"
+		language "C"
 		targetdir("libs/" .. os.target() .. "/thirdparty/")
 		files { "src/thirdparty/SOIL2/src/SOIL2/*.c" }
 		incdirs { "src/thirdparty/SOIL2" }
 		build_base_configuration( "SOIL2" )
-		filter "action:vs*"
-			language "C++"
-			buildoptions { "/TP" }
-		filter "action:not vs*"
-			language "C"
 
 	project "glew-static"
 		kind "StaticLib"

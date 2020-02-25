@@ -146,7 +146,7 @@ class EE_API UIWindow : public UIWidget {
 
 	virtual void internalDraw();
 
-	void invalidate();
+	void invalidate( Node* invalidator );
 
 	bool invalidated();
 

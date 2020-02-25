@@ -329,7 +329,7 @@ class EE_API Node : public Transformable {
 
 	bool invalidated() const;
 
-	void invalidate();
+	virtual void invalidate( Node* invalidator );
 
 	Uint32 getChildCount() const;
 

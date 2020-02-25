@@ -6,11 +6,14 @@ namespace EE { namespace UI { namespace CSS {
 SINGLETON_DECLARE_IMPLEMENTATION( StyleSheetSpecification )
 
 StyleSheetSpecification::StyleSheetSpecification() {
-	// TODO: Add support to animations (@keyframes).
+	// TODO: Add correct "background" and "foreground" shorthand.
 	// TODO: Support border-color top right bottom left.
 	// TODO: Support border-radius top right bottom left.
-	// TODO: Support box-sizing or something similar.
-	// TODO: Add correct "background" and "foreground" shorthand.
+	// TODO: Create a rule to set the border position against its box.
+	//		 Something like: "border-box", with the following options:
+	//			inside: The border is drawn inside the box.
+	//			outside: The border is drawn outside the box.
+	//			over: The border is drawn in the middle point of inside and outside.
 	registerDefaultProperties();
 	registerDefaultNodeSelectors();
 }

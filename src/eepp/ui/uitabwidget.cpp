@@ -160,6 +160,33 @@ std::string UITabWidget::getPropertyString( const PropertyDefinition* propertyDe
 	}
 }
 
+bool UITabWidget::isDrawInvalidator() const {
+	return true;
+}
+
+void UITabWidget::invalidate( Node* invalidator ) {
+	// Only invalidate if the invalidator is actually visible in the current active tab.
+	if ( NULL != invalidator ) {
+		if ( invalidator == mCtrlContainer ) {
+			mSceneNode->invalidate( mCtrlContainer );
+		} else if ( invalidator->getParent() == mCtrlContainer ) {
+			if ( invalidator->isVisible() ) {
+				mSceneNode->invalidate( mCtrlContainer );
+			}
+		} else {
+			Node* container = invalidator->getParent();
+			while ( container->getParent() != NULL && container->getParent() != mCtrlContainer ) {
+				container = container->getParent();
+			}
+			if ( container->getParent() == mCtrlContainer && container->isVisible() ) {
+				mSceneNode->invalidate( mCtrlContainer );
+			}
+		}
+	} else if ( NULL != mSceneNode ) {
+		mSceneNode->invalidate( this );
+	}
+}
+
 bool UITabWidget::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) )
 		return false;

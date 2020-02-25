@@ -1112,7 +1112,7 @@ void UIWindow::onPositionChange() {
 	// Invalidate the buffer since a position change can get childs into a drawable position
 	// (on screen), when the drawable could have been outside the viewport and not drawn in the
 	// previous position.
-	invalidate();
+	invalidate( this );
 
 	UIWidget::onPositionChange();
 }
@@ -1241,12 +1241,12 @@ void UIWindow::internalDraw() {
 	}
 }
 
-void UIWindow::invalidate() {
+void UIWindow::invalidate( Node* invalidator ) {
 	if ( mVisible && mAlpha != 0.f ) {
 		writeNodeFlag( NODE_FLAG_VIEW_DIRTY, 1 );
 
 		if ( NULL != mSceneNode )
-			mSceneNode->invalidate();
+			mSceneNode->invalidate( invalidator );
 	}
 }
 

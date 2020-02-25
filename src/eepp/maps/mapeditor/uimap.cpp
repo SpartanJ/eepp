@@ -104,7 +104,7 @@ void UIMap::scheduledUpdate( const Time& time ) {
 	UIWindow::scheduledUpdate( time );
 
 	if ( NULL != mMap ) {
-		invalidate();
+		invalidate( this );
 		invalidateDraw();
 
 		mMap->update();

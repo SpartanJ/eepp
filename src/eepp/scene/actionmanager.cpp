@@ -17,8 +17,6 @@ ActionManager::~ActionManager() {
 }
 
 void ActionManager::addAction( Action* action ) {
-	Lock lock( mMutex );
-
 	bool found = ( std::find( mActions.begin(), mActions.end(), action ) != mActions.end() );
 
 	if ( !found ) {
@@ -27,8 +25,6 @@ void ActionManager::addAction( Action* action ) {
 }
 
 Action* ActionManager::getActionByTag( const Uint32& tag ) {
-	Lock lock( mMutex );
-
 	for ( auto it = mActions.begin(); it != mActions.end(); ++it ) {
 		Action* action = ( *it );
 
@@ -40,7 +36,6 @@ Action* ActionManager::getActionByTag( const Uint32& tag ) {
 }
 
 std::vector<Action*> ActionManager::getActionsFromTarget( Node* target ) {
-	Lock lock( mMutex );
 	std::vector<Action*> actions;
 
 	for ( auto it = mActions.begin(); it != mActions.end(); ++it ) {
@@ -54,7 +49,6 @@ std::vector<Action*> ActionManager::getActionsFromTarget( Node* target ) {
 }
 
 std::vector<Action*> ActionManager::getActionsByTagFromTarget( Node* target, const Uint32& tag ) {
-	Lock lock( mMutex );
 	std::vector<Action*> actions;
 
 	for ( auto it = mActions.begin(); it != mActions.end(); ++it ) {
@@ -74,15 +68,11 @@ void ActionManager::removeActionByTag( const Uint32& tag ) {
 void ActionManager::removeActionsByTagFromTarget( Node* target, const Uint32& tag ) {
 	std::vector<Action*> removeList;
 
-	{
-		Lock lock( mMutex );
+	for ( auto it = mActions.begin(); it != mActions.end(); ++it ) {
+		Action* action = ( *it );
 
-		for ( auto it = mActions.begin(); it != mActions.end(); ++it ) {
-			Action* action = ( *it );
-
-			if ( action->getTarget() == target && action->getTag() == tag ) {
-				removeList.push_back( *it );
-			}
+		if ( action->getTarget() == target && action->getTag() == tag ) {
+			removeList.push_back( *it );
 		}
 	}
 
@@ -96,24 +86,21 @@ void ActionManager::update( const Time& time ) {
 
 	std::vector<Action*> removeList;
 
-	{
-		Lock lock( mMutex );
-		mUpdating = true;
+	mUpdating = true;
 
-		for ( auto it = mActions.begin(); it != mActions.end(); ++it ) {
-			Action* action = ( *it );
+	for ( auto it = mActions.begin(); it != mActions.end(); ++it ) {
+		Action* action = ( *it );
 
-			action->update( time );
+		action->update( time );
 
-			if ( action->isDone() ) {
-				action->sendEvent( Action::ActionType::OnDone );
+		if ( action->isDone() ) {
+			action->sendEvent( Action::ActionType::OnDone );
 
-				removeList.push_back( action );
-			}
+			removeList.push_back( action );
 		}
-
-		mUpdating = false;
 	}
+
+	mUpdating = false;
 
 	for ( auto it = mActionsRemoveList.begin(); it != mActionsRemoveList.end(); ++it )
 		removeAction( ( *it ) );
@@ -125,20 +112,14 @@ void ActionManager::update( const Time& time ) {
 }
 
 std::size_t ActionManager::count() const {
-	Lock lock( const_cast<Mutex&>( mMutex ) );
-
 	return mActions.size();
 }
 
 bool ActionManager::isEmpty() const {
-	Lock lock( const_cast<Mutex&>( mMutex ) );
-
 	return mActions.empty();
 }
 
 void ActionManager::clear() {
-	Lock lock( mMutex );
-
 	for ( auto it = mActions.begin(); it != mActions.end(); ++it ) {
 		Action* action = ( *it );
 
@@ -149,8 +130,6 @@ void ActionManager::clear() {
 }
 
 void ActionManager::removeAction( Action* action ) {
-	Lock lock( mMutex );
-
 	if ( NULL != action ) {
 		if ( !mUpdating ) {
 			bool found = std::find( mActions.begin(), mActions.end(), action ) != mActions.end();
@@ -175,15 +154,11 @@ void ActionManager::removeActions( const std::vector<Action*>& actions ) {
 void ActionManager::removeAllActionsFromTarget( Node* target ) {
 	std::vector<Action*> removeList;
 
-	{
-		Lock lock( mMutex );
+	for ( auto it = mActions.begin(); it != mActions.end(); ++it ) {
+		Action* action = ( *it );
 
-		for ( auto it = mActions.begin(); it != mActions.end(); ++it ) {
-			Action* action = ( *it );
-
-			if ( action->getTarget() == target ) {
-				removeList.push_back( *it );
-			}
+		if ( action->getTarget() == target ) {
+			removeList.push_back( *it );
 		}
 	}
 

@@ -116,6 +116,10 @@ class EE_API UITabWidget : public UIWidget {
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
 										   const Uint32& propertyIndex = 0 );
 
+	virtual bool isDrawInvalidator() const;
+
+	void invalidate( Node* invalidator );
+
   protected:
 	friend class UITab;
 

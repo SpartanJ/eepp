@@ -172,9 +172,9 @@ StyleSheetPropertyAnimation* StyleSheetPropertyAnimation::New(
 	const Uint32& propertyIndex, const Time& duration, const Time& delay,
 	const Ease::Interpolation& timingFunction, const AnimationOrigin& animationOrigin ) {
 	AnimationDefinition animation;
-	animation.delay = delay;
-	animation.duration = duration;
-	animation.timingFunction = timingFunction;
+	animation.setDelay( delay );
+	animation.setDuration( duration );
+	animation.setTimingFunction( timingFunction );
 	return New( animation, property, {startValue, endValue}, {0, 1}, propertyIndex,
 				animationOrigin );
 }
@@ -189,9 +189,10 @@ StyleSheetPropertyAnimation::StyleSheetPropertyAnimation( const AnimationDefinit
 	mPropertyDef( propertyDef ),
 	mStates( states ),
 	mAnimationStepsTime( animationStepsTime ),
-	mPendingIterations( animation.iterations ),
+	mPendingIterations( animation.getIterations() ),
 	mPropertyIndex( propertyIndex ),
-	mAnimationOrigin( animationOrigin ) {
+	mAnimationOrigin( animationOrigin ),
+	mPaused( mAnimation.isPaused() ) {
 	mId = ID;
 }
 
@@ -208,38 +209,41 @@ void StyleSheetPropertyAnimation::stop() {
 }
 
 void StyleSheetPropertyAnimation::update( const Time& time ) {
+	if ( mPaused )
+		return;
+
 	mRealElapsed += time;
 
 	bool wasDone = false;
 
-	if ( mRealElapsed >= mAnimation.delay ) {
+	if ( mRealElapsed >= mAnimation.getDelay() ) {
 		mElapsed += time;
 
 		if ( mPendingIterations > 0 ) {
-			while ( mElapsed > mAnimation.duration ) {
+			while ( mElapsed > mAnimation.getDuration() ) {
 				if ( mPendingIterations > 0 ) {
 					mPendingIterations--;
 
 					if ( mPendingIterations > 0 ) {
 						wasDone = true;
-						mElapsed -= mAnimation.duration;
+						mElapsed -= mAnimation.getDuration();
 					} else {
-						mElapsed = mAnimation.duration;
+						mElapsed = mAnimation.getDuration();
 					}
 				} else {
 					break;
 				}
 			}
 		} else if ( mPendingIterations == -1 ) {
-			while ( mElapsed > mAnimation.duration ) {
-				mElapsed -= mAnimation.duration;
+			while ( mElapsed > mAnimation.getDuration() ) {
+				mElapsed -= mAnimation.getDuration();
 				wasDone = true;
 			}
 		}
 
 		if ( wasDone && ( mPendingIterations > 0 || mPendingIterations == -1 ) ) {
-			if ( mAnimation.direction == AnimationDefinition::AnimationDirection::Alternate ||
-				 mAnimation.direction ==
+			if ( mAnimation.getDirection() == AnimationDefinition::AnimationDirection::Alternate ||
+				 mAnimation.getDirection() ==
 					 AnimationDefinition::AnimationDirection::AlternateReverse ) {
 				reverseAnimation();
 			}
@@ -254,16 +258,16 @@ void StyleSheetPropertyAnimation::update( const Time& time ) {
 }
 
 bool StyleSheetPropertyAnimation::isDone() {
-	return mElapsed.asMicroseconds() >= mAnimation.duration.asMicroseconds() &&
+	return mElapsed.asMicroseconds() >= mAnimation.getDuration().asMicroseconds() &&
 		   ( mPendingIterations == 0 || mPendingIterations != -1 );
 }
 
 Float StyleSheetPropertyAnimation::getCurrentProgress() {
-	return eemin( mElapsed.asMilliseconds() / mAnimation.duration.asMilliseconds(), 1. );
+	return eemin( mElapsed.asMilliseconds() / mAnimation.getDuration().asMilliseconds(), 1. );
 }
 
 Time StyleSheetPropertyAnimation::getTotalTime() {
-	return mAnimation.duration;
+	return mAnimation.getDuration();
 }
 
 Action* StyleSheetPropertyAnimation::clone() const {
@@ -291,7 +295,7 @@ const std::string& StyleSheetPropertyAnimation::getEndValue() const {
 }
 
 void StyleSheetPropertyAnimation::onStart() {
-	if ( mRealElapsed >= mAnimation.delay ) {
+	if ( mRealElapsed >= mAnimation.getDelay() ) {
 		onUpdate( Time::Zero );
 	}
 }
@@ -313,15 +317,58 @@ void StyleSheetPropertyAnimation::onUpdate( const Time& time ) {
 
 		if ( curPos - 1 >= 0 && curPos < static_cast<Int32>( mStates.size() ) ) {
 			tweenProperty( widget, normalizedProgress, mPropertyDef, mStates[curPos - 1],
-						   mStates[curPos], mAnimation.timingFunction, mPropertyIndex, isDone() );
+						   mStates[curPos], mAnimation.getTimingFunction(), mPropertyIndex,
+						   isDone() );
 		}
 	}
 }
 
 void StyleSheetPropertyAnimation::onTargetChange() {
 	if ( NULL != mNode && mNode->isWidget() && mAnimationOrigin == AnimationOrigin::Animation ) {
-		UIWidget* widget = mNode->asType<UIWidget>();
-		mFillModeValue = widget->getPropertyString( mPropertyDef, mPropertyIndex );
+		if ( mAnimation.getFillMode() == AnimationDefinition::AnimationFillMode::None ) {
+			UIWidget* widget = mNode->asType<UIWidget>();
+			mFillModeValue = widget->getPropertyString( mPropertyDef, mPropertyIndex );
+		} else if ( mAnimation.getFillMode() == AnimationDefinition::AnimationFillMode::Forwards ) {
+			if ( mStates.empty() )
+				return;
+			switch ( mAnimation.getDirection() ) {
+				case AnimationDefinition::AnimationDirection::Normal: {
+					mFillModeValue = mStates[mStates.size() - 1];
+					break;
+				}
+				case AnimationDefinition::AnimationDirection::Reverse: {
+					mFillModeValue = mStates[0];
+					break;
+				}
+				case AnimationDefinition::AnimationDirection::Alternate: {
+					if ( mAnimation.getIterations() % 2 == 0 ) {
+						mFillModeValue = mStates[0];
+					} else {
+						mFillModeValue = mStates[mStates.size() - 1];
+					}
+					break;
+				}
+				case AnimationDefinition::AnimationDirection::AlternateReverse: {
+					if ( mAnimation.getIterations() % 2 == 0 ) {
+						mFillModeValue = mStates[mStates.size() - 1];
+					} else {
+
+						mFillModeValue = mStates[0];
+					}
+					break;
+				}
+			}
+		} else if ( mAnimation.getFillMode() ==
+					AnimationDefinition::AnimationFillMode::Backwards ) {
+			if ( mStates.empty() )
+				return;
+			if ( mAnimation.getDirection() == AnimationDefinition::AnimationDirection::Normal ||
+				 mAnimation.getDirection() == AnimationDefinition::AnimationDirection::Alternate ) {
+				mFillModeValue = mStates[0];
+			} else {
+				mFillModeValue = mStates[mStates.size() - 1];
+			}
+		}
 	}
 }
 
@@ -329,10 +376,10 @@ void StyleSheetPropertyAnimation::setElapsed( const Time& elapsed ) {
 	mElapsed = elapsed;
 
 	if ( mPendingIterations > 0 ) {
-		while ( mElapsed > mAnimation.duration ) {
+		while ( mElapsed > mAnimation.getDuration() ) {
 			if ( mPendingIterations > 0 ) {
 				mPendingIterations--;
-				mElapsed = mAnimation.duration - mElapsed;
+				mElapsed = mAnimation.getDuration() - mElapsed;
 			} else {
 				break;
 			}
@@ -344,9 +391,17 @@ const AnimationOrigin& StyleSheetPropertyAnimation::getAnimationOrigin() const {
 	return mAnimationOrigin;
 }
 
+void StyleSheetPropertyAnimation::setRunning( const bool& running ) {
+	mPaused = !running;
+}
+
+void StyleSheetPropertyAnimation::setPaused( const bool& paused ) {
+	mPaused = paused;
+}
+
 void StyleSheetPropertyAnimation::notifyClose() {
 	if ( mAnimationOrigin == AnimationOrigin::Animation && NULL != mNode && mNode->isWidget() ) {
-		if ( mAnimation.fillMode == AnimationDefinition::AnimationFillMode::None ) {
+		if ( mAnimation.getFillMode() != AnimationDefinition::AnimationFillMode::Both ) {
 			UIWidget* widget = mNode->asType<UIWidget>();
 			widget->applyProperty(
 				StyleSheetProperty( mPropertyDef, mFillModeValue, mPropertyIndex ) );
@@ -354,13 +409,17 @@ void StyleSheetPropertyAnimation::notifyClose() {
 	}
 }
 
+const AnimationDefinition& StyleSheetPropertyAnimation::getAnimation() const {
+	return mAnimation;
+}
+
 const Time& StyleSheetPropertyAnimation::getElapsed() const {
 	return mElapsed;
 }
 
 void StyleSheetPropertyAnimation::prepareDirection() {
-	if ( mAnimation.direction == AnimationDefinition::AnimationDirection::Reverse ||
-		 mAnimation.direction == AnimationDefinition::AnimationDirection::AlternateReverse ) {
+	if ( mAnimation.getDirection() == AnimationDefinition::AnimationDirection::Reverse ||
+		 mAnimation.getDirection() == AnimationDefinition::AnimationDirection::AlternateReverse ) {
 		reverseAnimation();
 	}
 }

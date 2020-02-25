@@ -15,6 +15,10 @@ namespace EE { namespace Graphics {
 class Font;
 }} // namespace EE::Graphics
 
+namespace EE { namespace UI { namespace CSS {
+class StyleSheetPropertyAnimation;
+}}} // namespace EE::UI::CSS
+
 namespace EE { namespace UI {
 
 class UIWidget;
@@ -41,6 +45,10 @@ class EE_API UIStyle : public UIState {
 
 	bool hasTransition( const std::string& propertyName );
 
+	CSS::StyleSheetPropertyAnimation* getAnimation( const CSS::PropertyDefinition* propertyDef );
+
+	bool hasAnimation( const CSS::PropertyDefinition* propertyDef );
+
 	CSS::TransitionDefinition getTransition( const std::string& propertyName );
 
 	const bool& isChangingState() const;
@@ -54,8 +62,8 @@ class EE_API UIStyle : public UIState {
 	CSS::StyleSheetStyle mElementStyle;
 	CSS::StyleSheetProperties mProperties;
 	CSS::StyleSheetVariables mVariables;
-	std::vector<CSS::StyleSheetProperty> mTransitionAttributes;
-	std::vector<CSS::StyleSheetProperty> mAnimationAttributes;
+	std::vector<CSS::StyleSheetProperty> mTransitionProperties;
+	std::vector<CSS::StyleSheetProperty> mAnimationProperties;
 	CSS::TransitionsMap mTransitions;
 	CSS::AnimationsMap mAnimations;
 	std::set<UIWidget*> mRelatedWidgets;
@@ -87,7 +95,11 @@ class EE_API UIStyle : public UIState {
 	void applyStyleSheetProperty( const CSS::StyleSheetProperty& property,
 								  CSS::StyleSheetProperties& prevProperties );
 
-	void startAnimations();
+	void updateAnimationsPlayState();
+
+	void updateAnimations();
+
+	void startAnimations( const CSS::AnimationsMap& animations );
 
 	void removeAllAnimations();
 

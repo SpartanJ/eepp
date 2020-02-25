@@ -106,12 +106,14 @@ const KeyframesDefinition& StyleSheet::getKeyframesDefinition( const std::string
 }
 
 void StyleSheet::addKeyframes( const KeyframesDefinition& keyframes ) {
-	mKeyframesMap[keyframes.getName()] = keyframes;
+	// "none" is a reserved keyword
+	if ( keyframes.getName() != "none" )
+		mKeyframesMap[keyframes.getName()] = keyframes;
 }
 
 void StyleSheet::addKeyframes( const KeyframesDefinitionMap& keyframesMap ) {
-	for ( auto& keyframe : keyframesMap ) {
-		mKeyframesMap[keyframe.first] = keyframe.second;
+	for ( auto& keyframes : keyframesMap ) {
+		addKeyframes( keyframes.second );
 	}
 }
 

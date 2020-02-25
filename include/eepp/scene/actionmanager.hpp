@@ -49,7 +49,6 @@ class EE_API ActionManager {
   protected:
 	std::list<Action*> mActions;
 	std::list<Action*> mActionsRemoveList;
-	Mutex mMutex;
 	bool mUpdating;
 };
 

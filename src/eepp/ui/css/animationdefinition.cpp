@@ -7,7 +7,7 @@ bool isTimingFunction( const std::string& str ) {
 	return Ease::Interpolation::None != Ease::fromName( str, Ease::Interpolation::None );
 }
 
-std::map<std::string, AnimationDefinition> AnimationDefinition::parseAnimationProperties(
+std::unordered_map<std::string, AnimationDefinition> AnimationDefinition::parseAnimationProperties(
 	const std::vector<StyleSheetProperty>& stylesheetProperties ) {
 	AnimationsMap animations;
 	std::vector<std::string> names;
@@ -41,40 +41,39 @@ std::map<std::string, AnimationDefinition> AnimationDefinition::parseAnimationPr
 							std::string val( String::trim( String::toLower( part ) ) );
 
 							if ( isDirectionString( val ) ) {
-								animationDef.direction = directionFromString( val );
+								animationDef.setDirection( directionFromString( val ) );
 							} else if ( isAnimationFillModeString( val ) ) {
-								animationDef.fillMode = fillModeFromString( val );
+								animationDef.setFillMode( fillModeFromString( val ) );
 							} else if ( "infinite" == val ) {
-								animationDef.iterations = -1;
+								animationDef.setIterations( -1 );
 							} else if ( "paused" == val ) {
-								animationDef.paused = true;
+								animationDef.setPaused( true );
 							} else if ( "running" == val ) {
-								animationDef.paused = false;
+								animationDef.setPaused( false );
 							} else if ( isTimingFunction( val ) ) {
-								animationDef.timingFunction = Ease::fromName( val );
+								animationDef.setTimingFunction( Ease::fromName( val ) );
 							} else if ( Time::isValid( val ) ) {
 								if ( durationSet ) {
-									animationDef.delay =
-										StyleSheetProperty( "animation-delay", val ).asTime();
+									animationDef.setDelay( Time::fromString( val ) );
 								} else {
-									animationDef.duration =
-										StyleSheetProperty( "animation-duration", val ).asTime();
+									animationDef.setDuration( Time::fromString( val ) );
 									durationSet = true;
 								}
 							} else if ( String::isNumber( val, true ) ) {
 								int iterations = 1;
 
 								if ( String::fromString( iterations, val ) ) {
-									animationDef.iterations = iterations;
+									animationDef.setIterations( iterations );
 								}
 							} else {
-								animationDef.name = part;
+								animationDef.setName( part );
 							}
 						}
 
-						animations[animationDef.name] = std::move( animationDef );
+						animations[animationDef.getName()] = std::move( animationDef );
 					}
 				}
+				return animations;
 				break;
 			}
 			case PropertyId::AnimationName:
@@ -133,27 +132,27 @@ std::map<std::string, AnimationDefinition> AnimationDefinition::parseAnimationPr
 
 	for ( size_t i = 0; i < names.size(); i++ ) {
 		AnimationDefinition animationDef;
-		animationDef.name = names[i];
+		animationDef.setName( names[i] );
 
 		if ( !delays.empty() )
-			animationDef.delay = delays[i % delays.size()];
+			animationDef.setDelay( delays[i % delays.size()] );
 
 		if ( !durations.empty() )
-			animationDef.duration = delays[i % durations.size()];
+			animationDef.setDuration( delays[i % durations.size()] );
 
 		if ( !fillModes.empty() )
-			animationDef.fillMode = fillModes[i % fillModes.size()];
+			animationDef.setFillMode( fillModes[i % fillModes.size()] );
 
 		if ( !pausedStates.empty() )
-			animationDef.paused = pausedStates[i % pausedStates.size()];
+			animationDef.setPaused( pausedStates[i % pausedStates.size()] );
 
 		if ( !iterations.empty() )
-			animationDef.iterations = iterations[i % iterations.size()];
+			animationDef.setIterations( iterations[i % iterations.size()] );
 
 		if ( !timingFunctions.empty() )
-			animationDef.timingFunction = timingFunctions[i % timingFunctions.size()];
+			animationDef.setTimingFunction( timingFunctions[i % timingFunctions.size()] );
 
-		animations[animationDef.name] = std::move( animationDef );
+		animations[animationDef.getName()] = std::move( animationDef );
 	}
 
 	return animations;
@@ -205,31 +204,72 @@ AnimationDefinition::AnimationFillMode AnimationDefinition::fillModeFromString( 
 AnimationDefinition::AnimationDefinition() {}
 
 const AnimationDefinition::AnimationDirection& AnimationDefinition::getDirection() const {
-	return direction;
+	return mDirection;
 }
 
 const bool& AnimationDefinition::isPaused() const {
-	return paused;
+	return mPaused;
 }
 
 const Int32& AnimationDefinition::getIterations() const {
-	return iterations;
+	return mIterations;
 }
 
 const std::string& AnimationDefinition::getName() const {
-	return name;
+	return mName;
 }
 
 const Time& AnimationDefinition::getDelay() const {
-	return delay;
+	return mDelay;
 }
 
 const Time& AnimationDefinition::getDuration() const {
-	return duration;
+	return mDuration;
 }
 
 const Ease::Interpolation& AnimationDefinition::getTimingFunction() const {
-	return timingFunction;
+	return mTimingFunction;
+}
+
+void AnimationDefinition::setName( const std::string& value ) {
+	mName = value;
+	mId = String::hash( mName );
+}
+
+void AnimationDefinition::setFillMode( const AnimationFillMode& value ) {
+	mFillMode = value;
+}
+
+void AnimationDefinition::setPaused( bool value ) {
+	mPaused = value;
+}
+
+const Uint32& AnimationDefinition::getId() const {
+	return mId;
+}
+
+const AnimationDefinition::AnimationFillMode& AnimationDefinition::getFillMode() const {
+	return mFillMode;
+}
+
+void AnimationDefinition::setDirection( const AnimationDirection& value ) {
+	mDirection = value;
+}
+
+void AnimationDefinition::setTimingFunction( const Ease::Interpolation& value ) {
+	mTimingFunction = value;
+}
+
+void AnimationDefinition::setIterations( const Int32& value ) {
+	mIterations = value;
+}
+
+void AnimationDefinition::setDuration( const Time& value ) {
+	mDuration = value;
+}
+
+void AnimationDefinition::setDelay( const Time& value ) {
+	mDelay = value;
 }
 
 }}} // namespace EE::UI::CSS

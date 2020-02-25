@@ -802,14 +802,7 @@ solution "eepp"
 
 	project "SOIL2-static"
 		kind "StaticLib"
-
-		if is_vs() then
-			language "C++"
-			buildoptions { "/TP" }
-		else
-			language "C"
-		end
-
+		language "C"
 		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
 		files { "src/thirdparty/SOIL2/src/SOIL2/*.c" }
 		includedirs { "src/thirdparty/SOIL2" }

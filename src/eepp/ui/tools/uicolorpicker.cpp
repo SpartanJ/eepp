@@ -182,27 +182,27 @@ UIColorPicker::UIColorPicker( UIWindow* attachTo, const UIColorPicker::ColorPick
 			</RelativeLayout>
 		</LinearLayout>
 		<Widget class="separator" layout_width="match_parent" layout_height="1dp" />
-		<LinearLayout id="red_container" class="slider_container" orientation="horizontal" ayout_width="match_parent" layout_height="wrap_content">
+		<LinearLayout id="red_container" class="slider_container" orientation="horizontal" layout_width="match_parent" layout_height="wrap_content">
 			<TextView layout_width="16dp" layout_height="wrap_content" text="R" layout_gravity="center" />
 			<Slider layout_width="0dp" layout_weight="1" layout_height="wrap_content" orientation="horizontal" layout_gravity="center" minValue="0" maxValue="255" />
 			<SpinBox layout_width="48dp" layout_height="wrap_content" minValue="0" maxValue="255" />
 		</LinearLayout>
-		<LinearLayout id="green_container" class="slider_container" orientation="horizontal" ayout_width="match_parent" layout_height="wrap_content">
+		<LinearLayout id="green_container" class="slider_container" orientation="horizontal" layout_width="match_parent" layout_height="wrap_content">
 			<TextView layout_width="16dp" layout_height="wrap_content" text="G" layout_gravity="center" />
 			<Slider layout_width="0dp" layout_weight="1" layout_height="wrap_content" orientation="horizontal" layout_gravity="center" minValue="0" maxValue="255" />
 			<SpinBox layout_width="48dp" layout_height="wrap_content" minValue="0" maxValue="255" />
 		</LinearLayout>
-		<LinearLayout id="blue_container" class="slider_container" orientation="horizontal" ayout_width="match_parent" layout_height="wrap_content">
+		<LinearLayout id="blue_container" class="slider_container" orientation="horizontal" layout_width="match_parent" layout_height="wrap_content">
 			<TextView layout_width="16dp" layout_height="wrap_content" text="B" layout_gravity="center" />
 			<Slider layout_width="0dp" layout_weight="1" layout_height="wrap_content" orientation="horizontal" layout_gravity="center" minValue="0" maxValue="255" />
 			<SpinBox layout_width="48dp" layout_height="wrap_content" minValue="0" maxValue="255" />
 		</LinearLayout>
-		<LinearLayout id="alpha_container" class="slider_container" orientation="horizontal" ayout_width="match_parent" layout_height="wrap_content">
+		<LinearLayout id="alpha_container" class="slider_container" orientation="horizontal" layout_width="match_parent" layout_height="wrap_content">
 			<TextView layout_width="16dp" layout_height="wrap_content" text="A" layout_gravity="center" />
 			<Slider layout_width="0dp" layout_weight="1" layout_height="wrap_content" orientation="horizontal" layout_gravity="center" minValue="0" maxValue="255" />
 			<SpinBox layout_width="48dp" layout_height="wrap_content" minValue="0" maxValue="255" />
 		</LinearLayout>
-		<LinearLayout id="footer" class="footer" orientation="horizontal" ayout_width="match_parent" layout_height="wrap_content">
+		<LinearLayout id="footer" class="footer" orientation="horizontal" layout_width="match_parent" layout_height="wrap_content">
 			<Widget layout_width="0dp" layout_weight="1" layout_height="match_parent" />
 			<TextView layout_width="wrap_content" layout_height="wrap_content" text="#" layout_gravity="center" />
 			<TextInput layout_width="120dp" layout_height="wrap_content" />

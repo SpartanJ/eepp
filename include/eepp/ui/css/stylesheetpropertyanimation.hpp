@@ -74,7 +74,13 @@ class EE_API StyleSheetPropertyAnimation : public Action {
 
 	const AnimationOrigin& getAnimationOrigin() const;
 
+	void setRunning( const bool& running );
+
+	void setPaused( const bool& paused );
+
 	void notifyClose();
+
+	const AnimationDefinition& getAnimation() const;
 
   protected:
 	AnimationDefinition mAnimation;
@@ -87,6 +93,7 @@ class EE_API StyleSheetPropertyAnimation : public Action {
 	Uint32 mPropertyIndex;
 	std::string mFillModeValue;
 	AnimationOrigin mAnimationOrigin;
+	bool mPaused;
 
 	StyleSheetPropertyAnimation( const AnimationDefinition& animation,
 								 const PropertyDefinition* propertyDef,
