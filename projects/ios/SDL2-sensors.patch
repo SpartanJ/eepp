@@ -1,0 +1,33 @@
+--- a/configure	Mon Dec 30 17:56:56 2019 -0800
++++ b/configure	Tue Dec 31 10:40:30 2019 -0800
+@@ -25106,6 +25106,14 @@
+         #    have_haptic=yes
+         #    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -Wl,-framework,ForceFeedback"
+         #fi
++        # Set up files for the sensor library
++        if test x$enable_sensor = xyes; then
++
++$as_echo "#define SDL_SENSOR_COREMOTION 1" >>confdefs.h
++
++            SOURCES="$SOURCES $srcdir/src/sensor/coremotion/*.m"
++            have_sensor=yes
++        fi
+         # Set up files for the power library
+         if test x$enable_power = xyes; then
+ 
+
+--- a/configure.ac	Mon Dec 30 17:56:56 2019 -0800
++++ b/configure.ac	Tue Dec 31 10:40:30 2019 -0800
+@@ -3856,6 +3856,12 @@
+         #    have_haptic=yes
+         #    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -Wl,-framework,ForceFeedback"
+         #fi
++        # Set up files for the sensor library
++        if test x$enable_sensor = xyes; then
++            AC_DEFINE(SDL_SENSOR_COREMOTION, 1, [ ])
++            SOURCES="$SOURCES $srcdir/src/sensor/coremotion/*.m"
++            have_sensor=yes
++        fi
+         # Set up files for the power library
+         if test x$enable_power = xyes; then
+             AC_DEFINE(SDL_POWER_UIKIT, 1, [ ])

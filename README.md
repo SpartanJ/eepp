@@ -12,11 +12,9 @@ framework heavily focused on the development of rich graphical user interfaces.
 
 ### Cross platform functionality
 
-* Official support for Linux, Windows, macOS and Android.
+* Official support for Linux, Windows, macOS, Android and iOS.
 
-* Exports to HTML5 using emscripten with some limitations.
-
-* iOS current support is limited but should work without issues.
+* Exports to HTML5 using emscripten with some minor limitations.
 
 * Also works on BSD and Haiku.
 
@@ -442,23 +440,59 @@ library. That file can be used in you projects.
 
 ### iOS
 
-I've compiled the project for **iOS** many times in the past but there's not a
-recent build of it, so it might fail. But you can get the scripts to build it in
-`projects/ios/`. You can use `compile-all.sh` to generate a static build of eepp
-( but you will need to update the `libs/ios/libSDL2.a` build with a more recent
-one ).
-You'll need some inspiration to make this work, but I promise that I'll work on
-make this easier in the near future.
-You can also try to build the project with
-`premake5 --use-frameworks --os=ios xcode4`. That should give you a good
-starting point, but won't build, it will need some minor tweaks.
+The project provides two files to build the library and the demos. You can use
+any of them depending on your needs.
+The files are located in `projects/ios`:
+
+#### gen-xcode4-proj.sh script
+
+This script can be used to generate the xcode projects and solution of all the
+included projects in eepp (demos, tools, shared lib, static lib, etc). It will
+also download and build the SDL2 fat static library in order to be able to
+reference the library to the project. After building the projects sadly you'll
+need to make some minor changes to any/all of the projects you wan't to build
+or test, since the project generated lacks some minor configurations. After
+you run this script you'll need to open the solution located in
+`make/ios/eepp.xcworkspace`. To build the static libraries you'll not find any
+problem (that will work out of the box). But to test some of the examples it's
+required to:
+
+##### Add the Info.plist file
+
+Select (click on the project name) the project you want to test, for example
+ `eepp-empty-window`. You will se several tabs/options, go to _Build Settings_,
+ and locate the option _Info.plist_ file, double click to edit and write:
+ `Info.plist`. This will indicate to read that file that is located in the same
+ directory than the project. The go to the tab _General_ and complete the
+ _Bundle Identifier_ with an identifier name of the app bundle that will be
+ generated, for this example you can use something like: `eepp-empty-window`.
+ That will allow you to build and run the project.
+
+#### Add resources to the project
+This `eepp-empty-window` demo does not use any assets/resources, but other demos
+will need to load assets, and this assets need to be added to the project in order
+to be available to the app bundle. For example, the project `eepp-ui-hello-world`,
+will require you to add the `assets` folder into the project. What you need to do
+is: select the project and go to the _Build Phases_ tab, in _Copy Bundles Resources_
+click in the plus icon (+), then go to _Add Other..._ and locate and select the
+`bin/assets/` folder and _Finish_. That should be enough.
+
+#### compile-all.sh script
+
+This script can be used to build the SDL2 and eepp as two fat static libraries
+with arm64 and x86_64 architectures in it (arm64 for iPhone/iPad and x86_64 for
+the simulators). To generate a release build pass `config=release` as a parameter
+fo the script (`sh compile-all.sh config=release`). The built files will be
+located in `libs/ios/`, as `libSDL2.a` and `libeepp.a` (or `libeepp-debug.a` for
+debug build). This two files can be integrated in your project.
 
 ### emscripten
 
 You will first need to [download and install emscripten](https://emscripten.org/docs/getting_started/downloads.html).
 Then there's a script for building the **emscripten** project in
-`projects/emscripten/make.sh`. That should be enough in **GNU/Linux** or
-**macOS** ( only tested this on GNU/Linux ).
+`projects/emscripten/make.sh`. Before running this script remember to set the
+emsdk enviroment, it should be something like: `source /path/to/emsdk/emsdk_env.sh`.
+That should be enough in **GNU/Linux** or **macOS** ( only tested this on GNU/Linux ).
 
 ## Author comment
 

@@ -288,27 +288,6 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 		return false;
 	}
 
-// In some platforms it will not create the desired window size, so we query the real window size
-// created
-#if SDL_VERSION_ATLEAST( 2, 0, 1 )
-	int w, h;
-	SDL_GL_GetDrawableSize( mSDLWindow, &w, &h );
-
-	if ( w > 0 && h > 0 ) {
-		mWindow.WindowConfig.Width = w;
-		mWindow.WindowConfig.Height = h;
-		mWindow.WindowSize = Sizei( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
-	} else {
-		eePRINTL( "Window failed to create!" );
-
-		if ( NULL != SDL_GetError() ) {
-			eePRINTL( "Error: %s", SDL_GetError() );
-		}
-
-		return false;
-	}
-#endif
-
 #if EE_PLATFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_IOS
 	eePRINTL( "Choosing GL Version from: %d", Context.Version );
 
@@ -352,8 +331,8 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 	if ( mWindow.ContextConfig.SharedGLContext ) {
 		SDL_GL_SetAttribute( SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1 );
 
-		mGLContext = SDL_GL_CreateContext( mSDLWindow );
 		mGLContextThread = SDL_GL_CreateContext( mSDLWindow );
+		mGLContext = SDL_GL_CreateContext( mSDLWindow );
 	} else {
 		mGLContext = SDL_GL_CreateContext( mSDLWindow );
 	}
@@ -373,6 +352,27 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 
 		return false;
 	}
+
+	// In some platforms it will not create the desired window size, so we query the real window size
+	// created
+#if SDL_VERSION_ATLEAST( 2, 0, 1 )
+	int w, h;
+	SDL_GL_GetDrawableSize( mSDLWindow, &w, &h );
+	
+	if ( w > 0 && h > 0 ) {
+		mWindow.WindowConfig.Width = w;
+		mWindow.WindowConfig.Height = h;
+		mWindow.WindowSize = Sizei( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
+	} else {
+		eePRINTL( "Window failed to create!" );
+		
+		if ( NULL != SDL_GetError() ) {
+			eePRINTL( "Error: %s", SDL_GetError() );
+		}
+		
+		return false;
+	}
+#endif
 
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	SDL_GL_SetSwapInterval( ( mWindow.ContextConfig.VSync ? 1 : 0 ) ); // VSync
