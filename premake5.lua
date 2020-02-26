@@ -99,7 +99,7 @@ function incdirs( dirs )
 	includedirs { dirs }
 end
 
-function download_and_extract_sdl(sdl_url, ext)
+function download_and_extract_sdl(sdl_url)
 	print("Downloading: " .. sdl_url)
 	local dest_dir = "src/thirdparty/"
 	local local_file = dest_dir .. remote_sdl2_version .. ".zip"
