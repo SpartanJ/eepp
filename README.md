@@ -468,7 +468,8 @@ Select (click on the project name) the project you want to test, for example
  generated, for this example you can use something like: `eepp-empty-window`.
  That will allow you to build and run the project.
 
-#### Add resources to the project
+##### Add resources to the project
+
 This `eepp-empty-window` demo does not use any assets/resources, but other demos
 will need to load assets, and this assets need to be added to the project in order
 to be available to the app bundle. For example, the project `eepp-ui-hello-world`,
