@@ -89,6 +89,7 @@ backends = { }
 static_backends = { }
 backend_selected = false
 remote_sdl2_version = "SDL2-2.0.10"
+remote_sdl2_devel_src_url = "https://libsdl.org/release/SDL2-2.0.10.zip"
 remote_sdl2_devel_vc_url = "https://www.libsdl.org/release/SDL2-devel-2.0.10-VC.zip"
 
 function incdirs( dirs )
@@ -98,19 +99,28 @@ function incdirs( dirs )
 	includedirs { dirs }
 end
 
+function download_and_extract_sdl(sdl_url)
+	print("Downloading: " .. sdl_url)
+	local dest_dir = "src/thirdparty/"
+	local local_file = dest_dir .. remote_sdl2_version .. ".zip"
+	local result_str, response_code = http.download(sdl_url, local_file)
+	if response_code == 200 then
+		print("Downloaded successfully to: " .. local_file)
+		zip.extract(local_file, dest_dir)
+		print("Extracted " .. local_file .. " into " .. dest_dir)
+	else
+		print("Failed to download:  " .. sdl_url)
+		exit(1)
+	end
+end
+
 function download_and_extract_dependencies()
-	if _OPTIONS["windows-vc-build"] and not os.isdir("src/thirdparty/" .. remote_sdl2_version) then
-		print("Downloading: " .. remote_sdl2_devel_vc_url)
-		local dest_dir = "src/thirdparty/"
-		local local_file = dest_dir .. remote_sdl2_version .. ".zip"
-		local result_str, response_code = http.download(remote_sdl2_devel_vc_url, local_file)
-		if response_code == 200 then
-			print("Downloaded successfully to: " .. local_file)
-			zip.extract(local_file, dest_dir)
-			print("Extracted " .. local_file .. " into " .. dest_dir)
-		else
-			print("Failed to download:  " .. remote_sdl2_rul)
-			exit(1)
+	if not os.isdir("src/thirdparty/" .. remote_sdl2_version) then
+		if _OPTIONS["windows-vc-build"] then
+			download_and_extract_sdl(remote_sdl2_devel_vc_url)
+		elseif os.istarget("ios") then
+			download_and_extract_sdl(remote_sdl2_devel_src_url)
+			os.execute("patch -t --forward -p1 -d src/thirdparty/SDL2-2.0.10/ < projects/ios/SDL2-sensors.patch")
 		end
 	end
 end
@@ -124,10 +134,10 @@ function build_base_configuration( package_name )
 	filter "not system:windows"
 		buildoptions{ "-fPIC" }
 
-	filter "configurations:debug"
+	filter "configurations:debug*"
 		targetname ( package_name .. "-debug" )
 
-	filter "configurations:release"
+	filter "configurations:release*"
 		targetname ( package_name )
 
 	filter "action:not vs*"
@@ -149,12 +159,12 @@ function build_base_cpp_configuration( package_name )
 	filter "action:not vs*"
 		buildoptions { "-Wall" }
 
-	filter "configurations:debug"
+	filter "configurations:debug*"
 		defines { "DEBUG" }
 		symbols "On"
 		targetname ( package_name .. "-debug" )
 
-	filter "configurations:release"
+	filter "configurations:release*"
 		optimize "Speed"
 		targetname ( package_name )
 end
@@ -192,23 +202,23 @@ function build_link_configuration( package_name, use_ee_icon )
 		cppdialect "C++14"
 		buildoptions { "-Wall" }
 
-	filter { "configurations:debug", "action:not vs*" }
+	filter { "configurations:debug*", "action:not vs*" }
 		buildoptions{ "-Wno-long-long" }
 
-	filter { "configurations:release", "action:not vs*" }
+	filter { "configurations:release*", "action:not vs*" }
 		buildoptions { "-fno-strict-aliasing -ffast-math" }
 
-	filter { "configurations:release", "action:not vs*", "system:not macosx" }
+	filter { "configurations:release*", "action:not vs*", "system:not macosx" }
 		buildoptions { "-s" }
 
-	filter "configurations:debug"
+	filter "configurations:debug*"
 		defines { "DEBUG", "EE_DEBUG", "EE_MEMORY_MANAGER" }
 		targetname ( package_name .. "-debug" .. extension )
 
-	filter "configurations:release"
+	filter "configurations:release*"
 		targetname ( package_name .. extension )
 
-	filter { "system:windows or system:ios", "action:not vs*" }
+	filter { "system:windows", "action:not vs*" }
 		linkoptions { "-static-libgcc", "-static-libstdc++" }
 
 	filter { "system:windows", "action:vs*" }
@@ -253,7 +263,7 @@ function generate_os_links()
 	elseif os.istarget("haiku") then
 		multiple_insert( os_links, { "GL", "network" } )
 	elseif os.istarget("ios") then
-		multiple_insert( os_links, { "OpenGLES.framework", "AudioToolbox.framework", "CoreAudio.framework", "Foundation.framework", "CoreFoundation.framework", "UIKit.framework", "QuartzCore.framework", "CoreGraphics.framework" } )
+		multiple_insert( os_links, { "OpenGLES.framework", "AudioToolbox.framework", "CoreAudio.framework", "Foundation.framework", "CoreFoundation.framework", "UIKit.framework", "QuartzCore.framework", "CoreGraphics.framework", "CoreMotion.framework", "AVFoundation.framework", "GameController.framework" } )
 	elseif os.istarget("android") then
 		multiple_insert( os_links, { "GLESv1_CM", "GLESv2", "log" } )
 	end
@@ -319,13 +329,13 @@ end
 
 function can_add_static_backend( name )
 	if _OPTIONS["with-static-backend"] then
-		local path = "libs/" .. os.target() .. "/lib" .. name .. ".a"
-		return os.isfile(path)
+		return true
 	end
+	return false
 end
 
 function insert_static_backend( name )
-	table.insert( static_backends, path.getrelative( "libs/" .. os.target(), "./" ) .. "/libs/" .. os.target() .. "/lib" .. name .. ".a" )
+	table.insert( static_backends, "../../libs/" .. os.target() .. "/lib" .. name .. ".a" )
 end
 
 function add_sdl2()
@@ -333,6 +343,7 @@ function add_sdl2()
 	if not can_add_static_backend("SDL2") then
 		table.insert( link_list, get_backend_link_name( "SDL2" ) )
 	else
+		print("Using static backend")
 		insert_static_backend( "SDL2" )
 	end
 
@@ -349,44 +360,32 @@ end
 
 function set_ios_config()
 	if os.istarget("ios") then
-		local err = false
+		local toolchainpath = os.getenv("TOOLCHAINPATH")
+		local iosversion = os.getenv("IOSVERSION")
+		local sysroot_path = os.getenv("SYSROOTPATH")
 
 		if nil == os.getenv("TOOLCHAINPATH") then
-			print("You must set TOOLCHAINPATH enviroment variable.")
-			print("\tExample: /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/")
-			err = true
-		end
-
-		if nil == os.getenv("SYSROOTPATH") then
-			print("You must set SYSROOTPATH enviroment variable.")
-			print("\tExample: /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS5.0.sdk")
-			err = true
+			toolchainpath = os.outputof("xcrun -find -sdk iphonesimulator clang")
 		end
 
 		if nil == os.getenv("IOSVERSION") then
-			print("You must set IOSVERSION enviroment variable.")
-			print("\tExample: 5.0")
-			err = true
+			iosversion = os.outputof("xcrun --sdk iphonesimulator --show-sdk-version")
 		end
 
-		if err then
-			os.exit(1)
+		if nil == os.getenv("SYSROOTPATH") then
+			local platform_path = os.outputof("xcrun --sdk iphonesimulator --show-sdk-platform-path")
+			sysroot_path = platform_path .. "/Developer/SDKs/iPhoneSimulator" .. iosversion .. ".sdk/"
 		end
 
-		local sysroot_path = os.getenv("SYSROOTPATH")
 		local framework_path = sysroot_path .. "/System/Library/Frameworks"
 		local framework_libs_path = framework_path .. "/usr/lib"
-		local sysroot_ver = " -miphoneos-version-min=" .. os.getenv("IOSVERSION") .. " -isysroot " .. sysroot_path
+		local sysroot_ver = " -miphoneos-version-min=9.0 -isysroot " .. sysroot_path
 
 		buildoptions { sysroot_ver .. " -I" .. sysroot_path .. "/usr/include" }
 		linkoptions { sysroot_ver }
 		libdirs { framework_libs_path }
 		linkoptions { " -F" .. framework_path .. " -L" .. framework_libs_path .. " -isysroot " .. sysroot_path }
-		incdirs { "src/thirdparty/SDL2/include" }
-	end
-
-	if _OPTIONS.platform == "ios-cross-arm7" or _OPTIONS.platform == "ios-cross-x86" then
-		incdirs { "src/thirdparty/SDL2/include" }
+		includedirs { "src/thirdparty/" .. remote_sdl2_version .. "/include" }
 	end
 end
 
@@ -507,11 +506,6 @@ function build_eepp( build_name )
 	filter { "system:macosx", "action:xcode* or options:use-frameworks" }
 		libdirs { "/System/Library/Frameworks", "/Library/Frameworks" }
 
-	filter "with-dynamic-freetype"
-		if os_findlib("freetype") then
-			table.insert( link_list, get_backend_link_name( "freetype" ) )
-		end
-
 	filter "system:windows"
 		files { "src/eepp/system/platform/win/*.cpp" }
 		files { "src/eepp/network/platform/win/*.cpp" }
@@ -532,12 +526,22 @@ function build_eepp( build_name )
 
 	filter "action:not vs*"
 		cppdialect "C++14"
+
+	filter "options:with-dynamic-freetype"
+		if not os.istarget("ios") and os_findlib("freetype") then
+			table.insert( link_list, get_backend_link_name( "freetype" ) )
+		end
 end
 
 workspace "eepp"
 	targetdir("./bin/")
-	configurations { "debug", "release" }
-	platforms { "x86_64", "x86" }
+	if os.istarget("ios") then
+		configurations { "debug-x64", "debug-arm64", "release-x64", "release-arm64" }
+		platforms { "x86_64", "arm64" }
+	else
+		configurations { "debug", "release" }
+		platforms { "x86_64", "x86" }
+	end
 	rtti "On"
 	download_and_extract_dependencies()
 	select_backend()
@@ -549,7 +553,10 @@ workspace "eepp"
 	filter "platforms:x86"
 		architecture "x86"
 
-	filter "platforms:x86_64"
+	filter "platforms:arm64 or configurations:debug-arm64 or configurations:release-arm64"
+		architecture "arm64"
+
+	filter "platforms:x86_64 or configurations:debug-x64 or configurations:release-x64"
 		architecture "x86_64"
 
 	filter "system:macosx"
@@ -560,10 +567,10 @@ workspace "eepp"
 		ndkplatform "android-28"
 		ndkstl "c++_static"
 
-	filter "configurations:debug"
+	filter "configurations:debug*"
 		defines { "DEBUG" }
 		symbols "On"
-	filter "configurations:release"
+	filter "configurations:release*"
 		optimize "Speed"
 
 	project "SOIL2-static"
@@ -693,7 +700,7 @@ workspace "eepp"
 				"src/thirdparty/efsw/src/efsw/FileWatcherWin32.cpp",
 				"src/thirdparty/efsw/src/efsw/FileWatcherFSEvents.cpp"
 			}
-		filter "system:macosx"
+		filter "system:macosx or system:ios"
 			excludes {
 				"src/thirdparty/efsw/src/efsw/WatcherInotify.cpp",
 				"src/thirdparty/efsw/src/efsw/WatcherWin32.cpp",

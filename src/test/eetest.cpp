@@ -558,7 +558,7 @@ void EETest::createBaseUI() {
 	Menu->getItem( "Quit" )->addEventListener( Event::MouseUp,
 											   cb::Make1( this, &EETest::onQuitClick ) );
 
-	SceneManager::instance()->getUISceneNode()->addEventListener(
+	SceneManager::instance()->getUISceneNode()->getRoot()->addEventListener(
 		Event::MouseClick, cb::Make1( this, &EETest::onMainClick ) );
 
 #ifdef EE_PLATFORM_TOUCH

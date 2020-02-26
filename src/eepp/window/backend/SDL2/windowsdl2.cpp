@@ -239,11 +239,7 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 		mWindow.WindowConfig.Height = mWindow.DesktopResolution.getHeight();
 	}
 
-	mWindow.Flags = SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN;
-
-#if SDL_VERSION_ATLEAST( 2, 0, 1 )
-	mWindow.Flags |= SDL_WINDOW_ALLOW_HIGHDPI;
-#endif
+	mWindow.Flags = SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI;
 
 	if ( mWindow.WindowConfig.Style & WindowStyle::Resize ) {
 		mWindow.Flags |= SDL_WINDOW_RESIZABLE;
@@ -272,10 +268,6 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 	mWindow.WindowConfig.Height *= mWindow.WindowConfig.PixelDensity;
 #endif
 
-#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
-	tmpFlags = SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI;
-#endif
-
 	mSDLWindow = SDL_CreateWindow( mWindow.WindowConfig.Caption.c_str(), SDL_WINDOWPOS_UNDEFINED,
 								   SDL_WINDOWPOS_UNDEFINED, mWindow.WindowConfig.Width,
 								   mWindow.WindowConfig.Height, tmpFlags );
@@ -287,27 +279,6 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 
 		return false;
 	}
-
-// In some platforms it will not create the desired window size, so we query the real window size
-// created
-#if SDL_VERSION_ATLEAST( 2, 0, 1 )
-	int w, h;
-	SDL_GL_GetDrawableSize( mSDLWindow, &w, &h );
-
-	if ( w > 0 && h > 0 ) {
-		mWindow.WindowConfig.Width = w;
-		mWindow.WindowConfig.Height = h;
-		mWindow.WindowSize = Sizei( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
-	} else {
-		eePRINTL( "Window failed to create!" );
-
-		if ( NULL != SDL_GetError() ) {
-			eePRINTL( "Error: %s", SDL_GetError() );
-		}
-
-		return false;
-	}
-#endif
 
 #if EE_PLATFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_IOS
 	eePRINTL( "Choosing GL Version from: %d", Context.Version );
@@ -352,8 +323,8 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 	if ( mWindow.ContextConfig.SharedGLContext ) {
 		SDL_GL_SetAttribute( SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1 );
 
-		mGLContext = SDL_GL_CreateContext( mSDLWindow );
 		mGLContextThread = SDL_GL_CreateContext( mSDLWindow );
+		mGLContext = SDL_GL_CreateContext( mSDLWindow );
 	} else {
 		mGLContext = SDL_GL_CreateContext( mSDLWindow );
 	}
@@ -370,6 +341,25 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 		eePRINTL( "Unable to create context: %s", SDL_GetError() );
 
 		logFailureInit( "WindowSDL", getVersion() );
+
+		return false;
+	}
+
+	// In some platforms it will not create the desired window size, so we query the real window
+	// size created
+	int w, h;
+	SDL_GL_GetDrawableSize( mSDLWindow, &w, &h );
+
+	if ( w > 0 && h > 0 ) {
+		mWindow.WindowConfig.Width = w;
+		mWindow.WindowConfig.Height = h;
+		mWindow.WindowSize = Sizei( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
+	} else {
+		eePRINTL( "Window failed to create!" );
+
+		if ( NULL != SDL_GetError() ) {
+			eePRINTL( "Error: %s", SDL_GetError() );
+		}
 
 		return false;
 	}
@@ -770,26 +760,18 @@ const Sizei& WindowSDL::getDesktopResolution() {
 }
 
 Rect WindowSDL::getBorderSize() {
-#if SDL_VERSION_ATLEAST( 2, 0, 5 )
 	Rect bordersSize;
 	SDL_GetWindowBordersSize( mSDLWindow, &bordersSize.Top, &bordersSize.Left, &bordersSize.Bottom,
 							  &bordersSize.Right );
 	return bordersSize;
-#else
-	return Rect();
-#endif
 }
 
 Float WindowSDL::getScale() {
-#if SDL_VERSION_ATLEAST( 2, 0, 1 )
 	int realX, realY;
 	int scaledX, scaledY;
 	SDL_GL_GetDrawableSize( mSDLWindow, &realX, &realY );
 	SDL_GetWindowSize( mSDLWindow, &scaledX, &scaledY );
 	return (Float)realX / (Float)scaledX;
-#else
-	return 1.f;
-#endif
 }
 
 SDL_Window* WindowSDL::GetSDLWindow() const {

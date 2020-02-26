@@ -348,7 +348,6 @@ void InputSDL::injectMousePos( const Uint16& x, const Uint16& y ) {
 }
 
 Vector2i InputSDL::queryMousePos() {
-#if SDL_VERSION_ATLEAST( 2, 0, 5 )
 	Vector2i mousePos;
 	Vector2i tempMouse;
 	Vector2i tempWinPos;
@@ -361,11 +360,6 @@ Vector2i InputSDL::queryMousePos() {
 	mousePos.x = (int)tempMouse.x - tempWinPos.x - bordersSize.Left;
 	mousePos.y = (int)tempMouse.y - tempWinPos.y - bordersSize.Top;
 	return mousePos;
-#else
-	int x, y;
-	SDL_GetMouseState( &x, &y );
-	return Vector2i( x, y );
-#endif
 }
 
 void InputSDL::init() {

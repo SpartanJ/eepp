@@ -285,6 +285,7 @@ os_links = { }
 backends = { }
 static_backends = { }
 backend_selected = false
+remote_sdl2_version = "SDL2-2.0.10"
 
 function build_base_configuration( package_name )
 	includedirs { "src/thirdparty/zlib" }
@@ -489,7 +490,7 @@ function generate_os_links()
 	elseif os.is_real("haiku") then
 		multiple_insert( os_links, { "GL", "network" } )
 	elseif os.is_real("ios") then
-		multiple_insert( os_links, { "OpenGLES.framework", "AudioToolbox.framework", "CoreAudio.framework", "Foundation.framework", "CoreFoundation.framework", "UIKit.framework", "QuartzCore.framework", "CoreGraphics.framework" } )
+		multiple_insert( os_links, { "OpenGLES.framework", "AudioToolbox.framework", "CoreAudio.framework", "Foundation.framework", "CoreFoundation.framework", "UIKit.framework", "QuartzCore.framework", "CoreGraphics.framework", "CoreMotion.framework", "AVFoundation.framework", "GameController.framework" } )
 	end
 
 	if not _OPTIONS["with-mojoal"] then
@@ -613,17 +614,17 @@ function set_ios_config()
 		local sysroot_path = os.getenv("SYSROOTPATH")
 		local framework_path = sysroot_path .. "/System/Library/Frameworks"
 		local framework_libs_path = framework_path .. "/usr/lib"
-		local sysroot_ver = " -miphoneos-version-min=" .. os.getenv("IOSVERSION") .. " -isysroot " .. sysroot_path
+		local sysroot_ver = " -miphoneos-version-min=9.0 -isysroot " .. sysroot_path
 
 		buildoptions { sysroot_ver .. " -I" .. sysroot_path .. "/usr/include" }
 		linkoptions { sysroot_ver }
 		libdirs { framework_libs_path }
 		linkoptions { " -F" .. framework_path .. " -L" .. framework_libs_path .. " -isysroot " .. sysroot_path }
-		includedirs { "src/thirdparty/SDL2/include" }
+		includedirs { "src/thirdparty/" .. remote_sdl2_version .. "/include" }
 	end
 
 	if _OPTIONS.platform == "ios-cross-arm7" or _OPTIONS.platform == "ios-cross-x86" then
-		includedirs { "src/thirdparty/SDL2/include" }
+		includedirs { "src/thirdparty/" .. remote_sdl2_version .. "/include" }
 	end
 end
 

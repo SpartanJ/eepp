@@ -24,11 +24,9 @@ Float DisplaySDL2::getDPI() {
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 	return 96.f * emscripten_get_device_pixel_ratio();
 #else
-#if SDL_VERSION_ATLEAST( 2, 0, 4 )
 	float ddpi, hdpi, vdpi;
 	if ( 0 == SDL_GetDisplayDPI( 0, &ddpi, &hdpi, &vdpi ) )
 		return ddpi;
-#endif
 	return 96.f;
 #endif
 }
@@ -83,11 +81,9 @@ DisplayMode DisplaySDL2::getClosestDisplayMode( DisplayMode wantedMode ) {
 }
 
 Rect DisplaySDL2::getUsableBounds() {
-#if SDL_VERSION_ATLEAST( 2, 0, 5 )
 	SDL_Rect r;
 	if ( SDL_GetDisplayUsableBounds( index, &r ) == 0 )
 		return Rect( r.x, r.y, r.w, r.h );
-#endif
 	return Rect();
 }
 
