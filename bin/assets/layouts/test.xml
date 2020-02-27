@@ -87,11 +87,18 @@
 			<Image src="file://assets/tiles/5.png" />
 			<Image src="file://assets/tiles/6.png" />
 		</GridLayout>
+		<ViewPager id="test_7" layout_width="match_parent" layout_height="match_parent">
+			<Image src="file://assets/sprites/1.png" scale-type="expand" />
+			<Image src="file://assets/sprites/2.png" scale-type="expand" />
+			<Image src="file://assets/sprites/3.png" scale-type="expand" />
+			<Image src="file://assets/sprites/4.png" scale-type="expand" />
+		</ViewPager>
 		<Tab name="Padding Test" owns="test_1" />
 		<Tab name="Tabs Test" owns="test_2" />
 		<Tab name="Cascade Test" owns="test_3" />
 		<Tab name="Hover Test" owns="test_4" />
 		<Tab name="Scroll Test" owns="test_5" />
 		<Tab name="Grid Test" owns="test_6" />
+		<Tab name="View Pager Test" owns="test_7" />
 	</TabWidget>
 </vbox>

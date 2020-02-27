@@ -585,7 +585,7 @@ void Node::childAdd( Node* ChildCtrl ) {
 		mChildLast = ChildCtrl;
 	}
 
-	onChildCountChange();
+	onChildCountChange( ChildCtrl, false );
 }
 
 void Node::childAddAt( Node* ChildCtrl, Uint32 Pos ) {
@@ -635,7 +635,7 @@ void Node::childAddAt( Node* ChildCtrl, Uint32 Pos ) {
 		}
 	}
 
-	onChildCountChange();
+	onChildCountChange( ChildCtrl, false );
 }
 
 void Node::childRemove( Node* ChildCtrl ) {
@@ -664,7 +664,7 @@ void Node::childRemove( Node* ChildCtrl ) {
 		ChildCtrl->mPrev = NULL;
 	}
 
-	onChildCountChange();
+	onChildCountChange( ChildCtrl, true );
 }
 
 void Node::childsCloseAll() {
@@ -1066,7 +1066,7 @@ void Node::onParentSizeChange( const Vector2f& ) {
 	invalidateDraw();
 }
 
-void Node::onChildCountChange() {
+void Node::onChildCountChange( Node* child, const bool& removed ) {
 	invalidateDraw();
 }
 

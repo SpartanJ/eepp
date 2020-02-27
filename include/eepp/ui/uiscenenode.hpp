@@ -99,7 +99,7 @@ class EE_API UISceneNode : public SceneNode {
 
 	bool onMediaChanged();
 
-	virtual void onChildCountChange();
+	virtual void onChildCountChange( Node * child, const bool& removed );
 
 	virtual void onSizeChange();
 

@@ -45,17 +45,17 @@ class EE_API UITabWidget : public UIWidget {
 
 	Uint32 getTabIndex( UITab* Tab );
 
-	Uint32 getCount() const;
+	Uint32 getTabCount() const;
 
-	void remove( const Uint32& Index );
+	void removeTab( const Uint32& Index );
 
-	void remove( UITab* Tab );
+	void removeTab( UITab* Tab );
 
-	void removeAll();
+	void removeAllTabs();
 
-	void insert( const String& Text, UINode* CtrlOwned, Drawable* Icon, const Uint32& Index );
+	void insertTab( const String& Text, UINode* CtrlOwned, Drawable* Icon, const Uint32& Index );
 
-	void insert( UITab* Tab, const Uint32& Index );
+	void insertTab( UITab* Tab, const Uint32& Index );
 
 	virtual void setTheme( UITheme* Theme );
 
@@ -120,6 +120,14 @@ class EE_API UITabWidget : public UIWidget {
 
 	void invalidate( Node* invalidator );
 
+	void selectPreviousTab();
+
+	void selectNextTab();
+
+	void setTabSelected( UITab* Tab );
+
+	void setTabSelected( const Uint32& tabIndex );
+
   protected:
 	friend class UITab;
 
@@ -136,11 +144,9 @@ class EE_API UITabWidget : public UIWidget {
 
 	virtual void onSizeChange();
 
-	virtual void onChildCountChange();
+	virtual void onChildCountChange( Node * child, const bool& removed );
 
 	virtual void onPaddingChange();
-
-	void setTabSelected( UITab* Tab );
 
 	void setTabContainerSize();
 
@@ -151,10 +157,6 @@ class EE_API UITabWidget : public UIWidget {
 	void zorderTabs();
 
 	void orderTabs();
-
-	void selectPrev();
-
-	void selectNext();
 
 	void applyThemeToTabs();
 

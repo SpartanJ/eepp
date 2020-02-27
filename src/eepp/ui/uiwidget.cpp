@@ -561,6 +561,22 @@ Float UIWidget::lengthFromValue( const StyleSheetProperty& property, const Float
 							defaultContainerValue, property.getIndex() );
 }
 
+Float UIWidget::lengthFromValueAsDp( const std::string& value,
+									 const PropertyRelativeTarget& relativeTarget,
+									 const Float& defaultValue, const Float& defaultContainerValue,
+									 const Uint32& propertyIndex ) {
+	Float containerLength =
+		getPropertyRelativeTargetContainerLength( relativeTarget, defaultValue, propertyIndex );
+	return convertLengthAsDp( CSS::StyleSheetLength( value, defaultValue ), containerLength );
+}
+
+Float UIWidget::lengthFromValueAsDp( const StyleSheetProperty& property, const Float& defaultValue,
+									 const Float& defaultContainerValue ) {
+	return lengthFromValue( property.getValue(),
+							property.getPropertyDefinition()->getRelativeTarget(), defaultValue,
+							defaultContainerValue, property.getIndex() );
+}
+
 const Rectf& UIWidget::getPadding() const {
 	return mPadding;
 }

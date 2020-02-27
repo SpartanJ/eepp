@@ -1087,23 +1087,11 @@ void UIWindow::onAlphaChange() {
 	UIWidget::onAlphaChange();
 }
 
-void UIWindow::onChildCountChange() {
+void UIWindow::onChildCountChange( Node* child, const bool& removed ) {
 	if ( NULL == mContainer )
 		return;
 
-	Node* child = mChild;
-	bool found = false;
-
-	while ( NULL != child ) {
-		if ( !( child->getNodeFlags() & NODE_FLAG_OWNED_BY_NODE ) ) {
-			found = true;
-			break;
-		}
-
-		child = child->getNextNode();
-	}
-
-	if ( found ) {
+	if ( !removed && !( child->getNodeFlags() & NODE_FLAG_OWNED_BY_NODE ) ) {
 		child->setParent( mContainer );
 	}
 }

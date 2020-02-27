@@ -30,11 +30,13 @@ class EE_API Move : public ActionInterpolation2d {
 
 class EE_API MoveCoordinate : public ActionInterpolation1d {
   public:
-	enum CoordinateType { CoordinateX, CoordinateY };
+	enum CoordinateAxis { CoordinateX, CoordinateY };
+	enum CoordinateType { Position, PixelPosition };
 
 	static MoveCoordinate* New( const Float& start, const Float& end, const Time& duration,
 								const Ease::Interpolation& type = Ease::Linear,
-								const CoordinateType& coordinateType = CoordinateX );
+								const CoordinateAxis& coordinateAxis = CoordinateX,
+								const CoordinateType& coordinateType = Position );
 
 	Action* clone() const override;
 
@@ -42,13 +44,15 @@ class EE_API MoveCoordinate : public ActionInterpolation1d {
 
   protected:
 	MoveCoordinate( const Float& start, const Float& end, const Time& duration,
-					const Ease::Interpolation& type, const CoordinateType& coordinateType );
+					const Ease::Interpolation& type, const CoordinateAxis& coordinateAxis,
+					const CoordinateType& coordinateType );
 
 	void onStart() override;
 
 	void onUpdate( const Time& time ) override;
 
   private:
+	CoordinateAxis mCoordinateAxis;
 	CoordinateType mCoordinateType;
 
 	MoveCoordinate();

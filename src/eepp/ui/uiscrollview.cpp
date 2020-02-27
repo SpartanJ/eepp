@@ -58,21 +58,9 @@ void UIScrollView::onAlphaChange() {
 		mScrollView->setAlpha( mAlpha );
 }
 
-void UIScrollView::onChildCountChange() {
-	Node* child = mChild;
-	bool found = false;
-
-	while ( NULL != child ) {
-		if ( child != mVScroll && child != mHScroll && child != mContainer &&
-			 child != mScrollView ) {
-			found = true;
-			break;
-		}
-
-		child = child->getNextNode();
-	}
-
-	if ( found ) {
+void UIScrollView::onChildCountChange( Node* child, const bool& removed ) {
+	if ( !removed && child != mVScroll && child != mHScroll && child != mContainer &&
+		 child != mScrollView ) {
 		if ( NULL != mScrollView ) {
 			if ( 0 != mSizeChangeCb )
 				mScrollView->removeEventListener( mSizeChangeCb );
@@ -92,6 +80,8 @@ void UIScrollView::onChildCountChange() {
 
 		containerUpdate();
 	}
+
+	UITouchDragableWidget::onChildCountChange( child, removed );
 }
 
 void UIScrollView::onPaddingChange() {

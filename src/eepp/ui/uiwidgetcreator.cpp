@@ -29,6 +29,7 @@
 #include <eepp/ui/uiwidgetcreator.hpp>
 #include <eepp/ui/uiwindow.hpp>
 #include <eepp/ui/uiwinmenu.hpp>
+#include <eepp/ui/uiviewpager.hpp>
 
 namespace EE { namespace UI {
 
@@ -74,11 +75,14 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["touchdragable"] = UITouchDragableWidget::New;
 		registeredWidget["gridlayout"] = UIGridLayout::New;
 		registeredWidget["layout"] = UILayout::New;
+		registeredWidget["viewpager"] = UIViewPager::New;
 
 		registeredWidget["hbox"] = UILinearLayout::NewHorizontal;
 		registeredWidget["vbox"] = UILinearLayout::NewVertical;
 		registeredWidget["input"] = UITextInput::New;
 		registeredWidget["inputpassword"] = UITextInputPassword::New;
+		registeredWidget["viewpagerhorizontal"] = UIViewPager::NewHorizontal;
+		registeredWidget["viewpagervertical"] = UIViewPager::NewHorizontal;
 
 		sBaseListCreated = true;
 	}

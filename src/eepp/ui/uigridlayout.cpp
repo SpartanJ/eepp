@@ -109,9 +109,9 @@ void UIGridLayout::onSizeChange() {
 	UIWidget::onSizeChange();
 }
 
-void UIGridLayout::onChildCountChange() {
+void UIGridLayout::onChildCountChange( Node* child, const bool& removed ) {
 	pack();
-	UIWidget::onChildCountChange();
+	UIWidget::onChildCountChange( child, removed );
 }
 
 void UIGridLayout::onPaddingChange() {

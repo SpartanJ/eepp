@@ -61,7 +61,7 @@ class EE_API UIGridLayout : public UILayout {
 
 	virtual void onSizeChange();
 
-	virtual void onChildCountChange();
+	virtual void onChildCountChange( Node * child, const bool& removed );
 
 	virtual void onPaddingChange();
 

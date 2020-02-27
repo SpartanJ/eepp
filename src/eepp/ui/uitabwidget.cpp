@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
@@ -452,11 +453,11 @@ Uint32 UITabWidget::getTabIndex( UITab* Tab ) {
 	return eeINDEX_NOT_FOUND;
 }
 
-Uint32 UITabWidget::getCount() const {
+Uint32 UITabWidget::getTabCount() const {
 	return mTabs.size();
 }
 
-void UITabWidget::remove( const Uint32& Index ) {
+void UITabWidget::removeTab( const Uint32& Index ) {
 	eeASSERT( Index < mTabs.size() );
 
 	if ( mTabs[Index] == mTabSelected ) {
@@ -493,11 +494,11 @@ void UITabWidget::remove( const Uint32& Index ) {
 	orderTabs();
 }
 
-void UITabWidget::remove( UITab* Tab ) {
-	remove( getTabIndex( Tab ) );
+void UITabWidget::removeTab( UITab* Tab ) {
+	removeTab( getTabIndex( Tab ) );
 }
 
-void UITabWidget::removeAll() {
+void UITabWidget::removeAllTabs() {
 	for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
 		if ( NULL != mTabs[i] ) {
 			mTabs[i]->close();
@@ -514,12 +515,12 @@ void UITabWidget::removeAll() {
 	orderTabs();
 }
 
-void UITabWidget::insert( const String& Text, UINode* CtrlOwned, Drawable* Icon,
-						  const Uint32& Index ) {
-	insert( createTab( Text, CtrlOwned, Icon ), Index );
+void UITabWidget::insertTab( const String& Text, UINode* CtrlOwned, Drawable* Icon,
+							 const Uint32& Index ) {
+	insertTab( createTab( Text, CtrlOwned, Icon ), Index );
 }
 
-void UITabWidget::insert( UITab* Tab, const Uint32& Index ) {
+void UITabWidget::insertTab( UITab* Tab, const Uint32& Index ) {
 	mTabs.insert( mTabs.begin() + Index, Tab );
 
 	childAddAt( Tab, Index );
@@ -529,6 +530,9 @@ void UITabWidget::insert( UITab* Tab, const Uint32& Index ) {
 
 void UITabWidget::setTabSelected( UITab* Tab ) {
 	if ( NULL == Tab )
+		return;
+
+	if ( std::find( mTabs.begin(), mTabs.end(), Tab ) == mTabs.end() )
 		return;
 
 	invalidateDraw();
@@ -563,6 +567,12 @@ void UITabWidget::setTabSelected( UITab* Tab ) {
 	}
 }
 
+void UITabWidget::setTabSelected( const Uint32& tabIndex ) {
+	if ( tabIndex < mTabs.size() ) {
+		setTabSelected( mTabs[tabIndex] );
+	}
+}
+
 void UITabWidget::refreshControlOwned( UITab* tab ) {
 	if ( NULL != tab && NULL != tab->getControlOwned() ) {
 		tab->getControlOwned()->setParent( mCtrlContainer );
@@ -580,13 +590,13 @@ void UITabWidget::refreshControlOwned( UITab* tab ) {
 	}
 }
 
-void UITabWidget::selectPrev() {
+void UITabWidget::selectPreviousTab() {
 	if ( eeINDEX_NOT_FOUND != mTabSelectedIndex && mTabSelectedIndex > 0 ) {
 		setTabSelected( getTab( mTabSelectedIndex - 1 ) );
 	}
 }
 
-void UITabWidget::selectNext() {
+void UITabWidget::selectNextTab() {
 	if ( mTabSelectedIndex + 1 < mTabs.size() ) {
 		setTabSelected( getTab( mTabSelectedIndex + 1 ) );
 	}
@@ -612,20 +622,8 @@ void UITabWidget::onSizeChange() {
 	UIWidget::onSizeChange();
 }
 
-void UITabWidget::onChildCountChange() {
-	Node* child = mChild;
-	bool found = false;
-
-	while ( NULL != child ) {
-		if ( !( child == mTabContainer || child == mCtrlContainer ) ) {
-			found = true;
-			break;
-		}
-
-		child = child->getNextNode();
-	}
-
-	if ( found ) {
+void UITabWidget::onChildCountChange( Node* child, const bool& removed ) {
+	if ( !removed && child != mTabContainer && child != mCtrlContainer ) {
 		if ( child->isType( UI_TYPE_TAB ) ) {
 			UITab* Tab = static_cast<UITab*>( child );
 
@@ -645,7 +643,7 @@ void UITabWidget::onChildCountChange() {
 		}
 	}
 
-	UIWidget::onChildCountChange();
+	UIWidget::onChildCountChange( child, removed );
 }
 
 void UITabWidget::onPaddingChange() {

@@ -51,8 +51,8 @@ void UITab::setTheme( UITheme* Theme ) {
 		if ( tTabW->getSpecialBorderTabs() ) {
 			if ( 0 == tTabW->getTabIndex( this ) ) {
 				tabPos = "tab_left";
-			} else if ( tTabW->getCount() > 0 &&
-						( tTabW->getCount() - 1 ) == tTabW->getTabIndex( this ) ) {
+			} else if ( tTabW->getTabCount() > 0 &&
+						( tTabW->getTabCount() - 1 ) == tTabW->getTabIndex( this ) ) {
 				tabPos = "tab_right";
 			}
 		}
@@ -192,12 +192,12 @@ Uint32 UITab::onMouseUp( const Vector2i& Pos, const Uint32& Flags ) {
 		if ( NULL != tTabW ) {
 			if ( Flags & EE_BUTTONS_WUWD ) {
 				if ( Flags & EE_BUTTON_WUMASK ) {
-					tTabW->selectPrev();
+					tTabW->selectPreviousTab();
 				} else if ( Flags & EE_BUTTON_WDMASK ) {
-					tTabW->selectNext();
+					tTabW->selectNextTab();
 				}
 			} else if ( tTabW->getTabsClosable() && ( Flags & EE_BUTTON_MMASK ) ) {
-				tTabW->remove( this );
+				tTabW->removeTab( this );
 			}
 		}
 	}

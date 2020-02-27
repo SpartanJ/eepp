@@ -52,8 +52,8 @@ void UILinearLayout::onParentSizeChange( const Vector2f& ) {
 	pack();
 }
 
-void UILinearLayout::onChildCountChange() {
-	UILayout::onChildCountChange();
+void UILinearLayout::onChildCountChange( Node* child, const bool& removed ) {
+	UILayout::onChildCountChange( child, removed );
 	pack();
 }
 

@@ -324,6 +324,12 @@ void StyleSheetSpecification::registerDefaultProperties() {
 		.setType( PropertyType::String )
 		.setIndexed();
 
+	registerProperty( "drag-resistance", "8dp" ).setType( PropertyType::NumberLength );
+	registerProperty( "change-page-percent", "0.33" ).setType( PropertyType::NumberFloat );
+	registerProperty( "max-edge-resistance", "0" ).setType( PropertyType::NumberFloat );
+	registerProperty( "timing-function", "linear" ).setType( PropertyType::String );
+
+
 	// Shorthands
 	registerShorthand( "margin", {"margin-top", "margin-right", "margin-bottom", "margin-left"},
 					   ShorthandType::Box );

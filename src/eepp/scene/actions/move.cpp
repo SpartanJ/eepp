@@ -1,5 +1,8 @@
 #include <eepp/scene/actions/move.hpp>
 #include <eepp/scene/node.hpp>
+#include <eepp/ui/uinode.hpp>
+
+using namespace EE::UI;
 
 namespace EE { namespace Scene { namespace Actions {
 
@@ -39,8 +42,9 @@ Action* Move::reverse() const {
 
 MoveCoordinate* MoveCoordinate::New( const Float& start, const Float& end, const Time& duration,
 									 const Ease::Interpolation& type,
+									 const MoveCoordinate::CoordinateAxis& coordinateAxis,
 									 const MoveCoordinate::CoordinateType& coordinateType ) {
-	return eeNew( MoveCoordinate, ( start, end, duration, type, coordinateType ) );
+	return eeNew( MoveCoordinate, ( start, end, duration, type, coordinateAxis, coordinateType ) );
 }
 
 Action* MoveCoordinate::clone() const {
@@ -57,8 +61,9 @@ Action* MoveCoordinate::reverse() const {
 
 MoveCoordinate::MoveCoordinate( const Float& start, const Float& end, const Time& duration,
 								const Ease::Interpolation& type,
+								const MoveCoordinate::CoordinateAxis& coordinateAxis,
 								const MoveCoordinate::CoordinateType& coordinateType ) :
-	mCoordinateType( coordinateType ) {
+	mCoordinateAxis( coordinateAxis ), mCoordinateType( coordinateType ) {
 	mInterpolation.clear().add( start, duration ).add( end ).setType( type );
 }
 
@@ -68,10 +73,21 @@ void MoveCoordinate::onStart() {
 
 void MoveCoordinate::onUpdate( const Time& ) {
 	if ( NULL != mNode ) {
-		if ( mCoordinateType == CoordinateX )
-			mNode->setPosition( mInterpolation.getPosition(), mNode->getPosition().y );
-		else if ( mCoordinateType == CoordinateY )
-			mNode->setPosition( mNode->getPosition().x, mInterpolation.getPosition() );
+		if ( mCoordinateAxis == CoordinateX ) {
+			if ( mCoordinateType == Position ) {
+				mNode->setPosition( mInterpolation.getPosition(), mNode->getPosition().y );
+			} else if ( mNode->isUINode() ) {
+				UINode* widget = mNode->asType<UINode>();
+				widget->setPixelsPosition( mInterpolation.getPosition(), mNode->getPosition().y );
+			}
+		} else if ( mCoordinateAxis == CoordinateY ) {
+			if ( mCoordinateType == Position ) {
+				mNode->setPosition( mNode->getPosition().x, mInterpolation.getPosition() );
+			} else if ( mNode->isUINode() ) {
+				UINode* widget = mNode->asType<UINode>();
+				widget->setPixelsPosition( mNode->getPosition().x, mInterpolation.getPosition() );
+			}
+		}
 	}
 }
 

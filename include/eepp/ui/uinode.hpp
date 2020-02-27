@@ -248,7 +248,7 @@ class EE_API UINode : public Node {
 
 	virtual void onThemeLoaded();
 
-	virtual void onChildCountChange();
+	virtual void onChildCountChange( Node * child, const bool& removed );
 
 	virtual Uint32 onCalculateDrag( const Vector2f& position, const Uint32& flags );
 

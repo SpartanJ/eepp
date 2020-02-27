@@ -348,20 +348,8 @@ bool UISceneNode::onMediaChanged() {
 	return false;
 }
 
-void UISceneNode::onChildCountChange() {
-	Node* child = mChild;
-	bool found = false;
-
-	while ( NULL != child ) {
-		if ( child != mRoot ) {
-			found = true;
-			break;
-		}
-
-		child = child->getNextNode();
-	}
-
-	if ( found ) {
+void UISceneNode::onChildCountChange( Node* child, const bool& removed ) {
+	if ( !removed && child != mRoot ) {
 		child->setParent( mRoot );
 	}
 }

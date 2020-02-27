@@ -44,6 +44,76 @@ class Ease {
 		None
 	};
 
+	static std::string toString( const Interpolation& interpolation ) {
+		switch ( interpolation ) {
+			case Ease::Linear:
+				return "linear";
+			case Ease::QuadraticIn:
+				return "quadratic-in";
+			case Ease::QuadraticOut:
+				return "quadratic-out";
+			case Ease::QuadraticInOut:
+				return "quadratic-in-out";
+			case Ease::SineIn:
+				return "sine-in";
+			case Ease::SineOut:
+				return "sine-out";
+			case Ease::SineInOut:
+				return "sine-in-out";
+			case Ease::ExponentialIn:
+				return "exponential-in";
+			case Ease::ExponentialOut:
+				return "exponential-out";
+			case Ease::ExponentialInOut:
+				return "exponential-in-out";
+			case Ease::QuarticIn:
+				return "quartic-in";
+			case Ease::QuarticOut:
+				return "quartic-out";
+			case Ease::QuarticInOut:
+				return "quartic-in-out";
+			case Ease::QuinticIn:
+				return "quintic-in";
+			case Ease::QuinticOut:
+				return "quintic-out";
+			case Ease::QuinticInOut:
+				return "quintic-in-out";
+			case Ease::CircularIn:
+				return "circular-in";
+			case Ease::CircularOut:
+				return "circular-out";
+			case Ease::CircularInOut:
+				return "circular-in-out";
+			case Ease::CubicIn:
+				return "cubic-in";
+			case Ease::CubicOut:
+				return "cubic-out";
+			case Ease::CubicInOut:
+				return "cubic-in-out";
+			case Ease::BackIn:
+				return "back-in";
+			case Ease::BackOut:
+				return "back-out";
+			case Ease::BackInOut:
+				return "back-in-out";
+			case Ease::BounceIn:
+				return "bounce-in";
+			case Ease::BounceOut:
+				return "bounce-out";
+			case Ease::BounceInOut:
+				return "bounce-in-out";
+			case Ease::ElasticIn:
+				return "elastic-in";
+			case Ease::ElasticOut:
+				return "elastic-out";
+			case Ease::ElasticInOut:
+				return "elastic-in-out";
+			case Ease::None:
+				return "none";
+		}
+		return "";
+	}
+
 	static Interpolation fromName( const std::string& name,
 								   const Interpolation& defaultInterpolation = Ease::Linear ) {
 		if ( "linear" == name )

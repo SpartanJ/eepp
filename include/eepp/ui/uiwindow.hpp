@@ -213,7 +213,7 @@ class EE_API UIWindow : public UIWidget {
 
 	virtual void onAlphaChange();
 
-	virtual void onChildCountChange();
+	virtual void onChildCountChange( Node * child, const bool& removed );
 
 	virtual void onPositionChange();
 

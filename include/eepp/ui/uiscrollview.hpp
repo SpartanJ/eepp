@@ -59,7 +59,7 @@ class EE_API UIScrollView : public UITouchDragableWidget {
 
 	virtual void onAlphaChange();
 
-	virtual void onChildCountChange();
+	virtual void onChildCountChange( Node * child, const bool& removed );
 
 	virtual void onPaddingChange();
 

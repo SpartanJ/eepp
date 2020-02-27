@@ -888,7 +888,7 @@ void UINode::onThemeLoaded() {
 	invalidateDraw();
 }
 
-void UINode::onChildCountChange() {
+void UINode::onChildCountChange( Node* child, const bool& removed ) {
 	invalidateDraw();
 }
 

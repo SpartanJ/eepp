@@ -218,6 +218,15 @@ class EE_API UIWidget : public UINode {
 	Float lengthFromValue( const StyleSheetProperty& property, const Float& defaultValue = 0,
 						   const Float& defaultContainerValue = 0 );
 
+	Float lengthFromValueAsDp( const std::string& value,
+							   const CSS::PropertyRelativeTarget& relativeTarget,
+							   const Float& defaultValue = 0,
+							   const Float& defaultContainerValue = 0,
+							   const Uint32& propertyIndex = 0 );
+
+	Float lengthFromValueAsDp( const StyleSheetProperty& property, const Float& defaultValue = 0,
+							   const Float& defaultContainerValue = 0 );
+
   protected:
 	friend class UIManager;
 	friend class UISceneNode;

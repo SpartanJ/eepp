@@ -79,9 +79,9 @@ void EventDispatcher::update( const Time& time ) {
 			sendMsg( mOverControl, NodeMessage::MouseOver );
 		}
 	} else {
-		if ( NULL != mOverControl ) {
+		if ( NULL != mOverControl && mLastMousePos != mMousePos ) {
 			mOverControl->onMouseMove( mMousePosi, mInput->getPressTrigger() );
-			sendMsg( mOverControl, NodeMessage::MouseMove );
+			sendMsg( mOverControl, NodeMessage::MouseMove, mInput->getPressTrigger() );
 		}
 	}
 

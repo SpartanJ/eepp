@@ -197,7 +197,12 @@ enum class PropertyId : Uint32 {
 	AnimationFillMode = String::hash( "animation-fill-mode" ),
 	AnimationIterationCount = String::hash( "animation-iteration-count" ),
 	AnimationPlayState = String::hash( "animation-play-state" ),
-	AnimationTimingFunction = String::hash( "animation-timing-function" )
+	AnimationTimingFunction = String::hash( "animation-timing-function" ),
+	DragResistance = String::hash( "drag-resistance" ),
+	ChangePagePercent = String::hash( "change-page-percent" ),
+	MaxEdgeResistance = String::hash( "max-edge-resistance" ),
+	PageTransitionDuration = String::hash( "page-transition-duration" ),
+	TimingFunction = String::hash( "timing-function" )
 };
 
 enum class PropertyType : Uint32 {

@@ -424,7 +424,7 @@ class EE_API Node : public Transformable {
 
 	virtual void drawChilds();
 
-	virtual void onChildCountChange();
+	virtual void onChildCountChange( Node * child, const bool& removed );
 
 	virtual void onAngleChange();
 
