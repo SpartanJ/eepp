@@ -595,8 +595,8 @@ void UINode::drawBackground() {
 void UINode::drawForeground() {
 	if ( ( mFlags & UI_FILL_FOREGROUND ) && NULL != mForeground ) {
 		mForeground->draw( Vector2f( mScreenPosi.x, mScreenPosi.y ),
-								Sizef( eefloor( mSize.getWidth() ), eefloor( mSize.getHeight() ) ),
-								(Uint32)mAlpha );
+						   Sizef( eefloor( mSize.getWidth() ), eefloor( mSize.getHeight() ) ),
+						   (Uint32)mAlpha );
 	}
 }
 
@@ -1006,6 +1006,10 @@ void UINode::setDragging( const bool& dragging ) {
 	}
 }
 
+bool UINode::ownsChildPosition() const {
+	return 0 != ( mFlags & UI_OWNS_CHILDS_POSITION );
+}
+
 void UINode::setDragButton( const Uint32& Button ) {
 	mDragButton = Button;
 }
@@ -1037,6 +1041,7 @@ Uint32 UINode::onFocusLoss() {
 }
 
 Float UINode::convertLength( const CSS::StyleSheetLength& length, const Float& containerLength ) {
+	// TODO: Fix asPixels parameters
 	return length.asPixels( containerLength, getSceneNode()->getPixelsSize(),
 							getSceneNode()->getDPI(), 12, 12 );
 }

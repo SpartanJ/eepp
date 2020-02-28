@@ -36,7 +36,9 @@ void UIRelativeLayout::onParentSizeChange( const Vector2f& ) {
 }
 
 void UIRelativeLayout::fixChilds() {
-	setInternalPosition( Vector2f( mLayoutMargin.Left, mLayoutMargin.Top ) );
+	if ( getParent()->isUINode() && !getParent()->asType<UINode>()->ownsChildPosition() ) {
+		setInternalPosition( Vector2f( mLayoutMargin.Left, mLayoutMargin.Top ) );
+	}
 
 	if ( getLayoutWidthRule() == LayoutSizeRule::MatchParent ) {
 		Rectf padding = Rectf();

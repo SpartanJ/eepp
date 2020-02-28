@@ -32,6 +32,8 @@ class EE_API UILinearLayout : public UILayout {
 
   protected:
 	UIOrientation mOrientation;
+	bool mHPacking;
+	bool mVPacking;
 
 	virtual Uint32 onMessage( const NodeMessage* Msg );
 
@@ -39,7 +41,7 @@ class EE_API UILinearLayout : public UILayout {
 
 	virtual void onParentSizeChange( const Vector2f& SizeChange );
 
-	virtual void onChildCountChange( Node * child, const bool& removed );
+	virtual void onChildCountChange( Node* child, const bool& removed );
 
 	void pack();
 

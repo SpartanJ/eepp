@@ -227,6 +227,22 @@ class EE_API UIWidget : public UINode {
 	Float lengthFromValueAsDp( const StyleSheetProperty& property, const Float& defaultValue = 0,
 							   const Float& defaultContainerValue = 0 );
 
+	const std::string& getMinWidthEq() const;
+
+	void setMinWidthEq( const std::string& minWidthEq );
+
+	const std::string& getMinHeightEq() const;
+
+	void setMinHeightEq( const std::string& minHeightEq );
+
+	const std::string& getMaxWidthEq() const;
+
+	void setMaxWidthEq( const std::string& maxWidthEq );
+
+	const std::string& getMaxHeightEq() const;
+
+	void setMaxHeightEq( const std::string& maxHeightEq );
+
   protected:
 	friend class UIManager;
 	friend class UISceneNode;
@@ -250,6 +266,10 @@ class EE_API UIWidget : public UINode {
 	std::string mSkinName;
 	std::vector<std::string> mClasses;
 	std::vector<std::string> mPseudoClasses;
+	std::string mMinWidthEq;
+	std::string mMinHeightEq;
+	std::string mMaxWidthEq;
+	std::string mMaxHeightEq;
 
 	explicit UIWidget( const std::string& tag );
 

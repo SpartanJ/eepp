@@ -311,6 +311,30 @@ Node* UIWidget::setSize( const Sizef& size ) {
 	if ( s.y < mMinControlSize.y )
 		s.y = mMinControlSize.y;
 
+	if ( !mMinWidthEq.empty() ) {
+		Float length =
+			lengthFromValue( mMinWidthEq, CSS::PropertyRelativeTarget::ContainingBlockWidth );
+		s.x = eemax( s.x, length );
+	}
+
+	if ( !mMinHeightEq.empty() ) {
+		Float length =
+			lengthFromValue( mMinHeightEq, CSS::PropertyRelativeTarget::ContainingBlockHeight );
+		s.y = eemax( s.y, length );
+	}
+
+	if ( !mMaxWidthEq.empty() ) {
+		Float length =
+			lengthFromValue( mMaxWidthEq, CSS::PropertyRelativeTarget::ContainingBlockWidth );
+		s.x = eemin( s.x, length );
+	}
+
+	if ( !mMaxHeightEq.empty() ) {
+		Float length =
+			lengthFromValue( mMaxWidthEq, CSS::PropertyRelativeTarget::ContainingBlockHeight );
+		s.y = eemin( s.y, length );
+	}
+
 	return UINode::setSize( s );
 }
 
@@ -575,6 +599,50 @@ Float UIWidget::lengthFromValueAsDp( const StyleSheetProperty& property, const F
 	return lengthFromValue( property.getValue(),
 							property.getPropertyDefinition()->getRelativeTarget(), defaultValue,
 							defaultContainerValue, property.getIndex() );
+}
+
+const std::string& UIWidget::getMinWidthEq() const {
+	return mMinWidthEq;
+}
+
+void UIWidget::setMinWidthEq( const std::string& minWidthEq ) {
+	if ( mMinWidthEq != minWidthEq ) {
+		mMinWidthEq = minWidthEq;
+		setSize( mSize );
+	}
+}
+
+const std::string& UIWidget::getMinHeightEq() const {
+	return mMinHeightEq;
+}
+
+void UIWidget::setMinHeightEq( const std::string& minHeightEq ) {
+	if ( mMinHeightEq != minHeightEq ) {
+		mMinHeightEq = minHeightEq;
+		setSize( mSize );
+	}
+}
+
+const std::string& UIWidget::getMaxWidthEq() const {
+	return mMaxWidthEq;
+}
+
+void UIWidget::setMaxWidthEq( const std::string& maxWidthEq ) {
+	if ( mMaxWidthEq != maxWidthEq ) {
+		mMaxWidthEq = maxWidthEq;
+		setSize( mSize );
+	}
+}
+
+const std::string& UIWidget::getMaxHeightEq() const {
+	return mMaxHeightEq;
+}
+
+void UIWidget::setMaxHeightEq( const std::string& maxHeightEq ) {
+	if ( mMaxHeightEq != maxHeightEq ) {
+		mMaxHeightEq = maxHeightEq;
+		setSize( mSize );
+	}
 }
 
 const Rectf& UIWidget::getPadding() const {
@@ -1105,6 +1173,14 @@ std::string UIWidget::getPropertyString( const PropertyDefinition* propertyDef,
 			return getScaleOriginPoint().toString();
 		case PropertyId::BlendMode:
 			return "";
+		case PropertyId::MinWidth:
+			return mMinWidthEq;
+		case PropertyId::MaxWidth:
+			return mMaxWidthEq;
+		case PropertyId::MinHeight:
+			return mMinHeightEq;
+		case PropertyId::MaxHeight:
+			return mMaxHeightEq;
 		default:
 			break;
 	}
@@ -1437,6 +1513,18 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		case PropertyId::ScaleOriginPoint:
 			setScaleOriginPoint( attribute.asOriginPoint() );
+			break;
+		case PropertyId::MinWidth:
+			setMinWidthEq( attribute.getValue() );
+			break;
+		case PropertyId::MaxWidth:
+			setMaxWidthEq( attribute.getValue() );
+			break;
+		case PropertyId::MinHeight:
+			setMinHeightEq( attribute.getValue() );
+			break;
+		case PropertyId::MaxHeight:
+			setMaxHeightEq( attribute.getValue() );
 			break;
 		default:
 			attributeSet = false;

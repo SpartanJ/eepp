@@ -31,21 +31,21 @@ class EE_API UIMenuSubMenu : public UIMenuItem {
 
 	virtual bool inheritsFrom( const Uint32 getType );
 
-	Float getMouseOverTimeShowMenu() const;
+	const Time& getMouseOverTimeShowMenu() const;
 
-	void setMouseOverTimeShowMenu( const Float& maxTime );
+	void setMouseOverTimeShowMenu( const Time& maxTime );
 
   protected:
 	UIMenu* mSubMenu;
 	UINode* mArrow;
-	Float mTimeOver;
-	Float mMaxTime;
+	Time mMaxTime;
 	Uint32 mCbId;
 	Uint32 mCbId2;
+	Action* mCurWait;
+
+	virtual Uint32 onMouseOver( const Vector2i& position, const Uint32& flags );
 
 	virtual Uint32 onMouseLeave( const Vector2i& position, const Uint32& flags );
-
-	virtual Uint32 onMouseMove( const Vector2i& position, const Uint32& flags );
 
 	virtual void onStateChange();
 

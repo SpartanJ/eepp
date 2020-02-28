@@ -192,6 +192,8 @@ class EE_API UINode : public Node {
 
 	void setDragging( const bool& dragging );
 
+	bool ownsChildPosition() const;
+
 	const Vector2f& getDragPoint() const;
 
 	void setDragPoint( const Vector2f& Point );

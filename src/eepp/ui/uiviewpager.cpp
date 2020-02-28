@@ -28,8 +28,10 @@ UIViewPager::UIViewPager() :
 	mCurrentPage( 0 ),
 	mTotalPages( 0 ),
 	mTimingFunction( Ease::Interpolation::SineIn ) {
+	mFlags |= UI_OWNS_CHILDS_POSITION;
 	mContainer = UIWidget::New();
 	mContainer->setParent( this );
+	mContainer->setFlags( UI_OWNS_CHILDS_POSITION );
 }
 
 UIViewPager::~UIViewPager() {
@@ -49,8 +51,17 @@ void UIViewPager::onChildCountChange( Node* child, const bool& removed ) {
 	if ( !removed && child != mContainer ) {
 		child->setParent( mContainer );
 	}
-	updateChilds();
-	mTotalPages = mContainer->getChildCount();
+
+	if ( child != mContainer ) {
+		mTotalPages = mContainer->getChildCount();
+		updateChilds();
+	}
+
+	if ( !removed && child != mContainer ) {
+		child->addEventListener( Event::OnPositionChange,
+								 [&]( const Event* event ) { updateChilds(); } );
+	}
+
 	UIWidget::onChildCountChange( child, removed );
 }
 
@@ -172,8 +183,9 @@ void UIViewPager::limitDisplacement() {
 
 void UIViewPager::setDisplacement( const Float& val ) {
 	mDisplacement = val;
+	Float normalizedDisplacement = mDisplacement - mCurrentPage * getLength();
 
-	if ( eeabs( mDisplacement ) > mDragResistance ) {
+	if ( eeabs( normalizedDisplacement ) > mDragResistance ) {
 		if ( mOrientation == UIOrientation::Horizontal ) {
 			mContainer->setPixelsPosition(
 				Vector2f( -mDisplacement, mContainer->getPixelsPosition().y ) );

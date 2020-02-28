@@ -681,6 +681,7 @@ void UIMenu::fixMenuPos( Vector2f& Pos, UIMenu* Menu, UIMenu* Parent, UIMenuSubM
 		qPos.Right = qPos.Left + Menu->getPixelsSize().getWidth();
 		qPos.Top = Pos.y;
 		qPos.Bottom = qPos.Top + Menu->getPixelsSize().getHeight();
+		Vector2f oriPos( Pos );
 
 		if ( !qScreen.contains( qPos ) ) {
 			Pos.y =
@@ -701,6 +702,10 @@ void UIMenu::fixMenuPos( Vector2f& Pos, UIMenu* Menu, UIMenu* Parent, UIMenuSubM
 							Menu->getPixelsSize().getHeight();
 					qPos.Top = Pos.y;
 					qPos.Bottom = qPos.Top + Menu->getPixelsSize().getHeight();
+
+					if ( !qScreen.contains( qPos ) ) {
+						Pos = oriPos;
+					}
 				}
 			}
 		}

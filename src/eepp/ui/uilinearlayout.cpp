@@ -16,7 +16,10 @@ UILinearLayout* UILinearLayout::NewHorizontal() {
 }
 
 UILinearLayout::UILinearLayout() :
-	UILayout( "linearlayout" ), mOrientation( UIOrientation::Vertical ) {
+	UILayout( "linearlayout" ),
+	mOrientation( UIOrientation::Vertical ),
+	mHPacking( false ),
+	mVPacking( false ) {
 	clipEnable();
 }
 
@@ -65,6 +68,9 @@ void UILinearLayout::pack() {
 }
 
 void UILinearLayout::packVertical() {
+	if ( mVPacking )
+		return;
+	mVPacking = true;
 	bool sizeChanged = false;
 	Sizef size( getSize() );
 
@@ -224,15 +230,22 @@ void UILinearLayout::packVertical() {
 				getParent()->asType<UILinearLayout>()->getOrientation() ==
 					UIOrientation::Horizontal ) ) {
 			setInternalWidth( maxX );
+			mVPacking = false;
 			packVertical();
 			notifyLayoutAttrChangeParent();
 		}
 	}
 
-	alignAgainstLayout();
+	if ( getParent()->isUINode() && !getParent()->asType<UINode>()->ownsChildPosition() ) {
+		alignAgainstLayout();
+	}
+	mVPacking = false;
 }
 
 void UILinearLayout::packHorizontal() {
+	if ( mHPacking )
+		return;
+	mHPacking = true;
 	bool sizeChanged = false;
 	Sizef size( getSize() );
 
@@ -268,7 +281,6 @@ void UILinearLayout::packHorizontal() {
 
 	if ( sizeChanged ) {
 		setInternalSize( size );
-		;
 	}
 
 	Node* ChildLoop = mChild;
@@ -304,11 +316,11 @@ void UILinearLayout::packHorizontal() {
 				 widget->getLayoutWeight() == 0 &&
 				 widget->getSize().getWidth() !=
 					 getSize().getWidth() - widget->getLayoutMargin().Left -
-						 widget->getLayoutMargin().Top - mPadding.Left - mPadding.Right ) {
-				widget->setSize( getSize().getWidth(), widget->getSize().getWidth() -
-														   widget->getLayoutMargin().Left -
-														   widget->getLayoutMargin().Top -
-														   mPadding.Left - mPadding.Right );
+						 widget->getLayoutMargin().Right - mPadding.Left - mPadding.Right ) {
+				widget->setSize( getSize().getWidth() - widget->getLayoutMargin().Left -
+									 widget->getLayoutMargin().Right - mPadding.Left -
+									 mPadding.Right,
+								 widget->getSize().getHeight() );
 			}
 		}
 
@@ -392,12 +404,16 @@ void UILinearLayout::packHorizontal() {
 				getParent()->asType<UILinearLayout>()->getOrientation() ==
 					UIOrientation::Vertical ) ) {
 			setInternalHeight( maxY );
+			mHPacking = false;
 			packHorizontal();
 			notifyLayoutAttrChangeParent();
 		}
 	}
 
-	alignAgainstLayout();
+	if ( getParent()->isUINode() && !getParent()->asType<UINode>()->ownsChildPosition() ) {
+		alignAgainstLayout();
+	}
+	mHPacking = false;
 }
 
 Sizei UILinearLayout::getTotalUsedSize() {

@@ -138,8 +138,6 @@ void Node::scheduledUpdate( const Time& ) {}
 
 Node* Node::setSize( const Sizef& Size ) {
 	if ( Size != mSize ) {
-		Vector2f sizeChange( Size.x - mSize.x, Size.y - mSize.y );
-
 		setInternalSize( Size );
 
 		onSizeChange();

@@ -236,7 +236,20 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "outline-thickness", "" ).setType( PropertyType::NumberLength );
 	registerProperty( "animation-speed", "" ).setType( PropertyType::Vector2 );
 	registerProperty( "arc-start-angle", "" ).setType( PropertyType::NumberFloat );
-	registerProperty( "min-width", "" ).setType( PropertyType::NumberLength );
+
+	registerProperty( "min-width", "" )
+		.setType( PropertyType::NumberLength )
+		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockWidth );
+	registerProperty( "min-height", "" )
+		.setType( PropertyType::NumberLength )
+		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockHeight );
+	registerProperty( "max-width", "" )
+		.setType( PropertyType::NumberLength )
+		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockWidth );
+	registerProperty( "max-height", "" )
+		.setType( PropertyType::NumberLength )
+		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockHeight );
+
 	registerProperty( "min-margin-right", "" ).setType( PropertyType::NumberLength );
 	registerProperty( "min-icon-space", "" ).setType( PropertyType::NumberLength );
 
@@ -328,7 +341,6 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "change-page-percent", "0.33" ).setType( PropertyType::NumberFloat );
 	registerProperty( "max-edge-resistance", "0" ).setType( PropertyType::NumberFloat );
 	registerProperty( "timing-function", "linear" ).setType( PropertyType::String );
-
 
 	// Shorthands
 	registerShorthand( "margin", {"margin-top", "margin-right", "margin-bottom", "margin-left"},

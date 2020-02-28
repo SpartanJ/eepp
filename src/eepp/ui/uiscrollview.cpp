@@ -19,12 +19,14 @@ UIScrollView::UIScrollView() :
 	mScrollView( NULL ),
 	mSizeChangeCb( 0 ),
 	mPosChangeCb( 0 ) {
+	mFlags |= UI_OWNS_CHILDS_POSITION;
 	enableReportSizeChangeToChilds();
 
 	mVScroll->setParent( this );
 	mHScroll->setParent( this );
 	mContainer->setParent( this );
 	mContainer->clipEnable();
+	mContainer->setFlags( UI_OWNS_CHILDS_POSITION );
 	mContainer->enableReportSizeChangeToChilds();
 
 	mVScroll->addEventListener( Event::OnValueChange,

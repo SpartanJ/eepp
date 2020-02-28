@@ -466,6 +466,12 @@ TabWidget {
 	animation-play-state: running;
 }
 
+#test_8 Widget {
+	max-width: 64dp;
+	background-color: #323232;
+	margin-right: 8dp;
+}
+
 @media screen and (max-width: 1024px) {
 
 #lvbox {

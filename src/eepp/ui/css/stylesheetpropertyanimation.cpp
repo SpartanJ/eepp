@@ -308,15 +308,18 @@ void StyleSheetPropertyAnimation::onUpdate( const Time& time ) {
 		Float normalizedProgress = getCurrentProgress();
 
 		for ( size_t i = 1; i < mAnimationStepsTime.size(); i++ ) {
-			if ( normalizedProgress < mAnimationStepsTime[i] ) {
+			if ( normalizedProgress >= mAnimationStepsTime[i - 1] &&
+				 normalizedProgress <= mAnimationStepsTime[i] ) {
 				curPos = i;
-			} else {
 				break;
 			}
 		}
 
 		if ( curPos - 1 >= 0 && curPos < static_cast<Int32>( mStates.size() ) ) {
-			tweenProperty( widget, normalizedProgress, mPropertyDef, mStates[curPos - 1],
+			Float relTime = mAnimationStepsTime[curPos] - mAnimationStepsTime[curPos - 1];
+			Float curTime = normalizedProgress - mAnimationStepsTime[curPos - 1];
+			Float relativeProgress = curTime / relTime;
+			tweenProperty( widget, relativeProgress, mPropertyDef, mStates[curPos - 1],
 						   mStates[curPos], mAnimation.getTimingFunction(), mPropertyIndex,
 						   isDone() );
 		}

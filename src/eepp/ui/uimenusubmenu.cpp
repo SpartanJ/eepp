@@ -12,10 +12,10 @@ UIMenuSubMenu::UIMenuSubMenu() :
 	UIMenuItem( "menu::submenu" ),
 	mSubMenu( NULL ),
 	mArrow( NULL ),
-	mTimeOver( 0.f ),
-	mMaxTime( 200.f ),
+	mMaxTime( Milliseconds( 200.f ) ),
 	mCbId( 0 ),
-	mCbId2( 0 ) {
+	mCbId2( 0 ),
+	mCurWait( NULL ) {
 	mArrow = UINode::New();
 	mArrow->setParent( this );
 	mArrow->setFlags( UI_AUTO_SIZE );
@@ -89,20 +89,6 @@ UIMenu* UIMenuSubMenu::getSubMenu() const {
 	return mSubMenu;
 }
 
-Uint32 UIMenuSubMenu::onMouseMove( const Vector2i& Pos, const Uint32& Flags ) {
-	UIMenuItem::onMouseMove( Pos, Flags );
-
-	if ( NULL != mSceneNode && NULL != mSubMenu && !mSubMenu->isVisible() ) {
-		mTimeOver += mSceneNode->getElapsed().asMilliseconds();
-
-		if ( mTimeOver >= mMaxTime ) {
-			showSubMenu();
-		}
-	}
-
-	return 1;
-}
-
 void UIMenuSubMenu::showSubMenu() {
 	mSubMenu->setParent( getParent()->getParent() );
 
@@ -120,12 +106,26 @@ void UIMenuSubMenu::showSubMenu() {
 	}
 }
 
+Uint32 UIMenuSubMenu::onMouseOver( const Vector2i& position, const Uint32& flags ) {
+	Action* openMenu = Actions::Runnable::New(
+		[&] {
+			if ( isMouseOver() )
+				showSubMenu();
+			mCurWait = NULL;
+		},
+		mMaxTime );
+
+	runAction( openMenu );
+	return UIMenuItem::onMouseOver( position, flags );
+}
+
 Uint32 UIMenuSubMenu::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
 	UIMenuItem::onMouseLeave( Pos, Flags );
-
-	mTimeOver = 0;
-
-	return 1;
+	if ( NULL != mCurWait ) {
+		removeAction( mCurWait );
+		mCurWait = NULL;
+	}
+	return UIMenuItem::onMouseLeave( Pos, Flags );
 }
 
 UINode* UIMenuSubMenu::getArrow() const {
@@ -170,11 +170,11 @@ bool UIMenuSubMenu::inheritsFrom( const Uint32 Type ) {
 	return false;
 }
 
-Float UIMenuSubMenu::getMouseOverTimeShowMenu() const {
+const Time& UIMenuSubMenu::getMouseOverTimeShowMenu() const {
 	return mMaxTime;
 }
 
-void UIMenuSubMenu::setMouseOverTimeShowMenu( const Float& maxTime ) {
+void UIMenuSubMenu::setMouseOverTimeShowMenu( const Time& maxTime ) {
 	mMaxTime = maxTime;
 }
 
