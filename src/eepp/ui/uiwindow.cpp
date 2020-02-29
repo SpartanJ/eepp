@@ -62,7 +62,7 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const StyleConfig& w
 			break;
 		case SIMPLE_LAYOUT:
 		default:
-			mContainer = UIWidget::New();
+			mContainer = UIWidget::NewWithTag( "window::container" );
 			break;
 	}
 

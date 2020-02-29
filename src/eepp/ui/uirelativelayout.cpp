@@ -6,7 +6,9 @@ UIRelativeLayout* UIRelativeLayout::New() {
 	return eeNew( UIRelativeLayout, () );
 }
 
-UIRelativeLayout::UIRelativeLayout() : UILayout( "relativelayout" ) {}
+UIRelativeLayout::UIRelativeLayout() : UILayout( "relativelayout" ) {
+	mFlags |= UI_OWNS_CHILDS_POSITION;
+}
 
 Uint32 UIRelativeLayout::getType() const {
 	return UI_TYPE_RELATIVE_LAYOUT;

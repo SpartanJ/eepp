@@ -1416,6 +1416,17 @@ bool Node::hasFocus() const {
 
 void Node::setFocus() {}
 
+Node* Node::getFirstWidget() const {
+	Node* childLoop = mChild;
+	while ( NULL != childLoop ) {
+		if ( childLoop->isWidget() ) {
+			return childLoop;
+		}
+		childLoop = childLoop->getNextNode();
+	}
+	return NULL;
+}
+
 Node* Node::getNextWidget() const {
 	Node* Found = NULL;
 	Node* ChildLoop = mChild;

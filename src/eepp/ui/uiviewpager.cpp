@@ -224,22 +224,22 @@ Uint32 UIViewPager::onCalculateDrag( const Vector2f& position, const Uint32& fla
 void UIViewPager::onMouseDownEvent() {
 	if ( !mDragging && !getEventDispatcher()->isNodeDragging() ) {
 		mDragging = true;
+		mMouseDownPos = getEventDispatcher()->getMousePos().asFloat();
 		mContainer->clearActions();
 		mInitialDisplacement = mOrientation == UIOrientation::Horizontal
 								   ? -mContainer->getPixelsPosition().x
 								   : -mContainer->getPixelsPosition().y;
+		mDisplacement = 0;
 		getEventDispatcher()->setNodeDragging( this );
 	}
 }
 
 void UIViewPager::onMouseMoveEvent() {
 	if ( mDragging ) {
-		mDisplacement =
-			mInitialDisplacement + ( mOrientation == UIOrientation::Horizontal
-										 ? getEventDispatcher()->getMouseDownPos().asFloat().x -
-											   getEventDispatcher()->getMousePos().asFloat().x
-										 : getEventDispatcher()->getMouseDownPos().asFloat().y -
-											   getEventDispatcher()->getMousePos().asFloat().y );
+		mDisplacement = mInitialDisplacement +
+						( mOrientation == UIOrientation::Horizontal
+							  ? mMouseDownPos.x - getEventDispatcher()->getMousePos().asFloat().x
+							  : mMouseDownPos.y - getEventDispatcher()->getMousePos().asFloat().y );
 
 		limitDisplacement();
 

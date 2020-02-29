@@ -14,7 +14,9 @@ UIGridLayout::UIGridLayout() :
 	mColumnWeight( 0.25f ),
 	mColumnWidth( 0 ),
 	mRowWeight( 0.25f ),
-	mRowHeight( 0 ) {}
+	mRowHeight( 0 ) {
+	mFlags |= UI_OWNS_CHILDS_POSITION;
+}
 
 Uint32 UIGridLayout::getType() const {
 	return UI_TYPE_GRID_LAYOUT;
@@ -127,7 +129,9 @@ void UIGridLayout::onParentSizeChange( const Vector2f& SizeChange ) {
 void UIGridLayout::pack() {
 	Sizef oldSize( getSize() );
 
-	setInternalPosition( Vector2f( mLayoutMargin.Left, mLayoutMargin.Top ) );
+	if ( getParent()->isUINode() && !getParent()->asType<UINode>()->ownsChildPosition() ) {
+		setInternalPosition( Vector2f( mLayoutMargin.Left, mLayoutMargin.Top ) );
+	}
 
 	if ( getLayoutWidthRule() == LayoutSizeRule::MatchParent ) {
 		setInternalWidth( getParent()->getSize().getWidth() - mLayoutMargin.Left -
@@ -143,9 +147,18 @@ void UIGridLayout::pack() {
 
 	Vector2f pos( mPadding.Left, mPadding.Top );
 	Sizef targetSize( getTargetElementSize() );
+	Float initX = 0.f;
 
 	if ( getHorizontalAlign() == UI_HALIGN_RIGHT )
-		pos.x = getSize().getWidth() - mPadding.Right;
+		pos.x = getSize().getWidth() - targetSize.getWidth() - mPadding.Right;
+	else if ( getHorizontalAlign() == UI_HALIGN_CENTER && getSize().getWidth() > 0 ) {
+		initX =
+			mPadding.Left + eeceil( ( (Int32)targetSize.getWidth() %
+									  ( static_cast<Int32>( getSize().getWidth() - mPadding.Left -
+															mPadding.Right ) ) ) *
+									0.5f );
+		pos.x = initX;
+	}
 
 	bool usedLastRow = true;
 
@@ -169,9 +182,14 @@ void UIGridLayout::pack() {
 			if ( pos.x < mPadding.Left ||
 				 pos.x + targetSize.x > getSize().getWidth() - mPadding.Right ||
 				 pos.x + targetSize.x + mSpan.x > getSize().getWidth() - mPadding.Right ) {
-				pos.x = getHorizontalAlign() == UI_HALIGN_RIGHT
-							? getSize().getWidth() - mPadding.Right
-							: mPadding.Left;
+
+				if ( getHorizontalAlign() == UI_HALIGN_CENTER ) {
+					pos.x = initX;
+				} else if ( getHorizontalAlign() == UI_HALIGN_RIGHT ) {
+					pos.x = getSize().getWidth() - mPadding.Right;
+				} else {
+					pos.x = mPadding.Left;
+				}
 
 				pos.y += targetSize.getHeight() + mSpan.y;
 				usedLastRow = false;

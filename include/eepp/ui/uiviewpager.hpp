@@ -69,6 +69,7 @@ class EE_API UIViewPager : public UIWidget {
 	Int32 mCurrentPage;
 	Int32 mTotalPages;
 	Ease::Interpolation mTimingFunction;
+	Vector2f mMouseDownPos;
 
 	UIViewPager();
 

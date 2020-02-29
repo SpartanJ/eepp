@@ -271,6 +271,9 @@ void UIStyle::onStateChange() {
 			for ( auto& prop : mProperties ) {
 				StyleSheetProperty& property = prop.second;
 
+				if ( NULL == property.getPropertyDefinition() )
+					continue;
+
 				if ( property.getPropertyDefinition()->isIndexed() ) {
 					for ( size_t i = 0; i < property.getPropertyIndexCount(); i++ ) {
 						applyStyleSheetProperty( property.getPropertyIndex( i ), prevProperties );

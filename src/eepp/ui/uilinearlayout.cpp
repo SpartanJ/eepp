@@ -20,6 +20,7 @@ UILinearLayout::UILinearLayout() :
 	mOrientation( UIOrientation::Vertical ),
 	mHPacking( false ),
 	mVPacking( false ) {
+	mFlags |= UI_OWNS_CHILDS_POSITION;
 	clipEnable();
 }
 

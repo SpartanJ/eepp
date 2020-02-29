@@ -277,6 +277,8 @@ class EE_API UIWidget : public UINode {
 
 	void createTooltip();
 
+	virtual void onChildCountChange( Node* child, const bool& removed );
+
 	virtual Uint32 onMouseMove( const Vector2i& Pos, const Uint32& Flags );
 
 	virtual Uint32 onMouseLeave( const Vector2i& Pos, const Uint32& Flags );
@@ -316,6 +318,8 @@ class EE_API UIWidget : public UINode {
 	std::string getFlagsString() const;
 
 	bool checkPropertyDefinition( const StyleSheetProperty& property );
+
+	void reloadChildsStyleState();
 };
 
 }} // namespace EE::UI

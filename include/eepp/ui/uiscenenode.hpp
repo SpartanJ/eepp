@@ -106,6 +106,8 @@ class EE_API UISceneNode : public SceneNode {
 	void processStyleSheetAtRules( const CSS::StyleSheet& styleSheet );
 
 	void loadFontFaces( const CSS::StyleSheetStyleVector& styles );
+
+	UIWidget* loadNode( pugi::xml_node node, Node* parent );
 };
 
 }} // namespace EE::UI

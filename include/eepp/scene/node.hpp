@@ -299,6 +299,8 @@ class EE_API Node : public Transformable {
 
 	virtual void setFocus();
 
+	Node* getFirstWidget() const;
+
 	Node* getNextWidget() const;
 
 	Node* getParentWidget() const;

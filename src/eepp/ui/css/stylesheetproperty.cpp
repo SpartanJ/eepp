@@ -57,10 +57,11 @@ StyleSheetProperty::StyleSheetProperty( const bool& isVolatile,
 	}
 }
 
-StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::string& value ) :
+StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::string& value,
+										const bool& trimValue ) :
 	mName( String::toLower( String::trim( name ) ) ),
 	mNameHash( String::hash( mName ) ),
-	mValue( String::trim( value ) ),
+	mValue( trimValue ? String::trim( value ) : value ),
 	mSpecificity( 0 ),
 	mIndex( 0 ),
 	mVolatile( false ),

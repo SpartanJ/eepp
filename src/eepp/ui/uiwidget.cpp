@@ -213,6 +213,12 @@ void UIWidget::createTooltip() {
 	mTooltip->setTooltipOf( this );
 }
 
+void UIWidget::onChildCountChange( Node* child, const bool& removed ) {
+	UINode::onChildCountChange( child, removed );
+	if ( !isSceneNodeLoading() )
+		reloadChildsStyleState();
+}
+
 Uint32 UIWidget::onMouseMove( const Vector2i& Pos, const Uint32& Flags ) {
 	if ( mVisible && NULL != mTooltip && !mTooltip->getText().empty() ) {
 		EventDispatcher* eventDispatcher = getEventDispatcher();
@@ -1073,6 +1079,15 @@ bool UIWidget::checkPropertyDefinition( const StyleSheetProperty& property ) {
 	return true;
 }
 
+void UIWidget::reloadChildsStyleState() {
+	Node* childLoop = getFirstChild();
+	while ( childLoop != NULL ) {
+		if ( childLoop->isWidget() )
+			childLoop->asType<UIWidget>()->reportStyleStateChange();
+		childLoop = childLoop->getNextNode();
+	}
+}
+
 UIWidget* UIWidget::querySelector( const std::string& selector ) {
 	return querySelector( CSS::StyleSheetSelector( selector ) );
 }
@@ -1246,7 +1261,7 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			setForegroundDrawable( attribute.getValue(), attribute.getIndex() );
 			break;
 		case PropertyId::ForegroundRadius:
-			setForegroundRadius( attribute.asUint() );
+			setForegroundRadius( lengthFromValue( attribute ) );
 			break;
 		case PropertyId::ForegroundSize:
 			setForegroundSize( attribute.value(), attribute.getIndex() );
@@ -1539,7 +1554,8 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 
 	for ( pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end();
 		  ++ait ) {
-		StyleSheetProperty prop( ait->name(), ait->value() );
+		// Create a property without triming its value
+		StyleSheetProperty prop( ait->name(), ait->value(), false );
 
 		if ( prop.getShorthandDefinition() != NULL ) {
 			auto properties =

@@ -112,8 +112,7 @@ bool UISceneNode::windowExists( UIWindow* win ) {
 	return mWindowsList.end() != std::find( mWindowsList.begin(), mWindowsList.end(), win );
 }
 
-UIWidget* UISceneNode::loadLayoutNodes( pugi::xml_node node, Node* parent ) {
-	mIsLoading = true;
+UIWidget* UISceneNode::loadNode( pugi::xml_node node, Node* parent ) {
 	UIWidget* firstWidget = NULL;
 
 	if ( NULL == parent )
@@ -131,16 +130,25 @@ UIWidget* UISceneNode::loadLayoutNodes( pugi::xml_node node, Node* parent ) {
 			uiwidget->loadFromXmlNode( widget );
 
 			if ( widget.first_child() ) {
-				loadLayoutNodes( widget.first_child(), uiwidget );
+				loadNode( widget.first_child(), uiwidget );
 			}
 
-			uiwidget->reloadStyle( false );
+			//uiwidget->reloadStyle( false );
 			uiwidget->onWidgetCreated();
 		} else if ( String::toLower( widget.name() ) == "style" ) {
 			combineStyleSheet( widget.text().as_string() );
 		}
 	}
 
+	return firstWidget;
+}
+
+UIWidget* UISceneNode::loadLayoutNodes( pugi::xml_node node, Node* parent ) {
+	UIWidget* firstWidget = NULL;
+
+	mIsLoading = true;
+	firstWidget = loadNode( node, parent );
+	reloadStyle();
 	mIsLoading = false;
 
 	return firstWidget;
@@ -381,7 +389,6 @@ void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles ) {
 				}
 
 				if ( String::startsWith( path, "file://" ) ) {
-
 					std::string filePath( path.substr( 7 ) );
 
 					FontTrueType* font =

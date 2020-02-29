@@ -1000,7 +1000,9 @@ void EETest::createMapEditor() {
 	windowStyleConfig.MinWindowSize = Sizef( 1024, 768 );
 	tWin->setStyleConfig( windowStyleConfig );
 
+	Clock mapEditorTime;
 	mMapEditor = MapEditor::New( tWin, cb::Make0( this, &EETest::onMapEditorClose ) );
+	eePRINTL( "Map Editor created in: %s.", mapEditorTime.getElapsedTime().toString().c_str() );
 	tWin->center();
 	tWin->show();
 }
