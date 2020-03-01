@@ -52,9 +52,15 @@ class EE_API UIViewPager : public UIWidget {
 	void setTimingFunction( const Ease::Interpolation& timingFunction );
 
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
-								   const Uint32& propertyIndex );
+										   const Uint32& propertyIndex );
 
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
+
+	const Int32& getTotalPages() const;
+
+	const Int32& getCurrentPage() const;
+
+	void setCurrentPage( const Int32& currentPage, bool animate = false );
 
   protected:
 	UIWidget* mContainer;
@@ -85,7 +91,7 @@ class EE_API UIViewPager : public UIWidget {
 
 	Float getLength() const;
 
-	void moveToPage( const Int32& pageNum );
+	void moveToPage( const Int32& pageNum, bool animate = true );
 
 	Uint32 onCalculateDrag( const Vector2f& position, const Uint32& flags );
 

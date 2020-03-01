@@ -201,16 +201,22 @@ Float UIViewPager::getLength() const {
 													 : getPixelsSize().getHeight();
 }
 
-void UIViewPager::moveToPage( const Int32& pageNum ) {
+void UIViewPager::moveToPage( const Int32& pageNum, bool animate ) {
 	if ( pageNum >= 0 && pageNum < mTotalPages ) {
 		mCurrentPage = pageNum;
-		Float initPos = -mDisplacement;
-		Action* action = Actions::MoveCoordinate::New(
-			initPos, -getLength() * mCurrentPage, mPageTransitionDuration, mTimingFunction,
-			mOrientation == UIOrientation::Horizontal ? Actions::MoveCoordinate::CoordinateX
-													  : Actions::MoveCoordinate::CoordinateY,
-			Actions::MoveCoordinate::CoordinateType::PixelPosition );
-		mContainer->runAction( action );
+		if ( animate ) {
+			Float initPos = -mDisplacement;
+			Action* action = Actions::MoveCoordinate::New(
+				initPos, -getLength() * mCurrentPage, mPageTransitionDuration, mTimingFunction,
+				mOrientation == UIOrientation::Horizontal ? Actions::MoveCoordinate::CoordinateX
+														  : Actions::MoveCoordinate::CoordinateY,
+				Actions::MoveCoordinate::CoordinateType::PixelPosition );
+			mContainer->runAction( action );
+		} else {
+			Float val = -getLength() * mCurrentPage;
+			mContainer->setPosition(
+				mOrientation == UIOrientation::Horizontal ? Sizef( val, 0.f ) : Sizef( 0.f, val ) );
+		}
 	}
 }
 
@@ -320,6 +326,20 @@ bool UIViewPager::applyProperty( const StyleSheetProperty& attribute ) {
 	}
 
 	return true;
+}
+
+const Int32& UIViewPager::getTotalPages() const {
+	return mTotalPages;
+}
+
+const Int32& UIViewPager::getCurrentPage() const {
+	return mCurrentPage;
+}
+
+void UIViewPager::setCurrentPage( const Int32& currentPage, bool animate ) {
+	if ( mCurrentPage != currentPage ) {
+		moveToPage( currentPage, animate );
+	}
 }
 
 }} // namespace EE::UI

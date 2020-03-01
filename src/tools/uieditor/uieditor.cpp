@@ -418,8 +418,8 @@ void resizeWindowToLayout() {
 					   : 1.f;
 	Float scale = scaleW < scaleH ? scaleW : scaleH;
 
-	window->setSize( ( Uint32 )( uiContainer->getSize().getWidth() * scale ),
-					 ( Uint32 )( uiContainer->getSize().getHeight() * scale ) );
+	window->setSize( ( Uint32 )( size.getWidth() * scale ),
+					 ( Uint32 )( size.getHeight() * scale ) );
 	window->centerToDisplay();
 }
 
