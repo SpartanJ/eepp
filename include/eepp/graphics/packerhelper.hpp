@@ -8,9 +8,11 @@ namespace EE { namespace Graphics { namespace Private {
 #pragma pack( push, 1 )
 
 #define HDR_NAME_SIZE 128
+#define HDR_HASH_SIZE 16 // MD5 hash - 128 bit
 
 struct sTextureRegionHdr {
 	char Name[HDR_NAME_SIZE];
+	char Hash[HDR_HASH_SIZE];
 	Uint64 Date;
 	Int32 X;
 	Int32 Y;
@@ -49,6 +51,7 @@ struct sTextureAtlasHdr {
 	char Reserved[15];
 };
 
+#define HDR_TEXTURE_ATLAS_VERSION 3000
 #define HDR_TEXTURE_ATLAS_ALLOW_FLIPPING ( 1 << 0 )
 #define HDR_TEXTURE_ATLAS_REMOVE_EXTENSION ( 1 << 1 )
 #define HDR_TEXTURE_ATLAS_POW_OF_TWO ( 1 << 2 )

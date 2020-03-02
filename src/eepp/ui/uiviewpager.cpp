@@ -206,8 +206,12 @@ void UIViewPager::moveToPage( const Int32& pageNum, bool animate ) {
 		mCurrentPage = pageNum;
 		if ( animate ) {
 			Float initPos = -mDisplacement;
+			Float endPos = -getLength() * mCurrentPage;
+			Float normalizedDisplacement = mDisplacement - mCurrentPage * getLength();
+			Float normalizedProgress =
+				getLength() != 0 ? eeabs( normalizedDisplacement ) / getLength() : 1;
 			Action* action = Actions::MoveCoordinate::New(
-				initPos, -getLength() * mCurrentPage, mPageTransitionDuration, mTimingFunction,
+				initPos, endPos, mPageTransitionDuration * normalizedProgress, mTimingFunction,
 				mOrientation == UIOrientation::Horizontal ? Actions::MoveCoordinate::CoordinateX
 														  : Actions::MoveCoordinate::CoordinateY,
 				Actions::MoveCoordinate::CoordinateType::PixelPosition );

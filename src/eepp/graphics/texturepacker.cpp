@@ -4,6 +4,7 @@
 #include <eepp/graphics/texturepackertex.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreamfile.hpp>
+#include <eepp/system/md5.hpp>
 #include <eepp/system/sys.hpp>
 
 namespace EE { namespace Graphics {
@@ -13,7 +14,7 @@ TexturePacker* TexturePacker::New() {
 }
 
 TexturePacker* TexturePacker::New( const Uint32& maxWidth, const Uint32& maxHeight,
-								   const PixelDensitySize& pixelDensity, const bool& forcePowOfTwo,
+								   const Float& pixelDensity, const bool& forcePowOfTwo,
 								   const bool& scalableSVG, const Uint32& pixelBorder,
 								   const Texture::TextureFilter& textureFilter,
 								   const bool& allowChilds, const bool& allowFlipping ) {
@@ -22,7 +23,7 @@ TexturePacker* TexturePacker::New( const Uint32& maxWidth, const Uint32& maxHeig
 }
 
 TexturePacker::TexturePacker( const Uint32& maxWidth, const Uint32& maxHeight,
-							  const PixelDensitySize& pixelDensity, const bool& forcePowOfTwo,
+							  const Float& pixelDensity, const bool& forcePowOfTwo,
 							  const bool& scalableSVG, const Uint32& pixelBorder,
 							  const Texture::TextureFilter& textureFilter, const bool& allowChilds,
 							  const bool& allowFlipping ) :
@@ -40,9 +41,9 @@ TexturePacker::TexturePacker( const Uint32& maxWidth, const Uint32& maxHeight,
 	mPlacedCount( 0 ),
 	mForcePowOfTwo( true ),
 	mPixelBorder( 0 ),
-	mPixelDensity( pixelDensity ),
+	mPixelDensity( eefloor( pixelDensity * 100 ) ),
 	mTextureFilter( textureFilter ),
-	mSaveExtensions( false ),
+	mKeepExtensions( false ),
 	mScalableSVG( scalableSVG ),
 	mFormat( Image::SaveType::SAVE_TYPE_PNG ) {
 	setOptions( maxWidth, maxHeight, pixelDensity, forcePowOfTwo, scalableSVG, pixelBorder,
@@ -64,9 +65,9 @@ TexturePacker::TexturePacker() :
 	mPlacedCount( 0 ),
 	mForcePowOfTwo( true ),
 	mPixelBorder( 0 ),
-	mPixelDensity( PixelDensitySize::MDPI ),
+	mPixelDensity( 1 ),
 	mTextureFilter( Texture::TextureFilter::Linear ),
-	mSaveExtensions( false ),
+	mKeepExtensions( false ),
 	mScalableSVG( false ),
 	mFormat( Image::SaveType::SAVE_TYPE_PNG ) {}
 
@@ -133,7 +134,7 @@ Uint32 TexturePacker::getAtlasNumChannels() {
 }
 
 void TexturePacker::setOptions( const Uint32& maxWidth, const Uint32& maxHeight,
-								const PixelDensitySize& pixelDensity, const bool& forcePowOfTwo,
+								const Float& pixelDensity, const bool& forcePowOfTwo,
 								const bool& scalableSVG, const Uint32& pixelBorder,
 								const Texture::TextureFilter& textureFilter,
 								const bool& allowChilds, const bool& allowFlipping ) {
@@ -151,7 +152,7 @@ void TexturePacker::setOptions( const Uint32& maxWidth, const Uint32& maxHeight,
 		mAllowFlipping = allowFlipping;
 		mAllowChilds = allowChilds;
 		mPixelBorder = pixelBorder;
-		mPixelDensity = pixelDensity;
+		mPixelDensity = eefloor( pixelDensity * 100 );
 		mTextureFilter = textureFilter;
 		mScalableSVG = scalableSVG;
 	}
@@ -399,8 +400,8 @@ void TexturePacker::insertTexture( TexturePackerTex* t, TexturePackerNode* bestF
 }
 
 void TexturePacker::createChild() {
-	mChild = TexturePacker::New( mWidth, mHeight, mPixelDensity, mForcePowOfTwo, mScalableSVG,
-								 mPixelBorder, mTextureFilter, mAllowFlipping );
+	mChild = TexturePacker::New( mWidth, mHeight, mPixelDensity / 100.f, mForcePowOfTwo,
+								 mScalableSVG, mPixelBorder, mTextureFilter, mAllowFlipping );
 
 	std::list<TexturePackerTex*>::iterator it;
 	std::list<std::list<TexturePackerTex*>::iterator> remove;
@@ -494,8 +495,7 @@ bool TexturePacker::addTexture( const std::string& TexturePath ) {
 	if ( FileSystem::fileExists( TexturePath ) ) {
 		Image::FormatConfiguration imageFormatConfiguration;
 
-		imageFormatConfiguration.svgScale( mScalableSVG ? PixelDensity::toFloat( mPixelDensity )
-														: 1.f );
+		imageFormatConfiguration.svgScale( mScalableSVG ? mPixelDensity / 100.f : 1.f );
 
 		TexturePackerTex* TPack =
 			eeNew( TexturePackerTex, ( TexturePath, imageFormatConfiguration ) );
@@ -605,7 +605,7 @@ Int32 TexturePacker::packTextures() {
 }
 
 void TexturePacker::save( const std::string& Filepath, const Image::SaveType& Format,
-						  const bool& SaveExtensions ) {
+						  const bool& KeepExtensions ) {
 	if ( !mPacked )
 		packTextures();
 
@@ -613,7 +613,7 @@ void TexturePacker::save( const std::string& Filepath, const Image::SaveType& Fo
 		return;
 
 	mFilepath = Filepath;
-	mSaveExtensions = SaveExtensions;
+	mKeepExtensions = KeepExtensions;
 
 	Image Img( (Uint32)mWidth, (Uint32)mHeight, getAtlasNumChannels() );
 
@@ -681,7 +681,7 @@ void TexturePacker::saveTextureRegions() {
 	sTextureAtlasHdr TexGrHdr;
 
 	TexGrHdr.Magic = EE_TEXTURE_ATLAS_MAGIC;
-	TexGrHdr.Version = 2000;
+	TexGrHdr.Version = HDR_TEXTURE_ATLAS_VERSION;
 	TexGrHdr.Date = static_cast<Uint64>( Sys::getSystemTime() );
 	TexGrHdr.TextureCount = 1;
 	TexGrHdr.Format = mFormat;
@@ -697,7 +697,7 @@ void TexturePacker::saveTextureRegions() {
 	if ( mAllowFlipping )
 		TexGrHdr.Flags |= HDR_TEXTURE_ATLAS_ALLOW_FLIPPING;
 
-	if ( !mSaveExtensions )
+	if ( !mKeepExtensions )
 		TexGrHdr.Flags |= HDR_TEXTURE_ATLAS_REMOVE_EXTENSION;
 
 	if ( mForcePowOfTwo )
@@ -747,15 +747,15 @@ void TexturePacker::createTextureRegionsHdr( TexturePacker* Packer,
 		if ( tTex->placed() ) {
 			std::string name = FileSystem::fileNameFromPath( tTex->name() );
 
-			if ( !mSaveExtensions )
-				name = FileSystem::fileRemoveExtension( name );
-
 			if ( name.size() > HDR_NAME_SIZE )
 				name.resize( HDR_NAME_SIZE );
 
 			memset( tTextureRegionHdr.Name, 0, HDR_NAME_SIZE );
 
 			String::strCopy( tTextureRegionHdr.Name, name.c_str(), HDR_NAME_SIZE );
+
+			if ( !mKeepExtensions )
+				name = FileSystem::fileRemoveExtension( name );
 
 			tTextureRegionHdr.ResourceID = String::hash( name );
 			tTextureRegionHdr.Width = tTex->width();
@@ -769,7 +769,9 @@ void TexturePacker::createTextureRegionsHdr( TexturePacker* Packer,
 			tTextureRegionHdr.Y = tTex->y();
 			tTextureRegionHdr.Date = FileSystem::fileGetModificationDate( tTex->name() );
 			tTextureRegionHdr.Flags = 0;
-			tTextureRegionHdr.PixelDensity = (Uint32)mPixelDensity;
+			tTextureRegionHdr.PixelDensity = mPixelDensity;
+			MD5::Result md5Result = MD5::fromFile( tTex->name() );
+			memcpy( tTextureRegionHdr.Hash, &md5Result.digest[0], HDR_HASH_SIZE );
 
 			if ( tTex->flipped() )
 				tTextureRegionHdr.Flags |= HDR_TEXTUREREGION_FLAG_FLIPED;
@@ -815,7 +817,7 @@ void TexturePacker::childSave( const Image::SaveType& Format ) {
 			std::string fExt = FileSystem::fileExtension( LastParent->getFilepath() );
 			std::string fName = fFpath + "-ch" + String::toStr( ParentCount ) + "." + fExt;
 
-			mChild->save( fName, Format, mSaveExtensions );
+			mChild->save( fName, Format, mKeepExtensions );
 		}
 	}
 }

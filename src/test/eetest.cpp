@@ -234,7 +234,7 @@ void EETest::createUIThemeTextureAtlas() {
 		else if ( mThemeName.find( "1.5x" ) != std::string::npos )
 			PD = PixelDensitySize::HDPI;
 
-		TexturePacker tp( 2048, 2048, PD, true, false, 2 );
+		TexturePacker tp( 2048, 2048, PixelDensity::toFloat( PD ), true, false, 2 );
 		tp.addTexturesPath( Path );
 		tp.packTextures();
 		tp.save( tgpath + ".png", Image::SaveType::SAVE_TYPE_PNG );
@@ -1333,13 +1333,15 @@ void EETest::onTextureLoaded( ResourceLoader* ) {
 
 void EETest::loadTextures() {
 	if ( !FileSystem::fileExists( MyPath + "atlases/bnb.eta" ) ) {
-		TexturePacker tp( 1024, 512, PixelDensitySize::MDPI, true, false, 1 );
+		TexturePacker tp( 1024, 512, PixelDensity::toFloat( PixelDensitySize::MDPI ), true, false,
+						  1 );
 		tp.addTexturesPath( MyPath + "atlases/bnb/" );
 		tp.save( MyPath + "atlases/bnb.png" );
 	}
 
 	if ( !FileSystem::fileExists( MyPath + "atlases/tiles.eta" ) ) {
-		TexturePacker tp( 256, 32, PixelDensitySize::MDPI, true, false, 0 );
+		TexturePacker tp( 256, 32, PixelDensity::toFloat( PixelDensitySize::MDPI ), true, false,
+						  0 );
 		tp.addTexturesPath( MyPath + "atlases/tiles/" );
 		tp.save( MyPath + "atlases/tiles.png" );
 	}
@@ -1911,7 +1913,7 @@ void EETest::input() {
 	if ( KM->isKeyUp( KEY_F1 ) )
 		Graphics::ShaderProgramManager::instance()->reload();
 
-	UISceneNode * uiSceneNode = SceneManager::instance()->getUISceneNode();
+	UISceneNode* uiSceneNode = SceneManager::instance()->getUISceneNode();
 
 	if ( KM->isKeyUp( KEY_F6 ) )
 		uiSceneNode->setHighlightOver( !uiSceneNode->getHighlightOver() );

@@ -30,7 +30,6 @@
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/image.hpp>
 #include <eepp/graphics/packerhelper.hpp>
-#include <eepp/graphics/pixeldensity.hpp>
 #include <eepp/graphics/texture.hpp>
 #include <list>
 
@@ -73,7 +72,7 @@ class EE_API TexturePacker {
 	 */
 	static TexturePacker*
 	New( const Uint32& maxWidth, const Uint32& maxHeight,
-		 const PixelDensitySize& pixelDensity = PixelDensitySize::MDPI,
+		 const Float& pixelDensity = 1,
 		 const bool& forcePowOfTwo = true, const bool& scalableSVG = false,
 		 const Uint32& pixelBorder = 2,
 		 const Texture::TextureFilter& textureFilter = Texture::TextureFilter::Linear,
@@ -104,7 +103,7 @@ class EE_API TexturePacker {
 	 *orientation ). So avoid it for eepp.
 	 */
 	TexturePacker( const Uint32& maxWidth, const Uint32& maxHeight,
-				   const PixelDensitySize& pixelDensity = PixelDensitySize::MDPI,
+				   const Float& pixelDensity = 1,
 				   const bool& forcePowOfTwo = true, const bool& scalableSVG = false,
 				   const Uint32& pixelBorder = 2,
 				   const Texture::TextureFilter& textureFilter = Texture::TextureFilter::Linear,
@@ -136,13 +135,13 @@ class EE_API TexturePacker {
 	 *called, it will be called automatically by the function ( so you don't need to call it ).
 	 *	@param Filepath The path were it will be saved the new texture atlas.
 	 *	@param Format The image format of the new texture atlas.
-	 *	@param SaveExtensions Indicates if the extensions of the image files must be saved. Usually
-	 *you wan't to find the TextureRegions by its name without extension, but this can be changed
-	 *here.
+	 *	@param KeepExtensions Indicates if the extensions of the image files must be saved. Usually
+	 * you want to find the TextureRegions by its name without extension, but this can be changed
+	 * here.
 	 */
 	void save( const std::string& Filepath,
 			   const Image::SaveType& Format = Image::SaveType::SAVE_TYPE_PNG,
-			   const bool& SaveExtensions = false );
+			   const bool& KeepExtensions = false );
 
 	/** Clear all the textures added */
 	void close();
@@ -170,7 +169,7 @@ class EE_API TexturePacker {
 	 *orientation ). So avoid it for eepp.
 	 */
 	void setOptions( const Uint32& maxWidth, const Uint32& maxHeight,
-					 const PixelDensitySize& pixelDensity = PixelDensitySize::MDPI,
+					 const Float& pixelDensity = 1,
 					 const bool& forcePowOfTwo = true, const bool& scalableSVG = false,
 					 const Uint32& pixelBorder = 2,
 					 const Texture::TextureFilter& textureFilter = Texture::TextureFilter::Linear,
@@ -207,9 +206,9 @@ class EE_API TexturePacker {
 	Int32 mPlacedCount;
 	bool mForcePowOfTwo;
 	Int32 mPixelBorder;
-	PixelDensitySize mPixelDensity;
+	Uint32 mPixelDensity; /* The multiplier value * 100 ( example: PD = 2, here is 200 ) */
 	Texture::TextureFilter mTextureFilter;
-	bool mSaveExtensions;
+	bool mKeepExtensions;
 	bool mScalableSVG;
 	Image::SaveType mFormat;
 

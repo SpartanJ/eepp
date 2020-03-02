@@ -169,8 +169,9 @@ void TextureAtlasNew::textureAtlasSave( const Event* Event ) {
 
 		if ( Res1 && Res2 ) {
 			TexturePacker* texturePacker = TexturePacker::New(
-				w, h, PixelDensity::fromString( mPixelDensity->getText() ), mForcePow2->isChecked(),
-				mScalableSVG->isChecked(), b, textureFilter, mAllowChilds->isChecked(), false );
+				w, h, PixelDensity::toFloat( PixelDensity::fromString( mPixelDensity->getText() ) ),
+				mForcePow2->isChecked(), mScalableSVG->isChecked(), b, textureFilter,
+				mAllowChilds->isChecked(), false );
 
 			texturePacker->addTexturesPath( mTGPath->getText() );
 

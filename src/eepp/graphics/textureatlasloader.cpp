@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <eepp/graphics/packerhelper.hpp>
 #include <eepp/graphics/textureatlas.hpp>
 #include <eepp/graphics/textureatlasloader.hpp>
@@ -6,7 +7,9 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/iostreammemory.hpp>
+#include <eepp/system/md5.hpp>
 #include <eepp/system/packmanager.hpp>
+#include <iterator>
 
 namespace EE { namespace Graphics {
 
@@ -259,7 +262,11 @@ void TextureAtlasLoader::createTextureRegions() {
 				for ( Int32 i = 0; i < tTexHdr->TextureRegionCount; i++ ) {
 					sTextureRegionHdr* tSh = &tTexAtlas->TextureRegions[i];
 
-					std::string TextureRegionName( &tSh->Name[0] );
+					std::string TextureRegionName( tSh->Name );
+
+					if ( mTexGrHdr.Flags & HDR_TEXTURE_ATLAS_REMOVE_EXTENSION )
+						TextureRegionName = FileSystem::fileRemoveExtension( TextureRegionName );
+
 					Rect tRect( tSh->X, tSh->Y, tSh->X + tSh->Width, tSh->Y + tSh->Height );
 
 					TextureRegion* tTextureRegion = TextureRegion::New(
@@ -267,7 +274,7 @@ void TextureAtlasLoader::createTextureRegions() {
 						Sizef( (Float)tSh->DestWidth, (Float)tSh->DestHeight ),
 						Vector2i( tSh->OffsetX, tSh->OffsetY ), TextureRegionName );
 
-					tTextureRegion->setPixelDensity( PixelDensity::toFloat( tSh->PixelDensity ) );
+					tTextureRegion->setPixelDensity( tSh->PixelDensity / 100.f );
 					// if ( tSh->Flags & HDR_TEXTUREREGION_FLAG_FLIPED )
 					// Should rotate the sub texture, but.. sub texture rotation is not stored.
 
@@ -368,6 +375,10 @@ bool TextureAtlasLoader::updateTextureAtlas() {
 	return false;
 }
 
+#define ATLAS_IS_UPDATED 0
+#define ATLAS_NEEDS_RECREATE 2
+#define ATLAS_NEEDS_HDR_REWRITE 1
+
 bool TextureAtlasLoader::updateTextureAtlas( std::string TextureAtlasPath, std::string ImagesPath,
 											 Sizei maxImageSize ) {
 	if ( !TextureAtlasPath.size() || !ImagesPath.size() ||
@@ -383,8 +394,8 @@ bool TextureAtlasLoader::updateTextureAtlas( std::string TextureAtlasPath, std::
 
 	Int32 x, y, c;
 
-	Int32 NeedUpdate = 0;
-	PixelDensitySize pixelDensity = PixelDensitySize::MDPI;
+	Int32 NeedUpdate = ATLAS_IS_UPDATED;
+	Float pixelDensity = 1;
 
 	FileSystem::dirPathAddSlashAtEnd( ImagesPath );
 
@@ -395,7 +406,7 @@ bool TextureAtlasLoader::updateTextureAtlas( std::string TextureAtlasPath, std::
 		totalTextureRegions += mTempAtlass[z].Texture.TextureRegionCount;
 
 		if ( mTempAtlass[z].Texture.TextureRegionCount > 0 ) {
-			pixelDensity = (PixelDensitySize)mTempAtlass[z].TextureRegions[0].PixelDensity;
+			pixelDensity = mTempAtlass[z].TextureRegions[0].PixelDensity / 100.f;
 		}
 	}
 
@@ -411,13 +422,13 @@ bool TextureAtlasLoader::updateTextureAtlas( std::string TextureAtlasPath, std::
 	}
 
 	if ( totalTextureRegions != totalImages ) {
-		NeedUpdate = 2;
+		NeedUpdate = ATLAS_NEEDS_RECREATE;
 	} else {
 		for ( z = 0; z < mTempAtlass.size(); z++ ) {
 			sTempTexAtlas* tTexAtlas = &mTempAtlass[z];
 			sTextureHdr* tTexHdr = &tTexAtlas->Texture;
 
-			if ( 2 != NeedUpdate ) {
+			if ( ATLAS_NEEDS_RECREATE != NeedUpdate ) {
 				for ( Int32 i = 0; i < tTexHdr->TextureRegionCount; i++ ) {
 					sTextureRegionHdr* tSh = &tTexAtlas->TextureRegions[i];
 
@@ -425,27 +436,33 @@ bool TextureAtlasLoader::updateTextureAtlas( std::string TextureAtlasPath, std::
 
 					if ( FileSystem::fileSize( path ) ) {
 						if ( tSh->Date != FileSystem::fileGetModificationDate( path ) ) {
-							if ( Image::getInfo( path.c_str(), &x, &y, &c ) ) {
-								if ( ( !( tSh->Flags & HDR_TEXTUREREGION_FLAG_FLIPED ) &&
-									   tSh->Width == x &&
-									   tSh->Height == y ) || // If size or channels changed, the
-															 // image need update
-									 ( ( tSh->Flags & HDR_TEXTUREREGION_FLAG_FLIPED ) &&
-									   tSh->Width == y && tSh->Height == x ) ||
-									 tSh->Channels != c ) {
-									NeedUpdate = 1; // Only update the image with the newest one
+							MD5::Result result = MD5::fromFile( path );
+							if ( !std::equal( std::begin( tSh->Hash ), std::end( tSh->Hash ),
+											  std::begin( result.digest ) ) ) {
+								if ( Image::getInfo( path.c_str(), &x, &y, &c ) ) {
+									// If size or channels changed, the  image need update.
+									if ( ( !( tSh->Flags & HDR_TEXTUREREGION_FLAG_FLIPED ) &&
+										   tSh->Width == x && tSh->Height == y ) ||
+										 ( ( tSh->Flags & HDR_TEXTUREREGION_FLAG_FLIPED ) &&
+										   tSh->Width == y && tSh->Height == x ) ||
+										 tSh->Channels != c ) {
+										// Only update the image with the newest one.
+										NeedUpdate = ATLAS_NEEDS_HDR_REWRITE;
+									} else {
+										// The image has changed, recreate all.
+										NeedUpdate = ATLAS_NEEDS_RECREATE;
+										break;
+									}
 								} else {
-									NeedUpdate = 2; // The image change it, recreate all
+									// Something is wrong on the image.
+									NeedUpdate = ATLAS_NEEDS_RECREATE;
 									break;
 								}
-							} else {
-								NeedUpdate = 2; // Something is wrong on the image
-								break;
 							}
 						}
 					} else {
-						NeedUpdate = 2; // Need recreation of the whole texture atlas, some image
-										// where deleted.
+						// Need recreation of the whole texture atlas, some image where deleted.
+						NeedUpdate = ATLAS_NEEDS_RECREATE;
 						break;
 					}
 				}
@@ -455,11 +472,11 @@ bool TextureAtlasLoader::updateTextureAtlas( std::string TextureAtlasPath, std::
 		}
 	}
 
-	if ( NeedUpdate ) {
+	if ( NeedUpdate != ATLAS_IS_UPDATED ) {
 		std::string tapath( FileSystem::fileRemoveExtension( TextureAtlasPath ) + "." +
 							Image::saveTypeToExtension( mTexGrHdr.Format ) );
 
-		if ( 2 == NeedUpdate ) {
+		if ( ATLAS_NEEDS_RECREATE == NeedUpdate ) {
 			TexturePacker tp(
 				maxImageSize.getWidth() == 0 ? mTexGrHdr.Width : maxImageSize.getWidth(),
 				maxImageSize.getHeight() == 0 ? mTexGrHdr.Height : maxImageSize.getHeight(),
@@ -475,7 +492,7 @@ bool TextureAtlasLoader::updateTextureAtlas( std::string TextureAtlasPath, std::
 			}
 
 			tp.save( tapath, (Image::SaveType)mTexGrHdr.Format );
-		} else if ( 1 == NeedUpdate ) {
+		} else if ( ATLAS_NEEDS_HDR_REWRITE == NeedUpdate ) {
 			std::string etapath =
 				FileSystem::fileRemoveExtension( tapath ) + EE_TEXTURE_ATLAS_EXTENSION;
 

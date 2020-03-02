@@ -1,4 +1,5 @@
 #include <args/args.hxx>
+#include <eepp/graphics/pixeldensity.hpp>
 #include <eepp/graphics/textureatlasloader.hpp>
 #include <eepp/graphics/texturepacker.hpp>
 #include <eepp/system/filesystem.hpp>
@@ -139,9 +140,9 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	}
 
 	if ( !FileSystem::fileExists( outputFile.Get() ) ) {
-		TexturePacker tp( width.Get(), height.Get(), pixelDensity.Get(), forcePow2.Get(),
-						  scalableSVG.Get(), pixelsBorder.Get(), textureFilter.Get(),
-						  allowChilds.Get() );
+		TexturePacker tp( width.Get(), height.Get(), PixelDensity::toFloat( pixelDensity.Get() ),
+						  forcePow2.Get(), scalableSVG.Get(), pixelsBorder.Get(),
+						  textureFilter.Get(), allowChilds.Get() );
 		std::cout << "Packing directory: " << texturesPathSafe << std::endl;
 		tp.addTexturesPath( texturesPathSafe );
 		for ( auto& image : imagesList ) {
