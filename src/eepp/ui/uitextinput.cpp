@@ -356,7 +356,7 @@ Uint32 UITextInput::onMouseDoubleClick( const Vector2i& Pos, const Uint32& Flags
 }
 
 Uint32 UITextInput::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
-	UINode::onMouseLeave( Pos, Flags );
+	UIWidget::onMouseLeave( Pos, Flags );
 
 	if ( NULL != mSceneNode )
 		mSceneNode->setCursor( Cursor::Arrow );

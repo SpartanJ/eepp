@@ -215,68 +215,93 @@ void UIWidget::createTooltip() {
 
 void UIWidget::onChildCountChange( Node* child, const bool& removed ) {
 	UINode::onChildCountChange( child, removed );
-	if ( !isSceneNodeLoading() )
-		reloadChildsStyleState();
+	if ( !isSceneNodeLoading() && getUISceneNode() != NULL )
+		getUISceneNode()->invalidateStyleSheet();
 }
 
-Uint32 UIWidget::onMouseMove( const Vector2i& Pos, const Uint32& Flags ) {
-	if ( mVisible && NULL != mTooltip && !mTooltip->getText().empty() ) {
-		EventDispatcher* eventDispatcher = getEventDispatcher();
+Vector2f UIWidget::getTooltipPosition() {
+	EventDispatcher* eventDispatcher = getEventDispatcher();
+	UIThemeManager* themeManager = getUISceneNode()->getUIThemeManager();
 
-		if ( NULL == eventDispatcher )
-			return 1;
+	if ( NULL == eventDispatcher || NULL == themeManager )
+		return Vector2f::Zero;
 
-		UIThemeManager* themeManager = getUISceneNode()->getUIThemeManager();
+	Vector2f Pos = eventDispatcher->getMousePosf();
+	Pos.x += themeManager->getCursorSize().x;
+	Pos.y += themeManager->getCursorSize().y;
 
-		Vector2f Pos = eventDispatcher->getMousePosf();
-		Pos.x += themeManager->getCursorSize().x;
-		Pos.y += themeManager->getCursorSize().y;
+	if ( Pos.x + mTooltip->getPixelsSize().getWidth() >
+		 eventDispatcher->getSceneNode()->getPixelsSize().getWidth() ) {
+		Pos.x = eventDispatcher->getMousePos().x - mTooltip->getPixelsSize().getWidth();
+	}
 
-		if ( Pos.x + mTooltip->getPixelsSize().getWidth() >
-			 eventDispatcher->getSceneNode()->getPixelsSize().getWidth() ) {
-			Pos.x = eventDispatcher->getMousePos().x - mTooltip->getPixelsSize().getWidth();
-		}
+	if ( Pos.y + mTooltip->getPixelsSize().getHeight() >
+		 eventDispatcher->getSceneNode()->getPixelsSize().getHeight() ) {
+		Pos.y = eventDispatcher->getMousePos().y - mTooltip->getPixelsSize().getHeight();
+	}
 
-		if ( Pos.y + mTooltip->getPixelsSize().getHeight() >
-			 eventDispatcher->getSceneNode()->getPixelsSize().getHeight() ) {
-			Pos.y = eventDispatcher->getMousePos().y - mTooltip->getPixelsSize().getHeight();
-		}
+	return Pos;
+}
 
-		if ( Time::Zero == themeManager->getTooltipTimeToShow() ) {
-			if ( !mTooltip->isVisible() || themeManager->getTooltipFollowMouse() )
-				mTooltip->setPosition( PixelDensity::pxToDp( Pos ) );
+Uint32 UIWidget::onMouseMove( const Vector2i& position, const Uint32& flags ) {
+	EventDispatcher* eventDispatcher = getEventDispatcher();
 
-			mTooltip->show();
-		} else {
-			if ( -1.f != mTooltip->getTooltipTime().asMilliseconds() ) {
-				mTooltip->addTooltipTime( mSceneNode->getElapsed() );
+	if ( NULL != eventDispatcher && eventDispatcher->getOverControl() == this ) {
+		if ( mVisible && NULL != mTooltip && !mTooltip->getText().empty() ) {
+			UIThemeManager* themeManager = getUISceneNode()->getUIThemeManager();
+
+			if ( themeManager->getTooltipFollowMouse() ) {
+				mTooltip->setPixelsPosition( getTooltipPosition() );
 			}
-
-			if ( mTooltip->getTooltipTime() >= themeManager->getTooltipTimeToShow() ) {
-				if ( mTooltip->getTooltipTime().asMilliseconds() != -1.f ) {
-					mTooltip->setPixelsPosition( Pos );
-
-					mTooltip->show();
-
-					mTooltip->setTooltipTime( Milliseconds( -1.f ) );
-				}
-			}
-		}
-
-		if ( themeManager->getTooltipFollowMouse() ) {
-			mTooltip->setPixelsPosition( Pos );
 		}
 	}
 
-	return UINode::onMouseMove( Pos, Flags );
+	return UINode::onMouseMove( position, flags );
+}
+
+Uint32 UIWidget::onMouseOver( const Vector2i& position, const Uint32& flags ) {
+	EventDispatcher* eventDispatcher = getEventDispatcher();
+
+	if ( NULL != eventDispatcher && eventDispatcher->getOverControl() == this ) {
+		updateDebugData();
+
+		if ( mVisible && NULL != mTooltip && !mTooltip->getText().empty() ) {
+			UIThemeManager* themeManager = getUISceneNode()->getUIThemeManager();
+
+			if ( NULL == themeManager )
+				return UINode::onMouseOver( position, flags );
+
+			if ( Time::Zero == themeManager->getTooltipTimeToShow() ) {
+				if ( !mTooltip->isVisible() || themeManager->getTooltipFollowMouse() )
+					mTooltip->setPosition( getTooltipPosition() );
+				mTooltip->show();
+			} else {
+				runAction( Actions::Runnable::New(
+					[&] {
+						if ( isMouseOver() ) {
+							mTooltip->setPixelsPosition( getTooltipPosition() );
+							mTooltip->show();
+						}
+					},
+					themeManager->getTooltipTimeToShow() ) );
+			}
+
+			if ( themeManager->getTooltipFollowMouse() ) {
+				mTooltip->setPixelsPosition( getTooltipPosition() );
+			}
+		}
+	}
+
+	return UINode::onMouseOver( position, flags );
 }
 
 Uint32 UIWidget::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
-	if ( mVisible && NULL != mTooltip && !mTooltip->getText().empty() ) {
-		mTooltip->setTooltipTime( Milliseconds( 0.f ) );
+	EventDispatcher* eventDispatcher = getEventDispatcher();
 
-		if ( mTooltip->isVisible() )
+	if ( NULL != eventDispatcher && eventDispatcher->getOverControl() != this ) {
+		if ( mVisible && NULL != mTooltip ) {
 			mTooltip->hide();
+		}
 	}
 
 	return UINode::onMouseLeave( Pos, Flags );

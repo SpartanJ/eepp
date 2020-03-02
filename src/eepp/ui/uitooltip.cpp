@@ -18,6 +18,7 @@ UITooltip::UITooltip() :
 	setFlags( UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_PADDING | UI_AUTO_SIZE );
 
 	mTextCache = Text::New();
+	mEnabled = false;
 
 	UITheme* theme = getUISceneNode()->getUIThemeManager()->getDefaultTheme();
 
@@ -35,6 +36,8 @@ UITooltip::UITooltip() :
 	autoPadding();
 
 	applyDefaultTheme();
+
+	reloadStyle( false );
 }
 
 UITooltip::~UITooltip() {
@@ -68,8 +71,6 @@ void UITooltip::autoPadding() {
 
 void UITooltip::show() {
 	if ( !isVisible() || 0 == mAlpha ) {
-		toFront();
-
 		setVisible( true );
 
 		if ( getUISceneNode()->getUIThemeManager()->getDefaultEffectsEnabled() ) {
@@ -77,9 +78,11 @@ void UITooltip::show() {
 				Actions::Fade::New(
 					255.f == mAlpha ? 0.f : mAlpha, 255.f,
 					getUISceneNode()->getUIThemeManager()->getControlsFadeOutTime() ),
-				Actions::Spawn::New( Actions::Enable::New(), Actions::Visible::New( true ) ) ) );
+				Actions::Visible::New( true ) ) );
 		}
 	}
+
+	toFront();
 }
 
 void UITooltip::hide() {
@@ -88,7 +91,7 @@ void UITooltip::hide() {
 			runAction( Actions::Sequence::New(
 				Actions::FadeOut::New(
 					getUISceneNode()->getUIThemeManager()->getControlsFadeOutTime() ),
-				Actions::Spawn::New( Actions::Disable::New(), Actions::Visible::New( false ) ) ) );
+				Actions::Visible::New( false ) ) );
 		} else {
 			setVisible( false );
 		}
@@ -237,18 +240,6 @@ const int& UITooltip::getNumLines() const {
 
 Vector2f UITooltip::getAlignOffset() {
 	return PixelDensity::pxToDp( mAlignOffset );
-}
-
-void UITooltip::setTooltipTime( const Time& Time ) {
-	mTooltipTime = Time;
-}
-
-void UITooltip::addTooltipTime( const Time& Time ) {
-	mTooltipTime += Time;
-}
-
-const Time& UITooltip::getTooltipTime() const {
-	return mTooltipTime;
 }
 
 UINode* UITooltip::getTooltipOf() const {

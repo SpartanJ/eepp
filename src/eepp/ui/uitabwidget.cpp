@@ -169,10 +169,10 @@ void UITabWidget::invalidate( Node* invalidator ) {
 	// Only invalidate if the invalidator is actually visible in the current active tab.
 	if ( NULL != invalidator ) {
 		if ( invalidator == mCtrlContainer ) {
-			mSceneNode->invalidate( mCtrlContainer );
+			mNodeDrawInvalidator->invalidate( mCtrlContainer );
 		} else if ( invalidator->getParent() == mCtrlContainer ) {
 			if ( invalidator->isVisible() ) {
-				mSceneNode->invalidate( mCtrlContainer );
+				mNodeDrawInvalidator->invalidate( mCtrlContainer );
 			}
 		} else {
 			Node* container = invalidator->getParent();
@@ -180,9 +180,11 @@ void UITabWidget::invalidate( Node* invalidator ) {
 				container = container->getParent();
 			}
 			if ( container->getParent() == mCtrlContainer && container->isVisible() ) {
-				mSceneNode->invalidate( mCtrlContainer );
+				mNodeDrawInvalidator->invalidate( mCtrlContainer );
 			}
 		}
+	} else if ( NULL != mNodeDrawInvalidator ) {
+		mNodeDrawInvalidator->invalidate( this );
 	} else if ( NULL != mSceneNode ) {
 		mSceneNode->invalidate( this );
 	}

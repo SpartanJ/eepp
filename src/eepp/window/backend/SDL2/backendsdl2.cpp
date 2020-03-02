@@ -16,7 +16,9 @@
 
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
-WindowBackendSDL2::WindowBackendSDL2() : WindowBackendLibrary() {}
+WindowBackendSDL2::WindowBackendSDL2() : WindowBackendLibrary() {
+	SDL_SetHint( "SDL_RETURN_KEY_HIDES_IME", "1" );
+}
 
 WindowBackendSDL2::~WindowBackendSDL2() {
 #if EE_PLATFORM != EE_PLATFORM_MACOSX

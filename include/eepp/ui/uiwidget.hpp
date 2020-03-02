@@ -281,6 +281,8 @@ class EE_API UIWidget : public UINode {
 
 	virtual Uint32 onMouseMove( const Vector2i& Pos, const Uint32& Flags );
 
+	virtual Uint32 onMouseOver( const Vector2i& Pos, const Uint32& Flags );
+
 	virtual Uint32 onMouseLeave( const Vector2i& Pos, const Uint32& Flags );
 
 	virtual void onParentSizeChange( const Vector2f& SizeChange );
@@ -320,6 +322,8 @@ class EE_API UIWidget : public UINode {
 	bool checkPropertyDefinition( const StyleSheetProperty& property );
 
 	void reloadChildsStyleState();
+
+	Vector2f getTooltipPosition();
 };
 
 }} // namespace EE::UI

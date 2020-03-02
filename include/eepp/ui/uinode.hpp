@@ -285,7 +285,7 @@ class EE_API UINode : public Node {
 
 	void drawOverNode();
 
-	void drawDebugData();
+	void updateDebugData();
 
 	void drawBox();
 

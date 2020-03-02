@@ -15,7 +15,7 @@ UIThemeManager::UIThemeManager() :
 	mEnableDefaultEffects( false ),
 	mFadeInTime( Milliseconds( 100.f ) ),
 	mFadeOutTime( Milliseconds( 100.f ) ),
-	mTooltipTimeToShow( Milliseconds( 200 ) ),
+	mTooltipTimeToShow( Milliseconds( 400 ) ),
 	mTooltipFollowMouse( true ),
 	mCursorSize( 16, 16 ) {}
 

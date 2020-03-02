@@ -67,12 +67,14 @@ void EventDispatcher::update( const Time& time ) {
 	Node* pOver = mSceneNode->overFind( mMousePos );
 
 	if ( pOver != mOverControl ) {
-		if ( NULL != mOverControl ) {
-			mOverControl->onMouseLeave( mMousePosi, 0 );
-			sendMsg( mOverControl, NodeMessage::MouseLeave );
-		}
+		Node* oldOverControl = mOverControl;
 
 		mOverControl = pOver;
+
+		if ( NULL != oldOverControl ) {
+			oldOverControl->onMouseLeave( mMousePosi, 0 );
+			sendMsg( oldOverControl, NodeMessage::MouseLeave );
+		}
 
 		if ( NULL != mOverControl ) {
 			mOverControl->onMouseOver( mMousePosi, 0 );

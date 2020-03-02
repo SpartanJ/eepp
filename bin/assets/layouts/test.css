@@ -76,7 +76,7 @@ Window::title {
 
 Tooltip {
 	padding: 8dp;
-	color: black;
+	color: #020203;
 }
 
 CheckBox {

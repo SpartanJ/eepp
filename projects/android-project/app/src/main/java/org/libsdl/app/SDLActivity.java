@@ -1519,7 +1519,19 @@ class SDLInputConnection extends BaseInputConnection {
                     return true;
                 }
             }
-        }
+        } else if (event.getKeyCode() == KeyEvent.KEYCODE_DEL ) {
+        	if ( event.getAction() == KeyEvent.ACTION_DOWN ) {
+        		SDLActivity.onNativeKeyDown( event.getKeyCode() );
+			} else if ( event.getAction() == KeyEvent.ACTION_UP ) {
+        		SDLActivity.onNativeKeyUp( event.getKeyCode() );
+			}
+			return true;
+		} else if ( event.getKeyCode() >= KeyEvent.KEYCODE_0 && event.getKeyCode() <= KeyEvent.KEYCODE_9 ) {
+        	int number = event.getKeyCode() - KeyEvent.KEYCODE_0;
+			if ( event.getAction() == KeyEvent.ACTION_UP ) {
+				SDLInputConnection.nativeCommitText(String.valueOf( number ), 1);
+			}
+		}
 
 
         return super.sendKeyEvent(event);

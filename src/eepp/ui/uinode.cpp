@@ -229,24 +229,25 @@ void UINode::drawOverNode() {
 	}
 }
 
-void UINode::drawDebugData() {
-	if ( NULL != mSceneNode && mSceneNode->getDrawDebugData() ) {
-		if ( isWidget() ) {
-			UIWidget* me = static_cast<UIWidget*>( this );
+void UINode::updateDebugData() {
+	if ( NULL != mSceneNode && mSceneNode->getDrawDebugData() && isWidget() &&
+		 NULL != getEventDispatcher() && getEventDispatcher()->getOverControl() == this ) {
+		UIWidget* widget = asType<UIWidget>();
 
-			if ( NULL != getEventDispatcher() && getEventDispatcher()->getOverControl() == this ) {
-				String text( String::format( "X: %2.4f Y: %2.4f\nW: %2.4f H: %2.4f", mDpPos.x,
-											 mDpPos.y, mDpSize.x, mDpSize.y ) );
+		String text = "Tag: " + String::fromUtf8( widget->getStyleSheetTag() ) + "\n";
 
-				if ( !mId.empty() ) {
-					text = "ID: " + mId + "\n" + text;
-				}
-
-				me->setTooltipText( text );
-			} else {
-				me->setTooltipText( "" );
-			}
+		if ( !mId.empty() ) {
+			text += "ID: " + mId + "\n";
 		}
+
+		if ( !widget->getStyleSheetClasses().empty() ) {
+			text += "Classes: " + String::join( widget->getStyleSheetClasses(), ' ' ) + "\n";
+		}
+
+		text += String::format( "X: %2.4f Y: %2.4f\nW: %2.4f H: %2.4f", mDpPos.x, mDpPos.y,
+									 mDpSize.x, mDpSize.y );
+
+		widget->setTooltipText( text );
 	}
 }
 
@@ -641,7 +642,7 @@ void UINode::internalDraw() {
 
 		drawOverNode();
 
-		drawDebugData();
+		updateDebugData();
 
 		drawBox();
 

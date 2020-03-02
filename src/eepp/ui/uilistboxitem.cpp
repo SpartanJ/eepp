@@ -109,7 +109,7 @@ void UIListBoxItem::select() {
 }
 
 Uint32 UIListBoxItem::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
-	UINode::onMouseLeave( Pos, Flags );
+	UIWidget::onMouseLeave( Pos, Flags );
 
 	if ( mNodeFlags & NODE_FLAG_SELECTED )
 		pushState( UIState::StateSelected );

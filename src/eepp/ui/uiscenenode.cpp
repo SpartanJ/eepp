@@ -30,6 +30,7 @@ UISceneNode::UISceneNode( EE::Window::Window* window ) :
 	SceneNode( window ),
 	mRoot( NULL ),
 	mIsLoading( false ),
+	mCSSInvalid( false ),
 	mUIThemeManager( UIThemeManager::New() ) {
 	// Update only UI elements that requires it.
 	setUpdateAllChilds( false );
@@ -133,7 +134,7 @@ UIWidget* UISceneNode::loadNode( pugi::xml_node node, Node* parent ) {
 				loadNode( widget.first_child(), uiwidget );
 			}
 
-			//uiwidget->reloadStyle( false );
+			// uiwidget->reloadStyle( false );
 			uiwidget->onWidgetCreated();
 		} else if ( String::toLower( widget.name() ) == "style" ) {
 			combineStyleSheet( widget.text().as_string() );
@@ -322,6 +323,15 @@ const Sizef& UISceneNode::getSize() const {
 	return mDpSize;
 }
 
+void UISceneNode::update( const Time& elapsed ) {
+	SceneNode::update( elapsed );
+
+	if ( mCSSInvalid ) {
+		mRoot->reloadChildsStyleState();
+		mCSSInvalid = false;
+	}
+}
+
 const bool& UISceneNode::isLoading() const {
 	return mIsLoading;
 }
@@ -332,6 +342,10 @@ UIThemeManager* UISceneNode::getUIThemeManager() const {
 
 UIWidget* UISceneNode::getRoot() const {
 	return mRoot;
+}
+
+void UISceneNode::invalidateStyleSheet() {
+	mCSSInvalid = true;
 }
 
 bool UISceneNode::onMediaChanged() {

@@ -61,12 +61,6 @@ class EE_API UITooltip : public UIWidget {
 
 	Vector2f getAlignOffset();
 
-	void setTooltipTime( const Time& Time );
-
-	void addTooltipTime( const Time& Time );
-
-	const Time& getTooltipTime() const;
-
 	UINode* getTooltipOf() const;
 
 	void setTooltipOf( UINode* tooltipOf );

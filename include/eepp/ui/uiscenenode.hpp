@@ -30,6 +30,8 @@ class EE_API UISceneNode : public SceneNode {
 
 	const Sizef& getSize() const;
 
+	virtual void update( const Time& elapsed );
+
 	void setTranslator( Translator translator );
 
 	Translator& getTranslator();
@@ -69,6 +71,8 @@ class EE_API UISceneNode : public SceneNode {
 
 	UIWidget* getRoot() const;
 
+	void invalidateStyleSheet();
+
   protected:
 	friend class EE::UI::UIWindow;
 	UIWidget* mRoot;
@@ -78,6 +82,7 @@ class EE_API UISceneNode : public SceneNode {
 	std::list<UIWindow*> mWindowsList;
 	CSS::StyleSheet mStyleSheet;
 	bool mIsLoading;
+	bool mCSSInvalid;
 	UIThemeManager* mUIThemeManager;
 	std::vector<Font*> mFontFaces;
 
@@ -99,7 +104,7 @@ class EE_API UISceneNode : public SceneNode {
 
 	bool onMediaChanged();
 
-	virtual void onChildCountChange( Node * child, const bool& removed );
+	virtual void onChildCountChange( Node* child, const bool& removed );
 
 	virtual void onSizeChange();
 
