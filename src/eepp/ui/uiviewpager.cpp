@@ -19,6 +19,7 @@ UIViewPager::UIViewPager() :
 	UIWidget( "viewpager" ),
 	mOrientation( UIOrientation::Horizontal ),
 	mDragging( false ),
+	mLocked( false ),
 	mDragResistance( PixelDensity::dpToPx( 8 ) ),
 	mInitialDisplacement( 0 ),
 	mDisplacement( 0 ),
@@ -32,6 +33,7 @@ UIViewPager::UIViewPager() :
 	mContainer = UIWidget::New();
 	mContainer->setParent( this );
 	mContainer->setFlags( UI_OWNS_CHILDS_POSITION );
+	clipEnable();
 }
 
 UIViewPager::~UIViewPager() {
@@ -215,11 +217,15 @@ void UIViewPager::moveToPage( const Int32& pageNum, bool animate ) {
 				mOrientation == UIOrientation::Horizontal ? Actions::MoveCoordinate::CoordinateX
 														  : Actions::MoveCoordinate::CoordinateY,
 				Actions::MoveCoordinate::CoordinateType::PixelPosition );
+			action->addEventListener( Action::OnDone, [&]( Action*, const Action::ActionType& ) {
+				sendCommonEvent( Event::OnPageChanged );
+			} );
 			mContainer->runAction( action );
 		} else {
 			Float val = -getLength() * mCurrentPage;
 			mContainer->setPosition(
 				mOrientation == UIOrientation::Horizontal ? Sizef( val, 0.f ) : Sizef( 0.f, val ) );
+			sendCommonEvent( Event::OnPageChanged );
 		}
 	}
 }
@@ -232,7 +238,7 @@ Uint32 UIViewPager::onCalculateDrag( const Vector2f& position, const Uint32& fla
 }
 
 void UIViewPager::onMouseDownEvent() {
-	if ( !mDragging && !getEventDispatcher()->isNodeDragging() ) {
+	if ( !mDragging && !mLocked && !getEventDispatcher()->isNodeDragging() ) {
 		mDragging = true;
 		mMouseDownPos = getEventDispatcher()->getMousePos().asFloat();
 		mContainer->clearActions();
@@ -297,6 +303,8 @@ std::string UIViewPager::getPropertyString( const PropertyDefinition* propertyDe
 			return mPageTransitionDuration.toString();
 		case PropertyId::TimingFunction:
 			return Ease::toString( mTimingFunction );
+		case PropertyId::PageLocked:
+			return isLocked() ? "true" : "false";
 		default:
 			return UIWidget::getPropertyString( propertyDef, propertyIndex );
 	}
@@ -319,12 +327,19 @@ bool UIViewPager::applyProperty( const StyleSheetProperty& attribute ) {
 		}
 		case PropertyId::DragResistance:
 			setDragResistance( lengthFromValueAsDp( attribute ) );
+			break;
 		case PropertyId::ChangePagePercent:
 			setChangePagePercent( attribute.asFloat() );
+			break;
 		case PropertyId::MaxEdgeResistance:
 			setMaxEdgeResistance( attribute.asFloat() );
+			break;
 		case PropertyId::TimingFunction:
 			setTimingFunction( Ease::fromName( attribute.getValue(), Ease::SineIn ) );
+			break;
+		case PropertyId::PageLocked:
+			setLocked( attribute.asBool() );
+			break;
 		default:
 			return UIWidget::applyProperty( attribute );
 	}
@@ -341,8 +356,18 @@ const Int32& UIViewPager::getCurrentPage() const {
 }
 
 void UIViewPager::setCurrentPage( const Int32& currentPage, bool animate ) {
-	if ( mCurrentPage != currentPage ) {
+	if ( !mLocked && mCurrentPage != currentPage ) {
 		moveToPage( currentPage, animate );
+	}
+}
+
+const bool& UIViewPager::isLocked() const {
+	return mLocked;
+}
+
+void UIViewPager::setLocked( bool locked ) {
+	if ( locked != mLocked ) {
+		mLocked = locked;
 	}
 }
 

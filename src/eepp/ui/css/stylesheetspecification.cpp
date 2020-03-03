@@ -10,7 +10,7 @@ StyleSheetSpecification::StyleSheetSpecification() {
 	// TODO: Support border-color top right bottom left.
 	// TODO: Support border-radius top right bottom left.
 	// TODO: Create a rule to set the border position against its box.
-	//		 Something like: "border-box", with the following options:
+	//		 Something like: "border-type", with the following options:
 	//			inside: The border is drawn inside the box.
 	//			outside: The border is drawn outside the box.
 	//			over: The border is drawn in the middle point of inside and outside.
@@ -341,6 +341,8 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "change-page-percent", "0.33" ).setType( PropertyType::NumberFloat );
 	registerProperty( "max-edge-resistance", "0" ).setType( PropertyType::NumberFloat );
 	registerProperty( "timing-function", "linear" ).setType( PropertyType::String );
+
+	registerProperty( "page-locked", "" ).setType( PropertyType::Bool );
 
 	// Shorthands
 	registerShorthand( "margin", {"margin-top", "margin-right", "margin-bottom", "margin-left"},

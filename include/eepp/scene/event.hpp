@@ -56,6 +56,7 @@ class EE_API Event {
 		OnPaddingChange,
 		OnBufferChange,
 		OnUpdateScreenPosition,
+		OnPageChanged,
 		UserEvent,
 		NoEvent = eeINDEX_NOT_FOUND
 	};

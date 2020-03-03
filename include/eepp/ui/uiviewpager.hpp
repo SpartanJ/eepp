@@ -62,10 +62,15 @@ class EE_API UIViewPager : public UIWidget {
 
 	void setCurrentPage( const Int32& currentPage, bool animate = false );
 
+	const bool& isLocked() const;
+
+	void setLocked( bool locked );
+
   protected:
 	UIWidget* mContainer;
 	UIOrientation mOrientation;
 	bool mDragging;
+	bool mLocked;
 	Float mDragResistance;
 	Float mInitialDisplacement;
 	Float mDisplacement;

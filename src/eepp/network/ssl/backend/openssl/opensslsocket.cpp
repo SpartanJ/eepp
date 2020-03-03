@@ -1,6 +1,6 @@
 #include <eepp/network/ssl/backend/openssl/opensslsocket.hpp>
 
-/** This implementation is based on the Godo Game Engine implementation (
+/** This implementation is based on the Godot Game Engine implementation (
  * https://github.com/okamstudio/godot ), MIT licensed. */
 
 #ifdef EE_OPENSSL
@@ -8,6 +8,7 @@
 #include <eepp/network/packet.hpp>
 #include <eepp/network/ssl/backend/openssl/curl_hostcheck.h>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/packmanager.hpp>
 
 namespace EE { namespace Network { namespace SSL {
 
@@ -155,30 +156,35 @@ bool OpenSSLSocket::init() {
 
 	OpenSSL_add_all_algorithms(); // Load all available encryption algorithms
 
-	//! Load the certificates and config
+	ScopedBuffer data;
+
 	if ( FileSystem::fileExists( SSLSocket::CertificatesPath ) ) {
-		ScopedBuffer data;
 		FileSystem::fileGet( SSLSocket::CertificatesPath, data );
+	} else if ( PackManager::instance()->isFallbackToPacksActive() ) {
+		std::string tPath( SSLSocket::CertificatesPath );
 
-		if ( data.length() > 0 ) {
-			BIO* mem = BIO_new( BIO_s_mem() );
+		Pack* tPack = PackManager::instance()->exists( tPath );
 
-			BIO_puts( mem, (const char*)data.get() );
+		if ( NULL != tPack ) {
+			tPack->extractFileToMemory( tPath, data );
+		}
+	}
 
-			while ( true ) {
-				X509* cert = PEM_read_bio_X509( mem, NULL, 0, NULL );
+	if ( data.length() > 0 ) {
+		BIO* mem = BIO_new( BIO_s_mem() );
 
-				if ( !cert )
-					break;
+		BIO_puts( mem, (const char*)data.get() );
 
-				sCerts.push_back( cert );
-			}
+		while ( true ) {
+			X509* cert = PEM_read_bio_X509( mem, NULL, 0, NULL );
 
-			BIO_free( mem );
+			if ( !cert )
+				break;
+
+			sCerts.push_back( cert );
 		}
 
-		// eePRINTL( "Loaded certs from '%s': %d", SSLSocket::CertificatesPath.c_str(),
-		// (int)sCerts.size() );
+		BIO_free( mem );
 	}
 
 	return true;
