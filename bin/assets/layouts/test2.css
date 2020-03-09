@@ -11,13 +11,14 @@ Widget {
   width: 200px;
   height: 200px;
   background-color: white;
-  border-radius: 50dp;
+  border-radius: 100dp;
   border-color: rgba(255, 0, 0, 0.5);
-  border-width: 100dp;
+  border-width: 20dp;
   border-type: outside;
   transition: all 0.5s;
 }
 
 Widget:hover {
-  border-radius: 0dp;
+  border-radius: 20dp;
+  border-width: 2dp;
 }

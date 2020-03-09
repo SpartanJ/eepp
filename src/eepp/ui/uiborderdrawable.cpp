@@ -13,9 +13,15 @@ static void borderAddArc( VertexBuffer* vbo, Vector2f pos, Float radiW, Float ra
 	double startAngle = eemin( arcStartAngle, arcEndAngle );
 	double endAngle = eemax( arcStartAngle, arcEndAngle );
 	Vector2f startPos = ( radiW > lineW ) ? pos : basePos;
+	double lastAngle = startAngle;
+	double i;
 
 	if ( decrease ) {
-		for ( double i = endAngle; i >= startAngle; i -= angleShift ) {
+		for ( i = endAngle; i >= startAngle; i -= angleShift ) {
+			vbo->addVertex(
+				Vector2f( pos.x + radiW * Math::cosAng( i ), pos.y + radiH * Math::sinAng( i ) ) );
+			vbo->addColor( color );
+
 			if ( radiW > lineW ) {
 				vbo->addVertex( Vector2f( pos.x + ( radiW - lineW ) * Math::cosAng( i ),
 										  pos.y + ( radiH - lineW ) * Math::sinAng( i ) ) );
@@ -24,17 +30,11 @@ static void borderAddArc( VertexBuffer* vbo, Vector2f pos, Float radiW, Float ra
 			}
 
 			vbo->addColor( color );
+			lastAngle = i;
+		}
 
-			if ( i + angleShift < endAngle ) {
-				vbo->addVertex( Vector2f( pos.x + radiW * Math::cosAng( i + angleShift ),
-										  pos.y + radiH * Math::sinAng( i + angleShift ) ) );
-			} else {
-				vbo->addVertex( Vector2f( pos.x + radiW * Math::cosAng( endAngle ),
-										  pos.y + radiH * Math::sinAng( endAngle ) ) );
-			}
-
-			vbo->addColor( color );
-
+		if ( lastAngle != endAngle ) {
+			i = endAngle;
 			vbo->addVertex(
 				Vector2f( pos.x + radiW * Math::cosAng( i ), pos.y + radiH * Math::sinAng( i ) ) );
 			vbo->addColor( color );
@@ -49,7 +49,7 @@ static void borderAddArc( VertexBuffer* vbo, Vector2f pos, Float radiW, Float ra
 			vbo->addColor( color );
 		}
 	} else {
-		for ( double i = startAngle; i <= endAngle; i += angleShift ) {
+		for ( i = startAngle; i <= endAngle; i += angleShift ) {
 			if ( radiW > lineW ) {
 				vbo->addVertex( Vector2f( pos.x + ( radiW - lineW ) * Math::cosAng( i ),
 										  pos.y + ( radiH - lineW ) * Math::sinAng( i ) ) );
@@ -63,14 +63,11 @@ static void borderAddArc( VertexBuffer* vbo, Vector2f pos, Float radiW, Float ra
 				Vector2f( pos.x + radiW * Math::cosAng( i ), pos.y + radiH * Math::sinAng( i ) ) );
 			vbo->addColor( color );
 
-			if ( i + angleShift < endAngle ) {
-				vbo->addVertex( Vector2f( pos.x + radiW * Math::cosAng( i + angleShift ),
-										  pos.y + radiH * Math::sinAng( i + angleShift ) ) );
-			} else {
-				vbo->addVertex( Vector2f( pos.x + radiW * Math::cosAng( endAngle ),
-										  pos.y + radiH * Math::sinAng( endAngle ) ) );
-			}
-			vbo->addColor( color );
+			lastAngle = i;
+		}
+
+		if ( lastAngle != endAngle ) {
+			i = endAngle;
 
 			if ( radiW > lineW ) {
 				vbo->addVertex( Vector2f( pos.x + ( radiW - lineW ) * Math::cosAng( i ),
@@ -79,6 +76,10 @@ static void borderAddArc( VertexBuffer* vbo, Vector2f pos, Float radiW, Float ra
 				vbo->addVertex( startPos );
 			}
 
+			vbo->addColor( color );
+
+			vbo->addVertex(
+				Vector2f( pos.x + radiW * Math::cosAng( i ), pos.y + radiH * Math::sinAng( i ) ) );
 			vbo->addColor( color );
 		}
 	}
@@ -119,9 +120,8 @@ void UIBorderDrawable::createBorders( VertexBuffer* vbo, const UIBorderDrawable:
 		double rightH = eemin( halfHeight, eemax( 0.f, borders.radius.topRightY ) );
 
 		if ( leftW ) {
-			double endAngle = Math::degrees( M_PI * 3.0 / 2.0 );
-			double startAngle = Math::degrees(
-				M_PI * 3.0 / 2.0 - M_PI / 2.0 / ( (double)borderLeft / (double)borderTop + 1 ) );
+			double endAngle = 270;
+			double startAngle = 225;
 
 			borderAddArc( vbo, Vector2f( pos.x + leftW, pos.y + leftH ), leftW, leftH, startAngle,
 						  endAngle, borders.top.color, borderTop,
@@ -134,17 +134,26 @@ void UIBorderDrawable::createBorders( VertexBuffer* vbo, const UIBorderDrawable:
 		}
 
 		if ( rightW ) {
+			double startAngle = 270;
+			double endAngle = 315;
+			Vector2f basePos( pos.x + size.getWidth() - borderRight, pos.y + borderTop );
+			Vector2f tPos( pos.x + size.getWidth() - rightW, pos.y + rightH );
+
+			if ( rightW > borderTop ) {
+				vbo->addVertex(
+					Vector2f( tPos.x + ( rightW - borderTop ) * Math::cosAng( startAngle ),
+							  tPos.y + ( rightH - borderTop ) * Math::sinAng( startAngle ) ) );
+			} else {
+				vbo->addVertex( basePos );
+			}
+
+			vbo->addColor( borders.top.color );
+
 			vbo->addVertex( Vector2f( pos.x + size.getWidth() - rightW, pos.y ) );
 			vbo->addColor( borders.top.color );
 
-			Vector2f basePos( pos.x + size.getWidth() - borderRight, pos.y + borderTop );
-
-			double startAngle = Math::degrees( M_PI * 3.0 / 2.0 );
-			double endAngle = Math::degrees(
-				M_PI * 3.0 / 2.0 + M_PI / 2.0 / ( (double)borderRight / (double)borderTop + 1 ) );
-
-			borderAddArc( vbo, Vector2f( pos.x + size.getWidth() - rightW, pos.y + rightH ), rightW,
-						  rightH, startAngle, endAngle, borders.top.color, borderTop, basePos );
+			borderAddArc( vbo, tPos, rightW, rightH, startAngle, endAngle, borders.top.color,
+						  borderTop, basePos );
 		} else {
 			vbo->addVertex( Vector2f( pos.x + size.getWidth(), pos.y ) );
 			vbo->addColor( borders.top.color );
@@ -161,10 +170,8 @@ void UIBorderDrawable::createBorders( VertexBuffer* vbo, const UIBorderDrawable:
 		double bottomH = eemin( halfHeight, eemax( 0.f, borders.radius.bottomRightY ) );
 
 		if ( topW ) {
-			double endAngle = Math::degrees( 2 * M_PI );
-			double startAngle = Math::degrees(
-				2 * M_PI - M_PI / 2.0 / ( (double)borderTop / (double)borderRight + 1 ) );
-
+			double startAngle = 315;
+			double endAngle = 360;
 			Vector2f basePos( pos.x + size.getWidth() - borderRight, pos.y + borderTop );
 
 			borderAddArc( vbo, Vector2f( pos.x + size.getWidth() - topW, pos.y + topH ), topW, topH,
@@ -177,20 +184,27 @@ void UIBorderDrawable::createBorders( VertexBuffer* vbo, const UIBorderDrawable:
 		}
 
 		if ( bottomH ) {
+			double startAngle = 0;
+			double endAngle = 45;
+			Vector2f basePos( pos.x + size.getWidth() - borderRight,
+							  pos.y + size.getHeight() - borderBottom );
+			Vector2f tPos( pos.x + size.getWidth() - bottomW, pos.y + size.getHeight() - bottomH );
+
+			if ( bottomW > borderRight ) {
+				vbo->addVertex(
+					Vector2f( tPos.x + ( bottomW - borderRight ) * Math::cosAng( startAngle ),
+							  tPos.y + ( bottomH - borderRight ) * Math::sinAng( startAngle ) ) );
+			} else {
+				vbo->addVertex( basePos );
+			}
+			vbo->addColor( borders.right.color );
+
 			vbo->addVertex(
 				Vector2f( pos.x + size.getWidth(), pos.y + size.getHeight() - bottomH ) );
 			vbo->addColor( borders.right.color );
 
-			Vector2f basePos( pos.x + size.getWidth() - borderRight,
-							  pos.y + size.getHeight() - borderBottom );
-			double startAngle = Math::degrees( 0 );
-			double endAngle =
-				Math::degrees( M_PI / 2.0 / ( (double)borderBottom / (double)borderRight + 1 ) );
-
-			borderAddArc(
-				vbo,
-				Vector2f( pos.x + size.getWidth() - bottomW, pos.y + size.getHeight() - bottomH ),
-				bottomW, bottomH, startAngle, endAngle, borders.right.color, borderRight, basePos );
+			borderAddArc( vbo, tPos, bottomW, bottomH, startAngle, endAngle, borders.right.color,
+						  borderRight, basePos );
 
 		} else {
 			vbo->addVertex( Vector2f( pos.x + size.getWidth(), pos.y + size.getHeight() ) );
@@ -209,11 +223,11 @@ void UIBorderDrawable::createBorders( VertexBuffer* vbo, const UIBorderDrawable:
 		double rightH = eemin( halfHeight, eemax( 0.f, borders.radius.bottomRightY ) );
 
 		if ( rightW ) {
-			double endAngle = Math::degrees( M_PI / 2.0 );
-			double startAngle = Math::degrees(
-				M_PI / 2.0 - M_PI / 2.0 / ( (double)borderRight / (double)borderBottom + 1 ) );
+			double startAngle = 45;
+			double endAngle = 90;
 			Vector2f basePos( pos.x + size.getWidth() - borderRight,
 							  pos.y + size.getHeight() - borderBottom );
+
 			borderAddArc(
 				vbo,
 				Vector2f( pos.x + size.getWidth() - rightW, pos.y + size.getHeight() - rightH ),
@@ -228,13 +242,21 @@ void UIBorderDrawable::createBorders( VertexBuffer* vbo, const UIBorderDrawable:
 		}
 
 		if ( leftW ) {
-			double startAngle = Math::degrees( M_PI / 2.0 );
-			double endAngle = Math::degrees(
-				M_PI / 2.0 + M_PI / 2.0 / ( (double)borderLeft / (double)borderBottom + 1 ) );
-
+			double startAngle = 90;
+			double endAngle = 135;
 			Vector2f basePos( pos.x + borderLeft, pos.y + size.getHeight() - borderBottom );
-
 			Vector2f tPos( Vector2f( pos.x + leftW, pos.y + size.getHeight() - leftH ) );
+
+			if ( leftW > borderBottom ) {
+				vbo->addVertex(
+					Vector2f( tPos.x + ( leftW - borderBottom ) * Math::cosAng( startAngle ),
+							  tPos.y + ( leftH - borderBottom ) * Math::sinAng( startAngle ) ) );
+			} else {
+				vbo->addVertex( basePos );
+			}
+
+			vbo->addColor( borders.bottom.color );
+
 			vbo->addVertex( Vector2f( tPos.x + leftW * Math::cosAng( startAngle ),
 									  tPos.y + leftH * Math::sinAng( startAngle ) ) );
 			vbo->addColor( borders.bottom.color );
@@ -258,11 +280,9 @@ void UIBorderDrawable::createBorders( VertexBuffer* vbo, const UIBorderDrawable:
 		double bottomH = eemin( halfHeight, eemax( 0.f, borders.radius.bottomLeftY ) );
 
 		if ( bottomW ) {
+			double startAngle = 135;
+			double endAngle = 180;
 			Vector2f basePos( pos.x + borderLeft, pos.y + size.getHeight() - borderBottom );
-
-			double endAngle = Math::degrees( M_PI );
-			double startAngle = Math::degrees(
-				M_PI - M_PI / 2.0 / ( (double)borderBottom / (double)borderLeft + 1 ) );
 
 			borderAddArc( vbo, Vector2f( pos.x + bottomW, pos.y + size.getHeight() - bottomH ),
 						  bottomW, bottomH, startAngle, endAngle, borders.left.color, borderLeft,
@@ -276,19 +296,28 @@ void UIBorderDrawable::createBorders( VertexBuffer* vbo, const UIBorderDrawable:
 		}
 
 		if ( topW ) {
-			double startAngle = Math::degrees( M_PI );
-			double endAngle =
-				Math::degrees( M_PI + M_PI / 2.0 / ( (double)borderTop / (double)borderLeft + 1 ) );
-
+			double startAngle = 180;
+			double endAngle = 225;
 			Vector2f basePos( pos.x + borderLeft, pos.y + borderTop );
 			Vector2f tPos( pos.x + topW, pos.y + topW );
+
+			if ( topW > borderLeft ) {
+				vbo->addVertex(
+					Vector2f( tPos.x + ( topW - borderLeft ) * Math::cosAng( startAngle ),
+							  tPos.y + ( topH - borderLeft ) * Math::sinAng( startAngle ) ) );
+			} else {
+				vbo->addVertex( basePos );
+			}
+
+			vbo->addColor( borders.left.color );
+
 			vbo->addVertex( Vector2f( tPos.x + topW * Math::cosAng( startAngle ),
 									  tPos.y + topH * Math::sinAng( startAngle ) ) );
+
 			vbo->addColor( borders.left.color );
 
 			borderAddArc( vbo, tPos, topW, topH, startAngle, endAngle, borders.left.color,
 						  borderLeft, basePos );
-
 		} else {
 			vbo->addVertex( Vector2f( pos.x, pos.y ) );
 			vbo->addColor( borders.left.color );
@@ -332,9 +361,7 @@ void UIBorderDrawable::draw( const Vector2f& position, const Sizef& size ) {
 	}
 
 	mVertexBuffer->bind();
-	//GLi->enable( GL_CULL_FACE );
 	mVertexBuffer->draw();
-	//GLi->disable( GL_CULL_FACE );
 	mVertexBuffer->unbind();
 }
 
@@ -450,6 +477,11 @@ void UIBorderDrawable::onPositionChange() {
 }
 
 void UIBorderDrawable::update() {
+	mBorders.left.color = Color::Red;
+	mBorders.right.color = Color::Green;
+	mBorders.top.color = Color::Blue;
+	mBorders.bottom.color = Color::Fuchsia;
+
 	switch ( mBorderType ) {
 		case BorderType::Outside: {
 			Vector2f pos( mPosition );
