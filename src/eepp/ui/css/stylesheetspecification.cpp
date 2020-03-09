@@ -343,6 +343,7 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "timing-function", "linear" ).setType( PropertyType::String );
 
 	registerProperty( "page-locked", "" ).setType( PropertyType::Bool );
+	registerProperty( "border-type", "inside" ).setType( PropertyType::String );
 
 	// Shorthands
 	registerShorthand( "margin", {"margin-top", "margin-right", "margin-bottom", "margin-left"},

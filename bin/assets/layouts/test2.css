@@ -1,0 +1,23 @@
+LinearLayout {
+	layout-width: match_parent;
+	layout-height: match_parent;
+  background-color: #cecece;
+}
+
+Widget {
+  clip: false;
+  margin-left: 200dp;
+  margin-top: 200dp;
+  width: 200px;
+  height: 200px;
+  background-color: white;
+  border-radius: 50dp;
+  border-color: rgba(255, 0, 0, 0.5);
+  border-width: 100dp;
+  border-type: outside;
+  transition: all 0.5s;
+}
+
+Widget:hover {
+  border-radius: 0dp;
+}

@@ -11,7 +11,6 @@
 
 namespace EE { namespace Graphics {
 class Drawable;
-class RectangleDrawable;
 }} // namespace EE::Graphics
 
 namespace EE { namespace Scene {
@@ -25,6 +24,7 @@ namespace EE { namespace UI {
 class UISceneNode;
 class UITheme;
 class UINodeDrawable;
+class UIBorderDrawable;
 
 class EE_API UINode : public Node {
   public:
@@ -132,7 +132,7 @@ class EE_API UINode : public Node {
 
 	Uint32 getForegroundRadius() const;
 
-	RectangleDrawable* setBorderEnabled( bool enabled );
+	UIBorderDrawable* setBorderEnabled( bool enabled );
 
 	UINode* setBorderColor( const Color& color );
 
@@ -154,7 +154,7 @@ class EE_API UINode : public Node {
 
 	UINodeDrawable* getForeground();
 
-	RectangleDrawable* getBorder();
+	UIBorderDrawable* getBorder();
 
 	void setThemeByName( const std::string& Theme );
 
@@ -223,7 +223,7 @@ class EE_API UINode : public Node {
 	UISkinState* mSkinState;
 	UINodeDrawable* mBackground;
 	UINodeDrawable* mForeground;
-	RectangleDrawable* mBorder;
+	UIBorderDrawable* mBorder;
 	Vector2f mDragPoint;
 	Uint32 mDragButton;
 	Color mSkinColor;

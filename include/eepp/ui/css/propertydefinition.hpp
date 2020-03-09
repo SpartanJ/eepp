@@ -206,7 +206,8 @@ enum class PropertyId : Uint32 {
 	MaxEdgeResistance = String::hash( "max-edge-resistance" ),
 	PageTransitionDuration = String::hash( "page-transition-duration" ),
 	TimingFunction = String::hash( "timing-function" ),
-	PageLocked = String::hash( "page-locked" )
+	PageLocked = String::hash( "page-locked" ),
+	BorderType = String::hash( "border-type" )
 };
 
 enum class PropertyType : Uint32 {

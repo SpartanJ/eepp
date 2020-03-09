@@ -5,6 +5,7 @@
 #include <eepp/ui/css/stylesheetselector.hpp>
 #include <eepp/ui/css/stylesheetspecification.hpp>
 #include <eepp/ui/css/transitiondefinition.hpp>
+#include <eepp/ui/uiborderdrawable.hpp>
 #include <eepp/ui/uinodedrawable.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uistyle.hpp>
@@ -1167,6 +1168,8 @@ std::string UIWidget::getPropertyString( const PropertyDefinition* propertyDef,
 			return String::toStr( getBorderRadius() );
 		case PropertyId::BorderWidth:
 			return String::fromFloat( getBorderWidth() );
+		case PropertyId::BorderType:
+			return getBorder()->getBorderType() == BorderType::Inside ? "inside" : "outside";
 		case PropertyId::SkinColor:
 			return getSkinColor().toHexString();
 		case PropertyId::Rotation:
@@ -1299,6 +1302,10 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		case PropertyId::BorderRadius:
 			setBorderRadius( lengthFromValue( attribute ) );
+			break;
+		case PropertyId::BorderType:
+			getBorder()->setBorderType( attribute.getValue() == "inside" ? BorderType::Inside
+																		 : BorderType::Outside );
 			break;
 		case PropertyId::Visible:
 			setVisible( attribute.asBool() );

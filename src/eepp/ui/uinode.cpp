@@ -1,7 +1,6 @@
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/primitives.hpp>
-#include <eepp/graphics/rectangledrawable.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/textureregion.hpp>
 #include <eepp/scene/action.hpp>
@@ -12,6 +11,7 @@
 #include <eepp/scene/actions/scale.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/scene/scenenode.hpp>
+#include <eepp/ui/uiborderdrawable.hpp>
 #include <eepp/ui/uinode.hpp>
 #include <eepp/ui/uinodedrawable.hpp>
 #include <eepp/ui/uiscenenode.hpp>
@@ -443,13 +443,13 @@ Color UINode::getBackgroundColor() const {
 }
 
 UINode* UINode::setBorderRadius( const unsigned int& corners ) {
-	setBorderEnabled( true )->setCorners( corners );
+	setBorderEnabled( true )->setRadius( corners );
 	setBackgroundFillEnabled( true )->setBorderRadius( corners );
 	return this;
 }
 
 Uint32 UINode::getBorderRadius() const {
-	return NULL != mBorder ? mBorder->getCorners() : 0;
+	return NULL != mBorder ? mBorder->getRadius() : 0;
 }
 
 UINodeDrawable* UINode::setForegroundFillEnabled( bool enabled ) {
@@ -512,7 +512,7 @@ Uint32 UINode::getForegroundRadius() const {
 	return NULL != mForeground ? mForeground->getBorderRadius() : 0;
 }
 
-RectangleDrawable* UINode::setBorderEnabled( bool enabled ) {
+UIBorderDrawable* UINode::setBorderEnabled( bool enabled ) {
 	writeFlag( UI_BORDER, enabled ? 1 : 0 );
 
 	if ( enabled && NULL == mBorder ) {
@@ -587,16 +587,13 @@ UINode* UINode::resetFlags( Uint32 newFlags ) {
 
 void UINode::drawBackground() {
 	if ( ( mFlags & UI_FILL_BACKGROUND ) && NULL != mBackground ) {
-		mBackground->draw( Vector2f( mScreenPosi.x, mScreenPosi.y ),
-						   Sizef( eefloor( mSize.getWidth() ), eefloor( mSize.getHeight() ) ),
-						   mAlpha );
+		mBackground->draw( Vector2f( mScreenPosi.x, mScreenPosi.y ), mSize.floor(), mAlpha );
 	}
 }
 
 void UINode::drawForeground() {
 	if ( ( mFlags & UI_FILL_FOREGROUND ) && NULL != mForeground ) {
-		mForeground->draw( Vector2f( mScreenPosi.x, mScreenPosi.y ),
-						   Sizef( eefloor( mSize.getWidth() ), eefloor( mSize.getHeight() ) ),
+		mForeground->draw( Vector2f( mScreenPosi.x, mScreenPosi.y ), mSize.floor(),
 						   (Uint32)mAlpha );
 	}
 }
@@ -605,8 +602,7 @@ void UINode::drawBorder() {
 	if ( ( mFlags & UI_BORDER ) && NULL != mBorder ) {
 		Uint8 alpha = mBorder->getAlpha();
 		mBorder->setAlpha( eemin<Uint32>( mAlpha * alpha / 255.f, 255 ) );
-		mBorder->draw( Vector2f( mScreenPosi.x, mScreenPosi.y ),
-					   Sizef( eefloor( mSize.getWidth() ), eefloor( mSize.getHeight() ) ) );
+		mBorder->draw( mScreenPosi.asFloat(), mSize.floor() );
 		mBorder->setAlpha( alpha );
 	}
 }
@@ -666,11 +662,10 @@ UINodeDrawable* UINode::getForeground() {
 	return mForeground;
 }
 
-RectangleDrawable* UINode::getBorder() {
+UIBorderDrawable* UINode::getBorder() {
 	if ( NULL == mBorder ) {
-		mBorder = RectangleDrawable::New();
+		mBorder = UIBorderDrawable::New();
 		mBorder->setColor( Color::Transparent );
-		mBorder->setFillMode( PrimitiveFillMode::DRAW_LINE );
 		mBorder->setLineWidth( PixelDensity::dpToPx( 1 ) );
 	}
 
