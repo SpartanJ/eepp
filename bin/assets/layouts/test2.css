@@ -13,12 +13,12 @@ Widget {
   background-color: white;
   border-radius: 100dp;
   border-color: rgba(255, 0, 0, 0.5);
-  border-width: 20dp;
-  border-type: outside;
+  border-width: 0dp;
+  border-type: inside;
   transition: all 0.5s;
 }
 
 Widget:hover {
   border-radius: 20dp;
-  border-width: 2dp;
+  border-width: 10dp;
 }

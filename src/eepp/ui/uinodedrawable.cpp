@@ -49,12 +49,12 @@ void UINodeDrawable::clearDrawables() {
 	mBackgroundColor.setColor( Color::Transparent );
 }
 
-void UINodeDrawable::setBorderRadius( const Uint32& corners ) {
-	mBackgroundColor.setCorners( corners );
+void UINodeDrawable::setBorderRadius( const Uint32& radius ) {
+	mBackgroundColor.setRadius( radius );
 }
 
 Uint32 UINodeDrawable::getBorderRadius() const {
-	return mBackgroundColor.getCorners();
+	return mBackgroundColor.getRadius();
 }
 
 bool UINodeDrawable::layerExists( int index ) {

@@ -289,6 +289,7 @@
 ../../include/eepp/thirdparty/PlusCallback/callback.hpp
 ../../include/eepp/ui/base.hpp
 ../../include/eepp/ui.hpp
+../../include/eepp/ui/border.hpp
 ../../include/eepp/ui/css/animationdefinition.hpp
 ../../include/eepp/ui/css/keyframesdefinition.hpp
 ../../include/eepp/ui/css/mediaquery.hpp
@@ -311,6 +312,7 @@
 ../../include/eepp/ui/marginmove/scale.hpp
 ../../include/eepp/ui/tools/textureatlaseditor.hpp
 ../../include/eepp/ui/tools/uicolorpicker.hpp
+../../include/eepp/ui/uibackgrounddrawable.hpp
 ../../include/eepp/ui/uiborderdrawable.hpp
 ../../include/eepp/ui/uicheckbox.hpp
 ../../include/eepp/ui/uicombobox.hpp
@@ -721,6 +723,7 @@
 ../../src/eepp/system/translator.cpp
 ../../src/eepp/system/virtualfilesystem.cpp
 ../../src/eepp/system/zip.cpp
+../../src/eepp/ui/border.cpp
 ../../src/eepp/ui/css/animationdefinition.cpp
 ../../src/eepp/ui/css/keyframesdefinition.cpp
 ../../src/eepp/ui/css/mediaquery.cpp
@@ -746,6 +749,7 @@
 ../../src/eepp/ui/tools/textureatlastextureregioneditor.cpp
 ../../src/eepp/ui/tools/textureatlastextureregioneditor.hpp
 ../../src/eepp/ui/tools/uicolorpicker.cpp
+../../src/eepp/ui/uibackgrounddrawable.cpp
 ../../src/eepp/ui/uiborderdrawable.cpp
 ../../src/eepp/ui/uicheckbox.cpp
 ../../src/eepp/ui/uicombobox.cpp

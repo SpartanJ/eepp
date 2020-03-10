@@ -2,9 +2,9 @@
 #define EE_UI_UINODEDRAWABLE_HPP
 
 #include <eepp/graphics/drawable.hpp>
-#include <eepp/graphics/rectangledrawable.hpp>
 #include <eepp/math/ease.hpp>
 #include <eepp/scene/action.hpp>
+#include <eepp/ui/uibackgrounddrawable.hpp>
 #include <map>
 #include <vector>
 
@@ -127,7 +127,7 @@ class EE_API UINodeDrawable : public Drawable {
 
 	void clearDrawables();
 
-	void setBorderRadius( const Uint32& corners );
+	void setBorderRadius( const Uint32& radius );
 
 	Uint32 getBorderRadius() const;
 
@@ -161,7 +161,7 @@ class EE_API UINodeDrawable : public Drawable {
 
   protected:
 	UINode* mOwner;
-	RectangleDrawable mBackgroundColor;
+	UIBackgroundDrawable mBackgroundColor;
 	std::map<int, LayerDrawable*> mGroup;
 	Sizef mSize;
 	bool mNeedsUpdate;
