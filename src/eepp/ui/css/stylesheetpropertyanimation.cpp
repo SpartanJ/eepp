@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <eepp/math/easing.hpp>
+#include <eepp/ui/border.hpp>
 #include <eepp/ui/css/stylesheetpropertyanimation.hpp>
 #include <eepp/ui/css/stylesheetspecification.hpp>
 #include <eepp/ui/uinodedrawable.hpp>
@@ -60,6 +61,18 @@ void StyleSheetPropertyAnimation::tweenProperty( UIWidget* widget, const Float& 
 			widget->applyProperty(
 				StyleSheetProperty( property, String::fromFloat( value, "px" ), propertyIndex ) );
 
+			if ( isDone ) {
+				widget->applyProperty( StyleSheetProperty( property, endValue, propertyIndex ) );
+			}
+			break;
+		}
+		case PropertyType::RadiusLength: {
+			Sizef start( Borders::radiusFromString( widget, startValue ) );
+			Sizef end( Borders::radiusFromString( widget, endValue ) );
+			Float x = easingCb[timingFunction]( normalizedProgress, start.x, end.x - start.x, 1.f );
+			Float y = easingCb[timingFunction]( normalizedProgress, start.y, end.y - start.y, 1.f );
+			widget->applyProperty( StyleSheetProperty(
+				property, String::fromFloat( x ) + " " + String::fromFloat( y ), propertyIndex ) );
 			if ( isDone ) {
 				widget->applyProperty( StyleSheetProperty( property, endValue, propertyIndex ) );
 			}
@@ -153,6 +166,7 @@ bool StyleSheetPropertyAnimation::animationSupported( const PropertyType& type )
 		case PropertyType::Vector2:
 		case PropertyType::BackgroundSize:
 		case PropertyType::ForegroundSize:
+		case PropertyType::RadiusLength:
 			return true;
 		default:
 			return false;

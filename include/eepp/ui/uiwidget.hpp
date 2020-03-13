@@ -205,28 +205,6 @@ class EE_API UIWidget : public UINode {
 
 	bool isSceneNodeLoading() const;
 
-	Float
-	getPropertyRelativeTargetContainerLength( const CSS::PropertyRelativeTarget& relativeTarget,
-											  const Float& defaultValue = 0,
-											  const Uint32& propertyIndex = 0 );
-
-	Float lengthFromValue( const std::string& value,
-						   const CSS::PropertyRelativeTarget& relativeTarget,
-						   const Float& defaultValue = 0, const Float& defaultContainerValue = 0,
-						   const Uint32& propertyIndex = 0 );
-
-	Float lengthFromValue( const StyleSheetProperty& property, const Float& defaultValue = 0,
-						   const Float& defaultContainerValue = 0 );
-
-	Float lengthFromValueAsDp( const std::string& value,
-							   const CSS::PropertyRelativeTarget& relativeTarget,
-							   const Float& defaultValue = 0,
-							   const Float& defaultContainerValue = 0,
-							   const Uint32& propertyIndex = 0 );
-
-	Float lengthFromValueAsDp( const StyleSheetProperty& property, const Float& defaultValue = 0,
-							   const Float& defaultContainerValue = 0 );
-
 	const std::string& getMinWidthEq() const;
 
 	void setMinWidthEq( const std::string& minWidthEq );

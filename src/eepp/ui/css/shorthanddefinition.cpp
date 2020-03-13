@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <eepp/core.hpp>
 #include <eepp/system/color.hpp>
 #include <eepp/ui/css/shorthanddefinition.hpp>
@@ -15,7 +16,15 @@ ShorthandDefinition* ShorthandDefinition::New( const std::string& name,
 ShorthandDefinition::ShorthandDefinition( const std::string& name,
 										  const std::vector<std::string>& properties,
 										  const ShorthandType& shorthandType ) :
-	mName( name ), mId( String::hash( name ) ), mProperties( properties ), mType( shorthandType ) {}
+	mName( name ), mId( String::hash( name ) ), mProperties( properties ), mType( shorthandType ) {
+	for ( auto& sep : {"-", "_"} ) {
+		if ( mName.find( sep ) != std::string::npos ) {
+			std::string alias( name );
+			String::replaceAll( alias, sep, "" );
+			addAlias( alias );
+		}
+	}
+}
 
 const std::string& ShorthandDefinition::getName() const {
 	return mName;
@@ -45,6 +54,28 @@ static int getIndexEndingWith( const std::vector<std::string>& vec, const std::s
 	}
 
 	return -1;
+}
+
+ShorthandDefinition& ShorthandDefinition::addAlias( const std::string& alias ) {
+	mAliases.push_back( alias );
+	mAliasesHash.push_back( String::hash( alias ) );
+	return *this;
+}
+
+bool ShorthandDefinition::isAlias( const std::string& alias ) const {
+	return isAlias( String::hash( alias ) );
+}
+
+bool ShorthandDefinition::isAlias( const Uint32& id ) const {
+	return std::find( mAliasesHash.begin(), mAliasesHash.end(), id ) != mAliasesHash.end();
+}
+
+bool ShorthandDefinition::isDefinition( const std::string& name ) const {
+	return isDefinition( String::hash( name ) );
+}
+
+bool ShorthandDefinition::isDefinition( const Uint32& id ) const {
+	return mId == id || isAlias( id );
 }
 
 std::vector<StyleSheetProperty>
@@ -100,12 +131,11 @@ ShorthandDefinition::parseShorthand( const ShorthandDefinition* shorthand, std::
 
 			auto values = String::split( value, ' ' );
 
-			if ( values.size() >= 2 ) {
-				properties.emplace_back( StyleSheetProperty( propNames[0], values[0] ) );
-				properties.emplace_back( StyleSheetProperty( propNames[1], values[1] ) );
-			} else if ( values.size() == 1 ) {
-				properties.emplace_back( StyleSheetProperty( propNames[0], values[0] ) );
-				properties.emplace_back( StyleSheetProperty( propNames[1], values[0] ) );
+			if ( !values.empty() ) {
+				for ( size_t i = 0; i < propNames.size(); i++ ) {
+					properties.emplace_back(
+						StyleSheetProperty( propNames[0], values[i % values.size()] ) );
+				}
 			}
 			break;
 		}
@@ -155,6 +185,35 @@ ShorthandDefinition::parseShorthand( const ShorthandDefinition* shorthand, std::
 					StyleSheetProperty( props.first, String::join( props.second, ',' ) ) );
 			}
 
+			break;
+		}
+		case ShorthandType::BorderBox: {
+			auto ltrbSplit = String::split( value, " ", "", "(\"" );
+			if ( !ltrbSplit.empty() ) {
+				for ( size_t i = 0; i < propNames.size(); i++ ) {
+					properties.emplace_back(
+						StyleSheetProperty( propNames[i], ltrbSplit[i % ltrbSplit.size()] ) );
+				}
+			}
+			break;
+		}
+		case ShorthandType::Radius: {
+			String::trim( value );
+			auto splits = String::split( value, '/' );
+			auto widths = String::split( splits[0], ' ' );
+			std::vector<std::string> heights;
+			if ( splits.size() >= 2 ) {
+				heights = String::split( splits[1], ' ' );
+			}
+			if ( !widths.empty() ) {
+				for ( size_t i = 0; i < propNames.size(); i++ ) {
+					std::string val = widths[i % widths.size()];
+					if ( !heights.empty() ) {
+						val += " " + heights[i % heights.size()];
+					}
+					properties.emplace_back( StyleSheetProperty( propNames[i], val ) );
+				}
+			}
 			break;
 		}
 		default:

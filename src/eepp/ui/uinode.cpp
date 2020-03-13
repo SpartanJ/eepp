@@ -245,7 +245,7 @@ void UINode::updateDebugData() {
 		}
 
 		text += String::format( "X: %2.4f Y: %2.4f\nW: %2.4f H: %2.4f", mDpPos.x, mDpPos.y,
-									 mDpSize.x, mDpSize.y );
+								mDpSize.x, mDpSize.y );
 
 		widget->setTooltipText( text );
 	}
@@ -445,6 +445,30 @@ Color UINode::getBackgroundColor() const {
 UINode* UINode::setBorderRadius( const unsigned int& corners ) {
 	setBorderEnabled( true )->setRadius( corners );
 	setBackgroundFillEnabled( true )->setBorderRadius( corners );
+	return this;
+}
+
+UINode* UINode::setTopLeftRadius( const std::string& radius ) {
+	setBorderEnabled( true )->setTopLeftRadius( radius );
+	setBackgroundFillEnabled( true )->getBackgroundDrawable().setTopLeftRadius( radius );
+	return this;
+}
+
+UINode* UINode::setTopRightRadius( const std::string& radius ) {
+	setBorderEnabled( true )->setTopRightRadius( radius );
+	setBackgroundFillEnabled( true )->getBackgroundDrawable().setTopRightRadius( radius );
+	return this;
+}
+
+UINode* UINode::setBottomLeftRadius( const std::string& radius ) {
+	setBorderEnabled( true )->setBottomLeftRadius( radius );
+	setBackgroundFillEnabled( true )->getBackgroundDrawable().setBottomLeftRadius( radius );
+	return this;
+}
+
+UINode* UINode::setBottomRightRadius( const std::string& radius ) {
+	setBorderEnabled( true )->setBottomRightRadius( radius );
+	setBackgroundFillEnabled( true )->getBackgroundDrawable().setBottomRightRadius( radius );
 	return this;
 }
 
@@ -664,7 +688,7 @@ UINodeDrawable* UINode::getForeground() {
 
 UIBorderDrawable* UINode::getBorder() {
 	if ( NULL == mBorder ) {
-		mBorder = UIBorderDrawable::New();
+		mBorder = UIBorderDrawable::New( this );
 		mBorder->setColor( Color::Transparent );
 		mBorder->setLineWidth( PixelDensity::dpToPx( 1 ) );
 	}
@@ -1022,6 +1046,86 @@ void UINode::onWidgetFocusLoss() {
 void UINode::setFocus() {
 	if ( NULL != getEventDispatcher() )
 		getEventDispatcher()->setFocusControl( this );
+}
+
+Float UINode::getPropertyRelativeTargetContainerLength(
+	const CSS::PropertyRelativeTarget& relativeTarget, const Float& defaultValue,
+	const Uint32& propertyIndex ) {
+	Float containerLength = defaultValue;
+	switch ( relativeTarget ) {
+		case PropertyRelativeTarget::ContainingBlockWidth:
+			containerLength = getParent()->getPixelsSize().getWidth();
+			break;
+		case PropertyRelativeTarget::ContainingBlockHeight:
+			containerLength = getParent()->getPixelsSize().getHeight();
+		case PropertyRelativeTarget::LocalBlockWidth:
+			containerLength = getPixelsSize().getWidth();
+			break;
+		case PropertyRelativeTarget::LocalBlockHeight:
+			containerLength = getPixelsSize().getHeight();
+			break;
+		case PropertyRelativeTarget::BackgroundWidth:
+			containerLength =
+				getPixelsSize().getWidth() -
+				getBackground()->getLayer( propertyIndex )->getDrawableSize().getWidth();
+			break;
+		case PropertyRelativeTarget::BackgroundHeight:
+			containerLength =
+				getPixelsSize().getHeight() -
+				getBackground()->getLayer( propertyIndex )->getDrawableSize().getHeight();
+			break;
+		case PropertyRelativeTarget::ForegroundWidth:
+			containerLength =
+				getPixelsSize().getWidth() -
+				getForeground()->getLayer( propertyIndex )->getDrawableSize().getWidth();
+			break;
+		case PropertyRelativeTarget::ForegroundHeight:
+			containerLength =
+				getPixelsSize().getHeight() -
+				getForeground()->getLayer( propertyIndex )->getDrawableSize().getHeight();
+			break;
+		case PropertyRelativeTarget::LocalBlockRadiusWidth:
+			containerLength = getPixelsSize().getWidth() * 0.5f;
+			break;
+		case PropertyRelativeTarget::LocalBlockRadiusHeight:
+			containerLength = getPixelsSize().getHeight() * 0.5f;
+			break;
+		default:
+			break;
+	}
+	return containerLength;
+}
+
+Float UINode::lengthFromValue( const std::string& value,
+							   const PropertyRelativeTarget& relativeTarget,
+							   const Float& defaultValue, const Float& defaultContainerValue,
+							   const Uint32& propertyIndex ) {
+	Float containerLength =
+		getPropertyRelativeTargetContainerLength( relativeTarget, defaultValue, propertyIndex );
+	return convertLength( CSS::StyleSheetLength( value, defaultValue ), containerLength );
+}
+
+Float UINode::lengthFromValue( const CSS::StyleSheetProperty& property, const Float& defaultValue,
+							   const Float& defaultContainerValue ) {
+	return lengthFromValue( property.getValue(),
+							property.getPropertyDefinition()->getRelativeTarget(), defaultValue,
+							defaultContainerValue, property.getIndex() );
+}
+
+Float UINode::lengthFromValueAsDp( const std::string& value,
+								   const PropertyRelativeTarget& relativeTarget,
+								   const Float& defaultValue, const Float& defaultContainerValue,
+								   const Uint32& propertyIndex ) {
+	Float containerLength =
+		getPropertyRelativeTargetContainerLength( relativeTarget, defaultValue, propertyIndex );
+	return convertLengthAsDp( CSS::StyleSheetLength( value, defaultValue ), containerLength );
+}
+
+Float UINode::lengthFromValueAsDp( const CSS::StyleSheetProperty& property,
+								   const Float& defaultValue, const Float& defaultContainerValue ) {
+	return lengthFromValue( property.getValue(),
+							property.getPropertyDefinition()->getRelativeTarget(), defaultValue,
+							defaultContainerValue, property.getIndex() );
 }
 
 Uint32 UINode::onFocus() {

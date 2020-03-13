@@ -6,11 +6,13 @@
 
 namespace EE { namespace UI {
 
+class UINode;
+
 class EE_API UIBorderDrawable : public Drawable {
   public:
-	static UIBorderDrawable* New();
+	static UIBorderDrawable* New( UINode* owner );
 
-	UIBorderDrawable();
+	UIBorderDrawable( UINode* owner );
 
 	virtual ~UIBorderDrawable();
 
@@ -54,9 +56,31 @@ class EE_API UIBorderDrawable : public Drawable {
 
 	void setBorderType( const BorderType& borderType );
 
+	void invalidate();
+
+	void setLeftWidth( const std::string& leftWidth );
+
+	void setRightWidth( const std::string& rightWidth );
+
+	void setTopWidth( const std::string& topWidth );
+
+	void setBottomWidth( const std::string& bottomWidth );
+
+	void setTopLeftRadius( const std::string& radius );
+
+	void setTopRightRadius( const std::string& radius );
+
+	void setBottomLeftRadius( const std::string& radius );
+
+	void setBottomRightRadius( const std::string& radius );
+
+	const Borders& getBorders() const;
+
   protected:
+	UINode* mOwner;
 	VertexBuffer* mVertexBuffer;
 	Borders mBorders;
+	BorderStr mBorderStr;
 	BorderType mBorderType;
 	Sizef mSize;
 	bool mNeedsUpdate;
@@ -69,6 +93,8 @@ class EE_API UIBorderDrawable : public Drawable {
 	virtual void onPositionChange();
 
 	void update();
+
+	void updateBorders();
 };
 
 }} // namespace EE::UI

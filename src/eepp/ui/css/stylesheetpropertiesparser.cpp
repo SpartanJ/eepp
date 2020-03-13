@@ -134,7 +134,10 @@ int StyleSheetPropertiesParser::readComment( StyleSheetPropertiesParser::ReadSta
 	return pos;
 }
 
-void StyleSheetPropertiesParser::addProperty( const std::string& name, std::string value ) {
+void StyleSheetPropertiesParser::addProperty( std::string name, std::string value ) {
+	String::toLowerInPlace( name );
+	String::trimInPlace( name );
+
 	if ( StyleSheetSpecification::instance()->isShorthand( name ) ) {
 		std::vector<StyleSheetProperty> properties = ShorthandDefinition::parseShorthand(
 			StyleSheetSpecification::instance()->getShorthand( name ), value );

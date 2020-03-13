@@ -8,11 +8,13 @@ using namespace EE::Graphics;
 
 namespace EE { namespace UI {
 
+class UINode;
+
 class EE_API UIBackgroundDrawable : public Drawable {
   public:
-	static UIBackgroundDrawable* New();
+	static UIBackgroundDrawable* New( UINode* owner );
 
-	UIBackgroundDrawable();
+	UIBackgroundDrawable( UINode* owner );
 
 	virtual ~UIBackgroundDrawable();
 
@@ -30,13 +32,31 @@ class EE_API UIBackgroundDrawable : public Drawable {
 
 	const BorderRadiuses& getRadiuses() const;
 
+	bool hasRadius() const;
+
 	void setRadiuses( const BorderRadiuses& radiuses );
 
 	void setRadius( const Uint32& radius );
 
 	Int32 getRadius() const;
 
+	void invalidate();
+
+	void setTopWidth( const std::string& topWidth );
+
+	void setBottomWidth( const std::string& bottomWidth );
+
+	void setTopLeftRadius( const std::string& radius );
+
+	void setTopRightRadius( const std::string& radius );
+
+	void setBottomLeftRadius( const std::string& radius );
+
+	void setBottomRightRadius( const std::string& radius );
+
   protected:
+	UINode* mOwner;
+	BorderRadiuseStr mRadiusesStr;
 	VertexBuffer* mVertexBuffer;
 	Sizef mSize;
 	BorderRadiuses mRadiuses;
@@ -50,6 +70,8 @@ class EE_API UIBackgroundDrawable : public Drawable {
 	virtual void onPositionChange();
 
 	void update();
+
+	void updateRadiuses();
 };
 
 }} // namespace EE::UI

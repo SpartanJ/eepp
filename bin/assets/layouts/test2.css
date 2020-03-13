@@ -11,14 +11,21 @@ Widget {
   width: 200px;
   height: 200px;
   background-color: white;
-  border-radius: 100dp;
+  border-top-left-radius: 50px 100px;
+  border-top-right-radius: 100px 50px;
+  border-bottom-left-radius: 100px 50%;
+  border-bottom-right-radius: 100% 50%;
   border-color: rgba(255, 0, 0, 0.5);
-  border-width: 0dp;
-  border-type: inside;
+  border-width: 20dp;
+  border-type: outline;
   transition: all 0.5s;
+  clip: true;
 }
 
 Widget:hover {
-  border-radius: 20dp;
+  border-top-left-radius: 5px 10px;
+  border-top-right-radius: 10px 5px;
+  border-bottom-left-radius: 100px 100%;
+  border-bottom-right-radius: 100% 30%;
   border-width: 10dp;
 }

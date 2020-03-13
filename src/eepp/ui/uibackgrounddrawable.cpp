@@ -1,15 +1,17 @@
 #include <eepp/graphics/vertexbuffer.hpp>
 #include <eepp/ui/uibackgrounddrawable.hpp>
+#include <eepp/ui/uinode.hpp>
 
 namespace EE { namespace UI {
 
-UIBackgroundDrawable* UIBackgroundDrawable::New() {
-	return eeNew( UIBackgroundDrawable, () );
+UIBackgroundDrawable* UIBackgroundDrawable::New( UINode* owner ) {
+	return eeNew( UIBackgroundDrawable, ( owner ) );
 }
 
-UIBackgroundDrawable::UIBackgroundDrawable() :
+UIBackgroundDrawable::UIBackgroundDrawable( UINode* owner ) :
 	Drawable( UIBACKGROUNDDRAWABLE ),
-	mVertexBuffer( VertexBuffer::New( VERTEX_FLAGS_PRIMITIVE, PRIMITIVE_TRIANGLE_FAN ) ),
+	mOwner( owner ),
+	mVertexBuffer( VertexBuffer::NewVertexArray( VERTEX_FLAGS_PRIMITIVE, PRIMITIVE_TRIANGLE_FAN ) ),
 	mNeedsUpdate( false ),
 	mColorNeedsUpdate( false ) {}
 
@@ -17,9 +19,13 @@ UIBackgroundDrawable::~UIBackgroundDrawable() {
 	eeSAFE_DELETE( mVertexBuffer );
 }
 
-void UIBackgroundDrawable::draw() {}
+void UIBackgroundDrawable::draw() {
+	draw( mPosition, mSize );
+}
 
-void UIBackgroundDrawable::draw( const Vector2f& position ) {}
+void UIBackgroundDrawable::draw( const Vector2f& position ) {
+	draw( position, mSize );
+}
 
 void UIBackgroundDrawable::draw( const Vector2f& position, const Sizef& size ) {
 	if ( mPosition != position ) {
@@ -36,6 +42,8 @@ void UIBackgroundDrawable::draw( const Vector2f& position, const Sizef& size ) {
 		update();
 	}
 
+	// TODO: Optimize rendering for square backgrounds (no radius)
+	// It will be cheaper to use the batch renderer for those cases.
 	mVertexBuffer->bind();
 	mVertexBuffer->draw();
 	mVertexBuffer->unbind();
@@ -47,6 +55,13 @@ bool UIBackgroundDrawable::isStateful() {
 
 const BorderRadiuses& UIBackgroundDrawable::getRadiuses() const {
 	return mRadiuses;
+}
+
+bool UIBackgroundDrawable::hasRadius() const {
+	return !mRadiusesStr.topLeft.empty() || !mRadiusesStr.topRight.empty() ||
+		   !mRadiusesStr.bottomLeft.empty() || !mRadiusesStr.bottomRight.empty() ||
+		   mRadiuses.topLeft != Sizef::Zero || mRadiuses.topRight != Sizef::Zero ||
+		   mRadiuses.bottomLeft != Sizef::Zero || mRadiuses.bottomRight != Sizef::Zero;
 }
 
 void UIBackgroundDrawable::setRadiuses( const BorderRadiuses& radiuses ) {
@@ -68,8 +83,40 @@ void UIBackgroundDrawable::setRadius( const Uint32& radius ) {
 	}
 }
 
+void UIBackgroundDrawable::setTopLeftRadius( const std::string& radius ) {
+	if ( mRadiusesStr.topLeft != radius ) {
+		mRadiusesStr.topLeft = radius;
+		mNeedsUpdate = true;
+	}
+}
+
+void UIBackgroundDrawable::setTopRightRadius( const std::string& radius ) {
+	if ( mRadiusesStr.topRight != radius ) {
+		mRadiusesStr.topRight = radius;
+		mNeedsUpdate = true;
+	}
+}
+
+void UIBackgroundDrawable::setBottomLeftRadius( const std::string& radius ) {
+	if ( mRadiusesStr.bottomLeft != radius ) {
+		mRadiusesStr.bottomLeft = radius;
+		mNeedsUpdate = true;
+	}
+}
+
+void UIBackgroundDrawable::setBottomRightRadius( const std::string& radius ) {
+	if ( mRadiusesStr.bottomRight != radius ) {
+		mRadiusesStr.bottomRight = radius;
+		mNeedsUpdate = true;
+	}
+}
+
 Int32 UIBackgroundDrawable::getRadius() const {
 	return mRadiuses.topLeft.x;
+}
+
+void UIBackgroundDrawable::invalidate() {
+	mNeedsUpdate = true;
 }
 
 void UIBackgroundDrawable::setSize( const Sizef& size ) {
@@ -96,9 +143,24 @@ void UIBackgroundDrawable::onPositionChange() {
 }
 
 void UIBackgroundDrawable::update() {
+	updateRadiuses();
 	Borders::createBackground( mVertexBuffer, mRadiuses, mPosition, mSize, mColor );
 	mColorNeedsUpdate = false;
 	mNeedsUpdate = false;
+}
+
+void UIBackgroundDrawable::updateRadiuses() {
+	if ( !mRadiusesStr.topLeft.empty() )
+		mRadiuses.topLeft = Borders::radiusFromString( mOwner, mRadiusesStr.topLeft );
+
+	if ( !mRadiusesStr.topRight.empty() )
+		mRadiuses.topRight = Borders::radiusFromString( mOwner, mRadiusesStr.topRight );
+
+	if ( !mRadiusesStr.bottomLeft.empty() )
+		mRadiuses.bottomLeft = Borders::radiusFromString( mOwner, mRadiusesStr.bottomLeft );
+
+	if ( !mRadiusesStr.bottomRight.empty() )
+		mRadiuses.bottomRight = Borders::radiusFromString( mOwner, mRadiusesStr.bottomRight );
 }
 
 }} // namespace EE::UI

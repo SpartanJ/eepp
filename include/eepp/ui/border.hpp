@@ -13,8 +13,9 @@ using namespace EE::System;
 using namespace EE::Math;
 
 namespace EE { namespace UI {
+class UINode;
 
-enum class BorderType : Uint32 { Inside, Outside };
+enum class BorderType : Uint32 { Inside, Outside, Outline };
 
 struct EE_API Border {
 	int width = 0;
@@ -35,6 +36,12 @@ struct EE_API Borders {
 	Border bottom;
 	BorderRadiuses radius;
 
+	static std::string fromBorderType( const BorderType& borderType );
+
+	static BorderType toBorderType( const std::string& borderType );
+
+	static Sizef radiusFromString( UINode* node, const std::string& val );
+
 	/** Creates the border geometry into the VertexBuffer provided. The VertexBuffer must be a
 	 * a EE::Graphics::PrimitiveType::PRIMITIVE_TRIANGLE_STRIP with VERTEX_FLAGS_PRIMITIVE flags. */
 	static void createBorders( VertexBuffer* vbo, const Borders& borders, const Vector2f& pos,
@@ -44,6 +51,23 @@ struct EE_API Borders {
 	 * a EE::Graphics::PrimitiveType::PRIMITIVE_TRIANGLE_FAN with VERTEX_FLAGS_PRIMITIVE flags. */
 	static void createBackground( VertexBuffer* vbo, const BorderRadiuses& radius,
 								  const Vector2f& pos, const Sizef& size, const Color& color );
+};
+
+struct BorderRadiuseStr {
+	std::string topLeft;
+	std::string topRight;
+	std::string bottomLeft;
+	std::string bottomRight;
+};
+
+struct BorderStr {
+	struct {
+		std::string left;
+		std::string right;
+		std::string top;
+		std::string bottom;
+	} width;
+	BorderRadiuseStr radius;
 };
 
 }} // namespace EE::UI

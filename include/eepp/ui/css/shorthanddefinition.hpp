@@ -19,7 +19,10 @@ enum class ShorthandId : Uint32 {
 	LayoutMarginUnderscore = String::hash( "layout_margin" ),
 	FillerPadding = String::hash( "filler-padding" ),
 	RotationOriginPoint = String::hash( "rotation-origin-point" ),
-	ScaleOriginPoint = String::hash( "scale-origin-point" )
+	ScaleOriginPoint = String::hash( "scale-origin-point" ),
+	BorderColor = String::hash( "border-color" ),
+	BorderWidth = String::hash( "border-width" ),
+	BorderRadius = String::hash( "border-radius" )
 };
 
 enum class ShorthandType : Uint32 {
@@ -27,7 +30,9 @@ enum class ShorthandType : Uint32 {
 	Background,
 	Vector2,
 	SingleValueVector,
-	BackgroundPosition
+	BackgroundPosition,
+	BorderBox,
+	Radius
 };
 
 class ShorthandDefinition {
@@ -46,6 +51,16 @@ class ShorthandDefinition {
 
 	const Uint32& getId() const;
 
+	ShorthandDefinition& addAlias( const std::string& alias );
+
+	bool isAlias( const std::string& alias ) const;
+
+	bool isAlias( const Uint32& id ) const;
+
+	bool isDefinition( const std::string& name ) const;
+
+	bool isDefinition( const Uint32& id ) const;
+
 	ShorthandId getShorthandId() const;
 
 	const std::vector<std::string>& getProperties() const;
@@ -55,6 +70,8 @@ class ShorthandDefinition {
   protected:
 	std::string mName;
 	Uint32 mId;
+	std::vector<std::string> mAliases;
+	std::vector<Uint32> mAliasesHash;
 	std::vector<std::string> mProperties;
 	ShorthandType mType;
 };

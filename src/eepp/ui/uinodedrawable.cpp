@@ -31,6 +31,7 @@ UINodeDrawable* UINodeDrawable::New( UINode* owner ) {
 UINodeDrawable::UINodeDrawable( UINode* owner ) :
 	Drawable( Drawable::UINODEDRAWABLE ),
 	mOwner( owner ),
+	mBackgroundColor( owner ),
 	mNeedsUpdate( true ),
 	mClipEnabled( false ) {
 	mBackgroundColor.setColor( Color::Transparent );
@@ -123,6 +124,11 @@ void UINodeDrawable::setClipEnabled( bool clipEnabled ) {
 
 void UINodeDrawable::invalidate() {
 	mNeedsUpdate = true;
+	mBackgroundColor.invalidate();
+}
+
+UIBackgroundDrawable& UINodeDrawable::getBackgroundDrawable() {
+	return mBackgroundColor;
 }
 
 Sizef UINodeDrawable::getSize() {
@@ -169,6 +175,16 @@ void UINodeDrawable::draw( const Vector2f& position, const Sizef& size, const Ui
 		}
 	}
 
+	bool masked = false;
+	ClippingMask* clippingMask = GLi->getClippingMask();
+	if ( !mGroup.empty() && mBackgroundColor.hasRadius() ) {
+		masked = true;
+		clippingMask->setMaskMode( ClippingMask::Inclusive );
+		clippingMask->clearMasks();
+		clippingMask->appendMask( mBackgroundColor );
+		clippingMask->stencilMaskEnable();
+	}
+
 	// Draw in reverse order to respect the background-image specification:
 	// "The background images are drawn on stacking context layers on top of each other. The first
 	// layer specified is drawn as if it is closest to the user."
@@ -183,6 +199,10 @@ void UINodeDrawable::draw( const Vector2f& position, const Sizef& size, const Ui
 		} else {
 			drawable->draw( position, size );
 		}
+	}
+
+	if ( masked ) {
+		clippingMask->stencilMaskDisable();
 	}
 
 	if ( mClipEnabled )

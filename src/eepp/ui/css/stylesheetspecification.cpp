@@ -7,13 +7,6 @@ SINGLETON_DECLARE_IMPLEMENTATION( StyleSheetSpecification )
 
 StyleSheetSpecification::StyleSheetSpecification() {
 	// TODO: Add correct "background" and "foreground" shorthand.
-	// TODO: Support border-color top right bottom left.
-	// TODO: Support border-radius top right bottom left.
-	// TODO: Create a rule to set the border position against its box.
-	//		 Something like: "border-type", with the following options:
-	//			inside: The border is drawn inside the box.
-	//			outside: The border is drawn outside the box.
-	//			over: The border is drawn in the middle point of inside and outside.
 	registerDefaultProperties();
 	registerDefaultNodeSelectors();
 }
@@ -97,9 +90,6 @@ void StyleSheetSpecification::registerDefaultProperties() {
 		.setType( PropertyType::ForegroundSize )
 		.setIndexed();
 	registerProperty( "foreground-radius", "0px" ).setType( PropertyType::NumberLength );
-	registerProperty( "border-color", "" ).setType( PropertyType::Color );
-	registerProperty( "border-width", "" ).setType( PropertyType::NumberLength );
-	registerProperty( "border-radius", "0px" ).setType( PropertyType::NumberLength );
 	registerProperty( "visible", "true" ).setType( PropertyType::Bool );
 	registerProperty( "enabled", "true" ).setType( PropertyType::Bool );
 	registerProperty( "theme", "" );
@@ -343,7 +333,29 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "timing-function", "linear" ).setType( PropertyType::String );
 
 	registerProperty( "page-locked", "" ).setType( PropertyType::Bool );
+
 	registerProperty( "border-type", "inside" ).setType( PropertyType::String );
+	registerProperty( "border-left-color", "transparent" ).setType( PropertyType::Color );
+	registerProperty( "border-right-color", "transparent" ).setType( PropertyType::Color );
+	registerProperty( "border-top-color", "transparent" ).setType( PropertyType::Color );
+	registerProperty( "border-bottom-color", "transparent" ).setType( PropertyType::Color );
+	registerProperty( "border-left-width", "0" )
+		.setType( PropertyType::NumberLength )
+		.setRelativeTarget( PropertyRelativeTarget::LocalBlockRadiusWidth );
+	registerProperty( "border-right-width", "0" )
+		.setType( PropertyType::NumberLength )
+		.setRelativeTarget( PropertyRelativeTarget::LocalBlockRadiusWidth );
+	registerProperty( "border-top-width", "0" )
+		.setType( PropertyType::NumberLength )
+		.setRelativeTarget( PropertyRelativeTarget::LocalBlockRadiusWidth );
+	registerProperty( "border-bottom-width", "0" )
+		.setType( PropertyType::NumberLength )
+		.setRelativeTarget( PropertyRelativeTarget::LocalBlockRadiusWidth );
+
+	registerProperty( "border-top-left-radius", "0" ).setType( PropertyType::RadiusLength );
+	registerProperty( "border-top-right-radius", "0" ).setType( PropertyType::RadiusLength );
+	registerProperty( "border-bottom-left-radius", "0" ).setType( PropertyType::RadiusLength );
+	registerProperty( "border-bottom-right-radius", "0" ).setType( PropertyType::RadiusLength );
 
 	// Shorthands
 	registerShorthand( "margin", {"margin-top", "margin-right", "margin-bottom", "margin-left"},
@@ -370,6 +382,19 @@ void StyleSheetSpecification::registerDefaultProperties() {
 					   ShorthandType::BackgroundPosition );
 	registerShorthand( "foreground-position", {"foreground-position-x", "foreground-position-y"},
 					   ShorthandType::BackgroundPosition );
+	registerShorthand(
+		"border-color",
+		{"border-top-color", "border-right-color", "border-bottom-color", "border-left-color"},
+		ShorthandType::BorderBox );
+	registerShorthand(
+		"border-width",
+		{"border-top-width", "border-right-width", "border-bottom-width", "border-left-width"},
+		ShorthandType::BorderBox );
+
+	registerShorthand( "border-radius",
+					   {"border-top-left-radius", "border-top-right-radius",
+						"border-bottom-right-radius", "border-bottom-left-radius"},
+					   ShorthandType::Radius );
 	/*registerShorthand( "rotation-origin-point", {"rotation-origin-point-x",
 	"rotation-origin-point-y"}, ShorthandType::Vector2 ); registerShorthand(
 	"scale-origin-point", {"scale-origin-point-x", "scale-origin-point-y"},

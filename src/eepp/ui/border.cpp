@@ -1,5 +1,6 @@
 #include <eepp/graphics/vertexbuffer.hpp>
 #include <eepp/ui/border.hpp>
+#include <eepp/ui/uinode.hpp>
 
 namespace EE { namespace UI {
 
@@ -90,6 +91,36 @@ static void borderAddArc( VertexBuffer* vbo, Vector2f pos, Float radiW, Float ra
 	}
 }
 
+std::string Borders::fromBorderType( const BorderType& borderType ) {
+	switch ( borderType ) {
+		case BorderType::Outside:
+			return "outside";
+		case BorderType::Outline:
+			return "outline";
+		case BorderType::Inside:
+		default:
+			return "inside";
+	}
+}
+
+BorderType Borders::toBorderType( const std::string& borderType ) {
+	if ( borderType == "outside" ) {
+		return BorderType::Outside;
+	} else if ( borderType == "outline" ) {
+		return BorderType::Outline;
+	}
+	return BorderType::Inside;
+}
+
+Sizef Borders::radiusFromString( UINode* node, const std::string& val ) {
+	auto split = String::split( val, ' ' );
+	Sizef size;
+	size.x = node->lengthFromValue( split[0], CSS::PropertyRelativeTarget::LocalBlockRadiusWidth );
+	size.y = node->lengthFromValue( split[split.size() > 1 ? 1 : 0],
+									CSS::PropertyRelativeTarget::LocalBlockRadiusHeight );
+	return size;
+}
+
 void Borders::createBorders( VertexBuffer* vbo, const Borders& borders, const Vector2f& pos,
 							 const Sizef& size ) {
 	vbo->clear();
@@ -132,9 +163,9 @@ void Borders::createBorders( VertexBuffer* vbo, const Borders& borders, const Ve
 						  endAngle, borders.top.color, borderTop,
 						  Vector2f( pos.x + borderLeft, pos.y + borderTop ) );
 		} else {
-			vbo->addVertex( Vector2f( pos.x, pos.y ) );
-			vbo->addColor( borders.top.color );
 			vbo->addVertex( Vector2f( pos.x + borderLeft, pos.y + borderTop ) );
+			vbo->addColor( borders.top.color );
+			vbo->addVertex( Vector2f( pos.x, pos.y ) );
 			vbo->addColor( borders.top.color );
 		}
 
@@ -160,9 +191,9 @@ void Borders::createBorders( VertexBuffer* vbo, const Borders& borders, const Ve
 			borderAddArc( vbo, tPos, rightW, rightH, startAngle, endAngle, borders.top.color,
 						  borderTop, basePos );
 		} else {
-			vbo->addVertex( Vector2f( pos.x + size.getWidth(), pos.y ) );
-			vbo->addColor( borders.top.color );
 			vbo->addVertex( Vector2f( pos.x + size.getWidth() - borderRight, pos.y + borderTop ) );
+			vbo->addColor( borders.top.color );
+			vbo->addVertex( Vector2f( pos.x + size.getWidth(), pos.y ) );
 			vbo->addColor( borders.top.color );
 		}
 	}
@@ -182,9 +213,9 @@ void Borders::createBorders( VertexBuffer* vbo, const Borders& borders, const Ve
 			borderAddArc( vbo, Vector2f( pos.x + size.getWidth() - topW, pos.y + topH ), topW, topH,
 						  startAngle, endAngle, borders.right.color, borderRight, basePos );
 		} else {
-			vbo->addVertex( Vector2f( pos.x + size.getWidth(), pos.y ) );
-			vbo->addColor( borders.right.color );
 			vbo->addVertex( Vector2f( pos.x + size.getWidth() - borderRight, pos.y + borderTop ) );
+			vbo->addColor( borders.right.color );
+			vbo->addVertex( Vector2f( pos.x + size.getWidth(), pos.y ) );
 			vbo->addColor( borders.right.color );
 		}
 
@@ -212,10 +243,10 @@ void Borders::createBorders( VertexBuffer* vbo, const Borders& borders, const Ve
 						  borderRight, basePos );
 
 		} else {
-			vbo->addVertex( Vector2f( pos.x + size.getWidth(), pos.y + size.getHeight() ) );
-			vbo->addColor( borders.right.color );
 			vbo->addVertex( Vector2f( pos.x + size.getWidth() - borderRight,
 									  pos.y + size.getHeight() - borderBottom ) );
+			vbo->addColor( borders.right.color );
+			vbo->addVertex( Vector2f( pos.x + size.getWidth(), pos.y + size.getHeight() ) );
 			vbo->addColor( borders.right.color );
 		}
 	}
@@ -238,11 +269,10 @@ void Borders::createBorders( VertexBuffer* vbo, const Borders& borders, const Ve
 				Vector2f( pos.x + size.getWidth() - rightW, pos.y + size.getHeight() - rightH ),
 				rightW, rightH, startAngle, endAngle, borders.bottom.color, borderBottom, basePos );
 		} else {
-			vbo->addVertex( Vector2f( pos.x + size.getWidth(), pos.y + size.getHeight() ) );
-			vbo->addColor( borders.bottom.color );
-
 			vbo->addVertex( Vector2f( pos.x + size.getWidth() - borderRight,
 									  pos.y + size.getHeight() - borderBottom ) );
+			vbo->addColor( borders.bottom.color );
+			vbo->addVertex( Vector2f( pos.x + size.getWidth(), pos.y + size.getHeight() ) );
 			vbo->addColor( borders.bottom.color );
 		}
 
@@ -269,10 +299,10 @@ void Borders::createBorders( VertexBuffer* vbo, const Borders& borders, const Ve
 			borderAddArc( vbo, tPos, leftW, leftH, startAngle, endAngle, borders.bottom.color,
 						  borderBottom, basePos );
 		} else {
-			vbo->addVertex( Vector2f( pos.x, pos.y + size.getHeight() ) );
-			vbo->addColor( borders.bottom.color );
 			vbo->addVertex(
 				Vector2f( pos.x + borderLeft, pos.y + size.getHeight() - borderBottom ) );
+			vbo->addColor( borders.bottom.color );
+			vbo->addVertex( Vector2f( pos.x, pos.y + size.getHeight() ) );
 			vbo->addColor( borders.bottom.color );
 		}
 	}
@@ -293,10 +323,10 @@ void Borders::createBorders( VertexBuffer* vbo, const Borders& borders, const Ve
 						  bottomW, bottomH, startAngle, endAngle, borders.left.color, borderLeft,
 						  basePos );
 		} else {
-			vbo->addVertex( Vector2f( pos.x, pos.y + size.getHeight() ) );
-			vbo->addColor( borders.left.color );
 			vbo->addVertex(
 				Vector2f( pos.x + borderLeft, pos.y + size.getHeight() - borderBottom ) );
+			vbo->addColor( borders.left.color );
+			vbo->addVertex( Vector2f( pos.x, pos.y + size.getHeight() ) );
 			vbo->addColor( borders.left.color );
 		}
 
@@ -304,7 +334,7 @@ void Borders::createBorders( VertexBuffer* vbo, const Borders& borders, const Ve
 			double startAngle = 180;
 			double endAngle = 225;
 			Vector2f basePos( pos.x + borderLeft, pos.y + borderTop );
-			Vector2f tPos( pos.x + topW, pos.y + topW );
+			Vector2f tPos( pos.x + topW, pos.y + topH );
 
 			if ( topW > borderLeft ) {
 				vbo->addVertex(
@@ -324,9 +354,9 @@ void Borders::createBorders( VertexBuffer* vbo, const Borders& borders, const Ve
 			borderAddArc( vbo, tPos, topW, topH, startAngle, endAngle, borders.left.color,
 						  borderLeft, basePos );
 		} else {
-			vbo->addVertex( Vector2f( pos.x, pos.y ) );
-			vbo->addColor( borders.left.color );
 			vbo->addVertex( Vector2f( pos.x + borderLeft, pos.y + borderTop ) );
+			vbo->addColor( borders.left.color );
+			vbo->addVertex( Vector2f( pos.x, pos.y ) );
 			vbo->addColor( borders.left.color );
 		}
 	}

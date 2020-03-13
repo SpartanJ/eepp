@@ -159,6 +159,8 @@ class EE_API UINodeDrawable : public Drawable {
 
 	UINode* getOwner() { return mOwner; }
 
+	UIBackgroundDrawable& getBackgroundDrawable();
+
   protected:
 	UINode* mOwner;
 	UIBackgroundDrawable mBackgroundColor;
