@@ -7,6 +7,7 @@ namespace EE { namespace UI {
 static void borderAddArc( VertexBuffer* vbo, Vector2f pos, Float radiW, Float radiH,
 						  double arcStartAngle, double arcEndAngle, Color color, Float lineW,
 						  Vector2f basePos, bool decrease = false, bool addInnerVertex = true ) {
+	// TODO: Add segment count parameter to change the arc precision (num of vertex).
 	Float angleShift = 1;
 	double startAngle = eemin( arcStartAngle, arcEndAngle );
 	double endAngle = eemax( arcStartAngle, arcEndAngle );

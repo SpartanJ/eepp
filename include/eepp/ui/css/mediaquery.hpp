@@ -99,7 +99,7 @@ struct MediaFeatures {
 	int resolution; // The resolution of the output device (in DPI)
 };
 
-struct MediaQueryExpression {
+struct EE_API MediaQueryExpression {
 	typedef std::vector<MediaQueryExpression> vector;
 
 	MediaFeature feature;
@@ -112,7 +112,7 @@ struct MediaQueryExpression {
 	bool check( const MediaFeatures& features ) const;
 };
 
-class MediaQuery {
+class EE_API MediaQuery {
   public:
 	typedef std::shared_ptr<MediaQuery> ptr;
 	typedef std::vector<MediaQuery::ptr> vector;
@@ -131,7 +131,7 @@ class MediaQuery {
 	MediaType mMediaType;
 };
 
-class MediaQueryList {
+class EE_API MediaQueryList {
   public:
 	typedef std::shared_ptr<MediaQueryList> ptr;
 	typedef std::vector<MediaQueryList::ptr> vector;

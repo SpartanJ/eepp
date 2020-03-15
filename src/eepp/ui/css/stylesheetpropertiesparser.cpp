@@ -139,8 +139,8 @@ void StyleSheetPropertiesParser::addProperty( std::string name, std::string valu
 	String::trimInPlace( name );
 
 	if ( StyleSheetSpecification::instance()->isShorthand( name ) ) {
-		std::vector<StyleSheetProperty> properties = ShorthandDefinition::parseShorthand(
-			StyleSheetSpecification::instance()->getShorthand( name ), value );
+		std::vector<StyleSheetProperty> properties =
+			StyleSheetSpecification::instance()->getShorthand( name )->parse( value );
 
 		for ( auto& property : properties )
 			mProperties[property.getId()] = property;

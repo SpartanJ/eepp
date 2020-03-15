@@ -1573,8 +1573,7 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 		StyleSheetProperty prop( ait->name(), ait->value(), false );
 
 		if ( prop.getShorthandDefinition() != NULL ) {
-			auto properties =
-				ShorthandDefinition::parseShorthand( prop.getShorthandDefinition(), ait->value() );
+			auto properties = prop.getShorthandDefinition()->parse( ait->value() );
 
 			for ( auto& property : properties )
 				applyProperty( property );
