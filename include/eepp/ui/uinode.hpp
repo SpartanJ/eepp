@@ -3,7 +3,9 @@
 
 #include <eepp/scene/node.hpp>
 #include <eepp/ui/base.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/css/stylesheetlength.hpp>
+#include <eepp/ui/css/stylesheetproperty.hpp>
 #include <eepp/ui/uihelper.hpp>
 #include <eepp/ui/uiskin.hpp>
 #include <eepp/ui/uiskinstate.hpp>
@@ -11,7 +13,6 @@
 
 namespace EE { namespace Graphics {
 class Drawable;
-class RectangleDrawable;
 }} // namespace EE::Graphics
 
 namespace EE { namespace Scene {
@@ -25,6 +26,7 @@ namespace EE { namespace UI {
 class UISceneNode;
 class UITheme;
 class UINodeDrawable;
+class UIBorderDrawable;
 
 class EE_API UINode : public Node {
   public:
@@ -108,6 +110,14 @@ class EE_API UINode : public Node {
 
 	UINode* setBorderRadius( const unsigned int& corners );
 
+	UINode* setTopLeftRadius( const std::string& radius );
+
+	UINode* setTopRightRadius( const std::string& radius );
+
+	UINode* setBottomLeftRadius( const std::string& radius );
+
+	UINode* setBottomRightRadius( const std::string& radius );
+
 	Uint32 getBorderRadius() const;
 
 	UINodeDrawable* setForegroundFillEnabled( bool enabled );
@@ -132,7 +142,7 @@ class EE_API UINode : public Node {
 
 	Uint32 getForegroundRadius() const;
 
-	RectangleDrawable* setBorderEnabled( bool enabled );
+	UIBorderDrawable* setBorderEnabled( bool enabled );
 
 	UINode* setBorderColor( const Color& color );
 
@@ -154,7 +164,7 @@ class EE_API UINode : public Node {
 
 	UINodeDrawable* getForeground();
 
-	RectangleDrawable* getBorder();
+	UIBorderDrawable* getBorder();
 
 	void setThemeByName( const std::string& Theme );
 
@@ -208,10 +218,33 @@ class EE_API UINode : public Node {
 
 	virtual void setFocus();
 
+	Float
+	getPropertyRelativeTargetContainerLength( const CSS::PropertyRelativeTarget& relativeTarget,
+											  const Float& defaultValue = 0,
+											  const Uint32& propertyIndex = 0 );
+
 	virtual Float convertLength( const CSS::StyleSheetLength& length,
 								 const Float& containerLength );
 
 	Float convertLengthAsDp( const CSS::StyleSheetLength& length, const Float& containerLength );
+
+	Float lengthFromValue( const std::string& value,
+						   const CSS::PropertyRelativeTarget& relativeTarget,
+						   const Float& defaultValue = 0, const Float& defaultContainerValue = 0,
+						   const Uint32& propertyIndex = 0 );
+
+	Float lengthFromValue( const CSS::StyleSheetProperty& property, const Float& defaultValue = 0,
+						   const Float& defaultContainerValue = 0 );
+
+	Float lengthFromValueAsDp( const std::string& value,
+							   const CSS::PropertyRelativeTarget& relativeTarget,
+							   const Float& defaultValue = 0,
+							   const Float& defaultContainerValue = 0,
+							   const Uint32& propertyIndex = 0 );
+
+	Float lengthFromValueAsDp( const CSS::StyleSheetProperty& property,
+							   const Float& defaultValue = 0,
+							   const Float& defaultContainerValue = 0 );
 
 	UISceneNode* getUISceneNode();
 
@@ -223,7 +256,7 @@ class EE_API UINode : public Node {
 	UISkinState* mSkinState;
 	UINodeDrawable* mBackground;
 	UINodeDrawable* mForeground;
-	RectangleDrawable* mBorder;
+	UIBorderDrawable* mBorder;
 	Vector2f mDragPoint;
 	Uint32 mDragButton;
 	Color mSkinColor;
@@ -250,7 +283,7 @@ class EE_API UINode : public Node {
 
 	virtual void onThemeLoaded();
 
-	virtual void onChildCountChange( Node * child, const bool& removed );
+	virtual void onChildCountChange( Node* child, const bool& removed );
 
 	virtual Uint32 onCalculateDrag( const Vector2f& position, const Uint32& flags );
 

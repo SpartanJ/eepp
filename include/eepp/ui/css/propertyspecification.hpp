@@ -20,7 +20,7 @@ class EE_API PropertySpecification {
 
 	ShorthandDefinition& registerShorthand( const std::string& name,
 											const std::vector<std::string>& properties,
-											const ShorthandType& shorthandType );
+											const std::string& shorthandParserName );
 
 	const ShorthandDefinition* getShorthand( const Uint32& id ) const;
 

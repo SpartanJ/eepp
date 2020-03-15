@@ -32,9 +32,9 @@ void UIStyle::setStyleSheetProperty( const StyleSheetProperty& property ) {
 	std::vector<StyleSheetProperty> properties;
 
 	if ( StyleSheetSpecification::instance()->isShorthand( property.getName() ) ) {
-		properties = ShorthandDefinition::parseShorthand(
-			StyleSheetSpecification::instance()->getShorthand( property.getName() ),
-			property.getValue() );
+		properties = StyleSheetSpecification::instance()
+						 ->getShorthand( property.getName() )
+						 ->parse( property.getValue() );
 	} else {
 		properties.emplace_back( property );
 	}

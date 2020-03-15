@@ -5,6 +5,8 @@
 #include <eepp/system/functionstring.hpp>
 #include <eepp/system/singleton.hpp>
 #include <eepp/ui/css/propertyspecification.hpp>
+#include <eepp/ui/css/shorthanddefinition.hpp>
+#include <functional>
 
 namespace EE { namespace UI {
 class UIWidget;
@@ -25,7 +27,7 @@ struct StructuralSelector {
 	FunctionString data;
 };
 
-class StyleSheetSpecification {
+class EE_API StyleSheetSpecification {
 	SINGLETON_DECLARE_HEADERS( StyleSheetSpecification )
   public:
 	StyleSheetSpecification();
@@ -41,7 +43,7 @@ class StyleSheetSpecification {
 
 	ShorthandDefinition& registerShorthand( const std::string& name,
 											const std::vector<std::string>& properties,
-											const ShorthandType& shorthandType );
+											const std::string& shorthandFuncName );
 
 	const ShorthandDefinition* getShorthand( const Uint32& id ) const;
 
@@ -55,9 +57,16 @@ class StyleSheetSpecification {
 
 	StructuralSelector getStructuralSelector( const std::string& name );
 
+	void registerShorthandParser( const std::string& name,
+								  ShorthandParserFunc shorthandParserFunc );
+
+	ShorthandParserFunc getShorthandParser( const std::string& name );
   protected:
 	PropertySpecification mPropertySpecification;
+	std::map<std::string, ShorthandParserFunc> mShorthandParsers;
 	std::map<std::string, StyleSheetNodeSelector> mNodeSelectors;
+
+	void registerDefaultShorthandParsers();
 
 	void registerDefaultProperties();
 

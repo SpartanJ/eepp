@@ -6,18 +6,6 @@
 
 namespace EE { namespace UI { namespace CSS {
 
-/* Shorthands:
- *
- * background
- * foreground
- * margin
- * layout_margin
- * padding
- * background-position
- * rotation-origin-point
- * scale-origin-point
- * */
-
 enum class PropertyId : Uint32 {
 	Id = String::hash( "id" ),
 	Class = String::hash( "class" ),
@@ -38,9 +26,6 @@ enum class PropertyId : Uint32 {
 	ForegroundRepeat = String::hash( "foreground-repeat" ),
 	ForegroundSize = String::hash( "foreground-size" ),
 	ForegroundRadius = String::hash( "foreground-radius" ),
-	BorderColor = String::hash( "border-color" ),
-	BorderWidth = String::hash( "border-width" ),
-	BorderRadius = String::hash( "border-radius" ),
 	Visible = String::hash( "visible" ),
 	Enabled = String::hash( "enabled" ),
 	Theme = String::hash( "theme" ),
@@ -206,7 +191,20 @@ enum class PropertyId : Uint32 {
 	MaxEdgeResistance = String::hash( "max-edge-resistance" ),
 	PageTransitionDuration = String::hash( "page-transition-duration" ),
 	TimingFunction = String::hash( "timing-function" ),
-	PageLocked = String::hash( "page-locked" )
+	PageLocked = String::hash( "page-locked" ),
+	BorderType = String::hash( "border-type" ),
+	BorderLeftColor = String::hash( "border-left-color" ),
+	BorderRightColor = String::hash( "border-right-color" ),
+	BorderTopColor = String::hash( "border-top-color" ),
+	BorderBottomColor = String::hash( "border-bottom-color" ),
+	BorderLeftWidth = String::hash( "border-left-width" ),
+	BorderRightWidth = String::hash( "border-right-width" ),
+	BorderTopWidth = String::hash( "border-top-width" ),
+	BorderBottomWidth = String::hash( "border-bottom-width" ),
+	BorderTopLeftRadius = String::hash( "border-top-left-radius" ),
+	BorderTopRightRadius = String::hash( "border-top-right-radius" ),
+	BorderBottomLeftRadius = String::hash( "border-bottom-left-radius" ),
+	BorderBottomRightRadius = String::hash( "border-bottom-right-radius" ),
 };
 
 enum class PropertyType : Uint32 {
@@ -216,6 +214,7 @@ enum class PropertyType : Uint32 {
 	NumberInt,
 	NumberFloat,
 	NumberLength,
+	RadiusLength,
 	Color,
 	Vector2,
 	BackgroundSize,
@@ -235,7 +234,9 @@ enum class PropertyRelativeTarget : Uint32 {
 	BackgroundWidth,
 	BackgroundHeight,
 	ForegroundWidth,
-	ForegroundHeight
+	ForegroundHeight,
+	LocalBlockRadiusWidth,
+	LocalBlockRadiusHeight
 };
 
 class EE_API PropertyDefinition {

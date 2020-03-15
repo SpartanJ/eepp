@@ -4,6 +4,7 @@
 #include <eepp/config.hpp>
 #include <eepp/core/string.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
+#include <functional>
 
 namespace EE { namespace UI { namespace CSS {
 
@@ -19,44 +20,52 @@ enum class ShorthandId : Uint32 {
 	LayoutMarginUnderscore = String::hash( "layout_margin" ),
 	FillerPadding = String::hash( "filler-padding" ),
 	RotationOriginPoint = String::hash( "rotation-origin-point" ),
-	ScaleOriginPoint = String::hash( "scale-origin-point" )
+	ScaleOriginPoint = String::hash( "scale-origin-point" ),
+	BorderColor = String::hash( "border-color" ),
+	BorderWidth = String::hash( "border-width" ),
+	BorderRadius = String::hash( "border-radius" )
 };
 
-enum class ShorthandType : Uint32 {
-	Box,
-	Background,
-	Vector2,
-	SingleValueVector,
-	BackgroundPosition
-};
+typedef std::function<std::vector<StyleSheetProperty>( const ShorthandDefinition* shorthand,
+													   std::string value )>
+	ShorthandParserFunc;
 
-class ShorthandDefinition {
+class EE_API ShorthandDefinition {
   public:
-	static std::vector<StyleSheetProperty> parseShorthand( const ShorthandDefinition* shorthand,
-														   std::string value );
-
 	static ShorthandDefinition* New( const std::string& name,
 									 const std::vector<std::string>& properties,
-									 const ShorthandType& shorthandType );
+									 const std::string& shorthandParserName );
 
 	ShorthandDefinition( const std::string& name, const std::vector<std::string>& properties,
-						 const ShorthandType& shorthandType );
+						 const std::string& shorthandFuncName );
+
+	std::vector<StyleSheetProperty> parse( std::string value ) const;
 
 	const std::string& getName() const;
 
 	const Uint32& getId() const;
 
+	ShorthandDefinition& addAlias( const std::string& alias );
+
+	bool isAlias( const std::string& alias ) const;
+
+	bool isAlias( const Uint32& id ) const;
+
+	bool isDefinition( const std::string& name ) const;
+
+	bool isDefinition( const Uint32& id ) const;
+
 	ShorthandId getShorthandId() const;
 
 	const std::vector<std::string>& getProperties() const;
 
-	const ShorthandType& getType() const;
-
   protected:
 	std::string mName;
+	std::string mFuncName;
 	Uint32 mId;
+	std::vector<std::string> mAliases;
+	std::vector<Uint32> mAliasesHash;
 	std::vector<std::string> mProperties;
-	ShorthandType mType;
 };
 
 }}} // namespace EE::UI::CSS

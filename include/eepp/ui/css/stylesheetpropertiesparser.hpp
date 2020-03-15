@@ -39,7 +39,7 @@ class EE_API StyleSheetPropertiesParser {
 
 	int readComment( ReadState& rs, std::size_t pos, std::string& buffer, const std::string& str );
 
-	void addProperty( const std::string& name, std::string value );
+	void addProperty( std::string name, std::string value );
 };
 
 }}} // namespace EE::UI::CSS

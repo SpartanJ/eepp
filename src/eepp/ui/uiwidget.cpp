@@ -5,6 +5,7 @@
 #include <eepp/ui/css/stylesheetselector.hpp>
 #include <eepp/ui/css/stylesheetspecification.hpp>
 #include <eepp/ui/css/transitiondefinition.hpp>
+#include <eepp/ui/uiborderdrawable.hpp>
 #include <eepp/ui/uinodedrawable.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uistyle.hpp>
@@ -450,6 +451,9 @@ void UIWidget::onVisibilityChange() {
 void UIWidget::onSizeChange() {
 	UINode::onSizeChange();
 
+	if ( mBorder != NULL )
+		mBorder->invalidate();
+
 	if ( mBackground != NULL )
 		mBackground->invalidate();
 
@@ -556,80 +560,6 @@ bool UIWidget::isSceneNodeLoading() const {
 	return getSceneNode()->isUISceneNode()
 			   ? static_cast<UISceneNode*>( getSceneNode() )->isLoading()
 			   : false;
-}
-
-Float UIWidget::getPropertyRelativeTargetContainerLength(
-	const PropertyRelativeTarget& relativeTarget, const Float& defaultValue,
-	const Uint32& propertyIndex ) {
-	Float containerLength = defaultValue;
-	switch ( relativeTarget ) {
-		case PropertyRelativeTarget::ContainingBlockWidth:
-			containerLength = getParent()->getPixelsSize().getWidth();
-			break;
-		case PropertyRelativeTarget::ContainingBlockHeight:
-			containerLength = getParent()->getPixelsSize().getHeight();
-		case PropertyRelativeTarget::LocalBlockWidth:
-			containerLength = getPixelsSize().getWidth();
-			break;
-		case PropertyRelativeTarget::LocalBlockHeight:
-			containerLength = getPixelsSize().getHeight();
-			break;
-		case PropertyRelativeTarget::BackgroundWidth:
-			containerLength =
-				getPixelsSize().getWidth() -
-				getBackground()->getLayer( propertyIndex )->getDrawableSize().getWidth();
-			break;
-		case PropertyRelativeTarget::BackgroundHeight:
-			containerLength =
-				getPixelsSize().getHeight() -
-				getBackground()->getLayer( propertyIndex )->getDrawableSize().getHeight();
-			break;
-		case PropertyRelativeTarget::ForegroundWidth:
-			containerLength =
-				getPixelsSize().getWidth() -
-				getForeground()->getLayer( propertyIndex )->getDrawableSize().getWidth();
-			break;
-		case PropertyRelativeTarget::ForegroundHeight:
-			containerLength =
-				getPixelsSize().getHeight() -
-				getForeground()->getLayer( propertyIndex )->getDrawableSize().getHeight();
-			break;
-		default:
-			break;
-	}
-	return containerLength;
-}
-
-Float UIWidget::lengthFromValue( const std::string& value,
-								 const PropertyRelativeTarget& relativeTarget,
-								 const Float& defaultValue, const Float& defaultContainerValue,
-								 const Uint32& propertyIndex ) {
-	Float containerLength =
-		getPropertyRelativeTargetContainerLength( relativeTarget, defaultValue, propertyIndex );
-	return convertLength( CSS::StyleSheetLength( value, defaultValue ), containerLength );
-}
-
-Float UIWidget::lengthFromValue( const StyleSheetProperty& property, const Float& defaultValue,
-								 const Float& defaultContainerValue ) {
-	return lengthFromValue( property.getValue(),
-							property.getPropertyDefinition()->getRelativeTarget(), defaultValue,
-							defaultContainerValue, property.getIndex() );
-}
-
-Float UIWidget::lengthFromValueAsDp( const std::string& value,
-									 const PropertyRelativeTarget& relativeTarget,
-									 const Float& defaultValue, const Float& defaultContainerValue,
-									 const Uint32& propertyIndex ) {
-	Float containerLength =
-		getPropertyRelativeTargetContainerLength( relativeTarget, defaultValue, propertyIndex );
-	return convertLengthAsDp( CSS::StyleSheetLength( value, defaultValue ), containerLength );
-}
-
-Float UIWidget::lengthFromValueAsDp( const StyleSheetProperty& property, const Float& defaultValue,
-									 const Float& defaultContainerValue ) {
-	return lengthFromValue( property.getValue(),
-							property.getPropertyDefinition()->getRelativeTarget(), defaultValue,
-							defaultContainerValue, property.getIndex() );
 }
 
 const std::string& UIWidget::getMinWidthEq() const {
@@ -1161,12 +1091,8 @@ std::string UIWidget::getPropertyString( const PropertyDefinition* propertyDef,
 			return getForegroundColor().toHexString();
 		case PropertyId::ForegroundRadius:
 			return String::toStr( getForegroundRadius() );
-		case PropertyId::BorderColor:
-			return getBorderColor().toHexString();
-		case PropertyId::BorderRadius:
-			return String::toStr( getBorderRadius() );
-		case PropertyId::BorderWidth:
-			return String::fromFloat( getBorderWidth() );
+		case PropertyId::BorderType:
+			return Borders::fromBorderType( setBorderEnabled( true )->getBorderType() );
 		case PropertyId::SkinColor:
 			return getSkinColor().toHexString();
 		case PropertyId::Rotation:
@@ -1221,6 +1147,38 @@ std::string UIWidget::getPropertyString( const PropertyDefinition* propertyDef,
 			return mMinHeightEq;
 		case PropertyId::MaxHeight:
 			return mMaxHeightEq;
+		case PropertyId::BorderLeftColor:
+			return setBorderEnabled( true )->getColorLeft().toHexString();
+		case PropertyId::BorderRightColor:
+			return setBorderEnabled( true )->getColorRight().toHexString();
+		case PropertyId::BorderTopColor:
+			return setBorderEnabled( true )->getColorTop().toHexString();
+		case PropertyId::BorderBottomColor:
+			return setBorderEnabled( true )->getColorBottom().toHexString();
+		case PropertyId::BorderLeftWidth:
+			return String::fromFloat( setBorderEnabled( true )->getBorders().left.width, "px" );
+		case PropertyId::BorderRightWidth:
+			return String::fromFloat( setBorderEnabled( true )->getBorders().right.width, "px" );
+		case PropertyId::BorderTopWidth:
+			return String::fromFloat( setBorderEnabled( true )->getBorders().top.width, "px" );
+		case PropertyId::BorderBottomWidth:
+			return String::fromFloat( setBorderEnabled( true )->getBorders().bottom.width, "px" );
+		case PropertyId::BorderTopLeftRadius:
+			return String::format( "%.2fpx %.2fpx",
+								   setBorderEnabled( true )->getBorders().radius.topLeft.x,
+								   getBorder()->getBorders().radius.topLeft.y );
+		case PropertyId::BorderTopRightRadius:
+			return String::format( "%.2fpx %.2fpx",
+								   setBorderEnabled( true )->getBorders().radius.topRight.x,
+								   getBorder()->getBorders().radius.topRight.y );
+		case PropertyId::BorderBottomLeftRadius:
+			return String::format( "%.2fpx %.2fpx",
+								   setBorderEnabled( true )->getBorders().radius.bottomLeft.x,
+								   getBorder()->getBorders().radius.bottomLeft.y );
+		case PropertyId::BorderBottomRightRadius:
+			return String::format( "%.2fpx %.2fpx",
+								   setBorderEnabled( true )->getBorders().radius.bottomRight.x,
+								   getBorder()->getBorders().radius.bottomRight.y );
 		default:
 			break;
 	}
@@ -1291,14 +1249,9 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::ForegroundSize:
 			setForegroundSize( attribute.value(), attribute.getIndex() );
 			break;
-		case PropertyId::BorderColor:
-			setBorderColor( attribute.asColor() );
-			break;
-		case PropertyId::BorderWidth:
-			setBorderWidth( lengthFromValue( attribute, PixelDensity::dpToPx( 1 ) ) );
-			break;
-		case PropertyId::BorderRadius:
-			setBorderRadius( lengthFromValue( attribute ) );
+		case PropertyId::BorderType:
+			setBorderEnabled( true )->setBorderType(
+				Borders::toBorderType( attribute.getValue() ) );
 			break;
 		case PropertyId::Visible:
 			setVisible( attribute.asBool() );
@@ -1566,6 +1519,43 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::MaxHeight:
 			setMaxHeightEq( attribute.getValue() );
 			break;
+		case PropertyId::BorderLeftColor:
+			setBorderEnabled( true )->setColorLeft( attribute.asColor() );
+			invalidateDraw();
+			break;
+		case PropertyId::BorderRightColor:
+			setBorderEnabled( true )->setColorRight( attribute.asColor() );
+			break;
+		case PropertyId::BorderTopColor:
+			setBorderEnabled( true )->setColorTop( attribute.asColor() );
+			break;
+		case PropertyId::BorderBottomColor:
+			setBorderEnabled( true )->setColorBottom( attribute.asColor() );
+			break;
+		case PropertyId::BorderLeftWidth:
+			setBorderEnabled( true )->setLeftWidth( attribute.asString() );
+			break;
+		case PropertyId::BorderRightWidth:
+			setBorderEnabled( true )->setRightWidth( attribute.asString() );
+			break;
+		case PropertyId::BorderTopWidth:
+			setBorderEnabled( true )->setTopWidth( attribute.asString() );
+			break;
+		case PropertyId::BorderBottomWidth:
+			setBorderEnabled( true )->setBottomWidth( attribute.asString() );
+			break;
+		case PropertyId::BorderTopLeftRadius:
+			setTopLeftRadius( attribute.asString() );
+			break;
+		case PropertyId::BorderBottomLeftRadius:
+			setBottomLeftRadius( attribute.asString() );
+			break;
+		case PropertyId::BorderTopRightRadius:
+			setTopRightRadius( attribute.asString() );
+			break;
+		case PropertyId::BorderBottomRightRadius:
+			setBottomRightRadius( attribute.asString() );
+			break;
 		default:
 			attributeSet = false;
 			break;
@@ -1583,8 +1573,7 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 		StyleSheetProperty prop( ait->name(), ait->value(), false );
 
 		if ( prop.getShorthandDefinition() != NULL ) {
-			auto properties =
-				ShorthandDefinition::parseShorthand( prop.getShorthandDefinition(), ait->value() );
+			auto properties = prop.getShorthandDefinition()->parse( ait->value() );
 
 			for ( auto& property : properties )
 				applyProperty( property );
