@@ -28,7 +28,7 @@ class EE_API DrawableImageParser {
   public:
 	DrawableImageParser();
 
-	bool exists( const std::string& name );
+	bool exists( const std::string& name ) const;
 
 	Drawable* createDrawable( const std::string& value, const Sizef& size, bool& ownIt,
 							  UINode* node );

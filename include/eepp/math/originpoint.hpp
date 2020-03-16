@@ -43,7 +43,6 @@ template <typename T> std::string tOriginPoint<T>::toString() const {
 }
 
 typedef tOriginPoint<Float> OriginPoint;
-typedef tOriginPoint<int> OriginPointi;
 
 }} // namespace EE::Math
 

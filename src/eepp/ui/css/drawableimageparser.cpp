@@ -12,7 +12,7 @@ DrawableImageParser::DrawableImageParser() {
 	registerBaseParsers();
 }
 
-bool DrawableImageParser::exists( const std::string& name ) {
+bool DrawableImageParser::exists( const std::string& name ) const {
 	return mFuncs.find( name ) != mFuncs.end();
 }
 

@@ -6,7 +6,6 @@ namespace EE { namespace UI { namespace CSS {
 SINGLETON_DECLARE_IMPLEMENTATION( StyleSheetSpecification )
 
 StyleSheetSpecification::StyleSheetSpecification() {
-	// TODO: Add correct "background" and "foreground" shorthand.
 	registerDefaultShorthandParsers();
 	registerDefaultProperties();
 	registerDefaultNodeSelectors();
@@ -389,8 +388,14 @@ void StyleSheetSpecification::registerDefaultProperties() {
 					   {"margin-top", "margin-right", "margin-bottom", "margin-left"}, "box" );
 	registerShorthand( "padding",
 					   {"padding-top", "padding-right", "padding-bottom", "padding-left"}, "box" );
-	registerShorthand( "background", {"background-color", "background-image"}, "background" );
-	registerShorthand( "foreground", {"foreground-color", "foreground-image"}, "background" );
+	registerShorthand(
+		"background",
+		{"background-color", "background-image", "background-repeat", "background-position"},
+		"background" );
+	registerShorthand(
+		"foreground",
+		{"foreground-color", "foreground-image", "foreground-repeat", "foreground-position"},
+		"background" );
 	registerShorthand( "filler-padding",
 					   {"filler-padding-top", "filler-padding-right", "filler-padding-bottom",
 						"filler-padding-left"},
@@ -408,7 +413,6 @@ void StyleSheetSpecification::registerDefaultProperties() {
 		"border-width",
 		{"border-top-width", "border-right-width", "border-bottom-width", "border-left-width"},
 		"border-box" );
-
 	registerShorthand( "border-radius",
 					   {"border-top-left-radius", "border-top-right-radius",
 						"border-bottom-right-radius", "border-bottom-left-radius"},
@@ -665,23 +669,6 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 		return properties;
 	};
 
-	mShorthandParsers["background"] = []( const ShorthandDefinition* shorthand,
-										  std::string value ) -> std::vector<StyleSheetProperty> {
-		value = String::trim( value );
-		std::vector<StyleSheetProperty> properties;
-		const std::vector<std::string> propNames( shorthand->getProperties() );
-		if ( Color::isColorString( value ) ) {
-			int pos = getIndexEndingWith( propNames, "-color" );
-			if ( pos != -1 )
-				properties.emplace_back( StyleSheetProperty( propNames[pos], value ) );
-		} else {
-			int pos = getIndexEndingWith( propNames, "-image" );
-			if ( pos != -1 )
-				properties.emplace_back( StyleSheetProperty( propNames[pos], value ) );
-		}
-		return properties;
-	};
-
 	mShorthandParsers["single-value-vector"] =
 		[]( const ShorthandDefinition* shorthand,
 			std::string value ) -> std::vector<StyleSheetProperty> {
@@ -711,6 +698,44 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 			for ( size_t i = 0; i < propNames.size(); i++ ) {
 				properties.emplace_back(
 					StyleSheetProperty( propNames[0], values[i % values.size()] ) );
+			}
+		}
+		return properties;
+	};
+
+	mShorthandParsers["border-box"] = []( const ShorthandDefinition* shorthand,
+										  std::string value ) -> std::vector<StyleSheetProperty> {
+		value = String::trim( value );
+		std::vector<StyleSheetProperty> properties;
+		const std::vector<std::string> propNames( shorthand->getProperties() );
+		auto ltrbSplit = String::split( value, " ", "", "(\"" );
+		if ( !ltrbSplit.empty() ) {
+			for ( size_t i = 0; i < propNames.size(); i++ ) {
+				properties.emplace_back(
+					StyleSheetProperty( propNames[i], ltrbSplit[i % ltrbSplit.size()] ) );
+			}
+		}
+		return properties;
+	};
+
+	mShorthandParsers["radius"] = []( const ShorthandDefinition* shorthand,
+									  std::string value ) -> std::vector<StyleSheetProperty> {
+		value = String::trim( value );
+		std::vector<StyleSheetProperty> properties;
+		const std::vector<std::string> propNames( shorthand->getProperties() );
+		auto splits = String::split( value, '/' );
+		auto widths = String::split( splits[0], ' ' );
+		std::vector<std::string> heights;
+		if ( splits.size() >= 2 ) {
+			heights = String::split( splits[1], ' ' );
+		}
+		if ( !widths.empty() ) {
+			for ( size_t i = 0; i < propNames.size(); i++ ) {
+				std::string val = widths[i % widths.size()];
+				if ( !heights.empty() ) {
+					val += " " + heights[i % heights.size()];
+				}
+				properties.emplace_back( StyleSheetProperty( propNames[i], val ) );
 			}
 		}
 		return properties;
@@ -769,41 +794,46 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 		return properties;
 	};
 
-	mShorthandParsers["border-box"] = []( const ShorthandDefinition* shorthand,
-										  std::string value ) -> std::vector<StyleSheetProperty> {
+	mShorthandParsers["background"] = [&]( const ShorthandDefinition* shorthand,
+										   std::string value ) -> std::vector<StyleSheetProperty> {
 		value = String::trim( value );
+		if ( "none" == value )
+			return {};
 		std::vector<StyleSheetProperty> properties;
 		const std::vector<std::string> propNames( shorthand->getProperties() );
-		auto ltrbSplit = String::split( value, " ", "", "(\"" );
-		if ( !ltrbSplit.empty() ) {
-			for ( size_t i = 0; i < propNames.size(); i++ ) {
-				properties.emplace_back(
-					StyleSheetProperty( propNames[i], ltrbSplit[i % ltrbSplit.size()] ) );
-			}
-		}
-		return properties;
-	};
+		std::vector<std::string> tokens = String::split( value, " ", "", "(" );
+		std::string positionStr;
 
-	mShorthandParsers["radius"] = []( const ShorthandDefinition* shorthand,
-									  std::string value ) -> std::vector<StyleSheetProperty> {
-		value = String::trim( value );
-		std::vector<StyleSheetProperty> properties;
-		const std::vector<std::string> propNames( shorthand->getProperties() );
-		auto splits = String::split( value, '/' );
-		auto widths = String::split( splits[0], ' ' );
-		std::vector<std::string> heights;
-		if ( splits.size() >= 2 ) {
-			heights = String::split( splits[1], ' ' );
-		}
-		if ( !widths.empty() ) {
-			for ( size_t i = 0; i < propNames.size(); i++ ) {
-				std::string val = widths[i % widths.size()];
-				if ( !heights.empty() ) {
-					val += " " + heights[i % heights.size()];
-				}
-				properties.emplace_back( StyleSheetProperty( propNames[i], val ) );
+		for ( auto& tok : tokens ) {
+			if ( mDrawableImageParser.exists( tok ) ) {
+				int pos = getIndexEndingWith( propNames, "-image" );
+				if ( pos != -1 )
+					properties.emplace_back( StyleSheetProperty( propNames[pos], tok ) );
+			} else if ( -1 != String::valueIndex( tok, "repeat;repeat-x;repeat-y;no-repeat" ) ) {
+				int pos = getIndexEndingWith( propNames, "-repeat" );
+				if ( pos != -1 )
+					properties.emplace_back( StyleSheetProperty( propNames[pos], value ) );
+			} else if ( -1 != String::valueIndex( tok, "left;right;top;bottom;center" ) ||
+						String::isNumber( tok[0] ) || tok[0] == '-' || tok[0] == '.' ||
+						tok[0] == '+' ) {
+				positionStr += tok + " ";
+			} else if ( Color::isColorString( tok ) ) {
+				int pos = getIndexEndingWith( propNames, "-color" );
+				if ( pos != -1 )
+					properties.emplace_back( StyleSheetProperty( propNames[pos], value ) );
 			}
 		}
+
+		if ( !positionStr.empty() ) {
+			String::trimInPlace( positionStr );
+			int pos = getIndexEndingWith( propNames, "-position" );
+			if ( pos != -1 ) {
+				const ShorthandDefinition* shorthand = getShorthand( propNames[pos] );
+				if ( NULL != shorthand )
+					mShorthandParsers["background-position"]( shorthand, positionStr );
+			}
+		}
+
 		return properties;
 	};
 }
