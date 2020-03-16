@@ -53,6 +53,10 @@ ShorthandParserFunc StyleSheetSpecification::getShorthandParser( const std::stri
 	return mShorthandParsers[name];
 }
 
+DrawableImageParser& StyleSheetSpecification::getDrawableImageParser() {
+	return mDrawableImageParser;
+}
+
 const ShorthandDefinition* StyleSheetSpecification::getShorthand( const Uint32& id ) const {
 	return mPropertySpecification.getShorthand( id );
 }

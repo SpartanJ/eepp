@@ -4,6 +4,7 @@
 #include <eepp/core.hpp>
 #include <eepp/system/functionstring.hpp>
 #include <eepp/system/singleton.hpp>
+#include <eepp/ui/css/drawableimageparser.hpp>
 #include <eepp/ui/css/propertyspecification.hpp>
 #include <eepp/ui/css/shorthanddefinition.hpp>
 #include <functional>
@@ -61,8 +62,12 @@ class EE_API StyleSheetSpecification {
 								  ShorthandParserFunc shorthandParserFunc );
 
 	ShorthandParserFunc getShorthandParser( const std::string& name );
+
+	DrawableImageParser& getDrawableImageParser();
+
   protected:
 	PropertySpecification mPropertySpecification;
+	DrawableImageParser mDrawableImageParser;
 	std::map<std::string, ShorthandParserFunc> mShorthandParsers;
 	std::map<std::string, StyleSheetNodeSelector> mNodeSelectors;
 
