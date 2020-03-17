@@ -99,6 +99,7 @@ CheckBox:checked {
 	border-radius: 12;
 	font-size: 24dp;
 	padding: 12dp;
+	rotation-origin-point: 50% 50%;
 	transition: scale 0.25s, rotation 0.25s 0.25s, border-color 0.25s, background-color 0.25s, border-radius 0.25s;
 }
 

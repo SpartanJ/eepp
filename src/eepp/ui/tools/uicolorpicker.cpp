@@ -106,7 +106,7 @@ UIColorPicker::UIColorPicker( UIWindow* attachTo, const UIColorPicker::ColorPick
 	<style>
 	#color_picker {
 		margin: 4dp;
-		min-window-size: 320dp, 478dp;
+		min-window-size: 320dp 478dp;
 	}
 	#color_picker > .header {
 		margin-bottom: 4dp;
@@ -125,11 +125,13 @@ UIColorPicker::UIColorPicker( UIWindow* attachTo, const UIColorPicker::ColorPick
 		background-color: black;
 		border-width: 1dp;
 		border-color: white;
+		border-type: outside;
 	}
 	#color_picker > .pickers > .color_picker_container > .horizontal_line {
 		background-color: black;
 		border-width: 1dp;
 		border-color: white;
+		border-type: outside;
 	}
 	#color_picker > .pickers > .separator,
 	#color_picker > .header > .separator {
@@ -147,6 +149,7 @@ UIColorPicker::UIColorPicker( UIWindow* attachTo, const UIColorPicker::ColorPick
 		background-color: black;
 		border-width: 1dp;
 		border-color: white;
+		border-type: outside;
 	}
 	#color_picker > .separator {
 		margin-top: 8dp;

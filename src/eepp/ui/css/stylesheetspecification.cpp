@@ -209,7 +209,6 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "src", "" ).setType( PropertyType::String );
 	registerProperty( "scale-type", "" );
 	registerProperty( "tint", "" ).setType( PropertyType::Color );
-	registerProperty( "rotation-origin-point", "" ).setType( PropertyType::Vector2 );
 	registerProperty( "max-text-length", "" ).setType( PropertyType::NumberInt );
 	registerProperty( "min-tab-width", "" ).setType( PropertyType::NumberLength );
 	registerProperty( "max-tab-width", "" ).setType( PropertyType::NumberLength );
@@ -306,8 +305,6 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "button-margin", "" ).setType( PropertyType::NumberLength );
 	registerProperty( "menu-height", "" ).setType( PropertyType::NumberLength );
 	registerProperty( "first-button-margin-left", "" ).setType( PropertyType::NumberLength );
-
-	registerProperty( "scale-origin-point", "" ).setType( PropertyType::Vector2 );
 
 	registerProperty( "word-wrap", "" ).setType( PropertyType::Bool );
 
@@ -417,10 +414,10 @@ void StyleSheetSpecification::registerDefaultProperties() {
 					   {"border-top-left-radius", "border-top-right-radius",
 						"border-bottom-right-radius", "border-bottom-left-radius"},
 					   "radius" );
-	/*registerShorthand( "rotation-origin-point", {"rotation-origin-point-x",
-						 "rotation-origin-point-y"}, "vector2" );
+	registerShorthand( "rotation-origin-point",
+					   {"rotation-origin-point-x", "rotation-origin-point-y"}, "vector2" );
 	registerShorthand( "scale-origin-point", {"scale-origin-point-x", "scale-origin-point-y"},
-					   "vector2" );*/
+					   "vector2" );
 }
 
 void StyleSheetSpecification::registerNodeSelector( const std::string& name,
@@ -697,7 +694,7 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 		if ( !values.empty() ) {
 			for ( size_t i = 0; i < propNames.size(); i++ ) {
 				properties.emplace_back(
-					StyleSheetProperty( propNames[0], values[i % values.size()] ) );
+					StyleSheetProperty( propNames[i], values[i % values.size()] ) );
 			}
 		}
 		return properties;

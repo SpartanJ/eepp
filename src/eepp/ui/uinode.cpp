@@ -197,6 +197,38 @@ void UINode::setInternalPixelsHeight( const Float& height ) {
 	setInternalPixelsSize( Sizef( mSize.x, height ) );
 }
 
+void UINode::updateOriginPoint() {
+	Node::updateOriginPoint();
+
+	if ( mRotationOriginPoint.OriginType == OriginPoint::OriginEquation ) {
+		if ( !mRotationOriginPoint.getXEq().empty() ) {
+			mRotationOriginPoint.x = lengthFromValue( mRotationOriginPoint.getXEq(),
+													  PropertyRelativeTarget::LocalBlockWidth );
+		}
+
+		if ( !mRotationOriginPoint.getYEq().empty() ) {
+			mRotationOriginPoint.y = lengthFromValue( mRotationOriginPoint.getYEq(),
+													  PropertyRelativeTarget::LocalBlockHeight );
+		}
+
+		Transformable::setRotationOrigin( getRotationOriginPoint().x, getRotationOriginPoint().y );
+	}
+
+	if ( mScaleOriginPoint.OriginType == OriginPoint::OriginEquation ) {
+		if ( !mScaleOriginPoint.getXEq().empty() ) {
+			mScaleOriginPoint.x = lengthFromValue( mScaleOriginPoint.getXEq(),
+												   PropertyRelativeTarget::LocalBlockWidth );
+		}
+
+		if ( !mScaleOriginPoint.getYEq().empty() ) {
+			mScaleOriginPoint.y = lengthFromValue( mScaleOriginPoint.getYEq(),
+												   PropertyRelativeTarget::LocalBlockHeight );
+		}
+
+		Transformable::setScaleOrigin( getScaleOriginPoint().x, getScaleOriginPoint().y );
+	}
+}
+
 Rect UINode::getRect() const {
 	return Rect( Vector2i( mDpPos.x, mDpPos.y ), Sizei( mDpSize.x, mDpSize.y ) );
 }

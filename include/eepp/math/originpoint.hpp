@@ -10,7 +10,7 @@ namespace EE { namespace Math {
 /** @brief Helper class to define the origin point of a translation/rotation/scaling */
 template <typename T> class tOriginPoint : public Vector2<T> {
   public:
-	enum OriginTypes { OriginCenter, OriginTopLeft, OriginCustom };
+	enum OriginTypes { OriginCenter, OriginTopLeft, OriginCustom, OriginEquation };
 
 	OriginTypes OriginType;
 
@@ -26,6 +26,18 @@ template <typename T> class tOriginPoint : public Vector2<T> {
 	std::string toString() const;
 
 	tOriginPoint<T>& operator=( const Vector2<T>& v );
+
+	const std::string& getXEq() const;
+
+	void setXEq( const std::string& xEq );
+
+	const std::string& getYEq() const;
+
+	void setYEq( const std::string& yEq );
+
+  protected:
+	std::string mXEq;
+	std::string mYEq;
 };
 
 template <typename T> tOriginPoint<T>& tOriginPoint<T>::operator=( const Vector2<T>& v ) {
@@ -34,12 +46,36 @@ template <typename T> tOriginPoint<T>& tOriginPoint<T>::operator=( const Vector2
 	return *this;
 }
 
+template <typename T>
+const std::string& tOriginPoint<T>::getXEq() const {
+	return mXEq;
+}
+
+template <typename T>
+void tOriginPoint<T>::setXEq( const std::string& xEq ) {
+	OriginType = OriginEquation;
+	mXEq = xEq;
+}
+
+template <typename T>
+const std::string& tOriginPoint<T>::getYEq() const {
+	return mYEq;
+}
+
+template <typename T>
+void tOriginPoint<T>::setYEq( const std::string& yEq ) {
+	OriginType = OriginEquation;
+	mYEq = yEq;
+}
+
 template <typename T> std::string tOriginPoint<T>::toString() const {
 	if ( OriginType == OriginCenter )
 		return "center";
 	else if ( OriginType == OriginTopLeft )
 		return "topleft";
-	return String::toStr( this->x ) + "," + String::toStr( this->y );
+	else if ( OriginType == OriginEquation )
+		return mXEq + " " + mYEq;
+	return String::toStr( this->x ) + " " + String::toStr( this->y );
 }
 
 typedef tOriginPoint<Float> OriginPoint;

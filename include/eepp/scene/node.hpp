@@ -239,6 +239,10 @@ class EE_API Node : public Transformable {
 
 	void setRotationOriginPoint( const OriginPoint& center );
 
+	void setRotationOriginPointX( const std::string& xEq );
+
+	void setRotationOriginPointY( const std::string& yEq );
+
 	Vector2f getRotationCenter() const;
 
 	void setScale( const Vector2f& scale );
@@ -250,6 +254,10 @@ class EE_API Node : public Transformable {
 	const OriginPoint& getScaleOriginPoint() const;
 
 	void setScaleOriginPoint( const OriginPoint& center );
+
+	void setScaleOriginPointX( const std::string& xEq );
+
+	void setScaleOriginPointY( const std::string& yEq );
 
 	Vector2f getScaleCenter() const;
 
@@ -480,7 +488,7 @@ class EE_API Node : public Transformable {
 
 	Node* findIdHash( const Uint32& idHash ) const;
 
-	void updateOriginPoint();
+	virtual void updateOriginPoint();
 
 	void setDirty();
 

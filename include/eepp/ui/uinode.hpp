@@ -331,6 +331,8 @@ class EE_API UINode : public Node {
 	void setInternalPixelsWidth( const Float& width );
 
 	void setInternalPixelsHeight( const Float& height );
+
+	virtual void updateOriginPoint();
 };
 
 }} // namespace EE::UI

@@ -1135,8 +1135,14 @@ std::string UIWidget::getPropertyString( const PropertyDefinition* propertyDef,
 			return getForeground()->getLayer( propertyIndex )->getPositionX();
 		case PropertyId::ForegroundPositionY:
 			return getForeground()->getLayer( propertyIndex )->getPositionY();
-		case PropertyId::ScaleOriginPoint:
-			return getScaleOriginPoint().toString();
+		case PropertyId::RotationOriginPointX:
+			return String::fromFloat( getRotationOriginPoint().x, "px" );
+		case PropertyId::RotationOriginPointY:
+			return String::fromFloat( getRotationOriginPoint().y, "px" );
+		case PropertyId::ScaleOriginPointX:
+			return String::fromFloat( getScaleOriginPoint().x, "px" );
+		case PropertyId::ScaleOriginPointY:
+			return String::fromFloat( getScaleOriginPoint().y, "px" );
 		case PropertyId::BlendMode:
 			return "";
 		case PropertyId::MinWidth:
@@ -1501,11 +1507,17 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::ForegroundPositionY:
 			setForegroundPositionY( attribute.value(), attribute.getIndex() );
 			break;
-		case PropertyId::RotationOriginPoint:
-			setRotationOriginPoint( attribute.asOriginPoint() );
+		case PropertyId::RotationOriginPointX:
+			setRotationOriginPointX( attribute.value() );
 			break;
-		case PropertyId::ScaleOriginPoint:
-			setScaleOriginPoint( attribute.asOriginPoint() );
+		case PropertyId::RotationOriginPointY:
+			setRotationOriginPointY( attribute.value() );
+			break;
+		case PropertyId::ScaleOriginPointX:
+			setScaleOriginPointX( attribute.value() );
+			break;
+		case PropertyId::ScaleOriginPointY:
+			setScaleOriginPointY( attribute.value() );
 			break;
 		case PropertyId::MinWidth:
 			setMinWidthEq( attribute.getValue() );

@@ -81,8 +81,6 @@ enum class PropertyId : Uint32 {
 	Src = String::hash( "src" ),
 	ScaleType = String::hash( "scale-type" ),
 	Tint = String::hash( "tint" ),
-	RotationOriginPoint = String::hash( "rotation-origin-point" ),
-	ScaleOriginPoint = String::hash( "scale-origin-point" ),
 	MaxTextLength = String::hash( "max-text-length" ),
 	MinTabWidth = String::hash( "min-tab-width" ),
 	MaxTabWidth = String::hash( "max-tab-width" ),

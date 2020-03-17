@@ -1200,6 +1200,18 @@ void Node::setRotationOriginPoint( const OriginPoint& center ) {
 	Transformable::setRotationOrigin( getRotationOriginPoint().x, getRotationOriginPoint().y );
 }
 
+void Node::setRotationOriginPointX( const std::string& xEq ) {
+	mRotationOriginPoint.setXEq( xEq );
+	updateOriginPoint();
+	Transformable::setRotationOrigin( getRotationOriginPoint().x, getRotationOriginPoint().y );
+}
+
+void Node::setRotationOriginPointY( const std::string& yEq ) {
+	mRotationOriginPoint.setYEq( yEq );
+	updateOriginPoint();
+	Transformable::setRotationOrigin( getRotationOriginPoint().x, getRotationOriginPoint().y );
+}
+
 Vector2f Node::getRotationCenter() const {
 	switch ( mRotationOriginPoint.OriginType ) {
 		case OriginPoint::OriginCenter:
@@ -1260,6 +1272,18 @@ const OriginPoint& Node::getScaleOriginPoint() const {
 
 void Node::setScaleOriginPoint( const OriginPoint& center ) {
 	mScaleOriginPoint = PixelDensity::dpToPx( center );
+	updateOriginPoint();
+	Transformable::setScaleOrigin( getScaleCenter().x, getScaleCenter().y );
+}
+
+void Node::setScaleOriginPointX( const std::string& xEq ) {
+	mScaleOriginPoint.setXEq( xEq );
+	updateOriginPoint();
+	Transformable::setScaleOrigin( getScaleCenter().x, getScaleCenter().y );
+}
+
+void Node::setScaleOriginPointY( const std::string& yEq ) {
+	mScaleOriginPoint.setYEq( yEq );
 	updateOriginPoint();
 	Transformable::setScaleOrigin( getScaleCenter().x, getScaleCenter().y );
 }
