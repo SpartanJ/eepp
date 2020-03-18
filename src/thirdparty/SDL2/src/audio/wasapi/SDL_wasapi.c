@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2018 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2020 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -36,6 +36,11 @@
 #include <audioclient.h>
 
 #include "SDL_wasapi.h"
+
+/* This constant isn't available on MinGW-w64 */
+#ifndef AUDCLNT_STREAMFLAGS_RATEADJUST
+#define AUDCLNT_STREAMFLAGS_RATEADJUST  0x00100000
+#endif
 
 /* these increment as default devices change. Opened default devices pick up changes in their threads. */
 SDL_atomic_t WASAPI_DefaultPlaybackGeneration;
@@ -154,21 +159,6 @@ static void
 WASAPI_DetectDevices(void)
 {
     WASAPI_EnumerateEndpoints();
-}
-
-static int
-WASAPI_GetPendingBytes(_THIS)
-{
-    UINT32 frames = 0;
-
-    /* it's okay to fail here; we'll deal with failures in the audio thread. */
-    /* FIXME: need a lock around checking this->hidden->client */
-    if (this->hidden->client != NULL) {  /* definitely activated? */
-        if (FAILED(IAudioClient_GetCurrentPadding(this->hidden->client, &frames))) {
-            return 0;  /* oh well. */
-        }
-    }
-    return ((int) frames) * this->hidden->framesize;
 }
 
 static SDL_INLINE SDL_bool
@@ -322,8 +312,8 @@ static void
 WASAPI_WaitDevice(_THIS)
 {
     while (RecoverWasapiIfLost(this) && this->hidden->client && this->hidden->event) {
-        /*SDL_Log("WAITDEVICE");*/
-        if (WaitForSingleObjectEx(this->hidden->event, INFINITE, FALSE) == WAIT_OBJECT_0) {
+        DWORD waitResult = WaitForSingleObjectEx(this->hidden->event, 200, FALSE);
+        if (waitResult == WAIT_OBJECT_0) {
             const UINT32 maxpadding = this->spec.samples;
             UINT32 padding = 0;
             if (!WasapiFailed(this, IAudioClient_GetCurrentPadding(this->hidden->client, &padding))) {
@@ -332,7 +322,7 @@ WASAPI_WaitDevice(_THIS)
                     break;
                 }
             }
-        } else {
+        } else if (waitResult != WAIT_TIMEOUT) {
             /*SDL_Log("WASAPI FAILED EVENT!");*/
             IAudioClient_Stop(this->hidden->client);
             SDL_OpenedAudioDeviceDisconnected(this);
@@ -527,6 +517,7 @@ WASAPI_PrepDevice(_THIS, const SDL_bool updatestream)
     SDL_AudioFormat wasapi_format = 0;
     SDL_bool valid_format = SDL_FALSE;
     HRESULT ret = S_OK;
+    DWORD streamflags = 0;
 
     SDL_assert(client != NULL);
 
@@ -548,9 +539,7 @@ WASAPI_PrepDevice(_THIS, const SDL_bool updatestream)
     SDL_assert(waveformat != NULL);
     this->hidden->waveformat = waveformat;
 
-    /* WASAPI will not do any conversion on our behalf. Force channels and sample rate. */
     this->spec.channels = (Uint8) waveformat->nChannels;
-    this->spec.freq = waveformat->nSamplesPerSec;
 
     /* Make sure we have a valid format that we can convert to whatever WASAPI wants. */
     if ((waveformat->wFormatTag == WAVE_FORMAT_IEEE_FLOAT) && (waveformat->wBitsPerSample == 32)) {
@@ -588,7 +577,21 @@ WASAPI_PrepDevice(_THIS, const SDL_bool updatestream)
         return WIN_SetErrorFromHRESULT("WASAPI can't determine minimum device period", ret);
     }
 
-    ret = IAudioClient_Initialize(client, sharemode, AUDCLNT_STREAMFLAGS_EVENTCALLBACK, duration, sharemode == AUDCLNT_SHAREMODE_SHARED ? 0 : duration, waveformat, NULL);
+    /* favor WASAPI's resampler over our own, in Win7+. */
+    if (this->spec.freq != waveformat->nSamplesPerSec) {
+        /* RATEADJUST only works with output devices in share mode, and is available in Win7 and later.*/
+        if (WIN_IsWindows7OrGreater() && !this->iscapture && (sharemode == AUDCLNT_SHAREMODE_SHARED)) {
+            streamflags |= AUDCLNT_STREAMFLAGS_RATEADJUST;
+            waveformat->nSamplesPerSec = this->spec.freq;
+            waveformat->nAvgBytesPerSec = waveformat->nSamplesPerSec * waveformat->nChannels * (waveformat->wBitsPerSample / 8);
+        }
+        else {
+            this->spec.freq = waveformat->nSamplesPerSec;  /* force sampling rate so our resampler kicks in. */
+        }
+    }
+
+    streamflags |= AUDCLNT_STREAMFLAGS_EVENTCALLBACK;
+    ret = IAudioClient_Initialize(client, sharemode, streamflags, duration, sharemode == AUDCLNT_SHAREMODE_SHARED ? 0 : duration, waveformat, NULL);
     if (FAILED(ret)) {
         return WIN_SetErrorFromHRESULT("WASAPI can't initialize audio client", ret);
     }
@@ -707,6 +710,12 @@ WASAPI_ThreadDeinit(_THIS)
     WASAPI_PlatformThreadDeinit(this);
 }
 
+void
+WASAPI_BeginLoopIteration(_THIS)
+{
+	/* no-op. */
+}
+
 static void
 WASAPI_Deinitialize(void)
 {
@@ -741,7 +750,6 @@ WASAPI_Init(SDL_AudioDriverImpl * impl)
     impl->OpenDevice = WASAPI_OpenDevice;
     impl->PlayDevice = WASAPI_PlayDevice;
     impl->WaitDevice = WASAPI_WaitDevice;
-    impl->GetPendingBytes = WASAPI_GetPendingBytes;
     impl->GetDeviceBuf = WASAPI_GetDeviceBuf;
     impl->CaptureFromDevice = WASAPI_CaptureFromDevice;
     impl->FlushCapture = WASAPI_FlushCapture;

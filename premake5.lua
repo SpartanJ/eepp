@@ -1,5 +1,3 @@
-require "premake/modules/androidmk"
-
 newoption { trigger = "with-openssl", description = "Enables OpenSSL support ( and disables mbedtls backend )." }
 newoption { trigger = "with-dynamic-freetype", description = "Dynamic link against freetype." }
 newoption { trigger = "with-static-eepp", description = "Force to build the demos and tests with eepp compiled statically" }
@@ -561,11 +559,6 @@ workspace "eepp"
 
 	filter "system:macosx"
 		defines { "GL_SILENCE_DEPRECATION" }
-
-	filter "system:android"
-		ndkabi "arm64-v8a"
-		ndkplatform "android-28"
-		ndkstl "c++_static"
 
 	filter "configurations:debug*"
 		defines { "DEBUG" }

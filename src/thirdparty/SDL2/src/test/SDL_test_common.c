@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2018 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2020 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -19,18 +19,29 @@
   3. This notice may not be removed or altered from any source distribution.
 */
 
-/* Ported from original test\common.c file. */
+/* Ported from original test/common.c file. */
 
 #include "SDL_config.h"
 #include "SDL_test.h"
 
 #include <stdio.h>
 
-#define VIDEO_USAGE \
-"[--video driver] [--renderer driver] [--gldebug] [--info all|video|modes|render|event] [--log all|error|system|audio|video|render|input] [--display N] [--fullscreen | --fullscreen-desktop | --windows N] [--title title] [--icon icon.bmp] [--center | --position X,Y] [--geometry WxH] [--min-geometry WxH] [--max-geometry WxH] [--logical WxH] [--scale N] [--depth N] [--refresh R] [--vsync] [--noframe] [--resize] [--minimize] [--maximize] [--grab] [--allow-highdpi]"
+static const char *video_usage[] = {
+    "[--video driver]", "[--renderer driver]", "[--gldebug]",
+    "[--info all|video|modes|render|event]",
+    "[--log all|error|system|audio|video|render|input]", "[--display N]",
+    "[--fullscreen | --fullscreen-desktop | --windows N]", "[--title title]",
+    "[--icon icon.bmp]", "[--center | --position X,Y]", "[--geometry WxH]",
+    "[--min-geometry WxH]", "[--max-geometry WxH]", "[--logical WxH]",
+    "[--scale N]", "[--depth N]", "[--refresh R]", "[--vsync]", "[--noframe]",
+    "[--resize]", "[--minimize]", "[--maximize]", "[--grab]",
+    "[--allow-highdpi]", "[--usable-bounds]"
+};
 
-#define AUDIO_USAGE \
-"[--rate N] [--format U8|S8|U16|U16LE|U16BE|S16|S16LE|S16BE] [--channels N] [--samples N]"
+static const char *audio_usage[] = {
+    "[--rate N]", "[--format U8|S8|U16|U16LE|U16BE|S16|S16LE|S16BE]",
+    "[--channels N]", "[--samples N]"
+};
 
 static void SDL_snprintfcat(SDL_OUT_Z_CAP(maxlen) char *text, size_t maxlen, SDL_PRINTF_FORMAT_STRING const char *fmt, ... )
 {
@@ -271,6 +282,15 @@ SDLTest_CommonArg(SDLTest_CommonState * state, int index)
         state->window_y = SDL_atoi(y);
         return 2;
     }
+    if (SDL_strcasecmp(argv[index], "--usable-bounds") == 0) {
+        /* !!! FIXME: this is a bit of a hack, but I don't want to add a
+           !!! FIXME:  flag to the public structure in 2.0.x */
+        state->window_x = -1;
+        state->window_y = -1;
+        state->window_w = -1;
+        state->window_h = -1;
+        return 1;
+    }
     if (SDL_strcasecmp(argv[index], "--geometry") == 0) {
         char *w, *h;
         ++index;
@@ -474,19 +494,105 @@ SDLTest_CommonArg(SDLTest_CommonState * state, int index)
     return 0;
 }
 
+void
+SDLTest_CommonLogUsage(SDLTest_CommonState * state, const char *argv0, const char **options)
+{
+    int i;
+
+    SDL_Log("USAGE: %s", argv0);
+    SDL_Log("    %s", "[--trackmem]");
+
+    if (state->flags & SDL_INIT_VIDEO) {
+        for (i = 0; i < SDL_arraysize(video_usage); i++) {
+            SDL_Log("    %s", video_usage[i]);
+        }
+    }
+
+    if (state->flags & SDL_INIT_AUDIO) {
+        for (i = 0; i < SDL_arraysize(audio_usage); i++) {
+            SDL_Log("    %s", audio_usage[i]);
+        }
+    }
+
+    if (options) {
+        for (i = 0; options[i] != NULL; i++) {
+            SDL_Log("    %s", options[i]);
+        }
+    }
+}
+
+static const char *
+BuildCommonUsageString(char **pstr, const char **strlist, const int numitems, const char **strlist2, const int numitems2)
+{
+    char *str = *pstr;
+    if (!str) {
+        size_t len = SDL_strlen("[--trackmem]") + 2;
+        int i;
+        for (i = 0; i < numitems; i++) {
+            len += SDL_strlen(strlist[i]) + 1;
+        }
+        if (strlist2) {
+            for (i = 0; i < numitems2; i++) {
+                len += SDL_strlen(strlist2[i]) + 1;
+            }
+        }
+        str = (char *) SDL_calloc(1, len);
+        if (!str) {
+            return "";  /* oh well. */
+        }
+        SDL_strlcat(str, "[--trackmem] ", len);
+        for (i = 0; i < numitems-1; i++) {
+            SDL_strlcat(str, strlist[i], len);
+            SDL_strlcat(str, " ", len);
+        }
+        SDL_strlcat(str, strlist[i], len);
+        if (strlist2) {
+            SDL_strlcat(str, " ", len);
+            for (i = 0; i < numitems2-1; i++) {
+                SDL_strlcat(str, strlist2[i], len);
+                SDL_strlcat(str, " ", len);
+            }
+            SDL_strlcat(str, strlist2[i], len);
+        }
+        *pstr = str;
+    }
+    return str;
+}
+
+static char *common_usage_video = NULL;
+static char *common_usage_audio = NULL;
+static char *common_usage_videoaudio = NULL;
+
 const char *
 SDLTest_CommonUsage(SDLTest_CommonState * state)
 {
+
     switch (state->flags & (SDL_INIT_VIDEO | SDL_INIT_AUDIO)) {
-    case SDL_INIT_VIDEO:
-        return "[--trackmem] " VIDEO_USAGE;
-    case SDL_INIT_AUDIO:
-        return "[--trackmem] " AUDIO_USAGE;
-    case (SDL_INIT_VIDEO | SDL_INIT_AUDIO):
-        return "[--trackmem] " VIDEO_USAGE " " AUDIO_USAGE;
-    default:
-        return "[--trackmem]";
+        case SDL_INIT_VIDEO:
+            return BuildCommonUsageString(&common_usage_video, video_usage, SDL_arraysize(video_usage), NULL, 0);
+        case SDL_INIT_AUDIO:
+            return BuildCommonUsageString(&common_usage_audio, audio_usage, SDL_arraysize(audio_usage), NULL, 0);
+        case (SDL_INIT_VIDEO | SDL_INIT_AUDIO):
+            return BuildCommonUsageString(&common_usage_videoaudio, video_usage, SDL_arraysize(video_usage), audio_usage, SDL_arraysize(audio_usage));
+        default:
+            return "[--trackmem]";
     }
+}
+
+
+SDL_bool
+SDLTest_CommonDefaultArgs(SDLTest_CommonState *state, const int argc, char **argv)
+{
+    int i = 1;
+    while (i < argc) {
+        const int consumed = SDLTest_CommonArg(state, i);
+        if (consumed == 0) {
+            SDLTest_CommonLogUsage(state, argv[0], NULL);
+            return SDL_FALSE;
+        }
+        i += consumed;
+    }
+    return SDL_TRUE;
 }
 
 static void
@@ -538,6 +644,9 @@ SDLTest_PrintPixelFormat(char *text, size_t maxlen, Uint32 format)
         break;
     case SDL_PIXELFORMAT_RGB444:
         SDL_snprintfcat(text, maxlen, "RGB444");
+        break;
+    case SDL_PIXELFORMAT_BGR444:
+        SDL_snprintfcat(text, maxlen, "BGR444");
         break;
     case SDL_PIXELFORMAT_RGB555:
         SDL_snprintfcat(text, maxlen, "RGB555");
@@ -918,6 +1027,15 @@ SDLTest_CommonInit(SDLTest_CommonState * state)
         }
         for (i = 0; i < state->num_windows; ++i) {
             char title[1024];
+            SDL_Rect r = {
+                state->window_x, state->window_y,
+                state->window_w, state->window_h
+            };
+
+            /* !!! FIXME: hack to make --usable-bounds work for now. */
+            if ((r.x == -1) && (r.y == -1) && (r.w == -1) && (r.h == -1)) {
+                SDL_GetDisplayUsableBounds(state->display, &r);
+            }
 
             if (state->num_windows > 1) {
                 SDL_snprintf(title, SDL_arraysize(title), "%s %d",
@@ -926,9 +1044,7 @@ SDLTest_CommonInit(SDLTest_CommonState * state)
                 SDL_strlcpy(title, state->window_title, SDL_arraysize(title));
             }
             state->windows[i] =
-                SDL_CreateWindow(title, state->window_x, state->window_y,
-                                 state->window_w, state->window_h,
-                                 state->window_flags);
+                SDL_CreateWindow(title, r.x, r.y, r.w, r.h, state->window_flags);
             if (!state->windows[i]) {
                 SDL_Log("Couldn't create window: %s\n",
                         SDL_GetError());
@@ -999,7 +1115,7 @@ SDLTest_CommonInit(SDLTest_CommonState * state)
                 }
                 if (state->logical_w && state->logical_h) {
                     SDL_RenderSetLogicalSize(state->renderers[i], state->logical_w, state->logical_h);
-                } else if (state->scale) {
+                } else if (state->scale != 0.) {
                     SDL_RenderSetScale(state->renderers[i], state->scale, state->scale);
                 }
                 if (state->verbose & VERBOSE_RENDER) {
@@ -1034,7 +1150,7 @@ SDLTest_CommonInit(SDLTest_CommonState * state)
                     SDL_GetError());
             return SDL_FALSE;
         }
-        if (state->verbose & VERBOSE_VIDEO) {
+        if (state->verbose & VERBOSE_AUDIO) {
             SDL_Log("Audio driver: %s\n",
                     SDL_GetCurrentAudioDriver());
         }
@@ -1046,6 +1162,22 @@ SDLTest_CommonInit(SDLTest_CommonState * state)
     }
 
     return SDL_TRUE;
+}
+
+static const char *
+DisplayOrientationName(int orientation)
+{
+    switch (orientation)
+    {
+#define CASE(X) case SDL_ORIENTATION_##X: return #X
+        CASE(UNKNOWN);
+        CASE(LANDSCAPE);
+        CASE(LANDSCAPE_FLIPPED);
+        CASE(PORTRAIT);
+        CASE(PORTRAIT_FLIPPED);
+#undef CASE
+default: return "???";
+    }
 }
 
 static const char *
@@ -1102,6 +1234,17 @@ SDLTest_PrintEvent(SDL_Event * event)
     }
 
     switch (event->type) {
+    case SDL_DISPLAYEVENT:
+        switch (event->display.event) {
+        case SDL_DISPLAYEVENT_ORIENTATION:
+            SDL_Log("SDL EVENT: Display %d changed orientation to %s", event->display.display, DisplayOrientationName(event->display.data1));
+            break;
+        default:
+            SDL_Log("SDL EVENT: Display %d got unknown event 0x%4.4x",
+                    event->display.display, event->display.event);
+            break;
+        }
+        break;
     case SDL_WINDOWEVENT:
         switch (event->window.event) {
         case SDL_WINDOWEVENT_SHOWN:
@@ -1349,7 +1492,18 @@ SDLTest_PrintEvent(SDL_Event * event)
     case SDL_APP_DIDENTERFOREGROUND:
         SDL_Log("SDL EVENT: App entered the foreground");
         break;
-
+    case SDL_DROPBEGIN:
+        SDL_Log("SDL EVENT: Drag and drop beginning");
+        break;
+    case SDL_DROPFILE:
+        SDL_Log("SDL EVENT: Drag and drop file: '%s'", event->drop.file);
+        break;
+    case SDL_DROPTEXT:
+        SDL_Log("SDL EVENT: Drag and drop text: '%s'", event->drop.file);
+        break;
+    case SDL_DROPCOMPLETE:
+        SDL_Log("SDL EVENT: Drag and drop ending");
+        break;
     case SDL_QUIT:
         SDL_Log("SDL EVENT: Quit requested");
         break;
@@ -1744,6 +1898,11 @@ SDLTest_CommonEvent(SDLTest_CommonState * state, SDL_Event * event, int *done)
     case SDL_MOUSEMOTION:
         lastEvent = event->motion;
         break;
+
+    case SDL_DROPFILE:
+    case SDL_DROPTEXT:
+        SDL_free(event->drop.file);
+        break;
     }
 }
 
@@ -1751,6 +1910,13 @@ void
 SDLTest_CommonQuit(SDLTest_CommonState * state)
 {
     int i;
+
+    SDL_free(common_usage_video);
+    SDL_free(common_usage_audio);
+    SDL_free(common_usage_videoaudio);
+    common_usage_video = NULL;
+    common_usage_audio = NULL;
+    common_usage_videoaudio = NULL;
 
     SDL_free(state->windows);
     if (state->targets) {

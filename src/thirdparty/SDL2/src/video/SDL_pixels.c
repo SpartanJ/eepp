@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2018 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2020 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -94,6 +94,7 @@ SDL_GetPixelFormatName(Uint32 format)
     CASE(SDL_PIXELFORMAT_INDEX8)
     CASE(SDL_PIXELFORMAT_RGB332)
     CASE(SDL_PIXELFORMAT_RGB444)
+    CASE(SDL_PIXELFORMAT_BGR444)
     CASE(SDL_PIXELFORMAT_RGB555)
     CASE(SDL_PIXELFORMAT_BGR555)
     CASE(SDL_PIXELFORMAT_ARGB4444)
@@ -321,12 +322,18 @@ SDL_MasksToPixelFormatEnum(int bpp, Uint32 Rmask, Uint32 Gmask, Uint32 Bmask,
             Amask == 0x0000) {
             return SDL_PIXELFORMAT_RGB444;
         }
+        if (Rmask == 0x000F &&
+            Gmask == 0x00F0 &&
+            Bmask == 0x0F00 &&
+            Amask == 0x0000) {
+            return SDL_PIXELFORMAT_BGR444;
+        }
         break;
     case 15:
         if (Rmask == 0) {
             return SDL_PIXELFORMAT_RGB555;
         }
-	/* fallthrough */
+    /* fallthrough */
     case 16:
         if (Rmask == 0) {
             return SDL_PIXELFORMAT_RGB565;
@@ -490,16 +497,20 @@ SDL_MasksToPixelFormatEnum(int bpp, Uint32 Rmask, Uint32 Gmask, Uint32 Bmask,
 }
 
 static SDL_PixelFormat *formats;
+static SDL_SpinLock formats_lock = 0;
 
 SDL_PixelFormat *
 SDL_AllocFormat(Uint32 pixel_format)
 {
     SDL_PixelFormat *format;
 
+    SDL_AtomicLock(&formats_lock);
+
     /* Look it up in our list of previously allocated formats */
     for (format = formats; format; format = format->next) {
         if (pixel_format == format->format) {
             ++format->refcount;
+            SDL_AtomicUnlock(&formats_lock);
             return format;
         }
     }
@@ -507,10 +518,12 @@ SDL_AllocFormat(Uint32 pixel_format)
     /* Allocate an empty pixel format structure, and initialize it */
     format = SDL_malloc(sizeof(*format));
     if (format == NULL) {
+        SDL_AtomicUnlock(&formats_lock);
         SDL_OutOfMemory();
         return NULL;
     }
     if (SDL_InitFormat(format, pixel_format) < 0) {
+        SDL_AtomicUnlock(&formats_lock);
         SDL_free(format);
         SDL_InvalidParamError("format");
         return NULL;
@@ -521,6 +534,9 @@ SDL_AllocFormat(Uint32 pixel_format)
         format->next = formats;
         formats = format;
     }
+
+    SDL_AtomicUnlock(&formats_lock);
+
     return format;
 }
 
@@ -598,7 +614,11 @@ SDL_FreeFormat(SDL_PixelFormat *format)
         SDL_InvalidParamError("format");
         return;
     }
+
+    SDL_AtomicLock(&formats_lock);
+
     if (--format->refcount > 0) {
+        SDL_AtomicUnlock(&formats_lock);
         return;
     }
 
@@ -613,6 +633,8 @@ SDL_FreeFormat(SDL_PixelFormat *format)
             }
         }
     }
+
+    SDL_AtomicUnlock(&formats_lock);
 
     if (format->palette) {
         SDL_FreePalette(format->palette);
@@ -981,9 +1003,11 @@ SDL_MapSurface(SDL_Surface * src, SDL_Surface * dst)
 
     /* Clear out any previous mapping */
     map = src->map;
+#if SDL_HAVE_RLE
     if ((src->flags & SDL_RLEACCEL) == SDL_RLEACCEL) {
         SDL_UnRLESurface(src, 1);
     }
+#endif
     SDL_InvalidateMap(map);
 
     /* Figure out what kind of mapping we're doing */

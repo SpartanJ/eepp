@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2018 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2020 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -97,6 +97,10 @@ typedef unsigned int uintptr_t;
 #if WINAPI_FAMILY != WINAPI_FAMILY_PHONE_APP
 #define HAVE_XINPUT_H 1
 #endif
+
+#define HAVE_MMDEVICEAPI_H 1
+#define HAVE_AUDIOCLIENT_H 1
+
 #define HAVE_LIBC 1
 #define STDC_HEADERS 1
 #define HAVE_CTYPE_H 1
@@ -126,6 +130,7 @@ typedef unsigned int uintptr_t;
 #define HAVE_STRCHR 1
 #define HAVE_STRRCHR 1
 #define HAVE_STRSTR 1
+#define HAVE_STRTOK_S 1
 //#define HAVE_ITOA 1   // TODO, WinRT: consider using _itoa_s instead
 //#define HAVE__LTOA 1  // TODO, WinRT: consider using _ltoa_s instead
 //#define HAVE__ULTOA 1 // TODO, WinRT: consider using _ultoa_s instead
@@ -155,6 +160,8 @@ typedef unsigned int uintptr_t;
 #define HAVE__COPYSIGN 1
 #define HAVE_COS    1
 #define HAVE_COSF   1
+#define HAVE_EXP    1
+#define HAVE_EXPF   1
 #define HAVE_FABS   1
 #define HAVE_FABSF  1
 #define HAVE_FLOOR  1
@@ -163,6 +170,8 @@ typedef unsigned int uintptr_t;
 #define HAVE_FMODF  1
 #define HAVE_LOG    1
 #define HAVE_LOGF   1
+#define HAVE_LOG10  1
+#define HAVE_LOG10F 1
 #define HAVE_POW    1
 #define HAVE_POWF   1
 #define HAVE__SCALB 1
@@ -187,6 +196,9 @@ typedef unsigned int uintptr_t;
 #define SDL_JOYSTICK_XINPUT 1
 #define SDL_HAPTIC_XINPUT   1
 #endif
+
+/* Enable the dummy sensor driver */
+#define SDL_SENSOR_DUMMY  1
 
 /* Enable various shared object loading systems */
 #define SDL_LOADSO_WINDOWS  1

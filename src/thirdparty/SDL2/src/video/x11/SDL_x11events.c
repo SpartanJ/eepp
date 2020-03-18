@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2018 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2020 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -309,6 +309,20 @@ static void X11_HandleGenericEvent(SDL_VideoData *videodata, XEvent *xev)
     XGenericEventCookie *cookie = &xev->xcookie;
     if (X11_XGetEventData(videodata->display, cookie)) {
         X11_HandleXinput2Event(videodata, cookie);
+
+        /* Send a SDL_SYSWMEVENT if the application wants them.
+         * Since event data is only available until XFreeEventData is called,
+         * the *only* way for an application to access it is to register an event filter/watcher
+         * and do all the processing on the SDL_SYSWMEVENT inside the callback. */
+        if (SDL_GetEventState(SDL_SYSWMEVENT) == SDL_ENABLE) {
+            SDL_SysWMmsg wmmsg;
+
+            SDL_VERSION(&wmmsg.version);
+            wmmsg.subsystem = SDL_SYSWM_X11;
+            wmmsg.msg.x11.event = *xev;
+            SDL_SendSysWMEvent(&wmmsg);
+        }
+
         X11_XFreeEventData(videodata->display, cookie);
     }
 }
@@ -419,8 +433,8 @@ X11_DispatchFocusOut(_THIS, SDL_WindowData *data)
 static void
 X11_DispatchMapNotify(SDL_WindowData *data)
 {
-    SDL_SendWindowEvent(data->window, SDL_WINDOWEVENT_SHOWN, 0, 0);
     SDL_SendWindowEvent(data->window, SDL_WINDOWEVENT_RESTORED, 0, 0);
+    SDL_SendWindowEvent(data->window, SDL_WINDOWEVENT_SHOWN, 0, 0);
 }
 
 static void
@@ -684,6 +698,13 @@ X11_DispatchEvent(_THIS)
         return;
     }
 
+#if SDL_VIDEO_DRIVER_X11_SUPPORTS_GENERIC_EVENTS
+    if(xevent.type == GenericEvent) {
+        X11_HandleGenericEvent(videodata, &xevent);
+        return;
+    }
+#endif
+
     /* Send a SDL_SYSWMEVENT if the application wants them */
     if (SDL_GetEventState(SDL_SYSWMEVENT) == SDL_ENABLE) {
         SDL_SysWMmsg wmmsg;
@@ -693,13 +714,6 @@ X11_DispatchEvent(_THIS)
         wmmsg.msg.x11.event = xevent;
         SDL_SendSysWMEvent(&wmmsg);
     }
-
-#if SDL_VIDEO_DRIVER_X11_SUPPORTS_GENERIC_EVENTS
-    if(xevent.type == GenericEvent) {
-        X11_HandleGenericEvent(videodata, &xevent);
-        return;
-    }
-#endif
 
 #if 0
     printf("type = %d display = %d window = %d\n",
@@ -884,7 +898,7 @@ X11_DispatchEvent(_THIS)
             }
 #endif
             /* */
-            SDL_zero(text);
+            SDL_zeroa(text);
 #ifdef X_HAVE_UTF8_STRING
             if (data->ic) {
                 X11_Xutf8LookupString(data->ic, &xevent.xkey, text, sizeof(text),
@@ -1332,9 +1346,9 @@ X11_DispatchEvent(_THIS)
                 X11_ReadProperty(&p, display, data->xwindow, videodata->PRIMARY);
 
                 if (p.format == 8) {
-                    /* !!! FIXME: don't use strtok here. It's not reentrant and not in SDL_stdinc. */
+                    char* saveptr = NULL;
                     char* name = X11_XGetAtomName(display, target);
-                    char *token = strtok((char *) p.data, "\r\n");
+                    char *token = SDL_strtokr((char *) p.data, "\r\n", &saveptr);
                     while (token != NULL) {
                         if (SDL_strcmp("text/plain", name)==0) {
                             SDL_SendDropText(data->window, token);
@@ -1344,7 +1358,7 @@ X11_DispatchEvent(_THIS)
                                 SDL_SendDropFile(data->window, fn);
                             }
                         }
-                        token = strtok(NULL, "\r\n");
+                        token = SDL_strtokr(NULL, "\r\n", &saveptr);
                     }
                     SDL_SendDropComplete(data->window);
                 }

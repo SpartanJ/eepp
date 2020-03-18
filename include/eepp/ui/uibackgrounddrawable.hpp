@@ -61,6 +61,7 @@ class EE_API UIBackgroundDrawable : public Drawable {
 	Sizef mSize;
 	BorderRadiuses mRadiuses;
 	bool mNeedsUpdate;
+	bool mNeedsRadiusUpdate;
 	bool mColorNeedsUpdate;
 
 	virtual void onAlphaChange();

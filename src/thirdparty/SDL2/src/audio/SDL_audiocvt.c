@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2018 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2020 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -677,7 +677,7 @@ SDL_BuildAudioTypeCVTFromFloat(SDL_AudioCVT *cvt, const SDL_AudioFormat dst_fmt)
         }
 
         if (!filter) {
-            return SDL_SetError("No conversion from float to destination format available");
+            return SDL_SetError("No conversion from float to format 0x%.4x available", dst_fmt);
         }
 
         if (SDL_AddAudioCVTFilter(cvt, filter) < 0) {
@@ -718,13 +718,19 @@ SDL_ResampleCVT(SDL_AudioCVT *cvt, const int chans, const SDL_AudioFormat format
     /* !!! FIXME: remove this if we can get the resampler to work in-place again. */
     float *dst = (float *) (cvt->buf + srclen);
     const int dstlen = (cvt->len * cvt->len_mult) - srclen;
-    const int paddingsamples = (ResamplerPadding(inrate, outrate) * chans);
+    const int requestedpadding = ResamplerPadding(inrate, outrate);
+    int paddingsamples;
     float *padding;
 
+    if (requestedpadding < SDL_MAX_SINT32 / chans) {
+        paddingsamples = requestedpadding * chans;
+    } else {
+        paddingsamples = 0;
+    }
     SDL_assert(format == AUDIO_F32SYS);
 
     /* we keep no streaming state here, so pad with silence on both ends. */
-    padding = (float *) SDL_calloc(paddingsamples, sizeof (float));
+    padding = (float *) SDL_calloc(paddingsamples ? paddingsamples : 1, sizeof (float));
     if (!padding) {
         SDL_OutOfMemory();
         return;
@@ -889,10 +895,14 @@ SDL_BuildAudioCVT(SDL_AudioCVT * cvt,
         return SDL_SetError("Invalid source channels");
     } else if (!SDL_SupportedChannelCount(dst_channels)) {
         return SDL_SetError("Invalid destination channels");
-    } else if (src_rate == 0) {
-        return SDL_SetError("Source rate is zero");
-    } else if (dst_rate == 0) {
-        return SDL_SetError("Destination rate is zero");
+    } else if (src_rate <= 0) {
+        return SDL_SetError("Source rate is equal to or less than zero");
+    } else if (dst_rate <= 0) {
+        return SDL_SetError("Destination rate is equal to or less than zero");
+    } else if (src_rate >= SDL_MAX_SINT32 / RESAMPLER_SAMPLES_PER_ZERO_CROSSING) {
+        return SDL_SetError("Source rate is too high");
+    } else if (dst_rate >= SDL_MAX_SINT32 / RESAMPLER_SAMPLES_PER_ZERO_CROSSING) {
+        return SDL_SetError("Destination rate is too high");
     }
 
 #if DEBUG_CONVERT
@@ -905,7 +915,7 @@ SDL_BuildAudioCVT(SDL_AudioCVT * cvt,
     cvt->dst_format = dst_fmt;
     cvt->needed = 0;
     cvt->filter_index = 0;
-    SDL_zero(cvt->filters);
+    SDL_zeroa(cvt->filters);
     cvt->len_mult = 1;
     cvt->len_ratio = 1.0;
     cvt->rate_incr = ((double) dst_rate) / ((double) src_rate);
@@ -1291,7 +1301,7 @@ SDL_NewAudioStream(const SDL_AudioFormat src_format,
     retval->packetlen = packetlen;
     retval->rate_incr = ((double) dst_rate) / ((double) src_rate);
     retval->resampler_padding_samples = ResamplerPadding(retval->src_rate, retval->dst_rate) * pre_resample_channels;
-    retval->resampler_padding = (float *) SDL_calloc(retval->resampler_padding_samples, sizeof (float));
+    retval->resampler_padding = (float *) SDL_calloc(retval->resampler_padding_samples ? retval->resampler_padding_samples : 1, sizeof (float));
 
     if (retval->resampler_padding == NULL) {
         SDL_FreeAudioStream(retval);

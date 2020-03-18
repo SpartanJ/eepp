@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2018 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2020 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -205,6 +205,11 @@ SDL_Generic_SetTLSData(SDL_TLSData *storage)
 SDL_error *
 SDL_GetErrBuf(void)
 {
+#if SDL_THREADS_DISABLED
+    /* Non-thread-safe global error variable */
+    static SDL_error SDL_global_error;
+    return &SDL_global_error;
+#else
     static SDL_SpinLock tls_lock;
     static SDL_bool tls_being_created;
     static SDL_TLSID tls_errbuf;
@@ -249,6 +254,7 @@ SDL_GetErrBuf(void)
         SDL_TLSSet(tls_errbuf, errbuf, SDL_free);
     }
     return errbuf;
+#endif /* SDL_THREADS_DISABLED */
 }
 
 
@@ -299,19 +305,21 @@ SDL_RunThread(void *data)
 
 #ifdef SDL_CreateThread
 #undef SDL_CreateThread
+#undef SDL_CreateThreadWithStackSize
 #endif
 #if SDL_DYNAMIC_API
 #define SDL_CreateThread SDL_CreateThread_REAL
+#define SDL_CreateThreadWithStackSize SDL_CreateThreadWithStackSize_REAL
 #endif
 
 #ifdef SDL_PASSED_BEGINTHREAD_ENDTHREAD
-static SDL_Thread *
+SDL_Thread *
 SDL_CreateThreadWithStackSize(int (SDLCALL * fn) (void *),
                  const char *name, const size_t stacksize, void *data,
                  pfnSDL_CurrentBeginThread pfnBeginThread,
                  pfnSDL_CurrentEndThread pfnEndThread)
 #else
-static SDL_Thread *
+SDL_Thread *
 SDL_CreateThreadWithStackSize(int (SDLCALL * fn) (void *),
                 const char *name, const size_t stacksize, void *data)
 #endif

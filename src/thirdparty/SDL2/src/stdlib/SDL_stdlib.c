@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2018 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2020 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -201,10 +201,30 @@ SDL_cosf(float x)
 }
 
 double
+SDL_exp(double x)
+{
+#if defined(HAVE_EXP)
+    return exp(x);
+#else
+    return SDL_uclibc_exp(x);
+#endif
+}
+
+float
+SDL_expf(float x)
+{
+#if defined(HAVE_EXPF)
+    return expf(x);
+#else
+    return (float)SDL_exp((double)x);
+#endif
+}
+
+double
 SDL_fabs(double x)
 {
 #if defined(HAVE_FABS)
-    return fabs(x); 
+    return fabs(x);
 #else
     return SDL_uclibc_fabs(x);
 #endif
@@ -214,7 +234,7 @@ float
 SDL_fabsf(float x)
 {
 #if defined(HAVE_FABSF)
-    return fabsf(x); 
+    return fabsf(x);
 #else
     return (float)SDL_fabs((double)x);
 #endif
@@ -277,6 +297,26 @@ SDL_logf(float x)
     return logf(x);
 #else
     return (float)SDL_log((double)x);
+#endif
+}
+
+double
+SDL_log10(double x)
+{
+#if defined(HAVE_LOG10)
+    return log10(x);
+#else
+    return SDL_uclibc_log10(x);
+#endif
+}
+
+float
+SDL_log10f(float x)
+{
+#if defined(HAVE_LOG10F)
+    return log10f(x);
+#else
+    return (float)SDL_log10((double)x);
 #endif
 }
 
@@ -398,11 +438,15 @@ int SDL_abs(int x)
 #if defined(HAVE_CTYPE_H)
 int SDL_isdigit(int x) { return isdigit(x); }
 int SDL_isspace(int x) { return isspace(x); }
+int SDL_isupper(int x) { return isupper(x); }
+int SDL_islower(int x) { return islower(x); }
 int SDL_toupper(int x) { return toupper(x); }
 int SDL_tolower(int x) { return tolower(x); }
 #else
 int SDL_isdigit(int x) { return ((x) >= '0') && ((x) <= '9'); }
 int SDL_isspace(int x) { return ((x) == ' ') || ((x) == '\t') || ((x) == '\r') || ((x) == '\n') || ((x) == '\f') || ((x) == '\v'); }
+int SDL_isupper(int x) { return ((x) >= 'A') && ((x) <= 'Z'); }
+int SDL_islower(int x) { return ((x) >= 'a') && ((x) <= 'z'); }
 int SDL_toupper(int x) { return ((x) >= 'a') && ((x) <= 'z') ? ('A'+((x)-'a')) : (x); }
 int SDL_tolower(int x) { return ((x) >= 'A') && ((x) <= 'Z') ? ('a'+((x)-'A')) : (x); }
 #endif

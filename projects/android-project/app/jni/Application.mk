@@ -18,6 +18,6 @@ APP_LDLIBS				:= -llog $(EE_GLES_LINK) -lm -lz -lOpenSLES -lEGL -landroid
 APP_CFLAGS				:= -fno-strict-aliasing -O3 -s -DNDEBUG -ffast-math
 APP_CPPFLAGS			:= -std=c++14 -frtti -fexceptions
 
-APP_PLATFORM			:= android-14
+APP_PLATFORM			:= android-16
 APP_MODULES				:= main
-APP_ABI					:= armeabi-v7a x86 x86_64
+APP_ABI					:= armeabi-v7a arm64-v8a x86 x86_64
