@@ -147,7 +147,7 @@ Text* UITextInputPassword::getPassCache() const {
 }
 
 void UITextInputPassword::updateFontStyleConfig() {
-	mPassCache->setCharacterSize( mFontStyleConfig.CharacterSize );
+	mPassCache->setFontSize( mFontStyleConfig.CharacterSize );
 	mPassCache->setFont( mFontStyleConfig.getFont() );
 	mPassCache->setFillColor( mFontStyleConfig.getFontColor() );
 	mPassCache->setShadowColor( mFontStyleConfig.getFontShadowColor() );

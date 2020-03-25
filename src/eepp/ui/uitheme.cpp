@@ -258,7 +258,8 @@ UITheme::UITheme( const std::string& name, const std::string& Abbr, Graphics::Fo
 	mNameHash( String::hash( mName ) ),
 	mAbbr( Abbr ),
 	mTextureAtlas( NULL ),
-	mDefaultFont( defaultFont ) {}
+	mDefaultFont( defaultFont ),
+	mDefaultFontSize( 12 ) {}
 
 UITheme::~UITheme() {}
 
@@ -308,6 +309,14 @@ const CSS::StyleSheet& UITheme::getStyleSheet() const {
 
 void UITheme::setStyleSheet( const CSS::StyleSheet& styleSheet ) {
 	mStyleSheet = styleSheet;
+}
+
+const Float& UITheme::getDefaultFontSize() const {
+	return mDefaultFontSize;
+}
+
+void UITheme::setDefaultFontSize( const Float& defaultFontSize ) {
+	mDefaultFontSize = defaultFontSize;
 }
 
 Font* UITheme::getDefaultFont() const {

@@ -64,7 +64,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		fontTest->loadFromFile( "assets/fonts/DejaVuSansMono.ttf" );
 
 		text.setFont( fontTest );
-		text.setCharacterSize( 24 );
+		text.setFontSize( 24 );
 		text.setAlign( TEXT_ALIGN_CENTER );
 		text.setString( Txt );
 		text.shrinkText( win->getWidth() - 96 );
@@ -82,13 +82,13 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 
 		text2.setFont( fontTest2 );
 		text2.setString( "Lorem ipsum dolor sit amet, consectetur adipisicing elit." );
-		text2.setCharacterSize( 32 );
+		text2.setFontSize( 32 );
 		text2.setFillColor( Color::Black );
 
 		text3.setFont( fontTest );
 		text3.setString( text2.getString() );
 		text3.setOutlineThickness( 2 );
-		text3.setCharacterSize( 24 );
+		text3.setFontSize( 24 );
 		text3.setFillColor( Color( 255, 255, 255, 255 ) );
 		text3.setOutlineColor( Color( 0, 0, 0, 255 ) );
 
@@ -97,7 +97,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 
 		text4.setFont( fontBMFont );
 		text4.setString( "Lorem ipsum dolor sit amet, consectetur adipisicing elit." );
-		text4.setCharacterSize( 45 );
+		text4.setFontSize( 45 );
 		text4.setFillColor( Color::Black );
 
 		fontSprite = FontSprite::New(
@@ -106,7 +106,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 
 		text5.setFont( fontSprite );
 		text5.setString( "Lorem ipsum dolor sit amet, consectetur adipisicing elit." );
-		text5.setCharacterSize( 38 );
+		text5.setFontSize( 38 );
 
 		// Application loop
 		win->runMainLoop( &mainLoop );

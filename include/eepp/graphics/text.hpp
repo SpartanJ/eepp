@@ -42,7 +42,7 @@ class EE_API Text {
 
 	void setFont( Font* font );
 
-	void setCharacterSize( unsigned int size );
+	void setFontSize( unsigned int size );
 
 	void setStyle( Uint32 style );
 
@@ -151,10 +151,10 @@ class EE_API Text {
 		Vector2f position;
 	};
 
-	String mString;				 ///< String to display
-	Font* mFont;				 ///< FontTrueType used to display the string
-	unsigned int mCharacterSize; ///< Base size of characters, in pixels
-	unsigned int mRealCharacterSize;
+	String mString;			///< String to display
+	Font* mFont;			///< FontTrueType used to display the string
+	unsigned int mFontSize; ///< Base size of characters, in pixels
+	unsigned int mRealFontSize;
 	Uint32 mStyle;			 ///< Text style (see Style enum)
 	Color mFillColor;		 ///< Text fill color
 	Color mOutlineColor;	 ///< Text outline color

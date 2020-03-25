@@ -71,12 +71,17 @@ class EE_API UITheme : protected ResourceManager<UISkin> {
 
 	void setStyleSheet( const CSS::StyleSheet& styleSheet );
 
+	const Float& getDefaultFontSize() const;
+
+	void setDefaultFontSize( const Float& defaultFontSize );
+
   protected:
 	std::string mName;
 	Uint32 mNameHash;
 	std::string mAbbr;
 	Graphics::TextureAtlas* mTextureAtlas;
 	Font* mDefaultFont;
+	Float mDefaultFontSize;
 	CSS::StyleSheet mStyleSheet;
 
 	void setTextureAtlas( Graphics::TextureAtlas* SG );

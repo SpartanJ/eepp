@@ -10,6 +10,7 @@ UIThemeManager* UIThemeManager::New() {
 UIThemeManager::UIThemeManager() :
 	ResourceManager<UITheme>( true ),
 	mFont( NULL ),
+	mFontSize( 12 ),
 	mThemeDefault( NULL ),
 	mAutoApplyDefaultTheme( true ),
 	mEnableDefaultEffects( false ),
@@ -33,6 +34,15 @@ UIThemeManager* UIThemeManager::setDefaultFont( Font* Font ) {
 
 Font* UIThemeManager::getDefaultFont() const {
 	return mFont;
+}
+
+UIThemeManager* UIThemeManager::setDefaultFontSize( const Float& fontSize ) {
+	mFontSize = fontSize;
+	return this;
+}
+
+const Float& UIThemeManager::getDefaultFontSize() const {
+	return mFontSize;
 }
 
 UIThemeManager* UIThemeManager::setDefaultTheme( UITheme* Theme ) {

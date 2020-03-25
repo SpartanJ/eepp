@@ -31,7 +31,7 @@ class EE_API UITextView : public UIWidget {
 
 	Uint32 getCharacterSize() const;
 
-	UITextView* setCharacterSize( const Uint32& characterSize );
+	UITextView* setFontSize( const Uint32& characterSize );
 
 	const Uint32& getFontStyle() const;
 

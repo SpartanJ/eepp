@@ -11,6 +11,7 @@
 #include <eepp/scene/actions/scale.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/scene/scenenode.hpp>
+#include <eepp/ui/css/stylesheetspecification.hpp>
 #include <eepp/ui/uiborderdrawable.hpp>
 #include <eepp/ui/uinode.hpp>
 #include <eepp/ui/uinodedrawable.hpp>
@@ -1173,9 +1174,82 @@ Uint32 UINode::onFocusLoss() {
 }
 
 Float UINode::convertLength( const CSS::StyleSheetLength& length, const Float& containerLength ) {
-	// TODO: Fix asPixels parameters
+	Float elFontSize = 12;
+	Float rootFontSize = 12;
+
+	if ( length.getUnit() == CSS::StyleSheetLength::Unit::Rem ) {
+		if ( getUISceneNode() != NULL ) {
+			std::string fontSizeStr( getUISceneNode()->getRoot()->getPropertyString(
+				CSS::StyleSheetSpecification::instance()->getProperty(
+					(Uint32)PropertyId::FontSize ) ) );
+			if ( !fontSizeStr.empty() ) {
+				Float num;
+				if ( String::fromString( num, fontSizeStr ) ) {
+					rootFontSize = num;
+				}
+			} else if ( NULL != getUISceneNode() &&
+						NULL != getUISceneNode()->getUIThemeManager() ) {
+				UIThemeManager* themeManager = getUISceneNode()->getUIThemeManager();
+				if ( NULL != themeManager->getDefaultTheme() ) {
+					rootFontSize = getUISceneNode()
+									   ->getUIThemeManager()
+									   ->getDefaultTheme()
+									   ->getDefaultFontSize();
+				} else {
+					rootFontSize = themeManager->getDefaultFontSize();
+				}
+			}
+		}
+	} else if ( length.getUnit() == CSS::StyleSheetLength::Unit::Em ) {
+		if ( isWidget() ) {
+			std::string fontSizeStr( asType<UIWidget>()->getPropertyString(
+				CSS::StyleSheetSpecification::instance()->getProperty(
+					(Uint32)PropertyId::FontSize ) ) );
+			if ( !fontSizeStr.empty() ) {
+				Float num;
+				if ( String::fromString( num, fontSizeStr ) ) {
+					elFontSize = num;
+				}
+			} else {
+				Node* node = getParent();
+
+				while ( NULL != node ) {
+					if ( node->isWidget() ) {
+						std::string fontSizeStr( node->asType<UIWidget>()->getPropertyString(
+							CSS::StyleSheetSpecification::instance()->getProperty(
+								(Uint32)PropertyId::FontSize ) ) );
+						if ( !fontSizeStr.empty() ) {
+							Float num;
+							if ( String::fromString( num, fontSizeStr ) ) {
+								elFontSize = num;
+								break;
+							}
+						}
+					}
+
+					node = node->getParent();
+				}
+
+				if ( node == NULL ) {
+					if ( NULL != getUISceneNode() &&
+						 NULL != getUISceneNode()->getUIThemeManager() ) {
+						UIThemeManager* themeManager = getUISceneNode()->getUIThemeManager();
+						if ( NULL != themeManager->getDefaultTheme() ) {
+							elFontSize = getUISceneNode()
+											 ->getUIThemeManager()
+											 ->getDefaultTheme()
+											 ->getDefaultFontSize();
+						} else {
+							elFontSize = themeManager->getDefaultFontSize();
+						}
+					}
+				}
+			}
+		}
+	}
+
 	return length.asPixels( containerLength, getSceneNode()->getPixelsSize(),
-							getSceneNode()->getDPI(), 12, 12 );
+							getSceneNode()->getDPI(), elFontSize, rootFontSize );
 }
 
 Float UINode::convertLengthAsDp( const CSS::StyleSheetLength& length,

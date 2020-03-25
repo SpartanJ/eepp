@@ -259,7 +259,7 @@ void Console::draw() {
 					Text& text = mTextCache[Pos];
 
 					text.setFont( mFontStyleConfig.Font );
-					text.setCharacterSize( mFontStyleConfig.CharacterSize );
+					text.setFontSize( mFontStyleConfig.CharacterSize );
 					text.setStyle( mFontStyleConfig.Style );
 					text.setOutlineThickness( mFontStyleConfig.OutlineThickness );
 					text.setOutlineColor( mFontStyleConfig.OutlineColor );
@@ -277,7 +277,7 @@ void Console::draw() {
 
 			Text& text = mTextCache[mTextCache.size() - 1];
 			text.setFont( mFontStyleConfig.Font );
-			text.setCharacterSize( mFontStyleConfig.CharacterSize );
+			text.setFontSize( mFontStyleConfig.CharacterSize );
 			text.setStyle( mFontStyleConfig.Style );
 			text.setOutlineThickness( mFontStyleConfig.OutlineThickness );
 			text.setOutlineColor( mFontStyleConfig.OutlineColor );
@@ -288,7 +288,7 @@ void Console::draw() {
 
 			Text& text2 = mTextCache[mTextCache.size() - 2];
 			text2.setFont( mFontStyleConfig.Font );
-			text2.setCharacterSize( mFontStyleConfig.CharacterSize );
+			text2.setFontSize( mFontStyleConfig.CharacterSize );
 			text2.setStyle( mFontStyleConfig.Style );
 			text2.setOutlineThickness( mFontStyleConfig.OutlineThickness );
 			text2.setOutlineColor( mFontStyleConfig.OutlineColor );

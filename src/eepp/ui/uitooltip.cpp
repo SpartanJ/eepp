@@ -261,7 +261,7 @@ Uint32 UITooltip::getCharacterSize() const {
 UITooltip* UITooltip::setCharacterSize( const Uint32& characterSize ) {
 	if ( mTextCache->getCharacterSize() != characterSize ) {
 		mStyleConfig.CharacterSize = characterSize;
-		mTextCache->setCharacterSize( characterSize );
+		mTextCache->setFontSize( characterSize );
 		onAutoSize();
 		autoAlign();
 		invalidateDraw();
@@ -321,7 +321,7 @@ void UITooltip::setFontStyleConfig( const UIFontStyleConfig& styleConfig ) {
 	setFont( mStyleConfig.Font );
 	setFontColor( mStyleConfig.FontColor );
 	setFontShadowColor( mStyleConfig.ShadowColor );
-	mTextCache->setCharacterSize( mStyleConfig.CharacterSize );
+	mTextCache->setFontSize( mStyleConfig.CharacterSize );
 	mTextCache->setStyle( mStyleConfig.Style );
 	mTextCache->setOutlineThickness( mStyleConfig.OutlineThickness );
 	mTextCache->setOutlineColor( mStyleConfig.OutlineColor );

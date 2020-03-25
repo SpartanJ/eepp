@@ -39,11 +39,18 @@ UITextView::UITextView( const std::string& tag ) :
 		setFont( theme->getDefaultFont() );
 	}
 
+	if ( NULL != theme ) {
+		setFontSize( theme->getDefaultFontSize() );
+	} else {
+		mTextCache->setFontSize( getUISceneNode()->getUIThemeManager()->getDefaultFontSize() );
+	}
+
 	if ( NULL == getFont() ) {
-		if ( NULL != getUISceneNode()->getUIThemeManager()->getDefaultFont() )
+		if ( NULL != getUISceneNode()->getUIThemeManager()->getDefaultFont() ) {
 			setFont( getUISceneNode()->getUIThemeManager()->getDefaultFont() );
-		else
+		} else {
 			eePRINTL( "UITextView::UITextView : Created a without a defined font." );
+		}
 	}
 
 	alignFix();
@@ -113,10 +120,10 @@ Uint32 UITextView::getCharacterSize() const {
 	return mTextCache->getCharacterSize();
 }
 
-UITextView* UITextView::setCharacterSize( const Uint32& characterSize ) {
+UITextView* UITextView::setFontSize( const Uint32& characterSize ) {
 	if ( mTextCache->getCharacterSize() != characterSize ) {
 		mFontStyleConfig.CharacterSize = characterSize;
-		mTextCache->setCharacterSize( characterSize );
+		mTextCache->setFontSize( characterSize );
 		recalculate();
 		onFontStyleChanged();
 		notifyLayoutAttrChange();
@@ -510,7 +517,7 @@ const UIFontStyleConfig& UITextView::getFontStyleConfig() const {
 void UITextView::setFontStyleConfig( const UIFontStyleConfig& fontStyleConfig ) {
 	mFontStyleConfig = fontStyleConfig;
 	setFont( fontStyleConfig.getFont() );
-	setCharacterSize( fontStyleConfig.getFontCharacterSize() );
+	setFontSize( fontStyleConfig.getFontCharacterSize() );
 	setFontColor( fontStyleConfig.getFontColor() );
 	setFontShadowColor( fontStyleConfig.getFontShadowColor() );
 	setOutlineThickness( fontStyleConfig.getOutlineThickness() );
@@ -615,7 +622,7 @@ bool UITextView::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		}
 		case PropertyId::FontSize:
-			setCharacterSize( attribute.asDpDimensionI() );
+			setFontSize( attribute.asDpDimensionI() );
 			break;
 		case PropertyId::FontStyle: {
 			Uint32 flags = attribute.asFontStyle();

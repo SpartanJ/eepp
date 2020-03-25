@@ -264,7 +264,9 @@ Uint32 UIWidget::onMouseOver( const Vector2i& position, const Uint32& flags ) {
 	EventDispatcher* eventDispatcher = getEventDispatcher();
 
 	if ( NULL != eventDispatcher && eventDispatcher->getOverControl() == this ) {
-		updateDebugData();
+		if ( NULL != mSceneNode && mSceneNode->getDrawDebugData() ) {
+			updateDebugData();
+		}
 
 		if ( mVisible && NULL != mTooltip && !mTooltip->getText().empty() ) {
 			UIThemeManager* themeManager = getUISceneNode()->getUIThemeManager();
@@ -279,7 +281,7 @@ Uint32 UIWidget::onMouseOver( const Vector2i& position, const Uint32& flags ) {
 			} else {
 				runAction( Actions::Runnable::New(
 					[&] {
-						if ( isMouseOver() ) {
+						if ( getEventDispatcher()->getOverControl() == this ) {
 							mTooltip->setPixelsPosition( getTooltipPosition() );
 							mTooltip->show();
 						}
@@ -331,6 +333,9 @@ String UIWidget::getTooltipText() {
 }
 
 void UIWidget::tooltipRemove() {
+	if ( NULL != mTooltip ) {
+		mTooltip->close();
+	}
 	mTooltip = NULL;
 }
 

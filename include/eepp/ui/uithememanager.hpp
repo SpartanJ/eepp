@@ -18,6 +18,10 @@ class EE_API UIThemeManager : public ResourceManager<UITheme> {
 
 	Font* getDefaultFont() const;
 
+	UIThemeManager* setDefaultFontSize( const Float& fontSize );
+
+	const Float& getDefaultFontSize() const;
+
 	UIThemeManager* setDefaultTheme( UITheme* Theme );
 
 	UIThemeManager* setDefaultTheme( const std::string& Theme );
@@ -56,6 +60,7 @@ class EE_API UIThemeManager : public ResourceManager<UITheme> {
 
   protected:
 	Font* mFont;
+	Float mFontSize;
 	UITheme* mThemeDefault;
 	bool mAutoApplyDefaultTheme;
 

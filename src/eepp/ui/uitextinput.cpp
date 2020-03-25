@@ -621,7 +621,7 @@ Uint32 UITextInput::getHintCharacterSize() const {
 
 UITextView* UITextInput::setHintCharacterSize( const Uint32& characterSize ) {
 	if ( mHintCache->getCharacterSize() != characterSize ) {
-		mHintCache->setCharacterSize( characterSize );
+		mHintCache->setFontSize( characterSize );
 		mHintStyleConfig.CharacterSize = characterSize;
 		invalidateDraw();
 	}
