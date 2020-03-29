@@ -125,380 +125,923 @@ eepp CSS properties can be categorized in two big groups: CSS standard propertie
 
 Properties directly linked to the Mozilla docs are fully supported, otherwise a clarification will appear.
 
-* [animation-delay](https://developer.mozilla.org/en-US/docs/Web/CSS/animation-delay)
+#### animation-delay
 
-* [animation-direction](https://developer.mozilla.org/en-US/docs/Web/CSS/animation-direction)
+Read [animation-delay](https://developer.mozilla.org/en-US/docs/Web/CSS/animation-delay) docs.
 
-* [animation-duration](https://developer.mozilla.org/en-US/docs/Web/CSS/animation-duration)
+---
 
-* [animation-fill-mode](https://developer.mozilla.org/en-US/docs/Web/CSS/animation-fill-mode)
+#### animation-direction
 
-* [animation-iteration-count](https://developer.mozilla.org/en-US/docs/Web/CSS/animation-iteration-count)
+Read [animation-direction](https://developer.mozilla.org/en-US/docs/Web/CSS/animation-direction) documenation.
 
-* [animation-name](https://developer.mozilla.org/en-US/docs/Web/CSS/animation-name)
+---
 
-* [animation-play-state](https://developer.mozilla.org/en-US/docs/Web/CSS/animation-play-state)
+#### animation-duration
 
-* [animation-timing-function](https://developer.mozilla.org/en-US/docs/Web/CSS/animation-timing-function):
+Read [animation-duration](https://developer.mozilla.org/en-US/docs/Web/CSS/animation-duration) documenation.
+
+---
+
+#### animation-fill-mode
+
+Read [animation-fill-mode](https://developer.mozilla.org/en-US/docs/Web/CSS/animation-fill-mode) documentation.
+
+---
+
+#### animation-iteration-count
+
+Read [animation-iteration-count](https://developer.mozilla.org/en-US/docs/Web/CSS/animation-iteration-count) documentation.
+
+---
+
+#### animation-name
+
+Read [animation-name](https://developer.mozilla.org/en-US/docs/Web/CSS/animation-name) documentation.
+
+#### animation-play-state
+
+Read [animation-play-state](https://developer.mozilla.org/en-US/docs/Web/CSS/animation-play-state) documentation.
+
+---
+
+#### animation-timing-function
+
+Read [animation-timing-function](https://developer.mozilla.org/en-US/docs/Web/CSS/animation-timing-function) documentation.
+
 Timing function names are custom, and not the same as the standard, but `cubic-bezier` will be added soon. Current timing functions supported: linear, quadratic-in, quadratic-out, quadratic-in-out, sine-in, sine-out, sine-in-out, exponential-in, exponential-out, exponential-in-out, quartic-in, quartic-out, quartic-in-out, circular-in, circular-out, circular-in-out, cubic-in, cubic-out, cubic-in-out, back-in, back-out, back-in-out, bounce-in, bounce-out, bounce-in-out, elastic-in, elastic-out, elastic-in-out, none.
 
-* [background-color](https://developer.mozilla.org/en-US/docs/Web/CSS/background-color)
+---
 
-* [background-image](https://developer.mozilla.org/en-US/docs/Web/CSS/background-image)
+#### background-color
 
-* [background-position-x](https://developer.mozilla.org/en-US/docs/Web/CSS/background-position-x)
+Read [background-color](https://developer.mozilla.org/en-US/docs/Web/CSS/background-color) documentation.
 
-* [background-position-y](https://developer.mozilla.org/en-US/docs/Web/CSS/background-position-y)
+---
 
-* [background-repeat](https://developer.mozilla.org/en-US/docs/Web/CSS/background-repeat)
+#### background-image
 
-* [background-size](https://developer.mozilla.org/en-US/docs/Web/CSS/background-size)
+Read [background-image](https://developer.mozilla.org/en-US/docs/Web/CSS/background-image) documentation.
 
-* [border-bottom-color](https://developer.mozilla.org/en-US/docs/Web/CSS/border-bottom-color)
+---
 
-* [border-bottom-left-radius](https://developer.mozilla.org/en-US/docs/Web/CSS/border-bottom-left-radius)
+#### background-position-x
 
-* [border-bottom-right-radius](https://developer.mozilla.org/en-US/docs/Web/CSS/border-bottom-right-radius)
+Read [background-position-x](https://developer.mozilla.org/en-US/docs/Web/CSS/background-position-x) documentation.
 
-* [border-bottom-width](https://developer.mozilla.org/en-US/docs/Web/CSS/border-bottom-width)
+---
 
-* [border-left-color](https://developer.mozilla.org/en-US/docs/Web/CSS/border-left-color)
+#### background-position-y
 
-* [border-left-width](https://developer.mozilla.org/en-US/docs/Web/CSS/border-left-width)
+Read [background-position-y](https://developer.mozilla.org/en-US/docs/Web/CSS/background-position-y) documentation.
 
-* [border-right-color](https://developer.mozilla.org/en-US/docs/Web/CSS/border-right-color)
+---
 
-* [border-right-width](https://developer.mozilla.org/en-US/docs/Web/CSS/border-right-width)
+#### backtround-repeat
 
-* [border-top-color](https://developer.mozilla.org/en-US/docs/Web/CSS/border-top-color)
+Read [background-repeat](https://developer.mozilla.org/en-US/docs/Web/CSS/background-repeat) documentation.
 
-* [border-top-left-radius](https://developer.mozilla.org/en-US/docs/Web/CSS/border-top-left-radius)
+---
 
-* [border-top-right-radius](https://developer.mozilla.org/en-US/docs/Web/CSS/border-top-right-radius)
+#### background-size
 
-* [border-top-width](https://developer.mozilla.org/en-US/docs/Web/CSS/border-top-width)
+Read [background-size](https://developer.mozilla.org/en-US/docs/Web/CSS/background-size) documentation.
 
-* [color](https://developer.mozilla.org/en-US/docs/Web/CSS/color)
+---
 
-* [cursor](https://developer.mozilla.org/en-US/docs/Web/CSS/cursor): Custom cursors not yet supported (but supported by the engine, only not implemented in the CSS side).
+#### border-bottom-color
 
-* [font-family](https://developer.mozilla.org/en-US/docs/Web/CSS/font-family)
+Read [border-bottom-color](https://developer.mozilla.org/en-US/docs/Web/CSS/border-bottom-color) documentation.
 
-* [font-size](https://developer.mozilla.org/en-US/docs/Web/CSS/font-size)
+---
 
-* [font-style](https://developer.mozilla.org/en-US/docs/Web/CSS/font-style)
+#### border-bottom-left-radius
 
-* [margin-bottom](https://developer.mozilla.org/en-US/docs/Web/CSS/margin-bottom)
+Read [border-bottom-left-radius](https://developer.mozilla.org/en-US/docs/Web/CSS/border-bottom-left-radius) documentation.
 
-* [margin-left](https://developer.mozilla.org/en-US/docs/Web/CSS/margin-left)
+---
 
-* [margin-right](https://developer.mozilla.org/en-US/docs/Web/CSS/margin-right)
+#### border-bottom-right-radius
 
-* [margin-top](https://developer.mozilla.org/en-US/docs/Web/CSS/margin-top)
+Read [border-bottom-right-radius](https://developer.mozilla.org/en-US/docs/Web/CSS/border-bottom-right-radius) documentation.
 
-* [max-height](https://developer.mozilla.org/en-US/docs/Web/CSS/max-height)
+---
 
-* [max-width](https://developer.mozilla.org/en-US/docs/Web/CSS/max-width)
+#### border-bottom-width
 
-* [min-height](https://developer.mozilla.org/en-US/docs/Web/CSS/min-height)
+Read [border-bottom-width](https://developer.mozilla.org/en-US/docs/Web/CSS/border-bottom-width) documentation.
 
-* [min-width](https://developer.mozilla.org/en-US/docs/Web/CSS/min-width)
+---
 
-* [opacity](https://developer.mozilla.org/en-US/docs/Web/CSS/opacity)
+#### border-left-color
 
-* [padding-bottom](https://developer.mozilla.org/en-US/docs/Web/CSS/padding-bottom)
+Read [border-left-color](https://developer.mozilla.org/en-US/docs/Web/CSS/border-left-color) documentation.
 
-* [padding-left](https://developer.mozilla.org/en-US/docs/Web/CSS/padding-left)
+---
 
-* [padding-right](https://developer.mozilla.org/en-US/docs/Web/CSS/padding-right)
+#### border-left-width
 
-* [padding-top](https://developer.mozilla.org/en-US/docs/Web/CSS/padding-top)
+Read [border-left-width](https://developer.mozilla.org/en-US/docs/Web/CSS/border-left-width) documentation.
 
-* [text-align](https://developer.mozilla.org/en-US/docs/Web/CSS/text-align)
+---
 
-* [transition-delay](https://developer.mozilla.org/en-US/docs/Web/CSS/transition-delay)
+#### border-right-color
 
-* [transition-duration](https://developer.mozilla.org/en-US/docs/Web/CSS/transition-duration)
+Read [border-right-color](https://developer.mozilla.org/en-US/docs/Web/CSS/border-right-color) documentation.
 
-* [transition-property](https://developer.mozilla.org/en-US/docs/Web/CSS/transition-property)
+---
 
-* [transition-timing-function](https://developer.mozilla.org/en-US/docs/Web/CSS/transition-timing-function): Timing function names are custom, and not the same as the standard, but `cubic-bezier` will be added soon. Current timing functions supported: linear, quadratic-in, quadratic-out, quadratic-in-out, sine-in, sine-out, sine-in-out, exponential-in, exponential-out, exponential-in-out, quartic-in, quartic-out, quartic-in-out, circular-in, circular-out, circular-in-out, cubic-in, cubic-out, cubic-in-out, back-in, back-out, back-in-out, bounce-in, bounce-out, bounce-in-out, elastic-in, elastic-out, elastic-in-out, none.
+#### border-right-width
+
+Read [border-right-width](https://developer.mozilla.org/en-US/docs/Web/CSS/border-right-width) documentation.
+
+---
+
+#### border-top-color
+
+Read [border-top-color](https://developer.mozilla.org/en-US/docs/Web/CSS/border-top-color) documentation.
+
+---
+
+#### border-top-left-radius
+
+Read [border-top-left-radius](https://developer.mozilla.org/en-US/docs/Web/CSS/border-top-left-radius) documentation.
+
+---
+
+#### border-top-right-radius
+
+Read [border-top-right-radius](https://developer.mozilla.org/en-US/docs/Web/CSS/border-top-right-radius) documentation.
+
+---
+
+#### border-top-width
+
+Read [border-top-width](https://developer.mozilla.org/en-US/docs/Web/CSS/border-top-width) documentation.
+
+---
+
+#### color
+
+Read [color](https://developer.mozilla.org/en-US/docs/Web/CSS/color) documentation.
+
+---
+
+#### cursor
+
+Read [cursor](https://developer.mozilla.org/en-US/docs/Web/CSS/cursor) documentation.
+
+Custom cursors not yet supported (but supported by the engine, only not implemented in the CSS side).
+
+---
+
+#### font-family
+
+Read [font-family](https://developer.mozilla.org/en-US/docs/Web/CSS/font-family) documentation.
+
+---
+
+#### font-size
+
+Read [font-size](https://developer.mozilla.org/en-US/docs/Web/CSS/font-size) documentation.
+
+---
+
+#### font-style
+
+Read [font-style](https://developer.mozilla.org/en-US/docs/Web/CSS/font-style) documentation.
+
+---
+
+#### margin-bottom
+
+Read [margin-bottom](https://developer.mozilla.org/en-US/docs/Web/CSS/margin-bottom) documentation.
+
+---
+
+#### margin-left
+
+Read [margin-left](https://developer.mozilla.org/en-US/docs/Web/CSS/margin-left) documentation.
+
+---
+
+#### margin-right
+
+Read [margin-right](https://developer.mozilla.org/en-US/docs/Web/CSS/margin-right) documentation.
+
+---
+
+#### margin-top
+
+Read [margin-top](https://developer.mozilla.org/en-US/docs/Web/CSS/margin-top) documentation.
+
+---
+
+#### max-height
+
+Read [max-height](https://developer.mozilla.org/en-US/docs/Web/CSS/max-height) documentation.
+
+---
+
+#### max-width
+
+Read [max-width](https://developer.mozilla.org/en-US/docs/Web/CSS/max-width) documentation.
+
+---
+
+#### min-height
+
+Read [min-height](https://developer.mozilla.org/en-US/docs/Web/CSS/min-height) documentation.
+
+---
+
+#### min-width
+
+Read [min-width](https://developer.mozilla.org/en-US/docs/Web/CSS/min-width) documentation.
+
+---
+
+#### opacity
+
+Read [opacity](https://developer.mozilla.org/en-US/docs/Web/CSS/opacity) documentation.
+
+---
+
+#### padding-bottom
+
+Read [padding-bottom](https://developer.mozilla.org/en-US/docs/Web/CSS/padding-bottom) documentation.
+
+---
+
+#### padding-left
+
+Read [padding-left](https://developer.mozilla.org/en-US/docs/Web/CSS/padding-left) documentation.
+
+---
+
+#### padding-right
+
+Read [padding-right](https://developer.mozilla.org/en-US/docs/Web/CSS/padding-right) documentation.
+
+---
+
+#### padding-top
+
+Read [padding-top](https://developer.mozilla.org/en-US/docs/Web/CSS/padding-top) documentation.
+
+---
+
+#### text-align
+
+Read [text-align](https://developer.mozilla.org/en-US/docs/Web/CSS/text-align) documentation.
+
+---
+
+#### transition-delay
+
+Read [transition-delay](https://developer.mozilla.org/en-US/docs/Web/CSS/transition-delay) documentation.
+
+---
+
+#### transition-duration
+
+Read [transition-duration](https://developer.mozilla.org/en-US/docs/Web/CSS/transition-duration) documentation.
+
+---
+
+#### transition-property
+
+Read [transition-property](https://developer.mozilla.org/en-US/docs/Web/CSS/transition-property) documentation.
+
+---
+
+#### transition-timing-function
+
+Read [transition-timing-function](https://developer.mozilla.org/en-US/docs/Web/CSS/transition-timing-function) documentation.
+
+Timing function names are custom, and not the same as the standard, but `cubic-bezier` will be added soon. Current timing functions supported: linear, quadratic-in, quadratic-out, quadratic-in-out, sine-in, sine-out, sine-in-out, exponential-in, exponential-out, exponential-in-out, quartic-in, quartic-out, quartic-in-out, circular-in, circular-out, circular-in-out, cubic-in, cubic-out, cubic-in-out, back-in, back-out, back-in-out, bounce-in, bounce-out, bounce-in-out, elastic-in, elastic-out, elastic-in-out, none.
+
+---
 
 ### Custom eepp CSS properties
 
-* allow-dot
+_Applicable to_ will link to the EE::UI::UIWidget that can use that property, and betweeen parenthesis is the CSS element name.
 
-* allow-editing
+---
 
-* animation-speed
+#### allow-editing
 
-* arc-start-angle
+Enable or disable editing on input elements.
 
-* background-expand
+* Applicable to: EE::UI::UITextEdit (TextEdit), EE::UI::UITextInput (TextInput)
+* Value Type: boolean
+* Default value: `true`
 
-* base-alpha
+---
 
-* blend-mode
+#### allow-float
 
-* border-auto-size
+On a input that only accept numbers, enables floating point numbers.
 
-* border-size
+* Applicable to: EE::UI::UITextInput (TextInput), EE::UI::UISpinBox (SpinBox::input)
+* Value Type: boolean
+* Default value: `false`
 
-* border-type
+---
 
-* button-margin
+#### animation-speed
 
-* buttons-position-offset
+Sets the loader speed animation.
 
-* buttons-separation
+* Applicable to: EE::UI::UILoader (Loader)
+* Value type: float
+* Default value: `0.5`
 
-* change-page-percent
+---
 
-* click-step
+#### arc-start-angle
 
-* clip
+The angle value where a loader progress starts rendering.
 
-* column-mode
+* Applicable to: EE::UI::UILoader (Loader)
+* Value type: float
+* Default value: `0`
 
-* column-span
+---
 
-* column-weight
+#### background-expand
 
-* column-width
+Sets if the element skin background should be expanded to the element dimensions.
 
-* decoration-auto-size
+* Applicable to: EE::UI::UISlider (Slider), EE::UI::UIScrollBar (ScrollBar)
+* Value Type: boolean
+* Default value: `false`
 
-* decoration-size
+---
 
-* display-percent
+#### blend-mode
 
-* drag-resistance
+Sets the blend mode to the widget.
 
-* enabled
+* Applicable to: Any element.
+* Value Type: string-list
+* Value List:
+  * `add`
+  * `alpha`
+  * `multiply`
+  * `none`
+* Default value: `alpha`
 
-* fill-color
+#### border-auto-size
 
-* filler-padding-bottom
+Sets if the window border size should be automatically calculated based on the skin size.
 
-* filler-padding-left
+* Applicable to: EE::UI::UIWindow (window)
+* Value Type: boolean
+* Default value: `true`
 
-* filler-padding-right
+---
 
-* filler-padding-top
+#### border-size
 
-* first-button-margin-left
+Manually sets the size of the window border size.
 
-* flags
+* Applicable to: EE::UI::UIWindow (window)
+* Value Type: vector2-length
+* Default value: _No value_.
 
-* foreground-color
+---
 
-* foreground-image
+#### border-type
 
-* foreground-position-x
+Defines where the border box is drawn.
 
-* foreground-position-y
+* Applicable to: Any element.
+* Value Type: string-list
+* Value List:
+  * `inside`: The border will be drawn inside the content box.
+  * `outside`: The border will be drawn outside the content box.
+  * `outline`: The border will be drawn in the middle point between the content box and the border width.
 
-* foreground-radius
+---
 
-* foreground-repeat
+#### button-margin
 
-* foreground-size
+---
 
-* free-editing
+#### buttons-position-offset
 
-* gravity
+---
 
-* half-slider
+#### buttons-separation
 
-* hint
+---
 
-* hint-color
+#### change-page-percent
 
-* hint-font-family
+---
 
-* hint-font-size
+#### click-step
 
-* hint-font-style
+---
 
-* hint-shadow-color
+#### clip
 
-* hint-stroke-color
+---
 
-* hint-stroke-width
+#### column-mode
 
-* hscroll-mode
+---
 
-* icon
+#### column-span
 
-* icon-auto-margin
+---
 
-* icon-horizontal-margin
+#### column-weight
 
-* indeterminate
+---
 
-* layout-gravity
+#### column-width
 
-* layout-height
+---
 
-* layout-to-bottom-of
+#### decoration-auto-size
 
-* layout-to-left-of
+---
 
-* layout-to-right-of
+#### decoration-size
 
-* layout-to-top-of
+---
 
-* layout-weight
+#### display-percent
 
-* layout-width
+---
 
-* line-below-tabs
+#### drag-resistance
 
-* line-below-tabs-color
+---
 
-* line-below-tabs-y-offset
+#### enabled
 
-* margin-between-buttons
+---
 
-* max-edge-resistance
+#### fill-color
 
-* max-length
+---
 
-* max-progress
+#### filler-padding-bottom
 
-* max-tab-width
+---
 
-* max-text-length
+#### filler-padding-left
 
-* max-value
+---
 
-* max-visible-items
+#### filler-padding-right
 
-* menu-height
+---
 
-* min-corner-distance
+#### filler-padding-top
 
-* min-icon-size
+---
 
-* min-icon-space
+#### first-button-margin-left
 
-* min-margin-right
+---
 
-* min-tab-width
+#### flags
 
-* min-value
+---
 
-* min-window-size
+#### foreground-color
 
-* movement-speed
+---
 
-* name
+#### foreground-image
 
-* only-numbers
+---
 
-* orientation
+#### foreground-position-x
 
-* outline-thickness
+---
 
-* owns
+#### foreground-position-y
 
-* page-locked
+---
 
-* page-step
+#### foreground-radius
 
-* popup-to-main-control
+---
 
-* progress
+#### foreground-repeat
 
-* radius
+---
 
-* reverse-draw
+#### foreground-size
 
-* rotation
+---
 
-* rotation-origin-point-x
+#### free-editing
 
-* rotation-origin-point-y
+---
 
-* row-height
+#### gravity
 
-* row-mode
+---
 
-* row-span
+#### half-slider
 
-* row-weight
+---
 
-* scale
+#### hint
 
-* scale-origin-point-x
+---
 
-* scale-origin-point-y
+#### hint-color
 
-* scale-type
+---
 
-* scrollbar-mode
+#### hint-font-family
 
-* scrollbar-type
+---
 
-* selected
+#### hint-font-size
 
-* selected-color
+---
 
-* selected-index
+#### hint-font-style
 
-* selectex-text
+---
 
-* selection-back-color
+#### hint-shadow-color
 
-* shadow-color
+---
 
-* skin
+#### hint-stroke-color
 
-* skin-color
+---
 
-* span
+#### hint-stroke-width
 
-* special-border-tabs
+---
 
-* src
+#### hscroll-mode
 
-* tab-closable
+---
 
-* tab-separation
+#### icon
 
-* text
+---
 
-* text-selection
+#### icon-auto-margin
 
-* text-stroke-color
+---
 
-* text-stroke-width
+#### icon-horizontal-margin
 
-* theme
+---
 
-* timing-function
+#### indeterminate
 
-* tint
+---
 
-* tooltip
+#### layout-gravity
 
-* total-steps
+---
 
-* touch-drag
+#### layout-height
 
-* touch-drag-deceleration
+---
 
-* value
+#### layout-to-bottom-of
 
-* vertical-expand
+---
 
-* visible
+#### layout-to-left-of
 
-* vscroll-mode
+---
 
-* window-flags
+#### layout-to-right-of
 
-* word-wrap
+---
+
+#### layout-to-top-of
+
+---
+
+#### layout-weight
+
+---
+
+#### layout-width
+
+---
+
+#### line-below-tabs
+
+---
+
+#### line-below-tabs-color
+
+---
+
+#### line-below-tabs-y-offset
+
+---
+
+#### margin-between-buttons
+
+---
+
+#### max-edge-resistance
+
+---
+
+#### max-length
+
+---
+
+#### max-progress
+
+---
+
+#### max-tab-width
+
+---
+
+#### max-text-length
+
+---
+
+#### max-value
+
+---
+
+#### max-visible-items
+
+---
+
+#### menu-height
+
+---
+
+#### min-corner-distance
+
+---
+
+#### min-icon-size
+
+---
+
+#### min-icon-space
+
+---
+
+#### min-margin-right
+
+---
+
+#### min-tab-width
+
+---
+
+#### min-value
+
+---
+
+#### min-window-size
+
+---
+
+#### movement-speed
+
+---
+
+#### name
+
+---
+
+#### only-numbers
+
+---
+
+#### orientation
+
+---
+
+#### outline-thickness
+
+---
+
+#### owns
+
+---
+
+#### page-locked
+
+---
+
+#### page-step
+
+---
+
+#### popup-to-main-control
+
+---
+
+#### progress
+
+---
+
+#### radius
+
+---
+
+#### reverse-draw
+
+---
+
+#### rotation
+
+---
+
+#### rotation-origin-point-x
+
+---
+
+#### rotation-origin-point-y
+
+---
+
+#### row-height
+
+---
+
+#### row-mode
+
+---
+
+#### row-span
+
+---
+
+#### row-weight
+
+---
+
+#### scale
+
+---
+
+#### scale-origin-point-x
+
+---
+
+#### scale-origin-point-y
+
+---
+
+#### scale-type
+
+---
+
+#### scrollbar-mode
+
+---
+
+#### scrollbar-type
+
+---
+
+#### selected
+
+---
+
+#### selected-color
+
+---
+
+#### selected-index
+
+---
+
+#### selectex-text
+
+---
+
+#### selection-back-color
+
+---
+
+#### shadow-color
+
+---
+
+#### skin
+
+---
+
+#### skin-color
+
+---
+
+#### span
+
+---
+
+#### special-border-tabs
+
+---
+
+#### src
+
+---
+
+#### tab-closable
+
+---
+
+#### tab-separation
+
+---
+
+#### text
+
+---
+
+#### text-selection
+
+---
+
+#### text-stroke-color
+
+---
+
+#### text-stroke-width
+
+---
+
+#### theme
+
+---
+
+#### timing-function
+
+---
+
+#### tint
+
+---
+
+#### tooltip
+
+---
+
+#### total-steps
+
+---
+
+#### touch-drag
+
+---
+
+#### touch-drag-deceleration
+
+---
+
+#### value
+
+---
+
+#### vertical-expand
+
+---
+
+#### visible
+
+---
+
+#### vscroll-mode
+
+---
+
+#### window-flags
+
+---
+
+#### window-opacity
+
+Sets the base opacity of a window, this is the maximum opacity that the window will be able to have. And the opacity property applied to the window will be multiplied by this value.
+
+* Applicable to: EE::UI::UIWindow (window)
+* Value type: float
+* Default value: 1
+
+---
+
+#### word-wrap
+
+---
 
 ## CSS Shorthands
 
@@ -523,17 +1066,17 @@ Timing function names are custom, and not the same as the standard, but `cubic-b
 * rotation-origin-point: The origin point of the rotation expressed as two numeric lengths or percentages separated by a space. Default value is "center center". For example:
 
 ```CSS
-rotation-origin-point: 50dp 10dp;
-rotation-origin-point: center top;
-rotation-origin-point: 100% 0%;
+    rotation-origin-point: 50dp 10dp;
+    rotation-origin-point: center top;
+    rotation-origin-point: 100% 0%;
 ```
 
 * scale-origin-point: The origin point of the node scale expressed as two numeric lengths or percentages separated by a space. Default value is "center center". For example:
 
 ```CSS
-scale-origin-point: 50dp 10dp;
-scale-origin-point: center top;
-scale-origin-point: 100% 0%;
+    scale-origin-point: 50dp 10dp;
+    scale-origin-point: center top;
+    scale-origin-point: 100% 0%;
 ```
 
 * [transition](https://developer.mozilla.org/en-US/docs/Web/CSS/transition)
@@ -546,9 +1089,9 @@ The following at-rules are currently supported:
 
 * [@import](https://developer.mozilla.org/en-US/docs/Web/CSS/@import) — Tells the CSS engine to include an external style sheet.
 
-* [@media](https://developer.mozilla.org/en-US/docs/Web/CSS/@media) — A conditional group rule that will apply its content if the device meets the criteria of the condition defined using a media query.
+* [@media](https://developer.mozilla.org/en-US/docs/Web/CSS/@media) — A conditional group rule that will apply its content if the device meets the criteria of the condition defined using a media query. Media features currently supported: [width](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/width), [height](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/height), [device-width](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/device-width), [device-height](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/device-height), [orientation](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/orientation), [aspect-ratio](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/aspect-ratio), [device-aspect-ratio](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/device-aspect-ratio), [color](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/color), [color-index](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/color-index), [monochrome](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/monochrome), [resolution](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/resolution). Also, eepp only uses `screen` media type.
 
-* [@font-face](https://developer.mozilla.org/en-US/docs/Web/CSS/@font-face) — Describes the aspect of an external font to be downloaded.
+* [@font-face](https://developer.mozilla.org/en-US/docs/Web/CSS/@font-face) — Describes the aspect of an external font to be downloaded. Only [font-family](https://developer.mozilla.org/en-US/docs/Web/CSS/@font-face/font-family) and [src](https://developer.mozilla.org/en-US/docs/Web/CSS/@font-face/src) properties are supported at the moment.
 
 * [@keyframes](https://developer.mozilla.org/en-US/docs/Web/CSS/@keyframes) — Describes the aspect of intermediate steps in a CSS animation sequence.
 
@@ -582,7 +1125,7 @@ Most common pseudo-class selectors are supported. The list is:
 
 * [:nth-last-child()](https://developer.mozilla.org/en-US/docs/Web/CSS/:nth-last-child)
 
-* [::nth-last-of-type()](https://developer.mozilla.org/en-US/docs/Web/CSS/:nth-last-of-type)
+* [:nth-last-of-type()](https://developer.mozilla.org/en-US/docs/Web/CSS/:nth-last-of-type)
 
 * [:nth-of-type()](https://developer.mozilla.org/en-US/docs/Web/CSS/:nth-of-type)
 

@@ -16,6 +16,10 @@ using namespace EE::System;
 using namespace EE::Math;
 using namespace EE::Graphics;
 
+namespace EE { namespace UI {
+class UINode;
+}} // namespace EE::UI
+
 namespace EE { namespace UI { namespace CSS {
 
 class PropertyDefinition;
@@ -134,6 +138,30 @@ class EE_API StyleSheetProperty {
 	StyleSheetProperty& getPropertyIndexRef( const Uint32& index );
 
 	const Uint32& getIndex() const;
+
+	Float asDpDimension( UINode* node, const std::string& defaultValue = "" ) const;
+
+	int asDpDimensionI( UINode* node, const std::string& defaultValue = "" ) const;
+
+	Uint32 asDpDimensionUint( UINode* node, const std::string& defaultValue = "" ) const;
+
+	Vector2f asDpDimensionVector2f( UINode* node,
+									const Vector2f& defaultValue = Vector2f::Zero ) const;
+
+	Vector2i asDpDimensionVector2i( UINode* node,
+									const Vector2i& defaultValue = Vector2i::Zero ) const;
+
+	Vector2f asDpDimensionSizef( UINode* node, const Sizef& defaultValue = Sizef::Zero ) const;
+
+	Vector2i asDpDimensionSizei( UINode* node, const Sizei& defaultValue = Sizei::Zero ) const;
+
+	Vector2f asVector2f( UINode* node, const Vector2f& defaultValue = Vector2f::Zero ) const;
+
+	Vector2i asVector2i( UINode* node, const Vector2i& defaultValue = Vector2i::Zero ) const;
+
+	Sizef asSizef( UINode* node, const Sizef& defaultValue = Sizef::Zero ) const;
+
+	Sizei asSizei( UINode* node, const Sizei& defaultValue = Sizei::Zero ) const;
 
   protected:
 	std::string mName;

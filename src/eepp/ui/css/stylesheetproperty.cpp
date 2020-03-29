@@ -4,10 +4,12 @@
 #include <eepp/graphics/text.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/css/shorthanddefinition.hpp>
+#include <eepp/ui/css/stylesheetlength.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
 #include <eepp/ui/css/stylesheetselectorrule.hpp>
 #include <eepp/ui/css/stylesheetspecification.hpp>
 #include <eepp/ui/uihelper.hpp>
+#include <eepp/ui/uinode.hpp>
 
 namespace EE { namespace UI { namespace CSS {
 
@@ -300,11 +302,11 @@ Vector2f StyleSheetProperty::asDpDimensionVector2f( const Vector2f& defaultValue
 		auto xySplit = String::split( mValue, ' ', true );
 
 		if ( xySplit.size() == 2 ) {
-			vector.x = PixelDensity::toDpFromString( "0" );
-			vector.y = PixelDensity::toDpFromString( "0" );
+			vector.x = PixelDensity::toDpFromString( xySplit[0] );
+			vector.y = PixelDensity::toDpFromString( xySplit[1] );
 			return vector;
 		} else if ( xySplit.size() == 1 ) {
-			vector.x = vector.y = PixelDensity::toDpFromString( "0" );
+			vector.x = vector.y = PixelDensity::toDpFromString( xySplit[0] );
 			return vector;
 		}
 	}
@@ -495,6 +497,95 @@ void StyleSheetProperty::cleanValue() {
 	if ( NULL != mPropertyDefinition && mPropertyDefinition->getType() == PropertyType::String ) {
 		String::trimInPlace( mValue, '"' );
 	}
+}
+
+Float StyleSheetProperty::asDpDimension( UINode* node, const std::string& defaultValue ) const {
+	return node->lengthFromValueAsDp( asString( defaultValue ), CSS::PropertyRelativeTarget::None );
+}
+
+int StyleSheetProperty::asDpDimensionI( UINode* node, const std::string& defaultValue ) const {
+	return static_cast<int>( asDpDimension( node, defaultValue ) );
+}
+
+Uint32 StyleSheetProperty::asDpDimensionUint( UINode* node,
+											  const std::string& defaultValue ) const {
+	int attrInt = asDpDimensionI( node, defaultValue );
+	return attrInt >= 0 ? attrInt : 0;
+}
+
+Vector2f StyleSheetProperty::asDpDimensionVector2f( UINode* node,
+													const Vector2f& defaultValue ) const {
+	if ( !mValue.empty() ) {
+		Vector2f vector;
+		auto xySplit = String::split( mValue, ' ', true );
+
+		if ( xySplit.size() == 2 ) {
+			vector.x = node->lengthFromValueAsDp( xySplit[0], CSS::PropertyRelativeTarget::None,
+												  defaultValue.x );
+			vector.y = node->lengthFromValueAsDp( xySplit[1], CSS::PropertyRelativeTarget::None,
+												  defaultValue.y );
+			return vector;
+		} else if ( xySplit.size() == 1 ) {
+			vector.x = vector.y = node->lengthFromValueAsDp(
+				xySplit[0], CSS::PropertyRelativeTarget::None, defaultValue.x );
+			return vector;
+		}
+	}
+
+	return defaultValue;
+}
+
+Vector2i StyleSheetProperty::asDpDimensionVector2i( UINode* node,
+													const Vector2i& defaultValue ) const {
+	Vector2f v( asDpDimensionVector2f( node, Vector2f( defaultValue.x, defaultValue.y ) ) );
+	return Vector2i( v.x, v.y );
+}
+
+Vector2f StyleSheetProperty::asDpDimensionSizef( UINode* node, const Sizef& defaultValue ) const {
+	Vector2f v( asDpDimensionVector2f( node, defaultValue ) );
+	return Sizef( v.x, v.y );
+}
+
+Vector2i StyleSheetProperty::asDpDimensionSizei( UINode* node, const Sizei& defaultValue ) const {
+	Vector2i v( asDpDimensionVector2i( node, defaultValue ) );
+	return Sizei( v.x, v.y );
+}
+
+Vector2f StyleSheetProperty::asVector2f( UINode* node, const Vector2f& defaultValue ) const {
+	if ( !mValue.empty() ) {
+		Vector2f vector;
+		auto xySplit = String::split( mValue, ' ', true );
+
+		if ( xySplit.size() == 2 ) {
+			vector.x = node->lengthFromValue( xySplit[0], CSS::PropertyRelativeTarget::None,
+											  defaultValue.x );
+			vector.y = node->lengthFromValue( xySplit[1], CSS::PropertyRelativeTarget::None,
+											  defaultValue.y );
+			return vector;
+		} else if ( xySplit.size() == 1 ) {
+			vector.x = vector.y = node->lengthFromValue(
+				xySplit[0], CSS::PropertyRelativeTarget::None, defaultValue.x );
+			return vector;
+		}
+	}
+
+	return defaultValue;
+}
+
+Vector2i StyleSheetProperty::asVector2i( UINode* node, const Vector2i& defaultValue ) const {
+	if ( !mValue.empty() ) {
+		Vector2f vectorF( asVector2f( node, Vector2f( defaultValue.x, defaultValue.y ) ) );
+		return Vector2i( vectorF.x, vectorF.y );
+	}
+	return defaultValue;
+}
+
+Sizef StyleSheetProperty::asSizef( UINode* node, const Sizef& defaultValue ) const {
+	return Sizef( asVector2f( node, defaultValue ) );
+}
+
+Sizei StyleSheetProperty::asSizei( UINode* node, const Sizei& defaultValue ) const {
+	return Sizei( asVector2i( node, defaultValue ) );
 }
 
 }}} // namespace EE::UI::CSS

@@ -245,7 +245,7 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "fill-color", "" ).setType( PropertyType::Color );
 	registerProperty( "radius", "" ).setType( PropertyType::NumberLength );
 	registerProperty( "outline-thickness", "" ).setType( PropertyType::NumberLength );
-	registerProperty( "animation-speed", "" ).setType( PropertyType::Vector2 );
+	registerProperty( "animation-speed", "" ).setType( PropertyType::NumberFloat );
 	registerProperty( "arc-start-angle", "" ).setType( PropertyType::NumberFloat );
 
 	registerProperty( "min-width", "" )
@@ -286,11 +286,11 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "max-length", "" ).setType( PropertyType::NumberInt );
 	registerProperty( "free-editing", "" ).setType( PropertyType::Bool );
 	registerProperty( "only-numbers", "" ).setType( PropertyType::Bool );
-	registerProperty( "allow-dot", "" ).setType( PropertyType::Bool );
+	registerProperty( "allow-float", "" ).setType( PropertyType::Bool );
 	registerProperty( "touch-drag", "" ).setType( PropertyType::Bool );
 	registerProperty( "touch-drag-deceleration", "" ).setType( PropertyType::NumberFloat );
 
-	registerProperty( "base-alpha", "" ).setType( PropertyType::NumberFloat );
+	registerProperty( "window-opacity", "" ).setType( PropertyType::NumberFloat );
 	registerProperty( "buttons-position-offset", "" ).setType( PropertyType::NumberLength );
 	registerProperty( "window-flags", "" ).addAlias( "winflags" );
 	registerProperty( "decoration-size", "" ).setType( PropertyType::Vector2 );

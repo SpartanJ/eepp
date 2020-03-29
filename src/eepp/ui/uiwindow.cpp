@@ -1105,7 +1105,7 @@ void UIWindow::onPositionChange() {
 	UIWidget::onPositionChange();
 }
 
-void UIWindow::setBaseAlpha( const Uint8& Alpha ) {
+void UIWindow::setWindowOpacity( const Uint8& Alpha ) {
 	if ( mAlpha == mStyleConfig.BaseAlpha ) {
 		UINode::setAlpha( Alpha );
 	}
@@ -1497,8 +1497,8 @@ std::string UIWindow::getPropertyString( const PropertyDefinition* propertyDef,
 			return String::fromFloat( getSize().getHeight(), "dp" );
 		case PropertyId::Title:
 			return getTitle().toUtf8();
-		case PropertyId::BaseAlpha:
-			return String::toStr( getBaseAlpha() );
+		case PropertyId::WindowOpacity:
+			return String::toStr( getBaseAlpha() / 255.f );
 		case PropertyId::ButtonsPositionOffset:
 			return String::format( "%ddp", mStyleConfig.ButtonsPositionFixer.x ) + " " +
 				   String::format( "%ddp", mStyleConfig.ButtonsPositionFixer.y );
@@ -1535,16 +1535,16 @@ bool UIWindow::applyProperty( const StyleSheetProperty& attribute ) {
 			setSize( attribute.asDpDimension(), getSize().getHeight() );
 			break;
 		case PropertyId::Height:
-			setSize( getSize().getWidth(), attribute.asDpDimension() );
+			setSize( getSize().getWidth(), attribute.asDpDimension( this ) );
 			break;
 		case PropertyId::Title:
 			setTitle( attribute.asString() );
 			break;
-		case PropertyId::BaseAlpha:
-			setBaseAlpha( (Uint8)eemin( attribute.asUint(), 255u ) );
+		case PropertyId::WindowOpacity:
+			setWindowOpacity( (Uint8)eemin<Uint32>( (Uint32)attribute.asFloat() * 255.f, 255u ) );
 			break;
 		case PropertyId::ButtonsPositionOffset:
-			mStyleConfig.ButtonsPositionFixer = attribute.asDpDimensionVector2i();
+			mStyleConfig.ButtonsPositionFixer = attribute.asDpDimensionVector2i( this );
 			fixChildsSize();
 			break;
 		case PropertyId::WindowFlags: {
@@ -1592,23 +1592,24 @@ bool UIWindow::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		}
 		case PropertyId::DecorationSize:
-			mStyleConfig.DecorationSize = attribute.asDpDimensionSizei();
+			mStyleConfig.DecorationSize = attribute.asDpDimensionSizei( this );
 			fixChildsSize();
 			break;
 		case PropertyId::BorderSize:
-			mStyleConfig.BorderSize = attribute.asDpDimensionSizei();
+			mStyleConfig.BorderSize = attribute.asDpDimensionSizei( this );
+			mStyleConfig.BorderAutoSize = false;
 			fixChildsSize();
 			break;
 		case PropertyId::MinWindowSize:
-			mStyleConfig.MinWindowSize = attribute.asDpDimensionSizef();
+			mStyleConfig.MinWindowSize = attribute.asDpDimensionSizef( this );
 			fixChildsSize();
 			break;
 		case PropertyId::ButtonsSeparation:
-			mStyleConfig.ButtonsSeparation = attribute.asDpDimensionUint();
+			mStyleConfig.ButtonsSeparation = attribute.asDpDimensionUint( this );
 			fixChildsSize();
 			break;
 		case PropertyId::MinCornerDistance:
-			mStyleConfig.MinCornerDistance = attribute.asDpDimensionI();
+			mStyleConfig.MinCornerDistance = attribute.asDpDimensionI( this );
 			break;
 		case PropertyId::DecorationAutoSize:
 			mStyleConfig.DecorationAutoSize = attribute.asBool();

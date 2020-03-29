@@ -461,7 +461,7 @@ std::string UITextInput::getPropertyString( const PropertyDefinition* propertyDe
 			return isFreeEditingEnabled() ? "true" : "false";
 		case PropertyId::OnlyNumbers:
 			return getInputTextBuffer()->onlyNumbersAllowed() ? "true" : "false";
-		case PropertyId::AllowDot:
+		case PropertyId::AllowFloat:
 			return getInputTextBuffer()->dotsInNumbersAllowed() ? "true" : "false";
 		case PropertyId::Hint:
 			return getHint().toUtf8();
@@ -506,7 +506,7 @@ bool UITextInput::applyProperty( const StyleSheetProperty& attribute ) {
 			getInputTextBuffer()->setAllowOnlyNumbers(
 				attribute.asBool(), getInputTextBuffer()->dotsInNumbersAllowed() );
 			break;
-		case PropertyId::AllowDot:
+		case PropertyId::AllowFloat:
 			getInputTextBuffer()->setAllowOnlyNumbers( getInputTextBuffer()->onlyNumbersAllowed(),
 													   attribute.asBool() );
 			break;

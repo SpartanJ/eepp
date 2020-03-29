@@ -100,7 +100,7 @@ class EE_API UIWindow : public UIWidget {
 
 	virtual void close();
 
-	void setBaseAlpha( const Uint8& alpha );
+	void setWindowOpacity( const Uint8& alpha );
 
 	const Uint8& getBaseAlpha() const;
 
