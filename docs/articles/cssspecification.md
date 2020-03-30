@@ -492,26 +492,6 @@ Sets the blend mode to the widget.
   * `none`
 * Default value: `alpha`
 
-#### border-auto-size
-
-Sets if the window border size should be automatically calculated based on the skin size.
-
-* Applicable to: EE::UI::UIWindow (window)
-* Value Type: boolean
-* Default value: `true`
-
----
-
-#### border-size
-
-Manually sets the size of the window border size.
-
-* Applicable to: EE::UI::UIWindow (window)
-* Value Type: vector2-length
-* Default value: _No value_.
-
----
-
 #### border-type
 
 Defines where the border box is drawn.
@@ -525,51 +505,81 @@ Defines where the border box is drawn.
 
 ---
 
-#### button-margin
-
----
-
-#### buttons-position-offset
-
----
-
-#### buttons-separation
-
----
-
 #### change-page-percent
+
+Sets the percentage of scroll of a page that triggers a page change in a ViewPager.
+
+* Applicable to: EE::UI::UIViewPager (ViewPager).
+* Value Type: float (normalized between `0` and `1`)
+* Default value: `0.33`
 
 ---
 
 #### click-step
 
+For any element that has a stepped value change, this sets the step variation for a click to the element.
+
+* Applicable to: EE::UI::UIScrollBar (ScrollBar), EE::UI::UISlider (Slider), EE::UI::UISpinBox (SpinBox).
+* Value Type: float
+* Default value:
+  * ScrollBar: `0.1`
+  * Slider: `0.1`
+  * SpinBox: `1`
+
 ---
 
 #### clip
+
+Enables/disables clipping to the element box.
+
+* Applicable to: Any element.
+* Value Type: boolean
+* Default Value: Varies for each widget/element.
 
 ---
 
 #### column-mode
 
+Sets the column mode of a grid layout.
+The column mode defines how the size of the column of a grid layout is measured.
+
+* Applicable to: EE::UI::UIGridLayout (GridLayout)
+* Value Type: string-list
+* Value List:
+  * `size`: The column width of each grid child will be defined with a fixed width based on the value of the `column-width` length.
+  * `weight`: The column width of each grid child will be calculated as a normalized percentage of the total grid width using the `column-weight` value.
+* Default value: `weight`
+
 ---
 
-#### column-span
+#### column-margin
+
+Sets the horizontal separation between each element in the grid layout.
+
+* Applicable to: EE::UI::UIGridLayout (GridLayout)
+* Value Type: length
+* Default value: `0dp`
 
 ---
 
 #### column-weight
 
+Sets the percentage width of the child elements of a grid layout.
+`column-mode` must be `weight` in order to work.
+
+* Applicable to: EE::UI::UIGridLayout (GridLayout)
+* Value Type: float (normalized between `0` and `1`)
+* Default value: `0.25`
+
 ---
 
 #### column-width
 
----
+Sets the width of the child elements of a grid layout.
 
-#### decoration-auto-size
-
----
-
-#### decoration-size
+* Applicable to: EE::UI::UIGridLayout (GridLayout)
+* Value Type: length
+* Default value: `0`
 
 ---
 
@@ -582,6 +592,12 @@ Defines where the border box is drawn.
 ---
 
 #### enabled
+
+Sets if the element is enabled
+
+* Applicable to: Any element.
+* Value Type: boolean
+* Default value: `true`
 
 ---
 
@@ -605,39 +621,43 @@ Defines where the border box is drawn.
 
 ---
 
-#### first-button-margin-left
-
----
-
 #### flags
 
 ---
 
 #### foreground-color
 
+Same as [background-color](#background-color) but for the foreground.
+
 ---
 
 #### foreground-image
+
+Same as [background-image](#background-image) but for the foreground.
 
 ---
 
 #### foreground-position-x
 
+Same as [background-position-x](#background-position-x) but for the foreground.
+
 ---
 
 #### foreground-position-y
 
----
-
-#### foreground-radius
+Same as [background-position-y](#background-position-y) but for the foreground.
 
 ---
 
 #### foreground-repeat
 
+Same as [background-repeat](#background-repeat) but for the foreground.
+
 ---
 
 #### foreground-size
+
+Same as [background-size](#background-size) but for the foreground.
 
 ---
 
@@ -749,10 +769,6 @@ Defines where the border box is drawn.
 
 ---
 
-#### margin-between-buttons
-
----
-
 #### max-edge-resistance
 
 ---
@@ -781,14 +797,6 @@ Defines where the border box is drawn.
 
 ---
 
-#### menu-height
-
----
-
-#### min-corner-distance
-
----
-
 #### min-icon-size
 
 ---
@@ -806,10 +814,6 @@ Defines where the border box is drawn.
 ---
 
 #### min-value
-
----
-
-#### min-window-size
 
 ---
 
@@ -881,7 +885,7 @@ Defines where the border box is drawn.
 
 ---
 
-#### row-span
+#### row-margin
 
 ---
 
@@ -1025,7 +1029,88 @@ Defines where the border box is drawn.
 
 ---
 
+#### window-border-auto-size
+
+Sets if the window border size should be automatically calculated based on the skin size.
+
+* Applicable to: EE::UI::UIWindow (Window)
+* Value Type: boolean
+* Default value: `true`
+
+---
+
+#### window-border-size
+
+Manually sets the size of the window border.
+
+* Applicable to: EE::UI::UIWindow (Window)
+* Value Type: vector2-length
+* Default value: _No value_
+
+---
+
+#### window-buttons-offset
+
+Sets the window titlebar buttons position offset.
+
+* Applicable to: EE::UI::UIWindow (Window)
+* Value Type: vector2-length
+* Default Value: `0dp 0dp`
+
+---
+
+#### window-buttons-separation
+
+Sets the separation between the window titlebar buttons.
+
+* Applicable to: EE::UI::UIWindow (Window)
+* Value Type: length
+* Default value: `4dp`
+
+---
+
+#### window-corner-distance
+
+Sets the minimum distance where the hovering cursor detects an edge of the window to enable edge resizing.
+
+* Applicable to: EE::UI::UIWindow (Window)
+* Value Type: length
+* Default value: `24dp`
+
+---
+
 #### window-flags
+
+Sets the window flags. Window flags activate a set of different boolean options of the window.
+Multiple values are separated with a `|` (as a logical or).
+
+* Applicable to: EE::UI::UIWindow (Window)
+* Value Type: string-list
+* Value List:
+  * `default`: same as `close|buttonactions|resizeable|shareopacity`
+  * `close`: Adds a close button to the titlebar.
+  * `maximize`: Adds a maximize button to the titlebar.
+  * `minimize`: Adds a minimize button to the titlebar.
+  * `dragable`: Makes the window background dragable.
+  * `shadow`: The window will project a shadow.
+  * `modal`: Makes the window modal (blocks interacting any element ouside the window).
+  * `undecorated`: Creates an undecorated window (no borders and titlebar).
+  * `resizeable`: Makes the window resizeable.
+  * `shareopacity`: Childs will inherit the window opacity (otherwise if you change the opacity of the window will only affect its borders, background and titlebar).
+  * `buttonactions`: Implements the window minimize, maximize and close buttons default actions. This means that close button click will close, minimize will hide (but not close) and maximize will maximize.
+  * `framebuffer`: Creates the window on its own frame buffer.
+  * `colorbuffer`: Enables the color buffer to the frame buffer (if active).
+* Default value: `default`
+
+---
+
+#### window-min-size
+
+Sets the window minimum size.
+
+* Applicable to: EE::UI::Window (Window)
+* Value Type: vector2-length
+* Default value: _No value_
 
 ---
 
@@ -1035,11 +1120,37 @@ Sets the base opacity of a window, this is the maximum opacity that the window w
 
 * Applicable to: EE::UI::UIWindow (window)
 * Value type: float
-* Default value: 1
+* Default value: `1`
+
+---
+
+#### window-titlebar-auto-size
+
+Sets if the window titlebar size should be automatically calculated based on the skin size.
+
+* Applicable to: EE::UI::UIWindow (Window)
+* Value Type: boolean
+* Default value: `true`
+
+---
+
+#### window-titlebar-size
+
+Manually sets the size of the window titlebar.
+
+* Applicable to: EE::UI::UIWindow (Window)
+* Value Type: vector2-length
+* Default value: _No value_.
 
 ---
 
 #### word-wrap
+
+Enables/disables word-wrap in the text view element.
+
+* Applicable to: EE::UI::UITextVIew (TextView), EE::UI::UITextInput (TextInput), EE::UI::UICheckBox (CheckBox), EE::UI::UIRadioButton (RadioButton), EE::UI::UIListBoxItem (ListBox::item), EE::UI::UITextInputPassword (TextInputPassword), EE::UI::UIDropDownList (DropDownList).
+* Value type: boolean
+* Default value: `false`
 
 ---
 
@@ -1047,39 +1158,134 @@ Sets the base opacity of a window, this is the maximum opacity that the window w
 
 [Shorthand properties](https://developer.mozilla.org/en-US/docs/Web/CSS/Shorthand_properties) are CSS properties that let you set the values of multiple other CSS properties simultaneously. Using a shorthand property, you can write more concise (and often more readable) style sheets, saving time and energy.
 
-* [animation](https://developer.mozilla.org/en-US/docs/Web/CSS/animation)
+---
 
-* [background](https://developer.mozilla.org/en-US/docs/Web/CSS/background): Only for the CSS properties supported by eepp.
+### animation
 
-* [border-color](https://developer.mozilla.org/en-US/docs/Web/CSS/border-color)
+Read [animation](https://developer.mozilla.org/en-US/docs/Web/CSS/animation) documentation.
 
-* [border-radius](https://developer.mozilla.org/en-US/docs/Web/CSS/border-radius)
+---
 
-* [border-width](https://developer.mozilla.org/en-US/docs/Web/CSS/border-width)
+### background
 
-* foreground: Same as the background but for the foreground of the node. The foreground is rendered on the top of the element.
+Read [background](https://developer.mozilla.org/en-US/docs/Web/CSS/background) documentation.
+Only eepp CSS properties supported are valid in the shorthand.
 
-* [margin](https://developer.mozilla.org/en-US/docs/Web/CSS/margin)
+---
 
-* [padding](https://developer.mozilla.org/en-US/docs/Web/CSS/padding)
+### background-position
 
-* rotation-origin-point: The origin point of the rotation expressed as two numeric lengths or percentages separated by a space. Default value is "center center". For example:
+Read [background-position](https://developer.mozilla.org/en-US/docs/Web/CSS/background-position) documentation.
+
+---
+
+### border-color
+
+Read [border-color](https://developer.mozilla.org/en-US/docs/Web/CSS/border-color) documentation.
+
+---
+
+### border-radius
+
+Read [border-radius](https://developer.mozilla.org/en-US/docs/Web/CSS/border-radius) documentation.
+
+---
+
+### border-width
+
+Read [border-width](https://developer.mozilla.org/en-US/docs/Web/CSS/border-width) documentation.
+
+---
+
+### box-margin
+
+Shorthand for [column-margin](#column-margin) and [row-margin](#row-margin) (in that order).
+
+The syntax consists in two lengths separated by a space.
+
+Syntax:
 
 ```CSS
-    rotation-origin-point: 50dp 10dp;
-    rotation-origin-point: center top;
-    rotation-origin-point: 100% 0%;
+box-margin: 10dp 10dp;
 ```
 
-* scale-origin-point: The origin point of the node scale expressed as two numeric lengths or percentages separated by a space. Default value is "center center". For example:
+---
+
+### filler-padding
+
+Sets the padding for the filler element of a EE::UI::UIProgressBar (ProgressBar) element.
+This follow the same rules than the [padding](#padding) shorthand.
+
+---
+
+### foreground
+
+Same as the [background](#background) but for the foreground of the node.
+The foreground is rendered on the top of the element.
+
+---
+
+### foreground-position
+
+Same as the [background-position](#background-position) but for the foreground of the node.
+
+---
+
+### foreground-radius
+
+Same as the [border-radius](#border-radius) but for the foreground of the node.
+
+---
+
+### margin
+
+Read [margin](https://developer.mozilla.org/en-US/docs/Web/CSS/margin) documentation.
+
+---
+
+### padding
+
+Read [padding](https://developer.mozilla.org/en-US/docs/Web/CSS/padding) documentation.
+
+---
+
+### rotation-origin-point
+
+The origin point of the rotation expressed as two numeric lengths or percentages separated by a space.
+
+Default value: `center center`.
+
+Syntax:
 
 ```CSS
-    scale-origin-point: 50dp 10dp;
-    scale-origin-point: center top;
-    scale-origin-point: 100% 0%;
+rotation-origin-point: 50dp 10dp;
+rotation-origin-point: center top;
+rotation-origin-point: 100% 0%;
 ```
 
-* [transition](https://developer.mozilla.org/en-US/docs/Web/CSS/transition)
+---
+
+### scale-origin-point
+
+The origin point of the node scale expressed as two numeric lengths or percentages separated by a space.
+
+Default value: `center center`.
+
+Syntax:
+
+```CSS
+scale-origin-point: 50dp 10dp;
+scale-origin-point: center top;
+scale-origin-point: 100% 0%;
+```
+
+---
+
+### transition
+
+Read [transition](https://developer.mozilla.org/en-US/docs/Web/CSS/transition) documentation.
+
+---
 
 ## At-rules
 

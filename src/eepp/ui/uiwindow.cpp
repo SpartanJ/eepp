@@ -180,7 +180,7 @@ void UIWindow::updateWinFlags() {
 
 		if ( mStyleConfig.WinFlags & UI_WIN_CLOSE_BUTTON ) {
 			if ( NULL == mButtonClose ) {
-				mButtonClose = UINode::New();
+				mButtonClose = UIWidget::NewWithTag( "window::close" );
 				mButtonClose->writeNodeFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 				needsUpdate = true;
 			}
@@ -195,7 +195,7 @@ void UIWindow::updateWinFlags() {
 
 		if ( isMaximizable() ) {
 			if ( NULL == mButtonMaximize ) {
-				mButtonMaximize = UINode::New();
+				mButtonMaximize = UIWidget::NewWithTag( "window::maximize" );
 				mButtonMaximize->writeNodeFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 				needsUpdate = true;
 			}
@@ -210,7 +210,7 @@ void UIWindow::updateWinFlags() {
 
 		if ( mStyleConfig.WinFlags & UI_WIN_MINIMIZE_BUTTON ) {
 			if ( NULL == mButtonMinimize ) {
-				mButtonMinimize = UINode::New();
+				mButtonMinimize = UIWidget::NewWithTag( "window::minimize" );
 				mButtonMinimize->writeNodeFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 				needsUpdate = true;
 			}
@@ -515,7 +515,7 @@ void UIWindow::calcMinWinSize() {
 	Sizei tSize;
 
 	tSize.x = mBorderLeft->getSize().getWidth() + mBorderRight->getSize().getWidth() -
-			  mStyleConfig.ButtonsPositionFixer.x;
+			  mStyleConfig.ButtonsOffset.x;
 	tSize.y = mWindowDecoration->getSize().getHeight() + mBorderBottom->getSize().getHeight();
 
 	if ( NULL != mButtonClose )
@@ -623,15 +623,15 @@ void UIWindow::fixChildsSize() {
 		return;
 	}
 
-	Sizei decoSize = mStyleConfig.DecorationSize;
+	Sizei decoSize = mStyleConfig.TitlebarSize;
 
-	if ( mStyleConfig.DecorationAutoSize ) {
-		decoSize = mStyleConfig.DecorationSize =
+	if ( mStyleConfig.TitlebarAutoSize ) {
+		decoSize = mStyleConfig.TitlebarSize =
 			Sizei( getSize().getWidth(), mWindowDecoration->getSkinSize().getHeight() );
 	}
 
 	mWindowDecoration->setPixelsSize(
-		mSize.getWidth(), PixelDensity::dpToPx( mStyleConfig.DecorationSize.getHeight() ) );
+		mSize.getWidth(), PixelDensity::dpToPx( mStyleConfig.TitlebarSize.getHeight() ) );
 
 	if ( mStyleConfig.BorderAutoSize ) {
 		mBorderBottom->setPixelsSize(
@@ -673,7 +673,7 @@ void UIWindow::fixChildsSize() {
 
 	Uint32 yPos;
 	Vector2f posFix( PixelDensity::dpToPx(
-		Vector2f( mStyleConfig.ButtonsPositionFixer.x, mStyleConfig.ButtonsPositionFixer.y ) ) );
+		Vector2f( mStyleConfig.ButtonsOffset.x, mStyleConfig.ButtonsOffset.y ) ) );
 
 	if ( NULL != mButtonClose ) {
 		yPos = mWindowDecoration->getPixelsSize().getHeight() / 2 -
@@ -1475,7 +1475,7 @@ std::string UIWindow::getWindowFlagsString() {
 	if ( getWinFlags() & UI_WIN_RESIZEABLE )
 		flags.push_back( "resizeable" );
 	if ( getWinFlags() & UI_WIN_SHARE_ALPHA_WITH_CHILDS )
-		flags.push_back( "sharealpha" );
+		flags.push_back( "shareopacity" );
 	if ( getWinFlags() & UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS )
 		flags.push_back( "buttonactions" );
 	if ( getWinFlags() & UI_WIN_FRAME_BUFFER )
@@ -1499,27 +1499,27 @@ std::string UIWindow::getPropertyString( const PropertyDefinition* propertyDef,
 			return getTitle().toUtf8();
 		case PropertyId::WindowOpacity:
 			return String::toStr( getBaseAlpha() / 255.f );
-		case PropertyId::ButtonsPositionOffset:
-			return String::format( "%ddp", mStyleConfig.ButtonsPositionFixer.x ) + " " +
-				   String::format( "%ddp", mStyleConfig.ButtonsPositionFixer.y );
+		case PropertyId::WindowButtonsOffset:
+			return String::format( "%ddp", mStyleConfig.ButtonsOffset.x ) + " " +
+				   String::format( "%ddp", mStyleConfig.ButtonsOffset.y );
 		case PropertyId::WindowFlags:
 			return getWindowFlagsString();
-		case PropertyId::DecorationSize:
-			return String::format( "%ddp", mStyleConfig.DecorationSize.x ) + " " +
-				   String::format( "%ddp", mStyleConfig.DecorationSize.y );
-		case PropertyId::BorderSize:
+		case PropertyId::WindowTitlebarSize:
+			return String::format( "%ddp", mStyleConfig.TitlebarSize.x ) + " " +
+				   String::format( "%ddp", mStyleConfig.TitlebarSize.y );
+		case PropertyId::WindowBorderSize:
 			return String::format( "%ddp", mStyleConfig.BorderSize.x ) + " " +
 				   String::format( "%ddp", mStyleConfig.BorderSize.y );
-		case PropertyId::MinWindowSize:
+		case PropertyId::WindowMinSize:
 			return String::fromFloat( mStyleConfig.MinWindowSize.x, "dp" ) + " " +
 				   String::fromFloat( mStyleConfig.MinWindowSize.y, "dp" );
-		case PropertyId::ButtonsSeparation:
+		case PropertyId::WindowButtonsSeparation:
 			return String::format( "%ddp", mStyleConfig.ButtonsSeparation );
-		case PropertyId::MinCornerDistance:
+		case PropertyId::WindowCornerDistance:
 			return String::format( "%ddp", mStyleConfig.MinCornerDistance );
-		case PropertyId::DecorationAutoSize:
-			return mStyleConfig.DecorationAutoSize ? "true" : "false";
-		case PropertyId::BorderAutoSize:
+		case PropertyId::WindowTitlebarAutoSize:
+			return mStyleConfig.TitlebarAutoSize ? "true" : "false";
+		case PropertyId::WindowBorderAutoSize:
 			return mStyleConfig.BorderAutoSize ? "true" : "false";
 		default:
 			return UIWidget::getPropertyString( propertyDef, propertyIndex );
@@ -1543,8 +1543,8 @@ bool UIWindow::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::WindowOpacity:
 			setWindowOpacity( (Uint8)eemin<Uint32>( (Uint32)attribute.asFloat() * 255.f, 255u ) );
 			break;
-		case PropertyId::ButtonsPositionOffset:
-			mStyleConfig.ButtonsPositionFixer = attribute.asDpDimensionVector2i( this );
+		case PropertyId::WindowButtonsOffset:
+			mStyleConfig.ButtonsOffset = attribute.asDpDimensionVector2i( this );
 			fixChildsSize();
 			break;
 		case PropertyId::WindowFlags: {
@@ -1571,11 +1571,11 @@ bool UIWindow::applyProperty( const StyleSheetProperty& attribute ) {
 						winflags |= UI_WIN_SHADOW;
 					else if ( "modal" == cur )
 						winflags |= UI_WIN_MODAL;
-					else if ( "noborder" == cur || "borderless" == cur )
+					else if ( "noborder" == cur || "borderless" == cur || "undecorated" == cur )
 						winflags |= UI_WIN_NO_DECORATION;
 					else if ( "resizeable" == cur )
 						winflags |= UI_WIN_RESIZEABLE;
-					else if ( "sharealpha" == cur )
+					else if ( "shareopacity" == cur )
 						winflags |= UI_WIN_SHARE_ALPHA_WITH_CHILDS;
 					else if ( "buttonactions" == cur )
 						winflags |= UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS;
@@ -1591,31 +1591,31 @@ bool UIWindow::applyProperty( const StyleSheetProperty& attribute ) {
 			}
 			break;
 		}
-		case PropertyId::DecorationSize:
-			mStyleConfig.DecorationSize = attribute.asDpDimensionSizei( this );
+		case PropertyId::WindowTitlebarSize:
+			mStyleConfig.TitlebarSize = attribute.asDpDimensionSizei( this );
 			fixChildsSize();
 			break;
-		case PropertyId::BorderSize:
+		case PropertyId::WindowBorderSize:
 			mStyleConfig.BorderSize = attribute.asDpDimensionSizei( this );
 			mStyleConfig.BorderAutoSize = false;
 			fixChildsSize();
 			break;
-		case PropertyId::MinWindowSize:
+		case PropertyId::WindowMinSize:
 			mStyleConfig.MinWindowSize = attribute.asDpDimensionSizef( this );
 			fixChildsSize();
 			break;
-		case PropertyId::ButtonsSeparation:
+		case PropertyId::WindowButtonsSeparation:
 			mStyleConfig.ButtonsSeparation = attribute.asDpDimensionUint( this );
 			fixChildsSize();
 			break;
-		case PropertyId::MinCornerDistance:
+		case PropertyId::WindowCornerDistance:
 			mStyleConfig.MinCornerDistance = attribute.asDpDimensionI( this );
 			break;
-		case PropertyId::DecorationAutoSize:
-			mStyleConfig.DecorationAutoSize = attribute.asBool();
+		case PropertyId::WindowTitlebarAutoSize:
+			mStyleConfig.TitlebarAutoSize = attribute.asBool();
 			fixChildsSize();
 			break;
-		case PropertyId::BorderAutoSize:
+		case PropertyId::WindowBorderAutoSize:
 			mStyleConfig.BorderAutoSize = attribute.asBool();
 			fixChildsSize();
 			break;

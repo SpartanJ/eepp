@@ -228,8 +228,8 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "vscroll-mode", "" );
 	registerProperty( "hscroll-mode", "" );
 
-	registerProperty( "column-span", "" ).setType( PropertyType::NumberLength );
-	registerProperty( "row-span", "" ).setType( PropertyType::NumberLength );
+	registerProperty( "column-margin", "" ).setType( PropertyType::NumberLength );
+	registerProperty( "row-margin", "" ).setType( PropertyType::NumberLength );
 	registerProperty( "span", "" ).setType( PropertyType::NumberLength );
 	registerProperty( "column-mode", "" );
 	registerProperty( "row-mode", "" );
@@ -291,20 +291,15 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "touch-drag-deceleration", "" ).setType( PropertyType::NumberFloat );
 
 	registerProperty( "window-opacity", "" ).setType( PropertyType::NumberFloat );
-	registerProperty( "buttons-position-offset", "" ).setType( PropertyType::NumberLength );
-	registerProperty( "window-flags", "" ).addAlias( "winflags" );
-	registerProperty( "decoration-size", "" ).setType( PropertyType::Vector2 );
-	registerProperty( "border-size", "" ).setType( PropertyType::Vector2 );
-	registerProperty( "min-window-size", "" ).setType( PropertyType::Vector2 );
-	registerProperty( "buttons-separation", "" ).setType( PropertyType::NumberLength );
-	registerProperty( "min-corner-distance", "" );
-	registerProperty( "decoration-auto-size", "" ).setType( PropertyType::Bool );
-	registerProperty( "border-auto-size", "" ).setType( PropertyType::Bool );
-
-	registerProperty( "margin-between-buttons", "" ).setType( PropertyType::NumberLength );
-	registerProperty( "button-margin", "" ).setType( PropertyType::NumberLength );
-	registerProperty( "menu-height", "" ).setType( PropertyType::NumberLength );
-	registerProperty( "first-button-margin-left", "" ).setType( PropertyType::NumberLength );
+	registerProperty( "window-buttons-offset", "" ).setType( PropertyType::NumberLength );
+	registerProperty( "window-flags", "" ).addAlias( "winflags" ).setType( PropertyType::String );
+	registerProperty( "window-titlebar-size", "" ).setType( PropertyType::Vector2 );
+	registerProperty( "window-border-size", "" ).setType( PropertyType::Vector2 );
+	registerProperty( "window-min-size", "" ).setType( PropertyType::Vector2 );
+	registerProperty( "window-buttons-separation", "" ).setType( PropertyType::NumberLength );
+	registerProperty( "window-corner-distance", "" ).setType( PropertyType::NumberLength );
+	registerProperty( "window-decoration-auto-size", "" ).setType( PropertyType::Bool );
+	registerProperty( "window-border-auto-size", "" ).setType( PropertyType::Bool );
 
 	registerProperty( "word-wrap", "" ).setType( PropertyType::Bool );
 
@@ -397,7 +392,7 @@ void StyleSheetSpecification::registerDefaultProperties() {
 					   {"filler-padding-top", "filler-padding-right", "filler-padding-bottom",
 						"filler-padding-left"},
 					   "box" );
-	registerShorthand( "span", {"column-span", "row-span"}, "single-value-vector" );
+	registerShorthand( "box-margin", {"column-margin", "row-margin"}, "single-value-vector" );
 	registerShorthand( "background-position", {"background-position-x", "background-position-y"},
 					   "background-position" );
 	registerShorthand( "foreground-position", {"foreground-position-x", "foreground-position-y"},

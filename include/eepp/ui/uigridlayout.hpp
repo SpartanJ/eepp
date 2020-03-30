@@ -17,9 +17,9 @@ class EE_API UIGridLayout : public UILayout {
 
 	virtual bool isType( const Uint32& type ) const;
 
-	Sizei getSpan() const;
+	Sizei getBoxMargin() const;
 
-	UIGridLayout* setSpan( const Sizei& span );
+	UIGridLayout* setBoxMargin( const Sizei& span );
 
 	ElementMode getColumnMode() const;
 
@@ -51,7 +51,7 @@ class EE_API UIGridLayout : public UILayout {
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
   protected:
-	Sizei mSpan;
+	Sizei mBoxMargin;
 	ElementMode mColumnMode;
 	ElementMode mRowMode;
 	Float mColumnWeight;
@@ -61,7 +61,7 @@ class EE_API UIGridLayout : public UILayout {
 
 	virtual void onSizeChange();
 
-	virtual void onChildCountChange( Node * child, const bool& removed );
+	virtual void onChildCountChange( Node* child, const bool& removed );
 
 	virtual void onPaddingChange();
 

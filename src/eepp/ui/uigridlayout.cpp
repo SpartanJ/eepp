@@ -26,12 +26,12 @@ bool UIGridLayout::isType( const Uint32& type ) const {
 	return UIGridLayout::getType() == type ? true : UIWidget::isType( type );
 }
 
-Sizei UIGridLayout::getSpan() const {
-	return mSpan;
+Sizei UIGridLayout::getBoxMargin() const {
+	return mBoxMargin;
 }
 
-UIGridLayout* UIGridLayout::setSpan( const Sizei& span ) {
-	mSpan = span;
+UIGridLayout* UIGridLayout::setBoxMargin( const Sizei& span ) {
+	mBoxMargin = span;
 	invalidateDraw();
 	return this;
 }
@@ -181,7 +181,7 @@ void UIGridLayout::pack() {
 
 			if ( pos.x < mPadding.Left ||
 				 pos.x + targetSize.x > getSize().getWidth() - mPadding.Right ||
-				 pos.x + targetSize.x + mSpan.x > getSize().getWidth() - mPadding.Right ) {
+				 pos.x + targetSize.x + mBoxMargin.x > getSize().getWidth() - mPadding.Right ) {
 
 				if ( getHorizontalAlign() == UI_HALIGN_CENTER ) {
 					pos.x = initX;
@@ -191,10 +191,10 @@ void UIGridLayout::pack() {
 					pos.x = mPadding.Left;
 				}
 
-				pos.y += targetSize.getHeight() + mSpan.y;
+				pos.y += targetSize.getHeight() + mBoxMargin.y;
 				usedLastRow = false;
 			} else {
-				pos.x += getHorizontalAlign() == UI_HALIGN_RIGHT ? -mSpan.x : mSpan.x;
+				pos.x += getHorizontalAlign() == UI_HALIGN_RIGHT ? -mBoxMargin.x : mBoxMargin.x;
 			}
 		}
 
@@ -244,10 +244,10 @@ std::string UIGridLayout::getPropertyString( const PropertyDefinition* propertyD
 		return "";
 
 	switch ( propertyDef->getPropertyId() ) {
-		case PropertyId::ColumnSpan:
-			return String::format( "%ddp", mSpan.x );
-		case PropertyId::RowSpan:
-			return String::format( "%ddp", mSpan.y );
+		case PropertyId::ColumnMargin:
+			return String::format( "%ddp", mBoxMargin.x );
+		case PropertyId::RowMargin:
+			return String::format( "%ddp", mBoxMargin.y );
 		case PropertyId::ColumnMode:
 			return getColumnMode() == Size ? "size" : "weight";
 		case PropertyId::RowMode:
@@ -272,11 +272,11 @@ bool UIGridLayout::applyProperty( const StyleSheetProperty& attribute ) {
 		return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
-		case PropertyId::ColumnSpan:
-			setSpan( Sizei( attribute.asDpDimensionI(), mSpan.y ) );
+		case PropertyId::ColumnMargin:
+			setBoxMargin( Sizei( attribute.asDpDimensionI( this ), mBoxMargin.y ) );
 			break;
-		case PropertyId::RowSpan:
-			setSpan( Sizei( mSpan.x, attribute.asDpDimensionI() ) );
+		case PropertyId::RowMargin:
+			setBoxMargin( Sizei( mBoxMargin.x, attribute.asDpDimensionI( this ) ) );
 			break;
 		case PropertyId::ColumnMode: {
 			std::string val( attribute.asString() );
@@ -294,13 +294,13 @@ bool UIGridLayout::applyProperty( const StyleSheetProperty& attribute ) {
 			setColumnWeight( attribute.asFloat() );
 			break;
 		case PropertyId::ColumnWidth:
-			setColumnWidth( attribute.asDpDimensionI() );
+			setColumnWidth( attribute.asDpDimensionI( this ) );
 			break;
 		case PropertyId::RowWeight:
-			setRowWeight( attribute.asDpDimension() );
+			setRowWeight( attribute.asFloat() );
 			break;
 		case PropertyId::RowHeight:
-			setRowHeight( attribute.asDpDimensionI() );
+			setRowHeight( attribute.asDpDimensionI( this ) );
 			break;
 		case PropertyId::ReverseDraw:
 			setReverseDraw( attribute.asBool() );

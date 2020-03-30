@@ -41,14 +41,14 @@ class EE_API UIWindow : public UIWidget {
 		StyleConfig( Uint32 winFlags ) : WinFlags( winFlags ) {}
 
 		Uint32 WinFlags = UI_WIN_DEFAULT_FLAGS;
-		Sizei DecorationSize;
+		Sizei TitlebarSize;
 		Sizei BorderSize;
 		Sizef MinWindowSize;
-		Vector2i ButtonsPositionFixer;
+		Vector2i ButtonsOffset;
 		Uint32 ButtonsSeparation = 4;
 		Int32 MinCornerDistance = 24;
 		Uint8 BaseAlpha = 255;
-		bool DecorationAutoSize = true;
+		bool TitlebarAutoSize = true;
 		bool BorderAutoSize = true;
 	};
 

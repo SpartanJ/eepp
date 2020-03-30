@@ -10,14 +10,6 @@ namespace EE { namespace UI {
 
 class EE_API UIWinMenu : public UIWidget {
   public:
-	class StyleConfig {
-	  public:
-		Uint32 MarginBetweenButtons = 0;
-		Uint32 ButtonMargin = 4;
-		Uint32 MenuHeight = 0;
-		Uint32 FirstButtonMargin = 1;
-	};
-
 	static UIWinMenu* New();
 
 	UIWinMenu();
@@ -38,37 +30,18 @@ class EE_API UIWinMenu : public UIWidget {
 
 	UIPopUpMenu* getPopUpMenu( const String& ButtonText );
 
-	Uint32 getMarginBetweenButtons() const;
-
-	void setMarginBetweenButtons( const Uint32& marginBetweenButtons );
-
-	Uint32 getButtonMargin() const;
-
-	void setButtonMargin( const Uint32& buttonMargin );
-
 	Uint32 getMenuHeight() const;
 
 	void setMenuHeight( const Uint32& menuHeight );
-
-	Uint32 getFirstButtonMargin() const;
-
-	void setFirstButtonMargin( const Uint32& buttonMargin );
-
-	const StyleConfig& getStyleConfig() const;
-
-	void setStyleConfig( const StyleConfig& styleConfig );
 
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
 	virtual void loadFromXmlNode( const pugi::xml_node& node );
 
-	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
-										   const Uint32& propertyIndex = 0 );
-
   protected:
 	typedef std::list<std::pair<UISelectButton*, UIPopUpMenu*>> WinMenuList;
 
-	StyleConfig mStyleConfig;
+	Uint32 mMenuHeight;
 	UIPopUpMenu* mCurrentMenu;
 	WinMenuList mButtons;
 

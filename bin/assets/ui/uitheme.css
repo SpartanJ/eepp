@@ -21,7 +21,12 @@ ProgressBar {
 }
 
 WinMenu {
-	button-margin: 12dp;
+	padding-left: 1dp;
+}
+
+WinMenu::button {
+	padding-left: -3dp;
+	padding-right: -3dp;
 }
 
 Menu,
@@ -54,7 +59,7 @@ ScrollBar {
 
 Window {
 	window-flags: shadow;
-	buttons-position-offset: -2 0;
+	window-buttons-offset: -2dp 0;
 }
 
 Window::title {

@@ -106,7 +106,7 @@ UIColorPicker::UIColorPicker( UIWindow* attachTo, const UIColorPicker::ColorPick
 	<style>
 	#color_picker {
 		margin: 4dp;
-		min-window-size: 320dp 478dp;
+		window-min-size: 320dp 478dp;
 	}
 	#color_picker > .header {
 		margin-bottom: 4dp;
