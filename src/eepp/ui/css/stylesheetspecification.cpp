@@ -267,10 +267,6 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "total-steps", "" ).setType( PropertyType::NumberInt );
 	registerProperty( "vertical-expand", "" ).setType( PropertyType::Bool );
 	registerProperty( "display-percent", "" ).setType( PropertyType::Bool );
-	registerProperty( "filler-padding-left", "" ).setType( PropertyType::NumberLength );
-	registerProperty( "filler-padding-top", "" ).setType( PropertyType::NumberLength );
-	registerProperty( "filler-padding-right", "" ).setType( PropertyType::NumberLength );
-	registerProperty( "filler-padding-bottom", "" ).setType( PropertyType::NumberLength );
 	registerProperty( "movement-speed", "" ).setType( PropertyType::Vector2 );
 	registerProperty( "min-value", "" ).setType( PropertyType::NumberFloat );
 	registerProperty( "max-value", "" ).setType( PropertyType::NumberFloat );
@@ -388,10 +384,6 @@ void StyleSheetSpecification::registerDefaultProperties() {
 		"foreground",
 		{"foreground-color", "foreground-image", "foreground-repeat", "foreground-position"},
 		"background" );
-	registerShorthand( "filler-padding",
-					   {"filler-padding-top", "filler-padding-right", "filler-padding-bottom",
-						"filler-padding-left"},
-					   "box" );
 	registerShorthand( "box-margin", {"column-margin", "row-margin"}, "single-value-vector" );
 	registerShorthand( "background-position", {"background-position-x", "background-position-y"},
 					   "background-position" );

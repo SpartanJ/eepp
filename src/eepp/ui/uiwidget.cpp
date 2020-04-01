@@ -1291,7 +1291,11 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			String::toLowerInPlace( gravity );
 			std::vector<std::string> strings = String::split( gravity, '|' );
 
-			if ( strings.size() ) {
+			if ( strings.empty() ) {
+				strings = String::split( gravity, ' ' );
+			}
+
+			if ( !strings.empty() ) {
 				for ( std::size_t i = 0; i < strings.size(); i++ ) {
 					std::string cur = strings[i];
 					String::toLowerInPlace( cur );
@@ -1333,7 +1337,7 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 						notifyLayoutAttrChange();
 					} else if ( "clip" == cur ) {
 						clipEnable();
-					} else if ( "multi" == cur ) {
+					} else if ( "multiselect" == cur ) {
 						setFlags( UI_MULTI_SELECT );
 					} else if ( "auto_padding" == cur || "autopadding" == cur ) {
 						setFlags( UI_AUTO_PADDING );

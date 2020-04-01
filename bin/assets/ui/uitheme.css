@@ -10,14 +10,14 @@ TabWidget {
 	tab-separation: -1dp;
 	line-below-tabs: true;
 	line-below-tabs-color: #2f3030;
-	line-below-tabs-y-offset: 0dp;
+	line-below-tabs-y-offset: -1dp;
 }
 
 ProgressBar {
 	display-percent: true;
 	vertical-expand: true;
-	filler-padding: 2dp;
 	movement-speed: 32 0;
+	padding: 2dp;
 }
 
 WinMenu {

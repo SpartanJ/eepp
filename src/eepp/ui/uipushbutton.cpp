@@ -348,7 +348,7 @@ bool UIPushButton::applyProperty( const StyleSheetProperty& attribute ) {
 			setIconMinimumSize( attribute.asSizei() );
 			break;
 		case PropertyId::IconHorizontalMargin:
-			setIconHorizontalMargin( attribute.asDpDimensionI() );
+			setIconHorizontalMargin( attribute.asDpDimensionI( this ) );
 			break;
 		case PropertyId::IconAutoMargin:
 			mStyleConfig.IconAutoMargin = attribute.asBool();

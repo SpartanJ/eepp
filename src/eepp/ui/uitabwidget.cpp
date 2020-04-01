@@ -17,13 +17,13 @@ UITabWidget::UITabWidget() :
 	UIWidget( "tabwidget" ), mTabSelected( NULL ), mTabSelectedIndex( eeINDEX_NOT_FOUND ) {
 	setHorizontalAlign( UI_HALIGN_CENTER );
 
-	mTabContainer = UIWidget::New();
+	mTabContainer = UIWidget::NewWithTag( "tabwidget::tabcontainer" );
 	mTabContainer->setPixelsSize( mSize.getWidth(), mStyleConfig.TabWidgetHeight )
 		->setParent( this )
 		->setPosition( 0, 0 );
 	mTabContainer->clipEnable();
 
-	mCtrlContainer = UIWidget::New();
+	mCtrlContainer = UIWidget::NewWithTag( "tabwidget::container" );
 	mCtrlContainer
 		->setPixelsSize( mSize.getWidth(),
 						 mSize.getHeight() - PixelDensity::dpToPx( mStyleConfig.TabWidgetHeight ) )
@@ -128,7 +128,6 @@ void UITabWidget::setStyleConfig( const StyleConfig& styleConfig ) {
 	mStyleConfig = styleConfig;
 	mStyleConfig.TabWidgetHeight = tabWidgetHeight;
 	setContainerSize();
-	setTabContainerSize();
 	orderTabs();
 }
 

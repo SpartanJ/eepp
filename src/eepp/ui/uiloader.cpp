@@ -13,7 +13,7 @@ UILoader::UILoader() :
 	UIWidget( "loader" ),
 	mRadius( 0 ),
 	mOutlineThickness( PixelDensity::dpToPx( 8 ) ),
-	mColor( Color::Transparent ),
+	mColor( Color::White ),
 	mArcAngle( 0 ),
 	mArcStartAngle( 0 ),
 	mProgress( 0 ),

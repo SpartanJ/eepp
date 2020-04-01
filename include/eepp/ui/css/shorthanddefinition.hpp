@@ -18,7 +18,6 @@ enum class ShorthandId : Uint32 {
 	ForegroundPosition = String::hash( "foreground-position" ),
 	LayoutMargin = String::hash( "layout-margin" ),
 	LayoutMarginUnderscore = String::hash( "layout_margin" ),
-	FillerPadding = String::hash( "filler-padding" ),
 	RotationOriginPoint = String::hash( "rotation-origin-point" ),
 	ScaleOriginPoint = String::hash( "scale-origin-point" ),
 	BorderColor = String::hash( "border-color" ),

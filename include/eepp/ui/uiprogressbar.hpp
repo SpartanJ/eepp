@@ -14,7 +14,6 @@ class EE_API UIProgressBar : public UIWidget {
 		bool DisplayPercent = false;
 		bool VerticalExpand = true;
 		Vector2f MovementSpeed = Vector2f( 64.f, 0 );
-		Rectf FillerPadding;
 	};
 
 	static UIProgressBar* New();
@@ -48,10 +47,6 @@ class EE_API UIProgressBar : public UIWidget {
 	void setVerticalExpand( const bool& verticalExpand );
 
 	const bool& getVerticalExpand() const;
-
-	void setFillerPadding( const Rectf& padding );
-
-	const Rectf& getFillerPadding() const;
 
 	void setDisplayPercent( const bool& displayPercent );
 

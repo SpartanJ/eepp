@@ -42,8 +42,6 @@ void UIProgressBar::draw() {
 	if ( NULL == mFillerSkin )
 		return;
 
-	Rectf fillerPadding = PixelDensity::dpToPx( mStyleConfig.FillerPadding );
-
 	Float Height = (Float)mSize.getHeight();
 
 	if ( !mStyleConfig.VerticalExpand )
@@ -52,22 +50,22 @@ void UIProgressBar::draw() {
 	if ( Height > mSize.getHeight() )
 		Height = mSize.getHeight();
 
-	Sizef fSize( ( ( mSize.getWidth() - fillerPadding.Left - fillerPadding.Right ) * mProgress ) /
+	Sizef fSize( ( ( mSize.getWidth() - mRealPadding.Left - mRealPadding.Right ) * mProgress ) /
 					 mTotalSteps,
-				 Height - fillerPadding.Top - fillerPadding.Bottom );
+				 Height - mRealPadding.Top - mRealPadding.Bottom );
 	Sizei rSize( PixelDensity::dpToPxI( mFillerSkin->getSize() ) );
 	Sizei numTiles( (Int32)eeceil( (Float)fSize.getWidth() / (Float)rSize.getWidth() + 2 ),
 					(Int32)eeceil( (Float)fSize.getHeight() / (Float)rSize.getHeight() ) + 2 );
 
-	clipSmartEnable( mScreenPos.x + fillerPadding.Left, mScreenPos.y + fillerPadding.Top,
+	clipSmartEnable( mScreenPos.x + mRealPadding.Left, mScreenPos.y + mRealPadding.Top,
 					 fSize.getWidth(), fSize.getHeight() );
 
 	for ( int y = -1; y < numTiles.y; y++ ) {
 		for ( int x = -1; x < numTiles.x; x++ ) {
 			mFillerSkin->draw(
-				Vector2f( (Int32)mOffset.x + mScreenPosi.x + fillerPadding.Left +
+				Vector2f( (Int32)mOffset.x + mScreenPosi.x + mRealPadding.Left +
 							  x * rSize.getWidth(),
-						  mOffset.y + mScreenPosi.y + fillerPadding.Top + y * rSize.getHeight() ),
+						  mOffset.y + mScreenPosi.y + mRealPadding.Top + y * rSize.getHeight() ),
 				Sizef( rSize.getWidth(), rSize.getHeight() ) );
 		}
 	}
@@ -106,7 +104,7 @@ void UIProgressBar::setTheme( UITheme* Theme ) {
 			Float meH = (Float)getSkinSize().getHeight();
 			Float otH = (Float)mFillerSkin->getSize().getHeight();
 			Float res = Math::roundUp( ( meH - otH ) * 0.5f );
-			mStyleConfig.FillerPadding = Rectf( res, res, res, res );
+			setPadding( Rectf( res, res, res, res ) );
 		}
 	}
 
@@ -178,17 +176,6 @@ const bool& UIProgressBar::getVerticalExpand() const {
 	return mStyleConfig.VerticalExpand;
 }
 
-void UIProgressBar::setFillerPadding( const Rectf& padding ) {
-	mStyleConfig.FillerPadding = padding;
-
-	onPositionChange();
-	onSizeChange();
-}
-
-const Rectf& UIProgressBar::getFillerPadding() const {
-	return mStyleConfig.FillerPadding;
-}
-
 void UIProgressBar::setDisplayPercent( const bool& DisplayPercent ) {
 	mStyleConfig.DisplayPercent = DisplayPercent;
 
@@ -223,14 +210,6 @@ std::string UIProgressBar::getPropertyString( const PropertyDefinition* property
 			return mStyleConfig.VerticalExpand ? "true" : "false";
 		case PropertyId::DisplayPercent:
 			return mStyleConfig.DisplayPercent ? "true" : "false";
-		case PropertyId::FillerPaddingLeft:
-			return String::fromFloat( mStyleConfig.FillerPadding.Left, "dp" );
-		case PropertyId::FillerPaddingTop:
-			return String::fromFloat( mStyleConfig.FillerPadding.Top, "dp" );
-		case PropertyId::FillerPaddingRight:
-			return String::fromFloat( mStyleConfig.FillerPadding.Right, "dp" );
-		case PropertyId::FillerPaddingBottom:
-			return String::fromFloat( mStyleConfig.FillerPadding.Bottom, "dp" );
 		case PropertyId::MovementSpeed:
 			return String::fromFloat( getMovementSpeed().x ) + " " +
 				   String::fromFloat( getMovementSpeed().y );
@@ -255,26 +234,6 @@ bool UIProgressBar::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		case PropertyId::DisplayPercent:
 			setDisplayPercent( attribute.asBool() );
-			break;
-		case PropertyId::FillerPaddingLeft:
-			setFillerPadding( Rectf( attribute.asDpDimension(), mStyleConfig.FillerPadding.Top,
-									 mStyleConfig.FillerPadding.Right,
-									 mStyleConfig.FillerPadding.Bottom ) );
-			break;
-		case PropertyId::FillerPaddingTop:
-			setFillerPadding( Rectf( mStyleConfig.FillerPadding.Left, attribute.asDpDimension(),
-									 mStyleConfig.FillerPadding.Right,
-									 mStyleConfig.FillerPadding.Bottom ) );
-			break;
-		case PropertyId::FillerPaddingRight:
-			setFillerPadding( Rectf( mStyleConfig.FillerPadding.Left,
-									 mStyleConfig.FillerPadding.Top, attribute.asDpDimension(),
-									 mStyleConfig.FillerPadding.Bottom ) );
-			break;
-		case PropertyId::FillerPaddingBottom:
-			setFillerPadding(
-				Rectf( mStyleConfig.FillerPadding.Left, mStyleConfig.FillerPadding.Top,
-					   mStyleConfig.FillerPadding.Right, attribute.asDpDimension() ) );
 			break;
 		case PropertyId::MovementSpeed:
 			setMovementSpeed( attribute.asVector2f() );
