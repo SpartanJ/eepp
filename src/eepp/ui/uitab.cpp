@@ -99,29 +99,17 @@ const String& UITab::getText() {
 }
 
 UIPushButton* UITab::setText( const String& text ) {
+	mText = text;
+
 	UITabWidget* tTabW = getTabWidget();
 
 	if ( NULL != tTabW ) {
-		if ( text.size() > tTabW->getMaxTextLength() ) {
-			UIPushButton::setText( text.substr( 0, tTabW->getMaxTextLength() ) );
+		updateTab();
 
-			onAutoSize();
+		tTabW->orderTabs();
 
-			tTabW->orderTabs();
-
-			tTabW->setTabSelected( tTabW->getSelectedTab() );
-
-			return this;
-		}
+		tTabW->setTabSelected( tTabW->getSelectedTab() );
 	}
-
-	UIPushButton::setText( text );
-
-	onAutoSize();
-
-	tTabW->orderTabs();
-
-	tTabW->setTabSelected( tTabW->getSelectedTab() );
 
 	return this;
 }
@@ -210,6 +198,20 @@ void UITab::setOwnedControl() {
 
 	if ( NULL != ctrl ) {
 		setControlOwned( ctrl );
+	}
+}
+
+void UITab::updateTab() {
+	UITabWidget* tTabW = getTabWidget();
+
+	if ( NULL != tTabW ) {
+		if ( mText.size() > tTabW->getMaxTextLength() ) {
+			UIPushButton::setText( mText.substr( 0, tTabW->getMaxTextLength() ) );
+		} else {
+			UIPushButton::setText( mText );
+		}
+
+		onAutoSize();
 	}
 }
 

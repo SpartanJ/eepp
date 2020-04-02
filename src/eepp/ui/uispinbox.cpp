@@ -2,6 +2,7 @@
 #include <eepp/scene/scenenode.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/uispinbox.hpp>
+#include <limits>
 
 namespace EE { namespace UI {
 
@@ -10,7 +11,11 @@ UISpinBox* UISpinBox::New() {
 }
 
 UISpinBox::UISpinBox() :
-	UIWidget( "spinbox" ), mMinValue( 0.f ), mMaxValue( 1024.f ), mValue( 0 ), mClickStep( 1.f ) {
+	UIWidget( "spinbox" ),
+	mMinValue( 0.f ),
+	mMaxValue( std::numeric_limits<Float>::max() ),
+	mValue( 0 ),
+	mClickStep( 1.f ) {
 	mInput = UITextInput::NewWithTag( "spinbox::input" );
 	mInput->setVisible( true );
 	mInput->setEnabled( true );

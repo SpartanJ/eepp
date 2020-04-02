@@ -933,18 +933,6 @@ or one of the special constants.
 
 ---
 
-### line-below-tabs
-
----
-
-### line-below-tabs-color
-
----
-
-### line-below-tabs-y-offset
-
----
-
 ### margin-bottom
 
 Read [margin-bottom](https://developer.mozilla.org/en-US/docs/Web/CSS/margin-bottom) documentation.
@@ -983,29 +971,73 @@ Read [max-width](https://developer.mozilla.org/en-US/docs/Web/CSS/max-width) doc
 
 ### max-edge-resistance
 
+On a view pager the max edge resistance allows to scroll outside the edge limits by a percentage of
+the element width/height (depending on the view pager orientation) and automatically go back to the
+final position when released.
+
+* Applicable to: EE::UI::UIViewPager (ViewPager)
+* Value Type: float (normalized between `0` and `1`)
+* Default value: `0`
+
 ---
 
 ### max-length
+
+Sets the maximum length of an input.
+
+* Applicable to: EE::UI::UITextInput (TextInput)
+* Value type: integer
+* Default value: _No value_
 
 ---
 
 ### max-progress
 
+Sets the maximum number of progress that a loader can have.
+
+* Applicable to: EE::UI::UILoader (Loader)
+* Value Type: float
+* Default value: `100`
+
 ---
 
 ### max-tab-width
+
+Sets the maximum tab width accepted in a tab widget.
+
+* Applicable to: EE::UI::UITabWidget (TabWidget)
+* Value Type: length
+* Default value: `300dp`
 
 ---
 
 ### max-text-length
 
+Sets the maximum text length in a tab.
+
+* Applicable to: EE::UI::UITabWidget (TabWidget)
+* Value Type: integer
+* Default value: `100`
+
 ---
 
 ### max-value
 
+Sets the maximum value that a range element will hold.
+
+* Applicable to: EE::UI::UISlider (Slider), EE::UI::UIScrollBar (ScrollBar), EE::UI::UISpinBox (SpinBox)
+* Value Type: float
+* Default value: `1` for Slider and ScrollBar. Float numeric limits for SpinBox.
+
 ---
 
 ### max-visible-items
+
+Sets the maximum visible items for the list shown by a drop down list or combo box.
+
+* Applicable to: EE::UI::UIDropDownList (DropDownList)
+* Value Type: integer
+* Default value: `10`
 
 ---
 

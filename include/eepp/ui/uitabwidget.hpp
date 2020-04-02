@@ -12,7 +12,7 @@ class EE_API UITabWidget : public UIWidget {
 	class StyleConfig {
 	  public:
 		Int32 TabSeparation = 0;
-		Uint32 MaxTextLength = 30;
+		Uint32 MaxTextLength = 100;
 		Uint32 TabWidgetHeight = 0;
 		Uint32 TabTextAlign = ( UI_HALIGN_CENTER | UI_VALIGN_CENTER );
 		Uint32 MinTabWidth = 32;
@@ -20,9 +20,6 @@ class EE_API UITabWidget : public UIWidget {
 		bool TabsClosable = false;
 		bool SpecialBorderTabs = false; //! Indicates if the periferical tabs ( the left and right
 										//! border tab ) are different from the central tabs.
-		bool DrawLineBelowTabs = false;
-		Color LineBelowTabsColor;
-		Int32 LineBelowTabsYOffset = 0;
 	};
 
 	static UITabWidget* New();
@@ -67,8 +64,6 @@ class EE_API UITabWidget : public UIWidget {
 
 	UIWidget* getControlContainer() const;
 
-	virtual void draw();
-
 	Int32 getTabSeparation() const;
 
 	void setTabSeparation( const Int32& tabSeparation );
@@ -94,18 +89,6 @@ class EE_API UITabWidget : public UIWidget {
 	bool getSpecialBorderTabs() const;
 
 	void setSpecialBorderTabs( bool specialBorderTabs );
-
-	bool getDrawLineBelowTabs() const;
-
-	void setDrawLineBelowTabs( bool drawLineBelowTabs );
-
-	Color getLineBelowTabsColor() const;
-
-	void setLineBelowTabsColor( const Color& lineBelowTabsColor );
-
-	Int32 getLineBelowTabsYOffset() const;
-
-	void setLineBelowTabsYOffset( const Int32& lineBelowTabsYOffset );
 
 	const StyleConfig& getStyleConfig() const;
 
@@ -148,8 +131,6 @@ class EE_API UITabWidget : public UIWidget {
 
 	virtual void onPaddingChange();
 
-	void setTabContainerSize();
-
 	void setContainerSize();
 
 	void posTabs();
@@ -157,6 +138,8 @@ class EE_API UITabWidget : public UIWidget {
 	void zorderTabs();
 
 	void orderTabs();
+
+	void updateTabs();
 
 	void applyThemeToTabs();
 

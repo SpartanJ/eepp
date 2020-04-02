@@ -35,7 +35,10 @@ class EE_API UITab : public UISelectButton {
 										   const Uint32& propertyIndex = 0 );
 
   protected:
+	friend class UITabWidget;
+
 	Node* mControlOwned;
+	String mText;
 	std::string mOwnedName;
 
 	virtual Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
@@ -51,6 +54,8 @@ class EE_API UITab : public UISelectButton {
 	virtual void onParentChange();
 
 	void setOwnedControl();
+
+	void updateTab();
 };
 
 }} // namespace EE::UI

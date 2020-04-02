@@ -20,9 +20,12 @@
 
 TabWidget {
 	tab-separation: -1dp;
-	line-below-tabs: true;
-	line-below-tabs-color: #2f3030;
-	line-below-tabs-y-offset: -1dp;
+}
+
+TabWidget::TabContainer {
+	background-image: rectangle(solid, #2f3030);
+	background-size: 100% 1dp;
+	background-position-y: bottom;
 }
 
 ProgressBar {

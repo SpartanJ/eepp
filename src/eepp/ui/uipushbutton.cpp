@@ -15,34 +15,21 @@ UIPushButton::UIPushButton( const std::string& tag ) :
 	UIWidget( tag ), mIcon( NULL ), mTextBox( NULL ) {
 	mFlags |= ( UI_AUTO_SIZE | UI_VALIGN_CENTER | UI_HALIGN_CENTER );
 
-	Uint32 GfxFlags;
-
-	if ( mStyleConfig.IconMinSize.x != 0 && mStyleConfig.IconMinSize.y != 0 ) {
-		GfxFlags = UI_VALIGN_CENTER | UI_HALIGN_CENTER;
-	} else {
-		GfxFlags = UI_AUTO_SIZE | UI_VALIGN_CENTER | UI_HALIGN_CENTER;
-	}
-
 	mIcon = UIImage::NewWithTag( "pushbutton::image" );
-	mIcon->setParent( this );
-	mIcon->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::Fixed );
-	mIcon->setFlags( GfxFlags );
-	mIcon->unsetFlags( UI_AUTO_SIZE );
-	mIcon->setScaleType( UIScaleType::FitInside );
-
-	if ( mStyleConfig.IconMinSize.x != 0 && mStyleConfig.IconMinSize.y != 0 ) {
-		mIcon->setSize( mStyleConfig.IconMinSize.asFloat() );
-	}
-
-	mIcon->setVisible( true );
-	mIcon->setEnabled( false );
+	mIcon->setScaleType( UIScaleType::FitInside )
+		->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::Fixed )
+		->setFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER )
+		->setParent( this )
+		->setVisible( true )
+		->setEnabled( false );
 
 	mTextBox = UITextView::NewWithTag( "pushbutton::text" );
-	mTextBox->setLayoutSizeRules( LayoutSizeRule::WrapContent, LayoutSizeRule::WrapContent );
-	mTextBox->setParent( this );
-	mTextBox->setVisible( true );
-	mTextBox->setEnabled( false );
-	mTextBox->setFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER );
+	mTextBox->setLayoutSizeRules( LayoutSizeRule::WrapContent, LayoutSizeRule::WrapContent )
+		->setFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER )
+		->setParent( this )
+		->setVisible( true )
+		->setEnabled( false );
+
 	auto cb = [&]( const Event* event ) {
 		onSizeChange();
 		notifyLayoutAttrChange();
@@ -50,9 +37,6 @@ UIPushButton::UIPushButton( const std::string& tag ) :
 	mTextBox->addEventListener( Event::OnFontChanged, cb );
 	mTextBox->addEventListener( Event::OnFontStyleChanged, cb );
 	mTextBox->addEventListener( Event::OnTextChanged, cb );
-
-	if ( mStyleConfig.IconAutoMargin )
-		mNodeFlags |= NODE_FLAG_FREE_USE;
 
 	onSizeChange();
 
@@ -265,7 +249,7 @@ Uint32 UIPushButton::onKeyUp( const KeyEvent& Event ) {
 }
 
 void UIPushButton::autoIconHorizontalMargin() {
-	if ( mNodeFlags & NODE_FLAG_FREE_USE ) {
+	if ( mStyleConfig.IconAutoMargin ) {
 		Rectf RMargin = makePadding( true, false, false, false, true );
 		setIconHorizontalMargin( RMargin.Left );
 	}
@@ -352,9 +336,6 @@ bool UIPushButton::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		case PropertyId::IconAutoMargin:
 			mStyleConfig.IconAutoMargin = attribute.asBool();
-
-			if ( mStyleConfig.IconAutoMargin )
-				mNodeFlags |= NODE_FLAG_FREE_USE;
 			break;
 		case PropertyId::Color:
 		case PropertyId::ShadowColor:

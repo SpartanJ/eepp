@@ -78,45 +78,13 @@ void UITabWidget::onThemeLoaded() {
 
 void UITabWidget::setContainerSize() {
 	mTabContainer->setPixelsSize( mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
-								  mStyleConfig.TabWidgetHeight );
+								  PixelDensity::dpToPx( mStyleConfig.TabWidgetHeight ) );
 	mTabContainer->setPosition( mPadding.Left, mPadding.Top );
 	mCtrlContainer->setPosition( mPadding.Left, mPadding.Top + mStyleConfig.TabWidgetHeight );
 	mCtrlContainer->setPixelsSize( mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
 								   mSize.getHeight() -
 									   PixelDensity::dpToPx( mStyleConfig.TabWidgetHeight ) -
 									   mRealPadding.Top - mRealPadding.Bottom );
-}
-
-void UITabWidget::draw() {
-	UIWidget::draw();
-
-	if ( mStyleConfig.DrawLineBelowTabs ) {
-		bool smooth = GLi->isLineSmooth();
-		if ( smooth )
-			GLi->lineSmooth( false );
-
-		Primitives P;
-		Vector2f p1( mScreenPos.x + mRealPadding.Left,
-					 mScreenPos.y + mRealPadding.Top + mTabContainer->getPixelsSize().getHeight() +
-						 mStyleConfig.LineBelowTabsYOffset );
-		Vector2f p2( mScreenPos.x + mTabContainer->getPixelsPosition().x, p1.y );
-
-		P.setLineWidth( PixelDensity::dpToPx( 1 ) );
-		P.setColor( Color( mStyleConfig.LineBelowTabsColor, mAlpha ) );
-		P.drawLine( Line2f( Vector2f( (int)p1.x, (int)p1.y ), Vector2f( (int)p2.x, (int)p2.y ) ) );
-
-		Vector2f p3( mScreenPos.x + mTabContainer->getPixelsPosition().x +
-						 mTabContainer->getPixelsSize().getWidth(),
-					 mScreenPos.y + mRealPadding.Top + mTabContainer->getPixelsSize().getHeight() +
-						 mStyleConfig.LineBelowTabsYOffset );
-		Vector2f p4( mScreenPos.x + mRealPadding.Left + mCtrlContainer->getPixelsSize().getWidth(),
-					 p3.y );
-
-		P.drawLine( Line2f( Vector2f( (int)p3.x, (int)p3.y ), Vector2f( (int)p4.x, (int)p4.y ) ) );
-
-		if ( smooth )
-			GLi->lineSmooth( true );
-	}
 }
 
 const UITabWidget::StyleConfig& UITabWidget::getStyleConfig() const {
@@ -147,12 +115,6 @@ std::string UITabWidget::getPropertyString( const PropertyDefinition* propertyDe
 			return getTabsClosable() ? "true" : "false";
 		case PropertyId::SpecialBorderTabs:
 			return getSpecialBorderTabs() ? "true" : "false";
-		case PropertyId::LineBelowTabs:
-			return getDrawLineBelowTabs() ? "true" : "false";
-		case PropertyId::LineBelowTabsColor:
-			return getLineBelowTabsColor().toHexString();
-		case PropertyId::LineBelowTabsYOffset:
-			return String::format( "%ddp", getLineBelowTabsYOffset() );
 		case PropertyId::TabSeparation:
 			return String::format( "%ddp", getTabSeparation() );
 		default:
@@ -198,25 +160,16 @@ bool UITabWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			setMaxTextLength( attribute.asUint( 1 ) );
 			break;
 		case PropertyId::MinTabWidth:
-			setMinTabWidth( attribute.asDpDimensionUint( "1" ) );
+			setMinTabWidth( attribute.asDpDimensionUint( this, "1" ) );
 			break;
 		case PropertyId::MaxTabWidth:
-			setMaxTabWidth( attribute.asDpDimensionUint() );
+			setMaxTabWidth( attribute.asDpDimensionUint( this ) );
 			break;
 		case PropertyId::TabClosable:
 			setTabsClosable( attribute.asBool() );
 			break;
 		case PropertyId::SpecialBorderTabs:
 			setSpecialBorderTabs( attribute.asBool() );
-			break;
-		case PropertyId::LineBelowTabs:
-			setDrawLineBelowTabs( attribute.asBool() );
-			break;
-		case PropertyId::LineBelowTabsColor:
-			setLineBelowTabsColor( attribute.asColor() );
-			break;
-		case PropertyId::LineBelowTabsYOffset:
-			setLineBelowTabsYOffset( attribute.asDpDimensionI() );
 			break;
 		case PropertyId::TabSeparation:
 			setTabSeparation( attribute.asDpDimensionI() );
@@ -234,7 +187,6 @@ Int32 UITabWidget::getTabSeparation() const {
 
 void UITabWidget::setTabSeparation( const Int32& tabSeparation ) {
 	mStyleConfig.TabSeparation = tabSeparation;
-	setTabContainerSize();
 	posTabs();
 }
 
@@ -244,6 +196,7 @@ Uint32 UITabWidget::getMaxTextLength() const {
 
 void UITabWidget::setMaxTextLength( const Uint32& maxTextLength ) {
 	mStyleConfig.MaxTextLength = maxTextLength;
+	updateTabs();
 	invalidateDraw();
 }
 
@@ -257,6 +210,7 @@ Uint32 UITabWidget::getMinTabWidth() const {
 
 void UITabWidget::setMinTabWidth( const Uint32& minTabWidth ) {
 	mStyleConfig.MinTabWidth = minTabWidth;
+	updateTabs();
 	invalidateDraw();
 }
 
@@ -266,6 +220,7 @@ Uint32 UITabWidget::getMaxTabWidth() const {
 
 void UITabWidget::setMaxTabWidth( const Uint32& maxTabWidth ) {
 	mStyleConfig.MaxTabWidth = maxTabWidth;
+	updateTabs();
 	invalidateDraw();
 }
 
@@ -287,81 +242,51 @@ void UITabWidget::setSpecialBorderTabs( bool specialBorderTabs ) {
 	applyThemeToTabs();
 }
 
-bool UITabWidget::getDrawLineBelowTabs() const {
-	return mStyleConfig.DrawLineBelowTabs;
-}
+void UITabWidget::posTabs() {
+	Int32 x = 0;
+	Int32 y = 0;
+	Int32 alignOffset = 0;
+	Uint32 tabsWidth = 0;
 
-void UITabWidget::setDrawLineBelowTabs( bool drawLineBelowTabs ) {
-	mStyleConfig.DrawLineBelowTabs = drawLineBelowTabs;
-	invalidateDraw();
-}
-
-Color UITabWidget::getLineBelowTabsColor() const {
-	return mStyleConfig.LineBelowTabsColor;
-}
-
-void UITabWidget::setLineBelowTabsColor( const Color& lineBelowTabsColor ) {
-	mStyleConfig.LineBelowTabsColor = lineBelowTabsColor;
-	invalidateDraw();
-}
-
-Int32 UITabWidget::getLineBelowTabsYOffset() const {
-	return mStyleConfig.LineBelowTabsYOffset;
-}
-
-void UITabWidget::setLineBelowTabsYOffset( const Int32& lineBelowTabsYOffset ) {
-	mStyleConfig.LineBelowTabsYOffset = lineBelowTabsYOffset;
-	invalidateDraw();
-}
-
-void UITabWidget::setTabContainerSize() {
-	Uint32 s = 0;
-
-	if ( mTabs.size() > 0 ) {
+	if ( !mTabs.empty() ) {
 		for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
-			s += mTabs[i]->getPixelsSize().getWidth() + mStyleConfig.TabSeparation;
+			tabsWidth += mTabs[i]->getPixelsSize().getWidth() + mStyleConfig.TabSeparation;
 		}
 
-		s -= mStyleConfig.TabSeparation;
+		tabsWidth -= mStyleConfig.TabSeparation;
 	}
-
-	mTabContainer->setPixelsSize( s, PixelDensity::dpToPx( mStyleConfig.TabWidgetHeight ) );
 
 	switch ( Font::getHorizontalAlign( mFlags ) ) {
 		case UI_HALIGN_LEFT:
-			mTabContainer->setPosition( 0, 0 );
+			alignOffset = 0;
 			break;
 		case UI_HALIGN_CENTER:
-			mTabContainer->centerHorizontal();
+			alignOffset = ( getPixelsSize().getWidth() - tabsWidth ) / 2;
 			break;
 		case UI_HALIGN_RIGHT:
-			mTabContainer->setPosition( getSize().getWidth() - mTabContainer->getSize().getWidth(),
-										0 );
+			alignOffset = getSize().getWidth() - tabsWidth;
 			break;
 	}
-}
-
-void UITabWidget::posTabs() {
-	Uint32 w = 0;
-	Int32 h = 0;
-	Int32 VA = Font::getVerticalAlign( mFlags );
 
 	for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
-		switch ( VA ) {
+		switch ( Font::getVerticalAlign( mFlags ) ) {
 			case UI_VALIGN_BOTTOM:
-				h = mStyleConfig.TabWidgetHeight - mTabs[i]->getSize().getHeight();
+				y = PixelDensity::dpToPx( mStyleConfig.TabWidgetHeight ) -
+					mTabs[i]->getPixelsSize().getHeight();
 				break;
 			case UI_VALIGN_TOP:
-				h = 0;
+				y = 0;
 				break;
 			case UI_VALIGN_CENTER:
-				h = mStyleConfig.TabWidgetHeight / 2 - mTabs[i]->getSize().getHeight() / 2;
+				y = ( PixelDensity::dpToPx( mStyleConfig.TabWidgetHeight ) -
+					  mTabs[i]->getPixelsSize().getHeight() ) /
+					2;
 				break;
 		}
 
-		mTabs[i]->setPosition( w, h );
+		mTabs[i]->setPixelsPosition( alignOffset + x, y );
 
-		w += mTabs[i]->getSize().getWidth() + mStyleConfig.TabSeparation;
+		x += mTabs[i]->getPixelsSize().getWidth() + mStyleConfig.TabSeparation;
 	}
 }
 
@@ -380,11 +305,15 @@ void UITabWidget::orderTabs() {
 
 	zorderTabs();
 
-	setTabContainerSize();
-
 	posTabs();
 
 	invalidateDraw();
+}
+
+void UITabWidget::updateTabs() {
+	for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
+		mTabs[i]->updateTab();
+	}
 }
 
 UITab* UITabWidget::createTab( const String& Text, UINode* CtrlOwned, Drawable* Icon ) {
@@ -613,7 +542,6 @@ Uint32 UITabWidget::getSelectedTabIndex() const {
 
 void UITabWidget::onSizeChange() {
 	setContainerSize();
-	setTabContainerSize();
 	posTabs();
 
 	if ( NULL != mTabSelected && NULL != mTabSelected->getControlOwned() ) {
