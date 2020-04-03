@@ -299,6 +299,19 @@ std::string UIPushButton::getPropertyString( const PropertyDefinition* propertyD
 			return String::format( "%ddp", mStyleConfig.IconHorizontalMargin );
 		case PropertyId::IconAutoMargin:
 			return mStyleConfig.IconAutoMargin ? "true" : "false";
+		case PropertyId::Color:
+		case PropertyId::ShadowColor:
+		case PropertyId::SelectedColor:
+		case PropertyId::SelectionBackColor:
+		case PropertyId::FontFamily:
+		case PropertyId::FontSize:
+		case PropertyId::FontStyle:
+		case PropertyId::Wordwrap:
+		case PropertyId::TextStrokeWidth:
+		case PropertyId::TextStrokeColor:
+		case PropertyId::TextSelection:
+		case PropertyId::TextAlign:
+			return mTextBox->getPropertyString( propertyDef, propertyIndex );
 		default:
 			return UIWidget::getPropertyString( propertyDef, propertyIndex );
 	}

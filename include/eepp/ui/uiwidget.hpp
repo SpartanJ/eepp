@@ -277,6 +277,8 @@ class EE_API UIWidget : public UINode {
 
 	virtual void onPaddingChange();
 
+	virtual void onMarginChange();
+
 	virtual void onThemeLoaded();
 
 	virtual void onParentChange();

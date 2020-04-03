@@ -1091,6 +1091,7 @@ Float UINode::getPropertyRelativeTargetContainerLength(
 			break;
 		case PropertyRelativeTarget::ContainingBlockHeight:
 			containerLength = getParent()->getPixelsSize().getHeight();
+			break;
 		case PropertyRelativeTarget::LocalBlockWidth:
 			containerLength = getPixelsSize().getWidth();
 			break;
@@ -1151,14 +1152,15 @@ Float UINode::lengthFromValueAsDp( const std::string& value,
 								   const Uint32& propertyIndex ) {
 	Float containerLength =
 		getPropertyRelativeTargetContainerLength( relativeTarget, defaultValue, propertyIndex );
-	return convertLengthAsDp( CSS::StyleSheetLength( value, defaultValue ), containerLength );
+	return convertLengthAsDp( CSS::StyleSheetLength::fromString( value, defaultValue ),
+							  containerLength );
 }
 
 Float UINode::lengthFromValueAsDp( const CSS::StyleSheetProperty& property,
 								   const Float& defaultValue, const Float& defaultContainerValue ) {
-	return lengthFromValue( property.getValue(),
-							property.getPropertyDefinition()->getRelativeTarget(), defaultValue,
-							defaultContainerValue, property.getIndex() );
+	return lengthFromValueAsDp( property.getValue(),
+								property.getPropertyDefinition()->getRelativeTarget(), defaultValue,
+								defaultContainerValue, property.getIndex() );
 }
 
 Uint32 UINode::onFocus() {

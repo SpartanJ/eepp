@@ -81,6 +81,7 @@ Rect UIWidget::getLayoutMargin() const {
 UIWidget* UIWidget::setLayoutMargin( const Rect& margin ) {
 	if ( mLayoutMargin != margin ) {
 		mLayoutMargin = margin;
+		onMarginChange();
 		notifyLayoutAttrChange();
 	}
 
@@ -90,6 +91,7 @@ UIWidget* UIWidget::setLayoutMargin( const Rect& margin ) {
 UIWidget* UIWidget::setLayoutMarginLeft( const Float& marginLeft ) {
 	if ( mLayoutMargin.Left != marginLeft ) {
 		mLayoutMargin.Left = marginLeft;
+		onMarginChange();
 		notifyLayoutAttrChange();
 	}
 
@@ -99,6 +101,7 @@ UIWidget* UIWidget::setLayoutMarginLeft( const Float& marginLeft ) {
 UIWidget* UIWidget::setLayoutMarginRight( const Float& marginRight ) {
 	if ( mLayoutMargin.Right != marginRight ) {
 		mLayoutMargin.Right = marginRight;
+		onMarginChange();
 		notifyLayoutAttrChange();
 	}
 
@@ -108,6 +111,7 @@ UIWidget* UIWidget::setLayoutMarginRight( const Float& marginRight ) {
 UIWidget* UIWidget::setLayoutMarginTop( const Float& marginTop ) {
 	if ( mLayoutMargin.Top != marginTop ) {
 		mLayoutMargin.Top = marginTop;
+		onMarginChange();
 		notifyLayoutAttrChange();
 	}
 
@@ -117,6 +121,7 @@ UIWidget* UIWidget::setLayoutMarginTop( const Float& marginTop ) {
 UIWidget* UIWidget::setLayoutMarginBottom( const Float& marginBottom ) {
 	if ( mLayoutMargin.Bottom != marginBottom ) {
 		mLayoutMargin.Bottom = marginBottom;
+		onMarginChange();
 		notifyLayoutAttrChange();
 	}
 
@@ -865,6 +870,11 @@ void UIWidget::onPaddingChange() {
 	invalidateDraw();
 }
 
+void UIWidget::onMarginChange() {
+	sendCommonEvent( Event::OnMarginChange );
+	invalidateDraw();
+}
+
 void UIWidget::onThemeLoaded() {
 	reportStyleStateChange();
 }
@@ -1218,22 +1228,24 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		case PropertyId::X:
 			setLayoutWidthRule( LayoutSizeRule::Fixed );
-			setInternalPosition( Vector2f( attribute.asDpDimension(), mDpPos.y ) );
+			setInternalPosition(
+				Vector2f( eefloor( lengthFromValueAsDp( attribute ) ), mDpPos.y ) );
 			notifyLayoutAttrChange();
 			break;
 		case PropertyId::Y:
 			setLayoutWidthRule( LayoutSizeRule::Fixed );
-			setInternalPosition( Vector2f( mDpPos.x, attribute.asDpDimensionI() ) );
+			setInternalPosition(
+				Vector2f( mDpPos.x, eefloor( lengthFromValueAsDp( attribute ) ) ) );
 			notifyLayoutAttrChange();
 			break;
 		case PropertyId::Width:
 			setLayoutWidthRule( LayoutSizeRule::Fixed );
-			setInternalWidth( attribute.asDpDimensionI() );
+			setInternalWidth( eefloor( lengthFromValueAsDp( attribute ) ) );
 			notifyLayoutAttrChange();
 			break;
 		case PropertyId::Height:
 			setLayoutHeightRule( LayoutSizeRule::Fixed );
-			setInternalHeight( attribute.asDpDimensionI() );
+			setInternalHeight( eefloor( lengthFromValueAsDp( attribute ) ) );
 			notifyLayoutAttrChange();
 			break;
 		case PropertyId::BackgroundColor:
@@ -1351,16 +1363,16 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		}
 		case PropertyId::MarginLeft:
-			setLayoutMarginLeft( attribute.asDpDimensionI() );
+			setLayoutMarginLeft( lengthFromValueAsDp( attribute ) );
 			break;
 		case PropertyId::MarginRight:
-			setLayoutMarginRight( attribute.asDpDimensionI() );
+			setLayoutMarginRight( lengthFromValueAsDp( attribute ) );
 			break;
 		case PropertyId::MarginTop:
-			setLayoutMarginTop( attribute.asDpDimensionI() );
+			setLayoutMarginTop( lengthFromValueAsDp( attribute ) );
 			break;
 		case PropertyId::MarginBottom:
-			setLayoutMarginBottom( attribute.asDpDimensionI() );
+			setLayoutMarginBottom( lengthFromValueAsDp( attribute ) );
 			break;
 		case PropertyId::Tooltip:
 			setTooltipText( attribute.asString() );
@@ -1413,7 +1425,7 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			} else {
 				unsetFlags( UI_AUTO_SIZE );
 				setLayoutWidthRule( LayoutSizeRule::Fixed );
-				Float newVal = eefloor( PixelDensity::toDpFromString( val ) );
+				Float newVal = eefloor( lengthFromValueAsDp( attribute ) );
 				if ( !( newVal == 0 && getLayoutWeight() != 0 &&
 						getParent()->isType( UI_TYPE_LINEAR_LAYOUT ) ) ) {
 					setInternalWidth( newVal );
@@ -1436,7 +1448,7 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			} else {
 				unsetFlags( UI_AUTO_SIZE );
 				setLayoutHeightRule( LayoutSizeRule::Fixed );
-				Float newVal = eefloor( PixelDensity::toDpFromString( val ) );
+				Float newVal = eefloor( lengthFromValueAsDp( attribute ) );
 				if ( !( newVal == 0 && getLayoutWeight() != 0 &&
 						getParent()->isType( UI_TYPE_LINEAR_LAYOUT ) ) ) {
 					setInternalHeight( newVal );
@@ -1484,16 +1496,16 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			setBlendMode( attribute.asBlendMode() );
 			break;
 		case PropertyId::PaddingLeft:
-			setPaddingLeft( attribute.asDpDimension() );
+			setPaddingLeft( lengthFromValueAsDp( attribute ) );
 			break;
 		case PropertyId::PaddingRight:
-			setPaddingRight( attribute.asDpDimension() );
+			setPaddingRight( lengthFromValueAsDp( attribute ) );
 			break;
 		case PropertyId::PaddingTop:
-			setPaddingTop( attribute.asDpDimension() );
+			setPaddingTop( lengthFromValueAsDp( attribute ) );
 			break;
 		case PropertyId::PaddingBottom:
-			setPaddingBottom( attribute.asDpDimension() );
+			setPaddingBottom( lengthFromValueAsDp( attribute ) );
 			break;
 		case PropertyId::Opacity: {
 			Float alpha = eemin( attribute.asFloat() * 255.f, 255.f );

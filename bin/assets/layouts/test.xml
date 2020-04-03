@@ -40,7 +40,7 @@
 					<!-- <Loader layout_width="350dp" layout_height="350dp" layout_gravity="center" fill-color="#999" padding="44dp" outline-thickness="8dp" /> -->
 
 					<PushButton layout_width="wrap_content" layout_height="wrap_content" text="testing padding" layout_gravity="bottom|right" gravity="center" padding="8dp" layout_to_top_of="tmp" />
-					<PushButton id="pbut" text="OK!" font-size="16dp" icon="ok" layout_gravity="left|bottom" gravity="center" layout_width="wrap_content" layout_height="wrap_content" margin-bottom="8dp" padding="8dp" layout_to_top_of="tm" />
+					<PushButton id="pbut" text="OK!" font-size="16dp" icon="ok" layout_gravity="left|bottom" gravity="center" layout_width="300dp" layout_height="wrap_content" margin-bottom="8dp" padding="8dp" layout_to_top_of="tm" />
 
 					<Slider id="slider" orientation="horizontal" half-slider="true" layout_width="200dp" layout_height="wrap_content" layout_to_bottom_of="el1" />
 
