@@ -1049,21 +1049,36 @@ Read [min-height](https://developer.mozilla.org/en-US/docs/Web/CSS/min-height) d
 
 ### min-icon-size
 
----
+Sets the minimum size of the icon inside a push button (or any widget that extends from it, for
+example a menu item or a tab). It's usually required for the EE::UI::UIMenu (Menu) sice the icon
+box must have a size if the menu contains items with icons and others without, otherwise the menu
+items will be misaligned.
 
-### min-icon-space
-
----
-
-### min-margin-right
+* Applicatable to: EE::UI::UIPushButton (PushButton), EE::UI::UIMenuItem (Menu::item),
+  EE::UI::UITab (Tab), EE::UI::UISelectButton (SelectButton), EE::UI::UIMenuCheckBox (Menu::checkbox),
+  EE::UI::UIMenuSubMenu (Menu::SubMenu)
+* Value Type: vector2-length
+* Default value: _No value_
 
 ---
 
 ### min-tab-width
 
+Sets the minimum width that a tab can have inside a EE::UI::UITabWidget (TabWidget).
+
+* Applicable to: EE::UI::UITabWidget (TabWidget)
+* Value Type: length
+* Default value: `32dp`
+
 ---
 
 ### min-value
+
+Sets the minimum value that a range element will hold.
+
+* Applicable to: EE::UI::UISlider (Slider), EE::UI::UIScrollBar (ScrollBar), EE::UI::UISpinBox (SpinBox)
+* Value Type: float
+* Default value: `0`
 
 ---
 
@@ -1075,13 +1090,22 @@ Read [min-width](https://developer.mozilla.org/en-US/docs/Web/CSS/min-width) doc
 
 ### movement-speed
 
+Sets the movement speed in displaced length per second of the progress bar filler.
+
+* Applicable to: EE::UI::UIProgressBar (ProgressBar)
+* Value Type: vector2-length
+* Default value: `0dp 0dp`
+
 ---
 
-### name
+### numeric
 
----
+Sets the text input as a numeric input, this means that only numbers will be accepted and
+if [allow-float](#allow-float) also is enabled it will allow numeric float numbers.
 
-### only-numbers
+* Applicable to: EE::UI::UITextInput (TextInput)
+* Value Type: boolean
+* Default value: `false`
 
 ---
 
@@ -1093,13 +1117,37 @@ Read [opacity](https://developer.mozilla.org/en-US/docs/Web/CSS/opacity) documen
 
 ### orientation
 
+Sets the orientation to any element that allows vertical and horizontal orientation.
+
+* Applicable to: EE::UI::UILinearLayout (LinearLayout), EE::UI::UISlider (Slider), EE::UI::UIScrollBar
+  (ScrollBar), EE::UI::UIViewPager (ViewPager)
+* Value Type: string-list
+* Value List:
+  * `horizontal`
+  * `vertical`
+* Default value: `vertical` for LinearLayout, Slider and ScrollBar, `horizontal` for ViewPager
+
 ---
 
 ### outline-thickness
 
+Sets the outline thickness of the loader spinner.
+
+* Applicable to: EE::UI::UILoader (Loader)
+* Value Type: length
+* Default value: `8dp`
+
 ---
 
 ### owns
+
+Indicates the element ID that the Tab element owns. The ownership indicates that the element ID
+is going to be shown when the Tab element is selected, and will be closed if the Tab is closed.
+The owned element will be automatically resized to the tab widget container size.
+
+* Applicable to: EE::UI::UITab (Tab)
+* Value Type: string (element ID)
+* Default value: _No value_
 
 ---
 

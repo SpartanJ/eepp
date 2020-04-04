@@ -338,9 +338,6 @@ String UIWidget::getTooltipText() {
 }
 
 void UIWidget::tooltipRemove() {
-	if ( NULL != mTooltip ) {
-		mTooltip->close();
-	}
 	mTooltip = NULL;
 }
 
@@ -576,6 +573,14 @@ const std::string& UIWidget::getMinWidthEq() const {
 	return mMinWidthEq;
 }
 
+void UIWidget::setMinSizeEq( const std::string& minWidthEq, const std::string& minHeightEq ) {
+	if ( mMinWidthEq != minWidthEq || mMinHeightEq != minHeightEq ) {
+		mMinWidthEq = minWidthEq;
+		mMinHeightEq = minHeightEq;
+		setSize( mSize );
+	}
+}
+
 void UIWidget::setMinWidthEq( const std::string& minWidthEq ) {
 	if ( mMinWidthEq != minWidthEq ) {
 		mMinWidthEq = minWidthEq;
@@ -596,6 +601,14 @@ void UIWidget::setMinHeightEq( const std::string& minHeightEq ) {
 
 const std::string& UIWidget::getMaxWidthEq() const {
 	return mMaxWidthEq;
+}
+
+void UIWidget::setMaxSizeEq( const std::string& maxWidthEq, const std::string& maxHeightEq ) {
+	if ( mMaxWidthEq != maxWidthEq || mMaxHeightEq != maxHeightEq ) {
+		mMaxWidthEq = maxWidthEq;
+		mMaxHeightEq = maxHeightEq;
+		setSize( mSize );
+	}
 }
 
 void UIWidget::setMaxWidthEq( const std::string& maxWidthEq ) {
@@ -1674,7 +1687,7 @@ std::string UIWidget::getFlagsString() const {
 	if ( mFlags & UI_AUTO_SIZE )
 		flagvec.push_back( "autosize" );
 	if ( mFlags & UI_MULTI_SELECT )
-		flagvec.push_back( "multi" );
+		flagvec.push_back( "multiselect" );
 	if ( mFlags & UI_AUTO_PADDING )
 		flagvec.push_back( "autopadding" );
 	if ( reportSizeChangeToChilds() )

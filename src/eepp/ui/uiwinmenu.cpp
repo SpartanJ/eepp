@@ -41,12 +41,8 @@ void UIWinMenu::addMenuButton( const String& ButtonText, UIPopUpMenu* Menu ) {
 	Button->setText( ButtonText );
 	Button->setVisible( true );
 	Button->setEnabled( true );
-	Button->addEventListener( Event::OnSizeChange, [&]( const Event* event) {
-		refreshButtons();
-	} );
-
-	if ( NULL != mTheme )
-		Button->setThemeSkin( mTheme, "winmenubutton" );
+	Button->addEventListener( Event::OnSizeChange,
+							  [&]( const Event* event ) { refreshButtons(); } );
 
 	Menu->setVisible( false );
 	Menu->setEnabled( false );
@@ -56,6 +52,9 @@ void UIWinMenu::addMenuButton( const String& ButtonText, UIPopUpMenu* Menu ) {
 	Menu->addEventListener( Event::OnHideByClick, cb::Make1( this, &UIWinMenu::onHideByClick ) );
 
 	mButtons.push_back( std::make_pair( Button, Menu ) );
+
+	if ( NULL != mTheme )
+		Button->setThemeSkin( mTheme, "winmenubutton" );
 
 	refreshButtons();
 }
@@ -125,33 +124,22 @@ void UIWinMenu::setMenuHeight( const Uint32& menuHeight ) {
 }
 
 void UIWinMenu::refreshButtons() {
-	Int32 h = 0, th = 0, ycenter = 0;
+	Int32 ycenter = 0;
 
-	UISkin* skin = getSkin();
-
-	if ( NULL != skin ) {
-		h = getSize().getHeight();
-
-		if ( !mButtons.empty() ) {
-			UISelectButton* tbut = mButtons.begin()->first;
-
-			skin = tbut->getSkin();
-
-			if ( NULL != skin ) {
-				th = skin->getSize( UIState::StateFlagSelected ).getHeight();
-
-				switch ( Font::getVerticalAlign( getFlags() ) ) {
-					case UI_VALIGN_CENTER:
-						ycenter = ( h - th ) / 2;
-						break;
-					case UI_VALIGN_BOTTOM:
-						ycenter = ( h - th );
-						break;
-					case UI_VALIGN_TOP:
-						ycenter = 0;
-						break;
-				}
-			}
+	if ( !mButtons.empty() ) {
+		UISelectButton* tbut = mButtons.begin()->first;
+		Float h = mSize.getHeight();
+		Float th = tbut->getPixelsSize().getHeight();
+		switch ( Font::getVerticalAlign( getFlags() ) ) {
+			case UI_VALIGN_CENTER:
+				ycenter = eefloor( ( h - th ) / 2 );
+				break;
+			case UI_VALIGN_BOTTOM:
+				ycenter = ( h - th );
+				break;
+			case UI_VALIGN_TOP:
+				ycenter = 0;
+				break;
 		}
 	}
 

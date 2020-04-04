@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 4.11.1, 2020-03-25T03:19:26. -->
+<!-- Written by QtCreator 4.11.1, 2020-04-04T02:40:31. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -1455,7 +1455,7 @@
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">eepp-MapEditor-debug</value>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">ProjectExplorer.CustomExecutableRunConfiguration</value>
     <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey"></value>
-    <value type="QString" key="RunConfiguration.Arguments"></value>
+    <value type="QString" key="RunConfiguration.Arguments">-x assets/layouts/test.xml -c assets/layouts/test.css -u</value>
     <value type="bool" key="RunConfiguration.Arguments.multi">false</value>
     <value type="QString" key="RunConfiguration.OverrideDebuggerStartup"></value>
     <value type="bool" key="RunConfiguration.UseCppDebugger">true</value>

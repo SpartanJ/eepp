@@ -9,13 +9,6 @@ namespace EE { namespace UI {
 
 class EE_API UIPushButton : public UIWidget {
   public:
-	class StyleConfig {
-	  public:
-		Int32 IconHorizontalMargin = 4;
-		bool IconAutoMargin = true;
-		Sizei IconMinSize;
-	};
-
 	static UIPushButton* New();
 
 	UIPushButton();
@@ -36,17 +29,11 @@ class EE_API UIPushButton : public UIWidget {
 
 	virtual const String& getText();
 
-	void setIconHorizontalMargin( Int32 margin );
-
-	const Int32& getIconHorizontalMargin() const;
-
 	UITextView* getTextBox() const;
-
-	const StyleConfig& getStyleConfig() const;
 
 	void setIconMinimumSize( const Sizei& minIconSize );
 
-	void setStyleConfig( const StyleConfig& styleConfig );
+	const Sizei& getIconMinimumSize() const;
 
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
@@ -54,9 +41,9 @@ class EE_API UIPushButton : public UIWidget {
 										   const Uint32& propertyIndex = 0 );
 
   protected:
-	StyleConfig mStyleConfig;
 	UIImage* mIcon;
 	UITextView* mTextBox;
+	Sizei mIconMinSize;
 
 	explicit UIPushButton( const std::string& tag );
 
@@ -78,7 +65,7 @@ class EE_API UIPushButton : public UIWidget {
 
 	virtual Uint32 onKeyUp( const KeyEvent& Event );
 
-	void autoIconHorizontalMargin();
+	virtual UIWidget* getExtraInnerWidget();
 };
 
 }} // namespace EE::UI

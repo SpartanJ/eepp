@@ -300,7 +300,7 @@ void MapEditor::createTextureRegionContainer( Int32 Width ) {
 	mGOTypeList = UIDropDownList::New();
 	mGOTypeList->setFontStyle( Text::Shadow )
 		->setParent( mTextureRegionCont )
-		->setSize( Width - 26, 0 )
+		->setSize( Width - 30, 0 )
 		->setPosition( TAB_CONT_X_DIST, Txt->getPosition().y + Txt->getSize().getHeight() + 4 );
 
 	mGOTypeList->addEventListener( Event::OnItemSelected,

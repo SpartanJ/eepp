@@ -261,9 +261,6 @@ void StyleSheetSpecification::registerDefaultProperties() {
 		.setType( PropertyType::NumberLength )
 		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockHeight );
 
-	registerProperty( "min-margin-right", "" ).setType( PropertyType::NumberLength );
-	registerProperty( "min-icon-space", "" ).setType( PropertyType::NumberLength );
-
 	registerProperty( "total-steps", "" ).setType( PropertyType::NumberInt );
 	registerProperty( "vertical-expand", "" ).setType( PropertyType::Bool );
 	registerProperty( "display-percent", "" ).setType( PropertyType::Bool );
@@ -276,12 +273,11 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "background-expand", "" ).setType( PropertyType::Bool );
 	registerProperty( "scrollbar-mode", "" );
 	registerProperty( "half-slider", "" ).setType( PropertyType::Bool );
-	registerProperty( "name", "" ).setType( PropertyType::String );
 	registerProperty( "owns", "" ).setType( PropertyType::String );
 	registerProperty( "allow-editing", "" ).setType( PropertyType::Bool );
 	registerProperty( "max-length", "" ).setType( PropertyType::NumberInt );
 	registerProperty( "free-editing", "" ).setType( PropertyType::Bool );
-	registerProperty( "only-numbers", "" ).setType( PropertyType::Bool );
+	registerProperty( "numeric", "" ).setType( PropertyType::Bool );
 	registerProperty( "allow-float", "" ).setType( PropertyType::Bool );
 	registerProperty( "touch-drag", "" ).setType( PropertyType::Bool );
 	registerProperty( "touch-drag-deceleration", "" ).setType( PropertyType::NumberFloat );

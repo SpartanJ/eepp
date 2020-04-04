@@ -8,7 +8,7 @@ UIMenuItem* UIMenuItem::New() {
 }
 
 UIMenuItem::UIMenuItem( const std::string& tag ) : UIPushButton( tag ) {
-	mIcon->setElementTag( getElementTag() + "::image" );
+	mIcon->setElementTag( getElementTag() + "::icon" );
 	mTextBox->setElementTag( getElementTag() + "::text" );
 	applyDefaultTheme();
 }

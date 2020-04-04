@@ -211,8 +211,8 @@ std::string UIProgressBar::getPropertyString( const PropertyDefinition* property
 		case PropertyId::DisplayPercent:
 			return mStyleConfig.DisplayPercent ? "true" : "false";
 		case PropertyId::MovementSpeed:
-			return String::fromFloat( getMovementSpeed().x ) + " " +
-				   String::fromFloat( getMovementSpeed().y );
+			return String::fromFloat( getMovementSpeed().x, "px" ) + " " +
+				   String::fromFloat( getMovementSpeed().y, "px" );
 		default:
 			return UIWidget::getPropertyString( propertyDef, propertyIndex );
 	}
@@ -236,7 +236,7 @@ bool UIProgressBar::applyProperty( const StyleSheetProperty& attribute ) {
 			setDisplayPercent( attribute.asBool() );
 			break;
 		case PropertyId::MovementSpeed:
-			setMovementSpeed( attribute.asVector2f() );
+			setMovementSpeed( attribute.asVector2f( this ) );
 			break;
 		default:
 			return UIWidget::applyProperty( attribute );

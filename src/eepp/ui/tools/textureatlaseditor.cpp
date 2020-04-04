@@ -77,8 +77,8 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow* attachTo, const TGEditorCloseC
 						<GridLayout columnMode="size" rowMode="size" columnWidth="64dp" row-height="64dp" layout_width="match_parent" layout_height="wrap_content" id="gridlayout" />
 					</ScrollView>
 					<ListBox id="TextureRegionList" layout_width="match_parent" layout_height="144dp" touchDrag="true" />
-					<Tab name="List" owns="TextureRegionList" />
-					<Tab name="Grid" owns="GridView" />
+					<Tab text="List" owns="TextureRegionList" />
+					<Tab text="Grid" owns="GridView" />
 				</TabWidget>
 				<TextView text="Current TextureRegion:" font-style="shadow" margin-top="16dp" margin-bottom="16dp" />
 				<LinearLayout orientation="horizontal" layout_width="match_parent" layout_height="wrap_content">

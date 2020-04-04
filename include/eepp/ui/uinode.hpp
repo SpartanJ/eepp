@@ -192,7 +192,7 @@ class EE_API UINode : public Node {
 
 	virtual void popState( const Uint32& State, bool emitEvent = true );
 
-	Sizef getSkinSize() const;
+	Sizef getSkinSize( const Uint32& state = UIState::StateFlagNormal ) const;
 
 	void applyDefaultTheme();
 

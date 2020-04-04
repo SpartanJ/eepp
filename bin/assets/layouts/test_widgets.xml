@@ -45,13 +45,13 @@
 
 					<PushButton layout_width="wrap_content" layout_height="wrap_content" text="testing padding" layout_gravity="bottom|right" gravity="center" padding="8dp" layout_to_top_of="tmp" />
 					<PushButton text="OK!" font-size="16dp" icon="ok" layout_gravity="left|bottom" gravity="center" layout_width="wrap_content" layout_height="wrap_content" margin-bottom="8dp" padding="8dp" layout_to_top_of="tm" />
-					
+
 					<Slider id="slider" orientation="horizontal" half-slider="true" layout_width="200dp" layout_height="wrap_content" padding="32dp" background="#555" layout_to_bottom_of="el1" />
-					
+
 					<ScrollBar id="scrollbar" orientation="horizontal" layout_width="200dp" layout_height="wrap_content" padding="8dp" background="#12345666" layout_to_bottom_of="slider" />
 
 					<SpinBox id="spinbox" layout_width="200dp" layout_height="wrap_content" padding="8dp" background="#54345666" layout_to_bottom_of="scrollbar" />
-					
+
 					<TextEdit layout_width="200dp" layout_height="50dp" layout_gravity="bottom|center_horizontal" padding="16dp" margin-bottom="140dp" />
 				</RelativeLayout>
 			</vbox>
@@ -59,9 +59,9 @@
 		<hbox id="test_2" layout_width="match_parent" layout_height="match_parent">
 			<TextView layout_width="match_parent" layout_height="match_parent" text="Hello World!" gravity="center" background="#333" font-size="24dp" border-radius="128" />
 		</hbox>
-		
-		<Tab name="Padding Test" owns="test_1" />
-		<Tab name="Tabs Test" owns="test_2" />
+
+		<Tab text="Padding Test" owns="test_1" />
+		<Tab text="Tabs Test" owns="test_2" />
 	</TabWidget>
 </vbox>
- 
+

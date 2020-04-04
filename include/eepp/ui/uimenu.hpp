@@ -6,20 +6,12 @@
 #include <eepp/ui/uimenuitem.hpp>
 #include <eepp/ui/uimenuseparator.hpp>
 #include <eepp/ui/uimenusubmenu.hpp>
-#include <eepp/ui/uinode.hpp>
+#include <eepp/ui/uiwidget.hpp>
 
 namespace EE { namespace UI {
 
 class EE_API UIMenu : public UIWidget {
   public:
-	class StyleConfig {
-	  public:
-		Rectf Padding = Rectf( 0, 0, 0, 0 );
-		Uint32 MinWidth = 0;
-		Uint32 MinSpaceForIcons = 0;
-		Uint32 MinRightMargin = 0;
-	};
-
 	static UIMenu* New();
 
 	static void fixMenuPos( Vector2f& position, UIMenu* Menu, UIMenu* parent = NULL,
@@ -35,7 +27,7 @@ class EE_API UIMenu : public UIWidget {
 
 	Uint32 add( const String& Text, Drawable* Icon = NULL );
 
-	Uint32 add( UINode* Control );
+	Uint32 add( UIWidget* widget );
 
 	Uint32 addSeparator();
 
@@ -43,35 +35,29 @@ class EE_API UIMenu : public UIWidget {
 
 	Uint32 addSubMenu( const String& Text, Drawable* Icon = NULL, UIMenu* SubMenu = NULL );
 
-	UINode* getItem( const Uint32& Index );
+	UIWidget* getItem( const Uint32& Index );
 
-	UINode* getItem( const String& Text );
+	UIWidget* getItem( const String& Text );
 
-	Uint32 getItemIndex( UINode* Item );
+	Uint32 getItemIndex( UIWidget* Item );
 
 	Uint32 getCount() const;
 
 	void remove( const Uint32& Index );
 
-	void remove( UINode* Ctrl );
+	void remove( UIWidget* Ctrl );
 
 	void removeAll();
 
 	void insert( const String& Text, Drawable* Icon, const Uint32& Index );
 
-	void insert( UINode* Control, const Uint32& Index );
+	void insert( UIWidget* Control, const Uint32& Index );
 
 	virtual void setTheme( UITheme* Theme );
 
 	virtual bool show();
 
 	virtual bool hide();
-
-	Uint32 getMinRightMargin() const;
-
-	void setMinRightMargin( const Uint32& minRightMargin );
-
-	const StyleConfig& getStyleConfig() const;
 
 	virtual void loadFromXmlNode( const pugi::xml_node& node );
 
@@ -85,21 +71,25 @@ class EE_API UIMenu : public UIWidget {
 	/** The owner node is the node who triggers the visibility of the menu */
 	void setOwnerNode( UINode* ownerNode );
 
+	void setIconMinimumSize( const Sizei& minIconSize );
+
+	const Sizei& getIconMinimumSize() const;
+
   protected:
 	friend class UIMenuItem;
 	friend class UIMenuCheckBox;
 	friend class UIMenuSubMenu;
 
-	std::deque<UINode*> mItems;
-	StyleConfig mStyleConfig;
+	std::deque<UIWidget*> mItems;
 	Uint32 mMaxWidth;
 	Uint32 mNextPosY;
-	Uint32 mBiggestIcon;
-	UINode* mItemSelected;
+	Int32 mBiggestIcon;
+	UIWidget* mItemSelected;
 	Uint32 mItemSelectedIndex;
 	bool mClickHide;
 	Uint32 mLastTickMove;
 	UINode* mOwnerNode;
+	Sizei mIconMinSize;
 
 	virtual void onSizeChange();
 
@@ -107,11 +97,11 @@ class EE_API UIMenu : public UIWidget {
 
 	virtual Uint32 onMessage( const NodeMessage* Msg );
 
-	void setControlSize( UINode* Control, const Uint32& position );
+	void setWidgetSize( UIWidget* widget );
 
-	void resizeControls();
+	void widgetsResize();
 
-	void rePosControls();
+	void widgetsSetPos();
 
 	void resizeMe();
 
@@ -123,11 +113,13 @@ class EE_API UIMenu : public UIWidget {
 
 	void onThemeLoaded();
 
-	bool checkControlSize( UINode* Control, const bool& Resize = true );
+	virtual void onPaddingChange();
+
+	bool widgetCheckSize( UIWidget* widget, const bool& Resize = true );
 
 	bool isSubMenu( Node* Ctrl );
 
-	void setItemSelected( UINode* Item );
+	void setItemSelected( UIWidget* Item );
 
 	virtual Uint32 onKeyDown( const KeyEvent& Event );
 
@@ -135,9 +127,7 @@ class EE_API UIMenu : public UIWidget {
 
 	void nextSel();
 
-	void trySelect( UINode* Ctrl, bool Up );
-
-	void setMinSpaceForIcons( const Uint32& minSpaceForIcons );
+	void trySelect( UIWidget* Ctrl, bool Up );
 };
 
 }} // namespace EE::UI

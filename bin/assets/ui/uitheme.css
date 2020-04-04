@@ -19,7 +19,7 @@ TabWidget::TabContainer {
 ProgressBar {
 	display-percent: true;
 	vertical-expand: true;
-	movement-speed: 32 0;
+	movement-speed: 32dp 0dp;
 	padding: 2dp;
 }
 
@@ -36,8 +36,25 @@ Menu,
 PopUpMenu {
 	color: #E6E6E6FF;
 	min-width: 100dp;
-	min-icon-space: 24dp;
-	min-margin-right: 8dp;
+	min-icon-size: 16dp 16dp;
+}
+
+Menu::Item,
+Menu::CheckBox,
+Menu::Separator,
+Menu::SubMenu {
+	padding-left: 4dp;
+}
+
+Menu::Item::text,
+Menu::CheckBox::text,
+Menu::Separator::text,
+Menu::SubMenu::text {
+	padding-right: 4dp;
+}
+
+Menu::SubMenu::arrow {
+	margin-right: 1dp;
 }
 
 Menu:hover,
@@ -68,6 +85,11 @@ Window {
 Window::title {
 	color: #E6E6E6FF;
 	font-style: shadow;
+}
+
+Tab::text {
+	padding-left: 4dp;
+	padding-right: 4dp;
 }
 
 Tooltip {

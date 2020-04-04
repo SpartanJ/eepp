@@ -14,7 +14,11 @@ UITabWidget* UITabWidget::New() {
 }
 
 UITabWidget::UITabWidget() :
-	UIWidget( "tabwidget" ), mTabSelected( NULL ), mTabSelectedIndex( eeINDEX_NOT_FOUND ) {
+	UIWidget( "tabwidget" ),
+	mCtrlContainer( NULL ),
+	mTabContainer( NULL ),
+	mTabSelected( NULL ),
+	mTabSelectedIndex( eeINDEX_NOT_FOUND ) {
 	setHorizontalAlign( UI_HALIGN_CENTER );
 
 	mTabContainer = UIWidget::NewWithTag( "tabwidget::tabcontainer" );
@@ -172,7 +176,7 @@ bool UITabWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			setSpecialBorderTabs( attribute.asBool() );
 			break;
 		case PropertyId::TabSeparation:
-			setTabSeparation( attribute.asDpDimensionI() );
+			setTabSeparation( attribute.asDpDimensionI( this ) );
 			break;
 		default:
 			return UIWidget::applyProperty( attribute );

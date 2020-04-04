@@ -13,7 +13,7 @@ class EE_API UIProgressBar : public UIWidget {
 	  public:
 		bool DisplayPercent = false;
 		bool VerticalExpand = true;
-		Vector2f MovementSpeed = Vector2f( 64.f, 0 );
+		Vector2f MovementSpeed = Vector2f( 0.f, 0 );
 	};
 
 	static UIProgressBar* New();

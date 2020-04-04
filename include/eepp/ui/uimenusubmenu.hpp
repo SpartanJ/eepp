@@ -37,7 +37,7 @@ class EE_API UIMenuSubMenu : public UIMenuItem {
 
   protected:
 	UIMenu* mSubMenu;
-	UINode* mArrow;
+	UIWidget* mArrow;
 	Time mMaxTime;
 	Uint32 mCbId;
 	Uint32 mCbId2;
@@ -52,6 +52,8 @@ class EE_API UIMenuSubMenu : public UIMenuItem {
 	virtual void onSizeChange();
 
 	virtual void onAlphaChange();
+
+	virtual UIWidget* getExtraInnerWidget();
 
 	void onSubMenuFocusLoss( const Event* Event );
 

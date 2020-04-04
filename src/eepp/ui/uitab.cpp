@@ -116,9 +116,11 @@ UIPushButton* UITab::setText( const String& text ) {
 
 void UITab::onAutoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
-		Uint32 w = PixelDensity::pxToDpI( mTextBox->getTextWidth() ) +
-				   mStyleConfig.IconHorizontalMargin +
-				   ( NULL != mIcon ? mIcon->getSize().getWidth() : 0 ) + getSkinSize().getWidth();
+		Uint32 w = mTextBox->getSize().getWidth() +
+				   ( NULL != mIcon ? mIcon->getSize().getWidth() + mIcon->getLayoutMargin().Left +
+										 mIcon->getLayoutMargin().Right
+								   : 0 ) +
+				   getSkinSize().getWidth();
 
 		UITabWidget* tTabW = getTabWidget();
 
@@ -138,7 +140,6 @@ std::string UITab::getPropertyString( const PropertyDefinition* propertyDef,
 
 	switch ( propertyDef->getPropertyId() ) {
 		case PropertyId::Text:
-		case PropertyId::Name:
 			return getText().toUtf8();
 		case PropertyId::Owns:
 			return mOwnedName;
@@ -153,7 +154,6 @@ bool UITab::applyProperty( const StyleSheetProperty& attribute ) {
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::Text:
-		case PropertyId::Name:
 			if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
 				setText( static_cast<UISceneNode*>( mSceneNode )
 							 ->getTranslatorString( attribute.asString() ) );

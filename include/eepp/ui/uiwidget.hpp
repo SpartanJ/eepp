@@ -207,6 +207,8 @@ class EE_API UIWidget : public UINode {
 
 	const std::string& getMinWidthEq() const;
 
+	void setMinSizeEq( const std::string& minWidthEq, const std::string& minHeightEq );
+
 	void setMinWidthEq( const std::string& minWidthEq );
 
 	const std::string& getMinHeightEq() const;
@@ -214,6 +216,8 @@ class EE_API UIWidget : public UINode {
 	void setMinHeightEq( const std::string& minHeightEq );
 
 	const std::string& getMaxWidthEq() const;
+
+	void setMaxSizeEq( const std::string& maxWidthEq, const std::string& maxHeightEq );
 
 	void setMaxWidthEq( const std::string& maxWidthEq );
 

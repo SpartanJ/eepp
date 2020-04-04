@@ -929,9 +929,9 @@ Sizef UINode::getSkinSize( UISkin* Skin, const Uint32& State ) const {
 	return Sizef::Zero;
 }
 
-Sizef UINode::getSkinSize() const {
+Sizef UINode::getSkinSize( const Uint32& state ) const {
 	if ( NULL != getSkin() ) {
-		return getSkin()->getSize();
+		return getSkin()->getSize( state );
 	}
 
 	return Sizef::Zero;
@@ -1124,6 +1124,7 @@ Float UINode::getPropertyRelativeTargetContainerLength(
 		case PropertyRelativeTarget::LocalBlockRadiusHeight:
 			containerLength = getPixelsSize().getHeight() * 0.5f;
 			break;
+		case PropertyRelativeTarget::None:
 		default:
 			break;
 	}

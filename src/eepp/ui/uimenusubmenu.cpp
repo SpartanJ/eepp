@@ -16,11 +16,13 @@ UIMenuSubMenu::UIMenuSubMenu() :
 	mCbId( 0 ),
 	mCbId2( 0 ),
 	mCurWait( NULL ) {
-	mArrow = UINode::New();
+	mArrow = UIWidget::NewWithTag( getElementTag() + "::arrow" );
 	mArrow->setParent( this );
 	mArrow->setFlags( UI_AUTO_SIZE );
 	mArrow->setVisible( true );
 	mArrow->setEnabled( false );
+	mArrow->addEventListener( Event::OnMarginChange,
+							  [&]( const Event* event ) { onSizeChange(); } );
 
 	applyDefaultTheme();
 }
@@ -48,9 +50,8 @@ void UIMenuSubMenu::setTheme( UITheme* Theme ) {
 
 void UIMenuSubMenu::onSizeChange() {
 	UIMenuItem::onSizeChange();
-
-	mArrow->setPosition( getParent()->getSize().getWidth() - mArrow->getSize().getWidth() -
-							 PixelDensity::dpToPx( 1 ),
+	mArrow->setPosition( getSize().getWidth() - mArrow->getSize().getWidth() -
+							 PixelDensity::dpToPx( mArrow->getLayoutMargin().Right ),
 						 0 );
 	mArrow->centerVertical();
 }
@@ -59,6 +60,10 @@ void UIMenuSubMenu::onAlphaChange() {
 	UIMenuItem::onAlphaChange();
 
 	mArrow->setAlpha( mAlpha );
+}
+
+UIWidget* UIMenuSubMenu::getExtraInnerWidget() {
+	return mArrow;
 }
 
 void UIMenuSubMenu::onStateChange() {
