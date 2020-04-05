@@ -1,8 +1,6 @@
 # CSS Specification
 
-## WIP
-
-This document is a work in progress. You'll find that many features are currently not documented.
+This document is a work in progress. You may not find some vital information.
 
 ## Introduction
 
@@ -98,7 +96,7 @@ grouping method, it selects all the matching nodes.
 
 Syntax: `A, B`
 
-Example: `widget, image` will match both `<span>` and `<image>` elements.
+Example: `widget, image` will match both `<widget>` and `<image>` elements.
 
 ---
 
@@ -317,7 +315,7 @@ Read [background-size](https://developer.mozilla.org/en-US/docs/Web/CSS/backgrou
 
 Sets the blend mode to the widget.
 
-* Applicable to: Any element.
+* Applicable to: Any element
 * Value Type: string-list
 * Value List:
   * `add`
@@ -402,7 +400,7 @@ Read [border-top-width](https://developer.mozilla.org/en-US/docs/Web/CSS/border-
 
 Defines where the border box is drawn.
 
-* Applicable to: Any element.
+* Applicable to: Any element
 * Value Type: string-list
 * Value List:
   * `inside`: The border will be drawn inside the content box.
@@ -439,7 +437,7 @@ element.
 
 Enables/disables clipping to the element box.
 
-* Applicable to: Any element.
+* Applicable to: Any element
 * Value Type: boolean
 * Default Value: Varies for each widget/element.
 
@@ -459,8 +457,8 @@ The column mode defines how the size of the column of a grid layout is measured.
 * Applicable to: EE::UI::UIGridLayout (GridLayout)
 * Value Type: string-list
 * Value List:
-  * `size`: The column width of each grid child will be defined with a fixed width based on the value of the `column-width` length.
-  * `weight`: The column width of each grid child will be calculated as a normalized percentage of the total grid width using the `column-weight` value.
+  * `size`: The column width of each grid child will be defined with a fixed width based on the value of the [column-width](#column-width) length.
+  * `weight`: The column width of each grid child will be calculated as a normalized percentage of the total grid width using the [column-weight](#column-weight) value.
 * Default value: `weight`
 
 ---
@@ -478,7 +476,7 @@ Sets the horizontal separation between each element in the grid layout.
 ### column-weight
 
 Sets the percentage width of the child elements of a grid layout.
-`column-mode` must be `weight` in order to work.
+[column-mode](#column-mode) must be `weight` in order to work.
 
 * Applicable to: EE::UI::UIGridLayout (GridLayout)
 * Value Type: float (normalized between `0` and `1`)
@@ -528,7 +526,7 @@ Sets the amount of drag that is needed to start dragging an element.
 
 Sets if the element is enabled
 
-* Applicable to: Any element.
+* Applicable to: Any element
 * Value Type: boolean
 * Default value: `true`
 
@@ -567,7 +565,7 @@ Sets the fill color of a element.
 Allows to set some very specific flags to the element.
 Multiple flags can be set, flags are separated by `|`.
 
-* Applicable to: Any element.
+* Applicable to: Any element
 * Value Type: string-list
 * Value List:
   * `autosize`: This flag allows the widget/element to resize itself to a minimum size that allows the widget to be fully visible.
@@ -668,8 +666,8 @@ With `half-slider` enabled the button will start and end from its center (and no
 ### hint
 
 Sets the hint text of an input. This is the equivalen of `placeholder` in HTML.
-Usually this property will be set not in the CSS file but in the XML or by code, but it's
-available as an option.
+Usually this property will not be set in the CSS file but in the XML as an attribute or from the
+code implementation, but it's available as an option.
 
 * Applicable to: EE::UI::UITextInput (TextInput)
 * Value Type: string
@@ -779,26 +777,6 @@ Sets an icon to an element that support icons.
 
 ---
 
-### icon-auto-margin
-
-When enabled automatically calculates the optimal horizontal position of an icon in a push button.
-
-* Applicable to: EE::UI::UIPushButton (PushButton)
-* Value Type: boolean
-* Default value: `true`
-
----
-
-### icon-horizontal-margin
-
-Manually sets the horizontal position of an icon in a push button.
-
-* Applicable to: EE::UI::UIPushButton (PushButton)
-* Value Type: length
-* Default value: `4dp`
-
----
-
 ### indeterminate
 
 Enables/disables indeterminate mode for a loader. Indeterminate mode is used when the progress of
@@ -846,6 +824,7 @@ or one of the special constants.
   * `match_parent`: The element must be as big as its parent.
   * `wrap_content`: The element should be only big enough to enclose its content (plus padding).
 * Default value: `wrap_content`
+* Aliases: `layout_height`
 
 ---
 
@@ -857,6 +836,7 @@ Accommodates top margin of this element and bottom margin of anchor view.
 * Applicatable to: Any child of a EE::UI::UIRelativeLayout (RelativeLayout)
 * Value Type: string (anchor element ID)
 * Default value: _No value_
+* Aliases: `layout_to_bottom_of`
 
 ---
 
@@ -868,6 +848,7 @@ Accommodates right margin of this element and left margin of anchor element.
 * Applicatable to: Any child of a EE::UI::UIRelativeLayout (RelativeLayout)
 * Value Type: string (anchor element ID)
 * Default value: _No value_
+* Aliases: `layout_to_left_of`
 
 ---
 
@@ -879,6 +860,7 @@ left margin of this element and right margin of anchor element.
 * Applicatable to: Any child of a EE::UI::UIRelativeLayout (RelativeLayout)
 * Value Type: string (anchor element ID)
 * Default value: _No value_
+* Aliases: `layout_to_right_of`
 
 ---
 
@@ -890,6 +872,7 @@ Accommodates bottom margin of this element and top margin of anchor view.
 * Applicatable to: Any child of a EE::UI::UIRelativeLayout (RelativeLayout)
 * Value Type: string (anchor element ID)
 * Default value: _No value_
+* Aliases: `layout_to_top_of`
 
 ---
 
@@ -913,6 +896,7 @@ layout weight.
 * Applicable to: Any element child of a EE::UI::UILinearLayout (LinearLayout)
 * Value Type: float (normalized from `0` to `1`)
 * Default value: `0`
+* Aliases: `layout_weight`
 
 ---
 
@@ -930,6 +914,7 @@ or one of the special constants.
   * `match_parent`: The element must be as big as its parent.
   * `wrap_content`: The element should be only big enough to enclose its content (plus padding).
 * Default value: `wrap_content`
+* Aliases: `layout_width`
 
 ---
 
@@ -937,11 +922,15 @@ or one of the special constants.
 
 Read [margin-bottom](https://developer.mozilla.org/en-US/docs/Web/CSS/margin-bottom) documentation.
 
+* Aliases: `layout_marginBottom`
+
 ---
 
 ### margin-left
 
 Read [margin-left](https://developer.mozilla.org/en-US/docs/Web/CSS/margin-left) documentation.
+
+* Aliases: `layout_marginLeft`
 
 ---
 
@@ -949,11 +938,15 @@ Read [margin-left](https://developer.mozilla.org/en-US/docs/Web/CSS/margin-left)
 
 Read [margin-right](https://developer.mozilla.org/en-US/docs/Web/CSS/margin-right) documentation.
 
+* Aliases: `layout_marginRight`
+
 ---
 
 ### margin-top
 
 Read [margin-top](https://developer.mozilla.org/en-US/docs/Web/CSS/margin-top) documentation.
+
+* Aliases: `layout_marginTop`
 
 ---
 
@@ -1177,133 +1170,428 @@ Read [padding-top](https://developer.mozilla.org/en-US/docs/Web/CSS/padding-top)
 
 ### page-locked
 
+Locks/unlocks the current page in a view pager (locking means that the page cannot be changed and it's
+not scrollable).
+
+* Applicable to: EE::UI::UIViewPager (ViewPager)
+* Value Type: boolean
+* Default value: `false`
+
 ---
 
 ### page-step
 
+Sets the length value that needs the element to scroll a page. Currently the page step it's not used
+by any element but it's a value that can be fetched to implement a page up and down in a scrollable
+component.
+
+* Applicable to: EE::UI::UISlider (Slider), EE::UI::UIProgressBar (ProgressBar)
+* Value Type: float
+* Default value: `0`
+
 ---
 
-### popup-to-main-control
+### popup-to-root
+
+Sets if the drop down listbox should popup in the root widget node, otherwise will popup in the
+parent window.
+
+* Applicable to: EE::UI::UIDropDownList (DropDownList)
+* Value Type: boolean
+* Default value: `false`
 
 ---
 
 ### progress
 
+Sets the current progress of any type of progress bar or loader.
+
+* Applicable to: EE::UI::UIProgresBar (ProgressBar), EE::UI::UILoader (Loader)
+* Value Type: float
+* Default value: `0`
+
 ---
 
 ### radius
+
+Sets the radius of a loader. This will not change the size of the loader,
+only the loader internal size.
+
+* Applicable to: EE::UI::UILoader (Loader)
+* Value Type: length
+* Default value: `0` (but it will change with the loader layout size)
 
 ---
 
 ### reverse-draw
 
+Enables/disables the reverse draw order for the element. When enabled the element will draw from
+the last child to the first.
+
+* Applicable to: Any element
+* Value Type: boolean
+* Default value: `false`
+
 ---
 
 ### rotation
+
+Sets the element rotation in degrees.
+
+* Applicable to: Any element
+* Value Type: float
+* Default value: `0`
 
 ---
 
 ### rotation-origin-point-x
 
+Sets the x-axis rotation origin point relative to the element expressed as a length or a percentage.
+
+* Applicable to: Any element
+* Value Type: length or percentage
+* Default value: `center`
+
+Syntax:
+
+```CSS
+rotation-origin-point-x: 50dp;
+rotation-origin-point-x: center;
+rotation-origin-point-x: 100%;
+```
+
 ---
 
 ### rotation-origin-point-y
+
+Sets the y-axis rotation origin point relative to the element expressed as a length or a percentage.
+
+* Applicable to: Any element
+* Value Type: length or percentage
+* Default value: `center`
+
+Syntax:
+
+```CSS
+rotation-origin-point-y: 50dp;
+rotation-origin-point-y: center;
+rotation-origin-point-y: 100%;
+```
 
 ---
 
 ### row-height
 
+Sets the row height in any element that contains fixed size rows.
+
+* Applicable to: EE::UI::UIListBox (ListBox), EE::UI::UIDropDownList (DropDownList), EE::UI::UITable (Table), EE::UI::UIGridLayout (GridLayout)
+* Value Type: length
+* Default value: Varies on each case. ListBox and DropDownList will guess the value based on the [font-size](#font-size). Table requires this value to be manually set in order to work. GridLayout
+will require the value only if [row-mode](#row-mode) is `size`.
+
 ---
 
 ### row-mode
+
+Sets the row mode of a grid layout.
+The row mode defines how the size of the row of a grid layout is measured.
+
+* Applicable to: EE::UI::UIGridLayout (GridLayout)
+* Value Type: string-list
+* Value List:
+  * `size`: The row width of each grid child will be defined with a fixed width based on the value of the [row-width](#row-width) length.
+  * `weight`: The row width of each grid child will be calculated as a normalized percentage of the total grid width using the [row-weight](#row-weight) value.
+* Default value: `weight`
 
 ---
 
 ### row-margin
 
+Sets the vertical separation between each element in the grid layout.
+
+* Applicable to: EE::UI::UIGridLayout (GridLayout)
+* Value Type: length
+* Default value: `0dp`
+
 ---
 
 ### row-weight
+
+Sets the percentage height of the child elements of a grid layout.
+[row-mode](#row-mode) must be `weight` in order to work.
+
+* Applicable to: EE::UI::UIGridLayout (GridLayout)
+* Value Type: float (normalized between `0` and `1`)
+* Default value: `0.25`
 
 ---
 
 ### scale
 
+Sets the scale of the element.
+
+* Applicable to: Any element
+* Value Type: vector2-float
+* Default value: `1 1`
+
 ---
 
 ### scale-origin-point-x
+
+Sets the x-axis scale origin point relative to the element expressed as a length or a percentage.
+
+* Applicable to: Any element
+* Value Type: length or percentage
+* Default value: `center`
+
+Syntax:
+
+```CSS
+scale-origin-point-x: 50dp;
+scale-origin-point-x: center;
+scale-origin-point-x: 100%;
+```
 
 ---
 
 ### scale-origin-point-y
 
+Sets the y-axis scale origin point relative to the element expressed as a length or a percentage.
+
+* Applicable to: Any element
+* Value Type: length or percentage
+* Default value: `center`
+
+Syntax:
+
+```CSS
+scale-origin-point-y: 50dp;
+scale-origin-point-y: center;
+scale-origin-point-y: 100%;
+```
+
 ---
 
 ### scale-type
+
+Sets a method to scale the image inside an element.
+
+* Applicable to: EE::UI::UIImage (Image), EE::UI::UITextureRegion (TextureRegion)
+* Value Type: string-list
+* Value List:
+  * `fit-inside`: Fits the image inside the element mantaining its ratio.
+  * `expand`: Expands the image to cover the whole element without mantaining its ratio.
+  * `none`: Keeps the image as it is.
 
 ---
 
 ### scrollbar-mode
 
+Defines how the scrollbar should fit inside an scrollable element.
+
+* Applicable to: EE::UI::UIScrollView (ScrollView)
+* Value Type: string-list
+* Value List:
+  * `inclusive`: The scrollbar is part of the scrollable element container, this means that it will
+    be on top of the content (scrollbars on mobile usually behave like this).
+  * `exclusive`: The scrollbar is outside the scrollable element container, this means that it will not
+    be on top of the content (scrollbars on desktop usually behave like this).
+* Default value: `exclusive`
+
 ---
 
 ### scrollbar-type
+
+Sets the scrollbar style (for the moment defines if it contains buttons at its edge or it's simply a bar).
+
+* Applicable to: EE::UI::UIScrollBar (ScrollBar), EE::UI::UIListBox (ListBox), EE::UI::UIDropDownLis
+  (DropDownList), EE::UI::UITable (Table), EE::UI::UIScrollView (ScrollView)
+* Value Type: string-list
+* Value List:
+  * `no-buttons`: It's just a scroll bar.
+  * `two-buttons`: Adds to buttons at its edge.
+* Default value: `two-buttons` for desktop platforms, `no-button` for mobile.
 
 ---
 
 ### selected
 
----
+Sets the element state as selected when supported by the specific widget.
 
-### selected-color
+* Applicable to: EE::UI::UICheckBox (CheckBox), EE::UI::UIRadioButton (RadioButton)
+* Value Type: boolean
+* Default value: `false`
+* Aliases: `active`
 
 ---
 
 ### selected-index
 
+Selects an item inside an element containing a list of items from the item index in the list
+(starting from `0`).
+
+* Applicable to: EE::UI::UIListBox (ListBox), EE::UI::UIDropDownList (DropDownList)
+* Value Type: integer
+* Default value: _No value_
+
 ---
 
 ### selectex-text
+
+Selects an item inside an element containing a list of items from its item text.
+
+* Applicable to: EE::UI::UIListBox (ListBox), EE::UI::UIDropDownList (DropDownList)
+* Value Type: string
+* Default value: _No value_
 
 ---
 
 ### selection-back-color
 
+Sets the text selection background color on a text element that suports text selection.
+
+* Applicable to: EE::UI::UITextView (TextView) and any element that holds inside or extends from a
+  TextView. EE::UI::UICheckBox (CheckBox), EE::UI::UIRadioButton (RadioButton), EE::UI::UITextInput
+  (TextInput), EE::UI::UIListBoxItem (ListBox::item), EE::UI::UIDropDownList (DropDownList),
+  EE::UI::UITextInputPassword (TextInputPassword)
+* Value Type: color
+* Default color: `#323232`
+
+---
+
+### selection-color
+
+Sets the text selection color on a text element that suports text selection.
+
+* Applicable to: EE::UI::UITextView (TextView) and any element that holds inside text or extends from a
+  TextView. EE::UI::UICheckBox (CheckBox), EE::UI::UIRadioButton (RadioButton), EE::UI::UITextInput
+  (TextInput), EE::UI::UIListBoxItem (ListBox::item), EE::UI::UIDropDownList (DropDownList),
+  EE::UI::UITextInputPassword (TextInputPassword), EE::UI::UIPushButton (PushButton)
+* Value Type: color
+* Default color: `white`
+
 ---
 
 ### shadow-color
+
+Sets the text shadow color.
+
+* Applicable to: EE::UI::UITextView (TextView) and any element that holds inside text or extends from a
+  TextView. EE::UI::UICheckBox (CheckBox), EE::UI::UIRadioButton (RadioButton), EE::UI::UITextInput
+  (TextInput), EE::UI::UIListBoxItem (ListBox::item), EE::UI::UIDropDownList (DropDownList),
+  EE::UI::UITextInputPassword (TextInputPassword), EE::UI::UIPushButton (PushButton), EE::UI::UIToolti
+  (Tooltip)
+* Value Type: color
+* Default color: `#323232E6`
 
 ---
 
 ### skin
 
+Sets the skin (a.k.a. decoration) to an element. Element skins are automatically applied if there's a specific skin for the element
+loaded in the current theme, but new skins can be used and loaded with this property. Skins are the default way
+to decorate the widgets, they are loaded from a list of textures or from a texture atlas. Skins are stateful,
+this means that a skin can contain all the possible states that a widget can have for decoration, these are: `normal`, `focus`, `selected`, `hover`, `pressed`, `selectedhover`, `selectedpressed`, `disabled`, `checked`.
+Current UI skin documentation is lacking.
+
+* Applicable to: Any element
+* Value Type: string (skin name or `none` to disable skinning)
+* Default value: The skin corresponding to the widget.
+
 ---
 
 ### skin-color
 
----
+Sets the [skin](#skin) tint color.
 
-### span
-
----
-
-### special-border-tabs
+* Applicable to: Any element
+* Value Type: color
+* Default value: `white` (no tint)
 
 ---
 
 ### src
 
+Sets the source of a resource in an element that supports source.
+
+* Applicable to: EE::UI::UIImage (Image), EE::UI::UISprite (Sprite), EE::UI::UITextureRegion (TextureRegion)
+* Value Type: string
+* Default value: _No value_
+
+Syntax:
+
+For Image (all the examples are valid).
+
+For a TextureRegion only the examples with: @textureregion, @drawable, drawable_resource_name
+from a texture region resource are valid.
+
+For a Sprite only the examples with: all the examples are valid except for @9p and http/s resources.
+
+```CSS
+src: file://assets/icon/ee.png; /** relative path to the current working diretory */
+src: "file://assets/icon/ee.png";
+src: https://raw.githubusercontent.com/SpartanJ/eepp/develop/bin/assets/icon/ee.png;
+src: "https://raw.githubusercontent.com/SpartanJ/eepp/develop/bin/assets/icon/ee.png";
+src: url(file://assets/icon/ee.png);
+src: url(https://raw.githubusercontent.com/SpartanJ/eepp/develop/bin/assets/icon/ee.png);
+src: url("file://assets/icon/ee.png");
+src: @image/image_name_already_in_texture_factory;
+src: @texture/image_name_already_in_texture_factory;
+src: @textureregion/region_name_already_in_any_texture_atlas;
+src: @sprite/sprite_name_already_in_any_texture_atlas; /* sprite pattern name **/
+src: @drawable/drawable_name_already_in_any_drawable_manager; /* drawable managers are any holder of image resources. This includes: texture atlases, textures, nine patchs. */
+src: @9p/nine_patch_resource_name_already_in_the_nine_path_manager;
+src: drawable_resource_name; /** same as doing: @drawable/drawable_resource_name */
+```
+
 ---
 
 ### tab-closable
+
+Enables/disables tabs to be closable with the middle mouse button click (pending implementation of a close
+button inside a tab).
+
+* Applicable to: EE::UI::UITabWidget (TabWidget)
+* Value Type: boolean
+* Default value: `false`
+
+---
+
+### tabs-edges-diff-skin
+
+Enable/disable the tabs edges (most left and right) to use a different skin/decoration from the other tabs.
+The most left tab will use the skin: `tab_left` and the most right tab will use `tab_right`. instead of using
+the normal `tab` skin. This is to be able to achieve more "closed" tab widgets.
+
+* Applicable to: EE::UI::UITabWidget (TabWidget)
+* Value Type: boolean
+* Default value: `false`
 
 ---
 
 ### tab-separation
 
+Sets the tabs separation/distance between each other. Negative values are accepted.
+
+* Applicable to: EE::UI::UITabWidget (TabWidget)
+* Value Type: length
+* Default value: `0dp`
+
 ---
 
 ### text
+
+Sets the text to any element that holds or contains text.
+Usually this property will not be set in the CSS file but in the XML as an attribute or from the
+code implementation, but it's available as an option.
+
+* Applicable to: EE::UI::UITextView (TextView) and any element that holds inside or extends from a
+  TextView. EE::UI::UICheckBox (CheckBox), EE::UI::UIRadioButton (RadioButton), EE::UI::UITextInput
+  (TextInput), EE::UI::UIListBoxItem (ListBox::item), EE::UI::UIDropDownList (DropDownList),
+  EE::UI::UITextInputPassword (TextInputPassword), EE::UI::UITooltip (Tooltip), EE::UI::UITab (Tab),
+  EE::UI::UITextEdit (TextEdit)
+* Value Type: string
+* Default value: _No value_
 
 ---
 
@@ -1315,41 +1603,119 @@ Read [text-align](https://developer.mozilla.org/en-US/docs/Web/CSS/text-align) d
 
 ### text-selection
 
+Enables/disables text selection in any element that contains text.
+
+* Applicable to: EE::UI::UITextView (TextView) and any element that holds inside or extends from a
+  TextView. EE::UI::UICheckBox (CheckBox), EE::UI::UIRadioButton (RadioButton), EE::UI::UITextInput
+  (TextInput), EE::UI::UIListBoxItem (ListBox::item), EE::UI::UIDropDownList (DropDownList),
+  EE::UI::UITextInputPassword (TextInputPassword), EE::UI::UITooltip (Tooltip), EE::UI::UITab (Tab),
+  EE::UI::UITextEdit (TextEdit)
+* Value Type: boolean
+* Default value: `true` for TextEdit, TextInput. `false` for any other element.
+
 ---
 
 ### text-stroke-color
+
+Sets the text stroke (also known as text outline) color.
+
+* Applicable to: EE::UI::UITextView (TextView) and any element that holds inside or extends from a
+  TextView.
+* Value Type: color
+* Default color: `black`
+* Aliases: `fontOutlineColor`
 
 ---
 
 ### text-stroke-width
 
+Sets the text stroke (also known as text outline) width/thickness.
+
+* Applicable to: EE::UI::UITextView (TextView) and any element that holds inside or extends from a
+  TextView.
+* Value Type: length
+* Default value: `0dp`
+* Aliases: `fontOutlineThickness`
+
 ---
 
 ### theme
+
+Sets a theme to the element. Changing the theme will not have any effect unless [skin](#skin) is also set.
+
+* Applicable to: Any element
+* Value Type: string
+* Default value: _No value_
 
 ---
 
 ### timing-function
 
+Sets the timing function (easing function) of a view pager.
+
+* Applicable to: EE::UI::UIViewPager (ViewPager)
+* Value Type: string
+* Value List:
+  * Current timing functions supported: linear, quadratic-in, quadratic-out, quadratic-in-out,
+  sine-in, sine-out, sine-in-out, exponential-in, exponential-out, exponential-in-out, quartic-in,
+  quartic-out, quartic-in-out, circular-in, circular-out, circular-in-out, cubic-in, cubic-out,
+  cubic-in-out, back-in, back-out, back-in-out, bounce-in, bounce-out, bounce-in-out, elastic-in,
+  elastic-out, elastic-in-out, none.
+* Default value: `sine-in`
+
 ---
 
 ### tint
+
+Sets the tint color of an image.
+
+* Applicable to: EE::UI::UIImage (Image), EE::UI::UITextureRegion (TextureRegion)
+* Value Type: color
+* Default value: `white` (no tint)
 
 ---
 
 ### tooltip
 
+Sets the tooltip text and enables the tooltip to the element.
+Usually this property will not be set in the CSS file but in the XML as an attribute or from the
+code implementation, but it's available as an option.
+
+* Applicable to: Any element
+* Value Type: string
+* Default value: _No value_
+
 ---
 
 ### total-steps
+
+Sets the total steps required to complete a progress bar (the maximum value a progress bar will hold).
+
+* Applicable to: EE::UI::UIProgressBar (ProgressBar)
+* Value Type: float
+* Default value: `100`
 
 ---
 
 ### touch-drag
 
+Enables/disables the element as draggable. When enabled the element will be able to be dragged.
+
+* Applicable to: EE::UI::UITouchDraggable (TouchDraggable), (EE::UI::UIListBox (ListBox),
+  EE::UI::UIScrollView (ScrollView), EE::UI::UITable (Table)
+* Value Type: boolean
+* Default value: `false`
+
 ---
 
 ### touch-drag-deceleration
+
+Sets a acceleration value that defines how much will accelerate the drag when the mouse or touch is released.
+
+* Applicable to: EE::UI::UITouchDraggable (TouchDraggable), (EE::UI::UIListBox (ListBox),
+  EE::UI::UIScrollView (ScrollView), EE::UI::UITable (Table)
+* Value Type: vector2-float
+* Default value: `5 5`
 
 ---
 
@@ -1384,17 +1750,48 @@ elastic-out, elastic-in-out, none.
 
 ### value
 
+Sets the current value to an element that accepts values.
+
+* Applicable to: EE::UI::UIScrollBar (ScrollBar), EE::UI::UISlider (Slider), EE::UI::UISpinBox (SpinBox)
+* Value Type: float
+* Default value: _Not set_
+
 ---
 
 ### vertical-expand
+
+In a progress bar enables/disables if the progress bar filler should be expanded vertically to the element
+height. Whend disabled the filler height will be defined by the filler skin height.
+
+* Applicable to: EE::UI::UIScrollBar (ScrollBar)
+* Value Type: boolean
+* Default value: `true`
 
 ---
 
 ### visible
 
+Enables/disables the element visibility.
+
+* Applicable to: Any element
+* Value Type: boolean
+* Default value: `true`
+
 ---
 
 ### vscroll-mode
+
+Sets the vertical scroll mode to any scrollable element.
+The mode defines the visibility of the vertical scroll.
+
+* Applicable to: EE::UI::DropDownList (DropDownList), EE::UI::UIListBox (ListBox),
+  EE::UI::UIScrollView (ScrollView), EE::UI::UITable (Table), EE::UI::UITextEdit (TextEdit).
+* Value Type: string-list
+* Value List:
+  * `auto`: The vertical scrollbar will be visible only when needed.
+  * `on`: The vertical scrollbar will be always visible.
+  * `off`: The vertical scrollbar will be always hidden.
+* Default value: `auto`
 
 ---
 

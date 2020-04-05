@@ -117,7 +117,7 @@ std::string UITabWidget::getPropertyString( const PropertyDefinition* propertyDe
 			return String::format( "%ddp", getMaxTabWidth() );
 		case PropertyId::TabClosable:
 			return getTabsClosable() ? "true" : "false";
-		case PropertyId::SpecialBorderTabs:
+		case PropertyId::TabsEdgesDiffSkin:
 			return getSpecialBorderTabs() ? "true" : "false";
 		case PropertyId::TabSeparation:
 			return String::format( "%ddp", getTabSeparation() );
@@ -172,8 +172,8 @@ bool UITabWidget::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::TabClosable:
 			setTabsClosable( attribute.asBool() );
 			break;
-		case PropertyId::SpecialBorderTabs:
-			setSpecialBorderTabs( attribute.asBool() );
+		case PropertyId::TabsEdgesDiffSkin:
+			setTabsEdgesDiffSkins( attribute.asBool() );
 			break;
 		case PropertyId::TabSeparation:
 			setTabSeparation( attribute.asDpDimensionI( this ) );
@@ -238,11 +238,11 @@ void UITabWidget::setTabsClosable( bool tabsClosable ) {
 }
 
 bool UITabWidget::getSpecialBorderTabs() const {
-	return mStyleConfig.SpecialBorderTabs;
+	return mStyleConfig.TabsEdgesDiffSkins;
 }
 
-void UITabWidget::setSpecialBorderTabs( bool specialBorderTabs ) {
-	mStyleConfig.SpecialBorderTabs = specialBorderTabs;
+void UITabWidget::setTabsEdgesDiffSkins( bool diffSkins ) {
+	mStyleConfig.TabsEdgesDiffSkins = diffSkins;
 	applyThemeToTabs();
 }
 
@@ -586,7 +586,7 @@ void UITabWidget::onPaddingChange() {
 }
 
 void UITabWidget::applyThemeToTabs() {
-	if ( mStyleConfig.SpecialBorderTabs ) {
+	if ( mStyleConfig.TabsEdgesDiffSkins ) {
 		for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
 			mTabs[i]->applyDefaultTheme();
 		}

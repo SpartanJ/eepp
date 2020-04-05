@@ -42,7 +42,7 @@
 #include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uitheme.hpp>
 #include <eepp/ui/uithememanager.hpp>
-#include <eepp/ui/uitouchdragablewidget.hpp>
+#include <eepp/ui/uitouchdraggablewidget.hpp>
 #include <eepp/ui/uiviewpager.hpp>
 #include <eepp/ui/uiwidget.hpp>
 #include <eepp/ui/uiwindow.hpp>

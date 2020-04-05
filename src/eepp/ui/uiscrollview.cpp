@@ -9,7 +9,7 @@ UIScrollView* UIScrollView::New() {
 }
 
 UIScrollView::UIScrollView() :
-	UITouchDragableWidget( "scrollview" ),
+	UITouchDraggableWidget( "scrollview" ),
 	mViewType( Exclusive ),
 	mVScrollMode( ScrollBarMode::Auto ),
 	mHScrollMode( ScrollBarMode::Auto ),
@@ -42,7 +42,7 @@ Uint32 UIScrollView::getType() const {
 }
 
 bool UIScrollView::isType( const Uint32& type ) const {
-	return UIScrollView::getType() == type ? true : UITouchDragableWidget::isType( type );
+	return UIScrollView::getType() == type ? true : UITouchDraggableWidget::isType( type );
 }
 
 void UIScrollView::onSizeChange() {
@@ -83,7 +83,7 @@ void UIScrollView::onChildCountChange( Node* child, const bool& removed ) {
 		containerUpdate();
 	}
 
-	UITouchDragableWidget::onChildCountChange( child, removed );
+	UITouchDraggableWidget::onChildCountChange( child, removed );
 }
 
 void UIScrollView::onPaddingChange() {
@@ -267,13 +267,13 @@ std::string UIScrollView::getPropertyString( const PropertyDefinition* propertyD
 			return getHorizontalScrollMode() == ScrollBarMode::Auto
 					   ? "auto"
 					   : ( getHorizontalScrollMode() == ScrollBarMode::AlwaysOn ? "on" : "off" );
-		case PropertyId::ScrollBarType:
+		case PropertyId::ScrollBarStyle:
 			return mVScroll->getScrollBarType() == UIScrollBar::NoButtons ? "no-buttons"
 																		  : "two-buttons";
 		case PropertyId::ScrollBarMode:
 			return getViewType() == Inclusive ? "inclusive" : "exclusive";
 		default:
-			return UITouchDragableWidget::getPropertyString( propertyDef, propertyIndex );
+			return UITouchDraggableWidget::getPropertyString( propertyDef, propertyIndex );
 	}
 }
 
@@ -285,9 +285,9 @@ bool UIScrollView::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::ScrollBarMode: {
 			std::string val( attribute.asString() );
 			String::toLowerInPlace( val );
-			if ( "inclusive" == val )
+			if ( "inclusive" == val || "inside" == val )
 				setViewType( Inclusive );
-			else if ( "exclusive" == val )
+			else if ( "exclusive" == val || "outside" == val )
 				setViewType( Exclusive );
 			break;
 		}
@@ -315,7 +315,7 @@ bool UIScrollView::applyProperty( const StyleSheetProperty& attribute ) {
 				setHorizontalScrollMode( ScrollBarMode::Auto );
 			break;
 		}
-		case PropertyId::ScrollBarType: {
+		case PropertyId::ScrollBarStyle: {
 			std::string val( attribute.asString() );
 			String::toLowerInPlace( val );
 
@@ -329,7 +329,7 @@ bool UIScrollView::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		}
 		default:
-			return UITouchDragableWidget::applyProperty( attribute );
+			return UITouchDraggableWidget::applyProperty( attribute );
 	}
 
 	return true;

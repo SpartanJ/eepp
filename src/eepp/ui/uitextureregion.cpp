@@ -234,9 +234,14 @@ bool UITextureRegion::applyProperty( const StyleSheetProperty& attribute ) {
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::Src: {
 			Drawable* res = NULL;
+			std::string name( attribute.asString() );
 
-			if ( NULL != ( res = TextureAtlasManager::instance()->getTextureRegionByName(
-							   attribute.asString() ) ) &&
+			if ( String::startsWith( name, "@textureregion/" ) ) {
+				name = name.substr( 12 );
+			}
+
+			if ( NULL !=
+					 ( res = TextureAtlasManager::instance()->getTextureRegionByName( name ) ) &&
 				 res->getDrawableType() == Drawable::TEXTUREREGION ) {
 				setTextureRegion( static_cast<TextureRegion*>( res ) );
 			}

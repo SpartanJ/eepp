@@ -186,7 +186,7 @@ void StyleSheetSpecification::registerDefaultProperties() {
 		.addAlias( "text-color" )
 		.addAlias( "textcolor" );
 	registerProperty( "shadow-color", "" ).setType( PropertyType::Color );
-	registerProperty( "selected-color", "" ).setType( PropertyType::Color );
+	registerProperty( "selection-color", "" ).setType( PropertyType::Color );
 	registerProperty( "selection-back-color", "" ).setType( PropertyType::Color );
 	registerProperty( "font-family", "" ).addAlias( "font-name" ).setType( PropertyType::String );
 	registerProperty( "font-size", "" )
@@ -204,8 +204,6 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "text-align", "" );
 	registerProperty( "icon", "" );
 	registerProperty( "min-icon-size", "" ).setType( PropertyType::Vector2 );
-	registerProperty( "icon-horizontal-margin", "" ).setType( PropertyType::NumberLength );
-	registerProperty( "icon-auto-margin", "" ).setType( PropertyType::NumberLength );
 	registerProperty( "src", "" ).setType( PropertyType::String );
 	registerProperty( "scale-type", "" );
 	registerProperty( "tint", "" ).setType( PropertyType::Color );
@@ -213,24 +211,20 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "min-tab-width", "" ).setType( PropertyType::NumberLength );
 	registerProperty( "max-tab-width", "" ).setType( PropertyType::NumberLength );
 	registerProperty( "tab-closable", "" ).setType( PropertyType::Bool );
-	registerProperty( "special-border-tabs", "" ).setType( PropertyType::Bool );
-	registerProperty( "line-below-tabs", "" ).setType( PropertyType::Bool );
-	registerProperty( "line-below-tabs-color", "" ).setType( PropertyType::Color );
-	registerProperty( "line-below-tabs-y-offset", "" ).setType( PropertyType::NumberLength );
+	registerProperty( "tabs-edges-diff-skin", "" ).setType( PropertyType::Bool );
 	registerProperty( "tab-separation", "" ).setType( PropertyType::NumberLength );
 	registerProperty( "selected", "" ).setType( PropertyType::Bool ).addAlias( "active" );
-	registerProperty( "popup-to-main-control", "" ).setType( PropertyType::Bool );
+	registerProperty( "popup-to-root", "" ).setType( PropertyType::Bool );
 	registerProperty( "max-visible-items", "" ).setType( PropertyType::NumberInt );
 	registerProperty( "selected-index", "" );
 	registerProperty( "selected-text", "" );
-	registerProperty( "scrollbar-type", "" );
+	registerProperty( "scrollbar-style", "" );
 	registerProperty( "row-height", "" ).setType( PropertyType::NumberLength );
 	registerProperty( "vscroll-mode", "" );
 	registerProperty( "hscroll-mode", "" );
 
 	registerProperty( "column-margin", "" ).setType( PropertyType::NumberLength );
 	registerProperty( "row-margin", "" ).setType( PropertyType::NumberLength );
-	registerProperty( "span", "" ).setType( PropertyType::NumberLength );
 	registerProperty( "column-mode", "" );
 	registerProperty( "row-mode", "" );
 	registerProperty( "column-weight", "" ).setType( PropertyType::NumberFloat );
@@ -307,13 +301,11 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "hint-font-family", "" ).addAlias( "hint-font-name" );
 
 	registerProperty( "transition", "" ).setIndexed();
-	registerProperty( "transition-duration", "" ).addAlias( "transitionduration" );
+	registerProperty( "transition-duration", "" );
 	registerProperty( "transition-delay", "0s" )
-		.setType( PropertyType::Time )
-		.addAlias( "transitiondelay" );
-	registerProperty( "transition-timing-function", "linear" )
-		.addAlias( "transitiontimingfunction" );
-	registerProperty( "transition-property", "" ).addAlias( "transitionproperty" );
+		.setType( PropertyType::Time );
+	registerProperty( "transition-timing-function", "linear" );
+	registerProperty( "transition-property", "" );
 
 	registerProperty( "animation", "" ).setIndexed();
 	registerProperty( "animation-delay", "0s" ).setType( PropertyType::Time ).setIndexed();

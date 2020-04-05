@@ -1,3 +1,4 @@
+#include <eepp/graphics/drawablesearcher.hpp>
 #include <eepp/graphics/globaltextureatlas.hpp>
 #include <eepp/graphics/sprite.hpp>
 #include <eepp/scene/scenenode.hpp>
@@ -212,11 +213,24 @@ bool UISprite::applyProperty( const StyleSheetProperty& attribute ) {
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::Src: {
-			std::string val = attribute.asString();
+			std::string path( attribute.getValue() );
 
-			if ( val.size() ) {
+			FunctionString func( FunctionString::parse( path ) );
+			if ( !func.getParameters().empty() && func.getName() == "url" ) {
+				path = func.getParameters().at( 0 );
+			}
+
+			Drawable* res = NULL;
+			if ( NULL != ( res = DrawableSearcher::searchByName( path, true ) ) ) {
 				setIsSpriteOwner( true );
-				setSprite( Sprite::New( val ) );
+
+				if ( res->getDrawableType() == Drawable::SPRITE ) {
+					setSprite( static_cast<Sprite*>( res ) );
+				} else if ( res->getDrawableType() == Drawable::TEXTUREREGION ) {
+					setSprite( Sprite::New( static_cast<TextureRegion*>( res ) ) );
+				} else if ( res->getDrawableType() == Drawable::TEXTURE ) {
+					setSprite( Sprite::New( static_cast<Texture*>( res )->getTextureId() ) );
+				}
 			}
 			break;
 		}

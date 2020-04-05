@@ -243,8 +243,15 @@ bool UIImage::applyProperty( const StyleSheetProperty& attribute ) {
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::Src: {
+			std::string path( attribute.getValue() );
+
+			FunctionString func( FunctionString::parse( path ) );
+			if ( !func.getParameters().empty() && func.getName() == "url" ) {
+				path = func.getParameters().at( 0 );
+			}
+
 			Drawable* res = NULL;
-			if ( NULL != ( res = DrawableSearcher::searchByName( attribute.asString() ) ) ) {
+			if ( NULL != ( res = DrawableSearcher::searchByName( path ) ) ) {
 				if ( res->getDrawableType() == Drawable::SPRITE )
 					mDrawableOwner = true;
 

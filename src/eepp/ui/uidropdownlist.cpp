@@ -285,7 +285,7 @@ bool UIDropDownList::applyProperty( const StyleSheetProperty& attribute ) {
 		return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
-		case PropertyId::PopUpToMainControl:
+		case PropertyId::PopUpToRoot:
 			setPopUpToMainControl( attribute.asBool() );
 			break;
 		case PropertyId::MaxVisibleItems:
@@ -293,7 +293,7 @@ bool UIDropDownList::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		case PropertyId::SelectedIndex:
 		case PropertyId::SelectedText:
-		case PropertyId::ScrollBarType:
+		case PropertyId::ScrollBarStyle:
 		case PropertyId::RowHeight:
 		case PropertyId::VScrollMode:
 		case PropertyId::HScrollMode:
@@ -311,13 +311,13 @@ std::string UIDropDownList::getPropertyString( const PropertyDefinition* propert
 		return "";
 
 	switch ( propertyDef->getPropertyId() ) {
-		case PropertyId::PopUpToMainControl:
+		case PropertyId::PopUpToRoot:
 			return mStyleConfig.PopUpToMainControl ? "true" : "false";
 		case PropertyId::MaxVisibleItems:
 			return String::toStr( mStyleConfig.MaxNumVisibleItems );
 		case PropertyId::SelectedIndex:
 		case PropertyId::SelectedText:
-		case PropertyId::ScrollBarType:
+		case PropertyId::ScrollBarStyle:
 		case PropertyId::RowHeight:
 		case PropertyId::VScrollMode:
 		case PropertyId::HScrollMode:

@@ -607,7 +607,7 @@ bool UITextView::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::ShadowColor:
 			setFontShadowColor( attribute.asColor() );
 			break;
-		case PropertyId::SelectedColor:
+		case PropertyId::SelectionColor:
 			mFontStyleConfig.FontSelectedColor = attribute.asColor();
 			break;
 		case PropertyId::SelectionBackColor:
@@ -644,7 +644,7 @@ bool UITextView::applyProperty( const StyleSheetProperty& attribute ) {
 			autoShrink();
 			break;
 		case PropertyId::TextStrokeWidth:
-			setOutlineThickness( PixelDensity::dpToPx( attribute.asDpDimension() ) );
+			setOutlineThickness( lengthFromValue( attribute ) );
 			break;
 		case PropertyId::TextStrokeColor:
 			setOutlineColor( attribute.asColor() );
@@ -681,7 +681,7 @@ std::string UITextView::getPropertyString( const PropertyDefinition* propertyDef
 			return getFontColor().toHexString();
 		case PropertyId::ShadowColor:
 			return getFontShadowColor().toHexString();
-		case PropertyId::SelectedColor:
+		case PropertyId::SelectionColor:
 			return mFontStyleConfig.FontSelectedColor.toHexString();
 		case PropertyId::SelectionBackColor:
 			return getSelectionBackColor().toHexString();

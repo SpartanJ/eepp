@@ -335,7 +335,7 @@ std::string UIScrollBar::getPropertyString( const PropertyDefinition* propertyDe
 			return String::fromFloat( getClickStep() );
 		case PropertyId::PageStep:
 			return String::fromFloat( getPageStep() );
-		case PropertyId::ScrollBarType:
+		case PropertyId::ScrollBarStyle:
 			return getScrollBarType() == NoButtons ? "no-buttons" : "two-buttons";
 		case PropertyId::BackgroundExpand:
 			return getExpandBackground() ? "true" : "false";
@@ -374,7 +374,7 @@ bool UIScrollBar::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::PageStep:
 			setPageStep( attribute.asFloat() );
 			break;
-		case PropertyId::ScrollBarType: {
+		case PropertyId::ScrollBarStyle: {
 			std::string val = attribute.asString();
 			String::toLowerInPlace( val );
 

@@ -1,13 +1,13 @@
 #ifndef EE_UISCROLLVIEW_HPP
 #define EE_UISCROLLVIEW_HPP
 
-#include <eepp/ui/uitouchdragablewidget.hpp>
+#include <eepp/ui/uitouchdraggablewidget.hpp>
 
 namespace EE { namespace UI {
 
 class UIScrollBar;
 
-class EE_API UIScrollView : public UITouchDragableWidget {
+class EE_API UIScrollView : public UITouchDraggableWidget {
   public:
 	enum ScrollViewType { Inclusive, Exclusive };
 

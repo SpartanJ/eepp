@@ -9,7 +9,7 @@ UITable* UITable::New() {
 }
 
 UITable::UITable() :
-	UITouchDragableWidget( "table" ),
+	UITouchDraggableWidget( "table" ),
 	mContainerPadding(),
 	mContainer( NULL ),
 	mVScrollBar( NULL ),
@@ -69,7 +69,7 @@ Uint32 UITable::getType() const {
 }
 
 bool UITable::isType( const Uint32& type ) const {
-	return UITable::getType() == type ? true : UITouchDragableWidget::isType( type );
+	return UITable::getType() == type ? true : UITouchDraggableWidget::isType( type );
 }
 
 void UITable::setDefaultCollumnsWidth() {
@@ -654,11 +654,11 @@ std::string UITable::getPropertyString( const PropertyDefinition* propertyDef,
 			return getHorizontalScrollMode() == ScrollBarMode::Auto
 					   ? "auto"
 					   : ( getHorizontalScrollMode() == ScrollBarMode::AlwaysOn ? "on" : "off" );
-		case PropertyId::ScrollBarType:
+		case PropertyId::ScrollBarStyle:
 			return mVScrollBar->getScrollBarType() == UIScrollBar::NoButtons ? "no-buttons"
 																			 : "two-buttons";
 		default:
-			return UITouchDragableWidget::getPropertyString( propertyDef, propertyIndex );
+			return UITouchDraggableWidget::getPropertyString( propertyDef, propertyIndex );
 	}
 }
 
@@ -668,7 +668,7 @@ bool UITable::applyProperty( const StyleSheetProperty& attribute ) {
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::RowHeight:
-			setRowHeight( attribute.asDpDimensionI() );
+			setRowHeight( attribute.asDpDimensionI( this ) );
 			break;
 		case PropertyId::VScrollMode: {
 			std::string val = attribute.asString();
@@ -690,7 +690,7 @@ bool UITable::applyProperty( const StyleSheetProperty& attribute ) {
 				setHorizontalScrollMode( ScrollBarMode::AlwaysOff );
 			break;
 		}
-		case PropertyId::ScrollBarType: {
+		case PropertyId::ScrollBarStyle: {
 			std::string val( attribute.asString() );
 			String::toLowerInPlace( val );
 
@@ -704,7 +704,7 @@ bool UITable::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		}
 		default:
-			return UITouchDragableWidget::applyProperty( attribute );
+			return UITouchDraggableWidget::applyProperty( attribute );
 	}
 
 	return true;

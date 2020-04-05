@@ -332,7 +332,7 @@ std::string UIPushButton::getPropertyString( const PropertyDefinition* propertyD
 				   String::format( "%ddp", mIconMinSize.getHeight() );
 		case PropertyId::Color:
 		case PropertyId::ShadowColor:
-		case PropertyId::SelectedColor:
+		case PropertyId::SelectionColor:
 		case PropertyId::SelectionBackColor:
 		case PropertyId::FontFamily:
 		case PropertyId::FontSize:
@@ -377,7 +377,7 @@ bool UIPushButton::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		case PropertyId::Color:
 		case PropertyId::ShadowColor:
-		case PropertyId::SelectedColor:
+		case PropertyId::SelectionColor:
 		case PropertyId::SelectionBackColor:
 		case PropertyId::FontFamily:
 		case PropertyId::FontSize:

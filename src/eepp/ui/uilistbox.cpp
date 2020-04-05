@@ -22,7 +22,7 @@ UIListBox* UIListBox::NewWithTag( const std::string& tag ) {
 }
 
 UIListBox::UIListBox( const std::string& tag ) :
-	UITouchDragableWidget( tag ),
+	UITouchDraggableWidget( tag ),
 	mRowHeight( 0 ),
 	mVScrollMode( ScrollBarMode::Auto ),
 	mHScrollMode( ScrollBarMode::Auto ),
@@ -92,7 +92,7 @@ Uint32 UIListBox::getType() const {
 }
 
 bool UIListBox::isType( const Uint32& type ) const {
-	return UIListBox::getType() == type ? true : UITouchDragableWidget::isType( type );
+	return UIListBox::getType() == type ? true : UITouchDraggableWidget::isType( type );
 }
 
 void UIListBox::setTheme( UITheme* Theme ) {
@@ -1027,11 +1027,11 @@ std::string UIListBox::getPropertyString( const PropertyDefinition* propertyDef,
 			return String::toStr( getItemSelectedIndex() );
 		case PropertyId::SelectedText:
 			return getItemSelectedText();
-		case PropertyId::ScrollBarType:
+		case PropertyId::ScrollBarStyle:
 			return mVScrollBar->getScrollBarType() == UIScrollBar::NoButtons ? "no-buttons"
 																			 : "two-buttons";
 		default:
-			return UITouchDragableWidget::getPropertyString( propertyDef, propertyIndex );
+			return UITouchDraggableWidget::getPropertyString( propertyDef, propertyIndex );
 	}
 }
 
@@ -1041,7 +1041,7 @@ bool UIListBox::applyProperty( const StyleSheetProperty& attribute ) {
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::RowHeight:
-			setRowHeight( attribute.asDpDimensionI() );
+			setRowHeight( attribute.asDpDimensionI( this ) );
 			break;
 		case PropertyId::VScrollMode: {
 			std::string val = attribute.asString();
@@ -1069,7 +1069,7 @@ bool UIListBox::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::SelectedText:
 			setSelected( attribute.asString() );
 			break;
-		case PropertyId::ScrollBarType: {
+		case PropertyId::ScrollBarStyle: {
 			std::string val( attribute.asString() );
 			String::toLowerInPlace( val );
 
@@ -1083,7 +1083,7 @@ bool UIListBox::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		}
 		default:
-			return UITouchDragableWidget::applyProperty( attribute );
+			return UITouchDraggableWidget::applyProperty( attribute );
 	}
 
 	return true;
@@ -1092,7 +1092,7 @@ bool UIListBox::applyProperty( const StyleSheetProperty& attribute ) {
 void UIListBox::loadFromXmlNode( const pugi::xml_node& node ) {
 	beginAttributesTransaction();
 
-	UITouchDragableWidget::loadFromXmlNode( node );
+	UITouchDraggableWidget::loadFromXmlNode( node );
 
 	loadItemsFromXmlNode( node );
 

@@ -8,7 +8,7 @@ namespace EE { namespace Graphics {
 
 class EE_API DrawableSearcher {
   public:
-	static Drawable* searchByName( const std::string& name );
+	static Drawable* searchByName( const std::string& name, bool firstSearchSprite = false );
 
 	static Drawable* searchById( const Uint32& id );
 

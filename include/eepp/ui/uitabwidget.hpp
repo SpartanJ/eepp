@@ -18,8 +18,8 @@ class EE_API UITabWidget : public UIWidget {
 		Uint32 MinTabWidth = 32;
 		Uint32 MaxTabWidth = 300;
 		bool TabsClosable = false;
-		bool SpecialBorderTabs = false; //! Indicates if the periferical tabs ( the left and right
-										//! border tab ) are different from the central tabs.
+		bool TabsEdgesDiffSkins = false; //! Indicates if the edge tabs ( the left and right
+										 //! border tab ) are different from the central tabs.
 	};
 
 	static UITabWidget* New();
@@ -88,7 +88,7 @@ class EE_API UITabWidget : public UIWidget {
 
 	bool getSpecialBorderTabs() const;
 
-	void setSpecialBorderTabs( bool specialBorderTabs );
+	void setTabsEdgesDiffSkins( bool diffSkins );
 
 	const StyleConfig& getStyleConfig() const;
 
@@ -127,7 +127,7 @@ class EE_API UITabWidget : public UIWidget {
 
 	virtual void onSizeChange();
 
-	virtual void onChildCountChange( Node * child, const bool& removed );
+	virtual void onChildCountChange( Node* child, const bool& removed );
 
 	virtual void onPaddingChange();
 

@@ -268,10 +268,10 @@ bool UILoader::applyProperty( const StyleSheetProperty& attribute ) {
 			setFillColor( attribute.asColor() );
 			break;
 		case PropertyId::Radius:
-			setRadius( attribute.asDpDimension() );
+			setRadius( attribute.asDpDimension( this ) );
 			break;
 		case PropertyId::OutlineThickness:
-			setOutlineThickness( attribute.asDpDimension() );
+			setOutlineThickness( attribute.asDpDimension( this ) );
 			break;
 		case PropertyId::AnimationSpeed:
 			setAnimationSpeed( attribute.asFloat() );

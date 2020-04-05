@@ -1,17 +1,17 @@
-#ifndef EE_UITOUCHDRAGABLEWIDGET_HPP
-#define EE_UITOUCHDRAGABLEWIDGET_HPP
+#ifndef EE_UITOUCHDRAGGABLEWIDGET_HPP
+#define EE_UITOUCHDRAGGABLEWIDGET_HPP
 
 #include <eepp/ui/uiwidget.hpp>
 
 namespace EE { namespace UI {
 
-class EE_API UITouchDragableWidget : public UIWidget {
+class EE_API UITouchDraggableWidget : public UIWidget {
   public:
-	static UITouchDragableWidget* New();
+	static UITouchDraggableWidget* New();
 
-	UITouchDragableWidget();
+	UITouchDraggableWidget();
 
-	~UITouchDragableWidget();
+	~UITouchDraggableWidget();
 
 	virtual Uint32 getType() const;
 
@@ -19,15 +19,15 @@ class EE_API UITouchDragableWidget : public UIWidget {
 
 	bool isTouchDragEnabled() const;
 
-	UITouchDragableWidget* setTouchDragEnabled( const bool& enable );
+	UITouchDraggableWidget* setTouchDragEnabled( const bool& enable );
 
 	bool isTouchDragging() const;
 
-	UITouchDragableWidget* setTouchDragging( const bool& dragging );
+	UITouchDraggableWidget* setTouchDragging( const bool& dragging );
 
 	Vector2f getTouchDragDeceleration() const;
 
-	UITouchDragableWidget* setTouchDragDeceleration( const Vector2f& touchDragDeceleration );
+	UITouchDraggableWidget* setTouchDragDeceleration( const Vector2f& touchDragDeceleration );
 
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
@@ -39,7 +39,7 @@ class EE_API UITouchDragableWidget : public UIWidget {
 	Vector2f mTouchDragAcceleration;
 	Vector2f mTouchDragDeceleration;
 
-	UITouchDragableWidget( const std::string& tag );
+	UITouchDraggableWidget( const std::string& tag );
 
 	virtual void onTouchDragValueChange( Vector2f diff );
 

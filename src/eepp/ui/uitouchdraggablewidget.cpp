@@ -1,68 +1,68 @@
 #include <eepp/scene/scenenode.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
-#include <eepp/ui/uitouchdragablewidget.hpp>
+#include <eepp/ui/uitouchdraggablewidget.hpp>
 
 namespace EE { namespace UI {
 
-UITouchDragableWidget* UITouchDragableWidget::New() {
-	return eeNew( UITouchDragableWidget, () );
+UITouchDraggableWidget* UITouchDraggableWidget::New() {
+	return eeNew( UITouchDraggableWidget, () );
 }
 
-UITouchDragableWidget::UITouchDragableWidget( const std::string& tag ) :
+UITouchDraggableWidget::UITouchDraggableWidget( const std::string& tag ) :
 	UIWidget( tag ), mTouchDragDeceleration( 5.f, 5.f ) {
 	subscribeScheduledUpdate();
 }
 
-UITouchDragableWidget::UITouchDragableWidget() : UITouchDragableWidget( "touchdragable" ) {}
+UITouchDraggableWidget::UITouchDraggableWidget() : UITouchDraggableWidget( "touchdraggable" ) {}
 
-UITouchDragableWidget::~UITouchDragableWidget() {
+UITouchDraggableWidget::~UITouchDraggableWidget() {
 	if ( NULL != getEventDispatcher() && isTouchDragging() )
 		getEventDispatcher()->setNodeDragging( NULL );
 }
 
-Uint32 UITouchDragableWidget::getType() const {
-	return UI_TYPE_TOUCH_DRAGABLE_WIDGET;
+Uint32 UITouchDraggableWidget::getType() const {
+	return UI_TYPE_TOUCH_DRAGGABLE_WIDGET;
 }
 
-bool UITouchDragableWidget::isType( const Uint32& type ) const {
-	return UITouchDragableWidget::getType() == type ? true : UIWidget::isType( type );
+bool UITouchDraggableWidget::isType( const Uint32& type ) const {
+	return UITouchDraggableWidget::getType() == type ? true : UIWidget::isType( type );
 }
 
-bool UITouchDragableWidget::isTouchDragEnabled() const {
+bool UITouchDraggableWidget::isTouchDragEnabled() const {
 	return 0 != ( mFlags & UI_TOUCH_DRAG_ENABLED );
 }
 
-UITouchDragableWidget* UITouchDragableWidget::setTouchDragEnabled( const bool& enable ) {
+UITouchDraggableWidget* UITouchDraggableWidget::setTouchDragEnabled( const bool& enable ) {
 	writeFlag( UI_TOUCH_DRAG_ENABLED, true == enable );
 	return this;
 }
 
-bool UITouchDragableWidget::isTouchDragging() const {
+bool UITouchDraggableWidget::isTouchDragging() const {
 	return 0 != ( mNodeFlags & NODE_FLAG_TOUCH_DRAGGING );
 }
 
-UITouchDragableWidget* UITouchDragableWidget::setTouchDragging( const bool& dragging ) {
+UITouchDraggableWidget* UITouchDraggableWidget::setTouchDragging( const bool& dragging ) {
 	writeNodeFlag( NODE_FLAG_TOUCH_DRAGGING, true == dragging );
 	return this;
 }
 
-Vector2f UITouchDragableWidget::getTouchDragDeceleration() const {
+Vector2f UITouchDraggableWidget::getTouchDragDeceleration() const {
 	return mTouchDragDeceleration;
 }
 
-UITouchDragableWidget*
-UITouchDragableWidget::setTouchDragDeceleration( const Vector2f& touchDragDeceleration ) {
+UITouchDraggableWidget*
+UITouchDraggableWidget::setTouchDragDeceleration( const Vector2f& touchDragDeceleration ) {
 	mTouchDragDeceleration = touchDragDeceleration;
 	return this;
 }
 
-void UITouchDragableWidget::onTouchDragValueChange( Vector2f ) {}
+void UITouchDraggableWidget::onTouchDragValueChange( Vector2f ) {}
 
-bool UITouchDragableWidget::isTouchOverAllowedChilds() {
+bool UITouchDraggableWidget::isTouchOverAllowedChilds() {
 	return isMouseOverMeOrChilds();
 }
 
-void UITouchDragableWidget::scheduledUpdate( const Time& time ) {
+void UITouchDraggableWidget::scheduledUpdate( const Time& time ) {
 	if ( mEnabled && mVisible && NULL != getEventDispatcher() ) {
 		if ( isTouchDragEnabled() ) {
 			EventDispatcher* eventDispatcher = getEventDispatcher();
@@ -145,8 +145,8 @@ void UITouchDragableWidget::scheduledUpdate( const Time& time ) {
 	}
 }
 
-std::string UITouchDragableWidget::getPropertyString( const PropertyDefinition* propertyDef,
-													  const Uint32& propertyIndex ) {
+std::string UITouchDraggableWidget::getPropertyString( const PropertyDefinition* propertyDef,
+													   const Uint32& propertyIndex ) {
 	if ( NULL == propertyDef )
 		return "";
 
@@ -161,7 +161,7 @@ std::string UITouchDragableWidget::getPropertyString( const PropertyDefinition* 
 	}
 }
 
-bool UITouchDragableWidget::applyProperty( const StyleSheetProperty& attribute ) {
+bool UITouchDraggableWidget::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) )
 		return false;
 

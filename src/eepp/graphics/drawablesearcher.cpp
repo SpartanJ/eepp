@@ -45,10 +45,26 @@ static Drawable* searchByNameInternal( const std::string& name ) {
 	return drawable;
 }
 
-Drawable* DrawableSearcher::searchByName( const std::string& name ) {
+Drawable* DrawableSearcher::searchByName( const std::string& name, bool firstSearchSprite ) {
 	Drawable* drawable = NULL;
 
 	if ( name.size() ) {
+		bool searchedSprite = false;
+
+		if ( firstSearchSprite ) {
+			if ( String::startsWith( name, "@sprite/" ) ) {
+				drawable = getSprite( name.substr( 8 ) );
+			} else {
+				drawable = getSprite( name );
+			}
+
+			if ( NULL != drawable ) {
+				return drawable;
+			}
+
+			searchedSprite = true;
+		}
+
 		if ( name[0] == '@' ) {
 			if ( String::startsWith( name, "@textureregion/" ) ) {
 				drawable =
@@ -57,7 +73,7 @@ Drawable* DrawableSearcher::searchByName( const std::string& name ) {
 				drawable = TextureFactory::instance()->getByName( name.substr( 7 ) );
 			} else if ( String::startsWith( name, "@texture/" ) ) {
 				drawable = TextureFactory::instance()->getByName( name.substr( 9 ) );
-			} else if ( String::startsWith( name, "@sprite/" ) ) {
+			} else if ( String::startsWith( name, "@sprite/" ) && !searchedSprite ) {
 				drawable = getSprite( name.substr( 8 ) );
 			} else if ( String::startsWith( name, "@drawable/" ) ) {
 				drawable = searchByNameInternal( name.substr( 10 ) );

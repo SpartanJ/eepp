@@ -25,11 +25,11 @@
 #include <eepp/ui/uitextinputpassword.hpp>
 #include <eepp/ui/uitextureregion.hpp>
 #include <eepp/ui/uitextview.hpp>
-#include <eepp/ui/uitouchdragablewidget.hpp>
+#include <eepp/ui/uitouchdraggablewidget.hpp>
+#include <eepp/ui/uiviewpager.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
 #include <eepp/ui/uiwindow.hpp>
 #include <eepp/ui/uiwinmenu.hpp>
-#include <eepp/ui/uiviewpager.hpp>
 
 namespace EE { namespace UI {
 
@@ -72,7 +72,7 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["window"] = UIWindow::New;
 		registeredWidget["scrollview"] = UIScrollView::New;
 		registeredWidget["textureregion"] = UITextureRegion::New;
-		registeredWidget["touchdragable"] = UITouchDragableWidget::New;
+		registeredWidget["touchdraggable"] = UITouchDraggableWidget::New;
 		registeredWidget["gridlayout"] = UIGridLayout::New;
 		registeredWidget["layout"] = UILayout::New;
 		registeredWidget["viewpager"] = UIViewPager::New;

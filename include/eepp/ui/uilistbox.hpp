@@ -5,11 +5,11 @@
 #include <eepp/ui/uilistboxitem.hpp>
 #include <eepp/ui/uinode.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
-#include <eepp/ui/uitouchdragablewidget.hpp>
+#include <eepp/ui/uitouchdraggablewidget.hpp>
 
 namespace EE { namespace UI {
 
-class EE_API UIListBox : public UITouchDragableWidget {
+class EE_API UIListBox : public UITouchDraggableWidget {
   public:
 	static UIListBox* New();
 
