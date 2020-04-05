@@ -187,6 +187,8 @@ Important CSS3 features that are currently supported:
 
 * [Most of the background properties](https://developer.mozilla.org/en-US/docs/Web/CSS/background)
 
+See the [CSS Specification](docs/articles/cssspecification.md) for more information.
+
 ## Write the CSS
 
 Following [Load the XML Layout Resource](#load-the-xml-layout-resource) we are

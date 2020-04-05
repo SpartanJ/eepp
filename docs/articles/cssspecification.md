@@ -1,7 +1,5 @@
 # CSS Specification
 
-This document is a work in progress. You may not find some vital information.
-
 ## Introduction
 
 eepp CSS custom implementation is heavily based on the official [CSS standard](https://www.w3.org/TR/CSS/#css).
@@ -150,7 +148,7 @@ Example: `TextView + image` will match all `<image>` elements that directly foll
 eepp CSS properties can be categorized in two big groups: CSS standard properties and eepp CSS
 properties.
 
-**Definitions**:
+**Definitions:**
 
 * Property names are *case insensitive*.
 * Some properties have aliases.
@@ -227,7 +225,7 @@ elastic-out, elastic-in-out, none.
 Enable or disable editing on input elements.
 
 * Applicable to: EE::UI::UITextEdit (TextEdit), EE::UI::UITextInput (TextInput)
-* Value Type: boolean
+* Data Type: [boolean](#boolean-data-type)
 * Default value: `true`
 
 ---
@@ -237,7 +235,7 @@ Enable or disable editing on input elements.
 On a input that only accept numbers, enables floating point numbers.
 
 * Applicable to: EE::UI::UITextInput (TextInput), EE::UI::UISpinBox (SpinBox::input)
-* Value Type: boolean
+* Data Type: [boolean](#boolean-data-type)
 * Default value: `false`
 
 ---
@@ -247,7 +245,7 @@ On a input that only accept numbers, enables floating point numbers.
 Sets the loader speed animation.
 
 * Applicable to: EE::UI::UILoader (Loader)
-* Value type: float
+* Data Type: [number](#number-data-type)
 * Default value: `0.5`
 
 ---
@@ -257,7 +255,7 @@ Sets the loader speed animation.
 The angle value where a loader progress starts rendering.
 
 * Applicable to: EE::UI::UILoader (Loader)
-* Value type: float
+* Data Type: [number](#number-data-type)
 * Default value: `0`
 
 ---
@@ -273,7 +271,7 @@ Read [background-color](https://developer.mozilla.org/en-US/docs/Web/CSS/backgro
 Sets if the element skin background should be expanded to the element dimensions.
 
 * Applicable to: EE::UI::UISlider (Slider), EE::UI::UIScrollBar (ScrollBar)
-* Value Type: boolean
+* Data Type: [boolean](#boolean-data-type)
 * Default value: `false`
 
 ---
@@ -316,7 +314,7 @@ Read [background-size](https://developer.mozilla.org/en-US/docs/Web/CSS/backgrou
 Sets the blend mode to the widget.
 
 * Applicable to: Any element
-* Value Type: string-list
+* Data Type: [string-list](#string-list-data-type)
 * Value List:
   * `add`
   * `alpha`
@@ -401,7 +399,7 @@ Read [border-top-width](https://developer.mozilla.org/en-US/docs/Web/CSS/border-
 Defines where the border box is drawn.
 
 * Applicable to: Any element
-* Value Type: string-list
+* Data Type: [string-list](#string-list-data-type)
 * Value List:
   * `inside`: The border will be drawn inside the content box.
   * `outside`: The border will be drawn outside the content box.
@@ -414,7 +412,7 @@ Defines where the border box is drawn.
 Sets the percentage of scroll of a page that triggers a page change in a ViewPager.
 
 * Applicable to: EE::UI::UIViewPager (ViewPager).
-* Value Type: float (normalized between `0` and `1`)
+* Data Type: [number](#number-data-type) (normalized between `0` and `1`)
 * Default value: `0.33`
 
 ---
@@ -425,7 +423,7 @@ For any element that has a stepped value change, this sets the step variation fo
 element.
 
 * Applicable to: EE::UI::UIScrollBar (ScrollBar), EE::UI::UISlider (Slider), EE::UI::UISpinBox (SpinBox).
-* Value Type: float
+* Data Type: [number](#number-data-type)
 * Default value:
   * ScrollBar: `0.1`
   * Slider: `0.1`
@@ -438,7 +436,7 @@ element.
 Enables/disables clipping to the element box.
 
 * Applicable to: Any element
-* Value Type: boolean
+* Data Type: [boolean](#boolean-data-type)
 * Default Value: Varies for each widget/element.
 
 ---
@@ -455,7 +453,7 @@ Sets the column mode of a grid layout.
 The column mode defines how the size of the column of a grid layout is measured.
 
 * Applicable to: EE::UI::UIGridLayout (GridLayout)
-* Value Type: string-list
+* Data Type: [string-list](#string-list-data-type)
 * Value List:
   * `size`: The column width of each grid child will be defined with a fixed width based on the value of the [column-width](#column-width) length.
   * `weight`: The column width of each grid child will be calculated as a normalized percentage of the total grid width using the [column-weight](#column-weight) value.
@@ -468,7 +466,7 @@ The column mode defines how the size of the column of a grid layout is measured.
 Sets the horizontal separation between each element in the grid layout.
 
 * Applicable to: EE::UI::UIGridLayout (GridLayout)
-* Value Type: length
+* Data Type: [length](#length-data-type)
 * Default value: `0dp`
 
 ---
@@ -479,7 +477,7 @@ Sets the percentage width of the child elements of a grid layout.
 [column-mode](#column-mode) must be `weight` in order to work.
 
 * Applicable to: EE::UI::UIGridLayout (GridLayout)
-* Value Type: float (normalized between `0` and `1`)
+* Data Type: [number](#number-data-type) (normalized between `0` and `1`)
 * Default value: `0.25`
 
 ---
@@ -489,7 +487,7 @@ Sets the percentage width of the child elements of a grid layout.
 Sets the width of the child elements of a grid layout.
 
 * Applicable to: EE::UI::UIGridLayout (GridLayout)
-* Value Type: length
+* Data Type: [length](#length-data-type)
 * Default value: `0`
 
 ---
@@ -507,7 +505,7 @@ Custom cursors not yet supported (but supported by the engine, only not implemen
 Enables/disables displaying the percentage of progress in the progress bar.
 
 * Applicable to: EE::UI::UIProgressBar (ProgressBar)
-* Value Type: boolean
+* Data Type: [boolean](#boolean-data-type)
 * Default value: `false`
 
 ---
@@ -517,7 +515,7 @@ Enables/disables displaying the percentage of progress in the progress bar.
 Sets the amount of drag that is needed to start dragging an element.
 
 * Applicable to: EE::UI::UIViewPager (ViewPager)
-* Value Type: length
+* Data Type: [length](#length-data-type)
 * Default value: `8dp`
 
 ---
@@ -527,7 +525,7 @@ Sets the amount of drag that is needed to start dragging an element.
 Sets if the element is enabled
 
 * Applicable to: Any element
-* Value Type: boolean
+* Data Type: [boolean](#boolean-data-type)
 * Default value: `true`
 
 ---
@@ -555,7 +553,7 @@ Read [font-style](https://developer.mozilla.org/en-US/docs/Web/CSS/font-style) d
 Sets the fill color of a element.
 
 * Applicable to: EE::UI::UILoader (Loader)
-* Value Type: color
+* Data Type: [color](#color-data-type)
 * Default value: `white`
 
 ---
@@ -566,7 +564,7 @@ Allows to set some very specific flags to the element.
 Multiple flags can be set, flags are separated by `|`.
 
 * Applicable to: Any element
-* Value Type: string-list
+* Data Type: [string-list](#string-list-data-type)
 * Value List:
   * `autosize`: This flag allows the widget/element to resize itself to a minimum size that allows the widget to be fully visible.
   * `clip`: Enables clipping of the element box.
@@ -618,7 +616,7 @@ Same as [background-size](#background-size) but for the foreground.
 Allows the cursor to move freely in an input.
 
 * Applicable to: EE::UI::UITextInput (TextInput)
-* Value Type: boolean
+* Data Type: [boolean](#boolean-data-type)
 * Default value: `true`
 
 ---
@@ -631,7 +629,7 @@ text on a TextView). Vertical and horizontal can be set by using `|` as a separa
 * Applicable to: Any element. This applies at the EE::UI::UIWidget (Widget) level, the base element
   of all widgets. But every widget has it's own behaviour, based on it's own content. Some may not
   do anything.
-* Value Type: string-list.
+* Data Type: [string-list](#string-list-data-type)
 * Value List:
   * `left`
   * `right`
@@ -658,7 +656,7 @@ Defines how the slider widget should set its movement limits against the slider.
 With `half-slider` enabled the button will start and end from its center (and not its border).
 
 * Applicable to: EE::UI::UISlider (Slider)
-* Value Type: boolean
+* Data Type: [boolean](#boolean-data-type)
 * Default value: `false`
 
 ---
@@ -670,7 +668,7 @@ Usually this property will not be set in the CSS file but in the XML as an attri
 code implementation, but it's available as an option.
 
 * Applicable to: EE::UI::UITextInput (TextInput)
-* Value Type: string
+* Data Type: [string](#string-data-type)
 * Default value: _No value_
 
 ---
@@ -680,7 +678,7 @@ code implementation, but it's available as an option.
 Sets the hint font color.
 
 * Applicable to: EE::UI::UITextInput (TextInput)
-* Value Type: color
+* Data Type: [color](#color-data-type)
 * Default value: `white`
 
 ---
@@ -690,7 +688,7 @@ Sets the hint font color.
 Sets the hint font family.
 
 * Applicable to: EE::UI::UITextInput (TextInput)
-* Value Type: string
+* Data Type: [string](#string-data-type)
 * Default value: _No value_
 
 ---
@@ -700,7 +698,7 @@ Sets the hint font family.
 Sets the hint font size.
 
 * Applicable to: EE::UI::UITextInput (TextInput)
-* Value Type: length
+* Data Type: [length](#length-data-type)
 * Default value: `12px`
 
 ---
@@ -710,7 +708,7 @@ Sets the hint font size.
 Sets the hint font style.
 
 * Applicable to: EE::UI::UITextInput (TextInput)
-* Value Type: string-list
+* Data Type: [string-list](#string-list-data-type)
 * Value List:
   * `underline`
   * `bold`
@@ -726,7 +724,7 @@ Sets the hint font style.
 Sets the hint font shadow color.
 
 * Applicable to: EE::UI::UITextInput (TextInput)
-* Value Type: color
+* Data Type: [color](#color-data-type)
 * Default value: `#323232E6`
 
 ---
@@ -736,7 +734,7 @@ Sets the hint font shadow color.
 Sets the hint font stroke (the outline) color.
 
 * Applicable to: EE::UI::UITextInput (TextInput)
-* Value Type: color
+* Data Type: [color](#color-data-type)
 * Default value: `black`
 
 ---
@@ -746,7 +744,7 @@ Sets the hint font stroke (the outline) color.
 Sets the hint font stroke (the outline) width.
 
 * Applicable to: EE::UI::UITextInput (TextInput)
-* Value Type: length
+* Data Type: [length](#length-data-type)
 * Default value: `0dp`
 
 ---
@@ -758,7 +756,7 @@ The mode defines the visibility of the horizontal scroll.
 
 * Applicable to: EE::UI::DropDownList (DropDownList), EE::UI::UIListBox (ListBox),
   EE::UI::UIScrollView (ScrollView), EE::UI::UITable (Table), EE::UI::UITextEdit (TextEdit).
-* Value Type: string-list
+* Data Type: [string-list](#string-list-data-type)
 * Value List:
   * `auto`: The horizontal scrollbar will be visible only when needed.
   * `on`: The horizontal scrollbar will be always visible.
@@ -772,7 +770,7 @@ The mode defines the visibility of the horizontal scroll.
 Sets an icon to an element that support icons.
 
 * Applicable to: EE::UI::UIImage (Image), EE::UI::UIPushButton (PushButton), EE::UI::UITab (Tab)
-* Value Type: resource-path (`url()`)
+* Data Type: resource-path (`url()`)
 * Default value: _No value_
 
 ---
@@ -783,7 +781,7 @@ Enables/disables indeterminate mode for a loader. Indeterminate mode is used whe
 the load can't be determined.
 
 * Applicable to: EE::UI::UILoader (Loader)
-* Value Type: boolean
+* Data Type: [boolean](#boolean-data-type)
 * Default value: `true`
 
 ---
@@ -796,7 +794,7 @@ specifies how a component should be placed in its group of cells. Must be one or
 XML attribute (for those who are familiar with).
 
 * Applicable to: Any element child of a layout element
-* Value Type: string-list
+* Data Type: [string-list](#string-list-data-type)
 * Value List:
   * `left`: Push element to the left of its container.
   * `right`: Push element to the right of its container.
@@ -819,7 +817,7 @@ or one of the special constants.
 
 * Applicable to: Any element child of a EE::UI::UILinearLayout (LinearLayout) or
   EE::UI::UIRelativeLayout (RelativeLayout)
-* Value Type: length or string-list
+* Data Type: [length](#length-data-type) or string-list
 * Value List: (for the constant values)
   * `match_parent`: The element must be as big as its parent.
   * `wrap_content`: The element should be only big enough to enclose its content (plus padding).
@@ -834,7 +832,7 @@ Positions the top edge of this element below the given anchor element ID.
 Accommodates top margin of this element and bottom margin of anchor view.
 
 * Applicatable to: Any child of a EE::UI::UIRelativeLayout (RelativeLayout)
-* Value Type: string (anchor element ID)
+* Data Type: [string](#string-data-type) (anchor element ID)
 * Default value: _No value_
 * Aliases: `layout_to_bottom_of`
 
@@ -846,7 +844,7 @@ Positions the right edge of this element to the left of the given anchor element
 Accommodates right margin of this element and left margin of anchor element.
 
 * Applicatable to: Any child of a EE::UI::UIRelativeLayout (RelativeLayout)
-* Value Type: string (anchor element ID)
+* Data Type: [string](#string-data-type) (anchor element ID)
 * Default value: _No value_
 * Aliases: `layout_to_left_of`
 
@@ -858,7 +856,7 @@ Positions the left edge of this element to the right of the given anchor element
 left margin of this element and right margin of anchor element.
 
 * Applicatable to: Any child of a EE::UI::UIRelativeLayout (RelativeLayout)
-* Value Type: string (anchor element ID)
+* Data Type: [string](#string-data-type) (anchor element ID)
 * Default value: _No value_
 * Aliases: `layout_to_right_of`
 
@@ -870,7 +868,7 @@ Positions the bottom edge of this element above the given anchor element ID.
 Accommodates bottom margin of this element and top margin of anchor view.
 
 * Applicatable to: Any child of a EE::UI::UIRelativeLayout (RelativeLayout)
-* Value Type: string (anchor element ID)
+* Data Type: [string](#string-data-type) (anchor element ID)
 * Default value: _No value_
 * Aliases: `layout_to_top_of`
 
@@ -894,7 +892,7 @@ vertical LinearLayout the [layout-height](#layout-height) must be set to `0`, in
 layout weight.
 
 * Applicable to: Any element child of a EE::UI::UILinearLayout (LinearLayout)
-* Value Type: float (normalized from `0` to `1`)
+* Data Type: [number](#number-data-type) (normalized from `0` to `1`)
 * Default value: `0`
 * Aliases: `layout_weight`
 
@@ -909,7 +907,7 @@ or one of the special constants.
 
 * Applicable to: Any element child of a EE::UI::UILinearLayout (LinearLayout) or
   EE::UI::UIRelativeLayout (RelativeLayout)
-* Value Type: length or string-list
+* Data Type: [length](#length-data-type) or string-list
 * Value List: (for the constant values)
   * `match_parent`: The element must be as big as its parent.
   * `wrap_content`: The element should be only big enough to enclose its content (plus padding).
@@ -969,7 +967,7 @@ the element width/height (depending on the view pager orientation) and automatic
 final position when released.
 
 * Applicable to: EE::UI::UIViewPager (ViewPager)
-* Value Type: float (normalized between `0` and `1`)
+* Data Type: [number](#number-data-type) (normalized between `0` and `1`)
 * Default value: `0`
 
 ---
@@ -979,7 +977,7 @@ final position when released.
 Sets the maximum length of an input.
 
 * Applicable to: EE::UI::UITextInput (TextInput)
-* Value type: integer
+* Data Type: integer
 * Default value: _No value_
 
 ---
@@ -989,7 +987,7 @@ Sets the maximum length of an input.
 Sets the maximum number of progress that a loader can have.
 
 * Applicable to: EE::UI::UILoader (Loader)
-* Value Type: float
+* Data Type: [number](#number-data-type)
 * Default value: `100`
 
 ---
@@ -999,7 +997,7 @@ Sets the maximum number of progress that a loader can have.
 Sets the maximum tab width accepted in a tab widget.
 
 * Applicable to: EE::UI::UITabWidget (TabWidget)
-* Value Type: length
+* Data Type: [length](#length-data-type)
 * Default value: `300dp`
 
 ---
@@ -1009,7 +1007,7 @@ Sets the maximum tab width accepted in a tab widget.
 Sets the maximum text length in a tab.
 
 * Applicable to: EE::UI::UITabWidget (TabWidget)
-* Value Type: integer
+* Data Type: integer
 * Default value: `100`
 
 ---
@@ -1019,7 +1017,7 @@ Sets the maximum text length in a tab.
 Sets the maximum value that a range element will hold.
 
 * Applicable to: EE::UI::UISlider (Slider), EE::UI::UIScrollBar (ScrollBar), EE::UI::UISpinBox (SpinBox)
-* Value Type: float
+* Data Type: [number](#number-data-type)
 * Default value: `1` for Slider and ScrollBar. Float numeric limits for SpinBox.
 
 ---
@@ -1029,7 +1027,7 @@ Sets the maximum value that a range element will hold.
 Sets the maximum visible items for the list shown by a drop down list or combo box.
 
 * Applicable to: EE::UI::UIDropDownList (DropDownList)
-* Value Type: integer
+* Data Type: integer
 * Default value: `10`
 
 ---
@@ -1050,7 +1048,7 @@ items will be misaligned.
 * Applicatable to: EE::UI::UIPushButton (PushButton), EE::UI::UIMenuItem (Menu::item),
   EE::UI::UITab (Tab), EE::UI::UISelectButton (SelectButton), EE::UI::UIMenuCheckBox (Menu::checkbox),
   EE::UI::UIMenuSubMenu (Menu::SubMenu)
-* Value Type: vector2-length
+* Data Type: [vector2-length](#vector2-length-data-type)
 * Default value: _No value_
 
 ---
@@ -1060,7 +1058,7 @@ items will be misaligned.
 Sets the minimum width that a tab can have inside a EE::UI::UITabWidget (TabWidget).
 
 * Applicable to: EE::UI::UITabWidget (TabWidget)
-* Value Type: length
+* Data Type: [length](#length-data-type)
 * Default value: `32dp`
 
 ---
@@ -1070,7 +1068,7 @@ Sets the minimum width that a tab can have inside a EE::UI::UITabWidget (TabWidg
 Sets the minimum value that a range element will hold.
 
 * Applicable to: EE::UI::UISlider (Slider), EE::UI::UIScrollBar (ScrollBar), EE::UI::UISpinBox (SpinBox)
-* Value Type: float
+* Data Type: [number](#number-data-type)
 * Default value: `0`
 
 ---
@@ -1086,7 +1084,7 @@ Read [min-width](https://developer.mozilla.org/en-US/docs/Web/CSS/min-width) doc
 Sets the movement speed in displaced length per second of the progress bar filler.
 
 * Applicable to: EE::UI::UIProgressBar (ProgressBar)
-* Value Type: vector2-length
+* Data Type: [vector2-length](#vector2-length-data-type)
 * Default value: `0dp 0dp`
 
 ---
@@ -1097,7 +1095,7 @@ Sets the text input as a numeric input, this means that only numbers will be acc
 if [allow-float](#allow-float) also is enabled it will allow numeric float numbers.
 
 * Applicable to: EE::UI::UITextInput (TextInput)
-* Value Type: boolean
+* Data Type: [boolean](#boolean-data-type)
 * Default value: `false`
 
 ---
@@ -1114,7 +1112,7 @@ Sets the orientation to any element that allows vertical and horizontal orientat
 
 * Applicable to: EE::UI::UILinearLayout (LinearLayout), EE::UI::UISlider (Slider), EE::UI::UIScrollBar
   (ScrollBar), EE::UI::UIViewPager (ViewPager)
-* Value Type: string-list
+* Data Type: [string-list](#string-list-data-type)
 * Value List:
   * `horizontal`
   * `vertical`
@@ -1127,7 +1125,7 @@ Sets the orientation to any element that allows vertical and horizontal orientat
 Sets the outline thickness of the loader spinner.
 
 * Applicable to: EE::UI::UILoader (Loader)
-* Value Type: length
+* Data Type: [length](#length-data-type)
 * Default value: `8dp`
 
 ---
@@ -1139,7 +1137,7 @@ is going to be shown when the Tab element is selected, and will be closed if the
 The owned element will be automatically resized to the tab widget container size.
 
 * Applicable to: EE::UI::UITab (Tab)
-* Value Type: string (element ID)
+* Data Type: [string](#string-data-type) (element ID)
 * Default value: _No value_
 
 ---
@@ -1174,7 +1172,7 @@ Locks/unlocks the current page in a view pager (locking means that the page cann
 not scrollable).
 
 * Applicable to: EE::UI::UIViewPager (ViewPager)
-* Value Type: boolean
+* Data Type: [boolean](#boolean-data-type)
 * Default value: `false`
 
 ---
@@ -1186,7 +1184,7 @@ by any element but it's a value that can be fetched to implement a page up and d
 component.
 
 * Applicable to: EE::UI::UISlider (Slider), EE::UI::UIProgressBar (ProgressBar)
-* Value Type: float
+* Data Type: [number](#number-data-type)
 * Default value: `0`
 
 ---
@@ -1197,7 +1195,7 @@ Sets if the drop down listbox should popup in the root widget node, otherwise wi
 parent window.
 
 * Applicable to: EE::UI::UIDropDownList (DropDownList)
-* Value Type: boolean
+* Data Type: [boolean](#boolean-data-type)
 * Default value: `false`
 
 ---
@@ -1207,7 +1205,7 @@ parent window.
 Sets the current progress of any type of progress bar or loader.
 
 * Applicable to: EE::UI::UIProgresBar (ProgressBar), EE::UI::UILoader (Loader)
-* Value Type: float
+* Data Type: [number](#number-data-type)
 * Default value: `0`
 
 ---
@@ -1218,7 +1216,7 @@ Sets the radius of a loader. This will not change the size of the loader,
 only the loader internal size.
 
 * Applicable to: EE::UI::UILoader (Loader)
-* Value Type: length
+* Data Type: [length](#length-data-type)
 * Default value: `0` (but it will change with the loader layout size)
 
 ---
@@ -1229,7 +1227,7 @@ Enables/disables the reverse draw order for the element. When enabled the elemen
 the last child to the first.
 
 * Applicable to: Any element
-* Value Type: boolean
+* Data Type: [boolean](#boolean-data-type)
 * Default value: `false`
 
 ---
@@ -1239,7 +1237,7 @@ the last child to the first.
 Sets the element rotation in degrees.
 
 * Applicable to: Any element
-* Value Type: float
+* Data Type: [number](#number-data-type)
 * Default value: `0`
 
 ---
@@ -1249,7 +1247,7 @@ Sets the element rotation in degrees.
 Sets the x-axis rotation origin point relative to the element expressed as a length or a percentage.
 
 * Applicable to: Any element
-* Value Type: length or percentage
+* Data Type: [length-percentage](#length-percentage-data-type)
 * Default value: `center`
 
 Syntax:
@@ -1267,7 +1265,7 @@ rotation-origin-point-x: 100%;
 Sets the y-axis rotation origin point relative to the element expressed as a length or a percentage.
 
 * Applicable to: Any element
-* Value Type: length or percentage
+* Data Type: [length-percentage](#length-percentage-data-type)
 * Default value: `center`
 
 Syntax:
@@ -1285,7 +1283,7 @@ rotation-origin-point-y: 100%;
 Sets the row height in any element that contains fixed size rows.
 
 * Applicable to: EE::UI::UIListBox (ListBox), EE::UI::UIDropDownList (DropDownList), EE::UI::UITable (Table), EE::UI::UIGridLayout (GridLayout)
-* Value Type: length
+* Data Type: [length](#length-data-type)
 * Default value: Varies on each case. ListBox and DropDownList will guess the value based on the [font-size](#font-size). Table requires this value to be manually set in order to work. GridLayout
 will require the value only if [row-mode](#row-mode) is `size`.
 
@@ -1297,7 +1295,7 @@ Sets the row mode of a grid layout.
 The row mode defines how the size of the row of a grid layout is measured.
 
 * Applicable to: EE::UI::UIGridLayout (GridLayout)
-* Value Type: string-list
+* Data Type: [string-list](#string-list-data-type)
 * Value List:
   * `size`: The row width of each grid child will be defined with a fixed width based on the value of the [row-width](#row-width) length.
   * `weight`: The row width of each grid child will be calculated as a normalized percentage of the total grid width using the [row-weight](#row-weight) value.
@@ -1310,7 +1308,7 @@ The row mode defines how the size of the row of a grid layout is measured.
 Sets the vertical separation between each element in the grid layout.
 
 * Applicable to: EE::UI::UIGridLayout (GridLayout)
-* Value Type: length
+* Data Type: [length](#length-data-type)
 * Default value: `0dp`
 
 ---
@@ -1321,7 +1319,7 @@ Sets the percentage height of the child elements of a grid layout.
 [row-mode](#row-mode) must be `weight` in order to work.
 
 * Applicable to: EE::UI::UIGridLayout (GridLayout)
-* Value Type: float (normalized between `0` and `1`)
+* Data Type: [number](#number-data-type) (normalized between `0` and `1`)
 * Default value: `0.25`
 
 ---
@@ -1331,7 +1329,7 @@ Sets the percentage height of the child elements of a grid layout.
 Sets the scale of the element.
 
 * Applicable to: Any element
-* Value Type: vector2-float
+* Data Type: [vector2-number](#vector2-number-data-type)
 * Default value: `1 1`
 
 ---
@@ -1341,7 +1339,7 @@ Sets the scale of the element.
 Sets the x-axis scale origin point relative to the element expressed as a length or a percentage.
 
 * Applicable to: Any element
-* Value Type: length or percentage
+* Data Type: [length-percentage](#length-percentage-data-type)
 * Default value: `center`
 
 Syntax:
@@ -1359,7 +1357,7 @@ scale-origin-point-x: 100%;
 Sets the y-axis scale origin point relative to the element expressed as a length or a percentage.
 
 * Applicable to: Any element
-* Value Type: length or percentage
+* Data Type: [length-percentage](#length-percentage-data-type)
 * Default value: `center`
 
 Syntax:
@@ -1377,7 +1375,7 @@ scale-origin-point-y: 100%;
 Sets a method to scale the image inside an element.
 
 * Applicable to: EE::UI::UIImage (Image), EE::UI::UITextureRegion (TextureRegion)
-* Value Type: string-list
+* Data Type: [string-list](#string-list-data-type)
 * Value List:
   * `fit-inside`: Fits the image inside the element mantaining its ratio.
   * `expand`: Expands the image to cover the whole element without mantaining its ratio.
@@ -1390,7 +1388,7 @@ Sets a method to scale the image inside an element.
 Defines how the scrollbar should fit inside an scrollable element.
 
 * Applicable to: EE::UI::UIScrollView (ScrollView)
-* Value Type: string-list
+* Data Type: [string-list](#string-list-data-type)
 * Value List:
   * `inclusive`: The scrollbar is part of the scrollable element container, this means that it will
     be on top of the content (scrollbars on mobile usually behave like this).
@@ -1406,7 +1404,7 @@ Sets the scrollbar style (for the moment defines if it contains buttons at its e
 
 * Applicable to: EE::UI::UIScrollBar (ScrollBar), EE::UI::UIListBox (ListBox), EE::UI::UIDropDownLis
   (DropDownList), EE::UI::UITable (Table), EE::UI::UIScrollView (ScrollView)
-* Value Type: string-list
+* Data Type: [string-list](#string-list-data-type)
 * Value List:
   * `no-buttons`: It's just a scroll bar.
   * `two-buttons`: Adds to buttons at its edge.
@@ -1419,7 +1417,7 @@ Sets the scrollbar style (for the moment defines if it contains buttons at its e
 Sets the element state as selected when supported by the specific widget.
 
 * Applicable to: EE::UI::UICheckBox (CheckBox), EE::UI::UIRadioButton (RadioButton)
-* Value Type: boolean
+* Data Type: [boolean](#boolean-data-type)
 * Default value: `false`
 * Aliases: `active`
 
@@ -1431,7 +1429,7 @@ Selects an item inside an element containing a list of items from the item index
 (starting from `0`).
 
 * Applicable to: EE::UI::UIListBox (ListBox), EE::UI::UIDropDownList (DropDownList)
-* Value Type: integer
+* Data Type: integer
 * Default value: _No value_
 
 ---
@@ -1441,7 +1439,7 @@ Selects an item inside an element containing a list of items from the item index
 Selects an item inside an element containing a list of items from its item text.
 
 * Applicable to: EE::UI::UIListBox (ListBox), EE::UI::UIDropDownList (DropDownList)
-* Value Type: string
+* Data Type: [string](#string-data-type)
 * Default value: _No value_
 
 ---
@@ -1454,7 +1452,7 @@ Sets the text selection background color on a text element that suports text sel
   TextView. EE::UI::UICheckBox (CheckBox), EE::UI::UIRadioButton (RadioButton), EE::UI::UITextInput
   (TextInput), EE::UI::UIListBoxItem (ListBox::item), EE::UI::UIDropDownList (DropDownList),
   EE::UI::UITextInputPassword (TextInputPassword)
-* Value Type: color
+* Data Type: [color](#color-data-type)
 * Default color: `#323232`
 
 ---
@@ -1467,7 +1465,7 @@ Sets the text selection color on a text element that suports text selection.
   TextView. EE::UI::UICheckBox (CheckBox), EE::UI::UIRadioButton (RadioButton), EE::UI::UITextInput
   (TextInput), EE::UI::UIListBoxItem (ListBox::item), EE::UI::UIDropDownList (DropDownList),
   EE::UI::UITextInputPassword (TextInputPassword), EE::UI::UIPushButton (PushButton)
-* Value Type: color
+* Data Type: [color](#color-data-type)
 * Default color: `white`
 
 ---
@@ -1481,7 +1479,7 @@ Sets the text shadow color.
   (TextInput), EE::UI::UIListBoxItem (ListBox::item), EE::UI::UIDropDownList (DropDownList),
   EE::UI::UITextInputPassword (TextInputPassword), EE::UI::UIPushButton (PushButton), EE::UI::UIToolti
   (Tooltip)
-* Value Type: color
+* Data Type: [color](#color-data-type)
 * Default color: `#323232E6`
 
 ---
@@ -1495,7 +1493,7 @@ this means that a skin can contain all the possible states that a widget can hav
 Current UI skin documentation is lacking.
 
 * Applicable to: Any element
-* Value Type: string (skin name or `none` to disable skinning)
+* Data Type: [string](#string-data-type) (skin name or `none` to disable skinning)
 * Default value: The skin corresponding to the widget.
 
 ---
@@ -1505,7 +1503,7 @@ Current UI skin documentation is lacking.
 Sets the [skin](#skin) tint color.
 
 * Applicable to: Any element
-* Value Type: color
+* Data Type: [color](#color-data-type)
 * Default value: `white` (no tint)
 
 ---
@@ -1515,7 +1513,7 @@ Sets the [skin](#skin) tint color.
 Sets the source of a resource in an element that supports source.
 
 * Applicable to: EE::UI::UIImage (Image), EE::UI::UISprite (Sprite), EE::UI::UITextureRegion (TextureRegion)
-* Value Type: string
+* Data Type: [string](#string-data-type)
 * Default value: _No value_
 
 Syntax:
@@ -1552,7 +1550,7 @@ Enables/disables tabs to be closable with the middle mouse button click (pending
 button inside a tab).
 
 * Applicable to: EE::UI::UITabWidget (TabWidget)
-* Value Type: boolean
+* Data Type: [boolean](#boolean-data-type)
 * Default value: `false`
 
 ---
@@ -1564,7 +1562,7 @@ The most left tab will use the skin: `tab_left` and the most right tab will use 
 the normal `tab` skin. This is to be able to achieve more "closed" tab widgets.
 
 * Applicable to: EE::UI::UITabWidget (TabWidget)
-* Value Type: boolean
+* Data Type: [boolean](#boolean-data-type)
 * Default value: `false`
 
 ---
@@ -1574,7 +1572,7 @@ the normal `tab` skin. This is to be able to achieve more "closed" tab widgets.
 Sets the tabs separation/distance between each other. Negative values are accepted.
 
 * Applicable to: EE::UI::UITabWidget (TabWidget)
-* Value Type: length
+* Data Type: [length](#length-data-type)
 * Default value: `0dp`
 
 ---
@@ -1590,7 +1588,7 @@ code implementation, but it's available as an option.
   (TextInput), EE::UI::UIListBoxItem (ListBox::item), EE::UI::UIDropDownList (DropDownList),
   EE::UI::UITextInputPassword (TextInputPassword), EE::UI::UITooltip (Tooltip), EE::UI::UITab (Tab),
   EE::UI::UITextEdit (TextEdit)
-* Value Type: string
+* Data Type: [string](#string-data-type)
 * Default value: _No value_
 
 ---
@@ -1610,7 +1608,7 @@ Enables/disables text selection in any element that contains text.
   (TextInput), EE::UI::UIListBoxItem (ListBox::item), EE::UI::UIDropDownList (DropDownList),
   EE::UI::UITextInputPassword (TextInputPassword), EE::UI::UITooltip (Tooltip), EE::UI::UITab (Tab),
   EE::UI::UITextEdit (TextEdit)
-* Value Type: boolean
+* Data Type: [boolean](#boolean-data-type)
 * Default value: `true` for TextEdit, TextInput. `false` for any other element.
 
 ---
@@ -1621,7 +1619,7 @@ Sets the text stroke (also known as text outline) color.
 
 * Applicable to: EE::UI::UITextView (TextView) and any element that holds inside or extends from a
   TextView.
-* Value Type: color
+* Data Type: [color](#color-data-type)
 * Default color: `black`
 * Aliases: `fontOutlineColor`
 
@@ -1633,7 +1631,7 @@ Sets the text stroke (also known as text outline) width/thickness.
 
 * Applicable to: EE::UI::UITextView (TextView) and any element that holds inside or extends from a
   TextView.
-* Value Type: length
+* Data Type: [length](#length-data-type)
 * Default value: `0dp`
 * Aliases: `fontOutlineThickness`
 
@@ -1644,7 +1642,7 @@ Sets the text stroke (also known as text outline) width/thickness.
 Sets a theme to the element. Changing the theme will not have any effect unless [skin](#skin) is also set.
 
 * Applicable to: Any element
-* Value Type: string
+* Data Type: [string](#string-data-type)
 * Default value: _No value_
 
 ---
@@ -1654,7 +1652,7 @@ Sets a theme to the element. Changing the theme will not have any effect unless 
 Sets the timing function (easing function) of a view pager.
 
 * Applicable to: EE::UI::UIViewPager (ViewPager)
-* Value Type: string
+* Data Type: [string](#string-data-type)
 * Value List:
   * Current timing functions supported: linear, quadratic-in, quadratic-out, quadratic-in-out,
   sine-in, sine-out, sine-in-out, exponential-in, exponential-out, exponential-in-out, quartic-in,
@@ -1670,7 +1668,7 @@ Sets the timing function (easing function) of a view pager.
 Sets the tint color of an image.
 
 * Applicable to: EE::UI::UIImage (Image), EE::UI::UITextureRegion (TextureRegion)
-* Value Type: color
+* Data Type: [color](#color-data-type)
 * Default value: `white` (no tint)
 
 ---
@@ -1682,7 +1680,7 @@ Usually this property will not be set in the CSS file but in the XML as an attri
 code implementation, but it's available as an option.
 
 * Applicable to: Any element
-* Value Type: string
+* Data Type: [string](#string-data-type)
 * Default value: _No value_
 
 ---
@@ -1692,7 +1690,7 @@ code implementation, but it's available as an option.
 Sets the total steps required to complete a progress bar (the maximum value a progress bar will hold).
 
 * Applicable to: EE::UI::UIProgressBar (ProgressBar)
-* Value Type: float
+* Data Type: [number](#number-data-type)
 * Default value: `100`
 
 ---
@@ -1703,7 +1701,7 @@ Enables/disables the element as draggable. When enabled the element will be able
 
 * Applicable to: EE::UI::UITouchDraggable (TouchDraggable), (EE::UI::UIListBox (ListBox),
   EE::UI::UIScrollView (ScrollView), EE::UI::UITable (Table)
-* Value Type: boolean
+* Data Type: [boolean](#boolean-data-type)
 * Default value: `false`
 
 ---
@@ -1714,7 +1712,7 @@ Sets a acceleration value that defines how much will accelerate the drag when th
 
 * Applicable to: EE::UI::UITouchDraggable (TouchDraggable), (EE::UI::UIListBox (ListBox),
   EE::UI::UIScrollView (ScrollView), EE::UI::UITable (Table)
-* Value Type: vector2-float
+* Data Type: [vector2-number](#vector2-number-data-type)
 * Default value: `5 5`
 
 ---
@@ -1753,7 +1751,7 @@ elastic-out, elastic-in-out, none.
 Sets the current value to an element that accepts values.
 
 * Applicable to: EE::UI::UIScrollBar (ScrollBar), EE::UI::UISlider (Slider), EE::UI::UISpinBox (SpinBox)
-* Value Type: float
+* Data Type: [number](#number-data-type)
 * Default value: _Not set_
 
 ---
@@ -1764,7 +1762,7 @@ In a progress bar enables/disables if the progress bar filler should be expanded
 height. Whend disabled the filler height will be defined by the filler skin height.
 
 * Applicable to: EE::UI::UIScrollBar (ScrollBar)
-* Value Type: boolean
+* Data Type: [boolean](#boolean-data-type)
 * Default value: `true`
 
 ---
@@ -1774,7 +1772,7 @@ height. Whend disabled the filler height will be defined by the filler skin heig
 Enables/disables the element visibility.
 
 * Applicable to: Any element
-* Value Type: boolean
+* Data Type: [boolean](#boolean-data-type)
 * Default value: `true`
 
 ---
@@ -1786,7 +1784,7 @@ The mode defines the visibility of the vertical scroll.
 
 * Applicable to: EE::UI::DropDownList (DropDownList), EE::UI::UIListBox (ListBox),
   EE::UI::UIScrollView (ScrollView), EE::UI::UITable (Table), EE::UI::UITextEdit (TextEdit).
-* Value Type: string-list
+* Data Type: [string-list](#string-list-data-type)
 * Value List:
   * `auto`: The vertical scrollbar will be visible only when needed.
   * `on`: The vertical scrollbar will be always visible.
@@ -1800,7 +1798,7 @@ The mode defines the visibility of the vertical scroll.
 Sets if the window border size should be automatically calculated based on the skin size.
 
 * Applicable to: EE::UI::UIWindow (Window)
-* Value Type: boolean
+* Data Type: [boolean](#boolean-data-type)
 * Default value: `true`
 
 ---
@@ -1810,7 +1808,7 @@ Sets if the window border size should be automatically calculated based on the s
 Manually sets the size of the window border.
 
 * Applicable to: EE::UI::UIWindow (Window)
-* Value Type: vector2-length
+* Data Type: [vector2-length](#vector2-length-data-type)
 * Default value: _No value_
 
 ---
@@ -1820,7 +1818,7 @@ Manually sets the size of the window border.
 Sets the window titlebar buttons position offset.
 
 * Applicable to: EE::UI::UIWindow (Window)
-* Value Type: vector2-length
+* Data Type: [vector2-length](#vector2-length-data-type)
 * Default Value: `0dp 0dp`
 
 ---
@@ -1830,7 +1828,7 @@ Sets the window titlebar buttons position offset.
 Sets the separation between the window titlebar buttons.
 
 * Applicable to: EE::UI::UIWindow (Window)
-* Value Type: length
+* Data Type: [length](#length-data-type)
 * Default value: `4dp`
 
 ---
@@ -1841,7 +1839,7 @@ Sets the minimum distance where the hovering cursor detects an edge of the windo
 resizing.
 
 * Applicable to: EE::UI::UIWindow (Window)
-* Value Type: length
+* Data Type: [length](#length-data-type)
 * Default value: `24dp`
 
 ---
@@ -1852,7 +1850,7 @@ Sets the window flags. Window flags activate a set of different boolean options 
 Multiple values are separated with a `|` (as a logical or).
 
 * Applicable to: EE::UI::UIWindow (Window)
-* Value Type: string-list
+* Data Type: [string-list](#string-list-data-type)
 * Value List:
   * `default`: same as `close|buttonactions|resizeable|shareopacity`
   * `close`: Adds a close button to the titlebar.
@@ -1876,7 +1874,7 @@ Multiple values are separated with a `|` (as a logical or).
 Sets the window minimum size.
 
 * Applicable to: EE::UI::Window (Window)
-* Value Type: vector2-length
+* Data Type: [vector2-length](#vector2-length-data-type)
 * Default value: _No value_
 
 ---
@@ -1887,7 +1885,7 @@ Sets the base opacity of a window, this is the maximum opacity that the window w
 And the opacity property applied to the window will be multiplied by this value.
 
 * Applicable to: EE::UI::UIWindow (window)
-* Value type: float
+* Data Type: [number](#number-data-type)
 * Default value: `1`
 
 ---
@@ -1897,7 +1895,7 @@ And the opacity property applied to the window will be multiplied by this value.
 Sets if the window titlebar size should be automatically calculated based on the skin size.
 
 * Applicable to: EE::UI::UIWindow (Window)
-* Value Type: boolean
+* Data Type: [boolean](#boolean-data-type)
 * Default value: `true`
 
 ---
@@ -1907,7 +1905,7 @@ Sets if the window titlebar size should be automatically calculated based on the
 Manually sets the size of the window titlebar.
 
 * Applicable to: EE::UI::UIWindow (Window)
-* Value Type: vector2-length
+* Data Type: [vector2-length](#vector2-length-data-type)
 * Default value: _No value_.
 
 ---
@@ -1920,7 +1918,7 @@ Enables/disables word-wrap in the text view element.
   EE::UI::UICheckBox (CheckBox), EE::UI::UIRadioButton (RadioButton),
   EE::UI::UIListBoxItem (ListBox::item), EE::UI::UITextInputPassword (TextInputPassword),
   EE::UI::UIDropDownList (DropDownList).
-* Value type: boolean
+* Data Type: [boolean](#boolean-data-type)
 * Default value: `false`
 
 ---
@@ -2018,8 +2016,7 @@ Read [padding](https://developer.mozilla.org/en-US/docs/Web/CSS/padding) documen
 
 ### rotation-origin-point
 
-The origin point of the rotation expressed as two numeric lengths or percentages separated by a
-space.
+The origin point of the rotation expressed as a [position](#position-data-type).
 
 Default value: `center center`.
 
@@ -2035,8 +2032,7 @@ rotation-origin-point: 100% 0%;
 
 ### scale-origin-point
 
-The origin point of the node scale expressed as two numeric lengths or percentages separated by a
-space.
+The origin point of the node scale expressed as [position](#position-data-type).
 
 Default value: `center center`.
 
@@ -2132,3 +2128,106 @@ Most common pseudo-class selectors are supported. The list is:
 * [:only-child](https://developer.mozilla.org/en-US/docs/Web/CSS/:only-child)
 
 * [:root](https://developer.mozilla.org/en-US/docs/Web/CSS/:root)
+
+## CSS Data Types
+
+CSS data types define typical values (including keywords and units) accepted by CSS properties and functions.
+
+For more details regarding this topic please read the
+[CSS values and units Mozilla docs](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Types).
+
+**Types:**
+
+### boolean (data-type)
+
+Binary state with two possible values:
+
+* `true`
+  * Aliases: `1`, `t`, `T`, `y`, `Y`
+* `false`
+  * Aliases: `0`, `f`, `F`, `n`, `N`
+
+---
+
+### integer (data-type)
+
+Read [integer](https://developer.mozilla.org/en-US/docs/Web/CSS/integer) documentation.
+
+---
+
+### color (data-type)
+
+Read [color](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value) documentation.
+
+**Differences with documentation:**
+
+* Only CSS Level 1 color keywords supported.
+* eepp adds hsv and hsva functions with the same syntax that hsl and hsla.
+* System colors not support.
+* New global color keywords can be registered to eepp by calling the static function:
+  EE::System::Color::registerColor.
+
+---
+
+### length (data-type)
+
+Read [length](https://developer.mozilla.org/en-US/docs/Web/CSS/length) documentation.
+
+**Differences with documentation:**
+
+* Supported lenghts: `em`, `rem`, `pt`, `pc`, `in`, `cm`, `mm`, `vw`, `vh`, `vmin`, `vmax`.
+
+---
+
+### length-percentage (data-type)
+
+Read [length-percentage](https://developer.mozilla.org/en-US/docs/Web/CSS/length-percentage) documentation.
+
+**Differences with documentation:**
+
+* `calc` currently not supported
+
+---
+
+### number (data-type)
+
+Read [number](https://developer.mozilla.org/en-US/docs/Web/CSS/number) documentation.
+
+---
+
+### position (data-type)
+
+Read [position](https://developer.mozilla.org/en-US/docs/Web/CSS/position_value) documentation.
+
+---
+
+### string (data-type)
+
+Read [string](https://developer.mozilla.org/en-US/docs/Web/CSS/string) documentation.
+
+**Differences with documentation:**
+
+* Only supports `"` (double quote)
+
+---
+
+### string-list (data-type)
+
+A set of predefined string value types. Each CSS property will have its own string set specified in
+the documentation.
+
+---
+
+### vector2-number (data-type)
+
+A set of two [number](#number-data-type)s separated by a " " (space), usually representing `x` and `y` axis
+in that order.
+
+---
+
+### vector2-length (data-type)
+
+A set of two [length](#number-data-type)s separated by a " " (space), usually representing `x` and `y` axis
+in that order or also representing `width` and `height`.
+
+---
