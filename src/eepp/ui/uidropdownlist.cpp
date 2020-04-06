@@ -9,12 +9,16 @@
 
 namespace EE { namespace UI {
 
+UIDropDownList* UIDropDownList::NewWithTag( const std::string& tag ) {
+	return eeNew( UIDropDownList, ( tag ) );
+}
+
 UIDropDownList* UIDropDownList::New() {
 	return eeNew( UIDropDownList, () );
 }
 
-UIDropDownList::UIDropDownList() :
-	UITextInput( "dropdownlist" ), mListBox( NULL ), mFriendCtrl( NULL ) {
+UIDropDownList::UIDropDownList( const std::string& tag ) :
+	UITextInput( tag ), mListBox( NULL ), mFriendCtrl( NULL ) {
 	clipEnable();
 	setFlags( UI_AUTO_SIZE | UI_AUTO_PADDING );
 	unsetFlags( UI_TEXT_SELECTION_ENABLED );
@@ -23,7 +27,7 @@ UIDropDownList::UIDropDownList() :
 
 	applyDefaultTheme();
 
-	mListBox = UIListBox::NewWithTag( "dropdownlist::listbox" );
+	mListBox = UIListBox::NewWithTag( mTag + "::listbox" );
 	mListBox->setSize( getSize().getWidth(),
 					   mStyleConfig.MaxNumVisibleItems * getSize().getHeight() );
 	mListBox->setEnabled( false );
@@ -265,6 +269,22 @@ void UIDropDownList::hide() {
 	} else {
 		mListBox->setEnabled( false );
 		mListBox->setVisible( false );
+	}
+}
+
+Uint32 UIDropDownList::onMouseOver( const Vector2i& position, const Uint32& flags ) {
+	if ( getParent()->isType( UI_TYPE_COMBOBOX ) ) {
+		return UITextInput::onMouseOver( position, flags );
+	} else {
+		return UITextView::onMouseOver( position, flags );
+	}
+}
+
+Uint32 UIDropDownList::onMouseLeave( const Vector2i& position, const Uint32& flags ) {
+	if ( getParent()->isType( UI_TYPE_COMBOBOX ) ) {
+		return UITextInput::onMouseLeave( position, flags );
+	} else {
+		return UITextView::onMouseLeave( position, flags );
 	}
 }
 

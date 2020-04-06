@@ -442,4 +442,53 @@ void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles ) {
 	}
 }
 
+Uint32 UISceneNode::onKeyDown( const KeyEvent& Event ) {
+	checkShortcuts( Event.getKeyCode(), Event.getMod() );
+
+	return SceneNode::onKeyDown( Event );
+}
+
+void UISceneNode::checkShortcuts( const Uint32& KeyCode, const Uint32& Mod ) {
+	if ( NULL == getEventDispatcher() )
+		return;
+
+	for ( auto& kb : mKbShortcuts ) {
+		if ( KeyCode == kb.KeyCode && ( Mod & kb.Mod ) ) {
+			getEventDispatcher()->sendMouseUp( kb.Widget, Vector2i( -1, -1 ), EE_BUTTON_LMASK );
+			getEventDispatcher()->sendMouseClick( kb.Widget, Vector2i( -1, -1 ), EE_BUTTON_LMASK );
+		}
+	}
+}
+
+KeyboardShortcuts::iterator UISceneNode::existsShortcut( const Uint32& KeyCode, const Uint32& Mod ) {
+	for ( KeyboardShortcuts::iterator it = mKbShortcuts.begin(); it != mKbShortcuts.end(); ++it ) {
+		if ( ( *it ).KeyCode == KeyCode && ( *it ).Mod == Mod )
+			return it;
+	}
+
+	return mKbShortcuts.end();
+}
+
+bool UISceneNode::addShortcut( const Uint32& KeyCode, const Uint32& Mod, UIWidget* Widget ) {
+	if ( inParentTreeOf( Widget ) && mKbShortcuts.end() == existsShortcut( KeyCode, Mod ) ) {
+		mKbShortcuts.push_back( KeyboardShortcut( KeyCode, Mod, Widget ) );
+
+		return true;
+	}
+
+	return false;
+}
+
+bool UISceneNode::removeShortcut( const Uint32& KeyCode, const Uint32& Mod ) {
+	KeyboardShortcuts::iterator it = existsShortcut( KeyCode, Mod );
+
+	if ( mKbShortcuts.end() != it ) {
+		mKbShortcuts.erase( it );
+
+		return true;
+	}
+
+	return false;
+}
+
 }} // namespace EE::UI

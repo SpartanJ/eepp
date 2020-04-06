@@ -5,6 +5,7 @@
 ../../bin/assets/layouts/test.xml
 ../../bin/assets/layouts/test_widgets.xml
 ../../bin/assets/ui/uitheme.css
+../../docs/articles/cssspecification.md
 ../../docs/articles/uiintroduction.md
 ../../external_projects.lua
 ../../include/eepp/audio/alresource.hpp
@@ -310,6 +311,7 @@
 ../../include/eepp/ui/css/stylesheetstyle.hpp
 ../../include/eepp/ui/css/stylesheetvariable.hpp
 ../../include/eepp/ui/css/transitiondefinition.hpp
+../../include/eepp/ui/keyboardshortcut.hpp
 ../../include/eepp/ui/marginmove/scale.hpp
 ../../include/eepp/ui/tools/textureatlaseditor.hpp
 ../../include/eepp/ui/tools/uicolorpicker.hpp

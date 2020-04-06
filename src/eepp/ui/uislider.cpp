@@ -443,11 +443,11 @@ void UISlider::setPageStep( const Float& pageStep ) {
 	}
 }
 
-UINode* UISlider::getBackSlider() const {
+UIWidget* UISlider::getBackSlider() const {
 	return mBackSlider;
 }
 
-UINode* UISlider::getSliderButton() const {
+UIWidget* UISlider::getSliderButton() const {
 	return mSlider;
 }
 

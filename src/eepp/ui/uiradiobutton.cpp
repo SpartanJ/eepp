@@ -259,11 +259,11 @@ void UIRadioButton::alignFix() {
 	mAlignOffset = PixelDensity::pxToDp( mRealAlignOffset );
 }
 
-UINode* UIRadioButton::getActiveButton() const {
+UIWidget* UIRadioButton::getActiveButton() const {
 	return mActiveButton;
 }
 
-UINode* UIRadioButton::getInactiveButton() const {
+UIWidget* UIRadioButton::getInactiveButton() const {
 	return mInactiveButton;
 }
 

@@ -8,7 +8,7 @@ clean:
 
 doxygen:
 	cd ../../ && doxygen Doxyfile
-	sh fix_md_files.sh
+	bash fix_md_files.sh
 
 doxyrest: doxygen
 	doxyrest -c doxyrest-config.lua

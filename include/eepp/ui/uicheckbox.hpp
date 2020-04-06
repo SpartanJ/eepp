@@ -24,9 +24,9 @@ class EE_API UICheckBox : public UITextView {
 
 	void setChecked( const bool& checked );
 
-	UINode* getCheckedButton() const;
+	UIWidget* getCheckedButton() const;
 
-	UINode* getInactiveButton() const;
+	UIWidget* getInactiveButton() const;
 
 	Int32 getTextSeparation() const;
 
@@ -38,8 +38,8 @@ class EE_API UICheckBox : public UITextView {
 								   const Uint32& propertyIndex = 0 );
 
   protected:
-	UINode* mActiveButton;
-	UINode* mInactiveButton;
+	UIWidget* mActiveButton;
+	UIWidget* mInactiveButton;
 	bool mChecked;
 	Uint32 mLastTick;
 	Int32 mTextSeparation;

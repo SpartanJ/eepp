@@ -250,6 +250,8 @@ class EE_API MapEditor {
 	void onMapLoad();
 
 	void updateScroll();
+
+	bool addShortcut( const Uint32& KeyCode, const Uint32& Mod, UIWidget* Widget );
 };
 
 }} // namespace EE::Maps

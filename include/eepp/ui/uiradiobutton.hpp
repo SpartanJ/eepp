@@ -24,9 +24,9 @@ class EE_API UIRadioButton : public UITextView {
 
 	void setActive( const bool& active );
 
-	UINode* getActiveButton() const;
+	UIWidget* getActiveButton() const;
 
-	UINode* getInactiveButton() const;
+	UIWidget* getInactiveButton() const;
 
 	Int32 getTextSeparation() const;
 
@@ -38,8 +38,8 @@ class EE_API UIRadioButton : public UITextView {
 										   const Uint32& propertyIndex = 0 );
 
   protected:
-	UINode* mActiveButton;
-	UINode* mInactiveButton;
+	UIWidget* mActiveButton;
+	UIWidget* mInactiveButton;
 	bool mActive;
 	Uint32 mLastTick;
 	Int32 mTextSeparation;

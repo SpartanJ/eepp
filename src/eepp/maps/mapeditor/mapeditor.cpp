@@ -72,17 +72,13 @@ MapEditor::MapEditor( UIWindow* AttatchTo, const MapEditorCloseCb& callback ) :
 		return;
 	}
 
-	if ( NULL == mUIWindow ) {
-		mUIContainer = SceneManager::instance()->getUISceneNode();
-	} else {
-		mUIContainer = mUIWindow->getContainer();
-	}
-
 	if ( NULL != mUIWindow ) {
+		mUIContainer = mUIWindow->getContainer();
 		mUIWindow->setTitle( "Map Editor" );
 		mUIWindow->addEventListener( Event::OnWindowClose,
 									 cb::Make1( this, &MapEditor::windowClose ) );
 	} else {
+		mUIContainer = SceneManager::instance()->getUISceneNode();
 		mUIContainer->addEventListener( Event::OnClose,
 										cb::Make1( this, &MapEditor::windowClose ) );
 	}
@@ -98,6 +94,14 @@ void MapEditor::createME() {
 	createETGMenu();
 
 	createUIMap();
+}
+
+bool MapEditor::addShortcut( const Uint32& KeyCode, const Uint32& Mod, UIWidget* Widget ) {
+	if ( NULL != mUIWindow ) {
+		return mUIWindow->addShortcut( KeyCode, Mod, Widget );
+	} else {
+		return mUIContainer->asType<UISceneNode>()->addShortcut( KeyCode, Mod, Widget );
+	}
 }
 
 void MapEditor::createWinMenu() {
@@ -141,18 +145,16 @@ void MapEditor::createWinMenu() {
 	mChkShowBlocked = PU3->getItem( PU3->addCheckBox( "Show Blocked" ) )->asType<UIMenuCheckBox>();
 
 	PU3->addSeparator();
-	mUIWindow->addShortcut(
-		KEY_KP_PLUS, KEYMOD_CTRL,
-		PU3->getItem( PU3->add( "Zoom In", mTheme->getIconByName( "zoom-in" ) ) )
-			->asType<UIPushButton>() );
-	mUIWindow->addShortcut(
-		KEY_KP_MINUS, KEYMOD_CTRL,
-		PU3->getItem( PU3->add( "Zoom Out", mTheme->getIconByName( "zoom-out" ) ) )
-			->asType<UIPushButton>() );
-	mUIWindow->addShortcut(
-		KEY_KP0, KEYMOD_CTRL,
-		PU3->getItem( PU3->add( "Normal Size", mTheme->getIconByName( "zoom-original" ) ) )
-			->asType<UIPushButton>() );
+
+	addShortcut( KEY_KP_PLUS, KEYMOD_CTRL,
+				 PU3->getItem( PU3->add( "Zoom In", mTheme->getIconByName( "zoom-in" ) ) )
+					 ->asType<UIPushButton>() );
+	addShortcut( KEY_KP_MINUS, KEYMOD_CTRL,
+				 PU3->getItem( PU3->add( "Zoom Out", mTheme->getIconByName( "zoom-out" ) ) )
+					 ->asType<UIPushButton>() );
+	addShortcut( KEY_KP0, KEYMOD_CTRL,
+				 PU3->getItem( PU3->add( "Normal Size", mTheme->getIconByName( "zoom-original" ) ) )
+					 ->asType<UIPushButton>() );
 	PU3->addSeparator();
 
 	PU3->addEventListener( Event::OnItemClicked, cb::Make1( this, &MapEditor::viewMenuClick ) );
@@ -739,7 +741,7 @@ void MapEditor::onAddObject( Uint32 Type, Polygon2f poly ) {
 void MapEditor::onLightTypeChange( const Event* Event ) {
 	if ( NULL != mUIMap->getSelectedLight() ) {
 		mUIMap->getSelectedLight()->setType( mLightTypeChk->isChecked() ? MapLightType::Isometric
-																	   : MapLightType::Normal );
+																		: MapLightType::Normal );
 	}
 }
 
@@ -920,7 +922,7 @@ void MapEditor::chkClickAnimated( const Event* Event ) {
 	updateFlags();
 
 	if ( mChkAnim->isChecked() && ( mGOTypeList->getText() == "TextureRegion" ||
-								   mGOTypeList->getText() == "TextureRegionEx" ) ) {
+									mGOTypeList->getText() == "TextureRegionEx" ) ) {
 		mGOTypeList->getListBox()->setSelected( "Sprite" );
 	}
 }

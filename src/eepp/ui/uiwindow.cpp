@@ -143,7 +143,7 @@ void UIWindow::updateWinFlags() {
 
 	if ( !( mStyleConfig.WinFlags & UI_WIN_NO_DECORATION ) ) {
 		if ( NULL == mWindowDecoration ) {
-			mWindowDecoration = UINode::New();
+			mWindowDecoration = UIWidget::NewWithTag( "window::decoration" );
 			mWindowDecoration->writeNodeFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 		}
 
@@ -152,7 +152,7 @@ void UIWindow::updateWinFlags() {
 		mWindowDecoration->setEnabled( false );
 
 		if ( NULL == mBorderLeft ) {
-			mBorderLeft = UINode::New();
+			mBorderLeft = UIWidget::NewWithTag( "window::border::left" );
 			mBorderLeft->writeNodeFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 		}
 
@@ -161,7 +161,7 @@ void UIWindow::updateWinFlags() {
 		mBorderLeft->setVisible( true );
 
 		if ( NULL == mBorderRight ) {
-			mBorderRight = UINode::New();
+			mBorderRight = UIWidget::NewWithTag( "window::border::right" );
 			mBorderRight->writeNodeFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 		}
 
@@ -170,7 +170,7 @@ void UIWindow::updateWinFlags() {
 		mBorderRight->setVisible( true );
 
 		if ( NULL == mBorderBottom ) {
-			mBorderBottom = UINode::New();
+			mBorderBottom = UIWidget::NewWithTag( "window::border::bottom" );
 			mBorderBottom->writeNodeFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 		}
 
@@ -1298,18 +1298,15 @@ void UIWindow::checkShortcuts( const Uint32& KeyCode, const Uint32& Mod ) {
 	if ( NULL == getEventDispatcher() )
 		return;
 
-	for ( KeyboardShortcuts::iterator it = mKbShortcuts.begin(); it != mKbShortcuts.end(); ++it ) {
-		KeyboardShortcut kb = ( *it );
-
+	for ( auto& kb : mKbShortcuts ) {
 		if ( KeyCode == kb.KeyCode && ( Mod & kb.Mod ) ) {
-			getEventDispatcher()->sendMouseUp( kb.Button, Vector2i( 0, 0 ), EE_BUTTON_LMASK );
-			getEventDispatcher()->sendMouseClick( kb.Button, Vector2i( 0, 0 ), EE_BUTTON_LMASK );
+			getEventDispatcher()->sendMouseUp( kb.Widget, Vector2i( -1, -1 ), EE_BUTTON_LMASK );
+			getEventDispatcher()->sendMouseClick( kb.Widget, Vector2i( -1, -1 ), EE_BUTTON_LMASK );
 		}
 	}
 }
 
-UIWindow::KeyboardShortcuts::iterator UIWindow::existsShortcut( const Uint32& KeyCode,
-																const Uint32& Mod ) {
+KeyboardShortcuts::iterator UIWindow::existsShortcut( const Uint32& KeyCode, const Uint32& Mod ) {
 	for ( KeyboardShortcuts::iterator it = mKbShortcuts.begin(); it != mKbShortcuts.end(); ++it ) {
 		if ( ( *it ).KeyCode == KeyCode && ( *it ).Mod == Mod )
 			return it;
@@ -1318,9 +1315,9 @@ UIWindow::KeyboardShortcuts::iterator UIWindow::existsShortcut( const Uint32& Ke
 	return mKbShortcuts.end();
 }
 
-bool UIWindow::addShortcut( const Uint32& KeyCode, const Uint32& Mod, UIPushButton* Button ) {
-	if ( inParentTreeOf( Button ) && mKbShortcuts.end() == existsShortcut( KeyCode, Mod ) ) {
-		mKbShortcuts.push_back( KeyboardShortcut( KeyCode, Mod, Button ) );
+bool UIWindow::addShortcut( const Uint32& KeyCode, const Uint32& Mod, UIWidget* Widget ) {
+	if ( inParentTreeOf( Widget ) && mKbShortcuts.end() == existsShortcut( KeyCode, Mod ) ) {
+		mKbShortcuts.push_back( KeyboardShortcut( KeyCode, Mod, Widget ) );
 
 		return true;
 	}

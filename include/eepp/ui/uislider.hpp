@@ -41,9 +41,9 @@ class EE_API UISlider : public UIWidget {
 
 	bool isVertical() const;
 
-	UINode* getBackSlider() const;
+	UIWidget* getBackSlider() const;
 
-	UINode* getSliderButton() const;
+	UIWidget* getSliderButton() const;
 
 	void adjustChilds();
 
@@ -76,7 +76,7 @@ class EE_API UISlider : public UIWidget {
 	UIOrientation mOrientation;
 	bool mAllowHalfSliderOut;
 	bool mExpandBackground;
-	UINode* mBackSlider;
+	UIWidget* mBackSlider;
 	UIWidget* mSlider;
 	Float mMinValue;
 	Float mMaxValue;

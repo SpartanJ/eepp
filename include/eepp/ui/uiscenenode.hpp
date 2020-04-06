@@ -4,6 +4,7 @@
 #include <eepp/scene/scenenode.hpp>
 #include <eepp/system/translator.hpp>
 #include <eepp/ui/css/stylesheet.hpp>
+#include <eepp/ui/keyboardshortcut.hpp>
 
 namespace EE { namespace Graphics {
 class Font;
@@ -73,6 +74,10 @@ class EE_API UISceneNode : public SceneNode {
 
 	void invalidateStyleSheet();
 
+	bool addShortcut( const Uint32& KeyCode, const Uint32& Mod, UIWidget* Widget );
+
+	bool removeShortcut( const Uint32& KeyCode, const Uint32& Mod );
+
   protected:
 	friend class EE::UI::UIWindow;
 	UIWidget* mRoot;
@@ -85,6 +90,7 @@ class EE_API UISceneNode : public SceneNode {
 	bool mCSSInvalid;
 	UIThemeManager* mUIThemeManager;
 	std::vector<Font*> mFontFaces;
+	KeyboardShortcuts mKbShortcuts;
 
 	virtual void resizeControl( EE::Window::Window* win );
 
@@ -113,6 +119,12 @@ class EE_API UISceneNode : public SceneNode {
 	void loadFontFaces( const CSS::StyleSheetStyleVector& styles );
 
 	UIWidget* loadNode( pugi::xml_node node, Node* parent );
+
+	virtual Uint32 onKeyDown( const KeyEvent& Event );
+
+	void checkShortcuts( const Uint32& KeyCode, const Uint32& Mod );
+
+	KeyboardShortcuts::iterator existsShortcut( const Uint32& KeyCode, const Uint32& Mod );
 };
 
 }} // namespace EE::UI

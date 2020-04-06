@@ -10,14 +10,14 @@ UICheckBox* UICheckBox::New() {
 }
 
 UICheckBox::UICheckBox() : UITextView( "checkbox" ), mChecked( false ), mTextSeparation( 4 ) {
-	mActiveButton = UINode::New();
+	mActiveButton = UIWidget::NewWithTag( "checkbox::active" );
 	mActiveButton->setVisible( false );
 	mActiveButton->setEnabled( true );
 	mActiveButton->setParent( this );
 	mActiveButton->setPosition( 0, 0 );
 	mActiveButton->setSize( 16, 16 );
 
-	mInactiveButton = UINode::New();
+	mInactiveButton = UIWidget::NewWithTag( "checkbox::inactive" );
 	mInactiveButton->setVisible( true );
 	mInactiveButton->setEnabled( true );
 	mInactiveButton->setParent( this );
@@ -192,11 +192,11 @@ void UICheckBox::alignFix() {
 	mAlignOffset = PixelDensity::pxToDp( mRealAlignOffset );
 }
 
-UINode* UICheckBox::getCheckedButton() const {
+UIWidget* UICheckBox::getCheckedButton() const {
 	return mActiveButton;
 }
 
-UINode* UICheckBox::getInactiveButton() const {
+UIWidget* UICheckBox::getInactiveButton() const {
 	return mInactiveButton;
 }
 

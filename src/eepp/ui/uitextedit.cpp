@@ -22,7 +22,7 @@ UITextEdit::UITextEdit() :
 	setFlags( UI_AUTO_PADDING | UI_TEXT_SELECTION_ENABLED );
 	clipEnable();
 
-	mTextInput = UITextInput::New();
+	mTextInput = UITextInput::NewWithTag( mTag + "::input" );
 	mTextInput->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::Fixed );
 	mTextInput->setParent( this );
 	mTextInput->setFlags( UI_TEXT_SELECTION_ENABLED | UI_VALIGN_TOP );

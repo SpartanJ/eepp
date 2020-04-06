@@ -57,10 +57,6 @@ bool UITextInput::isType( const Uint32& type ) const {
 }
 
 void UITextInput::scheduledUpdate( const Time& time ) {
-	if ( isMouseOverMeOrChilds() && NULL != mSceneNode ) {
-		mSceneNode->setCursor( Cursor::IBeam );
-	}
-
 	updateWaitingCursor( time );
 }
 
@@ -355,8 +351,15 @@ Uint32 UITextInput::onMouseDoubleClick( const Vector2i& Pos, const Uint32& Flags
 	return 1;
 }
 
+Uint32 UITextInput::onMouseOver(const Vector2i& position, const Uint32& flags) {
+	if ( NULL != mSceneNode )
+		mSceneNode->setCursor( Cursor::IBeam );
+
+	return UITextView::onMouseOver( position, flags );
+}
+
 Uint32 UITextInput::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
-	UIWidget::onMouseLeave( Pos, Flags );
+	UITextView::onMouseLeave( Pos, Flags );
 
 	if ( NULL != mSceneNode )
 		mSceneNode->setCursor( Cursor::Arrow );

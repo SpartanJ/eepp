@@ -14,9 +14,11 @@ class EE_API UIDropDownList : public UITextInput {
 		bool PopUpToMainControl = false;
 	};
 
+	static UIDropDownList* NewWithTag( const std::string& tag );
+
 	static UIDropDownList* New();
 
-	UIDropDownList();
+	UIDropDownList( const std::string& tag = "dropdownlist" );
 
 	virtual ~UIDropDownList();
 
@@ -64,9 +66,13 @@ class EE_API UIDropDownList : public UITextInput {
 
 	virtual void hide();
 
-	Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
+	virtual Uint32 onMouseOver( const Vector2i& position, const Uint32& flags );
 
-	Uint32 onMouseClick( const Vector2i& position, const Uint32& flags );
+	virtual Uint32 onMouseLeave( const Vector2i& position, const Uint32& flags );
+
+	virtual Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
+
+	virtual Uint32 onMouseClick( const Vector2i& position, const Uint32& flags );
 
 	virtual void onItemClicked( const Event* Event );
 
@@ -74,7 +80,7 @@ class EE_API UIDropDownList : public UITextInput {
 
 	virtual void onControlClear( const Event* Event );
 
-	Uint32 onKeyDown( const KeyEvent& Event );
+	virtual Uint32 onKeyDown( const KeyEvent& Event );
 
 	virtual void onSizeChange();
 

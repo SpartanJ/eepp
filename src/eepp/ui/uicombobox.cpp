@@ -25,7 +25,7 @@ void UIComboBox::setTheme( UITheme* Theme ) {
 	UIWidget::setTheme( Theme );
 
 	if ( NULL == mDropDownList ) {
-		mDropDownList = UIDropDownList::New();
+		mDropDownList = UIDropDownList::NewWithTag( "combobox::dropdownlist" );
 		mDropDownList->setParent( this );
 		mDropDownList->setFriendControl( this );
 		mDropDownList->setVisible( true );

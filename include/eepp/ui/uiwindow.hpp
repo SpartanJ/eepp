@@ -1,6 +1,7 @@
 #ifndef EE_UICUIWINDOW_HPP
 #define EE_UICUIWINDOW_HPP
 
+#include <eepp/ui/keyboardshortcut.hpp>
 #include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uiwidget.hpp>
@@ -110,7 +111,7 @@ class EE_API UIWindow : public UIWidget {
 
 	UITextView* getTitleTextBox() const;
 
-	bool addShortcut( const Uint32& KeyCode, const Uint32& Mod, UIPushButton* Button );
+	bool addShortcut( const Uint32& KeyCode, const Uint32& Mod, UIWidget* Widget );
 
 	bool removeShortcut( const Uint32& KeyCode, const Uint32& Mod );
 
@@ -160,20 +161,6 @@ class EE_API UIWindow : public UIWidget {
 	std::string getWindowFlagsString();
 
   protected:
-	class KeyboardShortcut {
-	  public:
-		KeyboardShortcut() : KeyCode( 0 ), Mod( 0 ), Button( NULL ) {}
-
-		KeyboardShortcut( const Uint32& KeyCode, const Uint32& Mod, UIPushButton* Button ) :
-			KeyCode( KeyCode ), Mod( Mod ), Button( Button ) {}
-
-		Uint32 KeyCode;
-		Uint32 Mod;
-		UIPushButton* Button;
-	};
-
-	typedef std::list<KeyboardShortcut> KeyboardShortcuts;
-
 	enum UI_RESIZE_TYPE {
 		RESIZE_NONE,
 		RESIZE_LEFT,
@@ -188,15 +175,15 @@ class EE_API UIWindow : public UIWidget {
 
 	FrameBuffer* mFrameBuffer;
 	StyleConfig mStyleConfig;
-	UINode* mWindowDecoration;
-	UINode* mBorderLeft;
-	UINode* mBorderRight;
-	UINode* mBorderBottom;
+	UIWidget* mWindowDecoration;
+	UIWidget* mBorderLeft;
+	UIWidget* mBorderRight;
+	UIWidget* mBorderBottom;
 	UIWidget* mContainer;
 
-	UINode* mButtonClose;
-	UINode* mButtonMinimize;
-	UINode* mButtonMaximize;
+	UIWidget* mButtonClose;
+	UIWidget* mButtonMinimize;
+	UIWidget* mButtonMaximize;
 	UITextView* mTitle;
 
 	UIWidget* mModalCtrl;
@@ -213,7 +200,7 @@ class EE_API UIWindow : public UIWidget {
 
 	virtual void onAlphaChange();
 
-	virtual void onChildCountChange( Node * child, const bool& removed );
+	virtual void onChildCountChange( Node* child, const bool& removed );
 
 	virtual void onPositionChange();
 

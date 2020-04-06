@@ -28,8 +28,13 @@ UIScrollBar::UIScrollBar( const UIOrientation& orientation ) :
 
 	setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::Fixed );
 
-	mBtnDown = UINode::New();
-	mBtnUp = UINode::New();
+	if ( orientation == UIOrientation::Vertical ) {
+		mBtnDown = UIWidget::NewWithTag( "scrollbar::btndown" );
+		mBtnUp = UIWidget::NewWithTag( "scrollbar::btnup" );
+	} else {
+		mBtnDown = UIWidget::NewWithTag( "scrollbar::btnleft" );
+		mBtnUp = UIWidget::NewWithTag( "scrollbar::btnright" );
+	}
 	mBtnUp->setParent( this );
 	mBtnUp->setSize( 16, 16 );
 	mBtnDown->setParent( this );
@@ -43,6 +48,8 @@ UIScrollBar::UIScrollBar( const UIOrientation& orientation ) :
 	mSlider->setParent( this );
 	mSlider->setAllowHalfSliderOut( false );
 	mSlider->setExpandBackground( false );
+	mSlider->getSliderButton()->setElementTag( "scrollbar::button" );
+	mSlider->getBackSlider()->setElementTag( "scrollbar::back" );
 
 	adjustChilds();
 
@@ -69,6 +76,8 @@ void UIScrollBar::setTheme( UITheme* Theme ) {
 		mSlider->getSliderButton()->setThemeSkin( Theme, "hscrollbar_button" );
 		mBtnUp->setThemeSkin( Theme, "hscrollbar_btnup" );
 		mBtnDown->setThemeSkin( Theme, "hscrollbar_btndown" );
+		mBtnDown->setElementTag( "scrollbar::btnleft" );
+		mBtnUp->setElementTag( "scrollbar::btnright" );
 	} else {
 		UINode::setThemeSkin( Theme, "vscrollbar" );
 		mSlider->setThemeSkin( Theme, "vscrollbar_slider" );
@@ -76,6 +85,8 @@ void UIScrollBar::setTheme( UITheme* Theme ) {
 		mSlider->getSliderButton()->setThemeSkin( Theme, "vscrollbar_button" );
 		mBtnUp->setThemeSkin( Theme, "vscrollbar_btnup" );
 		mBtnDown->setThemeSkin( Theme, "vscrollbar_btndown" );
+		mBtnDown->setElementTag( "scrollbar::btndown" );
+		mBtnUp->setElementTag( "scrollbar::btnup" );
 	}
 
 	UISkin* tSkin = mBtnUp->getSkin();

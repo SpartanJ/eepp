@@ -8,3 +8,5 @@
 ../../include/eepp/ui/css
 ../../src/eepp/ui/css
 ../../src/thirdparty/mbedtls/include
+../../include/eepp/ui
+../../docs/articles
