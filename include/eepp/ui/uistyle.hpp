@@ -105,6 +105,8 @@ class EE_API UIStyle : public UIState {
 
 	void removeAnimation( const CSS::PropertyDefinition* propertyDefinition,
 						  const Uint32& propertyIndex );
+
+	std::string varToVal( const std::string& varDef );
 };
 
 }} // namespace EE::UI

@@ -19,9 +19,9 @@ UIScrollBar* UIScrollBar::NewVertical() {
 UIScrollBar::UIScrollBar( const UIOrientation& orientation ) :
 	UIWidget( "scrollbar" ),
 #ifdef EE_PLATFORM_TOUCH
-	mScrollBarType( NoButtons )
+	mScrollBarStyle( NoButtons )
 #else
-	mScrollBarType( TwoButtons )
+	mScrollBarStyle( TwoButtons )
 #endif
 {
 	mFlags |= UI_AUTO_SIZE;
@@ -41,15 +41,23 @@ UIScrollBar::UIScrollBar( const UIOrientation& orientation ) :
 	mBtnDown->setSize( 16, 16 );
 
 	mSlider = UISlider::New();
-	mSlider->addEventListener( Event::OnValueChange,
-							   cb::Make1( this, &UIScrollBar::onValueChangeCb ) );
-	mSlider->setElementTag( "scrollbar::slider" );
 	mSlider->setOrientation( orientation );
 	mSlider->setParent( this );
 	mSlider->setAllowHalfSliderOut( false );
 	mSlider->setExpandBackground( false );
-	mSlider->getSliderButton()->setElementTag( "scrollbar::button" );
-	mSlider->getBackSlider()->setElementTag( "scrollbar::back" );
+
+	if ( orientation == UIOrientation::Vertical ) {
+		mSlider->setElementTag( "scrollbar::vslider" );
+		mSlider->getSliderButton()->setElementTag( "scrollbar::vbutton" );
+		mSlider->getBackSlider()->setElementTag( "scrollbar::vback" );
+	} else {
+		mSlider->setElementTag( "scrollbar::hslider" );
+		mSlider->getSliderButton()->setElementTag( "scrollbar::hbutton" );
+		mSlider->getBackSlider()->setElementTag( "scrollbar::hback" );
+	}
+
+	mSlider->addEventListener( Event::OnValueChange,
+							   cb::Make1( this, &UIScrollBar::onValueChangeCb ) );
 
 	adjustChilds();
 
@@ -76,8 +84,6 @@ void UIScrollBar::setTheme( UITheme* Theme ) {
 		mSlider->getSliderButton()->setThemeSkin( Theme, "hscrollbar_button" );
 		mBtnUp->setThemeSkin( Theme, "hscrollbar_btnup" );
 		mBtnDown->setThemeSkin( Theme, "hscrollbar_btndown" );
-		mBtnDown->setElementTag( "scrollbar::btnleft" );
-		mBtnUp->setElementTag( "scrollbar::btnright" );
 	} else {
 		UINode::setThemeSkin( Theme, "vscrollbar" );
 		mSlider->setThemeSkin( Theme, "vscrollbar_slider" );
@@ -85,8 +91,6 @@ void UIScrollBar::setTheme( UITheme* Theme ) {
 		mSlider->getSliderButton()->setThemeSkin( Theme, "vscrollbar_button" );
 		mBtnUp->setThemeSkin( Theme, "vscrollbar_btnup" );
 		mBtnDown->setThemeSkin( Theme, "vscrollbar_btndown" );
-		mBtnDown->setElementTag( "scrollbar::btndown" );
-		mBtnUp->setElementTag( "scrollbar::btnup" );
 	}
 
 	UISkin* tSkin = mBtnUp->getSkin();
@@ -115,7 +119,7 @@ void UIScrollBar::onAutoSize() {
 	if ( NULL != tSkin ) {
 		size = tSkin->getSize();
 
-		mMinControlSize = PixelDensity::pxToDp( size );
+		setMinSize( PixelDensity::pxToDp( size ) );
 
 		if ( mFlags & UI_AUTO_SIZE ) {
 			if ( mSlider->isVertical() ) {
@@ -132,6 +136,8 @@ void UIScrollBar::onAutoSize() {
 		if ( NULL != tSkin ) {
 			size = tSkin->getSize();
 
+			setMinSize( PixelDensity::pxToDp( size ) );
+
 			if ( mFlags & UI_AUTO_SIZE ) {
 				if ( mSlider->isVertical() ) {
 					setSize( size.getWidth(), getSize().getHeight() );
@@ -144,9 +150,9 @@ void UIScrollBar::onAutoSize() {
 
 	if ( mLayoutWidthRule == LayoutSizeRule::WrapContent ||
 		 mLayoutHeightRule == LayoutSizeRule::WrapContent ) {
-		size = PixelDensity::dpToPx( mSlider->getMinimumSize() ) + mRealPadding;
+		size = PixelDensity::dpToPx( mSlider->getSize() ) + mRealPadding;
 
-		if ( mScrollBarType == TwoButtons ) {
+		if ( mScrollBarStyle == TwoButtons ) {
 			if ( mSlider->isVertical() ) {
 				size.y +=
 					mBtnDown->getPixelsSize().getHeight() + mBtnUp->getPixelsSize().getHeight();
@@ -180,7 +186,7 @@ void UIScrollBar::adjustChilds() {
 
 	mBtnUp->setPosition( 0, 0 );
 
-	switch ( mScrollBarType ) {
+	switch ( mScrollBarStyle ) {
 		case NoButtons: {
 			mBtnDown->setVisible( false )->setEnabled( false );
 			mBtnUp->setVisible( false )->setEnabled( false );
@@ -390,9 +396,9 @@ bool UIScrollBar::applyProperty( const StyleSheetProperty& attribute ) {
 			String::toLowerInPlace( val );
 
 			if ( "no-buttons" == val || "nobuttons" == val ) {
-				setScrollBarType( NoButtons );
+				setScrollBarStyle( NoButtons );
 			} else if ( "two-buttons" == val || "twobuttons" == val ) {
-				setScrollBarType( TwoButtons );
+				setScrollBarStyle( TwoButtons );
 			}
 			break;
 		}
@@ -407,12 +413,12 @@ bool UIScrollBar::applyProperty( const StyleSheetProperty& attribute ) {
 }
 
 UIScrollBar::ScrollBarType UIScrollBar::getScrollBarType() const {
-	return mScrollBarType;
+	return mScrollBarStyle;
 }
 
-void UIScrollBar::setScrollBarType( const ScrollBarType& scrollBarType ) {
-	if ( mScrollBarType != scrollBarType ) {
-		mScrollBarType = scrollBarType;
+void UIScrollBar::setScrollBarStyle( const ScrollBarType& scrollBarType ) {
+	if ( mScrollBarStyle != scrollBarType ) {
+		mScrollBarStyle = scrollBarType;
 
 		onAutoSize();
 
@@ -428,6 +434,7 @@ UINode* UIScrollBar::setOrientation( const UIOrientation& orientation ) {
 	if ( mSlider->getOrientation() != orientation ) {
 		mSlider->setOrientation( orientation );
 
+		updateOrientation();
 		applyDefaultTheme();
 	}
 
@@ -448,6 +455,22 @@ void UIScrollBar::onPaddingChange() {
 	adjustChilds();
 
 	UIWidget::onPaddingChange();
+}
+
+void UIScrollBar::updateOrientation() {
+	if ( mSlider->getOrientation() == UIOrientation::Vertical ) {
+		mBtnDown->setElementTag( "scrollbar::btndown" );
+		mBtnUp->setElementTag( "scrollbar::btnup" );
+		mSlider->setElementTag( "scrollbar::vslider" );
+		mSlider->getSliderButton()->setElementTag( "scrollbar::vbutton" );
+		mSlider->getBackSlider()->setElementTag( "scrollbar::vback" );
+	} else {
+		mBtnDown->setElementTag( "scrollbar::btnleft" );
+		mBtnUp->setElementTag( "scrollbar::btnright" );
+		mSlider->setElementTag( "scrollbar::hslider" );
+		mSlider->getSliderButton()->setElementTag( "scrollbar::hbutton" );
+		mSlider->getBackSlider()->setElementTag( "scrollbar::hback" );
+	}
 }
 
 }} // namespace EE::UI

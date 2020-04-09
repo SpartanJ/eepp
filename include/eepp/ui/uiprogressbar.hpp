@@ -7,6 +7,8 @@
 
 namespace EE { namespace UI {
 
+class UIProgressBarFiller;
+
 class EE_API UIProgressBar : public UIWidget {
   public:
 	class StyleConfig {
@@ -36,8 +38,6 @@ class EE_API UIProgressBar : public UIWidget {
 
 	const Float& getTotalSteps() const;
 
-	virtual void draw();
-
 	virtual void scheduledUpdate( const Time& time );
 
 	void setMovementSpeed( const Vector2f& Speed );
@@ -62,16 +62,19 @@ class EE_API UIProgressBar : public UIWidget {
 	const StyleConfig& getStyleConfig() const;
 
   protected:
+	friend class UIProgressBarFiller;
 	StyleConfig mStyleConfig;
 	Float mProgress;
 	Float mTotalSteps;
 	UITextView* mTextBox;
 	Vector2f mOffset;
-	UISkin* mFillerSkin;
+	UIProgressBarFiller* mFiller;
 
 	virtual Uint32 onValueChange();
 
 	virtual void onSizeChange();
+
+	virtual void onPaddingChange();
 
 	virtual void onThemeLoaded();
 

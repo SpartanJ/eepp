@@ -194,25 +194,55 @@ void UIStyle::findVariables( const StyleSheetStyle& style ) {
 	}
 }
 
-void UIStyle::setVariableFromValue( StyleSheetProperty& property, const std::string& value ) {
-	FunctionString functionType = FunctionString::parse( value );
+std::string UIStyle::varToVal( const std::string& varDef ) {
+	FunctionString functionType = FunctionString::parse( varDef );
 
 	if ( !functionType.getParameters().empty() ) {
 		for ( auto& val : functionType.getParameters() ) {
 			if ( String::startsWith( val, "--" ) ) {
 				StyleSheetVariable variable( getVariable( val ) );
-
 				if ( !variable.isEmpty() ) {
-					property.setValue( variable.getValue() );
-					break;
+					return variable.getValue();
 				}
 			} else if ( String::startsWith( val, "var(" ) ) {
-				return setVariableFromValue( property, val );
+				return varToVal( val );
 			} else {
-				property.setValue( val );
-				break;
+				return val;
 			}
 		}
+	}
+
+	return "";
+}
+
+void UIStyle::setVariableFromValue( StyleSheetProperty& property, const std::string& value ) {
+	std::string::size_type tokenStart = 0;
+	std::string::size_type tokenEnd = 0;
+	std::string newValue( value );
+
+	while ( true ) {
+		tokenStart = newValue.find( "var(", tokenStart );
+
+		if ( tokenStart != std::string::npos ) {
+			tokenEnd = String::findCloseBracket( value, tokenStart, '(', ')' );
+
+			if ( tokenEnd != std::string::npos ) {
+				std::string varDef( newValue.substr( tokenStart, tokenEnd + 1 - tokenStart ) );
+
+				String::replaceAll( newValue, varDef, varToVal( varDef ) );
+			} else {
+				break;
+			}
+		} else {
+			break;
+		}
+	};
+
+	property.setValue( newValue );
+
+	if ( newValue.empty() ) {
+		eePRINTL( "Invalid var: \"%s\" for property: %s", value.c_str(),
+				  property.getName().c_str() );
 	}
 }
 

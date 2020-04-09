@@ -76,8 +76,8 @@ void UITextInput::drawWaitingCursor() {
 		Primitives P;
 		P.setColor( mFontStyleConfig.FontColor );
 
-		Float CurPosX = eefloor( mScreenPos.x + mRealAlignOffset.x + mCurPos.x +
-								 PixelDensity::dpToPx( 1.f ) + mRealPadding.Left );
+		Float CurPosX =
+			eefloor( mScreenPos.x + mRealAlignOffset.x + mCurPos.x + mRealPadding.Left );
 		Float CurPosY = mScreenPos.y + mRealAlignOffset.y + mCurPos.y + mRealPadding.Top;
 
 		if ( CurPosX > (Float)mScreenPos.x + (Float)mSize.x )
@@ -189,6 +189,7 @@ void UITextInput::resetWaitCursor() {
 }
 
 void UITextInput::alignFix() {
+	Vector2f rOffset( mRealAlignOffset );
 	UITextView::alignFix();
 
 	if ( Font::getHorizontalAlign( getFlags() ) == UI_HALIGN_LEFT ) {
@@ -201,18 +202,20 @@ void UITextInput::alignFix() {
 			mTextBuffer.getBuffer().substr( NLPos, mTextBuffer.getCursorPosition() - NLPos ) );
 
 		Float tW = textCache.getTextWidth();
-		Float tX = mRealAlignOffset.x + tW;
-
 		mCurPos.x = tW;
 		mCurPos.y = (Float)LineNum * (Float)mTextCache->getFont()->getLineSpacing(
 										 mTextCache->getCharacterSizePx() );
 
-		if ( !mTextBuffer.setSupportNewLine() ) {
-			if ( tX < 0.f )
+		if ( !mTextBuffer.setSupportNewLine() && mSize.getWidth() > 0 ) {
+			mRealAlignOffset.x = rOffset.x;
+			Float tX = mRealAlignOffset.x + tW;
+
+			if ( tX < 0.f ) {
 				mRealAlignOffset.x = -( mRealAlignOffset.x + ( tW - mRealAlignOffset.x ) );
-			else if ( tX > mSize.getWidth() - mRealPadding.Left - mRealPadding.Right )
+			} else if ( tX > mSize.getWidth() - mRealPadding.Left - mRealPadding.Right ) {
 				mRealAlignOffset.x = mSize.getWidth() - mRealPadding.Left - mRealPadding.Right -
 									 ( mRealAlignOffset.x + ( tW - mRealAlignOffset.x ) );
+			}
 		}
 	}
 }
@@ -228,7 +231,7 @@ void UITextInput::setTheme( UITheme* Theme ) {
 void UITextInput::onThemeLoaded() {
 	UITextView::onThemeLoaded();
 
-	mMinControlSize.y = eemax( mMinControlSize.y, getSkinSize().getHeight() );
+	mMinSize.y = eemax( mMinSize.y, getSkinSize().getHeight() );
 
 	autoPadding();
 	onAutoSize();
@@ -298,33 +301,6 @@ void UITextInput::shrinkText( const Uint32& MaxWidth ) {
 
 void UITextInput::updateText() {}
 
-Uint32 UITextInput::onMouseClick( const Vector2i& Pos, const Uint32& Flags ) {
-	UITextView::onMouseClick( Pos, Flags );
-
-	if ( ( Flags & EE_BUTTON_LMASK ) ) {
-		if ( selCurInit() == selCurEnd() ) {
-			Vector2f controlPos( Vector2f( Pos.x, Pos.y ) );
-			worldToNode( controlPos );
-			controlPos = PixelDensity::dpToPx( controlPos ) - mRealAlignOffset;
-
-			Int32 curPos =
-				mTextCache->findCharacterFromPos( Vector2i( controlPos.x, controlPos.y ) );
-
-			if ( -1 != curPos ) {
-				mTextBuffer.setCursorPosition( curPos );
-				onCursorPositionChange();
-				resetWaitCursor();
-			}
-		} else {
-			mTextBuffer.setCursorPosition( selCurEnd() );
-			onCursorPositionChange();
-			resetWaitCursor();
-		}
-	}
-
-	return 1;
-}
-
 Uint32 UITextInput::onMouseDown( const Vector2i& position, const Uint32& flags ) {
 	int endPos = selCurEnd();
 
@@ -351,7 +327,7 @@ Uint32 UITextInput::onMouseDoubleClick( const Vector2i& Pos, const Uint32& Flags
 	return 1;
 }
 
-Uint32 UITextInput::onMouseOver(const Vector2i& position, const Uint32& flags) {
+Uint32 UITextInput::onMouseOver( const Vector2i& position, const Uint32& flags ) {
 	if ( NULL != mSceneNode )
 		mSceneNode->setCursor( Cursor::IBeam );
 

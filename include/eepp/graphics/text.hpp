@@ -118,7 +118,7 @@ class EE_API Text {
 	void setStyleConfig( const FontStyleConfig& styleConfig );
 
 	/** Finds the closest cursor position to the point position */
-	Int32 findCharacterFromPos( const Vector2i& pos );
+	Int32 findCharacterFromPos( const Vector2i& pos, bool returnNearest = true );
 
 	/** Simulates a selection request and return the initial and end cursor position when the
 	 * selection worked. Otherwise both parameters will be -1. */

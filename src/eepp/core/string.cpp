@@ -281,6 +281,14 @@ bool String::endsWith( const String& haystack, const String& needle ) {
 		   haystack.compare( haystack.size() - needle.size(), needle.size(), needle ) == 0;
 }
 
+bool String::contains( const std::string& haystack, const std::string& needle ) {
+	return haystack.find( needle ) != std::string::npos;
+}
+
+bool String::contains( const String& haystack, const String& needle ) {
+	return haystack.find( needle ) != String::InvalidPos;
+}
+
 void String::replaceAll( std::string& target, const std::string& that, const std::string& with ) {
 	std::string::size_type pos = 0;
 

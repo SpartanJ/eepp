@@ -33,12 +33,15 @@ UITextEdit::UITextEdit() :
 	mTextInput->setEnabled( true );
 	mTextInput->setSize( getSize() );
 
-	mTextInput->addEventListener( Event::OnSizeChange,
-								  cb::Make1( this, &UITextEdit::onInputSizeChange ) );
-	mTextInput->addEventListener( Event::OnTextChanged,
-								  cb::Make1( this, &UITextEdit::onInputSizeChange ) );
-	mTextInput->addEventListener( Event::OnPressEnter,
-								  cb::Make1( this, &UITextEdit::onInputSizeChange ) );
+	auto cb = [&]( const Event* event ) {
+		mNodeFlags |= NODE_FLAG_FREE_USE;
+		onInputSizeChange( event );
+		mNodeFlags &= ~NODE_FLAG_FREE_USE;
+	};
+
+	mTextInput->addEventListener( Event::OnSizeChange, cb );
+	mTextInput->addEventListener( Event::OnTextChanged, cb );
+	mTextInput->addEventListener( Event::OnPressEnter, cb );
 	mTextInput->addEventListener( Event::OnCursorPosChange,
 								  cb::Make1( this, &UITextEdit::onCursorPosChange ) );
 
@@ -295,9 +298,7 @@ void UITextEdit::onInputSizeChange( const Event* Event ) {
 	if ( mTextInput->getTextHeight() > Height ) {
 		Width -= mVScrollBar->getPixelsSize().getWidth();
 
-		mNodeFlags |= NODE_FLAG_FREE_USE;
 		mTextInput->getInputTextBuffer()->setBuffer( text );
-		mNodeFlags &= ~NODE_FLAG_FREE_USE;
 
 		shrinkText( Width );
 

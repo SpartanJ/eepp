@@ -60,7 +60,7 @@ class EE_API UIScrollBar : public UIWidget {
 
 	ScrollBarType getScrollBarType() const;
 
-	void setScrollBarType( const ScrollBarType& scrollBarType );
+	void setScrollBarStyle( const ScrollBarType& scrollBarType );
 
 	bool getExpandBackground() const;
 
@@ -72,7 +72,7 @@ class EE_API UIScrollBar : public UIWidget {
 										   const Uint32& propertyIndex = 0 );
 
   protected:
-	ScrollBarType mScrollBarType;
+	ScrollBarType mScrollBarStyle;
 	UISlider* mSlider;
 	UIWidget* mBtnUp;
 	UIWidget* mBtnDown;
@@ -90,6 +90,8 @@ class EE_API UIScrollBar : public UIWidget {
 	virtual Uint32 onMessage( const NodeMessage* Msg );
 
 	virtual void onPaddingChange();
+
+	void updateOrientation();
 };
 
 }} // namespace EE::UI

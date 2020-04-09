@@ -318,8 +318,6 @@ void UITextView::alignFix() {
 			mRealAlignOffset.y = 0;
 			break;
 	}
-
-	mAlignOffset = PixelDensity::pxToDp( mRealAlignOffset );
 }
 
 Uint32 UITextView::onFocusLoss() {
@@ -386,8 +384,8 @@ const int& UITextView::getNumLines() const {
 	return mTextCache->getNumLines();
 }
 
-const Vector2f& UITextView::getAlignOffset() const {
-	return mAlignOffset;
+Vector2f UITextView::getAlignOffset() const {
+	return PixelDensity::pxToDp( mRealAlignOffset );
 }
 
 Uint32 UITextView::onMouseDoubleClick( const Vector2i& Pos, const Uint32& Flags ) {
@@ -395,8 +393,9 @@ Uint32 UITextView::onMouseDoubleClick( const Vector2i& Pos, const Uint32& Flags 
 		Vector2f controlPos( Vector2f( Pos.x, Pos.y ) );
 		worldToNode( controlPos );
 		controlPos = PixelDensity::dpToPx( controlPos ) - mRealAlignOffset;
+		controlPos -= Vector2f( mRealPadding.Left, mRealPadding.Top );
 
-		Int32 curPos = mTextCache->findCharacterFromPos( Vector2i( controlPos.x, controlPos.y ) );
+		Int32 curPos = mTextCache->findCharacterFromPos( controlPos.asInt() );
 
 		if ( -1 != curPos ) {
 			Int32 tSelCurInit, tSelCurEnd;
@@ -433,9 +432,10 @@ Uint32 UITextView::onMouseDown( const Vector2i& Pos, const Uint32& Flags ) {
 		 getEventDispatcher()->getDownControl() == this ) {
 		Vector2f controlPos( Vector2f( Pos.x, Pos.y ) );
 		worldToNode( controlPos );
-		controlPos = PixelDensity::dpToPx( controlPos ) - mRealAlignOffset;
+		controlPos = PixelDensity::dpToPx( controlPos ) - mRealAlignOffset +
+					 Vector2f( mRealPadding.Left, mRealPadding.Top );
 
-		Int32 curPos = mTextCache->findCharacterFromPos( Vector2i( controlPos.x, controlPos.y ) );
+		Int32 curPos = mTextCache->findCharacterFromPos( controlPos.asInt() );
 
 		if ( -1 != curPos ) {
 			if ( -1 == selCurInit() || !mSelecting ) {

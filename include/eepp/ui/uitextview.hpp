@@ -69,7 +69,7 @@ class EE_API UITextView : public UIWidget {
 
 	const int& getNumLines() const;
 
-	const Vector2f& getAlignOffset() const;
+	Vector2f getAlignOffset() const;
 
 	virtual void shrinkText( const Uint32& MaxWidth );
 
@@ -88,7 +88,6 @@ class EE_API UITextView : public UIWidget {
 	Text* mTextCache;
 	String mString;
 	UIFontStyleConfig mFontStyleConfig;
-	Vector2f mAlignOffset;
 	Vector2f mRealAlignOffset;
 	Int32 mSelCurInit;
 	Int32 mSelCurEnd;

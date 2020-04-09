@@ -233,7 +233,6 @@ class EE_API UIWidget : public UINode {
 	UITheme* mTheme;
 	UIStyle* mStyle;
 	UITooltip* mTooltip;
-	Sizef mMinControlSize;
 	Rect mDistToBorder;
 	Rect mLayoutMargin;
 	Rectf mPadding;

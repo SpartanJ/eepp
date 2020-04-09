@@ -83,12 +83,12 @@ void UIDropDownList::setFriendControl( UINode* friendCtrl ) {
 }
 
 void UIDropDownList::onAutoSize() {
+	Float max = eemax<Float>( PixelDensity::dpToPxI( getSkinSize().getHeight() ), getTextHeight() );
+
 	if ( mLayoutHeightRule == LayoutSizeRule::WrapContent ) {
-		setInternalPixelsHeight( PixelDensity::dpToPxI( getSkinSize().getHeight() ) +
-								 mRealPadding.Top + mRealPadding.Bottom );
-	} else if ( ( ( mFlags & UI_AUTO_SIZE ) || 0 == getSize().getHeight() ) &&
-				0 != getSkinSize().getHeight() ) {
-		setInternalHeight( getSkinSize().getHeight() );
+		setInternalPixelsHeight( max + mRealPadding.Top + mRealPadding.Bottom );
+	} else if ( ( ( mFlags & UI_AUTO_SIZE ) || 0 == getSize().getHeight() ) && max > 0 ) {
+		setInternalHeight( max );
 	}
 }
 

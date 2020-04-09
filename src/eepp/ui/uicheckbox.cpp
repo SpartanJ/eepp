@@ -65,7 +65,7 @@ void UICheckBox::onThemeLoaded() {
 		mInactiveButton->centerVertical();
 	}
 
-	mMinControlSize = mActiveButton->getSkinSize();
+	mMinSize = mActiveButton->getSkinSize();
 
 	onPaddingChange();
 
@@ -188,8 +188,6 @@ void UICheckBox::alignFix() {
 				mActiveButton->getPixelsSize().getWidth() + PixelDensity::dpToPx( mTextSeparation );
 			break;
 	}
-
-	mAlignOffset = PixelDensity::pxToDp( mRealAlignOffset );
 }
 
 UIWidget* UICheckBox::getCheckedButton() const {

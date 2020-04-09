@@ -1074,11 +1074,11 @@ bool UIListBox::applyProperty( const StyleSheetProperty& attribute ) {
 			String::toLowerInPlace( val );
 
 			if ( "no-buttons" == val || "nobuttons" == val ) {
-				mVScrollBar->setScrollBarType( UIScrollBar::NoButtons );
-				mHScrollBar->setScrollBarType( UIScrollBar::NoButtons );
+				mVScrollBar->setScrollBarStyle( UIScrollBar::NoButtons );
+				mHScrollBar->setScrollBarStyle( UIScrollBar::NoButtons );
 			} else if ( "two-buttons" == val || "twobuttons" == val ) {
-				mVScrollBar->setScrollBarType( UIScrollBar::TwoButtons );
-				mHScrollBar->setScrollBarType( UIScrollBar::NoButtons );
+				mVScrollBar->setScrollBarStyle( UIScrollBar::TwoButtons );
+				mHScrollBar->setScrollBarStyle( UIScrollBar::NoButtons );
 			}
 			break;
 		}

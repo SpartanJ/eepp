@@ -7,6 +7,7 @@
 #include <eepp/graphics/text.hpp>
 #include <eepp/graphics/texture.hpp>
 #include <eepp/graphics/texturefactory.hpp>
+#include <limits>
 
 namespace EE { namespace Graphics {
 
@@ -281,7 +282,7 @@ Vector2f Text::findCharacterPos( std::size_t index ) const {
 	return mGlyphPos[index];
 }
 
-Int32 Text::findCharacterFromPos( const Vector2i& pos ) {
+Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest ) {
 	if ( NULL == mFont )
 		return 0;
 
@@ -289,8 +290,12 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos ) {
 	Float Width = 0, lWidth = 0, Height = vspace, lHeight = 0;
 	Uint32 CharID;
 	Uint32 prevChar = 0;
+	Int32 nearest = -1;
+	Int32 minDist = std::numeric_limits<Int32>::max();
+	Int32 curDist = -1;
 	std::size_t tSize = mString.size();
 	bool bold = ( mStyle & Bold ) != 0;
+	Vector2f fpos( pos.asFloat() );
 
 	Float hspace = static_cast<Float>( mFont->getGlyph( L' ', mRealFontSize, bold ).advance );
 
@@ -318,7 +323,7 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos ) {
 		if ( pos.x <= Width && pos.x >= lWidth && pos.y <= Height && pos.y >= lHeight ) {
 			if ( i + 1 < tSize ) {
 				Int32 curDist = eeabs( pos.x - lWidth );
-				Int32 nextDist = eeabs( pos.x - ( lWidth + glyph.advance ) );
+				Int32 nextDist = eeabs( pos.x - Width );
 
 				if ( nextDist < curDist ) {
 					return i + 1;
@@ -326,6 +331,15 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos ) {
 			}
 
 			return i;
+		}
+
+		if ( returnNearest ) {
+			curDist = eeabs( fpos.distance( Vector2f( Width - ( Width - lWidth ) * 0.5f,
+													  Height - ( Height - lHeight ) * 0.5f ) ) );
+			if ( curDist < minDist ) {
+				nearest = i;
+				minDist = curDist;
+			}
 		}
 
 		if ( CharID == '\n' ) {
@@ -342,7 +356,7 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos ) {
 		return tSize;
 	}
 
-	return -1;
+	return nearest;
 }
 
 static bool isStopSelChar( Uint32 c ) {

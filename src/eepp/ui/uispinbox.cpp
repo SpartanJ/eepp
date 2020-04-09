@@ -25,13 +25,13 @@ UISpinBox::UISpinBox() :
 	mPushUp->setVisible( true );
 	mPushUp->setEnabled( true );
 	mPushUp->setParent( this );
-	mPushUp->setSize( 16, 16 );
+	mPushUp->setSize( 8, 8 );
 
 	mPushDown = UIWidget::NewWithTag( "spinbox::btndown" );
 	mPushDown->setVisible( true );
 	mPushDown->setEnabled( true );
 	mPushDown->setParent( this );
-	mPushDown->setSize( 16, 16 );
+	mPushDown->setSize( 8, 8 );
 
 	mInput->getInputTextBuffer()->setAllowOnlyNumbers( true, false );
 	mInput->addEventListener( Event::OnBufferChange,
@@ -312,12 +312,37 @@ bool UISpinBox::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::ClickStep:
 			setClickStep( attribute.asFloat() );
 			break;
+		case PropertyId::Text:
+		case PropertyId::AllowEditing:
+		case PropertyId::MaxLength:
+		case PropertyId::FreeEditing:
+		case PropertyId::Numeric:
+		case PropertyId::AllowFloat:
+		case PropertyId::Hint:
+		case PropertyId::HintColor:
+		case PropertyId::HintShadowColor:
+		case PropertyId::HintFontSize:
+		case PropertyId::HintFontFamily:
+		case PropertyId::HintFontStyle:
+		case PropertyId::HintStrokeWidth:
+		case PropertyId::HintStrokeColor:
+		case PropertyId::Color:
+		case PropertyId::ShadowColor:
+		case PropertyId::SelectionColor:
+		case PropertyId::SelectionBackColor:
+		case PropertyId::FontFamily:
+		case PropertyId::FontSize:
+		case PropertyId::FontStyle:
+		case PropertyId::Wordwrap:
+		case PropertyId::TextStrokeWidth:
+		case PropertyId::TextStrokeColor:
+		case PropertyId::TextSelection:
+		case PropertyId::TextAlign:
+			return mInput->applyProperty( attribute );
 		default:
 			attributeSet = UIWidget::applyProperty( attribute );
 			break;
 	}
-
-	mInput->applyProperty( attribute );
 
 	return attributeSet;
 }

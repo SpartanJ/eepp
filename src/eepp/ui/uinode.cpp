@@ -135,26 +135,51 @@ const Vector2f& UINode::getPixelsPosition() const {
 }
 
 void UINode::setInternalSize( const Sizef& size ) {
+	Sizef s( size );
+
+	if ( s.x < mMinSize.x )
+		s.x = mMinSize.x;
+
+	if ( s.y < mMinSize.y )
+		s.y = mMinSize.y;
+
 	mDpSize = size;
-	mSize = PixelDensity::dpToPx( size );
+	mSize = PixelDensity::dpToPx( s );
 	updateCenter();
 	sendCommonEvent( Event::OnSizeChange );
 	invalidateDraw();
 }
 
 void UINode::setInternalPixelsSize( const Sizef& size ) {
-	mDpSize = PixelDensity::pxToDp( size );
-	mSize = size;
+	Sizef s( size );
+	Sizef pMinSize( PixelDensity::dpToPx( mMinSize ) );
+
+	if ( s.x < pMinSize.x )
+		s.x = pMinSize.x;
+
+	if ( s.y < pMinSize.y )
+		s.y = pMinSize.y;
+
+	mDpSize = PixelDensity::pxToDp( s );
+	mSize = s;
 	updateCenter();
 	sendCommonEvent( Event::OnSizeChange );
 	invalidateDraw();
 }
 
 Node* UINode::setSize( const Sizef& Size ) {
-	if ( Size != mDpSize ) {
-		Vector2f sizeChange( Size.x - mDpSize.x, Size.y - mDpSize.y );
+	Sizef s( Size );
 
-		setInternalSize( Size );
+	if ( s.x < mMinSize.x )
+		s.x = mMinSize.x;
+
+	if ( s.y < mMinSize.y )
+		s.y = mMinSize.y;
+
+	if ( s != mDpSize ) {
+		Vector2f sizeChange( s.x - mDpSize.x, s.y - mDpSize.y );
+
+		setInternalSize( s );
 
 		onSizeChange();
 
@@ -196,6 +221,31 @@ void UINode::setInternalPixelsWidth( const Float& width ) {
 
 void UINode::setInternalPixelsHeight( const Float& height ) {
 	setInternalPixelsSize( Sizef( mSize.x, height ) );
+}
+
+void UINode::setMinSize( const Sizef& size ) {
+	if ( size != mMinSize ) {
+		mMinSize = size;
+		setSize( getSize() );
+	}
+}
+
+void UINode::setMinWidth( const Float& width ) {
+	if ( width != mMinSize.x ) {
+		mMinSize.x = width;
+		setSize( getSize() );
+	}
+}
+
+void UINode::setMinHeight( const Float& height ) {
+	if ( height != mMinSize.y ) {
+		mMinSize.y = height;
+		setSize( getSize() );
+	}
+}
+
+const Sizef& UINode::getMinSize() const {
+	return mMinSize;
 }
 
 void UINode::updateOriginPoint() {

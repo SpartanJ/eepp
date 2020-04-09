@@ -76,6 +76,7 @@ class EE_API UISlider : public UIWidget {
 	UIOrientation mOrientation;
 	bool mAllowHalfSliderOut;
 	bool mExpandBackground;
+	bool mUpdating;
 	UIWidget* mBackSlider;
 	UIWidget* mSlider;
 	Float mMinValue;
@@ -103,6 +104,8 @@ class EE_API UISlider : public UIWidget {
 	virtual void onAlphaChange();
 
 	virtual Uint32 onMessage( const NodeMessage* Msg );
+
+	void updateOrientation();
 };
 
 }} // namespace EE::UI

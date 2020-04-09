@@ -34,7 +34,6 @@ UIWidget::UIWidget( const std::string& tag ) :
 	mTheme( NULL ),
 	mStyle( NULL ),
 	mTooltip( NULL ),
-	mMinControlSize(),
 	mLayoutWeight( 0 ),
 	mLayoutGravity( 0 ),
 	mLayoutWidthRule( LayoutSizeRule::WrapContent ),
@@ -344,11 +343,11 @@ void UIWidget::tooltipRemove() {
 Node* UIWidget::setSize( const Sizef& size ) {
 	Sizef s( size );
 
-	if ( s.x < mMinControlSize.x )
-		s.x = mMinControlSize.x;
+	if ( s.x < mMinSize.x )
+		s.x = mMinSize.x;
 
-	if ( s.y < mMinControlSize.y )
-		s.y = mMinControlSize.y;
+	if ( s.y < mMinSize.y )
+		s.y = mMinSize.y;
 
 	if ( !mMinWidthEq.empty() ) {
 		Float length =
@@ -505,8 +504,8 @@ void UIWidget::updateAnchors( const Vector2f& SizeChange ) {
 			newSize.x = mParentCtrl->getSize().getWidth() - mDpPos.x -
 						PixelDensity::pxToDpI( mDistToBorder.Right );
 
-			if ( newSize.x < mMinControlSize.getWidth() )
-				newSize.x = mMinControlSize.getWidth();
+			if ( newSize.x < mMinSize.getWidth() )
+				newSize.x = mMinSize.getWidth();
 		}
 	}
 
@@ -519,8 +518,8 @@ void UIWidget::updateAnchors( const Vector2f& SizeChange ) {
 			newSize.y =
 				mParentCtrl->getSize().y - mDpPos.y - PixelDensity::pxToDpI( mDistToBorder.Bottom );
 
-			if ( newSize.y < mMinControlSize.getHeight() )
-				newSize.y = mMinControlSize.getHeight();
+			if ( newSize.y < mMinSize.getHeight() )
+				newSize.y = mMinSize.getHeight();
 		}
 	}
 
@@ -577,14 +576,31 @@ void UIWidget::setMinSizeEq( const std::string& minWidthEq, const std::string& m
 	if ( mMinWidthEq != minWidthEq || mMinHeightEq != minHeightEq ) {
 		mMinWidthEq = minWidthEq;
 		mMinHeightEq = minHeightEq;
-		setSize( mSize );
+
+		if ( !mMinWidthEq.empty() ) {
+			mMinSize.x =
+				lengthFromValue( mMinWidthEq, CSS::PropertyRelativeTarget::ContainingBlockWidth );
+		}
+
+		if ( !mMinHeightEq.empty() ) {
+			mMinSize.y =
+				lengthFromValue( mMinHeightEq, CSS::PropertyRelativeTarget::ContainingBlockHeight );
+		}
+
+		setSize( mDpSize );
 	}
 }
 
 void UIWidget::setMinWidthEq( const std::string& minWidthEq ) {
 	if ( mMinWidthEq != minWidthEq ) {
 		mMinWidthEq = minWidthEq;
-		setSize( mSize );
+
+		if ( !mMinWidthEq.empty() ) {
+			mMinSize.x =
+				lengthFromValue( mMinWidthEq, CSS::PropertyRelativeTarget::ContainingBlockWidth );
+		}
+
+		setSize( mDpSize );
 	}
 }
 
@@ -595,7 +611,13 @@ const std::string& UIWidget::getMinHeightEq() const {
 void UIWidget::setMinHeightEq( const std::string& minHeightEq ) {
 	if ( mMinHeightEq != minHeightEq ) {
 		mMinHeightEq = minHeightEq;
-		setSize( mSize );
+
+		if ( !mMinHeightEq.empty() ) {
+			mMinSize.y =
+				lengthFromValue( mMinHeightEq, CSS::PropertyRelativeTarget::ContainingBlockHeight );
+		}
+
+		setSize( mDpSize );
 	}
 }
 
@@ -607,14 +629,14 @@ void UIWidget::setMaxSizeEq( const std::string& maxWidthEq, const std::string& m
 	if ( mMaxWidthEq != maxWidthEq || mMaxHeightEq != maxHeightEq ) {
 		mMaxWidthEq = maxWidthEq;
 		mMaxHeightEq = maxHeightEq;
-		setSize( mSize );
+		setSize( mDpSize );
 	}
 }
 
 void UIWidget::setMaxWidthEq( const std::string& maxWidthEq ) {
 	if ( mMaxWidthEq != maxWidthEq ) {
 		mMaxWidthEq = maxWidthEq;
-		setSize( mSize );
+		setSize( mDpSize );
 	}
 }
 

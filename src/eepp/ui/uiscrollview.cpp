@@ -320,11 +320,11 @@ bool UIScrollView::applyProperty( const StyleSheetProperty& attribute ) {
 			String::toLowerInPlace( val );
 
 			if ( "no-buttons" == val || "nobuttons" == val ) {
-				mVScroll->setScrollBarType( UIScrollBar::NoButtons );
-				mHScroll->setScrollBarType( UIScrollBar::NoButtons );
+				mVScroll->setScrollBarStyle( UIScrollBar::NoButtons );
+				mHScroll->setScrollBarStyle( UIScrollBar::NoButtons );
 			} else if ( "two-buttons" == val || "twobuttons" == val ) {
-				mVScroll->setScrollBarType( UIScrollBar::TwoButtons );
-				mHScroll->setScrollBarType( UIScrollBar::NoButtons );
+				mVScroll->setScrollBarStyle( UIScrollBar::TwoButtons );
+				mHScroll->setScrollBarStyle( UIScrollBar::NoButtons );
 			}
 			break;
 		}

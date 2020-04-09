@@ -69,7 +69,7 @@ void UIRadioButton::onThemeLoaded() {
 		mInactiveButton->centerVertical();
 	}
 
-	mMinControlSize = mActiveButton->getSkinSize();
+	mMinSize = mActiveButton->getSkinSize();
 
 	onPaddingChange();
 
@@ -255,8 +255,6 @@ void UIRadioButton::alignFix() {
 				mActiveButton->getPixelsSize().getWidth() + PixelDensity::dpToPx( mTextSeparation );
 			break;
 	}
-
-	mAlignOffset = PixelDensity::pxToDp( mRealAlignOffset );
 }
 
 UIWidget* UIRadioButton::getActiveButton() const {

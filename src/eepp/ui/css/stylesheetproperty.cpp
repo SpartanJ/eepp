@@ -25,7 +25,7 @@ StyleSheetProperty::StyleSheetProperty( const PropertyDefinition* definition,
 	mIndex( index ),
 	mVolatile( false ),
 	mImportant( false ),
-	mIsVarValue( String::startsWith( mValue, "var(" ) ),
+	mIsVarValue( String::contains( mValue, "var(" ) ),
 	mPropertyDefinition( definition ),
 	mShorthandDefinition( NULL ) {
 	cleanValue();
@@ -48,7 +48,7 @@ StyleSheetProperty::StyleSheetProperty( const bool& isVolatile,
 	mIndex( index ),
 	mVolatile( false ),
 	mImportant( false ),
-	mIsVarValue( String::startsWith( mValue, "var(" ) ),
+	mIsVarValue( String::contains( mValue, "var(" ) ),
 	mPropertyDefinition( definition ),
 	mShorthandDefinition( NULL ) {
 	cleanValue();
@@ -68,7 +68,7 @@ StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::stri
 	mIndex( 0 ),
 	mVolatile( false ),
 	mImportant( false ),
-	mIsVarValue( String::startsWith( mValue, "var(" ) ),
+	mIsVarValue( String::contains( mValue, "var(" ) ),
 	mPropertyDefinition( StyleSheetSpecification::instance()->getProperty( mNameHash ) ),
 	mShorthandDefinition( NULL == mPropertyDefinition
 							  ? StyleSheetSpecification::instance()->getShorthand( mNameHash )
@@ -92,7 +92,7 @@ StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::stri
 	mIndex( index ),
 	mVolatile( isVolatile ),
 	mImportant( false ),
-	mIsVarValue( String::startsWith( mValue, "var(" ) ),
+	mIsVarValue( String::contains( mValue, "var(" ) ),
 	mPropertyDefinition( StyleSheetSpecification::instance()->getProperty( mNameHash ) ),
 	mShorthandDefinition( NULL == mPropertyDefinition
 							  ? StyleSheetSpecification::instance()->getShorthand( mNameHash )

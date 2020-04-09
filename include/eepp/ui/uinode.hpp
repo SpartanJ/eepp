@@ -248,9 +248,19 @@ class EE_API UINode : public Node {
 
 	UISceneNode* getUISceneNode();
 
+
+	void setMinWidth( const Float& width );
+
+	void setMinHeight( const Float& height );
+
+	void setMinSize( const Sizef& size );
+
+	const Sizef& getMinSize() const;
+
   protected:
 	Vector2f mDpPos;
 	Sizef mDpSize;
+	Sizef mMinSize;
 	Uint32 mFlags;
 	Uint32 mState;
 	UISkinState* mSkinState;

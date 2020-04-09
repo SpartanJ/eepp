@@ -61,8 +61,8 @@ class EE_API UISpinBox : public UIWidget {
 
   protected:
 	UITextInput* mInput;
-	UINode* mPushUp;
-	UINode* mPushDown;
+	UIWidget* mPushUp;
+	UIWidget* mPushDown;
 	Float mMinValue;
 	Float mMaxValue;
 	Float mValue;

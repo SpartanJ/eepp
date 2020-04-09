@@ -1398,11 +1398,11 @@ Defines how the scrollbar should fit inside an scrollable element.
 
 ---
 
-### scrollbar-type
+### scrollbar-style
 
 Sets the scrollbar style (for the moment defines if it contains buttons at its edge or it's simply a bar).
 
-* Applicable to: EE::UI::UIScrollBar (ScrollBar), EE::UI::UIListBox (ListBox), EE::UI::UIDropDownLis
+* Applicable to: EE::UI::UIScrollBar (ScrollBar), EE::UI::UIListBox (ListBox), EE::UI::UIDropDownList
   (DropDownList), EE::UI::UITable (Table), EE::UI::UIScrollView (ScrollView)
 * Data Type: [string-list](#string-list-data-type)
 * Value List:

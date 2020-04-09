@@ -1,0 +1,325 @@
+
+:root {
+	--primary: #3daee9;
+	--back: #31363b;
+	--font: #eff0f1;
+	--button-back: #30353a;
+	--button-border: #6b6f73;
+	--button-radius: 2dp;
+	--base-horizontal-padding: 5dp;
+	--base-vertical-padding: 7dp;
+	--border-width: 1dp;
+	--list-back: #232629;
+	--separator: #383a3d;
+	--item-hover: #284150;
+	--scroll-button: #6b6d6f;
+	--slider-back: #676a6e;
+	--slider-button: #31363b;
+	--slider-border: #787b80;
+	--scrollbar-border: #373a3d;
+	--scrollbar-button: #4085a9;
+	--scrollbar-hback-hover: #606365;
+}
+
+* {
+	color: var(--font);
+	font-size: 11dp;
+	selection-back-color: var(--primary);
+}
+
+PushButton,
+SelectButton,
+DropDownList {
+	padding-left: var(--base-horizontal-padding);
+	padding-right: var(--base-horizontal-padding);
+	padding-top: var(--base-vertical-padding);
+	padding-bottom: var(--base-vertical-padding);
+	background-color: var(--button-back);
+	border-color: var(--button-border);
+	border-radius: var(--button-radius);
+	border-width: var(--border-width);
+	transition: all 0.125s;
+}
+
+PushButton:hover,
+DropDownList:hover,
+SelectButton:hover {
+	border-color: var(--primary);
+}
+
+PushButton:pressed,
+SelectButton:pressed,
+SelectButton:selected,
+SelectButton:selectedpressed {
+	background-color: var(--primary);
+}
+
+CheckBox::active,
+CheckBox::inactive {
+	width: 12dp;
+	height: 12dp;
+	border-width: 1dp;
+	border-radius: var(--button-radius);
+}
+
+CheckBox::inactive {
+	border-color: var(--button-border);
+}
+
+CheckBox::active {
+	border-color: var(--primary);
+	background-image: rectangle(solid, var(--primary));
+	background-size: 70% 70%;
+	background-position: center;
+}
+
+RadioButton::active,
+RadioButton::inactive {
+	width: 12dp;
+	height: 12dp;
+	border-width: 1dp;
+	border-radius: 100%;
+}
+
+RadioButton::inactive {
+	border-color: var(--button-border);
+}
+
+RadioButton::active {
+	border-color: var(--primary);
+	background-image: circle(solid, var(--primary));
+	background-size: 8dp 8dp;
+	background-position: 6dp 6dp;
+}
+
+ListBox,
+DropDownList::ListBox {
+	background-color: var(--list-back);
+	border-color: var(--button-border);
+	border-radius: var(--button-radius);
+	border-width: var(--border-width);
+	transition: all 0.15;
+}
+
+ListBox::item {
+	padding-left: 4dp;
+	background-image: linear-gradient( to right, #232629, #383a3d ), linear-gradient( to right, #383a3d, #232629 );
+	background-size: 50% 1dp, 50% 1dp;
+	background-position: left bottom, right bottom;
+}
+
+ListBox:hover {
+	border-color: var(--primary);
+}
+
+ListBox::item:hover {
+	background-color: var(--item-hover);
+}
+
+ListBox::item:selected {
+	background-color: var(--primary);
+}
+
+DropDownList::ListBox::item {
+	padding-left: 4dp;
+}
+
+DropDownList::ListBox::item:hover,
+DropDownList::ListBox::item:selected {
+	background-color: var(--primary);
+}
+
+TextInput {
+	padding-left: var(--base-horizontal-padding);
+	padding-right: var(--base-horizontal-padding);
+	padding-top: var(--base-vertical-padding);
+	padding-bottom: var(--base-vertical-padding);
+	background-color: var(--list-back);
+	border-color: var(--button-border);
+	border-radius: var(--button-radius);
+	border-width: var(--border-width);
+	transition: all 0.15;
+}
+
+TextInput:hover,
+TextInput:focus,
+SpinBox:hover,
+SpinBox:focus {
+	border-color: var(--primary);
+}
+
+SpinBox {
+	background-color: var(--list-back);
+	border-color: var(--button-border);
+	border-radius: var(--button-radius);
+	border-width: var(--border-width);
+	transition: all 0.15;
+}
+
+SpinBox::input {
+	padding-left: var(--base-horizontal-padding);
+	padding-right: var(--base-horizontal-padding);
+	padding-top: var(--base-vertical-padding);
+	padding-bottom: var(--base-vertical-padding);
+}
+
+SpinBox::input,
+SpinBox::input::hover,
+SpinBox::input::focus {
+	border-width: 0dp;
+	border-color: transparent;
+}
+
+SpinBox::btnup,
+SpinBox::btndown {
+	width: 13dp;
+	height: 13dp;
+}
+
+TextEdit {
+	background-color: var(--list-back);
+	border-color: var(--button-border);
+	border-radius: var(--button-radius);
+	border-width: var(--border-width);
+}
+
+TextEdit::input {
+	padding-left: var(--base-horizontal-padding);
+	padding-right: var(--base-horizontal-padding);
+	padding-top: var(--base-vertical-padding);
+	padding-bottom: var(--base-vertical-padding);
+}
+
+Tooltip {
+	padding-left: var(--base-horizontal-padding);
+	padding-right: var(--base-horizontal-padding);
+	padding-top: var(--base-vertical-padding);
+	padding-bottom: var(--base-vertical-padding);
+	background-color: var(--button-back);
+	border-color: var(--button-border);
+	border-radius: var(--button-radius);
+	border-width: var(--border-width);
+	font-style: shadow;
+}
+
+Slider {
+	min-width: 11dp;
+	min-height: 11dp;
+	half-slider: true;
+}
+
+Slider::vback {
+	background-color: var(--slider-back);
+	border-radius: 4dp;
+	min-width: 5dp;
+	min-height: 64dp;
+	transition: all 0.15s;
+}
+
+Slider::hback {
+	background-color: var(--slider-back);
+	border-radius: 4dp;
+	min-width: 64dp;
+	min-height: 5dp;
+	transition: all 0.15s;
+}
+
+Slider::vbutton,
+Slider::hbutton {
+	background-color: var(--slider-button);
+	border-color: var(--slider-border);
+	border-width: 1dp;
+	border-radius: 100%;
+	min-width: 11dp;
+	min-height: 11dp;
+}
+
+Slider::vbutton:hover,
+Slider::vbutton:focus,
+Slider::hbutton:hover,
+Slider::hbutton:focus {
+	border-color: var(--primary);
+}
+
+ScrollBar {
+	scrollbar-style: no-buttons;
+}
+
+ScrollBar::hback {
+	min-height: 6dp;
+	border-radius: 4dp;
+	background-color: transparent;
+}
+
+ScrollBar::vback {
+	min-width: 6dp;
+	border-radius: 4dp;
+	background-color: transparent;
+}
+
+ScrollBar::hslider,
+ScrollBar::vslider {
+	border-width: 1dp;
+	border-color: var(--scrollbar-border);
+	background-color: var(--list-back);
+	padding: 4dp;
+	transition: all 0.15s;
+}
+
+ScrollBar::hbutton {
+	min-height: 6dp;
+	background-color: var(--scrollbar-button);
+	border-radius: 4dp;
+	border-width: 0dp;
+	transition: all 0.15s;
+}
+
+ScrollBar::vbutton {
+	min-width: 6dp;
+	background-color: var(--scrollbar-button);
+	border-radius: 4dp;
+	border-width: 0dp;
+	transition: all 0.15s;
+}
+
+ScrollBar::hslider:hover ScrollBar::hback,
+ScrollBar::vslider:hover ScrollBar::vback {
+	background-color: var(--scrollbar-hback-hover);
+}
+
+ScrollBar::vslider:hover ScrollBar::vbutton,
+ScrollBar::vbutton:hover,
+ScrollBar::hslider:hover ScrollBar::hbutton,
+ScrollBar::hbutton:hover {
+	background-color: var(--primary);
+}
+
+ProgressBar {
+	min-height: 6dp;
+}
+
+ProgressBar::filler {
+	border-radius: 4dp;
+	background-color: var(--primary);
+}
+
+TabWidget {
+	tab-separation: -1dp;
+}
+
+TabWidget::TabContainer {
+	background-image: rectangle(solid, #2f3030);
+	background-size: 100% 1dp;
+	background-position-y: bottom;
+	min-height: 24dp;
+}
+
+Tab {
+	background-color: var(--list-back);
+	min-height: 24dp;
+}
+
+Tab::text {
+	padding-left: 4dp;
+	padding-right: 4dp;
+}

@@ -1,9 +1,9 @@
 <vbox layout_width="match_parent" layout_height="match_parent">
 	<TabWidget layout_width="match_parent" layout_height="match_parent" padding-left="8dp" padding-right="8dp" padding-bottom="8dp" padding-top="20dp" background="#656565">
 		<hbox id="test_1" layout_width="match_parent" layout_height="match_parent">
-			<vbox id="lvbox" layout_width="match_parent" layout_weight="0.5" layout_height="match_parent" background="#222" padding="12dp">
-				<TextView layout_width="wrap_content" layout_height="wrap_content" text="Testing TextView"/>
-				<PushButton layout_width="wrap_content" layout_height="wrap_content" text="Testing PushButton" />
+			<vbox id="lvbox" layout_width="match_parent" layout_weight="0.5" layout_height="match_parent" background="#31363b" padding="12dp">
+				<TextView layout_width="wrap_content" layout_height="wrap_content" text="Testing TextView" />
+				<PushButton layout_width="wrap_content" layout_height="wrap_content" text="Testing PushButton" margin-top="8dp" />
 				<CheckBox layout_width="wrap_content" layout_height="wrap_content" margin-top="8dp" text="Testing CheckBox" />
 				<RadioButton layout_width="wrap_content" layout_height="wrap_content" margin-top="8dp" text="Testing RadioButton"/>
 				<DropDownList layout_width="300dp" layout_height="wrap_content" margin-top="8dp" text="Testing DropDownList">
@@ -11,7 +11,7 @@
 					<item>Test 2</item>
 					<item>Test 3</item>
 				</DropDownList>
-				<Image layout_width="32dp" layout_height="32dp" src="file://assets/tiles/1.png" margin-top="8dp" />
+				<!-- <Image layout_width="32dp" layout_height="32dp" src="file://assets/tiles/1.png" margin-top="8dp" /> -->
 				<ListBox layout_width="300dp" layout_height="100dp" margin-top="8dp" text="Testing ListBox">
 					<item>Test</item>
 					<item>Test 2</item>
@@ -29,6 +29,7 @@
 				<TextInput layout_width="300dp" layout_height="wrap_content" margin-top="8dp" text="Testing TextInput" />
 				<TextEdit layout_width="300dp" layout_height="60dp" margin-top="8dp" text="Testing TextEdit" />
 				<SelectButton layout_width="wrap_content" layout_height="wrap_content" text="Testing SelectButton" margin-top="8dp" />
+				<SpinBox id="spinbox" layout_width="200dp" layout_height="wrap_content" margin-top="8dp" />
 				<!-- <TextureRegion layout_width="32dp" layout_height="32dp" src="" margin-top="8dp" margin-top="8dp" /> -->
 			</vbox>
 			<vbox id="rvbox" layout_width="match_parent" layout_weight="0.5" layout_height="match_parent" background="#323232" padding="12dp">
@@ -38,7 +39,7 @@
 					<TextView layout_width="wrap_content" layout_height="wrap_content" text="testing margin" font-size="24dp" padding="12dp" background="#242424" layout_gravity="top|right" margin="12dp" />
 					<TextView id="tm" layout_width="wrap_content" layout_height="wrap_content" text="testing margin" font-size="24dp" background="#242424" layout_gravity="bottom|left" margin="12dp" />
 					<TextView id="tmp" layout_width="wrap_content" layout_height="wrap_content" text="testing margin padding" font-size="24dp" background="#242424" layout_gravity="bottom|right" margin="12dp" padding="12dp" />
-					<Loader layout_width="350dp" layout_height="350dp" layout_gravity="center" fill-color="#999" padding="44dp" outline-thickness="8dp" />
+					<!-- <Loader layout_width="350dp" layout_height="350dp" layout_gravity="center" fill-color="#999" padding="44dp" outline-thickness="8dp" /> -->
 
 					<Sprite layout_width="96dp" layout_height="96dp" src="bn" padding="8dp" background="#888" gravity="center" margin-top="56dp" gravity="right|bottom" />
 					<TextureRegion layout_width="96dp" layout_height="96dp" src="bn01" padding="8dp" background="#787" gravity="center" margin-top="162dp" gravity="right|bottom" />
@@ -64,4 +65,3 @@
 		<Tab text="Tabs Test" owns="test_2" />
 	</TabWidget>
 </vbox>
-
