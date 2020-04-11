@@ -111,8 +111,6 @@ class EE_API UIListBox : public UITouchDraggableWidget {
 	ScrollBarMode mVScrollMode;
 	ScrollBarMode mHScrollMode;
 	Rectf mContainerPadding;
-	Rectf mHScrollPadding;
-	Rectf mVScrollPadding;
 	UIItemContainer<UIListBox>* mContainer;
 	UIScrollBar* mVScrollBar;
 	UIScrollBar* mHScrollBar;

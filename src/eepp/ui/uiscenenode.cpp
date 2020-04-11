@@ -4,6 +4,7 @@
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/network/http.hpp>
 #include <eepp/network/uri.hpp>
+#include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/functionstring.hpp>
 #include <eepp/system/packmanager.hpp>
@@ -324,12 +325,17 @@ const Sizef& UISceneNode::getSize() const {
 }
 
 void UISceneNode::update( const Time& elapsed ) {
+	UISceneNode * uiSceneNode = SceneManager::instance()->getUISceneNode();
+
+	SceneManager::instance()->setCurrentUISceneNode( this );
 	SceneNode::update( elapsed );
 
 	if ( mCSSInvalid ) {
 		mRoot->reloadChildsStyleState();
 		mCSSInvalid = false;
 	}
+
+	SceneManager::instance()->setCurrentUISceneNode( uiSceneNode );
 }
 
 const bool& UISceneNode::isLoading() const {
@@ -460,7 +466,8 @@ void UISceneNode::checkShortcuts( const Uint32& KeyCode, const Uint32& Mod ) {
 	}
 }
 
-KeyboardShortcuts::iterator UISceneNode::existsShortcut( const Uint32& KeyCode, const Uint32& Mod ) {
+KeyboardShortcuts::iterator UISceneNode::existsShortcut( const Uint32& KeyCode,
+														 const Uint32& Mod ) {
 	for ( KeyboardShortcuts::iterator it = mKbShortcuts.begin(); it != mKbShortcuts.end(); ++it ) {
 		if ( ( *it ).KeyCode == KeyCode && ( *it ).Mod == Mod )
 			return it;

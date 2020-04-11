@@ -26,10 +26,13 @@ class EE_API ConvexShapeDrawable : public PrimitiveDrawable {
 
 	void addPoint( const Vector2f& point );
 
+	void addPoint( const Vector2f& point, const Color& color );
+
 	void resetPoints();
 
   protected:
 	Polygon2f mPolygon;
+	std::vector<Color> mIndexColor;
 
 	void updateVertex();
 };

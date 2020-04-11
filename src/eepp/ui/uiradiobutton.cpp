@@ -69,7 +69,7 @@ void UIRadioButton::onThemeLoaded() {
 		mInactiveButton->centerVertical();
 	}
 
-	mMinSize = mActiveButton->getSkinSize();
+	setMinSize( mActiveButton->getSkinSize() );
 
 	onPaddingChange();
 

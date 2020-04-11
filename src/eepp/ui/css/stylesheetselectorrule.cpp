@@ -106,23 +106,25 @@ void StyleSheetSelectorRule::parseFragment( const std::string& selectorFragment 
 		pseudoClass.clear();
 		realSelector.clear();
 
-		splitSelectorPseudoClass( selector, realSelector, pseudoClass );
+		if ( !selectorFragment.empty() && selectorFragment[0] != ':' ) {
+			splitSelectorPseudoClass( selector, realSelector, pseudoClass );
 
-		if ( !pseudoClass.empty() ) {
-			if ( isPseudoClassState( pseudoClass ) ) {
-				mPseudoClasses.push_back( pseudoClass );
-			} else if ( isStructuralPseudoClass( pseudoClass ) ) {
-				mStructuralPseudoClasses.push_back( pseudoClass );
+			if ( !pseudoClass.empty() ) {
+				if ( isPseudoClassState( pseudoClass ) ) {
+					mPseudoClasses.push_back( pseudoClass );
+				} else if ( isStructuralPseudoClass( pseudoClass ) ) {
+					mStructuralPseudoClasses.push_back( pseudoClass );
 
-				StructuralSelector structuralSelector =
-					StyleSheetSpecification::instance()->getStructuralSelector( pseudoClass );
+					StructuralSelector structuralSelector =
+						StyleSheetSpecification::instance()->getStructuralSelector( pseudoClass );
 
-				if ( structuralSelector.selector ) {
-					mStructuralSelectors.push_back( structuralSelector );
+					if ( structuralSelector.selector ) {
+						mStructuralSelectors.push_back( structuralSelector );
+					}
 				}
-			}
 
-			selector = realSelector;
+				selector = realSelector;
+			}
 		}
 	} while ( !pseudoClass.empty() );
 

@@ -1,5 +1,5 @@
 <vbox layout_width="match_parent" layout_height="match_parent">
-	<TabWidget layout_width="match_parent" layout_height="match_parent" padding-left="8dp" padding-right="8dp" padding-bottom="8dp" padding-top="20dp" background="#656565">
+	<TabWidget layout_width="match_parent" layout_height="match_parent" padding-left="8dp" padding-right="8dp" padding-bottom="8dp" padding-top="20dp" background="#31363b">
 		<hbox id="test_1" layout_width="match_parent" layout_height="match_parent">
 			<vbox id="lvbox" layout_width="match_parent" layout_weight="0.5" layout_height="match_parent" background="#31363b" padding="12dp">
 				<TextView layout_width="wrap_content" layout_height="wrap_content" text="Testing TextView" />
@@ -10,12 +10,15 @@
 					<item>Test</item>
 					<item>Test 2</item>
 					<item>Test 3</item>
+					<item>Test 4</item><item>Test 5</item><item>Test 6</item><item>Test 7</item><item>Test 8</item>
+					<item>Test 9</item><item>Test 10</item><item>Test 11</item><item>Test 12</item><item>Test 13</item>
 				</DropDownList>
 				<!-- <Image layout_width="32dp" layout_height="32dp" src="file://assets/tiles/1.png" margin-top="8dp" /> -->
 				<ListBox layout_width="300dp" layout_height="100dp" margin-top="8dp" text="Testing ListBox">
 					<item>Test</item>
 					<item>Test 2</item>
 					<item>Test 3</item>
+					<item>Test 4</item><item>Test 5</item><item>Test 6</item><item>Test 7</item><item>Test 8</item>
 				</ListBox>
 				<ProgressBar layout_width="300dp" layout_height="wrap_content" margin-top="8dp" progress="50" margin-top="8dp" />
 				<ScrollBar id="scrollbar" orientation="horizontal" layout_width="300dp" layout_height="wrap_content" margin-top="8dp" />
@@ -25,6 +28,7 @@
 					<item>Test</item>
 					<item>Test 2</item>
 					<item>Test 3</item>
+					<item>Test 4</item><item>Test 5</item><item>Test 6</item><item>Test 7</item><item>Test 8</item>
 				</ComboBox>
 				<TextInput layout_width="300dp" layout_height="wrap_content" margin-top="8dp" text="Testing TextInput" />
 				<TextEdit layout_width="300dp" layout_height="60dp" margin-top="8dp" text="Testing TextEdit" />
@@ -39,7 +43,6 @@
 					<TextView layout_width="wrap_content" layout_height="wrap_content" text="testing margin" font-size="24dp" padding="12dp" background="#242424" layout_gravity="top|right" margin="12dp" />
 					<TextView id="tm" layout_width="wrap_content" layout_height="wrap_content" text="testing margin" font-size="24dp" background="#242424" layout_gravity="bottom|left" margin="12dp" />
 					<TextView id="tmp" layout_width="wrap_content" layout_height="wrap_content" text="testing margin padding" font-size="24dp" background="#242424" layout_gravity="bottom|right" margin="12dp" padding="12dp" />
-					<!-- <Loader layout_width="350dp" layout_height="350dp" layout_gravity="center" fill-color="#999" padding="44dp" outline-thickness="8dp" /> -->
 
 					<Sprite layout_width="96dp" layout_height="96dp" src="bn" padding="8dp" background="#888" gravity="center" margin-top="56dp" gravity="right|bottom" />
 					<TextureRegion layout_width="96dp" layout_height="96dp" src="bn01" padding="8dp" background="#787" gravity="center" margin-top="162dp" gravity="right|bottom" />
@@ -57,11 +60,27 @@
 				</RelativeLayout>
 			</vbox>
 		</hbox>
-		<hbox id="test_2" layout_width="match_parent" layout_height="match_parent">
-			<TextView layout_width="match_parent" layout_height="match_parent" text="Hello World!" gravity="center" background="#333" font-size="24dp" border-radius="128" />
-		</hbox>
+		<RelativeLayout id="test_2" layout_width="match_parent" layout_height="match_parent">
+			<TextView layout_width="match_parent" layout_height="match_parent" text="Hello World!" gravity="center" font-size="24dp" />
+			<Loader layout_width="350dp" layout_height="350dp" layout_gravity="center" padding="44dp" outline-thickness="8dp" />
+		</RelativeLayout>
 
 		<Tab text="Padding Test" owns="test_1" />
 		<Tab text="Tabs Test" owns="test_2" />
 	</TabWidget>
 </vbox>
+<window layout_width="300dp" layout_height="300dp" x="400dp" y="300dp" window-title="Test Window">
+  <LinearLayout id="testlayout" orientation="vertical" layout_width="match_parent" layout_height="match_parent" layout_margin="8dp">
+	<TextView text="Hello World!" gravity="center" layout_gravity="center_horizontal" layout_width="match_parent" layout_height="wrap_content" />
+	<PushButton text="OK!" textSize="16dp" icon="ok" gravity="center" layout_gravity="center_horizontal" layout_width="match_parent" layout_height="wrap_content" />
+	<TextInput text="test" layout_width="match_parent" layout_height="wrap_content" />
+	<DropDownList layout_width="match_parent" layout_height="wrap_content" selectedIndex="0">
+	  <item>Test Item</item>
+	  <item>@string/test_item</item>
+	</DropDownList>
+	<ListBox layout_width="match_parent" layout_height="match_parent" layout_weight="1">
+	  <item>Hello!</item>
+	  <item>World!</item>
+	</ListBox>
+  </LinearLayout>
+</window>

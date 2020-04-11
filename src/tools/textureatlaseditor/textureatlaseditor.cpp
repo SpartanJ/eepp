@@ -44,6 +44,21 @@ void mainLoop() {
 		win->close();
 	}
 
+	if ( win->getInput()->isKeyUp( KEY_F6 ) ) {
+		SceneManager::instance()->getUISceneNode()->setHighlightOver(
+			!SceneManager::instance()->getUISceneNode()->getHighlightOver() );
+	}
+
+	if ( win->getInput()->isKeyUp( KEY_F7 ) ) {
+		SceneManager::instance()->getUISceneNode()->setDrawBoxes(
+			!SceneManager::instance()->getUISceneNode()->getDrawBoxes() );
+	}
+
+	if ( win->getInput()->isKeyUp( KEY_F8 ) ) {
+		SceneManager::instance()->getUISceneNode()->setDrawDebugData(
+			!SceneManager::instance()->getUISceneNode()->getDrawDebugData() );
+	}
+
 	SceneManager::instance()->update();
 
 	if ( SceneManager::instance()->getUISceneNode()->invalidated() ) {

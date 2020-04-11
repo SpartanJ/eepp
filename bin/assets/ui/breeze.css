@@ -19,6 +19,15 @@
 	--scrollbar-border: #373a3d;
 	--scrollbar-button: #4085a9;
 	--scrollbar-hback-hover: #606365;
+	--tab-back: #2b3034;
+	--tab-line: #616569;
+	--tab-active: #31363b;
+	--icon: #b6bbc2;
+	--icon-active: white;
+	--menu-back: #2d3136;
+	--menu-font: #eff0f1;
+	--menu-border: #616569;
+	--menu-font-active: white;
 }
 
 * {
@@ -39,6 +48,10 @@ DropDownList {
 	border-radius: var(--button-radius);
 	border-width: var(--border-width);
 	transition: all 0.125s;
+}
+
+DropDownList {
+	max-visible-items: 6;
 }
 
 PushButton:hover,
@@ -212,7 +225,6 @@ Slider::vback {
 	background-color: var(--slider-back);
 	border-radius: 4dp;
 	min-width: 5dp;
-	min-height: 64dp;
 	transition: all 0.15s;
 }
 
@@ -243,41 +255,53 @@ Slider::hbutton:focus {
 
 ScrollBar {
 	scrollbar-style: no-buttons;
+	min-width: 12dp;
+	min-height: 12dp;
 }
 
 ScrollBar::hback {
-	min-height: 6dp;
-	border-radius: 4dp;
+	min-height: 4dp;
+	border-radius: 3dp;
 	background-color: transparent;
 }
 
 ScrollBar::vback {
-	min-width: 6dp;
-	border-radius: 4dp;
+	min-width: 4dp;
+	border-radius: 3dp;
 	background-color: transparent;
+	margin-top: 4dp;
+	margin-bottom: 4dp;
+}
+
+ScrollBar::vslider {
+	padding-top: 4dp;
+	padding-bottom: 4dp;
+}
+
+ScrollBar::hslider {
+	padding-left: 4dp;
+	padding-right: 4dp;
 }
 
 ScrollBar::hslider,
 ScrollBar::vslider {
 	border-width: 1dp;
 	border-color: var(--scrollbar-border);
-	background-color: var(--list-back);
-	padding: 4dp;
 	transition: all 0.15s;
 }
 
 ScrollBar::hbutton {
-	min-height: 6dp;
+	min-height: 4dp;
 	background-color: var(--scrollbar-button);
-	border-radius: 4dp;
+	border-radius: 3dp;
 	border-width: 0dp;
 	transition: all 0.15s;
 }
 
 ScrollBar::vbutton {
-	min-width: 6dp;
+	min-width: 4dp;
 	background-color: var(--scrollbar-button);
-	border-radius: 4dp;
+	border-radius: 3dp;
 	border-width: 0dp;
 	transition: all 0.15s;
 }
@@ -304,22 +328,205 @@ ProgressBar::filler {
 }
 
 TabWidget {
-	tab-separation: -1dp;
+	tab-height: 24dp;
+	gravity: left|bottom;
 }
 
 TabWidget::TabContainer {
-	background-image: rectangle(solid, #2f3030);
+	background-image: rectangle(solid, var(--tab-line));
 	background-size: 100% 1dp;
 	background-position-y: bottom;
-	min-height: 24dp;
 }
 
 Tab {
-	background-color: var(--list-back);
-	min-height: 24dp;
+	background-color: var(--tab-back);
+	border-left-color: transparent;
+	border-right-color: transparent;
+	border-top-color: transparent;
+	background-image: rectangle(solid, var(--tab-line));
+	background-size: 100% 1dp;
+	background-position-y: bottom;
+	height: 24dp;
 }
 
 Tab::text {
 	padding-left: 4dp;
 	padding-right: 4dp;
+}
+
+Tab:selected {
+	background-image: rectangle(solid, transparent);
+	background-size: 100% 1dp;
+	background-position-y: bottom;
+	background-color: var(--tab-active);
+	border-left-color: var(--tab-line);
+	border-right-color: var(--tab-line);
+	border-top-color: var(--tab-line);
+	border-left-width: 1dp;
+	border-right-width: 1dp;
+	border-top-width: 1dp;
+	border-top-left-radius: 2dp;
+	border-top-right-radius: 2dp;
+}
+
+Loader {
+	fill-color: var(--primary);
+}
+
+Window::close {
+	width: 12dp;
+	height: 12dp;
+	foreground-image: poly(line, var(--icon), "0dp 0dp, 8dp 8dp"), poly(line, var(--icon), "8dp 0dp, 0dp 8dp");
+	foreground-position: 2dp 2dp, 2dp 2dp;
+}
+
+Window::close:hover {
+	foreground-image: poly(line, var(--icon-active), "0dp 0dp, 8dp 8dp"), poly(line, var(--icon-active), "8dp 0dp, 0dp 8dp");
+}
+
+Window::maximize {
+	width: 12dp;
+	height: 12dp;
+	foreground-image: rectangle(line, var(--icon)), rectangle(solid, var(--icon));
+	foreground-size: 8dp 8dp, 8dp 2dp;
+	foreground-position: 2dp 2dp, 2dp 2dp;
+}
+
+Window::maximize:hover {
+	foreground-image: rectangle(line, var(--icon-active)), rectangle(solid, var(--icon-active));
+}
+
+Window::minimize {
+	width: 12dp;
+	height: 12dp;
+	foreground-image: rectangle(solid, var(--icon));
+	foreground-size: 8dp 2dp;
+	foreground-position: 2dp 8dp;
+}
+
+Window::minimize:hover {
+	foreground-image: rectangle(solid, var(--icon-active));
+}
+
+Window {
+	background-color: var(--back);
+	window-border-size: 2dp 2dp;
+	window-titlebar-size: 24dp 24dp;
+}
+
+Window::decoration {
+	background-color: var(--back);
+}
+
+Window::border::left,
+Window::border::right {
+	background-color: var(--back);
+}
+
+Window::border::bottom {
+	background-color: var(--back);
+}
+
+DropDownList {
+	foreground-image: poly(line, var(--icon), "-8dp 0dp, -12dp 3dp"), poly(line, var(--icon), "-16dp 0dp, -12dp 3dp");
+	foreground-position-x: right, right;
+	foreground-position-y: center, center;
+}
+
+DropDownList:hover,
+DropDownList:focus {
+	foreground-image: poly(line, var(--icon-active), "-8dp 0dp, -12dp 3dp"), poly(line, var(--icon-active), "-16dp 0dp, -12dp 3dp");
+}
+
+SpinBox::btndown {
+	width: 12dp;
+	height: 12dp;
+	foreground-image: poly(line, var(--icon), "1dp 4dp, 5dp 7dp"), poly(line, var(--icon), "5dp 7dp, 9dp 4dp");
+}
+
+SpinBox::btndown:hover {
+	foreground-image: poly(line, var(--primary), "1dp 4dp, 5dp 7dp"), poly(line, var(--primary), "5dp 7dp, 9dp 4dp");
+}
+
+SpinBox::btnup {
+	width: 12dp;
+	height: 12dp;
+	foreground-image: poly(line, var(--icon), "1dp 7dp, 5dp 4dp"), poly(line, var(--icon), "5dp 4dp, 9dp 7dp");
+}
+
+SpinBox::btnup:hover {
+	foreground-image: poly(line, var(--primary), "1dp 7dp, 5dp 4dp"), poly(line, var(--primary), "5dp 4dp, 9dp 7dp");
+}
+
+WinMenu {
+	height: 24dp;
+}
+
+WinMenu {
+	padding-left: 4dp;
+}
+
+Menu,
+PopUpMenu {
+	background-color: var(--menu-back);
+	color: var(--menu-font);
+	min-width: 100dp;
+	min-icon-size: 16dp 16dp;
+	border-width: 1dp;
+	border-color: var(--menu-border);
+}
+
+WinMenu::Button {
+	padding-left: 4dp;
+	padding-right: 4dp;
+	min-height: 16dp;
+}
+
+WinMenu::Button:hover {
+	background-color: var(--primary);
+}
+
+Menu::Item,
+Menu::CheckBox,
+Menu::Separator,
+Menu::SubMenu {
+	padding-left: 4dp;
+	padding-top: 2dp;
+	padding-bottom: 2dp;
+	background-color: transparent;
+}
+
+Menu::Item:hover,
+Menu::CheckBox:hover,
+Menu::Separator:hover,
+Menu::SubMenu:hover {
+	background-color: var(--primary);
+}
+
+Menu::Item::text,
+Menu::CheckBox::text,
+Menu::Separator::text,
+Menu::SubMenu::text {
+	padding-right: 4dp;
+	color: var(--menu-font);
+}
+
+Menu::SubMenu::arrow {
+	margin-right: 1dp;
+}
+
+Menu:hover,
+PopUpMenu:hover,
+Menu::Item:hover,
+Menu::CheckBox:hover,
+Menu::SubMenu:hover,
+ListBox::item:hover,
+Tab:selected,
+Tab:hover,
+Tab:pressed {
+	color: var(--menu-font-active);
+}
+
+:root {
+	background-color: var(--back);
 }

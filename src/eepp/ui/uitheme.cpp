@@ -39,13 +39,17 @@ UITheme* UITheme::load( const std::string& name, const std::string& abbr,
 						const std::string& textureAtlasPath, Font* defaultFont,
 						const std::string& styleSheetPath ) {
 	UITheme* theme = UITheme::New( name, abbr, defaultFont );
-	TextureAtlasLoader tgl( textureAtlasPath );
 
 	CSS::StyleSheetParser styleSheetParser;
 
 	if ( styleSheetParser.loadFromFile( styleSheetPath ) ) {
 		theme->setStyleSheet( styleSheetParser.getStyleSheet() );
 	}
+
+	if ( textureAtlasPath.empty() )
+		return theme;
+
+	TextureAtlasLoader tgl( textureAtlasPath );
 
 	return loadFromTextureAtlas( theme, tgl.getTextureAtlas() );
 }

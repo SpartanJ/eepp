@@ -116,11 +116,11 @@ UIPushButton* UITab::setText( const String& text ) {
 
 void UITab::onAutoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
-		Uint32 w = mTextBox->getSize().getWidth() +
-				   ( NULL != mIcon ? mIcon->getSize().getWidth() + mIcon->getLayoutMargin().Left +
-										 mIcon->getLayoutMargin().Right
-								   : 0 ) +
-				   getSkinSize().getWidth();
+		Float w = mTextBox->getSize().getWidth() +
+				  ( NULL != mIcon ? mIcon->getSize().getWidth() + mIcon->getLayoutMargin().Left +
+										mIcon->getLayoutMargin().Right
+								  : 0 ) +
+				  getSkinSize().getWidth();
 
 		UITabWidget* tTabW = getTabWidget();
 

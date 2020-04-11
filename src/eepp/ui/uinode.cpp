@@ -145,6 +145,7 @@ void UINode::setInternalSize( const Sizef& size ) {
 
 	mDpSize = size;
 	mSize = PixelDensity::dpToPx( s );
+	mNodeFlags |= NODE_FLAG_POLYGON_DIRTY;
 	updateCenter();
 	sendCommonEvent( Event::OnSizeChange );
 	invalidateDraw();
@@ -162,6 +163,7 @@ void UINode::setInternalPixelsSize( const Sizef& size ) {
 
 	mDpSize = PixelDensity::pxToDp( s );
 	mSize = s;
+	mNodeFlags |= NODE_FLAG_POLYGON_DIRTY;
 	updateCenter();
 	sendCommonEvent( Event::OnSizeChange );
 	invalidateDraw();

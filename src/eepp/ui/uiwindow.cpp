@@ -147,6 +147,8 @@ void UIWindow::updateWinFlags() {
 			mWindowDecoration->writeNodeFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 		}
 
+		auto cb = [&]( const Event* event ) { onSizeChange(); };
+
 		mWindowDecoration->setParent( this );
 		mWindowDecoration->setVisible( true );
 		mWindowDecoration->setEnabled( false );
@@ -182,6 +184,7 @@ void UIWindow::updateWinFlags() {
 			if ( NULL == mButtonClose ) {
 				mButtonClose = UIWidget::NewWithTag( "window::close" );
 				mButtonClose->writeNodeFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
+				mButtonClose->addEventListener( Event::OnSizeChange, cb );
 				needsUpdate = true;
 			}
 
@@ -197,6 +200,7 @@ void UIWindow::updateWinFlags() {
 			if ( NULL == mButtonMaximize ) {
 				mButtonMaximize = UIWidget::NewWithTag( "window::maximize" );
 				mButtonMaximize->writeNodeFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
+				mButtonMaximize->addEventListener( Event::OnSizeChange, cb );
 				needsUpdate = true;
 			}
 
@@ -212,6 +216,7 @@ void UIWindow::updateWinFlags() {
 			if ( NULL == mButtonMinimize ) {
 				mButtonMinimize = UIWidget::NewWithTag( "window::minimize" );
 				mButtonMinimize->writeNodeFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
+				mButtonMinimize->addEventListener( Event::OnSizeChange, cb );
 				needsUpdate = true;
 			}
 
@@ -487,17 +492,20 @@ void UIWindow::setTheme( UITheme* Theme ) {
 
 		if ( NULL != mButtonClose ) {
 			mButtonClose->setThemeSkin( Theme, "winclose" );
-			mButtonClose->setSize( mButtonClose->getSkinSize() );
+			if ( mButtonClose->getSkinSize() != Sizef::Zero )
+				mButtonClose->setSize( mButtonClose->getSkinSize() );
 		}
 
 		if ( NULL != mButtonMaximize ) {
 			mButtonMaximize->setThemeSkin( Theme, "winmax" );
-			mButtonMaximize->setSize( mButtonMaximize->getSkinSize() );
+			if ( mButtonMaximize->getSkinSize() != Sizef::Zero )
+				mButtonMaximize->setSize( mButtonMaximize->getSkinSize() );
 		}
 
 		if ( NULL != mButtonMinimize ) {
 			mButtonMinimize->setThemeSkin( Theme, "winmin" );
-			mButtonMinimize->setSize( mButtonMinimize->getSkinSize() );
+			if ( mButtonMinimize->getSkinSize() != Sizef::Zero )
+				mButtonMinimize->setSize( mButtonMinimize->getSkinSize() );
 		}
 
 		calcMinWinSize();
@@ -1492,7 +1500,7 @@ std::string UIWindow::getPropertyString( const PropertyDefinition* propertyDef,
 			return String::fromFloat( getSize().getWidth(), "dp" );
 		case PropertyId::Height:
 			return String::fromFloat( getSize().getHeight(), "dp" );
-		case PropertyId::Title:
+		case PropertyId::WindowTitle:
 			return getTitle().toUtf8();
 		case PropertyId::WindowOpacity:
 			return String::toStr( getBaseAlpha() / 255.f );
@@ -1534,7 +1542,7 @@ bool UIWindow::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::Height:
 			setSize( getSize().getWidth(), attribute.asDpDimension( this ) );
 			break;
-		case PropertyId::Title:
+		case PropertyId::WindowTitle:
 			setTitle( attribute.asString() );
 			break;
 		case PropertyId::WindowOpacity:
@@ -1583,13 +1591,16 @@ bool UIWindow::applyProperty( const StyleSheetProperty& attribute ) {
 				}
 
 				/// TODO: WinFlags should replace old winFlags
-				mStyleConfig.WinFlags |= winflags;
-				updateWinFlags();
+				if ( winflags != mStyleConfig.WinFlags ) {
+					mStyleConfig.WinFlags |= winflags;
+					updateWinFlags();
+				}
 			}
 			break;
 		}
 		case PropertyId::WindowTitlebarSize:
 			mStyleConfig.TitlebarSize = attribute.asDpDimensionSizei( this );
+			mStyleConfig.TitlebarAutoSize = false;
 			fixChildsSize();
 			break;
 		case PropertyId::WindowBorderSize:

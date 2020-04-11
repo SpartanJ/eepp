@@ -3,6 +3,7 @@
 #include <eepp/ui/uicommondialog.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uilistboxitem.hpp>
+#include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uithememanager.hpp>
 
 namespace EE { namespace UI {
@@ -50,7 +51,8 @@ UICommonDialog::UICommonDialog( Uint32 CDLFlags, std::string DefaultFilePattern,
 	UILinearLayout* hLayout = UILinearLayout::NewHorizontal();
 	hLayout->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )
 		->setLayoutMargin( Rect( 0, 0, 0, 4 ) )
-		->setParent( linearLayout );
+		->setParent( linearLayout )
+		->setId( "lay1" );
 
 	UITextView::New()
 		->setText( "Look in:" )
@@ -61,7 +63,7 @@ UICommonDialog::UICommonDialog( Uint32 CDLFlags, std::string DefaultFilePattern,
 
 	mPath = UITextInput::New();
 	mPath->setText( mCurPath )
-		->setLayoutSizeRules( LayoutSizeRule::WrapContent, LayoutSizeRule::MatchParent )
+		->setLayoutSizeRules( LayoutSizeRule::WrapContent, LayoutSizeRule::WrapContent )
 		->setLayoutWeight( 1 )
 		->setParent( hLayout );
 	mPath->addEventListener( Event::OnPressEnter,
@@ -116,7 +118,7 @@ UICommonDialog::UICommonDialog( Uint32 CDLFlags, std::string DefaultFilePattern,
 		->setEnabled( false );
 
 	mFiletype = UIDropDownList::New();
-	mFiletype->setLayoutSizeRules( LayoutSizeRule::WrapContent, LayoutSizeRule::MatchParent )
+	mFiletype->setLayoutSizeRules( LayoutSizeRule::WrapContent, LayoutSizeRule::WrapContent )
 		->setLayoutWeight( 1 )
 		->setParent( hLayout );
 	mFiletype->setPopUpToMainControl( true );
@@ -133,6 +135,13 @@ UICommonDialog::UICommonDialog( Uint32 CDLFlags, std::string DefaultFilePattern,
 	applyDefaultTheme();
 
 	refreshFolder();
+
+	runOnMainThread( [&]() {
+		if ( NULL != mStyle ) {
+			mStyle->setForceReapplyProperties( true );
+			reportStyleStateChange();
+		}
+	} );
 }
 
 UICommonDialog::~UICommonDialog() {}

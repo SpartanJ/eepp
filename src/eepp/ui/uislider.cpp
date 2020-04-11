@@ -169,30 +169,34 @@ void UISlider::adjustChilds() {
 		else
 			Height = mBackSlider->getMinSize().getHeight();
 
-		if ( mAllowHalfSliderOut )
+		if ( mAllowHalfSliderOut ) {
 			mBackSlider->setSize( Sizef( getSize().getWidth() - mSlider->getSize().getWidth() -
 											 mPadding.Left - mPadding.Right,
 										 Height ) );
-		else
+		} else {
 			mBackSlider->setSize(
 				Sizef( getSize().getWidth() - mPadding.Left - mPadding.Right, Height ) );
+		}
 
 		if ( Height > getMinSize().getHeight() )
 			setMinHeight( Height );
 	} else {
 		Float Width;
 
-		if ( mExpandBackground )
+		if ( mExpandBackground ) {
 			Width = getSize().getWidth() - mPadding.Left - mPadding.Right;
-		else
+		} else {
 			Width = mBackSlider->getMinSize().getWidth();
+		}
 
-		if ( mAllowHalfSliderOut )
+		if ( mAllowHalfSliderOut ) {
 			mBackSlider->setSize( Sizef( Width, getSize().getHeight() -
 													mSlider->getSize().getHeight() - mPadding.Top -
 													mPadding.Bottom ) );
-		else
-			mBackSlider->setSize( Sizef( Width, getSize().getHeight() ) );
+		} else {
+			mBackSlider->setSize(
+				Sizef( Width, getSize().getHeight() - mPadding.Top - mPadding.Bottom ) );
+		}
 
 		if ( Width > getMinimumSize().getWidth() )
 			setMinWidth( Width );

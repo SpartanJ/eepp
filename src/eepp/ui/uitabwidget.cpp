@@ -22,7 +22,7 @@ UITabWidget::UITabWidget() :
 	setHorizontalAlign( UI_HALIGN_CENTER );
 
 	mTabContainer = UIWidget::NewWithTag( "tabwidget::tabcontainer" );
-	mTabContainer->setPixelsSize( mSize.getWidth(), mStyleConfig.TabWidgetHeight )
+	mTabContainer->setPixelsSize( mSize.getWidth(), mStyleConfig.TabHeight )
 		->setParent( this )
 		->setPosition( 0, 0 );
 	mTabContainer->clipEnable();
@@ -30,9 +30,9 @@ UITabWidget::UITabWidget() :
 	mCtrlContainer = UIWidget::NewWithTag( "tabwidget::container" );
 	mCtrlContainer
 		->setPixelsSize( mSize.getWidth(),
-						 mSize.getHeight() - PixelDensity::dpToPx( mStyleConfig.TabWidgetHeight ) )
+						 mSize.getHeight() - PixelDensity::dpToPx( mStyleConfig.TabHeight ) )
 		->setParent( this )
-		->setPosition( 0, mStyleConfig.TabWidgetHeight );
+		->setPosition( 0, mStyleConfig.TabHeight );
 	mCtrlContainer->clipEnable();
 
 	onSizeChange();
@@ -57,14 +57,14 @@ void UITabWidget::setTheme( UITheme* Theme ) {
 
 	mCtrlContainer->setThemeSkin( Theme, "tabcontainer" );
 
-	if ( 0 == mStyleConfig.TabWidgetHeight ) {
+	if ( 0 == mStyleConfig.TabHeight ) {
 		UISkin* tSkin = Theme->getSkin( "tab" );
 
 		if ( NULL != tSkin ) {
 			Sizef tSize1 = getSkinSize( tSkin );
 			Sizef tSize2 = getSkinSize( tSkin, UIState::StateFlagSelected );
 
-			mStyleConfig.TabWidgetHeight = eemax( tSize1.getHeight(), tSize2.getHeight() );
+			mStyleConfig.TabHeight = eemax( tSize1.getHeight(), tSize2.getHeight() );
 
 			setContainerSize();
 			orderTabs();
@@ -82,12 +82,12 @@ void UITabWidget::onThemeLoaded() {
 
 void UITabWidget::setContainerSize() {
 	mTabContainer->setPixelsSize( mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
-								  PixelDensity::dpToPx( mStyleConfig.TabWidgetHeight ) );
+								  PixelDensity::dpToPx( mStyleConfig.TabHeight ) );
 	mTabContainer->setPosition( mPadding.Left, mPadding.Top );
-	mCtrlContainer->setPosition( mPadding.Left, mPadding.Top + mStyleConfig.TabWidgetHeight );
+	mCtrlContainer->setPosition( mPadding.Left, mPadding.Top + mStyleConfig.TabHeight );
 	mCtrlContainer->setPixelsSize( mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
 								   mSize.getHeight() -
-									   PixelDensity::dpToPx( mStyleConfig.TabWidgetHeight ) -
+									   PixelDensity::dpToPx( mStyleConfig.TabHeight ) -
 									   mRealPadding.Top - mRealPadding.Bottom );
 }
 
@@ -96,9 +96,9 @@ const UITabWidget::StyleConfig& UITabWidget::getStyleConfig() const {
 }
 
 void UITabWidget::setStyleConfig( const StyleConfig& styleConfig ) {
-	Uint32 tabWidgetHeight = mStyleConfig.TabWidgetHeight;
+	Uint32 tabWidgetHeight = mStyleConfig.TabHeight;
 	mStyleConfig = styleConfig;
-	mStyleConfig.TabWidgetHeight = tabWidgetHeight;
+	mStyleConfig.TabHeight = tabWidgetHeight;
 	setContainerSize();
 	orderTabs();
 }
@@ -112,15 +112,17 @@ std::string UITabWidget::getPropertyString( const PropertyDefinition* propertyDe
 		case PropertyId::MaxTextLength:
 			return String::toStr( getMaxTextLength() );
 		case PropertyId::MinTabWidth:
-			return String::format( "%ddp", getMinTabWidth() );
+			return String::fromFloat( getMinTabWidth(), "dp" );
 		case PropertyId::MaxTabWidth:
-			return String::format( "%ddp", getMaxTabWidth() );
+			return String::fromFloat( getMaxTabWidth(), "dp" );
 		case PropertyId::TabClosable:
 			return getTabsClosable() ? "true" : "false";
 		case PropertyId::TabsEdgesDiffSkin:
 			return getSpecialBorderTabs() ? "true" : "false";
 		case PropertyId::TabSeparation:
-			return String::format( "%ddp", getTabSeparation() );
+			return String::fromFloat( getTabSeparation(), "dp" );
+		case PropertyId::TabHeight:
+			return String::fromFloat( getTabsHeight(), "dp" );
 		default:
 			return UIWidget::getPropertyString( propertyDef, propertyIndex );
 	}
@@ -164,10 +166,10 @@ bool UITabWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			setMaxTextLength( attribute.asUint( 1 ) );
 			break;
 		case PropertyId::MinTabWidth:
-			setMinTabWidth( attribute.asDpDimensionUint( this, "1" ) );
+			setMinTabWidth( attribute.asDpDimension( this, "1" ) );
 			break;
 		case PropertyId::MaxTabWidth:
-			setMaxTabWidth( attribute.asDpDimensionUint( this ) );
+			setMaxTabWidth( attribute.asDpDimension( this ) );
 			break;
 		case PropertyId::TabClosable:
 			setTabsClosable( attribute.asBool() );
@@ -176,7 +178,10 @@ bool UITabWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			setTabsEdgesDiffSkins( attribute.asBool() );
 			break;
 		case PropertyId::TabSeparation:
-			setTabSeparation( attribute.asDpDimensionI( this ) );
+			setTabSeparation( attribute.asDpDimension( this ) );
+			break;
+		case PropertyId::TabHeight:
+			setTabsHeight( attribute.asDpDimension( this ) );
 			break;
 		default:
 			return UIWidget::applyProperty( attribute );
@@ -185,13 +190,15 @@ bool UITabWidget::applyProperty( const StyleSheetProperty& attribute ) {
 	return true;
 }
 
-Int32 UITabWidget::getTabSeparation() const {
+Float UITabWidget::getTabSeparation() const {
 	return mStyleConfig.TabSeparation;
 }
 
-void UITabWidget::setTabSeparation( const Int32& tabSeparation ) {
-	mStyleConfig.TabSeparation = tabSeparation;
-	posTabs();
+void UITabWidget::setTabSeparation( const Float& tabSeparation ) {
+	if ( tabSeparation != mStyleConfig.TabSeparation ) {
+		mStyleConfig.TabSeparation = tabSeparation;
+		posTabs();
+	}
 }
 
 Uint32 UITabWidget::getMaxTextLength() const {
@@ -199,33 +206,35 @@ Uint32 UITabWidget::getMaxTextLength() const {
 }
 
 void UITabWidget::setMaxTextLength( const Uint32& maxTextLength ) {
-	mStyleConfig.MaxTextLength = maxTextLength;
-	updateTabs();
-	invalidateDraw();
+	if ( maxTextLength != mStyleConfig.MaxTextLength ) {
+		mStyleConfig.MaxTextLength = maxTextLength;
+		updateTabs();
+		invalidateDraw();
+	}
 }
 
-Uint32 UITabWidget::getTabWidgetHeight() const {
-	return mStyleConfig.TabWidgetHeight;
-}
-
-Uint32 UITabWidget::getMinTabWidth() const {
+Float UITabWidget::getMinTabWidth() const {
 	return mStyleConfig.MinTabWidth;
 }
 
-void UITabWidget::setMinTabWidth( const Uint32& minTabWidth ) {
-	mStyleConfig.MinTabWidth = minTabWidth;
-	updateTabs();
-	invalidateDraw();
+void UITabWidget::setMinTabWidth( const Float& minTabWidth ) {
+	if ( minTabWidth != mStyleConfig.MinTabWidth ) {
+		mStyleConfig.MinTabWidth = minTabWidth;
+		updateTabs();
+		invalidateDraw();
+	}
 }
 
-Uint32 UITabWidget::getMaxTabWidth() const {
+Float UITabWidget::getMaxTabWidth() const {
 	return mStyleConfig.MaxTabWidth;
 }
 
-void UITabWidget::setMaxTabWidth( const Uint32& maxTabWidth ) {
-	mStyleConfig.MaxTabWidth = maxTabWidth;
-	updateTabs();
-	invalidateDraw();
+void UITabWidget::setMaxTabWidth( const Float& maxTabWidth ) {
+	if ( maxTabWidth != mStyleConfig.MaxTabWidth ) {
+		mStyleConfig.MaxTabWidth = maxTabWidth;
+		updateTabs();
+		invalidateDraw();
+	}
 }
 
 bool UITabWidget::getTabsClosable() const {
@@ -233,8 +242,10 @@ bool UITabWidget::getTabsClosable() const {
 }
 
 void UITabWidget::setTabsClosable( bool tabsClosable ) {
-	mStyleConfig.TabsClosable = tabsClosable;
-	invalidateDraw();
+	if ( mStyleConfig.TabsClosable != tabsClosable ) {
+		mStyleConfig.TabsClosable = tabsClosable;
+		invalidateDraw();
+	}
 }
 
 bool UITabWidget::getSpecialBorderTabs() const {
@@ -242,8 +253,22 @@ bool UITabWidget::getSpecialBorderTabs() const {
 }
 
 void UITabWidget::setTabsEdgesDiffSkins( bool diffSkins ) {
-	mStyleConfig.TabsEdgesDiffSkins = diffSkins;
-	applyThemeToTabs();
+	if ( mStyleConfig.TabsEdgesDiffSkins != diffSkins ) {
+		mStyleConfig.TabsEdgesDiffSkins = diffSkins;
+		applyThemeToTabs();
+	}
+}
+
+void UITabWidget::setTabsHeight( const Float& height ) {
+	if ( height != mStyleConfig.TabHeight ) {
+		mStyleConfig.TabHeight = height;
+		setContainerSize();
+		orderTabs();
+	}
+}
+
+Float UITabWidget::getTabsHeight() const {
+	return mStyleConfig.TabHeight;
 }
 
 void UITabWidget::posTabs() {
@@ -275,14 +300,14 @@ void UITabWidget::posTabs() {
 	for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
 		switch ( Font::getVerticalAlign( mFlags ) ) {
 			case UI_VALIGN_BOTTOM:
-				y = PixelDensity::dpToPx( mStyleConfig.TabWidgetHeight ) -
+				y = PixelDensity::dpToPx( mStyleConfig.TabHeight ) -
 					mTabs[i]->getPixelsSize().getHeight();
 				break;
 			case UI_VALIGN_TOP:
 				y = 0;
 				break;
 			case UI_VALIGN_CENTER:
-				y = ( PixelDensity::dpToPx( mStyleConfig.TabWidgetHeight ) -
+				y = ( PixelDensity::dpToPx( mStyleConfig.TabHeight ) -
 					  mTabs[i]->getPixelsSize().getHeight() ) /
 					2;
 				break;

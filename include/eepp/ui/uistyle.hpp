@@ -55,6 +55,14 @@ class EE_API UIStyle : public UIState {
 
 	CSS::StyleSheetVariable getVariable( const std::string& variable );
 
+	bool getForceReapplyProperties() const;
+
+	void setForceReapplyProperties( bool forceReapplyProperties );
+
+	bool getDisableAnimations() const;
+
+	void setDisableAnimations( bool disableAnimations );
+
   protected:
 	UIWidget* mWidget;
 	CSS::StyleSheetStyleVector mCacheableStyles;
@@ -69,6 +77,8 @@ class EE_API UIStyle : public UIState {
 	std::set<UIWidget*> mRelatedWidgets;
 	std::set<UIWidget*> mSubscribedWidgets;
 	bool mChangingState;
+	bool mForceReapplyProperties;
+	bool mDisableAnimations;
 
 	void tryApplyStyle( const CSS::StyleSheetStyle& style );
 

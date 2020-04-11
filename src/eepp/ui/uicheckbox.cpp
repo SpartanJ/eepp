@@ -65,7 +65,7 @@ void UICheckBox::onThemeLoaded() {
 		mInactiveButton->centerVertical();
 	}
 
-	mMinSize = mActiveButton->getSkinSize();
+	setMinSize( mActiveButton->getSkinSize() );
 
 	onPaddingChange();
 

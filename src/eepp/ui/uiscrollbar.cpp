@@ -36,9 +36,9 @@ UIScrollBar::UIScrollBar( const UIOrientation& orientation ) :
 		mBtnUp = UIWidget::NewWithTag( "scrollbar::btnright" );
 	}
 	mBtnUp->setParent( this );
-	mBtnUp->setSize( 16, 16 );
+	mBtnUp->setSize( 8, 8 );
 	mBtnDown->setParent( this );
-	mBtnDown->setSize( 16, 16 );
+	mBtnDown->setSize( 8, 8 );
 
 	mSlider = UISlider::New();
 	mSlider->setOrientation( orientation );

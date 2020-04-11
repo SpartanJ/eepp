@@ -231,7 +231,7 @@ void UITextInput::setTheme( UITheme* Theme ) {
 void UITextInput::onThemeLoaded() {
 	UITextView::onThemeLoaded();
 
-	mMinSize.y = eemax( mMinSize.y, getSkinSize().getHeight() );
+	setMinHeight( eemax( mMinSize.y, getSkinSize().getHeight() ) );
 
 	autoPadding();
 	onAutoSize();
@@ -240,16 +240,19 @@ void UITextInput::onThemeLoaded() {
 }
 
 void UITextInput::onAutoSize() {
-	if ( ( mFlags & UI_AUTO_SIZE ) && 0 == getSize().getHeight() ) {
-		setInternalPixelsHeight( PixelDensity::dpToPxI( getSkinSize().getHeight() ) +
-								 mRealPadding.Top + mRealPadding.Bottom );
-	}
-
 	if ( mLayoutHeightRule == LayoutSizeRule::WrapContent ) {
 		int minHeight = eemax<int>( mTextCache->getTextHeight(),
 									PixelDensity::dpToPxI( getSkinSize().getHeight() ) );
 		setInternalPixelsHeight( minHeight + mRealPadding.Top + mRealPadding.Bottom );
+	} else if ( ( mFlags & UI_AUTO_SIZE ) && 0 == getSize().getHeight() ) {
+		setInternalPixelsHeight( PixelDensity::dpToPxI( getSkinSize().getHeight() ) +
+								 mRealPadding.Top + mRealPadding.Bottom );
 	}
+}
+
+void UITextInput::onSizeChange() {
+	mRealAlignOffset = Vector2f::Zero;
+	UITextView::onSizeChange();
 }
 
 void UITextInput::autoPadding() {

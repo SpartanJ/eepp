@@ -35,6 +35,12 @@ void ConvexShapeDrawable::addPoint( const Vector2f& point ) {
 	mNeedsUpdate = true;
 }
 
+void ConvexShapeDrawable::addPoint( const Vector2f& point, const Color& color ) {
+	mPolygon.pushBack( point );
+	mIndexColor.push_back( color );
+	mNeedsUpdate = true;
+}
+
 void ConvexShapeDrawable::resetPoints() {
 	mPolygon.clear();
 	mNeedsUpdate = true;
@@ -50,22 +56,38 @@ void ConvexShapeDrawable::updateVertex() {
 		case DRAW_LINE: {
 			for ( Uint32 i = 0; i < mPolygon.getSize(); i++ ) {
 				mVertexBuffer->addVertex( mPosition + mPolygon[i] );
-				mVertexBuffer->addColor( mColor );
+				if ( mIndexColor.empty() ) {
+					mVertexBuffer->addColor( mColor );
+				} else {
+					mVertexBuffer->addColor( mIndexColor[i & mIndexColor.size()] );
+				}
 			}
 
 			break;
 		}
 		case DRAW_FILL: {
 			mVertexBuffer->addVertex( mPosition + mPolygon.getBounds().getCenter() );
-			mVertexBuffer->addColor( mColor );
+			if ( mIndexColor.empty() ) {
+				mVertexBuffer->addColor( mColor );
+			} else {
+				mVertexBuffer->addColor( mIndexColor[0] );
+			}
 
 			for ( Uint32 i = 0; i < mPolygon.getSize(); i++ ) {
 				mVertexBuffer->addVertex( mPosition + mPolygon[i] );
-				mVertexBuffer->addColor( mColor );
+				if ( mIndexColor.empty() ) {
+					mVertexBuffer->addColor( mColor );
+				} else {
+					mVertexBuffer->addColor( mIndexColor[i & mIndexColor.size()] );
+				}
 			}
 
 			mVertexBuffer->addVertex( mPosition + mPolygon[0] );
-			mVertexBuffer->addColor( mColor );
+			if ( mIndexColor.empty() ) {
+				mVertexBuffer->addColor( mColor );
+			} else {
+				mVertexBuffer->addColor( mIndexColor[mIndexColor.size() - 1] );
+			}
 
 			break;
 		}

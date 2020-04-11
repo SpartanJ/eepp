@@ -127,8 +127,8 @@ void UIProgressBar::setTheme( UITheme* Theme ) {
 }
 
 void UIProgressBar::onThemeLoaded() {
-	mMinSize.x = eemax( mMinSize.x, getSkinSize().getWidth() );
-	mMinSize.y = eemax( mMinSize.y, getSkinSize().getHeight() );
+	setMinSize( Sizef( eemax( mMinSize.x, getSkinSize().getWidth() ),
+					   eemax( mMinSize.y, getSkinSize().getHeight() ) ) );
 
 	if ( mFlags & UI_AUTO_SIZE ) {
 		setSize( getSize().getWidth(), getSkinSize().getHeight() );

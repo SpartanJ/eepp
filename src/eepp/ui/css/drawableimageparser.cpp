@@ -1,4 +1,5 @@
 #include <eepp/graphics/circledrawable.hpp>
+#include <eepp/graphics/convexshapedrawable.hpp>
 #include <eepp/graphics/drawable.hpp>
 #include <eepp/graphics/drawablesearcher.hpp>
 #include <eepp/graphics/rectangledrawable.hpp>
@@ -24,7 +25,7 @@ Drawable* DrawableImageParser::createDrawable( const std::string& value, const S
 
 	if ( !functionType.isEmpty() ) {
 		if ( exists( functionType.getName() ) ) {
-			return mFuncs[ functionType.getName() ]( functionType, size, ownIt, node );
+			return mFuncs[functionType.getName()]( functionType, size, ownIt, node );
 		}
 	} else if ( NULL != ( res = DrawableSearcher::searchByName( value ) ) ) {
 		return res;
@@ -233,6 +234,59 @@ void DrawableImageParser::registerBaseParsers() {
 			}
 
 			drawable->setTriangle( triangle );
+			ownIt = true;
+			return drawable;
+		} else {
+			eeSAFE_DELETE( drawable );
+		}
+
+		return drawable;
+	};
+
+	mFuncs["poly"] = []( const FunctionString& functionType, const Sizef& size, bool& ownIt,
+						 UINode* node ) -> Drawable* {
+		if ( functionType.getParameters().size() < 2 ) {
+			return NULL;
+		}
+
+		ConvexShapeDrawable* drawable = ConvexShapeDrawable::New();
+		std::vector<Color> colors;
+		std::vector<Vector2f> vertices;
+
+		const std::vector<std::string>& params( functionType.getParameters() );
+
+		for ( size_t i = 0; i < params.size(); i++ ) {
+			std::string param( String::toLower( params[i] ) );
+
+			if ( param == "solid" || param == "fill" ) {
+				drawable->setFillMode( DRAW_FILL );
+			} else if ( String::startsWith( param, "line" ) ) {
+				drawable->setFillMode( DRAW_LINE );
+			} else if ( Color::isColorString( param ) ) {
+				colors.push_back( Color::fromString( param ) );
+			} else {
+				std::vector<std::string> vertex( String::split( param, ',' ) );
+
+				for ( size_t v = 0; v < vertex.size(); v++ ) {
+					vertex[v] = String::trim( vertex[v] );
+					std::vector<std::string> coords( String::split( vertex[v], ' ' ) );
+
+					if ( coords.size() == 2 ) {
+						CSS::StyleSheetLength posX( coords[0] );
+						CSS::StyleSheetLength posY( coords[1] );
+						vertices.push_back(
+							Vector2f( node->convertLength( posX, size.getWidth() ),
+									  node->convertLength( posY, size.getHeight() ) ) );
+					}
+				}
+			}
+		}
+
+		if ( vertices.size() >= 2 && !colors.empty() ) {
+			for ( size_t i = 0; i < vertices.size(); i++ ) {
+				drawable->addPoint( vertices[i], colors[i % colors.size()] );
+			}
+
 			ownIt = true;
 			return drawable;
 		} else {

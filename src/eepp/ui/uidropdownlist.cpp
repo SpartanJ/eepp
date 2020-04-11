@@ -69,7 +69,7 @@ void UIDropDownList::setTheme( UITheme* Theme ) {
 void UIDropDownList::onSizeChange() {
 	onAutoSize();
 
-	UITextView::onSizeChange();
+	UITextInput::onSizeChange();
 }
 
 void UIDropDownList::onThemeLoaded() {
@@ -88,7 +88,7 @@ void UIDropDownList::onAutoSize() {
 	if ( mLayoutHeightRule == LayoutSizeRule::WrapContent ) {
 		setInternalPixelsHeight( max + mRealPadding.Top + mRealPadding.Bottom );
 	} else if ( ( ( mFlags & UI_AUTO_SIZE ) || 0 == getSize().getHeight() ) && max > 0 ) {
-		setInternalHeight( max );
+		setInternalPixelsHeight( max );
 	}
 }
 
@@ -191,10 +191,12 @@ Uint32 UIDropDownList::getMaxNumVisibleItems() const {
 }
 
 void UIDropDownList::setMaxNumVisibleItems( const Uint32& maxNumVisibleItems ) {
-	mStyleConfig.MaxNumVisibleItems = maxNumVisibleItems;
+	if ( maxNumVisibleItems != mStyleConfig.MaxNumVisibleItems ) {
+		mStyleConfig.MaxNumVisibleItems = maxNumVisibleItems;
 
-	mListBox->setSize( getSize().getWidth(),
-					   mStyleConfig.MaxNumVisibleItems * getSize().getHeight() );
+		mListBox->setSize( getSize().getWidth(),
+						   mStyleConfig.MaxNumVisibleItems * mListBox->getRowHeight() );
+	}
 }
 
 const UIDropDownList::StyleConfig& UIDropDownList::getStyleConfig() const {

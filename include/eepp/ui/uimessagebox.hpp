@@ -45,6 +45,7 @@ class EE_API UIMessageBox : public UIWindow {
 	UIPushButton* mButtonOK;
 	UIPushButton* mButtonCancel;
 	Uint32 mCloseWithKey;
+	UIWidget* mLayoutCont;
 
 	virtual Uint32 onKeyUp( const KeyEvent& Event );
 };

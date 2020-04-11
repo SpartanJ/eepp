@@ -105,6 +105,8 @@ class EE_API UITextInput : public UITextView {
 
 	virtual void onAutoSize();
 
+	virtual void onSizeChange();
+
 	void privOnPressEnter();
 
 	void autoPadding();

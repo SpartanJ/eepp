@@ -1,6 +1,7 @@
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uimessagebox.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uitheme.hpp>
 
 namespace EE { namespace UI {
@@ -16,14 +17,14 @@ UIMessageBox::UIMessageBox( const Type& type, const String& message, const Uint3
 
 	updateWinFlags();
 
-	UILinearLayout* rlay = UILinearLayout::New();
-	rlay->setLayoutSizeRules( LayoutSizeRule::WrapContent, LayoutSizeRule::WrapContent )
+	mLayoutCont = UILinearLayout::New();
+	mLayoutCont->setLayoutSizeRules( LayoutSizeRule::WrapContent, LayoutSizeRule::WrapContent )
 		->setParent( mContainer );
 
 	UILinearLayout* vlay = UILinearLayout::NewVertical();
 	vlay->setLayoutSizeRules( LayoutSizeRule::WrapContent, LayoutSizeRule::WrapContent )
 		->setLayoutMargin( Rect( 8, 8, 8, 8 ) )
-		->setParent( rlay );
+		->setParent( mLayoutCont );
 
 	mTextBox = UITextView::New();
 	mTextBox->setText( message )
@@ -75,7 +76,14 @@ UIMessageBox::UIMessageBox( const Type& type, const String& message, const Uint3
 
 	applyDefaultTheme();
 
-	setMinWindowSize( rlay->getSize() );
+	runOnMainThread( [&]() {
+		if ( NULL != mStyle ) {
+			mStyle->setForceReapplyProperties( true );
+			reportStyleStateChange();
+			setMinWindowSize( mLayoutCont->getSize() );
+			center();
+		}
+	} );
 }
 
 UIMessageBox::~UIMessageBox() {}

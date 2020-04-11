@@ -11,12 +11,12 @@ class EE_API UITabWidget : public UIWidget {
   public:
 	class StyleConfig {
 	  public:
-		Int32 TabSeparation = 0;
+		Float TabSeparation = 0;
 		Uint32 MaxTextLength = 100;
-		Uint32 TabWidgetHeight = 0;
+		Float TabHeight = 0;
 		Uint32 TabTextAlign = ( UI_HALIGN_CENTER | UI_VALIGN_CENTER );
-		Uint32 MinTabWidth = 32;
-		Uint32 MaxTabWidth = 300;
+		Float MinTabWidth = 32;
+		Float MaxTabWidth = 300;
 		bool TabsClosable = false;
 		bool TabsEdgesDiffSkins = false; //! Indicates if the edge tabs ( the left and right
 										 //! border tab ) are different from the central tabs.
@@ -64,23 +64,21 @@ class EE_API UITabWidget : public UIWidget {
 
 	UIWidget* getControlContainer() const;
 
-	Int32 getTabSeparation() const;
+	Float getTabSeparation() const;
 
-	void setTabSeparation( const Int32& tabSeparation );
+	void setTabSeparation( const Float& tabSeparation );
 
 	Uint32 getMaxTextLength() const;
 
 	void setMaxTextLength( const Uint32& maxTextLength );
 
-	Uint32 getTabWidgetHeight() const;
+	Float getMinTabWidth() const;
 
-	Uint32 getMinTabWidth() const;
+	void setMinTabWidth( const Float& minTabWidth );
 
-	void setMinTabWidth( const Uint32& minTabWidth );
+	Float getMaxTabWidth() const;
 
-	Uint32 getMaxTabWidth() const;
-
-	void setMaxTabWidth( const Uint32& maxTabWidth );
+	void setMaxTabWidth( const Float& maxTabWidth );
 
 	bool getTabsClosable() const;
 
@@ -89,6 +87,10 @@ class EE_API UITabWidget : public UIWidget {
 	bool getSpecialBorderTabs() const;
 
 	void setTabsEdgesDiffSkins( bool diffSkins );
+
+	void setTabsHeight( const Float& height );
+
+	Float getTabsHeight() const;
 
 	const StyleConfig& getStyleConfig() const;
 

@@ -213,9 +213,10 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "tab-closable", "" ).setType( PropertyType::Bool );
 	registerProperty( "tabs-edges-diff-skin", "" ).setType( PropertyType::Bool );
 	registerProperty( "tab-separation", "" ).setType( PropertyType::NumberLength );
+	registerProperty( "tab-height", "" ).setType( PropertyType::NumberLength );
 	registerProperty( "selected", "" ).setType( PropertyType::Bool ).addAlias( "active" );
 	registerProperty( "popup-to-root", "" ).setType( PropertyType::Bool );
-	registerProperty( "max-visible-items", "" ).setType( PropertyType::NumberInt );
+	registerProperty( "max-visible-items", "" ).setType( PropertyType::NumberIntFixed );
 	registerProperty( "selected-index", "" );
 	registerProperty( "selected-text", "" );
 	registerProperty( "scrollbar-style", "" );
@@ -276,6 +277,7 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "touch-drag", "" ).setType( PropertyType::Bool );
 	registerProperty( "touch-drag-deceleration", "" ).setType( PropertyType::NumberFloat );
 
+	registerProperty( "window-title", "" ).setType( PropertyType::String );
 	registerProperty( "window-opacity", "" ).setType( PropertyType::NumberFloat );
 	registerProperty( "window-buttons-offset", "" ).setType( PropertyType::NumberLength );
 	registerProperty( "window-flags", "" ).addAlias( "winflags" ).setType( PropertyType::String );

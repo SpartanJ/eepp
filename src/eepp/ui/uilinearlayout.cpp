@@ -153,8 +153,8 @@ void UILinearLayout::packVertical() {
 		ChildLoop = ChildLoop->getNextNode();
 	}
 
-	Int32 curY = mPadding.Top;
-	Int32 maxX = 0;
+	Float curY = mPadding.Top;
+	Float maxX = 0;
 	Sizei freeSize = getTotalUsedSize();
 
 	ChildLoop = mChild;
@@ -164,7 +164,7 @@ void UILinearLayout::packVertical() {
 			UIWidget* widget = static_cast<UIWidget*>( ChildLoop );
 			Rect margin = widget->getLayoutMargin();
 
-			curY += margin.Top;
+			curY += eeceil( margin.Top );
 
 			Vector2f pos( mPadding.Left, curY );
 
@@ -197,11 +197,11 @@ void UILinearLayout::packVertical() {
 
 			widget->setPosition( pos );
 
-			curY += widget->getSize().getHeight() + margin.Bottom;
+			curY += eeceil( widget->getSize().getHeight() + margin.Bottom );
 
-			maxX = eemax( maxX,
-						  ( Int32 )( widget->getSize().getWidth() + widget->getLayoutMargin().Left +
-									 widget->getLayoutMargin().Right ) );
+			maxX = eeceil(
+				eemax( maxX, ( widget->getSize().getWidth() + widget->getLayoutMargin().Left +
+							   widget->getLayoutMargin().Right ) ) );
 		}
 
 		ChildLoop = ChildLoop->getNextNode();
@@ -328,8 +328,8 @@ void UILinearLayout::packHorizontal() {
 		ChildLoop = ChildLoop->getNextNode();
 	}
 
-	Int32 curX = mPadding.Left;
-	Int32 maxY = 0;
+	Float curX = mPadding.Left;
+	Float maxY = 0;
 	Sizei freeSize = getTotalUsedSize();
 
 	ChildLoop = mChild;
@@ -339,7 +339,7 @@ void UILinearLayout::packHorizontal() {
 			UIWidget* widget = static_cast<UIWidget*>( ChildLoop );
 			Rect margin = widget->getLayoutMargin();
 
-			curX += margin.Left;
+			curX += eeceil( margin.Left );
 
 			Vector2f pos( curX, mPadding.Top );
 
@@ -371,11 +371,11 @@ void UILinearLayout::packHorizontal() {
 
 			widget->setPosition( pos );
 
-			curX += widget->getSize().getWidth() + margin.Right;
+			curX += eeceil( widget->getSize().getWidth() + margin.Right );
 
-			maxY = eemax( maxY,
-						  ( Int32 )( widget->getSize().getHeight() + widget->getLayoutMargin().Top +
-									 widget->getLayoutMargin().Bottom ) );
+			maxY = eeceil(
+				eemax( maxY, ( widget->getSize().getHeight() + widget->getLayoutMargin().Top +
+							   widget->getLayoutMargin().Bottom ) ) );
 		}
 
 		ChildLoop = ChildLoop->getNextNode();

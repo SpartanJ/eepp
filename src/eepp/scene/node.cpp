@@ -129,6 +129,7 @@ Node* Node::setPosition( const Float& x, const Float& y ) {
 
 void Node::setInternalSize( const Sizef& size ) {
 	mSize = size;
+	mNodeFlags |= NODE_FLAG_POLYGON_DIRTY;
 	updateCenter();
 	sendCommonEvent( Event::OnSizeChange );
 	invalidateDraw();

@@ -17,7 +17,12 @@ UIStyle* UIStyle::New( UIWidget* widget ) {
 	return eeNew( UIStyle, ( widget ) );
 }
 
-UIStyle::UIStyle( UIWidget* widget ) : UIState(), mWidget( widget ), mChangingState( false ) {}
+UIStyle::UIStyle( UIWidget* widget ) :
+	UIState(),
+	mWidget( widget ),
+	mChangingState( false ),
+	mForceReapplyProperties( false ),
+	mDisableAnimations( false ) {}
 
 UIStyle::~UIStyle() {
 	removeRelatedWidgets();
@@ -151,6 +156,22 @@ StyleSheetVariable UIStyle::getVariable( const std::string& variable ) {
 	}
 
 	return StyleSheetVariable();
+}
+
+bool UIStyle::getForceReapplyProperties() const {
+	return mForceReapplyProperties;
+}
+
+void UIStyle::setForceReapplyProperties( bool forceReapplyProperties ) {
+	mForceReapplyProperties = forceReapplyProperties;
+}
+
+bool UIStyle::getDisableAnimations() const {
+	return mDisableAnimations;
+}
+
+void UIStyle::setDisableAnimations( bool disableAnimations ) {
+	mDisableAnimations = disableAnimations;
 }
 
 void UIStyle::subscribeRelated( UIWidget* widget ) {
@@ -288,7 +309,9 @@ void UIStyle::onStateChange() {
 			tryApplyStyle( style );
 		}
 
-		if ( !mapEquals( mProperties, prevProperties ) ) {
+		if ( !mapEquals( mProperties, prevProperties ) || mForceReapplyProperties ) {
+			mForceReapplyProperties = false;
+
 			mWidget->beginAttributesTransaction();
 
 			updateAnimations();
@@ -424,7 +447,7 @@ void UIStyle::applyStyleSheetProperty( const StyleSheetProperty& property,
 		}
 	}
 
-	if ( !mWidget->isSceneNodeLoading() && NULL != propertyDefinition &&
+	if ( !mDisableAnimations && !mWidget->isSceneNodeLoading() && NULL != propertyDefinition &&
 		 StyleSheetPropertyAnimation::animationSupported( propertyDefinition->getType() ) &&
 		 hasTransition( property.getName() ) &&
 		 !hasAnimation( property.getPropertyDefinition() ) ) {

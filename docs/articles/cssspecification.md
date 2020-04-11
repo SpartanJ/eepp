@@ -1567,6 +1567,15 @@ the normal `tab` skin. This is to be able to achieve more "closed" tab widgets.
 
 ---
 
+### tab-height
+
+Sets the tab widget tabs container height. If not set it will try to get the height from the tab
+skin height.
+
+* Applicable to: EE::UI::UITabWidget (TabWidget)
+* Data Type: [length](#length-data-type)
+* Default value: `0dp`
+
 ### tab-separation
 
 Sets the tabs separation/distance between each other. Negative values are accepted.
@@ -1889,6 +1898,14 @@ And the opacity property applied to the window will be multiplied by this value.
 * Default value: `1`
 
 ---
+
+### window-title
+
+Sets the window title.
+
+* Applicable to: EE::UI::UIWindow (Window)
+* Data Type: [string](#string-data-type)
+* Default value: _No value_
 
 ### window-titlebar-auto-size
 
