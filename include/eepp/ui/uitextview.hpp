@@ -75,6 +75,8 @@ class EE_API UITextView : public UIWidget {
 
 	bool isTextSelectionEnabled() const;
 
+	void setTextSelection( const bool& active );
+
 	const UIFontStyleConfig& getFontStyleConfig() const;
 
 	void setFontStyleConfig( const UIFontStyleConfig& fontStyleConfig );

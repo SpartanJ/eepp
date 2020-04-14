@@ -161,7 +161,7 @@ void UINode::setInternalPixelsSize( const Sizef& size ) {
 	if ( s.y < pMinSize.y )
 		s.y = pMinSize.y;
 
-	mDpSize = PixelDensity::pxToDp( s );
+	mDpSize = PixelDensity::pxToDp( s ).ceil();
 	mSize = s;
 	mNodeFlags |= NODE_FLAG_POLYGON_DIRTY;
 	updateCenter();

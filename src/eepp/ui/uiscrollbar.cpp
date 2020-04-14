@@ -40,24 +40,22 @@ UIScrollBar::UIScrollBar( const UIOrientation& orientation ) :
 	mBtnDown->setParent( this );
 	mBtnDown->setSize( 8, 8 );
 
-	mSlider = UISlider::New();
+	mSlider = UISlider::NewWithTag( orientation == UIOrientation::Vertical ? "scrollbar::vslider"
+																		   : "scrollbar::hslider" );
+	mSlider->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::Fixed );
 	mSlider->setOrientation( orientation );
 	mSlider->setParent( this );
 	mSlider->setAllowHalfSliderOut( false );
 	mSlider->setExpandBackground( false );
-
+	mSlider->addEventListener( Event::OnValueChange,
+							   cb::Make1( this, &UIScrollBar::onValueChangeCb ) );
 	if ( orientation == UIOrientation::Vertical ) {
-		mSlider->setElementTag( "scrollbar::vslider" );
 		mSlider->getSliderButton()->setElementTag( "scrollbar::vbutton" );
 		mSlider->getBackSlider()->setElementTag( "scrollbar::vback" );
 	} else {
-		mSlider->setElementTag( "scrollbar::hslider" );
 		mSlider->getSliderButton()->setElementTag( "scrollbar::hbutton" );
 		mSlider->getBackSlider()->setElementTag( "scrollbar::hback" );
 	}
-
-	mSlider->addEventListener( Event::OnValueChange,
-							   cb::Make1( this, &UIScrollBar::onValueChangeCb ) );
 
 	adjustChilds();
 
@@ -432,10 +430,21 @@ UIOrientation UIScrollBar::getOrientation() const {
 
 UINode* UIScrollBar::setOrientation( const UIOrientation& orientation ) {
 	if ( mSlider->getOrientation() != orientation ) {
-		mSlider->setOrientation( orientation );
+		if ( orientation == UIOrientation::Vertical ) {
+			mSlider->setElementTag( "scrollbar::vslider" );
+			mBtnDown->setElementTag( mTag + "::btndown" );
+			mBtnUp->setElementTag( mTag + "::btnup" );
+		} else {
+			mSlider->setElementTag( "scrollbar::hslider" );
+			mBtnDown->setElementTag( mTag + "::btnleft" );
+			mBtnUp->setElementTag( mTag + "::btnright" );
+		}
 
-		updateOrientation();
+		mSlider->setOrientation( orientation, "scrollbar" );
+
 		applyDefaultTheme();
+
+		adjustChilds();
 	}
 
 	return this;
@@ -455,22 +464,6 @@ void UIScrollBar::onPaddingChange() {
 	adjustChilds();
 
 	UIWidget::onPaddingChange();
-}
-
-void UIScrollBar::updateOrientation() {
-	if ( mSlider->getOrientation() == UIOrientation::Vertical ) {
-		mBtnDown->setElementTag( "scrollbar::btndown" );
-		mBtnUp->setElementTag( "scrollbar::btnup" );
-		mSlider->setElementTag( "scrollbar::vslider" );
-		mSlider->getSliderButton()->setElementTag( "scrollbar::vbutton" );
-		mSlider->getBackSlider()->setElementTag( "scrollbar::vback" );
-	} else {
-		mBtnDown->setElementTag( "scrollbar::btnleft" );
-		mBtnUp->setElementTag( "scrollbar::btnright" );
-		mSlider->setElementTag( "scrollbar::hslider" );
-		mSlider->getSliderButton()->setElementTag( "scrollbar::hbutton" );
-		mSlider->getBackSlider()->setElementTag( "scrollbar::hback" );
-	}
 }
 
 }} // namespace EE::UI

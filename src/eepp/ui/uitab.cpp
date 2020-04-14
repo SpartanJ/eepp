@@ -10,9 +10,8 @@ UITab* UITab::New() {
 }
 
 UITab::UITab() : UISelectButton( "tab" ), mControlOwned( NULL ) {
-	mTextBox->setElementTag( "tab::text" );
-	mIcon->setElementTag( "tab::icon" );
-
+	mTextBox->setElementTag( mTag + "::text" );
+	mIcon->setElementTag( mTag + "::icon" );
 	applyDefaultTheme();
 }
 

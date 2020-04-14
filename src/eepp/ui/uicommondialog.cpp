@@ -135,13 +135,6 @@ UICommonDialog::UICommonDialog( Uint32 CDLFlags, std::string DefaultFilePattern,
 	applyDefaultTheme();
 
 	refreshFolder();
-
-	runOnMainThread( [&]() {
-		if ( NULL != mStyle ) {
-			mStyle->setForceReapplyProperties( true );
-			reportStyleStateChange();
-		}
-	} );
 }
 
 UICommonDialog::~UICommonDialog() {}

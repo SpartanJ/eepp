@@ -24,7 +24,7 @@
 				<ScrollBar id="scrollbar" orientation="horizontal" layout_width="300dp" layout_height="wrap_content" margin-top="8dp" />
 				<Slider id="scrollbar" orientation="horizontal" layout_width="300dp" layout_height="wrap_content" margin-top="8dp" />
 				<!-- <Sprite layout_width="wrap_content" layout_height="wrap_content" src="" margin-top="8dp" /> -->
-				<ComboBox layout_width="300dp" layout_height="wrap_content" margin-top="8dp" text="Testing ComboBox" margin-top="8dp">
+				<ComboBox layout_width="300dp" layout_height="wrap_content" margin-top="8dp" text="Testing ComboBox">
 					<item>Test</item>
 					<item>Test 2</item>
 					<item>Test 3</item>

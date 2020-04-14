@@ -620,8 +620,10 @@ void EETest::createUI() {
 	eePRINTL( "UIWidget size: %d", sizeof( UIWidget ) );
 
 	mTheme = UITheme::load( mThemeName, mThemeName,
-							MyPath + "ui/" + mThemeName + EE_TEXTURE_ATLAS_EXTENSION, TTF,
-							MyPath + "ui/uitheme.css" );
+								MyPath + "ui/" + mThemeName + EE_TEXTURE_ATLAS_EXTENSION, TTF,
+								MyPath + "ui/uitheme.css" );
+
+	/*mTheme = UITheme::load( mThemeName, mThemeName, "", TTF, MyPath + "ui/breeze.css" );*/
 
 	sceneNode->combineStyleSheet( mTheme->getStyleSheet() );
 
@@ -687,7 +689,7 @@ void EETest::createNewUI() {
 	SceneManager::instance()->getUISceneNode()->combineStyleSheet( R"css(
 		#happy_check,
 		#happy_radio {
-			textColor: black;
+			color: black;
 		}
 	)css" );
 
@@ -897,7 +899,7 @@ void EETest::createNewUI() {
 		->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::Fixed )
 		->setSize( 0, 105 )
 		->setParent( lay2 );
-	lbox->addListBoxItems( {"This", "is", "a", "ListBox"} );
+	lbox->addListBoxItems( { "This", "is", "a", "ListBox" } );
 	lay2->setParent( layPar );
 	lay->setParent( layPar );
 
@@ -905,7 +907,7 @@ void EETest::createNewUI() {
 	drop->setLayoutMargin( Rect( 10, 10, 10, 10 ) )
 		->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )
 		->setParent( layWin );
-	drop->getListBox()->addListBoxItems( {"Car", "Bus", "Plane", "Submarine"} );
+	drop->getListBox()->addListBoxItems( { "Car", "Bus", "Plane", "Submarine" } );
 	drop->getListBox()->setSelected( 0 );
 	win->show();
 

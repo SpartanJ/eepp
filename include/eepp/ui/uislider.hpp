@@ -9,11 +9,14 @@ class EE_API UISlider : public UIWidget {
   public:
 	static UISlider* New();
 
-	static UISlider* NewVertical();
+	static UISlider* NewWithTag( const std::string& tag );
 
-	static UISlider* NewHorizontal();
+	static UISlider* NewVertical( const std::string& tag );
 
-	UISlider( const UIOrientation& orientation = UIOrientation::Horizontal );
+	static UISlider* NewHorizontal( const std::string& tag );
+
+	UISlider( const std::string& tag,
+			  const UIOrientation& orientation = UIOrientation::Horizontal );
 
 	virtual ~UISlider();
 
@@ -51,7 +54,7 @@ class EE_API UISlider : public UIWidget {
 
 	UIOrientation getOrientation() const;
 
-	UISlider* setOrientation( const UIOrientation& orientation );
+	UISlider* setOrientation( const UIOrientation& orientation, std::string childsBaseTag = "" );
 
 	bool getAllowHalfSliderOut() const;
 
@@ -104,8 +107,6 @@ class EE_API UISlider : public UIWidget {
 	virtual void onAlphaChange();
 
 	virtual Uint32 onMessage( const NodeMessage* Msg );
-
-	void updateOrientation();
 };
 
 }} // namespace EE::UI

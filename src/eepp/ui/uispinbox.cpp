@@ -21,17 +21,23 @@ UISpinBox::UISpinBox() :
 	mInput->setEnabled( true );
 	mInput->setParent( this );
 
+	auto cb = [&]( const Event* event ) {
+		adjustChilds();
+	};
+
 	mPushUp = UIWidget::NewWithTag( "spinbox::btnup" );
 	mPushUp->setVisible( true );
 	mPushUp->setEnabled( true );
 	mPushUp->setParent( this );
 	mPushUp->setSize( 8, 8 );
+	mPushUp->addEventListener( Event::OnSizeChange, cb );
 
 	mPushDown = UIWidget::NewWithTag( "spinbox::btndown" );
 	mPushDown->setVisible( true );
 	mPushDown->setEnabled( true );
 	mPushDown->setParent( this );
 	mPushDown->setSize( 8, 8 );
+	mPushDown->addEventListener( Event::OnSizeChange, cb );
 
 	mInput->getInputTextBuffer()->setAllowOnlyNumbers( true, false );
 	mInput->addEventListener( Event::OnBufferChange,

@@ -43,13 +43,13 @@ UIWidget::UIWidget( const std::string& tag ) :
 	mAttributesTransactionCount( 0 ) {
 	mNodeFlags |= NODE_FLAG_WIDGET;
 
-	reloadStyle( false );
+	reloadStyle( false, true );
 
 	updateAnchorsDistances();
 }
 
 UIWidget::UIWidget() : UIWidget( "widget" ) {
-	reloadStyle( false );
+	reloadStyle( false, true );
 }
 
 UIWidget::~UIWidget() {
@@ -819,6 +819,10 @@ bool UIWidget::hasClass( const std::string& cls ) const {
 void UIWidget::setElementTag( const std::string& tag ) {
 	if ( mTag != tag ) {
 		mTag = tag;
+		// Some rules are going to be invalidated if the tag is changed
+		mMinWidthEq = "";
+		mMinHeightEq = "";
+		mMinSize = Sizef::Zero;
 
 		reloadStyle( true );
 	}
@@ -876,7 +880,7 @@ UIStyle* UIWidget::getUIStyle() const {
 	return mStyle;
 }
 
-void UIWidget::reloadStyle( const bool& reloadChilds ) {
+void UIWidget::reloadStyle( const bool& reloadChilds, const bool& disableAnimations ) {
 	if ( NULL == mStyle && NULL != getSceneNode() && getSceneNode()->isUISceneNode() &&
 		 getUISceneNode()->hasStyleSheet() ) {
 		mStyle = UIStyle::New( this );
@@ -884,6 +888,8 @@ void UIWidget::reloadStyle( const bool& reloadChilds ) {
 	}
 
 	if ( NULL != mStyle ) {
+		if ( disableAnimations )
+			mStyle->setDisableAnimations( true );
 		mStyle->load();
 		reportStyleStateChange();
 
@@ -892,11 +898,14 @@ void UIWidget::reloadStyle( const bool& reloadChilds ) {
 
 			while ( NULL != ChildLoop ) {
 				if ( ChildLoop->isWidget() )
-					ChildLoop->asType<UIWidget>()->reloadStyle( reloadChilds );
+					ChildLoop->asType<UIWidget>()->reloadStyle( reloadChilds, disableAnimations );
 
 				ChildLoop = ChildLoop->getNextNode();
 			}
 		}
+
+		if ( disableAnimations )
+			mStyle->setDisableAnimations( false );
 	}
 }
 
@@ -910,12 +919,10 @@ void UIWidget::onMarginChange() {
 	invalidateDraw();
 }
 
-void UIWidget::onThemeLoaded() {
-	reportStyleStateChange();
-}
+void UIWidget::onThemeLoaded() {}
 
 void UIWidget::onParentChange() {
-	reloadStyle( true );
+	reloadStyle( true, true );
 }
 
 void UIWidget::beginAttributesTransaction() {

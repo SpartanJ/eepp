@@ -354,6 +354,10 @@ class EE_API Node : public Transformable {
 	void runOnMainThread( Actions::Runnable::RunnableFunc runnable,
 						  const Time& delay = Seconds( 0 ) );
 
+	bool isChild( Node* child ) const;
+
+	bool inParentTreeOf( Node* Child ) const;
+
   protected:
 	typedef std::map<Uint32, std::map<Uint32, EventCallback>> EventsMap;
 	friend class EventDispatcher;
@@ -434,7 +438,7 @@ class EE_API Node : public Transformable {
 
 	virtual void drawChilds();
 
-	virtual void onChildCountChange( Node * child, const bool& removed );
+	virtual void onChildCountChange( Node* child, const bool& removed );
 
 	virtual void onAngleChange();
 
@@ -471,10 +475,6 @@ class EE_API Node : public Transformable {
 	void childAddAt( Node* ChildCtrl, Uint32 position );
 
 	void childRemove( Node* ChildCtrl );
-
-	bool isChild( Node* ChildCtrl ) const;
-
-	bool inParentTreeOf( Node* Child ) const;
 
 	Rectf getScreenBounds();
 

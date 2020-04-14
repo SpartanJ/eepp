@@ -86,9 +86,9 @@ void UIDropDownList::onAutoSize() {
 	Float max = eemax<Float>( PixelDensity::dpToPxI( getSkinSize().getHeight() ), getTextHeight() );
 
 	if ( mLayoutHeightRule == LayoutSizeRule::WrapContent ) {
-		setInternalPixelsHeight( max + mRealPadding.Top + mRealPadding.Bottom );
+		setInternalPixelsHeight( eeceil( max + mRealPadding.Top + mRealPadding.Bottom ) );
 	} else if ( ( ( mFlags & UI_AUTO_SIZE ) || 0 == getSize().getHeight() ) && max > 0 ) {
-		setInternalPixelsHeight( max );
+		setInternalPixelsHeight( eeceil( max ) );
 	}
 }
 

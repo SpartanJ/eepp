@@ -29,6 +29,11 @@ class EE_API UIComboBox : public UIWidget {
 
 	const String& getText();
 
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
+
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& propertyIndex = 0 );
+
 	void loadFromXmlNode( const pugi::xml_node& node );
 
   protected:

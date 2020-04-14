@@ -78,6 +78,8 @@ class EE_API UISceneNode : public SceneNode {
 
 	bool removeShortcut( const Uint32& KeyCode, const Uint32& Mod );
 
+	const bool& invalidStyleSheetState();
+
   protected:
 	friend class EE::UI::UIWindow;
 	UIWidget* mRoot;
@@ -106,7 +108,7 @@ class EE_API UISceneNode : public SceneNode {
 
 	virtual void setInternalSize( const Sizef& size );
 
-	void reloadStyle();
+	void reloadStyle( const bool& disableAnimations = false );
 
 	bool onMediaChanged();
 

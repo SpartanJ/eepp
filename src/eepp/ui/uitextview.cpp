@@ -510,6 +510,14 @@ bool UITextView::isTextSelectionEnabled() const {
 	return 0 != ( mFlags & UI_TEXT_SELECTION_ENABLED );
 }
 
+void UITextView::setTextSelection( const bool& active ) {
+	if ( active ) {
+		mFlags |= UI_TEXT_SELECTION_ENABLED;
+	} else {
+		mFlags &= ~UI_TEXT_SELECTION_ENABLED;
+	}
+}
+
 const UIFontStyleConfig& UITextView::getFontStyleConfig() const {
 	return mFontStyleConfig;
 }
@@ -650,7 +658,7 @@ bool UITextView::applyProperty( const StyleSheetProperty& attribute ) {
 			setOutlineColor( attribute.asColor() );
 			break;
 		case PropertyId::TextSelection:
-			mFlags |= UI_TEXT_SELECTION_ENABLED;
+			setTextSelection( attribute.asBool() );
 			break;
 		case PropertyId::TextAlign: {
 			std::string align = String::toLower( attribute.value() );

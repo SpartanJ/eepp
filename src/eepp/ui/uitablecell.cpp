@@ -151,7 +151,8 @@ void UITableCell::onAutoSize() {
 void UITableCell::onStateChange() {
 	UIWidget::onStateChange();
 
-	if ( isSelected() && !( mSkinState->getState() & UIState::StateFlagSelected ) ) {
+	if ( isSelected() && NULL != mSkinState &&
+		 !( mSkinState->getState() & UIState::StateFlagSelected ) ) {
 		pushState( UIState::StateSelected, false );
 	}
 }

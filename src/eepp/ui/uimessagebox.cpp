@@ -75,15 +75,6 @@ UIMessageBox::UIMessageBox( const Type& type, const String& message, const Uint3
 	}
 
 	applyDefaultTheme();
-
-	runOnMainThread( [&]() {
-		if ( NULL != mStyle ) {
-			mStyle->setForceReapplyProperties( true );
-			reportStyleStateChange();
-			setMinWindowSize( mLayoutCont->getSize() );
-			center();
-		}
-	} );
 }
 
 UIMessageBox::~UIMessageBox() {}
@@ -165,6 +156,12 @@ Uint32 UIMessageBox::getCloseWithKey() const {
 
 void UIMessageBox::setCloseWithKey( const Uint32& closeWithKey ) {
 	mCloseWithKey = closeWithKey;
+}
+
+void UIMessageBox::onWindowReady() {
+	UIWindow::onWindowReady();
+	setMinWindowSize( mLayoutCont->getSize() );
+	center();
 }
 
 }} // namespace EE::UI

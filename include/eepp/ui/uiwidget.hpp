@@ -160,7 +160,7 @@ class EE_API UIWidget : public UINode {
 
 	UIStyle* getUIStyle() const;
 
-	void reloadStyle( const bool& reloadChilds = true );
+	void reloadStyle( const bool& reloadChilds = true, const bool& disableAnimations = false );
 
 	void beginAttributesTransaction();
 

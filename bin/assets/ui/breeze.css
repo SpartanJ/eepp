@@ -22,6 +22,7 @@
 	--tab-back: #2b3034;
 	--tab-line: #616569;
 	--tab-active: #31363b;
+	--tab-hover: #334e5e;
 	--icon: #b6bbc2;
 	--icon-active: white;
 	--menu-back: #2d3136;
@@ -50,13 +51,15 @@ DropDownList {
 	transition: all 0.125s;
 }
 
-DropDownList {
+DropDownList,
+ComboBox::DropDownList {
 	max-visible-items: 6;
 }
 
 PushButton:hover,
 DropDownList:hover,
-SelectButton:hover {
+SelectButton:hover,
+ComboBox:hover {
 	border-color: var(--primary);
 }
 
@@ -106,7 +109,8 @@ RadioButton::active {
 }
 
 ListBox,
-DropDownList::ListBox {
+DropDownList::ListBox,
+ComboBox::DropDownList::ListBox {
 	background-color: var(--list-back);
 	border-color: var(--button-border);
 	border-radius: var(--button-radius);
@@ -133,16 +137,20 @@ ListBox::item:selected {
 	background-color: var(--primary);
 }
 
-DropDownList::ListBox::item {
+DropDownList::ListBox::item,
+ComboBox::DropDownList::ListBox::item {
 	padding-left: 4dp;
 }
 
 DropDownList::ListBox::item:hover,
-DropDownList::ListBox::item:selected {
+DropDownList::ListBox::item:selected,
+ComboBox::DropDownList::ListBox::item:hover,
+ComboBox::DropDownList::ListBox::item:selected {
 	background-color: var(--primary);
 }
 
-TextInput {
+TextInput,
+TextInputPassword {
 	padding-left: var(--base-horizontal-padding);
 	padding-right: var(--base-horizontal-padding);
 	padding-top: var(--base-vertical-padding);
@@ -154,6 +162,23 @@ TextInput {
 	transition: all 0.15;
 }
 
+ComboBox {
+	background-color: var(--list-back);
+	border-color: var(--button-border);
+	border-radius: var(--button-radius);
+	border-width: var(--border-width);
+	transition: all 0.15;
+}
+
+ComboBox::DropDownList {
+	padding-left: var(--base-horizontal-padding);
+	padding-right: var(--base-horizontal-padding);
+	padding-top: var(--base-vertical-padding);
+	padding-bottom: var(--base-vertical-padding);
+}
+
+TextInputPassword:hover,
+TextInputPassword:focus,
 TextInput:hover,
 TextInput:focus,
 SpinBox:hover,
@@ -262,6 +287,8 @@ ScrollBar {
 ScrollBar::hback {
 	min-height: 4dp;
 	border-radius: 3dp;
+	margin-left: 4dp;
+	margin-right: 4dp;
 	background-color: transparent;
 }
 
@@ -291,6 +318,7 @@ ScrollBar::vslider {
 }
 
 ScrollBar::hbutton {
+	min-width: 8dp;
 	min-height: 4dp;
 	background-color: var(--scrollbar-button);
 	border-radius: 3dp;
@@ -300,6 +328,7 @@ ScrollBar::hbutton {
 
 ScrollBar::vbutton {
 	min-width: 4dp;
+	min-height: 8dp;
 	background-color: var(--scrollbar-button);
 	border-radius: 3dp;
 	border-width: 0dp;
@@ -347,6 +376,11 @@ Tab {
 	background-size: 100% 1dp;
 	background-position-y: bottom;
 	height: 24dp;
+	transition: background-color 0.15s;
+}
+
+Tab:hover {
+	background-color: var(--tab-hover);
 }
 
 Tab::text {
@@ -367,6 +401,10 @@ Tab:selected {
 	border-top-width: 1dp;
 	border-top-left-radius: 2dp;
 	border-top-right-radius: 2dp;
+}
+
+Tab:selectedhover {
+	background-color: var(--tab-active);
 }
 
 Loader {
@@ -412,6 +450,7 @@ Window {
 	background-color: var(--back);
 	window-border-size: 2dp 2dp;
 	window-titlebar-size: 24dp 24dp;
+	window-flags: shadow;
 }
 
 Window::decoration {
@@ -435,6 +474,19 @@ DropDownList {
 
 DropDownList:hover,
 DropDownList:focus {
+	foreground-image: poly(line, var(--icon-active), "-8dp 0dp, -12dp 3dp"), poly(line, var(--icon-active), "-16dp 0dp, -12dp 3dp");
+}
+
+ComboBox::Button {
+	width: 24dp;
+	height: 16dp;
+	foreground-image: poly(line, var(--icon), "-8dp 0dp, -12dp 3dp"), poly(line, var(--icon), "-16dp 0dp, -12dp 3dp");
+	foreground-position-x: right, right;
+	foreground-position-y: center, center;
+}
+
+ComboBox::Button:focus,
+ComboBox::Button:hover {
 	foreground-image: poly(line, var(--icon-active), "-8dp 0dp, -12dp 3dp"), poly(line, var(--icon-active), "-16dp 0dp, -12dp 3dp");
 }
 

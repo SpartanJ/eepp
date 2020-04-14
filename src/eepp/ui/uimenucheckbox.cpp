@@ -50,10 +50,12 @@ void UIMenuCheckBox::setActive( const bool& active ) {
 			if ( NULL == mIcon->getSkin() || mIcon->getSkin()->getName() != mSkinActive->getName() )
 				mIcon->setSkin( mSkinActive );
 
-			if ( mSkinState->getState() & UIState::StateFlagSelected )
-				mIcon->pushState( UIState::StateHover );
-			else
-				mIcon->popState( UIState::StateHover );
+			if ( NULL != mSkinState ) {
+				if ( mSkinState->getState() & UIState::StateFlagSelected )
+					mIcon->pushState( UIState::StateHover );
+				else
+					mIcon->popState( UIState::StateHover );
+			}
 		} else {
 			mIcon->removeSkin();
 		}
@@ -63,10 +65,12 @@ void UIMenuCheckBox::setActive( const bool& active ) {
 				 mIcon->getSkin()->getName() != mSkinInactive->getName() )
 				mIcon->setSkin( mSkinInactive );
 
-			if ( mSkinState->getState() & UIState::StateFlagSelected )
-				mIcon->pushState( UIState::StateHover );
-			else
-				mIcon->popState( UIState::StateHover );
+			if ( NULL != mSkinState ) {
+				if ( mSkinState->getState() & UIState::StateFlagSelected )
+					mIcon->pushState( UIState::StateHover );
+				else
+					mIcon->popState( UIState::StateHover );
+			}
 		} else {
 			mIcon->removeSkin();
 		}

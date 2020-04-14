@@ -6,19 +6,23 @@
 namespace EE { namespace UI {
 
 UISlider* UISlider::New() {
-	return eeNew( UISlider, ( UIOrientation::Vertical ) );
+	return NewWithTag( "slider" );
 }
 
-UISlider* UISlider::NewVertical() {
-	return eeNew( UISlider, ( UIOrientation::Vertical ) );
+UISlider* UISlider::NewWithTag( const std::string& tag ) {
+	return eeNew( UISlider, ( tag, UIOrientation::Vertical ) );
 }
 
-UISlider* UISlider::NewHorizontal() {
-	return eeNew( UISlider, ( UIOrientation::Horizontal ) );
+UISlider* UISlider::NewVertical( const std::string& tag ) {
+	return eeNew( UISlider, ( tag, UIOrientation::Vertical ) );
 }
 
-UISlider::UISlider( const UIOrientation& orientation ) :
-	UIWidget( "slider" ),
+UISlider* UISlider::NewHorizontal( const std::string& tag ) {
+	return eeNew( UISlider, ( tag, UIOrientation::Horizontal ) );
+}
+
+UISlider::UISlider( const std::string& tag, const UIOrientation& orientation ) :
+	UIWidget( tag ),
 	mOrientation( orientation ),
 	mAllowHalfSliderOut( false ),
 	mExpandBackground( false ),
@@ -31,18 +35,13 @@ UISlider::UISlider( const UIOrientation& orientation ) :
 	mClickStep( 0.1f ),
 	mPageStep( 0 ),
 	mOnPosChange( false ) {
-	Sizef bgSize;
 
 	if ( UIOrientation::Horizontal == mOrientation ) {
-		bgSize = Sizef( getSize().getWidth() - 16, 8 );
-
-		mBackSlider = UIWidget::NewWithTag( "slider::hback" );
-		mSlider = UIWidget::NewWithTag( "slider::hbutton" );
+		mBackSlider = UIWidget::NewWithTag( mTag + "::hback" );
+		mSlider = UIWidget::NewWithTag( mTag + "::hbutton" );
 	} else {
-		bgSize = Sizef( 8, getSize().getHeight() - 16 );
-
-		mBackSlider = UIWidget::NewWithTag( "slider::vback" );
-		mSlider = UIWidget::NewWithTag( "slider::hbutton" );
+		mBackSlider = UIWidget::NewWithTag( mTag + "::vback" );
+		mSlider = UIWidget::NewWithTag( mTag + "::vbutton" );
 	}
 
 	auto cb = [&]( const Event* event ) {
@@ -53,7 +52,6 @@ UISlider::UISlider( const UIOrientation& orientation ) :
 	mBackSlider->setParent( this );
 	mBackSlider->setVisible( true );
 	mBackSlider->setEnabled( true );
-	mBackSlider->setSize( bgSize );
 	mBackSlider->center();
 
 	mSlider->setParent( this );
@@ -427,12 +425,29 @@ UIOrientation UISlider::getOrientation() const {
 	return mOrientation;
 }
 
-UISlider* UISlider::setOrientation( const UIOrientation& orientation ) {
+UISlider* UISlider::setOrientation( const UIOrientation& orientation, std::string childsBaseTag ) {
 	if ( orientation != mOrientation ) {
+		if ( childsBaseTag.empty() )
+			childsBaseTag = mTag;
+
 		mOrientation = orientation;
 
-		updateOrientation();
+		mBackSlider->setMinSize( Sizef::Zero );
+		mSlider->setMinSize( Sizef::Zero );
+		mBackSlider->setSize( Sizef::Zero );
+		mSlider->setSize( Sizef::Zero );
+
 		applyDefaultTheme();
+
+		if ( UIOrientation::Horizontal == mOrientation ) {
+			mBackSlider->setElementTag( childsBaseTag + "::hback" );
+			mSlider->setElementTag( childsBaseTag + "::hbutton" );
+		} else {
+			mBackSlider->setElementTag( childsBaseTag + "::vback" );
+			mSlider->setElementTag( childsBaseTag + "::hbutton" );
+		}
+
+		adjustChilds();
 	}
 
 	return this;
@@ -504,16 +519,6 @@ Uint32 UISlider::onMessage( const NodeMessage* Msg ) {
 	}
 
 	return 0;
-}
-
-void UISlider::updateOrientation() {
-	if ( UIOrientation::Horizontal == mOrientation ) {
-		mBackSlider->setElementTag( "slider::hback" );
-		mSlider->setElementTag( "slider::hbutton" );
-	} else {
-		mBackSlider->setElementTag( "slider::vback" );
-		mSlider->setElementTag( "slider::hbutton" );
-	}
 }
 
 std::string UISlider::getPropertyString( const PropertyDefinition* propertyDef,

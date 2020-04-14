@@ -135,7 +135,8 @@ bool UITabWidget::isDrawInvalidator() const {
 void UITabWidget::invalidate( Node* invalidator ) {
 	// Only invalidate if the invalidator is actually visible in the current active tab.
 	if ( NULL != invalidator ) {
-		if ( invalidator == mCtrlContainer ) {
+		if ( invalidator == mCtrlContainer || invalidator == mTabContainer ||
+			 mTabContainer->isChild( invalidator ) ) {
 			mNodeDrawInvalidator->invalidate( mCtrlContainer );
 		} else if ( invalidator->getParent() == mCtrlContainer ) {
 			if ( invalidator->isVisible() ) {

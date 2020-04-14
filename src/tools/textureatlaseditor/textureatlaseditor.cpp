@@ -100,9 +100,12 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 			FontTrueType* font =
 				FontTrueType::New( "NotoSans-Regular", "assets/fonts/NotoSans-Regular.ttf" );
 
-			UITheme* theme =
+			/*UITheme* theme =
 				UITheme::load( "uitheme" + pd, "uitheme" + pd, "assets/ui/uitheme" + pd + ".eta",
-							   font, "assets/ui/uitheme.css" );
+							   font, "assets/ui/uitheme.css" );*/
+
+			UITheme* theme =
+				UITheme::load( "uitheme", "uitheme", "", font, "assets/ui/breeze.css" );
 
 			uiSceneNode->combineStyleSheet( theme->getStyleSheet() );
 

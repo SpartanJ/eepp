@@ -90,8 +90,6 @@ class EE_API UIScrollBar : public UIWidget {
 	virtual Uint32 onMessage( const NodeMessage* Msg );
 
 	virtual void onPaddingChange();
-
-	void updateOrientation();
 };
 
 }} // namespace EE::UI

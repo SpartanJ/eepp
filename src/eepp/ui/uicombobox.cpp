@@ -8,6 +8,25 @@ UIComboBox* UIComboBox::New() {
 }
 
 UIComboBox::UIComboBox() : UIWidget( "combobox" ), mDropDownList( NULL ), mButton( NULL ) {
+	mDropDownList = UIDropDownList::NewWithTag( "combobox::dropdownlist" );
+	mDropDownList->setParent( this );
+	mDropDownList->setFriendControl( this );
+	mDropDownList->setVisible( true );
+	mDropDownList->setEnabled( true );
+	mDropDownList->setAllowEditing( true );
+	mDropDownList->setFreeEditing( true );
+	mDropDownList->setTextSelection( true );
+	mDropDownList->addEventListener( Event::OnPaddingChange,
+									 [this]( const Event* ) { onPaddingChange(); } );
+	mDropDownList->addEventListener( Event::OnSizeChange,
+									 [&]( const Event* event ) { onSizeChange(); } );
+
+	mButton = UIWidget::NewWithTag( "combobox::button" );
+	mButton->setParent( this );
+	mButton->setVisible( true );
+	mButton->setEnabled( true );
+	mButton->addEventListener( Event::OnSizeChange, [&]( const Event* event ) { onSizeChange(); } );
+
 	applyDefaultTheme();
 }
 
@@ -23,25 +42,6 @@ bool UIComboBox::isType( const Uint32& type ) const {
 
 void UIComboBox::setTheme( UITheme* Theme ) {
 	UIWidget::setTheme( Theme );
-
-	if ( NULL == mDropDownList ) {
-		mDropDownList = UIDropDownList::NewWithTag( "combobox::dropdownlist" );
-		mDropDownList->setParent( this );
-		mDropDownList->setFriendControl( this );
-		mDropDownList->setVisible( true );
-		mDropDownList->setEnabled( true );
-		mDropDownList->setAllowEditing( true );
-		mDropDownList->getInputTextBuffer()->setFreeEditing( true );
-		mDropDownList->addEventListener( Event::OnPaddingChange,
-										 [this]( const Event* ) { this->onPaddingChange(); } );
-	}
-
-	if ( NULL == mButton ) {
-		mButton = UIWidget::NewWithTag( "combobox::button" );
-		mButton->setParent( this );
-		mButton->setVisible( true );
-		mButton->setEnabled( true );
-	}
 
 	mDropDownList->setThemeSkin( Theme, "combobox" );
 	mDropDownList->onThemeLoaded();
@@ -98,12 +98,13 @@ Uint32 UIComboBox::onMessage( const NodeMessage* Msg ) {
 void UIComboBox::updateControls() {
 	if ( NULL != mDropDownList ) {
 		if ( ( mFlags & UI_AUTO_SIZE ) ||
-			 getSize().getHeight() < mDropDownList->getSkinSize().getHeight() ) {
+			 getSize().getHeight() < mDropDownList->getSize().getHeight() ) {
 			onAutoSize();
 		}
 
 		mDropDownList->setPosition( 0, 0 );
-		mDropDownList->setSize( getSize().getWidth() - mButton->getSize().getWidth(), 0 );
+		mDropDownList->setSize( getSize().getWidth() - mButton->getSize().getWidth(),
+								mDropDownList->getSize().getHeight() );
 		mDropDownList->getListBox()->setSize( getSize().getWidth(),
 											  mDropDownList->getListBox()->getSize().getHeight() );
 		mDropDownList->centerVertical();
@@ -135,8 +136,101 @@ void UIComboBox::onPaddingChange() {
 
 void UIComboBox::onAutoSize() {
 	if ( NULL != mDropDownList )
-		setInternalHeight( mDropDownList->getSkinSize().getHeight() +
-						   mDropDownList->getPadding().Top + mDropDownList->getPadding().Bottom );
+		setInternalHeight( mDropDownList->getSize().getHeight() + getPadding().Top +
+						   getPadding().Bottom );
+}
+
+bool UIComboBox::applyProperty( const StyleSheetProperty& attribute ) {
+	if ( !checkPropertyDefinition( attribute ) )
+		return false;
+
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::Color:
+		case PropertyId::ShadowColor:
+		case PropertyId::SelectionColor:
+		case PropertyId::SelectionBackColor:
+		case PropertyId::FontFamily:
+		case PropertyId::FontSize:
+		case PropertyId::FontStyle:
+		case PropertyId::Wordwrap:
+		case PropertyId::TextStrokeWidth:
+		case PropertyId::TextStrokeColor:
+		case PropertyId::TextSelection:
+		case PropertyId::TextAlign:
+		case PropertyId::Text:
+		case PropertyId::AllowEditing:
+		case PropertyId::MaxLength:
+		case PropertyId::FreeEditing:
+		case PropertyId::Numeric:
+		case PropertyId::AllowFloat:
+		case PropertyId::Hint:
+		case PropertyId::HintColor:
+		case PropertyId::HintShadowColor:
+		case PropertyId::HintFontSize:
+		case PropertyId::HintFontFamily:
+		case PropertyId::HintFontStyle:
+		case PropertyId::HintStrokeWidth:
+		case PropertyId::HintStrokeColor:
+		case PropertyId::PopUpToRoot:
+		case PropertyId::MaxVisibleItems:
+		case PropertyId::SelectedIndex:
+		case PropertyId::SelectedText:
+		case PropertyId::ScrollBarStyle:
+		case PropertyId::RowHeight:
+		case PropertyId::VScrollMode:
+		case PropertyId::HScrollMode:
+			return mDropDownList->applyProperty( attribute );
+		default:
+			return UIWidget::applyProperty( attribute );
+	}
+
+	return true;
+}
+
+std::string UIComboBox::getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& propertyIndex ) {
+	if ( NULL == propertyDef )
+		return "";
+
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::Color:
+		case PropertyId::ShadowColor:
+		case PropertyId::SelectionColor:
+		case PropertyId::SelectionBackColor:
+		case PropertyId::FontFamily:
+		case PropertyId::FontSize:
+		case PropertyId::FontStyle:
+		case PropertyId::Wordwrap:
+		case PropertyId::TextStrokeWidth:
+		case PropertyId::TextStrokeColor:
+		case PropertyId::TextSelection:
+		case PropertyId::TextAlign:
+		case PropertyId::Text:
+		case PropertyId::AllowEditing:
+		case PropertyId::MaxLength:
+		case PropertyId::FreeEditing:
+		case PropertyId::Numeric:
+		case PropertyId::AllowFloat:
+		case PropertyId::Hint:
+		case PropertyId::HintColor:
+		case PropertyId::HintShadowColor:
+		case PropertyId::HintFontSize:
+		case PropertyId::HintFontFamily:
+		case PropertyId::HintFontStyle:
+		case PropertyId::HintStrokeWidth:
+		case PropertyId::HintStrokeColor:
+		case PropertyId::PopUpToRoot:
+		case PropertyId::MaxVisibleItems:
+		case PropertyId::SelectedIndex:
+		case PropertyId::SelectedText:
+		case PropertyId::ScrollBarStyle:
+		case PropertyId::RowHeight:
+		case PropertyId::VScrollMode:
+		case PropertyId::HScrollMode:
+			return mDropDownList->getPropertyString( propertyDef, propertyIndex );
+		default:
+			return UIWidget::getPropertyString( propertyDef, propertyIndex );
+	}
 }
 
 }} // namespace EE::UI

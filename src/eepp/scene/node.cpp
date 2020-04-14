@@ -712,14 +712,14 @@ Node* Node::find( const std::string& id ) const {
 	return findIdHash( String::hash( id ) );
 }
 
-bool Node::isChild( Node* ChildCtrl ) const {
-	Node* ChildLoop = mChild;
+bool Node::isChild( Node* child ) const {
+	Node* childLoop = mChild;
 
-	while ( NULL != ChildLoop ) {
-		if ( ChildCtrl == ChildLoop )
+	while ( NULL != childLoop ) {
+		if ( child == childLoop )
 			return true;
 
-		ChildLoop = ChildLoop->mNext;
+		childLoop = childLoop->mNext;
 	}
 
 	return false;

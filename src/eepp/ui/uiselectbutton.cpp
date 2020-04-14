@@ -53,14 +53,14 @@ bool UISelectButton::isSelected() const {
 void UISelectButton::onStateChange() {
 	UIWidget::onStateChange();
 
+	mTextBox->setAlpha( mAlpha );
+
 	if ( NULL == mSkinState )
 		return;
 
 	if ( !( mSkinState->getState() & UIState::StateFlagSelected ) && isSelected() ) {
 		pushState( UIState::StateSelected, false );
 	}
-
-	mTextBox->setAlpha( mAlpha );
 }
 
 }} // namespace EE::UI

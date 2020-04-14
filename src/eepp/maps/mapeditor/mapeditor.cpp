@@ -954,7 +954,9 @@ void MapEditor::fillSGCombo() {
 	std::vector<String> items;
 
 	Uint32 Restricted1 = String::hash( std::string( "global" ) );
-	Uint32 Restricted2 = String::hash( mTheme->getTextureAtlas()->getName() );
+	Uint32 Restricted2 = 0;
+	if ( NULL != mTheme && NULL != mTheme->getTextureAtlas() )
+		Restricted2 = String::hash( mTheme->getTextureAtlas()->getName() );
 
 	for ( std::list<TextureAtlas*>::iterator it = Res.begin(); it != Res.end(); ++it ) {
 		if ( ( *it )->getId() != Restricted1 && ( *it )->getId() != Restricted2 )

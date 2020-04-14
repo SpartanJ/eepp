@@ -135,7 +135,6 @@ UIWidget* UISceneNode::loadNode( pugi::xml_node node, Node* parent ) {
 				loadNode( widget.first_child(), uiwidget );
 			}
 
-			// uiwidget->reloadStyle( false );
 			uiwidget->onWidgetCreated();
 		} else if ( String::toLower( widget.name() ) == "style" ) {
 			combineStyleSheet( widget.text().as_string() );
@@ -150,7 +149,7 @@ UIWidget* UISceneNode::loadLayoutNodes( pugi::xml_node node, Node* parent ) {
 
 	mIsLoading = true;
 	firstWidget = loadNode( node, parent );
-	reloadStyle();
+	reloadStyle( true );
 	mIsLoading = false;
 
 	return firstWidget;
@@ -192,13 +191,13 @@ bool UISceneNode::hasStyleSheet() {
 	return !mStyleSheet.isEmpty();
 }
 
-void UISceneNode::reloadStyle() {
+void UISceneNode::reloadStyle( const bool& disableAnimations ) {
 	if ( NULL != mChild ) {
 		Node* ChildLoop = mChild;
 
 		while ( NULL != ChildLoop ) {
 			if ( ChildLoop->isWidget() )
-				ChildLoop->asType<UIWidget>()->reloadStyle();
+				ChildLoop->asType<UIWidget>()->reloadStyle( true, disableAnimations );
 
 			ChildLoop = ChildLoop->getNextNode();
 		}
@@ -325,14 +324,14 @@ const Sizef& UISceneNode::getSize() const {
 }
 
 void UISceneNode::update( const Time& elapsed ) {
-	UISceneNode * uiSceneNode = SceneManager::instance()->getUISceneNode();
+	UISceneNode* uiSceneNode = SceneManager::instance()->getUISceneNode();
 
 	SceneManager::instance()->setCurrentUISceneNode( this );
 	SceneNode::update( elapsed );
 
 	if ( mCSSInvalid ) {
-		mRoot->reloadChildsStyleState();
 		mCSSInvalid = false;
+		mRoot->reloadChildsStyleState();
 	}
 
 	SceneManager::instance()->setCurrentUISceneNode( uiSceneNode );
@@ -352,6 +351,10 @@ UIWidget* UISceneNode::getRoot() const {
 
 void UISceneNode::invalidateStyleSheet() {
 	mCSSInvalid = true;
+}
+
+const bool& UISceneNode::invalidStyleSheetState() {
+	return mCSSInvalid;
 }
 
 bool UISceneNode::onMediaChanged() {

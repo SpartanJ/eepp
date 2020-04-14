@@ -11,6 +11,7 @@
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uirelativelayout.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uiwindow.hpp>
 #include <pugixml/pugixml.hpp>
@@ -80,6 +81,10 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const StyleConfig& w
 	setAlpha( mStyleConfig.BaseAlpha );
 
 	applyDefaultTheme();
+
+	runOnMainThread( [&]() {
+		onWindowReady();
+	} );
 }
 
 UIWindow::~UIWindow() {
@@ -419,6 +424,15 @@ Sizei UIWindow::getFrameBufferSize() {
 			   ? Sizei( Math::nextPowOfTwo( (int)mSize.getWidth() ),
 						Math::nextPowOfTwo( (int)mSize.getHeight() ) )
 			   : mSize.ceil().asInt();
+}
+
+void UIWindow::onWindowReady() {
+	if ( NULL != mStyle ) {
+		mStyle->setForceReapplyProperties( true );
+		mStyle->setDisableAnimations( true );
+		reportStyleStateChange();
+		mStyle->setDisableAnimations( false );
+	}
 }
 
 void UIWindow::createModalControl() {
