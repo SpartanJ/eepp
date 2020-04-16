@@ -15,19 +15,23 @@ UIRadioButton::UIRadioButton() :
 	mInactiveButton( NULL ),
 	mActive( false ),
 	mTextSeparation( 4 ) {
+	auto cb = [&]( const Event* event ) { onAutoSize(); };
+
 	mActiveButton = UIWidget::NewWithTag( "radiobutton::active" );
 	mActiveButton->setVisible( false );
 	mActiveButton->setEnabled( true );
 	mActiveButton->setParent( this );
 	mActiveButton->setPosition( 0, 0 );
-	mActiveButton->setSize( 16, 16 );
+	mActiveButton->setSize( 8, 8 );
+	mActiveButton->addEventListener( Event::OnSizeChange, cb );
 
 	mInactiveButton = UIWidget::NewWithTag( "radiobutton::inactive" );
 	mInactiveButton->setVisible( true );
 	mInactiveButton->setEnabled( true );
 	mInactiveButton->setParent( this );
 	mInactiveButton->setPosition( 0, 0 );
-	mInactiveButton->setSize( 16, 16 );
+	mInactiveButton->setSize( 9, 8 );
+	mInactiveButton->addEventListener( Event::OnSizeChange, cb );
 
 	onPaddingChange();
 
@@ -57,17 +61,13 @@ void UIRadioButton::setTheme( UITheme* Theme ) {
 void UIRadioButton::onThemeLoaded() {
 	UISkin* tSkin = mActiveButton->getSkin();
 
-	if ( tSkin ) {
+	if ( tSkin )
 		mActiveButton->setSize( tSkin->getSize() );
-		mActiveButton->centerVertical();
-	}
 
 	tSkin = mInactiveButton->getSkin();
 
-	if ( NULL != tSkin ) {
+	if ( NULL != tSkin )
 		mInactiveButton->setSize( tSkin->getSize() );
-		mInactiveButton->centerVertical();
-	}
 
 	setMinSize( mActiveButton->getSkinSize() );
 
@@ -79,40 +79,35 @@ void UIRadioButton::onThemeLoaded() {
 void UIRadioButton::onAutoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
 		if ( getSize().getWidth() == 0 ) {
-			setInternalPixelsWidth( (int)mTextCache->getTextWidth() +
-									mActiveButton->getPixelsSize().getWidth() + mTextSeparation +
-									mRealPadding.Left + mRealPadding.Right );
+			setInternalPixelsWidth(
+				(int)mTextCache->getTextWidth() + mActiveButton->getPixelsSize().getWidth() +
+				PixelDensity::dpToPx( mTextSeparation ) + mRealPadding.Left + mRealPadding.Right );
 		}
 
 		if ( getSize().getHeight() == 0 ) {
 			setInternalHeight( mActiveButton->getSize().getHeight() + mRealPadding.Top +
 							   mRealPadding.Bottom );
 		}
-
-		mActiveButton->centerVertical();
-		mInactiveButton->centerVertical();
 	}
 
 	if ( mLayoutWidthRule == LayoutSizeRule::WrapContent ) {
 		setInternalPixelsWidth( (int)mTextCache->getTextWidth() + mRealPadding.Left +
 								mRealPadding.Right + mActiveButton->getPixelsSize().getWidth() +
-								mTextSeparation );
+								PixelDensity::dpToPx( mTextSeparation ) );
 	}
 
 	if ( mLayoutHeightRule == LayoutSizeRule::WrapContent ) {
 		setInternalPixelsHeight( (int)mTextCache->getTextHeight() + mRealPadding.Top +
 								 mRealPadding.Bottom );
-
-		mActiveButton->centerVertical();
-		mInactiveButton->centerVertical();
 	}
+
+	alignFix();
 }
 
 void UIRadioButton::onSizeChange() {
 	UITextView::onSizeChange();
 
-	mActiveButton->centerVertical();
-	mInactiveButton->centerVertical();
+	alignFix();
 }
 
 Uint32 UIRadioButton::onMessage( const NodeMessage* Msg ) {
@@ -229,12 +224,15 @@ const bool& UIRadioButton::isActive() const {
 void UIRadioButton::onPaddingChange() {
 	mActiveButton->setPosition( mPadding.Left, mActiveButton->getPosition().y );
 	mInactiveButton->setPosition( mPadding.Left, mInactiveButton->getPosition().y );
-
+	alignFix();
 	UITextView::onPaddingChange();
 }
 
 void UIRadioButton::alignFix() {
 	UITextView::alignFix();
+
+	mActiveButton->centerVertical();
+	mInactiveButton->centerVertical();
 
 	switch ( Font::getHorizontalAlign( getFlags() ) ) {
 		case UI_HALIGN_CENTER:

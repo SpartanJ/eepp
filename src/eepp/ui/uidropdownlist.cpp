@@ -32,6 +32,8 @@ UIDropDownList::UIDropDownList( const std::string& tag ) :
 					   mStyleConfig.MaxNumVisibleItems * getSize().getHeight() );
 	mListBox->setEnabled( false );
 	mListBox->setVisible( false );
+	// This will force to change the parent when shown, and force the CSS style reload.
+	mListBox->setParent( this );
 
 	mListBox->addEventListener( Event::OnWidgetFocusLoss,
 								cb::Make1( this, &UIDropDownList::onListBoxFocusLoss ) );
@@ -127,7 +129,7 @@ Uint32 UIDropDownList::onMouseClick( const Vector2i& Pos, const Uint32& Flags ) 
 
 void UIDropDownList::showList() {
 	if ( !mListBox->isVisible() ) {
-		if ( !mStyleConfig.PopUpToMainControl )
+		if ( !mStyleConfig.PopUpToRoot )
 			mListBox->setParent( getWindowContainer() );
 		else
 			mListBox->setParent( mSceneNode );
@@ -136,7 +138,7 @@ void UIDropDownList::showList() {
 
 		Vector2f Pos( mDpPos.x, mDpPos.y + getSize().getHeight() );
 
-		if ( mStyleConfig.PopUpToMainControl ) {
+		if ( mStyleConfig.PopUpToRoot ) {
 			getParent()->nodeToWorld( Pos );
 			Pos = PixelDensity::pxToDp( Pos );
 		} else {
@@ -178,12 +180,12 @@ void UIDropDownList::showList() {
 	}
 }
 
-bool UIDropDownList::getPopUpToMainControl() const {
-	return mStyleConfig.PopUpToMainControl;
+bool UIDropDownList::getPopUpToRoot() const {
+	return mStyleConfig.PopUpToRoot;
 }
 
-void UIDropDownList::setPopUpToMainControl( bool popUpToMainControl ) {
-	mStyleConfig.PopUpToMainControl = popUpToMainControl;
+void UIDropDownList::setPopUpToRoot( bool popUpToRoot ) {
+	mStyleConfig.PopUpToRoot = popUpToRoot;
 }
 
 Uint32 UIDropDownList::getMaxNumVisibleItems() const {
@@ -207,7 +209,7 @@ void UIDropDownList::setStyleConfig( const StyleConfig& styleConfig ) {
 	mStyleConfig = styleConfig;
 
 	setMaxNumVisibleItems( mStyleConfig.MaxNumVisibleItems );
-	setPopUpToMainControl( mStyleConfig.PopUpToMainControl );
+	setPopUpToRoot( mStyleConfig.PopUpToRoot );
 }
 
 void UIDropDownList::onControlClear( const Event* ) {
@@ -308,7 +310,7 @@ bool UIDropDownList::applyProperty( const StyleSheetProperty& attribute ) {
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::PopUpToRoot:
-			setPopUpToMainControl( attribute.asBool() );
+			setPopUpToRoot( attribute.asBool() );
 			break;
 		case PropertyId::MaxVisibleItems:
 			setMaxNumVisibleItems( attribute.asUint() );
@@ -334,7 +336,7 @@ std::string UIDropDownList::getPropertyString( const PropertyDefinition* propert
 
 	switch ( propertyDef->getPropertyId() ) {
 		case PropertyId::PopUpToRoot:
-			return mStyleConfig.PopUpToMainControl ? "true" : "false";
+			return mStyleConfig.PopUpToRoot ? "true" : "false";
 		case PropertyId::MaxVisibleItems:
 			return String::toStr( mStyleConfig.MaxNumVisibleItems );
 		case PropertyId::SelectedIndex:

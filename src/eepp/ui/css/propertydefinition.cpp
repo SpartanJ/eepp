@@ -17,6 +17,7 @@ PropertyDefinition::PropertyDefinition( const std::string& name, const std::stri
 	mDefaultValue( defaultValue ),
 	mInherited( inherited ),
 	mIndexed( false ),
+	mRelativeTarget( PropertyRelativeTarget::None ),
 	mPropertyType( PropertyType::Undefined ) {
 
 	for ( auto& sep : {"-", "_"} ) {

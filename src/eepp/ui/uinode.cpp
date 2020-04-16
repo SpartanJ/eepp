@@ -332,6 +332,18 @@ void UINode::updateDebugData() {
 		text += String::format( "X: %2.4f Y: %2.4f\nW: %2.4f H: %2.4f", mDpPos.x, mDpPos.y,
 								mDpSize.x, mDpSize.y );
 
+		if ( widget->getPadding() != Rectf( 0, 0, 0, 0 ) ) {
+			Rectf p( widget->getPadding() );
+			text +=
+				String::format( "\npadding: %.2f %.2f %.2f %.2f", p.Top, p.Right, p.Bottom, p.Left );
+		}
+
+		if ( widget->getLayoutMargin() != Rect( 0, 0, 0, 0 ) ) {
+			Rect m( widget->getLayoutMargin() );
+			text +=
+				String::format( "\nmargin: %d %d %d %d", m.Top, m.Right, m.Bottom, m.Left );
+		}
+
 		widget->setTooltipText( text );
 	}
 }

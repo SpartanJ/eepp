@@ -177,6 +177,10 @@ class EE_API UIListBox : public UITouchDraggableWidget {
 
 	void setHScrollStep();
 
+	void updateScrollBar();
+
+	void updatePageStep();
+
 	virtual void onTouchDragValueChange( Vector2f diff );
 
 	virtual bool isTouchOverAllowedChilds();

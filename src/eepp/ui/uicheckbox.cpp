@@ -10,19 +10,23 @@ UICheckBox* UICheckBox::New() {
 }
 
 UICheckBox::UICheckBox() : UITextView( "checkbox" ), mChecked( false ), mTextSeparation( 4 ) {
+	auto cb = [&]( const Event* event ) { onAutoSize(); };
+
 	mActiveButton = UIWidget::NewWithTag( "checkbox::active" );
 	mActiveButton->setVisible( false );
 	mActiveButton->setEnabled( true );
 	mActiveButton->setParent( this );
 	mActiveButton->setPosition( 0, 0 );
-	mActiveButton->setSize( 16, 16 );
+	mActiveButton->setSize( 8, 8 );
+	mActiveButton->addEventListener( Event::OnSizeChange, cb );
 
 	mInactiveButton = UIWidget::NewWithTag( "checkbox::inactive" );
 	mInactiveButton->setVisible( true );
 	mInactiveButton->setEnabled( true );
 	mInactiveButton->setParent( this );
 	mInactiveButton->setPosition( 0, 0 );
-	mInactiveButton->setSize( 16, 16 );
+	mInactiveButton->setSize( 8, 8 );
+	mInactiveButton->addEventListener( Event::OnSizeChange, cb );
 
 	onPaddingChange();
 
@@ -53,17 +57,13 @@ void UICheckBox::setTheme( UITheme* Theme ) {
 void UICheckBox::onThemeLoaded() {
 	UISkin* tSkin = mActiveButton->getSkin();
 
-	if ( tSkin ) {
+	if ( tSkin )
 		mActiveButton->setSize( tSkin->getSize() );
-		mActiveButton->centerVertical();
-	}
 
 	tSkin = mInactiveButton->getSkin();
 
-	if ( NULL != tSkin ) {
+	if ( NULL != tSkin )
 		mInactiveButton->setSize( tSkin->getSize() );
-		mInactiveButton->centerVertical();
-	}
 
 	setMinSize( mActiveButton->getSkinSize() );
 
@@ -81,34 +81,28 @@ void UICheckBox::onAutoSize() {
 		}
 
 		if ( getSize().getHeight() == 0 ) {
-			setInternalHeight( mActiveButton->getSize().getHeight() + mRealPadding.Top +
-							   mRealPadding.Bottom );
+			setInternalHeight( mActiveButton->getSize().getHeight() + mPadding.Top +
+							   mPadding.Bottom );
 		}
-
-		mActiveButton->centerVertical();
-		mInactiveButton->centerVertical();
 	}
 
 	if ( mLayoutWidthRule == LayoutSizeRule::WrapContent ) {
 		setInternalPixelsWidth( (int)mTextCache->getTextWidth() + mRealPadding.Left +
 								mRealPadding.Right + mActiveButton->getPixelsSize().getWidth() +
-								mTextSeparation );
+								PixelDensity::dpToPx( mTextSeparation ) );
 	}
 
 	if ( mLayoutHeightRule == LayoutSizeRule::WrapContent ) {
 		setInternalPixelsHeight( (int)mTextCache->getTextHeight() + mRealPadding.Top +
 								 mRealPadding.Bottom );
-
-		mActiveButton->centerVertical();
-		mInactiveButton->centerVertical();
 	}
+
+	alignFix();
 }
 
 void UICheckBox::onSizeChange() {
+	alignFix();
 	UITextView::onSizeChange();
-
-	mActiveButton->centerVertical();
-	mInactiveButton->centerVertical();
 }
 
 Uint32 UICheckBox::onMessage( const NodeMessage* Msg ) {
@@ -152,6 +146,8 @@ void UICheckBox::setChecked( const bool& checked ) {
 		pushState( UIState::StateChecked );
 	}
 
+	alignFix();
+
 	onValueChange();
 }
 
@@ -162,12 +158,15 @@ const bool& UICheckBox::isChecked() const {
 void UICheckBox::onPaddingChange() {
 	mActiveButton->setPosition( mPadding.Left, mActiveButton->getPosition().y );
 	mInactiveButton->setPosition( mPadding.Left, mInactiveButton->getPosition().y );
-
+	alignFix();
 	UITextView::onPaddingChange();
 }
 
 void UICheckBox::alignFix() {
 	UITextView::alignFix();
+
+	mActiveButton->centerVertical();
+	mInactiveButton->centerVertical();
 
 	switch ( Font::getHorizontalAlign( getFlags() ) ) {
 		case UI_HALIGN_CENTER:

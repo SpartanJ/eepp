@@ -145,15 +145,15 @@ void SceneNode::update( const Time& time ) {
 	}
 
 	if ( !mScheduledUpdate.empty() ) {
-		for ( auto it = mScheduledUpdate.begin(); it != mScheduledUpdate.end(); ++it )
-			( *it )->scheduledUpdate( time );
+		for ( auto& node : mScheduledUpdate )
+			node->scheduledUpdate( time );
 	}
 
 	if ( mUpdateAllChilds ) {
 		Node::update( time );
 	} else {
-		for ( auto it = mMouseOverNodes.begin(); it != mMouseOverNodes.end(); ++it )
-			( *it )->writeNodeFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 0 );
+		for ( auto& nodeOver : mMouseOverNodes )
+			nodeOver->writeNodeFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 0 );
 	}
 
 	mMouseOverNodes.clear();

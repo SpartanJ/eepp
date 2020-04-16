@@ -56,6 +56,7 @@ UIColorPicker* UIColorPicker::NewModal( Node* nodeCreator,
 
 UIColorPicker* UIColorPicker::NewWindow( const ColorPickedCb& colorPickedCb, const Uint32& winFlags,
 										 const Sizef& winSize, const Uint8& modalAlpha ) {
+	Clock clock;
 	UIWindow* tWin = UIWindow::New();
 	tWin->setSizeWithDecoration( winSize )->setPosition( 0, 0 );
 	UIWindow::StyleConfig windowStyleConfig = tWin->getStyleConfig();
@@ -64,6 +65,7 @@ UIColorPicker* UIColorPicker::NewWindow( const ColorPickedCb& colorPickedCb, con
 	tWin->setStyleConfig( windowStyleConfig );
 	UIColorPicker* colorPicker = Tools::UIColorPicker::New( tWin, colorPickedCb, modalAlpha );
 	tWin->show();
+	eePRINTL( "UIColorPicker created in: %.2fms", clock.getElapsedTime().asMilliseconds() );
 	return colorPicker;
 }
 
@@ -214,9 +216,13 @@ UIColorPicker::UIColorPicker( UIWindow* attachTo, const UIColorPicker::ColorPick
 	</LinearLayout>
 	)xml";
 
-	if ( NULL != mUIContainer->getSceneNode() && mUIContainer->getSceneNode()->isUISceneNode() )
+	if ( NULL != mUIContainer->getSceneNode() && mUIContainer->getSceneNode()->isUISceneNode() ) {
+		Clock clock;
 		mRoot = mUIContainer->getSceneNode()->asType<UISceneNode>()->loadLayoutFromString(
 			layout, mUIContainer );
+		eePRINTL( "UIColorPicker loadLayoutFromString time: %.2f",
+				  clock.getElapsedTime().asMilliseconds() );
+	}
 
 	if ( NULL != mUIWindow ) {
 		mUIWindow->setTitle( "Color Picker" );
@@ -347,9 +353,8 @@ Texture* UIColorPicker::createGridTexture() {
 	}
 
 	TextureFactory* TF = TextureFactory::instance();
-	Uint32 texId =
-		TF->loadFromPixels( image.getPixelsPtr(), image.getWidth(), image.getHeight(),
-							image.getChannels() );
+	Uint32 texId = TF->loadFromPixels( image.getPixelsPtr(), image.getWidth(), image.getHeight(),
+									   image.getChannels() );
 
 	return TF->getTexture( texId );
 }

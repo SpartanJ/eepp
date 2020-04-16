@@ -29,6 +29,8 @@ UITable::UITable() :
 	mCollWidthAssigned( false ) {
 	setFlags( UI_AUTO_PADDING );
 
+	auto cb = [&]( const Event* event ) { containerResize(); };
+
 	mContainer = eeNew( UIItemContainer<UITable>, () );
 	mContainer->setVisible( true );
 	mContainer->setEnabled( true );
@@ -58,6 +60,9 @@ UITable::UITable() :
 								   cb::Make1( this, &UITable::onScrollValueChange ) );
 	mHScrollBar->addEventListener( Event::OnValueChange,
 								   cb::Make1( this, &UITable::onScrollValueChange ) );
+
+	mVScrollBar->addEventListener( Event::OnSizeChange, cb );
+	mHScrollBar->addEventListener( Event::OnSizeChange, cb );
 
 	applyDefaultTheme();
 }
@@ -123,24 +128,10 @@ void UITable::autoPadding() {
 }
 
 void UITable::onSizeChange() {
-	mVScrollBar->setPosition( getSize().getWidth() - mVScrollBar->getSize().getWidth(), 0 );
-	mVScrollBar->setSize( mVScrollBar->getSize().getWidth(), getSize().getHeight() );
-
-	mHScrollBar->setPosition( 0, getSize().getHeight() - mHScrollBar->getSize().getHeight() );
-	mHScrollBar->setSize( getSize().getWidth() - mVScrollBar->getSize().getWidth(),
-						  mHScrollBar->getSize().getHeight() );
-
-	if ( mContainer->isClipped() && ScrollBarMode::Auto == mHScrollMode ) {
-		if ( (Int32)mTotalWidth <= mContainer->getSize().getWidth() ) {
-			mHScrollBar->setVisible( false );
-			mHScrollBar->setEnabled( false );
-			mHScrollInit = 0;
-		}
-	}
-
 	containerResize();
 	setDefaultCollumnsWidth();
 	updateScroll();
+	updatePageStep();
 }
 
 void UITable::containerResize() {
@@ -148,20 +139,23 @@ void UITable::containerResize() {
 
 	mContainer->setPosition( padding.Left, padding.Top );
 
-	if ( mHScrollBar->isVisible() )
+	if ( mHScrollBar->isVisible() ) {
 		mContainer->setPixelsSize( mSize.getWidth() - padding.Right - padding.Left,
 								   mSize.getHeight() - padding.Top -
 									   mHScrollBar->getPixelsSize().getHeight() );
-	else
+	} else {
 		mContainer->setPixelsSize( mSize.getWidth() - padding.Right - padding.Left,
 								   mSize.getHeight() - padding.Bottom - padding.Top );
+	}
 
-	if ( mVScrollBar->isVisible() )
+	if ( mVScrollBar->isVisible() ) {
 		mContainer->setPixelsSize( mContainer->getPixelsSize().getWidth() -
 									   mVScrollBar->getPixelsSize().getWidth(),
 								   mContainer->getPixelsSize().getHeight() );
+	}
 
 	setDefaultCollumnsWidth();
+	updateScrollBar();
 }
 
 void UITable::updateVScroll() {
@@ -233,6 +227,23 @@ void UITable::setHScrollStep() {
 	mHScrollBar->setPageStep( stepVal );
 
 	mHScrollBar->setClickStep( stepVal );
+}
+
+void UITable::updateScrollBar() {
+	mVScrollBar->setPosition( getSize().getWidth() - mVScrollBar->getSize().getWidth(), 0 );
+	mVScrollBar->setSize( mVScrollBar->getSize().getWidth(), getSize().getHeight() );
+
+	mHScrollBar->setPosition( 0, getSize().getHeight() - mHScrollBar->getSize().getHeight() );
+	mHScrollBar->setSize( getSize().getWidth() - mVScrollBar->getSize().getWidth(),
+						  mHScrollBar->getSize().getHeight() );
+
+	if ( mContainer->isClipped() && ScrollBarMode::Auto == mHScrollMode ) {
+		if ( (Int32)mTotalWidth <= mContainer->getSize().getWidth() ) {
+			mHScrollBar->setVisible( false );
+			mHScrollBar->setEnabled( false );
+			mHScrollInit = 0;
+		}
+	}
 }
 
 void UITable::updateScroll( bool FromScrollChange ) {
@@ -367,8 +378,7 @@ void UITable::add( UITableCell* Cell ) {
 
 	updateScroll();
 
-	mVScrollBar->setPageStep( ( (Float)mContainer->getSize().getHeight() / (Float)mRowHeight ) /
-							  (Float)mItems.size() );
+	updatePageStep();
 }
 
 void UITable::remove( UITableCell* Cell ) {
@@ -636,6 +646,11 @@ void UITable::onTouchDragValueChange( Vector2f diff ) {
 bool UITable::isTouchOverAllowedChilds() {
 	return isMouseOverMeOrChilds() && !mVScrollBar->isMouseOverMeOrChilds() &&
 		   !mHScrollBar->isMouseOverMeOrChilds();
+}
+
+void UITable::updatePageStep() {
+	mVScrollBar->setPageStep( ( (Float)mContainer->getSize().getHeight() / (Float)mRowHeight ) /
+							  (Float)mItems.size() );
 }
 
 std::string UITable::getPropertyString( const PropertyDefinition* propertyDef,

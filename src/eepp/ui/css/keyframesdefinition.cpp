@@ -9,7 +9,7 @@ KeyframesDefinition::parseKeyframes( const std::string& name,
 	def.name = name;
 
 	for ( const auto& block : keyframeBlocks ) {
-		std::string blockName( String::toLower( String::trim( block.getSelector().getName() ) ) );
+		std::string blockName( String::toLower( String::trim( block->getSelector().getName() ) ) );
 		Float blockTime = 0.f;
 
 		if ( blockName == "from" ) {
@@ -26,7 +26,7 @@ KeyframesDefinition::parseKeyframes( const std::string& name,
 			continue;
 		}
 
-		def.keyframeBlocks[blockTime] = {blockTime, block.getProperties()};
+		def.keyframeBlocks[blockTime] = {blockTime, block->getProperties()};
 	}
 
 	return def;

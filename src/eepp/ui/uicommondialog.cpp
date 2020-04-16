@@ -121,7 +121,7 @@ UICommonDialog::UICommonDialog( Uint32 CDLFlags, std::string DefaultFilePattern,
 	mFiletype->setLayoutSizeRules( LayoutSizeRule::WrapContent, LayoutSizeRule::WrapContent )
 		->setLayoutWeight( 1 )
 		->setParent( hLayout );
-	mFiletype->setPopUpToMainControl( true );
+	mFiletype->setPopUpToRoot( true );
 	mFiletype->getListBox()->addListBoxItem( DefaultFilePattern );
 	mFiletype->getListBox()->setSelected( 0 );
 	mFiletype->setLayoutMargin( Rect( 0, 0, 4, 0 ) );

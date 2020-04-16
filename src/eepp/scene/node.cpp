@@ -682,7 +682,12 @@ std::string Node::getId() const {
 Node* Node::setId( const std::string& id ) {
 	mId = id;
 	mIdHash = String::hash( id );
+	onIdChange();
 	return this;
+}
+
+void Node::onIdChange() {
+	sendCommonEvent( Event::OnIdChange );
 }
 
 Uint32 Node::getIdHash() const {
@@ -736,6 +741,14 @@ bool Node::inParentTreeOf( Node* Child ) const {
 	}
 
 	return false;
+}
+
+void Node::setLoadingState( bool loading ) {
+	writeNodeFlag( NODE_FLAG_LOADING, loading ? 1 : 0 );
+}
+
+bool Node::isLoadingState() const {
+	return 0 != ( mNodeFlags & NODE_FLAG_LOADING );
 }
 
 Uint32 Node::getChildCount() const {

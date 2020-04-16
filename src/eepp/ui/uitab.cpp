@@ -13,6 +13,11 @@ UITab::UITab() : UISelectButton( "tab" ), mControlOwned( NULL ) {
 	mTextBox->setElementTag( mTag + "::text" );
 	mIcon->setElementTag( mTag + "::icon" );
 	applyDefaultTheme();
+	auto cb = [&]( const Event* event ) {
+		onSizeChange();
+	};
+	mTextBox->addEventListener( Event::OnSizeChange, cb );
+	mIcon->addEventListener( Event::OnSizeChange, cb );
 }
 
 UITab::~UITab() {}
@@ -37,6 +42,13 @@ UITabWidget* UITab::getTabWidget() {
 void UITab::onParentChange() {
 	applyDefaultTheme();
 	UISelectButton::onParentChange();
+}
+
+void UITab::onSizeChange() {
+	onAutoSize();
+	if ( NULL != getTabWidget() )
+		getTabWidget()->orderTabs();
+	UISelectButton::onSizeChange();
 }
 
 void UITab::setTheme( UITheme* Theme ) {
@@ -129,6 +141,11 @@ void UITab::onAutoSize() {
 		}
 
 		setInternalWidth( w );
+
+		if ( getSize().getWidth() != w ) {
+			if ( NULL != getTabWidget() )
+				getTabWidget()->orderTabs();
+		}
 	}
 }
 

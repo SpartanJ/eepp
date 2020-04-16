@@ -60,7 +60,8 @@ enum NodeFlags {
 	NODE_FLAG_WIDGET = ( 1 << 24 ),
 	NODE_FLAG_WINDOW = ( 1 << 25 ),
 
-	NODE_FLAG_FREE_USE = ( 1 << 26 )
+	NODE_FLAG_LOADING = ( 1 << 26 ),
+	NODE_FLAG_FREE_USE = ( 1 << 27 )
 };
 
 class EE_API Node : public Transformable {
@@ -358,6 +359,11 @@ class EE_API Node : public Transformable {
 
 	bool inParentTreeOf( Node* Child ) const;
 
+	void setLoadingState( bool loading );
+
+	bool isLoadingState() const;
+
+	virtual void onIdChange();
   protected:
 	typedef std::map<Uint32, std::map<Uint32, EventCallback>> EventsMap;
 	friend class EventDispatcher;

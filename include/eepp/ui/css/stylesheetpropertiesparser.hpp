@@ -15,6 +15,8 @@ class EE_API StyleSheetPropertiesParser {
 
 	explicit StyleSheetPropertiesParser( const std::string& propsstr );
 
+	void parse( const std::string& propsstr );
+
 	void print();
 
 	const StyleSheetProperties& getProperties() const;
@@ -28,8 +30,6 @@ class EE_API StyleSheetPropertiesParser {
 
 	StyleSheetProperties mProperties;
 	StyleSheetVariables mVariables;
-
-	void parse( std::string propsstr );
 
 	int readPropertyName( ReadState& rs, std::size_t pos, std::string& buffer,
 						  const std::string& str );

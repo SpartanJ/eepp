@@ -12,10 +12,7 @@ UIListBoxItem* UIListBoxItem::NewWithTag( const std::string& tag ) {
 	return eeNew( UIListBoxItem, ( tag ) );
 }
 
-UIListBoxItem::UIListBoxItem() : UITextView( "listbox::item" ) {
-	setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::Fixed );
-	applyDefaultTheme();
-}
+UIListBoxItem::UIListBoxItem() : UIListBoxItem( "listbox::item" ) {}
 
 UIListBoxItem::UIListBoxItem( const std::string& tag ) : UITextView( tag ) {
 	setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::Fixed );

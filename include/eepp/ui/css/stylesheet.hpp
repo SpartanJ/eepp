@@ -4,6 +4,7 @@
 #include <eepp/ui/css/keyframesdefinition.hpp>
 #include <eepp/ui/css/mediaquery.hpp>
 #include <eepp/ui/css/stylesheetstyle.hpp>
+#include <memory>
 
 namespace EE { namespace UI { namespace CSS {
 
@@ -11,7 +12,7 @@ class EE_API StyleSheet {
   public:
 	StyleSheet();
 
-	void addStyle( const StyleSheetStyle& node );
+	void addStyle( std::shared_ptr<StyleSheetStyle> node );
 
 	bool isEmpty() const;
 

@@ -199,6 +199,7 @@ enum class PropertyType : Uint32 {
 	NumberFloat,
 	NumberFloatFixed,
 	NumberLength,
+	NumberLengthFixed,
 	RadiusLength,
 	Color,
 	Vector2,

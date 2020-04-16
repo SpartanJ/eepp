@@ -52,7 +52,7 @@
 
 					<Slider id="slider" orientation="horizontal" half-slider="true" layout_width="200dp" layout_height="wrap_content" padding="32dp" background="#555" layout_to_bottom_of="el1" />
 
-					<ScrollBar id="scrollbar" orientation="horizontal" layout_width="200dp" layout_height="wrap_content" padding="8dp" background="#12345666" layout_to_bottom_of="slider" />
+					<ScrollBar id="scrollbarpadding" orientation="horizontal" layout_width="200dp" layout_height="wrap_content" padding="8dp" background="#12345666" layout_to_bottom_of="slider" />
 
 					<SpinBox id="spinbox" layout_width="200dp" layout_height="wrap_content" padding="8dp" background="#54345666" layout_to_bottom_of="scrollbar" />
 

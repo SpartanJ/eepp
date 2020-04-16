@@ -70,6 +70,8 @@ UISlider::UISlider( const std::string& tag, const UIOrientation& orientation ) :
 
 	mBackSlider->addEventListener( Event::OnSizeChange, cb );
 	mSlider->addEventListener( Event::OnSizeChange, cb );
+	mBackSlider->addEventListener( Event::OnPaddingChange, cb );
+	mSlider->addEventListener( Event::OnPaddingChange, cb );
 
 	applyDefaultTheme();
 }
@@ -130,13 +132,15 @@ void UISlider::adjustChilds() {
 		Float percent = ( mPageStep / ( mMaxValue - mMinValue ) );
 
 		if ( UIOrientation::Horizontal == mOrientation ) {
-			Float size = eemax( ( (Float)getSize().getWidth() * percent ),
-								mSlider->getMinSize().getWidth() );
+			Float size = eemax(
+				( ( Float )( getSize().getWidth() - mPadding.Left - mPadding.Right ) * percent ),
+				mSlider->getMinSize().getWidth() );
 
 			mSlider->setSize( size, mSlider->getSize().getHeight() );
 		} else {
-			Float size = eemax( ( (Float)getSize().getHeight() * percent ),
-								mSlider->getMinSize().getHeight() );
+			Float size = eemax(
+				( ( Float )( getSize().getHeight() - mPadding.Top - mPadding.Bottom ) * percent ),
+				mSlider->getMinSize().getHeight() );
 
 			mSlider->setSize( mSlider->getSize().getWidth(), size );
 		}
@@ -433,7 +437,9 @@ UISlider* UISlider::setOrientation( const UIOrientation& orientation, std::strin
 		mOrientation = orientation;
 
 		mBackSlider->setMinSize( Sizef::Zero );
+		mBackSlider->setMinSizeEq( "", "" );
 		mSlider->setMinSize( Sizef::Zero );
+		mSlider->setMinSizeEq( "", "" );
 		mBackSlider->setSize( Sizef::Zero );
 		mSlider->setSize( Sizef::Zero );
 
@@ -601,19 +607,23 @@ Sizef UISlider::getMinimumSize() {
 void UISlider::onAutoSize() {
 	if ( mLayoutWidthRule == LayoutSizeRule::WrapContent ||
 		 mLayoutHeightRule == LayoutSizeRule::WrapContent ) {
+		bool modified = false;
 		Sizef total( getMinimumSize() );
 
 		total = PixelDensity::dpToPx( total );
 
 		if ( mLayoutWidthRule == LayoutSizeRule::WrapContent ) {
 			setInternalPixelsWidth( total.getWidth() );
+			modified = true;
 		}
 
 		if ( mLayoutHeightRule == LayoutSizeRule::WrapContent ) {
 			setInternalPixelsHeight( total.getHeight() );
+			modified = true;
 		}
 
-		adjustChilds();
+		if ( modified )
+			adjustChilds();
 	}
 }
 

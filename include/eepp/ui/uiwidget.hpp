@@ -286,6 +286,10 @@ class EE_API UIWidget : public UINode {
 
 	virtual void onParentChange();
 
+	virtual void onClassChange();
+
+	virtual void onTagChange();
+
 	void updateAnchors( const Vector2f& SizeChange );
 
 	void alignAgainstLayout();
@@ -307,6 +311,8 @@ class EE_API UIWidget : public UINode {
 	void reloadChildsStyleState();
 
 	Vector2f getTooltipPosition();
+
+	void createStyle();
 };
 
 }} // namespace EE::UI

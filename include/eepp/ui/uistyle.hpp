@@ -80,11 +80,11 @@ class EE_API UIStyle : public UIState {
 	bool mForceReapplyProperties;
 	bool mDisableAnimations;
 
-	void tryApplyStyle( const CSS::StyleSheetStyle& style );
+	void tryApplyStyle( const CSS::StyleSheetStyle* style );
 
-	void findVariables( const CSS::StyleSheetStyle& style );
+	void findVariables( const CSS::StyleSheetStyle* style );
 
-	void applyVarValues( CSS::StyleSheetStyle& style );
+	void applyVarValues( CSS::StyleSheetProperty& style );
 
 	void setVariableFromValue( CSS::StyleSheetProperty& property, const std::string& value );
 

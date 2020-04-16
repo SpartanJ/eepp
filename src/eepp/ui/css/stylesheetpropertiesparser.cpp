@@ -6,9 +6,10 @@ using namespace EE::UI;
 
 namespace EE { namespace UI { namespace CSS {
 
-StyleSheetPropertiesParser::StyleSheetPropertiesParser() {}
+StyleSheetPropertiesParser::StyleSheetPropertiesParser() : mPrevRs( ReadingPropertyName ) {}
 
-StyleSheetPropertiesParser::StyleSheetPropertiesParser( const std::string& propsstr ) {
+StyleSheetPropertiesParser::StyleSheetPropertiesParser( const std::string& propsstr ) :
+	mPrevRs( ReadingPropertyName ) {
 	std::vector<std::string> props = String::split( propsstr, ';' );
 
 	if ( !props.empty() ) {
@@ -24,7 +25,9 @@ const StyleSheetVariables& StyleSheetPropertiesParser::getVariables() const {
 	return mVariables;
 }
 
-void StyleSheetPropertiesParser::parse( std::string propsstr ) {
+void StyleSheetPropertiesParser::parse( const std::string& propsstr ) {
+	mProperties.clear();
+	mVariables.clear();
 	ReadState rs = ReadingPropertyName;
 	mPrevRs = rs;
 	std::size_t pos = 0;

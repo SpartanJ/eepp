@@ -138,9 +138,13 @@ class EE_API UITable : public UITouchDraggableWidget {
 
 	void setHScrollStep();
 
+	void updateScrollBar();
+
 	virtual void onTouchDragValueChange( Vector2f diff );
 
 	virtual bool isTouchOverAllowedChilds();
+
+	void updatePageStep();
 };
 
 }} // namespace EE::UI

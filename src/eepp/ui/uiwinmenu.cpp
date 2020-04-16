@@ -46,7 +46,8 @@ void UIWinMenu::addMenuButton( const String& ButtonText, UIPopUpMenu* Menu ) {
 
 	Menu->setVisible( false );
 	Menu->setEnabled( false );
-	Menu->setParent( getWindowContainer() );
+	// This will force to change the parent when shown, and force the CSS style reload.
+	Menu->setParent( this );
 	Menu->addEventListener( Event::OnWidgetFocusLoss,
 							cb::Make1( this, &UIWinMenu::onMenuFocusLoss ) );
 	Menu->addEventListener( Event::OnHideByClick, cb::Make1( this, &UIWinMenu::onHideByClick ) );
@@ -184,6 +185,7 @@ Uint32 UIWinMenu::onMessage( const NodeMessage* Msg ) {
 						mCurrentMenu = tpop;
 
 						tbut->select();
+						tpop->setParent( getWindowContainer() );
 						tpop->show();
 					}
 				} else {
@@ -192,6 +194,7 @@ Uint32 UIWinMenu::onMessage( const NodeMessage* Msg ) {
 							mCurrentMenu = tpop;
 
 							tbut->select();
+							tpop->setParent( getWindowContainer() );
 							tpop->show();
 						} else {
 							mCurrentMenu = NULL;

@@ -43,14 +43,15 @@ UIWidget::UIWidget( const std::string& tag ) :
 	mAttributesTransactionCount( 0 ) {
 	mNodeFlags |= NODE_FLAG_WIDGET;
 
-	reloadStyle( false, true );
+	if ( !isSceneNodeLoading() && !isLoadingState() )
+		reloadStyle( false, true );
+
+	createStyle();
 
 	updateAnchorsDistances();
 }
 
-UIWidget::UIWidget() : UIWidget( "widget" ) {
-	reloadStyle( false, true );
-}
+UIWidget::UIWidget() : UIWidget( "widget" ) {}
 
 UIWidget::~UIWidget() {
 	eeSAFE_DELETE( mStyle );
@@ -248,6 +249,14 @@ Vector2f UIWidget::getTooltipPosition() {
 	return Pos;
 }
 
+void UIWidget::createStyle() {
+	if ( NULL == mStyle && NULL != getSceneNode() && getSceneNode()->isUISceneNode() &&
+		 getUISceneNode()->hasStyleSheet() ) {
+		mStyle = UIStyle::New( this );
+		mStyle->setState( mState );
+	}
+}
+
 Uint32 UIWidget::onMouseMove( const Vector2i& position, const Uint32& flags ) {
 	EventDispatcher* eventDispatcher = getEventDispatcher();
 
@@ -425,7 +434,8 @@ Node* UIWidget::setSize( const Float& Width, const Float& Height ) {
 Node* UIWidget::setId( const std::string& id ) {
 	Node::setId( id );
 
-	reloadStyle( true );
+	if ( !isSceneNodeLoading() && !isLoadingState() )
+		reloadStyle( true );
 
 	return this;
 }
@@ -563,7 +573,7 @@ void UIWidget::reportStyleStateChange() {
 }
 
 bool UIWidget::isSceneNodeLoading() const {
-	return getSceneNode()->isUISceneNode()
+	return NULL != getSceneNode() && getSceneNode()->isUISceneNode()
 			   ? static_cast<UISceneNode*>( getSceneNode() )->isLoading()
 			   : false;
 }
@@ -768,7 +778,10 @@ void UIWidget::addClass( const std::string& cls ) {
 	if ( !cls.empty() && !hasClass( cls ) ) {
 		mClasses.push_back( cls );
 
-		reloadStyle( true );
+		if ( !isSceneNodeLoading() && !isLoadingState() )
+			reloadStyle( true );
+
+		onClassChange();
 	}
 }
 
@@ -782,7 +795,10 @@ void UIWidget::addClasses( const std::vector<std::string>& classes ) {
 			}
 		}
 
-		reloadStyle( true );
+		if ( !isSceneNodeLoading() && !isLoadingState() )
+			reloadStyle( true );
+
+		onClassChange();
 	}
 }
 
@@ -790,7 +806,10 @@ void UIWidget::removeClass( const std::string& cls ) {
 	if ( hasClass( cls ) ) {
 		mClasses.erase( std::find( mClasses.begin(), mClasses.end(), cls ) );
 
-		reloadStyle( true );
+		if ( !isSceneNodeLoading() && !isLoadingState() )
+			reloadStyle( true );
+
+		onClassChange();
 	}
 }
 
@@ -808,7 +827,10 @@ void UIWidget::removeClasses( const std::vector<std::string>& classes ) {
 			}
 		}
 
-		reloadStyle( true );
+		if ( !isSceneNodeLoading() && !isLoadingState() )
+			reloadStyle( true );
+
+		onClassChange();
 	}
 }
 
@@ -824,7 +846,10 @@ void UIWidget::setElementTag( const std::string& tag ) {
 		mMinHeightEq = "";
 		mMinSize = Sizef::Zero;
 
-		reloadStyle( true );
+		if ( !isSceneNodeLoading() && !isLoadingState() )
+			reloadStyle( true );
+
+		onTagChange();
 	}
 }
 
@@ -881,11 +906,7 @@ UIStyle* UIWidget::getUIStyle() const {
 }
 
 void UIWidget::reloadStyle( const bool& reloadChilds, const bool& disableAnimations ) {
-	if ( NULL == mStyle && NULL != getSceneNode() && getSceneNode()->isUISceneNode() &&
-		 getUISceneNode()->hasStyleSheet() ) {
-		mStyle = UIStyle::New( this );
-		mStyle->setState( mState );
-	}
+	createStyle();
 
 	if ( NULL != mStyle ) {
 		if ( disableAnimations )
@@ -893,7 +914,7 @@ void UIWidget::reloadStyle( const bool& reloadChilds, const bool& disableAnimati
 		mStyle->load();
 		reportStyleStateChange();
 
-		if ( NULL != mChild && reloadChilds ) {
+		if ( NULL != getFirstChild() && reloadChilds ) {
 			Node* ChildLoop = mChild;
 
 			while ( NULL != ChildLoop ) {
@@ -922,7 +943,16 @@ void UIWidget::onMarginChange() {
 void UIWidget::onThemeLoaded() {}
 
 void UIWidget::onParentChange() {
-	reloadStyle( true, true );
+	if ( !isSceneNodeLoading() && !isLoadingState() )
+		reloadStyle( true, true );
+}
+
+void UIWidget::onClassChange() {
+	sendCommonEvent( Event::OnClassChange );
+}
+
+void UIWidget::onTagChange() {
+	sendCommonEvent( Event::OnTagChange );
 }
 
 void UIWidget::beginAttributesTransaction() {
@@ -1092,10 +1122,11 @@ bool UIWidget::checkPropertyDefinition( const StyleSheetProperty& property ) {
 }
 
 void UIWidget::reloadChildsStyleState() {
+	reportStyleStateChange();
 	Node* childLoop = getFirstChild();
 	while ( childLoop != NULL ) {
 		if ( childLoop->isWidget() )
-			childLoop->asType<UIWidget>()->reportStyleStateChange();
+			childLoop->asType<UIWidget>()->reloadChildsStyleState();
 		childLoop = childLoop->getNextNode();
 	}
 }

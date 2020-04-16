@@ -62,7 +62,7 @@ class EE_API StyleSheetStyle {
 };
 
 typedef std::map<std::string, StyleSheetStyle> StyleSheetStyleList;
-typedef std::vector<StyleSheetStyle> StyleSheetStyleVector;
+typedef std::vector<std::shared_ptr<StyleSheetStyle>> StyleSheetStyleVector;
 
 }}} // namespace EE::UI::CSS
 

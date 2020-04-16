@@ -2,15 +2,19 @@
 #define EE_UITUIITEMCONTAINER_HPP
 
 #include <eepp/scene/scenenode.hpp>
-#include <eepp/ui/uinode.hpp>
+#include <eepp/ui/uiwidget.hpp>
 
 namespace EE { namespace UI {
 
-template <class TContainer> class UIItemContainer : public UINode {
+template <class TContainer> class UIItemContainer : public UIWidget {
   public:
 	UIItemContainer();
 
 	~UIItemContainer();
+
+	virtual Uint32 getType() const;
+
+	virtual bool isType( const Uint32& type ) const;
 
 	void update( const Time& time );
 
@@ -20,7 +24,17 @@ template <class TContainer> class UIItemContainer : public UINode {
 	Node* overFind( const Vector2f& Point );
 };
 
-template <class TContainer> UIItemContainer<TContainer>::UIItemContainer() : UINode() {}
+template <class TContainer>
+Uint32 UIItemContainer<TContainer>::getType() const {
+	return UI_TYPE_ITEMCONTAINER;
+}
+
+template <class TContainer>
+bool UIItemContainer<TContainer>::isType( const Uint32& type ) const {
+	return UIItemContainer<TContainer>::getType() == type ? true : UIWidget::isType( type );
+}
+
+template <class TContainer> UIItemContainer<TContainer>::UIItemContainer() : UIWidget() {}
 
 template <class TContainer> UIItemContainer<TContainer>::~UIItemContainer() {}
 

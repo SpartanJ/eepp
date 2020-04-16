@@ -114,8 +114,8 @@ bool UISceneNode::windowExists( UIWindow* win ) {
 	return mWindowsList.end() != std::find( mWindowsList.begin(), mWindowsList.end(), win );
 }
 
-UIWidget* UISceneNode::loadNode( pugi::xml_node node, Node* parent ) {
-	UIWidget* firstWidget = NULL;
+std::vector<UIWidget*> UISceneNode::loadNode( pugi::xml_node node, Node* parent ) {
+	std::vector<UIWidget*> rootWidgets;
 
 	if ( NULL == parent )
 		parent = this;
@@ -124,9 +124,7 @@ UIWidget* UISceneNode::loadNode( pugi::xml_node node, Node* parent ) {
 		UIWidget* uiwidget = UIWidgetCreator::createFromName( widget.name() );
 
 		if ( NULL != uiwidget ) {
-			if ( NULL == firstWidget ) {
-				firstWidget = uiwidget;
-			}
+			rootWidgets.push_back( uiwidget );
 
 			uiwidget->setParent( parent );
 			uiwidget->loadFromXmlNode( widget );
@@ -137,22 +135,26 @@ UIWidget* UISceneNode::loadNode( pugi::xml_node node, Node* parent ) {
 
 			uiwidget->onWidgetCreated();
 		} else if ( String::toLower( widget.name() ) == "style" ) {
-			combineStyleSheet( widget.text().as_string() );
+			combineStyleSheet( widget.text().as_string(), false );
 		}
 	}
 
-	return firstWidget;
+	return rootWidgets;
 }
 
 UIWidget* UISceneNode::loadLayoutNodes( pugi::xml_node node, Node* parent ) {
-	UIWidget* firstWidget = NULL;
-
+	Clock clock;
+	UISceneNode* prevUISceneNode = SceneManager::instance()->getUISceneNode();
+	SceneManager::instance()->setCurrentUISceneNode( this );
 	mIsLoading = true;
-	firstWidget = loadNode( node, parent );
-	reloadStyle( true );
+	std::vector<UIWidget*> widgets = loadNode( node, parent );
+	for ( auto& widget : widgets )
+		widget->reloadStyle( true, true );
 	mIsLoading = false;
-
-	return firstWidget;
+	SceneManager::instance()->setCurrentUISceneNode( prevUISceneNode );
+	eePRINTL( "UISceneNode::loadLayoutNodes loaded in: %.2fms",
+			  clock.getElapsedTime().asMilliseconds() );
+	return widgets.empty() ? NULL : widgets[0];
 }
 
 void UISceneNode::setStyleSheet( const CSS::StyleSheet& styleSheet ) {
@@ -169,18 +171,21 @@ void UISceneNode::setStyleSheet( const std::string& inlineStyleSheet ) {
 		setStyleSheet( parser.getStyleSheet() );
 }
 
-void UISceneNode::combineStyleSheet( const CSS::StyleSheet& styleSheet ) {
+void UISceneNode::combineStyleSheet( const CSS::StyleSheet& styleSheet,
+									 const bool& forceReloadStyle ) {
 	mStyleSheet.combineStyleSheet( styleSheet );
 	processStyleSheetAtRules( styleSheet );
 	onMediaChanged();
-	reloadStyle();
+	if ( forceReloadStyle )
+		reloadStyle();
 }
 
-void UISceneNode::combineStyleSheet( const std::string& inlineStyleSheet ) {
+void UISceneNode::combineStyleSheet( const std::string& inlineStyleSheet,
+									 const bool& forceReloadStyle ) {
 	CSS::StyleSheetParser parser;
 
 	if ( parser.loadFromString( inlineStyleSheet ) )
-		combineStyleSheet( parser.getStyleSheet() );
+		combineStyleSheet( parser.getStyleSheet(), forceReloadStyle );
 }
 
 CSS::StyleSheet& UISceneNode::getStyleSheet() {
@@ -371,7 +376,7 @@ bool UISceneNode::onMediaChanged() {
 		media.resolution = static_cast<int>( getDPI() );
 
 		if ( mStyleSheet.updateMediaLists( media ) ) {
-			reloadStyle();
+			mRoot->reloadChildsStyleState();
 			return true;
 		}
 	}
@@ -397,8 +402,8 @@ void UISceneNode::processStyleSheetAtRules( const StyleSheet& styleSheet ) {
 
 void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles ) {
 	for ( auto& style : styles ) {
-		CSS::StyleSheetProperty familyProp( style.getPropertyById( PropertyId::FontFamily ) );
-		CSS::StyleSheetProperty srcProp( style.getPropertyById( PropertyId::Src ) );
+		CSS::StyleSheetProperty familyProp( style->getPropertyById( PropertyId::FontFamily ) );
+		CSS::StyleSheetProperty srcProp( style->getPropertyById( PropertyId::Src ) );
 
 		if ( !familyProp.isEmpty() && !srcProp.isEmpty() ) {
 			Font* fontSearch = FontManager::instance()->getByName( familyProp.getValue() );

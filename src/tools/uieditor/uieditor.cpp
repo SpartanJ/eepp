@@ -994,9 +994,11 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 							   font, "assets/ui/uitheme.css" );
 
 		uiSceneNode = UISceneNode::New();
+		uiSceneNode->setId( "uiSceneNode" );
 		SceneManager::instance()->add( uiSceneNode );
 
 		appUiSceneNode = UISceneNode::New();
+		appUiSceneNode->setId( "appUiSceneNode" );
 		SceneManager::instance()->add( appUiSceneNode );
 
 		appUiSceneNode->enableDrawInvalidation();

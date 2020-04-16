@@ -53,6 +53,8 @@ class EE_API UITab : public UISelectButton {
 
 	virtual void onParentChange();
 
+	virtual void onSizeChange();
+
 	void setOwnedControl();
 
 	void updateTab();

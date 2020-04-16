@@ -244,16 +244,16 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "arc-start-angle", "" ).setType( PropertyType::NumberFloat );
 
 	registerProperty( "min-width", "" )
-		.setType( PropertyType::NumberLength )
+		.setType( PropertyType::NumberLengthFixed )
 		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockWidth );
 	registerProperty( "min-height", "" )
-		.setType( PropertyType::NumberLength )
+		.setType( PropertyType::NumberLengthFixed )
 		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockHeight );
 	registerProperty( "max-width", "" )
-		.setType( PropertyType::NumberLength )
+		.setType( PropertyType::NumberLengthFixed )
 		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockWidth );
 	registerProperty( "max-height", "" )
-		.setType( PropertyType::NumberLength )
+		.setType( PropertyType::NumberLengthFixed )
 		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockHeight );
 
 	registerProperty( "total-steps", "" ).setType( PropertyType::NumberInt );

@@ -287,8 +287,6 @@ ScrollBar {
 ScrollBar::hback {
 	min-height: 4dp;
 	border-radius: 3dp;
-	margin-left: 4dp;
-	margin-right: 4dp;
 	background-color: transparent;
 }
 
@@ -296,8 +294,6 @@ ScrollBar::vback {
 	min-width: 4dp;
 	border-radius: 3dp;
 	background-color: transparent;
-	margin-top: 4dp;
-	margin-bottom: 4dp;
 }
 
 ScrollBar::vslider {

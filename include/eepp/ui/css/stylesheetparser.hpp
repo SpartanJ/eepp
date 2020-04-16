@@ -5,6 +5,7 @@
 #include <eepp/system/iostream.hpp>
 #include <eepp/ui/css/mediaquery.hpp>
 #include <eepp/ui/css/stylesheet.hpp>
+#include <eepp/ui/css/stylesheetpropertiesparser.hpp>
 #include <iostream>
 #include <map>
 #include <string>
@@ -39,11 +40,8 @@ class EE_API StyleSheetParser {
 	enum ReadState { ReadingSelector, ReadingProperty, ReadingComment };
 
 	std::string mCSS;
-
 	StyleSheet mStyleSheet;
-
 	std::vector<std::string> mComments;
-
 	MediaQueryList::ptr mMediaQueryList;
 
 	bool parse( std::string& css, std::vector<std::string>& importedList );

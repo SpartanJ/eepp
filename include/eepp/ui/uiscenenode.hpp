@@ -58,9 +58,11 @@ class EE_API UISceneNode : public SceneNode {
 
 	void setStyleSheet( const std::string& inlineStyleSheet );
 
-	void combineStyleSheet( const CSS::StyleSheet& styleSheet );
+	void combineStyleSheet( const CSS::StyleSheet& styleSheet,
+							const bool& forceReloadStyle = true );
 
-	void combineStyleSheet( const std::string& inlineStyleSheet );
+	void combineStyleSheet( const std::string& inlineStyleSheet,
+							const bool& forceReloadStyle = true );
 
 	CSS::StyleSheet& getStyleSheet();
 
@@ -120,7 +122,7 @@ class EE_API UISceneNode : public SceneNode {
 
 	void loadFontFaces( const CSS::StyleSheetStyleVector& styles );
 
-	UIWidget* loadNode( pugi::xml_node node, Node* parent );
+	std::vector<UIWidget*> loadNode( pugi::xml_node node, Node* parent );
 
 	virtual Uint32 onKeyDown( const KeyEvent& Event );
 

@@ -11,7 +11,7 @@ class EE_API UIDropDownList : public UITextInput {
 	class StyleConfig {
 	  public:
 		Uint32 MaxNumVisibleItems = 10;
-		bool PopUpToMainControl = false;
+		bool PopUpToRoot = false;
 	};
 
 	static UIDropDownList* NewWithTag( const std::string& tag );
@@ -32,9 +32,9 @@ class EE_API UIDropDownList : public UITextInput {
 
 	void showList();
 
-	bool getPopUpToMainControl() const;
+	bool getPopUpToRoot() const;
 
-	void setPopUpToMainControl( bool popUpToMainControl );
+	void setPopUpToRoot( bool popUpToRoot );
 
 	Uint32 getMaxNumVisibleItems() const;
 

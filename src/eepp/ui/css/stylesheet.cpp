@@ -8,10 +8,10 @@ namespace EE { namespace UI { namespace CSS {
 
 StyleSheet::StyleSheet() {}
 
-void StyleSheet::addStyle( const StyleSheetStyle& node ) {
+void StyleSheet::addStyle( std::shared_ptr<StyleSheetStyle> node ) {
 	mNodes.push_back( node );
 
-	addMediaQueryList( node.getMediaQueryList() );
+	addMediaQueryList( node->getMediaQueryList() );
 }
 
 bool StyleSheet::isEmpty() const {
@@ -20,7 +20,7 @@ bool StyleSheet::isEmpty() const {
 
 void StyleSheet::print() {
 	for ( auto& style : mNodes ) {
-		std::cout << style.build();
+		std::cout << style->build();
 	}
 }
 
@@ -37,7 +37,7 @@ StyleSheetStyleVector StyleSheet::getElementStyles( UIWidget* element,
 	StyleSheetStyleVector styles;
 
 	for ( const auto& node : mNodes ) {
-		const StyleSheetSelector& selector = node.getSelector();
+		const StyleSheetSelector& selector = node->getSelector();
 
 		if ( selector.select( element, applyPseudo ) ) {
 			styles.push_back( node );
@@ -84,7 +84,7 @@ StyleSheetStyleVector StyleSheet::getStyleSheetStyleByAtRule( const AtRuleType& 
 	StyleSheetStyleVector vector;
 
 	for ( auto& node : mNodes ) {
-		if ( node.getAtRuleType() == atRuleType ) {
+		if ( node->getAtRuleType() == atRuleType ) {
 			vector.push_back( node );
 		}
 	}

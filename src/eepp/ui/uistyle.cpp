@@ -67,7 +67,7 @@ void UIStyle::load() {
 			StyleSheetStyleVector styles = styleSheet.getElementStyles( mWidget );
 
 			for ( auto& style : styles ) {
-				const StyleSheetSelector& selector = style.getSelector();
+				const StyleSheetSelector& selector = style->getSelector();
 
 				if ( selector.isCacheable() ) {
 					mCacheableStyles.push_back( style );
@@ -75,15 +75,7 @@ void UIStyle::load() {
 					mNoncacheableStyles.push_back( style );
 				}
 
-				findVariables( style );
-			}
-
-			for ( auto& style : mCacheableStyles ) {
-				applyVarValues( style );
-			}
-
-			for ( auto& style : mNoncacheableStyles ) {
-				applyVarValues( style );
+				findVariables( style.get() );
 			}
 
 			subscribeNonCacheableStyles();
@@ -182,15 +174,17 @@ void UIStyle::unsubscribeRelated( UIWidget* widget ) {
 	mRelatedWidgets.erase( widget );
 }
 
-void UIStyle::tryApplyStyle( const StyleSheetStyle& style ) {
-	if ( style.isMediaValid() && style.getSelector().select( mWidget ) ) {
-		for ( const auto& prop : style.getProperties() ) {
+void UIStyle::tryApplyStyle( const StyleSheetStyle* style ) {
+	if ( style->isMediaValid() && style->getSelector().select( mWidget ) ) {
+		for ( const auto& prop : style->getProperties() ) {
 			const StyleSheetProperty& property = prop.second;
 			const auto& it = mProperties.find( property.getId() );
 
 			if ( it == mProperties.end() ||
 				 property.getSpecificity() >= it->second.getSpecificity() ) {
 				mProperties[property.getId()] = property;
+
+				applyVarValues( mProperties[property.getId()] );
 
 				if ( String::startsWith( property.getName(), "transition" ) )
 					mTransitionProperties.push_back( property );
@@ -201,16 +195,13 @@ void UIStyle::tryApplyStyle( const StyleSheetStyle& style ) {
 	}
 }
 
-void UIStyle::findVariables( const StyleSheetStyle& style ) {
-	if ( style.getSelector().select( mWidget, false ) ) {
-		for ( const auto& vars : style.getVariables() ) {
-			const StyleSheetVariable& variable = vars.second;
-			const auto& it = mVariables.find( variable.getName() );
+void UIStyle::findVariables( const StyleSheetStyle* style ) {
+	for ( const auto& vars : style->getVariables() ) {
+		const StyleSheetVariable& variable = vars.second;
+		const auto& it = mVariables.find( variable.getName() );
 
-			if ( it == mVariables.end() ||
-				 variable.getSpecificity() >= it->second.getSpecificity() ) {
-				mVariables[variable.getName()] = variable;
-			}
+		if ( it == mVariables.end() || variable.getSpecificity() >= it->second.getSpecificity() ) {
+			mVariables[variable.getName()] = variable;
 		}
 	}
 }
@@ -267,20 +258,16 @@ void UIStyle::setVariableFromValue( StyleSheetProperty& property, const std::str
 	}
 }
 
-void UIStyle::applyVarValues( StyleSheetStyle& style ) {
-	for ( auto& prop : style.getPropertiesRef() ) {
-		StyleSheetProperty& property = prop.second;
-
-		if ( property.isVarValue() ) {
-			if ( NULL != property.getPropertyDefinition() &&
-				 property.getPropertyDefinition()->isIndexed() ) {
-				for ( size_t i = 0; i < property.getPropertyIndexCount(); i++ ) {
-					StyleSheetProperty& realProperty = property.getPropertyIndexRef( i );
-					setVariableFromValue( realProperty, realProperty.getValue() );
-				}
-			} else {
-				setVariableFromValue( property, property.getValue() );
+void UIStyle::applyVarValues( StyleSheetProperty& property ) {
+	if ( property.isVarValue() ) {
+		if ( NULL != property.getPropertyDefinition() &&
+			 property.getPropertyDefinition()->isIndexed() ) {
+			for ( size_t i = 0; i < property.getPropertyIndexCount(); i++ ) {
+				StyleSheetProperty& realProperty = property.getPropertyIndexRef( i );
+				setVariableFromValue( realProperty, realProperty.getValue() );
 			}
+		} else {
+			setVariableFromValue( property, property.getValue() );
 		}
 	}
 }
@@ -299,14 +286,14 @@ void UIStyle::onStateChange() {
 		mTransitionProperties.clear();
 		mAnimationProperties.clear();
 
-		tryApplyStyle( mElementStyle );
+		tryApplyStyle( &mElementStyle );
 
 		for ( auto& style : mCacheableStyles ) {
-			tryApplyStyle( style );
+			tryApplyStyle( style.get() );
 		}
 
 		for ( auto& style : mNoncacheableStyles ) {
-			tryApplyStyle( style );
+			tryApplyStyle( style.get() );
 		}
 
 		if ( !mapEquals( mProperties, prevProperties ) || mForceReapplyProperties ) {
@@ -358,9 +345,9 @@ StyleSheetProperty UIStyle::getStatelessStyleSheetProperty( const Uint32& proper
 				return property;
 		}
 
-		for ( const StyleSheetStyle& style : mCacheableStyles ) {
-			if ( !style.getSelector().hasPseudoClasses() ) {
-				StyleSheetProperty property = style.getPropertyById( propertyId );
+		for ( auto style : mCacheableStyles ) {
+			if ( !style->getSelector().hasPseudoClasses() ) {
+				StyleSheetProperty property = style->getPropertyById( propertyId );
 
 				if ( !property.isEmpty() )
 					return property;
@@ -389,7 +376,7 @@ void UIStyle::updateState() {
 
 void UIStyle::subscribeNonCacheableStyles() {
 	for ( auto& style : mNoncacheableStyles ) {
-		std::vector<UIWidget*> elements = style.getSelector().getRelatedElements( mWidget, false );
+		std::vector<UIWidget*> elements = style->getSelector().getRelatedElements( mWidget, false );
 
 		if ( !elements.empty() ) {
 			for ( auto& element : elements ) {
@@ -512,8 +499,7 @@ void UIStyle::applyStyleSheetProperty( const StyleSheetProperty& property,
 					}
 				} else if ( startValue == prevTransition->getEndValue() ) {
 					startValue = currentValue;
-				} /*else if ( startValue == prevTransition->getStartValue() ) {
-				}*/
+				}
 
 				for ( auto& rem : removeTransitions ) {
 					mWidget->removeAction( rem );

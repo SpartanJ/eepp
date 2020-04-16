@@ -58,6 +58,9 @@ class EE_API Event {
 		OnUpdateScreenPosition,
 		OnPageChanged,
 		OnMarginChange,
+		OnTagChange,
+		OnIdChange,
+		OnClassChange,
 		UserEvent,
 		NoEvent = eeINDEX_NOT_FOUND
 	};

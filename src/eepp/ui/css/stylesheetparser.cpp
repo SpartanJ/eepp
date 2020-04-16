@@ -24,7 +24,7 @@ StyleSheetParser::StyleSheetParser() {}
 bool StyleSheetParser::loadFromStream( IOStream& stream ) {
 	Clock elapsed;
 	std::vector<std::string> importedList;
-	mCSS.resize( stream.getSize(), '\0' );
+	mCSS.resize( stream.getSize() );
 	stream.read( &mCSS[0], stream.getSize() );
 	bool ok = parse( mCSS, importedList );
 	eePRINTL( "StyleSheet loaded in: %4.3f ms.", elapsed.getElapsedTime().asMilliseconds() );
@@ -192,13 +192,14 @@ int StyleSheetParser::readProperty( const std::string& css, ReadState& rs, std::
 			selectorName = String::trim( selectorName );
 
 			StyleSheetSelectorParser selectorParse( selectorName );
-			StyleSheetPropertiesParser propertiesParse( buffer );
+			StyleSheetPropertiesParser propertiesParser( buffer );
 
 			if ( !selectorParse.selectors.empty() ) {
 				for ( auto it = selectorParse.selectors.begin();
 					  it != selectorParse.selectors.end(); ++it ) {
-					StyleSheetStyle node( it->getName(), propertiesParse.getProperties(),
-										  propertiesParse.getVariables(), mMediaQueryList );
+					std::shared_ptr<StyleSheetStyle> node = std::make_shared<StyleSheetStyle>(
+						it->getName(), propertiesParser.getProperties(),
+						propertiesParser.getVariables(), mMediaQueryList );
 
 					mStyleSheet.addStyle( node );
 				}
