@@ -85,10 +85,16 @@ void UITabWidget::setContainerSize() {
 								  PixelDensity::dpToPx( mStyleConfig.TabHeight ) );
 	mTabContainer->setPosition( mPadding.Left, mPadding.Top );
 	mCtrlContainer->setPosition( mPadding.Left, mPadding.Top + mStyleConfig.TabHeight );
-	mCtrlContainer->setPixelsSize( mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
-								   mSize.getHeight() -
-									   PixelDensity::dpToPx( mStyleConfig.TabHeight ) -
-									   mRealPadding.Top - mRealPadding.Bottom );
+	Sizef s( mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
+			mSize.getHeight() - PixelDensity::dpToPx( mStyleConfig.TabHeight ) - mRealPadding.Top -
+				mRealPadding.Bottom );
+	if ( s != mCtrlContainer->getSize() ) {
+		mCtrlContainer->setPixelsSize( s );
+
+		for ( auto& tab : mTabs ) {
+			refreshOwnedWidget( tab );
+		}
+	}
 }
 
 const UITabWidget::StyleConfig& UITabWidget::getStyleConfig() const {
@@ -346,26 +352,26 @@ void UITabWidget::updateTabs() {
 	}
 }
 
-UITab* UITabWidget::createTab( const String& Text, UINode* CtrlOwned, Drawable* Icon ) {
-	UITab* tCtrl = UITab::New();
-	tCtrl->setParent( mTabContainer );
-	tCtrl->setFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER | UI_AUTO_SIZE );
-	tCtrl->setIcon( Icon );
-	tCtrl->setText( Text );
-	tCtrl->setVisible( true );
-	tCtrl->setEnabled( true );
-	tCtrl->setControlOwned( CtrlOwned );
-	CtrlOwned->setParent( mCtrlContainer );
-	CtrlOwned->setVisible( false );
-	CtrlOwned->setEnabled( true );
+UITab* UITabWidget::createTab( const String& Text, UINode* ownedWidget, Drawable* Icon ) {
+	UITab* tab = UITab::New();
+	tab->setParent( mTabContainer );
+	tab->setFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER | UI_AUTO_SIZE );
+	tab->setIcon( Icon );
+	tab->setText( Text );
+	tab->setVisible( true );
+	tab->setEnabled( true );
+	tab->setOwnedWidget( ownedWidget );
+	ownedWidget->setParent( mCtrlContainer );
+	ownedWidget->setVisible( false );
+	ownedWidget->setEnabled( true );
 
-	if ( CtrlOwned->isWidget() ) {
-		UIWidget* widgetOwned = static_cast<UIWidget*>( CtrlOwned );
+	if ( ownedWidget->isWidget() ) {
+		UIWidget* widgetOwned = static_cast<UIWidget*>( ownedWidget );
 
 		widgetOwned->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::Fixed );
 	}
 
-	return tCtrl;
+	return tab;
 }
 
 UITabWidget* UITabWidget::add( const String& Text, UINode* CtrlOwned, Drawable* Icon ) {
@@ -421,8 +427,8 @@ void UITabWidget::removeTab( const Uint32& Index ) {
 	eeASSERT( Index < mTabs.size() );
 
 	if ( mTabs[Index] == mTabSelected ) {
-		mTabSelected->getControlOwned()->setVisible( false );
-		mTabSelected->getControlOwned()->setEnabled( false );
+		mTabSelected->getOwnedWidget()->setVisible( false );
+		mTabSelected->getOwnedWidget()->setEnabled( false );
 	}
 
 	mTabs[Index]->close();
@@ -498,16 +504,16 @@ void UITabWidget::setTabSelected( UITab* Tab ) {
 	invalidateDraw();
 
 	if ( Tab == mTabSelected ) {
-		refreshControlOwned( Tab );
+		refreshOwnedWidget( Tab );
 		return;
 	}
 
 	if ( NULL != mTabSelected ) {
 		mTabSelected->unselect();
 
-		if ( NULL != mTabSelected->getControlOwned() ) {
-			mTabSelected->getControlOwned()->setVisible( false );
-			mTabSelected->getControlOwned()->setEnabled( false );
+		if ( NULL != mTabSelected->getOwnedWidget() ) {
+			mTabSelected->getOwnedWidget()->setVisible( false );
+			mTabSelected->getOwnedWidget()->setEnabled( false );
 		}
 	}
 
@@ -519,7 +525,7 @@ void UITabWidget::setTabSelected( UITab* Tab ) {
 		mTabSelected = Tab;
 		mTabSelectedIndex = TabIndex;
 
-		refreshControlOwned( mTabSelected );
+		refreshOwnedWidget( mTabSelected );
 
 		orderTabs();
 
@@ -533,19 +539,19 @@ void UITabWidget::setTabSelected( const Uint32& tabIndex ) {
 	}
 }
 
-void UITabWidget::refreshControlOwned( UITab* tab ) {
-	if ( NULL != tab && NULL != tab->getControlOwned() ) {
-		tab->getControlOwned()->setParent( mCtrlContainer );
-		tab->getControlOwned()->setVisible( tab == mTabSelected );
-		tab->getControlOwned()->setEnabled( tab == mTabSelected );
-		tab->getControlOwned()->setSize( mCtrlContainer->getSize() );
+void UITabWidget::refreshOwnedWidget( UITab* tab ) {
+	if ( NULL != tab && NULL != tab->getOwnedWidget() ) {
+		tab->getOwnedWidget()->setParent( mCtrlContainer );
+		tab->getOwnedWidget()->setVisible( tab == mTabSelected );
+		tab->getOwnedWidget()->setEnabled( tab == mTabSelected );
+		tab->getOwnedWidget()->setSize( mCtrlContainer->getSize() );
 
-		if ( tab->getControlOwned()->isWidget() ) {
-			UIWidget* widget = static_cast<UIWidget*>( tab->getControlOwned() );
+		if ( tab->getOwnedWidget()->isWidget() ) {
+			UIWidget* widget = static_cast<UIWidget*>( tab->getOwnedWidget() );
 
 			widget->setPosition( widget->getLayoutMargin().Left, widget->getLayoutMargin().Top );
 		} else {
-			tab->getControlOwned()->setPosition( 0, 0 );
+			tab->getOwnedWidget()->setPosition( 0, 0 );
 		}
 	}
 }
@@ -574,8 +580,8 @@ void UITabWidget::onSizeChange() {
 	setContainerSize();
 	posTabs();
 
-	if ( NULL != mTabSelected && NULL != mTabSelected->getControlOwned() ) {
-		mTabSelected->getControlOwned()->setSize( mCtrlContainer->getSize() );
+	if ( NULL != mTabSelected && NULL != mTabSelected->getOwnedWidget() ) {
+		mTabSelected->getOwnedWidget()->setSize( mCtrlContainer->getSize() );
 	}
 
 	UIWidget::onSizeChange();

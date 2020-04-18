@@ -262,6 +262,8 @@ class EE_API UIWindow : public UIWidget {
 
 	virtual void onWindowReady();
 
+	Sizef getMinWindowSizeWithDecoration();
+
 	void onContainerPositionChange( const Event* Event );
 
 	void setupModal();

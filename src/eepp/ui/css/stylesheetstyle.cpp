@@ -125,7 +125,7 @@ void StyleSheetStyle::clearProperties() {
 }
 
 StyleSheetVariable StyleSheetStyle::getVariableByName( const std::string& name ) const {
-	auto it = mVariables.find( name );
+	auto it = mVariables.find( String::hash( name ) );
 
 	if ( it != mVariables.end() )
 		return it->second;
@@ -134,7 +134,7 @@ StyleSheetVariable StyleSheetStyle::getVariableByName( const std::string& name )
 }
 
 void StyleSheetStyle::setVariable( const StyleSheetVariable& variable ) {
-	mVariables[variable.getName()] = variable;
+	mVariables[variable.getNameHash()] = variable;
 }
 
 bool StyleSheetStyle::isMediaValid() const {

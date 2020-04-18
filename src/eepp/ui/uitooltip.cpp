@@ -36,6 +36,8 @@ UITooltip::UITooltip() :
 	autoPadding();
 
 	applyDefaultTheme();
+
+	reloadStyle( true, true  );
 }
 
 UITooltip::~UITooltip() {

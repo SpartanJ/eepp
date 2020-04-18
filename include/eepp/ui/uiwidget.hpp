@@ -160,7 +160,8 @@ class EE_API UIWidget : public UINode {
 
 	UIStyle* getUIStyle() const;
 
-	void reloadStyle( const bool& reloadChilds = true, const bool& disableAnimations = false );
+	void reloadStyle( const bool& reloadChilds = true, const bool& disableAnimations = false,
+					  const bool& reportStateChange = true );
 
 	void beginAttributesTransaction();
 
@@ -224,6 +225,8 @@ class EE_API UIWidget : public UINode {
 	const std::string& getMaxHeightEq() const;
 
 	void setMaxHeightEq( const std::string& maxHeightEq );
+
+	void reportStyleStateChangeRecursive();
 
   protected:
 	friend class UIManager;
@@ -307,8 +310,6 @@ class EE_API UIWidget : public UINode {
 	std::string getFlagsString() const;
 
 	bool checkPropertyDefinition( const StyleSheetProperty& property );
-
-	void reloadChildsStyleState();
 
 	Vector2f getTooltipPosition();
 

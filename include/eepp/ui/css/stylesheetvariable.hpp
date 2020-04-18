@@ -43,7 +43,7 @@ class EE_API StyleSheetVariable {
 	Uint32 mSpecificity;
 };
 
-typedef std::map<std::string, StyleSheetVariable> StyleSheetVariables;
+typedef std::map<Uint32, StyleSheetVariable> StyleSheetVariables;
 
 }}} // namespace EE::UI::CSS
 

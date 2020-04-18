@@ -11,17 +11,16 @@ namespace EE { namespace UI { namespace Tools {
 
 TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) : mUIWindow( NULL ), mNewTGCb( NewTGCb ) {
 	mUIWindow = UIWindow::New();
-	mUIWindow->setSizeWithDecoration( 378, 374 )
-		->setMinWindowSize( 378, 374 )
-		->setWinFlags( UI_WIN_CLOSE_BUTTON | UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS |
-					   UI_WIN_SHARE_ALPHA_WITH_CHILDS | UI_WIN_MODAL );
+	mUIWindow->setSizeWithDecoration( 378, 0 )->setMinWindowSize( 378, 0 )->setWinFlags(
+		UI_WIN_CLOSE_BUTTON | UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS | UI_WIN_SHARE_ALPHA_WITH_CHILDS |
+		UI_WIN_MODAL );
 
 	mUIWindow->addEventListener( Event::OnWindowClose,
 								 cb::Make1( this, &TextureAtlasNew::windowClose ) );
 	mUIWindow->setTitle( "New Texture Atlas" );
 
 	std::string layout = R"xml(
-	<LinearLayout id='container' layout_width='match_parent' layout_height='wrap_content' margin-left='8dp' margin-right='8dp' margin-top='8dp'>
+	<LinearLayout id='container' layout_width='match_parent' layout_height='wrap_content' margin='8dp'>
 		<LinearLayout layout_width='match_parent' layout_height='wrap_content' orientation='horizontal' margin-bottom='8dp'>
 			<TextView layout_width='match_parent' layout_weight='0.7' layout_height='wrap_content' layout_gravity='center_vertical' text='Save File Format:' />
 			<DropDownList id='saveType' layout_width='match_parent' layout_weight='0.3' layout_height='wrap_content' layout_gravity='center_vertical' selected-text='PNG'>
@@ -79,9 +78,11 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) : mUIWindow( NULL ), mNew
 	 </LinearLayout>
 	 )xml";
 
-	if ( mUIWindow->getSceneNode()->isUISceneNode() )
-		static_cast<UISceneNode*>( mUIWindow->getSceneNode() )
-			->loadLayoutFromString( layout, mUIWindow->getContainer() );
+	UIWidget* container = NULL;
+	if ( mUIWindow->getSceneNode()->isUISceneNode() ) {
+		container =
+			mUIWindow->getUISceneNode()->loadLayoutFromString( layout, mUIWindow->getContainer() );
+	}
 
 	mUIWindow->bind( "saveType", mSaveFileType );
 	mUIWindow->bind( "maxTAWidth", mComboWidth );
@@ -114,7 +115,8 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) : mUIWindow( NULL ), mNew
 	mUIWindow->find<UIPushButton>( "cancelButton" )
 		->addEventListener( Event::MouseClick, cb::Make1( this, &TextureAtlasNew::cancelClick ) );
 
-	mUIWindow->setSizeWithDecoration( mUIWindow->getContainer()->find( "container" )->getSize() );
+	mUIWindow->setMinWindowSize(
+		Sizef( container->getSize().getWidth(), container->getSize().getHeight() ) );
 	mUIWindow->center();
 	mUIWindow->show();
 }

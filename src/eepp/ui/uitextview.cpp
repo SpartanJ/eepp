@@ -53,8 +53,6 @@ UITextView::UITextView( const std::string& tag ) :
 		}
 	}
 
-	alignFix();
-
 	applyDefaultTheme();
 }
 
@@ -392,8 +390,10 @@ Uint32 UITextView::onMouseDoubleClick( const Vector2i& Pos, const Uint32& Flags 
 	if ( isTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) ) {
 		Vector2f controlPos( Vector2f( Pos.x, Pos.y ) );
 		worldToNode( controlPos );
-		controlPos = PixelDensity::dpToPx( controlPos ) - mRealAlignOffset;
-		controlPos -= Vector2f( mRealPadding.Left, mRealPadding.Top );
+		controlPos = PixelDensity::dpToPx( controlPos ) - mRealAlignOffset -
+					 Vector2f( mRealPadding.Left, mRealPadding.Top );
+		controlPos.x = eemax( 0.f, controlPos.x );
+		controlPos.y = eemax( 0.f, controlPos.y );
 
 		Int32 curPos = mTextCache->findCharacterFromPos( controlPos.asInt() );
 
@@ -432,8 +432,10 @@ Uint32 UITextView::onMouseDown( const Vector2i& Pos, const Uint32& Flags ) {
 		 getEventDispatcher()->getDownControl() == this ) {
 		Vector2f controlPos( Vector2f( Pos.x, Pos.y ) );
 		worldToNode( controlPos );
-		controlPos = PixelDensity::dpToPx( controlPos ) - mRealAlignOffset +
+		controlPos = PixelDensity::dpToPx( controlPos ) - mRealAlignOffset -
 					 Vector2f( mRealPadding.Left, mRealPadding.Top );
+		controlPos.x = eemax( 0.f, controlPos.x );
+		controlPos.y = eemax( 0.f, controlPos.y );
 
 		Int32 curPos = mTextCache->findCharacterFromPos( controlPos.asInt() );
 

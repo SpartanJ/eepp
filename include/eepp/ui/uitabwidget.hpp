@@ -145,7 +145,7 @@ class EE_API UITabWidget : public UIWidget {
 
 	void applyThemeToTabs();
 
-	void refreshControlOwned( UITab* tab );
+	void refreshOwnedWidget( UITab* tab );
 };
 
 }} // namespace EE::UI

@@ -218,25 +218,39 @@ bool StyleSheetSelectorRule::hasStructuralPseudoClass( const std::string& cls ) 
 		   mStructuralPseudoClasses.end();
 }
 
+const std::string& StyleSheetSelectorRule::getTagName() const {
+	return mTagName;
+}
+
+const std::string& StyleSheetSelectorRule::getId() const {
+	return mId;
+}
+
 bool StyleSheetSelectorRule::matches( UIWidget* element, const bool& applyPseudo ) const {
 	Uint32 flags = 0;
 
-	if ( mTagName == "*" ) {
-		if ( !applyPseudo ) {
-			return true;
+	if ( !mTagName.empty() ) {
+		if ( mTagName != "*" ) {
+			if ( mTagName != element->getElementTag() ) {
+				return false;
+			} else {
+				flags |= TagName;
+			}
 		} else {
-			flags |= TagName;
+			if ( !applyPseudo ) {
+				return true;
+			} else {
+				flags |= TagName;
+			}
 		}
 	}
 
-	if ( !mTagName.empty() && !element->getStyleSheetTag().empty() &&
-		 mTagName == element->getStyleSheetTag() ) {
-		flags |= TagName;
-	}
-
-	if ( !mId.empty() && !element->getStyleSheetId().empty() &&
-		 mId == element->getStyleSheetId() ) {
-		flags |= Id;
+	if ( !mId.empty() ) {
+		if ( mId != element->getId() ) {
+			return false;
+		} else {
+			flags |= Id;
+		}
 	}
 
 	if ( !mClasses.empty() && !element->getStyleSheetClasses().empty() ) {

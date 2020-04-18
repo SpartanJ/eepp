@@ -74,6 +74,10 @@ class EE_API StyleSheetSelectorRule {
 
 	bool hasStructuralPseudoClass( const std::string& cls ) const;
 
+	const std::string& getTagName() const;
+
+	const std::string& getId() const;
+
   protected:
 	int mSpecificity;
 	PatternMatch mPatternMatch;

@@ -45,8 +45,6 @@ UISpinBox::UISpinBox() :
 
 	internalValue( mValue, true );
 
-	adjustChilds();
-
 	applyDefaultTheme();
 }
 

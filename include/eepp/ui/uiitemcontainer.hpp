@@ -20,23 +20,28 @@ template <class TContainer> class UIItemContainer : public UIWidget {
 
 	void drawChilds();
 
+	virtual void onChildCountChange( Node* child, const bool& removed );
+
   protected:
 	Node* overFind( const Vector2f& Point );
 };
 
-template <class TContainer>
-Uint32 UIItemContainer<TContainer>::getType() const {
+template <class TContainer> Uint32 UIItemContainer<TContainer>::getType() const {
 	return UI_TYPE_ITEMCONTAINER;
 }
 
-template <class TContainer>
-bool UIItemContainer<TContainer>::isType( const Uint32& type ) const {
+template <class TContainer> bool UIItemContainer<TContainer>::isType( const Uint32& type ) const {
 	return UIItemContainer<TContainer>::getType() == type ? true : UIWidget::isType( type );
 }
 
 template <class TContainer> UIItemContainer<TContainer>::UIItemContainer() : UIWidget() {}
 
 template <class TContainer> UIItemContainer<TContainer>::~UIItemContainer() {}
+
+template <class TContainer>
+void UIItemContainer<TContainer>::onChildCountChange( Node* child, const bool& removed ) {
+	UINode::onChildCountChange( child, removed );
+}
 
 template <class TContainer> void UIItemContainer<TContainer>::update( const Time& time ) {
 	TContainer* tParent = reinterpret_cast<TContainer*>( getParent() );

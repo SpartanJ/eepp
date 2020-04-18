@@ -9,13 +9,11 @@ UITab* UITab::New() {
 	return eeNew( UITab, () );
 }
 
-UITab::UITab() : UISelectButton( "tab" ), mControlOwned( NULL ) {
+UITab::UITab() : UISelectButton( "tab" ), mOwnedWidget( NULL ) {
 	mTextBox->setElementTag( mTag + "::text" );
 	mIcon->setElementTag( mTag + "::icon" );
 	applyDefaultTheme();
-	auto cb = [&]( const Event* event ) {
-		onSizeChange();
-	};
+	auto cb = [&]( const Event* event ) { onSizeChange(); };
 	mTextBox->addEventListener( Event::OnSizeChange, cb );
 	mIcon->addEventListener( Event::OnSizeChange, cb );
 }
@@ -187,7 +185,7 @@ bool UITab::applyProperty( const StyleSheetProperty& attribute ) {
 
 Uint32 UITab::onMouseUp( const Vector2i& Pos, const Uint32& Flags ) {
 	if ( mEnabled && mVisible ) {
-		if ( NULL == mControlOwned && !mOwnedName.empty() ) {
+		if ( NULL == mOwnedWidget && !mOwnedName.empty() ) {
 			setOwnedControl();
 		}
 
@@ -213,7 +211,7 @@ void UITab::setOwnedControl() {
 	Node* ctrl = getParent()->getParent()->find( mOwnedName );
 
 	if ( NULL != ctrl ) {
-		setControlOwned( ctrl );
+		setOwnedWidget( ctrl );
 	}
 }
 
@@ -231,17 +229,17 @@ void UITab::updateTab() {
 	}
 }
 
-Node* UITab::getControlOwned() const {
-	return mControlOwned;
+Node* UITab::getOwnedWidget() const {
+	return mOwnedWidget;
 }
 
-void UITab::setControlOwned( Node* controlOwned ) {
-	mControlOwned = controlOwned;
+void UITab::setOwnedWidget( Node* ownedWidget ) {
+	mOwnedWidget = ownedWidget;
 
 	UITabWidget* tTabW = getTabWidget();
 
 	if ( NULL != tTabW ) {
-		tTabW->refreshControlOwned( this );
+		tTabW->refreshOwnedWidget( this );
 
 		if ( NULL == tTabW->mTabSelected )
 			tTabW->setTabSelected( this );

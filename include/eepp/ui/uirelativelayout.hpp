@@ -22,6 +22,8 @@ class EE_API UIRelativeLayout : public UILayout {
 
 	virtual void onSizeChange();
 
+	virtual void onPaddingChange();
+
 	virtual void onChildCountChange( Node * child, const bool& removed );
 
 	virtual void onParentSizeChange( const Vector2f& SizeChange );

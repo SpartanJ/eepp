@@ -57,20 +57,6 @@ UIScrollBar::UIScrollBar( const UIOrientation& orientation ) :
 		mSlider->getBackSlider()->setElementTag( "scrollbar::hback" );
 	}
 
-	auto cb = [&]( const Event* event ) {
-		onAutoSize();
-		adjustChilds();
-	};
-
-	mBtnUp->addEventListener( Event::OnSizeChange, cb );
-	mBtnDown->addEventListener( Event::OnSizeChange, cb );
-	mSlider->addEventListener( Event::OnSizeChange, [&]( const Event* event ) {
-		onAutoSize();
-	} );
-	mSlider->addEventListener( Event::OnPaddingChange, cb );
-
-	adjustChilds();
-
 	applyDefaultTheme();
 }
 
@@ -131,7 +117,7 @@ void UIScrollBar::onAutoSize() {
 
 		setMinSize( PixelDensity::pxToDp( size ) );
 
-		/*if ( mFlags & UI_AUTO_SIZE ) {
+		if ( mFlags & UI_AUTO_SIZE ) {
 			if ( mSlider->isVertical() ) {
 				mSlider->setSize( size.getWidth(), getSize().getHeight() );
 				setSize( size.getWidth(), getSize().getHeight() );
@@ -139,11 +125,11 @@ void UIScrollBar::onAutoSize() {
 				mSlider->setSize( getSize().getWidth(), size.getHeight() );
 				setSize( getSize().getWidth(), size.getHeight() );
 			}
-		}*/
+		}
 	} else if ( NULL != mSlider->getSliderButton() ) {
 		tSkin = mSlider->getSliderButton()->getSkin();
 
-		/*if ( NULL != tSkin ) {
+		if ( NULL != tSkin ) {
 			size = tSkin->getSize();
 
 			setMinSize( PixelDensity::pxToDp( size ) );
@@ -155,7 +141,7 @@ void UIScrollBar::onAutoSize() {
 					setSize( getSize().getWidth(), size.getHeight() );
 				}
 			}
-		}*/
+		}
 	}
 
 	if ( mLayoutWidthRule == LayoutSizeRule::WrapContent ||

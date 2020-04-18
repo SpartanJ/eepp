@@ -401,17 +401,17 @@ Uint32 UISlider::onKeyDown( const KeyEvent& Event ) {
 
 void UISlider::manageClick( const Uint32& Flags ) {
 	if ( Flags && NULL != getEventDispatcher() ) {
-		Vector2f ControlPos = getEventDispatcher()->getMousePosf();
-		mSlider->worldToNode( ControlPos );
+		Vector2f controlPos = getEventDispatcher()->getMousePosf();
+		mSlider->worldToNode( controlPos );
 
 		if ( Flags & EE_BUTTON_LMASK && !mSlider->isMouseOver() ) {
 			if ( UIOrientation::Horizontal == mOrientation ) {
-				if ( ControlPos.x < 0 )
+				if ( controlPos.x < 0 )
 					setValue( mValue - mClickStep );
 				else
 					setValue( mValue + mClickStep );
 			} else {
-				if ( ControlPos.y < 0 )
+				if ( controlPos.y < 0 )
 					setValue( mValue - mClickStep );
 				else
 					setValue( mValue + mClickStep );

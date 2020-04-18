@@ -767,6 +767,13 @@ void mainLoop() {
 		uiSceneNode->setDrawDebugData( !uiSceneNode->getDrawDebugData() );
 	}
 
+	if ( window->getInput()->isKeyUp( KEY_F9 ) ) {
+		Clock clock;
+		uiSceneNode->getRoot()->reportStyleStateChangeRecursive();
+		eePRINTL( "Applied style state changes in: %.2fms",
+				  clock.getElapsedTime().asMilliseconds() );
+	}
+
 	if ( mousePos != window->getInput()->getMousePos() ) {
 		mousePos = window->getInput()->getMousePos();
 		mouseClock.restart();
@@ -967,6 +974,9 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		preserveContainerSize = true;
 	}
 
+	Log::instance()->setLiveWrite( true );
+	Log::instance()->setConsoleOutput( true );
+
 	window = Engine::instance()->createWindow(
 		WindowSettings( 1280, 720, "eepp - UI Editor", WindowStyle::Default, WindowBackend::Default,
 						32, "assets/icon/ee.png", pixelDensity ),
@@ -995,6 +1005,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 
 		uiSceneNode = UISceneNode::New();
 		uiSceneNode->setId( "uiSceneNode" );
+		uiSceneNode->setVerbose( true );
 		SceneManager::instance()->add( uiSceneNode );
 
 		appUiSceneNode = UISceneNode::New();

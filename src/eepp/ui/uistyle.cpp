@@ -131,7 +131,7 @@ const bool& UIStyle::isChangingState() const {
 }
 
 StyleSheetVariable UIStyle::getVariable( const std::string& variable ) {
-	auto it = mVariables.find( variable );
+	auto it = mVariables.find( String::hash( variable ) );
 
 	if ( it != mVariables.end() ) {
 		return it->second;
@@ -198,10 +198,10 @@ void UIStyle::tryApplyStyle( const StyleSheetStyle* style ) {
 void UIStyle::findVariables( const StyleSheetStyle* style ) {
 	for ( const auto& vars : style->getVariables() ) {
 		const StyleSheetVariable& variable = vars.second;
-		const auto& it = mVariables.find( variable.getName() );
+		const auto& it = mVariables.find( variable.getNameHash() );
 
 		if ( it == mVariables.end() || variable.getSpecificity() >= it->second.getSpecificity() ) {
-			mVariables[variable.getName()] = variable;
+			mVariables[variable.getNameHash()] = variable;
 		}
 	}
 }

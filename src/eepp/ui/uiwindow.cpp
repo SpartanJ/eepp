@@ -82,9 +82,7 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const StyleConfig& w
 
 	applyDefaultTheme();
 
-	runOnMainThread( [&]() {
-		onWindowReady();
-	} );
+	runOnMainThread( [&]() { onWindowReady(); } );
 }
 
 UIWindow::~UIWindow() {
@@ -557,25 +555,27 @@ void UIWindow::calcMinWinSize() {
 }
 
 void UIWindow::applyMinWinSize() {
-	if ( getSize().getWidth() < mStyleConfig.MinWindowSize.getWidth() &&
-		 getSize().getHeight() < mStyleConfig.MinWindowSize.getHeight() ) {
+	Sizef size( getMinWindowSizeWithDecoration() );
+
+	if ( getSize().getWidth() < size.getWidth() && getSize().getHeight() < size.getHeight() ) {
 		setSize( mStyleConfig.MinWindowSize );
-	} else if ( getSize().getWidth() < mStyleConfig.MinWindowSize.getWidth() ) {
+	} else if ( getSize().getWidth() < size.getWidth() ) {
 		setSize( Sizef( mStyleConfig.MinWindowSize.getWidth(), getSize().getHeight() ) );
-	} else if ( getSize().getHeight() < mStyleConfig.MinWindowSize.getHeight() ) {
+	} else if ( getSize().getHeight() < size.getHeight() ) {
 		setSize( Sizef( getSize().getWidth(), mStyleConfig.MinWindowSize.getHeight() ) );
 	}
 }
 
 void UIWindow::onSizeChange() {
-	if ( getSize().getWidth() < mStyleConfig.MinWindowSize.getWidth() ||
-		 getSize().getHeight() < mStyleConfig.MinWindowSize.getHeight() ) {
-		if ( getSize().getWidth() < mStyleConfig.MinWindowSize.getWidth() &&
+	Sizef size( getMinWindowSizeWithDecoration() );
+
+	if ( getSize().getWidth() < size.getWidth() || getSize().getHeight() < size.getHeight() ) {
+		if ( getSize().getWidth() < size.getWidth() &&
 			 getSize().getHeight() < mStyleConfig.MinWindowSize.getHeight() ) {
 			setSize( mStyleConfig.MinWindowSize );
-		} else if ( getSize().getWidth() < mStyleConfig.MinWindowSize.getHeight() ) {
+		} else if ( getSize().getWidth() < size.getWidth() ) {
 			setSize( Sizef( mStyleConfig.MinWindowSize.getWidth(), getSize().getHeight() ) );
-		} else {
+		} else if ( getSize().getHeight() < size.getHeight() ) {
 			setSize( Sizef( getSize().getWidth(), mStyleConfig.MinWindowSize.getHeight() ) );
 		}
 	} else {
@@ -631,12 +631,11 @@ const Sizef& UIWindow::getSize() const {
 }
 
 void UIWindow::fixChildsSize() {
-	if ( mSize.getWidth() < PixelDensity::dpToPx( mStyleConfig.MinWindowSize.getWidth() ) ||
-		 mSize.getHeight() < PixelDensity::dpToPx( mStyleConfig.MinWindowSize.getHeight() ) ) {
-		internalSize( eemin( mSize.getWidth(),
-							 PixelDensity::dpToPx( mStyleConfig.MinWindowSize.getWidth() ) ),
-					  eemin( mSize.getHeight(),
-							 PixelDensity::dpToPx( mStyleConfig.MinWindowSize.getHeight() ) ) );
+	Sizef size( PixelDensity::dpToPx( getMinWindowSizeWithDecoration() ) );
+
+	if ( mSize.getWidth() < size.getWidth() || mSize.getHeight() < size.getHeight() ) {
+		internalSize( eemin( mSize.getWidth(), size.getWidth() ),
+					  eemin( mSize.getHeight(), size.getHeight() ) );
 	}
 
 	if ( NULL == mWindowDecoration && NULL != mContainer ) {
@@ -1004,7 +1003,7 @@ void UIWindow::internalSize( const Float& w, const Float& h ) {
 }
 
 void UIWindow::internalSize( Sizef Size ) {
-	Sizef realMin = PixelDensity::dpToPx( mStyleConfig.MinWindowSize );
+	Sizef realMin = PixelDensity::dpToPx( getMinWindowSizeWithDecoration() );
 
 	Size.x = eemax( realMin.x, Size.x );
 	Size.y = eemax( realMin.y, Size.y );
@@ -1407,6 +1406,15 @@ UIWindow* UIWindow::setMinWindowSize( Sizef size ) {
 	applyMinWinSize();
 
 	return this;
+}
+
+Sizef UIWindow::getMinWindowSizeWithDecoration() {
+	Sizef size( getMinWindowSize() );
+	if ( NULL != mWindowDecoration ) {
+		size.x += mBorderLeft->getSize().getWidth() + mBorderRight->getSize().getWidth();
+		size.y += mWindowDecoration->getSize().getHeight() + mBorderBottom->getSize().getHeight();
+	}
+	return size;
 }
 
 const Sizef& UIWindow::getMinWindowSize() {

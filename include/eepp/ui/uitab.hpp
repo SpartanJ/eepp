@@ -13,9 +13,9 @@ class EE_API UITab : public UISelectButton {
 
 	UITab();
 
-	Node* getControlOwned() const;
+	Node* getOwnedWidget() const;
 
-	void setControlOwned( Node* controlOwned );
+	void setOwnedWidget( Node* ownedWidget );
 
 	virtual ~UITab();
 
@@ -37,7 +37,7 @@ class EE_API UITab : public UISelectButton {
   protected:
 	friend class UITabWidget;
 
-	Node* mControlOwned;
+	Node* mOwnedWidget;
 	String mText;
 	std::string mOwnedName;
 

@@ -28,6 +28,11 @@ void UIRelativeLayout::onSizeChange() {
 	fixChilds();
 }
 
+void UIRelativeLayout::onPaddingChange() {
+	UILayout::onPaddingChange();
+	fixChilds();
+}
+
 void UIRelativeLayout::onChildCountChange( Node* child, const bool& removed ) {
 	UILayout::onChildCountChange( child, removed );
 	fixChilds();

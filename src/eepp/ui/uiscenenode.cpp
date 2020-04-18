@@ -32,6 +32,11 @@ UISceneNode::UISceneNode( EE::Window::Window* window ) :
 	mRoot( NULL ),
 	mIsLoading( false ),
 	mCSSInvalid( false ),
+#ifdef EE_DEBUG
+	mVerbose( true ),
+#else
+	mVerbose( false ),
+#endif
 	mUIThemeManager( UIThemeManager::New() ) {
 	// Update only UI elements that requires it.
 	setUpdateAllChilds( false );
@@ -114,13 +119,18 @@ bool UISceneNode::windowExists( UIWindow* win ) {
 	return mWindowsList.end() != std::find( mWindowsList.begin(), mWindowsList.end(), win );
 }
 
+static std::vector<std::pair<Float, std::string>> times;
+
 std::vector<UIWidget*> UISceneNode::loadNode( pugi::xml_node node, Node* parent ) {
 	std::vector<UIWidget*> rootWidgets;
 
 	if ( NULL == parent )
 		parent = this;
 
+	Clock clock;
 	for ( pugi::xml_node widget = node; widget; widget = widget.next_sibling() ) {
+		clock.restart();
+
 		UIWidget* uiwidget = UIWidgetCreator::createFromName( widget.name() );
 
 		if ( NULL != uiwidget ) {
@@ -128,6 +138,11 @@ std::vector<UIWidget*> UISceneNode::loadNode( pugi::xml_node node, Node* parent 
 
 			uiwidget->setParent( parent );
 			uiwidget->loadFromXmlNode( widget );
+
+			if ( mVerbose ) {
+				times.push_back( std::make_pair<Float, std::string>(
+					clock.getElapsedTime().asMilliseconds(), widget.name() ) );
+			}
 
 			if ( widget.first_child() ) {
 				loadNode( widget.first_child(), uiwidget );
@@ -146,14 +161,52 @@ UIWidget* UISceneNode::loadLayoutNodes( pugi::xml_node node, Node* parent ) {
 	Clock clock;
 	UISceneNode* prevUISceneNode = SceneManager::instance()->getUISceneNode();
 	SceneManager::instance()->setCurrentUISceneNode( this );
+	std::string id( node.attribute( "id" ).as_string() );
 	mIsLoading = true;
+	Clock innerClock;
 	std::vector<UIWidget*> widgets = loadNode( node, parent );
+
+	if ( mVerbose ) {
+		std::sort(
+			times.begin(), times.end(),
+			[]( const std::pair<Float, std::string>& left,
+				const std::pair<Float, std::string>& right ) { return left.first < right.first; } );
+
+		for ( auto& time : times ) {
+			eePRINTL( "Widget %s created in %.2f ms", time.second.c_str(), time.first );
+		}
+
+		times.clear();
+
+		eePRINTL( "UISceneNode::loadLayoutNodes loaded nodes%s in: %.2f ms",
+				  id.empty() ? "" : std::string( " (id=" + id + ")" ).c_str(),
+				  innerClock.getElapsed().asMilliseconds() );
+	}
+
 	for ( auto& widget : widgets )
-		widget->reloadStyle( true, true );
+		widget->reloadStyle( true, true, false );
+
+	if ( mVerbose ) {
+		eePRINTL( "UISceneNode::loadLayoutNodes reloaded styles in: %.2f ms",
+				  innerClock.getElapsed().asMilliseconds() );
+	}
+
+	for ( auto& widget : widgets )
+		widget->reportStyleStateChangeRecursive();
+
+	if ( mVerbose ) {
+		eePRINTL( "UISceneNode::loadLayoutNodes reloaded style state in: %.2f ms",
+				  innerClock.getElapsed().asMilliseconds() );
+	}
+
 	mIsLoading = false;
 	SceneManager::instance()->setCurrentUISceneNode( prevUISceneNode );
-	eePRINTL( "UISceneNode::loadLayoutNodes loaded in: %.2fms",
-			  clock.getElapsedTime().asMilliseconds() );
+
+	if ( mVerbose ) {
+		eePRINTL( "UISceneNode::loadLayoutNodes loaded in: %.2f ms",
+				  clock.getElapsedTime().asMilliseconds() );
+	}
+
 	return widgets.empty() ? NULL : widgets[0];
 }
 
@@ -336,7 +389,10 @@ void UISceneNode::update( const Time& elapsed ) {
 
 	if ( mCSSInvalid ) {
 		mCSSInvalid = false;
-		mRoot->reloadChildsStyleState();
+		Clock clock;
+		mRoot->reportStyleStateChangeRecursive();
+		eePRINTL( "CSS Invalidated, reapplied state in %.2f ms",
+				  clock.getElapsedTime().asMilliseconds() );
 	}
 
 	SceneManager::instance()->setCurrentUISceneNode( uiSceneNode );
@@ -362,6 +418,14 @@ const bool& UISceneNode::invalidStyleSheetState() {
 	return mCSSInvalid;
 }
 
+bool UISceneNode::getVerbose() const {
+	return mVerbose;
+}
+
+void UISceneNode::setVerbose( bool verbose ) {
+	mVerbose = verbose;
+}
+
 bool UISceneNode::onMediaChanged() {
 	if ( !mStyleSheet.isMediaQueryListEmpty() ) {
 		MediaFeatures media;
@@ -376,7 +440,7 @@ bool UISceneNode::onMediaChanged() {
 		media.resolution = static_cast<int>( getDPI() );
 
 		if ( mStyleSheet.updateMediaLists( media ) ) {
-			mRoot->reloadChildsStyleState();
+			mRoot->reportStyleStateChangeRecursive();
 			return true;
 		}
 	}

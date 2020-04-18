@@ -82,6 +82,10 @@ class EE_API UISceneNode : public SceneNode {
 
 	const bool& invalidStyleSheetState();
 
+	bool getVerbose() const;
+
+	void setVerbose( bool verbose );
+
   protected:
 	friend class EE::UI::UIWindow;
 	UIWidget* mRoot;
@@ -92,6 +96,7 @@ class EE_API UISceneNode : public SceneNode {
 	CSS::StyleSheet mStyleSheet;
 	bool mIsLoading;
 	bool mCSSInvalid;
+	bool mVerbose;
 	UIThemeManager* mUIThemeManager;
 	std::vector<Font*> mFontFaces;
 	KeyboardShortcuts mKbShortcuts;

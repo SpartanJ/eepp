@@ -905,25 +905,30 @@ UIStyle* UIWidget::getUIStyle() const {
 	return mStyle;
 }
 
-void UIWidget::reloadStyle( const bool& reloadChilds, const bool& disableAnimations ) {
+void UIWidget::reloadStyle( const bool& reloadChilds, const bool& disableAnimations,
+							const bool& reportStateChange ) {
 	createStyle();
 
 	if ( NULL != mStyle ) {
 		if ( disableAnimations )
 			mStyle->setDisableAnimations( true );
+
 		mStyle->load();
-		reportStyleStateChange();
 
 		if ( NULL != getFirstChild() && reloadChilds ) {
-			Node* ChildLoop = mChild;
+			Node* child = getFirstChild();
 
-			while ( NULL != ChildLoop ) {
-				if ( ChildLoop->isWidget() )
-					ChildLoop->asType<UIWidget>()->reloadStyle( reloadChilds, disableAnimations );
+			while ( NULL != child ) {
+				if ( child->isWidget() )
+					child->asType<UIWidget>()->reloadStyle( reloadChilds, disableAnimations,
+															reportStateChange );
 
-				ChildLoop = ChildLoop->getNextNode();
+				child = child->getNextNode();
 			}
 		}
+
+		if ( reportStateChange )
+			reportStyleStateChange();
 
 		if ( disableAnimations )
 			mStyle->setDisableAnimations( false );
@@ -1121,14 +1126,14 @@ bool UIWidget::checkPropertyDefinition( const StyleSheetProperty& property ) {
 	return true;
 }
 
-void UIWidget::reloadChildsStyleState() {
-	reportStyleStateChange();
+void UIWidget::reportStyleStateChangeRecursive() {
 	Node* childLoop = getFirstChild();
 	while ( childLoop != NULL ) {
 		if ( childLoop->isWidget() )
-			childLoop->asType<UIWidget>()->reloadChildsStyleState();
+			childLoop->asType<UIWidget>()->reportStyleStateChangeRecursive();
 		childLoop = childLoop->getNextNode();
 	}
+	reportStyleStateChange();
 }
 
 UIWidget* UIWidget::querySelector( const std::string& selector ) {
@@ -1313,12 +1318,12 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		case PropertyId::Width:
 			setLayoutWidthRule( LayoutSizeRule::Fixed );
-			setInternalWidth( eefloor( lengthFromValueAsDp( attribute ) ) );
+			setSize( eefloor( lengthFromValueAsDp( attribute ) ), getSize().getHeight() );
 			notifyLayoutAttrChange();
 			break;
 		case PropertyId::Height:
 			setLayoutHeightRule( LayoutSizeRule::Fixed );
-			setInternalHeight( eefloor( lengthFromValueAsDp( attribute ) ) );
+			setSize( getSize().getWidth(), eefloor( lengthFromValueAsDp( attribute ) ) );
 			notifyLayoutAttrChange();
 			break;
 		case PropertyId::BackgroundColor:

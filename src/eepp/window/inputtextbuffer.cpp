@@ -668,7 +668,7 @@ void InputTextBuffer::setCursorPosition( const Uint32& pos ) {
 }
 
 void InputTextBuffer::setCursorPos( const Uint32& pos ) {
-	if ( isFreeEditingEnabled() ) {
+	if ( isFreeEditingEnabled() && mPromptPos != (Int32)pos ) {
 		setCursorPosition( pos );
 
 		onCursorPositionChange();

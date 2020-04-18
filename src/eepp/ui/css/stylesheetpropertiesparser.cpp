@@ -149,7 +149,7 @@ void StyleSheetPropertiesParser::addProperty( std::string name, std::string valu
 			mProperties[property.getId()] = property;
 	} else {
 		if ( String::startsWith( name, "--" ) ) {
-			mVariables[name] = StyleSheetVariable( name, value );
+			mVariables[String::hash(name)] = StyleSheetVariable( name, value );
 		} else {
 			StyleSheetProperty property( StyleSheetProperty( name, value ) );
 			mProperties[property.getId()] = property;

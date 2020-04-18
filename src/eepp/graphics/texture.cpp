@@ -309,6 +309,12 @@ void Texture::iTextureFilter( const TextureFilter& filter ) {
 	if ( mTexture ) {
 		mFilter = filter;
 
+		bool threaded = Engine::instance()->isSharedGLContextEnabled() &&
+						Thread::getCurrentThreadId() != Engine::instance()->getMainThreadId();
+
+		if ( threaded )
+			Engine::instance()->getCurrentWindow()->setGLContextThread();
+
 		ScopedTexture saver( mTexture );
 
 		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
@@ -320,6 +326,9 @@ void Texture::iTextureFilter( const TextureFilter& filter ) {
 		else
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
 							 ( mFilter == Linear ) ? GL_LINEAR : GL_NEAREST );
+
+		if ( threaded )
+			Engine::instance()->getCurrentWindow()->unsetGLContextThread();
 	}
 }
 

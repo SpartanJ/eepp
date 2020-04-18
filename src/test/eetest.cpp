@@ -602,6 +602,7 @@ void EETest::createUI() {
 
 	sceneNode->enableDrawInvalidation();
 	sceneNode->enableFrameBuffer();
+	sceneNode->setVerbose( true );
 
 	if ( mDebugUI ) {
 		sceneNode->setDrawBoxes( true );
@@ -732,7 +733,8 @@ void EETest::createNewUI() {
 	pushButton->setText( "PushButton" );
 	pushButton->setIcon( mTheme->getIconByName( "ok" ) );
 	pushButton->addEventListener( Event::MouseClick, [&, pushButton]( const Event* event ) {
-		createColorPicker( pushButton );
+		if ( static_cast<const MouseEvent*>( event )->getFlags() & EE_BUTTON_LMASK )
+			createColorPicker( pushButton );
 	} );
 
 	UISprite* sprite = UISprite::New();
@@ -899,7 +901,7 @@ void EETest::createNewUI() {
 		->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::Fixed )
 		->setSize( 0, 105 )
 		->setParent( lay2 );
-	lbox->addListBoxItems( { "This", "is", "a", "ListBox" } );
+	lbox->addListBoxItems( {"This", "is", "a", "ListBox"} );
 	lay2->setParent( layPar );
 	lay->setParent( layPar );
 
@@ -907,7 +909,7 @@ void EETest::createNewUI() {
 	drop->setLayoutMargin( Rect( 10, 10, 10, 10 ) )
 		->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )
 		->setParent( layWin );
-	drop->getListBox()->addListBoxItems( { "Car", "Bus", "Plane", "Submarine" } );
+	drop->getListBox()->addListBoxItems( {"Car", "Bus", "Plane", "Submarine"} );
 	drop->getListBox()->setSelected( 0 );
 	win->show();
 

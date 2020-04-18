@@ -79,7 +79,11 @@ bool PropertyDefinition::isAlias( const std::string& alias ) const {
 }
 
 bool PropertyDefinition::isAlias( const Uint32& id ) const {
-	return std::find( mAliasesHash.begin(), mAliasesHash.end(), id ) != mAliasesHash.end();
+	for ( auto& tid : mAliasesHash ) {
+		if ( tid == id )
+			return true;
+	}
+	return false;
 }
 
 bool PropertyDefinition::isDefinition( const std::string& name ) const {
