@@ -221,8 +221,18 @@ void UIWidget::createTooltip() {
 
 void UIWidget::onChildCountChange( Node* child, const bool& removed ) {
 	UINode::onChildCountChange( child, removed );
-	if ( !isSceneNodeLoading() && getUISceneNode() != NULL )
-		getUISceneNode()->invalidateStyleSheet();
+	if ( !isSceneNodeLoading() && getUISceneNode() != NULL ) {
+		UISceneNode* sceneNode = getUISceneNode();
+		Node* child = getFirstChild();
+		UIWidget* widget = NULL;
+		while ( NULL != child ) {
+			if ( child->isWidget() && ( widget = child->asType<UIWidget>() ) &&
+				 NULL != widget->getUIStyle() && widget->getUIStyle()->isStructurallyVolatile() ) {
+				sceneNode->addWidgetToDirtyStyleState( widget );
+			}
+			child = child->getNextNode();
+		};
+	}
 }
 
 Vector2f UIWidget::getTooltipPosition() {

@@ -253,10 +253,10 @@ Node* Node::setParent( Node* parent ) {
 
 	setDirty();
 
-	onParentChange();
-
 	if ( mSceneNode != findSceneNode() )
 		onSceneChange();
+
+	onParentChange();
 
 	return this;
 }

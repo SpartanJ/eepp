@@ -248,7 +248,6 @@ class EE_API UINode : public Node {
 
 	UISceneNode* getUISceneNode();
 
-
 	void setMinWidth( const Float& width );
 
 	void setMinHeight( const Float& height );
@@ -270,6 +269,7 @@ class EE_API UINode : public Node {
 	Vector2f mDragPoint;
 	Uint32 mDragButton;
 	Color mSkinColor;
+	UISceneNode* mUISceneNode;
 
 	virtual Uint32 onMouseDown( const Vector2i& position, const Uint32& flags );
 
@@ -310,6 +310,8 @@ class EE_API UINode : public Node {
 	virtual Uint32 onFocus();
 
 	virtual Uint32 onFocusLoss();
+
+	virtual void onSceneChange();
 
 	void checkClose();
 

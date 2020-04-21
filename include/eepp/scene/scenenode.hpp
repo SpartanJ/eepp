@@ -4,7 +4,7 @@
 #include <eepp/scene/node.hpp>
 #include <eepp/system/translator.hpp>
 #include <eepp/window/cursor.hpp>
-#include <list>
+#include <unordered_set>
 
 namespace EE { namespace Graphics {
 class FrameBuffer;
@@ -117,7 +117,7 @@ class EE_API SceneNode : public Node {
 
   protected:
 	friend class Node;
-	typedef std::list<Node*> CloseList;
+	typedef std::unordered_set<Node*> CloseList;
 
 	EE::Window::Window* mWindow;
 	ActionManager* mActionManager;
@@ -138,9 +138,9 @@ class EE_API SceneNode : public Node {
 	Color mHighlightOverColor;
 	Color mHighlightInvalidationColor;
 	Time mElapsed;
-	std::list<Node*> mScheduledUpdate;
-	std::list<Node*> mScheduledUpdateRemove;
-	std::list<Node*> mMouseOverNodes;
+	std::unordered_set<Node*> mScheduledUpdate;
+	std::unordered_set<Node*> mScheduledUpdateRemove;
+	std::unordered_set<Node*> mMouseOverNodes;
 	Float mDPI;
 
 	virtual void onSizeChange();
@@ -157,7 +157,7 @@ class EE_API SceneNode : public Node {
 
 	virtual void resizeControl( EE::Window::Window* win );
 
-	void addToCloseQueue( Node* Ctrl );
+	void addToCloseQueue( Node* node );
 
 	void checkClose();
 

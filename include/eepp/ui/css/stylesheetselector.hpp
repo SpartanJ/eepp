@@ -32,12 +32,15 @@ class EE_API StyleSheetSelector {
 	std::vector<UIWidget*> getRelatedElements( UIWidget* element,
 											   const bool& applyPseudo = true ) const;
 
+	const bool& isStructurallyVolatile() const;
+
   protected:
 	std::string mName;
 	std::string mPseudoClass;
 	Uint32 mSpecificity;
 	std::vector<StyleSheetSelectorRule> mSelectorRules;
 	bool mCacheable;
+	bool mStructurallyVolatile;
 
 	void addSelectorRule( std::string& buffer,
 						  StyleSheetSelectorRule::PatternMatch& curPatternMatch,

@@ -329,19 +329,18 @@ void UINode::updateDebugData() {
 			text += "Classes: " + String::join( widget->getStyleSheetClasses(), ' ' ) + "\n";
 		}
 
-		text += String::format( "X: %.2f Y: %.2f\nW: %.2f H: %.2f", mDpPos.x, mDpPos.y,
-								mDpSize.x, mDpSize.y );
+		text += String::format( "X: %.2f Y: %.2f\nW: %.2f H: %.2f", mDpPos.x, mDpPos.y, mDpSize.x,
+								mDpSize.y );
 
 		if ( widget->getPadding() != Rectf( 0, 0, 0, 0 ) ) {
 			Rectf p( widget->getPadding() );
-			text +=
-				String::format( "\npadding: %.2f %.2f %.2f %.2f", p.Top, p.Right, p.Bottom, p.Left );
+			text += String::format( "\npadding: %.2f %.2f %.2f %.2f", p.Top, p.Right, p.Bottom,
+									p.Left );
 		}
 
 		if ( widget->getLayoutMargin() != Rect( 0, 0, 0, 0 ) ) {
 			Rect m( widget->getLayoutMargin() );
-			text +=
-				String::format( "\nmargin: %d %d %d %d", m.Top, m.Right, m.Bottom, m.Left );
+			text += String::format( "\nmargin: %d %d %d %d", m.Top, m.Right, m.Bottom, m.Left );
 		}
 
 		widget->setTooltipText( text );
@@ -1240,6 +1239,13 @@ Uint32 UINode::onFocusLoss() {
 	return Node::onFocusLoss();
 }
 
+void UINode::onSceneChange() {
+	Node::onSceneChange();
+	if ( NULL != mSceneNode && mSceneNode->isUISceneNode() ) {
+		mUISceneNode = static_cast<UISceneNode*>( mSceneNode );
+	}
+}
+
 Float UINode::convertLength( const CSS::StyleSheetLength& length, const Float& containerLength ) {
 	Float elFontSize = 12;
 	Float rootFontSize = 12;
@@ -1325,9 +1331,7 @@ Float UINode::convertLengthAsDp( const CSS::StyleSheetLength& length,
 }
 
 UISceneNode* UINode::getUISceneNode() {
-	return ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
-			   ? static_cast<UISceneNode*>( mSceneNode )
-			   : NULL;
+	return mUISceneNode;
 }
 
 }} // namespace EE::UI

@@ -57,6 +57,7 @@ void UIStyle::load() {
 	mElementStyle.clearProperties();
 	mProperties.clear();
 	mVariables.clear();
+	mStructurallyVolatile = false;
 
 	UISceneNode* uiSceneNode = mWidget->getUISceneNode();
 
@@ -74,6 +75,9 @@ void UIStyle::load() {
 				} else {
 					mNoncacheableStyles.push_back( style );
 				}
+
+				if ( selector.isStructurallyVolatile() )
+					mStructurallyVolatile = true;
 
 				findVariables( style.get() );
 			}
@@ -164,6 +168,10 @@ bool UIStyle::getDisableAnimations() const {
 
 void UIStyle::setDisableAnimations( bool disableAnimations ) {
 	mDisableAnimations = disableAnimations;
+}
+
+const bool& UIStyle::isStructurallyVolatile() const {
+	return mStructurallyVolatile;
 }
 
 void UIStyle::subscribeRelated( UIWidget* widget ) {

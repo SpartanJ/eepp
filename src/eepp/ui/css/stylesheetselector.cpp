@@ -8,7 +8,10 @@ StyleSheetSelector::StyleSheetSelector() : mName( "*" ), mSpecificity( 0 ), mCac
 }
 
 StyleSheetSelector::StyleSheetSelector( const std::string& selectorName ) :
-	mName( String::toLower( selectorName ) ), mSpecificity( 0 ), mCacheable( true ) {
+	mName( String::toLower( selectorName ) ),
+	mSpecificity( 0 ),
+	mCacheable( true ),
+	mStructurallyVolatile( false ) {
 	parseSelector( mName );
 }
 
@@ -84,13 +87,19 @@ void StyleSheetSelector::parseSelector( std::string selector ) {
 			buffer.clear();
 		}
 
-		if ( !mSelectorRules.empty() && mSelectorRules[0].hasPseudoClasses() ) {
-			mPseudoClass = mSelectorRules[0].getPseudoClasses()[0];
+		mCacheable = true;
+
+		if ( !mSelectorRules.empty() ) {
+			if ( mSelectorRules[0].hasPseudoClasses() )
+				mPseudoClass = mSelectorRules[0].getPseudoClasses()[0];
+
+			if ( mSelectorRules[0].hasStructuralPseudoClasses() ) {
+				mStructurallyVolatile = true;
+				mCacheable = false;
+			}
 		}
 
-		if ( !mSelectorRules.empty() && mSelectorRules.size() > 1 ) {
-			mCacheable = true;
-
+		if ( mCacheable ) {
 			for ( size_t i = 1; i < mSelectorRules.size(); i++ ) {
 				if ( mSelectorRules[i].hasPseudoClasses() ||
 					 mSelectorRules[i].hasStructuralPseudoClasses() ) {
@@ -98,10 +107,6 @@ void StyleSheetSelector::parseSelector( std::string selector ) {
 					break;
 				}
 			}
-		}
-
-		if ( !mSelectorRules.empty() && mSelectorRules[0].hasStructuralPseudoClasses() ) {
-			mCacheable = false;
 		}
 	}
 }
@@ -117,7 +122,7 @@ bool StyleSheetSelector::hasPseudoClass( const std::string& cls ) const {
 }
 
 bool StyleSheetSelector::hasPseudoClasses() const {
-	return mSelectorRules.empty() || mSelectorRules[0].hasPseudoClasses();
+	return !mSelectorRules.empty() && mSelectorRules[0].hasPseudoClasses();
 }
 
 bool StyleSheetSelector::select( UIWidget* element, const bool& applyPseudo ) const {
@@ -311,6 +316,10 @@ std::vector<UIWidget*> StyleSheetSelector::getRelatedElements( UIWidget* element
 	}
 
 	return elements;
+}
+
+const bool& StyleSheetSelector::isStructurallyVolatile() const {
+	return mStructurallyVolatile;
 }
 
 }}} // namespace EE::UI::CSS

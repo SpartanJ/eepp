@@ -31,7 +31,6 @@ UISceneNode::UISceneNode( EE::Window::Window* window ) :
 	SceneNode( window ),
 	mRoot( NULL ),
 	mIsLoading( false ),
-	mCSSInvalid( false ),
 #ifdef EE_DEBUG
 	mVerbose( true ),
 #else
@@ -385,12 +384,27 @@ void UISceneNode::update( const Time& elapsed ) {
 	UISceneNode* uiSceneNode = SceneManager::instance()->getUISceneNode();
 
 	SceneManager::instance()->setCurrentUISceneNode( this );
+
+	if ( !mDirtyStyleState.empty() ) {
+		std::vector<UIWidget*> inCloseList;
+		for ( auto& widget : mDirtyStyleState ) {
+			if ( mCloseList.count( widget ) > 0 ) {
+				inCloseList.push_back( widget );
+			}
+		}
+		for ( auto& widget : inCloseList ) {
+			mDirtyStyleState.erase( widget );
+		}
+	}
+
 	SceneNode::update( elapsed );
 
-	if ( mCSSInvalid ) {
-		mCSSInvalid = false;
+	if ( !mDirtyStyleState.empty() ) {
 		Clock clock;
-		mRoot->reportStyleStateChangeRecursive();
+		for ( auto& node : mDirtyStyleState ) {
+			node->reportStyleStateChangeRecursive();
+		}
+		mDirtyStyleState.clear();
 		eePRINTL( "CSS Invalidated, reapplied state in %.2f ms",
 				  clock.getElapsedTime().asMilliseconds() );
 	}
@@ -410,20 +424,45 @@ UIWidget* UISceneNode::getRoot() const {
 	return mRoot;
 }
 
-void UISceneNode::invalidateStyleSheet() {
-	mCSSInvalid = true;
-}
-
-const bool& UISceneNode::invalidStyleSheetState() {
-	return mCSSInvalid;
-}
-
 bool UISceneNode::getVerbose() const {
 	return mVerbose;
 }
 
 void UISceneNode::setVerbose( bool verbose ) {
 	mVerbose = verbose;
+}
+
+void UISceneNode::addWidgetToDirtyStyleState( UIWidget* node ) {
+	eeASSERT( NULL != node );
+
+	Node* itNode = NULL;
+
+	if ( mDirtyStyleState.count( node ) > 0 )
+		return;
+
+	for ( auto& dirtyCtrl : mDirtyStyleState ) {
+		if ( NULL != dirtyCtrl && dirtyCtrl->isParentOf( node ) ) {
+			return;
+		}
+	}
+
+	std::vector<std::unordered_set<UIWidget*>::iterator> itEraseList;
+
+	for ( auto it = mDirtyStyleState.begin(); it != mDirtyStyleState.end(); ++it ) {
+		itNode = *it;
+
+		if ( NULL != itNode && node->isParentOf( itNode ) ) {
+			itEraseList.push_back( it );
+		} else if ( NULL == itNode ) {
+			itEraseList.push_back( it );
+		}
+	}
+
+	for ( auto ite = itEraseList.begin(); ite != itEraseList.end(); ++ite ) {
+		mDirtyStyleState.erase( *ite );
+	}
+
+	mDirtyStyleState.insert( node );
 }
 
 bool UISceneNode::onMediaChanged() {

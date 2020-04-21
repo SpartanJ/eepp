@@ -74,17 +74,15 @@ class EE_API UISceneNode : public SceneNode {
 
 	UIWidget* getRoot() const;
 
-	void invalidateStyleSheet();
-
 	bool addShortcut( const Uint32& KeyCode, const Uint32& Mod, UIWidget* Widget );
 
 	bool removeShortcut( const Uint32& KeyCode, const Uint32& Mod );
 
-	const bool& invalidStyleSheetState();
-
 	bool getVerbose() const;
 
 	void setVerbose( bool verbose );
+
+	void addWidgetToDirtyStyleState( UIWidget* widget );
 
   protected:
 	friend class EE::UI::UIWindow;
@@ -95,11 +93,11 @@ class EE_API UISceneNode : public SceneNode {
 	std::list<UIWindow*> mWindowsList;
 	CSS::StyleSheet mStyleSheet;
 	bool mIsLoading;
-	bool mCSSInvalid;
 	bool mVerbose;
 	UIThemeManager* mUIThemeManager;
 	std::vector<Font*> mFontFaces;
 	KeyboardShortcuts mKbShortcuts;
+	std::unordered_set<UIWidget*> mDirtyStyleState;
 
 	virtual void resizeControl( EE::Window::Window* win );
 

@@ -139,7 +139,7 @@ void SceneNode::update( const Time& time ) {
 
 	if ( !mScheduledUpdateRemove.empty() ) {
 		for ( auto it = mScheduledUpdateRemove.begin(); it != mScheduledUpdateRemove.end(); ++it )
-			mScheduledUpdate.remove( *it );
+			mScheduledUpdate.erase( *it );
 
 		mScheduledUpdateRemove.clear();
 	}
@@ -173,15 +173,16 @@ void SceneNode::onSizeChange() {
 	Node::onSizeChange();
 }
 
-void SceneNode::addToCloseQueue( Node* Ctrl ) {
-	eeASSERT( NULL != Ctrl );
+void SceneNode::addToCloseQueue( Node* node ) {
+	eeASSERT( NULL != node );
 
-	Node* itCtrl = NULL;
+	Node* itNode = NULL;
 
-	for ( auto it = mCloseList.begin(); it != mCloseList.end(); ++it ) {
-		itCtrl = *it;
+	if ( mCloseList.count( node ) > 0 )
+		return;
 
-		if ( NULL != itCtrl && itCtrl->isParentOf( Ctrl ) ) {
+	for ( auto& closeCtrl : mCloseList ) {
+		if ( NULL != closeCtrl && closeCtrl->isParentOf( node ) ) {
 			// If a parent will be removed, means that the control
 			// that we are trying to queue will be removed by the father
 			// so we skip it
@@ -192,14 +193,14 @@ void SceneNode::addToCloseQueue( Node* Ctrl ) {
 	std::vector<CloseList::iterator> itEraseList;
 
 	for ( auto it = mCloseList.begin(); it != mCloseList.end(); ++it ) {
-		itCtrl = *it;
+		itNode = *it;
 
-		if ( NULL != itCtrl && Ctrl->isParentOf( itCtrl ) ) {
+		if ( NULL != itNode && node->isParentOf( itNode ) ) {
 			// if the control added is parent of another control already added,
 			// we remove the already added control because it will be deleted
 			// by its parent
 			itEraseList.push_back( it );
-		} else if ( NULL == itCtrl ) {
+		} else if ( NULL == itNode ) {
 			itEraseList.push_back( it );
 		}
 	}
@@ -210,9 +211,7 @@ void SceneNode::addToCloseQueue( Node* Ctrl ) {
 		mCloseList.erase( *ite );
 	}
 
-	if ( std::find( mCloseList.begin(), mCloseList.end(), Ctrl ) == mCloseList.end() ) {
-		mCloseList.push_back( Ctrl );
-	}
+	mCloseList.insert( node );
 }
 
 void SceneNode::checkClose() {
@@ -433,24 +432,23 @@ void SceneNode::preDraw() {}
 void SceneNode::postDraw() {}
 
 void SceneNode::subscribeScheduledUpdate( Node* node ) {
-	mScheduledUpdate.push_back( node );
+	mScheduledUpdate.insert( node );
 }
 
 void SceneNode::unsubscribeScheduledUpdate( Node* node ) {
-	mScheduledUpdateRemove.push_back( node );
+	mScheduledUpdateRemove.insert( node );
 }
 
 bool SceneNode::isSubscribedForScheduledUpdate( Node* node ) {
-	return std::find( mScheduledUpdate.begin(), mScheduledUpdate.end(), node ) !=
-		   mScheduledUpdate.end();
+	return mScheduledUpdate.count( node ) > 0;
 }
 
 void SceneNode::addMouseOverNode( Node* node ) {
-	mMouseOverNodes.push_back( node );
+	mMouseOverNodes.insert( node );
 }
 
 void SceneNode::removeMouseOverNode( Node* node ) {
-	mMouseOverNodes.remove( node );
+	mMouseOverNodes.erase( node );
 }
 
 const bool& SceneNode::getUpdateAllChilds() const {

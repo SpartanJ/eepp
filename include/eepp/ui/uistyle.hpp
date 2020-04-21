@@ -63,6 +63,7 @@ class EE_API UIStyle : public UIState {
 
 	void setDisableAnimations( bool disableAnimations );
 
+	const bool& isStructurallyVolatile() const;
   protected:
 	UIWidget* mWidget;
 	CSS::StyleSheetStyleVector mCacheableStyles;
@@ -79,6 +80,7 @@ class EE_API UIStyle : public UIState {
 	bool mChangingState;
 	bool mForceReapplyProperties;
 	bool mDisableAnimations;
+	bool mStructurallyVolatile;
 
 	void tryApplyStyle( const CSS::StyleSheetStyle* style );
 

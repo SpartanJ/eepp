@@ -65,6 +65,8 @@ class EE_API StyleSheetProperty {
 
 	bool operator==( const StyleSheetProperty& property ) const;
 
+	bool operator!=( const StyleSheetProperty& property ) const;
+
 	std::string asString( const std::string& defaultValue = "" ) const;
 
 	template <typename Type> Type asType( Type defaultValue ) const {
@@ -163,10 +165,13 @@ class EE_API StyleSheetProperty {
 
 	Sizei asSizei( UINode* node, const Sizei& defaultValue = Sizei::Zero ) const;
 
+	const Uint32& getValueHash() const;
+
   protected:
 	std::string mName;
 	Uint32 mNameHash;
 	std::string mValue;
+	Uint32 mValueHash;
 	Uint32 mSpecificity;
 	Uint32 mIndex;
 	bool mVolatile;

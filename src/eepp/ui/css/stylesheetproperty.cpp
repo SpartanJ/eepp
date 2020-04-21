@@ -21,6 +21,7 @@ StyleSheetProperty::StyleSheetProperty( const PropertyDefinition* definition,
 	mName( definition->getName() ),
 	mNameHash( definition->getId() ),
 	mValue( String::trim( value ) ),
+	mValueHash( String::hash( mValue ) ),
 	mSpecificity( 0 ),
 	mIndex( index ),
 	mVolatile( false ),
@@ -44,6 +45,7 @@ StyleSheetProperty::StyleSheetProperty( const bool& isVolatile,
 	mName( definition->getName() ),
 	mNameHash( definition->getId() ),
 	mValue( String::trim( value ) ),
+	mValueHash( String::hash( mValue ) ),
 	mSpecificity( 0 ),
 	mIndex( index ),
 	mVolatile( false ),
@@ -64,6 +66,7 @@ StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::stri
 	mName( String::toLower( String::trim( name ) ) ),
 	mNameHash( String::hash( mName ) ),
 	mValue( trimValue ? String::trim( value ) : value ),
+	mValueHash( String::hash( mValue ) ),
 	mSpecificity( 0 ),
 	mIndex( 0 ),
 	mVolatile( false ),
@@ -88,6 +91,7 @@ StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::stri
 	mName( String::toLower( String::trim( name ) ) ),
 	mNameHash( String::hash( mName ) ),
 	mValue( String::trim( value ) ),
+	mValueHash( String::hash( mValue ) ),
 	mSpecificity( specificity ),
 	mIndex( index ),
 	mVolatile( isVolatile ),
@@ -147,6 +151,7 @@ void StyleSheetProperty::setName( const std::string& name ) {
 
 void StyleSheetProperty::setValue( const std::string& value ) {
 	mValue = value;
+	mValueHash = String::hash( value );
 	mIsVarValue = String::startsWith( mValue, "var(" );
 	createIndexed();
 }
@@ -160,7 +165,11 @@ void StyleSheetProperty::setVolatile( const bool& isVolatile ) {
 }
 
 bool StyleSheetProperty::operator==( const StyleSheetProperty& property ) const {
-	return mNameHash == property.mNameHash && mValue == property.mValue;
+	return mNameHash == property.mNameHash && mValueHash == property.mValueHash;
+}
+
+bool StyleSheetProperty::operator!=( const StyleSheetProperty& property ) const {
+	return mNameHash != property.mNameHash || mValueHash != property.mValueHash;
 }
 
 const Uint32& StyleSheetProperty::getNameHash() const {
@@ -172,6 +181,7 @@ void StyleSheetProperty::checkImportant() {
 		mImportant = true;
 		mSpecificity = StyleSheetSelectorRule::SpecificityImportant;
 		mValue = String::trim( mValue.substr( 0, mValue.size() - 10 /*!important*/ ) );
+		mValueHash = String::hash( mValue );
 	}
 }
 
@@ -586,6 +596,10 @@ Sizef StyleSheetProperty::asSizef( UINode* node, const Sizef& defaultValue ) con
 
 Sizei StyleSheetProperty::asSizei( UINode* node, const Sizei& defaultValue ) const {
 	return Sizei( asVector2i( node, defaultValue ) );
+}
+
+const Uint32& StyleSheetProperty::getValueHash() const {
+	return mValueHash;
 }
 
 }}} // namespace EE::UI::CSS
