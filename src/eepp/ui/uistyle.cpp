@@ -192,6 +192,8 @@ void UIStyle::tryApplyStyle( const StyleSheetStyle* style ) {
 				 property.getSpecificity() >= it->second.getSpecificity() ) {
 				mProperties[property.getId()] = property;
 
+				applyVarValues( mProperties[property.getId()] );
+
 				if ( String::startsWith( property.getName(), "transition" ) )
 					mTransitionProperties.push_back( &property );
 				else if ( String::startsWith( property.getName(), "animation" ) )
@@ -265,10 +267,6 @@ void UIStyle::onStateChange() {
 		}
 
 		if ( !mapEquals( mProperties, prevProperties ) || mForceReapplyProperties ) {
-			for ( auto& prop : mProperties ) {
-				applyVarValues( prop.second );
-			}
-
 			mForceReapplyProperties = false;
 
 			mWidget->beginAttributesTransaction();
