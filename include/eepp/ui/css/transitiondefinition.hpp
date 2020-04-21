@@ -15,7 +15,7 @@ namespace EE { namespace UI { namespace CSS {
 class EE_API TransitionDefinition {
   public:
 	static std::map<std::string, TransitionDefinition>
-	parseTransitionProperties( const std::vector<StyleSheetProperty>& styleSheetProperties );
+	parseTransitionProperties( const std::vector<const StyleSheetProperty*>& styleSheetProperties );
 
 	TransitionDefinition() : timingFunction( Ease::Linear ) {}
 

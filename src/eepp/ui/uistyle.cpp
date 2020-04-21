@@ -195,9 +195,9 @@ void UIStyle::tryApplyStyle( const StyleSheetStyle* style ) {
 				applyVarValues( mProperties[property.getId()] );
 
 				if ( String::startsWith( property.getName(), "transition" ) )
-					mTransitionProperties.push_back( property );
+					mTransitionProperties.push_back( &property );
 				else if ( String::startsWith( property.getName(), "animation" ) )
-					mAnimationProperties.push_back( property );
+					mAnimationProperties.push_back( &property );
 			}
 		}
 	}
@@ -214,56 +214,18 @@ void UIStyle::findVariables( const StyleSheetStyle* style ) {
 	}
 }
 
-std::string UIStyle::varToVal( const std::string& varDef ) {
-	FunctionString functionType = FunctionString::parse( varDef );
-
-	if ( !functionType.getParameters().empty() ) {
-		for ( auto& val : functionType.getParameters() ) {
-			if ( String::startsWith( val, "--" ) ) {
-				StyleSheetVariable variable( getVariable( val ) );
-				if ( !variable.isEmpty() ) {
-					return variable.getValue();
-				}
-			} else if ( String::startsWith( val, "var(" ) ) {
-				return varToVal( val );
-			} else {
-				return val;
-			}
-		}
-	}
-
-	return "";
-}
-
 void UIStyle::setVariableFromValue( StyleSheetProperty& property, const std::string& value ) {
-	std::string::size_type tokenStart = 0;
-	std::string::size_type tokenEnd = 0;
 	std::string newValue( value );
-
-	while ( true ) {
-		tokenStart = newValue.find( "var(", tokenStart );
-
-		if ( tokenStart != std::string::npos ) {
-			tokenEnd = String::findCloseBracket( value, tokenStart, '(', ')' );
-
-			if ( tokenEnd != std::string::npos ) {
-				std::string varDef( newValue.substr( tokenStart, tokenEnd + 1 - tokenStart ) );
-
-				String::replaceAll( newValue, varDef, varToVal( varDef ) );
-			} else {
+	for ( auto& var : property.getVarCache() ) {
+		for ( auto& val : var.variableList ) {
+			StyleSheetVariable variable( getVariable( val ) );
+			if ( !variable.isEmpty() ) {
+				String::replaceAll( newValue, var.definition, variable.getValue() );
 				break;
 			}
-		} else {
-			break;
 		}
-	};
-
-	property.setValue( newValue );
-
-	if ( newValue.empty() ) {
-		eePRINTL( "Invalid var: \"%s\" for property: %s", value.c_str(),
-				  property.getName().c_str() );
 	}
+	property.setValue( newValue );
 }
 
 void UIStyle::applyVarValues( StyleSheetProperty& property ) {
@@ -580,13 +542,13 @@ void UIStyle::updateAnimationsPlayState() {
 						// "animation-play-state" definition.
 						bool isSet = false;
 						for ( auto& animProp : mAnimationProperties ) {
-							if ( NULL != animProp.getPropertyDefinition() &&
-								 animProp.getPropertyDefinition()->getPropertyId() ==
+							if ( NULL != animProp->getPropertyDefinition() &&
+								 animProp->getPropertyDefinition()->getPropertyId() ==
 									 PropertyId::AnimationPlayState ) {
 								// If found, get the pause/running state of the property, using the
 								// index of the current animation, and set the animation.play-state.
-								size_t animPropCount = animProp.getPropertyIndexCount();
-								bool paused = animProp.getPropertyIndex( animPos % animPropCount )
+								size_t animPropCount = animProp->getPropertyIndexCount();
+								bool paused = animProp->getPropertyIndex( animPos % animPropCount )
 														  .getValue() == "paused"
 												  ? true
 												  : false;

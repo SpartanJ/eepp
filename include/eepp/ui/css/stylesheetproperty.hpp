@@ -25,6 +25,11 @@ namespace EE { namespace UI { namespace CSS {
 class PropertyDefinition;
 class ShorthandDefinition;
 
+struct VariableFunctionCache {
+	std::string definition;
+	std::vector<std::string> variableList;
+};
+
 class EE_API StyleSheetProperty {
   public:
 	StyleSheetProperty();
@@ -167,6 +172,8 @@ class EE_API StyleSheetProperty {
 
 	const Uint32& getValueHash() const;
 
+	const std::vector<VariableFunctionCache>& getVarCache() const;
+
   protected:
 	std::string mName;
 	Uint32 mNameHash;
@@ -180,6 +187,7 @@ class EE_API StyleSheetProperty {
 	const PropertyDefinition* mPropertyDefinition;
 	const ShorthandDefinition* mShorthandDefinition;
 	std::vector<StyleSheetProperty> mIndexedProperty;
+	std::vector<VariableFunctionCache> mVarCache;
 
 	explicit StyleSheetProperty( const bool& isVolatile, const PropertyDefinition* definition,
 								 const std::string& value, const Uint32& specificity = 0,
@@ -188,6 +196,8 @@ class EE_API StyleSheetProperty {
 	void cleanValue();
 	void checkImportant();
 	void createIndexed();
+	void checkVars();
+	std::vector<VariableFunctionCache> checkVars( const std::string& value );
 };
 
 typedef std::map<Uint32, StyleSheetProperty> StyleSheetProperties;

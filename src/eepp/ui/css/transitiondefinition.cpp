@@ -5,7 +5,7 @@
 namespace EE { namespace UI { namespace CSS {
 
 std::map<std::string, TransitionDefinition> TransitionDefinition::parseTransitionProperties(
-	const std::vector<StyleSheetProperty>& styleSheetProperties ) {
+	const std::vector<const StyleSheetProperty*>& styleSheetProperties ) {
 	std::vector<std::string> properties;
 	std::vector<Time> durations;
 	std::vector<Time> delays;
@@ -13,13 +13,13 @@ std::map<std::string, TransitionDefinition> TransitionDefinition::parseTransitio
 	TransitionsMap transitions;
 
 	for ( auto& prop : styleSheetProperties ) {
-		if ( prop.getPropertyDefinition() == NULL )
+		if ( prop->getPropertyDefinition() == NULL )
 			continue;
 
-		const PropertyDefinition* propDef = prop.getPropertyDefinition();
+		const PropertyDefinition* propDef = prop->getPropertyDefinition();
 
 		if ( propDef->getPropertyId() == PropertyId::Transition ) {
-			auto strTransitions = String::split( prop.getValue(), ',' );
+			auto strTransitions = String::split( prop->getValue(), ',' );
 
 			for ( auto tit = strTransitions.begin(); tit != strTransitions.end(); ++tit ) {
 				auto strTransition = String::trim( *tit );
@@ -32,7 +32,7 @@ std::map<std::string, TransitionDefinition> TransitionDefinition::parseTransitio
 						std::string property = String::trim( splitTransition[0] );
 						String::toLowerInPlace( property );
 
-						Time duration = StyleSheetProperty( prop.getName(),
+						Time duration = StyleSheetProperty( prop->getName(),
 															String::toLower( splitTransition[1] ) )
 											.asTime();
 
@@ -46,12 +46,12 @@ std::map<std::string, TransitionDefinition> TransitionDefinition::parseTransitio
 							if ( transitionDef.timingFunction == Ease::Linear &&
 								 splitTransition[2] != "linear" && splitTransition.size() == 3 ) {
 								transitionDef.delay =
-									StyleSheetProperty( prop.getName(),
+									StyleSheetProperty( prop->getName(),
 														String::toLower( splitTransition[2] ) )
 										.asTime();
 							} else if ( splitTransition.size() >= 4 ) {
 								transitionDef.delay =
-									StyleSheetProperty( prop.getName(),
+									StyleSheetProperty( prop->getName(),
 														String::toLower( splitTransition[3] ) )
 										.asTime();
 							}
@@ -62,23 +62,23 @@ std::map<std::string, TransitionDefinition> TransitionDefinition::parseTransitio
 				}
 			}
 		} else if ( propDef->getPropertyId() == PropertyId::TransitionDuration ) {
-			auto strDurations = String::split( prop.getValue(), ',' );
+			auto strDurations = String::split( prop->getValue(), ',' );
 
 			for ( auto dit = strDurations.begin(); dit != strDurations.end(); ++dit ) {
 				std::string duration( String::trim( *dit ) );
 				String::toLowerInPlace( duration );
-				durations.push_back( StyleSheetProperty( prop.getName(), duration ).asTime() );
+				durations.push_back( StyleSheetProperty( prop->getName(), duration ).asTime() );
 			}
 		} else if ( propDef->getPropertyId() == PropertyId::TransitionDelay ) {
-			auto strDelays = String::split( prop.getValue(), ',' );
+			auto strDelays = String::split( prop->getValue(), ',' );
 
 			for ( auto dit = strDelays.begin(); dit != strDelays.end(); ++dit ) {
 				std::string delay( String::trim( *dit ) );
 				String::toLowerInPlace( delay );
-				delays.push_back( StyleSheetProperty( prop.getName(), delay ).asTime() );
+				delays.push_back( StyleSheetProperty( prop->getName(), delay ).asTime() );
 			}
 		} else if ( propDef->getPropertyId() == PropertyId::TransitionTimingFunction ) {
-			auto strTimingFuncs = String::split( prop.getValue(), ',' );
+			auto strTimingFuncs = String::split( prop->getValue(), ',' );
 
 			for ( auto dit = strTimingFuncs.begin(); dit != strTimingFuncs.end(); ++dit ) {
 				std::string timingFunction( String::trim( *dit ) );
@@ -86,7 +86,7 @@ std::map<std::string, TransitionDefinition> TransitionDefinition::parseTransitio
 				timingFunctions.push_back( Ease::fromName( timingFunction ) );
 			}
 		} else if ( propDef->getPropertyId() == PropertyId::TransitionProperty ) {
-			auto strProperties = String::split( prop.getValue(), ',' );
+			auto strProperties = String::split( prop->getValue(), ',' );
 
 			for ( auto dit = strProperties.begin(); dit != strProperties.end(); ++dit ) {
 				std::string property( String::trim( *dit ) );

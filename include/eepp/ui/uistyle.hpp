@@ -64,6 +64,7 @@ class EE_API UIStyle : public UIState {
 	void setDisableAnimations( bool disableAnimations );
 
 	const bool& isStructurallyVolatile() const;
+
   protected:
 	UIWidget* mWidget;
 	CSS::StyleSheetStyleVector mCacheableStyles;
@@ -71,8 +72,8 @@ class EE_API UIStyle : public UIState {
 	CSS::StyleSheetStyle mElementStyle;
 	CSS::StyleSheetProperties mProperties;
 	CSS::StyleSheetVariables mVariables;
-	std::vector<CSS::StyleSheetProperty> mTransitionProperties;
-	std::vector<CSS::StyleSheetProperty> mAnimationProperties;
+	std::vector<const CSS::StyleSheetProperty*> mTransitionProperties;
+	std::vector<const CSS::StyleSheetProperty*> mAnimationProperties;
 	CSS::TransitionsMap mTransitions;
 	CSS::AnimationsMap mAnimations;
 	std::set<UIWidget*> mRelatedWidgets;
@@ -117,8 +118,6 @@ class EE_API UIStyle : public UIState {
 
 	void removeAnimation( const CSS::PropertyDefinition* propertyDefinition,
 						  const Uint32& propertyIndex );
-
-	std::string varToVal( const std::string& varDef );
 };
 
 }} // namespace EE::UI
