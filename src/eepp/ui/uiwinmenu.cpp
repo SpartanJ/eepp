@@ -243,6 +243,10 @@ void UIWinMenu::onParentChange() {
 	UIWidget::onParentChange();
 }
 
+void UIWinMenu::onPaddingChange() {
+	refreshButtons();
+}
+
 void UIWinMenu::unselectButtons() {
 	for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); ++it ) {
 		it->first->unselect();
