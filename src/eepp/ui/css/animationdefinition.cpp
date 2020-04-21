@@ -8,7 +8,7 @@ bool isTimingFunction( const std::string& str ) {
 }
 
 std::unordered_map<std::string, AnimationDefinition> AnimationDefinition::parseAnimationProperties(
-	const std::vector<StyleSheetProperty>& stylesheetProperties ) {
+	const std::vector<const StyleSheetProperty*>& stylesheetProperties ) {
 	AnimationsMap animations;
 	std::vector<std::string> names;
 	std::vector<Time> durations;
@@ -20,17 +20,17 @@ std::unordered_map<std::string, AnimationDefinition> AnimationDefinition::parseA
 	std::vector<bool> pausedStates;
 
 	for ( auto& prop : stylesheetProperties ) {
-		if ( prop.getPropertyDefinition() == NULL )
+		if ( prop->getPropertyDefinition() == NULL )
 			continue;
 
-		const PropertyDefinition* propDef = prop.getPropertyDefinition();
+		const PropertyDefinition* propDef = prop->getPropertyDefinition();
 
 		switch ( propDef->getPropertyId() ) {
 			case PropertyId::Animation: {
 				bool durationSet = false;
 
-				for ( size_t i = 0; i < prop.getPropertyIndexCount(); i++ ) {
-					const StyleSheetProperty& iProp = prop.getPropertyIndex( i );
+				for ( size_t i = 0; i < prop->getPropertyIndexCount(); i++ ) {
+					const StyleSheetProperty& iProp = prop->getPropertyIndex( i );
 
 					auto parts = String::split( iProp.getValue(), ' ' );
 
@@ -83,8 +83,8 @@ std::unordered_map<std::string, AnimationDefinition> AnimationDefinition::parseA
 			case PropertyId::AnimationPlayState:
 			case PropertyId::AnimationIterationCount:
 			case PropertyId::AnimationTimingFunction: {
-				for ( size_t i = 0; i < prop.getPropertyIndexCount(); i++ ) {
-					const StyleSheetProperty& iProp = prop.getPropertyIndex( i );
+				for ( size_t i = 0; i < prop->getPropertyIndexCount(); i++ ) {
+					const StyleSheetProperty& iProp = prop->getPropertyIndex( i );
 					std::string val( String::trim( String::toLower( iProp.getValue() ) ) );
 					switch ( propDef->getPropertyId() ) {
 						case PropertyId::AnimationName:

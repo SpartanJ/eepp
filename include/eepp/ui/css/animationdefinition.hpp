@@ -15,7 +15,7 @@ namespace EE { namespace UI { namespace CSS {
 class EE_API AnimationDefinition {
   public:
 	static std::unordered_map<std::string, AnimationDefinition>
-	parseAnimationProperties( const std::vector<StyleSheetProperty>& stylesheetProperties );
+	parseAnimationProperties( const std::vector<const StyleSheetProperty*>& stylesheetProperties );
 
 	/* https://developer.mozilla.org/en-US/docs/Web/CSS/animation-direction */
 	enum AnimationDirection {

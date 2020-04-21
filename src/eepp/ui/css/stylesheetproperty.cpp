@@ -26,12 +26,13 @@ StyleSheetProperty::StyleSheetProperty( const PropertyDefinition* definition,
 	mIndex( index ),
 	mVolatile( false ),
 	mImportant( false ),
-	mIsVarValue( String::contains( mValue, "var(" ) ),
+	mIsVarValue( false ),
 	mPropertyDefinition( definition ),
 	mShorthandDefinition( NULL ) {
 	cleanValue();
 	checkImportant();
 	createIndexed();
+	checkVars();
 
 	if ( NULL == mShorthandDefinition && NULL == mPropertyDefinition ) {
 		eePRINTL( "Property %s is not defined!", mName.c_str() );
@@ -48,13 +49,14 @@ StyleSheetProperty::StyleSheetProperty( const bool& isVolatile,
 	mValueHash( String::hash( mValue ) ),
 	mSpecificity( 0 ),
 	mIndex( index ),
-	mVolatile( false ),
+	mVolatile( isVolatile ),
 	mImportant( false ),
-	mIsVarValue( String::contains( mValue, "var(" ) ),
+	mIsVarValue( false ),
 	mPropertyDefinition( definition ),
 	mShorthandDefinition( NULL ) {
 	cleanValue();
 	checkImportant();
+	checkVars();
 
 	if ( NULL == mShorthandDefinition && NULL == mPropertyDefinition ) {
 		eePRINTL( "Property %s is not defined!", mName.c_str() );
@@ -71,7 +73,7 @@ StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::stri
 	mIndex( 0 ),
 	mVolatile( false ),
 	mImportant( false ),
-	mIsVarValue( String::contains( mValue, "var(" ) ),
+	mIsVarValue( false ),
 	mPropertyDefinition( StyleSheetSpecification::instance()->getProperty( mNameHash ) ),
 	mShorthandDefinition( NULL == mPropertyDefinition
 							  ? StyleSheetSpecification::instance()->getShorthand( mNameHash )
@@ -79,6 +81,7 @@ StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::stri
 	cleanValue();
 	checkImportant();
 	createIndexed();
+	checkVars();
 
 	if ( NULL == mShorthandDefinition && NULL == mPropertyDefinition ) {
 		eePRINTL( "Property %s is not defined!", mName.c_str() );
@@ -96,7 +99,7 @@ StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::stri
 	mIndex( index ),
 	mVolatile( isVolatile ),
 	mImportant( false ),
-	mIsVarValue( String::contains( mValue, "var(" ) ),
+	mIsVarValue( false ),
 	mPropertyDefinition( StyleSheetSpecification::instance()->getProperty( mNameHash ) ),
 	mShorthandDefinition( NULL == mPropertyDefinition
 							  ? StyleSheetSpecification::instance()->getShorthand( mNameHash )
@@ -104,6 +107,7 @@ StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::stri
 	cleanValue();
 	checkImportant();
 	createIndexed();
+	checkVars();
 
 	if ( NULL == mShorthandDefinition && NULL == mPropertyDefinition ) {
 		eePRINTL( "Property %s is not defined!" );
@@ -151,7 +155,7 @@ void StyleSheetProperty::setName( const std::string& name ) {
 
 void StyleSheetProperty::setValue( const std::string& value ) {
 	mValue = value;
-	mValueHash = String::hash( value );
+	//mValueHash = String::hash( value );
 	mIsVarValue = String::startsWith( mValue, "var(" );
 	createIndexed();
 }
@@ -191,11 +195,62 @@ void StyleSheetProperty::createIndexed() {
 		auto splitValues = String::split( getValue(), ",", "", "(\"" );
 		if ( !splitValues.empty() ) {
 			for ( size_t i = 0; i < splitValues.size(); i++ ) {
-				mIndexedProperty.emplace_back( StyleSheetProperty(
-					isVolatile(), getPropertyDefinition(), splitValues[i], getSpecificity(), i ) );
+				StyleSheetProperty index( mVolatile, mPropertyDefinition, splitValues[i],
+										  mSpecificity, i );
+				mIndexedProperty.emplace_back( std::move( index ) );
 			}
 		}
 	}
+}
+
+void StyleSheetProperty::checkVars() {
+	auto varCache( checkVars( mValue ) );
+	mIsVarValue = false;
+	if ( !varCache.empty() ) {
+		mIsVarValue = true;
+		mVarCache = std::move( varCache );
+	}
+}
+
+static void varToVal( VariableFunctionCache& varCache, const std::string& varDef ) {
+	FunctionString functionType = FunctionString::parse( varDef );
+	if ( !functionType.getParameters().empty() ) {
+		for ( auto& val : functionType.getParameters() ) {
+			if ( String::startsWith( val, "--" ) ) {
+				varCache.variableList.emplace_back( val );
+			} else if ( String::startsWith( val, "var(" ) ) {
+				varToVal( varCache, val );
+			}
+		}
+	}
+}
+
+std::vector<VariableFunctionCache> StyleSheetProperty::checkVars( const std::string& value ) {
+	std::vector<VariableFunctionCache> vars;
+	std::string::size_type tokenStart = 0;
+	std::string::size_type tokenEnd = 0;
+
+	while ( true ) {
+		tokenStart = value.find( "var(", tokenStart );
+		if ( tokenStart != std::string::npos ) {
+			tokenEnd = String::findCloseBracket( value, tokenStart, '(', ')' );
+			if ( tokenEnd != std::string::npos ) {
+				mIsVarValue = true;
+				VariableFunctionCache variableFuncCache;
+				variableFuncCache.definition =
+					value.substr( tokenStart, tokenEnd + 1 - tokenStart );
+				varToVal( variableFuncCache, variableFuncCache.definition );
+				tokenStart = tokenEnd;
+				vars.emplace_back( std::move( variableFuncCache ) );
+			} else {
+				break;
+			}
+		} else {
+			break;
+		}
+	};
+
+	return vars;
 }
 
 std::string StyleSheetProperty::asString( const std::string& defaultValue ) const {
@@ -600,6 +655,10 @@ Sizei StyleSheetProperty::asSizei( UINode* node, const Sizei& defaultValue ) con
 
 const Uint32& StyleSheetProperty::getValueHash() const {
 	return mValueHash;
+}
+
+const std::vector<VariableFunctionCache>& StyleSheetProperty::getVarCache() const {
+	return mVarCache;
 }
 
 }}} // namespace EE::UI::CSS
