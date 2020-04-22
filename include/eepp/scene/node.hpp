@@ -364,6 +364,8 @@ class EE_API Node : public Transformable {
 	bool isLoadingState() const;
 
 	virtual void onIdChange();
+
+	bool isClosing() const;
   protected:
 	typedef std::map<Uint32, std::map<Uint32, EventCallback>> EventsMap;
 	friend class EventDispatcher;

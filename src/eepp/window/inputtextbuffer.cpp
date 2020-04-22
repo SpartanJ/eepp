@@ -278,8 +278,13 @@ void InputTextBuffer::update( InputEvent* Event ) {
 	if ( isActive() ) {
 		Input* Input = mWindow->getInput();
 
-		Uint32 c = InputHelper::convertKeyCharacter(
-			Event->key.keysym.sym, Event->key.keysym.unicode, Event->key.keysym.mod );
+		Uint32 keyChar = 0;
+
+		if ( Event->Type == InputEvent::TextInput || Event->Type == InputEvent::KeyDown ||
+			 Event->Type == InputEvent::KeyUp ) {
+			InputHelper::convertKeyCharacter( Event->key.keysym.sym, Event->key.keysym.unicode,
+											  Event->key.keysym.mod );
+		}
 
 		if ( isFreeEditingEnabled() ) {
 			switch ( Event->Type ) {
@@ -312,7 +317,7 @@ void InputTextBuffer::update( InputEvent* Event ) {
 									 ( Event->key.keysym.sym == KEY_X ||
 									   Event->key.keysym.sym == KEY_V ) ) ||
 								   Event->key.keysym.sym == KEY_DELETE ) ||
-								 c == KEY_BACKSPACE ) {
+								 keyChar == KEY_BACKSPACE ) {
 								removeSelection();
 								break;
 							}
@@ -329,7 +334,8 @@ void InputTextBuffer::update( InputEvent* Event ) {
 
 					if ( Input->isShiftPressed() || Input->isControlPressed() ) {
 						if ( !onlyNumbersAllowed() &&
-							 ( ( ( Event->key.keysym.mod & KEYMOD_SHIFT ) && c == KEY_INSERT ) ||
+							 ( ( ( Event->key.keysym.mod & KEYMOD_SHIFT ) &&
+								 keyChar == KEY_INSERT ) ||
 							   ( ( Event->key.keysym.mod & KEYMOD_CTRL ) &&
 								 Event->key.keysym.sym == KEY_V ) ) ) {
 							String txt = mWindow->getClipboard()->getWideText();
@@ -360,26 +366,26 @@ void InputTextBuffer::update( InputEvent* Event ) {
 						}
 
 						if ( Input->isControlPressed() ) {
-							if ( c == KEY_LEFT ) {
+							if ( keyChar == KEY_LEFT ) {
 								promptToLeftFirstNoChar();
 								break;
-							} else if ( c == KEY_RIGHT ) {
+							} else if ( keyChar == KEY_RIGHT ) {
 								promptToRightFirstNoChar();
 								break;
-							} else if ( c == KEY_BACKSPACE ) {
+							} else if ( keyChar == KEY_BACKSPACE ) {
 								eraseToPrevNoChar();
 								break;
-							} else if ( c == KEY_DELETE ) {
+							} else if ( keyChar == KEY_DELETE ) {
 								eraseToNextNoChar();
 								break;
 							}
 						}
 					}
 
-					if ( ( c == KEY_BACKSPACE || c == KEY_DELETE ) ) {
+					if ( ( keyChar == KEY_BACKSPACE || keyChar == KEY_DELETE ) ) {
 						if ( mText.size() ) {
 							if ( mPromptPos < (int)mText.size() ) {
-								if ( c == KEY_BACKSPACE ) {
+								if ( keyChar == KEY_BACKSPACE ) {
 									if ( mPromptPos > 0 ) {
 										mText.erase( mPromptPos - 1, 1 );
 										setCursorPos( mPromptPos - 1 );
@@ -387,7 +393,7 @@ void InputTextBuffer::update( InputEvent* Event ) {
 								} else {
 									mText.erase( mPromptPos, 1 );
 								}
-							} else if ( c == KEY_BACKSPACE ) {
+							} else if ( keyChar == KEY_BACKSPACE ) {
 								mText.resize( mText.size() - 1 );
 								autoPrompt( true );
 							}
@@ -397,7 +403,7 @@ void InputTextBuffer::update( InputEvent* Event ) {
 							setChangedSinceLastUpdate( true );
 							onBufferChange();
 						}
-					} else if ( ( c == KEY_RETURN || c == KEY_KP_ENTER ) ) {
+					} else if ( ( keyChar == KEY_RETURN || keyChar == KEY_KP_ENTER ) ) {
 						if ( setSupportNewLine() && canAdd() ) {
 							String::insertChar( mText, mPromptPos, '\n' );
 
@@ -412,13 +418,13 @@ void InputTextBuffer::update( InputEvent* Event ) {
 						if ( mEnterCall )
 							mEnterCall();
 
-					} else if ( c == KEY_LEFT ) {
+					} else if ( keyChar == KEY_LEFT ) {
 						if ( ( mPromptPos - 1 ) >= 0 ) {
 							setCursorPos( mPromptPos - 1 );
 							autoPrompt( false );
 							shiftSelection( mPromptPos + 1 );
 						}
-					} else if ( c == KEY_RIGHT ) {
+					} else if ( keyChar == KEY_RIGHT ) {
 						if ( ( mPromptPos + 1 ) < (int)mText.size() ) {
 							setCursorPos( mPromptPos + 1 );
 							autoPrompt( false );
@@ -426,16 +432,16 @@ void InputTextBuffer::update( InputEvent* Event ) {
 						} else if ( ( mPromptPos + 1 ) == (int)mText.size() ) {
 							autoPrompt( true );
 						}
-					} else if ( c == KEY_UP ) {
+					} else if ( keyChar == KEY_UP ) {
 						movePromptRowUp( false );
-					} else if ( c == KEY_DOWN ) {
+					} else if ( keyChar == KEY_DOWN ) {
 						movePromptRowDown( true );
-					} else if ( c == KEY_PAGEUP ) {
+					} else if ( keyChar == KEY_PAGEUP ) {
 						movePromptRowUp( true );
-					} else if ( c == KEY_PAGEDOWN ) {
+					} else if ( keyChar == KEY_PAGEDOWN ) {
 						movePromptRowDown( false );
-					} else if ( c == KEY_TAB ) {
-						tryAddChar( c );
+					} else if ( keyChar == KEY_TAB ) {
+						tryAddChar( keyChar );
 					}
 
 					break;
@@ -444,7 +450,7 @@ void InputTextBuffer::update( InputEvent* Event ) {
 					if ( setSupportNewLine() ) {
 						int lPromtpPos = mPromptPos;
 
-						if ( c == KEY_END ) {
+						if ( keyChar == KEY_END ) {
 							for ( Uint32 i = mPromptPos; i < mText.size(); i++ ) {
 								if ( mText[i] == '\n' ) {
 									setCursorPos( i );
@@ -461,7 +467,7 @@ void InputTextBuffer::update( InputEvent* Event ) {
 							shiftSelection( lPromtpPos );
 						}
 
-						if ( c == KEY_HOME ) {
+						if ( keyChar == KEY_HOME ) {
 							if ( 0 != mPromptPos ) {
 								for ( Int32 i = (Int32)mPromptPos - 1; i >= 0; i-- ) {
 									if ( mText[i] == '\n' ) {
@@ -482,13 +488,13 @@ void InputTextBuffer::update( InputEvent* Event ) {
 					} else {
 						int lPromtpPos = mPromptPos;
 
-						if ( c == KEY_END ) {
+						if ( keyChar == KEY_END ) {
 							autoPrompt( true );
 
 							shiftSelection( lPromtpPos );
 						}
 
-						if ( c == KEY_HOME ) {
+						if ( keyChar == KEY_HOME ) {
 							setCursorPos( 0 );
 							autoPrompt( false );
 
@@ -502,10 +508,11 @@ void InputTextBuffer::update( InputEvent* Event ) {
 			if ( Event->Type == InputEvent::TextInput ) {
 				tryAddChar( Event->text.text );
 			} else if ( Event->Type == InputEvent::KeyDown ) {
-				if ( c == KEY_BACKSPACE && mText.size() > 0 ) {
+				if ( keyChar == KEY_BACKSPACE && mText.size() > 0 ) {
 					mText.resize( mText.size() - 1 );
-				} else if ( ( c == KEY_RETURN || c == KEY_KP_ENTER ) && !Input->isMetaPressed() &&
-							!Input->isAltPressed() && !Input->isControlPressed() ) {
+				} else if ( ( keyChar == KEY_RETURN || keyChar == KEY_KP_ENTER ) &&
+							!Input->isMetaPressed() && !Input->isAltPressed() &&
+							!Input->isControlPressed() ) {
 					if ( setSupportNewLine() && canAdd() )
 						mText += '\n';
 

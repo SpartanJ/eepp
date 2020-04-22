@@ -88,6 +88,7 @@ class EE_API UISceneNode : public SceneNode {
 
   protected:
 	friend class EE::UI::UIWindow;
+	friend class EE::UI::UIWidget;
 	UIWidget* mRoot;
 	Sizef mDpSize;
 	Uint32 mFlags;
@@ -135,6 +136,8 @@ class EE_API UISceneNode : public SceneNode {
 	void checkShortcuts( const Uint32& KeyCode, const Uint32& Mod );
 
 	KeyboardShortcuts::iterator existsShortcut( const Uint32& KeyCode, const Uint32& Mod );
+
+	void onWidgetDelete( Node* node );
 };
 
 }} // namespace EE::UI

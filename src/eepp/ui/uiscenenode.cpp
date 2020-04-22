@@ -385,30 +385,6 @@ void UISceneNode::update( const Time& elapsed ) {
 
 	SceneManager::instance()->setCurrentUISceneNode( this );
 
-	if ( !mDirtyStyle.empty() ) {
-		std::vector<UIWidget*> inCloseList;
-		for ( auto& widget : mDirtyStyle ) {
-			if ( mCloseList.count( widget ) > 0 ) {
-				inCloseList.push_back( widget );
-			}
-		}
-		for ( auto& widget : inCloseList ) {
-			mDirtyStyle.erase( widget );
-		}
-	}
-
-	if ( !mDirtyStyleState.empty() ) {
-		std::vector<UIWidget*> inCloseList;
-		for ( auto& widget : mDirtyStyleState ) {
-			if ( mCloseList.count( widget ) > 0 ) {
-				inCloseList.push_back( widget );
-			}
-		}
-		for ( auto& widget : inCloseList ) {
-			mDirtyStyleState.erase( widget );
-		}
-	}
-
 	SceneNode::update( elapsed );
 
 	if ( !mDirtyStyle.empty() ) {
@@ -433,6 +409,20 @@ void UISceneNode::update( const Time& elapsed ) {
 	SceneManager::instance()->setCurrentUISceneNode( uiSceneNode );
 }
 
+void UISceneNode::onWidgetDelete( Node* node ) {
+	if ( node->isWidget() ) {
+		UIWidget* widget = node->asType<UIWidget>();
+
+		if ( mDirtyStyle.find( widget ) != mDirtyStyle.end() ) {
+			mDirtyStyle.erase( widget );
+		}
+
+		if ( mDirtyStyleState.find( widget ) != mDirtyStyleState.end() ) {
+			mDirtyStyleState.erase( widget );
+		}
+	}
+}
+
 const bool& UISceneNode::isLoading() const {
 	return mIsLoading;
 }
@@ -455,6 +445,9 @@ void UISceneNode::setVerbose( bool verbose ) {
 
 void UISceneNode::invalidateStyle( UIWidget* node ) {
 	eeASSERT( NULL != node );
+
+	if ( node->isClosing() )
+		return;
 
 	Node* itNode = NULL;
 
@@ -488,6 +481,9 @@ void UISceneNode::invalidateStyle( UIWidget* node ) {
 
 void UISceneNode::invalidateStyleState( UIWidget* node ) {
 	eeASSERT( NULL != node );
+
+	if ( node->isClosing() )
+		return;
 
 	Node* itNode = NULL;
 

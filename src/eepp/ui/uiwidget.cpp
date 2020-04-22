@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <eepp/scene/actions/actions.hpp>
+#include <eepp/scene/scenemanager.hpp>
 #include <eepp/ui/css/shorthanddefinition.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
 #include <eepp/ui/css/stylesheetselector.hpp>
@@ -43,9 +44,9 @@ UIWidget::UIWidget( const std::string& tag ) :
 	mAttributesTransactionCount( 0 ) {
 	mNodeFlags |= NODE_FLAG_WIDGET;
 
-	if ( NULL != mSceneNode && !isSceneNodeLoading() && !isLoadingState() ) {
-		getUISceneNode()->invalidateStyle( this );
-		getUISceneNode()->invalidateStyleState( this );
+	if ( NULL != mUISceneNode && !isSceneNodeLoading() && !isLoadingState() ) {
+		mUISceneNode->invalidateStyle( this );
+		mUISceneNode->invalidateStyleState( this );
 	}
 
 	createStyle();
@@ -56,6 +57,8 @@ UIWidget::UIWidget( const std::string& tag ) :
 UIWidget::UIWidget() : UIWidget( "widget" ) {}
 
 UIWidget::~UIWidget() {
+	if ( !SceneManager::instance()->isShootingDown() && NULL != mUISceneNode )
+		mUISceneNode->onWidgetDelete( this );
 	eeSAFE_DELETE( mStyle );
 	eeSAFE_DELETE( mTooltip );
 }
@@ -223,18 +226,8 @@ void UIWidget::createTooltip() {
 
 void UIWidget::onChildCountChange( Node* child, const bool& removed ) {
 	UINode::onChildCountChange( child, removed );
-	if ( !isSceneNodeLoading() && getUISceneNode() != NULL ) {
-		UISceneNode* sceneNode = getUISceneNode();
-		Node* child = getFirstChild();
-		UIWidget* widget = NULL;
-		while ( NULL != child ) {
-			if ( child->isWidget() && ( widget = child->asType<UIWidget>() ) &&
-				 NULL != widget->getUIStyle() && widget->getUIStyle()->isStructurallyVolatile() ) {
-				sceneNode->invalidateStyleState( widget );
-			}
-			child = child->getNextNode();
-		};
-	}
+	if ( !isSceneNodeLoading() && getUISceneNode() != NULL )
+		getUISceneNode()->invalidateStyleState( this );
 }
 
 Vector2f UIWidget::getTooltipPosition() {
@@ -585,9 +578,7 @@ void UIWidget::reportStyleStateChange() {
 }
 
 bool UIWidget::isSceneNodeLoading() const {
-	return NULL != getSceneNode() && getSceneNode()->isUISceneNode()
-			   ? static_cast<UISceneNode*>( getSceneNode() )->isLoading()
-			   : false;
+	return NULL != mUISceneNode ? mUISceneNode->isLoading() : false;
 }
 
 const std::string& UIWidget::getMinWidthEq() const {

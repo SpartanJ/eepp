@@ -39,13 +39,13 @@ UINode::UINode() :
 	mForeground( NULL ),
 	mBorder( NULL ),
 	mDragButton( EE_BUTTON_LMASK ),
-	mSkinColor( Color::White ) {
+	mSkinColor( Color::White ),
+	mUISceneNode( SceneManager::instance()->getUISceneNode() ) {
 	mNodeFlags |= NODE_FLAG_UINODE | NODE_FLAG_OVER_FIND_ALLOWED;
 
-	if ( NULL != SceneManager::instance()->getUISceneNode() )
-		setParent( (Node*)SceneManager::instance()->getUISceneNode()->getRoot() );
+	if ( NULL != mUISceneNode )
+		setParent( (Node*)mUISceneNode->getRoot() );
 }
-
 UINode::~UINode() {
 	removeSkin();
 
