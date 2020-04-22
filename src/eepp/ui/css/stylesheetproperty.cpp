@@ -155,7 +155,7 @@ void StyleSheetProperty::setName( const std::string& name ) {
 
 void StyleSheetProperty::setValue( const std::string& value ) {
 	mValue = value;
-	//mValueHash = String::hash( value );
+	// mValueHash = String::hash( value );
 	mIsVarValue = String::startsWith( mValue, "var(" );
 	createIndexed();
 }
@@ -549,9 +549,9 @@ const StyleSheetProperty& StyleSheetProperty::getPropertyIndex( const Uint32& in
 	return mIndexedProperty[index];
 }
 
-StyleSheetProperty& StyleSheetProperty::getPropertyIndexRef( const Uint32& index ) {
+StyleSheetProperty* StyleSheetProperty::getPropertyIndexRef( const Uint32& index ) {
 	eeASSERT( index < mIndexedProperty.size() );
-	return mIndexedProperty[index];
+	return &mIndexedProperty[index];
 }
 
 const Uint32& StyleSheetProperty::getIndex() const {

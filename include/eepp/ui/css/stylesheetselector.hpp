@@ -17,15 +17,11 @@ class EE_API StyleSheetSelector {
 
 	const std::string& getName() const;
 
-	const std::string& getPseudoClass() const;
-
 	const Uint32& getSpecificity() const;
 
 	bool select( UIWidget* element, const bool& applyPseudo = true ) const;
 
 	const bool& isCacheable() const;
-
-	bool hasPseudoClass( const std::string& cls ) const;
 
 	bool hasPseudoClasses() const;
 
@@ -34,9 +30,14 @@ class EE_API StyleSheetSelector {
 
 	const bool& isStructurallyVolatile() const;
 
+	const StyleSheetSelectorRule& getRule( const Uint32& index );
+
+	const std::string& getSelectorId() const;
+
+	const std::string& getSelectorTagName() const;
+
   protected:
 	std::string mName;
-	std::string mPseudoClass;
 	Uint32 mSpecificity;
 	std::vector<StyleSheetSelectorRule> mSelectorRules;
 	bool mCacheable;

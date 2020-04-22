@@ -142,7 +142,7 @@ class EE_API StyleSheetProperty {
 
 	const StyleSheetProperty& getPropertyIndex( const Uint32& index ) const;
 
-	StyleSheetProperty& getPropertyIndexRef( const Uint32& index );
+	StyleSheetProperty* getPropertyIndexRef( const Uint32& index );
 
 	const Uint32& getIndex() const;
 

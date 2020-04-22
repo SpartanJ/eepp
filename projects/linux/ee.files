@@ -294,9 +294,11 @@
 ../../include/eepp/ui/border.hpp
 ../../include/eepp/ui/css/animationdefinition.hpp
 ../../include/eepp/ui/css/drawableimageparser.hpp
+../../include/eepp/ui/css/elementdefinition.hpp
 ../../include/eepp/ui/css/keyframesdefinition.hpp
 ../../include/eepp/ui/css/mediaquery.hpp
 ../../include/eepp/ui/css/propertydefinition.hpp
+../../include/eepp/ui/css/propertyidset.hpp
 ../../include/eepp/ui/css/propertyspecification.hpp
 ../../include/eepp/ui/css/shorthanddefinition.hpp
 ../../include/eepp/ui/css/stylesheet.hpp
@@ -730,6 +732,7 @@
 ../../src/eepp/ui/border.cpp
 ../../src/eepp/ui/css/animationdefinition.cpp
 ../../src/eepp/ui/css/drawableimageparser.cpp
+../../src/eepp/ui/css/elementdefinition.cpp
 ../../src/eepp/ui/css/keyframesdefinition.cpp
 ../../src/eepp/ui/css/mediaquery.cpp
 ../../src/eepp/ui/css/propertydefinition.cpp

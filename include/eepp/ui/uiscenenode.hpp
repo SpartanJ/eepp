@@ -82,7 +82,9 @@ class EE_API UISceneNode : public SceneNode {
 
 	void setVerbose( bool verbose );
 
-	void addWidgetToDirtyStyleState( UIWidget* widget );
+	void invalidateStyle( UIWidget* widget );
+
+	void invalidateStyleState( UIWidget* widget );
 
   protected:
 	friend class EE::UI::UIWindow;
@@ -97,6 +99,7 @@ class EE_API UISceneNode : public SceneNode {
 	UIThemeManager* mUIThemeManager;
 	std::vector<Font*> mFontFaces;
 	KeyboardShortcuts mKbShortcuts;
+	std::unordered_set<UIWidget*> mDirtyStyle;
 	std::unordered_set<UIWidget*> mDirtyStyleState;
 
 	virtual void resizeControl( EE::Window::Window* win );

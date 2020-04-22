@@ -385,6 +385,18 @@ void UISceneNode::update( const Time& elapsed ) {
 
 	SceneManager::instance()->setCurrentUISceneNode( this );
 
+	if ( !mDirtyStyle.empty() ) {
+		std::vector<UIWidget*> inCloseList;
+		for ( auto& widget : mDirtyStyle ) {
+			if ( mCloseList.count( widget ) > 0 ) {
+				inCloseList.push_back( widget );
+			}
+		}
+		for ( auto& widget : inCloseList ) {
+			mDirtyStyle.erase( widget );
+		}
+	}
+
 	if ( !mDirtyStyleState.empty() ) {
 		std::vector<UIWidget*> inCloseList;
 		for ( auto& widget : mDirtyStyleState ) {
@@ -399,13 +411,22 @@ void UISceneNode::update( const Time& elapsed ) {
 
 	SceneNode::update( elapsed );
 
+	if ( !mDirtyStyle.empty() ) {
+		Clock clock;
+		for ( auto& node : mDirtyStyle ) {
+			node->reloadStyle( true, false, false );
+		}
+		mDirtyStyle.clear();
+		eePRINTL( "CSS Styles Reloaded in %.2f ms", clock.getElapsedTime().asMilliseconds() );
+	}
+
 	if ( !mDirtyStyleState.empty() ) {
 		Clock clock;
 		for ( auto& node : mDirtyStyleState ) {
 			node->reportStyleStateChangeRecursive();
 		}
 		mDirtyStyleState.clear();
-		eePRINTL( "CSS Invalidated, reapplied state in %.2f ms",
+		eePRINTL( "CSS Style State Invalidated, reapplied state in %.2f ms",
 				  clock.getElapsedTime().asMilliseconds() );
 	}
 
@@ -432,7 +453,40 @@ void UISceneNode::setVerbose( bool verbose ) {
 	mVerbose = verbose;
 }
 
-void UISceneNode::addWidgetToDirtyStyleState( UIWidget* node ) {
+void UISceneNode::invalidateStyle( UIWidget* node ) {
+	eeASSERT( NULL != node );
+
+	Node* itNode = NULL;
+
+	if ( mDirtyStyle.count( node ) > 0 )
+		return;
+
+	for ( auto& dirtyCtrl : mDirtyStyle ) {
+		if ( NULL != dirtyCtrl && dirtyCtrl->isParentOf( node ) ) {
+			return;
+		}
+	}
+
+	std::vector<std::unordered_set<UIWidget*>::iterator> itEraseList;
+
+	for ( auto it = mDirtyStyle.begin(); it != mDirtyStyle.end(); ++it ) {
+		itNode = *it;
+
+		if ( NULL != itNode && node->isParentOf( itNode ) ) {
+			itEraseList.push_back( it );
+		} else if ( NULL == itNode ) {
+			itEraseList.push_back( it );
+		}
+	}
+
+	for ( auto ite = itEraseList.begin(); ite != itEraseList.end(); ++ite ) {
+		mDirtyStyle.erase( *ite );
+	}
+
+	mDirtyStyle.insert( node );
+}
+
+void UISceneNode::invalidateStyleState( UIWidget* node ) {
 	eeASSERT( NULL != node );
 
 	Node* itNode = NULL;
@@ -505,8 +559,8 @@ void UISceneNode::processStyleSheetAtRules( const StyleSheet& styleSheet ) {
 
 void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles ) {
 	for ( auto& style : styles ) {
-		CSS::StyleSheetProperty familyProp( style->getPropertyById( PropertyId::FontFamily ) );
-		CSS::StyleSheetProperty srcProp( style->getPropertyById( PropertyId::Src ) );
+		CSS::StyleSheetProperty familyProp( *style->getPropertyById( PropertyId::FontFamily ) );
+		CSS::StyleSheetProperty srcProp( *style->getPropertyById( PropertyId::Src ) );
 
 		if ( !familyProp.isEmpty() && !srcProp.isEmpty() ) {
 			Font* fontSearch = FontManager::instance()->getByName( familyProp.getValue() );

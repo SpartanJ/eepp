@@ -43,8 +43,10 @@ UIWidget::UIWidget( const std::string& tag ) :
 	mAttributesTransactionCount( 0 ) {
 	mNodeFlags |= NODE_FLAG_WIDGET;
 
-	if ( !isSceneNodeLoading() && !isLoadingState() )
-		reloadStyle( false, true );
+	if ( NULL != mSceneNode && !isSceneNodeLoading() && !isLoadingState() ) {
+		getUISceneNode()->invalidateStyle( this );
+		getUISceneNode()->invalidateStyleState( this );
+	}
 
 	createStyle();
 
@@ -228,7 +230,7 @@ void UIWidget::onChildCountChange( Node* child, const bool& removed ) {
 		while ( NULL != child ) {
 			if ( child->isWidget() && ( widget = child->asType<UIWidget>() ) &&
 				 NULL != widget->getUIStyle() && widget->getUIStyle()->isStructurallyVolatile() ) {
-				sceneNode->addWidgetToDirtyStyleState( widget );
+				sceneNode->invalidateStyleState( widget );
 			}
 			child = child->getNextNode();
 		};
@@ -445,7 +447,7 @@ Node* UIWidget::setId( const std::string& id ) {
 	Node::setId( id );
 
 	if ( !isSceneNodeLoading() && !isLoadingState() )
-		reloadStyle( true );
+		getUISceneNode()->invalidateStyle( this );
 
 	return this;
 }
@@ -789,7 +791,7 @@ void UIWidget::addClass( const std::string& cls ) {
 		mClasses.push_back( cls );
 
 		if ( !isSceneNodeLoading() && !isLoadingState() )
-			reloadStyle( true );
+			getUISceneNode()->invalidateStyle( this );
 
 		onClassChange();
 	}
@@ -806,7 +808,7 @@ void UIWidget::addClasses( const std::vector<std::string>& classes ) {
 		}
 
 		if ( !isSceneNodeLoading() && !isLoadingState() )
-			reloadStyle( true );
+			getUISceneNode()->invalidateStyle( this );
 
 		onClassChange();
 	}
@@ -817,7 +819,7 @@ void UIWidget::removeClass( const std::string& cls ) {
 		mClasses.erase( std::find( mClasses.begin(), mClasses.end(), cls ) );
 
 		if ( !isSceneNodeLoading() && !isLoadingState() )
-			reloadStyle( true );
+			getUISceneNode()->invalidateStyle( this );
 
 		onClassChange();
 	}
@@ -838,7 +840,7 @@ void UIWidget::removeClasses( const std::vector<std::string>& classes ) {
 		}
 
 		if ( !isSceneNodeLoading() && !isLoadingState() )
-			reloadStyle( true );
+			getUISceneNode()->invalidateStyle( this );
 
 		onClassChange();
 	}
@@ -857,7 +859,7 @@ void UIWidget::setElementTag( const std::string& tag ) {
 		mMinSize = Sizef::Zero;
 
 		if ( !isSceneNodeLoading() && !isLoadingState() )
-			reloadStyle( true );
+			getUISceneNode()->invalidateStyle( this );
 
 		onTagChange();
 	}
@@ -959,7 +961,7 @@ void UIWidget::onThemeLoaded() {}
 
 void UIWidget::onParentChange() {
 	if ( !isSceneNodeLoading() && !isLoadingState() )
-		reloadStyle( true, true );
+		getUISceneNode()->invalidateStyle( this );
 }
 
 void UIWidget::onClassChange() {

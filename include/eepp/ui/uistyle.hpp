@@ -4,6 +4,7 @@
 #include <eepp/graphics/fontstyleconfig.hpp>
 #include <eepp/math/ease.hpp>
 #include <eepp/ui/css/animationdefinition.hpp>
+#include <eepp/ui/css/elementdefinition.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
 #include <eepp/ui/css/stylesheetstyle.hpp>
 #include <eepp/ui/css/transitiondefinition.hpp>
@@ -37,7 +38,7 @@ class EE_API UIStyle : public UIState {
 
 	void onStateChange();
 
-	CSS::StyleSheetProperty getStatelessStyleSheetProperty( const Uint32& propertyId ) const;
+	const CSS::StyleSheetProperty* getStatelessStyleSheetProperty( const Uint32& propertyId ) const;
 
 	void setStyleSheetProperties( const CSS::StyleSheetProperties& properties );
 
@@ -69,8 +70,8 @@ class EE_API UIStyle : public UIState {
 	UIWidget* mWidget;
 	CSS::StyleSheetStyleVector mCacheableStyles;
 	CSS::StyleSheetStyleVector mNoncacheableStyles;
-	CSS::StyleSheetStyle mElementStyle;
-	CSS::StyleSheetProperties mProperties;
+	std::shared_ptr<CSS::StyleSheetStyle> mElementStyle;
+	std::shared_ptr<CSS::ElementDefinition> mDefinition;
 	CSS::StyleSheetVariables mVariables;
 	std::vector<const CSS::StyleSheetProperty*> mTransitionProperties;
 	std::vector<const CSS::StyleSheetProperty*> mAnimationProperties;
@@ -83,13 +84,13 @@ class EE_API UIStyle : public UIState {
 	bool mDisableAnimations;
 	bool mStructurallyVolatile;
 
-	void tryApplyStyle( const CSS::StyleSheetStyle* style );
+	void tryApplyStyle( CSS::StyleSheetStyleVector& styles, CSS::StyleSheetStyle* style );
 
 	void findVariables( const CSS::StyleSheetStyle* style );
 
-	void applyVarValues( CSS::StyleSheetProperty& style );
+	void applyVarValues( CSS::StyleSheetProperty* style );
 
-	void setVariableFromValue( CSS::StyleSheetProperty& property, const std::string& value );
+	void setVariableFromValue( CSS::StyleSheetProperty* property, const std::string& value );
 
 	void updateState();
 
@@ -106,7 +107,7 @@ class EE_API UIStyle : public UIState {
 	void removeRelatedWidgets();
 
 	void applyStyleSheetProperty( const CSS::StyleSheetProperty& property,
-								  CSS::StyleSheetProperties& prevProperties );
+								  std::shared_ptr<CSS::ElementDefinition> prevDefinition );
 
 	void updateAnimationsPlayState();
 
@@ -118,6 +119,8 @@ class EE_API UIStyle : public UIState {
 
 	void removeAnimation( const CSS::PropertyDefinition* propertyDefinition,
 						  const Uint32& propertyIndex );
+
+	CSS::StyleSheetProperty* getLocalProperty( Uint32 propId );
 };
 
 }} // namespace EE::UI
