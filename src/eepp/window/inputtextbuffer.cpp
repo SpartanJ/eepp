@@ -282,8 +282,8 @@ void InputTextBuffer::update( InputEvent* Event ) {
 
 		if ( Event->Type == InputEvent::TextInput || Event->Type == InputEvent::KeyDown ||
 			 Event->Type == InputEvent::KeyUp ) {
-			InputHelper::convertKeyCharacter( Event->key.keysym.sym, Event->key.keysym.unicode,
-											  Event->key.keysym.mod );
+			keyChar = InputHelper::convertKeyCharacter(
+				Event->key.keysym.sym, Event->key.keysym.unicode, Event->key.keysym.mod );
 		}
 
 		if ( isFreeEditingEnabled() ) {
