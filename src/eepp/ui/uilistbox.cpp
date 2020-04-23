@@ -1117,14 +1117,12 @@ void UIListBox::loadItemsFromXmlNode( const pugi::xml_node& node ) {
 	for ( pugi::xml_node item = node.child( "item" ); item; item = item.next_sibling( "item" ) ) {
 		std::string data = item.text().as_string();
 
-		if ( data.size() ) {
-			if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
-				items.push_back(
-					static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( data ) );
+		if ( NULL != mUISceneNode && !data.empty() ) {
+			items.push_back( mUISceneNode->getTranslatorString( data ) );
 		}
 	}
 
-	if ( items.size() ) {
+	if ( !items.empty() ) {
 		addListBoxItems( items );
 	}
 

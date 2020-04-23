@@ -109,16 +109,17 @@ StyleSheetVariable UIStyle::getVariable( const std::string& variable ) {
 
 		if ( it != mDefinition->getVariables().end() ) {
 			return it->second;
-		} else {
-			Node* parentWidget = mWidget->getParentWidget();
+		}
 
-			if ( NULL != parentWidget ) {
-				UIStyle* style = parentWidget->asType<UIWidget>()->getUIStyle();
+	}
 
-				if ( NULL != style ) {
-					return style->getVariable( variable );
-				}
-			}
+	Node* parentWidget = mWidget->getParentWidget();
+
+	if ( NULL != parentWidget ) {
+		UIStyle* style = parentWidget->asType<UIWidget>()->getUIStyle();
+
+		if ( NULL != style ) {
+			return style->getVariable( variable );
 		}
 	}
 

@@ -183,18 +183,10 @@ UIWidget* UISceneNode::loadLayoutNodes( pugi::xml_node node, Node* parent ) {
 	}
 
 	for ( auto& widget : widgets )
-		widget->reloadStyle( true, true, false );
+		widget->reloadStyle( true, true, true );
 
 	if ( mVerbose ) {
 		eePRINTL( "UISceneNode::loadLayoutNodes reloaded styles in: %.2f ms",
-				  innerClock.getElapsed().asMilliseconds() );
-	}
-
-	for ( auto& widget : widgets )
-		widget->reportStyleStateChangeRecursive();
-
-	if ( mVerbose ) {
-		eePRINTL( "UISceneNode::loadLayoutNodes reloaded style state in: %.2f ms",
 				  innerClock.getElapsed().asMilliseconds() );
 	}
 
