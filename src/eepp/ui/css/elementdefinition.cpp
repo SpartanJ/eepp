@@ -2,10 +2,13 @@
 
 namespace EE { namespace UI { namespace CSS {
 
-ElementDefinition::ElementDefinition( const StyleSheetStyleVector& styleSheetStyles ) {
-	// Initialises the element definition from the list of style sheet nodes.
-	for ( size_t i = 0; i < styleSheetStyles.size(); ++i ) {
-		const StyleSheetProperties& properties = styleSheetStyles[i]->getProperties();
+ElementDefinition::ElementDefinition( const StyleSheetStyleVector& styleSheetStyles ) :
+	mStyles( styleSheetStyles ), mStructurallyVolatile( false ) {
+	for ( auto& styleSheetStyle : styleSheetStyles ) {
+		const StyleSheetProperties& properties = styleSheetStyle->getProperties();
+
+		if ( styleSheetStyle->getSelector().isStructurallyVolatile() )
+			mStructurallyVolatile = true;
 
 		for ( auto iterator = properties.begin(); iterator != properties.end(); ++iterator ) {
 			const StyleSheetProperty& property = iterator->second;
@@ -15,7 +18,14 @@ ElementDefinition::ElementDefinition( const StyleSheetStyleVector& styleSheetSty
 				 property.getSpecificity() >= it->second.getSpecificity() ) {
 				mProperties[property.getId()] = property;
 			}
+
+			if ( String::startsWith( property.getName(), "transition" ) )
+				mTransitionProperties.push_back( &property );
+			else if ( String::startsWith( property.getName(), "animation" ) )
+				mAnimationProperties.push_back( &property );
 		}
+
+		findVariables( styleSheetStyle );
 	}
 
 	for ( auto& property : mProperties )
@@ -33,6 +43,37 @@ const PropertyIdSet& ElementDefinition::getPropertyIds() const {
 
 const StyleSheetProperties& ElementDefinition::getProperties() const {
 	return mProperties;
+}
+
+const std::vector<const StyleSheetProperty*>& ElementDefinition::getTransitionProperties() const {
+	return mTransitionProperties;
+}
+
+const std::vector<const StyleSheetProperty*>& ElementDefinition::getAnimationProperties() const {
+	return mAnimationProperties;
+}
+
+const StyleSheetVariables& ElementDefinition::getVariables() const {
+	return mVariables;
+}
+
+bool ElementDefinition::isStructurallyVolatile() const {
+	return mStructurallyVolatile;
+}
+
+const StyleSheetStyleVector& ElementDefinition::getStyles() const {
+	return mStyles;
+}
+
+void ElementDefinition::findVariables( const StyleSheetStyle* style ) {
+	for ( const auto& vars : style->getVariables() ) {
+		const StyleSheetVariable& variable = vars.second;
+		const auto& it = mVariables.find( variable.getNameHash() );
+
+		if ( it == mVariables.end() || variable.getSpecificity() >= it->second.getSpecificity() ) {
+			mVariables[variable.getNameHash()] = variable;
+		}
+	}
 }
 
 }}} // namespace EE::UI::CSS

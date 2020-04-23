@@ -10,13 +10,14 @@ namespace EE { namespace UI { namespace CSS {
 StyleSheet::StyleSheet() {}
 
 template <class T> inline void HashCombine( std::size_t& seed, const T& v ) {
-	seed ^= String::hash( v ) + 0x9e3779b9 + ( seed << 6 ) + ( seed >> 2 );
+	std::hash<T> hasher;
+	seed ^= hasher( v ) + 0x9e3779b9 + ( seed << 6 ) + ( seed >> 2 );
 }
 
 size_t StyleSheet::NodeHash( const std::string& tag, const std::string& id ) {
 	size_t seed = 0;
 	if ( !tag.empty() )
-		seed = String::hash( tag );
+		seed = std::hash<std::string>()( tag );
 	if ( !id.empty() )
 		HashCombine( seed, id );
 	return seed;
@@ -61,8 +62,13 @@ void StyleSheet::combineStyleSheet( const StyleSheet& styleSheet ) {
 	addKeyframes( styleSheet.getKeyframes() );
 }
 
-StyleSheetStyleVector StyleSheet::getElementStyles( UIWidget* element,
-													const bool& applyPseudo ) const {
+inline static bool StyleSheetNodeSort( const StyleSheetStyle* lhs, const StyleSheetStyle* rhs ) {
+	return lhs->getSelector().getSpecificity() < rhs->getSelector().getSpecificity();
+}
+
+// This is based on the RmlUi implementation.
+std::shared_ptr<ElementDefinition> StyleSheet::getElementStyles( UIWidget* element,
+																 const bool& applyPseudo ) const {
 	static StyleSheetStyleVector applicableNodes;
 	applicableNodes.clear();
 
@@ -86,14 +92,32 @@ StyleSheetStyleVector StyleSheet::getElementStyles( UIWidget* element,
 		if ( it_nodes != mNodeIndex.end() ) {
 			const StyleSheetStyleVector& nodes = it_nodes->second;
 			for ( StyleSheetStyle* node : nodes ) {
-				if ( node->getSelector().select( element, applyPseudo ) ) {
+				if ( node->isMediaValid() && node->getSelector().select( element, applyPseudo ) ) {
 					applicableNodes.push_back( node );
 				}
 			}
 		}
 	}
 
-	return applicableNodes;
+	std::sort( applicableNodes.begin(), applicableNodes.end(), StyleSheetNodeSort );
+
+	if ( applicableNodes.empty() )
+		return nullptr;
+
+	size_t seed = 0;
+	for ( const StyleSheetStyle* node : applicableNodes )
+		HashCombine( seed, node );
+
+	auto cacheIterator = mNodeCache.find( seed );
+	if ( cacheIterator != mNodeCache.end() ) {
+		std::shared_ptr<ElementDefinition>& definition = ( *cacheIterator ).second;
+		return definition;
+	}
+
+	auto newDefinition = std::make_shared<ElementDefinition>( applicableNodes );
+	mNodeCache[seed] = newDefinition;
+
+	return newDefinition;
 }
 
 const std::vector<std::shared_ptr<StyleSheetStyle>>& StyleSheet::getStyles() const {

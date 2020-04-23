@@ -12,21 +12,32 @@ class EE_API ElementDefinition : NonCopyable {
   public:
 	ElementDefinition( const StyleSheetStyleVector& styleSheetStyles );
 
-	/// Returns a specific property from the element definition.
-	/// @param[in] id The id of the property to return.
-	/// @return The property defined against the give name, or nullptr if no such property was
-	/// found.
 	StyleSheetProperty* getProperty( const Uint32& id );
 
-	/// Returns the list of property ids this element definition defines.
-	/// @param[out] property_names The list to store the defined property ids in.
 	const PropertyIdSet& getPropertyIds() const;
 
 	const StyleSheetProperties& getProperties() const;
 
+	const std::vector<const CSS::StyleSheetProperty*>& getTransitionProperties() const;
+
+	const std::vector<const CSS::StyleSheetProperty*>& getAnimationProperties() const;
+
+	const StyleSheetVariables& getVariables() const;
+
+	bool isStructurallyVolatile() const;
+
+	const StyleSheetStyleVector& getStyles() const;
+
   protected:
+	StyleSheetStyleVector mStyles;
 	StyleSheetProperties mProperties;
+	StyleSheetVariables mVariables;
 	PropertyIdSet mPropertyIds;
+	std::vector<const CSS::StyleSheetProperty*> mTransitionProperties;
+	std::vector<const CSS::StyleSheetProperty*> mAnimationProperties;
+	bool mStructurallyVolatile;
+
+	void findVariables( const CSS::StyleSheetStyle* style );
 };
 
 }}} // namespace EE::UI::CSS

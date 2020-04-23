@@ -22,8 +22,8 @@ class EE_API StyleSheet {
 
 	void combineStyleSheet( const StyleSheet& styleSheet );
 
-	StyleSheetStyleVector getElementStyles( UIWidget* element,
-											const bool& applyPseudo = false ) const;
+	std::shared_ptr<ElementDefinition> getElementStyles( UIWidget* element,
+														 const bool& applyPseudo = false ) const;
 
 	const std::vector<std::shared_ptr<StyleSheetStyle>>& getStyles() const;
 
