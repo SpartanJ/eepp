@@ -4,6 +4,7 @@
 #include <eepp/maps/mapeditor/uimap.hpp>
 #include <eepp/maps/mapobjectlayer.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
+#include <eepp/ui/uistyle.hpp>
 
 namespace EE { namespace Maps { namespace Private {
 
@@ -30,6 +31,8 @@ UIMap::UIMap( UITheme* Theme, TileMap* Map ) :
 	mTileBox( NULL ) {
 	subscribeScheduledUpdate();
 
+	getUIStyle()->setDisableAnimations( true );
+
 	if ( NULL == Map ) {
 		mMap = eeNew( TileMap, () );
 	}
@@ -48,6 +51,8 @@ UIMap::UIMap( UITheme* Theme, TileMap* Map ) :
 	onUpdateScreenPos();
 
 	addEventListener( Event::OnUpdateScreenPosition, [&]( const Event* ) { onUpdateScreenPos(); } );
+
+	getUIStyle()->setDisableAnimations( false );
 }
 
 UIMap::~UIMap() {

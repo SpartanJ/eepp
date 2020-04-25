@@ -391,9 +391,10 @@ void UISceneNode::update( const Time& elapsed ) {
 	if ( !mDirtyStyleState.empty() ) {
 		Clock clock;
 		for ( auto& node : mDirtyStyleState ) {
-			node->reportStyleStateChangeRecursive();
+			node->reportStyleStateChangeRecursive( mDirtyStyleStateCSSAnimations[node] );
 		}
 		mDirtyStyleState.clear();
+		mDirtyStyleStateCSSAnimations.clear();
 		eePRINTL( "CSS Style State Invalidated, reapplied state in %.2f ms",
 				  clock.getElapsedTime().asMilliseconds() );
 	}
@@ -471,7 +472,7 @@ void UISceneNode::invalidateStyle( UIWidget* node ) {
 	mDirtyStyle.insert( node );
 }
 
-void UISceneNode::invalidateStyleState( UIWidget* node ) {
+void UISceneNode::invalidateStyleState( UIWidget* node, bool disableCSSAnimations ) {
 	eeASSERT( NULL != node );
 
 	if ( node->isClosing() )
@@ -505,6 +506,11 @@ void UISceneNode::invalidateStyleState( UIWidget* node ) {
 	}
 
 	mDirtyStyleState.insert( node );
+	mDirtyStyleStateCSSAnimations[node] = disableCSSAnimations;
+}
+
+void UISceneNode::setIsLoading( bool isLoading ) {
+	mIsLoading = isLoading;
 }
 
 bool UISceneNode::onMediaChanged() {
@@ -570,6 +576,7 @@ void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles ) {
 					font->loadFromFile( filePath );
 
 					mFontFaces.push_back( font );
+					runOnMainThread( [&] { mRoot->reloadFontFamily(); } );
 				} else if ( String::startsWith( path, "http://" ) ||
 							String::startsWith( path, "https://" ) ) {
 					std::string familyName = familyProp.getValue();
@@ -582,7 +589,7 @@ void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles ) {
 								font->loadFromMemory( &response.getBody()[0],
 													  response.getBody().size() );
 								mFontFaces.push_back( font );
-								runOnMainThread( [&] { reloadStyle(); } );
+								runOnMainThread( [&] { mRoot->reloadFontFamily(); } );
 							}
 						},
 						URI( path ), Seconds( 5 ) );
@@ -595,6 +602,7 @@ void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles ) {
 					font->loadFromStream( *stream );
 
 					mFontFaces.push_back( font );
+					runOnMainThread( [&] { mRoot->reloadFontFamily(); } );
 				}
 			}
 		}

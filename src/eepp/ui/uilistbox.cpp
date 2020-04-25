@@ -360,14 +360,6 @@ void UIListBox::updateScrollBar() {
 	mHScrollBar->setSize( getSize().getWidth() - mVScrollBar->getSize().getWidth() +
 							  mHScrollBar->getPadding().Right,
 						  mHScrollBar->getSize().getHeight() + mHScrollBar->getPadding().Bottom );
-
-	if ( mContainer->isClipped() && ScrollBarMode::Auto == mHScrollMode ) {
-		if ( (Int32)mMaxTextWidth <= mContainer->getPixelsSize().getWidth() ) {
-			mHScrollBar->setVisible( false );
-			mHScrollBar->setEnabled( false );
-			mHScrollInit = 0;
-		}
-	}
 }
 
 void UIListBox::updatePageStep() {

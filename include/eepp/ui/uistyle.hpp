@@ -66,9 +66,11 @@ class EE_API UIStyle : public UIState {
 
 	bool isStructurallyVolatile() const;
 
+	void reloadFontFamily();
   protected:
 	UIWidget* mWidget;
 	std::shared_ptr<CSS::StyleSheetStyle> mElementStyle;
+	std::shared_ptr<CSS::ElementDefinition> mGlobalDefinition;
 	std::shared_ptr<CSS::ElementDefinition> mDefinition;
 	CSS::TransitionsMap mTransitions;
 	CSS::AnimationsMap mAnimations;

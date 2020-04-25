@@ -21,6 +21,7 @@ UIMenu::UIMenu() :
 	mItemSelected( NULL ),
 	mItemSelectedIndex( eeINDEX_NOT_FOUND ),
 	mClickHide( false ),
+	mResizing( false ),
 	mLastTickMove( 0 ),
 	mOwnerNode( NULL ) {
 	mFlags |= UI_AUTO_SIZE;
@@ -150,27 +151,43 @@ Uint32 UIMenu::add( UIWidget* widget ) {
 
 	mItems.push_back( widget );
 
+	widget->addEventListener( Event::OnSizeChange, [&]( const Event* event ) {
+		if ( !mResizing ) {
+			widgetsSetPos();
+			widgetsResize();
+		}
+	} );
+
 	resizeMe();
 
 	return mItems.size() - 1;
 }
 
 void UIMenu::setWidgetSize( UIWidget* widget ) {
+	mResizing = true;
 	widget->setPixelsSize( mSize.getWidth(), widget->getPixelsSize().getHeight() );
+	mResizing = false;
 }
 
 Uint32 UIMenu::addSeparator() {
-	UIMenuSeparator* Control = UIMenuSeparator::New();
-	Control->setParent( this );
-	Control->setPixelsPosition( mRealPadding.Left, mRealPadding.Top + mNextPosY );
-	Control->setPixelsSize( mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
-							PixelDensity::dpToPxI( Control->getSkinSize().getHeight() ) );
+	UIMenuSeparator* separator = UIMenuSeparator::New();
+	separator->setParent( this );
+	separator->setPixelsPosition( mRealPadding.Left, mRealPadding.Top + mNextPosY );
+	separator->setPixelsSize( mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
+							  PixelDensity::dpToPxI( separator->getSkinSize().getHeight() ) );
 
-	mNextPosY += Control->getPixelsSize().getHeight();
+	mNextPosY += separator->getPixelsSize().getHeight();
 
-	mItems.push_back( Control );
+	mItems.push_back( separator );
 
 	resizeMe();
+
+	separator->addEventListener( Event::OnSizeChange, [&]( const Event* event ) {
+		if ( !mResizing ) {
+			widgetsSetPos();
+			widgetsResize();
+		}
+	} );
 
 	return mItems.size() - 1;
 }

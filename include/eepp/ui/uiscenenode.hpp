@@ -84,7 +84,9 @@ class EE_API UISceneNode : public SceneNode {
 
 	void invalidateStyle( UIWidget* widget );
 
-	void invalidateStyleState( UIWidget* widget );
+	void invalidateStyleState( UIWidget* widget, bool disableCSSAnimations = false );
+
+	void setIsLoading( bool isLoading );
 
   protected:
 	friend class EE::UI::UIWindow;
@@ -102,6 +104,7 @@ class EE_API UISceneNode : public SceneNode {
 	KeyboardShortcuts mKbShortcuts;
 	std::unordered_set<UIWidget*> mDirtyStyle;
 	std::unordered_set<UIWidget*> mDirtyStyleState;
+	std::unordered_map<UIWidget*, bool> mDirtyStyleStateCSSAnimations;
 
 	virtual void resizeControl( EE::Window::Window* win );
 

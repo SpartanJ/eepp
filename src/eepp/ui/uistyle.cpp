@@ -21,6 +21,7 @@ UIStyle::UIStyle( UIWidget* widget ) :
 	UIState(),
 	mWidget( widget ),
 	mElementStyle( std::make_shared<CSS::StyleSheetStyle>() ),
+	mGlobalDefinition( nullptr ),
 	mDefinition( nullptr ),
 	mChangingState( false ),
 	mForceReapplyProperties( false ),
@@ -53,7 +54,13 @@ void UIStyle::setStyleSheetProperty( const StyleSheetProperty& property ) {
 
 void UIStyle::load() {
 	mElementStyle->clearProperties();
-	onStateChange();
+
+	mGlobalDefinition =
+		mWidget->getUISceneNode()->getStyleSheet().getElementStyles( mWidget, false );
+
+	unsubscribeNonCacheableStyles();
+
+	subscribeNonCacheableStyles();
 }
 
 void UIStyle::setStyleSheetProperties( const CSS::StyleSheetProperties& properties ) {
@@ -110,7 +117,6 @@ StyleSheetVariable UIStyle::getVariable( const std::string& variable ) {
 		if ( it != mDefinition->getVariables().end() ) {
 			return it->second;
 		}
-
 	}
 
 	Node* parentWidget = mWidget->getParentWidget();
@@ -146,6 +152,15 @@ bool UIStyle::isStructurallyVolatile() const {
 	return NULL != mDefinition && mDefinition->isStructurallyVolatile();
 }
 
+void UIStyle::reloadFontFamily() {
+	if ( mDefinition->getPropertyIds().contains( (Uint32)PropertyId::FontFamily ) ) {
+		auto propIt = mDefinition->getProperties().find( (Uint32)PropertyId::FontFamily );
+		if ( propIt != mDefinition->getProperties().end() ) {
+			applyStyleSheetProperty( propIt->second, nullptr );
+		}
+	}
+}
+
 void UIStyle::subscribeRelated( UIWidget* widget ) {
 	mRelatedWidgets.insert( widget );
 }
@@ -155,17 +170,19 @@ void UIStyle::unsubscribeRelated( UIWidget* widget ) {
 }
 
 void UIStyle::setVariableFromValue( StyleSheetProperty* property, const std::string& value ) {
-	std::string newValue( value );
-	for ( auto& var : property->getVarCache() ) {
-		for ( auto& val : var.variableList ) {
-			StyleSheetVariable variable( getVariable( val ) );
-			if ( !variable.isEmpty() ) {
-				String::replaceAll( newValue, var.definition, variable.getValue() );
-				break;
+	if ( !property->getVarCache().empty() ) {
+		std::string newValue( value );
+		for ( auto& var : property->getVarCache() ) {
+			for ( auto& val : var.variableList ) {
+				StyleSheetVariable variable( getVariable( val ) );
+				if ( !variable.isEmpty() ) {
+					String::replaceAll( newValue, var.definition, variable.getValue() );
+					break;
+				}
 			}
 		}
+		property->setValue( newValue );
 	}
-	property->setValue( newValue );
 }
 
 void UIStyle::applyVarValues( StyleSheetProperty* property ) {
@@ -211,12 +228,9 @@ void UIStyle::onStateChange() {
 							changedProperties.erase( id );
 					}
 				}
-				mDefinition = newDefinition;
 			}
 
-			unsubscribeNonCacheableStyles();
-
-			subscribeNonCacheableStyles();
+			mDefinition = newDefinition;
 
 			mForceReapplyProperties = false;
 
@@ -232,16 +246,16 @@ void UIStyle::onStateChange() {
 			for ( auto prop : changedProperties ) {
 				StyleSheetProperty* property = getLocalProperty( prop );
 
-				if ( nullptr == property )
-					continue;
-
-				if ( NULL == property->getPropertyDefinition() )
+				if ( nullptr == property || NULL == property->getPropertyDefinition() )
 					continue;
 
 				applyVarValues( property );
 
 				if ( property->getPropertyDefinition()->isIndexed() ) {
 					for ( size_t i = 0; i < property->getPropertyIndexCount(); i++ ) {
+
+						applyVarValues( property->getPropertyIndexRef( i ) );
+
 						applyStyleSheetProperty( property->getPropertyIndex( i ), prevDefinition );
 					}
 				} else {
@@ -305,7 +319,9 @@ void UIStyle::updateState() {
 }
 
 void UIStyle::subscribeNonCacheableStyles() {
-	for ( auto& style : mDefinition->getStyles() ) {
+	if ( nullptr == mGlobalDefinition )
+		return;
+	for ( auto& style : mGlobalDefinition->getStyles() ) {
 		if ( !style->getSelector().isCacheable() ) {
 			std::vector<UIWidget*> elements =
 				style->getSelector().getRelatedElements( mWidget, false );
@@ -383,9 +399,11 @@ void UIStyle::applyStyleSheetProperty( const StyleSheetProperty& property,
 					StyleSheetProperty* curProperty = prevProp;
 					if ( propertyDefinition->isIndexed() &&
 						 property.getIndex() < curProperty->getPropertyIndexCount() ) {
+						applyVarValues( curProperty->getPropertyIndexRef( property.getIndex() ) );
 						startValue =
 							curProperty->getPropertyIndex( property.getIndex() ).getValue();
 					} else {
+						applyVarValues( curProperty );
 						startValue = curProperty->getValue();
 					}
 				}

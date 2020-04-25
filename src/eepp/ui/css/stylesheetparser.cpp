@@ -229,7 +229,7 @@ std::string StyleSheetParser::importCSS( std::string path,
 
 		if ( FileSystem::fileGet( path, buffer ) ) {
 			importedList.push_back( path );
-			return std::string( reinterpret_cast<const char*>( buffer.get() ) );
+			return std::string( reinterpret_cast<const char*>( buffer.get() ), buffer.size() );
 		}
 	} else if ( String::startsWith( path, "http://" ) || String::startsWith( path, "https://" ) ) {
 		Http::Response response = Http::get( URI( path ), Seconds( 5 ) );

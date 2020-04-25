@@ -226,7 +226,7 @@ class EE_API UIWidget : public UINode {
 
 	void setMaxHeightEq( const std::string& maxHeightEq );
 
-	void reportStyleStateChangeRecursive();
+	void reportStyleStateChangeRecursive( bool disableAnimations = false );
 
   protected:
 	friend class UIManager;
@@ -297,7 +297,7 @@ class EE_API UIWidget : public UINode {
 
 	void alignAgainstLayout();
 
-	void reportStyleStateChange();
+	void reportStyleStateChange( bool disableAnimations = false );
 
 	std::string getLayoutWidthRulesString() const;
 
@@ -314,6 +314,12 @@ class EE_API UIWidget : public UINode {
 	Vector2f getTooltipPosition();
 
 	void createStyle();
+
+	void enableCSSAnimations();
+
+	void disableCSSAnimations();
+
+	void reloadFontFamily();
 };
 
 }} // namespace EE::UI

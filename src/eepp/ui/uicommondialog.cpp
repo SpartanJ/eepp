@@ -5,6 +5,7 @@
 #include <eepp/ui/uilistboxitem.hpp>
 #include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 
 namespace EE { namespace UI {
 
@@ -34,6 +35,9 @@ UICommonDialog::UICommonDialog( Uint32 CDLFlags, std::string DefaultFilePattern,
 
 	if ( mStyleConfig.MinWindowSize.getHeight() < CDLG_MIN_HEIGHT )
 		mStyleConfig.MinWindowSize.setHeight( CDLG_MIN_HEIGHT );
+
+	bool loading = isSceneNodeLoading();
+	mUISceneNode->setIsLoading( true );
 
 	mContainer->setSize( getSize() );
 
@@ -135,6 +139,8 @@ UICommonDialog::UICommonDialog( Uint32 CDLFlags, std::string DefaultFilePattern,
 	applyDefaultTheme();
 
 	refreshFolder();
+
+	mUISceneNode->setIsLoading( loading );
 }
 
 UICommonDialog::~UICommonDialog() {}
