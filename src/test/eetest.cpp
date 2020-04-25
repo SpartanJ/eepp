@@ -620,11 +620,11 @@ void EETest::createUI() {
 	eePRINTL( "UINode size: %d", sizeof( UINode ) );
 	eePRINTL( "UIWidget size: %d", sizeof( UIWidget ) );
 
-	/*mTheme = UITheme::load( mThemeName, mThemeName,
+	mTheme = UITheme::load( mThemeName, mThemeName,
 								MyPath + "ui/" + mThemeName + EE_TEXTURE_ATLAS_EXTENSION, TTF,
-								MyPath + "ui/uitheme.css" );*/
+								MyPath + "ui/uitheme.css" );
 
-	mTheme = UITheme::load( mThemeName, mThemeName, "", TTF, MyPath + "ui/breeze.css" );
+	/*mTheme = UITheme::load( mThemeName, mThemeName, "", TTF, MyPath + "ui/breeze.css" );*/
 
 	sceneNode->combineStyleSheet( mTheme->getStyleSheet() );
 
