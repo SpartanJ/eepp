@@ -44,12 +44,12 @@ UIWidget::UIWidget( const std::string& tag ) :
 	mAttributesTransactionCount( 0 ) {
 	mNodeFlags |= NODE_FLAG_WIDGET;
 
+	createStyle();
+
 	if ( NULL != mUISceneNode && !isSceneNodeLoading() && !isLoadingState() ) {
 		mUISceneNode->invalidateStyle( this );
 		mUISceneNode->invalidateStyleState( this, true );
 	}
-
-	createStyle();
 
 	updateAnchorsDistances();
 }
@@ -963,8 +963,9 @@ void UIWidget::onMarginChange() {
 void UIWidget::onThemeLoaded() {}
 
 void UIWidget::onParentChange() {
-	if ( !isSceneNodeLoading() && !isLoadingState() )
+	if ( !isSceneNodeLoading() && !isLoadingState() ) {
 		getUISceneNode()->invalidateStyle( this );
+	}
 }
 
 void UIWidget::onClassChange() {

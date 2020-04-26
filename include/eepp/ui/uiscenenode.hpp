@@ -88,6 +88,10 @@ class EE_API UISceneNode : public SceneNode {
 
 	void setIsLoading( bool isLoading );
 
+	void updateDirtyStyles();
+
+	void updateDirtyStyleStates();
+
   protected:
 	friend class EE::UI::UIWindow;
 	friend class EE::UI::UIWidget;

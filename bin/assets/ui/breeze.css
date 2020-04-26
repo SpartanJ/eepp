@@ -490,7 +490,7 @@ ComboBox::Button:hover {
 }
 
 SpinBox::btndown {
-	width: 12dp;
+	width: 16dp;
 	height: 12dp;
 	foreground-image: poly(line, var(--icon), "1dp 4dp, 5dp 7dp"), poly(line, var(--icon), "5dp 7dp, 9dp 4dp");
 }
@@ -500,7 +500,7 @@ SpinBox::btndown:hover {
 }
 
 SpinBox::btnup {
-	width: 12dp;
+	width: 16dp;
 	height: 12dp;
 	foreground-image: poly(line, var(--icon), "1dp 7dp, 5dp 4dp"), poly(line, var(--icon), "5dp 4dp, 9dp 7dp");
 }
@@ -511,10 +511,6 @@ SpinBox::btnup:hover {
 
 WinMenu {
 	height: 24dp;
-}
-
-WinMenu {
-	padding-left: 4dp;
 }
 
 Menu,
@@ -549,14 +545,12 @@ Menu::SubMenu {
 
 Menu::Item:hover,
 Menu::CheckBox:hover,
-Menu::Separator:hover,
 Menu::SubMenu:hover {
 	background-color: var(--primary);
 }
 
 Menu::Item::text,
 Menu::CheckBox::text,
-Menu::Separator::text,
 Menu::SubMenu::text {
 	padding-right: 4dp;
 	color: var(--menu-font);
@@ -579,8 +573,11 @@ Tab:pressed {
 }
 
 Menu::Separator {
-	height: 1dp;
-	background-color: var(--button-border);
+	height: 3dp;
+	background-color: var(--button-back);
+	background-image: rectangle(solid, var(--button-border));
+	background-size: 100% 1dp;
+	background-position: center;
 }
 
 :root {

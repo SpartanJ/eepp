@@ -379,25 +379,9 @@ void UISceneNode::update( const Time& elapsed ) {
 
 	SceneNode::update( elapsed );
 
-	if ( !mDirtyStyle.empty() ) {
-		Clock clock;
-		for ( auto& node : mDirtyStyle ) {
-			node->reloadStyle( true, false, false );
-		}
-		mDirtyStyle.clear();
-		eePRINTL( "CSS Styles Reloaded in %.2f ms", clock.getElapsedTime().asMilliseconds() );
-	}
+	updateDirtyStyles();
 
-	if ( !mDirtyStyleState.empty() ) {
-		Clock clock;
-		for ( auto& node : mDirtyStyleState ) {
-			node->reportStyleStateChangeRecursive( mDirtyStyleStateCSSAnimations[node] );
-		}
-		mDirtyStyleState.clear();
-		mDirtyStyleStateCSSAnimations.clear();
-		eePRINTL( "CSS Style State Invalidated, reapplied state in %.2f ms",
-				  clock.getElapsedTime().asMilliseconds() );
-	}
+	updateDirtyStyleStates();
 
 	SceneManager::instance()->setCurrentUISceneNode( uiSceneNode );
 }
@@ -511,6 +495,30 @@ void UISceneNode::invalidateStyleState( UIWidget* node, bool disableCSSAnimation
 
 void UISceneNode::setIsLoading( bool isLoading ) {
 	mIsLoading = isLoading;
+}
+
+void UISceneNode::updateDirtyStyles() {
+	if ( !mDirtyStyle.empty() ) {
+		Clock clock;
+		for ( auto& node : mDirtyStyle ) {
+			node->reloadStyle( true, false, false );
+		}
+		mDirtyStyle.clear();
+		eePRINTL( "CSS Styles Reloaded in %.2f ms", clock.getElapsedTime().asMilliseconds() );
+	}
+}
+
+void UISceneNode::updateDirtyStyleStates() {
+	if ( !mDirtyStyleState.empty() ) {
+		Clock clock;
+		for ( auto& node : mDirtyStyleState ) {
+			node->reportStyleStateChangeRecursive( mDirtyStyleStateCSSAnimations[node] );
+		}
+		mDirtyStyleState.clear();
+		mDirtyStyleStateCSSAnimations.clear();
+		eePRINTL( "CSS Style State Invalidated, reapplied state in %.2f ms",
+				  clock.getElapsedTime().asMilliseconds() );
+	}
 }
 
 bool UISceneNode::onMediaChanged() {
