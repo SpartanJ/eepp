@@ -20,8 +20,9 @@ class EE_API KeyframesDefinition {
 		StyleSheetProperties properties;
 	};
 
-	static KeyframesDefinition parseKeyframes( const std::string& name,
-											   const StyleSheetStyleVector& keyframeBlocks );
+	static KeyframesDefinition
+	parseKeyframes( const std::string& name,
+					const std::vector<std::shared_ptr<StyleSheetStyle>>& keyframeBlocks );
 
 	const std::string& getName() const;
 

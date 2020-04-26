@@ -3,6 +3,7 @@
 	--primary: #3daee9;
 	--back: #31363b;
 	--font: #eff0f1;
+	--font-hint: #898b8d;
 	--button-back: #30353a;
 	--button-border: #6b6f73;
 	--button-radius: 2dp;
@@ -110,7 +111,8 @@ RadioButton::active {
 
 ListBox,
 DropDownList::ListBox,
-ComboBox::DropDownList::ListBox {
+ComboBox::DropDownList::ListBox,
+Table {
 	background-color: var(--list-back);
 	border-color: var(--button-border);
 	border-radius: var(--button-radius);
@@ -125,7 +127,8 @@ ListBox::item {
 	background-position: left bottom, right bottom;
 }
 
-ListBox:hover {
+ListBox:hover,
+Table::hover {
 	border-color: var(--primary);
 }
 
@@ -159,6 +162,8 @@ TextInputPassword {
 	border-color: var(--button-border);
 	border-radius: var(--button-radius);
 	border-width: var(--border-width);
+	hint-color: var(--font-hint);
+	hint-font-size: 11dp;
 	transition: all 0.15;
 }
 
@@ -214,18 +219,21 @@ SpinBox::btndown {
 	height: 13dp;
 }
 
-TextEdit {
+TextEdit::input {
 	background-color: var(--list-back);
 	border-color: var(--button-border);
 	border-radius: var(--button-radius);
 	border-width: var(--border-width);
-}
-
-TextEdit::input {
 	padding-left: var(--base-horizontal-padding);
 	padding-right: var(--base-horizontal-padding);
 	padding-top: var(--base-vertical-padding);
 	padding-bottom: var(--base-vertical-padding);
+	transition: all 0.15;
+}
+
+TextEdit::input:focus,
+TextEdit::input:hover {
+	border-color: var(--primary);
 }
 
 Tooltip {
@@ -359,7 +367,7 @@ TabWidget {
 
 TabWidget::TabContainer {
 	background-image: rectangle(solid, var(--tab-line));
-	background-size: 100% 1dp;
+	background-size: 100% 1px;
 	background-position-y: bottom;
 }
 
@@ -369,7 +377,7 @@ Tab {
 	border-right-color: transparent;
 	border-top-color: transparent;
 	background-image: rectangle(solid, var(--tab-line));
-	background-size: 100% 1dp;
+	background-size: 100% 1px;
 	background-position-y: bottom;
 	height: 24dp;
 	transition: background-color 0.15s;
@@ -487,7 +495,7 @@ ComboBox::Button:hover {
 }
 
 SpinBox::btndown {
-	width: 12dp;
+	width: 16dp;
 	height: 12dp;
 	foreground-image: poly(line, var(--icon), "1dp 4dp, 5dp 7dp"), poly(line, var(--icon), "5dp 7dp, 9dp 4dp");
 }
@@ -497,7 +505,7 @@ SpinBox::btndown:hover {
 }
 
 SpinBox::btnup {
-	width: 12dp;
+	width: 16dp;
 	height: 12dp;
 	foreground-image: poly(line, var(--icon), "1dp 7dp, 5dp 4dp"), poly(line, var(--icon), "5dp 4dp, 9dp 7dp");
 }
@@ -508,10 +516,6 @@ SpinBox::btnup:hover {
 
 WinMenu {
 	height: 24dp;
-}
-
-WinMenu {
-	padding-left: 4dp;
 }
 
 Menu,
@@ -546,14 +550,12 @@ Menu::SubMenu {
 
 Menu::Item:hover,
 Menu::CheckBox:hover,
-Menu::Separator:hover,
 Menu::SubMenu:hover {
 	background-color: var(--primary);
 }
 
 Menu::Item::text,
 Menu::CheckBox::text,
-Menu::Separator::text,
 Menu::SubMenu::text {
 	padding-right: 4dp;
 	color: var(--menu-font);
@@ -575,6 +577,30 @@ Tab:pressed {
 	color: var(--menu-font-active);
 }
 
-:root {
+Menu::Separator {
+	height: 3dp;
+	background-color: var(--button-back);
+	background-image: rectangle(solid, var(--button-border));
+	background-size: 100% 1px;
+	background-position: center;
+}
+
+Menu::SubMenu::Arrow {
+	width: 16dp;
+	height: 16dp;
+	foreground-image: poly(line, var(--icon), "-7dp -5dp, -2dp 0dp"), poly(line, var(--icon), "-7dp 5dp, -2dp 0dp");
+}
+
+Menu::CheckBox::icon {
+	width: 16dp;
+	height: 16dp;
+	foreground-image: none, none;
+}
+
+Menu::CheckBox::icon:selected {
+	foreground-image: poly(line, var(--icon), "10dp 14dp, 12dp 16dp"), poly(line, var(--icon), "12dp 16dp, 16dp 8dp");
+}
+
+.appbackground {
 	background-color: var(--back);
 }

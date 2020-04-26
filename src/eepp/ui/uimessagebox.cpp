@@ -24,7 +24,8 @@ UIMessageBox::UIMessageBox( const Type& type, const String& message, const Uint3
 	UILinearLayout* vlay = UILinearLayout::NewVertical();
 	vlay->setLayoutSizeRules( LayoutSizeRule::WrapContent, LayoutSizeRule::WrapContent )
 		->setLayoutMargin( Rect( 8, 8, 8, 8 ) )
-		->setParent( mLayoutCont );
+		->setParent( mLayoutCont )
+		->clipDisable();
 
 	mTextBox = UITextView::New();
 	mTextBox->setText( message )
@@ -35,7 +36,8 @@ UIMessageBox::UIMessageBox( const Type& type, const String& message, const Uint3
 	hlay->setLayoutMargin( Rect( 0, 8, 0, 0 ) )
 		->setLayoutSizeRules( LayoutSizeRule::WrapContent, LayoutSizeRule::WrapContent )
 		->setLayoutGravity( UI_HALIGN_RIGHT | UI_VALIGN_CENTER )
-		->setParent( vlay );
+		->setParent( vlay )
+		->clipDisable();
 
 	mButtonOK = UIPushButton::New();
 	mButtonOK->setSize( 90, 0 )->setParent( hlay );
@@ -73,6 +75,8 @@ UIMessageBox::UIMessageBox( const Type& type, const String& message, const Uint3
 			break;
 		}
 	}
+
+	reloadStyle( true, true );
 
 	applyDefaultTheme();
 }

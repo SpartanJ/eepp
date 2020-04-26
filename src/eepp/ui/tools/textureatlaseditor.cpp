@@ -44,8 +44,10 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow* attachTo, const TGEditorCloseC
 
 	if ( NULL == mUIWindow ) {
 		mUIContainer = uiSceneNode;
+		uiSceneNode->getRoot()->addClass( "appbackground" );
 	} else {
 		mUIContainer = mUIWindow->getContainer();
+		mUIWindow->getContainer()->addClass( "appbackground" );
 	}
 
 	std::string layout = R"xml(

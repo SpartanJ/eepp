@@ -37,7 +37,7 @@ UITooltip::UITooltip() :
 
 	applyDefaultTheme();
 
-	reloadStyle( true, true  );
+	getUISceneNode()->invalidateStyle( this );
 }
 
 UITooltip::~UITooltip() {

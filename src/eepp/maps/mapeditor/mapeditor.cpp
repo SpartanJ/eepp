@@ -1,11 +1,4 @@
-#include <eepp/maps/mapeditor/mapeditor.hpp>
-#include <eepp/maps/mapeditor/maplayerproperties.hpp>
-#include <eepp/maps/mapeditor/tilemapproperties.hpp>
-#include <eepp/maps/mapeditor/uigotypenew.hpp>
-#include <eepp/maps/mapeditor/uimap.hpp>
-#include <eepp/maps/mapeditor/uimaplayernew.hpp>
-#include <eepp/maps/mapeditor/uimapnew.hpp>
-
+#include <algorithm>
 #include <eepp/graphics/globaltextureatlas.hpp>
 #include <eepp/graphics/sprite.hpp>
 #include <eepp/graphics/textureatlasloader.hpp>
@@ -17,13 +10,17 @@
 #include <eepp/maps/gameobjecttextureregion.hpp>
 #include <eepp/maps/gameobjecttextureregionex.hpp>
 #include <eepp/maps/gameobjectvirtual.hpp>
+#include <eepp/maps/mapeditor/mapeditor.hpp>
+#include <eepp/maps/mapeditor/maplayerproperties.hpp>
+#include <eepp/maps/mapeditor/tilemapproperties.hpp>
+#include <eepp/maps/mapeditor/uigotypenew.hpp>
+#include <eepp/maps/mapeditor/uimap.hpp>
+#include <eepp/maps/mapeditor/uimaplayernew.hpp>
+#include <eepp/maps/mapeditor/uimapnew.hpp>
 #include <eepp/maps/mapobjectlayer.hpp>
 #include <eepp/maps/tilemaplayer.hpp>
-
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/ui/uiscenenode.hpp>
-
-#include <algorithm>
 
 using namespace EE::Graphics;
 using namespace EE::Maps::Private;
@@ -107,6 +104,7 @@ bool MapEditor::addShortcut( const Uint32& KeyCode, const Uint32& Mod, UIWidget*
 void MapEditor::createWinMenu() {
 	UIWinMenu* WinMenu = UIWinMenu::New();
 	WinMenu->setParent( mUIContainer );
+	WinMenu->getUISceneNode()->updateDirtyStyleStates();
 
 	mTileBox =
 		createTextBox( "", mUIContainer, Sizef(), Vector2f(),

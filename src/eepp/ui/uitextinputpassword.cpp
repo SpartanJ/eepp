@@ -9,7 +9,8 @@ UITextInputPassword* UITextInputPassword::New() {
 	return eeNew( UITextInputPassword, () );
 }
 
-UITextInputPassword::UITextInputPassword() : UITextInput( "textinputpassword" ) {
+UITextInputPassword::UITextInputPassword() :
+	UITextInput( "textinputpassword" ), mBulletCharacter( "●" ) {
 	mPassCache = Text::New();
 
 	updateFontStyleConfig();
@@ -50,9 +51,9 @@ void UITextInputPassword::draw() {
 								 mSize.getHeight() - mRealPadding.Top - mRealPadding.Bottom );
 			}
 
-			mHintCache->draw( (Float)mScreenPosi.x + (int)mRealAlignOffset.x +
+			mHintCache->draw( (Float)mScreenPosi.x + (int)mHintAlignOffset.x +
 								  (int)mRealPadding.Left,
-							  mFontLineCenter + (Float)mScreenPosi.y + (int)mRealAlignOffset.y +
+							  mFontLineCenter + (Float)mScreenPosi.y + (int)mHintAlignOffset.y +
 								  (int)mRealPadding.Top,
 							  Vector2f::One, 0.f, getBlendMode() );
 
@@ -69,25 +70,38 @@ void UITextInputPassword::alignFix() {
 	switch ( Font::getHorizontalAlign( getFlags() ) ) {
 		case UI_HALIGN_CENTER:
 			mRealAlignOffset.x = ( Float )( ( Int32 )( mSize.x - mPassCache->getTextWidth() ) / 2 );
+			mHintAlignOffset.x = ( Float )( ( Int32 )( mSize.x - mHintCache->getTextWidth() ) / 2 );
 			break;
 		case UI_HALIGN_RIGHT:
 			mRealAlignOffset.x = ( (Float)mSize.x - (Float)mPassCache->getTextWidth() );
+			mHintAlignOffset.x = ( (Float)mSize.x - (Float)mHintCache->getTextWidth() );
 			break;
 		case UI_HALIGN_LEFT:
 			mRealAlignOffset.x = 0.f;
+			mHintAlignOffset.x = 0.f;
 			break;
 	}
 
 	switch ( Font::getVerticalAlign( getFlags() ) ) {
 		case UI_VALIGN_CENTER:
 			mRealAlignOffset.y =
-				( Float )( ( ( Int32 )( mSize.y - mPassCache->getTextHeight() ) ) / 2 ) - 1;
+				( Float )( ( ( Int32 )( mSize.y - mRealPadding.Top - mRealPadding.Bottom -
+										mPassCache->getTextHeight() ) ) /
+						   2.f ) -
+				1;
+			mHintAlignOffset.y =
+				( Float )( ( ( Int32 )( mSize.y - mRealPadding.Top - mRealPadding.Bottom -
+										mHintCache->getTextHeight() ) ) /
+						   2.f ) -
+				1;
 			break;
 		case UI_VALIGN_BOTTOM:
 			mRealAlignOffset.y = ( (Float)mSize.y - (Float)mPassCache->getTextHeight() );
+			mHintAlignOffset.y = ( (Float)mSize.y - (Float)mHintCache->getTextHeight() );
 			break;
 		case UI_VALIGN_TOP:
 			mRealAlignOffset.y = 0.f;
+			mHintAlignOffset.y = 0.f;
 			break;
 	}
 
@@ -100,7 +114,7 @@ void UITextInputPassword::alignFix() {
 		String pasStr;
 
 		for ( size_t i = 0; i < curStr.size(); i++ )
-			pasStr += '*';
+			pasStr += mBulletCharacter;
 
 		mPassCache->setString( pasStr );
 
@@ -129,7 +143,7 @@ void UITextInputPassword::updatePass( const String& pass ) {
 	String newTxt;
 
 	for ( size_t i = 0; i < pass.size(); i++ )
-		newTxt += '*';
+		newTxt += mBulletCharacter;
 
 	mPassCache->setString( newTxt );
 }
@@ -144,6 +158,14 @@ UITextView* UITextInputPassword::setText( const String& text ) {
 
 Text* UITextInputPassword::getPassCache() const {
 	return mPassCache;
+}
+
+const String& UITextInputPassword::getBulletCharacter() const {
+	return mBulletCharacter;
+}
+
+void UITextInputPassword::setBulletCharacter( const String& bulletCharacter ) {
+	mBulletCharacter = bulletCharacter;
 }
 
 void UITextInputPassword::updateFontStyleConfig() {

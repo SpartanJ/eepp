@@ -229,7 +229,7 @@ std::string StyleSheetParser::importCSS( std::string path,
 
 		if ( FileSystem::fileGet( path, buffer ) ) {
 			importedList.push_back( path );
-			return std::string( reinterpret_cast<const char*>( buffer.get() ) );
+			return std::string( reinterpret_cast<const char*>( buffer.get() ), buffer.size() );
 		}
 	} else if ( String::startsWith( path, "http://" ) || String::startsWith( path, "https://" ) ) {
 		Http::Response response = Http::get( URI( path ), Seconds( 5 ) );
@@ -345,7 +345,8 @@ void StyleSheetParser::keyframesParse( std::string& css, ReadState& rs, std::siz
 		StyleSheetParser keyframeParser;
 		keyframeParser.loadFromMemory( reinterpret_cast<const Uint8*>( &css[pos] ),
 									   keyframesClosePos - pos );
-		const StyleSheetStyleVector& styles = keyframeParser.getStyleSheet().getStyles();
+		const std::vector<std::shared_ptr<StyleSheetStyle>>& styles =
+			keyframeParser.getStyleSheet().getStyles();
 
 		std::string name(
 			String::trim( String::trim( buffer.substr( buffer.find_first_of( " " ) ) ), '"' ) );

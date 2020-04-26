@@ -607,9 +607,8 @@ bool UITextView::applyProperty( const StyleSheetProperty& attribute ) {
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::Text:
-			if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
-				setText( static_cast<UISceneNode*>( mSceneNode )
-							 ->getTranslatorString( attribute.asString() ) );
+			if ( NULL != mUISceneNode )
+				setText( mUISceneNode->getTranslatorString( attribute.asString() ) );
 			break;
 		case PropertyId::Color:
 			setFontColor( attribute.asColor() );

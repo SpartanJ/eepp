@@ -118,8 +118,6 @@ bool UISceneNode::windowExists( UIWindow* win ) {
 	return mWindowsList.end() != std::find( mWindowsList.begin(), mWindowsList.end(), win );
 }
 
-static std::vector<std::pair<Float, std::string>> times;
-
 std::vector<UIWidget*> UISceneNode::loadNode( pugi::xml_node node, Node* parent ) {
 	std::vector<UIWidget*> rootWidgets;
 
@@ -139,7 +137,7 @@ std::vector<UIWidget*> UISceneNode::loadNode( pugi::xml_node node, Node* parent 
 			uiwidget->loadFromXmlNode( widget );
 
 			if ( mVerbose ) {
-				times.push_back( std::make_pair<Float, std::string>(
+				mTimes.push_back( std::make_pair<Float, std::string>(
 					clock.getElapsedTime().asMilliseconds(), widget.name() ) );
 			}
 
@@ -167,15 +165,15 @@ UIWidget* UISceneNode::loadLayoutNodes( pugi::xml_node node, Node* parent ) {
 
 	if ( mVerbose ) {
 		std::sort(
-			times.begin(), times.end(),
+			mTimes.begin(), mTimes.end(),
 			[]( const std::pair<Float, std::string>& left,
 				const std::pair<Float, std::string>& right ) { return left.first < right.first; } );
 
-		for ( auto& time : times ) {
+		for ( auto& time : mTimes ) {
 			eePRINTL( "Widget %s created in %.2f ms", time.second.c_str(), time.first );
 		}
 
-		times.clear();
+		mTimes.clear();
 
 		eePRINTL( "UISceneNode::loadLayoutNodes loaded nodes%s in: %.2f ms",
 				  id.empty() ? "" : std::string( " (id=" + id + ")" ).c_str(),
@@ -183,18 +181,10 @@ UIWidget* UISceneNode::loadLayoutNodes( pugi::xml_node node, Node* parent ) {
 	}
 
 	for ( auto& widget : widgets )
-		widget->reloadStyle( true, true, false );
+		widget->reloadStyle( true, true, true );
 
 	if ( mVerbose ) {
 		eePRINTL( "UISceneNode::loadLayoutNodes reloaded styles in: %.2f ms",
-				  innerClock.getElapsed().asMilliseconds() );
-	}
-
-	for ( auto& widget : widgets )
-		widget->reportStyleStateChangeRecursive();
-
-	if ( mVerbose ) {
-		eePRINTL( "UISceneNode::loadLayoutNodes reloaded style state in: %.2f ms",
 				  innerClock.getElapsed().asMilliseconds() );
 	}
 
@@ -250,13 +240,14 @@ bool UISceneNode::hasStyleSheet() {
 
 void UISceneNode::reloadStyle( const bool& disableAnimations ) {
 	if ( NULL != mChild ) {
-		Node* ChildLoop = mChild;
+		Node* child = mChild;
 
-		while ( NULL != ChildLoop ) {
-			if ( ChildLoop->isWidget() )
-				ChildLoop->asType<UIWidget>()->reloadStyle( true, disableAnimations );
+		while ( NULL != child ) {
+			if ( child->isWidget() ) {
+				child->asType<UIWidget>()->reloadStyle( true, disableAnimations );
+			}
 
-			ChildLoop = ChildLoop->getNextNode();
+			child = child->getNextNode();
 		}
 	}
 }
@@ -385,31 +376,27 @@ void UISceneNode::update( const Time& elapsed ) {
 
 	SceneManager::instance()->setCurrentUISceneNode( this );
 
-	if ( !mDirtyStyleState.empty() ) {
-		std::vector<UIWidget*> inCloseList;
-		for ( auto& widget : mDirtyStyleState ) {
-			if ( mCloseList.count( widget ) > 0 ) {
-				inCloseList.push_back( widget );
-			}
+	SceneNode::update( elapsed );
+
+	updateDirtyStyles();
+
+	updateDirtyStyleStates();
+
+	SceneManager::instance()->setCurrentUISceneNode( uiSceneNode );
+}
+
+void UISceneNode::onWidgetDelete( Node* node ) {
+	if ( node->isWidget() ) {
+		UIWidget* widget = node->asType<UIWidget>();
+
+		if ( mDirtyStyle.find( widget ) != mDirtyStyle.end() ) {
+			mDirtyStyle.erase( widget );
 		}
-		for ( auto& widget : inCloseList ) {
+
+		if ( mDirtyStyleState.find( widget ) != mDirtyStyleState.end() ) {
 			mDirtyStyleState.erase( widget );
 		}
 	}
-
-	SceneNode::update( elapsed );
-
-	if ( !mDirtyStyleState.empty() ) {
-		Clock clock;
-		for ( auto& node : mDirtyStyleState ) {
-			node->reportStyleStateChangeRecursive();
-		}
-		mDirtyStyleState.clear();
-		eePRINTL( "CSS Invalidated, reapplied state in %.2f ms",
-				  clock.getElapsedTime().asMilliseconds() );
-	}
-
-	SceneManager::instance()->setCurrentUISceneNode( uiSceneNode );
 }
 
 const bool& UISceneNode::isLoading() const {
@@ -432,8 +419,47 @@ void UISceneNode::setVerbose( bool verbose ) {
 	mVerbose = verbose;
 }
 
-void UISceneNode::addWidgetToDirtyStyleState( UIWidget* node ) {
+void UISceneNode::invalidateStyle( UIWidget* node ) {
 	eeASSERT( NULL != node );
+
+	if ( node->isClosing() )
+		return;
+
+	Node* itNode = NULL;
+
+	if ( mDirtyStyle.count( node ) > 0 )
+		return;
+
+	for ( auto& dirtyCtrl : mDirtyStyle ) {
+		if ( NULL != dirtyCtrl && dirtyCtrl->isParentOf( node ) ) {
+			return;
+		}
+	}
+
+	std::vector<std::unordered_set<UIWidget*>::iterator> itEraseList;
+
+	for ( auto it = mDirtyStyle.begin(); it != mDirtyStyle.end(); ++it ) {
+		itNode = *it;
+
+		if ( NULL != itNode && node->isParentOf( itNode ) ) {
+			itEraseList.push_back( it );
+		} else if ( NULL == itNode ) {
+			itEraseList.push_back( it );
+		}
+	}
+
+	for ( auto ite = itEraseList.begin(); ite != itEraseList.end(); ++ite ) {
+		mDirtyStyle.erase( *ite );
+	}
+
+	mDirtyStyle.insert( node );
+}
+
+void UISceneNode::invalidateStyleState( UIWidget* node, bool disableCSSAnimations ) {
+	eeASSERT( NULL != node );
+
+	if ( node->isClosing() )
+		return;
 
 	Node* itNode = NULL;
 
@@ -463,6 +489,35 @@ void UISceneNode::addWidgetToDirtyStyleState( UIWidget* node ) {
 	}
 
 	mDirtyStyleState.insert( node );
+	mDirtyStyleStateCSSAnimations[node] = disableCSSAnimations;
+}
+
+void UISceneNode::setIsLoading( bool isLoading ) {
+	mIsLoading = isLoading;
+}
+
+void UISceneNode::updateDirtyStyles() {
+	if ( !mDirtyStyle.empty() ) {
+		Clock clock;
+		for ( auto& node : mDirtyStyle ) {
+			node->reloadStyle( true, false, false );
+		}
+		mDirtyStyle.clear();
+		eePRINTL( "CSS Styles Reloaded in %.2f ms", clock.getElapsedTime().asMilliseconds() );
+	}
+}
+
+void UISceneNode::updateDirtyStyleStates() {
+	if ( !mDirtyStyleState.empty() ) {
+		Clock clock;
+		for ( auto& node : mDirtyStyleState ) {
+			node->reportStyleStateChangeRecursive( mDirtyStyleStateCSSAnimations[node] );
+		}
+		mDirtyStyleState.clear();
+		mDirtyStyleStateCSSAnimations.clear();
+		eePRINTL( "CSS Style State Invalidated, reapplied state in %.2f ms",
+				  clock.getElapsedTime().asMilliseconds() );
+	}
 }
 
 bool UISceneNode::onMediaChanged() {
@@ -505,8 +560,8 @@ void UISceneNode::processStyleSheetAtRules( const StyleSheet& styleSheet ) {
 
 void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles ) {
 	for ( auto& style : styles ) {
-		CSS::StyleSheetProperty familyProp( style->getPropertyById( PropertyId::FontFamily ) );
-		CSS::StyleSheetProperty srcProp( style->getPropertyById( PropertyId::Src ) );
+		CSS::StyleSheetProperty familyProp( *style->getPropertyById( PropertyId::FontFamily ) );
+		CSS::StyleSheetProperty srcProp( *style->getPropertyById( PropertyId::Src ) );
 
 		if ( !familyProp.isEmpty() && !srcProp.isEmpty() ) {
 			Font* fontSearch = FontManager::instance()->getByName( familyProp.getValue() );
@@ -528,6 +583,7 @@ void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles ) {
 					font->loadFromFile( filePath );
 
 					mFontFaces.push_back( font );
+					runOnMainThread( [&] { mRoot->reloadFontFamily(); } );
 				} else if ( String::startsWith( path, "http://" ) ||
 							String::startsWith( path, "https://" ) ) {
 					std::string familyName = familyProp.getValue();
@@ -540,7 +596,7 @@ void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles ) {
 								font->loadFromMemory( &response.getBody()[0],
 													  response.getBody().size() );
 								mFontFaces.push_back( font );
-								runOnMainThread( [&] { reloadStyle(); } );
+								runOnMainThread( [&] { mRoot->reloadFontFamily(); } );
 							}
 						},
 						URI( path ), Seconds( 5 ) );
@@ -553,6 +609,7 @@ void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles ) {
 					font->loadFromStream( *stream );
 
 					mFontFaces.push_back( font );
+					runOnMainThread( [&] { mRoot->reloadFontFamily(); } );
 				}
 			}
 		}

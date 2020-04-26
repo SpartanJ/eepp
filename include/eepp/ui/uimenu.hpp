@@ -87,6 +87,7 @@ class EE_API UIMenu : public UIWidget {
 	UIWidget* mItemSelected;
 	Uint32 mItemSelectedIndex;
 	bool mClickHide;
+	bool mResizing;
 	Uint32 mLastTickMove;
 	UINode* mOwnerNode;
 	Sizei mIconMinSize;

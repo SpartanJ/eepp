@@ -1,10 +1,12 @@
 #ifndef EE_UI_CSS_STYLESHEET_HPP
 #define EE_UI_CSS_STYLESHEET_HPP
 
+#include <eepp/ui/css/elementdefinition.hpp>
 #include <eepp/ui/css/keyframesdefinition.hpp>
 #include <eepp/ui/css/mediaquery.hpp>
 #include <eepp/ui/css/stylesheetstyle.hpp>
 #include <memory>
+#include <unordered_map>
 
 namespace EE { namespace UI { namespace CSS {
 
@@ -20,10 +22,10 @@ class EE_API StyleSheet {
 
 	void combineStyleSheet( const StyleSheet& styleSheet );
 
-	StyleSheetStyleVector getElementStyles( UIWidget* element,
-											const bool& applyPseudo = false ) const;
+	std::shared_ptr<ElementDefinition> getElementStyles( UIWidget* element,
+														 const bool& applyPseudo = false ) const;
 
-	const StyleSheetStyleVector& getStyles() const;
+	const std::vector<std::shared_ptr<StyleSheetStyle>>& getStyles() const;
 
 	bool updateMediaLists( const MediaFeatures& features );
 
@@ -41,12 +43,19 @@ class EE_API StyleSheet {
 
 	const KeyframesDefinitionMap& getKeyframes() const;
 
+	static size_t NodeHash( const std::string& tag, const std::string& id );
+
   protected:
-	StyleSheetStyleVector mNodes;
+	std::vector<std::shared_ptr<StyleSheetStyle>> mNodes;
+	std::unordered_map<size_t, StyleSheetStyleVector> mNodeIndex;
 	MediaQueryList::vector mMediaQueryList;
 	KeyframesDefinitionMap mKeyframesMap;
+	using ElementDefinitionCache = std::unordered_map<size_t, std::shared_ptr<ElementDefinition>>;
+	mutable ElementDefinitionCache mNodeCache;
 
 	void addMediaQueryList( MediaQueryList::ptr list );
+
+	void addStyleToNodeIndex( StyleSheetStyle* style );
 };
 
 }}} // namespace EE::UI::CSS

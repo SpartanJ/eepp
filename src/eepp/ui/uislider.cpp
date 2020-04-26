@@ -132,15 +132,15 @@ void UISlider::adjustChilds() {
 		Float percent = ( mPageStep / ( mMaxValue - mMinValue ) );
 
 		if ( UIOrientation::Horizontal == mOrientation ) {
-			Float size = eemax(
+			Float size = eeceil( eemax(
 				( ( Float )( getSize().getWidth() - mPadding.Left - mPadding.Right ) * percent ),
-				mSlider->getMinSize().getWidth() );
+				mSlider->getMinSize().getWidth() ) );
 
 			mSlider->setSize( size, mSlider->getSize().getHeight() );
 		} else {
-			Float size = eemax(
+			Float size = eeceil( eemax(
 				( ( Float )( getSize().getHeight() - mPadding.Top - mPadding.Bottom ) * percent ),
-				mSlider->getMinSize().getHeight() );
+				mSlider->getMinSize().getHeight() ) );
 
 			mSlider->setSize( mSlider->getSize().getWidth(), size );
 		}
@@ -240,9 +240,10 @@ void UISlider::fixSliderPos() {
 										  ( mMaxValue - mMinValue ) /
 										  (Float)mBackSlider->getSize().getWidth() );
 			else
-				setValue( mMinValue +
-						  ( mSlider->getPosition().x - mPadding.Left ) * ( mMaxValue - mMinValue ) /
-							  ( (Float)getSize().getWidth() - mSlider->getSize().getWidth() ) );
+				setValue( mMinValue + ( mSlider->getPosition().x - mPadding.Left ) *
+										  ( mMaxValue - mMinValue ) /
+										  ( (Float)mBackSlider->getSize().getWidth() -
+											mSlider->getSize().getWidth() ) );
 		} else {
 			mSlider->setPosition( 0, mSlider->getPosition().y );
 
@@ -269,9 +270,10 @@ void UISlider::fixSliderPos() {
 										  ( mMaxValue - mMinValue ) /
 										  (Float)mBackSlider->getSize().getHeight() );
 			else
-				setValue( mMinValue +
-						  ( mSlider->getPosition().y - mPadding.Top ) * ( mMaxValue - mMinValue ) /
-							  ( (Float)getSize().getHeight() - mSlider->getSize().getHeight() ) );
+				setValue( mMinValue + ( mSlider->getPosition().y - mPadding.Top ) *
+										  ( mMaxValue - mMinValue ) /
+										  ( (Float)mBackSlider->getSize().getHeight() -
+											mSlider->getSize().getHeight() ) );
 		}
 
 		mOnPosChange = false;

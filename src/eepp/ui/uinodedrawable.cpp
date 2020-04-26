@@ -384,7 +384,7 @@ void UINodeDrawable::LayerDrawable::setDrawable( Drawable* drawable, const bool&
 	mOwnsDrawable = ownIt;
 	invalidate();
 
-	if ( mDrawable->isDrawableResource() ) {
+	if ( NULL != mDrawable && mDrawable->isDrawableResource() ) {
 		mResourceChangeCbId = reinterpret_cast<DrawableResource*>( mDrawable )
 								  ->pushResourceChangeCallback(
 									  [&]( DrawableResource::Event event, DrawableResource* ) {
@@ -402,11 +402,9 @@ void UINodeDrawable::LayerDrawable::setDrawable( const std::string& drawableRef 
 	bool ownIt;
 	Drawable* drawable = createDrawable( drawableRef, mSize, ownIt );
 
-	if ( NULL != drawable ) {
-		setDrawable( drawable, ownIt );
+	setDrawable( drawable, ownIt );
 
-		mDrawableRef = drawableRef;
-	}
+	mDrawableRef = drawableRef;
 }
 
 Drawable* UINodeDrawable::LayerDrawable::createDrawable( const std::string& value,

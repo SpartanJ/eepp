@@ -19,10 +19,6 @@ const std::string& StyleSheetSelector::getName() const {
 	return mName;
 }
 
-const std::string& StyleSheetSelector::getPseudoClass() const {
-	return mPseudoClass;
-}
-
 const Uint32& StyleSheetSelector::getSpecificity() const {
 	return mSpecificity;
 }
@@ -90,9 +86,6 @@ void StyleSheetSelector::parseSelector( std::string selector ) {
 		mCacheable = true;
 
 		if ( !mSelectorRules.empty() ) {
-			if ( mSelectorRules[0].hasPseudoClasses() )
-				mPseudoClass = mSelectorRules[0].getPseudoClasses()[0];
-
 			if ( mSelectorRules[0].hasStructuralPseudoClasses() ) {
 				mStructurallyVolatile = true;
 				mCacheable = false;
@@ -113,12 +106,6 @@ void StyleSheetSelector::parseSelector( std::string selector ) {
 
 const bool& StyleSheetSelector::isCacheable() const {
 	return mCacheable;
-}
-
-bool StyleSheetSelector::hasPseudoClass( const std::string& cls ) const {
-	return mSelectorRules.empty()
-			   ? false
-			   : ( cls.empty() ? true : mSelectorRules[0].hasPseudoClass( cls ) );
 }
 
 bool StyleSheetSelector::hasPseudoClasses() const {
@@ -320,6 +307,18 @@ std::vector<UIWidget*> StyleSheetSelector::getRelatedElements( UIWidget* element
 
 const bool& StyleSheetSelector::isStructurallyVolatile() const {
 	return mStructurallyVolatile;
+}
+
+const StyleSheetSelectorRule& StyleSheetSelector::getRule( const Uint32& index ) {
+	return mSelectorRules[index];
+}
+
+const std::string& StyleSheetSelector::getSelectorId() const {
+	return mSelectorRules[0].getId();
+}
+
+const std::string& StyleSheetSelector::getSelectorTagName() const {
+	return mSelectorRules[0].getTagName();
 }
 
 }}} // namespace EE::UI::CSS

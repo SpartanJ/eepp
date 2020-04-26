@@ -31,6 +31,7 @@
 					<item>Test 4</item><item>Test 5</item><item>Test 6</item><item>Test 7</item><item>Test 8</item>
 				</ComboBox>
 				<TextInput layout_width="300dp" layout_height="wrap_content" margin-top="8dp" text="Testing TextInput&#10;Multi line&#10;Texts" />
+				<TextInputPassword layout_width="300dp" layout_height="wrap_content" margin-top="8dp" hint="Password" />
 				<TextEdit layout_width="300dp" layout_height="60dp" margin-top="8dp" text="Testing TextEdit&#10;Multi line&#10;Texts" />
 				<SelectButton layout_width="wrap_content" layout_height="wrap_content" text="Testing SelectButton" margin-top="8dp" />
 				<SpinBox id="spinbox" layout_width="200dp" layout_height="wrap_content" margin-top="8dp" />

@@ -690,6 +690,10 @@ void Node::onIdChange() {
 	sendCommonEvent( Event::OnIdChange );
 }
 
+bool Node::isClosing() const {
+	return 0 != ( mNodeFlags & NODE_FLAG_CLOSE );
+}
+
 Uint32 Node::getIdHash() const {
 	return mIdHash;
 }

@@ -20,6 +20,9 @@ UIStyle* UIStyle::New( UIWidget* widget ) {
 UIStyle::UIStyle( UIWidget* widget ) :
 	UIState(),
 	mWidget( widget ),
+	mElementStyle( std::make_shared<CSS::StyleSheetStyle>() ),
+	mGlobalDefinition( nullptr ),
+	mDefinition( nullptr ),
 	mChangingState( false ),
 	mForceReapplyProperties( false ),
 	mDisableAnimations( false ) {}
@@ -45,46 +48,19 @@ void UIStyle::setStyleSheetProperty( const StyleSheetProperty& property ) {
 	}
 
 	for ( auto& prop : properties ) {
-		mElementStyle.setProperty( prop );
+		mElementStyle.get()->setProperty( prop );
 	}
 }
 
 void UIStyle::load() {
+	mElementStyle->clearProperties();
+
+	mGlobalDefinition =
+		mWidget->getUISceneNode()->getStyleSheet().getElementStyles( mWidget, false );
+
 	unsubscribeNonCacheableStyles();
 
-	mCacheableStyles.clear();
-	mNoncacheableStyles.clear();
-	mElementStyle.clearProperties();
-	mProperties.clear();
-	mVariables.clear();
-	mStructurallyVolatile = false;
-
-	UISceneNode* uiSceneNode = mWidget->getUISceneNode();
-
-	if ( NULL != uiSceneNode ) {
-		CSS::StyleSheet& styleSheet = uiSceneNode->getStyleSheet();
-
-		if ( !styleSheet.isEmpty() ) {
-			StyleSheetStyleVector styles = styleSheet.getElementStyles( mWidget );
-
-			for ( auto& style : styles ) {
-				const StyleSheetSelector& selector = style->getSelector();
-
-				if ( selector.isCacheable() ) {
-					mCacheableStyles.push_back( style );
-				} else {
-					mNoncacheableStyles.push_back( style );
-				}
-
-				if ( selector.isStructurallyVolatile() )
-					mStructurallyVolatile = true;
-
-				findVariables( style.get() );
-			}
-
-			subscribeNonCacheableStyles();
-		}
-	}
+	subscribeNonCacheableStyles();
 }
 
 void UIStyle::setStyleSheetProperties( const CSS::StyleSheetProperties& properties ) {
@@ -135,19 +111,21 @@ const bool& UIStyle::isChangingState() const {
 }
 
 StyleSheetVariable UIStyle::getVariable( const std::string& variable ) {
-	auto it = mVariables.find( String::hash( variable ) );
+	if ( NULL != mGlobalDefinition ) {
+		auto it = mGlobalDefinition->getVariables().find( String::hash( variable ) );
 
-	if ( it != mVariables.end() ) {
-		return it->second;
-	} else {
-		Node* parentWidget = mWidget->getParentWidget();
+		if ( it != mGlobalDefinition->getVariables().end() ) {
+			return it->second;
+		}
+	}
 
-		if ( NULL != parentWidget ) {
-			UIStyle* style = parentWidget->asType<UIWidget>()->getUIStyle();
+	Node* parentWidget = mWidget->getParentWidget();
 
-			if ( NULL != style ) {
-				return style->getVariable( variable );
-			}
+	if ( NULL != parentWidget ) {
+		UIStyle* style = parentWidget->asType<UIWidget>()->getUIStyle();
+
+		if ( NULL != style ) {
+			return style->getVariable( variable );
 		}
 	}
 
@@ -170,8 +148,17 @@ void UIStyle::setDisableAnimations( bool disableAnimations ) {
 	mDisableAnimations = disableAnimations;
 }
 
-const bool& UIStyle::isStructurallyVolatile() const {
-	return mStructurallyVolatile;
+bool UIStyle::isStructurallyVolatile() const {
+	return NULL != mDefinition && mDefinition->isStructurallyVolatile();
+}
+
+void UIStyle::reloadFontFamily() {
+	if ( mDefinition->getPropertyIds().contains( (Uint32)PropertyId::FontFamily ) ) {
+		auto propIt = mDefinition->getProperties().find( (Uint32)PropertyId::FontFamily );
+		if ( propIt != mDefinition->getProperties().end() ) {
+			applyStyleSheetProperty( propIt->second, nullptr );
+		}
+	}
 }
 
 void UIStyle::subscribeRelated( UIWidget* widget ) {
@@ -182,114 +169,98 @@ void UIStyle::unsubscribeRelated( UIWidget* widget ) {
 	mRelatedWidgets.erase( widget );
 }
 
-void UIStyle::tryApplyStyle( const StyleSheetStyle* style ) {
-	if ( style->isMediaValid() && style->getSelector().select( mWidget ) ) {
-		for ( const auto& prop : style->getProperties() ) {
-			const StyleSheetProperty& property = prop.second;
-			const auto& it = mProperties.find( property.getId() );
-
-			if ( it == mProperties.end() ||
-				 property.getSpecificity() >= it->second.getSpecificity() ) {
-				mProperties[property.getId()] = property;
-
-				applyVarValues( mProperties[property.getId()] );
-
-				if ( String::startsWith( property.getName(), "transition" ) )
-					mTransitionProperties.push_back( &property );
-				else if ( String::startsWith( property.getName(), "animation" ) )
-					mAnimationProperties.push_back( &property );
+void UIStyle::setVariableFromValue( StyleSheetProperty* property, const std::string& value ) {
+	if ( !property->getVarCache().empty() ) {
+		std::string newValue( value );
+		for ( auto& var : property->getVarCache() ) {
+			for ( auto& val : var.variableList ) {
+				StyleSheetVariable variable( getVariable( val ) );
+				if ( !variable.isEmpty() ) {
+					String::replaceAll( newValue, var.definition, variable.getValue() );
+					break;
+				}
 			}
 		}
+		property->setValue( newValue );
 	}
 }
 
-void UIStyle::findVariables( const StyleSheetStyle* style ) {
-	for ( const auto& vars : style->getVariables() ) {
-		const StyleSheetVariable& variable = vars.second;
-		const auto& it = mVariables.find( variable.getNameHash() );
-
-		if ( it == mVariables.end() || variable.getSpecificity() >= it->second.getSpecificity() ) {
-			mVariables[variable.getNameHash()] = variable;
-		}
-	}
-}
-
-void UIStyle::setVariableFromValue( StyleSheetProperty& property, const std::string& value ) {
-	std::string newValue( value );
-	for ( auto& var : property.getVarCache() ) {
-		for ( auto& val : var.variableList ) {
-			StyleSheetVariable variable( getVariable( val ) );
-			if ( !variable.isEmpty() ) {
-				String::replaceAll( newValue, var.definition, variable.getValue() );
-				break;
-			}
-		}
-	}
-	property.setValue( newValue );
-}
-
-void UIStyle::applyVarValues( StyleSheetProperty& property ) {
-	if ( property.isVarValue() ) {
-		if ( NULL != property.getPropertyDefinition() &&
-			 property.getPropertyDefinition()->isIndexed() ) {
-			for ( size_t i = 0; i < property.getPropertyIndexCount(); i++ ) {
-				StyleSheetProperty& realProperty = property.getPropertyIndexRef( i );
-				setVariableFromValue( realProperty, realProperty.getValue() );
+void UIStyle::applyVarValues( StyleSheetProperty* property ) {
+	if ( property->isVarValue() ) {
+		if ( NULL != property->getPropertyDefinition() &&
+			 property->getPropertyDefinition()->isIndexed() ) {
+			for ( size_t i = 0; i < property->getPropertyIndexCount(); i++ ) {
+				StyleSheetProperty* realProperty = property->getPropertyIndexRef( i );
+				setVariableFromValue( realProperty, realProperty->getValue() );
 			}
 		} else {
-			setVariableFromValue( property, property.getValue() );
+			setVariableFromValue( property, property->getValue() );
 		}
 	}
-}
-
-template <typename Map> bool mapEquals( Map const& lhs, Map const& rhs ) {
-	// No predicate needed because there is operator== for pairs already.
-	return lhs.size() == rhs.size() && std::equal( lhs.begin(), lhs.end(), rhs.begin() );
 }
 
 void UIStyle::onStateChange() {
-	if ( NULL != mWidget ) {
+	if ( NULL != mWidget && NULL != mWidget->getUISceneNode() ) {
 		mChangingState = true;
 
-		CSS::StyleSheetProperties prevProperties( mProperties );
-		mProperties.clear();
-		mTransitionProperties.clear();
-		mAnimationProperties.clear();
+		std::shared_ptr<ElementDefinition> prevDefinition = mDefinition;
+		std::shared_ptr<ElementDefinition> newDefinition =
+			mWidget->getUISceneNode()->getStyleSheet().getElementStyles( mWidget, true );
 
-		tryApplyStyle( &mElementStyle );
+		if ( newDefinition != mDefinition || mForceReapplyProperties ) {
+			PropertyIdSet changedProperties;
 
-		for ( auto& style : mCacheableStyles ) {
-			tryApplyStyle( style.get() );
-		}
+			if ( mDefinition )
+				changedProperties = mDefinition->getPropertyIds();
 
-		for ( auto& style : mNoncacheableStyles ) {
-			tryApplyStyle( style.get() );
-		}
+			if ( newDefinition )
+				changedProperties |= newDefinition->getPropertyIds();
 
-		if ( !mapEquals( mProperties, prevProperties ) || mForceReapplyProperties ) {
+			if ( !mForceReapplyProperties ) {
+				if ( nullptr != newDefinition && !newDefinition->getPropertyIds().empty() ) {
+					if ( nullptr != mDefinition ) {
+						const PropertyIdSet propertiesInBothDefinitions =
+							( mDefinition->getPropertyIds() & newDefinition->getPropertyIds() );
+
+						for ( Uint32 id : propertiesInBothDefinitions ) {
+							const StyleSheetProperty* p0 = mDefinition->getProperty( id );
+							const StyleSheetProperty* p1 = newDefinition->getProperty( id );
+							if ( nullptr != p0 && nullptr != p1 && *p0 == *p1 )
+								changedProperties.erase( id );
+						}
+					}
+				}
+			}
+
+			mDefinition = newDefinition;
+
 			mForceReapplyProperties = false;
 
 			mWidget->beginAttributesTransaction();
 
 			updateAnimations();
 
-			if ( !mTransitionProperties.empty() ) {
-				mTransitions =
-					TransitionDefinition::parseTransitionProperties( mTransitionProperties );
+			if ( nullptr != mDefinition && !mDefinition->getTransitionProperties().empty() ) {
+				mTransitions = TransitionDefinition::parseTransitionProperties(
+					mDefinition->getTransitionProperties() );
 			}
 
-			for ( auto& prop : mProperties ) {
-				StyleSheetProperty& property = prop.second;
+			for ( auto prop : changedProperties ) {
+				StyleSheetProperty* property = getLocalProperty( prop );
 
-				if ( NULL == property.getPropertyDefinition() )
+				if ( nullptr == property || NULL == property->getPropertyDefinition() )
 					continue;
 
-				if ( property.getPropertyDefinition()->isIndexed() ) {
-					for ( size_t i = 0; i < property.getPropertyIndexCount(); i++ ) {
-						applyStyleSheetProperty( property.getPropertyIndex( i ), prevProperties );
+				applyVarValues( property );
+
+				if ( property->getPropertyDefinition()->isIndexed() ) {
+					for ( size_t i = 0; i < property->getPropertyIndexCount(); i++ ) {
+						applyVarValues( property->getPropertyIndexRef( i ) );
+
+						applyStyleSheetProperty( property->getPropertyIndex( i ), prevDefinition );
 					}
 				} else {
-					applyStyleSheetProperty( property, prevProperties );
+					applyStyleSheetProperty( *property, prevDefinition );
 				}
 			}
 
@@ -306,26 +277,30 @@ void UIStyle::onStateChange() {
 	}
 }
 
-StyleSheetProperty UIStyle::getStatelessStyleSheetProperty( const Uint32& propertyId ) const {
+const StyleSheetProperty*
+UIStyle::getStatelessStyleSheetProperty( const Uint32& propertyId ) const {
 	if ( 0 != propertyId ) {
-		if ( !mElementStyle.getSelector().hasPseudoClasses() ) {
-			StyleSheetProperty property = mElementStyle.getPropertyById( propertyId );
+		if ( !mElementStyle->getSelector().hasPseudoClasses() ) {
+			const StyleSheetProperty* property = mElementStyle->getPropertyById( propertyId );
 
-			if ( !property.isEmpty() )
+			if ( property )
 				return property;
 		}
 
-		for ( auto style : mCacheableStyles ) {
-			if ( !style->getSelector().hasPseudoClasses() ) {
-				StyleSheetProperty property = style->getPropertyById( propertyId );
+		if ( nullptr == mDefinition )
+			return nullptr;
 
-				if ( !property.isEmpty() )
+		for ( auto style : mDefinition->getStyles() ) {
+			if ( style->getSelector().isCacheable() && !style->getSelector().hasPseudoClasses() ) {
+				const StyleSheetProperty* property = style->getPropertyById( propertyId );
+
+				if ( property )
 					return property;
 			}
 		}
 	}
 
-	return StyleSheetProperty();
+	return nullptr;
 }
 
 void UIStyle::updateState() {
@@ -345,17 +320,22 @@ void UIStyle::updateState() {
 }
 
 void UIStyle::subscribeNonCacheableStyles() {
-	for ( auto& style : mNoncacheableStyles ) {
-		std::vector<UIWidget*> elements = style->getSelector().getRelatedElements( mWidget, false );
+	if ( nullptr == mGlobalDefinition )
+		return;
+	for ( auto& style : mGlobalDefinition->getStyles() ) {
+		if ( !style->getSelector().isCacheable() ) {
+			std::vector<UIWidget*> elements =
+				style->getSelector().getRelatedElements( mWidget, false );
 
-		if ( !elements.empty() ) {
-			for ( auto& element : elements ) {
-				UIWidget* widget = element->asType<UIWidget>();
+			if ( !elements.empty() ) {
+				for ( auto& element : elements ) {
+					UIWidget* widget = element->asType<UIWidget>();
 
-				if ( NULL != widget && NULL != widget->getUIStyle() ) {
-					widget->getUIStyle()->subscribeRelated( mWidget );
+					if ( NULL != widget && NULL != widget->getUIStyle() ) {
+						widget->getUIStyle()->subscribeRelated( mWidget );
 
-					mSubscribedWidgets.insert( widget );
+						mSubscribedWidgets.insert( widget );
+					}
 				}
 			}
 		}
@@ -387,14 +367,14 @@ void UIStyle::removeRelatedWidgets() {
 }
 
 void UIStyle::applyStyleSheetProperty( const StyleSheetProperty& property,
-									   StyleSheetProperties& prevProperties ) {
+									   std::shared_ptr<ElementDefinition> prevDefinition ) {
 	const PropertyDefinition* propertyDefinition = property.getPropertyDefinition();
 
 	// Save default value if possible and not available.
 	if ( mCurrentState != UIState::StateFlagNormal ||
 		 ( mCurrentState == UIState::StateFlagNormal && property.isVolatile() ) ) {
-		StyleSheetProperty oldAttribute = getStatelessStyleSheetProperty( property.getId() );
-		if ( oldAttribute.isEmpty() && getPreviousState() == UIState::StateFlagNormal ) {
+		const StyleSheetProperty* oldAttribute = getStatelessStyleSheetProperty( property.getId() );
+		if ( nullptr == oldAttribute && getPreviousState() == UIState::StateFlagNormal ) {
 			std::string value(
 				mWidget->getPropertyString( propertyDefinition, property.getIndex() ) );
 			if ( !value.empty() ) {
@@ -414,14 +394,19 @@ void UIStyle::applyStyleSheetProperty( const StyleSheetProperty& property,
 
 		if ( !startValue.empty() ) {
 			// Get the real start value
-			auto prevPropIt = prevProperties.find( property.getId() );
-			if ( prevPropIt != prevProperties.end() ) {
-				StyleSheetProperty& curProperty = prevPropIt->second;
-				if ( propertyDefinition->isIndexed() &&
-					 property.getIndex() < curProperty.getPropertyIndexCount() ) {
-					startValue = curProperty.getPropertyIndex( property.getIndex() ).getValue();
-				} else {
-					startValue = curProperty.getValue();
+			if ( nullptr != prevDefinition ) {
+				auto prevProp = prevDefinition->getProperty( property.getId() );
+				if ( nullptr != prevProp ) {
+					StyleSheetProperty* curProperty = prevProp;
+					if ( propertyDefinition->isIndexed() &&
+						 property.getIndex() < curProperty->getPropertyIndexCount() ) {
+						applyVarValues( curProperty->getPropertyIndexRef( property.getIndex() ) );
+						startValue =
+							curProperty->getPropertyIndex( property.getIndex() ).getValue();
+					} else {
+						applyVarValues( curProperty );
+						startValue = curProperty->getValue();
+					}
 				}
 			}
 
@@ -492,11 +477,15 @@ void UIStyle::applyStyleSheetProperty( const StyleSheetProperty& property,
 }
 
 void UIStyle::updateAnimations() {
+	if ( nullptr == mDefinition )
+		return;
+
 	bool isDifferent = false;
 	CSS::AnimationsMap animations;
 
-	if ( !mAnimationProperties.empty() ) {
-		animations = AnimationDefinition::parseAnimationProperties( mAnimationProperties );
+	if ( !mDefinition->getAnimationProperties().empty() ) {
+		animations =
+			AnimationDefinition::parseAnimationProperties( mDefinition->getAnimationProperties() );
 		if ( animations.size() == mAnimations.size() ) {
 			for ( auto& animation : animations ) {
 				auto animIt = mAnimations.find( animation.second.getName() );
@@ -508,7 +497,7 @@ void UIStyle::updateAnimations() {
 		} else {
 			isDifferent = true;
 		}
-	} else if ( !mAnimations.empty() && mAnimationProperties.empty() ) {
+	} else if ( !mAnimations.empty() && mDefinition->getAnimationProperties().empty() ) {
 		isDifferent = true;
 	}
 
@@ -518,13 +507,13 @@ void UIStyle::updateAnimations() {
 		removeAllAnimations();
 
 		startAnimations( animations );
-	} else if ( !mAnimationProperties.empty() ) {
+	} else if ( !mDefinition->getAnimationProperties().empty() ) {
 		updateAnimationsPlayState();
 	}
 }
 
 void UIStyle::updateAnimationsPlayState() {
-	if ( mAnimations.empty() )
+	if ( mAnimations.empty() || nullptr == mDefinition )
 		return;
 	std::vector<Action*> actions = mWidget->getActions();
 	for ( auto& action : actions ) {
@@ -541,7 +530,7 @@ void UIStyle::updateAnimationsPlayState() {
 						// First check if in the current animation properties is there any
 						// "animation-play-state" definition.
 						bool isSet = false;
-						for ( auto& animProp : mAnimationProperties ) {
+						for ( auto& animProp : mDefinition->getAnimationProperties() ) {
 							if ( NULL != animProp->getPropertyDefinition() &&
 								 animProp->getPropertyDefinition()->getPropertyId() ==
 									 PropertyId::AnimationPlayState ) {
@@ -590,10 +579,9 @@ void UIStyle::startAnimations( const CSS::AnimationsMap& animations ) {
 
 				if ( StyleSheetPropertyAnimation::animationSupported( propDef->getType() ) ) {
 					if ( propDef->isIndexed() ) {
-						auto propIt = mProperties.find( propDef->getId() );
-						if ( propIt != mProperties.end() ) {
-							StyleSheetProperty& prop = propIt->second;
-							for ( size_t i = 0; i < prop.getPropertyIndexCount(); i++ ) {
+						StyleSheetProperty* prop = mDefinition->getProperty( propDef->getId() );
+						if ( nullptr != prop ) {
+							for ( size_t i = 0; i < prop->getPropertyIndexCount(); i++ ) {
 								removeAnimation( propDef, i );
 								StyleSheetPropertyAnimation* newAnimation =
 									StyleSheetPropertyAnimation::fromAnimationKeyframes(
@@ -673,6 +661,15 @@ void UIStyle::removeAnimation( const PropertyDefinition* propertyDefinition,
 
 		mWidget->removeActions( removeTransitions );
 	}
+}
+
+StyleSheetProperty* UIStyle::getLocalProperty( Uint32 propId ) {
+	StyleSheetProperty* property = nullptr;
+	if ( nullptr != mDefinition )
+		property = mDefinition->getProperty( propId );
+	if ( nullptr == property )
+		return mElementStyle->getPropertyById( propId );
+	return property;
 }
 
 }} // namespace EE::UI

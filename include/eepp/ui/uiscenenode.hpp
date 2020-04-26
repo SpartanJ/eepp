@@ -82,10 +82,19 @@ class EE_API UISceneNode : public SceneNode {
 
 	void setVerbose( bool verbose );
 
-	void addWidgetToDirtyStyleState( UIWidget* widget );
+	void invalidateStyle( UIWidget* widget );
+
+	void invalidateStyleState( UIWidget* widget, bool disableCSSAnimations = false );
+
+	void setIsLoading( bool isLoading );
+
+	void updateDirtyStyles();
+
+	void updateDirtyStyleStates();
 
   protected:
 	friend class EE::UI::UIWindow;
+	friend class EE::UI::UIWidget;
 	UIWidget* mRoot;
 	Sizef mDpSize;
 	Uint32 mFlags;
@@ -97,7 +106,10 @@ class EE_API UISceneNode : public SceneNode {
 	UIThemeManager* mUIThemeManager;
 	std::vector<Font*> mFontFaces;
 	KeyboardShortcuts mKbShortcuts;
+	std::unordered_set<UIWidget*> mDirtyStyle;
 	std::unordered_set<UIWidget*> mDirtyStyleState;
+	std::unordered_map<UIWidget*, bool> mDirtyStyleStateCSSAnimations;
+	std::vector<std::pair<Float, std::string>> mTimes;
 
 	virtual void resizeControl( EE::Window::Window* win );
 
@@ -132,6 +144,8 @@ class EE_API UISceneNode : public SceneNode {
 	void checkShortcuts( const Uint32& KeyCode, const Uint32& Mod );
 
 	KeyboardShortcuts::iterator existsShortcut( const Uint32& KeyCode, const Uint32& Mod );
+
+	void onWidgetDelete( Node* node );
 };
 
 }} // namespace EE::UI

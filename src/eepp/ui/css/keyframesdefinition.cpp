@@ -2,9 +2,8 @@
 
 namespace EE { namespace UI { namespace CSS {
 
-KeyframesDefinition
-KeyframesDefinition::parseKeyframes( const std::string& name,
-									 const StyleSheetStyleVector& keyframeBlocks ) {
+KeyframesDefinition KeyframesDefinition::parseKeyframes(
+	const std::string& name, const std::vector<std::shared_ptr<StyleSheetStyle>>& keyframeBlocks ) {
 	KeyframesDefinition def;
 	def.name = name;
 

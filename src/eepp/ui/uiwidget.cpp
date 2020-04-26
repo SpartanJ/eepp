@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <eepp/scene/actions/actions.hpp>
+#include <eepp/scene/scenemanager.hpp>
 #include <eepp/ui/css/shorthanddefinition.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
 #include <eepp/ui/css/stylesheetselector.hpp>
@@ -43,10 +44,12 @@ UIWidget::UIWidget( const std::string& tag ) :
 	mAttributesTransactionCount( 0 ) {
 	mNodeFlags |= NODE_FLAG_WIDGET;
 
-	if ( !isSceneNodeLoading() && !isLoadingState() )
-		reloadStyle( false, true );
-
 	createStyle();
+
+	if ( NULL != mUISceneNode && !isSceneNodeLoading() && !isLoadingState() ) {
+		mUISceneNode->invalidateStyle( this );
+		mUISceneNode->invalidateStyleState( this, true );
+	}
 
 	updateAnchorsDistances();
 }
@@ -54,6 +57,8 @@ UIWidget::UIWidget( const std::string& tag ) :
 UIWidget::UIWidget() : UIWidget( "widget" ) {}
 
 UIWidget::~UIWidget() {
+	if ( !SceneManager::instance()->isShootingDown() && NULL != mUISceneNode )
+		mUISceneNode->onWidgetDelete( this );
 	eeSAFE_DELETE( mStyle );
 	eeSAFE_DELETE( mTooltip );
 }
@@ -222,16 +227,18 @@ void UIWidget::createTooltip() {
 void UIWidget::onChildCountChange( Node* child, const bool& removed ) {
 	UINode::onChildCountChange( child, removed );
 	if ( !isSceneNodeLoading() && getUISceneNode() != NULL ) {
-		UISceneNode* sceneNode = getUISceneNode();
 		Node* child = getFirstChild();
 		UIWidget* widget = NULL;
 		while ( NULL != child ) {
-			if ( child->isWidget() && ( widget = child->asType<UIWidget>() ) &&
-				 NULL != widget->getUIStyle() && widget->getUIStyle()->isStructurallyVolatile() ) {
-				sceneNode->addWidgetToDirtyStyleState( widget );
+			if ( child->isWidget() ) {
+				widget = child->asType<UIWidget>();
+				if ( widget->getUIStyle() != NULL &&
+					 widget->getUIStyle()->isStructurallyVolatile() ) {
+					getUISceneNode()->invalidateStyleState( widget );
+				}
 			}
 			child = child->getNextNode();
-		};
+		}
 	}
 }
 
@@ -444,8 +451,10 @@ Node* UIWidget::setSize( const Float& Width, const Float& Height ) {
 Node* UIWidget::setId( const std::string& id ) {
 	Node::setId( id );
 
-	if ( !isSceneNodeLoading() && !isLoadingState() )
-		reloadStyle( true );
+	if ( !isSceneNodeLoading() && !isLoadingState() ) {
+		getUISceneNode()->invalidateStyle( this );
+		getUISceneNode()->invalidateStyleState( this );
+	}
 
 	return this;
 }
@@ -577,15 +586,19 @@ void UIWidget::alignAgainstLayout() {
 	setPosition( pos );
 }
 
-void UIWidget::reportStyleStateChange() {
-	if ( NULL != mStyle && !mStyle->isChangingState() )
+void UIWidget::reportStyleStateChange( bool disableAnimations ) {
+	if ( NULL != mStyle && !mStyle->isChangingState() ) {
+		bool hasAnimDisabled = mStyle->getDisableAnimations();
+		if ( disableAnimations )
+			mStyle->setDisableAnimations( disableAnimations );
 		mStyle->onStateChange();
+		if ( disableAnimations )
+			mStyle->setDisableAnimations( hasAnimDisabled );
+	}
 }
 
 bool UIWidget::isSceneNodeLoading() const {
-	return NULL != getSceneNode() && getSceneNode()->isUISceneNode()
-			   ? static_cast<UISceneNode*>( getSceneNode() )->isLoading()
-			   : false;
+	return NULL != mUISceneNode ? mUISceneNode->isLoading() : false;
 }
 
 const std::string& UIWidget::getMinWidthEq() const {
@@ -788,8 +801,10 @@ void UIWidget::addClass( const std::string& cls ) {
 	if ( !cls.empty() && !hasClass( cls ) ) {
 		mClasses.push_back( cls );
 
-		if ( !isSceneNodeLoading() && !isLoadingState() )
-			reloadStyle( true );
+		if ( !isSceneNodeLoading() && !isLoadingState() ) {
+			getUISceneNode()->invalidateStyle( this );
+			getUISceneNode()->invalidateStyleState( this );
+		}
 
 		onClassChange();
 	}
@@ -805,8 +820,10 @@ void UIWidget::addClasses( const std::vector<std::string>& classes ) {
 			}
 		}
 
-		if ( !isSceneNodeLoading() && !isLoadingState() )
-			reloadStyle( true );
+		if ( !isSceneNodeLoading() && !isLoadingState() ) {
+			getUISceneNode()->invalidateStyle( this );
+			getUISceneNode()->invalidateStyleState( this );
+		}
 
 		onClassChange();
 	}
@@ -816,8 +833,10 @@ void UIWidget::removeClass( const std::string& cls ) {
 	if ( hasClass( cls ) ) {
 		mClasses.erase( std::find( mClasses.begin(), mClasses.end(), cls ) );
 
-		if ( !isSceneNodeLoading() && !isLoadingState() )
-			reloadStyle( true );
+		if ( !isSceneNodeLoading() && !isLoadingState() ) {
+			getUISceneNode()->invalidateStyle( this );
+			getUISceneNode()->invalidateStyleState( this );
+		}
 
 		onClassChange();
 	}
@@ -837,8 +856,10 @@ void UIWidget::removeClasses( const std::vector<std::string>& classes ) {
 			}
 		}
 
-		if ( !isSceneNodeLoading() && !isLoadingState() )
-			reloadStyle( true );
+		if ( !isSceneNodeLoading() && !isLoadingState() ) {
+			getUISceneNode()->invalidateStyle( this );
+			getUISceneNode()->invalidateStyleState( this );
+		}
 
 		onClassChange();
 	}
@@ -856,8 +877,10 @@ void UIWidget::setElementTag( const std::string& tag ) {
 		mMinHeightEq = "";
 		mMinSize = Sizef::Zero;
 
-		if ( !isSceneNodeLoading() && !isLoadingState() )
-			reloadStyle( true );
+		if ( !isSceneNodeLoading() && !isLoadingState() ) {
+			getUISceneNode()->invalidateStyle( this );
+			getUISceneNode()->invalidateStyleState( this );
+		}
 
 		onTagChange();
 	}
@@ -920,9 +943,6 @@ void UIWidget::reloadStyle( const bool& reloadChilds, const bool& disableAnimati
 	createStyle();
 
 	if ( NULL != mStyle ) {
-		if ( disableAnimations )
-			mStyle->setDisableAnimations( true );
-
 		mStyle->load();
 
 		if ( NULL != getFirstChild() && reloadChilds ) {
@@ -938,10 +958,7 @@ void UIWidget::reloadStyle( const bool& reloadChilds, const bool& disableAnimati
 		}
 
 		if ( reportStateChange )
-			reportStyleStateChange();
-
-		if ( disableAnimations )
-			mStyle->setDisableAnimations( false );
+			reportStyleStateChange( disableAnimations );
 	}
 }
 
@@ -958,8 +975,10 @@ void UIWidget::onMarginChange() {
 void UIWidget::onThemeLoaded() {}
 
 void UIWidget::onParentChange() {
-	if ( !isSceneNodeLoading() && !isLoadingState() )
-		reloadStyle( true, true );
+	if ( !isSceneNodeLoading() && !isLoadingState() ) {
+		getUISceneNode()->invalidateStyle( this );
+		getUISceneNode()->invalidateStyleState( this, true );
+	}
 }
 
 void UIWidget::onClassChange() {
@@ -1136,14 +1155,14 @@ bool UIWidget::checkPropertyDefinition( const StyleSheetProperty& property ) {
 	return true;
 }
 
-void UIWidget::reportStyleStateChangeRecursive() {
+void UIWidget::reportStyleStateChangeRecursive( bool disableAnimations ) {
 	Node* childLoop = getFirstChild();
 	while ( childLoop != NULL ) {
 		if ( childLoop->isWidget() )
-			childLoop->asType<UIWidget>()->reportStyleStateChangeRecursive();
+			childLoop->asType<UIWidget>()->reportStyleStateChangeRecursive( disableAnimations );
 		childLoop = childLoop->getNextNode();
 	}
-	reportStyleStateChange();
+	reportStyleStateChange( disableAnimations );
 }
 
 UIWidget* UIWidget::querySelector( const std::string& selector ) {
@@ -1771,6 +1790,27 @@ std::string UIWidget::getFlagsString() const {
 		flagvec.push_back( "clip" );
 
 	return String::join( flagvec, '|' );
+}
+
+void UIWidget::enableCSSAnimations() {
+	if ( NULL != mStyle )
+		mStyle->setDisableAnimations( false );
+}
+
+void UIWidget::disableCSSAnimations() {
+	if ( NULL != mStyle )
+		mStyle->setDisableAnimations( true );
+}
+
+void UIWidget::reloadFontFamily() {
+	if ( NULL != mStyle )
+		mStyle->reloadFontFamily();
+	Node* child = getFirstChild();
+	while ( NULL != child ) {
+		if ( child->isWidget() )
+			child->asType<UIWidget>()->reloadFontFamily();
+		child = child->getNextNode();
+	}
 }
 
 }} // namespace EE::UI

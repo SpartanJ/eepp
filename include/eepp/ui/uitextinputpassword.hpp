@@ -21,8 +21,14 @@ class EE_API UITextInputPassword : public UITextInput {
 
 	Text* getPassCache() const;
 
+	const String& getBulletCharacter() const;
+
+	void setBulletCharacter( const String& bulletCharacter );
+
   protected:
 	Text* mPassCache;
+	Vector2f mHintAlignOffset;
+	String mBulletCharacter;
 
 	void alignFix();
 

@@ -29,15 +29,19 @@ class EE_API StyleSheetStyle {
 
 	const StyleSheetVariables& getVariables() const;
 
-	StyleSheetProperty getPropertyById( const PropertyId& id ) const;
+	const StyleSheetProperty* getPropertyById( const PropertyId& id ) const;
 
-	StyleSheetProperty getPropertyByDefinition( const PropertyDefinition* def ) const;
+	const StyleSheetProperty* getPropertyByDefinition( const PropertyDefinition* def ) const;
 
-	StyleSheetProperty getPropertyById( const Uint32& id ) const;
+	StyleSheetProperty* getPropertyById( const Uint32& id );
 
 	void setProperty( const StyleSheetProperty& property );
 
 	void clearProperties();
+
+	bool hasProperties() const;
+
+	bool hasVariables() const;
 
 	StyleSheetVariable getVariableByName( const std::string& name ) const;
 
@@ -62,7 +66,7 @@ class EE_API StyleSheetStyle {
 };
 
 typedef std::map<std::string, StyleSheetStyle> StyleSheetStyleList;
-typedef std::vector<std::shared_ptr<StyleSheetStyle>> StyleSheetStyleVector;
+typedef std::vector<StyleSheetStyle*> StyleSheetStyleVector;
 
 }}} // namespace EE::UI::CSS
 

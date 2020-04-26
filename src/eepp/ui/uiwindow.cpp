@@ -47,6 +47,9 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const StyleConfig& w
 	mFrameBufferBound( false ) {
 	subscribeScheduledUpdate();
 
+	bool loading = isSceneNodeLoading();
+	mUISceneNode->setIsLoading( true );
+
 	mNodeFlags |= NODE_FLAG_WINDOW | NODE_FLAG_VIEW_DIRTY;
 
 	setHorizontalAlign( UI_HALIGN_CENTER );
@@ -56,10 +59,10 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const StyleConfig& w
 
 	switch ( type ) {
 		case LINEAR_LAYOUT:
-			mContainer = UILinearLayout::New();
+			mContainer = UILinearLayout::NewWithTag( "window::container" );
 			break;
 		case RELATIVE_LAYOUT:
-			mContainer = UIRelativeLayout::New();
+			mContainer = UIRelativeLayout::NewWithTag( "window::container" );
 			break;
 		case SIMPLE_LAYOUT:
 		default:
@@ -83,6 +86,8 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const StyleConfig& w
 	applyDefaultTheme();
 
 	runOnMainThread( [&]() { onWindowReady(); } );
+
+	mUISceneNode->setIsLoading( loading );
 }
 
 UIWindow::~UIWindow() {
