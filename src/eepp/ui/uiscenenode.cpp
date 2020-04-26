@@ -118,8 +118,6 @@ bool UISceneNode::windowExists( UIWindow* win ) {
 	return mWindowsList.end() != std::find( mWindowsList.begin(), mWindowsList.end(), win );
 }
 
-static std::vector<std::pair<Float, std::string>> times;
-
 std::vector<UIWidget*> UISceneNode::loadNode( pugi::xml_node node, Node* parent ) {
 	std::vector<UIWidget*> rootWidgets;
 
@@ -139,7 +137,7 @@ std::vector<UIWidget*> UISceneNode::loadNode( pugi::xml_node node, Node* parent 
 			uiwidget->loadFromXmlNode( widget );
 
 			if ( mVerbose ) {
-				times.push_back( std::make_pair<Float, std::string>(
+				mTimes.push_back( std::make_pair<Float, std::string>(
 					clock.getElapsedTime().asMilliseconds(), widget.name() ) );
 			}
 
@@ -167,15 +165,15 @@ UIWidget* UISceneNode::loadLayoutNodes( pugi::xml_node node, Node* parent ) {
 
 	if ( mVerbose ) {
 		std::sort(
-			times.begin(), times.end(),
+			mTimes.begin(), mTimes.end(),
 			[]( const std::pair<Float, std::string>& left,
 				const std::pair<Float, std::string>& right ) { return left.first < right.first; } );
 
-		for ( auto& time : times ) {
+		for ( auto& time : mTimes ) {
 			eePRINTL( "Widget %s created in %.2f ms", time.second.c_str(), time.first );
 		}
 
-		times.clear();
+		mTimes.clear();
 
 		eePRINTL( "UISceneNode::loadLayoutNodes loaded nodes%s in: %.2f ms",
 				  id.empty() ? "" : std::string( " (id=" + id + ")" ).c_str(),
@@ -242,13 +240,14 @@ bool UISceneNode::hasStyleSheet() {
 
 void UISceneNode::reloadStyle( const bool& disableAnimations ) {
 	if ( NULL != mChild ) {
-		Node* ChildLoop = mChild;
+		Node* child = mChild;
 
-		while ( NULL != ChildLoop ) {
-			if ( ChildLoop->isWidget() )
-				ChildLoop->asType<UIWidget>()->reloadStyle( true, disableAnimations );
+		while ( NULL != child ) {
+			if ( child->isWidget() ) {
+				child->asType<UIWidget>()->reloadStyle( true, disableAnimations );
+			}
 
-			ChildLoop = ChildLoop->getNextNode();
+			child = child->getNextNode();
 		}
 	}
 }

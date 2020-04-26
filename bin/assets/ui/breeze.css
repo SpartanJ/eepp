@@ -111,7 +111,8 @@ RadioButton::active {
 
 ListBox,
 DropDownList::ListBox,
-ComboBox::DropDownList::ListBox {
+ComboBox::DropDownList::ListBox,
+Table {
 	background-color: var(--list-back);
 	border-color: var(--button-border);
 	border-radius: var(--button-radius);
@@ -126,7 +127,8 @@ ListBox::item {
 	background-position: left bottom, right bottom;
 }
 
-ListBox:hover {
+ListBox:hover,
+Table::hover {
 	border-color: var(--primary);
 }
 
@@ -217,18 +219,21 @@ SpinBox::btndown {
 	height: 13dp;
 }
 
-TextEdit {
+TextEdit::input {
 	background-color: var(--list-back);
 	border-color: var(--button-border);
 	border-radius: var(--button-radius);
 	border-width: var(--border-width);
-}
-
-TextEdit::input {
 	padding-left: var(--base-horizontal-padding);
 	padding-right: var(--base-horizontal-padding);
 	padding-top: var(--base-vertical-padding);
 	padding-bottom: var(--base-vertical-padding);
+	transition: all 0.15;
+}
+
+TextEdit::input:focus,
+TextEdit::input:hover {
+	border-color: var(--primary);
 }
 
 Tooltip {
@@ -576,10 +581,26 @@ Menu::Separator {
 	height: 3dp;
 	background-color: var(--button-back);
 	background-image: rectangle(solid, var(--button-border));
-	background-size: 100% 1dp;
+	background-size: 100% 1px;
 	background-position: center;
 }
 
-:root {
+Menu::SubMenu::Arrow {
+	width: 16dp;
+	height: 16dp;
+	foreground-image: poly(line, var(--icon), "-7dp -5dp, -2dp 0dp"), poly(line, var(--icon), "-7dp 5dp, -2dp 0dp");
+}
+
+Menu::CheckBox::icon {
+	width: 16dp;
+	height: 16dp;
+	foreground-image: none, none;
+}
+
+Menu::CheckBox::icon:selected {
+	foreground-image: poly(line, var(--icon), "10dp 14dp, 12dp 16dp"), poly(line, var(--icon), "12dp 16dp, 16dp 8dp");
+}
+
+.appbackground {
 	background-color: var(--back);
 }

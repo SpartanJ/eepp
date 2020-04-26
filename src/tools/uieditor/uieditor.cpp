@@ -925,6 +925,7 @@ void createAppMenu() {
 void setUserDefaultTheme() {
 	useDefaultTheme = true;
 	uiSceneNode->getUIThemeManager()->setDefaultTheme( theme );
+	uiSceneNode->combineStyleSheet( theme->getStyleSheet() );
 }
 
 EE_MAIN_FUNC int main( int argc, char* argv[] ) {
@@ -1002,6 +1003,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 
 		theme = UITheme::load( "uitheme" + pd, "uitheme" + pd, "assets/ui/uitheme" + pd + ".eta",
 							   font, "assets/ui/uitheme.css" );
+		/*theme = UITheme::load( "uitheme", "uitheme", "", font, "assets/ui/breeze.css" );*/
 
 		uiSceneNode = UISceneNode::New();
 		uiSceneNode->setId( "uiSceneNode" );
@@ -1015,14 +1017,13 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		appUiSceneNode->enableDrawInvalidation();
 		uiSceneNode->enableDrawInvalidation();
 
-		appUiSceneNode->combineStyleSheet( theme->getStyleSheet() );
+		appUiSceneNode->setStyleSheet( theme->getStyleSheet() );
 		appUiSceneNode->getUIThemeManager()
 			->setDefaultEffectsEnabled( true )
 			->setDefaultTheme( theme )
 			->setDefaultFont( font )
 			->add( theme );
 
-		uiSceneNode->combineStyleSheet( theme->getStyleSheet() );
 		uiSceneNode->getUIThemeManager()->setDefaultFont( font )->setDefaultEffectsEnabled( true );
 
 		if ( useAppTheme.Get() ) {
@@ -1038,6 +1039,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		uiContainer->setId( "appContainer" )->setSize( uiSceneNode->getSize() );
 
 		updateRecentProjects();
+		updateRecentFiles();
 
 		resizeCb( window );
 

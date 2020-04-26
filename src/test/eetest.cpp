@@ -621,8 +621,8 @@ void EETest::createUI() {
 	eePRINTL( "UIWidget size: %d", sizeof( UIWidget ) );
 
 	mTheme = UITheme::load( mThemeName, mThemeName,
-								MyPath + "ui/" + mThemeName + EE_TEXTURE_ATLAS_EXTENSION, TTF,
-								MyPath + "ui/uitheme.css" );
+							MyPath + "ui/" + mThemeName + EE_TEXTURE_ATLAS_EXTENSION, TTF,
+							MyPath + "ui/uitheme.css" );
 
 	/*mTheme = UITheme::load( mThemeName, mThemeName, "", TTF, MyPath + "ui/breeze.css" );*/
 

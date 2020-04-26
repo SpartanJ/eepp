@@ -10,6 +10,7 @@ UIMenuCheckBox* UIMenuCheckBox::New() {
 
 UIMenuCheckBox::UIMenuCheckBox() :
 	UIMenuItem( "menu::checkbox" ), mActive( false ), mSkinActive( NULL ), mSkinInactive( NULL ) {
+	mIcon->setElementTag( mTag + "::icon" );
 	applyDefaultTheme();
 	mIcon->setFlags( UI_SKIN_KEEP_SIZE_ON_DRAW );
 }
@@ -46,15 +47,22 @@ void UIMenuCheckBox::setActive( const bool& active ) {
 	mActive = active;
 
 	if ( mActive ) {
+		mIcon->pushState( UIState::StateSelected );
+	} else {
+		mIcon->popState( UIState::StateSelected );
+	}
+
+	if ( mActive ) {
 		if ( NULL != mSkinActive ) {
 			if ( NULL == mIcon->getSkin() || mIcon->getSkin()->getName() != mSkinActive->getName() )
 				mIcon->setSkin( mSkinActive );
 
 			if ( NULL != mSkinState ) {
-				if ( mSkinState->getState() & UIState::StateFlagSelected )
+				if ( mSkinState->getState() & UIState::StateFlagSelected ) {
 					mIcon->pushState( UIState::StateHover );
-				else
+				} else {
 					mIcon->popState( UIState::StateHover );
+				}
 			}
 		} else {
 			mIcon->removeSkin();
@@ -66,10 +74,11 @@ void UIMenuCheckBox::setActive( const bool& active ) {
 				mIcon->setSkin( mSkinInactive );
 
 			if ( NULL != mSkinState ) {
-				if ( mSkinState->getState() & UIState::StateFlagSelected )
+				if ( mSkinState->getState() & UIState::StateFlagSelected ) {
 					mIcon->pushState( UIState::StateHover );
-				else
+				} else {
 					mIcon->popState( UIState::StateHover );
+				}
 			}
 		} else {
 			mIcon->removeSkin();

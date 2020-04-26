@@ -111,10 +111,10 @@ const bool& UIStyle::isChangingState() const {
 }
 
 StyleSheetVariable UIStyle::getVariable( const std::string& variable ) {
-	if ( NULL != mDefinition ) {
-		auto it = mDefinition->getVariables().find( String::hash( variable ) );
+	if ( NULL != mGlobalDefinition ) {
+		auto it = mGlobalDefinition->getVariables().find( String::hash( variable ) );
 
-		if ( it != mDefinition->getVariables().end() ) {
+		if ( it != mGlobalDefinition->getVariables().end() ) {
 			return it->second;
 		}
 	}
@@ -216,16 +216,18 @@ void UIStyle::onStateChange() {
 			if ( newDefinition )
 				changedProperties |= newDefinition->getPropertyIds();
 
-			if ( !newDefinition->getPropertyIds().empty() ) {
-				if ( nullptr != mDefinition ) {
-					const PropertyIdSet propertiesInBothDefinitions =
-						( mDefinition->getPropertyIds() & newDefinition->getPropertyIds() );
+			if ( !mForceReapplyProperties ) {
+				if ( nullptr != newDefinition && !newDefinition->getPropertyIds().empty() ) {
+					if ( nullptr != mDefinition ) {
+						const PropertyIdSet propertiesInBothDefinitions =
+							( mDefinition->getPropertyIds() & newDefinition->getPropertyIds() );
 
-					for ( Uint32 id : propertiesInBothDefinitions ) {
-						const StyleSheetProperty* p0 = mDefinition->getProperty( id );
-						const StyleSheetProperty* p1 = newDefinition->getProperty( id );
-						if ( nullptr != p0 && nullptr != p1 && *p0 == *p1 )
-							changedProperties.erase( id );
+						for ( Uint32 id : propertiesInBothDefinitions ) {
+							const StyleSheetProperty* p0 = mDefinition->getProperty( id );
+							const StyleSheetProperty* p1 = newDefinition->getProperty( id );
+							if ( nullptr != p0 && nullptr != p1 && *p0 == *p1 )
+								changedProperties.erase( id );
+						}
 					}
 				}
 			}
@@ -238,7 +240,7 @@ void UIStyle::onStateChange() {
 
 			updateAnimations();
 
-			if ( !mDefinition->getTransitionProperties().empty() ) {
+			if ( nullptr != mDefinition && !mDefinition->getTransitionProperties().empty() ) {
 				mTransitions = TransitionDefinition::parseTransitionProperties(
 					mDefinition->getTransitionProperties() );
 			}
@@ -253,7 +255,6 @@ void UIStyle::onStateChange() {
 
 				if ( property->getPropertyDefinition()->isIndexed() ) {
 					for ( size_t i = 0; i < property->getPropertyIndexCount(); i++ ) {
-
 						applyVarValues( property->getPropertyIndexRef( i ) );
 
 						applyStyleSheetProperty( property->getPropertyIndex( i ), prevDefinition );
@@ -663,7 +664,9 @@ void UIStyle::removeAnimation( const PropertyDefinition* propertyDefinition,
 }
 
 StyleSheetProperty* UIStyle::getLocalProperty( Uint32 propId ) {
-	StyleSheetProperty* property = mDefinition->getProperty( propId );
+	StyleSheetProperty* property = nullptr;
+	if ( nullptr != mDefinition )
+		property = mDefinition->getProperty( propId );
 	if ( nullptr == property )
 		return mElementStyle->getPropertyById( propId );
 	return property;

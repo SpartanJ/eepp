@@ -109,6 +109,7 @@ class EE_API UISceneNode : public SceneNode {
 	std::unordered_set<UIWidget*> mDirtyStyle;
 	std::unordered_set<UIWidget*> mDirtyStyleState;
 	std::unordered_map<UIWidget*, bool> mDirtyStyleStateCSSAnimations;
+	std::vector<std::pair<Float, std::string>> mTimes;
 
 	virtual void resizeControl( EE::Window::Window* win );
 

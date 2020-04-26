@@ -23,6 +23,10 @@ Drawable* DrawableImageParser::createDrawable( const std::string& value, const S
 	Drawable* res = NULL;
 	ownIt = false;
 
+	if ( "none" == value ) {
+		return NULL;
+	}
+
 	if ( !functionType.isEmpty() ) {
 		if ( exists( functionType.getName() ) ) {
 			return mFuncs[functionType.getName()]( functionType, size, ownIt, node );
