@@ -6,6 +6,8 @@
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitextinput.hpp>
+#include <eepp/ui/uitheme.hpp>
+#include <eepp/ui/uithememanager.hpp>
 #include <eepp/window/engine.hpp>
 #include <pugixml/pugixml.hpp>
 
@@ -22,6 +24,26 @@ UITextInput* UITextInput::NewWithTag( const std::string& tag ) {
 UITextInput::UITextInput( const std::string& tag ) :
 	UITextView( tag ), mCursorPos( 0 ), mAllowEditing( true ), mShowingWait( true ) {
 	mHintCache = Text::New();
+
+	UITheme* theme = getUISceneNode()->getUIThemeManager()->getDefaultTheme();
+
+	if ( NULL != theme && NULL != theme->getDefaultFont() ) {
+		mHintCache->setFont( theme->getDefaultFont() );
+	}
+
+	if ( NULL != theme ) {
+		mHintCache->setFontSize( theme->getDefaultFontSize() );
+	} else {
+		mHintCache->setFontSize( getUISceneNode()->getUIThemeManager()->getDefaultFontSize() );
+	}
+
+	if ( NULL == mHintCache->getFont() ) {
+		if ( NULL != getUISceneNode()->getUIThemeManager()->getDefaultFont() ) {
+			mHintCache->setFont( getUISceneNode()->getUIThemeManager()->getDefaultFont() );
+		} else {
+			eePRINTL( "UITextInput::UITextInput : Created a without a defined font." );
+		}
+	}
 
 	subscribeScheduledUpdate();
 

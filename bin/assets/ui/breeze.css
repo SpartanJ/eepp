@@ -3,6 +3,7 @@
 	--primary: #3daee9;
 	--back: #31363b;
 	--font: #eff0f1;
+	--font-hint: #898b8d;
 	--button-back: #30353a;
 	--button-border: #6b6f73;
 	--button-radius: 2dp;
@@ -159,6 +160,8 @@ TextInputPassword {
 	border-color: var(--button-border);
 	border-radius: var(--button-radius);
 	border-width: var(--border-width);
+	hint-color: var(--font-hint);
+	hint-font-size: 11dp;
 	transition: all 0.15;
 }
 
