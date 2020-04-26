@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <array>
 #include <eepp/ui/css/stylesheet.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
 #include <eepp/ui/css/stylesheetselector.hpp>
