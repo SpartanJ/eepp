@@ -55,7 +55,7 @@ class EE_API StyleSheet {
 
 	void addMediaQueryList( MediaQueryList::ptr list );
 
-	void addStyleToNodeIndex( StyleSheetStyle* style );
+	bool addStyleToNodeIndex( StyleSheetStyle* style );
 };
 
 }}} // namespace EE::UI::CSS

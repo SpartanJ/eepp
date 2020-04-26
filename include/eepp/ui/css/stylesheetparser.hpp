@@ -36,6 +36,8 @@ class EE_API StyleSheetParser {
 
 	StyleSheet& getStyleSheet();
 
+	const bool& isLoaded() const;
+
   protected:
 	enum ReadState { ReadingSelector, ReadingProperty, ReadingComment };
 
@@ -43,6 +45,7 @@ class EE_API StyleSheetParser {
 	StyleSheet mStyleSheet;
 	std::vector<std::string> mComments;
 	MediaQueryList::ptr mMediaQueryList;
+	bool mLoaded;
 
 	bool parse( std::string& css, std::vector<std::string>& importedList );
 

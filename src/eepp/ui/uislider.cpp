@@ -6,18 +6,26 @@
 namespace EE { namespace UI {
 
 UISlider* UISlider::New() {
-	return NewWithTag( "slider" );
+	return NewWithTag( "slider", UIOrientation::Vertical );
 }
 
-UISlider* UISlider::NewWithTag( const std::string& tag ) {
+UISlider* UISlider::NewWithTag( const std::string& tag, const UIOrientation& orientation ) {
+	return eeNew( UISlider, ( tag, orientation ) );
+}
+
+UISlider* UISlider::NewVertical() {
+	return NewVerticalWithTag( "slider" );
+}
+
+UISlider* UISlider::NewHorizontal() {
+	return NewHorizontalWithTag( "slider" );
+}
+
+UISlider* UISlider::NewVerticalWithTag( const std::string& tag ) {
 	return eeNew( UISlider, ( tag, UIOrientation::Vertical ) );
 }
 
-UISlider* UISlider::NewVertical( const std::string& tag ) {
-	return eeNew( UISlider, ( tag, UIOrientation::Vertical ) );
-}
-
-UISlider* UISlider::NewHorizontal( const std::string& tag ) {
+UISlider* UISlider::NewHorizontalWithTag( const std::string& tag ) {
 	return eeNew( UISlider, ( tag, UIOrientation::Horizontal ) );
 }
 

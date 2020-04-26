@@ -19,7 +19,7 @@ using namespace EE::System;
 
 namespace EE { namespace UI { namespace CSS {
 
-StyleSheetParser::StyleSheetParser() {}
+StyleSheetParser::StyleSheetParser() : mLoaded( false ) {}
 
 bool StyleSheetParser::loadFromStream( IOStream& stream ) {
 	Clock elapsed;
@@ -28,6 +28,7 @@ bool StyleSheetParser::loadFromStream( IOStream& stream ) {
 	stream.read( &mCSS[0], stream.getSize() );
 	bool ok = parse( mCSS, importedList );
 	eePRINTL( "StyleSheet loaded in: %4.3f ms.", elapsed.getElapsedTime().asMilliseconds() );
+	mLoaded = ok;
 	return ok;
 }
 
@@ -87,6 +88,10 @@ bool StyleSheetParser::loadFromString( const std::string& str ) {
 
 StyleSheet& StyleSheetParser::getStyleSheet() {
 	return mStyleSheet;
+}
+
+const bool& StyleSheetParser::isLoaded() const {
+	return mLoaded;
 }
 
 bool StyleSheetParser::parse( std::string& css, std::vector<std::string>& importedList ) {

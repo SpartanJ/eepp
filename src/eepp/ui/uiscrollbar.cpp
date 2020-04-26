@@ -41,7 +41,8 @@ UIScrollBar::UIScrollBar( const UIOrientation& orientation ) :
 	mBtnDown->setSize( 8, 8 );
 
 	mSlider = UISlider::NewWithTag( orientation == UIOrientation::Vertical ? "scrollbar::vslider"
-																		   : "scrollbar::hslider" );
+																		   : "scrollbar::hslider",
+									orientation );
 	mSlider->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::Fixed );
 	mSlider->setOrientation( orientation );
 	mSlider->setParent( this );

@@ -83,6 +83,10 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["inputpassword"] = UITextInputPassword::New;
 		registeredWidget["viewpagerhorizontal"] = UIViewPager::NewHorizontal;
 		registeredWidget["viewpagervertical"] = UIViewPager::NewHorizontal;
+		registeredWidget["vslider"] = UISlider::NewHorizontal;
+		registeredWidget["hslider"] = UISlider::NewHorizontal;
+		registeredWidget["vscrollbar"] = UIScrollBar::NewVertical;
+		registeredWidget["hscrollbar"] = UIScrollBar::NewHorizontal;
 
 		sBaseListCreated = true;
 	}

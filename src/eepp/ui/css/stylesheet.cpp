@@ -24,7 +24,7 @@ size_t StyleSheet::NodeHash( const std::string& tag, const std::string& id ) {
 	return seed;
 }
 
-void StyleSheet::addStyleToNodeIndex( StyleSheetStyle* style ) {
+bool StyleSheet::addStyleToNodeIndex( StyleSheetStyle* style ) {
 	const std::string& id = style->getSelector().getSelectorId();
 	const std::string& tag = style->getSelector().getSelectorTagName();
 	if ( style->hasProperties() || style->hasVariables() ) {
@@ -33,15 +33,18 @@ void StyleSheet::addStyleToNodeIndex( StyleSheetStyle* style ) {
 		auto it = std::find( nodes.begin(), nodes.end(), style );
 		if ( it == nodes.end() ) {
 			nodes.push_back( style );
+			return true;
 		} else {
 			eePRINTL( "Ignored style %s", style->getSelector().getName().c_str() );
 		}
 	}
+	return false;
 }
 
 void StyleSheet::addStyle( std::shared_ptr<StyleSheetStyle> node ) {
-	mNodes.push_back( node );
-	addStyleToNodeIndex( node.get() );
+	if ( addStyleToNodeIndex( node.get() ) ) {
+		mNodes.push_back( node );
+	}
 	addMediaQueryList( node->getMediaQueryList() );
 }
 

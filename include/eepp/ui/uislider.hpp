@@ -9,11 +9,15 @@ class EE_API UISlider : public UIWidget {
   public:
 	static UISlider* New();
 
-	static UISlider* NewWithTag( const std::string& tag );
+	static UISlider* NewWithTag( const std::string& tag, const UIOrientation& orientation );
 
-	static UISlider* NewVertical( const std::string& tag );
+	static UISlider* NewVertical();
 
-	static UISlider* NewHorizontal( const std::string& tag );
+	static UISlider* NewHorizontal();
+
+	static UISlider* NewVerticalWithTag( const std::string& tag );
+
+	static UISlider* NewHorizontalWithTag( const std::string& tag );
 
 	UISlider( const std::string& tag,
 			  const UIOrientation& orientation = UIOrientation::Horizontal );

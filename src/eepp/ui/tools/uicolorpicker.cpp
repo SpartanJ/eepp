@@ -7,11 +7,79 @@
 #include <eepp/scene/actions/fade.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/scene/scenenode.hpp>
+#include <eepp/ui/css/stylesheetparser.hpp>
 #include <eepp/ui/tools/uicolorpicker.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uithememanager.hpp>
 
 namespace EE { namespace UI { namespace Tools {
+
+static CSS::StyleSheetParser sStyleSheetParser;
+static UISceneNode* sLastSceneNode = NULL;
+
+const char* COLOR_PICKER_STYLE = R"xml(
+#color_picker {
+	margin: 4dp;
+	window-min-size: 320dp 478dp;
+}
+#color_picker > .header {
+	margin-bottom: 4dp;
+}
+#color_picker > .header > .current_color {
+}
+#color_picker > .header > .picker_icon {
+	icon: color-picker-white;
+	gravity: center;
+}
+#color_picker > .pickers > .color_picker_container > .color_picker {
+	background-color: white;
+	scale-type: expand;
+}
+#color_picker > .pickers > .color_picker_container > .vertical_line {
+	background-color: black;
+	border-width: 1dp;
+	border-color: white;
+	border-type: outside;
+}
+#color_picker > .pickers > .color_picker_container > .horizontal_line {
+	background-color: black;
+	border-width: 1dp;
+	border-color: white;
+	border-type: outside;
+}
+#color_picker > .pickers > .separator,
+#color_picker > .header > .separator {
+	margin-left: 8dp;
+	margin-right: 8dp;
+}
+#color_picker > .pickers > .separator {
+	background-color: #FFFFFF88;
+}
+#color_picker > .pickers > .hue_picker_container > .hue_picker {
+	background-color: white;
+	scale-type: expand;
+}
+#color_picker > .pickers > .hue_picker_container > .hue_line {
+	background-color: black;
+	border-width: 1dp;
+	border-color: white;
+	border-type: outside;
+}
+#color_picker > .separator {
+	margin-top: 8dp;
+	margin-bottom: 4dp;
+	background-color: #FFFFFF88;
+}
+#color_picker > .slider_container,
+#color_picker > .footer {
+	margin-top: 4dp;
+}
+#color_picker > .footer > PushButton {
+	padding-left: 8dp;
+	padding-right: 8dp;
+	icon: ok;
+}
+)xml";
 
 UIColorPicker* UIColorPicker::NewModal( Node* nodeCreator,
 										const UIColorPicker::ColorPickedCb& colorPickedCb,
@@ -105,69 +173,6 @@ UIColorPicker::UIColorPicker( UIWindow* attachTo, const UIColorPicker::ColorPick
 	}
 
 	std::string layout = R"xml(
-	<style>
-	#color_picker {
-		margin: 4dp;
-		window-min-size: 320dp 478dp;
-	}
-	#color_picker > .header {
-		margin-bottom: 4dp;
-	}
-	#color_picker > .header > .current_color {
-	}
-	#color_picker > .header > .picker_icon {
-		icon: color-picker-white;
-		gravity: center;
-	}
-	#color_picker > .pickers > .color_picker_container > .color_picker {
-		background-color: white;
-		scale-type: expand;
-	}
-	#color_picker > .pickers > .color_picker_container > .vertical_line {
-		background-color: black;
-		border-width: 1dp;
-		border-color: white;
-		border-type: outside;
-	}
-	#color_picker > .pickers > .color_picker_container > .horizontal_line {
-		background-color: black;
-		border-width: 1dp;
-		border-color: white;
-		border-type: outside;
-	}
-	#color_picker > .pickers > .separator,
-	#color_picker > .header > .separator {
-		margin-left: 8dp;
-		margin-right: 8dp;
-	}
-	#color_picker > .pickers > .separator {
-		background-color: #FFFFFF88;
-	}
-	#color_picker > .pickers > .hue_picker_container > .hue_picker {
-		background-color: white;
-		scale-type: expand;
-	}
-	#color_picker > .pickers > .hue_picker_container > .hue_line {
-		background-color: black;
-		border-width: 1dp;
-		border-color: white;
-		border-type: outside;
-	}
-	#color_picker > .separator {
-		margin-top: 8dp;
-		margin-bottom: 4dp;
-		background-color: #FFFFFF88;
-	}
-	#color_picker > .slider_container,
-	#color_picker > .footer {
-		margin-top: 4dp;
-	}
-	#color_picker > .footer > PushButton {
-		padding-left: 8dp;
-		padding-right: 8dp;
-		icon: ok;
-	}
-	</style>
 	<LinearLayout id="color_picker" class="container" orientation="vertical" layout_width="match_parent" layout_height="wrap_content">
 		<LinearLayout class="header" orientation="horizontal" layout_width="match_parent" layout_height="28dp">
 			<Widget id="current_color" class="current_color" layout_width="256dp" layout_height="match_parent" />
@@ -189,22 +194,22 @@ UIColorPicker::UIColorPicker( UIWindow* attachTo, const UIColorPicker::ColorPick
 		<Widget class="separator" layout_width="match_parent" layout_height="1dp" />
 		<LinearLayout id="red_container" class="slider_container" orientation="horizontal" layout_width="match_parent" layout_height="wrap_content">
 			<TextView layout_width="16dp" layout_height="wrap_content" text="R" layout_gravity="center" />
-			<Slider layout_width="0dp" layout_weight="1" layout_height="wrap_content" orientation="horizontal" layout_gravity="center" minValue="0" maxValue="255" />
+			<HSlider layout_width="0dp" layout_weight="1" layout_height="wrap_content" layout_gravity="center" minValue="0" maxValue="255" />
 			<SpinBox layout_width="48dp" layout_height="wrap_content" minValue="0" maxValue="255" />
 		</LinearLayout>
 		<LinearLayout id="green_container" class="slider_container" orientation="horizontal" layout_width="match_parent" layout_height="wrap_content">
 			<TextView layout_width="16dp" layout_height="wrap_content" text="G" layout_gravity="center" />
-			<Slider layout_width="0dp" layout_weight="1" layout_height="wrap_content" orientation="horizontal" layout_gravity="center" minValue="0" maxValue="255" />
+			<HSlider layout_width="0dp" layout_weight="1" layout_height="wrap_content" layout_gravity="center" minValue="0" maxValue="255" />
 			<SpinBox layout_width="48dp" layout_height="wrap_content" minValue="0" maxValue="255" />
 		</LinearLayout>
 		<LinearLayout id="blue_container" class="slider_container" orientation="horizontal" layout_width="match_parent" layout_height="wrap_content">
 			<TextView layout_width="16dp" layout_height="wrap_content" text="B" layout_gravity="center" />
-			<Slider layout_width="0dp" layout_weight="1" layout_height="wrap_content" orientation="horizontal" layout_gravity="center" minValue="0" maxValue="255" />
+			<HSlider layout_width="0dp" layout_weight="1" layout_height="wrap_content" layout_gravity="center" minValue="0" maxValue="255" />
 			<SpinBox layout_width="48dp" layout_height="wrap_content" minValue="0" maxValue="255" />
 		</LinearLayout>
 		<LinearLayout id="alpha_container" class="slider_container" orientation="horizontal" layout_width="match_parent" layout_height="wrap_content">
 			<TextView layout_width="16dp" layout_height="wrap_content" text="A" layout_gravity="center" />
-			<Slider layout_width="0dp" layout_weight="1" layout_height="wrap_content" orientation="horizontal" layout_gravity="center" minValue="0" maxValue="255" />
+			<HSlider layout_width="0dp" layout_weight="1" layout_height="wrap_content" layout_gravity="center" minValue="0" maxValue="255" />
 			<SpinBox layout_width="48dp" layout_height="wrap_content" minValue="0" maxValue="255" />
 		</LinearLayout>
 		<LinearLayout id="footer" class="footer" orientation="horizontal" layout_width="match_parent" layout_height="wrap_content">
@@ -218,8 +223,19 @@ UIColorPicker::UIColorPicker( UIWindow* attachTo, const UIColorPicker::ColorPick
 
 	if ( NULL != mUIContainer->getSceneNode() && mUIContainer->getSceneNode()->isUISceneNode() ) {
 		Clock clock;
-		mRoot = mUIContainer->getSceneNode()->asType<UISceneNode>()->loadLayoutFromString(
-			layout, mUIContainer );
+		UISceneNode* uiSceneNode = mUIContainer->getSceneNode()->asType<UISceneNode>();
+
+		if ( !sStyleSheetParser.isLoaded() ) {
+			sStyleSheetParser.loadFromString( std::string( COLOR_PICKER_STYLE ) );
+		}
+
+		if ( sLastSceneNode != uiSceneNode ) {
+			uiSceneNode->combineStyleSheet( sStyleSheetParser.getStyleSheet() );
+			sLastSceneNode = uiSceneNode;
+		}
+
+		mRoot = uiSceneNode->loadLayoutFromString( layout, mUIContainer );
+
 		eePRINTL( "UIColorPicker loadLayoutFromString time: %.2f",
 				  clock.getElapsedTime().asMilliseconds() );
 	}
