@@ -14,6 +14,7 @@
 #include <eepp/ui/uieventdispatcher.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#include <eepp/ui/uitooltip.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
 #include <eepp/ui/uiwindow.hpp>
 #include <eepp/window/window.hpp>
@@ -64,6 +65,30 @@ void UISceneNode::resizeControl( EE::Window::Window* ) {
 			 eefloor( mWindow->getHeight() / PixelDensity::getPixelDensity() ) );
 	onMediaChanged();
 	sendMsg( this, NodeMessage::WindowResize );
+}
+
+void UISceneNode::resetTooltips( Node* node ) {
+	if ( node->isWidget() ) {
+		UIWidget* widget = node->asType<UIWidget>();
+
+		if ( NULL != widget->getTooltip() ) {
+			widget->getTooltip()->resetTextToStringBuffer();
+			widget->getTooltip()->setVisible( false );
+		}
+	}
+
+	Node* child = node->getFirstChild();
+
+	while ( NULL != child ) {
+		resetTooltips( child );
+		child = child->getNextNode();
+	}
+}
+
+void UISceneNode::onDrawDebugDataChange() {
+	if ( !mDrawDebugData ) {
+		resetTooltips( mRoot );
+	}
 }
 
 void UISceneNode::setTranslator( Translator translator ) {

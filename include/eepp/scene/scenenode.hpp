@@ -153,6 +153,8 @@ class EE_API SceneNode : public Node {
 
 	virtual void postDraw();
 
+	virtual void onDrawDebugDataChange();
+
 	void sendMsg( Node* Ctrl, const Uint32& Msg, const Uint32& Flags = 0 );
 
 	virtual void resizeControl( EE::Window::Window* win );

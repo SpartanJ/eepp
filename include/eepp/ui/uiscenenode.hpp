@@ -113,6 +113,8 @@ class EE_API UISceneNode : public SceneNode {
 
 	virtual void resizeControl( EE::Window::Window* win );
 
+	virtual void onDrawDebugDataChange();
+
 	void setActiveWindow( UIWindow* window );
 
 	void setFocusLastWindow( UIWindow* window );
@@ -146,6 +148,8 @@ class EE_API UISceneNode : public SceneNode {
 	KeyboardShortcuts::iterator existsShortcut( const Uint32& KeyCode, const Uint32& Mod );
 
 	void onWidgetDelete( Node* node );
+
+	void resetTooltips( Node* node );
 };
 
 }} // namespace EE::UI

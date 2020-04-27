@@ -334,7 +334,11 @@ EventDispatcher* SceneNode::getEventDispatcher() const {
 }
 
 void SceneNode::setDrawDebugData( bool debug ) {
-	mDrawDebugData = debug;
+	if ( mDrawDebugData != debug ) {
+		mDrawDebugData = debug;
+
+		onDrawDebugDataChange();
+	}
 }
 
 bool SceneNode::getDrawDebugData() const {
@@ -430,6 +434,8 @@ ActionManager* SceneNode::getActionManager() const {
 void SceneNode::preDraw() {}
 
 void SceneNode::postDraw() {}
+
+void SceneNode::onDrawDebugDataChange() {}
 
 void SceneNode::subscribeScheduledUpdate( Node* node ) {
 	mScheduledUpdate.insert( node );

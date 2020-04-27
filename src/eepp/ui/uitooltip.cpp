@@ -38,6 +38,7 @@ UITooltip::UITooltip() :
 	applyDefaultTheme();
 
 	getUISceneNode()->invalidateStyle( this );
+	getUISceneNode()->invalidateStyleState( this );
 }
 
 UITooltip::~UITooltip() {
@@ -355,6 +356,18 @@ std::string UITooltip::getPropertyString( const PropertyDefinition* propertyDef,
 		default:
 			return UIWidget::getPropertyString( propertyDef, propertyIndex );
 	}
+}
+
+const String& UITooltip::getStringBuffer() const {
+	return mStringBuffer;
+}
+
+void UITooltip::setStringBuffer( const String& stringBuffer ) {
+	mStringBuffer = stringBuffer;
+}
+
+void UITooltip::resetTextToStringBuffer() {
+	setText( mStringBuffer );
 }
 
 bool UITooltip::applyProperty( const StyleSheetProperty& attribute ) {

@@ -249,15 +249,15 @@ Tooltip {
 }
 
 Slider {
-	min-width: 11dp;
-	min-height: 11dp;
+	min-width: 16dp;
+	min-height: 16dp;
 	half-slider: true;
 }
 
 Slider::vback {
 	background-color: var(--slider-back);
 	border-radius: 4dp;
-	min-width: 5dp;
+	min-width: 8dp;
 	transition: all 0.15s;
 }
 
@@ -265,7 +265,7 @@ Slider::hback {
 	background-color: var(--slider-back);
 	border-radius: 4dp;
 	min-width: 64dp;
-	min-height: 5dp;
+	min-height: 8dp;
 	transition: all 0.15s;
 }
 
@@ -275,8 +275,8 @@ Slider::hbutton {
 	border-color: var(--slider-border);
 	border-width: 1dp;
 	border-radius: 100%;
-	min-width: 11dp;
-	min-height: 11dp;
+	min-width: 16dp;
+	min-height: 16dp;
 }
 
 Slider::vbutton:hover,
@@ -288,18 +288,18 @@ Slider::hbutton:focus {
 
 ScrollBar {
 	scrollbar-style: no-buttons;
-	min-width: 12dp;
-	min-height: 12dp;
+	min-width: 18dp;
+	min-height: 18dp;
 }
 
 ScrollBar::hback {
-	min-height: 4dp;
+	min-height: 6dp;
 	border-radius: 3dp;
 	background-color: transparent;
 }
 
 ScrollBar::vback {
-	min-width: 4dp;
+	min-width: 6dp;
 	border-radius: 3dp;
 	background-color: transparent;
 }
@@ -322,8 +322,8 @@ ScrollBar::vslider {
 }
 
 ScrollBar::hbutton {
-	min-width: 8dp;
-	min-height: 4dp;
+	min-width: 12dp;
+	min-height: 6dp;
 	background-color: var(--scrollbar-button);
 	border-radius: 3dp;
 	border-width: 0dp;
@@ -331,8 +331,8 @@ ScrollBar::hbutton {
 }
 
 ScrollBar::vbutton {
-	min-width: 4dp;
-	min-height: 8dp;
+	min-width: 6dp;
+	min-height: 12dp;
 	background-color: var(--scrollbar-button);
 	border-radius: 3dp;
 	border-width: 0dp;
@@ -352,7 +352,7 @@ ScrollBar::hbutton:hover {
 }
 
 ProgressBar {
-	min-height: 6dp;
+	min-height: 9dp;
 }
 
 ProgressBar::filler {
@@ -522,8 +522,8 @@ Menu,
 PopUpMenu {
 	background-color: var(--menu-back);
 	color: var(--menu-font);
-	min-width: 100dp;
-	min-icon-size: 16dp 16dp;
+	min-width: 150dp;
+	min-icon-size: 12dp 12dp;
 	border-width: 1dp;
 	border-color: var(--menu-border);
 }
@@ -557,7 +557,7 @@ Menu::SubMenu:hover {
 Menu::Item::text,
 Menu::CheckBox::text,
 Menu::SubMenu::text {
-	padding-right: 4dp;
+	padding-right: 8dp;
 	color: var(--menu-font);
 }
 
@@ -591,14 +591,27 @@ Menu::SubMenu::Arrow {
 	foreground-image: poly(line, var(--icon), "-7dp -5dp, -2dp 0dp"), poly(line, var(--icon), "-7dp 5dp, -2dp 0dp");
 }
 
+Menu::Item::icon,
+Menu::SubMenu::icon,
 Menu::CheckBox::icon {
-	width: 16dp;
-	height: 16dp;
-	foreground-image: none, none;
+	margin-right: 4dp;
+}
+
+Menu::CheckBox::icon {
+	max-width: 12dp;
+	max-height: 12dp;
+	border-width: 1dp;
+	border-color: var(--button-border);
+	border-radius: var(--button-radius);
+	background-image: none;
+	background-color: var(--menu-back);
 }
 
 Menu::CheckBox::icon:selected {
-	foreground-image: poly(line, var(--icon), "10dp 14dp, 12dp 16dp"), poly(line, var(--icon), "12dp 16dp, 16dp 8dp");
+	border-color: var(--primary);
+	background-image: rectangle(solid, var(--primary));
+	background-size: 70% 70%;
+	background-position: center;
 }
 
 .appbackground {

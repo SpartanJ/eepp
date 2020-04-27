@@ -90,12 +90,19 @@ class EE_API UITooltip : public UIWidget {
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
 										   const Uint32& propertyIndex = 0 );
 
+	const String& getStringBuffer() const;
+
+	void setStringBuffer( const String& stringBuffer );
+
+	void resetTextToStringBuffer();
+
   protected:
 	Text* mTextCache;
 	UIFontStyleConfig mStyleConfig;
 	Vector2f mAlignOffset;
 	Time mTooltipTime;
 	UINode* mTooltipOf;
+	String mStringBuffer;
 
 	virtual void onAlphaChange();
 

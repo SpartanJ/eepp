@@ -228,6 +228,8 @@ class EE_API UIWidget : public UINode {
 
 	void reportStyleStateChangeRecursive( bool disableAnimations = false );
 
+	void createTooltip();
+
   protected:
 	friend class UIManager;
 	friend class UISceneNode;
@@ -258,8 +260,6 @@ class EE_API UIWidget : public UINode {
 	explicit UIWidget( const std::string& tag );
 
 	void updatePseudoClasses();
-
-	void createTooltip();
 
 	virtual void onChildCountChange( Node* child, const bool& removed );
 

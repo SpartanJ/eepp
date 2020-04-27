@@ -377,25 +377,25 @@ Node* UIWidget::setSize( const Sizef& size ) {
 
 	if ( !mMinWidthEq.empty() ) {
 		Float length =
-			lengthFromValue( mMinWidthEq, CSS::PropertyRelativeTarget::ContainingBlockWidth );
+			lengthFromValueAsDp( mMinWidthEq, CSS::PropertyRelativeTarget::ContainingBlockWidth );
 		s.x = eemax( s.x, length );
 	}
 
 	if ( !mMinHeightEq.empty() ) {
 		Float length =
-			lengthFromValue( mMinHeightEq, CSS::PropertyRelativeTarget::ContainingBlockHeight );
+			lengthFromValueAsDp( mMinHeightEq, CSS::PropertyRelativeTarget::ContainingBlockHeight );
 		s.y = eemax( s.y, length );
 	}
 
 	if ( !mMaxWidthEq.empty() ) {
 		Float length =
-			lengthFromValue( mMaxWidthEq, CSS::PropertyRelativeTarget::ContainingBlockWidth );
+			lengthFromValueAsDp( mMaxWidthEq, CSS::PropertyRelativeTarget::ContainingBlockWidth );
 		s.x = eemin( s.x, length );
 	}
 
 	if ( !mMaxHeightEq.empty() ) {
 		Float length =
-			lengthFromValue( mMaxWidthEq, CSS::PropertyRelativeTarget::ContainingBlockHeight );
+			lengthFromValueAsDp( mMaxHeightEq, CSS::PropertyRelativeTarget::ContainingBlockHeight );
 		s.y = eemin( s.y, length );
 	}
 
@@ -611,13 +611,13 @@ void UIWidget::setMinSizeEq( const std::string& minWidthEq, const std::string& m
 		mMinHeightEq = minHeightEq;
 
 		if ( !mMinWidthEq.empty() ) {
-			mMinSize.x =
-				lengthFromValue( mMinWidthEq, CSS::PropertyRelativeTarget::ContainingBlockWidth );
+			mMinSize.x = lengthFromValueAsDp( mMinWidthEq,
+											  CSS::PropertyRelativeTarget::ContainingBlockWidth );
 		}
 
 		if ( !mMinHeightEq.empty() ) {
-			mMinSize.y =
-				lengthFromValue( mMinHeightEq, CSS::PropertyRelativeTarget::ContainingBlockHeight );
+			mMinSize.y = lengthFromValueAsDp( mMinHeightEq,
+											  CSS::PropertyRelativeTarget::ContainingBlockHeight );
 		}
 
 		setSize( mDpSize );
@@ -629,8 +629,8 @@ void UIWidget::setMinWidthEq( const std::string& minWidthEq ) {
 		mMinWidthEq = minWidthEq;
 
 		if ( !mMinWidthEq.empty() ) {
-			mMinSize.x =
-				lengthFromValue( mMinWidthEq, CSS::PropertyRelativeTarget::ContainingBlockWidth );
+			mMinSize.x = lengthFromValueAsDp( mMinWidthEq,
+											  CSS::PropertyRelativeTarget::ContainingBlockWidth );
 		}
 
 		setSize( mDpSize );
@@ -646,8 +646,8 @@ void UIWidget::setMinHeightEq( const std::string& minHeightEq ) {
 		mMinHeightEq = minHeightEq;
 
 		if ( !mMinHeightEq.empty() ) {
-			mMinSize.y =
-				lengthFromValue( mMinHeightEq, CSS::PropertyRelativeTarget::ContainingBlockHeight );
+			mMinSize.y = lengthFromValueAsDp( mMinHeightEq,
+											  CSS::PropertyRelativeTarget::ContainingBlockHeight );
 		}
 
 		setSize( mDpSize );
@@ -680,7 +680,7 @@ const std::string& UIWidget::getMaxHeightEq() const {
 void UIWidget::setMaxHeightEq( const std::string& maxHeightEq ) {
 	if ( mMaxHeightEq != maxHeightEq ) {
 		mMaxHeightEq = maxHeightEq;
-		setSize( mSize );
+		setSize( mDpSize );
 	}
 }
 
@@ -1481,9 +1481,15 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::MarginBottom:
 			setLayoutMarginBottom( lengthFromValueAsDp( attribute ) );
 			break;
-		case PropertyId::Tooltip:
-			setTooltipText( attribute.asString() );
+		case PropertyId::Tooltip: {
+			if ( NULL != mUISceneNode ) {
+				String text = mUISceneNode->getTranslatorString( attribute.asString() );
+				setTooltipText( text );
+				if ( NULL != mTooltip )
+					mTooltip->setStringBuffer( text );
+			}
 			break;
+		}
 		case PropertyId::LayoutWeight:
 			setLayoutWeight( attribute.asFloat() );
 			break;
