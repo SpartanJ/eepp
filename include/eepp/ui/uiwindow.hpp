@@ -160,6 +160,10 @@ class EE_API UIWindow : public UIWidget {
 
 	std::string getWindowFlagsString();
 
+	Sizef getMinWindowSizeWithDecoration();
+
+	Sizef getSizeWithoutDecoration();
+
   protected:
 	enum UI_RESIZE_TYPE {
 		RESIZE_NONE,
@@ -261,8 +265,6 @@ class EE_API UIWindow : public UIWidget {
 	virtual Sizei getFrameBufferSize();
 
 	virtual void onWindowReady();
-
-	Sizef getMinWindowSizeWithDecoration();
 
 	void onContainerPositionChange( const Event* Event );
 

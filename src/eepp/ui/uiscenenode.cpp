@@ -162,8 +162,22 @@ std::vector<UIWidget*> UISceneNode::loadNode( pugi::xml_node node, Node* parent 
 			uiwidget->loadFromXmlNode( widget );
 
 			if ( mVerbose ) {
+				std::string name( widget.name() );
+				pugi::xml_attribute idAttr( widget.attribute( "id" ) );
+				pugi::xml_attribute classAttr( widget.attribute( "class" ) );
+
+				if ( !idAttr.empty() ) {
+					name += "#" + std::string( idAttr.as_string() );
+				}
+
+				if ( !classAttr.empty() ) {
+					std::string classes( String::trim( std::string( classAttr.as_string() ) ) );
+					String::replaceAll( classes, " ", "." );
+					name += "." + classes;
+				}
+
 				mTimes.push_back( std::make_pair<Float, std::string>(
-					clock.getElapsedTime().asMilliseconds(), widget.name() ) );
+					clock.getElapsedTime().asMilliseconds(), std::string( name ) ) );
 			}
 
 			if ( widget.first_child() ) {

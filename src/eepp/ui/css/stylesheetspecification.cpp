@@ -1,3 +1,4 @@
+#include <eepp/ui/css/propertyspecification.hpp>
 #include <eepp/ui/css/stylesheetspecification.hpp>
 #include <eepp/ui/uiwidget.hpp>
 
@@ -5,33 +6,36 @@ namespace EE { namespace UI { namespace CSS {
 
 SINGLETON_DECLARE_IMPLEMENTATION( StyleSheetSpecification )
 
-StyleSheetSpecification::StyleSheetSpecification() {
+StyleSheetSpecification::StyleSheetSpecification() :
+	mPropertySpecification( PropertySpecification::createSingleton() ) {
 	registerDefaultShorthandParsers();
 	registerDefaultProperties();
 	registerDefaultNodeSelectors();
 }
 
-StyleSheetSpecification::~StyleSheetSpecification() {}
+StyleSheetSpecification::~StyleSheetSpecification() {
+	PropertySpecification::destroySingleton();
+}
 
 PropertyDefinition& StyleSheetSpecification::registerProperty( const std::string& propertyVame,
 															   const std::string& defaultValue,
 															   bool inherited ) {
-	return mPropertySpecification.registerProperty( propertyVame, defaultValue, inherited );
+	return mPropertySpecification->registerProperty( propertyVame, defaultValue, inherited );
 }
 
 const PropertyDefinition* StyleSheetSpecification::getProperty( const Uint32& id ) const {
-	return mPropertySpecification.getProperty( id );
+	return mPropertySpecification->getProperty( id );
 }
 
 const PropertyDefinition* StyleSheetSpecification::getProperty( const std::string& name ) const {
-	return mPropertySpecification.getProperty( name );
+	return mPropertySpecification->getProperty( name );
 }
 
 ShorthandDefinition&
 StyleSheetSpecification::registerShorthand( const std::string& name,
 											const std::vector<std::string>& properties,
 											const std::string& shorthandFuncName ) {
-	return mPropertySpecification.registerShorthand( name, properties, shorthandFuncName );
+	return mPropertySpecification->registerShorthand( name, properties, shorthandFuncName );
 }
 
 void StyleSheetSpecification::registerShorthandParser( const std::string& name,
@@ -57,19 +61,19 @@ DrawableImageParser& StyleSheetSpecification::getDrawableImageParser() {
 }
 
 const ShorthandDefinition* StyleSheetSpecification::getShorthand( const Uint32& id ) const {
-	return mPropertySpecification.getShorthand( id );
+	return mPropertySpecification->getShorthand( id );
 }
 
 const ShorthandDefinition* StyleSheetSpecification::getShorthand( const std::string& name ) const {
-	return mPropertySpecification.getShorthand( name );
+	return mPropertySpecification->getShorthand( name );
 }
 
 bool StyleSheetSpecification::isShorthand( const Uint32& id ) const {
-	return mPropertySpecification.isShorthand( id );
+	return mPropertySpecification->isShorthand( id );
 }
 
 bool StyleSheetSpecification::isShorthand( const std::string& name ) const {
-	return mPropertySpecification.isShorthand( name );
+	return mPropertySpecification->isShorthand( name );
 }
 
 void StyleSheetSpecification::registerDefaultProperties() {
@@ -304,8 +308,7 @@ void StyleSheetSpecification::registerDefaultProperties() {
 
 	registerProperty( "transition", "" ).setIndexed();
 	registerProperty( "transition-duration", "" );
-	registerProperty( "transition-delay", "0s" )
-		.setType( PropertyType::Time );
+	registerProperty( "transition-delay", "0s" ).setType( PropertyType::Time );
 	registerProperty( "transition-timing-function", "linear" );
 	registerProperty( "transition-property", "" );
 

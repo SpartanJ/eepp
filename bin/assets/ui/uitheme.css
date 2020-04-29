@@ -36,7 +36,7 @@ Menu,
 PopUpMenu {
 	color: #E6E6E6FF;
 	min-width: 100dp;
-	min-icon-size: 16dp 16dp;
+	min-icon-size: 24dp 24dp;
 }
 
 Menu::Item,

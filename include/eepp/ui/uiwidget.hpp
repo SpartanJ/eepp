@@ -116,6 +116,8 @@ class EE_API UIWidget : public UINode {
 
 	const Rectf& getPadding() const;
 
+	const Rectf& getPixelsPadding() const;
+
 	UIWidget* setPadding( const Rectf& padding );
 
 	UIWidget* setPaddingLeft( const Float& paddingLeft );

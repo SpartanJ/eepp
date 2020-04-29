@@ -85,7 +85,13 @@ class EE_API UITextEdit : public UIWidget {
 
 	void fixScrollToCursor();
 
-	void shrinkText( const Uint32& Width );
+	void shrinkText( const Float& width );
+
+	void textInputTryResize();
+
+	Sizef getAvailableSize();
+
+	Sizef getInputSize();
 };
 
 }} // namespace EE::UI

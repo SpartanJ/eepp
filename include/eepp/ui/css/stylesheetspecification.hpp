@@ -5,7 +5,6 @@
 #include <eepp/system/functionstring.hpp>
 #include <eepp/system/singleton.hpp>
 #include <eepp/ui/css/drawableimageparser.hpp>
-#include <eepp/ui/css/propertyspecification.hpp>
 #include <eepp/ui/css/shorthanddefinition.hpp>
 #include <functional>
 
@@ -14,6 +13,8 @@ class UIWidget;
 }} // namespace EE::UI
 
 namespace EE { namespace UI { namespace CSS {
+
+class PropertySpecification;
 
 typedef std::function<bool( const UIWidget* node, int a, int b, FunctionString data )>
 	StyleSheetNodeSelector;
@@ -66,7 +67,7 @@ class EE_API StyleSheetSpecification {
 	DrawableImageParser& getDrawableImageParser();
 
   protected:
-	PropertySpecification mPropertySpecification;
+	PropertySpecification* mPropertySpecification;
 	DrawableImageParser mDrawableImageParser;
 	std::map<std::string, ShorthandParserFunc> mShorthandParsers;
 	std::map<std::string, StyleSheetNodeSelector> mNodeSelectors;

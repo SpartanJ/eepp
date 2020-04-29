@@ -8,14 +8,15 @@
 namespace EE { namespace System {
 
 /** @brief A simple resource manager. It keeps a list of the resources, and free the instances of
-*the resources when the manager is closed.
-**	Resources must have Id() and Name() properties. Id() is the string hash of Name(). */
+ * the resources when the manager is closed. Resources must have getId() and getName() properties.
+ * getId() is the string hash of getName().
+ */
 template <class T> class ResourceManager {
   public:
 	/** @param UniqueId Indicates if the resources id must be unique */
 	ResourceManager( bool UniqueId = true );
 
-	/** @brief The destructor will call Destroy() and destroy all the resources added to the manager
+	/** @brief The destructor will call destroy() and destroy all the resources added to the manager
 	 */
 	virtual ~ResourceManager();
 
@@ -30,11 +31,11 @@ template <class T> class ResourceManager {
 	bool remove( T* Resource, bool Delete = true );
 
 	/** @brief Removes the resource by its id
-	**	@see Remove */
+	**	@see remove */
 	bool removeById( const Uint32& Id, bool Delete = true );
 
 	/** @brief Removes the resource by its name
-	**	@see Remove */
+	**	@see remove */
 	bool removeByName( const std::string& Name, bool Delete = true );
 
 	/** @returns A resource by its name. If not found returns NULL. */

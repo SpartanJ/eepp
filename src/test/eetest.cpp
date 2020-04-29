@@ -1001,7 +1001,7 @@ void EETest::createMapEditor() {
 	UIWindow::StyleConfig windowStyleConfig = tWin->getStyleConfig();
 	windowStyleConfig.WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON |
 								 UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER;
-	windowStyleConfig.MinWindowSize = Sizef( 1024, 768 );
+	windowStyleConfig.MinWindowSize = tWin->getSizeWithoutDecoration();
 	tWin->setStyleConfig( windowStyleConfig );
 
 	Clock mapEditorTime;
@@ -1021,7 +1021,7 @@ void EETest::createETGEditor() {
 	UIWindow::StyleConfig windowStyleConfig = tWin->getStyleConfig();
 	windowStyleConfig.WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON |
 								 UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER;
-	windowStyleConfig.MinWindowSize = Sizef( 1024, 768 );
+	windowStyleConfig.MinWindowSize = tWin->getSizeWithoutDecoration();
 	tWin->setStyleConfig( windowStyleConfig );
 
 	mETGEditor = Tools::TextureAtlasEditor::New( tWin, [&] { mETGEditor = NULL; } );

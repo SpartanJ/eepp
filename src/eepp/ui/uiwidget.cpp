@@ -688,6 +688,10 @@ const Rectf& UIWidget::getPadding() const {
 	return mPadding;
 }
 
+const Rectf& UIWidget::getPixelsPadding() const {
+	return mRealPadding;
+}
+
 UIWidget* UIWidget::setPadding( const Rectf& padding ) {
 	if ( padding != mPadding ) {
 		mPadding = padding;

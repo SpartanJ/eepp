@@ -1194,7 +1194,7 @@ void UIWindow::maximize() {
 		mNonMaxSize = mSize;
 
 		setPosition( 0, 0 );
-		internalSize( Ctrl->getPixelsSize() );
+		setSizeWithDecoration( Ctrl->getSize() );
 	}
 }
 
@@ -1418,6 +1418,15 @@ Sizef UIWindow::getMinWindowSizeWithDecoration() {
 	if ( NULL != mWindowDecoration ) {
 		size.x += mBorderLeft->getSize().getWidth() + mBorderRight->getSize().getWidth();
 		size.y += mWindowDecoration->getSize().getHeight() + mBorderBottom->getSize().getHeight();
+	}
+	return size;
+}
+
+Sizef UIWindow::getSizeWithoutDecoration() {
+	Sizef size( getSize() );
+	if ( NULL != mWindowDecoration ) {
+		size.x -= mBorderLeft->getSize().getWidth() + mBorderRight->getSize().getWidth();
+		size.y -= mWindowDecoration->getSize().getHeight() + mBorderBottom->getSize().getHeight();
 	}
 	return size;
 }

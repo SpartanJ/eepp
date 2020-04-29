@@ -31,30 +31,26 @@ UITextEdit::UITextEdit() :
 	mTextInput->getInputTextBuffer()->isNewLineEnabled( true );
 	mTextInput->setVisible( true );
 	mTextInput->setEnabled( true );
-	mTextInput->setMinHeight( getSize().getHeight() );
 	mTextInput->setSize( getSize() );
 
-	auto cb = [&]( const Event* event ) {
-		mNodeFlags |= NODE_FLAG_FREE_USE;
-		onInputSizeChange( event );
-		mNodeFlags &= ~NODE_FLAG_FREE_USE;
-	};
+	auto cb = [&]( const Event* event ) { onInputSizeChange( event ); };
 
 	mTextInput->addEventListener( Event::OnSizeChange, cb );
 	mTextInput->addEventListener( Event::OnTextChanged, cb );
 	mTextInput->addEventListener( Event::OnPressEnter, cb );
 	mTextInput->addEventListener( Event::OnCursorPosChange,
 								  cb::Make1( this, &UITextEdit::onCursorPosChange ) );
+	mTextInput->addEventListener( Event::OnFocus, [&]( const Event* event ) { onFocus(); } );
+	mTextInput->addEventListener( Event::OnFocusLoss,
+								  [&]( const Event* event ) { onFocusLoss(); } );
 
-	mVScrollBar = UIScrollBar::New();
-	mVScrollBar->setOrientation( UIOrientation::Vertical );
+	mVScrollBar = UIScrollBar::NewVertical();
 	mVScrollBar->setParent( this );
 	mVScrollBar->setSize( 0, getSize().getHeight() );
 	mVScrollBar->setPosition( getSize().getWidth() - mVScrollBar->getSize().getWidth(), 0 );
 	mVScrollBar->setValue( 1 );
 
-	mHScrollBar = UIScrollBar::New();
-	mHScrollBar->setOrientation( UIOrientation::Horizontal );
+	mHScrollBar = UIScrollBar::NewHorizontal();
 	mHScrollBar->setParent( this );
 	mHScrollBar->setSize( getSize().getWidth() - mVScrollBar->getSize().getWidth(), 0 );
 	mHScrollBar->setPosition( 0, getSize().getHeight() - mHScrollBar->getSize().getHeight() );
@@ -99,9 +95,7 @@ void UITextEdit::onSizeChange() {
 	mHScrollBar->setSize( getSize().getWidth(), mHScrollBar->getSize().getHeight() );
 	mVScrollBar->setSize( mVScrollBar->getSize().getWidth(), getSize().getHeight() );
 
-	mTextInput->setPixelsPosition( mContainerPadding.Left, mContainerPadding.Top );
-	mTextInput->setMinHeight( getSize().getHeight() );
-	mTextInput->setSize( getSize() );
+	mTextInput->setPosition( mContainerPadding.Left, mContainerPadding.Top );
 
 	onInputSizeChange( NULL );
 
@@ -199,9 +193,9 @@ void UITextEdit::scrollbarsSet() {
 
 	if ( ScrollBarMode::Auto == mHScrollBarMode && mVScrollBar->isVisible() &&
 		 !mHScrollBar->isVisible() ) {
-		if ( mTextInput->getTextWidth() > mSize.getWidth() - mContainerPadding.Left -
-											  mContainerPadding.Right -
-											  mVScrollBar->getPixelsSize().getWidth() ) {
+		if ( mTextInput->getPixelsSize().getWidth() >
+			 mSize.getWidth() - mContainerPadding.Left - mContainerPadding.Right -
+				 mVScrollBar->getPixelsSize().getWidth() ) {
 			mHScrollBar->setVisible( true );
 			mHScrollBar->setEnabled( true );
 		}
@@ -210,12 +204,9 @@ void UITextEdit::scrollbarsSet() {
 	mSkipValueChange = true;
 
 	if ( mVScrollBar->isVisible() ) {
-		int extraH = 0;
-
-		if ( mHScrollBar->isVisible() )
-			extraH = mHScrollBar->getPixelsSize().getHeight();
-
-		Int32 totH = mSize.getHeight() - mContainerPadding.Top - mContainerPadding.Bottom - extraH;
+		Float extraH = mHScrollBar->isVisible() ? mHScrollBar->getPixelsSize().getHeight() : 0;
+		Float totH = eefloor( mSize.getHeight() - mContainerPadding.Top - mContainerPadding.Bottom -
+							  extraH );
 
 		if ( mTextInput->getTextHeight() > totH ) {
 			mVScrollBar->setPageStep( (Float)totH / (Float)mTextInput->getTextHeight() );
@@ -223,11 +214,13 @@ void UITextEdit::scrollbarsSet() {
 	}
 
 	if ( mHScrollBar->isVisible() ) {
-		Int32 totW = mSize.getWidth() - mContainerPadding.Left - mContainerPadding.Right -
-					 mVScrollBar->getPixelsSize().getWidth();
+		Float extraW = mVScrollBar->isVisible() ? mVScrollBar->getPixelsSize().getWidth() : 0;
+		Float totW =
+			eefloor( mSize.getWidth() - mContainerPadding.Left - mContainerPadding.Right - extraW );
 
-		if ( mTextInput->getTextWidth() > totW && 0 != mTextInput->getTextWidth() ) {
-			mHScrollBar->setPageStep( (Float)totW / (Float)mTextInput->getTextWidth() );
+		if ( mTextInput->getPixelsSize().getWidth() > totW &&
+			 0 != mTextInput->getPixelsSize().getWidth() ) {
+			mHScrollBar->setPageStep( (Float)totW / mTextInput->getPixelsSize().getWidth() );
 		}
 	}
 
@@ -282,8 +275,10 @@ void UITextEdit::onInputSizeChange( const Event* Event ) {
 	if ( mNodeFlags & NODE_FLAG_FREE_USE )
 		return;
 
-	int Width = mSize.getWidth() - mContainerPadding.Left - mContainerPadding.Right;
-	int Height = mSize.getHeight() - mContainerPadding.Top - mContainerPadding.Bottom;
+	mNodeFlags |= NODE_FLAG_FREE_USE;
+
+	Sizef aSize( getAvailableSize() );
+	Sizef iSize( getInputSize() );
 
 	if ( NULL != Event ) {
 		if ( Event->getType() == Event::OnPressEnter ) {
@@ -292,57 +287,80 @@ void UITextEdit::onInputSizeChange( const Event* Event ) {
 	}
 
 	if ( mHScrollBar->isVisible() )
-		Height -= mHScrollBar->getPixelsSize().getHeight();
+		aSize.y -= mHScrollBar->getPixelsSize().getHeight();
 
 	String text( mTextInput->getInputTextBuffer()->getBuffer() );
 
-	shrinkText( Width );
+	shrinkText( aSize.getWidth() );
 
-	if ( mTextInput->getTextHeight() > Height ) {
-		Width -= mVScrollBar->getPixelsSize().getWidth();
+	if ( iSize.getHeight() > aSize.getHeight() ) {
+		aSize.x -= mVScrollBar->getPixelsSize().getWidth();
 
 		mTextInput->getInputTextBuffer()->setBuffer( text );
 
-		shrinkText( Width );
-
-		scrollbarsSet();
+		shrinkText( aSize.getWidth() );
 	}
 
-	if ( ( mFlags & UI_WORD_WRAP ) && mTextInput->getTextHeight() < Height ) {
+	textInputTryResize();
+
+	fixScroll();
+	fixScrollToCursor();
+
+	mNodeFlags &= ~NODE_FLAG_FREE_USE;
+}
+
+void UITextEdit::textInputTryResize() {
+	Sizef aSize( getAvailableSize() );
+	Sizef iSize( getInputSize() );
+
+	if ( ( mFlags & UI_WORD_WRAP ) && iSize.getHeight() < aSize.getHeight() ) {
 		mVScrollBar->setVisible( false );
 		mVScrollBar->setEnabled( false );
 	}
 
-	if ( mTextInput->getPixelsSize().getWidth() < Width ||
-		 mTextInput->getPixelsSize().getHeight() < Height ) {
-		if ( mTextInput->getPixelsSize().getWidth() < Width &&
-			 mTextInput->getPixelsSize().getHeight() < Height ) {
-			mTextInput->setPixelsSize( Width, Height );
+	if ( mTextInput->getPixelsSize().getWidth() < aSize.getWidth() ||
+		 mTextInput->getPixelsSize().getHeight() < aSize.getHeight() ) {
+		if ( mTextInput->getPixelsSize().getWidth() < aSize.getWidth() &&
+			 mTextInput->getPixelsSize().getHeight() < aSize.getHeight() ) {
+			mTextInput->setPixelsSize( aSize );
 		} else {
-			if ( mTextInput->getPixelsSize().getWidth() < Width ) {
-				mTextInput->setPixelsSize( Width, mTextInput->getPixelsSize().getHeight() );
+			if ( mTextInput->getPixelsSize().getWidth() < aSize.getWidth() ) {
+				mTextInput->setPixelsSize( aSize.getWidth(),
+										   mTextInput->getPixelsSize().getHeight() );
 			} else {
-				mTextInput->setPixelsSize( mTextInput->getPixelsSize().getWidth(), Height );
+				mTextInput->setPixelsSize( mTextInput->getPixelsSize().getWidth(),
+										   aSize.getHeight() );
 			}
 		}
 	}
 
-	if ( mTextInput->getTextWidth() > Width || mTextInput->getTextHeight() > Height ) {
-		if ( mTextInput->getTextWidth() > Width && mTextInput->getTextHeight() > Height ) {
-			mTextInput->setPixelsSize( mTextInput->getTextWidth(), mTextInput->getTextHeight() );
+	if ( iSize.getWidth() > aSize.getWidth() || iSize.getHeight() > aSize.getHeight() ) {
+		if ( iSize.getWidth() > aSize.getWidth() && iSize.getHeight() > aSize.getHeight() ) {
+			mTextInput->setPixelsSize( iSize );
 		} else {
-			if ( mTextInput->getTextWidth() > Width ) {
-				mTextInput->setPixelsSize( mTextInput->getTextWidth(), Height );
+			if ( iSize.getWidth() > aSize.getWidth() ) {
+				mTextInput->setPixelsSize( iSize.getWidth(), aSize.getHeight() );
 			} else {
-				mTextInput->setPixelsSize( Width, mTextInput->getTextHeight() );
+				mTextInput->setPixelsSize( aSize.getWidth(), iSize.getHeight() );
 			}
 		}
 	} else {
-		mTextInput->setPixelsSize( Width, Height );
+		mTextInput->setPixelsSize( aSize );
 	}
+}
 
-	fixScroll();
-	fixScrollToCursor();
+Sizef UITextEdit::getAvailableSize() {
+	Float width = mSize.getWidth() - mContainerPadding.Left - mContainerPadding.Right;
+	Float height = mSize.getHeight() - mContainerPadding.Top - mContainerPadding.Bottom;
+	return Sizef( width, height );
+}
+
+Sizef UITextEdit::getInputSize() {
+	Float width = mTextInput->getTextWidth() + mTextInput->getPixelsPadding().Left +
+				  mTextInput->getPixelsPadding().Right;
+	Float height = mTextInput->getTextHeight() + mTextInput->getPixelsPadding().Top +
+				   mTextInput->getPixelsPadding().Bottom;
+	return Sizef( width, height );
 }
 
 void UITextEdit::onCursorPosChange( const Event* ) {
@@ -350,19 +368,18 @@ void UITextEdit::onCursorPosChange( const Event* ) {
 }
 
 void UITextEdit::fixScroll() {
-	int Width = mSize.getWidth() - mContainerPadding.Left - mContainerPadding.Right;
-	int Height = mSize.getHeight() - mContainerPadding.Top - mContainerPadding.Bottom;
+	Sizef aSize( getAvailableSize() );
 
 	if ( mVScrollBar->isVisible() )
-		Width -= mVScrollBar->getPixelsSize().getWidth();
+		aSize.x -= mVScrollBar->getPixelsSize().getWidth();
 
 	if ( mHScrollBar->isVisible() )
-		Height -= mHScrollBar->getPixelsSize().getHeight();
+		aSize.y -= mHScrollBar->getPixelsSize().getHeight();
 
-	int diff;
+	Float diff;
 	Float pos;
 
-	diff = mTextInput->getPixelsSize().getHeight() - Height;
+	diff = mTextInput->getPixelsSize().getHeight() - aSize.getHeight();
 	if ( diff >= 0 ) {
 		pos = diff * mVScrollBar->getValue();
 
@@ -370,27 +387,24 @@ void UITextEdit::fixScroll() {
 									   mContainerPadding.Top - pos );
 	}
 
-	diff = mTextInput->getPixelsSize().getWidth() - Width;
+	diff = mTextInput->getPixelsSize().getWidth() - aSize.getWidth();
 	if ( diff >= 0 ) {
 		pos = diff * mHScrollBar->getValue();
 
 		mTextInput->setPixelsPosition( mContainerPadding.Left - pos,
 									   mTextInput->getPixelsPosition().y );
 	}
-
-	invalidateDraw();
 }
 
 void UITextEdit::fixScrollToCursor() {
 	if ( Font::getHorizontalAlign( mTextInput->getFlags() ) == UI_HALIGN_LEFT ) {
-		int Width = mSize.getWidth() - mContainerPadding.Left - mContainerPadding.Right;
-		int Height = mSize.getHeight() - mContainerPadding.Top - mContainerPadding.Bottom;
+		Sizef aSize( getAvailableSize() );
 
 		if ( mVScrollBar->isVisible() )
-			Width -= mVScrollBar->getPixelsSize().getWidth();
+			aSize.x -= mVScrollBar->getPixelsSize().getWidth();
 
 		if ( mHScrollBar->isVisible() )
-			Height -= mHScrollBar->getPixelsSize().getHeight();
+			aSize.y -= mHScrollBar->getPixelsSize().getHeight();
 
 		Uint32 NLPos = 0;
 		Uint32 LineNum = mTextInput->getInputTextBuffer()->getCurPosLinePos( NLPos );
@@ -405,18 +419,36 @@ void UITextEdit::fixScrollToCursor() {
 		Float lineHeight =
 			(Float)textCache.getFont()->getLineSpacing( textCache.getCharacterSizePx() );
 		Float currentLineY = LineNum * lineHeight;
-		Float visibleLines = eefloor( Height / lineHeight );
+		Float visibleLines = eefloor( aSize.getHeight() / lineHeight );
 		Float scrollLines = (Float)mTextInput->getNumLines() - visibleLines;
 
 		if ( mTextInput->getNumLines() > 0 ) {
 			if ( mTextInput->getPixelsPosition().y + currentLineY < 0 ) {
 				mVScrollBar->setValue( LineNum / scrollLines );
-			} else if ( mTextInput->getPixelsPosition().y + currentLineY + lineHeight > Height ) {
+			} else if ( mTextInput->getPixelsPosition().y + currentLineY + lineHeight >
+						aSize.getHeight() ) {
 				mVScrollBar->setValue( ( LineNum + 1 - visibleLines ) / scrollLines );
 			}
 		}
 
-		mHScrollBar->setValue( textCache.getTextWidth() / mTextInput->getPixelsSize().getWidth() );
+		Vector2f cursorPos( mTextInput->getPixelsPadding().Left + textCache.getTextWidth(),
+							mTextInput->getPixelsPadding().Top + currentLineY );
+
+		Float tW = mTextInput->getPixelsPosition().x + cursorPos.x;
+		Float contDiff = mTextInput->getPixelsSize().getWidth() - aSize.getWidth();
+
+		if ( contDiff != 0 ) {
+			if ( tW <= 0.f ) {
+				if ( mTextInput->getInputTextBuffer()->getCursorPosition() - NLPos == 0 ) {
+					mHScrollBar->setValue( 0 );
+				} else {
+					mHScrollBar->setValue( ( cursorPos.x - mTextInput->getPixelsPadding().Left ) /
+										   contDiff );
+				}
+			} else if ( tW >= aSize.getWidth() ) {
+				mHScrollBar->setValue( ( cursorPos.x - aSize.getWidth() ) / contDiff );
+			}
+		}
 
 		fixScroll();
 
@@ -426,9 +458,11 @@ void UITextEdit::fixScrollToCursor() {
 	invalidateDraw();
 }
 
-void UITextEdit::shrinkText( const Uint32& Width ) {
-	if ( getFlags() & UI_WORD_WRAP ) {
-		mTextInput->shrinkText( Width );
+void UITextEdit::shrinkText( const Float& width ) {
+	if ( ( getFlags() & UI_WORD_WRAP ) && width > 0 ) {
+		mTextInput->shrinkText( width );
+		textInputTryResize();
+		scrollbarsSet();
 	}
 }
 
@@ -545,13 +579,34 @@ bool UITextEdit::applyProperty( const StyleSheetProperty& attribute ) {
 				setHorizontalScrollMode( ScrollBarMode::AlwaysOff );
 			break;
 		}
+		case PropertyId::MaxLength:
+		case PropertyId::FreeEditing:
+		case PropertyId::Numeric:
+		case PropertyId::AllowFloat:
+		case PropertyId::Hint:
+		case PropertyId::HintColor:
+		case PropertyId::HintShadowColor:
+		case PropertyId::HintFontSize:
+		case PropertyId::HintFontFamily:
+		case PropertyId::HintFontStyle:
+		case PropertyId::HintStrokeWidth:
+		case PropertyId::HintStrokeColor:
+		case PropertyId::Color:
+		case PropertyId::ShadowColor:
+		case PropertyId::SelectionColor:
+		case PropertyId::SelectionBackColor:
+		case PropertyId::FontFamily:
+		case PropertyId::FontSize:
+		case PropertyId::FontStyle:
+		case PropertyId::TextStrokeWidth:
+		case PropertyId::TextStrokeColor:
+		case PropertyId::Wordwrap:
+		case PropertyId::TextSelection:
+		case PropertyId::TextAlign:
+			return mTextInput->applyProperty( attribute );
 		default:
 			attributeSet = UIWidget::applyProperty( attribute );
 	}
-
-	if ( !attributeSet && ( String::startsWith( attribute.getName(), "text" ) ||
-							String::startsWith( attribute.getName(), "font" ) ) )
-		mTextInput->applyProperty( attribute );
 
 	return attributeSet;
 }

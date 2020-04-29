@@ -3,39 +3,42 @@
 
 namespace EE { namespace UI { namespace CSS {
 
-PropertySpecification::~PropertySpecification() {
-	for ( std::size_t i = 0; i < mProperties.size(); i++ ) {
-		eeSAFE_DELETE( mProperties[i] );
-	}
+SINGLETON_DECLARE_IMPLEMENTATION( PropertySpecification )
 
-	for ( std::size_t i = 0; i < mShorthands.size(); i++ ) {
-		eeSAFE_DELETE( mShorthands[i] );
-	}
-}
+PropertySpecification::~PropertySpecification() {}
 
 PropertyDefinition& PropertySpecification::registerProperty( const std::string& propertyVame,
 															 const std::string& defaultValue,
 															 bool inherited ) {
 	PropertyDefinition* property = const_cast<PropertyDefinition*>( getProperty( propertyVame ) );
 
-	if ( NULL != property ) {
+	if ( nullptr != property ) {
 		eePRINTL( "Property %s already registered.", propertyVame.c_str() );
 		return *property;
 	}
 
-	mProperties.emplace_back( PropertyDefinition::New( propertyVame, defaultValue, inherited ) );
+	PropertyDefinition* propDef = new PropertyDefinition( propertyVame, defaultValue, inherited );
 
-	return *mProperties.back();
-}
+	mProperties[propDef->getId()] = std::shared_ptr<PropertyDefinition>( propDef );
 
-const PropertyDefinition* PropertySpecification::getProperty( const Uint32& id ) const {
-	for ( auto& property : mProperties ) {
-		if ( property->isDefinition( id ) ) {
-			return property;
+	for ( auto& sep : {"-", "_"} ) {
+		if ( propDef->getName().find( sep ) != std::string::npos ) {
+			std::string alias( propDef->getName() );
+			String::replaceAll( alias, sep, "" );
+			propDef->addAlias( alias );
 		}
 	}
 
-	return NULL;
+	return *propDef;
+}
+
+const PropertyDefinition* PropertySpecification::getProperty( const Uint32& id ) const {
+	auto it = mProperties.find( id );
+
+	if ( it != mProperties.end() )
+		return it->second.get();
+
+	return nullptr;
 }
 
 const PropertyDefinition* PropertySpecification::getProperty( const std::string& name ) const {
@@ -48,24 +51,26 @@ PropertySpecification::registerShorthand( const std::string& name,
 										  const std::string& shorthandParserName ) {
 	ShorthandDefinition* shorthand = const_cast<ShorthandDefinition*>( getShorthand( name ) );
 
-	if ( NULL != shorthand ) {
+	if ( nullptr != shorthand ) {
 		eePRINTL( "Shorthand %s already registered.", name.c_str() );
 		return *shorthand;
 	}
 
-	mShorthands.emplace_back( ShorthandDefinition::New( name, properties, shorthandParserName ) );
+	ShorthandDefinition* shorthandDef =
+		new ShorthandDefinition( name, properties, shorthandParserName );
 
-	return *mShorthands.back();
+	mShorthands[shorthandDef->getId()] = std::shared_ptr<ShorthandDefinition>( shorthandDef );
+
+	return *shorthandDef;
 }
 
 const ShorthandDefinition* PropertySpecification::getShorthand( const Uint32& id ) const {
-	for ( auto& shorthand : mShorthands ) {
-		if ( shorthand->isDefinition( id ) ) {
-			return shorthand;
-		}
-	}
+	auto it = mShorthands.find( id );
 
-	return NULL;
+	if ( it != mShorthands.end() )
+		return it->second.get();
+
+	return nullptr;
 }
 
 const ShorthandDefinition* PropertySpecification::getShorthand( const std::string& name ) const {
@@ -73,11 +78,22 @@ const ShorthandDefinition* PropertySpecification::getShorthand( const std::strin
 }
 
 bool PropertySpecification::isShorthand( const std::string& name ) const {
-	return getShorthand( name ) != NULL;
+	return getShorthand( name ) != nullptr;
 }
 
 bool PropertySpecification::isShorthand( const Uint32& id ) const {
-	return getShorthand( id ) != NULL;
+	return getShorthand( id ) != nullptr;
+}
+
+const PropertyDefinition*
+PropertySpecification::addPropertyAlias( Uint32 aliasId, const PropertyDefinition* propDef ) {
+	if ( getProperty( aliasId ) == nullptr ) {
+		auto it = mProperties.find( propDef->getId() );
+		if ( it != mProperties.end() ) {
+			mProperties[aliasId] = it->second;
+		}
+	}
+	return propDef;
 }
 
 }}} // namespace EE::UI::CSS

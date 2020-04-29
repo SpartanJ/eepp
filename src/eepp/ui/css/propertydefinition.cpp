@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <eepp/core.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/css/propertyspecification.hpp>
 
 namespace EE { namespace UI { namespace CSS {
 
@@ -18,16 +19,7 @@ PropertyDefinition::PropertyDefinition( const std::string& name, const std::stri
 	mInherited( inherited ),
 	mIndexed( false ),
 	mRelativeTarget( PropertyRelativeTarget::None ),
-	mPropertyType( PropertyType::Undefined ) {
-
-	for ( auto& sep : {"-", "_"} ) {
-		if ( mName.find( sep ) != std::string::npos ) {
-			std::string alias( name );
-			String::replaceAll( alias, sep, "" );
-			addAlias( alias );
-		}
-	}
-}
+	mPropertyType( PropertyType::Undefined ) {}
 
 const std::string& PropertyDefinition::getName() const {
 	return mName;
@@ -69,8 +61,10 @@ const PropertyType& PropertyDefinition::getType() const {
 }
 
 PropertyDefinition& PropertyDefinition::addAlias( const std::string& alias ) {
+	Uint32 aliasId = String::hash( alias );
 	mAliases.push_back( alias );
-	mAliasesHash.push_back( String::hash( alias ) );
+	mAliasesHash.push_back( aliasId );
+	PropertySpecification::instance()->addPropertyAlias( aliasId, this );
 	return *this;
 }
 
@@ -79,8 +73,9 @@ bool PropertyDefinition::isAlias( const std::string& alias ) const {
 }
 
 bool PropertyDefinition::isAlias( const Uint32& id ) const {
-	for ( auto& tid : mAliasesHash ) {
-		if ( tid == id )
+	size_t size = mAliasesHash.size();
+	for ( size_t i = 0; i < size; i++ ) {
+		if ( mAliasesHash[i] == id )
 			return true;
 	}
 	return false;

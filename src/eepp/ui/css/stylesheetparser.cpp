@@ -104,12 +104,14 @@ bool StyleSheetParser::parse( std::string& css, std::vector<std::string>& import
 			case ReadingSelector: {
 				pos = readSelector( css, rs, pos, buffer );
 
-				if ( String::startsWith( buffer, "@media" ) ) {
-					mediaParse( css, rs, pos, buffer, importedList );
-				} else if ( String::startsWith( buffer, "@import" ) ) {
-					importParse( css, pos, buffer, importedList );
-				} else if ( String::startsWith( buffer, "@keyframes" ) ) {
-					keyframesParse( css, rs, pos, buffer, importedList );
+				if ( buffer[0] == '@' ) {
+					if ( String::startsWith( buffer, "@media" ) ) {
+						mediaParse( css, rs, pos, buffer, importedList );
+					} else if ( String::startsWith( buffer, "@import" ) ) {
+						importParse( css, pos, buffer, importedList );
+					} else if ( String::startsWith( buffer, "@keyframes" ) ) {
+						keyframesParse( css, rs, pos, buffer, importedList );
+					}
 				}
 
 				break;

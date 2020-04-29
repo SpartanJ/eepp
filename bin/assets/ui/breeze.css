@@ -30,6 +30,10 @@
 	--menu-font: #eff0f1;
 	--menu-border: #616569;
 	--menu-font-active: white;
+	--icon-back-hover: #eff0f1;
+	--icon-line-hover: #3d4246;
+	--icon-back-alert: #d9727c;
+	--win-icon: #dbdbdd;
 }
 
 * {
@@ -219,20 +223,23 @@ SpinBox::btndown {
 	height: 13dp;
 }
 
-TextEdit::input {
+TextEdit {
 	background-color: var(--list-back);
 	border-color: var(--button-border);
 	border-radius: var(--button-radius);
 	border-width: var(--border-width);
+	transition: all 0.15;
+}
+
+TextEdit::input {
 	padding-left: var(--base-horizontal-padding);
 	padding-right: var(--base-horizontal-padding);
 	padding-top: var(--base-vertical-padding);
 	padding-bottom: var(--base-vertical-padding);
-	transition: all 0.15;
 }
 
-TextEdit::input:focus,
-TextEdit::input:hover {
+TextEdit:focus,
+TextEdit:hover {
 	border-color: var(--primary);
 }
 
@@ -418,42 +425,53 @@ Loader {
 Window::close {
 	width: 12dp;
 	height: 12dp;
-	foreground-image: poly(line, var(--icon), "0dp 0dp, 8dp 8dp"), poly(line, var(--icon), "8dp 0dp, 0dp 8dp");
-	foreground-position: 2dp 2dp, 2dp 2dp;
+	border-radius: 6dp;
+	background-color: var(--icon-back-hover);
+	foreground-image: poly(line, var(--icon-line-hover), "0dp 0dp, 6dp 6dp"), poly(line, var(--icon-line-hover), "6dp 0dp, 0dp 6dp");
+	foreground-position: 3dp 3dp, 3dp 3dp;
+	transition: all 0.15s;
 }
 
 Window::close:hover {
-	foreground-image: poly(line, var(--icon-active), "0dp 0dp, 8dp 8dp"), poly(line, var(--icon-active), "8dp 0dp, 0dp 8dp");
+	background-color: var(--icon-back-alert);
 }
 
 Window::maximize {
 	width: 12dp;
 	height: 12dp;
-	foreground-image: rectangle(line, var(--icon)), rectangle(solid, var(--icon));
-	foreground-size: 8dp 8dp, 8dp 2dp;
-	foreground-position: 2dp 2dp, 2dp 2dp;
+	border-radius: 6dp;
+	background-color: transparent;
+	foreground-image: poly(line, var(--win-icon), "0dp 4dp, 4dp 0dp"), poly(line, var(--win-icon), "4dp 0dp, 8dp 4dp");
+	foreground-position: 2dp 4dp, 2dp 4dp;
+	transition: all 0.15s;
 }
 
 Window::maximize:hover {
-	foreground-image: rectangle(line, var(--icon-active)), rectangle(solid, var(--icon-active));
+	background-color: var(--icon-back-hover);
+	foreground-image: poly(line, var(--icon-line-hover), "0dp 4dp, 4dp 0dp"), poly(line, var(--icon-line-hover), "4dp 0dp, 8dp 4dp");
 }
 
 Window::minimize {
 	width: 12dp;
 	height: 12dp;
-	foreground-image: rectangle(solid, var(--icon));
-	foreground-size: 8dp 2dp;
-	foreground-position: 2dp 8dp;
+	border-radius: 6dp;
+	background-color: transparent;
+	foreground-image: poly(line, var(--win-icon), "0dp 0dp, 4dp 4dp"), poly(line, var(--win-icon), "4dp 4dp, 8dp 0dp");
+	foreground-position: 2dp 4dp, 2dp 4dp;
+	transition: all 0.15s;
 }
 
 Window::minimize:hover {
-	foreground-image: rectangle(solid, var(--icon-active));
+	background-color: var(--icon-back-hover);
+	foreground-image: poly(line, var(--icon-line-hover), "0dp 0dp, 4dp 4dp"), poly(line, var(--icon-line-hover), "4dp 4dp, 8dp 0dp");
 }
 
 Window {
 	background-color: var(--back);
 	window-border-size: 2dp 2dp;
 	window-titlebar-size: 24dp 24dp;
+	window-buttons-offset: -6dp 0dp;
+	window-buttons-separation: 8dp;
 	window-flags: shadow;
 }
 
@@ -612,6 +630,12 @@ Menu::CheckBox::icon:selected {
 	background-image: rectangle(solid, var(--primary));
 	background-size: 70% 70%;
 	background-position: center;
+}
+
+ListBox > ScrollBar,
+TextEdit > ScrollBar,
+Table > ScrollBar {
+	background-color: var(--list-back);
 }
 
 .appbackground {
