@@ -26,7 +26,7 @@ UIScrollBar::UIScrollBar( const UIOrientation& orientation ) :
 {
 	mFlags |= UI_AUTO_SIZE;
 
-	setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::Fixed );
+	setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 
 	if ( orientation == UIOrientation::Vertical ) {
 		mBtnDown = UIWidget::NewWithTag( "scrollbar::btndown" );
@@ -43,7 +43,7 @@ UIScrollBar::UIScrollBar( const UIOrientation& orientation ) :
 	mSlider = UISlider::NewWithTag( orientation == UIOrientation::Vertical ? "scrollbar::vslider"
 																		   : "scrollbar::hslider",
 									orientation );
-	mSlider->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::Fixed );
+	mSlider->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 	mSlider->setOrientation( orientation );
 	mSlider->setParent( this );
 	mSlider->setAllowHalfSliderOut( false );
@@ -145,8 +145,7 @@ void UIScrollBar::onAutoSize() {
 		}
 	}
 
-	if ( mLayoutWidthRule == LayoutSizeRule::WrapContent ||
-		 mLayoutHeightRule == LayoutSizeRule::WrapContent ) {
+	if ( mWidthPolicy == SizePolicy::WrapContent || mHeightPolicy == SizePolicy::WrapContent ) {
 		size = PixelDensity::dpToPx( mSlider->getSize() ) + mRealPadding;
 
 		if ( mScrollBarStyle == TwoButtons ) {
@@ -158,11 +157,11 @@ void UIScrollBar::onAutoSize() {
 			}
 		}
 
-		if ( mLayoutWidthRule == LayoutSizeRule::WrapContent ) {
+		if ( mWidthPolicy == SizePolicy::WrapContent ) {
 			setInternalPixelsWidth( size.getWidth() );
 		}
 
-		if ( mLayoutHeightRule == LayoutSizeRule::WrapContent ) {
+		if ( mHeightPolicy == SizePolicy::WrapContent ) {
 			setInternalPixelsHeight( size.getHeight() );
 		}
 

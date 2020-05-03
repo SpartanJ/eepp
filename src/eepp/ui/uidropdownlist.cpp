@@ -87,7 +87,7 @@ void UIDropDownList::setFriendControl( UINode* friendCtrl ) {
 void UIDropDownList::onAutoSize() {
 	Float max = eemax<Float>( PixelDensity::dpToPxI( getSkinSize().getHeight() ), getTextHeight() );
 
-	if ( mLayoutHeightRule == LayoutSizeRule::WrapContent ) {
+	if ( mHeightPolicy == SizePolicy::WrapContent ) {
 		setInternalPixelsHeight( eeceil( max + mRealPadding.Top + mRealPadding.Bottom ) );
 	} else if ( ( ( mFlags & UI_AUTO_SIZE ) || 0 == getSize().getHeight() ) && max > 0 ) {
 		setInternalPixelsHeight( eeceil( max ) );

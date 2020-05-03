@@ -615,19 +615,18 @@ Sizef UISlider::getMinimumSize() {
 }
 
 void UISlider::onAutoSize() {
-	if ( mLayoutWidthRule == LayoutSizeRule::WrapContent ||
-		 mLayoutHeightRule == LayoutSizeRule::WrapContent ) {
+	if ( mWidthPolicy == SizePolicy::WrapContent || mHeightPolicy == SizePolicy::WrapContent ) {
 		bool modified = false;
 		Sizef total( getMinimumSize() );
 
 		total = PixelDensity::dpToPx( total );
 
-		if ( mLayoutWidthRule == LayoutSizeRule::WrapContent ) {
+		if ( mWidthPolicy == SizePolicy::WrapContent ) {
 			setInternalPixelsWidth( total.getWidth() );
 			modified = true;
 		}
 
-		if ( mLayoutHeightRule == LayoutSizeRule::WrapContent ) {
+		if ( mHeightPolicy == SizePolicy::WrapContent ) {
 			setInternalPixelsHeight( total.getHeight() );
 			modified = true;
 		}

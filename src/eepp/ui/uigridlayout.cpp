@@ -133,12 +133,12 @@ void UIGridLayout::pack() {
 		setInternalPosition( Vector2f( mLayoutMargin.Left, mLayoutMargin.Top ) );
 	}
 
-	if ( getLayoutWidthRule() == LayoutSizeRule::MatchParent ) {
+	if ( getLayoutWidthPolicy() == SizePolicy::MatchParent ) {
 		setInternalWidth( getParent()->getSize().getWidth() - mLayoutMargin.Left -
 						  mLayoutMargin.Right );
 	}
 
-	if ( getLayoutHeightRule() == LayoutSizeRule::MatchParent ) {
+	if ( getLayoutHeightPolicy() == SizePolicy::MatchParent ) {
 		setInternalHeight( getParent()->getSize().getHeight() - mLayoutMargin.Top -
 						   mLayoutMargin.Bottom );
 	}
@@ -171,7 +171,7 @@ void UIGridLayout::pack() {
 				targetSize.x = widget->getLayoutWeight() *
 							   ( getSize().getWidth() - mPadding.Left - mPadding.Right );
 
-			widget->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::Fixed );
+			widget->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 			if ( targetSize >= Sizef::Zero )
 				widget->setSize( targetSize );
 			widget->setPosition( pos );
@@ -201,7 +201,7 @@ void UIGridLayout::pack() {
 		ChildLoop = ChildLoop->getNextNode();
 	}
 
-	if ( getLayoutHeightRule() == LayoutSizeRule::WrapContent ) {
+	if ( getLayoutHeightPolicy() == SizePolicy::WrapContent ) {
 		setInternalHeight( pos.y + ( usedLastRow ? targetSize.getHeight() : 0 ) + mPadding.Bottom );
 	}
 
@@ -225,13 +225,13 @@ Uint32 UIGridLayout::onMessage( const NodeMessage* Msg ) {
 
 Sizef UIGridLayout::getTargetElementSize() const {
 	return Sizef( mColumnMode == Size ? mColumnWidth
-									  : ( ( getLayoutHeightRule() == LayoutSizeRule::WrapContent
+									  : ( ( getLayoutHeightPolicy() == SizePolicy::WrapContent
 												? getParent()->getSize().getWidth()
 												: getSize().getWidth() ) -
 										  mPadding.Left - mPadding.Right ) *
 											mColumnWeight,
 				  mRowMode == Size ? mRowHeight
-								   : ( ( getLayoutHeightRule() == LayoutSizeRule::WrapContent
+								   : ( ( getLayoutHeightPolicy() == SizePolicy::WrapContent
 											 ? getParent()->getSize().getHeight()
 											 : getSize().getHeight() ) -
 									   mPadding.Top - mPadding.Bottom ) *

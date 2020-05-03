@@ -56,14 +56,13 @@ void UITextureRegion::onAutoSize() {
 			autoAlign();
 		}
 
-		if ( mLayoutWidthRule == LayoutSizeRule::WrapContent ||
-			 mLayoutHeightRule == LayoutSizeRule::WrapContent ) {
-			if ( mLayoutWidthRule == LayoutSizeRule::WrapContent ) {
+		if ( mWidthPolicy == SizePolicy::WrapContent || mHeightPolicy == SizePolicy::WrapContent ) {
+			if ( mWidthPolicy == SizePolicy::WrapContent ) {
 				setInternalPixelsWidth( mTextureRegion->getPxSize().getWidth() + mRealPadding.Left +
 										mRealPadding.Right );
 			}
 
-			if ( mLayoutHeightRule == LayoutSizeRule::WrapContent ) {
+			if ( mHeightPolicy == SizePolicy::WrapContent ) {
 				setInternalPixelsHeight( mTextureRegion->getPxSize().getHeight() +
 										 mRealPadding.Top + mRealPadding.Bottom );
 			}

@@ -356,6 +356,14 @@ bool Engine::isSharedGLContextEnabled() {
 	return mSharedGLContext && mWindow->isThreadedGLContext();
 }
 
+bool Engine::isThreaded() {
+#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+	return false;
+#else
+	return true;
+#endif
+}
+
 Uint32 Engine::getMainThreadId() {
 	return mMainThreadId;
 }

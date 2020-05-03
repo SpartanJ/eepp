@@ -15,7 +15,7 @@ UIListBoxItem* UIListBoxItem::NewWithTag( const std::string& tag ) {
 UIListBoxItem::UIListBoxItem() : UIListBoxItem( "listbox::item" ) {}
 
 UIListBoxItem::UIListBoxItem( const std::string& tag ) : UITextView( tag ) {
-	setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::Fixed );
+	setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 	applyDefaultTheme();
 }
 

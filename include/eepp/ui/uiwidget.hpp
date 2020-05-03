@@ -85,22 +85,21 @@ class EE_API UIWidget : public UINode {
 
 	UIWidget* setLayoutGravity( const Uint32& layoutGravity );
 
-	LayoutSizeRule getLayoutWidthRule() const;
+	const SizePolicy& getLayoutWidthPolicy() const;
 
-	UIWidget* setLayoutWidthRule( const LayoutSizeRule& layoutWidthRules );
+	UIWidget* setLayoutWidthPolicy( const SizePolicy& widthPolicy );
 
-	LayoutSizeRule getLayoutHeightRule() const;
+	const SizePolicy& getLayoutHeightPolicy() const;
 
-	UIWidget* setLayoutHeightRule( const LayoutSizeRule& layoutHeightRules );
+	UIWidget* setLayoutHeightPolicy( const SizePolicy& heightPolicy );
 
-	UIWidget* setLayoutSizeRules( const LayoutSizeRule& layoutWidthRules,
-								  const LayoutSizeRule& layoutHeightRules );
+	UIWidget* setLayoutSizePolicy( const SizePolicy& widthPolicy, const SizePolicy& heightPolicy );
 
-	UIWidget* setLayoutPositionRule( const LayoutPositionRule& layoutPositionRule, UIWidget* of );
+	UIWidget* setLayoutPositionPolicy( const PositionPolicy& layoutPositionPolicy, UIWidget* of );
 
-	UIWidget* getLayoutPositionRuleWidget() const;
+	UIWidget* getLayoutPositionPolicyWidget() const;
 
-	LayoutPositionRule getLayoutPositionRule() const;
+	PositionPolicy getLayoutPositionPolicy() const;
 
 	virtual void loadFromXmlNode( const pugi::xml_node& node );
 
@@ -246,10 +245,10 @@ class EE_API UIWidget : public UINode {
 	Rectf mRealPadding;
 	Float mLayoutWeight;
 	Uint32 mLayoutGravity;
-	LayoutSizeRule mLayoutWidthRule;
-	LayoutSizeRule mLayoutHeightRule;
-	LayoutPositionRule mLayoutPositionRule;
-	UIWidget* mLayoutPositionRuleWidget;
+	SizePolicy mWidthPolicy;
+	SizePolicy mHeightPolicy;
+	PositionPolicy mLayoutPositionPolicy;
+	UIWidget* mLayoutPositionPolicyWidget;
 	int mAttributesTransactionCount;
 	std::string mSkinName;
 	std::vector<std::string> mClasses;
@@ -301,9 +300,9 @@ class EE_API UIWidget : public UINode {
 
 	void reportStyleStateChange( bool disableAnimations = false );
 
-	std::string getLayoutWidthRulesString() const;
+	std::string getLayoutWidthPolicyString() const;
 
-	std::string getLayoutHeightRulesString() const;
+	std::string getLayoutHeightPolicyString() const;
 
 	std::string getLayoutGravityString() const;
 

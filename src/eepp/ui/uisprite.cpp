@@ -136,12 +136,12 @@ void UISprite::updateSize() {
 		}
 
 		if ( NULL != mSprite->getCurrentTextureRegion() ) {
-			if ( mLayoutWidthRule == LayoutSizeRule::WrapContent ) {
+			if ( mWidthPolicy == SizePolicy::WrapContent ) {
 				setInternalPixelsWidth( mSprite->getCurrentTextureRegion()->getPxSize().getWidth() +
 										mRealPadding.Left + mRealPadding.Right );
 			}
 
-			if ( mLayoutHeightRule == LayoutSizeRule::WrapContent ) {
+			if ( mHeightPolicy == SizePolicy::WrapContent ) {
 				setInternalPixelsHeight(
 					mSprite->getCurrentTextureRegion()->getPxSize().getHeight() + mRealPadding.Top +
 					mRealPadding.Bottom );

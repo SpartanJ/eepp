@@ -90,13 +90,13 @@ void UIRadioButton::onAutoSize() {
 		}
 	}
 
-	if ( mLayoutWidthRule == LayoutSizeRule::WrapContent ) {
+	if ( mWidthPolicy == SizePolicy::WrapContent ) {
 		setInternalPixelsWidth( (int)mTextCache->getTextWidth() + mRealPadding.Left +
 								mRealPadding.Right + mActiveButton->getPixelsSize().getWidth() +
 								PixelDensity::dpToPx( mTextSeparation ) );
 	}
 
-	if ( mLayoutHeightRule == LayoutSizeRule::WrapContent ) {
+	if ( mHeightPolicy == SizePolicy::WrapContent ) {
 		setInternalPixelsHeight( (int)mTextCache->getTextHeight() + mRealPadding.Top +
 								 mRealPadding.Bottom );
 	}

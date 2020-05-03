@@ -18,23 +18,23 @@ UIMessageBox::UIMessageBox( const Type& type, const String& message, const Uint3
 	updateWinFlags();
 
 	mLayoutCont = UILinearLayout::New();
-	mLayoutCont->setLayoutSizeRules( LayoutSizeRule::WrapContent, LayoutSizeRule::WrapContent )
+	mLayoutCont->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent )
 		->setParent( mContainer );
 
 	UILinearLayout* vlay = UILinearLayout::NewVertical();
-	vlay->setLayoutSizeRules( LayoutSizeRule::WrapContent, LayoutSizeRule::WrapContent )
+	vlay->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent )
 		->setLayoutMargin( Rect( 8, 8, 8, 8 ) )
 		->setParent( mLayoutCont )
 		->clipDisable();
 
 	mTextBox = UITextView::New();
 	mTextBox->setText( message )
-		->setLayoutSizeRules( LayoutSizeRule::WrapContent, LayoutSizeRule::WrapContent )
+		->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent )
 		->setParent( vlay );
 
 	UILinearLayout* hlay = UILinearLayout::NewHorizontal();
 	hlay->setLayoutMargin( Rect( 0, 8, 0, 0 ) )
-		->setLayoutSizeRules( LayoutSizeRule::WrapContent, LayoutSizeRule::WrapContent )
+		->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent )
 		->setLayoutGravity( UI_HALIGN_RIGHT | UI_VALIGN_CENTER )
 		->setParent( vlay )
 		->clipDisable();

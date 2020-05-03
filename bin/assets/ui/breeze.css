@@ -32,7 +32,7 @@
 	--menu-font-active: white;
 	--icon-back-hover: #eff0f1;
 	--icon-line-hover: #3d4246;
-	--icon-back-alert: #d9727c;
+	--icon-back-alert: #e49aa2;
 	--win-icon: #dbdbdd;
 }
 
@@ -549,7 +549,7 @@ PopUpMenu {
 WinMenu::Button {
 	padding-left: 4dp;
 	padding-right: 4dp;
-	min-height: 16dp;
+	min-height: 24dp;
 }
 
 WinMenu::Button:hover {

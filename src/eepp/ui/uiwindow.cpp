@@ -70,7 +70,7 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const StyleConfig& w
 			break;
 	}
 
-	mContainer->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::Fixed );
+	mContainer->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 	mContainer->writeNodeFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 	mContainer->setParent( this );
 	mContainer->clipEnable();
@@ -1146,7 +1146,7 @@ const Uint8& UIWindow::getBaseAlpha() const {
 void UIWindow::setTitle( const String& text ) {
 	if ( NULL == mTitle ) {
 		mTitle = UITextView::NewWithTag( "window::title" );
-		mTitle->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::Fixed );
+		mTitle->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 		mTitle->writeNodeFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 		mTitle->setParent( this );
 		mTitle->setHorizontalAlign( getHorizontalAlign() );

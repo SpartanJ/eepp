@@ -223,7 +223,7 @@ How does it look with real code?
 UITextView::New()->setText( "Text  on  test  1" )
          ->setCharacterSize( 12 )
          ->setLayoutMargin( Rect( 10, 10, 10, 10 ) )
-         ->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )
+         ->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
          ->setParent( layout );
 ```
 

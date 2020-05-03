@@ -23,7 +23,7 @@ UITextEdit::UITextEdit() :
 	clipEnable();
 
 	mTextInput = UITextInput::NewWithTag( mTag + "::input" );
-	mTextInput->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::WrapContent );
+	mTextInput->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::WrapContent );
 	mTextInput->setParent( this );
 	mTextInput->setFlags( UI_TEXT_SELECTION_ENABLED | UI_VALIGN_TOP );
 	mTextInput->unsetFlags( UI_VALIGN_CENTER | UI_AUTO_SIZE );

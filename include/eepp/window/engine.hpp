@@ -118,6 +118,10 @@ class EE_API Engine {
 	/** @return If the Shared GL Context is enabled and ready to use. */
 	bool isSharedGLContextEnabled();
 
+	/** @return Indicates if the current running platform/OS supports threads (always true except
+	 * for emscripten) */
+	bool isThreaded();
+
 	/** @return The id of the thread that was used to initialize the OpenGL Context. */
 	Uint32 getMainThreadId();
 

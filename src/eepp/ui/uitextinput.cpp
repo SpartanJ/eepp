@@ -262,7 +262,7 @@ void UITextInput::onThemeLoaded() {
 }
 
 void UITextInput::onAutoSize() {
-	if ( mLayoutHeightRule == LayoutSizeRule::WrapContent ) {
+	if ( mHeightPolicy == SizePolicy::WrapContent ) {
 		int minHeight = eemax<int>( mTextCache->getTextHeight(),
 									PixelDensity::dpToPxI( getSkinSize().getHeight() ) );
 		setInternalPixelsHeight( minHeight + mRealPadding.Top + mRealPadding.Bottom );

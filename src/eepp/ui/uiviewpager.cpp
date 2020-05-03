@@ -153,8 +153,8 @@ void UIViewPager::updateChilds() {
 	Float val = 0;
 	while ( NULL != childLoop ) {
 		if ( childLoop->isWidget() ) {
-			childLoop->asType<UIWidget>()->setLayoutSizeRules( LayoutSizeRule::Fixed,
-															   LayoutSizeRule::Fixed );
+			childLoop->asType<UIWidget>()->setLayoutSizePolicy( SizePolicy::Fixed,
+																SizePolicy::Fixed );
 		}
 		childLoop->setSize( getSize() );
 		childLoop->setPosition( mOrientation == UIOrientation::Horizontal ? Vector2f( val, 0.f )

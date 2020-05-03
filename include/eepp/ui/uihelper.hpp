@@ -90,9 +90,9 @@ enum class ScrollBarMode : Uint32 { Auto, AlwaysOn, AlwaysOff };
 
 enum class UIOrientation : Uint32 { Vertical, Horizontal };
 
-enum class LayoutSizeRule : Uint32 { Fixed, MatchParent, WrapContent };
+enum class SizePolicy : Uint32 { Fixed, MatchParent, WrapContent };
 
-enum class LayoutPositionRule : Uint32 { None, LeftOf, RightOf, TopOf, BottomOf };
+enum class PositionPolicy : Uint32 { None, LeftOf, RightOf, TopOf, BottomOf };
 
 enum class UIScaleType : Uint32 { None, Expand, FitInside };
 

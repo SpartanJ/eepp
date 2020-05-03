@@ -109,7 +109,7 @@ void MapEditor::createWinMenu() {
 	mTileBox =
 		createTextBox( "", mUIContainer, Sizef(), Vector2f(),
 					   UI_HALIGN_RIGHT | UI_VALIGN_CENTER | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT );
-	mTileBox->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::Fixed );
+	mTileBox->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 	mTileBox->setSize( 100, WinMenu->getSize().getHeight() );
 	mTileBox->setPosition(
 		Vector2f( mUIContainer->getSize().getWidth() - mTileBox->getSize().getWidth(), 0 ) );
@@ -464,7 +464,7 @@ void MapEditor::createTextureRegionContainer( Int32 Width ) {
 
 	mGfxPreview = UITextureRegion::New();
 	mGfxPreview->setScaleType( UIScaleType::FitInside )
-		->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::Fixed )
+		->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed )
 		->resetFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP )
 		->setParent( mSGCont )
 		->setSize( Width, Width )

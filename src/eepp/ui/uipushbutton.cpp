@@ -17,7 +17,7 @@ UIPushButton::UIPushButton( const std::string& tag ) :
 
 	mIcon = UIImage::NewWithTag( "pushbutton::icon" );
 	mIcon->setScaleType( UIScaleType::FitInside )
-		->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::Fixed )
+		->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed )
 		->setFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER )
 		->setParent( this )
 		->setVisible( true )
@@ -33,7 +33,7 @@ UIPushButton::UIPushButton( const std::string& tag ) :
 	mIcon->addEventListener( Event::OnSizeChange, cb );
 
 	mTextBox = UITextView::NewWithTag( "pushbutton::text" );
-	mTextBox->setLayoutSizeRules( LayoutSizeRule::WrapContent, LayoutSizeRule::WrapContent )
+	mTextBox->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent )
 		->setFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER )
 		->setParent( this )
 		->setVisible( true )
@@ -67,7 +67,7 @@ bool UIPushButton::isType( const Uint32& type ) const {
 
 void UIPushButton::onAutoSize() {
 	if ( ( ( mFlags & UI_AUTO_SIZE ) && 0 == getSize().getHeight() ) ||
-		 mLayoutHeightRule == LayoutSizeRule::WrapContent ) {
+		 mHeightPolicy == SizePolicy::WrapContent ) {
 		Float sH = getSkinSize().getHeight();
 		Float sHS = getSkinSize( UIState::StateFlagSelected ).getHeight();
 		Float tH = mTextBox->getPixelsSize().getHeight();
@@ -79,7 +79,7 @@ void UIPushButton::onAutoSize() {
 		setInternalHeight( getSkinSize().getHeight() );
 	}
 
-	if ( ( mFlags & UI_AUTO_SIZE ) || mLayoutWidthRule == LayoutSizeRule::WrapContent ) {
+	if ( ( mFlags & UI_AUTO_SIZE ) || mWidthPolicy == SizePolicy::WrapContent ) {
 		Int32 txtW = mTextBox->getPixelsSize().getWidth();
 		Int32 iconSize = mIcon->getPixelsSize().getWidth() > 0
 							 ? mIcon->getPixelsSize().getWidth() +

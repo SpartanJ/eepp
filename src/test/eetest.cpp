@@ -379,7 +379,7 @@ void EETest::createBaseUI() {
 	sprite->setIsSpriteOwner( true );
 
 	UITextView* Text = UITextView::New();
-	Text->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::Fixed )
+	Text->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed )
 		->setHorizontalAlign( UI_HALIGN_RIGHT )
 		->setVerticalAlign( UI_VALIGN_TOP )
 		->setParent( C )
@@ -572,7 +572,7 @@ void EETest::createBaseUI() {
 	Sizef screenSize = SceneManager::instance()->getUISceneNode()->getSize();
 
 	mShowMenu = UIPushButton::New();
-	mShowMenu->setLayoutSizeRules( LayoutSizeRule::WrapContent, LayoutSizeRule::WrapContent );
+	mShowMenu->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent );
 	mShowMenu->setPadding( Rectf( 16, 0, 16, 0 ) );
 	mShowMenu->setSkin( nSkin );
 	mShowMenu->setText( "Show Menu" );
@@ -643,14 +643,14 @@ void EETest::createNewUI() {
 	std::vector<String> str = getTestStringArr();
 
 	relLay = UIRelativeLayout::New();
-	relLay->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::MatchParent );
+	relLay->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
 
 	UIWidget* container = UIWidget::New();
 	container->setSize( relLay->getSize() - 32.f );
 
 	UIScrollView* scrollView = UIScrollView::New();
 	scrollView->setTouchDragEnabled( true );
-	scrollView->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::MatchParent )
+	scrollView->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent )
 		->setParent( relLay );
 	scrollView->getContainer()->addEventListener( Event::MouseClick,
 												  cb::Make1( this, &EETest::onMainClick ) );
@@ -667,7 +667,7 @@ void EETest::createNewUI() {
 
 	UIRadioButton* ctrl = UIRadioButton::New();
 	ctrl->setId( "happy_radio" );
-	ctrl->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::Fixed )
+	ctrl->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed )
 		->setPosition( 50, 100 )
 		->setSize( 200, 32 )
 		->setParent( container );
@@ -678,7 +678,7 @@ void EETest::createNewUI() {
 
 	UICheckBox* cbox = UICheckBox::New();
 	cbox->setId( "happy_check" );
-	cbox->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::Fixed )
+	cbox->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed )
 		->setPosition( 50, 164 )
 		->setSize( 200, 32 )
 		->setParent( container );
@@ -838,67 +838,67 @@ void EETest::createNewUI() {
 	win->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_RESIZEABLE | UI_WIN_MAXIMIZE_BUTTON );
 
 	UILinearLayout* layWin = UILinearLayout::NewVertical();
-	layWin->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::MatchParent );
+	layWin->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
 	layWin->setParent( win );
 
 	UILinearLayout* layPar = UILinearLayout::NewHorizontal();
 	layPar->setParent( layWin );
 	layPar->setLayoutMargin( Rect( 10, 10, 10, 10 ) );
-	layPar->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent );
+	layPar->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent );
 	layPar->setLayoutGravity( UI_VALIGN_CENTER | UI_HALIGN_CENTER );
 	layPar->setBackgroundColor( 0x999999FF );
 
 	UILinearLayout* lay = UILinearLayout::NewVertical();
 	lay->setLayoutGravity( UI_HALIGN_CENTER | UI_VALIGN_CENTER );
-	lay->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent );
+	lay->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent );
 	lay->setBackgroundColor( 0x333333FF );
 	lay->setLayoutWeight( 0.7f );
 
 	UITextView::New()
 		->setText( "Text on test 1" )
 		->setLayoutMargin( Rect( 10, 10, 10, 10 ) )
-		->setLayoutSizeRules( LayoutSizeRule::WrapContent, LayoutSizeRule::WrapContent )
+		->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent )
 		->setParent( lay );
 	UITextView::New()
 		->setText( "Text on test 2" )
 		->setLayoutMargin( Rect( 10, 10, 10, 10 ) )
-		->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )
+		->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
 		->setParent( lay );
 	UICheckBox::New()
 		->setText( "Checkbox" )
 		->setLayoutMargin( Rect( 10, 10, 10, 10 ) )
-		->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )
+		->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
 		->setParent( lay );
 	UITextView::New()
 		->setText( "Text on test 3" )
 		->setLayoutMargin( Rect( 10, 10, 10, 10 ) )
-		->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )
+		->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
 		->setParent( lay );
 	UITextView::New()
 		->setText( "Text on test 4" )
 		->setLayoutMargin( Rect( 10, 10, 10, 10 ) )
-		->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )
+		->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
 		->setParent( lay );
 	UITextInput::New()
 		->setLayoutMargin( Rect( 10, 10, 10, 10 ) )
-		->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )
+		->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
 		->setParent( lay );
 
 	UILinearLayout* lay2 = UILinearLayout::NewVertical();
 	lay2->setLayoutGravity( UI_HALIGN_CENTER | UI_VALIGN_CENTER );
-	lay2->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::WrapContent );
+	lay2->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::WrapContent );
 	lay2->setBackgroundColor( Color::Black );
 	lay2->setLayoutWeight( 0.3f );
 
 	UIPushButton::New()
 		->setText( "PushButton" )
 		->setLayoutMargin( Rect( 10, 10, 10, 10 ) )
-		->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )
+		->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
 		->setLayoutGravity( UI_VALIGN_CENTER )
 		->setParent( lay2 );
 	UIListBox* lbox = UIListBox::New();
 	lbox->setLayoutMargin( Rect( 10, 10, 10, 10 ) )
-		->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::Fixed )
+		->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::Fixed )
 		->setSize( 0, 105 )
 		->setParent( lay2 );
 	lbox->addListBoxItems( {"This", "is", "a", "ListBox"} );
@@ -907,7 +907,7 @@ void EETest::createNewUI() {
 
 	UIDropDownList* drop = UIDropDownList::New();
 	drop->setLayoutMargin( Rect( 10, 10, 10, 10 ) )
-		->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )
+		->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
 		->setParent( layWin );
 	drop->getListBox()->addListBoxItems( {"Car", "Bus", "Plane", "Submarine"} );
 	drop->getListBox()->setSelected( 0 );
@@ -919,7 +919,7 @@ void EETest::createNewUI() {
 
 	UIRelativeLayout* rlay = UIRelativeLayout::New();
 	rlay->setParent( win2 );
-	rlay->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::MatchParent );
+	rlay->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
 	rlay->setLayoutMargin( Rect( 16, 16, 16, 16 ) );
 	rlay->setBackgroundColor( 0x333333CC );
 
@@ -933,7 +933,7 @@ void EETest::createNewUI() {
 		->setText( "Cancel" )
 		->setLayoutGravity( UI_VALIGN_BOTTOM | UI_HALIGN_RIGHT )
 		->setLayoutMargin( Rect( 0, 0, 8, 0 ) )
-		->setLayoutPositionRule( LayoutPositionRule::LeftOf, ofBut )
+		->setLayoutPositionPolicy( PositionPolicy::LeftOf, ofBut )
 		->setParent( rlay );
 
 	win2->show();
@@ -1076,11 +1076,11 @@ void EETest::createDecoratedWindow() {
 	mUIWindow->addEventListener( Event::OnDragStop, cb::Make1( &onWinDragStop ) );
 
 	UILinearLayout* lay = UILinearLayout::NewVertical();
-	lay->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::MatchParent );
+	lay->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
 	lay->setParent( mUIWindow->getContainer() );
 
 	UIWinMenu* WinMenu = UIWinMenu::New();
-	WinMenu->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )
+	WinMenu->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
 		->setParent( lay );
 
 	UIPopUpMenu* PopMenu = UIPopUpMenu::New();
@@ -1130,7 +1130,7 @@ void EETest::createDecoratedWindow() {
 	UIPushButton* Button = UIPushButton::New();
 	Button->setLayoutMargin( Rect( 5, 5, 5, 5 ) );
 	Button->setText( "Click Me" );
-	Button->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )
+	Button->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
 		->setParent( lay );
 	Button->addEventListener( Event::MouseClick, cb::Make1( this, &EETest::onButtonClick ) );
 
@@ -1139,7 +1139,7 @@ void EETest::createDecoratedWindow() {
 	UITabWidget* TabWidget = UITabWidget::New();
 	TabWidget->setLayoutMargin( Rect( 5, 5, 5, 5 ) )
 		->setLayoutWeight( 1 )
-		->setLayoutSizeRules( LayoutSizeRule::MatchParent, LayoutSizeRule::WrapContent )
+		->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
 		->setFlags( UI_HALIGN_CENTER | UI_VALIGN_CENTER )
 		->setParent( lay );
 

@@ -368,7 +368,7 @@ UITab* UITabWidget::createTab( const String& Text, UINode* ownedWidget, Drawable
 	if ( ownedWidget->isWidget() ) {
 		UIWidget* widgetOwned = static_cast<UIWidget*>( ownedWidget );
 
-		widgetOwned->setLayoutSizeRules( LayoutSizeRule::Fixed, LayoutSizeRule::Fixed );
+		widgetOwned->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 	}
 
 	return tab;

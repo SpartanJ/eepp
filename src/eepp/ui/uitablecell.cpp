@@ -44,8 +44,7 @@ void UITableCell::setCell( const Uint32& CollumnIndex, UINode* Ctrl ) {
 		Ctrl->setParent( this );
 
 	if ( Ctrl->isWidget() )
-		static_cast<UIWidget*>( Ctrl )->setLayoutSizeRules( LayoutSizeRule::Fixed,
-															LayoutSizeRule::Fixed );
+		static_cast<UIWidget*>( Ctrl )->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 
 	Ctrl->setPosition( P->getCellPosition( CollumnIndex ), 0 );
 	Ctrl->setSize( P->getCollumnWidth( CollumnIndex ), P->getRowHeight() );

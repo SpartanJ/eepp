@@ -11,6 +11,7 @@
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
+#include <eepp/window/engine.hpp>
 
 namespace EE { namespace UI { namespace Tools {
 
@@ -347,9 +348,9 @@ void TextureAtlasEditor::onTextureAtlasCreate( TexturePacker* TexPacker ) {
 	std::string FPath( FileSystem::fileRemoveExtension( mTexturePacker->getFilepath() +
 														EE_TEXTURE_ATLAS_EXTENSION ) );
 
-	bool threaded = mUIContainer->getSceneNode()->getWindow()->isThreadedGLContext();
-	mTextureAtlasLoader = TextureAtlasLoader::New(
-		FPath, threaded, cb::Make1( this, &TextureAtlasEditor::onTextureAtlasLoaded ) );
+	mTextureAtlasLoader =
+		TextureAtlasLoader::New( FPath, Engine::instance()->isThreaded(),
+								 cb::Make1( this, &TextureAtlasEditor::onTextureAtlasLoaded ) );
 }
 
 void TextureAtlasEditor::updateControls() {
@@ -446,9 +447,8 @@ void TextureAtlasEditor::onTextureRegionChange( const Event* Event ) {
 void TextureAtlasEditor::openTextureAtlas( const Event* Event ) {
 	eeSAFE_DELETE( mTextureAtlasLoader );
 
-	bool threaded = mUIContainer->getSceneNode()->getWindow()->isThreadedGLContext();
 	mTextureAtlasLoader = TextureAtlasLoader::New(
-		Event->getNode()->asType<UICommonDialog>()->getFullPath(), threaded,
+		Event->getNode()->asType<UICommonDialog>()->getFullPath(), Engine::instance()->isThreaded(),
 		cb::Make1( this, &TextureAtlasEditor::onTextureAtlasLoaded ) );
 }
 
@@ -467,8 +467,11 @@ void TextureAtlasEditor::saveTextureAtlas( const Event* ) {
 }
 
 void TextureAtlasEditor::onTextureAtlasClose( const Event* ) {
+	if ( NULL != mTextureAtlasLoader && NULL != mTextureAtlasLoader->getTextureAtlas() )
+		TextureAtlasManager::instance()->remove( mTextureAtlasLoader->getTextureAtlas() );
 	eeSAFE_DELETE( mTextureAtlasLoader );
 	mTextureRegionList->clear();
+	mTextureRegionGrid->childsCloseAll();
 	mSpinOffX->setValue( 0 );
 	mSpinOffY->setValue( 0 );
 	mSpinDestW->setValue( 0 );
