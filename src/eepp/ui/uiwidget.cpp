@@ -79,7 +79,7 @@ void UIWidget::updateAnchorsDistances() {
 	}
 }
 
-Rect UIWidget::getLayoutMargin() const {
+const Rect& UIWidget::getLayoutMargin() const {
 	return mLayoutMargin;
 }
 
@@ -1720,14 +1720,18 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 	for ( pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end();
 		  ++ait ) {
 		// Create a property without triming its value
-		StyleSheetProperty prop( ait->name(), ait->value(), false );
+		StyleSheetProperty prop( ait->name(), ait->value(), false,
+								 StyleSheetSelectorRule::SpecificityInline );
 
 		if ( prop.getShorthandDefinition() != NULL ) {
 			auto properties = prop.getShorthandDefinition()->parse( ait->value() );
 
-			for ( auto& property : properties )
+			for ( auto& property : properties ) {
+				mStyle->setStyleSheetProperty( property );
 				applyProperty( property );
+			}
 		} else {
+			mStyle->setStyleSheetProperty( prop );
 			applyProperty( prop );
 		}
 	}

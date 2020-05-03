@@ -4,8 +4,12 @@ namespace EE { namespace Window {
 
 Display::Display( int displayIndex ) : index( displayIndex ) {}
 
-PixelDensitySize Display::getPixelDensity() {
+PixelDensitySize Display::getPixelDensitySize() {
 	return PixelDensity::fromDPI( getDPI() );
+}
+
+Float Display::getPixelDensity() {
+	return PixelDensity::toFloat( PixelDensity::fromDPI( getDPI() ) );
 }
 
 Display::~Display() {}

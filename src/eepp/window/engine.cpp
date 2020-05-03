@@ -249,7 +249,7 @@ WindowSettings Engine::createWindowSettings( IniFile* ini, std::string iniKeyNam
 	if ( !pixelDensityStr.empty() ) {
 		if ( String::toLower( pixelDensityStr ) == "auto" ) {
 			Display* currentDisplay = Engine::instance()->getDisplayManager()->getDisplayIndex( 0 );
-			pixelDensity = PixelDensity::toFloat( currentDisplay->getPixelDensity() );
+			pixelDensity = currentDisplay->getPixelDensity();
 		} else {
 			float pd = 1;
 			bool res = String::fromString<float>( pd, pixelDensityStr );

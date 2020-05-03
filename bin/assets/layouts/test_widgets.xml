@@ -62,7 +62,7 @@
 			</vbox>
 		</hbox>
 		<RelativeLayout id="test_2" layout_width="match_parent" layout_height="match_parent">
-			<TextView layout_width="match_parent" layout_height="match_parent" text="Hello World!" gravity="center" font-size="24dp" />
+			<TextView layout_width="match_parent" layout_height="match_parent" font-size="24dp" text="Hello World!" gravity="center" />
 			<Loader layout_width="350dp" layout_height="350dp" layout_gravity="center" padding="44dp" outline-thickness="8dp" />
 		</RelativeLayout>
 
@@ -70,7 +70,7 @@
 		<Tab text="Tabs Test" owns="test_2" />
 	</TabWidget>
 </vbox>
-<window windowFlags="default|maximize|minimize" layout_width="300dp" layout_height="300dp" x="400dp" y="300dp" window-title="Test Window">
+<window windowFlags="default|maximize|minimize|shadow" layout_width="300dp" layout_height="300dp" x="400dp" y="300dp" window-title="Test Window">
   <LinearLayout id="testlayout" orientation="vertical" layout_width="match_parent" layout_height="match_parent" layout_margin="8dp">
 	<TextView text="Hello World!" gravity="center" layout_gravity="center_horizontal" layout_width="match_parent" layout_height="wrap_content" />
 	<PushButton text="OK!" textSize="16dp" icon="ok" gravity="center" layout_gravity="center_horizontal" layout_width="match_parent" layout_height="wrap_content" />

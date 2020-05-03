@@ -631,7 +631,7 @@ bool UITextView::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		}
 		case PropertyId::FontSize:
-			setFontSize( attribute.asDpDimensionI() );
+			setFontSize( lengthFromValueAsDp( attribute ) );
 			break;
 		case PropertyId::FontStyle: {
 			Uint32 flags = attribute.asFontStyle();

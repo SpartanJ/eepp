@@ -64,13 +64,14 @@ StyleSheetProperty::StyleSheetProperty( const bool& isVolatile,
 }
 
 StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::string& value,
-										const bool& trimValue ) :
+										const bool& trimValue, const Uint32& specificity,
+										const Uint32& index ) :
 	mName( String::toLower( String::trim( name ) ) ),
 	mNameHash( String::hash( mName ) ),
 	mValue( trimValue ? String::trim( value ) : value ),
 	mValueHash( String::hash( mValue ) ),
-	mSpecificity( 0 ),
-	mIndex( 0 ),
+	mSpecificity( specificity ),
+	mIndex( index ),
 	mVolatile( false ),
 	mImportant( false ),
 	mIsVarValue( false ),

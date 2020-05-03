@@ -31,7 +31,9 @@ class EE_API Display {
 
 	virtual ~Display();
 
-	PixelDensitySize getPixelDensity();
+	PixelDensitySize getPixelDensitySize();
+
+	Float getPixelDensity();
 
   protected:
 	int index;

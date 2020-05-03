@@ -51,24 +51,21 @@ UIListBox::UIListBox( const std::string& tag ) :
 	mContainer->setPosition( 0, 0 );
 	mContainer->clipEnable();
 
-	mVScrollBar = UIScrollBar::New();
-	mVScrollBar->setOrientation( UIOrientation::Vertical );
+	mVScrollBar = UIScrollBar::NewVertical();
 	mVScrollBar->setParent( this );
 	mVScrollBar->setPosition( getSize().getWidth() - 8, 0 );
 	mVScrollBar->setSize( 8, getSize().getHeight() );
 	mVScrollBar->setEnabled( false )->setVisible( false );
 	mVScrollBar->addEventListener( Event::OnSizeChange, cb );
+	mVScrollBar->addEventListener( Event::OnValueChange,
+								   cb::Make1( this, &UIListBox::onScrollValueChange ) );
 
-	mHScrollBar = UIScrollBar::New();
-	mHScrollBar->setOrientation( UIOrientation::Horizontal );
+	mHScrollBar = UIScrollBar::NewHorizontal();
 	mHScrollBar->setParent( this );
 	mHScrollBar->setSize( getSize().getWidth() - mVScrollBar->getSize().getWidth(), 8 );
 	mHScrollBar->setPosition( 0, getSize().getHeight() - 8 );
 	mHScrollBar->setEnabled( false )->setVisible( false );
 	mHScrollBar->addEventListener( Event::OnSizeChange, cb );
-
-	mVScrollBar->addEventListener( Event::OnValueChange,
-								   cb::Make1( this, &UIListBox::onScrollValueChange ) );
 	mHScrollBar->addEventListener( Event::OnValueChange,
 								   cb::Make1( this, &UIListBox::onHScrollValueChange ) );
 
@@ -131,9 +128,11 @@ void UIListBox::addListBoxItems( std::vector<String> Texts ) {
 	mTexts.reserve( mTexts.size() + Texts.size() );
 
 	for ( Uint32 i = 0; i < Texts.size(); i++ ) {
-		addListBoxItem( Texts[i] );
+		mTexts.push_back( Texts[i] );
+		mItems.push_back( NULL );
 	}
 
+	updatePageStep();
 	updateScroll();
 }
 
@@ -163,22 +162,6 @@ Uint32 UIListBox::addListBoxItem( UIListBoxItem* Item ) {
 Uint32 UIListBox::addListBoxItem( const String& text ) {
 	mTexts.push_back( text );
 	mItems.push_back( NULL );
-
-	const UIFontStyleConfig& fontStyleConfig = mDummyItem->getFontStyleConfig();
-
-	if ( NULL != fontStyleConfig.getFont() ) {
-		Text textCache;
-		textCache.setStyleConfig( fontStyleConfig );
-		textCache.setString( text );
-
-		Uint32 twidth = textCache.getTextWidth();
-
-		if ( twidth > mMaxTextWidth ) {
-			mMaxTextWidth = twidth;
-
-			updateListBoxItemsSize();
-		}
-	}
 
 	updatePageStep();
 	updateScroll();
@@ -412,8 +395,6 @@ void UIListBox::updateListBoxItemsSize() {
 
 	for ( Uint32 i = 0; i < size; i++ )
 		itemUpdateSize( mItems[i] );
-
-	invalidateDraw();
 }
 
 void UIListBox::itemUpdateSize( UIListBoxItem* Item ) {
@@ -545,6 +526,7 @@ void UIListBox::updateScroll( bool fromScrollChange ) {
 
 	bool wasScrollVisible = mVScrollBar->isVisible();
 	bool wasHScrollVisible = mHScrollBar->isVisible();
+	bool wasFirstTime = mVisibleFirst == 0 && mVisibleLast == 0;
 
 	updateScrollBarState();
 
@@ -681,6 +663,9 @@ void UIListBox::updateScroll( bool fromScrollChange ) {
 	}
 
 	setHScrollStep();
+
+	if ( wasFirstTime )
+		updateScrollBarState();
 
 	invalidateDraw();
 }

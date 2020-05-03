@@ -65,7 +65,7 @@ class EE_API UIWidget : public UINode {
 
 	void updateAnchorsDistances();
 
-	Rect getLayoutMargin() const;
+	const Rect& getLayoutMargin() const;
 
 	UIWidget* setLayoutMargin( const Rect& margin );
 

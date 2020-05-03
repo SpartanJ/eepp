@@ -1,4 +1,4 @@
-#include "eetest.hpp"
+#include "test.hpp"
 
 Demo_Test::EETest* TestInstance = NULL;
 

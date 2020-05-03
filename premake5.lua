@@ -732,12 +732,6 @@ workspace "eepp"
 		build_eepp( "eepp" )
 
 	-- Examples
-	project "eepp-test"
-		set_kind()
-		language "C++"
-		files { "src/test/*.cpp" }
-		build_link_configuration( "eepp-test", true )
-
 	project "eepp-external-shader"
 		set_kind()
 		language "C++"
@@ -825,6 +819,20 @@ workspace "eepp"
 		incdirs { "src/thirdparty" }
 		files { "src/tools/texturepacker/*.cpp" }
 		build_link_configuration( "eepp-TexturePacker", true )
+
+	-- Tests
+	project "eepp-test"
+		set_kind()
+		language "C++"
+		files { "src/tests/test_all/*.cpp" }
+		build_link_configuration( "eepp-test", true )
+
+	project "eepp-ui-perf-test"
+		set_kind()
+		language "C++"
+		files { "src/tests/ui_perf_test/*.cpp" }
+		includedirs { "src/thirdparty" }
+		build_link_configuration( "eepp-ui-perf-test", true )
 
 if os.isfile("external_projects.lua") then
 	dofile("external_projects.lua")

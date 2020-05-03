@@ -965,7 +965,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	fileWatcher->watch();
 
 	Display* currentDisplay = Engine::instance()->getDisplayManager()->getDisplayIndex( 0 );
-	Float pixelDensity = PixelDensity::toFloat( currentDisplay->getPixelDensity() );
+	Float pixelDensity = currentDisplay->getPixelDensity();
 
 	if ( pixelDenstiyConf ) {
 		pixelDensity = pixelDenstiyConf.Get();

@@ -37,24 +37,22 @@ bool UIStyle::stateExists( const EE::Uint32& ) const {
 }
 
 void UIStyle::setStyleSheetProperty( const StyleSheetProperty& property ) {
-	std::vector<StyleSheetProperty> properties;
-
 	if ( StyleSheetSpecification::instance()->isShorthand( property.getName() ) ) {
+		std::vector<StyleSheetProperty> properties;
+
 		properties = StyleSheetSpecification::instance()
 						 ->getShorthand( property.getName() )
 						 ->parse( property.getValue() );
-	} else {
-		properties.emplace_back( property );
-	}
 
-	for ( auto& prop : properties ) {
-		mElementStyle.get()->setProperty( prop );
+		for ( auto& prop : properties ) {
+			mElementStyle->setProperty( prop );
+		}
+	} else {
+		mElementStyle->setProperty( property );
 	}
 }
 
 void UIStyle::load() {
-	mElementStyle->clearProperties();
-
 	mGlobalDefinition =
 		mWidget->getUISceneNode()->getStyleSheet().getElementStyles( mWidget, false );
 
@@ -664,12 +662,12 @@ void UIStyle::removeAnimation( const PropertyDefinition* propertyDefinition,
 }
 
 StyleSheetProperty* UIStyle::getLocalProperty( Uint32 propId ) {
-	StyleSheetProperty* property = nullptr;
-	if ( nullptr != mDefinition )
-		property = mDefinition->getProperty( propId );
-	if ( nullptr == property )
-		return mElementStyle->getPropertyById( propId );
-	return property;
+	StyleSheetProperty* defProperty = mDefinition->getProperty( propId );
+	StyleSheetProperty* elemProperty = mElementStyle->getPropertyById( propId );
+	if ( defProperty && elemProperty )
+		return defProperty->getSpecificity() > elemProperty->getSpecificity() ? defProperty
+																			  : elemProperty;
+	return defProperty ? defProperty : elemProperty;
 }
 
 }} // namespace EE::UI

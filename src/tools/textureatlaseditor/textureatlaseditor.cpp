@@ -74,7 +74,7 @@ void mainLoop() {
 
 EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	Display* currentDisplay = Engine::instance()->getDisplayManager()->getDisplayIndex( 0 );
-	Float pixelDensity = PixelDensity::toFloat( currentDisplay->getPixelDensity() );
+	Float pixelDensity = currentDisplay->getPixelDensity();
 
 	win = Engine::instance()->createWindow(
 		WindowSettings( 1280, 720, "eepp - Texture Atlas Editor", WindowStyle::Default,
