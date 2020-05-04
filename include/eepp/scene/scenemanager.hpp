@@ -16,12 +16,18 @@ namespace EE { namespace Scene {
 
 class SceneNode;
 
-class EE_API SceneManager : public Container<SceneNode> {
+class EE_API SceneManager {
 	SINGLETON_DECLARE_HEADERS( SceneManager )
   public:
 	SceneManager();
 
 	~SceneManager();
+
+	SceneNode* add(SceneNode* sceneNode );
+
+	bool remove( SceneNode* sceneNode );
+
+	size_t count() const;
 
 	void draw();
 
@@ -39,6 +45,7 @@ class EE_API SceneManager : public Container<SceneNode> {
 	Clock mClock;
 	UISceneNode* mUISceneNode;
 	bool mIsShootingDown;
+	std::vector<SceneNode*> mSceneNodes;
 };
 
 }} // namespace EE::Scene

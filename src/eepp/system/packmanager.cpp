@@ -15,15 +15,13 @@ Pack* PackManager::exists( std::string& path ) {
 
 	FileSystem::filePathRemoveProcessPath( tpath );
 
-	std::list<Pack*>::iterator it;
-
-	for ( it = mResources.begin(); it != mResources.end(); ++it ) {
-		if ( -1 != ( *it )->exists( tpath ) ) {
+	for ( auto& pack : mResources ) {
+		if ( -1 != pack->exists( tpath ) ) {
 			if ( path.size() != tpath.size() ) {
 				path = tpath;
 			}
 
-			return ( *it );
+			return pack;
 		}
 	}
 
@@ -31,11 +29,9 @@ Pack* PackManager::exists( std::string& path ) {
 }
 
 Pack* PackManager::getPackByPath( std::string path ) {
-	std::list<Pack*>::iterator it;
-
-	for ( it = mResources.begin(); it != mResources.end(); ++it ) {
-		if ( path == ( *it )->getPackPath() ) {
-			return ( *it );
+	for ( auto& pack : mResources ) {
+		if ( path == pack->getPackPath() ) {
+			return pack;
 		}
 	}
 

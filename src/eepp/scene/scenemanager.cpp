@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/scene/scenenode.hpp>
 #include <eepp/ui/uiscenenode.hpp>
@@ -11,25 +12,40 @@ SceneManager::SceneManager() : mUISceneNode( NULL ), mIsShootingDown( false ) {}
 SceneManager::~SceneManager() {
 	mIsShootingDown = true;
 
-	for ( auto it = mResources.begin(); it != mResources.end(); it++ ) {
-		eeSAFE_DELETE( ( *it ) );
+	for ( auto& it : mSceneNodes ) {
+		SceneNode* node = it;
+		eeSAFE_DELETE( node );
 	}
 
-	mResources.clear();
+	mSceneNodes.clear();
+}
+
+SceneNode* SceneManager::add( SceneNode* sceneNode ) {
+	mSceneNodes.push_back( sceneNode );
+	return sceneNode;
+}
+
+bool SceneManager::remove( SceneNode* sceneNode ) {
+	auto it = std::find( mSceneNodes.begin(), mSceneNodes.end(), sceneNode );
+	if ( it != mSceneNodes.end() ) {
+		mSceneNodes.erase( it );
+		return true;
+	}
+	return false;
+}
+
+size_t SceneManager::count() const {
+	return mSceneNodes.size();
 }
 
 void SceneManager::draw() {
-	for ( auto it = mResources.begin(); it != mResources.end(); it++ ) {
-		SceneNode* sceneNode = ( *it );
-
+	for ( auto& sceneNode : mSceneNodes ) {
 		sceneNode->draw();
 	}
 }
 
 void SceneManager::update( const Time& elapsed ) {
-	for ( auto it = mResources.begin(); it != mResources.end(); it++ ) {
-		SceneNode* sceneNode = ( *it );
-
+	for ( auto& sceneNode : mSceneNodes ) {
 		sceneNode->update( elapsed );
 	}
 }
@@ -44,9 +60,7 @@ bool SceneManager::isShootingDown() const {
 
 UISceneNode* SceneManager::getUISceneNode() {
 	if ( NULL == mUISceneNode ) {
-		for ( auto it = mResources.begin(); it != mResources.end(); it++ ) {
-			SceneNode* sceneNode = ( *it );
-
+		for ( auto& sceneNode : mSceneNodes ) {
 			if ( sceneNode->isUISceneNode() ) {
 				mUISceneNode = sceneNode->asType<UISceneNode>();
 				break;

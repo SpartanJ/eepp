@@ -101,7 +101,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		SceneManager::instance()->update();*/
 
 		total.restart();
-		for ( size_t i = 0; i < 10000; i++ ) {
+		for ( size_t i = 0; i < 100000; i++ ) {
 			auto* widget = UIWidget::New();
 			widget->setParent( vlay );
 			widget->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::Fixed );
@@ -115,8 +115,6 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		}
 		std::cout << "Time UIWidget total: " << total.getElapsedTime().asMilliseconds() << " ms"
 				  << std::endl;
-
-		win->close();
 
 		/*UIWindow* wind = UIWindow::New();
 		wind->setSize( 500, 500 );

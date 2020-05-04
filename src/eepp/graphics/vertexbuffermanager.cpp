@@ -9,10 +9,8 @@ VertexBufferManager::VertexBufferManager() {}
 VertexBufferManager::~VertexBufferManager() {}
 
 void VertexBufferManager::reload() {
-	std::list<VertexBuffer*>::iterator it;
-
-	for ( it = mResources.begin(); it != mResources.end(); ++it )
-		( *it )->reload();
+	for ( auto& vb : mResources )
+		vb->reload();
 }
 
 }}} // namespace EE::Graphics::Private
