@@ -12,6 +12,7 @@
 #include <eepp/ui/css/mediaquery.hpp>
 #include <eepp/ui/css/stylesheetparser.hpp>
 #include <eepp/ui/uieventdispatcher.hpp>
+#include <eepp/ui/uilayout.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uitooltip.hpp>
@@ -37,6 +38,7 @@ UISceneNode::UISceneNode( EE::Window::Window* window ) :
 #else
 	mVerbose( false ),
 #endif
+	mUpdatingLayouts( false ),
 	mUIThemeManager( UIThemeManager::New() ) {
 	// Update only UI elements that requires it.
 	setUpdateAllChilds( false );
@@ -415,6 +417,8 @@ void UISceneNode::update( const Time& elapsed ) {
 
 	SceneManager::instance()->setCurrentUISceneNode( this );
 
+	updateDirtyLayouts();
+
 	SceneNode::update( elapsed );
 
 	updateDirtyStyles();
@@ -428,13 +432,13 @@ void UISceneNode::onWidgetDelete( Node* node ) {
 	if ( node->isWidget() ) {
 		UIWidget* widget = node->asType<UIWidget>();
 
-		if ( mDirtyStyle.find( widget ) != mDirtyStyle.end() ) {
-			mDirtyStyle.erase( widget );
+		if ( node->isLayout() ) {
+			mDirtyLayouts.erase( node->asType<UILayout>() );
 		}
 
-		if ( mDirtyStyleState.find( widget ) != mDirtyStyleState.end() ) {
-			mDirtyStyleState.erase( widget );
-		}
+		mDirtyStyle.erase( widget );
+
+		mDirtyStyleState.erase( widget );
 	}
 }
 
@@ -531,8 +535,59 @@ void UISceneNode::invalidateStyleState( UIWidget* node, bool disableCSSAnimation
 	mDirtyStyleStateCSSAnimations[node] = disableCSSAnimations;
 }
 
+void UISceneNode::invalidateLayout( UILayout* node ) {
+	eeASSERT( NULL != node );
+
+	if ( node->isClosing() )
+		return;
+
+	Node* itNode = NULL;
+
+	if ( mDirtyLayouts.count( node ) > 0 )
+		return;
+
+	for ( auto& dirtyCtrl : mDirtyLayouts ) {
+		if ( NULL != dirtyCtrl && dirtyCtrl->isParentOf( node ) ) {
+			return;
+		}
+	}
+
+	std::vector<std::unordered_set<UILayout*>::iterator> itEraseList;
+
+	for ( auto it = mDirtyLayouts.begin(); it != mDirtyLayouts.end(); ++it ) {
+		itNode = *it;
+
+		if ( NULL != itNode && node->isParentOf( itNode ) ) {
+			itEraseList.push_back( it );
+		} else if ( NULL == itNode ) {
+			itEraseList.push_back( it );
+		}
+	}
+
+	for ( auto ite = itEraseList.begin(); ite != itEraseList.end(); ++ite ) {
+		mDirtyLayouts.erase( *ite );
+	}
+
+	mDirtyLayouts.insert( node );
+}
+
 void UISceneNode::setIsLoading( bool isLoading ) {
 	mIsLoading = isLoading;
+}
+
+void UISceneNode::updateDirtyLayouts() {
+	if ( !mDirtyLayouts.empty() ) {
+		Clock clock;
+		mUpdatingLayouts = true;
+
+		for ( UILayout* layout : mDirtyLayouts ) {
+			layout->packLayoutTree();
+		}
+
+		mDirtyLayouts.clear();
+		mUpdatingLayouts = false;
+		eePRINTL( "Layouts recalculated in %.2f ms", clock.getElapsedTime().asMilliseconds() );
+	}
 }
 
 void UISceneNode::updateDirtyStyles() {
@@ -557,6 +612,10 @@ void UISceneNode::updateDirtyStyleStates() {
 		eePRINTL( "CSS Style State Invalidated, reapplied state in %.2f ms",
 				  clock.getElapsedTime().asMilliseconds() );
 	}
+}
+
+const bool& UISceneNode::isUpdatingLayouts() const {
+	return mUpdatingLayouts;
 }
 
 bool UISceneNode::onMediaChanged() {

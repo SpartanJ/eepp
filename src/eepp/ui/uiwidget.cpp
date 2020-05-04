@@ -226,18 +226,18 @@ void UIWidget::createTooltip() {
 
 void UIWidget::onChildCountChange( Node* child, const bool& removed ) {
 	UINode::onChildCountChange( child, removed );
-	if ( !isSceneNodeLoading() && getUISceneNode() != NULL ) {
-		Node* child = getFirstChild();
-		UIWidget* widget = NULL;
-		while ( NULL != child ) {
-			if ( child->isWidget() ) {
-				widget = child->asType<UIWidget>();
-				if ( widget->getUIStyle() != NULL &&
-					 widget->getUIStyle()->isStructurallyVolatile() ) {
-					getUISceneNode()->invalidateStyleState( widget );
-				}
-			}
-			child = child->getNextNode();
+
+	if ( removed && child->isWidget() ) {
+		UIWidget* widget = child->asType<UIWidget>();
+		if ( widget->getUIStyle() && widget->getUIStyle()->isStructurallyVolatile() ) {
+			mStyle->removeStructurallyVolatileChild( widget->asType<UIWidget>() );
+		}
+	}
+
+	if ( !isSceneNodeLoading() && mUISceneNode != NULL && mStyle != NULL ) {
+		auto& svc = mStyle->getStructurallyVolatileChilds();
+		for ( auto& child : svc ) {
+			mUISceneNode->invalidateStyleState( child );
 		}
 	}
 }
@@ -267,8 +267,7 @@ Vector2f UIWidget::getTooltipPosition() {
 }
 
 void UIWidget::createStyle() {
-	if ( NULL == mStyle && NULL != getSceneNode() && getSceneNode()->isUISceneNode() &&
-		 getUISceneNode()->hasStyleSheet() ) {
+	if ( NULL == mStyle && NULL != mUISceneNode ) {
 		mStyle = UIStyle::New( this );
 		mStyle->setState( mState );
 	}
@@ -1727,11 +1726,13 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 			auto properties = prop.getShorthandDefinition()->parse( ait->value() );
 
 			for ( auto& property : properties ) {
-				mStyle->setStyleSheetProperty( property );
+				if ( NULL != mStyle )
+					mStyle->setStyleSheetProperty( property );
 				applyProperty( property );
 			}
 		} else {
-			mStyle->setStyleSheetProperty( prop );
+			if ( NULL != mStyle )
+				mStyle->setStyleSheetProperty( prop );
 			applyProperty( prop );
 		}
 	}

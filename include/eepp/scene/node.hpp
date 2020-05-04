@@ -59,9 +59,10 @@ enum NodeFlags {
 	NODE_FLAG_UINODE = ( 1 << 23 ),
 	NODE_FLAG_WIDGET = ( 1 << 24 ),
 	NODE_FLAG_WINDOW = ( 1 << 25 ),
+	NODE_FLAG_LAYOUT = ( 1 << 26 ),
 
-	NODE_FLAG_LOADING = ( 1 << 26 ),
-	NODE_FLAG_FREE_USE = ( 1 << 27 )
+	NODE_FLAG_LOADING = ( 1 << 27 ),
+	NODE_FLAG_FREE_USE = ( 1 << 28 )
 };
 
 class EE_API Node : public Transformable {
@@ -162,6 +163,8 @@ class EE_API Node : public Transformable {
 	bool isWidget() const;
 
 	bool isWindow() const;
+
+	bool isLayout() const;
 
 	bool isClipped() const;
 

@@ -28,6 +28,13 @@ UIStyle::UIStyle( UIWidget* widget ) :
 	mDisableAnimations( false ) {}
 
 UIStyle::~UIStyle() {
+	if ( mGlobalDefinition && mGlobalDefinition->isStructurallyVolatile() && mWidget->getParent() &&
+		 mWidget->getParent()->isWidget() &&
+		 mWidget->getParent()->asType<UIWidget>()->getUIStyle() ) {
+		mWidget->getParent()->asType<UIWidget>()->getUIStyle()->removeStructurallyVolatileChild(
+			mWidget );
+	}
+
 	removeRelatedWidgets();
 	unsubscribeNonCacheableStyles();
 }
@@ -53,12 +60,26 @@ void UIStyle::setStyleSheetProperty( const StyleSheetProperty& property ) {
 }
 
 void UIStyle::load() {
+	if ( mGlobalDefinition && mGlobalDefinition->isStructurallyVolatile() && mWidget->getParent() &&
+		 mWidget->getParent()->isWidget() &&
+		 mWidget->getParent()->asType<UIWidget>()->getUIStyle() ) {
+		mWidget->getParent()->asType<UIWidget>()->getUIStyle()->removeStructurallyVolatileChild(
+			mWidget );
+	}
+
 	mGlobalDefinition =
 		mWidget->getUISceneNode()->getStyleSheet().getElementStyles( mWidget, false );
 
 	unsubscribeNonCacheableStyles();
 
 	subscribeNonCacheableStyles();
+
+	if ( mGlobalDefinition && mGlobalDefinition->isStructurallyVolatile() && mWidget->getParent() &&
+		 mWidget->getParent()->isWidget() &&
+		 mWidget->getParent()->asType<UIWidget>()->getUIStyle() ) {
+		mWidget->getParent()->asType<UIWidget>()->getUIStyle()->addStructurallyVolatileChild(
+			mWidget );
+	}
 }
 
 void UIStyle::setStyleSheetProperties( const CSS::StyleSheetProperties& properties ) {
@@ -147,7 +168,7 @@ void UIStyle::setDisableAnimations( bool disableAnimations ) {
 }
 
 bool UIStyle::isStructurallyVolatile() const {
-	return NULL != mDefinition && mDefinition->isStructurallyVolatile();
+	return mGlobalDefinition && mGlobalDefinition->isStructurallyVolatile();
 }
 
 void UIStyle::reloadFontFamily() {
@@ -157,6 +178,20 @@ void UIStyle::reloadFontFamily() {
 			applyStyleSheetProperty( propIt->second, nullptr );
 		}
 	}
+}
+
+void UIStyle::addStructurallyVolatileChild( UIWidget* widget ) {
+	if ( mStructurallyVolatileChilds.count( widget ) == 0 ) {
+		mStructurallyVolatileChilds.insert( widget );
+	}
+}
+
+void UIStyle::removeStructurallyVolatileChild( UIWidget* widget ) {
+	mStructurallyVolatileChilds.erase( widget );
+}
+
+std::unordered_set<UIWidget*>& UIStyle::getStructurallyVolatileChilds() {
+	return mStructurallyVolatileChilds;
 }
 
 void UIStyle::subscribeRelated( UIWidget* widget ) {
@@ -662,8 +697,9 @@ void UIStyle::removeAnimation( const PropertyDefinition* propertyDefinition,
 }
 
 StyleSheetProperty* UIStyle::getLocalProperty( Uint32 propId ) {
-	StyleSheetProperty* defProperty = mDefinition->getProperty( propId );
-	StyleSheetProperty* elemProperty = mElementStyle->getPropertyById( propId );
+	StyleSheetProperty* defProperty = mDefinition ? mDefinition->getProperty( propId ) : nullptr;
+	StyleSheetProperty* elemProperty =
+		mElementStyle ? mElementStyle->getPropertyById( propId ) : nullptr;
 	if ( defProperty && elemProperty )
 		return defProperty->getSpecificity() > elemProperty->getSpecificity() ? defProperty
 																			  : elemProperty;

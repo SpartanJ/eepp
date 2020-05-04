@@ -53,7 +53,7 @@ UIGridLayout::ElementMode UIGridLayout::getRowMode() const {
 
 UIGridLayout* UIGridLayout::setRowMode( const UIGridLayout::ElementMode& mode ) {
 	mRowMode = mode;
-	pack();
+	packConditional();
 	invalidateDraw();
 	return this;
 }
@@ -65,7 +65,7 @@ Float UIGridLayout::getColumnWeight() const {
 UIGridLayout* UIGridLayout::setColumnWeight( const Float& columnWeight ) {
 	mColumnWeight = columnWeight;
 	if ( mColumnMode == Weight )
-		pack();
+		packConditional();
 	invalidateDraw();
 	return this;
 }
@@ -77,7 +77,7 @@ int UIGridLayout::getColumnWidth() const {
 UIGridLayout* UIGridLayout::setColumnWidth( int columnWidth ) {
 	mColumnWidth = columnWidth;
 	if ( mColumnMode == Size )
-		pack();
+		packConditional();
 	invalidateDraw();
 	return this;
 }
@@ -89,7 +89,7 @@ int UIGridLayout::getRowHeight() const {
 UIGridLayout* UIGridLayout::setRowHeight( int rowHeight ) {
 	mRowHeight = rowHeight;
 	if ( mRowMode == Size )
-		pack();
+		packConditional();
 	invalidateDraw();
 	return this;
 }
@@ -101,29 +101,9 @@ Float UIGridLayout::getRowWeight() const {
 UIGridLayout* UIGridLayout::setRowWeight( const Float& rowWeight ) {
 	mRowWeight = rowWeight;
 	if ( mRowMode == Weight )
-		pack();
+		packConditional();
 	invalidateDraw();
 	return this;
-}
-
-void UIGridLayout::onSizeChange() {
-	pack();
-	UIWidget::onSizeChange();
-}
-
-void UIGridLayout::onChildCountChange( Node* child, const bool& removed ) {
-	pack();
-	UIWidget::onChildCountChange( child, removed );
-}
-
-void UIGridLayout::onPaddingChange() {
-	pack();
-	UILayout::onPaddingChange();
-}
-
-void UIGridLayout::onParentSizeChange( const Vector2f& SizeChange ) {
-	pack();
-	UIWidget::onParentSizeChange( SizeChange );
 }
 
 void UIGridLayout::pack() {
@@ -210,12 +190,13 @@ void UIGridLayout::pack() {
 	}
 
 	invalidateDraw();
+	mDirtyLayout = false;
 }
 
 Uint32 UIGridLayout::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
 		case NodeMessage::LayoutAttributeChange: {
-			pack();
+			packConditional();
 			break;
 		}
 	}

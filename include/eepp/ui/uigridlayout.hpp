@@ -50,6 +50,7 @@ class EE_API UIGridLayout : public UILayout {
 
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
+	virtual void pack();
   protected:
 	Sizei mBoxMargin;
 	ElementMode mColumnMode;
@@ -59,19 +60,9 @@ class EE_API UIGridLayout : public UILayout {
 	Float mRowWeight;
 	int mRowHeight;
 
-	virtual void onSizeChange();
-
-	virtual void onChildCountChange( Node* child, const bool& removed );
-
-	virtual void onPaddingChange();
-
-	virtual void onParentSizeChange( const Vector2f& SizeChange );
-
 	virtual Uint32 onMessage( const NodeMessage* Msg );
 
 	Sizef getTargetElementSize() const;
-
-	void pack();
 };
 
 }} // namespace EE::UI

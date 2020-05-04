@@ -881,6 +881,10 @@ bool Node::isWindow() const {
 	return 0 != ( mNodeFlags & NODE_FLAG_WINDOW );
 }
 
+bool Node::isLayout() const {
+	return 0 != ( mNodeFlags & NODE_FLAG_LAYOUT );
+}
+
 bool Node::isClipped() const {
 	return 0 != ( mNodeFlags & NODE_FLAG_CLIP_ENABLE );
 }
@@ -1039,14 +1043,15 @@ void Node::removeEventListener( const Uint32& CallbackId ) {
 	}
 }
 
-void Node::sendEvent( const Event* Event ) {
-	if ( 0 != mEvents.count( Event->getType() ) ) {
-		std::map<Uint32, EventCallback> event = mEvents[Event->getType()];
-		std::map<Uint32, EventCallback>::iterator it;
-
-		if ( event.begin() != event.end() ) {
-			for ( it = event.begin(); it != event.end(); ++it )
-				it->second( Event );
+void Node::sendEvent( const Event* event ) {
+	if ( 0 != mEvents.count( event->getType() ) ) {
+		std::map<Uint32, EventCallback> eventMap = mEvents[event->getType()];
+		if ( eventMap.begin() != eventMap.end() ) {
+			std::map<Uint32, EventCallback>::iterator it;
+			for ( it = eventMap.begin(); it != eventMap.end(); ++it ) {
+				const_cast<Event*>( event )->mCallbackId = it->first;
+				it->second( event );
+			}
 		}
 	}
 }

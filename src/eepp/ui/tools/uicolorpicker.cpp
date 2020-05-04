@@ -279,11 +279,14 @@ UIColorPicker::UIColorPicker( UIWindow* attachTo, const UIColorPicker::ColorPick
 
 	mRoot->addEventListener( Event::OnSizeChange, [&]( const Event* event ) { updateAll(); } );
 
-	mHuePicker->setDrawable( createHueTexture( mHuePicker->getPixelsSize() ), true );
-	mCurrentColor->setBackgroundDrawable( createGridTexture(), true );
-	mCurrentColor->setBackgroundRepeat( "repeat" );
-
-	updateAll();
+	mRoot->addEventListener( Event::OnLayoutUpdate, [&]( const Event* event ) {
+		if ( mHuePicker->getDrawable() == nullptr ) {
+			mHuePicker->setDrawable( createHueTexture( mHuePicker->getPixelsSize() ), true );
+			mCurrentColor->setBackgroundDrawable( createGridTexture(), true );
+			mCurrentColor->setBackgroundRepeat( "repeat" );
+			updateAll();
+		}
+	} );
 
 	registerEvents();
 }
@@ -344,7 +347,8 @@ Texture* UIColorPicker::createHueTexture( const Sizef& size ) {
 		hsva.hsv.h = 360.f - 360.f * y / image.getHeight();
 		hsva.hsv.s = 1.f;
 		hsva.hsv.v = 1.f;
-		image.setPixel( 0, y, Color::fromHsv( hsva ) );
+		Color color( Color::fromHsv( hsva ) );
+		image.setPixel( 0, y, color );
 	}
 
 	TextureFactory* TF = TextureFactory::instance();

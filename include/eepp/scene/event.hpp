@@ -61,6 +61,7 @@ class EE_API Event {
 		OnTagChange,
 		OnIdChange,
 		OnClassChange,
+		OnLayoutUpdate,
 		UserEvent,
 		NoEvent = eeINDEX_NOT_FOUND
 	};
@@ -73,9 +74,13 @@ class EE_API Event {
 
 	const Uint32& getType() const;
 
+	const Uint32& getCallbackId() const;
+
   protected:
+	friend class Node;
 	Node* mNode;
 	Uint32 mEventType;
+	Uint32 mCallbackId;
 };
 
 }} // namespace EE::Scene

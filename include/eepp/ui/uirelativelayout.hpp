@@ -17,18 +17,9 @@ class EE_API UIRelativeLayout : public UILayout {
 
 	UIRelativeLayout* add( UIWidget* widget );
 
+	virtual void pack();
   protected:
 	virtual Uint32 onMessage( const NodeMessage* Msg );
-
-	virtual void onSizeChange();
-
-	virtual void onPaddingChange();
-
-	virtual void onChildCountChange( Node * child, const bool& removed );
-
-	virtual void onParentSizeChange( const Vector2f& SizeChange );
-
-	void fixChilds();
 
 	void fixChildPos( UIWidget* widget );
 
