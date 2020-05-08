@@ -30,7 +30,7 @@ class EE_API UILinearLayout : public UILayout {
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
 										   const Uint32& propertyIndex = 0 );
 
-	void pack();
+	void updateLayout();
 
 	bool isPacking() const;
 

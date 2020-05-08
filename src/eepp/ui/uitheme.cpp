@@ -66,13 +66,12 @@ UITheme* UITheme::loadFromTextureAtlas( UITheme* tTheme, Graphics::TextureAtlas*
 
 	tTheme->setTextureAtlas( textureAtlas );
 
-	std::list<TextureRegion*>& resources = textureAtlas->getResources();
-	std::list<TextureRegion*>::iterator it;
+	auto& resources = textureAtlas->getResources();
 	std::string sAbbr( tTheme->getAbbr() + "_" );
 	std::map<std::string, UISkin*> skins;
 
-	for ( it = resources.begin(); it != resources.end(); ++it ) {
-		TextureRegion* textureRegion = *it;
+	for ( auto& it : resources ) {
+		TextureRegion* textureRegion = it.second;
 
 		std::string name( textureRegion->getName() );
 
@@ -257,7 +256,7 @@ UITheme* UITheme::loadFromTextureAtlas( Graphics::TextureAtlas* TextureAtlas,
 }
 
 UITheme::UITheme( const std::string& name, const std::string& Abbr, Graphics::Font* defaultFont ) :
-	ResourceManager<UISkin>( false ),
+	ResourceManagerMulti<UISkin>(),
 	mName( name ),
 	mNameHash( String::hash( mName ) ),
 	mAbbr( Abbr ),
@@ -285,7 +284,7 @@ const std::string& UITheme::getAbbr() const {
 }
 
 UISkin* UITheme::add( UISkin* Resource ) {
-	return ResourceManager<UISkin>::add( Resource );
+	return ResourceManagerMulti<UISkin>::add( Resource );
 }
 
 Graphics::TextureAtlas* UITheme::getTextureAtlas() const {

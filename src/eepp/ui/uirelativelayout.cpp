@@ -24,7 +24,7 @@ UIRelativeLayout* UIRelativeLayout::add( UIWidget* widget ) {
 	return this;
 }
 
-void UIRelativeLayout::pack() {
+void UIRelativeLayout::updateLayout() {
 	if ( getParent()->isUINode() && !getParent()->asType<UINode>()->ownsChildPosition() ) {
 		setInternalPosition( Vector2f( mLayoutMargin.Left, mLayoutMargin.Top ) );
 	}
@@ -170,8 +170,8 @@ void UIRelativeLayout::fixChildSize( UIWidget* widget ) {
 Uint32 UIRelativeLayout::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
 		case NodeMessage::LayoutAttributeChange: {
-			packConditional();
-			break;
+			tryUpdateLayout();
+			return 1;
 		}
 	}
 

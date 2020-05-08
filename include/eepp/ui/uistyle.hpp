@@ -122,6 +122,10 @@ class EE_API UIStyle : public UIState {
 						  const Uint32& propertyIndex );
 
 	CSS::StyleSheetProperty* getLocalProperty( Uint32 propId );
+
+	void addStructurallyVolatileWidgetFromParent();
+
+	void removeStructurallyVolatileWidgetFromParent();
 };
 
 }} // namespace EE::UI

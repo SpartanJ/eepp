@@ -50,7 +50,8 @@ class EE_API UIGridLayout : public UILayout {
 
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
-	virtual void pack();
+	virtual void updateLayout();
+
   protected:
 	Sizei mBoxMargin;
 	ElementMode mColumnMode;

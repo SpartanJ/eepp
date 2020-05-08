@@ -28,13 +28,7 @@ UIStyle::UIStyle( UIWidget* widget ) :
 	mDisableAnimations( false ) {}
 
 UIStyle::~UIStyle() {
-	if ( mGlobalDefinition && mGlobalDefinition->isStructurallyVolatile() && mWidget->getParent() &&
-		 mWidget->getParent()->isWidget() &&
-		 mWidget->getParent()->asType<UIWidget>()->getUIStyle() ) {
-		mWidget->getParent()->asType<UIWidget>()->getUIStyle()->removeStructurallyVolatileChild(
-			mWidget );
-	}
-
+	removeStructurallyVolatileWidgetFromParent();
 	removeRelatedWidgets();
 	unsubscribeNonCacheableStyles();
 }
@@ -60,12 +54,7 @@ void UIStyle::setStyleSheetProperty( const StyleSheetProperty& property ) {
 }
 
 void UIStyle::load() {
-	if ( mGlobalDefinition && mGlobalDefinition->isStructurallyVolatile() && mWidget->getParent() &&
-		 mWidget->getParent()->isWidget() &&
-		 mWidget->getParent()->asType<UIWidget>()->getUIStyle() ) {
-		mWidget->getParent()->asType<UIWidget>()->getUIStyle()->removeStructurallyVolatileChild(
-			mWidget );
-	}
+	removeStructurallyVolatileWidgetFromParent();
 
 	mGlobalDefinition =
 		mWidget->getUISceneNode()->getStyleSheet().getElementStyles( mWidget, false );
@@ -74,12 +63,7 @@ void UIStyle::load() {
 
 	subscribeNonCacheableStyles();
 
-	if ( mGlobalDefinition && mGlobalDefinition->isStructurallyVolatile() && mWidget->getParent() &&
-		 mWidget->getParent()->isWidget() &&
-		 mWidget->getParent()->asType<UIWidget>()->getUIStyle() ) {
-		mWidget->getParent()->asType<UIWidget>()->getUIStyle()->addStructurallyVolatileChild(
-			mWidget );
-	}
+	addStructurallyVolatileWidgetFromParent();
 }
 
 void UIStyle::setStyleSheetProperties( const CSS::StyleSheetProperties& properties ) {
@@ -485,6 +469,7 @@ void UIStyle::applyStyleSheetProperty( const StyleSheetProperty& property,
 					} else {
 						elapsed = transitionInfo.getDuration();
 					}
+					startValue = prevTransition->getEndValue();
 				} else if ( startValue == prevTransition->getEndValue() ) {
 					startValue = currentValue;
 				}
@@ -704,6 +689,24 @@ StyleSheetProperty* UIStyle::getLocalProperty( Uint32 propId ) {
 		return defProperty->getSpecificity() > elemProperty->getSpecificity() ? defProperty
 																			  : elemProperty;
 	return defProperty ? defProperty : elemProperty;
+}
+
+void UIStyle::addStructurallyVolatileWidgetFromParent() {
+	if ( mGlobalDefinition && mGlobalDefinition->isStructurallyVolatile() && mWidget->getParent() &&
+		 mWidget->getParent()->isWidget() &&
+		 mWidget->getParent()->asType<UIWidget>()->getUIStyle() ) {
+		mWidget->getParent()->asType<UIWidget>()->getUIStyle()->addStructurallyVolatileChild(
+			mWidget );
+	}
+}
+
+void UIStyle::removeStructurallyVolatileWidgetFromParent() {
+	if ( mGlobalDefinition && mGlobalDefinition->isStructurallyVolatile() && mWidget->getParent() &&
+		 mWidget->getParent()->isWidget() &&
+		 mWidget->getParent()->asType<UIWidget>()->getUIStyle() ) {
+		mWidget->getParent()->asType<UIWidget>()->getUIStyle()->removeStructurallyVolatileChild(
+			mWidget );
+	}
 }
 
 }} // namespace EE::UI

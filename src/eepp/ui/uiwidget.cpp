@@ -235,6 +235,9 @@ void UIWidget::onChildCountChange( Node* child, const bool& removed ) {
 	}
 
 	if ( !isSceneNodeLoading() && mUISceneNode != NULL && mStyle != NULL ) {
+		// Childs that are structurally volatile can change states when a new
+		// element is added to the parent. We pre-store them and invalidate its
+		// state if that's the case.
 		auto& svc = mStyle->getStructurallyVolatileChilds();
 		for ( auto& child : svc ) {
 			mUISceneNode->invalidateStyleState( child );

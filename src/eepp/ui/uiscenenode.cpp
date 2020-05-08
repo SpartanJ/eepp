@@ -577,16 +577,14 @@ void UISceneNode::setIsLoading( bool isLoading ) {
 
 void UISceneNode::updateDirtyLayouts() {
 	if ( !mDirtyLayouts.empty() ) {
-		Clock clock;
 		mUpdatingLayouts = true;
 
 		for ( UILayout* layout : mDirtyLayouts ) {
-			layout->packLayoutTree();
+			layout->updateLayoutTree();
 		}
 
 		mDirtyLayouts.clear();
 		mUpdatingLayouts = false;
-		eePRINTL( "Layouts recalculated in %.2f ms", clock.getElapsedTime().asMilliseconds() );
 	}
 }
 
@@ -597,7 +595,9 @@ void UISceneNode::updateDirtyStyles() {
 			node->reloadStyle( true, false, false );
 		}
 		mDirtyStyle.clear();
-		eePRINTL( "CSS Styles Reloaded in %.2f ms", clock.getElapsedTime().asMilliseconds() );
+
+		if ( mVerbose )
+			eePRINTL( "CSS Styles Reloaded in %.2f ms", clock.getElapsedTime().asMilliseconds() );
 	}
 }
 
@@ -609,8 +609,10 @@ void UISceneNode::updateDirtyStyleStates() {
 		}
 		mDirtyStyleState.clear();
 		mDirtyStyleStateCSSAnimations.clear();
-		eePRINTL( "CSS Style State Invalidated, reapplied state in %.2f ms",
-				  clock.getElapsedTime().asMilliseconds() );
+
+		if ( mVerbose )
+			eePRINTL( "CSS Style State Invalidated, reapplied state in %.2f ms",
+					  clock.getElapsedTime().asMilliseconds() );
 	}
 }
 

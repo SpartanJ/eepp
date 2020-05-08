@@ -6,7 +6,7 @@ TextureAtlas* TextureAtlas::New( const std::string& name ) {
 	return eeNew( TextureAtlas, ( name ) );
 }
 
-TextureAtlas::TextureAtlas( const std::string& name ) : ResourceManager<TextureRegion>( true ) {
+TextureAtlas::TextureAtlas( const std::string& name ) : ResourceManager<TextureRegion>() {
 	setName( name );
 }
 

@@ -15,15 +15,9 @@ class EE_API UILayout : public UIWidget {
 
 	virtual bool isType( const Uint32& type ) const;
 
-	virtual void pack();
-
-	virtual void setLayoutDirty();
-
-	virtual void packConditional();
-
-	void packLayoutTree();
-
   protected:
+	friend class UISceneNode;
+
 	UILayout( const std::string& tag );
 
 	virtual void onSizeChange();
@@ -35,6 +29,14 @@ class EE_API UILayout : public UIWidget {
 	virtual void onChildCountChange( Node* child, const bool& removed );
 
 	virtual void onLayoutUpdate();
+
+	virtual void tryUpdateLayout();
+
+	virtual void updateLayout();
+
+	virtual void updateLayoutTree();
+
+	void setLayoutDirty();
 
 	std::unordered_set<UILayout*> mLayouts;
 	bool mDirtyLayout;

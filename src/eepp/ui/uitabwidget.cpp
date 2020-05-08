@@ -14,7 +14,7 @@ UITabWidget* UITabWidget::New() {
 }
 
 UITabWidget::UITabWidget() :
-	UIWidget( "tabwidget" ),
+	UILayout( "tabwidget" ),
 	mCtrlContainer( NULL ),
 	mTabContainer( NULL ),
 	mTabSelected( NULL ),
@@ -35,8 +35,6 @@ UITabWidget::UITabWidget() :
 		->setPosition( 0, mStyleConfig.TabHeight );
 	mCtrlContainer->clipEnable();
 
-	onSizeChange();
-
 	applyDefaultTheme();
 }
 
@@ -47,11 +45,11 @@ Uint32 UITabWidget::getType() const {
 }
 
 bool UITabWidget::isType( const Uint32& type ) const {
-	return UITabWidget::getType() == type ? true : UIWidget::isType( type );
+	return UITabWidget::getType() == type ? true : UILayout::isType( type );
 }
 
 void UITabWidget::setTheme( UITheme* Theme ) {
-	UIWidget::setTheme( Theme );
+	UILayout::setTheme( Theme );
 
 	mTabContainer->setThemeSkin( Theme, "tabwidget" );
 
@@ -75,9 +73,9 @@ void UITabWidget::setTheme( UITheme* Theme ) {
 }
 
 void UITabWidget::onThemeLoaded() {
-	onSizeChange();
+	tryUpdateLayout();
 
-	UIWidget::onThemeLoaded();
+	UILayout::onThemeLoaded();
 }
 
 void UITabWidget::setContainerSize() {
@@ -86,8 +84,8 @@ void UITabWidget::setContainerSize() {
 	mTabContainer->setPosition( mPadding.Left, mPadding.Top );
 	mCtrlContainer->setPosition( mPadding.Left, mPadding.Top + mStyleConfig.TabHeight );
 	Sizef s( mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
-			mSize.getHeight() - PixelDensity::dpToPx( mStyleConfig.TabHeight ) - mRealPadding.Top -
-				mRealPadding.Bottom );
+			 mSize.getHeight() - PixelDensity::dpToPx( mStyleConfig.TabHeight ) - mRealPadding.Top -
+				 mRealPadding.Bottom );
 	if ( s != mCtrlContainer->getSize() ) {
 		mCtrlContainer->setPixelsSize( s );
 
@@ -130,7 +128,7 @@ std::string UITabWidget::getPropertyString( const PropertyDefinition* propertyDe
 		case PropertyId::TabHeight:
 			return String::fromFloat( getTabsHeight(), "dp" );
 		default:
-			return UIWidget::getPropertyString( propertyDef, propertyIndex );
+			return UILayout::getPropertyString( propertyDef, propertyIndex );
 	}
 }
 
@@ -191,7 +189,7 @@ bool UITabWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			setTabsHeight( attribute.asDpDimension( this ) );
 			break;
 		default:
-			return UIWidget::applyProperty( attribute );
+			return UILayout::applyProperty( attribute );
 	}
 
 	return true;
@@ -576,17 +574,6 @@ Uint32 UITabWidget::getSelectedTabIndex() const {
 	return mTabSelectedIndex;
 }
 
-void UITabWidget::onSizeChange() {
-	setContainerSize();
-	posTabs();
-
-	if ( NULL != mTabSelected && NULL != mTabSelected->getOwnedWidget() ) {
-		mTabSelected->getOwnedWidget()->setSize( mCtrlContainer->getSize() );
-	}
-
-	UIWidget::onSizeChange();
-}
-
 void UITabWidget::onChildCountChange( Node* child, const bool& removed ) {
 	if ( !removed && child != mTabContainer && child != mCtrlContainer ) {
 		if ( child->isType( UI_TYPE_TAB ) ) {
@@ -605,16 +592,27 @@ void UITabWidget::onChildCountChange( Node* child, const bool& removed ) {
 			child->setParent( mCtrlContainer );
 			child->setVisible( false );
 			child->setEnabled( true );
+
+			if ( child->isLayout() ) {
+				mLayouts.insert( child->asType<UILayout>() );
+			}
 		}
 	}
 
-	UIWidget::onChildCountChange( child, removed );
+	if ( removed && child->isLayout() ) {
+		mLayouts.erase( child->asType<UILayout>() );
+	}
+
+	tryUpdateLayout();
 }
 
-void UITabWidget::onPaddingChange() {
-	onSizeChange();
+void UITabWidget::updateLayout() {
+	setContainerSize();
+	posTabs();
 
-	UIWidget::onPaddingChange();
+	if ( NULL != mTabSelected && NULL != mTabSelected->getOwnedWidget() ) {
+		mTabSelected->getOwnedWidget()->setSize( mCtrlContainer->getSize() );
+	}
 }
 
 void UITabWidget::applyThemeToTabs() {

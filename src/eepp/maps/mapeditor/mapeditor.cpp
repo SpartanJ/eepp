@@ -945,7 +945,7 @@ void MapEditor::onNewGOTypeAdded( std::string name, Uint32 hash ) {
 
 void MapEditor::fillSGCombo() {
 	TextureAtlasManager* SGM = TextureAtlasManager::instance();
-	std::list<TextureAtlas*>& Res = SGM->getResources();
+	auto& res = SGM->getResources();
 
 	mTextureAtlasesList->getListBox()->clear();
 
@@ -956,9 +956,9 @@ void MapEditor::fillSGCombo() {
 	if ( NULL != mTheme && NULL != mTheme->getTextureAtlas() )
 		Restricted2 = String::hash( mTheme->getTextureAtlas()->getName() );
 
-	for ( std::list<TextureAtlas*>::iterator it = Res.begin(); it != Res.end(); ++it ) {
-		if ( ( *it )->getId() != Restricted1 && ( *it )->getId() != Restricted2 )
-			items.push_back( ( *it )->getName() );
+	for ( auto& it : res ) {
+		if ( it.second->getId() != Restricted1 && it.second->getId() != Restricted2 )
+			items.push_back( it.second->getName() );
 	}
 
 	if ( items.size() ) {
@@ -974,15 +974,15 @@ void MapEditor::fillSGCombo() {
 void MapEditor::fillTextureRegionList() {
 	TextureAtlasManager* SGM = TextureAtlasManager::instance();
 	mCurSG = SGM->getByName( mTextureAtlasesList->getText() );
-	std::list<TextureRegion*>& Res = mCurSG->getResources();
+	auto& res = mCurSG->getResources();
 
 	mTextureRegionList->clear();
 
 	if ( NULL != mCurSG ) {
 		std::vector<String> items;
 
-		for ( std::list<TextureRegion*>::iterator it = Res.begin(); it != Res.end(); ++it ) {
-			items.push_back( ( *it )->getName() );
+		for ( auto& it : res ) {
+			items.push_back( it.second->getName() );
 		}
 
 		if ( items.size() ) {

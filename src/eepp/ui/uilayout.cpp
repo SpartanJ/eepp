@@ -27,22 +27,22 @@ void UILayout::onChildCountChange( Node* child, const bool& removed ) {
 		}
 	}
 
-	packConditional();
+	tryUpdateLayout();
 }
 
 void UILayout::onSizeChange() {
 	UIWidget::onSizeChange();
-	packConditional();
+	tryUpdateLayout();
 }
 
 void UILayout::onPaddingChange() {
 	UIWidget::onPaddingChange();
-	packConditional();
+	tryUpdateLayout();
 }
 
 void UILayout::onParentSizeChange( const Vector2f& ) {
 	UIWidget::onParentChange();
-	packConditional();
+	tryUpdateLayout();
 }
 
 void UILayout::onLayoutUpdate() {
@@ -57,7 +57,7 @@ bool UILayout::isType( const Uint32& type ) const {
 	return UILayout::getType() == type ? true : UIWidget::isType( type );
 }
 
-void UILayout::pack() {}
+void UILayout::updateLayout() {}
 
 void UILayout::setLayoutDirty() {
 	if ( !mDirtyLayout ) {
@@ -66,19 +66,19 @@ void UILayout::setLayoutDirty() {
 	}
 }
 
-void UILayout::packConditional() {
+void UILayout::tryUpdateLayout() {
 	if ( mUISceneNode->isUpdatingLayouts() ) {
-		pack();
+		updateLayout();
 	} else if ( !mDirtyLayout ) {
 		setLayoutDirty();
 	}
 }
 
-void UILayout::packLayoutTree() {
-	pack();
+void UILayout::updateLayoutTree() {
+	updateLayout();
 
 	for ( auto layout : mLayouts ) {
-		layout->packLayoutTree();
+		layout->updateLayoutTree();
 	}
 
 	onLayoutUpdate();

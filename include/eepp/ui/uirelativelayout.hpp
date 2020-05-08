@@ -17,7 +17,8 @@ class EE_API UIRelativeLayout : public UILayout {
 
 	UIRelativeLayout* add( UIWidget* widget );
 
-	virtual void pack();
+	virtual void updateLayout();
+
   protected:
 	virtual Uint32 onMessage( const NodeMessage* Msg );
 

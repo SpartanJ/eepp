@@ -44,7 +44,7 @@ UILinearLayout* UILinearLayout::add( UIWidget* widget ) {
 	return this;
 }
 
-void UILinearLayout::pack() {
+void UILinearLayout::updateLayout() {
 	if ( mOrientation == UIOrientation::Vertical )
 		packVertical();
 	else
@@ -477,8 +477,8 @@ bool UILinearLayout::applyProperty( const StyleSheetProperty& attribute ) {
 Uint32 UILinearLayout::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
 		case NodeMessage::LayoutAttributeChange: {
-			packConditional();
-			break;
+			tryUpdateLayout();
+			return 1;
 		}
 	}
 

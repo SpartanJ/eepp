@@ -52,6 +52,7 @@ class EE_API String {
 	typedef StringType::const_iterator ConstIterator;				 //! Constant iterator type
 	typedef StringType::reverse_iterator ReverseIterator;			 //! Reverse Iterator type
 	typedef StringType::const_reverse_iterator ConstReverseIterator; //! Constant iterator type
+	typedef Uint32 HashType;
 
 	static const std::size_t InvalidPos; ///< Represents an invalid position in the string
 

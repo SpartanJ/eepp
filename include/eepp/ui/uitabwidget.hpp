@@ -2,12 +2,12 @@
 #define EE_UICUITABWIDGET_HPP
 
 #include <deque>
+#include <eepp/ui/uilayout.hpp>
 #include <eepp/ui/uitab.hpp>
-#include <eepp/ui/uiwidget.hpp>
 
 namespace EE { namespace UI {
 
-class EE_API UITabWidget : public UIWidget {
+class EE_API UITabWidget : public UILayout {
   public:
 	class StyleConfig {
 	  public:
@@ -127,11 +127,9 @@ class EE_API UITabWidget : public UIWidget {
 
 	UITab* createTab( const String& Text, UINode* CtrlOwned, Drawable* Icon );
 
-	virtual void onSizeChange();
-
 	virtual void onChildCountChange( Node* child, const bool& removed );
 
-	virtual void onPaddingChange();
+	virtual void updateLayout();
 
 	void setContainerSize();
 

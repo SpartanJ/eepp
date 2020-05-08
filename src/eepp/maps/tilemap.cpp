@@ -1435,7 +1435,7 @@ void TileMap::saveToFile( const std::string& path ) {
 
 std::vector<std::string> TileMap::getTextureAtlases() {
 	TextureAtlasManager* SGM = TextureAtlasManager::instance();
-	std::list<TextureAtlas*>& Res = SGM->getResources();
+	auto& res = SGM->getResources();
 
 	std::vector<std::string> items;
 
@@ -1448,9 +1448,9 @@ std::vector<std::string> TileMap::getTextureAtlases() {
 										   ->getTextureAtlas()
 										   ->getName() );
 
-	for ( std::list<TextureAtlas*>::iterator it = Res.begin(); it != Res.end(); ++it ) {
-		if ( ( *it )->getId() != Restricted1 && ( *it )->getId() != Restricted2 )
-			items.push_back( ( *it )->getPath() );
+	for ( auto& it : res ) {
+		if ( it.second->getId() != Restricted1 && it.second->getId() != Restricted2 )
+			items.push_back( it.second->getPath() );
 	}
 
 	return items;
