@@ -546,26 +546,29 @@ void UISceneNode::invalidateLayout( UILayout* node ) {
 	if ( mDirtyLayouts.count( node ) > 0 )
 		return;
 
-	for ( auto& dirtyCtrl : mDirtyLayouts ) {
-		if ( NULL != dirtyCtrl && dirtyCtrl->isParentOf( node ) ) {
-			return;
+	if ( node->getParent()->isLayout() ) {
+		for ( auto& dirtyCtrl : mDirtyLayouts ) {
+			if ( NULL != dirtyCtrl && dirtyCtrl->isParentOf( node ) &&
+				 node->getParent()->isLayout() ) {
+				return;
+			}
 		}
-	}
 
-	std::vector<std::unordered_set<UILayout*>::iterator> itEraseList;
+		std::vector<std::unordered_set<UILayout*>::iterator> itEraseList;
 
-	for ( auto it = mDirtyLayouts.begin(); it != mDirtyLayouts.end(); ++it ) {
-		itNode = *it;
+		for ( auto it = mDirtyLayouts.begin(); it != mDirtyLayouts.end(); ++it ) {
+			itNode = *it;
 
-		if ( NULL != itNode && node->isParentOf( itNode ) ) {
-			itEraseList.push_back( it );
-		} else if ( NULL == itNode ) {
-			itEraseList.push_back( it );
+			if ( NULL != itNode && node->isParentOf( itNode ) && itNode->getParent()->isLayout() ) {
+				itEraseList.push_back( it );
+			} else if ( NULL == itNode ) {
+				itEraseList.push_back( it );
+			}
 		}
-	}
 
-	for ( auto ite = itEraseList.begin(); ite != itEraseList.end(); ++ite ) {
-		mDirtyLayouts.erase( *ite );
+		for ( auto ite = itEraseList.begin(); ite != itEraseList.end(); ++ite ) {
+			mDirtyLayouts.erase( *ite );
+		}
 	}
 
 	mDirtyLayouts.insert( node );
