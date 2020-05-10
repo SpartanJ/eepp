@@ -17,12 +17,12 @@ class Drawable;
 
 namespace EE { namespace UI {
 
-class EE_API UITheme : protected ResourceManager<UISkin> {
+class EE_API UITheme : protected ResourceManagerMulti<UISkin> {
   public:
-	using ResourceManager<UISkin>::getById;
-	using ResourceManager<UISkin>::getByName;
-	using ResourceManager<UISkin>::exists;
-	using ResourceManager<UISkin>::existsId;
+	using ResourceManagerMulti<UISkin>::getById;
+	using ResourceManagerMulti<UISkin>::getByName;
+	using ResourceManagerMulti<UISkin>::exists;
+	using ResourceManagerMulti<UISkin>::existsId;
 
 	static UITheme* New( const std::string& name, const std::string& abbr,
 						 Graphics::Font* defaultFont = NULL );

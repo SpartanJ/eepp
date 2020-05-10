@@ -130,10 +130,10 @@ void SceneNode::draw() {
 void SceneNode::update( const Time& time ) {
 	mElapsed = time;
 
+	mActionManager->update( time );
+
 	if ( NULL != mEventDispatcher )
 		mEventDispatcher->update( time );
-
-	mActionManager->update( time );
 
 	checkClose();
 

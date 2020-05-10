@@ -8,7 +8,7 @@ UIThemeManager* UIThemeManager::New() {
 }
 
 UIThemeManager::UIThemeManager() :
-	ResourceManager<UITheme>( true ),
+	ResourceManager<UITheme>(),
 	mFont( NULL ),
 	mFontSize( 12 ),
 	mThemeDefault( NULL ),

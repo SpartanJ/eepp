@@ -1,4 +1,5 @@
 #include <eepp/ui/uirelativelayout.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 
 namespace EE { namespace UI {
 
@@ -23,26 +24,10 @@ UIRelativeLayout* UIRelativeLayout::add( UIWidget* widget ) {
 	return this;
 }
 
-void UIRelativeLayout::onSizeChange() {
-	UILayout::onSizeChange();
-	fixChilds();
-}
-
-void UIRelativeLayout::onPaddingChange() {
-	UILayout::onPaddingChange();
-	fixChilds();
-}
-
-void UIRelativeLayout::onChildCountChange( Node* child, const bool& removed ) {
-	UILayout::onChildCountChange( child, removed );
-	fixChilds();
-}
-
-void UIRelativeLayout::onParentSizeChange( const Vector2f& ) {
-	fixChilds();
-}
-
-void UIRelativeLayout::fixChilds() {
+void UIRelativeLayout::updateLayout() {
+	if ( mPacking )
+		return;
+	mPacking = true;
 	if ( getParent()->isUINode() && !getParent()->asType<UINode>()->ownsChildPosition() ) {
 		setInternalPosition( Vector2f( mLayoutMargin.Left, mLayoutMargin.Top ) );
 	}
@@ -80,6 +65,9 @@ void UIRelativeLayout::fixChilds() {
 
 		child = child->getNextNode();
 	}
+
+	mDirtyLayout = false;
+	mPacking = false;
 }
 
 void UIRelativeLayout::fixChildPos( UIWidget* widget ) {
@@ -186,8 +174,8 @@ void UIRelativeLayout::fixChildSize( UIWidget* widget ) {
 Uint32 UIRelativeLayout::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
 		case NodeMessage::LayoutAttributeChange: {
-			fixChilds();
-			break;
+			tryUpdateLayout();
+			return 1;
 		}
 	}
 

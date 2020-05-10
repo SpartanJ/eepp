@@ -367,14 +367,14 @@ void TextureAtlasEditor::fillTextureRegionList() {
 		 !mTextureAtlasLoader->isLoaded() )
 		return;
 
-	std::list<TextureRegion*>& Res = mTextureAtlasLoader->getTextureAtlas()->getResources();
+	auto& res = mTextureAtlasLoader->getTextureAtlas()->getResources();
 
 	mTextureRegionList->clear();
 
 	std::vector<String> items;
 
-	for ( std::list<TextureRegion*>::iterator it = Res.begin(); it != Res.end(); ++it ) {
-		items.push_back( ( *it )->getName() );
+	for ( auto& it : res ) {
+		items.push_back( it.second->getName() );
 	}
 
 	if ( items.size() ) {
@@ -387,11 +387,11 @@ void TextureAtlasEditor::fillTextureRegionList() {
 	mTextureRegionList->getVerticalScrollBar()->setClickStep(
 		8.f / (Float)mTextureRegionList->getCount() );
 
-	if ( !Res.empty() ) {
+	if ( !res.empty() ) {
 		mTextureRegionGrid->childsCloseAll();
 
-		for ( auto it = Res.begin(); it != Res.end(); ++it ) {
-			TextureRegion* tr = ( *it );
+		for ( auto& it : res ) {
+			TextureRegion* tr = it.second;
 
 			UITextureRegion::New()
 				->setTextureRegion( tr )

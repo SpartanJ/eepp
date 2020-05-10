@@ -279,11 +279,14 @@ UIColorPicker::UIColorPicker( UIWindow* attachTo, const UIColorPicker::ColorPick
 
 	mRoot->addEventListener( Event::OnSizeChange, [&]( const Event* event ) { updateAll(); } );
 
-	mHuePicker->setDrawable( createHueTexture( mHuePicker->getPixelsSize() ), true );
-	mCurrentColor->setBackgroundDrawable( createGridTexture(), true );
-	mCurrentColor->setBackgroundRepeat( "repeat" );
-
-	updateAll();
+	mRoot->addEventListener( Event::OnLayoutUpdate, [&]( const Event* event ) {
+		if ( mHuePicker->getDrawable() == nullptr ) {
+			mHuePicker->setDrawable( createHueTexture( mHuePicker->getPixelsSize() ), true );
+			mCurrentColor->setBackgroundDrawable( createGridTexture(), true );
+			mCurrentColor->setBackgroundRepeat( "repeat" );
+			updateAll();
+		}
+	} );
 
 	registerEvents();
 }

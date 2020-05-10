@@ -30,22 +30,14 @@ class EE_API UILinearLayout : public UILayout {
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
 										   const Uint32& propertyIndex = 0 );
 
+	void updateLayout();
+
+	bool isPacking() const;
+
   protected:
 	UIOrientation mOrientation;
-	bool mHPacking;
-	bool mVPacking;
 
 	virtual Uint32 onMessage( const NodeMessage* Msg );
-
-	virtual void onSizeChange();
-
-	virtual void onPaddingChange();
-
-	virtual void onParentSizeChange( const Vector2f& SizeChange );
-
-	virtual void onChildCountChange( Node* child, const bool& removed );
-
-	void pack();
 
 	void packVertical();
 

@@ -9,10 +9,8 @@ ShaderProgramManager::ShaderProgramManager() {}
 ShaderProgramManager::~ShaderProgramManager() {}
 
 void ShaderProgramManager::reload() {
-	std::list<ShaderProgram*>::iterator it;
-
-	for ( it = mResources.begin(); it != mResources.end(); ++it )
-		( *it )->reload();
+	for ( auto& res : mResources )
+		res.second->reload();
 }
 
 }} // namespace EE::Graphics

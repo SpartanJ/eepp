@@ -42,8 +42,6 @@ UITextureRegion* UITextureRegion::setTextureRegion( Graphics::TextureRegion* Tex
 
 	autoAlign();
 
-	notifyLayoutAttrChange();
-
 	invalidateDraw();
 
 	return this;

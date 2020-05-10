@@ -190,17 +190,9 @@ const String& UITextView::getText() {
 }
 
 UITextView* UITextView::setText( const String& text ) {
-	if ( ( mFlags & UI_WORD_WRAP ) ) {
-		if ( mString != text ) {
-			mString = text;
-			mTextCache->setString( mString );
-
-			recalculate();
-			onTextChanged();
-			notifyLayoutAttrChange();
-		}
-	} else if ( mTextCache->getString() != text ) {
-		mTextCache->setString( text );
+	if ( mString != text ) {
+		mString = text;
+		mTextCache->setString( mString );
 
 		recalculate();
 		onTextChanged();

@@ -150,7 +150,8 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 							 totalBytes != currentBytes )
 							return true;
 						tickElapsed.restart();
-						double progress = currentBytes / static_cast<double>( totalBytes );
+						double progress =
+							totalBytes > 0 ? currentBytes / static_cast<double>( totalBytes ) : 0;
 						Time eta( elapsed.getElapsedTime() / progress - elapsed.getElapsedTime() );
 						int percent = static_cast<int>( eefloor( progress * 100. ) );
 						std::string bytesProgress( String::format(
@@ -194,7 +195,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 				httpProxy = proxy.Get();
 			}
 
-			if ( httpProxy.find( "://" ) == std::string::npos ) {
+			if ( !httpProxy.empty() && httpProxy.find( "://" ) == std::string::npos ) {
 				httpProxy = "http://" + httpProxy;
 			}
 

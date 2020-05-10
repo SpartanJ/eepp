@@ -8,7 +8,7 @@ namespace EE { namespace Graphics {
 SINGLETON_DECLARE_IMPLEMENTATION( TextureAtlasManager )
 
 TextureAtlasManager::TextureAtlasManager() :
-	ResourceManager<TextureAtlas>( false ), mWarnings( false ) {
+	ResourceManagerMulti<TextureAtlas>(), mWarnings( false ) {
 	add( GlobalTextureAtlas::instance() );
 }
 
@@ -57,8 +57,8 @@ TextureRegion* TextureAtlasManager::getTextureRegionById( const Uint32& Id ) {
 	TextureAtlas* tSG = NULL;
 	TextureRegion* tTextureRegion = NULL;
 
-	for ( it = mResources.begin(); it != mResources.end(); ++it ) {
-		tSG = ( *it );
+	for ( auto& it : mResources ) {
+		tSG = it.second;
 
 		tTextureRegion = tSG->getById( Id );
 
@@ -70,10 +70,8 @@ TextureRegion* TextureAtlasManager::getTextureRegionById( const Uint32& Id ) {
 }
 
 void TextureAtlasManager::printResources() {
-	std::list<TextureAtlas*>::iterator it;
-
-	for ( it = mResources.begin(); it != mResources.end(); ++it )
-		( *it )->printNames();
+	for ( auto& it : mResources )
+		it.second->printNames();
 }
 
 std::vector<TextureRegion*>

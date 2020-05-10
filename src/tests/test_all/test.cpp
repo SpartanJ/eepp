@@ -646,7 +646,7 @@ void EETest::createNewUI() {
 	relLay->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
 
 	UIWidget* container = UIWidget::New();
-	container->setSize( relLay->getSize() - 32.f );
+	container->setSize( relLay->getParent()->getSize() - 32.f );
 
 	UIScrollView* scrollView = UIScrollView::New();
 	scrollView->setTouchDragEnabled( true );

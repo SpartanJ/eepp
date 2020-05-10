@@ -64,8 +64,6 @@ UIImage* UIImage::setDrawable( Drawable* drawable, bool ownIt ) {
 
 	autoAlign();
 
-	notifyLayoutAttrChange();
-
 	invalidateDraw();
 
 	return this;

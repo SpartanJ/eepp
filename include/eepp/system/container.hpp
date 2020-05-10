@@ -2,7 +2,7 @@
 #define EE_SYSTEMTCONTAINER_HPP
 
 #include <eepp/config.hpp>
-#include <list>
+#include <unordered_set>
 
 namespace EE { namespace System {
 
@@ -23,7 +23,7 @@ template <class T> class Container {
 	Uint32 count();
 
   protected:
-	std::list<T*> mResources;
+	std::unordered_set<T*> mResources;
 };
 
 template <class T> Container<T>::Container() {}
@@ -32,7 +32,7 @@ template <class T> Container<T>::~Container() {}
 
 template <class T> T* Container<T>::add( T* resource ) {
 	if ( NULL != resource ) {
-		mResources.push_back( resource );
+		mResources.insert( resource );
 
 		return resource;
 	}
@@ -42,7 +42,7 @@ template <class T> T* Container<T>::add( T* resource ) {
 
 template <class T> bool Container<T>::remove( T* resource ) {
 	if ( NULL != resource ) {
-		mResources.remove( resource );
+		mResources.erase( resource );
 
 		return true;
 	}

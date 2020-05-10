@@ -86,8 +86,8 @@ void UITabWidget::setContainerSize() {
 	mTabContainer->setPosition( mPadding.Left, mPadding.Top );
 	mCtrlContainer->setPosition( mPadding.Left, mPadding.Top + mStyleConfig.TabHeight );
 	Sizef s( mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
-			mSize.getHeight() - PixelDensity::dpToPx( mStyleConfig.TabHeight ) - mRealPadding.Top -
-				mRealPadding.Bottom );
+			 mSize.getHeight() - PixelDensity::dpToPx( mStyleConfig.TabHeight ) - mRealPadding.Top -
+				 mRealPadding.Bottom );
 	if ( s != mCtrlContainer->getSize() ) {
 		mCtrlContainer->setPixelsSize( s );
 

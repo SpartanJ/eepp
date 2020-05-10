@@ -33,11 +33,11 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) : mUIWindow( NULL ), mNew
 		</LinearLayout>
 		<LinearLayout layout_width='match_parent' layout_height='wrap_content' orientation='horizontal' margin-bottom='8dp'>
 			<TextView layout_width='match_parent' layout_weight='0.7' layout_height='wrap_content' layout_gravity='center_vertical' text='Max. Texture Atlas Width:' />
-			<ComboBox id='maxTAWidth' layout_width='match_parent' layout_weight='0.3' layout_height='wrap_content' layout_gravity='center_vertical' onlyNumbers='true' />
+			<ComboBox id='maxTAWidth' layout_width='match_parent' layout_weight='0.3' layout_height='wrap_content' layout_gravity='center_vertical' allowFloat='true' />
 		</LinearLayout>
 		<LinearLayout layout_width='match_parent' layout_height='wrap_content' orientation='horizontal' margin-bottom='8dp'>
 			<TextView layout_width='match_parent' layout_weight='0.7' layout_height='wrap_content' layout_gravity='center_vertical' text='Max. Texture Atlas Height:' />
-			<ComboBox id='maxTAHeight' layout_width='match_parent' layout_weight='0.3' layout_height='wrap_content' layout_gravity='center_vertical' onlyNumbers='true' />
+			<ComboBox id='maxTAHeight' layout_width='match_parent' layout_weight='0.3' layout_height='wrap_content' layout_gravity='center_vertical' allowFloat='true' />
 		</LinearLayout>
 		<LinearLayout layout_width='match_parent' layout_height='wrap_content' orientation='horizontal' margin-bottom='8dp'>
 			<TextView layout_width='match_parent' layout_weight='0.7' layout_height='wrap_content' layout_gravity='center_vertical' text='Space between images (pixels):' />
@@ -78,12 +78,8 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) : mUIWindow( NULL ), mNew
 	 </LinearLayout>
 	 )xml";
 
-	UIWidget* container = NULL;
-	if ( mUIWindow->getSceneNode()->isUISceneNode() ) {
-		container =
-			mUIWindow->getUISceneNode()->loadLayoutFromString( layout, mUIWindow->getContainer() );
-	}
-
+	UIWidget* container =
+		mUIWindow->getUISceneNode()->loadLayoutFromString( layout, mUIWindow->getContainer() );
 	mUIWindow->bind( "saveType", mSaveFileType );
 	mUIWindow->bind( "maxTAWidth", mComboWidth );
 	mUIWindow->bind( "maxTAHeight", mComboHeight );
@@ -115,9 +111,12 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) : mUIWindow( NULL ), mNew
 	mUIWindow->find<UIPushButton>( "cancelButton" )
 		->addEventListener( Event::MouseClick, cb::Make1( this, &TextureAtlasNew::cancelClick ) );
 
-	mUIWindow->setMinWindowSize( container->getSize() );
-	mUIWindow->center();
-	mUIWindow->show();
+	container->addEventListener( Event::OnLayoutUpdate, [&]( const Event* event ) {
+		mUIWindow->setMinWindowSize( event->getNode()->getSize() );
+		mUIWindow->center();
+		mUIWindow->show();
+		event->getNode()->removeEventListener( event->getCallbackId() );
+	} );
 }
 
 TextureAtlasNew::~TextureAtlasNew() {}

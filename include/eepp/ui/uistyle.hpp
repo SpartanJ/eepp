@@ -11,6 +11,7 @@
 #include <eepp/ui/uistate.hpp>
 #include <functional>
 #include <set>
+#include <unordered_set>
 
 namespace EE { namespace Graphics {
 class Font;
@@ -67,6 +68,13 @@ class EE_API UIStyle : public UIState {
 	bool isStructurallyVolatile() const;
 
 	void reloadFontFamily();
+
+	void addStructurallyVolatileChild( UIWidget* widget );
+
+	void removeStructurallyVolatileChild( UIWidget* widget );
+
+	std::unordered_set<UIWidget*>& getStructurallyVolatileChilds();
+
   protected:
 	UIWidget* mWidget;
 	std::shared_ptr<CSS::StyleSheetStyle> mElementStyle;
@@ -76,6 +84,7 @@ class EE_API UIStyle : public UIState {
 	CSS::AnimationsMap mAnimations;
 	std::set<UIWidget*> mRelatedWidgets;
 	std::set<UIWidget*> mSubscribedWidgets;
+	std::unordered_set<UIWidget*> mStructurallyVolatileChilds;
 	bool mChangingState;
 	bool mForceReapplyProperties;
 	bool mDisableAnimations;
@@ -113,6 +122,10 @@ class EE_API UIStyle : public UIState {
 						  const Uint32& propertyIndex );
 
 	CSS::StyleSheetProperty* getLocalProperty( Uint32 propId );
+
+	void addStructurallyVolatileWidgetFromParent();
+
+	void removeStructurallyVolatileWidgetFromParent();
 };
 
 }} // namespace EE::UI

@@ -46,6 +46,9 @@ UIDropDownList::UIDropDownList( const std::string& tag ) :
 	mListBox->addEventListener( Event::KeyDown, cb::Make1( this, &UIDropDownList::onItemKeyDown ) );
 	mListBox->addEventListener( Event::OnControlClear,
 								cb::Make1( this, &UIDropDownList::onControlClear ) );
+	mListBox->addEventListener( Event::OnClose, [&]( const Event*) {
+		mListBox = NULL;
+	} );
 }
 
 UIDropDownList::~UIDropDownList() {
@@ -99,7 +102,7 @@ UIListBox* UIDropDownList::getListBox() const {
 }
 
 Uint32 UIDropDownList::onMouseUp( const Vector2i& Pos, const Uint32& Flags ) {
-	if ( mEnabled && mVisible && isMouseOver() ) {
+	if ( mEnabled && mVisible && isMouseOver() && NULL != mListBox ) {
 		if ( Flags & EE_BUTTONS_WUWD ) {
 			if ( Flags & EE_BUTTON_WUMASK ) {
 				mListBox->selectPrev();
@@ -128,6 +131,9 @@ Uint32 UIDropDownList::onMouseClick( const Vector2i& Pos, const Uint32& Flags ) 
 }
 
 void UIDropDownList::showList() {
+	if ( NULL == mListBox )
+		return;
+
 	if ( !mListBox->isVisible() ) {
 		if ( !mStyleConfig.PopUpToRoot )
 			mListBox->setParent( getWindowContainer() );
@@ -196,8 +202,9 @@ void UIDropDownList::setMaxNumVisibleItems( const Uint32& maxNumVisibleItems ) {
 	if ( maxNumVisibleItems != mStyleConfig.MaxNumVisibleItems ) {
 		mStyleConfig.MaxNumVisibleItems = maxNumVisibleItems;
 
-		mListBox->setSize( getSize().getWidth(),
-						   mStyleConfig.MaxNumVisibleItems * mListBox->getRowHeight() );
+		if ( NULL != mListBox )
+			mListBox->setSize( getSize().getWidth(),
+							   mStyleConfig.MaxNumVisibleItems * mListBox->getRowHeight() );
 	}
 }
 
@@ -251,6 +258,9 @@ void UIDropDownList::onItemSelected( const Event* ) {
 }
 
 void UIDropDownList::show() {
+	if ( NULL == mListBox )
+		return;
+
 	mListBox->setEnabled( true );
 	mListBox->setVisible( true );
 
@@ -264,6 +274,9 @@ void UIDropDownList::show() {
 }
 
 void UIDropDownList::hide() {
+	if ( NULL == mListBox )
+		return;
+
 	if ( NULL != getUISceneNode() &&
 		 getUISceneNode()->getUIThemeManager()->getDefaultEffectsEnabled() ) {
 		mListBox->runAction( Actions::Sequence::New(
@@ -293,13 +306,14 @@ Uint32 UIDropDownList::onMouseLeave( const Vector2i& position, const Uint32& fla
 }
 
 Uint32 UIDropDownList::onKeyDown( const KeyEvent& Event ) {
-	mListBox->onKeyDown( Event );
+	if ( NULL != mListBox )
+		mListBox->onKeyDown( Event );
 
 	return UITextInput::onKeyDown( Event );
 }
 
 void UIDropDownList::destroyListBox() {
-	if ( !SceneManager::instance()->isShootingDown() ) {
+	if ( !SceneManager::instance()->isShootingDown() && NULL != mListBox ) {
 		mListBox->close();
 	}
 }
@@ -321,7 +335,10 @@ bool UIDropDownList::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::RowHeight:
 		case PropertyId::VScrollMode:
 		case PropertyId::HScrollMode:
-			return mListBox->applyProperty( attribute );
+			if ( NULL != mListBox )
+				return mListBox->applyProperty( attribute );
+			else
+				return false;
 		default:
 			return UITextInput::applyProperty( attribute );
 	}
@@ -345,16 +362,20 @@ std::string UIDropDownList::getPropertyString( const PropertyDefinition* propert
 		case PropertyId::RowHeight:
 		case PropertyId::VScrollMode:
 		case PropertyId::HScrollMode:
-			return mListBox->getPropertyString( propertyDef, propertyIndex );
+			if ( NULL != mListBox )
+				return mListBox->getPropertyString( propertyDef, propertyIndex );
 		default:
 			return UITextInput::getPropertyString( propertyDef, propertyIndex );
 	}
+
+	return "";
 }
 
 void UIDropDownList::loadFromXmlNode( const pugi::xml_node& node ) {
 	beginAttributesTransaction();
 
-	mListBox->loadItemsFromXmlNode( node );
+	if ( NULL != mListBox )
+		mListBox->loadItemsFromXmlNode( node );
 
 	UITextInput::loadFromXmlNode( node );
 

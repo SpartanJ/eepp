@@ -2,62 +2,62 @@
 #define EE_SYSTEMTRESOURCEMANAGER_HPP
 
 #include <eepp/core/string.hpp>
-#include <list>
 #include <string>
+#include <unordered_map>
 
 namespace EE { namespace System {
 
 /** @brief A simple resource manager. It keeps a list of the resources, and free the instances of
- * the resources when the manager is closed. Resources must have getId() and getName() properties.
- * getId() is the string hash of getName().
+ * the resources when the manager is closed. Resources must implement getId() and getName()
+ * properties getId() is the string hash of getName().
  */
 template <class T> class ResourceManager {
   public:
 	/** @param UniqueId Indicates if the resources id must be unique */
-	ResourceManager( bool UniqueId = true );
+	ResourceManager();
 
 	/** @brief The destructor will call destroy() and destroy all the resources added to the manager
 	 */
 	virtual ~ResourceManager();
 
 	/** @brief Add the resource to the resource manager
-	**	@param Resource The resource to be managed by the manager */
-	virtual T* add( T* Resource );
+	**	@param resource The resource to be managed by the manager */
+	virtual T* add( T* resource );
 
 	/** @brief Removes the resource from the manager
-	**	@param Resource The resource to remove
-	**	@param Delete Indicates if the resource must be destroyed after being removed from the
+	**	@param resource The resource to remove
+	**	@param remove Indicates if the resource must be destroyed after being removed from the
 	*manager */
-	bool remove( T* Resource, bool Delete = true );
+	bool remove( T* resource, bool remove = true );
 
 	/** @brief Removes the resource by its id
 	**	@see remove */
-	bool removeById( const Uint32& Id, bool Delete = true );
+	bool removeById( const String::HashType& id, bool remove = true );
 
 	/** @brief Removes the resource by its name
 	**	@see remove */
-	bool removeByName( const std::string& Name, bool Delete = true );
+	bool removeByName( const std::string& name, bool remove = true );
 
 	/** @returns A resource by its name. If not found returns NULL. */
-	T* getByName( const std::string& Name );
+	T* getByName( const std::string& name );
 
 	/** @returns A resource by its id. If not found returns NULL. */
-	T* getById( const Uint32& Id );
+	T* getById( const String::HashType& id );
 
 	/** @returns The number of resources added */
 	Uint32 getCount();
 
 	/** @returns The number of resources that where added with the indicated name. */
-	Uint32 setCount( const std::string& Name );
+	Uint32 getCount( const std::string& name );
 
 	/** @returns The number of resources that where added with the indicated id. */
-	Uint32 setCount( const Uint32& Id );
+	Uint32 getCount( const String::HashType& id );
 
 	/** @returns If the resource name exists in the resources list. */
-	bool exists( const std::string& Name );
+	bool exists( const std::string& name );
 
 	/** @returns If the resource id exists in the resources list. */
-	bool existsId( const Uint32& Id );
+	bool existsId( const String::HashType& id );
 
 	/** @brief Destroy all the resources added ( delete the instances of the resources ) */
 	void destroy();
@@ -66,20 +66,17 @@ template <class T> class ResourceManager {
 	void printNames();
 
 	/** @returns A reference to the resources list of the manager. */
-	std::list<T*>& getResources();
+	std::unordered_map<String::HashType, T*>& getResources();
 
 	/** @brief Indicates if the resource manager is destroy the resources. */
 	const bool& isDestroying() const;
 
   protected:
-	std::list<T*> mResources;
-	bool mUniqueId;
+	std::unordered_map<String::HashType, T*> mResources;
 	bool mIsDestroying;
 };
 
-template <class T>
-ResourceManager<T>::ResourceManager( bool UniqueId ) :
-	mUniqueId( UniqueId ), mIsDestroying( false ) {}
+template <class T> ResourceManager<T>::ResourceManager() : mIsDestroying( false ) {}
 
 template <class T> const bool& ResourceManager<T>::isDestroying() const {
 	return mIsDestroying;
@@ -90,12 +87,11 @@ template <class T> ResourceManager<T>::~ResourceManager() {
 }
 
 template <class T> void ResourceManager<T>::destroy() {
-	typename std::list<T*>::iterator it;
-
 	mIsDestroying = true;
 
-	for ( it = mResources.begin(); it != mResources.end(); it++ ) {
-		eeSAFE_DELETE( ( *it ) );
+	for ( auto& it : mResources ) {
+		T* res = it.second;
+		eeSAFE_DELETE( res );
 	}
 
 	mResources.clear();
@@ -103,45 +99,40 @@ template <class T> void ResourceManager<T>::destroy() {
 	mIsDestroying = false;
 }
 
-template <class T> std::list<T*>& ResourceManager<T>::getResources() {
+template <class T> std::unordered_map<String::HashType, T*>& ResourceManager<T>::getResources() {
 	return mResources;
 }
 
-template <class T> T* ResourceManager<T>::add( T* Resource ) {
-	if ( NULL != Resource ) {
-		if ( mUniqueId ) {
-			Uint32 c = setCount( Resource->getId() );
+template <class T> T* ResourceManager<T>::add( T* resource ) {
+	if ( NULL != resource ) {
+		if ( !existsId( resource->getId() ) ) {
+			mResources[resource->getId()] = resource;
 
-			if ( 0 == c ) {
-				mResources.push_back( Resource );
-
-				return Resource;
-			} else {
-				std::string RealName( Resource->getName() );
-
-				while ( setCount( Resource->getId() ) ) {
-					c++;
-					Resource->setName( RealName + String::toStr( c ) );
-				}
-
-				return add( Resource );
-			}
+			return resource;
 		} else {
-			mResources.push_back( Resource );
+			std::string realName( resource->getName() );
+			Uint32 c = 1;
 
-			return Resource;
+			while ( existsId( resource->getId() ) ) {
+				c++;
+				resource->setName( realName + String::toStr( c ) );
+			}
+
+			return add( resource );
 		}
-	}
 
+		mResources[resource->getId()] = resource;
+		return resource;
+	}
 	return NULL;
 }
 
-template <class T> bool ResourceManager<T>::remove( T* Resource, bool Delete ) {
-	if ( NULL != Resource ) {
-		mResources.remove( Resource );
+template <class T> bool ResourceManager<T>::remove( T* resource, bool remove ) {
+	if ( NULL != resource ) {
+		mResources.erase( resource->getId() );
 
-		if ( Delete )
-			eeSAFE_DELETE( Resource );
+		if ( remove )
+			eeSAFE_DELETE( resource );
 
 		return true;
 	}
@@ -149,56 +140,34 @@ template <class T> bool ResourceManager<T>::remove( T* Resource, bool Delete ) {
 	return false;
 }
 
-template <class T> bool ResourceManager<T>::removeById( const Uint32& Id, bool Delete ) {
-	return remove( getById( Id ), Delete );
+template <class T> bool ResourceManager<T>::removeById( const String::HashType& id, bool _remove ) {
+	return remove( getById( id ), _remove );
 }
 
-template <class T> bool ResourceManager<T>::removeByName( const std::string& Name, bool Delete ) {
-	return remove( getByName( Name ), Delete );
+template <class T> bool ResourceManager<T>::removeByName( const std::string& name, bool _remove ) {
+	return remove( getByName( name ), _remove );
 }
 
-template <class T> bool ResourceManager<T>::exists( const std::string& Name ) {
-	return existsId( String::hash( Name ) );
+template <class T> bool ResourceManager<T>::exists( const std::string& name ) {
+	return existsId( String::hash( name ) );
 }
 
-template <class T> bool ResourceManager<T>::existsId( const Uint32& Id ) {
-	typename std::list<T*>::iterator it;
-
-	for ( it = mResources.begin(); it != mResources.end(); it++ )
-		if ( ( *it )->getId() == Id )
-			return true;
-
-	return false;
+template <class T> bool ResourceManager<T>::existsId( const String::HashType& id ) {
+	return mResources.find( id ) != mResources.end();
 }
 
-template <class T> T* ResourceManager<T>::getByName( const std::string& Name ) {
-	return getById( String::hash( Name ) );
+template <class T> T* ResourceManager<T>::getByName( const std::string& name ) {
+	return getById( String::hash( name ) );
 }
 
-template <class T> T* ResourceManager<T>::getById( const Uint32& id ) {
-	typename std::list<T*>::reverse_iterator it;
-
-	T* sp = NULL;
-
-	for ( it = mResources.rbegin(); it != mResources.rend(); it++ ) {
-		sp = ( *it );
-
-		if ( id == sp->getId() )
-			return sp;
-	}
-
-	return NULL;
+template <class T> T* ResourceManager<T>::getById( const String::HashType& id ) {
+	auto it = mResources.find( id );
+	return it != mResources.end() ? it->second : nullptr;
 }
 
 template <class T> void ResourceManager<T>::printNames() {
-	typename std::list<T*>::reverse_iterator it;
-
-	T* sp = NULL;
-
-	for ( it = mResources.rbegin(); it != mResources.rend(); it++ ) {
-		sp = ( *it );
-
-		eePRINT( "'%s'\n", sp->getName().c_str() );
+	for ( auto& it : mResources ) {
+		eePRINT( "'%s'\n", it.second->getName().c_str() );
 	}
 }
 
@@ -206,19 +175,175 @@ template <class T> Uint32 ResourceManager<T>::getCount() {
 	return (Uint32)mResources.size();
 }
 
-template <class T> Uint32 ResourceManager<T>::setCount( const Uint32& Id ) {
-	typename std::list<T*>::iterator it;
-	Uint32 Count = 0;
-
-	for ( it = mResources.begin(); it != mResources.end(); it++ )
-		if ( ( *it )->getId() == Id )
-			Count++;
-
-	return Count;
+template <class T> Uint32 ResourceManager<T>::getCount( const String::HashType& id ) {
+	return existsId( id ) ? 1 : 0;
 }
 
-template <class T> Uint32 ResourceManager<T>::setCount( const std::string& Name ) {
-	return setCount( String::hash( Name ) );
+template <class T> Uint32 ResourceManager<T>::getCount( const std::string& name ) {
+	return getCount( String::hash( name ) );
+}
+
+/** @brief A simple resource manager. It keeps a list of the resources, and free the instances of
+ * the resources when the manager is closed. Resources must implement getId() and getName()
+ * properties getId() is the string hash of getName(). Allows repeated keys.
+ */
+template <class T> class ResourceManagerMulti {
+  public:
+	/** @param UniqueId Indicates if the resources id must be unique */
+	ResourceManagerMulti();
+
+	/** @brief The destructor will call destroy() and destroy all the resources added to the manager
+	 */
+	virtual ~ResourceManagerMulti();
+
+	/** @brief Add the resource to the resource manager
+	**	@param resource The resource to be managed by the manager */
+	virtual T* add( T* resource );
+
+	/** @brief Removes the resource from the manager
+	**	@param resource The resource to remove
+	**	@param remove Indicates if the resource must be destroyed after being removed from the
+	*manager */
+	bool remove( T* resource, bool remove = true );
+
+	/** @brief Removes the resource by its id
+	**	@see remove */
+	bool removeById( const String::HashType& id, bool remove = true );
+
+	/** @brief Removes the resource by its name
+	**	@see remove */
+	bool removeByName( const std::string& name, bool remove = true );
+
+	/** @returns A resource by its name. If not found returns NULL. */
+	T* getByName( const std::string& name );
+
+	/** @returns A resource by its id. If not found returns NULL. */
+	T* getById( const String::HashType& id );
+
+	/** @returns The number of resources added */
+	Uint32 getCount();
+
+	/** @returns The number of resources that where added with the indicated name. */
+	Uint32 getCount( const std::string& name );
+
+	/** @returns The number of resources that where added with the indicated id. */
+	Uint32 getCount( const String::HashType& id );
+
+	/** @returns If the resource name exists in the resources list. */
+	bool exists( const std::string& name );
+
+	/** @returns If the resource id exists in the resources list. */
+	bool existsId( const String::HashType& id );
+
+	/** @brief Destroy all the resources added ( delete the instances of the resources ) */
+	void destroy();
+
+	/** @brief Prints all the resources names added to the manager. */
+	void printNames();
+
+	/** @returns A reference to the resources list of the manager. */
+	std::unordered_multimap<String::HashType, T*>& getResources();
+
+	/** @brief Indicates if the resource manager is destroy the resources. */
+	const bool& isDestroying() const;
+
+  protected:
+	std::unordered_multimap<String::HashType, T*> mResources;
+	bool mIsDestroying;
+};
+
+template <class T> ResourceManagerMulti<T>::ResourceManagerMulti() : mIsDestroying( false ) {}
+
+template <class T> const bool& ResourceManagerMulti<T>::isDestroying() const {
+	return mIsDestroying;
+}
+
+template <class T> ResourceManagerMulti<T>::~ResourceManagerMulti() {
+	destroy();
+}
+
+template <class T> void ResourceManagerMulti<T>::destroy() {
+	mIsDestroying = true;
+
+	for ( auto& it : mResources ) {
+		T* res = it.second;
+		eeSAFE_DELETE( res );
+	}
+
+	mResources.clear();
+
+	mIsDestroying = false;
+}
+
+template <class T>
+std::unordered_multimap<String::HashType, T*>& ResourceManagerMulti<T>::getResources() {
+	return mResources;
+}
+
+template <class T> T* ResourceManagerMulti<T>::add( T* resource ) {
+	if ( NULL != resource ) {
+		mResources.insert( std::pair<String::HashType, T*>( resource->getId(), resource ) );
+		return resource;
+	}
+	return NULL;
+}
+
+template <class T> bool ResourceManagerMulti<T>::remove( T* resource, bool remove ) {
+	if ( NULL != resource ) {
+		mResources.erase( resource->getId() );
+
+		if ( remove )
+			eeSAFE_DELETE( resource );
+
+		return true;
+	}
+
+	return false;
+}
+
+template <class T>
+bool ResourceManagerMulti<T>::removeById( const String::HashType& id, bool _remove ) {
+	return remove( getById( id ), _remove );
+}
+
+template <class T>
+bool ResourceManagerMulti<T>::removeByName( const std::string& name, bool _remove ) {
+	return remove( getByName( name ), _remove );
+}
+
+template <class T> bool ResourceManagerMulti<T>::exists( const std::string& name ) {
+	return existsId( String::hash( name ) );
+}
+
+template <class T> bool ResourceManagerMulti<T>::existsId( const String::HashType& id ) {
+	return mResources.find( id ) != mResources.end();
+}
+
+template <class T> T* ResourceManagerMulti<T>::getByName( const std::string& name ) {
+	return getById( String::hash( name ) );
+}
+
+template <class T> T* ResourceManagerMulti<T>::getById( const String::HashType& id ) {
+	auto it = mResources.find( id );
+	return it != mResources.end() ? it->second : nullptr;
+}
+
+template <class T> void ResourceManagerMulti<T>::printNames() {
+	for ( auto& it : mResources ) {
+		eePRINT( "'%s'\n", it->second->getName().c_str() );
+	}
+}
+
+template <class T> Uint32 ResourceManagerMulti<T>::getCount() {
+	return (Uint32)mResources.size();
+}
+
+template <class T> Uint32 ResourceManagerMulti<T>::getCount( const String::HashType& id ) {
+	return mResources.count( id );
+}
+
+template <class T> Uint32 ResourceManagerMulti<T>::getCount( const std::string& name ) {
+	return getCount( String::hash( name ) );
 }
 
 }} // namespace EE::System

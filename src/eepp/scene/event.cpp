@@ -15,4 +15,8 @@ const Uint32& Event::getType() const {
 	return mEventType;
 }
 
+const Uint32& Event::getCallbackId() const {
+	return mCallbackId;
+}
+
 }} // namespace EE::Scene

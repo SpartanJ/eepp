@@ -16,6 +16,7 @@ class UIThemeManager;
 class UIWidget;
 class UIWindow;
 class UIWidget;
+class UILayout;
 
 class EE_API UISceneNode : public SceneNode {
   public:
@@ -86,11 +87,17 @@ class EE_API UISceneNode : public SceneNode {
 
 	void invalidateStyleState( UIWidget* widget, bool disableCSSAnimations = false );
 
+	void invalidateLayout( UILayout* widget );
+
 	void setIsLoading( bool isLoading );
+
+	void updateDirtyLayouts();
 
 	void updateDirtyStyles();
 
 	void updateDirtyStyleStates();
+
+	const bool& isUpdatingLayouts() const;
 
   protected:
 	friend class EE::UI::UIWindow;
@@ -103,12 +110,14 @@ class EE_API UISceneNode : public SceneNode {
 	CSS::StyleSheet mStyleSheet;
 	bool mIsLoading;
 	bool mVerbose;
+	bool mUpdatingLayouts;
 	UIThemeManager* mUIThemeManager;
 	std::vector<Font*> mFontFaces;
 	KeyboardShortcuts mKbShortcuts;
 	std::unordered_set<UIWidget*> mDirtyStyle;
 	std::unordered_set<UIWidget*> mDirtyStyleState;
 	std::unordered_map<UIWidget*, bool> mDirtyStyleStateCSSAnimations;
+	std::unordered_set<UILayout*> mDirtyLayouts;
 	std::vector<std::pair<Float, std::string>> mTimes;
 
 	virtual void resizeControl( EE::Window::Window* win );

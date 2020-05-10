@@ -1,5 +1,6 @@
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 
 namespace EE { namespace UI {
 
@@ -16,10 +17,7 @@ UILinearLayout* UILinearLayout::NewHorizontal() {
 }
 
 UILinearLayout::UILinearLayout() :
-	UILayout( "linearlayout" ),
-	mOrientation( UIOrientation::Vertical ),
-	mHPacking( false ),
-	mVPacking( false ) {
+	UILayout( "linearlayout" ), mOrientation( UIOrientation::Vertical ) {
 	mFlags |= UI_OWNS_CHILDS_POSITION;
 	clipEnable();
 }
@@ -46,37 +44,22 @@ UILinearLayout* UILinearLayout::add( UIWidget* widget ) {
 	return this;
 }
 
-void UILinearLayout::onSizeChange() {
-	UILayout::onSizeChange();
-	pack();
-}
-
-void UILinearLayout::onPaddingChange() {
-	UILayout::onPaddingChange();
-	pack();
-}
-
-void UILinearLayout::onParentSizeChange( const Vector2f& ) {
-	UILayout::onParentChange();
-	pack();
-}
-
-void UILinearLayout::onChildCountChange( Node* child, const bool& removed ) {
-	UILayout::onChildCountChange( child, removed );
-	pack();
-}
-
-void UILinearLayout::pack() {
+void UILinearLayout::updateLayout() {
 	if ( mOrientation == UIOrientation::Vertical )
 		packVertical();
 	else
 		packHorizontal();
+	mDirtyLayout = false;
+}
+
+bool UILinearLayout::isPacking() const {
+	return mPacking;
 }
 
 void UILinearLayout::packVertical() {
-	if ( mVPacking )
+	if ( mPacking )
 		return;
-	mVPacking = true;
+	mPacking = true;
 	bool sizeChanged = false;
 	Sizef size( getSize() );
 
@@ -236,7 +219,7 @@ void UILinearLayout::packVertical() {
 				getParent()->asType<UILinearLayout>()->getOrientation() ==
 					UIOrientation::Horizontal ) ) {
 			setInternalWidth( maxX );
-			mVPacking = false;
+			mPacking = false;
 			packVertical();
 			notifyLayoutAttrChangeParent();
 		}
@@ -245,13 +228,13 @@ void UILinearLayout::packVertical() {
 	if ( getParent()->isUINode() && !getParent()->asType<UINode>()->ownsChildPosition() ) {
 		alignAgainstLayout();
 	}
-	mVPacking = false;
+	mPacking = false;
 }
 
 void UILinearLayout::packHorizontal() {
-	if ( mHPacking )
+	if ( mPacking )
 		return;
-	mHPacking = true;
+	mPacking = true;
 	bool sizeChanged = false;
 	Sizef size( getSize() );
 
@@ -410,7 +393,7 @@ void UILinearLayout::packHorizontal() {
 				getParent()->asType<UILinearLayout>()->getOrientation() ==
 					UIOrientation::Vertical ) ) {
 			setInternalHeight( maxY );
-			mHPacking = false;
+			mPacking = false;
 			packHorizontal();
 			notifyLayoutAttrChangeParent();
 		}
@@ -419,7 +402,7 @@ void UILinearLayout::packHorizontal() {
 	if ( getParent()->isUINode() && !getParent()->asType<UINode>()->ownsChildPosition() ) {
 		alignAgainstLayout();
 	}
-	mHPacking = false;
+	mPacking = false;
 }
 
 Sizei UILinearLayout::getTotalUsedSize() {
@@ -494,8 +477,8 @@ bool UILinearLayout::applyProperty( const StyleSheetProperty& attribute ) {
 Uint32 UILinearLayout::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
 		case NodeMessage::LayoutAttributeChange: {
-			pack();
-			break;
+			tryUpdateLayout();
+			return 1;
 		}
 	}
 
