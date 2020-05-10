@@ -107,6 +107,9 @@ UIGridLayout* UIGridLayout::setRowWeight( const Float& rowWeight ) {
 }
 
 void UIGridLayout::updateLayout() {
+	if ( mPacking )
+		return;
+	mPacking = true;
 	Sizef oldSize( getSize() );
 
 	if ( getParent()->isUINode() && !getParent()->asType<UINode>()->ownsChildPosition() ) {
@@ -191,6 +194,7 @@ void UIGridLayout::updateLayout() {
 
 	invalidateDraw();
 	mDirtyLayout = false;
+	mPacking = false;
 }
 
 Uint32 UIGridLayout::onMessage( const NodeMessage* Msg ) {
@@ -202,6 +206,11 @@ Uint32 UIGridLayout::onMessage( const NodeMessage* Msg ) {
 	}
 
 	return 0;
+}
+
+void UIGridLayout::onParentSizeChange( const Vector2f& size ) {
+	tryUpdateLayout();
+	UILayout::onParentSizeChange( size );
 }
 
 Sizef UIGridLayout::getTargetElementSize() const {

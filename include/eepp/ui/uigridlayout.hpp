@@ -1,4 +1,4 @@
-#ifndef EE_UI_UIGRIDLAYOUT
+﻿#ifndef EE_UI_UIGRIDLAYOUT
 #define EE_UI_UIGRIDLAYOUT
 
 #include <eepp/ui/uilayout.hpp>
@@ -62,6 +62,8 @@ class EE_API UIGridLayout : public UILayout {
 	int mRowHeight;
 
 	virtual Uint32 onMessage( const NodeMessage* Msg );
+
+	virtual void onParentSizeChange( const Vector2f& size );
 
 	Sizef getTargetElementSize() const;
 };

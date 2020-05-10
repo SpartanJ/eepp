@@ -178,7 +178,7 @@ void URI::setUserInfo( const std::string& userInfo ) {
 	decode( userInfo, mUserInfo );
 }
 
-void URI::getHost( const std::string& host ) {
+void URI::setHost( const std::string& host ) {
 	mHost = host;
 }
 

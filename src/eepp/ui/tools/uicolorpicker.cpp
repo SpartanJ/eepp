@@ -347,8 +347,7 @@ Texture* UIColorPicker::createHueTexture( const Sizef& size ) {
 		hsva.hsv.h = 360.f - 360.f * y / image.getHeight();
 		hsva.hsv.s = 1.f;
 		hsva.hsv.v = 1.f;
-		Color color( Color::fromHsv( hsva ) );
-		image.setPixel( 0, y, color );
+		image.setPixel( 0, y, Color::fromHsv( hsva ) );
 	}
 
 	TextureFactory* TF = TextureFactory::instance();

@@ -17,7 +17,7 @@ UILinearLayout* UILinearLayout::NewHorizontal() {
 }
 
 UILinearLayout::UILinearLayout() :
-	UILayout( "linearlayout" ), mOrientation( UIOrientation::Vertical ), mPacking( false ) {
+	UILayout( "linearlayout" ), mOrientation( UIOrientation::Vertical ) {
 	mFlags |= UI_OWNS_CHILDS_POSITION;
 	clipEnable();
 }

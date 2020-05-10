@@ -40,6 +40,7 @@ class EE_API UILayout : public UIWidget {
 
 	std::unordered_set<UILayout*> mLayouts;
 	bool mDirtyLayout;
+	bool mPacking;
 };
 
 }} // namespace EE::UI

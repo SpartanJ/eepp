@@ -122,7 +122,7 @@ class EE_API URI {
 	const std::string& getHost() const;
 
 	/** Sets the host part of the URI. */
-	void getHost( const std::string& host );
+	void setHost( const std::string& host );
 
 	/** @returns the port number part of the URI.
 	 * If no port number (0) has been specified, the

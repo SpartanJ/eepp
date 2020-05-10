@@ -7,11 +7,12 @@ UILayout* UILayout::New() {
 	return eeNew( UILayout, () );
 }
 
-UILayout::UILayout() : UIWidget( "layout" ), mDirtyLayout( false ) {
+UILayout::UILayout() : UIWidget( "layout" ), mDirtyLayout( false ), mPacking( false ) {
 	mNodeFlags |= NODE_FLAG_LAYOUT;
 }
 
-UILayout::UILayout( const std::string& tag ) : UIWidget( tag ), mDirtyLayout( false ) {
+UILayout::UILayout( const std::string& tag ) :
+	UIWidget( tag ), mDirtyLayout( false ), mPacking( false ) {
 	mNodeFlags |= NODE_FLAG_LAYOUT;
 }
 
@@ -42,7 +43,10 @@ void UILayout::onPaddingChange() {
 
 void UILayout::onParentSizeChange( const Vector2f& ) {
 	UIWidget::onParentChange();
-	tryUpdateLayout();
+	if ( !getParent()->isLayout() ) {
+		mPacking = false;
+		tryUpdateLayout();
+	}
 }
 
 void UILayout::onLayoutUpdate() {

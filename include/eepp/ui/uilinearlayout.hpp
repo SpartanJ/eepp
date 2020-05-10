@@ -36,7 +36,6 @@ class EE_API UILinearLayout : public UILayout {
 
   protected:
 	UIOrientation mOrientation;
-	bool mPacking;
 
 	virtual Uint32 onMessage( const NodeMessage* Msg );
 

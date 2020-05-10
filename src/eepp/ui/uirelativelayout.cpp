@@ -25,6 +25,9 @@ UIRelativeLayout* UIRelativeLayout::add( UIWidget* widget ) {
 }
 
 void UIRelativeLayout::updateLayout() {
+	if ( mPacking )
+		return;
+	mPacking = true;
 	if ( getParent()->isUINode() && !getParent()->asType<UINode>()->ownsChildPosition() ) {
 		setInternalPosition( Vector2f( mLayoutMargin.Left, mLayoutMargin.Top ) );
 	}
@@ -64,6 +67,7 @@ void UIRelativeLayout::updateLayout() {
 	}
 
 	mDirtyLayout = false;
+	mPacking = false;
 }
 
 void UIRelativeLayout::fixChildPos( UIWidget* widget ) {
