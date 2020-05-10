@@ -141,6 +141,16 @@ class InputEvent {
 		Uint8 type;
 	};
 
+	/** File dropped event */
+	struct FileDroppedEvent {
+		char* file;
+	};
+
+	/** Text dropped event */
+	struct TextDroppedEvent {
+		char* text;
+	};
+
 	/** The "quit requested" event */
 	struct QuitEvent {
 		Uint8 type;
@@ -182,6 +192,8 @@ class InputEvent {
 		SysWM,
 		VideoResize,
 		VideoExpose,
+		FileDropped,
+		TextDropped,
 		EventUser,
 		EventCount = EventUser - 1
 	};
@@ -203,6 +215,8 @@ class InputEvent {
 		JoyButtonEvent jbutton;
 		ResizeEvent resize;
 		ExposeEvent expose;
+		FileDroppedEvent file;
+		TextDroppedEvent textdrop;
 		QuitEvent quit;
 		UserEvent user;
 		SysWMEvent syswm;

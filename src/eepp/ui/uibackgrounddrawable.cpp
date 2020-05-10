@@ -12,7 +12,7 @@ UIBackgroundDrawable* UIBackgroundDrawable::New( UINode* owner ) {
 UIBackgroundDrawable::UIBackgroundDrawable( UINode* owner ) :
 	Drawable( UIBACKGROUNDDRAWABLE ),
 	mOwner( owner ),
-	mVertexBuffer( VertexBuffer::NewVertexArray( VERTEX_FLAGS_PRIMITIVE, PRIMITIVE_TRIANGLE_FAN ) ),
+	mVertexBuffer( nullptr ),
 	mNeedsUpdate( false ),
 	mNeedsRadiusUpdate( false ),
 	mColorNeedsUpdate( false ) {}
@@ -44,7 +44,7 @@ void UIBackgroundDrawable::draw( const Vector2f& position, const Sizef& size ) {
 		update();
 	}
 
-	if ( hasRadius() ) {
+	if ( hasRadius() && mVertexBuffer ) {
 		mVertexBuffer->bind();
 		mVertexBuffer->draw();
 		mVertexBuffer->unbind();
@@ -152,7 +152,13 @@ void UIBackgroundDrawable::onPositionChange() {
 
 void UIBackgroundDrawable::update() {
 	updateRadiuses();
-	Borders::createBackground( mVertexBuffer, mRadiuses, mPosition, mSize, mColor );
+	if ( hasRadius() ) {
+		if ( nullptr == mVertexBuffer ) {
+			mVertexBuffer =
+				VertexBuffer::NewVertexArray( VERTEX_FLAGS_PRIMITIVE, PRIMITIVE_TRIANGLE_FAN );
+		}
+		Borders::createBackground( mVertexBuffer, mRadiuses, mPosition, mSize, mColor );
+	}
 	mColorNeedsUpdate = false;
 	mNeedsRadiusUpdate = false;
 	mNeedsUpdate = false;

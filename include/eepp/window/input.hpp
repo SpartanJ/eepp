@@ -151,10 +151,10 @@ class EE_API Input {
 	const Uint32& getDoubleClickTrigger() const;
 
 	/** @return The double click interval in milliseconds ( default 500 ms ) */
-	const Uint32& getDoubleClickInterval() const;
+	const Time& getDoubleClickInterval() const;
 
 	/** Set the double click interval in milliseconds */
-	void setDoubleClickInterval( const Uint32& Interval );
+	void setDoubleClickInterval( const Time& Interval );
 
 	/** Clean the keyboard and mouse states */
 	void cleanStates();
@@ -197,8 +197,8 @@ class EE_API Input {
 	Uint32 mClickTrigger;
 	Uint32 mDoubleClickTrigger;
 	Uint32 mInputMod;
-	Uint32 mDoubleClickInterval; //!< Determine the double click inverval in milliseconds ( default
-								 //!< 500 ms )
+	Time mDoubleClickInterval; /// Determine the double click inverval in milliseconds ( default 400
+							   /// ms )
 	Uint32 mLastButtonLeftClicked;
 	Uint32 mLastButtonRightClicked;
 	Uint32 mLastButtonMiddleClicked;

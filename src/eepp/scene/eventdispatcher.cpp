@@ -128,12 +128,15 @@ void EventDispatcher::update( const Time& time ) {
 					lastFocusControl->onMouseClick( mMousePosi, mInput->getClickTrigger() );
 					sendMsg( lastFocusControl, NodeMessage::Click, mInput->getClickTrigger() );
 
-					if ( mInput->getDoubleClickTrigger() ) {
+					if ( mInput->getDoubleClickTrigger() &&
+						 mClickPos.distance( mMousePosi ) < 10 ) {
 						lastFocusControl->onMouseDoubleClick( mMousePosi,
 															  mInput->getDoubleClickTrigger() );
 						sendMsg( lastFocusControl, NodeMessage::DoubleClick,
 								 mInput->getDoubleClickTrigger() );
 					}
+
+					mClickPos = mMousePosi;
 				}
 			}
 		}

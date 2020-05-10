@@ -308,6 +308,16 @@ void InputSDL::update() {
 				EEEvent.syswm.msg = (InputEvent::SysWMmsg*)SDLEvent.syswm.msg;
 				break;
 			}
+			case SDL_DROPFILE: {
+				EEEvent.Type = InputEvent::FileDropped;
+				EEEvent.file.file = SDLEvent.drop.file;
+				break;
+			}
+			case SDL_DROPTEXT: {
+				EEEvent.Type = InputEvent::TextDropped;
+				EEEvent.textdrop.text = SDLEvent.drop.file;
+				break;
+			}
 			default: {
 				if ( SDLEvent.type >= SDL_USEREVENT && SDLEvent.type < SDL_LASTEVENT ) {
 					EEEvent.Type = InputEvent::EventUser + SDLEvent.type - SDL_USEREVENT;
@@ -323,6 +333,10 @@ void InputSDL::update() {
 
 		if ( InputEvent::NoEvent != EEEvent.Type ) {
 			processEvent( &EEEvent );
+		}
+
+		if ( InputEvent::FileDropped == EEEvent.Type || InputEvent::TextDropped == EEEvent.Type ) {
+			SDL_free( SDLEvent.drop.file );
 		}
 	}
 

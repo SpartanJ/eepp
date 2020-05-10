@@ -319,7 +319,6 @@ void InputTextBuffer::update( InputEvent* Event ) {
 								   Event->key.keysym.sym == KEY_DELETE ) ||
 								 keyChar == KEY_BACKSPACE ) {
 								removeSelection();
-								break;
 							}
 						}
 

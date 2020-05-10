@@ -92,6 +92,7 @@ class EE_API EventDispatcher {
 	Vector2i mMousePosi;
 	Vector2f mLastMousePos;
 	Vector2i mMouseDownPos;
+	Vector2i mClickPos;
 	Int32 mCbId;
 	bool mFirstPress;
 	Node* mNodeDragging;

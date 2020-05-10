@@ -11,7 +11,7 @@ Input::Input( EE::Window::Window* window, JoystickManager* joystickmanager ) :
 	mClickTrigger( 0 ),
 	mDoubleClickTrigger( 0 ),
 	mInputMod( 0 ),
-	mDoubleClickInterval( 400 ),
+	mDoubleClickInterval( Milliseconds( 400 ) ),
 	mLastButtonLeftClicked( 0 ),
 	mLastButtonRightClicked( 0 ),
 	mLastButtonMiddleClicked( 0 ),
@@ -116,7 +116,7 @@ void Input::processEvent( InputEvent* Event ) {
 
 				mTClick = mLastButtonLeftClick - mLastButtonLeftClicked;
 
-				if ( mTClick < mDoubleClickInterval && mTClick > 0 ) {
+				if ( mTClick < mDoubleClickInterval.asMilliseconds() && mTClick > 0 ) {
 					mDoubleClickTrigger |= EE_BUTTON_MASK( EE_BUTTON_LEFT );
 					mLastButtonLeftClick = 0;
 					mLastButtonLeftClicked = 0;
@@ -127,7 +127,7 @@ void Input::processEvent( InputEvent* Event ) {
 
 				mTClick = mLastButtonRightClick - mLastButtonRightClicked;
 
-				if ( mTClick < mDoubleClickInterval && mTClick > 0 ) {
+				if ( mTClick < mDoubleClickInterval.asMilliseconds() && mTClick > 0 ) {
 					mDoubleClickTrigger |= EE_BUTTON_MASK( EE_BUTTON_RIGHT );
 					mLastButtonRightClick = 0;
 					mLastButtonRightClicked = 0;
@@ -138,7 +138,7 @@ void Input::processEvent( InputEvent* Event ) {
 
 				mTClick = mLastButtonMiddleClick - mLastButtonMiddleClicked;
 
-				if ( mTClick < mDoubleClickInterval && mTClick > 0 ) {
+				if ( mTClick < mDoubleClickInterval.asMilliseconds() && mTClick > 0 ) {
 					mDoubleClickTrigger |= EE_BUTTON_MASK( EE_BUTTON_MIDDLE );
 					mLastButtonMiddleClick = 0;
 					mLastButtonMiddleClicked = 0;
@@ -400,11 +400,11 @@ const Uint32& Input::getDoubleClickTrigger() const {
 	return mDoubleClickTrigger;
 }
 
-const Uint32& Input::getDoubleClickInterval() const {
+const Time& Input::getDoubleClickInterval() const {
 	return mDoubleClickInterval;
 }
 
-void Input::setDoubleClickInterval( const Uint32& Interval ) {
+void Input::setDoubleClickInterval( const Time& Interval ) {
 	mDoubleClickInterval = Interval;
 }
 
