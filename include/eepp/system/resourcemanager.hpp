@@ -13,7 +13,6 @@ namespace EE { namespace System {
  */
 template <class T> class ResourceManager {
   public:
-	/** @param UniqueId Indicates if the resources id must be unique */
 	ResourceManager();
 
 	/** @brief The destructor will call destroy() and destroy all the resources added to the manager
@@ -330,7 +329,7 @@ template <class T> T* ResourceManagerMulti<T>::getById( const String::HashType& 
 
 template <class T> void ResourceManagerMulti<T>::printNames() {
 	for ( auto& it : mResources ) {
-		eePRINT( "'%s'\n", it->second->getName().c_str() );
+		eePRINT( "'%s'\n", it.second->getName().c_str() );
 	}
 }
 
