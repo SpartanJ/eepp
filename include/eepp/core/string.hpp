@@ -153,7 +153,7 @@ class EE_API String {
 	static std::string Uint8ToString( const std::vector<Uint8>& v );
 
 	/** Insert a char into String on pos (added this function to avoid a bug on String) */
-	static void insertChar( String& str, const unsigned int& pos, const Uint32& tchar );
+	static void insertChar( String& str, const unsigned int& pos, const StringBaseType& tchar );
 
 	/** Copy a string to another
 	 * @param Dst Destination String
@@ -504,17 +504,17 @@ class EE_API String {
 	**/
 	String& insert( std::size_t position, const String& str );
 
-	String& insert( std::size_t pos1, const String& str, std::size_t pos2, std::size_t n );
+	String& insert( size_t pos1, const char* s, size_t n );
 
-	String& insert( std::size_t pos1, const char* s, std::size_t n );
+	String& insert( std::size_t pos1, const String& str, std::size_t pos2, std::size_t n );
 
 	String& insert( std::size_t pos1, const char* s );
 
-	String& insert( std::size_t pos1, size_t n, char c );
+	String& insert( std::size_t pos1, size_t n, const String::StringBaseType& c );
 
-	Iterator insert( Iterator p, char c );
+	Iterator insert( Iterator p, const String::StringBaseType& c );
 
-	void insert( Iterator p, std::size_t n, char c );
+	void insert( Iterator p, std::size_t n, const StringBaseType& c );
 
 	template <class InputIterator>
 	void insert( Iterator p, InputIterator first, InputIterator last ) {
@@ -534,7 +534,7 @@ class EE_API String {
 
 	std::size_t find( const char* s, std::size_t pos = 0 ) const;
 
-	std::size_t find( char c, std::size_t pos = 0 ) const;
+	std::size_t find( const String::StringBaseType& c, std::size_t pos = 0 ) const;
 
 	/** @brief Get a pointer to the C-style array of characters
 	** This functions provides a read-only access to a
@@ -641,11 +641,9 @@ class EE_API String {
 
 	String& assign( const String& str, std::size_t pos, std::size_t n );
 
-	String& assign( const char* s, std::size_t n );
-
 	String& assign( const char* s );
 
-	String& assign( std::size_t n, char c );
+	String& assign( std::size_t n, StringBaseType c );
 
 	template <class InputIterator> String& assign( InputIterator first, InputIterator last ) {
 		mString.assign( first, last );
@@ -655,8 +653,6 @@ class EE_API String {
 	String& append( const String& str );
 
 	String& append( const String& str, std::size_t pos, std::size_t n );
-
-	String& append( const char* s, std::size_t n );
 
 	String& append( const char* s );
 
@@ -684,9 +680,9 @@ class EE_API String {
 
 	String& replace( Iterator i1, Iterator i2, const char* s );
 
-	String& replace( std::size_t pos1, std::size_t n1, std::size_t n2, char c );
+	String& replace( std::size_t pos1, std::size_t n1, std::size_t n2, StringBaseType c );
 
-	String& replace( Iterator i1, Iterator i2, std::size_t n2, char c );
+	String& replace( Iterator i1, Iterator i2, std::size_t n2, StringBaseType c );
 
 	template <class InputIterator>
 	String& replace( Iterator i1, Iterator i2, InputIterator j1, InputIterator j2 ) {
@@ -696,11 +692,9 @@ class EE_API String {
 
 	std::size_t rfind( const String& str, std::size_t pos = StringType::npos ) const;
 
-	std::size_t rfind( const char* s, std::size_t pos, std::size_t n ) const;
-
 	std::size_t rfind( const char* s, std::size_t pos = StringType::npos ) const;
 
-	std::size_t rfind( char c, std::size_t pos = StringType::npos ) const;
+	std::size_t rfind( const StringBaseType& c, std::size_t pos = StringType::npos ) const;
 
 	String substr( std::size_t pos = 0, std::size_t n = StringType::npos ) const;
 
@@ -721,15 +715,11 @@ class EE_API String {
 
 	std::size_t find_first_of( const String& str, std::size_t pos = 0 ) const;
 
-	std::size_t find_first_of( const char* s, std::size_t pos, std::size_t n ) const;
-
 	std::size_t find_first_of( const char* s, std::size_t pos = 0 ) const;
 
 	std::size_t find_first_of( StringBaseType c, std::size_t pos = 0 ) const;
 
 	std::size_t find_last_of( const String& str, std::size_t pos = StringType::npos ) const;
-
-	std::size_t find_last_of( const char* s, std::size_t pos, std::size_t n ) const;
 
 	std::size_t find_last_of( const char* s, std::size_t pos = StringType::npos ) const;
 
@@ -737,15 +727,11 @@ class EE_API String {
 
 	std::size_t find_first_not_of( const String& str, std::size_t pos = 0 ) const;
 
-	std::size_t find_first_not_of( const char* s, std::size_t pos, std::size_t n ) const;
-
 	std::size_t find_first_not_of( const char* s, std::size_t pos = 0 ) const;
 
 	std::size_t find_first_not_of( StringBaseType c, std::size_t pos = 0 ) const;
 
 	std::size_t find_last_not_of( const String& str, std::size_t pos = StringType::npos ) const;
-
-	std::size_t find_last_not_of( const char* s, std::size_t pos, std::size_t n ) const;
 
 	std::size_t find_last_not_of( const char* s, std::size_t pos = StringType::npos ) const;
 

@@ -391,7 +391,7 @@ std::string String::fromFloat( const Float& value, const std::string& append,
 	return prepend + toStr( value ) + append;
 }
 
-void String::insertChar( String& str, const unsigned int& pos, const Uint32& tchar ) {
+void String::insertChar( String& str, const unsigned int& pos, const StringBaseType& tchar ) {
 	str.insert( str.begin() + pos, tchar );
 }
 
@@ -652,7 +652,7 @@ String& String::insert( size_t pos1, const char* s, size_t n ) {
 	return *this;
 }
 
-String& String::insert( size_t pos1, size_t n, char c ) {
+String& String::insert( size_t pos1, size_t n, const StringBaseType& c ) {
 	mString.insert( pos1, n, c );
 	return *this;
 }
@@ -665,11 +665,11 @@ String& String::insert( size_t pos1, const char* s ) {
 	return *this;
 }
 
-String::Iterator String::insert( Iterator p, char c ) {
+String::Iterator String::insert( Iterator p, const String::StringBaseType& c ) {
 	return mString.insert( p, c );
 }
 
-void String::insert( Iterator p, size_t n, char c ) {
+void String::insert( Iterator p, size_t n, const String::StringBaseType& c ) {
 	mString.insert( p, n, c );
 }
 
@@ -743,14 +743,6 @@ String& String::assign( const String& str, size_t pos, size_t n ) {
 	return *this;
 }
 
-String& String::assign( const char* s, size_t n ) {
-	String tmp( s );
-
-	mString.assign( tmp.mString );
-
-	return *this;
-}
-
 String& String::assign( const char* s ) {
 	String tmp( s );
 
@@ -759,7 +751,7 @@ String& String::assign( const char* s ) {
 	return *this;
 }
 
-String& String::assign( size_t n, char c ) {
+String& String::assign( size_t n, StringBaseType c ) {
 	mString.assign( n, c );
 
 	return *this;
@@ -773,14 +765,6 @@ String& String::append( const String& str ) {
 
 String& String::append( const String& str, size_t pos, size_t n ) {
 	mString.append( str.mString, pos, n );
-
-	return *this;
-}
-
-String& String::append( const char* s, size_t n ) {
-	String tmp( s );
-
-	mString.append( tmp.mString );
 
 	return *this;
 }
@@ -855,13 +839,13 @@ String& String::replace( Iterator i1, Iterator i2, const char* s ) {
 	return *this;
 }
 
-String& String::replace( size_t pos1, size_t n1, size_t n2, char c ) {
+String& String::replace( size_t pos1, size_t n1, size_t n2, StringBaseType c ) {
 	mString.replace( pos1, n1, n2, (StringBaseType)c );
 
 	return *this;
 }
 
-String& String::replace( Iterator i1, Iterator i2, size_t n2, char c ) {
+String& String::replace( Iterator i1, Iterator i2, size_t n2, StringBaseType c ) {
 	mString.replace( i1, i2, n2, (StringBaseType)c );
 
 	return *this;
@@ -871,31 +855,23 @@ std::size_t String::find( const String& str, std::size_t start ) const {
 	return mString.find( str.mString, start );
 }
 
-std::size_t String::find( const char* s, std::size_t pos, std::size_t n ) const {
-	return find( String( s ), pos );
-}
-
 std::size_t String::find( const char* s, std::size_t pos ) const {
 	return find( String( s ), pos );
 }
 
-size_t String::find( char c, std::size_t pos ) const {
-	return mString.find( (StringBaseType)c, pos );
+size_t String::find( const StringBaseType& c, std::size_t pos ) const {
+	return mString.find( c, pos );
 }
 
 std::size_t String::rfind( const String& str, std::size_t pos ) const {
 	return mString.rfind( str.mString, pos );
 }
 
-std::size_t String::rfind( const char* s, std::size_t pos, std::size_t n ) const {
-	return rfind( String( s ), pos );
-}
-
 std::size_t String::rfind( const char* s, std::size_t pos ) const {
 	return rfind( String( s ), pos );
 }
 
-std::size_t String::rfind( char c, std::size_t pos ) const {
+std::size_t String::rfind( const StringBaseType& c, std::size_t pos ) const {
 	return mString.rfind( c, pos );
 }
 
@@ -936,10 +912,6 @@ std::size_t String::find_first_of( const String& str, std::size_t pos ) const {
 	return mString.find_first_of( str.mString, pos );
 }
 
-std::size_t String::find_first_of( const char* s, std::size_t pos, std::size_t n ) const {
-	return find_first_of( String( s ), pos );
-}
-
 std::size_t String::find_first_of( const char* s, std::size_t pos ) const {
 	return find_first_of( String( s ), pos );
 }
@@ -950,10 +922,6 @@ std::size_t String::find_first_of( StringBaseType c, std::size_t pos ) const {
 
 std::size_t String::find_last_of( const String& str, std::size_t pos ) const {
 	return mString.find_last_of( str.mString, pos );
-}
-
-std::size_t String::find_last_of( const char* s, std::size_t pos, std::size_t n ) const {
-	return find_last_of( String( s ), pos );
 }
 
 std::size_t String::find_last_of( const char* s, std::size_t pos ) const {
@@ -968,10 +936,6 @@ std::size_t String::find_first_not_of( const String& str, std::size_t pos ) cons
 	return mString.find_first_not_of( str.mString, pos );
 }
 
-std::size_t String::find_first_not_of( const char* s, std::size_t pos, std::size_t n ) const {
-	return find_first_not_of( String( s ), pos );
-}
-
 std::size_t String::find_first_not_of( const char* s, std::size_t pos ) const {
 	return find_first_not_of( String( s ), pos );
 }
@@ -982,10 +946,6 @@ std::size_t String::find_first_not_of( StringBaseType c, std::size_t pos ) const
 
 std::size_t String::find_last_not_of( const String& str, std::size_t pos ) const {
 	return mString.find_last_not_of( str.mString, pos );
-}
-
-std::size_t String::find_last_not_of( const char* s, std::size_t pos, std::size_t n ) const {
-	return find_last_not_of( String( s ), pos );
 }
 
 std::size_t String::find_last_not_of( const char* s, std::size_t pos ) const {
