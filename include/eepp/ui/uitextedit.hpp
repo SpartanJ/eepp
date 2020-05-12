@@ -87,7 +87,7 @@ class EE_API UITextEdit : public UIWidget {
 
 	void shrinkText( const Float& width );
 
-	void textInputTryResize();
+	void textInputTryResize( Sizef aSize, Sizef iSize );
 
 	Sizef getAvailableSize();
 

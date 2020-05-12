@@ -23,15 +23,15 @@ class EE_API Text {
 
 	static Text* New();
 
-	static Text* New( const String& string, Font* font, unsigned int characterSize = 30 );
+	static Text* New( const String& string, Font* font, unsigned int characterSize = 12 );
 
-	static Text* New( Font* font, unsigned int characterSize = 30 );
+	static Text* New( Font* font, unsigned int characterSize = 12 );
 
 	Text();
 
-	Text( const String& string, Font* font, unsigned int characterSize = 30 );
+	Text( const String& string, Font* font, unsigned int characterSize = 12 );
 
-	Text( Font* font, unsigned int characterSize = 30 );
+	Text( Font* font, unsigned int characterSize = 12 );
 
 	/** Create a text from a font */
 	void create( Graphics::Font* font, const String& text = "",
@@ -124,14 +124,10 @@ class EE_API Text {
 	 * selection worked. Otherwise both parameters will be -1. */
 	void findWordFromCharacterIndex( Int32 characterIndex, Int32& InitCur, Int32& EndCur );
 
-	/** Cache the with of the current text */
-	void getWidthInfo( std::vector<Float>& LinesWidth, Float& CachedWidth, int& NumLines,
-					   int& LargestLineCharCount );
-
 	/** Shrink the String to a max width
 	 * @param MaxWidth The maximum possible width
 	 */
-	void shrinkText( const Uint32& MaxWidth );
+	void shrinkText( const Uint32& maxWidth );
 
 	/** Invalidates the color cache */
 	void invalidateColors();
@@ -159,7 +155,6 @@ class EE_API Text {
 	Color mFillColor;		 ///< Text fill color
 	Color mOutlineColor;	 ///< Text outline color
 	Float mOutlineThickness; ///< Thickness of the text's outline
-	Sizei mTextureSize;
 
 	mutable Rectf mBounds;			  ///< Bounding rectangle of the text (in local coordinates)
 	mutable bool mGeometryNeedUpdate; ///< Does the geometry need to be recomputed?
@@ -175,12 +170,13 @@ class EE_API Text {
 	Uint32 mTabWidth;
 
 	std::vector<VertexCoords> mVertices;
-	std::vector<Vector2f> mGlyphPos;
+	std::vector<Rectf> mGlyphCache;
 	std::vector<Color> mColors;
 
 	std::vector<VertexCoords> mOutlineVertices;
 	std::vector<Color> mOutlineColors;
 	std::vector<Float> mLinesWidth;
+	std::vector<Uint32> mLinesStartIndex;
 
 	void ensureGeometryUpdate();
 
@@ -197,6 +193,9 @@ class EE_API Text {
 							  Float outlineThickness, Int32 centerDiffX );
 
 	Uint32 getTotalVertices();
+
+	/** Cache the with of the current text */
+	void getWidthInfo();
 };
 
 }} // namespace EE::Graphics

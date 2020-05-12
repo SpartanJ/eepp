@@ -279,81 +279,41 @@ Vector2f Text::findCharacterPos( std::size_t index ) const {
 	if ( index >= mString.size() )
 		index = mString.size();
 
-	return mGlyphPos[index];
+	return Vector2f( mGlyphCache[index].Left, mGlyphCache[index].Top );
 }
 
-Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest ) {
-	if ( NULL == mFont )
+Int32 Text::findCharacterFromPos( const Vector2i& pos, bool ) {
+	if ( NULL == mFont || mString.empty() || mLinesStartIndex.empty() )
 		return 0;
 
-	Float vspace = mFont->getLineSpacing( mRealFontSize );
-	Float Width = 0, lWidth = 0, Height = vspace, lHeight = 0;
-	Uint32 CharID;
-	Uint32 prevChar = 0;
-	Int32 nearest = -1;
+	Vector2f charCenter;
+	Int32 nearest = 0;
 	Int32 minDist = std::numeric_limits<Int32>::max();
 	Int32 curDist = -1;
-	std::size_t tSize = mString.size();
-	bool bold = ( mStyle & Bold ) != 0;
 	Vector2f fpos( pos.asFloat() );
 
-	Float hspace = static_cast<Float>( mFont->getGlyph( L' ', mRealFontSize, bold ).advance );
+	Float textHeight = mFont->getLineSpacing( mRealFontSize );
+	Int32 approximateSearchLine = static_cast<Int32>( eefloor( pos.y / textHeight ) );
+	approximateSearchLine = eemin(
+		eemax( 0, approximateSearchLine ),
+		static_cast<Int32>( mLinesStartIndex.size() > 1 ? mLinesStartIndex.size() : 1 ) - 1 );
+	size_t start = mLinesStartIndex[approximateSearchLine];
+	size_t end = approximateSearchLine == static_cast<Int32>( mLinesStartIndex.size() ) - 1
+					 ? mString.size()
+					 : mLinesStartIndex[approximateSearchLine + 1];
 
-	for ( std::size_t i = 0; i < tSize; ++i ) {
-		CharID = mString[i];
-		Glyph glyph = mFont->getGlyph( CharID, mRealFontSize, bold, mOutlineThickness );
-
-		lWidth = Width;
-
-		if ( CharID != '\r' && CharID != '\t' ) {
-			Width += mFont->getKerning( prevChar, CharID, mRealFontSize );
-			prevChar = CharID;
-			Width += glyph.advance;
-		}
-
-		if ( CharID == '\t' ) {
-			Width += hspace * mTabWidth;
-		}
-
-		if ( CharID == '\n' ) {
-			lWidth = 0;
-			Width = 0;
-		}
-
-		if ( pos.x <= Width && pos.x >= lWidth && pos.y <= Height && pos.y >= lHeight ) {
-			if ( i + 1 < tSize ) {
-				Int32 curDist = eeabs( pos.x - lWidth );
-				Int32 nextDist = eeabs( pos.x - Width );
-
-				if ( nextDist < curDist ) {
-					return i + 1;
-				}
-			}
-
-			return i;
-		}
-
-		if ( returnNearest ) {
-			curDist = eeabs( fpos.distance( Vector2f( Width - ( Width - lWidth ) * 0.5f,
-													  Height - ( Height - lHeight ) * 0.5f ) ) );
-			if ( curDist < minDist ) {
-				nearest = i;
-				minDist = curDist;
-			}
-		}
-
-		if ( CharID == '\n' ) {
-			lHeight = Height;
-			Height += vspace;
-
-			if ( pos.x > Width && pos.y <= lHeight ) {
-				return i;
-			}
-		}
+	if ( mString[start] == '\n' && start + 1 < mString.size() ) {
+		start++;
 	}
 
-	if ( pos.x >= Width ) {
-		return tSize;
+	for ( std::size_t i = start; i <= end; ++i ) {
+		charCenter.x = mGlyphCache[i].Left;
+		charCenter.y = mGlyphCache[i].Top + mGlyphCache[i].getHeight();
+		curDist = eeabs( fpos.distance( charCenter ) );
+		if ( curDist < minDist ) {
+			nearest = i;
+			minDist = curDist;
+		}
 	}
 
 	return nearest;
@@ -395,20 +355,22 @@ void Text::findWordFromCharacterIndex( Int32 characterIndex, Int32& InitCur, Int
 	}
 }
 
-void Text::getWidthInfo( std::vector<Float>& LinesWidth, Float& CachedWidth, int& NumLines,
-						 int& LargestLineCharCount ) {
-	if ( NULL == mFont )
+void Text::getWidthInfo() {
+	if ( NULL == mFont || mString.empty() )
 		return;
 
-	LinesWidth.clear();
+	mLinesWidth.clear();
+	mLinesStartIndex.clear();
 
 	Float Width = 0, MaxWidth = 0;
 	Uint32 CharID;
 	Int32 Lines = 1;
 	Int32 CharCount = 0;
 	Uint32 prevChar = 0;
-	LargestLineCharCount = 0;
+	mLargestLineCharCount = 0;
 	bool bold = ( mStyle & Bold ) != 0;
+
+	mLinesStartIndex.push_back( 0 );
 
 	Float hspace = static_cast<Float>( mFont->getGlyph( L' ', mRealFontSize, bold ).advance );
 
@@ -428,16 +390,17 @@ void Text::getWidthInfo( std::vector<Float>& LinesWidth, Float& CachedWidth, int
 			Width += hspace * mTabWidth;
 		}
 		if ( CharID == '\n' ) {
+			mLinesStartIndex.push_back( i );
 			Lines++;
 
-			LinesWidth.push_back( Width - glyph.advance );
+			mLinesWidth.push_back( Width - glyph.advance );
 
 			Width = 0;
 
 			CharCount = 0;
 		} else {
-			if ( CharCount > LargestLineCharCount )
-				LargestLineCharCount = CharCount;
+			if ( CharCount > mLargestLineCharCount )
+				mLargestLineCharCount = CharCount;
 		}
 
 		if ( Width > MaxWidth )
@@ -445,20 +408,20 @@ void Text::getWidthInfo( std::vector<Float>& LinesWidth, Float& CachedWidth, int
 	}
 
 	if ( mString.size() && mString.at( mString.size() - 1 ) != '\n' ) {
-		LinesWidth.push_back( Width );
+		mLinesWidth.push_back( Width );
 	}
 
-	CachedWidth = MaxWidth;
-	NumLines = Lines;
+	mCachedWidth = MaxWidth;
+	mNumLines = Lines;
 }
 
-void Text::shrinkText( const Uint32& MaxWidth ) {
+void Text::shrinkText( const Uint32& maxWidth ) {
 	if ( !mString.size() || NULL == mFont )
 		return;
 
 	Float tCurWidth = 0.f;
 	Float tWordWidth = 0.f;
-	Float tMaxWidth = (Float)MaxWidth;
+	Float tMaxWidth = (Float)maxWidth;
 	String::StringBaseType* tChar = &mString[0];
 	String::StringBaseType* tLastSpace = NULL;
 	Uint32 prevChar = 0;
@@ -524,9 +487,7 @@ void Text::shrinkText( const Uint32& MaxWidth ) {
 		}
 	}
 
-	mCachedWidthNeedUpdate = true;
-	mGeometryNeedUpdate = true;
-	mColorsNeedUpdate = true;
+	invalidate();
 }
 
 void Text::invalidateColors() {
@@ -696,7 +657,7 @@ void Text::ensureGeometryUpdate() {
 
 	// Clear the previous geometry
 	mVertices.clear();
-	mGlyphPos.clear();
+	mGlyphCache.clear();
 	mOutlineVertices.clear();
 	mBounds = Rectf();
 
@@ -792,16 +753,20 @@ void Text::ensureGeometryUpdate() {
 			minX = std::min( minX, x );
 			minY = std::min( minY, y );
 
-			mGlyphPos.push_back( Vector2f( x, y - mRealFontSize ) );
-
 			switch ( curChar ) {
 				case ' ':
+					mGlyphCache.push_back(
+						Rectf( Vector2f( x, y - mRealFontSize ), Sizef( hspace, vspace ) ) );
 					x += hspace;
 					break;
 				case '\t':
+					mGlyphCache.push_back( Rectf( Vector2f( x, y - mRealFontSize ),
+												  Sizef( hspace * mTabWidth, vspace ) ) );
 					x += hspace * mTabWidth;
 					break;
 				case '\n':
+					mGlyphCache.push_back(
+						Rectf( Vector2f( x, y - mRealFontSize ), Sizef( 0, vspace ) ) );
 					y += vspace;
 					x = 0;
 					break;
@@ -856,13 +821,14 @@ void Text::ensureGeometryUpdate() {
 			maxY = std::max( maxY, y + bottom );
 		}
 
-		mGlyphPos.push_back( Vector2f( x, y - mRealFontSize ) );
+		mGlyphCache.push_back(
+			Rectf( Vector2f( x, y - mRealFontSize ), Sizef( glyph.advance, vspace ) ) );
 
 		// Advance to the next character
 		x += glyph.advance;
 	}
 
-	mGlyphPos.push_back( Vector2f( x, y - mRealFontSize ) );
+	mGlyphCache.push_back( Rectf( Vector2f( x, y - mRealFontSize ), Sizef( 0, vspace ) ) );
 
 	// If we're using the underlined style, add the last line
 	if ( underlined && ( x > 0 ) ) {
@@ -945,10 +911,13 @@ void Text::cacheWidth() {
 		return;
 
 	if ( NULL != mFont && mString.size() ) {
-		getWidthInfo( mLinesWidth, mCachedWidth, mNumLines, mLargestLineCharCount );
+		getWidthInfo();
 		mCachedWidthNeedUpdate = false;
 	} else {
 		mCachedWidth = 0;
+		mNumLines = 0;
+		mLinesWidth.clear();
+		mLinesStartIndex.clear();
 	}
 }
 

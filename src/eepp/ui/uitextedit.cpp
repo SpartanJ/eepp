@@ -23,7 +23,7 @@ UITextEdit::UITextEdit() :
 	clipEnable();
 
 	mTextInput = UITextInput::NewWithTag( mTag + "::input" );
-	mTextInput->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::WrapContent );
+	mTextInput->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 	mTextInput->setParent( this );
 	mTextInput->setFlags( UI_TEXT_SELECTION_ENABLED | UI_VALIGN_TOP );
 	mTextInput->unsetFlags( UI_VALIGN_CENTER | UI_AUTO_SIZE );
@@ -40,9 +40,8 @@ UITextEdit::UITextEdit() :
 	mTextInput->addEventListener( Event::OnPressEnter, cb );
 	mTextInput->addEventListener( Event::OnCursorPosChange,
 								  cb::Make1( this, &UITextEdit::onCursorPosChange ) );
-	mTextInput->addEventListener( Event::OnFocus, [&]( const Event* event ) { onFocus(); } );
-	mTextInput->addEventListener( Event::OnFocusLoss,
-								  [&]( const Event* event ) { onFocusLoss(); } );
+	mTextInput->addEventListener( Event::OnFocus, [&]( const Event* ) { onFocus(); } );
+	mTextInput->addEventListener( Event::OnFocusLoss, [&]( const Event* ) { onFocusLoss(); } );
 
 	mVScrollBar = UIScrollBar::NewVertical();
 	mVScrollBar->setParent( this );
@@ -172,7 +171,7 @@ void UITextEdit::scrollbarsSet() {
 			if ( mHScrollBar->isVisible() )
 				extraH = mHScrollBar->getPixelsSize().getHeight();
 
-			if ( mTextInput->getTextHeight() >
+			if ( mTextInput->getPixelsSize().getHeight() >
 				 mSize.getHeight() - mContainerPadding.Top - mContainerPadding.Bottom - extraH ) {
 				mVScrollBar->setVisible( true );
 				mVScrollBar->setEnabled( true );
@@ -301,7 +300,7 @@ void UITextEdit::onInputSizeChange( const Event* Event ) {
 		shrinkText( aSize.getWidth() );
 	}
 
-	textInputTryResize();
+	textInputTryResize( aSize, iSize );
 
 	fixScroll();
 	fixScrollToCursor();
@@ -309,10 +308,7 @@ void UITextEdit::onInputSizeChange( const Event* Event ) {
 	mNodeFlags &= ~NODE_FLAG_FREE_USE;
 }
 
-void UITextEdit::textInputTryResize() {
-	Sizef aSize( getAvailableSize() );
-	Sizef iSize( getInputSize() );
-
+void UITextEdit::textInputTryResize( Sizef aSize, Sizef iSize ) {
 	if ( ( mFlags & UI_WORD_WRAP ) && iSize.getHeight() < aSize.getHeight() ) {
 		mVScrollBar->setVisible( false );
 		mVScrollBar->setEnabled( false );
@@ -461,7 +457,7 @@ void UITextEdit::fixScrollToCursor() {
 void UITextEdit::shrinkText( const Float& width ) {
 	if ( ( getFlags() & UI_WORD_WRAP ) && width > 0 ) {
 		mTextInput->shrinkText( width );
-		textInputTryResize();
+		textInputTryResize( getAvailableSize(), getInputSize() );
 		scrollbarsSet();
 	}
 }

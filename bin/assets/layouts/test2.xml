@@ -1,3 +1,3 @@
-<vbox>
-	<Widget />
+<vbox layout_width="match_parent" layout_height="match_parent">
+	<TextEdit layout_width="match_parent" layout_height="match_parent" margin-top="24dp" />
 </vbox>
