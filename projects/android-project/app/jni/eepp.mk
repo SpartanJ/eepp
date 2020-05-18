@@ -81,6 +81,7 @@ CODE_SRCS				:=  \
 	scene/actions/*.cpp \
 	ui/*.cpp \
 	ui/css/*.cpp \
+	ui/doc/*.cpp \
 	ui/actions/*.cpp \
 	ui/tools/*.cpp \
 	maps/*.cpp \

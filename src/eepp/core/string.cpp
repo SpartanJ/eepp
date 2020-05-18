@@ -188,7 +188,7 @@ String String::join( const std::vector<String>& strArray, const Int8& joinchar,
 		for ( size_t i = 0; i < s; i++ ) {
 			str += strArray[i];
 
-			if ( i != s - 1 || appendLastJoinChar ) {
+			if ( joinchar >= 0 && ( i != s - 1 || appendLastJoinChar ) ) {
 				str += joinchar;
 			}
 		}
@@ -450,14 +450,14 @@ String::String( StringBaseType utf32Char ) {
 	mString += utf32Char;
 }
 
-String::String( const char* uf8String ) {
-	if ( uf8String ) {
-		std::size_t length = strlen( uf8String );
+String::String( const char* utf8String ) {
+	if ( utf8String ) {
+		std::size_t length = strlen( utf8String );
 
 		if ( length > 0 ) {
 			mString.reserve( length + 1 );
 
-			Utf8::toUtf32( uf8String, uf8String + length, std::back_inserter( mString ) );
+			Utf8::toUtf32( utf8String, utf8String + length, std::back_inserter( mString ) );
 		}
 	}
 }

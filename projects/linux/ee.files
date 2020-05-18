@@ -315,6 +315,9 @@
 ../../include/eepp/ui/css/stylesheetstyle.hpp
 ../../include/eepp/ui/css/stylesheetvariable.hpp
 ../../include/eepp/ui/css/transitiondefinition.hpp
+../../include/eepp/ui/doc/textdocument.hpp
+../../include/eepp/ui/doc/textposition.hpp
+../../include/eepp/ui/doc/textrange.hpp
 ../../include/eepp/ui/keyboardshortcut.hpp
 ../../include/eepp/ui/marginmove/scale.hpp
 ../../include/eepp/ui/tools/textureatlaseditor.hpp
@@ -752,6 +755,7 @@
 ../../src/eepp/ui/css/stylesheetstyle.cpp
 ../../src/eepp/ui/css/stylesheetvariable.cpp
 ../../src/eepp/ui/css/transitiondefinition.cpp
+../../src/eepp/ui/doc/textdocument.cpp
 ../../src/eepp/ui/tools/textureatlaseditor.cpp
 ../../src/eepp/ui/tools/textureatlasnew.cpp
 ../../src/eepp/ui/tools/textureatlasnew.hpp
