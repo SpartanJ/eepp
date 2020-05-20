@@ -19,6 +19,8 @@ class EE_API TextDocument {
 		virtual void onDocumentSelectionChange( const TextRange& ) = 0;
 	};
 
+	enum IndentType { IndentSpaces, IndentTabs };
+
 	static bool isNonWord( String::StringBaseType ch );
 
 	TextDocument();
@@ -102,6 +104,8 @@ class EE_API TextDocument {
 
 	void moveTo( TextPosition offset );
 
+	void moveTo( int columnOffset );
+
 	void textInput( const String& text );
 
 	void registerClient( Client& client );
@@ -120,11 +124,27 @@ class EE_API TextDocument {
 
 	void moveToNextPage( Int64 pageSize );
 
+	void deleteToPreviousChar();
+
+	void deleteToNextChar();
+
+	void newLine();
+
+	void indent();
+
+	void unindent();
+
+	String getIndentString();
+
 	const Uint32& getTabWidth() const;
 
 	void setTabWidth( const Uint32& tabWidth );
 
 	TextPosition sanitizePosition( const TextPosition& position ) const;
+
+	const IndentType& getIndentType() const;
+
+	void setIndentType( const IndentType& indentType );
 
   protected:
 	std::string mFilename;
@@ -133,12 +153,17 @@ class EE_API TextDocument {
 	std::unordered_set<Client*> mClients;
 	bool mIsCLRF;
 	Uint32 mTabWidth{4};
+	IndentType mIndentType{IndentTabs};
 
 	void notifyTextChanged();
 
 	void notifyCursorChanged();
 
 	void notifySelectionChanged();
+
+	void insertAtStartOfSelectedLines( String text, bool skipEmpty );
+
+	void removeFromStartOfSelectedLines( String text, bool skipEmpty );
 };
 
 }}} // namespace EE::UI::Doc

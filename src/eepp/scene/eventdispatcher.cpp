@@ -33,21 +33,23 @@ EventDispatcher::~EventDispatcher() {
 	}
 }
 
-void EventDispatcher::inputCallback( InputEvent* Event ) {
-	switch ( Event->Type ) {
+void EventDispatcher::inputCallback( InputEvent* event ) {
+	switch ( event->Type ) {
 		case InputEvent::Window: {
-			if ( Event->window.type == InputEvent::WindowKeyboardFocusGain ) {
+			if ( event->window.type == InputEvent::WindowKeyboardFocusGain ) {
 				mMousePosi = mInput->queryMousePos();
 				mMousePos = mMousePosi.asFloat();
 			}
 			break;
 		}
 		case InputEvent::KeyUp:
-			sendKeyUp( Event->key.keysym.sym, Event->key.keysym.unicode, Event->key.keysym.mod );
+			sendKeyUp( event->key.keysym.sym, event->key.keysym.unicode, event->key.keysym.mod );
 			break;
 		case InputEvent::KeyDown:
-			sendKeyDown( Event->key.keysym.sym, Event->key.keysym.unicode, Event->key.keysym.mod );
+			sendKeyDown( event->key.keysym.sym, event->key.keysym.unicode, event->key.keysym.mod );
 			break;
+		case InputEvent::TextInput:
+			sendTextInput( event->text.text, event->text.timestamp );
 		case InputEvent::SysWM:
 		case InputEvent::VideoResize:
 		case InputEvent::VideoExpose: {
@@ -151,7 +153,20 @@ Input* EventDispatcher::getInput() const {
 	return mInput;
 }
 
-void EventDispatcher::sendKeyUp( const Uint32& KeyCode, const Uint16& Char, const Uint32& Mod ) {
+void EventDispatcher::sendTextInput( const Uint32& textChar, const Uint32& timestamp ) {
+	TextInputEvent textInputEvent =
+		TextInputEvent( mFocusControl, Event::TextInput, textChar, timestamp );
+	Node* CtrlLoop = mFocusControl;
+
+	while ( NULL != CtrlLoop ) {
+		if ( CtrlLoop->isEnabled() && CtrlLoop->onTextInput( textInputEvent ) )
+			break;
+
+		CtrlLoop = CtrlLoop->getParent();
+	}
+}
+
+void EventDispatcher::sendKeyUp( const Uint32& KeyCode, const Uint32& Char, const Uint32& Mod ) {
 	KeyEvent keyEvent = KeyEvent( mFocusControl, Event::KeyUp, KeyCode, Char, Mod );
 	Node* CtrlLoop = mFocusControl;
 
@@ -163,7 +178,7 @@ void EventDispatcher::sendKeyUp( const Uint32& KeyCode, const Uint16& Char, cons
 	}
 }
 
-void EventDispatcher::sendKeyDown( const Uint32& KeyCode, const Uint16& Char, const Uint32& Mod ) {
+void EventDispatcher::sendKeyDown( const Uint32& KeyCode, const Uint32& Char, const Uint32& Mod ) {
 	KeyEvent keyEvent = KeyEvent( mFocusControl, Event::KeyDown, KeyCode, Char, Mod );
 	Node* CtrlLoop = mFocusControl;
 

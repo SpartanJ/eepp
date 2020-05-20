@@ -43,6 +43,10 @@ class EE_API UICodeEdit : public UIWidget, public TextDocument::Client {
 	const Uint32& getTabWidth() const;
 	void setTabWidth( const Uint32& tabWidth );
 
+	const Float& getMouseWheelScroll() const;
+
+	void setMouseWheelScroll( const Float& mouseWheelScroll );
+
   protected:
 	Font* mFont;
 	UIFontStyleConfig mFontStyleConfig;
@@ -54,12 +58,17 @@ class EE_API UICodeEdit : public UIWidget, public TextDocument::Client {
 	Uint32 mTabWidth;
 	Int64 mLastColOffset;
 	Vector2f mScroll;
+	Float mMouseWheelScroll;
 
 	void invalidateEditor();
+
+	virtual Uint32 onTextInput( const TextInputEvent& event );
 
 	virtual Uint32 onKeyDown( const KeyEvent& Event );
 
 	virtual Uint32 onMouseDown( const Vector2i& position, const Uint32& flags );
+
+	virtual Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
 
 	virtual void onSizeChange();
 
@@ -90,6 +99,10 @@ class EE_API UICodeEdit : public UIWidget, public TextDocument::Client {
 	void updateLastColumnOffset();
 
 	TextPosition resolveScreenPosition( const Vector2f& position ) const;
+
+	Vector2f getViewPortLineCount() const;
+
+	Sizef getMaxScroll() const;
 };
 
 }} // namespace EE::UI

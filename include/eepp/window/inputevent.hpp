@@ -41,7 +41,7 @@ class InputEvent {
 	struct KeySym {
 		Uint32 sym;		/** virtual keysym */
 		Uint32 mod;		/** current key modifiers */
-		Uint16 unicode; /** translated character */
+		Uint32 unicode; /** translated character */
 	};
 
 	/** Application visibility event structure */
@@ -93,7 +93,7 @@ class InputEvent {
 		Uint32 timestamp;
 		Uint32 text;
 
-		String Text() { return String( text ); }
+		String getText() { return String( text ); }
 	};
 
 	/** Joystick axis motion event structure */

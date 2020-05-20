@@ -28,14 +28,14 @@ void mainLoop() {
 }
 
 EE_MAIN_FUNC int main( int, char** ) {
-	Doc::TextDocument doc;
+	/*Doc::TextDocument doc;
 	doc.loadFromPath( "/home/downloads/textposition.hpp" );
 	doc.remove( TextRange( TextPosition( 0, 0 ), TextPosition( 1, 40 ) ) );
 	doc.insert( TextPosition( 0, 0 ),
 				String( "#ifndef EE_UI_DOC_TEXPOS\n#define EE_UI_DOC_TEXPOS" ) );
 	doc.remove( TextRange( TextPosition( 31, 2 ), TextPosition( 33, 15 ) ) );
 	doc.insert( TextPosition( 31, 2 ), String( "hexNumber" ) );
-	doc.print();
+	doc.print();*/
 	// return EXIT_SUCCESS;
 	win = Engine::instance()->createWindow( WindowSettings( 640, 480, "eepp - UI Hello World" ),
 											ContextSettings( true ) );

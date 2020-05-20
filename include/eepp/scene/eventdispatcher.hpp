@@ -46,9 +46,11 @@ class EE_API EventDispatcher {
 
 	void sendMsg( Node* Ctrl, const Uint32& Msg, const Uint32& Flags = 0 );
 
-	void sendKeyUp( const Uint32& KeyCode, const Uint16& Char, const Uint32& Mod );
+	void sendTextInput( const Uint32& textChar, const Uint32& timestamp );
 
-	void sendKeyDown( const Uint32& KeyCode, const Uint16& Char, const Uint32& Mod );
+	void sendKeyUp( const Uint32& KeyCode, const Uint32& Char, const Uint32& Mod );
+
+	void sendKeyDown( const Uint32& KeyCode, const Uint32& Char, const Uint32& Mod );
 
 	void sendMouseClick( Node* ToCtrl, const Vector2i& Pos, const Uint32 Flags );
 
@@ -98,7 +100,7 @@ class EE_API EventDispatcher {
 	Node* mNodeDragging;
 	Time mElapsed;
 
-	virtual void inputCallback( InputEvent* Event );
+	virtual void inputCallback( InputEvent* event );
 };
 
 }} // namespace EE::Scene

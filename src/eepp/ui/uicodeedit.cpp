@@ -19,7 +19,8 @@ UICodeEdit::UICodeEdit() :
 	mDirtyEditor( false ),
 	mCursorVisible( false ),
 	mTabWidth( 4 ),
-	mLastColOffset( 0 ) {
+	mLastColOffset( 0 ),
+	mMouseWheelScroll( 50 ) {
 	clipEnable();
 	if ( NULL == mFont ) {
 		mFont = FontTrueType::New( "monospace", "assets/fonts/DejaVuSansMono.ttf" );
@@ -124,12 +125,40 @@ void UICodeEdit::setTabWidth( const Uint32& tabWidth ) {
 	}
 }
 
+const Float& UICodeEdit::getMouseWheelScroll() const {
+	return mMouseWheelScroll;
+}
+
+void UICodeEdit::setMouseWheelScroll( const Float& mouseWheelScroll ) {
+	mMouseWheelScroll = mouseWheelScroll;
+}
+
 void UICodeEdit::invalidateEditor() {
 	mDirtyEditor = true;
 }
 
+Uint32 UICodeEdit::onTextInput( const TextInputEvent& event ) {
+	mDoc.textInput( event.getText() );
+	return 1;
+}
+
 Uint32 UICodeEdit::onKeyDown( const KeyEvent& event ) {
 	switch ( event.getKeyCode() ) {
+		case KEY_BACKSPACE: {
+			mDoc.deleteToPreviousChar();
+			updateLastColumnOffset();
+			break;
+		}
+		case KEY_DELETE: {
+			mDoc.deleteToNextChar();
+			break;
+		}
+		case KEY_KP_ENTER:
+		case KEY_RETURN: {
+			mDoc.newLine();
+			updateLastColumnOffset();
+			break;
+		}
 		case KEY_UP: {
 			mDoc.moveToPreviousLine( mLastColOffset );
 			break;
@@ -168,6 +197,16 @@ Uint32 UICodeEdit::onKeyDown( const KeyEvent& event ) {
 			updateLastColumnOffset();
 			break;
 		}
+		case KEY_TAB: {
+			if ( event.getMod() & KEYMOD_LSHIFT ) {
+				mDoc.unindent();
+				updateLastColumnOffset();
+			} else if ( !event.getMod() ) {
+				mDoc.indent();
+				updateLastColumnOffset();
+			}
+			break;
+		}
 		default:
 			break;
 	}
@@ -187,6 +226,19 @@ TextPosition UICodeEdit::resolveScreenPosition( const Vector2f& position ) const
 	return TextPosition( line, getColFromXOffset( line, localPos.x ) );
 }
 
+Vector2f UICodeEdit::getViewPortLineCount() const {
+	return Vector2f( eefloor( mSize.getWidth() / getGlyphWidth() ),
+					 eefloor( mSize.getHeight() / getLineHeight() ) );
+}
+
+Sizef UICodeEdit::getMaxScroll() const {
+	Vector2f vplc( getViewPortLineCount() );
+	return Sizef( 0 /*TODO: Implement*/,
+				  vplc.y > mDoc.lineCount() - 1
+					  ? 0.f
+					  : ( mDoc.lineCount() - getViewPortLineCount().y ) * getLineHeight() );
+}
+
 Uint32 UICodeEdit::onMouseDown( const Vector2i& position, const Uint32& flags ) {
 	if ( flags & EE_BUTTON_LMASK ) {
 		mDoc.setSelection( resolveScreenPosition( position.asFloat() ) );
@@ -194,8 +246,22 @@ Uint32 UICodeEdit::onMouseDown( const Vector2i& position, const Uint32& flags ) 
 	return UIWidget::onMouseDown( position, flags );
 }
 
+Uint32 UICodeEdit::onMouseUp( const Vector2i& position, const Uint32& flags ) {
+	if ( flags & EE_BUTTON_WDMASK ) {
+		mScroll.y += PixelDensity::dpToPx( mMouseWheelScroll );
+		mScroll.y = eemin( mScroll.y, getMaxScroll().y );
+		invalidateDraw();
+	} else if ( flags & EE_BUTTON_WUMASK ) {
+		mScroll.y -= PixelDensity::dpToPx( mMouseWheelScroll );
+		mScroll.y = eemax( mScroll.y, 0.f );
+		invalidateDraw();
+	}
+	return UIWidget::onMouseUp( position, flags );
+}
+
 void UICodeEdit::onSizeChange() {
 	UIWidget::onSizeChange();
+	mScroll = {0, 0};
 	invalidateEditor();
 }
 
@@ -206,6 +272,7 @@ void UICodeEdit::onPaddingChange() {
 
 void UICodeEdit::updateEditor() {
 	scrollToMakeVisible( mDoc.getSelection().start() );
+	mDirtyEditor = false;
 }
 
 void UICodeEdit::onDocumentTextChanged() {

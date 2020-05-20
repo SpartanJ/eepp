@@ -307,6 +307,11 @@ void Node::sendCommonEvent( const Uint32& event ) {
 	sendEvent( &CommonEvent );
 }
 
+Uint32 Node::onTextInput( const TextInputEvent& event ) {
+	sendEvent( &event );
+	return 0;
+}
+
 Uint32 Node::onKeyDown( const KeyEvent& Event ) {
 	sendEvent( &Event );
 	return 0;
