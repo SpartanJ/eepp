@@ -22,14 +22,17 @@ void TextDocument::reset() {
 	mFilename = "unsaved";
 	mSelection.set( {0, 0}, {0, 0} );
 	mLines.clear();
+	notifyTextChanged();
+	notifyCursorChanged();
+	notifySelectionChanged();
 }
 
-void TextDocument::load( const std::string& path ) {
+void TextDocument::loadFromPath( const std::string& path ) {
 	reset();
 	mFilename = path;
 	std::string line;
-	std::ifstream infile( path );
-	while ( std::getline( infile, line ) ) {
+	std::ifstream file( path );
+	while ( std::getline( file, line ) ) {
 		std::istringstream iss( line );
 		if ( mLines.empty() && line.size() >= 3 ) {
 			// Check UTF-8 BOM header
@@ -46,6 +49,8 @@ void TextDocument::load( const std::string& path ) {
 	}
 	if ( mLines.empty() ) {
 		mLines.emplace_back( String( "\n" ) );
+	} else if ( mLines[mLines.size() - 1].at( mLines[mLines.size() - 1].size() - 1 ) == '\n' ) {
+		mLines.emplace_back( String( "\n" ) );
 	}
 }
 
@@ -59,15 +64,25 @@ void TextDocument::setSelection( TextPosition position ) {
 	setSelection( position, position );
 }
 
-void TextDocument::setSelection( TextPosition pos1, TextPosition pos2, bool swap ) {
+void TextDocument::setSelection( TextPosition start, TextPosition end, bool swap ) {
 	if ( swap ) {
-		auto posT = pos1;
-		pos1 = pos2;
-		pos2 = posT;
+		auto posT = start;
+		start = end;
+		end = posT;
 	}
-	pos1 = sanitizePosition( pos1 );
-	pos2 = sanitizePosition( pos2 );
-	mSelection.set( pos1, pos2 );
+
+	if ( start == end ) {
+		start = end = sanitizePosition( start );
+	} else {
+		start = sanitizePosition( start );
+		end = sanitizePosition( end );
+	}
+
+	if ( mSelection != TextRange( start, end ) ) {
+		mSelection.set( start, end );
+		notifyCursorChanged();
+		notifySelectionChanged();
+	}
 }
 
 void TextDocument::setSelection( TextRange range ) {
@@ -86,6 +101,14 @@ String& TextDocument::line( const size_t& index ) {
 	return mLines[index];
 }
 
+const String& TextDocument::line( const size_t& index ) const {
+	return mLines[index];
+}
+
+size_t TextDocument::lineCount() const {
+	return mLines.size();
+}
+
 std::vector<String>& TextDocument::lines() {
 	return mLines;
 }
@@ -101,7 +124,7 @@ String TextDocument::getText( const TextRange& range ) const {
 													 nrange.end().column() );
 	}
 	std::vector<String> lines = {mLines[nrange.start().line()].substr( nrange.start().column() )};
-	for ( size_t i = nrange.start().line() + 1; i < nrange.end().line() - 1; i++ ) {
+	for ( auto i = nrange.start().line() + 1; i < nrange.end().line() - 1; i++ ) {
 		lines.emplace_back( mLines[i] );
 	}
 	lines.emplace_back( mLines[nrange.end().line()].substr( 0, nrange.end().column() ) );
@@ -122,38 +145,37 @@ TextPosition TextDocument::insert( const TextPosition& position, const String& t
 
 TextPosition TextDocument::insert( TextPosition position, const String::StringBaseType& ch ) {
 	position = sanitizePosition( position );
-	size_t m_soft_tab_width = 4;
-	bool at_head = position.column() == 0;
-	bool at_tail = position.column() == line( position.line() ).length();
+	size_t tabWidth = mTabWidth;
+	bool atHead = position.column() == 0;
+	bool atTail = position.column() == (Int64)line( position.line() ).length();
 	if ( ch == '\n' ) {
-		if ( at_tail || at_head ) {
+		if ( atTail || atHead ) {
 			String new_line_contents;
 			size_t row = position.line();
 			String line_content;
 			for ( size_t i = position.column(); i < line( row ).length(); i++ )
 				line_content.append( line( row )[i] );
-			mLines.insert( mLines.begin() + position.line() + ( at_tail ? 1 : 0 ),
+			mLines.insert( mLines.begin() + position.line() + ( atTail ? 1 : 0 ),
 						   new_line_contents );
-			return {position.line() + 1, line( position.line() + 1 ).length()};
+			return {position.line() + 1, (Int64)line( position.line() + 1 ).length()};
 		}
-		String new_line;
-		new_line +=
+		String newLine;
+		newLine +=
 			line( position.line() )
 				.substr( position.column(), line( position.line() ).length() - position.column() );
 
-		String line_content( new_line );
+		String lineContent( newLine );
 		line( position.line() ).substr( 0, position.column() );
-		mLines.insert( mLines.begin() + position.line() + 1, std::move( new_line ) );
+		mLines.insert( mLines.begin() + position.line() + 1, std::move( newLine ) );
 		return {position.line() + 1, 0};
 	} else if ( ch == '\t' ) {
-		size_t next_soft_tab_stop =
-			( ( position.column() + m_soft_tab_width ) / m_soft_tab_width ) * m_soft_tab_width;
-		size_t spaces_to_insert = next_soft_tab_stop - position.column();
+		Int64 nextSoftTabStop = ( ( position.column() + tabWidth ) / tabWidth ) * tabWidth;
+		size_t spaces_to_insert = nextSoftTabStop - position.column();
 		for ( size_t i = 0; i < spaces_to_insert; ++i ) {
 			line( position.line() )
 				.insert( line( position.line() ).begin() + position.column(), ' ' );
 		}
-		return {position.line(), next_soft_tab_stop};
+		return {position.line(), nextSoftTabStop};
 	}
 	line( position.line() ).insert( line( position.line() ).begin() + position.column(), ch );
 	return {position.line(), position.column() + 1};
@@ -172,7 +194,7 @@ void TextDocument::remove( TextRange range ) {
 	range.setEnd( sanitizePosition( range.end() ) );
 
 	// First delete all the lines in between the first and last one.
-	for ( size_t i = range.start().line() + 1; i < range.end().line(); ) {
+	for ( auto i = range.start().line() + 1; i < range.end().line(); ) {
 		mLines.erase( mLines.begin() + i );
 		range.end().setLine( range.end().line() - 1 );
 	}
@@ -181,7 +203,7 @@ void TextDocument::remove( TextRange range ) {
 		// Delete within same line.
 		auto& line = this->line( range.start().line() );
 		bool whole_line_is_selected =
-			range.start().column() == 0 && range.end().column() == line.length();
+			range.start().column() == 0 && range.end().column() == (Int64)line.length();
 
 		if ( whole_line_is_selected ) {
 			line.clear();
@@ -215,8 +237,8 @@ TextPosition TextDocument::positionOffset( TextPosition position, int columnOffs
 		position.setLine( position.line() - 1 );
 		position.setColumn( position.column() + mLines[position.line()].size() );
 	}
-	while ( position.line() < mLines.size() &&
-			position.column() > mLines[position.line()].size() ) {
+	while ( position.line() < (Int64)mLines.size() &&
+			position.column() > (Int64)mLines[position.line()].size() - 1 ) {
 		position.setColumn( position.column() - mLines[position.line()].size() );
 		position.setLine( position.line() + 1 );
 	}
@@ -228,11 +250,11 @@ TextPosition TextDocument::positionOffset( TextPosition position, TextPosition o
 }
 
 TextPosition TextDocument::nextChar( TextPosition position ) const {
-	return positionOffset( position, 1 );
+	return positionOffset( position, TextPosition( 0, 1 ) );
 }
 
 TextPosition TextDocument::previousChar( TextPosition position ) const {
-	return positionOffset( position, -1 );
+	return positionOffset( position, TextPosition( 0, -1 ) );
 }
 
 TextPosition TextDocument::previousWordBoundary( TextPosition position ) const {
@@ -307,6 +329,30 @@ TextPosition TextDocument::endOfDoc() const {
 	return TextPosition( mLines.size() - 1, mLines[mLines.size() - 1].size() - 1 );
 }
 
+TextPosition TextDocument::getAbsolutePosition( TextPosition position ) const {
+	position = sanitizePosition( position );
+	const String& string = line( position.line() );
+	size_t tabCount = string.substr( 0, position.column() ).countChar( '\t' );
+	return TextPosition( position.line(), position.column() - tabCount + tabCount * getTabWidth() );
+}
+
+Int64 TextDocument::getRelativeColumnOffset( TextPosition position ) const {
+	const String& line = mLines[position.line()];
+	Int64 length = eemin<Int64>( position.column(), line.size() - 1 );
+	Int64 offset = 0;
+	for ( Int64 i = 0; i <= length; ++i ) {
+		if ( offset >= position.column() ) {
+			return i;
+		}
+		if ( line[i] == '\t' ) {
+			offset += getTabWidth();
+		} else if ( line[i] != '\n' && line[i] != '\r' ) {
+			offset += 1;
+		}
+	}
+	return length;
+}
+
 void TextDocument::deleteTo( int offset ) {
 	TextPosition cursorPos = getSelection( true ).start();
 	if ( hasSelection() ) {
@@ -340,6 +386,72 @@ void TextDocument::textInput( const String& text ) {
 	moveTo( TextPosition( 0, text.size() ) );
 }
 
+void TextDocument::registerClient( TextDocument::Client& client ) {
+	mClients.insert( &client );
+}
+
+void TextDocument::unregisterClient( TextDocument::Client& client ) {
+	mClients.erase( &client );
+}
+
+void TextDocument::moveToPreviousChar() {
+	if ( hasSelection() ) {
+		TextRange selection = getSelection( true );
+		setSelection( selection.end() );
+	} else {
+		setSelection( positionOffset( getSelection().start(), -1 ) );
+	}
+}
+
+void TextDocument::moveToNextChar() {
+	if ( hasSelection() ) {
+		TextRange selection = getSelection( true );
+		setSelection( selection.start() );
+	} else {
+		setSelection( positionOffset( getSelection().start(), 1 ) );
+	}
+}
+
+void TextDocument::moveToPreviousLine( Int64 lastColIndex ) {
+	TextPosition pos = getSelection().start();
+	pos.setLine( pos.line() - 1 );
+	if ( pos.line() >= 0 ) {
+		lastColIndex = getRelativeColumnOffset( TextPosition( pos.line(), lastColIndex ) );
+	}
+	pos.setColumn( lastColIndex );
+	setSelection( pos );
+}
+
+void TextDocument::moveToNextLine( Int64 lastColIndex ) {
+	TextPosition pos = getSelection().start();
+	pos.setLine( pos.line() + 1 );
+	if ( pos.line() < (Int64)mLines.size() ) {
+		lastColIndex = getRelativeColumnOffset( TextPosition( pos.line(), lastColIndex ) );
+	}
+	pos.setColumn( lastColIndex );
+	setSelection( pos );
+}
+
+void TextDocument::moveToPreviousPage( Int64 pageSize ) {
+	TextPosition pos = getSelection().start();
+	pos.setLine( pos.line() - pageSize );
+	setSelection( pos );
+}
+
+void TextDocument::moveToNextPage( Int64 pageSize ) {
+	TextPosition pos = getSelection().start();
+	pos.setLine( pos.line() + pageSize );
+	setSelection( pos );
+}
+
+const Uint32& TextDocument::getTabWidth() const {
+	return mTabWidth;
+}
+
+void TextDocument::setTabWidth( const Uint32& tabWidth ) {
+	mTabWidth = tabWidth;
+}
+
 void TextDocument::deleteTo( TextPosition offset ) {
 	TextPosition cursorPos = getSelection( true ).start();
 	if ( hasSelection() ) {
@@ -360,9 +472,29 @@ void TextDocument::print() const {
 }
 
 TextPosition TextDocument::sanitizePosition( const TextPosition& position ) const {
-	size_t line = eeclamp<size_t>( position.line(), 0UL, mLines.size() - 1 );
-	size_t col = eeclamp<size_t>( position.column(), 0UL, mLines[line].size() - 1 );
+	Int64 line = eeclamp<Int64>( position.line(), 0UL, mLines.size() - 1 );
+	Int64 col = eeclamp<Int64>( position.column(), 0UL, mLines[line].size() - 1 );
 	return {line, col};
 }
+
+void TextDocument::notifyTextChanged() {
+	for ( auto& client : mClients ) {
+		client->onDocumentTextChanged();
+	}
+}
+
+void TextDocument::notifyCursorChanged() {
+	for ( auto& client : mClients ) {
+		client->onDocumentCursorChange( getSelection().start() );
+	}
+}
+
+void TextDocument::notifySelectionChanged() {
+	for ( auto& client : mClients ) {
+		client->onDocumentSelectionChange( getSelection() );
+	}
+}
+
+TextDocument::Client::~Client() {}
 
 }}} // namespace EE::UI::Doc

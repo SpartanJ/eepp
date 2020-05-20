@@ -40,6 +40,10 @@ class EE_API TextRange {
 		return mStart == other.mStart && mEnd == other.mEnd;
 	}
 
+	bool operator!=( const TextRange& other ) const {
+		return mStart != other.mStart || mEnd != other.mEnd;
+	}
+
 	bool contains( const TextPosition& position ) const {
 		if ( !( position.line() > mStart.line() ||
 				( position.line() == mStart.line() && position.column() >= mStart.column() ) ) )

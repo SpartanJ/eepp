@@ -10,13 +10,13 @@ class EE_API TextPosition {
   public:
 	TextPosition() {}
 
-	TextPosition( size_t line, size_t column ) : mLine( line ), mColumn( column ) {}
+	TextPosition( Int64 line, Int64 column ) : mLine( line ), mColumn( column ) {}
 
 	bool isValid() const { return mLine != 0xffffffffu && mColumn != 0xffffffffu; }
 
-	size_t line() const { return mLine; }
+	Int64 line() const { return mLine; }
 
-	size_t column() const { return mColumn; }
+	Int64 column() const { return mColumn; }
 
 	void setLine( size_t line ) { mLine = line; }
 
@@ -51,8 +51,8 @@ class EE_API TextPosition {
 	}
 
   private:
-	size_t mLine{0xffffffff};
-	size_t mColumn{0xffffffff};
+	Int64 mLine{0xffffffff};
+	Int64 mColumn{0xffffffff};
 };
 
 }}} // namespace EE::UI::Doc

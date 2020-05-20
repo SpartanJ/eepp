@@ -737,6 +737,8 @@ class EE_API String {
 
 	std::size_t find_last_not_of( StringBaseType c, std::size_t pos = StringType::npos ) const;
 
+	size_t countChar( StringBaseType c ) const;
+
   private:
 	friend EE_API bool operator==( const String& left, const String& right );
 	friend EE_API bool operator<( const String& left, const String& right );

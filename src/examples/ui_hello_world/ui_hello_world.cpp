@@ -29,14 +29,14 @@ void mainLoop() {
 
 EE_MAIN_FUNC int main( int, char** ) {
 	Doc::TextDocument doc;
-	doc.load( "/home/downloads/textposition.hpp" );
+	doc.loadFromPath( "/home/downloads/textposition.hpp" );
 	doc.remove( TextRange( TextPosition( 0, 0 ), TextPosition( 1, 40 ) ) );
 	doc.insert( TextPosition( 0, 0 ),
 				String( "#ifndef EE_UI_DOC_TEXPOS\n#define EE_UI_DOC_TEXPOS" ) );
 	doc.remove( TextRange( TextPosition( 31, 2 ), TextPosition( 33, 15 ) ) );
 	doc.insert( TextPosition( 31, 2 ), String( "hexNumber" ) );
 	doc.print();
-	return EXIT_SUCCESS;
+	// return EXIT_SUCCESS;
 	win = Engine::instance()->createWindow( WindowSettings( 640, 480, "eepp - UI Hello World" ),
 											ContextSettings( true ) );
 
@@ -68,6 +68,10 @@ EE_MAIN_FUNC int main( int, char** ) {
 						layout_width="match_parent"
 						layout_height="wrap_content"
 						text="Hello, I am a PushButton" />
+				<CodeEdit id="code_edit"
+					layout_width="match_parent"
+					layout_height="0dp"
+					layout_weight="1" />
 			</LinearLayout>
 		)xml" );
 
@@ -88,6 +92,9 @@ EE_MAIN_FUNC int main( int, char** ) {
 				color: white;
 			}
 		)css" );
+
+		uiSceneNode->find<UICodeEdit>( "code_edit" )
+			->loadFromFile( "/home/downloads/textposition.hpp" );
 
 		win->runMainLoop( &mainLoop );
 	}

@@ -956,6 +956,10 @@ std::size_t String::find_last_not_of( StringBaseType c, std::size_t pos ) const 
 	return mString.find_last_not_of( c, pos );
 }
 
+size_t String::countChar( String::StringBaseType c ) const {
+	return std::count( begin(), end(), c );
+}
+
 bool operator==( const String& left, const String& right ) {
 	return left.mString == right.mString;
 }
