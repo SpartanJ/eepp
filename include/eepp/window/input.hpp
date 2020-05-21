@@ -8,7 +8,6 @@
 #include <eepp/window/inputhelper.hpp>
 #include <eepp/window/joystickmanager.hpp>
 #include <eepp/window/window.hpp>
-#include <list>
 
 using namespace EE::Graphics;
 
@@ -35,6 +34,15 @@ class EE_API Input {
 
 	/** Gets the current mouse position relative to the focus window */
 	virtual Vector2i queryMousePos() = 0;
+
+	/** Capturing enables your app to obtain mouse events globally, instead of just within your
+	 * window. Not all video targets support this function. When capturing is enabled, the current
+	 * window will get all mouse events, but unlike relative mode, no change is made to the cursor
+	 * and it is not restrained to your window. */
+	virtual void captureMouse( const bool& capture ) = 0;
+
+	/** @return If mouse is captured. */
+	virtual bool isMouseCaptured() const = 0;
 
 	/** @return If keyboard key was released */
 	bool isKeyUp( const KeyTable& Key );

@@ -371,6 +371,15 @@ Vector2i InputSDL::queryMousePos() {
 	return mousePos;
 }
 
+void InputSDL::captureMouse( const bool& capture ) {
+	SDL_CaptureMouse( capture ? SDL_TRUE : SDL_FALSE );
+}
+
+bool InputSDL::isMouseCaptured() const {
+	return SDL_GetWindowFlags( reinterpret_cast<WindowSDL*>( mWindow )->GetSDLWindow() ) &
+		   SDL_WINDOW_MOUSE_CAPTURE;
+}
+
 void InputSDL::init() {
 	mDPIScale = mWindow->getScale();
 	mMousePos = queryMousePos();

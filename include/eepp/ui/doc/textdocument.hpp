@@ -144,11 +144,23 @@ class EE_API TextDocument {
 
 	void selectToPreviousWord();
 
+	void selectWord();
+
 	void selectToNextWord();
 
 	void selectToPreviousLine( Int64 lastColIndex );
 
 	void selectToNextLine( Int64 lastColIndex );
+
+	void selectToStartOfLine();
+
+	void selectToEndOfLine();
+
+	void selectToPreviousPage( Int64 pageSize );
+
+	void selectToNextPage( Int64 pageSize );
+
+	void selectAll();
 
 	void newLine();
 

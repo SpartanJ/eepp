@@ -65,6 +65,10 @@ void TextDocument::setSelection( TextPosition position ) {
 }
 
 void TextDocument::setSelection( TextPosition start, TextPosition end, bool swap ) {
+	if ( ( start == mSelection.start() && end == mSelection.end() && !swap ) ||
+		 ( start == mSelection.end() && end == mSelection.start() && swap ) )
+		return;
+
 	if ( swap ) {
 		auto posT = start;
 		start = end;
@@ -124,7 +128,7 @@ String TextDocument::getText( const TextRange& range ) const {
 													 nrange.end().column() );
 	}
 	std::vector<String> lines = {mLines[nrange.start().line()].substr( nrange.start().column() )};
-	for ( auto i = nrange.start().line() + 1; i < nrange.end().line() - 1; i++ ) {
+	for ( auto i = nrange.start().line() + 1; i <= nrange.end().line() - 1; i++ ) {
 		lines.emplace_back( mLines[i] );
 	}
 	lines.emplace_back( mLines[nrange.end().line()].substr( 0, nrange.end().column() ) );
@@ -171,16 +175,7 @@ TextPosition TextDocument::insert( TextPosition position, const String::StringBa
 		mLines.insert( mLines.begin() + position.line() + 1, std::move( newLine ) );
 		notifyTextChanged();
 		return {position.line() + 1, 0};
-	} /* else if ( ch == '\t' ) {
-		 Int64 nextSoftTabStop =
-			( ( position.column() + tabWidth ) / getTabWidth() ) * getTabWidth();
-		 size_t spacesToInsert = nextSoftTabStop - position.column();
-		 for ( size_t i = 0; i < spacesToInsert; ++i ) {
-			 line( position.line() )
-				 .insert( line( position.line() ).begin() + position.column(), ' ' );
-		 }
-		 return {position.line(), nextSoftTabStop};
-	 }*/
+	}
 	line( position.line() ).insert( line( position.line() ).begin() + position.column(), ch );
 	notifyTextChanged();
 	return {position.line(), position.column() + 1};
@@ -380,13 +375,11 @@ void TextDocument::deleteSelection() {
 }
 
 void TextDocument::selectTo( TextPosition offset ) {
-	TextRange range = getSelection();
-	TextPosition posOffset = positionOffset( range.start(), offset );
-	setSelection( TextRange( posOffset, range.end() ) );
+	setSelection( TextRange( sanitizePosition( offset ), getSelection().end() ) );
 }
 
 void TextDocument::selectTo( int offset ) {
-	TextRange range = getSelection();
+	const TextRange& range = getSelection();
 	TextPosition posOffset = positionOffset( range.start(), offset );
 	setSelection( TextRange( posOffset, range.end() ) );
 }
@@ -506,6 +499,11 @@ void TextDocument::selectToNextWord() {
 	setSelection( {nextWordBoundary( getSelection().start() ), getSelection().end()} );
 }
 
+void TextDocument::selectWord() {
+	setSelection( {nextWordBoundary( getSelection().start() ),
+				   previousWordBoundary( getSelection().start() )} );
+}
+
 void TextDocument::selectToPreviousLine( Int64 lastColIndex ) {
 	TextPosition pos = getSelection().start();
 	pos.setLine( pos.line() - 1 );
@@ -524,6 +522,30 @@ void TextDocument::selectToNextLine( Int64 lastColIndex ) {
 	}
 	pos.setColumn( lastColIndex );
 	setSelection( TextRange( pos, getSelection().end() ) );
+}
+
+void TextDocument::selectToStartOfLine() {
+	selectTo( startOfLine( getSelection().start() ) );
+}
+
+void TextDocument::selectToEndOfLine() {
+	selectTo( endOfLine( getSelection().start() ) );
+}
+
+void TextDocument::selectToPreviousPage( Int64 pageSize ) {
+	TextPosition pos = getSelection().start();
+	pos.setLine( pos.line() - pageSize );
+	selectTo( pos );
+}
+
+void TextDocument::selectToNextPage( Int64 pageSize ) {
+	TextPosition pos = getSelection().start();
+	pos.setLine( pos.line() + pageSize );
+	selectTo( pos );
+}
+
+void TextDocument::selectAll() {
+	setSelection( startOfDoc(), endOfDoc() );
 }
 
 void TextDocument::newLine() {

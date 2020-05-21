@@ -38,12 +38,21 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	Font* getFont() const;
 
-	void setFont( Font* font );
+	const UIFontStyleConfig& getFontStyleConfig() const;
 
-	void setFontSize( Float dpSize );
+	UICodeEditor* setFont( Font* font );
+
+	UICodeEditor* setFontSize( Float dpSize );
+
+	UICodeEditor* setFontColor( const Color& color );
+
+	UICodeEditor* setFontSelectedColor( const Color& color );
+
+	UICodeEditor* setFontSelectionBackColor( const Color& color );
 
 	const Uint32& getTabWidth() const;
-	void setTabWidth( const Uint32& tabWidth );
+
+	UICodeEditor* setTabWidth( const Uint32& tabWidth );
 
 	const Float& getMouseWheelScroll() const;
 
@@ -76,6 +85,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	virtual Uint32 onMouseMove( const Vector2i& position, const Uint32& flags );
 
 	virtual Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
+
+	virtual Uint32 onMouseDoubleClick( const Vector2i& position, const Uint32& flags );
 
 	virtual void onSizeChange();
 

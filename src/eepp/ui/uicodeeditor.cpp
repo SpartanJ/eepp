@@ -49,6 +49,8 @@ void UICodeEditor::setTheme( UITheme* Theme ) {
 }
 
 void UICodeEditor::draw() {
+	UIWidget::draw();
+
 	if ( mDirtyEditor ) {
 		updateEditor();
 	}
@@ -56,6 +58,7 @@ void UICodeEditor::draw() {
 	if ( mFont == NULL )
 		return;
 
+	std::pair<int, int> lineRange = getVisibleLineRange();
 	Float charSize = PixelDensity::pxToDp( getCharacterSize() );
 	Float lineHeight = getLineHeight();
 	Vector2f start( mScreenPos.x + mRealPadding.Left, mScreenPos.y + mRealPadding.Top );
@@ -63,17 +66,20 @@ void UICodeEditor::draw() {
 	Primitives primitives;
 	TextPosition cursor( mDoc.getSelection().start() );
 
-	primitives.setColor( Color( 25, 25, 25, 255 ) );
+	primitives.setColor( Color( 255, 255, 255, 20 ) );
 	primitives.drawRectangle(
 		Rectf( Vector2f( startScroll.x, startScroll.y + cursor.line() * lineHeight ),
 			   Sizef( mSize.getWidth(), lineHeight ) ) );
 
 	if ( mDoc.hasSelection() ) {
-		primitives.setColor( Color( 50, 50, 50, 255 ) );
+		primitives.setColor( Color( 255, 255, 255, 50 ) );
 
 		TextRange selection = mDoc.getSelection( true );
 
-		for ( auto ln = selection.start().line(); ln <= selection.end().line(); ln++ ) {
+		int startLine = eemax<int>( lineRange.first, selection.start().line() );
+		int endLine = eemin<int>( lineRange.second, selection.end().line() );
+
+		for ( auto ln = startLine; ln <= endLine; ln++ ) {
 			const String& line = mDoc.line( ln );
 			Rectf selRect;
 			selRect.Top = startScroll.y + ln * lineHeight;
@@ -99,9 +105,9 @@ void UICodeEditor::draw() {
 		}
 	}
 
-	std::pair<int, int> lineRange = getVisibleLineRange();
 	for ( int i = lineRange.first; i <= lineRange.second; i++ ) {
 		Text line( mDoc.line( i ), mFont, charSize );
+		line.setStyleConfig( mFontStyleConfig );
 		line.draw( startScroll.x, startScroll.y + lineHeight * i );
 	}
 
@@ -123,6 +129,11 @@ void UICodeEditor::scheduledUpdate( const Time& ) {
 			invalidateDraw();
 		}
 	}
+
+	if ( mMouseDown &&
+		 !( getUISceneNode()->getWindow()->getInput()->getPressTrigger() & EE_BUTTON_LMASK ) ) {
+		mMouseDown = false;
+	}
 }
 
 void UICodeEditor::reset() {}
@@ -136,30 +147,61 @@ Font* UICodeEditor::getFont() const {
 	return mFont;
 }
 
-void UICodeEditor::setFont( Font* font ) {
+const UIFontStyleConfig& UICodeEditor::getFontStyleConfig() const {
+	return mFontStyleConfig;
+}
+
+UICodeEditor* UICodeEditor::setFont( Font* font ) {
 	if ( mFont != font ) {
 		mFont = font;
 		invalidateDraw();
 		invalidateEditor();
 	}
+	return this;
 }
 
-void UICodeEditor::setFontSize( Float dpSize ) {
+UICodeEditor* UICodeEditor::setFontSize( Float dpSize ) {
 	if ( mFontStyleConfig.CharacterSize != dpSize ) {
 		mFontStyleConfig.CharacterSize = dpSize;
 		invalidateDraw();
 	}
+	return this;
+}
+
+UICodeEditor* UICodeEditor::setFontColor( const Color& color ) {
+	if ( mFontStyleConfig.getFontColor() != color ) {
+		mFontStyleConfig.FontColor = color;
+		invalidateDraw();
+	}
+	return this;
+}
+
+UICodeEditor* UICodeEditor::setFontSelectedColor( const Color& color ) {
+	if ( mFontStyleConfig.getFontSelectedColor() != color ) {
+		mFontStyleConfig.FontSelectedColor = color;
+		invalidateDraw();
+	}
+	return this;
+}
+
+UICodeEditor* UICodeEditor::setFontSelectionBackColor( const Color& color ) {
+	if ( mFontStyleConfig.getFontSelectionBackColor() != color ) {
+		mFontStyleConfig.FontSelectionBackColor = color;
+		invalidateDraw();
+	}
+	return this;
 }
 
 const Uint32& UICodeEditor::getTabWidth() const {
 	return mTabWidth;
 }
 
-void UICodeEditor::setTabWidth( const Uint32& tabWidth ) {
+UICodeEditor* UICodeEditor::setTabWidth( const Uint32& tabWidth ) {
 	if ( mTabWidth != tabWidth ) {
 		mTabWidth = tabWidth;
 		mDoc.setTabWidth( mTabWidth );
 	}
+	return this;
 }
 
 const Float& UICodeEditor::getMouseWheelScroll() const {
@@ -245,23 +287,53 @@ Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
 			break;
 		}
 		case KEY_HOME: {
-			mDoc.setSelection( mDoc.startOfLine( mDoc.getSelection().start() ) );
-			updateLastColumnOffset();
+			if ( event.getMod() & KEYMOD_LSHIFT ) {
+				mDoc.selectToStartOfLine();
+				updateLastColumnOffset();
+			} else if ( event.getMod() & KEYMOD_LCTRL ) {
+				mScroll.y = 0;
+				mDoc.setSelection( {0, 0} );
+				invalidateDraw();
+			} else {
+				mDoc.setSelection( mDoc.startOfLine( mDoc.getSelection().start() ) );
+				updateLastColumnOffset();
+			}
 			break;
 		}
 		case KEY_END: {
-			mDoc.setSelection( mDoc.endOfLine( mDoc.getSelection().start() ) );
-			updateLastColumnOffset();
+			if ( event.getMod() & KEYMOD_LSHIFT ) {
+				mDoc.selectToEndOfLine();
+				updateLastColumnOffset();
+			} else if ( event.getMod() & KEYMOD_LCTRL ) {
+				mScroll.y = getMaxScroll().y;
+				mDoc.setSelection(
+					{static_cast<Int64>( mDoc.lineCount() - 1 ),
+					 static_cast<Int64>( mDoc.line( mDoc.lineCount() - 1 ).length() )} );
+				invalidateDraw();
+			} else {
+				mDoc.setSelection( mDoc.endOfLine( mDoc.getSelection().start() ) );
+				updateLastColumnOffset();
+			}
 			break;
 		}
 		case KEY_PAGEUP: {
-			mDoc.moveToPreviousPage( getVisibleLinesCount() );
-			updateLastColumnOffset();
+			if ( event.getMod() & KEYMOD_LSHIFT ) {
+				mDoc.selectToPreviousPage( getVisibleLinesCount() );
+				updateLastColumnOffset();
+			} else {
+				mDoc.moveToPreviousPage( getVisibleLinesCount() );
+				updateLastColumnOffset();
+			}
 			break;
 		}
 		case KEY_PAGEDOWN: {
-			mDoc.moveToNextPage( getVisibleLinesCount() );
-			updateLastColumnOffset();
+			if ( event.getMod() & KEYMOD_LSHIFT ) {
+				mDoc.selectToNextPage( getVisibleLinesCount() );
+				updateLastColumnOffset();
+			} else {
+				mDoc.moveToNextPage( getVisibleLinesCount() );
+				updateLastColumnOffset();
+			}
 			break;
 		}
 		case KEY_TAB: {
@@ -288,7 +360,14 @@ Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
 		}
 		case KEY_X: {
 			if ( event.getMod() & KEYMOD_LCTRL ) {
+				getUISceneNode()->getWindow()->getClipboard()->setText( mDoc.getSelectedText() );
 				mDoc.deleteSelection();
+			}
+			break;
+		}
+		case KEY_A: {
+			if ( event.getMod() & KEYMOD_LCTRL ) {
+				mDoc.selectAll();
 			}
 			break;
 		}
@@ -318,10 +397,11 @@ Vector2f UICodeEditor::getViewPortLineCount() const {
 
 Sizef UICodeEditor::getMaxScroll() const {
 	Vector2f vplc( getViewPortLineCount() );
-	return Sizef( 0 /*TODO: Implement*/,
-				  vplc.y > mDoc.lineCount() - 1
-					  ? 0.f
-					  : ( mDoc.lineCount() - getViewPortLineCount().y ) * getLineHeight() );
+	return Sizef(
+		eefloor( ( mSize.getWidth() - mRealPadding.Left - mRealPadding.Right ) / getGlyphWidth() ),
+		vplc.y > mDoc.lineCount() - 1
+			? 0.f
+			: ( mDoc.lineCount() - getViewPortLineCount().y ) * getLineHeight() );
 }
 
 Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags ) {
@@ -333,8 +413,7 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 }
 
 Uint32 UICodeEditor::onMouseMove( const Vector2i& position, const Uint32& flags ) {
-	if ( ( flags & EE_BUTTON_LMASK ) ) {
-		mMouseDown = true;
+	if ( mMouseDown && ( flags & EE_BUTTON_LMASK ) ) {
 		TextRange selection = mDoc.getSelection();
 		selection.setStart( resolveScreenPosition( position.asFloat() ) );
 		mDoc.setSelection( selection );
@@ -355,6 +434,13 @@ Uint32 UICodeEditor::onMouseUp( const Vector2i& position, const Uint32& flags ) 
 		invalidateDraw();
 	}
 	return UIWidget::onMouseUp( position, flags );
+}
+
+Uint32 UICodeEditor::onMouseDoubleClick( const Vector2i&, const Uint32& flags ) {
+	if ( flags & EE_BUTTON_LMASK ) {
+		mDoc.selectWord();
+	}
+	return 1;
 }
 
 void UICodeEditor::onSizeChange() {
@@ -461,8 +547,10 @@ void UICodeEditor::updateLastColumnOffset() {
 }
 
 void UICodeEditor::resetCursor() {
-	mCursorVisible = true;
-	mBlinkTimer.restart();
+	if ( hasFocus() ) {
+		mCursorVisible = true;
+		mBlinkTimer.restart();
+	}
 }
 
 }} // namespace EE::UI

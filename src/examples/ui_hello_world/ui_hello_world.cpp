@@ -37,10 +37,10 @@ EE_MAIN_FUNC int main( int, char** ) {
 	doc.insert( TextPosition( 31, 2 ), String( "hexNumber" ) );
 	doc.print();*/
 	// return EXIT_SUCCESS;
-	//Display* currentDisplay = Engine::instance()->getDisplayManager()->getDisplayIndex( 0 );
-	Float pixelDensity = 1; // currentDisplay->getPixelDensity();
+	Display* currentDisplay = Engine::instance()->getDisplayManager()->getDisplayIndex( 0 );
+	Float pixelDensity = currentDisplay->getPixelDensity();
 
-	win = Engine::instance()->createWindow( WindowSettings( 640, 480, "eepp - UI Hello World" ),
+	win = Engine::instance()->createWindow( WindowSettings( 1024, 768, "eepp - UI Hello World" ),
 											ContextSettings( true ) );
 
 	if ( win->isOpen() ) {
@@ -99,9 +99,11 @@ EE_MAIN_FUNC int main( int, char** ) {
 			}
 		)css" );
 
-		uiSceneNode->find<UICodeEditor>( "code_edit" )
+		UICodeEditor* codeEditor = uiSceneNode->find<UICodeEditor>( "code_edit" );
+			codeEditor->setFontSize( 11 )
 			->loadFromFile( "/home/downloads/textposition.hpp" );
-
+		codeEditor->setBackgroundColor( Color::fromString( "#2e2e32" ) );
+		codeEditor->setFontColor( Color::fromString( "#e1e1e6" ) );
 		win->runMainLoop( &mainLoop );
 	}
 
