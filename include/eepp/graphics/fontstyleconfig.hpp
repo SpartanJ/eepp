@@ -17,7 +17,7 @@ class FontStyleConfig {
 
 	const Color& getFontShadowColor() const { return ShadowColor; }
 
-	const Uint32& getFontCharacterSize() const { return CharacterSize; }
+	const Float& getFontCharacterSize() const { return CharacterSize; }
 
 	const Uint32& getFontStyle() const { return Style; }
 
@@ -47,7 +47,7 @@ class FontStyleConfig {
 	}
 
 	Graphics::Font* Font = NULL;
-	Uint32 CharacterSize = 12;
+	Float CharacterSize = 12;
 	Uint32 Style = 0;
 	Color FontColor = Color( 255, 255, 255, 255 );
 	Color ShadowColor = Color( 50, 50, 50, 230 );

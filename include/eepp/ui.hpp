@@ -4,7 +4,7 @@
 #include <eepp/ui/tools/textureatlaseditor.hpp>
 #include <eepp/ui/tools/uicolorpicker.hpp>
 #include <eepp/ui/uicheckbox.hpp>
-#include <eepp/ui/uicodeedit.hpp>
+#include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uicombobox.hpp>
 #include <eepp/ui/uicommondialog.hpp>
 #include <eepp/ui/uidropdownlist.hpp>

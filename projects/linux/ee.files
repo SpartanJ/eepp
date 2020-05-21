@@ -325,7 +325,7 @@
 ../../include/eepp/ui/uibackgrounddrawable.hpp
 ../../include/eepp/ui/uiborderdrawable.hpp
 ../../include/eepp/ui/uicheckbox.hpp
-../../include/eepp/ui/uicodeedit.hpp
+../../include/eepp/ui/uicodeeditor.hpp
 ../../include/eepp/ui/uicombobox.hpp
 ../../include/eepp/ui/uicommondialog.hpp
 ../../include/eepp/ui/uidropdownlist.hpp
@@ -766,7 +766,7 @@
 ../../src/eepp/ui/uibackgrounddrawable.cpp
 ../../src/eepp/ui/uiborderdrawable.cpp
 ../../src/eepp/ui/uicheckbox.cpp
-../../src/eepp/ui/uicodeedit.cpp
+../../src/eepp/ui/uicodeeditor.cpp
 ../../src/eepp/ui/uicombobox.cpp
 ../../src/eepp/ui/uicommondialog.cpp
 ../../src/eepp/ui/uidropdownlist.cpp

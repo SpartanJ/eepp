@@ -14,13 +14,13 @@ class Font;
 
 namespace EE { namespace UI {
 
-class EE_API UICodeEdit : public UIWidget, public TextDocument::Client {
+class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
   public:
-	static UICodeEdit* New();
+	static UICodeEditor* New();
 
-	UICodeEdit();
+	UICodeEditor();
 
-	virtual ~UICodeEdit();
+	virtual ~UICodeEditor();
 
 	virtual Uint32 getType() const;
 
@@ -40,6 +40,8 @@ class EE_API UICodeEdit : public UIWidget, public TextDocument::Client {
 
 	void setFont( Font* font );
 
+	void setFontSize( Float dpSize );
+
 	const Uint32& getTabWidth() const;
 	void setTabWidth( const Uint32& tabWidth );
 
@@ -55,6 +57,7 @@ class EE_API UICodeEdit : public UIWidget, public TextDocument::Client {
 	Clock mBlinkTimer;
 	bool mDirtyEditor;
 	bool mCursorVisible;
+	bool mMouseDown;
 	Uint32 mTabWidth;
 	Int64 mLastColOffset;
 	Vector2f mScroll;
@@ -62,11 +65,15 @@ class EE_API UICodeEdit : public UIWidget, public TextDocument::Client {
 
 	void invalidateEditor();
 
+	virtual Uint32 onFocusLoss();
+
 	virtual Uint32 onTextInput( const TextInputEvent& event );
 
 	virtual Uint32 onKeyDown( const KeyEvent& Event );
 
 	virtual Uint32 onMouseDown( const Vector2i& position, const Uint32& flags );
+
+	virtual Uint32 onMouseMove( const Vector2i& position, const Uint32& flags );
 
 	virtual Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
 
@@ -77,7 +84,9 @@ class EE_API UICodeEdit : public UIWidget, public TextDocument::Client {
 	void updateEditor();
 
 	void onDocumentTextChanged();
+
 	void onDocumentCursorChange( const TextPosition& );
+
 	void onDocumentSelectionChange( const TextRange& );
 
 	std::pair<int, int> getVisibleLineRange();
@@ -97,6 +106,8 @@ class EE_API UICodeEdit : public UIWidget, public TextDocument::Client {
 	Float getGlyphWidth() const;
 
 	void updateLastColumnOffset();
+
+	void resetCursor();
 
 	TextPosition resolveScreenPosition( const Vector2f& position ) const;
 

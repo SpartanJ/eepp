@@ -1,5 +1,5 @@
 #include <eepp/ui/uicheckbox.hpp>
-#include <eepp/ui/uicodeedit.hpp>
+#include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uicombobox.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
 #include <eepp/ui/uigridlayout.hpp>
@@ -77,7 +77,7 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["gridlayout"] = UIGridLayout::New;
 		registeredWidget["layout"] = UILayout::New;
 		registeredWidget["viewpager"] = UIViewPager::New;
-		registeredWidget["codeedit"] = UICodeEdit ::New;
+		registeredWidget["codeeditor"] = UICodeEditor ::New;
 
 		registeredWidget["hbox"] = UILinearLayout::NewHorizontal;
 		registeredWidget["vbox"] = UILinearLayout::NewVertical;

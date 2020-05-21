@@ -37,10 +37,15 @@ EE_MAIN_FUNC int main( int, char** ) {
 	doc.insert( TextPosition( 31, 2 ), String( "hexNumber" ) );
 	doc.print();*/
 	// return EXIT_SUCCESS;
+	//Display* currentDisplay = Engine::instance()->getDisplayManager()->getDisplayIndex( 0 );
+	Float pixelDensity = 1; // currentDisplay->getPixelDensity();
+
 	win = Engine::instance()->createWindow( WindowSettings( 640, 480, "eepp - UI Hello World" ),
 											ContextSettings( true ) );
 
 	if ( win->isOpen() ) {
+		PixelDensity::setPixelDensity( eemax( win->getScale(), pixelDensity ) );
+
 		// Load a font to use as the default font in our UI.
 		FontTrueType* font =
 			FontTrueType::New( "NotoSans-Regular", "assets/fonts/NotoSans-Regular.ttf" );
@@ -68,10 +73,11 @@ EE_MAIN_FUNC int main( int, char** ) {
 						layout_width="match_parent"
 						layout_height="wrap_content"
 						text="Hello, I am a PushButton" />
-				<CodeEdit id="code_edit"
+				<CodeEditor id="code_edit"
 					layout_width="match_parent"
 					layout_height="0dp"
-					layout_weight="1" />
+					layout_weight="1"
+					 />
 			</LinearLayout>
 		)xml" );
 
@@ -93,7 +99,7 @@ EE_MAIN_FUNC int main( int, char** ) {
 			}
 		)css" );
 
-		uiSceneNode->find<UICodeEdit>( "code_edit" )
+		uiSceneNode->find<UICodeEditor>( "code_edit" )
 			->loadFromFile( "/home/downloads/textposition.hpp" );
 
 		win->runMainLoop( &mainLoop );

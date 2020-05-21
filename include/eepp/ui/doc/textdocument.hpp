@@ -55,6 +55,8 @@ class EE_API TextDocument {
 
 	String getText( const TextRange& range ) const;
 
+	String getSelectedText() const;
+
 	String::StringBaseType getChar( const TextPosition& position ) const;
 
 	TextPosition insert( const TextPosition& position, const String& text );
@@ -100,7 +102,11 @@ class EE_API TextDocument {
 
 	void deleteTo( int offset );
 
+	void deleteSelection();
+
 	void selectTo( TextPosition offset );
+
+	void selectTo( int offset );
 
 	void moveTo( TextPosition offset );
 
@@ -116,6 +122,10 @@ class EE_API TextDocument {
 
 	void moveToNextChar();
 
+	void moveToPreviousWord();
+
+	void moveToNextWord();
+
 	void moveToPreviousLine( Int64 lastColIndex = 0 );
 
 	void moveToNextLine( Int64 lastColIndex = 0 );
@@ -127,6 +137,18 @@ class EE_API TextDocument {
 	void deleteToPreviousChar();
 
 	void deleteToNextChar();
+
+	void selectToPreviousChar();
+
+	void selectToNextChar();
+
+	void selectToPreviousWord();
+
+	void selectToNextWord();
+
+	void selectToPreviousLine( Int64 lastColIndex );
+
+	void selectToNextLine( Int64 lastColIndex );
 
 	void newLine();
 

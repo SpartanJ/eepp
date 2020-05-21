@@ -131,6 +131,10 @@ String TextDocument::getText( const TextRange& range ) const {
 	return String::join( lines, -1 );
 }
 
+String TextDocument::getSelectedText() const {
+	return getText( getSelection() );
+}
+
 String::StringBaseType TextDocument::getChar( const TextPosition& position ) const {
 	auto pos = sanitizePosition( position );
 	return mLines[pos.line()][pos.column()];
@@ -270,7 +274,7 @@ TextPosition TextDocument::previousWordBoundary( TextPosition position ) const {
 			break;
 		}
 		nextChar = getChar( positionOffset( position, -1 ) );
-	} while ( ( inWord && isNonWord( nextChar ) ) || ( !inWord && nextChar != ch ) );
+	} while ( ( inWord && !isNonWord( nextChar ) ) || ( !inWord && nextChar == ch ) );
 	return position;
 }
 
@@ -285,7 +289,7 @@ TextPosition TextDocument::nextWordBoundary( TextPosition position ) const {
 			break;
 		}
 		nextChar = getChar( position );
-	} while ( ( inWord && isNonWord( nextChar ) ) || ( !inWord && nextChar != ch ) );
+	} while ( ( inWord && !isNonWord( nextChar ) ) || ( !inWord && nextChar == ch ) );
 	return position;
 }
 
@@ -369,10 +373,22 @@ void TextDocument::deleteTo( int offset ) {
 	setSelection( cursorPos );
 }
 
+void TextDocument::deleteSelection() {
+	TextPosition cursorPos = getSelection( true ).start();
+	remove( getSelection() );
+	setSelection( cursorPos );
+}
+
 void TextDocument::selectTo( TextPosition offset ) {
 	TextRange range = getSelection();
 	TextPosition posOffset = positionOffset( range.start(), offset );
-	setSelection( TextRange( range.start(), posOffset ) );
+	setSelection( TextRange( posOffset, range.end() ) );
+}
+
+void TextDocument::selectTo( int offset ) {
+	TextRange range = getSelection();
+	TextPosition posOffset = positionOffset( range.start(), offset );
+	setSelection( TextRange( posOffset, range.end() ) );
 }
 
 void TextDocument::moveTo( TextPosition offset ) {
@@ -416,6 +432,24 @@ void TextDocument::moveToNextChar() {
 	}
 }
 
+void TextDocument::moveToPreviousWord() {
+	if ( hasSelection() ) {
+		TextRange selection = getSelection( true );
+		setSelection( selection.end() );
+	} else {
+		setSelection( previousWordBoundary( getSelection().start() ) );
+	}
+}
+
+void TextDocument::moveToNextWord() {
+	if ( hasSelection() ) {
+		TextRange selection = getSelection( true );
+		setSelection( selection.start() );
+	} else {
+		setSelection( nextWordBoundary( getSelection().start() ) );
+	}
+}
+
 void TextDocument::moveToPreviousLine( Int64 lastColIndex ) {
 	TextPosition pos = getSelection().start();
 	pos.setLine( pos.line() - 1 );
@@ -454,6 +488,42 @@ void TextDocument::deleteToPreviousChar() {
 
 void TextDocument::deleteToNextChar() {
 	deleteTo( 1 );
+}
+
+void TextDocument::selectToPreviousChar() {
+	selectTo( -1 );
+}
+
+void TextDocument::selectToNextChar() {
+	selectTo( 1 );
+}
+
+void TextDocument::selectToPreviousWord() {
+	setSelection( {previousWordBoundary( getSelection().start() ), getSelection().end()} );
+}
+
+void TextDocument::selectToNextWord() {
+	setSelection( {nextWordBoundary( getSelection().start() ), getSelection().end()} );
+}
+
+void TextDocument::selectToPreviousLine( Int64 lastColIndex ) {
+	TextPosition pos = getSelection().start();
+	pos.setLine( pos.line() - 1 );
+	if ( pos.line() >= 0 ) {
+		lastColIndex = getRelativeColumnOffset( TextPosition( pos.line(), lastColIndex ) );
+	}
+	pos.setColumn( lastColIndex );
+	setSelection( TextRange( pos, getSelection().end() ) );
+}
+
+void TextDocument::selectToNextLine( Int64 lastColIndex ) {
+	TextPosition pos = getSelection().start();
+	pos.setLine( pos.line() + 1 );
+	if ( pos.line() < (Int64)mLines.size() ) {
+		lastColIndex = getRelativeColumnOffset( TextPosition( pos.line(), lastColIndex ) );
+	}
+	pos.setColumn( lastColIndex );
+	setSelection( TextRange( pos, getSelection().end() ) );
 }
 
 void TextDocument::newLine() {
