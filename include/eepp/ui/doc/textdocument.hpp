@@ -2,10 +2,15 @@
 #define EE_UI_DOC_TEXTDOCUMENT
 
 #include <eepp/core/string.hpp>
+#include <eepp/system/clock.hpp>
+#include <eepp/system/time.hpp>
 #include <eepp/ui/doc/textposition.hpp>
 #include <eepp/ui/doc/textrange.hpp>
+#include <eepp/ui/doc/undostack.hpp>
 #include <unordered_set>
 #include <vector>
+
+using namespace EE::System;
 
 namespace EE { namespace UI { namespace Doc {
 
@@ -61,8 +66,6 @@ class EE_API TextDocument {
 
 	TextPosition insert( const TextPosition& position, const String& text );
 
-	TextPosition insert( TextPosition position, const String::StringBaseType& text );
-
 	void remove( TextPosition position );
 
 	void remove( TextRange range );
@@ -98,13 +101,13 @@ class EE_API TextDocument {
 
 	Int64 getRelativeColumnOffset( TextPosition position ) const;
 
-	void deleteTo( TextPosition offset );
+	void deleteTo( TextPosition position );
 
 	void deleteTo( int offset );
 
 	void deleteSelection();
 
-	void selectTo( TextPosition offset );
+	void selectTo( TextPosition position );
 
 	void selectTo( int offset );
 
@@ -137,6 +140,10 @@ class EE_API TextDocument {
 	void deleteToPreviousChar();
 
 	void deleteToNextChar();
+
+	void deleteToPreviousWord();
+
+	void deleteToNextWord();
 
 	void selectToPreviousChar();
 
@@ -180,7 +187,13 @@ class EE_API TextDocument {
 
 	void setIndentType( const IndentType& indentType );
 
+	void undo();
+
+	void redo();
+
   protected:
+	friend class UndoStack;
+	UndoStack mUndoStack;
 	std::string mFilename;
 	std::vector<String> mLines;
 	TextRange mSelection;
@@ -188,6 +201,7 @@ class EE_API TextDocument {
 	bool mIsCLRF;
 	Uint32 mTabWidth{4};
 	IndentType mIndentType{IndentTabs};
+	Clock mTimer;
 
 	void notifyTextChanged();
 
@@ -198,6 +212,13 @@ class EE_API TextDocument {
 	void insertAtStartOfSelectedLines( String text, bool skipEmpty );
 
 	void removeFromStartOfSelectedLines( String text, bool skipEmpty );
+
+	void remove( TextRange range, UndoStackContainer& undoStack, const Time& time );
+
+	TextPosition insert( const TextPosition& position, const String& text,
+						 UndoStackContainer& undoStack, const Time& time );
+
+	TextPosition insert( TextPosition position, const String::StringBaseType& text );
 };
 
 }}} // namespace EE::UI::Doc

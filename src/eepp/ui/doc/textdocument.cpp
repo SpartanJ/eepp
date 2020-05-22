@@ -16,7 +16,7 @@ bool TextDocument::isNonWord( String::StringBaseType ch ) {
 	return false;
 }
 
-TextDocument::TextDocument() {}
+TextDocument::TextDocument() : mUndoStack( this ) {}
 
 void TextDocument::reset() {
 	mFilename = "unsaved";
@@ -124,8 +124,8 @@ bool TextDocument::hasSelection() const {
 String TextDocument::getText( const TextRange& range ) const {
 	TextRange nrange = range.normalized();
 	if ( nrange.start().line() == nrange.end().line() ) {
-		return mLines[nrange.start().line()].substr( nrange.start().column(),
-													 nrange.end().column() );
+		return mLines[nrange.start().line()].substr(
+			nrange.start().column(), nrange.end().column() - nrange.start().column() );
 	}
 	std::vector<String> lines = {mLines[nrange.start().line()].substr( nrange.start().column() )};
 	for ( auto i = nrange.start().line() + 1; i <= nrange.end().line() - 1; i++ ) {
@@ -145,9 +145,23 @@ String::StringBaseType TextDocument::getChar( const TextPosition& position ) con
 }
 
 TextPosition TextDocument::insert( const TextPosition& position, const String& text ) {
+	mUndoStack.clearRedoStack();
+	return insert( position, text, mUndoStack.getUndoStackContainer(), mTimer.getElapsedTime() );
+}
+
+TextPosition TextDocument::insert( const TextPosition& position, const String& text,
+								   UndoStackContainer& undoStack, const Time& time ) {
 	TextPosition cursor = position;
-	for ( size_t i = 0; i < text.length(); ++i )
+
+	for ( size_t i = 0; i < text.length(); ++i ) {
 		cursor = insert( cursor, text[i] );
+	}
+
+	mUndoStack.pushSelection( undoStack, getSelection(), time );
+	mUndoStack.pushRemove( undoStack, {position, cursor}, time );
+
+	notifyTextChanged();
+
 	return cursor;
 }
 
@@ -157,27 +171,26 @@ TextPosition TextDocument::insert( TextPosition position, const String::StringBa
 	bool atTail = position.column() == (Int64)line( position.line() ).length() - 1;
 	if ( ch == '\n' ) {
 		if ( atTail || atHead ) {
-			String newLineContents( "\n" );
 			size_t row = position.line();
 			String line_content;
 			for ( size_t i = position.column(); i < line( row ).length(); i++ )
 				line_content.append( line( row )[i] );
-			mLines.insert( mLines.begin() + position.line() + ( atTail ? 1 : 0 ), newLineContents );
-			notifyTextChanged();
-			if ( atTail )
-				return {position.line() + 1, (Int64)line( position.line() + 1 ).length()};
-			return {position.line() + 1, 0};
+			mLines.insert( mLines.begin() + position.line() + ( atTail ? 1 : 0 ), String( "\n" ) );
+			return atTail
+					   ? TextPosition( position.line() + 1, line( position.line() + 1 ).length() )
+					   : TextPosition( position.line() + 1, 0 );
 		}
 		String newLine =
 			line( position.line() )
 				.substr( position.column(), line( position.line() ).length() - position.column() );
 		line( position.line() ) = line( position.line() ).substr( 0, position.column() );
+		if ( newLine.empty() ) {
+			eePRINTL( "wtf" );
+		}
 		mLines.insert( mLines.begin() + position.line() + 1, std::move( newLine ) );
-		notifyTextChanged();
 		return {position.line() + 1, 0};
 	}
 	line( position.line() ).insert( line( position.line() ).begin() + position.column(), ch );
-	notifyTextChanged();
 	return {position.line(), position.column() + 1};
 }
 
@@ -186,12 +199,19 @@ void TextDocument::remove( TextPosition position ) {
 }
 
 void TextDocument::remove( TextRange range ) {
-	if ( !range.isValid() )
-		return;
-
+	mUndoStack.clearRedoStack();
 	range = range.normalized();
 	range.setStart( sanitizePosition( range.start() ) );
 	range.setEnd( sanitizePosition( range.end() ) );
+	remove( range, mUndoStack.getUndoStackContainer(), mTimer.getElapsedTime() );
+}
+
+void TextDocument::remove( TextRange range, UndoStackContainer& undoStack, const Time& time ) {
+	if ( !range.isValid() )
+		return;
+
+	mUndoStack.pushSelection( undoStack, getSelection(), time );
+	mUndoStack.pushInsert( undoStack, getText( range ), range.start(), time );
 
 	// First delete all the lines in between the first and last one.
 	for ( auto i = range.start().line() + 1; i < range.end().line(); ) {
@@ -221,12 +241,15 @@ void TextDocument::remove( TextRange range ) {
 		auto beforeSelection = firstLine.substr( 0, range.start().column() );
 		auto afterSelection =
 			secondLine.substr( range.end().column(), secondLine.length() - range.end().column() );
+		if ( beforeSelection.empty() && afterSelection.empty() ) {
+			beforeSelection += '\n';
+		}
 		firstLine.assign( beforeSelection + afterSelection );
 		mLines.erase( mLines.begin() + range.end().line() );
 	}
 
 	if ( lines().empty() ) {
-		mLines.emplace_back( String() );
+		mLines.emplace_back( String( "\n" ) );
 	}
 	notifyTextChanged();
 }
@@ -374,8 +397,8 @@ void TextDocument::deleteSelection() {
 	setSelection( cursorPos );
 }
 
-void TextDocument::selectTo( TextPosition offset ) {
-	setSelection( TextRange( sanitizePosition( offset ), getSelection().end() ) );
+void TextDocument::selectTo( TextPosition position ) {
+	setSelection( TextRange( sanitizePosition( position ), getSelection().end() ) );
 }
 
 void TextDocument::selectTo( int offset ) {
@@ -481,6 +504,14 @@ void TextDocument::deleteToPreviousChar() {
 
 void TextDocument::deleteToNextChar() {
 	deleteTo( 1 );
+}
+
+void TextDocument::deleteToPreviousWord() {
+	deleteTo( previousWordBoundary( getSelection().start() ) );
+}
+
+void TextDocument::deleteToNextWord() {
+	deleteTo( nextWordBoundary( getSelection().start() ) );
 }
 
 void TextDocument::selectToPreviousChar() {
@@ -626,13 +657,12 @@ void TextDocument::setTabWidth( const Uint32& tabWidth ) {
 	mTabWidth = tabWidth;
 }
 
-void TextDocument::deleteTo( TextPosition offset ) {
+void TextDocument::deleteTo( TextPosition position ) {
 	TextPosition cursorPos = getSelection( true ).start();
 	if ( hasSelection() ) {
 		remove( getSelection() );
 	} else {
-		TextPosition delPos = positionOffset( cursorPos, offset );
-		TextRange range( cursorPos, delPos );
+		TextRange range( cursorPos, position );
 		remove( range );
 		range = range.normalized();
 		cursorPos = range.start();
@@ -660,7 +690,21 @@ void TextDocument::setIndentType( const IndentType& indentType ) {
 	mIndentType = indentType;
 }
 
+void TextDocument::undo() {
+	mUndoStack.undo();
+}
+
+void TextDocument::redo() {
+	mUndoStack.redo();
+}
+
 void TextDocument::notifyTextChanged() {
+	for ( size_t i = 0; i < mLines.size(); i++ ) {
+		if ( mLines[i].empty() ) {
+			eePRINTL( "wtf" );
+		}
+	}
+
 	for ( auto& client : mClients ) {
 		client->onDocumentTextChanged();
 	}

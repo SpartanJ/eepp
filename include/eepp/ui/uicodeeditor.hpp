@@ -88,6 +88,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	virtual Uint32 onMouseDoubleClick( const Vector2i& position, const Uint32& flags );
 
+	virtual Uint32 onMouseOver( const Vector2i& position, const Uint32& flags );
+
+	virtual Uint32 onMouseLeave( const Vector2i& position, const Uint32& flags );
+
 	virtual void onSizeChange();
 
 	virtual void onPaddingChange();

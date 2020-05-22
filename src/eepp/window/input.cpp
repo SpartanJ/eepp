@@ -68,6 +68,9 @@ void Input::processEvent( InputEvent* Event ) {
 			break;
 		}
 		case InputEvent::KeyUp: {
+			if ( Event->key.keysym.mod != eeINDEX_NOT_FOUND )
+				mInputMod = Event->key.keysym.mod;
+
 			if ( Event->key.keysym.sym > EE_KEYS_NUM )
 				break;
 

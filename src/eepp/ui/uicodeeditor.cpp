@@ -25,6 +25,7 @@ UICodeEditor::UICodeEditor() :
 	mMouseWheelScroll( 50 ) {
 	clipEnable();
 	if ( NULL == mFont ) {
+		// TODO: Remove this.
 		mFont = FontTrueType::New( "monospace", "assets/fonts/DejaVuSansMono.ttf" );
 	}
 	mDoc.registerClient( *this );
@@ -45,7 +46,7 @@ bool UICodeEditor::isType( const Uint32& type ) const {
 
 void UICodeEditor::setTheme( UITheme* Theme ) {
 	UIWidget::setTheme( Theme );
-	setThemeSkin( Theme, "textedit" );
+	setThemeSkin( Theme, "codeeditor" );
 }
 
 void UICodeEditor::draw() {
@@ -230,12 +231,23 @@ Uint32 UICodeEditor::onTextInput( const TextInputEvent& event ) {
 Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
 	switch ( event.getKeyCode() ) {
 		case KEY_BACKSPACE: {
-			mDoc.deleteToPreviousChar();
-			updateLastColumnOffset();
+			if ( event.getMod() & KEYMOD_CTRL ) {
+				mDoc.deleteToPreviousWord();
+				updateLastColumnOffset();
+			} else {
+				mDoc.deleteToPreviousChar();
+				updateLastColumnOffset();
+			}
 			break;
 		}
 		case KEY_DELETE: {
-			mDoc.deleteToNextChar();
+			if ( event.getMod() & KEYMOD_CTRL ) {
+				mDoc.deleteToNextWord();
+				updateLastColumnOffset();
+			} else {
+				mDoc.deleteToNextChar();
+				updateLastColumnOffset();
+			}
 			break;
 		}
 		case KEY_KP_ENTER:
@@ -245,7 +257,10 @@ Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
 			break;
 		}
 		case KEY_UP: {
-			if ( event.getMod() & KEYMOD_LSHIFT ) {
+			if ( event.getMod() & KEYMOD_CTRL ) {
+				mScroll.y = eefloor( eemax<Float>( 0, mScroll.y - getLineHeight() ) );
+				invalidateDraw();
+			} else if ( event.getMod() & KEYMOD_SHIFT ) {
 				mDoc.selectToPreviousLine( mLastColOffset );
 			} else {
 				mDoc.moveToPreviousLine( mLastColOffset );
@@ -253,7 +268,11 @@ Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
 			break;
 		}
 		case KEY_DOWN: {
-			if ( event.getMod() & KEYMOD_LSHIFT ) {
+			if ( event.getMod() & KEYMOD_CTRL ) {
+				mScroll.y =
+					eefloor( eemin<Float>( getMaxScroll().y, mScroll.y + getLineHeight() ) );
+				invalidateDraw();
+			} else if ( event.getMod() & KEYMOD_SHIFT ) {
 				mDoc.selectToNextLine( mLastColOffset );
 			} else {
 				mDoc.moveToNextLine( mLastColOffset );
@@ -261,11 +280,11 @@ Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
 			break;
 		}
 		case KEY_LEFT: {
-			if ( ( event.getMod() & KEYMOD_LSHIFT ) && ( event.getMod() & KEYMOD_LCTRL ) ) {
+			if ( ( event.getMod() & KEYMOD_SHIFT ) && ( event.getMod() & KEYMOD_CTRL ) ) {
 				mDoc.selectToPreviousWord();
-			} else if ( event.getMod() & KEYMOD_LSHIFT ) {
+			} else if ( event.getMod() & KEYMOD_SHIFT ) {
 				mDoc.selectToPreviousChar();
-			} else if ( event.getMod() & KEYMOD_LCTRL ) {
+			} else if ( event.getMod() & KEYMOD_CTRL ) {
 				mDoc.moveToPreviousWord();
 			} else {
 				mDoc.moveToPreviousChar();
@@ -274,11 +293,11 @@ Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
 			break;
 		}
 		case KEY_RIGHT: {
-			if ( ( event.getMod() & KEYMOD_LSHIFT ) && ( event.getMod() & KEYMOD_LCTRL ) ) {
+			if ( ( event.getMod() & KEYMOD_SHIFT ) && ( event.getMod() & KEYMOD_CTRL ) ) {
 				mDoc.selectToNextWord();
-			} else if ( event.getMod() & KEYMOD_LSHIFT ) {
+			} else if ( event.getMod() & KEYMOD_SHIFT ) {
 				mDoc.selectToNextChar();
-			} else if ( event.getMod() & KEYMOD_LCTRL ) {
+			} else if ( event.getMod() & KEYMOD_CTRL ) {
 				mDoc.moveToNextWord();
 			} else {
 				mDoc.moveToNextChar();
@@ -287,10 +306,10 @@ Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
 			break;
 		}
 		case KEY_HOME: {
-			if ( event.getMod() & KEYMOD_LSHIFT ) {
+			if ( event.getMod() & KEYMOD_SHIFT ) {
 				mDoc.selectToStartOfLine();
 				updateLastColumnOffset();
-			} else if ( event.getMod() & KEYMOD_LCTRL ) {
+			} else if ( event.getMod() & KEYMOD_CTRL ) {
 				mScroll.y = 0;
 				mDoc.setSelection( {0, 0} );
 				invalidateDraw();
@@ -301,10 +320,10 @@ Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
 			break;
 		}
 		case KEY_END: {
-			if ( event.getMod() & KEYMOD_LSHIFT ) {
+			if ( event.getMod() & KEYMOD_SHIFT ) {
 				mDoc.selectToEndOfLine();
 				updateLastColumnOffset();
-			} else if ( event.getMod() & KEYMOD_LCTRL ) {
+			} else if ( event.getMod() & KEYMOD_CTRL ) {
 				mScroll.y = getMaxScroll().y;
 				mDoc.setSelection(
 					{static_cast<Int64>( mDoc.lineCount() - 1 ),
@@ -317,7 +336,7 @@ Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
 			break;
 		}
 		case KEY_PAGEUP: {
-			if ( event.getMod() & KEYMOD_LSHIFT ) {
+			if ( event.getMod() & KEYMOD_SHIFT ) {
 				mDoc.selectToPreviousPage( getVisibleLinesCount() );
 				updateLastColumnOffset();
 			} else {
@@ -327,7 +346,7 @@ Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
 			break;
 		}
 		case KEY_PAGEDOWN: {
-			if ( event.getMod() & KEYMOD_LSHIFT ) {
+			if ( event.getMod() & KEYMOD_SHIFT ) {
 				mDoc.selectToNextPage( getVisibleLinesCount() );
 				updateLastColumnOffset();
 			} else {
@@ -337,7 +356,7 @@ Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
 			break;
 		}
 		case KEY_TAB: {
-			if ( event.getMod() & KEYMOD_LSHIFT ) {
+			if ( event.getMod() & KEYMOD_SHIFT ) {
 				mDoc.unindent();
 				updateLastColumnOffset();
 			} else if ( !event.getMod() ) {
@@ -347,27 +366,44 @@ Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
 			break;
 		}
 		case KEY_V: {
-			if ( event.getMod() & KEYMOD_LCTRL ) {
+			if ( event.getMod() & KEYMOD_CTRL ) {
 				mDoc.textInput( getUISceneNode()->getWindow()->getClipboard()->getText() );
 			}
 			break;
 		}
 		case KEY_C: {
-			if ( event.getMod() & KEYMOD_LCTRL ) {
+			if ( event.getMod() & KEYMOD_CTRL ) {
 				getUISceneNode()->getWindow()->getClipboard()->setText( mDoc.getSelectedText() );
 			}
 			break;
 		}
 		case KEY_X: {
-			if ( event.getMod() & KEYMOD_LCTRL ) {
+			if ( event.getMod() & KEYMOD_CTRL ) {
 				getUISceneNode()->getWindow()->getClipboard()->setText( mDoc.getSelectedText() );
 				mDoc.deleteSelection();
 			}
 			break;
 		}
 		case KEY_A: {
-			if ( event.getMod() & KEYMOD_LCTRL ) {
+			if ( event.getMod() & KEYMOD_CTRL ) {
 				mDoc.selectAll();
+			}
+			break;
+		}
+		case KEY_Z: {
+			if ( ( event.getMod() & KEYMOD_CTRL ) && ( event.getMod() & KEYMOD_SHIFT ) ) {
+				mDoc.redo();
+				updateLastColumnOffset();
+			} else if ( event.getMod() & KEYMOD_CTRL ) {
+				mDoc.undo();
+				updateLastColumnOffset();
+			}
+			break;
+		}
+		case KEY_Y: {
+			if ( event.getMod() & KEYMOD_CTRL ) {
+				mDoc.redo();
+				updateLastColumnOffset();
 			}
 			break;
 		}
@@ -401,13 +437,18 @@ Sizef UICodeEditor::getMaxScroll() const {
 		eefloor( ( mSize.getWidth() - mRealPadding.Left - mRealPadding.Right ) / getGlyphWidth() ),
 		vplc.y > mDoc.lineCount() - 1
 			? 0.f
-			: ( mDoc.lineCount() - getViewPortLineCount().y ) * getLineHeight() );
+			: eefloor( mDoc.lineCount() - getViewPortLineCount().y ) * getLineHeight() );
 }
 
 Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags ) {
 	if ( !mMouseDown && ( flags & EE_BUTTON_LMASK ) ) {
 		mMouseDown = true;
-		mDoc.setSelection( resolveScreenPosition( position.asFloat() ) );
+		Input* input = getUISceneNode()->getWindow()->getInput();
+		if ( input->isShiftPressed() ) {
+			mDoc.selectTo( resolveScreenPosition( position.asFloat() ) );
+		} else {
+			mDoc.setSelection( resolveScreenPosition( position.asFloat() ) );
+		}
 	}
 	return UIWidget::onMouseDown( position, flags );
 }
@@ -426,11 +467,11 @@ Uint32 UICodeEditor::onMouseUp( const Vector2i& position, const Uint32& flags ) 
 		mMouseDown = false;
 	} else if ( flags & EE_BUTTON_WDMASK ) {
 		mScroll.y += PixelDensity::dpToPx( mMouseWheelScroll );
-		mScroll.y = eemin( mScroll.y, getMaxScroll().y );
+		mScroll.y = eefloor( eemin( mScroll.y, getMaxScroll().y ) );
 		invalidateDraw();
 	} else if ( flags & EE_BUTTON_WUMASK ) {
 		mScroll.y -= PixelDensity::dpToPx( mMouseWheelScroll );
-		mScroll.y = eemax( mScroll.y, 0.f );
+		mScroll.y = eefloor( eemax( mScroll.y, 0.f ) );
 		invalidateDraw();
 	}
 	return UIWidget::onMouseUp( position, flags );
@@ -441,6 +482,16 @@ Uint32 UICodeEditor::onMouseDoubleClick( const Vector2i&, const Uint32& flags ) 
 		mDoc.selectWord();
 	}
 	return 1;
+}
+
+Uint32 UICodeEditor::onMouseOver( const Vector2i& position, const Uint32& flags ) {
+	getUISceneNode()->setCursor( Cursor::IBeam );
+	return UIWidget::onMouseOver( position, flags );
+}
+
+Uint32 UICodeEditor::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
+	getUISceneNode()->setCursor( Cursor::Arrow );
+	return UIWidget::onMouseLeave( Pos, Flags );
 }
 
 void UICodeEditor::onSizeChange() {
@@ -492,7 +543,7 @@ void UICodeEditor::scrollToMakeVisible( const TextPosition& position ) {
 	Float min = lineHeight * ( eemax<Float>( 0, position.line() - 1 ) );
 	Float max = lineHeight * ( position.line() + 2 ) - mSize.getHeight();
 	mScroll.y = eemin( mScroll.y, min );
-	mScroll.y = eemax( mScroll.y, max );
+	mScroll.y = eefloor( eemax( mScroll.y, max ) );
 	invalidateDraw();
 }
 
@@ -539,7 +590,7 @@ Float UICodeEditor::getCharacterSize() const {
 }
 
 Float UICodeEditor::getGlyphWidth() const {
-	return mFont->getGlyph( KEY_SPACE, getCharacterSize(), false ).advance;
+	return mFont->getGlyph( ' ', getCharacterSize(), false ).advance;
 }
 
 void UICodeEditor::updateLastColumnOffset() {
