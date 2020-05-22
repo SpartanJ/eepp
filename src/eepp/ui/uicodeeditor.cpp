@@ -22,7 +22,8 @@ UICodeEditor::UICodeEditor() :
 	mMouseDown( false ),
 	mTabWidth( 4 ),
 	mLastColOffset( 0 ),
-	mMouseWheelScroll( 50 ) {
+	mMouseWheelScroll( 50 ),
+	mFontSize( mFontStyleConfig.getFontCharacterSize() ) {
 	clipEnable();
 	if ( NULL == mFont ) {
 		// TODO: Remove this.
@@ -69,7 +70,7 @@ void UICodeEditor::draw() {
 
 	primitives.setColor( Color( 255, 255, 255, 20 ) );
 	primitives.drawRectangle(
-		Rectf( Vector2f( startScroll.x, startScroll.y + cursor.line() * lineHeight ),
+		Rectf( Vector2f( startScroll.x + mScroll.x, startScroll.y + cursor.line() * lineHeight ),
 			   Sizef( mSize.getWidth(), lineHeight ) ) );
 
 	if ( mDoc.hasSelection() ) {
@@ -164,6 +165,7 @@ UICodeEditor* UICodeEditor::setFont( Font* font ) {
 UICodeEditor* UICodeEditor::setFontSize( Float dpSize ) {
 	if ( mFontStyleConfig.CharacterSize != dpSize ) {
 		mFontStyleConfig.CharacterSize = dpSize;
+		mFontSize = dpSize;
 		invalidateDraw();
 	}
 	return this;
@@ -224,7 +226,9 @@ Uint32 UICodeEditor::onFocusLoss() {
 }
 
 Uint32 UICodeEditor::onTextInput( const TextInputEvent& event ) {
-	mDoc.textInput( event.getText() );
+	if ( !getUISceneNode()->getWindow()->getInput()->isControlPressed() ) {
+		mDoc.textInput( event.getText() );
+	}
 	return 1;
 }
 
@@ -407,6 +411,31 @@ Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
 			}
 			break;
 		}
+		case KEY_PLUS:
+		case KEY_KP_PLUS: {
+			if ( event.getMod() & KEYMOD_CTRL ) {
+				mFontStyleConfig.CharacterSize =
+					eemin<Float>( 96, mFontStyleConfig.CharacterSize + 1 );
+				invalidateDraw();
+			}
+			break;
+		}
+		case KEY_MINUS:
+		case KEY_KP_MINUS: {
+			if ( event.getMod() & KEYMOD_CTRL ) {
+				mFontStyleConfig.CharacterSize =
+					eemax<Float>( 4, mFontStyleConfig.CharacterSize - 1 );
+				invalidateDraw();
+			}
+			break;
+		}
+		case KEY_0:
+		case KEY_KP0: {
+			if ( event.getMod() & KEYMOD_CTRL ) {
+				setFontSize( mFontSize );
+			}
+			break;
+		}
 		default:
 			break;
 	}
@@ -466,12 +495,20 @@ Uint32 UICodeEditor::onMouseUp( const Vector2i& position, const Uint32& flags ) 
 	if ( flags & EE_BUTTON_LMASK ) {
 		mMouseDown = false;
 	} else if ( flags & EE_BUTTON_WDMASK ) {
-		mScroll.y += PixelDensity::dpToPx( mMouseWheelScroll );
-		mScroll.y = eefloor( eemin( mScroll.y, getMaxScroll().y ) );
+		if ( getUISceneNode()->getWindow()->getInput()->isControlPressed() ) {
+			mFontStyleConfig.CharacterSize = eemax<Float>( 4, mFontStyleConfig.CharacterSize - 1 );
+		} else {
+			mScroll.y += PixelDensity::dpToPx( mMouseWheelScroll );
+			mScroll.y = eefloor( eemin( mScroll.y, getMaxScroll().y ) );
+		}
 		invalidateDraw();
 	} else if ( flags & EE_BUTTON_WUMASK ) {
-		mScroll.y -= PixelDensity::dpToPx( mMouseWheelScroll );
-		mScroll.y = eefloor( eemax( mScroll.y, 0.f ) );
+		if ( getUISceneNode()->getWindow()->getInput()->isControlPressed() ) {
+			mFontStyleConfig.CharacterSize = eemin<Float>( 96, mFontStyleConfig.CharacterSize + 1 );
+		} else {
+			mScroll.y -= PixelDensity::dpToPx( mMouseWheelScroll );
+			mScroll.y = eefloor( eemax( mScroll.y, 0.f ) );
+		}
 		invalidateDraw();
 	}
 	return UIWidget::onMouseUp( position, flags );
@@ -539,11 +576,23 @@ int UICodeEditor::getVisibleLinesCount() {
 }
 
 void UICodeEditor::scrollToMakeVisible( const TextPosition& position ) {
+	// Vertical Scroll
 	Float lineHeight = getLineHeight();
 	Float min = lineHeight * ( eemax<Float>( 0, position.line() - 1 ) );
 	Float max = lineHeight * ( position.line() + 2 ) - mSize.getHeight();
 	mScroll.y = eemin( mScroll.y, min );
 	mScroll.y = eefloor( eemax( mScroll.y, max ) );
+
+	// Horizontal Scroll
+	Float offsetX = getXOffsetCol( position );
+	Float glyphSize = getGlyphWidth();
+	Float minVisibility = glyphSize * 10;
+	Float viewPortWidth = eefloor( mSize.getWidth() - mRealPadding.Left - mRealPadding.Right );
+	if ( offsetX + minVisibility > viewPortWidth - mScroll.x ) {
+		mScroll.x = eefloor( eemax( 0.f, offsetX + minVisibility - viewPortWidth ) );
+	} else if ( offsetX < mScroll.x ) {
+		mScroll.x = eefloor( eemax( 0.f, offsetX - minVisibility ) );
+	}
 	invalidateDraw();
 }
 

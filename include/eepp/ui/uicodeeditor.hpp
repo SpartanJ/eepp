@@ -71,6 +71,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Int64 mLastColOffset;
 	Vector2f mScroll;
 	Float mMouseWheelScroll;
+	Float mFontSize;
 
 	void invalidateEditor();
 
