@@ -739,6 +739,8 @@ class EE_API String {
 
 	size_t countChar( StringBaseType c ) const;
 
+	String& padLeft( unsigned int minDigits, StringBaseType padChar );
+
   private:
 	friend EE_API bool operator==( const String& left, const String& right );
 	friend EE_API bool operator<( const String& left, const String& right );

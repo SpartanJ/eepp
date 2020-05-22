@@ -28,15 +28,6 @@ void mainLoop() {
 }
 
 EE_MAIN_FUNC int main( int, char** ) {
-	/*Doc::TextDocument doc;
-	doc.loadFromPath( "/home/downloads/textposition.hpp" );
-	doc.remove( TextRange( TextPosition( 0, 0 ), TextPosition( 1, 40 ) ) );
-	doc.insert( TextPosition( 0, 0 ),
-				String( "#ifndef EE_UI_DOC_TEXPOS\n#define EE_UI_DOC_TEXPOS" ) );
-	doc.remove( TextRange( TextPosition( 31, 2 ), TextPosition( 33, 15 ) ) );
-	doc.insert( TextPosition( 31, 2 ), String( "hexNumber" ) );
-	doc.print();*/
-	// return EXIT_SUCCESS;
 	Display* currentDisplay = Engine::instance()->getDisplayManager()->getDisplayIndex( 0 );
 	Float pixelDensity = currentDisplay->getPixelDensity();
 
@@ -49,6 +40,8 @@ EE_MAIN_FUNC int main( int, char** ) {
 		// Load a font to use as the default font in our UI.
 		FontTrueType* font =
 			FontTrueType::New( "NotoSans-Regular", "assets/fonts/NotoSans-Regular.ttf" );
+
+		FontTrueType::New( "monospace", "assets/fonts/DejaVuSansMono.ttf" );
 
 		// Create a new scene node to add our widgets.
 		UISceneNode* uiSceneNode = UISceneNode::New();
@@ -100,10 +93,7 @@ EE_MAIN_FUNC int main( int, char** ) {
 		)css" );
 
 		UICodeEditor* codeEditor = uiSceneNode->find<UICodeEditor>( "code_edit" );
-			codeEditor->setFontSize( 11 )
-			->loadFromFile( "/home/downloads/textposition.hpp" );
-		codeEditor->setBackgroundColor( Color::fromString( "#2e2e32" ) );
-		codeEditor->setFontColor( Color::fromString( "#e1e1e6" ) );
+		codeEditor->setFontSize( 11 )->loadFromFile( "../src/eepp/ui/doc/textdocument.cpp" );
 		win->runMainLoop( &mainLoop );
 	}
 

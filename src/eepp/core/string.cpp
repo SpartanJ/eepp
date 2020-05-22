@@ -960,6 +960,13 @@ size_t String::countChar( String::StringBaseType c ) const {
 	return std::count( begin(), end(), c );
 }
 
+String& String::padLeft( unsigned int minDigits, String::StringBaseType padChar ) {
+	if ( mString.length() < minDigits ) {
+		mString.insert( mString.begin(), minDigits - mString.length(), padChar );
+	}
+	return *this;
+}
+
 bool operator==( const String& left, const String& right ) {
 	return left.mString == right.mString;
 }

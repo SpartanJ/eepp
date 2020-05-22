@@ -16,12 +16,15 @@ bool TextDocument::isNonWord( String::StringBaseType ch ) {
 	return false;
 }
 
-TextDocument::TextDocument() : mUndoStack( this ) {}
+TextDocument::TextDocument() : mUndoStack( this ) {
+	reset();
+}
 
 void TextDocument::reset() {
 	mFilename = "unsaved";
 	mSelection.set( {0, 0}, {0, 0} );
 	mLines.clear();
+	mLines.emplace_back( String( "\n" ) );
 	notifyTextChanged();
 	notifyCursorChanged();
 	notifySelectionChanged();
@@ -29,6 +32,7 @@ void TextDocument::reset() {
 
 void TextDocument::loadFromPath( const std::string& path ) {
 	reset();
+	mLines.clear();
 	mFilename = path;
 	std::string line;
 	std::ifstream file( path );
@@ -109,7 +113,7 @@ const String& TextDocument::line( const size_t& index ) const {
 	return mLines[index];
 }
 
-size_t TextDocument::lineCount() const {
+size_t TextDocument::linesCount() const {
 	return mLines.size();
 }
 

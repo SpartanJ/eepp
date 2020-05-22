@@ -20,15 +20,26 @@ UICodeEditor::UICodeEditor() :
 	mDirtyEditor( false ),
 	mCursorVisible( false ),
 	mMouseDown( false ),
+	mShowLineNumber( true ),
 	mTabWidth( 4 ),
 	mLastColOffset( 0 ),
 	mMouseWheelScroll( 50 ),
-	mFontSize( mFontStyleConfig.getFontCharacterSize() ) {
+	mFontSize( mFontStyleConfig.getFontCharacterSize() ),
+	mLineNumberPaddingLeft( 8 ),
+	mLineNumberPaddingRight( 8 ),
+	mLineNumberFontColor( "#525259" ),
+	mLineNumberBackgroundColor( Color::fromString( "#2e2e32" ) ),
+	mCurrentLineBackgroundColor( "#343438" ),
+	mCaretColor( "#93DDFA" ) {
+	setBackgroundColor( Color::fromString( "#2e2e32" ) );
+	setFontColor( Color::fromString( "#e1e1e6" ) );
+	mFontStyleConfig.setFontSelectionBackColor( Color::fromString( "#48484f" ) );
+
+	if ( NULL == mFont )
+		eePRINTL( "A monospace font must be loaded to be able to use the code editor.\nTry loading "
+				  "a font with the name \"monospace\"" );
+
 	clipEnable();
-	if ( NULL == mFont ) {
-		// TODO: Remove this.
-		mFont = FontTrueType::New( "monospace", "assets/fonts/DejaVuSansMono.ttf" );
-	}
 	mDoc.registerClient( *this );
 	subscribeScheduledUpdate();
 }
@@ -53,28 +64,31 @@ void UICodeEditor::setTheme( UITheme* Theme ) {
 void UICodeEditor::draw() {
 	UIWidget::draw();
 
+	if ( mFont == NULL )
+		return;
+
 	if ( mDirtyEditor ) {
 		updateEditor();
 	}
 
-	if ( mFont == NULL )
-		return;
-
 	std::pair<int, int> lineRange = getVisibleLineRange();
 	Float charSize = PixelDensity::pxToDp( getCharacterSize() );
 	Float lineHeight = getLineHeight();
-	Vector2f start( mScreenPos.x + mRealPadding.Left, mScreenPos.y + mRealPadding.Top );
+	int lineNumberDigits = Math::countDigits( mDoc.linesCount() );
+	Float lineNumberWidth = mShowLineNumber ? getLineNumberWidth() : 0.f;
+	Vector2f screenStart( mScreenPos.x + mRealPadding.Left, mScreenPos.y + mRealPadding.Top );
+	Vector2f start( screenStart.x + lineNumberWidth, screenStart.y );
 	Vector2f startScroll( start - mScroll );
 	Primitives primitives;
 	TextPosition cursor( mDoc.getSelection().start() );
 
-	primitives.setColor( Color( 255, 255, 255, 20 ) );
+	primitives.setColor( mCurrentLineBackgroundColor );
 	primitives.drawRectangle(
 		Rectf( Vector2f( startScroll.x + mScroll.x, startScroll.y + cursor.line() * lineHeight ),
 			   Sizef( mSize.getWidth(), lineHeight ) ) );
 
 	if ( mDoc.hasSelection() ) {
-		primitives.setColor( Color( 255, 255, 255, 50 ) );
+		primitives.setColor( mFontStyleConfig.getFontSelectionBackColor() );
 
 		TextRange selection = mDoc.getSelection( true );
 
@@ -117,9 +131,22 @@ void UICodeEditor::draw() {
 		Vector2f cursorPos( startScroll.x + getXOffsetCol( cursor ),
 							startScroll.y + cursor.line() * lineHeight );
 
-		primitives.setColor( Color::White );
+		primitives.setColor( mCaretColor );
 		primitives.drawRectangle(
 			Rectf( cursorPos, Sizef( PixelDensity::dpToPx( 2 ), lineHeight ) ) );
+	}
+
+	if ( mShowLineNumber ) {
+		primitives.setColor( mLineNumberBackgroundColor );
+		primitives.drawRectangle(
+			Rectf( screenStart, Sizef( lineNumberWidth, mSize.getHeight() ) ) );
+		for ( int i = lineRange.first; i <= lineRange.second; i++ ) {
+			Text line( String( String::toStr( i ) ).padLeft( lineNumberDigits, ' ' ), mFont,
+					   charSize );
+			line.setStyleConfig( mFontStyleConfig );
+			line.setColor( mLineNumberFontColor );
+			line.draw( screenStart.x + mLineNumberPaddingLeft, startScroll.y + lineHeight * i );
+		}
 	}
 }
 
@@ -215,6 +242,79 @@ void UICodeEditor::setMouseWheelScroll( const Float& mouseWheelScroll ) {
 	mMouseWheelScroll = mouseWheelScroll;
 }
 
+void UICodeEditor::setLineNumberPaddingLeft( const Float& dpLeft ) {
+	if ( dpLeft != mLineNumberPaddingLeft ) {
+		mLineNumberPaddingLeft = dpLeft;
+		invalidateDraw();
+	}
+}
+
+void UICodeEditor::setLineNumberPaddingRight( const Float& dpRight ) {
+	if ( dpRight != mLineNumberPaddingRight ) {
+		mLineNumberPaddingRight = dpRight;
+		invalidateDraw();
+	}
+}
+
+void UICodeEditor::setLineNumberPadding( const Float& dpPaddingLeft, const Float& dpPaddingRight ) {
+	setLineNumberPaddingLeft( dpPaddingLeft );
+	setLineNumberPaddingRight( dpPaddingRight );
+}
+
+const Float& UICodeEditor::getLineNumberPaddingLeft() const {
+	return mLineNumberPaddingLeft;
+}
+
+const Float& UICodeEditor::getLineNumberPaddingRight() const {
+	return mLineNumberPaddingRight;
+}
+
+Float UICodeEditor::getLineNumberWidth() const {
+	return Math::countDigits( mDoc.linesCount() ) * getGlyphWidth() + getLineNumberPaddingLeft() +
+		   getLineNumberPaddingRight();
+}
+
+const bool& UICodeEditor::getShowLineNumber() const {
+	return mShowLineNumber;
+}
+
+void UICodeEditor::setShowLineNumber( const bool& showLineNumber ) {
+	if ( mShowLineNumber != showLineNumber ) {
+		mShowLineNumber = showLineNumber;
+		invalidateDraw();
+	}
+}
+
+const Color& UICodeEditor::getLineNumberBackgroundColor() const {
+	return mLineNumberBackgroundColor;
+}
+
+void UICodeEditor::setLineNumberBackgroundColor( const Color& lineNumberBackgroundColor ) {
+	if ( mLineNumberBackgroundColor != lineNumberBackgroundColor ) {
+		mLineNumberBackgroundColor = lineNumberBackgroundColor;
+		invalidateDraw();
+	};
+}
+
+const Color& UICodeEditor::getCurrentLineBackgroundColor() const {
+	return mCurrentLineBackgroundColor;
+}
+
+void UICodeEditor::setCurrentLineBackgroundColor( const Color& currentLineBackgroundColor ) {
+	mCurrentLineBackgroundColor = currentLineBackgroundColor;
+}
+
+const Color& UICodeEditor::getCaretColor() const {
+	return mCaretColor;
+}
+
+void UICodeEditor::setCaretColor( const Color& caretColor ) {
+	if ( mCaretColor != caretColor ) {
+		mCaretColor = caretColor;
+		invalidateDraw();
+	}
+}
+
 void UICodeEditor::invalidateEditor() {
 	mDirtyEditor = true;
 }
@@ -226,6 +326,9 @@ Uint32 UICodeEditor::onFocusLoss() {
 }
 
 Uint32 UICodeEditor::onTextInput( const TextInputEvent& event ) {
+	if ( NULL == mFont )
+		return 1;
+
 	if ( !getUISceneNode()->getWindow()->getInput()->isControlPressed() ) {
 		mDoc.textInput( event.getText() );
 	}
@@ -233,6 +336,9 @@ Uint32 UICodeEditor::onTextInput( const TextInputEvent& event ) {
 }
 
 Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
+	if ( NULL == mFont )
+		return 1;
+
 	switch ( event.getKeyCode() ) {
 		case KEY_BACKSPACE: {
 			if ( event.getMod() & KEYMOD_CTRL ) {
@@ -330,8 +436,8 @@ Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
 			} else if ( event.getMod() & KEYMOD_CTRL ) {
 				mScroll.y = getMaxScroll().y;
 				mDoc.setSelection(
-					{static_cast<Int64>( mDoc.lineCount() - 1 ),
-					 static_cast<Int64>( mDoc.line( mDoc.lineCount() - 1 ).length() )} );
+					{static_cast<Int64>( mDoc.linesCount() - 1 ),
+					 static_cast<Int64>( mDoc.line( mDoc.linesCount() - 1 ).length() )} );
 				invalidateDraw();
 			} else {
 				mDoc.setSelection( mDoc.endOfLine( mDoc.getSelection().start() ) );
@@ -448,10 +554,10 @@ TextPosition UICodeEditor::resolveScreenPosition( const Vector2f& position ) con
 	worldToNode( localPos );
 	localPos = PixelDensity::dpToPx( localPos );
 	localPos += mScroll;
-	localPos.x -= mRealPadding.Left;
+	localPos.x -= mRealPadding.Left + ( mShowLineNumber ? getLineNumberWidth() : 0.f );
 	localPos.y -= mRealPadding.Top;
 	Int64 line =
-		eeclamp<Int64>( (Int64)eefloor( localPos.y / getLineHeight() ), 0, mDoc.lineCount() - 1 );
+		eeclamp<Int64>( (Int64)eefloor( localPos.y / getLineHeight() ), 0, mDoc.linesCount() - 1 );
 	return TextPosition( line, getColFromXOffset( line, localPos.x ) );
 }
 
@@ -464,13 +570,13 @@ Sizef UICodeEditor::getMaxScroll() const {
 	Vector2f vplc( getViewPortLineCount() );
 	return Sizef(
 		eefloor( ( mSize.getWidth() - mRealPadding.Left - mRealPadding.Right ) / getGlyphWidth() ),
-		vplc.y > mDoc.lineCount() - 1
+		vplc.y > mDoc.linesCount() - 1
 			? 0.f
-			: eefloor( mDoc.lineCount() - getViewPortLineCount().y ) * getLineHeight() );
+			: eefloor( mDoc.linesCount() - getViewPortLineCount().y ) * getLineHeight() );
 }
 
 Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags ) {
-	if ( !mMouseDown && ( flags & EE_BUTTON_LMASK ) ) {
+	if ( NULL != mFont && !mMouseDown && ( flags & EE_BUTTON_LMASK ) ) {
 		mMouseDown = true;
 		Input* input = getUISceneNode()->getWindow()->getInput();
 		if ( input->isShiftPressed() ) {
@@ -483,7 +589,7 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 }
 
 Uint32 UICodeEditor::onMouseMove( const Vector2i& position, const Uint32& flags ) {
-	if ( mMouseDown && ( flags & EE_BUTTON_LMASK ) ) {
+	if ( NULL != mFont && mMouseDown && ( flags & EE_BUTTON_LMASK ) ) {
 		TextRange selection = mDoc.getSelection();
 		selection.setStart( resolveScreenPosition( position.asFloat() ) );
 		mDoc.setSelection( selection );
@@ -492,6 +598,9 @@ Uint32 UICodeEditor::onMouseMove( const Vector2i& position, const Uint32& flags 
 }
 
 Uint32 UICodeEditor::onMouseUp( const Vector2i& position, const Uint32& flags ) {
+	if ( NULL == mFont )
+		return UIWidget::onMouseUp( position, flags );
+
 	if ( flags & EE_BUTTON_LMASK ) {
 		mMouseDown = false;
 	} else if ( flags & EE_BUTTON_WDMASK ) {
@@ -515,6 +624,9 @@ Uint32 UICodeEditor::onMouseUp( const Vector2i& position, const Uint32& flags ) 
 }
 
 Uint32 UICodeEditor::onMouseDoubleClick( const Vector2i&, const Uint32& flags ) {
+	if ( NULL == mFont )
+		return 1;
+
 	if ( flags & EE_BUTTON_LMASK ) {
 		mDoc.selectWord();
 	}
@@ -565,7 +677,7 @@ void UICodeEditor::onDocumentSelectionChange( const Doc::TextRange& ) {
 std::pair<int, int> UICodeEditor::getVisibleLineRange() {
 	Float lineHeight = getLineHeight();
 	Float minLine = eemax( 0.f, eefloor( mScroll.y / lineHeight ) );
-	Float maxLine = eemin( mDoc.lineCount() - 1.f,
+	Float maxLine = eemin( mDoc.linesCount() - 1.f,
 						   eefloor( ( mSize.getHeight() + mScroll.y ) / lineHeight ) + 1 );
 	return std::make_pair<int, int>( (int)minLine, (int)maxLine );
 }
@@ -610,10 +722,10 @@ Float UICodeEditor::getXOffsetCol( const TextPosition& position ) const {
 	return x;
 }
 
-Int64 UICodeEditor::getColFromXOffset( Int64 _line, const Float& offset ) const {
+Int64 UICodeEditor::getColFromXOffset( Int64 lineNumber, const Float& offset ) const {
 	if ( offset <= 0 )
 		return 0;
-	TextPosition pos = mDoc.sanitizePosition( TextPosition( _line, 0 ) );
+	TextPosition pos = mDoc.sanitizePosition( TextPosition( lineNumber, 0 ) );
 	const String& line = mDoc.line( pos.line() );
 	Float glyphWidth = getGlyphWidth();
 	Float x = 0;

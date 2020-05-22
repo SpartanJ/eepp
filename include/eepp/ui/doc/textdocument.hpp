@@ -52,7 +52,7 @@ class EE_API TextDocument {
 
 	const String& line( const size_t& index ) const;
 
-	size_t lineCount() const;
+	size_t linesCount() const;
 
 	std::vector<String>& lines();
 

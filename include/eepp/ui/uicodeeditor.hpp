@@ -58,6 +58,34 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void setMouseWheelScroll( const Float& mouseWheelScroll );
 
+	void setLineNumberPaddingLeft( const Float& dpLeft );
+
+	void setLineNumberPaddingRight( const Float& dpRight );
+
+	void setLineNumberPadding( const Float& dpPaddingLeft, const Float& dpPaddingRight );
+
+	const Float& getLineNumberPaddingLeft() const;
+
+	const Float& getLineNumberPaddingRight() const;
+
+	Float getLineNumberWidth() const;
+
+	const bool& getShowLineNumber() const;
+
+	void setShowLineNumber( const bool& showLineNumber );
+
+	const Color& getLineNumberBackgroundColor() const;
+
+	void setLineNumberBackgroundColor( const Color& lineNumberBackgroundColor );
+
+	const Color& getCurrentLineBackgroundColor() const;
+
+	void setCurrentLineBackgroundColor( const Color& currentLineBackgroundColor );
+
+	const Color& getCaretColor() const;
+
+	void setCaretColor( const Color& caretColor );
+
   protected:
 	Font* mFont;
 	UIFontStyleConfig mFontStyleConfig;
@@ -67,11 +95,18 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mDirtyEditor;
 	bool mCursorVisible;
 	bool mMouseDown;
+	bool mShowLineNumber;
 	Uint32 mTabWidth;
 	Int64 mLastColOffset;
 	Vector2f mScroll;
 	Float mMouseWheelScroll;
 	Float mFontSize;
+	Float mLineNumberPaddingLeft;
+	Float mLineNumberPaddingRight;
+	Color mLineNumberFontColor;
+	Color mLineNumberBackgroundColor;
+	Color mCurrentLineBackgroundColor;
+	Color mCaretColor;
 
 	void invalidateEditor();
 
