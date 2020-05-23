@@ -1,4 +1,5 @@
 #include <eepp/core/debug.hpp>
+#include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
 #include <sstream>
 #include <string>
@@ -25,6 +26,7 @@ void TextDocument::reset() {
 	mSelection.set( {0, 0}, {0, 0} );
 	mLines.clear();
 	mLines.emplace_back( String( "\n" ) );
+	mSyntaxDefinition = SyntaxDefinitionManager::instance()->getPlainStyle();
 	notifyTextChanged();
 	notifyCursorChanged();
 	notifySelectionChanged();
@@ -34,6 +36,7 @@ void TextDocument::loadFromPath( const std::string& path ) {
 	reset();
 	mLines.clear();
 	mFilename = path;
+	mSyntaxDefinition = SyntaxDefinitionManager::instance()->getStyleByExtension( path );
 	std::string line;
 	std::ifstream file( path );
 	while ( std::getline( file, line ) ) {
@@ -188,9 +191,6 @@ TextPosition TextDocument::insert( TextPosition position, const String::StringBa
 			line( position.line() )
 				.substr( position.column(), line( position.line() ).length() - position.column() );
 		line( position.line() ) = line( position.line() ).substr( 0, position.column() );
-		if ( newLine.empty() ) {
-			eePRINTL( "wtf" );
-		}
 		mLines.insert( mLines.begin() + position.line() + 1, std::move( newLine ) );
 		return {position.line() + 1, 0};
 	}
@@ -702,13 +702,11 @@ void TextDocument::redo() {
 	mUndoStack.redo();
 }
 
-void TextDocument::notifyTextChanged() {
-	for ( size_t i = 0; i < mLines.size(); i++ ) {
-		if ( mLines[i].empty() ) {
-			eePRINTL( "wtf" );
-		}
-	}
+const SyntaxDefinition& TextDocument::getSyntaxDefinition() const {
+	return mSyntaxDefinition;
+}
 
+void TextDocument::notifyTextChanged() {
 	for ( auto& client : mClients ) {
 		client->onDocumentTextChanged();
 	}

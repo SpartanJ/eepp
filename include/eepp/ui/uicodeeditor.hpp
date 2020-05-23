@@ -1,6 +1,8 @@
 #ifndef EE_UI_UICODEEDIT_HPP
 #define EE_UI_UICODEEDIT_HPP
 
+#include <eepp/ui/doc/syntaxhighlighter.hpp>
+#include <eepp/ui/doc/syntaxstyle.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
 #include <eepp/ui/uifontstyleconfig.hpp>
 #include <eepp/ui/uiwidget.hpp>
@@ -107,6 +109,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Color mLineNumberBackgroundColor;
 	Color mCurrentLineBackgroundColor;
 	Color mCaretColor;
+	SyntaxStyle mStyle;
+	SyntaxHighlighter mHighlighter;
 
 	void invalidateEditor();
 

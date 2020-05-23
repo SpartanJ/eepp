@@ -1,4 +1,6 @@
 #include <eepp/ee.hpp>
+#include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
+#include <eepp/ui/doc/syntaxtokenizer.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
 using namespace EE::UI::Doc;
 
@@ -54,7 +56,7 @@ EE_MAIN_FUNC int main( int, char** ) {
 		SceneManager::instance()->add( uiSceneNode );
 
 		// Create a very simple Hello World with a TextView and a PushButton.
-		uiSceneNode->loadLayoutFromString( R"xml(
+		std::string layout = R"xml(
 			<LinearLayout layout_width="match_parent"
 						  layout_height="match_parent"
 						  orientation="vertical">
@@ -72,7 +74,17 @@ EE_MAIN_FUNC int main( int, char** ) {
 					layout_weight="1"
 					 />
 			</LinearLayout>
-		)xml" );
+		)xml";
+		uiSceneNode->loadLayoutFromString( layout );
+
+		const auto& def = SyntaxDefinitionManager::instance()->getStyleByExtension( "xml" );
+		Clock clock;
+		std::pair<std::vector<SyntaxToken>, int> ret =
+			SyntaxTokenizer::tokenize( def, layout, SYNTAX_TOKENIZER_STATE_NONE );
+
+		if ( ret.first.size() ) {
+			eePRINTL( "tokenized in: %.2fms", clock.getElapsedTime().asMilliseconds() );
+		}
 
 		// Set the style to our "Hello World" widgets.
 		uiSceneNode->setStyleSheet( R"css(
@@ -93,7 +105,7 @@ EE_MAIN_FUNC int main( int, char** ) {
 		)css" );
 
 		UICodeEditor* codeEditor = uiSceneNode->find<UICodeEditor>( "code_edit" );
-		codeEditor->setFontSize( 11 )->loadFromFile( "../src/eepp/ui/doc/textdocument.cpp" );
+		codeEditor->setFontSize( 11 )->loadFromFile( "assets/layouts/test_widgets.xml" );
 		win->runMainLoop( &mainLoop );
 	}
 

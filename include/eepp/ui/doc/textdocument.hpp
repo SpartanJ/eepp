@@ -4,6 +4,7 @@
 #include <eepp/core/string.hpp>
 #include <eepp/system/clock.hpp>
 #include <eepp/system/time.hpp>
+#include <eepp/ui/doc/syntaxdefinition.hpp>
 #include <eepp/ui/doc/textposition.hpp>
 #include <eepp/ui/doc/textrange.hpp>
 #include <eepp/ui/doc/undostack.hpp>
@@ -191,6 +192,8 @@ class EE_API TextDocument {
 
 	void redo();
 
+	const SyntaxDefinition& getSyntaxDefinition() const;
+
   protected:
 	friend class UndoStack;
 	UndoStack mUndoStack;
@@ -202,6 +205,7 @@ class EE_API TextDocument {
 	Uint32 mTabWidth{4};
 	IndentType mIndentType{IndentTabs};
 	Clock mTimer;
+	SyntaxDefinition mSyntaxDefinition;
 
 	void notifyTextChanged();
 

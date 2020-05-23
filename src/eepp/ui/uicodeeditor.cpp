@@ -2,6 +2,7 @@
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/text.hpp>
+#include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/window/clipboard.hpp>
@@ -30,7 +31,9 @@ UICodeEditor::UICodeEditor() :
 	mLineNumberFontColor( "#525259" ),
 	mLineNumberBackgroundColor( Color::fromString( "#2e2e32" ) ),
 	mCurrentLineBackgroundColor( "#343438" ),
-	mCaretColor( "#93DDFA" ) {
+	mCaretColor( "#93DDFA" ),
+	mStyle( SyntaxStyle::getDefault() ),
+	mHighlighter( &mDoc ) {
 	setBackgroundColor( Color::fromString( "#2e2e32" ) );
 	setFontColor( Color::fromString( "#e1e1e6" ) );
 	mFontStyleConfig.setFontSelectionBackColor( Color::fromString( "#48484f" ) );
@@ -125,6 +128,16 @@ void UICodeEditor::draw() {
 		Text line( mDoc.line( i ), mFont, charSize );
 		line.setStyleConfig( mFontStyleConfig );
 		line.draw( startScroll.x, startScroll.y + lineHeight * i );
+		/*Vector2f curPos( startScroll.x, startScroll.y + lineHeight * i );
+		auto& tokens = mHighlighter.getLine( i );
+		Text line( "", mFont, charSize );
+		line.setStyleConfig( mFontStyleConfig );
+		for ( auto& token : tokens ) {
+			line.setString( token.text );
+			line.setColor( mStyle.getColor( token.type ) );
+			line.draw( curPos.x, curPos.y );
+			curPos.x += line.getTextWidth();
+		}*/
 	}
 
 	if ( mCursorVisible ) {
@@ -165,7 +178,10 @@ void UICodeEditor::scheduledUpdate( const Time& ) {
 	}
 }
 
-void UICodeEditor::reset() {}
+void UICodeEditor::reset() {
+	mDoc.reset();
+	invalidateDraw();
+}
 
 void UICodeEditor::loadFromFile( const std::string& path ) {
 	mDoc.loadFromPath( path );

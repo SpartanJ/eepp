@@ -19,7 +19,8 @@ EEPP_C_INCLUDES			:= \
 	$(EEPP_THIRD_PARTY_PATH)/libvorbis/include \
 	$(EEPP_THIRD_PARTY_PATH)/libogg/include \
 	$(EEPP_THIRD_PARTY_PATH)/mbedtls/include \
-	$(EEPP_THIRD_PARTY_PATH)/mojoAL
+	$(EEPP_THIRD_PARTY_PATH)/mojoAL \
+	$(EEPP_THIRD_PARTY_PATH)/rx-cpp
 
 EEPP_C_FLAGS				:= \
 	-Wl,--undefined=Java_org_libsdl_app_SDLActivity_nativeInit \
@@ -61,6 +62,8 @@ CODE_SRCS				:=  \
 	../thirdparty/libvorbis/lib/*.c \
 	../thirdparty/mbedtls/library/*.c \
 	../thirdparty/mojoAL/*.c \
+	../thirdparty/rx-cpp/*.c \
+	../thirdparty/rx-cpp/*.cpp \
 	system/*.cpp \
 	system/platform/posix/*.cpp \
 	network/*.cpp \

@@ -7,3 +7,5 @@
 /usr/include/freetype2/
 ../../src/thirdparty/mbedtls/include
 ../../docs/articles
+../../include/eepp/ui/doc
+../../src/eepp/ui/doc
