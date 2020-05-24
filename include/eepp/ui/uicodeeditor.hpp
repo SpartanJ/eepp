@@ -1,4 +1,4 @@
-#ifndef EE_UI_UICODEEDIT_HPP
+﻿#ifndef EE_UI_UICODEEDIT_HPP
 #define EE_UI_UICODEEDIT_HPP
 
 #include <eepp/ui/doc/syntaxcolorscheme.hpp>
@@ -37,6 +37,12 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void reset();
 
 	void loadFromFile( const std::string& path );
+
+	bool save();
+
+	bool save( const std::string& path, const bool& utf8bom = false );
+
+	bool save( IOStreamFile& stream, const bool& utf8bom = false );
 
 	Font* getFont() const;
 
@@ -91,6 +97,12 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	const SyntaxColorScheme& getColorScheme() const;
 
 	void setColorScheme( const SyntaxColorScheme& colorScheme );
+
+	const Doc::TextDocument& getDocument() const;
+
+	Doc::TextDocument& getDocument();
+
+	bool isDirty() const;
 
   protected:
 	Font* mFont;

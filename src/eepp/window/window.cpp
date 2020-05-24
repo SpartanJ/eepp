@@ -468,8 +468,8 @@ void Window::onCloseRequest() {
 	close();
 }
 
-std::string Window::getCaption() {
-	return mWindow.WindowConfig.Caption;
+std::string Window::getTitle() {
+	return mWindow.WindowConfig.Title;
 }
 
 eeWindowContex Window::getContext() const {

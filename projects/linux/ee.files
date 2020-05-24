@@ -952,6 +952,7 @@
 ../../src/thirdparty/SOIL2/src/SOIL2/stbi_pkm.h
 ../../src/thirdparty/SOIL2/src/SOIL2/stbi_pvr_c.h
 ../../src/thirdparty/SOIL2/src/SOIL2/stbi_pvr.h
+../../src/tools/codeeditor/codeeditor.cpp
 ../../src/tools/mapeditor/mapeditor.cpp
 ../../src/tools/textureatlaseditor/textureatlaseditor.cpp
 ../../src/tools/texturepacker/texturepacker.cpp

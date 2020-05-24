@@ -18,22 +18,25 @@ enum class TextUndoCommandType { Insert, Remove, Selection };
 
 class EE_API TextUndoCommand {
   public:
-	TextUndoCommand( const TextUndoCommandType& type, const Time& timestamp );
+	TextUndoCommand( const Uint64& id, const TextUndoCommandType& type, const Time& timestamp );
 
 	virtual ~TextUndoCommand();
+
+	const Uint64& getId() const;
 
 	const TextUndoCommandType& getType() const;
 
 	const Time& getTimestamp() const;
 
   protected:
+	Uint64 mId;
 	TextUndoCommandType mType;
 	Time mTimestamp;
 };
 
 class EE_API TextUndoCommandInsert : public TextUndoCommand {
   public:
-	TextUndoCommandInsert( const String& text, const TextPosition& position,
+	TextUndoCommandInsert( const Uint64& id, const String& text, const TextPosition& position,
 						   const Time& timestamp );
 
 	const String& getText() const;
@@ -47,7 +50,7 @@ class EE_API TextUndoCommandInsert : public TextUndoCommand {
 
 class EE_API TextUndoCommandRemove : public TextUndoCommand {
   public:
-	TextUndoCommandRemove( const TextRange& range, const Time& timestamp );
+	TextUndoCommandRemove( const Uint64& id, const TextRange& range, const Time& timestamp );
 
 	const TextRange& getRange() const;
 
@@ -57,7 +60,7 @@ class EE_API TextUndoCommandRemove : public TextUndoCommand {
 
 class EE_API TextUndoCommandSelection : public TextUndoCommand {
   public:
-	TextUndoCommandSelection( const TextRange& selection, const Time& timestamp );
+	TextUndoCommandSelection( const Uint64& id, const TextRange& selection, const Time& timestamp );
 
 	const TextRange& getSelection() const;
 
@@ -71,6 +74,8 @@ class EE_API UndoStack {
   public:
 	UndoStack( TextDocument* owner, const Uint32& maxStackSize = 1000 );
 
+	void clear();
+
 	void clearRedoStack();
 
 	void undo();
@@ -83,11 +88,14 @@ class EE_API UndoStack {
 
 	void setMergeTimeout( const Time& mergeTimeout );
 
+	Uint64 getCurrentChangeId() const;
+
   protected:
 	friend class TextDocument;
 
 	TextDocument* mDoc;
 	Uint32 mMaxStackSize;
+	Uint64 mChangeIdCounter;
 	UndoStackContainer mUndoStack;
 	UndoStackContainer mRedoStack;
 	Time mMergeTimeout;

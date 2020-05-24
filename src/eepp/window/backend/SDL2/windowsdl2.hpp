@@ -27,7 +27,7 @@ class EE_API WindowSDL : public Window {
 
 	void toggleFullscreen();
 
-	void setCaption( const std::string& setCaption );
+	void setTitle( const std::string& title );
 
 	bool setIcon( const std::string& Path );
 

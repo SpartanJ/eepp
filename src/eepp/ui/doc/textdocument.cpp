@@ -1,4 +1,6 @@
+#include <cstdio>
 #include <eepp/core/debug.hpp>
+#include <eepp/system/filesystem.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
 #include <sstream>
@@ -17,16 +19,19 @@ bool TextDocument::isNonWord( String::StringBaseType ch ) {
 	return false;
 }
 
-TextDocument::TextDocument() : mUndoStack( this ) {
+TextDocument::TextDocument() :
+	mUndoStack( this ), mDefaultFileName( "untitled" ), mCleanChangeId( 0 ) {
 	reset();
 }
 
 void TextDocument::reset() {
-	mFilename = "unsaved";
+	mFilePath = mDefaultFileName;
 	mSelection.set( {0, 0}, {0, 0} );
 	mLines.clear();
 	mLines.emplace_back( String( "\n" ) );
 	mSyntaxDefinition = SyntaxDefinitionManager::instance()->getPlainStyle();
+	mUndoStack.clear();
+	cleanChangeId();
 	notifyTextChanged();
 	notifyCursorChanged();
 	notifySelectionChanged();
@@ -35,16 +40,18 @@ void TextDocument::reset() {
 void TextDocument::loadFromPath( const std::string& path ) {
 	reset();
 	mLines.clear();
-	mFilename = path;
+	mFilePath = path;
 	mSyntaxDefinition = SyntaxDefinitionManager::instance()->getStyleByExtension( path );
+	// TODO: Reimplement load without using getline, since the standard ignores the last \n and
+	// is inconsistent.
 	std::string line;
 	std::ifstream file( path );
 	while ( std::getline( file, line ) ) {
-		std::istringstream iss( line );
 		if ( mLines.empty() && line.size() >= 3 ) {
 			// Check UTF-8 BOM header
 			if ( (char)0xef == line[0] && (char)0xbb == line[1] && (char)0xbf == line[2] ) {
 				line = line.substr( 3 );
+				mIsBOM = true;
 			}
 		}
 		// Check CLRF
@@ -54,17 +61,59 @@ void TextDocument::loadFromPath( const std::string& path ) {
 		}
 		mLines.emplace_back( String( line + "\n" ) );
 	}
+
 	if ( mLines.empty() ) {
 		mLines.emplace_back( String( "\n" ) );
-	} else if ( mLines[mLines.size() - 1].at( mLines[mLines.size() - 1].size() - 1 ) == '\n' ) {
-		mLines.emplace_back( String( "\n" ) );
+	} else if ( mLines[mLines.size() - 1][mLines[mLines.size() - 1].size() - 1] != '\n' ) {
+		mLines[mLines.size() - 1] += '\n';
 	}
 }
 
-void TextDocument::save( const std::string& ) {}
+bool TextDocument::save( const std::string& path, const bool& utf8bom ) {
+	if ( path.empty() || mDefaultFileName == path )
+		return false;
+	IOStreamFile file( path, "wb" );
+	if ( save( file, utf8bom ) ) {
+		mFilePath = path;
+		return true;
+	}
+	return false;
+}
+
+bool TextDocument::save( IOStreamFile& stream, const bool& utf8bom ) {
+	if ( !stream.isOpen() || mLines.empty() )
+		return false;
+	char nl = '\n';
+	if ( utf8bom ) {
+		unsigned char bom[] = {0xEF, 0xBB, 0xBF};
+		stream.write( (char*)bom, sizeof( bom ) );
+	}
+	size_t lastLine = mLines.size() - 1;
+	for ( size_t i = 0; i <= lastLine; i++ ) {
+		String& line = mLines[i];
+		std::string utf8( line.toUtf8() );
+		if ( i == lastLine && line.size() > 1 ) {
+			// Last \n is added by the document but it's not part of the document.
+			utf8.pop_back();
+		}
+		if ( mIsCLRF ) {
+			utf8[utf8.size() - 1] = '\r';
+			stream.write( utf8.c_str(), utf8.size() );
+			stream.write( &nl, 1 );
+		} else {
+			stream.write( utf8.c_str(), utf8.size() );
+		}
+	}
+	cleanChangeId();
+	return true;
+}
+
+bool TextDocument::save() {
+	return save( mFilePath, mIsBOM );
+}
 
 const std::string TextDocument::getFilename() const {
-	return mFilename;
+	return mFilePath;
 }
 
 void TextDocument::setSelection( TextPosition position ) {
@@ -190,7 +239,16 @@ TextPosition TextDocument::insert( TextPosition position, const String::StringBa
 		String newLine =
 			line( position.line() )
 				.substr( position.column(), line( position.line() ).length() - position.column() );
-		line( position.line() ) = line( position.line() ).substr( 0, position.column() );
+		String& oldLine = line( position.line() );
+		oldLine = line( position.line() ).substr( 0, position.column() );
+		// TODO: Investigate why this is needed when undo is used.
+		// This fixes the case when a line ends up without an \n at the end of it.
+		if ( oldLine.empty() || oldLine[oldLine.size() - 1] != '\n' ) {
+			oldLine += '\n';
+		}
+		if ( newLine.empty() || newLine[newLine.size() - 1] != '\n' ) {
+			newLine += '\n';
+		}
 		mLines.insert( mLines.begin() + position.line() + 1, std::move( newLine ) );
 		return {position.line() + 1, 0};
 	}
@@ -225,16 +283,24 @@ void TextDocument::remove( TextRange range, UndoStackContainer& undoStack, const
 
 	if ( range.start().line() == range.end().line() ) {
 		// Delete within same line.
-		auto& line = this->line( range.start().line() );
+		String& line = this->line( range.start().line() );
 		bool wholeLineIsSelected =
 			range.start().column() == 0 && range.end().column() == (Int64)line.length();
 
 		if ( wholeLineIsSelected ) {
-			line.clear();
+			line = "\n";
 		} else {
 			auto beforeSelection = line.substr( 0, range.start().column() );
 			auto afterSelection =
-				line.substr( range.end().column(), line.length() - range.end().column() );
+				!line.empty()
+					? line.substr( range.end().column(), line.length() - range.end().column() )
+					: "";
+
+			if ( !beforeSelection.empty() && beforeSelection[beforeSelection.size() - 1] == '\n' )
+				beforeSelection = beforeSelection.substr( 0, beforeSelection.size() - 1 );
+			if ( afterSelection.empty() || afterSelection[afterSelection.size() - 1] != '\n' )
+				afterSelection += '\n';
+
 			line.assign( beforeSelection + afterSelection );
 		}
 	} else {
@@ -243,11 +309,16 @@ void TextDocument::remove( TextRange range, UndoStackContainer& undoStack, const
 		auto& firstLine = line( range.start().line() );
 		auto& secondLine = line( range.end().line() );
 		auto beforeSelection = firstLine.substr( 0, range.start().column() );
-		auto afterSelection =
-			secondLine.substr( range.end().column(), secondLine.length() - range.end().column() );
-		if ( beforeSelection.empty() && afterSelection.empty() ) {
-			beforeSelection += '\n';
-		}
+		auto afterSelection = !secondLine.empty()
+								  ? secondLine.substr( range.end().column(),
+													   secondLine.length() - range.end().column() )
+								  : "";
+
+		if ( !beforeSelection.empty() && beforeSelection[beforeSelection.size() - 1] == '\n' )
+			beforeSelection = beforeSelection.substr( 0, beforeSelection.size() - 1 );
+		if ( afterSelection.empty() || afterSelection[afterSelection.size() - 1] != '\n' )
+			afterSelection += '\n';
+
 		firstLine.assign( beforeSelection + afterSelection );
 		mLines.erase( mLines.begin() + range.end().line() );
 	}
@@ -704,6 +775,30 @@ void TextDocument::redo() {
 
 const SyntaxDefinition& TextDocument::getSyntaxDefinition() const {
 	return mSyntaxDefinition;
+}
+
+Uint64 TextDocument::getCurrentChangeId() const {
+	return mUndoStack.getCurrentChangeId();
+}
+
+const std::string& TextDocument::getDefaultFileName() const {
+	return mDefaultFileName;
+}
+
+void TextDocument::setDefaultFileName( const std::string& defaultFileName ) {
+	mDefaultFileName = defaultFileName;
+}
+
+const std::string& TextDocument::getFilePath() const {
+	return mFilePath;
+}
+
+bool TextDocument::isDirty() const {
+	return mCleanChangeId != getCurrentChangeId();
+}
+
+void TextDocument::cleanChangeId() {
+	mCleanChangeId = getCurrentChangeId();
 }
 
 void TextDocument::notifyTextChanged() {

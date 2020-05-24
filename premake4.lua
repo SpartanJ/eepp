@@ -1073,6 +1073,13 @@ solution "eepp"
 		files { "src/tools/uieditor/*.cpp" }
 		build_link_configuration( "eepp-UIEditor", true )
 
+	project "eepp-codeeditor"
+		set_kind()
+		language "C++"
+		files { "src/tools/codeeditor/*.cpp" }
+		includedirs { "src/thirdparty" }
+		build_link_configuration( "eepp-codeeditor", true )
+
 	project "eepp-texturepacker"
 		kind "ConsoleApp"
 		language "C++"

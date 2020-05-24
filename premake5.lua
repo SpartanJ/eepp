@@ -823,6 +823,13 @@ workspace "eepp"
 		filter { "system:not windows", "system:not haiku" }
 			links { "pthread" }
 
+	project "eepp-codeeditor"
+		set_kind()
+		language "C++"
+		files { "src/tools/codeeditor/*.cpp" }
+		incdirs { "src/thirdparty" }
+		build_link_configuration( "eepp-codeeditor", true )
+
 	project "eepp-texturepacker"
 		kind "ConsoleApp"
 		language "C++"

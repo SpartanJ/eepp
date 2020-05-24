@@ -5,10 +5,15 @@ using namespace EE::System;
 
 namespace EE { namespace UI { namespace Doc {
 
-TextUndoCommand::TextUndoCommand( const TextUndoCommandType& type, const Time& timestamp ) :
-	mType( type ), mTimestamp( timestamp ) {}
+TextUndoCommand::TextUndoCommand( const Uint64& id, const TextUndoCommandType& type,
+								  const Time& timestamp ) :
+	mId( id ), mType( type ), mTimestamp( timestamp ) {}
 
 TextUndoCommand::~TextUndoCommand() {}
+
+const Uint64& TextUndoCommand::getId() const {
+	return mId;
+}
 
 const TextUndoCommandType& TextUndoCommand::getType() const {
 	return mType;
@@ -18,9 +23,10 @@ const Time& TextUndoCommand::getTimestamp() const {
 	return mTimestamp;
 }
 
-TextUndoCommandInsert::TextUndoCommandInsert( const String& text, const TextPosition& position,
+TextUndoCommandInsert::TextUndoCommandInsert( const Uint64& id, const String& text,
+											  const TextPosition& position,
 											  const Time& timestamp ) :
-	TextUndoCommand( TextUndoCommandType::Insert, timestamp ),
+	TextUndoCommand( id, TextUndoCommandType::Insert, timestamp ),
 	mText( text ),
 	mPosition( position ) {}
 
@@ -32,23 +38,32 @@ const TextPosition& TextUndoCommandInsert::getPosition() const {
 	return mPosition;
 }
 
-TextUndoCommandRemove::TextUndoCommandRemove( const TextRange& range, const Time& timestamp ) :
-	TextUndoCommand( TextUndoCommandType::Remove, timestamp ), mRange( range ) {}
+TextUndoCommandRemove::TextUndoCommandRemove( const Uint64& id, const TextRange& range,
+											  const Time& timestamp ) :
+	TextUndoCommand( id, TextUndoCommandType::Remove, timestamp ), mRange( range ) {}
 
 const TextRange& TextUndoCommandRemove::getRange() const {
 	return mRange;
 }
 
-TextUndoCommandSelection::TextUndoCommandSelection( const TextRange& selection,
+TextUndoCommandSelection::TextUndoCommandSelection( const Uint64& id, const TextRange& selection,
 													const Time& timestamp ) :
-	TextUndoCommand( TextUndoCommandType::Selection, timestamp ), mSelection( selection ) {}
+	TextUndoCommand( id, TextUndoCommandType::Selection, timestamp ), mSelection( selection ) {}
 
 const TextRange& TextUndoCommandSelection::getSelection() const {
 	return mSelection;
 }
 
 UndoStack::UndoStack( TextDocument* owner, const Uint32& maxStackSize ) :
-	mDoc( owner ), mMaxStackSize( maxStackSize ), mMergeTimeout( Milliseconds( 300.f ) ) {}
+	mDoc( owner ),
+	mMaxStackSize( maxStackSize ),
+	mChangeIdCounter( 0 ),
+	mMergeTimeout( Milliseconds( 300.f ) ) {}
+
+void UndoStack::clear() {
+	mUndoStack.clear();
+	clearRedoStack();
+}
 
 void UndoStack::clearRedoStack() {
 	mRedoStack.clear();
@@ -63,17 +78,20 @@ void UndoStack::pushUndo( UndoStackContainer& undoStack, std::unique_ptr<TextUnd
 
 void UndoStack::pushInsert( UndoStackContainer& undoStack, const String& string,
 							const TextPosition& position, const Time& time ) {
-	pushUndo( undoStack, std::make_unique<TextUndoCommandInsert>( string, position, time ) );
+	pushUndo( undoStack, std::make_unique<TextUndoCommandInsert>( ++mChangeIdCounter, string,
+																  position, time ) );
 }
 
 void UndoStack::pushRemove( UndoStackContainer& undoStack, const TextRange& range,
 							const Time& time ) {
-	pushUndo( undoStack, std::make_unique<TextUndoCommandRemove>( range, time ) );
+	pushUndo( undoStack,
+			  std::make_unique<TextUndoCommandRemove>( ++mChangeIdCounter, range, time ) );
 }
 
 void UndoStack::pushSelection( UndoStackContainer& undoStack, const TextRange& selection,
 							   const Time& time ) {
-	pushUndo( undoStack, std::make_unique<TextUndoCommandSelection>( selection, time ) );
+	pushUndo( undoStack,
+			  std::make_unique<TextUndoCommandSelection>( ++mChangeIdCounter, selection, time ) );
 }
 
 void UndoStack::popUndo( UndoStackContainer& undoStack, UndoStackContainer& redoStack ) {
@@ -128,6 +146,12 @@ const Time& UndoStack::getMergeTimeout() const {
 
 void UndoStack::setMergeTimeout( const Time& mergeTimeout ) {
 	mMergeTimeout = mergeTimeout;
+}
+
+Uint64 UndoStack::getCurrentChangeId() const {
+	if ( mUndoStack.empty() )
+		return 0;
+	return mUndoStack.back()->getId();
 }
 
 UndoStackContainer& UndoStack::getUndoStackContainer() {

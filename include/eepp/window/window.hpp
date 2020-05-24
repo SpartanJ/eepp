@@ -42,7 +42,7 @@ enum class WindowBackend : Uint32 { SDL2, Default };
 /** @brief WindowSettings A small class that contains the window settings */
 class WindowSettings {
   public:
-	inline WindowSettings( Uint32 width, Uint32 height, const std::string& caption = std::string(),
+	inline WindowSettings( Uint32 width, Uint32 height, const std::string& title = std::string(),
 						   Uint32 style = WindowStyle::Default,
 						   WindowBackend backend = WindowBackend::Default, Uint32 bpp = 32,
 						   const std::string& icon = std::string(), const Float& pixelDensity = 1,
@@ -52,7 +52,7 @@ class WindowSettings {
 		Height( height ),
 		BitsPerPixel( bpp ),
 		Icon( icon ),
-		Caption( caption ),
+		Title( title ),
 		Backend( backend ),
 		PixelDensity( pixelDensity ),
 		UseScreenKeyboard( useScreenKeyboard ) {}
@@ -71,7 +71,7 @@ class WindowSettings {
 	Uint32 Height;
 	Uint32 BitsPerPixel;
 	std::string Icon;
-	std::string Caption;
+	std::string Title;
 	WindowBackend Backend;
 	Float PixelDensity;
 	bool UseScreenKeyboard;
@@ -164,14 +164,14 @@ class EE_API Window {
 	/** Toogle the screen to Fullscreen, if it's in fullscreen toogle to windowed mode. */
 	virtual void toggleFullscreen() = 0;
 
-	/** Set the window caption */
-	virtual void setCaption( const std::string& setCaption ) = 0;
+	/** Set the window title */
+	virtual void setTitle( const std::string& title ) = 0;
 
-	/** @return The caption of the titlebar */
-	virtual std::string getCaption();
+	/** @return The window title*/
+	virtual std::string getTitle();
 
 	/** Set the Window icon */
-	virtual bool setIcon( const std::string& Path ) = 0;
+	virtual bool setIcon( const std::string& path ) = 0;
 
 	/** This will attempt to iconify/minimize the window. */
 	virtual void minimize();

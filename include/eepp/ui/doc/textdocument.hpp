@@ -3,6 +3,7 @@
 
 #include <eepp/core/string.hpp>
 #include <eepp/system/clock.hpp>
+#include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/time.hpp>
 #include <eepp/ui/doc/syntaxdefinition.hpp>
 #include <eepp/ui/doc/textposition.hpp>
@@ -35,7 +36,11 @@ class EE_API TextDocument {
 
 	void loadFromPath( const std::string& path );
 
-	void save( const std::string& path );
+	bool save();
+
+	bool save( const std::string& path, const bool& utf8bom = false );
+
+	bool save( IOStreamFile& stream, const bool& utf8bom = false );
 
 	const std::string getFilename() const;
 
@@ -194,18 +199,32 @@ class EE_API TextDocument {
 
 	const SyntaxDefinition& getSyntaxDefinition() const;
 
+	Uint64 getCurrentChangeId() const;
+
+	const std::string& getDefaultFileName() const;
+
+	void setDefaultFileName( const std::string& defaultFileName );
+
+	const std::string& getFilePath() const;
+
+	bool isDirty() const;
   protected:
 	friend class UndoStack;
 	UndoStack mUndoStack;
-	std::string mFilename;
+	std::string mFilePath;
 	std::vector<String> mLines;
 	TextRange mSelection;
 	std::unordered_set<Client*> mClients;
-	bool mIsCLRF;
+	bool mIsCLRF{false};
+	bool mIsBOM{false};
 	Uint32 mTabWidth{4};
 	IndentType mIndentType{IndentTabs};
 	Clock mTimer;
 	SyntaxDefinition mSyntaxDefinition;
+	std::string mDefaultFileName;
+	Uint64 mCleanChangeId;
+
+	void cleanChangeId();
 
 	void notifyTextChanged();
 

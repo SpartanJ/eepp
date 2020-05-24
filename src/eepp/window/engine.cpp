@@ -284,10 +284,10 @@ WindowSettings Engine::createWindowSettings( IniFile* ini, std::string iniKeyNam
 	if ( Resizeable )
 		Style |= WindowStyle::Resize;
 
-	std::string Icon = ini->getValue( iniKeyName, "WinIcon", "" );
-	std::string Caption = ini->getValue( iniKeyName, "WinCaption", "" );
+	std::string icon = ini->getValue( iniKeyName, "WinIcon", "" );
+	std::string title = ini->getValue( iniKeyName, "WinTitle", "" );
 
-	WindowSettings WinSettings( Width, Height, Caption, Style, winBackend, BitColor, Icon,
+	WindowSettings WinSettings( Width, Height, title, Style, winBackend, BitColor, icon,
 								pixelDensity, useScreenKeyboard );
 
 	return WinSettings;

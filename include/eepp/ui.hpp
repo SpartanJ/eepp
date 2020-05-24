@@ -59,4 +59,7 @@
 #include <eepp/ui/css/stylesheetselectorparser.hpp>
 #include <eepp/ui/css/stylesheetstyle.hpp>
 
+#include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
+#include <eepp/ui/doc/textdocument.hpp>
+
 #endif

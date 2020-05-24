@@ -155,7 +155,7 @@ void UICodeEditor::draw() {
 		primitives.drawRectangle(
 			Rectf( screenStart, Sizef( lineNumberWidth, mSize.getHeight() ) ) );
 		for ( int i = lineRange.first; i <= lineRange.second; i++ ) {
-			Text line( String( String::toStr( i ) ).padLeft( lineNumberDigits, ' ' ), mFont,
+			Text line( String( String::toStr( i + 1 ) ).padLeft( lineNumberDigits, ' ' ), mFont,
 					   charSize );
 			line.setStyleConfig( mFontStyleConfig );
 			line.setColor( mLineNumberFontColor );
@@ -187,6 +187,18 @@ void UICodeEditor::reset() {
 void UICodeEditor::loadFromFile( const std::string& path ) {
 	mDoc.loadFromPath( path );
 	invalidateEditor();
+}
+
+bool UICodeEditor::save() {
+	return mDoc.save();
+}
+
+bool UICodeEditor::save( const std::string& path, const bool& utf8bom ) {
+	return mDoc.save( path, utf8bom );
+}
+
+bool UICodeEditor::save( IOStreamFile& stream, const bool& utf8bom ) {
+	return mDoc.save( stream, utf8bom );
 }
 
 Font* UICodeEditor::getFont() const {
@@ -339,6 +351,18 @@ const SyntaxColorScheme& UICodeEditor::getColorScheme() const {
 void UICodeEditor::setColorScheme( const SyntaxColorScheme& colorScheme ) {
 	mColorScheme = colorScheme;
 	invalidateDraw();
+}
+
+const TextDocument& UICodeEditor::getDocument() const {
+	return mDoc;
+}
+
+TextDocument& UICodeEditor::getDocument() {
+	return mDoc;
+}
+
+bool UICodeEditor::isDirty() const {
+	return mDoc.isDirty();
 }
 
 void UICodeEditor::invalidateEditor() {

@@ -30,20 +30,13 @@ void mainLoop() {
 }
 
 EE_MAIN_FUNC int main( int, char** ) {
-	Display* currentDisplay = Engine::instance()->getDisplayManager()->getDisplayIndex( 0 );
-	Float pixelDensity = currentDisplay->getPixelDensity();
-
-	win = Engine::instance()->createWindow( WindowSettings( 1024, 768, "eepp - UI Hello World" ),
+	win = Engine::instance()->createWindow( WindowSettings( 640, 480, "eepp - UI Hello World" ),
 											ContextSettings( true ) );
 
 	if ( win->isOpen() ) {
-		PixelDensity::setPixelDensity( eemax( win->getScale(), pixelDensity ) );
-
 		// Load a font to use as the default font in our UI.
 		FontTrueType* font =
 			FontTrueType::New( "NotoSans-Regular", "assets/fonts/NotoSans-Regular.ttf" );
-
-		FontTrueType::New( "monospace", "assets/fonts/DejaVuSansMono.ttf" );
 
 		// Create a new scene node to add our widgets.
 		UISceneNode* uiSceneNode = UISceneNode::New();
@@ -68,11 +61,6 @@ EE_MAIN_FUNC int main( int, char** ) {
 						layout_width="match_parent"
 						layout_height="wrap_content"
 						text="Hello, I am a PushButton" />
-				<CodeEditor id="code_edit"
-					layout_width="match_parent"
-					layout_height="0dp"
-					layout_weight="1"
-					 />
 			</LinearLayout>
 		)xml";
 		uiSceneNode->loadLayoutFromString( layout );
@@ -95,16 +83,6 @@ EE_MAIN_FUNC int main( int, char** ) {
 			}
 		)css" );
 
-		UICodeEditor* codeEditor = uiSceneNode->find<UICodeEditor>( "code_edit" );
-		codeEditor->setFontSize( 11 )
-			//->loadFromFile( "../docs/articles/cssspecification.md" );
-			//->loadFromFile( "assets/ui/breeze.css" );
-			->loadFromFile( "assets/layouts/test_widgets.xml" );
-			//->loadFromFile( "../src/eepp/ui/doc/textdocument.cpp" );
-			//->loadFromFile( "../premake5.lua" );
-			//->loadFromFile( "eepp-UIEditor-debug.js" );
-			//->loadFromFile( "../docs/doxyrest/sphinx/doxyrest.py" );
-			//->loadFromFile( "../projects/emscripten/make.sh" );
 		win->runMainLoop( &mainLoop );
 	}
 
