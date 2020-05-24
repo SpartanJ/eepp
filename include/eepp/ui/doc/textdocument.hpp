@@ -24,6 +24,8 @@ class EE_API TextDocument {
 		virtual void onDocumentTextChanged() = 0;
 		virtual void onDocumentCursorChange( const TextPosition& ) = 0;
 		virtual void onDocumentSelectionChange( const TextRange& ) = 0;
+		virtual void onDocumentLineCountChange( const size_t& lastCount,
+												const size_t& newCount ) = 0;
 	};
 
 	enum IndentType { IndentSpaces, IndentTabs };
@@ -208,6 +210,7 @@ class EE_API TextDocument {
 	const std::string& getFilePath() const;
 
 	bool isDirty() const;
+
   protected:
 	friend class UndoStack;
 	UndoStack mUndoStack;
@@ -231,6 +234,8 @@ class EE_API TextDocument {
 	void notifyCursorChanged();
 
 	void notifySelectionChanged();
+
+	void notifyLineCountChanged( const size_t& lastCount, const size_t& newCount );
 
 	void insertAtStartOfSelectedLines( String text, bool skipEmpty );
 

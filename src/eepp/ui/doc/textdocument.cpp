@@ -208,6 +208,7 @@ TextPosition TextDocument::insert( const TextPosition& position, const String& t
 TextPosition TextDocument::insert( const TextPosition& position, const String& text,
 								   UndoStackContainer& undoStack, const Time& time ) {
 	TextPosition cursor = position;
+	size_t lineCount = mLines.size();
 
 	for ( size_t i = 0; i < text.length(); ++i ) {
 		cursor = insert( cursor, text[i] );
@@ -217,6 +218,10 @@ TextPosition TextDocument::insert( const TextPosition& position, const String& t
 	mUndoStack.pushRemove( undoStack, {position, cursor}, time );
 
 	notifyTextChanged();
+
+	if ( lineCount != mLines.size() ) {
+		notifyLineCountChanged( lineCount, mLines.size() );
+	}
 
 	return cursor;
 }
@@ -261,11 +266,15 @@ void TextDocument::remove( TextPosition position ) {
 }
 
 void TextDocument::remove( TextRange range ) {
+	size_t lineCount = mLines.size();
 	mUndoStack.clearRedoStack();
 	range = range.normalized();
 	range.setStart( sanitizePosition( range.start() ) );
 	range.setEnd( sanitizePosition( range.end() ) );
 	remove( range, mUndoStack.getUndoStackContainer(), mTimer.getElapsedTime() );
+	if ( lineCount != mLines.size() ) {
+		notifyLineCountChanged( lineCount, mLines.size() );
+	}
 }
 
 void TextDocument::remove( TextRange range, UndoStackContainer& undoStack, const Time& time ) {
@@ -816,6 +825,12 @@ void TextDocument::notifyCursorChanged() {
 void TextDocument::notifySelectionChanged() {
 	for ( auto& client : mClients ) {
 		client->onDocumentSelectionChange( getSelection() );
+	}
+}
+
+void TextDocument::notifyLineCountChanged( const size_t& lastCount, const size_t& newCount ) {
+	for ( auto& client : mClients ) {
+		client->onDocumentLineCountChange( lastCount, newCount );
 	}
 }
 

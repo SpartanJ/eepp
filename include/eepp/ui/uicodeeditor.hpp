@@ -16,6 +16,8 @@ class Font;
 
 namespace EE { namespace UI {
 
+class UIScrollBar;
+
 class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
   public:
 	static UICodeEditor* New();
@@ -127,6 +129,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Color mCaretColor;
 	SyntaxColorScheme mColorScheme;
 	SyntaxHighlighter mHighlighter;
+	UIScrollBar* mVScrollBar;
 
 	void invalidateEditor();
 
@@ -160,11 +163,15 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void onDocumentSelectionChange( const TextRange& );
 
+	void onDocumentLineCountChange( const size_t& lastCount, const size_t& newCount );
+
 	std::pair<int, int> getVisibleLineRange();
 
 	int getVisibleLinesCount();
 
 	void scrollToMakeVisible( const TextPosition& position );
+
+	void setScrollY( const Float& val, bool emmitEvent = true );
 
 	Float getXOffsetCol( const TextPosition& position ) const;
 
@@ -187,6 +194,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Vector2f getViewPortLineCount() const;
 
 	Sizef getMaxScroll() const;
+
+	void updateScrollBar();
 };
 
 }} // namespace EE::UI

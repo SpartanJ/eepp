@@ -169,6 +169,10 @@ void UIScrollBar::onAutoSize() {
 	}
 }
 
+Uint32 UIScrollBar::onMouseOver( const Vector2i&, const Uint32& ) {
+	return 1;
+}
+
 void UIScrollBar::onSizeChange() {
 	onAutoSize();
 
@@ -263,8 +267,8 @@ Uint32 UIScrollBar::onMessage( const NodeMessage* Msg ) {
 	return 0;
 }
 
-void UIScrollBar::setValue( Float Val ) {
-	mSlider->setValue( Val );
+void UIScrollBar::setValue( Float val, const bool& emmitEvent ) {
+	mSlider->setValue( val, emmitEvent );
 }
 
 const Float& UIScrollBar::getValue() const {

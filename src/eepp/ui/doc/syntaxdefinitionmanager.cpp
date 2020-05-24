@@ -224,7 +224,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 		  {
 			  {{"//.-\n"}, "comment"},
 			  {{"/%*", "%*/"}, "comment"},
-			  {{"#", "[^\\]\n"}, "comment"},
+			  {{"#", "[^\\]\n"}, "keyword2"},
 			  {{"\"", "\"", "\\"}, "string"},
 			  {{"'", "'", "\\"}, "string"},
 			  {{"-?0x%x+"}, "number"},

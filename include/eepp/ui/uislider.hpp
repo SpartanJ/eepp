@@ -30,7 +30,7 @@ class EE_API UISlider : public UIWidget {
 
 	virtual void setTheme( UITheme* Theme );
 
-	virtual void setValue( Float Val );
+	virtual void setValue( Float val, bool emmitEvent = true );
 
 	const Float& getValue() const;
 

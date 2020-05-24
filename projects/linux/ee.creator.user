@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 4.12.0, 2020-05-24T02:52:40. -->
+<!-- Written by QtCreator 4.12.0, 2020-05-24T06:14:21. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -1847,7 +1847,7 @@
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">eepp-codeeditor-debug</value>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">ProjectExplorer.CustomExecutableRunConfiguration</value>
     <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey"></value>
-    <value type="QString" key="RunConfiguration.Arguments">/home/downloads/codeeditor.cpp</value>
+    <value type="QString" key="RunConfiguration.Arguments">../src/tools/codeeditor/codeeditor.cpp</value>
     <value type="bool" key="RunConfiguration.Arguments.multi">false</value>
     <value type="QString" key="RunConfiguration.OverrideDebuggerStartup"></value>
     <value type="bool" key="RunConfiguration.UseCppDebugger">true</value>

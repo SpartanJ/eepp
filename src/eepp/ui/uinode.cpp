@@ -143,12 +143,14 @@ void UINode::setInternalSize( const Sizef& size ) {
 	if ( s.y < mMinSize.y )
 		s.y = mMinSize.y;
 
-	mDpSize = size;
-	mSize = PixelDensity::dpToPx( s );
-	mNodeFlags |= NODE_FLAG_POLYGON_DIRTY;
-	updateCenter();
-	sendCommonEvent( Event::OnSizeChange );
-	invalidateDraw();
+	if ( s != mDpSize ) {
+		mDpSize = size;
+		mSize = PixelDensity::dpToPx( s );
+		mNodeFlags |= NODE_FLAG_POLYGON_DIRTY;
+		updateCenter();
+		sendCommonEvent( Event::OnSizeChange );
+		invalidateDraw();
+	}
 }
 
 void UINode::setInternalPixelsSize( const Sizef& size ) {
@@ -161,12 +163,14 @@ void UINode::setInternalPixelsSize( const Sizef& size ) {
 	if ( s.y < pMinSize.y )
 		s.y = pMinSize.y;
 
-	mDpSize = PixelDensity::pxToDp( s ).ceil();
-	mSize = s;
-	mNodeFlags |= NODE_FLAG_POLYGON_DIRTY;
-	updateCenter();
-	sendCommonEvent( Event::OnSizeChange );
-	invalidateDraw();
+	if ( s != mSize ) {
+		mDpSize = PixelDensity::pxToDp( s ).ceil();
+		mSize = s;
+		mNodeFlags |= NODE_FLAG_POLYGON_DIRTY;
+		updateCenter();
+		sendCommonEvent( Event::OnSizeChange );
+		invalidateDraw();
+	}
 }
 
 Node* UINode::setSize( const Sizef& Size ) {

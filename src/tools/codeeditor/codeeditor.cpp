@@ -7,6 +7,24 @@ UICodeEditor* codeEditor = NULL;
 std::string curFile = "untitled";
 const std::string& windowTitle = "eepp - Code Editor";
 bool docDirtyState = false;
+UIMessageBox* MsgBox = NULL;
+
+bool onCloseRequestCallback( EE::Window::Window* ) {
+	if ( NULL != codeEditor && codeEditor->isDirty() ) {
+		MsgBox = UIMessageBox::New(
+			UIMessageBox::OK_CANCEL,
+			"Do you really want to close the code editor?\nAll changes will be lost." );
+		MsgBox->addEventListener( Event::MsgBoxConfirmClick,
+								  []( const Event* ) { win->close(); } );
+		MsgBox->addEventListener( Event::OnClose, []( const Event* ) { MsgBox = NULL; } );
+		MsgBox->setTitle( "Close Code Editor?" );
+		MsgBox->center();
+		MsgBox->show();
+		return false;
+	} else {
+		return true;
+	}
+}
 
 void setAppTitle( const std::string& title ) {
 	win->setTitle( windowTitle + String( title.empty() ? "" : " - " + title ) );
@@ -42,7 +60,8 @@ void mainLoop() {
 		uiSceneNode->setDrawDebugData( !uiSceneNode->getDrawDebugData() );
 	}
 
-	if ( win->getInput()->isKeyUp( KEY_ESCAPE ) ) {
+	if ( win->getInput()->isKeyUp( KEY_ESCAPE ) && NULL == MsgBox &&
+		 onCloseRequestCallback( win ) ) {
 		win->close();
 	}
 
@@ -90,6 +109,8 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		ContextSettings( true ) );
 
 	if ( win->isOpen() ) {
+		win->setCloseRequestCallback( cb::Make1( onCloseRequestCallback ) );
+
 		win->getInput()->pushCallback( []( InputEvent* event ) {
 			if ( NULL == codeEditor )
 				return;
@@ -134,11 +155,6 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 
 		if ( file ) {
 			loadFileFromPath( file.Get() );
-		} else {
-			/*UIMessageBox::New( UIMessageBox::OK,
-							   "To load a file add the file path as a command argument or\n"
-							   "drop any text file into the window." )
-				->show();*/
 		}
 
 		win->runMainLoop( &mainLoop );
