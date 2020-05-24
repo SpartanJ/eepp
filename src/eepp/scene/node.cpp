@@ -51,12 +51,12 @@ Node::~Node() {
 	EventDispatcher* eventDispatcher = NULL != mSceneNode ? mSceneNode->getEventDispatcher() : NULL;
 
 	if ( NULL != eventDispatcher ) {
-		if ( eventDispatcher->getFocusControl() == this && mSceneNode != this ) {
-			eventDispatcher->setFocusControl( mSceneNode );
+		if ( eventDispatcher->getFocusNode() == this && mSceneNode != this ) {
+			eventDispatcher->setFocusNode( mSceneNode );
 		}
 
-		if ( eventDispatcher->getOverControl() == this && mSceneNode != this ) {
-			eventDispatcher->setOverControl( mSceneNode );
+		if ( eventDispatcher->getMouseOverNode() == this && mSceneNode != this ) {
+			eventDispatcher->setMouseOverNode( mSceneNode );
 		}
 	}
 }
@@ -307,6 +307,11 @@ void Node::sendCommonEvent( const Uint32& event ) {
 	sendEvent( &CommonEvent );
 }
 
+Uint32 Node::onTextInput( const TextInputEvent& event ) {
+	sendEvent( &event );
+	return 0;
+}
+
 Uint32 Node::onKeyDown( const KeyEvent& Event ) {
 	sendEvent( &Event );
 	return 0;
@@ -358,7 +363,7 @@ Uint32 Node::onMouseOver( const Vector2i& Pos, const Uint32& Flags ) {
 
 	EventDispatcher* eventDispatcher = NULL != mSceneNode ? mSceneNode->getEventDispatcher() : NULL;
 
-	if ( NULL != eventDispatcher && eventDispatcher->getOverControl() == this )
+	if ( NULL != eventDispatcher && eventDispatcher->getMouseOverNode() == this )
 		sendMouseEvent( Event::MouseOver, Pos, Flags );
 
 	return 1;
@@ -372,7 +377,7 @@ Uint32 Node::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
 
 	EventDispatcher* eventDispatcher = NULL != mSceneNode ? mSceneNode->getEventDispatcher() : NULL;
 
-	if ( NULL != eventDispatcher && eventDispatcher->getOverControl() == this )
+	if ( NULL != eventDispatcher && eventDispatcher->getMouseOverNode() == this )
 		sendMouseEvent( Event::MouseLeave, Pos, Flags );
 
 	return 1;
@@ -448,9 +453,9 @@ void Node::onVisibilityChange() {
 void Node::onEnabledChange() {
 	EventDispatcher* eventDispatcher = NULL != mSceneNode ? mSceneNode->getEventDispatcher() : NULL;
 
-	if ( !isEnabled() && NULL != eventDispatcher && NULL != eventDispatcher->getFocusControl() ) {
-		if ( isChild( eventDispatcher->getFocusControl() ) ) {
-			eventDispatcher->setFocusControl( NULL );
+	if ( !isEnabled() && NULL != eventDispatcher && NULL != eventDispatcher->getFocusNode() ) {
+		if ( isChild( eventDispatcher->getFocusNode() ) ) {
+			eventDispatcher->setFocusNode( NULL );
 		}
 	}
 

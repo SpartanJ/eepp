@@ -4,6 +4,7 @@
 #include <eepp/ui/tools/textureatlaseditor.hpp>
 #include <eepp/ui/tools/uicolorpicker.hpp>
 #include <eepp/ui/uicheckbox.hpp>
+#include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uicombobox.hpp>
 #include <eepp/ui/uicommondialog.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
@@ -57,5 +58,8 @@
 #include <eepp/ui/css/stylesheetselector.hpp>
 #include <eepp/ui/css/stylesheetselectorparser.hpp>
 #include <eepp/ui/css/stylesheetstyle.hpp>
+
+#include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
+#include <eepp/ui/doc/textdocument.hpp>
 
 #endif

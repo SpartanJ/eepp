@@ -13,11 +13,11 @@ UITableCell::UITableCell() : UIWidget( "tablecell" ) {
 
 UITableCell::~UITableCell() {
 	if ( NULL != getEventDispatcher() ) {
-		if ( getEventDispatcher()->getFocusControl() == this )
+		if ( getEventDispatcher()->getFocusNode() == this )
 			mParentCtrl->setFocus();
 
-		if ( getEventDispatcher()->getOverControl() == this )
-			getEventDispatcher()->setOverControl( mParentCtrl );
+		if ( getEventDispatcher()->getMouseOverNode() == this )
+			getEventDispatcher()->setMouseOverNode( mParentCtrl );
 	}
 }
 

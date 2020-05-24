@@ -124,6 +124,8 @@ class EE_API UISceneNode : public SceneNode {
 
 	virtual void onDrawDebugDataChange();
 
+	virtual void setFocus();
+
 	void setActiveWindow( UIWindow* window );
 
 	void setFocusLastWindow( UIWindow* window );

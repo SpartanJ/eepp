@@ -24,6 +24,10 @@ class EE_API InputSDL : public Input {
 
 	Vector2i queryMousePos();
 
+	void captureMouse( const bool& capture );
+
+	bool isMouseCaptured() const;
+
   protected:
 	friend class WindowSDL;
 	Float mDPIScale;

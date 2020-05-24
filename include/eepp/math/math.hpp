@@ -80,6 +80,16 @@ template <typename T> inline T roundUp( T r ) {
 	return ( r > 0.0f ) ? ceil( r ) : ceil( r - 0.5f );
 }
 
+/** @return The number of digits in a number. */
+template <typename T> static T countDigits( T num ) {
+	T count = 0;
+	while ( num != 0 ) {
+		count++;
+		num /= 10;
+	}
+	return count;
+}
+
 }} // namespace EE::Math
 
 #endif

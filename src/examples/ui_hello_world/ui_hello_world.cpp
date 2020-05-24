@@ -1,4 +1,8 @@
 #include <eepp/ee.hpp>
+#include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
+#include <eepp/ui/doc/syntaxtokenizer.hpp>
+#include <eepp/ui/doc/textdocument.hpp>
+using namespace EE::UI::Doc;
 
 EE::Window::Window* win = NULL;
 
@@ -25,7 +29,7 @@ void mainLoop() {
 	}
 }
 
-EE_MAIN_FUNC int main( int argc, char* argv[] ) {
+EE_MAIN_FUNC int main( int, char** ) {
 	win = Engine::instance()->createWindow( WindowSettings( 640, 480, "eepp - UI Hello World" ),
 											ContextSettings( true ) );
 
@@ -45,7 +49,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		SceneManager::instance()->add( uiSceneNode );
 
 		// Create a very simple Hello World with a TextView and a PushButton.
-		uiSceneNode->loadLayoutFromString( R"xml(
+		std::string layout = R"xml(
 			<LinearLayout layout_width="match_parent"
 						  layout_height="match_parent"
 						  orientation="vertical">
@@ -58,7 +62,8 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 						layout_height="wrap_content"
 						text="Hello, I am a PushButton" />
 			</LinearLayout>
-		)xml" );
+		)xml";
+		uiSceneNode->loadLayoutFromString( layout );
 
 		// Set the style to our "Hello World" widgets.
 		uiSceneNode->setStyleSheet( R"css(

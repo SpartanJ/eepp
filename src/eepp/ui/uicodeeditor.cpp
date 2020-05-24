@@ -1,0 +1,864 @@
+#include <eepp/graphics/fontmanager.hpp>
+#include <eepp/graphics/fonttruetype.hpp>
+#include <eepp/graphics/primitives.hpp>
+#include <eepp/graphics/text.hpp>
+#include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
+#include <eepp/ui/uicodeeditor.hpp>
+#include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uiscrollbar.hpp>
+#include <eepp/window/clipboard.hpp>
+#include <eepp/window/input.hpp>
+#include <eepp/window/window.hpp>
+
+namespace EE { namespace UI {
+
+UICodeEditor* UICodeEditor::New() {
+	return eeNew( UICodeEditor, () );
+}
+
+UICodeEditor::UICodeEditor() :
+	UIWidget( "codeeditor" ),
+	mFont( FontManager::instance()->getByName( "monospace" ) ),
+	mDirtyEditor( false ),
+	mCursorVisible( false ),
+	mMouseDown( false ),
+	mShowLineNumber( true ),
+	mTabWidth( 4 ),
+	mLastColOffset( 0 ),
+	mMouseWheelScroll( 50 ),
+	mFontSize( mFontStyleConfig.getFontCharacterSize() ),
+	mLineNumberPaddingLeft( 8 ),
+	mLineNumberPaddingRight( 8 ),
+	mLineNumberFontColor( "#525259" ),
+	mLineNumberBackgroundColor( Color::fromString( "#2e2e32" ) ),
+	mCurrentLineBackgroundColor( "#343438" ),
+	mCaretColor( "#93DDFA" ),
+	mColorScheme( SyntaxColorScheme::getDefault() ),
+	mHighlighter( &mDoc ) {
+	setBackgroundColor( Color::fromString( "#2e2e32" ) );
+	setFontColor( Color::fromString( "#e1e1e6" ) );
+	mFontStyleConfig.setFontSelectionBackColor( Color::fromString( "#48484f" ) );
+
+	mVScrollBar = UIScrollBar::NewVertical();
+	mVScrollBar->setParent( this );
+	mVScrollBar->addEventListener( Event::OnSizeChange,
+								   [&]( const Event* ) { updateScrollBar(); } );
+	mVScrollBar->addEventListener( Event::OnValueChange, [&]( const Event* ) {
+		setScrollY( mVScrollBar->getValue() * getMaxScroll().y, false );
+	} );
+
+	if ( NULL == mFont )
+		eePRINTL( "A monospace font must be loaded to be able to use the code editor.\nTry loading "
+				  "a font with the name \"monospace\"" );
+
+	clipEnable();
+	mDoc.registerClient( *this );
+	subscribeScheduledUpdate();
+}
+
+UICodeEditor::~UICodeEditor() {
+	mDoc.unregisterClient( *this );
+}
+
+Uint32 UICodeEditor::getType() const {
+	return UI_TYPE_CODEEDIT;
+}
+
+bool UICodeEditor::isType( const Uint32& type ) const {
+	return type == getType() || UIWidget::isType( type );
+}
+
+void UICodeEditor::setTheme( UITheme* Theme ) {
+	UIWidget::setTheme( Theme );
+	setThemeSkin( Theme, "codeeditor" );
+}
+
+void UICodeEditor::draw() {
+	UIWidget::draw();
+
+	if ( mFont == NULL )
+		return;
+
+	if ( mDirtyEditor ) {
+		updateEditor();
+	}
+
+	std::pair<int, int> lineRange = getVisibleLineRange();
+	Float charSize = PixelDensity::pxToDp( getCharacterSize() );
+	Float lineHeight = getLineHeight();
+	int lineNumberDigits = Math::countDigits( mDoc.linesCount() );
+	Float lineNumberWidth = mShowLineNumber ? getLineNumberWidth() : 0.f;
+	Vector2f screenStart( mScreenPos.x + mRealPadding.Left, mScreenPos.y + mRealPadding.Top );
+	Vector2f start( screenStart.x + lineNumberWidth, screenStart.y );
+	Vector2f startScroll( start - mScroll );
+	Primitives primitives;
+	TextPosition cursor( mDoc.getSelection().start() );
+
+	primitives.setColor( mCurrentLineBackgroundColor );
+	primitives.drawRectangle(
+		Rectf( Vector2f( startScroll.x + mScroll.x, startScroll.y + cursor.line() * lineHeight ),
+			   Sizef( mSize.getWidth(), lineHeight ) ) );
+
+	if ( mDoc.hasSelection() ) {
+		primitives.setColor( mFontStyleConfig.getFontSelectionBackColor() );
+
+		TextRange selection = mDoc.getSelection( true );
+
+		int startLine = eemax<int>( lineRange.first, selection.start().line() );
+		int endLine = eemin<int>( lineRange.second, selection.end().line() );
+
+		for ( auto ln = startLine; ln <= endLine; ln++ ) {
+			const String& line = mDoc.line( ln );
+			Rectf selRect;
+			selRect.Top = startScroll.y + ln * lineHeight;
+			selRect.Bottom = selRect.Top + lineHeight;
+			if ( selection.start().line() == ln ) {
+				selRect.Left = startScroll.x + getXOffsetCol( {ln, selection.start().column()} );
+				if ( selection.end().line() == ln ) {
+					selRect.Right = startScroll.x + getXOffsetCol( {ln, selection.end().column()} );
+				} else {
+					selRect.Right =
+						startScroll.x + getXOffsetCol( {ln, static_cast<Int64>( line.length() )} );
+				}
+			} else if ( selection.end().line() == ln ) {
+				selRect.Left = startScroll.x + getXOffsetCol( {ln, 0} );
+				selRect.Right = startScroll.x + getXOffsetCol( {ln, selection.end().column()} );
+			} else {
+				selRect.Left = startScroll.x + getXOffsetCol( {ln, 0} );
+				selRect.Right =
+					startScroll.x + getXOffsetCol( {ln, static_cast<Int64>( line.length() )} );
+			}
+
+			primitives.drawRectangle( selRect );
+		}
+	}
+
+	for ( int i = lineRange.first; i <= lineRange.second; i++ ) {
+		Vector2f curPos( startScroll.x, startScroll.y + lineHeight * i );
+		auto& tokens = mHighlighter.getLine( i );
+		Text line( "", mFont, charSize );
+		line.setStyleConfig( mFontStyleConfig );
+		for ( auto& token : tokens ) {
+			Float textWidth = getTextWidth( token.text );
+			if ( curPos.x + textWidth >= mScreenPos.x &&
+				 curPos.x <= mScreenPos.x + mSize.getWidth() ) {
+				line.setString( token.text );
+				line.setColor( mColorScheme.getColor( token.type ) );
+				line.draw( curPos.x, curPos.y );
+			}
+			curPos.x += textWidth;
+		}
+	}
+
+	if ( mCursorVisible ) {
+		Vector2f cursorPos( startScroll.x + getXOffsetCol( cursor ),
+							startScroll.y + cursor.line() * lineHeight );
+
+		primitives.setColor( mCaretColor );
+		primitives.drawRectangle(
+			Rectf( cursorPos, Sizef( PixelDensity::dpToPx( 2 ), lineHeight ) ) );
+	}
+
+	if ( mShowLineNumber ) {
+		primitives.setColor( mLineNumberBackgroundColor );
+		primitives.drawRectangle(
+			Rectf( screenStart, Sizef( lineNumberWidth, mSize.getHeight() ) ) );
+		for ( int i = lineRange.first; i <= lineRange.second; i++ ) {
+			Text line( String( String::toStr( i + 1 ) ).padLeft( lineNumberDigits, ' ' ), mFont,
+					   charSize );
+			line.setStyleConfig( mFontStyleConfig );
+			line.setColor( mLineNumberFontColor );
+			line.draw( screenStart.x + mLineNumberPaddingLeft, startScroll.y + lineHeight * i );
+		}
+	}
+}
+
+void UICodeEditor::scheduledUpdate( const Time& ) {
+	if ( hasFocus() && getUISceneNode()->getWindow()->isActive() ) {
+		if ( mBlinkTimer.getElapsedTime().asSeconds() > 0.5f ) {
+			mCursorVisible = !mCursorVisible;
+			mBlinkTimer.restart();
+			invalidateDraw();
+		}
+	}
+
+	if ( mMouseDown &&
+		 !( getUISceneNode()->getWindow()->getInput()->getPressTrigger() & EE_BUTTON_LMASK ) ) {
+		mMouseDown = false;
+	}
+}
+
+void UICodeEditor::reset() {
+	mDoc.reset();
+	invalidateDraw();
+}
+
+void UICodeEditor::loadFromFile( const std::string& path ) {
+	mDoc.loadFromPath( path );
+	invalidateEditor();
+}
+
+bool UICodeEditor::save() {
+	return mDoc.save();
+}
+
+bool UICodeEditor::save( const std::string& path, const bool& utf8bom ) {
+	return mDoc.save( path, utf8bom );
+}
+
+bool UICodeEditor::save( IOStreamFile& stream, const bool& utf8bom ) {
+	return mDoc.save( stream, utf8bom );
+}
+
+Font* UICodeEditor::getFont() const {
+	return mFont;
+}
+
+const UIFontStyleConfig& UICodeEditor::getFontStyleConfig() const {
+	return mFontStyleConfig;
+}
+
+UICodeEditor* UICodeEditor::setFont( Font* font ) {
+	if ( mFont != font ) {
+		mFont = font;
+		invalidateDraw();
+		invalidateEditor();
+	}
+	return this;
+}
+
+UICodeEditor* UICodeEditor::setFontSize( Float dpSize ) {
+	if ( mFontStyleConfig.CharacterSize != dpSize ) {
+		mFontStyleConfig.CharacterSize = dpSize;
+		mFontSize = dpSize;
+		invalidateDraw();
+	}
+	return this;
+}
+
+UICodeEditor* UICodeEditor::setFontColor( const Color& color ) {
+	if ( mFontStyleConfig.getFontColor() != color ) {
+		mFontStyleConfig.FontColor = color;
+		invalidateDraw();
+	}
+	return this;
+}
+
+UICodeEditor* UICodeEditor::setFontSelectedColor( const Color& color ) {
+	if ( mFontStyleConfig.getFontSelectedColor() != color ) {
+		mFontStyleConfig.FontSelectedColor = color;
+		invalidateDraw();
+	}
+	return this;
+}
+
+UICodeEditor* UICodeEditor::setFontSelectionBackColor( const Color& color ) {
+	if ( mFontStyleConfig.getFontSelectionBackColor() != color ) {
+		mFontStyleConfig.FontSelectionBackColor = color;
+		invalidateDraw();
+	}
+	return this;
+}
+
+const Uint32& UICodeEditor::getTabWidth() const {
+	return mTabWidth;
+}
+
+UICodeEditor* UICodeEditor::setTabWidth( const Uint32& tabWidth ) {
+	if ( mTabWidth != tabWidth ) {
+		mTabWidth = tabWidth;
+		mDoc.setTabWidth( mTabWidth );
+	}
+	return this;
+}
+
+const Float& UICodeEditor::getMouseWheelScroll() const {
+	return mMouseWheelScroll;
+}
+
+void UICodeEditor::setMouseWheelScroll( const Float& mouseWheelScroll ) {
+	mMouseWheelScroll = mouseWheelScroll;
+}
+
+void UICodeEditor::setLineNumberPaddingLeft( const Float& dpLeft ) {
+	if ( dpLeft != mLineNumberPaddingLeft ) {
+		mLineNumberPaddingLeft = dpLeft;
+		invalidateDraw();
+	}
+}
+
+void UICodeEditor::setLineNumberPaddingRight( const Float& dpRight ) {
+	if ( dpRight != mLineNumberPaddingRight ) {
+		mLineNumberPaddingRight = dpRight;
+		invalidateDraw();
+	}
+}
+
+void UICodeEditor::setLineNumberPadding( const Float& dpPaddingLeft, const Float& dpPaddingRight ) {
+	setLineNumberPaddingLeft( dpPaddingLeft );
+	setLineNumberPaddingRight( dpPaddingRight );
+}
+
+const Float& UICodeEditor::getLineNumberPaddingLeft() const {
+	return mLineNumberPaddingLeft;
+}
+
+const Float& UICodeEditor::getLineNumberPaddingRight() const {
+	return mLineNumberPaddingRight;
+}
+
+Float UICodeEditor::getLineNumberWidth() const {
+	return Math::countDigits( mDoc.linesCount() ) * getGlyphWidth() + getLineNumberPaddingLeft() +
+		   getLineNumberPaddingRight();
+}
+
+const bool& UICodeEditor::getShowLineNumber() const {
+	return mShowLineNumber;
+}
+
+void UICodeEditor::setShowLineNumber( const bool& showLineNumber ) {
+	if ( mShowLineNumber != showLineNumber ) {
+		mShowLineNumber = showLineNumber;
+		invalidateDraw();
+	}
+}
+
+const Color& UICodeEditor::getLineNumberBackgroundColor() const {
+	return mLineNumberBackgroundColor;
+}
+
+void UICodeEditor::setLineNumberBackgroundColor( const Color& lineNumberBackgroundColor ) {
+	if ( mLineNumberBackgroundColor != lineNumberBackgroundColor ) {
+		mLineNumberBackgroundColor = lineNumberBackgroundColor;
+		invalidateDraw();
+	};
+}
+
+const Color& UICodeEditor::getCurrentLineBackgroundColor() const {
+	return mCurrentLineBackgroundColor;
+}
+
+void UICodeEditor::setCurrentLineBackgroundColor( const Color& currentLineBackgroundColor ) {
+	mCurrentLineBackgroundColor = currentLineBackgroundColor;
+}
+
+const Color& UICodeEditor::getCaretColor() const {
+	return mCaretColor;
+}
+
+void UICodeEditor::setCaretColor( const Color& caretColor ) {
+	if ( mCaretColor != caretColor ) {
+		mCaretColor = caretColor;
+		invalidateDraw();
+	}
+}
+
+const SyntaxColorScheme& UICodeEditor::getColorScheme() const {
+	return mColorScheme;
+}
+
+void UICodeEditor::setColorScheme( const SyntaxColorScheme& colorScheme ) {
+	mColorScheme = colorScheme;
+	invalidateDraw();
+}
+
+const TextDocument& UICodeEditor::getDocument() const {
+	return mDoc;
+}
+
+TextDocument& UICodeEditor::getDocument() {
+	return mDoc;
+}
+
+bool UICodeEditor::isDirty() const {
+	return mDoc.isDirty();
+}
+
+void UICodeEditor::invalidateEditor() {
+	mDirtyEditor = true;
+}
+
+Uint32 UICodeEditor::onFocusLoss() {
+	mMouseDown = false;
+	mCursorVisible = false;
+	return UIWidget::onFocusLoss();
+}
+
+Uint32 UICodeEditor::onTextInput( const TextInputEvent& event ) {
+	if ( NULL == mFont )
+		return 1;
+
+	if ( !getUISceneNode()->getWindow()->getInput()->isControlPressed() ) {
+		mDoc.textInput( event.getText() );
+	}
+	return 1;
+}
+
+Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
+	if ( NULL == mFont )
+		return 1;
+
+	switch ( event.getKeyCode() ) {
+		case KEY_BACKSPACE: {
+			if ( event.getMod() & KEYMOD_CTRL ) {
+				mDoc.deleteToPreviousWord();
+				updateLastColumnOffset();
+			} else {
+				mDoc.deleteToPreviousChar();
+				updateLastColumnOffset();
+			}
+			break;
+		}
+		case KEY_DELETE: {
+			if ( event.getMod() & KEYMOD_CTRL ) {
+				mDoc.deleteToNextWord();
+				updateLastColumnOffset();
+			} else {
+				mDoc.deleteToNextChar();
+				updateLastColumnOffset();
+			}
+			break;
+		}
+		case KEY_KP_ENTER:
+		case KEY_RETURN: {
+			mDoc.newLine();
+			updateLastColumnOffset();
+			break;
+		}
+		case KEY_UP: {
+			if ( event.getMod() & KEYMOD_CTRL ) {
+				setScrollY( mScroll.y - getLineHeight() );
+			} else if ( event.getMod() & KEYMOD_SHIFT ) {
+				mDoc.selectToPreviousLine( mLastColOffset );
+			} else {
+				mDoc.moveToPreviousLine( mLastColOffset );
+			}
+			break;
+		}
+		case KEY_DOWN: {
+			if ( event.getMod() & KEYMOD_CTRL ) {
+				setScrollY( mScroll.y + getLineHeight() );
+			} else if ( event.getMod() & KEYMOD_SHIFT ) {
+				mDoc.selectToNextLine( mLastColOffset );
+			} else {
+				mDoc.moveToNextLine( mLastColOffset );
+			}
+			break;
+		}
+		case KEY_LEFT: {
+			if ( ( event.getMod() & KEYMOD_SHIFT ) && ( event.getMod() & KEYMOD_CTRL ) ) {
+				mDoc.selectToPreviousWord();
+			} else if ( event.getMod() & KEYMOD_SHIFT ) {
+				mDoc.selectToPreviousChar();
+			} else if ( event.getMod() & KEYMOD_CTRL ) {
+				mDoc.moveToPreviousWord();
+			} else {
+				mDoc.moveToPreviousChar();
+				updateLastColumnOffset();
+			}
+			break;
+		}
+		case KEY_RIGHT: {
+			if ( ( event.getMod() & KEYMOD_SHIFT ) && ( event.getMod() & KEYMOD_CTRL ) ) {
+				mDoc.selectToNextWord();
+			} else if ( event.getMod() & KEYMOD_SHIFT ) {
+				mDoc.selectToNextChar();
+			} else if ( event.getMod() & KEYMOD_CTRL ) {
+				mDoc.moveToNextWord();
+			} else {
+				mDoc.moveToNextChar();
+				updateLastColumnOffset();
+			}
+			break;
+		}
+		case KEY_HOME: {
+			if ( event.getMod() & KEYMOD_SHIFT ) {
+				mDoc.selectToStartOfLine();
+				updateLastColumnOffset();
+			} else if ( event.getMod() & KEYMOD_CTRL ) {
+				setScrollY( 0 );
+				mDoc.setSelection( {0, 0} );
+			} else {
+				mDoc.setSelection( mDoc.startOfLine( mDoc.getSelection().start() ) );
+				updateLastColumnOffset();
+			}
+			break;
+		}
+		case KEY_END: {
+			if ( event.getMod() & KEYMOD_SHIFT ) {
+				mDoc.selectToEndOfLine();
+				updateLastColumnOffset();
+			} else if ( event.getMod() & KEYMOD_CTRL ) {
+				setScrollY( getMaxScroll().y );
+				mDoc.setSelection(
+					{static_cast<Int64>( mDoc.linesCount() - 1 ),
+					 static_cast<Int64>( mDoc.line( mDoc.linesCount() - 1 ).length() )} );
+				invalidateDraw();
+			} else {
+				mDoc.setSelection( mDoc.endOfLine( mDoc.getSelection().start() ) );
+				updateLastColumnOffset();
+			}
+			break;
+		}
+		case KEY_PAGEUP: {
+			if ( event.getMod() & KEYMOD_SHIFT ) {
+				mDoc.selectToPreviousPage( getVisibleLinesCount() );
+				updateLastColumnOffset();
+			} else {
+				mDoc.moveToPreviousPage( getVisibleLinesCount() );
+				updateLastColumnOffset();
+			}
+			break;
+		}
+		case KEY_PAGEDOWN: {
+			if ( event.getMod() & KEYMOD_SHIFT ) {
+				mDoc.selectToNextPage( getVisibleLinesCount() );
+				updateLastColumnOffset();
+			} else {
+				mDoc.moveToNextPage( getVisibleLinesCount() );
+				updateLastColumnOffset();
+			}
+			break;
+		}
+		case KEY_TAB: {
+			if ( event.getMod() & KEYMOD_SHIFT ) {
+				mDoc.unindent();
+				updateLastColumnOffset();
+			} else if ( !event.getMod() ) {
+				mDoc.indent();
+				updateLastColumnOffset();
+			}
+			break;
+		}
+		case KEY_V: {
+			if ( event.getMod() & KEYMOD_CTRL ) {
+				mDoc.textInput( getUISceneNode()->getWindow()->getClipboard()->getText() );
+			}
+			break;
+		}
+		case KEY_C: {
+			if ( event.getMod() & KEYMOD_CTRL ) {
+				getUISceneNode()->getWindow()->getClipboard()->setText( mDoc.getSelectedText() );
+			}
+			break;
+		}
+		case KEY_X: {
+			if ( event.getMod() & KEYMOD_CTRL ) {
+				getUISceneNode()->getWindow()->getClipboard()->setText( mDoc.getSelectedText() );
+				mDoc.deleteSelection();
+			}
+			break;
+		}
+		case KEY_A: {
+			if ( event.getMod() & KEYMOD_CTRL ) {
+				mDoc.selectAll();
+			}
+			break;
+		}
+		case KEY_Z: {
+			if ( ( event.getMod() & KEYMOD_CTRL ) && ( event.getMod() & KEYMOD_SHIFT ) ) {
+				mDoc.redo();
+				updateLastColumnOffset();
+			} else if ( event.getMod() & KEYMOD_CTRL ) {
+				mDoc.undo();
+				updateLastColumnOffset();
+			}
+			break;
+		}
+		case KEY_Y: {
+			if ( event.getMod() & KEYMOD_CTRL ) {
+				mDoc.redo();
+				updateLastColumnOffset();
+			}
+			break;
+		}
+		case KEY_PLUS:
+		case KEY_KP_PLUS: {
+			if ( event.getMod() & KEYMOD_CTRL ) {
+				mFontStyleConfig.CharacterSize =
+					eemin<Float>( 96, mFontStyleConfig.CharacterSize + 1 );
+				invalidateDraw();
+			}
+			break;
+		}
+		case KEY_MINUS:
+		case KEY_KP_MINUS: {
+			if ( event.getMod() & KEYMOD_CTRL ) {
+				mFontStyleConfig.CharacterSize =
+					eemax<Float>( 4, mFontStyleConfig.CharacterSize - 1 );
+				invalidateDraw();
+			}
+			break;
+		}
+		case KEY_0:
+		case KEY_KP0: {
+			if ( event.getMod() & KEYMOD_CTRL ) {
+				setFontSize( mFontSize );
+			}
+			break;
+		}
+		default:
+			break;
+	}
+
+	return 1;
+}
+
+TextPosition UICodeEditor::resolveScreenPosition( const Vector2f& position ) const {
+	Vector2f localPos( position );
+	worldToNode( localPos );
+	localPos = PixelDensity::dpToPx( localPos );
+	localPos += mScroll;
+	localPos.x -= mRealPadding.Left + ( mShowLineNumber ? getLineNumberWidth() : 0.f );
+	localPos.y -= mRealPadding.Top;
+	Int64 line =
+		eeclamp<Int64>( (Int64)eefloor( localPos.y / getLineHeight() ), 0, mDoc.linesCount() - 1 );
+	return TextPosition( line, getColFromXOffset( line, localPos.x ) );
+}
+
+Vector2f UICodeEditor::getViewPortLineCount() const {
+	return Vector2f( eefloor( ( mSize.getWidth() - mRealPadding.Left ) / getGlyphWidth() ),
+					 eefloor( ( mSize.getHeight() - mRealPadding.Top ) / getLineHeight() ) );
+}
+
+Sizef UICodeEditor::getMaxScroll() const {
+	Vector2f vplc( getViewPortLineCount() );
+	return Sizef(
+		eefloor( ( mSize.getWidth() - mRealPadding.Left - mRealPadding.Right ) / getGlyphWidth() ),
+		vplc.y > mDoc.linesCount() - 1
+			? 0.f
+			: eefloor( mDoc.linesCount() - getViewPortLineCount().y ) * getLineHeight() );
+}
+
+Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags ) {
+	if ( !getUISceneNode()->getEventDispatcher()->isNodeDragging() && NULL != mFont &&
+		 !mMouseDown && ( flags & EE_BUTTON_LMASK ) ) {
+		mMouseDown = true;
+		Input* input = getUISceneNode()->getWindow()->getInput();
+		if ( input->isShiftPressed() ) {
+			mDoc.selectTo( resolveScreenPosition( position.asFloat() ) );
+		} else {
+			mDoc.setSelection( resolveScreenPosition( position.asFloat() ) );
+		}
+	}
+	return UIWidget::onMouseDown( position, flags );
+}
+
+Uint32 UICodeEditor::onMouseMove( const Vector2i& position, const Uint32& flags ) {
+	if ( !getUISceneNode()->getEventDispatcher()->isNodeDragging() && hasFocus() && NULL != mFont &&
+		 mMouseDown && ( flags & EE_BUTTON_LMASK ) ) {
+		TextRange selection = mDoc.getSelection();
+		selection.setStart( resolveScreenPosition( position.asFloat() ) );
+		mDoc.setSelection( selection );
+	}
+	return UIWidget::onMouseMove( position, flags );
+}
+
+Uint32 UICodeEditor::onMouseUp( const Vector2i& position, const Uint32& flags ) {
+	if ( NULL == mFont )
+		return UIWidget::onMouseUp( position, flags );
+
+	if ( flags & EE_BUTTON_LMASK ) {
+		mMouseDown = false;
+	} else if ( flags & EE_BUTTON_WDMASK ) {
+		if ( getUISceneNode()->getWindow()->getInput()->isControlPressed() ) {
+			mFontStyleConfig.CharacterSize = eemax<Float>( 4, mFontStyleConfig.CharacterSize - 1 );
+		} else {
+			setScrollY( mScroll.y + PixelDensity::dpToPx( mMouseWheelScroll ) );
+		}
+		invalidateDraw();
+	} else if ( flags & EE_BUTTON_WUMASK ) {
+		if ( getUISceneNode()->getWindow()->getInput()->isControlPressed() ) {
+			mFontStyleConfig.CharacterSize = eemin<Float>( 96, mFontStyleConfig.CharacterSize + 1 );
+		} else {
+			setScrollY( mScroll.y - PixelDensity::dpToPx( mMouseWheelScroll ) );
+		}
+		invalidateDraw();
+	}
+	return UIWidget::onMouseUp( position, flags );
+}
+
+Uint32 UICodeEditor::onMouseDoubleClick( const Vector2i&, const Uint32& flags ) {
+	if ( NULL == mFont )
+		return 1;
+
+	if ( flags & EE_BUTTON_LMASK ) {
+		mDoc.selectWord();
+	}
+	return 1;
+}
+
+Uint32 UICodeEditor::onMouseOver( const Vector2i& position, const Uint32& flags ) {
+	getUISceneNode()->setCursor( Cursor::IBeam );
+	return UIWidget::onMouseOver( position, flags );
+}
+
+Uint32 UICodeEditor::onMouseLeave( const Vector2i& position, const Uint32& flags ) {
+	getUISceneNode()->setCursor( Cursor::Arrow );
+	return UIWidget::onMouseLeave( position, flags );
+}
+
+void UICodeEditor::onSizeChange() {
+	UIWidget::onSizeChange();
+	mScroll = {0, 0};
+	invalidateEditor();
+}
+
+void UICodeEditor::onPaddingChange() {
+	UIWidget::onPaddingChange();
+	invalidateEditor();
+}
+
+void UICodeEditor::updateScrollBar() {
+	mVScrollBar->setPixelsSize( 0, mSize.getHeight() );
+	mVScrollBar->setPixelsPosition( mSize.getWidth() - mVScrollBar->getPixelsSize().getWidth(), 0 );
+	int notVisibleLineCount = (int)mDoc.linesCount() - (int)getViewPortLineCount().y;
+	mVScrollBar->setPageStep( getViewPortLineCount().y / (float)mDoc.linesCount()  );
+	mVScrollBar->setClickStep( 0.2f );
+	mVScrollBar->setEnabled( notVisibleLineCount > 0 );
+	mVScrollBar->setVisible( notVisibleLineCount > 0 );
+	setScrollY( mScroll.y );
+}
+
+void UICodeEditor::updateEditor() {
+	scrollToMakeVisible( mDoc.getSelection().start() );
+	updateScrollBar();
+	mDirtyEditor = false;
+}
+
+void UICodeEditor::onDocumentTextChanged() {
+	invalidateDraw();
+}
+
+void UICodeEditor::onDocumentCursorChange( const Doc::TextPosition& ) {
+	resetCursor();
+	invalidateEditor();
+	invalidateDraw();
+}
+
+void UICodeEditor::onDocumentSelectionChange( const Doc::TextRange& ) {
+	resetCursor();
+	invalidateDraw();
+}
+
+void UICodeEditor::onDocumentLineCountChange( const size_t&, const size_t& ) {
+	updateScrollBar();
+}
+
+std::pair<int, int> UICodeEditor::getVisibleLineRange() {
+	Float lineHeight = getLineHeight();
+	Float minLine = eemax( 0.f, eefloor( mScroll.y / lineHeight ) );
+	Float maxLine = eemin( mDoc.linesCount() - 1.f,
+						   eefloor( ( mSize.getHeight() + mScroll.y ) / lineHeight ) + 1 );
+	return std::make_pair<int, int>( (int)minLine, (int)maxLine );
+}
+
+int UICodeEditor::getVisibleLinesCount() {
+	auto lines = getVisibleLineRange();
+	return lines.second - lines.first;
+}
+
+void UICodeEditor::scrollToMakeVisible( const TextPosition& position ) {
+	// Vertical Scroll
+	Float lineHeight = getLineHeight();
+	Float min = lineHeight * ( eemax<Float>( 0, position.line() - 1 ) );
+	Float max = lineHeight * ( position.line() + 2 ) - mSize.getHeight();
+	Float scrollY = eemin( mScroll.y, min );
+	scrollY = eefloor( eemax( mScroll.y, max ) );
+	setScrollY( scrollY );
+
+	// Horizontal Scroll
+	Float offsetX = getXOffsetCol( position );
+	Float glyphSize = getGlyphWidth();
+	Float minVisibility = glyphSize * 10;
+	Float viewPortWidth = eefloor( mSize.getWidth() - mRealPadding.Left - mRealPadding.Right );
+	if ( offsetX + minVisibility > viewPortWidth - mScroll.x ) {
+		mScroll.x = eefloor( eemax( 0.f, offsetX + minVisibility - viewPortWidth ) );
+	} else if ( offsetX < mScroll.x ) {
+		mScroll.x = eefloor( eemax( 0.f, offsetX - minVisibility ) );
+	}
+	invalidateDraw();
+}
+
+void UICodeEditor::setScrollY( const Float& val, bool emmitEvent ) {
+	Float oldVal = mScroll.y;
+	mScroll.y = eefloor( eeclamp<Float>( val, 0, getMaxScroll().y ) );
+	if ( oldVal != mScroll.y ) {
+		invalidateDraw();
+		if ( emmitEvent )
+			mVScrollBar->setValue( mScroll.y / getMaxScroll().y, false );
+	}
+}
+
+Float UICodeEditor::getXOffsetCol( const TextPosition& position ) const {
+	const String& line = mDoc.line( position.line() );
+	Float glyphWidth = getGlyphWidth();
+	Float x = 0;
+	for ( auto i = 0; i < position.column(); i++ ) {
+		if ( line[i] == '\t' ) {
+			x += glyphWidth * mTabWidth;
+		} else if ( line[i] != '\n' && line[i] != '\r' ) {
+			x += glyphWidth;
+		}
+	}
+	return x;
+}
+
+Float UICodeEditor::getTextWidth( const String& line ) const {
+	Float glyphWidth = getGlyphWidth();
+	size_t len = line.length();
+	Float x = 0;
+	for ( size_t i = 0; i < len; i++ ) {
+		if ( line[i] == '\t' ) {
+			x += glyphWidth * mTabWidth;
+		} else if ( line[i] != '\n' && line[i] != '\r' ) {
+			x += glyphWidth;
+		}
+	}
+	return x;
+}
+
+Int64 UICodeEditor::getColFromXOffset( Int64 lineNumber, const Float& offset ) const {
+	if ( offset <= 0 )
+		return 0;
+	TextPosition pos = mDoc.sanitizePosition( TextPosition( lineNumber, 0 ) );
+	const String& line = mDoc.line( pos.line() );
+	Float glyphWidth = getGlyphWidth();
+	Float x = 0;
+	for ( size_t i = 0; i < line.size(); i++ ) {
+		if ( line[i] == '\t' ) {
+			x += glyphWidth * mTabWidth;
+		} else if ( line[i] != '\n' && line[i] != '\r' ) {
+			x += glyphWidth;
+		}
+		if ( x >= offset ) {
+			return i;
+		}
+	}
+	return line.size() - 1;
+}
+
+Float UICodeEditor::getLineHeight() const {
+	return mFont->getLineSpacing( getCharacterSize() );
+}
+
+Float UICodeEditor::getCharacterSize() const {
+	return PixelDensity::dpToPx( mFontStyleConfig.getFontCharacterSize() );
+}
+
+Float UICodeEditor::getGlyphWidth() const {
+	return mFont->getGlyph( ' ', getCharacterSize(), false ).advance;
+}
+
+void UICodeEditor::updateLastColumnOffset() {
+	mLastColOffset = mDoc.getAbsolutePosition( mDoc.getSelection().start() ).column();
+}
+
+void UICodeEditor::resetCursor() {
+	if ( hasFocus() ) {
+		mCursorVisible = true;
+		mBlinkTimer.restart();
+	}
+}
+
+}} // namespace EE::UI

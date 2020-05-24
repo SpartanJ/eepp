@@ -17,6 +17,7 @@
 #include <eepp/system/thread.hpp>
 #include <eepp/system/virtualfilesystem.hpp>
 #include <eepp/ui/css/stylesheetspecification.hpp>
+#include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/window/backend.hpp>
 #include <eepp/window/backend/SDL2/backendsdl2.hpp>
@@ -73,6 +74,8 @@ Engine::~Engine() {
 	Scene::SceneManager::destroySingleton();
 
 	CSS::StyleSheetSpecification::destroySingleton();
+
+	Doc::SyntaxDefinitionManager::destroySingleton();
 
 	FontManager::destroySingleton();
 
@@ -281,10 +284,10 @@ WindowSettings Engine::createWindowSettings( IniFile* ini, std::string iniKeyNam
 	if ( Resizeable )
 		Style |= WindowStyle::Resize;
 
-	std::string Icon = ini->getValue( iniKeyName, "WinIcon", "" );
-	std::string Caption = ini->getValue( iniKeyName, "WinCaption", "" );
+	std::string icon = ini->getValue( iniKeyName, "WinIcon", "" );
+	std::string title = ini->getValue( iniKeyName, "WinTitle", "" );
 
-	WindowSettings WinSettings( Width, Height, Caption, Style, winBackend, BitColor, Icon,
+	WindowSettings WinSettings( Width, Height, title, Style, winBackend, BitColor, icon,
 								pixelDensity, useScreenKeyboard );
 
 	return WinSettings;

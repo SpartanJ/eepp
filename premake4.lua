@@ -536,7 +536,8 @@ function add_static_links()
 			"zlib-static",
 			"imageresampler-static",
 			"pugixml-static",
-			"vorbis-static"
+			"vorbis-static",
+			"rx-cpp-static"
 	}
 
 	if _OPTIONS["with-mojoal"] then
@@ -746,6 +747,7 @@ function build_eepp( build_name )
 			"src/eepp/ui/*.cpp",
 			"src/eepp/ui/actions/*.cpp",
 			"src/eepp/ui/css/*.cpp",
+			"src/eepp/ui/doc/*.cpp",
 			"src/eepp/ui/tools/*.cpp",
 			"src/eepp/physics/*.cpp",
 			"src/eepp/physics/constraints/*.cpp",
@@ -868,6 +870,14 @@ solution "eepp"
 		files { "src/thirdparty/freetype2/src/**.c" }
 		includedirs { "src/thirdparty/freetype2/include" }
 		build_base_configuration( "freetype" )
+
+	project "rx-cpp-static"
+		kind "StaticLib"
+		language "C++"
+		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+		files { "src/thirdparty/rx-cpp/*.cpp", "src/thirdparty/rx-cpp/*.c" }
+		includedirs { "src/thirdparty/rx-cpp" }
+		build_base_cpp_configuration( "rx-cpp" )
 
 	project "chipmunk-static"
 		kind "StaticLib"
@@ -1062,6 +1072,13 @@ solution "eepp"
 		links { "efsw-static", "pugixml-static" }
 		files { "src/tools/uieditor/*.cpp" }
 		build_link_configuration( "eepp-UIEditor", true )
+
+	project "eepp-codeeditor"
+		set_kind()
+		language "C++"
+		files { "src/tools/codeeditor/*.cpp" }
+		includedirs { "src/thirdparty" }
+		build_link_configuration( "eepp-codeeditor", true )
 
 	project "eepp-texturepacker"
 		kind "ConsoleApp"

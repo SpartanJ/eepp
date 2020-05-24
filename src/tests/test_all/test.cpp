@@ -137,7 +137,7 @@ void EETest::init() {
 	if ( NULL != mWindow && mWindow->isOpen() ) {
 		setScreen( StartScreen );
 
-		mWindow->setCaption( "eepp - Test Application" );
+		mWindow->setTitle( "eepp - Test Application" );
 		mWindow->pushResizeCallback( cb::Make1( this, &EETest::onWindowResize ) );
 
 		TF = TextureFactory::instance();

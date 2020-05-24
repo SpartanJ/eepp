@@ -93,6 +93,11 @@ void UISceneNode::onDrawDebugDataChange() {
 	}
 }
 
+void UISceneNode::setFocus() {
+	if ( NULL != getEventDispatcher() )
+		getEventDispatcher()->setFocusNode( mRoot );
+}
+
 void UISceneNode::setTranslator( Translator translator ) {
 	mTranslator = translator;
 }
@@ -121,7 +126,7 @@ String UISceneNode::getTranslatorString( const std::string& str, const String& d
 
 void UISceneNode::setFocusLastWindow( UIWindow* window ) {
 	if ( NULL != mEventDispatcher && !mWindowsList.empty() && window != mWindowsList.front() ) {
-		mEventDispatcher->setFocusControl( mWindowsList.front() );
+		mEventDispatcher->setFocusNode( mWindowsList.front() );
 	}
 }
 

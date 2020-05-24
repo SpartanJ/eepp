@@ -315,6 +315,15 @@
 ../../include/eepp/ui/css/stylesheetstyle.hpp
 ../../include/eepp/ui/css/stylesheetvariable.hpp
 ../../include/eepp/ui/css/transitiondefinition.hpp
+../../include/eepp/ui/doc/syntaxcolorscheme.hpp
+../../include/eepp/ui/doc/syntaxdefinition.hpp
+../../include/eepp/ui/doc/syntaxdefinitionmanager.hpp
+../../include/eepp/ui/doc/syntaxhighlighter.hpp
+../../include/eepp/ui/doc/syntaxtokenizer.hpp
+../../include/eepp/ui/doc/textdocument.hpp
+../../include/eepp/ui/doc/textposition.hpp
+../../include/eepp/ui/doc/textrange.hpp
+../../include/eepp/ui/doc/undostack.hpp
 ../../include/eepp/ui/keyboardshortcut.hpp
 ../../include/eepp/ui/marginmove/scale.hpp
 ../../include/eepp/ui/tools/textureatlaseditor.hpp
@@ -322,6 +331,7 @@
 ../../include/eepp/ui/uibackgrounddrawable.hpp
 ../../include/eepp/ui/uiborderdrawable.hpp
 ../../include/eepp/ui/uicheckbox.hpp
+../../include/eepp/ui/uicodeeditor.hpp
 ../../include/eepp/ui/uicombobox.hpp
 ../../include/eepp/ui/uicommondialog.hpp
 ../../include/eepp/ui/uidropdownlist.hpp
@@ -752,6 +762,13 @@
 ../../src/eepp/ui/css/stylesheetstyle.cpp
 ../../src/eepp/ui/css/stylesheetvariable.cpp
 ../../src/eepp/ui/css/transitiondefinition.cpp
+../../src/eepp/ui/doc/syntaxcolorscheme.cpp
+../../src/eepp/ui/doc/syntaxdefinition.cpp
+../../src/eepp/ui/doc/syntaxdefinitionmanager.cpp
+../../src/eepp/ui/doc/syntaxhighlighter.cpp
+../../src/eepp/ui/doc/syntaxtokenizer.cpp
+../../src/eepp/ui/doc/textdocument.cpp
+../../src/eepp/ui/doc/undostack.cpp
 ../../src/eepp/ui/tools/textureatlaseditor.cpp
 ../../src/eepp/ui/tools/textureatlasnew.cpp
 ../../src/eepp/ui/tools/textureatlasnew.hpp
@@ -761,6 +778,7 @@
 ../../src/eepp/ui/uibackgrounddrawable.cpp
 ../../src/eepp/ui/uiborderdrawable.cpp
 ../../src/eepp/ui/uicheckbox.cpp
+../../src/eepp/ui/uicodeeditor.cpp
 ../../src/eepp/ui/uicombobox.cpp
 ../../src/eepp/ui/uicommondialog.cpp
 ../../src/eepp/ui/uidropdownlist.cpp
@@ -934,6 +952,7 @@
 ../../src/thirdparty/SOIL2/src/SOIL2/stbi_pkm.h
 ../../src/thirdparty/SOIL2/src/SOIL2/stbi_pvr_c.h
 ../../src/thirdparty/SOIL2/src/SOIL2/stbi_pvr.h
+../../src/tools/codeeditor/codeeditor.cpp
 ../../src/tools/mapeditor/mapeditor.cpp
 ../../src/tools/textureatlaseditor/textureatlaseditor.cpp
 ../../src/tools/texturepacker/texturepacker.cpp

@@ -32,23 +32,25 @@ class EE_API EventDispatcher {
 
 	Input* getInput() const;
 
-	Node* getFocusControl() const;
+	Node* getFocusNode() const;
 
-	void setFocusControl( Node* Ctrl );
+	void setFocusNode( Node* Ctrl );
 
-	Node* getOverControl() const;
+	Node* getMouseOverNode() const;
 
-	void setOverControl( Node* Ctrl );
+	void setMouseOverNode( Node* Ctrl );
 
-	Node* getDownControl() const;
+	Node* getMouseDownNode() const;
 
-	Node* getLossFocusControl() const;
+	Node* getLossFocusNode() const;
 
 	void sendMsg( Node* Ctrl, const Uint32& Msg, const Uint32& Flags = 0 );
 
-	void sendKeyUp( const Uint32& KeyCode, const Uint16& Char, const Uint32& Mod );
+	void sendTextInput( const Uint32& textChar, const Uint32& timestamp );
 
-	void sendKeyDown( const Uint32& KeyCode, const Uint16& Char, const Uint32& Mod );
+	void sendKeyUp( const Uint32& KeyCode, const Uint32& Char, const Uint32& Mod );
+
+	void sendKeyDown( const Uint32& KeyCode, const Uint32& Char, const Uint32& Mod );
 
 	void sendMouseClick( Node* ToCtrl, const Vector2i& Pos, const Uint32 Flags );
 
@@ -84,10 +86,10 @@ class EE_API EventDispatcher {
 	EE::Window::Window* mWindow;
 	Input* mInput;
 	SceneNode* mSceneNode;
-	Node* mFocusControl;
-	Node* mOverControl;
-	Node* mDownControl;
-	Node* mLossFocusControl;
+	Node* mFocusNode;
+	Node* mOverNode;
+	Node* mDownNode;
+	Node* mLossFocusNode;
 	Vector2f mMousePos;
 	Vector2i mMousePosi;
 	Vector2f mLastMousePos;
@@ -98,7 +100,7 @@ class EE_API EventDispatcher {
 	Node* mNodeDragging;
 	Time mElapsed;
 
-	virtual void inputCallback( InputEvent* Event );
+	virtual void inputCallback( InputEvent* event );
 };
 
 }} // namespace EE::Scene

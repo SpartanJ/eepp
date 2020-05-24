@@ -188,7 +188,7 @@ String String::join( const std::vector<String>& strArray, const Int8& joinchar,
 		for ( size_t i = 0; i < s; i++ ) {
 			str += strArray[i];
 
-			if ( i != s - 1 || appendLastJoinChar ) {
+			if ( joinchar >= 0 && ( i != s - 1 || appendLastJoinChar ) ) {
 				str += joinchar;
 			}
 		}
@@ -450,14 +450,14 @@ String::String( StringBaseType utf32Char ) {
 	mString += utf32Char;
 }
 
-String::String( const char* uf8String ) {
-	if ( uf8String ) {
-		std::size_t length = strlen( uf8String );
+String::String( const char* utf8String ) {
+	if ( utf8String ) {
+		std::size_t length = strlen( utf8String );
 
 		if ( length > 0 ) {
 			mString.reserve( length + 1 );
 
-			Utf8::toUtf32( uf8String, uf8String + length, std::back_inserter( mString ) );
+			Utf8::toUtf32( utf8String, utf8String + length, std::back_inserter( mString ) );
 		}
 	}
 }
@@ -954,6 +954,17 @@ std::size_t String::find_last_not_of( const char* s, std::size_t pos ) const {
 
 std::size_t String::find_last_not_of( StringBaseType c, std::size_t pos ) const {
 	return mString.find_last_not_of( c, pos );
+}
+
+size_t String::countChar( String::StringBaseType c ) const {
+	return std::count( begin(), end(), c );
+}
+
+String& String::padLeft( unsigned int minDigits, String::StringBaseType padChar ) {
+	if ( mString.length() < minDigits ) {
+		mString.insert( mString.begin(), minDigits - mString.length(), padChar );
+	}
+	return *this;
 }
 
 bool operator==( const String& left, const String& right ) {

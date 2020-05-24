@@ -319,17 +319,17 @@ void UISlider::adjustSliderPos() {
 	mOnPosChange = false;
 }
 
-void UISlider::setValue( Float Val ) {
-	if ( Val < mMinValue )
-		Val = mMinValue;
-	if ( Val > mMaxValue )
-		Val = mMaxValue;
+void UISlider::setValue( Float val, bool emmitEvent ) {
+	if ( val < mMinValue )
+		val = mMinValue;
+	if ( val > mMaxValue )
+		val = mMaxValue;
 
-	if ( mValue == Val )
+	if ( mValue == val )
 		return;
 
-	if ( Val >= mMinValue && Val <= mMaxValue ) {
-		mValue = Val;
+	if ( val >= mMinValue && val <= mMaxValue ) {
+		mValue = val;
 
 		if ( !mOnPosChange ) {
 			mOnPosChange = true;
@@ -339,7 +339,8 @@ void UISlider::setValue( Float Val ) {
 			mOnPosChange = false;
 		}
 
-		onValueChange();
+		if ( emmitEvent )
+			onValueChange();
 	}
 }
 

@@ -298,7 +298,7 @@ class EE_API String {
 	/** @brief Construct from an from a null-terminated C-style UTF-8 string to UTF-32
 	** @param uf8String UTF-8 string to convert
 	**/
-	String( const char* uf8String );
+	String( const char* utf8String );
 
 	/** @brief Construct from an UTF-8 string to UTF-32 according
 	** @param utf8String UTF-8 string to convert
@@ -736,6 +736,10 @@ class EE_API String {
 	std::size_t find_last_not_of( const char* s, std::size_t pos = StringType::npos ) const;
 
 	std::size_t find_last_not_of( StringBaseType c, std::size_t pos = StringType::npos ) const;
+
+	size_t countChar( StringBaseType c ) const;
+
+	String& padLeft( unsigned int minDigits, StringBaseType padChar );
 
   private:
 	friend EE_API bool operator==( const String& left, const String& right );

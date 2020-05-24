@@ -129,7 +129,7 @@ void demo1Create() {
 
 	createJointAndBody();
 
-	mWindow->setCaption( "eepp - Physics - Logo Smash" );
+	mWindow->setTitle( "eepp - Physics - Logo Smash" );
 
 	mSpace = Physics::Space::New();
 	mSpace->setIterations( 1 );
@@ -184,7 +184,7 @@ void demo2Create() {
 
 	createJointAndBody();
 
-	mWindow->setCaption( "eepp - Physics - Pyramid Stack" );
+	mWindow->setTitle( "eepp - Physics - Pyramid Stack" );
 
 	Shape::resetShapeIdCounter();
 
@@ -313,7 +313,7 @@ void demo3Create() {
 
 	createJointAndBody();
 
-	mWindow->setCaption( "eepp - Physics - Sensor" );
+	mWindow->setTitle( "eepp - Physics - Sensor" );
 
 	Shape::resetShapeIdCounter();
 
@@ -478,7 +478,7 @@ void demo4Create() {
 
 	createJointAndBody();
 
-	mWindow->setCaption( "eepp - Physics - Sticky collisions using the Arbiter data pointer." );
+	mWindow->setTitle( "eepp - Physics - Sticky collisions using the Arbiter data pointer." );
 
 	mSpace = Space::New();
 	mSpace->setIterations( 10 );

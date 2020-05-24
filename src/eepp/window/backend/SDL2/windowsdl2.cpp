@@ -268,7 +268,7 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 	mWindow.WindowConfig.Height *= mWindow.WindowConfig.PixelDensity;
 #endif
 
-	mSDLWindow = SDL_CreateWindow( mWindow.WindowConfig.Caption.c_str(), SDL_WINDOWPOS_UNDEFINED,
+	mSDLWindow = SDL_CreateWindow( mWindow.WindowConfig.Title.c_str(), SDL_WINDOWPOS_UNDEFINED,
 								   SDL_WINDOWPOS_UNDEFINED, mWindow.WindowConfig.Width,
 								   mWindow.WindowConfig.Height, tmpFlags );
 
@@ -381,7 +381,7 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 
 	getMainContext();
 
-	setCaption( mWindow.WindowConfig.Caption );
+	setTitle( mWindow.WindowConfig.Title );
 
 	createView();
 
@@ -487,10 +487,10 @@ void WindowSDL::toggleFullscreen() {
 	}
 }
 
-void WindowSDL::setCaption( const std::string& Caption ) {
-	mWindow.WindowConfig.Caption = Caption;
+void WindowSDL::setTitle( const std::string& title ) {
+	mWindow.WindowConfig.Title = title;
 
-	SDL_SetWindowTitle( mSDLWindow, Caption.c_str() );
+	SDL_SetWindowTitle( mSDLWindow, title.c_str() );
 }
 
 bool WindowSDL::isActive() {

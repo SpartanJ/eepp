@@ -58,7 +58,7 @@ class EE_API Engine {
 		Resizeable		bool
 		Backend			SDL2
 		WinIcon			The path to the window icon
-		WinCaption		The window default title
+		WinTitle		The window default title
 
 		@param iniPath The ini file path
 		@param iniKeyName The ini key name to search the properties
@@ -74,7 +74,7 @@ class EE_API Engine {
 		Resizeable		bool
 		Backend			SDL2
 		WinIcon			The path to the window icon
-		WinCaption		The window default title
+		WinTitle		The window default title
 
 		@param ini The ini file instance
 		@param iniKeyName The ini key name to search the properties

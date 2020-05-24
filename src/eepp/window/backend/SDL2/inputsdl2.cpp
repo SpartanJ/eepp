@@ -160,11 +160,6 @@ void InputSDL::update() {
 				EEEvent.key.state = SDLEvent.key.state;
 				EEEvent.key.which = SDLEvent.key.windowID;
 				EEEvent.key.keysym.sym = KeyCodesTable[SDLEvent.key.keysym.scancode];
-
-				if ( SDLEvent.key.keysym.scancode == SDL_SCANCODE_1 ) {
-					EEEvent.key.state = SDLEvent.key.state;
-				}
-
 				EEEvent.key.keysym.mod = SDLEvent.key.keysym.mod;
 				EEEvent.key.keysym.unicode = 0;
 				break;
@@ -374,6 +369,15 @@ Vector2i InputSDL::queryMousePos() {
 	mousePos.x = (int)tempMouse.x - tempWinPos.x - bordersSize.Left;
 	mousePos.y = (int)tempMouse.y - tempWinPos.y - bordersSize.Top;
 	return mousePos;
+}
+
+void InputSDL::captureMouse( const bool& capture ) {
+	SDL_CaptureMouse( capture ? SDL_TRUE : SDL_FALSE );
+}
+
+bool InputSDL::isMouseCaptured() const {
+	return SDL_GetWindowFlags( reinterpret_cast<WindowSDL*>( mWindow )->GetSDLWindow() ) &
+		   SDL_WINDOW_MOUSE_CAPTURE;
 }
 
 void InputSDL::init() {

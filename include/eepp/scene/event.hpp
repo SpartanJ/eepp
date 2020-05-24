@@ -12,6 +12,7 @@ class EE_API Event {
 	enum EventType {
 		KeyDown = 0,
 		KeyUp,
+		TextInput,
 		MouseMove,
 		MouseDown,
 		MouseClick,

@@ -24,7 +24,7 @@ class EE_API UIScrollBar : public UIWidget {
 
 	virtual bool isType( const Uint32& type ) const;
 
-	virtual void setValue( Float Val );
+	virtual void setValue( Float val, const bool& emmitEvent = true );
 
 	const Float& getValue() const;
 
@@ -80,6 +80,8 @@ class EE_API UIScrollBar : public UIWidget {
 	virtual void onSizeChange();
 
 	virtual void onAutoSize();
+
+	virtual Uint32 onMouseOver( const Vector2i& position, const Uint32& flags );
 
 	void adjustChilds();
 

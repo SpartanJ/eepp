@@ -405,6 +405,8 @@ class EE_API Node : public Transformable {
 
 	virtual Uint32 onMessage( const NodeMessage* Msg );
 
+	virtual Uint32 onTextInput( const TextInputEvent& Event );
+
 	virtual Uint32 onKeyDown( const KeyEvent& Event );
 
 	virtual Uint32 onKeyUp( const KeyEvent& Event );
