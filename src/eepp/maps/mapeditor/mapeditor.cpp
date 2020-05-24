@@ -1534,7 +1534,7 @@ void MapEditor::onMapMouseClick( const Event* Event ) {
 
 	if ( mTextureRegionCont->isVisible() ) {
 		if ( NULL == mCurLayer || NULL == mGfxPreview->getTextureRegion() ||
-			 mUIContainer->getEventDispatcher()->getDownControl() != mUIMap ) {
+			 mUIContainer->getEventDispatcher()->getMouseDownNode() != mUIMap ) {
 			if ( NULL == mCurLayer )
 				createNoLayerAlert( "No layers found" );
 
@@ -1580,7 +1580,7 @@ void MapEditor::onMapMouseDown( const Event* Event ) {
 
 	if ( mTextureRegionCont->isVisible() ) {
 		if ( NULL == mCurLayer || NULL == mGfxPreview->getTextureRegion() ||
-			 mUIContainer->getEventDispatcher()->getDownControl() != mUIMap )
+			 mUIContainer->getEventDispatcher()->getMouseDownNode() != mUIMap )
 			return;
 
 		if ( MEvent->getFlags() & EE_BUTTON_LMASK ) {

@@ -385,9 +385,9 @@ static int push_captures (MatchState *ms, const char *s, const char *e, LuaMatch
 }
 
 
-int str_match (const char *s, size_t ls, const char *p,  LuaMatch *mm) {
+int str_match (const char *s, int offset, size_t ls, const char *p,  LuaMatch *mm) {
   size_t lp=strlen(p);
-  const char *s1 = s;
+  const char *s1 = s + offset;
   MatchState ms;
   int anchor = (*p == '^');
   if (anchor) {

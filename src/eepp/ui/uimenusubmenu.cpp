@@ -141,7 +141,7 @@ void UIMenuSubMenu::onSubMenuFocusLoss( const Event* ) {
 	Node* focusCtrl = NULL;
 
 	if ( NULL != getEventDispatcher() ) {
-		focusCtrl = getEventDispatcher()->getFocusControl();
+		focusCtrl = getEventDispatcher()->getFocusNode();
 
 		if ( getParent() != focusCtrl && !getParent()->isParentOf( focusCtrl ) ) {
 			getParent()->setFocus();

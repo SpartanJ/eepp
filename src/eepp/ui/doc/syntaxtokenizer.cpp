@@ -38,11 +38,9 @@ bool isScaped( const std::string& text, const size_t& startIndex, const std::str
 std::pair<int, int> findNonEscaped( const std::string& text, const std::string& pattern, int offset,
 									const std::string& escapeStr ) {
 	while ( true ) {
-		Rxp words( pattern, Rx::lua );
+		Rxl words( pattern );
 		int start, end;
-		if ( words.find( text.c_str() + offset, start, end ) ) {
-			start += offset;
-			end += offset;
+		if ( words.find( text, offset, start, end ) ) {
 			if ( !escapeStr.empty() && isScaped( text, start, escapeStr ) ) {
 				offset = end;
 			} else {
@@ -69,8 +67,9 @@ std::pair<std::vector<SyntaxToken>, int> SyntaxTokenizer::tokenize( const Syntax
 	while ( i < text.size() ) {
 		if ( retState != SYNTAX_TOKENIZER_STATE_NONE ) {
 			const SyntaxPattern& pattern = syntax.getPatterns()[retState];
-			std::pair<int, int> range =
-				findNonEscaped( text, pattern.patterns[1], i, pattern.patterns[2] );
+			std::pair<int, int> range = findNonEscaped(
+				text, pattern.patterns[1], i, pattern.patterns.size() >= 3 ? pattern.patterns[2]
+				: "" );
 			if ( range.first != -1 ) {
 				pushToken( tokens, pattern.type, text.substr( i, range.second - i ) );
 				retState = SYNTAX_TOKENIZER_STATE_NONE;
@@ -87,11 +86,9 @@ std::pair<std::vector<SyntaxToken>, int> SyntaxTokenizer::tokenize( const Syntax
 			  patternIndex++ ) {
 			const SyntaxPattern& pattern = syntax.getPatterns()[patternIndex];
 			const std::string& patternStr( "^" + pattern.patterns.at( 0 ) );
-			Rxp words( patternStr, Rx::lua );
+			Rxl words( patternStr );
 			int start, end = 0;
-			if ( words.find( text.c_str() + i, start, end ) ) {
-				start += i;
-				end += i;
+			if ( words.find( text, i, start, end ) ) {
 				std::string patternText( text.substr( start, end - start ) );
 				std::string type = syntax.getSymbol( patternText );
 				pushToken( tokens, type.empty() ? pattern.type : type, patternText );

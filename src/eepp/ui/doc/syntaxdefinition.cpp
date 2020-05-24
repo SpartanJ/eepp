@@ -30,7 +30,7 @@ const std::unordered_map<std::string, std::string>& SyntaxDefinition::getSymbols
 std::string SyntaxDefinition::getSymbol( const std::string& symbol ) const {
 	auto it = mSymbols.find( symbol );
 	if ( it != mSymbols.end() )
-		return symbol;
+		return it->second;
 	return "";
 }
 

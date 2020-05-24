@@ -235,10 +235,10 @@ void UIDropDownList::onListBoxFocusLoss( const Event* ) {
 		return;
 
 	bool frienIsFocus =
-		NULL != mFriendCtrl && mFriendCtrl == getEventDispatcher()->getFocusControl();
-	bool isChildFocus = isChild( getEventDispatcher()->getFocusControl() );
+		NULL != mFriendCtrl && mFriendCtrl == getEventDispatcher()->getFocusNode();
+	bool isChildFocus = isChild( getEventDispatcher()->getFocusNode() );
 
-	if ( getEventDispatcher()->getFocusControl() != this && !isChildFocus && !frienIsFocus ) {
+	if ( getEventDispatcher()->getFocusNode() != this && !isChildFocus && !frienIsFocus ) {
 		hide();
 	}
 }

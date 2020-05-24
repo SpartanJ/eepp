@@ -8,11 +8,14 @@ using namespace EE::System;
 
 namespace EE { namespace UI { namespace Doc {
 
-class EE_API SyntaxStyle {
+class EE_API SyntaxColorScheme {
   public:
-	static SyntaxStyle getDefault();
+	static SyntaxColorScheme getDefault();
 
-	SyntaxStyle();
+	SyntaxColorScheme();
+
+	SyntaxColorScheme( const std::string& name,
+					   const std::unordered_map<std::string, Color>& colors );
 
 	const Color& getColor( const std::string& type ) const;
 
@@ -20,7 +23,12 @@ class EE_API SyntaxStyle {
 
 	void setColor( const std::string& type, const Color& color );
 
+	const std::string& getName() const;
+
+	void setName( const std::string& name );
+
   protected:
+	std::string mName;
 	std::unordered_map<std::string, Color> mColors;
 };
 

@@ -39,9 +39,9 @@ const std::vector<SyntaxToken>& SyntaxHighlighter::getLine( const size_t& index 
 				prevState = prevIt->second.state;
 			}
 		}
-		auto newLine = mLines.insert( std::make_pair( index, tokenizeLine( index, prevState ) ) );
+		mLines[index] = tokenizeLine( index, prevState );
 		mMaxWantedLine = eemax( mMaxWantedLine, index );
-		return newLine.first->second.tokens;
+		return mLines[index].tokens;
 	}
 	return it->second.tokens;
 }

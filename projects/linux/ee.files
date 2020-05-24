@@ -315,10 +315,10 @@
 ../../include/eepp/ui/css/stylesheetstyle.hpp
 ../../include/eepp/ui/css/stylesheetvariable.hpp
 ../../include/eepp/ui/css/transitiondefinition.hpp
+../../include/eepp/ui/doc/syntaxcolorscheme.hpp
 ../../include/eepp/ui/doc/syntaxdefinition.hpp
 ../../include/eepp/ui/doc/syntaxdefinitionmanager.hpp
 ../../include/eepp/ui/doc/syntaxhighlighter.hpp
-../../include/eepp/ui/doc/syntaxstyle.hpp
 ../../include/eepp/ui/doc/syntaxtokenizer.hpp
 ../../include/eepp/ui/doc/textdocument.hpp
 ../../include/eepp/ui/doc/textposition.hpp
@@ -762,10 +762,10 @@
 ../../src/eepp/ui/css/stylesheetstyle.cpp
 ../../src/eepp/ui/css/stylesheetvariable.cpp
 ../../src/eepp/ui/css/transitiondefinition.cpp
+../../src/eepp/ui/doc/syntaxcolorscheme.cpp
 ../../src/eepp/ui/doc/syntaxdefinition.cpp
 ../../src/eepp/ui/doc/syntaxdefinitionmanager.cpp
 ../../src/eepp/ui/doc/syntaxhighlighter.cpp
-../../src/eepp/ui/doc/syntaxstyle.cpp
 ../../src/eepp/ui/doc/syntaxtokenizer.cpp
 ../../src/eepp/ui/doc/textdocument.cpp
 ../../src/eepp/ui/doc/undostack.cpp

@@ -16,10 +16,10 @@ EventDispatcher::EventDispatcher( SceneNode* sceneNode ) :
 	mWindow( sceneNode->getWindow() ),
 	mInput( mWindow->getInput() ),
 	mSceneNode( sceneNode ),
-	mFocusControl( sceneNode ),
-	mOverControl( NULL ),
-	mDownControl( NULL ),
-	mLossFocusControl( NULL ),
+	mFocusNode( sceneNode ),
+	mOverNode( NULL ),
+	mDownNode( NULL ),
+	mLossFocusNode( NULL ),
 	mCbId( 0 ),
 	mFirstPress( false ),
 	mNodeDragging( NULL ) {
@@ -60,7 +60,7 @@ void EventDispatcher::inputCallback( InputEvent* event ) {
 }
 
 void EventDispatcher::update( const Time& time ) {
-	bool wasDraggingControl = mNodeDragging;
+	bool wasDraggingNode = mNodeDragging;
 
 	mElapsed = time;
 	mMousePos = mInput->getMousePosFromView( mWindow->getDefaultView() );
@@ -68,24 +68,24 @@ void EventDispatcher::update( const Time& time ) {
 
 	Node* pOver = mSceneNode->overFind( mMousePos );
 
-	if ( pOver != mOverControl ) {
-		Node* oldOverControl = mOverControl;
+	if ( pOver != mOverNode ) {
+		Node* oldOverNode = mOverNode;
 
-		mOverControl = pOver;
+		mOverNode = pOver;
 
-		if ( NULL != oldOverControl ) {
-			oldOverControl->onMouseLeave( mMousePosi, 0 );
-			sendMsg( oldOverControl, NodeMessage::MouseLeave );
+		if ( NULL != oldOverNode ) {
+			oldOverNode->onMouseLeave( mMousePosi, 0 );
+			sendMsg( oldOverNode, NodeMessage::MouseLeave );
 		}
 
-		if ( NULL != mOverControl ) {
-			mOverControl->onMouseOver( mMousePosi, 0 );
-			sendMsg( mOverControl, NodeMessage::MouseOver );
+		if ( NULL != mOverNode ) {
+			mOverNode->onMouseOver( mMousePosi, 0 );
+			sendMsg( mOverNode, NodeMessage::MouseOver );
 		}
 	} else {
-		if ( NULL != mOverControl && mLastMousePos != mMousePos ) {
-			mOverControl->onMouseMove( mMousePosi, mInput->getPressTrigger() );
-			sendMsg( mOverControl, NodeMessage::MouseMove, mInput->getPressTrigger() );
+		if ( NULL != mOverNode && mLastMousePos != mMousePos ) {
+			mOverNode->onMouseMove( mMousePosi, mInput->getPressTrigger() );
+			sendMsg( mOverNode, NodeMessage::MouseMove, mInput->getPressTrigger() );
 		}
 	}
 
@@ -93,13 +93,13 @@ void EventDispatcher::update( const Time& time ) {
 		mNodeDragging->onCalculateDrag( mMousePos, mInput->getPressTrigger() );
 
 	if ( mInput->getPressTrigger() ) {
-		if ( NULL != mOverControl ) {
-			mOverControl->onMouseDown( mMousePosi, mInput->getPressTrigger() );
-			sendMsg( mOverControl, NodeMessage::MouseDown, mInput->getPressTrigger() );
+		if ( NULL != mOverNode ) {
+			mOverNode->onMouseDown( mMousePosi, mInput->getPressTrigger() );
+			sendMsg( mOverNode, NodeMessage::MouseDown, mInput->getPressTrigger() );
 		}
 
 		if ( !mFirstPress ) {
-			mDownControl = mOverControl;
+			mDownNode = mOverNode;
 			mMouseDownPos = mMousePosi;
 
 			mFirstPress = true;
@@ -107,34 +107,34 @@ void EventDispatcher::update( const Time& time ) {
 	}
 
 	if ( mInput->getReleaseTrigger() ) {
-		if ( NULL != mFocusControl ) {
-			if ( !wasDraggingControl || mMousePos == mLastMousePos ) {
-				if ( mOverControl != mFocusControl &&
+		if ( NULL != mFocusNode ) {
+			if ( !wasDraggingNode || mMousePos == mLastMousePos ) {
+				if ( mOverNode != mFocusNode &&
 					 mInput->getReleaseTrigger() & ( EE_BUTTON_LMASK | EE_BUTTON_RMASK ) )
-					setFocusControl( mOverControl );
+					setFocusNode( mOverNode );
 
-				// The focused control can change after the MouseUp ( since the control can call
-				// "setFocus()" on other control And the Click would be received by the new focused
-				// control instead of the real one
-				Node* lastFocusControl = mFocusControl;
+				// The focused node can change after the MouseUp ( since the node can call
+				// "setFocus()" on other node And the Click would be received by the new focused
+				// node instead of the real one
+				Node* lastFocusNode = mFocusNode;
 
-				if ( NULL != mOverControl ) {
-					getOverControl()->onMouseUp( mMousePosi, mInput->getReleaseTrigger() );
+				if ( NULL != mOverNode ) {
+					getMouseOverNode()->onMouseUp( mMousePosi, mInput->getReleaseTrigger() );
 
-					if ( NULL != getOverControl() )
-						sendMsg( getOverControl(), NodeMessage::MouseUp,
+					if ( NULL != getMouseOverNode() )
+						sendMsg( getMouseOverNode(), NodeMessage::MouseUp,
 								 mInput->getReleaseTrigger() );
 				}
 
 				if ( mInput->getClickTrigger() ) {
-					lastFocusControl->onMouseClick( mMousePosi, mInput->getClickTrigger() );
-					sendMsg( lastFocusControl, NodeMessage::Click, mInput->getClickTrigger() );
+					lastFocusNode->onMouseClick( mMousePosi, mInput->getClickTrigger() );
+					sendMsg( lastFocusNode, NodeMessage::Click, mInput->getClickTrigger() );
 
 					if ( mInput->getDoubleClickTrigger() &&
 						 mClickPos.distance( mMousePosi ) < 10 ) {
-						lastFocusControl->onMouseDoubleClick( mMousePosi,
-															  mInput->getDoubleClickTrigger() );
-						sendMsg( lastFocusControl, NodeMessage::DoubleClick,
+						lastFocusNode->onMouseDoubleClick( mMousePosi,
+														   mInput->getDoubleClickTrigger() );
+						sendMsg( lastFocusNode, NodeMessage::DoubleClick,
 								 mInput->getDoubleClickTrigger() );
 					}
 
@@ -155,8 +155,8 @@ Input* EventDispatcher::getInput() const {
 
 void EventDispatcher::sendTextInput( const Uint32& textChar, const Uint32& timestamp ) {
 	TextInputEvent textInputEvent =
-		TextInputEvent( mFocusControl, Event::TextInput, textChar, timestamp );
-	Node* CtrlLoop = mFocusControl;
+		TextInputEvent( mFocusNode, Event::TextInput, textChar, timestamp );
+	Node* CtrlLoop = mFocusNode;
 
 	while ( NULL != CtrlLoop ) {
 		if ( CtrlLoop->isEnabled() && CtrlLoop->onTextInput( textInputEvent ) )
@@ -167,8 +167,8 @@ void EventDispatcher::sendTextInput( const Uint32& textChar, const Uint32& times
 }
 
 void EventDispatcher::sendKeyUp( const Uint32& KeyCode, const Uint32& Char, const Uint32& Mod ) {
-	KeyEvent keyEvent = KeyEvent( mFocusControl, Event::KeyUp, KeyCode, Char, Mod );
-	Node* CtrlLoop = mFocusControl;
+	KeyEvent keyEvent = KeyEvent( mFocusNode, Event::KeyUp, KeyCode, Char, Mod );
+	Node* CtrlLoop = mFocusNode;
 
 	while ( NULL != CtrlLoop ) {
 		if ( CtrlLoop->isEnabled() && CtrlLoop->onKeyUp( keyEvent ) )
@@ -179,8 +179,8 @@ void EventDispatcher::sendKeyUp( const Uint32& KeyCode, const Uint32& Char, cons
 }
 
 void EventDispatcher::sendKeyDown( const Uint32& KeyCode, const Uint32& Char, const Uint32& Mod ) {
-	KeyEvent keyEvent = KeyEvent( mFocusControl, Event::KeyDown, KeyCode, Char, Mod );
-	Node* CtrlLoop = mFocusControl;
+	KeyEvent keyEvent = KeyEvent( mFocusNode, Event::KeyDown, KeyCode, Char, Mod );
+	Node* CtrlLoop = mFocusNode;
 
 	while ( NULL != CtrlLoop ) {
 		if ( CtrlLoop->isEnabled() && CtrlLoop->onKeyDown( keyEvent ) )
@@ -211,38 +211,38 @@ void EventDispatcher::sendMouseDown( Node* ToCtrl, const Vector2i& Pos, const Ui
 	ToCtrl->onMouseDown( Pos, Flags );
 }
 
-void EventDispatcher::setFocusControl( Node* Ctrl ) {
-	if ( NULL != mFocusControl && NULL != Ctrl && Ctrl != mFocusControl ) {
-		mLossFocusControl = mFocusControl;
+void EventDispatcher::setFocusNode( Node* Ctrl ) {
+	if ( NULL != mFocusNode && NULL != Ctrl && Ctrl != mFocusNode ) {
+		mLossFocusNode = mFocusNode;
 
-		mFocusControl = Ctrl;
+		mFocusNode = Ctrl;
 
-		mLossFocusControl->onFocusLoss();
-		sendMsg( mLossFocusControl, NodeMessage::FocusLoss );
+		mLossFocusNode->onFocusLoss();
+		sendMsg( mLossFocusNode, NodeMessage::FocusLoss );
 
-		mFocusControl->onFocus();
-		sendMsg( mFocusControl, NodeMessage::Focus );
+		mFocusNode->onFocus();
+		sendMsg( mFocusNode, NodeMessage::Focus );
 	}
 }
 
-Node* EventDispatcher::getDownControl() const {
-	return mDownControl;
+Node* EventDispatcher::getMouseDownNode() const {
+	return mDownNode;
 }
 
-Node* EventDispatcher::getOverControl() const {
-	return mOverControl;
+Node* EventDispatcher::getMouseOverNode() const {
+	return mOverNode;
 }
 
-void EventDispatcher::setOverControl( Node* Ctrl ) {
-	mOverControl = Ctrl;
+void EventDispatcher::setMouseOverNode( Node* Ctrl ) {
+	mOverNode = Ctrl;
 }
 
-Node* EventDispatcher::getFocusControl() const {
-	return mFocusControl;
+Node* EventDispatcher::getFocusNode() const {
+	return mFocusNode;
 }
 
-Node* EventDispatcher::getLossFocusControl() const {
-	return mLossFocusControl;
+Node* EventDispatcher::getLossFocusNode() const {
+	return mLossFocusNode;
 }
 
 const Uint32& EventDispatcher::getPressTrigger() const {

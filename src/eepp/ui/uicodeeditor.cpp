@@ -32,7 +32,7 @@ UICodeEditor::UICodeEditor() :
 	mLineNumberBackgroundColor( Color::fromString( "#2e2e32" ) ),
 	mCurrentLineBackgroundColor( "#343438" ),
 	mCaretColor( "#93DDFA" ),
-	mStyle( SyntaxStyle::getDefault() ),
+	mColorScheme( SyntaxColorScheme::getDefault() ),
 	mHighlighter( &mDoc ) {
 	setBackgroundColor( Color::fromString( "#2e2e32" ) );
 	setFontColor( Color::fromString( "#e1e1e6" ) );
@@ -125,19 +125,20 @@ void UICodeEditor::draw() {
 	}
 
 	for ( int i = lineRange.first; i <= lineRange.second; i++ ) {
-		Text line( mDoc.line( i ), mFont, charSize );
-		line.setStyleConfig( mFontStyleConfig );
-		line.draw( startScroll.x, startScroll.y + lineHeight * i );
-		/*Vector2f curPos( startScroll.x, startScroll.y + lineHeight * i );
+		Vector2f curPos( startScroll.x, startScroll.y + lineHeight * i );
 		auto& tokens = mHighlighter.getLine( i );
 		Text line( "", mFont, charSize );
 		line.setStyleConfig( mFontStyleConfig );
 		for ( auto& token : tokens ) {
-			line.setString( token.text );
-			line.setColor( mStyle.getColor( token.type ) );
-			line.draw( curPos.x, curPos.y );
-			curPos.x += line.getTextWidth();
-		}*/
+			Float textWidth = getTextWidth( token.text );
+			if ( curPos.x + textWidth >= mScreenPos.x &&
+				 curPos.x <= mScreenPos.x + mSize.getWidth() ) {
+				line.setString( token.text );
+				line.setColor( mColorScheme.getColor( token.type ) );
+				line.draw( curPos.x, curPos.y );
+			}
+			curPos.x += textWidth;
+		}
 	}
 
 	if ( mCursorVisible ) {
@@ -164,7 +165,7 @@ void UICodeEditor::draw() {
 }
 
 void UICodeEditor::scheduledUpdate( const Time& ) {
-	if ( hasFocus() ) {
+	if ( hasFocus() && getUISceneNode()->getWindow()->isActive() ) {
 		if ( mBlinkTimer.getElapsedTime().asSeconds() > 0.5f ) {
 			mCursorVisible = !mCursorVisible;
 			mBlinkTimer.restart();
@@ -329,6 +330,15 @@ void UICodeEditor::setCaretColor( const Color& caretColor ) {
 		mCaretColor = caretColor;
 		invalidateDraw();
 	}
+}
+
+const SyntaxColorScheme& UICodeEditor::getColorScheme() const {
+	return mColorScheme;
+}
+
+void UICodeEditor::setColorScheme( const SyntaxColorScheme& colorScheme ) {
+	mColorScheme = colorScheme;
+	invalidateDraw();
 }
 
 void UICodeEditor::invalidateEditor() {
@@ -729,6 +739,20 @@ Float UICodeEditor::getXOffsetCol( const TextPosition& position ) const {
 	Float glyphWidth = getGlyphWidth();
 	Float x = 0;
 	for ( auto i = 0; i < position.column(); i++ ) {
+		if ( line[i] == '\t' ) {
+			x += glyphWidth * mTabWidth;
+		} else if ( line[i] != '\n' && line[i] != '\r' ) {
+			x += glyphWidth;
+		}
+	}
+	return x;
+}
+
+Float UICodeEditor::getTextWidth( const String& line ) const {
+	Float glyphWidth = getGlyphWidth();
+	size_t len = line.length();
+	Float x = 0;
+	for ( size_t i = 0; i < len; i++ ) {
 		if ( line[i] == '\t' ) {
 			x += glyphWidth * mTabWidth;
 		} else if ( line[i] != '\n' && line[i] != '\r' ) {

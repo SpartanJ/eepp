@@ -32,12 +32,12 @@ void UIEventDispatcher::inputCallback( InputEvent* Event ) {
 }
 
 void UIEventDispatcher::checkTabPress( const Uint32& KeyCode ) {
-	eeASSERT( NULL != mFocusControl );
+	eeASSERT( NULL != mFocusNode );
 
-	Window::Window* win = mFocusControl->getSceneNode()->getWindow();
-	if ( KeyCode == KEY_TAB && mFocusControl->isUINode() && NULL != win && win->isActive() &&
+	Window::Window* win = mFocusNode->getSceneNode()->getWindow();
+	if ( KeyCode == KEY_TAB && mFocusNode->isUINode() && NULL != win && win->isActive() &&
 		 !mJustGainedFocus ) {
-		Node* Ctrl = static_cast<UINode*>( mFocusControl )->getNextWidget();
+		Node* Ctrl = static_cast<UINode*>( mFocusNode )->getNextWidget();
 
 		if ( NULL != Ctrl )
 			Ctrl->setFocus();

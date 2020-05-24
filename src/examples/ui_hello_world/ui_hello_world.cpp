@@ -77,15 +77,6 @@ EE_MAIN_FUNC int main( int, char** ) {
 		)xml";
 		uiSceneNode->loadLayoutFromString( layout );
 
-		const auto& def = SyntaxDefinitionManager::instance()->getStyleByExtension( "xml" );
-		Clock clock;
-		std::pair<std::vector<SyntaxToken>, int> ret =
-			SyntaxTokenizer::tokenize( def, layout, SYNTAX_TOKENIZER_STATE_NONE );
-
-		if ( ret.first.size() ) {
-			eePRINTL( "tokenized in: %.2fms", clock.getElapsedTime().asMilliseconds() );
-		}
-
 		// Set the style to our "Hello World" widgets.
 		uiSceneNode->setStyleSheet( R"css(
 			* {
@@ -105,7 +96,15 @@ EE_MAIN_FUNC int main( int, char** ) {
 		)css" );
 
 		UICodeEditor* codeEditor = uiSceneNode->find<UICodeEditor>( "code_edit" );
-		codeEditor->setFontSize( 11 )->loadFromFile( "assets/layouts/test_widgets.xml" );
+		codeEditor->setFontSize( 11 )
+			//->loadFromFile( "../docs/articles/cssspecification.md" );
+			//->loadFromFile( "assets/ui/breeze.css" );
+			->loadFromFile( "assets/layouts/test_widgets.xml" );
+			//->loadFromFile( "../src/eepp/ui/doc/textdocument.cpp" );
+			//->loadFromFile( "../premake5.lua" );
+			//->loadFromFile( "eepp-UIEditor-debug.js" );
+			//->loadFromFile( "../docs/doxyrest/sphinx/doxyrest.py" );
+			//->loadFromFile( "../projects/emscripten/make.sh" );
 		win->runMainLoop( &mainLoop );
 	}
 

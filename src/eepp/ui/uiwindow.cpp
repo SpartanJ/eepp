@@ -1456,7 +1456,7 @@ void UIWindow::resizeCursor() {
 
 	worldToNode( Pos );
 
-	const Node* Control = eventDispatcher->getOverControl();
+	const Node* Control = eventDispatcher->getMouseOverNode();
 
 	if ( Control == this ) {
 		if ( Pos.x <= mBorderLeft->getSize().getWidth() ) {

@@ -279,7 +279,7 @@ void UIWidget::createStyle() {
 Uint32 UIWidget::onMouseMove( const Vector2i& position, const Uint32& flags ) {
 	EventDispatcher* eventDispatcher = getEventDispatcher();
 
-	if ( NULL != eventDispatcher && eventDispatcher->getOverControl() == this ) {
+	if ( NULL != eventDispatcher && eventDispatcher->getMouseOverNode() == this ) {
 		if ( mVisible && NULL != mTooltip && !mTooltip->getText().empty() ) {
 			UIThemeManager* themeManager = getUISceneNode()->getUIThemeManager();
 
@@ -295,7 +295,7 @@ Uint32 UIWidget::onMouseMove( const Vector2i& position, const Uint32& flags ) {
 Uint32 UIWidget::onMouseOver( const Vector2i& position, const Uint32& flags ) {
 	EventDispatcher* eventDispatcher = getEventDispatcher();
 
-	if ( NULL != eventDispatcher && eventDispatcher->getOverControl() == this ) {
+	if ( NULL != eventDispatcher && eventDispatcher->getMouseOverNode() == this ) {
 		if ( NULL != mSceneNode && mSceneNode->getDrawDebugData() ) {
 			updateDebugData();
 		}
@@ -313,7 +313,7 @@ Uint32 UIWidget::onMouseOver( const Vector2i& position, const Uint32& flags ) {
 			} else {
 				runAction( Actions::Runnable::New(
 					[&] {
-						if ( getEventDispatcher()->getOverControl() == this ) {
+						if ( getEventDispatcher()->getMouseOverNode() == this ) {
 							mTooltip->setPixelsPosition( getTooltipPosition() );
 							mTooltip->show();
 						}
@@ -333,7 +333,7 @@ Uint32 UIWidget::onMouseOver( const Vector2i& position, const Uint32& flags ) {
 Uint32 UIWidget::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
 	EventDispatcher* eventDispatcher = getEventDispatcher();
 
-	if ( NULL != eventDispatcher && eventDispatcher->getOverControl() != this ) {
+	if ( NULL != eventDispatcher && eventDispatcher->getMouseOverNode() != this ) {
 		if ( mVisible && NULL != mTooltip ) {
 			mTooltip->hide();
 		}

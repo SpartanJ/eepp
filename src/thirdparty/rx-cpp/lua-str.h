@@ -13,7 +13,7 @@ typedef struct LuaMatch {
   int end;
 } LuaMatch;
 
-int str_match (const char *text, size_t len, const char *pattern,  LuaMatch *mm);
+int str_match (const char *text, int offset, size_t len, const char *pattern,  LuaMatch *mm);
 
 #ifdef __cplusplus
 }

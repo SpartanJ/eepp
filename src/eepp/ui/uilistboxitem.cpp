@@ -23,11 +23,11 @@ UIListBoxItem::~UIListBoxItem() {
 	EventDispatcher* eventDispatcher = getEventDispatcher();
 
 	if ( NULL != eventDispatcher ) {
-		if ( eventDispatcher->getFocusControl() == this )
+		if ( eventDispatcher->getFocusNode() == this )
 			mParentCtrl->setFocus();
 
-		if ( eventDispatcher->getOverControl() == this )
-			eventDispatcher->setOverControl( mParentCtrl );
+		if ( eventDispatcher->getMouseOverNode() == this )
+			eventDispatcher->setMouseOverNode( mParentCtrl );
 	}
 }
 

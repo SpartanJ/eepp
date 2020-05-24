@@ -332,12 +332,41 @@ bool Rxl::matches (const char *ps, regmatch_t *r_matches, size_t len) {
     // if there's an error in the pattern, it will throw and set error state
     // LuaMatch and regmatch_t are just the same under the hood
     try {
-        n_match = str_match(ps,len,(const char *)rx, (LuaMatch*) r_matches);
+        n_match = str_match(ps,0,len,pat.c_str(), (LuaMatch*) r_matches);
     } catch (const string& pattern_error) {
         err = copy_str(pattern_error);
         n_match = 0;
     }
     return n_match == 0 ? false : true;
+}
+
+bool Rxl::matches (const char *ps, int offset, regmatch_t *r_matches, size_t len) {
+    regmatch_t match_buff[MAX_DEFAULT_MATCHES];
+    if (r_matches == NULL)
+        r_matches = match_buff;
+    if (len == 0)
+        len = strlen(ps);
+    // if there's an error in the pattern, it will throw and set error state
+    // LuaMatch and regmatch_t are just the same under the hood
+    try {
+        n_match = str_match(ps, offset,len,pat.c_str(), (LuaMatch*) r_matches);
+    } catch (const string& pattern_error) {
+        err = copy_str(pattern_error);
+        n_match = 0;
+    }
+    return n_match == 0 ? false : true;
+}
+
+bool Rxl::find(const char* str, int offset, int& i1, int& i2, int len, int idx) {
+    regmatch_t match_buff[MAX_DEFAULT_MATCHES];
+    if (matches(str,offset,match_buff,len)){
+        range(idx,i1,i2,match_buff);
+        return true;
+    } else {
+        i1 = -1;
+        i2 = -1;
+        return false;
+    }
 }
 
 int Rxl::n_matches() {

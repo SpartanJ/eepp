@@ -221,7 +221,7 @@ Uint32 UIWinMenu::onMessage( const NodeMessage* Msg ) {
 		}
 		case NodeMessage::FocusLoss: {
 			if ( NULL != getEventDispatcher() ) {
-				Node* FocusCtrl = getEventDispatcher()->getFocusControl();
+				Node* FocusCtrl = getEventDispatcher()->getFocusNode();
 
 				if ( !isParentOf( FocusCtrl ) && !isPopUpMenuChild( FocusCtrl ) ) {
 					onWidgetFocusLoss();
@@ -274,7 +274,7 @@ bool UIWinMenu::isPopUpMenuChild( Node* Ctrl ) {
 }
 
 void UIWinMenu::onMenuFocusLoss( const Event* ) {
-	Node* FocusCtrl = getEventDispatcher()->getFocusControl();
+	Node* FocusCtrl = getEventDispatcher()->getFocusNode();
 
 	if ( !isParentOf( FocusCtrl ) && !isPopUpMenuChild( FocusCtrl ) ) {
 		onWidgetFocusLoss();

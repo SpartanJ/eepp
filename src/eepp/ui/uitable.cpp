@@ -592,7 +592,7 @@ Uint32 UITable::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
 		case NodeMessage::FocusLoss: {
 			if ( NULL != getEventDispatcher() ) {
-				Node* FocusCtrl = getEventDispatcher()->getFocusControl();
+				Node* FocusCtrl = getEventDispatcher()->getFocusNode();
 
 				if ( this != FocusCtrl && !isParentOf( FocusCtrl ) ) {
 					onWidgetFocusLoss();

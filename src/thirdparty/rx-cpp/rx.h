@@ -223,6 +223,14 @@ public:
     virtual std::string error();
     virtual int n_matches();
     virtual bool matches (const char *ps, regmatch_t *r_matches = NULL,size_t len=0);    
+    virtual bool matches (const std::string& s, regmatch_t *r_matches = NULL) {
+        return matches(s.c_str(),r_matches, s.size());
+    }
+    bool matches (const char *ps, int offset, regmatch_t *r_matches, size_t len);
+    bool find (const char *str, int offset, int& i1, int& i2, int len = 0, int idx = 0);
+    bool find (const std::string& s, int offset, int& i1, int& i2, int idx = 0) {
+        return find(s.c_str(),offset,i1,i2,s.size(),idx);
+    }
 };
 
 inline Rx operator"" _L (const char *pat, size_t) {  return Rxl(pat); }

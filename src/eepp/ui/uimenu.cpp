@@ -293,7 +293,7 @@ Uint32 UIMenu::onMessage( const NodeMessage* Msg ) {
 		}
 		case NodeMessage::FocusLoss: {
 			if ( NULL != getEventDispatcher() ) {
-				Node* focusCtrl = getEventDispatcher()->getFocusControl();
+				Node* focusCtrl = getEventDispatcher()->getFocusNode();
 
 				if ( this != focusCtrl && !isParentOf( focusCtrl ) && !isSubMenu( focusCtrl ) &&
 					 mOwnerNode != focusCtrl ) {

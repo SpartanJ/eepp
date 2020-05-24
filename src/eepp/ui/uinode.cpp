@@ -292,7 +292,7 @@ const Sizef& UINode::getSize() const {
 
 void UINode::drawHighlightFocus() {
 	if ( NULL != getEventDispatcher() && mSceneNode->getHighlightFocus() &&
-		 getEventDispatcher()->getFocusControl() == this ) {
+		 getEventDispatcher()->getFocusNode() == this ) {
 		Primitives P;
 		P.setFillMode( DRAW_LINE );
 		P.setBlendMode( getBlendMode() );
@@ -304,7 +304,7 @@ void UINode::drawHighlightFocus() {
 
 void UINode::drawOverNode() {
 	if ( NULL != getEventDispatcher() && mSceneNode->getHighlightOver() &&
-		 getEventDispatcher()->getOverControl() == this ) {
+		 getEventDispatcher()->getMouseOverNode() == this ) {
 		Primitives P;
 		P.setFillMode( DRAW_LINE );
 		P.setBlendMode( getBlendMode() );
@@ -316,7 +316,7 @@ void UINode::drawOverNode() {
 
 void UINode::updateDebugData() {
 	if ( NULL != mSceneNode && mSceneNode->getDrawDebugData() && isWidget() &&
-		 NULL != getEventDispatcher() && getEventDispatcher()->getOverControl() == this ) {
+		 NULL != getEventDispatcher() && getEventDispatcher()->getMouseOverNode() == this ) {
 		UIWidget* widget = asType<UIWidget>();
 
 		String text = "Tag: " + String::fromUtf8( widget->getStyleSheetTag() ) + "\n";
@@ -1141,7 +1141,7 @@ void UINode::onWidgetFocusLoss() {
 
 void UINode::setFocus() {
 	if ( NULL != getEventDispatcher() )
-		getEventDispatcher()->setFocusControl( this );
+		getEventDispatcher()->setFocusNode( this );
 }
 
 Float UINode::getPropertyRelativeTargetContainerLength(

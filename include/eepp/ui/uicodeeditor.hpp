@@ -1,8 +1,8 @@
 #ifndef EE_UI_UICODEEDIT_HPP
 #define EE_UI_UICODEEDIT_HPP
 
+#include <eepp/ui/doc/syntaxcolorscheme.hpp>
 #include <eepp/ui/doc/syntaxhighlighter.hpp>
-#include <eepp/ui/doc/syntaxstyle.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
 #include <eepp/ui/uifontstyleconfig.hpp>
 #include <eepp/ui/uiwidget.hpp>
@@ -88,6 +88,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void setCaretColor( const Color& caretColor );
 
+	const SyntaxColorScheme& getColorScheme() const;
+
+	void setColorScheme( const SyntaxColorScheme& colorScheme );
+
   protected:
 	Font* mFont;
 	UIFontStyleConfig mFontStyleConfig;
@@ -109,7 +113,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Color mLineNumberBackgroundColor;
 	Color mCurrentLineBackgroundColor;
 	Color mCaretColor;
-	SyntaxStyle mStyle;
+	SyntaxColorScheme mColorScheme;
 	SyntaxHighlighter mHighlighter;
 
 	void invalidateEditor();
@@ -151,6 +155,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void scrollToMakeVisible( const TextPosition& position );
 
 	Float getXOffsetCol( const TextPosition& position ) const;
+
+	Float getTextWidth( const String& text ) const;
 
 	Int64 getColFromXOffset( Int64 line, const Float& offset ) const;
 

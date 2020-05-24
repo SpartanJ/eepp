@@ -32,17 +32,17 @@ class EE_API EventDispatcher {
 
 	Input* getInput() const;
 
-	Node* getFocusControl() const;
+	Node* getFocusNode() const;
 
-	void setFocusControl( Node* Ctrl );
+	void setFocusNode( Node* Ctrl );
 
-	Node* getOverControl() const;
+	Node* getMouseOverNode() const;
 
-	void setOverControl( Node* Ctrl );
+	void setMouseOverNode( Node* Ctrl );
 
-	Node* getDownControl() const;
+	Node* getMouseDownNode() const;
 
-	Node* getLossFocusControl() const;
+	Node* getLossFocusNode() const;
 
 	void sendMsg( Node* Ctrl, const Uint32& Msg, const Uint32& Flags = 0 );
 
@@ -86,10 +86,10 @@ class EE_API EventDispatcher {
 	EE::Window::Window* mWindow;
 	Input* mInput;
 	SceneNode* mSceneNode;
-	Node* mFocusControl;
-	Node* mOverControl;
-	Node* mDownControl;
-	Node* mLossFocusControl;
+	Node* mFocusNode;
+	Node* mOverNode;
+	Node* mDownNode;
+	Node* mLossFocusNode;
 	Vector2f mMousePos;
 	Vector2i mMousePosi;
 	Vector2f mLastMousePos;
