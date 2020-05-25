@@ -22,6 +22,7 @@ EventDispatcher::EventDispatcher( SceneNode* sceneNode ) :
 	mLossFocusNode( NULL ),
 	mCbId( 0 ),
 	mFirstPress( false ),
+	mNodeWasDragging( NULL ),
 	mNodeDragging( NULL ) {
 	mCbId = mInput->pushCallback( cb::Make1( this, &EventDispatcher::inputCallback ) );
 }
@@ -60,7 +61,8 @@ void EventDispatcher::inputCallback( InputEvent* event ) {
 }
 
 void EventDispatcher::update( const Time& time ) {
-	bool wasDraggingNode = mNodeDragging;
+	mNodeWasDragging = mNodeDragging;
+	bool nodeWasDragging = mNodeDragging;
 
 	mElapsed = time;
 	mMousePos = mInput->getMousePosFromView( mWindow->getDefaultView() );
@@ -108,7 +110,7 @@ void EventDispatcher::update( const Time& time ) {
 
 	if ( mInput->getReleaseTrigger() ) {
 		if ( NULL != mFocusNode ) {
-			if ( !wasDraggingNode || mMousePos == mLastMousePos ) {
+			if ( !nodeWasDragging || mMousePos == mLastMousePos ) {
 				if ( mOverNode != mFocusNode &&
 					 mInput->getReleaseTrigger() & ( EE_BUTTON_LMASK | EE_BUTTON_RMASK ) )
 					setFocusNode( mOverNode );
@@ -150,9 +152,9 @@ void EventDispatcher::update( const Time& time ) {
 
 	// While dragging and object we want to be able to continue dragging even if the mouse cursor
 	// moves outside the window. Capturing the mouse allows this.
-	if ( !wasDraggingNode && isNodeDragging() ) {
+	if ( !nodeWasDragging && isNodeDragging() ) {
 		mInput->captureMouse( true );
-	} else if ( wasDraggingNode && !isNodeDragging() ) {
+	} else if ( nodeWasDragging && !isNodeDragging() ) {
 		mInput->captureMouse( false );
 	}
 }
@@ -277,6 +279,14 @@ bool EventDispatcher::isNodeDragging() const {
 	return NULL != mNodeDragging;
 }
 
+bool EventDispatcher::wasNodeDragging() const {
+	return NULL != mNodeWasDragging;
+}
+
+bool EventDispatcher::isOrWasNodeDragging() const {
+	return mNodeWasDragging || isNodeDragging();
+}
+
 Vector2i EventDispatcher::getMousePos() {
 	return mMousePosi;
 }
@@ -299,6 +309,14 @@ SceneNode* EventDispatcher::getSceneNode() const {
 
 const Time& EventDispatcher::getLastFrameTime() const {
 	return mElapsed;
+}
+
+Node* EventDispatcher::getNodeDragging() const {
+	return mNodeDragging;
+}
+
+Node* EventDispatcher::getNodeWasDragging() const {
+	return mNodeWasDragging;
 }
 
 }} // namespace EE::Scene

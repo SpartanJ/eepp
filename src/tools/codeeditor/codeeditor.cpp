@@ -36,7 +36,7 @@ void loadFileFromPath( const std::string& path ) {
 }
 
 void openFileDialog() {
-	UICommonDialog* TGDialog = UICommonDialog::New( UI_CDL_DEFAULT_FLAGS, "*.xml;*.css;*.svg" );
+	UICommonDialog* TGDialog = UICommonDialog::New( UI_CDL_DEFAULT_FLAGS, "*" );
 	TGDialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 	TGDialog->setTitle( "Open layout..." );
 	TGDialog->addEventListener( Event::OpenFile, []( const Event* event ) {

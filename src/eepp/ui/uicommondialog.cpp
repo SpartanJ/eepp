@@ -138,12 +138,14 @@ UICommonDialog::UICommonDialog( Uint32 CDLFlags, std::string DefaultFilePattern,
 
 	applyDefaultTheme();
 
-	refreshFolder();
-
 	mUISceneNode->setIsLoading( loading );
 }
 
 UICommonDialog::~UICommonDialog() {}
+
+void UICommonDialog::onWindowReady() {
+	refreshFolder();
+}
 
 Uint32 UICommonDialog::getType() const {
 	return UI_TYPE_COMMONDIALOG;

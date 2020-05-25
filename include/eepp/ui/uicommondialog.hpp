@@ -92,6 +92,8 @@ class EE_API UICommonDialog : public UIWindow {
 	UIDropDownList* mFiletype;
 	Uint32 mCDLFlags;
 
+	virtual void onWindowReady();
+
 	void onPressEnter( const Event* Event );
 
 	void onPressFileEnter( const Event* Event );

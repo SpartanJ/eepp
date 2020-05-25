@@ -70,6 +70,10 @@ class EE_API EventDispatcher {
 
 	bool isNodeDragging() const;
 
+	bool wasNodeDragging() const;
+
+	bool isOrWasNodeDragging() const;
+
 	Vector2i getMousePos();
 
 	Vector2f getMousePosf();
@@ -81,6 +85,10 @@ class EE_API EventDispatcher {
 	SceneNode* getSceneNode() const;
 
 	const Time& getLastFrameTime() const;
+
+	Node* getNodeDragging() const;
+
+	Node* getNodeWasDragging() const;
 
   protected:
 	EE::Window::Window* mWindow;
@@ -97,6 +105,7 @@ class EE_API EventDispatcher {
 	Vector2i mClickPos;
 	Int32 mCbId;
 	bool mFirstPress;
+	Node* mNodeWasDragging;
 	Node* mNodeDragging;
 	Time mElapsed;
 

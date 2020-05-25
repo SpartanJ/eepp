@@ -94,14 +94,13 @@ void UndoStack::pushUndo( UndoStackContainer& undoStack, TextUndoCommand* cmd ) 
 
 void UndoStack::pushInsert( UndoStackContainer& undoStack, const String& string,
 							const TextPosition& position, const Time& time ) {
-	pushUndo( undoStack, eeNew( TextUndoCommandInsert, ( ++mChangeIdCounter, string,
-																  position, time ) ) );
+	pushUndo( undoStack,
+			  eeNew( TextUndoCommandInsert, ( ++mChangeIdCounter, string, position, time ) ) );
 }
 
 void UndoStack::pushRemove( UndoStackContainer& undoStack, const TextRange& range,
 							const Time& time ) {
-	pushUndo( undoStack,
-			  eeNew( TextUndoCommandRemove, ( ++mChangeIdCounter, range, time ) ) );
+	pushUndo( undoStack, eeNew( TextUndoCommandRemove, ( ++mChangeIdCounter, range, time ) ) );
 }
 
 void UndoStack::pushSelection( UndoStackContainer& undoStack, const TextRange& selection,
@@ -131,8 +130,7 @@ void UndoStack::popUndo( UndoStackContainer& undoStack, UndoStackContainer& redo
 			break;
 		}
 		case TextUndoCommandType::Selection: {
-			TextUndoCommandSelection* selection =
-				static_cast<TextUndoCommandSelection*>( cmd );
+			TextUndoCommandSelection* selection = static_cast<TextUndoCommandSelection*>( cmd );
 			mDoc->setSelection( selection->getSelection() );
 			break;
 		}

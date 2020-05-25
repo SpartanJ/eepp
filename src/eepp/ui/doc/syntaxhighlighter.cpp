@@ -15,9 +15,10 @@ TokenizedLine SyntaxHighlighter::tokenizeLine( const size_t& line, const int& st
 	TokenizedLine tokenizedLine;
 	tokenizedLine.initState = state;
 	tokenizedLine.text = mDoc->line( line );
-	auto res = SyntaxTokenizer::tokenize( mDoc->getSyntaxDefinition(), tokenizedLine.text.toUtf8(), state );
-	tokenizedLine.tokens = res.first;
-	tokenizedLine.state = res.second;
+	std::pair<std::vector<SyntaxToken>, int> res = SyntaxTokenizer::tokenize(
+		mDoc->getSyntaxDefinition(), tokenizedLine.text.toUtf8(), state );
+	tokenizedLine.tokens = std::move( res.first );
+	tokenizedLine.state = std::move( res.second );
 	return tokenizedLine;
 }
 

@@ -94,7 +94,7 @@ bool VertexBufferVBO::compile() {
 	}
 
 	// Create the VBO index array
-	if ( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_USE_INDICES ) ) {
+	if ( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_USE_INDICES ) && !mIndexArray.empty() ) {
 		glGenBuffersARB( 1, (unsigned int*)&mElementHandle );
 
 		glBindBufferARB( GL_ELEMENT_ARRAY_BUFFER, mElementHandle );
@@ -193,7 +193,8 @@ void VertexBufferVBO::setVertexStates() {
 																EEGL_TEXTURE_COORD_ARRAY ) );
 
 					if ( -1 != index )
-						glVertexAttribPointerARB( index, VertexElementCount[VERTEX_FLAG_TEXTURE0 + i],
+						glVertexAttribPointerARB( index,
+												  VertexElementCount[VERTEX_FLAG_TEXTURE0 + i],
 												  GL_FP, GL_FALSE, 0, 0 );
 				} else
 #endif
@@ -228,13 +229,13 @@ void VertexBufferVBO::setVertexStates() {
 									  EEGL_TEXTURE_COORD_ARRAY ) );
 
 				if ( -1 != index )
-					glVertexAttribPointerARB( index, VertexElementCount[VERTEX_FLAG_TEXTURE0], GL_FP,
-											  GL_FALSE, 0, 0 );
+					glVertexAttribPointerARB( index, VertexElementCount[VERTEX_FLAG_TEXTURE0],
+											  GL_FP, GL_FALSE, 0, 0 );
 			} else
 #endif
 			{
-				GLi->texCoordPointer( VertexElementCount[VERTEX_FLAG_TEXTURE0], GL_FP, 0, (char*)NULL,
-									  0 );
+				GLi->texCoordPointer( VertexElementCount[VERTEX_FLAG_TEXTURE0], GL_FP, 0,
+									  (char*)NULL, 0 );
 			}
 
 			mTextured = true;
@@ -265,7 +266,8 @@ void VertexBufferVBO::setVertexStates() {
 		} else
 #endif
 		{
-			GLi->vertexPointer( VertexElementCount[VERTEX_FLAG_POSITION], GL_FP, 0, (char*)NULL, 0 );
+			GLi->vertexPointer( VertexElementCount[VERTEX_FLAG_POSITION], GL_FP, 0, (char*)NULL,
+								0 );
 		}
 	} else {
 		GLi->disableClientState( GL_VERTEX_ARRAY );

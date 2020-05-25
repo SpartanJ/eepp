@@ -431,7 +431,8 @@ void UISlider::manageClick( const Uint32& Flags ) {
 		Vector2f controlPos = getEventDispatcher()->getMousePosf();
 		mSlider->worldToNode( controlPos );
 
-		if ( Flags & EE_BUTTON_LMASK && !mSlider->isMouseOver() ) {
+		if ( Flags & EE_BUTTON_LMASK && !mSlider->isMouseOver() && !mSlider->isDragging() &&
+			 getUISceneNode()->getEventDispatcher()->getNodeWasDragging() != mSlider ) {
 			if ( UIOrientation::Horizontal == mOrientation ) {
 				if ( controlPos.x < 0 )
 					setValue( mValue - mClickStep );

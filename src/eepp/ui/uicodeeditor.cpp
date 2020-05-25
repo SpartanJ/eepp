@@ -769,11 +769,12 @@ int UICodeEditor::getVisibleLinesCount() {
 void UICodeEditor::scrollToMakeVisible( const TextPosition& position ) {
 	// Vertical Scroll
 	Float lineHeight = getLineHeight();
-	Float min = lineHeight * ( eemax<Float>( 0, position.line() - 1 ) );
-	Float max = lineHeight * ( position.line() + 2 ) - mSize.getHeight();
-	Float scrollY = eemin( mScroll.y, min );
-	scrollY = eefloor( eemax( mScroll.y, max ) );
-	setScrollY( scrollY );
+	Float min = eefloor( lineHeight * ( eemax<Float>( 0, position.line() - 1 ) ) );
+	Float max = eefloor( lineHeight * ( position.line() + 2 ) - mSize.getHeight() );
+	if ( min < mScroll.y )
+		setScrollY( min );
+	else if ( max > mScroll.y )
+		setScrollY( max );
 
 	// Horizontal Scroll
 	Float offsetX = getXOffsetCol( position );

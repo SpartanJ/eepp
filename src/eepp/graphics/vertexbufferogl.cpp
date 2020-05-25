@@ -40,11 +40,14 @@ void VertexBufferOGL::setVertexStates() {
 	if ( GLi->isExtension( EEGL_ARB_multitexture ) ) {
 		for ( Int32 i = 0; i < EE_MAX_TEXTURE_UNITS; i++ ) {
 			if ( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_TEXTURE0 + i ) ) {
+				if ( mVertexArray[VERTEX_FLAG_TEXTURE0 + i].empty() )
+					return;
 				GLi->clientActiveTexture( GL_TEXTURE0 + i );
 				GLi->enableClientState( GL_TEXTURE_COORD_ARRAY );
 
 				GLi->texCoordPointer( VertexElementCount[VERTEX_FLAG_TEXTURE0 + i], GL_FP,
-									  sizeof( Float ) * VertexElementCount[VERTEX_FLAG_TEXTURE0 + i],
+									  sizeof( Float ) *
+										  VertexElementCount[VERTEX_FLAG_TEXTURE0 + i],
 									  &mVertexArray[VERTEX_FLAG_TEXTURE0 + i][0], alloc );
 			} else {
 				if ( 0 == i ) {
@@ -56,6 +59,8 @@ void VertexBufferOGL::setVertexStates() {
 		}
 	} else {
 		if ( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_TEXTURE0 ) ) {
+			if ( mVertexArray[VERTEX_FLAG_TEXTURE0].empty() )
+				return;
 			GLi->enableClientState( GL_TEXTURE_COORD_ARRAY );
 			GLi->texCoordPointer( VertexElementCount[VERTEX_FLAG_TEXTURE0], GL_FP,
 								  sizeof( Float ) * VertexElementCount[VERTEX_FLAG_TEXTURE0],
@@ -68,6 +73,8 @@ void VertexBufferOGL::setVertexStates() {
 
 	/// POSITION
 	if ( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_POSITION ) ) {
+		if ( mVertexArray[VERTEX_FLAG_POSITION].empty() )
+			return;
 		GLi->enableClientState( GL_VERTEX_ARRAY );
 		GLi->vertexPointer( VertexElementCount[VERTEX_FLAG_POSITION], GL_FP,
 							sizeof( Float ) * VertexElementCount[VERTEX_FLAG_POSITION],
@@ -78,6 +85,8 @@ void VertexBufferOGL::setVertexStates() {
 
 	/// COLOR
 	if ( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_COLOR ) ) {
+		if ( mColorArray.empty() )
+			return;
 		GLi->enableClientState( GL_COLOR_ARRAY );
 		GLi->colorPointer( VertexElementCount[VERTEX_FLAG_COLOR], GL_UNSIGNED_BYTE,
 						   sizeof( Uint8 ) * VertexElementCount[VERTEX_FLAG_COLOR], &mColorArray[0],
@@ -104,7 +113,7 @@ void VertexBufferOGL::unbind() {
 	}
 }
 
-void VertexBufferOGL::update( const Uint32& Types, bool Indices ) {}
+void VertexBufferOGL::update( const Uint32&, bool ) {}
 
 void VertexBufferOGL::reload() {}
 
