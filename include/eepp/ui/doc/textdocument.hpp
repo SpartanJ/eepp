@@ -18,7 +18,7 @@ namespace EE { namespace UI { namespace Doc {
 
 class EE_API TextDocument {
   public:
-	class Client {
+	class EE_API Client {
 	  public:
 		virtual ~Client();
 		virtual void onDocumentTextChanged() = 0;

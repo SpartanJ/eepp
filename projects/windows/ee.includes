@@ -5,6 +5,7 @@
 ../../src/thirdparty/efsw/include
 ../../src/thirdparty/libvorbis/include
 /usr/include/freetype2/
-../../include/eepp/ui/css
-../../src/eepp/ui/css
 ../../src/thirdparty/mbedtls/include
+../../docs/articles
+../../include/eepp/ui/doc
+../../src/eepp/ui/doc

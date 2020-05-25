@@ -310,7 +310,7 @@ const Float& UICodeEditor::getLineNumberPaddingRight() const {
 }
 
 size_t UICodeEditor::getLineNumberDigits() const {
-	return eemax( 2UL, Math::countDigits( mDoc.linesCount() ) );
+	return eemax<size_t>( 2UL, Math::countDigits( mDoc.linesCount() ) );
 }
 
 Float UICodeEditor::getLineNumberWidth() const {

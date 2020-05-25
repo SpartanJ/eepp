@@ -15,7 +15,7 @@ TokenizedLine SyntaxHighlighter::tokenizeLine( const size_t& line, const int& st
 	TokenizedLine tokenizedLine;
 	tokenizedLine.initState = state;
 	tokenizedLine.text = mDoc->line( line );
-	auto res = SyntaxTokenizer::tokenize( mDoc->getSyntaxDefinition(), tokenizedLine.text, state );
+	auto res = SyntaxTokenizer::tokenize( mDoc->getSyntaxDefinition(), tokenizedLine.text.toUtf8(), state );
 	tokenizedLine.tokens = res.first;
 	tokenizedLine.state = res.second;
 	return tokenizedLine;

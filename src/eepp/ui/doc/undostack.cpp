@@ -1,3 +1,4 @@
+#include <eepp/core/core.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
 #include <eepp/ui/doc/undostack.hpp>
 
@@ -60,69 +61,87 @@ UndoStack::UndoStack( TextDocument* owner, const Uint32& maxStackSize ) :
 	mChangeIdCounter( 0 ),
 	mMergeTimeout( Milliseconds( 300.f ) ) {}
 
+UndoStack::~UndoStack() {
+	clear();
+}
+
 void UndoStack::clear() {
-	mUndoStack.clear();
+	clearUndoStack();
 	clearRedoStack();
 }
 
+void UndoStack::clearUndoStack() {
+	for ( TextUndoCommand* cmd : mUndoStack ) {
+		eeDelete( cmd );
+	}
+	mUndoStack.clear();
+}
+
 void UndoStack::clearRedoStack() {
+	for ( TextUndoCommand* cmd : mRedoStack ) {
+		eeDelete( cmd );
+	}
 	mRedoStack.clear();
 }
 
-void UndoStack::pushUndo( UndoStackContainer& undoStack, std::unique_ptr<TextUndoCommand>&& cmd ) {
-	undoStack.push_back( std::move( cmd ) );
+void UndoStack::pushUndo( UndoStackContainer& undoStack, TextUndoCommand* cmd ) {
+	undoStack.push_back( cmd );
 	while ( undoStack.size() > mMaxStackSize ) {
+		eeDelete( undoStack.front() );
 		undoStack.pop_front();
 	}
 }
 
 void UndoStack::pushInsert( UndoStackContainer& undoStack, const String& string,
 							const TextPosition& position, const Time& time ) {
-	pushUndo( undoStack, std::make_unique<TextUndoCommandInsert>( ++mChangeIdCounter, string,
-																  position, time ) );
+	pushUndo( undoStack, eeNew( TextUndoCommandInsert, ( ++mChangeIdCounter, string,
+																  position, time ) ) );
 }
 
 void UndoStack::pushRemove( UndoStackContainer& undoStack, const TextRange& range,
 							const Time& time ) {
 	pushUndo( undoStack,
-			  std::make_unique<TextUndoCommandRemove>( ++mChangeIdCounter, range, time ) );
+			  eeNew( TextUndoCommandRemove, ( ++mChangeIdCounter, range, time ) ) );
 }
 
 void UndoStack::pushSelection( UndoStackContainer& undoStack, const TextRange& selection,
 							   const Time& time ) {
 	pushUndo( undoStack,
-			  std::make_unique<TextUndoCommandSelection>( ++mChangeIdCounter, selection, time ) );
+			  eeNew( TextUndoCommandSelection, ( ++mChangeIdCounter, selection, time ) ) );
 }
 
 void UndoStack::popUndo( UndoStackContainer& undoStack, UndoStackContainer& redoStack ) {
 	if ( undoStack.empty() )
 		return;
 
-	auto cmd = std::move( undoStack.back() );
+	TextUndoCommand* cmd = undoStack.back();
+	Time lastTimestamp = cmd->getTimestamp();
 	undoStack.pop_back();
 
 	switch ( cmd->getType() ) {
 		case TextUndoCommandType::Insert: {
-			TextUndoCommandInsert* insert = static_cast<TextUndoCommandInsert*>( cmd.get() );
+			TextUndoCommandInsert* insert = static_cast<TextUndoCommandInsert*>( cmd );
 			mDoc->insert( insert->getPosition(), insert->getText(), redoStack,
 						  cmd->getTimestamp() );
 			break;
 		}
 		case TextUndoCommandType::Remove: {
-			TextUndoCommandRemove* remove = static_cast<TextUndoCommandRemove*>( cmd.get() );
+			TextUndoCommandRemove* remove = static_cast<TextUndoCommandRemove*>( cmd );
 			mDoc->remove( remove->getRange(), redoStack, cmd->getTimestamp() );
 			break;
 		}
 		case TextUndoCommandType::Selection: {
 			TextUndoCommandSelection* selection =
-				static_cast<TextUndoCommandSelection*>( cmd.get() );
+				static_cast<TextUndoCommandSelection*>( cmd );
 			mDoc->setSelection( selection->getSelection() );
 			break;
 		}
 	}
 
+	eeSAFE_DELETE( cmd );
+
 	if ( !undoStack.empty() &&
-		 eeabs( ( cmd->getTimestamp() - undoStack.back()->getTimestamp() ).asMilliseconds() ) <
+		 eeabs( ( lastTimestamp - undoStack.back()->getTimestamp() ).asMilliseconds() ) <
 			 mMergeTimeout.asMilliseconds() ) {
 		popUndo( undoStack, redoStack );
 	}

@@ -402,7 +402,7 @@ TextPosition TextDocument::startOfWord( TextPosition position ) const {
 	while ( true ) {
 		TextPosition curPos = positionOffset( position, -1 );
 		String::StringBaseType ch = getChar( curPos );
-		if ( isNonWord( ch ) or position == curPos ) {
+		if ( isNonWord( ch ) || position == curPos ) {
 			break;
 		}
 		position = curPos;
@@ -414,7 +414,7 @@ TextPosition TextDocument::endOfWord( TextPosition position ) const {
 	while ( true ) {
 		TextPosition curPos = positionOffset( position, 1 );
 		String::StringBaseType ch = getChar( position );
-		if ( isNonWord( ch ) or position == curPos ) {
+		if ( isNonWord( ch ) || position == curPos ) {
 			break;
 		}
 		position = curPos;

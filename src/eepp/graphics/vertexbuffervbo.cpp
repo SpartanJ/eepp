@@ -76,7 +76,7 @@ bool VertexBufferVBO::compile() {
 
 			glBindBufferARB( GL_ARRAY_BUFFER, mArrayHandle[i] );
 
-			if ( mArrayHandle[i] ) {
+			if ( mArrayHandle[i] && !mVertexArray[i].empty() ) {
 				if ( i != VERTEX_FLAG_COLOR )
 					glBufferDataARB( GL_ARRAY_BUFFER, mVertexArray[i].size() * sizeof( Float ),
 									 &( mVertexArray[i][0] ), usageType );

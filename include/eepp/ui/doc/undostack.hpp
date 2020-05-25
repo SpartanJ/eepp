@@ -68,13 +68,17 @@ class EE_API TextUndoCommandSelection : public TextUndoCommand {
 	TextRange mSelection;
 };
 
-using UndoStackContainer = std::deque<std::unique_ptr<TextUndoCommand>>;
+using UndoStackContainer = std::deque<TextUndoCommand*>;
 
 class EE_API UndoStack {
   public:
 	UndoStack( TextDocument* owner, const Uint32& maxStackSize = 1000 );
 
+	~UndoStack();
+
 	void clear();
+
+	void clearUndoStack();
 
 	void clearRedoStack();
 
@@ -100,7 +104,7 @@ class EE_API UndoStack {
 	UndoStackContainer mRedoStack;
 	Time mMergeTimeout;
 
-	void pushUndo( UndoStackContainer& undoStack, std::unique_ptr<TextUndoCommand>&& cmd );
+	void pushUndo( UndoStackContainer& undoStack, TextUndoCommand* cmd );
 
 	void pushInsert( UndoStackContainer& undoStack, const String& string,
 					 const TextPosition& position, const Time& time );

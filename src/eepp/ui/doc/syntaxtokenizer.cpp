@@ -31,7 +31,7 @@ static void pushToken( std::vector<SyntaxToken>& tokens, const std::string& type
 bool isScaped( const std::string& text, const size_t& startIndex, const std::string& escapeStr ) {
 	char escapeByte = escapeStr.empty() ? '\\' : escapeStr[0];
 	int count = 0;
-	for ( size_t i = startIndex - 1; i >= 0; i-- ) {
+	for ( int i = startIndex < 1 ? 0 : startIndex - 1; i >= 0; i-- ) {
 		if ( text[i] != escapeByte )
 			break;
 		count++;
