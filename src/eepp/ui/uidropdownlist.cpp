@@ -46,9 +46,6 @@ UIDropDownList::UIDropDownList( const std::string& tag ) :
 	mListBox->addEventListener( Event::KeyDown, cb::Make1( this, &UIDropDownList::onItemKeyDown ) );
 	mListBox->addEventListener( Event::OnControlClear,
 								cb::Make1( this, &UIDropDownList::onControlClear ) );
-	mListBox->addEventListener( Event::OnClose, [&]( const Event*) {
-		mListBox = NULL;
-	} );
 }
 
 UIDropDownList::~UIDropDownList() {
@@ -138,7 +135,7 @@ void UIDropDownList::showList() {
 		if ( !mStyleConfig.PopUpToRoot )
 			mListBox->setParent( getWindowContainer() );
 		else
-			mListBox->setParent( mSceneNode );
+			mListBox->setParent( getUISceneNode()->getRoot() );
 
 		mListBox->toFront();
 
@@ -234,8 +231,7 @@ void UIDropDownList::onListBoxFocusLoss( const Event* ) {
 	if ( NULL == getEventDispatcher() )
 		return;
 
-	bool frienIsFocus =
-		NULL != mFriendCtrl && mFriendCtrl == getEventDispatcher()->getFocusNode();
+	bool frienIsFocus = NULL != mFriendCtrl && mFriendCtrl == getEventDispatcher()->getFocusNode();
 	bool isChildFocus = isChild( getEventDispatcher()->getFocusNode() );
 
 	if ( getEventDispatcher()->getFocusNode() != this && !isChildFocus && !frienIsFocus ) {
@@ -313,8 +309,9 @@ Uint32 UIDropDownList::onKeyDown( const KeyEvent& Event ) {
 }
 
 void UIDropDownList::destroyListBox() {
-	if ( !SceneManager::instance()->isShootingDown() && NULL != mListBox ) {
-		mListBox->close();
+	if ( !SceneManager::instance()->isShootingDown() && NULL != mListBox &&
+		 mListBox->getParent() != this ) {
+		mListBox->setParent( this );
 	}
 }
 

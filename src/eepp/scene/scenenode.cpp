@@ -216,11 +216,16 @@ void SceneNode::addToCloseQueue( Node* node ) {
 
 void SceneNode::checkClose() {
 	if ( !mCloseList.empty() ) {
-		for ( auto it = mCloseList.begin(); it != mCloseList.end(); ++it ) {
-			eeDelete( *it );
-		}
-
+		// First we need to create a temporal copy of the close list because it can change its
+		// content while deleting the elements, since the elements can call to any node close()
+		// at any moment (and in this case during the deletion of a node).
+		// Once copied we need to clear the close list and start the new close list for the next
+		// check.
+		CloseList closeListCopy( mCloseList );
 		mCloseList.clear();
+
+		for ( Node* node : closeListCopy )
+			eeDelete( node );
 	}
 }
 

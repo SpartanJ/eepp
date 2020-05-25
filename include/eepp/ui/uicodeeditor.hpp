@@ -78,6 +78,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	const Float& getLineNumberPaddingRight() const;
 
+	size_t getLineNumberDigits() const;
+
 	Float getLineNumberWidth() const;
 
 	const bool& getShowLineNumber() const;

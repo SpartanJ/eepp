@@ -202,6 +202,8 @@ class EE_API UINode : public Node {
 
 	void setDragging( const bool& dragging );
 
+	void startDragging( const Vector2f& position );
+
 	bool ownsChildPosition() const;
 
 	const Vector2f& getDragPoint() const;
@@ -255,6 +257,10 @@ class EE_API UINode : public Node {
 	void setMinSize( const Sizef& size );
 
 	const Sizef& getMinSize() const;
+
+	bool isTabStop() const;
+
+	Rectf getLocalDpBounds() const;
 
   protected:
 	Vector2f mDpPos;

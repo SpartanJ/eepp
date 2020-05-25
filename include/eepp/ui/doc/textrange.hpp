@@ -54,6 +54,10 @@ class EE_API TextRange {
 		return true;
 	}
 
+	std::string toString() {
+		return String::format( "%s - %s", mStart.toString().c_str(), mEnd.toString().c_str() );
+	}
+
   private:
 	TextPosition mStart;
 	TextPosition mEnd;

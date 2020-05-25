@@ -14,8 +14,7 @@ bool onCloseRequestCallback( EE::Window::Window* ) {
 		MsgBox = UIMessageBox::New(
 			UIMessageBox::OK_CANCEL,
 			"Do you really want to close the code editor?\nAll changes will be lost." );
-		MsgBox->addEventListener( Event::MsgBoxConfirmClick,
-								  []( const Event* ) { win->close(); } );
+		MsgBox->addEventListener( Event::MsgBoxConfirmClick, []( const Event* ) { win->close(); } );
 		MsgBox->addEventListener( Event::OnClose, []( const Event* ) { MsgBox = NULL; } );
 		MsgBox->setTitle( "Close Code Editor?" );
 		MsgBox->center();
@@ -36,45 +35,60 @@ void loadFileFromPath( const std::string& path ) {
 	setAppTitle( curFile );
 }
 
+void openFileDialog() {
+	UICommonDialog* TGDialog = UICommonDialog::New( UI_CDL_DEFAULT_FLAGS, "*.xml;*.css;*.svg" );
+	TGDialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
+	TGDialog->setTitle( "Open layout..." );
+	TGDialog->addEventListener( Event::OpenFile, []( const Event* event ) {
+		loadFileFromPath( event->getNode()->asType<UICommonDialog>()->getFullPath() );
+	} );
+	TGDialog->center();
+	TGDialog->show();
+}
+
 void mainLoop() {
 	if ( codeEditor->isDirty() != docDirtyState ) {
 		docDirtyState = codeEditor->isDirty();
 		setAppTitle( docDirtyState ? curFile + "*" : curFile );
 	}
 
-	win->getInput()->update();
+	Input* input = win->getInput();
 
-	if ( win->getInput()->isControlPressed() && win->getInput()->isKeyUp( KEY_S ) ) {
+	input->update();
+
+	if ( ( input->isControlPressed() && input->isKeyUp( KEY_O ) ) || input->isKeyUp( KEY_F2 ) ) {
+		openFileDialog();
+	}
+
+	if ( input->isControlPressed() && input->isKeyUp( KEY_S ) ) {
 		codeEditor->save();
 	}
 
-	if ( win->getInput()->isKeyUp( KEY_F6 ) ) {
+	if ( input->isKeyUp( KEY_F6 ) ) {
 		uiSceneNode->setHighlightOver( !uiSceneNode->getHighlightOver() );
 	}
 
-	if ( win->getInput()->isKeyUp( KEY_F7 ) ) {
+	if ( input->isKeyUp( KEY_F7 ) ) {
 		uiSceneNode->setDrawBoxes( !uiSceneNode->getDrawBoxes() );
 	}
 
-	if ( win->getInput()->isKeyUp( KEY_F8 ) ) {
+	if ( input->isKeyUp( KEY_F8 ) ) {
 		uiSceneNode->setDrawDebugData( !uiSceneNode->getDrawDebugData() );
 	}
 
-	if ( win->getInput()->isKeyUp( KEY_ESCAPE ) && NULL == MsgBox &&
-		 onCloseRequestCallback( win ) ) {
+	if ( input->isKeyUp( KEY_ESCAPE ) && NULL == MsgBox && onCloseRequestCallback( win ) ) {
 		win->close();
 	}
 
-	// Update the UI scene.
+	if ( input->isAltPressed() && input->isKeyUp( KEY_RETURN ) ) {
+		win->toggleFullscreen();
+	}
+
 	SceneManager::instance()->update();
 
-	// Check if the UI has been invalidated ( needs redraw ).
 	if ( SceneManager::instance()->getUISceneNode()->invalidated() ) {
 		win->clear();
-
-		// Redraw the UI scene.
 		SceneManager::instance()->draw();
-
 		win->display();
 	} else {
 		Sys::sleep( Milliseconds( win->isVisible() ? 1 : 8 ) );

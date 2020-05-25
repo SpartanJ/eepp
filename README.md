@@ -584,11 +584,15 @@ Probably deprecate the Maps module, since I will focus my efforts on the UI syst
 
 * Michael R. P. Ragazzon [RmlUI](https://github.com/mikke89/RmlUi)
 
+* rxi for [lite](https://github.com/rxi/lite)
+
+* Andreas Kling for [SerenityOS](https://github.com/SerenityOS/serenity)
+
 * Ryan C. Gordon for [mojoAL](https://icculus.org/mojoAL/)
 
 * David Reid for [dr_libs](https://github.com/mackron/dr_libs)
 
-* Lion (Lieff) for [minimp3](https://github.com/lieff/minimp3) and more.
+* Lion (Lieff) for [minimp3](https://github.com/lieff/minimp3) and more
 
 * Lewis Van Winkle for [PlusCallback](https://github.com/codeplea/pluscallback)
 

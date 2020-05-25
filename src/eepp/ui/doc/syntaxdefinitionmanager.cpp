@@ -1,7 +1,8 @@
 #include <algorithm>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/luapatternmatcher.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
-#include <rx-cpp/rx.h>
+#include <eepp/ui/uiwidgetcreator.hpp>
 
 using namespace EE::System;
 
@@ -9,11 +10,14 @@ namespace EE { namespace UI { namespace Doc {
 
 SINGLETON_DECLARE_IMPLEMENTATION( SyntaxDefinitionManager )
 
+// Syntax definitions can be directly converted from the lite (https://github.com/rxi/lite) and
+// lite-plugins (https://github.com/rxi/lite-plugins) supported languages.
+
 SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	// Register some languages support.
 
 	// XML - HTML
-	add( {{"%.xml$", "%.html?$"},
+	add( {{"%.xml$", "%.html?$", "%.svg?$"},
 		  {
 			  {{"<!%-%-", "%-%->"}, "comment"},
 			  {{"%f[^>][^<]", "%f[<]"}, "normal"},
@@ -47,7 +51,8 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 			  {{"@[%a][%w_-]*"}, "keyword2"},
 			  {{"%.[%a][%w_-]*"}, "keyword2"},
 			  {{"[{}:]"}, "operator"},
-		  }} );
+		  }} )
+		.addSymbols( UIWidgetCreator::getWidgetNames(), "keyword2" );
 
 	// Markdown
 	add( {{"%.md$", "%.markdown$"},
@@ -394,14 +399,17 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 		  "//"} );
 }
 
-void SyntaxDefinitionManager::add( SyntaxDefinition&& syntaxStyle ) {
+SyntaxDefinition& SyntaxDefinitionManager::add( SyntaxDefinition&& syntaxStyle ) {
 	mStyles.emplace_back( std::move( syntaxStyle ) );
+	return mStyles.back();
 }
 
-const SyntaxDefinition PLAIN_STYLE = SyntaxDefinition();
-
 const SyntaxDefinition& SyntaxDefinitionManager::getPlainStyle() const {
-	return PLAIN_STYLE;
+	return mEmptyDefinition;
+}
+
+SyntaxDefinition& SyntaxDefinitionManager::getStyleByExtensionRef( const std::string& filePath ) {
+	return const_cast<SyntaxDefinition&>( getStyleByExtension( filePath ) );
 }
 
 const SyntaxDefinition&
@@ -410,8 +418,8 @@ SyntaxDefinitionManager::getStyleByExtension( const std::string& filePath ) cons
 	if ( !extension.empty() ) {
 		for ( auto style = mStyles.rbegin(); style != mStyles.rend(); ++style ) {
 			for ( auto ext : style->getFiles() ) {
-				if ( String::startsWith( ext, "%." ) ) {
-					textutil::Rxl words( ext );
+				if ( String::startsWith( ext, "%." ) || String::endsWith( ext, "$" ) ) {
+					LuaPatternMatcher words( ext );
 					int start, end;
 					if ( words.find( filePath, 0, start, end ) ) {
 						return *style;
@@ -422,6 +430,7 @@ SyntaxDefinitionManager::getStyleByExtension( const std::string& filePath ) cons
 			}
 		}
 	}
-	return PLAIN_STYLE;
+	return mEmptyDefinition;
 }
+
 }}} // namespace EE::UI::Doc

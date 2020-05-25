@@ -1,5 +1,7 @@
 #include <eepp/graphics/textureregion.hpp>
+#include <eepp/scene/eventdispatcher.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uislider.hpp>
 #include <eepp/ui/uithememanager.hpp>
 
@@ -52,7 +54,7 @@ UISlider::UISlider( const std::string& tag, const UIOrientation& orientation ) :
 		mSlider = UIWidget::NewWithTag( mTag + "::vbutton" );
 	}
 
-	auto cb = [&]( const Event* event ) {
+	auto cb = [&]( const Event* ) {
 		if ( !mUpdating )
 			adjustChilds();
 	};
@@ -68,8 +70,7 @@ UISlider::UISlider( const std::string& tag, const UIOrientation& orientation ) :
 	mSlider->setDragEnabled( true );
 	mSlider->setSize( 4, 4 );
 	mSlider->setPosition( 0, 0 );
-	mSlider->addEventListener( Event::OnPositionChange,
-							   [&]( const Event* event ) { fixSliderPos(); } );
+	mSlider->addEventListener( Event::OnPositionChange, [&]( const Event* ) { fixSliderPos(); } );
 
 	if ( UIOrientation::Horizontal == mOrientation )
 		mSlider->centerVertical();
@@ -124,6 +125,21 @@ void UISlider::onSizeChange() {
 void UISlider::onPaddingChange() {
 	adjustChilds();
 	UIWidget::onPaddingChange();
+}
+
+Uint32 UISlider::onMouseDown( const Vector2i& position, const Uint32& flags ) {
+	Vector2f mouseDownInitPos(
+		getUISceneNode()->getEventDispatcher()->getMouseDownPos().asFloat() );
+	worldToNode( mouseDownInitPos );
+	if ( getLocalDpBounds().contains( mouseDownInitPos ) ) {
+		Vector2f localPos( position.asFloat() );
+		worldToNode( localPos );
+		if ( localPos.y >= mSlider->getPosition().y &&
+			 localPos.y <= mSlider->getPosition().y + mSlider->getSize().getHeight() ) {
+			mSlider->startDragging( position.asFloat() );
+		}
+	}
+	return UIWidget::onMouseDown( position, flags );
 }
 
 void UISlider::adjustChilds() {

@@ -32,6 +32,19 @@ class EE_API SyntaxDefinition {
 
 	std::string getSymbol( const std::string& symbol ) const;
 
+	/** Accepts lua patterns and file extensions. */
+	SyntaxDefinition& addFileType( const std::string& fileType );
+
+	SyntaxDefinition& addPattern( const SyntaxPattern& pattern );
+
+	SyntaxDefinition& addSymbol( const std::string& symbolName, const std::string& typeName );
+
+	SyntaxDefinition& addSymbols( const std::vector<std::string>& symbolNames,
+								  const std::string& typeName );
+
+	/** Sets the comment string used for auto-comment functionality. */
+	SyntaxDefinition& setComment( const std::string& comment );
+
   protected:
 	std::vector<std::string> mFiles;
 	std::vector<SyntaxPattern> mPatterns;

@@ -36,7 +36,7 @@ enum UIFlag {
 	UI_TEXT_SELECTION_ENABLED = ( 1 << 19 ),
 	UI_ATTRIBUTE_CHANGED = ( 1 << 20 ),
 	UI_CHECKED = ( 1 << 21 ),
-	UI_OWNS_CHILDS_POSITION = ( 1 << 22 )
+	UI_OWNS_CHILDS_POSITION = ( 1 << 22 ),
 };
 
 enum UINodeType {

@@ -34,4 +34,33 @@ std::string SyntaxDefinition::getSymbol( const std::string& symbol ) const {
 	return "";
 }
 
+SyntaxDefinition& SyntaxDefinition::addFileType( const std::string& fileType ) {
+	mFiles.push_back( fileType );
+	return *this;
+}
+
+SyntaxDefinition& SyntaxDefinition::addPattern( const SyntaxPattern& pattern ) {
+	mPatterns.push_back( pattern );
+	return *this;
+}
+
+SyntaxDefinition& SyntaxDefinition::addSymbol( const std::string& symbolName,
+											   const std::string& typeName ) {
+	mSymbols[symbolName] = typeName;
+	return *this;
+}
+
+SyntaxDefinition& SyntaxDefinition::addSymbols( const std::vector<std::string>& symbolNames,
+												const std::string& typeName ) {
+	for ( auto& symbol : symbolNames ) {
+		addSymbol( symbol, typeName );
+	}
+	return *this;
+}
+
+SyntaxDefinition& SyntaxDefinition::setComment( const std::string& comment ) {
+	mComment = comment;
+	return *this;
+}
+
 }}} // namespace EE::UI::Doc

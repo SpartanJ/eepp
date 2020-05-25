@@ -40,6 +40,11 @@ UISceneNode::UISceneNode( EE::Window::Window* window ) :
 #endif
 	mUpdatingLayouts( false ),
 	mUIThemeManager( UIThemeManager::New() ) {
+	// Reset size since the SceneNode already set it but needs to set the size from zero to emmit
+	// the required events to its childs.
+	mSize = Sizef();
+	mDpSize = Sizef();
+
 	// Update only UI elements that requires it.
 	setUpdateAllChilds( false );
 
@@ -48,7 +53,7 @@ UISceneNode::UISceneNode( EE::Window::Window* window ) :
 	setEventDispatcher( UIEventDispatcher::New( this ) );
 
 	mRoot = UIWidget::NewWithTag( ":root" );
-	mRoot->setParent( this )->setPosition( 0, 0 );
+	mRoot->setParent( this )->setPosition( 0, 0 )->setId( "uiscenenode_root_node" );
 	mRoot->enableReportSizeChangeToChilds();
 
 	resizeControl( mWindow );
@@ -63,8 +68,7 @@ UISceneNode::~UISceneNode() {
 }
 
 void UISceneNode::resizeControl( EE::Window::Window* ) {
-	setSize( eefloor( mWindow->getWidth() / PixelDensity::getPixelDensity() ),
-			 eefloor( mWindow->getHeight() / PixelDensity::getPixelDensity() ) );
+	setPixelsSize( mWindow->getSize().asFloat() );
 	onMediaChanged();
 	sendMsg( this, NodeMessage::WindowResize );
 }
@@ -386,11 +390,13 @@ UIWidget* UISceneNode::loadLayoutFromPack( Pack* pack, const std::string& FilePa
 }
 
 void UISceneNode::setInternalSize( const Sizef& size ) {
-	mDpSize = size;
-	mSize = PixelDensity::dpToPx( size );
-	updateCenter();
-	sendCommonEvent( Event::OnSizeChange );
-	invalidateDraw();
+	if ( size != mDpSize ) {
+		mDpSize = size;
+		mSize = PixelDensity::dpToPx( size );
+		updateCenter();
+		sendCommonEvent( Event::OnSizeChange );
+		invalidateDraw();
+	}
 }
 
 Node* UISceneNode::setSize( const Sizef& Size ) {
@@ -417,18 +423,47 @@ const Sizef& UISceneNode::getSize() const {
 	return mDpSize;
 }
 
+UISceneNode* UISceneNode::setPixelsSize( const Sizef& size ) {
+	if ( size != mSize ) {
+		Vector2f sizeChange( size.x - mSize.x, size.y - mSize.y );
+
+		setInternalPixelsSize( size );
+
+		onSizeChange();
+
+		if ( reportSizeChangeToChilds() ) {
+			sendParentSizeChange( PixelDensity::pxToDp( sizeChange ) );
+		}
+	}
+
+	return this;
+}
+
+UISceneNode* UISceneNode::setPixelsSize( const Float& x, const Float& y ) {
+	return setPixelsSize( Sizef( x, y ) );
+}
+
 void UISceneNode::update( const Time& elapsed ) {
 	UISceneNode* uiSceneNode = SceneManager::instance()->getUISceneNode();
 
 	SceneManager::instance()->setCurrentUISceneNode( this );
 
+	updateDirtyStyles();
+	updateDirtyStyleStates();
 	updateDirtyLayouts();
 
 	SceneNode::update( elapsed );
 
+	// We process again all the dirty states since the update could have created new dirty states
+	// that we want to process BEFORE drawing the scene, since we can avoid some resizes/animations
+	// glitches. Also after the SceneNode::update (having run updated the actions, responded to
+	// events, and updating the nodes means that new nodes could have been added and need to be
+	// ready before being drawn. Also the reverse case could happen, we need to have the styles and
+	// layouts updated before and after the update to avoid weird issues. The cost of doing this is
+	// minimal and the benefit is huge and simplifies implementation.
 	updateDirtyStyles();
-
 	updateDirtyStyleStates();
+	updateDirtyLayouts();
 
 	SceneManager::instance()->setCurrentUISceneNode( uiSceneNode );
 }
@@ -772,6 +807,18 @@ bool UISceneNode::removeShortcut( const Uint32& KeyCode, const Uint32& Mod ) {
 	}
 
 	return false;
+}
+
+void UISceneNode::setInternalPixelsSize( const Sizef& size ) {
+	Sizef s( size );
+	if ( s != mSize ) {
+		mDpSize = PixelDensity::pxToDp( s ).ceil();
+		mSize = s;
+		mNodeFlags |= NODE_FLAG_POLYGON_DIRTY;
+		updateCenter();
+		sendCommonEvent( Event::OnSizeChange );
+		invalidateDraw();
+	}
 }
 
 }} // namespace EE::UI

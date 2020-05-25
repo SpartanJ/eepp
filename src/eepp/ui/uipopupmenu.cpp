@@ -17,9 +17,7 @@ UIPopUpMenu::UIPopUpMenu() : UIMenu() {
 	applyDefaultTheme();
 }
 
-UIPopUpMenu::~UIPopUpMenu() {
-	onClose();
-}
+UIPopUpMenu::~UIPopUpMenu() {}
 
 Uint32 UIPopUpMenu::getType() const {
 	return UI_TYPE_POPUPMENU;

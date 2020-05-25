@@ -35,6 +35,7 @@ UICodeEditor::UICodeEditor() :
 	mCaretColor( "#93DDFA" ),
 	mColorScheme( SyntaxColorScheme::getDefault() ),
 	mHighlighter( &mDoc ) {
+	mFlags |= UI_TAB_STOP;
 	setBackgroundColor( Color::fromString( "#2e2e32" ) );
 	setFontColor( Color::fromString( "#e1e1e6" ) );
 	mFontStyleConfig.setFontSelectionBackColor( Color::fromString( "#48484f" ) );
@@ -86,7 +87,7 @@ void UICodeEditor::draw() {
 	std::pair<int, int> lineRange = getVisibleLineRange();
 	Float charSize = PixelDensity::pxToDp( getCharacterSize() );
 	Float lineHeight = getLineHeight();
-	int lineNumberDigits = Math::countDigits( mDoc.linesCount() );
+	int lineNumberDigits = getLineNumberDigits();
 	Float lineNumberWidth = mShowLineNumber ? getLineNumberWidth() : 0.f;
 	Vector2f screenStart( mScreenPos.x + mRealPadding.Left, mScreenPos.y + mRealPadding.Top );
 	Vector2f start( screenStart.x + lineNumberWidth, screenStart.y );
@@ -185,6 +186,7 @@ void UICodeEditor::scheduledUpdate( const Time& ) {
 	if ( mMouseDown &&
 		 !( getUISceneNode()->getWindow()->getInput()->getPressTrigger() & EE_BUTTON_LMASK ) ) {
 		mMouseDown = false;
+		getUISceneNode()->getWindow()->getInput()->captureMouse( false );
 	}
 }
 
@@ -307,8 +309,12 @@ const Float& UICodeEditor::getLineNumberPaddingRight() const {
 	return mLineNumberPaddingRight;
 }
 
+size_t UICodeEditor::getLineNumberDigits() const {
+	return eemax( 2UL, Math::countDigits( mDoc.linesCount() ) );
+}
+
 Float UICodeEditor::getLineNumberWidth() const {
-	return Math::countDigits( mDoc.linesCount() ) * getGlyphWidth() + getLineNumberPaddingLeft() +
+	return getLineNumberDigits() * getGlyphWidth() + getLineNumberPaddingLeft() +
 		   getLineNumberPaddingRight();
 }
 
@@ -611,8 +617,8 @@ TextPosition UICodeEditor::resolveScreenPosition( const Vector2f& position ) con
 	localPos += mScroll;
 	localPos.x -= mRealPadding.Left + ( mShowLineNumber ? getLineNumberWidth() : 0.f );
 	localPos.y -= mRealPadding.Top;
-	Int64 line =
-		eeclamp<Int64>( (Int64)eefloor( localPos.y / getLineHeight() ), 0, mDoc.linesCount() - 1 );
+	Int64 line = eeclamp<Int64>( (Int64)eefloor( localPos.y / getLineHeight() ), 0,
+								 ( Int64 )( mDoc.linesCount() - 1 ) );
 	return TextPosition( line, getColFromXOffset( line, localPos.x ) );
 }
 
@@ -635,6 +641,7 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 		 !mMouseDown && ( flags & EE_BUTTON_LMASK ) ) {
 		mMouseDown = true;
 		Input* input = getUISceneNode()->getWindow()->getInput();
+		input->captureMouse( true );
 		if ( input->isShiftPressed() ) {
 			mDoc.selectTo( resolveScreenPosition( position.asFloat() ) );
 		} else {
@@ -660,6 +667,7 @@ Uint32 UICodeEditor::onMouseUp( const Vector2i& position, const Uint32& flags ) 
 
 	if ( flags & EE_BUTTON_LMASK ) {
 		mMouseDown = false;
+		getUISceneNode()->getWindow()->getInput()->captureMouse( false );
 	} else if ( flags & EE_BUTTON_WDMASK ) {
 		if ( getUISceneNode()->getWindow()->getInput()->isControlPressed() ) {
 			mFontStyleConfig.CharacterSize = eemax<Float>( 4, mFontStyleConfig.CharacterSize - 1 );
@@ -713,7 +721,7 @@ void UICodeEditor::updateScrollBar() {
 	mVScrollBar->setPixelsSize( 0, mSize.getHeight() );
 	mVScrollBar->setPixelsPosition( mSize.getWidth() - mVScrollBar->getPixelsSize().getWidth(), 0 );
 	int notVisibleLineCount = (int)mDoc.linesCount() - (int)getViewPortLineCount().y;
-	mVScrollBar->setPageStep( getViewPortLineCount().y / (float)mDoc.linesCount()  );
+	mVScrollBar->setPageStep( getViewPortLineCount().y / (float)mDoc.linesCount() );
 	mVScrollBar->setClickStep( 0.2f );
 	mVScrollBar->setEnabled( notVisibleLineCount > 0 );
 	mVScrollBar->setVisible( notVisibleLineCount > 0 );
@@ -835,7 +843,7 @@ Int64 UICodeEditor::getColFromXOffset( Int64 lineNumber, const Float& offset ) c
 			return i;
 		}
 	}
-	return line.size() - 1;
+	return static_cast<Int64>( line.size() ) - 1;
 }
 
 Float UICodeEditor::getLineHeight() const {

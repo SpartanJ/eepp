@@ -30,6 +30,10 @@ class EE_API UISceneNode : public SceneNode {
 
 	virtual Node* setSize( const Float& Width, const Float& Height );
 
+	UISceneNode* setPixelsSize( const Sizef& size );
+
+	UISceneNode* setPixelsSize( const Float& x, const Float& y );
+
 	const Sizef& getSize() const;
 
 	virtual void update( const Time& elapsed );
@@ -125,6 +129,8 @@ class EE_API UISceneNode : public SceneNode {
 	virtual void onDrawDebugDataChange();
 
 	virtual void setFocus();
+
+	void setInternalPixelsSize( const Sizef& size );
 
 	void setActiveWindow( UIWindow* window );
 

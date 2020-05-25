@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 4.12.0, 2020-05-24T06:14:21. -->
+<!-- Written by QtCreator 4.12.0, 2020-05-25T05:15:06. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -1843,11 +1843,11 @@
     </valuelist>
     <value type="int" key="PE.EnvironmentAspect.Base">2</value>
     <valuelist type="QVariantList" key="PE.EnvironmentAspect.Changes"/>
-    <value type="QString" key="ProjectExplorer.CustomExecutableRunConfiguration.Executable">%{buildDir}../../../bin/eepp-codeeditor-debug</value>
-    <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">eepp-codeeditor-debug</value>
+    <value type="QString" key="ProjectExplorer.CustomExecutableRunConfiguration.Executable">%{buildDir}../../../bin/eepp-CodeEditor-debug</value>
+    <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">eepp-CodeEditor-debug</value>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">ProjectExplorer.CustomExecutableRunConfiguration</value>
     <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey"></value>
-    <value type="QString" key="RunConfiguration.Arguments">../src/tools/codeeditor/codeeditor.cpp</value>
+    <value type="QString" key="RunConfiguration.Arguments">../src/eepp/ui/doc/textdocument.cpp</value>
     <value type="bool" key="RunConfiguration.Arguments.multi">false</value>
     <value type="QString" key="RunConfiguration.OverrideDebuggerStartup"></value>
     <value type="bool" key="RunConfiguration.UseCppDebugger">true</value>

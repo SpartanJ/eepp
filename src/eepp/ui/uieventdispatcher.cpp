@@ -37,10 +37,14 @@ void UIEventDispatcher::checkTabPress( const Uint32& KeyCode ) {
 	Window::Window* win = mFocusNode->getSceneNode()->getWindow();
 	if ( KeyCode == KEY_TAB && mFocusNode->isUINode() && NULL != win && win->isActive() &&
 		 !mJustGainedFocus ) {
-		Node* Ctrl = static_cast<UINode*>( mFocusNode )->getNextWidget();
+		UINode* uiNode = static_cast<UINode*>( mFocusNode );
 
-		if ( NULL != Ctrl )
-			Ctrl->setFocus();
+		if ( !uiNode->isTabStop() ) {
+			Node* Ctrl = static_cast<UINode*>( mFocusNode )->getNextWidget();
+
+			if ( NULL != Ctrl )
+				Ctrl->setFocus();
+		}
 	}
 }
 

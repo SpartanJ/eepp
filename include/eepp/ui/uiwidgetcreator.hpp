@@ -30,6 +30,8 @@ class EE_API UIWidgetCreator {
 
 	static const RegisteredWidgetCallbackMap& getRegisteredWidgets();
 
+	static std::vector<std::string> getWidgetNames();
+
   protected:
 	static RegisteredWidgetCallbackMap registeredWidget;
 

@@ -102,6 +102,8 @@ class EE_API UISlider : public UIWidget {
 
 	virtual void onPaddingChange();
 
+	virtual Uint32 onMouseDown( const Vector2i& position, const Uint32& flags );;
+
 	void fixSliderPos();
 
 	void adjustSliderPos();

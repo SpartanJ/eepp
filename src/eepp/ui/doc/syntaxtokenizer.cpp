@@ -1,10 +1,14 @@
+#include <eepp/system/luapatternmatcher.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/doc/syntaxtokenizer.hpp>
-#include <rx-cpp/rx.h>
 
-using namespace textutil;
+using namespace EE::System;
 
 namespace EE { namespace UI { namespace Doc {
+
+// This tokenizer is a direct conversion to C++ from the lite (https://github.com/rxi/lite)
+// tokenizer. This allows eepp to support the same color schemes and syntax definitions from
+// lite. Making much easier to implement a complete code editor.
 
 static bool allSpaces( const std::string& str ) {
 	for ( auto& chr : str )
@@ -38,7 +42,7 @@ bool isScaped( const std::string& text, const size_t& startIndex, const std::str
 std::pair<int, int> findNonEscaped( const std::string& text, const std::string& pattern, int offset,
 									const std::string& escapeStr ) {
 	while ( true ) {
-		Rxl words( pattern );
+		LuaPatternMatcher words( pattern );
 		int start, end;
 		if ( words.find( text, offset, start, end ) ) {
 			if ( !escapeStr.empty() && isScaped( text, start, escapeStr ) ) {
@@ -67,9 +71,9 @@ std::pair<std::vector<SyntaxToken>, int> SyntaxTokenizer::tokenize( const Syntax
 	while ( i < text.size() ) {
 		if ( retState != SYNTAX_TOKENIZER_STATE_NONE ) {
 			const SyntaxPattern& pattern = syntax.getPatterns()[retState];
-			std::pair<int, int> range = findNonEscaped(
-				text, pattern.patterns[1], i, pattern.patterns.size() >= 3 ? pattern.patterns[2]
-				: "" );
+			std::pair<int, int> range =
+				findNonEscaped( text, pattern.patterns[1], i,
+								pattern.patterns.size() >= 3 ? pattern.patterns[2] : "" );
 			if ( range.first != -1 ) {
 				pushToken( tokens, pattern.type, text.substr( i, range.second - i ) );
 				retState = SYNTAX_TOKENIZER_STATE_NONE;
@@ -86,7 +90,7 @@ std::pair<std::vector<SyntaxToken>, int> SyntaxTokenizer::tokenize( const Syntax
 			  patternIndex++ ) {
 			const SyntaxPattern& pattern = syntax.getPatterns()[patternIndex];
 			const std::string& patternStr( "^" + pattern.patterns.at( 0 ) );
-			Rxl words( patternStr );
+			LuaPatternMatcher words( patternStr );
 			int start, end = 0;
 			if ( words.find( text, i, start, end ) ) {
 				std::string patternText( text.substr( start, end - start ) );

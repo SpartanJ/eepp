@@ -202,10 +202,19 @@ Node* UINode::setSize( const Float& Width, const Float& Height ) {
 }
 
 UINode* UINode::setPixelsSize( const Sizef& size ) {
-	if ( size != mSize ) {
-		Vector2f sizeChange( size.x - mSize.x, size.y - mSize.y );
+	Sizef s( size );
+	Sizef pMinSize( PixelDensity::dpToPx( mMinSize ) );
 
-		setInternalPixelsSize( size );
+	if ( s.x < pMinSize.x )
+		s.x = pMinSize.x;
+
+	if ( s.y < pMinSize.y )
+		s.y = pMinSize.y;
+
+	if ( s != mSize ) {
+		Vector2f sizeChange( s.x - mSize.x, s.y - mSize.y );
+
+		setInternalPixelsSize( s );
 
 		onSizeChange();
 
@@ -252,6 +261,10 @@ void UINode::setMinHeight( const Float& height ) {
 
 const Sizef& UINode::getMinSize() const {
 	return mMinSize;
+}
+
+bool UINode::isTabStop() const {
+	return ( mFlags & UI_TAB_STOP ) != 0;
 }
 
 void UINode::updateOriginPoint() {
@@ -389,21 +402,16 @@ void UINode::draw() {
 	}
 }
 
-Uint32 UINode::onMouseDown( const Vector2i& Pos, const Uint32& Flags ) {
+Uint32 UINode::onMouseDown( const Vector2i& position, const Uint32& flags ) {
 	if ( NULL != getEventDispatcher() && !getEventDispatcher()->isNodeDragging() &&
 		 !( getEventDispatcher()->getLastPressTrigger() & mDragButton ) &&
-		 ( Flags & mDragButton ) && isDragEnabled() && !isDragging() ) {
-		setDragging( true );
-
-		if ( NULL != getEventDispatcher() )
-			getEventDispatcher()->setNodeDragging( this );
-
-		mDragPoint = Vector2f( Pos.x, Pos.y );
+		 ( flags & mDragButton ) && isDragEnabled() && !isDragging() ) {
+		startDragging( position.asFloat() );
 	}
 
 	pushState( UIState::StatePressed );
 
-	return Node::onMouseDown( Pos, Flags );
+	return Node::onMouseDown( position, flags );
 }
 
 Uint32 UINode::onMouseUp( const Vector2i& Pos, const Uint32& Flags ) {
@@ -1126,6 +1134,15 @@ void UINode::setDragging( const bool& dragging ) {
 	}
 }
 
+void UINode::startDragging( const Vector2f& position ) {
+	setDragging( true );
+
+	if ( NULL != getEventDispatcher() )
+		getEventDispatcher()->setNodeDragging( this );
+
+	mDragPoint = position;
+}
+
 bool UINode::ownsChildPosition() const {
 	return 0 != ( mFlags & UI_OWNS_CHILDS_POSITION );
 }
@@ -1336,6 +1353,10 @@ Float UINode::convertLengthAsDp( const CSS::StyleSheetLength& length,
 
 UISceneNode* UINode::getUISceneNode() {
 	return mUISceneNode;
+}
+
+Rectf UINode::getLocalDpBounds() const {
+	return Rectf( 0, 0, mDpSize.getWidth(), mDpSize.getHeight() );
 }
 
 }} // namespace EE::UI

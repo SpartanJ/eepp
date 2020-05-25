@@ -2,6 +2,8 @@
 
 namespace EE { namespace UI { namespace Doc {
 
+// Color schemes are compatible with the lite (https://github.com/rxi/lite) color schemes.
+
 SyntaxColorScheme SyntaxColorScheme::getDefault() {
 	return {"lite-theme",
 			{

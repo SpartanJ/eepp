@@ -147,6 +147,14 @@ void EventDispatcher::update( const Time& time ) {
 	}
 
 	mLastMousePos = mMousePos;
+
+	// While dragging and object we want to be able to continue dragging even if the mouse cursor
+	// moves outside the window. Capturing the mouse allows this.
+	if ( !wasDraggingNode && isNodeDragging() ) {
+		mInput->captureMouse( true );
+	} else if ( wasDraggingNode && !isNodeDragging() ) {
+		mInput->captureMouse( false );
+	}
 }
 
 Input* EventDispatcher::getInput() const {

@@ -8,6 +8,9 @@
 
 namespace EE { namespace UI { namespace Doc {
 
+// Text document is loosely based on the SerenityOS (https://github.com/SerenityOS/serenity)
+// TextDocument and the lite editor (https://github.com/rxi/lite) implementations.
+
 const char NON_WORD_CHARS[] = " \t\n/\\()\"':,.;<>~!@#$%^&*|+=[]{}`?-";
 
 bool TextDocument::isNonWord( String::StringBaseType ch ) {

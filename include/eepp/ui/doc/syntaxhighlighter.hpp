@@ -20,14 +20,10 @@ class EE_API SyntaxHighlighter {
 
 	void reset();
 
-	void invalidate( const size_t& line );
-
 	const std::vector<SyntaxToken>& getLine( const size_t& index );
 
   protected:
 	TextDocument* mDoc;
-	size_t mFirstInvalidLine{0};
-	size_t mMaxWantedLine{0};
 	std::map<size_t, TokenizedLine> mLines;
 	TokenizedLine tokenizeLine( const size_t& line, const int& state );
 };

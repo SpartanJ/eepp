@@ -25,6 +25,18 @@ UIWinMenu::~UIWinMenu() {
 	destroyMenues();
 }
 
+void UIWinMenu::destroyMenues() {
+	if ( !SceneManager::instance()->isShootingDown() ) {
+		for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); ++it ) {
+			if ( it->second->getParent() != this ) {
+				// Changing the parent ensures that the menu will be destroyed when the win menu is
+				// destroyed
+				it->second->setParent( this );
+			}
+		}
+	}
+}
+
 Uint32 UIWinMenu::getType() const {
 	return UI_TYPE_WINMENU;
 }
@@ -41,8 +53,7 @@ void UIWinMenu::addMenuButton( const String& ButtonText, UIPopUpMenu* Menu ) {
 	Button->setText( ButtonText );
 	Button->setVisible( true );
 	Button->setEnabled( true );
-	Button->addEventListener( Event::OnSizeChange,
-							  [&]( const Event* event ) { refreshButtons(); } );
+	Button->addEventListener( Event::OnSizeChange, [&]( const Event* ) { refreshButtons(); } );
 
 	Menu->setVisible( false );
 	Menu->setEnabled( false );
@@ -295,14 +306,6 @@ void UIWinMenu::onWidgetFocusLoss() {
 	}
 
 	unselectButtons();
-}
-
-void UIWinMenu::destroyMenues() {
-	if ( !SceneManager::instance()->isShootingDown() ) {
-		for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); ++it ) {
-			it->second->close();
-		}
-	}
 }
 
 void UIWinMenu::autoHeight() {

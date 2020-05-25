@@ -2,6 +2,7 @@
 #define EE_UI_DOC_TEXTPOSITION_HPP
 
 #include <eepp/config.hpp>
+#include <eepp/core/string.hpp>
 #include <string>
 
 namespace EE { namespace UI { namespace Doc {
@@ -18,9 +19,9 @@ class EE_API TextPosition {
 
 	Int64 column() const { return mColumn; }
 
-	void setLine( size_t line ) { mLine = line; }
+	void setLine( Int64 line ) { mLine = line; }
 
-	void setColumn( size_t column ) { mColumn = column; }
+	void setColumn( Int64 column ) { mColumn = column; }
 
 	bool operator==( const TextPosition& other ) const {
 		return mLine == other.mLine && mColumn == other.mColumn;
@@ -49,6 +50,8 @@ class EE_API TextPosition {
 	TextPosition operator-=( const TextPosition& other ) const {
 		return {mLine - other.line(), mColumn - other.column()};
 	}
+
+	std::string toString() { return String::format( "L%lld,C%lld", mLine, mColumn ); }
 
   private:
 	Int64 mLine{0xffffffff};

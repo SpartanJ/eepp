@@ -9,13 +9,6 @@ SyntaxHighlighter::SyntaxHighlighter( TextDocument* doc ) : mDoc( doc ) {
 
 void SyntaxHighlighter::reset() {
 	mLines.clear();
-	mFirstInvalidLine = 0;
-	mMaxWantedLine = 0;
-}
-
-void SyntaxHighlighter::invalidate( const size_t& line ) {
-	mFirstInvalidLine = line;
-	mMaxWantedLine = eemin( mMaxWantedLine, mDoc->linesCount() );
 }
 
 TokenizedLine SyntaxHighlighter::tokenizeLine( const size_t& line, const int& state ) {
@@ -40,7 +33,6 @@ const std::vector<SyntaxToken>& SyntaxHighlighter::getLine( const size_t& index 
 			}
 		}
 		mLines[index] = tokenizeLine( index, prevState );
-		mMaxWantedLine = eemax( mMaxWantedLine, index );
 		return mLines[index].tokens;
 	}
 	return it->second.tokens;

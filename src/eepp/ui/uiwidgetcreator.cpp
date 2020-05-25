@@ -140,4 +140,13 @@ const UIWidgetCreator::RegisteredWidgetCallbackMap& UIWidgetCreator::getRegister
 	return registeredWidget;
 }
 
+std::vector<std::string> UIWidgetCreator::getWidgetNames() {
+	std::vector<std::string> names;
+	createBaseWidgetList();
+	for ( auto& widgetIt : registeredWidget ) {
+		names.push_back( widgetIt.first );
+	}
+	return names;
+}
+
 }} // namespace EE::UI

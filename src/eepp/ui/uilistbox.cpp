@@ -84,9 +84,7 @@ UIListBox::UIListBox( const std::string& tag ) :
 
 UIListBox::UIListBox() : UIListBox( "listbox" ) {}
 
-UIListBox::~UIListBox() {
-	onClose();
-}
+UIListBox::~UIListBox() {}
 
 Uint32 UIListBox::getType() const {
 	return UI_TYPE_LISTBOX;
