@@ -112,6 +112,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	virtual Float getColXOffset( TextPosition position );
 
+	const bool& isLocked() const;
+
+	void setLocked( bool locked );
+
   protected:
 	struct LastXOffset {
 		TextPosition position;
@@ -126,6 +130,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mCursorVisible;
 	bool mMouseDown;
 	bool mShowLineNumber;
+	bool mLocked;
 	Uint32 mTabWidth;
 	Int64 mLastColOffset;
 	Vector2f mScroll;
@@ -175,6 +180,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void onDocumentSelectionChange( const TextRange& );
 
 	void onDocumentLineCountChange( const size_t& lastCount, const size_t& newCount );
+
+	void onDocumentLineChanged( const Int64& lineIndex );
 
 	std::pair<int, int> getVisibleLineRange();
 

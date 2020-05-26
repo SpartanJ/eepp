@@ -23,6 +23,7 @@ UICodeEditor::UICodeEditor() :
 	mCursorVisible( false ),
 	mMouseDown( false ),
 	mShowLineNumber( true ),
+	mLocked( false ),
 	mTabWidth( 4 ),
 	mLastColOffset( 0 ),
 	mMouseWheelScroll( 50 ),
@@ -95,10 +96,12 @@ void UICodeEditor::draw() {
 	Primitives primitives;
 	TextPosition cursor( mDoc.getSelection().start() );
 
-	primitives.setColor( mCurrentLineBackgroundColor );
-	primitives.drawRectangle(
-		Rectf( Vector2f( startScroll.x + mScroll.x, startScroll.y + cursor.line() * lineHeight ),
-			   Sizef( mSize.getWidth(), lineHeight ) ) );
+	if ( !mLocked ) {
+		primitives.setColor( mCurrentLineBackgroundColor );
+		primitives.drawRectangle( Rectf(
+			Vector2f( startScroll.x + mScroll.x, startScroll.y + cursor.line() * lineHeight ),
+			Sizef( mSize.getWidth(), lineHeight ) ) );
+	}
 
 	if ( mDoc.hasSelection() ) {
 		primitives.setColor( mFontStyleConfig.getFontSelectionBackColor() );
@@ -109,7 +112,7 @@ void UICodeEditor::draw() {
 		int endLine = eemin<int>( lineRange.second, selection.end().line() );
 
 		for ( auto ln = startLine; ln <= endLine; ln++ ) {
-			const String& line = mDoc.line( ln );
+			const String& line = mDoc.line( ln ).getText();
 			Rectf selRect;
 			selRect.Top = startScroll.y + ln * lineHeight;
 			selRect.Bottom = selRect.Top + lineHeight;
@@ -137,21 +140,23 @@ void UICodeEditor::draw() {
 	for ( int i = lineRange.first; i <= lineRange.second; i++ ) {
 		Vector2f curPos( startScroll.x, startScroll.y + lineHeight * i );
 		auto& tokens = mHighlighter.getLine( i );
-		Text line( "", mFont, charSize );
-		line.setStyleConfig( mFontStyleConfig );
 		for ( auto& token : tokens ) {
 			Float textWidth = getTextWidth( token.text );
 			if ( curPos.x + textWidth >= mScreenPos.x &&
 				 curPos.x <= mScreenPos.x + mSize.getWidth() ) {
+				Text line( "", mFont, charSize );
+				line.setStyleConfig( mFontStyleConfig );
 				line.setString( token.text );
 				line.setColor( mColorScheme.getColor( token.type ) );
 				line.draw( curPos.x, curPos.y );
+			} else if ( curPos.x > mScreenPos.x + mSize.getWidth() ) {
+				break;
 			}
 			curPos.x += textWidth;
 		}
 	}
 
-	if ( mCursorVisible ) {
+	if ( mCursorVisible && !mLocked ) {
 		Vector2f cursorPos( startScroll.x + getXOffsetCol( cursor ),
 							startScroll.y + cursor.line() * lineHeight );
 
@@ -187,6 +192,10 @@ void UICodeEditor::scheduledUpdate( const Time& ) {
 		 !( getUISceneNode()->getWindow()->getInput()->getPressTrigger() & EE_BUTTON_LMASK ) ) {
 		mMouseDown = false;
 		getUISceneNode()->getWindow()->getInput()->captureMouse( false );
+	}
+
+	if ( mHighlighter.updateDirty( getVisibleLinesCount() ) ) {
+		invalidateDraw();
 	}
 }
 
@@ -391,7 +400,7 @@ Uint32 UICodeEditor::onFocusLoss() {
 }
 
 Uint32 UICodeEditor::onTextInput( const TextInputEvent& event ) {
-	if ( NULL == mFont )
+	if ( mLocked || NULL == mFont )
 		return 1;
 
 	if ( !getUISceneNode()->getWindow()->getInput()->isControlPressed() ) {
@@ -403,6 +412,14 @@ Uint32 UICodeEditor::onTextInput( const TextInputEvent& event ) {
 Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
 	if ( NULL == mFont )
 		return 1;
+
+	// Allow copy selection on locked mode
+	if ( mLocked ) {
+		if ( event.getKeyCode() == KEY_C && ( event.getMod() & KEYMOD_CTRL ) ) {
+			getUISceneNode()->getWindow()->getClipboard()->setText( mDoc.getSelectedText() );
+		}
+		return 1;
+	}
 
 	switch ( event.getKeyCode() ) {
 		case KEY_BACKSPACE: {
@@ -662,7 +679,7 @@ Uint32 UICodeEditor::onMouseUp( const Vector2i& position, const Uint32& flags ) 
 }
 
 Uint32 UICodeEditor::onMouseDoubleClick( const Vector2i&, const Uint32& flags ) {
-	if ( NULL == mFont )
+	if ( !mLocked || NULL == mFont )
 		return 1;
 
 	if ( flags & EE_BUTTON_LMASK ) {
@@ -672,7 +689,7 @@ Uint32 UICodeEditor::onMouseDoubleClick( const Vector2i&, const Uint32& flags ) 
 }
 
 Uint32 UICodeEditor::onMouseOver( const Vector2i& position, const Uint32& flags ) {
-	getUISceneNode()->setCursor( Cursor::IBeam );
+	getUISceneNode()->setCursor( !mLocked ? Cursor::IBeam : Cursor::Arrow );
 	return UIWidget::onMouseOver( position, flags );
 }
 
@@ -728,6 +745,10 @@ void UICodeEditor::onDocumentLineCountChange( const size_t&, const size_t& ) {
 	updateScrollBar();
 }
 
+void UICodeEditor::onDocumentLineChanged( const Int64& lineIndex ) {
+	mHighlighter.invalidate( lineIndex );
+}
+
 std::pair<int, int> UICodeEditor::getVisibleLineRange() {
 	Float lineHeight = getLineHeight();
 	Float minLine = eemax( 0.f, eefloor( mScroll.y / lineHeight ) );
@@ -775,7 +796,7 @@ void UICodeEditor::setScrollY( const Float& val, bool emmitEvent ) {
 }
 
 Float UICodeEditor::getXOffsetCol( const TextPosition& position ) const {
-	const String& line = mDoc.line( position.line() );
+	const String& line = mDoc.line( position.line() ).getText();
 	Float glyphWidth = getGlyphWidth();
 	Float x = 0;
 	for ( auto i = 0; i < position.column(); i++ ) {
@@ -792,37 +813,42 @@ Float UICodeEditor::getTextWidth( const String& line ) const {
 	Float glyphWidth = getGlyphWidth();
 	size_t len = line.length();
 	Float x = 0;
-	for ( size_t i = 0; i < len; i++ ) {
-		if ( line[i] == '\t' ) {
-			x += glyphWidth * mTabWidth;
-		} else if ( line[i] != '\n' && line[i] != '\r' ) {
-			x += glyphWidth;
-		}
-	}
+	for ( size_t i = 0; i < len; i++ )
+		x += ( line[i] == '\t' ) ? glyphWidth * mTabWidth : glyphWidth;
 	return x;
 }
 
 Float UICodeEditor::getColXOffset( TextPosition position ) {
-	position = mDoc.sanitizePosition( position );
+	position.setLine( eeclamp<Int64>( position.line(), 0L, mDoc.linesCount() - 1 ) );
+	// This is different from sanitizePosition, sinze allows the last character.
+	position.setColumn( eeclamp<Int64>( position.column(), 0L,
+										eemax<Int64>( 0, mDoc.line( position.line() ).size() ) ) );
 	return getTextWidth( mDoc.line( position.line() ).substr( 0, position.column() ) );
+}
+
+const bool& UICodeEditor::isLocked() const {
+	return mLocked;
+}
+
+void UICodeEditor::setLocked( bool locked ) {
+	if ( mLocked != locked ) {
+		mLocked = locked;
+		invalidateDraw();
+	}
 }
 
 Int64 UICodeEditor::getColFromXOffset( Int64 lineNumber, const Float& offset ) const {
 	if ( offset <= 0 )
 		return 0;
 	TextPosition pos = mDoc.sanitizePosition( TextPosition( lineNumber, 0 ) );
-	const String& line = mDoc.line( pos.line() );
+	const String& line = mDoc.line( pos.line() ).getText();
+	size_t len = line.length();
 	Float glyphWidth = getGlyphWidth();
 	Float x = 0;
-	for ( size_t i = 0; i < line.size(); i++ ) {
-		if ( line[i] == '\t' ) {
-			x += glyphWidth * mTabWidth;
-		} else if ( line[i] != '\n' && line[i] != '\r' ) {
-			x += glyphWidth;
-		}
-		if ( x >= offset ) {
+	for ( size_t i = 0; i < len; i++ ) {
+		x += ( line[i] == '\t' ) ? glyphWidth * mTabWidth : glyphWidth;
+		if ( x >= offset )
 			return i;
-		}
 	}
 	return static_cast<Int64>( line.size() ) - 1;
 }

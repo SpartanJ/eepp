@@ -4,6 +4,9 @@
 #include <eepp/core/string.hpp>
 #include <eepp/core/utf.hpp>
 #include <iterator>
+#include <crc/CRC.h>
+
+static CRC::Table<std::uint32_t, 32> CRC_TABLE(CRC::CRC_32());
 
 namespace EE {
 
@@ -29,7 +32,7 @@ Uint32 String::hash( const std::string& str ) {
 }
 
 Uint32 String::hash( const String& str ) {
-	return String::hash( (const Uint8*)str.c_str() );
+	return CRC::Calculate( (void*)str.c_str(), sizeof(StringBaseType)*str.size(), CRC_TABLE );
 }
 
 bool String::isCharacter( const int& value ) {
@@ -594,7 +597,7 @@ String& String::operator+=( const StringBaseType& right ) {
 	return *this;
 }
 
-String::StringBaseType String::operator[]( std::size_t index ) const {
+const String::StringBaseType& String::operator[]( std::size_t index ) const {
 	return mString[index];
 }
 
@@ -602,7 +605,7 @@ String::StringBaseType& String::operator[]( std::size_t index ) {
 	return mString[index];
 }
 
-String::StringBaseType String::at( std::size_t index ) const {
+const String::StringBaseType& String::at( std::size_t index ) const {
 	return mString.at( index );
 }
 

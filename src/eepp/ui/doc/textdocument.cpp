@@ -62,13 +62,13 @@ void TextDocument::loadFromPath( const std::string& path ) {
 			line = line.substr( 0, line.size() - 1 );
 			mIsCLRF = true;
 		}
-		mLines.emplace_back( String( line + "\n" ) );
+		mLines.emplace_back( TextDocumentLine( line + "\n" ) );
 	}
 
 	if ( mLines.empty() ) {
-		mLines.emplace_back( String( "\n" ) );
+		mLines.emplace_back( TextDocumentLine( "\n" ) );
 	} else if ( mLines[mLines.size() - 1][mLines[mLines.size() - 1].size() - 1] != '\n' ) {
-		mLines[mLines.size() - 1] += '\n';
+		mLines[mLines.size() - 1].append( '\n' );
 	}
 }
 
@@ -93,9 +93,8 @@ bool TextDocument::save( IOStreamFile& stream, const bool& utf8bom ) {
 	}
 	size_t lastLine = mLines.size() - 1;
 	for ( size_t i = 0; i <= lastLine; i++ ) {
-		String& line = mLines[i];
-		std::string utf8( line.toUtf8() );
-		if ( i == lastLine && line.size() > 1 ) {
+		std::string utf8( mLines[i].toUtf8() );
+		if ( i == lastLine && utf8.size() > 1 && utf8[utf8.size() - 1] == '\n' ) {
 			// Last \n is added by the document but it's not part of the document.
 			utf8.pop_back();
 		}
@@ -160,11 +159,11 @@ const TextRange& TextDocument::getSelection() const {
 	return mSelection;
 }
 
-String& TextDocument::line( const size_t& index ) {
+TextDocumentLine& TextDocument::line( const size_t& index ) {
 	return mLines[index];
 }
 
-const String& TextDocument::line( const size_t& index ) const {
+const TextDocumentLine& TextDocument::line( const size_t& index ) const {
 	return mLines[index];
 }
 
@@ -172,7 +171,7 @@ size_t TextDocument::linesCount() const {
 	return mLines.size();
 }
 
-std::vector<String>& TextDocument::lines() {
+std::vector<TextDocumentLine>& TextDocument::lines() {
 	return mLines;
 }
 
@@ -188,7 +187,7 @@ String TextDocument::getText( const TextRange& range ) const {
 	}
 	std::vector<String> lines = {mLines[nrange.start().line()].substr( nrange.start().column() )};
 	for ( auto i = nrange.start().line() + 1; i <= nrange.end().line() - 1; i++ ) {
-		lines.emplace_back( mLines[i] );
+		lines.emplace_back( mLines[i].getText() );
 	}
 	lines.emplace_back( mLines[nrange.end().line()].substr( 0, nrange.end().column() ) );
 	return String::join( lines, -1 );
@@ -240,27 +239,30 @@ TextPosition TextDocument::insert( TextPosition position, const String::StringBa
 			for ( size_t i = position.column(); i < line( row ).length(); i++ )
 				line_content.append( line( row )[i] );
 			mLines.insert( mLines.begin() + position.line() + ( atTail ? 1 : 0 ), String( "\n" ) );
+			notifyLineChanged( position.line() );
 			return atTail
 					   ? TextPosition( position.line() + 1, line( position.line() + 1 ).length() )
 					   : TextPosition( position.line() + 1, 0 );
 		}
-		String newLine =
-			line( position.line() )
-				.substr( position.column(), line( position.line() ).length() - position.column() );
-		String& oldLine = line( position.line() );
-		oldLine = line( position.line() ).substr( 0, position.column() );
+		TextDocumentLine newLine( line( position.line() )
+									  .substr( position.column(), line( position.line() ).length() -
+																	  position.column() ) );
+		TextDocumentLine& oldLine = line( position.line() );
+		oldLine.setText( line( position.line() ).substr( 0, position.column() ) );
 		// TODO: Investigate why this is needed when undo is used.
 		// This fixes the case when a line ends up without an \n at the end of it.
 		if ( oldLine.empty() || oldLine[oldLine.size() - 1] != '\n' ) {
-			oldLine += '\n';
+			oldLine.append( '\n' );
 		}
 		if ( newLine.empty() || newLine[newLine.size() - 1] != '\n' ) {
-			newLine += '\n';
+			newLine.append( '\n' );
 		}
 		mLines.insert( mLines.begin() + position.line() + 1, std::move( newLine ) );
+		notifyLineChanged( position.line() );
 		return {position.line() + 1, 0};
 	}
-	line( position.line() ).insert( line( position.line() ).begin() + position.column(), ch );
+	line( position.line() ).insertChar( position.column(), ch );
+	notifyLineChanged( position.line() );
 	return {position.line(), position.column() + 1};
 }
 
@@ -295,7 +297,7 @@ void TextDocument::remove( TextRange range, UndoStackContainer& undoStack, const
 
 	if ( range.start().line() == range.end().line() ) {
 		// Delete within same line.
-		String& line = this->line( range.start().line() );
+		TextDocumentLine& line = this->line( range.start().line() );
 		bool wholeLineIsSelected =
 			range.start().column() == 0 && range.end().column() == (Int64)line.length();
 
@@ -313,13 +315,13 @@ void TextDocument::remove( TextRange range, UndoStackContainer& undoStack, const
 			if ( afterSelection.empty() || afterSelection[afterSelection.size() - 1] != '\n' )
 				afterSelection += '\n';
 
-			line.assign( beforeSelection + afterSelection );
+			line.setText( beforeSelection + afterSelection );
 		}
 	} else {
 		// Delete across a newline, merging lines.
 		eeASSERT( range.start().line() == range.end().line() - 1 );
-		auto& firstLine = line( range.start().line() );
-		auto& secondLine = line( range.end().line() );
+		TextDocumentLine& firstLine = line( range.start().line() );
+		TextDocumentLine& secondLine = line( range.end().line() );
 		auto beforeSelection = firstLine.substr( 0, range.start().column() );
 		auto afterSelection = !secondLine.empty()
 								  ? secondLine.substr( range.end().column(),
@@ -331,7 +333,7 @@ void TextDocument::remove( TextRange range, UndoStackContainer& undoStack, const
 		if ( afterSelection.empty() || afterSelection[afterSelection.size() - 1] != '\n' )
 			afterSelection += '\n';
 
-		firstLine.assign( beforeSelection + afterSelection );
+		firstLine.setText( beforeSelection + afterSelection );
 		mLines.erase( mLines.begin() + range.end().line() );
 	}
 
@@ -339,6 +341,7 @@ void TextDocument::remove( TextRange range, UndoStackContainer& undoStack, const
 		mLines.emplace_back( String( "\n" ) );
 	}
 	notifyTextChanged();
+	notifyLineChanged( range.start().line() );
 }
 
 TextPosition TextDocument::positionOffset( TextPosition position, int columnOffset ) const {
@@ -647,7 +650,7 @@ void TextDocument::newLine() {
 	String input( "\n" );
 	TextPosition start = getSelection().start();
 	if ( start.line() >= 0 && start.line() < (Int64)mLines.size() ) {
-		String& ln = line( start.line() );
+		const String& ln = line( start.line() ).getText();
 		size_t to = eemin<size_t>( ln.size(), start.column() );
 		int indent = 0;
 		for ( size_t i = 0; i < to; i++ ) {
@@ -664,12 +667,12 @@ void TextDocument::newLine() {
 	textInput( input );
 }
 
-void TextDocument::insertAtStartOfSelectedLines( String text, bool skipEmpty ) {
+void TextDocument::insertAtStartOfSelectedLines( const String& text, bool skipEmpty ) {
 	TextPosition prevStart = getSelection().start();
 	TextRange range = getSelection( true );
 	bool swap = prevStart != range.start();
 	for ( auto i = range.start().line(); i <= range.end().line(); i++ ) {
-		const String& line = this->line( i );
+		const String& line = this->line( i ).getText();
 		if ( !skipEmpty || line.length() != 1 ) {
 			insert( {i, 0}, text );
 		}
@@ -678,12 +681,12 @@ void TextDocument::insertAtStartOfSelectedLines( String text, bool skipEmpty ) {
 				  TextPosition( range.end().line(), range.end().column() + text.size() ), swap );
 }
 
-void TextDocument::removeFromStartOfSelectedLines( String text, bool skipEmpty ) {
+void TextDocument::removeFromStartOfSelectedLines( const String& text, bool skipEmpty ) {
 	TextPosition prevStart = getSelection().start();
 	TextRange range = getSelection( true );
 	bool swap = prevStart != range.start();
 	for ( auto i = range.start().line(); i <= range.end().line(); i++ ) {
-		const String& line = this->line( i );
+		const String& line = this->line( i ).getText();
 		if ( !skipEmpty || line.length() != 1 ) {
 			if ( line.substr( 0, text.length() ) == text ) {
 				remove( {{i, 0}, {i, static_cast<Int64>( text.length() )}} );
@@ -811,6 +814,12 @@ void TextDocument::notifySelectionChanged() {
 void TextDocument::notifyLineCountChanged( const size_t& lastCount, const size_t& newCount ) {
 	for ( auto& client : mClients ) {
 		client->onDocumentLineCountChange( lastCount, newCount );
+	}
+}
+
+void TextDocument::notifyLineChanged( const Int64& lineIndex ) {
+	for ( auto& client : mClients ) {
+		client->onDocumentLineChanged( lineIndex );
 	}
 }
 

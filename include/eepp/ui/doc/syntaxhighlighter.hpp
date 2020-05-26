@@ -9,7 +9,7 @@ namespace EE { namespace UI { namespace Doc {
 
 struct TokenizedLine {
 	int initState;
-	String text;
+	Uint32 hash;
 	std::vector<SyntaxToken> tokens;
 	int state;
 };
@@ -20,11 +20,21 @@ class EE_API SyntaxHighlighter {
 
 	void reset();
 
+	void invalidate( Int64 lineIndex );
+
 	const std::vector<SyntaxToken>& getLine( const size_t& index );
+
+	Int64 getFirstInvalidLine() const;
+
+	Int64 getMaxWantedLine() const;
+
+	bool updateDirty( int visibleLinesCount = 40 );
 
   protected:
 	TextDocument* mDoc;
 	std::map<size_t, TokenizedLine> mLines;
+	Int64 mFirstInvalidLine;
+	Int64 mMaxWantedLine;
 	TokenizedLine tokenizeLine( const size_t& line, const int& state );
 };
 

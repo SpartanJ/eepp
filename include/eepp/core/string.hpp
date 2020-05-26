@@ -449,7 +449,7 @@ class EE_API String {
 	** @param index Index of the character to get
 	** @return Character at position \a index
 	**/
-	StringBaseType operator[]( std::size_t index ) const;
+	const StringBaseType& operator[]( std::size_t index ) const;
 
 	/** @brief Overload of [] operator to access a character by its position
 	** This function provides read and write access to characters.
@@ -465,7 +465,7 @@ class EE_API String {
 	*actual position in the string.
 	** @return The character at position pos in the string.
 	*/
-	StringBaseType at( std::size_t index ) const;
+	const StringBaseType& at( std::size_t index ) const;
 
 	/** @brief clear the string
 	** This function removes all the characters from the string.

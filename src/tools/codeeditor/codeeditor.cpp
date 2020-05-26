@@ -4,6 +4,7 @@
 EE::Window::Window* win = NULL;
 UISceneNode* uiSceneNode = NULL;
 UICodeEditor* codeEditor = NULL;
+Console* console = NULL;
 std::string curFile = "untitled";
 const std::string& windowTitle = "eepp - Code Editor";
 bool docDirtyState = false;
@@ -47,41 +48,52 @@ void openFileDialog() {
 }
 
 void mainLoop() {
-	if ( codeEditor->isDirty() != docDirtyState ) {
-		docDirtyState = codeEditor->isDirty();
-		setAppTitle( docDirtyState ? curFile + "*" : curFile );
-	}
-
 	Input* input = win->getInput();
 
 	input->update();
 
-	if ( ( input->isControlPressed() && input->isKeyUp( KEY_O ) ) || input->isKeyUp( KEY_F2 ) ) {
-		openFileDialog();
-	}
+	if ( win->isActive() ) {
+		if ( codeEditor->isDirty() != docDirtyState ) {
+			docDirtyState = codeEditor->isDirty();
+			setAppTitle( docDirtyState ? curFile + "*" : curFile );
+		}
 
-	if ( input->isControlPressed() && input->isKeyUp( KEY_S ) ) {
-		codeEditor->save();
-	}
+		if ( ( input->isControlPressed() && input->isKeyUp( KEY_O ) ) ||
+			 input->isKeyUp( KEY_F2 ) ) {
+			openFileDialog();
+		}
 
-	if ( input->isKeyUp( KEY_F6 ) ) {
-		uiSceneNode->setHighlightOver( !uiSceneNode->getHighlightOver() );
-	}
+		if ( input->isControlPressed() && input->isKeyUp( KEY_S ) ) {
+			codeEditor->save();
+		}
 
-	if ( input->isKeyUp( KEY_F7 ) ) {
-		uiSceneNode->setDrawBoxes( !uiSceneNode->getDrawBoxes() );
-	}
+		if ( input->isKeyUp( KEY_F6 ) ) {
+			uiSceneNode->setHighlightOver( !uiSceneNode->getHighlightOver() );
+		}
 
-	if ( input->isKeyUp( KEY_F8 ) ) {
-		uiSceneNode->setDrawDebugData( !uiSceneNode->getDrawDebugData() );
-	}
+		if ( input->isKeyUp( KEY_F7 ) ) {
+			uiSceneNode->setDrawBoxes( !uiSceneNode->getDrawBoxes() );
+		}
 
-	if ( input->isKeyUp( KEY_ESCAPE ) && NULL == MsgBox && onCloseRequestCallback( win ) ) {
-		win->close();
-	}
+		if ( input->isKeyUp( KEY_F8 ) ) {
+			uiSceneNode->setDrawDebugData( !uiSceneNode->getDrawDebugData() );
+		}
 
-	if ( input->isAltPressed() && input->isKeyUp( KEY_RETURN ) ) {
-		win->toggleFullscreen();
+		if ( input->isKeyUp( KEY_ESCAPE ) && NULL == MsgBox && onCloseRequestCallback( win ) ) {
+			win->close();
+		}
+
+		if ( input->isAltPressed() && input->isKeyUp( KEY_RETURN ) ) {
+			win->toggleFullscreen();
+		}
+
+		if ( input->isKeyUp( KEY_F3 ) ) {
+			console->toggle();
+		}
+
+		if ( input->isControlPressed() && input->isKeyUp( KEY_L ) ) {
+			codeEditor->setLocked( !codeEditor->isLocked() );
+		}
 	}
 
 	SceneManager::instance()->update();
@@ -89,9 +101,10 @@ void mainLoop() {
 	if ( SceneManager::instance()->getUISceneNode()->invalidated() ) {
 		win->clear();
 		SceneManager::instance()->draw();
+		console->draw();
 		win->display();
 	} else {
-		Sys::sleep( Milliseconds( win->isVisible() ? 1 : 8 ) );
+		Sys::sleep( Milliseconds( win->isVisible() ? 1 : 16 ) );
 	}
 }
 
@@ -143,7 +156,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		uiSceneNode->getUIThemeManager()->setDefaultFont(
 			FontTrueType::New( "NotoSans-Regular", "assets/fonts/NotoSans-Regular.ttf" ) );
 
-		FontTrueType::New( "monospace", "assets/fonts/DejaVuSansMono.ttf" );
+		Font* fontMono = FontTrueType::New( "monospace", "assets/fonts/DejaVuSansMono.ttf" );
 
 		SceneManager::instance()->add( uiSceneNode );
 
@@ -171,8 +184,12 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 			loadFileFromPath( file.Get() );
 		}
 
+		console = eeNew( Console, ( fontMono, true, true, 1024 * 1000, 0, win ) );
+
 		win->runMainLoop( &mainLoop );
 	}
+
+	eeSAFE_DELETE( console );
 
 	Engine::destroySingleton();
 	MemoryManager::showResults();

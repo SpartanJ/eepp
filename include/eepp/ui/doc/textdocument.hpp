@@ -16,6 +16,63 @@ using namespace EE::System;
 
 namespace EE { namespace UI { namespace Doc {
 
+class EE_API TextDocumentLine {
+  public:
+	TextDocumentLine( const String& text ) : mText( text ) { updateHash(); }
+
+	void setText( const String& text ) {
+		mText = text;
+		updateHash();
+	}
+
+	const String& getText() const { return mText; }
+
+	void operator=( const std::string& right ) { setText( right ); }
+
+	String::StringBaseType operator[]( std::size_t index ) const { return mText[index]; }
+
+	void insertChar( const unsigned int& pos, const String::StringBaseType& tchar ) {
+		mText.insert( mText.begin() + pos, tchar );
+		updateHash();
+	}
+
+	void append( const String& text ) {
+		mText.append( text );
+		updateHash();
+	}
+
+	void append( const String::StringBaseType& code ) {
+		mText.append( code );
+		updateHash();
+	}
+
+	String substr( std::size_t pos = 0, std::size_t n = String::StringType::npos ) const {
+		return mText.substr( pos, n );
+	}
+
+	String::Iterator insert( String::Iterator p, const String::StringBaseType& c ) {
+		auto it = mText.insert( p, c );
+		updateHash();
+		return it;
+	}
+
+	bool empty() const { return mText.empty(); }
+
+	size_t size() const { return mText.size(); }
+
+	size_t length() const { return mText.length(); }
+
+	const Uint32& getHash() const { return mHash; }
+
+	std::string toUtf8() const { return mText.toUtf8(); }
+
+  protected:
+	String mText;
+	Uint32 mHash;
+
+	void updateHash() { mHash = mText.getHash(); }
+};
+
 class EE_API TextDocument {
   public:
 	class EE_API Client {
@@ -26,6 +83,7 @@ class EE_API TextDocument {
 		virtual void onDocumentSelectionChange( const TextRange& ) = 0;
 		virtual void onDocumentLineCountChange( const size_t& lastCount,
 												const size_t& newCount ) = 0;
+		virtual void onDocumentLineChanged( const Int64& lineIndex ) = 0;
 	};
 
 	enum IndentType { IndentSpaces, IndentTabs };
@@ -56,13 +114,13 @@ class EE_API TextDocument {
 
 	const TextRange& getSelection() const;
 
-	String& line( const size_t& index );
+	TextDocumentLine& line( const size_t& index );
 
-	const String& line( const size_t& index ) const;
+	const TextDocumentLine& line( const size_t& index ) const;
 
 	size_t linesCount() const;
 
-	std::vector<String>& lines();
+	std::vector<TextDocumentLine>& lines();
 
 	bool hasSelection() const;
 
@@ -219,7 +277,7 @@ class EE_API TextDocument {
 	friend class UndoStack;
 	UndoStack mUndoStack;
 	std::string mFilePath;
-	std::vector<String> mLines;
+	std::vector<TextDocumentLine> mLines;
 	TextRange mSelection;
 	std::unordered_set<Client*> mClients;
 	bool mIsCLRF{false};
@@ -241,9 +299,11 @@ class EE_API TextDocument {
 
 	void notifyLineCountChanged( const size_t& lastCount, const size_t& newCount );
 
-	void insertAtStartOfSelectedLines( String text, bool skipEmpty );
+	void notifyLineChanged( const Int64& lineIndex );
 
-	void removeFromStartOfSelectedLines( String text, bool skipEmpty );
+	void insertAtStartOfSelectedLines( const String& text, bool skipEmpty );
+
+	void removeFromStartOfSelectedLines( const String& text, bool skipEmpty );
 
 	void remove( TextRange range, UndoStackContainer& undoStack, const Time& time );
 
