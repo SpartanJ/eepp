@@ -72,17 +72,21 @@ bool VertexBufferVBO::compile() {
 	// Create the VBO vertex arrays
 	for ( Int32 i = 0; i < VERTEX_FLAGS_COUNT; i++ ) {
 		if ( VERTEX_FLAG_QUERY( mVertexFlags, i ) ) {
-			glGenBuffersARB( 1, (unsigned int*)&mArrayHandle[i] );
+			if ( !mVertexArray[i].empty() ) {
+				glGenBuffersARB( 1, (unsigned int*)&mArrayHandle[i] );
 
-			glBindBufferARB( GL_ARRAY_BUFFER, mArrayHandle[i] );
+				glBindBufferARB( GL_ARRAY_BUFFER, mArrayHandle[i] );
 
-			if ( mArrayHandle[i] && !mVertexArray[i].empty() ) {
-				if ( i != VERTEX_FLAG_COLOR )
-					glBufferDataARB( GL_ARRAY_BUFFER, mVertexArray[i].size() * sizeof( Float ),
-									 &( mVertexArray[i][0] ), usageType );
-				else
-					glBufferDataARB( GL_ARRAY_BUFFER, mColorArray.size(), &mColorArray[0],
-									 usageType );
+				if ( mArrayHandle[i] ) {
+					if ( i != VERTEX_FLAG_COLOR )
+						glBufferDataARB( GL_ARRAY_BUFFER, mVertexArray[i].size() * sizeof( Float ),
+										 &( mVertexArray[i][0] ), usageType );
+					else
+						glBufferDataARB( GL_ARRAY_BUFFER, mColorArray.size(), &mColorArray[0],
+										 usageType );
+				} else {
+					return false;
+				}
 			} else {
 				return false;
 			}

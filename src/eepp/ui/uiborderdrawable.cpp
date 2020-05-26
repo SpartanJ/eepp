@@ -15,7 +15,8 @@ UIBorderDrawable::UIBorderDrawable( UINode* owner ) :
 	mVertexBuffer( VertexBuffer::New( VERTEX_FLAGS_PRIMITIVE, PRIMITIVE_TRIANGLE_STRIP ) ),
 	mBorderType( BorderType::Inside ),
 	mNeedsUpdate( false ),
-	mColorNeedsUpdate( false ) {}
+	mColorNeedsUpdate( false ),
+	mHasBorder( false ) {}
 
 UIBorderDrawable::~UIBorderDrawable() {
 	eeSAFE_DELETE( mVertexBuffer );
@@ -45,9 +46,11 @@ void UIBorderDrawable::draw( const Vector2f& position, const Sizef& size ) {
 		update();
 	}
 
-	mVertexBuffer->bind();
-	mVertexBuffer->draw();
-	mVertexBuffer->unbind();
+	if ( mHasBorder ) {
+		mVertexBuffer->bind();
+		mVertexBuffer->draw();
+		mVertexBuffer->unbind();
+	}
 }
 
 bool UIBorderDrawable::isStateful() {
@@ -321,6 +324,9 @@ void UIBorderDrawable::updateBorders() {
 	if ( !mBorderStr.radius.bottomRight.empty() )
 		mBorders.radius.bottomRight =
 			Borders::radiusFromString( mOwner, mBorderStr.radius.bottomRight );
+
+	mHasBorder = mBorders.top.width > 0 || mBorders.right.width > 0 || mBorders.bottom.width > 0 ||
+				 mBorders.left.width > 0;
 }
 
 }} // namespace EE::UI

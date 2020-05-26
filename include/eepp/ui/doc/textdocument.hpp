@@ -105,10 +105,6 @@ class EE_API TextDocument {
 
 	TextPosition endOfDoc() const;
 
-	TextPosition getAbsolutePosition( TextPosition position ) const;
-
-	Int64 getRelativeColumnOffset( TextPosition position ) const;
-
 	void deleteTo( TextPosition position );
 
 	void deleteTo( int offset );
@@ -139,11 +135,19 @@ class EE_API TextDocument {
 
 	void moveToPreviousLine( Int64 lastColIndex = 0 );
 
-	void moveToNextLine( Int64 lastColIndex = 0 );
+	void moveToNextLine();
 
 	void moveToPreviousPage( Int64 pageSize );
 
 	void moveToNextPage( Int64 pageSize );
+
+	void moveToStartOfDoc();
+
+	void moveToEndOfDoc();
+
+	void moveToStartOfLine();
+
+	void moveToEndOfLine();
 
 	void deleteToPreviousChar();
 
@@ -163,9 +167,9 @@ class EE_API TextDocument {
 
 	void selectToNextWord();
 
-	void selectToPreviousLine( Int64 lastColIndex );
+	void selectToPreviousLine();
 
-	void selectToNextLine( Int64 lastColIndex );
+	void selectToNextLine();
 
 	void selectToStartOfLine();
 

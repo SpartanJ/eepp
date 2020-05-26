@@ -85,6 +85,7 @@ class EE_API UIBorderDrawable : public Drawable {
 	Sizef mSize;
 	bool mNeedsUpdate;
 	bool mColorNeedsUpdate;
+	bool mHasBorder;
 
 	virtual void onAlphaChange();
 

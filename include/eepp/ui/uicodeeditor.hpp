@@ -108,7 +108,15 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	bool isDirty() const;
 
+	virtual Int64 getColFromXOffset( Int64 line, const Float& offset ) const;
+
+	virtual Float getColXOffset( TextPosition position );
+
   protected:
+	struct LastXOffset {
+		TextPosition position;
+		Float offset;
+	};
 	Font* mFont;
 	UIFontStyleConfig mFontStyleConfig;
 	Doc::TextDocument mDoc;
@@ -132,6 +140,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	SyntaxColorScheme mColorScheme;
 	SyntaxHighlighter mHighlighter;
 	UIScrollBar* mVScrollBar;
+	LastXOffset mLastXOffset{{0, 0}, 0.f};
 
 	void invalidateEditor();
 
@@ -179,15 +188,11 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	Float getTextWidth( const String& text ) const;
 
-	Int64 getColFromXOffset( Int64 line, const Float& offset ) const;
-
 	Float getLineHeight() const;
 
 	Float getCharacterSize() const;
 
 	Float getGlyphWidth() const;
-
-	void updateLastColumnOffset();
 
 	void resetCursor();
 
@@ -198,6 +203,16 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Sizef getMaxScroll() const;
 
 	void updateScrollBar();
+
+	TextPosition moveToLineOffset( const TextPosition& position, int offset );
+
+	void moveToPreviousLine();
+
+	void moveToNextLine();
+
+	void selectToPreviousLine();
+
+	void selectToNextLine();
 };
 
 }} // namespace EE::UI

@@ -348,7 +348,7 @@ TextPosition TextDocument::positionOffset( TextPosition position, int columnOffs
 		position.setLine( position.line() - 1 );
 		position.setColumn( eemax<Int64>( 0, position.column() + mLines[position.line()].size() ) );
 	}
-	while ( position.line() < (Int64)mLines.size() &&
+	while ( position.line() < (Int64)mLines.size() - 1 &&
 			position.column() > (Int64)eemax<Int64>( 0, mLines[position.line()].size() - 1 ) ) {
 		position.setColumn( position.column() - mLines[position.line()].size() - 1 );
 		position.setLine( position.line() + 1 );
@@ -440,30 +440,6 @@ TextPosition TextDocument::endOfDoc() const {
 	return TextPosition( mLines.size() - 1, mLines[mLines.size() - 1].size() - 1 );
 }
 
-TextPosition TextDocument::getAbsolutePosition( TextPosition position ) const {
-	position = sanitizePosition( position );
-	const String& string = line( position.line() );
-	size_t tabCount = string.substr( 0, position.column() ).countChar( '\t' );
-	return TextPosition( position.line(), position.column() - tabCount + tabCount * getTabWidth() );
-}
-
-Int64 TextDocument::getRelativeColumnOffset( TextPosition position ) const {
-	const String& line = mLines[position.line()];
-	Int64 length = eemin<Int64>( position.column(), line.size() - 1 );
-	Int64 offset = 0;
-	for ( Int64 i = 0; i <= length; ++i ) {
-		if ( offset >= position.column() ) {
-			return i;
-		}
-		if ( line[i] == '\t' ) {
-			offset += getTabWidth();
-		} else if ( line[i] != '\n' && line[i] != '\r' ) {
-			offset += 1;
-		}
-	}
-	return length;
-}
-
 void TextDocument::deleteTo( int offset ) {
 	TextPosition cursorPos = getSelection( true ).start();
 	if ( hasSelection() ) {
@@ -495,7 +471,7 @@ void TextDocument::selectTo( int offset ) {
 }
 
 void TextDocument::moveTo( TextPosition offset ) {
-	setSelection( getSelection().start() + offset );
+	setSelection( offset );
 }
 
 void TextDocument::moveTo( int columnOffset ) {
@@ -556,20 +532,13 @@ void TextDocument::moveToNextWord() {
 void TextDocument::moveToPreviousLine( Int64 lastColIndex ) {
 	TextPosition pos = getSelection().start();
 	pos.setLine( pos.line() - 1 );
-	if ( pos.line() >= 0 ) {
-		lastColIndex = getRelativeColumnOffset( TextPosition( pos.line(), lastColIndex ) );
-	}
 	pos.setColumn( lastColIndex );
 	setSelection( pos );
 }
 
-void TextDocument::moveToNextLine( Int64 lastColIndex ) {
+void TextDocument::moveToNextLine() {
 	TextPosition pos = getSelection().start();
 	pos.setLine( pos.line() + 1 );
-	if ( pos.line() < (Int64)mLines.size() ) {
-		lastColIndex = getRelativeColumnOffset( TextPosition( pos.line(), lastColIndex ) );
-	}
-	pos.setColumn( lastColIndex );
 	setSelection( pos );
 }
 
@@ -583,6 +552,22 @@ void TextDocument::moveToNextPage( Int64 pageSize ) {
 	TextPosition pos = getSelection().start();
 	pos.setLine( pos.line() + pageSize );
 	setSelection( pos );
+}
+
+void TextDocument::moveToStartOfDoc() {
+	setSelection( startOfDoc() );
+}
+
+void TextDocument::moveToEndOfDoc() {
+	setSelection( endOfDoc() );
+}
+
+void TextDocument::moveToStartOfLine() {
+	setSelection( startOfLine( getSelection().start() ) );
+}
+
+void TextDocument::moveToEndOfLine() {
+	setSelection( endOfLine( getSelection().start() ) );
 }
 
 void TextDocument::deleteToPreviousChar() {
@@ -622,23 +607,15 @@ void TextDocument::selectWord() {
 				   previousWordBoundary( getSelection().start() )} );
 }
 
-void TextDocument::selectToPreviousLine( Int64 lastColIndex ) {
+void TextDocument::selectToPreviousLine() {
 	TextPosition pos = getSelection().start();
 	pos.setLine( pos.line() - 1 );
-	if ( pos.line() >= 0 ) {
-		lastColIndex = getRelativeColumnOffset( TextPosition( pos.line(), lastColIndex ) );
-	}
-	pos.setColumn( lastColIndex );
 	setSelection( TextRange( pos, getSelection().end() ) );
 }
 
-void TextDocument::selectToNextLine( Int64 lastColIndex ) {
+void TextDocument::selectToNextLine() {
 	TextPosition pos = getSelection().start();
 	pos.setLine( pos.line() + 1 );
-	if ( pos.line() < (Int64)mLines.size() ) {
-		lastColIndex = getRelativeColumnOffset( TextPosition( pos.line(), lastColIndex ) );
-	}
-	pos.setColumn( lastColIndex );
 	setSelection( TextRange( pos, getSelection().end() ) );
 }
 

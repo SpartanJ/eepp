@@ -408,36 +408,31 @@ Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
 		case KEY_BACKSPACE: {
 			if ( event.getMod() & KEYMOD_CTRL ) {
 				mDoc.deleteToPreviousWord();
-				updateLastColumnOffset();
 			} else {
 				mDoc.deleteToPreviousChar();
-				updateLastColumnOffset();
 			}
 			break;
 		}
 		case KEY_DELETE: {
 			if ( event.getMod() & KEYMOD_CTRL ) {
 				mDoc.deleteToNextWord();
-				updateLastColumnOffset();
 			} else {
 				mDoc.deleteToNextChar();
-				updateLastColumnOffset();
 			}
 			break;
 		}
 		case KEY_KP_ENTER:
 		case KEY_RETURN: {
 			mDoc.newLine();
-			updateLastColumnOffset();
 			break;
 		}
 		case KEY_UP: {
 			if ( event.getMod() & KEYMOD_CTRL ) {
 				setScrollY( mScroll.y - getLineHeight() );
 			} else if ( event.getMod() & KEYMOD_SHIFT ) {
-				mDoc.selectToPreviousLine( mLastColOffset );
+				selectToPreviousLine();
 			} else {
-				mDoc.moveToPreviousLine( mLastColOffset );
+				moveToPreviousLine();
 			}
 			break;
 		}
@@ -445,9 +440,9 @@ Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
 			if ( event.getMod() & KEYMOD_CTRL ) {
 				setScrollY( mScroll.y + getLineHeight() );
 			} else if ( event.getMod() & KEYMOD_SHIFT ) {
-				mDoc.selectToNextLine( mLastColOffset );
+				selectToNextLine();
 			} else {
-				mDoc.moveToNextLine( mLastColOffset );
+				moveToNextLine();
 			}
 			break;
 		}
@@ -460,7 +455,6 @@ Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
 				mDoc.moveToPreviousWord();
 			} else {
 				mDoc.moveToPreviousChar();
-				updateLastColumnOffset();
 			}
 			break;
 		}
@@ -473,66 +467,50 @@ Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
 				mDoc.moveToNextWord();
 			} else {
 				mDoc.moveToNextChar();
-				updateLastColumnOffset();
 			}
 			break;
 		}
 		case KEY_HOME: {
 			if ( event.getMod() & KEYMOD_SHIFT ) {
 				mDoc.selectToStartOfLine();
-				updateLastColumnOffset();
 			} else if ( event.getMod() & KEYMOD_CTRL ) {
-				setScrollY( 0 );
-				mDoc.setSelection( {0, 0} );
+				mDoc.moveToStartOfDoc();
 			} else {
-				mDoc.setSelection( mDoc.startOfLine( mDoc.getSelection().start() ) );
-				updateLastColumnOffset();
+				mDoc.moveToStartOfLine();
 			}
 			break;
 		}
 		case KEY_END: {
 			if ( event.getMod() & KEYMOD_SHIFT ) {
 				mDoc.selectToEndOfLine();
-				updateLastColumnOffset();
 			} else if ( event.getMod() & KEYMOD_CTRL ) {
-				setScrollY( getMaxScroll().y );
-				mDoc.setSelection(
-					{static_cast<Int64>( mDoc.linesCount() - 1 ),
-					 static_cast<Int64>( mDoc.line( mDoc.linesCount() - 1 ).length() )} );
-				invalidateDraw();
+				mDoc.moveToEndOfDoc();
 			} else {
-				mDoc.setSelection( mDoc.endOfLine( mDoc.getSelection().start() ) );
-				updateLastColumnOffset();
+				mDoc.moveToEndOfLine();
 			}
 			break;
 		}
 		case KEY_PAGEUP: {
 			if ( event.getMod() & KEYMOD_SHIFT ) {
 				mDoc.selectToPreviousPage( getVisibleLinesCount() );
-				updateLastColumnOffset();
 			} else {
 				mDoc.moveToPreviousPage( getVisibleLinesCount() );
-				updateLastColumnOffset();
 			}
 			break;
 		}
 		case KEY_PAGEDOWN: {
 			if ( event.getMod() & KEYMOD_SHIFT ) {
 				mDoc.selectToNextPage( getVisibleLinesCount() );
-				updateLastColumnOffset();
 			} else {
 				mDoc.moveToNextPage( getVisibleLinesCount() );
-				updateLastColumnOffset();
 			}
 			break;
 		}
 		case KEY_TAB: {
 			if ( event.getMod() & KEYMOD_SHIFT ) {
 				mDoc.unindent();
-				updateLastColumnOffset();
 			} else if ( !event.getMod() ) {
 				mDoc.indent();
-				updateLastColumnOffset();
 			}
 			break;
 		}
@@ -564,17 +542,14 @@ Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
 		case KEY_Z: {
 			if ( ( event.getMod() & KEYMOD_CTRL ) && ( event.getMod() & KEYMOD_SHIFT ) ) {
 				mDoc.redo();
-				updateLastColumnOffset();
 			} else if ( event.getMod() & KEYMOD_CTRL ) {
 				mDoc.undo();
-				updateLastColumnOffset();
 			}
 			break;
 		}
 		case KEY_Y: {
 			if ( event.getMod() & KEYMOD_CTRL ) {
 				mDoc.redo();
-				updateLastColumnOffset();
 			}
 			break;
 		}
@@ -827,6 +802,11 @@ Float UICodeEditor::getTextWidth( const String& line ) const {
 	return x;
 }
 
+Float UICodeEditor::getColXOffset( TextPosition position ) {
+	position = mDoc.sanitizePosition( position );
+	return getTextWidth( mDoc.line( position.line() ).substr( 0, position.column() ) );
+}
+
 Int64 UICodeEditor::getColFromXOffset( Int64 lineNumber, const Float& offset ) const {
 	if ( offset <= 0 )
 		return 0;
@@ -859,15 +839,49 @@ Float UICodeEditor::getGlyphWidth() const {
 	return mFont->getGlyph( ' ', getCharacterSize(), false ).advance;
 }
 
-void UICodeEditor::updateLastColumnOffset() {
-	mLastColOffset = mDoc.getAbsolutePosition( mDoc.getSelection().start() ).column();
-}
-
 void UICodeEditor::resetCursor() {
 	if ( hasFocus() ) {
 		mCursorVisible = true;
 		mBlinkTimer.restart();
 	}
+}
+
+TextPosition UICodeEditor::moveToLineOffset( const TextPosition& position, int offset ) {
+	auto& xo = mLastXOffset;
+	if ( xo.position != position ) {
+		xo.offset = getColXOffset( {position.line(), position.column() + 1} );
+	}
+	xo.position.setLine( position.line() + offset );
+	xo.position.setColumn( getColFromXOffset( position.line() + offset, xo.offset ) );
+	return xo.position;
+}
+
+void UICodeEditor::moveToPreviousLine() {
+	TextPosition position = mDoc.getSelection().start();
+	if ( position.line() == 0 )
+		return mDoc.moveToStartOfDoc();
+	mDoc.moveTo( moveToLineOffset( position, -1 ) );
+}
+
+void UICodeEditor::moveToNextLine() {
+	TextPosition position = mDoc.getSelection().start();
+	if ( position.line() == (Int64)mDoc.linesCount() - 1 )
+		return mDoc.moveToEndOfDoc();
+	mDoc.moveTo( moveToLineOffset( position, 1 ) );
+}
+
+void UICodeEditor::selectToPreviousLine() {
+	TextPosition position = mDoc.getSelection().start();
+	if ( position.line() == 0 )
+		return mDoc.moveToStartOfDoc();
+	mDoc.selectTo( moveToLineOffset( position, -1 ) );
+}
+
+void UICodeEditor::selectToNextLine() {
+	TextPosition position = mDoc.getSelection().start();
+	if ( position.line() == (Int64)mDoc.linesCount() - 1 )
+		return mDoc.moveToEndOfDoc();
+	mDoc.selectTo( moveToLineOffset( position, 1 ) );
 }
 
 }} // namespace EE::UI
