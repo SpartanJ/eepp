@@ -188,7 +188,10 @@ class EE_API Input {
 	/** @return A list of the input finders that were down in the last update */
 	std::list<InputFinger*> getFingersWasDown();
 
-  protected:
+	/** @return the state of the mod keys. */
+	const Uint32& getKeyMod() const;
+
+	protected:
 	friend class Window;
 
 	Input( EE::Window::Window* window, JoystickManager* joystickmanager );

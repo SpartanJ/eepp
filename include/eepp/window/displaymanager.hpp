@@ -50,6 +50,10 @@ class EE_API DisplayManager {
 
 	virtual void disableScreenSaver();
 
+	virtual void enableMouseFocusClickThrough();
+
+	virtual void disableMouseFocusClickThrough();
+
 	virtual ~DisplayManager();
 
   protected:

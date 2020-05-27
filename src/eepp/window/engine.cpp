@@ -55,8 +55,6 @@ Engine::Engine() :
 	mZip->open( getPlatformHelper()->getApkPath() );
 
 	FileSystem::changeWorkingDirectory( getPlatformHelper()->getExternalStoragePath() );
-#else
-	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 #endif
 
 	TextureAtlasManager::createSingleton();

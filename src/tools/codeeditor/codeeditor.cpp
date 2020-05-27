@@ -52,48 +52,45 @@ void mainLoop() {
 
 	input->update();
 
-	if ( win->isActive() ) {
-		if ( codeEditor->isDirty() != docDirtyState ) {
-			docDirtyState = codeEditor->isDirty();
-			setAppTitle( docDirtyState ? curFile + "*" : curFile );
-		}
+	if ( codeEditor->isDirty() != docDirtyState ) {
+		docDirtyState = codeEditor->isDirty();
+		setAppTitle( docDirtyState ? curFile + "*" : curFile );
+	}
 
-		if ( ( input->isControlPressed() && input->isKeyUp( KEY_O ) ) ||
-			 input->isKeyUp( KEY_F2 ) ) {
-			openFileDialog();
-		}
+	if ( ( input->isControlPressed() && input->isKeyUp( KEY_O ) ) || input->isKeyUp( KEY_F2 ) ) {
+		openFileDialog();
+	}
 
-		if ( input->isControlPressed() && input->isKeyUp( KEY_S ) ) {
-			codeEditor->save();
-		}
+	if ( input->isControlPressed() && input->isKeyUp( KEY_S ) ) {
+		codeEditor->save();
+	}
 
-		if ( input->isKeyUp( KEY_F6 ) ) {
-			uiSceneNode->setHighlightOver( !uiSceneNode->getHighlightOver() );
-		}
+	if ( input->isKeyUp( KEY_F6 ) ) {
+		uiSceneNode->setHighlightOver( !uiSceneNode->getHighlightOver() );
+	}
 
-		if ( input->isKeyUp( KEY_F7 ) ) {
-			uiSceneNode->setDrawBoxes( !uiSceneNode->getDrawBoxes() );
-		}
+	if ( input->isKeyUp( KEY_F7 ) ) {
+		uiSceneNode->setDrawBoxes( !uiSceneNode->getDrawBoxes() );
+	}
 
-		if ( input->isKeyUp( KEY_F8 ) ) {
-			uiSceneNode->setDrawDebugData( !uiSceneNode->getDrawDebugData() );
-		}
+	if ( input->isKeyUp( KEY_F8 ) ) {
+		uiSceneNode->setDrawDebugData( !uiSceneNode->getDrawDebugData() );
+	}
 
-		if ( input->isKeyUp( KEY_ESCAPE ) && NULL == MsgBox && onCloseRequestCallback( win ) ) {
-			win->close();
-		}
+	if ( input->isKeyUp( KEY_ESCAPE ) && NULL == MsgBox && onCloseRequestCallback( win ) ) {
+		win->close();
+	}
 
-		if ( input->isAltPressed() && input->isKeyUp( KEY_RETURN ) ) {
-			win->toggleFullscreen();
-		}
+	if ( input->isAltPressed() && input->isKeyUp( KEY_RETURN ) ) {
+		win->toggleFullscreen();
+	}
 
-		if ( input->isKeyUp( KEY_F3 ) ) {
-			console->toggle();
-		}
+	if ( input->isKeyUp( KEY_F3 ) ) {
+		console->toggle();
+	}
 
-		if ( input->isControlPressed() && input->isKeyUp( KEY_L ) ) {
-			codeEditor->setLocked( !codeEditor->isLocked() );
-		}
+	if ( input->isControlPressed() && input->isKeyUp( KEY_L ) ) {
+		codeEditor->setLocked( !codeEditor->isLocked() );
 	}
 
 	SceneManager::instance()->update();
@@ -127,12 +124,18 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		return EXIT_FAILURE;
 	}
 
-	Display* currentDisplay = Engine::instance()->getDisplayManager()->getDisplayIndex( 0 );
+	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
+	Display* currentDisplay = displayManager->getDisplayIndex( 0 );
 	Float pixelDensity = currentDisplay->getPixelDensity();
+
+	displayManager->enableScreenSaver();
+	displayManager->enableMouseFocusClickThrough();
+
+	std::string resPath( Sys::getProcessPath() );
 
 	win = Engine::instance()->createWindow(
 		WindowSettings( 1280, 720, windowTitle, WindowStyle::Default, WindowBackend::Default, 32,
-						"assets/icon/ee.png", pixelDensity ),
+						resPath + "assets/icon/ee.png", pixelDensity ),
 		ContextSettings( true ) );
 
 	if ( win->isOpen() ) {
@@ -153,15 +156,16 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 
 		uiSceneNode = UISceneNode::New();
 
-		uiSceneNode->getUIThemeManager()->setDefaultFont(
-			FontTrueType::New( "NotoSans-Regular", "assets/fonts/NotoSans-Regular.ttf" ) );
+		uiSceneNode->getUIThemeManager()->setDefaultFont( FontTrueType::New(
+			"NotoSans-Regular", resPath + "assets/fonts/NotoSans-Regular.ttf" ) );
 
-		Font* fontMono = FontTrueType::New( "monospace", "assets/fonts/DejaVuSansMono.ttf" );
+		Font* fontMono =
+			FontTrueType::New( "monospace", resPath + "assets/fonts/DejaVuSansMono.ttf" );
 
 		SceneManager::instance()->add( uiSceneNode );
 
 		StyleSheetParser cssParser;
-		if ( cssParser.loadFromFile( "assets/ui/breeze.css" ) ) {
+		if ( cssParser.loadFromFile( resPath + "assets/ui/breeze.css" ) ) {
 			uiSceneNode->setStyleSheet( cssParser.getStyleSheet() );
 		}
 

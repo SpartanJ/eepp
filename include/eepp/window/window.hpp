@@ -425,6 +425,7 @@ class EE_API Window {
 	**	@param fps The desired FPS ( 0 = infinite ) */
 	void runMainLoop( void ( *func )(), int fps = 0 );
 
+	/** @return The current display index. */
 	virtual int getCurrentDisplayIndex();
 
 	Vector2f mapPixelToCoords( const Vector2i& point );

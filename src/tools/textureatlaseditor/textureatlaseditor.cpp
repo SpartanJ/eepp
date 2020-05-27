@@ -76,9 +76,11 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	Display* currentDisplay = Engine::instance()->getDisplayManager()->getDisplayIndex( 0 );
 	Float pixelDensity = currentDisplay->getPixelDensity();
 
+	std::string resPath( Sys::getProcessPath() );
+
 	win = Engine::instance()->createWindow(
 		WindowSettings( 1280, 720, "eepp - Texture Atlas Editor", WindowStyle::Default,
-						WindowBackend::Default, 32, "assets/icon/ee.png", pixelDensity ),
+						WindowBackend::Default, 32, resPath + "assets/icon/ee.png", pixelDensity ),
 		ContextSettings( true, GLv_default, true, 24, 1, 0, true ) );
 
 	if ( win->isOpen() ) {
@@ -97,15 +99,14 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 			else if ( PixelDensity::getPixelDensity() >= 2.f )
 				pd = "2x";
 
-			FontTrueType* font =
-				FontTrueType::New( "NotoSans-Regular", "assets/fonts/NotoSans-Regular.ttf" );
+			FontTrueType* font = FontTrueType::New( "NotoSans-Regular",
+													resPath + "assets/fonts/NotoSans-Regular.ttf" );
 
-			/*UITheme* theme =
-				UITheme::load( "uitheme" + pd, "uitheme" + pd, "assets/ui/uitheme" + pd + ".eta",
-							   font, "assets/ui/uitheme.css" );*/
+			/*UITheme* theme = UITheme::load( "uitheme" + pd, "uitheme" + pd, resPath +
+			 * "assets/ui/uitheme" + pd + ".eta", font, resPath + "assets/ui/uitheme.css" );*/
 
 			UITheme* theme =
-				UITheme::load( "uitheme", "uitheme", "", font, "assets/ui/breeze.css" );
+				UITheme::load( "uitheme", "uitheme", "", font, resPath + "assets/ui/breeze.css" );
 
 			uiSceneNode->combineStyleSheet( theme->getStyleSheet() );
 

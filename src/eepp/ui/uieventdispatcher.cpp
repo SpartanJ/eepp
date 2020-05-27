@@ -13,6 +13,10 @@ UIEventDispatcher* UIEventDispatcher::New( SceneNode* sceneNode ) {
 UIEventDispatcher::UIEventDispatcher( SceneNode* sceneNode ) :
 	EventDispatcher( sceneNode ), mJustGainedFocus( false ) {}
 
+const bool& UIEventDispatcher::justGainedFocus() const {
+	return mJustGainedFocus;
+}
+
 void UIEventDispatcher::inputCallback( InputEvent* Event ) {
 	EventDispatcher::inputCallback( Event );
 
@@ -35,8 +39,7 @@ void UIEventDispatcher::checkTabPress( const Uint32& KeyCode ) {
 	eeASSERT( NULL != mFocusNode );
 
 	Window::Window* win = mFocusNode->getSceneNode()->getWindow();
-	if ( KeyCode == KEY_TAB && mFocusNode->isUINode() && NULL != win && win->isActive() &&
-		 !mJustGainedFocus ) {
+	if ( KeyCode == KEY_TAB && mFocusNode->isUINode() && NULL != win && !mJustGainedFocus ) {
 		UINode* uiNode = static_cast<UINode*>( mFocusNode );
 
 		if ( !uiNode->isTabStop() ) {

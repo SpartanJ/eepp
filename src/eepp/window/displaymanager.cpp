@@ -26,4 +26,8 @@ void DisplayManager::enableScreenSaver() {}
 
 void DisplayManager::disableScreenSaver() {}
 
+void DisplayManager::enableMouseFocusClickThrough() {}
+
+void DisplayManager::disableMouseFocusClickThrough() {}
+
 }} // namespace EE::Window

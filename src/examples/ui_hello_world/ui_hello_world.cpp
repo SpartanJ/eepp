@@ -34,6 +34,11 @@ EE_MAIN_FUNC int main( int, char** ) {
 											ContextSettings( true ) );
 
 	if ( win->isOpen() ) {
+		// Change the current working directory to the binary path to ensure the assets location
+		// is always correct even if we load the application from other directory than the binary
+		// path.
+		FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
 		// Load a font to use as the default font in our UI.
 		FontTrueType* font =
 			FontTrueType::New( "NotoSans-Regular", "assets/fonts/NotoSans-Regular.ttf" );

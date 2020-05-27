@@ -34,6 +34,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 											ContextSettings( true ) );
 
 	if ( win->isOpen() ) {
+		FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 		PixelDensity::setPixelDensity(
 			Engine::instance()->getDisplayManager()->getDisplayIndex( 0 )->getPixelDensity() );
 		FontTrueType* font =

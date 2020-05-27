@@ -95,6 +95,11 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 
 	// Check if created
 	if ( win->isOpen() ) {
+		// Change the current working directory to the binary path to ensure the assets location
+		// is always correct even if we load the application from other directory than the binary
+		// path.
+		FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
 		// Load the rock texture
 		Uint32 PlanetId = TextureFactory::instance()->loadFromFile( "assets/sprites/7.png" );
 		Uint32 RockId = TextureFactory::instance()->loadFromFile( "assets/sprites/5.png" );

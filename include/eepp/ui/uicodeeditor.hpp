@@ -108,7 +108,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	bool isDirty() const;
 
-	virtual Int64 getColFromXOffset( Int64 line, const Float& offset ) const;
+	virtual Int64 getColFromXOffset( Int64 line, const Float& x ) const;
 
 	virtual Float getColXOffset( TextPosition position );
 

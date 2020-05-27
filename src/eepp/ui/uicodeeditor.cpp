@@ -4,6 +4,7 @@
 #include <eepp/graphics/text.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
+#include <eepp/ui/uieventdispatcher.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/window/clipboard.hpp>
@@ -404,6 +405,10 @@ Uint32 UICodeEditor::onTextInput( const TextInputEvent& event ) {
 		return 1;
 
 	if ( !getUISceneNode()->getWindow()->getInput()->isControlPressed() ) {
+		if ( getUISceneNode()->getWindow()->getInput()->isAltPressed() &&
+			 !event.getText().empty() && event.getText()[0] == '\t' )
+			return 1;
+
 		mDoc.textInput( event.getText() );
 	}
 	return 1;
@@ -425,7 +430,7 @@ Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
 		case KEY_BACKSPACE: {
 			if ( event.getMod() & KEYMOD_CTRL ) {
 				mDoc.deleteToPreviousWord();
-			} else {
+			} else if ( event.getMod() == 0 || ( event.getMod() & KEYMOD_SHIFT ) ) {
 				mDoc.deleteToPreviousChar();
 			}
 			break;
@@ -433,28 +438,36 @@ Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
 		case KEY_DELETE: {
 			if ( event.getMod() & KEYMOD_CTRL ) {
 				mDoc.deleteToNextWord();
-			} else {
+			} else if ( event.getMod() == 0 || ( event.getMod() & KEYMOD_SHIFT ) ) {
 				mDoc.deleteToNextChar();
 			}
 			break;
 		}
 		case KEY_KP_ENTER:
 		case KEY_RETURN: {
-			mDoc.newLine();
+			if ( ( event.getMod() & KEYMOD_CTRL ) && ( event.getMod() & KEYMOD_SHIFT ) ) {
+				mDoc.newLineAbove();
+			} else if ( !( event.getMod() & KEYMOD_ALT ) ) {
+				mDoc.newLine();
+			}
 			break;
 		}
 		case KEY_UP: {
-			if ( event.getMod() & KEYMOD_CTRL ) {
+			if ( ( event.getMod() & KEYMOD_CTRL ) && ( event.getMod() & KEYMOD_SHIFT ) ) {
+				mDoc.moveLinesUp();
+			} else if ( event.getMod() & KEYMOD_CTRL ) {
 				setScrollY( mScroll.y - getLineHeight() );
 			} else if ( event.getMod() & KEYMOD_SHIFT ) {
 				selectToPreviousLine();
-			} else {
+			} else if ( event.getMod() == 0 ) {
 				moveToPreviousLine();
 			}
 			break;
 		}
 		case KEY_DOWN: {
-			if ( event.getMod() & KEYMOD_CTRL ) {
+			if ( ( event.getMod() & KEYMOD_CTRL ) && ( event.getMod() & KEYMOD_SHIFT ) ) {
+				mDoc.moveLinesDown();
+			} else if ( event.getMod() & KEYMOD_CTRL ) {
 				setScrollY( mScroll.y + getLineHeight() );
 			} else if ( event.getMod() & KEYMOD_SHIFT ) {
 				selectToNextLine();
@@ -488,21 +501,25 @@ Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
 			break;
 		}
 		case KEY_HOME: {
-			if ( event.getMod() & KEYMOD_SHIFT ) {
-				mDoc.selectToStartOfLine();
+			if ( ( event.getMod() & KEYMOD_CTRL ) && ( event.getMod() & KEYMOD_SHIFT ) ) {
+				mDoc.selectToStartOfDoc();
+			} else if ( event.getMod() & KEYMOD_SHIFT ) {
+				mDoc.selectToStartOfContent();
 			} else if ( event.getMod() & KEYMOD_CTRL ) {
 				mDoc.moveToStartOfDoc();
-			} else {
-				mDoc.moveToStartOfLine();
+			} else if ( event.getMod() == 0 ) {
+				mDoc.moveToStartOfContent();
 			}
 			break;
 		}
 		case KEY_END: {
-			if ( event.getMod() & KEYMOD_SHIFT ) {
+			if ( ( event.getMod() & KEYMOD_CTRL ) && ( event.getMod() & KEYMOD_SHIFT ) ) {
+				mDoc.selectToEndOfDoc();
+			} else if ( event.getMod() & KEYMOD_SHIFT ) {
 				mDoc.selectToEndOfLine();
 			} else if ( event.getMod() & KEYMOD_CTRL ) {
 				mDoc.moveToEndOfDoc();
-			} else {
+			} else if ( event.getMod() == 0 ) {
 				mDoc.moveToEndOfLine();
 			}
 			break;
@@ -510,7 +527,7 @@ Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
 		case KEY_PAGEUP: {
 			if ( event.getMod() & KEYMOD_SHIFT ) {
 				mDoc.selectToPreviousPage( getVisibleLinesCount() );
-			} else {
+			} else if ( event.getMod() == 0 ) {
 				mDoc.moveToPreviousPage( getVisibleLinesCount() );
 			}
 			break;
@@ -518,16 +535,20 @@ Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
 		case KEY_PAGEDOWN: {
 			if ( event.getMod() & KEYMOD_SHIFT ) {
 				mDoc.selectToNextPage( getVisibleLinesCount() );
-			} else {
+			} else if ( event.getMod() == 0 ) {
 				mDoc.moveToNextPage( getVisibleLinesCount() );
 			}
 			break;
 		}
 		case KEY_TAB: {
-			if ( event.getMod() & KEYMOD_SHIFT ) {
-				mDoc.unindent();
-			} else if ( !event.getMod() ) {
-				mDoc.indent();
+			UIEventDispatcher* eventDispatcher =
+				static_cast<UIEventDispatcher*>( getUISceneNode()->getEventDispatcher() );
+			if ( !eventDispatcher->justGainedFocus() ) {
+				if ( event.getMod() & KEYMOD_SHIFT ) {
+					mDoc.unindent();
+				} else if ( event.getMod() == 0 ) {
+					mDoc.indent();
+				}
 			}
 			break;
 		}
@@ -644,8 +665,8 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 }
 
 Uint32 UICodeEditor::onMouseMove( const Vector2i& position, const Uint32& flags ) {
-	if ( !getUISceneNode()->getEventDispatcher()->isNodeDragging() && hasFocus() && NULL != mFont &&
-		 mMouseDown && ( flags & EE_BUTTON_LMASK ) ) {
+	if ( !getUISceneNode()->getEventDispatcher()->isNodeDragging() && NULL != mFont && mMouseDown &&
+		 ( flags & EE_BUTTON_LMASK ) ) {
 		TextRange selection = mDoc.getSelection();
 		selection.setStart( resolveScreenPosition( position.asFloat() ) );
 		mDoc.setSelection( selection );
@@ -679,7 +700,7 @@ Uint32 UICodeEditor::onMouseUp( const Vector2i& position, const Uint32& flags ) 
 }
 
 Uint32 UICodeEditor::onMouseDoubleClick( const Vector2i&, const Uint32& flags ) {
-	if ( !mLocked || NULL == mFont )
+	if ( mLocked || NULL == mFont )
 		return 1;
 
 	if ( flags & EE_BUTTON_LMASK ) {
@@ -837,18 +858,18 @@ void UICodeEditor::setLocked( bool locked ) {
 	}
 }
 
-Int64 UICodeEditor::getColFromXOffset( Int64 lineNumber, const Float& offset ) const {
-	if ( offset <= 0 )
+Int64 UICodeEditor::getColFromXOffset( Int64 lineNumber, const Float& x ) const {
+	if ( x <= 0 )
 		return 0;
 	TextPosition pos = mDoc.sanitizePosition( TextPosition( lineNumber, 0 ) );
 	const String& line = mDoc.line( pos.line() ).getText();
-	size_t len = line.length();
+	Int64 len = line.length();
 	Float glyphWidth = getGlyphWidth();
-	Float x = 0;
-	for ( size_t i = 0; i < len; i++ ) {
-		x += ( line[i] == '\t' ) ? glyphWidth * mTabWidth : glyphWidth;
-		if ( x >= offset )
-			return i;
+	Float xOffset = 0;
+	for ( int i = 0; i < len; i++ ) {
+		if ( xOffset >= x )
+			return xOffset - x > glyphWidth * 0.5f ? eemax<Int64>( 0, i - 1 ) : i;
+		xOffset += ( line[i] == '\t' ) ? glyphWidth * mTabWidth : glyphWidth;
 	}
 	return static_cast<Int64>( line.size() ) - 1;
 }
@@ -866,16 +887,14 @@ Float UICodeEditor::getGlyphWidth() const {
 }
 
 void UICodeEditor::resetCursor() {
-	if ( hasFocus() ) {
-		mCursorVisible = true;
-		mBlinkTimer.restart();
-	}
+	mCursorVisible = true;
+	mBlinkTimer.restart();
 }
 
 TextPosition UICodeEditor::moveToLineOffset( const TextPosition& position, int offset ) {
 	auto& xo = mLastXOffset;
 	if ( xo.position != position ) {
-		xo.offset = getColXOffset( {position.line(), position.column() + 1} );
+		xo.offset = getColXOffset( position );
 	}
 	xo.position.setLine( position.line() + offset );
 	xo.position.setColumn( getColFromXOffset( position.line() + offset, xo.offset ) );

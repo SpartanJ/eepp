@@ -9,6 +9,7 @@
 #include <eepp/ui/doc/textposition.hpp>
 #include <eepp/ui/doc/textrange.hpp>
 #include <eepp/ui/doc/undostack.hpp>
+#include <functional>
 #include <unordered_set>
 #include <vector>
 
@@ -18,6 +19,8 @@ namespace EE { namespace UI { namespace Doc {
 
 class EE_API TextDocumentLine {
   public:
+	typedef std::function<void()> DocumentCommand;
+
 	TextDocumentLine( const String& text ) : mText( text ) { updateHash(); }
 
 	void setText( const String& text ) {
@@ -159,6 +162,8 @@ class EE_API TextDocument {
 
 	TextPosition endOfLine( TextPosition position ) const;
 
+	TextPosition startOfContent( TextPosition position );
+
 	TextPosition startOfDoc() const;
 
 	TextPosition endOfDoc() const;
@@ -207,6 +212,8 @@ class EE_API TextDocument {
 
 	void moveToEndOfLine();
 
+	void moveToStartOfContent();
+
 	void deleteToPreviousChar();
 
 	void deleteToNextChar();
@@ -233,17 +240,29 @@ class EE_API TextDocument {
 
 	void selectToEndOfLine();
 
+	void selectToStartOfDoc();
+
+	void selectToEndOfDoc();
+
 	void selectToPreviousPage( Int64 pageSize );
 
 	void selectToNextPage( Int64 pageSize );
+
+	void selectToStartOfContent();
 
 	void selectAll();
 
 	void newLine();
 
+	void newLineAbove();
+
 	void indent();
 
 	void unindent();
+
+	void moveLinesUp();
+
+	void moveLinesDown();
 
 	String getIndentString();
 
@@ -311,6 +330,8 @@ class EE_API TextDocument {
 						 UndoStackContainer& undoStack, const Time& time );
 
 	TextPosition insert( TextPosition position, const String::StringBaseType& text );
+
+	void appendLineIfLastLine( Int64 line );
 };
 
 }}} // namespace EE::UI::Doc

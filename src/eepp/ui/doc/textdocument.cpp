@@ -41,6 +41,10 @@ void TextDocument::reset() {
 }
 
 void TextDocument::loadFromPath( const std::string& path ) {
+	if ( !FileSystem::fileExists( path ) ) {
+		eePRINTL( "File \"%s\" does not exists. Creating a new file.", path.c_str() );
+	}
+	Clock clock;
 	reset();
 	mLines.clear();
 	mFilePath = path;
@@ -70,6 +74,8 @@ void TextDocument::loadFromPath( const std::string& path ) {
 	} else if ( mLines[mLines.size() - 1][mLines[mLines.size() - 1].size() - 1] != '\n' ) {
 		mLines[mLines.size() - 1].append( '\n' );
 	}
+	eePRINTL( "Document \"%s\" loaded in %.2fms.", path.c_str(),
+			  clock.getElapsedTime().asMilliseconds() );
 }
 
 bool TextDocument::save( const std::string& path, const bool& utf8bom ) {
@@ -435,6 +441,21 @@ TextPosition TextDocument::endOfLine( TextPosition position ) const {
 	return TextPosition( position.line(), mLines[position.line()].size() - 1 );
 }
 
+TextPosition TextDocument::startOfContent( TextPosition start ) {
+	start = sanitizePosition( start );
+	const String& ln = line( start.line() ).getText();
+	size_t to = start.column();
+	int indent = 0;
+	for ( size_t i = 0; i < to; i++ ) {
+		if ( '\t' == ln[i] || ' ' == ln[i] ) {
+			indent++;
+		} else {
+			break;
+		}
+	}
+	return {start.line(), indent};
+}
+
 TextPosition TextDocument::startOfDoc() const {
 	return TextPosition( 0, 0 );
 }
@@ -498,8 +519,7 @@ void TextDocument::unregisterClient( TextDocument::Client& client ) {
 
 void TextDocument::moveToPreviousChar() {
 	if ( hasSelection() ) {
-		TextRange selection = getSelection( true );
-		setSelection( selection.end() );
+		setSelection( getSelection( true ).start() );
 	} else {
 		setSelection( positionOffset( getSelection().start(), -1 ) );
 	}
@@ -507,8 +527,7 @@ void TextDocument::moveToPreviousChar() {
 
 void TextDocument::moveToNextChar() {
 	if ( hasSelection() ) {
-		TextRange selection = getSelection( true );
-		setSelection( selection.start() );
+		setSelection( getSelection( true ).end() );
 	} else {
 		setSelection( positionOffset( getSelection().start(), 1 ) );
 	}
@@ -516,8 +535,7 @@ void TextDocument::moveToNextChar() {
 
 void TextDocument::moveToPreviousWord() {
 	if ( hasSelection() ) {
-		TextRange selection = getSelection( true );
-		setSelection( selection.end() );
+		setSelection( getSelection( true ).start() );
 	} else {
 		setSelection( previousWordBoundary( getSelection().start() ) );
 	}
@@ -525,8 +543,7 @@ void TextDocument::moveToPreviousWord() {
 
 void TextDocument::moveToNextWord() {
 	if ( hasSelection() ) {
-		TextRange selection = getSelection( true );
-		setSelection( selection.start() );
+		setSelection( getSelection( true ).end() );
 	} else {
 		setSelection( nextWordBoundary( getSelection().start() ) );
 	}
@@ -563,6 +580,20 @@ void TextDocument::moveToStartOfDoc() {
 
 void TextDocument::moveToEndOfDoc() {
 	setSelection( endOfDoc() );
+}
+
+void TextDocument::moveToStartOfContent() {
+	TextPosition start = getSelection().start();
+	TextPosition indented = startOfContent( getSelection().start() );
+	setSelection( indented.column() == start.column() ? TextPosition( start.line(), 0 )
+													  : indented );
+}
+
+void TextDocument::selectToStartOfContent() {
+	TextPosition start = getSelection().start();
+	TextPosition indented = startOfContent( getSelection().start() );
+	setSelection( {indented.column() == start.column() ? TextPosition( start.line(), 0 ) : indented,
+				   getSelection().end()} );
 }
 
 void TextDocument::moveToStartOfLine() {
@@ -630,6 +661,14 @@ void TextDocument::selectToEndOfLine() {
 	selectTo( endOfLine( getSelection().start() ) );
 }
 
+void TextDocument::selectToStartOfDoc() {
+	selectTo( startOfDoc() );
+}
+
+void TextDocument::selectToEndOfDoc() {
+	selectTo( endOfDoc() );
+}
+
 void TextDocument::selectToPreviousPage( Int64 pageSize ) {
 	TextPosition pos = getSelection().start();
 	pos.setLine( pos.line() - pageSize );
@@ -649,22 +688,20 @@ void TextDocument::selectAll() {
 void TextDocument::newLine() {
 	String input( "\n" );
 	TextPosition start = getSelection().start();
-	if ( start.line() >= 0 && start.line() < (Int64)mLines.size() ) {
-		const String& ln = line( start.line() ).getText();
-		size_t to = eemin<size_t>( ln.size(), start.column() );
-		int indent = 0;
-		for ( size_t i = 0; i < to; i++ ) {
-			if ( '\t' == ln[i] || ' ' == ln[i] ) {
-				indent++;
-			} else {
-				break;
-			}
-		}
-		if ( indent ) {
-			input.append( ln.substr( 0, indent ) );
-		}
-	}
+	TextPosition indent = startOfContent( getSelection().start() );
+	if ( indent.column() != 0 )
+		input.append( line( start.line() ).getText().substr( 0, indent.column() ) );
 	textInput( input );
+}
+
+void TextDocument::newLineAbove() {
+	String input( "\n" );
+	TextPosition start = getSelection().start();
+	TextPosition indent = startOfContent( getSelection().start() );
+	if ( indent.column() != 0 )
+		input.insert( 0, line( start.line() ).getText().substr( 0, indent.column() ) );
+	insert( {start.line(), 0}, input );
+	setSelection( {start.line(), (Int64)input.size()} );
 }
 
 void TextDocument::insertAtStartOfSelectedLines( const String& text, bool skipEmpty ) {
@@ -707,6 +744,38 @@ void TextDocument::indent() {
 
 void TextDocument::unindent() {
 	removeFromStartOfSelectedLines( getIndentString(), false );
+}
+
+void TextDocument::moveLinesUp() {
+	TextRange range = getSelection( true );
+	bool swap = getSelection( true ) != getSelection();
+	appendLineIfLastLine( range.end().line() );
+	if ( range.start().line() > 0 ) {
+		auto& text = line( range.start().line() - 1 );
+		insert( {range.end().line() + 1, 0}, text.getText() );
+		remove( {{range.start().line() - 1, 0}, {range.start().line(), 0}} );
+		setSelection( {range.start().line() - 1, range.start().column()},
+					  {range.end().line() - 1, range.end().column()}, swap );
+	}
+}
+
+void TextDocument::moveLinesDown() {
+	TextRange range = getSelection( true );
+	bool swap = getSelection( true ) != getSelection();
+	appendLineIfLastLine( range.end().line() + 1 );
+	if ( range.end().line() < (Int64)mLines.size() - 1 ) {
+		auto text = line( range.end().line() + 1 );
+		remove( {{range.end().line() + 1, 0}, {range.end().line() + 2, 0}} );
+		insert( {range.start().line(), 0}, text.getText() );
+		setSelection( {range.start().line() + 1, range.start().column()},
+					  {range.end().line() + 1, range.end().column()}, swap );
+	}
+}
+
+void TextDocument::appendLineIfLastLine( Int64 line ) {
+	if ( line >= (Int64)mLines.size() - 1 ) {
+		insert( endOfDoc(), "\n" );
+	}
 }
 
 String TextDocument::getIndentString() {

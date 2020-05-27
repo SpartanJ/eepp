@@ -115,4 +115,12 @@ void DisplayManagerSDL2::disableScreenSaver() {
 	SDL_DisableScreenSaver();
 }
 
+void DisplayManagerSDL2::enableMouseFocusClickThrough() {
+	SDL_SetHint( SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH, "1" );
+}
+
+void DisplayManagerSDL2::disableMouseFocusClickThrough() {
+	SDL_SetHint( SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH, "0" );
+}
+
 }}}} // namespace EE::Window::Backend::SDL2

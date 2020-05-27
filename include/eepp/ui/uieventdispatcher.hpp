@@ -12,6 +12,8 @@ class UIEventDispatcher : public EventDispatcher {
 
 	UIEventDispatcher( SceneNode* sceneNode );
 
+	const bool& justGainedFocus() const;
+
   protected:
 	bool mJustGainedFocus;
 

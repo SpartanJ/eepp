@@ -458,4 +458,8 @@ std::list<InputFinger*> Input::getFingersWasDown() {
 	return fDown;
 }
 
+const Uint32& Input::getKeyMod() const {
+	return mInputMod;
+}
+
 }} // namespace EE::Window

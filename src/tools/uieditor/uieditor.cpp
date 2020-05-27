@@ -978,9 +978,11 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	Log::instance()->setLiveWrite( true );
 	Log::instance()->setConsoleOutput( true );
 
+	std::string resPath( Sys::getProcessPath() );
+
 	window = Engine::instance()->createWindow(
 		WindowSettings( 1280, 720, "eepp - UI Editor", WindowStyle::Default, WindowBackend::Default,
-						32, "assets/icon/ee.png", pixelDensity ),
+						32, resPath + "assets/icon/ee.png", pixelDensity ),
 		ContextSettings( true, GLv_default, true, 24, 1, 0, true ) );
 
 	if ( window->isOpen() ) {
@@ -995,15 +997,17 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 			pd = "2x";
 
 		FontTrueType* font =
-			FontTrueType::New( "NotoSans-Regular", "assets/fonts/NotoSans-Regular.ttf" );
+			FontTrueType::New( "NotoSans-Regular", resPath + "assets/fonts/NotoSans-Regular.ttf" );
 		FontTrueType* fontMono =
-			FontTrueType::New( "DejaVuSansMono", "assets/fonts/DejaVuSansMono.ttf" );
+			FontTrueType::New( "DejaVuSansMono", resPath + "assets/fonts/DejaVuSansMono.ttf" );
 
 		console = eeNew( Console, ( fontMono, true, true, 1024 * 1000, 0, window ) );
 
-		theme = UITheme::load( "uitheme" + pd, "uitheme" + pd, "assets/ui/uitheme" + pd + ".eta",
-							   font, "assets/ui/uitheme.css" );
-		/*theme = UITheme::load( "uitheme", "uitheme", "", font, "assets/ui/breeze.css" );*/
+		theme = UITheme::load( "uitheme" + pd, "uitheme" + pd,
+							   resPath + "assets/ui/uitheme" + pd + ".eta", font,
+							   resPath + "assets/ui/uitheme.css" );
+		/*theme = UITheme::load( "uitheme", "uitheme", "", font, resPath + "assets/ui/breeze.css"
+		 * );*/
 
 		uiSceneNode = UISceneNode::New();
 		uiSceneNode->setId( "uiSceneNode" );

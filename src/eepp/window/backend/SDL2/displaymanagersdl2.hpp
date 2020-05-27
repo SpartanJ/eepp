@@ -35,6 +35,11 @@ class EE_API DisplayManagerSDL2 : public DisplayManager {
 	void enableScreenSaver();
 
 	void disableScreenSaver();
+
+	void enableMouseFocusClickThrough();
+
+	void disableMouseFocusClickThrough();
+
 };
 
 }}}} // namespace EE::Window::Backend::SDL2

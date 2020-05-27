@@ -112,7 +112,7 @@ void EETest::init() {
 	mTerrainUp = true;
 	relLay = NULL;
 
-	MyPath = "assets/";
+	MyPath = Sys::getProcessPath() + "assets/";
 
 	IniFile Ini( MyPath + "ee.ini" );
 

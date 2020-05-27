@@ -52,6 +52,11 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 
 	// Check if created
 	if ( win->isOpen() ) {
+		// Change the current working directory to the binary path to ensure the assets location
+		// is always correct even if we load the application from other directory than the binary
+		// path.
+		FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
 		// Create a new text string
 		String Txt( "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod "
 					"tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, "
