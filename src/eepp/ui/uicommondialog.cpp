@@ -83,6 +83,24 @@ UICommonDialog::UICommonDialog( Uint32 CDLFlags, std::string DefaultFilePattern,
 	mList->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
 		->setLayoutWeight( 1 )
 		->setLayoutMargin( Rect( 0, 0, 0, 4 ) );
+	mList->addEventListener( Event::KeyDown, [&]( const Event* event ) {
+		const KeyEvent* KEvent = reinterpret_cast<const KeyEvent*>( event );
+		if ( KEvent->getKeyCode() == KEY_DOWN ) {
+			if ( mList->getCount() && mList->getItemSelectedIndex() == eeINDEX_NOT_FOUND ) {
+				mList->setSelected( 0 );
+			}
+		} else if ( KEvent->getKeyCode() == KEY_BACKSPACE ) {
+			goFolderUp();
+		}
+	} );
+	mList->addEventListener( Event::OnItemKeyDown, [&]( const Event* event ) {
+		const KeyEvent* KEvent = reinterpret_cast<const KeyEvent*>( event );
+		if ( KEvent->getKeyCode() == KEY_RETURN ) {
+			openFileOrFolder();
+		} else if ( KEvent->getKeyCode() == KEY_BACKSPACE ) {
+			goFolderUp();
+		}
+	} );
 
 	hLayout = UILinearLayout::NewHorizontal();
 	hLayout->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
@@ -231,6 +249,8 @@ void UICommonDialog::refreshFolder() {
 			1.f / ( ( mList->getCount() * mList->getRowHeight() ) /
 					(Float)mList->getSize().getHeight() ) );
 	}
+
+	mList->setFocus();
 }
 
 void UICommonDialog::openSaveClick() {
@@ -260,6 +280,24 @@ void UICommonDialog::disableButtons() {
 		mButtonMaximize->setEnabled( false );
 }
 
+void UICommonDialog::openFileOrFolder() {
+	std::string newPath = mCurPath + mList->getItemSelectedText();
+
+	if ( FileSystem::isDirectory( newPath ) ) {
+		mCurPath = newPath + FileSystem::getOSSlash();
+		mPath->setText( mCurPath );
+		refreshFolder();
+	} else {
+		open();
+	}
+}
+
+void UICommonDialog::goFolderUp() {
+	mCurPath = FileSystem::removeLastFolderFromPath( mCurPath );
+	mPath->setText( mCurPath );
+	refreshFolder();
+}
+
 Uint32 UICommonDialog::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
 		case NodeMessage::Click: {
@@ -271,9 +309,7 @@ Uint32 UICommonDialog::onMessage( const NodeMessage* Msg ) {
 
 					closeWindow();
 				} else if ( Msg->getSender() == mButtonUp ) {
-					mCurPath = FileSystem::removeLastFolderFromPath( mCurPath );
-					mPath->setText( mCurPath );
-					refreshFolder();
+					goFolderUp();
 				}
 			}
 
@@ -282,15 +318,7 @@ Uint32 UICommonDialog::onMessage( const NodeMessage* Msg ) {
 		case NodeMessage::DoubleClick: {
 			if ( Msg->getFlags() & EE_BUTTON_LMASK ) {
 				if ( Msg->getSender()->isType( UI_TYPE_LISTBOXITEM ) ) {
-					std::string newPath = mCurPath + mList->getItemSelectedText();
-
-					if ( FileSystem::isDirectory( newPath ) ) {
-						mCurPath = newPath + FileSystem::getOSSlash();
-						mPath->setText( mCurPath );
-						refreshFolder();
-					} else {
-						open();
-					}
+					openFileOrFolder();
 				}
 			}
 

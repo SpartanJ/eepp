@@ -24,6 +24,7 @@ UICodeEditor::UICodeEditor() :
 	mCursorVisible( false ),
 	mMouseDown( false ),
 	mShowLineNumber( true ),
+	mShowIndentationGuide( true ),
 	mLocked( false ),
 	mTabWidth( 4 ),
 	mLastColOffset( 0 ),
@@ -128,6 +129,43 @@ void UICodeEditor::draw() {
 
 			primitives.drawRectangle( selRect );
 		}
+	}
+
+	// Draw tab marker
+	if ( mShowIndentationGuide ) {
+		primitives.setForceDraw( false );
+		for ( int i = lineRange.first; i <= lineRange.second; i++ ) {
+			Float charWidth = getGlyphWidth();
+			Float tabWidth = getTextWidth( "\t" );
+			Vector2f curPos( startScroll.x, startScroll.y + lineHeight * i );
+			auto& tokens = mHighlighter.getLine( i );
+
+			if ( !tokens.empty() ) {
+				size_t c = 0;
+				String::StringBaseType curChar;
+				primitives.setLineWidth( 1 );
+				while ( c < tokens[0].text.size() &&
+						( tokens[0].text[c] == '\t' || tokens[0].text[c] == ' ' ) ) {
+					curChar = tokens[0].text[c];
+					primitives.setColor( mIndentationGuideColor );
+					if ( curChar == '\t' ) {
+						primitives.drawLine( {{eefloor( curPos.x + tabWidth * 0.25f ),
+											   eeceil( curPos.y + lineHeight * 0.5f )},
+											  {eefloor( curPos.x + tabWidth * 0.75f ),
+											   eeceil( curPos.y + lineHeight * 0.5f )}} );
+					} else {
+						primitives.drawLine(
+							{{eefloor( curPos.x + charWidth * 0.5f - PixelDensity::dpToPx( 1 ) ),
+							  eeceil( curPos.y + lineHeight * 0.5f )},
+							 {eefloor( curPos.x + charWidth * 0.5f + PixelDensity::dpToPx( 1 ) ),
+							  eeceil( curPos.y + lineHeight * 0.5f )}} );
+					}
+					c++;
+					curPos.x += curChar == ' ' ? charWidth : tabWidth;
+				}
+			}
+		}
+		primitives.setForceDraw( true );
 	}
 
 	for ( int i = lineRange.first; i <= lineRange.second; i++ ) {
@@ -364,6 +402,17 @@ void UICodeEditor::setCaretColor( const Color& caretColor ) {
 	}
 }
 
+const Color& UICodeEditor::getIndentationGuideColor() const {
+	return mIndentationGuideColor;
+}
+
+void UICodeEditor::setIndentationGuideColor( const Color& indentationGuide ) {
+	if ( mIndentationGuideColor != indentationGuide ) {
+		mIndentationGuideColor = indentationGuide;
+		invalidateDraw();
+	}
+}
+
 const SyntaxColorScheme& UICodeEditor::getColorScheme() const {
 	return mColorScheme;
 }
@@ -377,6 +426,7 @@ void UICodeEditor::updateColorScheme() {
 	mLineNumberBackgroundColor = mColorScheme.getEditorColor( "line_number_background" );
 	mCurrentLineBackgroundColor = mColorScheme.getEditorColor( "line_highlight" );
 	mCaretColor = mColorScheme.getEditorColor( "caret" );
+	mIndentationGuideColor = mColorScheme.getEditorColor( "indentation_guide" );
 }
 
 void UICodeEditor::setColorScheme( const SyntaxColorScheme& colorScheme ) {
@@ -625,8 +675,7 @@ Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
 			}
 			break;
 		}
-		case KEY_0:
-		case KEY_KP0: {
+		case KEY_0: {
 			if ( event.getMod() & KEYMOD_CTRL ) {
 				setFontSize( mFontSize );
 			}
@@ -870,6 +919,28 @@ const bool& UICodeEditor::isLocked() const {
 void UICodeEditor::setLocked( bool locked ) {
 	if ( mLocked != locked ) {
 		mLocked = locked;
+		invalidateDraw();
+	}
+}
+
+const Color& UICodeEditor::getLineNumberFontColor() const {
+	return mLineNumberFontColor;
+}
+
+void UICodeEditor::setLineNumberFontColor( const Color& lineNumberFontColor ) {
+	if ( lineNumberFontColor != mLineNumberFontColor ) {
+		mLineNumberFontColor = lineNumberFontColor;
+		invalidateDraw();
+	}
+}
+
+const Color& UICodeEditor::getLineNumberActiveFontColor() const {
+	return mLineNumberActiveFontColor;
+}
+
+void UICodeEditor::setLineNumberActiveFontColor( const Color& lineNumberActiveFontColor ) {
+	if ( mLineNumberActiveFontColor != lineNumberActiveFontColor ) {
+		mLineNumberActiveFontColor = lineNumberActiveFontColor;
 		invalidateDraw();
 	}
 }

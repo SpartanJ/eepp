@@ -22,8 +22,8 @@ Input::Input( EE::Window::Window* window, JoystickManager* joystickmanager ) :
 	mNumCallBacks( 0 ),
 	mMouseSpeed( 1.0f ),
 	mInputGrabed( false ) {
-	memset( mKeysDown, 0, EE_KEYS_SPACE );
-	memset( mKeysUp, 0, EE_KEYS_SPACE );
+	memset( mScancodeDown, 0, EE_KEYS_SPACE );
+	memset( mScancodeUp, 0, EE_KEYS_SPACE );
 }
 
 Input::~Input() {
@@ -31,7 +31,7 @@ Input::~Input() {
 }
 
 void Input::cleanStates() {
-	memset( mKeysUp, 0, EE_KEYS_SPACE );
+	memset( mScancodeUp, 0, EE_KEYS_SPACE );
 
 	mReleaseTrigger = 0;
 	mLastPressTrigger = mPressTrigger;
@@ -57,26 +57,27 @@ void Input::processEvent( InputEvent* Event ) {
 			break;
 		}
 		case InputEvent::KeyDown: {
-			if ( Event->key.keysym.sym > EE_KEYS_NUM )
+			if ( Event->key.keysym.scancode > EE_KEYS_NUM )
 				break;
 
 			if ( Event->key.keysym.mod != eeINDEX_NOT_FOUND )
 				mInputMod = Event->key.keysym.mod;
 
-			BitOp::writeBitKey( &mKeysDown[Event->key.keysym.sym / 8], Event->key.keysym.sym % 8,
-								1 );
+			BitOp::writeBitKey( &mScancodeDown[Event->key.keysym.scancode / 8],
+								Event->key.keysym.scancode % 8, 1 );
 			break;
 		}
 		case InputEvent::KeyUp: {
 			if ( Event->key.keysym.mod != eeINDEX_NOT_FOUND )
 				mInputMod = Event->key.keysym.mod;
 
-			if ( Event->key.keysym.sym > EE_KEYS_NUM )
+			if ( Event->key.keysym.scancode > EE_KEYS_NUM )
 				break;
 
-			BitOp::writeBitKey( &mKeysDown[Event->key.keysym.sym / 8], Event->key.keysym.sym % 8,
-								0 );
-			BitOp::writeBitKey( &mKeysUp[Event->key.keysym.sym / 8], Event->key.keysym.sym % 8, 1 );
+			BitOp::writeBitKey( &mScancodeDown[Event->key.keysym.scancode / 8],
+								Event->key.keysym.scancode % 8, 0 );
+			BitOp::writeBitKey( &mScancodeUp[Event->key.keysym.scancode / 8],
+								Event->key.keysym.scancode % 8, 1 );
 			break;
 		}
 		case InputEvent::MouseMotion: {
@@ -249,20 +250,28 @@ void Input::resetFingerWasDown() {
 	}
 }
 
-bool Input::isKeyDown( const KeyTable& Key ) {
-	return 0 != BitOp::readBitKey( &mKeysDown[Key / 8], Key % 8 );
+bool Input::isKeyDown( const Keycode& Key ) {
+	return isScancodeDown( getScancodeFromKey( Key ) );
 }
 
-bool Input::isKeyUp( const KeyTable& Key ) {
-	return 0 != BitOp::readBitKey( &mKeysUp[Key / 8], Key % 8 );
+bool Input::isKeyUp( const Keycode& Key ) {
+	return isScancodeUp( getScancodeFromKey( Key ) );
 }
 
-void Input::injectKeyDown( const KeyTable& Key ) {
-	BitOp::writeBitKey( &mKeysDown[Key / 8], Key % 8, 1 );
+bool Input::isScancodeUp( const Scancode& scancode ) {
+	return 0 != BitOp::readBitKey( &mScancodeUp[scancode / 8], scancode % 8 );
 }
 
-void Input::injectKeyUp( const KeyTable& Key ) {
-	BitOp::writeBitKey( &mKeysUp[Key / 8], Key % 8, 1 );
+bool Input::isScancodeDown( const Scancode& scancode ) {
+	return 0 != BitOp::readBitKey( &mScancodeDown[scancode / 8], scancode % 8 );
+}
+
+void Input::injectScancodeDown( const Scancode& scancode ) {
+	BitOp::writeBitKey( &mScancodeDown[scancode / 8], scancode % 8, 1 );
+}
+
+void Input::injectScancodeUp( const Scancode& scancode ) {
+	BitOp::writeBitKey( &mScancodeUp[scancode / 8], scancode % 8, 1 );
 }
 
 void Input::injectButtonPress( const Uint32& Button ) {
@@ -434,8 +443,8 @@ InputFinger* Input::getFinger( const Int64& fingerId ) {
 	return NULL;
 }
 
-std::list<InputFinger*> Input::getFingersDown() {
-	std::list<InputFinger*> fDown;
+std::vector<InputFinger*> Input::getFingersDown() {
+	std::vector<InputFinger*> fDown;
 
 	for ( Uint32 i = 0; i < EE_MAX_FINGERS; i++ ) {
 		if ( mFingers[i].down ) {
@@ -446,8 +455,8 @@ std::list<InputFinger*> Input::getFingersDown() {
 	return fDown;
 }
 
-std::list<InputFinger*> Input::getFingersWasDown() {
-	std::list<InputFinger*> fDown;
+std::vector<InputFinger*> Input::getFingersWasDown() {
+	std::vector<InputFinger*> fDown;
 
 	for ( Uint32 i = 0; i < EE_MAX_FINGERS; i++ ) {
 		if ( mFingers[i].wasDown ) {
@@ -458,7 +467,7 @@ std::list<InputFinger*> Input::getFingersWasDown() {
 	return fDown;
 }
 
-const Uint32& Input::getKeyMod() const {
+const Uint32& Input::getModState() const {
 	return mInputMod;
 }
 

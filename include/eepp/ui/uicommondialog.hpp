@@ -103,6 +103,10 @@ class EE_API UICommonDialog : public UIWindow {
 	std::string getTempFullPath();
 
 	void disableButtons();
+
+	void openFileOrFolder();
+
+	void goFolderUp();
 };
 
 }} // namespace EE::UI

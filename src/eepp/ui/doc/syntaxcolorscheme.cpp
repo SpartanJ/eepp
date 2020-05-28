@@ -27,6 +27,7 @@ SyntaxColorScheme SyntaxColorScheme::getDefault() {
 				{"line_number", Color( "#525259" )},
 				{"line_number2", Color( "#83838f" )},
 				{"line_number_background", Color::Transparent},
+				{"indentation_guide", Color( "#54575b" )},
 			}};
 }
 

@@ -2,8 +2,7 @@
 
 namespace EE { namespace Window {
 
-Uint32 InputHelper::convertKeyCharacter( const Uint32& KeyCode, const Uint16& Unicode,
-										 const Uint32& Modifiers ) {
+Uint32 InputHelper::convertKeyCharacter( const Uint32& KeyCode, const Uint16& Unicode ) {
 	Uint32 value = 0;
 
 	if ( Unicode < 255 ) {
@@ -63,9 +62,6 @@ Uint32 InputHelper::convertKeyCharacter( const Uint32& KeyCode, const Uint16& Un
 		case KEY_PAGEUP:
 			value = KEY_PAGEUP;
 			break;
-		case KEY_PRINT:
-			value = KEY_PRINT;
-			break;
 		case KEY_PAGEDOWN:
 			value = KEY_PAGEDOWN;
 			break;
@@ -114,26 +110,8 @@ Uint32 InputHelper::convertKeyCharacter( const Uint32& KeyCode, const Uint16& Un
 		case KEY_F15:
 			value = KEY_F15;
 			break;
-		case KEY_NUMLOCK:
-			value = KEY_NUMLOCK;
-			break;
 		case KEY_CAPSLOCK:
 			value = KEY_CAPSLOCK;
-			break;
-		case KEY_SCROLLOCK:
-			value = KEY_SCROLLOCK;
-			break;
-		case KEY_RMETA:
-			value = KEY_RMETA;
-			break;
-		case KEY_LMETA:
-			value = KEY_LMETA;
-			break;
-		case KEY_LSUPER:
-			value = KEY_LSUPER;
-			break;
-		case KEY_RSUPER:
-			value = KEY_RSUPER;
 			break;
 		case KEY_MODE:
 			value = KEY_MODE;

@@ -1919,8 +1919,10 @@ void EETest::input() {
 
 	UISceneNode* uiSceneNode = SceneManager::instance()->getUISceneNode();
 
-	if ( KM->isKeyUp( KEY_F6 ) )
+	if ( KM->isKeyUp( KEY_F6 ) ) {
+		uiSceneNode->setHighlightFocus( !uiSceneNode->getHighlightFocus() );
 		uiSceneNode->setHighlightOver( !uiSceneNode->getHighlightOver() );
+	}
 
 	if ( KM->isKeyUp( KEY_F7 ) )
 		uiSceneNode->setDrawBoxes( !uiSceneNode->getDrawBoxes() );
@@ -1986,7 +1988,7 @@ void EETest::input() {
 	if ( KM->isControlPressed() && KM->isKeyUp( KEY_G ) )
 		KM->grabInput( !KM->grabInput() );
 
-	if ( KM->isKeyUp( KEY_F3 ) || KM->isKeyUp( KEY_WORLD_26 ) || KM->isKeyUp( KEY_BACKSLASH ) ) {
+	if ( KM->isKeyUp( KEY_F3 ) || KM->isKeyUp( KEY_BACKSLASH ) ) {
 		Con.toggle();
 	}
 

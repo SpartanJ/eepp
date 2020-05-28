@@ -3,6 +3,7 @@
 
 #include <eepp/config.hpp>
 #include <eepp/core/string.hpp>
+#include <eepp/window/keycodes.hpp>
 
 namespace EE { namespace Window {
 
@@ -39,7 +40,8 @@ class InputEvent {
 	inline InputEvent( Uint32 type ) : Type( type ) {}
 
 	struct KeySym {
-		Uint32 sym;		/** virtual keysym */
+		Scancode scancode; /**< physical key code - see ::Scancode for details */
+		Keycode sym;	/**< virtual key code - see ::Keycode for details */
 		Uint32 mod;		/** current key modifiers */
 		Uint32 unicode; /** translated character */
 	};

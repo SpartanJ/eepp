@@ -98,6 +98,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void setCaretColor( const Color& caretColor );
 
+	const Color& getIndentationGuideColor() const;
+
+	void setIndentationGuideColor( const Color& color );
+
 	const SyntaxColorScheme& getColorScheme() const;
 
 	void setColorScheme( const SyntaxColorScheme& colorScheme );
@@ -116,6 +120,14 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void setLocked( bool locked );
 
+	const Color& getLineNumberFontColor() const;
+
+	void setLineNumberFontColor( const Color& lineNumberFontColor );
+
+	const Color& getLineNumberActiveFontColor() const;
+
+	void setLineNumberActiveFontColor( const Color& lineNumberActiveFontColor );
+
   protected:
 	struct LastXOffset {
 		TextPosition position;
@@ -130,6 +142,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mCursorVisible;
 	bool mMouseDown;
 	bool mShowLineNumber;
+	bool mShowIndentationGuide;
 	bool mLocked;
 	Uint32 mTabWidth;
 	Int64 mLastColOffset;
@@ -143,6 +156,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Color mLineNumberBackgroundColor;
 	Color mCurrentLineBackgroundColor;
 	Color mCaretColor;
+	Color mIndentationGuideColor;
 	SyntaxColorScheme mColorScheme;
 	SyntaxHighlighter mHighlighter;
 	UIScrollBar* mVScrollBar;

@@ -4,6 +4,8 @@
 
 namespace EE { namespace Window {
 
+// TODO: Deprecate this. It's horrendous. Use TextDocument instead.
+
 InputTextBuffer* InputTextBuffer::New( const bool& active, const bool& newLineEnabled,
 									   const bool& freeEditing, EE::Window::Window* window,
 									   const Uint32& maxLength ) {
@@ -282,8 +284,8 @@ void InputTextBuffer::update( InputEvent* Event ) {
 
 		if ( Event->Type == InputEvent::TextInput || Event->Type == InputEvent::KeyDown ||
 			 Event->Type == InputEvent::KeyUp ) {
-			keyChar = InputHelper::convertKeyCharacter(
-				Event->key.keysym.sym, Event->key.keysym.unicode, Event->key.keysym.mod );
+			keyChar = InputHelper::convertKeyCharacter( Event->key.keysym.sym,
+														Event->key.keysym.unicode );
 		}
 
 		if ( isFreeEditingEnabled() ) {
@@ -302,13 +304,12 @@ void InputTextBuffer::update( InputEvent* Event ) {
 								Int32 end = eemax( mSelCurInit, mSelCurEnd );
 								std::string clipStr( mText.substr( init, end - init ).toUtf8() );
 								mWindow->getClipboard()->setText( clipStr );
-							} else if ( ( Event->key.keysym.sym >= KEY_UP &&
-										  Event->key.keysym.sym <= KEY_END ) &&
-										!( Event->key.keysym.sym >= KEY_NUMLOCK &&
-										   Event->key.keysym.sym <= KEY_COMPOSE ) ) {
+							} else {
+								Keycode sym = Event->key.keysym.sym;
 								if ( !( Input->isShiftPressed() &&
-										( Event->key.keysym.sym >= KEY_UP &&
-										  Event->key.keysym.sym <= KEY_END ) ) ) {
+										( sym == KEY_UP || sym == KEY_DOWN || sym == KEY_LEFT ||
+										  sym == KEY_RIGHT || sym == KEY_INSERT ||
+										  sym == KEY_HOME || sym == KEY_END ) ) ) {
 									resetSelection();
 								}
 							}

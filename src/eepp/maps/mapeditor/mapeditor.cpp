@@ -150,7 +150,7 @@ void MapEditor::createWinMenu() {
 	addShortcut( KEY_KP_MINUS, KEYMOD_CTRL,
 				 PU3->getItem( PU3->add( "Zoom Out", mTheme->getIconByName( "zoom-out" ) ) )
 					 ->asType<UIPushButton>() );
-	addShortcut( KEY_KP0, KEYMOD_CTRL,
+	addShortcut( KEY_0, KEYMOD_CTRL,
 				 PU3->getItem( PU3->add( "Normal Size", mTheme->getIconByName( "zoom-original" ) ) )
 					 ->asType<UIPushButton>() );
 	PU3->addSeparator();

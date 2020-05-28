@@ -45,24 +45,24 @@ void mainLoop() {
 		win->close();
 	}
 
+	UISceneNode* uiSceneNode = SceneManager::instance()->getUISceneNode();
+
 	if ( win->getInput()->isKeyUp( KEY_F6 ) ) {
-		SceneManager::instance()->getUISceneNode()->setHighlightOver(
-			!SceneManager::instance()->getUISceneNode()->getHighlightOver() );
+		uiSceneNode->setHighlightFocus( !uiSceneNode->getHighlightFocus() );
+		uiSceneNode->setHighlightOver( !uiSceneNode->getHighlightOver() );
 	}
 
 	if ( win->getInput()->isKeyUp( KEY_F7 ) ) {
-		SceneManager::instance()->getUISceneNode()->setDrawBoxes(
-			!SceneManager::instance()->getUISceneNode()->getDrawBoxes() );
+		uiSceneNode->setDrawBoxes( !uiSceneNode->getDrawBoxes() );
 	}
 
 	if ( win->getInput()->isKeyUp( KEY_F8 ) ) {
-		SceneManager::instance()->getUISceneNode()->setDrawDebugData(
-			!SceneManager::instance()->getUISceneNode()->getDrawDebugData() );
+		uiSceneNode->setDrawDebugData( !uiSceneNode->getDrawDebugData() );
 	}
 
 	SceneManager::instance()->update();
 
-	if ( SceneManager::instance()->getUISceneNode()->invalidated() ) {
+	if ( uiSceneNode->invalidated() ) {
 		win->clear();
 
 		SceneManager::instance()->draw();

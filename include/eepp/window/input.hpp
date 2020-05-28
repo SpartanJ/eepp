@@ -44,17 +44,44 @@ class EE_API Input {
 	/** @return If mouse is captured. */
 	virtual bool isMouseCaptured() const = 0;
 
-	/** @return If keyboard key was released */
-	bool isKeyUp( const KeyTable& Key );
+	/** @return Get the key name. */
+	virtual std::string getKeyName( const Keycode& keycode ) const = 0;
 
-	/** @return If keyboard key it's pressed */
-	bool isKeyDown( const KeyTable& Key );
+	/** @return The corresponding keycode from a name. */
+	virtual Keycode getKeyFromName( const std::string& keycode ) const = 0;
 
-	/** Inject the key state of a key as KEY UP or RELEASE */
-	void injectKeyUp( const KeyTable& Key );
+	/** @return Get the scancode name.  */
+	virtual std::string getScancodeName( const Scancode& scancode ) const = 0;
 
-	/** Inject the key state of a key as KEY DOWN or PRESSED */
-	void injectKeyDown( const KeyTable& Key );
+	/** @return The corresponding scancode from a name. */
+	virtual Scancode getScancodeFromName( const std::string& scancode ) const = 0;
+
+	/** @return The key from the scancode. */
+	virtual Keycode getKeyFromScancode( const Scancode& scancode ) const = 0;
+
+	/** @return The scancode from a key. */
+	virtual Scancode getScancodeFromKey( const Keycode& scancode ) const = 0;
+
+	/** @return If keyboard key was released. */
+	bool isKeyUp( const Keycode& Key );
+
+	/** @return If keyboard key is pressed. */
+	bool isKeyDown( const Keycode& Key );
+
+	/** @return If scancode was released. */
+	bool isScancodeUp( const Scancode& scancode );
+
+	/** @return If scancode it's pressed. */
+	bool isScancodeDown( const Scancode& scancode );
+
+	/** Inject the key state of a key as key up or released. */
+	void injectKeyUp( const Keycode& Key );
+
+	/** Inject the scancode state of a scancode as pressed. */
+	void injectScancodeDown( const Scancode& scancode );
+
+	/** Inject the key state of a key as released. */
+	void injectScancodeUp( const Scancode& scancode );
 
 	/** Inject the mouse position given */
 	void injectMousePos( const Vector2i& Pos );
@@ -183,15 +210,15 @@ class EE_API Input {
 	InputFinger* getFinger( const Int64& fingerId );
 
 	/** @return A list of the input finders that are currently down */
-	std::list<InputFinger*> getFingersDown();
+	std::vector<InputFinger*> getFingersDown();
 
 	/** @return A list of the input finders that were down in the last update */
-	std::list<InputFinger*> getFingersWasDown();
+	std::vector<InputFinger*> getFingersWasDown();
 
 	/** @return the state of the mod keys. */
-	const Uint32& getKeyMod() const;
+	const Uint32& getModState() const;
 
-	protected:
+  protected:
 	friend class Window;
 
 	Input( EE::Window::Window* window, JoystickManager* joystickmanager );
@@ -200,8 +227,8 @@ class EE_API Input {
 
 	EE::Window::Window* mWindow;
 	JoystickManager* mJoystickManager;
-	Uint8 mKeysDown[EE_KEYS_SPACE];
-	Uint8 mKeysUp[EE_KEYS_SPACE];
+	Uint8 mScancodeDown[SCANCODES_NUM];
+	Uint8 mScancodeUp[SCANCODES_NUM];
 	Uint32 mPressTrigger;
 	Uint32 mReleaseTrigger;
 	Uint32 mLastPressTrigger;

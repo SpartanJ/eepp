@@ -24,6 +24,7 @@ bool TextDocument::isNonWord( String::StringBaseType ch ) {
 
 TextDocument::TextDocument() :
 	mUndoStack( this ), mDefaultFileName( "untitled" ), mCleanChangeId( 0 ) {
+	initializeCommands();
 	reset();
 }
 
@@ -549,10 +550,9 @@ void TextDocument::moveToNextWord() {
 	}
 }
 
-void TextDocument::moveToPreviousLine( Int64 lastColIndex ) {
+void TextDocument::moveToPreviousLine() {
 	TextPosition pos = getSelection().start();
 	pos.setLine( pos.line() - 1 );
-	pos.setColumn( lastColIndex );
 	setSelection( pos );
 }
 
@@ -858,6 +858,25 @@ bool TextDocument::isDirty() const {
 	return mCleanChangeId != getCurrentChangeId();
 }
 
+void TextDocument::execute( const std::string& command ) {
+	auto cmdIt = mCommands.find( command );
+	if ( cmdIt != mCommands.end() ) {
+		cmdIt->second();
+	}
+}
+
+void TextDocument::setCommand( const std::string& command, TextDocument::DocumentCommand func ) {
+	mCommands[command] = func;
+}
+
+const Uint32& TextDocument::getPageSize() const {
+	return mPageSize;
+}
+
+void TextDocument::setPageSize( const Uint32& pageSize ) {
+	mPageSize = pageSize;
+}
+
 void TextDocument::cleanChangeId() {
 	mCleanChangeId = getCurrentChangeId();
 }
@@ -890,6 +909,52 @@ void TextDocument::notifyLineChanged( const Int64& lineIndex ) {
 	for ( auto& client : mClients ) {
 		client->onDocumentLineChanged( lineIndex );
 	}
+}
+
+void TextDocument::initializeCommands() {
+	mCommands["reset"] = [&] { reset(); };
+	mCommands["save"] = [&] { save(); };
+	mCommands["delete-to-previous-word"] = [&] { deleteToPreviousWord(); };
+	mCommands["delete-to-previous-char"] = [&] { deleteToPreviousChar(); };
+	mCommands["delete-to-next-word"] = [&] { deleteToNextWord(); };
+	mCommands["delete-to-next-char"] = [&] { deleteToNextChar(); };
+	mCommands["delete-selection"] = [&] { deleteSelection(); };
+	mCommands["move-to-previous-char"] = [&] { moveToPreviousChar(); };
+	mCommands["move-to-previous-word"] = [&] { moveToPreviousWord(); };
+	mCommands["move-to-next-char"] = [&] { moveToNextChar(); };
+	mCommands["move-to-next-word"] = [&] { moveToNextWord(); };
+	mCommands["move-to-previous-line"] = [&] { moveToPreviousLine(); };
+	mCommands["move-to-next-line"] = [&] { moveToNextLine(); };
+	mCommands["move-to-previous-page"] = [&] { moveToPreviousPage( mPageSize ); };
+	mCommands["move-to-next-page"] = [&] { moveToNextPage( mPageSize ); };
+	mCommands["move-to-start-of-doc"] = [&] { moveToStartOfDoc(); };
+	mCommands["move-to-end-of-doc"] = [&] { moveToEndOfDoc(); };
+	mCommands["move-to-start-of-line"] = [&] { moveToStartOfLine(); };
+	mCommands["move-to-end-of-line"] = [&] { moveToEndOfLine(); };
+	mCommands["move-to-start-of-content"] = [&] { moveToStartOfContent(); };
+	mCommands["move-lines-up"] = [&] { moveLinesUp(); };
+	mCommands["move-lines-down"] = [&] { moveLinesDown(); };
+	mCommands["select-to-previous-char"] = [&] { selectToPreviousChar(); };
+	mCommands["select-to-previous-word"] = [&] { selectToPreviousWord(); };
+	mCommands["select-to-previous-line"] = [&] { selectToPreviousLine(); };
+	mCommands["select-to-next-char"] = [&] { selectToNextChar(); };
+	mCommands["select-to-next-word"] = [&] { selectToNextWord(); };
+	mCommands["select-to-next-line"] = [&] { selectToNextLine(); };
+	mCommands["select-word"] = [&] { selectWord(); };
+	mCommands["select-to-start-of-line"] = [&] { selectToStartOfLine(); };
+	mCommands["select-to-end-of-line"] = [&] { selectToEndOfLine(); };
+	mCommands["select-to-start-of-doc"] = [&] { selectToStartOfDoc(); };
+	mCommands["select-to-start-of-content"] = [&] { selectToStartOfContent(); };
+	mCommands["select-to-end-of-doc"] = [&] { selectToEndOfDoc(); };
+	mCommands["select-to-previous-page"] = [&] { selectToPreviousPage( mPageSize ); };
+	mCommands["select-to-next-page"] = [&] { selectToNextPage( mPageSize ); };
+	mCommands["select-all"] = [&] { selectAll(); };
+	mCommands["new-line"] = [&] { newLine(); };
+	mCommands["new-line-above"] = [&] { newLineAbove(); };
+	mCommands["indent"] = [&] { indent(); };
+	mCommands["unindent"] = [&] { unindent(); };
+	mCommands["undo"] = [&] { undo(); };
+	mCommands["redo"] = [&] { redo(); };
 }
 
 TextDocument::Client::~Client() {}

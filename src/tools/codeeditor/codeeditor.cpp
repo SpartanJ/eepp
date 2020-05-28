@@ -66,6 +66,7 @@ void mainLoop() {
 	}
 
 	if ( input->isKeyUp( KEY_F6 ) ) {
+		uiSceneNode->setHighlightFocus( !uiSceneNode->getHighlightFocus() );
 		uiSceneNode->setHighlightOver( !uiSceneNode->getHighlightOver() );
 	}
 

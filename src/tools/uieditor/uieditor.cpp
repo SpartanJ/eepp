@@ -746,8 +746,7 @@ void mainLoop() {
 		window->close();
 	}
 
-	if ( window->getInput()->isKeyUp( KEY_F3 ) || window->getInput()->isKeyUp( KEY_WORLD_26 ) ||
-		 window->getInput()->isKeyUp( KEY_BACKSLASH ) ) {
+	if ( window->getInput()->isKeyUp( KEY_F3 ) || window->getInput()->isKeyUp( KEY_BACKSLASH ) ) {
 		console->toggle();
 	}
 
@@ -756,6 +755,7 @@ void mainLoop() {
 	}
 
 	if ( window->getInput()->isKeyUp( KEY_F6 ) ) {
+		uiSceneNode->setHighlightFocus( !uiSceneNode->getHighlightFocus() );
 		uiSceneNode->setHighlightOver( !uiSceneNode->getHighlightOver() );
 	}
 

@@ -10,6 +10,7 @@
 #include <eepp/ui/doc/textrange.hpp>
 #include <eepp/ui/doc/undostack.hpp>
 #include <functional>
+#include <map>
 #include <unordered_set>
 #include <vector>
 
@@ -19,8 +20,6 @@ namespace EE { namespace UI { namespace Doc {
 
 class EE_API TextDocumentLine {
   public:
-	typedef std::function<void()> DocumentCommand;
-
 	TextDocumentLine( const String& text ) : mText( text ) { updateHash(); }
 
 	void setText( const String& text ) {
@@ -78,6 +77,8 @@ class EE_API TextDocumentLine {
 
 class EE_API TextDocument {
   public:
+	typedef std::function<void()> DocumentCommand;
+
 	class EE_API Client {
 	  public:
 		virtual ~Client();
@@ -196,7 +197,7 @@ class EE_API TextDocument {
 
 	void moveToNextWord();
 
-	void moveToPreviousLine( Int64 lastColIndex = 0 );
+	void moveToPreviousLine();
 
 	void moveToNextLine();
 
@@ -264,6 +265,14 @@ class EE_API TextDocument {
 
 	void moveLinesDown();
 
+	void undo();
+
+	void redo();
+
+	void execute( const std::string& command );
+
+	void setCommand( const std::string& command, DocumentCommand func );
+
 	String getIndentString();
 
 	const Uint32& getTabWidth() const;
@@ -276,10 +285,6 @@ class EE_API TextDocument {
 
 	void setIndentType( const IndentType& indentType );
 
-	void undo();
-
-	void redo();
-
 	const SyntaxDefinition& getSyntaxDefinition() const;
 
 	Uint64 getCurrentChangeId() const;
@@ -291,6 +296,10 @@ class EE_API TextDocument {
 	const std::string& getFilePath() const;
 
 	bool isDirty() const;
+
+	const Uint32& getPageSize() const;
+
+	void setPageSize( const Uint32& pageSize );
 
   protected:
 	friend class UndoStack;
@@ -307,6 +316,10 @@ class EE_API TextDocument {
 	SyntaxDefinition mSyntaxDefinition;
 	std::string mDefaultFileName;
 	Uint64 mCleanChangeId;
+	Uint32 mPageSize{10};
+	std::map<std::string, DocumentCommand> mCommands;
+
+	void initializeCommands();
 
 	void cleanChangeId();
 

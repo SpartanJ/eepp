@@ -12,7 +12,7 @@ namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
 class EE_API InputSDL : public Input {
   public:
-	virtual ~InputSDL();
+	~InputSDL();
 
 	void update();
 
@@ -28,15 +28,25 @@ class EE_API InputSDL : public Input {
 
 	bool isMouseCaptured() const;
 
+	std::string getKeyName( const Keycode& keycode ) const;
+
+	Keycode getKeyFromName( const std::string& keycode ) const;
+
+	std::string getScancodeName( const Scancode& scancode ) const;
+
+	Scancode getScancodeFromName( const std::string& scancode ) const;
+
+	Keycode getKeyFromScancode( const Scancode& scancode ) const;
+
+	Scancode getScancodeFromKey( const Keycode& scancode ) const;
+
   protected:
 	friend class WindowSDL;
 	Float mDPIScale;
 
 	InputSDL( EE::Window::Window* window );
 
-	virtual void init();
-
-	void initializeTables();
+	void init();
 };
 
 }}}} // namespace EE::Window::Backend::SDL2

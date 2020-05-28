@@ -106,6 +106,8 @@ void UIListBoxItem::select() {
 		if ( !wasSelected ) {
 			LBParent->onSelected();
 		}
+
+		setFocus();
 	}
 }
 
