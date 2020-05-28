@@ -8,6 +8,18 @@ using namespace EE::System;
 
 namespace EE { namespace UI { namespace Doc {
 
+/**
+ * Syntax colors types accepted/used are:
+ * "normal", "symbol", "comment", "keyword", "keyword2",
+ * "number", "literal", "string", "operator", "function"
+ *
+ * Editor colors types accepted/used are:
+ * "background", "text", "caret"
+ * "selection", "line_number_background",
+ * "line_number", "line_number2", "line_highlight"
+ *
+ * Following the lite editor syntax colors (https://github.com/rxi/lite).
+ */
 class EE_API SyntaxColorScheme {
   public:
 	static SyntaxColorScheme getDefault();
@@ -15,13 +27,20 @@ class EE_API SyntaxColorScheme {
 	SyntaxColorScheme();
 
 	SyntaxColorScheme( const std::string& name,
-					   const std::unordered_map<std::string, Color>& colors );
+					   const std::unordered_map<std::string, Color>& syntaxColors,
+					   const std::unordered_map<std::string, Color>& editorColors );
 
-	const Color& getColor( const std::string& type ) const;
+	const Color& getSyntaxColor( const std::string& type ) const;
 
-	void setColors( const std::unordered_map<std::string, Color>& colors );
+	void setSyntaxColors( const std::unordered_map<std::string, Color>& colors );
 
-	void setColor( const std::string& type, const Color& color );
+	void setSyntaxColor( const std::string& type, const Color& color );
+
+	const Color& getEditorColor( const std::string& type ) const;
+
+	void setEditorColors( const std::unordered_map<std::string, Color>& colors );
+
+	void setEditorColor( const std::string& type, const Color& color );
 
 	const std::string& getName() const;
 
@@ -29,7 +48,8 @@ class EE_API SyntaxColorScheme {
 
   protected:
 	std::string mName;
-	std::unordered_map<std::string, Color> mColors;
+	std::unordered_map<std::string, Color> mSyntaxColors;
+	std::unordered_map<std::string, Color> mEditorColors;
 };
 
 }}} // namespace EE::UI::Doc

@@ -17,28 +17,54 @@ SyntaxColorScheme SyntaxColorScheme::getDefault() {
 				{"string", Color( "#f7c95c" )},
 				{"operator", Color( "#93DDFA" )},
 				{"function", Color( "#93DDFA" )},
+			},
+			{
+				{"background", Color( "#2e2e32" )},
+				{"text", Color( "#e1e1e6" )},
+				{"caret", Color( "#93DDFA" )},
+				{"selection", Color( "#48484f" )},
+				{"line_highlight", Color( "#343438" )},
+				{"line_number", Color( "#525259" )},
+				{"line_number2", Color( "#83838f" )},
+				{"line_number_background", Color::Transparent},
 			}};
 }
 
 SyntaxColorScheme::SyntaxColorScheme() {}
 
 SyntaxColorScheme::SyntaxColorScheme( const std::string& name,
-									  const std::unordered_map<std::string, Color>& colors ) :
-	mName( name ), mColors( colors ) {}
+									  const std::unordered_map<std::string, Color>& syntaxColors,
+									  const std::unordered_map<std::string, Color>& editorColors ) :
+	mName( name ), mSyntaxColors( syntaxColors ), mEditorColors( editorColors ) {}
 
-const Color& SyntaxColorScheme::getColor( const std::string& type ) const {
-	auto it = mColors.find( type );
-	if ( it != mColors.end() )
+const Color& SyntaxColorScheme::getSyntaxColor( const std::string& type ) const {
+	auto it = mSyntaxColors.find( type );
+	if ( it != mSyntaxColors.end() )
 		return it->second;
 	return Color::White;
 }
 
-void SyntaxColorScheme::setColors( const std::unordered_map<std::string, Color>& colors ) {
-	mColors.insert( colors.begin(), colors.end() );
+void SyntaxColorScheme::setSyntaxColors( const std::unordered_map<std::string, Color>& colors ) {
+	mSyntaxColors.insert( colors.begin(), colors.end() );
 }
 
-void SyntaxColorScheme::setColor( const std::string& type, const Color& color ) {
-	mColors[type] = color;
+void SyntaxColorScheme::setSyntaxColor( const std::string& type, const Color& color ) {
+	mSyntaxColors[type] = color;
+}
+
+const Color& SyntaxColorScheme::getEditorColor( const std::string& type ) const {
+	auto it = mEditorColors.find( type );
+	if ( it != mEditorColors.end() )
+		return it->second;
+	return Color::White;
+}
+
+void SyntaxColorScheme::setEditorColors( const std::unordered_map<std::string, Color>& colors ) {
+	mEditorColors.insert( colors.begin(), colors.end() );
+}
+
+void SyntaxColorScheme::setEditorColor( const std::string& type, const Color& color ) {
+	mEditorColors[type] = color;
 }
 
 const std::string& SyntaxColorScheme::getName() const {

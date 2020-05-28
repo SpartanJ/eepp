@@ -126,6 +126,7 @@ Table {
 
 ListBox::item {
 	padding-left: 4dp;
+	background-color: transparent;
 	background-image: linear-gradient( to right, #232629, #383a3d ), linear-gradient( to right, #383a3d, #232629 );
 	background-size: 50% 1dp, 50% 1dp;
 	background-position: left bottom, right bottom;

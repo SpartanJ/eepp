@@ -96,6 +96,10 @@ void UIListBoxItem::select() {
 
 		mNodeFlags |= NODE_FLAG_SELECTED;
 
+		if ( NULL != LBParent->mItems[LBParent->mSelected.front()] &&
+			 LBParent->getItemIndex( this ) != LBParent->mSelected.front() ) {
+			LBParent->mItems[LBParent->mSelected.front()]->unselect();
+		}
 		LBParent->mSelected.clear();
 		LBParent->mSelected.push_back( LBParent->getItemIndex( this ) );
 

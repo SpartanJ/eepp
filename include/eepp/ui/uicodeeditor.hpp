@@ -139,6 +139,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Float mLineNumberPaddingLeft;
 	Float mLineNumberPaddingRight;
 	Color mLineNumberFontColor;
+	Color mLineNumberActiveFontColor;
 	Color mLineNumberBackgroundColor;
 	Color mCurrentLineBackgroundColor;
 	Color mCaretColor;
@@ -147,7 +148,11 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	UIScrollBar* mVScrollBar;
 	LastXOffset mLastXOffset{{0, 0}, 0.f};
 
+	void updateColorScheme();
+
 	void invalidateEditor();
+
+	virtual Uint32 onFocus();
 
 	virtual Uint32 onFocusLoss();
 
@@ -173,15 +178,15 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void updateEditor();
 
-	void onDocumentTextChanged();
+	virtual void onDocumentTextChanged();
 
-	void onDocumentCursorChange( const TextPosition& );
+	virtual void onDocumentCursorChange( const TextPosition& );
 
-	void onDocumentSelectionChange( const TextRange& );
+	virtual void onDocumentSelectionChange( const TextRange& );
 
-	void onDocumentLineCountChange( const size_t& lastCount, const size_t& newCount );
+	virtual void onDocumentLineCountChange( const size_t& lastCount, const size_t& newCount );
 
-	void onDocumentLineChanged( const Int64& lineIndex );
+	virtual void onDocumentLineChanged( const Int64& lineIndex );
 
 	std::pair<int, int> getVisibleLineRange();
 

@@ -31,17 +31,9 @@ UICodeEditor::UICodeEditor() :
 	mFontSize( mFontStyleConfig.getFontCharacterSize() ),
 	mLineNumberPaddingLeft( 8 ),
 	mLineNumberPaddingRight( 8 ),
-	mLineNumberFontColor( "#525259" ),
-	mLineNumberBackgroundColor( Color::fromString( "#2e2e32" ) ),
-	mCurrentLineBackgroundColor( "#343438" ),
-	mCaretColor( "#93DDFA" ),
-	mColorScheme( SyntaxColorScheme::getDefault() ),
 	mHighlighter( &mDoc ) {
 	mFlags |= UI_TAB_STOP;
-	setBackgroundColor( Color::fromString( "#2e2e32" ) );
-	setFontColor( Color::fromString( "#e1e1e6" ) );
-	mFontStyleConfig.setFontSelectionBackColor( Color::fromString( "#48484f" ) );
-
+	setColorScheme( SyntaxColorScheme::getDefault() );
 	mVScrollBar = UIScrollBar::NewVertical();
 	mVScrollBar->setParent( this );
 	mVScrollBar->addEventListener( Event::OnSizeChange,
@@ -148,7 +140,7 @@ void UICodeEditor::draw() {
 				Text line( "", mFont, charSize );
 				line.setStyleConfig( mFontStyleConfig );
 				line.setString( token.text );
-				line.setColor( mColorScheme.getColor( token.type ) );
+				line.setColor( mColorScheme.getSyntaxColor( token.type ) );
 				line.draw( curPos.x, curPos.y );
 			} else if ( curPos.x > mScreenPos.x + mSize.getWidth() ) {
 				break;
@@ -170,11 +162,14 @@ void UICodeEditor::draw() {
 		primitives.setColor( mLineNumberBackgroundColor );
 		primitives.drawRectangle(
 			Rectf( screenStart, Sizef( lineNumberWidth, mSize.getHeight() ) ) );
+		TextRange selection = mDoc.getSelection( true );
 		for ( int i = lineRange.first; i <= lineRange.second; i++ ) {
 			Text line( String( String::toStr( i + 1 ) ).padLeft( lineNumberDigits, ' ' ), mFont,
 					   charSize );
 			line.setStyleConfig( mFontStyleConfig );
-			line.setColor( mLineNumberFontColor );
+			line.setColor( ( i >= selection.start().line() && i <= selection.end().line() )
+							   ? mLineNumberActiveFontColor
+							   : mLineNumberFontColor );
 			line.draw( screenStart.x + mLineNumberPaddingLeft, startScroll.y + lineHeight * i );
 		}
 	}
@@ -373,8 +368,20 @@ const SyntaxColorScheme& UICodeEditor::getColorScheme() const {
 	return mColorScheme;
 }
 
+void UICodeEditor::updateColorScheme() {
+	setBackgroundColor( mColorScheme.getEditorColor( "background" ) );
+	setFontColor( mColorScheme.getEditorColor( "text" ) );
+	mFontStyleConfig.setFontSelectionBackColor( mColorScheme.getEditorColor( "selection" ) );
+	mLineNumberFontColor = mColorScheme.getEditorColor( "line_number" );
+	mLineNumberActiveFontColor = mColorScheme.getEditorColor( "line_number2" );
+	mLineNumberBackgroundColor = mColorScheme.getEditorColor( "line_number_background" );
+	mCurrentLineBackgroundColor = mColorScheme.getEditorColor( "line_highlight" );
+	mCaretColor = mColorScheme.getEditorColor( "caret" );
+}
+
 void UICodeEditor::setColorScheme( const SyntaxColorScheme& colorScheme ) {
 	mColorScheme = colorScheme;
+	updateColorScheme();
 	invalidateDraw();
 }
 
@@ -394,9 +401,18 @@ void UICodeEditor::invalidateEditor() {
 	mDirtyEditor = true;
 }
 
+Uint32 UICodeEditor::onFocus() {
+	if ( !mLocked ) {
+		getUISceneNode()->getWindow()->startTextInput();
+		resetCursor();
+	}
+	return UIWidget::onFocus();
+}
+
 Uint32 UICodeEditor::onFocusLoss() {
 	mMouseDown = false;
 	mCursorVisible = false;
+	getSceneNode()->getWindow()->stopTextInput();
 	return UIWidget::onFocusLoss();
 }
 
