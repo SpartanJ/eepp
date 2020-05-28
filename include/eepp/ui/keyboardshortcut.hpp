@@ -3,6 +3,7 @@
 
 #include <eepp/config.hpp>
 #include <map>
+#include <string>
 #include <vector>
 
 namespace EE { namespace Window {
