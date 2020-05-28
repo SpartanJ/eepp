@@ -4,6 +4,7 @@
 #include <eepp/ui/doc/syntaxcolorscheme.hpp>
 #include <eepp/ui/doc/syntaxhighlighter.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
+#include <eepp/ui/keyboardshortcut.hpp>
 #include <eepp/ui/uifontstyleconfig.hpp>
 #include <eepp/ui/uiwidget.hpp>
 
@@ -128,6 +129,22 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void setLineNumberActiveFontColor( const Color& lineNumberActiveFontColor );
 
+	KeyBindings& getKeyBindings();
+
+	void setKeyBindings( const KeyBindings& keyBindings );
+
+	void addKeyBindingString( const std::string& shortcut, const std::string& command );
+
+	void addKeyBinding( const KeyBindings::Shortcut& shortcut, const std::string& command );
+
+	void replaceKeyBindingString( const std::string& shortcut, const std::string& command );
+
+	void replaceKeyBinding( const KeyBindings::Shortcut& shortcut, const std::string& command );
+
+	void addKeybindsString( const std::map<std::string, std::string>& binds );
+
+	void addKeybinds( const std::map<KeyBindings::Shortcut, std::string>& binds );
+
   protected:
 	struct LastXOffset {
 		TextPosition position;
@@ -161,6 +178,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	SyntaxHighlighter mHighlighter;
 	UIScrollBar* mVScrollBar;
 	LastXOffset mLastXOffset{{0, 0}, 0.f};
+	KeyBindings mKeyBindings;
 
 	void updateColorScheme();
 
@@ -239,6 +257,30 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void selectToPreviousLine();
 
 	void selectToNextLine();
+
+	void registerKeybindings();
+
+	void registerCommands();
+
+	void moveScrollUp();
+
+	void moveScrollDown();
+
+	void indent();
+
+	void unindent();
+
+	void copy();
+
+	void cut();
+
+	void paste();
+
+	void fontSizeGrow();
+
+	void fontSizeShrink();
+
+	void fontSizeReset();
 };
 
 }} // namespace EE::UI

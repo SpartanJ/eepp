@@ -61,10 +61,6 @@ void mainLoop() {
 		openFileDialog();
 	}
 
-	if ( input->isControlPressed() && input->isKeyUp( KEY_S ) ) {
-		codeEditor->save();
-	}
-
 	if ( input->isKeyUp( KEY_F6 ) ) {
 		uiSceneNode->setHighlightFocus( !uiSceneNode->getHighlightFocus() );
 		uiSceneNode->setHighlightOver( !uiSceneNode->getHighlightOver() );
@@ -184,6 +180,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 
 		uiSceneNode->bind( "code_edit", codeEditor );
 		codeEditor->setFontSize( 11 );
+		codeEditor->addKeyBindingString( "ctrl+s", "save" );
 
 		if ( file ) {
 			loadFileFromPath( file.Get() );

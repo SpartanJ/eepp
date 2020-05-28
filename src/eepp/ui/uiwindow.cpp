@@ -1332,8 +1332,8 @@ void UIWindow::checkShortcuts( const Uint32& KeyCode, const Uint32& Mod ) {
 	}
 }
 
-KeyboardShortcuts::iterator UIWindow::existsShortcut( const Uint32& KeyCode, const Uint32& Mod ) {
-	for ( KeyboardShortcuts::iterator it = mKbShortcuts.begin(); it != mKbShortcuts.end(); ++it ) {
+UIKeyboardShortcuts::iterator UIWindow::existsShortcut( const Uint32& KeyCode, const Uint32& Mod ) {
+	for ( UIKeyboardShortcuts::iterator it = mKbShortcuts.begin(); it != mKbShortcuts.end(); ++it ) {
 		if ( ( *it ).KeyCode == KeyCode && ( *it ).Mod == Mod )
 			return it;
 	}
@@ -1343,7 +1343,7 @@ KeyboardShortcuts::iterator UIWindow::existsShortcut( const Uint32& KeyCode, con
 
 bool UIWindow::addShortcut( const Uint32& KeyCode, const Uint32& Mod, UIWidget* Widget ) {
 	if ( inParentTreeOf( Widget ) && mKbShortcuts.end() == existsShortcut( KeyCode, Mod ) ) {
-		mKbShortcuts.push_back( KeyboardShortcut( KeyCode, Mod, Widget ) );
+		mKbShortcuts.push_back( UIKeyShortcut( KeyCode, Mod, Widget ) );
 
 		return true;
 	}
@@ -1352,7 +1352,7 @@ bool UIWindow::addShortcut( const Uint32& KeyCode, const Uint32& Mod, UIWidget* 
 }
 
 bool UIWindow::removeShortcut( const Uint32& KeyCode, const Uint32& Mod ) {
-	KeyboardShortcuts::iterator it = existsShortcut( KeyCode, Mod );
+	UIKeyboardShortcuts::iterator it = existsShortcut( KeyCode, Mod );
 
 	if ( mKbShortcuts.end() != it ) {
 		mKbShortcuts.erase( it );

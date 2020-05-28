@@ -196,7 +196,7 @@ class EE_API UIWindow : public UIWidget {
 	Sizef mNonMaxSize;
 	UI_RESIZE_TYPE mResizeType;
 	Vector2f mResizePos;
-	KeyboardShortcuts mKbShortcuts;
+	UIKeyboardShortcuts mKbShortcuts;
 
 	bool mFrameBufferBound;
 
@@ -238,7 +238,7 @@ class EE_API UIWindow : public UIWidget {
 
 	void checkShortcuts( const Uint32& KeyCode, const Uint32& Mod );
 
-	KeyboardShortcuts::iterator existsShortcut( const Uint32& KeyCode, const Uint32& Mod );
+	UIKeyboardShortcuts::iterator existsShortcut( const Uint32& KeyCode, const Uint32& Mod );
 
 	void createModalControl();
 

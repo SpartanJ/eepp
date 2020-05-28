@@ -32,7 +32,8 @@ UICodeEditor::UICodeEditor() :
 	mFontSize( mFontStyleConfig.getFontCharacterSize() ),
 	mLineNumberPaddingLeft( 8 ),
 	mLineNumberPaddingRight( 8 ),
-	mHighlighter( &mDoc ) {
+	mHighlighter( &mDoc ),
+	mKeyBindings( getUISceneNode()->getWindow()->getInput() ) {
 	mFlags |= UI_TAB_STOP;
 	setColorScheme( SyntaxColorScheme::getDefault() );
 	mVScrollBar = UIScrollBar::NewVertical();
@@ -50,6 +51,9 @@ UICodeEditor::UICodeEditor() :
 	clipEnable();
 	mDoc.registerClient( *this );
 	subscribeScheduledUpdate();
+
+	registerCommands();
+	registerKeybindings();
 }
 
 UICodeEditor::~UICodeEditor() {
@@ -426,7 +430,7 @@ void UICodeEditor::updateColorScheme() {
 	mLineNumberBackgroundColor = mColorScheme.getEditorColor( "line_number_background" );
 	mCurrentLineBackgroundColor = mColorScheme.getEditorColor( "line_highlight" );
 	mCaretColor = mColorScheme.getEditorColor( "caret" );
-	mIndentationGuideColor = mColorScheme.getEditorColor( "indentation_guide" );
+	mIndentationGuideColor = mColorScheme.getEditorColor( "indentation" );
 }
 
 void UICodeEditor::setColorScheme( const SyntaxColorScheme& colorScheme ) {
@@ -484,205 +488,12 @@ Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
 	if ( NULL == mFont )
 		return 1;
 
-	// Allow copy selection on locked mode
-	if ( mLocked ) {
-		if ( event.getKeyCode() == KEY_C && ( event.getMod() & KEYMOD_CTRL ) ) {
-			getUISceneNode()->getWindow()->getClipboard()->setText( mDoc.getSelectedText() );
-		}
-		return 1;
-	}
+	std::string cmd = mKeyBindings.getCommandFromKeyBind( {event.getKeyCode(), event.getMod()} );
 
-	switch ( event.getKeyCode() ) {
-		case KEY_BACKSPACE: {
-			if ( event.getMod() & KEYMOD_CTRL ) {
-				mDoc.deleteToPreviousWord();
-			} else if ( event.getMod() == 0 || ( event.getMod() & KEYMOD_SHIFT ) ) {
-				mDoc.deleteToPreviousChar();
-			}
-			break;
-		}
-		case KEY_DELETE: {
-			if ( event.getMod() & KEYMOD_CTRL ) {
-				mDoc.deleteToNextWord();
-			} else if ( event.getMod() == 0 || ( event.getMod() & KEYMOD_SHIFT ) ) {
-				mDoc.deleteToNextChar();
-			}
-			break;
-		}
-		case KEY_KP_ENTER:
-		case KEY_RETURN: {
-			if ( ( event.getMod() & KEYMOD_CTRL ) && ( event.getMod() & KEYMOD_SHIFT ) ) {
-				mDoc.newLineAbove();
-			} else if ( !( event.getMod() & KEYMOD_ALT ) ) {
-				mDoc.newLine();
-			}
-			break;
-		}
-		case KEY_UP: {
-			if ( ( event.getMod() & KEYMOD_CTRL ) && ( event.getMod() & KEYMOD_SHIFT ) ) {
-				mDoc.moveLinesUp();
-			} else if ( event.getMod() & KEYMOD_CTRL ) {
-				setScrollY( mScroll.y - getLineHeight() );
-			} else if ( event.getMod() & KEYMOD_SHIFT ) {
-				selectToPreviousLine();
-			} else if ( event.getMod() == 0 ) {
-				moveToPreviousLine();
-			}
-			break;
-		}
-		case KEY_DOWN: {
-			if ( ( event.getMod() & KEYMOD_CTRL ) && ( event.getMod() & KEYMOD_SHIFT ) ) {
-				mDoc.moveLinesDown();
-			} else if ( event.getMod() & KEYMOD_CTRL ) {
-				setScrollY( mScroll.y + getLineHeight() );
-			} else if ( event.getMod() & KEYMOD_SHIFT ) {
-				selectToNextLine();
-			} else {
-				moveToNextLine();
-			}
-			break;
-		}
-		case KEY_LEFT: {
-			if ( ( event.getMod() & KEYMOD_SHIFT ) && ( event.getMod() & KEYMOD_CTRL ) ) {
-				mDoc.selectToPreviousWord();
-			} else if ( event.getMod() & KEYMOD_SHIFT ) {
-				mDoc.selectToPreviousChar();
-			} else if ( event.getMod() & KEYMOD_CTRL ) {
-				mDoc.moveToPreviousWord();
-			} else {
-				mDoc.moveToPreviousChar();
-			}
-			break;
-		}
-		case KEY_RIGHT: {
-			if ( ( event.getMod() & KEYMOD_SHIFT ) && ( event.getMod() & KEYMOD_CTRL ) ) {
-				mDoc.selectToNextWord();
-			} else if ( event.getMod() & KEYMOD_SHIFT ) {
-				mDoc.selectToNextChar();
-			} else if ( event.getMod() & KEYMOD_CTRL ) {
-				mDoc.moveToNextWord();
-			} else {
-				mDoc.moveToNextChar();
-			}
-			break;
-		}
-		case KEY_HOME: {
-			if ( ( event.getMod() & KEYMOD_CTRL ) && ( event.getMod() & KEYMOD_SHIFT ) ) {
-				mDoc.selectToStartOfDoc();
-			} else if ( event.getMod() & KEYMOD_SHIFT ) {
-				mDoc.selectToStartOfContent();
-			} else if ( event.getMod() & KEYMOD_CTRL ) {
-				mDoc.moveToStartOfDoc();
-			} else if ( event.getMod() == 0 ) {
-				mDoc.moveToStartOfContent();
-			}
-			break;
-		}
-		case KEY_END: {
-			if ( ( event.getMod() & KEYMOD_CTRL ) && ( event.getMod() & KEYMOD_SHIFT ) ) {
-				mDoc.selectToEndOfDoc();
-			} else if ( event.getMod() & KEYMOD_SHIFT ) {
-				mDoc.selectToEndOfLine();
-			} else if ( event.getMod() & KEYMOD_CTRL ) {
-				mDoc.moveToEndOfDoc();
-			} else if ( event.getMod() == 0 ) {
-				mDoc.moveToEndOfLine();
-			}
-			break;
-		}
-		case KEY_PAGEUP: {
-			if ( event.getMod() & KEYMOD_SHIFT ) {
-				mDoc.selectToPreviousPage( getVisibleLinesCount() );
-			} else if ( event.getMod() == 0 ) {
-				mDoc.moveToPreviousPage( getVisibleLinesCount() );
-			}
-			break;
-		}
-		case KEY_PAGEDOWN: {
-			if ( event.getMod() & KEYMOD_SHIFT ) {
-				mDoc.selectToNextPage( getVisibleLinesCount() );
-			} else if ( event.getMod() == 0 ) {
-				mDoc.moveToNextPage( getVisibleLinesCount() );
-			}
-			break;
-		}
-		case KEY_TAB: {
-			UIEventDispatcher* eventDispatcher =
-				static_cast<UIEventDispatcher*>( getUISceneNode()->getEventDispatcher() );
-			if ( !eventDispatcher->justGainedFocus() ) {
-				if ( event.getMod() & KEYMOD_SHIFT ) {
-					mDoc.unindent();
-				} else if ( event.getMod() == 0 ) {
-					mDoc.indent();
-				}
-			}
-			break;
-		}
-		case KEY_V: {
-			if ( event.getMod() & KEYMOD_CTRL ) {
-				mDoc.textInput( getUISceneNode()->getWindow()->getClipboard()->getText() );
-			}
-			break;
-		}
-		case KEY_C: {
-			if ( event.getMod() & KEYMOD_CTRL ) {
-				getUISceneNode()->getWindow()->getClipboard()->setText( mDoc.getSelectedText() );
-			}
-			break;
-		}
-		case KEY_X: {
-			if ( event.getMod() & KEYMOD_CTRL ) {
-				getUISceneNode()->getWindow()->getClipboard()->setText( mDoc.getSelectedText() );
-				mDoc.deleteSelection();
-			}
-			break;
-		}
-		case KEY_A: {
-			if ( event.getMod() & KEYMOD_CTRL ) {
-				mDoc.selectAll();
-			}
-			break;
-		}
-		case KEY_Z: {
-			if ( ( event.getMod() & KEYMOD_CTRL ) && ( event.getMod() & KEYMOD_SHIFT ) ) {
-				mDoc.redo();
-			} else if ( event.getMod() & KEYMOD_CTRL ) {
-				mDoc.undo();
-			}
-			break;
-		}
-		case KEY_Y: {
-			if ( event.getMod() & KEYMOD_CTRL ) {
-				mDoc.redo();
-			}
-			break;
-		}
-		case KEY_PLUS:
-		case KEY_KP_PLUS: {
-			if ( event.getMod() & KEYMOD_CTRL ) {
-				mFontStyleConfig.CharacterSize =
-					eemin<Float>( 96, mFontStyleConfig.CharacterSize + 1 );
-				invalidateDraw();
-			}
-			break;
-		}
-		case KEY_MINUS:
-		case KEY_KP_MINUS: {
-			if ( event.getMod() & KEYMOD_CTRL ) {
-				mFontStyleConfig.CharacterSize =
-					eemax<Float>( 4, mFontStyleConfig.CharacterSize - 1 );
-				invalidateDraw();
-			}
-			break;
-		}
-		case KEY_0: {
-			if ( event.getMod() & KEYMOD_CTRL ) {
-				setFontSize( mFontSize );
-			}
-			break;
-		}
-		default:
-			break;
+	if ( !cmd.empty() ) {
+		// Allow copy selection on locked mode
+		if ( !( mLocked && cmd != "copy" ) )
+			mDoc.execute( cmd );
 	}
 
 	return 1;
@@ -807,6 +618,7 @@ void UICodeEditor::updateScrollBar() {
 }
 
 void UICodeEditor::updateEditor() {
+	mDoc.setPageSize( getVisibleLinesCount() );
 	scrollToMakeVisible( mDoc.getSelection().start() );
 	updateScrollBar();
 	mDirtyEditor = false;
@@ -945,6 +757,41 @@ void UICodeEditor::setLineNumberActiveFontColor( const Color& lineNumberActiveFo
 	}
 }
 
+KeyBindings& UICodeEditor::getKeyBindings() {
+	return mKeyBindings;
+}
+
+void UICodeEditor::setKeyBindings( const KeyBindings& keyBindings ) {
+	mKeyBindings = keyBindings;
+}
+
+void UICodeEditor::addKeyBindingString( const std::string& shortcut, const std::string& command ) {
+	mKeyBindings.addKeybindString( shortcut, command );
+}
+
+void UICodeEditor::addKeyBinding( const KeyBindings::Shortcut& shortcut,
+								  const std::string& command ) {
+	mKeyBindings.addKeybind( shortcut, command );
+}
+
+void UICodeEditor::replaceKeyBindingString( const std::string& shortcut,
+											const std::string& command ) {
+	mKeyBindings.replaceKeybindString( shortcut, command );
+}
+
+void UICodeEditor::replaceKeyBinding( const KeyBindings::Shortcut& shortcut,
+									  const std::string& command ) {
+	mKeyBindings.replaceKeybind( shortcut, command );
+}
+
+void UICodeEditor::addKeybindsString( const std::map<std::string, std::string>& binds ) {
+	mKeyBindings.addKeybindsString( binds );
+}
+
+void UICodeEditor::addKeybinds( const std::map<KeyBindings::Shortcut, std::string>& binds ) {
+	mKeyBindings.addKeybinds( binds );
+}
+
 Int64 UICodeEditor::getColFromXOffset( Int64 lineNumber, const Float& x ) const {
 	if ( x <= 0 )
 		return 0;
@@ -1014,6 +861,129 @@ void UICodeEditor::selectToNextLine() {
 	if ( position.line() == (Int64)mDoc.linesCount() - 1 )
 		return mDoc.moveToEndOfDoc();
 	mDoc.selectTo( moveToLineOffset( position, 1 ) );
+}
+
+void UICodeEditor::moveScrollUp() {
+	setScrollY( mScroll.y - getLineHeight() );
+}
+
+void UICodeEditor::moveScrollDown() {
+	setScrollY( mScroll.y + getLineHeight() );
+}
+
+void UICodeEditor::indent() {
+	UIEventDispatcher* eventDispatcher =
+		static_cast<UIEventDispatcher*>( getUISceneNode()->getEventDispatcher() );
+	if ( !eventDispatcher->justGainedFocus() ) {
+		mDoc.indent();
+	}
+}
+
+void UICodeEditor::unindent() {
+	UIEventDispatcher* eventDispatcher =
+		static_cast<UIEventDispatcher*>( getUISceneNode()->getEventDispatcher() );
+	if ( !eventDispatcher->justGainedFocus() ) {
+		mDoc.unindent();
+	}
+}
+
+void UICodeEditor::copy() {
+	getUISceneNode()->getWindow()->getClipboard()->setText( mDoc.getSelectedText() );
+}
+
+void UICodeEditor::cut() {
+	getUISceneNode()->getWindow()->getClipboard()->setText( mDoc.getSelectedText() );
+	mDoc.deleteSelection();
+}
+
+void UICodeEditor::paste() {
+	mDoc.textInput( getUISceneNode()->getWindow()->getClipboard()->getText() );
+}
+
+void UICodeEditor::fontSizeGrow() {
+	mFontStyleConfig.CharacterSize = eemin<Float>( 96, mFontStyleConfig.CharacterSize + 1 );
+	invalidateDraw();
+}
+
+void UICodeEditor::fontSizeShrink() {
+	mFontStyleConfig.CharacterSize = eemax<Float>( 4, mFontStyleConfig.CharacterSize - 1 );
+	invalidateDraw();
+}
+
+void UICodeEditor::fontSizeReset() {
+	setFontSize( mFontSize );
+}
+
+void UICodeEditor::registerCommands() {
+	mDoc.setCommand( "move-to-previous-line", [&] { moveToPreviousLine(); } );
+	mDoc.setCommand( "move-to-next-line", [&] { moveToNextLine(); } );
+	mDoc.setCommand( "select-to-previous-line", [&] { selectToPreviousLine(); } );
+	mDoc.setCommand( "select-to-next-line", [&] { selectToNextLine(); } );
+	mDoc.setCommand( "move-scroll-up", [&] { moveScrollUp(); } );
+	mDoc.setCommand( "move-scroll-down", [&] { moveScrollDown(); } );
+	mDoc.setCommand( "indent", [&] { indent(); } );
+	mDoc.setCommand( "unindent", [&] { unindent(); } );
+	mDoc.setCommand( "copy", [&] { copy(); } );
+	mDoc.setCommand( "cut", [&] { cut(); } );
+	mDoc.setCommand( "paste", [&] { paste(); } );
+	mDoc.setCommand( "font-size-grow", [&] { fontSizeGrow(); } );
+	mDoc.setCommand( "font-size-shrink", [&] { fontSizeShrink(); } );
+	mDoc.setCommand( "font-size-reset", [&] { fontSizeReset(); } );
+}
+
+void UICodeEditor::registerKeybindings() {
+	mKeyBindings.addKeybinds( {
+		{{KEY_BACKSPACE, KEYMOD_CTRL}, "delete-to-previous-word"},
+		{{KEY_BACKSPACE, 0}, "delete-to-previous-char"},
+		{{KEY_DELETE, KEYMOD_CTRL}, "delete-to-next-word"},
+		{{KEY_DELETE, 0}, "delete-to-next-char"},
+		{{KEY_KP_ENTER, KEYMOD_CTRL | KEYMOD_SHIFT}, "new-line-above"},
+		{{KEY_RETURN, KEYMOD_CTRL | KEYMOD_SHIFT}, "new-line-above"},
+		{{KEY_KP_ENTER, 0}, "new-line"},
+		{{KEY_RETURN, 0}, "new-line"},
+		{{KEY_UP, KEYMOD_CTRL | KEYMOD_SHIFT}, "move-lines-up"},
+		{{KEY_UP, KEYMOD_CTRL}, "move-scroll-up"},
+		{{KEY_UP, KEYMOD_SHIFT}, "select-to-previous-line"},
+		{{KEY_UP, 0}, "move-to-previous-line"},
+		{{KEY_DOWN, KEYMOD_CTRL | KEYMOD_SHIFT}, "move-lines-down"},
+		{{KEY_DOWN, KEYMOD_CTRL}, "move-scroll-down"},
+		{{KEY_DOWN, KEYMOD_SHIFT}, "select-to-next-line"},
+		{{KEY_DOWN, 0}, "move-to-next-line"},
+		{{KEY_LEFT, KEYMOD_CTRL | KEYMOD_SHIFT}, "select-to-previous-word"},
+		{{KEY_LEFT, KEYMOD_CTRL}, "move-to-previous-word"},
+		{{KEY_LEFT, KEYMOD_SHIFT}, "select-to-previous-char"},
+		{{KEY_LEFT, 0}, "move-to-previous-char"},
+		{{KEY_RIGHT, KEYMOD_CTRL | KEYMOD_SHIFT}, "select-to-next-word"},
+		{{KEY_RIGHT, KEYMOD_CTRL}, "move-to-next-word"},
+		{{KEY_RIGHT, KEYMOD_SHIFT}, "select-to-next-char"},
+		{{KEY_RIGHT, 0}, "move-to-next-char"},
+		{{KEY_Z, KEYMOD_CTRL | KEYMOD_SHIFT}, "redo"},
+		{{KEY_HOME, KEYMOD_CTRL | KEYMOD_SHIFT}, "select-to-start-of-doc"},
+		{{KEY_HOME, KEYMOD_SHIFT}, "select-to-start-of-content"},
+		{{KEY_HOME, KEYMOD_CTRL}, "move-to-start-of-doc"},
+		{{KEY_HOME, 0}, "move-to-start-of-content"},
+		{{KEY_END, KEYMOD_CTRL | KEYMOD_SHIFT}, "select-to-end-of-doc"},
+		{{KEY_END, KEYMOD_SHIFT}, "select-to-end-of-line"},
+		{{KEY_END, KEYMOD_CTRL}, "move-to-end-of-doc"},
+		{{KEY_END, 0}, "move-to-end-of-line"},
+		{{KEY_PAGEUP, KEYMOD_SHIFT}, "select-to-previous-page"},
+		{{KEY_PAGEUP, 0}, "move-to-previous-page"},
+		{{KEY_PAGEDOWN, KEYMOD_SHIFT}, "select-to-next-page"},
+		{{KEY_PAGEDOWN, 0}, "move-to-next-page"},
+		{{KEY_Y, KEYMOD_CTRL}, "redo"},
+		{{KEY_Z, KEYMOD_CTRL}, "undo"},
+		{{KEY_TAB, KEYMOD_SHIFT}, "unindent"},
+		{{KEY_TAB, 0}, "indent"},
+		{{KEY_C, KEYMOD_CTRL}, "copy"},
+		{{KEY_X, KEYMOD_CTRL}, "cut"},
+		{{KEY_V, KEYMOD_CTRL}, "paste"},
+		{{KEY_A, KEYMOD_CTRL}, "select-all"},
+		{{KEY_PLUS, KEYMOD_CTRL}, "font-size-grow"},
+		{{KEY_KP_PLUS, KEYMOD_CTRL}, "font-size-grow"},
+		{{KEY_MINUS, KEYMOD_CTRL}, "font-size-shrink"},
+		{{KEY_KP_MINUS, KEYMOD_CTRL}, "font-size-shrink"},
+		{{KEY_0, KEYMOD_CTRL}, "font-size-reset"},
+	} );
 }
 
 }} // namespace EE::UI

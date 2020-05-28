@@ -5,6 +5,7 @@
 #include <eepp/system/translator.hpp>
 #include <eepp/ui/css/stylesheet.hpp>
 #include <eepp/ui/keyboardshortcut.hpp>
+#include <list>
 
 namespace EE { namespace Graphics {
 class Font;
@@ -117,7 +118,7 @@ class EE_API UISceneNode : public SceneNode {
 	bool mUpdatingLayouts;
 	UIThemeManager* mUIThemeManager;
 	std::vector<Font*> mFontFaces;
-	KeyboardShortcuts mKbShortcuts;
+	UIKeyboardShortcuts mKbShortcuts;
 	std::unordered_set<UIWidget*> mDirtyStyle;
 	std::unordered_set<UIWidget*> mDirtyStyleState;
 	std::unordered_map<UIWidget*, bool> mDirtyStyleStateCSSAnimations;
@@ -162,7 +163,7 @@ class EE_API UISceneNode : public SceneNode {
 
 	void checkShortcuts( const Uint32& KeyCode, const Uint32& Mod );
 
-	KeyboardShortcuts::iterator existsShortcut( const Uint32& KeyCode, const Uint32& Mod );
+	UIKeyboardShortcuts::iterator existsShortcut( const Uint32& KeyCode, const Uint32& Mod );
 
 	void onWidgetDelete( Node* node );
 
