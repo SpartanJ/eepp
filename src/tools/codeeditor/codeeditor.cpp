@@ -9,6 +9,7 @@ std::string curFile = "untitled";
 const std::string& windowTitle = "eepp - Code Editor";
 bool docDirtyState = false;
 UIMessageBox* MsgBox = NULL;
+String lastSearch;
 
 bool onCloseRequestCallback( EE::Window::Window* ) {
 	if ( NULL != codeEditor && codeEditor->isDirty() ) {
@@ -47,6 +48,44 @@ void openFileDialog() {
 	TGDialog->show();
 }
 
+void findText( String text = "" ) {
+	if ( text.empty() )
+		text = lastSearch;
+	if ( text.empty() )
+		return;
+	lastSearch = text;
+	TextDocument& doc = codeEditor->getDocument();
+	TextPosition found = doc.find( text, doc.getSelection( true ).end() );
+	if ( found.isValid() ) {
+		doc.setSelection( {{found.line(), found.column() + (Int64)text.size()}, found} );
+	} else {
+		found = doc.find( text, {0, 0} );
+		if ( found.isValid() ) {
+			doc.setSelection( {{found.line(), found.column() + (Int64)text.size()}, found} );
+		}
+	}
+}
+
+void findTextMessageBox() {
+	UIMessageBox* inputSearch = UIMessageBox::New( UIMessageBox::INPUT, "Find text..." );
+	inputSearch->getTextInput()->setHint( "Find text..." );
+	inputSearch->setCloseWithKey( KEY_ESCAPE );
+	inputSearch->addEventListener( Event::MsgBoxConfirmClick, []( const Event* event ) {
+		findText( event->getNode()->asType<UIMessageBox>()->getTextInput()->getText() );
+	} );
+	inputSearch->addEventListener( Event::OnClose, []( const Event* ) { codeEditor->setFocus(); } );
+	inputSearch->setTitle( "Find" );
+	inputSearch->getButtonOK()->setText( "Search" );
+	inputSearch->center();
+	inputSearch->show();
+}
+
+void closeApp() {
+	if ( NULL == MsgBox && onCloseRequestCallback( win ) ) {
+		win->close();
+	}
+}
+
 void mainLoop() {
 	Input* input = win->getInput();
 
@@ -74,15 +113,11 @@ void mainLoop() {
 		uiSceneNode->setDrawDebugData( !uiSceneNode->getDrawDebugData() );
 	}
 
-	if ( input->isKeyUp( KEY_ESCAPE ) && NULL == MsgBox && onCloseRequestCallback( win ) ) {
-		win->close();
-	}
-
 	if ( input->isAltPressed() && input->isKeyUp( KEY_RETURN ) ) {
 		win->toggleFullscreen();
 	}
 
-	if ( input->isKeyUp( KEY_F3 ) ) {
+	if ( input->isScancodeUp( SCANCODE_GRAVE ) ) {
 		console->toggle();
 	}
 
@@ -173,14 +208,24 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 				<CodeEditor id="code_edit"
 					layout_width="match_parent"
 					layout_height="match_parent"
-					 />
+					/>
 			</LinearLayout>
 		)xml";
 		uiSceneNode->loadLayoutFromString( layout );
 
 		uiSceneNode->bind( "code_edit", codeEditor );
+		uiSceneNode->getRoot()->addClass( "appbackground" );
 		codeEditor->setFontSize( 11 );
+		codeEditor->getDocument().setCommand( "find", []() { findTextMessageBox(); } );
+		codeEditor->getDocument().setCommand( "repeat-find", []() { findText(); } );
+		codeEditor->getDocument().setCommand( "close-app", []() { closeApp(); } );
 		codeEditor->addKeyBindingString( "ctrl+s", "save" );
+		codeEditor->addKeyBindingString( "ctrl+f", "find" );
+		codeEditor->addKeyBindingString( "f3", "repeat-find" );
+		codeEditor->addKeyBindingString( "escape", "close-app" );
+		codeEditor->addKeyBindingString( "ctrl+q", "close-app" );
+
+		codeEditor->setFocus();
 
 		if ( file ) {
 			loadFileFromPath( file.Get() );

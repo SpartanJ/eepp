@@ -2,6 +2,7 @@
 #define EE_UICUIMESSAGEBOX_HPP
 
 #include <eepp/ui/uipushbutton.hpp>
+#include <eepp/ui/uitextinput.hpp>
 #include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uiwindow.hpp>
 
@@ -13,7 +14,7 @@ namespace EE { namespace UI {
 
 class EE_API UIMessageBox : public UIWindow {
   public:
-	enum Type { OK_CANCEL, YES_NO, RETRY_CANCEL, OK };
+	enum Type { OK_CANCEL, YES_NO, RETRY_CANCEL, OK, INPUT };
 
 	static UIMessageBox* New( const Type& type, const String& message,
 							  const Uint32& windowFlags = UI_MESSAGE_BOX_DEFAULT_FLAGS );
@@ -39,11 +40,14 @@ class EE_API UIMessageBox : public UIWindow {
 
 	void setCloseWithKey( const Uint32& closeWithKey );
 
+	UITextInput* getTextInput() const;
+
   protected:
 	Type mMsgBoxType;
 	UITextView* mTextBox;
 	UIPushButton* mButtonOK;
 	UIPushButton* mButtonCancel;
+	UITextInput* mTextInput;
 	Uint32 mCloseWithKey;
 	UIWidget* mLayoutCont;
 

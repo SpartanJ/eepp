@@ -113,10 +113,6 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	bool isDirty() const;
 
-	virtual Int64 getColFromXOffset( Int64 line, const Float& x ) const;
-
-	virtual Float getColXOffset( TextPosition position );
-
 	const bool& isLocked() const;
 
 	void setLocked( bool locked );
@@ -145,6 +141,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void addKeybinds( const std::map<KeyBindings::Shortcut, std::string>& binds );
 
+	const bool& getHighlightCurrentLine() const;
+
+	void setHighlightCurrentLine( const bool& highlightCurrentLine );
+
   protected:
 	struct LastXOffset {
 		TextPosition position;
@@ -161,6 +161,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mShowLineNumber;
 	bool mShowIndentationGuide;
 	bool mLocked;
+	bool mHighlightCurrentLine;
 	Uint32 mTabWidth;
 	Int64 mLastColOffset;
 	Vector2f mScroll;
@@ -179,6 +180,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	UIScrollBar* mVScrollBar;
 	LastXOffset mLastXOffset{{0, 0}, 0.f};
 	KeyBindings mKeyBindings;
+	Clock mLastDoubleClick;
 
 	void updateColorScheme();
 
@@ -197,6 +199,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	virtual Uint32 onMouseMove( const Vector2i& position, const Uint32& flags );
 
 	virtual Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
+
+	virtual Uint32 onMouseClick( const Vector2i& position, const Uint32& flags );
 
 	virtual Uint32 onMouseDoubleClick( const Vector2i& position, const Uint32& flags );
 
@@ -228,9 +232,13 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void setScrollY( const Float& val, bool emmitEvent = true );
 
-	Float getXOffsetCol( const TextPosition& position ) const;
+	virtual Int64 getColFromXOffset( Int64 line, const Float& x ) const;
 
-	Float getTextWidth( const String& text ) const;
+	virtual Float getColXOffset( TextPosition position );
+
+	virtual Float getXOffsetCol( const TextPosition& position ) const;
+
+	virtual Float getTextWidth( const String& text ) const;
 
 	Float getLineHeight() const;
 
@@ -281,6 +289,19 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void fontSizeShrink();
 
 	void fontSizeReset();
+
+	virtual void drawLineText( const Int64& index, Vector2f position, const Float& fontSize );
+
+	virtual void drawIndentationGuide( const std::pair<int, int>& lineRange,
+									   const Vector2f& startScroll, const Float& lineHeight );
+
+	virtual void drawSelection( const std::pair<int, int>& lineRange, const Vector2f& startScroll,
+								const Float& lineHeight );
+
+	virtual void drawLineNumbers( const std::pair<int, int>& lineRange, const Vector2f& startScroll,
+								  const Vector2f& screenStart, const Float& lineHeight,
+								  const Float& lineNumberWidth, const int& lineNumberDigits,
+								  const Float& fontSize );
 };
 
 }} // namespace EE::UI

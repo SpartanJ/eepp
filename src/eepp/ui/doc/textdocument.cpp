@@ -640,6 +640,16 @@ void TextDocument::selectWord() {
 	setSelection( {nextWordBoundary( getSelection().start() ),
 				   previousWordBoundary( getSelection().start() )} );
 }
+void TextDocument::selectLine() {
+	if ( getSelection().start().line() + 1 < (Int64)linesCount() ) {
+		setSelection(
+			{{getSelection().start().line() + 1, 0}, {getSelection().start().line(), 0}} );
+	} else {
+		setSelection(
+			{{getSelection().start().line(), (Int64)line( getSelection().start().line() ).size()},
+			 {getSelection().start().line(), 0}} );
+	}
+}
 
 void TextDocument::selectToPreviousLine() {
 	TextPosition pos = getSelection().start();
@@ -869,6 +879,29 @@ void TextDocument::setCommand( const std::string& command, TextDocument::Documen
 	mCommands[command] = func;
 }
 
+TextPosition TextDocument::find( String text, TextPosition from, const bool& caseSensitive ) {
+	from = sanitizePosition( from );
+	if ( !caseSensitive )
+		text.toLower();
+	for ( size_t i = from.line(); i < linesCount(); i++ ) {
+		size_t col;
+		if ( (Int64)i == from.line() ) {
+			col = caseSensitive
+					  ? line( i ).getText().substr( from.column() ).find( text )
+					  : String::toLower( line( i ).getText() ).substr( from.column() ).find( text );
+			if ( String::StringType::npos != col )
+				col += from.column();
+		} else {
+			col = caseSensitive ? line( i ).getText().find( text )
+								: String::toLower( line( i ).getText() ).find( text );
+		}
+		if ( String::StringType::npos != col ) {
+			return {(Int64)i, (Int64)col};
+		}
+	}
+	return TextPosition();
+}
+
 const Uint32& TextDocument::getPageSize() const {
 	return mPageSize;
 }
@@ -941,6 +974,7 @@ void TextDocument::initializeCommands() {
 	mCommands["select-to-next-word"] = [&] { selectToNextWord(); };
 	mCommands["select-to-next-line"] = [&] { selectToNextLine(); };
 	mCommands["select-word"] = [&] { selectWord(); };
+	mCommands["select-line"] = [&] { selectLine(); };
 	mCommands["select-to-start-of-line"] = [&] { selectToStartOfLine(); };
 	mCommands["select-to-end-of-line"] = [&] { selectToEndOfLine(); };
 	mCommands["select-to-start-of-doc"] = [&] { selectToStartOfDoc(); };

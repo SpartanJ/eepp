@@ -35,7 +35,7 @@ void Translator::loadFromDirectory( std::string dirPath, std::string ext ) {
 
 void Translator::loadNodes( pugi::xml_node node, std::string lang ) {
 	for ( pugi::xml_node resources = node; resources; resources = resources.next_sibling() ) {
-		std::string name = String::toLower( resources.name() );
+		std::string name = String::toLower( std::string( resources.name() ) );
 
 		if ( name == "resources" ) {
 			lang = lang.size() == 2 ? lang : resources.attribute( "language" ).as_string();

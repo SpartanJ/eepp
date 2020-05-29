@@ -26,6 +26,7 @@ UICodeEditor::UICodeEditor() :
 	mShowLineNumber( true ),
 	mShowIndentationGuide( true ),
 	mLocked( false ),
+	mHighlightCurrentLine( true ),
 	mTabWidth( 4 ),
 	mLastColOffset( 0 ),
 	mMouseWheelScroll( 50 ),
@@ -94,7 +95,7 @@ void UICodeEditor::draw() {
 	Primitives primitives;
 	TextPosition cursor( mDoc.getSelection().start() );
 
-	if ( !mLocked ) {
+	if ( !mLocked && mHighlightCurrentLine ) {
 		primitives.setColor( mCurrentLineBackgroundColor );
 		primitives.drawRectangle( Rectf(
 			Vector2f( startScroll.x + mScroll.x, startScroll.y + cursor.line() * lineHeight ),
@@ -102,93 +103,16 @@ void UICodeEditor::draw() {
 	}
 
 	if ( mDoc.hasSelection() ) {
-		primitives.setColor( mFontStyleConfig.getFontSelectionBackColor() );
-
-		TextRange selection = mDoc.getSelection( true );
-
-		int startLine = eemax<int>( lineRange.first, selection.start().line() );
-		int endLine = eemin<int>( lineRange.second, selection.end().line() );
-
-		for ( auto ln = startLine; ln <= endLine; ln++ ) {
-			const String& line = mDoc.line( ln ).getText();
-			Rectf selRect;
-			selRect.Top = startScroll.y + ln * lineHeight;
-			selRect.Bottom = selRect.Top + lineHeight;
-			if ( selection.start().line() == ln ) {
-				selRect.Left = startScroll.x + getXOffsetCol( {ln, selection.start().column()} );
-				if ( selection.end().line() == ln ) {
-					selRect.Right = startScroll.x + getXOffsetCol( {ln, selection.end().column()} );
-				} else {
-					selRect.Right =
-						startScroll.x + getXOffsetCol( {ln, static_cast<Int64>( line.length() )} );
-				}
-			} else if ( selection.end().line() == ln ) {
-				selRect.Left = startScroll.x + getXOffsetCol( {ln, 0} );
-				selRect.Right = startScroll.x + getXOffsetCol( {ln, selection.end().column()} );
-			} else {
-				selRect.Left = startScroll.x + getXOffsetCol( {ln, 0} );
-				selRect.Right =
-					startScroll.x + getXOffsetCol( {ln, static_cast<Int64>( line.length() )} );
-			}
-
-			primitives.drawRectangle( selRect );
-		}
+		drawSelection( lineRange, startScroll, lineHeight );
 	}
 
 	// Draw tab marker
 	if ( mShowIndentationGuide ) {
-		primitives.setForceDraw( false );
-		for ( int i = lineRange.first; i <= lineRange.second; i++ ) {
-			Float charWidth = getGlyphWidth();
-			Float tabWidth = getTextWidth( "\t" );
-			Vector2f curPos( startScroll.x, startScroll.y + lineHeight * i );
-			auto& tokens = mHighlighter.getLine( i );
-
-			if ( !tokens.empty() ) {
-				size_t c = 0;
-				String::StringBaseType curChar;
-				primitives.setLineWidth( 1 );
-				while ( c < tokens[0].text.size() &&
-						( tokens[0].text[c] == '\t' || tokens[0].text[c] == ' ' ) ) {
-					curChar = tokens[0].text[c];
-					primitives.setColor( mIndentationGuideColor );
-					if ( curChar == '\t' ) {
-						primitives.drawLine( {{eefloor( curPos.x + tabWidth * 0.25f ),
-											   eeceil( curPos.y + lineHeight * 0.5f )},
-											  {eefloor( curPos.x + tabWidth * 0.75f ),
-											   eeceil( curPos.y + lineHeight * 0.5f )}} );
-					} else {
-						primitives.drawLine(
-							{{eefloor( curPos.x + charWidth * 0.5f - PixelDensity::dpToPx( 1 ) ),
-							  eeceil( curPos.y + lineHeight * 0.5f )},
-							 {eefloor( curPos.x + charWidth * 0.5f + PixelDensity::dpToPx( 1 ) ),
-							  eeceil( curPos.y + lineHeight * 0.5f )}} );
-					}
-					c++;
-					curPos.x += curChar == ' ' ? charWidth : tabWidth;
-				}
-			}
-		}
-		primitives.setForceDraw( true );
+		drawIndentationGuide( lineRange, startScroll, lineHeight );
 	}
 
 	for ( int i = lineRange.first; i <= lineRange.second; i++ ) {
-		Vector2f curPos( startScroll.x, startScroll.y + lineHeight * i );
-		auto& tokens = mHighlighter.getLine( i );
-		for ( auto& token : tokens ) {
-			Float textWidth = getTextWidth( token.text );
-			if ( curPos.x + textWidth >= mScreenPos.x &&
-				 curPos.x <= mScreenPos.x + mSize.getWidth() ) {
-				Text line( "", mFont, charSize );
-				line.setStyleConfig( mFontStyleConfig );
-				line.setString( token.text );
-				line.setColor( mColorScheme.getSyntaxColor( token.type ) );
-				line.draw( curPos.x, curPos.y );
-			} else if ( curPos.x > mScreenPos.x + mSize.getWidth() ) {
-				break;
-			}
-			curPos.x += textWidth;
-		}
+		drawLineText( i, {startScroll.x, startScroll.y + lineHeight * i}, charSize );
 	}
 
 	if ( mCursorVisible && !mLocked ) {
@@ -201,19 +125,8 @@ void UICodeEditor::draw() {
 	}
 
 	if ( mShowLineNumber ) {
-		primitives.setColor( mLineNumberBackgroundColor );
-		primitives.drawRectangle(
-			Rectf( screenStart, Sizef( lineNumberWidth, mSize.getHeight() ) ) );
-		TextRange selection = mDoc.getSelection( true );
-		for ( int i = lineRange.first; i <= lineRange.second; i++ ) {
-			Text line( String( String::toStr( i + 1 ) ).padLeft( lineNumberDigits, ' ' ), mFont,
-					   charSize );
-			line.setStyleConfig( mFontStyleConfig );
-			line.setColor( ( i >= selection.start().line() && i <= selection.end().line() )
-							   ? mLineNumberActiveFontColor
-							   : mLineNumberFontColor );
-			line.draw( screenStart.x + mLineNumberPaddingLeft, startScroll.y + lineHeight * i );
-		}
+		drawLineNumbers( lineRange, startScroll, screenStart, lineHeight, lineNumberWidth,
+						 lineNumberDigits, charSize );
 	}
 }
 
@@ -575,12 +488,21 @@ Uint32 UICodeEditor::onMouseUp( const Vector2i& position, const Uint32& flags ) 
 	return UIWidget::onMouseUp( position, flags );
 }
 
+Uint32 UICodeEditor::onMouseClick( const Vector2i&, const Uint32& flags ) {
+	if ( ( flags & EE_BUTTON_LMASK ) &&
+		 mLastDoubleClick.getElapsedTime() < Milliseconds( 300.f ) ) {
+		mDoc.selectLine();
+	}
+	return 1;
+}
+
 Uint32 UICodeEditor::onMouseDoubleClick( const Vector2i&, const Uint32& flags ) {
 	if ( mLocked || NULL == mFont )
 		return 1;
 
 	if ( flags & EE_BUTTON_LMASK ) {
 		mDoc.selectWord();
+		mLastDoubleClick.restart();
 	}
 	return 1;
 }
@@ -792,6 +714,17 @@ void UICodeEditor::addKeybinds( const std::map<KeyBindings::Shortcut, std::strin
 	mKeyBindings.addKeybinds( binds );
 }
 
+const bool& UICodeEditor::getHighlightCurrentLine() const {
+	return mHighlightCurrentLine;
+}
+
+void UICodeEditor::setHighlightCurrentLine( const bool& highlightCurrentLine ) {
+	if ( mHighlightCurrentLine != highlightCurrentLine ) {
+		mHighlightCurrentLine = highlightCurrentLine;
+		invalidateDraw();
+	}
+}
+
 Int64 UICodeEditor::getColFromXOffset( Int64 lineNumber, const Float& x ) const {
 	if ( x <= 0 )
 		return 0;
@@ -912,6 +845,118 @@ void UICodeEditor::fontSizeShrink() {
 
 void UICodeEditor::fontSizeReset() {
 	setFontSize( mFontSize );
+}
+
+void UICodeEditor::drawLineText( const Int64& index, Vector2f position, const Float& fontSize ) {
+	auto& tokens = mHighlighter.getLine( index );
+	for ( auto& token : tokens ) {
+		Float textWidth = getTextWidth( token.text );
+		if ( position.x + textWidth >= mScreenPos.x &&
+			 position.x <= mScreenPos.x + mSize.getWidth() ) {
+			Text line( "", mFont, fontSize );
+			line.setStyleConfig( mFontStyleConfig );
+			line.setString( token.text );
+			line.setColor( mColorScheme.getSyntaxColor( token.type ) );
+			line.draw( position.x, position.y );
+		} else if ( position.x > mScreenPos.x + mSize.getWidth() ) {
+			break;
+		}
+		position.x += textWidth;
+	}
+}
+
+void UICodeEditor::drawSelection( const std::pair<int, int>& lineRange, const Vector2f& startScroll,
+								  const Float& lineHeight ) {
+	Primitives primitives;
+	primitives.setForceDraw( false );
+	primitives.setColor( mFontStyleConfig.getFontSelectionBackColor() );
+
+	TextRange selection = mDoc.getSelection( true );
+
+	int startLine = eemax<int>( lineRange.first, selection.start().line() );
+	int endLine = eemin<int>( lineRange.second, selection.end().line() );
+
+	for ( auto ln = startLine; ln <= endLine; ln++ ) {
+		const String& line = mDoc.line( ln ).getText();
+		Rectf selRect;
+		selRect.Top = startScroll.y + ln * lineHeight;
+		selRect.Bottom = selRect.Top + lineHeight;
+		if ( selection.start().line() == ln ) {
+			selRect.Left = startScroll.x + getXOffsetCol( {ln, selection.start().column()} );
+			if ( selection.end().line() == ln ) {
+				selRect.Right = startScroll.x + getXOffsetCol( {ln, selection.end().column()} );
+			} else {
+				selRect.Right =
+					startScroll.x + getXOffsetCol( {ln, static_cast<Int64>( line.length() )} );
+			}
+		} else if ( selection.end().line() == ln ) {
+			selRect.Left = startScroll.x + getXOffsetCol( {ln, 0} );
+			selRect.Right = startScroll.x + getXOffsetCol( {ln, selection.end().column()} );
+		} else {
+			selRect.Left = startScroll.x + getXOffsetCol( {ln, 0} );
+			selRect.Right =
+				startScroll.x + getXOffsetCol( {ln, static_cast<Int64>( line.length() )} );
+		}
+
+		primitives.drawRectangle( selRect );
+	}
+	primitives.setForceDraw( true );
+}
+
+void UICodeEditor::drawLineNumbers( const std::pair<int, int>& lineRange,
+									const Vector2f& startScroll, const Vector2f& screenStart,
+									const Float& lineHeight, const Float& lineNumberWidth,
+									const int& lineNumberDigits, const Float& fontSize ) {
+	Primitives primitives;
+	primitives.setColor( mLineNumberBackgroundColor );
+	primitives.drawRectangle( Rectf( screenStart, Sizef( lineNumberWidth, mSize.getHeight() ) ) );
+	TextRange selection = mDoc.getSelection( true );
+	for ( int i = lineRange.first; i <= lineRange.second; i++ ) {
+		Text line( String( String::toStr( i + 1 ) ).padLeft( lineNumberDigits, ' ' ), mFont,
+				   fontSize );
+		line.setStyleConfig( mFontStyleConfig );
+		line.setColor( ( i >= selection.start().line() && i <= selection.end().line() )
+						   ? mLineNumberActiveFontColor
+						   : mLineNumberFontColor );
+		line.draw( screenStart.x + mLineNumberPaddingLeft, startScroll.y + lineHeight * i );
+	}
+}
+
+void UICodeEditor::drawIndentationGuide( const std::pair<int, int>& lineRange,
+										 const Vector2f& startScroll, const Float& lineHeight ) {
+	Primitives primitives;
+	primitives.setForceDraw( false );
+	primitives.setColor( mIndentationGuideColor );
+	primitives.setLineWidth( 1 );
+	for ( int i = lineRange.first; i <= lineRange.second; i++ ) {
+		Float charWidth = getGlyphWidth();
+		Float tabWidth = getTextWidth( "\t" );
+		Vector2f curPos( startScroll.x, startScroll.y + lineHeight * i );
+		auto& tokens = mHighlighter.getLine( i );
+		if ( !tokens.empty() ) {
+			size_t c = 0;
+			String::StringBaseType curChar;
+			while ( c < tokens[0].text.size() &&
+					( tokens[0].text[c] == '\t' || tokens[0].text[c] == ' ' ) ) {
+				curChar = tokens[0].text[c];
+				if ( curChar == '\t' ) {
+					primitives.drawLine( {{eefloor( curPos.x + tabWidth * 0.25f ),
+										   eeceil( curPos.y + lineHeight * 0.5f )},
+										  {eefloor( curPos.x + tabWidth * 0.75f ),
+										   eeceil( curPos.y + lineHeight * 0.5f )}} );
+				} else {
+					primitives.drawLine(
+						{{eefloor( curPos.x + charWidth * 0.5f - PixelDensity::dpToPx( 1 ) ),
+						  eeceil( curPos.y + lineHeight * 0.5f )},
+						 {eefloor( curPos.x + charWidth * 0.5f + PixelDensity::dpToPx( 1 ) ),
+						  eeceil( curPos.y + lineHeight * 0.5f )}} );
+				}
+				c++;
+				curPos.x += curChar == ' ' ? charWidth : tabWidth;
+			}
+		}
+	}
+	primitives.setForceDraw( true );
 }
 
 void UICodeEditor::registerCommands() {

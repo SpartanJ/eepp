@@ -231,6 +231,8 @@ class EE_API TextDocument {
 
 	void selectWord();
 
+	void selectLine();
+
 	void selectToNextWord();
 
 	void selectToPreviousLine();
@@ -272,6 +274,8 @@ class EE_API TextDocument {
 	void execute( const std::string& command );
 
 	void setCommand( const std::string& command, DocumentCommand func );
+
+	TextPosition find( String text, TextPosition from = {0, 0}, const bool& caseSensitive = false );
 
 	String getIndentString();
 

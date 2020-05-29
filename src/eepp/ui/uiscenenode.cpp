@@ -196,7 +196,7 @@ std::vector<UIWidget*> UISceneNode::loadNode( pugi::xml_node node, Node* parent 
 			}
 
 			uiwidget->onWidgetCreated();
-		} else if ( String::toLower( widget.name() ) == "style" ) {
+		} else if ( String::toLower( std::string( widget.name() ) ) == "style" ) {
 			combineStyleSheet( widget.text().as_string(), false );
 		}
 	}

@@ -1,12 +1,12 @@
 #include <algorithm>
 #include <cctype>
+#include <crc/CRC.h>
 #include <cstdarg>
 #include <eepp/core/string.hpp>
 #include <eepp/core/utf.hpp>
 #include <iterator>
-#include <crc/CRC.h>
 
-static CRC::Table<std::uint32_t, 32> CRC_TABLE(CRC::CRC_32());
+static CRC::Table<std::uint32_t, 32> CRC_TABLE( CRC::CRC_32() );
 
 namespace EE {
 
@@ -32,7 +32,7 @@ Uint32 String::hash( const std::string& str ) {
 }
 
 Uint32 String::hash( const String& str ) {
-	return CRC::Calculate( (void*)str.c_str(), sizeof(StringBaseType)*str.size(), CRC_TABLE );
+	return CRC::Calculate( (void*)str.c_str(), sizeof( StringBaseType ) * str.size(), CRC_TABLE );
 }
 
 bool String::isCharacter( const int& value ) {
@@ -250,6 +250,30 @@ std::string String::toLower( std::string str ) {
 	for ( std::string::iterator i = str.begin(); i != str.end(); ++i )
 		*i = static_cast<char>( std::tolower( *i ) );
 	return str;
+}
+
+String String::toUpper( const String& str ) {
+	String cpy( str );
+	cpy.toUpper();
+	return cpy;
+}
+
+String String::toLower( const String& str ) {
+	String cpy( str );
+	cpy.toLower();
+	return cpy;
+}
+
+String& String::toLower() {
+	for ( StringType::iterator i = mString.begin(); i != mString.end(); ++i )
+		*i = static_cast<Uint32>( std::tolower( *i ) );
+	return *this;
+}
+
+String& String::toUpper() {
+	for ( StringType::iterator i = mString.begin(); i != mString.end(); ++i )
+		*i = static_cast<Uint32>( std::toupper( *i ) );
+	return *this;
 }
 
 std::vector<Uint8> String::stringToUint8( const std::string& str ) {

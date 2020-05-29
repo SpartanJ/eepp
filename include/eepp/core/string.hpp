@@ -146,6 +146,12 @@ class EE_API String {
 	/** Convert a string to lower case */
 	static std::string toLower( std::string str );
 
+	/** Convert a string to lower case */
+	static String toUpper( const String& str );
+
+	/** Convert a string to lower case */
+	static String toLower( const String& str );
+
 	/** Convert the string to an std::vector<Uint8> */
 	static std::vector<Uint8> stringToUint8( const std::string& str );
 
@@ -740,6 +746,10 @@ class EE_API String {
 	size_t countChar( StringBaseType c ) const;
 
 	String& padLeft( unsigned int minDigits, StringBaseType padChar );
+
+	String& toLower();
+
+	String& toUpper();
 
   private:
 	friend EE_API bool operator==( const String& left, const String& right );

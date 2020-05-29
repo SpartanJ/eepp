@@ -512,7 +512,7 @@ static void loadProjectNodes( pugi::xml_node node ) {
 	uiSceneNode->getUIThemeManager()->setDefaultTheme( useDefaultTheme ? theme : NULL );
 
 	for ( pugi::xml_node resources = node; resources; resources = resources.next_sibling() ) {
-		std::string name = String::toLower( resources.name() );
+		std::string name = String::toLower( std::string( resources.name() ) );
 
 		if ( name == "uiproject" ) {
 			pugi::xml_node basePathNode = resources.child( "basepath" );

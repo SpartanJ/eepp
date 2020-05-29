@@ -12,7 +12,7 @@ UIMessageBox* UIMessageBox::New( const Type& type, const String& message,
 }
 
 UIMessageBox::UIMessageBox( const Type& type, const String& message, const Uint32& windowFlags ) :
-	UIWindow(), mMsgBoxType( type ), mCloseWithKey( KEY_UNKNOWN ) {
+	UIWindow(), mMsgBoxType( type ), mTextInput( NULL ), mCloseWithKey( KEY_UNKNOWN ) {
 	mStyleConfig.WinFlags = windowFlags;
 
 	updateWinFlags();
@@ -32,6 +32,16 @@ UIMessageBox::UIMessageBox( const Type& type, const String& message, const Uint3
 		->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent )
 		->setParent( vlay );
 
+	if ( mMsgBoxType == INPUT ) {
+		mTextInput = UITextInput::New();
+		mTextInput->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
+			->setLayoutMargin( Rect( 0, 4, 0, 4 ) )
+			->setParent( vlay )
+			->addEventListener( Event::OnPressEnter, [&] ( const Event* ) {
+				sendCommonEvent( Event::MsgBoxConfirmClick );
+			} );
+	}
+
 	UILinearLayout* hlay = UILinearLayout::NewHorizontal();
 	hlay->setLayoutMargin( Rect( 0, 8, 0, 0 ) )
 		->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent )
@@ -46,6 +56,7 @@ UIMessageBox::UIMessageBox( const Type& type, const String& message, const Uint3
 	mButtonCancel->setLayoutMargin( Rect( 8, 0, 0, 0 ) )->setSize( 90, 0 )->setParent( hlay );
 
 	switch ( mMsgBoxType ) {
+		case UIMessageBox::INPUT:
 		case UIMessageBox::OK_CANCEL: {
 			mButtonOK->setText(
 				getUISceneNode()->getTranslatorString( "@string/msg_box_ok", "Ok" ) );
@@ -148,9 +159,11 @@ Uint32 UIMessageBox::onKeyUp( const KeyEvent& Event ) {
 
 bool UIMessageBox::show() {
 	bool b = UIWindow::show();
-
-	mButtonOK->setFocus();
-
+	if ( NULL != mTextInput ) {
+		mTextInput->setFocus();
+	} else {
+		mButtonOK->setFocus();
+	}
 	return b;
 }
 
@@ -160,6 +173,10 @@ Uint32 UIMessageBox::getCloseWithKey() const {
 
 void UIMessageBox::setCloseWithKey( const Uint32& closeWithKey ) {
 	mCloseWithKey = closeWithKey;
+}
+
+UITextInput* UIMessageBox::getTextInput() const {
+	return mTextInput;
 }
 
 void UIMessageBox::onWindowReady() {
