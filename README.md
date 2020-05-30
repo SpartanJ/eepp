@@ -614,8 +614,6 @@ Probably deprecate the Maps module, since I will focus my efforts on the UI syst
 
 * Jason Perkins for [premake](https://premake.github.io/)
 
-* Daniel Bahr for [CRC++](https://github.com/d-bahr/CRCpp)
-
 * Martín Lucas Golini ( me ) and all the several contributors for [SOIL2](https://github.com/SpartanJ/SOIL2) and [efsw](https://github.com/SpartanJ/efsw)
 
 * The Xiph open source community for [libogg](https://xiph.org/ogg/) and [libvorbis](https://xiph.org/vorbis/)

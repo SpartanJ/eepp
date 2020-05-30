@@ -15,7 +15,7 @@ template <class T> inline void HashCombine( std::size_t& seed, const T& v ) {
 	seed ^= hasher( v ) + 0x9e3779b9 + ( seed << 6 ) + ( seed >> 2 );
 }
 
-size_t StyleSheet::NodeHash( const std::string& tag, const std::string& id ) {
+size_t StyleSheet::nodeHash( const std::string& tag, const std::string& id ) {
 	size_t seed = 0;
 	if ( !tag.empty() )
 		seed = std::hash<std::string>()( tag );
@@ -28,7 +28,7 @@ bool StyleSheet::addStyleToNodeIndex( StyleSheetStyle* style ) {
 	const std::string& id = style->getSelector().getSelectorId();
 	const std::string& tag = style->getSelector().getSelectorTagName();
 	if ( style->hasProperties() || style->hasVariables() ) {
-		size_t nodeHash = NodeHash( "*" == tag ? "" : tag, id );
+		size_t nodeHash = this->nodeHash( "*" == tag ? "" : tag, id );
 		StyleSheetStyleVector& nodes = mNodeIndex[nodeHash];
 		auto it = std::find( nodes.begin(), nodes.end(), style );
 		if ( it == nodes.end() ) {
@@ -83,12 +83,12 @@ std::shared_ptr<ElementDefinition> StyleSheet::getElementStyles( UIWidget* eleme
 	int numHashes = 2;
 
 	nodeHash[0] = 0;
-	nodeHash[1] = NodeHash( tag, "" );
+	nodeHash[1] = this->nodeHash( tag, "" );
 
 	if ( !id.empty() ) {
 		numHashes = 4;
-		nodeHash[2] = NodeHash( "", id );
-		nodeHash[3] = NodeHash( tag, id );
+		nodeHash[2] = this->nodeHash( "", id );
+		nodeHash[3] = this->nodeHash( tag, id );
 	}
 
 	for ( int i = 0; i < numHashes; i++ ) {

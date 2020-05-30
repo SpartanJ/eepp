@@ -699,11 +699,11 @@ bool Node::isClosing() const {
 	return 0 != ( mNodeFlags & NODE_FLAG_CLOSE );
 }
 
-Uint32 Node::getIdHash() const {
+const String::HashType& Node::getIdHash() const {
 	return mIdHash;
 }
 
-Node* Node::findIdHash( const Uint32& idHash ) const {
+Node* Node::findIdHash( const String::HashType& idHash ) const {
 	if ( mIdHash == idHash ) {
 		return const_cast<Node*>( this );
 	} else {

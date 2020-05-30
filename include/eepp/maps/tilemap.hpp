@@ -48,7 +48,7 @@ class EE_API TileMap {
 
 	virtual Uint32 getLayerIndex( MapLayer* Layer );
 
-	virtual MapLayer* getLayerByHash( Uint32 hash );
+	virtual MapLayer* getLayerByHash( String::HashType hash );
 
 	virtual MapLayer* getLayer( const std::string& name );
 

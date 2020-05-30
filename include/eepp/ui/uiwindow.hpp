@@ -111,9 +111,9 @@ class EE_API UIWindow : public UIWidget {
 
 	UITextView* getTitleTextBox() const;
 
-	bool addShortcut( const Uint32& KeyCode, const Uint32& Mod, UIWidget* Widget );
+	bool addShortcut( const Keycode& KeyCode, const Uint32& Mod, UIWidget* Widget );
 
-	bool removeShortcut( const Uint32& KeyCode, const Uint32& Mod );
+	bool removeShortcut( const Keycode& KeyCode, const Uint32& Mod );
 
 	bool isModal();
 
@@ -238,7 +238,7 @@ class EE_API UIWindow : public UIWidget {
 
 	void checkShortcuts( const Uint32& KeyCode, const Uint32& Mod );
 
-	UIKeyboardShortcuts::iterator existsShortcut( const Uint32& KeyCode, const Uint32& Mod );
+	UIKeyboardShortcuts::iterator existsShortcut( const Keycode& KeyCode, const Uint32& Mod );
 
 	void createModalControl();
 

@@ -40,7 +40,7 @@ class EE_API TextureAtlasManager : public ResourceManagerMulti<TextureAtlas> {
 
 	/** It will search for a TextureRegion Id in the texture atlases loaded.
 	 *	@return The first TextureRegion found with the given id in any atlas. */
-	TextureRegion* getTextureRegionById( const Uint32& Id );
+	TextureRegion* getTextureRegionById( const String::HashType& Id );
 
 	/** Search for a pattern name
 	 * For example search for name "car" with extensions "png", i will try to find car00.png

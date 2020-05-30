@@ -214,7 +214,7 @@ class EE_API Node : public Transformable {
 
 	virtual Node* setId( const std::string& id );
 
-	Uint32 getIdHash() const;
+	const String::HashType& getIdHash() const;
 
 	Node* find( const std::string& id ) const;
 
@@ -369,12 +369,13 @@ class EE_API Node : public Transformable {
 	virtual void onIdChange();
 
 	bool isClosing() const;
+
   protected:
 	typedef std::map<Uint32, std::map<Uint32, EventCallback>> EventsMap;
 	friend class EventDispatcher;
 
 	std::string mId;
-	Uint32 mIdHash;
+	String::HashType mIdHash;
 	Vector2f mScreenPos;
 	Vector2i mScreenPosi;
 	Sizef mSize;
@@ -499,7 +500,7 @@ class EE_API Node : public Transformable {
 
 	Color getColor( const Color& Col );
 
-	Node* findIdHash( const Uint32& idHash ) const;
+	Node* findIdHash( const String::HashType& idHash ) const;
 
 	virtual void updateOriginPoint();
 

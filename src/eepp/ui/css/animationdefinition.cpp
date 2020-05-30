@@ -159,7 +159,7 @@ std::unordered_map<std::string, AnimationDefinition> AnimationDefinition::parseA
 }
 
 bool AnimationDefinition::isDirectionString( const std::string str ) {
-	Uint32 id = String::hash( str );
+	String::HashType id = String::hash( str );
 	return id == AlternateReverse || id == Alternate || id == Reverse || id == Normal;
 }
 
@@ -244,7 +244,7 @@ void AnimationDefinition::setPaused( bool value ) {
 	mPaused = value;
 }
 
-const Uint32& AnimationDefinition::getId() const {
+const String::HashType& AnimationDefinition::getId() const {
 	return mId;
 }
 

@@ -2,10 +2,12 @@
 #define EE_UI_KEYBOARDSHORTCUT_HPP
 
 #include <eepp/config.hpp>
+#include <eepp/window/keycodes.hpp>
 #include <map>
 #include <string>
 #include <vector>
 
+using namespace EE::Window;
 namespace EE { namespace Window {
 class Input;
 }} // namespace EE::Window
@@ -16,12 +18,12 @@ class UIWidget;
 
 class EE_API UIKeyShortcut {
   public:
-	UIKeyShortcut() : KeyCode( 0 ), Mod( 0 ), Widget( NULL ) {}
+	UIKeyShortcut() : KeyCode( KEY_UNKNOWN ), Mod( 0 ), Widget( NULL ) {}
 
-	UIKeyShortcut( const Uint32& KeyCode, const Uint32& Mod, UIWidget* Widget ) :
+	UIKeyShortcut( const Keycode& KeyCode, const Uint32& Mod, UIWidget* Widget ) :
 		KeyCode( KeyCode ), Mod( Mod ), Widget( Widget ) {}
 
-	Uint32 KeyCode;
+	Keycode KeyCode;
 	Uint32 Mod;
 	UIWidget* Widget;
 };
@@ -32,10 +34,10 @@ class EE_API KeyBindings {
   public:
 	struct Shortcut {
 		Shortcut() {}
-		Shortcut( Uint32 key, Uint32 mod ) : key( key ), mod( mod ) {}
+		Shortcut( Keycode key, Uint32 mod ) : key( key ), mod( mod ) {}
 		Shortcut( const Uint64& code ) :
-			key( code & 0xFFFFFFFF ), mod( ( code >> 32 ) & 0xFFFFFFFF ) {}
-		Uint32 key{0};
+			key( ( Keycode )( code & 0xFFFFFFFF ) ), mod( ( code >> 32 ) & 0xFFFFFFFF ) {}
+		Keycode key{KEY_UNKNOWN};
 		Uint32 mod{0};
 		Uint64 toUint64() const { return (Uint64)mod << 32 | (Uint64)key; }
 		operator Uint64() const { return toUint64(); }

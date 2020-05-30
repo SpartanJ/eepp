@@ -42,17 +42,17 @@ class EE_API ShorthandDefinition {
 
 	const std::string& getName() const;
 
-	const Uint32& getId() const;
+	const String::HashType& getId() const;
 
 	ShorthandDefinition& addAlias( const std::string& alias );
 
 	bool isAlias( const std::string& alias ) const;
 
-	bool isAlias( const Uint32& id ) const;
+	bool isAlias( const String::HashType& id ) const;
 
 	bool isDefinition( const std::string& name ) const;
 
-	bool isDefinition( const Uint32& id ) const;
+	bool isDefinition( const String::HashType& id ) const;
 
 	ShorthandId getShorthandId() const;
 
@@ -61,9 +61,9 @@ class EE_API ShorthandDefinition {
   protected:
 	std::string mName;
 	std::string mFuncName;
-	Uint32 mId;
+	String::HashType mId;
 	std::vector<std::string> mAliases;
-	std::vector<Uint32> mAliasesHash;
+	std::vector<String::HashType> mAliasesHash;
 	std::vector<std::string> mProperties;
 };
 

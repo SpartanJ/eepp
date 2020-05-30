@@ -38,7 +38,7 @@ const std::string& ShorthandDefinition::getName() const {
 	return mName;
 }
 
-const Uint32& ShorthandDefinition::getId() const {
+const String::HashType& ShorthandDefinition::getId() const {
 	return mId;
 }
 
@@ -60,7 +60,7 @@ bool ShorthandDefinition::isAlias( const std::string& alias ) const {
 	return isAlias( String::hash( alias ) );
 }
 
-bool ShorthandDefinition::isAlias( const Uint32& id ) const {
+bool ShorthandDefinition::isAlias( const String::HashType& id ) const {
 	return std::find( mAliasesHash.begin(), mAliasesHash.end(), id ) != mAliasesHash.end();
 }
 
@@ -68,7 +68,7 @@ bool ShorthandDefinition::isDefinition( const std::string& name ) const {
 	return isDefinition( String::hash( name ) );
 }
 
-bool ShorthandDefinition::isDefinition( const Uint32& id ) const {
+bool ShorthandDefinition::isDefinition( const String::HashType& id ) const {
 	return mId == id || isAlias( id );
 }
 

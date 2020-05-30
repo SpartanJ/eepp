@@ -102,7 +102,7 @@ class EE_API FrameBuffer {
 	void setName( const std::string& name );
 
 	/** @return The hash id from its name */
-	const Uint32& getId() const;
+	const String::HashType& getId() const;
 
 	/** @return If the frame buffer was created */
 	virtual bool created() const = 0;
@@ -112,7 +112,7 @@ class EE_API FrameBuffer {
 	Sizei mSize;
 	Uint32 mChannels;
 	std::string mName;
-	Uint32 mId;
+	String::HashType mId;
 	bool mHasColorBuffer;
 	bool mHasDepthBuffer;
 	bool mHasStencilBuffer;

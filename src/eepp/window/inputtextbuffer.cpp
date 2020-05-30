@@ -194,7 +194,7 @@ void InputTextBuffer::eraseToNextNoChar() {
 	}
 }
 
-bool InputTextBuffer::isIgnoredChar( const Uint32& c ) {
+bool InputTextBuffer::isIgnoredChar( const String::StringBaseType& c ) {
 	if ( mIgnoredChars.size() ) {
 		for ( std::size_t i = 0; i < mIgnoredChars.size(); i++ ) {
 			if ( mIgnoredChars[i] == c )
@@ -205,7 +205,7 @@ bool InputTextBuffer::isIgnoredChar( const Uint32& c ) {
 	return false;
 }
 
-bool InputTextBuffer::validChar( const Uint32& c ) {
+bool InputTextBuffer::validChar( const String::StringBaseType& c ) {
 	if ( canAdd() && String::isCharacter( c ) ) {
 		bool Ignored = false;
 
@@ -225,7 +225,7 @@ bool InputTextBuffer::validChar( const Uint32& c ) {
 	return false;
 }
 
-void InputTextBuffer::tryAddChar( const Uint32& c ) {
+void InputTextBuffer::tryAddChar( const String::StringBaseType& c ) {
 	if ( isFreeEditingEnabled() ) {
 		if ( validChar( c ) ) {
 			removeSelection();

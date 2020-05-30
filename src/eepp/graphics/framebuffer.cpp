@@ -137,7 +137,7 @@ void FrameBuffer::setName( const std::string& name ) {
 	mId = String::hash( mName );
 }
 
-const Uint32& FrameBuffer::getId() const {
+const String::HashType& FrameBuffer::getId() const {
 	return mId;
 }
 

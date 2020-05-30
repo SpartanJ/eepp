@@ -75,10 +75,10 @@ class EE_API AnimationDefinition {
 
 	void setPaused( bool value );
 
-	const Uint32& getId() const;
+	const String::HashType& getId() const;
 
   protected:
-	Uint32 mId;
+	String::HashType mId;
 	std::string mName;
 	Time mDelay = Time::Zero;
 	Time mDuration = Time::Zero;

@@ -87,7 +87,7 @@ Cursor::Type Cursor::fromName( std::string name ) {
 	return Arrow;
 }
 
-const Uint32& Cursor::getId() const {
+const String::HashType& Cursor::getId() const {
 	return mId;
 }
 

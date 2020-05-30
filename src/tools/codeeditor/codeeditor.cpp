@@ -96,10 +96,6 @@ void mainLoop() {
 		setAppTitle( docDirtyState ? curFile + "*" : curFile );
 	}
 
-	if ( ( input->isControlPressed() && input->isKeyUp( KEY_O ) ) || input->isKeyUp( KEY_F2 ) ) {
-		openFileDialog();
-	}
-
 	if ( input->isKeyUp( KEY_F6 ) ) {
 		uiSceneNode->setHighlightFocus( !uiSceneNode->getHighlightFocus() );
 		uiSceneNode->setHighlightOver( !uiSceneNode->getHighlightOver() );
@@ -113,21 +109,10 @@ void mainLoop() {
 		uiSceneNode->setDrawDebugData( !uiSceneNode->getDrawDebugData() );
 	}
 
-	if ( input->isAltPressed() && input->isKeyUp( KEY_RETURN ) ) {
-		win->toggleFullscreen();
-	}
-
-	if ( input->isScancodeUp( SCANCODE_GRAVE ) ) {
-		console->toggle();
-	}
-
-	if ( input->isControlPressed() && input->isKeyUp( KEY_L ) ) {
-		codeEditor->setLocked( !codeEditor->isLocked() );
-	}
-
 	SceneManager::instance()->update();
 
-	if ( SceneManager::instance()->getUISceneNode()->invalidated() ) {
+	if ( SceneManager::instance()->getUISceneNode()->invalidated() || console->isActive() ||
+		 console->isFading() ) {
 		win->clear();
 		SceneManager::instance()->draw();
 		console->draw();
@@ -219,11 +204,21 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		codeEditor->getDocument().setCommand( "find", []() { findTextMessageBox(); } );
 		codeEditor->getDocument().setCommand( "repeat-find", []() { findText(); } );
 		codeEditor->getDocument().setCommand( "close-app", []() { closeApp(); } );
-		codeEditor->addKeyBindingString( "ctrl+s", "save" );
-		codeEditor->addKeyBindingString( "ctrl+f", "find" );
-		codeEditor->addKeyBindingString( "f3", "repeat-find" );
-		codeEditor->addKeyBindingString( "escape", "close-app" );
-		codeEditor->addKeyBindingString( "ctrl+q", "close-app" );
+		codeEditor->getDocument().setCommand( "fullscreen-toggle",
+											  []() { win->toggleFullscreen(); } );
+		codeEditor->getDocument().setCommand( "open-file", [] { openFileDialog(); } );
+		codeEditor->getDocument().setCommand( "console-toggle", [] { console->toggle(); } );
+		codeEditor->addKeyBindingString( "ctrl+s", "save", false );
+		codeEditor->addKeyBindingString( "ctrl+f", "find", false );
+		codeEditor->addKeyBindingString( "f3", "repeat-find", false );
+		codeEditor->addKeyBindingString( "escape", "close-app", true );
+		codeEditor->addKeyBindingString( "ctrl+q", "close-app", true );
+		codeEditor->addKeyBindingString( "alt+return", "fullscreen-toggle", true );
+		codeEditor->addKeyBindingString( "ctrl+o", "open-file", true );
+		codeEditor->addKeyBindingString( "f2", "open-file", true );
+		codeEditor->addKeyBindingString( "ctrl+l", "lock-toggle", true );
+		codeEditor->addKeyBinding( {win->getInput()->getKeyFromScancode( SCANCODE_GRAVE ), 0},
+								   "console-toggle", true );
 
 		codeEditor->setFocus();
 

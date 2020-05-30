@@ -65,7 +65,7 @@ class EE_API Font {
 	void setName( const std::string& setName );
 
 	/** @return The font id */
-	const Uint32& getId();
+	const String::HashType& getId();
 
 	virtual const Info& getInfo() const = 0;
 
@@ -95,7 +95,7 @@ class EE_API Font {
   protected:
 	FontType mType;
 	std::string mFontName;
-	Uint32 mFontHash;
+	String::HashType mFontHash;
 	Uint32 mNumCallBacks;
 	std::map<Uint32, FontEventCallback> mCallbacks;
 

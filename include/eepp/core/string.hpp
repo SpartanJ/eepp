@@ -46,7 +46,7 @@ namespace EE {
 /** Utility string class that automatically handles conversions between types and encodings **/
 class EE_API String {
   public:
-	typedef Uint32 StringBaseType;
+	typedef char32_t StringBaseType;
 	typedef std::basic_string<StringBaseType> StringType;
 	typedef StringType::iterator Iterator;							 //! Iterator type
 	typedef StringType::const_iterator ConstIterator;				 //! Constant iterator type
@@ -57,10 +57,10 @@ class EE_API String {
 	static const std::size_t InvalidPos; ///< Represents an invalid position in the string
 
 	/** @return string hash */
-	static constexpr Uint32 hash( const Uint8* str );
+	static constexpr HashType hash( const Uint8* str );
 
 	/** @return string hash */
-	static constexpr Uint32 hash( const char* str ) {
+	static constexpr HashType hash( const char* str ) {
 		//! djb2
 		if ( NULL != str ) {
 			Uint32 hash = 5381;
@@ -76,11 +76,11 @@ class EE_API String {
 	}
 
 	/** @return string hash */
-	static Uint32 hash( const std::string& str );
+	static String::HashType hash( const std::string& str );
 
 	/** @return string hash. Note: String::hash( std::string( "text" ) ) is != to String::hash(
 	 * String( "text" ) ) */
-	static Uint32 hash( const String& str );
+	static String::HashType hash( const String& str );
 
 	/** @return If the value passed is a character */
 	static bool isCharacter( const int& value );
@@ -306,6 +306,11 @@ class EE_API String {
 	**/
 	String( const char* utf8String );
 
+	/** @brief Construct from an from a sub-string C-style UTF-8 string to UTF-32
+	** @param uf8String UTF-8 string to convert
+	**/
+	String( const char* utf8String, const size_t& utf8StringSize );
+
 	/** @brief Construct from an UTF-8 string to UTF-32 according
 	** @param utf8String UTF-8 string to convert
 	**/
@@ -431,7 +436,7 @@ class EE_API String {
 	std::basic_string<Uint16> toUtf16() const;
 
 	/** @return The hash code of the String */
-	Uint32 getHash() const;
+	HashType getHash() const;
 
 	/** @brief Overload of assignment operator
 	** @param right Instance to assign

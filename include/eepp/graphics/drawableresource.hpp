@@ -15,7 +15,7 @@ class EE_API DrawableResource : public Drawable {
 	typedef std::function<void( Event, DrawableResource* )> OnResourceChangeCallback;
 
 	/** @return The DrawableResource Id. The Id is the String::hash of the name. */
-	const Uint32& getId() const;
+	const String::HashType& getId() const;
 
 	/** @return The DrawableResource Name. */
 	const std::string getName() const;
@@ -36,7 +36,7 @@ class EE_API DrawableResource : public Drawable {
 
   protected:
 	std::string mName;
-	Uint32 mId;
+	String::HashType mId;
 	Uint32 mNumCallBacks;
 	std::map<Uint32, OnResourceChangeCallback> mCallbacks;
 

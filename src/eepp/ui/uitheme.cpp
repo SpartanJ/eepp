@@ -275,7 +275,7 @@ void UITheme::setName( const std::string& name ) {
 	mNameHash = String::hash( mName );
 }
 
-const Uint32& UITheme::getId() const {
+const String::HashType& UITheme::getId() const {
 	return mNameHash;
 }
 

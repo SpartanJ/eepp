@@ -3,6 +3,10 @@
 namespace EE { namespace UI { namespace Doc {
 
 // Color schemes are compatible with the lite (https://github.com/rxi/lite) color schemes.
+// But I also added:
+// "line_number_background" (the gutter background color)
+// "indentation" (the indentation line color)
+// "line_break_column" (the right margin line column color)
 
 SyntaxColorScheme SyntaxColorScheme::getDefault() {
 	return {"lite-theme",
@@ -28,6 +32,7 @@ SyntaxColorScheme SyntaxColorScheme::getDefault() {
 				{"line_number2", Color( "#83838f" )},
 				{"line_number_background", Color( "#2e2e32" )},
 				{"indentation", Color( "#54575b" )},
+				{"line_break_column", Color( "#54575b99" )},
 			}};
 }
 

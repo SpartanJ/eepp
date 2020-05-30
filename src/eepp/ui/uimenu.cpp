@@ -511,6 +511,8 @@ Uint32 UIMenu::onKeyDown( const KeyEvent& Event ) {
 				}
 
 				break;
+			default:
+				break;
 		}
 	}
 

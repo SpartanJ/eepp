@@ -34,7 +34,7 @@ FrameBuffer* FrameBufferManager::getFromName( const std::string& name ) {
 	return getFromId( String::hash( name ) );
 }
 
-FrameBuffer* FrameBufferManager::getFromId( const Uint32& id ) {
+FrameBuffer* FrameBufferManager::getFromId( const String::HashType& id ) {
 	for ( auto& fb : mResources ) {
 		if ( fb->getId() == id ) {
 			return fb;

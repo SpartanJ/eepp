@@ -322,6 +322,7 @@
 ../../include/eepp/ui/doc/syntaxhighlighter.hpp
 ../../include/eepp/ui/doc/syntaxtokenizer.hpp
 ../../include/eepp/ui/doc/textdocument.hpp
+../../include/eepp/ui/doc/textdocumentline.hpp
 ../../include/eepp/ui/doc/textposition.hpp
 ../../include/eepp/ui/doc/textrange.hpp
 ../../include/eepp/ui/doc/undostack.hpp

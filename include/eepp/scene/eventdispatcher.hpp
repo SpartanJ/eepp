@@ -2,11 +2,13 @@
 #define EE_EVENTDISPATCHER_HPP
 
 #include <eepp/core.hpp>
-#include <eepp/system/time.hpp>
-using namespace EE::System;
 #include <eepp/math/vector2.hpp>
-using namespace EE::Math;
+#include <eepp/system/time.hpp>
+#include <eepp/window/keycodes.hpp>
 #include <vector>
+
+using namespace EE::System;
+using namespace EE::Math;
 
 namespace EE { namespace Window {
 class Input;
@@ -48,9 +50,9 @@ class EE_API EventDispatcher {
 
 	void sendTextInput( const Uint32& textChar, const Uint32& timestamp );
 
-	void sendKeyUp( const Uint32& KeyCode, const Uint32& Char, const Uint32& Mod );
+	void sendKeyUp( const Keycode& KeyCode, const Uint32& Char, const Uint32& Mod );
 
-	void sendKeyDown( const Uint32& KeyCode, const Uint32& Char, const Uint32& Mod );
+	void sendKeyDown( const Keycode& KeyCode, const Uint32& Char, const Uint32& Mod );
 
 	void sendMouseClick( Node* ToCtrl, const Vector2i& Pos, const Uint32 Flags );
 

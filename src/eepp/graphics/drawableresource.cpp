@@ -16,7 +16,7 @@ DrawableResource::~DrawableResource() {
 	sendEvent( Event::Unload );
 }
 
-const Uint32& DrawableResource::getId() const {
+const String::HashType& DrawableResource::getId() const {
 	return mId;
 }
 

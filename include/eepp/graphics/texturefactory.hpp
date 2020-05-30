@@ -243,7 +243,7 @@ class EE_API TextureFactory : protected Mutex {
 	 * @param Hash The file path hash
 	 * @return The texture, NULL if not exists
 	 */
-	Texture* getByHash( const Uint32& Hash );
+	Texture* getByHash( const String::HashType& hash );
 
 	~TextureFactory();
 

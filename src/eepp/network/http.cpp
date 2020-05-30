@@ -1378,7 +1378,7 @@ std::string Http::Pool::getHostKey( const URI& host, const URI& proxy ) {
 										   proxy.getSchemeAndAuthority().c_str() );
 }
 
-Uint32 Http::Pool::getHostHash( const URI& host, const URI& proxy ) {
+String::HashType Http::Pool::getHostHash( const URI& host, const URI& proxy ) {
 	return String::hash( Http::Pool::getHostKey( host, proxy ) );
 }
 

@@ -235,7 +235,7 @@ class EE_API PropertyDefinition {
 
 	const std::string& getName() const;
 
-	const Uint32& getId() const;
+	const String::HashType& getId() const;
 
 	PropertyId getPropertyId() const;
 
@@ -267,7 +267,7 @@ class EE_API PropertyDefinition {
 
   protected:
 	std::string mName;
-	Uint32 mId;
+	String::HashType mId;
 	std::vector<std::string> mAliases;
 	std::vector<Uint32> mAliasesHash;
 	std::string mDefaultValue;

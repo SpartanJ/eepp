@@ -37,7 +37,7 @@ class EE_API MapLayer {
 
 	const std::string& getName() const;
 
-	const Uint32& getId() const;
+	const String::HashType& getId() const;
 
 	void addProperty( std::string Text, std::string Value );
 
@@ -64,7 +64,7 @@ class EE_API MapLayer {
 	Uint32 mType;
 	Uint32 mFlags;
 	Vector2f mOffset;
-	Uint32 mNameHash;
+	String::HashType mNameHash;
 	std::string mName;
 	PropertiesMap mProperties;
 

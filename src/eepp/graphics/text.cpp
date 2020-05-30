@@ -1185,7 +1185,7 @@ Uint32 Text::getTotalVertices() {
 	size_t sl = mString.size();
 	size_t sv = sl * GLi->quadVertexs();
 
-	Uint32* c = &mString[0];
+	String::StringBaseType* c = &mString[0];
 	Uint32 skiped = 0;
 	bool lineHasChars = false;
 

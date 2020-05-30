@@ -25,7 +25,7 @@ const std::string& PropertyDefinition::getName() const {
 	return mName;
 }
 
-const Uint32& PropertyDefinition::getId() const {
+const String::HashType& PropertyDefinition::getId() const {
 	return mId;
 }
 
@@ -61,7 +61,7 @@ const PropertyType& PropertyDefinition::getType() const {
 }
 
 PropertyDefinition& PropertyDefinition::addAlias( const std::string& alias ) {
-	Uint32 aliasId = String::hash( alias );
+	String::HashType aliasId = String::hash( alias );
 	mAliases.push_back( alias );
 	mAliasesHash.push_back( aliasId );
 	PropertySpecification::instance()->addPropertyAlias( aliasId, this );

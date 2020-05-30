@@ -25,7 +25,7 @@ class EE_API PropertySpecification {
 											const std::vector<std::string>& properties,
 											const std::string& shorthandParserName );
 
-	const ShorthandDefinition* getShorthand( const Uint32& id ) const;
+	const ShorthandDefinition* getShorthand( const String::HashType& id ) const;
 
 	const ShorthandDefinition* getShorthand( const std::string& name ) const;
 

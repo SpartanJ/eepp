@@ -71,7 +71,7 @@ class EE_API TextureAtlas : public ResourceManager<TextureRegion> {
 	void setPath( const std::string& path );
 
 	/** @return The texture atlas Id. The Id is the String::hash of the texture atlas name. */
-	const Uint32& getId() const;
+	const String::HashType& getId() const;
 
 	/** @return The number of TextureRegions inside the texture atlas. */
 	Uint32 getCount();
@@ -94,7 +94,7 @@ class EE_API TextureAtlas : public ResourceManager<TextureRegion> {
 	friend class TextureAtlasLoader;
 
 	std::string mName;
-	Uint32 mId;
+	String::HashType mId;
 	std::string mPath;
 	std::vector<Texture*> mTextures;
 

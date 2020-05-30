@@ -336,6 +336,14 @@ bool Input::isAltPressed() const {
 	return ( mInputMod & KEYMOD_ALT ) != 0;
 }
 
+bool Input::isLeftAltPressed() const {
+	return ( mInputMod & KEYMOD_LALT ) != 0;
+}
+
+bool Input::isAltGrPressed() const {
+	return ( mInputMod & KEYMOD_RALT ) != 0;
+}
+
 bool Input::isMetaPressed() const {
 	return ( mInputMod & KEYMOD_META ) != 0;
 }

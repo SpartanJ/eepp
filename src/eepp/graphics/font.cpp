@@ -29,7 +29,7 @@ void Font::setName( const std::string& name ) {
 	mFontHash = String::hash( mFontName );
 }
 
-const Uint32& Font::getId() {
+const String::HashType& Font::getId() {
 	return mFontHash;
 }
 

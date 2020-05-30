@@ -3,25 +3,28 @@
 
 #include <eepp/core/string.hpp>
 #include <eepp/scene/event.hpp>
+#include <eepp/window/keycodes.hpp>
+
+using namespace EE::Window;
 
 namespace EE { namespace Scene {
 
 class EE_API KeyEvent : public Event {
   public:
-	KeyEvent( Node* node, const Uint32& eventNum, const Uint32& keyCode, const Uint32& chr,
+	KeyEvent( Node* node, const Uint32& eventNum, const Keycode& keyCode, const Uint32& chr,
 			  const Uint32& mod );
 
 	~KeyEvent();
 
-	const Uint32& getKeyCode() const;
+	const Keycode& getKeyCode() const;
 
-	const Uint32& getChar() const;
+	const String::StringBaseType& getChar() const;
 
 	const Uint32& getMod() const;
 
   protected:
-	Uint32 mKeyCode;
-	Uint32 mChar;
+	Keycode mKeyCode;
+	String::StringBaseType mChar;
 	Uint32 mMod;
 };
 
@@ -30,14 +33,14 @@ class EE_API TextInputEvent : public Event {
 	TextInputEvent( Node* node, const Uint32& eventNum, const Uint32& chr,
 					const Uint32& timestamp );
 
-	const Uint32& getChar() const;
+	const String::StringBaseType& getChar() const;
 
 	const Uint32& getTimestamp() const;
 
 	String getText() const;
 
   protected:
-	Uint32 mChar;
+	String::StringBaseType mChar;
 	Uint32 mTimestamp;
 };
 

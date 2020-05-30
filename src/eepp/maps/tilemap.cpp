@@ -184,7 +184,7 @@ MapLayer* TileMap::getLayer( Uint32 index ) {
 	return mLayers[index];
 }
 
-MapLayer* TileMap::getLayerByHash( Uint32 hash ) {
+MapLayer* TileMap::getLayerByHash( String::HashType hash ) {
 	for ( Uint32 i = 0; i < mLayerCount; i++ ) {
 		if ( mLayers[i]->getId() == hash )
 			return mLayers[i];

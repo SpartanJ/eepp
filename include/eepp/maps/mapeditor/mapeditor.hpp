@@ -199,7 +199,7 @@ class EE_API MapEditor {
 
 	void onObjectModeSel( const Event* Event );
 
-	void onNewGOTypeAdded( std::string name, Uint32 hash );
+	void onNewGOTypeAdded( std::string name, String::HashType hash );
 
 	void onAddObject( Uint32 Type, Polygon2f poly );
 
@@ -251,7 +251,7 @@ class EE_API MapEditor {
 
 	void updateScroll();
 
-	bool addShortcut( const Uint32& KeyCode, const Uint32& Mod, UIWidget* Widget );
+	bool addShortcut( const Keycode& KeyCode, const Uint32& Mod, UIWidget* Widget );
 };
 
 }} // namespace EE::Maps

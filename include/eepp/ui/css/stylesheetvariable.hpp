@@ -2,8 +2,8 @@
 #define EE_UI_CSS_STYLESHEETVARIABLE_HPP
 
 #include <eepp/config.hpp>
+#include <eepp/core/string.hpp>
 #include <map>
-#include <string>
 
 namespace EE { namespace UI { namespace CSS {
 
@@ -18,7 +18,7 @@ class EE_API StyleSheetVariable {
 
 	const std::string& getName() const;
 
-	const Uint32& getNameHash() const;
+	const String::HashType& getNameHash() const;
 
 	const std::string& getValue() const;
 
@@ -38,7 +38,7 @@ class EE_API StyleSheetVariable {
 
   protected:
 	std::string mName;
-	Uint32 mNameHash;
+	String::HashType mNameHash;
 	std::string mValue;
 	Uint32 mSpecificity;
 };

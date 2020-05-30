@@ -185,11 +185,11 @@ class EE_API InputTextBuffer {
 
 	void eraseToNextNoChar();
 
-	bool isIgnoredChar( const Uint32& c );
+	bool isIgnoredChar( const String::StringBaseType& c );
 
-	bool validChar( const Uint32& c );
+	bool validChar(const String::StringBaseType& c );
 
-	void tryAddChar( const Uint32& c );
+	void tryAddChar( const String::StringBaseType& c );
 
 	void shiftSelection( const int& lastPromtpPos );
 

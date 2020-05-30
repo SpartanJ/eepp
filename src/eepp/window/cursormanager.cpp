@@ -35,7 +35,7 @@ void CursorManager::remove( const std::string& name, bool Delete ) {
 	remove( String::hash( name ), Delete );
 }
 
-void CursorManager::remove( const Uint32& id, bool Delete ) {
+void CursorManager::remove( const String::HashType& id, bool Delete ) {
 	for ( CursorsList::iterator it = mCursors.begin(); it != mCursors.end(); ++it ) {
 		if ( ( *it )->getId() == id ) {
 			remove( ( *it ), Delete );
@@ -48,7 +48,7 @@ Cursor* CursorManager::get( const std::string& name ) {
 	return getById( String::hash( name ) );
 }
 
-Cursor* CursorManager::getById( const Uint32& id ) {
+Cursor* CursorManager::getById( const String::HashType& id ) {
 	for ( CursorsList::iterator it = mCursors.begin(); it != mCursors.end(); ++it ) {
 		if ( ( *it )->getId() == id ) {
 			return ( *it );
@@ -62,7 +62,7 @@ void CursorManager::set( const std::string& name ) {
 	setById( String::hash( name ) );
 }
 
-void CursorManager::setById( const Uint32& id ) {
+void CursorManager::setById( const String::HashType& id ) {
 	for ( CursorsList::iterator it = mCursors.begin(); it != mCursors.end(); ++it ) {
 		if ( ( *it )->getId() == id ) {
 			set( *it );

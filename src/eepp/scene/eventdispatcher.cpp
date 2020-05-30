@@ -176,7 +176,7 @@ void EventDispatcher::sendTextInput( const Uint32& textChar, const Uint32& times
 	}
 }
 
-void EventDispatcher::sendKeyUp( const Uint32& KeyCode, const Uint32& Char, const Uint32& Mod ) {
+void EventDispatcher::sendKeyUp( const Keycode& KeyCode, const Uint32& Char, const Uint32& Mod ) {
 	KeyEvent keyEvent = KeyEvent( mFocusNode, Event::KeyUp, KeyCode, Char, Mod );
 	Node* CtrlLoop = mFocusNode;
 
@@ -188,7 +188,7 @@ void EventDispatcher::sendKeyUp( const Uint32& KeyCode, const Uint32& Char, cons
 	}
 }
 
-void EventDispatcher::sendKeyDown( const Uint32& KeyCode, const Uint32& Char, const Uint32& Mod ) {
+void EventDispatcher::sendKeyDown( const Keycode& KeyCode, const Uint32& Char, const Uint32& Mod ) {
 	KeyEvent keyEvent = KeyEvent( mFocusNode, Event::KeyDown, KeyCode, Char, Mod );
 	Node* CtrlLoop = mFocusNode;
 

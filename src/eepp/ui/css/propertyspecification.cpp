@@ -64,7 +64,7 @@ PropertySpecification::registerShorthand( const std::string& name,
 	return *shorthandDef;
 }
 
-const ShorthandDefinition* PropertySpecification::getShorthand( const Uint32& id ) const {
+const ShorthandDefinition* PropertySpecification::getShorthand( const String::HashType& id ) const {
 	auto it = mShorthands.find( id );
 
 	if ( it != mShorthands.end() )

@@ -58,7 +58,7 @@ const std::string& MapLayer::getName() const {
 	return mName;
 }
 
-const Uint32& MapLayer::getId() const {
+const String::HashType& MapLayer::getId() const {
 	return mNameHash;
 }
 

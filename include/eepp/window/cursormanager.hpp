@@ -64,19 +64,19 @@ class EE_API CursorManager {
 	 * @param Delete Indicates if the cursor must be delete after being removed from the cursor
 	 * manager
 	 */
-	virtual void remove( const Uint32& id, bool Delete = false );
+	virtual void remove( const String::HashType& id, bool Delete = false );
 
 	/** @return The cursor pointer by its name */
 	virtual Cursor* get( const std::string& name );
 
 	/** @return The cursor pointer by its id */
-	virtual Cursor* getById( const Uint32& id );
+	virtual Cursor* getById( const String::HashType& id );
 
 	/** Set the the current cursor by its name */
 	virtual void set( const std::string& name );
 
 	/** Set the the current cursor by its id */
-	virtual void setById( const Uint32& id );
+	virtual void setById( const String::HashType& id );
 
 	/** Set the the current cursor by its cursor pointer */
 	virtual void set( Cursor* cursor ) = 0;

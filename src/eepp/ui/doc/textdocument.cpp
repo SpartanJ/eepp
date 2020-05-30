@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <eepp/core/debug.hpp>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/iostreamfile.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
 #include <sstream>
@@ -41,42 +42,106 @@ void TextDocument::reset() {
 	notifySelectionChanged();
 }
 
-void TextDocument::loadFromPath( const std::string& path ) {
-	if ( !FileSystem::fileExists( path ) ) {
-		eePRINTL( "File \"%s\" does not exists. Creating a new file.", path.c_str() );
-	}
+static String ptrGetLine( char* data, const size_t& size, size_t& position ) {
+	position = 0;
+	while ( position < size && data[position] != '\n' )
+		position++;
+	if ( position < size )
+		position++;
+	return String( data, position );
+}
+
+void TextDocument::loadFromStream( IOStream& file ) {
 	Clock clock;
 	reset();
 	mLines.clear();
-	mFilePath = path;
-	mSyntaxDefinition = SyntaxDefinitionManager::instance()->getStyleByExtension( path );
-	// TODO: Reimplement load without using getline, since the standard ignores the last \n and
-	// is inconsistent.
-	std::string line;
-	std::ifstream file( path );
-	while ( std::getline( file, line ) ) {
-		if ( mLines.empty() && line.size() >= 3 ) {
-			// Check UTF-8 BOM header
-			if ( (char)0xef == line[0] && (char)0xbb == line[1] && (char)0xbf == line[2] ) {
-				line = line.substr( 3 );
-				mIsBOM = true;
+	if ( file.isOpen() ) {
+		const size_t BLOCK_SIZE = EE_1MB;
+		size_t total = file.getSize();
+		size_t pending = total;
+		size_t blockSize = eemin( total, BLOCK_SIZE );
+		size_t read = 0;
+		String lineBuffer;
+		size_t position;
+		int consume;
+		char* bufferPtr;
+		TScopedBuffer<char> data( blockSize );
+		while ( pending ) {
+			read = file.read( data.get(), blockSize );
+			bufferPtr = data.get();
+			consume = read;
+
+			if ( pending == total ) {
+				// Check UTF-8 BOM header
+				if ( (char)0xef == data.get()[0] && (char)0xbb == data.get()[1] &&
+					 (char)0xbf == data.get()[2] ) {
+					bufferPtr += 3;
+					consume -= 3;
+					mIsBOM = true;
+				}
 			}
-		}
-		// Check CLRF
-		if ( !line.empty() && line[line.size() - 1] == '\r' ) {
-			line = line.substr( 0, line.size() - 1 );
-			mIsCLRF = true;
-		}
-		mLines.emplace_back( TextDocumentLine( line + "\n" ) );
+
+			while ( consume ) {
+				lineBuffer += ptrGetLine( bufferPtr, consume, position );
+				bufferPtr += position;
+				consume -= position;
+
+				if ( lineBuffer[lineBuffer.size() - 1] == '\n' || !consume ) {
+					if ( mLines.empty() && lineBuffer.size() > 1 &&
+						 lineBuffer[lineBuffer.size() - 2] == '\r' ) {
+						mIsCLRF = true;
+					}
+
+					if ( mIsCLRF && lineBuffer.size() > 1 ) {
+						lineBuffer[lineBuffer.size() - 2] = '\n';
+						lineBuffer.resize( lineBuffer.size() - 1 );
+					}
+
+					mLines.push_back( lineBuffer );
+					lineBuffer.resize( 0 );
+				}
+
+				if ( consume < 0 ) {
+					eeASSERT( !consume );
+					break;
+				}
+			}
+
+			if ( !mLines.empty() ) {
+				const String& lastLine = mLines[mLines.size() - 1].getText();
+				if ( lastLine[lastLine.size() - 1] == '\n' ) {
+					mLines.push_back( String( "\n" ) );
+				} else {
+					mLines[mLines.size() - 1].append( "\n" );
+				}
+			}
+
+			if ( !read )
+				break;
+			pending -= read;
+			blockSize = eemin( pending, BLOCK_SIZE );
+		};
 	}
 
-	if ( mLines.empty() ) {
-		mLines.emplace_back( TextDocumentLine( "\n" ) );
-	} else if ( mLines[mLines.size() - 1][mLines[mLines.size() - 1].size() - 1] != '\n' ) {
-		mLines[mLines.size() - 1].append( '\n' );
-	}
-	eePRINTL( "Document \"%s\" loaded in %.2fms.", path.c_str(),
+	eePRINTL( "Document \"%s\" loaded in %.2fms.",
+			  mFilePath.empty() ? "untitled" : mFilePath.c_str(),
 			  clock.getElapsedTime().asMilliseconds() );
+}
+
+void TextDocument::loadFromFile( const std::string& path ) {
+	if ( !FileSystem::fileExists( path ) ) {
+		eePRINTL( "File \"%s\" does not exists. Creating a new file.", path.c_str() );
+	}
+
+	if ( !FileSystem::fileExists( path ) ) {
+		mSyntaxDefinition = SyntaxDefinitionManager::instance()->getStyleByExtension( path );
+		return;
+	}
+
+	IOStreamFile file( path, "rb" );
+	loadFromStream( file );
+	mFilePath = path;
+	mSyntaxDefinition = SyntaxDefinitionManager::instance()->getStyleByExtension( path );
 }
 
 bool TextDocument::save( const std::string& path, const bool& utf8bom ) {
@@ -90,7 +155,7 @@ bool TextDocument::save( const std::string& path, const bool& utf8bom ) {
 	return false;
 }
 
-bool TextDocument::save( IOStreamFile& stream, const bool& utf8bom ) {
+bool TextDocument::save( IOStream& stream, const bool& utf8bom ) {
 	if ( !stream.isOpen() || mLines.empty() )
 		return false;
 	char nl = '\n';
@@ -100,17 +165,19 @@ bool TextDocument::save( IOStreamFile& stream, const bool& utf8bom ) {
 	}
 	size_t lastLine = mLines.size() - 1;
 	for ( size_t i = 0; i <= lastLine; i++ ) {
-		std::string utf8( mLines[i].toUtf8() );
-		if ( i == lastLine && utf8.size() > 1 && utf8[utf8.size() - 1] == '\n' ) {
+		std::string text( mLines[i].toUtf8() );
+		if ( i == lastLine && !text.empty() && text[text.size() - 1] == '\n' ) {
 			// Last \n is added by the document but it's not part of the document.
-			utf8.pop_back();
+			text.pop_back();
+			if ( text.empty() )
+				continue;
 		}
 		if ( mIsCLRF ) {
-			utf8[utf8.size() - 1] = '\r';
-			stream.write( utf8.c_str(), utf8.size() );
+			text[text.size() - 1] = '\r';
+			stream.write( text.c_str(), text.size() );
 			stream.write( &nl, 1 );
 		} else {
-			stream.write( utf8.c_str(), utf8.size() );
+			stream.write( text.c_str(), text.size() );
 		}
 	}
 	cleanChangeId();

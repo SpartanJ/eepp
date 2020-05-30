@@ -584,7 +584,7 @@ class EE_API Http : NonCopyable {
 
 		static std::string getHostKey( const URI& host, const URI& proxy );
 
-		static Uint32 getHostHash( const URI& host, const URI& proxy );
+		static String::HashType getHostHash( const URI& host, const URI& proxy );
 	};
 
 	/** Creates an HTTP Request using the global HTTP Client Pool */

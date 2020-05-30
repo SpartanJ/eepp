@@ -35,7 +35,7 @@ class EE_API Texture : public DrawableResource, public Image, private NonCopyabl
 	int getHandle() const { return mTexture; }
 
 	/** @return The hash of the filename */
-	const Uint32& getHashName() const;
+	const String::HashType& getHashName() const;
 
 	/** Set the Texture File Path */
 	void setFilepath( const std::string& filepath ) { mFilepath = filepath; }

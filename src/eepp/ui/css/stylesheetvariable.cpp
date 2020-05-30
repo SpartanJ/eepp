@@ -56,7 +56,7 @@ bool StyleSheetVariable::operator==( const StyleSheetVariable& variable ) {
 	return mNameHash == variable.mNameHash && mValue == variable.mValue;
 }
 
-const Uint32& StyleSheetVariable::getNameHash() const {
+const String::HashType& StyleSheetVariable::getNameHash() const {
 	return mNameHash;
 }
 

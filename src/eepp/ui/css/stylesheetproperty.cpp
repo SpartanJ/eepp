@@ -177,7 +177,7 @@ bool StyleSheetProperty::operator!=( const StyleSheetProperty& property ) const 
 	return mNameHash != property.mNameHash || mValueHash != property.mValueHash;
 }
 
-const Uint32& StyleSheetProperty::getNameHash() const {
+const String::HashType& StyleSheetProperty::getNameHash() const {
 	return mNameHash;
 }
 
@@ -654,7 +654,7 @@ Sizei StyleSheetProperty::asSizei( UINode* node, const Sizei& defaultValue ) con
 	return Sizei( asVector2i( node, defaultValue ) );
 }
 
-const Uint32& StyleSheetProperty::getValueHash() const {
+const String::HashType& StyleSheetProperty::getValueHash() const {
 	return mValueHash;
 }
 

@@ -22,7 +22,7 @@ class EE_API FrameBufferManager : public Container<FrameBuffer> {
 
 	FrameBuffer* getFromName( const std::string& name );
 
-	FrameBuffer* getFromId( const Uint32& id );
+	FrameBuffer* getFromId( const String::HashType& id );
 
   protected:
 	FrameBufferManager();

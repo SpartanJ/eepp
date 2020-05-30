@@ -55,7 +55,7 @@ class EE_API Cursor {
 	};
 
 	/** @return The cursor id */
-	const Uint32& getId() const;
+	const String::HashType& getId() const;
 
 	/** @return The cursor name */
 	const std::string& getName() const;
@@ -72,7 +72,7 @@ class EE_API Cursor {
   protected:
 	friend class CursorManager;
 
-	Uint32 mId;
+	String::HashType mId;
 	std::string mName;
 	Graphics::Image* mImage;
 	Vector2i mHotSpot;

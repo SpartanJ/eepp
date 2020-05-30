@@ -49,7 +49,7 @@ class EE_API StyleSheetProperty {
 
 	const std::string& getName() const;
 
-	const Uint32& getNameHash() const;
+	const String::HashType& getNameHash() const;
 
 	const std::string& getValue() const;
 
@@ -171,15 +171,15 @@ class EE_API StyleSheetProperty {
 
 	Sizei asSizei( UINode* node, const Sizei& defaultValue = Sizei::Zero ) const;
 
-	const Uint32& getValueHash() const;
+	const String::HashType& getValueHash() const;
 
 	const std::vector<VariableFunctionCache>& getVarCache() const;
 
   protected:
 	std::string mName;
-	Uint32 mNameHash;
+	String::HashType mNameHash;
 	std::string mValue;
-	Uint32 mValueHash;
+	String::HashType mValueHash;
 	Uint32 mSpecificity;
 	Uint32 mIndex;
 	bool mVolatile;

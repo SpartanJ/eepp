@@ -102,6 +102,13 @@ void UICodeEditor::draw() {
 			Sizef( mSize.getWidth(), lineHeight ) ) );
 	}
 
+	if ( mLineBreakingColumn ) {
+		Float lineBreakingOffset = start.x + getGlyphWidth() * mLineBreakingColumn;
+		primitives.setColor( mLineBreakColumnColor );
+		primitives.drawLine(
+			{{lineBreakingOffset, start.y}, {lineBreakingOffset, start.y + mSize.getHeight()}} );
+	}
+
 	if ( mDoc.hasSelection() ) {
 		drawSelection( lineRange, startScroll, lineHeight );
 	}
@@ -156,7 +163,7 @@ void UICodeEditor::reset() {
 }
 
 void UICodeEditor::loadFromFile( const std::string& path ) {
-	mDoc.loadFromPath( path );
+	mDoc.loadFromFile( path );
 	invalidateEditor();
 }
 
@@ -344,6 +351,7 @@ void UICodeEditor::updateColorScheme() {
 	mCurrentLineBackgroundColor = mColorScheme.getEditorColor( "line_highlight" );
 	mCaretColor = mColorScheme.getEditorColor( "caret" );
 	mIndentationGuideColor = mColorScheme.getEditorColor( "indentation" );
+	mLineBreakColumnColor = mColorScheme.getEditorColor( "line_break_column" );
 }
 
 void UICodeEditor::setColorScheme( const SyntaxColorScheme& colorScheme ) {
@@ -405,11 +413,11 @@ Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
 
 	if ( !cmd.empty() ) {
 		// Allow copy selection on locked mode
-		if ( !( mLocked && cmd != "copy" ) )
+		if ( !mLocked || mUnlockedCmd.find( cmd ) != mUnlockedCmd.end() )
 			mDoc.execute( cmd );
 	}
 
-	return 1;
+	return 0;
 }
 
 TextPosition UICodeEditor::resolveScreenPosition( const Vector2f& position ) const {
@@ -519,7 +527,6 @@ Uint32 UICodeEditor::onMouseLeave( const Vector2i& position, const Uint32& flags
 
 void UICodeEditor::onSizeChange() {
 	UIWidget::onSizeChange();
-	mScroll = {0, 0};
 	invalidateEditor();
 }
 
@@ -583,6 +590,11 @@ int UICodeEditor::getVisibleLinesCount() {
 }
 
 void UICodeEditor::scrollToMakeVisible( const TextPosition& position ) {
+	auto lineRange = getVisibleLineRange();
+
+	if ( position.line() >= lineRange.first && position.line() <= lineRange.second )
+		return;
+
 	// Vertical Scroll
 	Float lineHeight = getLineHeight();
 	Float min = eefloor( lineHeight * ( eemax<Float>( 0, position.line() - 1 ) ) );
@@ -687,31 +699,52 @@ void UICodeEditor::setKeyBindings( const KeyBindings& keyBindings ) {
 	mKeyBindings = keyBindings;
 }
 
-void UICodeEditor::addKeyBindingString( const std::string& shortcut, const std::string& command ) {
+void UICodeEditor::addKeyBindingString( const std::string& shortcut, const std::string& command,
+										const bool& allowLocked ) {
 	mKeyBindings.addKeybindString( shortcut, command );
+	if ( allowLocked )
+		mUnlockedCmd.insert( command );
 }
 
-void UICodeEditor::addKeyBinding( const KeyBindings::Shortcut& shortcut,
-								  const std::string& command ) {
+void UICodeEditor::addKeyBinding( const KeyBindings::Shortcut& shortcut, const std::string& command,
+								  const bool& allowLocked ) {
 	mKeyBindings.addKeybind( shortcut, command );
+	if ( allowLocked )
+		mUnlockedCmd.insert( command );
 }
 
-void UICodeEditor::replaceKeyBindingString( const std::string& shortcut,
-											const std::string& command ) {
+void UICodeEditor::replaceKeyBindingString( const std::string& shortcut, const std::string& command,
+											const bool& allowLocked ) {
 	mKeyBindings.replaceKeybindString( shortcut, command );
+	if ( allowLocked )
+		mUnlockedCmd.insert( command );
 }
 
 void UICodeEditor::replaceKeyBinding( const KeyBindings::Shortcut& shortcut,
-									  const std::string& command ) {
+									  const std::string& command, const bool& allowLocked ) {
 	mKeyBindings.replaceKeybind( shortcut, command );
+	if ( allowLocked )
+		mUnlockedCmd.insert( command );
 }
 
-void UICodeEditor::addKeybindsString( const std::map<std::string, std::string>& binds ) {
+void UICodeEditor::addKeybindsString( const std::map<std::string, std::string>& binds,
+									  const bool& allowLocked ) {
 	mKeyBindings.addKeybindsString( binds );
+	for ( auto bind : binds ) {
+		if ( allowLocked ) {
+			mUnlockedCmd.insert( bind.second );
+		}
+	}
 }
 
-void UICodeEditor::addKeybinds( const std::map<KeyBindings::Shortcut, std::string>& binds ) {
+void UICodeEditor::addKeybinds( const std::map<KeyBindings::Shortcut, std::string>& binds,
+								const bool& allowLocked ) {
 	mKeyBindings.addKeybinds( binds );
+	for ( auto bind : binds ) {
+		if ( allowLocked ) {
+			mUnlockedCmd.insert( bind.second );
+		}
+	}
 }
 
 const bool& UICodeEditor::getHighlightCurrentLine() const {
@@ -723,6 +756,21 @@ void UICodeEditor::setHighlightCurrentLine( const bool& highlightCurrentLine ) {
 		mHighlightCurrentLine = highlightCurrentLine;
 		invalidateDraw();
 	}
+}
+
+const Uint32& UICodeEditor::getLineBreakingColumn() const {
+	return mLineBreakingColumn;
+}
+
+void UICodeEditor::setLineBreakingColumn( const Uint32& lineBreakingColumn ) {
+	if ( lineBreakingColumn != mLineBreakingColumn ) {
+		mLineBreakingColumn = lineBreakingColumn;
+		invalidateDraw();
+	}
+}
+
+void UICodeEditor::addUnlockedCommand( const std::string& command ) {
+	mUnlockedCmd.insert( command );
 }
 
 Int64 UICodeEditor::getColFromXOffset( Int64 lineNumber, const Float& x ) const {
@@ -974,11 +1022,16 @@ void UICodeEditor::registerCommands() {
 	mDoc.setCommand( "font-size-grow", [&] { fontSizeGrow(); } );
 	mDoc.setCommand( "font-size-shrink", [&] { fontSizeShrink(); } );
 	mDoc.setCommand( "font-size-reset", [&] { fontSizeReset(); } );
+	mDoc.setCommand( "lock", [&] { setLocked( true ); } );
+	mDoc.setCommand( "unlock", [&] { setLocked( false ); } );
+	mDoc.setCommand( "lock-toggle", [&] { setLocked( !isLocked() ); } );
+	mUnlockedCmd.insert( {"copy", "select-all"} );
 }
 
 void UICodeEditor::registerKeybindings() {
 	mKeyBindings.addKeybinds( {
 		{{KEY_BACKSPACE, KEYMOD_CTRL}, "delete-to-previous-word"},
+		{{KEY_BACKSPACE, KEYMOD_SHIFT}, "delete-to-previous-char"},
 		{{KEY_BACKSPACE, 0}, "delete-to-previous-char"},
 		{{KEY_DELETE, KEYMOD_CTRL}, "delete-to-next-word"},
 		{{KEY_DELETE, 0}, "delete-to-next-char"},

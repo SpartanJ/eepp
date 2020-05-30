@@ -51,7 +51,7 @@ class EE_API UITheme : protected ResourceManagerMulti<UISkin> {
 
 	void setName( const std::string& name );
 
-	const Uint32& getId() const;
+	const String::HashType& getId() const;
 
 	const std::string& getAbbr() const;
 
@@ -77,7 +77,7 @@ class EE_API UITheme : protected ResourceManagerMulti<UISkin> {
 
   protected:
 	std::string mName;
-	Uint32 mNameHash;
+	String::HashType mNameHash;
 	std::string mAbbr;
 	Graphics::TextureAtlas* mTextureAtlas;
 	Font* mDefaultFont;

@@ -1,18 +1,16 @@
 #include <algorithm>
 #include <cctype>
-#include <crc/CRC.h>
 #include <cstdarg>
 #include <eepp/core/string.hpp>
 #include <eepp/core/utf.hpp>
+#include <functional>
 #include <iterator>
-
-static CRC::Table<std::uint32_t, 32> CRC_TABLE( CRC::CRC_32() );
 
 namespace EE {
 
 const std::size_t String::InvalidPos = StringType::npos;
 
-constexpr Uint32 String::hash( const Uint8* str ) {
+constexpr String::HashType String::hash( const Uint8* str ) {
 	//! djb2
 	if ( NULL != str ) {
 		Uint32 hash = 5381;
@@ -27,12 +25,12 @@ constexpr Uint32 String::hash( const Uint8* str ) {
 	return 0;
 }
 
-Uint32 String::hash( const std::string& str ) {
+String::HashType String::hash( const std::string& str ) {
 	return String::hash( str.c_str() );
 }
 
-Uint32 String::hash( const String& str ) {
-	return CRC::Calculate( (void*)str.c_str(), sizeof( StringBaseType ) * str.size(), CRC_TABLE );
+String::HashType String::hash( const String& str ) {
+	return std::hash<std::u32string>{}( str.mString );
 }
 
 bool String::isCharacter( const int& value ) {
@@ -489,6 +487,16 @@ String::String( const char* utf8String ) {
 	}
 }
 
+String::String( const char* utf8String, const size_t& utf8StringSize ) {
+	if ( utf8String ) {
+		if ( utf8StringSize > 0 ) {
+			mString.reserve( utf8StringSize + 1 );
+
+			Utf8::toUtf32( utf8String, utf8String + utf8StringSize, std::back_inserter( mString ) );
+		}
+	}
+}
+
 String::String( const std::string& utf8String ) {
 	mString.reserve( utf8String.length() + 1 );
 
@@ -597,7 +605,7 @@ std::basic_string<Uint16> String::toUtf16() const {
 	return output;
 }
 
-Uint32 String::getHash() const {
+String::HashType String::getHash() const {
 	return String::hash( *this );
 }
 

@@ -129,21 +129,34 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void setKeyBindings( const KeyBindings& keyBindings );
 
-	void addKeyBindingString( const std::string& shortcut, const std::string& command );
+	void addKeyBindingString( const std::string& shortcut, const std::string& command,
+							  const bool& allowLocked = false );
 
-	void addKeyBinding( const KeyBindings::Shortcut& shortcut, const std::string& command );
+	void addKeyBinding( const KeyBindings::Shortcut& shortcut, const std::string& command,
+						const bool& allowLocked = false );
 
-	void replaceKeyBindingString( const std::string& shortcut, const std::string& command );
+	void replaceKeyBindingString( const std::string& shortcut, const std::string& command,
+								  const bool& allowLocked = false );
 
-	void replaceKeyBinding( const KeyBindings::Shortcut& shortcut, const std::string& command );
+	void replaceKeyBinding( const KeyBindings::Shortcut& shortcut, const std::string& command,
+							const bool& allowLocked = false );
 
-	void addKeybindsString( const std::map<std::string, std::string>& binds );
+	void addKeybindsString( const std::map<std::string, std::string>& binds,
+							const bool& allowLocked = false );
 
-	void addKeybinds( const std::map<KeyBindings::Shortcut, std::string>& binds );
+	void addKeybinds( const std::map<KeyBindings::Shortcut, std::string>& binds,
+					  const bool& allowLocked = false );
 
 	const bool& getHighlightCurrentLine() const;
 
 	void setHighlightCurrentLine( const bool& highlightCurrentLine );
+
+	const Uint32& getLineBreakingColumn() const;
+
+	/** Set to 0 to hide. */
+	void setLineBreakingColumn( const Uint32& lineBreakingColumn );
+
+	void addUnlockedCommand( const std::string& command );
 
   protected:
 	struct LastXOffset {
@@ -175,12 +188,15 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Color mCurrentLineBackgroundColor;
 	Color mCaretColor;
 	Color mIndentationGuideColor;
+	Color mLineBreakColumnColor;
 	SyntaxColorScheme mColorScheme;
 	SyntaxHighlighter mHighlighter;
 	UIScrollBar* mVScrollBar;
 	LastXOffset mLastXOffset{{0, 0}, 0.f};
 	KeyBindings mKeyBindings;
+	std::unordered_set<std::string> mUnlockedCmd;
 	Clock mLastDoubleClick;
+	Uint32 mLineBreakingColumn{100};
 
 	void updateColorScheme();
 

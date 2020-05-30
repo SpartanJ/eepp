@@ -117,7 +117,7 @@ class EE_API ShaderProgram {
 	const Uint32& getHandler() const { return mHandler; }
 
 	/** @return The Id of the program ( hash of the program name ) */
-	const Uint32& getId() const { return mId; }
+	const String::HashType& getId() const { return mId; }
 
 	/** Reloads the shaders */
 	void reload();
@@ -146,7 +146,7 @@ class EE_API ShaderProgram {
   protected:
 	std::string mName;
 	Uint32 mHandler;
-	Uint32 mId;
+	String::HashType mId;
 
 	bool mValid;
 	std::string mLinkLog;

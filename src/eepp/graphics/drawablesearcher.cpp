@@ -31,7 +31,7 @@ static Drawable* getSprite( const std::string& sprite ) {
 }
 
 static Drawable* searchByNameInternal( const std::string& name ) {
-	Uint32 id = String::hash( name );
+	String::HashType id = String::hash( name );
 	Drawable* drawable = TextureAtlasManager::instance()->getTextureRegionById( id );
 
 	if ( NULL == drawable ) {

@@ -326,13 +326,13 @@ Texture* TextureFactory::getByName( const std::string& Name ) {
 	return getByHash( String::hash( Name ) );
 }
 
-Texture* TextureFactory::getByHash( const Uint32& Hash ) {
+Texture* TextureFactory::getByHash( const String::HashType& hash ) {
 	Texture* tTex = NULL;
 
 	for ( Uint32 i = (Uint32)mTextures.size() - 1; i > 0; i-- ) {
 		tTex = mTextures[i];
 
-		if ( NULL != tTex && tTex->getHashName() == Hash )
+		if ( NULL != tTex && tTex->getHashName() == hash )
 			return mTextures[i];
 	}
 

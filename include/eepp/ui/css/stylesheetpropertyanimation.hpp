@@ -20,7 +20,7 @@ enum class AnimationOrigin : uint8_t { User, Animation, Transition };
 
 class EE_API StyleSheetPropertyAnimation : public Action {
   public:
-	static constexpr Uint32 ID = String::hash( "StyleSheetPropertyAnimation" );
+	static constexpr String::HashType ID = String::hash( "StyleSheetPropertyAnimation" );
 
 	static void tweenProperty( UIWidget* widget, const Float& normalizedProgress,
 							   const PropertyDefinition* property, const std::string& startValue,

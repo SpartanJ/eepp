@@ -93,9 +93,9 @@ class InputEvent {
 	/** Keyboard text editing event */
 	struct TextInputEvent {
 		Uint32 timestamp;
-		Uint32 text;
+		String::StringBaseType text;
 
-		String getText() { return String( text ); }
+		String getText() { return String( (String::StringBaseType)text ); }
 	};
 
 	/** Joystick axis motion event structure */

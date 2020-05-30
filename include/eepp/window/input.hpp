@@ -98,8 +98,14 @@ class EE_API Input {
 	/** @return If the Shift Key is pressed */
 	bool isShiftPressed() const;
 
-	/** @return If the Alt Key is pressed */
+	/** @return If any Alt Key is pressed */
 	bool isAltPressed() const;
+
+	/** @return If the left Alt Key is pressed */
+	bool isLeftAltPressed() const;
+
+	/** @return If the left Alt Key is pressed */
+	bool isAltGrPressed() const;
 
 	/** @return If the Meta Key is pressed */
 	bool isMetaPressed() const;

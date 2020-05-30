@@ -43,7 +43,7 @@ class EE_API StyleSheet {
 
 	const KeyframesDefinitionMap& getKeyframes() const;
 
-	static size_t NodeHash( const std::string& tag, const std::string& id );
+	static size_t nodeHash( const std::string& tag, const std::string& id );
 
   protected:
 	std::vector<std::shared_ptr<StyleSheetStyle>> mNodes;

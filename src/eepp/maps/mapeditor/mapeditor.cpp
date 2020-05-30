@@ -93,7 +93,7 @@ void MapEditor::createME() {
 	createUIMap();
 }
 
-bool MapEditor::addShortcut( const Uint32& KeyCode, const Uint32& Mod, UIWidget* Widget ) {
+bool MapEditor::addShortcut( const Keycode& KeyCode, const Uint32& Mod, UIWidget* Widget ) {
 	if ( NULL != mUIWindow ) {
 		return mUIWindow->addShortcut( KeyCode, Mod, Widget );
 	} else {
@@ -264,7 +264,7 @@ void MapEditor::createTabs() {
 	mTabWidget->add( "Objects", mObjectCont );
 }
 
-void MapEditor::onTabSelected( const Event* Event ) {
+void MapEditor::onTabSelected( const Event* ) {
 	if ( NULL != mUIMap ) {
 		switch ( mTabWidget->getSelectedTabIndex() ) {
 			case 0:
@@ -736,14 +736,14 @@ void MapEditor::onAddObject( Uint32 Type, Polygon2f poly ) {
 	}
 }
 
-void MapEditor::onLightTypeChange( const Event* Event ) {
+void MapEditor::onLightTypeChange( const Event* ) {
 	if ( NULL != mUIMap->getSelectedLight() ) {
 		mUIMap->getSelectedLight()->setType( mLightTypeChk->isChecked() ? MapLightType::Isometric
 																		: MapLightType::Normal );
 	}
 }
 
-void MapEditor::onLightRadiusChangeVal( const Event* Event ) {
+void MapEditor::onLightRadiusChangeVal( const Event* ) {
 	if ( NULL != mUIMap->getSelectedLight() ) {
 		mUIMap->getSelectedLight()->setRadius( mLightRadius->getValue() );
 	}
@@ -775,7 +775,7 @@ void MapEditor::onNewLight( const Event* Event ) {
 	}
 }
 
-void MapEditor::onRedChange( const Event* Event ) {
+void MapEditor::onRedChange( const Event* ) {
 	Color Col = mUIBaseColor->getBackgroundColor();
 	Col.r = (Uint8)mUIRedSlider->getValue();
 	mUIBaseColor->setBackgroundColor( Col );
@@ -788,7 +788,7 @@ void MapEditor::onRedChange( const Event* Event ) {
 	}
 }
 
-void MapEditor::onGreenChange( const Event* Event ) {
+void MapEditor::onGreenChange( const Event* ) {
 	Color Col = mUIBaseColor->getBackgroundColor();
 	Col.g = (Uint8)mUIGreenSlider->getValue();
 	mUIBaseColor->setBackgroundColor( Col );
@@ -801,7 +801,7 @@ void MapEditor::onGreenChange( const Event* Event ) {
 	}
 }
 
-void MapEditor::onBlueChange( const Event* Event ) {
+void MapEditor::onBlueChange( const Event* ) {
 	Color Col = mUIBaseColor->getBackgroundColor();
 	Col.b = (Uint8)mUIBlueSlider->getValue();
 	mUIBaseColor->setBackgroundColor( Col );
@@ -814,7 +814,7 @@ void MapEditor::onBlueChange( const Event* Event ) {
 	}
 }
 
-void MapEditor::chkClickDI( const Event* Event ) {
+void MapEditor::chkClickDI( const Event* ) {
 	if ( mChkDI->isChecked() ) {
 		mSGCont->setEnabled( false );
 		mSGCont->setVisible( false );
@@ -828,7 +828,7 @@ void MapEditor::chkClickDI( const Event* Event ) {
 	}
 }
 
-void MapEditor::chkClickClampToTile( const Event* Event ) {
+void MapEditor::chkClickClampToTile( const Event* ) {
 	if ( NULL != mUIMap )
 		mUIMap->setClampToTile( mChkClampToTile->isChecked() );
 }
@@ -874,7 +874,7 @@ void MapEditor::updateFlags() {
 		mCurGOFlags |= GObjFlags::GAMEOBJECT_BLEND_ADD;
 }
 
-void MapEditor::onTypeChange( const Event* Event ) {
+void MapEditor::onTypeChange( const Event* ) {
 	if ( mGOTypeList->getText() == "TextureRegion" )
 		mCurGOType = GAMEOBJECT_TYPE_TEXTUREREGION;
 	else if ( mGOTypeList->getText() == "TextureRegionEx" )
@@ -893,30 +893,30 @@ void MapEditor::onTypeChange( const Event* Event ) {
 	}
 }
 
-void MapEditor::chkClickMirrored( const Event* Event ) {
+void MapEditor::chkClickMirrored( const Event* ) {
 	updateGfx();
 	updateFlags();
 }
 
-void MapEditor::chkClickFlipped( const Event* Event ) {
+void MapEditor::chkClickFlipped( const Event* ) {
 	updateGfx();
 	updateFlags();
 }
 
-void MapEditor::chkClickRot90( const Event* Event ) {
+void MapEditor::chkClickRot90( const Event* ) {
 	updateGfx();
 	updateFlags();
 }
 
-void MapEditor::chkClickBlocked( const Event* Event ) {
+void MapEditor::chkClickBlocked( const Event* ) {
 	updateFlags();
 }
 
-void MapEditor::chkClickAutoFix( const Event* Event ) {
+void MapEditor::chkClickAutoFix( const Event* ) {
 	updateFlags();
 }
 
-void MapEditor::chkClickAnimated( const Event* Event ) {
+void MapEditor::chkClickAnimated( const Event* ) {
 	updateFlags();
 
 	if ( mChkAnim->isChecked() && ( mGOTypeList->getText() == "TextureRegion" ||
@@ -925,11 +925,11 @@ void MapEditor::chkClickAnimated( const Event* Event ) {
 	}
 }
 
-void MapEditor::addNewGOType( const Event* Event ) {
+void MapEditor::addNewGOType( const Event* ) {
 	eeNew( UIGOTypeNew, ( cb::Make2( this, &MapEditor::onNewGOTypeAdded ) ) );
 }
 
-void MapEditor::onNewGOTypeAdded( std::string name, Uint32 hash ) {
+void MapEditor::onNewGOTypeAdded( std::string name, String::HashType ) {
 	if ( "" != name ) {
 		for ( Uint32 i = 0; i < mGOTypeList->getListBox()->getCount(); i++ ) {
 			UIListBoxItem* Item = mGOTypeList->getListBox()->getItem( i );
@@ -997,7 +997,7 @@ void MapEditor::fillTextureRegionList() {
 		8.f / (Float)mTextureRegionList->getCount() );
 }
 
-void MapEditor::onTextureRegionChange( const Event* Event ) {
+void MapEditor::onTextureRegionChange( const Event* ) {
 	if ( NULL != mCurSG ) {
 		TextureRegion* tTextureRegion =
 			mCurSG->getByName( mTextureRegionList->getItemSelectedText() );
@@ -1008,7 +1008,7 @@ void MapEditor::onTextureRegionChange( const Event* Event ) {
 	}
 }
 
-void MapEditor::onTextureAtlasChange( const Event* Event ) {
+void MapEditor::onTextureAtlasChange( const Event* ) {
 	fillTextureRegionList();
 }
 
@@ -1039,7 +1039,7 @@ void MapEditor::mapCreated() {
 	createTabs();
 }
 
-void MapEditor::onMapSizeChange( const Event* Event ) {
+void MapEditor::onMapSizeChange( const Event* ) {
 	if ( mMouseScrolling )
 		return;
 
@@ -1064,14 +1064,14 @@ void MapEditor::onMapSizeChange( const Event* Event ) {
 	mMapVScroll->setPageStep( v.y / s.y * m.y );
 }
 
-void MapEditor::onScrollMapH( const Event* Event ) {
+void MapEditor::onScrollMapH( const Event* ) {
 	if ( mMouseScrolling )
 		return;
 
 	mUIMap->Map()->setOffset( Vector2f( -mMapHScroll->getValue(), -mMapVScroll->getValue() ) );
 }
 
-void MapEditor::onScrollMapV( const Event* Event ) {
+void MapEditor::onScrollMapV( const Event* ) {
 	mUIMap->Map()->setOffset( Vector2f( -mMapHScroll->getValue(), -mMapVScroll->getValue() ) );
 }
 
@@ -1159,7 +1159,7 @@ void MapEditor::fileMenuClick( const Event* Event ) {
 	}
 }
 
-void MapEditor::onMapClose( const Event* Event ) {
+void MapEditor::onMapClose( const Event* ) {
 	createNewEmptyMap();
 
 	mapCreated();
@@ -1414,7 +1414,7 @@ void MapEditor::onLayerAdd( UIMapLayerNew* UILayer ) {
 	}
 }
 
-void MapEditor::onLayerSelect( const Event* Event ) {
+void MapEditor::onLayerSelect( const Event* ) {
 	MapLayer* tLayer = mUIMap->Map()->getLayer( mLayerList->getText() );
 
 	if ( NULL != tLayer ) {
@@ -1428,7 +1428,7 @@ void MapEditor::onLayerSelect( const Event* Event ) {
 	}
 }
 
-void MapEditor::windowClose( const Event* Event ) {
+void MapEditor::windowClose( const Event* ) {
 	if ( mCloseCb )
 		mCloseCb();
 

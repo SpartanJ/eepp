@@ -29,7 +29,7 @@ void TextureAtlas::setPath( const std::string& path ) {
 	mPath = path;
 }
 
-const Uint32& TextureAtlas::getId() const {
+const String::HashType& TextureAtlas::getId() const {
 	return mId;
 }
 

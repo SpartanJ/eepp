@@ -80,9 +80,9 @@ class EE_API UISceneNode : public SceneNode {
 
 	UIWidget* getRoot() const;
 
-	bool addShortcut( const Uint32& KeyCode, const Uint32& Mod, UIWidget* Widget );
+	bool addShortcut( const Keycode& KeyCode, const Uint32& Mod, UIWidget* Widget );
 
-	bool removeShortcut( const Uint32& KeyCode, const Uint32& Mod );
+	bool removeShortcut( const Keycode& KeyCode, const Uint32& Mod );
 
 	bool getVerbose() const;
 

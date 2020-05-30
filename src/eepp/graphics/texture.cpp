@@ -598,7 +598,7 @@ void Texture::replace( Image* image ) {
 	onResourceChange();
 }
 
-const Uint32& Texture::getHashName() const {
+const String::HashType& Texture::getHashName() const {
 	return mId;
 }
 

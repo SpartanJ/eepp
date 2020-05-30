@@ -778,8 +778,9 @@ void UISceneNode::checkShortcuts( const Uint32& KeyCode, const Uint32& Mod ) {
 }
 
 UIKeyboardShortcuts::iterator UISceneNode::existsShortcut( const Uint32& KeyCode,
-														 const Uint32& Mod ) {
-	for ( UIKeyboardShortcuts::iterator it = mKbShortcuts.begin(); it != mKbShortcuts.end(); ++it ) {
+														   const Uint32& Mod ) {
+	for ( UIKeyboardShortcuts::iterator it = mKbShortcuts.begin(); it != mKbShortcuts.end();
+		  ++it ) {
 		if ( it->KeyCode == KeyCode && it->Mod == Mod )
 			return it;
 	}
@@ -787,7 +788,7 @@ UIKeyboardShortcuts::iterator UISceneNode::existsShortcut( const Uint32& KeyCode
 	return mKbShortcuts.end();
 }
 
-bool UISceneNode::addShortcut( const Uint32& KeyCode, const Uint32& Mod, UIWidget* Widget ) {
+bool UISceneNode::addShortcut( const Keycode& KeyCode, const Uint32& Mod, UIWidget* Widget ) {
 	if ( inParentTreeOf( Widget ) && mKbShortcuts.end() == existsShortcut( KeyCode, Mod ) ) {
 		mKbShortcuts.push_back( UIKeyShortcut( KeyCode, Mod, Widget ) );
 
@@ -797,7 +798,7 @@ bool UISceneNode::addShortcut( const Uint32& KeyCode, const Uint32& Mod, UIWidge
 	return false;
 }
 
-bool UISceneNode::removeShortcut( const Uint32& KeyCode, const Uint32& Mod ) {
+bool UISceneNode::removeShortcut( const Keycode& KeyCode, const Uint32& Mod ) {
 	UIKeyboardShortcuts::iterator it = existsShortcut( KeyCode, Mod );
 
 	if ( mKbShortcuts.end() != it ) {
