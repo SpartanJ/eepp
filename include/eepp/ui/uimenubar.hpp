@@ -1,5 +1,5 @@
-#ifndef EE_UICUIWINMENU_HPP
-#define EE_UICUIWINMENU_HPP
+#ifndef EE_UI_UIMENUBAR_HPP
+#define EE_UI_UIMENUBAR_HPP
 
 #include <eepp/ui/base.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
@@ -8,13 +8,13 @@
 
 namespace EE { namespace UI {
 
-class EE_API UIWinMenu : public UIWidget {
+class EE_API UIMenuBar : public UIWidget {
   public:
-	static UIWinMenu* New();
+	static UIMenuBar* New();
 
-	UIWinMenu();
+	UIMenuBar();
 
-	virtual ~UIWinMenu();
+	virtual ~UIMenuBar();
 
 	virtual Uint32 getType() const;
 
@@ -39,11 +39,11 @@ class EE_API UIWinMenu : public UIWidget {
 	virtual void loadFromXmlNode( const pugi::xml_node& node );
 
   protected:
-	typedef std::list<std::pair<UISelectButton*, UIPopUpMenu*>> WinMenuList;
+	typedef std::list<std::pair<UISelectButton*, UIPopUpMenu*>> MenuBarList;
 
 	Uint32 mMenuHeight;
 	UIPopUpMenu* mCurrentMenu;
-	WinMenuList mButtons;
+	MenuBarList mButtons;
 
 	void refreshButtons();
 

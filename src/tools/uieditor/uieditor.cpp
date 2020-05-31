@@ -45,7 +45,7 @@ UIMessageBox* MsgBox = NULL;
 efsw::FileWatcher* fileWatcher = NULL;
 UITheme* theme = NULL;
 UIWindow* uiContainer = NULL;
-UIWinMenu* uiWinMenu = NULL;
+UIMenuBar* uiMenuBar = NULL;
 UISceneNode* uiSceneNode = NULL;
 UISceneNode* appUiSceneNode = NULL;
 std::string currentLayout;
@@ -321,10 +321,10 @@ void onRecentFilesClick( const Event* event ) {
 void updateRecentFiles() {
 	SceneManager::instance()->setCurrentUISceneNode( appUiSceneNode );
 
-	if ( NULL == uiWinMenu )
+	if ( NULL == uiMenuBar )
 		return;
 
-	UIPopUpMenu* fileMenu = uiWinMenu->getPopUpMenu( "File" );
+	UIPopUpMenu* fileMenu = uiMenuBar->getPopUpMenu( "File" );
 
 	UINode* node = NULL;
 
@@ -352,10 +352,10 @@ void updateRecentFiles() {
 void updateRecentProjects() {
 	SceneManager::instance()->setCurrentUISceneNode( appUiSceneNode );
 
-	if ( NULL == uiWinMenu )
+	if ( NULL == uiMenuBar )
 		return;
 
-	UIPopUpMenu* fileMenu = uiWinMenu->getPopUpMenu( "File" );
+	UIPopUpMenu* fileMenu = uiMenuBar->getPopUpMenu( "File" );
 
 	UINode* node = NULL;
 
@@ -456,7 +456,7 @@ void onLayoutSelected( const Event* event ) {
 
 	UIPopUpMenu* uiLayoutsMenu;
 
-	if ( ( uiLayoutsMenu = uiWinMenu->getPopUpMenu( "Layouts" ) ) &&
+	if ( ( uiLayoutsMenu = uiMenuBar->getPopUpMenu( "Layouts" ) ) &&
 		 uiLayoutsMenu->getCount() > 0 ) {
 		for ( size_t i = 0; i < uiLayoutsMenu->getCount(); i++ ) {
 			UIMenuCheckBox* menuItem = static_cast<UIMenuCheckBox*>( uiLayoutsMenu->getItem( i ) );
@@ -475,7 +475,7 @@ void onLayoutSelected( const Event* event ) {
 }
 
 void refreshLayoutList() {
-	if ( NULL == uiWinMenu )
+	if ( NULL == uiMenuBar )
 		return;
 
 	SceneManager::instance()->setCurrentUISceneNode( appUiSceneNode );
@@ -483,14 +483,14 @@ void refreshLayoutList() {
 	if ( layouts.size() > 0 ) {
 		UIPopUpMenu* uiLayoutsMenu = NULL;
 
-		if ( uiWinMenu->getButton( "Layouts" ) == NULL ) {
+		if ( uiMenuBar->getButton( "Layouts" ) == NULL ) {
 			uiLayoutsMenu = UIPopUpMenu::New();
 
-			uiWinMenu->addMenuButton( "Layouts", uiLayoutsMenu );
+			uiMenuBar->addMenuButton( "Layouts", uiLayoutsMenu );
 
 			uiLayoutsMenu->addEventListener( Event::OnItemClicked, cb::Make1( &onLayoutSelected ) );
 		} else {
-			uiLayoutsMenu = uiWinMenu->getPopUpMenu( "Layouts" );
+			uiLayoutsMenu = uiMenuBar->getPopUpMenu( "Layouts" );
 		}
 
 		uiLayoutsMenu->removeAll();
@@ -501,8 +501,8 @@ void refreshLayoutList() {
 
 			chk->setActive( currentLayout == it->second );
 		}
-	} else if ( uiWinMenu->getButton( "Layouts" ) != NULL ) {
-		uiWinMenu->removeMenuButton( "Layouts" );
+	} else if ( uiMenuBar->getButton( "Layouts" ) != NULL ) {
+		uiMenuBar->removeMenuButton( "Layouts" );
 	}
 
 	SceneManager::instance()->setCurrentUISceneNode( uiSceneNode );
@@ -778,13 +778,13 @@ void mainLoop() {
 		mousePos = window->getInput()->getMousePos();
 		mouseClock.restart();
 
-		if ( uiWinMenu->getAlpha() != 255 && uiWinMenu->getActionManager()->isEmpty() ) {
-			uiWinMenu->runAction(
-				Actions::Fade::New( uiWinMenu->getAlpha(), 255, Milliseconds( 250 ) ) );
+		if ( uiMenuBar->getAlpha() != 255 && uiMenuBar->getActionManager()->isEmpty() ) {
+			uiMenuBar->runAction(
+				Actions::Fade::New( uiMenuBar->getAlpha(), 255, Milliseconds( 250 ) ) );
 		}
 	} else if ( mouseClock.getElapsedTime() > Seconds( 1 ) ) {
-		if ( uiWinMenu->getAlpha() == 255 && uiWinMenu->getActionManager()->isEmpty() ) {
-			uiWinMenu->runAction( Actions::Fade::New( 255, 0, Milliseconds( 250 ) ) );
+		if ( uiMenuBar->getAlpha() == 255 && uiMenuBar->getActionManager()->isEmpty() ) {
+			uiMenuBar->runAction( Actions::Fade::New( 255, 0, Milliseconds( 250 ) ) );
 		}
 	}
 
@@ -894,7 +894,7 @@ void fileMenuClick( const Event* event ) {
 void createAppMenu() {
 	SceneManager::instance()->setCurrentUISceneNode( appUiSceneNode );
 
-	uiWinMenu = UIWinMenu::New();
+	uiMenuBar = UIMenuBar::New();
 
 	UIPopUpMenu* uiPopMenu = UIPopUpMenu::New();
 	uiPopMenu->add( "Open project...", theme->getIconByName( "document-open" ) );
@@ -907,7 +907,7 @@ void createAppMenu() {
 	uiPopMenu->add( "Close", theme->getIconByName( "document-close" ) );
 	uiPopMenu->addSeparator();
 	uiPopMenu->add( "Quit", theme->getIconByName( "quit" ) );
-	uiWinMenu->addMenuButton( "File", uiPopMenu );
+	uiMenuBar->addMenuButton( "File", uiPopMenu );
 	uiPopMenu->addEventListener( Event::OnItemClicked, cb::Make1( fileMenuClick ) );
 
 	UIPopUpMenu* uiResourceMenu = UIPopUpMenu::New();
@@ -916,7 +916,7 @@ void createAppMenu() {
 	uiResourceMenu->add( "Load fonts from path...", theme->getIconByName( "document-open" ) );
 	uiResourceMenu->addSeparator();
 	uiResourceMenu->add( "Load style sheet from path...", theme->getIconByName( "document-open" ) );
-	uiWinMenu->addMenuButton( "Resources", uiResourceMenu );
+	uiMenuBar->addMenuButton( "Resources", uiResourceMenu );
 	uiResourceMenu->addEventListener( Event::OnItemClicked, cb::Make1( fileMenuClick ) );
 
 	SceneManager::instance()->setCurrentUISceneNode( uiSceneNode );

@@ -533,7 +533,7 @@ SpinBox::btnup:hover {
 	foreground-image: poly(line, var(--primary), "1dp 7dp, 5dp 4dp"), poly(line, var(--primary), "5dp 4dp, 9dp 7dp");
 }
 
-WinMenu {
+MenuBar {
 	height: 24dp;
 }
 
@@ -547,13 +547,13 @@ PopUpMenu {
 	border-color: var(--menu-border);
 }
 
-WinMenu::Button {
+MenuBar::Button {
 	padding-left: 4dp;
 	padding-right: 4dp;
 	min-height: 24dp;
 }
 
-WinMenu::Button:hover {
+MenuBar::Button:hover {
 	background-color: var(--primary);
 }
 

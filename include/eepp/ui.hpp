@@ -47,7 +47,7 @@
 #include <eepp/ui/uiviewpager.hpp>
 #include <eepp/ui/uiwidget.hpp>
 #include <eepp/ui/uiwindow.hpp>
-#include <eepp/ui/uiwinmenu.hpp>
+#include <eepp/ui/uimenubar.hpp>
 
 #include <eepp/ui/uiwidgetcreator.hpp>
 

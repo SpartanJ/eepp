@@ -53,7 +53,7 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow* attachTo, const TGEditorCloseC
 
 	std::string layout = R"xml(
 	<LinearLayout id="texture_atlas_editor_root" orientation="vertical" layout_width="match_parent" layout_height="match_parent">
-		<WinMenu layout_width="match_parent" layout_height="wrap_content">
+		<MenuBar layout_width="match_parent" layout_height="wrap_content">
 			<Menu id="fileMenu" text="File">
 				<item text="New..." icon="document-new" />
 				<item text="Open..." icon="document-open" />
@@ -64,7 +64,7 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow* attachTo, const TGEditorCloseC
 				<separator />
 				<item text="Quit" icon="quit" />
 			</Menu>
-		</WinMenu>
+		</MenuBar>
 		<LinearLayout layout_width="match_parent" layout_height="0dp" layout_weight="1" orientation="horizontal">
 			<TextureAtlasTextureRegionEditor layout_width="match_parent" layout_height="match_parent" layout_weight="1"
 											flags="clip" background-color="#00000032" border-width="1" border-color="#000000FF" />

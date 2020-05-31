@@ -30,7 +30,7 @@
 #include <eepp/ui/uiviewpager.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
 #include <eepp/ui/uiwindow.hpp>
-#include <eepp/ui/uiwinmenu.hpp>
+#include <eepp/ui/uimenubar.hpp>
 
 namespace EE { namespace UI {
 
@@ -55,7 +55,7 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["dropdownlist"] = UIDropDownList::New;
 		registeredWidget["image"] = UIImage::New;
 		registeredWidget["listbox"] = UIListBox::New;
-		registeredWidget["winmenu"] = UIWinMenu::New;
+		registeredWidget["menubar"] = UIMenuBar::New;
 		registeredWidget["progressbar"] = UIProgressBar::New;
 		registeredWidget["scrollbar"] = UIScrollBar::New;
 		registeredWidget["slider"] = UISlider::New;

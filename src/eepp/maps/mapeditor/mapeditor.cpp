@@ -86,7 +86,7 @@ MapEditor::MapEditor( UIWindow* AttatchTo, const MapEditorCloseCb& callback ) :
 MapEditor::~MapEditor() {}
 
 void MapEditor::createME() {
-	createWinMenu();
+	createMenuBar();
 
 	createETGMenu();
 
@@ -101,16 +101,16 @@ bool MapEditor::addShortcut( const Keycode& KeyCode, const Uint32& Mod, UIWidget
 	}
 }
 
-void MapEditor::createWinMenu() {
-	UIWinMenu* WinMenu = UIWinMenu::New();
-	WinMenu->setParent( mUIContainer );
-	WinMenu->getUISceneNode()->updateDirtyStyleStates();
+void MapEditor::createMenuBar() {
+	UIMenuBar* MenuBar = UIMenuBar::New();
+	MenuBar->setParent( mUIContainer );
+	MenuBar->getUISceneNode()->updateDirtyStyleStates();
 
 	mTileBox =
 		createTextBox( "", mUIContainer, Sizef(), Vector2f(),
 					   UI_HALIGN_RIGHT | UI_VALIGN_CENTER | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT );
 	mTileBox->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
-	mTileBox->setSize( 100, WinMenu->getSize().getHeight() );
+	mTileBox->setSize( 100, MenuBar->getSize().getHeight() );
 	mTileBox->setPosition(
 		Vector2f( mUIContainer->getSize().getWidth() - mTileBox->getSize().getWidth(), 0 ) );
 	mTileBox->setVisible( true );
@@ -129,7 +129,7 @@ void MapEditor::createWinMenu() {
 	PU1->add( "Quit", mTheme->getIconByName( "quit" ) );
 
 	PU1->addEventListener( Event::OnItemClicked, cb::Make1( this, &MapEditor::fileMenuClick ) );
-	WinMenu->addMenuButton( "File", PU1 );
+	MenuBar->addMenuButton( "File", PU1 );
 
 	UIPopUpMenu* PU3 = UIPopUpMenu::New();
 	PU3->setParent( mUIContainer );
@@ -156,7 +156,7 @@ void MapEditor::createWinMenu() {
 	PU3->addSeparator();
 
 	PU3->addEventListener( Event::OnItemClicked, cb::Make1( this, &MapEditor::viewMenuClick ) );
-	WinMenu->addMenuButton( "View", PU3 );
+	MenuBar->addMenuButton( "View", PU3 );
 
 	UIPopUpMenu* PU4 = UIPopUpMenu::New();
 	PU4->setParent( mUIContainer );
@@ -164,7 +164,7 @@ void MapEditor::createWinMenu() {
 	PU4->add( "Resize..." );
 
 	PU4->addEventListener( Event::OnItemClicked, cb::Make1( this, &MapEditor::mapMenuClick ) );
-	WinMenu->addMenuButton( "Map", PU4 );
+	MenuBar->addMenuButton( "Map", PU4 );
 
 	UIPopUpMenu* PU5 = UIPopUpMenu::New();
 	PU5->setParent( mUIContainer );
@@ -188,21 +188,21 @@ void MapEditor::createWinMenu() {
 	mLayerChkVisible = PU5->getItem( LayerChkBoxIndex )->asType<UIMenuCheckBox>();
 
 	PU5->addEventListener( Event::OnItemClicked, cb::Make1( this, &MapEditor::layerMenuClick ) );
-	WinMenu->addMenuButton( "Layer", PU5 );
+	MenuBar->addMenuButton( "Layer", PU5 );
 
 	UIPopUpMenu* PU6 = UIPopUpMenu::New();
 	PU6->setParent( mUIContainer );
 	PU6->add( "New Texture Atlas..." );
 	PU6->add( "Add External Texture Atlas..." );
-	WinMenu->addMenuButton( "Atlases", PU6 );
+	MenuBar->addMenuButton( "Atlases", PU6 );
 	PU6->addEventListener( Event::OnItemClicked, cb::Make1( this, &MapEditor::mapMenuClick ) );
 
 	mWinContainer = UIWidget::New();
 	mWinContainer->enableReportSizeChangeToChilds();
 	mWinContainer->setParent( mUIContainer );
-	mWinContainer->setPosition( 0, WinMenu->getSize().getHeight() );
+	mWinContainer->setPosition( 0, MenuBar->getSize().getHeight() );
 	mWinContainer->setSize( mUIContainer->getSize().getWidth(),
-							mUIContainer->getSize().getHeight() - WinMenu->getSize().getHeight() );
+							mUIContainer->getSize().getHeight() - MenuBar->getSize().getHeight() );
 	mWinContainer->setAnchors( UI_ANCHOR_TOP | UI_ANCHOR_BOTTOM | UI_ANCHOR_LEFT |
 							   UI_ANCHOR_RIGHT );
 	mWinContainer->setThemeSkin( mTheme, "winback" );

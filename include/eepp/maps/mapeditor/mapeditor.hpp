@@ -17,7 +17,7 @@
 #include <eepp/ui/uitextureregion.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uiwindow.hpp>
-#include <eepp/ui/uiwinmenu.hpp>
+#include <eepp/ui/uimenubar.hpp>
 
 namespace EE { namespace UI {
 class UIMessageBox;
@@ -121,7 +121,7 @@ class EE_API MapEditor {
 
 	void createME();
 
-	void createWinMenu();
+	void createMenuBar();
 
 	void createETGMenu();
 

@@ -35,11 +35,11 @@ ProgressBar {
 	padding: 2dp;
 }
 
-WinMenu {
+MenuBar {
 	padding-left: 1dp;
 }
 
-WinMenu::button {
+MenuBar::button {
 	padding-left: -3dp;
 	padding-right: -3dp;
 }

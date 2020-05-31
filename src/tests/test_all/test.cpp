@@ -815,8 +815,8 @@ void EETest::createNewUI() {
 	UIWindow* MenuCont = UIWindow::New();
 	MenuCont->setPosition( 350, 390 )->setSize( 200, 115 );
 
-	UIWinMenu* WinMenu = UIWinMenu::New();
-	WinMenu->setParent( MenuCont->getContainer() );
+	UIMenuBar* MenuBar = UIMenuBar::New();
+	MenuBar->setParent( MenuCont->getContainer() );
 
 	UIPopUpMenu* PopMenu = UIPopUpMenu::New();
 	PopMenu->add( "File" );
@@ -830,8 +830,8 @@ void EETest::createNewUI() {
 	PopMenu2->add( "Bla 3" );
 	PopMenu2->add( "Bla 4" );
 
-	WinMenu->addMenuButton( "File", PopMenu );
-	WinMenu->addMenuButton( "Edit", PopMenu2 );
+	MenuBar->addMenuButton( "File", PopMenu );
+	MenuBar->addMenuButton( "Edit", PopMenu2 );
 
 	UIWindow* win = UIWindow::New();
 	win->setSize( 500, 500 );
@@ -1079,8 +1079,8 @@ void EETest::createDecoratedWindow() {
 	lay->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
 	lay->setParent( mUIWindow->getContainer() );
 
-	UIWinMenu* WinMenu = UIWinMenu::New();
-	WinMenu->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
+	UIMenuBar* MenuBar = UIMenuBar::New();
+	MenuBar->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
 		->setParent( lay );
 
 	UIPopUpMenu* PopMenu = UIPopUpMenu::New();
@@ -1124,8 +1124,8 @@ void EETest::createDecoratedWindow() {
 	PopMenu2->add( "Bla 3" );
 	PopMenu2->add( "Bla 4" );
 
-	WinMenu->addMenuButton( "File", PopMenu );
-	WinMenu->addMenuButton( "Edit", PopMenu2 );
+	MenuBar->addMenuButton( "File", PopMenu );
+	MenuBar->addMenuButton( "Edit", PopMenu2 );
 
 	UIPushButton* Button = UIPushButton::New();
 	Button->setLayoutMargin( Rect( 5, 5, 5, 5 ) );

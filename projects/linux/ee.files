@@ -349,6 +349,7 @@
 ../../include/eepp/ui/uilistboxitem.hpp
 ../../include/eepp/ui/uiloader.hpp
 ../../include/eepp/ui/uimanager.hpp
+../../include/eepp/ui/uimenubar.hpp
 ../../include/eepp/ui/uimenucheckbox.hpp
 ../../include/eepp/ui/uimenu.hpp
 ../../include/eepp/ui/uimenuitem.hpp
@@ -390,7 +391,6 @@
 ../../include/eepp/ui/uiwidgetcreator.hpp
 ../../include/eepp/ui/uiwidget.hpp
 ../../include/eepp/ui/uiwindow.hpp
-../../include/eepp/ui/uiwinmenu.hpp
 ../../include/eepp/version.hpp
 ../../include/eepp/window/base.hpp
 ../../include/eepp/window/clipboard.hpp
@@ -797,6 +797,7 @@
 ../../src/eepp/ui/uilistboxitem.cpp
 ../../src/eepp/ui/uiloader.cpp
 ../../src/eepp/ui/uimanager.cpp
+../../src/eepp/ui/uimenubar.cpp
 ../../src/eepp/ui/uimenucheckbox.cpp
 ../../src/eepp/ui/uimenu.cpp
 ../../src/eepp/ui/uimenuitem.cpp
@@ -838,7 +839,6 @@
 ../../src/eepp/ui/uiwidget.cpp
 ../../src/eepp/ui/uiwidgetcreator.cpp
 ../../src/eepp/ui/uiwindow.cpp
-../../src/eepp/ui/uiwinmenu.cpp
 ../../src/eepp/window/backend/allegro5/cbackendal.hpp
 ../../src/eepp/window/backend/allegro5/cclipboardal.cpp
 ../../src/eepp/window/backend/allegro5/cclipboardal.hpp
