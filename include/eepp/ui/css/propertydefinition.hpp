@@ -131,6 +131,7 @@ enum class PropertyId : Uint32 {
 	HalfSlider = String::hash( "half-slider" ),
 	Owns = String::hash( "owns" ),
 	AllowEditing = String::hash( "allow-editing" ),
+	Locked = String::hash( "locked" ),
 	MaxLength = String::hash( "max-length" ),
 	FreeEditing = String::hash( "free-editing" ),
 	Numeric = String::hash( "numeric" ),

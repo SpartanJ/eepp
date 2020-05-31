@@ -160,6 +160,8 @@ class EE_API Color : public tColor<Uint8> {
 
 	std::string toHexString( const bool& prependHash = true ) const;
 
+	Color& blendAlpha( const Uint8& alpha );
+
 	static Color fromHsl( const Colorf& hsl );
 
 	/** Blend a source color to destination color */

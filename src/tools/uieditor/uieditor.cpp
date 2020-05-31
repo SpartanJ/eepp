@@ -999,7 +999,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		FontTrueType* font =
 			FontTrueType::New( "NotoSans-Regular", resPath + "assets/fonts/NotoSans-Regular.ttf" );
 		FontTrueType* fontMono =
-			FontTrueType::New( "DejaVuSansMono", resPath + "assets/fonts/DejaVuSansMono.ttf" );
+			FontTrueType::New( "monospace", resPath + "assets/fonts/DejaVuSansMono.ttf" );
 
 		console = eeNew( Console, ( fontMono, true, true, 1024 * 1000, 0, window ) );
 

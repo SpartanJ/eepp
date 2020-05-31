@@ -274,6 +274,7 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "half-slider", "" ).setType( PropertyType::Bool );
 	registerProperty( "owns", "" ).setType( PropertyType::String );
 	registerProperty( "allow-editing", "" ).setType( PropertyType::Bool );
+	registerProperty( "locked", "" ).setType( PropertyType::Bool );
 	registerProperty( "max-length", "" ).setType( PropertyType::NumberInt );
 	registerProperty( "free-editing", "" ).setType( PropertyType::Bool );
 	registerProperty( "numeric", "" ).setType( PropertyType::Bool );

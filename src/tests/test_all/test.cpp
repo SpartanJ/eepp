@@ -248,21 +248,21 @@ void EETest::loadFonts() {
 	mFTE.restart();
 
 	FontTrueType::New( "NotoSans-Regular", MyPath + "fonts/NotoSans-Regular.ttf" );
-	FontTrueType::New( "DejaVuSansMono", MyPath + "fonts/DejaVuSansMono.ttf" );
+	FontTrueType::New( "monospace", MyPath + "fonts/DejaVuSansMono.ttf" );
 
 	onFontLoaded();
 }
 
 void EETest::onFontLoaded() {
 	TTF = FontManager::instance()->getByName( "NotoSans-Regular" );
-	Font* DBSM = FontManager::instance()->getByName( "DejaVuSansMono" );
+	Font* monospace = FontManager::instance()->getByName( "monospace" );
 
 	eePRINTL( "Fonts loading time: %4.3f ms.", mFTE.getElapsed().asMilliseconds() );
 
 	eeASSERT( TTF != NULL );
-	eeASSERT( DBSM != NULL );
+	eeASSERT( monospace != NULL );
 
-	Con.create( DBSM, true );
+	Con.create( monospace, true );
 	Con.ignoreCharOnPrompt( 186 ); // 'º'
 
 	mBuda = String::fromUtf8(
@@ -282,7 +282,7 @@ void EETest::onFontLoaded() {
 	mFBOText.setOutlineThickness( 1 );
 	mFBOText.setOutlineColor( Color( 0, 0, 0, 255 ) );
 
-	mInfoText.create( DBSM, "", Color( 100, 100, 100, 255 ) );
+	mInfoText.create( monospace, "", Color( 100, 100, 100, 255 ) );
 	mInfoText.setOutlineThickness( 1 );
 }
 
@@ -1160,8 +1160,12 @@ void EETest::createDecoratedWindow() {
 						UI_TEXT_SELECTION_ENABLED );
 	txtBox->setParent( TabWidget );
 	txtBox->setText( mBuda );
-
 	TabWidget->add( "TextBox", txtBox );
+
+	UICodeEditor* codeEditor = UICodeEditor::New();
+	codeEditor->setParent( TabWidget );
+	codeEditor->getDocument().textInput( mBuda );
+	TabWidget->add( "CodeEditor", codeEditor );
 }
 
 void EETest::onCloseClick( const Event* ) {

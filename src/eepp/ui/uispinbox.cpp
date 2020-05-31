@@ -21,9 +21,7 @@ UISpinBox::UISpinBox() :
 	mInput->setEnabled( true );
 	mInput->setParent( this );
 
-	auto cb = [&]( const Event* event ) {
-		adjustChilds();
-	};
+	auto cb = [&]( const Event* ) { adjustChilds(); };
 
 	mPushUp = UIWidget::NewWithTag( "spinbox::btnup" );
 	mPushUp->setVisible( true );
@@ -223,7 +221,7 @@ const Float& UISpinBox::getMaxValue() const {
 	return mMaxValue;
 }
 
-void UISpinBox::onBufferChange( const Event* event ) {
+void UISpinBox::onBufferChange( const Event* ) {
 	if ( !mInput->getText().size() ) {
 		setValue( 0 );
 	} else {

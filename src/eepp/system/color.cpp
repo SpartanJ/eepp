@@ -232,6 +232,11 @@ std::string Color::toHexString( const bool& prependHashtag ) const {
 	return stream.str();
 }
 
+Color& Color::blendAlpha( const Uint8& alpha ) {
+	this->a = static_cast<Uint8>( ( alpha * this->a ) / 255.f );
+	return *this;
+}
+
 static Float hue2rgb( Float p, Float q, Float t ) {
 	if ( t < 0.f )
 		t += 1.f;

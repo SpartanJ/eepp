@@ -55,15 +55,39 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	UICodeEditor* setFontSize( Float dpSize );
 
+	const Float& getFontSize() const;
+
 	UICodeEditor* setFontColor( const Color& color );
+
+	const Color& getFontColor() const;
 
 	UICodeEditor* setFontSelectedColor( const Color& color );
 
+	const Color& getFontSelectedColor();
+
 	UICodeEditor* setFontSelectionBackColor( const Color& color );
+
+	const Color& getFontSelectionBackColor() const;
+
+	UICodeEditor* setFontShadowColor( const Color& color );
+
+	const Color& getFontShadowColor() const;
+
+	UICodeEditor* setFontStyle( const Uint32& fontStyle );
 
 	const Uint32& getTabWidth() const;
 
 	UICodeEditor* setTabWidth( const Uint32& tabWidth );
+
+	const Uint32& getFontStyle() const;
+
+	const Float& getOutlineThickness() const;
+
+	UICodeEditor* setOutlineThickness( const Float& outlineThickness );
+
+	const Color& getOutlineColor() const;
+
+	UICodeEditor* setOutlineColor( const Color& outlineColor );
 
 	const Float& getMouseWheelScroll() const;
 
@@ -125,6 +149,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void setLineNumberActiveFontColor( const Color& lineNumberActiveFontColor );
 
+	bool isTextSelectionEnabled() const;
+
+	void setTextSelection( const bool& active );
+
 	KeyBindings& getKeyBindings();
 
 	void setKeyBindings( const KeyBindings& keyBindings );
@@ -158,7 +186,11 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void addUnlockedCommand( const std::string& command );
 
-  protected:
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
+
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& propertyIndex = 0 );
+	protected:
 	struct LastXOffset {
 		TextPosition position;
 		Float offset;

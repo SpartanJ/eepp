@@ -15,7 +15,7 @@ class UIFontStyleConfig : public FontStyleConfig {
   public:
 	const Color& getFontSelectedColor() const { return FontSelectedColor; }
 
-	Color getFontSelectionBackColor() const { return FontSelectionBackColor; }
+	const Color& getFontSelectionBackColor() const { return FontSelectionBackColor; }
 
 	void setFontSelectedColor( const Color& color ) { FontSelectedColor = color; }
 

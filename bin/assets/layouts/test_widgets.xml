@@ -65,9 +65,13 @@
 			<TextView layout_width="match_parent" layout_height="match_parent" font-size="24dp" text="Hello World!" gravity="center" />
 			<Loader layout_width="350dp" layout_height="350dp" layout_gravity="center" padding="44dp" outline-thickness="8dp" />
 		</RelativeLayout>
+		<RelativeLayout id="test_3" layout_width="match_parent" layout_height="match_parent">
+			<CodeEditor layout_width="match_parent" layout_height="match_parent" />
+		</RelativeLayout>
 
 		<Tab text="Padding Test" owns="test_1" />
 		<Tab text="Tabs Test" owns="test_2" />
+		<Tab text="Code Editor Test" owns="test_3" />
 	</TabWidget>
 </vbox>
 <window windowFlags="default|maximize|minimize|shadow" layout_width="300dp" layout_height="300dp" x="400dp" y="300dp" window-title="Test Window">

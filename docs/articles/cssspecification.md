@@ -916,6 +916,16 @@ or one of the special constants.
 
 ---
 
+### locked
+
+Enable or disable editing on code editor elements.
+
+* Applicable to: EE::UI::UICodeEditor (TextEdit)
+* Data Type: [boolean](#boolean-data-type)
+* Default value: `false`
+
+---
+
 ### margin-bottom
 
 Read [margin-bottom](https://developer.mozilla.org/en-US/docs/Web/CSS/margin-bottom) documentation.

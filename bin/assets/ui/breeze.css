@@ -36,9 +36,35 @@
 	--win-icon: #dbdbdd;
 }
 
-* {
+CheckBox,
+ComboBox,
+ComboBox::DropDownList::ListBox::item,
+DropDownList,
+DropDownList::ListBox::item,
+ListBox::item,
+Menu::item,
+Menu::SubMenu,
+PushButton,
+RadioButton,
+SelectButton,
+SpinBox::input,
+Tab,
+TextEdit,
+TextInput,
+TextInputPassword,
+TextView,
+Tooltip,
+MenuBar::button {
 	color: var(--font);
 	font-size: 11dp;
+}
+
+TextView,
+TextEdit,
+TextInput,
+TextInputPassword,
+ComboBox::DropDownList,
+SpinBox::input, {
 	selection-back-color: var(--primary);
 }
 
