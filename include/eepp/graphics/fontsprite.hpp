@@ -74,8 +74,7 @@ class EE_API FontSprite : public Font {
 	std::string mFilePath;
 	Uint32 mFontSize;
 
-	Glyph loadGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
-					 Float outlineThickness ) const;
+	Glyph loadGlyph( Uint32 codePoint, unsigned int characterSize ) const;
 };
 
 }} // namespace EE::Graphics

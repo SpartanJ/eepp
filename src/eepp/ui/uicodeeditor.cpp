@@ -617,7 +617,7 @@ int UICodeEditor::getVisibleLinesCount() {
 void UICodeEditor::scrollToMakeVisible( const TextPosition& position ) {
 	auto lineRange = getVisibleLineRange();
 
-	if ( position.line() < lineRange.first || position.line() > lineRange.second ) {
+	if ( position.line() <= lineRange.first || position.line() >= lineRange.second - 2 ) {
 		// Vertical Scroll
 		Float lineHeight = getLineHeight();
 		Float min = eefloor( lineHeight * ( eemax<Float>( 0, position.line() - 1 ) ) );

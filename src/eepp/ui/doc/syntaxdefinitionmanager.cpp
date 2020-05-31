@@ -830,6 +830,19 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 			  {"usubpassInputMS", "keyword2"},
 		  },
 		  "//"} );
+
+	// ini / conf
+	add( {{"%.ini$", "%.conf$", "%.desktop$"},
+		  {
+			  {{"#[%da-fA-F]+"}, "literal"},
+			  {{"#", "\n"}, "comment"},
+			  {{"\"", "\"", "\\"}, "string"},
+			  {{"'", "'", "\\"}, "string"},
+			  {{"%[", "%]"}, "keyword2"},
+			  {{"[%a][%w_-]*%s*%f[=]"}, "keyword"},
+			  {{"[=]"}, "operator"},
+			  {{"https?://%S+"}, "function"},
+		  }} );
 }
 
 SyntaxDefinition& SyntaxDefinitionManager::add( SyntaxDefinition&& syntaxStyle ) {

@@ -64,7 +64,7 @@ bool FontSprite::loadFromMemory( const void* data, std::size_t sizeInBytes, Colo
 	cleanup();
 	mFilePath = FileSystem::getCurrentWorkingDirectory();
 	IOStreamMemory stream( (const char*)data, sizeInBytes );
-	return loadFromStream( stream, key, firstChar );
+	return loadFromStream( stream, key, firstChar, spacing );
 }
 
 bool FontSprite::loadFromStream( IOStream& stream, Color key, Uint32 firstChar, int spacing ) {
@@ -163,8 +163,8 @@ const FontSprite::Info& FontSprite::getInfo() const {
 	return mInfo;
 }
 
-const Glyph& FontSprite::getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
-								   Float outlineThickness ) const {
+const Glyph& FontSprite::getGlyph( Uint32 codePoint, unsigned int characterSize, bool,
+								   Float ) const {
 	GlyphTable& glyphs = mPages[characterSize].glyphs;
 
 	GlyphTable::const_iterator it = glyphs.find( codePoint );
@@ -172,13 +172,12 @@ const Glyph& FontSprite::getGlyph( Uint32 codePoint, unsigned int characterSize,
 	if ( it != glyphs.end() ) {
 		return it->second;
 	} else {
-		glyphs[characterSize] = loadGlyph( codePoint, characterSize, bold, outlineThickness );
+		glyphs[characterSize] = loadGlyph( codePoint, characterSize );
 		return glyphs[characterSize];
 	}
 }
 
-Glyph FontSprite::loadGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
-							 Float outlineThickness ) const {
+Glyph FontSprite::loadGlyph( Uint32 codePoint, unsigned int characterSize ) const {
 	Glyph glyph;
 
 	GlyphTable& glyphs = mPages[mFontSize].glyphs;
@@ -197,7 +196,7 @@ Glyph FontSprite::loadGlyph( Uint32 codePoint, unsigned int characterSize, bool 
 	return glyph;
 }
 
-Float FontSprite::getKerning( Uint32 first, Uint32 second, unsigned int characterSize ) const {
+Float FontSprite::getKerning( Uint32, Uint32, unsigned int ) const {
 	return 0;
 }
 
@@ -209,15 +208,15 @@ Uint32 FontSprite::getFontHeight( const Uint32& characterSize ) {
 	return ( Uint32 )( (Float)characterSize / mFontSize ) * mFontSize;
 }
 
-Float FontSprite::getUnderlinePosition( unsigned int characterSize ) const {
+Float FontSprite::getUnderlinePosition( unsigned int ) const {
 	return 0.f;
 }
 
-Float FontSprite::getUnderlineThickness( unsigned int characterSize ) const {
+Float FontSprite::getUnderlineThickness( unsigned int ) const {
 	return 0.f;
 }
 
-Texture* FontSprite::getTexture( unsigned int characterSize ) const {
+Texture* FontSprite::getTexture( unsigned int ) const {
 	return mPages[mFontSize].texture;
 }
 
