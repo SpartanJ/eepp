@@ -371,6 +371,7 @@
 ../../include/eepp/ui/uiskinstate.hpp
 ../../include/eepp/ui/uislider.hpp
 ../../include/eepp/ui/uispinbox.hpp
+../../include/eepp/ui/uisplitter.hpp
 ../../include/eepp/ui/uisprite.hpp
 ../../include/eepp/ui/uistate.hpp
 ../../include/eepp/ui/uistyle.hpp
@@ -819,6 +820,7 @@
 ../../src/eepp/ui/uiskinstate.cpp
 ../../src/eepp/ui/uislider.cpp
 ../../src/eepp/ui/uispinbox.cpp
+../../src/eepp/ui/uisplitter.cpp
 ../../src/eepp/ui/uisprite.cpp
 ../../src/eepp/ui/uistate.cpp
 ../../src/eepp/ui/uistyle.cpp

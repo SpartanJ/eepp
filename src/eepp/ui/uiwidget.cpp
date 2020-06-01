@@ -404,6 +404,47 @@ Node* UIWidget::setSize( const Sizef& size ) {
 	return UINode::setSize( s );
 }
 
+Sizef UIWidget::getCurrentMinSize() {
+	Sizef s;
+
+	if ( s.x < mMinSize.x )
+		s.x = mMinSize.x;
+
+	if ( s.y < mMinSize.y )
+		s.y = mMinSize.y;
+
+	if ( !mMinWidthEq.empty() ) {
+		Float length =
+			lengthFromValueAsDp( mMinWidthEq, CSS::PropertyRelativeTarget::ContainingBlockWidth );
+		s.x = eemax( s.x, length );
+	}
+
+	if ( !mMinHeightEq.empty() ) {
+		Float length =
+			lengthFromValueAsDp( mMinHeightEq, CSS::PropertyRelativeTarget::ContainingBlockHeight );
+		s.y = eemax( s.y, length );
+	}
+	return s;
+}
+
+Sizef UIWidget::getCurrentMaxSize() {
+	Sizef s;
+
+	if ( !mMaxWidthEq.empty() ) {
+		Float length =
+			lengthFromValueAsDp( mMaxWidthEq, CSS::PropertyRelativeTarget::ContainingBlockWidth );
+		s.x = eemin( s.x, length );
+	}
+
+	if ( !mMaxHeightEq.empty() ) {
+		Float length =
+			lengthFromValueAsDp( mMaxHeightEq, CSS::PropertyRelativeTarget::ContainingBlockHeight );
+		s.y = eemin( s.y, length );
+	}
+
+	return s;
+}
+
 UINode* UIWidget::setFlags( const Uint32& flags ) {
 	if ( flags & ( UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM ) ) {
 		updateAnchorsDistances();

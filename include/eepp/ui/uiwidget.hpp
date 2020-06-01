@@ -231,6 +231,10 @@ class EE_API UIWidget : public UINode {
 
 	void createTooltip();
 
+	Sizef getCurrentMinSize();
+
+	Sizef getCurrentMaxSize();
+
   protected:
 	friend class UIManager;
 	friend class UISceneNode;

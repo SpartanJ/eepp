@@ -7,6 +7,7 @@
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uilistbox.hpp>
 #include <eepp/ui/uiloader.hpp>
+#include <eepp/ui/uimenubar.hpp>
 #include <eepp/ui/uiprogressbar.hpp>
 #include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uiradiobutton.hpp>
@@ -16,6 +17,7 @@
 #include <eepp/ui/uiselectbutton.hpp>
 #include <eepp/ui/uislider.hpp>
 #include <eepp/ui/uispinbox.hpp>
+#include <eepp/ui/uisplitter.hpp>
 #include <eepp/ui/uisprite.hpp>
 #include <eepp/ui/uitab.hpp>
 #include <eepp/ui/uitable.hpp>
@@ -30,7 +32,6 @@
 #include <eepp/ui/uiviewpager.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
 #include <eepp/ui/uiwindow.hpp>
-#include <eepp/ui/uimenubar.hpp>
 
 namespace EE { namespace UI {
 
@@ -77,7 +78,8 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["gridlayout"] = UIGridLayout::New;
 		registeredWidget["layout"] = UILayout::New;
 		registeredWidget["viewpager"] = UIViewPager::New;
-		registeredWidget["codeeditor"] = UICodeEditor ::New;
+		registeredWidget["codeeditor"] = UICodeEditor::New;
+		registeredWidget["splitter"] = UISplitter::New;
 
 		registeredWidget["hbox"] = UILinearLayout::NewHorizontal;
 		registeredWidget["vbox"] = UILinearLayout::NewVertical;

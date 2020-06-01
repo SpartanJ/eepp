@@ -665,6 +665,15 @@ Table > ScrollBar {
 	background-color: var(--list-back);
 }
 
+Splitter::separator {
+	background-color: var(--back);
+}
+
+Splitter::separator:selected,
+Splitter::separator:hover {
+	background-color: var(--primary);
+}
+
 .appbackground {
 	background-color: var(--back);
 }
