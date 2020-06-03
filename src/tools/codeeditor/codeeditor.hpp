@@ -23,11 +23,9 @@ class App {
 
 	void findTextMessageBox();
 
-	bool onCloseRequestCallback( EE::Window::Window* );
-
 	UICodeEditor* createCodeEditor();
 
-	UISplitter* createEditorSplitter( Node* parent );
+	UISplitter* createEditorWithSplitter( Node* parent );
 
 	UITabWidget* tabWidgetFromEditor( UICodeEditor* editor );
 
@@ -38,15 +36,28 @@ class App {
 	void splitEditor( const UIOrientation& orientation );
 
   protected:
-	EE::Window::Window* mWindow = NULL;
-	UISceneNode* mUISceneNode = NULL;
-	UICodeEditor* mCurEditor = NULL;
-	Console* mConsole = NULL;
-	std::string mWindowTitle = "eepp - Code Editor";
-	bool mDocDirtyState = false;
-	UIMessageBox* mMsgBox = NULL;
+	EE::Window::Window* mWindow{NULL};
+	UISceneNode* mUISceneNode{NULL};
+	UICodeEditor* mCurEditor{NULL};
+	Console* mConsole{NULL};
+	std::string mWindowTitle{"eepp - Code Editor"};
+	UIMessageBox* mMsgBox{NULL};
 	String mLastSearch;
-	UILayout* mBaseLayout;
+	UILayout* mBaseLayout{NULL};
+
+	void onFileDropped( String file );
+
+	void onTextDropped( String text );
+
+	void updateEditorTitle( UICodeEditor* editor );
+
+	std::string titleFromEditor( UICodeEditor* editor );
+
+	bool onTabCloseRequestCallback( EE::Window::Window* );
+
+	bool onCloseRequestCallback( EE::Window::Window* );
+
+	void closeCurrrentTab();
 };
 
 #endif // EE_TOOLS_CODEEDITOR_HPP

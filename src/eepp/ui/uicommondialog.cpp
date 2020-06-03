@@ -19,7 +19,7 @@ UICommonDialog* UICommonDialog::New( Uint32 CDLFlags, std::string DefaultFilePat
 
 UICommonDialog::UICommonDialog( Uint32 CDLFlags, std::string DefaultFilePattern,
 								std::string DefaultDirectory ) :
-	UIWindow(), mCurPath( DefaultDirectory ), mCDLFlags( CDLFlags ) {
+	UIWindow(), mCurPath( DefaultDirectory ), mCDLFlags( CDLFlags ), mCloseWithKey( KEY_UNKNOWN ) {
 	if ( getSize().getWidth() < CDLG_MIN_WIDTH ) {
 		mDpSize.x = CDLG_MIN_WIDTH;
 		mSize.x = PixelDensity::dpToPxI( CDLG_MIN_WIDTH );
@@ -484,6 +484,24 @@ UITextInput* UICommonDialog::getFileInput() const {
 
 UIDropDownList* UICommonDialog::getFiletypeList() const {
 	return mFiletype;
+}
+
+Uint32 UICommonDialog::onKeyUp( const KeyEvent& Event ) {
+	if ( mCloseWithKey && Event.getKeyCode() == mCloseWithKey ) {
+		disableButtons();
+
+		closeWindow();
+	}
+
+	return 1;
+}
+
+const Uint32& UICommonDialog::getCloseWithKey() const {
+	return mCloseWithKey;
+}
+
+void UICommonDialog::setCloseWithKey( const Uint32& closeWithKey ) {
+	mCloseWithKey = closeWithKey;
 }
 
 }} // namespace EE::UI

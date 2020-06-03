@@ -81,6 +81,10 @@ class EE_API UICommonDialog : public UIWindow {
 
 	void setAllowFolderSelect( const bool& allowFolderSelect );
 
+	const Uint32& getCloseWithKey() const;
+
+	void setCloseWithKey( const Uint32& closeWithKey );
+
   protected:
 	std::string mCurPath;
 	UIPushButton* mButtonOpen;
@@ -91,8 +95,11 @@ class EE_API UICommonDialog : public UIWindow {
 	UITextInput* mFile;
 	UIDropDownList* mFiletype;
 	Uint32 mCDLFlags;
+	Uint32 mCloseWithKey;
 
 	virtual void onWindowReady();
+
+	virtual Uint32 onKeyUp( const KeyEvent& Event );
 
 	void onPressEnter( const Event* Event );
 

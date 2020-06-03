@@ -377,7 +377,7 @@ Uint32 Node::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
 
 	EventDispatcher* eventDispatcher = NULL != mSceneNode ? mSceneNode->getEventDispatcher() : NULL;
 
-	if ( NULL != eventDispatcher && eventDispatcher->getMouseOverNode() == this )
+	if ( NULL != eventDispatcher && eventDispatcher->getMouseOverNode() != this )
 		sendMouseEvent( Event::MouseLeave, Pos, Flags );
 
 	return 1;

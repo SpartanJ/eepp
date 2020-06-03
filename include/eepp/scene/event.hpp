@@ -50,6 +50,7 @@ class EE_API Event {
 		SaveFile,
 		OnControlClear,
 		MsgBoxConfirmClick,
+		MsgBoxCancelClick,
 		OnTabSelected,
 		OnTabClosed,
 		OnClose, // Warning: Only some controls will report this event.
@@ -64,6 +65,7 @@ class EE_API Event {
 		OnIdChange,
 		OnClassChange,
 		OnLayoutUpdate,
+		OnSelectionChanged,
 		UserEvent,
 		NoEvent = eeINDEX_NOT_FOUND
 	};

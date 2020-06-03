@@ -130,23 +130,36 @@ void UISplitter::setDivisionSplit( const Float& divisionSplit ) {
 }
 
 void UISplitter::onChildCountChange( Node* child, const bool& removed ) {
-	if ( child != mSplitter && !removed ) {
-		if ( !child->isWidget() ) {
-			child->close();
-			return;
-		}
-		UIWidget* childWidget = child->asType<UIWidget>();
-
-		if ( getChildCount() > 3 ) {
-			child->close();
-			return;
-		} else {
-			if ( NULL == mFirstWidget ) {
-				mFirstWidget = childWidget;
-			} else {
-				mLastWidget = childWidget;
+	if ( child != mSplitter ) {
+		if ( !removed ) {
+			if ( !child->isWidget() ) {
+				child->close();
+				return;
 			}
-			mSplitter->toFront();
+			UIWidget* childWidget = child->asType<UIWidget>();
+
+			if ( getChildCount() > 3 ) {
+				child->close();
+				return;
+			} else {
+				if ( NULL == mFirstWidget ) {
+					mFirstWidget = childWidget;
+				} else {
+					mLastWidget = childWidget;
+				}
+				mSplitter->toFront();
+			}
+		} else {
+			if ( mLastWidget == child ) {
+				mLastWidget = NULL;
+			} else if ( mFirstWidget == child ) {
+				if ( mLastWidget ) {
+					mFirstWidget = mLastWidget;
+					mLastWidget = NULL;
+				} else {
+					mFirstWidget = NULL;
+				}
+			}
 		}
 	}
 

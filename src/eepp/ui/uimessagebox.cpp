@@ -37,7 +37,7 @@ UIMessageBox::UIMessageBox( const Type& type, const String& message, const Uint3
 		mTextInput->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
 			->setLayoutMargin( Rect( 0, 4, 0, 4 ) )
 			->setParent( vlay )
-			->addEventListener( Event::OnPressEnter, [&] ( const Event* ) {
+			->addEventListener( Event::OnPressEnter, [&]( const Event* ) {
 				sendCommonEvent( Event::MsgBoxConfirmClick );
 			} );
 	}
@@ -123,9 +123,9 @@ Uint32 UIMessageBox::onMessage( const NodeMessage* Msg ) {
 			if ( Msg->getFlags() & EE_BUTTON_LMASK ) {
 				if ( Msg->getSender() == mButtonOK ) {
 					sendCommonEvent( Event::MsgBoxConfirmClick );
-
 					closeWindow();
 				} else if ( Msg->getSender() == mButtonCancel ) {
+					sendCommonEvent( Event::MsgBoxCancelClick );
 					closeWindow();
 				}
 			}
@@ -151,6 +151,7 @@ UIPushButton* UIMessageBox::getButtonCancel() const {
 
 Uint32 UIMessageBox::onKeyUp( const KeyEvent& Event ) {
 	if ( mCloseWithKey && Event.getKeyCode() == mCloseWithKey ) {
+		sendCommonEvent( Event::MsgBoxCancelClick );
 		closeWindow();
 	}
 
@@ -167,7 +168,7 @@ bool UIMessageBox::show() {
 	return b;
 }
 
-Uint32 UIMessageBox::getCloseWithKey() const {
+const Uint32& UIMessageBox::getCloseWithKey() const {
 	return mCloseWithKey;
 }
 

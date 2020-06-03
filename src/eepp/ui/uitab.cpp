@@ -108,18 +108,19 @@ const String& UITab::getText() {
 }
 
 UIPushButton* UITab::setText( const String& text ) {
-	mText = text;
+	if ( text != mText ) {
+		mText = text;
 
-	UITabWidget* tTabW = getTabWidget();
+		UITabWidget* tTabW = getTabWidget();
 
-	if ( NULL != tTabW ) {
-		updateTab();
+		if ( NULL != tTabW ) {
+			updateTab();
 
-		tTabW->orderTabs();
+			tTabW->orderTabs();
 
-		tTabW->setTabSelected( tTabW->getSelectedTab() );
+			tTabW->setTabSelected( tTabW->getSelectedTab() );
+		}
 	}
-
 	return this;
 }
 

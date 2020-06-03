@@ -490,9 +490,11 @@ void WindowSDL::toggleFullscreen() {
 }
 
 void WindowSDL::setTitle( const std::string& title ) {
-	mWindow.WindowConfig.Title = title;
+	if ( mWindow.WindowConfig.Title != title ) {
+		mWindow.WindowConfig.Title = title;
 
-	SDL_SetWindowTitle( mSDLWindow, title.c_str() );
+		SDL_SetWindowTitle( mSDLWindow, title.c_str() );
+	}
 }
 
 bool WindowSDL::isActive() {

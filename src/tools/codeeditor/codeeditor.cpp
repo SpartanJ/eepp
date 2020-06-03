@@ -24,13 +24,47 @@ bool App::onCloseRequestCallback( EE::Window::Window* ) {
 	}
 }
 
+bool App::onTabCloseRequestCallback( EE::Window::Window* ) {
+	if ( NULL != mCurEditor && mCurEditor->isDirty() ) {
+		mMsgBox =
+			UIMessageBox::New( UIMessageBox::OK_CANCEL,
+							   "Do you really want to close this tab?\nAll changes will be lost." );
+		mMsgBox->addEventListener( Event::MsgBoxConfirmClick,
+								   [&]( const Event* ) { closeCurrrentTab(); } );
+		mMsgBox->addEventListener( Event::OnClose, [&]( const Event* ) {
+			mMsgBox = NULL;
+			if ( mCurEditor )
+				mCurEditor->setFocus();
+		} );
+		mMsgBox->setTitle( "Close Editor Tab?" );
+		mMsgBox->center();
+		mMsgBox->show();
+		return false;
+	} else {
+		return true;
+	}
+}
+
+void App::closeCurrrentTab() {
+	if ( mCurEditor ) {
+		UITabWidget* tabWidget = tabWidgetFromEditor( mCurEditor );
+		if ( tabWidget ) {
+			tabWidget->removeTab( (UITab*)mCurEditor->getData() );
+			if ( tabWidget->getTabCount() > 0 ) {
+				tabWidget->setTabSelected( tabWidget->getTabCount() - 1 );
+				tabWidget->getSelectedTab()->getOwnedWidget()->setFocus();
+			}
+		}
+	}
+}
+
 void App::splitEditor( const UIOrientation& orientation ) {
 	UITabWidget* tabWidget = tabWidgetFromEditor( mCurEditor );
 	if ( tabWidget ) {
 		UISplitter* splitter = (UISplitter*)tabWidget->getParent();
 		if ( splitter->getChildCount() < 3 ) {
 			splitter->setOrientation( orientation );
-			createEditorSplitter( splitter );
+			createEditorWithSplitter( splitter );
 		}
 	}
 }
@@ -46,15 +80,8 @@ UICodeEditor* App::createCodeEditor() {
 	codeEditor->getDocument().setCommand( "open-file", [&] { openFileDialog(); } );
 	codeEditor->getDocument().setCommand( "console-toggle", [&] { mConsole->toggle(); } );
 	codeEditor->getDocument().setCommand( "close-doc", [&] {
-		if ( mCurEditor ) {
-			UITabWidget* tabWidget = tabWidgetFromEditor( mCurEditor );
-			if ( tabWidget ) {
-				tabWidget->removeTab( (UITab*)mCurEditor->getData() );
-				if ( tabWidget->getTabCount() > 0 ) {
-					tabWidget->setTabSelected( tabWidget->getTabCount() - 1 );
-					tabWidget->getSelectedTab()->getOwnedWidget()->setFocus();
-				}
-			}
+		if ( onTabCloseRequestCallback( mWindow ) ) {
+			closeCurrrentTab();
 		}
 	} );
 	codeEditor->getDocument().setCommand( "create-new", [&] {
@@ -112,7 +139,13 @@ UICodeEditor* App::createCodeEditor() {
 	codeEditor->addKeyBindingString( "ctrl+shift+k", "split-vertical", true );
 	codeEditor->addEventListener( Event::OnFocus, [&]( const Event* event ) {
 		mCurEditor = event->getNode()->asType<UICodeEditor>();
-		setAppTitle( mCurEditor->getDocument().getFilename() );
+		updateEditorTitle( mCurEditor );
+	} );
+	codeEditor->addEventListener( Event::OnTextChanged, [&]( const Event* event ) {
+		updateEditorTitle( event->getNode()->asType<UICodeEditor>() );
+	} );
+	codeEditor->addEventListener( Event::OnSelectionChanged, [&]( const Event* event ) {
+		updateEditorTitle( event->getNode()->asType<UICodeEditor>() );
 	} );
 	if ( NULL == mCurEditor ) {
 		mCurEditor = codeEditor;
@@ -120,11 +153,26 @@ UICodeEditor* App::createCodeEditor() {
 	return codeEditor;
 }
 
+std::string App::titleFromEditor( UICodeEditor* editor ) {
+	std::string title( editor->getDocument().getFilename() );
+	return editor->getDocument().isDirty() ? title + "*" : title;
+}
+
+void App::updateEditorTitle( UICodeEditor* editor ) {
+	std::string title( titleFromEditor( editor ) );
+	if ( editor->getData() ) {
+		UITab* tab = (UITab*)editor->getData();
+		tab->setText( title );
+	}
+	setAppTitle( title );
+}
+
 std::pair<UITab*, UICodeEditor*> App::createCodeEditorInTabWidget( UITabWidget* tabWidget ) {
 	if ( NULL == tabWidget )
 		return std::make_pair( (UITab*)NULL, (UICodeEditor*)NULL );
 	UICodeEditor* editor = createCodeEditor();
 	UITab* tab = tabWidget->add( editor->getDocument().getFilename(), editor );
+	editor->setData( (UintPtr)tab );
 	tabWidget->addEventListener( Event::OnTabClosed, [&]( const Event* event ) {
 		const TabEvent* tabEvent = static_cast<const TabEvent*>( event );
 		if ( tabEvent->getTab()->getOwnedWidget() == mCurEditor ) {
@@ -137,7 +185,6 @@ std::pair<UITab*, UICodeEditor*> App::createCodeEditorInTabWidget( UITabWidget* 
 			d.second->setFocus();
 		}
 	} );
-	editor->setData( (UintPtr)tab );
 	return std::make_pair( tab, editor );
 }
 
@@ -148,13 +195,14 @@ UITabWidget* App::createEditorWithTabWidget( UISplitter* splitter ) {
 	tabWidget->addEventListener( Event::OnTabSelected, [&]( const Event* event ) {
 		UITabWidget* tabWidget = event->getNode()->asType<UITabWidget>();
 		mCurEditor = tabWidget->getSelectedTab()->getOwnedWidget()->asType<UICodeEditor>();
-		setAppTitle( tabWidget->getSelectedTab()->getText() );
+		updateEditorTitle( mCurEditor );
+		mCurEditor->setFocus();
 	} );
 	createCodeEditorInTabWidget( tabWidget );
 	return tabWidget;
 }
 
-UISplitter* App::createEditorSplitter( Node* parent ) {
+UISplitter* App::createEditorWithSplitter( Node* parent ) {
 	if ( NULL == parent )
 		return NULL;
 	UISplitter* splitter = UISplitter::New();
@@ -179,16 +227,14 @@ void App::loadFileFromPath( const std::string& path, UICodeEditor* codeEditor ) 
 	if ( NULL == codeEditor )
 		codeEditor = mCurEditor;
 	codeEditor->loadFromFile( path );
-	String title( codeEditor->getDocument().getFilename() );
-	setAppTitle( title );
-	UITab* tab = ( (UITab*)codeEditor->getData() );
-	tab->setText( title );
+	updateEditorTitle( codeEditor );
 }
 
 void App::openFileDialog() {
 	UICommonDialog* TGDialog = UICommonDialog::New( UI_CDL_DEFAULT_FLAGS, "*" );
 	TGDialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 	TGDialog->setTitle( "Open layout..." );
+	TGDialog->setCloseWithKey( KEY_ESCAPE );
 	TGDialog->addEventListener( Event::OpenFile, [&]( const Event* event ) {
 		auto d = createCodeEditorInTabWidget( tabWidgetFromEditor( mCurEditor ) );
 		UITabWidget* tabWidget = d.first->getTabWidget();
@@ -202,6 +248,10 @@ void App::openFileDialog() {
 				tabWidget->removeTab( firstTab );
 			}
 		}
+	} );
+	TGDialog->addEventListener( Event::OnWindowClose, [&]( const Event* ) {
+		if ( mCurEditor )
+			mCurEditor->setFocus();
 	} );
 	TGDialog->center();
 	TGDialog->show();
@@ -228,6 +278,9 @@ void App::findText( String text ) {
 void App::findTextMessageBox() {
 	UIMessageBox* inputSearch = UIMessageBox::New( UIMessageBox::INPUT, "Find text..." );
 	inputSearch->getTextInput()->setHint( "Find text..." );
+	String text = mCurEditor->getDocument().getSelectedText();
+	if ( !text.empty() )
+		inputSearch->getTextInput()->setText( text );
 	inputSearch->setCloseWithKey( KEY_ESCAPE );
 	inputSearch->addEventListener( Event::MsgBoxConfirmClick, [&]( const Event* event ) {
 		findText( event->getNode()->asType<UIMessageBox>()->getTextInput()->getText() );
@@ -250,11 +303,6 @@ void App::mainLoop() {
 	Input* input = mWindow->getInput();
 
 	input->update();
-
-	if ( mCurEditor && mCurEditor->isDirty() != mDocDirtyState ) {
-		mDocDirtyState = mCurEditor->isDirty();
-		setAppTitle( mCurEditor->getDocument().getFilename() + ( mDocDirtyState ? "*" : "" ) );
-	}
 
 	if ( input->isKeyUp( KEY_F6 ) ) {
 		mUISceneNode->setHighlightFocus( !mUISceneNode->getHighlightFocus() );
@@ -282,6 +330,34 @@ void App::mainLoop() {
 	}
 }
 
+void App::onFileDropped( String file ) {
+	Vector2f mousePos( mUISceneNode->getEventDispatcher()->getMousePosf() );
+	Node* node = mUISceneNode->overFind( mousePos );
+	UICodeEditor* codeEditor = mCurEditor;
+	if ( node->isType( UI_TYPE_CODEEDITOR ) ) {
+		codeEditor = node->asType<UICodeEditor>();
+		if ( !codeEditor->getDocument().isEmpty() ) {
+			auto d = createCodeEditorInTabWidget( tabWidgetFromEditor( codeEditor ) );
+			codeEditor = d.second;
+			d.first->getTabWidget()->setTabSelected( d.first );
+		}
+	}
+	loadFileFromPath( file, codeEditor );
+}
+
+void App::onTextDropped( String text ) {
+	Vector2f mousePos( mUISceneNode->getEventDispatcher()->getMousePosf() );
+	Node* node = mUISceneNode->overFind( mousePos );
+	UICodeEditor* codeEditor = mCurEditor;
+	if ( node->isType( UI_TYPE_CODEEDITOR ) )
+		codeEditor = node->asType<UICodeEditor>();
+	if ( codeEditor && !text.empty() ) {
+		if ( text[text.size() - 1] != '\n' )
+			text += '\n';
+		codeEditor->getDocument().textInput( text );
+	}
+}
+
 App::~App() {
 	eeSAFE_DELETE( mConsole );
 }
@@ -306,24 +382,10 @@ void App::init( const std::string& file ) {
 			[&]( auto* win ) -> bool { return onCloseRequestCallback( win ); } );
 
 		mWindow->getInput()->pushCallback( [&]( InputEvent* event ) {
-			if ( NULL == mCurEditor )
-				return;
-
 			if ( event->Type == InputEvent::FileDropped ) {
-				Vector2f mousePos( mUISceneNode->getEventDispatcher()->getMousePosf() );
-				Node* node = mUISceneNode->overFind( mousePos );
-				UICodeEditor* codeEditor = mCurEditor;
-				if ( node->isType( UI_TYPE_CODEEDITOR ) ) {
-					codeEditor = node->asType<UICodeEditor>();
-					if ( !codeEditor->getDocument().isEmpty() ) {
-						auto d = createCodeEditorInTabWidget( tabWidgetFromEditor( codeEditor ) );
-						codeEditor = d.second;
-						d.first->getTabWidget()->setTabSelected( d.first );
-					}
-				}
-				loadFileFromPath( event->file.file, codeEditor );
+				onFileDropped( event->file.file );
 			} else if ( event->Type == InputEvent::TextDropped ) {
-				mCurEditor->getDocument().textInput( event->textdrop.text );
+				onTextDropped( event->textdrop.text );
 			}
 		} );
 
@@ -348,8 +410,11 @@ void App::init( const std::string& file ) {
 
 		mBaseLayout = UILinearLayout::NewVertical();
 		mBaseLayout->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
+		UISplitter* splitter = UISplitter::New();
+		splitter->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
+		splitter->setParent( mBaseLayout );
 
-		createEditorSplitter( mBaseLayout );
+		createEditorWithSplitter( splitter );
 
 		if ( !file.empty() ) {
 			loadFileFromPath( file );

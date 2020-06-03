@@ -580,6 +580,7 @@ void UICodeEditor::updateEditor() {
 
 void UICodeEditor::onDocumentTextChanged() {
 	invalidateDraw();
+	sendCommonEvent( Event::OnTextChanged );
 }
 
 void UICodeEditor::onDocumentCursorChange( const Doc::TextPosition& ) {
@@ -591,6 +592,7 @@ void UICodeEditor::onDocumentCursorChange( const Doc::TextPosition& ) {
 void UICodeEditor::onDocumentSelectionChange( const Doc::TextRange& ) {
 	resetCursor();
 	invalidateDraw();
+	sendCommonEvent( Event::OnSelectionChanged );
 }
 
 void UICodeEditor::onDocumentLineCountChange( const size_t&, const size_t& ) {

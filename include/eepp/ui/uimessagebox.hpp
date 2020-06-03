@@ -36,7 +36,7 @@ class EE_API UIMessageBox : public UIWindow {
 
 	virtual bool show();
 
-	Uint32 getCloseWithKey() const;
+	const Uint32& getCloseWithKey() const;
 
 	void setCloseWithKey( const Uint32& closeWithKey );
 
