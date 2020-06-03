@@ -51,6 +51,7 @@ class EE_API Event {
 		OnControlClear,
 		MsgBoxConfirmClick,
 		OnTabSelected,
+		OnTabClosed,
 		OnClose, // Warning: Only some controls will report this event.
 		OnDragStart,
 		OnDragStop,

@@ -66,7 +66,7 @@ UICodeEditor::~UICodeEditor() {
 }
 
 Uint32 UICodeEditor::getType() const {
-	return UI_TYPE_CODEEDIT;
+	return UI_TYPE_CODEEDITOR;
 }
 
 bool UICodeEditor::isType( const Uint32& type ) const {

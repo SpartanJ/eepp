@@ -22,7 +22,6 @@ template <class TContainer> class UIItemContainer : public UIWidget {
 
 	virtual void onChildCountChange( Node* child, const bool& removed );
 
-  protected:
 	Node* overFind( const Vector2f& Point );
 };
 

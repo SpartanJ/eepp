@@ -7,6 +7,17 @@
 
 namespace EE { namespace UI {
 
+class EE_API TabEvent : public Event {
+  public:
+	TabEvent( Node* node, UITab* tabEvent, const Uint32& eventType ) :
+		Event( node, eventType ), tab( tabEvent ) {}
+
+	UITab* getTab() const { return tab; }
+
+  protected:
+	UITab* tab;
+};
+
 class EE_API UITabWidget : public UIWidget {
   public:
 	class StyleConfig {
@@ -32,7 +43,7 @@ class EE_API UITabWidget : public UIWidget {
 
 	virtual bool isType( const Uint32& type ) const;
 
-	UITabWidget* add( const String& Text, UINode* CtrlOwned, Drawable* Icon = NULL );
+	UITab* add( const String& Text, UINode* CtrlOwned, Drawable* Icon = NULL );
 
 	UITabWidget* add( UITab* Tab );
 
@@ -44,7 +55,7 @@ class EE_API UITabWidget : public UIWidget {
 
 	Uint32 getTabCount() const;
 
-	void removeTab( const Uint32& Index );
+	void removeTab( const Uint32& index );
 
 	void removeTab( UITab* Tab );
 
@@ -109,9 +120,9 @@ class EE_API UITabWidget : public UIWidget {
 
 	void selectNextTab();
 
-	void setTabSelected( UITab* Tab );
+	UITab* setTabSelected( UITab* Tab );
 
-	void setTabSelected( const Uint32& tabIndex );
+	UITab* setTabSelected( const Uint32& tabIndex );
 
   protected:
 	friend class UITab;

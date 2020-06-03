@@ -1,60 +1,219 @@
+#include "codeeditor.hpp"
 #include <args/args.hxx>
-#include <eepp/ee.hpp>
 
-EE::Window::Window* win = NULL;
-UISceneNode* uiSceneNode = NULL;
-UICodeEditor* codeEditor = NULL;
-Console* console = NULL;
-std::string curFile = "untitled";
-const std::string& windowTitle = "eepp - Code Editor";
-bool docDirtyState = false;
-UIMessageBox* MsgBox = NULL;
-String lastSearch;
+App* appInstance = NULL;
 
-bool onCloseRequestCallback( EE::Window::Window* ) {
-	if ( NULL != codeEditor && codeEditor->isDirty() ) {
-		MsgBox = UIMessageBox::New(
+void appLoop() {
+	appInstance->mainLoop();
+}
+
+bool App::onCloseRequestCallback( EE::Window::Window* ) {
+	if ( NULL != mCurEditor && mCurEditor->isDirty() ) {
+		mMsgBox = UIMessageBox::New(
 			UIMessageBox::OK_CANCEL,
 			"Do you really want to close the code editor?\nAll changes will be lost." );
-		MsgBox->addEventListener( Event::MsgBoxConfirmClick, []( const Event* ) { win->close(); } );
-		MsgBox->addEventListener( Event::OnClose, []( const Event* ) { MsgBox = NULL; } );
-		MsgBox->setTitle( "Close Code Editor?" );
-		MsgBox->center();
-		MsgBox->show();
+		mMsgBox->addEventListener( Event::MsgBoxConfirmClick,
+								   [&]( const Event* ) { mWindow->close(); } );
+		mMsgBox->addEventListener( Event::OnClose, [&]( const Event* ) { mMsgBox = NULL; } );
+		mMsgBox->setTitle( "Close Code Editor?" );
+		mMsgBox->center();
+		mMsgBox->show();
 		return false;
 	} else {
 		return true;
 	}
 }
 
-void setAppTitle( const std::string& title ) {
-	win->setTitle( windowTitle + String( title.empty() ? "" : " - " + title ) );
+void App::splitEditor( const UIOrientation& orientation ) {
+	UITabWidget* tabWidget = tabWidgetFromEditor( mCurEditor );
+	if ( tabWidget ) {
+		UISplitter* splitter = (UISplitter*)tabWidget->getParent();
+		if ( splitter->getChildCount() < 3 ) {
+			splitter->setOrientation( orientation );
+			createEditorSplitter( splitter );
+		}
+	}
 }
 
-void loadFileFromPath( const std::string& path ) {
+UICodeEditor* App::createCodeEditor() {
+	UICodeEditor* codeEditor = UICodeEditor::New();
+	codeEditor->setFontSize( 11 );
+	codeEditor->getDocument().setCommand( "find", [&]() { findTextMessageBox(); } );
+	codeEditor->getDocument().setCommand( "repeat-find", [&] { findText(); } );
+	codeEditor->getDocument().setCommand( "close-app", [&] { closeApp(); } );
+	codeEditor->getDocument().setCommand( "fullscreen-toggle",
+										  [&]() { mWindow->toggleFullscreen(); } );
+	codeEditor->getDocument().setCommand( "open-file", [&] { openFileDialog(); } );
+	codeEditor->getDocument().setCommand( "console-toggle", [&] { mConsole->toggle(); } );
+	codeEditor->getDocument().setCommand( "close-doc", [&] {
+		if ( mCurEditor ) {
+			UITabWidget* tabWidget = tabWidgetFromEditor( mCurEditor );
+			if ( tabWidget ) {
+				tabWidget->removeTab( (UITab*)mCurEditor->getData() );
+				if ( tabWidget->getTabCount() > 0 ) {
+					tabWidget->setTabSelected( tabWidget->getTabCount() - 1 );
+					tabWidget->getSelectedTab()->getOwnedWidget()->setFocus();
+				}
+			}
+		}
+	} );
+	codeEditor->getDocument().setCommand( "create-new", [&] {
+		auto d = createCodeEditorInTabWidget( tabWidgetFromEditor( mCurEditor ) );
+		d.first->getTabWidget()->setTabSelected( d.first );
+		d.second->setFocus();
+	} );
+	codeEditor->getDocument().setCommand( "next-doc", [&] {
+		UITabWidget* tabWidget = tabWidgetFromEditor( mCurEditor );
+		if ( tabWidget && tabWidget->getTabCount() > 1 ) {
+			UITab* tab = (UITab*)mCurEditor->getData();
+			Uint32 tabIndex = tabWidget->getTabIndex( tab );
+			if ( tabIndex + 1 == tabWidget->getTabCount() ) {
+				tab = tabWidget->setTabSelected( (Uint32)0 );
+			} else {
+				tab = tabWidget->setTabSelected( ( Uint32 )( tabIndex + 1 ) );
+			}
+			if ( tab )
+				tab->getOwnedWidget()->setFocus();
+		}
+	} );
+	codeEditor->getDocument().setCommand( "previous-doc", [&] {
+		UITabWidget* tabWidget = tabWidgetFromEditor( mCurEditor );
+		if ( tabWidget && tabWidget->getTabCount() > 1 ) {
+			UITab* tab = (UITab*)mCurEditor->getData();
+			Uint32 tabIndex = tabWidget->getTabIndex( tab );
+			if ( tabIndex == 0 ) {
+				tab = tabWidget->setTabSelected( (Uint32)tabWidget->getTabCount() - 1 );
+			} else {
+				tab = tabWidget->setTabSelected( ( Uint32 )( tabIndex - 1 ) );
+			}
+			if ( tab )
+				tab->getOwnedWidget()->setFocus();
+		}
+	} );
+	codeEditor->getDocument().setCommand( "split-horizontal",
+										  [&] { splitEditor( UIOrientation::Horizontal ); } );
+	codeEditor->getDocument().setCommand( "split-vertical",
+										  [&] { splitEditor( UIOrientation::Vertical ); } );
+	codeEditor->addKeyBindingString( "escape", "close-app", true );
+	codeEditor->addKeyBindingString( "f2", "open-file", true );
+	codeEditor->addKeyBindingString( "f3", "repeat-find", false );
+	codeEditor->addKeyBindingString( "f12", "console-toggle", true );
+	codeEditor->addKeyBindingString( "alt+return", "fullscreen-toggle", true );
+	codeEditor->addKeyBindingString( "ctrl+s", "save", false );
+	codeEditor->addKeyBindingString( "ctrl+f", "find", false );
+	codeEditor->addKeyBindingString( "ctrl+q", "close-app", true );
+	codeEditor->addKeyBindingString( "ctrl+o", "open-file", true );
+	codeEditor->addKeyBindingString( "ctrl+l", "lock-toggle", true );
+	codeEditor->addKeyBindingString( "ctrl+t", "create-new", true );
+	codeEditor->addKeyBindingString( "ctrl+w", "close-doc", true );
+	codeEditor->addKeyBindingString( "ctrl+tab", "next-doc", true );
+	codeEditor->addKeyBindingString( "ctrl+shift+tab", "previous-doc", true );
+	codeEditor->addKeyBindingString( "ctrl+shift+l", "split-horizontal", true );
+	codeEditor->addKeyBindingString( "ctrl+shift+k", "split-vertical", true );
+	codeEditor->addEventListener( Event::OnFocus, [&]( const Event* event ) {
+		mCurEditor = event->getNode()->asType<UICodeEditor>();
+		setAppTitle( mCurEditor->getDocument().getFilename() );
+	} );
+	if ( NULL == mCurEditor ) {
+		mCurEditor = codeEditor;
+	}
+	return codeEditor;
+}
+
+std::pair<UITab*, UICodeEditor*> App::createCodeEditorInTabWidget( UITabWidget* tabWidget ) {
+	if ( NULL == tabWidget )
+		return std::make_pair( (UITab*)NULL, (UICodeEditor*)NULL );
+	UICodeEditor* editor = createCodeEditor();
+	UITab* tab = tabWidget->add( editor->getDocument().getFilename(), editor );
+	tabWidget->addEventListener( Event::OnTabClosed, [&]( const Event* event ) {
+		const TabEvent* tabEvent = static_cast<const TabEvent*>( event );
+		if ( tabEvent->getTab()->getOwnedWidget() == mCurEditor ) {
+			mCurEditor = NULL;
+		}
+		UITabWidget* tabWidget = tabEvent->getTab()->getTabWidget();
+		if ( tabWidget->getTabCount() == 0 ) {
+			auto d = createCodeEditorInTabWidget( tabWidget );
+			d.first->getTabWidget()->setTabSelected( d.first );
+			d.second->setFocus();
+		}
+	} );
+	editor->setData( (UintPtr)tab );
+	return std::make_pair( tab, editor );
+}
+
+UITabWidget* App::createEditorWithTabWidget( UISplitter* splitter ) {
+	UITabWidget* tabWidget = UITabWidget::New();
+	tabWidget->setParent( splitter );
+	tabWidget->setTabsClosable( true );
+	tabWidget->addEventListener( Event::OnTabSelected, [&]( const Event* event ) {
+		UITabWidget* tabWidget = event->getNode()->asType<UITabWidget>();
+		mCurEditor = tabWidget->getSelectedTab()->getOwnedWidget()->asType<UICodeEditor>();
+		setAppTitle( tabWidget->getSelectedTab()->getText() );
+	} );
+	createCodeEditorInTabWidget( tabWidget );
+	return tabWidget;
+}
+
+UISplitter* App::createEditorSplitter( Node* parent ) {
+	if ( NULL == parent )
+		return NULL;
+	UISplitter* splitter = UISplitter::New();
+	splitter->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
+	splitter->setParent( parent );
+	auto d = createEditorWithTabWidget( splitter );
+	d->getSelectedTab()->getOwnedWidget()->setFocus();
+	return splitter;
+}
+
+UITabWidget* App::tabWidgetFromEditor( UICodeEditor* editor ) {
+	if ( editor )
+		return ( (UITab*)editor->getData() )->getTabWidget();
+	return NULL;
+}
+
+void App::setAppTitle( const std::string& title ) {
+	mWindow->setTitle( mWindowTitle + String( title.empty() ? "" : " - " + title ) );
+}
+
+void App::loadFileFromPath( const std::string& path, UICodeEditor* codeEditor ) {
+	if ( NULL == codeEditor )
+		codeEditor = mCurEditor;
 	codeEditor->loadFromFile( path );
-	curFile = FileSystem::fileNameFromPath( path );
-	setAppTitle( curFile );
+	String title( codeEditor->getDocument().getFilename() );
+	setAppTitle( title );
+	UITab* tab = ( (UITab*)codeEditor->getData() );
+	tab->setText( title );
 }
 
-void openFileDialog() {
+void App::openFileDialog() {
 	UICommonDialog* TGDialog = UICommonDialog::New( UI_CDL_DEFAULT_FLAGS, "*" );
 	TGDialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 	TGDialog->setTitle( "Open layout..." );
-	TGDialog->addEventListener( Event::OpenFile, []( const Event* event ) {
-		loadFileFromPath( event->getNode()->asType<UICommonDialog>()->getFullPath() );
+	TGDialog->addEventListener( Event::OpenFile, [&]( const Event* event ) {
+		auto d = createCodeEditorInTabWidget( tabWidgetFromEditor( mCurEditor ) );
+		UITabWidget* tabWidget = d.first->getTabWidget();
+		UITab* addedTab = d.first;
+		loadFileFromPath( event->getNode()->asType<UICommonDialog>()->getFullPath(), d.second );
+		tabWidget->setTabSelected( addedTab );
+		UITab* firstTab = tabWidget->getTab( 0 );
+		if ( addedTab != firstTab ) {
+			UICodeEditor* editor = (UICodeEditor*)firstTab->getOwnedWidget();
+			if ( editor->getDocument().isEmpty() ) {
+				tabWidget->removeTab( firstTab );
+			}
+		}
 	} );
 	TGDialog->center();
 	TGDialog->show();
 }
 
-void findText( String text = "" ) {
+void App::findText( String text ) {
 	if ( text.empty() )
-		text = lastSearch;
+		text = mLastSearch;
 	if ( text.empty() )
 		return;
-	lastSearch = text;
-	TextDocument& doc = codeEditor->getDocument();
+	mLastSearch = text;
+	TextDocument& doc = mCurEditor->getDocument();
 	TextPosition found = doc.find( text, doc.getSelection( true ).end() );
 	if ( found.isValid() ) {
 		doc.setSelection( {{found.line(), found.column() + (Int64)text.size()}, found} );
@@ -66,59 +225,139 @@ void findText( String text = "" ) {
 	}
 }
 
-void findTextMessageBox() {
+void App::findTextMessageBox() {
 	UIMessageBox* inputSearch = UIMessageBox::New( UIMessageBox::INPUT, "Find text..." );
 	inputSearch->getTextInput()->setHint( "Find text..." );
 	inputSearch->setCloseWithKey( KEY_ESCAPE );
-	inputSearch->addEventListener( Event::MsgBoxConfirmClick, []( const Event* event ) {
+	inputSearch->addEventListener( Event::MsgBoxConfirmClick, [&]( const Event* event ) {
 		findText( event->getNode()->asType<UIMessageBox>()->getTextInput()->getText() );
 	} );
-	inputSearch->addEventListener( Event::OnClose, []( const Event* ) { codeEditor->setFocus(); } );
+	inputSearch->addEventListener( Event::OnClose,
+								   [&]( const Event* ) { mCurEditor->setFocus(); } );
 	inputSearch->setTitle( "Find" );
 	inputSearch->getButtonOK()->setText( "Search" );
 	inputSearch->center();
 	inputSearch->show();
 }
 
-void closeApp() {
-	if ( NULL == MsgBox && onCloseRequestCallback( win ) ) {
-		win->close();
+void App::closeApp() {
+	if ( NULL == mMsgBox && onCloseRequestCallback( mWindow ) ) {
+		mWindow->close();
 	}
 }
 
-void mainLoop() {
-	Input* input = win->getInput();
+void App::mainLoop() {
+	Input* input = mWindow->getInput();
 
 	input->update();
 
-	if ( codeEditor->isDirty() != docDirtyState ) {
-		docDirtyState = codeEditor->isDirty();
-		setAppTitle( docDirtyState ? curFile + "*" : curFile );
+	if ( mCurEditor && mCurEditor->isDirty() != mDocDirtyState ) {
+		mDocDirtyState = mCurEditor->isDirty();
+		setAppTitle( mCurEditor->getDocument().getFilename() + ( mDocDirtyState ? "*" : "" ) );
 	}
 
 	if ( input->isKeyUp( KEY_F6 ) ) {
-		uiSceneNode->setHighlightFocus( !uiSceneNode->getHighlightFocus() );
-		uiSceneNode->setHighlightOver( !uiSceneNode->getHighlightOver() );
+		mUISceneNode->setHighlightFocus( !mUISceneNode->getHighlightFocus() );
+		mUISceneNode->setHighlightOver( !mUISceneNode->getHighlightOver() );
 	}
 
 	if ( input->isKeyUp( KEY_F7 ) ) {
-		uiSceneNode->setDrawBoxes( !uiSceneNode->getDrawBoxes() );
+		mUISceneNode->setDrawBoxes( !mUISceneNode->getDrawBoxes() );
 	}
 
 	if ( input->isKeyUp( KEY_F8 ) ) {
-		uiSceneNode->setDrawDebugData( !uiSceneNode->getDrawDebugData() );
+		mUISceneNode->setDrawDebugData( !mUISceneNode->getDrawDebugData() );
 	}
 
 	SceneManager::instance()->update();
 
-	if ( SceneManager::instance()->getUISceneNode()->invalidated() || console->isActive() ||
-		 console->isFading() ) {
-		win->clear();
+	if ( SceneManager::instance()->getUISceneNode()->invalidated() || mConsole->isActive() ||
+		 mConsole->isFading() ) {
+		mWindow->clear();
 		SceneManager::instance()->draw();
-		console->draw();
-		win->display();
+		mConsole->draw();
+		mWindow->display();
 	} else {
-		Sys::sleep( Milliseconds( win->isVisible() ? 1 : 16 ) );
+		Sys::sleep( Milliseconds( mWindow->isVisible() ? 1 : 16 ) );
+	}
+}
+
+App::~App() {
+	eeSAFE_DELETE( mConsole );
+}
+
+void App::init( const std::string& file ) {
+	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
+	Display* currentDisplay = displayManager->getDisplayIndex( 0 );
+	Float pixelDensity = currentDisplay->getPixelDensity();
+
+	displayManager->enableScreenSaver();
+	displayManager->enableMouseFocusClickThrough();
+
+	std::string resPath( Sys::getProcessPath() );
+
+	mWindow = Engine::instance()->createWindow(
+		WindowSettings( 1280, 720, mWindowTitle, WindowStyle::Default, WindowBackend::Default, 32,
+						resPath + "assets/icon/ee.png", pixelDensity ),
+		ContextSettings( true ) );
+
+	if ( mWindow->isOpen() ) {
+		mWindow->setCloseRequestCallback(
+			[&]( auto* win ) -> bool { return onCloseRequestCallback( win ); } );
+
+		mWindow->getInput()->pushCallback( [&]( InputEvent* event ) {
+			if ( NULL == mCurEditor )
+				return;
+
+			if ( event->Type == InputEvent::FileDropped ) {
+				Vector2f mousePos( mUISceneNode->getEventDispatcher()->getMousePosf() );
+				Node* node = mUISceneNode->overFind( mousePos );
+				UICodeEditor* codeEditor = mCurEditor;
+				if ( node->isType( UI_TYPE_CODEEDITOR ) ) {
+					codeEditor = node->asType<UICodeEditor>();
+					if ( !codeEditor->getDocument().isEmpty() ) {
+						auto d = createCodeEditorInTabWidget( tabWidgetFromEditor( codeEditor ) );
+						codeEditor = d.second;
+						d.first->getTabWidget()->setTabSelected( d.first );
+					}
+				}
+				loadFileFromPath( event->file.file, codeEditor );
+			} else if ( event->Type == InputEvent::TextDropped ) {
+				mCurEditor->getDocument().textInput( event->textdrop.text );
+			}
+		} );
+
+		PixelDensity::setPixelDensity( eemax( mWindow->getScale(), pixelDensity ) );
+
+		mUISceneNode = UISceneNode::New();
+
+		mUISceneNode->getUIThemeManager()->setDefaultFont( FontTrueType::New(
+			"NotoSans-Regular", resPath + "assets/fonts/NotoSans-Regular.ttf" ) );
+
+		Font* fontMono =
+			FontTrueType::New( "monospace", resPath + "assets/fonts/DejaVuSansMono.ttf" );
+
+		SceneManager::instance()->add( mUISceneNode );
+
+		StyleSheetParser cssParser;
+		if ( cssParser.loadFromFile( resPath + "assets/ui/breeze.css" ) ) {
+			mUISceneNode->setStyleSheet( cssParser.getStyleSheet() );
+		}
+
+		mUISceneNode->getRoot()->addClass( "appbackground" );
+
+		mBaseLayout = UILinearLayout::NewVertical();
+		mBaseLayout->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
+
+		createEditorSplitter( mBaseLayout );
+
+		if ( !file.empty() ) {
+			loadFileFromPath( file );
+		}
+
+		mConsole = eeNew( Console, ( fontMono, true, true, 1024 * 1000, 0, mWindow ) );
+
+		mWindow->runMainLoop( &appLoop );
 	}
 }
 
@@ -141,97 +380,9 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		return EXIT_FAILURE;
 	}
 
-	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
-	Display* currentDisplay = displayManager->getDisplayIndex( 0 );
-	Float pixelDensity = currentDisplay->getPixelDensity();
-
-	displayManager->enableScreenSaver();
-	displayManager->enableMouseFocusClickThrough();
-
-	std::string resPath( Sys::getProcessPath() );
-
-	win = Engine::instance()->createWindow(
-		WindowSettings( 1280, 720, windowTitle, WindowStyle::Default, WindowBackend::Default, 32,
-						resPath + "assets/icon/ee.png", pixelDensity ),
-		ContextSettings( true ) );
-
-	if ( win->isOpen() ) {
-		win->setCloseRequestCallback( cb::Make1( onCloseRequestCallback ) );
-
-		win->getInput()->pushCallback( []( InputEvent* event ) {
-			if ( NULL == codeEditor )
-				return;
-
-			if ( event->Type == InputEvent::FileDropped ) {
-				loadFileFromPath( event->file.file );
-			} else if ( event->Type == InputEvent::TextDropped ) {
-				codeEditor->getDocument().textInput( event->textdrop.text );
-			}
-		} );
-
-		PixelDensity::setPixelDensity( eemax( win->getScale(), pixelDensity ) );
-
-		uiSceneNode = UISceneNode::New();
-
-		uiSceneNode->getUIThemeManager()->setDefaultFont( FontTrueType::New(
-			"NotoSans-Regular", resPath + "assets/fonts/NotoSans-Regular.ttf" ) );
-
-		Font* fontMono =
-			FontTrueType::New( "monospace", resPath + "assets/fonts/DejaVuSansMono.ttf" );
-
-		SceneManager::instance()->add( uiSceneNode );
-
-		StyleSheetParser cssParser;
-		if ( cssParser.loadFromFile( resPath + "assets/ui/breeze.css" ) ) {
-			uiSceneNode->setStyleSheet( cssParser.getStyleSheet() );
-		}
-
-		std::string layout = R"xml(
-			<LinearLayout layout_width="match_parent"
-						  layout_height="match_parent"
-						  orientation="vertical">
-				<CodeEditor id="code_edit"
-					layout_width="match_parent"
-					layout_height="match_parent"
-					/>
-			</LinearLayout>
-		)xml";
-		uiSceneNode->loadLayoutFromString( layout );
-
-		uiSceneNode->bind( "code_edit", codeEditor );
-		uiSceneNode->getRoot()->addClass( "appbackground" );
-		codeEditor->setFontSize( 11 );
-		codeEditor->getDocument().setCommand( "find", []() { findTextMessageBox(); } );
-		codeEditor->getDocument().setCommand( "repeat-find", []() { findText(); } );
-		codeEditor->getDocument().setCommand( "close-app", []() { closeApp(); } );
-		codeEditor->getDocument().setCommand( "fullscreen-toggle",
-											  []() { win->toggleFullscreen(); } );
-		codeEditor->getDocument().setCommand( "open-file", [] { openFileDialog(); } );
-		codeEditor->getDocument().setCommand( "console-toggle", [] { console->toggle(); } );
-		codeEditor->addKeyBindingString( "ctrl+s", "save", false );
-		codeEditor->addKeyBindingString( "ctrl+f", "find", false );
-		codeEditor->addKeyBindingString( "f3", "repeat-find", false );
-		codeEditor->addKeyBindingString( "escape", "close-app", true );
-		codeEditor->addKeyBindingString( "ctrl+q", "close-app", true );
-		codeEditor->addKeyBindingString( "alt+return", "fullscreen-toggle", true );
-		codeEditor->addKeyBindingString( "ctrl+o", "open-file", true );
-		codeEditor->addKeyBindingString( "f2", "open-file", true );
-		codeEditor->addKeyBindingString( "ctrl+l", "lock-toggle", true );
-		codeEditor->addKeyBinding( {win->getInput()->getKeyFromScancode( SCANCODE_GRAVE ), 0},
-								   "console-toggle", true );
-
-		codeEditor->setFocus();
-
-		if ( file ) {
-			loadFileFromPath( file.Get() );
-		}
-
-		console = eeNew( Console, ( fontMono, true, true, 1024 * 1000, 0, win ) );
-
-		win->runMainLoop( &mainLoop );
-	}
-
-	eeSAFE_DELETE( console );
+	appInstance = eeNew( App, () );
+	appInstance->init( file.Get() );
+	eeSAFE_DELETE( appInstance );
 
 	Engine::destroySingleton();
 	MemoryManager::showResults();

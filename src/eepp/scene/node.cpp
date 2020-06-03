@@ -578,97 +578,106 @@ void Node::childDeleteAll() {
 	}
 }
 
-void Node::childAdd( Node* ChildCtrl ) {
+void Node::childAdd( Node* node ) {
 	if ( NULL == mChild ) {
-		mChild = ChildCtrl;
-		mChildLast = ChildCtrl;
+		mChild = node;
+		mChildLast = node;
 	} else {
-		mChildLast->mNext = ChildCtrl;
-		ChildCtrl->mPrev = mChildLast;
-		ChildCtrl->mNext = NULL;
-		mChildLast = ChildCtrl;
+		mChildLast->mNext = node;
+		node->mPrev = mChildLast;
+		node->mNext = NULL;
+		mChildLast = node;
 	}
 
-	onChildCountChange( ChildCtrl, false );
+	eeASSERT( !( NULL == mChildLast && NULL != mChild ) );
+
+	onChildCountChange( node, false );
 }
 
-void Node::childAddAt( Node* ChildCtrl, Uint32 Pos ) {
-	eeASSERT( NULL != ChildCtrl );
+void Node::childAddAt( Node* node, Uint32 index ) {
+	eeASSERT( NULL != node );
 
-	Node* ChildLoop = mChild;
+	Node* nodeLoop = mChild;
 
-	ChildCtrl->setParent( this );
+	node->setParent( this );
 
-	childRemove( ChildCtrl );
+	childRemove( node );
 
-	ChildCtrl->mParentCtrl = this;
-	ChildCtrl->mSceneNode = ChildCtrl->findSceneNode();
+	node->mParentCtrl = this;
+	node->mSceneNode = node->findSceneNode();
 
-	if ( ChildLoop == NULL ) {
-		mChild = ChildCtrl;
-		mChildLast = ChildCtrl;
-		ChildCtrl->mNext = NULL;
-		ChildCtrl->mPrev = NULL;
+	if ( nodeLoop == NULL ) {
+		mChild = node;
+		mChildLast = node;
+		node->mNext = NULL;
+		node->mPrev = NULL;
 	} else {
-		if ( Pos == 0 ) {
+		if ( index == 0 ) {
 			if ( NULL != mChild ) {
-				mChild->mPrev = ChildCtrl;
+				mChild->mPrev = node;
 			}
 
-			ChildCtrl->mNext = mChild;
-			ChildCtrl->mPrev = NULL;
-			mChild = ChildCtrl;
+			node->mNext = mChild;
+			node->mPrev = NULL;
+			mChild = node;
+
+			if ( mChild->mNext == NULL )
+				mChildLast = mChild;
 		} else {
 			Uint32 i = 0;
 
-			while ( NULL != ChildLoop->mNext && i < Pos ) {
-				ChildLoop = ChildLoop->mNext;
+			while ( NULL != nodeLoop->mNext && i < index ) {
+				nodeLoop = nodeLoop->mNext;
 				i++;
 			}
 
-			Node* ChildTmp = ChildLoop->mNext;
-			ChildLoop->mNext = ChildCtrl;
-			ChildCtrl->mPrev = ChildLoop;
-			ChildCtrl->mNext = ChildTmp;
+			Node* ChildTmp = nodeLoop->mNext;
+			nodeLoop->mNext = node;
+			node->mPrev = nodeLoop;
+			node->mNext = ChildTmp;
 
 			if ( NULL != ChildTmp ) {
-				ChildTmp->mPrev = ChildCtrl;
+				ChildTmp->mPrev = node;
 			} else {
-				mChildLast = ChildCtrl;
+				mChildLast = node;
 			}
 		}
 	}
 
-	onChildCountChange( ChildCtrl, false );
+	eeASSERT( !( NULL == mChildLast && NULL != mChild ) );
+
+	onChildCountChange( node, false );
 }
 
-void Node::childRemove( Node* ChildCtrl ) {
-	if ( ChildCtrl == mChild ) {
+void Node::childRemove( Node* node ) {
+	if ( node == mChild ) {
 		mChild = mChild->mNext;
 
 		if ( NULL != mChild ) {
 			mChild->mPrev = NULL;
 
-			if ( ChildCtrl == mChildLast )
+			if ( node == mChildLast )
 				mChildLast = mChild;
 		} else {
 			mChildLast = NULL;
 		}
 	} else {
-		if ( mChildLast == ChildCtrl )
+		if ( mChildLast == node )
 			mChildLast = mChildLast->mPrev;
 
-		ChildCtrl->mPrev->mNext = ChildCtrl->mNext;
+		node->mPrev->mNext = node->mNext;
 
-		if ( NULL != ChildCtrl->mNext ) {
-			ChildCtrl->mNext->mPrev = ChildCtrl->mPrev;
-			ChildCtrl->mNext = NULL;
+		if ( NULL != node->mNext ) {
+			node->mNext->mPrev = node->mPrev;
+			node->mNext = NULL;
 		}
 
-		ChildCtrl->mPrev = NULL;
+		node->mPrev = NULL;
 	}
 
-	onChildCountChange( ChildCtrl, true );
+	eeASSERT( !( NULL == mChildLast && NULL != mChild ) );
+
+	onChildCountChange( node, true );
 }
 
 void Node::childsCloseAll() {
@@ -1092,7 +1101,7 @@ void Node::onParentSizeChange( const Vector2f& ) {
 	invalidateDraw();
 }
 
-void Node::onChildCountChange( Node* child, const bool& removed ) {
+void Node::onChildCountChange( Node*, const bool& ) {
 	invalidateDraw();
 }
 
@@ -1633,7 +1642,7 @@ bool Node::isDrawInvalidator() const {
 	return false;
 }
 
-void Node::invalidate( Node* invalidator ) {
+void Node::invalidate( Node* ) {
 	if ( mVisible && mAlpha != 0.f ) {
 		writeNodeFlag( NODE_FLAG_VIEW_DIRTY, 1 );
 	}

@@ -15,6 +15,7 @@
 #include <eepp/ui/uilistboxitem.hpp>
 #include <eepp/ui/uiloader.hpp>
 #include <eepp/ui/uimenu.hpp>
+#include <eepp/ui/uimenubar.hpp>
 #include <eepp/ui/uimenuitem.hpp>
 #include <eepp/ui/uimenuseparator.hpp>
 #include <eepp/ui/uimessagebox.hpp>
@@ -31,6 +32,7 @@
 #include <eepp/ui/uiskin.hpp>
 #include <eepp/ui/uislider.hpp>
 #include <eepp/ui/uispinbox.hpp>
+#include <eepp/ui/uisplitter.hpp>
 #include <eepp/ui/uisprite.hpp>
 #include <eepp/ui/uitab.hpp>
 #include <eepp/ui/uitable.hpp>
@@ -47,7 +49,6 @@
 #include <eepp/ui/uiviewpager.hpp>
 #include <eepp/ui/uiwidget.hpp>
 #include <eepp/ui/uiwindow.hpp>
-#include <eepp/ui/uimenubar.hpp>
 
 #include <eepp/ui/uiwidgetcreator.hpp>
 

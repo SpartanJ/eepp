@@ -29,6 +29,10 @@ TextDocument::TextDocument() :
 	reset();
 }
 
+bool TextDocument::isEmpty() {
+	return linesCount() == 1 && line( 0 ).size() == 1;
+}
+
 void TextDocument::reset() {
 	mFilePath = mDefaultFileName;
 	mSelection.set( {0, 0}, {0, 0} );
@@ -188,8 +192,8 @@ bool TextDocument::save() {
 	return save( mFilePath, mIsBOM );
 }
 
-const std::string TextDocument::getFilename() const {
-	return mFilePath;
+std::string TextDocument::getFilename() const {
+	return FileSystem::fileNameFromPath( mFilePath );
 }
 
 void TextDocument::setSelection( TextPosition position ) {

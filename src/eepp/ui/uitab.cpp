@@ -13,7 +13,7 @@ UITab::UITab() : UISelectButton( "tab" ), mOwnedWidget( NULL ) {
 	mTextBox->setElementTag( mTag + "::text" );
 	mIcon->setElementTag( mTag + "::icon" );
 	applyDefaultTheme();
-	auto cb = [&]( const Event* event ) { onSizeChange(); };
+	auto cb = [&]( const Event* ) { onSizeChange(); };
 	mTextBox->addEventListener( Event::OnSizeChange, cb );
 	mIcon->addEventListener( Event::OnSizeChange, cb );
 }

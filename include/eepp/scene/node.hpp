@@ -370,6 +370,8 @@ class EE_API Node : public Transformable {
 
 	bool isClosing() const;
 
+	virtual Node* overFind( const Vector2f& Point );
+
   protected:
 	typedef std::map<Uint32, std::map<Uint32, EventCallback>> EventsMap;
 	friend class EventDispatcher;
@@ -460,8 +462,6 @@ class EE_API Node : public Transformable {
 
 	virtual void onAlphaChange();
 
-	virtual Node* overFind( const Vector2f& Point );
-
 	virtual void onSceneChange();
 
 	void clipStart();
@@ -484,11 +484,11 @@ class EE_API Node : public Transformable {
 
 	void childDeleteAll();
 
-	void childAdd( Node* ChildCtrl );
+	void childAdd( Node* node );
 
-	void childAddAt( Node* ChildCtrl, Uint32 position );
+	void childAddAt( Node* node, Uint32 index );
 
-	void childRemove( Node* ChildCtrl );
+	void childRemove( Node* node );
 
 	Rectf getScreenBounds();
 

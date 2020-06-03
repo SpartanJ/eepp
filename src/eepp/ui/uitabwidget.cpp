@@ -88,7 +88,7 @@ void UITabWidget::setContainerSize() {
 	Sizef s( mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
 			 mSize.getHeight() - PixelDensity::dpToPx( mStyleConfig.TabHeight ) - mRealPadding.Top -
 				 mRealPadding.Bottom );
-	if ( s != mCtrlContainer->getSize() ) {
+	if ( s != mCtrlContainer->getPixelsSize() ) {
 		mCtrlContainer->setPixelsSize( s );
 
 		for ( auto& tab : mTabs ) {
@@ -374,8 +374,10 @@ UITab* UITabWidget::createTab( const String& Text, UINode* ownedWidget, Drawable
 	return tab;
 }
 
-UITabWidget* UITabWidget::add( const String& Text, UINode* CtrlOwned, Drawable* Icon ) {
-	return add( createTab( Text, CtrlOwned, Icon ) );
+UITab* UITabWidget::add( const String& Text, UINode* CtrlOwned, Drawable* Icon ) {
+	UITab* tab = createTab( Text, CtrlOwned, Icon );
+	add( tab );
+	return tab;
 }
 
 UITabWidget* UITabWidget::add( UITab* Tab ) {
@@ -423,25 +425,22 @@ Uint32 UITabWidget::getTabCount() const {
 	return mTabs.size();
 }
 
-void UITabWidget::removeTab( const Uint32& Index ) {
-	eeASSERT( Index < mTabs.size() );
+void UITabWidget::removeTab( const Uint32& index ) {
+	eeASSERT( index < mTabs.size() );
 
-	if ( mTabs[Index] == mTabSelected ) {
-		mTabSelected->getOwnedWidget()->setVisible( false );
-		mTabSelected->getOwnedWidget()->setEnabled( false );
-	}
+	UITab* tab = mTabs[index];
 
-	mTabs[Index]->close();
-	mTabs[Index]->setVisible( false );
-	mTabs[Index]->setEnabled( false );
-	mTabs[Index] = NULL;
+	tab->close();
+	tab->setVisible( false );
+	tab->setEnabled( false );
+	tab->getOwnedWidget()->close();
+	tab->getOwnedWidget()->setVisible( false );
+	tab->getOwnedWidget()->setEnabled( false );
 
-	mTabs.erase( mTabs.begin() + Index );
+	mTabs.erase( mTabs.begin() + index );
 
-	mTabSelected = NULL;
-
-	if ( Index == mTabSelectedIndex ) {
-		if ( mTabs.size() > 0 ) {
+	if ( index == mTabSelectedIndex ) {
+		if ( !mTabs.empty() ) {
 			if ( mTabSelectedIndex < mTabs.size() ) {
 				setTabSelected( mTabs[mTabSelectedIndex] );
 			} else {
@@ -455,9 +454,14 @@ void UITabWidget::removeTab( const Uint32& Index ) {
 			mTabSelected = NULL;
 			mTabSelectedIndex = eeINDEX_NOT_FOUND;
 		}
+	} else {
+		mTabSelectedIndex = getTabIndex( mTabSelected );
 	}
 
 	orderTabs();
+
+	TabEvent tabEvent( this, tab, Event::OnTabClosed );
+	sendEvent( &tabEvent );
 }
 
 void UITabWidget::removeTab( UITab* Tab ) {
@@ -465,11 +469,16 @@ void UITabWidget::removeTab( UITab* Tab ) {
 }
 
 void UITabWidget::removeAllTabs() {
+	std::deque<UITab*> tabs = mTabs;
+
 	for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
 		if ( NULL != mTabs[i] ) {
 			mTabs[i]->close();
 			mTabs[i]->setVisible( false );
 			mTabs[i]->setEnabled( false );
+			mTabs[i]->getOwnedWidget()->close();
+			mTabs[i]->getOwnedWidget()->setVisible( false );
+			mTabs[i]->getOwnedWidget()->setEnabled( false );
 		}
 	}
 
@@ -479,6 +488,13 @@ void UITabWidget::removeAllTabs() {
 	mTabSelectedIndex = eeINDEX_NOT_FOUND;
 
 	orderTabs();
+
+	for ( Uint32 i = 0; i < tabs.size(); i++ ) {
+		if ( NULL != tabs[i] ) {
+			TabEvent tabEvent( this, tabs[i], Event::OnTabClosed );
+			sendEvent( &tabEvent );
+		}
+	}
 }
 
 void UITabWidget::insertTab( const String& Text, UINode* CtrlOwned, Drawable* Icon,
@@ -494,18 +510,18 @@ void UITabWidget::insertTab( UITab* Tab, const Uint32& Index ) {
 	orderTabs();
 }
 
-void UITabWidget::setTabSelected( UITab* Tab ) {
+UITab* UITabWidget::setTabSelected( UITab* Tab ) {
 	if ( NULL == Tab )
-		return;
+		return NULL;
 
 	if ( std::find( mTabs.begin(), mTabs.end(), Tab ) == mTabs.end() )
-		return;
+		return NULL;
 
 	invalidateDraw();
 
 	if ( Tab == mTabSelected ) {
 		refreshOwnedWidget( Tab );
-		return;
+		return NULL;
 	}
 
 	if ( NULL != mTabSelected ) {
@@ -531,12 +547,15 @@ void UITabWidget::setTabSelected( UITab* Tab ) {
 
 		sendCommonEvent( Event::OnTabSelected );
 	}
+
+	return Tab;
 }
 
-void UITabWidget::setTabSelected( const Uint32& tabIndex ) {
+UITab* UITabWidget::setTabSelected( const Uint32& tabIndex ) {
 	if ( tabIndex < mTabs.size() ) {
-		setTabSelected( mTabs[tabIndex] );
+		return setTabSelected( mTabs[tabIndex] );
 	}
+	return NULL;
 }
 
 void UITabWidget::refreshOwnedWidget( UITab* tab ) {

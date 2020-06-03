@@ -190,7 +190,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
 										   const Uint32& propertyIndex = 0 );
-	protected:
+
+  protected:
 	struct LastXOffset {
 		TextPosition position;
 		Float offset;

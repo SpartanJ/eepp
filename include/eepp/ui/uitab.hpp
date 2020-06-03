@@ -34,6 +34,8 @@ class EE_API UITab : public UISelectButton {
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
 										   const Uint32& propertyIndex = 0 );
 
+	UITabWidget* getTabWidget();
+
   protected:
 	friend class UITabWidget;
 
@@ -48,8 +50,6 @@ class EE_API UITab : public UISelectButton {
 	virtual void onStateChange();
 
 	virtual void onAutoSize();
-
-	UITabWidget* getTabWidget();
 
 	virtual void onParentChange();
 

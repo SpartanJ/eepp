@@ -5,7 +5,6 @@
 namespace EE { namespace UI {
 
 class UISplitterSeparator : public UIWidget {
-
   public:
 	static UISplitterSeparator* NewWithTag( const std::string& tag, UISplitter* parent ) {
 		return eeNew( UISplitterSeparator, ( tag, parent ) );
@@ -63,9 +62,9 @@ UISplitter* UISplitter::New() {
 UISplitter::UISplitter() :
 	UILayout( "splitter" ),
 	mOrientation( UIOrientation::Horizontal ),
-	mSplitOnlyWhenNeeded( false ),
+	mSplitOnlyWhenNeeded( true ),
 	mAlwaysShowSplitter( true ),
-	mDivisionSplit( 1.f ),
+	mDivisionSplit( 0.5f ),
 	mFirstWidget( NULL ),
 	mLastWidget( NULL ) {
 	mFlags |= UI_OWNS_CHILDS_POSITION;
@@ -131,8 +130,6 @@ void UISplitter::setDivisionSplit( const Float& divisionSplit ) {
 }
 
 void UISplitter::onChildCountChange( Node* child, const bool& removed ) {
-	UILayout::onChildCountChange( child, removed );
-
 	if ( child != mSplitter && !removed ) {
 		if ( !child->isWidget() ) {
 			child->close();
@@ -142,6 +139,7 @@ void UISplitter::onChildCountChange( Node* child, const bool& removed ) {
 
 		if ( getChildCount() > 3 ) {
 			child->close();
+			return;
 		} else {
 			if ( NULL == mFirstWidget ) {
 				mFirstWidget = childWidget;
@@ -151,6 +149,8 @@ void UISplitter::onChildCountChange( Node* child, const bool& removed ) {
 			mSplitter->toFront();
 		}
 	}
+
+	UILayout::onChildCountChange( child, removed );
 }
 
 void UISplitter::updateFromDrag() {
@@ -167,17 +167,17 @@ void UISplitter::updateFromDrag() {
 	}
 
 	if ( UIOrientation::Horizontal == mOrientation ) {
-		Float firstWidgetMinSize =
-			mFirstWidget ? mFirstWidget->getCurrentMinSize().getWidth() : 0.f;
-		if ( mSplitter->getPosition().x < mPadding.Left + firstWidgetMinSize ) {
-			mSplitter->setPosition( mPadding.Left + firstWidgetMinSize,
-									mSplitter->getPosition().y );
+		Float fMinSize = mFirstWidget ? mFirstWidget->getCurrentMinSize().getWidth() : 0.f;
+
+		if ( mSplitter->getPosition().x < mPadding.Left + fMinSize ) {
+			mSplitter->setPosition( mPadding.Left + fMinSize, mSplitter->getPosition().y );
 		}
 
-		Float lastWidgetMinSize = mLastWidget ? mLastWidget->getCurrentMinSize().getWidth() : 0.f;
+		Float lMinSize = mLastWidget ? mLastWidget->getCurrentMinSize().getWidth() : 0.f;
+
 		if ( mSplitter->getPosition().x + mSplitter->getSize().getWidth() >
-			 mDpSize.getWidth() - mPadding.Right - lastWidgetMinSize ) {
-			mSplitter->setPosition( mDpSize.getWidth() - mPadding.Right - lastWidgetMinSize -
+			 mDpSize.getWidth() - mPadding.Right - lMinSize ) {
+			mSplitter->setPosition( mDpSize.getWidth() - mPadding.Right - lMinSize -
 										mSplitter->getSize().getWidth(),
 									mSplitter->getPosition().y );
 		}
@@ -185,17 +185,17 @@ void UISplitter::updateFromDrag() {
 		mSplitter->setPixelsSize( mSplitter->getPixelsSize().getWidth(),
 								  mSize.getHeight() - mRealPadding.Top - mRealPadding.Bottom );
 	} else {
-		Float firstWidgetMinSize =
-			mFirstWidget ? mFirstWidget->getCurrentMinSize().getHeight() : 0.f;
-		if ( mSplitter->getPosition().y < mPadding.Top + firstWidgetMinSize ) {
-			mSplitter->setPosition( mSplitter->getPosition().x, mPadding.Top + firstWidgetMinSize );
+		Float fMinSize = mFirstWidget ? mFirstWidget->getCurrentMinSize().getHeight() : 0.f;
+
+		if ( mSplitter->getPosition().y < mPadding.Top + fMinSize ) {
+			mSplitter->setPosition( mSplitter->getPosition().x, mPadding.Top + fMinSize );
 		}
 
-		Float lastWidgetMinSize = mLastWidget ? mLastWidget->getCurrentMinSize().getHeight() : 0.f;
-		if ( mSplitter->getPosition().y >
-			 mDpSize.getHeight() - mPadding.Bottom - lastWidgetMinSize ) {
+		Float lMinSize = mLastWidget ? mLastWidget->getCurrentMinSize().getHeight() : 0.f;
+
+		if ( mSplitter->getPosition().y > mDpSize.getHeight() - mPadding.Bottom - lMinSize ) {
 			mSplitter->setPosition( mSplitter->getPosition().x,
-									mDpSize.getHeight() - mPadding.Bottom - lastWidgetMinSize -
+									mDpSize.getHeight() - mPadding.Bottom - lMinSize -
 										+mSplitter->getSize().getHeight() );
 		}
 
@@ -249,15 +249,56 @@ void UISplitter::updateFromDrag() {
 }
 
 void UISplitter::updateLayout() {
+	mDirtyLayout = true;
+
+	if ( !getParent()->isLayout() && !getParent()->asType<UINode>()->ownsChildPosition() ) {
+		bool sizeChanged = false;
+		Sizef size( getSize() );
+
+		if ( getLayoutWidthPolicy() == SizePolicy::MatchParent && 0 == getLayoutWeight() ) {
+			Float w = getParent()->getSize().getWidth() - mLayoutMargin.Left - mLayoutMargin.Right;
+
+			if ( getParent()->isType( UI_TYPE_LAYOUT ) ) {
+				UILayout* pLay = static_cast<UILayout*>( getParent() );
+				w = w - pLay->getPadding().Left - pLay->getPadding().Right;
+			}
+
+			if ( (int)w != (int)getSize().getWidth() ) {
+				sizeChanged = true;
+				size.setWidth( w );
+			}
+		}
+
+		if ( getLayoutHeightPolicy() == SizePolicy::MatchParent ) {
+			Float h = getParent()->getSize().getHeight() - mLayoutMargin.Top - mLayoutMargin.Bottom;
+
+			if ( getParent()->isType( UI_TYPE_LAYOUT ) ) {
+				UILayout* pLay = static_cast<UILayout*>( getParent() );
+				h = h - pLay->getPadding().Top - pLay->getPadding().Bottom;
+			}
+
+			if ( (int)h != (int)getSize().getHeight() ) {
+				sizeChanged = true;
+				size.setHeight( h );
+			}
+		}
+
+		if ( sizeChanged ) {
+			setInternalSize( size );
+		}
+	}
+
 	if ( mSplitOnlyWhenNeeded && !mLastWidget ) {
 		mSplitter->setVisible( false )->setEnabled( false );
 
 		if ( mFirstWidget ) {
-			mFirstWidget->setPosition( mRealPadding.Left, mRealPadding.Top );
+			mFirstWidget->setPixelsPosition( mRealPadding.Left, mRealPadding.Top );
 			mFirstWidget->setPixelsSize( mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
 										 mSize.getHeight() - mRealPadding.Top -
 											 mRealPadding.Bottom );
 		}
+
+		mDirtyLayout = false;
 		return;
 	}
 
@@ -277,21 +318,31 @@ void UISplitter::updateLayout() {
 
 	if ( mFirstWidget ) {
 		mFirstWidget->setPixelsPosition( mRealPadding.Left, mRealPadding.Top );
-		if ( UIOrientation::Horizontal == mOrientation ) {
-			mFirstWidget->setPixelsSize( firstSplit, mSize.getHeight() - mRealPadding.Top -
-														 mRealPadding.Bottom );
-		} else {
-			mFirstWidget->setPixelsSize( mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
-										 firstSplit );
-		}
 
 		if ( UIOrientation::Horizontal == mOrientation ) {
+			Float fMinSize = mFirstWidget ? mFirstWidget->getCurrentMinSize().getWidth() : 0.f;
+
+			firstSplit = eemax( firstSplit, fMinSize );
+			secondSplit = totalSpace - firstSplit;
+
+			mFirstWidget->setPixelsSize( firstSplit, mSize.getHeight() - mRealPadding.Top -
+														 mRealPadding.Bottom );
+
 			mSplitter->setPixelsPosition( mFirstWidget->getPixelsPosition().x +
 											  mFirstWidget->getPixelsSize().getWidth(),
 										  mRealPadding.Top );
 			mSplitter->setPixelsSize( mSplitter->getPixelsSize().getWidth(),
 									  mSize.getHeight() - mRealPadding.Top - mRealPadding.Bottom );
 		} else {
+
+			Float fMinSize = mFirstWidget ? mFirstWidget->getCurrentMinSize().getHeight() : 0.f;
+
+			firstSplit = eemax( firstSplit, fMinSize );
+			secondSplit = totalSpace - firstSplit;
+
+			mFirstWidget->setPixelsSize( mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
+										 firstSplit );
+
 			mSplitter->setPixelsPosition( mRealPadding.Left,
 										  mFirstWidget->getPixelsPosition().y +
 											  mFirstWidget->getPixelsSize().getHeight() );
@@ -322,7 +373,9 @@ void UISplitter::updateLayout() {
 Uint32 UISplitter::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
 		case NodeMessage::LayoutAttributeChange: {
-			tryUpdateLayout();
+			if ( !mSplitter->isDragging() ) {
+				tryUpdateLayout();
+			}
 			return 1;
 		}
 	}

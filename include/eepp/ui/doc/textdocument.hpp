@@ -40,6 +40,8 @@ class EE_API TextDocument {
 
 	TextDocument();
 
+	bool isEmpty();
+
 	void reset();
 
 	void loadFromStream( IOStream& path );
@@ -52,7 +54,7 @@ class EE_API TextDocument {
 
 	bool save( IOStream& stream, const bool& utf8bom = false );
 
-	const std::string getFilename() const;
+	std::string getFilename() const;
 
 	void setSelection( TextPosition position );
 
