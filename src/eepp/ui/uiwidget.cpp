@@ -1063,7 +1063,7 @@ const Uint32& UIWidget::getStylePreviousState() const {
 std::vector<UIWidget*> UIWidget::findAllByClass( const std::string& className ) {
 	std::vector<UIWidget*> widgets;
 
-	if ( hasClass( className ) ) {
+	if ( !isClosing() && hasClass( className ) ) {
 		widgets.push_back( this );
 	}
 
@@ -1087,7 +1087,7 @@ std::vector<UIWidget*> UIWidget::findAllByClass( const std::string& className ) 
 std::vector<UIWidget*> UIWidget::findAllByTag( const std::string& tag ) {
 	std::vector<UIWidget*> widgets;
 
-	if ( getElementTag() == tag ) {
+	if ( !isClosing() && getElementTag() == tag ) {
 		widgets.push_back( this );
 	}
 
@@ -1108,7 +1108,7 @@ std::vector<UIWidget*> UIWidget::findAllByTag( const std::string& tag ) {
 }
 
 UIWidget* UIWidget::findByClass( const std::string& className ) {
-	if ( hasClass( className ) ) {
+	if ( !isClosing() && hasClass( className ) ) {
 		return this;
 	} else {
 		Node* child = mChild;
@@ -1129,7 +1129,7 @@ UIWidget* UIWidget::findByClass( const std::string& className ) {
 }
 
 UIWidget* UIWidget::findByTag( const std::string& tag ) {
-	if ( getElementTag() == tag ) {
+	if ( !isClosing() && getElementTag() == tag ) {
 		return this;
 	} else {
 		Node* child = mChild;
@@ -1150,7 +1150,7 @@ UIWidget* UIWidget::findByTag( const std::string& tag ) {
 }
 
 UIWidget* UIWidget::querySelector( const CSS::StyleSheetSelector& selector ) {
-	if ( selector.select( this ) ) {
+	if ( !isClosing() && selector.select( this ) ) {
 		return this;
 	} else {
 		Node* child = mChild;
@@ -1173,7 +1173,7 @@ UIWidget* UIWidget::querySelector( const CSS::StyleSheetSelector& selector ) {
 std::vector<UIWidget*> UIWidget::querySelectorAll( const CSS::StyleSheetSelector& selector ) {
 	std::vector<UIWidget*> widgets;
 
-	if ( selector.select( this ) ) {
+	if ( !isClosing() && selector.select( this ) ) {
 		widgets.push_back( this );
 	}
 

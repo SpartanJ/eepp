@@ -88,6 +88,7 @@ class EE_API UIStyle : public UIState {
 	bool mChangingState;
 	bool mForceReapplyProperties;
 	bool mDisableAnimations;
+	bool mFirstState;
 
 	void applyVarValues( CSS::StyleSheetProperty* style );
 

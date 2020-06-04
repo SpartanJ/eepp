@@ -399,7 +399,7 @@ TabWidget {
 	gravity: left|bottom;
 }
 
-TabWidget::TabContainer {
+TabWidget::TabBar {
 	background-image: rectangle(solid, var(--tab-line));
 	background-size: 100% 1px;
 	background-position-y: bottom;

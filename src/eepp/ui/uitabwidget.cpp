@@ -16,16 +16,17 @@ UITabWidget* UITabWidget::New() {
 UITabWidget::UITabWidget() :
 	UIWidget( "tabwidget" ),
 	mCtrlContainer( NULL ),
-	mTabContainer( NULL ),
+	mTabBar( NULL ),
 	mTabSelected( NULL ),
-	mTabSelectedIndex( eeINDEX_NOT_FOUND ) {
+	mTabSelectedIndex( eeINDEX_NOT_FOUND ),
+	mHideWhenNotNeeded( false ) {
 	setHorizontalAlign( UI_HALIGN_CENTER );
 
-	mTabContainer = UIWidget::NewWithTag( "tabwidget::tabcontainer" );
-	mTabContainer->setPixelsSize( mSize.getWidth(), mStyleConfig.TabHeight )
+	mTabBar = UIWidget::NewWithTag( "tabwidget::tabbar" );
+	mTabBar->setPixelsSize( mSize.getWidth(), mStyleConfig.TabHeight )
 		->setParent( this )
 		->setPosition( 0, 0 );
-	mTabContainer->clipEnable();
+	mTabBar->clipEnable();
 
 	mCtrlContainer = UIWidget::NewWithTag( "tabwidget::container" );
 	mCtrlContainer
@@ -53,9 +54,9 @@ bool UITabWidget::isType( const Uint32& type ) const {
 void UITabWidget::setTheme( UITheme* Theme ) {
 	UIWidget::setTheme( Theme );
 
-	mTabContainer->setThemeSkin( Theme, "tabwidget" );
+	mTabBar->setThemeSkin( Theme, "tabwidget" );
 
-	mCtrlContainer->setThemeSkin( Theme, "tabcontainer" );
+	mCtrlContainer->setThemeSkin( Theme, "tabbar" );
 
 	if ( 0 == mStyleConfig.TabHeight ) {
 		UISkin* tSkin = Theme->getSkin( "tab" );
@@ -81,18 +82,35 @@ void UITabWidget::onThemeLoaded() {
 }
 
 void UITabWidget::setContainerSize() {
-	mTabContainer->setPixelsSize( mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
-								  PixelDensity::dpToPx( mStyleConfig.TabHeight ) );
-	mTabContainer->setPosition( mPadding.Left, mPadding.Top );
-	mCtrlContainer->setPosition( mPadding.Left, mPadding.Top + mStyleConfig.TabHeight );
-	Sizef s( mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
-			 mSize.getHeight() - PixelDensity::dpToPx( mStyleConfig.TabHeight ) - mRealPadding.Top -
-				 mRealPadding.Bottom );
-	if ( s != mCtrlContainer->getPixelsSize() ) {
-		mCtrlContainer->setPixelsSize( s );
+	if ( getTabCount() < 2 && mHideWhenNotNeeded ) {
+		mTabBar->setVisible( false );
+		mTabBar->setEnabled( false );
+		mCtrlContainer->setPosition( mPadding.Left, mPadding.Top );
+		Sizef s( mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
+				 mSize.getHeight() - mRealPadding.Top - mRealPadding.Bottom );
+		if ( s != mCtrlContainer->getPixelsSize() ) {
+			mCtrlContainer->setPixelsSize( s );
 
-		for ( auto& tab : mTabs ) {
-			refreshOwnedWidget( tab );
+			for ( auto& tab : mTabs ) {
+				refreshOwnedWidget( tab );
+			}
+		}
+	} else {
+		mTabBar->setVisible( true );
+		mTabBar->setEnabled( true );
+		mTabBar->setPixelsSize( mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
+								PixelDensity::dpToPx( mStyleConfig.TabHeight ) );
+		mTabBar->setPosition( mPadding.Left, mPadding.Top );
+		mCtrlContainer->setPosition( mPadding.Left, mPadding.Top + mStyleConfig.TabHeight );
+		Sizef s( mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
+				 mSize.getHeight() - PixelDensity::dpToPx( mStyleConfig.TabHeight ) -
+					 mRealPadding.Top - mRealPadding.Bottom );
+		if ( s != mCtrlContainer->getPixelsSize() ) {
+			mCtrlContainer->setPixelsSize( s );
+
+			for ( auto& tab : mTabs ) {
+				refreshOwnedWidget( tab );
+			}
 		}
 	}
 }
@@ -105,7 +123,6 @@ void UITabWidget::setStyleConfig( const StyleConfig& styleConfig ) {
 	Uint32 tabWidgetHeight = mStyleConfig.TabHeight;
 	mStyleConfig = styleConfig;
 	mStyleConfig.TabHeight = tabWidgetHeight;
-	setContainerSize();
 	orderTabs();
 }
 
@@ -141,8 +158,8 @@ bool UITabWidget::isDrawInvalidator() const {
 void UITabWidget::invalidate( Node* invalidator ) {
 	// Only invalidate if the invalidator is actually visible in the current active tab.
 	if ( NULL != invalidator ) {
-		if ( invalidator == mCtrlContainer || invalidator == mTabContainer ||
-			 mTabContainer->isChild( invalidator ) ) {
+		if ( invalidator == mCtrlContainer || invalidator == mTabBar ||
+			 mTabBar->isChild( invalidator ) ) {
 			mNodeDrawInvalidator->invalidate( mCtrlContainer );
 		} else if ( invalidator->getParent() == mCtrlContainer ) {
 			if ( invalidator->isVisible() ) {
@@ -339,6 +356,8 @@ void UITabWidget::zorderTabs() {
 void UITabWidget::orderTabs() {
 	applyThemeToTabs();
 
+	setContainerSize();
+
 	zorderTabs();
 
 	posTabs();
@@ -354,7 +373,7 @@ void UITabWidget::updateTabs() {
 
 UITab* UITabWidget::createTab( const String& Text, UINode* ownedWidget, Drawable* Icon ) {
 	UITab* tab = UITab::New();
-	tab->setParent( mTabContainer );
+	tab->setParent( mTabBar );
 	tab->setFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER | UI_AUTO_SIZE );
 	tab->setIcon( Icon );
 	tab->setText( Text );
@@ -381,7 +400,7 @@ UITab* UITabWidget::add( const String& Text, UINode* CtrlOwned, Drawable* Icon )
 }
 
 UITabWidget* UITabWidget::add( UITab* Tab ) {
-	Tab->setParent( mTabContainer );
+	Tab->setParent( mTabBar );
 
 	mTabs.push_back( Tab );
 
@@ -558,6 +577,17 @@ UITab* UITabWidget::setTabSelected( const Uint32& tabIndex ) {
 	return NULL;
 }
 
+const bool& UITabWidget::getHideWhenNotNeeded() const {
+	return mHideWhenNotNeeded;
+}
+
+void UITabWidget::setHideWhenNotNeeded( const bool& hideWhenNotNeeded ) {
+	if ( mHideWhenNotNeeded != hideWhenNotNeeded ) {
+		mHideWhenNotNeeded = hideWhenNotNeeded;
+		setContainerSize();
+	}
+}
+
 void UITabWidget::refreshOwnedWidget( UITab* tab ) {
 	if ( NULL != tab && NULL != tab->getOwnedWidget() ) {
 		tab->getOwnedWidget()->setParent( mCtrlContainer );
@@ -607,11 +637,11 @@ void UITabWidget::onSizeChange() {
 }
 
 void UITabWidget::onChildCountChange( Node* child, const bool& removed ) {
-	if ( !removed && child != mTabContainer && child != mCtrlContainer ) {
+	if ( !removed && child != mTabBar && child != mCtrlContainer ) {
 		if ( child->isType( UI_TYPE_TAB ) ) {
 			UITab* Tab = static_cast<UITab*>( child );
 
-			Tab->setParent( mTabContainer );
+			Tab->setParent( mTabBar );
 
 			mTabs.push_back( Tab );
 
@@ -644,8 +674,8 @@ void UITabWidget::applyThemeToTabs() {
 	}
 }
 
-UIWidget* UITabWidget::getTabContainer() const {
-	return mTabContainer;
+UIWidget* UITabWidget::getTabBar() const {
+	return mTabBar;
 }
 
 UIWidget* UITabWidget::getControlContainer() const {

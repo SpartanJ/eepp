@@ -25,7 +25,8 @@ UIStyle::UIStyle( UIWidget* widget ) :
 	mDefinition( nullptr ),
 	mChangingState( false ),
 	mForceReapplyProperties( false ),
-	mDisableAnimations( false ) {}
+	mDisableAnimations( false ),
+	mFirstState( true ) {}
 
 UIStyle::~UIStyle() {
 	removeStructurallyVolatileWidgetFromParent();
@@ -291,6 +292,7 @@ void UIStyle::onStateChange() {
 		}
 
 		mChangingState = false;
+		mFirstState = false;
 	}
 }
 
@@ -401,7 +403,8 @@ void UIStyle::applyStyleSheetProperty( const StyleSheetProperty& property,
 		}
 	}
 
-	if ( !mDisableAnimations && !mWidget->isSceneNodeLoading() && NULL != propertyDefinition &&
+	if ( !mDisableAnimations && !mFirstState && !mWidget->isSceneNodeLoading() &&
+		 NULL != propertyDefinition &&
 		 StyleSheetPropertyAnimation::animationSupported( propertyDefinition->getType() ) &&
 		 hasTransition( property.getName() ) &&
 		 !hasAnimation( property.getPropertyDefinition() ) ) {

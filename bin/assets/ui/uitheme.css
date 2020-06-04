@@ -10,7 +10,7 @@ TabWidget {
 	tab-separation: -1dp;
 }
 
-TabWidget::TabContainer {
+TabWidget::TabBar {
 	background-image: rectangle(solid, #2f3030);
 	background-size: 100% 1dp;
 	background-position-y: bottom;

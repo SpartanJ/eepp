@@ -229,6 +229,19 @@ class EE_API Node : public Transformable {
 
 	template <typename T> T* asType() { return reinterpret_cast<T*>( this ); }
 
+	Node* findByType( const Uint32& type ) const;
+
+	template <typename T> T* findByType( const Uint32& type ) const {
+		return reinterpret_cast<T*>( findByType( type ) );
+	}
+
+	template <typename T> T* bindByType( const Uint32& type, T*& ctrl ) {
+		ctrl = findByType<T>( type );
+		return ctrl;
+	}
+
+	bool inNodeTree( Node* node ) const;
+
 	bool isReverseDraw() const;
 
 	void setReverseDraw( bool reverseDraw );
@@ -371,6 +384,9 @@ class EE_API Node : public Transformable {
 	bool isClosing() const;
 
 	virtual Node* overFind( const Vector2f& Point );
+
+	/** This removes the node from its parent. Never use this unless you know what you are doing. */
+	void detach();
 
   protected:
 	typedef std::map<Uint32, std::map<Uint32, EventCallback>> EventsMap;

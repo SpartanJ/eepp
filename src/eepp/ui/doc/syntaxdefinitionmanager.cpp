@@ -843,6 +843,22 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 			  {{"[=]"}, "operator"},
 			  {{"https?://%S+"}, "function"},
 		  }} );
+
+	// Makefile
+	add( {{"Makefile", "makefile", "%.mk$", "%.make$"},
+		  {
+			  {{"#.*\n"}, "comment"},
+			  {{"[[.]]}"}, "normal"},
+			  {{"$[@^<%%?+|*]"}, "keyword2"},
+			  {{"$%(", "%)"}, "keyword"},
+			  {{"%f[%w_][%d%.]+%f[^%w_]"}, "number"},
+			  {{"%..*:"}, "keyword2"},
+			  {{".*:="}, "function"},
+			  {{".*+="}, "function"},
+			  {{".*%s="}, "function"},
+		  },
+		  {},
+		  "#"} );
 }
 
 SyntaxDefinition& SyntaxDefinitionManager::add( SyntaxDefinition&& syntaxStyle ) {
@@ -878,5 +894,4 @@ SyntaxDefinitionManager::getStyleByExtension( const std::string& filePath ) cons
 	}
 	return mEmptyDefinition;
 }
-
 }}} // namespace EE::UI::Doc

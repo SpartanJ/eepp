@@ -129,6 +129,31 @@ void UISplitter::setDivisionSplit( const Float& divisionSplit ) {
 	}
 }
 
+void UISplitter::swap() {
+	if ( isFull() ) {
+		UIWidget* tmp = mFirstWidget;
+		mFirstWidget = mLastWidget;
+		mLastWidget = tmp;
+		setLayoutDirty();
+	}
+}
+
+bool UISplitter::isEmpty() {
+	return !mFirstWidget && !mLastWidget;
+}
+
+bool UISplitter::isFull() {
+	return mFirstWidget && mLastWidget;
+}
+
+UIWidget* UISplitter::getFirstWidget() const {
+	return mFirstWidget;
+}
+
+UIWidget* UISplitter::getLastWidget() const {
+	return mLastWidget;
+}
+
 void UISplitter::onChildCountChange( Node* child, const bool& removed ) {
 	if ( child != mSplitter ) {
 		if ( !removed ) {

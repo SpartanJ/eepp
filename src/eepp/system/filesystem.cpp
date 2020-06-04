@@ -113,7 +113,9 @@ bool FileSystem::fileCopy( const std::string& src, const std::string& dst ) {
 }
 
 std::string FileSystem::fileExtension( const std::string& filepath, const bool& lowerExt ) {
-	std::string tstr( filepath.substr( filepath.find_last_of( "." ) + 1 ) );
+	size_t dotPos = filepath.find_last_of( "." );
+	std::string tstr( dotPos != std::string::npos ? filepath.substr( dotPos + 1 )
+												  : fileNameFromPath( filepath ) );
 
 	if ( lowerExt )
 		String::toLowerInPlace( tstr );

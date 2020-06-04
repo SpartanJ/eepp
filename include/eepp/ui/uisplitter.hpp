@@ -29,6 +29,16 @@ class EE_API UISplitter : public UILayout {
 
 	void setDivisionSplit( const Float& divisionSplit );
 
+	void swap();
+
+	bool isEmpty();
+
+	bool isFull();
+
+	UIWidget* getFirstWidget() const;
+
+	UIWidget* getLastWidget() const;
+
   protected:
 	UIOrientation mOrientation;
 	bool mSplitOnlyWhenNeeded;

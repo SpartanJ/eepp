@@ -49,30 +49,68 @@ void App::closeCurrrentTab() {
 	if ( mCurEditor ) {
 		UITabWidget* tabWidget = tabWidgetFromEditor( mCurEditor );
 		if ( tabWidget ) {
-			tabWidget->removeTab( (UITab*)mCurEditor->getData() );
-			if ( tabWidget->getTabCount() > 0 ) {
-				tabWidget->setTabSelected( tabWidget->getTabCount() - 1 );
-				tabWidget->getSelectedTab()->getOwnedWidget()->setFocus();
+			if ( !( mCurEditor->getDocument().isEmpty() &&
+					!tabWidget->getParent()->isType( UI_TYPE_SPLITTER ) ) ) {
+				tabWidget->removeTab( (UITab*)mCurEditor->getData() );
 			}
 		}
 	}
 }
 
-void App::splitEditor( const UIOrientation& orientation ) {
-	UITabWidget* tabWidget = tabWidgetFromEditor( mCurEditor );
-	if ( tabWidget ) {
-		UISplitter* splitter = (UISplitter*)tabWidget->getParent();
-		if ( splitter->getChildCount() < 3 ) {
-			splitter->setOrientation( orientation );
-			createEditorWithSplitter( splitter );
+void App::splitEditor( const SplitDirection& direction, UICodeEditor* editor ) {
+	if ( !editor )
+		return;
+	UIOrientation orientation =
+		direction == SplitDirection::Left || direction == SplitDirection::Right
+			? UIOrientation::Horizontal
+			: UIOrientation::Vertical;
+	UITabWidget* tabWidget = tabWidgetFromEditor( editor );
+	if ( !tabWidget )
+		return;
+	Node* parent = tabWidget->getParent();
+	UISplitter* parentSplitter = NULL;
+	bool wasFirst = true;
+
+	if ( parent->isType( UI_TYPE_SPLITTER ) ) {
+		parentSplitter = parent->asType<UISplitter>();
+		wasFirst = parentSplitter->getFirstWidget() == tabWidget;
+		if ( !parentSplitter->isFull() ) {
+			parentSplitter->setOrientation( orientation );
+			createEditorWithTabWidget( parentSplitter );
+			if ( direction == SplitDirection::Left || direction == SplitDirection::Top )
+				parentSplitter->swap();
+			return;
 		}
 	}
+
+	UISplitter* splitter = UISplitter::New();
+	splitter->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
+	splitter->setOrientation( orientation );
+	tabWidget->detach();
+	splitter->setParent( parent );
+	tabWidget->setParent( splitter );
+	createEditorWithTabWidget( splitter );
+	if ( direction == SplitDirection::Left || direction == SplitDirection::Top )
+		splitter->swap();
+
+	if ( parentSplitter ) {
+		if ( wasFirst && parentSplitter->getFirstWidget() != splitter ) {
+			parentSplitter->swap();
+		} else if ( !wasFirst && parentSplitter->getLastWidget() != splitter ) {
+			parentSplitter->swap();
+		}
+	}
+	eeASSERT( mBaseLayout->getChildCount() <= 1 );
 }
 
 UICodeEditor* App::createCodeEditor() {
 	UICodeEditor* codeEditor = UICodeEditor::New();
 	codeEditor->setFontSize( 11 );
-	codeEditor->getDocument().setCommand( "find", [&]() { findTextMessageBox(); } );
+	codeEditor->getDocument().setCommand( "save-doc", [&, codeEditor] {
+		if ( codeEditor->save() )
+			updateEditorTitle( codeEditor );
+	} );
+	codeEditor->getDocument().setCommand( "find", [&] { findTextMessageBox(); } );
 	codeEditor->getDocument().setCommand( "repeat-find", [&] { findText(); } );
 	codeEditor->getDocument().setCommand( "close-app", [&] { closeApp(); } );
 	codeEditor->getDocument().setCommand( "fullscreen-toggle",
@@ -117,16 +155,24 @@ UICodeEditor* App::createCodeEditor() {
 				tab->getOwnedWidget()->setFocus();
 		}
 	} );
-	codeEditor->getDocument().setCommand( "split-horizontal",
-										  [&] { splitEditor( UIOrientation::Horizontal ); } );
-	codeEditor->getDocument().setCommand( "split-vertical",
-										  [&] { splitEditor( UIOrientation::Vertical ); } );
+	codeEditor->getDocument().setCommand(
+		"split-right", [&] { splitEditor( SplitDirection::Right, mCurEditor ); } );
+	codeEditor->getDocument().setCommand(
+		"split-bottom", [&] { splitEditor( SplitDirection::Bottom, mCurEditor ); } );
+	codeEditor->getDocument().setCommand(
+		"split-left", [&] { splitEditor( SplitDirection::Left, mCurEditor ); } );
+	codeEditor->getDocument().setCommand( "split-top",
+										  [&] { splitEditor( SplitDirection::Top, mCurEditor ); } );
+	codeEditor->getDocument().setCommand( "split-swap", [&] {
+		if ( UISplitter* splitter = splitterFromEditor( mCurEditor ) )
+			splitter->swap();
+	} );
 	codeEditor->addKeyBindingString( "escape", "close-app", true );
 	codeEditor->addKeyBindingString( "f2", "open-file", true );
 	codeEditor->addKeyBindingString( "f3", "repeat-find", false );
 	codeEditor->addKeyBindingString( "f12", "console-toggle", true );
 	codeEditor->addKeyBindingString( "alt+return", "fullscreen-toggle", true );
-	codeEditor->addKeyBindingString( "ctrl+s", "save", false );
+	codeEditor->addKeyBindingString( "ctrl+s", "save-doc", false );
 	codeEditor->addKeyBindingString( "ctrl+f", "find", false );
 	codeEditor->addKeyBindingString( "ctrl+q", "close-app", true );
 	codeEditor->addKeyBindingString( "ctrl+o", "open-file", true );
@@ -135,8 +181,11 @@ UICodeEditor* App::createCodeEditor() {
 	codeEditor->addKeyBindingString( "ctrl+w", "close-doc", true );
 	codeEditor->addKeyBindingString( "ctrl+tab", "next-doc", true );
 	codeEditor->addKeyBindingString( "ctrl+shift+tab", "previous-doc", true );
-	codeEditor->addKeyBindingString( "ctrl+shift+l", "split-horizontal", true );
-	codeEditor->addKeyBindingString( "ctrl+shift+k", "split-vertical", true );
+	codeEditor->addKeyBindingString( "ctrl+shift+j", "split-left", true );
+	codeEditor->addKeyBindingString( "ctrl+shift+l", "split-right", true );
+	codeEditor->addKeyBindingString( "ctrl+shift+i", "split-top", true );
+	codeEditor->addKeyBindingString( "ctrl+shift+k", "split-bottom", true );
+	codeEditor->addKeyBindingString( "ctrl+shift+s", "split-swap", true );
 	codeEditor->addEventListener( Event::OnFocus, [&]( const Event* event ) {
 		mCurEditor = event->getNode()->asType<UICodeEditor>();
 		updateEditorTitle( mCurEditor );
@@ -167,6 +216,76 @@ void App::updateEditorTitle( UICodeEditor* editor ) {
 	setAppTitle( title );
 }
 
+void App::focusSomeEditor( Node* searchFrom ) {
+	UICodeEditor* editor =
+		searchFrom ? searchFrom->findByType<UICodeEditor>( UI_TYPE_CODEEDITOR )
+				   : mUISceneNode->getRoot()->findByType<UICodeEditor>( UI_TYPE_CODEEDITOR );
+	if ( searchFrom && !editor )
+		editor = mUISceneNode->getRoot()->findByType<UICodeEditor>( UI_TYPE_CODEEDITOR );
+	if ( editor && tabWidgetFromEditor( editor ) && !tabWidgetFromEditor( editor )->isClosing() ) {
+		editor->setFocus();
+	} else {
+		UITabWidget* tabW = mUISceneNode->getRoot()->findByType<UITabWidget>( UI_TYPE_TABWIDGET );
+		if ( tabW && tabW->getTabCount() > 0 ) {
+			tabW->setTabSelected( tabW->getTabCount() - 1 );
+		}
+	}
+}
+
+void App::onTabClosed( const TabEvent* tabEvent ) {
+	UICodeEditor* editor = mCurEditor;
+	if ( tabEvent->getTab()->getOwnedWidget() == mCurEditor ) {
+		mCurEditor = NULL;
+	}
+	UITabWidget* tabWidget = tabEvent->getTab()->getTabWidget();
+	if ( tabWidget->getTabCount() == 0 ) {
+		UISplitter* splitter = splitterFromEditor( editor );
+		if ( splitter ) {
+			if ( splitter->isFull() ) {
+				tabWidget->close();
+				// Remove splitter if it's redundant
+				Node* parent = splitter->getParent();
+				if ( parent->isType( UI_TYPE_SPLITTER ) ) {
+					UISplitter* parentSplitter = parent->asType<UISplitter>();
+					Node* remainingNode = tabWidget == splitter->getFirstWidget()
+											  ? splitter->getLastWidget()
+											  : splitter->getFirstWidget();
+					bool wasFirst = parentSplitter->getFirstWidget() == splitter;
+					remainingNode->detach();
+					splitter->setParent( mUISceneNode->getRoot() );
+					splitter->setVisible( false );
+					splitter->setEnabled( false );
+					splitter->close();
+					remainingNode->setParent( parentSplitter );
+					if ( wasFirst )
+						parentSplitter->swap();
+					focusSomeEditor( parentSplitter );
+				} else {
+					// Then this is the main splitter
+					Node* remainingNode = tabWidget == splitter->getFirstWidget()
+											  ? splitter->getLastWidget()
+											  : splitter->getFirstWidget();
+					splitter->setParent( mUISceneNode->getRoot() );
+					splitter->setVisible( false );
+					splitter->setEnabled( false );
+					splitter->close();
+					eeASSERT( parent->getChildCount() == 0 );
+					remainingNode->setParent( parent );
+					focusSomeEditor( NULL );
+				}
+				eeASSERT( mBaseLayout->getChildCount() == 1 );
+				return;
+			}
+		}
+		auto d = createCodeEditorInTabWidget( tabWidget );
+		d.first->getTabWidget()->setTabSelected( d.first );
+		d.second->setFocus();
+	} else {
+		tabWidget->setTabSelected( tabWidget->getTabCount() - 1 );
+		tabWidget->getSelectedTab()->getOwnedWidget()->setFocus();
+	}
+}
+
 std::pair<UITab*, UICodeEditor*> App::createCodeEditorInTabWidget( UITabWidget* tabWidget ) {
 	if ( NULL == tabWidget )
 		return std::make_pair( (UITab*)NULL, (UICodeEditor*)NULL );
@@ -174,24 +293,17 @@ std::pair<UITab*, UICodeEditor*> App::createCodeEditorInTabWidget( UITabWidget* 
 	UITab* tab = tabWidget->add( editor->getDocument().getFilename(), editor );
 	editor->setData( (UintPtr)tab );
 	tabWidget->addEventListener( Event::OnTabClosed, [&]( const Event* event ) {
-		const TabEvent* tabEvent = static_cast<const TabEvent*>( event );
-		if ( tabEvent->getTab()->getOwnedWidget() == mCurEditor ) {
-			mCurEditor = NULL;
-		}
-		UITabWidget* tabWidget = tabEvent->getTab()->getTabWidget();
-		if ( tabWidget->getTabCount() == 0 ) {
-			auto d = createCodeEditorInTabWidget( tabWidget );
-			d.first->getTabWidget()->setTabSelected( d.first );
-			d.second->setFocus();
-		}
+		onTabClosed( static_cast<const TabEvent*>( event ) );
 	} );
 	return std::make_pair( tab, editor );
 }
 
-UITabWidget* App::createEditorWithTabWidget( UISplitter* splitter ) {
+UITabWidget* App::createEditorWithTabWidget( Node* parent ) {
 	UITabWidget* tabWidget = UITabWidget::New();
-	tabWidget->setParent( splitter );
+	tabWidget->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
+	tabWidget->setParent( parent );
 	tabWidget->setTabsClosable( true );
+	tabWidget->setHideWhenNotNeeded( true );
 	tabWidget->addEventListener( Event::OnTabSelected, [&]( const Event* event ) {
 		UITabWidget* tabWidget = event->getNode()->asType<UITabWidget>();
 		mCurEditor = tabWidget->getSelectedTab()->getOwnedWidget()->asType<UICodeEditor>();
@@ -202,20 +314,15 @@ UITabWidget* App::createEditorWithTabWidget( UISplitter* splitter ) {
 	return tabWidget;
 }
 
-UISplitter* App::createEditorWithSplitter( Node* parent ) {
-	if ( NULL == parent )
-		return NULL;
-	UISplitter* splitter = UISplitter::New();
-	splitter->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
-	splitter->setParent( parent );
-	auto d = createEditorWithTabWidget( splitter );
-	d->getSelectedTab()->getOwnedWidget()->setFocus();
-	return splitter;
-}
-
 UITabWidget* App::tabWidgetFromEditor( UICodeEditor* editor ) {
 	if ( editor )
 		return ( (UITab*)editor->getData() )->getTabWidget();
+	return NULL;
+}
+
+UISplitter* App::splitterFromEditor( UICodeEditor* editor ) {
+	if ( editor && editor->getParent()->getParent()->getParent()->isType( UI_TYPE_SPLITTER ) )
+		return editor->getParent()->getParent()->getParent()->asType<UISplitter>();
 	return NULL;
 }
 
@@ -260,7 +367,7 @@ void App::openFileDialog() {
 void App::findText( String text ) {
 	if ( text.empty() )
 		text = mLastSearch;
-	if ( text.empty() )
+	if ( !mCurEditor || text.empty() )
 		return;
 	mLastSearch = text;
 	TextDocument& doc = mCurEditor->getDocument();
@@ -276,6 +383,8 @@ void App::findText( String text ) {
 }
 
 void App::findTextMessageBox() {
+	if ( !mCurEditor )
+		return;
 	UIMessageBox* inputSearch = UIMessageBox::New( UIMessageBox::INPUT, "Find text..." );
 	inputSearch->getTextInput()->setHint( "Find text..." );
 	String text = mCurEditor->getDocument().getSelectedText();
@@ -408,13 +517,10 @@ void App::init( const std::string& file ) {
 
 		mUISceneNode->getRoot()->addClass( "appbackground" );
 
-		mBaseLayout = UILinearLayout::NewVertical();
+		mBaseLayout = UIRelativeLayout::New();
 		mBaseLayout->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
-		UISplitter* splitter = UISplitter::New();
-		splitter->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
-		splitter->setParent( mBaseLayout );
 
-		createEditorWithSplitter( splitter );
+		createEditorWithTabWidget( mBaseLayout );
 
 		if ( !file.empty() ) {
 			loadFileFromPath( file );

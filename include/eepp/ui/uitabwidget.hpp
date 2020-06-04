@@ -71,7 +71,7 @@ class EE_API UITabWidget : public UIWidget {
 
 	Uint32 getSelectedTabIndex() const;
 
-	UIWidget* getTabContainer() const;
+	UIWidget* getTabBar() const;
 
 	UIWidget* getControlContainer() const;
 
@@ -124,15 +124,20 @@ class EE_API UITabWidget : public UIWidget {
 
 	UITab* setTabSelected( const Uint32& tabIndex );
 
+	const bool& getHideWhenNotNeeded() const;
+
+	void setHideWhenNotNeeded( const bool& hideWhenNotNeeded );
+
   protected:
 	friend class UITab;
 
 	UIWidget* mCtrlContainer;
-	UIWidget* mTabContainer;
+	UIWidget* mTabBar;
 	StyleConfig mStyleConfig;
 	std::deque<UITab*> mTabs;
 	UITab* mTabSelected;
 	Uint32 mTabSelectedIndex;
+	bool mHideWhenNotNeeded;
 
 	void onThemeLoaded();
 

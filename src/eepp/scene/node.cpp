@@ -582,6 +582,8 @@ void Node::childAdd( Node* node ) {
 	if ( NULL == mChild ) {
 		mChild = node;
 		mChildLast = node;
+		mChild->mPrev = NULL;
+		mChild->mNext = NULL;
 	} else {
 		mChildLast->mNext = node;
 		node->mPrev = mChildLast;
@@ -713,7 +715,7 @@ const String::HashType& Node::getIdHash() const {
 }
 
 Node* Node::findIdHash( const String::HashType& idHash ) const {
-	if ( mIdHash == idHash ) {
+	if ( !isClosing() && mIdHash == idHash ) {
 		return const_cast<Node*>( this );
 	} else {
 		Node* child = mChild;
@@ -733,6 +735,37 @@ Node* Node::findIdHash( const String::HashType& idHash ) const {
 
 Node* Node::find( const std::string& id ) const {
 	return findIdHash( String::hash( id ) );
+}
+
+Node* Node::findByType( const Uint32& type ) const {
+	if ( !isClosing() && isType( type ) ) {
+		return const_cast<Node*>( this );
+	} else {
+		Node* child = mChild;
+		while ( NULL != child ) {
+			Node* foundNode = child->findByType( type );
+			if ( NULL != foundNode )
+				return foundNode;
+			child = child->mNext;
+		}
+	}
+
+	return NULL;
+}
+
+bool Node::inNodeTree( Node* node ) const {
+	if ( this == node ) {
+		return true;
+	} else {
+		Node* child = mChild;
+		while ( NULL != child ) {
+			if ( child->inNodeTree( node ) )
+				return true;
+			child = child->mNext;
+		}
+	}
+
+	return false;
 }
 
 bool Node::isChild( Node* child ) const {
@@ -874,6 +907,13 @@ Node* Node::overFind( const Vector2f& Point ) {
 	}
 
 	return pOver;
+}
+
+void Node::detach() {
+	if ( mParentCtrl ) {
+		mParentCtrl->childRemove( this );
+		mParentCtrl = NULL;
+	}
 }
 
 void Node::onSceneChange() {

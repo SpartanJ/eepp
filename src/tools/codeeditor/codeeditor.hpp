@@ -5,6 +5,8 @@
 
 class App {
   public:
+	enum class SplitDirection { Left, Right, Top, Bottom };
+
 	~App();
 
 	void init( const std::string& file = "" );
@@ -25,15 +27,17 @@ class App {
 
 	UICodeEditor* createCodeEditor();
 
-	UISplitter* createEditorWithSplitter( Node* parent );
-
 	UITabWidget* tabWidgetFromEditor( UICodeEditor* editor );
+
+	UISplitter* splitterFromEditor( UICodeEditor* editor );
 
 	std::pair<UITab*, UICodeEditor*> createCodeEditorInTabWidget( UITabWidget* tabWidget );
 
-	UITabWidget* createEditorWithTabWidget( UISplitter* splitter );
+	UITabWidget* createEditorWithTabWidget( Node* parent );
 
-	void splitEditor( const UIOrientation& orientation );
+	void splitEditor( const SplitDirection& direction, UICodeEditor* editor );
+
+	void focusSomeEditor( Node* searchFrom = NULL );
 
   protected:
 	EE::Window::Window* mWindow{NULL};
@@ -58,6 +62,8 @@ class App {
 	bool onCloseRequestCallback( EE::Window::Window* );
 
 	void closeCurrrentTab();
+
+	void onTabClosed( const TabEvent* tabEvent );
 };
 
 #endif // EE_TOOLS_CODEEDITOR_HPP
