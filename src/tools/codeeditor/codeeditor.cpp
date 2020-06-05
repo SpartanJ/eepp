@@ -24,13 +24,13 @@ bool App::onCloseRequestCallback( EE::Window::Window* ) {
 	}
 }
 
-bool App::onTabCloseRequestCallback( EE::Window::Window* ) {
-	if ( NULL != mCurEditor && mCurEditor->isDirty() ) {
+bool App::tryTabClose( UICodeEditor* editor ) {
+	if ( NULL != editor && editor->isDirty() ) {
 		mMsgBox =
 			UIMessageBox::New( UIMessageBox::OK_CANCEL,
 							   "Do you really want to close this tab?\nAll changes will be lost." );
 		mMsgBox->addEventListener( Event::MsgBoxConfirmClick,
-								   [&]( const Event* ) { closeCurrrentTab(); } );
+								   [&, editor]( const Event* ) { closeEditorTab( editor ); } );
 		mMsgBox->addEventListener( Event::OnClose, [&]( const Event* ) {
 			mMsgBox = NULL;
 			if ( mCurEditor )
@@ -41,17 +41,19 @@ bool App::onTabCloseRequestCallback( EE::Window::Window* ) {
 		mMsgBox->show();
 		return false;
 	} else {
+		closeEditorTab( editor );
 		return true;
 	}
 }
 
-void App::closeCurrrentTab() {
-	if ( mCurEditor ) {
-		UITabWidget* tabWidget = tabWidgetFromEditor( mCurEditor );
+void App::closeEditorTab( UICodeEditor* editor ) {
+	if ( editor ) {
+		UITabWidget* tabWidget = tabWidgetFromEditor( editor );
 		if ( tabWidget ) {
-			if ( !( mCurEditor->getDocument().isEmpty() &&
-					!tabWidget->getParent()->isType( UI_TYPE_SPLITTER ) ) ) {
-				tabWidget->removeTab( (UITab*)mCurEditor->getData() );
+			if ( !( editor->getDocument().isEmpty() &&
+					!tabWidget->getParent()->isType( UI_TYPE_SPLITTER ) &&
+					tabWidget->getTabCount() == 1 ) ) {
+				tabWidget->removeTab( (UITab*)editor->getData() );
 			}
 		}
 	}
@@ -117,11 +119,7 @@ UICodeEditor* App::createCodeEditor() {
 										  [&]() { mWindow->toggleFullscreen(); } );
 	codeEditor->getDocument().setCommand( "open-file", [&] { openFileDialog(); } );
 	codeEditor->getDocument().setCommand( "console-toggle", [&] { mConsole->toggle(); } );
-	codeEditor->getDocument().setCommand( "close-doc", [&] {
-		if ( onTabCloseRequestCallback( mWindow ) ) {
-			closeCurrrentTab();
-		}
-	} );
+	codeEditor->getDocument().setCommand( "close-doc", [&] { tryTabClose( mCurEditor ); } );
 	codeEditor->getDocument().setCommand( "create-new", [&] {
 		auto d = createCodeEditorInTabWidget( tabWidgetFromEditor( mCurEditor ) );
 		d.first->getTabWidget()->setTabSelected( d.first );
@@ -303,12 +301,17 @@ UITabWidget* App::createEditorWithTabWidget( Node* parent ) {
 	tabWidget->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
 	tabWidget->setParent( parent );
 	tabWidget->setTabsClosable( true );
-	tabWidget->setHideWhenNotNeeded( true );
+	tabWidget->setHideTabBarOnSingleTab( true );
+	tabWidget->setAllowRearrangeTabs( true );
 	tabWidget->addEventListener( Event::OnTabSelected, [&]( const Event* event ) {
 		UITabWidget* tabWidget = event->getNode()->asType<UITabWidget>();
 		mCurEditor = tabWidget->getSelectedTab()->getOwnedWidget()->asType<UICodeEditor>();
 		updateEditorTitle( mCurEditor );
 		mCurEditor->setFocus();
+	} );
+	tabWidget->setTabTryCloseCallback( [&]( UITab* tab ) -> bool {
+		tryTabClose( tab->getOwnedWidget()->asType<UICodeEditor>() );
+		return false;
 	} );
 	createCodeEditorInTabWidget( tabWidget );
 	return tabWidget;
@@ -502,11 +505,13 @@ void App::init( const std::string& file ) {
 
 		mUISceneNode = UISceneNode::New();
 
-		mUISceneNode->getUIThemeManager()->setDefaultFont( FontTrueType::New(
-			"NotoSans-Regular", resPath + "assets/fonts/NotoSans-Regular.ttf" ) );
+		Font* font =
+			FontTrueType::New( "NotoSans-Regular", resPath + "assets/fonts/NotoSans-Regular.ttf" );
 
 		Font* fontMono =
 			FontTrueType::New( "monospace", resPath + "assets/fonts/DejaVuSansMono.ttf" );
+
+		mUISceneNode->getUIThemeManager()->setDefaultFont( font );
 
 		SceneManager::instance()->add( mUISceneNode );
 

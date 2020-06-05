@@ -12,10 +12,15 @@ UITab* UITab::New() {
 UITab::UITab() : UISelectButton( "tab" ), mOwnedWidget( NULL ) {
 	mTextBox->setElementTag( mTag + "::text" );
 	mIcon->setElementTag( mTag + "::icon" );
-	applyDefaultTheme();
 	auto cb = [&]( const Event* ) { onSizeChange(); };
 	mTextBox->addEventListener( Event::OnSizeChange, cb );
 	mIcon->addEventListener( Event::OnSizeChange, cb );
+	mCloseButton = UIWidget::NewWithTag( mTag + "::close" );
+	mCloseButton->setParent( this );
+	mCloseButton->setEnabled( false );
+	mCloseButton->setVisible( false );
+	applyDefaultTheme();
+	unsetFlags( UI_DRAG_VERTICAL );
 }
 
 UITab::~UITab() {}
@@ -37,6 +42,44 @@ UITabWidget* UITab::getTabWidget() {
 	return NULL;
 }
 
+Uint32 UITab::onDrag( const Vector2f&, const Uint32&, const Sizef& dragDiff ) {
+	UITabWidget* tabW = getTabWidget();
+	if ( !tabW )
+		return 0;
+	Vector2f newPos( mPosition - dragDiff );
+	if ( newPos.x < 0 || newPos.x + mSize.getWidth() > getParent()->getPixelsSize().getWidth() ) {
+		getUISceneNode()->getEventDispatcher()->setNodeDragging( this );
+		return 0;
+	}
+	Uint32 index = tabW->getTabIndex( this );
+	if ( index > 0 ) {
+		UITab* tab = tabW->getTab( index - 1 );
+		if ( tab ) {
+			if ( newPos.x < tab->getPixelsPosition().x + tab->getPixelsSize().getWidth() * 0.5f ) {
+				tabW->swapTabs( this, tab );
+			}
+		}
+	}
+	if ( index + 1 < tabW->getTabCount() ) {
+		UITab* tab = tabW->getTab( index + 1 );
+
+		if ( tab ) {
+			if ( newPos.x + mSize.getWidth() >
+				 tab->getPixelsPosition().x + tab->getPixelsSize().getWidth() * 0.5f ) {
+				tabW->swapTabs( tab, this );
+			}
+		}
+	}
+	return 1;
+}
+
+Uint32 UITab::onDragStop( const Vector2i& position, const Uint32& flags ) {
+	UITabWidget* tabW = getTabWidget();
+	if ( tabW )
+		tabW->posTabs();
+	return UISelectButton::onDragStop( position, flags );
+}
+
 void UITab::onParentChange() {
 	applyDefaultTheme();
 	UISelectButton::onParentChange();
@@ -47,6 +90,10 @@ void UITab::onSizeChange() {
 	if ( NULL != getTabWidget() )
 		getTabWidget()->orderTabs();
 	UISelectButton::onSizeChange();
+}
+
+UIWidget* UITab::getExtraInnerWidget() {
+	return mCloseButton;
 }
 
 void UITab::setTheme( UITheme* Theme ) {
@@ -71,20 +118,6 @@ void UITab::setTheme( UITheme* Theme ) {
 
 	onThemeLoaded();
 	onStateChange();
-}
-
-Uint32 UITab::onMouseClick( const Vector2i& Pos, const Uint32& Flags ) {
-	UISelectButton::onMouseClick( Pos, Flags );
-
-	UITabWidget* tTabW = getTabWidget();
-
-	if ( NULL != tTabW ) {
-		if ( Flags & EE_BUTTON_LMASK ) {
-			tTabW->setTabSelected( this );
-		}
-	}
-
-	return UISelectButton::onMouseClick( Pos, Flags );
 }
 
 void UITab::onStateChange() {
@@ -125,14 +158,24 @@ UIPushButton* UITab::setText( const String& text ) {
 }
 
 void UITab::onAutoSize() {
-	if ( mFlags & UI_AUTO_SIZE ) {
-		Float w = mTextBox->getSize().getWidth() +
-				  ( NULL != mIcon ? mIcon->getSize().getWidth() + mIcon->getLayoutMargin().Left +
-										mIcon->getLayoutMargin().Right
-								  : 0 ) +
-				  getSkinSize().getWidth();
+	UITabWidget* tTabW = getTabWidget();
 
-		UITabWidget* tTabW = getTabWidget();
+	if ( NULL != tTabW ) {
+		mCloseButton->setVisible( tTabW->getTabsClosable() );
+		mCloseButton->setEnabled( tTabW->getTabsClosable() );
+	}
+
+	if ( mFlags & UI_AUTO_SIZE ) {
+		Float w =
+			mTextBox->getSize().getWidth() +
+			( NULL != mIcon ? mIcon->getSize().getWidth() + mIcon->getLayoutMargin().Left +
+								  mIcon->getLayoutMargin().Right
+							: 0 ) +
+			( NULL != mCloseButton && mCloseButton->isVisible()
+				  ? mCloseButton->getSize().getWidth() + mCloseButton->getLayoutMargin().Left +
+						mCloseButton->getLayoutMargin().Right
+				  : 0 ) +
+			getSkinSize().getWidth();
 
 		if ( NULL != tTabW ) {
 			w = eemax( w, tTabW->getMinTabWidth() );
@@ -184,28 +227,45 @@ bool UITab::applyProperty( const StyleSheetProperty& attribute ) {
 	return true;
 }
 
-Uint32 UITab::onMouseUp( const Vector2i& Pos, const Uint32& Flags ) {
-	if ( mEnabled && mVisible ) {
-		if ( NULL == mOwnedWidget && !mOwnedName.empty() ) {
-			setOwnedControl();
+Uint32 UITab::onMessage( const NodeMessage* message ) {
+	UITabWidget* tTabW = getTabWidget();
+	if ( !tTabW || !mEnabled || !mVisible )
+		return 1;
+
+	if ( NULL == mOwnedWidget && !mOwnedName.empty() ) {
+		setOwnedControl();
+	}
+
+	Uint32 flags = message->getFlags();
+
+	switch ( message->getMsg() ) {
+		case NodeMessage::MouseDown: {
+			if ( flags & EE_BUTTON_LMASK && message->getSender() != mCloseButton ) {
+				tTabW->setTabSelected( this );
+			}
+			break;
 		}
-
-		UITabWidget* tTabW = getTabWidget();
-
-		if ( NULL != tTabW ) {
-			if ( Flags & EE_BUTTONS_WUWD ) {
-				if ( Flags & EE_BUTTON_WUMASK ) {
+		case NodeMessage::MouseUp: {
+			if ( tTabW->getTabsClosable() && ( flags & EE_BUTTON_MMASK ) ) {
+				tTabW->tryCloseTab( this );
+			} else if ( flags & EE_BUTTONS_WUWD ) {
+				if ( flags & EE_BUTTON_WUMASK ) {
 					tTabW->selectPreviousTab();
-				} else if ( Flags & EE_BUTTON_WDMASK ) {
+				} else if ( flags & EE_BUTTON_WDMASK ) {
 					tTabW->selectNextTab();
 				}
-			} else if ( tTabW->getTabsClosable() && ( Flags & EE_BUTTON_MMASK ) ) {
-				tTabW->removeTab( this );
 			}
+			break;
+		}
+		case NodeMessage::Click: {
+			if ( flags & EE_BUTTON_LMASK && message->getSender() == mCloseButton ) {
+				tTabW->tryCloseTab( this );
+			}
+			break;
 		}
 	}
 
-	return UISelectButton::onMouseUp( Pos, Flags );
+	return 0;
 }
 
 void UITab::setOwnedControl() {
@@ -225,7 +285,7 @@ void UITab::updateTab() {
 		} else {
 			UIPushButton::setText( mText );
 		}
-
+		setDragEnabled( tTabW->getAllowRearrangeTabs() );
 		onAutoSize();
 	}
 }

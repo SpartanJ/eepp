@@ -57,11 +57,11 @@ class App {
 
 	std::string titleFromEditor( UICodeEditor* editor );
 
-	bool onTabCloseRequestCallback( EE::Window::Window* );
+	bool tryTabClose( UICodeEditor* editor );
 
 	bool onCloseRequestCallback( EE::Window::Window* );
 
-	void closeCurrrentTab();
+	void closeEditorTab( UICodeEditor* editor );
 
 	void onTabClosed( const TabEvent* tabEvent );
 };

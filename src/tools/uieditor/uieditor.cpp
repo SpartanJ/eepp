@@ -1038,7 +1038,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 
 		createAppMenu();
 
-		UIWindow::StyleConfig winStyle( UI_CONTROL_DEFAULT_FLAGS | UI_WIN_NO_DECORATION );
+		UIWindow::StyleConfig winStyle( UI_NODE_DEFAULT_FLAGS | UI_WIN_NO_DECORATION );
 		uiContainer = UIWindow::NewOpt( UIWindow::SIMPLE_LAYOUT, winStyle );
 		uiContainer->setId( "appContainer" )->setSize( uiSceneNode->getSize() );
 

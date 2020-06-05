@@ -7,7 +7,7 @@ namespace EE { namespace Maps { namespace Private {
 
 static UITextView* createTextBox( const String& Text = "", Node* Parent = NULL,
 								  const Sizef& Size = Sizef(), const Vector2f& Pos = Vector2f(),
-								  const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE,
+								  const Uint32& Flags = UI_NODE_DEFAULT_FLAGS | UI_AUTO_SIZE,
 								  const Uint32& fontStyle = Text::Regular ) {
 	UITextView* Ctrl = UITextView::New();
 	Ctrl->setFontStyle( fontStyle );
@@ -50,7 +50,7 @@ MapObjectProperties::MapObjectProperties( GameObjectObject* Obj ) :
 
 	UITextView* Txt =
 		createTextBox( "Object name:", mUIWindow->getContainer(), Sizef(), Vector2f( 50, InitialY ),
-					   UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
+					   UI_NODE_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 	mUIInput = UITextInput::New();
 	mUIInput->setParent( mUIWindow->getContainer() )
 		->setSize( 120, 0 )
@@ -62,7 +62,7 @@ MapObjectProperties::MapObjectProperties( GameObjectObject* Obj ) :
 
 	UITextView* Txt2 = createTextBox( "Object type:", mUIWindow->getContainer(), Sizef(),
 									  Vector2f( 50 + 192, InitialY ),
-									  UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
+									  UI_NODE_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 	mUIInput2 = UITextInput::New();
 	mUIInput2->setParent( mUIWindow->getContainer() )
 		->setSize( 120, 0 )
@@ -73,7 +73,7 @@ MapObjectProperties::MapObjectProperties( GameObjectObject* Obj ) :
 	mUIInput2->addEventListener( Event::OnPressEnter,
 								 cb::Make1( this, &MapObjectProperties::onOKClick ) );
 
-	Uint32 TxtBoxFlags = UI_CONTROL_DEFAULT_FLAGS | UI_HALIGN_CENTER | UI_VALIGN_CENTER;
+	Uint32 TxtBoxFlags = UI_NODE_DEFAULT_FLAGS | UI_HALIGN_CENTER | UI_VALIGN_CENTER;
 	createTextBox( "Property Name", mUIWindow->getContainer(), Sizef( 192, 24 ),
 				   Vector2f( 50, mUIInput->getPosition().y + mUIInput->getSize().getHeight() + 12 ),
 				   TxtBoxFlags, Text::Shadow );

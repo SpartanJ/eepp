@@ -23,7 +23,7 @@ UIPushButton::UIPushButton( const std::string& tag ) :
 		->setVisible( true )
 		->setEnabled( false );
 
-	auto cb = [&]( const Event* event ) {
+	auto cb = [&]( const Event* ) {
 		onSizeChange();
 		notifyLayoutAttrChange();
 	};
@@ -41,6 +41,7 @@ UIPushButton::UIPushButton( const std::string& tag ) :
 	mTextBox->addEventListener( Event::OnFontChanged, cb );
 	mTextBox->addEventListener( Event::OnFontStyleChanged, cb );
 	mTextBox->addEventListener( Event::OnTextChanged, cb );
+	mTextBox->addEventListener( Event::OnVisibleChange, cb );
 
 	if ( NULL != getExtraInnerWidget() ) {
 		getExtraInnerWidget()->addEventListener( Event::OnPaddingChange, cb );
@@ -140,11 +141,12 @@ void UIPushButton::onSizeChange() {
 								PixelDensity::dpToPxI( mIcon->getLayoutMargin().Left +
 													   mIcon->getLayoutMargin().Right )
 						  : 0;
-	Float eWidth = NULL != eWidget && eWidget->getPixelsSize().getWidth() > 0
-					   ? eWidget->getPixelsSize().getWidth() +
-							 PixelDensity::dpToPxI( eWidget->getLayoutMargin().Left +
-													eWidget->getLayoutMargin().Right )
-					   : 0;
+	Float eWidth =
+		NULL != eWidget && eWidget->isVisible() && eWidget->getPixelsSize().getWidth() > 0
+			? eWidget->getPixelsSize().getWidth() +
+				  PixelDensity::dpToPxI( eWidget->getLayoutMargin().Left +
+										 eWidget->getLayoutMargin().Right )
+			: 0;
 	Float textBoxWidth = mTextBox->getPixelsSize().getWidth();
 	Float totalWidth = textBoxWidth + iconWidth + eWidth;
 
@@ -155,14 +157,14 @@ void UIPushButton::onSizeChange() {
 			position.y =
 				eefloor( ( mSize.getHeight() - mTextBox->getPixelsSize().getHeight() ) * 0.5f );
 			ePos.y =
-				NULL != eWidget
+				NULL != eWidget && eWidget->isVisible()
 					? eefloor( ( mSize.getHeight() - eWidget->getPixelsSize().getHeight() ) * 0.5f )
 					: 0;
 			break;
 		case UI_VALIGN_BOTTOM:
 			iconPos.y = mSize.y - mIcon->getPixelsSize().getHeight() - autoPadding.Bottom;
 			position.y = mSize.y - mTextBox->getPixelsSize().getHeight() - autoPadding.Bottom;
-			ePos.y = NULL != eWidget
+			ePos.y = NULL != eWidget && eWidget->isVisible()
 						 ? mSize.y - eWidget->getPixelsSize().getHeight() - autoPadding.Bottom
 						 : 0;
 			break;
@@ -178,7 +180,7 @@ void UIPushButton::onSizeChange() {
 			position.x = mSize.getWidth() - autoPadding.Right;
 			ePos.x = position.x;
 
-			if ( NULL != eWidget ) {
+			if ( NULL != eWidget && eWidget->isVisible() ) {
 				ePos.x = position.x - PixelDensity::dpToPx( eWidget->getLayoutMargin().Right ) -
 						 eWidget->getPixelsSize().getWidth();
 				position.x = ePos.x - PixelDensity::dpToPx( eWidget->getLayoutMargin().Left );
@@ -194,7 +196,7 @@ void UIPushButton::onSizeChange() {
 			iconPos.x = ( mSize.getWidth() - totalWidth ) / 2 +
 						PixelDensity::dpToPxI( mIcon->getLayoutMargin().Left );
 
-			if ( NULL != eWidget ) {
+			if ( NULL != eWidget && eWidget->isVisible() ) {
 				ePos.x = position.x + textBoxWidth +
 						 PixelDensity::dpToPx( eWidget->getLayoutMargin().Left );
 			}
@@ -203,7 +205,7 @@ void UIPushButton::onSizeChange() {
 			position.x = autoPadding.Left + iconWidth;
 			iconPos.x = autoPadding.Left + PixelDensity::dpToPxI( mIcon->getLayoutMargin().Left );
 
-			if ( NULL != eWidget ) {
+			if ( NULL != eWidget && eWidget->isVisible() ) {
 				ePos.x = position.x + textBoxWidth +
 						 PixelDensity::dpToPx( eWidget->getLayoutMargin().Left );
 			}
@@ -212,7 +214,7 @@ void UIPushButton::onSizeChange() {
 
 	mTextBox->setPixelsPosition( position );
 	mIcon->setPixelsPosition( iconPos );
-	if ( NULL != eWidget ) {
+	if ( NULL != eWidget && eWidget->isVisible() ) {
 		eWidget->setPixelsPosition( ePos );
 	}
 }

@@ -55,6 +55,8 @@ class EE_API UISplitter : public UILayout {
 	virtual Uint32 onMessage( const NodeMessage* Msg );
 
 	void updateFromDrag();
+
+	void updateSplitterDragFlags();
 };
 
 }} // namespace EE::UI

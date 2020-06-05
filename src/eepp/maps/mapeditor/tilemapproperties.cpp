@@ -7,7 +7,7 @@ namespace EE { namespace Maps { namespace Private {
 
 static UITextView* createTextBox( const String& Text = "", Node* Parent = NULL,
 								  const Sizef& Size = Sizef(), const Vector2f& Pos = Vector2f(),
-								  const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE,
+								  const Uint32& Flags = UI_NODE_DEFAULT_FLAGS | UI_AUTO_SIZE,
 								  const Uint32& fontStyle = Text::Regular ) {
 	UITextView* Ctrl = UITextView::New();
 	Ctrl->setFontStyle( fontStyle );
@@ -52,7 +52,7 @@ TileMapProperties::TileMapProperties( TileMap* Map ) :
 
 		UITextView* Txt = createTextBox( "Map Base Color:", mUIWindow->getContainer(), Sizef(),
 										 Vector2f( 50, 16 ),
-										 UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
+										 UI_NODE_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
 		mUIBaseColor = UIWidget::New();
 		mUIBaseColor->setFlags( UI_FILL_BACKGROUND | UI_BORDER );
@@ -67,7 +67,7 @@ TileMapProperties::TileMapProperties( TileMap* Map ) :
 			"Red Color:", mUIWindow->getContainer(), Sizef(),
 			Vector2f( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4,
 					  mUIBaseColor->getPosition().y ),
-			UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
+			UI_NODE_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 		mUIRedSlider = UISlider::New()->setOrientation( UIOrientation::Horizontal );
 		mUIRedSlider->setParent( mUIWindow->getContainer() )
 			->setSize( 255, 20 )
@@ -82,13 +82,13 @@ TileMapProperties::TileMapProperties( TileMap* Map ) :
 			String::toStr( (Uint32)mMap->getBaseColor().r ), mUIWindow->getContainer(), Sizef(),
 			Vector2f( mUIRedSlider->getPosition().x + mUIRedSlider->getSize().getWidth() + 4,
 					  mUIRedSlider->getPosition().y ),
-			UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
+			UI_NODE_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
 		Txt = createTextBox(
 			"Green Color:", mUIWindow->getContainer(), Sizef(),
 			Vector2f( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4,
 					  mUIRedSlider->getPosition().y + mUIRedSlider->getSize().getHeight() + 4 ),
-			UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
+			UI_NODE_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
 		mUIGreenSlider = UISlider::New()->setOrientation( UIOrientation::Horizontal );
 		mUIGreenSlider->setParent( mUIWindow->getContainer() )
@@ -103,13 +103,13 @@ TileMapProperties::TileMapProperties( TileMap* Map ) :
 			String::toStr( (Uint32)mMap->getBaseColor().g ), mUIWindow->getContainer(), Sizef(),
 			Vector2f( mUIGreenSlider->getPosition().x + mUIGreenSlider->getSize().getWidth() + 4,
 					  mUIGreenSlider->getPosition().y ),
-			UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
+			UI_NODE_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
 		Txt = createTextBox(
 			"Blue Color:", mUIWindow->getContainer(), Sizef(),
 			Vector2f( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4,
 					  mUIGreenSlider->getPosition().y + mUIGreenSlider->getSize().getHeight() + 4 ),
-			UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
+			UI_NODE_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 		mUIBlueSlider = UISlider::New()->setOrientation( UIOrientation::Horizontal );
 		mUIBlueSlider->setParent( mUIWindow->getContainer() )
 			->setSize( 255, 20 )
@@ -123,10 +123,10 @@ TileMapProperties::TileMapProperties( TileMap* Map ) :
 			String::toStr( (Uint32)mMap->getBaseColor().b ), mUIWindow->getContainer(), Sizef(),
 			Vector2f( mUIBlueSlider->getPosition().x + mUIBlueSlider->getSize().getWidth() + 4,
 					  mUIBlueSlider->getPosition().y ),
-			UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
+			UI_NODE_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 	}
 
-	Uint32 TxtBoxFlags = UI_CONTROL_DEFAULT_FLAGS | UI_HALIGN_CENTER | UI_VALIGN_CENTER;
+	Uint32 TxtBoxFlags = UI_NODE_DEFAULT_FLAGS | UI_HALIGN_CENTER | UI_VALIGN_CENTER;
 	UITextView* TxtBox =
 		createTextBox( "Property Name", mUIWindow->getContainer(), Sizef( 192, 24 ),
 					   Vector2f( 50, 10 + DiffIfLights ), TxtBoxFlags, Text::Shadow );

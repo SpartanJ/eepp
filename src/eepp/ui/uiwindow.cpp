@@ -155,7 +155,7 @@ void UIWindow::updateWinFlags() {
 			mWindowDecoration->writeNodeFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 		}
 
-		auto cb = [&]( const Event* event ) { onSizeChange(); };
+		auto cb = [&]( const Event* ) { onSizeChange(); };
 
 		mWindowDecoration->setParent( this );
 		mWindowDecoration->setVisible( true );

@@ -42,10 +42,13 @@ class EE_API UITab : public UISelectButton {
 	Node* mOwnedWidget;
 	String mText;
 	std::string mOwnedName;
+	UIWidget* mCloseButton;
 
-	virtual Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
+	Uint32 onDrag( const Vector2f& position, const Uint32& flags, const Sizef& dragDiff );
 
-	virtual Uint32 onMouseClick( const Vector2i& position, const Uint32& flags );
+	Uint32 onDragStop( const Vector2i& position, const Uint32& flags );
+
+	virtual Uint32 onMessage( const NodeMessage* message );
 
 	virtual void onStateChange();
 
@@ -54,6 +57,8 @@ class EE_API UITab : public UISelectButton {
 	virtual void onParentChange();
 
 	virtual void onSizeChange();
+
+	virtual UIWidget* getExtraInnerWidget();
 
 	void setOwnedControl();
 

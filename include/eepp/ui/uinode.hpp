@@ -303,7 +303,7 @@ class EE_API UINode : public Node {
 
 	virtual Uint32 onCalculateDrag( const Vector2f& position, const Uint32& flags );
 
-	virtual Uint32 onDrag( const Vector2f& position, const Uint32& flags );
+	virtual Uint32 onDrag( const Vector2f& position, const Uint32& flags, const Sizef& dragDiff );
 
 	virtual Uint32 onDragStart( const Vector2i& position, const Uint32& flags );
 

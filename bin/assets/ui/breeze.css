@@ -34,6 +34,8 @@
 	--icon-line-hover: #3d4246;
 	--icon-back-alert: #e49aa2;
 	--win-icon: #dbdbdd;
+	--tab-close: #909396;
+	--tab-close-hover: #863d47;
 }
 
 CheckBox,
@@ -443,6 +445,21 @@ Tab:selected {
 
 Tab:selectedhover {
 	background-color: var(--tab-active);
+}
+
+Tab::close {
+	width: 10dp;
+	height: 10dp;
+	border-radius: 5dp;
+	background-color: var(--tab-close);
+	foreground-image: poly(line, var(--tab-hover), "0dp 0dp, 5dp 5dp"), poly(line, var(--icon-line-hover), "5dp 0dp, 0dp 5dp");
+	foreground-position: 2.5dp 2.5dp, 2.5dp 2.5dp;
+	margin-right: 4dp;
+	transition: all 0.15s;
+}
+
+Tab::close:hover {
+	background-color: var(--tab-close-hover);
 }
 
 Loader {

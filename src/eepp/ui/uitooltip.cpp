@@ -15,7 +15,7 @@ UITooltip* UITooltip::New() {
 
 UITooltip::UITooltip() :
 	UIWidget( "tooltip" ), mAlignOffset( 0.f, 0.f ), mTooltipTime( Time::Zero ), mTooltipOf() {
-	setFlags( UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_PADDING | UI_AUTO_SIZE );
+	setFlags( UI_NODE_DEFAULT_FLAGS_CENTERED | UI_AUTO_PADDING | UI_AUTO_SIZE );
 
 	mTextCache = Text::New();
 	mEnabled = false;

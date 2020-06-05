@@ -32,7 +32,7 @@ UINode* UINode::New() {
 
 UINode::UINode() :
 	Node(),
-	mFlags( UI_CONTROL_DEFAULT_FLAGS ),
+	mFlags( UI_NODE_DEFAULT_FLAGS ),
 	mState( UIState::StateFlagNormal ),
 	mSkinState( NULL ),
 	mBackground( NULL ),
@@ -437,19 +437,17 @@ Uint32 UINode::onCalculateDrag( const Vector2f& position, const Uint32& flags ) 
 			return 1;
 		}
 
-		Vector2f Pos( eefloor( position.x ), eefloor( position.y ) );
+		Vector2f pos( eefloor( position.x ), eefloor( position.y ) );
+		if ( mDragPoint != pos && ( std::abs( mDragPoint.x - pos.x ) > 1.f ||
+									std::abs( mDragPoint.y - pos.y ) > 1.f ) ) {
+			Sizef dragDiff;
+			dragDiff.x = ( mFlags & UI_DRAG_HORIZONTAL ) ? ( Float )( mDragPoint.x - pos.x ) : 0;
+			dragDiff.y = ( mFlags & UI_DRAG_VERTICAL ) ? ( Float )( mDragPoint.y - pos.y ) : 0;
 
-		if ( mDragPoint != Pos && ( std::abs( mDragPoint.x - Pos.x ) > 1.f ||
-									std::abs( mDragPoint.y - Pos.y ) > 1.f ) ) {
-			if ( onDrag( Pos, flags ) ) {
-				Sizef dragDiff;
-
-				dragDiff.x = ( Float )( mDragPoint.x - Pos.x );
-				dragDiff.y = ( Float )( mDragPoint.y - Pos.y );
-
+			if ( onDrag( pos, flags, dragDiff ) ) {
 				setPixelsPosition( mPosition - dragDiff );
 
-				mDragPoint = Pos;
+				mDragPoint = pos;
 
 				onPositionChange();
 
@@ -1016,7 +1014,7 @@ void UINode::onThemeLoaded() {
 	invalidateDraw();
 }
 
-void UINode::onChildCountChange( Node* child, const bool& removed ) {
+void UINode::onChildCountChange( Node*, const bool& ) {
 	invalidateDraw();
 }
 
@@ -1072,7 +1070,7 @@ void UINode::setDragPoint( const Vector2f& Point ) {
 	mDragPoint = Point;
 }
 
-Uint32 UINode::onDrag( const Vector2f&, const Uint32& ) {
+Uint32 UINode::onDrag( const Vector2f&, const Uint32&, const Sizef& ) {
 	return 1;
 }
 

@@ -1554,10 +1554,30 @@ src: drawable_resource_name; /** same as doing: @drawable/drawable_resource_name
 
 ---
 
+### tabbar-hide-on-single-tab
+
+Enables/disables the tab bar hiding when only one tab is contained in the tab widget.
+
+* Applicable to: EE::UI::UITabWidget (TabWidget)
+* Data Type: [boolean](#boolean-data-type)
+* Default value: `false`
+
+---
+
+### tabbar-allow-rearrange
+
+Enables/disables manually rearraging the tabs in the tab bar.
+
+* Applicable to: EE::UI::UITabWidget (TabWidget)
+* Data Type: [boolean](#boolean-data-type)
+* Default value: `false`
+
+---
+
 ### tab-closable
 
-Enables/disables tabs to be closable with the middle mouse button click (pending implementation of a close
-button inside a tab).
+Enables/disables tabs to be closable with the middle mouse button click or by clicking on the close
+button.
 
 * Applicable to: EE::UI::UITabWidget (TabWidget)
 * Data Type: [boolean](#boolean-data-type)

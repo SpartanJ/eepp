@@ -189,6 +189,8 @@ enum class PropertyId : Uint32 {
 	BorderTopRightRadius = String::hash( "border-top-right-radius" ),
 	BorderBottomLeftRadius = String::hash( "border-bottom-left-radius" ),
 	BorderBottomRightRadius = String::hash( "border-bottom-right-radius" ),
+	TabBarHideOnSingleTab = String::hash( "tabbar-hide-on-single-tab" ),
+	TabBarAllowRearrange = String::hash( "tabbar-allow-rearrange" ),
 };
 
 enum class PropertyType : Uint32 {

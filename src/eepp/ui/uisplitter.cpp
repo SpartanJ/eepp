@@ -4,57 +4,6 @@
 
 namespace EE { namespace UI {
 
-class UISplitterSeparator : public UIWidget {
-  public:
-	static UISplitterSeparator* NewWithTag( const std::string& tag, UISplitter* parent ) {
-		return eeNew( UISplitterSeparator, ( tag, parent ) );
-	}
-
-	UISplitterSeparator( const std::string& tagname, UISplitter* parent ) :
-		UIWidget( tagname ), mContainer( parent ) {
-		setDragEnabled( true );
-	}
-
-  protected:
-	UISplitter* mContainer;
-
-	Uint32 onCalculateDrag( const Vector2f& position, const Uint32& flags ) {
-		if ( isDragging() && !( flags /*press trigger*/ & EE_BUTTON_LMASK ) ) {
-			setDragging( false );
-			getUISceneNode()->getEventDispatcher()->setNodeDragging( NULL );
-			return 1;
-		}
-		Vector2f pos( eefloor( position.x ), eefloor( position.y ) );
-		if ( mDragPoint != pos && ( std::abs( mDragPoint.x - pos.x ) > 1.f ||
-									std::abs( mDragPoint.y - pos.y ) > 1.f ) ) {
-			if ( onDrag( pos, flags ) ) {
-				Sizef dragDiff;
-				dragDiff.x = ( Float )( mDragPoint.x - pos.x );
-				dragDiff.y = ( Float )( mDragPoint.y - pos.y );
-				if ( mContainer->getOrientation() == UIOrientation::Horizontal ) {
-					setPixelsPosition( mPosition.x - dragDiff.x, mPosition.y );
-				} else {
-					setPixelsPosition( mPosition.x, mPosition.y - dragDiff.y );
-				}
-				mDragPoint = pos;
-				onPositionChange();
-				getUISceneNode()->getEventDispatcher()->setNodeDragging( this );
-			}
-		}
-		return 1;
-	}
-
-	Uint32 onDragStart( const Vector2i& pos, const Uint32& flags ) {
-		pushState( UIState::StateSelected );
-		return UIWidget::onDragStart( pos, flags );
-	}
-
-	Uint32 onDragStop( const Vector2i& pos, const Uint32& flags ) {
-		popState( UIState::StateSelected );
-		return UIWidget::onDragStop( pos, flags );
-	}
-};
-
 UISplitter* UISplitter::New() {
 	return eeNew( UISplitter, () );
 }
@@ -68,7 +17,13 @@ UISplitter::UISplitter() :
 	mFirstWidget( NULL ),
 	mLastWidget( NULL ) {
 	mFlags |= UI_OWNS_CHILDS_POSITION;
-	mSplitter = UISplitterSeparator::NewWithTag( "splitter::separator", this );
+	mSplitter = UIWidget::NewWithTag( "splitter::separator" );
+	mSplitter->setDragEnabled( true );
+	mSplitter->addEventListener( Event::OnDragStart, [&]( const Event* ) {
+		mSplitter->pushState( UIState::StateSelected );
+	} );
+	mSplitter->addEventListener(
+		Event::OnDragStop, [&]( const Event* ) { mSplitter->popState( UIState::StateSelected ); } );
 	mSplitter->setParent( this );
 	mSplitter->setMinWidth( 4 );
 	mSplitter->setMinHeight( 4 );
@@ -83,6 +38,9 @@ UISplitter::UISplitter() :
 		if ( mSplitter->isDragging() && !mDirtyLayout )
 			updateFromDrag();
 	} );
+
+	updateSplitterDragFlags();
+
 	applyDefaultTheme();
 }
 
@@ -103,6 +61,7 @@ const UIOrientation& UISplitter::getOrientation() const {
 void UISplitter::setOrientation( const UIOrientation& orientation ) {
 	if ( orientation != mOrientation ) {
 		mOrientation = orientation;
+		updateSplitterDragFlags();
 		setLayoutDirty();
 	}
 }
@@ -231,10 +190,11 @@ void UISplitter::updateFromDrag() {
 
 		Float lMinSize = mLastWidget ? mLastWidget->getCurrentMinSize().getHeight() : 0.f;
 
-		if ( mSplitter->getPosition().y > mDpSize.getHeight() - mPadding.Bottom - lMinSize ) {
+		if ( mSplitter->getPosition().y + mSplitter->getSize().getHeight() >
+			 mDpSize.getHeight() - mPadding.Bottom - lMinSize ) {
 			mSplitter->setPosition( mSplitter->getPosition().x,
 									mDpSize.getHeight() - mPadding.Bottom - lMinSize -
-										+mSplitter->getSize().getHeight() );
+										mSplitter->getSize().getHeight() );
 		}
 
 		mSplitter->setPixelsSize( mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
@@ -406,6 +366,13 @@ void UISplitter::updateLayout() {
 	}
 
 	mDirtyLayout = false;
+}
+
+void UISplitter::updateSplitterDragFlags() {
+	mSplitter->setFlags( getOrientation() == UIOrientation::Horizontal ? UI_DRAG_HORIZONTAL
+																	   : UI_DRAG_VERTICAL );
+	mSplitter->unsetFlags( getOrientation() == UIOrientation::Horizontal ? UI_DRAG_VERTICAL
+																		 : UI_DRAG_HORIZONTAL );
 }
 
 Uint32 UISplitter::onMessage( const NodeMessage* Msg ) {

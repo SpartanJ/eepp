@@ -59,7 +59,7 @@ UIMap::~UIMap() {
 	eeSAFE_DELETE( mMap );
 }
 
-Uint32 UIMap::onDrag( const Vector2f& Pos, const Uint32& ) {
+Uint32 UIMap::onDrag( const Vector2f& Pos, const Uint32&, const Sizef& ) {
 
 	if ( ( EDITING_OBJECT == mEditingMode && NULL != mSelObj ) ||
 		 ( EDITING_LIGHT == mEditingMode && NULL != mSelLight ) ) {

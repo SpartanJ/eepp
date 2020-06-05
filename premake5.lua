@@ -214,6 +214,7 @@ function build_link_configuration( package_name, use_ee_icon )
 		targetname ( package_name .. "-debug" .. extension )
 
 	filter "configurations:release*"
+		defines { "NDEBUG" }
 		targetname ( package_name .. extension )
 
 	filter { "system:windows", "action:not vs*" }

@@ -1,4 +1,4 @@
-#ifndef EE_UICUITABWIDGET_HPP
+﻿#ifndef EE_UICUITABWIDGET_HPP
 #define EE_UICUITABWIDGET_HPP
 
 #include <deque>
@@ -32,6 +32,8 @@ class EE_API UITabWidget : public UIWidget {
 		bool TabsEdgesDiffSkins = false; //! Indicates if the edge tabs ( the left and right
 										 //! border tab ) are different from the central tabs.
 	};
+
+	typedef std::function<bool( UITab* )> TabTryCloseCallback;
 
 	static UITabWidget* New();
 
@@ -124,9 +126,17 @@ class EE_API UITabWidget : public UIWidget {
 
 	UITab* setTabSelected( const Uint32& tabIndex );
 
-	const bool& getHideWhenNotNeeded() const;
+	const bool& getHideTabBarOnSingleTab() const;
 
-	void setHideWhenNotNeeded( const bool& hideWhenNotNeeded );
+	void setHideTabBarOnSingleTab( const bool& hideTabBarOnSingleTab );
+
+	const TabTryCloseCallback& getTabTryCloseCallback() const;
+
+	void setTabTryCloseCallback( const TabTryCloseCallback& tabTryCloseCallback );
+
+	const bool& getAllowRearrangeTabs() const;
+
+	void setAllowRearrangeTabs( bool allowRearrangeTabs );
 
   protected:
 	friend class UITab;
@@ -137,7 +147,9 @@ class EE_API UITabWidget : public UIWidget {
 	std::deque<UITab*> mTabs;
 	UITab* mTabSelected;
 	Uint32 mTabSelectedIndex;
-	bool mHideWhenNotNeeded;
+	TabTryCloseCallback mTabTryCloseCallback;
+	bool mHideTabBarOnSingleTab;
+	bool mAllowRearrangeTabs;
 
 	void onThemeLoaded();
 
@@ -162,6 +174,10 @@ class EE_API UITabWidget : public UIWidget {
 	void applyThemeToTabs();
 
 	void refreshOwnedWidget( UITab* tab );
+
+	void tryCloseTab( UITab* tab );
+
+	void swapTabs( UITab* left, UITab* right );
 };
 
 }} // namespace EE::UI

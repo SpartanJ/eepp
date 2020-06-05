@@ -361,6 +361,9 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "border-bottom-left-radius", "0" ).setType( PropertyType::RadiusLength );
 	registerProperty( "border-bottom-right-radius", "0" ).setType( PropertyType::RadiusLength );
 
+	registerProperty( "tabbar-hide-on-single-tab", "false" );
+	registerProperty( "tabbar-allow-rearrange", "false" );
+
 	// Shorthands
 	registerShorthand( "margin", {"margin-top", "margin-right", "margin-bottom", "margin-left"},
 					   "box" );

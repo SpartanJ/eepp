@@ -31,7 +31,7 @@ namespace EE { namespace Maps {
 
 static UITextView* createTextBox( const String& Text = "", Node* Parent = NULL,
 								  const Sizef& Size = Sizef(), const Vector2f& Pos = Vector2f(),
-								  const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE,
+								  const Uint32& Flags = UI_NODE_DEFAULT_FLAGS | UI_AUTO_SIZE,
 								  const Uint32& fontStyle = Text::Regular ) {
 	UITextView* Ctrl = UITextView::New();
 	Ctrl->setFontStyle( fontStyle );
@@ -292,7 +292,7 @@ void MapEditor::fillGotyList() {
 
 void MapEditor::createTextureRegionContainer( Int32 Width ) {
 	UITextView* Txt;
-	Uint32 TxtFlags = UI_CONTROL_DEFAULT_ALIGN | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP;
+	Uint32 TxtFlags = UI_NODE_DEFAULT_ALIGN | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP;
 
 	Txt = createTextBox( "Add Game Object as...", mTextureRegionCont, Sizef( Width, 16 ),
 						 Vector2f( TAB_CONT_X_DIST, 4 ), TxtFlags, Text::Shadow );
@@ -340,7 +340,7 @@ void MapEditor::createTextureRegionContainer( Int32 Width ) {
 														mLayerList->getSize().getHeight() + 4 ),
 						 TxtFlags, Text::Shadow );
 
-	Uint32 ChkFlags = UI_CONTROL_DEFAULT_ALIGN | UI_AUTO_SIZE | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP;
+	Uint32 ChkFlags = UI_NODE_DEFAULT_ALIGN | UI_AUTO_SIZE | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP;
 
 	mChkMirrored = UICheckBox::New();
 	mChkMirrored->setFontStyle( Text::Shadow )
@@ -503,7 +503,7 @@ void MapEditor::createLighContainer() {
 
 	UITextView* Txt =
 		createTextBox( "Light Color:", mLightCont, Sizef(), Vector2f( TAB_CONT_X_DIST, 32 ),
-					   UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
+					   UI_NODE_DEFAULT_FLAGS | UI_AUTO_SIZE );
 	Txt->setFontStyle( Text::Shadow );
 
 	mUIBaseColor = UIWidget::New();
@@ -519,7 +519,7 @@ void MapEditor::createLighContainer() {
 		"R:", mLightCont, Sizef(),
 		Vector2f( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4,
 				  mUIBaseColor->getPosition().y ),
-		UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
+		UI_NODE_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
 	mUIRedSlider = UISlider::New()->setOrientation( UIOrientation::Horizontal );
 	mUIRedSlider->setParent( mLightCont )
@@ -534,13 +534,13 @@ void MapEditor::createLighContainer() {
 		String::toStr( (Uint32)255 ), mLightCont, Sizef(),
 		Vector2f( mUIRedSlider->getPosition().x + mUIRedSlider->getSize().getWidth() + 4,
 				  mUIRedSlider->getPosition().y ),
-		UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
+		UI_NODE_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
 	Txt = createTextBox(
 		"G:", mLightCont, Sizef(),
 		Vector2f( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4,
 				  mUIRedSlider->getPosition().y + mUIRedSlider->getSize().getHeight() + 4 ),
-		UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
+		UI_NODE_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 	mUIGreenSlider = UISlider::New()->setOrientation( UIOrientation::Horizontal );
 	mUIGreenSlider->setParent( mLightCont )
 		->setSize( 100, 20 )
@@ -554,13 +554,13 @@ void MapEditor::createLighContainer() {
 		String::toStr( (Uint32)255 ), mLightCont, Sizef(),
 		Vector2f( mUIGreenSlider->getPosition().x + mUIGreenSlider->getSize().getWidth() + 4,
 				  mUIGreenSlider->getPosition().y ),
-		UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
+		UI_NODE_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
 	Txt = createTextBox(
 		"B:", mLightCont, Sizef(),
 		Vector2f( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4,
 				  mUIGreenSlider->getPosition().y + mUIGreenSlider->getSize().getHeight() + 4 ),
-		UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
+		UI_NODE_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 	mUIBlueSlider = UISlider::New()->setOrientation( UIOrientation::Horizontal );
 	mUIBlueSlider->setParent( mLightCont )
 		->setSize( 100, 20 )
@@ -574,12 +574,12 @@ void MapEditor::createLighContainer() {
 		String::toStr( (Uint32)255 ), mLightCont, Sizef(),
 		Vector2f( mUIBlueSlider->getPosition().x + mUIBlueSlider->getSize().getWidth() + 4,
 				  mUIBlueSlider->getPosition().y ),
-		UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
+		UI_NODE_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
 	Txt = createTextBox( "Light Radius:", mLightCont, Sizef(),
 						 Vector2f( TAB_CONT_X_DIST, mUIBlueTxt->getPosition().y +
 														mUIBlueTxt->getSize().getHeight() + 16 ),
-						 UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
+						 UI_NODE_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
 	mLightRadius = UISpinBox::New()->setAllowOnlyNumbers( false )->setValue( 100 );
 	mLightRadius->setParent( mLightCont )
@@ -627,7 +627,7 @@ void MapEditor::createObjectsContainer() {
 
 	Int32 nextY = Button->getPosition().y + Button->getSize().getHeight() + 4;
 
-	Uint32 ChkFlags = UI_CONTROL_DEFAULT_ALIGN | UI_AUTO_SIZE | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP;
+	Uint32 ChkFlags = UI_NODE_DEFAULT_ALIGN | UI_AUTO_SIZE | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP;
 
 	mChkClampToTile = UICheckBox::New();
 	mChkClampToTile->resetFlags( ChkFlags )->setParent( mObjectCont )->setPosition( 12, nextY );

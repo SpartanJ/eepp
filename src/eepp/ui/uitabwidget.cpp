@@ -19,7 +19,8 @@ UITabWidget::UITabWidget() :
 	mTabBar( NULL ),
 	mTabSelected( NULL ),
 	mTabSelectedIndex( eeINDEX_NOT_FOUND ),
-	mHideWhenNotNeeded( false ) {
+	mHideTabBarOnSingleTab( false ),
+	mAllowRearrangeTabs( false ) {
 	setHorizontalAlign( UI_HALIGN_CENTER );
 
 	mTabBar = UIWidget::NewWithTag( "tabwidget::tabbar" );
@@ -82,7 +83,7 @@ void UITabWidget::onThemeLoaded() {
 }
 
 void UITabWidget::setContainerSize() {
-	if ( getTabCount() < 2 && mHideWhenNotNeeded ) {
+	if ( getTabCount() < 2 && mHideTabBarOnSingleTab ) {
 		mTabBar->setVisible( false );
 		mTabBar->setEnabled( false );
 		mCtrlContainer->setPosition( mPadding.Left, mPadding.Top );
@@ -146,6 +147,10 @@ std::string UITabWidget::getPropertyString( const PropertyDefinition* propertyDe
 			return String::fromFloat( getTabSeparation(), "dp" );
 		case PropertyId::TabHeight:
 			return String::fromFloat( getTabsHeight(), "dp" );
+		case PropertyId::TabBarHideOnSingleTab:
+			return getHideTabBarOnSingleTab() ? "true" : "false";
+		case PropertyId::TabBarAllowRearrange:
+			return getAllowRearrangeTabs() ? "true" : "false";
 		default:
 			return UIWidget::getPropertyString( propertyDef, propertyIndex );
 	}
@@ -159,7 +164,7 @@ void UITabWidget::invalidate( Node* invalidator ) {
 	// Only invalidate if the invalidator is actually visible in the current active tab.
 	if ( NULL != invalidator ) {
 		if ( invalidator == mCtrlContainer || invalidator == mTabBar ||
-			 mTabBar->isChild( invalidator ) ) {
+			 mTabBar->inParentTreeOf( invalidator ) ) {
 			mNodeDrawInvalidator->invalidate( mCtrlContainer );
 		} else if ( invalidator->getParent() == mCtrlContainer ) {
 			if ( invalidator->isVisible() ) {
@@ -206,6 +211,12 @@ bool UITabWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		case PropertyId::TabHeight:
 			setTabsHeight( attribute.asDpDimension( this ) );
+			break;
+		case PropertyId::TabBarHideOnSingleTab:
+			setHideTabBarOnSingleTab( attribute.asBool() );
+			break;
+		case PropertyId::TabBarAllowRearrange:
+			setAllowRearrangeTabs( attribute.asBool() );
 			break;
 		default:
 			return UIWidget::applyProperty( attribute );
@@ -268,6 +279,7 @@ bool UITabWidget::getTabsClosable() const {
 void UITabWidget::setTabsClosable( bool tabsClosable ) {
 	if ( mStyleConfig.TabsClosable != tabsClosable ) {
 		mStyleConfig.TabsClosable = tabsClosable;
+		updateTabs();
 		invalidateDraw();
 	}
 }
@@ -337,7 +349,9 @@ void UITabWidget::posTabs() {
 				break;
 		}
 
-		mTabs[i]->setPixelsPosition( alignOffset + x, y );
+		if ( !mTabs[i]->isDragging() ) {
+			mTabs[i]->setPixelsPosition( alignOffset + x, y );
+		}
 
 		x += mTabs[i]->getPixelsSize().getWidth() + mStyleConfig.TabSeparation;
 	}
@@ -577,14 +591,33 @@ UITab* UITabWidget::setTabSelected( const Uint32& tabIndex ) {
 	return NULL;
 }
 
-const bool& UITabWidget::getHideWhenNotNeeded() const {
-	return mHideWhenNotNeeded;
+const bool& UITabWidget::getHideTabBarOnSingleTab() const {
+	return mHideTabBarOnSingleTab;
 }
 
-void UITabWidget::setHideWhenNotNeeded( const bool& hideWhenNotNeeded ) {
-	if ( mHideWhenNotNeeded != hideWhenNotNeeded ) {
-		mHideWhenNotNeeded = hideWhenNotNeeded;
+void UITabWidget::setHideTabBarOnSingleTab( const bool& hideTabBarOnSingleTab ) {
+	if ( mHideTabBarOnSingleTab != hideTabBarOnSingleTab ) {
+		mHideTabBarOnSingleTab = hideTabBarOnSingleTab;
 		setContainerSize();
+	}
+}
+
+const UITabWidget::TabTryCloseCallback& UITabWidget::getTabTryCloseCallback() const {
+	return mTabTryCloseCallback;
+}
+
+void UITabWidget::setTabTryCloseCallback( const TabTryCloseCallback& tabTryCloseCallback ) {
+	mTabTryCloseCallback = tabTryCloseCallback;
+}
+
+const bool& UITabWidget::getAllowRearrangeTabs() const {
+	return mAllowRearrangeTabs;
+}
+
+void UITabWidget::setAllowRearrangeTabs( bool allowRearrangeTabs ) {
+	if ( allowRearrangeTabs != mAllowRearrangeTabs ) {
+		mAllowRearrangeTabs = allowRearrangeTabs;
+		updateTabs();
 	}
 }
 
@@ -602,6 +635,22 @@ void UITabWidget::refreshOwnedWidget( UITab* tab ) {
 		} else {
 			tab->getOwnedWidget()->setPosition( 0, 0 );
 		}
+	}
+}
+
+void UITabWidget::tryCloseTab( UITab* tab ) {
+	if ( mTabTryCloseCallback && !mTabTryCloseCallback( tab ) )
+		return;
+	removeTab( tab );
+}
+
+void UITabWidget::swapTabs( UITab* left, UITab* right ) {
+	Uint32 leftIndex = getTabIndex( left );
+	Uint32 rightIndex = getTabIndex( right );
+	if ( leftIndex != eeINDEX_NOT_FOUND && rightIndex != eeINDEX_NOT_FOUND ) {
+		mTabs[leftIndex] = right;
+		mTabs[rightIndex] = left;
+		posTabs();
 	}
 }
 
