@@ -47,10 +47,6 @@ Uint32 UITab::onDrag( const Vector2f&, const Uint32&, const Sizef& dragDiff ) {
 	if ( !tabW )
 		return 0;
 	Vector2f newPos( mPosition - dragDiff );
-	if ( newPos.x < 0 || newPos.x + mSize.getWidth() > getParent()->getPixelsSize().getWidth() ) {
-		getUISceneNode()->getEventDispatcher()->setNodeDragging( this );
-		return 0;
-	}
 	Uint32 index = tabW->getTabIndex( this );
 	if ( index > 0 ) {
 		UITab* tab = tabW->getTab( index - 1 );
@@ -62,7 +58,6 @@ Uint32 UITab::onDrag( const Vector2f&, const Uint32&, const Sizef& dragDiff ) {
 	}
 	if ( index + 1 < tabW->getTabCount() ) {
 		UITab* tab = tabW->getTab( index + 1 );
-
 		if ( tab ) {
 			if ( newPos.x + mSize.getWidth() >
 				 tab->getPixelsPosition().x + tab->getPixelsSize().getWidth() * 0.5f ) {
@@ -73,10 +68,30 @@ Uint32 UITab::onDrag( const Vector2f&, const Uint32&, const Sizef& dragDiff ) {
 	return 1;
 }
 
+Uint32 UITab::onDragStart( const Vector2i& position, const Uint32& flags ) {
+	UITabWidget* tabW = getTabWidget();
+	if ( tabW ) {
+		for ( size_t i = 0; i < tabW->getTabCount(); i++ ) {
+			UITab* tab = tabW->getTab( i );
+			if ( tab != this ) {
+				tab->setEnabled( false );
+			}
+		}
+	}
+	return UISelectButton::onDragStart( position, flags );
+}
+
 Uint32 UITab::onDragStop( const Vector2i& position, const Uint32& flags ) {
 	UITabWidget* tabW = getTabWidget();
-	if ( tabW )
+	if ( tabW ) {
+		for ( size_t i = 0; i < tabW->getTabCount(); i++ ) {
+			UITab* tab = tabW->getTab( i );
+			if ( tab != this ) {
+				tab->setEnabled( true );
+			}
+		}
 		tabW->posTabs();
+	}
 	return UISelectButton::onDragStop( position, flags );
 }
 
@@ -90,6 +105,13 @@ void UITab::onSizeChange() {
 	if ( NULL != getTabWidget() )
 		getTabWidget()->orderTabs();
 	UISelectButton::onSizeChange();
+}
+
+Uint32 UITab::onFocus() {
+	UISelectButton::onFocus();
+	if ( mOwnedWidget )
+		mOwnedWidget->setFocus();
+	return 1;
 }
 
 UIWidget* UITab::getExtraInnerWidget() {
