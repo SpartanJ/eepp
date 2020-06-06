@@ -249,7 +249,7 @@ class EE_API IniFile {
 	std::vector<key> mKeys;
 	std::vector<std::string> mNames;
 	std::vector<std::string> mComments;
-	std::string CheckCase( std::string s ) const;
+	std::string checkCase( std::string s ) const;
 
 	std::vector<std::string> mLines;
 };

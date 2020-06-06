@@ -13,7 +13,7 @@ class EE_API TextPosition {
 
 	TextPosition( Int64 line, Int64 column ) : mLine( line ), mColumn( column ) {}
 
-	bool isValid() const { return mLine != 0xffffffffu && mColumn != 0xffffffffu; }
+	bool isValid() const { return mLine != 0xffffffff && mColumn != 0xffffffff; }
 
 	Int64 line() const { return mLine; }
 

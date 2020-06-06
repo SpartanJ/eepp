@@ -4,6 +4,7 @@
 #include <eepp/core/string.hpp>
 #include <eepp/system/clock.hpp>
 #include <eepp/system/iostreamfile.hpp>
+#include <eepp/system/pack.hpp>
 #include <eepp/system/time.hpp>
 #include <eepp/ui/doc/syntaxdefinition.hpp>
 #include <eepp/ui/doc/textdocumentline.hpp>
@@ -44,9 +45,13 @@ class EE_API TextDocument {
 
 	void reset();
 
-	void loadFromStream( IOStream& path );
+	bool loadFromStream( IOStream& path );
 
-	void loadFromFile( const std::string& path );
+	bool loadFromFile( const std::string& path );
+
+	bool loadFromMemory( const Uint8* data, const Uint32& size );
+
+	bool loadFromPack( Pack* pack, std::string filePackPath );
 
 	bool save();
 
@@ -252,6 +257,14 @@ class EE_API TextDocument {
 	const Uint32& getPageSize() const;
 
 	void setPageSize( const Uint32& pageSize );
+
+	TextPosition findOpenBracket( TextPosition startPosition,
+								  const String::StringBaseType& openBracket,
+								  const String::StringBaseType& closeBracket ) const;
+
+	TextPosition findCloseBracket( TextPosition startPosition,
+								   const String::StringBaseType& openBracket,
+								   const String::StringBaseType& closeBracket ) const;
 
   protected:
 	friend class UndoStack;

@@ -191,6 +191,22 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
 										   const Uint32& propertyIndex = 0 );
 
+	const bool& getHighlightMatchingBracket() const;
+
+	void setHighlightMatchingBracket( const bool& highlightMatchingBracket );
+
+	const Color& getMatchingBracketColor() const;
+
+	void setMatchingBracketColor( const Color& matchingBracketColor );
+
+	const bool& getHighlightSelectionMatch() const;
+
+	void setHighlightSelectionMatch( const bool& highlightSelection );
+
+	const Color& getSelectionMatchColor() const;
+
+	void setSelectionMatchColor( const Color& highlightSelectionMatchColor );
+
   protected:
 	struct LastXOffset {
 		TextPosition position;
@@ -208,6 +224,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mShowIndentationGuide;
 	bool mLocked;
 	bool mHighlightCurrentLine;
+	bool mHighlightMatchingBracket;
+	bool mHighlightSelectionMatch;
 	Uint32 mTabWidth;
 	Int64 mLastColOffset;
 	Vector2f mScroll;
@@ -222,6 +240,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Color mCaretColor;
 	Color mIndentationGuideColor;
 	Color mLineBreakColumnColor;
+	Color mMatchingBracketColor;
+	Color mSelectionMatchColor;
 	SyntaxColorScheme mColorScheme;
 	SyntaxHighlighter mHighlighter;
 	UIScrollBar* mVScrollBar;
@@ -230,6 +250,9 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	std::unordered_set<std::string> mUnlockedCmd;
 	Clock mLastDoubleClick;
 	Uint32 mLineBreakingColumn{100};
+	TextRange mMatchingBrackets;
+
+	void checkMatchingBrackets();
 
 	void updateColorScheme();
 
@@ -338,6 +361,11 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void fontSizeShrink();
 
 	void fontSizeReset();
+
+	virtual void drawMatchingBrackets( const Vector2f& startScroll, const Float& lineHeight );
+
+	virtual void drawSelectionMatch( const std::pair<int, int>& lineRange,
+									 const Vector2f& startScroll, const Float& lineHeight );
 
 	virtual void drawLineText( const Int64& index, Vector2f position, const Float& fontSize );
 

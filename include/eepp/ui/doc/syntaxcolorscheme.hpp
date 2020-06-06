@@ -2,7 +2,10 @@
 #define EE_UI_DOC_SYNTAXSTYLE_HPP
 
 #include <eepp/system/color.hpp>
+#include <eepp/system/iostream.hpp>
+#include <eepp/system/pack.hpp>
 #include <unordered_map>
+#include <vector>
 
 using namespace EE::System;
 
@@ -23,6 +26,15 @@ namespace EE { namespace UI { namespace Doc {
 class EE_API SyntaxColorScheme {
   public:
 	static SyntaxColorScheme getDefault();
+
+	static std::vector<SyntaxColorScheme> loadFromStream( IOStream& stream );
+
+	static std::vector<SyntaxColorScheme> loadFromFile( const std::string& path );
+
+	static std::vector<SyntaxColorScheme> loadFromMemory( const void* data,
+														  std::size_t sizeInBytes );
+
+	static std::vector<SyntaxColorScheme> loadFromPack( Pack* pack, std::string filePackPath );
 
 	SyntaxColorScheme();
 

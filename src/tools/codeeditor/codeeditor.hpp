@@ -39,6 +39,18 @@ class App {
 
 	void focusSomeEditor( Node* searchFrom = NULL );
 
+	void switchToTab( Int32 index );
+
+	UITabWidget* findPreviousSplit( UICodeEditor* editor );
+
+	void switchPreviousSplit( UICodeEditor* editor );
+
+	UITabWidget* findNextSplit( UICodeEditor* editor );
+
+	void switchNextSplit( UICodeEditor* editor );
+
+	void applyColorScheme( const SyntaxColorScheme& colorScheme );
+
   protected:
 	EE::Window::Window* mWindow{NULL};
 	UISceneNode* mUISceneNode{NULL};
@@ -48,6 +60,9 @@ class App {
 	UIMessageBox* mMsgBox{NULL};
 	String mLastSearch;
 	UILayout* mBaseLayout{NULL};
+	std::vector<UITabWidget*> mTabWidgets;
+	std::map<std::string, SyntaxColorScheme> mColorSchemes;
+	std::string mCurrentColorScheme;
 
 	void onFileDropped( String file );
 
@@ -64,6 +79,10 @@ class App {
 	void closeEditorTab( UICodeEditor* editor );
 
 	void onTabClosed( const TabEvent* tabEvent );
+
+	void closeSplitter( UISplitter* splitter );
+
+	void closeTabWidgets( UISplitter* splitter );
 };
 
 #endif // EE_TOOLS_CODEEDITOR_HPP

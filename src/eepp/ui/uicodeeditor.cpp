@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/primitives.hpp>
@@ -28,6 +29,8 @@ UICodeEditor::UICodeEditor() :
 	mShowIndentationGuide( true ),
 	mLocked( false ),
 	mHighlightCurrentLine( true ),
+	mHighlightMatchingBracket( true ),
+	mHighlightSelectionMatch( true ),
 	mTabWidth( 4 ),
 	mLastColOffset( 0 ),
 	mMouseWheelScroll( 50 ),
@@ -102,7 +105,6 @@ void UICodeEditor::draw() {
 	TextPosition cursor( mDoc.getSelection().start() );
 
 	if ( !mLocked && mHighlightCurrentLine ) {
-
 		primitives.setColor( Color( mCurrentLineBackgroundColor ).blendAlpha( mAlpha ) );
 		primitives.drawRectangle( Rectf(
 			Vector2f( startScroll.x + mScroll.x, startScroll.y + cursor.line() * lineHeight ),
@@ -114,6 +116,15 @@ void UICodeEditor::draw() {
 		primitives.setColor( Color( mLineBreakColumnColor ).blendAlpha( mAlpha ) );
 		primitives.drawLine(
 			{{lineBreakingOffset, start.y}, {lineBreakingOffset, start.y + mSize.getHeight()}} );
+	}
+
+	if ( mHighlightMatchingBracket ) {
+		drawMatchingBrackets( startScroll, lineHeight );
+	}
+
+	if ( mHighlightSelectionMatch && mDoc.hasSelection() &&
+		 mDoc.getSelection().start().line() == mDoc.getSelection().end().line() ) {
+		drawSelectionMatch( lineRange, startScroll, lineHeight );
 	}
 
 	if ( mDoc.hasSelection() ) {
@@ -373,8 +384,10 @@ void UICodeEditor::updateColorScheme() {
 	mLineNumberBackgroundColor = mColorScheme.getEditorColor( "line_number_background" );
 	mCurrentLineBackgroundColor = mColorScheme.getEditorColor( "line_highlight" );
 	mCaretColor = mColorScheme.getEditorColor( "caret" );
-	mIndentationGuideColor = mColorScheme.getEditorColor( "indentation" );
+	mIndentationGuideColor = mColorScheme.getEditorColor( "guide" );
 	mLineBreakColumnColor = mColorScheme.getEditorColor( "line_break_column" );
+	mMatchingBracketColor = mColorScheme.getEditorColor( "matching_bracket" );
+	mSelectionMatchColor = mColorScheme.getEditorColor( "matching_selection" );
 }
 
 void UICodeEditor::setColorScheme( const SyntaxColorScheme& colorScheme ) {
@@ -585,6 +598,7 @@ void UICodeEditor::onDocumentTextChanged() {
 
 void UICodeEditor::onDocumentCursorChange( const Doc::TextPosition& ) {
 	resetCursor();
+	checkMatchingBrackets();
 	invalidateEditor();
 	invalidateDraw();
 }
@@ -946,6 +960,85 @@ std::string UICodeEditor::getPropertyString( const PropertyDefinition* propertyD
 	}
 }
 
+const bool& UICodeEditor::getHighlightMatchingBracket() const {
+	return mHighlightMatchingBracket;
+}
+
+void UICodeEditor::setHighlightMatchingBracket( const bool& highlightMatchingBracket ) {
+	if ( highlightMatchingBracket != mHighlightMatchingBracket ) {
+		mHighlightMatchingBracket = highlightMatchingBracket;
+		checkMatchingBrackets();
+		invalidateDraw();
+	}
+}
+
+const Color& UICodeEditor::getMatchingBracketColor() const {
+	return mMatchingBracketColor;
+}
+
+void UICodeEditor::setMatchingBracketColor( const Color& matchingBracketColor ) {
+	if ( matchingBracketColor != mMatchingBracketColor ) {
+		mMatchingBracketColor = matchingBracketColor;
+		invalidateDraw();
+	}
+}
+
+const bool& UICodeEditor::getHighlightSelectionMatch() const {
+	return mHighlightSelectionMatch;
+}
+
+void UICodeEditor::setHighlightSelectionMatch( const bool& highlightSelection ) {
+	if ( highlightSelection != mHighlightSelectionMatch ) {
+		mHighlightSelectionMatch = highlightSelection;
+		invalidateDraw();
+	}
+}
+
+const Color& UICodeEditor::getSelectionMatchColor() const {
+	return mSelectionMatchColor;
+}
+
+void UICodeEditor::setSelectionMatchColor( const Color& highlightSelectionMatchColor ) {
+	if ( highlightSelectionMatchColor != mSelectionMatchColor ) {
+		mSelectionMatchColor = highlightSelectionMatchColor;
+		invalidateDraw();
+	}
+}
+
+void UICodeEditor::checkMatchingBrackets() {
+	if ( mHighlightMatchingBracket ) {
+		mMatchingBrackets = TextRange();
+		std::vector<String::StringBaseType> open{'{', '(', '['};
+		std::vector<String::StringBaseType> close{'}', ')', ']'};
+		TextPosition pos = mDoc.getSelection().start();
+		TextDocumentLine& line = mDoc.line( pos.line() );
+		auto isOpenIt = std::find( open.begin(), open.end(), line[pos.column()] );
+		auto isCloseIt = std::find( close.begin(), close.end(), line[pos.column()] );
+		if ( ( isOpenIt == open.end() && isCloseIt == close.end() ) && pos.column() > 0 ) {
+			isOpenIt = std::find( open.begin(), open.end(), line[pos.column() - 1] );
+			isCloseIt = std::find( close.begin(), close.end(), line[pos.column() - 1] );
+			if ( isOpenIt != open.end() ) {
+				pos.setColumn( pos.column() - 1 );
+			} else if ( isCloseIt != close.end() ) {
+				pos.setColumn( pos.column() - 1 );
+			}
+		}
+		if ( isOpenIt != open.end() ) {
+			size_t index = std::distance( open.begin(), isOpenIt );
+			String::StringBaseType openBracket = open[index];
+			String::StringBaseType closeBracket = close[index];
+			TextPosition closePosition = mDoc.findCloseBracket( pos, openBracket, closeBracket );
+			mMatchingBrackets = {pos, closePosition};
+		} else if ( isCloseIt != close.end() ) {
+			size_t index = std::distance( close.begin(), isCloseIt );
+			String::StringBaseType openBracket = open[index];
+			String::StringBaseType closeBracket = close[index];
+			TextPosition closePosition = mDoc.findOpenBracket( pos, openBracket, closeBracket );
+			mMatchingBrackets = {pos, closePosition};
+		}
+	}
+}
+
 Int64 UICodeEditor::getColFromXOffset( Int64 lineNumber, const Float& x ) const {
 	if ( x <= 0 )
 		return 0;
@@ -954,10 +1047,18 @@ Int64 UICodeEditor::getColFromXOffset( Int64 lineNumber, const Float& x ) const 
 	Int64 len = line.length();
 	Float glyphWidth = getGlyphWidth();
 	Float xOffset = 0;
+	Float tabWidth = glyphWidth * mTabWidth;
+	Float hTab = tabWidth * 0.5f;
+	bool isTab;
 	for ( int i = 0; i < len; i++ ) {
-		if ( xOffset >= x )
-			return xOffset - x > glyphWidth * 0.5f ? eemax<Int64>( 0, i - 1 ) : i;
-		xOffset += ( line[i] == '\t' ) ? glyphWidth * mTabWidth : glyphWidth;
+		isTab = ( line[i] == '\t' );
+		if ( xOffset >= x ) {
+			return xOffset - x > ( isTab ? hTab : glyphWidth * 0.5f ) ? eemax<Int64>( 0, i - 1 )
+																	  : i;
+		} else if ( isTab && ( xOffset + tabWidth > x ) ) {
+			return x - xOffset > hTab ? eemin<Int64>( i + 1, line.size() - 1 ) : i;
+		}
+		xOffset += isTab ? tabWidth : glyphWidth;
 	}
 	return static_cast<Int64>( line.size() ) - 1;
 }
@@ -1066,6 +1167,61 @@ void UICodeEditor::fontSizeShrink() {
 
 void UICodeEditor::fontSizeReset() {
 	setFontSize( mFontSize );
+}
+
+void UICodeEditor::drawMatchingBrackets( const Vector2f& startScroll, const Float& lineHeight ) {
+	if ( mMatchingBrackets.isValid() ) {
+		Primitives primitive;
+		primitive.setForceDraw( false );
+		primitive.setColor( Color( mMatchingBracketColor ).blendAlpha( mAlpha ) );
+		auto drawBracket = [&]( const TextPosition& pos ) {
+			primitive.drawRectangle( Rectf( Vector2f( startScroll.x + getXOffsetCol( pos ),
+													  startScroll.y + pos.line() * lineHeight ),
+											Sizef( getGlyphWidth(), lineHeight ) ) );
+		};
+		drawBracket( mMatchingBrackets.start() );
+		drawBracket( mMatchingBrackets.end() );
+		primitive.setForceDraw( true );
+	}
+}
+
+void UICodeEditor::drawSelectionMatch( const std::pair<int, int>& lineRange,
+									   const Vector2f& startScroll, const Float& lineHeight ) {
+	if ( !mDoc.hasSelection() )
+		return;
+	Primitives primitives;
+	primitives.setForceDraw( false );
+	primitives.setColor( Color( mSelectionMatchColor ).blendAlpha( mAlpha ) );
+
+	TextRange selection = mDoc.getSelection( true );
+	const String& selectionLine = mDoc.line( selection.start().line() ).getText();
+	String text( selectionLine.substr( selection.start().column(),
+									   selection.end().column() - selection.start().column() ) );
+
+	for ( auto ln = lineRange.first; ln <= lineRange.second; ln++ ) {
+		const String& line = mDoc.line( ln ).getText();
+		size_t pos = 0;
+		// Skip ridicously long lines.
+		if ( line.size() > 300 )
+			continue;
+		do {
+			pos = line.find( text, pos );
+			if ( pos != String::InvalidPos ) {
+				Rectf selRect;
+				Int64 startCol = pos;
+				Int64 endCol = pos + text.size();
+				selRect.Top = startScroll.y + ln * lineHeight;
+				selRect.Bottom = selRect.Top + lineHeight;
+				selRect.Left = startScroll.x + getXOffsetCol( {ln, startCol} );
+				selRect.Right = startScroll.x + getXOffsetCol( {ln, endCol} );
+				primitives.drawRectangle( selRect );
+				pos = endCol;
+			} else {
+				break;
+			}
+		} while ( true );
+	}
+	primitives.setForceDraw( true );
 }
 
 void UICodeEditor::drawLineText( const Int64& index, Vector2f position, const Float& fontSize ) {

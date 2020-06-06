@@ -217,7 +217,7 @@ bool IniFile::writeFile() {
 
 long IniFile::findKey( std::string const keyname ) const {
 	for ( unsigned keyID = 0; keyID < mNames.size(); ++keyID )
-		if ( CheckCase( mNames[keyID] ) == CheckCase( keyname ) )
+		if ( checkCase( mNames[keyID] ) == checkCase( keyname ) )
 			return long( keyID );
 	return noID;
 }
@@ -227,7 +227,7 @@ long IniFile::findValue( unsigned const keyID, std::string const valuename ) con
 		return noID;
 
 	for ( unsigned valueID = 0; valueID < mKeys[keyID].names.size(); ++valueID )
-		if ( CheckCase( mKeys[keyID].names[valueID] ) == CheckCase( valuename ) )
+		if ( checkCase( mKeys[keyID].names[valueID] ) == checkCase( valuename ) )
 			return long( valueID );
 	return noID;
 }
@@ -531,7 +531,7 @@ bool IniFile::deleteKeyComments( std::string const keyname ) {
 	return deleteKeyComments( unsigned( keyID ) );
 }
 
-std::string IniFile::CheckCase( std::string s ) const {
+std::string IniFile::checkCase( std::string s ) const {
 	if ( mCaseInsensitive )
 		for ( std::string::size_type i = 0; i < s.length(); ++i )
 			s[i] = std::tolower( s[i] );

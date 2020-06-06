@@ -2,6 +2,8 @@
 #include <eepp/core/debug.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreamfile.hpp>
+#include <eepp/system/iostreammemory.hpp>
+#include <eepp/system/packmanager.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
 #include <sstream>
@@ -55,7 +57,7 @@ static String ptrGetLine( char* data, const size_t& size, size_t& position ) {
 	return String( data, position );
 }
 
-void TextDocument::loadFromStream( IOStream& file ) {
+bool TextDocument::loadFromStream( IOStream& file ) {
 	Clock clock;
 	reset();
 	mLines.clear();
@@ -130,22 +132,45 @@ void TextDocument::loadFromStream( IOStream& file ) {
 	eePRINTL( "Document \"%s\" loaded in %.2fms.",
 			  mFilePath.empty() ? "untitled" : mFilePath.c_str(),
 			  clock.getElapsedTime().asMilliseconds() );
+	return true;
 }
 
-void TextDocument::loadFromFile( const std::string& path ) {
-	if ( !FileSystem::fileExists( path ) ) {
-		eePRINTL( "File \"%s\" does not exists. Creating a new file.", path.c_str() );
+bool TextDocument::loadFromFile( const std::string& path ) {
+	if ( !FileSystem::fileExists( path ) && PackManager::instance()->isFallbackToPacksActive() ) {
+		std::string pathFix( path );
+		Pack* pack = PackManager::instance()->exists( pathFix );
+		if ( NULL != pack ) {
+			mFilePath = pathFix;
+			return loadFromPack( pack, pathFix );
+		}
 	}
 
 	if ( !FileSystem::fileExists( path ) ) {
 		mSyntaxDefinition = SyntaxDefinitionManager::instance()->getStyleByExtension( path );
-		return;
+		return false;
 	}
 
 	IOStreamFile file( path, "rb" );
-	loadFromStream( file );
+	bool ret = loadFromStream( file );
 	mFilePath = path;
 	mSyntaxDefinition = SyntaxDefinitionManager::instance()->getStyleByExtension( path );
+	return ret;
+}
+
+bool TextDocument::loadFromMemory( const Uint8* data, const Uint32& size ) {
+	IOStreamMemory stream( (const char*)data, size );
+	return loadFromStream( stream );
+}
+
+bool TextDocument::loadFromPack( Pack* pack, std::string filePackPath ) {
+	if ( NULL == pack )
+		return false;
+	bool ret = false;
+	ScopedBuffer buffer;
+	if ( pack->isOpen() && pack->extractFileToMemory( filePackPath, buffer ) ) {
+		ret = loadFromMemory( buffer.get(), buffer.length() );
+	}
+	return ret;
 }
 
 bool TextDocument::save( const std::string& path, const bool& utf8bom ) {
@@ -983,6 +1008,55 @@ void TextDocument::setPageSize( const Uint32& pageSize ) {
 
 void TextDocument::cleanChangeId() {
 	mCleanChangeId = getCurrentChangeId();
+}
+
+TextPosition TextDocument::findOpenBracket( TextPosition startPosition,
+											const String::StringBaseType& openBracket,
+											const String::StringBaseType& closeBracket ) const {
+	int count = 0;
+	Int64 startColumn;
+	Int64 lineLength;
+	for ( Int64 line = startPosition.line(); line >= 0; line-- ) {
+		const String& string = mLines[line].getText();
+		lineLength = string.size();
+		startColumn = ( line == startPosition.line() ) ? startPosition.column() : lineLength - 1;
+		for ( Int64 i = startColumn; i >= 0; i-- ) {
+			if ( string[i] == closeBracket ) {
+				count++;
+			} else if ( string[i] == openBracket ) {
+				count--;
+				if ( 0 == count ) {
+					return {line, i};
+				}
+			}
+		}
+	}
+	return TextPosition();
+}
+
+TextPosition TextDocument::findCloseBracket( TextPosition startPosition,
+											 const String::StringBaseType& openBracket,
+											 const String::StringBaseType& closeBracket ) const {
+	int count = 0;
+	Int64 linesCount = mLines.size();
+	Int64 startColumn;
+	Int64 lineLength;
+	for ( Int64 line = startPosition.line(); line < linesCount; line++ ) {
+		const String& string = mLines[line].getText();
+		startColumn = ( line == startPosition.line() ) ? startPosition.column() : 0;
+		lineLength = string.size();
+		for ( Int64 i = startColumn; i < lineLength; i++ ) {
+			if ( string[i] == openBracket ) {
+				count++;
+			} else if ( string[i] == closeBracket ) {
+				count--;
+				if ( 0 == count ) {
+					return {line, i};
+				}
+			}
+		}
+	}
+	return TextPosition();
 }
 
 void TextDocument::notifyTextChanged() {

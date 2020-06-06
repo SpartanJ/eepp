@@ -5,11 +5,16 @@ namespace EE { namespace UI { namespace Doc {
 
 SyntaxDefinition::SyntaxDefinition() {}
 
-SyntaxDefinition::SyntaxDefinition( const std::vector<std::string>& files,
+SyntaxDefinition::SyntaxDefinition( const std::string& languageName,
+									const std::vector<std::string>& files,
 									const std::vector<SyntaxPattern>& patterns,
 									const std::unordered_map<std::string, std::string>& symbols,
 									const std::string& comment ) :
-	mFiles( files ), mPatterns( patterns ), mSymbols( symbols ), mComment( comment ) {}
+	mLanguageName( languageName ),
+	mFiles( files ),
+	mPatterns( patterns ),
+	mSymbols( symbols ),
+	mComment( comment ) {}
 
 const std::vector<std::string>& SyntaxDefinition::getFiles() const {
 	return mFiles;
@@ -61,6 +66,10 @@ SyntaxDefinition& SyntaxDefinition::addSymbols( const std::vector<std::string>& 
 SyntaxDefinition& SyntaxDefinition::setComment( const std::string& comment ) {
 	mComment = comment;
 	return *this;
+}
+
+const std::string& SyntaxDefinition::getLanguageName() const {
+	return mLanguageName;
 }
 
 }}} // namespace EE::UI::Doc

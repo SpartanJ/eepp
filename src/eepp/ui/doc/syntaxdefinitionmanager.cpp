@@ -17,7 +17,8 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	// Register some languages support.
 
 	// XML - HTML
-	add( {{"%.xml$", "%.html?$", "%.svg?$"},
+	add( {"XML",
+		  {"%.xml$", "%.html?$", "%.svg?$"},
 		  {
 			  {{"<!%-%-", "%-%->"}, "comment"},
 			  {{"%f[^>][^<]", "%f[<]"}, "normal"},
@@ -34,7 +35,8 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 		  }} );
 
 	// CSS
-	add( {{"%.css$"},
+	add( {"CSS",
+		  {"%.css$"},
 		  {
 			  {{"\\."}, "normal"},
 			  {{"//.-\n"}, "comment"},
@@ -55,7 +57,8 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 		.addSymbols( UIWidgetCreator::getWidgetNames(), "keyword2" );
 
 	// Markdown
-	add( {{"%.md$", "%.markdown$"},
+	add( {"Markdown",
+		  {"%.md$", "%.markdown$"},
 		  {
 			  {{"\\."}, "normal"},
 			  {{"<!%-%-", "%-%->"}, "comment"},
@@ -73,7 +76,8 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 		  }} );
 
 	// C
-	add( {{"%.c$", "%.h$"},
+	add( {"C",
+		  {"%.c$", "%.h$"},
 		  {
 			  {{"//.-\n"}, "comment"},
 			  {{"/%*", "%*/"}, "comment"},
@@ -105,7 +109,8 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 		  "//"} );
 
 	// Lua
-	add( {{"%.lua$"},
+	add( {"Lua",
+		  {"%.lua$"},
 		  {
 			  {{"\"", "\"", "\\"}, "string"},
 			  {{"'", "'", "\\"}, "string"},
@@ -135,7 +140,8 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 		  "--"} );
 
 	// JavaScript
-	add( {{"%.js$", "%.json$", "%.cson$"},
+	add( {"Javascript",
+		  {"%.js$", "%.json$", "%.cson$"},
 		  {
 			  {{"//.-\n"}, "comment"},
 			  {{"/%*", "%*/"}, "comment"},
@@ -170,7 +176,8 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 		  "//"} );
 
 	// Python
-	add( {{"%.py$"},
+	add( {"Python",
+		  {"%.py$"},
 		  {
 			  {{"#", "\n"}, "comment"},
 			  {{"[ruU]?\"", "\"", "\\"}, "string"},
@@ -200,7 +207,8 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 		  "#"} );
 
 	// sh - bash
-	add( {{"%.sh$", "%.bash$"},
+	add( {"Bash",
+		  {"%.sh$", "%.bash$"},
 		  {
 			  {{"#.*\n"}, "comment"},
 			  {{"[[\\.]]"}, "normal"},
@@ -226,7 +234,8 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 		  "#"} );
 
 	// C++
-	add( {{"%.h$", "%.inl$", "%.cpp$", "%.cc$", "%.C$", "%.cxx$", "%.c++$", "%.hh$", "%.H$",
+	add( {"C++",
+		  {"%.h$", "%.inl$", "%.cpp$", "%.cc$", "%.C$", "%.cxx$", "%.c++$", "%.hh$", "%.H$",
 		   "%.hxx$", "%.hpp$", "%.h++$"},
 		  {
 			  {{"//.-\n"}, "comment"},
@@ -348,7 +357,8 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 		  "//"} );
 
 	// PHP
-	add( {{"%.php$", "%.php3$", "%.php4$", "%.php5$", "%.phtml"},
+	add( {"PHP",
+		  {"%.php$", "%.php3$", "%.php4$", "%.php5$", "%.phtml"},
 		  {
 			  {{"//.-\n"}, "comment"},
 			  {{"/%*", "%*/"}, "comment"},
@@ -461,7 +471,8 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 		symbols[literal] = "literal";
 	}
 
-	add( {{"%.sql$", "%.psql$"},
+	add( {"SQL",
+		  {"%.sql$", "%.psql$"},
 		  {
 			  {{"%-%-.-\n"}, "comment"},
 			  {{"/%*", "%*/"}, "comment"},
@@ -476,7 +487,8 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 		  "--"} );
 
 	// GLSL
-	add( {{"%.glsl$", "%.frag$", "%.vert$"},
+	add( {"GLSL",
+		  {"%.glsl$", "%.frag$", "%.vert$"},
 		  {
 			  {{"//.-\n"}, "comment"},
 			  {{"/%*", "%*/"}, "comment"},
@@ -834,7 +846,8 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 		  "//"} );
 
 	// ini / conf
-	add( {{"%.ini$", "%.conf$", "%.desktop$"},
+	add( {"Config File",
+		  {"%.ini$", "%.conf$", "%.desktop$"},
 		  {
 			  {{"#[%da-fA-F]+"}, "literal"},
 			  {{"#", "\n"}, "comment"},
@@ -847,7 +860,8 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 		  }} );
 
 	// Makefile
-	add( {{"Makefile", "makefile", "%.mk$", "%.make$"},
+	add( {"Makefile",
+		  {"Makefile", "makefile", "%.mk$", "%.make$"},
 		  {
 			  {{"#.*\n"}, "comment"},
 			  {{"[[.]]}"}, "normal"},
