@@ -15,7 +15,7 @@ void SyntaxHighlighter::reset() {
 }
 
 void SyntaxHighlighter::invalidate( Int64 lineIndex ) {
-	mFirstInvalidLine = lineIndex;
+	mFirstInvalidLine = eemin( lineIndex, mFirstInvalidLine );
 	mMaxWantedLine = eemin<Int64>( mMaxWantedLine, (Int64)mDoc->linesCount() - 1 );
 }
 

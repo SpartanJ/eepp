@@ -30,4 +30,8 @@ void DisplayManager::enableMouseFocusClickThrough() {}
 
 void DisplayManager::disableMouseFocusClickThrough() {}
 
+void DisplayManager::disableBypassCompositor() {}
+
+void DisplayManager::enableBypassCompositor() {}
+
 }} // namespace EE::Window

@@ -40,6 +40,9 @@ class EE_API DisplayManagerSDL2 : public DisplayManager {
 
 	void disableMouseFocusClickThrough();
 
+	void disableBypassCompositor();
+
+	void enableBypassCompositor();
 };
 
 }}}} // namespace EE::Window::Backend::SDL2

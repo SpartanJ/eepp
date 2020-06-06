@@ -73,7 +73,11 @@ void mainLoop() {
 }
 
 EE_MAIN_FUNC int main( int argc, char* argv[] ) {
-	Display* currentDisplay = Engine::instance()->getDisplayManager()->getDisplayIndex( 0 );
+	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
+	displayManager->enableScreenSaver();
+	displayManager->enableMouseFocusClickThrough();
+	displayManager->disableBypassCompositor();
+	Display* currentDisplay = displayManager->getDisplayIndex( 0 );
 	Float pixelDensity = currentDisplay->getPixelDensity();
 
 	std::string resPath( Sys::getProcessPath() );

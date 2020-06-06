@@ -960,11 +960,16 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		return EXIT_FAILURE;
 	}
 
+	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
+	displayManager->enableScreenSaver();
+	displayManager->enableMouseFocusClickThrough();
+	displayManager->disableBypassCompositor();
+
 	fileWatcher = new efsw::FileWatcher();
 	listener = new UpdateListener();
 	fileWatcher->watch();
 
-	Display* currentDisplay = Engine::instance()->getDisplayManager()->getDisplayIndex( 0 );
+	Display* currentDisplay = displayManager->getDisplayIndex( 0 );
 	Float pixelDensity = currentDisplay->getPixelDensity();
 
 	if ( pixelDenstiyConf ) {

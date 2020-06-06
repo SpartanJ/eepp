@@ -123,4 +123,16 @@ void DisplayManagerSDL2::disableMouseFocusClickThrough() {
 	SDL_SetHint( SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH, "0" );
 }
 
+void DisplayManagerSDL2::disableBypassCompositor() {
+#ifdef SDL_HINT_VIDEO_X11_NET_WM_BYPASS_COMPOSITOR
+	SDL_SetHint( SDL_HINT_VIDEO_X11_NET_WM_BYPASS_COMPOSITOR, "0" );
+#endif
+}
+
+void DisplayManagerSDL2::enableBypassCompositor() {
+#ifdef SDL_HINT_VIDEO_X11_NET_WM_BYPASS_COMPOSITOR
+	SDL_SetHint( SDL_HINT_VIDEO_X11_NET_WM_BYPASS_COMPOSITOR, "1" );
+#endif
+}
+
 }}}} // namespace EE::Window::Backend::SDL2

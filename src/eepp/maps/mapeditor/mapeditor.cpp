@@ -252,7 +252,7 @@ void MapEditor::createETGMenu() {
 }
 
 void MapEditor::createTabs() {
-	mTabWidget->removeAllTabs();
+	mTabWidget->removeAllTabs( false );
 	mTabWidget->add( "Sprites", mTextureRegionCont );
 
 	if ( NULL != mUIMap && NULL != mUIMap->Map() ) {

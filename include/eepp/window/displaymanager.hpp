@@ -54,6 +54,10 @@ class EE_API DisplayManager {
 
 	virtual void disableMouseFocusClickThrough();
 
+	virtual void disableBypassCompositor();
+
+	virtual void enableBypassCompositor();
+
 	virtual ~DisplayManager();
 
   protected:

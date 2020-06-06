@@ -385,21 +385,21 @@ void UITabWidget::updateTabs() {
 	}
 }
 
-UITab* UITabWidget::createTab( const String& Text, UINode* ownedWidget, Drawable* Icon ) {
+UITab* UITabWidget::createTab( const String& text, UINode* nodeOwned, Drawable* icon ) {
 	UITab* tab = UITab::New();
 	tab->setParent( mTabBar );
 	tab->setFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER | UI_AUTO_SIZE );
-	tab->setIcon( Icon );
-	tab->setText( Text );
+	tab->setIcon( icon );
+	tab->setText( text );
 	tab->setVisible( true );
 	tab->setEnabled( true );
-	tab->setOwnedWidget( ownedWidget );
-	ownedWidget->setParent( mCtrlContainer );
-	ownedWidget->setVisible( false );
-	ownedWidget->setEnabled( true );
+	tab->setOwnedWidget( nodeOwned );
+	nodeOwned->setParent( mCtrlContainer );
+	nodeOwned->setVisible( false );
+	nodeOwned->setEnabled( true );
 
-	if ( ownedWidget->isWidget() ) {
-		UIWidget* widgetOwned = static_cast<UIWidget*>( ownedWidget );
+	if ( nodeOwned->isWidget() ) {
+		UIWidget* widgetOwned = static_cast<UIWidget*>( nodeOwned );
 
 		widgetOwned->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 	}
@@ -407,8 +407,8 @@ UITab* UITabWidget::createTab( const String& Text, UINode* ownedWidget, Drawable
 	return tab;
 }
 
-UITab* UITabWidget::add( const String& Text, UINode* CtrlOwned, Drawable* Icon ) {
-	UITab* tab = createTab( Text, CtrlOwned, Icon );
+UITab* UITabWidget::add( const String& text, UINode* nodeOwned, Drawable* icon ) {
+	UITab* tab = createTab( text, nodeOwned, icon );
 	add( tab );
 	return tab;
 }
@@ -458,7 +458,7 @@ Uint32 UITabWidget::getTabCount() const {
 	return mTabs.size();
 }
 
-void UITabWidget::removeTab( const Uint32& index ) {
+void UITabWidget::removeTab( const Uint32& index, bool destroyOwnedNode ) {
 	eeASSERT( index < mTabs.size() );
 
 	UITab* tab = mTabs[index];
@@ -466,10 +466,11 @@ void UITabWidget::removeTab( const Uint32& index ) {
 	tab->close();
 	tab->setVisible( false );
 	tab->setEnabled( false );
-	tab->getOwnedWidget()->close();
-	tab->getOwnedWidget()->setVisible( false );
-	tab->getOwnedWidget()->setEnabled( false );
-
+	if ( destroyOwnedNode ) {
+		tab->getOwnedWidget()->close();
+		tab->getOwnedWidget()->setVisible( false );
+		tab->getOwnedWidget()->setEnabled( false );
+	}
 	mTabs.erase( mTabs.begin() + index );
 
 	if ( index == mTabSelectedIndex ) {
@@ -497,11 +498,11 @@ void UITabWidget::removeTab( const Uint32& index ) {
 	sendEvent( &tabEvent );
 }
 
-void UITabWidget::removeTab( UITab* Tab ) {
-	removeTab( getTabIndex( Tab ) );
+void UITabWidget::removeTab( UITab* Tab, bool destroyOwnedNode ) {
+	removeTab( getTabIndex( Tab ), destroyOwnedNode );
 }
 
-void UITabWidget::removeAllTabs() {
+void UITabWidget::removeAllTabs( bool destroyOwnedNode ) {
 	std::deque<UITab*> tabs = mTabs;
 
 	for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
@@ -509,9 +510,11 @@ void UITabWidget::removeAllTabs() {
 			mTabs[i]->close();
 			mTabs[i]->setVisible( false );
 			mTabs[i]->setEnabled( false );
-			mTabs[i]->getOwnedWidget()->close();
-			mTabs[i]->getOwnedWidget()->setVisible( false );
-			mTabs[i]->getOwnedWidget()->setEnabled( false );
+			if ( destroyOwnedNode ) {
+				mTabs[i]->getOwnedWidget()->close();
+				mTabs[i]->getOwnedWidget()->setVisible( false );
+				mTabs[i]->getOwnedWidget()->setEnabled( false );
+			}
 		}
 	}
 
@@ -567,6 +570,8 @@ UITab* UITabWidget::setTabSelected( UITab* Tab ) {
 	}
 
 	Tab->select();
+	if ( Tab->getOwnedWidget() )
+		Tab->getOwnedWidget()->setFocus();
 
 	Uint32 TabIndex = getTabIndex( Tab );
 

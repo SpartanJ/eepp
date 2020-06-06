@@ -141,6 +141,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 			  {{"/%*", "%*/"}, "comment"},
 			  {{"\"", "\"", "\\"}, "string"},
 			  {{"'", "'", "\\"}, "string"},
+			  {{"`", "`", "\\"}, "string"},
 			  {{"0x[%da-fA-F]+"}, "number"},
 			  {{"-?%d+[%d%.eE]*"}, "number"},
 			  {{"-?%.?%d+"}, "number"},
@@ -160,10 +161,11 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 			  {"Infinity", "keyword2"},	 {"instanceof", "keyword"}, {"let", "keyword"},
 			  {"NaN", "keyword2"},		 {"new", "keyword"},		{"null", "literal"},
 			  {"return", "keyword"},	 {"set", "keyword"},		{"super", "keyword"},
-			  {"switch", "keyword"},	 {"this", "keyword2"},		{"throw", "keyword"},
-			  {"true", "literal"},		 {"try", "keyword"},		{"typeof", "keyword"},
-			  {"undefined", "literal"},	 {"var", "keyword"},		{"void", "keyword"},
-			  {"while", "keyword"},		 {"with", "keyword"},		{"yield", "keyword"},
+			  {"static", "keyword"},	 {"switch", "keyword"},		{"this", "keyword2"},
+			  {"throw", "keyword"},		 {"true", "literal"},		{"try", "keyword"},
+			  {"typeof", "keyword"},	 {"undefined", "literal"},	{"var", "keyword"},
+			  {"void", "keyword"},		 {"while", "keyword"},		{"with", "keyword"},
+			  {"yield", "keyword"},
 		  },
 		  "//"} );
 
