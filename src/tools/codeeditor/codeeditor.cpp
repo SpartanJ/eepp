@@ -129,14 +129,14 @@ UITabWidget* App::findPreviousSplit( UICodeEditor* editor ) {
 
 void App::switchPreviousSplit( UICodeEditor* editor ) {
 	UITabWidget* tabWidget = findPreviousSplit( editor );
-	if ( tabWidget && tabWidget->getSelectedTab() &&
-		 tabWidget->getSelectedTab()->getOwnedWidget() ) {
-		tabWidget->getSelectedTab()->getOwnedWidget()->setFocus();
+	if ( tabWidget && tabWidget->getTabSelected() &&
+		 tabWidget->getTabSelected()->getOwnedWidget() ) {
+		tabWidget->getTabSelected()->getOwnedWidget()->setFocus();
 	} else {
 		tabWidget = findNextSplit( editor );
-		if ( tabWidget && tabWidget->getSelectedTab() &&
-			 tabWidget->getSelectedTab()->getOwnedWidget() ) {
-			tabWidget->getSelectedTab()->getOwnedWidget()->setFocus();
+		if ( tabWidget && tabWidget->getTabSelected() &&
+			 tabWidget->getTabSelected()->getOwnedWidget() ) {
+			tabWidget->getTabSelected()->getOwnedWidget()->setFocus();
 		}
 	}
 }
@@ -159,14 +159,14 @@ UITabWidget* App::findNextSplit( UICodeEditor* editor ) {
 
 void App::switchNextSplit( UICodeEditor* editor ) {
 	UITabWidget* tabWidget = findNextSplit( editor );
-	if ( tabWidget && tabWidget->getSelectedTab() &&
-		 tabWidget->getSelectedTab()->getOwnedWidget() ) {
-		tabWidget->getSelectedTab()->getOwnedWidget()->setFocus();
+	if ( tabWidget && tabWidget->getTabSelected() &&
+		 tabWidget->getTabSelected()->getOwnedWidget() ) {
+		tabWidget->getTabSelected()->getOwnedWidget()->setFocus();
 	} else {
 		tabWidget = findPreviousSplit( editor );
-		if ( tabWidget && tabWidget->getSelectedTab() &&
-			 tabWidget->getSelectedTab()->getOwnedWidget() ) {
-			tabWidget->getSelectedTab()->getOwnedWidget()->setFocus();
+		if ( tabWidget && tabWidget->getTabSelected() &&
+			 tabWidget->getTabSelected()->getOwnedWidget() ) {
+			tabWidget->getTabSelected()->getOwnedWidget()->setFocus();
 		}
 	}
 }
@@ -324,11 +324,14 @@ void App::focusSomeEditor( Node* searchFrom ) {
 	if ( searchFrom && !editor )
 		editor = mUISceneNode->getRoot()->findByType<UICodeEditor>( UI_TYPE_CODEEDITOR );
 	if ( editor && tabWidgetFromEditor( editor ) && !tabWidgetFromEditor( editor )->isClosing() ) {
-		editor->setFocus();
+		UITabWidget* tabW = tabWidgetFromEditor( editor );
+		if ( tabW && tabW->getTabCount() > 0 ) {
+			tabW->setTabSelected( tabW->getTabSelected() );
+		}
 	} else {
 		UITabWidget* tabW = mUISceneNode->getRoot()->findByType<UITabWidget>( UI_TYPE_TABWIDGET );
 		if ( tabW && tabW->getTabCount() > 0 ) {
-			tabW->setTabSelected( tabW->getTabCount() - 1 );
+			tabW->setTabSelected( tabW->getTabSelected() );
 		}
 	}
 }
@@ -346,6 +349,19 @@ void App::closeTabWidgets( UISplitter* splitter ) {
 			closeTabWidgets( node->asType<UISplitter>() );
 		}
 		node = node->getNextNode();
+	}
+}
+
+void App::addRemainingTabWidgets( Node* widget ) {
+	if ( widget->isType( UI_TYPE_TABWIDGET ) ) {
+		if ( std::find( mTabWidgets.begin(), mTabWidgets.end(), widget->asType<UITabWidget>() ) ==
+			 mTabWidgets.end() ) {
+			mTabWidgets.push_back( widget->asType<UITabWidget>() );
+		}
+	} else if ( widget->isType( UI_TYPE_SPLITTER ) ) {
+		UISplitter* splitter = widget->asType<UISplitter>();
+		addRemainingTabWidgets( splitter->getFirstWidget() );
+		addRemainingTabWidgets( splitter->getLastWidget() );
 	}
 }
 
@@ -368,7 +384,10 @@ void App::onTabClosed( const TabEvent* tabEvent ) {
 		if ( splitter ) {
 			if ( splitter->isFull() ) {
 				tabWidget->close();
-				mTabWidgets.erase( std::find( mTabWidgets.begin(), mTabWidgets.end(), tabWidget ) );
+				auto itWidget = std::find( mTabWidgets.begin(), mTabWidgets.end(), tabWidget );
+				if ( itWidget != mTabWidgets.end() ) {
+					mTabWidgets.erase( itWidget );
+				}
 
 				// Remove splitter if it's redundant
 				Node* parent = splitter->getParent();
@@ -381,6 +400,7 @@ void App::onTabClosed( const TabEvent* tabEvent ) {
 					remainingNode->detach();
 					closeSplitter( splitter );
 					remainingNode->setParent( parentSplitter );
+					addRemainingTabWidgets( remainingNode );
 					if ( wasFirst )
 						parentSplitter->swap();
 					focusSomeEditor( parentSplitter );
@@ -392,9 +412,7 @@ void App::onTabClosed( const TabEvent* tabEvent ) {
 					closeSplitter( splitter );
 					eeASSERT( parent->getChildCount() == 0 );
 					remainingNode->setParent( parent );
-					if ( remainingNode->isType( UI_TYPE_TABWIDGET ) ) {
-						mTabWidgets.push_back( remainingNode->asType<UITabWidget>() );
-					}
+					addRemainingTabWidgets( remainingNode );
 					focusSomeEditor( NULL );
 				}
 				return;
@@ -413,9 +431,6 @@ std::pair<UITab*, UICodeEditor*> App::createCodeEditorInTabWidget( UITabWidget* 
 	UICodeEditor* editor = createCodeEditor();
 	UITab* tab = tabWidget->add( editor->getDocument().getFilename(), editor );
 	editor->setData( (UintPtr)tab );
-	tabWidget->addEventListener( Event::OnTabClosed, [&]( const Event* event ) {
-		onTabClosed( static_cast<const TabEvent*>( event ) );
-	} );
 	return std::make_pair( tab, editor );
 }
 
@@ -428,12 +443,15 @@ UITabWidget* App::createEditorWithTabWidget( Node* parent ) {
 	tabWidget->setAllowRearrangeTabs( true );
 	tabWidget->addEventListener( Event::OnTabSelected, [&]( const Event* event ) {
 		UITabWidget* tabWidget = event->getNode()->asType<UITabWidget>();
-		mCurEditor = tabWidget->getSelectedTab()->getOwnedWidget()->asType<UICodeEditor>();
+		mCurEditor = tabWidget->getTabSelected()->getOwnedWidget()->asType<UICodeEditor>();
 		updateEditorTitle( mCurEditor );
 	} );
 	tabWidget->setTabTryCloseCallback( [&]( UITab* tab ) -> bool {
 		tryTabClose( tab->getOwnedWidget()->asType<UICodeEditor>() );
 		return false;
+	} );
+	tabWidget->addEventListener( Event::OnTabClosed, [&]( const Event* event ) {
+		onTabClosed( static_cast<const TabEvent*>( event ) );
 	} );
 	createCodeEditorInTabWidget( tabWidget );
 	mTabWidgets.push_back( tabWidget );
@@ -626,6 +644,7 @@ void App::initSearchBar() {
 	addClickListener( mSearchBarLayout->find<UIPushButton>( "replace" ), "replace-selection" );
 	addClickListener( mSearchBarLayout->find<UIPushButton>( "replace_find" ), "find-and-replace" );
 	addClickListener( mSearchBarLayout->find<UIPushButton>( "replace_all" ), "replace-all" );
+	addClickListener( mSearchBarLayout->find<UIWidget>( "searchbar_close" ), "close-searchbar" );
 	replaceInput->addEventListener( Event::OnTabNavigate,
 									[findInput]( const Event* ) { findInput->setFocus(); } );
 }
@@ -784,28 +803,43 @@ void App::init( const std::string& file ) {
 			padding-right: 4dp;
 			padding-bottom: 3dp;
 		}
+		.close_button {
+			width: 12dp;
+			height: 12dp;
+			border-radius: 6dp;
+			background-color: var(--icon-back-hover);
+			foreground-image: poly(line, var(--icon-line-hover), "0dp 0dp, 6dp 6dp"), poly(line, var(--icon-line-hover), "6dp 0dp, 0dp 6dp");
+			foreground-position: 3dp 3dp, 3dp 3dp;
+			transition: all 0.15s;
+		}
+		.close_button:hover {
+			background-color: var(--icon-back-alert);
+		}
 		</style>
 		<vbox layout_width="match_parent" layout_height="match_parent">
 			<vbox id="code_container" layout_width="match_parent" layout_height="0" layout_weight="1">
 			</vbox>
-			<searchbar id="search_bar" layout_width="match_parent" layout_height="wrap_content">
-				<vbox layout_width="wrap_content" layout_height="wrap_content">
-					<TextView layout_width="wrap_content" layout_height="18dp" text="Find:" />
+			<searchbar id="search_bar" layout_width="match_parent" layout_height="wrap_content" margin-bottom="2dp">
+				<vbox layout_width="wrap_content" layout_height="wrap_content" margin-right="4dp">
+					<TextView layout_width="wrap_content" layout_height="18dp" text="Find:"  margin-bottom="2dp" />
 					<TextView layout_width="wrap_content" layout_height="18dp" text="Replace with:" />
 				</vbox>
-				<vbox layout_width="0" layout_weight="1" layout_height="wrap_content">
-					<TextInput id="search_find" layout_width="match_parent" layout_height="18dp" padding="0" />
+				<vbox layout_width="0" layout_weight="1" layout_height="wrap_content" margin-right="4dp">
+					<TextInput id="search_find" layout_width="match_parent" layout_height="18dp" padding="0" margin-bottom="2dp" />
 					<TextInput id="search_replace" layout_width="match_parent" layout_height="18dp" padding="0" />
 				</vbox>
 				<vbox layout_width="wrap_content" layout_height="wrap_content">
-					<hbox layout_width="wrap_content" layout_height="wrap_content">
-						<PushButton id="find_prev" layout_width="wrap_content" layout_height="18dp" text="Find Previous" />
-						<PushButton id="find_next" layout_width="wrap_content" layout_height="18dp" text="Find Next" />
-						<CheckBox id="case_sensitive" layout_width='wrap_content' layout_height='wrap_content' text="Case Sensitive" selected="true" />
+					<hbox layout_width="wrap_content" layout_height="wrap_content" margin-bottom="2dp">
+						<PushButton id="find_prev" layout_width="wrap_content" layout_height="18dp" text="Previous" margin-right="4dp" />
+						<PushButton id="find_next" layout_width="wrap_content" layout_height="18dp" text="Next" margin-right="4dp" />
+						<CheckBox id="case_sensitive" layout_width="wrap_content" layout_height="wrap_content" text="Case sensitive" selected="true" />
+						<RelativeLayout layout_width="0" layout_weight="1" layout_height="18dp">
+							<Widget id="searchbar_close" class="close_button" layout_width="wrap_content" layout_height="wrap_content" layout_gravity="center_vertical|right" />
+						</RelativeLayout>
 					</hbox>
 					<hbox layout_width="wrap_content" layout_height="wrap_content">
-						<PushButton id="replace" layout_width="wrap_content" layout_height="18dp" text="Replace" />
-						<PushButton id="replace_find" layout_width="wrap_content" layout_height="18dp" text="Replace & Find" />
+						<PushButton id="replace" layout_width="wrap_content" layout_height="18dp" text="Replace" margin-right="4dp" />
+						<PushButton id="replace_find" layout_width="wrap_content" layout_height="18dp" text="Replace & Find" margin-right="4dp" />
 						<PushButton id="replace_all" layout_width="wrap_content" layout_height="18dp" text="Replace All" />
 					</hbox>
 				</vbox>

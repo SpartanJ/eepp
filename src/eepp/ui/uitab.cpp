@@ -166,7 +166,7 @@ UIPushButton* UITab::setText( const String& text ) {
 
 			tTabW->orderTabs();
 
-			tTabW->setTabSelected( tTabW->getSelectedTab() );
+			tTabW->setTabSelected( tTabW->getTabSelected() );
 		}
 	}
 	return this;
@@ -261,7 +261,9 @@ Uint32 UITab::onMessage( const NodeMessage* message ) {
 			break;
 		}
 		case NodeMessage::MouseUp: {
-			if ( tTabW->getTabsClosable() && ( flags & EE_BUTTON_MMASK ) ) {
+			if ( flags & EE_BUTTON_LMASK && message->getSender() != mCloseButton ) {
+				tTabW->setTabSelected( this );
+			} else if ( tTabW->getTabsClosable() && ( flags & EE_BUTTON_MMASK ) ) {
 				tTabW->tryCloseTab( this );
 			} else if ( flags & EE_BUTTONS_WUWD ) {
 				if ( flags & EE_BUTTON_WUMASK ) {

@@ -557,7 +557,9 @@ UITab* UITabWidget::setTabSelected( UITab* Tab ) {
 
 	if ( Tab == mTabSelected ) {
 		refreshOwnedWidget( Tab );
-		return NULL;
+		if ( Tab->getOwnedWidget() )
+			Tab->getOwnedWidget()->setFocus();
+		return Tab;
 	}
 
 	if ( NULL != mTabSelected ) {
@@ -671,11 +673,11 @@ void UITabWidget::selectNextTab() {
 	}
 }
 
-UITab* UITabWidget::getSelectedTab() const {
+UITab* UITabWidget::getTabSelected() const {
 	return mTabSelected;
 }
 
-Uint32 UITabWidget::getSelectedTabIndex() const {
+Uint32 UITabWidget::getTabSelectedIndex() const {
 	return mTabSelectedIndex;
 }
 

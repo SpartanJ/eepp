@@ -69,9 +69,9 @@ class EE_API UITabWidget : public UIWidget {
 
 	virtual void setTheme( UITheme* Theme );
 
-	UITab* getSelectedTab() const;
+	UITab* getTabSelected() const;
 
-	Uint32 getSelectedTabIndex() const;
+	Uint32 getTabSelectedIndex() const;
 
 	UIWidget* getTabBar() const;
 

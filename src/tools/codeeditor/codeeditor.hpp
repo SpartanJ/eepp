@@ -126,6 +126,8 @@ class App {
 	void closeTabWidgets( UISplitter* splitter );
 
 	void initSearchBar();
+
+	void addRemainingTabWidgets( Node* widget );
 };
 
 #endif // EE_TOOLS_CODEEDITOR_HPP

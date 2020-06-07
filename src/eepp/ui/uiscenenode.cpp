@@ -33,11 +33,7 @@ UISceneNode::UISceneNode( EE::Window::Window* window ) :
 	SceneNode( window ),
 	mRoot( NULL ),
 	mIsLoading( false ),
-#ifdef EE_DEBUG
-	mVerbose( true ),
-#else
 	mVerbose( false ),
-#endif
 	mUpdatingLayouts( false ),
 	mUIThemeManager( UIThemeManager::New() ) {
 	// Reset size since the SceneNode already set it but needs to set the size from zero to emmit

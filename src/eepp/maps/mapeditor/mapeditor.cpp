@@ -266,7 +266,7 @@ void MapEditor::createTabs() {
 
 void MapEditor::onTabSelected( const Event* ) {
 	if ( NULL != mUIMap ) {
-		switch ( mTabWidget->getSelectedTabIndex() ) {
+		switch ( mTabWidget->getTabSelectedIndex() ) {
 			case 0:
 				mUIMap->editingDisable();
 				break;
