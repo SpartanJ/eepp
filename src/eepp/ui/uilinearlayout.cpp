@@ -22,6 +22,12 @@ UILinearLayout::UILinearLayout() :
 	clipEnable();
 }
 
+UILinearLayout::UILinearLayout( const std::string& tag, const UIOrientation& orientation ) :
+	UILayout( tag ), mOrientation( orientation ) {
+	mFlags |= UI_OWNS_CHILDS_POSITION;
+	clipEnable();
+}
+
 Uint32 UILinearLayout::getType() const {
 	return UI_TYPE_LINEAR_LAYOUT;
 }
@@ -97,11 +103,11 @@ void UILinearLayout::packVertical() {
 		setInternalSize( size );
 	}
 
-	Node* ChildLoop = mChild;
+	Node* child = mChild;
 
-	while ( NULL != ChildLoop ) {
-		if ( ChildLoop->isWidget() && ChildLoop->isVisible() ) {
-			UIWidget* widget = static_cast<UIWidget*>( ChildLoop );
+	while ( NULL != child ) {
+		if ( child->isWidget() && child->isVisible() ) {
+			UIWidget* widget = static_cast<UIWidget*>( child );
 
 			if ( widget->getLayoutHeightPolicy() == SizePolicy::WrapContent ) {
 				widget->setFlags( UI_AUTO_SIZE );
@@ -138,18 +144,18 @@ void UILinearLayout::packVertical() {
 			}
 		}
 
-		ChildLoop = ChildLoop->getNextNode();
+		child = child->getNextNode();
 	}
 
 	Float curY = mPadding.Top;
 	Float maxX = 0;
 	Sizei freeSize = getTotalUsedSize();
 
-	ChildLoop = mChild;
+	child = mChild;
 
-	while ( NULL != ChildLoop ) {
-		if ( ChildLoop->isWidget() && ChildLoop->isVisible() ) {
-			UIWidget* widget = static_cast<UIWidget*>( ChildLoop );
+	while ( NULL != child ) {
+		if ( child->isWidget() && child->isVisible() ) {
+			UIWidget* widget = child->asType<UIWidget>();
 			Rect margin = widget->getLayoutMargin();
 
 			curY += eeceil( margin.Top );
@@ -192,7 +198,7 @@ void UILinearLayout::packVertical() {
 							   widget->getLayoutMargin().Right ) ) );
 		}
 
-		ChildLoop = ChildLoop->getNextNode();
+		child = child->getNextNode();
 	}
 
 	if ( getLayoutHeightPolicy() == SizePolicy::WrapContent ) {
@@ -272,11 +278,11 @@ void UILinearLayout::packHorizontal() {
 		setInternalSize( size );
 	}
 
-	Node* ChildLoop = mChild;
+	Node* child = mChild;
 
-	while ( NULL != ChildLoop ) {
-		if ( ChildLoop->isWidget() && ChildLoop->isVisible() ) {
-			UIWidget* widget = static_cast<UIWidget*>( ChildLoop );
+	while ( NULL != child ) {
+		if ( child->isWidget() && child->isVisible() ) {
+			UIWidget* widget = static_cast<UIWidget*>( child );
 
 			if ( widget->getLayoutWidthPolicy() == SizePolicy::WrapContent ) {
 				widget->setFlags( UI_AUTO_SIZE );
@@ -313,18 +319,18 @@ void UILinearLayout::packHorizontal() {
 			}
 		}
 
-		ChildLoop = ChildLoop->getNextNode();
+		child = child->getNextNode();
 	}
 
 	Float curX = mPadding.Left;
 	Float maxY = 0;
 	Sizei freeSize = getTotalUsedSize();
 
-	ChildLoop = mChild;
+	child = mChild;
 
-	while ( NULL != ChildLoop ) {
-		if ( ChildLoop->isWidget() && ChildLoop->isVisible() ) {
-			UIWidget* widget = static_cast<UIWidget*>( ChildLoop );
+	while ( NULL != child ) {
+		if ( child->isWidget() && child->isVisible() ) {
+			UIWidget* widget = static_cast<UIWidget*>( child );
 			Rect margin = widget->getLayoutMargin();
 
 			curX += eeceil( margin.Left );
@@ -366,7 +372,7 @@ void UILinearLayout::packHorizontal() {
 							   widget->getLayoutMargin().Bottom ) ) );
 		}
 
-		ChildLoop = ChildLoop->getNextNode();
+		child = child->getNextNode();
 	}
 
 	if ( getLayoutWidthPolicy() == SizePolicy::WrapContent ) {
@@ -406,12 +412,12 @@ void UILinearLayout::packHorizontal() {
 }
 
 Sizei UILinearLayout::getTotalUsedSize() {
-	Node* ChildLoop = mChild;
+	Node* child = mChild;
 	Sizei size( 0, 0 );
 
-	while ( NULL != ChildLoop ) {
-		if ( ChildLoop->isWidget() ) {
-			UIWidget* widget = static_cast<UIWidget*>( ChildLoop );
+	while ( NULL != child ) {
+		if ( child->isWidget() && child->isVisible() ) {
+			UIWidget* widget = static_cast<UIWidget*>( child );
 			Rect margin = widget->getLayoutMargin();
 
 			size.x += margin.Left + margin.Right;
@@ -433,7 +439,7 @@ Sizei UILinearLayout::getTotalUsedSize() {
 			}
 		}
 
-		ChildLoop = ChildLoop->getNextNode();
+		child = child->getNextNode();
 	}
 
 	return size;

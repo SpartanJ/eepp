@@ -90,9 +90,13 @@ ComboBox::DropDownList {
 }
 
 PushButton:hover,
+PushButton:focus,
 DropDownList:hover,
+DropDownList:focus,
 SelectButton:hover,
-ComboBox:hover {
+SelectButton:focus,
+ComboBox:hover,
+ComboBox:focus {
 	border-color: var(--primary);
 }
 

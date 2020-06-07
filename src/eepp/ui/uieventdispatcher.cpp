@@ -1,6 +1,6 @@
 #include <eepp/ui/uieventdispatcher.hpp>
-#include <eepp/ui/uinode.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uiwidget.hpp>
 #include <eepp/window/inputevent.hpp>
 #include <eepp/window/window.hpp>
 
@@ -37,17 +37,9 @@ void UIEventDispatcher::inputCallback( InputEvent* Event ) {
 
 void UIEventDispatcher::checkTabPress( const Uint32& KeyCode ) {
 	eeASSERT( NULL != mFocusNode );
-
 	Window::Window* win = mFocusNode->getSceneNode()->getWindow();
-	if ( KeyCode == KEY_TAB && mFocusNode->isUINode() && NULL != win && !mJustGainedFocus ) {
-		UINode* uiNode = static_cast<UINode*>( mFocusNode );
-
-		if ( !uiNode->isTabStop() ) {
-			Node* Ctrl = static_cast<UINode*>( mFocusNode )->getNextWidget();
-
-			if ( NULL != Ctrl )
-				Ctrl->setFocus();
-		}
+	if ( KeyCode == KEY_TAB && mFocusNode->isWidget() && NULL != win && !mJustGainedFocus ) {
+		mFocusNode->asType<UIWidget>()->onTabPress();
 	}
 }
 

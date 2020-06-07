@@ -80,7 +80,7 @@ class EE_API Text {
 
 	Float getOutlineThickness() const;
 
-	Vector2f findCharacterPos( std::size_t index ) const;
+	Vector2f findCharacterPos( std::size_t index );
 
 	/** @return The current text local bounds. */
 	Rectf getLocalBounds();

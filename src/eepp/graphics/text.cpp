@@ -270,7 +270,7 @@ Float Text::getOutlineThickness() const {
 	return mOutlineThickness;
 }
 
-Vector2f Text::findCharacterPos( std::size_t index ) const {
+Vector2f Text::findCharacterPos( std::size_t index ) {
 	// Make sure that we have a valid font
 	if ( !mFont )
 		return Vector2f();
@@ -278,6 +278,8 @@ Vector2f Text::findCharacterPos( std::size_t index ) const {
 	// Adjust the index if it's out of range
 	if ( index >= mString.size() )
 		index = mString.size();
+
+	ensureGeometryUpdate();
 
 	return Vector2f( mGlyphCache[index].Left, mGlyphCache[index].Top );
 }

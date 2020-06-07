@@ -9,11 +9,13 @@ UILayout* UILayout::New() {
 
 UILayout::UILayout() : UIWidget( "layout" ), mDirtyLayout( false ), mPacking( false ) {
 	mNodeFlags |= NODE_FLAG_LAYOUT;
+	unsetFlags( UI_TAB_FOCUSABLE );
 }
 
 UILayout::UILayout( const std::string& tag ) :
 	UIWidget( tag ), mDirtyLayout( false ), mPacking( false ) {
 	mNodeFlags |= NODE_FLAG_LAYOUT;
+	unsetFlags( UI_TAB_FOCUSABLE );
 }
 
 void UILayout::onChildCountChange( Node* child, const bool& removed ) {

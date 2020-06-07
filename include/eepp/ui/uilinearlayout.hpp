@@ -15,6 +15,8 @@ class EE_API UILinearLayout : public UILayout {
 
 	UILinearLayout();
 
+	UILinearLayout( const std::string& tag, const UIOrientation& orientation );
+
 	virtual Uint32 getType() const;
 
 	virtual bool isType( const Uint32& type ) const;

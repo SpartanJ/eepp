@@ -118,7 +118,6 @@ class EE_API UIListBox : public UITouchDraggableWidget {
 	Uint32 mMaxTextWidth;
 	Int32 mHScrollInit;
 	Int32 mItemsNotVisible;
-	Uint32 mLastTickMove;
 	UIListBoxItem* mDummyItem;
 	Uint32 mVisibleFirst;
 	Uint32 mVisibleLast;

@@ -43,6 +43,7 @@ UIWidget::UIWidget( const std::string& tag ) :
 	mLayoutPositionPolicyWidget( NULL ),
 	mAttributesTransactionCount( 0 ) {
 	mNodeFlags |= NODE_FLAG_WIDGET;
+	mFlags |= UI_TAB_FOCUSABLE;
 
 	createStyle();
 
@@ -523,6 +524,7 @@ void UIWidget::onPositionChange() {
 void UIWidget::onVisibilityChange() {
 	updateAnchorsDistances();
 	notifyLayoutAttrChange();
+	notifyLayoutAttrChangeParent();
 	UINode::onVisibilityChange();
 }
 
@@ -1869,6 +1871,74 @@ void UIWidget::reloadFontFamily() {
 		if ( child->isWidget() )
 			child->asType<UIWidget>()->reloadFontFamily();
 		child = child->getNextNode();
+	}
+}
+
+bool UIWidget::isTabStop() const {
+	return ( mFlags & UI_TAB_STOP ) != 0;
+}
+
+UIWidget* UIWidget::getNextWidget() const {
+	UIWidget* found = NULL;
+	UIWidget* possible = NULL;
+	Node* child = mChild;
+	while ( NULL != child ) {
+		if ( child->isVisible() && child->isEnabled() && child->isWidget() ) {
+			possible = child->asType<UIWidget>();
+			if ( possible->isTabFocusable() ) {
+				return possible;
+			}
+			found = possible->getNextWidget();
+			if ( found ) {
+				return found;
+			}
+		}
+		child = child->getNextNode();
+	}
+	return NULL;
+}
+
+UIWidget* UIWidget::getNextTabWidget() const {
+	UIWidget* widget = getNextWidget();
+	if ( widget ) {
+		return widget;
+	}
+	UIWidget* found = NULL;
+	UIWidget* possible = NULL;
+	const Node* start = this;
+	Node* container = getWindowContainer();
+	while ( start ) {
+		if ( start->isVisible() && start->isEnabled() ) {
+			Node* next = start->getNextNode();
+			while ( next ) {
+				if ( next->isVisible() && next->isEnabled() && next->isWidget() ) {
+					possible = next->asType<UIWidget>();
+					if ( possible->isTabFocusable() ) {
+						return possible;
+					}
+					found = possible->getNextWidget();
+					if ( found ) {
+						return found;
+					}
+				}
+				next = next->getNextNode();
+			}
+			if ( start->getParent() == container && container->getFirstWidget() ) {
+				return container->asType<UIWidget>()->getNextTabWidget();
+			}
+		}
+		start = start->getParent();
+	}
+	return NULL;
+}
+
+void UIWidget::onTabPress() {
+	if ( !isTabStop() ) {
+		Node* node = getNextTabWidget();
+		if ( NULL != node ) {
+			node->setFocus();
+			sendCommonEvent( Event::OnTabNavigate );
+		}
 	}
 }
 

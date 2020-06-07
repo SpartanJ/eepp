@@ -57,7 +57,7 @@ UICodeEditor::UICodeEditor() :
 	setFontSize( getUISceneNode()->getUIThemeManager()->getDefaultFontSize() );
 
 	clipEnable();
-	mDoc.registerClient( *this );
+	mDoc.registerClient( this );
 	subscribeScheduledUpdate();
 
 	registerCommands();
@@ -65,7 +65,7 @@ UICodeEditor::UICodeEditor() :
 }
 
 UICodeEditor::~UICodeEditor() {
-	mDoc.unregisterClient( *this );
+	mDoc.unregisterClient( this );
 }
 
 Uint32 UICodeEditor::getType() const {
@@ -430,10 +430,10 @@ Uint32 UICodeEditor::onFocusLoss() {
 Uint32 UICodeEditor::onTextInput( const TextInputEvent& event ) {
 	if ( mLocked || NULL == mFont )
 		return 1;
+	Input* input = getUISceneNode()->getWindow()->getInput();
 
-	if ( !getUISceneNode()->getWindow()->getInput()->isControlPressed() ) {
-		if ( getUISceneNode()->getWindow()->getInput()->isAltPressed() &&
-			 !event.getText().empty() && event.getText()[0] == '\t' )
+	if ( !input->isControlPressed() && !( input->isAltPressed() && input->isShiftPressed() ) ) {
+		if ( input->isAltPressed() && !event.getText().empty() && event.getText()[0] == '\t' )
 			return 1;
 
 		mDoc.textInput( event.getText() );
@@ -444,16 +444,15 @@ Uint32 UICodeEditor::onTextInput( const TextInputEvent& event ) {
 Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
 	if ( NULL == mFont )
 		return 1;
-
 	std::string cmd = mKeyBindings.getCommandFromKeyBind( {event.getKeyCode(), event.getMod()} );
-
 	if ( !cmd.empty() ) {
 		// Allow copy selection on locked mode
-		if ( !mLocked || mUnlockedCmd.find( cmd ) != mUnlockedCmd.end() )
+		if ( !mLocked || mUnlockedCmd.find( cmd ) != mUnlockedCmd.end() ) {
 			mDoc.execute( cmd );
+			return 0;
+		}
 	}
-
-	return 0;
+	return 1;
 }
 
 TextPosition UICodeEditor::resolveScreenPosition( const Vector2f& position ) const {
@@ -1376,7 +1375,7 @@ void UICodeEditor::registerKeybindings() {
 		{{KEY_UP, 0}, "move-to-previous-line"},
 		{{KEY_DOWN, KEYMOD_CTRL | KEYMOD_SHIFT}, "move-lines-down"},
 		{{KEY_DOWN, KEYMOD_CTRL}, "move-scroll-down"},
-		{{KEY_DOWN, KEYMOD_SHIFT}, "select-to-next-line"},
+								  {{KEY_DOWN, KEYMOD_SHIFT}, "select-to-next-line"},
 		{{KEY_DOWN, 0}, "move-to-next-line"},
 		{{KEY_LEFT, KEYMOD_CTRL | KEYMOD_SHIFT}, "select-to-previous-word"},
 		{{KEY_LEFT, KEYMOD_CTRL}, "move-to-previous-word"},
@@ -1395,8 +1394,10 @@ void UICodeEditor::registerKeybindings() {
 		{{KEY_END, KEYMOD_SHIFT}, "select-to-end-of-line"},
 		{{KEY_END, KEYMOD_CTRL}, "move-to-end-of-doc"},
 		{{KEY_END, 0}, "move-to-end-of-line"},
+		{{KEY_PAGEUP, KEYMOD_CTRL}, "select-to-previous-page"},
 		{{KEY_PAGEUP, KEYMOD_SHIFT}, "select-to-previous-page"},
 		{{KEY_PAGEUP, 0}, "move-to-previous-page"},
+		{{KEY_PAGEDOWN, KEYMOD_CTRL}, "select-to-next-page"},
 		{{KEY_PAGEDOWN, KEYMOD_SHIFT}, "select-to-next-page"},
 		{{KEY_PAGEDOWN, 0}, "move-to-next-page"},
 		{{KEY_Y, KEYMOD_CTRL}, "redo"},

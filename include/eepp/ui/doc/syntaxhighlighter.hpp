@@ -18,6 +18,8 @@ class EE_API SyntaxHighlighter {
   public:
 	SyntaxHighlighter( TextDocument* doc );
 
+	void changeDoc( TextDocument* doc );
+
 	void reset();
 
 	void invalidate( Int64 lineIndex );

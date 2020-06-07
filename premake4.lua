@@ -457,7 +457,7 @@ function build_link_configuration( package_name, use_ee_icon )
 
 	configuration "emscripten"
 		linkoptions { "-O3 -s TOTAL_MEMORY=67108864 -s VERBOSE=1" }
-		linkoptions { "-s USE_SDL=2 -s \"BINARYEN_TRAP_MODE='clamp'\"" }
+		linkoptions { "-s USE_SDL=2" }
 		buildoptions { "-O3 -s USE_SDL=2 -s PRECISE_F32=1 -s ENVIRONMENT=web" }
 
 		if _OPTIONS["with-gles1"] and ( not _OPTIONS["with-gles2"] or _OPTIONS["force-gles1"] ) then

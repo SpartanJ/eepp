@@ -10,7 +10,7 @@ UICheckBox* UICheckBox::New() {
 }
 
 UICheckBox::UICheckBox() : UITextView( "checkbox" ), mChecked( false ), mTextSeparation( 4 ) {
-	auto cb = [&]( const Event* event ) { onAutoSize(); };
+	auto cb = [&]( const Event* ) { onAutoSize(); };
 
 	mActiveButton = UIWidget::NewWithTag( "checkbox::active" );
 	mActiveButton->setVisible( false );

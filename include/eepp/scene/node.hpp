@@ -326,8 +326,6 @@ class EE_API Node : public Transformable {
 
 	Node* getFirstWidget() const;
 
-	Node* getNextWidget() const;
-
 	Node* getParentWidget() const;
 
 	void enableReportSizeChangeToChilds();

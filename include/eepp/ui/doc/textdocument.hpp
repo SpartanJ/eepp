@@ -138,9 +138,9 @@ class EE_API TextDocument {
 
 	void textInput( const String& text );
 
-	void registerClient( Client& client );
+	void registerClient( Client* client );
 
-	void unregisterClient( Client& client );
+	void unregisterClient( Client* client );
 
 	void moveToPreviousChar();
 
@@ -228,7 +228,15 @@ class EE_API TextDocument {
 
 	void setCommand( const std::string& command, DocumentCommand func );
 
-	TextPosition find( String text, TextPosition from = {0, 0}, const bool& caseSensitive = false );
+	TextPosition find( String text, TextPosition from = {0, 0}, const bool& caseSensitive = true );
+
+	TextPosition findLast( String text, TextPosition from = {0, 0},
+						   const bool& caseSensitive = true );
+
+	TextPosition replaceSelection( const String& replace );
+
+	TextPosition replace( String search, const String& replace, TextPosition from = {0, 0},
+						  const bool& caseSensitive = true );
 
 	String getIndentString();
 

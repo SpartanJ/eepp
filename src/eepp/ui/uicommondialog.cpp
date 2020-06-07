@@ -85,11 +85,7 @@ UICommonDialog::UICommonDialog( Uint32 CDLFlags, std::string DefaultFilePattern,
 		->setLayoutMargin( Rect( 0, 0, 0, 4 ) );
 	mList->addEventListener( Event::KeyDown, [&]( const Event* event ) {
 		const KeyEvent* KEvent = reinterpret_cast<const KeyEvent*>( event );
-		if ( KEvent->getKeyCode() == KEY_DOWN ) {
-			if ( mList->getCount() && mList->getItemSelectedIndex() == eeINDEX_NOT_FOUND ) {
-				mList->setSelected( 0 );
-			}
-		} else if ( KEvent->getKeyCode() == KEY_BACKSPACE ) {
+		if ( KEvent->getKeyCode() == KEY_BACKSPACE ) {
 			goFolderUp();
 		}
 	} );

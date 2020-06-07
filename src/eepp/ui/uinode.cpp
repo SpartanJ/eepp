@@ -263,10 +263,6 @@ const Sizef& UINode::getMinSize() const {
 	return mMinSize;
 }
 
-bool UINode::isTabStop() const {
-	return ( mFlags & UI_TAB_STOP ) != 0;
-}
-
 void UINode::updateOriginPoint() {
 	Node::updateOriginPoint();
 
@@ -717,14 +713,13 @@ UINode* UINode::resetFlags( Uint32 newFlags ) {
 
 void UINode::drawBackground() {
 	if ( ( mFlags & UI_FILL_BACKGROUND ) && NULL != mBackground ) {
-		mBackground->draw( Vector2f( mScreenPosi.x, mScreenPosi.y ), mSize.floor(), mAlpha );
+		mBackground->draw( mScreenPosi.asFloat(), mSize.floor(), mAlpha );
 	}
 }
 
 void UINode::drawForeground() {
 	if ( ( mFlags & UI_FILL_FOREGROUND ) && NULL != mForeground ) {
-		mForeground->draw( Vector2f( mScreenPosi.x, mScreenPosi.y ), mSize.floor(),
-						   (Uint32)mAlpha );
+		mForeground->draw( mScreenPosi.asFloat(), mSize.floor(), (Uint32)mAlpha );
 	}
 }
 
@@ -1043,12 +1038,12 @@ void UINode::nodeToWorld( Vector2f& pos ) const {
 }
 
 Node* UINode::getWindowContainer() const {
-	const Node* Ctrl = this;
+	const Node* node = this;
 
-	while ( Ctrl != NULL ) {
-		if ( Ctrl->isType( UI_TYPE_WINDOW ) ) {
-			return static_cast<const UIWindow*>( Ctrl )->getContainer();
-		} else if ( mSceneNode == Ctrl ) {
+	while ( node != NULL ) {
+		if ( node->isType( UI_TYPE_WINDOW ) ) {
+			return static_cast<const UIWindow*>( node )->getContainer();
+		} else if ( mSceneNode == node ) {
 			if ( mSceneNode->isUISceneNode() ) {
 				return static_cast<UISceneNode*>( mSceneNode )->getRoot();
 			} else {
@@ -1056,10 +1051,14 @@ Node* UINode::getWindowContainer() const {
 			}
 		}
 
-		Ctrl = Ctrl->getParent();
+		node = node->getParent();
 	}
 
 	return mSceneNode;
+}
+
+bool UINode::isTabFocusable() const {
+	return 0 != ( mFlags & UI_TAB_FOCUSABLE );
 }
 
 const Vector2f& UINode::getDragPoint() const {
@@ -1215,24 +1214,22 @@ Float UINode::getPropertyRelativeTargetContainerLength(
 
 Float UINode::lengthFromValue( const std::string& value,
 							   const PropertyRelativeTarget& relativeTarget,
-							   const Float& defaultValue, const Float& defaultContainerValue,
-							   const Uint32& propertyIndex ) {
+							   const Float& defaultValue, const Uint32& propertyIndex ) {
 	Float containerLength =
 		getPropertyRelativeTargetContainerLength( relativeTarget, defaultValue, propertyIndex );
 	return convertLength( CSS::StyleSheetLength( value, defaultValue ), containerLength );
 }
 
-Float UINode::lengthFromValue( const CSS::StyleSheetProperty& property, const Float& defaultValue,
-							   const Float& defaultContainerValue ) {
+Float UINode::lengthFromValue( const CSS::StyleSheetProperty& property,
+							   const Float& defaultValue ) {
 	return lengthFromValue( property.getValue(),
 							property.getPropertyDefinition()->getRelativeTarget(), defaultValue,
-							defaultContainerValue, property.getIndex() );
+							property.getIndex() );
 }
 
 Float UINode::lengthFromValueAsDp( const std::string& value,
 								   const PropertyRelativeTarget& relativeTarget,
-								   const Float& defaultValue, const Float& defaultContainerValue,
-								   const Uint32& propertyIndex ) {
+								   const Float& defaultValue, const Uint32& propertyIndex ) {
 	Float containerLength =
 		getPropertyRelativeTargetContainerLength( relativeTarget, defaultValue, propertyIndex );
 	return convertLengthAsDp( CSS::StyleSheetLength::fromString( value, defaultValue ),
@@ -1240,10 +1237,10 @@ Float UINode::lengthFromValueAsDp( const std::string& value,
 }
 
 Float UINode::lengthFromValueAsDp( const CSS::StyleSheetProperty& property,
-								   const Float& defaultValue, const Float& defaultContainerValue ) {
+								   const Float& defaultValue ) {
 	return lengthFromValueAsDp( property.getValue(),
 								property.getPropertyDefinition()->getRelativeTarget(), defaultValue,
-								defaultContainerValue, property.getIndex() );
+								property.getIndex() );
 }
 
 Uint32 UINode::onFocus() {

@@ -8,6 +8,11 @@ SyntaxHighlighter::SyntaxHighlighter( TextDocument* doc ) :
 	reset();
 }
 
+void SyntaxHighlighter::changeDoc( TextDocument* doc ) {
+	mDoc = doc;
+	reset();
+}
+
 void SyntaxHighlighter::reset() {
 	mLines.clear();
 	mFirstInvalidLine = 0;

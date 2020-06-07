@@ -235,9 +235,14 @@ class EE_API UIWidget : public UINode {
 
 	Sizef getCurrentMaxSize();
 
+	bool isTabStop() const;
+
+	UIWidget* getNextTabWidget() const;
+
   protected:
 	friend class UIManager;
 	friend class UISceneNode;
+	friend class UIEventDispatcher;
 
 	std::string mTag;
 	UITheme* mTheme;
@@ -298,6 +303,8 @@ class EE_API UIWidget : public UINode {
 
 	virtual void onTagChange();
 
+	virtual void onTabPress();
+
 	void updateAnchors( const Vector2f& SizeChange );
 
 	void alignAgainstLayout();
@@ -325,6 +332,8 @@ class EE_API UIWidget : public UINode {
 	void disableCSSAnimations();
 
 	void reloadFontFamily();
+
+	UIWidget* getNextWidget() const;
 };
 
 }} // namespace EE::UI

@@ -140,6 +140,7 @@ class EE_API InputTextBuffer {
 	/** Event callback when the selection changes. */
 	void setSelectionChangeCallback( const SelectionChangeCallback& selectionChangeCallback );
 
+	void selectAll();
   protected:
 	enum Flags {
 		SUPPORT_NEW_LINE = 0,

@@ -38,7 +38,8 @@ enum UIFlag {
 	UI_CHECKED = ( 1 << 21 ),
 	UI_OWNS_CHILDS_POSITION = ( 1 << 22 ),
 	UI_DRAG_VERTICAL = ( 1 << 23 ),
-	UI_DRAG_HORIZONTAL = ( 1 << 24 )
+	UI_DRAG_HORIZONTAL = ( 1 << 24 ),
+	UI_TAB_FOCUSABLE = ( 1 << 25 )
 };
 
 enum UINodeType {

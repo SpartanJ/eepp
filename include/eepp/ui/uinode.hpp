@@ -198,6 +198,8 @@ class EE_API UINode : public Node {
 
 	Node* getWindowContainer() const;
 
+	bool isTabFocusable() const;
+
 	bool isDragging() const;
 
 	void setDragging( const bool& dragging );
@@ -232,21 +234,16 @@ class EE_API UINode : public Node {
 
 	Float lengthFromValue( const std::string& value,
 						   const CSS::PropertyRelativeTarget& relativeTarget,
-						   const Float& defaultValue = 0, const Float& defaultContainerValue = 0,
-						   const Uint32& propertyIndex = 0 );
+						   const Float& defaultValue = 0, const Uint32& propertyIndex = 0 );
 
-	Float lengthFromValue( const CSS::StyleSheetProperty& property, const Float& defaultValue = 0,
-						   const Float& defaultContainerValue = 0 );
+	Float lengthFromValue( const CSS::StyleSheetProperty& property, const Float& defaultValue = 0 );
 
 	Float lengthFromValueAsDp( const std::string& value,
 							   const CSS::PropertyRelativeTarget& relativeTarget,
-							   const Float& defaultValue = 0,
-							   const Float& defaultContainerValue = 0,
-							   const Uint32& propertyIndex = 0 );
+							   const Float& defaultValue = 0, const Uint32& propertyIndex = 0 );
 
 	Float lengthFromValueAsDp( const CSS::StyleSheetProperty& property,
-							   const Float& defaultValue = 0,
-							   const Float& defaultContainerValue = 0 );
+							   const Float& defaultValue = 0 );
 
 	UISceneNode* getUISceneNode();
 
@@ -257,8 +254,6 @@ class EE_API UINode : public Node {
 	void setMinSize( const Sizef& size );
 
 	const Sizef& getMinSize() const;
-
-	bool isTabStop() const;
 
 	Rectf getLocalDpBounds() const;
 

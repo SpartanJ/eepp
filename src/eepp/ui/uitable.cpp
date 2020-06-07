@@ -29,7 +29,7 @@ UITable::UITable() :
 	mCollWidthAssigned( false ) {
 	setFlags( UI_AUTO_PADDING );
 
-	auto cb = [&]( const Event* event ) { containerResize(); };
+	auto cb = [&]( const Event* ) { containerResize(); };
 
 	mContainer = eeNew( UIItemContainer<UITable>, () );
 	mContainer->setVisible( true );

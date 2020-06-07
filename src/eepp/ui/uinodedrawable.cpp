@@ -166,7 +166,6 @@ void UINodeDrawable::draw( const Vector2f& position, const Sizef& size, const Ui
 			mBackgroundColor.setAlpha( alpha * color.a / 255 );
 			mBackgroundColor.draw( position, size );
 			mBackgroundColor.setAlpha( color.a );
-
 		} else {
 			mBackgroundColor.draw( position, size );
 		}

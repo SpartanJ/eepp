@@ -102,7 +102,6 @@ void App::splitEditor( const SplitDirection& direction, UICodeEditor* editor ) {
 			parentSplitter->swap();
 		}
 	}
-	eeASSERT( mBaseLayout->getChildCount() <= 1 );
 }
 
 void App::switchToTab( Int32 index ) {
@@ -210,8 +209,10 @@ UICodeEditor* App::createCodeEditor() {
 		if ( codeEditor->save() )
 			updateEditorTitle( codeEditor );
 	} );
-	codeEditor->getDocument().setCommand( "find", [&] { findTextMessageBox(); } );
-	codeEditor->getDocument().setCommand( "repeat-find", [&] { findText(); } );
+	codeEditor->getDocument().setCommand( "find", [&] { showFindView(); } );
+	codeEditor->getDocument().setCommand( "repeat-find", [&] {
+		findNextText( "", mSearchBarLayout->find<UICheckBox>( "case_sensitive" )->isChecked() );
+	} );
 	codeEditor->getDocument().setCommand( "close-app", [&] { closeApp(); } );
 	codeEditor->getDocument().setCommand( "fullscreen-toggle",
 										  [&]() { mWindow->toggleFullscreen(); } );
@@ -254,7 +255,18 @@ UICodeEditor* App::createCodeEditor() {
 		if ( UISplitter* splitter = splitterFromEditor( mCurEditor ) )
 			splitter->swap();
 	} );
-	codeEditor->addKeyBindingString( "escape", "close-app", true );
+
+	codeEditor->addEventListener( Event::OnFocus, [&]( const Event* event ) {
+		mCurEditor = event->getNode()->asType<UICodeEditor>();
+		updateEditorTitle( mCurEditor );
+	} );
+	codeEditor->addEventListener( Event::OnTextChanged, [&]( const Event* event ) {
+		updateEditorTitle( event->getNode()->asType<UICodeEditor>() );
+	} );
+	codeEditor->addEventListener( Event::OnSelectionChanged, [&]( const Event* event ) {
+		updateEditorTitle( event->getNode()->asType<UICodeEditor>() );
+	} );
+
 	codeEditor->addKeyBindingString( "f2", "open-file", true );
 	codeEditor->addKeyBindingString( "f3", "repeat-find", false );
 	codeEditor->addKeyBindingString( "f12", "console-toggle", true );
@@ -267,29 +279,24 @@ UICodeEditor* App::createCodeEditor() {
 	codeEditor->addKeyBindingString( "ctrl+t", "create-new", true );
 	codeEditor->addKeyBindingString( "ctrl+w", "close-doc", true );
 	codeEditor->addKeyBindingString( "ctrl+tab", "next-doc", true );
-	for ( int i = 1; i <= 10; i++ )
-		codeEditor->addKeyBindingString( String::format( "ctrl+%d", i ),
-										 String::format( "switch-to-tab-%d", i ), true );
 	codeEditor->addKeyBindingString( "ctrl+shift+tab", "previous-doc", true );
-	codeEditor->addKeyBindingString( "ctrl+shift+j", "split-left", true );
-	codeEditor->addKeyBindingString( "ctrl+shift+l", "split-right", true );
-	codeEditor->addKeyBindingString( "ctrl+shift+i", "split-top", true );
-	codeEditor->addKeyBindingString( "ctrl+shift+k", "split-bottom", true );
-	codeEditor->addKeyBindingString( "ctrl+shift+s", "split-swap", true );
+	codeEditor->addKeyBindingString( "alt+shift+j", "split-left", true );
+	codeEditor->addKeyBindingString( "alt+shift+l", "split-right", true );
+	codeEditor->addKeyBindingString( "alt+shift+i", "split-top", true );
+	codeEditor->addKeyBindingString( "alt+shift+k", "split-bottom", true );
+	codeEditor->addKeyBindingString( "alt+shift+s", "split-swap", true );
 	codeEditor->addKeyBindingString( "ctrl+alt+j", "switch-to-previous-split", true );
 	codeEditor->addKeyBindingString( "ctrl+alt+l", "switch-to-next-split", true );
-	codeEditor->addKeyBindingString( "ctrl+n", "switch-to-previous-colorscheme", true );
-	codeEditor->addKeyBindingString( "ctrl+m", "switch-to-next-colorscheme", true );
-	codeEditor->addEventListener( Event::OnFocus, [&]( const Event* event ) {
-		mCurEditor = event->getNode()->asType<UICodeEditor>();
-		updateEditorTitle( mCurEditor );
-	} );
-	codeEditor->addEventListener( Event::OnTextChanged, [&]( const Event* event ) {
-		updateEditorTitle( event->getNode()->asType<UICodeEditor>() );
-	} );
-	codeEditor->addEventListener( Event::OnSelectionChanged, [&]( const Event* event ) {
-		updateEditorTitle( event->getNode()->asType<UICodeEditor>() );
-	} );
+	codeEditor->addKeyBindingString( "ctrl+alt+n", "switch-to-previous-colorscheme", true );
+	codeEditor->addKeyBindingString( "ctrl+alt+m", "switch-to-next-colorscheme", true );
+
+	for ( int i = 1; i <= 10; i++ ) {
+		codeEditor->addKeyBindingString( String::format( "ctrl+%d", i ),
+										 String::format( "switch-to-tab-%d", i ), true );
+		codeEditor->addKeyBindingString( String::format( "alt+%d", i ),
+										 String::format( "switch-to-tab-%d", i ), true );
+	}
+
 	if ( NULL == mCurEditor ) {
 		mCurEditor = codeEditor;
 	}
@@ -390,7 +397,6 @@ void App::onTabClosed( const TabEvent* tabEvent ) {
 					}
 					focusSomeEditor( NULL );
 				}
-				eeASSERT( mBaseLayout->getChildCount() == 1 );
 				return;
 			}
 		}
@@ -484,42 +490,157 @@ void App::openFileDialog() {
 	TGDialog->show();
 }
 
-void App::findText( String text ) {
+void App::findPrevText( String text, const bool& caseSensitive ) {
 	if ( text.empty() )
 		text = mLastSearch;
 	if ( !mCurEditor || text.empty() )
 		return;
 	mLastSearch = text;
 	TextDocument& doc = mCurEditor->getDocument();
-	TextPosition found = doc.find( text, doc.getSelection( true ).end() );
+	TextPosition found = doc.findLast( text, doc.getSelection( true ).start(), caseSensitive );
 	if ( found.isValid() ) {
-		doc.setSelection( {{found.line(), found.column() + (Int64)text.size()}, found} );
+		doc.setSelection( {doc.positionOffset( found, text.size() ), found} );
 	} else {
-		found = doc.find( text, {0, 0} );
+		found = doc.findLast( text, doc.endOfDoc() );
 		if ( found.isValid() ) {
-			doc.setSelection( {{found.line(), found.column() + (Int64)text.size()}, found} );
+			doc.setSelection( {doc.positionOffset( found, text.size() ), found} );
 		}
 	}
 }
 
-void App::findTextMessageBox() {
+void App::findNextText( String text, const bool& caseSensitive ) {
+	if ( text.empty() )
+		text = mLastSearch;
+	if ( !mCurEditor || text.empty() )
+		return;
+	mLastSearch = text;
+	TextDocument& doc = mCurEditor->getDocument();
+	TextPosition found = doc.find( text, doc.getSelection( true ).end(), caseSensitive );
+	if ( found.isValid() ) {
+		doc.setSelection( {doc.positionOffset( found, text.size() ), found} );
+	} else {
+		found = doc.find( text, {0, 0} );
+		if ( found.isValid() ) {
+			doc.setSelection( {doc.positionOffset( found, text.size() ), found} );
+		}
+	}
+}
+
+void App::replaceSelection( const String& replacement ) {
+	if ( !mCurEditor || !mCurEditor->getDocument().hasSelection() )
+		return;
+	mCurEditor->getDocument().replaceSelection( replacement );
+}
+
+void App::replaceAll( String find, const String& replace, const bool& caseSensitive ) {
 	if ( !mCurEditor )
 		return;
-	UIMessageBox* inputSearch = UIMessageBox::New( UIMessageBox::INPUT, "Find text..." );
-	inputSearch->getTextInput()->setHint( "Find text..." );
-	String text = mCurEditor->getDocument().getSelectedText();
-	if ( !text.empty() )
-		inputSearch->getTextInput()->setText( text );
-	inputSearch->setCloseWithKey( KEY_ESCAPE );
-	inputSearch->addEventListener( Event::MsgBoxConfirmClick, [&]( const Event* event ) {
-		findText( event->getNode()->asType<UIMessageBox>()->getTextInput()->getText() );
+	if ( find.empty() )
+		find = mLastSearch;
+	if ( !mCurEditor || find.empty() )
+		return;
+	mLastSearch = find;
+	TextDocument& doc = mCurEditor->getDocument();
+	TextPosition found;
+	TextPosition startedPosition = doc.getSelection().start();
+	doc.setSelection( doc.startOfDoc() );
+	do {
+		found = doc.find( find, doc.getSelection( true ).end(), caseSensitive );
+		if ( found.isValid() ) {
+			doc.setSelection( {doc.positionOffset( found, find.size() ), found} );
+			doc.replaceSelection( replace );
+		}
+	} while ( found.isValid() );
+	doc.setSelection( startedPosition );
+}
+
+void App::findAndReplace( String find, String replace, const bool& caseSensitive ) {
+	if ( find.empty() )
+		find = mLastSearch;
+	if ( !mCurEditor || find.empty() )
+		return;
+	mLastSearch = find;
+	TextDocument& doc = mCurEditor->getDocument();
+	if ( doc.hasSelection() && doc.getSelectedText() == find ) {
+		replaceSelection( replace );
+	} else {
+		findNextText( find, caseSensitive );
+	}
+}
+
+void App::initSearchBar() {
+	auto addClickListener = [&]( UIWidget* widget, std::string cmd ) {
+		widget->addEventListener( Event::MouseClick, [this, cmd]( const Event* event ) {
+			const MouseEvent* mouseEvent = static_cast<const MouseEvent*>( event );
+			if ( mouseEvent->getFlags() & EE_BUTTON_LMASK )
+				mSearchBarLayout->execute( cmd );
+		} );
+	};
+	auto addReturnListener = [&]( UIWidget* widget, std::string cmd ) {
+		widget->addEventListener( Event::KeyDown, [this, cmd]( const Event* event ) {
+			const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );
+			if ( keyEvent->getKeyCode() == KEY_RETURN )
+				mSearchBarLayout->execute( cmd );
+		} );
+	};
+	UITextInput* findInput = mSearchBarLayout->find<UITextInput>( "search_find" );
+	UITextInput* replaceInput = mSearchBarLayout->find<UITextInput>( "search_replace" );
+	UICheckBox* caseSensitiveChk = mSearchBarLayout->find<UICheckBox>( "case_sensitive" );
+	findInput->getInputTextBuffer()->pushIgnoredChar( '\t' );
+	replaceInput->getInputTextBuffer()->pushIgnoredChar( '\t' );
+	mSearchBarLayout->addCommand( "close-searchbar", [&] {
+		mSearchBarLayout->setEnabled( false )->setVisible( false );
+		mCurEditor->setFocus();
 	} );
-	inputSearch->addEventListener( Event::OnClose,
-								   [&]( const Event* ) { mCurEditor->setFocus(); } );
-	inputSearch->setTitle( "Find" );
-	inputSearch->getButtonOK()->setText( "Search" );
-	inputSearch->center();
-	inputSearch->show();
+	mSearchBarLayout->addCommand( "repeat-find", [this, findInput, caseSensitiveChk] {
+		findNextText( findInput->getText(), caseSensitiveChk->isChecked() );
+	} );
+	mSearchBarLayout->addCommand( "replace-all", [this, findInput, replaceInput, caseSensitiveChk] {
+		replaceAll( findInput->getText(), replaceInput->getText(), caseSensitiveChk->isChecked() );
+	} );
+	mSearchBarLayout->addCommand( "find-and-replace",
+								  [this, findInput, replaceInput, caseSensitiveChk] {
+									  findAndReplace( findInput->getText(), replaceInput->getText(),
+													  caseSensitiveChk->isChecked() );
+								  } );
+	mSearchBarLayout->addCommand( "find-prev", [this, findInput, caseSensitiveChk] {
+		findPrevText( findInput->getText(), caseSensitiveChk->isChecked() );
+	} );
+	mSearchBarLayout->addCommand( "replace-selection", [this, replaceInput] {
+		replaceSelection( replaceInput->getText() );
+	} );
+	mSearchBarLayout->addCommand( "change-case", [caseSensitiveChk] {
+		caseSensitiveChk->setChecked( !caseSensitiveChk->isChecked() );
+	} );
+	mSearchBarLayout->getKeyBindings().addKeybindsString( {
+		{"f3", "repeat-find"},
+		{"ctrl+g", "repeat-find"},
+		{"escape", "close-searchbar"},
+		{"ctrl+r", "replace-all"},
+		{"ctrl+s", "change-case"},
+	} );
+	addReturnListener( findInput, "repeat-find" );
+	addReturnListener( replaceInput, "find-and-replace" );
+	addClickListener( mSearchBarLayout->find<UIPushButton>( "find_prev" ), "find-prev" );
+	addClickListener( mSearchBarLayout->find<UIPushButton>( "find_next" ), "repeat-find" );
+	addClickListener( mSearchBarLayout->find<UIPushButton>( "replace" ), "replace-selection" );
+	addClickListener( mSearchBarLayout->find<UIPushButton>( "replace_find" ), "find-and-replace" );
+	addClickListener( mSearchBarLayout->find<UIPushButton>( "replace_all" ), "replace-all" );
+	replaceInput->addEventListener( Event::OnTabNavigate,
+									[findInput]( const Event* ) { findInput->setFocus(); } );
+}
+
+void App::showFindView() {
+	if ( !mCurEditor )
+		return;
+	mSearchBarLayout->setEnabled( true )->setVisible( true );
+	UITextInput* findInput = mSearchBarLayout->find<UITextInput>( "search_find" );
+	findInput->setFocus();
+	String text = mCurEditor->getDocument().getSelectedText();
+	if ( !text.empty() ) {
+		findInput->setText( text );
+		findInput->getInputTextBuffer()->selectAll();
+	}
 }
 
 void App::closeApp() {
@@ -651,8 +772,53 @@ void App::init( const std::string& file ) {
 
 		mUISceneNode->getRoot()->addClass( "appbackground" );
 
-		mBaseLayout = UIRelativeLayout::New();
-		mBaseLayout->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
+		std::string baseUI = R"xml(
+		<style>
+		TextInput#search_find,
+		TextInput#search_replace {
+			padding-top: 0;
+			padding-bottom: 0;
+		}
+		#search_bar {
+			padding-left: 4dp;
+			padding-right: 4dp;
+			padding-bottom: 3dp;
+		}
+		</style>
+		<vbox layout_width="match_parent" layout_height="match_parent">
+			<vbox id="code_container" layout_width="match_parent" layout_height="0" layout_weight="1">
+			</vbox>
+			<searchbar id="search_bar" layout_width="match_parent" layout_height="wrap_content">
+				<vbox layout_width="wrap_content" layout_height="wrap_content">
+					<TextView layout_width="wrap_content" layout_height="18dp" text="Find:" />
+					<TextView layout_width="wrap_content" layout_height="18dp" text="Replace with:" />
+				</vbox>
+				<vbox layout_width="0" layout_weight="1" layout_height="wrap_content">
+					<TextInput id="search_find" layout_width="match_parent" layout_height="18dp" padding="0" />
+					<TextInput id="search_replace" layout_width="match_parent" layout_height="18dp" padding="0" />
+				</vbox>
+				<vbox layout_width="wrap_content" layout_height="wrap_content">
+					<hbox layout_width="wrap_content" layout_height="wrap_content">
+						<PushButton id="find_prev" layout_width="wrap_content" layout_height="18dp" text="Find Previous" />
+						<PushButton id="find_next" layout_width="wrap_content" layout_height="18dp" text="Find Next" />
+						<CheckBox id="case_sensitive" layout_width='wrap_content' layout_height='wrap_content' text="Case Sensitive" selected="true" />
+					</hbox>
+					<hbox layout_width="wrap_content" layout_height="wrap_content">
+						<PushButton id="replace" layout_width="wrap_content" layout_height="18dp" text="Replace" />
+						<PushButton id="replace_find" layout_width="wrap_content" layout_height="18dp" text="Replace & Find" />
+						<PushButton id="replace_all" layout_width="wrap_content" layout_height="18dp" text="Replace All" />
+					</hbox>
+				</vbox>
+			</searchbar>
+		</vbox>
+		)xml";
+
+		UIWidgetCreator::registerWidget( "searchbar", [] { return UISearchBar::New(); } );
+		mUISceneNode->loadLayoutFromString( baseUI );
+		mUISceneNode->bind( "code_container", mBaseLayout );
+		mUISceneNode->bind( "search_bar", mSearchBarLayout );
+		mSearchBarLayout->setVisible( false )->setEnabled( false );
+		initSearchBar();
 
 		createEditorWithTabWidget( mBaseLayout );
 

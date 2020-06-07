@@ -107,13 +107,6 @@ void UITab::onSizeChange() {
 	UISelectButton::onSizeChange();
 }
 
-Uint32 UITab::onFocus() {
-	UISelectButton::onFocus();
-	if ( mOwnedWidget )
-		mOwnedWidget->setFocus();
-	return 1;
-}
-
 UIWidget* UITab::getExtraInnerWidget() {
 	return mCloseButton;
 }

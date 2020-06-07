@@ -34,7 +34,6 @@ UIListBox::UIListBox( const std::string& tag ) :
 	mMaxTextWidth( 0 ),
 	mHScrollInit( 0 ),
 	mItemsNotVisible( 0 ),
-	mLastTickMove( 0 ),
 	mVisibleFirst( 0 ),
 	mVisibleLast( 0 ),
 	mSmoothScroll( true ) {
@@ -886,45 +885,77 @@ void UIListBox::selectNext() {
 	}
 }
 
-Uint32 UIListBox::onKeyDown( const KeyEvent& Event ) {
-	UINode::onKeyDown( Event );
+Uint32 UIListBox::onKeyDown( const KeyEvent& event ) {
+	UINode::onKeyDown( event );
 
-	if ( !mSelected.size() || mFlags & UI_MULTI_SELECT )
+	if ( mFlags & UI_MULTI_SELECT )
 		return 0;
 
-	if ( Sys::getTicks() - mLastTickMove > 100 ) {
-		if ( KEY_DOWN == Event.getKeyCode() ) {
-			mLastTickMove = Sys::getTicks();
-
-			selectNext();
-		} else if ( KEY_UP == Event.getKeyCode() ) {
-			mLastTickMove = Sys::getTicks();
-
-			selectPrev();
-		} else if ( KEY_HOME == Event.getKeyCode() ) {
-			mLastTickMove = Sys::getTicks();
-
-			if ( mSelected.front() != 0 ) {
-				mVScrollBar->setValue( 0 );
-
-				mItems[0]->setFocus();
-
+	if ( mSelected.empty() ) {
+		switch ( event.getKeyCode() ) {
+			case KEY_DOWN:
+			case KEY_UP:
+			case KEY_HOME:
+			case KEY_END:
+			case KEY_PAGEUP:
+			case KEY_PAGEDOWN: {
 				setSelected( 0 );
+				itemKeyEvent( event );
+				return 1;
 			}
-		} else if ( KEY_END == Event.getKeyCode() ) {
-			mLastTickMove = Sys::getTicks();
-
-			if ( mSelected.front() != getCount() - 1 ) {
-				mVScrollBar->setValue( 1 );
-
-				mItems[getCount() - 1]->setFocus();
-
-				setSelected( getCount() - 1 );
+			default: {
 			}
 		}
 	}
 
-	itemKeyEvent( Event );
+	switch ( event.getKeyCode() ) {
+		case KEY_DOWN:
+			selectNext();
+			break;
+		case KEY_UP:
+			selectPrev();
+			break;
+		case KEY_HOME:
+			if ( mSelected.front() != 0 ) {
+				mVScrollBar->setValue( 0 );
+				mItems[0]->setFocus();
+				setSelected( 0 );
+			}
+			break;
+		case KEY_END:
+			if ( mSelected.front() != getCount() - 1 ) {
+				mVScrollBar->setValue( 1 );
+				mItems[getCount() - 1]->setFocus();
+				setSelected( getCount() - 1 );
+			}
+			break;
+		case KEY_PAGEUP: {
+			Int32 index = getItemSelectedIndex();
+			if ( eeINDEX_NOT_FOUND == (Uint32)index )
+				index = 0;
+			Int32 pageSize = eefloor( mDpSize.getHeight() / mRowHeight );
+			index = eemax( 0, index - pageSize );
+			setSelected( index );
+			mVScrollBar->setValue( ( Float )( index * mRowHeight ) /
+								   ( Float )( ( mItems.size() - 1 ) * mRowHeight ) );
+			break;
+		}
+		case KEY_PAGEDOWN: {
+			Int32 index = getItemSelectedIndex();
+			if ( eeINDEX_NOT_FOUND == (Uint32)index )
+				index = 0;
+			Int32 pageSize = eefloor( mDpSize.getHeight() / mRowHeight );
+			index = eemin( getCount() ? (Int32)getCount() - 1 : 0, index + pageSize );
+			setSelected( index );
+			mVScrollBar->setValue( ( Float )( index * mRowHeight ) /
+								   ( Float )( ( mItems.size() - 1 ) * mRowHeight ) );
+			break;
+		}
+		default: {
+		}
+	}
+
+	itemKeyEvent( event );
 
 	return 1;
 }

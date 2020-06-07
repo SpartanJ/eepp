@@ -606,12 +606,12 @@ void TextDocument::textInput( const String& text ) {
 	setSelection( insert( getSelection().start(), text ) );
 }
 
-void TextDocument::registerClient( TextDocument::Client& client ) {
-	mClients.insert( &client );
+void TextDocument::registerClient( Client* client ) {
+	mClients.insert( client );
 }
 
-void TextDocument::unregisterClient( TextDocument::Client& client ) {
-	mClients.erase( &client );
+void TextDocument::unregisterClient( Client* client ) {
+	mClients.erase( client );
 }
 
 void TextDocument::moveToPreviousChar() {
@@ -993,6 +993,51 @@ TextPosition TextDocument::find( String text, TextPosition from, const bool& cas
 		}
 		if ( String::StringType::npos != col ) {
 			return {(Int64)i, (Int64)col};
+		}
+	}
+	return TextPosition();
+}
+
+TextPosition TextDocument::findLast( String text, TextPosition from, const bool& caseSensitive ) {
+	from = sanitizePosition( from );
+	if ( !caseSensitive )
+		text.toLower();
+	for ( Int64 i = from.line(); i >= 0; i-- ) {
+		size_t col;
+		if ( (Int64)i == from.line() ) {
+			col = caseSensitive ? line( i ).getText().substr( 0, from.column() ).rfind( text )
+								: String::toLower( line( i ).getText() )
+									  .substr( 0, from.column() )
+									  .rfind( text );
+		} else {
+			col = caseSensitive ? line( i ).getText().rfind( text )
+								: String::toLower( line( i ).getText() ).rfind( text );
+		}
+		if ( String::StringType::npos != col ) {
+			return {(Int64)i, (Int64)col};
+		}
+	}
+	return TextPosition();
+}
+
+TextPosition TextDocument::replaceSelection( const String& replace ) {
+	if ( hasSelection() ) {
+		deleteTo( 0 );
+		textInput( replace );
+	}
+	return getSelection( true ).end();
+}
+
+TextPosition TextDocument::replace( String search, const String& replace, TextPosition from,
+									const bool& caseSensitive ) {
+	TextPosition start( find( search, from, caseSensitive ) );
+	if ( start.isValid() ) {
+		TextPosition end = positionOffset( start, search.size() );
+		if ( end.isValid() ) {
+			setSelection( {start, end} );
+			deleteTo( 0 );
+			textInput( replace );
+			return end;
 		}
 	}
 	return TextPosition();

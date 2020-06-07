@@ -3,6 +3,38 @@
 
 #include <eepp/ee.hpp>
 
+class UISearchBar : public UILinearLayout {
+  public:
+	typedef std::function<void()> CommandCallback;
+	static UISearchBar* New() { return eeNew( UISearchBar, () ); }
+	UISearchBar() :
+		UILinearLayout( "searchbar", UIOrientation::Horizontal ),
+		mKeyBindings( getUISceneNode()->getWindow()->getInput() ) {}
+	void addCommand( const std::string& name, const CommandCallback& cb ) { mCommands[name] = cb; }
+	void execute( const std::string& command ) {
+		auto cmdIt = mCommands.find( command );
+		if ( cmdIt != mCommands.end() )
+			cmdIt->second();
+	}
+	KeyBindings& getKeyBindings() { return mKeyBindings; }
+
+  protected:
+	KeyBindings mKeyBindings;
+	std::unordered_map<std::string, std::function<void()>> mCommands;
+	Uint32 onKeyDown( const KeyEvent& event ) {
+		std::string cmd =
+			mKeyBindings.getCommandFromKeyBind( {event.getKeyCode(), event.getMod()} );
+		if ( !cmd.empty() ) {
+			auto cmdIt = mCommands.find( cmd );
+			if ( cmdIt != mCommands.end() ) {
+				cmdIt->second();
+				return 0;
+			}
+		}
+		return 1;
+	}
+};
+
 class App {
   public:
 	enum class SplitDirection { Left, Right, Top, Bottom };
@@ -17,13 +49,15 @@ class App {
 
 	void openFileDialog();
 
-	void findText( String text = "" );
+	void findPrevText( String text = "", const bool& caseSensitive = true );
+
+	void findNextText( String text = "", const bool& caseSensitive = true );
 
 	void closeApp();
 
 	void mainLoop();
 
-	void findTextMessageBox();
+	void showFindView();
 
 	UICodeEditor* createCodeEditor();
 
@@ -51,6 +85,12 @@ class App {
 
 	void applyColorScheme( const SyntaxColorScheme& colorScheme );
 
+	void replaceSelection( const String& replacement );
+
+	void replaceAll( String find, const String& replace, const bool& caseSensitive );
+
+	void findAndReplace( String find, String replace, const bool& caseSensitive );
+
   protected:
 	EE::Window::Window* mWindow{NULL};
 	UISceneNode* mUISceneNode{NULL};
@@ -60,6 +100,7 @@ class App {
 	UIMessageBox* mMsgBox{NULL};
 	String mLastSearch;
 	UILayout* mBaseLayout{NULL};
+	UISearchBar* mSearchBarLayout{NULL};
 	std::vector<UITabWidget*> mTabWidgets;
 	std::map<std::string, SyntaxColorScheme> mColorSchemes;
 	std::string mCurrentColorScheme;
@@ -83,6 +124,8 @@ class App {
 	void closeSplitter( UISplitter* splitter );
 
 	void closeTabWidgets( UISplitter* splitter );
+
+	void initSearchBar();
 };
 
 #endif // EE_TOOLS_CODEEDITOR_HPP

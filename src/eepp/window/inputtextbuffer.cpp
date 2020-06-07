@@ -304,12 +304,19 @@ void InputTextBuffer::update( InputEvent* Event ) {
 								Int32 end = eemax( mSelCurInit, mSelCurEnd );
 								std::string clipStr( mText.substr( init, end - init ).toUtf8() );
 								mWindow->getClipboard()->setText( clipStr );
-							} else {
-								Keycode sym = Event->key.keysym.sym;
+							} else if ( Event->key.keysym.sym == KEY_UP ||
+										Event->key.keysym.sym == KEY_DOWN ||
+										Event->key.keysym.sym == KEY_LEFT ||
+										Event->key.keysym.sym == KEY_RIGHT ||
+										Event->key.keysym.sym == KEY_HOME ||
+										Event->key.keysym.sym == KEY_END ) {
 								if ( !( Input->isShiftPressed() &&
-										( sym == KEY_UP || sym == KEY_DOWN || sym == KEY_LEFT ||
-										  sym == KEY_RIGHT || sym == KEY_INSERT ||
-										  sym == KEY_HOME || sym == KEY_END ) ) ) {
+										( Event->key.keysym.sym == KEY_UP ||
+										  Event->key.keysym.sym == KEY_DOWN ||
+										  Event->key.keysym.sym == KEY_LEFT ||
+										  Event->key.keysym.sym == KEY_RIGHT ||
+										  Event->key.keysym.sym == KEY_HOME ||
+										  Event->key.keysym.sym == KEY_END ) ) ) {
 									resetSelection();
 								}
 							}
@@ -325,10 +332,7 @@ void InputTextBuffer::update( InputEvent* Event ) {
 
 						if ( ( Event->key.keysym.mod & KEYMOD_CTRL ) &&
 							 Event->key.keysym.sym == KEY_A ) {
-							selCurInit( 0 );
-							selCurEnd( mText.size() );
-							setCursorPos( mSelCurEnd );
-							onSelectionChange();
+							selectAll();
 						}
 					}
 
@@ -444,9 +448,6 @@ void InputTextBuffer::update( InputEvent* Event ) {
 						tryAddChar( keyChar );
 					}
 
-					break;
-				}
-				case InputEvent::KeyUp: {
 					if ( setSupportNewLine() ) {
 						int lPromtpPos = mPromptPos;
 
@@ -501,6 +502,7 @@ void InputTextBuffer::update( InputEvent* Event ) {
 							shiftSelection( lPromtpPos );
 						}
 					}
+
 					break;
 				}
 			}
@@ -827,6 +829,13 @@ void InputTextBuffer::setBufferChangeCallback( const BufferChangeCallback& buffe
 void InputTextBuffer::setSelectionChangeCallback(
 	const SelectionChangeCallback& selectionChangeCallback ) {
 	mSelectionChangeCallback = selectionChangeCallback;
+}
+
+void InputTextBuffer::selectAll() {
+	selCurInit( 0 );
+	selCurEnd( mText.size() );
+	setCursorPos( mSelCurEnd );
+	onSelectionChange();
 }
 
 void InputTextBuffer::onCursorPositionChange() {
