@@ -207,6 +207,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void setSelectionMatchColor( const Color& highlightSelectionMatchColor );
 
+	const bool& getEnableColorPickerOnSelection() const;
+
+	void setEnableColorPickerOnSelection( const bool& enableColorPickerOnSelection );
+
   protected:
 	struct LastXOffset {
 		TextPosition position;
@@ -226,6 +230,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mHighlightCurrentLine;
 	bool mHighlightMatchingBracket;
 	bool mHighlightSelectionMatch;
+	bool mEnableColorPickerOnSelection;
 	Uint32 mTabWidth;
 	Int64 mLastColOffset;
 	Vector2f mScroll;
@@ -361,6 +366,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void fontSizeShrink();
 
 	void fontSizeReset();
+
+	void checkColorPickerAction();
 
 	virtual void drawMatchingBrackets( const Vector2f& startScroll, const Float& lineHeight );
 

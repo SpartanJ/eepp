@@ -257,7 +257,7 @@ UIColorPicker::UIColorPicker( UIWindow* attachTo, const UIColorPicker::ColorPick
 				mRoot->getUISceneNode()->getUIThemeManager()->getControlsFadeOutTime() ) );
 		}
 		mUIWindow->getModalControl()->addEventListener(
-			Event::MouseClick, [&]( const Event* event ) {
+			Event::MouseClick, [&]( const Event* ) {
 				if ( mModalAlpha != 0.f )
 					mUIWindow->getModalControl()->runAction( Actions::FadeOut::New(
 						mRoot->getUISceneNode()->getUIThemeManager()->getControlsFadeOutTime() ) );
@@ -277,9 +277,9 @@ UIColorPicker::UIColorPicker( UIWindow* attachTo, const UIColorPicker::ColorPick
 	mRoot->bind( "alpha_container", mAlphaContainer );
 	mRoot->bind( "footer", mFooter );
 
-	mRoot->addEventListener( Event::OnSizeChange, [&]( const Event* event ) { updateAll(); } );
+	mRoot->addEventListener( Event::OnSizeChange, [&]( const Event* ) { updateAll(); } );
 
-	mRoot->addEventListener( Event::OnLayoutUpdate, [&]( const Event* event ) {
+	mRoot->addEventListener( Event::OnLayoutUpdate, [&]( const Event* ) {
 		if ( mHuePicker->getDrawable() == nullptr ) {
 			mHuePicker->setDrawable( createHueTexture( mHuePicker->getPixelsSize() ), true );
 			mCurrentColor->setBackgroundDrawable( createGridTexture(), true );

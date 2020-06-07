@@ -91,6 +91,7 @@ class App {
 
 	void findAndReplace( String find, String replace, const bool& caseSensitive );
 
+	void runCommand( const std::string& command );
   protected:
 	EE::Window::Window* mWindow{NULL};
 	UISceneNode* mUISceneNode{NULL};
@@ -104,6 +105,8 @@ class App {
 	std::vector<UITabWidget*> mTabWidgets;
 	std::map<std::string, SyntaxColorScheme> mColorSchemes;
 	std::string mCurrentColorScheme;
+	UIPopUpMenu* mSettingsMenu;
+	UITextView* mSettingsButton;
 
 	void onFileDropped( String file );
 
@@ -128,6 +131,10 @@ class App {
 	void initSearchBar();
 
 	void addRemainingTabWidgets( Node* widget );
+
+	void createSettingsMenu();
+
+	UIMenu* createColorSchemeMenu();
 };
 
 #endif // EE_TOOLS_CODEEDITOR_HPP

@@ -4,6 +4,7 @@
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
+#include <eepp/ui/tools/uicolorpicker.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uieventdispatcher.hpp>
 #include <eepp/ui/uiscenenode.hpp>
@@ -12,6 +13,8 @@
 #include <eepp/window/clipboard.hpp>
 #include <eepp/window/input.hpp>
 #include <eepp/window/window.hpp>
+
+using namespace EE::UI::Tools;
 
 namespace EE { namespace UI {
 
@@ -31,6 +34,7 @@ UICodeEditor::UICodeEditor() :
 	mHighlightCurrentLine( true ),
 	mHighlightMatchingBracket( true ),
 	mHighlightSelectionMatch( true ),
+	mEnableColorPickerOnSelection( false ),
 	mTabWidth( 4 ),
 	mLastColOffset( 0 ),
 	mMouseWheelScroll( 50 ),
@@ -541,6 +545,45 @@ Uint32 UICodeEditor::onMouseClick( const Vector2i&, const Uint32& flags ) {
 	return 1;
 }
 
+void UICodeEditor::checkColorPickerAction() {
+	if ( !mEnableColorPickerOnSelection )
+		return;
+	String text( mDoc.getSelectedText() );
+	TextRange range( mDoc.getSelection( true ) );
+	if ( range.start().line() != range.end().line() )
+		return;
+	const String& line = mDoc.line( range.end().line() ).getText();
+	bool isHash = range.start().column() > 0 &&
+				  mDoc.line( range.start().line() ).getText()[range.start().column() - 1] == '#' &&
+				  ( text.size() == 6 || text.size() == 8 ) && String::isHexNotation( text );
+	bool isRgba = !isHash && text == "rgba" && range.end().column() < (Int64)line.size() - 1 &&
+				  line[range.end().column()] == '(';
+	bool isRgb = !isHash && !isRgba && text == "rgb" &&
+				 range.end().column() < (Int64)line.size() - 1 && line[range.end().column()] == '(';
+	if ( isHash || isRgb || isRgba ) {
+		UIColorPicker* colorPicker = NULL;
+		if ( isHash ) {
+			colorPicker = UIColorPicker::NewModal(
+				this, [&]( Color color ) { mDoc.replaceSelection( color.toHexString( false ) ); } );
+			colorPicker->setColor( Color( '#' + text ) );
+		} else if ( isRgba || isRgb ) {
+			TextPosition position = mDoc.findCloseBracket(
+				{range.start().line(), static_cast<Int64>( range.end().column() )}, '(', ')' );
+			if ( position.isValid() ) {
+				mDoc.setSelection( {position.line(), position.column() + 1}, range.start() );
+				colorPicker = UIColorPicker::NewModal( this, [&, isRgba]( Color color ) {
+					mDoc.replaceSelection( isRgba || color.a != 255 ? color.toRgbaString()
+																	: color.toRgbString() );
+				} );
+				colorPicker->setColor( Color::fromString( mDoc.getSelectedText() ) );
+			}
+		}
+		if ( colorPicker )
+			colorPicker->getUIWindow()->addEventListener( Event::OnWindowClose,
+														  [&]( const Event* ) { setFocus(); } );
+	}
+}
+
 Uint32 UICodeEditor::onMouseDoubleClick( const Vector2i&, const Uint32& flags ) {
 	if ( mLocked || NULL == mFont )
 		return 1;
@@ -548,6 +591,7 @@ Uint32 UICodeEditor::onMouseDoubleClick( const Vector2i&, const Uint32& flags ) 
 	if ( flags & EE_BUTTON_LMASK ) {
 		mDoc.selectWord();
 		mLastDoubleClick.restart();
+		checkColorPickerAction();
 	}
 	return 1;
 }
@@ -1004,6 +1048,14 @@ void UICodeEditor::setSelectionMatchColor( const Color& highlightSelectionMatchC
 	}
 }
 
+const bool& UICodeEditor::getEnableColorPickerOnSelection() const {
+	return mEnableColorPickerOnSelection;
+}
+
+void UICodeEditor::setEnableColorPickerOnSelection( const bool& enableColorPickerOnSelection ) {
+	mEnableColorPickerOnSelection = enableColorPickerOnSelection;
+}
+
 void UICodeEditor::checkMatchingBrackets() {
 	if ( mHighlightMatchingBracket ) {
 		mMatchingBrackets = TextRange();
@@ -1375,7 +1427,7 @@ void UICodeEditor::registerKeybindings() {
 		{{KEY_UP, 0}, "move-to-previous-line"},
 		{{KEY_DOWN, KEYMOD_CTRL | KEYMOD_SHIFT}, "move-lines-down"},
 		{{KEY_DOWN, KEYMOD_CTRL}, "move-scroll-down"},
-								  {{KEY_DOWN, KEYMOD_SHIFT}, "select-to-next-line"},
+		{{KEY_DOWN, KEYMOD_SHIFT}, "select-to-next-line"},
 		{{KEY_DOWN, 0}, "move-to-next-line"},
 		{{KEY_LEFT, KEYMOD_CTRL | KEYMOD_SHIFT}, "select-to-previous-word"},
 		{{KEY_LEFT, KEYMOD_CTRL}, "move-to-previous-word"},

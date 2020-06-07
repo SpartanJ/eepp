@@ -151,7 +151,7 @@ Uint32 UIMenu::add( UIWidget* widget ) {
 
 	mItems.push_back( widget );
 
-	widget->addEventListener( Event::OnSizeChange, [&]( const Event* event ) {
+	widget->addEventListener( Event::OnSizeChange, [&]( const Event* ) {
 		if ( !mResizing ) {
 			widgetsSetPos();
 			widgetsResize();
@@ -182,7 +182,7 @@ Uint32 UIMenu::addSeparator() {
 
 	resizeMe();
 
-	separator->addEventListener( Event::OnSizeChange, [&]( const Event* event ) {
+	separator->addEventListener( Event::OnSizeChange, [&]( const Event* ) {
 		if ( !mResizing ) {
 			widgetsSetPos();
 			widgetsResize();

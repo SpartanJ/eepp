@@ -160,6 +160,10 @@ class EE_API Color : public tColor<Uint8> {
 
 	std::string toHexString( const bool& prependHash = true ) const;
 
+	std::string toRgbaString() const;
+
+	std::string toRgbString() const;
+
 	Color& blendAlpha( const Uint8& alpha );
 
 	static Color fromHsl( const Colorf& hsl );

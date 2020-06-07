@@ -59,6 +59,14 @@ bool String::isLetter( const int& value ) {
 			 ( value != 215 ) && ( value != 247 ) );
 }
 
+bool String::isHexNotation( const std::string& value, const std::string& withPrefix ) {
+	if ( !withPrefix.empty() && !String::startsWith( value, withPrefix ) ) {
+		return false;
+	}
+	return value.find_first_not_of( "0123456789abcdefABCDEF", withPrefix.size() ) ==
+		   std::string::npos;
+}
+
 std::vector<String> String::split( const String& str, const Uint32& splitchar,
 								   const bool& pushEmptyString ) {
 	std::vector<String> tmp;

@@ -229,7 +229,18 @@ std::string Color::toHexString( const bool& prependHashtag ) const {
 	if ( prependHashtag )
 		stream << "#";
 	stream << std::setfill( '0' ) << std::setw( sizeof( Color ) * 2 ) << std::hex << getValue();
-	return stream.str();
+	std::string str = stream.str();
+	if ( this->a == 255 )
+		return str.substr( 0, 6 );
+	return str;
+}
+
+std::string Color::toRgbaString() const {
+	return String::format( "rgba(%d, %d, %d, %.2f)", r, g, b, a / 255.f );
+}
+
+std::string Color::toRgbString() const {
+	return String::format( "rgb(%d, %d, %d)", r, g, b );
 }
 
 Color& Color::blendAlpha( const Uint8& alpha ) {

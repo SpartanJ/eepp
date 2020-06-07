@@ -183,6 +183,7 @@ void App::applyColorScheme( const SyntaxColorScheme& colorScheme ) {
 UICodeEditor* App::createCodeEditor() {
 	UICodeEditor* codeEditor = UICodeEditor::New();
 	codeEditor->setFontSize( 11 );
+	codeEditor->setEnableColorPickerOnSelection( true );
 	codeEditor->setColorScheme( mColorSchemes[mCurrentColorScheme] );
 	codeEditor->getDocument().setCommand( "switch-to-previous-colorscheme", [&] {
 		auto it = mColorSchemes.find( mCurrentColorScheme );
@@ -477,6 +478,7 @@ void App::setAppTitle( const std::string& title ) {
 void App::loadFileFromPath( const std::string& path, UICodeEditor* codeEditor ) {
 	if ( NULL == codeEditor )
 		codeEditor = mCurEditor;
+	codeEditor->setColorScheme( mColorSchemes[mCurrentColorScheme] );
 	codeEditor->loadFromFile( path );
 	updateEditorTitle( codeEditor );
 }
@@ -501,7 +503,7 @@ void App::openFileDialog() {
 		}
 	} );
 	TGDialog->addEventListener( Event::OnWindowClose, [&]( const Event* ) {
-		if ( mCurEditor )
+		if ( mCurEditor && !SceneManager::instance()->isShootingDown() )
 			mCurEditor->setFocus();
 	} );
 	TGDialog->center();
@@ -583,6 +585,12 @@ void App::findAndReplace( String find, String replace, const bool& caseSensitive
 		replaceSelection( replace );
 	} else {
 		findNextText( find, caseSensitive );
+	}
+}
+
+void App::runCommand( const std::string& command ) {
+	if ( mCurEditor ) {
+		mCurEditor->getDocument().execute( command );
 	}
 }
 
@@ -731,6 +739,64 @@ App::~App() {
 	eeSAFE_DELETE( mConsole );
 }
 
+void App::createSettingsMenu() {
+	mSettingsMenu = UIPopUpMenu::New();
+	mSettingsMenu->add( "New" );
+	mSettingsMenu->add( "Open..." );
+	mSettingsMenu->addSeparator();
+	mSettingsMenu->add( "Save" );
+	mSettingsMenu->add( "Save as..." );
+	mSettingsMenu->addSeparator();
+	mSettingsMenu->addSubMenu( "Color Scheme", NULL, createColorSchemeMenu() );
+	mSettingsMenu->addSeparator();
+	mSettingsMenu->add( "Close" );
+	mSettingsMenu->addSeparator();
+	mSettingsMenu->add( "Quit" );
+	mSettingsButton = mUISceneNode->find<UITextView>( "settings" );
+	mSettingsButton->addEventListener( Event::MouseClick, [&]( const Event* ) {
+		Vector2f pos( mSettingsButton->getPixelsPosition() );
+		mSettingsButton->nodeToWorldTranslation( pos );
+		UIMenu::fixMenuPos( pos, mSettingsMenu );
+		mSettingsMenu->setPixelsPosition( pos );
+		mSettingsMenu->show();
+	} );
+	mSettingsMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
+		const String& name = event->getNode()->asType<UIMenuItem>()->getText();
+		if ( name == "New" ) {
+			runCommand( "create-new" );
+		} else if ( name == "Open..." ) {
+			runCommand( "open-file" );
+		} else if ( name == "Save" ) {
+			runCommand( "save-doc" );
+		} else if ( name == "Save as..." ) {
+
+		} else if ( name == "Close" ) {
+			runCommand( "close-doc" );
+		} else if ( name == "Quit" ) {
+			runCommand( "close-app" );
+		}
+	} );
+}
+
+UIMenu* App::createColorSchemeMenu() {
+	UIPopUpMenu* colorSchemeMenu = UIPopUpMenu::New();
+	for ( auto& colorScheme : mColorSchemes ) {
+		colorSchemeMenu->addCheckBox( colorScheme.first, mCurrentColorScheme == colorScheme.first );
+	}
+	colorSchemeMenu->addEventListener(
+		Event::OnItemClicked, [&, colorSchemeMenu]( const Event* event ) {
+			UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
+			const String& name = item->getText();
+			mCurrentColorScheme = name;
+			applyColorScheme( mColorSchemes[mCurrentColorScheme] );
+			for ( size_t i = 0; i < colorSchemeMenu->getCount(); i++ ) {
+				UIMenuCheckBox* menuItem = colorSchemeMenu->getItem( i )->asType<UIMenuCheckBox>();
+				menuItem->setActive( mCurrentColorScheme == menuItem->getText() );
+			}
+		} );
+	return colorSchemeMenu;
+}
+
 void App::init( const std::string& file ) {
 	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
 	Display* currentDisplay = displayManager->getDisplayIndex( 0 );
@@ -769,14 +835,18 @@ void App::init( const std::string& file ) {
 		Font* fontMono =
 			FontTrueType::New( "monospace", resPath + "assets/fonts/DejaVuSansMono.ttf" );
 
-		mUISceneNode->getUIThemeManager()->setDefaultFont( font );
+		FontTrueType::New( "icon", resPath + "assets/fonts/remixicon.ttf" );
 
 		SceneManager::instance()->add( mUISceneNode );
 
-		StyleSheetParser cssParser;
-		if ( cssParser.loadFromFile( resPath + "assets/ui/breeze.css" ) ) {
-			mUISceneNode->setStyleSheet( cssParser.getStyleSheet() );
-		}
+		UITheme* theme =
+			UITheme::load( "uitheme", "uitheme", "", font, resPath + "assets/ui/breeze.css" );
+		mUISceneNode->setStyleSheet( theme->getStyleSheet() );
+		mUISceneNode->getUIThemeManager()
+			->setDefaultEffectsEnabled( true )
+			->setDefaultTheme( theme )
+			->setDefaultFont( font )
+			->add( theme );
 
 		auto colorSchemes =
 			SyntaxColorScheme::loadFromFile( resPath + "assets/colorschemes/colorschemes.conf" );
@@ -815,7 +885,19 @@ void App::init( const std::string& file ) {
 		.close_button:hover {
 			background-color: var(--icon-back-alert);
 		}
+		#settings {
+			color: #eff0f188;
+			font-family: icon;
+			font-size: 16dp;
+			margin-top: 2dp;
+			margin-right: 22dp;
+			transition: all 0.15s;
+		}
+		#settings:hover {
+			color: var(--primary);
+		}
 		</style>
+		<RelativeLayout layout_width="match_parent" layout_height="match_parent">
 		<vbox layout_width="match_parent" layout_height="match_parent">
 			<vbox id="code_container" layout_width="match_parent" layout_height="0" layout_weight="1">
 			</vbox>
@@ -845,6 +927,8 @@ void App::init( const std::string& file ) {
 				</vbox>
 			</searchbar>
 		</vbox>
+		<TextView id="settings" layout_width="wrap_content" layout_height="wrap_content" text="&#xf0e9;" layout_gravity="top|right" />
+		</RelativeLayout>
 		)xml";
 
 		UIWidgetCreator::registerWidget( "searchbar", [] { return UISearchBar::New(); } );
@@ -854,6 +938,7 @@ void App::init( const std::string& file ) {
 		mSearchBarLayout->setVisible( false )->setEnabled( false );
 		initSearchBar();
 
+		createSettingsMenu();
 		createEditorWithTabWidget( mBaseLayout );
 
 		if ( !file.empty() ) {

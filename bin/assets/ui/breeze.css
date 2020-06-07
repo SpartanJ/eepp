@@ -654,7 +654,7 @@ Menu::Separator {
 Menu::SubMenu::Arrow {
 	width: 16dp;
 	height: 16dp;
-	foreground-image: poly(line, var(--icon), "-7dp -5dp, -2dp 0dp"), poly(line, var(--icon), "-7dp 5dp, -2dp 0dp");
+	foreground-image: poly(line, var(--icon), "5dp 3dp, 10dp 8dp"), poly(line, var(--icon), "5dp 13dp, 10dp 8dp");
 }
 
 Menu::Item::icon,

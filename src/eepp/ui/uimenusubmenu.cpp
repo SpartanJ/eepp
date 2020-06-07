@@ -19,12 +19,11 @@ UIMenuSubMenu::UIMenuSubMenu() :
 	mArrow = UIWidget::NewWithTag( getElementTag() + "::arrow" );
 	mArrow->setParent( this );
 	mArrow->setFlags( UI_AUTO_SIZE );
+	applyDefaultTheme();
+	mArrow->addEventListener( Event::OnSizeChange, [&]( const Event* ) { onSizeChange(); } );
+	mArrow->addEventListener( Event::OnMarginChange, [&]( const Event* ) { onSizeChange(); } );
 	mArrow->setVisible( true );
 	mArrow->setEnabled( false );
-	mArrow->addEventListener( Event::OnMarginChange,
-							  [&]( const Event* event ) { onSizeChange(); } );
-
-	applyDefaultTheme();
 }
 
 UIMenuSubMenu::~UIMenuSubMenu() {}
@@ -41,7 +40,11 @@ void UIMenuSubMenu::setTheme( UITheme* Theme ) {
 	UIMenuItem::setTheme( Theme );
 
 	mArrow->setThemeSkin( "menuarrow" );
-	mArrow->setSize( mArrow->getSkinSize() );
+
+	Sizef skinSize( mArrow->getSkinSize() );
+	if ( skinSize != Sizef::Zero ) {
+		mArrow->setSize( skinSize );
+	}
 
 	onStateChange();
 

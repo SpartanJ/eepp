@@ -94,6 +94,9 @@ class EE_API String {
 	/** @return If the value passed is a letter */
 	static bool isLetter( const int& value );
 
+	/** @return If the string is a representation of a hexa number */
+	static bool isHexNotation( const std::string& value, const std::string& withPrefix = "" );
+
 	/** Split a String and hold it on a vector */
 	static std::vector<String> split( const String& str, const Uint32& splitchar = '\n',
 									  const bool& pushEmptyString = false );

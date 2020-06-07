@@ -211,6 +211,7 @@ UITextView* UITextView::setFontColor( const Color& color ) {
 		mFontStyleConfig.FontColor = color;
 		Color newColor( color.r, color.g, color.b, color.a * mAlpha / 255.f );
 		mTextCache->setFillColor( newColor );
+		invalidateDraw();
 	}
 
 	return this;
