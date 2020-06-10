@@ -158,7 +158,7 @@ UICommonDialog::UICommonDialog( Uint32 CDLFlags, std::string DefaultFilePattern,
 UICommonDialog::~UICommonDialog() {}
 
 void UICommonDialog::onWindowReady() {
-	refreshFolder();
+	updateClickStep();
 }
 
 Uint32 UICommonDialog::getType() const {
@@ -240,13 +240,17 @@ void UICommonDialog::refreshFolder() {
 
 	mList->addListBoxItems( files );
 
+	updateClickStep();
+
+	mList->setFocus();
+}
+
+void UICommonDialog::updateClickStep() {
 	if ( NULL != mList->getVerticalScrollBar() ) {
 		mList->getVerticalScrollBar()->setClickStep(
 			1.f / ( ( mList->getCount() * mList->getRowHeight() ) /
 					(Float)mList->getSize().getHeight() ) );
 	}
-
-	mList->setFocus();
 }
 
 void UICommonDialog::openSaveClick() {

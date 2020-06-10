@@ -23,7 +23,11 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
   public:
 	static UICodeEditor* New();
 
-	UICodeEditor();
+	static UICodeEditor* NewOpt( const bool& autoRegisterBaseCommands,
+								 const bool& autoRegisterBaseKeybindings );
+
+	UICodeEditor( const bool& autoRegisterBaseCommands = true,
+				  const bool& autoRegisterBaseKeybindings = true );
 
 	virtual ~UICodeEditor();
 
@@ -211,6 +215,41 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void setEnableColorPickerOnSelection( const bool& enableColorPickerOnSelection );
 
+	/** Doc commands executed in this editor. */
+	TextPosition moveToLineOffset( const TextPosition& position, int offset );
+
+	void moveToPreviousLine();
+
+	void moveToNextLine();
+
+	void selectToPreviousLine();
+
+	void selectToNextLine();
+
+	void registerKeybindings();
+
+	void registerCommands();
+
+	void moveScrollUp();
+
+	void moveScrollDown();
+
+	void indent();
+
+	void unindent();
+
+	void copy();
+
+	void cut();
+
+	void paste();
+
+	void fontSizeGrow();
+
+	void fontSizeShrink();
+
+	void fontSizeReset();
+	/** Doc commands executed in this editor. */
   protected:
 	struct LastXOffset {
 		TextPosition position;
@@ -332,40 +371,6 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Sizef getMaxScroll() const;
 
 	void updateScrollBar();
-
-	TextPosition moveToLineOffset( const TextPosition& position, int offset );
-
-	void moveToPreviousLine();
-
-	void moveToNextLine();
-
-	void selectToPreviousLine();
-
-	void selectToNextLine();
-
-	void registerKeybindings();
-
-	void registerCommands();
-
-	void moveScrollUp();
-
-	void moveScrollDown();
-
-	void indent();
-
-	void unindent();
-
-	void copy();
-
-	void cut();
-
-	void paste();
-
-	void fontSizeGrow();
-
-	void fontSizeShrink();
-
-	void fontSizeReset();
 
 	void checkColorPickerAction();
 

@@ -498,19 +498,26 @@ void WindowSDL::setTitle( const std::string& title ) {
 }
 
 bool WindowSDL::isActive() {
-	Uint32 flags = 0;
-
-	flags = SDL_GetWindowFlags( mSDLWindow );
-
+	Uint32 flags = SDL_GetWindowFlags( mSDLWindow );
 	return 0 != ( ( flags & SDL_WINDOW_INPUT_FOCUS ) && ( flags & SDL_WINDOW_MOUSE_FOCUS ) );
 }
 
 bool WindowSDL::isVisible() {
-	Uint32 flags = 0;
-
-	flags = SDL_GetWindowFlags( mSDLWindow );
-
+	Uint32 flags = SDL_GetWindowFlags( mSDLWindow );
 	return 0 != ( ( flags & SDL_WINDOW_SHOWN ) && !( flags & SDL_WINDOW_MINIMIZED ) );
+}
+
+bool WindowSDL::hasFocus() {
+	return 0 != ( SDL_GetWindowFlags( mSDLWindow ) &
+				  ( SDL_WINDOW_INPUT_FOCUS | SDL_WINDOW_MOUSE_FOCUS ) );
+}
+
+bool WindowSDL::hasInputFocus() {
+	return 0 != ( SDL_GetWindowFlags( mSDLWindow ) & ( SDL_WINDOW_INPUT_FOCUS ) );
+}
+
+bool WindowSDL::hasMouseFocus() {
+	return 0 != ( SDL_GetWindowFlags( mSDLWindow ) & ( SDL_WINDOW_MOUSE_FOCUS ) );
 }
 
 void WindowSDL::onWindowResize( Uint32 Width, Uint32 Height ) {

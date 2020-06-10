@@ -252,17 +252,20 @@ UIColorPicker::UIColorPicker( UIWindow* attachTo, const UIColorPicker::ColorPick
 	if ( NULL != mUIWindow && mUIWindow->isModal() ) {
 		if ( mModalAlpha != 0.f ) {
 			mUIWindow->getModalControl()->setBackgroundColor( Color( 0, 0, 0, mModalAlpha ) );
-			mUIWindow->getModalControl()->runAction( Actions::Fade::New(
-				0.f, mModalAlpha,
-				mRoot->getUISceneNode()->getUIThemeManager()->getControlsFadeOutTime() ) );
+
+			if ( mRoot->getUISceneNode()->getUIThemeManager()->getDefaultEffectsEnabled() ) {
+				mUIWindow->getModalControl()->runAction( Actions::Fade::New(
+					0.f, mModalAlpha,
+					mRoot->getUISceneNode()->getUIThemeManager()->getControlsFadeOutTime() ) );
+			}
 		}
-		mUIWindow->getModalControl()->addEventListener(
-			Event::MouseClick, [&]( const Event* ) {
-				if ( mModalAlpha != 0.f )
-					mUIWindow->getModalControl()->runAction( Actions::FadeOut::New(
-						mRoot->getUISceneNode()->getUIThemeManager()->getControlsFadeOutTime() ) );
-				mUIWindow->closeWindow();
-			} );
+		mUIWindow->getModalControl()->addEventListener( Event::MouseClick, [&]( const Event* ) {
+			if ( mModalAlpha != 0.f &&
+				 mRoot->getUISceneNode()->getUIThemeManager()->getDefaultEffectsEnabled() )
+				mUIWindow->getModalControl()->runAction( Actions::FadeOut::New(
+					mRoot->getUISceneNode()->getUIThemeManager()->getControlsFadeOutTime() ) );
+			mUIWindow->closeWindow();
+		} );
 	}
 
 	mRoot->bind( "color_picker_rect", mColorPicker );

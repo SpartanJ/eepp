@@ -178,6 +178,7 @@ void App::applyColorScheme( const SyntaxColorScheme& colorScheme ) {
 				colorScheme );
 		}
 	}
+	updateColorSchemeMenu();
 }
 
 UICodeEditor* App::createCodeEditor() {
@@ -188,11 +189,11 @@ UICodeEditor* App::createCodeEditor() {
 	codeEditor->getDocument().setCommand( "switch-to-previous-colorscheme", [&] {
 		auto it = mColorSchemes.find( mCurrentColorScheme );
 		auto prev = std::prev( it, 1 );
-		if ( prev != mColorSchemes.end() )
-			mCurrentColorScheme = prev->first;
-		else
-			mCurrentColorScheme = mColorSchemes.rbegin()->first;
-		applyColorScheme( mColorSchemes[mCurrentColorScheme] );
+		if ( prev != mColorSchemes.end() ) {
+			setColorScheme( prev->first );
+		} else {
+			setColorScheme( mColorSchemes.rbegin()->first );
+		}
 	} );
 	codeEditor->getDocument().setCommand( "switch-to-next-colorscheme", [&] {
 		auto it = mColorSchemes.find( mCurrentColorScheme );
@@ -272,6 +273,7 @@ UICodeEditor* App::createCodeEditor() {
 	codeEditor->addKeyBindingString( "f3", "repeat-find", false );
 	codeEditor->addKeyBindingString( "f12", "console-toggle", true );
 	codeEditor->addKeyBindingString( "alt+return", "fullscreen-toggle", true );
+	codeEditor->addKeyBindingString( "alt+keypad enter", "fullscreen-toggle", true );
 	codeEditor->addKeyBindingString( "ctrl+s", "save-doc", false );
 	codeEditor->addKeyBindingString( "ctrl+f", "find", false );
 	codeEditor->addKeyBindingString( "ctrl+q", "close-app", true );
@@ -703,7 +705,7 @@ void App::mainLoop() {
 		mConsole->draw();
 		mWindow->display();
 	} else {
-		Sys::sleep( Milliseconds( mWindow->isVisible() ? 1 : 16 ) );
+		Sys::sleep( Milliseconds( mWindow->hasFocus() ? 1 : 16 ) );
 	}
 }
 
@@ -778,23 +780,32 @@ void App::createSettingsMenu() {
 	} );
 }
 
-UIMenu* App::createColorSchemeMenu() {
-	UIPopUpMenu* colorSchemeMenu = UIPopUpMenu::New();
-	for ( auto& colorScheme : mColorSchemes ) {
-		colorSchemeMenu->addCheckBox( colorScheme.first, mCurrentColorScheme == colorScheme.first );
+void App::setColorScheme( const std::string& name ) {
+	if ( name != mCurrentColorScheme ) {
+		mCurrentColorScheme = name;
+		applyColorScheme( mColorSchemes[mCurrentColorScheme] );
 	}
-	colorSchemeMenu->addEventListener(
-		Event::OnItemClicked, [&, colorSchemeMenu]( const Event* event ) {
-			UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
-			const String& name = item->getText();
-			mCurrentColorScheme = name;
-			applyColorScheme( mColorSchemes[mCurrentColorScheme] );
-			for ( size_t i = 0; i < colorSchemeMenu->getCount(); i++ ) {
-				UIMenuCheckBox* menuItem = colorSchemeMenu->getItem( i )->asType<UIMenuCheckBox>();
-				menuItem->setActive( mCurrentColorScheme == menuItem->getText() );
-			}
-		} );
-	return colorSchemeMenu;
+}
+
+void App::updateColorSchemeMenu() {
+	for ( size_t i = 0; i < mColorSchemeMenu->getCount(); i++ ) {
+		UIMenuCheckBox* menuItem = mColorSchemeMenu->getItem( i )->asType<UIMenuCheckBox>();
+		menuItem->setActive( mCurrentColorScheme == menuItem->getText() );
+	}
+}
+
+UIMenu* App::createColorSchemeMenu() {
+	mColorSchemeMenu = UIPopUpMenu::New();
+	for ( auto& colorScheme : mColorSchemes ) {
+		mColorSchemeMenu->addCheckBox( colorScheme.first,
+									   mCurrentColorScheme == colorScheme.first );
+	}
+	mColorSchemeMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
+		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
+		const String& name = item->getText();
+		setColorScheme( name );
+	} );
+	return mColorSchemeMenu;
 }
 
 void App::init( const std::string& file ) {
@@ -839,14 +850,13 @@ void App::init( const std::string& file ) {
 
 		SceneManager::instance()->add( mUISceneNode );
 
-		UITheme* theme =
-			UITheme::load( "uitheme", "uitheme", "", font, resPath + "assets/ui/breeze.css" );
-		mUISceneNode->setStyleSheet( theme->getStyleSheet() );
+		mTheme = UITheme::load( "uitheme", "uitheme", "", font, resPath + "assets/ui/breeze.css" );
+		mUISceneNode->setStyleSheet( mTheme->getStyleSheet() );
 		mUISceneNode->getUIThemeManager()
 			->setDefaultEffectsEnabled( true )
-			->setDefaultTheme( theme )
+			->setDefaultTheme( mTheme )
 			->setDefaultFont( font )
-			->add( theme );
+			->add( mTheme );
 
 		auto colorSchemes =
 			SyntaxColorScheme::loadFromFile( resPath + "assets/colorschemes/colorschemes.conf" );
@@ -889,7 +899,7 @@ void App::init( const std::string& file ) {
 			color: #eff0f188;
 			font-family: icon;
 			font-size: 16dp;
-			margin-top: 2dp;
+			margin-top: 6dp;
 			margin-right: 22dp;
 			transition: all 0.15s;
 		}

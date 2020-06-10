@@ -457,9 +457,19 @@ void UISceneNode::update( const Time& elapsed ) {
 	// ready before being drawn. Also the reverse case could happen, we need to have the styles and
 	// layouts updated before and after the update to avoid weird issues. The cost of doing this is
 	// minimal and the benefit is huge and simplifies implementation.
-	updateDirtyStyles();
-	updateDirtyStyleStates();
-	updateDirtyLayouts();
+	// invalidationDepth allows to retry to apply any pending state as many times as set.
+	// This is required in some very edge cases where widgets are being created during the update
+	// of any of these 3 steps. Usually during the layout update, this could trigger resizes that
+	// provokes the creation of dynamic elements. This is the case of the UIListBox for example
+	// that creates childs dynamically only when they are visible.
+	int invalidationDepth = 2;
+	while ( ( !mDirtyStyle.empty() || !mDirtyStyleState.empty() || !mDirtyLayouts.empty() ) &&
+			invalidationDepth > 0 ) {
+		updateDirtyStyles();
+		updateDirtyStyleStates();
+		updateDirtyLayouts();
+		invalidationDepth--;
+	}
 
 	SceneManager::instance()->setCurrentUISceneNode( uiSceneNode );
 }

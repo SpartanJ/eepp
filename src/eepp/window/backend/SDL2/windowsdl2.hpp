@@ -35,6 +35,12 @@ class EE_API WindowSDL : public Window {
 
 	bool isVisible();
 
+	bool hasFocus();
+
+	bool hasInputFocus();
+
+	bool hasMouseFocus();
+
 	void setSize( Uint32 Width, Uint32 Height, bool isWindowed );
 
 	std::vector<DisplayMode> getDisplayModes() const;

@@ -474,11 +474,11 @@ void UIWindow::closeWindow() {
 	if ( NULL != mButtonMinimize )
 		mButtonMinimize->setEnabled( false );
 
-	if ( Time::Zero != getUISceneNode()->getUIThemeManager()->getControlsFadeOutTime() ) {
-		runAction( Actions::Sequence::New(
-			Actions::FadeOut::New(
-				getUISceneNode()->getUIThemeManager()->getControlsFadeOutTime() ),
-			Actions::Close::New() ) );
+	UIThemeManager* themeManager = getUISceneNode()->getUIThemeManager();
+	if ( themeManager->getDefaultEffectsEnabled() ) {
+		runAction(
+			Actions::Sequence::New( Actions::FadeOut::New( themeManager->getControlsFadeOutTime() ),
+									Actions::Close::New() ) );
 	} else {
 		close();
 	}
@@ -1060,10 +1060,12 @@ bool UIWindow::show() {
 
 		setFocus();
 
-		runAction( Actions::Fade::New(
-			mStyleConfig.BaseAlpha == getAlpha() ? 0.f : mAlpha, mStyleConfig.BaseAlpha,
-			getUISceneNode()->getUIThemeManager()->getControlsFadeOutTime() ) );
-
+		UIThemeManager* themeManager = getUISceneNode()->getUIThemeManager();
+		if ( themeManager->getDefaultEffectsEnabled() ) {
+			runAction( Actions::Fade::New( mStyleConfig.BaseAlpha == getAlpha() ? 0.f : mAlpha,
+										   mStyleConfig.BaseAlpha,
+										   themeManager->getControlsFadeOutTime() ) );
+		}
 		setupModal();
 
 		return true;
@@ -1076,10 +1078,10 @@ bool UIWindow::show() {
 
 bool UIWindow::hide() {
 	if ( isVisible() ) {
-		if ( getUISceneNode()->getUIThemeManager()->getDefaultEffectsEnabled() ) {
+		UIThemeManager* themeManager = getUISceneNode()->getUIThemeManager();
+		if ( themeManager->getDefaultEffectsEnabled() ) {
 			runAction( Actions::Sequence::New(
-				Actions::FadeOut::New(
-					getUISceneNode()->getUIThemeManager()->getControlsFadeOutTime() ),
+				Actions::FadeOut::New( themeManager->getControlsFadeOutTime() ),
 				Actions::Spawn::New( Actions::Disable::New(), Actions::Visible::New( false ) ) ) );
 		} else {
 			setEnabled( false );

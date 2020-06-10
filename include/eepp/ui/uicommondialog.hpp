@@ -114,6 +114,8 @@ class EE_API UICommonDialog : public UIWindow {
 	void openFileOrFolder();
 
 	void goFolderUp();
+
+	void updateClickStep();
 };
 
 }} // namespace EE::UI

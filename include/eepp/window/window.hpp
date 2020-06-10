@@ -200,11 +200,21 @@ class EE_API Window {
 	/** Set as current context the default context ( the context used for the window creation ) */
 	virtual void setDefaultContext();
 
-	/** @return If the current window is active */
+	/** @return If the current window is active. This means that the window hasInputFocus() and
+	 * hasMouseFocus(). */
 	virtual bool isActive() = 0;
 
 	/** @return If the current window is visible */
 	virtual bool isVisible() = 0;
+
+	/** @return If the current window has focus (same as hasInputFocus() or(||) hasMouseFocus()) */
+	virtual bool hasFocus() = 0;
+
+	/** @return If the current window has input focus */
+	virtual bool hasInputFocus() = 0;
+
+	/** @return If the current window has input focus */
+	virtual bool hasMouseFocus() = 0;
 
 	/** Set the size of the window for a windowed window */
 	virtual void setSize( Uint32 Width, Uint32 Height );

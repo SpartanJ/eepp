@@ -92,6 +92,7 @@ class App {
 	void findAndReplace( String find, String replace, const bool& caseSensitive );
 
 	void runCommand( const std::string& command );
+
   protected:
 	EE::Window::Window* mWindow{NULL};
 	UISceneNode* mUISceneNode{NULL};
@@ -107,6 +108,8 @@ class App {
 	std::string mCurrentColorScheme;
 	UIPopUpMenu* mSettingsMenu;
 	UITextView* mSettingsButton;
+	UIPopUpMenu* mColorSchemeMenu;
+	UITheme* mTheme;
 
 	void onFileDropped( String file );
 
@@ -135,6 +138,10 @@ class App {
 	void createSettingsMenu();
 
 	UIMenu* createColorSchemeMenu();
+
+	void updateColorSchemeMenu();
+
+	void setColorScheme( const std::string& name );
 };
 
 #endif // EE_TOOLS_CODEEDITOR_HPP

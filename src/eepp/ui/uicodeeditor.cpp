@@ -19,10 +19,16 @@ using namespace EE::UI::Tools;
 namespace EE { namespace UI {
 
 UICodeEditor* UICodeEditor::New() {
-	return eeNew( UICodeEditor, () );
+	return eeNew( UICodeEditor, ( true, true ) );
 }
 
-UICodeEditor::UICodeEditor() :
+UICodeEditor* UICodeEditor::NewOpt( const bool& autoRegisterBaseCommands,
+									const bool& autoRegisterBaseKeybindings ) {
+	return eeNew( UICodeEditor, ( autoRegisterBaseCommands, autoRegisterBaseKeybindings ) );
+}
+
+UICodeEditor::UICodeEditor( const bool& autoRegisterBaseCommands,
+							const bool& autoRegisterBaseKeybindings ) :
 	UIWidget( "codeeditor" ),
 	mFont( FontManager::instance()->getByName( "monospace" ) ),
 	mDirtyEditor( false ),
@@ -64,8 +70,10 @@ UICodeEditor::UICodeEditor() :
 	mDoc.registerClient( this );
 	subscribeScheduledUpdate();
 
-	registerCommands();
-	registerKeybindings();
+	if ( autoRegisterBaseCommands )
+		registerCommands();
+	if ( autoRegisterBaseKeybindings )
+		registerKeybindings();
 }
 
 UICodeEditor::~UICodeEditor() {
@@ -160,7 +168,7 @@ void UICodeEditor::draw() {
 }
 
 void UICodeEditor::scheduledUpdate( const Time& ) {
-	if ( hasFocus() && getUISceneNode()->getWindow()->isActive() ) {
+	if ( hasFocus() && getUISceneNode()->getWindow()->hasFocus() ) {
 		if ( mBlinkTimer.getElapsedTime().asSeconds() > 0.5f ) {
 			mCursorVisible = !mCursorVisible;
 			mBlinkTimer.restart();
