@@ -4,7 +4,7 @@
 #include <eepp/ui/tools/textureatlaseditor.hpp>
 #include <eepp/ui/tools/textureatlasnew.hpp>
 #include <eepp/ui/tools/textureatlastextureregioneditor.hpp>
-#include <eepp/ui/uicommondialog.hpp>
+#include <eepp/ui/uifiledialog.hpp>
 #include <eepp/ui/uimenuitem.hpp>
 #include <eepp/ui/uimessagebox.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
@@ -293,8 +293,8 @@ void TextureAtlasEditor::fileMenuClick( const Event* Event ) {
 	if ( "New..." == txt ) {
 		eeNew( TextureAtlasNew, ( cb::Make1( this, &TextureAtlasEditor::onTextureAtlasCreate ) ) );
 	} else if ( "Open..." == txt ) {
-		UICommonDialog* TGDialog = UICommonDialog::New(
-			UI_CDL_DEFAULT_FLAGS, std::string( "*" ) + EE_TEXTURE_ATLAS_EXTENSION );
+		UIFileDialog* TGDialog = UIFileDialog::New(
+			UIFileDialog::DefaultFlags, std::string( "*" ) + EE_TEXTURE_ATLAS_EXTENSION );
 		TGDialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 		TGDialog->setTitle( "Open Texture Atlas" );
 		TGDialog->addEventListener( Event::OpenFile,
@@ -448,7 +448,7 @@ void TextureAtlasEditor::openTextureAtlas( const Event* Event ) {
 	eeSAFE_DELETE( mTextureAtlasLoader );
 
 	mTextureAtlasLoader = TextureAtlasLoader::New(
-		Event->getNode()->asType<UICommonDialog>()->getFullPath(), Engine::instance()->isThreaded(),
+		Event->getNode()->asType<UIFileDialog>()->getFullPath(), Engine::instance()->isThreaded(),
 		cb::Make1( this, &TextureAtlasEditor::onTextureAtlasLoaded ) );
 }
 

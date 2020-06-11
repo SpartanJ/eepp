@@ -1083,7 +1083,7 @@ void MapEditor::updateScroll() {
 }
 
 void MapEditor::mapOpen( const Event* Event ) {
-	UICommonDialog* CDL = Event->getNode()->asType<UICommonDialog>();
+	UIFileDialog* CDL = Event->getNode()->asType<UIFileDialog>();
 
 	if ( mUIMap->Map()->loadFromFile( CDL->getFullPath() ) ) {
 		onMapLoad();
@@ -1103,7 +1103,7 @@ void MapEditor::onMapLoad() {
 }
 
 void MapEditor::mapSave( const Event* Event ) {
-	UICommonDialog* CDL = Event->getNode()->asType<UICommonDialog>();
+	UIFileDialog* CDL = Event->getNode()->asType<UIFileDialog>();
 
 	std::string path( CDL->getFullPath() );
 
@@ -1123,15 +1123,15 @@ void MapEditor::fileMenuClick( const Event* Event ) {
 	if ( "New..." == txt ) {
 		createNewMap();
 	} else if ( "Open..." == txt ) {
-		UICommonDialog* TGDialog = UICommonDialog::New( UI_CDL_DEFAULT_FLAGS, "*.eem" );
+		UIFileDialog* TGDialog = UIFileDialog::New( UIFileDialog::DefaultFlags, "*.eem" );
 		TGDialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 		TGDialog->setTitle( "Open Map" );
 		TGDialog->addEventListener( Event::OpenFile, cb::Make1( this, &MapEditor::mapOpen ) );
 		TGDialog->center();
 		TGDialog->show();
 	} else if ( "Save As..." == txt ) {
-		UICommonDialog* TGDialog =
-			UICommonDialog::New( UI_CDL_DEFAULT_FLAGS | CDL_FLAG_SAVE_DIALOG, "*.eem" );
+		UIFileDialog* TGDialog =
+			UIFileDialog::New( UIFileDialog::DefaultFlags | UIFileDialog::SaveDialog, "*.eem" );
 		TGDialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 		TGDialog->setTitle( "Save Map" );
 		TGDialog->addEventListener( Event::SaveFile, cb::Make1( this, &MapEditor::mapSave ) );
@@ -1265,8 +1265,8 @@ void MapEditor::mapMenuClick( const Event* Event ) {
 		tWin->center();
 		tWin->show();
 	} else if ( "Add External Texture Atlas..." == txt ) {
-		UICommonDialog* TGDialog = UICommonDialog::New(
-			UI_CDL_DEFAULT_FLAGS, std::string( "*" ) + EE_TEXTURE_ATLAS_EXTENSION );
+		UIFileDialog* TGDialog = UIFileDialog::New(
+			UIFileDialog::DefaultFlags, std::string( "*" ) + EE_TEXTURE_ATLAS_EXTENSION );
 		TGDialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 		TGDialog->setTitle( "Load Texture Atlas..." );
 		TGDialog->addEventListener( Event::OpenFile,
@@ -1380,7 +1380,7 @@ void MapEditor::refreshLayersList() {
 }
 
 void MapEditor::cextureAtlasOpen( const Event* Event ) {
-	UICommonDialog* CDL = Event->getNode()->asType<UICommonDialog>();
+	UIFileDialog* CDL = Event->getNode()->asType<UIFileDialog>();
 
 	std::string sgname =
 		FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( CDL->getFullPath() ) );

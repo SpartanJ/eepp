@@ -1,5 +1,5 @@
-#ifndef EE_UICUICOMMONDIALOG_HPP
-#define EE_UICUICOMMONDIALOG_HPP
+#ifndef EE_UI_UIFILEDIALOG_HPP
+#define EE_UI_UIFILEDIALOG_HPP
 
 #include <eepp/ui/base.hpp>
 #include <eepp/ui/uicombobox.hpp>
@@ -11,25 +11,25 @@
 
 namespace EE { namespace UI {
 
-enum UICommonDialogFlags {
-	CDL_FLAG_SAVE_DIALOG = ( 1 << 0 ),
-	CDL_FLAG_FOLDERS_FISRT = ( 1 << 1 ),
-	CDL_FLAG_SORT_ALPHABETICALLY = ( 1 << 2 ),
-	CDL_FLAG_ALLOW_FOLDER_SELECT = ( 1 << 3 )
-};
-
-static const Uint32 UI_CDL_DEFAULT_FLAGS = CDL_FLAG_FOLDERS_FISRT | CDL_FLAG_SORT_ALPHABETICALLY;
-
-class EE_API UICommonDialog : public UIWindow {
+class EE_API UIFileDialog : public UIWindow {
   public:
-	static UICommonDialog* New( Uint32 CDLFlags = UI_CDL_DEFAULT_FLAGS,
-								std::string DefaultFilePattern = "*",
-								std::string DefaultDirectory = Sys::getProcessPath() );
+	enum Flags {
+		SaveDialog = ( 1 << 0 ),
+		FoldersFirst = ( 1 << 1 ),
+		SortAlphabetically = ( 1 << 2 ),
+		AllowFolderSelect = ( 1 << 3 )
+	};
 
-	UICommonDialog( Uint32 CDLFlags = UI_CDL_DEFAULT_FLAGS, std::string DefaultFilePattern = "*",
-					std::string DefaultDirectory = Sys::getProcessPath() );
+	static const Uint32 DefaultFlags = FoldersFirst | SortAlphabetically;
 
-	virtual ~UICommonDialog();
+	static UIFileDialog* New( Uint32 dialogFlags = DefaultFlags,
+							  std::string defaultFilePattern = "*",
+							  std::string defaultDirectory = Sys::getProcessPath() );
+
+	UIFileDialog( Uint32 dialogFlags = DefaultFlags, std::string defaultFilePattern = "*",
+				  std::string defaultDirectory = Sys::getProcessPath() );
+
+	virtual ~UIFileDialog();
 
 	virtual Uint32 getType() const;
 
@@ -94,7 +94,7 @@ class EE_API UICommonDialog : public UIWindow {
 	UITextInput* mPath;
 	UITextInput* mFile;
 	UIDropDownList* mFiletype;
-	Uint32 mCDLFlags;
+	Uint32 mDialogFlags;
 	Uint32 mCloseWithKey;
 
 	virtual void onWindowReady();

@@ -1248,6 +1248,7 @@ void UICodeEditor::drawSelectionMatch( const std::pair<int, int>& lineRange,
 									   const Vector2f& startScroll, const Float& lineHeight ) {
 	if ( !mDoc.hasSelection() )
 		return;
+
 	Primitives primitives;
 	primitives.setForceDraw( false );
 	primitives.setColor( Color( mSelectionMatchColor ).blendAlpha( mAlpha ) );
@@ -1256,6 +1257,11 @@ void UICodeEditor::drawSelectionMatch( const std::pair<int, int>& lineRange,
 	const String& selectionLine = mDoc.line( selection.start().line() ).getText();
 	String text( selectionLine.substr( selection.start().column(),
 									   selection.end().column() - selection.start().column() ) );
+
+	if ( ( text[0] == '\t' && text.countChar( '\t' ) == text.size() ) ||
+		 ( text[0] == ' ' && text.countChar( ' ' ) == text.size() ) ) {
+		return;
+	}
 
 	for ( auto ln = lineRange.first; ln <= lineRange.second; ln++ ) {
 		const String& line = mDoc.line( ln ).getText();

@@ -143,7 +143,7 @@ class EETest : private Thread {
 	Clock mFTE;
 	Translator mTranslator;
 
-	void createCommonDialog();
+	void createFileDialog();
 	void onItemClick( const Event* Event );
 	void onMainClick( const Event* Event );
 	void onQuitClick( const Event* Event );

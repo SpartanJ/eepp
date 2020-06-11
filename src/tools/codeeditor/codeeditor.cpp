@@ -486,7 +486,7 @@ void App::loadFileFromPath( const std::string& path, UICodeEditor* codeEditor ) 
 }
 
 void App::openFileDialog() {
-	UICommonDialog* TGDialog = UICommonDialog::New( UI_CDL_DEFAULT_FLAGS, "*" );
+	UIFileDialog* TGDialog = UIFileDialog::New();
 	TGDialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 	TGDialog->setTitle( "Open layout..." );
 	TGDialog->setCloseWithKey( KEY_ESCAPE );
@@ -494,7 +494,7 @@ void App::openFileDialog() {
 		auto d = createCodeEditorInTabWidget( tabWidgetFromEditor( mCurEditor ) );
 		UITabWidget* tabWidget = d.first->getTabWidget();
 		UITab* addedTab = d.first;
-		loadFileFromPath( event->getNode()->asType<UICommonDialog>()->getFullPath(), d.second );
+		loadFileFromPath( event->getNode()->asType<UIFileDialog>()->getFullPath(), d.second );
 		tabWidget->setTabSelected( addedTab );
 		UITab* firstTab = tabWidget->getTab( 0 );
 		if ( addedTab != firstTab ) {
@@ -871,7 +871,7 @@ void App::init( const std::string& file ) {
 
 		mUISceneNode->getRoot()->addClass( "appbackground" );
 
-		std::string baseUI = R"xml(
+		const std::string baseUI = R"xml(
 		<style>
 		TextInput#search_find,
 		TextInput#search_replace {

@@ -2,7 +2,7 @@
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/ui/tools/textureatlasnew.hpp>
-#include <eepp/ui/uicommondialog.hpp>
+#include <eepp/ui/uifiledialog.hpp>
 #include <eepp/ui/uimessagebox.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uithememanager.hpp>
@@ -128,8 +128,8 @@ void TextureAtlasNew::okClick( const Event* event ) {
 		std::string ext( mSaveFileType->getText() );
 		String::toLowerInPlace( ext );
 
-		UICommonDialog* TGDialog =
-			UICommonDialog::New( UI_CDL_DEFAULT_FLAGS | CDL_FLAG_SAVE_DIALOG, "*." + ext );
+		UIFileDialog* TGDialog =
+			UIFileDialog::New( UIFileDialog::DefaultFlags | UIFileDialog::SaveDialog, "*." + ext );
 		TGDialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 		TGDialog->setTitle( "Save Texture Atlas" );
 		TGDialog->addEventListener( Event::SaveFile,
@@ -156,7 +156,7 @@ static bool isValidExtension( const std::string& ext ) {
 }
 
 void TextureAtlasNew::textureAtlasSave( const Event* Event ) {
-	std::string FPath( Event->getNode()->asType<UICommonDialog>()->getFullPath() );
+	std::string FPath( Event->getNode()->asType<UIFileDialog>()->getFullPath() );
 
 	if ( !FileSystem::isDirectory( FPath ) ) {
 		Int32 w = 0, h = 0, b;
@@ -206,8 +206,8 @@ void TextureAtlasNew::onDialogFolderSelect( const Event* event ) {
 	const MouseEvent* mouseEvent = reinterpret_cast<const MouseEvent*>( event );
 
 	if ( mouseEvent->getFlags() & EE_BUTTON_LMASK ) {
-		UICommonDialog* TGDialog =
-			UICommonDialog::New( UI_CDL_DEFAULT_FLAGS | CDL_FLAG_ALLOW_FOLDER_SELECT, "*" );
+		UIFileDialog* TGDialog =
+			UIFileDialog::New( UIFileDialog::DefaultFlags | UIFileDialog::AllowFolderSelect, "*" );
 		TGDialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 		TGDialog->setTitle( "Create Texture Atlas ( Select Folder Containing Textures )" );
 		TGDialog->addEventListener( Event::OpenFile,
@@ -218,7 +218,7 @@ void TextureAtlasNew::onDialogFolderSelect( const Event* event ) {
 }
 
 void TextureAtlasNew::onSelectFolder( const Event* Event ) {
-	UICommonDialog* CDL = Event->getNode()->asType<UICommonDialog>();
+	UIFileDialog* CDL = Event->getNode()->asType<UIFileDialog>();
 	UIMessageBox* MsgBox;
 	std::string FPath( CDL->getFullPath() );
 	FileSystem::dirPathAddSlashAtEnd( FPath );

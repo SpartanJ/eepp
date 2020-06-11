@@ -1038,8 +1038,8 @@ void EETest::createColorPicker( Node* node ) {
 	// mColorPicker->getUIWindow()->center();
 }
 
-void EETest::createCommonDialog() {
-	UICommonDialog* CDialog = UICommonDialog::New();
+void EETest::createFileDialog() {
+	UIFileDialog* CDialog = UIFileDialog::New();
 	CDialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON );
 	CDialog->addFilePattern( "*.hpp;*.cpp", true );
 	CDialog->center();
@@ -1237,7 +1237,7 @@ void EETest::onItemClick( const Event* event ) {
 	} else if ( "Multi Viewport" == txt ) {
 		MultiViewportMode = !MultiViewportMode;
 	} else if ( "Open..." == txt ) {
-		createCommonDialog();
+		createFileDialog();
 	} else if ( "New" == txt ) {
 		if ( 0 == Screen ) {
 			changeDemo( 0 );

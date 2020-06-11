@@ -7,7 +7,7 @@
 #include <eepp/maps/maplight.hpp>
 #include <eepp/ui/tools/textureatlaseditor.hpp>
 #include <eepp/ui/uicheckbox.hpp>
-#include <eepp/ui/uicommondialog.hpp>
+#include <eepp/ui/uifiledialog.hpp>
 #include <eepp/ui/uimenucheckbox.hpp>
 #include <eepp/ui/uimessagebox.hpp>
 #include <eepp/ui/uipopupmenu.hpp>

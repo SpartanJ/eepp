@@ -1,6 +1,6 @@
 #include <algorithm>
 #include <eepp/system/filesystem.hpp>
-#include <eepp/ui/uicommondialog.hpp>
+#include <eepp/ui/uifiledialog.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uilistboxitem.hpp>
 #include <eepp/ui/uiscenenode.hpp>
@@ -9,32 +9,35 @@
 
 namespace EE { namespace UI {
 
-#define CDLG_MIN_WIDTH 420
-#define CDLG_MIN_HEIGHT 320
+#define FDLG_MIN_WIDTH 420
+#define FDLG_MIN_HEIGHT 320
 
-UICommonDialog* UICommonDialog::New( Uint32 CDLFlags, std::string DefaultFilePattern,
-									 std::string DefaultDirectory ) {
-	return eeNew( UICommonDialog, ( CDLFlags, DefaultFilePattern, DefaultDirectory ) );
+UIFileDialog* UIFileDialog::New( Uint32 dialogFlags, std::string defaultFilePattern,
+								 std::string defaultDirectory ) {
+	return eeNew( UIFileDialog, ( dialogFlags, defaultFilePattern, defaultDirectory ) );
 }
 
-UICommonDialog::UICommonDialog( Uint32 CDLFlags, std::string DefaultFilePattern,
-								std::string DefaultDirectory ) :
-	UIWindow(), mCurPath( DefaultDirectory ), mCDLFlags( CDLFlags ), mCloseWithKey( KEY_UNKNOWN ) {
-	if ( getSize().getWidth() < CDLG_MIN_WIDTH ) {
-		mDpSize.x = CDLG_MIN_WIDTH;
-		mSize.x = PixelDensity::dpToPxI( CDLG_MIN_WIDTH );
+UIFileDialog::UIFileDialog( Uint32 dialogFlags, std::string defaultFilePattern,
+							std::string defaultDirectory ) :
+	UIWindow(),
+	mCurPath( defaultDirectory ),
+	mDialogFlags( dialogFlags ),
+	mCloseWithKey( KEY_UNKNOWN ) {
+	if ( getSize().getWidth() < FDLG_MIN_WIDTH ) {
+		mDpSize.x = FDLG_MIN_WIDTH;
+		mSize.x = PixelDensity::dpToPxI( FDLG_MIN_WIDTH );
 	}
 
-	if ( getSize().getHeight() < CDLG_MIN_HEIGHT ) {
-		mDpSize.y = CDLG_MIN_HEIGHT;
-		mSize.y = PixelDensity::dpToPxI( CDLG_MIN_HEIGHT );
+	if ( getSize().getHeight() < FDLG_MIN_HEIGHT ) {
+		mDpSize.y = FDLG_MIN_HEIGHT;
+		mSize.y = PixelDensity::dpToPxI( FDLG_MIN_HEIGHT );
 	}
 
-	if ( mStyleConfig.MinWindowSize.getWidth() < CDLG_MIN_WIDTH )
-		mStyleConfig.MinWindowSize.setWidth( CDLG_MIN_WIDTH );
+	if ( mStyleConfig.MinWindowSize.getWidth() < FDLG_MIN_WIDTH )
+		mStyleConfig.MinWindowSize.setWidth( FDLG_MIN_WIDTH );
 
-	if ( mStyleConfig.MinWindowSize.getHeight() < CDLG_MIN_HEIGHT )
-		mStyleConfig.MinWindowSize.setHeight( CDLG_MIN_HEIGHT );
+	if ( mStyleConfig.MinWindowSize.getHeight() < FDLG_MIN_HEIGHT )
+		mStyleConfig.MinWindowSize.setHeight( FDLG_MIN_HEIGHT );
 
 	bool loading = isSceneNodeLoading();
 	mUISceneNode->setIsLoading( true );
@@ -70,8 +73,7 @@ UICommonDialog::UICommonDialog( Uint32 CDLFlags, std::string DefaultFilePattern,
 		->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent )
 		->setLayoutWeight( 1 )
 		->setParent( hLayout );
-	mPath->addEventListener( Event::OnPressEnter,
-							 cb::Make1( this, &UICommonDialog::onPressEnter ) );
+	mPath->addEventListener( Event::OnPressEnter, cb::Make1( this, &UIFileDialog::onPressEnter ) );
 
 	mButtonUp = UIPushButton::New();
 	mButtonUp->setText( "Up" )
@@ -116,7 +118,7 @@ UICommonDialog::UICommonDialog( Uint32 CDLFlags, std::string DefaultFilePattern,
 		->setParent( hLayout );
 	mFile->setLayoutMargin( Rect( 0, 0, 4, 0 ) );
 	mFile->addEventListener( Event::OnPressEnter,
-							 cb::Make1( this, &UICommonDialog::onPressFileEnter ) );
+							 cb::Make1( this, &UIFileDialog::onPressFileEnter ) );
 
 	mButtonOpen = UIPushButton::New();
 	mButtonOpen->setText( isSaveDialog() ? "Save" : "Open" )
@@ -140,7 +142,7 @@ UICommonDialog::UICommonDialog( Uint32 CDLFlags, std::string DefaultFilePattern,
 		->setLayoutWeight( 1 )
 		->setParent( hLayout );
 	mFiletype->setPopUpToRoot( true );
-	mFiletype->getListBox()->addListBoxItem( DefaultFilePattern );
+	mFiletype->getListBox()->addListBoxItem( defaultFilePattern );
 	mFiletype->getListBox()->setSelected( 0 );
 	mFiletype->setLayoutMargin( Rect( 0, 0, 4, 0 ) );
 
@@ -155,21 +157,21 @@ UICommonDialog::UICommonDialog( Uint32 CDLFlags, std::string DefaultFilePattern,
 	mUISceneNode->setIsLoading( loading );
 }
 
-UICommonDialog::~UICommonDialog() {}
+UIFileDialog::~UIFileDialog() {}
 
-void UICommonDialog::onWindowReady() {
+void UIFileDialog::onWindowReady() {
 	updateClickStep();
 }
 
-Uint32 UICommonDialog::getType() const {
-	return UI_TYPE_COMMONDIALOG;
+Uint32 UIFileDialog::getType() const {
+	return UI_TYPE_FILEDIALOG;
 }
 
-bool UICommonDialog::isType( const Uint32& type ) const {
-	return UICommonDialog::getType() == type ? true : UIWindow::isType( type );
+bool UIFileDialog::isType( const Uint32& type ) const {
+	return UIFileDialog::getType() == type ? true : UIWindow::isType( type );
 }
 
-void UICommonDialog::setTheme( UITheme* Theme ) {
+void UIFileDialog::setTheme( UITheme* Theme ) {
 	UIWindow::setTheme( Theme );
 
 	mButtonOpen->setTheme( Theme );
@@ -190,7 +192,7 @@ void UICommonDialog::setTheme( UITheme* Theme ) {
 	onThemeLoaded();
 }
 
-void UICommonDialog::refreshFolder() {
+void UIFileDialog::refreshFolder() {
 	std::vector<String> flist = FileSystem::filesGetInPath( String( mCurPath ) );
 	std::vector<String> files;
 	std::vector<String> folders;
@@ -245,7 +247,7 @@ void UICommonDialog::refreshFolder() {
 	mList->setFocus();
 }
 
-void UICommonDialog::updateClickStep() {
+void UIFileDialog::updateClickStep() {
 	if ( NULL != mList->getVerticalScrollBar() ) {
 		mList->getVerticalScrollBar()->setClickStep(
 			1.f / ( ( mList->getCount() * mList->getRowHeight() ) /
@@ -253,7 +255,7 @@ void UICommonDialog::updateClickStep() {
 	}
 }
 
-void UICommonDialog::openSaveClick() {
+void UIFileDialog::openSaveClick() {
 	if ( isSaveDialog() ) {
 		save();
 	} else {
@@ -261,11 +263,11 @@ void UICommonDialog::openSaveClick() {
 	}
 }
 
-void UICommonDialog::onPressFileEnter( const Event* ) {
+void UIFileDialog::onPressFileEnter( const Event* ) {
 	openSaveClick();
 }
 
-void UICommonDialog::disableButtons() {
+void UIFileDialog::disableButtons() {
 	mButtonOpen->setEnabled( false );
 	mButtonCancel->setEnabled( false );
 	mButtonUp->setEnabled( false );
@@ -280,7 +282,7 @@ void UICommonDialog::disableButtons() {
 		mButtonMaximize->setEnabled( false );
 }
 
-void UICommonDialog::openFileOrFolder() {
+void UIFileDialog::openFileOrFolder() {
 	std::string newPath = mCurPath + mList->getItemSelectedText();
 
 	if ( FileSystem::isDirectory( newPath ) ) {
@@ -292,13 +294,13 @@ void UICommonDialog::openFileOrFolder() {
 	}
 }
 
-void UICommonDialog::goFolderUp() {
+void UIFileDialog::goFolderUp() {
 	mCurPath = FileSystem::removeLastFolderFromPath( mCurPath );
 	mPath->setText( mCurPath );
 	refreshFolder();
 }
 
-Uint32 UICommonDialog::onMessage( const NodeMessage* Msg ) {
+Uint32 UIFileDialog::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
 		case NodeMessage::Click: {
 			if ( Msg->getFlags() & EE_BUTTON_LMASK ) {
@@ -350,7 +352,7 @@ Uint32 UICommonDialog::onMessage( const NodeMessage* Msg ) {
 	return UIWindow::onMessage( Msg );
 }
 
-void UICommonDialog::save() {
+void UIFileDialog::save() {
 	sendCommonEvent( Event::SaveFile );
 
 	disableButtons();
@@ -358,7 +360,7 @@ void UICommonDialog::save() {
 	closeWindow();
 }
 
-void UICommonDialog::open() {
+void UIFileDialog::open() {
 	if ( "" != mList->getItemSelectedText() || getAllowFolderSelect() ) {
 		if ( !getAllowFolderSelect() ) {
 			if ( FileSystem::isDirectory( getFullPath() ) )
@@ -377,7 +379,7 @@ void UICommonDialog::open() {
 	}
 }
 
-void UICommonDialog::onPressEnter( const Event* ) {
+void UIFileDialog::onPressEnter( const Event* ) {
 	if ( FileSystem::isDirectory( mPath->getText() ) ) {
 		std::string tpath = mPath->getText();
 		FileSystem::dirPathAddSlashAtEnd( tpath );
@@ -387,7 +389,7 @@ void UICommonDialog::onPressEnter( const Event* ) {
 	}
 }
 
-void UICommonDialog::addFilePattern( std::string pattern, bool select ) {
+void UIFileDialog::addFilePattern( std::string pattern, bool select ) {
 	Uint32 index = mFiletype->getListBox()->addListBoxItem( pattern );
 
 	if ( select ) {
@@ -397,37 +399,37 @@ void UICommonDialog::addFilePattern( std::string pattern, bool select ) {
 	}
 }
 
-bool UICommonDialog::isSaveDialog() {
-	return 0 != ( mCDLFlags & CDL_FLAG_SAVE_DIALOG );
+bool UIFileDialog::isSaveDialog() {
+	return 0 != ( mDialogFlags & SaveDialog );
 }
 
-bool UICommonDialog::getSortAlphabetically() {
-	return 0 != ( mCDLFlags & CDL_FLAG_SORT_ALPHABETICALLY );
+bool UIFileDialog::getSortAlphabetically() {
+	return 0 != ( mDialogFlags & SortAlphabetically );
 }
 
-bool UICommonDialog::getFoldersFirst() {
-	return 0 != ( mCDLFlags & CDL_FLAG_FOLDERS_FISRT );
+bool UIFileDialog::getFoldersFirst() {
+	return 0 != ( mDialogFlags & FoldersFirst );
 }
 
-bool UICommonDialog::getAllowFolderSelect() {
-	return 0 != ( mCDLFlags & CDL_FLAG_ALLOW_FOLDER_SELECT );
+bool UIFileDialog::getAllowFolderSelect() {
+	return 0 != ( mDialogFlags & AllowFolderSelect );
 }
 
-void UICommonDialog::setSortAlphabetically( const bool& sortAlphabetically ) {
-	BitOp::setBitFlagValue( &mCDLFlags, CDL_FLAG_SORT_ALPHABETICALLY, sortAlphabetically ? 1 : 0 );
+void UIFileDialog::setSortAlphabetically( const bool& sortAlphabetically ) {
+	BitOp::setBitFlagValue( &mDialogFlags, SortAlphabetically, sortAlphabetically ? 1 : 0 );
 	refreshFolder();
 }
 
-void UICommonDialog::setFoldersFirst( const bool& foldersFirst ) {
-	BitOp::setBitFlagValue( &mCDLFlags, CDL_FLAG_FOLDERS_FISRT, foldersFirst ? 1 : 0 );
+void UIFileDialog::setFoldersFirst( const bool& foldersFirst ) {
+	BitOp::setBitFlagValue( &mDialogFlags, FoldersFirst, foldersFirst ? 1 : 0 );
 	refreshFolder();
 }
 
-void UICommonDialog::setAllowFolderSelect( const bool& allowFolderSelect ) {
-	BitOp::setBitFlagValue( &mCDLFlags, CDL_FLAG_ALLOW_FOLDER_SELECT, allowFolderSelect ? 1 : 0 );
+void UIFileDialog::setAllowFolderSelect( const bool& allowFolderSelect ) {
+	BitOp::setBitFlagValue( &mDialogFlags, AllowFolderSelect, allowFolderSelect ? 1 : 0 );
 }
 
-std::string UICommonDialog::getFullPath() {
+std::string UIFileDialog::getFullPath() {
 	std::string tPath = mCurPath;
 
 	FileSystem::dirPathAddSlashAtEnd( tPath );
@@ -437,7 +439,7 @@ std::string UICommonDialog::getFullPath() {
 	return tPath;
 }
 
-std::string UICommonDialog::getTempFullPath() {
+std::string UIFileDialog::getTempFullPath() {
 	std::string tPath = mCurPath;
 
 	FileSystem::dirPathAddSlashAtEnd( tPath );
@@ -447,46 +449,46 @@ std::string UICommonDialog::getTempFullPath() {
 	return tPath;
 }
 
-std::string UICommonDialog::getCurPath() const {
+std::string UIFileDialog::getCurPath() const {
 	return mCurPath;
 }
 
-std::string UICommonDialog::getCurFile() const {
-	if ( mCDLFlags & CDL_FLAG_SAVE_DIALOG )
+std::string UIFileDialog::getCurFile() const {
+	if ( mDialogFlags & SaveDialog )
 		return mFile->getText();
 
 	return mList->getItemSelectedText().toUtf8();
 }
 
-UIPushButton* UICommonDialog::getButtonOpen() const {
+UIPushButton* UIFileDialog::getButtonOpen() const {
 	return mButtonOpen;
 }
 
-UIPushButton* UICommonDialog::getButtonCancel() const {
+UIPushButton* UIFileDialog::getButtonCancel() const {
 	return mButtonCancel;
 }
 
-UIPushButton* UICommonDialog::getButtonUp() const {
+UIPushButton* UIFileDialog::getButtonUp() const {
 	return mButtonUp;
 }
 
-UIListBox* UICommonDialog::getList() const {
+UIListBox* UIFileDialog::getList() const {
 	return mList;
 }
 
-UITextInput* UICommonDialog::getPathInput() const {
+UITextInput* UIFileDialog::getPathInput() const {
 	return mPath;
 }
 
-UITextInput* UICommonDialog::getFileInput() const {
+UITextInput* UIFileDialog::getFileInput() const {
 	return mFile;
 }
 
-UIDropDownList* UICommonDialog::getFiletypeList() const {
+UIDropDownList* UIFileDialog::getFiletypeList() const {
 	return mFiletype;
 }
 
-Uint32 UICommonDialog::onKeyUp( const KeyEvent& Event ) {
+Uint32 UIFileDialog::onKeyUp( const KeyEvent& Event ) {
 	if ( mCloseWithKey && Event.getKeyCode() == mCloseWithKey ) {
 		disableButtons();
 
@@ -496,11 +498,11 @@ Uint32 UICommonDialog::onKeyUp( const KeyEvent& Event ) {
 	return 1;
 }
 
-const Uint32& UICommonDialog::getCloseWithKey() const {
+const Uint32& UIFileDialog::getCloseWithKey() const {
 	return mCloseWithKey;
 }
 
-void UICommonDialog::setCloseWithKey( const Uint32& closeWithKey ) {
+void UIFileDialog::setCloseWithKey( const Uint32& closeWithKey ) {
 	mCloseWithKey = closeWithKey;
 }
 

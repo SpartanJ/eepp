@@ -335,9 +335,9 @@
 ../../include/eepp/ui/uicheckbox.hpp
 ../../include/eepp/ui/uicodeeditor.hpp
 ../../include/eepp/ui/uicombobox.hpp
-../../include/eepp/ui/uicommondialog.hpp
 ../../include/eepp/ui/uidropdownlist.hpp
 ../../include/eepp/ui/uieventdispatcher.hpp
+../../include/eepp/ui/uifiledialog.hpp
 ../../include/eepp/ui/uifontstyleconfig.hpp
 ../../include/eepp/ui/uigridlayout.hpp
 ../../include/eepp/ui/uihelper.hpp
@@ -787,9 +787,9 @@
 ../../src/eepp/ui/uicheckbox.cpp
 ../../src/eepp/ui/uicodeeditor.cpp
 ../../src/eepp/ui/uicombobox.cpp
-../../src/eepp/ui/uicommondialog.cpp
 ../../src/eepp/ui/uidropdownlist.cpp
 ../../src/eepp/ui/uieventdispatcher.cpp
+../../src/eepp/ui/uifiledialog.cpp
 ../../src/eepp/ui/uigridlayout.cpp
 ../../src/eepp/ui/uiimage.cpp
 ../../src/eepp/ui/uilayout.cpp

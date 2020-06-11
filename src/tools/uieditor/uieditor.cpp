@@ -813,23 +813,23 @@ void mainLoop() {
 }
 
 void imagePathOpen( const Event* event ) {
-	loadImagesFromFolder( event->getNode()->asType<UICommonDialog>()->getFullPath() );
+	loadImagesFromFolder( event->getNode()->asType<UIFileDialog>()->getFullPath() );
 }
 
 void fontPathOpen( const Event* event ) {
-	loadFontsFromFolder( event->getNode()->asType<UICommonDialog>()->getFullPath() );
+	loadFontsFromFolder( event->getNode()->asType<UIFileDialog>()->getFullPath() );
 }
 
 void styleSheetPathOpen( const Event* event ) {
-	loadStyleSheet( event->getNode()->asType<UICommonDialog>()->getFullPath() );
+	loadStyleSheet( event->getNode()->asType<UIFileDialog>()->getFullPath() );
 }
 
 void layoutOpen( const Event* event ) {
-	loadLayoutFile( event->getNode()->asType<UICommonDialog>()->getFullPath() );
+	loadLayoutFile( event->getNode()->asType<UIFileDialog>()->getFullPath() );
 }
 
 void projectOpen( const Event* event ) {
-	loadProject( event->getNode()->asType<UICommonDialog>()->getFullPath() );
+	loadProject( event->getNode()->asType<UIFileDialog>()->getFullPath() );
 }
 
 void fileMenuClick( const Event* event ) {
@@ -841,7 +841,7 @@ void fileMenuClick( const Event* event ) {
 	SceneManager::instance()->setCurrentUISceneNode( appUiSceneNode );
 
 	if ( "Open project..." == txt ) {
-		UICommonDialog* TGDialog = UICommonDialog::New( UI_CDL_DEFAULT_FLAGS, "*.xml" );
+		UIFileDialog* TGDialog = UIFileDialog::New( UIFileDialog::DefaultFlags, "*.xml" );
 		TGDialog->setTheme( theme );
 		TGDialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 		TGDialog->setTitle( "Open layout..." );
@@ -849,7 +849,7 @@ void fileMenuClick( const Event* event ) {
 		TGDialog->center();
 		TGDialog->show();
 	} else if ( "Open layout..." == txt ) {
-		UICommonDialog* TGDialog = UICommonDialog::New( UI_CDL_DEFAULT_FLAGS, "*.xml" );
+		UIFileDialog* TGDialog = UIFileDialog::New( UIFileDialog::DefaultFlags, "*.xml" );
 		TGDialog->setTheme( theme );
 		TGDialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 		TGDialog->setTitle( "Open layout..." );
@@ -861,8 +861,8 @@ void fileMenuClick( const Event* event ) {
 	} else if ( "Quit" == txt ) {
 		onCloseRequestCallback( window );
 	} else if ( "Load images from path..." == txt ) {
-		UICommonDialog* TGDialog =
-			UICommonDialog::New( UI_CDL_DEFAULT_FLAGS | CDL_FLAG_ALLOW_FOLDER_SELECT );
+		UIFileDialog* TGDialog =
+			UIFileDialog::New( UIFileDialog::DefaultFlags | UIFileDialog::AllowFolderSelect );
 		TGDialog->setTheme( theme );
 		TGDialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 		TGDialog->setTitle( "Open images from folder..." );
@@ -870,8 +870,8 @@ void fileMenuClick( const Event* event ) {
 		TGDialog->center();
 		TGDialog->show();
 	} else if ( "Load fonts from path..." == txt ) {
-		UICommonDialog* TGDialog =
-			UICommonDialog::New( UI_CDL_DEFAULT_FLAGS | CDL_FLAG_ALLOW_FOLDER_SELECT );
+		UIFileDialog* TGDialog =
+			UIFileDialog::New( UIFileDialog::DefaultFlags | UIFileDialog::AllowFolderSelect );
 		TGDialog->setTheme( theme );
 		TGDialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 		TGDialog->setTitle( "Open fonts from folder..." );
@@ -879,7 +879,7 @@ void fileMenuClick( const Event* event ) {
 		TGDialog->center();
 		TGDialog->show();
 	} else if ( "Load style sheet from path..." == txt ) {
-		UICommonDialog* TGDialog = UICommonDialog::New( UI_CDL_DEFAULT_FLAGS, "*.css" );
+		UIFileDialog* TGDialog = UIFileDialog::New( UIFileDialog::DefaultFlags, "*.css" );
 		TGDialog->setTheme( theme );
 		TGDialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 		TGDialog->setTitle( "Open style sheet from path..." );
