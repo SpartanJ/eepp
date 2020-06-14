@@ -903,10 +903,10 @@ void App::updateEditorState() {
 	updateCurrentFiletype();
 }
 
-void App::init( const std::string& file ) {
+void App::init( const std::string& file, const Float& pidelDensity ) {
 	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
 	Display* currentDisplay = displayManager->getDisplayIndex( 0 );
-	Float pixelDensity = currentDisplay->getPixelDensity();
+	Float pixelDensity = pidelDensity > 0 ? pidelDensity : currentDisplay->getPixelDensity();
 
 	displayManager->enableScreenSaver();
 	displayManager->enableMouseFocusClickThrough();
@@ -947,10 +947,8 @@ void App::init( const std::string& file ) {
 
 		mTheme = UITheme::load( "uitheme", "uitheme", "", font, resPath + "assets/ui/breeze.css" );
 		mUISceneNode->setStyleSheet( mTheme->getStyleSheet() );
-		mUISceneNode->getUIThemeManager()
-			->setDefaultTheme( mTheme )
-			->setDefaultFont( font )
-			->add( mTheme );
+		mUISceneNode->getUIThemeManager()->setDefaultTheme( mTheme )->setDefaultFont( font )->add(
+			mTheme );
 
 		auto colorSchemes =
 			SyntaxColorScheme::loadFromFile( resPath + "assets/colorschemes/colorschemes.conf" );
@@ -1057,7 +1055,10 @@ void App::init( const std::string& file ) {
 
 EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	args::ArgumentParser parser( "ecode" );
+	args::HelpFlag help( parser, "help", "Display this help menu", {'h', "help"} );
 	args::Positional<std::string> file( parser, "file", "The file path" );
+	args::ValueFlag<Float> pixelDenstiyConf(
+		parser, "pixel-density", "Set default application pixel density", {'d', "pixel-density"} );
 
 	try {
 		parser.ParseCLI( argc, argv );
@@ -1075,7 +1076,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	}
 
 	appInstance = eeNew( App, () );
-	appInstance->init( file.Get() );
+	appInstance->init( file.Get(), pixelDenstiyConf ? pixelDenstiyConf.Get() : 0.f );
 	eeSAFE_DELETE( appInstance );
 
 	Engine::destroySingleton();

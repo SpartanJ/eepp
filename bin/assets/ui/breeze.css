@@ -407,7 +407,7 @@ TabWidget {
 
 TabWidget::TabBar {
 	background-image: rectangle(solid, var(--tab-line));
-	background-size: 100% 1px;
+	background-size: 100% 1dp;
 	background-position-y: bottom;
 }
 
@@ -417,7 +417,7 @@ Tab {
 	border-right-color: transparent;
 	border-top-color: transparent;
 	background-image: rectangle(solid, var(--tab-line));
-	background-size: 100% 1px;
+	background-size: 100% 1dp;
 	background-position-y: bottom;
 	height: 24dp;
 	transition: background-color 0.15s;
@@ -647,7 +647,7 @@ Menu::Separator {
 	height: 3dp;
 	background-color: var(--button-back);
 	background-image: rectangle(solid, var(--button-border));
-	background-size: 100% 1px;
+	background-size: 100% 1dp;
 	background-position: center;
 }
 

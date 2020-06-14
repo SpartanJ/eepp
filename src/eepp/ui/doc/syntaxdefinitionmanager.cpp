@@ -120,8 +120,8 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 		  {
 			  {{"\"", "\"", "\\"}, "string"},
 			  {{"'", "'", "\\"}, "string"},
-			  {{"%[%{", "%]%]"}, "string"},
-			  {{"%-%-%[%{", "%]%]"}, "comment"},
+			  {{"%[%[", "%]%]"}, "string"},
+			  {{"%-%-%[%[", "%]%]"}, "comment"},
 			  {{"%-%-.-\n"}, "comment"},
 			  {{"-?0x%x+"}, "number"},
 			  {{"-?%d+[%d%.eE]*"}, "number"},
@@ -216,7 +216,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 
 	// sh - bash
 	add( {"Bash",
-		  {"^#!.*bin.*sh\n", "^#!.*bin.*bash\n"},
+		  {"%.sh$", "%.bash$"},
 		  {
 			  {{"#.*\n"}, "comment"},
 			  {{"[[\\.]]"}, "normal"},
@@ -864,7 +864,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 			  {{"#", "\n"}, "comment"},
 			  {{"\"", "\"", "\\"}, "string"},
 			  {{"'", "'", "\\"}, "string"},
-			  {{"%{", "%]"}, "keyword2"},
+			  {{"%[", "%]"}, "keyword2"},
 			  {{"[%a][%w_-]*%s*%f[=]"}, "keyword"},
 			  {{"[=]"}, "operator"},
 			  {{"https?://%S+"}, "function"},
@@ -1537,7 +1537,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 			  {{"&"}, "operator"},
 			  {{"\\\\"}, "operator"},
 			  {{"%$", "%$"}, "operator"},
-			  {{"\\%{", "\\]"}, "operator"},
+			  {{"\\%[", "\\]"}, "operator"},
 			  {{"{", "}"}, "keyword"},
 			  {{"\\%w*"}, "keyword2"},
 		  },
@@ -1621,7 +1621,6 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 			  {"and", "operator"},		{"or", "operator"},		  {"xor", "operator"},
 		  },
 		  "//"} );
-
 
 	// Batch script
 	std::unordered_map<std::string, std::vector<std::string>> batchSymTable = {

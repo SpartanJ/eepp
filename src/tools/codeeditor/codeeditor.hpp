@@ -41,7 +41,7 @@ class App {
 
 	~App();
 
-	void init( const std::string& file = "" );
+	void init( const std::string& file, const Float& pidelDensity );
 
 	bool loadFileFromPath( const std::string& path, UICodeEditor* codeEditor = NULL );
 
