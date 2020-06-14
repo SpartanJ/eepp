@@ -9,13 +9,16 @@ namespace EE { namespace UI {
 
 class EE_API TabEvent : public Event {
   public:
-	TabEvent( Node* node, UITab* tabEvent, const Uint32& eventType ) :
-		Event( node, eventType ), tab( tabEvent ) {}
+	TabEvent( Node* node, UITab* tabEvent, Uint32 tabIndex, const Uint32& eventType ) :
+		Event( node, eventType ), tab( tabEvent ), tabIndex( tabIndex ) {}
 
 	UITab* getTab() const { return tab; }
 
+	Uint32 getTabIndex() const { return tabIndex; }
+
   protected:
 	UITab* tab;
+	Uint32 tabIndex;
 };
 
 class EE_API UITabWidget : public UIWidget {

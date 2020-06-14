@@ -20,6 +20,7 @@ enum class BorderType : Uint32 { Inside, Outside, Outline };
 struct EE_API Border {
 	int width = 0;
 	Color color;
+	Color realColor;
 };
 
 struct EE_API BorderRadiuses {

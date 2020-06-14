@@ -43,11 +43,13 @@ class App {
 
 	void init( const std::string& file = "" );
 
-	void loadFileFromPath( const std::string& path, UICodeEditor* codeEditor = NULL );
+	bool loadFileFromPath( const std::string& path, UICodeEditor* codeEditor = NULL );
 
 	void setAppTitle( const std::string& title );
 
 	void openFileDialog();
+
+	void saveFileDialog();
 
 	void findPrevText( String text = "", const bool& caseSensitive = true );
 
@@ -98,7 +100,7 @@ class App {
 	UISceneNode* mUISceneNode{NULL};
 	UICodeEditor* mCurEditor{NULL};
 	Console* mConsole{NULL};
-	std::string mWindowTitle{"eepp - Code Editor"};
+	std::string mWindowTitle{"ecode"};
 	UIMessageBox* mMsgBox{NULL};
 	String mLastSearch;
 	UILayout* mBaseLayout{NULL};
@@ -109,6 +111,7 @@ class App {
 	UIPopUpMenu* mSettingsMenu;
 	UITextView* mSettingsButton;
 	UIPopUpMenu* mColorSchemeMenu;
+	UIPopUpMenu* mFiletypeMenu;
 	UITheme* mTheme;
 
 	void onFileDropped( String file );
@@ -142,6 +145,14 @@ class App {
 	void updateColorSchemeMenu();
 
 	void setColorScheme( const std::string& name );
+
+	UIMenu* createFiletypeMenu();
+
+	void updateCurrentFiletype();
+
+	void updateEditorState();
+
+	void saveDoc();
 };
 
 #endif // EE_TOOLS_CODEEDITOR_HPP

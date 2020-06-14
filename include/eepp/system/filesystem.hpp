@@ -66,7 +66,10 @@ class EE_API FileSystem {
 	static bool fileRemove( const std::string& filepath );
 
 	/** @return The modification date of the file */
-	static Uint32 fileGetModificationDate( const std::string& Filepath );
+	static Uint32 fileGetModificationDate( const std::string& filepath );
+
+	/** @return If a file path is writeable */
+	static bool fileCanWrite( const std::string& filepath );
 
 	/** If the directory path not end with a slash, it will add it. */
 	static void dirPathAddSlashAtEnd( std::string& path );

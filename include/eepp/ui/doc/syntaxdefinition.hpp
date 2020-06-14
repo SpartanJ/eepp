@@ -20,11 +20,14 @@ class EE_API SyntaxDefinition {
 					  const std::vector<SyntaxPattern>& patterns,
 					  const std::unordered_map<std::string, std::string>& symbols =
 						  std::unordered_map<std::string, std::string>(),
-					  const std::string& comment = "" );
+					  const std::string& comment = "",
+					  const std::vector<std::string> headers = {} );
 
 	const std::string& getLanguageName() const;
 
 	const std::vector<std::string>& getFiles() const;
+
+	std::string getFileExtension() const;
 
 	const std::vector<SyntaxPattern>& getPatterns() const;
 
@@ -47,12 +50,17 @@ class EE_API SyntaxDefinition {
 	/** Sets the comment string used for auto-comment functionality. */
 	SyntaxDefinition& setComment( const std::string& comment );
 
+	const std::vector<std::string>& getHeaders() const;
+
+	SyntaxDefinition& setHeaders( const std::vector<std::string>& headers );
+
   protected:
 	std::string mLanguageName;
 	std::vector<std::string> mFiles;
 	std::vector<SyntaxPattern> mPatterns;
 	std::unordered_map<std::string, std::string> mSymbols;
 	std::string mComment;
+	std::vector<std::string> mHeaders;
 };
 
 }}} // namespace EE::UI::Doc

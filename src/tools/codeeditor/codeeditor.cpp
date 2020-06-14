@@ -36,7 +36,7 @@ bool App::tryTabClose( UICodeEditor* editor ) {
 			if ( mCurEditor )
 				mCurEditor->setFocus();
 		} );
-		mMsgBox->setTitle( "Close Editor Tab?" );
+		mMsgBox->setTitle( "Close Tab?" );
 		mMsgBox->center();
 		mMsgBox->show();
 		return false;
@@ -181,6 +181,15 @@ void App::applyColorScheme( const SyntaxColorScheme& colorScheme ) {
 	updateColorSchemeMenu();
 }
 
+void App::saveDoc() {
+	if ( mCurEditor->getDocument().hasFilepath() ) {
+		if ( mCurEditor->save() )
+			updateEditorState();
+	} else {
+		saveFileDialog();
+	}
+}
+
 UICodeEditor* App::createCodeEditor() {
 	UICodeEditor* codeEditor = UICodeEditor::New();
 	codeEditor->setFontSize( 11 );
@@ -207,10 +216,8 @@ UICodeEditor* App::createCodeEditor() {
 										  [&] { switchPreviousSplit( mCurEditor ); } );
 	codeEditor->getDocument().setCommand( "switch-to-next-split",
 										  [&] { switchNextSplit( mCurEditor ); } );
-	codeEditor->getDocument().setCommand( "save-doc", [&, codeEditor] {
-		if ( codeEditor->save() )
-			updateEditorTitle( codeEditor );
-	} );
+	codeEditor->getDocument().setCommand( "save-doc", [&] { saveDoc(); } );
+	codeEditor->getDocument().setCommand( "save-as-doc", [&] { saveFileDialog(); } );
 	codeEditor->getDocument().setCommand( "find", [&] { showFindView(); } );
 	codeEditor->getDocument().setCommand( "repeat-find", [&] {
 		findNextText( "", mSearchBarLayout->find<UICheckBox>( "case_sensitive" )->isChecked() );
@@ -260,7 +267,7 @@ UICodeEditor* App::createCodeEditor() {
 
 	codeEditor->addEventListener( Event::OnFocus, [&]( const Event* event ) {
 		mCurEditor = event->getNode()->asType<UICodeEditor>();
-		updateEditorTitle( mCurEditor );
+		updateEditorState();
 	} );
 	codeEditor->addEventListener( Event::OnTextChanged, [&]( const Event* event ) {
 		updateEditorTitle( event->getNode()->asType<UICodeEditor>() );
@@ -424,7 +431,7 @@ void App::onTabClosed( const TabEvent* tabEvent ) {
 		auto d = createCodeEditorInTabWidget( tabWidget );
 		d.first->getTabWidget()->setTabSelected( d.first );
 	} else {
-		tabWidget->setTabSelected( tabWidget->getTabCount() - 1 );
+		tabWidget->setTabSelected( eemin( tabWidget->getTabCount() - 1, tabEvent->getTabIndex() ) );
 	}
 }
 
@@ -447,7 +454,7 @@ UITabWidget* App::createEditorWithTabWidget( Node* parent ) {
 	tabWidget->addEventListener( Event::OnTabSelected, [&]( const Event* event ) {
 		UITabWidget* tabWidget = event->getNode()->asType<UITabWidget>();
 		mCurEditor = tabWidget->getTabSelected()->getOwnedWidget()->asType<UICodeEditor>();
-		updateEditorTitle( mCurEditor );
+		updateEditorState();
 	} );
 	tabWidget->setTabTryCloseCallback( [&]( UITab* tab ) -> bool {
 		tryTabClose( tab->getOwnedWidget()->asType<UICodeEditor>() );
@@ -477,20 +484,25 @@ void App::setAppTitle( const std::string& title ) {
 	mWindow->setTitle( mWindowTitle + String( title.empty() ? "" : " - " + title ) );
 }
 
-void App::loadFileFromPath( const std::string& path, UICodeEditor* codeEditor ) {
+bool App::loadFileFromPath( const std::string& path, UICodeEditor* codeEditor ) {
+	if ( FileSystem::isDirectory( path ) )
+		return false;
 	if ( NULL == codeEditor )
 		codeEditor = mCurEditor;
 	codeEditor->setColorScheme( mColorSchemes[mCurrentColorScheme] );
-	codeEditor->loadFromFile( path );
+	bool ret = codeEditor->loadFromFile( path );
 	updateEditorTitle( codeEditor );
+	if ( codeEditor == mCurEditor )
+		updateCurrentFiletype();
+	return ret;
 }
 
 void App::openFileDialog() {
-	UIFileDialog* TGDialog = UIFileDialog::New();
-	TGDialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
-	TGDialog->setTitle( "Open layout..." );
-	TGDialog->setCloseWithKey( KEY_ESCAPE );
-	TGDialog->addEventListener( Event::OpenFile, [&]( const Event* event ) {
+	UIFileDialog* dialog = UIFileDialog::New();
+	dialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
+	dialog->setTitle( "Open File" );
+	dialog->setCloseShortcut( KEY_ESCAPE );
+	dialog->addEventListener( Event::OpenFile, [&]( const Event* event ) {
 		auto d = createCodeEditorInTabWidget( tabWidgetFromEditor( mCurEditor ) );
 		UITabWidget* tabWidget = d.first->getTabWidget();
 		UITab* addedTab = d.first;
@@ -504,12 +516,51 @@ void App::openFileDialog() {
 			}
 		}
 	} );
-	TGDialog->addEventListener( Event::OnWindowClose, [&]( const Event* ) {
+	dialog->addEventListener( Event::OnWindowClose, [&]( const Event* ) {
 		if ( mCurEditor && !SceneManager::instance()->isShootingDown() )
 			mCurEditor->setFocus();
 	} );
-	TGDialog->center();
-	TGDialog->show();
+	dialog->center();
+	dialog->show();
+}
+
+void App::saveFileDialog() {
+	UIFileDialog* dialog =
+		UIFileDialog::New( UIFileDialog::DefaultFlags | UIFileDialog::SaveDialog );
+	dialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
+	dialog->setTitle( "Save File As" );
+	dialog->setCloseShortcut( KEY_ESCAPE );
+	std::string filename( mCurEditor->getDocument().getFilename() );
+	if ( FileSystem::fileExtension( mCurEditor->getDocument().getFilename() ).empty() )
+		filename += mCurEditor->getSyntaxDefinition().getFileExtension();
+	dialog->setFileName( filename );
+	dialog->addEventListener( Event::SaveFile, [&]( const Event* event ) {
+		if ( mCurEditor ) {
+			std::string path( event->getNode()->asType<UIFileDialog>()->getFullPath() );
+			if ( !path.empty() && !FileSystem::isDirectory( path ) &&
+				 FileSystem::fileCanWrite( FileSystem::fileRemoveFileName( path ) ) ) {
+				if ( mCurEditor->getDocument().save( path ) ) {
+					updateEditorState();
+				} else {
+					UIMessageBox* msg =
+						UIMessageBox::New( UIMessageBox::OK, "Couldn't write the file." );
+					msg->setTitle( "Error" );
+					msg->show();
+				}
+			} else {
+				UIMessageBox* msg =
+					UIMessageBox::New( UIMessageBox::OK, "You must set a name to the file." );
+				msg->setTitle( "Error" );
+				msg->show();
+			}
+		}
+	} );
+	dialog->addEventListener( Event::OnWindowClose, [&]( const Event* ) {
+		if ( mCurEditor && !SceneManager::instance()->isShootingDown() )
+			mCurEditor->setFocus();
+	} );
+	dialog->center();
+	dialog->show();
 }
 
 void App::findPrevText( String text, const bool& caseSensitive ) {
@@ -616,6 +667,14 @@ void App::initSearchBar() {
 	UICheckBox* caseSensitiveChk = mSearchBarLayout->find<UICheckBox>( "case_sensitive" );
 	findInput->getInputTextBuffer()->pushIgnoredChar( '\t' );
 	replaceInput->getInputTextBuffer()->pushIgnoredChar( '\t' );
+	findInput->addEventListener( Event::OnTextChanged, [&, findInput]( const Event* ) {
+		if ( !findInput->getText().empty() ) {
+			findNextText( findInput->getText(), caseSensitiveChk->isChecked() );
+		} else if ( mCurEditor ) {
+			mCurEditor->getDocument().setSelection(
+				mCurEditor->getDocument().getSelection().start() );
+		}
+	} );
 	mSearchBarLayout->addCommand( "close-searchbar", [&] {
 		mSearchBarLayout->setEnabled( false )->setVisible( false );
 		mCurEditor->setFocus();
@@ -749,6 +808,7 @@ void App::createSettingsMenu() {
 	mSettingsMenu->add( "Save" );
 	mSettingsMenu->add( "Save as..." );
 	mSettingsMenu->addSeparator();
+	mSettingsMenu->addSubMenu( "Filetype", NULL, createFiletypeMenu() );
 	mSettingsMenu->addSubMenu( "Color Scheme", NULL, createColorSchemeMenu() );
 	mSettingsMenu->addSeparator();
 	mSettingsMenu->add( "Close" );
@@ -771,7 +831,7 @@ void App::createSettingsMenu() {
 		} else if ( name == "Save" ) {
 			runCommand( "save-doc" );
 		} else if ( name == "Save as..." ) {
-
+			runCommand( "save-as-doc" );
 		} else if ( name == "Close" ) {
 			runCommand( "close-doc" );
 		} else if ( name == "Quit" ) {
@@ -806,6 +866,41 @@ UIMenu* App::createColorSchemeMenu() {
 		setColorScheme( name );
 	} );
 	return mColorSchemeMenu;
+}
+
+UIMenu* App::createFiletypeMenu() {
+	auto* dM = SyntaxDefinitionManager::instance();
+	mFiletypeMenu = UIPopUpMenu::New();
+	auto names = dM->getLanguageNames();
+	for ( auto& name : names ) {
+		mFiletypeMenu->addCheckBox(
+			name, mCurEditor && mCurEditor->getSyntaxDefinition().getLanguageName() == name );
+	}
+	mFiletypeMenu->addEventListener( Event::OnItemClicked, [&, dM]( const Event* event ) {
+		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
+		const String& name = item->getText();
+		if ( mCurEditor ) {
+			mCurEditor->setSyntaxDefinition( dM->getStyleByLanguageName( name ) );
+			updateCurrentFiletype();
+		}
+	} );
+	return mFiletypeMenu;
+}
+
+void App::updateCurrentFiletype() {
+	if ( !mCurEditor )
+		return;
+	std::string curLang( mCurEditor->getSyntaxDefinition().getLanguageName() );
+	for ( size_t i = 0; i < mFiletypeMenu->getCount(); i++ ) {
+		UIMenuCheckBox* menuItem = mFiletypeMenu->getItem( i )->asType<UIMenuCheckBox>();
+		std::string itemLang( menuItem->getText() );
+		menuItem->setActive( curLang == itemLang );
+	}
+}
+
+void App::updateEditorState() {
+	updateEditorTitle( mCurEditor );
+	updateCurrentFiletype();
 }
 
 void App::init( const std::string& file ) {
@@ -853,7 +948,6 @@ void App::init( const std::string& file ) {
 		mTheme = UITheme::load( "uitheme", "uitheme", "", font, resPath + "assets/ui/breeze.css" );
 		mUISceneNode->setStyleSheet( mTheme->getStyleSheet() );
 		mUISceneNode->getUIThemeManager()
-			->setDefaultEffectsEnabled( true )
 			->setDefaultTheme( mTheme )
 			->setDefaultFont( font )
 			->add( mTheme );
@@ -962,7 +1056,7 @@ void App::init( const std::string& file ) {
 }
 
 EE_MAIN_FUNC int main( int argc, char* argv[] ) {
-	args::ArgumentParser parser( "eepp Code Editor" );
+	args::ArgumentParser parser( "ecode" );
 	args::Positional<std::string> file( parser, "file", "The file path" );
 
 	try {

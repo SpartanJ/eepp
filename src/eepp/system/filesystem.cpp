@@ -113,9 +113,10 @@ bool FileSystem::fileCopy( const std::string& src, const std::string& dst ) {
 }
 
 std::string FileSystem::fileExtension( const std::string& filepath, const bool& lowerExt ) {
-	size_t dotPos = filepath.find_last_of( "." );
-	std::string tstr( dotPos != std::string::npos ? filepath.substr( dotPos + 1 )
-												  : fileNameFromPath( filepath ) );
+	std::string filename( fileNameFromPath( filepath ) );
+
+	size_t dotPos = filename.find_last_of( "." );
+	std::string tstr( dotPos != std::string::npos ? filename.substr( dotPos + 1 ) : "" );
 
 	if ( lowerExt )
 		String::toLowerInPlace( tstr );
@@ -174,14 +175,36 @@ bool FileSystem::fileRemove( const std::string& filepath ) {
 	return 0 == remove( filepath.c_str() );
 }
 
-Uint32 FileSystem::fileGetModificationDate( const std::string& Filepath ) {
+Uint32 FileSystem::fileGetModificationDate( const std::string& filepath ) {
 	struct stat st;
-	int res = stat( Filepath.c_str(), &st );
+	int res = stat( filepath.c_str(), &st );
 
 	if ( 0 == res )
 		return (Uint32)st.st_mtime;
 
 	return 0;
+}
+
+bool FileSystem::fileCanWrite( const std::string& filepath ) {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+#if UNICODE
+	return 0 == ( GetFileAttributes( String::fromUtf8( filepath ).toWideString().c_str() ) &
+				  FILE_ATTRIBUTE_READONLY );
+#else
+	return 0 == ( GetFileAttributes( (LPCTSTR)filepath.c_str() ) & FILE_ATTRIBUTE_READONLY );
+#endif
+#else
+	struct stat st;
+	if ( stat( filepath.c_str(), &st ) == 0 ) {
+		if ( st.st_uid == geteuid() )
+			return ( st.st_mode & S_IWUSR ) != 0;
+		else if ( st.st_gid == getegid() )
+			return ( st.st_mode & S_IWGRP ) != 0;
+		else
+			return ( st.st_mode & S_IWOTH ) != 0 || geteuid() == 0;
+	}
+	return false;
+#endif
 }
 
 void FileSystem::dirPathAddSlashAtEnd( std::string& path ) {

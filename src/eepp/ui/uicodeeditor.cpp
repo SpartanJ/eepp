@@ -192,9 +192,10 @@ void UICodeEditor::reset() {
 	invalidateDraw();
 }
 
-void UICodeEditor::loadFromFile( const std::string& path ) {
-	mDoc.loadFromFile( path );
+bool UICodeEditor::loadFromFile( const std::string& path ) {
+	bool ret = mDoc.loadFromFile( path );
 	invalidateEditor();
+	return ret;
 }
 
 bool UICodeEditor::save() {
@@ -1064,6 +1065,16 @@ void UICodeEditor::setEnableColorPickerOnSelection( const bool& enableColorPicke
 	mEnableColorPickerOnSelection = enableColorPickerOnSelection;
 }
 
+void UICodeEditor::setSyntaxDefinition( const SyntaxDefinition& definition ) {
+	mDoc.setSyntaxDefinition( definition );
+	mHighlighter.reset();
+	invalidateDraw();
+}
+
+const SyntaxDefinition& UICodeEditor::getSyntaxDefinition() const {
+	return mDoc.getSyntaxDefinition();
+}
+
 void UICodeEditor::checkMatchingBrackets() {
 	if ( mHighlightMatchingBracket ) {
 		mMatchingBrackets = TextRange();
@@ -1258,15 +1269,10 @@ void UICodeEditor::drawSelectionMatch( const std::pair<int, int>& lineRange,
 	String text( selectionLine.substr( selection.start().column(),
 									   selection.end().column() - selection.start().column() ) );
 
-	if ( ( text[0] == '\t' && text.countChar( '\t' ) == text.size() ) ||
-		 ( text[0] == ' ' && text.countChar( ' ' ) == text.size() ) ) {
-		return;
-	}
-
 	for ( auto ln = lineRange.first; ln <= lineRange.second; ln++ ) {
 		const String& line = mDoc.line( ln ).getText();
 		size_t pos = 0;
-		// Skip ridicously long lines.
+		// Skip ridiculously long lines.
 		if ( line.size() > 300 )
 			continue;
 		do {

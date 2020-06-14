@@ -37,9 +37,11 @@ class EE_API TextDocument {
 
 	enum IndentType { IndentSpaces, IndentTabs };
 
-	static bool isNonWord( String::StringBaseType ch );
-
 	TextDocument();
+
+	bool isNonWord( String::StringBaseType ch ) const;
+
+	bool hasFilepath();
 
 	bool isEmpty();
 
@@ -252,6 +254,8 @@ class EE_API TextDocument {
 
 	const SyntaxDefinition& getSyntaxDefinition() const;
 
+	void setSyntaxDefinition( const SyntaxDefinition& definition );
+
 	Uint64 getCurrentChangeId() const;
 
 	const std::string& getDefaultFileName() const;
@@ -274,6 +278,12 @@ class EE_API TextDocument {
 								   const String::StringBaseType& openBracket,
 								   const String::StringBaseType& closeBracket ) const;
 
+	const String& getNonWordChars() const;
+
+	void setNonWordChars( const String& nonWordChars );
+
+	void resetSyntax();
+
   protected:
 	friend class UndoStack;
 	UndoStack mUndoStack;
@@ -291,6 +301,7 @@ class EE_API TextDocument {
 	Uint64 mCleanChangeId;
 	Uint32 mPageSize{10};
 	std::map<std::string, DocumentCommand> mCommands;
+	String mNonWordChars;
 
 	void initializeCommands();
 

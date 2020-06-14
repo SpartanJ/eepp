@@ -725,10 +725,8 @@ void UINode::drawForeground() {
 
 void UINode::drawBorder() {
 	if ( ( mFlags & UI_BORDER ) && NULL != mBorder ) {
-		Uint8 alpha = mBorder->getAlpha();
-		mBorder->setAlpha( eemin<Uint32>( mAlpha * alpha / 255.f, 255 ) );
+		mBorder->setAlpha( mAlpha );
 		mBorder->draw( mScreenPosi.asFloat(), mSize.floor() );
-		mBorder->setAlpha( alpha );
 	}
 }
 

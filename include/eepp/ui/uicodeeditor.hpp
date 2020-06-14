@@ -43,7 +43,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void reset();
 
-	void loadFromFile( const std::string& path );
+	bool loadFromFile( const std::string& path );
 
 	bool save();
 
@@ -214,6 +214,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	const bool& getEnableColorPickerOnSelection() const;
 
 	void setEnableColorPickerOnSelection( const bool& enableColorPickerOnSelection );
+
+	void setSyntaxDefinition( const SyntaxDefinition& definition );
+
+	const SyntaxDefinition& getSyntaxDefinition() const;
 
 	/** Doc commands executed in this editor. */
 	TextPosition moveToLineOffset( const TextPosition& position, int offset );

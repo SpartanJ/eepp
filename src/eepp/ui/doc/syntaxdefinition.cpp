@@ -1,4 +1,5 @@
 #include <eepp/core/memorymanager.hpp>
+#include <eepp/core/string.hpp>
 #include <eepp/ui/doc/syntaxdefinition.hpp>
 
 namespace EE { namespace UI { namespace Doc {
@@ -9,15 +10,28 @@ SyntaxDefinition::SyntaxDefinition( const std::string& languageName,
 									const std::vector<std::string>& files,
 									const std::vector<SyntaxPattern>& patterns,
 									const std::unordered_map<std::string, std::string>& symbols,
-									const std::string& comment ) :
+									const std::string& comment,
+									const std::vector<std::string> headers ) :
 	mLanguageName( languageName ),
 	mFiles( files ),
 	mPatterns( patterns ),
 	mSymbols( symbols ),
-	mComment( comment ) {}
+	mComment( comment ),
+	mHeaders( headers ) {}
 
 const std::vector<std::string>& SyntaxDefinition::getFiles() const {
 	return mFiles;
+}
+
+std::string SyntaxDefinition::getFileExtension() const {
+	if ( !mFiles.empty() ) {
+		std::string ext( mFiles[0] );
+		String::replaceAll( ext, "%", "" );
+		String::replaceAll( ext, "$", "" );
+		String::replaceAll( ext, "?", "" );
+		return ext;
+	}
+	return "";
 }
 
 const std::vector<SyntaxPattern>& SyntaxDefinition::getPatterns() const {
@@ -65,6 +79,15 @@ SyntaxDefinition& SyntaxDefinition::addSymbols( const std::vector<std::string>& 
 
 SyntaxDefinition& SyntaxDefinition::setComment( const std::string& comment ) {
 	mComment = comment;
+	return *this;
+}
+
+const std::vector<std::string>& SyntaxDefinition::getHeaders() const {
+	return mHeaders;
+}
+
+SyntaxDefinition& SyntaxDefinition::setHeaders( const std::vector<std::string>& headers ) {
+	mHeaders = headers;
 	return *this;
 }
 

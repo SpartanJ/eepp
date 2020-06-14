@@ -17,13 +17,22 @@ class EE_API SyntaxDefinitionManager {
 
 	const SyntaxDefinition& getStyleByExtension( const std::string& filePath ) const;
 
+	const SyntaxDefinition& getStyleByHeader( const std::string& header ) const;
+
+	const SyntaxDefinition& find( const std::string& filePath, const std::string& header );
+
 	SyntaxDefinition& getStyleByExtensionRef( const std::string& filePath );
+
+	const SyntaxDefinition& getStyleByLanguageName( const std::string& name ) const;
+
+	SyntaxDefinition& getStyleByLanguageNameRef( const std::string& name );
+
+	std::vector<std::string> getLanguageNames() const;
 
   protected:
 	SyntaxDefinitionManager();
 
 	std::vector<SyntaxDefinition> mStyles;
-	SyntaxDefinition mEmptyDefinition;
 };
 
 }}} // namespace EE::UI::Doc

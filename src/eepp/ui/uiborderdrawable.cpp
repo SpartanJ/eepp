@@ -99,6 +99,7 @@ Color UIBorderDrawable::getColorLeft() const {
 void UIBorderDrawable::setColorLeft( const Color& colorLeft ) {
 	if ( mBorders.left.color != colorLeft ) {
 		mBorders.left.color = colorLeft;
+		mBorders.left.realColor = colorLeft;
 		mColorNeedsUpdate = true;
 	}
 }
@@ -110,6 +111,7 @@ Color UIBorderDrawable::getColorRight() const {
 void UIBorderDrawable::setColorRight( const Color& colorRight ) {
 	if ( mBorders.right.color != colorRight ) {
 		mBorders.right.color = colorRight;
+		mBorders.right.realColor = colorRight;
 		mColorNeedsUpdate = true;
 	}
 }
@@ -121,6 +123,7 @@ Color UIBorderDrawable::getColorTop() const {
 void UIBorderDrawable::setColorTop( const Color& colorTop ) {
 	if ( mBorders.top.color != colorTop ) {
 		mBorders.top.color = colorTop;
+		mBorders.top.realColor = colorTop;
 		mColorNeedsUpdate = true;
 	}
 }
@@ -132,6 +135,7 @@ Color UIBorderDrawable::getColorBottom() const {
 void UIBorderDrawable::setColorBottom( const Color& colorBottom ) {
 	if ( mBorders.bottom.color != colorBottom ) {
 		mBorders.bottom.color = colorBottom;
+		mBorders.bottom.realColor = colorBottom;
 		mColorNeedsUpdate = true;
 	}
 }
@@ -212,15 +216,18 @@ const Borders& UIBorderDrawable::getBorders() const {
 }
 
 void UIBorderDrawable::onAlphaChange() {
-	mBorders.left.color.a = mBorders.right.color.a = mBorders.top.color.a =
-		mBorders.bottom.color.a = mColor.a;
+	mBorders.left.color.a = static_cast<Uint8>( mBorders.left.realColor.a * mColor.a / 255.f );
+	mBorders.right.color.a = static_cast<Uint8>( mBorders.right.realColor.a * mColor.a / 255.f );
+	mBorders.top.color.a = static_cast<Uint8>( mBorders.top.realColor.a * mColor.a / 255.f );
+	mBorders.bottom.color.a = static_cast<Uint8>( mBorders.bottom.realColor.a * mColor.a / 255.f );
 	mColorNeedsUpdate = true;
 }
 
 void UIBorderDrawable::onColorFilterChange() {
 	Drawable::onColorFilterChange();
-	mBorders.left.color = mBorders.right.color = mBorders.top.color = mBorders.bottom.color =
-		mColor;
+	mBorders.left.color = mBorders.left.realColor = mBorders.right.color =
+		mBorders.right.realColor = mBorders.top.color = mBorders.top.realColor =
+			mBorders.bottom.color = mBorders.bottom.realColor = mColor;
 	mColorNeedsUpdate = true;
 }
 

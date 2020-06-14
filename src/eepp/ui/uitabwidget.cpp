@@ -494,7 +494,7 @@ void UITabWidget::removeTab( const Uint32& index, bool destroyOwnedNode ) {
 
 	orderTabs();
 
-	TabEvent tabEvent( this, tab, Event::OnTabClosed );
+	TabEvent tabEvent( this, tab, index, Event::OnTabClosed );
 	sendEvent( &tabEvent );
 }
 
@@ -527,7 +527,7 @@ void UITabWidget::removeAllTabs( bool destroyOwnedNode ) {
 
 	for ( Uint32 i = 0; i < tabs.size(); i++ ) {
 		if ( NULL != tabs[i] ) {
-			TabEvent tabEvent( this, tabs[i], Event::OnTabClosed );
+			TabEvent tabEvent( this, tabs[i], i, Event::OnTabClosed );
 			sendEvent( &tabEvent );
 		}
 	}

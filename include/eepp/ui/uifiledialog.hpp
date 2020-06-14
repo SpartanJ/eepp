@@ -2,6 +2,7 @@
 #define EE_UI_UIFILEDIALOG_HPP
 
 #include <eepp/ui/base.hpp>
+#include <eepp/ui/keyboardshortcut.hpp>
 #include <eepp/ui/uicombobox.hpp>
 #include <eepp/ui/uilistbox.hpp>
 #include <eepp/ui/uipushbutton.hpp>
@@ -81,9 +82,11 @@ class EE_API UIFileDialog : public UIWindow {
 
 	void setAllowFolderSelect( const bool& allowFolderSelect );
 
-	const Uint32& getCloseWithKey() const;
+	const KeyBindings::Shortcut& getCloseShortcut() const;
 
-	void setCloseWithKey( const Uint32& closeWithKey );
+	void setFileName( const std::string& name );
+
+	void setCloseShortcut( const KeyBindings::Shortcut& closeWithKey );
 
   protected:
 	std::string mCurPath;
@@ -95,7 +98,7 @@ class EE_API UIFileDialog : public UIWindow {
 	UITextInput* mFile;
 	UIDropDownList* mFiletype;
 	Uint32 mDialogFlags;
-	Uint32 mCloseWithKey;
+	KeyBindings::Shortcut mCloseShortcut;
 
 	virtual void onWindowReady();
 

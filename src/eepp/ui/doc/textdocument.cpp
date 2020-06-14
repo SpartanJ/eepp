@@ -14,21 +14,23 @@ namespace EE { namespace UI { namespace Doc {
 // Text document is loosely based on the SerenityOS (https://github.com/SerenityOS/serenity)
 // TextDocument and the lite editor (https://github.com/rxi/lite) implementations.
 
-const char NON_WORD_CHARS[] = " \t\n/\\()\"':,.;<>~!@#$%^&*|+=[]{}`?-";
+const char DEFAULT_NON_WORD_CHARS[] = " \t\n/\\()\"':,.;<>~!@#$%^&*|+=[]{}`?-";
 
-bool TextDocument::isNonWord( String::StringBaseType ch ) {
-	for ( size_t i = 0; i < eeARRAY_SIZE( NON_WORD_CHARS ); i++ ) {
-		if ( static_cast<String::StringBaseType>( NON_WORD_CHARS[i] ) == ch ) {
-			return true;
-		}
-	}
-	return false;
+bool TextDocument::isNonWord( String::StringBaseType ch ) const {
+	return mNonWordChars.find_first_of( ch ) != String::InvalidPos;
 }
 
 TextDocument::TextDocument() :
-	mUndoStack( this ), mDefaultFileName( "untitled" ), mCleanChangeId( 0 ) {
+	mUndoStack( this ),
+	mDefaultFileName( "untitled" ),
+	mCleanChangeId( 0 ),
+	mNonWordChars( DEFAULT_NON_WORD_CHARS ) {
 	initializeCommands();
 	reset();
+}
+
+bool TextDocument::hasFilepath() {
+	return mDefaultFileName != mFilePath;
 }
 
 bool TextDocument::isEmpty() {
@@ -127,12 +129,19 @@ bool TextDocument::loadFromStream( IOStream& file ) {
 			pending -= read;
 			blockSize = eemin( pending, BLOCK_SIZE );
 		};
+	} else {
+		mLines.push_back( String( "\n" ) );
 	}
 
 	eePRINTL( "Document \"%s\" loaded in %.2fms.",
 			  mFilePath.empty() ? "untitled" : mFilePath.c_str(),
 			  clock.getElapsedTime().asMilliseconds() );
 	return true;
+}
+
+void TextDocument::resetSyntax() {
+	String header( getText( {{0, 0}, positionOffset( {0, 0}, 128 )} ) );
+	mSyntaxDefinition = SyntaxDefinitionManager::instance()->find( mFilePath, header );
 }
 
 bool TextDocument::loadFromFile( const std::string& path ) {
@@ -145,15 +154,10 @@ bool TextDocument::loadFromFile( const std::string& path ) {
 		}
 	}
 
-	if ( !FileSystem::fileExists( path ) ) {
-		mSyntaxDefinition = SyntaxDefinitionManager::instance()->getStyleByExtension( path );
-		return false;
-	}
-
 	IOStreamFile file( path, "rb" );
 	bool ret = loadFromStream( file );
 	mFilePath = path;
-	mSyntaxDefinition = SyntaxDefinitionManager::instance()->getStyleByExtension( path );
+	resetSyntax();
 	return ret;
 }
 
@@ -176,10 +180,14 @@ bool TextDocument::loadFromPack( Pack* pack, std::string filePackPath ) {
 bool TextDocument::save( const std::string& path, const bool& utf8bom ) {
 	if ( path.empty() || mDefaultFileName == path )
 		return false;
-	IOStreamFile file( path, "wb" );
-	if ( save( file, utf8bom ) ) {
+	if ( FileSystem::fileCanWrite( FileSystem::fileRemoveFileName( path ) ) ) {
+		IOStreamFile file( path, "wb" );
 		mFilePath = path;
-		return true;
+		if ( save( file, utf8bom ) ) {
+			return true;
+		} else {
+			mFilePath.clear();
+		}
 	}
 	return false;
 }
@@ -944,6 +952,10 @@ const SyntaxDefinition& TextDocument::getSyntaxDefinition() const {
 	return mSyntaxDefinition;
 }
 
+void TextDocument::setSyntaxDefinition( const SyntaxDefinition& definition ) {
+	mSyntaxDefinition = definition;
+}
+
 Uint64 TextDocument::getCurrentChangeId() const {
 	return mUndoStack.getCurrentChangeId();
 }
@@ -1102,6 +1114,14 @@ TextPosition TextDocument::findCloseBracket( TextPosition startPosition,
 		}
 	}
 	return TextPosition();
+}
+
+const String& TextDocument::getNonWordChars() const {
+	return mNonWordChars;
+}
+
+void TextDocument::setNonWordChars( const String& nonWordChars ) {
+	mNonWordChars = nonWordChars;
 }
 
 void TextDocument::notifyTextChanged() {

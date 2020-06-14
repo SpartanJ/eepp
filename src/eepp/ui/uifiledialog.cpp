@@ -22,7 +22,7 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, std::string defaultFilePattern,
 	UIWindow(),
 	mCurPath( defaultDirectory ),
 	mDialogFlags( dialogFlags ),
-	mCloseWithKey( KEY_UNKNOWN ) {
+	mCloseShortcut( KEY_UNKNOWN ) {
 	if ( getSize().getWidth() < FDLG_MIN_WIDTH ) {
 		mDpSize.x = FDLG_MIN_WIDTH;
 		mSize.x = PixelDensity::dpToPxI( FDLG_MIN_WIDTH );
@@ -93,7 +93,7 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, std::string defaultFilePattern,
 	} );
 	mList->addEventListener( Event::OnItemKeyDown, [&]( const Event* event ) {
 		const KeyEvent* KEvent = reinterpret_cast<const KeyEvent*>( event );
-		if ( KEvent->getKeyCode() == KEY_RETURN ) {
+		if ( KEvent->getKeyCode() == KEY_RETURN || KEvent->getKeyCode() == KEY_KP_ENTER ) {
 			openFileOrFolder();
 		} else if ( KEvent->getKeyCode() == KEY_BACKSPACE ) {
 			goFolderUp();
@@ -489,7 +489,8 @@ UIDropDownList* UIFileDialog::getFiletypeList() const {
 }
 
 Uint32 UIFileDialog::onKeyUp( const KeyEvent& Event ) {
-	if ( mCloseWithKey && Event.getKeyCode() == mCloseWithKey ) {
+	if ( mCloseShortcut && Event.getKeyCode() == mCloseShortcut &&
+		 ( Event.getMod() & mCloseShortcut.mod ) ) {
 		disableButtons();
 
 		closeWindow();
@@ -498,12 +499,18 @@ Uint32 UIFileDialog::onKeyUp( const KeyEvent& Event ) {
 	return 1;
 }
 
-const Uint32& UIFileDialog::getCloseWithKey() const {
-	return mCloseWithKey;
+const KeyBindings::Shortcut& UIFileDialog::getCloseShortcut() const {
+	return mCloseShortcut;
 }
 
-void UIFileDialog::setCloseWithKey( const Uint32& closeWithKey ) {
-	mCloseWithKey = closeWithKey;
+void UIFileDialog::setFileName( const std::string& name ) {
+	if ( mFile ) {
+		mFile->setText( name );
+	}
+}
+
+void UIFileDialog::setCloseShortcut( const KeyBindings::Shortcut& closeWithKey ) {
+	mCloseShortcut = closeWithKey;
 }
 
 }} // namespace EE::UI
