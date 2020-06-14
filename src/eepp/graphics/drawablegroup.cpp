@@ -105,6 +105,13 @@ void DrawableGroup::onPositionChange() {
 	mNeedsUpdate = true;
 }
 
+void DrawableGroup::onAlphaChange() {
+	for ( std::size_t i = 0; i < mGroup.size(); i++ ) {
+		Drawable* drawable = mGroup[i];
+		drawable->setAlpha( getAlpha() );
+	}
+}
+
 void DrawableGroup::update() {
 	Sizef nSize( mSize );
 

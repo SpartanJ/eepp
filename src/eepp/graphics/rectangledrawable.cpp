@@ -54,8 +54,17 @@ void RectangleDrawable::draw( const Vector2f& position, const Sizef& size ) {
 
 	if ( mCorners == 0 ) {
 		if ( mUsingRectColors ) {
-			drawRectangle( Rectf( mPosition, mSize ), mRectColors.TopLeft, mRectColors.BottomLeft,
-						   mRectColors.BottomRight, mRectColors.TopRight, mRotation, mScale );
+			if ( mColor.a == 255 ) {
+				drawRectangle( Rectf( mPosition, mSize ), mRectColors.TopLeft,
+							   mRectColors.BottomLeft, mRectColors.BottomRight,
+							   mRectColors.TopRight, mRotation, mScale );
+			} else {
+				drawRectangle(
+					Rectf( mPosition, mSize ), Color( mRectColors.TopLeft ).blendAlpha( mColor.a ),
+					Color( mRectColors.BottomLeft ).blendAlpha( mColor.a ),
+					Color( mRectColors.BottomRight ).blendAlpha( mColor.a ),
+					Color( mRectColors.TopRight ).blendAlpha( mColor.a ), mRotation, mScale );
+			}
 		} else {
 			drawRectangle( Rectf( mPosition, mSize ), mColor, mColor, mColor, mColor, mRotation,
 						   mScale );

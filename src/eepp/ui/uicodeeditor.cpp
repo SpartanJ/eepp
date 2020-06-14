@@ -3,6 +3,7 @@
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/text.hpp>
+#include <eepp/scene/scenemanager.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/tools/uicolorpicker.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
@@ -588,8 +589,11 @@ void UICodeEditor::checkColorPickerAction() {
 			}
 		}
 		if ( colorPicker )
-			colorPicker->getUIWindow()->addEventListener( Event::OnWindowClose,
-														  [&]( const Event* ) { setFocus(); } );
+			colorPicker->getUIWindow()->addEventListener(
+				Event::OnWindowClose, [&]( const Event* ) {
+					if ( !SceneManager::instance()->isShootingDown() )
+						setFocus();
+				} );
 	}
 }
 

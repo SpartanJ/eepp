@@ -59,7 +59,12 @@ void ConvexShapeDrawable::updateVertex() {
 				if ( mIndexColor.empty() ) {
 					mVertexBuffer->addColor( mColor );
 				} else {
-					mVertexBuffer->addColor( mIndexColor[i & mIndexColor.size()] );
+					if ( mColor.a == 255 ) {
+						mVertexBuffer->addColor( mIndexColor[i & mIndexColor.size()] );
+					} else {
+						mVertexBuffer->addColor(
+							Color( mIndexColor[i & mIndexColor.size()] ).blendAlpha( mColor.a ) );
+					}
 				}
 			}
 
@@ -70,7 +75,7 @@ void ConvexShapeDrawable::updateVertex() {
 			if ( mIndexColor.empty() ) {
 				mVertexBuffer->addColor( mColor );
 			} else {
-				mVertexBuffer->addColor( mIndexColor[0] );
+				mVertexBuffer->addColor( Color( mIndexColor[0] ).blendAlpha( mColor.a ) );
 			}
 
 			for ( Uint32 i = 0; i < mPolygon.getSize(); i++ ) {
@@ -78,7 +83,12 @@ void ConvexShapeDrawable::updateVertex() {
 				if ( mIndexColor.empty() ) {
 					mVertexBuffer->addColor( mColor );
 				} else {
-					mVertexBuffer->addColor( mIndexColor[i & mIndexColor.size()] );
+					if ( mColor.a == 255 ) {
+						mVertexBuffer->addColor( mIndexColor[i & mIndexColor.size()] );
+					} else {
+						mVertexBuffer->addColor(
+							Color( mIndexColor[i & mIndexColor.size()] ).blendAlpha( mColor.a ) );
+					}
 				}
 			}
 
@@ -86,7 +96,8 @@ void ConvexShapeDrawable::updateVertex() {
 			if ( mIndexColor.empty() ) {
 				mVertexBuffer->addColor( mColor );
 			} else {
-				mVertexBuffer->addColor( mIndexColor[mIndexColor.size() - 1] );
+				mVertexBuffer->addColor(
+					Color( mIndexColor[mIndexColor.size() - 1] ).blendAlpha( mColor.a ) );
 			}
 
 			break;

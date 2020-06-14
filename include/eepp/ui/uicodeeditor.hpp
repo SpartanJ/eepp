@@ -312,7 +312,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	virtual Uint32 onTextInput( const TextInputEvent& event );
 
-	virtual Uint32 onKeyDown( const KeyEvent& Event );
+	virtual Uint32 onKeyDown( const KeyEvent& event );
 
 	virtual Uint32 onMouseDown( const Vector2i& position, const Uint32& flags );
 

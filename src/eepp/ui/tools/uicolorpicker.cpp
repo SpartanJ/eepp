@@ -259,12 +259,11 @@ UIColorPicker::UIColorPicker( UIWindow* attachTo, const UIColorPicker::ColorPick
 					mRoot->getUISceneNode()->getUIThemeManager()->getControlsFadeOutTime() ) );
 			}
 		}
-		mUIWindow->getModalControl()->addEventListener( Event::MouseClick, [&]( const Event* ) {
-			if ( mModalAlpha != 0.f &&
-				 mRoot->getUISceneNode()->getUIThemeManager()->getDefaultEffectsEnabled() )
-				mUIWindow->getModalControl()->runAction( Actions::FadeOut::New(
-					mRoot->getUISceneNode()->getUIThemeManager()->getControlsFadeOutTime() ) );
-			mUIWindow->closeWindow();
+		mUIWindow->getModalControl()->addEventListener( Event::MouseClick,
+														[&]( const Event* ) { closePicker(); } );
+		mUIWindow->addEventListener( Event::KeyDown, [&]( const Event* event ) {
+			const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );
+			onKeyDown( *keyEvent );
 		} );
 	}
 
@@ -290,6 +289,8 @@ UIColorPicker::UIColorPicker( UIWindow* attachTo, const UIColorPicker::ColorPick
 			updateAll();
 		}
 	} );
+
+	mRoot->setFocus();
 
 	registerEvents();
 }
@@ -322,6 +323,20 @@ const Colorf& UIColorPicker::getHsvColor() const {
 
 UIWindow* UIColorPicker::getUIWindow() const {
 	return mUIWindow;
+}
+
+void UIColorPicker::closePicker() {
+	if ( mModalAlpha != 0.f &&
+		 mRoot->getUISceneNode()->getUIThemeManager()->getDefaultEffectsEnabled() )
+		mUIWindow->getModalControl()->runAction( Actions::FadeOut::New(
+			mRoot->getUISceneNode()->getUIThemeManager()->getControlsFadeOutTime() ) );
+	mUIWindow->closeWindow();
+}
+
+void UIColorPicker::onKeyDown( const KeyEvent& event ) {
+	if ( event.getKeyCode() == KEY_ESCAPE ) {
+		closePicker();
+	}
 }
 
 Uint8 UIColorPicker::getModalAlpha() const {

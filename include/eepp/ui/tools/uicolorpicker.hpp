@@ -47,6 +47,8 @@ class EE_API UIColorPicker {
 
 	UIWindow* getUIWindow() const;
 
+	void closePicker();
+
   protected:
 	UIWindow* mUIWindow;
 	Node* mUIContainer;
@@ -69,6 +71,8 @@ class EE_API UIColorPicker {
 	Uint8 mModalAlpha;
 	Uint8 mDefModalAlpha;
 	bool mUpdating;
+
+	void onKeyDown( const KeyEvent& event );
 
 	void windowClose( const Event* Event );
 

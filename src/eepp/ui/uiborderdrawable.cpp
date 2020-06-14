@@ -98,7 +98,7 @@ Color UIBorderDrawable::getColorLeft() const {
 
 void UIBorderDrawable::setColorLeft( const Color& colorLeft ) {
 	if ( mBorders.left.color != colorLeft ) {
-		mBorders.left.color = colorLeft;
+		mBorders.left.color = Color( colorLeft ).blendAlpha( mColor.a );
 		mBorders.left.realColor = colorLeft;
 		mColorNeedsUpdate = true;
 	}
@@ -110,7 +110,7 @@ Color UIBorderDrawable::getColorRight() const {
 
 void UIBorderDrawable::setColorRight( const Color& colorRight ) {
 	if ( mBorders.right.color != colorRight ) {
-		mBorders.right.color = colorRight;
+		mBorders.right.color = Color( colorRight ).blendAlpha( mColor.a );
 		mBorders.right.realColor = colorRight;
 		mColorNeedsUpdate = true;
 	}
@@ -122,7 +122,7 @@ Color UIBorderDrawable::getColorTop() const {
 
 void UIBorderDrawable::setColorTop( const Color& colorTop ) {
 	if ( mBorders.top.color != colorTop ) {
-		mBorders.top.color = colorTop;
+		mBorders.top.color = Color( colorTop ).blendAlpha( mColor.a );
 		mBorders.top.realColor = colorTop;
 		mColorNeedsUpdate = true;
 	}
@@ -134,7 +134,7 @@ Color UIBorderDrawable::getColorBottom() const {
 
 void UIBorderDrawable::setColorBottom( const Color& colorBottom ) {
 	if ( mBorders.bottom.color != colorBottom ) {
-		mBorders.bottom.color = colorBottom;
+		mBorders.bottom.color = Color( colorBottom ).blendAlpha( mColor.a );
 		mBorders.bottom.realColor = colorBottom;
 		mColorNeedsUpdate = true;
 	}

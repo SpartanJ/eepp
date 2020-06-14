@@ -50,6 +50,8 @@ class EE_API DrawableGroup : public Drawable {
 
 	virtual void onPositionChange();
 
+	virtual void onAlphaChange();
+
 	void update();
 };
 

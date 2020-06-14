@@ -947,8 +947,11 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 
 		mTheme = UITheme::load( "uitheme", "uitheme", "", font, resPath + "assets/ui/breeze.css" );
 		mUISceneNode->setStyleSheet( mTheme->getStyleSheet() );
-		mUISceneNode->getUIThemeManager()->setDefaultTheme( mTheme )->setDefaultFont( font )->add(
-			mTheme );
+		mUISceneNode->getUIThemeManager()
+			//->setDefaultEffectsEnabled( true )
+			->setDefaultTheme( mTheme )
+			->setDefaultFont( font )
+			->add( mTheme );
 
 		auto colorSchemes =
 			SyntaxColorScheme::loadFromFile( resPath + "assets/colorschemes/colorschemes.conf" );
