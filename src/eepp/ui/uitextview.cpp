@@ -253,12 +253,12 @@ void UITextView::autoShrink() {
 	}
 }
 
-void UITextView::shrinkText( const Uint32& MaxWidth ) {
+void UITextView::shrinkText( const Uint32& maxWidth ) {
 	if ( mFlags & UI_WORD_WRAP ) {
 		mTextCache->setString( mString );
 	}
 
-	mTextCache->shrinkText( MaxWidth );
+	mTextCache->shrinkText( maxWidth );
 	invalidateDraw();
 }
 

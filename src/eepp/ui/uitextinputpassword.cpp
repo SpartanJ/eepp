@@ -128,7 +128,7 @@ void UITextInputPassword::updateText() {
 void UITextInputPassword::updatePass( const String& pass ) {
 	String newTxt;
 	if ( !pass.empty() ) {
-		for ( size_t i = 0; i < pass.size() - 1; i++ )
+		for ( size_t i = 0; i < pass.size(); i++ )
 			newTxt += mBulletCharacter;
 	}
 	mPassCache->setString( newTxt );

@@ -29,6 +29,7 @@ UITextInput::UITextInput( const std::string& tag ) :
 	mShowingWait( true ),
 	mOnlyNumbers( false ),
 	mAllowFloat( false ),
+	mMouseDown( false ),
 	mKeyBindings( getUISceneNode()->getWindow()->getInput() ) {
 	mHintCache = Text::New();
 
@@ -80,6 +81,16 @@ bool UITextInput::isType( const Uint32& type ) const {
 
 void UITextInput::scheduledUpdate( const Time& time ) {
 	updateWaitingCursor( time );
+	if ( mMouseDown ) {
+		if ( !( getUISceneNode()->getWindow()->getInput()->getPressTrigger() & EE_BUTTON_LMASK ) ) {
+			mMouseDown = false;
+			mSelecting = false;
+			getUISceneNode()->getWindow()->getInput()->captureMouse( false );
+		} else {
+			onMouseDown( getUISceneNode()->getEventDispatcher()->getMousePos(),
+						 getUISceneNode()->getEventDispatcher()->getPressTrigger() );
+		}
+	}
 }
 
 void UITextInput::onCursorPosChange() {
@@ -88,7 +99,7 @@ void UITextInput::onCursorPosChange() {
 }
 
 void UITextInput::drawWaitingCursor() {
-	if ( mVisible && hasFocus() && mShowingWait ) {
+	if ( mVisible && hasFocus() && mShowingWait && mAllowEditing ) {
 		bool disableSmooth = mShowingWait && GLi->isLineSmooth();
 
 		if ( disableSmooth )
@@ -279,7 +290,10 @@ void UITextInput::autoPadding() {
 }
 
 UITextInput* UITextInput::setAllowEditing( const bool& allow ) {
-	mAllowEditing = allow;
+	if ( allow != mAllowEditing ) {
+		mAllowEditing = allow;
+		invalidateDraw();
+	}
 	return this;
 }
 
@@ -309,11 +323,27 @@ Uint32 UITextInput::onMouseDown( const Vector2i& position, const Uint32& flags )
 
 	UITextView::onMouseDown( position, flags );
 
+	if ( NULL != getEventDispatcher() && isTextSelectionEnabled() && ( flags & EE_BUTTON_LMASK ) &&
+		 getEventDispatcher()->getMouseDownNode() == this ) {
+		getUISceneNode()->getWindow()->getInput()->captureMouse( true );
+		mMouseDown = true;
+	}
+
 	if ( endPos != selCurEnd() && -1 != selCurEnd() ) {
 		resetWaitCursor();
 	}
 
 	return 1;
+}
+
+Uint32 UITextInput::onMouseUp( const Vector2i& position, const Uint32& flags ) {
+	if ( flags & EE_BUTTON_LMASK ) {
+		if ( mMouseDown ) {
+			mMouseDown = false;
+			getUISceneNode()->getWindow()->getInput()->captureMouse( false );
+		}
+	}
+	return UITextView::onMouseUp( position, flags );
 }
 
 Uint32 UITextInput::onMouseDoubleClick( const Vector2i& Pos, const Uint32& Flags ) {

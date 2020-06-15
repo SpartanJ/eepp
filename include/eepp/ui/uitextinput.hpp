@@ -110,6 +110,7 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 	bool mShowingWait;
 	bool mOnlyNumbers;
 	bool mAllowFloat;
+	bool mMouseDown;
 	Uint32 mMaxLength{0};
 	KeyBindings mKeyBindings;
 
@@ -124,6 +125,8 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 	void autoPadding();
 
 	virtual Uint32 onMouseDown( const Vector2i& position, const Uint32& flags );
+
+	virtual Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
 
 	virtual Uint32 onMouseDoubleClick( const Vector2i& position, const Uint32& flags );
 
