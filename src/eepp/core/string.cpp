@@ -424,6 +424,11 @@ std::string String::fromFloat( const Float& value, const std::string& append,
 	return prepend + toStr( value ) + append;
 }
 
+std::string String::fromDouble( const double& value, const std::string& append,
+								const std::string& prepend ) {
+	return prepend + toStr( value ) + append;
+}
+
 void String::insertChar( String& str, const unsigned int& pos, const StringBaseType& tchar ) {
 	str.insert( str.begin() + pos, tchar );
 }

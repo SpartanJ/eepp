@@ -62,7 +62,7 @@ UIMapNew::UIMapNew( UIMap* Map, std::function<void()> NewMapCb, bool ResizeMap )
 		Vector2f( Txt->getPosition().x + DistFromTitle, Txt->getPosition().y + DistFromTitle ),
 		UI_NODE_DEFAULT_FLAGS, Text::Shadow );
 
-	mUIMapWidth = UISpinBox::New()->setAllowOnlyNumbers( false )->setValue( 100 );
+	mUIMapWidth = UISpinBox::New()->setValue( 100 );
 	mUIMapWidth->setParent( mUIWindow->getContainer() )
 		->setSize( 53, 0 )
 		->setPosition( Txt->getPosition().x + Txt->getSize().getWidth(), Txt->getPosition().y );
@@ -77,7 +77,7 @@ UIMapNew::UIMapNew( UIMap* Map, std::function<void()> NewMapCb, bool ResizeMap )
 		Vector2f( Txt->getPosition().x, Txt->getPosition().y + Txt->getSize().getHeight() + 8 ),
 		UI_NODE_DEFAULT_FLAGS, Text::Shadow );
 
-	mUIMapHeight = UISpinBox::New()->setAllowOnlyNumbers( false )->setValue( 100 );
+	mUIMapHeight = UISpinBox::New()->setValue( 100 );
 	mUIMapHeight->setParent( mUIWindow->getContainer() )
 		->setSize( 53, 0 )
 		->setPosition( Txt->getPosition().x + Txt->getSize().getWidth(), Txt->getPosition().y );
@@ -96,7 +96,7 @@ UIMapNew::UIMapNew( UIMap* Map, std::function<void()> NewMapCb, bool ResizeMap )
 		Vector2f( Txt->getPosition().x + DistFromTitle, Txt->getPosition().y + DistFromTitle ),
 		UI_NODE_DEFAULT_FLAGS, Text::Shadow );
 
-	mUIMapTWidth = UISpinBox::New()->setAllowOnlyNumbers( false )->setValue( 32 );
+	mUIMapTWidth = UISpinBox::New()->setValue( 32 );
 	mUIMapTWidth->setParent( mUIWindow->getContainer() )
 		->setSize( 53, 0 )
 		->setPosition( Txt->getPosition().x + Txt->getSize().getWidth(), Txt->getPosition().y );
@@ -111,7 +111,7 @@ UIMapNew::UIMapNew( UIMap* Map, std::function<void()> NewMapCb, bool ResizeMap )
 		Vector2f( Txt->getPosition().x, Txt->getPosition().y + Txt->getSize().getHeight() + 8 ),
 		UI_NODE_DEFAULT_FLAGS, Text::Shadow );
 
-	mUIMapTHeight = UISpinBox::New()->setAllowOnlyNumbers( false )->setValue( 32 );
+	mUIMapTHeight = UISpinBox::New()->setValue( 32 );
 	mUIMapTHeight->setParent( mUIWindow->getContainer() )
 		->setSize( 53, 0 )
 		->setPosition( Txt->getPosition().x + Txt->getSize().getWidth(), Txt->getPosition().y );
@@ -126,7 +126,7 @@ UIMapNew::UIMapNew( UIMap* Map, std::function<void()> NewMapCb, bool ResizeMap )
 		Vector2f( 16, mUIMapTHeight->getPosition().y + mUIMapTHeight->getSize().getHeight() + 8 ),
 		UI_NODE_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
-	mUIMapMaxLayers = UISpinBox::New()->setAllowOnlyNumbers( false )->setValue( 8 );
+	mUIMapMaxLayers = UISpinBox::New()->setValue( 8 );
 	mUIMapMaxLayers->setParent( mUIWindow->getContainer() )
 		->setSize( 53, 0 )
 		->setPosition( Txt->getPosition().x + DistFromTitle, Txt->getPosition().y + DistFromTitle );

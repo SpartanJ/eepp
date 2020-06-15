@@ -272,7 +272,7 @@ Float Text::getOutlineThickness() const {
 
 Vector2f Text::findCharacterPos( std::size_t index ) {
 	// Make sure that we have a valid font
-	if ( !mFont )
+	if ( !mFont || mString.empty() )
 		return Vector2f();
 
 	// Adjust the index if it's out of range
@@ -533,6 +533,10 @@ Float Text::getTextHeight() {
 	return NULL != mFont
 			   ? mFont->getLineSpacing( mRealFontSize ) * ( 0 == mNumLines ? 1 : mNumLines )
 			   : 0;
+}
+
+Float Text::getLineSpacing() {
+	return NULL != mFont ? mFont->getLineSpacing( mRealFontSize ) : 0;
 }
 
 void Text::draw( const Float& X, const Float& Y, const Vector2f& Scale, const Float& Rotation,

@@ -8,6 +8,7 @@
 #include <eepp/ui/uitextinput.hpp>
 #include <eepp/ui/uitheme.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#include <eepp/window/clipboard.hpp>
 #include <eepp/window/engine.hpp>
 #include <pugixml/pugixml.hpp>
 
@@ -22,7 +23,13 @@ UITextInput* UITextInput::NewWithTag( const std::string& tag ) {
 }
 
 UITextInput::UITextInput( const std::string& tag ) :
-	UITextView( tag ), mCursorPos( 0 ), mAllowEditing( true ), mShowingWait( true ) {
+	UITextView( tag ),
+	mCursorPos( 0 ),
+	mAllowEditing( true ),
+	mShowingWait( true ),
+	mOnlyNumbers( false ),
+	mAllowFloat( false ),
+	mKeyBindings( getUISceneNode()->getWindow()->getInput() ) {
 	mHintCache = Text::New();
 
 	UITheme* theme = getUISceneNode()->getUIThemeManager()->getDefaultTheme();
@@ -50,16 +57,9 @@ UITextInput::UITextInput( const std::string& tag ) :
 	setFlags( UI_AUTO_PADDING | UI_AUTO_SIZE | UI_TEXT_SELECTION_ENABLED );
 	clipEnable();
 
-	mTextBuffer.start();
-	mTextBuffer.setActive( false );
-	mTextBuffer.setFreeEditing( true );
-	mTextBuffer.setTextSelectionEnabled( isTextSelectionEnabled() );
-	mTextBuffer.setReturnCallback( cb::Make0( this, &UITextInput::privOnPressEnter ) );
-	mTextBuffer.setCursorPositionChangeCallback(
-		cb::Make0( this, &UITextInput::onCursorPositionChange ) );
-	mTextBuffer.setBufferChangeCallback( cb::Make0( this, &UITextInput::onBufferChange ) );
-	mTextBuffer.setSelectionChangeCallback(
-		cb::Make0( this, &UITextInput::onInputSelectionChange ) );
+	mDoc.registerClient( this );
+	registerCommands();
+	registerKeybindings();
 
 	applyDefaultTheme();
 }
@@ -88,8 +88,7 @@ void UITextInput::onCursorPosChange() {
 }
 
 void UITextInput::drawWaitingCursor() {
-	if ( mVisible && mTextBuffer.isActive() && mTextBuffer.isFreeEditingEnabled() &&
-		 mShowingWait ) {
+	if ( mVisible && hasFocus() && mShowingWait ) {
 		bool disableSmooth = mShowingWait && GLi->isLineSmooth();
 
 		if ( disableSmooth )
@@ -116,7 +115,7 @@ void UITextInput::drawWaitingCursor() {
 }
 
 void UITextInput::updateWaitingCursor( const Time& time ) {
-	if ( mVisible && mTextBuffer.isActive() && mTextBuffer.isFreeEditingEnabled() ) {
+	if ( mVisible && hasFocus() ) {
 		mWaitCursorTime += time.asMilliseconds();
 
 		if ( mWaitCursorTime >= 500.f ) {
@@ -150,7 +149,7 @@ void UITextInput::draw() {
 			if ( isClipped() ) {
 				clipSmartDisable();
 			}
-		} else if ( !mHintCache->getString().empty() && !mTextBuffer.isActive() ) {
+		} else if ( !mHintCache->getString().empty() ) {
 			if ( isClipped() ) {
 				clipSmartEnable( mScreenPos.x + mRealPadding.Left, mScreenPos.y + mRealPadding.Top,
 								 mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
@@ -176,8 +175,6 @@ Uint32 UITextInput::onFocus() {
 	UINode::onFocus();
 
 	if ( mAllowEditing ) {
-		mTextBuffer.setActive( true );
-
 		resetWaitCursor();
 
 		getSceneNode()->getWindow()->startTextInput();
@@ -187,7 +184,6 @@ Uint32 UITextInput::onFocus() {
 }
 
 Uint32 UITextInput::onFocusLoss() {
-	mTextBuffer.setActive( false );
 	getSceneNode()->getWindow()->stopTextInput();
 	return UITextView::onFocusLoss();
 }
@@ -195,14 +191,6 @@ Uint32 UITextInput::onFocusLoss() {
 Uint32 UITextInput::onPressEnter() {
 	sendCommonEvent( Event::OnPressEnter );
 	return 0;
-}
-
-void UITextInput::privOnPressEnter() {
-	onPressEnter();
-}
-
-void UITextInput::pushIgnoredChar( const Uint32& ch ) {
-	mTextBuffer.pushIgnoredChar( ch );
 }
 
 void UITextInput::resetWaitCursor() {
@@ -214,21 +202,28 @@ void UITextInput::alignFix() {
 	Vector2f rOffset( mRealAlignOffset );
 	UITextView::alignFix();
 
+	switch ( Font::getVerticalAlign( getFlags() ) ) {
+		case UI_VALIGN_CENTER:
+			mRealAlignOffset.y =
+				( Float )( ( Int32 )( ( mSize.y - mRealPadding.Top - mRealPadding.Bottom ) / 2 -
+									  mTextCache->getLineSpacing() / 2 ) ) -
+				1;
+			break;
+		case UI_VALIGN_BOTTOM:
+			mRealAlignOffset.y =
+				mSize.y - mRealPadding.Top - mRealPadding.Bottom - mTextCache->getLineSpacing();
+			break;
+		case UI_VALIGN_TOP:
+			mRealAlignOffset.y = 0;
+			break;
+	}
+
 	if ( Font::getHorizontalAlign( getFlags() ) == UI_HALIGN_LEFT ) {
-		Uint32 NLPos = 0;
-		Uint32 LineNum = mTextBuffer.getCurPosLinePos( NLPos );
-
-		Text textCache( mTextCache->getFont(), mTextCache->getCharacterSize() );
-
-		textCache.setString(
-			mTextBuffer.getBuffer().substr( NLPos, mTextBuffer.getCursorPosition() - NLPos ) );
-
-		Float tW = textCache.getTextWidth();
+		Float tW = mTextCache->findCharacterPos( selCurEnd() ).x;
 		mCurPos.x = tW;
-		mCurPos.y = (Float)LineNum * (Float)mTextCache->getFont()->getLineSpacing(
-										 mTextCache->getCharacterSizePx() );
+		mCurPos.y = 0;
 
-		if ( !mTextBuffer.setSupportNewLine() && mSize.getWidth() > 0 ) {
+		if ( mSize.getWidth() > 0 ) {
 			mRealAlignOffset.x = rOffset.x;
 			Float tX = mRealAlignOffset.x + tW;
 
@@ -263,7 +258,7 @@ void UITextInput::onThemeLoaded() {
 
 void UITextInput::onAutoSize() {
 	if ( mHeightPolicy == SizePolicy::WrapContent ) {
-		int minHeight = eemax<int>( mTextCache->getTextHeight(),
+		int minHeight = eemax<int>( mTextCache->getLineSpacing(),
 									PixelDensity::dpToPxI( getSkinSize().getHeight() ) );
 		setInternalPixelsHeight( minHeight + mRealPadding.Top + mRealPadding.Bottom );
 	} else if ( ( mFlags & UI_AUTO_SIZE ) && 0 == getSize().getHeight() ) {
@@ -283,16 +278,8 @@ void UITextInput::autoPadding() {
 	}
 }
 
-InputTextBuffer* UITextInput::getInputTextBuffer() {
-	return &mTextBuffer;
-}
-
 UITextInput* UITextInput::setAllowEditing( const bool& allow ) {
 	mAllowEditing = allow;
-
-	if ( !mAllowEditing && mTextBuffer.isActive() )
-		mTextBuffer.setActive( false );
-
 	return this;
 }
 
@@ -303,9 +290,8 @@ const bool& UITextInput::isEditingAllowed() const {
 UITextView* UITextInput::setText( const String& text ) {
 	UITextView::setText( text );
 
-	mTextBuffer.setBuffer( text );
-
-	mTextBuffer.cursorToEnd();
+	mDoc.reset();
+	mDoc.textInput( text );
 
 	return this;
 }
@@ -314,15 +300,7 @@ const String& UITextInput::getText() {
 	return UITextView::getText();
 }
 
-void UITextInput::shrinkText( const Uint32& MaxWidth ) {
-	mTextCache->setString( mTextBuffer.getBuffer() );
-
-	UITextView::shrinkText( MaxWidth );
-
-	mTextBuffer.setBuffer( mTextCache->getString() );
-
-	alignFix();
-}
+void UITextInput::shrinkText( const Uint32& ) {}
 
 void UITextInput::updateText() {}
 
@@ -332,8 +310,6 @@ Uint32 UITextInput::onMouseDown( const Vector2i& position, const Uint32& flags )
 	UITextView::onMouseDown( position, flags );
 
 	if ( endPos != selCurEnd() && -1 != selCurEnd() ) {
-		mTextBuffer.setCursorPosition( selCurEnd() );
-		onCursorPositionChange();
 		resetWaitCursor();
 	}
 
@@ -344,8 +320,6 @@ Uint32 UITextInput::onMouseDoubleClick( const Vector2i& Pos, const Uint32& Flags
 	UITextView::onMouseDoubleClick( Pos, Flags );
 
 	if ( isTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) && selCurEnd() != -1 ) {
-		mTextBuffer.setCursorPosition( selCurEnd() );
-		onCursorPositionChange();
 		resetWaitCursor();
 	}
 
@@ -369,46 +343,33 @@ Uint32 UITextInput::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
 }
 
 void UITextInput::selCurInit( const Int32& init ) {
-	if ( mTextBuffer.selCurInit() != init ) {
-		mTextBuffer.selCurInit( init );
-		invalidateDraw();
+	if ( mDoc.getSelection().start().column() != init && -1 != init ) {
+		mDoc.setSelection( {{0, init}, mDoc.getSelection().end()} );
 	}
 }
 
 void UITextInput::selCurEnd( const Int32& end ) {
-	if ( mTextBuffer.selCurEnd() != end ) {
-		mTextBuffer.selCurEnd( end );
-		invalidateDraw();
-
-		if ( mTextBuffer.selCurEnd() != mTextBuffer.selCurInit() ) {
-			mTextBuffer.setCursorPosition( end );
-			onCursorPosChange();
-		}
+	if ( mDoc.getSelection().end().column() != end && -1 != end ) {
+		mDoc.setSelection( {mDoc.getSelection().start(), {0, end}} );
+	} else if ( -1 == end ) {
+		mDoc.setSelection( mDoc.getSelection().end() );
 	}
 }
 
 Int32 UITextInput::selCurInit() {
-	return mTextBuffer.selCurInit();
+	return mDoc.getSelection().start().column();
 }
 
 Int32 UITextInput::selCurEnd() {
-	return mTextBuffer.selCurEnd();
+	return mDoc.getSelection().end().column();
 }
 
-void UITextInput::onCursorPositionChange() {
-	if ( mCursorPos != mTextBuffer.getCursorPosition() ) {
-		alignFix();
-		mCursorPos = mTextBuffer.getCursorPosition();
-		mWaitCursorTime = 0.f;
-		mShowingWait = true;
-		onCursorPosChange();
-	}
-}
-
-void UITextInput::onBufferChange() {
+void UITextInput::onDocumentTextChanged() {
 	Vector2f offSet = mRealAlignOffset;
 
-	UITextView::setText( mTextBuffer.getBuffer() );
+	const String& text = mDoc.line( 0 ).getText();
+
+	UITextView::setText( !text.empty() ? text.substr( 0, text.size() - 1 ) : "" );
 
 	updateText();
 
@@ -418,35 +379,33 @@ void UITextInput::onBufferChange() {
 
 	alignFix();
 
-	mCursorPos = mTextBuffer.getCursorPosition();
-
-	mTextBuffer.setChangedSinceLastUpdate( false );
-
 	invalidateDraw();
 
 	sendCommonEvent( Event::OnBufferChange );
 }
 
-void UITextInput::onInputSelectionChange() {
+void UITextInput::onDocumentCursorChange( const TextPosition& ) {
+	alignFix();
+	mWaitCursorTime = 0.f;
+	mShowingWait = true;
+	onCursorPosChange();
+}
+
+void UITextInput::onDocumentSelectionChange( const TextRange& ) {
 	onSelectionChange();
 }
 
-UITextInput* UITextInput::setMaxLength( Uint32 maxLength ) {
-	mTextBuffer.setMaxLength( maxLength );
+void UITextInput::onDocumentLineCountChange( const size_t&, const size_t& ) {}
+
+void UITextInput::onDocumentLineChanged( const Int64& ) {}
+
+UITextInput* UITextInput::setMaxLength( const Uint32& maxLength ) {
+	mMaxLength = maxLength;
 	return this;
 }
 
-Uint32 UITextInput::getMaxLength() {
-	return mTextBuffer.getMaxLength();
-}
-
-UITextInput* UITextInput::setFreeEditing( bool support ) {
-	mTextBuffer.setFreeEditing( support );
-	return this;
-}
-
-bool UITextInput::isFreeEditingEnabled() {
-	return mTextBuffer.isFreeEditingEnabled();
+const Uint32& UITextInput::getMaxLength() {
+	return mMaxLength;
 }
 
 std::string UITextInput::getPropertyString( const PropertyDefinition* propertyDef,
@@ -461,12 +420,10 @@ std::string UITextInput::getPropertyString( const PropertyDefinition* propertyDe
 			return isEditingAllowed() ? "true" : "false";
 		case PropertyId::MaxLength:
 			return String::toStr( getMaxLength() );
-		case PropertyId::FreeEditing:
-			return isFreeEditingEnabled() ? "true" : "false";
 		case PropertyId::Numeric:
-			return getInputTextBuffer()->onlyNumbersAllowed() ? "true" : "false";
+			return onlyNumbersAllowed() ? "true" : "false";
 		case PropertyId::AllowFloat:
-			return getInputTextBuffer()->dotsInNumbersAllowed() ? "true" : "false";
+			return floatingPointAllowed() ? "true" : "false";
 		case PropertyId::Hint:
 			return getHint().toUtf8();
 		case PropertyId::HintColor:
@@ -503,16 +460,11 @@ bool UITextInput::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::MaxLength:
 			setMaxLength( attribute.asUint() );
 			break;
-		case PropertyId::FreeEditing:
-			setFreeEditing( attribute.asBool() );
-			break;
 		case PropertyId::Numeric:
-			getInputTextBuffer()->setAllowOnlyNumbers(
-				attribute.asBool(), getInputTextBuffer()->dotsInNumbersAllowed() );
+			setAllowOnlyNumbers( attribute.asBool(), floatingPointAllowed() );
 			break;
 		case PropertyId::AllowFloat:
-			getInputTextBuffer()->setAllowOnlyNumbers( getInputTextBuffer()->onlyNumbersAllowed(),
-													   attribute.asBool() );
+			setAllowOnlyNumbers( onlyNumbersAllowed(), attribute.asBool() );
 			break;
 		case PropertyId::Hint:
 			if ( NULL != getUISceneNode() )
@@ -675,6 +627,123 @@ UITextView* UITextInput::setHintFontStyle( const Uint32& fontStyle ) {
 	}
 
 	return this;
+}
+
+void UITextInput::copy() {
+	getUISceneNode()->getWindow()->getClipboard()->setText( mDoc.getSelectedText() );
+}
+
+void UITextInput::cut() {
+	getUISceneNode()->getWindow()->getClipboard()->setText( mDoc.getSelectedText() );
+	mDoc.deleteSelection();
+}
+
+void UITextInput::paste() {
+	String pasted( getUISceneNode()->getWindow()->getClipboard()->getText() );
+	String::replaceAll( pasted, "\n", "" );
+	mDoc.textInput( pasted );
+}
+
+void UITextInput::registerCommands() {
+	mDoc.setCommand( "copy", [&] { copy(); } );
+	mDoc.setCommand( "cut", [&] { cut(); } );
+	mDoc.setCommand( "paste", [&] { paste(); } );
+	mDoc.setCommand( "press-enter", [&] { onPressEnter(); } );
+}
+
+void UITextInput::registerKeybindings() {
+	mKeyBindings.addKeybinds( {
+		{{KEY_BACKSPACE, KEYMOD_CTRL}, "delete-to-previous-word"},
+		{{KEY_BACKSPACE, KEYMOD_SHIFT}, "delete-to-previous-char"},
+		{{KEY_BACKSPACE, 0}, "delete-to-previous-char"},
+		{{KEY_DELETE, KEYMOD_CTRL}, "delete-to-next-word"},
+		{{KEY_DELETE, 0}, "delete-to-next-char"},
+		{{KEY_KP_ENTER, 0}, "press-enter"},
+		{{KEY_RETURN, 0}, "press-enter"},
+		{{KEY_LEFT, KEYMOD_CTRL | KEYMOD_SHIFT}, "select-to-previous-word"},
+		{{KEY_LEFT, KEYMOD_CTRL}, "move-to-previous-word"},
+		{{KEY_LEFT, KEYMOD_SHIFT}, "select-to-previous-char"},
+		{{KEY_LEFT, 0}, "move-to-previous-char"},
+		{{KEY_RIGHT, KEYMOD_CTRL | KEYMOD_SHIFT}, "select-to-next-word"},
+		{{KEY_RIGHT, KEYMOD_CTRL}, "move-to-next-word"},
+		{{KEY_RIGHT, KEYMOD_SHIFT}, "select-to-next-char"},
+		{{KEY_RIGHT, 0}, "move-to-next-char"},
+		{{KEY_Z, KEYMOD_CTRL | KEYMOD_SHIFT}, "redo"},
+		{{KEY_HOME, KEYMOD_CTRL | KEYMOD_SHIFT}, "select-to-start-of-doc"},
+		{{KEY_HOME, KEYMOD_SHIFT}, "select-to-start-of-content"},
+		{{KEY_HOME, KEYMOD_CTRL}, "move-to-start-of-doc"},
+		{{KEY_HOME, 0}, "move-to-start-of-content"},
+		{{KEY_END, KEYMOD_CTRL | KEYMOD_SHIFT}, "select-to-end-of-doc"},
+		{{KEY_END, KEYMOD_SHIFT}, "select-to-end-of-line"},
+		{{KEY_END, KEYMOD_CTRL}, "move-to-end-of-doc"},
+		{{KEY_END, 0}, "move-to-end-of-line"},
+		{{KEY_Y, KEYMOD_CTRL}, "redo"},
+		{{KEY_Z, KEYMOD_CTRL}, "undo"},
+		{{KEY_C, KEYMOD_CTRL}, "copy"},
+		{{KEY_X, KEYMOD_CTRL}, "cut"},
+		{{KEY_V, KEYMOD_CTRL}, "paste"},
+		{{KEY_A, KEYMOD_CTRL}, "select-all"},
+	} );
+}
+
+Uint32 UITextInput::onKeyDown( const KeyEvent& event ) {
+	std::string cmd = mKeyBindings.getCommandFromKeyBind( {event.getKeyCode(), event.getMod()} );
+	if ( !cmd.empty() ) {
+		// Allow copy selection on locked mode
+		if ( mAllowEditing ) {
+			mDoc.execute( cmd );
+			return 1;
+		}
+	}
+	return 0;
+}
+
+Uint32 UITextInput::onTextInput( const TextInputEvent& event ) {
+	if ( !mAllowEditing )
+		return 0;
+	Input* input = getUISceneNode()->getWindow()->getInput();
+
+	if ( !input->isControlPressed() && !( input->isAltPressed() && input->isShiftPressed() ) ) {
+		if ( input->isAltPressed() && !event.getText().empty() && event.getText()[0] == '\t' )
+			return 0;
+
+		const String& text = event.getText();
+
+		for ( size_t i = 0; i < text.size(); i++ ) {
+			if ( text[i] == '\n' )
+				return 0;
+			if ( mOnlyNumbers &&
+				 ( ( mAllowFloat && text[i] == '.' && mDoc.find( "." ).isValid() ) ||
+				   !String::isNumber( text[i], mAllowFloat ) ) ) {
+				return 0;
+			}
+		}
+
+		mDoc.textInput( text );
+		return 1;
+	}
+	return 0;
+}
+
+void UITextInput::setAllowOnlyNumbers( const bool& onlyNumbers, const bool& allowFloat ) {
+	mOnlyNumbers = onlyNumbers;
+	mAllowFloat = allowFloat;
+}
+
+bool UITextInput::onlyNumbersAllowed() {
+	return mOnlyNumbers;
+}
+
+bool UITextInput::floatingPointAllowed() {
+	return mAllowFloat;
+}
+
+TextDocument& UITextInput::getDocument() {
+	return mDoc;
+}
+
+KeyBindings& UITextInput::getKeyBindings() {
+	return mKeyBindings;
 }
 
 }} // namespace EE::UI

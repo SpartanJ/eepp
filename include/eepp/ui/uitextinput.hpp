@@ -1,13 +1,17 @@
 #ifndef EE_UICUITEXTINPUT_H
 #define EE_UICUITEXTINPUT_H
 
+#include <eepp/ui/doc/textdocument.hpp>
+#include <eepp/ui/keyboardshortcut.hpp>
 #include <eepp/ui/uinode.hpp>
 #include <eepp/ui/uitextview.hpp>
 #include <eepp/window/inputtextbuffer.hpp>
 
+using namespace EE::UI::Doc;
+
 namespace EE { namespace UI {
 
-class EE_API UITextInput : public UITextView {
+class EE_API UITextInput : public UITextView, public TextDocument::Client {
   public:
 	static UITextInput* New();
 
@@ -27,11 +31,7 @@ class EE_API UITextInput : public UITextView {
 
 	virtual void draw();
 
-	void pushIgnoredChar( const Uint32& ch );
-
 	virtual void setTheme( UITheme* Theme );
-
-	InputTextBuffer* getInputTextBuffer();
 
 	UITextInput* setAllowEditing( const bool& allow );
 
@@ -43,13 +43,9 @@ class EE_API UITextInput : public UITextView {
 
 	virtual void shrinkText( const Uint32& MaxWidth );
 
-	UITextInput* setMaxLength( Uint32 maxLength );
+	UITextInput* setMaxLength( const Uint32& maxLength );
 
-	Uint32 getMaxLength();
-
-	UITextInput* setFreeEditing( bool support );
-
-	bool isFreeEditingEnabled();
+	const Uint32& getMaxLength();
 
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
@@ -90,8 +86,21 @@ class EE_API UITextInput : public UITextView {
 
 	UITextView* setHintOutlineColor( const Color& outlineColor );
 
+	/** Block all the inserts, allow only numeric characters. */
+	void setAllowOnlyNumbers( const bool& onlyNumbers, const bool& allowFloat = false );
+
+	/** @return If is only allowing numbers */
+	bool onlyNumbersAllowed();
+
+	/** @return If is only allowing numbers, it allow floating point numbers? */
+	bool floatingPointAllowed();
+
+	TextDocument& getDocument();
+
+	KeyBindings& getKeyBindings();
+
   protected:
-	InputTextBuffer mTextBuffer;
+	TextDocument mDoc;
 	Float mWaitCursorTime;
 	Vector2f mCurPos;
 	Text* mHintCache;
@@ -99,6 +108,11 @@ class EE_API UITextInput : public UITextView {
 	int mCursorPos;
 	bool mAllowEditing;
 	bool mShowingWait;
+	bool mOnlyNumbers;
+	bool mAllowFloat;
+	Uint32 mMaxLength{0};
+	KeyBindings mKeyBindings;
+
 	void resetWaitCursor();
 
 	virtual void alignFix();
@@ -106,8 +120,6 @@ class EE_API UITextInput : public UITextView {
 	virtual void onAutoSize();
 
 	virtual void onSizeChange();
-
-	void privOnPressEnter();
 
 	void autoPadding();
 
@@ -145,11 +157,29 @@ class EE_API UITextInput : public UITextView {
 
 	virtual Int32 selCurEnd();
 
-	void onCursorPositionChange();
+	virtual void onDocumentTextChanged();
 
-	void onBufferChange();
+	virtual void onDocumentCursorChange( const TextPosition& );
 
-	void onInputSelectionChange();
+	virtual void onDocumentSelectionChange( const TextRange& );
+
+	virtual void onDocumentLineCountChange( const size_t& lastCount, const size_t& newCount );
+
+	virtual void onDocumentLineChanged( const Int64& lineIndex );
+
+	void registerKeybindings();
+
+	void registerCommands();
+
+	void copy();
+
+	void cut();
+
+	void paste();
+
+	virtual Uint32 onKeyDown( const KeyEvent& event );
+
+	virtual Uint32 onTextInput( const TextInputEvent& event );
 };
 
 }} // namespace EE::UI

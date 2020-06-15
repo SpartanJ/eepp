@@ -590,7 +590,6 @@ void UITextView::recalculate() {
 
 void UITextView::resetSelCache() {
 	mLastSelCurInit = mLastSelCurEnd = -1;
-	invalidateDraw();
 	onSelectionChange();
 }
 

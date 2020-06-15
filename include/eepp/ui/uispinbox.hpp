@@ -24,25 +24,25 @@ class EE_API UISpinBox : public UIWidget {
 
 	const Rectf& getPadding() const;
 
-	virtual void setClickStep( const Float& step );
+	virtual void setClickStep( const double& step );
 
-	const Float& getClickStep() const;
+	const double& getClickStep() const;
 
 	virtual Uint32 onMessage( const NodeMessage* Msg );
 
-	void addValue( const Float& value );
+	void addValue( const double& value );
 
-	virtual UISpinBox* setMinValue( const Float& MinVal );
+	virtual UISpinBox* setMinValue( const double& minVal );
 
-	const Float& getMinValue() const;
+	const double& getMinValue() const;
 
-	virtual UISpinBox* setMaxValue( const Float& MaxVal );
+	virtual UISpinBox* setMaxValue( const double& maxVal );
 
-	const Float& getMaxValue() const;
+	const double& getMaxValue() const;
 
-	virtual UISpinBox* setValue( const Float& Val );
+	virtual UISpinBox* setValue( const double& val );
 
-	const Float& getValue() const;
+	const double& getValue() const;
 
 	UINode* getButtonPushUp() const;
 
@@ -50,7 +50,7 @@ class EE_API UISpinBox : public UIWidget {
 
 	UITextInput* getTextInput() const;
 
-	UISpinBox* setAllowOnlyNumbers( bool allow );
+	UISpinBox* allowFloatingPoint( bool allow );
 
 	bool dotsInNumbersAllowed();
 
@@ -63,14 +63,12 @@ class EE_API UISpinBox : public UIWidget {
 	UITextInput* mInput;
 	UIWidget* mPushUp;
 	UIWidget* mPushDown;
-	Float mMinValue;
-	Float mMaxValue;
-	Float mValue;
-	Float mClickStep;
+	double mMinValue;
+	double mMaxValue;
+	double mValue;
+	double mClickStep;
 
 	void adjustChilds();
-
-	void internalValue( const Float& Val, const bool& Force = false );
 
 	virtual void onSizeChange();
 

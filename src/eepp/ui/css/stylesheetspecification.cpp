@@ -276,7 +276,6 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "allow-editing", "" ).setType( PropertyType::Bool );
 	registerProperty( "locked", "" ).setType( PropertyType::Bool );
 	registerProperty( "max-length", "" ).setType( PropertyType::NumberInt );
-	registerProperty( "free-editing", "" ).setType( PropertyType::Bool );
 	registerProperty( "numeric", "" ).setType( PropertyType::Bool );
 	registerProperty( "allow-float", "" ).setType( PropertyType::Bool );
 	registerProperty( "touch-drag", "" ).setType( PropertyType::Bool );

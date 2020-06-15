@@ -91,6 +91,9 @@ class EE_API Text {
 	/** @return The cached text height */
 	Float getTextHeight();
 
+	/** @return The line espacing */
+	Float getLineSpacing();
+
 	/** Draw the cached text on screen */
 	void draw( const Float& X, const Float& Y, const Vector2f& Scale = Vector2f::One,
 			   const Float& Rotation = 0, BlendMode Effect = BlendAlpha,

@@ -428,7 +428,7 @@ void EETest::createBaseUI() {
 		->setPosition( 60, 110 )
 		->setSize( 80, 24 );
 
-	UISpinBox::New()->setAllowOnlyNumbers( true )->setParent( C )->setPosition( 80, 150 )->setSize(
+	UISpinBox::New()->allowFloatingPoint( true )->setParent( C )->setPosition( 80, 150 )->setSize(
 		80, 24 );
 
 	mScrollBar = UIScrollBar::New();

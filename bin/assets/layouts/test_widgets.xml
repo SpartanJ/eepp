@@ -55,7 +55,7 @@
 
 					<ScrollBar id="scrollbarpadding" orientation="horizontal" layout_width="200dp" layout_height="wrap_content" padding="8dp" background="#12345666" layout_to_bottom_of="slider" />
 
-					<SpinBox id="spinbox" layout_width="200dp" layout_height="wrap_content" padding="8dp" background="#54345666" layout_to_bottom_of="scrollbar" />
+					<SpinBox id="spinbox" layout_width="200dp" layout_height="wrap_content" padding="8dp" background="#54345666" layout_to_bottom_of="scrollbar" allow-float="true" />
 
 					<TextEdit layout_width="200dp" layout_height="50dp" layout_gravity="bottom|center_horizontal" padding="8dp" margin-bottom="140dp" />
 				</RelativeLayout>

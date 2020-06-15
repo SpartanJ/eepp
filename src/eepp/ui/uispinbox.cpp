@@ -13,7 +13,7 @@ UISpinBox* UISpinBox::New() {
 UISpinBox::UISpinBox() :
 	UIWidget( "spinbox" ),
 	mMinValue( 0.f ),
-	mMaxValue( std::numeric_limits<Float>::max() ),
+	mMaxValue( std::numeric_limits<double>::max() ),
 	mValue( 0 ),
 	mClickStep( 1.f ) {
 	mInput = UITextInput::NewWithTag( "spinbox::input" );
@@ -37,11 +37,12 @@ UISpinBox::UISpinBox() :
 	mPushDown->setSize( 8, 8 );
 	mPushDown->addEventListener( Event::OnSizeChange, cb );
 
-	mInput->getInputTextBuffer()->setAllowOnlyNumbers( true, false );
+	mInput->setAllowOnlyNumbers( true, false );
 	mInput->addEventListener( Event::OnBufferChange,
 							  cb::Make1( this, &UISpinBox::onBufferChange ) );
-
-	internalValue( mValue, true );
+	double val = mValue;
+	mValue += 1;
+	setValue( val );
 
 	applyDefaultTheme();
 }
@@ -117,11 +118,11 @@ const Rectf& UISpinBox::getPadding() const {
 	return mInput->getPadding();
 }
 
-void UISpinBox::setClickStep( const Float& step ) {
+void UISpinBox::setClickStep( const double& step ) {
 	mClickStep = step;
 }
 
-const Float& UISpinBox::getClickStep() const {
+const double& UISpinBox::getClickStep() const {
 	return mClickStep;
 }
 
@@ -148,28 +149,52 @@ Uint32 UISpinBox::onMessage( const NodeMessage* Msg ) {
 	return 0;
 }
 
-void UISpinBox::addValue( const Float& value ) {
+void UISpinBox::addValue( const double& value ) {
 	if ( !mInput->getText().size() )
 		mInput->setText( String::toStr( static_cast<Int32>( mMinValue ) ) );
 
-	this->setValue( mValue + value );
+	setValue( mValue + value );
 }
 
-void UISpinBox::internalValue( const Float& Val, const bool& Force ) {
-	if ( Force || Val != mValue ) {
-		if ( Val >= mMinValue && Val <= mMaxValue ) {
-			Float iValN = ( Float )(Int32)Val;
-			Float fValN = (Float)iValN;
+UISpinBox* UISpinBox::setValue( const double& val ) {
+	if ( val != mValue ) {
+		if ( val >= mMinValue && val <= mMaxValue ) {
+			double iValN = (double)(Int64)val;
+			double fValN = (double)iValN;
 
-			if ( fValN == Val ) {
-				mInput->setText( String::toStr( iValN ) );
+			mValue = val;
+
+			if ( fValN == val ) {
+				mInput->setText( String::toStr( (Int64)iValN ) );
 			} else {
-				mInput->setText( String::toStr( Val ) );
+				mInput->setText( String::toStr( val ) );
 			}
 
-			mValue = Val;
-
 			onValueChange();
+		}
+	}
+	return this;
+}
+
+void UISpinBox::onBufferChange( const Event* ) {
+	if ( !mInput->getText().size() ) {
+		setValue( 0 );
+	} else {
+		double val = mValue;
+
+		if ( '.' == mInput->getText()[mInput->getText().size() - 1] ) {
+			Uint32 pos = (Uint32)mInput->getText().find_first_of( "." );
+
+			if ( pos != mInput->getText().size() - 1 )
+				mInput->setText( mInput->getText().substr( 0, mInput->getText().size() - 1 ) );
+		} else {
+			bool res = String::fromString<double>( val, mInput->getText() );
+
+			if ( res && val != mValue && val >= mMinValue && val <= mMaxValue ) {
+				mValue = val;
+
+				onValueChange();
+			}
 		}
 	}
 }
@@ -186,17 +211,12 @@ void UISpinBox::onPositionChange() {
 	adjustChilds();
 }
 
-UISpinBox* UISpinBox::setValue( const Float& Val ) {
-	internalValue( Val, false );
-	return this;
-}
-
-const Float& UISpinBox::getValue() const {
+const double& UISpinBox::getValue() const {
 	return mValue;
 }
 
-UISpinBox* UISpinBox::setMinValue( const Float& MinVal ) {
-	mMinValue = MinVal;
+UISpinBox* UISpinBox::setMinValue( const double& minVal ) {
+	mMinValue = minVal;
 
 	if ( mValue < mMinValue )
 		mValue = mMinValue;
@@ -204,12 +224,12 @@ UISpinBox* UISpinBox::setMinValue( const Float& MinVal ) {
 	return this;
 }
 
-const Float& UISpinBox::getMinValue() const {
+const double& UISpinBox::getMinValue() const {
 	return mMinValue;
 }
 
-UISpinBox* UISpinBox::setMaxValue( const Float& MaxVal ) {
-	mMaxValue = MaxVal;
+UISpinBox* UISpinBox::setMaxValue( const double& maxVal ) {
+	mMaxValue = maxVal;
 
 	if ( mValue > mMaxValue )
 		mValue = mMaxValue;
@@ -217,28 +237,8 @@ UISpinBox* UISpinBox::setMaxValue( const Float& MaxVal ) {
 	return this;
 }
 
-const Float& UISpinBox::getMaxValue() const {
+const double& UISpinBox::getMaxValue() const {
 	return mMaxValue;
-}
-
-void UISpinBox::onBufferChange( const Event* ) {
-	if ( !mInput->getText().size() ) {
-		setValue( 0 );
-	} else {
-		Float Val = mValue;
-
-		if ( '.' == mInput->getText()[mInput->getText().size() - 1] ) {
-			Uint32 pos = (Uint32)mInput->getText().find_first_of( "." );
-
-			if ( pos != mInput->getText().size() - 1 )
-				mInput->setText( mInput->getText().substr( 0, mInput->getText().size() - 1 ) );
-		} else {
-			bool Res = String::fromString<Float>( Val, mInput->getText() );
-
-			if ( Res )
-				setValue( Val );
-		}
-	}
 }
 
 UINode* UISpinBox::getButtonPushUp() const {
@@ -253,14 +253,14 @@ UITextInput* UISpinBox::getTextInput() const {
 	return mInput;
 }
 
-UISpinBox* UISpinBox::setAllowOnlyNumbers( bool allow ) {
-	mInput->getInputTextBuffer()->setAllowOnlyNumbers( true, allow );
+UISpinBox* UISpinBox::allowFloatingPoint( bool allow ) {
+	mInput->setAllowOnlyNumbers( true, allow );
 
 	return this;
 }
 
 bool UISpinBox::dotsInNumbersAllowed() {
-	return mInput->getInputTextBuffer()->dotsInNumbersAllowed();
+	return mInput->floatingPointAllowed();
 }
 
 void UISpinBox::onAlphaChange() {
@@ -283,13 +283,13 @@ std::string UISpinBox::getPropertyString( const PropertyDefinition* propertyDef,
 
 	switch ( propertyDef->getPropertyId() ) {
 		case PropertyId::MinValue:
-			return String::fromFloat( getMinValue() );
+			return String::fromDouble( getMinValue() );
 		case PropertyId::MaxValue:
-			return String::fromFloat( getMaxValue() );
+			return String::fromDouble( getMaxValue() );
 		case PropertyId::Value:
-			return String::fromFloat( getValue() );
+			return String::fromDouble( getValue() );
 		case PropertyId::ClickStep:
-			return String::fromFloat( getClickStep() );
+			return String::fromDouble( getClickStep() );
 		default:
 			return UIWidget::getPropertyString( propertyDef, propertyIndex );
 	}
@@ -317,7 +317,6 @@ bool UISpinBox::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::Text:
 		case PropertyId::AllowEditing:
 		case PropertyId::MaxLength:
-		case PropertyId::FreeEditing:
 		case PropertyId::Numeric:
 		case PropertyId::AllowFloat:
 		case PropertyId::Hint:

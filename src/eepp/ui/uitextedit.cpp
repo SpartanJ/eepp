@@ -28,7 +28,7 @@ UITextEdit::UITextEdit() :
 	mTextInput->setFlags( UI_TEXT_SELECTION_ENABLED | UI_VALIGN_TOP );
 	mTextInput->unsetFlags( UI_VALIGN_CENTER | UI_AUTO_SIZE );
 	mTextInput->clipDisable();
-	mTextInput->getInputTextBuffer()->isNewLineEnabled( true );
+	//mTextInput->getInputTextBuffer()->isNewLineEnabled( true );
 	mTextInput->setVisible( true );
 	mTextInput->setEnabled( true );
 	mTextInput->setSize( getSize() );
@@ -288,7 +288,7 @@ void UITextEdit::onInputSizeChange( const Event* Event ) {
 	if ( mHScrollBar->isVisible() )
 		aSize.y -= mHScrollBar->getPixelsSize().getHeight();
 
-	String text( mTextInput->getInputTextBuffer()->getBuffer() );
+	/*String text( mTextInput->getInputTextBuffer()->getBuffer() );
 
 	shrinkText( aSize.getWidth() );
 
@@ -298,7 +298,7 @@ void UITextEdit::onInputSizeChange( const Event* Event ) {
 		mTextInput->getInputTextBuffer()->setBuffer( text );
 
 		shrinkText( aSize.getWidth() );
-	}
+	}*/
 
 	textInputTryResize( aSize, iSize );
 
@@ -393,7 +393,7 @@ void UITextEdit::fixScroll() {
 }
 
 void UITextEdit::fixScrollToCursor() {
-	if ( Font::getHorizontalAlign( mTextInput->getFlags() ) == UI_HALIGN_LEFT ) {
+	/*if ( Font::getHorizontalAlign( mTextInput->getFlags() ) == UI_HALIGN_LEFT ) {
 		Sizef aSize( getAvailableSize() );
 
 		if ( mVScrollBar->isVisible() )
@@ -449,7 +449,7 @@ void UITextEdit::fixScrollToCursor() {
 		fixScroll();
 
 		mSkipValueChange = false;
-	}
+	}*/
 
 	invalidateDraw();
 }
@@ -576,7 +576,6 @@ bool UITextEdit::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		}
 		case PropertyId::MaxLength:
-		case PropertyId::FreeEditing:
 		case PropertyId::Numeric:
 		case PropertyId::AllowFloat:
 		case PropertyId::Hint:

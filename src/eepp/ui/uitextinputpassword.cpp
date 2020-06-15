@@ -44,7 +44,7 @@ void UITextInputPassword::draw() {
 			if ( isClipped() ) {
 				clipSmartDisable();
 			}
-		} else if ( !mHintCache->getString().empty() && !mTextBuffer.isActive() ) {
+		} else if ( !mHintCache->getString().empty() ) {
 			if ( isClipped() ) {
 				clipSmartEnable( mScreenPos.x + mRealPadding.Left, mScreenPos.y + mRealPadding.Top,
 								 mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
@@ -106,31 +106,17 @@ void UITextInputPassword::alignFix() {
 	}
 
 	if ( Font::getHorizontalAlign( getFlags() ) == UI_HALIGN_LEFT ) {
-		Uint32 NLPos = 0;
-		Uint32 LineNum = mTextBuffer.getCurPosLinePos( NLPos );
-
-		String curStr(
-			mTextBuffer.getBuffer().substr( NLPos, mTextBuffer.getCursorPosition() - NLPos ) );
-		String pasStr;
-
-		for ( size_t i = 0; i < curStr.size(); i++ )
-			pasStr += mBulletCharacter;
-
-		mPassCache->setString( pasStr );
-
-		Float tW = mPassCache->getTextWidth();
+		Float tW = mPassCache->findCharacterPos( selCurEnd() ).x;
 		Float tX = mRealAlignOffset.x + tW;
 
 		mCurPos.x = tW;
-		mCurPos.y = (Float)LineNum * (Float)mPassCache->getFont()->getLineSpacing(
-										 mPassCache->getCharacterSizePx() );
+		mCurPos.y = 0;
 
-		if ( !mTextBuffer.setSupportNewLine() ) {
-			if ( tX < 0.f )
-				mRealAlignOffset.x = -( mRealAlignOffset.x + ( tW - mRealAlignOffset.x ) );
-			else if ( tX > mSize.getWidth() - mRealPadding.Left - mRealPadding.Right )
-				mRealAlignOffset.x = mSize.getWidth() - mRealPadding.Left - mRealPadding.Right -
-									 ( mRealAlignOffset.x + ( tW - mRealAlignOffset.x ) );
+		if ( tX < 0.f ) {
+			mRealAlignOffset.x = -( mRealAlignOffset.x + ( tW - mRealAlignOffset.x ) );
+		} else if ( tX > mSize.getWidth() - mRealPadding.Left - mRealPadding.Right ) {
+			mRealAlignOffset.x = mSize.getWidth() - mRealPadding.Left - mRealPadding.Right -
+								 ( mRealAlignOffset.x + ( tW - mRealAlignOffset.x ) );
 		}
 	}
 }
@@ -141,10 +127,10 @@ void UITextInputPassword::updateText() {
 
 void UITextInputPassword::updatePass( const String& pass ) {
 	String newTxt;
-
-	for ( size_t i = 0; i < pass.size(); i++ )
-		newTxt += mBulletCharacter;
-
+	if ( !pass.empty() ) {
+		for ( size_t i = 0; i < pass.size() - 1; i++ )
+			newTxt += mBulletCharacter;
+	}
 	mPassCache->setString( newTxt );
 }
 

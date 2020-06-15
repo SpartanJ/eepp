@@ -656,25 +656,22 @@ void App::initSearchBar() {
 		} );
 	};
 	auto addReturnListener = [&]( UIWidget* widget, std::string cmd ) {
-		widget->addEventListener( Event::KeyDown, [this, cmd]( const Event* event ) {
-			const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );
-			if ( keyEvent->getKeyCode() == KEY_RETURN )
-				mSearchBarLayout->execute( cmd );
+		widget->addEventListener( Event::OnPressEnter, [this, cmd]( const Event* ) {
+			mSearchBarLayout->execute( cmd );
 		} );
 	};
 	UITextInput* findInput = mSearchBarLayout->find<UITextInput>( "search_find" );
 	UITextInput* replaceInput = mSearchBarLayout->find<UITextInput>( "search_replace" );
 	UICheckBox* caseSensitiveChk = mSearchBarLayout->find<UICheckBox>( "case_sensitive" );
-	findInput->getInputTextBuffer()->pushIgnoredChar( '\t' );
-	replaceInput->getInputTextBuffer()->pushIgnoredChar( '\t' );
-	findInput->addEventListener( Event::OnTextChanged, [&, findInput]( const Event* ) {
-		if ( !findInput->getText().empty() ) {
-			findNextText( findInput->getText(), caseSensitiveChk->isChecked() );
-		} else if ( mCurEditor ) {
-			mCurEditor->getDocument().setSelection(
-				mCurEditor->getDocument().getSelection().start() );
-		}
-	} );
+	findInput->addEventListener(
+		Event::OnTextChanged, [&, findInput, caseSensitiveChk]( const Event* ) {
+			if ( !findInput->getText().empty() ) {
+				findNextText( findInput->getText(), caseSensitiveChk->isChecked() );
+			} else if ( mCurEditor ) {
+				mCurEditor->getDocument().setSelection(
+					mCurEditor->getDocument().getSelection().start() );
+			}
+		} );
 	mSearchBarLayout->addCommand( "close-searchbar", [&] {
 		mSearchBarLayout->setEnabled( false )->setVisible( false );
 		mCurEditor->setFocus();
@@ -727,7 +724,7 @@ void App::showFindView() {
 	String text = mCurEditor->getDocument().getSelectedText();
 	if ( !text.empty() ) {
 		findInput->setText( text );
-		findInput->getInputTextBuffer()->selectAll();
+		findInput->getDocument().selectAll();
 	}
 }
 
@@ -947,7 +944,8 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 
 		mTheme = UITheme::load( "uitheme", "uitheme", "", font, resPath + "assets/ui/breeze.css" );
 		mUISceneNode->setStyleSheet( mTheme->getStyleSheet() );
-		mUISceneNode->getUIThemeManager()
+		mUISceneNode
+			->getUIThemeManager()
 			//->setDefaultEffectsEnabled( true )
 			->setDefaultTheme( mTheme )
 			->setDefaultFont( font )

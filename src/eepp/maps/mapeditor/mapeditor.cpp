@@ -581,7 +581,7 @@ void MapEditor::createLighContainer() {
 														mUIBlueTxt->getSize().getHeight() + 16 ),
 						 UI_NODE_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
-	mLightRadius = UISpinBox::New()->setAllowOnlyNumbers( false )->setValue( 100 );
+	mLightRadius = UISpinBox::New()->setValue( 100 );
 	mLightRadius->setParent( mLightCont )
 		->setSize( 100, 0 )
 		->setPosition( Txt->getPosition().x,
