@@ -531,7 +531,7 @@ void MapEditor::createLighContainer() {
 									cb::Make1( this, &MapEditor::onRedChange ) );
 
 	mUIRedTxt = createTextBox(
-		String::toStr( (Uint32)255 ), mLightCont, Sizef(),
+		String::toString( (Uint32)255 ), mLightCont, Sizef(),
 		Vector2f( mUIRedSlider->getPosition().x + mUIRedSlider->getSize().getWidth() + 4,
 				  mUIRedSlider->getPosition().y ),
 		UI_NODE_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
@@ -551,7 +551,7 @@ void MapEditor::createLighContainer() {
 									  cb::Make1( this, &MapEditor::onGreenChange ) );
 
 	mUIGreenTxt = createTextBox(
-		String::toStr( (Uint32)255 ), mLightCont, Sizef(),
+		String::toString( (Uint32)255 ), mLightCont, Sizef(),
 		Vector2f( mUIGreenSlider->getPosition().x + mUIGreenSlider->getSize().getWidth() + 4,
 				  mUIGreenSlider->getPosition().y ),
 		UI_NODE_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
@@ -571,7 +571,7 @@ void MapEditor::createLighContainer() {
 									 cb::Make1( this, &MapEditor::onBlueChange ) );
 
 	mUIBlueTxt = createTextBox(
-		String::toStr( (Uint32)255 ), mLightCont, Sizef(),
+		String::toString( (Uint32)255 ), mLightCont, Sizef(),
 		Vector2f( mUIBlueSlider->getPosition().x + mUIBlueSlider->getSize().getWidth() + 4,
 				  mUIBlueSlider->getPosition().y ),
 		UI_NODE_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
@@ -779,7 +779,7 @@ void MapEditor::onRedChange( const Event* ) {
 	Color Col = mUIBaseColor->getBackgroundColor();
 	Col.r = (Uint8)mUIRedSlider->getValue();
 	mUIBaseColor->setBackgroundColor( Col );
-	mUIRedTxt->setText( String::toStr( (Int32)mUIRedSlider->getValue() ) );
+	mUIRedTxt->setText( String::toString( (Int32)mUIRedSlider->getValue() ) );
 
 	if ( NULL != mUIMap->getSelectedLight() ) {
 		RGB lCol( mUIMap->getSelectedLight()->getColor() );
@@ -792,7 +792,7 @@ void MapEditor::onGreenChange( const Event* ) {
 	Color Col = mUIBaseColor->getBackgroundColor();
 	Col.g = (Uint8)mUIGreenSlider->getValue();
 	mUIBaseColor->setBackgroundColor( Col );
-	mUIGreenTxt->setText( String::toStr( (Uint32)mUIGreenSlider->getValue() ) );
+	mUIGreenTxt->setText( String::toString( (Uint32)mUIGreenSlider->getValue() ) );
 
 	if ( NULL != mUIMap->getSelectedLight() ) {
 		RGB lCol( mUIMap->getSelectedLight()->getColor() );
@@ -805,7 +805,7 @@ void MapEditor::onBlueChange( const Event* ) {
 	Color Col = mUIBaseColor->getBackgroundColor();
 	Col.b = (Uint8)mUIBlueSlider->getValue();
 	mUIBaseColor->setBackgroundColor( Col );
-	mUIBlueTxt->setText( String::toStr( (Uint32)mUIBlueSlider->getValue() ) );
+	mUIBlueTxt->setText( String::toString( (Uint32)mUIBlueSlider->getValue() ) );
 
 	if ( NULL != mUIMap->getSelectedLight() ) {
 		RGB lCol( mUIMap->getSelectedLight()->getColor() );

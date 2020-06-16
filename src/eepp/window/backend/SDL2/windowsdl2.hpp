@@ -61,7 +61,7 @@ class EE_API WindowSDL : public Window {
 
 	virtual void show();
 
-	virtual void setPosition( Int16 Left, Int16 Top );
+	virtual void setPosition( int Left, int Top );
 
 	virtual Vector2i getPosition();
 

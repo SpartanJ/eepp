@@ -415,7 +415,7 @@ void ShaderProgram::setName( const std::string& name ) {
 	Uint32 NameCount = ShaderProgramManager::instance()->exists( mName );
 
 	if ( 0 != NameCount || 0 == name.size() ) {
-		setName( name + String::toStr( NameCount + 1 ) );
+		setName( name + String::toString( NameCount + 1 ) );
 	}
 }
 

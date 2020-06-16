@@ -192,7 +192,7 @@ class EE_API Window {
 	virtual void show();
 
 	/** This will attemp to move the window over the desktop to the position */
-	virtual void setPosition( Int16 Left, Int16 Top );
+	virtual void setPosition( int Left, int Top );
 
 	/** @return The Current Window Position */
 	virtual Vector2i getPosition();

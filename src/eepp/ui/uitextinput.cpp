@@ -100,28 +100,15 @@ void UITextInput::onCursorPosChange() {
 
 void UITextInput::drawWaitingCursor() {
 	if ( mVisible && hasFocus() && mShowingWait && mAllowEditing ) {
-		bool disableSmooth = mShowingWait && GLi->isLineSmooth();
+		Vector2f cursor(
+			eefloor( mScreenPos.x + mRealAlignOffset.x + mCurPos.x + mRealPadding.Left ),
+			mScreenPos.y + mRealAlignOffset.y + mCurPos.y + mRealPadding.Top );
 
-		if ( disableSmooth )
-			GLi->lineSmooth( false );
-
-		Primitives P;
-		P.setColor( mFontStyleConfig.FontColor );
-
-		Float CurPosX =
-			eefloor( mScreenPos.x + mRealAlignOffset.x + mCurPos.x + mRealPadding.Left );
-		Float CurPosY = mScreenPos.y + mRealAlignOffset.y + mCurPos.y + mRealPadding.Top;
-
-		if ( CurPosX > (Float)mScreenPos.x + (Float)mSize.x )
-			CurPosX = (Float)mScreenPos.x + (Float)mSize.x;
-
-		P.drawLine(
-			Line2f( Vector2f( CurPosX, CurPosY ),
-					Vector2f( CurPosX, CurPosY + mTextCache->getFont()->getFontHeight(
-													 mTextCache->getCharacterSizePx() ) ) ) );
-
-		if ( disableSmooth )
-			GLi->lineSmooth( true );
+		Primitives primitives;
+		primitives.setColor( Color( mFontStyleConfig.FontColor ).blendAlpha( mAlpha ) );
+		primitives.drawRectangle( Rectf(
+			cursor, Sizef( PixelDensity::dpToPx( 1 ), mTextCache->getFont()->getFontHeight(
+														  mTextCache->getCharacterSizePx() ) ) ) );
 	}
 }
 
@@ -230,7 +217,7 @@ void UITextInput::alignFix() {
 	}
 
 	if ( Font::getHorizontalAlign( getFlags() ) == UI_HALIGN_LEFT ) {
-		Float tW = mTextCache->findCharacterPos( selCurEnd() ).x;
+		Float tW = mTextCache->findCharacterPos( selCurInit() ).x;
 		mCurPos.x = tW;
 		mCurPos.y = 0;
 
@@ -346,11 +333,22 @@ Uint32 UITextInput::onMouseUp( const Vector2i& position, const Uint32& flags ) {
 	return UITextView::onMouseUp( position, flags );
 }
 
+Uint32 UITextInput::onMouseClick( const Vector2i& position, const Uint32& flags ) {
+	UITextView::onMouseClick( position, flags );
+	if ( ( flags & EE_BUTTON_LMASK ) &&
+		 mLastDoubleClick.getElapsedTime() < Milliseconds( 300.f ) ) {
+		mDoc.selectLine();
+	}
+	return 1;
+}
+
 Uint32 UITextInput::onMouseDoubleClick( const Vector2i& Pos, const Uint32& Flags ) {
 	UITextView::onMouseDoubleClick( Pos, Flags );
 
-	if ( isTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) && selCurEnd() != -1 ) {
-		resetWaitCursor();
+	if ( isTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) ) {
+		mLastDoubleClick.restart();
+		if ( selCurEnd() != -1 )
+			resetWaitCursor();
 	}
 
 	return 1;
@@ -449,7 +447,7 @@ std::string UITextInput::getPropertyString( const PropertyDefinition* propertyDe
 		case PropertyId::AllowEditing:
 			return isEditingAllowed() ? "true" : "false";
 		case PropertyId::MaxLength:
-			return String::toStr( getMaxLength() );
+			return String::toString( getMaxLength() );
 		case PropertyId::Numeric:
 			return onlyNumbersAllowed() ? "true" : "false";
 		case PropertyId::AllowFloat:
@@ -467,7 +465,7 @@ std::string UITextInput::getPropertyString( const PropertyDefinition* propertyDe
 		case PropertyId::HintFontStyle:
 			return Text::styleFlagToString( getHintFontStyle() );
 		case PropertyId::HintStrokeWidth:
-			return String::toStr( PixelDensity::dpToPx( getHintOutlineThickness() ) );
+			return String::toString( PixelDensity::dpToPx( getHintOutlineThickness() ) );
 		case PropertyId::HintStrokeColor:
 			return getHintOutlineColor().toHexString();
 		default:

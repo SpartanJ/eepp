@@ -125,7 +125,7 @@ std::vector<TextureRegion*> TextureAtlasManager::getTextureRegionsByPattern(
 
 	for ( int len = 1; len < 7; len++ ) {
 		for ( i = 0; i < 2; i++ ) {
-			std::string formatStr( "%s%0" + String::toStr( len ) + "d%s" );
+			std::string formatStr( "%s%0" + String::toString( len ) + "d%s" );
 			search = String::format( formatStr.c_str(), name.c_str(), i, realext.c_str() );
 
 			if ( NULL == SearchInTextureAtlas )
@@ -147,7 +147,7 @@ std::vector<TextureRegion*> TextureAtlasManager::getTextureRegionsByPattern(
 
 	if ( 0 != numPadding ) {
 		do {
-			std::string formatStr( "%s%0" + String::toStr( numPadding ) + "d%s" );
+			std::string formatStr( "%s%0" + String::toString( numPadding ) + "d%s" );
 			search = String::format( formatStr.c_str(), name.c_str(), c, realext.c_str() );
 
 			if ( NULL == SearchInTextureAtlas )

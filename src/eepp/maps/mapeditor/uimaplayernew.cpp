@@ -47,7 +47,7 @@ UIMapLayerNew::UIMapLayerNew( UIMap* Map, EE_LAYER_TYPE Type, NewLayerCb newLaye
 	mUILayerName->setSize( 120, 0 )
 		->setParent( mUIWindow->getContainer() )
 		->setPosition( Txt->getPosition().x + DistFromTitle, Txt->getPosition().y + DistFromTitle );
-	mUILayerName->setText( "Layer " + String::toStr( mUIMap->Map()->getLayerCount() + 1 ) );
+	mUILayerName->setText( "Layer " + String::toString( mUIMap->Map()->getLayerCount() + 1 ) );
 
 	UIPushButton* OKButton = UIPushButton::New();
 	OKButton->setSize( 80, 0 )->setParent( mUIWindow->getContainer() );

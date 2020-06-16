@@ -815,7 +815,7 @@ void TexturePacker::childSave( const Image::SaveType& Format ) {
 		if ( NULL != LastParent ) {
 			std::string fFpath = FileSystem::fileRemoveExtension( LastParent->getFilepath() );
 			std::string fExt = FileSystem::fileExtension( LastParent->getFilepath() );
-			std::string fName = fFpath + "-ch" + String::toStr( ParentCount ) + "." + fExt;
+			std::string fName = fFpath + "-ch" + String::toString( ParentCount ) + "." + fExt;
 
 			mChild->save( fName, Format, mKeepExtensions );
 		}

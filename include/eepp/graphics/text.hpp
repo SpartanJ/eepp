@@ -80,7 +80,7 @@ class EE_API Text {
 
 	Float getOutlineThickness() const;
 
-	Vector2f findCharacterPos( std::size_t index );
+	Vector2f findCharacterPos( std::size_t index ) const;
 
 	/** @return The current text local bounds. */
 	Rectf getLocalBounds();
@@ -121,11 +121,11 @@ class EE_API Text {
 	void setStyleConfig( const FontStyleConfig& styleConfig );
 
 	/** Finds the closest cursor position to the point position */
-	Int32 findCharacterFromPos( const Vector2i& pos, bool returnNearest = true );
+	Int32 findCharacterFromPos( const Vector2i& pos, bool returnNearest = true ) const;
 
 	/** Simulates a selection request and return the initial and end cursor position when the
 	 * selection worked. Otherwise both parameters will be -1. */
-	void findWordFromCharacterIndex( Int32 characterIndex, Int32& InitCur, Int32& EndCur );
+	void findWordFromCharacterIndex( Int32 characterIndex, Int32& InitCur, Int32& EndCur ) const;
 
 	/** Shrink the String to a max width
 	 * @param MaxWidth The maximum possible width

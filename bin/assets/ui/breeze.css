@@ -261,14 +261,11 @@ TextEdit {
 	border-color: var(--button-border);
 	border-radius: var(--button-radius);
 	border-width: var(--border-width);
-	transition: all 0.15;
-}
-
-TextEdit::input {
 	padding-left: var(--base-horizontal-padding);
 	padding-right: var(--base-horizontal-padding);
 	padding-top: var(--base-vertical-padding);
 	padding-bottom: var(--base-vertical-padding);
+	transition: all 0.15;
 }
 
 TextEdit:focus,

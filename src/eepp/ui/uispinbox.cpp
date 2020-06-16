@@ -15,7 +15,8 @@ UISpinBox::UISpinBox() :
 	mMinValue( 0.f ),
 	mMaxValue( std::numeric_limits<double>::max() ),
 	mValue( 0 ),
-	mClickStep( 1.f ) {
+	mClickStep( 1.f ),
+	mModifyingVal( false ) {
 	mInput = UITextInput::NewWithTag( "spinbox::input" );
 	mInput->setVisible( true );
 	mInput->setEnabled( true );
@@ -150,8 +151,8 @@ Uint32 UISpinBox::onMessage( const NodeMessage* Msg ) {
 }
 
 void UISpinBox::addValue( const double& value ) {
-	if ( !mInput->getText().size() )
-		mInput->setText( String::toStr( static_cast<Int32>( mMinValue ) ) );
+	if ( mInput->getText().empty() )
+		mInput->setText( String::toString( static_cast<Int32>( mMinValue ) ) );
 
 	setValue( mValue + value );
 }
@@ -164,11 +165,13 @@ UISpinBox* UISpinBox::setValue( const double& val ) {
 
 			mValue = val;
 
+			mModifyingVal = true;
 			if ( fValN == val ) {
-				mInput->setText( String::toStr( (Int64)iValN ) );
+				mInput->setText( String::toString( (Int64)iValN ) );
 			} else {
-				mInput->setText( String::toStr( val ) );
+				mInput->setText( String::toString( val ) );
 			}
+			mModifyingVal = false;
 
 			onValueChange();
 		}
@@ -177,7 +180,10 @@ UISpinBox* UISpinBox::setValue( const double& val ) {
 }
 
 void UISpinBox::onBufferChange( const Event* ) {
-	if ( !mInput->getText().size() ) {
+	if ( mModifyingVal )
+		return;
+
+	if ( mInput->getText().empty() ) {
 		setValue( 0 );
 	} else {
 		double val = mValue;

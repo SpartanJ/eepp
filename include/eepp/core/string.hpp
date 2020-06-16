@@ -236,7 +236,7 @@ class EE_API String {
 						   char delim = ';' );
 
 	/** Converts from any basic type to std::string */
-	template <class T> static std::string toStr( const T& i ) {
+	template <class T> static std::string toString( const T& i ) {
 		std::ostringstream ss;
 		ss << std::fixed << i;
 		return ss.str();

@@ -1043,7 +1043,7 @@ std::string UIListBox::getPropertyString( const PropertyDefinition* propertyDef,
 					   ? "auto"
 					   : ( getHorizontalScrollMode() == ScrollBarMode::AlwaysOn ? "on" : "off" );
 		case PropertyId::SelectedIndex:
-			return String::toStr( getItemSelectedIndex() );
+			return String::toString( getItemSelectedIndex() );
 		case PropertyId::SelectedText:
 			return getItemSelectedText();
 		case PropertyId::ScrollBarStyle:

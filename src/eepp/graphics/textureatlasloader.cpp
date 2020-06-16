@@ -506,7 +506,7 @@ bool TextureAtlasLoader::updateTextureAtlas( std::string TextureAtlasPath, std::
 			for ( Uint32 z = 0; z < mTempAtlass.size(); z++ ) {
 				if ( z != 0 ) {
 					tapath = FileSystem::fileRemoveExtension( TextureAtlasPath ) + "_ch" +
-							 String::toStr( z ) + "." +
+							 String::toString( z ) + "." +
 							 Image::saveTypeToExtension( mTexGrHdr.Format );
 				}
 

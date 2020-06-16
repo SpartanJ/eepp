@@ -113,6 +113,7 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 	bool mMouseDown;
 	Uint32 mMaxLength{0};
 	KeyBindings mKeyBindings;
+	Clock mLastDoubleClick;
 
 	void resetWaitCursor();
 
@@ -127,6 +128,8 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 	virtual Uint32 onMouseDown( const Vector2i& position, const Uint32& flags );
 
 	virtual Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
+
+	virtual Uint32 onMouseClick( const Vector2i& position, const Uint32& flags );
 
 	virtual Uint32 onMouseDoubleClick( const Vector2i& position, const Uint32& flags );
 

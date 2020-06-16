@@ -1543,7 +1543,7 @@ std::string UIWindow::getPropertyString( const PropertyDefinition* propertyDef,
 		case PropertyId::WindowTitle:
 			return getTitle().toUtf8();
 		case PropertyId::WindowOpacity:
-			return String::toStr( getBaseAlpha() / 255.f );
+			return String::toString( getBaseAlpha() / 255.f );
 		case PropertyId::WindowButtonsOffset:
 			return String::format( "%ddp", mStyleConfig.ButtonsOffset.x ) + " " +
 				   String::format( "%ddp", mStyleConfig.ButtonsOffset.y );

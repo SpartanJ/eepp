@@ -211,7 +211,7 @@ const bool& UIProgressBar::getDisplayPercent() const {
 
 void UIProgressBar::updateTextBox() {
 	mTextBox->setVisible( mStyleConfig.DisplayPercent );
-	mTextBox->setText( String::toStr( ( Int32 )( ( mProgress / mTotalSteps ) * 100.f ) ) + "%" );
+	mTextBox->setText( String::toString( ( Int32 )( ( mProgress / mTotalSteps ) * 100.f ) ) + "%" );
 	mTextBox->center();
 }
 

@@ -119,7 +119,7 @@ std::string Shader::getName() {
 	if ( mFilename.size() ) {
 		name = mFilename;
 	} else {
-		name = String::toStr( mGLId );
+		name = String::toString( mGLId );
 	}
 
 	return name;

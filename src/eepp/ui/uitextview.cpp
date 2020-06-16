@@ -25,10 +25,10 @@ UITextView* UITextView::NewWithTag( const std::string& tag ) {
 UITextView::UITextView( const std::string& tag ) :
 	UIWidget( tag ),
 	mRealAlignOffset( 0.f, 0.f ),
-	mSelCurInit( -1 ),
-	mSelCurEnd( -1 ),
-	mLastSelCurInit( -1 ),
-	mLastSelCurEnd( -1 ),
+	mSelCurInit( 0 ),
+	mSelCurEnd( 0 ),
+	mLastSelCurInit( 0 ),
+	mLastSelCurEnd( 0 ),
 	mFontLineCenter( 0 ),
 	mSelecting( false ) {
 	mTextCache = Text::New();
@@ -314,8 +314,7 @@ void UITextView::alignFix() {
 Uint32 UITextView::onFocusLoss() {
 	UIWidget::onFocusLoss();
 
-	selCurInit( -1 );
-	selCurEnd( -1 );
+	selCurEnd( selCurInit() );
 	onSelectionChange();
 
 	return 1;
@@ -395,8 +394,8 @@ Uint32 UITextView::onMouseDoubleClick( const Vector2i& Pos, const Uint32& Flags 
 
 			mTextCache->findWordFromCharacterIndex( curPos, tSelCurInit, tSelCurEnd );
 
-			selCurInit( tSelCurInit );
-			selCurEnd( tSelCurEnd );
+			selCurInit( tSelCurEnd );
+			selCurEnd( tSelCurInit );
 			onSelectionChange();
 
 			mSelecting = false;
@@ -408,12 +407,6 @@ Uint32 UITextView::onMouseDoubleClick( const Vector2i& Pos, const Uint32& Flags 
 
 Uint32 UITextView::onMouseClick( const Vector2i& Pos, const Uint32& Flags ) {
 	if ( isTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) ) {
-		if ( selCurInit() == selCurEnd() ) {
-			selCurInit( -1 );
-			selCurEnd( -1 );
-			onSelectionChange();
-		}
-
 		mSelecting = false;
 	}
 
@@ -433,11 +426,11 @@ Uint32 UITextView::onMouseDown( const Vector2i& Pos, const Uint32& Flags ) {
 		Int32 curPos = mTextCache->findCharacterFromPos( controlPos.asInt() );
 
 		if ( -1 != curPos ) {
-			if ( -1 == selCurInit() || !mSelecting ) {
+			if ( !mSelecting ) {
 				selCurInit( curPos );
 				selCurEnd( curPos );
 			} else {
-				selCurEnd( curPos );
+				selCurInit( curPos );
 			}
 
 			onSelectionChange();
@@ -589,7 +582,7 @@ void UITextView::recalculate() {
 }
 
 void UITextView::resetSelCache() {
-	mLastSelCurInit = mLastSelCurEnd = -1;
+	mLastSelCurInit = mLastSelCurEnd = 0;
 	onSelectionChange();
 }
 
@@ -693,7 +686,7 @@ std::string UITextView::getPropertyString( const PropertyDefinition* propertyDef
 		case PropertyId::FontStyle:
 			return Text::styleFlagToString( getFontStyle() );
 		case PropertyId::TextStrokeWidth:
-			return String::toStr( PixelDensity::dpToPx( getOutlineThickness() ) );
+			return String::toString( PixelDensity::dpToPx( getOutlineThickness() ) );
 		case PropertyId::TextStrokeColor:
 			return getOutlineColor().toHexString();
 		case PropertyId::Wordwrap:

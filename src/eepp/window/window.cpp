@@ -437,16 +437,16 @@ void Window::logSuccessfulInit( const std::string& BackendName ) {
 		" (codename: \"" + Version::getCodename() + "\")" +
 		"\n\tBuild time: " + Version::getBuildTime() + "\n\tPlatform: " + Sys::getPlatform() +
 		"\n\tOS: " + Sys::getOSName( true ) + "\n\tArch: " + Sys::getOSArchitecture() +
-		"\n\tCPU Cores: " + String::toStr( Sys::getCPUCount() ) +
+		"\n\tCPU Cores: " + String::toString( Sys::getCPUCount() ) +
 		"\n\tProcess Path: " + Sys::getProcessPath() + "\n\tCurrent Working Directory: " +
 		FileSystem::getCurrentWorkingDirectory() + "\n\tDisk Free Space: " +
-		String::toStr(
+		String::toString(
 			FileSystem::sizeToString( FileSystem::getDiskFreeSpace( Sys::getProcessPath() ) ) ) +
 		"\n\tWindow/Input Backend: " + BackendName + "\n\tGL Backend: " + GLi->versionStr() +
 		"\n\tGL Vendor: " + GLi->getVendor() + "\n\tGL Renderer: " + GLi->getRenderer() +
-		"\n\tGL Version: " + GLi->getVersion() +
-		"\n\tGL Shading Language Version: " + GLi->getShadingLanguageVersion() +
-		"\n\tResolution: " + String::toStr( getWidth() ) + "x" + String::toStr( getHeight() ) );
+		"\n\tGL Version: " + GLi->getVersion() + "\n\tGL Shading Language Version: " +
+		GLi->getShadingLanguageVersion() + "\n\tResolution: " + String::toString( getWidth() ) +
+		"x" + String::toString( getHeight() ) );
 
 #ifndef EE_SILENT
 	eePRINTL( msg.c_str() );
@@ -504,13 +504,13 @@ void Window::raise() {}
 
 void Window::show() {}
 
-void Window::setPosition( Int16 Left, Int16 Top ) {}
+void Window::setPosition( int, int ) {}
 
 Vector2i Window::getPosition() {
 	return Vector2i::Zero;
 }
 
-void Window::setCurrentContext( eeWindowContex Context ) {}
+void Window::setCurrentContext( eeWindowContex ) {}
 
 void Window::setCurrent() {}
 

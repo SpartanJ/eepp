@@ -339,7 +339,7 @@ static std::vector<String> getTestStringArr() {
 
 	if ( wsize ) {
 		for ( Int32 i = 1; i <= wsize; i++ )
-			str[i - 1] = "Test ListBox " + String::toStr( i ) + " testing it right now!";
+			str[i - 1] = "Test ListBox " + String::toString( i ) + " testing it right now!";
 	}
 
 	return str;
@@ -491,7 +491,7 @@ void EETest::createBaseUI() {
 
 		TxtGfx->setVerticalAlign( UI_VALIGN_CENTER );
 		TxtGfx->setDrawable( mTheme->getIconByName( "ok" ) );
-		TxtBox->setText( "Test " + String::toStr( i + 1 ) );
+		TxtBox->setText( "Test " + String::toString( i + 1 ) );
 
 		Cell->setCell( 0, TxtBox );
 		Cell->setCell( 1, TxtGfx );
@@ -797,7 +797,7 @@ void EETest::createNewUI() {
 		Cell->setCell( 2, TxtInput );
 
 		TxtGfx->setDrawable( mTheme->getIconByName( "ok" ) );
-		TxtBox->setText( "Test " + String::toStr( i + 1 ) );
+		TxtBox->setText( "Test " + String::toString( i + 1 ) );
 
 		genGrid->add( Cell );
 	}
@@ -1146,7 +1146,8 @@ void EETest::createDecoratedWindow() {
 	UITextEdit* TEdit = UITextEdit::New();
 	TEdit->setFlags( UI_WORD_WRAP );
 	TEdit->setParent( TabWidget );
-	TEdit->setText( mBuda );
+	TEdit->addEventListener( Event::OnSizeChange,
+							 [&, TEdit]( const Event* ) { TEdit->setText( mBuda ); } );
 	TabWidget->add( "TextEdit", TEdit );
 
 	UITextInput* Txt = UITextInput::New();
@@ -1246,7 +1247,7 @@ void EETest::onItemClick( const Event* event ) {
 }
 
 void EETest::onValueChange( const Event* ) {
-	mTextBoxValue->setText( "Scroll Value:\n" + String::toStr( mScrollBar->getValue() ) );
+	mTextBoxValue->setText( "Scroll Value:\n" + String::toString( mScrollBar->getValue() ) );
 
 	mProgressBar->setProgress( mScrollBar->getValue() * 100.f );
 }
@@ -1329,7 +1330,7 @@ void EETest::cmdSetPartsNum( const std::vector<String>& params ) {
 			PS[2].create( ParticleEffect::WormHole, tInt, TN[5],
 						  Vector2f( mWindow->getWidth() * 0.5f, mWindow->getHeight() * 0.5f ), 32,
 						  true );
-			Con.pushText( "Wormhole Particles Number Changed to: " + String::toStr( tInt ) );
+			Con.pushText( "Wormhole Particles Number Changed to: " + String::toString( tInt ) );
 		} else
 			Con.pushText( "Valid parameters are between 0 and 100000 (0 = no limit)." );
 	}
@@ -1383,7 +1384,7 @@ void EETest::loadTextures() {
 	TNP.resize( 12 );
 
 	for ( i = 0; i <= 6; i++ ) {
-		TN[i] = TF->loadFromFile( MyPath + "sprites/" + String::toStr( i + 1 ) + ".png",
+		TN[i] = TF->loadFromFile( MyPath + "sprites/" + String::toString( i + 1 ) + ".png",
 								  ( i + 1 ) == 7 ? true : false,
 								  ( ( i + 1 ) == 4 ) ? Texture::ClampMode::ClampRepeat
 													 : Texture::ClampMode::ClampToEdge );
@@ -1397,7 +1398,7 @@ void EETest::loadTextures() {
 
 	if ( NULL != SG ) {
 		for ( i = 0; i < 6; i++ ) {
-			Tiles[i] = SG->getByName( String::toStr( i + 1 ) );
+			Tiles[i] = SG->getByName( String::toString( i + 1 ) );
 		}
 
 		Tiles[6] = SG->add( TF->loadFromFile( MyPath + "sprites/objects/1.png" ), "7" );

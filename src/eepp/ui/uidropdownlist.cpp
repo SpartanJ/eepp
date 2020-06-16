@@ -353,7 +353,7 @@ std::string UIDropDownList::getPropertyString( const PropertyDefinition* propert
 		case PropertyId::PopUpToRoot:
 			return mStyleConfig.PopUpToRoot ? "true" : "false";
 		case PropertyId::MaxVisibleItems:
-			return String::toStr( mStyleConfig.MaxNumVisibleItems );
+			return String::toString( mStyleConfig.MaxNumVisibleItems );
 		case PropertyId::SelectedIndex:
 		case PropertyId::SelectedText:
 		case PropertyId::ScrollBarStyle:

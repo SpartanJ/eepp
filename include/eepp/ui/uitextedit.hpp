@@ -1,13 +1,12 @@
 #ifndef EE_UICUITEXTEDIT_HPP
 #define EE_UICUITEXTEDIT_HPP
 
-#include <eepp/ui/uitextinput.hpp>
+#include <eepp/graphics/text.hpp>
+#include <eepp/ui/uicodeeditor.hpp>
 
 namespace EE { namespace UI {
 
-class UIScrollBar;
-
-class EE_API UITextEdit : public UIWidget {
+class EE_API UITextEdit : public UICodeEditor {
   public:
 	static UITextEdit* New();
 
@@ -21,77 +20,45 @@ class EE_API UITextEdit : public UIWidget {
 
 	virtual void setTheme( UITheme* Theme );
 
-	const String& getText() const;
+	virtual void shrinkText( const Float& maxWidth );
 
-	void setText( const String& Txt );
+	String getText() const;
 
-	UITextInput* getTextInput() const;
+	void setText( const String& text );
 
-	UIScrollBar* getHScrollBar() const;
+  protected:
+	struct TextLine {
+		Text text;
+		String::HashType hash{0};
+	};
+	std::map<size_t, TextLine> mLines;
+	bool mIsMonoSpace;
 
-	UIScrollBar* getVScrollBar() const;
+	virtual void onFontChanged();
 
-	void setAllowEditing( const bool& allow );
+	virtual void onDocumentLineChanged( const Int64& lineIndex );
 
-	const bool& isEditingAllowed() const;
+	virtual void drawLineText( const Int64& index, Vector2f position, const Float& fontSize );
 
-	void setVerticalScrollMode( const ScrollBarMode& Mode );
+	virtual Int64 getColFromXOffset( Int64 line, const Float& x ) const;
 
-	const ScrollBarMode& getVerticalScrollMode();
+	virtual Float getColXOffset( TextPosition position );
 
-	void setHorizontalScrollMode( const ScrollBarMode& Mode );
+	virtual Float getXOffsetCol( const TextPosition& position );
 
-	const ScrollBarMode& getHorizontalScrollMode();
+	virtual Float getLineWidth( const Int64& lineIndex );
 
-	UIFontStyleConfig getFontStyleConfig() const;
+	void ensureLineUpdated( const Int64& lineIndex );
 
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
-	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
-										   const Uint32& propertyIndex = 0 );
+	virtual void drawCursor( const Vector2f& startScroll, const Float& lineHeight,
+							 const TextPosition& cursor );
 
-  protected:
-	UITextInput* mTextInput;
-	UIScrollBar* mHScrollBar;
-	UIScrollBar* mVScrollBar;
-	ScrollBarMode mHScrollBarMode;
-	ScrollBarMode mVScrollBarMode;
-	bool mSkipValueChange;
-	Rectf mContainerPadding;
+	void invalidateLinesCache();
 
-	virtual void onSizeChange();
+	void updateLineCache( const Int64& lineIndex );
 
-	virtual void onAlphaChange();
-
-	virtual void onParentSizeChange( const Vector2f& SizeChange );
-
-	virtual void onPaddingChange();
-
-	virtual Uint32 onMessage( const NodeMessage* Msg );
-
-	void onVScrollValueChange( const Event* Event );
-
-	void onHScrollValueChange( const Event* Event );
-
-	void onInputSizeChange( const Event* Event = NULL );
-
-	void onCursorPosChange( const Event* Event );
-
-	void autoPadding();
-
-	void scrollbarsSet();
-
-	void fixScroll();
-
-	void fixScrollToCursor();
-
-	void shrinkText( const Float& width );
-
-	void textInputTryResize( Sizef aSize, Sizef iSize );
-
-	Sizef getAvailableSize();
-
-	Sizef getInputSize();
 };
 
 }} // namespace EE::UI

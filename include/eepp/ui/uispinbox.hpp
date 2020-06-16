@@ -67,6 +67,7 @@ class EE_API UISpinBox : public UIWidget {
 	double mMaxValue;
 	double mValue;
 	double mClickStep;
+	bool mModifyingVal;
 
 	void adjustChilds();
 

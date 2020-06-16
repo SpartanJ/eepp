@@ -27,7 +27,7 @@ void JoystickSDL::open() {
 #if defined( SDL_REVISION_NUMBER ) && SDL_REVISION_NUMBER >= 7236
 		mName = SDL_JoystickName( mJoystick );
 #else
-		mName = std::string( "USB Joysick " ) + String::toStr( mIndex );
+		mName = std::string( "USB Joysick " ) + String::toString( mIndex );
 #endif
 
 		mHats = SDL_JoystickNumHats( mJoystick );

@@ -270,21 +270,21 @@ Float Text::getOutlineThickness() const {
 	return mOutlineThickness;
 }
 
-Vector2f Text::findCharacterPos( std::size_t index ) {
+Vector2f Text::findCharacterPos( std::size_t index ) const {
 	// Make sure that we have a valid font
 	if ( !mFont || mString.empty() )
 		return Vector2f();
 
 	// Adjust the index if it's out of range
-	if ( index >= mString.size() )
+	if ( index > mString.size() )
 		index = mString.size();
 
-	ensureGeometryUpdate();
+	const_cast<Text*>( this )->ensureGeometryUpdate();
 
 	return Vector2f( mGlyphCache[index].Left, mGlyphCache[index].Top );
 }
 
-Int32 Text::findCharacterFromPos( const Vector2i& pos, bool ) {
+Int32 Text::findCharacterFromPos( const Vector2i& pos, bool ) const {
 	if ( NULL == mFont || mString.empty() || mLinesStartIndex.empty() )
 		return 0;
 
@@ -326,7 +326,7 @@ static bool isStopSelChar( Uint32 c ) {
 		   ',' == c || ';' == c || ':' == c || '\n' == c || '"' == c || '\'' == c || '\t' == c;
 }
 
-void Text::findWordFromCharacterIndex( Int32 characterIndex, Int32& InitCur, Int32& EndCur ) {
+void Text::findWordFromCharacterIndex( Int32 characterIndex, Int32& InitCur, Int32& EndCur ) const {
 	InitCur = 0;
 	EndCur = mString.size();
 

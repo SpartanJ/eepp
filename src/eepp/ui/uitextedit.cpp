@@ -1,9 +1,11 @@
 #include <eepp/graphics/font.hpp>
+#include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uitextedit.hpp>
+#include <eepp/ui/uithememanager.hpp>
 
 namespace EE { namespace UI {
 
@@ -11,56 +13,33 @@ UITextEdit* UITextEdit::New() {
 	return eeNew( UITextEdit, () );
 }
 
-UITextEdit::UITextEdit() :
-	UIWidget( "textedit" ),
-	mTextInput( NULL ),
-	mHScrollBar( NULL ),
-	mVScrollBar( NULL ),
-	mHScrollBarMode( ScrollBarMode::Auto ),
-	mVScrollBarMode( ScrollBarMode::Auto ),
-	mSkipValueChange( false ) {
-	setFlags( UI_AUTO_PADDING | UI_TEXT_SELECTION_ENABLED );
+UITextEdit::UITextEdit() : UICodeEditor( "textedit", true, true ), mIsMonoSpace( false ) {
+	setFlags( UI_AUTO_PADDING );
 	clipEnable();
+	mFont = NULL;
+	mHorizontalScrollBarEnabled = true;
 
-	mTextInput = UITextInput::NewWithTag( mTag + "::input" );
-	mTextInput->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
-	mTextInput->setParent( this );
-	mTextInput->setFlags( UI_TEXT_SELECTION_ENABLED | UI_VALIGN_TOP );
-	mTextInput->unsetFlags( UI_VALIGN_CENTER | UI_AUTO_SIZE );
-	mTextInput->clipDisable();
-	//mTextInput->getInputTextBuffer()->isNewLineEnabled( true );
-	mTextInput->setVisible( true );
-	mTextInput->setEnabled( true );
-	mTextInput->setSize( getSize() );
+	UITheme* theme = getUISceneNode()->getUIThemeManager()->getDefaultTheme();
 
-	auto cb = [&]( const Event* event ) { onInputSizeChange( event ); };
+	if ( NULL != theme && NULL != theme->getDefaultFont() ) {
+		setFont( theme->getDefaultFont() );
+	}
 
-	mTextInput->addEventListener( Event::OnSizeChange, cb );
-	mTextInput->addEventListener( Event::OnTextChanged, cb );
-	mTextInput->addEventListener( Event::OnPressEnter, cb );
-	mTextInput->addEventListener( Event::OnCursorPosChange,
-								  cb::Make1( this, &UITextEdit::onCursorPosChange ) );
-	mTextInput->addEventListener( Event::OnFocus, [&]( const Event* ) { onFocus(); } );
-	mTextInput->addEventListener( Event::OnFocusLoss, [&]( const Event* ) { onFocusLoss(); } );
+	if ( NULL != theme ) {
+		setFontSize( theme->getDefaultFontSize() );
+	} else {
+		setFontSize( getUISceneNode()->getUIThemeManager()->getDefaultFontSize() );
+	}
 
-	mVScrollBar = UIScrollBar::NewVertical();
-	mVScrollBar->setParent( this );
-	mVScrollBar->setSize( 0, getSize().getHeight() );
-	mVScrollBar->setPosition( getSize().getWidth() - mVScrollBar->getSize().getWidth(), 0 );
-	mVScrollBar->setValue( 1 );
+	if ( NULL == getFont() ) {
+		if ( NULL != getUISceneNode()->getUIThemeManager()->getDefaultFont() ) {
+			setFont( getUISceneNode()->getUIThemeManager()->getDefaultFont() );
+		} else {
+			eePRINTL( "UITextEdit::UITextEdit : Created a without a defined font." );
+		}
+	}
 
-	mHScrollBar = UIScrollBar::NewHorizontal();
-	mHScrollBar->setParent( this );
-	mHScrollBar->setSize( getSize().getWidth() - mVScrollBar->getSize().getWidth(), 0 );
-	mHScrollBar->setPosition( 0, getSize().getHeight() - mHScrollBar->getSize().getHeight() );
-
-	mVScrollBar->addEventListener( Event::OnValueChange,
-								   cb::Make1( this, &UITextEdit::onVScrollValueChange ) );
-	mHScrollBar->addEventListener( Event::OnValueChange,
-								   cb::Make1( this, &UITextEdit::onHScrollValueChange ) );
-
-	autoPadding();
-
+	disableEditorFeatures();
 	applyDefaultTheme();
 }
 
@@ -79,463 +58,91 @@ void UITextEdit::setTheme( UITheme* Theme ) {
 
 	setThemeSkin( Theme, "textedit" );
 
-	mTextInput->setThemeSkin( Theme, "textedit_box" );
-
-	autoPadding();
-
-	onSizeChange();
 	onThemeLoaded();
 }
 
-void UITextEdit::onSizeChange() {
-	mHScrollBar->setPosition( 0, getSize().getHeight() - mHScrollBar->getSize().getHeight() );
-	mVScrollBar->setPosition( getSize().getWidth() - mVScrollBar->getSize().getWidth(), 0 );
-
-	mHScrollBar->setSize( getSize().getWidth(), mHScrollBar->getSize().getHeight() );
-	mVScrollBar->setSize( mVScrollBar->getSize().getWidth(), getSize().getHeight() );
-
-	mTextInput->setPosition( mContainerPadding.Left, mContainerPadding.Top );
-
-	onInputSizeChange( NULL );
-
-	scrollbarsSet();
-
-	fixScroll();
-
-	UIWidget::onSizeChange();
+void UITextEdit::shrinkText( const Float& maxWidth ) {
+	Text text;
+	text.setStyleConfig( mFontStyleConfig );
+	text.setString( getText() );
+	text.shrinkText( maxWidth );
+	mDoc.reset();
+	mDoc.textInput( text.getString() );
 }
 
-void UITextEdit::onParentSizeChange( const Vector2f& SizeChange ) {
-	UIWidget::onParentSizeChange( SizeChange );
-
-	onInputSizeChange( NULL );
+String UITextEdit::getText() const {
+	return mDoc.getText( {mDoc.startOfDoc(), mDoc.endOfDoc()} );
 }
 
-void UITextEdit::onPaddingChange() {
-	mContainerPadding = Rectf();
-	autoPadding();
-	mContainerPadding += mRealPadding;
-
-	onSizeChange();
-
-	UIWidget::onPaddingChange();
+void UITextEdit::setText( const String& text ) {
+	mDoc.reset();
+	mDoc.textInput( text );
+	if ( mFlags & UI_WORD_WRAP ) {
+		shrinkText( getViewportWidth( true ) );
+	}
+	if ( !hasFocus() ) {
+		mCursorVisible = false;
+	}
+	invalidateLongestLineWidth();
 }
 
-void UITextEdit::onAlphaChange() {
-	mTextInput->setAlpha( mAlpha );
-	mHScrollBar->setAlpha( mAlpha );
-	mVScrollBar->setAlpha( mAlpha );
-
-	UIWidget::onAlphaChange();
-}
-
-void UITextEdit::scrollbarsSet() {
-	switch ( mHScrollBarMode ) {
-		case ScrollBarMode::AlwaysOff: {
-			mHScrollBar->setVisible( false );
-			mHScrollBar->setEnabled( false );
-			break;
-		}
-		case ScrollBarMode::AlwaysOn: {
-			mHScrollBar->setVisible( true );
-			mHScrollBar->setEnabled( true );
-			break;
-		}
-		case ScrollBarMode::Auto: {
-			if ( mTextInput->getPixelsSize().getWidth() >
-				 mSize.getWidth() - mContainerPadding.Left - mContainerPadding.Right ) {
-				mHScrollBar->setVisible( true );
-				mHScrollBar->setEnabled( true );
-			} else {
-				mHScrollBar->setVisible( false );
-				mHScrollBar->setEnabled( false );
-			}
-			break;
-		}
-	}
-
-	switch ( mVScrollBarMode ) {
-		case ScrollBarMode::AlwaysOff: {
-			mVScrollBar->setVisible( false );
-			mVScrollBar->setEnabled( false );
-			break;
-		}
-		case ScrollBarMode::AlwaysOn: {
-			mVScrollBar->setVisible( true );
-			mVScrollBar->setEnabled( true );
-			break;
-		}
-		case ScrollBarMode::Auto: {
-			int extraH = 0;
-
-			if ( mHScrollBar->isVisible() )
-				extraH = mHScrollBar->getPixelsSize().getHeight();
-
-			if ( mTextInput->getPixelsSize().getHeight() >
-				 mSize.getHeight() - mContainerPadding.Top - mContainerPadding.Bottom - extraH ) {
-				mVScrollBar->setVisible( true );
-				mVScrollBar->setEnabled( true );
-			} else {
-				mVScrollBar->setVisible( false );
-				mVScrollBar->setEnabled( false );
-			}
-			break;
-		}
-	}
-
-	if ( !mVScrollBar->isVisible() && mHScrollBar->isVisible() ) {
-		mHScrollBar->setSize( getSize().getWidth(), mHScrollBar->getSize().getHeight() );
-	} else {
-		mHScrollBar->setSize( getSize().getWidth() - mVScrollBar->getSize().getWidth(),
-							  mHScrollBar->getSize().getHeight() );
-	}
-
-	if ( ScrollBarMode::Auto == mHScrollBarMode && mVScrollBar->isVisible() &&
-		 !mHScrollBar->isVisible() ) {
-		if ( mTextInput->getPixelsSize().getWidth() >
-			 mSize.getWidth() - mContainerPadding.Left - mContainerPadding.Right -
-				 mVScrollBar->getPixelsSize().getWidth() ) {
-			mHScrollBar->setVisible( true );
-			mHScrollBar->setEnabled( true );
-		}
-	}
-
-	mSkipValueChange = true;
-
-	if ( mVScrollBar->isVisible() ) {
-		Float extraH = mHScrollBar->isVisible() ? mHScrollBar->getPixelsSize().getHeight() : 0;
-		Float totH = eefloor( mSize.getHeight() - mContainerPadding.Top - mContainerPadding.Bottom -
-							  extraH );
-
-		if ( mTextInput->getTextHeight() > totH ) {
-			mVScrollBar->setPageStep( (Float)totH / (Float)mTextInput->getTextHeight() );
-		}
-	}
-
-	if ( mHScrollBar->isVisible() ) {
-		Float extraW = mVScrollBar->isVisible() ? mVScrollBar->getPixelsSize().getWidth() : 0;
-		Float totW =
-			eefloor( mSize.getWidth() - mContainerPadding.Left - mContainerPadding.Right - extraW );
-
-		if ( mTextInput->getPixelsSize().getWidth() > totW &&
-			 0 != mTextInput->getPixelsSize().getWidth() ) {
-			mHScrollBar->setPageStep( (Float)totW / mTextInput->getPixelsSize().getWidth() );
-		}
-	}
-
-	mSkipValueChange = false;
-
-	invalidateDraw();
-}
-
-void UITextEdit::autoPadding() {
-	if ( mFlags & UI_AUTO_PADDING ) {
-		mContainerPadding = PixelDensity::dpToPx( makePadding() );
+void UITextEdit::onFontChanged() {
+	if ( mFont ) {
+		Float g1 = mFont->getGlyph( '@', getCharacterSize(), false ).advance;
+		Float g2 = mFont->getGlyph( '.', getCharacterSize(), false ).advance;
+		mIsMonoSpace = g1 == g2;
+		invalidateLinesCache();
 	}
 }
 
-void UITextEdit::onVScrollValueChange( const Event* ) {
-	if ( !mSkipValueChange )
-		fixScroll();
+void UITextEdit::onDocumentLineChanged( const Int64& lineIndex ) {
+	UICodeEditor::onDocumentLineChanged( lineIndex );
+	updateLineCache( lineIndex );
 }
 
-void UITextEdit::onHScrollValueChange( const Event* ) {
-	if ( !mSkipValueChange )
-		fixScroll();
+void UITextEdit::drawLineText( const Int64& index, Vector2f position, const Float& ) {
+	ensureLineUpdated( index );
+	mLines[index].text.draw( position.x, position.y );
 }
 
-UITextInput* UITextEdit::getTextInput() const {
-	return mTextInput;
-}
-
-UIScrollBar* UITextEdit::getHScrollBar() const {
-	return mHScrollBar;
-}
-
-UIScrollBar* UITextEdit::getVScrollBar() const {
-	return mVScrollBar;
-}
-
-const String& UITextEdit::getText() const {
-	return mTextInput->getText();
-}
-
-void UITextEdit::setText( const String& Txt ) {
-	mTextInput->setText( Txt );
-
-	onInputSizeChange();
-
-	onSizeChange();
-}
-
-void UITextEdit::onInputSizeChange( const Event* Event ) {
-	scrollbarsSet();
-
-	if ( mNodeFlags & NODE_FLAG_FREE_USE )
-		return;
-
-	mNodeFlags |= NODE_FLAG_FREE_USE;
-
-	Sizef aSize( getAvailableSize() );
-	Sizef iSize( getInputSize() );
-
-	if ( NULL != Event ) {
-		if ( Event->getType() == Event::OnPressEnter ) {
-			mHScrollBar->setValue( 0 );
-		}
+Int64 UITextEdit::getColFromXOffset( Int64 line, const Float& x ) const {
+	if ( !mIsMonoSpace ) {
+		const_cast<UITextEdit*>( this )->ensureLineUpdated( line );
+		return mLines.at( line ).text.findCharacterFromPos( Vector2i( x, 0 ) );
 	}
-
-	if ( mHScrollBar->isVisible() )
-		aSize.y -= mHScrollBar->getPixelsSize().getHeight();
-
-	/*String text( mTextInput->getInputTextBuffer()->getBuffer() );
-
-	shrinkText( aSize.getWidth() );
-
-	if ( iSize.getHeight() > aSize.getHeight() ) {
-		aSize.x -= mVScrollBar->getPixelsSize().getWidth();
-
-		mTextInput->getInputTextBuffer()->setBuffer( text );
-
-		shrinkText( aSize.getWidth() );
-	}*/
-
-	textInputTryResize( aSize, iSize );
-
-	fixScroll();
-	fixScrollToCursor();
-
-	mNodeFlags &= ~NODE_FLAG_FREE_USE;
+	return UICodeEditor::getColFromXOffset( line, x );
 }
 
-void UITextEdit::textInputTryResize( Sizef aSize, Sizef iSize ) {
-	if ( ( mFlags & UI_WORD_WRAP ) && iSize.getHeight() < aSize.getHeight() ) {
-		mVScrollBar->setVisible( false );
-		mVScrollBar->setEnabled( false );
+Float UITextEdit::getColXOffset( TextPosition position ) {
+	if ( !mIsMonoSpace ) {
+		return getXOffsetCol( position );
 	}
+	return UICodeEditor::getColXOffset( position );
+}
 
-	if ( mTextInput->getPixelsSize().getWidth() < aSize.getWidth() ||
-		 mTextInput->getPixelsSize().getHeight() < aSize.getHeight() ) {
-		if ( mTextInput->getPixelsSize().getWidth() < aSize.getWidth() &&
-			 mTextInput->getPixelsSize().getHeight() < aSize.getHeight() ) {
-			mTextInput->setPixelsSize( aSize );
-		} else {
-			if ( mTextInput->getPixelsSize().getWidth() < aSize.getWidth() ) {
-				mTextInput->setPixelsSize( aSize.getWidth(),
-										   mTextInput->getPixelsSize().getHeight() );
-			} else {
-				mTextInput->setPixelsSize( mTextInput->getPixelsSize().getWidth(),
-										   aSize.getHeight() );
-			}
-		}
+Float UITextEdit::getXOffsetCol( const TextPosition& position ) {
+	if ( !mIsMonoSpace ) {
+		ensureLineUpdated( position.line() );
+		return mLines[position.line()]
+			.text
+			.findCharacterPos(
+				( position.column() == (Int64)mDoc.line( position.line() ).getText().size() )
+					? position.column() - 1
+					: position.column() )
+			.x;
 	}
-
-	if ( iSize.getWidth() > aSize.getWidth() || iSize.getHeight() > aSize.getHeight() ) {
-		if ( iSize.getWidth() > aSize.getWidth() && iSize.getHeight() > aSize.getHeight() ) {
-			mTextInput->setPixelsSize( iSize );
-		} else {
-			if ( iSize.getWidth() > aSize.getWidth() ) {
-				mTextInput->setPixelsSize( iSize.getWidth(), aSize.getHeight() );
-			} else {
-				mTextInput->setPixelsSize( aSize.getWidth(), iSize.getHeight() );
-			}
-		}
-	} else {
-		mTextInput->setPixelsSize( aSize );
-	}
+	return UICodeEditor::getXOffsetCol( position );
 }
 
-Sizef UITextEdit::getAvailableSize() {
-	Float width = mSize.getWidth() - mContainerPadding.Left - mContainerPadding.Right;
-	Float height = mSize.getHeight() - mContainerPadding.Top - mContainerPadding.Bottom;
-	return Sizef( width, height );
+Float UITextEdit::getLineWidth( const Int64& lineIndex ) {
+	ensureLineUpdated( lineIndex );
+	return mLines[lineIndex].text.getTextWidth();
 }
 
-Sizef UITextEdit::getInputSize() {
-	Float width = mTextInput->getTextWidth() + mTextInput->getPixelsPadding().Left +
-				  mTextInput->getPixelsPadding().Right;
-	Float height = mTextInput->getTextHeight() + mTextInput->getPixelsPadding().Top +
-				   mTextInput->getPixelsPadding().Bottom;
-	return Sizef( width, height );
-}
-
-void UITextEdit::onCursorPosChange( const Event* ) {
-	fixScrollToCursor();
-}
-
-void UITextEdit::fixScroll() {
-	Sizef aSize( getAvailableSize() );
-
-	if ( mVScrollBar->isVisible() )
-		aSize.x -= mVScrollBar->getPixelsSize().getWidth();
-
-	if ( mHScrollBar->isVisible() )
-		aSize.y -= mHScrollBar->getPixelsSize().getHeight();
-
-	Float diff;
-	Float pos;
-
-	diff = mTextInput->getPixelsSize().getHeight() - aSize.getHeight();
-	if ( diff >= 0 ) {
-		pos = diff * mVScrollBar->getValue();
-
-		mTextInput->setPixelsPosition( mTextInput->getPixelsPosition().x,
-									   mContainerPadding.Top - pos );
-	}
-
-	diff = mTextInput->getPixelsSize().getWidth() - aSize.getWidth();
-	if ( diff >= 0 ) {
-		pos = diff * mHScrollBar->getValue();
-
-		mTextInput->setPixelsPosition( mContainerPadding.Left - pos,
-									   mTextInput->getPixelsPosition().y );
-	}
-}
-
-void UITextEdit::fixScrollToCursor() {
-	/*if ( Font::getHorizontalAlign( mTextInput->getFlags() ) == UI_HALIGN_LEFT ) {
-		Sizef aSize( getAvailableSize() );
-
-		if ( mVScrollBar->isVisible() )
-			aSize.x -= mVScrollBar->getPixelsSize().getWidth();
-
-		if ( mHScrollBar->isVisible() )
-			aSize.y -= mHScrollBar->getPixelsSize().getHeight();
-
-		Uint32 NLPos = 0;
-		Uint32 LineNum = mTextInput->getInputTextBuffer()->getCurPosLinePos( NLPos );
-
-		Text textCache( mTextInput->getFont(),
-						mTextInput->getFontStyleConfig().getFontCharacterSize() );
-		textCache.setString( mTextInput->getInputTextBuffer()->getBuffer().substr(
-			NLPos, mTextInput->getInputTextBuffer()->getCursorPosition() - NLPos ) );
-
-		mSkipValueChange = true;
-
-		Float lineHeight =
-			(Float)textCache.getFont()->getLineSpacing( textCache.getCharacterSizePx() );
-		Float currentLineY = LineNum * lineHeight;
-		Float visibleLines = eefloor( aSize.getHeight() / lineHeight );
-		Float scrollLines = (Float)mTextInput->getNumLines() - visibleLines;
-
-		if ( mTextInput->getNumLines() > 0 ) {
-			if ( mTextInput->getPixelsPosition().y + currentLineY < 0 ) {
-				mVScrollBar->setValue( LineNum / scrollLines );
-			} else if ( mTextInput->getPixelsPosition().y + currentLineY + lineHeight >
-						aSize.getHeight() ) {
-				mVScrollBar->setValue( ( LineNum + 1 - visibleLines ) / scrollLines );
-			}
-		}
-
-		Vector2f cursorPos( mTextInput->getPixelsPadding().Left + textCache.getTextWidth(),
-							mTextInput->getPixelsPadding().Top + currentLineY );
-
-		Float tW = mTextInput->getPixelsPosition().x + cursorPos.x;
-		Float contDiff = mTextInput->getPixelsSize().getWidth() - aSize.getWidth();
-
-		if ( contDiff != 0 ) {
-			if ( tW <= 0.f ) {
-				if ( mTextInput->getInputTextBuffer()->getCursorPosition() - NLPos == 0 ) {
-					mHScrollBar->setValue( 0 );
-				} else {
-					mHScrollBar->setValue( ( cursorPos.x - mTextInput->getPixelsPadding().Left ) /
-										   contDiff );
-				}
-			} else if ( tW >= aSize.getWidth() ) {
-				mHScrollBar->setValue( ( cursorPos.x - aSize.getWidth() ) / contDiff );
-			}
-		}
-
-		fixScroll();
-
-		mSkipValueChange = false;
-	}*/
-
-	invalidateDraw();
-}
-
-void UITextEdit::shrinkText( const Float& width ) {
-	if ( ( getFlags() & UI_WORD_WRAP ) && width > 0 ) {
-		mTextInput->shrinkText( width );
-		textInputTryResize( getAvailableSize(), getInputSize() );
-		scrollbarsSet();
-	}
-}
-
-Uint32 UITextEdit::onMessage( const NodeMessage* Msg ) {
-	switch ( Msg->getMsg() ) {
-		case NodeMessage::MouseUp: {
-			if ( NULL != getEventDispatcher() && mTextInput->isEnabled() &&
-				 mTextInput->isVisible() && mTextInput->isMouseOver() &&
-				 mVScrollBar->isVisible() ) {
-				if ( Msg->getFlags() & EE_BUTTONS_WUWD )
-					mVScrollBar->getSlider()->manageClick( Msg->getFlags() );
-			}
-
-			return 1;
-		}
-	}
-
-	return 0;
-}
-
-void UITextEdit::setAllowEditing( const bool& allow ) {
-	mTextInput->setAllowEditing( allow );
-	invalidateDraw();
-}
-
-const bool& UITextEdit::isEditingAllowed() const {
-	return mTextInput->isEditingAllowed();
-}
-
-void UITextEdit::setVerticalScrollMode( const ScrollBarMode& Mode ) {
-	if ( Mode != mVScrollBarMode ) {
-		mVScrollBarMode = Mode;
-
-		scrollbarsSet();
-	}
-}
-
-const ScrollBarMode& UITextEdit::getVerticalScrollMode() {
-	return mVScrollBarMode;
-}
-
-void UITextEdit::setHorizontalScrollMode( const ScrollBarMode& Mode ) {
-	if ( Mode != mHScrollBarMode ) {
-		mHScrollBarMode = Mode;
-
-		scrollbarsSet();
-	}
-}
-
-const ScrollBarMode& UITextEdit::getHorizontalScrollMode() {
-	return mHScrollBarMode;
-}
-
-UIFontStyleConfig UITextEdit::getFontStyleConfig() const {
-	return mTextInput->getFontStyleConfig();
-}
-
-std::string UITextEdit::getPropertyString( const PropertyDefinition* propertyDef,
-										   const Uint32& propertyIndex ) {
-	if ( NULL == propertyDef )
-		return "";
-
-	switch ( propertyDef->getPropertyId() ) {
-		case PropertyId::Text:
-			return getText().toUtf8();
-		case PropertyId::AllowEditing:
-			return isEditingAllowed() ? "true" : "false";
-		case PropertyId::VScrollMode:
-			return getVerticalScrollMode() == ScrollBarMode::Auto
-					   ? "auto"
-					   : ( getVerticalScrollMode() == ScrollBarMode::AlwaysOn ? "on" : "off" );
-		case PropertyId::HScrollMode:
-			return getHorizontalScrollMode() == ScrollBarMode::Auto
-					   ? "auto"
-					   : ( getHorizontalScrollMode() == ScrollBarMode::AlwaysOn ? "on" : "off" );
-		default:
-			return UIWidget::getPropertyString( propertyDef, propertyIndex );
+void UITextEdit::ensureLineUpdated( const Int64& lineIndex ) {
+	if ( mLines.find( lineIndex ) == mLines.end() ||
+		 mDoc.line( lineIndex ).getHash() != mLines[lineIndex].hash ) {
+		updateLineCache( lineIndex );
 	}
 }
 
@@ -543,67 +150,42 @@ bool UITextEdit::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) )
 		return false;
 
-	bool attributeSet = true;
-
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::Text:
-			if ( NULL != mSceneNode && mSceneNode->isUISceneNode() ) {
-				setText( static_cast<UISceneNode*>( mSceneNode )
-							 ->getTranslatorString( attribute.asString() ) );
-			}
+			setText( attribute.asString() );
 			break;
-		case PropertyId::AllowEditing:
-			setAllowEditing( attribute.asBool() );
-			break;
-		case PropertyId::VScrollMode: {
-			std::string val = attribute.asString();
-			if ( "auto" == val )
-				setVerticalScrollMode( ScrollBarMode::Auto );
-			else if ( "on" == val )
-				setVerticalScrollMode( ScrollBarMode::AlwaysOn );
-			else if ( "off" == val )
-				setVerticalScrollMode( ScrollBarMode::AlwaysOff );
-			break;
-		}
-		case PropertyId::HScrollMode: {
-			std::string val = attribute.asString();
-			if ( "auto" == val )
-				setHorizontalScrollMode( ScrollBarMode::Auto );
-			else if ( "on" == val )
-				setHorizontalScrollMode( ScrollBarMode::AlwaysOn );
-			else if ( "off" == val )
-				setHorizontalScrollMode( ScrollBarMode::AlwaysOff );
-			break;
-		}
-		case PropertyId::MaxLength:
-		case PropertyId::Numeric:
-		case PropertyId::AllowFloat:
-		case PropertyId::Hint:
-		case PropertyId::HintColor:
-		case PropertyId::HintShadowColor:
-		case PropertyId::HintFontSize:
-		case PropertyId::HintFontFamily:
-		case PropertyId::HintFontStyle:
-		case PropertyId::HintStrokeWidth:
-		case PropertyId::HintStrokeColor:
-		case PropertyId::Color:
-		case PropertyId::ShadowColor:
-		case PropertyId::SelectionColor:
-		case PropertyId::SelectionBackColor:
-		case PropertyId::FontFamily:
-		case PropertyId::FontSize:
-		case PropertyId::FontStyle:
-		case PropertyId::TextStrokeWidth:
-		case PropertyId::TextStrokeColor:
-		case PropertyId::Wordwrap:
-		case PropertyId::TextSelection:
-		case PropertyId::TextAlign:
-			return mTextInput->applyProperty( attribute );
 		default:
-			attributeSet = UIWidget::applyProperty( attribute );
+			return UICodeEditor::applyProperty( attribute );
 	}
 
-	return attributeSet;
+	return true;
+}
+
+void UITextEdit::invalidateLinesCache() {
+	mLines.clear();
+	invalidateDraw();
+}
+
+void UITextEdit::updateLineCache( const Int64& lineIndex ) {
+	if ( lineIndex >= 0 && lineIndex < (Int64)mDoc.linesCount() ) {
+		TextDocumentLine& line = mDoc.line( lineIndex );
+		auto& cacheLine = mLines[lineIndex];
+		cacheLine.text.setStyleConfig( mFontStyleConfig );
+		cacheLine.text.setString( line.getText() );
+		cacheLine.hash = line.getHash();
+	}
+}
+
+void UITextEdit::drawCursor( const Vector2f& startScroll, const Float& lineHeight,
+							 const TextPosition& cursor ) {
+	if ( mCursorVisible && !mLocked && isTextSelectionEnabled() ) {
+		Vector2f cursorPos( startScroll.x + getXOffsetCol( cursor ),
+							startScroll.y + cursor.line() * lineHeight );
+		Primitives primitives;
+		primitives.setColor( Color( mFontStyleConfig.FontColor ).blendAlpha( mAlpha ) );
+		primitives.drawRectangle(
+			Rectf( cursorPos, Sizef( PixelDensity::dpToPx( 1 ), lineHeight ) ) );
+	}
 }
 
 }} // namespace EE::UI

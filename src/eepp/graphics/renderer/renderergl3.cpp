@@ -448,7 +448,7 @@ void RendererGL3::clipPlane( unsigned int plane, const double* equation ) {
 	if ( nplane < EE_MAX_PLANES ) {
 		location = mPlanes[nplane];
 	} else {
-		std::string planeNum( "dgl_ClipPlane[" + String::toStr( nplane ) + "]" );
+		std::string planeNum( "dgl_ClipPlane[" + String::toString( nplane ) + "]" );
 
 		location = glGetUniformLocation( mCurShader->getHandler(), (GLchar*)&planeNum[0] );
 	}
