@@ -496,10 +496,7 @@ void refreshLayoutList() {
 		uiLayoutsMenu->removeAll();
 
 		for ( auto it = layouts.begin(); it != layouts.end(); ++it ) {
-			Uint32 idx = uiLayoutsMenu->addCheckBox( it->first );
-			UIMenuCheckBox* chk = static_cast<UIMenuCheckBox*>( uiLayoutsMenu->getItem( idx ) );
-
-			chk->setActive( currentLayout == it->second );
+			uiLayoutsMenu->addCheckBox( it->first )->setActive( currentLayout == it->second );
 		}
 	} else if ( uiMenuBar->getButton( "Layouts" ) != NULL ) {
 		uiMenuBar->removeMenuButton( "Layouts" );

@@ -133,26 +133,20 @@ void MapEditor::createMenuBar() {
 
 	UIPopUpMenu* PU3 = UIPopUpMenu::New();
 	PU3->setParent( mUIContainer );
-	mChkShowGrid = PU3->getItem( PU3->addCheckBox( "Show Grid" ) )->asType<UIMenuCheckBox>();
+	mChkShowGrid = PU3->addCheckBox( "Show Grid" );
 
 	mChkShowGrid->setActive( true );
-
-	mChkMarkTileOver =
-		PU3->getItem( PU3->addCheckBox( "Mark Tile Over" ) )->asType<UIMenuCheckBox>();
-
-	mChkShowBlocked = PU3->getItem( PU3->addCheckBox( "Show Blocked" ) )->asType<UIMenuCheckBox>();
+	mChkMarkTileOver = PU3->addCheckBox( "Mark Tile Over" );
+	mChkShowBlocked = PU3->addCheckBox( "Show Blocked" );
 
 	PU3->addSeparator();
 
 	addShortcut( KEY_KP_PLUS, KEYMOD_CTRL,
-				 PU3->getItem( PU3->add( "Zoom In", mTheme->getIconByName( "zoom-in" ) ) )
-					 ->asType<UIPushButton>() );
+				 PU3->add( "Zoom In", mTheme->getIconByName( "zoom-in" ) ) );
 	addShortcut( KEY_KP_MINUS, KEYMOD_CTRL,
-				 PU3->getItem( PU3->add( "Zoom Out", mTheme->getIconByName( "zoom-out" ) ) )
-					 ->asType<UIPushButton>() );
+				 PU3->add( "Zoom Out", mTheme->getIconByName( "zoom-out" ) ) );
 	addShortcut( KEY_0, KEYMOD_CTRL,
-				 PU3->getItem( PU3->add( "Normal Size", mTheme->getIconByName( "zoom-original" ) ) )
-					 ->asType<UIPushButton>() );
+				 PU3->add( "Normal Size", mTheme->getIconByName( "zoom-original" ) ) );
 	PU3->addSeparator();
 
 	PU3->addEventListener( Event::OnItemClicked, cb::Make1( this, &MapEditor::viewMenuClick ) );
@@ -179,13 +173,11 @@ void MapEditor::createMenuBar() {
 	PU5->add( "Layer Properties..." );
 	PU5->addSeparator();
 
-	Uint32 LayerChkBoxIndex = PU5->addCheckBox( "Lights Enabled" );
-	mLayerChkLights = PU5->getItem( LayerChkBoxIndex )->asType<UIMenuCheckBox>();
+	mLayerChkLights = PU5->addCheckBox( "Lights Enabled" );
 
 	PU5->addSeparator();
 
-	LayerChkBoxIndex = PU5->addCheckBox( "Visible" );
-	mLayerChkVisible = PU5->getItem( LayerChkBoxIndex )->asType<UIMenuCheckBox>();
+	mLayerChkVisible = PU5->addCheckBox( "Visible" );
 
 	PU5->addEventListener( Event::OnItemClicked, cb::Make1( this, &MapEditor::layerMenuClick ) );
 	MenuBar->addMenuButton( "Layer", PU5 );

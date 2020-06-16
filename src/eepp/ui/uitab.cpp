@@ -255,7 +255,8 @@ Uint32 UITab::onMessage( const NodeMessage* message ) {
 
 	switch ( message->getMsg() ) {
 		case NodeMessage::MouseDown: {
-			if ( flags & EE_BUTTON_LMASK && message->getSender() != mCloseButton ) {
+			if ( flags & EE_BUTTON_LMASK && message->getSender() != mCloseButton &&
+				 getEventDispatcher()->getMouseDownNode() == this ) {
 				tTabW->setTabSelected( this );
 			}
 			break;

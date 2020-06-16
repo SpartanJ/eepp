@@ -184,11 +184,32 @@ its submodules, in order to achieve this easily you can simply clone with:
 
 ## UI Screenshots
 
+### ecode - Text Editor
+
+Text editor inspired in [lite](https://github.com/rxi/lite) (in development, already fully functional).
+It's using the newest pure CSS theme based on the default [Plasma](https://kde.org/plasma-desktop)
+dark theme: Breeze Dark.
+
+![ecode - Text Editor](https://web.ensoft.dev/eepp/screenshots/ecode.png)
+
+### UI Editor
+
+Editor that displays in real-time the changes on any layout and CSS to help speed up the development
+of user interfaces. In the screenshot is displaying some of the default widgets available in eepp.
+
+![UI Editor](https://web.ensoft.dev/eepp/screenshots/uieditor.png)
+
+### Texture Atlas Editor
+
+Small tool, used to create and edit texture atlases.
+
+![Texture Atlas Editor with 1.5x pixel density](https://web.ensoft.dev/eepp/screenshots/taeditor.png)
+
+### Map Editor
+
+2D map editor using the default skinned theme (using a single texture atlas with 9-patch images).
+
 ![Map Editor](https://web.ensoft.dev/eepp/screenshots/eepp1.png)
-
-![UI Elements with 2x pixel density](https://web.ensoft.dev/eepp/screenshots/eepp2.png)
-
-![Texture Atlas Editor with 1.5x pixel density](https://web.ensoft.dev/eepp/screenshots/eepp3.png)
 
 ## UI Layout XML example
 
@@ -214,6 +235,8 @@ the most basic controls in a vertical linear layout display.
   </LinearLayout>
 </window>
 ```
+
+**UI introduction can be found [here](https://eepp.ensoft.dev/page_uiintroduction.html)**.
 
 ## UI Widgets with C++ example
 
@@ -310,6 +333,36 @@ Here is a small example on how the CSS looks like:
 
 }
 ```
+
+**The complete CSS specification can be found in the docs: [here](https://eepp.ensoft.dev/page_cssspecification.html).**
+
+**You can also check how a pure CSS theme looks like in eepp: [here](https://github.com/SpartanJ/eepp/blob/develop/bin/assets/ui/breeze.css).**
+
+## Live demos (using emscripten)
+
+Since eepp supports emscripten you can take a quick look on some of the examples, demos and tools that
+the library currently provides. Please be aware that you'll find some differences based on the limitations
+that emscripten have at the moment (no threads, no access to the file system, no custom cursors, etc).
+Note: please wait some seconds until the resources are loaded, currently there is no loading indicator.
+Also please use a modern browser with WebGL and WASM support.
+
+* **[ecode - Text Editor](https://web.ensoft.dev/eepp/demo-fs.html?run=eepp-CodeEditor-debug.js)**
+
+* **[Texture Atlas Editor](https://web.ensoft.dev/eepp/demo-fs.html?run=eepp-TextureAtlasEditor-debug.js)**
+
+* **[Map Editor](https://web.ensoft.dev/eepp/demo-fs.html?run=eepp-MapEditor-debug.js)**
+
+* **[UI Hello World](https://web.ensoft.dev/eepp/demo-fs.html?run=eepp-ui-hello-world-debug.js)**
+
+* **[UI Editor running some tests](https://web.ensoft.dev/eepp/demo-fs.html?run=eepp-UIEditor-debug.js)**
+
+* **[Fonts example](http://localhost/eepp/emscripten-fs.html?run=eepp-fonts-debug.js)**
+
+* **[Physics module demo](https://web.ensoft.dev/eepp/demo-fs.html?run=eepp-physics-debug.js)**
+
+* **[Sprites example](https://web.ensoft.dev/eepp/demo-fs.html?run=eepp-sprites-debug.js)**
+
+* **[Full Test](https://web.ensoft.dev/eepp/demo-fs.html?run=eepp-test-debug.js)**
 
 ## How to build it
 
@@ -517,7 +570,7 @@ oriented to desktop apps.
 Audio and Network modules were based the modules in SFML with several important
 differences mentioned above.
 
-I like to use what's well done and fit my needs, but since I have my personal
+I like to use what's well done and fits my needs, but since I have my personal
 views on how to implement some things I prefer to take the code, to have full
 control over it.
 
@@ -547,9 +600,9 @@ of similar alternatives.
 Regarding the code quality: this project started very long time ago and suffered
 many modifications over time. A good chunk of the code base still uses old C++
 practices (for example: raw pointers, own implementation of thread, mutex, etc).
-Some of these things can be "modernized" others don't make much sense or
+Some of these things can be "modernized", but, others don't make much sense or
 overhauling them would take too much time to justify the effort. I'm working on
-"modernizing" some parts of the code, and new code usually tend to look more
+"modernizing" some parts of the code, and new code usually tends to look more
 modern.
 
 ### Plans/ideas for the future
@@ -562,7 +615,7 @@ Improve/create documentation for the UI module.
 
 Add more examples and some tools.
 
-Add Scripting support ( first I would like to stabilize the library, but I'm getting there ).
+Add scripting support, but first I would like to stabilize the library, but I'm getting there.
 
 Add 2D skeletal animations support ( probably Spine2D, shouldn't be much work to implement ).
 

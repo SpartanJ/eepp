@@ -46,6 +46,8 @@ class EE_API UITouchDraggableWidget : public UIWidget {
 	virtual bool isTouchOverAllowedChilds();
 
 	virtual void scheduledUpdate( const Time& time );
+
+	virtual Uint32 onMessage( const NodeMessage* msg );
 };
 
 }} // namespace EE::UI

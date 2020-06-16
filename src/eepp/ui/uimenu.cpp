@@ -71,8 +71,10 @@ UIMenuItem* UIMenu::createMenuItem( const String& Text, Drawable* Icon ) {
 	return tCtrl;
 }
 
-Uint32 UIMenu::add( const String& Text, Drawable* Icon ) {
-	return add( createMenuItem( Text, Icon ) );
+UIMenuItem* UIMenu::add( const String& Text, Drawable* Icon ) {
+	UIMenuItem* menuItem = createMenuItem( Text, Icon );
+	add( menuItem );
+	return menuItem;
 }
 
 UIMenuCheckBox* UIMenu::createMenuCheckBox( const String& Text, const bool& Active ) {
@@ -88,8 +90,10 @@ UIMenuCheckBox* UIMenu::createMenuCheckBox( const String& Text, const bool& Acti
 	return tCtrl;
 }
 
-Uint32 UIMenu::addCheckBox( const String& Text, const bool& Active ) {
-	return add( createMenuCheckBox( Text, Active ) );
+UIMenuCheckBox* UIMenu::addCheckBox( const String& Text, const bool& Active ) {
+	UIMenuCheckBox* chkBox = createMenuCheckBox( Text, Active );
+	add( chkBox );
+	return chkBox;
 }
 
 UIMenuSubMenu* UIMenu::createSubMenu( const String& Text, Drawable* Icon, UIMenu* SubMenu ) {
@@ -104,8 +108,10 @@ UIMenuSubMenu* UIMenu::createSubMenu( const String& Text, Drawable* Icon, UIMenu
 	return tCtrl;
 }
 
-Uint32 UIMenu::addSubMenu( const String& Text, Drawable* Icon, UIMenu* SubMenu ) {
-	return add( createSubMenu( Text, Icon, SubMenu ) );
+UIMenuSubMenu* UIMenu::addSubMenu( const String& Text, Drawable* Icon, UIMenu* SubMenu ) {
+	UIMenuSubMenu* subMenu = createSubMenu( Text, Icon, SubMenu );
+	add( subMenu );
+	return subMenu;
 }
 
 bool UIMenu::widgetCheckSize( UIWidget* widget, const bool& Resize ) {
@@ -137,7 +143,7 @@ bool UIMenu::widgetCheckSize( UIWidget* widget, const bool& Resize ) {
 	return false;
 }
 
-Uint32 UIMenu::add( UIWidget* widget ) {
+UIWidget* UIMenu::add( UIWidget* widget ) {
 	if ( this != widget->getParent() )
 		widget->setParent( this );
 
@@ -160,7 +166,7 @@ Uint32 UIMenu::add( UIWidget* widget ) {
 
 	resizeMe();
 
-	return mItems.size() - 1;
+	return widget;
 }
 
 void UIMenu::setWidgetSize( UIWidget* widget ) {
@@ -169,7 +175,7 @@ void UIMenu::setWidgetSize( UIWidget* widget ) {
 	mResizing = false;
 }
 
-Uint32 UIMenu::addSeparator() {
+UIMenuSeparator* UIMenu::addSeparator() {
 	UIMenuSeparator* separator = UIMenuSeparator::New();
 	separator->setParent( this );
 	separator->setPixelsPosition( mRealPadding.Left, mRealPadding.Top + mNextPosY );
@@ -189,7 +195,7 @@ Uint32 UIMenu::addSeparator() {
 		}
 	} );
 
-	return mItems.size() - 1;
+	return separator;
 }
 
 UIWidget* UIMenu::getItem( const Uint32& Index ) {

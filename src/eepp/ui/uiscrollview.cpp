@@ -349,8 +349,7 @@ Uint32 UIScrollView::onMessage( const NodeMessage* Msg ) {
 			}
 		}
 	}
-
-	return 0;
+	return UITouchDraggableWidget::onMessage( Msg );
 }
 
 }} // namespace EE::UI

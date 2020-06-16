@@ -63,86 +63,83 @@ bool UITouchDraggableWidget::isTouchOverAllowedChilds() {
 }
 
 void UITouchDraggableWidget::scheduledUpdate( const Time& time ) {
-	if ( mEnabled && mVisible && NULL != getEventDispatcher() ) {
-		if ( isTouchDragEnabled() ) {
-			EventDispatcher* eventDispatcher = getEventDispatcher();
-			Uint32 Press = eventDispatcher->getPressTrigger();
+	if ( mEnabled && mVisible && isTouchDragEnabled() && NULL != getEventDispatcher() ) {
+		if ( isTouchDragging() ) {
+			// Mouse Not Down
+			if ( !( getEventDispatcher()->getPressTrigger() & EE_BUTTON_LMASK ) ) {
+				setTouchDragging( false );
+				getEventDispatcher()->setNodeDragging( NULL );
+				return;
+			}
 
-			if ( isTouchDragging() ) {
-				// Mouse Not Down
-				if ( !( Press & EE_BUTTON_LMASK ) ) {
-					setTouchDragging( false );
-					eventDispatcher->setNodeDragging( NULL );
-					return;
-				}
+			Float ms = time.asSeconds();
+			Vector2f elapsed( ms, ms );
+			Vector2f Pos( getEventDispatcher()->getMousePosf() );
 
-				Float ms = time.asSeconds();
-				Vector2f elapsed( ms, ms );
-				Vector2f Pos( eventDispatcher->getMousePosf() );
+			if ( mTouchDragPoint != Pos ) {
+				Vector2f diff = -( mTouchDragPoint - Pos );
 
-				if ( mTouchDragPoint != Pos ) {
-					Vector2f diff = -( mTouchDragPoint - Pos );
+				onTouchDragValueChange( diff );
 
-					onTouchDragValueChange( diff );
+				mTouchDragAcceleration += elapsed * diff;
 
-					mTouchDragAcceleration += elapsed * diff;
+				mTouchDragPoint = Pos;
 
-					mTouchDragPoint = Pos;
-
-					eventDispatcher->setNodeDragging( this );
-				} else {
-					mTouchDragAcceleration -= elapsed * mTouchDragDeceleration;
-				}
+				getEventDispatcher()->setNodeDragging( this );
 			} else {
-				// Mouse Down
-				if ( Press & EE_BUTTON_LMASK ) {
-					if ( isTouchOverAllowedChilds() && !eventDispatcher->isNodeDragging() ) {
-						setTouchDragging( true );
-						eventDispatcher->setNodeDragging( this );
+				mTouchDragAcceleration -= elapsed * mTouchDragDeceleration;
+			}
+		} else {
+			// Deaccelerate
+			if ( mTouchDragAcceleration.x != 0 || mTouchDragAcceleration.y != 0 ) {
+				Float ms = getEventDispatcher()->getLastFrameTime().asSeconds();
 
-						mTouchDragPoint = Vector2f( eventDispatcher->getMousePos().x,
-													eventDispatcher->getMousePos().y );
-						mTouchDragAcceleration = Vector2f( 0, 0 );
-					}
+				if ( 0 != mTouchDragAcceleration.x ) {
+					bool wasPositiveX = mTouchDragAcceleration.x >= 0;
+
+					if ( mTouchDragAcceleration.x > 0 )
+						mTouchDragAcceleration.x -= mTouchDragDeceleration.x * ms;
+					else
+						mTouchDragAcceleration.x += mTouchDragDeceleration.x * ms;
+
+					if ( wasPositiveX && mTouchDragAcceleration.x < 0 )
+						mTouchDragAcceleration.x = 0;
+					else if ( !wasPositiveX && mTouchDragAcceleration.x > 0 )
+						mTouchDragAcceleration.x = 0;
 				}
 
-				// Deaccelerate
-				if ( mTouchDragAcceleration.x != 0 || mTouchDragAcceleration.y != 0 ) {
-					Float ms = eventDispatcher->getLastFrameTime().asSeconds();
+				if ( 0 != mTouchDragAcceleration.y ) {
+					bool wasPositiveY = mTouchDragAcceleration.y >= 0;
 
-					if ( 0 != mTouchDragAcceleration.x ) {
-						bool wasPositiveX = mTouchDragAcceleration.x >= 0;
+					if ( mTouchDragAcceleration.y > 0 )
+						mTouchDragAcceleration.y -= mTouchDragDeceleration.y * ms;
+					else
+						mTouchDragAcceleration.y += mTouchDragDeceleration.y * ms;
 
-						if ( mTouchDragAcceleration.x > 0 )
-							mTouchDragAcceleration.x -= mTouchDragDeceleration.x * ms;
-						else
-							mTouchDragAcceleration.x += mTouchDragDeceleration.x * ms;
-
-						if ( wasPositiveX && mTouchDragAcceleration.x < 0 )
-							mTouchDragAcceleration.x = 0;
-						else if ( !wasPositiveX && mTouchDragAcceleration.x > 0 )
-							mTouchDragAcceleration.x = 0;
-					}
-
-					if ( 0 != mTouchDragAcceleration.y ) {
-						bool wasPositiveY = mTouchDragAcceleration.y >= 0;
-
-						if ( mTouchDragAcceleration.y > 0 )
-							mTouchDragAcceleration.y -= mTouchDragDeceleration.y * ms;
-						else
-							mTouchDragAcceleration.y += mTouchDragDeceleration.y * ms;
-
-						if ( wasPositiveY && mTouchDragAcceleration.y < 0 )
-							mTouchDragAcceleration.y = 0;
-						else if ( !wasPositiveY && mTouchDragAcceleration.y > 0 )
-							mTouchDragAcceleration.y = 0;
-					}
-
-					onTouchDragValueChange( mTouchDragAcceleration );
+					if ( wasPositiveY && mTouchDragAcceleration.y < 0 )
+						mTouchDragAcceleration.y = 0;
+					else if ( !wasPositiveY && mTouchDragAcceleration.y > 0 )
+						mTouchDragAcceleration.y = 0;
 				}
+
+				onTouchDragValueChange( mTouchDragAcceleration );
 			}
 		}
 	}
+}
+
+Uint32 UITouchDraggableWidget::onMessage( const NodeMessage* msg ) {
+	if ( msg->getMsg() == NodeMessage::MouseDown && ( msg->getFlags() & EE_BUTTON_LMASK ) &&
+		 !isTouchDragging() && isTouchOverAllowedChilds() &&
+		 !getEventDispatcher()->isNodeDragging() ) {
+		setTouchDragging( true );
+		getEventDispatcher()->setNodeDragging( this );
+		mTouchDragPoint = Vector2f( getEventDispatcher()->getMousePos().x,
+									getEventDispatcher()->getMousePos().y );
+		mTouchDragAcceleration = Vector2f( 0, 0 );
+		return 1;
+	}
+	return 0;
 }
 
 std::string UITouchDraggableWidget::getPropertyString( const PropertyDefinition* propertyDef,

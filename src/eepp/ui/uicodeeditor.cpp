@@ -262,6 +262,12 @@ UICodeEditor* UICodeEditor::setFont( Font* font ) {
 
 void UICodeEditor::onFontChanged() {}
 
+Uint32 UICodeEditor::onMessage( const NodeMessage* msg ) {
+	if ( msg->getMsg() == NodeMessage::MouseDown )
+		return 1;
+	return UIWidget::onMessage( msg );
+}
+
 void UICodeEditor::disableEditorFeatures() {
 	mShowLineNumber = false;
 	mShowIndentationGuide = false;
@@ -1586,6 +1592,10 @@ void UICodeEditor::registerKeybindings() {
 		{{KEY_DELETE, 0}, "delete-to-next-char"},
 		{{KEY_KP_ENTER, KEYMOD_CTRL | KEYMOD_SHIFT}, "new-line-above"},
 		{{KEY_RETURN, KEYMOD_CTRL | KEYMOD_SHIFT}, "new-line-above"},
+		{{KEY_KP_ENTER, KEYMOD_CTRL}, "new-line"},
+		{{KEY_RETURN, KEYMOD_CTRL}, "new-line"},
+		{{KEY_KP_ENTER, KEYMOD_SHIFT}, "new-line"},
+		{{KEY_RETURN, KEYMOD_SHIFT}, "new-line"},
 		{{KEY_KP_ENTER, 0}, "new-line"},
 		{{KEY_RETURN, 0}, "new-line"},
 		{{KEY_UP, KEYMOD_CTRL | KEYMOD_SHIFT}, "move-lines-up"},

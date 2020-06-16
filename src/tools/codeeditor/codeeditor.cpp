@@ -663,15 +663,18 @@ void App::initSearchBar() {
 	UITextInput* findInput = mSearchBarLayout->find<UITextInput>( "search_find" );
 	UITextInput* replaceInput = mSearchBarLayout->find<UITextInput>( "search_replace" );
 	UICheckBox* caseSensitiveChk = mSearchBarLayout->find<UICheckBox>( "case_sensitive" );
-	findInput->addEventListener(
-		Event::OnTextChanged, [&, findInput, caseSensitiveChk]( const Event* ) {
+	findInput->addEventListener( Event::OnTextChanged, [&, findInput,
+														caseSensitiveChk]( const Event* ) {
+		if ( mCurEditor ) {
 			if ( !findInput->getText().empty() ) {
+				mCurEditor->getDocument().setSelection( mCurEditor->getDocument().startOfDoc() );
 				findNextText( findInput->getText(), caseSensitiveChk->isChecked() );
-			} else if ( mCurEditor ) {
+			} else {
 				mCurEditor->getDocument().setSelection(
 					mCurEditor->getDocument().getSelection().start() );
 			}
-		} );
+		}
+	} );
 	mSearchBarLayout->addCommand( "close-searchbar", [&] {
 		mSearchBarLayout->setEnabled( false )->setVisible( false );
 		mCurEditor->setFocus();

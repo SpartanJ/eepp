@@ -25,15 +25,15 @@ class EE_API UIMenu : public UIWidget {
 
 	virtual bool isType( const Uint32& type ) const;
 
-	Uint32 add( const String& Text, Drawable* Icon = NULL );
+	UIMenuItem* add( const String& Text, Drawable* Icon = NULL );
 
-	Uint32 add( UIWidget* widget );
+	UIWidget* add( UIWidget* widget );
 
-	Uint32 addSeparator();
+	UIMenuSeparator* addSeparator();
 
-	Uint32 addCheckBox( const String& Text, const bool& Active = false );
+	UIMenuCheckBox* addCheckBox( const String& Text, const bool& Active = false );
 
-	Uint32 addSubMenu( const String& Text, Drawable* Icon = NULL, UIMenu* SubMenu = NULL );
+	UIMenuSubMenu* addSubMenu( const String& Text, Drawable* Icon = NULL, UIMenu* SubMenu = NULL );
 
 	UIWidget* getItem( const Uint32& Index );
 

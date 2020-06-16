@@ -428,6 +428,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	virtual void onFontChanged();
 
+	virtual Uint32 onMessage( const NodeMessage* msg );
+
 	void disableEditorFeatures();
 
 	Float getViewportWidth( const bool& forceVScroll = false ) const;

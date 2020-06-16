@@ -69,8 +69,8 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 			  {{"\\."}, "normal"},
 			  {{"<!%-%-", "%-%->"}, "comment"},
 			  {{"```", "```"}, "string"},
-			  {{"``", "``", "\\"}, "string"},
-			  {{"`", "`", "\\"}, "string"},
+			  {{"``", "``"}, "string"},
+			  {{"`", "`"}, "string"},
 			  {{"~~", "~~", "\\"}, "keyword2"},
 			  {{"%-%-%-+"}, "comment"},
 			  {{"%*%s+"}, "operator"},
@@ -858,10 +858,10 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 
 	// ini / conf
 	add( {"Config File",
-		  {"%.ini$", "%.conf$", "%.desktop$"},
+		  {"%.ini$", "%.conf$", "%.desktop$", "Doxyfile"},
 		  {
 			  {{"#[%da-fA-F]+"}, "literal"},
-			  {{"#", "\n"}, "comment"},
+			  {{"#.-\n"}, "comment"},
 			  {{"\"", "\"", "\\"}, "string"},
 			  {{"'", "'", "\\"}, "string"},
 			  {{"%[", "%]"}, "keyword2"},
@@ -1713,6 +1713,12 @@ std::vector<std::string> SyntaxDefinitionManager::getLanguageNames() const {
 const SyntaxDefinition&
 SyntaxDefinitionManager::getStyleByExtension( const std::string& filePath ) const {
 	std::string extension( FileSystem::fileExtension( filePath ) );
+
+	// Use the filename instead
+	if ( extension.empty() ) {
+		extension = FileSystem::fileNameFromPath( filePath );
+	}
+
 	if ( !extension.empty() ) {
 		for ( auto style = mStyles.rbegin(); style != mStyles.rend(); ++style ) {
 			for ( auto ext : style->getFiles() ) {

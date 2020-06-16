@@ -25,8 +25,6 @@ class EE_API UIMenuCheckBox : public UIMenuItem {
 
 	void switchActive();
 
-	virtual bool inheritsFrom( const Uint32 getType );
-
   protected:
 	bool mActive;
 	UISkin* mSkinActive;

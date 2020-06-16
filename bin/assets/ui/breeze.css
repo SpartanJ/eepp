@@ -4,6 +4,7 @@
 	--back: #31363b;
 	--font: #eff0f1;
 	--font-hint: #898b8d;
+	--menu-font-disabled: #6e7275;
 	--button-back: #30353a;
 	--button-border: #6b6f73;
 	--button-radius: 2dp;
@@ -622,6 +623,13 @@ Menu::CheckBox::text,
 Menu::SubMenu::text {
 	padding-right: 8dp;
 	color: var(--menu-font);
+}
+
+
+Menu::Item:disabled > Menu::Item::text,
+Menu::CheckBox:disabled > Menu::CheckBox::text,
+Menu::SubMenu:disabled > Menu::SubMenu::text {
+	color: var(--menu-font-disabled);
 }
 
 Menu::SubMenu::arrow {
