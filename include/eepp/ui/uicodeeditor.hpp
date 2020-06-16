@@ -219,6 +219,14 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	const SyntaxDefinition& getSyntaxDefinition() const;
 
+	const bool& getHorizontalScrollBarEnabled() const;
+
+	void setHorizontalScrollBarEnabled( const bool& horizontalScrollBarEnabled );
+
+	const Time& getFindLongestLineWidthUpdateFrequency() const;
+
+	void setFindLongestLineWidthUpdateFrequency( const Time& findLongestLineWidthUpdateFrequency );
+
 	/** Doc commands executed in this editor. */
 	TextPosition moveToLineOffset( const TextPosition& position, int offset );
 
@@ -254,6 +262,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void fontSizeReset();
 	/** Doc commands executed in this editor. */
+
   protected:
 	struct LastXOffset {
 		TextPosition position;
@@ -274,8 +283,9 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mHighlightMatchingBracket;
 	bool mHighlightSelectionMatch;
 	bool mEnableColorPickerOnSelection;
+	bool mHorizontalScrollBarEnabled;
+	bool mLongestLineWidthDirty;
 	Uint32 mTabWidth;
-	Int64 mLastColOffset;
 	Vector2f mScroll;
 	Float mMouseWheelScroll;
 	Float mFontSize;
@@ -293,18 +303,33 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	SyntaxColorScheme mColorScheme;
 	SyntaxHighlighter mHighlighter;
 	UIScrollBar* mVScrollBar;
+	UIScrollBar* mHScrollBar;
 	LastXOffset mLastXOffset{{0, 0}, 0.f};
 	KeyBindings mKeyBindings;
 	std::unordered_set<std::string> mUnlockedCmd;
 	Clock mLastDoubleClick;
 	Uint32 mLineBreakingColumn{100};
 	TextRange mMatchingBrackets;
+	Float mLongestLineWidth{0};
+	Time mFindLongestLineWidthUpdateFrequency;
+	Clock mLongestLineWidthLastUpdate;
+
+	UICodeEditor( const std::string& elementTag, const bool& autoRegisterBaseCommands = true,
+				  const bool& autoRegisterBaseKeybindings = true );
 
 	void checkMatchingBrackets();
 
 	void updateColorScheme();
 
+	void updateLongestLineWidth();
+
 	void invalidateEditor();
+
+	void invalidateLongestLineWidth();
+
+	virtual void findLongestLine();
+
+	virtual Float getLineWidth( const Int64& lineIndex );
 
 	virtual Uint32 onFocus();
 
@@ -350,15 +375,17 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void scrollToMakeVisible( const TextPosition& position );
 
+	void setScrollX( const Float& val, bool emmitEvent = true );
+
 	void setScrollY( const Float& val, bool emmitEvent = true );
 
 	virtual Int64 getColFromXOffset( Int64 line, const Float& x ) const;
 
 	virtual Float getColXOffset( TextPosition position );
 
-	virtual Float getXOffsetCol( const TextPosition& position ) const;
+	virtual Float getXOffsetCol( const TextPosition& position );
 
-	virtual Float getTextWidth( const String& text ) const;
+	Float getTextWidth( const String& text ) const;
 
 	Float getLineHeight() const;
 
@@ -378,6 +405,9 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void checkColorPickerAction();
 
+	virtual void drawCursor( const Vector2f& startScroll, const Float& lineHeight,
+							 const TextPosition& cursor );
+
 	virtual void drawMatchingBrackets( const Vector2f& startScroll, const Float& lineHeight );
 
 	virtual void drawSelectionMatch( const std::pair<int, int>& lineRange,
@@ -395,6 +425,12 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 								  const Vector2f& screenStart, const Float& lineHeight,
 								  const Float& lineNumberWidth, const int& lineNumberDigits,
 								  const Float& fontSize );
+
+	virtual void onFontChanged();
+
+	void disableEditorFeatures();
+
+	Float getViewportWidth( const bool& forceVScroll = false ) const;
 };
 
 }} // namespace EE::UI

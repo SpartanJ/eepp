@@ -25,8 +25,6 @@ class EE_API UIComboBox : public UIWidget {
 
 	UINode* getButton() const { return mButton; }
 
-	InputTextBuffer* getInputTextBuffer();
-
 	const String& getText();
 
 	virtual bool applyProperty( const StyleSheetProperty& attribute );

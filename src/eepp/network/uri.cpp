@@ -207,7 +207,7 @@ std::string URI::getAuthority() const {
 		auth.append( mHost );
 	if ( mPort && !isWellKnownPort() ) {
 		auth += ':';
-		auth += String::toStr( mPort );
+		auth += String::toString( mPort );
 	}
 	return auth;
 }

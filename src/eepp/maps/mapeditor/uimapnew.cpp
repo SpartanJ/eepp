@@ -62,7 +62,7 @@ UIMapNew::UIMapNew( UIMap* Map, std::function<void()> NewMapCb, bool ResizeMap )
 		Vector2f( Txt->getPosition().x + DistFromTitle, Txt->getPosition().y + DistFromTitle ),
 		UI_NODE_DEFAULT_FLAGS, Text::Shadow );
 
-	mUIMapWidth = UISpinBox::New()->setAllowOnlyNumbers( false )->setValue( 100 );
+	mUIMapWidth = UISpinBox::New()->setValue( 100 );
 	mUIMapWidth->setParent( mUIWindow->getContainer() )
 		->setSize( 53, 0 )
 		->setPosition( Txt->getPosition().x + Txt->getSize().getWidth(), Txt->getPosition().y );
@@ -77,7 +77,7 @@ UIMapNew::UIMapNew( UIMap* Map, std::function<void()> NewMapCb, bool ResizeMap )
 		Vector2f( Txt->getPosition().x, Txt->getPosition().y + Txt->getSize().getHeight() + 8 ),
 		UI_NODE_DEFAULT_FLAGS, Text::Shadow );
 
-	mUIMapHeight = UISpinBox::New()->setAllowOnlyNumbers( false )->setValue( 100 );
+	mUIMapHeight = UISpinBox::New()->setValue( 100 );
 	mUIMapHeight->setParent( mUIWindow->getContainer() )
 		->setSize( 53, 0 )
 		->setPosition( Txt->getPosition().x + Txt->getSize().getWidth(), Txt->getPosition().y );
@@ -96,7 +96,7 @@ UIMapNew::UIMapNew( UIMap* Map, std::function<void()> NewMapCb, bool ResizeMap )
 		Vector2f( Txt->getPosition().x + DistFromTitle, Txt->getPosition().y + DistFromTitle ),
 		UI_NODE_DEFAULT_FLAGS, Text::Shadow );
 
-	mUIMapTWidth = UISpinBox::New()->setAllowOnlyNumbers( false )->setValue( 32 );
+	mUIMapTWidth = UISpinBox::New()->setValue( 32 );
 	mUIMapTWidth->setParent( mUIWindow->getContainer() )
 		->setSize( 53, 0 )
 		->setPosition( Txt->getPosition().x + Txt->getSize().getWidth(), Txt->getPosition().y );
@@ -111,7 +111,7 @@ UIMapNew::UIMapNew( UIMap* Map, std::function<void()> NewMapCb, bool ResizeMap )
 		Vector2f( Txt->getPosition().x, Txt->getPosition().y + Txt->getSize().getHeight() + 8 ),
 		UI_NODE_DEFAULT_FLAGS, Text::Shadow );
 
-	mUIMapTHeight = UISpinBox::New()->setAllowOnlyNumbers( false )->setValue( 32 );
+	mUIMapTHeight = UISpinBox::New()->setValue( 32 );
 	mUIMapTHeight->setParent( mUIWindow->getContainer() )
 		->setSize( 53, 0 )
 		->setPosition( Txt->getPosition().x + Txt->getSize().getWidth(), Txt->getPosition().y );
@@ -126,7 +126,7 @@ UIMapNew::UIMapNew( UIMap* Map, std::function<void()> NewMapCb, bool ResizeMap )
 		Vector2f( 16, mUIMapTHeight->getPosition().y + mUIMapTHeight->getSize().getHeight() + 8 ),
 		UI_NODE_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
-	mUIMapMaxLayers = UISpinBox::New()->setAllowOnlyNumbers( false )->setValue( 8 );
+	mUIMapMaxLayers = UISpinBox::New()->setValue( 8 );
 	mUIMapMaxLayers->setParent( mUIWindow->getContainer() )
 		->setSize( 53, 0 )
 		->setPosition( Txt->getPosition().x + DistFromTitle, Txt->getPosition().y + DistFromTitle );
@@ -219,7 +219,7 @@ UIMapNew::UIMapNew( UIMap* Map, std::function<void()> NewMapCb, bool ResizeMap )
 									cb::Make1( this, &UIMapNew::onRedChange ) );
 
 	mUIRedTxt = createTextBox(
-		String::toStr( 255 ), mUIWindow->getContainer(), Sizef(),
+		String::toString( 255 ), mUIWindow->getContainer(), Sizef(),
 		Vector2f( mUIRedSlider->getPosition().x + mUIRedSlider->getSize().getWidth() + 4,
 				  mUIRedSlider->getPosition().y ),
 		UI_NODE_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
@@ -244,7 +244,7 @@ UIMapNew::UIMapNew( UIMap* Map, std::function<void()> NewMapCb, bool ResizeMap )
 									  cb::Make1( this, &UIMapNew::onGreenChange ) );
 
 	mUIGreenTxt = createTextBox(
-		String::toStr( 255 ), mUIWindow->getContainer(), Sizef(),
+		String::toString( 255 ), mUIWindow->getContainer(), Sizef(),
 		Vector2f( mUIGreenSlider->getPosition().x + mUIGreenSlider->getSize().getWidth() + 4,
 				  mUIGreenSlider->getPosition().y ),
 		UI_NODE_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
@@ -269,7 +269,7 @@ UIMapNew::UIMapNew( UIMap* Map, std::function<void()> NewMapCb, bool ResizeMap )
 									 cb::Make1( this, &UIMapNew::onBlueChange ) );
 
 	mUIBlueTxt = createTextBox(
-		String::toStr( 255 ), mUIWindow->getContainer(), Sizef(),
+		String::toString( 255 ), mUIWindow->getContainer(), Sizef(),
 		Vector2f( mUIBlueSlider->getPosition().x + mUIBlueSlider->getSize().getWidth() + 4,
 				  mUIBlueSlider->getPosition().y ),
 		UI_NODE_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
@@ -307,21 +307,21 @@ void UIMapNew::onRedChange( const Event* ) {
 	Color Col = mUIBaseColor->getBackgroundColor();
 	Col.r = (Uint8)mUIRedSlider->getValue();
 	mUIBaseColor->setBackgroundColor( Col );
-	mUIRedTxt->setText( String::toStr( (Int32)mUIRedSlider->getValue() ) );
+	mUIRedTxt->setText( String::toString( (Int32)mUIRedSlider->getValue() ) );
 }
 
 void UIMapNew::onGreenChange( const Event* ) {
 	Color Col = mUIBaseColor->getBackgroundColor();
 	Col.g = (Uint8)mUIGreenSlider->getValue();
 	mUIBaseColor->setBackgroundColor( Col );
-	mUIGreenTxt->setText( String::toStr( (Uint32)mUIGreenSlider->getValue() ) );
+	mUIGreenTxt->setText( String::toString( (Uint32)mUIGreenSlider->getValue() ) );
 }
 
 void UIMapNew::onBlueChange( const Event* ) {
 	Color Col = mUIBaseColor->getBackgroundColor();
 	Col.b = (Uint8)mUIBlueSlider->getValue();
 	mUIBaseColor->setBackgroundColor( Col );
-	mUIBlueTxt->setText( String::toStr( (Uint32)mUIBlueSlider->getValue() ) );
+	mUIBlueTxt->setText( String::toString( (Uint32)mUIBlueSlider->getValue() ) );
 }
 
 void UIMapNew::onOKClick( const Event* ) {

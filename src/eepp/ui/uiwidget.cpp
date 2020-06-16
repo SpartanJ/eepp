@@ -1261,7 +1261,7 @@ std::string UIWidget::getPropertyString( const PropertyDefinition* propertyDef,
 		case PropertyId::ForegroundColor:
 			return getForegroundColor().toHexString();
 		case PropertyId::ForegroundRadius:
-			return String::toStr( getForegroundRadius() );
+			return String::toString( getForegroundRadius() );
 		case PropertyId::BorderType:
 			return Borders::fromBorderType( setBorderEnabled( true )->getBorderType() );
 		case PropertyId::SkinColor:
@@ -1793,7 +1793,7 @@ std::string UIWidget::getLayoutWidthPolicyString() const {
 		return "match_parent";
 	else if ( rules == SizePolicy::WrapContent )
 		return "wrap_content";
-	return String::toStr( getSize().getHeight() ) + "dp";
+	return String::toString( getSize().getHeight() ) + "dp";
 }
 
 std::string UIWidget::getLayoutHeightPolicyString() const {
@@ -1803,7 +1803,7 @@ std::string UIWidget::getLayoutHeightPolicyString() const {
 		return "match_parent";
 	else if ( rules == SizePolicy::WrapContent )
 		return "wrap_content";
-	return String::toStr( getSize().getHeight() ) + "dp";
+	return String::toString( getSize().getHeight() ) + "dp";
 }
 
 static std::string getGravityStringFromUint( const Uint32& gravity ) {

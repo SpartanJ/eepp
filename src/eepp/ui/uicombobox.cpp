@@ -14,7 +14,6 @@ UIComboBox::UIComboBox() : UIWidget( "combobox" ), mDropDownList( NULL ), mButto
 	mDropDownList->setVisible( true );
 	mDropDownList->setEnabled( true );
 	mDropDownList->setAllowEditing( true );
-	mDropDownList->setFreeEditing( true );
 	mDropDownList->setTextSelection( true );
 	mDropDownList->addEventListener( Event::OnPaddingChange,
 									 [this]( const Event* ) { onPaddingChange(); } );
@@ -62,10 +61,6 @@ void UIComboBox::setTheme( UITheme* Theme ) {
 
 UIListBox* UIComboBox::getListBox() {
 	return mDropDownList->getListBox();
-}
-
-InputTextBuffer* UIComboBox::getInputTextBuffer() {
-	return mDropDownList->getInputTextBuffer();
 }
 
 const String& UIComboBox::getText() {
@@ -159,7 +154,6 @@ bool UIComboBox::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::Text:
 		case PropertyId::AllowEditing:
 		case PropertyId::MaxLength:
-		case PropertyId::FreeEditing:
 		case PropertyId::Numeric:
 		case PropertyId::AllowFloat:
 		case PropertyId::Hint:
@@ -207,7 +201,6 @@ std::string UIComboBox::getPropertyString( const PropertyDefinition* propertyDef
 		case PropertyId::Text:
 		case PropertyId::AllowEditing:
 		case PropertyId::MaxLength:
-		case PropertyId::FreeEditing:
 		case PropertyId::Numeric:
 		case PropertyId::AllowFloat:
 		case PropertyId::Hint:

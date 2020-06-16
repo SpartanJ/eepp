@@ -421,7 +421,12 @@ int String::valueIndex( const std::string& val, const std::string& strings, int 
 
 std::string String::fromFloat( const Float& value, const std::string& append,
 							   const std::string& prepend ) {
-	return prepend + toStr( value ) + append;
+	return prepend + toString( value ) + append;
+}
+
+std::string String::fromDouble( const double& value, const std::string& append,
+								const std::string& prepend ) {
+	return prepend + toString( value ) + append;
 }
 
 void String::insertChar( String& str, const unsigned int& pos, const StringBaseType& tchar ) {

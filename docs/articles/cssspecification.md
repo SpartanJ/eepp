@@ -158,10 +158,10 @@ properties.
 * All properties can be used as attributes of the XML node.
   * XML attributes are treated as inline CSS styling.
   * For example:
-    * Something like:
-    * `LinearLayout {  layout-width: match_parent; layout_height: match_parent; orientation: vertical; }`
-    * is similar to (but not equivalent, since specificity of inline CSS is higher):
-    * `<LinearLayout layout_width="match_parent" layout_height="match_parent" orientation="vertical"></LinearLayout>`
+	* Something like:
+	* `LinearLayout {  layout-width: match_parent; layout_height: match_parent; orientation: vertical; }`
+	* is similar to (but not equivalent, since specificity of inline CSS is higher):
+	* `<LinearLayout layout_width="match_parent" layout_height="match_parent" orientation="vertical"></LinearLayout>`
 * CSS standard properties directly linked to the Mozilla docs are fully supported, otherwise a clarification will appear.
 * _Applicable to_ will link to the EE::UI::UIWidget that can use that property, and betweeen parenthesis is the CSS element name.
 
@@ -608,16 +608,6 @@ Same as [background-repeat](#background-repeat) but for the foreground.
 ### foreground-size
 
 Same as [background-size](#background-size) but for the foreground.
-
----
-
-### free-editing
-
-Allows the cursor to move freely in an input.
-
-* Applicable to: EE::UI::UITextInput (TextInput)
-* Data Type: [boolean](#boolean-data-type)
-* Default value: `true`
 
 ---
 
@@ -1401,9 +1391,9 @@ Defines how the scrollbar should fit inside an scrollable element.
 * Data Type: [string-list](#string-list-data-type)
 * Value List:
   * `inclusive`: The scrollbar is part of the scrollable element container, this means that it will
-    be on top of the content (scrollbars on mobile usually behave like this).
+	be on top of the content (scrollbars on mobile usually behave like this).
   * `exclusive`: The scrollbar is outside the scrollable element container, this means that it will not
-    be on top of the content (scrollbars on desktop usually behave like this).
+	be on top of the content (scrollbars on desktop usually behave like this).
 * Default value: `exclusive`
 
 ---

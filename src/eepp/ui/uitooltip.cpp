@@ -345,7 +345,7 @@ std::string UITooltip::getPropertyString( const PropertyDefinition* propertyDef,
 		case PropertyId::FontStyle:
 			return Text::styleFlagToString( getFontStyle() );
 		case PropertyId::TextStrokeWidth:
-			return String::toStr( PixelDensity::dpToPx( getOutlineThickness() ) );
+			return String::toString( PixelDensity::dpToPx( getOutlineThickness() ) );
 		case PropertyId::TextStrokeColor:
 			return getOutlineColor().toHexString();
 		case PropertyId::TextAlign:

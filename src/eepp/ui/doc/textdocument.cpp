@@ -133,6 +133,8 @@ bool TextDocument::loadFromStream( IOStream& file ) {
 		mLines.push_back( String( "\n" ) );
 	}
 
+	notifyTextChanged();
+
 	eePRINTL( "Document \"%s\" loaded in %.2fms.",
 			  mFilePath.empty() ? "untitled" : mFilePath.c_str(),
 			  clock.getElapsedTime().asMilliseconds() );
@@ -796,7 +798,7 @@ void TextDocument::selectToNextPage( Int64 pageSize ) {
 }
 
 void TextDocument::selectAll() {
-	setSelection( startOfDoc(), endOfDoc() );
+	setSelection( endOfDoc(), startOfDoc() );
 }
 
 void TextDocument::newLine() {
@@ -836,16 +838,23 @@ void TextDocument::removeFromStartOfSelectedLines( const String& text, bool skip
 	TextPosition prevStart = getSelection().start();
 	TextRange range = getSelection( true );
 	bool swap = prevStart != range.start();
+	Int64 startRemoved = 0;
+	Int64 endRemoved = 0;
 	for ( auto i = range.start().line(); i <= range.end().line(); i++ ) {
 		const String& line = this->line( i ).getText();
 		if ( !skipEmpty || line.length() != 1 ) {
 			if ( line.substr( 0, text.length() ) == text ) {
 				remove( {{i, 0}, {i, static_cast<Int64>( text.length() )}} );
+				if ( i == range.start().line() ) {
+					startRemoved = text.size();
+				} else if ( i == range.end().line() ) {
+					endRemoved = text.size();
+				}
 			}
 		}
 	}
-	setSelection( TextPosition( range.start().line(), range.start().column() - text.size() ),
-				  TextPosition( range.end().line(), range.end().column() - text.size() ), swap );
+	setSelection( TextPosition( range.start().line(), range.start().column() - startRemoved ),
+				  TextPosition( range.end().line(), range.end().column() - endRemoved ), swap );
 }
 
 void TextDocument::indent() {

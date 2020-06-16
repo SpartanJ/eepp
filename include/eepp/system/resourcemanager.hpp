@@ -114,7 +114,7 @@ template <class T> T* ResourceManager<T>::add( T* resource ) {
 
 			while ( existsId( resource->getId() ) ) {
 				c++;
-				resource->setName( realName + String::toStr( c ) );
+				resource->setName( realName + String::toString( c ) );
 			}
 
 			return add( resource );

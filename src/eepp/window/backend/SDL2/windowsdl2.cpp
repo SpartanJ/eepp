@@ -746,7 +746,7 @@ void WindowSDL::show() {
 	SDL_ShowWindow( mSDLWindow );
 }
 
-void WindowSDL::setPosition( Int16 Left, Int16 Top ) {
+void WindowSDL::setPosition( int Left, int Top ) {
 	SDL_SetWindowPosition( mSDLWindow, Left, Top );
 }
 

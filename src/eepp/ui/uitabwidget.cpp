@@ -134,7 +134,7 @@ std::string UITabWidget::getPropertyString( const PropertyDefinition* propertyDe
 
 	switch ( propertyDef->getPropertyId() ) {
 		case PropertyId::MaxTextLength:
-			return String::toStr( getMaxTextLength() );
+			return String::toString( getMaxTextLength() );
 		case PropertyId::MinTabWidth:
 			return String::fromFloat( getMinTabWidth(), "dp" );
 		case PropertyId::MaxTabWidth:

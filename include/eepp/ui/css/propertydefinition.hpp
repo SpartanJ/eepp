@@ -133,7 +133,6 @@ enum class PropertyId : Uint32 {
 	AllowEditing = String::hash( "allow-editing" ),
 	Locked = String::hash( "locked" ),
 	MaxLength = String::hash( "max-length" ),
-	FreeEditing = String::hash( "free-editing" ),
 	Numeric = String::hash( "numeric" ),
 	AllowFloat = String::hash( "allow-float" ),
 	TouchDrag = String::hash( "touch-drag" ),

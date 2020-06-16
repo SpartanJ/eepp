@@ -314,7 +314,7 @@ void Console::draw() {
 		Color OldColor1( text.getColor() );
 		text.setStyleConfig( mFontStyleConfig );
 		text.setFillColor( Color::White );
-		text.setString( "FPS: " + String::toStr( mWindow->getFPS() ) );
+		text.setString( "FPS: " + String::toString( mWindow->getFPS() ) );
 		text.draw( mWindow->getWidth() - text.getTextWidth() - 15, 6 );
 		text.setFillColor( OldColor1 );
 	}
@@ -884,7 +884,7 @@ void Console::cmdFrameLimit( const std::vector<String>& params ) {
 
 void Console::cmdGetLog() {
 	std::vector<String> tvec =
-		String::split( String( String::toStr( Log::instance()->getBuffer() ) ) );
+		String::split( String( String::toString( Log::instance()->getBuffer() ) ) );
 	if ( tvec.size() > 0 ) {
 		for ( unsigned int i = 0; i < tvec.size(); i++ )
 			privPushText( tvec[i] );

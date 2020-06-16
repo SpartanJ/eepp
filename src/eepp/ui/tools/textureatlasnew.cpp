@@ -96,7 +96,7 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) : mUIWindow( NULL ), mNew
 	std::vector<String> Sizes;
 
 	for ( Uint32 i = 8; i < 15; i++ ) {
-		Sizes.push_back( String::toStr( 1 << i ) );
+		Sizes.push_back( String::toString( 1 << i ) );
 	}
 
 	mComboWidth->getListBox()->addListBoxItems( Sizes );

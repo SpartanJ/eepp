@@ -50,9 +50,9 @@ TileMapProperties::TileMapProperties( TileMap* Map ) :
 	if ( mMap->getLightsEnabled() ) {
 		DiffIfLights = 100;
 
-		UITextView* Txt = createTextBox( "Map Base Color:", mUIWindow->getContainer(), Sizef(),
-										 Vector2f( 50, 16 ),
-										 UI_NODE_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
+		UITextView* Txt =
+			createTextBox( "Map Base Color:", mUIWindow->getContainer(), Sizef(),
+						   Vector2f( 50, 16 ), UI_NODE_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
 		mUIBaseColor = UIWidget::New();
 		mUIBaseColor->setFlags( UI_FILL_BACKGROUND | UI_BORDER );
@@ -79,7 +79,7 @@ TileMapProperties::TileMapProperties( TileMap* Map ) :
 										cb::Make1( this, &TileMapProperties::onRedChange ) );
 
 		mUIRedTxt = createTextBox(
-			String::toStr( (Uint32)mMap->getBaseColor().r ), mUIWindow->getContainer(), Sizef(),
+			String::toString( (Uint32)mMap->getBaseColor().r ), mUIWindow->getContainer(), Sizef(),
 			Vector2f( mUIRedSlider->getPosition().x + mUIRedSlider->getSize().getWidth() + 4,
 					  mUIRedSlider->getPosition().y ),
 			UI_NODE_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
@@ -100,7 +100,7 @@ TileMapProperties::TileMapProperties( TileMap* Map ) :
 										  cb::Make1( this, &TileMapProperties::onGreenChange ) );
 
 		mUIGreenTxt = createTextBox(
-			String::toStr( (Uint32)mMap->getBaseColor().g ), mUIWindow->getContainer(), Sizef(),
+			String::toString( (Uint32)mMap->getBaseColor().g ), mUIWindow->getContainer(), Sizef(),
 			Vector2f( mUIGreenSlider->getPosition().x + mUIGreenSlider->getSize().getWidth() + 4,
 					  mUIGreenSlider->getPosition().y ),
 			UI_NODE_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
@@ -120,7 +120,7 @@ TileMapProperties::TileMapProperties( TileMap* Map ) :
 										 cb::Make1( this, &TileMapProperties::onBlueChange ) );
 
 		mUIBlueTxt = createTextBox(
-			String::toStr( (Uint32)mMap->getBaseColor().b ), mUIWindow->getContainer(), Sizef(),
+			String::toString( (Uint32)mMap->getBaseColor().b ), mUIWindow->getContainer(), Sizef(),
 			Vector2f( mUIBlueSlider->getPosition().x + mUIBlueSlider->getSize().getWidth() + 4,
 					  mUIBlueSlider->getPosition().y ),
 			UI_NODE_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
@@ -204,7 +204,7 @@ void TileMapProperties::onRedChange( const Event* ) {
 	Color Col = mUIBaseColor->getBackgroundColor();
 	Col.r = (Uint8)mUIRedSlider->getValue();
 	mUIBaseColor->setBackgroundColor( Col );
-	mUIRedTxt->setText( String::toStr( (Int32)mUIRedSlider->getValue() ) );
+	mUIRedTxt->setText( String::toString( (Int32)mUIRedSlider->getValue() ) );
 
 	Color MapCol = mMap->getBaseColor();
 	MapCol.r = Col.r;
@@ -215,7 +215,7 @@ void TileMapProperties::onGreenChange( const Event* ) {
 	Color Col = mUIBaseColor->getBackgroundColor();
 	Col.g = (Uint8)mUIGreenSlider->getValue();
 	mUIBaseColor->setBackgroundColor( Col );
-	mUIGreenTxt->setText( String::toStr( (Uint32)mUIGreenSlider->getValue() ) );
+	mUIGreenTxt->setText( String::toString( (Uint32)mUIGreenSlider->getValue() ) );
 
 	Color MapCol = mMap->getBaseColor();
 	MapCol.g = Col.g;
@@ -226,7 +226,7 @@ void TileMapProperties::onBlueChange( const Event* ) {
 	Color Col = mUIBaseColor->getBackgroundColor();
 	Col.b = (Uint8)mUIBlueSlider->getValue();
 	mUIBaseColor->setBackgroundColor( Col );
-	mUIBlueTxt->setText( String::toStr( (Uint32)mUIBlueSlider->getValue() ) );
+	mUIBlueTxt->setText( String::toString( (Uint32)mUIBlueSlider->getValue() ) );
 
 	Color MapCol = mMap->getBaseColor();
 	MapCol.b = Col.b;

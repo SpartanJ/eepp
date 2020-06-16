@@ -236,14 +236,17 @@ class EE_API String {
 						   char delim = ';' );
 
 	/** Converts from any basic type to std::string */
-	template <class T> static std::string toStr( const T& i ) {
+	template <class T> static std::string toString( const T& i ) {
 		std::ostringstream ss;
-		ss << i;
+		ss << std::fixed << i;
 		return ss.str();
 	}
 
 	static std::string fromFloat( const Float& value, const std::string& append = "",
 								  const std::string& prepend = "" );
+
+	static std::string fromDouble( const double& value, const std::string& append = "",
+								   const std::string& prepend = "" );
 
 	/** Converts from a string to type */
 	template <class T>
