@@ -546,6 +546,8 @@ void EETest::createBaseUI() {
 	Menu2->add( "Test 2" );
 	Menu2->add( "Test 3" );
 	Menu2->add( "Test 4" );
+	Menu2->addRadioButton( "Test Radio Button" );
+	Menu2->addRadioButton( "Test Radio Button Active" )->setActive( true );
 	Menu2->addSubMenu( "Hello World", NULL, Menu3 );
 
 	Menu->addSeparator();

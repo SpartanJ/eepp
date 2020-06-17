@@ -53,9 +53,8 @@ void UIMenuSubMenu::setTheme( UITheme* Theme ) {
 
 void UIMenuSubMenu::onSizeChange() {
 	UIMenuItem::onSizeChange();
-	mArrow->setPosition( getSize().getWidth() - mArrow->getSize().getWidth() -
-							 PixelDensity::dpToPx( mArrow->getLayoutMargin().Right ),
-						 0 );
+	mArrow->setPosition(
+		getSize().getWidth() - mArrow->getSize().getWidth() - mArrow->getLayoutMargin().Right, 0 );
 	mArrow->centerVertical();
 }
 

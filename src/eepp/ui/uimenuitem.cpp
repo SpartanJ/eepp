@@ -7,7 +7,7 @@ UIMenuItem* UIMenuItem::New() {
 	return eeNew( UIMenuItem, () );
 }
 
-UIMenuItem::UIMenuItem( const std::string& tag ) : UIPushButton( tag ) {
+UIMenuItem::UIMenuItem( const std::string& tag ) : UIPushButton( tag ), mShortcutView( NULL ) {
 	mIcon->setElementTag( mTag + "::icon" );
 	mTextBox->setElementTag( mTag + "::text" );
 	applyDefaultTheme();
@@ -31,12 +31,47 @@ void UIMenuItem::setTheme( UITheme* Theme ) {
 	onThemeLoaded();
 }
 
+void UIMenuItem::setShortcutText( const String& text ) {
+	if ( !text.empty() )
+		createShortcutView();
+	if ( mShortcutView )
+		mShortcutView->setText( text );
+}
+
+UITextView* UIMenuItem::getShortcutView() const {
+	return mShortcutView;
+}
+
+void UIMenuItem::onSizeChange() {
+	UIPushButton::onSizeChange();
+	if ( mShortcutView ) {
+		mShortcutView->setPosition( getSize().getWidth() - mShortcutView->getSize().getWidth() -
+										mShortcutView->getLayoutMargin().Right,
+									0 );
+		mShortcutView->centerVertical();
+	}
+}
+
 Uint32 UIMenuItem::onMouseOver( const Vector2i& Pos, const Uint32& Flags ) {
 	UIPushButton::onMouseOver( Pos, Flags );
-
 	getParent()->asType<UIMenu>()->setItemSelected( this );
-
 	return 1;
+}
+
+UIWidget* UIMenuItem::getExtraInnerWidget() {
+	return mShortcutView;
+}
+
+void UIMenuItem::createShortcutView() {
+	if ( mShortcutView )
+		return;
+	mShortcutView = UITextView::NewWithTag( mTag + "::shortcut" );
+	mShortcutView->setParent( this )->setVisible( true )->setEnabled( false );
+	mShortcutView->setFlags( UI_AUTO_SIZE | UI_HALIGN_RIGHT );
+	auto cb = [&]( const Event* ) { onSizeChange(); };
+	mShortcutView->addEventListener( Event::OnPaddingChange, cb );
+	mShortcutView->addEventListener( Event::OnMarginChange, cb );
+	mShortcutView->addEventListener( Event::OnSizeChange, cb );
 }
 
 }} // namespace EE::UI

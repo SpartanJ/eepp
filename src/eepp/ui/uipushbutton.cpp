@@ -25,7 +25,6 @@ UIPushButton::UIPushButton( const std::string& tag ) :
 
 	auto cb = [&]( const Event* ) {
 		onSizeChange();
-		notifyLayoutAttrChange();
 	};
 
 	mIcon->addEventListener( Event::OnPaddingChange, cb );

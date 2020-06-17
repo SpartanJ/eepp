@@ -1064,10 +1064,9 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		}
 
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
-		setUserDefaultTheme();
 		if ( !xmlFile && !cssFile )
-			loadStyleSheet( "assets/layouts/test.css" );
-		loadLayoutFile( "assets/layouts/test.xml" );
+			loadStyleSheet( "assets/ui/breeze.css" );
+		loadLayoutFile( "assets/layouts/test_widgets.xml" );
 #endif
 
 		window->runMainLoop( &mainLoop );

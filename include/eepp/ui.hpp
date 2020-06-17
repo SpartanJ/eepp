@@ -6,8 +6,8 @@
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uicombobox.hpp>
-#include <eepp/ui/uifiledialog.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
+#include <eepp/ui/uifiledialog.hpp>
 #include <eepp/ui/uigridlayout.hpp>
 #include <eepp/ui/uiimage.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
@@ -16,7 +16,9 @@
 #include <eepp/ui/uiloader.hpp>
 #include <eepp/ui/uimenu.hpp>
 #include <eepp/ui/uimenubar.hpp>
+#include <eepp/ui/uimenucheckbox.hpp>
 #include <eepp/ui/uimenuitem.hpp>
+#include <eepp/ui/uimenuradiobutton.hpp>
 #include <eepp/ui/uimenuseparator.hpp>
 #include <eepp/ui/uimessagebox.hpp>
 #include <eepp/ui/uinode.hpp>

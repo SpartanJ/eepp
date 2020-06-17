@@ -36,17 +36,17 @@ class EE_API EventDispatcher {
 
 	Node* getFocusNode() const;
 
-	void setFocusNode( Node* Ctrl );
+	void setFocusNode( Node* node );
 
 	Node* getMouseOverNode() const;
 
-	void setMouseOverNode( Node* Ctrl );
+	void setMouseOverNode( Node* node );
 
 	Node* getMouseDownNode() const;
 
 	Node* getLossFocusNode() const;
 
-	void sendMsg( Node* Ctrl, const Uint32& Msg, const Uint32& Flags = 0 );
+	void sendMsg( Node* node, const Uint32& Msg, const Uint32& Flags = 0 );
 
 	void sendTextInput( const Uint32& textChar, const Uint32& timestamp );
 
@@ -54,11 +54,11 @@ class EE_API EventDispatcher {
 
 	void sendKeyDown( const Keycode& KeyCode, const Uint32& Char, const Uint32& Mod );
 
-	void sendMouseClick( Node* ToCtrl, const Vector2i& Pos, const Uint32 Flags );
+	void sendMouseClick( Node* toNode, const Vector2i& pos, const Uint32 flags );
 
-	void sendMouseUp( Node* ToCtrl, const Vector2i& Pos, const Uint32 Flags );
+	void sendMouseUp( Node* toNode, const Vector2i& pos, const Uint32 flags );
 
-	void sendMouseDown( Node* ToCtrl, const Vector2i& Pos, const Uint32 Flags );
+	void sendMouseDown( Node* toNode, const Vector2i& pos, const Uint32 flags );
 
 	const Uint32& getPressTrigger() const;
 

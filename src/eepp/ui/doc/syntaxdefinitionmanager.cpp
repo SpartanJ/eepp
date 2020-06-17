@@ -858,7 +858,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 
 	// ini / conf
 	add( {"Config File",
-		  {"%.ini$", "%.conf$", "%.desktop$", "Doxyfile"},
+		  {"%.ini$", "%.conf$", "%.desktop$", "%.service$", "Doxyfile"},
 		  {
 			  {{"#[%da-fA-F]+"}, "literal"},
 			  {{"#.-\n"}, "comment"},
@@ -866,7 +866,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 			  {{"'", "'", "\\"}, "string"},
 			  {{"%[", "%]"}, "keyword2"},
 			  {{"[%a][%w_-]*%s*%f[=]"}, "keyword"},
-			  {{"[=]"}, "operator"},
+			  {{"="}, "operator"},
 			  {{"https?://%S+"}, "function"},
 		  }} );
 
@@ -1673,6 +1673,19 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 		  },
 		  prepareBatchSymbols( batchSymTable ),
 		  "rem"} );
+
+	// diff - patch
+	add( {"Diff File",
+		  {"%.diff$", "%.patch$"},
+		  {
+			  {{"^%+%+%+%s.-\n"}, "keyword"},
+			  {{"^%-%-%-%s.-\n"}, "keyword"},
+			  {{"^diff%s.-\n"}, "string"},
+			  {{"^index%s.-\n"}, "comment"},
+			  {{"^@@.-\n"}, "number"},
+			  {{"^%+.-\n"}, "function"},
+			  {{"^%-.-\n"}, "keyword2"},
+		  }} );
 }
 
 SyntaxDefinition& SyntaxDefinitionManager::add( SyntaxDefinition&& syntaxStyle ) {

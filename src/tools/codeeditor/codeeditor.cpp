@@ -802,18 +802,18 @@ App::~App() {
 
 void App::createSettingsMenu() {
 	mSettingsMenu = UIPopUpMenu::New();
-	mSettingsMenu->add( "New" );
-	mSettingsMenu->add( "Open..." );
+	mSettingsMenu->add( "New", NULL, "Ctrl+T" );
+	mSettingsMenu->add( "Open...", NULL, "Ctrl+O" );
 	mSettingsMenu->addSeparator();
-	mSettingsMenu->add( "Save" );
+	mSettingsMenu->add( "Save", NULL, "Ctrl+S" );
 	mSettingsMenu->add( "Save as..." );
 	mSettingsMenu->addSeparator();
 	mSettingsMenu->addSubMenu( "Filetype", NULL, createFiletypeMenu() );
 	mSettingsMenu->addSubMenu( "Color Scheme", NULL, createColorSchemeMenu() );
 	mSettingsMenu->addSeparator();
-	mSettingsMenu->add( "Close" );
+	mSettingsMenu->add( "Close", NULL, "Ctrl+W" );
 	mSettingsMenu->addSeparator();
-	mSettingsMenu->add( "Quit" );
+	mSettingsMenu->add( "Quit", NULL, "Ctrl+Q" );
 	mSettingsButton = mUISceneNode->find<UITextView>( "settings" );
 	mSettingsButton->addEventListener( Event::MouseClick, [&]( const Event* ) {
 		Vector2f pos( mSettingsButton->getPixelsPosition() );
@@ -849,7 +849,7 @@ void App::setColorScheme( const std::string& name ) {
 
 void App::updateColorSchemeMenu() {
 	for ( size_t i = 0; i < mColorSchemeMenu->getCount(); i++ ) {
-		UIMenuCheckBox* menuItem = mColorSchemeMenu->getItem( i )->asType<UIMenuCheckBox>();
+		UIMenuRadioButton* menuItem = mColorSchemeMenu->getItem( i )->asType<UIMenuRadioButton>();
 		menuItem->setActive( mCurrentColorScheme == menuItem->getText() );
 	}
 }
@@ -857,8 +857,8 @@ void App::updateColorSchemeMenu() {
 UIMenu* App::createColorSchemeMenu() {
 	mColorSchemeMenu = UIPopUpMenu::New();
 	for ( auto& colorScheme : mColorSchemes ) {
-		mColorSchemeMenu->addCheckBox( colorScheme.first,
-									   mCurrentColorScheme == colorScheme.first );
+		mColorSchemeMenu->addRadioButton( colorScheme.first,
+										  mCurrentColorScheme == colorScheme.first );
 	}
 	mColorSchemeMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
@@ -873,7 +873,7 @@ UIMenu* App::createFiletypeMenu() {
 	mFiletypeMenu = UIPopUpMenu::New();
 	auto names = dM->getLanguageNames();
 	for ( auto& name : names ) {
-		mFiletypeMenu->addCheckBox(
+		mFiletypeMenu->addRadioButton(
 			name, mCurEditor && mCurEditor->getSyntaxDefinition().getLanguageName() == name );
 	}
 	mFiletypeMenu->addEventListener( Event::OnItemClicked, [&, dM]( const Event* event ) {
@@ -892,7 +892,7 @@ void App::updateCurrentFiletype() {
 		return;
 	std::string curLang( mCurEditor->getSyntaxDefinition().getLanguageName() );
 	for ( size_t i = 0; i < mFiletypeMenu->getCount(); i++ ) {
-		UIMenuCheckBox* menuItem = mFiletypeMenu->getItem( i )->asType<UIMenuCheckBox>();
+		UIMenuRadioButton* menuItem = mFiletypeMenu->getItem( i )->asType<UIMenuRadioButton>();
 		std::string itemLang( menuItem->getText() );
 		menuItem->setActive( curLang == itemLang );
 	}

@@ -353,6 +353,7 @@
 ../../include/eepp/ui/uimenucheckbox.hpp
 ../../include/eepp/ui/uimenu.hpp
 ../../include/eepp/ui/uimenuitem.hpp
+../../include/eepp/ui/uimenuradiobutton.hpp
 ../../include/eepp/ui/uimenuseparator.hpp
 ../../include/eepp/ui/uimenusubmenu.hpp
 ../../include/eepp/ui/uimessagebox.hpp
@@ -802,6 +803,7 @@
 ../../src/eepp/ui/uimenucheckbox.cpp
 ../../src/eepp/ui/uimenu.cpp
 ../../src/eepp/ui/uimenuitem.cpp
+../../src/eepp/ui/uimenuradiobutton.cpp
 ../../src/eepp/ui/uimenuseparator.cpp
 ../../src/eepp/ui/uimenusubmenu.cpp
 ../../src/eepp/ui/uimessagebox.cpp

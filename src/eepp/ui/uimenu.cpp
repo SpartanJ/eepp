@@ -41,10 +41,10 @@ bool UIMenu::isType( const Uint32& type ) const {
 	return UIMenu::getType() == type ? true : UIWidget::isType( type );
 }
 
-void UIMenu::setTheme( UITheme* Theme ) {
-	UIWidget::setTheme( Theme );
+void UIMenu::setTheme( UITheme* theme ) {
+	UIWidget::setTheme( theme );
 
-	setThemeSkin( Theme, "menu" );
+	setThemeSkin( theme, "menu" );
 	onThemeLoaded();
 }
 
@@ -60,61 +60,79 @@ void UIMenu::onPaddingChange() {
 	widgetsSetPos();
 }
 
-UIMenuItem* UIMenu::createMenuItem( const String& Text, Drawable* Icon ) {
-	UIMenuItem* tCtrl = UIMenuItem::New();
-	tCtrl->setHorizontalAlign( UI_HALIGN_LEFT );
-	tCtrl->setParent( this );
-	tCtrl->setIconMinimumSize( mIconMinSize );
-	tCtrl->setIcon( Icon );
-	tCtrl->setText( Text );
-
-	return tCtrl;
+UIMenuItem* UIMenu::createMenuItem( const String& text, Drawable* icon,
+									const String& shortcutText ) {
+	UIMenuItem* widget = UIMenuItem::New();
+	widget->setHorizontalAlign( UI_HALIGN_LEFT );
+	widget->setParent( this );
+	widget->setIconMinimumSize( mIconMinSize );
+	widget->setIcon( icon );
+	widget->setText( text );
+	widget->setShortcutText( shortcutText );
+	return widget;
 }
 
-UIMenuItem* UIMenu::add( const String& Text, Drawable* Icon ) {
-	UIMenuItem* menuItem = createMenuItem( Text, Icon );
+UIMenuItem* UIMenu::add( const String& text, Drawable* icon, const String& shortcutText ) {
+	UIMenuItem* menuItem = createMenuItem( text, icon, shortcutText );
 	add( menuItem );
 	return menuItem;
 }
 
-UIMenuCheckBox* UIMenu::createMenuCheckBox( const String& Text, const bool& Active ) {
-	UIMenuCheckBox* tCtrl = UIMenuCheckBox::New();
-	tCtrl->setHorizontalAlign( UI_HALIGN_LEFT );
-	tCtrl->setParent( this );
-	tCtrl->setIconMinimumSize( mIconMinSize );
-	tCtrl->setText( Text );
-
-	if ( Active )
-		tCtrl->setActive( Active );
-
-	return tCtrl;
+UIMenuCheckBox* UIMenu::createMenuCheckBox( const String& text, const bool& active ) {
+	UIMenuCheckBox* widget = UIMenuCheckBox::New();
+	widget->setHorizontalAlign( UI_HALIGN_LEFT );
+	widget->setParent( this );
+	widget->setIconMinimumSize( mIconMinSize );
+	widget->setText( text );
+	if ( active )
+		widget->setActive( active );
+	return widget;
 }
 
-UIMenuCheckBox* UIMenu::addCheckBox( const String& Text, const bool& Active ) {
-	UIMenuCheckBox* chkBox = createMenuCheckBox( Text, Active );
+UIMenuCheckBox* UIMenu::addCheckBox( const String& text, const bool& active ) {
+	UIMenuCheckBox* chkBox = createMenuCheckBox( text, active );
 	add( chkBox );
 	return chkBox;
 }
 
-UIMenuSubMenu* UIMenu::createSubMenu( const String& Text, Drawable* Icon, UIMenu* SubMenu ) {
+UIMenuRadioButton* UIMenu::createMenuRadioButton( const String& text, const bool& active ) {
+	UIMenuRadioButton* widget = UIMenuRadioButton::New();
+	widget->setHorizontalAlign( UI_HALIGN_LEFT );
+	widget->setParent( this );
+	widget->setIconMinimumSize( mIconMinSize );
+	widget->setText( text );
+
+	if ( active )
+		widget->setActive( active );
+
+	return widget;
+}
+
+UIMenuRadioButton* UIMenu::addRadioButton( const String& text, const bool& active ) {
+	UIMenuRadioButton* radioButton = createMenuRadioButton( text, active );
+	add( radioButton );
+	return radioButton;
+}
+
+UIMenuSubMenu* UIMenu::createSubMenu( const String& text, Drawable* icon, UIMenu* subMenu ) {
 	UIMenuSubMenu* tCtrl = UIMenuSubMenu::New();
 	tCtrl->setHorizontalAlign( UI_HALIGN_LEFT );
 	tCtrl->setParent( this );
 	tCtrl->setIconMinimumSize( mIconMinSize );
-	tCtrl->setIcon( Icon );
-	tCtrl->setText( Text );
-	tCtrl->setSubMenu( SubMenu );
+	tCtrl->setIcon( icon );
+	tCtrl->setText( text );
+	tCtrl->setSubMenu( subMenu );
 
 	return tCtrl;
 }
 
-UIMenuSubMenu* UIMenu::addSubMenu( const String& Text, Drawable* Icon, UIMenu* SubMenu ) {
-	UIMenuSubMenu* subMenu = createSubMenu( Text, Icon, SubMenu );
-	add( subMenu );
-	return subMenu;
+UIMenuSubMenu* UIMenu::addSubMenu( const String& text, Drawable* icon, UIMenu* subMenu ) {
+	UIMenuSubMenu* menu = createSubMenu( text, icon, subMenu );
+	add( menu );
+	return menu;
 }
 
-bool UIMenu::widgetCheckSize( UIWidget* widget, const bool& Resize ) {
+bool UIMenu::widgetCheckSize( UIWidget* widget, const bool& resize ) {
 	if ( widget->isType( UI_TYPE_MENUITEM ) ) {
 		UIMenuItem* tItem = widget->asType<UIMenuItem>();
 
@@ -131,7 +149,7 @@ bool UIMenu::widgetCheckSize( UIWidget* widget, const bool& Resize ) {
 			if ( widget->getPixelsSize().getWidth() > (Int32)mMaxWidth ) {
 				mMaxWidth = widget->getPixelsSize().getWidth();
 
-				if ( Resize ) {
+				if ( resize ) {
 					widgetsResize();
 
 					return true;
@@ -198,17 +216,17 @@ UIMenuSeparator* UIMenu::addSeparator() {
 	return separator;
 }
 
-UIWidget* UIMenu::getItem( const Uint32& Index ) {
-	eeASSERT( Index < mItems.size() );
-	return mItems[Index];
+UIWidget* UIMenu::getItem( const Uint32& index ) {
+	eeASSERT( index < mItems.size() );
+	return mItems[index];
 }
 
-UIWidget* UIMenu::getItem( const String& Text ) {
+UIWidget* UIMenu::getItem( const String& text ) {
 	for ( Uint32 i = 0; i < mItems.size(); i++ ) {
 		if ( mItems[i]->isType( UI_TYPE_MENUITEM ) ) {
 			UIMenuItem* tMenuItem = mItems[i]->asType<UIMenuItem>();
 
-			if ( tMenuItem->getText() == Text )
+			if ( tMenuItem->getText() == text )
 				return tMenuItem;
 		}
 	}
@@ -216,9 +234,9 @@ UIWidget* UIMenu::getItem( const String& Text ) {
 	return NULL;
 }
 
-Uint32 UIMenu::getItemIndex( UIWidget* Item ) {
+Uint32 UIMenu::getItemIndex( UIWidget* item ) {
 	for ( Uint32 i = 0; i < mItems.size(); i++ ) {
-		if ( mItems[i] == Item )
+		if ( mItems[i] == item )
 			return i;
 	}
 
@@ -229,20 +247,20 @@ Uint32 UIMenu::getCount() const {
 	return mItems.size();
 }
 
-void UIMenu::remove( const Uint32& Index ) {
-	eeASSERT( Index < mItems.size() );
+void UIMenu::remove( const Uint32& index ) {
+	eeASSERT( index < mItems.size() );
 
-	mItems[Index]->close();
+	mItems[index]->close();
 
-	mItems.erase( mItems.begin() + Index );
+	mItems.erase( mItems.begin() + index );
 
 	widgetsSetPos();
 	widgetsResize();
 }
 
-void UIMenu::remove( UIWidget* Ctrl ) {
+void UIMenu::remove( UIWidget* widget ) {
 	for ( Uint32 i = 0; i < mItems.size(); i++ ) {
-		if ( mItems[i] == Ctrl ) {
+		if ( mItems[i] == widget ) {
 			remove( i );
 			break;
 		}
@@ -261,14 +279,14 @@ void UIMenu::removeAll() {
 	resizeMe();
 }
 
-void UIMenu::insert( const String& Text, Drawable* Icon, const Uint32& Index ) {
-	insert( createMenuItem( Text, Icon ), Index );
+void UIMenu::insert( const String& text, Drawable* icon, const Uint32& index ) {
+	insert( createMenuItem( text, icon ), index );
 }
 
-void UIMenu::insert( UIWidget* Control, const Uint32& Index ) {
-	mItems.insert( mItems.begin() + Index, Control );
+void UIMenu::insert( UIWidget* widget, const Uint32& index ) {
+	mItems.insert( mItems.begin() + index, widget );
 
-	childAddAt( Control, Index );
+	childAddAt( widget, index );
 
 	widgetsSetPos();
 	widgetsResize();
@@ -642,20 +660,20 @@ const Sizei& UIMenu::getIconMinimumSize() const {
 	return mIconMinSize;
 }
 
-void UIMenu::fixMenuPos( Vector2f& Pos, UIMenu* Menu, UIMenu* Parent, UIMenuSubMenu* SubMenu ) {
-	SceneNode* sceneNode = Menu->getSceneNode();
+void UIMenu::fixMenuPos( Vector2f& Pos, UIMenu* menu, UIMenu* Parent, UIMenuSubMenu* subMenu ) {
+	SceneNode* sceneNode = menu->getSceneNode();
 
 	if ( NULL == sceneNode )
 		return;
 
 	Rectf qScreen( 0.f, 0.f, sceneNode->getPixelsSize().getWidth(),
 				   sceneNode->getPixelsSize().getHeight() );
-	Rectf qPos( Pos.x, Pos.y, Pos.x + Menu->getPixelsSize().getWidth(),
-				Pos.y + Menu->getPixelsSize().getHeight() );
+	Rectf qPos( Pos.x, Pos.y, Pos.x + menu->getPixelsSize().getWidth(),
+				Pos.y + menu->getPixelsSize().getHeight() );
 
-	if ( NULL != Parent && NULL != SubMenu ) {
-		Vector2f sPos = SubMenu->getPixelsPosition();
-		SubMenu->nodeToWorldTranslation( sPos );
+	if ( NULL != Parent && NULL != subMenu ) {
+		Vector2f sPos = subMenu->getPixelsPosition();
+		subMenu->nodeToWorldTranslation( sPos );
 
 		Vector2f pPos = Parent->getPixelsPosition();
 		Parent->nodeToWorldTranslation( pPos );
@@ -666,30 +684,30 @@ void UIMenu::fixMenuPos( Vector2f& Pos, UIMenu* Menu, UIMenu* Parent, UIMenuSubM
 		Pos.x = qParent.Right;
 		Pos.y = sPos.y;
 		qPos.Left = Pos.x;
-		qPos.Right = qPos.Left + Menu->getPixelsSize().getWidth();
+		qPos.Right = qPos.Left + menu->getPixelsSize().getWidth();
 		qPos.Top = Pos.y;
-		qPos.Bottom = qPos.Top + Menu->getPixelsSize().getHeight();
+		qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
 		Vector2f oriPos( Pos );
 
 		if ( !qScreen.contains( qPos ) ) {
 			Pos.y =
-				sPos.y + SubMenu->getPixelsSize().getHeight() - Menu->getPixelsSize().getHeight();
+				sPos.y + subMenu->getPixelsSize().getHeight() - menu->getPixelsSize().getHeight();
 			qPos.Top = Pos.y;
-			qPos.Bottom = qPos.Top + Menu->getPixelsSize().getHeight();
+			qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
 
 			if ( !qScreen.contains( qPos ) ) {
-				Pos.x = qParent.Left - Menu->getPixelsSize().getWidth();
+				Pos.x = qParent.Left - menu->getPixelsSize().getWidth();
 				Pos.y = sPos.y;
 				qPos.Left = Pos.x;
-				qPos.Right = qPos.Left + Menu->getPixelsSize().getWidth();
+				qPos.Right = qPos.Left + menu->getPixelsSize().getWidth();
 				qPos.Top = Pos.y;
-				qPos.Bottom = qPos.Top + Menu->getPixelsSize().getHeight();
+				qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
 
 				if ( !qScreen.contains( qPos ) ) {
-					Pos.y = sPos.y + SubMenu->getPixelsSize().getHeight() -
-							Menu->getPixelsSize().getHeight();
+					Pos.y = sPos.y + subMenu->getPixelsSize().getHeight() -
+							menu->getPixelsSize().getHeight();
 					qPos.Top = Pos.y;
-					qPos.Bottom = qPos.Top + Menu->getPixelsSize().getHeight();
+					qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
 
 					if ( !qScreen.contains( qPos ) ) {
 						Pos = oriPos;
@@ -699,19 +717,19 @@ void UIMenu::fixMenuPos( Vector2f& Pos, UIMenu* Menu, UIMenu* Parent, UIMenuSubM
 		}
 	} else {
 		if ( !qScreen.contains( qPos ) ) {
-			Pos.y -= Menu->getPixelsSize().getHeight();
-			qPos.Top -= Menu->getPixelsSize().getHeight();
-			qPos.Bottom -= Menu->getPixelsSize().getHeight();
+			Pos.y -= menu->getPixelsSize().getHeight();
+			qPos.Top -= menu->getPixelsSize().getHeight();
+			qPos.Bottom -= menu->getPixelsSize().getHeight();
 
 			if ( !qScreen.contains( qPos ) ) {
-				Pos.x -= Menu->getPixelsSize().getWidth();
-				qPos.Left -= Menu->getPixelsSize().getWidth();
-				qPos.Right -= Menu->getPixelsSize().getWidth();
+				Pos.x -= menu->getPixelsSize().getWidth();
+				qPos.Left -= menu->getPixelsSize().getWidth();
+				qPos.Right -= menu->getPixelsSize().getWidth();
 
 				if ( !qScreen.contains( qPos ) ) {
-					Pos.y += Menu->getPixelsSize().getHeight();
-					qPos.Top += Menu->getPixelsSize().getHeight();
-					qPos.Bottom += Menu->getPixelsSize().getHeight();
+					Pos.y += menu->getPixelsSize().getHeight();
+					qPos.Top += menu->getPixelsSize().getHeight();
+					qPos.Bottom += menu->getPixelsSize().getHeight();
 				}
 			}
 		}

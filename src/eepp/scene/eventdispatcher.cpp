@@ -111,8 +111,8 @@ void EventDispatcher::update( const Time& time ) {
 	if ( mInput->getReleaseTrigger() ) {
 		if ( NULL != mFocusNode ) {
 			if ( !nodeWasDragging || mMousePos == mLastMousePos ) {
-				if ( mOverNode != mFocusNode &&
-					 mInput->getReleaseTrigger() & ( EE_BUTTON_LMASK | EE_BUTTON_RMASK ) )
+				if ( mDownNode == mOverNode &&
+					 ( mInput->getReleaseTrigger() & ( EE_BUTTON_LMASK | EE_BUTTON_RMASK ) ) )
 					setFocusNode( mOverNode );
 
 				// The focused node can change after the MouseUp ( since the node can call
@@ -123,9 +123,8 @@ void EventDispatcher::update( const Time& time ) {
 				if ( NULL != mOverNode ) {
 					getMouseOverNode()->onMouseUp( mMousePosi, mInput->getReleaseTrigger() );
 
-					if ( NULL != getMouseOverNode() )
-						sendMsg( getMouseOverNode(), NodeMessage::MouseUp,
-								 mInput->getReleaseTrigger() );
+					if ( NULL != mOverNode )
+						sendMsg( mOverNode, NodeMessage::MouseUp, mInput->getReleaseTrigger() );
 				}
 
 				if ( mInput->getClickTrigger() ) {
@@ -166,66 +165,59 @@ Input* EventDispatcher::getInput() const {
 void EventDispatcher::sendTextInput( const Uint32& textChar, const Uint32& timestamp ) {
 	TextInputEvent textInputEvent =
 		TextInputEvent( mFocusNode, Event::TextInput, textChar, timestamp );
-	Node* CtrlLoop = mFocusNode;
-
-	while ( NULL != CtrlLoop ) {
-		if ( CtrlLoop->isEnabled() && CtrlLoop->onTextInput( textInputEvent ) )
+	Node* node = mFocusNode;
+	while ( NULL != node ) {
+		if ( node->isEnabled() && node->onTextInput( textInputEvent ) )
 			break;
-
-		CtrlLoop = CtrlLoop->getParent();
+		node = node->getParent();
 	}
 }
 
 void EventDispatcher::sendKeyUp( const Keycode& KeyCode, const Uint32& Char, const Uint32& Mod ) {
 	KeyEvent keyEvent = KeyEvent( mFocusNode, Event::KeyUp, KeyCode, Char, Mod );
-	Node* CtrlLoop = mFocusNode;
-
-	while ( NULL != CtrlLoop ) {
-		if ( CtrlLoop->isEnabled() && CtrlLoop->onKeyUp( keyEvent ) )
+	Node* node = mFocusNode;
+	while ( NULL != node ) {
+		if ( node->isEnabled() && node->onKeyUp( keyEvent ) )
 			break;
-
-		CtrlLoop = CtrlLoop->getParent();
+		node = node->getParent();
 	}
 }
 
 void EventDispatcher::sendKeyDown( const Keycode& KeyCode, const Uint32& Char, const Uint32& Mod ) {
 	KeyEvent keyEvent = KeyEvent( mFocusNode, Event::KeyDown, KeyCode, Char, Mod );
-	Node* CtrlLoop = mFocusNode;
-
-	while ( NULL != CtrlLoop ) {
-		if ( CtrlLoop->isEnabled() && CtrlLoop->onKeyDown( keyEvent ) )
+	Node* node = mFocusNode;
+	while ( NULL != node ) {
+		if ( node->isEnabled() && node->onKeyDown( keyEvent ) )
 			break;
-
-		CtrlLoop = CtrlLoop->getParent();
+		node = node->getParent();
 	}
 }
 
-void EventDispatcher::sendMsg( Node* Ctrl, const Uint32& Msg, const Uint32& Flags ) {
-	NodeMessage tMsg( Ctrl, Msg, Flags );
-
-	Ctrl->messagePost( &tMsg );
+void EventDispatcher::sendMsg( Node* node, const Uint32& Msg, const Uint32& Flags ) {
+	NodeMessage tMsg( node, Msg, Flags );
+	node->messagePost( &tMsg );
 }
 
-void EventDispatcher::sendMouseClick( Node* ToCtrl, const Vector2i& Pos, const Uint32 Flags ) {
-	sendMsg( ToCtrl, NodeMessage::Click, Flags );
-	ToCtrl->onMouseClick( Pos, Flags );
+void EventDispatcher::sendMouseClick( Node* toNode, const Vector2i& Pos, const Uint32 flags ) {
+	sendMsg( toNode, NodeMessage::Click, flags );
+	toNode->onMouseClick( Pos, flags );
 }
 
-void EventDispatcher::sendMouseUp( Node* ToCtrl, const Vector2i& Pos, const Uint32 Flags ) {
-	sendMsg( ToCtrl, NodeMessage::MouseUp, Flags );
-	ToCtrl->onMouseUp( Pos, Flags );
+void EventDispatcher::sendMouseUp( Node* toNode, const Vector2i& Pos, const Uint32 flags ) {
+	sendMsg( toNode, NodeMessage::MouseUp, flags );
+	toNode->onMouseUp( Pos, flags );
 }
 
-void EventDispatcher::sendMouseDown( Node* ToCtrl, const Vector2i& Pos, const Uint32 Flags ) {
-	sendMsg( ToCtrl, NodeMessage::MouseDown, Flags );
-	ToCtrl->onMouseDown( Pos, Flags );
+void EventDispatcher::sendMouseDown( Node* toNode, const Vector2i& pos, const Uint32 flags ) {
+	sendMsg( toNode, NodeMessage::MouseDown, flags );
+	toNode->onMouseDown( pos, flags );
 }
 
-void EventDispatcher::setFocusNode( Node* Ctrl ) {
-	if ( NULL != mFocusNode && NULL != Ctrl && Ctrl != mFocusNode ) {
+void EventDispatcher::setFocusNode( Node* node ) {
+	if ( NULL != mFocusNode && NULL != node && node != mFocusNode ) {
 		mLossFocusNode = mFocusNode;
 
-		mFocusNode = Ctrl;
+		mFocusNode = node;
 
 		mLossFocusNode->onFocusLoss();
 		sendMsg( mLossFocusNode, NodeMessage::FocusLoss );
@@ -243,8 +235,8 @@ Node* EventDispatcher::getMouseOverNode() const {
 	return mOverNode;
 }
 
-void EventDispatcher::setMouseOverNode( Node* Ctrl ) {
-	mOverNode = Ctrl;
+void EventDispatcher::setMouseOverNode( Node* node ) {
+	mOverNode = node;
 }
 
 Node* EventDispatcher::getFocusNode() const {

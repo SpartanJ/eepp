@@ -19,10 +19,22 @@ class EE_API UIMenuItem : public UIPushButton {
 
 	virtual void setTheme( UITheme* Theme );
 
+	virtual void setShortcutText( const String& text );
+
+	UITextView* getShortcutView() const;
+
   protected:
+	UITextView* mShortcutView;
+
 	explicit UIMenuItem( const std::string& tag );
 
+	virtual void onSizeChange();
+
 	virtual Uint32 onMouseOver( const Vector2i& position, const Uint32& flags );
+
+	virtual UIWidget* getExtraInnerWidget();
+
+	void createShortcutView();
 };
 
 }} // namespace EE::UI

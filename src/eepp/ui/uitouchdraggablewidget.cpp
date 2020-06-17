@@ -86,7 +86,7 @@ void UITouchDraggableWidget::scheduledUpdate( const Time& time ) {
 				mTouchDragPoint = Pos;
 
 				getEventDispatcher()->setNodeDragging( this );
-			} else {
+			} else if ( mTouchDragAcceleration != Vector2f::Zero ) {
 				mTouchDragAcceleration -= elapsed * mTouchDragDeceleration;
 			}
 		} else {
@@ -134,8 +134,7 @@ Uint32 UITouchDraggableWidget::onMessage( const NodeMessage* msg ) {
 		 !getEventDispatcher()->isNodeDragging() ) {
 		setTouchDragging( true );
 		getEventDispatcher()->setNodeDragging( this );
-		mTouchDragPoint = Vector2f( getEventDispatcher()->getMousePos().x,
-									getEventDispatcher()->getMousePos().y );
+		mTouchDragPoint = getEventDispatcher()->getMousePosf();
 		mTouchDragAcceleration = Vector2f( 0, 0 );
 		return 1;
 	}

@@ -4,6 +4,7 @@
 #include <deque>
 #include <eepp/ui/uimenucheckbox.hpp>
 #include <eepp/ui/uimenuitem.hpp>
+#include <eepp/ui/uimenuradiobutton.hpp>
 #include <eepp/ui/uimenuseparator.hpp>
 #include <eepp/ui/uimenusubmenu.hpp>
 #include <eepp/ui/uiwidget.hpp>
@@ -14,8 +15,8 @@ class EE_API UIMenu : public UIWidget {
   public:
 	static UIMenu* New();
 
-	static void fixMenuPos( Vector2f& position, UIMenu* Menu, UIMenu* parent = NULL,
-							UIMenuSubMenu* SubMenu = NULL );
+	static void fixMenuPos( Vector2f& position, UIMenu* menu, UIMenu* parent = NULL,
+							UIMenuSubMenu* subMenu = NULL );
 
 	UIMenu();
 
@@ -25,35 +26,37 @@ class EE_API UIMenu : public UIWidget {
 
 	virtual bool isType( const Uint32& type ) const;
 
-	UIMenuItem* add( const String& Text, Drawable* Icon = NULL );
+	UIMenuItem* add( const String& text, Drawable* icon = NULL, const String& shortcutText = "" );
 
 	UIWidget* add( UIWidget* widget );
 
 	UIMenuSeparator* addSeparator();
 
-	UIMenuCheckBox* addCheckBox( const String& Text, const bool& Active = false );
+	UIMenuCheckBox* addCheckBox( const String& text, const bool& active = false );
 
-	UIMenuSubMenu* addSubMenu( const String& Text, Drawable* Icon = NULL, UIMenu* SubMenu = NULL );
+	UIMenuRadioButton* addRadioButton( const String& text, const bool& active = false );
 
-	UIWidget* getItem( const Uint32& Index );
+	UIMenuSubMenu* addSubMenu( const String& text, Drawable* icon = NULL, UIMenu* subMenu = NULL );
 
-	UIWidget* getItem( const String& Text );
+	UIWidget* getItem( const Uint32& index );
 
-	Uint32 getItemIndex( UIWidget* Item );
+	UIWidget* getItem( const String& text );
+
+	Uint32 getItemIndex( UIWidget* item );
 
 	Uint32 getCount() const;
 
-	void remove( const Uint32& Index );
+	void remove( const Uint32& index );
 
-	void remove( UIWidget* Ctrl );
+	void remove( UIWidget* widget );
 
 	void removeAll();
 
-	void insert( const String& Text, Drawable* Icon, const Uint32& Index );
+	void insert( const String& text, Drawable* icon, const Uint32& index );
 
-	void insert( UIWidget* Control, const Uint32& Index );
+	void insert( UIWidget* widget, const Uint32& index );
 
-	virtual void setTheme( UITheme* Theme );
+	virtual void setTheme( UITheme* theme );
 
 	virtual bool show();
 
@@ -78,6 +81,7 @@ class EE_API UIMenu : public UIWidget {
   protected:
 	friend class UIMenuItem;
 	friend class UIMenuCheckBox;
+	friend class UIMenuRadioButton;
 	friend class UIMenuSubMenu;
 
 	std::deque<UIWidget*> mItems;
@@ -106,17 +110,20 @@ class EE_API UIMenu : public UIWidget {
 
 	void resizeMe();
 
-	UIMenuItem* createMenuItem( const String& Text, Drawable* Icon );
+	UIMenuItem* createMenuItem( const String& text, Drawable* icon,
+								const String& shortcutText = "" );
 
-	UIMenuCheckBox* createMenuCheckBox( const String& Text, const bool& Active );
+	UIMenuCheckBox* createMenuCheckBox( const String& text, const bool& active );
 
-	UIMenuSubMenu* createSubMenu( const String& Text, Drawable* Icon, UIMenu* SubMenu );
+	UIMenuRadioButton* createMenuRadioButton( const String& text, const bool& active );
+
+	UIMenuSubMenu* createSubMenu( const String& text, Drawable* icon, UIMenu* subMenu );
 
 	void onThemeLoaded();
 
 	virtual void onPaddingChange();
 
-	bool widgetCheckSize( UIWidget* widget, const bool& Resize = true );
+	bool widgetCheckSize( UIWidget* widget, const bool& resize = true );
 
 	bool isSubMenu( Node* Ctrl );
 

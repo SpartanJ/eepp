@@ -1,9 +1,9 @@
 #include <eepp/graphics/textureregion.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/uimenubar.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uithememanager.hpp>
-#include <eepp/ui/uimenubar.hpp>
 #include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
@@ -12,7 +12,8 @@ UIMenuBar* UIMenuBar::New() {
 	return eeNew( UIMenuBar, () );
 }
 
-UIMenuBar::UIMenuBar() : UIWidget( "menubar" ), mMenuHeight( 0 ), mCurrentMenu( NULL ) {
+UIMenuBar::UIMenuBar() :
+	UIWidget( "menubar" ), mMenuHeight( 0 ), mCurrentMenu( NULL ), mWaitingUp( NULL ) {
 	if ( !( mFlags & UI_ANCHOR_RIGHT ) )
 		mFlags |= UI_ANCHOR_RIGHT;
 
@@ -57,6 +58,7 @@ void UIMenuBar::addMenuButton( const String& ButtonText, UIPopUpMenu* Menu ) {
 
 	Menu->setVisible( false );
 	Menu->setEnabled( false );
+	Menu->setOwnerNode( Button );
 	// This will force to change the parent when shown, and force the CSS style reload.
 	Menu->setParent( this );
 	Menu->addEventListener( Event::OnWidgetFocusLoss,
@@ -105,7 +107,6 @@ UISelectButton* UIMenuBar::getButton( const String& ButtonText ) {
 			return it->first;
 		}
 	}
-
 	return NULL;
 }
 
@@ -115,7 +116,6 @@ UIPopUpMenu* UIMenuBar::getPopUpMenu( const String& ButtonText ) {
 			return it->second;
 		}
 	}
-
 	return NULL;
 }
 
@@ -179,37 +179,38 @@ bool UIMenuBar::applyProperty( const StyleSheetProperty& attribute ) {
 	return true;
 }
 
-Uint32 UIMenuBar::onMessage( const NodeMessage* Msg ) {
-	switch ( Msg->getMsg() ) {
+Uint32 UIMenuBar::onMessage( const NodeMessage* msg ) {
+	switch ( msg->getMsg() ) {
 		case NodeMessage::MouseUp:
+			mWaitingUp = NULL;
+		case NodeMessage::MouseDown:
 		case NodeMessage::MouseOver: {
-			if ( Msg->getSender()->isType( UI_TYPE_SELECTBUTTON ) ) {
-				UISelectButton* tbut = Msg->getSender()->asType<UISelectButton>();
+			if ( msg->getSender()->isType( UI_TYPE_SELECTBUTTON ) ) {
+				UISelectButton* tbut = msg->getSender()->asType<UISelectButton>();
 				UIPopUpMenu* tpop = getMenuFromButton( tbut );
 
 				Vector2f pos( tbut->getPosition().x,
 							  tbut->getPosition().y + tbut->getSize().getHeight() );
 				tpop->setPosition( pos );
 
-				if ( Msg->getMsg() == NodeMessage::MouseOver ) {
-					if ( NULL != mCurrentMenu ) {
+				if ( msg->getMsg() == NodeMessage::MouseOver ) {
+					if ( NULL != mCurrentMenu && mCurrentMenu != tpop ) {
 						mCurrentMenu = tpop;
-
 						tbut->select();
 						tpop->setParent( getWindowContainer() );
 						tpop->show();
 					}
 				} else {
-					if ( Msg->getFlags() & EE_BUTTON_LMASK ) {
-						if ( mCurrentMenu != tpop ) {
+					if ( msg->getMsg() == NodeMessage::MouseDown &&
+						 msg->getFlags() & EE_BUTTON_LMASK ) {
+						if ( !tpop->isVisible() ) {
 							mCurrentMenu = tpop;
-
 							tbut->select();
 							tpop->setParent( getWindowContainer() );
 							tpop->show();
-						} else {
+							mWaitingUp = tpop;
+						} else if ( mCurrentMenu != tpop || mWaitingUp == NULL ) {
 							mCurrentMenu = NULL;
-
 							tbut->unselect();
 							tpop->hide();
 						}
@@ -223,34 +224,31 @@ Uint32 UIMenuBar::onMessage( const NodeMessage* Msg ) {
 		}
 		case NodeMessage::Selected: {
 			for ( MenuBarList::iterator it = mButtons.begin(); it != mButtons.end(); ++it ) {
-				if ( it->first != Msg->getSender() ) {
+				if ( it->first != msg->getSender() ) {
 					it->first->unselect();
+					it->second->hide();
 				}
 			}
-
 			return 1;
 		}
 		case NodeMessage::FocusLoss: {
+			mWaitingUp = NULL;
 			if ( NULL != getEventDispatcher() ) {
-				Node* FocusCtrl = getEventDispatcher()->getFocusNode();
+				Node* focusNode = getEventDispatcher()->getFocusNode();
 
-				if ( !isParentOf( FocusCtrl ) && !isPopUpMenuChild( FocusCtrl ) ) {
+				if ( !isParentOf( focusNode ) && !isPopUpMenuChild( focusNode ) ) {
 					onWidgetFocusLoss();
 				}
-
 				return 1;
 			}
 		}
 	}
-
 	return 0;
 }
 
 void UIMenuBar::onParentChange() {
 	setSize( getParent()->getSize().getWidth(), mMenuHeight );
-
 	updateAnchorsDistances();
-
 	UIWidget::onParentChange();
 }
 
@@ -274,20 +272,18 @@ UIPopUpMenu* UIMenuBar::getMenuFromButton( UISelectButton* Button ) {
 	return NULL;
 }
 
-bool UIMenuBar::isPopUpMenuChild( Node* Ctrl ) {
+bool UIMenuBar::isPopUpMenuChild( Node* node ) {
 	for ( MenuBarList::iterator it = mButtons.begin(); it != mButtons.end(); ++it ) {
-		if ( it->second == Ctrl || it->second->isParentOf( Ctrl ) ) {
+		if ( it->second == node || it->second->isParentOf( node ) ) {
 			return true;
 		}
 	}
-
 	return false;
 }
 
 void UIMenuBar::onMenuFocusLoss( const Event* ) {
-	Node* FocusCtrl = getEventDispatcher()->getFocusNode();
-
-	if ( !isParentOf( FocusCtrl ) && !isPopUpMenuChild( FocusCtrl ) ) {
+	Node* focusNode = getEventDispatcher()->getFocusNode();
+	if ( !isParentOf( focusNode ) && !isPopUpMenuChild( focusNode ) ) {
 		onWidgetFocusLoss();
 	}
 }

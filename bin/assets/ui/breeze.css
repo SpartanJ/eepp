@@ -45,7 +45,8 @@ ComboBox::DropDownList::ListBox::item,
 DropDownList,
 DropDownList::ListBox::item,
 ListBox::item,
-Menu::item,
+Menu::item::text,
+Menu::item::shortcut,
 Menu::SubMenu,
 PushButton,
 RadioButton,
@@ -605,7 +606,8 @@ MenuBar::Button:hover {
 Menu::Item,
 Menu::CheckBox,
 Menu::Separator,
-Menu::SubMenu {
+Menu::SubMenu,
+Menu::RadioButton {
 	padding-left: 4dp;
 	padding-top: 2dp;
 	padding-bottom: 2dp;
@@ -614,20 +616,33 @@ Menu::SubMenu {
 
 Menu::Item:hover,
 Menu::CheckBox:hover,
-Menu::SubMenu:hover {
+Menu::SubMenu:hover,
+Menu::RadioButton:hover {
 	background-color: var(--primary);
 }
 
 Menu::Item::text,
 Menu::CheckBox::text,
-Menu::SubMenu::text {
+Menu::SubMenu::text,
+Menu::RadioButton::text {
 	padding-right: 8dp;
 	color: var(--menu-font);
 }
 
+Menu::Item::shortcut,
+Menu::CheckBox::shortcut,
+Menu::RadioButton::shortcut {
+	padding-left: 8dp;
+	padding-right: 8dp;
+	color: var(--menu-font);
+}
 
 Menu::Item:disabled > Menu::Item::text,
+Menu::Item:disabled > Menu::Item::shortcut,
 Menu::CheckBox:disabled > Menu::CheckBox::text,
+Menu::CheckBox:disabled > Menu::CheckBox::shortcut,
+Menu::RadioButton:disabled > Menu::RadioButton::text,
+Menu::RadioButton:disabled > Menu::RadioButton::shortcut,
 Menu::SubMenu:disabled > Menu::SubMenu::text {
 	color: var(--menu-font-disabled);
 }
@@ -636,11 +651,10 @@ Menu::SubMenu::arrow {
 	margin-right: 1dp;
 }
 
-Menu:hover,
-PopUpMenu:hover,
-Menu::Item:hover,
-Menu::CheckBox:hover,
-Menu::SubMenu:hover,
+Menu::Item:hover > Menu::Item::text,
+Menu::CheckBox:hover > Menu::Item::text,
+Menu::RadioButton:hover > Menu::Item::text,
+Menu::SubMenu:hover > Menu::Item::text,
 ListBox::item:hover,
 Tab:selected,
 Tab:hover,
@@ -664,7 +678,8 @@ Menu::SubMenu::Arrow {
 
 Menu::Item::icon,
 Menu::SubMenu::icon,
-Menu::CheckBox::icon {
+Menu::CheckBox::icon,
+Menu::RadioButton::icon {
 	margin-right: 4dp;
 }
 
@@ -683,6 +698,23 @@ Menu::CheckBox::icon:selected {
 	background-image: rectangle(solid, var(--primary));
 	background-size: 70% 70%;
 	background-position: center;
+}
+
+Menu::RadioButton::icon {
+	max-width: 12dp;
+	max-height: 12dp;
+	border-width: 1dp;
+	border-color: var(--button-border);
+	border-radius: 100%;
+	background-image: none;
+	background-color: var(--menu-back);
+}
+
+Menu::RadioButton::icon:selected {
+	border-color: var(--primary);
+	background-image: circle(solid, var(--primary));
+	background-size: 8dp 8dp;
+	background-position: 6dp 6dp;
 }
 
 ListBox > ScrollBar,

@@ -44,6 +44,7 @@ class EE_API UIMenuBar : public UIWidget {
 	Uint32 mMenuHeight;
 	UIPopUpMenu* mCurrentMenu;
 	MenuBarList mButtons;
+	UIPopUpMenu* mWaitingUp;
 
 	void refreshButtons();
 
