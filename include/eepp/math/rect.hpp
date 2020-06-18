@@ -68,7 +68,19 @@ template <typename T> class tRECT {
 	void scale( Vector2<T> scale, const Vector2<T>& center );
 
 	void scale( Vector2<T> scale );
+
+	tRECT<Float> asFloat() const;
+
+	tRECT<int> asInt() const;
 };
+
+template <typename T> tRECT<Float> tRECT<T>::asFloat() const {
+	return tRECT<Float>( Left, Top, Right, Bottom );
+}
+
+template <typename T> tRECT<int> tRECT<T>::asInt() const {
+	return tRECT<int>( Left, Top, Right, Bottom );
+}
 
 template <typename T> bool operator==( const tRECT<T>& R1, const tRECT<T>& R2 ) {
 	return ( R1.Left == R2.Left ) && ( R1.Right == R2.Right ) && ( R1.Top == R2.Top ) &&

@@ -63,6 +63,7 @@
 ../../include/eepp/graphics/globalbatchrenderer.hpp
 ../../include/eepp/graphics/globaltextureatlas.hpp
 ../../include/eepp/graphics.hpp
+../../include/eepp/graphics/glyphdrawable.hpp
 ../../include/eepp/graphics/image.hpp
 ../../include/eepp/graphics/ninepatch.hpp
 ../../include/eepp/graphics/ninepatchmanager.hpp
@@ -507,6 +508,7 @@
 ../../src/eepp/graphics/framebuffermanager.hpp
 ../../src/eepp/graphics/globalbatchrenderer.cpp
 ../../src/eepp/graphics/globaltextureatlas.cpp
+../../src/eepp/graphics/glyphdrawable.cpp
 ../../src/eepp/graphics/image.cpp
 ../../src/eepp/graphics/ninepatch.cpp
 ../../src/eepp/graphics/ninepatchmanager.cpp

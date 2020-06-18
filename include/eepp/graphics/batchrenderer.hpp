@@ -118,6 +118,9 @@ class EE_API BatchRenderer {
 	void quadsSetTexCoord( const Float& tl_u, const Float& tl_v, const Float& br_u,
 						   const Float& br_v );
 
+	/** Set the texture sector to be rendered */
+	void quadsSetTexCoord( const Rectf& region );
+
 	/** Set the texture sector to be rendered but freely seted */
 	void quadsSetTexCoordFree( const Float& x0, const Float& y0, const Float& x1, const Float& y1,
 							   const Float& x2, const Float& y2, const Float& x3, const Float& y3 );

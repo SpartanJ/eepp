@@ -75,7 +75,7 @@ class EE_API TexturePacker {
 		 const Float& pixelDensity = 1,
 		 const bool& forcePowOfTwo = true, const bool& scalableSVG = false,
 		 const Uint32& pixelBorder = 2,
-		 const Texture::TextureFilter& textureFilter = Texture::TextureFilter::Linear,
+		 const Texture::Filter& textureFilter = Texture::Filter::Linear,
 		 const bool& allowChilds = false, const bool& allowFlipping = false );
 
 	/** Creates a new texture packer ( you will need to call SetOptions before adding any texture or
@@ -106,7 +106,7 @@ class EE_API TexturePacker {
 				   const Float& pixelDensity = 1,
 				   const bool& forcePowOfTwo = true, const bool& scalableSVG = false,
 				   const Uint32& pixelBorder = 2,
-				   const Texture::TextureFilter& textureFilter = Texture::TextureFilter::Linear,
+				   const Texture::Filter& textureFilter = Texture::Filter::Linear,
 				   const bool& allowChilds = false, const bool& allowFlipping = false );
 
 	~TexturePacker();
@@ -172,7 +172,7 @@ class EE_API TexturePacker {
 					 const Float& pixelDensity = 1,
 					 const bool& forcePowOfTwo = true, const bool& scalableSVG = false,
 					 const Uint32& pixelBorder = 2,
-					 const Texture::TextureFilter& textureFilter = Texture::TextureFilter::Linear,
+					 const Texture::Filter& textureFilter = Texture::Filter::Linear,
 					 const bool& allowChilds = false, const bool& allowFlipping = false );
 
 	/** @return The texture atlas to generate width. */
@@ -207,7 +207,7 @@ class EE_API TexturePacker {
 	bool mForcePowOfTwo;
 	Int32 mPixelBorder;
 	Uint32 mPixelDensity; /* The multiplier value * 100 ( example: PD = 2, here is 200 ) */
-	Texture::TextureFilter mTextureFilter;
+	Texture::Filter mTextureFilter;
 	bool mKeepExtensions;
 	bool mScalableSVG;
 	Image::SaveType mFormat;

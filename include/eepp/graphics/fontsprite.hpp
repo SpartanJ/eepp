@@ -3,6 +3,7 @@
 
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/font.hpp>
+#include <eepp/graphics/glyphdrawable.hpp>
 #include <eepp/graphics/texture.hpp>
 
 namespace EE { namespace System {
@@ -15,9 +16,9 @@ namespace EE { namespace Graphics {
 /** @brief Implementation of XNA Font Sprites */
 class EE_API FontSprite : public Font {
   public:
-	static FontSprite* New( const std::string FontName );
+	static FontSprite* New( const std::string fontName );
 
-	static FontSprite* New( const std::string FontName, const std::string& filename );
+	static FontSprite* New( const std::string fontName, const std::string& filename );
 
 	~FontSprite();
 
@@ -37,6 +38,9 @@ class EE_API FontSprite : public Font {
 
 	const Glyph& getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
 						   Float outlineThickness = 0 ) const;
+
+	GlyphDrawable* getGlyphDrawable( Uint32 codePoint, unsigned int characterSize, bool bold,
+									 Float outlineThickness = 0 ) const;
 
 	Float getKerning( Uint32 first, Uint32 second, unsigned int characterSize ) const;
 
@@ -58,10 +62,15 @@ class EE_API FontSprite : public Font {
 	FontSprite( const std::string FontName );
 
 	typedef std::map<Uint64, Glyph> GlyphTable; ///< Table mapping a codepoint to its glyph
+	typedef std::map<Uint64, GlyphDrawable*> GlyphDrawableTable;
 
 	struct Page {
+		~Page();
+
 		GlyphTable glyphs; ///< Table mapping code points to their corresponding glyph
-		Texture* texture;  ///< Texture containing the pixels of the glyphs
+		GlyphDrawableTable
+			drawables;	  ///> Table mapping code points to their corresponding glyph drawables.
+		Texture* texture; ///< Texture containing the pixels of the glyphs
 	};
 
 	void cleanup();

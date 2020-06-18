@@ -332,9 +332,9 @@ void TextureAtlasEditor::onTextureFilterChange( const Event* ) {
 		 !mTextureAtlasLoader->isLoaded() )
 		return;
 
-	Texture::TextureFilter textureFilter = mTextureFilterList->getText() == "Nearest"
-											   ? Texture::TextureFilter::Nearest
-											   : Texture::TextureFilter::Linear;
+	Texture::Filter textureFilter = mTextureFilterList->getText() == "Nearest"
+											   ? Texture::Filter::Nearest
+											   : Texture::Filter::Linear;
 
 	mTextureAtlasLoader->setTextureFilter( textureFilter );
 }

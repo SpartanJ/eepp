@@ -37,8 +37,9 @@ Texture::Texture() :
 	mImgWidth( 0 ),
 	mImgHeight( 0 ),
 	mFlags( 0 ),
-	mClampMode( ClampToEdge ),
-	mFilter( Linear ) {
+	mClampMode( ClampMode::ClampToEdge ),
+	mFilter( Filter::Linear ),
+	mCoordinateType( CoordinateType::Normalized ) {
 	if ( NULL == sBR ) {
 		sBR = GlobalBatchRenderer::instance();
 	}
@@ -116,7 +117,7 @@ void Texture::create( const Uint32& texture, const unsigned int& width, const un
 	mImgHeight = imgheight;
 	mSize = MemSize;
 	mClampMode = ClampMode;
-	mFilter = Linear;
+	mFilter = Filter::Linear;
 
 	if ( UseMipmap )
 		mFlags |= TEX_FLAG_MIPMAP;
@@ -127,6 +128,14 @@ void Texture::create( const Uint32& texture, const unsigned int& width, const un
 	setPixels( data );
 
 	onResourceChange();
+}
+
+const Texture::CoordinateType& Texture::getCoordinateType() const {
+	return mCoordinateType;
+}
+
+void Texture::setCoordinateType( const CoordinateType& coordinateType ) {
+	mCoordinateType = coordinateType;
 }
 
 Uint8* Texture::iLock( const bool& ForceRGBA, const bool& KeepFormat ) {
@@ -233,7 +242,8 @@ bool Texture::unlock( const bool& KeepData, const bool& Modified ) {
 			ScopedTexture saver( mTexture );
 
 			Uint32 flags = ( mFlags & TEX_FLAG_MIPMAP ) ? SOIL_FLAG_MIPMAPS : 0;
-			flags = ( mClampMode == ClampRepeat ) ? ( flags | SOIL_FLAG_TEXTURE_REPEATS ) : flags;
+			flags = ( mClampMode == ClampMode::ClampRepeat ) ? ( flags | SOIL_FLAG_TEXTURE_REPEATS )
+															 : flags;
 
 			NTexId = SOIL_create_OGL_texture( reinterpret_cast<Uint8*>( &mPixels[0] ), &width,
 											  &height, mChannels, mTexture, flags );
@@ -285,6 +295,10 @@ void Texture::bind( CoordinateType coordinateType, const Uint32& textureUnit ) {
 	TextureFactory::instance()->bind( this, coordinateType, textureUnit );
 }
 
+void Texture::bind( const Uint32& textureUnit ) {
+	TextureFactory::instance()->bind( this, mCoordinateType, textureUnit );
+}
+
 bool Texture::saveToFile( const std::string& filepath, const SaveType& Format ) {
 	bool Res = false;
 
@@ -299,13 +313,13 @@ bool Texture::saveToFile( const std::string& filepath, const SaveType& Format ) 
 	return Res;
 }
 
-void Texture::setFilter( const TextureFilter& filter ) {
+void Texture::setFilter( const Filter& filter ) {
 	if ( mFilter != filter ) {
 		iTextureFilter( filter );
 	}
 }
 
-void Texture::iTextureFilter( const TextureFilter& filter ) {
+void Texture::iTextureFilter( const Filter& filter ) {
 	if ( mTexture ) {
 		mFilter = filter;
 
@@ -318,21 +332,21 @@ void Texture::iTextureFilter( const TextureFilter& filter ) {
 		ScopedTexture saver( mTexture );
 
 		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
-						 ( mFilter == Linear ) ? GL_LINEAR : GL_NEAREST );
+						 ( mFilter == Filter::Linear ) ? GL_LINEAR : GL_NEAREST );
 
 		if ( mFlags & TEX_FLAG_MIPMAP )
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-							 ( mFilter == Linear ) ? GL_LINEAR_MIPMAP_LINEAR : GL_NEAREST );
+							 ( mFilter == Filter::Linear ) ? GL_LINEAR_MIPMAP_LINEAR : GL_NEAREST );
 		else
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-							 ( mFilter == Linear ) ? GL_LINEAR : GL_NEAREST );
+							 ( mFilter == Filter::Linear ) ? GL_LINEAR : GL_NEAREST );
 
 		if ( threaded )
 			Engine::instance()->getCurrentWindow()->unsetGLContextThread();
 	}
 }
 
-const Texture::TextureFilter& Texture::getFilter() const {
+const Texture::Filter& Texture::getFilter() const {
 	return mFilter;
 }
 
@@ -422,7 +436,7 @@ void Texture::applyClampMode() {
 	if ( mTexture ) {
 		ScopedTexture saver( mTexture );
 
-		if ( mClampMode == ClampRepeat ) {
+		if ( mClampMode == ClampMode::ClampRepeat ) {
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
 		} else {
@@ -456,7 +470,8 @@ void Texture::reload() {
 			ScopedTexture saver( mTexture );
 
 			Uint32 flags = ( mFlags & TEX_FLAG_MIPMAP ) ? SOIL_FLAG_MIPMAPS : 0;
-			flags = ( mClampMode == ClampRepeat ) ? ( flags | SOIL_FLAG_TEXTURE_REPEATS ) : flags;
+			flags = ( mClampMode == ClampMode::ClampRepeat ) ? ( flags | SOIL_FLAG_TEXTURE_REPEATS )
+															 : flags;
 
 			if ( ( mFlags & TEX_FLAG_COMPRESSED ) ) {
 				if ( isGrabed() )
@@ -569,7 +584,8 @@ void Texture::replace( Image* image ) {
 
 	{
 		Uint32 flags = ( mFlags & TEX_FLAG_MIPMAP ) ? SOIL_FLAG_MIPMAPS : 0;
-		flags = ( mClampMode == ClampRepeat ) ? ( flags | SOIL_FLAG_TEXTURE_REPEATS ) : flags;
+		flags = ( mClampMode == ClampMode::ClampRepeat ) ? ( flags | SOIL_FLAG_TEXTURE_REPEATS )
+														 : flags;
 
 		ScopedTexture scopedTexture;
 
@@ -653,7 +669,7 @@ void Texture::drawFast( const Float& x, const Float& y, const Float& Angle, cons
 	sBR->quadsBegin();
 	sBR->quadsSetColor( Color );
 
-	if ( getClampMode() == ClampRepeat ) {
+	if ( getClampMode() == ClampMode::ClampRepeat ) {
 		Float iw = (Float)getImageWidth();
 		Float ih = (Float)getImageHeight();
 		sBR->quadsSetTexCoordFree( 0, 0, 0, height / ih, width / iw, height / ih, width / iw, 0 );
@@ -695,7 +711,7 @@ void Texture::drawEx( Float x, Float y, Float width, Float height, const Float& 
 	sBR->quadsSetColorFree( Color0, Color1, Color2, Color3 );
 
 	if ( Effect <= RENDER_FLIPPED_MIRRORED ) {
-		if ( getClampMode() == ClampRepeat ) {
+		if ( getClampMode() == ClampMode::ClampRepeat ) {
 			if ( Effect == RENDER_NORMAL ) {
 				if ( renderSector ) {
 					sBR->quadsSetTexCoordFree(
@@ -892,7 +908,7 @@ void Texture::drawQuadEx( Quad2f Q, const Vector2f& Offset, const Float& Angle,
 		Q.scale( Scale, QCenter );
 	}
 
-	if ( getClampMode() == ClampRepeat ) {
+	if ( getClampMode() == ClampMode::ClampRepeat ) {
 		sBR->quadsSetTexCoordFree( 0, 0, 0, ( Q.V[0].y - Q.V[0].y ) / h,
 								   ( Q.V[0].x - Q.V[0].x ) / w, ( Q.V[0].y - Q.V[0].y ) / h,
 								   ( Q.V[0].x - Q.V[0].x ) / w, 0 );
@@ -910,7 +926,7 @@ void Texture::drawQuadEx( Quad2f Q, const Vector2f& Offset, const Float& Angle,
 }
 
 Sizef Texture::getSize() {
-	return Sizef( PixelDensity::dpToPx( mImgWidth ), PixelDensity::dpToPx( mImgHeight ) );
+	return Sizef( PixelDensity::pxToDp( mImgWidth ), PixelDensity::pxToDp( mImgHeight ) );
 }
 
 Sizei Texture::getPixelSize() {

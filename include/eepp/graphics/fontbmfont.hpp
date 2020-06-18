@@ -15,9 +15,9 @@ namespace EE { namespace Graphics {
 /** @brief Implementation of AngelCode BMFont fonts. */
 class EE_API FontBMFont : public Font {
   public:
-	static FontBMFont* New( const std::string FontName );
+	static FontBMFont* New( const std::string fontName );
 
-	static FontBMFont* New( const std::string FontName, const std::string& filename );
+	static FontBMFont* New( const std::string fontName, const std::string& filename );
 
 	~FontBMFont();
 
@@ -34,6 +34,9 @@ class EE_API FontBMFont : public Font {
 
 	const Glyph& getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
 						   Float outlineThickness = 0 ) const;
+
+	GlyphDrawable* getGlyphDrawable( Uint32 codePoint, unsigned int characterSize, bool bold,
+									 Float outlineThickness = 0 ) const;
 
 	Float getKerning( Uint32 first, Uint32 second, unsigned int characterSize ) const;
 
@@ -55,10 +58,15 @@ class EE_API FontBMFont : public Font {
 	FontBMFont( const std::string FontName );
 
 	typedef std::map<Uint64, Glyph> GlyphTable; ///< Table mapping a codepoint to its glyph
+	typedef std::map<Uint64, GlyphDrawable*> GlyphDrawableTable;
 
 	struct Page {
+		~Page();
+
 		GlyphTable glyphs; ///< Table mapping code points to their corresponding glyph
-		Texture* texture;  ///< Texture containing the pixels of the glyphs
+		GlyphDrawableTable
+			drawables;	  ///> Table mapping code points to their corresponding glyph drawables.
+		Texture* texture; ///< Texture containing the pixels of the glyphs
 	};
 
 	void cleanup();

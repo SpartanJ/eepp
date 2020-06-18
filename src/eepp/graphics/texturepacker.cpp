@@ -16,7 +16,7 @@ TexturePacker* TexturePacker::New() {
 TexturePacker* TexturePacker::New( const Uint32& maxWidth, const Uint32& maxHeight,
 								   const Float& pixelDensity, const bool& forcePowOfTwo,
 								   const bool& scalableSVG, const Uint32& pixelBorder,
-								   const Texture::TextureFilter& textureFilter,
+								   const Texture::Filter& textureFilter,
 								   const bool& allowChilds, const bool& allowFlipping ) {
 	return eeNew( TexturePacker, ( maxWidth, maxHeight, pixelDensity, forcePowOfTwo, scalableSVG,
 								   pixelBorder, textureFilter, allowChilds, allowFlipping ) );
@@ -25,7 +25,7 @@ TexturePacker* TexturePacker::New( const Uint32& maxWidth, const Uint32& maxHeig
 TexturePacker::TexturePacker( const Uint32& maxWidth, const Uint32& maxHeight,
 							  const Float& pixelDensity, const bool& forcePowOfTwo,
 							  const bool& scalableSVG, const Uint32& pixelBorder,
-							  const Texture::TextureFilter& textureFilter, const bool& allowChilds,
+							  const Texture::Filter& textureFilter, const bool& allowChilds,
 							  const bool& allowFlipping ) :
 	mTotalArea( 0 ),
 	mFreeList( NULL ),
@@ -66,7 +66,7 @@ TexturePacker::TexturePacker() :
 	mForcePowOfTwo( true ),
 	mPixelBorder( 0 ),
 	mPixelDensity( 1 ),
-	mTextureFilter( Texture::TextureFilter::Linear ),
+	mTextureFilter( Texture::Filter::Linear ),
 	mKeepExtensions( false ),
 	mScalableSVG( false ),
 	mFormat( Image::SaveType::SAVE_TYPE_PNG ) {}
@@ -136,7 +136,7 @@ Uint32 TexturePacker::getAtlasNumChannels() {
 void TexturePacker::setOptions( const Uint32& maxWidth, const Uint32& maxHeight,
 								const Float& pixelDensity, const bool& forcePowOfTwo,
 								const bool& scalableSVG, const Uint32& pixelBorder,
-								const Texture::TextureFilter& textureFilter,
+								const Texture::Filter& textureFilter,
 								const bool& allowChilds, const bool& allowFlipping ) {
 	if ( !mTextures.size() ) { // only can change the dimensions before adding any texture
 		mMaxSize.x = maxWidth;
@@ -689,7 +689,7 @@ void TexturePacker::saveTextureRegions() {
 	TexGrHdr.Height = mHeight;
 	TexGrHdr.PixelBorder = mPixelBorder;
 	TexGrHdr.Flags = 0;
-	TexGrHdr.TextureFilter = mTextureFilter;
+	TexGrHdr.TextureFilter = (Uint32)mTextureFilter;
 
 	int reservedSize = eeARRAY_SIZE( TexGrHdr.Reserved );
 	memset( TexGrHdr.Reserved, 0, reservedSize );

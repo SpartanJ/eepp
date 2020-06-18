@@ -163,9 +163,9 @@ void TextureAtlasNew::textureAtlasSave( const Event* Event ) {
 		bool Res1 = String::fromString<Int32>( w, mComboWidth->getText() );
 		bool Res2 = String::fromString<Int32>( h, mComboHeight->getText() );
 		b = static_cast<Int32>( mPixelSpace->getValue() );
-		Texture::TextureFilter textureFilter = mTextureFilter->getText() == "Nearest"
-												   ? Texture::TextureFilter::Nearest
-												   : Texture::TextureFilter::Linear;
+		Texture::Filter textureFilter = mTextureFilter->getText() == "Nearest"
+												   ? Texture::Filter::Nearest
+												   : Texture::Filter::Linear;
 
 		if ( Res1 && Res2 ) {
 			TexturePacker* texturePacker = TexturePacker::New(

@@ -250,6 +250,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 			  {{"//.-\n"}, "comment"},
 			  {{"/%*", "%*/"}, "comment"},
 			  {{"#", "[^\\]\n"}, "keyword2"},
+			  {{"R\"[%a-\"]+%(", "%)[%a-\"]+%\""}, "string"},
 			  {{"\"", "\"", "\\"}, "string"},
 			  {{"'", "'", "\\"}, "string"},
 			  {{"-?0x%x+"}, "number"},
@@ -424,7 +425,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 		   {"NULL", "literal"},		   {"parent", "literal"},
 		   {"self", "literal"},		   {"echo", "function"}},
 		  "//",
-		  {"^#!.*[ /]php"}} );
+		  {"^#!.*[ /]php", "^<%?php"}} );
 
 	// Add SQL
 	std::vector<std::string> keywords = {

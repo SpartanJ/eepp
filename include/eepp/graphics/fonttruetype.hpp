@@ -33,6 +33,9 @@ class EE_API FontTrueType : public Font {
 	const Glyph& getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
 						   Float outlineThickness = 0 ) const;
 
+	GlyphDrawable* getGlyphDrawable( Uint32 codePoint, unsigned int characterSize, bool bold,
+									 Float outlineThickness = 0 ) const;
+
 	Float getKerning( Uint32 first, Uint32 second, unsigned int characterSize ) const;
 
 	Float getLineSpacing( unsigned int characterSize ) const;
@@ -62,15 +65,18 @@ class EE_API FontTrueType : public Font {
 	};
 
 	typedef std::map<Uint64, Glyph> GlyphTable; ///< Table mapping a codepoint to its glyph
+	typedef std::map<Uint64, GlyphDrawable*> GlyphDrawableTable;
 
 	struct Page {
 		Page();
 
 		~Page();
 
-		GlyphTable glyphs;	   ///< Table mapping code points to their corresponding glyph
-		Texture* texture;	   ///< Texture containing the pixels of the glyphs
-		unsigned int nextRow;  ///< Y position of the next new row in the texture
+		GlyphTable glyphs; ///< Table mapping code points to their corresponding glyph
+		GlyphDrawableTable
+			drawables;		  ///> Table mapping code points to their corresponding glyph drawables.
+		Texture* texture;	  ///< Texture containing the pixels of the glyphs
+		unsigned int nextRow; ///< Y position of the next new row in the texture
 		std::vector<Row> rows; ///< List containing the position of all the existing rows
 	};
 
@@ -88,8 +94,8 @@ class EE_API FontTrueType : public Font {
 
 	void* mLibrary; ///< Pointer to the internal library interface (it is typeless to avoid exposing
 					///< implementation details)
-	void* mFace;	///< Pointer to the internal font face (it is typeless to avoid exposing
-					///< implementation details)
+	void* mFace; ///< Pointer to the internal font face (it is typeless to avoid exposing
+				 ///< implementation details)
 	void* mStreamRec; ///< Pointer to the stream rec instance (it is typeless to avoid exposing
 					  ///< implementation details)
 	void* mStroker;	  ///< Pointer to the stroker (it is typeless to avoid exposing implementation

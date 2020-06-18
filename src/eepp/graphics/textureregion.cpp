@@ -37,7 +37,6 @@ TextureRegion::TextureRegion() :
 	DrawableResource( Drawable::TEXTUREREGION ),
 	mPixels( NULL ),
 	mAlphaMask( NULL ),
-	mTexId( 0 ),
 	mTexture( NULL ),
 	mSrcRect( Rect( 0, 0, 0, 0 ) ),
 	mOriDestSize( 0, 0 ),
@@ -49,7 +48,6 @@ TextureRegion::TextureRegion( const Uint32& TexId, const std::string& name ) :
 	DrawableResource( Drawable::TEXTUREREGION, name ),
 	mPixels( NULL ),
 	mAlphaMask( NULL ),
-	mTexId( TexId ),
 	mTexture( TextureFactory::instance()->getTexture( TexId ) ),
 	mSrcRect( Rect( 0, 0, NULL != mTexture ? mTexture->getImageWidth() : 0,
 					NULL != mTexture ? mTexture->getImageHeight() : 0 ) ),
@@ -63,7 +61,6 @@ TextureRegion::TextureRegion( const Uint32& TexId, const Rect& SrcRect, const st
 	DrawableResource( Drawable::TEXTUREREGION, name ),
 	mPixels( NULL ),
 	mAlphaMask( NULL ),
-	mTexId( TexId ),
 	mTexture( TextureFactory::instance()->getTexture( TexId ) ),
 	mSrcRect( SrcRect ),
 	mOriDestSize( PixelDensity::dpToPx( Sizef( ( Float )( mSrcRect.Right - mSrcRect.Left ),
@@ -77,7 +74,6 @@ TextureRegion::TextureRegion( const Uint32& TexId, const Rect& SrcRect, const Si
 	DrawableResource( Drawable::TEXTUREREGION, name ),
 	mPixels( NULL ),
 	mAlphaMask( NULL ),
-	mTexId( TexId ),
 	mTexture( TextureFactory::instance()->getTexture( TexId ) ),
 	mSrcRect( SrcRect ),
 	mOriDestSize( DestSize ),
@@ -90,7 +86,6 @@ TextureRegion::TextureRegion( const Uint32& TexId, const Rect& SrcRect, const Si
 	DrawableResource( Drawable::TEXTUREREGION, name ),
 	mPixels( NULL ),
 	mAlphaMask( NULL ),
-	mTexId( TexId ),
 	mTexture( TextureFactory::instance()->getTexture( TexId ) ),
 	mSrcRect( SrcRect ),
 	mOriDestSize( DestSize ),
@@ -102,13 +97,12 @@ TextureRegion::~TextureRegion() {
 	clearCache();
 }
 
-const Uint32& TextureRegion::getTextureId() {
-	return mTexId;
+void TextureRegion::setTextureId( const Uint32& TexId ) {
+	mTexture = TextureFactory::instance()->getTexture( TexId );
 }
 
-void TextureRegion::setTextureId( const Uint32& TexId ) {
-	mTexId = TexId;
-	mTexture = TextureFactory::instance()->getTexture( TexId );
+void TextureRegion::setTexture( Texture* texture ) {
+	mTexture = texture;
 }
 
 const Rect& TextureRegion::getSrcRect() const {

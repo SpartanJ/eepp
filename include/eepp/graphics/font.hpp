@@ -2,7 +2,9 @@
 #define EE_GRAPHICSCFONT_H
 
 #include <eepp/graphics/base.hpp>
+#include <eepp/graphics/glyphdrawable.hpp>
 #include <eepp/graphics/texturefactory.hpp>
+#include <eepp/graphics/textureregion.hpp>
 
 namespace EE { namespace Graphics {
 
@@ -71,6 +73,11 @@ class EE_API Font {
 
 	virtual const Glyph& getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
 								   Float outlineThickness = 0 ) const = 0;
+
+	/** @return The glyph drawable that represents the glyph in a texture. The glyph drawable
+	 * allocation is managed by the font. */
+	virtual GlyphDrawable* getGlyphDrawable( Uint32 codePoint, unsigned int characterSize,
+											 bool bold, Float outlineThickness = 0 ) const = 0;
 
 	virtual Float getKerning( Uint32 first, Uint32 second, unsigned int characterSize ) const = 0;
 

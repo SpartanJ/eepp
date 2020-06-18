@@ -65,13 +65,13 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		{'b', "pixels-border"}, 2, args::Options::Single );
 	args::Flag update( parser, "update", "Update texture atlas if output file already exists.",
 					   {'u', "update"}, args::Options::Single );
-	std::unordered_map<std::string, Texture::TextureFilter> textureFilterMap{
-		{"linear", Texture::TextureFilter::Linear}, {"nearest", Texture::TextureFilter::Nearest}};
-	args::MapFlag<std::string, Texture::TextureFilter> textureFilter(
+	std::unordered_map<std::string, Texture::Filter> textureFilterMap{
+		{"linear", Texture::Filter::Linear}, {"nearest", Texture::Filter::Nearest}};
+	args::MapFlag<std::string, Texture::Filter> textureFilter(
 		parser, "texture-filter",
 		"Texture filter to use with the texture atlas. Available filters: \"linear\" or "
 		"\"nearest\".",
-		{"texture-filter"}, textureFilterMap, Texture::TextureFilter::Linear,
+		{"texture-filter"}, textureFilterMap, Texture::Filter::Linear,
 		args::Options::Single );
 
 	try {

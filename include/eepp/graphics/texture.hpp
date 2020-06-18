@@ -13,15 +13,15 @@ namespace EE { namespace Graphics {
 class EE_API Texture : public DrawableResource, public Image, private NonCopyable {
   public:
 	/** @enum TextureFilter Defines the texture filter used. */
-	enum TextureFilter {
+	enum class Filter : Uint32 {
 		Linear, //!< Linear filtering (Smoothed Zoom)
 		Nearest //!< No filtering (Pixeled Zoom)
 	};
 
 	/** @enum ClampMode Set the clamp mode of the texture. */
-	enum ClampMode { ClampToEdge, ClampRepeat };
+	enum class ClampMode : Uint32 { ClampToEdge, ClampRepeat };
 
-	enum CoordinateType {
+	enum class CoordinateType : Uint32 {
 		Normalized, ///< Texture coordinates in range [0 .. 1]
 		Pixels		///< Texture coordinates in range [0 .. size]
 	};
@@ -84,10 +84,10 @@ class EE_API Texture : public DrawableResource, public Image, private NonCopyabl
 	const Uint8* getPixelsPtr();
 
 	/** Set the Texture Filter Mode */
-	void setFilter( const TextureFilter& filter );
+	void setFilter( const Filter& filter );
 
 	/** @return The texture filter used by the texture */
-	const TextureFilter& getFilter() const;
+	const Filter& getFilter() const;
 
 	/** Save the Texture to a new File */
 	bool saveToFile( const std::string& filepath, const Image::SaveType& Format );
@@ -299,10 +299,21 @@ class EE_API Texture : public DrawableResource, public Image, private NonCopyabl
 	 * @param coordinateType Type of texture coordinates to use
 	 * @param textureUnit The Texture unit that want to be used to bind ( usually 0 )
 	 */
-	void bind( CoordinateType coordinateType = Texture::CoordinateType::Normalized,
-			   const Uint32& textureUnit = 0 );
+	void bind( CoordinateType coordinateType, const Uint32& textureUnit = 0 );
+
+	/** Bind the texture. Activate the texture for rendering.
+	 * @param textureUnit The Texture unit that want to be used to bind ( usually 0 )
+	 */
+	void bind( const Uint32& textureUnit = 0 );
 
 	virtual ~Texture();
+
+	/** return The reference coordinate type. */
+	const CoordinateType& getCoordinateType() const;
+
+	/** Sets the default coordinate type. This value is not forced when binded, but used as a
+	reference for binding in the case of textures with a reference coordinate type. */
+	void setCoordinateType( const CoordinateType& coordinateType );
 
   protected:
 	enum TEXTURE_FLAGS {
@@ -341,7 +352,8 @@ class EE_API Texture : public DrawableResource, public Image, private NonCopyabl
 	Uint32 mFlags;
 
 	ClampMode mClampMode;
-	TextureFilter mFilter;
+	Filter mFilter;
+	CoordinateType mCoordinateType;
 
 	int mInternalFormat;
 
@@ -349,7 +361,7 @@ class EE_API Texture : public DrawableResource, public Image, private NonCopyabl
 
 	Uint8* iLock( const bool& ForceRGBA, const bool& KeepFormat );
 
-	void iTextureFilter( const TextureFilter& filter );
+	void iTextureFilter( const Filter& filter );
 };
 
 }} // namespace EE::Graphics

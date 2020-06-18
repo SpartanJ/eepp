@@ -475,14 +475,18 @@ void BatchRenderer::quadsSetColorFree( const Color& Color0, const Color& Color1,
 void BatchRenderer::quadsSetTexCoord( const Float& tl_u, const Float& tl_v, const Float& br_u,
 									  const Float& br_v ) {
 	mTexCoord[0].x = tl_u;
-	mTexCoord[1].x = tl_u;
 	mTexCoord[0].y = tl_v;
+	mTexCoord[1].x = tl_u;
 	mTexCoord[1].y = br_v;
 
 	mTexCoord[2].x = br_u;
-	mTexCoord[3].x = br_u;
 	mTexCoord[2].y = br_v;
+	mTexCoord[3].x = br_u;
 	mTexCoord[3].y = tl_v;
+}
+
+void BatchRenderer::quadsSetTexCoord( const Rectf& region ) {
+	quadsSetTexCoord( region.Left, region.Top, region.Right, region.Bottom );
 }
 
 void BatchRenderer::quadsSetTexCoordFree( const Float& x0, const Float& y0, const Float& x1,
@@ -546,7 +550,8 @@ void BatchRenderer::batchPointList( const std::vector<VertexData>& points,
 
 	addVertexs( points.size() );
 
-	memcpy( (void*)&mVertex[curNumVertex], (void*)&points[0], sizeof( VertexData ) * points.size() );
+	memcpy( (void*)&mVertex[curNumVertex], (void*)&points[0],
+			sizeof( VertexData ) * points.size() );
 }
 
 void BatchRenderer::linesBegin() {

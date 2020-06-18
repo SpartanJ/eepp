@@ -159,7 +159,7 @@ class EE_API TextureAtlasLoader {
 
 	sTextureAtlasHdr getTextureAtlasHeader();
 
-	void setTextureFilter( const Texture::TextureFilter& textureFilter );
+	void setTextureFilter( const Texture::Filter& textureFilter );
 
   protected:
 	ResourceLoader mRL;

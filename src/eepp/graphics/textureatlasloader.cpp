@@ -111,7 +111,7 @@ sTextureAtlasHdr TextureAtlasLoader::getTextureAtlasHeader() {
 	return mTexGrHdr;
 }
 
-void TextureAtlasLoader::setTextureFilter( const Texture::TextureFilter& textureFilter ) {
+void TextureAtlasLoader::setTextureFilter( const Texture::Filter& textureFilter ) {
 	mTexGrHdr.TextureFilter = (char)textureFilter;
 
 	size_t count = getTextureAtlas()->getTexturesCount() == 0;
@@ -294,7 +294,7 @@ void TextureAtlasLoader::createTextureRegions() {
 
 	if ( NULL != mTextureAtlas && mTexturesLoaded.size() ) {
 		for ( size_t i = 0; i < mTexturesLoaded.size(); i++ )
-			mTexturesLoaded[i]->setFilter( (Texture::TextureFilter)mTexGrHdr.TextureFilter );
+			mTexturesLoaded[i]->setFilter( (Texture::Filter)mTexGrHdr.TextureFilter );
 
 		mTextureAtlas->setTextures( mTexturesLoaded );
 	}
@@ -482,7 +482,7 @@ bool TextureAtlasLoader::updateTextureAtlas( std::string TextureAtlasPath, std::
 				maxImageSize.getHeight() == 0 ? mTexGrHdr.Height : maxImageSize.getHeight(),
 				pixelDensity, 0 != ( mTexGrHdr.Flags & HDR_TEXTURE_ATLAS_POW_OF_TWO ),
 				0 != ( mTexGrHdr.Flags & HDR_TEXTURE_ATLAS_SCALABLE_SVG ), mTexGrHdr.PixelBorder,
-				(Texture::TextureFilter)mTexGrHdr.TextureFilter,
+				(Texture::Filter)mTexGrHdr.TextureFilter,
 				mTexGrHdr.Flags & HDR_TEXTURE_ATLAS_ALLOW_FLIPPING );
 
 			tp.addTexturesPath( ImagesPath );

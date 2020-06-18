@@ -552,8 +552,10 @@ void Text::draw( const Float& X, const Float& Y, const Vector2f& Scale, const Fl
 			return;
 
 		GlobalBatchRenderer::instance()->draw();
-		TextureFactory::instance()->bind( mFont->getTexture( mRealFontSize ),
-										  Texture::CoordinateType::Pixels );
+		Texture* texture = mFont->getTexture( mRealFontSize );
+		if ( !texture )
+			return;
+		texture->bind();
 		BlendMode::setMode( Effect );
 
 		if ( mStyle & Shadow ) {

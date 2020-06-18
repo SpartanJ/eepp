@@ -62,11 +62,11 @@ class EE_API TextureRegion : public DrawableResource {
 
 	virtual ~TextureRegion();
 
-	/** @return The Texture Id that holds the TextureRegion. */
-	const Uint32& getTextureId();
-
 	/** Set the Texture Id that holds the TextureRegion. */
 	void setTextureId( const Uint32& TexId );
+
+	/** Set the Texture that holds the TextureRegion. */
+	void setTexture( Texture* texture );
 
 	/** @return The Texture sector that represents the TextureRegion */
 	const Rect& getSrcRect() const;
@@ -192,7 +192,6 @@ class EE_API TextureRegion : public DrawableResource {
   protected:
 	Uint8* mPixels;
 	Uint8* mAlphaMask;
-	Uint32 mTexId;
 	Graphics::Texture* mTexture;
 	Rect mSrcRect;
 	Sizef mOriDestSize;

@@ -19,6 +19,7 @@
 #include <eepp/graphics/framebuffermanager.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/globaltextureatlas.hpp>
+#include <eepp/graphics/glyphdrawable.hpp>
 #include <eepp/graphics/image.hpp>
 #include <eepp/graphics/ninepatch.hpp>
 #include <eepp/graphics/ninepatchmanager.hpp>

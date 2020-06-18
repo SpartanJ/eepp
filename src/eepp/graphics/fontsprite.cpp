@@ -9,12 +9,12 @@
 
 namespace EE { namespace Graphics {
 
-FontSprite* FontSprite::New( const std::string FontName ) {
-	return eeNew( FontSprite, ( FontName ) );
+FontSprite* FontSprite::New( const std::string fontName ) {
+	return eeNew( FontSprite, ( fontName ) );
 }
 
-FontSprite* FontSprite::New( const std::string FontName, const std::string& filename ) {
-	FontSprite* fontSprite = New( FontName );
+FontSprite* FontSprite::New( const std::string fontName, const std::string& filename ) {
+	FontSprite* fontSprite = New( fontName );
 	fontSprite->loadFromFile( filename );
 	return fontSprite;
 }
@@ -141,12 +141,12 @@ bool FontSprite::loadFromStream( IOStream& stream, Color key, Uint32 firstChar, 
 
 	Uint32 texId = TextureFactory::instance()->loadFromPixels( img.getPixelsPtr(), img.getWidth(),
 															   img.getHeight(), img.getChannels() );
-
-	mPages[mFontSize].texture = TextureFactory::instance()->getTexture( texId );
-
-	if ( NULL != mPages[mFontSize].texture )
-		mPages[mFontSize].texture->setFilter( Texture::TextureFilter::Nearest );
-
+	Texture* texture = TextureFactory::instance()->getTexture( texId );
+	mPages[mFontSize].texture = texture;
+	if ( NULL != texture ) {
+		texture->setFilter( Texture::Filter::Nearest );
+		texture->setCoordinateType( Texture::CoordinateType::Pixels );
+	}
 	sendEvent( Event::Load );
 
 	return true;
@@ -174,6 +174,23 @@ const Glyph& FontSprite::getGlyph( Uint32 codePoint, unsigned int characterSize,
 	} else {
 		glyphs[characterSize] = loadGlyph( codePoint, characterSize );
 		return glyphs[characterSize];
+	}
+}
+
+GlyphDrawable* FontSprite::getGlyphDrawable( Uint32 codePoint, unsigned int characterSize,
+											 bool bold, Float outlineThickness ) const {
+	GlyphDrawableTable& drawables = mPages[characterSize].drawables;
+	auto it = drawables.find( codePoint );
+	if ( it != drawables.end() ) {
+		return it->second;
+	} else {
+		const Glyph& glyph = getGlyph( codePoint, characterSize, bold, outlineThickness );
+		auto& page = mPages[characterSize];
+		GlyphDrawable* region = GlyphDrawable::New(
+			page.texture, glyph.textureRect,
+			String::format( "%s_%d_%u", mFontName.c_str(), characterSize, codePoint ) );
+		drawables[codePoint] = region;
+		return region;
 	}
 }
 
@@ -231,6 +248,14 @@ FontSprite& FontSprite::operator=( const FontSprite& right ) {
 	std::swap( mFilePath, temp.mFilePath );
 	std::swap( mFontSize, temp.mFontSize );
 	return *this;
+}
+
+FontSprite::Page::~Page() {
+	for ( auto drawable : drawables )
+		eeDelete( drawable.second );
+
+	if ( NULL != texture && TextureFactory::existsSingleton() )
+		TextureFactory::instance()->remove( texture->getTextureId() );
 }
 
 }} // namespace EE::Graphics

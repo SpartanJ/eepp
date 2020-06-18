@@ -59,7 +59,7 @@ UITheme* UITheme::loadFromTextureAtlas( UITheme* tTheme, Graphics::TextureAtlas*
 
 	/** Themes use nearest filter by default, force the filter to the textures. */
 	for ( Uint32 tC = 0; tC < textureAtlas->getTexturesCount(); tC++ ) {
-		textureAtlas->getTexture( tC )->setFilter( Texture::TextureFilter::Nearest );
+		textureAtlas->getTexture( tC )->setFilter( Texture::Filter::Nearest );
 	}
 
 	Clock TE;

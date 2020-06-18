@@ -9,12 +9,12 @@
 
 namespace EE { namespace Graphics {
 
-FontBMFont* FontBMFont::New( const std::string FontName ) {
-	return eeNew( FontBMFont, ( FontName ) );
+FontBMFont* FontBMFont::New( const std::string fontName ) {
+	return eeNew( FontBMFont, ( fontName ) );
 }
 
-FontBMFont* FontBMFont::New( const std::string FontName, const std::string& filename ) {
-	FontBMFont* fontBMFont = New( FontName );
+FontBMFont* FontBMFont::New( const std::string fontName, const std::string& filename ) {
+	FontBMFont* fontBMFont = New( fontName );
 	fontBMFont->loadFromFile( filename );
 	return fontBMFont;
 }
@@ -127,8 +127,10 @@ bool FontBMFont::loadFromStream( IOStream& stream ) {
 				mPages[mFontSize].texture = TF->getTexture( texId );
 			}
 
-			if ( NULL != mPages[mFontSize].texture )
-				mPages[mFontSize].texture->setFilter( Texture::TextureFilter::Nearest );
+			if ( NULL != mPages[mFontSize].texture ) {
+				mPages[mFontSize].texture->setFilter( Texture::Filter::Nearest );
+				mPages[mFontSize].texture->setCoordinateType( Texture::CoordinateType::Pixels );
+			}
 		}
 
 		GlyphTable& glyphs = mPages[mFontSize].glyphs;
@@ -184,8 +186,24 @@ const Glyph& FontBMFont::getGlyph( Uint32 codePoint, unsigned int characterSize,
 	}
 }
 
-Glyph FontBMFont::loadGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
-							 Float outlineThickness ) const {
+GlyphDrawable* FontBMFont::getGlyphDrawable( Uint32 codePoint, unsigned int characterSize,
+											 bool bold, Float outlineThickness ) const {
+	GlyphDrawableTable& drawables = mPages[characterSize].drawables;
+	auto it = drawables.find( codePoint );
+	if ( it != drawables.end() ) {
+		return it->second;
+	} else {
+		const Glyph& glyph = getGlyph( codePoint, characterSize, bold, outlineThickness );
+		auto& page = mPages[characterSize];
+		GlyphDrawable* region = GlyphDrawable::New(
+			page.texture, glyph.textureRect,
+			String::format( "%s_%d_%u", mFontName.c_str(), characterSize, codePoint ) );
+		drawables[codePoint] = region;
+		return region;
+	}
+}
+
+Glyph FontBMFont::loadGlyph( Uint32 codePoint, unsigned int characterSize, bool, Float ) const {
 	Glyph glyph;
 
 	GlyphTable& glyphs = mPages[mFontSize].glyphs;
@@ -204,7 +222,7 @@ Glyph FontBMFont::loadGlyph( Uint32 codePoint, unsigned int characterSize, bool 
 	return glyph;
 }
 
-Float FontBMFont::getKerning( Uint32 first, Uint32 second, unsigned int characterSize ) const {
+Float FontBMFont::getKerning( Uint32, Uint32, unsigned int ) const {
 	return 0;
 }
 
@@ -216,15 +234,15 @@ Uint32 FontBMFont::getFontHeight( const Uint32& characterSize ) {
 	return ( Uint32 )( (Float)characterSize / mFontSize ) * mFontSize;
 }
 
-Float FontBMFont::getUnderlinePosition( unsigned int characterSize ) const {
+Float FontBMFont::getUnderlinePosition( unsigned int ) const {
 	return 0.f;
 }
 
-Float FontBMFont::getUnderlineThickness( unsigned int characterSize ) const {
+Float FontBMFont::getUnderlineThickness( unsigned int ) const {
 	return 0.f;
 }
 
-Texture* FontBMFont::getTexture( unsigned int characterSize ) const {
+Texture* FontBMFont::getTexture( unsigned int ) const {
 	return mPages[mFontSize].texture;
 }
 
@@ -239,6 +257,14 @@ FontBMFont& FontBMFont::operator=( const FontBMFont& right ) {
 	std::swap( mFilePath, temp.mFilePath );
 	std::swap( mFontSize, temp.mFontSize );
 	return *this;
+}
+
+FontBMFont::Page::~Page() {
+	for ( auto drawable : drawables )
+		eeDelete( drawable.second );
+
+	if ( NULL != texture && TextureFactory::existsSingleton() )
+		TextureFactory::instance()->remove( texture->getTextureId() );
 }
 
 }} // namespace EE::Graphics

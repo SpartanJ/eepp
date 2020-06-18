@@ -29,11 +29,6 @@ Implement icon themes separated from the `UITheme` and customizable from a CSS f
  
 * On Save: Allow to select line endings type.
 
-## GlyphDrawable
-
-Implement a `GlyphDrawable`. This should render any glyph as a drawable type.
-It should be very useful to use font icons in buttons and menues.
-
 ## UITreeView
 
 Implement a simple tree view widget, to at least cover the most common use cases.
@@ -47,6 +42,8 @@ Keep improving it:
 * Save user configuration.
 
 * Support single instance (when a new file is opened while a previous instance exists, open it in the first instance).
+
+* Allow to open a document in any number of tabs.
 
 ## UI Editor
 

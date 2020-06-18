@@ -303,6 +303,27 @@ const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSiz
 	}
 }
 
+GlyphDrawable* FontTrueType::getGlyphDrawable( Uint32 codePoint, unsigned int characterSize,
+											   bool bold, Float outlineThickness ) const {
+	GlyphDrawableTable& drawables = mPages[characterSize].drawables;
+
+	Uint64 key = combine( outlineThickness, bold,
+						  FT_Get_Char_Index( static_cast<FT_Face>( mFace ), codePoint ) );
+
+	auto it = drawables.find( key );
+	if ( it != drawables.end() ) {
+		return it->second;
+	} else {
+		const Glyph& glyph = getGlyph( codePoint, characterSize, bold, outlineThickness );
+		auto& page = mPages[characterSize];
+		GlyphDrawable* region = GlyphDrawable::New(
+			page.texture, glyph.textureRect,
+			String::format( "%s_%d_%u", mFontName.c_str(), characterSize, codePoint ) );
+		drawables[key] = region;
+		return region;
+	}
+}
+
 Float FontTrueType::getKerning( Uint32 first, Uint32 second, unsigned int characterSize ) const {
 	// Special case where first or second is 0 (null character)
 	if ( first == 0 || second == 0 )
@@ -738,9 +759,13 @@ FontTrueType::Page::Page() : texture( NULL ), nextRow( 3 ) {
 		image.getPixelsPtr(), image.getWidth(), image.getHeight(), image.getChannels(), false,
 		Texture::ClampMode::ClampToEdge, false, true );
 	texture = TextureFactory::instance()->getTexture( texId );
+	texture->setCoordinateType( Texture::CoordinateType::Pixels );
 }
 
 FontTrueType::Page::~Page() {
+	for ( auto drawable : drawables )
+		eeDelete( drawable.second );
+
 	if ( NULL != texture && TextureFactory::existsSingleton() )
 		TextureFactory::instance()->remove( texture->getTextureId() );
 }
