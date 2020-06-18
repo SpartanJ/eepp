@@ -190,6 +190,7 @@ enum class PropertyId : Uint32 {
 	BorderBottomRightRadius = String::hash( "border-bottom-right-radius" ),
 	TabBarHideOnSingleTab = String::hash( "tabbar-hide-on-single-tab" ),
 	TabBarAllowRearrange = String::hash( "tabbar-allow-rearrange" ),
+	TabBarAllowDragAndDrop = String::hash( "tabbar-allow-drag-and-drop-tabs" ),
 };
 
 enum class PropertyType : Uint32 {

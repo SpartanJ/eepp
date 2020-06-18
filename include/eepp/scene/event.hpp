@@ -52,6 +52,7 @@ class EE_API Event {
 		MsgBoxConfirmClick,
 		MsgBoxCancelClick,
 		OnTabSelected,
+		OnTabAdded,
 		OnTabClosed,
 		OnTabNavigate,
 		OnClose, // Warning: Only some nodes will report this event.

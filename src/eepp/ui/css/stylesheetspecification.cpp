@@ -362,6 +362,7 @@ void StyleSheetSpecification::registerDefaultProperties() {
 
 	registerProperty( "tabbar-hide-on-single-tab", "false" );
 	registerProperty( "tabbar-allow-rearrange", "false" );
+	registerProperty( "tabbar-allow-drag-and-drop-tabs", "false" );
 
 	// Shorthands
 	registerShorthand( "margin", {"margin-top", "margin-right", "margin-bottom", "margin-left"},

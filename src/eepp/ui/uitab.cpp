@@ -9,7 +9,8 @@ UITab* UITab::New() {
 	return eeNew( UITab, () );
 }
 
-UITab::UITab() : UISelectButton( "tab" ), mOwnedWidget( NULL ) {
+UITab::UITab() :
+	UISelectButton( "tab" ), mOwnedWidget( NULL ), mDragTotalDiff( 0.f ), mTabWidget( NULL ) {
 	mTextBox->setElementTag( mTag + "::text" );
 	mIcon->setElementTag( mTag + "::icon" );
 	auto cb = [&]( const Event* ) { onSizeChange(); };
@@ -37,12 +38,13 @@ UITabWidget* UITab::getTabWidget() {
 	if ( NULL != getParent() && NULL != getParent()->getParent() &&
 		 getParent()->getParent()->isType( UI_TYPE_TABWIDGET ) ) {
 		return getParent()->getParent()->asType<UITabWidget>();
+	} else if ( mTabWidget ) {
+		return mTabWidget;
 	}
-
 	return NULL;
 }
 
-Uint32 UITab::onDrag( const Vector2f&, const Uint32&, const Sizef& dragDiff ) {
+Uint32 UITab::onDrag( const Vector2f& pos, const Uint32&, const Sizef& dragDiff ) {
 	UITabWidget* tabW = getTabWidget();
 	if ( !tabW )
 		return 0;
@@ -65,11 +67,27 @@ Uint32 UITab::onDrag( const Vector2f&, const Uint32&, const Sizef& dragDiff ) {
 			}
 		}
 	}
+	if ( tabW->getAllowDragAndDropTabs() && !( mFlags & UI_DRAG_VERTICAL ) ) {
+		mDragTotalDiff += ( Float )( mDragPoint.y - pos.y );
+		if ( eeabs( mDragTotalDiff ) >= tabW->getTabVerticalDragResistance() ) {
+			setFlags( UI_DRAG_VERTICAL );
+			setPixelsPosition( mPosition.x, mPosition.y - mDragTotalDiff );
+			mDragPoint = pos;
+			mTabWidget = getTabWidget();
+			Vector2f posDiff( pos );
+			worldToNode( posDiff );
+			setParent( getUISceneNode()->getRoot() );
+			setPixelsPosition( pos - posDiff );
+		}
+	}
 	return 1;
 }
 
 Uint32 UITab::onDragStart( const Vector2i& position, const Uint32& flags ) {
 	UITabWidget* tabW = getTabWidget();
+	mTabWidget = NULL;
+	mDragTotalDiff = 0;
+	unsetFlags( UI_DRAG_VERTICAL );
 	if ( tabW ) {
 		for ( size_t i = 0; i < tabW->getTabCount(); i++ ) {
 			UITab* tab = tabW->getTab( i );
@@ -83,6 +101,10 @@ Uint32 UITab::onDragStart( const Vector2i& position, const Uint32& flags ) {
 
 Uint32 UITab::onDragStop( const Vector2i& position, const Uint32& flags ) {
 	UITabWidget* tabW = getTabWidget();
+	if ( mTabWidget ) {
+		setParent( tabW->getTabBar() );
+		mTabWidget = NULL;
+	}
 	if ( tabW ) {
 		for ( size_t i = 0; i < tabW->getTabCount(); i++ ) {
 			UITab* tab = tabW->getTab( i );
@@ -303,7 +325,7 @@ void UITab::updateTab() {
 		} else {
 			UIPushButton::setText( mText );
 		}
-		setDragEnabled( tTabW->getAllowRearrangeTabs() );
+		setDragEnabled( tTabW->getAllowRearrangeTabs() || tTabW->getAllowDragAndDropTabs() );
 		onAutoSize();
 	}
 }

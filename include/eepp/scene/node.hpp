@@ -371,7 +371,7 @@ class EE_API Node : public Transformable {
 
 	bool isChild( Node* child ) const;
 
-	bool inParentTreeOf( Node* Child ) const;
+	bool inParentTreeOf( Node* child ) const;
 
 	void setLoadingState( bool loading );
 

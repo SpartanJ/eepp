@@ -1564,6 +1564,16 @@ Enables/disables manually rearraging the tabs in the tab bar.
 
 ---
 
+### tabbar-allow-drag-and-drop-tabs
+
+Enables/disables the hability to move any tab from a TabWidget to another.
+
+* Applicable to: EE::UI::UITabWidget (TabWidget)
+* Data Type: [boolean](#boolean-data-type)
+* Default value: `false`
+
+---
+
 ### tab-closable
 
 Enables/disables tabs to be closable with the middle mouse button click or by clicking on the close

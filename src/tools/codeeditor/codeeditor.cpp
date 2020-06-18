@@ -451,6 +451,7 @@ UITabWidget* App::createEditorWithTabWidget( Node* parent ) {
 	tabWidget->setTabsClosable( true );
 	tabWidget->setHideTabBarOnSingleTab( true );
 	tabWidget->setAllowRearrangeTabs( true );
+	tabWidget->setAllowDragAndDropTabs( true );
 	tabWidget->addEventListener( Event::OnTabSelected, [&]( const Event* event ) {
 		UITabWidget* tabWidget = event->getNode()->asType<UITabWidget>();
 		mCurEditor = tabWidget->getTabSelected()->getOwnedWidget()->asType<UICodeEditor>();
@@ -462,6 +463,16 @@ UITabWidget* App::createEditorWithTabWidget( Node* parent ) {
 	} );
 	tabWidget->addEventListener( Event::OnTabClosed, [&]( const Event* event ) {
 		onTabClosed( static_cast<const TabEvent*>( event ) );
+	} );
+	tabWidget->addEventListener( Event::OnTabAdded, [&]( const Event* event ) {
+		UITabWidget* tabWidget = event->getNode()->asType<UITabWidget>();
+		if ( tabWidget->getTabCount() == 2 && tabWidget->getTab( 0 )
+												  ->getOwnedWidget()
+												  ->asType<UICodeEditor>()
+												  ->getDocument()
+												  .isEmpty() ) {
+			tabWidget->removeTab( (Uint32)0 );
+		}
 	} );
 	createCodeEditorInTabWidget( tabWidget );
 	mTabWidgets.push_back( tabWidget );
@@ -508,13 +519,6 @@ void App::openFileDialog() {
 		UITab* addedTab = d.first;
 		loadFileFromPath( event->getNode()->asType<UIFileDialog>()->getFullPath(), d.second );
 		tabWidget->setTabSelected( addedTab );
-		UITab* firstTab = tabWidget->getTab( 0 );
-		if ( addedTab != firstTab ) {
-			UICodeEditor* editor = (UICodeEditor*)firstTab->getOwnedWidget();
-			if ( editor->getDocument().isEmpty() ) {
-				tabWidget->removeTab( firstTab );
-			}
-		}
 	} );
 	dialog->addEventListener( Event::OnWindowClose, [&]( const Event* ) {
 		if ( mCurEditor && !SceneManager::instance()->isShootingDown() )

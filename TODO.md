@@ -1,10 +1,6 @@
 
 # TODO - Short and mid term plans.
 
-## UITabWidget
-
-* Add support to move Tabs from one `UITabWidget` to another using the onDrop API.
-
 ## UIIconTheme and UIIconThemeManager
 
 Implement icon themes separated from the `UITheme` and customizable from a CSS file.

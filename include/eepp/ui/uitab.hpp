@@ -43,6 +43,8 @@ class EE_API UITab : public UISelectButton {
 	String mText;
 	std::string mOwnedName;
 	UIWidget* mCloseButton;
+	Float mDragTotalDiff;
+	UITabWidget* mTabWidget;
 
 	Uint32 onDrag( const Vector2f& position, const Uint32& flags, const Sizef& dragDiff );
 

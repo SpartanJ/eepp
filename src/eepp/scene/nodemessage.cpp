@@ -23,4 +23,8 @@ const Uint32& NodeMessage::getFlags() const {
 NodeDropMessage::NodeDropMessage( Node* node, const Uint32& msg, Node* droppedNode ) :
 	NodeMessage( node, msg ), mDroppedNode( droppedNode ) {}
 
+Node* NodeDropMessage::getDroppedNode() const {
+	return mDroppedNode;
+}
+
 }} // namespace EE::Scene

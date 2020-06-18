@@ -141,6 +141,14 @@ class EE_API UITabWidget : public UIWidget {
 
 	void setAllowRearrangeTabs( bool allowRearrangeTabs );
 
+	bool getAllowDragAndDropTabs() const;
+
+	void setAllowDragAndDropTabs( bool allowDragAndDropTabs );
+
+	const Float& getTabVerticalDragResistance() const;
+
+	void setTabVerticalDragResistance( const Float& tabVerticalDragResistance );
+
   protected:
 	friend class UITab;
 
@@ -153,16 +161,24 @@ class EE_API UITabWidget : public UIWidget {
 	TabTryCloseCallback mTabTryCloseCallback;
 	bool mHideTabBarOnSingleTab;
 	bool mAllowRearrangeTabs;
+	bool mAllowDragAndDropTabs;
+	Float mTabVerticalDragResistance;
 
 	void onThemeLoaded();
 
 	UITab* createTab( const String& text, UINode* nodeOwned, Drawable* icon );
+
+	void removeTab( const Uint32& index, bool destroyOwnedNode, bool destroyTab = true );
+
+	void removeTab( UITab* tab, bool destroyOwnedNode, bool destroyTab );
 
 	virtual void onSizeChange();
 
 	virtual void onChildCountChange( Node* child, const bool& removed );
 
 	virtual void onPaddingChange();
+
+	virtual Uint32 onMessage( const NodeMessage* msg );
 
 	void setContainerSize();
 

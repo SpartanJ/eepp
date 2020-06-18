@@ -773,16 +773,13 @@ bool Node::isChild( Node* child ) const {
 	return false;
 }
 
-bool Node::inParentTreeOf( Node* Child ) const {
-	Node* ParentLoop = Child->mParentNode;
-
-	while ( NULL != ParentLoop ) {
-		if ( ParentLoop == this )
+bool Node::inParentTreeOf( Node* child ) const {
+	Node* node = child->mParentNode;
+	while ( NULL != node ) {
+		if ( node == this )
 			return true;
-
-		ParentLoop = ParentLoop->mParentNode;
+		node = node->mParentNode;
 	}
-
 	return false;
 }
 

@@ -442,11 +442,7 @@ Uint32 UINode::onCalculateDrag( const Vector2f& position, const Uint32& flags ) 
 
 			if ( onDrag( pos, flags, dragDiff ) ) {
 				setPixelsPosition( mPosition - dragDiff );
-
 				mDragPoint = pos;
-
-				onPositionChange();
-
 				eventDispatcher->setNodeDragging( this );
 			}
 		}
@@ -1137,9 +1133,9 @@ void UINode::setDragging( const bool& dragging ) {
 		mEnabled = false;
 		Node* found = getUISceneNode()->overFind( getEventDispatcher()->getMousePosf() );
 		if ( found && found->isUINode() ) {
-			found->asType<UINode>()->onDrop( this );
 			NodeDropMessage msg( found, NodeMessage::Drop, this );
 			found->messagePost( &msg );
+			found->asType<UINode>()->onDrop( this );
 		}
 		mEnabled = enabled;
 	}

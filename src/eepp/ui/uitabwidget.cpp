@@ -20,7 +20,9 @@ UITabWidget::UITabWidget() :
 	mTabSelected( NULL ),
 	mTabSelectedIndex( eeINDEX_NOT_FOUND ),
 	mHideTabBarOnSingleTab( false ),
-	mAllowRearrangeTabs( false ) {
+	mAllowRearrangeTabs( false ),
+	mAllowDragAndDropTabs( false ),
+	mTabVerticalDragResistance( PixelDensity::dpToPx( 64 ) ) {
 	setHorizontalAlign( UI_HALIGN_CENTER );
 
 	mTabBar = UIWidget::NewWithTag( "tabwidget::tabbar" );
@@ -217,6 +219,9 @@ bool UITabWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		case PropertyId::TabBarAllowRearrange:
 			setAllowRearrangeTabs( attribute.asBool() );
+			break;
+		case PropertyId::TabBarAllowDragAndDrop:
+			setAllowDragAndDropTabs( attribute.asBool() );
 			break;
 		default:
 			return UIWidget::applyProperty( attribute );
@@ -424,6 +429,9 @@ UITabWidget* UITabWidget::add( UITab* tab ) {
 		orderTabs();
 	}
 
+	TabEvent tabEvent( this, tab, getTabIndex( tab ), Event::OnTabAdded );
+	sendEvent( &tabEvent );
+
 	return this;
 }
 
@@ -459,13 +467,19 @@ Uint32 UITabWidget::getTabCount() const {
 }
 
 void UITabWidget::removeTab( const Uint32& index, bool destroyOwnedNode ) {
+	removeTab( index, destroyOwnedNode, true );
+}
+
+void UITabWidget::removeTab( const Uint32& index, bool destroyOwnedNode, bool destroyTab ) {
 	eeASSERT( index < mTabs.size() );
 
 	UITab* tab = mTabs[index];
 
-	tab->close();
-	tab->setVisible( false );
-	tab->setEnabled( false );
+	if ( destroyTab ) {
+		tab->close();
+		tab->setVisible( false );
+		tab->setEnabled( false );
+	}
 	if ( destroyOwnedNode ) {
 		tab->getOwnedWidget()->close();
 		tab->getOwnedWidget()->setVisible( false );
@@ -499,7 +513,11 @@ void UITabWidget::removeTab( const Uint32& index, bool destroyOwnedNode ) {
 }
 
 void UITabWidget::removeTab( UITab* tab, bool destroyOwnedNode ) {
-	removeTab( getTabIndex( tab ), destroyOwnedNode );
+	removeTab( getTabIndex( tab ), destroyOwnedNode, true );
+}
+
+void UITabWidget::removeTab( UITab* tab, bool destroyOwnedNode, bool destroyTab ) {
+	removeTab( getTabIndex( tab ), destroyOwnedNode, destroyTab );
 }
 
 void UITabWidget::removeAllTabs( bool destroyOwnedNode ) {
@@ -628,6 +646,22 @@ void UITabWidget::setAllowRearrangeTabs( bool allowRearrangeTabs ) {
 	}
 }
 
+bool UITabWidget::getAllowDragAndDropTabs() const {
+	return mAllowDragAndDropTabs;
+}
+
+void UITabWidget::setAllowDragAndDropTabs( bool allowDragAndDropTabs ) {
+	mAllowDragAndDropTabs = allowDragAndDropTabs;
+}
+
+const Float& UITabWidget::getTabVerticalDragResistance() const {
+	return mTabVerticalDragResistance;
+}
+
+void UITabWidget::setTabVerticalDragResistance( const Float& tabVerticalDragResistance ) {
+	mTabVerticalDragResistance = tabVerticalDragResistance;
+}
+
 void UITabWidget::refreshOwnedWidget( UITab* tab ) {
 	if ( NULL != tab && NULL != tab->getOwnedWidget() ) {
 		tab->getOwnedWidget()->setParent( mNodeContainer );
@@ -695,17 +729,24 @@ void UITabWidget::onSizeChange() {
 void UITabWidget::onChildCountChange( Node* child, const bool& removed ) {
 	if ( !removed && child != mTabBar && child != mNodeContainer ) {
 		if ( child->isType( UI_TYPE_TAB ) ) {
-			UITab* Tab = static_cast<UITab*>( child );
+			// This must be a tab that was dragging.
+			if ( std::find( mTabs.begin(), mTabs.end(), child->asType<UITab>() ) != mTabs.end() )
+				return;
 
-			Tab->setParent( mTabBar );
+			UITab* tab = static_cast<UITab*>( child );
 
-			mTabs.push_back( Tab );
+			tab->setParent( mTabBar );
+
+			mTabs.push_back( tab );
 
 			if ( NULL == mTabSelected ) {
-				setTabSelected( Tab );
+				setTabSelected( tab );
 			} else {
 				orderTabs();
 			}
+
+			TabEvent tabEvent( this, tab, getTabIndex( tab ), Event::OnTabAdded );
+			sendEvent( &tabEvent );
 		} else {
 			child->setParent( mNodeContainer );
 			child->setVisible( false );
@@ -720,6 +761,21 @@ void UITabWidget::onPaddingChange() {
 	onSizeChange();
 
 	UIWidget::onPaddingChange();
+}
+
+Uint32 UITabWidget::onMessage( const NodeMessage* msg ) {
+	if ( msg->getMsg() == NodeMessage::Drop && mAllowDragAndDropTabs ) {
+		const NodeDropMessage* dropMsg = static_cast<const NodeDropMessage*>( msg );
+		if ( dropMsg->getDroppedNode()->isType( UI_TYPE_TAB ) ) {
+			UITab* tab = dropMsg->getDroppedNode()->asType<UITab>();
+			if ( tab->getTabWidget() != this ) {
+				tab->getTabWidget()->removeTab( tab, false, false );
+				add( tab );
+				return 1;
+			}
+		}
+	}
+	return 0;
 }
 
 void UITabWidget::applyThemeToTabs() {
