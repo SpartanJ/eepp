@@ -48,13 +48,13 @@ class EE_API Event {
 		OnWindowMinimizeClick,
 		OpenFile,
 		SaveFile,
-		OnControlClear,
+		OnClear,
 		MsgBoxConfirmClick,
 		MsgBoxCancelClick,
 		OnTabSelected,
 		OnTabClosed,
 		OnTabNavigate,
-		OnClose, // Warning: Only some controls will report this event.
+		OnClose, // Warning: Only some nodes will report this event.
 		OnDragStart,
 		OnDragStop,
 		OnPaddingChange,
@@ -67,6 +67,7 @@ class EE_API Event {
 		OnClassChange,
 		OnLayoutUpdate,
 		OnSelectionChanged,
+		OnNodeDropped,
 		UserEvent,
 		NoEvent = eeINDEX_NOT_FOUND
 	};
@@ -86,6 +87,16 @@ class EE_API Event {
 	Node* mNode;
 	Uint32 mEventType;
 	Uint32 mCallbackId;
+};
+
+class EE_API DropEvent : public Event {
+  public:
+	DropEvent( Node* node, Node* droppedNode, const Uint32& eventType ) :
+		Event( node, eventType ), droppedNode( droppedNode ) {}
+	Node* getDroppedNode() const { return droppedNode; }
+
+  protected:
+	Node* droppedNode;
 };
 
 }} // namespace EE::Scene

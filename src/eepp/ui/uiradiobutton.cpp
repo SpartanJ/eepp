@@ -154,8 +154,8 @@ void UIRadioButton::setActive( const bool& active ) {
 		onValueChange();
 	}
 
-	if ( active && NULL != mParentCtrl ) {
-		Node* tChild = mParentCtrl->getFirstChild();
+	if ( active && NULL != mParentNode ) {
+		Node* tChild = mParentNode->getFirstChild();
 
 		while ( NULL != tChild ) {
 			if ( tChild->isType( UI_TYPE_RADIOBUTTON ) ) {
@@ -173,8 +173,8 @@ void UIRadioButton::setActive( const bool& active ) {
 }
 
 bool UIRadioButton::checkActives() {
-	if ( NULL != mParentCtrl ) {
-		Node* tChild = mParentCtrl->getFirstChild();
+	if ( NULL != mParentNode ) {
+		Node* tChild = mParentNode->getFirstChild();
 
 		while ( NULL != tChild ) {
 			if ( tChild->isType( UI_TYPE_RADIOBUTTON ) ) {
@@ -194,10 +194,10 @@ bool UIRadioButton::checkActives() {
 }
 
 void UIRadioButton::autoActivate() {
-	eeASSERT( NULL != mParentCtrl );
+	eeASSERT( NULL != mParentNode );
 
-	if ( NULL != mParentCtrl ) {
-		Node* tChild = mParentCtrl->getFirstChild();
+	if ( NULL != mParentNode ) {
+		Node* tChild = mParentNode->getFirstChild();
 
 		while ( NULL != tChild ) {
 			if ( tChild->isType( UI_TYPE_RADIOBUTTON ) ) {

@@ -1,10 +1,6 @@
 
 # TODO - Short and mid term plans.
 
-## UIWidget
-
-* Add `onDrop( UIWidget* )` API. In order to be able to drop widgets onto other widgets.
-
 ## UITabWidget
 
 * Add support to move Tabs from one `UITabWidget` to another using the onDrop API.
@@ -16,6 +12,8 @@ Implement icon themes separated from the `UITheme` and customizable from a CSS f
 ## UICodeEditor
 
 * Add show white spaces.
+
+* Add new CSS properties related to the widget.
 
 ## TextDocument
 

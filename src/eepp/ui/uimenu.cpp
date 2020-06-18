@@ -115,15 +115,14 @@ UIMenuRadioButton* UIMenu::addRadioButton( const String& text, const bool& activ
 }
 
 UIMenuSubMenu* UIMenu::createSubMenu( const String& text, Drawable* icon, UIMenu* subMenu ) {
-	UIMenuSubMenu* tCtrl = UIMenuSubMenu::New();
-	tCtrl->setHorizontalAlign( UI_HALIGN_LEFT );
-	tCtrl->setParent( this );
-	tCtrl->setIconMinimumSize( mIconMinSize );
-	tCtrl->setIcon( icon );
-	tCtrl->setText( text );
-	tCtrl->setSubMenu( subMenu );
-
-	return tCtrl;
+	UIMenuSubMenu* menu = UIMenuSubMenu::New();
+	menu->setHorizontalAlign( UI_HALIGN_LEFT );
+	menu->setParent( this );
+	menu->setIconMinimumSize( mIconMinSize );
+	menu->setIcon( icon );
+	menu->setText( text );
+	menu->setSubMenu( subMenu );
+	return menu;
 }
 
 UIMenuSubMenu* UIMenu::addSubMenu( const String& text, Drawable* icon, UIMenu* subMenu ) {
@@ -292,12 +291,12 @@ void UIMenu::insert( UIWidget* widget, const Uint32& index ) {
 	widgetsResize();
 }
 
-bool UIMenu::isSubMenu( Node* Ctrl ) {
+bool UIMenu::isSubMenu( Node* node ) {
 	for ( Uint32 i = 0; i < mItems.size(); i++ ) {
 		if ( NULL != mItems[i] && mItems[i]->isType( UI_TYPE_MENUSUBMENU ) ) {
 			UIMenuSubMenu* tMenu = mItems[i]->asType<UIMenuSubMenu>();
 
-			if ( tMenu->getSubMenu() == Ctrl )
+			if ( tMenu->getSubMenu() == node )
 				return true;
 		}
 	}
@@ -317,10 +316,10 @@ Uint32 UIMenu::onMessage( const NodeMessage* Msg ) {
 		}
 		case NodeMessage::FocusLoss: {
 			if ( NULL != getEventDispatcher() ) {
-				Node* focusCtrl = getEventDispatcher()->getFocusNode();
+				Node* focusNode = getEventDispatcher()->getFocusNode();
 
-				if ( this != focusCtrl && !isParentOf( focusCtrl ) && !isSubMenu( focusCtrl ) &&
-					 mOwnerNode != focusCtrl ) {
+				if ( this != focusNode && !isParentOf( focusNode ) && !isSubMenu( focusNode ) &&
+					 mOwnerNode != focusNode ) {
 					mClickHide = true;
 
 					onWidgetFocusLoss();
@@ -434,15 +433,15 @@ void UIMenu::setItemSelected( UIWidget* Item ) {
 	}
 }
 
-void UIMenu::trySelect( UIWidget* Ctrl, bool Up ) {
+void UIMenu::trySelect( UIWidget* node, bool up ) {
 	if ( mItems.size() ) {
-		if ( !Ctrl->isType( UI_TYPE_MENU_SEPARATOR ) ) {
-			setItemSelected( Ctrl );
+		if ( !node->isType( UI_TYPE_MENU_SEPARATOR ) ) {
+			setItemSelected( node );
 		} else {
-			Uint32 Index = getItemIndex( Ctrl );
+			Uint32 Index = getItemIndex( node );
 
 			if ( Index != eeINDEX_NOT_FOUND ) {
-				if ( Up ) {
+				if ( up ) {
 					if ( Index > 0 ) {
 						for ( Int32 i = (Int32)Index - 1; i >= 0; i-- ) {
 							if ( !mItems[i]->isType( UI_TYPE_MENU_SEPARATOR ) ) {

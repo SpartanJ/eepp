@@ -155,9 +155,9 @@ class EE_API SceneNode : public Node {
 
 	virtual void onDrawDebugDataChange();
 
-	void sendMsg( Node* Ctrl, const Uint32& Msg, const Uint32& Flags = 0 );
+	void sendMsg( Node* node, const Uint32& msg, const Uint32& flags = 0 );
 
-	virtual void resizeControl( EE::Window::Window* win );
+	virtual void resizeNode( EE::Window::Window* win );
 
 	void addToCloseQueue( Node* node );
 

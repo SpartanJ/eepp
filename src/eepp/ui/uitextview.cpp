@@ -380,14 +380,14 @@ Vector2f UITextView::getAlignOffset() const {
 
 Uint32 UITextView::onMouseDoubleClick( const Vector2i& Pos, const Uint32& Flags ) {
 	if ( isTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) ) {
-		Vector2f controlPos( Vector2f( Pos.x, Pos.y ) );
-		worldToNode( controlPos );
-		controlPos = PixelDensity::dpToPx( controlPos ) - mRealAlignOffset -
+		Vector2f nodePos( Vector2f( Pos.x, Pos.y ) );
+		worldToNode( nodePos );
+		nodePos = PixelDensity::dpToPx( nodePos ) - mRealAlignOffset -
 					 Vector2f( mRealPadding.Left, mRealPadding.Top );
-		controlPos.x = eemax( 0.f, controlPos.x );
-		controlPos.y = eemax( 0.f, controlPos.y );
+		nodePos.x = eemax( 0.f, nodePos.x );
+		nodePos.y = eemax( 0.f, nodePos.y );
 
-		Int32 curPos = mTextCache->findCharacterFromPos( controlPos.asInt() );
+		Int32 curPos = mTextCache->findCharacterFromPos( nodePos.asInt() );
 
 		if ( -1 != curPos ) {
 			Int32 tSelCurInit, tSelCurEnd;
@@ -416,14 +416,14 @@ Uint32 UITextView::onMouseClick( const Vector2i& Pos, const Uint32& Flags ) {
 Uint32 UITextView::onMouseDown( const Vector2i& Pos, const Uint32& Flags ) {
 	if ( NULL != getEventDispatcher() && isTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) &&
 		 getEventDispatcher()->getMouseDownNode() == this ) {
-		Vector2f controlPos( Vector2f( Pos.x, Pos.y ) );
-		worldToNode( controlPos );
-		controlPos = PixelDensity::dpToPx( controlPos ) - mRealAlignOffset -
+		Vector2f nodePos( Vector2f( Pos.x, Pos.y ) );
+		worldToNode( nodePos );
+		nodePos = PixelDensity::dpToPx( nodePos ) - mRealAlignOffset -
 					 Vector2f( mRealPadding.Left, mRealPadding.Top );
-		controlPos.x = eemax( 0.f, controlPos.x );
-		controlPos.y = eemax( 0.f, controlPos.y );
+		nodePos.x = eemax( 0.f, nodePos.x );
+		nodePos.y = eemax( 0.f, nodePos.y );
 
-		Int32 curPos = mTextCache->findCharacterFromPos( controlPos.asInt() );
+		Int32 curPos = mTextCache->findCharacterFromPos( nodePos.asInt() );
 
 		if ( -1 != curPos ) {
 			if ( !mSelecting ) {

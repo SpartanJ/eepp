@@ -68,7 +68,7 @@ class EE_API TextureAtlasEditor {
 
 	void onTextureRegionChange( const Event* Event );
 
-	void updateControls();
+	void updateWidgets();
 
 	void fillTextureRegionList();
 

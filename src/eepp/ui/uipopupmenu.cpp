@@ -49,7 +49,7 @@ bool UIPopUpMenu::show() {
 			runAction( Actions::Sequence::New(
 				Actions::Fade::New(
 					255.f == mAlpha ? 0.f : mAlpha, 255.f,
-					getUISceneNode()->getUIThemeManager()->getControlsFadeOutTime() ),
+					getUISceneNode()->getUIThemeManager()->getWidgetsFadeOutTime() ),
 				Actions::Spawn::New( Actions::Enable::New(), Actions::Visible::New( true ) ) ) );
 		}
 
@@ -73,7 +73,7 @@ bool UIPopUpMenu::hide() {
 			 getUISceneNode()->getUIThemeManager()->getDefaultEffectsEnabled() ) {
 			runAction( Actions::Sequence::New(
 				Actions::FadeOut::New(
-					getUISceneNode()->getUIThemeManager()->getControlsFadeOutTime() ),
+					getUISceneNode()->getUIThemeManager()->getWidgetsFadeOutTime() ),
 				Actions::Spawn::New( Actions::Disable::New(), Actions::Visible::New( false ) ) ) );
 		} else {
 			setEnabled( false );

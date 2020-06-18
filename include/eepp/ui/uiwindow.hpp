@@ -117,7 +117,7 @@ class EE_API UIWindow : public UIWidget {
 
 	bool isModal();
 
-	UIWidget* getModalControl() const;
+	UIWidget* getModalWidget() const;
 
 	void maximize();
 
@@ -190,7 +190,7 @@ class EE_API UIWindow : public UIWidget {
 	UIWidget* mButtonMaximize;
 	UITextView* mTitle;
 
-	UIWidget* mModalCtrl;
+	UIWidget* mModalNode;
 
 	Vector2f mNonMaxPos;
 	Sizef mNonMaxSize;
@@ -218,7 +218,7 @@ class EE_API UIWindow : public UIWidget {
 
 	void doResize( const NodeMessage* Msg );
 
-	void decideResizeType( Node* Control );
+	void decideResizeType( Node* node );
 
 	void tryResize( const UI_RESIZE_TYPE& getType );
 
@@ -240,7 +240,7 @@ class EE_API UIWindow : public UIWidget {
 
 	UIKeyboardShortcuts::iterator existsShortcut( const Keycode& KeyCode, const Uint32& Mod );
 
-	void createModalControl();
+	void createModalNode();
 
 	void resizeCursor();
 

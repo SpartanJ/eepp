@@ -28,7 +28,7 @@ class EE_API UIThemeManager : public ResourceManager<UITheme> {
 
 	UITheme* getDefaultTheme() const;
 
-	UIThemeManager* applyDefaultTheme( UINode* Control );
+	UIThemeManager* applyDefaultTheme( UINode* node );
 
 	UIThemeManager* setAutoApplyDefaultTheme( const bool& apply );
 
@@ -38,13 +38,13 @@ class EE_API UIThemeManager : public ResourceManager<UITheme> {
 
 	const bool& getDefaultEffectsEnabled() const;
 
-	const Time& getControlsFadeInTime() const;
+	const Time& getWidgetsFadeInTime() const;
 
-	UIThemeManager* setControlsFadeInTime( const Time& Time );
+	UIThemeManager* setWidgetsFadeInTime( const Time& Time );
 
-	const Time& getControlsFadeOutTime() const;
+	const Time& getWidgetsFadeOutTime() const;
 
-	UIThemeManager* setControlsFadeOutTime( const Time& Time );
+	UIThemeManager* setWidgetsFadeOutTime( const Time& Time );
 
 	UIThemeManager* setTooltipTimeToShow( const Time& Time );
 

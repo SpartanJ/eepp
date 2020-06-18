@@ -18,7 +18,7 @@ class EE_API UITableCell : public UIWidget {
 
 	virtual void setTheme( UITheme* Theme );
 
-	void setCell( const Uint32& CollumnIndex, UINode* Ctrl );
+	void setCell( const Uint32& CollumnIndex, UINode* node );
 
 	UINode* getCell( const Uint32& CollumnIndex ) const;
 

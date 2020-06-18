@@ -10,7 +10,7 @@ UIComboBox* UIComboBox::New() {
 UIComboBox::UIComboBox() : UIWidget( "combobox" ), mDropDownList( NULL ), mButton( NULL ) {
 	mDropDownList = UIDropDownList::NewWithTag( "combobox::dropdownlist" );
 	mDropDownList->setParent( this );
-	mDropDownList->setFriendControl( this );
+	mDropDownList->setFriendNode( this );
 	mDropDownList->setVisible( true );
 	mDropDownList->setEnabled( true );
 	mDropDownList->setAllowEditing( true );
@@ -54,7 +54,7 @@ void UIComboBox::setTheme( UITheme* Theme ) {
 		mButton->setSize( mButton->getSkinSize() );
 	}
 
-	updateControls();
+	updateWidgets();
 
 	onThemeLoaded();
 }
@@ -77,7 +77,7 @@ void UIComboBox::loadFromXmlNode( const pugi::xml_node& node ) {
 
 	endAttributesTransaction();
 
-	updateControls();
+	updateWidgets();
 }
 
 Uint32 UIComboBox::onMessage( const NodeMessage* Msg ) {
@@ -89,7 +89,7 @@ Uint32 UIComboBox::onMessage( const NodeMessage* Msg ) {
 	return UIWidget::onMessage( Msg );
 }
 
-void UIComboBox::updateControls() {
+void UIComboBox::updateWidgets() {
 	if ( NULL != mDropDownList ) {
 		if ( ( mFlags & UI_AUTO_SIZE ) ||
 			 getSize().getHeight() < mDropDownList->getSize().getHeight() ) {
@@ -111,19 +111,19 @@ void UIComboBox::updateControls() {
 }
 
 void UIComboBox::onSizeChange() {
-	updateControls();
+	updateWidgets();
 
 	UIWidget::onSizeChange();
 }
 
 void UIComboBox::onPositionChange() {
-	updateControls();
+	updateWidgets();
 
 	UIWidget::onPositionChange();
 }
 
 void UIComboBox::onPaddingChange() {
-	updateControls();
+	updateWidgets();
 
 	UIWidget::onPaddingChange();
 }

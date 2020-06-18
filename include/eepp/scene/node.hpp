@@ -200,7 +200,7 @@ class EE_API Node : public Transformable {
 
 	const Rectf& getWorldBounds();
 
-	bool isParentOf( Node* Ctrl ) const;
+	bool isParentOf( Node* node ) const;
 
 	void sendEvent( const Event* Event );
 
@@ -222,9 +222,9 @@ class EE_API Node : public Transformable {
 		return reinterpret_cast<T*>( find( id ) );
 	}
 
-	template <typename T> T* bind( const std::string& id, T*& ctrl ) {
-		ctrl = find<T>( id );
-		return ctrl;
+	template <typename T> T* bind( const std::string& id, T*& node ) {
+		node = find<T>( id );
+		return node;
 	}
 
 	template <typename T> T* asType() { return reinterpret_cast<T*>( this ); }
@@ -235,9 +235,9 @@ class EE_API Node : public Transformable {
 		return reinterpret_cast<T*>( findByType( type ) );
 	}
 
-	template <typename T> T* bindByType( const Uint32& type, T*& ctrl ) {
-		ctrl = findByType<T>( type );
-		return ctrl;
+	template <typename T> T* bindByType( const Uint32& type, T*& node ) {
+		node = findByType<T>( type );
+		return node;
 	}
 
 	bool inNodeTree( Node* node ) const;
@@ -396,7 +396,7 @@ class EE_API Node : public Transformable {
 	Vector2i mScreenPosi;
 	Sizef mSize;
 	UintPtr mData;
-	Node* mParentCtrl;
+	Node* mParentNode;
 	SceneNode* mSceneNode;
 	Node* mNodeDrawInvalidator;
 	Node* mChild;	  //! Pointer to the first child of the node

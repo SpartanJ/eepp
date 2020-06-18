@@ -24,12 +24,13 @@ class EE_API NodeMessage {
 		Selected,
 		DragStart,
 		DragStop,
+		Drop,
 		LayoutAttributeChange,
 		UserMessage,
 		NoMessage = eeINDEX_NOT_FOUND
 	};
 
-	NodeMessage( Node* node, const Uint32& Msg, const Uint32& Flags = NoMessage );
+	NodeMessage( Node* node, const Uint32& msg, const Uint32& flags = NoMessage );
 
 	~NodeMessage();
 
@@ -43,6 +44,16 @@ class EE_API NodeMessage {
 	Node* mNode;
 	Uint32 mMsg;
 	Uint32 mFlags;
+};
+
+class EE_API NodeDropMessage : public NodeMessage {
+  public:
+	NodeDropMessage( Node* node, const Uint32& msg, Node* droppedNode );
+
+	Node* getDroppedNode() const;
+
+  private:
+	Node* mDroppedNode;
 };
 
 }} // namespace EE::Scene

@@ -242,7 +242,7 @@ void UIListBox::clear() {
 	updateScroll();
 	updateListBoxItemsSize();
 
-	sendCommonEvent( Event::OnControlClear );
+	sendCommonEvent( Event::OnClear );
 }
 
 Uint32 UIListBox::removeListBoxItem( Uint32 ItemIndex ) {
@@ -964,9 +964,9 @@ Uint32 UIListBox::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
 		case NodeMessage::FocusLoss: {
 			if ( NULL != getEventDispatcher() ) {
-				Node* FocusCtrl = getEventDispatcher()->getFocusNode();
+				Node* focusNode = getEventDispatcher()->getFocusNode();
 
-				if ( this != FocusCtrl && !isParentOf( FocusCtrl ) ) {
+				if ( this != focusNode && !isParentOf( focusNode ) ) {
 					onWidgetFocusLoss();
 				}
 

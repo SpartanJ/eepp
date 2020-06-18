@@ -304,6 +304,8 @@ class EE_API UINode : public Node {
 
 	virtual Uint32 onDragStop( const Vector2i& position, const Uint32& flags );
 
+	virtual Uint32 onDrop( UINode* widget );
+
 	virtual Uint32 onMouseOver( const Vector2i& position, const Uint32& flags );
 
 	virtual Uint32 onMouseLeave( const Vector2i& position, const Uint32& flags );

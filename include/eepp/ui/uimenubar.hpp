@@ -58,7 +58,7 @@ class EE_API UIMenuBar : public UIWidget {
 
 	UIPopUpMenu* getMenuFromButton( UISelectButton* Button );
 
-	bool isPopUpMenuChild( Node* Ctrl );
+	bool isPopUpMenuChild( Node* node );
 
 	void onMenuFocusLoss( const Event* Event );
 

@@ -78,7 +78,7 @@ void UITooltip::show() {
 			runAction( Actions::Sequence::New(
 				Actions::Fade::New(
 					255.f == mAlpha ? 0.f : mAlpha, 255.f,
-					getUISceneNode()->getUIThemeManager()->getControlsFadeOutTime() ),
+					getUISceneNode()->getUIThemeManager()->getWidgetsFadeOutTime() ),
 				Actions::Visible::New( true ) ) );
 		}
 	}
@@ -91,7 +91,7 @@ void UITooltip::hide() {
 		if ( getUISceneNode()->getUIThemeManager()->getDefaultEffectsEnabled() ) {
 			runAction( Actions::Sequence::New(
 				Actions::FadeOut::New(
-					getUISceneNode()->getUIThemeManager()->getControlsFadeOutTime() ),
+					getUISceneNode()->getUIThemeManager()->getWidgetsFadeOutTime() ),
 				Actions::Visible::New( false ) ) );
 		} else {
 			setVisible( false );

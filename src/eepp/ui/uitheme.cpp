@@ -302,8 +302,8 @@ Drawable* UITheme::getIconByName( const std::string& name ) {
 	return NULL;
 }
 
-UISkin* UITheme::getSkin( const std::string& controlName ) {
-	return getByName( mAbbr + "_" + controlName );
+UISkin* UITheme::getSkin( const std::string& widgetName ) {
+	return getByName( mAbbr + "_" + widgetName );
 }
 
 const CSS::StyleSheet& UITheme::getStyleSheet() const {

@@ -125,7 +125,7 @@ class EE_API UISceneNode : public SceneNode {
 	std::unordered_set<UILayout*> mDirtyLayouts;
 	std::vector<std::pair<Float, std::string>> mTimes;
 
-	virtual void resizeControl( EE::Window::Window* win );
+	virtual void resizeNode( EE::Window::Window* win );
 
 	virtual void onDrawDebugDataChange();
 

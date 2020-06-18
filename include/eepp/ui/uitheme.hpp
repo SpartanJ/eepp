@@ -61,7 +61,7 @@ class EE_API UITheme : protected ResourceManagerMulti<UISkin> {
 
 	EE::Graphics::Drawable* getIconByName( const std::string& name );
 
-	UISkin* getSkin( const std::string& controlName );
+	UISkin* getSkin( const std::string& widgetName );
 
 	Font* getDefaultFont() const;
 

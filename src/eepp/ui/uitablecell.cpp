@@ -14,10 +14,10 @@ UITableCell::UITableCell() : UIWidget( "tablecell" ) {
 UITableCell::~UITableCell() {
 	if ( NULL != getEventDispatcher() ) {
 		if ( getEventDispatcher()->getFocusNode() == this )
-			mParentCtrl->setFocus();
+			mParentNode->setFocus();
 
 		if ( getEventDispatcher()->getMouseOverNode() == this )
-			getEventDispatcher()->setMouseOverNode( mParentCtrl );
+			getEventDispatcher()->setMouseOverNode( mParentNode );
 	}
 }
 
@@ -30,27 +30,27 @@ void UITableCell::setTheme( UITheme* Theme ) {
 }
 
 UITable* UITableCell::gridParent() const {
-	return mParentCtrl->getParent()->asType<UITable>();
+	return mParentNode->getParent()->asType<UITable>();
 }
 
-void UITableCell::setCell( const Uint32& CollumnIndex, UINode* Ctrl ) {
+void UITableCell::setCell( const Uint32& CollumnIndex, UINode* node ) {
 	eeASSERT( CollumnIndex < gridParent()->getCollumnsCount() );
 
 	UITable* P = gridParent();
 
-	mCells[CollumnIndex] = Ctrl;
+	mCells[CollumnIndex] = node;
 
-	if ( Ctrl->getParent() != this )
-		Ctrl->setParent( this );
+	if ( node->getParent() != this )
+		node->setParent( this );
 
-	if ( Ctrl->isWidget() )
-		static_cast<UIWidget*>( Ctrl )->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	if ( node->isWidget() )
+		static_cast<UIWidget*>( node )->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 
-	Ctrl->setPosition( P->getCellPosition( CollumnIndex ), 0 );
-	Ctrl->setSize( P->getCollumnWidth( CollumnIndex ), P->getRowHeight() );
+	node->setPosition( P->getCellPosition( CollumnIndex ), 0 );
+	node->setSize( P->getCollumnWidth( CollumnIndex ), P->getRowHeight() );
 
-	Ctrl->setVisible( true );
-	Ctrl->setEnabled( true );
+	node->setVisible( true );
+	node->setEnabled( true );
 }
 
 UINode* UITableCell::getCell( const Uint32& CollumnIndex ) const {

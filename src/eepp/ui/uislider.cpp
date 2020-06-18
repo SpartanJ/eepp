@@ -428,18 +428,18 @@ Uint32 UISlider::onKeyDown( const KeyEvent& Event ) {
 
 void UISlider::manageClick( const Uint32& Flags ) {
 	if ( Flags && NULL != getEventDispatcher() ) {
-		Vector2f controlPos = getEventDispatcher()->getMousePosf();
-		mSlider->worldToNode( controlPos );
+		Vector2f nodePos = getEventDispatcher()->getMousePosf();
+		mSlider->worldToNode( nodePos );
 
 		if ( Flags & EE_BUTTON_LMASK && !mSlider->isMouseOver() && !mSlider->isDragging() &&
 			 getUISceneNode()->getEventDispatcher()->getNodeWasDragging() != mSlider ) {
 			if ( UIOrientation::Horizontal == mOrientation ) {
-				if ( controlPos.x < 0 )
+				if ( nodePos.x < 0 )
 					setValue( mValue - mClickStep );
 				else
 					setValue( mValue + mClickStep );
 			} else {
-				if ( controlPos.y < 0 )
+				if ( nodePos.y < 0 )
 					setValue( mValue - mClickStep );
 				else
 					setValue( mValue + mClickStep );

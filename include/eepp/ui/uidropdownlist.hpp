@@ -56,7 +56,7 @@ class EE_API UIDropDownList : public UITextInput {
 
 	StyleConfig mStyleConfig;
 	UIListBox* mListBox;
-	UINode* mFriendCtrl;
+	UINode* mFriendNode;
 
 	void onListBoxFocusLoss( const Event* Event );
 
@@ -78,7 +78,7 @@ class EE_API UIDropDownList : public UITextInput {
 
 	virtual void onItemKeyDown( const Event* Event );
 
-	virtual void onControlClear( const Event* Event );
+	virtual void onWidgetClear( const Event* Event );
 
 	virtual Uint32 onKeyDown( const KeyEvent& Event );
 
@@ -88,7 +88,7 @@ class EE_API UIDropDownList : public UITextInput {
 
 	virtual void onThemeLoaded();
 
-	void setFriendControl( UINode* friendCtrl );
+	void setFriendNode( UINode* friendNode );
 
 	void destroyListBox();
 };

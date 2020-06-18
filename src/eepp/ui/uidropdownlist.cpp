@@ -18,7 +18,7 @@ UIDropDownList* UIDropDownList::New() {
 }
 
 UIDropDownList::UIDropDownList( const std::string& tag ) :
-	UITextInput( tag ), mListBox( NULL ), mFriendCtrl( NULL ) {
+	UITextInput( tag ), mListBox( NULL ), mFriendNode( NULL ) {
 	clipEnable();
 	setFlags( UI_AUTO_SIZE | UI_AUTO_PADDING );
 	unsetFlags( UI_TEXT_SELECTION_ENABLED );
@@ -44,8 +44,8 @@ UIDropDownList::UIDropDownList( const std::string& tag ) :
 	mListBox->addEventListener( Event::OnItemKeyDown,
 								cb::Make1( this, &UIDropDownList::onItemKeyDown ) );
 	mListBox->addEventListener( Event::KeyDown, cb::Make1( this, &UIDropDownList::onItemKeyDown ) );
-	mListBox->addEventListener( Event::OnControlClear,
-								cb::Make1( this, &UIDropDownList::onControlClear ) );
+	mListBox->addEventListener( Event::OnClear,
+								cb::Make1( this, &UIDropDownList::onWidgetClear ) );
 }
 
 UIDropDownList::~UIDropDownList() {
@@ -80,8 +80,8 @@ void UIDropDownList::onThemeLoaded() {
 	onAutoSize();
 }
 
-void UIDropDownList::setFriendControl( UINode* friendCtrl ) {
-	mFriendCtrl = friendCtrl;
+void UIDropDownList::setFriendNode( UINode* friendNode ) {
+	mFriendNode = friendNode;
 }
 
 void UIDropDownList::onAutoSize() {
@@ -118,10 +118,10 @@ Uint32 UIDropDownList::onMouseUp( const Vector2i& Pos, const Uint32& Flags ) {
 }
 
 Uint32 UIDropDownList::onMouseClick( const Vector2i& Pos, const Uint32& Flags ) {
-	if ( ( Flags & EE_BUTTON_LMASK ) && NULL == mFriendCtrl )
+	if ( ( Flags & EE_BUTTON_LMASK ) && NULL == mFriendNode )
 		showList();
 
-	if ( NULL != mFriendCtrl ) {
+	if ( NULL != mFriendNode ) {
 		UITextInput::onMouseClick( Pos, Flags );
 	}
 
@@ -163,11 +163,11 @@ void UIDropDownList::showList() {
 
 			if ( mStyleConfig.MaxNumVisibleItems < mListBox->getCount() ) {
 				mListBox->setSize(
-					NULL != mFriendCtrl ? mFriendCtrl->getSize().getWidth() : getSize().getWidth(),
+					NULL != mFriendNode ? mFriendNode->getSize().getWidth() : getSize().getWidth(),
 					( Int32 )( mStyleConfig.MaxNumVisibleItems * mListBox->getRowHeight() ) +
 						tPadding.Top + tPadding.Bottom );
 			} else {
-				mListBox->setSize( NULL != mFriendCtrl ? mFriendCtrl->getSize().getWidth()
+				mListBox->setSize( NULL != mFriendNode ? mFriendNode->getSize().getWidth()
 													   : getSize().getWidth(),
 								   ( Int32 )( mListBox->getCount() * mListBox->getRowHeight() ) +
 									   tPadding.Top + tPadding.Bottom );
@@ -217,7 +217,7 @@ void UIDropDownList::setStyleConfig( const StyleConfig& styleConfig ) {
 	setPopUpToRoot( mStyleConfig.PopUpToRoot );
 }
 
-void UIDropDownList::onControlClear( const Event* ) {
+void UIDropDownList::onWidgetClear( const Event* ) {
 	setText( "" );
 }
 
@@ -232,7 +232,7 @@ void UIDropDownList::onListBoxFocusLoss( const Event* ) {
 	if ( NULL == getEventDispatcher() )
 		return;
 
-	bool frienIsFocus = NULL != mFriendCtrl && mFriendCtrl == getEventDispatcher()->getFocusNode();
+	bool frienIsFocus = NULL != mFriendNode && mFriendNode == getEventDispatcher()->getFocusNode();
 	bool isChildFocus = isChild( getEventDispatcher()->getFocusNode() );
 
 	if ( getEventDispatcher()->getFocusNode() != this && !isChildFocus && !frienIsFocus ) {
@@ -265,7 +265,7 @@ void UIDropDownList::show() {
 		 getUISceneNode()->getUIThemeManager()->getDefaultEffectsEnabled() ) {
 		mListBox->runAction( Actions::Sequence::New(
 			Actions::Fade::New( 255.f == mListBox->getAlpha() ? 0.f : mListBox->getAlpha(), 255.f,
-								getUISceneNode()->getUIThemeManager()->getControlsFadeOutTime() ),
+								getUISceneNode()->getUIThemeManager()->getWidgetsFadeOutTime() ),
 			Actions::Spawn::New( Actions::Enable::New(), Actions::Visible::New( true ) ) ) );
 	}
 }
@@ -278,7 +278,7 @@ void UIDropDownList::hide() {
 		 getUISceneNode()->getUIThemeManager()->getDefaultEffectsEnabled() ) {
 		mListBox->runAction( Actions::Sequence::New(
 			Actions::FadeOut::New(
-				getUISceneNode()->getUIThemeManager()->getControlsFadeOutTime() ),
+				getUISceneNode()->getUIThemeManager()->getWidgetsFadeOutTime() ),
 			Actions::Spawn::New( Actions::Disable::New(), Actions::Visible::New( false ) ) ) );
 	} else {
 		mListBox->setEnabled( false );

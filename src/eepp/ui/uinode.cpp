@@ -58,7 +58,7 @@ UINode::~UINode() {
 }
 
 void UINode::worldToNodeTranslation( Vector2f& Pos ) const {
-	Node* ParentLoop = mParentCtrl;
+	Node* ParentLoop = mParentNode;
 
 	Pos -= mPosition;
 
@@ -74,7 +74,7 @@ void UINode::worldToNodeTranslation( Vector2f& Pos ) const {
 }
 
 void UINode::nodeToWorldTranslation( Vector2f& Pos ) const {
-	Node* ParentLoop = mParentCtrl;
+	Node* ParentLoop = mParentNode;
 
 	while ( NULL != ParentLoop ) {
 		const Vector2f& ParentPos = ParentLoop->isUINode()
@@ -800,7 +800,7 @@ void UINode::setThemeByName( const std::string& Theme ) {
 }
 
 void UINode::setTheme( UITheme* Theme ) {
-	setThemeSkin( Theme, "control" );
+	setThemeSkin( Theme, "widget" );
 }
 
 UINode* UINode::setThemeSkin( const std::string& skinName ) {
@@ -1081,6 +1081,12 @@ Uint32 UINode::onDragStop( const Vector2i& pos, const Uint32& flags ) {
 	return 1;
 }
 
+Uint32 UINode::onDrop( UINode* widget ) {
+	DropEvent event( this, widget, Event::OnNodeDropped );
+	sendEvent( &event );
+	return 1;
+}
+
 Uint32 UINode::onMouseOver( const Vector2i& position, const Uint32& flags ) {
 	Node::onMouseOver( position, flags );
 
@@ -1126,6 +1132,16 @@ void UINode::setDragging( const bool& dragging ) {
 		messagePost( &tMsg );
 
 		onDragStop( getEventDispatcher()->getMousePos(), getEventDispatcher()->getPressTrigger() );
+
+		bool enabled = isEnabled();
+		mEnabled = false;
+		Node* found = getUISceneNode()->overFind( getEventDispatcher()->getMousePosf() );
+		if ( found && found->isUINode() ) {
+			found->asType<UINode>()->onDrop( this );
+			NodeDropMessage msg( found, NodeMessage::Drop, this );
+			found->messagePost( &msg );
+		}
+		mEnabled = enabled;
 	}
 }
 

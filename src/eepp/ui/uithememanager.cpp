@@ -63,9 +63,9 @@ UITheme* UIThemeManager::getDefaultTheme() const {
 	return mThemeDefault;
 }
 
-UIThemeManager* UIThemeManager::applyDefaultTheme( UINode* Control ) {
-	if ( mAutoApplyDefaultTheme && NULL != mThemeDefault && NULL != Control )
-		Control->setTheme( mThemeDefault );
+UIThemeManager* UIThemeManager::applyDefaultTheme( UINode* node ) {
+	if ( mAutoApplyDefaultTheme && NULL != mThemeDefault && NULL != node )
+		node->setTheme( mThemeDefault );
 
 	return this;
 }
@@ -88,20 +88,20 @@ const bool& UIThemeManager::getDefaultEffectsEnabled() const {
 	return mEnableDefaultEffects;
 }
 
-const Time& UIThemeManager::getControlsFadeInTime() const {
+const Time& UIThemeManager::getWidgetsFadeInTime() const {
 	return mFadeInTime;
 }
 
-UIThemeManager* UIThemeManager::setControlsFadeInTime( const Time& Time ) {
+UIThemeManager* UIThemeManager::setWidgetsFadeInTime( const Time& Time ) {
 	mFadeInTime = Time;
 	return this;
 }
 
-const Time& UIThemeManager::getControlsFadeOutTime() const {
+const Time& UIThemeManager::getWidgetsFadeOutTime() const {
 	return mFadeOutTime;
 }
 
-UIThemeManager* UIThemeManager::setControlsFadeOutTime( const Time& Time ) {
+UIThemeManager* UIThemeManager::setWidgetsFadeOutTime( const Time& Time ) {
 	mFadeOutTime = Time;
 	return this;
 }

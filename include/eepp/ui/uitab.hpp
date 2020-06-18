@@ -62,7 +62,7 @@ class EE_API UITab : public UISelectButton {
 
 	virtual UIWidget* getExtraInnerWidget();
 
-	void setOwnedControl();
+	void setOwnedNode();
 
 	void updateTab();
 };

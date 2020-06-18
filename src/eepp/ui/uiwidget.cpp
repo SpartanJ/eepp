@@ -73,10 +73,10 @@ bool UIWidget::isType( const Uint32& type ) const {
 }
 
 void UIWidget::updateAnchorsDistances() {
-	if ( NULL != mParentCtrl ) {
+	if ( NULL != mParentNode ) {
 		mDistToBorder = Rect( mPosition.x, mPosition.y,
-							  mParentCtrl->getPixelsSize().x - ( mPosition.x + mSize.x ),
-							  mParentCtrl->getPixelsSize().y - ( mPosition.y + mSize.y ) );
+							  mParentNode->getPixelsSize().x - ( mPosition.x + mSize.x ),
+							  mParentNode->getPixelsSize().y - ( mPosition.y + mSize.y ) );
 	}
 }
 
@@ -557,9 +557,9 @@ void UIWidget::notifyLayoutAttrChange() {
 }
 
 void UIWidget::notifyLayoutAttrChangeParent() {
-	if ( 0 == mAttributesTransactionCount && NULL != mParentCtrl ) {
+	if ( 0 == mAttributesTransactionCount && NULL != mParentNode ) {
 		NodeMessage msg( this, NodeMessage::LayoutAttributeChange );
-		mParentCtrl->messagePost( &msg );
+		mParentNode->messagePost( &msg );
 	}
 }
 
@@ -574,8 +574,8 @@ void UIWidget::updateAnchors( const Vector2f& SizeChange ) {
 	}
 
 	if ( mFlags & UI_ANCHOR_RIGHT ) {
-		if ( NULL != mParentCtrl ) {
-			newSize.x = mParentCtrl->getSize().getWidth() - mDpPos.x -
+		if ( NULL != mParentNode ) {
+			newSize.x = mParentNode->getSize().getWidth() - mDpPos.x -
 						PixelDensity::pxToDpI( mDistToBorder.Right );
 
 			if ( newSize.x < mMinSize.getWidth() )
@@ -588,9 +588,9 @@ void UIWidget::updateAnchors( const Vector2f& SizeChange ) {
 	}
 
 	if ( mFlags & UI_ANCHOR_BOTTOM ) {
-		if ( NULL != mParentCtrl ) {
+		if ( NULL != mParentNode ) {
 			newSize.y =
-				mParentCtrl->getSize().y - mDpPos.y - PixelDensity::pxToDpI( mDistToBorder.Bottom );
+				mParentNode->getSize().y - mDpPos.y - PixelDensity::pxToDpI( mDistToBorder.Bottom );
 
 			if ( newSize.y < mMinSize.getHeight() )
 				newSize.y = mMinSize.getHeight();
@@ -810,7 +810,7 @@ const std::vector<std::string>& UIWidget::getStyleSheetClasses() const {
 }
 
 UIWidget* UIWidget::getStyleSheetParentElement() const {
-	return NULL != mParentCtrl && mParentCtrl->isWidget() ? mParentCtrl->asType<UIWidget>() : NULL;
+	return NULL != mParentNode && mParentNode->isWidget() ? mParentNode->asType<UIWidget>() : NULL;
 }
 
 UIWidget* UIWidget::getStyleSheetPreviousSiblingElement() const {
@@ -1635,9 +1635,9 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			else if ( layoutId == PropertyId::LayoutToBottomOf )
 				rule = PositionPolicy::BottomOf;
 			std::string id = attribute.asString();
-			Node* control = getParent()->find( id );
-			if ( NULL != control && control->isWidget() ) {
-				UIWidget* widget = static_cast<UIWidget*>( control );
+			Node* node = getParent()->find( id );
+			if ( NULL != node && node->isWidget() ) {
+				UIWidget* widget = static_cast<UIWidget*>( node );
 				setLayoutPositionPolicy( rule, widget );
 			}
 			break;

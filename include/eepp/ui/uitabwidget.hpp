@@ -50,27 +50,27 @@ class EE_API UITabWidget : public UIWidget {
 
 	UITab* add( const String& text, UINode* nodeOwned, Drawable* icon = NULL );
 
-	UITabWidget* add( UITab* Tab );
+	UITabWidget* add( UITab* tab );
 
-	UITab* getTab( const Uint32& Index );
+	UITab* getTab( const Uint32& index );
 
-	UITab* getTab( const String& Text );
+	UITab* getTab( const String& text );
 
-	Uint32 getTabIndex( UITab* Tab );
+	Uint32 getTabIndex( UITab* tab );
 
 	Uint32 getTabCount() const;
 
 	void removeTab( const Uint32& index, bool destroyOwnedNode = true );
 
-	void removeTab( UITab* Tab, bool destroyOwnedNode = true );
+	void removeTab( UITab* tab, bool destroyOwnedNode = true );
 
 	void removeAllTabs( bool destroyOwnedNode = true );
 
-	void insertTab( const String& Text, UINode* CtrlOwned, Drawable* Icon, const Uint32& Index );
+	void insertTab( const String& text, UINode* nodeOwned, Drawable* icon, const Uint32& index );
 
-	void insertTab( UITab* Tab, const Uint32& Index );
+	void insertTab( UITab* tab, const Uint32& index );
 
-	virtual void setTheme( UITheme* Theme );
+	virtual void setTheme( UITheme* theme );
 
 	UITab* getTabSelected() const;
 
@@ -78,7 +78,7 @@ class EE_API UITabWidget : public UIWidget {
 
 	UIWidget* getTabBar() const;
 
-	UIWidget* getControlContainer() const;
+	UIWidget* getContainerNode() const;
 
 	Float getTabSeparation() const;
 
@@ -125,7 +125,7 @@ class EE_API UITabWidget : public UIWidget {
 
 	void selectNextTab();
 
-	UITab* setTabSelected( UITab* Tab );
+	UITab* setTabSelected( UITab* tab );
 
 	UITab* setTabSelected( const Uint32& tabIndex );
 
@@ -144,7 +144,7 @@ class EE_API UITabWidget : public UIWidget {
   protected:
 	friend class UITab;
 
-	UIWidget* mCtrlContainer;
+	UIWidget* mNodeContainer;
 	UIWidget* mTabBar;
 	StyleConfig mStyleConfig;
 	std::deque<UITab*> mTabs;

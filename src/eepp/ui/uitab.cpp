@@ -233,7 +233,7 @@ bool UITab::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		case PropertyId::Owns:
 			mOwnedName = attribute.asString();
-			setOwnedControl();
+			setOwnedNode();
 			break;
 		default:
 			return UISelectButton::applyProperty( attribute );
@@ -248,7 +248,7 @@ Uint32 UITab::onMessage( const NodeMessage* message ) {
 		return 1;
 
 	if ( NULL == mOwnedWidget && !mOwnedName.empty() ) {
-		setOwnedControl();
+		setOwnedNode();
 	}
 
 	Uint32 flags = message->getFlags();
@@ -286,11 +286,11 @@ Uint32 UITab::onMessage( const NodeMessage* message ) {
 	return 0;
 }
 
-void UITab::setOwnedControl() {
-	Node* ctrl = getParent()->getParent()->find( mOwnedName );
+void UITab::setOwnedNode() {
+	Node* node = getParent()->getParent()->find( mOwnedName );
 
-	if ( NULL != ctrl ) {
-		setOwnedWidget( ctrl );
+	if ( NULL != node ) {
+		setOwnedWidget( node );
 	}
 }
 

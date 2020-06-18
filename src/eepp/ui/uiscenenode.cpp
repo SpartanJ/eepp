@@ -52,7 +52,7 @@ UISceneNode::UISceneNode( EE::Window::Window* window ) :
 	mRoot->setParent( this )->setPosition( 0, 0 )->setId( "uiscenenode_root_node" );
 	mRoot->enableReportSizeChangeToChilds();
 
-	resizeControl( mWindow );
+	resizeNode( mWindow );
 }
 
 UISceneNode::~UISceneNode() {
@@ -63,7 +63,7 @@ UISceneNode::~UISceneNode() {
 	}
 }
 
-void UISceneNode::resizeControl( EE::Window::Window* ) {
+void UISceneNode::resizeNode( EE::Window::Window* ) {
 	setPixelsSize( mWindow->getSize().asFloat() );
 	onMediaChanged();
 	sendMsg( this, NodeMessage::WindowResize );
@@ -519,8 +519,8 @@ void UISceneNode::invalidateStyle( UIWidget* node ) {
 	if ( mDirtyStyle.count( node ) > 0 )
 		return;
 
-	for ( auto& dirtyCtrl : mDirtyStyle ) {
-		if ( NULL != dirtyCtrl && dirtyCtrl->isParentOf( node ) ) {
+	for ( auto& dirtyNode : mDirtyStyle ) {
+		if ( NULL != dirtyNode && dirtyNode->isParentOf( node ) ) {
 			return;
 		}
 	}
@@ -555,8 +555,8 @@ void UISceneNode::invalidateStyleState( UIWidget* node, bool disableCSSAnimation
 	if ( mDirtyStyleState.count( node ) > 0 )
 		return;
 
-	for ( auto& dirtyCtrl : mDirtyStyleState ) {
-		if ( NULL != dirtyCtrl && dirtyCtrl->isParentOf( node ) ) {
+	for ( auto& dirtyNode : mDirtyStyleState ) {
+		if ( NULL != dirtyNode && dirtyNode->isParentOf( node ) ) {
 			return;
 		}
 	}
@@ -593,8 +593,8 @@ void UISceneNode::invalidateLayout( UILayout* node ) {
 		return;
 
 	if ( node->getParent()->isLayout() ) {
-		for ( auto& dirtyCtrl : mDirtyLayouts ) {
-			if ( NULL != dirtyCtrl && dirtyCtrl->isParentOf( node ) &&
+		for ( auto& dirtyNode : mDirtyLayouts ) {
+			if ( NULL != dirtyNode && dirtyNode->isParentOf( node ) &&
 				 node->getParent()->isLayout() ) {
 				return;
 			}

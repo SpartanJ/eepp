@@ -125,7 +125,7 @@ class EE_API UIMenu : public UIWidget {
 
 	bool widgetCheckSize( UIWidget* widget, const bool& resize = true );
 
-	bool isSubMenu( Node* Ctrl );
+	bool isSubMenu( Node* node );
 
 	void setItemSelected( UIWidget* Item );
 
@@ -135,7 +135,7 @@ class EE_API UIMenu : public UIWidget {
 
 	void nextSel();
 
-	void trySelect( UIWidget* Ctrl, bool Up );
+	void trySelect( UIWidget* node, bool up );
 };
 
 }} // namespace EE::UI

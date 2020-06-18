@@ -40,7 +40,7 @@ class EE_API UIComboBox : public UIWidget {
 
 	Uint32 onMessage( const NodeMessage* Msg );
 
-	void updateControls();
+	void updateWidgets();
 
 	virtual void onSizeChange();
 

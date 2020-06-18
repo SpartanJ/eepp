@@ -42,7 +42,7 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const StyleConfig& w
 	mButtonMinimize( NULL ),
 	mButtonMaximize( NULL ),
 	mTitle( NULL ),
-	mModalCtrl( NULL ),
+	mModalNode( NULL ),
 	mResizeType( RESIZE_NONE ),
 	mFrameBufferBound( false ) {
 	subscribeScheduledUpdate();
@@ -92,10 +92,10 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const StyleConfig& w
 
 UIWindow::~UIWindow() {
 	if ( NULL != getUISceneNode() && !SceneManager::instance()->isShootingDown() ) {
-		if ( NULL != mModalCtrl ) {
-			mModalCtrl->setEnabled( false );
-			mModalCtrl->setVisible( false );
-			mModalCtrl->close();
+		if ( NULL != mModalNode ) {
+			mModalNode->setEnabled( false );
+			mModalNode->setVisible( false );
+			mModalNode->close();
 		}
 
 		getUISceneNode()->windowRemove( this );
@@ -294,8 +294,8 @@ void UIWindow::updateWinFlags() {
 
 	updateDrawInvalidator( true );
 
-	if ( isModal() && NULL == mModalCtrl ) {
-		createModalControl();
+	if ( isModal() && NULL == mModalNode ) {
+		createModalNode();
 	}
 
 	if ( needsUpdate ) {
@@ -438,21 +438,21 @@ void UIWindow::onWindowReady() {
 	}
 }
 
-void UIWindow::createModalControl() {
-	Node* Ctrl = mSceneNode;
+void UIWindow::createModalNode() {
+	Node* node = mSceneNode;
 
-	if ( NULL == Ctrl )
+	if ( NULL == node )
 		return;
 
-	if ( NULL == mModalCtrl ) {
-		mModalCtrl = UIWidget::NewWithTag( "window::modaldialog" );
-		mModalCtrl->setParent( Ctrl )->setPosition( 0, 0 )->setSize( Ctrl->getSize() );
-		mModalCtrl->setAnchors( UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT |
+	if ( NULL == mModalNode ) {
+		mModalNode = UIWidget::NewWithTag( "window::modaldialog" );
+		mModalNode->setParent( node )->setPosition( 0, 0 )->setSize( node->getSize() );
+		mModalNode->setAnchors( UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT |
 								UI_ANCHOR_BOTTOM );
 	} else {
-		mModalCtrl->setPosition( 0, 0 );
-		mModalCtrl->setSize( Ctrl->getSize() );
-		mModalCtrl->updateAnchorsDistances();
+		mModalNode->setPosition( 0, 0 );
+		mModalNode->setSize( node->getSize() );
+		mModalNode->updateAnchorsDistances();
 	}
 }
 
@@ -477,7 +477,7 @@ void UIWindow::closeWindow() {
 	UIThemeManager* themeManager = getUISceneNode()->getUIThemeManager();
 	if ( themeManager->getDefaultEffectsEnabled() ) {
 		runAction(
-			Actions::Sequence::New( Actions::FadeOut::New( themeManager->getControlsFadeOutTime() ),
+			Actions::Sequence::New( Actions::FadeOut::New( themeManager->getWidgetsFadeOutTime() ),
 									Actions::Close::New() ) );
 	} else {
 		close();
@@ -487,11 +487,11 @@ void UIWindow::closeWindow() {
 void UIWindow::close() {
 	UIWidget::close();
 
-	if ( NULL != mModalCtrl ) {
-		mModalCtrl->setEnabled( false );
-		mModalCtrl->setVisible( false );
-		mModalCtrl->close();
-		mModalCtrl = NULL;
+	if ( NULL != mModalNode ) {
+		mModalNode->setEnabled( false );
+		mModalNode->setVisible( false );
+		mModalNode->close();
+		mModalNode = NULL;
 	}
 }
 
@@ -771,8 +771,8 @@ Uint32 UIWindow::onMessage( const NodeMessage* Msg ) {
 			break;
 		}
 		case NodeMessage::WindowResize: {
-			if ( isModal() && NULL != mModalCtrl && NULL != mSceneNode ) {
-				mModalCtrl->setSize( mSceneNode->getSize() );
+			if ( isModal() && NULL != mModalNode && NULL != mSceneNode ) {
+				mModalNode->setSize( mSceneNode->getSize() );
 			}
 
 			break;
@@ -831,7 +831,7 @@ void UIWindow::doResize( const NodeMessage* Msg ) {
 	decideResizeType( Msg->getSender() );
 }
 
-void UIWindow::decideResizeType( Node* Control ) {
+void UIWindow::decideResizeType( Node* node ) {
 	if ( NULL == getEventDispatcher() )
 		return;
 
@@ -839,7 +839,7 @@ void UIWindow::decideResizeType( Node* Control ) {
 
 	worldToNode( Pos );
 
-	if ( Control == this ) {
+	if ( node == this ) {
 		if ( Pos.x <= mBorderLeft->getSize().getWidth() ) {
 			tryResize( RESIZE_TOPLEFT );
 		} else if ( Pos.x >= ( getSize().getWidth() - mBorderRight->getSize().getWidth() ) ) {
@@ -853,7 +853,7 @@ void UIWindow::decideResizeType( Node* Control ) {
 				tryResize( RESIZE_TOP );
 			}
 		}
-	} else if ( Control == mBorderBottom ) {
+	} else if ( node == mBorderBottom ) {
 		if ( Pos.x < mStyleConfig.MinCornerDistance ) {
 			tryResize( RESIZE_LEFTBOTTOM );
 		} else if ( Pos.x > getSize().getWidth() - mStyleConfig.MinCornerDistance ) {
@@ -861,13 +861,13 @@ void UIWindow::decideResizeType( Node* Control ) {
 		} else {
 			tryResize( RESIZE_BOTTOM );
 		}
-	} else if ( Control == mBorderLeft ) {
+	} else if ( node == mBorderLeft ) {
 		if ( Pos.y >= getSize().getHeight() - mStyleConfig.MinCornerDistance ) {
 			tryResize( RESIZE_LEFTBOTTOM );
 		} else {
 			tryResize( RESIZE_LEFT );
 		}
-	} else if ( Control == mBorderRight ) {
+	} else if ( node == mBorderRight ) {
 		if ( Pos.y >= getSize().getHeight() - mStyleConfig.MinCornerDistance ) {
 			tryResize( RESIZE_RIGHTBOTTOM );
 		} else {
@@ -1043,11 +1043,11 @@ UINode* UIWindow::getButtonMinimize() const {
 
 void UIWindow::setupModal() {
 	if ( isModal() ) {
-		createModalControl();
+		createModalNode();
 
-		mModalCtrl->setEnabled( true );
-		mModalCtrl->setVisible( true );
-		mModalCtrl->toFront();
+		mModalNode->setEnabled( true );
+		mModalNode->setVisible( true );
+		mModalNode->toFront();
 
 		toFront();
 	}
@@ -1064,7 +1064,7 @@ bool UIWindow::show() {
 		if ( themeManager->getDefaultEffectsEnabled() ) {
 			runAction( Actions::Fade::New( mStyleConfig.BaseAlpha == getAlpha() ? 0.f : mAlpha,
 										   mStyleConfig.BaseAlpha,
-										   themeManager->getControlsFadeOutTime() ) );
+										   themeManager->getWidgetsFadeOutTime() ) );
 		}
 		setupModal();
 
@@ -1081,7 +1081,7 @@ bool UIWindow::hide() {
 		UIThemeManager* themeManager = getUISceneNode()->getUIThemeManager();
 		if ( themeManager->getDefaultEffectsEnabled() ) {
 			runAction( Actions::Sequence::New(
-				Actions::FadeOut::New( themeManager->getControlsFadeOutTime() ),
+				Actions::FadeOut::New( themeManager->getWidgetsFadeOutTime() ),
 				Actions::Spawn::New( Actions::Disable::New(), Actions::Visible::New( false ) ) ) );
 		} else {
 			setEnabled( false );
@@ -1091,9 +1091,9 @@ bool UIWindow::hide() {
 		if ( NULL != mSceneNode )
 			mSceneNode->setFocus();
 
-		if ( NULL != mModalCtrl ) {
-			mModalCtrl->setEnabled( false );
-			mModalCtrl->setVisible( false );
+		if ( NULL != mModalNode ) {
+			mModalNode->setEnabled( false );
+			mModalNode->setVisible( false );
 		}
 
 		return true;
@@ -1183,12 +1183,12 @@ UITextView* UIWindow::getTitleTextBox() const {
 }
 
 void UIWindow::maximize() {
-	Node* Ctrl = mSceneNode;
+	Node* node = mSceneNode;
 
-	if ( NULL == Ctrl )
+	if ( NULL == node )
 		return;
 
-	if ( Ctrl->getSize() == getSize() ) {
+	if ( node->getSize() == getSize() ) {
 		setPixelsPosition( mNonMaxPos );
 		internalSize( mNonMaxSize );
 	} else {
@@ -1196,7 +1196,7 @@ void UIWindow::maximize() {
 		mNonMaxSize = mSize;
 
 		setPosition( 0, 0 );
-		setSizeWithDecoration( Ctrl->getSize() );
+		setSizeWithDecoration( node->getSize() );
 	}
 }
 
@@ -1443,8 +1443,8 @@ bool UIWindow::isModal() {
 	return 0 != ( mStyleConfig.WinFlags & UI_WIN_MODAL );
 }
 
-UIWidget* UIWindow::getModalControl() const {
-	return mModalCtrl;
+UIWidget* UIWindow::getModalWidget() const {
+	return mModalNode;
 }
 
 void UIWindow::resizeCursor() {
@@ -1456,21 +1456,21 @@ void UIWindow::resizeCursor() {
 
 	EventDispatcher* eventDispatcher = sceneNode->getEventDispatcher();
 
-	Vector2i Pos = eventDispatcher->getMousePos();
+	Vector2i pos = eventDispatcher->getMousePos();
 
-	worldToNode( Pos );
+	worldToNode( pos );
 
-	const Node* Control = eventDispatcher->getMouseOverNode();
+	const Node* node = eventDispatcher->getMouseOverNode();
 
-	if ( Control == this ) {
-		if ( Pos.x <= mBorderLeft->getSize().getWidth() ) {
+	if ( node == this ) {
+		if ( pos.x <= mBorderLeft->getSize().getWidth() ) {
 			sceneNode->setCursor( Cursor::SizeNWSE ); // RESIZE_TOPLEFT
-		} else if ( Pos.x >= ( getSize().getWidth() - mBorderRight->getSize().getWidth() ) ) {
+		} else if ( pos.x >= ( getSize().getWidth() - mBorderRight->getSize().getWidth() ) ) {
 			sceneNode->setCursor( Cursor::SizeNESW ); // RESIZE_TOPRIGHT
-		} else if ( Pos.y <= mBorderBottom->getSize().getHeight() ) {
-			if ( Pos.x < mStyleConfig.MinCornerDistance ) {
+		} else if ( pos.y <= mBorderBottom->getSize().getHeight() ) {
+			if ( pos.x < mStyleConfig.MinCornerDistance ) {
 				sceneNode->setCursor( Cursor::SizeNWSE ); // RESIZE_TOPLEFT
-			} else if ( Pos.x > getSize().getWidth() - mStyleConfig.MinCornerDistance ) {
+			} else if ( pos.x > getSize().getWidth() - mStyleConfig.MinCornerDistance ) {
 				sceneNode->setCursor( Cursor::SizeNESW ); // RESIZE_TOPRIGHT
 			} else {
 				sceneNode->setCursor( Cursor::SizeNS ); // RESIZE_TOP
@@ -1478,22 +1478,22 @@ void UIWindow::resizeCursor() {
 		} else if ( !( eventDispatcher->getPressTrigger() & EE_BUTTON_LMASK ) ) {
 			sceneNode->setCursor( Cursor::Arrow );
 		}
-	} else if ( Control == mBorderBottom ) {
-		if ( Pos.x < mStyleConfig.MinCornerDistance ) {
+	} else if ( node == mBorderBottom ) {
+		if ( pos.x < mStyleConfig.MinCornerDistance ) {
 			sceneNode->setCursor( Cursor::SizeNESW ); // RESIZE_LEFTBOTTOM
-		} else if ( Pos.x > getSize().getWidth() - mStyleConfig.MinCornerDistance ) {
+		} else if ( pos.x > getSize().getWidth() - mStyleConfig.MinCornerDistance ) {
 			sceneNode->setCursor( Cursor::SizeNWSE ); // RESIZE_RIGHTBOTTOM
 		} else {
 			sceneNode->setCursor( Cursor::SizeNS ); // RESIZE_BOTTOM
 		}
-	} else if ( Control == mBorderLeft ) {
-		if ( Pos.y >= getSize().getHeight() - mStyleConfig.MinCornerDistance ) {
+	} else if ( node == mBorderLeft ) {
+		if ( pos.y >= getSize().getHeight() - mStyleConfig.MinCornerDistance ) {
 			sceneNode->setCursor( Cursor::SizeNESW ); // RESIZE_LEFTBOTTOM
 		} else {
 			sceneNode->setCursor( Cursor::SizeWE ); // RESIZE_LEFT
 		}
-	} else if ( Control == mBorderRight ) {
-		if ( Pos.y >= getSize().getHeight() - mStyleConfig.MinCornerDistance ) {
+	} else if ( node == mBorderRight ) {
+		if ( pos.y >= getSize().getHeight() - mStyleConfig.MinCornerDistance ) {
 			sceneNode->setCursor( Cursor::SizeNWSE ); // RESIZE_RIGHTBOTTOM
 		} else {
 			sceneNode->setCursor( Cursor::SizeWE ); // RESIZE_RIGHT

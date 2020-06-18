@@ -303,18 +303,18 @@ void EETest::createShaders() {
 void EETest::onWinMouseUp( const Event* Event ) {
 	const MouseEvent* MEvent = reinterpret_cast<const MouseEvent*>( Event );
 
-	Node* CtrlAnim;
+	Node* nodeAnim;
 
 	if ( Event->getNode()->isType( UI_TYPE_WINDOW ) ) {
-		CtrlAnim = reinterpret_cast<Node*>( Event->getNode() );
+		nodeAnim = reinterpret_cast<Node*>( Event->getNode() );
 	} else {
-		CtrlAnim = reinterpret_cast<Node*>( Event->getNode()->getParent() );
+		nodeAnim = reinterpret_cast<Node*>( Event->getNode()->getParent() );
 	}
 
 	if ( MEvent->getFlags() & EE_BUTTON_WUMASK ) {
-		CtrlAnim->setScale( CtrlAnim->getScale() + 0.1f );
+		nodeAnim->setScale( nodeAnim->getScale() + 0.1f );
 	} else if ( MEvent->getFlags() & EE_BUTTON_WDMASK ) {
-		CtrlAnim->setScale( CtrlAnim->getScale() - 0.1f );
+		nodeAnim->setScale( nodeAnim->getScale() - 0.1f );
 	}
 }
 
@@ -366,7 +366,7 @@ void EETest::createBaseUI() {
 	C = static_cast<UINode*>( tWin->getContainer() );
 	tWin->setVisible( false )->setEnabled( false );
 
-	tWin->setTitle( "Controls Test" );
+	tWin->setTitle( "Widgets Test" );
 
 	tWin->addEventListener( Event::MouseUp, cb::Make1( this, &EETest::onWinMouseUp ) );
 	C->addEventListener( Event::MouseUp, cb::Make1( this, &EETest::onWinMouseUp ) );
@@ -667,16 +667,16 @@ void EETest::createNewUI() {
 		->setParent( container );
 	loader->setBackgroundColor( 0xCCCCCCCC );
 
-	UIRadioButton* ctrl = UIRadioButton::New();
-	ctrl->setId( "happy_radio" );
-	ctrl->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed )
+	UIRadioButton* radioButton = UIRadioButton::New();
+	radioButton->setId( "happy_radio" );
+	radioButton->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed )
 		->setPosition( 50, 100 )
 		->setSize( 200, 32 )
 		->setParent( container );
-	ctrl->setBackgroundColor( 0x33333333 );
-	ctrl->setBorderColor( 0x66666666 );
-	ctrl->setText( "Happy RadioButon :)" );
-	ctrl->setFontColor( Color::Black );
+	radioButton->setBackgroundColor( 0x33333333 );
+	radioButton->setBorderColor( 0x66666666 );
+	radioButton->setText( "Happy RadioButon :)" );
+	radioButton->setFontColor( Color::Black );
 
 	UICheckBox* cbox = UICheckBox::New();
 	cbox->setId( "happy_check" );
@@ -1049,18 +1049,18 @@ void EETest::createFileDialog() {
 }
 
 static void onWinDragStart( const Event* event ) {
-	UINode* ctrl = static_cast<UINode*>( event->getNode() );
-	UIWindow* window = ctrl->isType( UI_TYPE_WINDOW )
-						   ? static_cast<UIWindow*>( ctrl )
-						   : static_cast<UIWindow*>( ctrl->getWindowContainer()->getParent() );
+	UINode* node = static_cast<UINode*>( event->getNode() );
+	UIWindow* window = node->isType( UI_TYPE_WINDOW )
+						   ? static_cast<UIWindow*>( node )
+						   : static_cast<UIWindow*>( node->getWindowContainer()->getParent() );
 	window->runAction( Actions::Fade::New( window->getAlpha(), 100, Seconds( 0.2f ) ) );
 }
 
 static void onWinDragStop( const Event* event ) {
-	UINode* ctrl = static_cast<UINode*>( event->getNode() );
-	UIWindow* window = ctrl->isType( UI_TYPE_WINDOW )
-						   ? static_cast<UIWindow*>( ctrl )
-						   : static_cast<UIWindow*>( ctrl->getWindowContainer()->getParent() );
+	UINode* node = static_cast<UINode*>( event->getNode() );
+	UIWindow* window = node->isType( UI_TYPE_WINDOW )
+						   ? static_cast<UIWindow*>( node )
+						   : static_cast<UIWindow*>( node->getWindowContainer()->getParent() );
 	window->runAction( Actions::Fade::New( window->getAlpha(), 255, Seconds( 0.2f ) ) );
 }
 

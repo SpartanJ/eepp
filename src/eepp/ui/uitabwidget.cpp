@@ -15,7 +15,7 @@ UITabWidget* UITabWidget::New() {
 
 UITabWidget::UITabWidget() :
 	UIWidget( "tabwidget" ),
-	mCtrlContainer( NULL ),
+	mNodeContainer( NULL ),
 	mTabBar( NULL ),
 	mTabSelected( NULL ),
 	mTabSelectedIndex( eeINDEX_NOT_FOUND ),
@@ -29,13 +29,13 @@ UITabWidget::UITabWidget() :
 		->setPosition( 0, 0 );
 	mTabBar->clipEnable();
 
-	mCtrlContainer = UIWidget::NewWithTag( "tabwidget::container" );
-	mCtrlContainer
+	mNodeContainer = UIWidget::NewWithTag( "tabwidget::container" );
+	mNodeContainer
 		->setPixelsSize( mSize.getWidth(),
 						 mSize.getHeight() - PixelDensity::dpToPx( mStyleConfig.TabHeight ) )
 		->setParent( this )
 		->setPosition( 0, mStyleConfig.TabHeight );
-	mCtrlContainer->clipEnable();
+	mNodeContainer->clipEnable();
 
 	onSizeChange();
 
@@ -52,15 +52,15 @@ bool UITabWidget::isType( const Uint32& type ) const {
 	return UITabWidget::getType() == type ? true : UIWidget::isType( type );
 }
 
-void UITabWidget::setTheme( UITheme* Theme ) {
-	UIWidget::setTheme( Theme );
+void UITabWidget::setTheme( UITheme* theme ) {
+	UIWidget::setTheme( theme );
 
-	mTabBar->setThemeSkin( Theme, "tabwidget" );
+	mTabBar->setThemeSkin( theme, "tabwidget" );
 
-	mCtrlContainer->setThemeSkin( Theme, "tabbar" );
+	mNodeContainer->setThemeSkin( theme, "tabbar" );
 
 	if ( 0 == mStyleConfig.TabHeight ) {
-		UISkin* tSkin = Theme->getSkin( "tab" );
+		UISkin* tSkin = theme->getSkin( "tab" );
 
 		if ( NULL != tSkin ) {
 			Sizef tSize1 = getSkinSize( tSkin );
@@ -86,11 +86,11 @@ void UITabWidget::setContainerSize() {
 	if ( getTabCount() < 2 && mHideTabBarOnSingleTab ) {
 		mTabBar->setVisible( false );
 		mTabBar->setEnabled( false );
-		mCtrlContainer->setPosition( mPadding.Left, mPadding.Top );
+		mNodeContainer->setPosition( mPadding.Left, mPadding.Top );
 		Sizef s( mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
 				 mSize.getHeight() - mRealPadding.Top - mRealPadding.Bottom );
-		if ( s != mCtrlContainer->getPixelsSize() ) {
-			mCtrlContainer->setPixelsSize( s );
+		if ( s != mNodeContainer->getPixelsSize() ) {
+			mNodeContainer->setPixelsSize( s );
 
 			for ( auto& tab : mTabs ) {
 				refreshOwnedWidget( tab );
@@ -102,12 +102,12 @@ void UITabWidget::setContainerSize() {
 		mTabBar->setPixelsSize( mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
 								PixelDensity::dpToPx( mStyleConfig.TabHeight ) );
 		mTabBar->setPosition( mPadding.Left, mPadding.Top );
-		mCtrlContainer->setPosition( mPadding.Left, mPadding.Top + mStyleConfig.TabHeight );
+		mNodeContainer->setPosition( mPadding.Left, mPadding.Top + mStyleConfig.TabHeight );
 		Sizef s( mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
 				 mSize.getHeight() - PixelDensity::dpToPx( mStyleConfig.TabHeight ) -
 					 mRealPadding.Top - mRealPadding.Bottom );
-		if ( s != mCtrlContainer->getPixelsSize() ) {
-			mCtrlContainer->setPixelsSize( s );
+		if ( s != mNodeContainer->getPixelsSize() ) {
+			mNodeContainer->setPixelsSize( s );
 
 			for ( auto& tab : mTabs ) {
 				refreshOwnedWidget( tab );
@@ -163,20 +163,20 @@ bool UITabWidget::isDrawInvalidator() const {
 void UITabWidget::invalidate( Node* invalidator ) {
 	// Only invalidate if the invalidator is actually visible in the current active tab.
 	if ( NULL != invalidator ) {
-		if ( invalidator == mCtrlContainer || invalidator == mTabBar ||
+		if ( invalidator == mNodeContainer || invalidator == mTabBar ||
 			 mTabBar->inParentTreeOf( invalidator ) ) {
-			mNodeDrawInvalidator->invalidate( mCtrlContainer );
-		} else if ( invalidator->getParent() == mCtrlContainer ) {
+			mNodeDrawInvalidator->invalidate( mNodeContainer );
+		} else if ( invalidator->getParent() == mNodeContainer ) {
 			if ( invalidator->isVisible() ) {
-				mNodeDrawInvalidator->invalidate( mCtrlContainer );
+				mNodeDrawInvalidator->invalidate( mNodeContainer );
 			}
 		} else {
 			Node* container = invalidator->getParent();
-			while ( container->getParent() != NULL && container->getParent() != mCtrlContainer ) {
+			while ( container->getParent() != NULL && container->getParent() != mNodeContainer ) {
 				container = container->getParent();
 			}
-			if ( container->getParent() == mCtrlContainer && container->isVisible() ) {
-				mNodeDrawInvalidator->invalidate( mCtrlContainer );
+			if ( container->getParent() == mNodeContainer && container->isVisible() ) {
+				mNodeDrawInvalidator->invalidate( mNodeContainer );
 			}
 		}
 	} else if ( NULL != mNodeDrawInvalidator ) {
@@ -394,7 +394,7 @@ UITab* UITabWidget::createTab( const String& text, UINode* nodeOwned, Drawable* 
 	tab->setVisible( true );
 	tab->setEnabled( true );
 	tab->setOwnedWidget( nodeOwned );
-	nodeOwned->setParent( mCtrlContainer );
+	nodeOwned->setParent( mNodeContainer );
 	nodeOwned->setVisible( false );
 	nodeOwned->setEnabled( true );
 
@@ -413,13 +413,13 @@ UITab* UITabWidget::add( const String& text, UINode* nodeOwned, Drawable* icon )
 	return tab;
 }
 
-UITabWidget* UITabWidget::add( UITab* Tab ) {
-	Tab->setParent( mTabBar );
+UITabWidget* UITabWidget::add( UITab* tab ) {
+	tab->setParent( mTabBar );
 
-	mTabs.push_back( Tab );
+	mTabs.push_back( tab );
 
 	if ( NULL == mTabSelected ) {
-		setTabSelected( Tab );
+		setTabSelected( tab );
 	} else {
 		orderTabs();
 	}
@@ -427,17 +427,17 @@ UITabWidget* UITabWidget::add( UITab* Tab ) {
 	return this;
 }
 
-UITab* UITabWidget::getTab( const Uint32& Index ) {
-	eeASSERT( Index < mTabs.size() );
-	return mTabs[Index];
+UITab* UITabWidget::getTab( const Uint32& index ) {
+	eeASSERT( index < mTabs.size() );
+	return mTabs[index];
 }
 
-UITab* UITabWidget::getTab( const String& Text ) {
+UITab* UITabWidget::getTab( const String& text ) {
 	for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
 		if ( mTabs[i]->isType( UI_TYPE_TAB ) ) {
 			UITab* tTab = mTabs[i]->asType<UITab>();
 
-			if ( tTab->getText() == Text )
+			if ( tTab->getText() == text )
 				return tTab;
 		}
 	}
@@ -445,9 +445,9 @@ UITab* UITabWidget::getTab( const String& Text ) {
 	return NULL;
 }
 
-Uint32 UITabWidget::getTabIndex( UITab* Tab ) {
+Uint32 UITabWidget::getTabIndex( UITab* tab ) {
 	for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
-		if ( mTabs[i] == Tab )
+		if ( mTabs[i] == tab )
 			return i;
 	}
 
@@ -498,8 +498,8 @@ void UITabWidget::removeTab( const Uint32& index, bool destroyOwnedNode ) {
 	sendEvent( &tabEvent );
 }
 
-void UITabWidget::removeTab( UITab* Tab, bool destroyOwnedNode ) {
-	removeTab( getTabIndex( Tab ), destroyOwnedNode );
+void UITabWidget::removeTab( UITab* tab, bool destroyOwnedNode ) {
+	removeTab( getTabIndex( tab ), destroyOwnedNode );
 }
 
 void UITabWidget::removeAllTabs( bool destroyOwnedNode ) {
@@ -533,33 +533,33 @@ void UITabWidget::removeAllTabs( bool destroyOwnedNode ) {
 	}
 }
 
-void UITabWidget::insertTab( const String& Text, UINode* CtrlOwned, Drawable* Icon,
-							 const Uint32& Index ) {
-	insertTab( createTab( Text, CtrlOwned, Icon ), Index );
+void UITabWidget::insertTab( const String& text, UINode* nodeOwned, Drawable* icon,
+							 const Uint32& index ) {
+	insertTab( createTab( text, nodeOwned, icon ), index );
 }
 
-void UITabWidget::insertTab( UITab* Tab, const Uint32& Index ) {
-	mTabs.insert( mTabs.begin() + Index, Tab );
+void UITabWidget::insertTab( UITab* Tab, const Uint32& index ) {
+	mTabs.insert( mTabs.begin() + index, Tab );
 
-	childAddAt( Tab, Index );
+	childAddAt( Tab, index );
 
 	orderTabs();
 }
 
-UITab* UITabWidget::setTabSelected( UITab* Tab ) {
-	if ( NULL == Tab )
+UITab* UITabWidget::setTabSelected( UITab* tab ) {
+	if ( NULL == tab )
 		return NULL;
 
-	if ( std::find( mTabs.begin(), mTabs.end(), Tab ) == mTabs.end() )
+	if ( std::find( mTabs.begin(), mTabs.end(), tab ) == mTabs.end() )
 		return NULL;
 
 	invalidateDraw();
 
-	if ( Tab == mTabSelected ) {
-		refreshOwnedWidget( Tab );
-		if ( Tab->getOwnedWidget() )
-			Tab->getOwnedWidget()->setFocus();
-		return Tab;
+	if ( tab == mTabSelected ) {
+		refreshOwnedWidget( tab );
+		if ( tab->getOwnedWidget() )
+			tab->getOwnedWidget()->setFocus();
+		return tab;
 	}
 
 	if ( NULL != mTabSelected ) {
@@ -571,14 +571,14 @@ UITab* UITabWidget::setTabSelected( UITab* Tab ) {
 		}
 	}
 
-	Tab->select();
-	if ( Tab->getOwnedWidget() )
-		Tab->getOwnedWidget()->setFocus();
+	tab->select();
+	if ( tab->getOwnedWidget() )
+		tab->getOwnedWidget()->setFocus();
 
-	Uint32 TabIndex = getTabIndex( Tab );
+	Uint32 TabIndex = getTabIndex( tab );
 
 	if ( eeINDEX_NOT_FOUND != TabIndex ) {
-		mTabSelected = Tab;
+		mTabSelected = tab;
 		mTabSelectedIndex = TabIndex;
 
 		refreshOwnedWidget( mTabSelected );
@@ -588,7 +588,7 @@ UITab* UITabWidget::setTabSelected( UITab* Tab ) {
 		sendCommonEvent( Event::OnTabSelected );
 	}
 
-	return Tab;
+	return tab;
 }
 
 UITab* UITabWidget::setTabSelected( const Uint32& tabIndex ) {
@@ -630,10 +630,10 @@ void UITabWidget::setAllowRearrangeTabs( bool allowRearrangeTabs ) {
 
 void UITabWidget::refreshOwnedWidget( UITab* tab ) {
 	if ( NULL != tab && NULL != tab->getOwnedWidget() ) {
-		tab->getOwnedWidget()->setParent( mCtrlContainer );
+		tab->getOwnedWidget()->setParent( mNodeContainer );
 		tab->getOwnedWidget()->setVisible( tab == mTabSelected );
 		tab->getOwnedWidget()->setEnabled( tab == mTabSelected );
-		tab->getOwnedWidget()->setSize( mCtrlContainer->getSize() );
+		tab->getOwnedWidget()->setSize( mNodeContainer->getSize() );
 
 		if ( tab->getOwnedWidget()->isWidget() ) {
 			UIWidget* widget = static_cast<UIWidget*>( tab->getOwnedWidget() );
@@ -686,14 +686,14 @@ void UITabWidget::onSizeChange() {
 	posTabs();
 
 	if ( NULL != mTabSelected && NULL != mTabSelected->getOwnedWidget() ) {
-		mTabSelected->getOwnedWidget()->setSize( mCtrlContainer->getSize() );
+		mTabSelected->getOwnedWidget()->setSize( mNodeContainer->getSize() );
 	}
 
 	UIWidget::onSizeChange();
 }
 
 void UITabWidget::onChildCountChange( Node* child, const bool& removed ) {
-	if ( !removed && child != mTabBar && child != mCtrlContainer ) {
+	if ( !removed && child != mTabBar && child != mNodeContainer ) {
 		if ( child->isType( UI_TYPE_TAB ) ) {
 			UITab* Tab = static_cast<UITab*>( child );
 
@@ -707,7 +707,7 @@ void UITabWidget::onChildCountChange( Node* child, const bool& removed ) {
 				orderTabs();
 			}
 		} else {
-			child->setParent( mCtrlContainer );
+			child->setParent( mNodeContainer );
 			child->setVisible( false );
 			child->setEnabled( true );
 		}
@@ -734,8 +734,8 @@ UIWidget* UITabWidget::getTabBar() const {
 	return mTabBar;
 }
 
-UIWidget* UITabWidget::getControlContainer() const {
-	return mCtrlContainer;
+UIWidget* UITabWidget::getContainerNode() const {
+	return mNodeContainer;
 }
 
 }} // namespace EE::UI

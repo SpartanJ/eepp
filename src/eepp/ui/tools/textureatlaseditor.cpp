@@ -353,7 +353,7 @@ void TextureAtlasEditor::onTextureAtlasCreate( TexturePacker* TexPacker ) {
 								 cb::Make1( this, &TextureAtlasEditor::onTextureAtlasLoaded ) );
 }
 
-void TextureAtlasEditor::updateControls() {
+void TextureAtlasEditor::updateWidgets() {
 	if ( NULL != mTextureAtlasLoader && mTextureAtlasLoader->isLoaded() ) {
 		mTextureFilterList->getListBox()->setSelected(
 			mTextureAtlasLoader->getTextureAtlasHeader().TextureFilter );
@@ -456,7 +456,7 @@ void TextureAtlasEditor::onTextureAtlasLoaded( TextureAtlasLoader* textureAtlasL
 	mTextureAtlasLoader = textureAtlasLoader;
 
 	if ( mTextureAtlasLoader->isLoaded() ) {
-		mUIContainer->runOnMainThread( [&] { updateControls(); } );
+		mUIContainer->runOnMainThread( [&] { updateWidgets(); } );
 	}
 }
 

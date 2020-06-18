@@ -43,14 +43,14 @@ SceneNode::SceneNode( EE::Window::Window* window ) :
 		mWindow = Engine::instance()->getCurrentWindow();
 	}
 
-	mResizeCb = mWindow->pushResizeCallback( cb::Make1( this, &SceneNode::resizeControl ) );
+	mResizeCb = mWindow->pushResizeCallback( cb::Make1( this, &SceneNode::resizeNode ) );
 
 	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
 	int currentDisplayIndex = getWindow()->getCurrentDisplayIndex();
 	Display* currentDisplay = displayManager->getDisplayIndex( currentDisplayIndex );
 	mDPI = currentDisplay->getDPI();
 
-	resizeControl( window );
+	resizeNode( window );
 }
 
 SceneNode::~SceneNode() {
@@ -181,9 +181,9 @@ void SceneNode::addToCloseQueue( Node* node ) {
 	if ( mCloseList.count( node ) > 0 )
 		return;
 
-	for ( auto& closeCtrl : mCloseList ) {
-		if ( NULL != closeCtrl && closeCtrl->isParentOf( node ) ) {
-			// If a parent will be removed, means that the control
+	for ( auto& closeNode : mCloseList ) {
+		if ( NULL != closeNode && closeNode->isParentOf( node ) ) {
+			// If a parent will be removed, means that the node
 			// that we are trying to queue will be removed by the father
 			// so we skip it
 			return;
@@ -196,8 +196,8 @@ void SceneNode::addToCloseQueue( Node* node ) {
 		itNode = *it;
 
 		if ( NULL != itNode && node->isParentOf( itNode ) ) {
-			// if the control added is parent of another control already added,
-			// we remove the already added control because it will be deleted
+			// if the node added is parent of another node already added,
+			// we remove the already added node because it will be deleted
 			// by its parent
 			itEraseList.push_back( it );
 		} else if ( NULL == itNode ) {
@@ -205,8 +205,8 @@ void SceneNode::addToCloseQueue( Node* node ) {
 		}
 	}
 
-	// We delete all the controls that don't need to be deleted
-	// because of the new added control to the queue
+	// We delete all the nodes that don't need to be deleted
+	// because of the new added node to the queue
 	for ( auto ite = itEraseList.begin(); ite != itEraseList.end(); ++ite ) {
 		mCloseList.erase( *ite );
 	}
@@ -316,12 +316,12 @@ void SceneNode::matrixUnset() {
 	}
 }
 
-void SceneNode::sendMsg( Node* Ctrl, const Uint32& Msg, const Uint32& Flags ) {
-	NodeMessage tMsg( Ctrl, Msg, Flags );
-	Ctrl->messagePost( &tMsg );
+void SceneNode::sendMsg( Node* node, const Uint32& msg, const Uint32& flags ) {
+	NodeMessage tMsg( node, msg, flags );
+	node->messagePost( &tMsg );
 }
 
-void SceneNode::resizeControl( EE::Window::Window* ) {
+void SceneNode::resizeNode( EE::Window::Window* ) {
 	setSize( (Float)mWindow->getWidth(), (Float)mWindow->getHeight() );
 	sendMsg( this, NodeMessage::WindowResize );
 }
