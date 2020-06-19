@@ -342,6 +342,8 @@
 ../../include/eepp/ui/uifontstyleconfig.hpp
 ../../include/eepp/ui/uigridlayout.hpp
 ../../include/eepp/ui/uihelper.hpp
+../../include/eepp/ui/uiicontheme.hpp
+../../include/eepp/ui/uiiconthememanager.hpp
 ../../include/eepp/ui/uiimage.hpp
 ../../include/eepp/ui/uiitemcontainer.hpp
 ../../include/eepp/ui/uilayout.hpp
@@ -794,6 +796,8 @@
 ../../src/eepp/ui/uieventdispatcher.cpp
 ../../src/eepp/ui/uifiledialog.cpp
 ../../src/eepp/ui/uigridlayout.cpp
+../../src/eepp/ui/uiicontheme.cpp
+../../src/eepp/ui/uiiconthememanager.cpp
 ../../src/eepp/ui/uiimage.cpp
 ../../src/eepp/ui/uilayout.cpp
 ../../src/eepp/ui/uilinearlayout.cpp

@@ -14,6 +14,7 @@ class Font;
 namespace EE { namespace UI {
 
 class UIThemeManager;
+class UIIconThemeManager;
 class UIWidget;
 class UIWindow;
 class UIWidget;
@@ -104,6 +105,10 @@ class EE_API UISceneNode : public SceneNode {
 
 	const bool& isUpdatingLayouts() const;
 
+	UIIconThemeManager* getUIIconThemeManager() const;
+
+	Drawable* findIcon( const std::string& iconName );
+
   protected:
 	friend class EE::UI::UIWindow;
 	friend class EE::UI::UIWidget;
@@ -117,6 +122,7 @@ class EE_API UISceneNode : public SceneNode {
 	bool mVerbose;
 	bool mUpdatingLayouts;
 	UIThemeManager* mUIThemeManager;
+	UIIconThemeManager* mUIIconThemeManager;
 	std::vector<Font*> mFontFaces;
 	UIKeyboardShortcuts mKbShortcuts;
 	std::unordered_set<UIWidget*> mDirtyStyle;

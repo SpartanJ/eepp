@@ -3,7 +3,7 @@
 #include <eepp/graphics/sprite.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/uiimage.hpp>
-#include <eepp/ui/uithememanager.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 
 namespace EE { namespace UI {
 
@@ -260,7 +260,7 @@ bool UIImage::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::Icon: {
 			std::string val = attribute.asString();
 			Drawable* icon = NULL;
-			if ( NULL != mTheme && NULL != ( icon = mTheme->getIconByName( val ) ) ) {
+			if ( NULL != ( icon = getUISceneNode()->findIcon( val ) ) ) {
 				setDrawable( icon );
 			} else if ( NULL != ( icon = DrawableSearcher::searchByName( val ) ) ) {
 				setDrawable( icon );

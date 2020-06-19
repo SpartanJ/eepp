@@ -9,3 +9,5 @@
 ../../docs/articles
 ../../include/eepp/ui/doc
 ../../src/eepp/ui/doc
+../../include/eepp/ui
+../../src/eepp/ui

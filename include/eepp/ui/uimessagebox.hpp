@@ -26,7 +26,7 @@ class EE_API UIMessageBox : public UIWindow {
 
 	virtual Uint32 onMessage( const NodeMessage* Msg );
 
-	virtual void setTheme( UITheme* Theme );
+	virtual void setTheme( UITheme* theme );
 
 	UITextView* getTextBox() const;
 
@@ -36,9 +36,9 @@ class EE_API UIMessageBox : public UIWindow {
 
 	virtual bool show();
 
-	const Uint32& getCloseWithKey() const;
+	const KeyBindings::Shortcut& getCloseWithKey() const;
 
-	void setCloseWithKey( const Uint32& closeWithKey );
+	void setCloseWithKey( const KeyBindings::Shortcut& closeWithKey );
 
 	UITextInput* getTextInput() const;
 
@@ -48,12 +48,12 @@ class EE_API UIMessageBox : public UIWindow {
 	UIPushButton* mButtonOK;
 	UIPushButton* mButtonCancel;
 	UITextInput* mTextInput;
-	Uint32 mCloseWithKey;
+	KeyBindings::Shortcut mCloseWithKey;
 	UIWidget* mLayoutCont;
 
 	virtual void onWindowReady();
 
-	virtual Uint32 onKeyUp( const KeyEvent& Event );
+	virtual Uint32 onKeyUp( const KeyEvent& event );
 };
 
 }} // namespace EE::UI

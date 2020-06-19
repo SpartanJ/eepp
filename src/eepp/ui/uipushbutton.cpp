@@ -366,7 +366,7 @@ bool UIPushButton::applyProperty( const StyleSheetProperty& attribute ) {
 			std::string val = attribute.asString();
 			Drawable* icon = NULL;
 
-			if ( NULL != mTheme && NULL != ( icon = mTheme->getIconByName( val ) ) ) {
+			if ( NULL != mTheme && NULL != ( icon = getUISceneNode()->findIcon( val ) ) ) {
 				setIcon( icon );
 			} else if ( NULL != ( icon = DrawableSearcher::searchByName( val ) ) ) {
 				setIcon( icon );

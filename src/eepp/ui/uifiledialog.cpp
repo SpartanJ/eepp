@@ -77,6 +77,7 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, std::string defaultFilePattern,
 
 	mButtonUp = UIPushButton::New();
 	mButtonUp->setText( "Up" )
+		->setLayoutMarginLeft( 4 )
 		->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::MatchParent )
 		->setParent( hLayout );
 
@@ -182,11 +183,11 @@ void UIFileDialog::setTheme( UITheme* Theme ) {
 	mFile->setTheme( Theme );
 	mFiletype->setTheme( Theme );
 
-	Drawable* Icon = Theme->getIconByName( "go-up" );
+	Drawable* icon = getUISceneNode()->findIcon( "go-up" );
 
-	if ( NULL != Icon ) {
+	if ( NULL != icon ) {
 		mButtonUp->setText( "" );
-		mButtonUp->setIcon( Icon );
+		mButtonUp->setIcon( icon );
 	}
 
 	onThemeLoaded();

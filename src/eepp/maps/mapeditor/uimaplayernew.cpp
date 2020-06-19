@@ -15,7 +15,8 @@ UIMapLayerNew::UIMapLayerNew( UIMap* Map, EE_LAYER_TYPE Type, NewLayerCb newLaye
 	if ( SceneManager::instance()->getUISceneNode() == NULL )
 		return;
 
-	mTheme = SceneManager::instance()->getUISceneNode()->getUIThemeManager()->getDefaultTheme();
+	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
+	mTheme = sceneNode->getUIThemeManager()->getDefaultTheme();
 
 	if ( NULL == mTheme )
 		return;
@@ -51,7 +52,7 @@ UIMapLayerNew::UIMapLayerNew( UIMap* Map, EE_LAYER_TYPE Type, NewLayerCb newLaye
 
 	UIPushButton* OKButton = UIPushButton::New();
 	OKButton->setSize( 80, 0 )->setParent( mUIWindow->getContainer() );
-	OKButton->setIcon( mTheme->getIconByName( "add" ) );
+	OKButton->setIcon( sceneNode->findIcon( "add" ) );
 	OKButton->setPosition(
 		mUIWindow->getContainer()->getSize().getWidth() - OKButton->getSize().getWidth() - 4,
 		mUIWindow->getContainer()->getSize().getHeight() - OKButton->getSize().getHeight() - 4 );
@@ -66,7 +67,7 @@ UIMapLayerNew::UIMapLayerNew( UIMap* Map, EE_LAYER_TYPE Type, NewLayerCb newLaye
 		->setSize( OKButton->getSize() )
 		->setPosition( OKButton->getPosition().x - OKButton->getSize().getWidth() - 4,
 					   OKButton->getPosition().y );
-	CancelButton->setIcon( mTheme->getIconByName( "cancel" ) );
+	CancelButton->setIcon( sceneNode->findIcon( "cancel" ) );
 	CancelButton->addEventListener( Event::MouseClick,
 									cb::Make1( this, &UIMapLayerNew::onCancelClick ) );
 	CancelButton->setText( "Cancel" );

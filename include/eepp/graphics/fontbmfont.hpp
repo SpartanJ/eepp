@@ -35,8 +35,8 @@ class EE_API FontBMFont : public Font {
 	const Glyph& getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
 						   Float outlineThickness = 0 ) const;
 
-	GlyphDrawable* getGlyphDrawable( Uint32 codePoint, unsigned int characterSize, bool bold,
-									 Float outlineThickness = 0 ) const;
+	GlyphDrawable* getGlyphDrawable( Uint32 codePoint, unsigned int characterSize,
+									 bool bold = false, Float outlineThickness = 0 ) const;
 
 	Float getKerning( Uint32 first, Uint32 second, unsigned int characterSize ) const;
 

@@ -94,23 +94,23 @@ UIMessageBox::UIMessageBox( const Type& type, const String& message, const Uint3
 
 UIMessageBox::~UIMessageBox() {}
 
-void UIMessageBox::setTheme( UITheme* Theme ) {
-	UIWindow::setTheme( Theme );
+void UIMessageBox::setTheme( UITheme* theme ) {
+	UIWindow::setTheme( theme );
 
-	mTextBox->setTheme( Theme );
-	mButtonOK->setTheme( Theme );
-	mButtonCancel->setTheme( Theme );
+	mTextBox->setTheme( theme );
+	mButtonOK->setTheme( theme );
+	mButtonCancel->setTheme( theme );
 
 	if ( "Retry" != mButtonOK->getText() ) {
-		Drawable* OKIcon = Theme->getIconByName( "ok" );
-		Drawable* CancelIcon = Theme->getIconByName( "cancel" );
+		Drawable* okIcon = getUISceneNode()->findIcon( "ok" );
+		Drawable* cancelIcon = getUISceneNode()->findIcon( "cancel" );
 
-		if ( NULL != OKIcon ) {
-			mButtonOK->setIcon( OKIcon );
+		if ( NULL != okIcon ) {
+			mButtonOK->setIcon( okIcon );
 		}
 
-		if ( NULL != CancelIcon ) {
-			mButtonCancel->setIcon( CancelIcon );
+		if ( NULL != cancelIcon ) {
+			mButtonCancel->setIcon( cancelIcon );
 		}
 	}
 
@@ -149,8 +149,9 @@ UIPushButton* UIMessageBox::getButtonCancel() const {
 	return mButtonCancel;
 }
 
-Uint32 UIMessageBox::onKeyUp( const KeyEvent& Event ) {
-	if ( mCloseWithKey && Event.getKeyCode() == mCloseWithKey ) {
+Uint32 UIMessageBox::onKeyUp( const KeyEvent& event ) {
+	if ( mCloseWithKey && event.getKeyCode() == mCloseWithKey &&
+		 ( event.getMod() & mCloseWithKey.mod ) ) {
 		sendCommonEvent( Event::MsgBoxCancelClick );
 		closeWindow();
 	}
@@ -168,11 +169,11 @@ bool UIMessageBox::show() {
 	return b;
 }
 
-const Uint32& UIMessageBox::getCloseWithKey() const {
+const KeyBindings::Shortcut& UIMessageBox::getCloseWithKey() const {
 	return mCloseWithKey;
 }
 
-void UIMessageBox::setCloseWithKey( const Uint32& closeWithKey ) {
+void UIMessageBox::setCloseWithKey( const KeyBindings::Shortcut& closeWithKey ) {
 	mCloseWithKey = closeWithKey;
 }
 

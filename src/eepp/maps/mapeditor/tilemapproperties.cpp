@@ -31,7 +31,8 @@ TileMapProperties::TileMapProperties( TileMap* Map ) :
 	if ( SceneManager::instance()->getUISceneNode() == NULL )
 		return;
 
-	mUITheme = SceneManager::instance()->getUISceneNode()->getUIThemeManager()->getDefaultTheme();
+	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
+	mUITheme = sceneNode->getUIThemeManager()->getDefaultTheme();
 
 	if ( NULL == mUITheme )
 		return;
@@ -135,7 +136,7 @@ TileMapProperties::TileMapProperties( TileMap* Map ) :
 
 	UIPushButton* OKButton = UIPushButton::New();
 	OKButton->setSize( 80, 0 )->setParent( mUIWindow->getContainer() );
-	OKButton->setIcon( mUITheme->getIconByName( "ok" ) );
+	OKButton->setIcon( sceneNode->findIcon( "ok" ) );
 	OKButton->setPosition(
 		mUIWindow->getContainer()->getSize().getWidth() - OKButton->getSize().getWidth() - 4,
 		mUIWindow->getContainer()->getSize().getHeight() - OKButton->getSize().getHeight() - 4 );
@@ -149,7 +150,7 @@ TileMapProperties::TileMapProperties( TileMap* Map ) :
 		->setSize( OKButton->getSize() )
 		->setPosition( OKButton->getPosition().x - OKButton->getSize().getWidth() - 4,
 					   OKButton->getPosition().y );
-	CancelButton->setIcon( mUITheme->getIconByName( "cancel" ) );
+	CancelButton->setIcon( sceneNode->findIcon( "cancel" ) );
 	CancelButton->addEventListener( Event::MouseClick,
 									cb::Make1( this, &TileMapProperties::onCancelClick ) );
 	CancelButton->setText( "Cancel" );
@@ -172,7 +173,7 @@ TileMapProperties::TileMapProperties( TileMap* Map ) :
 
 	UIPushButton* AddButton = UIPushButton::New();
 	AddButton->setSize( 24, 0 )->setParent( mUIWindow->getContainer() )->setPosition( Pos );
-	AddButton->setIcon( mUITheme->getIconByName( "add" ) );
+	AddButton->setIcon( sceneNode->findIcon( "add" ) );
 	AddButton->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
 	AddButton->addEventListener( Event::MouseClick,
 								 cb::Make1( this, &TileMapProperties::onAddCellClick ) );
@@ -184,7 +185,7 @@ TileMapProperties::TileMapProperties( TileMap* Map ) :
 
 	UIPushButton* RemoveButton = UIPushButton::New();
 	RemoveButton->setSize( 24, 0 )->setParent( mUIWindow->getContainer() )->setPosition( Pos );
-	RemoveButton->setIcon( mUITheme->getIconByName( "remove" ) );
+	RemoveButton->setIcon( sceneNode->findIcon( "remove" ) );
 	RemoveButton->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
 	RemoveButton->addEventListener( Event::MouseClick,
 									cb::Make1( this, &TileMapProperties::onRemoveCellClick ) );

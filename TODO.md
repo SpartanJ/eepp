@@ -1,10 +1,6 @@
 
 # TODO - Short and mid term plans.
 
-## UIIconTheme and UIIconThemeManager
-
-Implement icon themes separated from the `UITheme` and customizable from a CSS file.
-
 ## UICodeEditor
 
 * Add show white spaces.

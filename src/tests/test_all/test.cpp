@@ -391,7 +391,7 @@ void EETest::createBaseUI() {
 
 	UIPushButton* Button = UIPushButton::New();
 	Button->setParent( C )->setPosition( 225, 215 )->setSize( 90, 0 );
-	Button->setIcon( mTheme->getIconByName( "ok" ) );
+	Button->setIcon( mSceneNode->findIcon( "ok" ) );
 	Button->setText( "Click Me" );
 	Button->addEventListener( Event::MouseClick, cb::Make1( this, &EETest::onButtonClick ) );
 	Button->setTooltipText( "Click and see what happens..." );
@@ -490,7 +490,7 @@ void EETest::createBaseUI() {
 		Cell->setParent( genGrid->getContainer() );
 
 		TxtGfx->setVerticalAlign( UI_VALIGN_CENTER );
-		TxtGfx->setDrawable( mTheme->getIconByName( "ok" ) );
+		TxtGfx->setDrawable( mSceneNode->findIcon( "ok" ) );
 		TxtBox->setText( "Test " + String::toString( i + 1 ) );
 
 		Cell->setCell( 0, TxtBox );
@@ -514,9 +514,9 @@ void EETest::createBaseUI() {
 	C = C->getParent()->asType<UINode>();
 
 	Menu = UIPopUpMenu::New();
-	Menu->add( "New", mTheme->getIconByName( "document-new" ) );
+	Menu->add( "New", mSceneNode->findIcon( "document-new" ) );
 
-	Menu->add( "Open...", mTheme->getIconByName( "document-open" ) );
+	Menu->add( "Open...", mSceneNode->findIcon( "document-open" ) );
 	Menu->addSeparator();
 	Menu->add( "Map Editor" );
 	Menu->add( "Texture Atlas Editor" );
@@ -600,23 +600,23 @@ void EETest::createUI() {
 
 	eePRINTL( "Texture Atlas Loading Time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
 
-	UISceneNode* sceneNode = UISceneNode::New();
+	mSceneNode = UISceneNode::New();
 
-	sceneNode->enableDrawInvalidation();
-	sceneNode->enableFrameBuffer();
-	sceneNode->setVerbose( true );
+	mSceneNode->enableDrawInvalidation();
+	mSceneNode->enableFrameBuffer();
+	mSceneNode->setVerbose( true );
 
 	if ( mDebugUI ) {
-		sceneNode->setDrawBoxes( true );
-		sceneNode->setDrawDebugData( true );
-		sceneNode->setHighlightFocus( true );
-		sceneNode->setHighlightOver( true );
-		sceneNode->setHighlightInvalidation( true );
+		mSceneNode->setDrawBoxes( true );
+		mSceneNode->setDrawDebugData( true );
+		mSceneNode->setHighlightFocus( true );
+		mSceneNode->setHighlightOver( true );
+		mSceneNode->setHighlightInvalidation( true );
 	}
 
-	sceneNode->setTranslator( mTranslator );
+	mSceneNode->setTranslator( mTranslator );
 
-	SceneManager::instance()->add( sceneNode );
+	SceneManager::instance()->add( mSceneNode );
 
 	eePRINTL( "Node size: %d", sizeof( Node ) );
 	eePRINTL( "UINode size: %d", sizeof( UINode ) );
@@ -628,9 +628,9 @@ void EETest::createUI() {
 
 	/*mTheme = UITheme::load( mThemeName, mThemeName, "", TTF, MyPath + "ui/breeze.css" );*/
 
-	sceneNode->combineStyleSheet( mTheme->getStyleSheet() );
+	mSceneNode->combineStyleSheet( mTheme->getStyleSheet() );
 
-	UIThemeManager* uiThemeManager = sceneNode->getUIThemeManager();
+	UIThemeManager* uiThemeManager = mSceneNode->getUIThemeManager();
 	uiThemeManager->add( mTheme );
 	uiThemeManager->setDefaultEffectsEnabled( true )->setDefaultFont( TTF )->setDefaultTheme(
 		mThemeName );
@@ -699,7 +699,7 @@ void EETest::createNewUI() {
 	UIImage* gfx = UIImage::New();
 	gfx->setPosition( 50, 140 )->setSize( 16, 16 )->setParent( container );
 	gfx->setBackgroundColor( 0x33333333 );
-	gfx->setDrawable( mTheme->getIconByName( "ok" ) );
+	gfx->setDrawable( mSceneNode->findIcon( "ok" ) );
 
 	UISlider* slider = UISlider::New();
 	slider->setOrientation( UIOrientation::Horizontal )
@@ -733,7 +733,7 @@ void EETest::createNewUI() {
 	UIPushButton* pushButton = UIPushButton::New();
 	pushButton->setPosition( 50, 560 )->setSize( 200, 0 )->setParent( container );
 	pushButton->setText( "PushButton" );
-	pushButton->setIcon( mTheme->getIconByName( "ok" ) );
+	pushButton->setIcon( mSceneNode->findIcon( "ok" ) );
 	pushButton->addEventListener( Event::MouseClick, [&, pushButton]( const Event* event ) {
 		if ( static_cast<const MouseEvent*>( event )->getFlags() & EE_BUTTON_LMASK )
 			createColorPicker( pushButton );
@@ -798,7 +798,7 @@ void EETest::createNewUI() {
 		Cell->setCell( 1, TxtGfx );
 		Cell->setCell( 2, TxtInput );
 
-		TxtGfx->setDrawable( mTheme->getIconByName( "ok" ) );
+		TxtGfx->setDrawable( mSceneNode->findIcon( "ok" ) );
 		TxtBox->setText( "Test " + String::toString( i + 1 ) );
 
 		genGrid->add( Cell );
@@ -808,11 +808,11 @@ void EETest::createNewUI() {
 	TabWidget->setPosition( 350, 530 )->setSize( 200, 64 )->setParent( container );
 
 	TabWidget->add( "Tab 1", UIWidget::New()->setThemeSkin( "winback" ),
-					mTheme->getIconByName( "ok" ) );
+					mSceneNode->findIcon( "ok" ) );
 	TabWidget->add( "Tab 2", UIWidget::New()->setThemeSkin( "winback" ),
-					mTheme->getIconByName( "go-up" ) );
+					mSceneNode->findIcon( "go-up" ) );
 	TabWidget->add( "Tab 3", UIWidget::New()->setThemeSkin( "winback" ),
-					mTheme->getIconByName( "add" ) );
+					mSceneNode->findIcon( "add" ) );
 
 	UIWindow* MenuCont = UIWindow::New();
 	MenuCont->setPosition( 350, 390 )->setSize( 200, 115 );
@@ -1291,7 +1291,7 @@ void EETest::onButtonClick( const Event* event ) {
 
 	if ( mouseEvent->getFlags() & EE_BUTTONS_LRM ) {
 		UIImage* Gfx = UIImage::New();
-		Gfx->setDrawable( mTheme->getIconByName( "ok" ) );
+		Gfx->setDrawable( mSceneNode->findIcon( "ok" ) );
 		Gfx->setEnabled( false );
 
 		Gfx->runAction( Spawn::New(

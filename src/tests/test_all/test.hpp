@@ -224,6 +224,7 @@ class EETest : private Thread {
 	Sprite* mCircleSprite;
 
 	UITheme* mTheme;
+	UISceneNode* mSceneNode;
 
 	bool mTerrainUp;
 	UIPushButton* mShowMenu;

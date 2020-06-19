@@ -30,7 +30,8 @@ UIMapNew::UIMapNew( UIMap* Map, std::function<void()> NewMapCb, bool ResizeMap )
 	if ( SceneManager::instance()->getUISceneNode() == NULL )
 		return;
 
-	mTheme = SceneManager::instance()->getUISceneNode()->getUIThemeManager()->getDefaultTheme();
+	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
+	mTheme = sceneNode->getUIThemeManager()->getDefaultTheme();
 
 	if ( NULL == mTheme )
 		return;
@@ -280,7 +281,7 @@ UIMapNew::UIMapNew( UIMap* Map, std::function<void()> NewMapCb, bool ResizeMap )
 
 	UIPushButton* OKButton = UIPushButton::New();
 	OKButton->setParent( mUIWindow->getContainer() )->setSize( 80, 0 );
-	OKButton->setIcon( mTheme->getIconByName( "ok" ) );
+	OKButton->setIcon( sceneNode->findIcon( "ok" ) );
 	OKButton->setPosition(
 		mUIWindow->getContainer()->getSize().getWidth() - OKButton->getSize().getWidth() - 4,
 		mUIWindow->getContainer()->getSize().getHeight() - OKButton->getSize().getHeight() - 4 );
@@ -292,7 +293,7 @@ UIMapNew::UIMapNew( UIMap* Map, std::function<void()> NewMapCb, bool ResizeMap )
 		->setSize( OKButton->getSize() )
 		->setPosition( OKButton->getPosition().x - OKButton->getSize().getWidth() - 4,
 					   OKButton->getPosition().y );
-	CancelButton->setIcon( mTheme->getIconByName( "cancel" ) );
+	CancelButton->setIcon( sceneNode->findIcon( "cancel" ) );
 	CancelButton->addEventListener( Event::MouseClick,
 									cb::Make1( this, &UIMapNew::onCancelClick ) );
 	CancelButton->setText( "Cancel" );

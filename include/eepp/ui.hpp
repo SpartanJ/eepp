@@ -9,6 +9,7 @@
 #include <eepp/ui/uidropdownlist.hpp>
 #include <eepp/ui/uifiledialog.hpp>
 #include <eepp/ui/uigridlayout.hpp>
+#include <eepp/ui/uiiconthememanager.hpp>
 #include <eepp/ui/uiimage.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uilistbox.hpp>

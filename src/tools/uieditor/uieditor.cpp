@@ -894,25 +894,26 @@ void createAppMenu() {
 	uiMenuBar = UIMenuBar::New();
 
 	UIPopUpMenu* uiPopMenu = UIPopUpMenu::New();
-	uiPopMenu->add( "Open project...", theme->getIconByName( "document-open" ) );
+	uiPopMenu->add( "Open project...", appUiSceneNode->findIcon( "document-open" ) );
 	uiPopMenu->addSeparator();
-	uiPopMenu->add( "Open layout...", theme->getIconByName( "document-open" ) );
+	uiPopMenu->add( "Open layout...", appUiSceneNode->findIcon( "document-open" ) );
 	uiPopMenu->addSeparator();
 	uiPopMenu->addSubMenu( "Recent files", NULL, UIPopUpMenu::New() );
 	uiPopMenu->addSubMenu( "Recent projects", NULL, UIPopUpMenu::New() );
 	uiPopMenu->addSeparator();
-	uiPopMenu->add( "Close", theme->getIconByName( "document-close" ) );
+	uiPopMenu->add( "Close", appUiSceneNode->findIcon( "document-close" ) );
 	uiPopMenu->addSeparator();
-	uiPopMenu->add( "Quit", theme->getIconByName( "quit" ) );
+	uiPopMenu->add( "Quit", appUiSceneNode->findIcon( "quit" ) );
 	uiMenuBar->addMenuButton( "File", uiPopMenu );
 	uiPopMenu->addEventListener( Event::OnItemClicked, cb::Make1( fileMenuClick ) );
 
 	UIPopUpMenu* uiResourceMenu = UIPopUpMenu::New();
-	uiResourceMenu->add( "Load images from path...", theme->getIconByName( "document-open" ) );
+	uiResourceMenu->add( "Load images from path...", appUiSceneNode->findIcon( "document-open" ) );
 	uiResourceMenu->addSeparator();
-	uiResourceMenu->add( "Load fonts from path...", theme->getIconByName( "document-open" ) );
+	uiResourceMenu->add( "Load fonts from path...", appUiSceneNode->findIcon( "document-open" ) );
 	uiResourceMenu->addSeparator();
-	uiResourceMenu->add( "Load style sheet from path...", theme->getIconByName( "document-open" ) );
+	uiResourceMenu->add( "Load style sheet from path...",
+						 appUiSceneNode->findIcon( "document-open" ) );
 	uiMenuBar->addMenuButton( "Resources", uiResourceMenu );
 	uiResourceMenu->addEventListener( Event::OnItemClicked, cb::Make1( fileMenuClick ) );
 

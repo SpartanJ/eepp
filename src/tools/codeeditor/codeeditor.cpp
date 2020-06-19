@@ -732,6 +732,8 @@ void App::showFindView() {
 	if ( !text.empty() ) {
 		findInput->setText( text );
 		findInput->getDocument().selectAll();
+	} else if ( !findInput->getText().empty() ) {
+		findInput->getDocument().selectAll();
 	}
 }
 
@@ -806,18 +808,18 @@ App::~App() {
 
 void App::createSettingsMenu() {
 	mSettingsMenu = UIPopUpMenu::New();
-	mSettingsMenu->add( "New", NULL, "Ctrl+T" );
-	mSettingsMenu->add( "Open...", NULL, "Ctrl+O" );
+	mSettingsMenu->add( "New", mUISceneNode->findIcon( "document-new" ), "Ctrl+T" );
+	mSettingsMenu->add( "Open...", mUISceneNode->findIcon( "document-open" ), "Ctrl+O" );
 	mSettingsMenu->addSeparator();
-	mSettingsMenu->add( "Save", NULL, "Ctrl+S" );
-	mSettingsMenu->add( "Save as..." );
+	mSettingsMenu->add( "Save", mUISceneNode->findIcon( "document-save" ), "Ctrl+S" );
+	mSettingsMenu->add( "Save as...", mUISceneNode->findIcon( "document-save-as" ) );
 	mSettingsMenu->addSeparator();
 	mSettingsMenu->addSubMenu( "Filetype", NULL, createFiletypeMenu() );
 	mSettingsMenu->addSubMenu( "Color Scheme", NULL, createColorSchemeMenu() );
 	mSettingsMenu->addSeparator();
-	mSettingsMenu->add( "Close", NULL, "Ctrl+W" );
+	mSettingsMenu->add( "Close", mUISceneNode->findIcon( "document-close" ), "Ctrl+W" );
 	mSettingsMenu->addSeparator();
-	mSettingsMenu->add( "Quit", NULL, "Ctrl+Q" );
+	mSettingsMenu->add( "Quit", mUISceneNode->findIcon( "quit" ), "Ctrl+Q" );
 	mSettingsButton = mUISceneNode->find<UITextView>( "settings" );
 	mSettingsButton->addEventListener( Event::MouseClick, [&]( const Event* ) {
 		Vector2f pos( mSettingsButton->getPixelsPosition() );
@@ -945,7 +947,7 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		Font* fontMono =
 			FontTrueType::New( "monospace", resPath + "assets/fonts/DejaVuSansMono.ttf" );
 
-		FontTrueType::New( "icon", resPath + "assets/fonts/remixicon.ttf" );
+		Font* iconFont = FontTrueType::New( "icon", resPath + "assets/fonts/remixicon.ttf" );
 
 		SceneManager::instance()->add( mUISceneNode );
 
@@ -1046,6 +1048,23 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		mUISceneNode->bind( "code_container", mBaseLayout );
 		mUISceneNode->bind( "search_bar", mSearchBarLayout );
 		mSearchBarLayout->setVisible( false )->setEnabled( false );
+		UIIconTheme* iconTheme = UIIconTheme::New( "remixicon" );
+		auto addIcon = [iconTheme, iconFont]( const std::string& name, const Uint32& codePoint,
+											  const Uint32& size ) {
+			iconTheme->add( name,
+							iconFont->getGlyphDrawable( codePoint, PixelDensity::dpToPx( size ) ) );
+		};
+		addIcon( "go-up", 0xea78, 16 );
+		addIcon( "ok", 0xeb7a, 16 );
+		addIcon( "cancel", 0xeb98, 16 );
+		addIcon( "document-new", 0xecc3, 12 );
+		addIcon( "document-open", 0xed70, 12 );
+		addIcon( "document-save", 0xf0b3, 12 );
+		addIcon( "document-save-as", 0xf0b3, 12 );
+		addIcon( "document-close", 0xeb99, 12 );
+		addIcon( "quit", 0xeb97, 12 );
+
+		mUISceneNode->getUIIconThemeManager()->setCurrentTheme( iconTheme );
 		initSearchBar();
 
 		createSettingsMenu();

@@ -1,6 +1,7 @@
 #include <eepp/graphics/drawablesearcher.hpp>
 #include <eepp/graphics/font.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/uiiconthememanager.hpp>
 #include <eepp/ui/uimenu.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uiscenenode.hpp>
@@ -542,11 +543,11 @@ Uint32 UIMenu::onKeyDown( const KeyEvent& Event ) {
 	return UIWidget::onKeyDown( Event );
 }
 
-static Drawable* getIconDrawable( const std::string& name, UITheme* theme ) {
+static Drawable* getIconDrawable( const std::string& name, UIIconThemeManager* iconThemeManager ) {
 	Drawable* iconDrawable = NULL;
 
-	if ( NULL != theme )
-		iconDrawable = theme->getIconByName( name );
+	if ( NULL != iconThemeManager )
+		iconDrawable = iconThemeManager->findIcon( name );
 
 	if ( NULL == iconDrawable )
 		iconDrawable = DrawableSearcher::searchByName( name );
@@ -569,8 +570,7 @@ void UIMenu::loadFromXmlNode( const pugi::xml_node& node ) {
 
 			if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
 				add( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( text ),
-					 getIconDrawable( icon,
-									  getUISceneNode()->getUIThemeManager()->getDefaultTheme() ) );
+					 getIconDrawable( icon, getUISceneNode()->getUIIconThemeManager() ) );
 		} else if ( name == "menuseparator" || name == "separator" ) {
 			addSeparator();
 		} else if ( name == "menucheckbox" || name == "checkbox" ) {
@@ -593,8 +593,7 @@ void UIMenu::loadFromXmlNode( const pugi::xml_node& node ) {
 
 			if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
 				addSubMenu( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( text ),
-							getIconDrawable(
-								icon, getUISceneNode()->getUIThemeManager()->getDefaultTheme() ),
+							getIconDrawable( icon, getUISceneNode()->getUIIconThemeManager() ),
 							subMenu );
 		}
 	}

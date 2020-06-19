@@ -58,7 +58,8 @@ TextInput,
 TextInputPassword,
 TextView,
 Tooltip,
-MenuBar::button {
+MenuBar::button,
+Window::title {
 	color: var(--font);
 	font-size: 11dp;
 }

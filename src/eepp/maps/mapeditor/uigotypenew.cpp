@@ -10,7 +10,8 @@ UIGOTypeNew::UIGOTypeNew( std::function<void( std::string, Uint32 )> Cb ) :
 	if ( SceneManager::instance()->getUISceneNode() == NULL )
 		return;
 
-	mUITheme = SceneManager::instance()->getUISceneNode()->getUIThemeManager()->getDefaultTheme();
+	UISceneNode* sceneNode = SceneManager::instance()->getUISceneNode();
+	mUITheme = sceneNode->getUIThemeManager()->getDefaultTheme();
 
 	if ( NULL == mUITheme )
 		return;
@@ -41,7 +42,7 @@ UIGOTypeNew::UIGOTypeNew( std::function<void( std::string, Uint32 )> Cb ) :
 
 	UIPushButton* OKButton = UIPushButton::New();
 	OKButton->setSize( 80, 0 )->setParent( mUIWindow->getContainer() );
-	OKButton->setIcon( mUITheme->getIconByName( "add" ) );
+	OKButton->setIcon( sceneNode->findIcon( "add" ) );
 	OKButton->setPosition(
 		mUIWindow->getContainer()->getSize().getWidth() - OKButton->getSize().getWidth() - 4,
 		mUIWindow->getContainer()->getSize().getHeight() - OKButton->getSize().getHeight() - 4 );
@@ -55,7 +56,7 @@ UIGOTypeNew::UIGOTypeNew( std::function<void( std::string, Uint32 )> Cb ) :
 		->setSize( OKButton->getSize() )
 		->setPosition( OKButton->getPosition().x - OKButton->getSize().getWidth() - 4,
 					   OKButton->getPosition().y );
-	CancelButton->setIcon( mUITheme->getIconByName( "cancel" ) );
+	CancelButton->setIcon( sceneNode->findIcon( "cancel" ) );
 	CancelButton->addEventListener( Event::MouseClick,
 									cb::Make1( this, &UIGOTypeNew::onCancelClick ) );
 	CancelButton->setText( "Cancel" );

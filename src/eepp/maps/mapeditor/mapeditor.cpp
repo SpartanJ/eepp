@@ -117,16 +117,17 @@ void MapEditor::createMenuBar() {
 	mTileBox->updateAnchorsDistances();
 
 	UIPopUpMenu* PU1 = UIPopUpMenu::New();
+
 	PU1->setParent( mUIContainer );
-	PU1->add( "New...", mTheme->getIconByName( "document-new" ) );
-	PU1->add( "Open...", mTheme->getIconByName( "document-open" ) );
+	PU1->add( "New...", PU1->getUISceneNode()->findIcon( "document-new" ) );
+	PU1->add( "Open...", PU1->getUISceneNode()->findIcon( "document-open" ) );
 	PU1->addSeparator();
-	PU1->add( "Save", mTheme->getIconByName( "document-save" ) );
-	PU1->add( "Save As...", mTheme->getIconByName( "document-save-as" ) );
+	PU1->add( "Save", PU1->getUISceneNode()->findIcon( "document-save" ) );
+	PU1->add( "Save As...", PU1->getUISceneNode()->findIcon( "document-save-as" ) );
 	PU1->addSeparator();
-	PU1->add( "Close", mTheme->getIconByName( "document-close" ) );
+	PU1->add( "Close", PU1->getUISceneNode()->findIcon( "document-close" ) );
 	PU1->addSeparator();
-	PU1->add( "Quit", mTheme->getIconByName( "quit" ) );
+	PU1->add( "Quit", PU1->getUISceneNode()->findIcon( "quit" ) );
 
 	PU1->addEventListener( Event::OnItemClicked, cb::Make1( this, &MapEditor::fileMenuClick ) );
 	MenuBar->addMenuButton( "File", PU1 );
@@ -142,11 +143,11 @@ void MapEditor::createMenuBar() {
 	PU3->addSeparator();
 
 	addShortcut( KEY_KP_PLUS, KEYMOD_CTRL,
-				 PU3->add( "Zoom In", mTheme->getIconByName( "zoom-in" ) ) );
+				 PU3->add( "Zoom In", PU3->getUISceneNode()->findIcon( "zoom-in" ) ) );
 	addShortcut( KEY_KP_MINUS, KEYMOD_CTRL,
-				 PU3->add( "Zoom Out", mTheme->getIconByName( "zoom-out" ) ) );
+				 PU3->add( "Zoom Out", PU3->getUISceneNode()->findIcon( "zoom-out" ) ) );
 	addShortcut( KEY_0, KEYMOD_CTRL,
-				 PU3->add( "Normal Size", mTheme->getIconByName( "zoom-original" ) ) );
+				 PU3->add( "Normal Size", PU3->getUISceneNode()->findIcon( "zoom-original" ) ) );
 	PU3->addSeparator();
 
 	PU3->addEventListener( Event::OnItemClicked, cb::Make1( this, &MapEditor::viewMenuClick ) );
@@ -304,7 +305,7 @@ void MapEditor::createTextureRegionContainer( Int32 Width ) {
 		->setSize( 24, mGOTypeList->getSize().getHeight() )
 		->setPosition( mGOTypeList->getPosition().x + mGOTypeList->getSize().getWidth() + 2,
 					   mGOTypeList->getPosition().y );
-	mBtnGOTypeAdd->setIcon( mTheme->getIconByName( "add" ) )
+	mBtnGOTypeAdd->setIcon( mBtnGOTypeAdd->getUISceneNode()->findIcon( "add" ) )
 		->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
 	mBtnGOTypeAdd->setTooltipText( "Adds a new game object type\nunknown by the map editor." );
 	mBtnGOTypeAdd->addEventListener( Event::MouseClick,

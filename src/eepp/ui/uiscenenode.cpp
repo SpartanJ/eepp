@@ -12,6 +12,7 @@
 #include <eepp/ui/css/mediaquery.hpp>
 #include <eepp/ui/css/stylesheetparser.hpp>
 #include <eepp/ui/uieventdispatcher.hpp>
+#include <eepp/ui/uiiconthememanager.hpp>
 #include <eepp/ui/uilayout.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uithememanager.hpp>
@@ -35,7 +36,8 @@ UISceneNode::UISceneNode( EE::Window::Window* window ) :
 	mIsLoading( false ),
 	mVerbose( false ),
 	mUpdatingLayouts( false ),
-	mUIThemeManager( UIThemeManager::New() ) {
+	mUIThemeManager( UIThemeManager::New() ),
+	mUIIconThemeManager( UIIconThemeManager::New()->setFallbackThemeManager( mUIThemeManager ) ) {
 	// Reset size since the SceneNode already set it but needs to set the size from zero to emmit
 	// the required events to its childs.
 	mSize = Sizef();
@@ -57,6 +59,7 @@ UISceneNode::UISceneNode( EE::Window::Window* window ) :
 
 UISceneNode::~UISceneNode() {
 	eeSAFE_DELETE( mUIThemeManager );
+	eeSAFE_DELETE( mUIIconThemeManager );
 
 	for ( auto& font : mFontFaces ) {
 		FontManager::instance()->remove( font );
@@ -667,6 +670,14 @@ void UISceneNode::updateDirtyStyleStates() {
 
 const bool& UISceneNode::isUpdatingLayouts() const {
 	return mUpdatingLayouts;
+}
+
+UIIconThemeManager* UISceneNode::getUIIconThemeManager() const {
+	return mUIIconThemeManager;
+}
+
+Drawable* UISceneNode::findIcon( const std::string& iconName ) {
+	return getUIIconThemeManager()->findIcon( iconName );
 }
 
 bool UISceneNode::onMediaChanged() {
