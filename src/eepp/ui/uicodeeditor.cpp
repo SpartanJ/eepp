@@ -1540,8 +1540,8 @@ void UICodeEditor::drawWhitespaces( const std::pair<int, int>& lineRange,
 	Color color( Color( mWhitespaceColor ).blendAlpha( mAlpha ) );
 	unsigned int fontSize = getCharacterSize();
 	// We use the GlyphDrawable since can batch the draw calls instead of Text.
-	GlyphDrawable* adv = mFont->getGlyphDrawable( u'»', fontSize );
-	GlyphDrawable* cpoint = mFont->getGlyphDrawable( u'·', fontSize );
+	GlyphDrawable* adv = mFont->getGlyphDrawable( 187 /*'»'*/, fontSize );
+	GlyphDrawable* cpoint = mFont->getGlyphDrawable( 183 /*'·'*/, fontSize );
 	Float tabCenter = ( tabWidth - adv->getPxSize().getWidth() ) * 0.5f;
 	adv->setDrawMode( GlyphDrawable::DrawMode::Text );
 	cpoint->setDrawMode( GlyphDrawable::DrawMode::Text );
