@@ -36,7 +36,12 @@ void GlyphDrawable::draw( const Vector2f& position, const Sizef& size ) {
 	BR->quadsSetColor( mColor );
 	BR->quadsSetTexCoord( mSrcRect.Left, mSrcRect.Top, mSrcRect.Left + mSrcRect.Right,
 						  mSrcRect.Top + mSrcRect.Bottom );
-	BR->batchQuad( position.x, position.y, size.getWidth(), size.getHeight() );
+	if ( mDrawMode == DrawMode::Image ) {
+		BR->batchQuad( position.x, position.y, size.getWidth(), size.getHeight() );
+	} else {
+		BR->batchQuad( position.x + mGlyphOffset.x, position.y + mGlyphOffset.y, size.getWidth(),
+					   size.getHeight() );
+	}
 	BR->drawOpt();
 }
 
@@ -58,6 +63,26 @@ const Float& GlyphDrawable::getPixelDensity() const {
 
 void GlyphDrawable::setPixelDensity( const Float& pixelDensity ) {
 	mPixelDensity = pixelDensity;
+}
+
+Sizef GlyphDrawable::getPxSize() const {
+	return Sizef( mSrcRect.Right, mSrcRect.Bottom );
+}
+
+const Vector2f& GlyphDrawable::getGlyphOffset() const {
+	return mGlyphOffset;
+}
+
+void GlyphDrawable::setGlyphOffset( const Vector2f& glyphOffset ) {
+	mGlyphOffset = glyphOffset;
+}
+
+const GlyphDrawable::DrawMode& GlyphDrawable::getDrawMode() const {
+	return mDrawMode;
+}
+
+void GlyphDrawable::setDrawMode( const DrawMode& drawMode ) {
+	mDrawMode = drawMode;
 }
 
 }} // namespace EE::Graphics

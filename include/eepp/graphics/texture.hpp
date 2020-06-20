@@ -273,7 +273,7 @@ class EE_API Texture : public DrawableResource, public Image, private NonCopyabl
 
 	Sizef getSize();
 
-	Sizei getPixelSize();
+	Sizef getPxSize();
 
 	void draw();
 

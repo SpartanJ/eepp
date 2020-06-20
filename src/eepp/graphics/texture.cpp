@@ -929,8 +929,8 @@ Sizef Texture::getSize() {
 	return Sizef( PixelDensity::pxToDp( mImgWidth ), PixelDensity::pxToDp( mImgHeight ) );
 }
 
-Sizei Texture::getPixelSize() {
-	return Sizei( mImgWidth, mImgHeight );
+Sizef Texture::getPxSize() {
+	return Sizef( mImgWidth, mImgHeight );
 }
 
 void Texture::draw() {

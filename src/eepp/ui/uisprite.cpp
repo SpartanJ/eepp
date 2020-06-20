@@ -61,7 +61,7 @@ void UISprite::draw() {
 
 			if ( NULL != textureRegion ) {
 				Sizef oDestSize = textureRegion->getDestSize();
-				Sizei pxSize = textureRegion->getPxSize();
+				Sizef pxSize = textureRegion->getPxSize();
 
 				textureRegion->setDestSize( Sizef( (Float)pxSize.x, (Float)pxSize.y ) );
 

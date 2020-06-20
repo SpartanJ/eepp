@@ -127,9 +127,9 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void setCaretColor( const Color& caretColor );
 
-	const Color& getIndentationGuideColor() const;
+	const Color& getWhitespaceColor() const;
 
-	void setIndentationGuideColor( const Color& color );
+	void setWhitespaceColor( const Color& color );
 
 	const SyntaxColorScheme& getColorScheme() const;
 
@@ -263,10 +263,14 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void fontSizeReset();
 	/** Doc commands executed in this editor. */
 
-  protected:
+	const bool& getShowWhitespaces() const;
+
+	void setShowWhitespaces(const bool& showWhitespaces);
+
+	protected:
 	struct LastXOffset {
-		TextPosition position;
-		Float offset;
+			TextPosition position;
+			Float offset;
 	};
 	Font* mFont;
 	UIFontStyleConfig mFontStyleConfig;
@@ -277,7 +281,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mCursorVisible;
 	bool mMouseDown;
 	bool mShowLineNumber;
-	bool mShowIndentationGuide;
+	bool mShowWhitespaces;
 	bool mLocked;
 	bool mHighlightCurrentLine;
 	bool mHighlightMatchingBracket;
@@ -296,7 +300,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Color mLineNumberBackgroundColor;
 	Color mCurrentLineBackgroundColor;
 	Color mCaretColor;
-	Color mIndentationGuideColor;
+	Color mWhitespaceColor;
 	Color mLineBreakColumnColor;
 	Color mMatchingBracketColor;
 	Color mSelectionMatchColor;
@@ -415,8 +419,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	virtual void drawLineText( const Int64& index, Vector2f position, const Float& fontSize );
 
-	virtual void drawIndentationGuide( const std::pair<int, int>& lineRange,
-									   const Vector2f& startScroll, const Float& lineHeight );
+	virtual void drawWhitespaces( const std::pair<int, int>& lineRange, const Vector2f& startScroll,
+								  const Float& lineHeight );
 
 	virtual void drawSelection( const std::pair<int, int>& lineRange, const Vector2f& startScroll,
 								const Float& lineHeight );

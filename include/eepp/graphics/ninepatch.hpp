@@ -52,7 +52,7 @@ class EE_API NinePatch : public DrawableResource {
 	TextureRegion* mDrawable[SideCount];
 	Rect mRect;
 	Rectf mRectf;
-	Sizei mSize;
+	Sizef mSize;
 	Sizef mDestSize;
 	Float mPixelDensity;
 

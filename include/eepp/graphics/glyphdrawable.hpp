@@ -12,6 +12,11 @@ class EE_API GlyphDrawable : public DrawableResource {
 	static GlyphDrawable* New( Texture* texture, const Rect& srcRect,
 							   const std::string& resourceName = "" );
 
+	enum class DrawMode {
+		Image, ///< It will be treated as a simple image, no special offset is applied.
+		Text   ///< Will add the glyph offset corresponding to that character
+	};
+
 	GlyphDrawable( Texture* texture, const Rect& srcRect, const std::string& resourceName = "" );
 
 	virtual void draw();
@@ -32,12 +37,25 @@ class EE_API GlyphDrawable : public DrawableResource {
 	Sizef getSize();
 
 	const Float& getPixelDensity() const;
-	void setPixelDensity(const Float& pixelDensity);
 
-	protected:
+	void setPixelDensity( const Float& pixelDensity );
+
+	Sizef getPxSize() const;
+
+	const Vector2f& getGlyphOffset() const;
+
+	void setGlyphOffset( const Vector2f& glyphOffset );
+
+	const DrawMode& getDrawMode() const;
+
+	void setDrawMode( const DrawMode& drawMode );
+
+  protected:
 	Texture* mTexture;
 	Rectf mSrcRect;
 	Float mPixelDensity;
+	Vector2f mGlyphOffset;
+	DrawMode mDrawMode{DrawMode::Image};
 };
 
 }} // namespace EE::Graphics

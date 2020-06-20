@@ -91,7 +91,7 @@ void UITextureRegion::draw() {
 			} else if ( mScaleType == UIScaleType::FitInside ) {
 				mTextureRegion->setOffset( Vector2i( 0, 0 ) );
 
-				Sizei pxSize = mTextureRegion->getPxSize();
+				Sizef pxSize = mTextureRegion->getPxSize();
 				Float Scale1 =
 					( mSize.x - mRealPadding.Left - mRealPadding.Right ) / (Float)pxSize.x;
 				Float Scale2 =

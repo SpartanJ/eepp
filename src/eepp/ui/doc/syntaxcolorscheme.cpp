@@ -12,7 +12,7 @@ namespace EE { namespace UI { namespace Doc {
 // Color schemes are compatible with the lite (https://github.com/rxi/lite) color schemes.
 // But I also added:
 // "line_number_background" (the gutter background color)
-// "guide" (the indentation guide line color)
+// "whitespace" (the whitespace color)
 // "line_break_column" (the right margin line column color)
 // "matching_bracket" (the background color drawn in the matching brackets)
 // "matching_selection" (the background color drawn in the text matching the current selected text)
@@ -41,7 +41,7 @@ SyntaxColorScheme SyntaxColorScheme::getDefault() {
 				{"line_number2", Color( "#83838f" )},
 				// eepp colors
 				{"line_number_background", Color( "#2e2e32" )},
-				{"guide", Color( "#54575b" )},
+				{"whitespace", Color( "#54575b" )},
 				{"line_break_column", Color( "#54575b99" )},
 				{"matching_bracket", Color( "#FFFFFF33" )},
 				{"matching_selection", Color( "#FFFFFF33" )},

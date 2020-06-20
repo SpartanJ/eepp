@@ -387,8 +387,8 @@ Sizei TextureRegion::getDpSize() {
 				  ( Int32 )( mOriDestSize.getHeight() / mPixelDensity ) );
 }
 
-Sizei TextureRegion::getPxSize() {
-	return Sizei(
+Sizef TextureRegion::getPxSize() {
+	return Sizef(
 		( Int32 )( mOriDestSize.getWidth() / mPixelDensity * PixelDensity::getPixelDensity() ),
 		( Int32 )( mOriDestSize.getHeight() / mPixelDensity * PixelDensity::getPixelDensity() ) );
 }

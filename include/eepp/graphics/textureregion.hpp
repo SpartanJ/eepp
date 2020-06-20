@@ -80,7 +80,7 @@ class EE_API TextureRegion : public DrawableResource {
 	/** Sets the Destination Size of the TextureRegion.
 	 *	The size can be different from the original size of the TextureRegion.
 	 *	For example if the TextureRegion width is 32 pixels, by default the destination width is 32
-	 *pixels, but it can be changed to anything want. */
+	 *pixels, but it can be changed to anything you want. */
 	void setDestSize( const Sizef& destSize );
 
 	/** @return The TextureRegion default offset. The offset is added to the position passed when is
@@ -183,7 +183,7 @@ class EE_API TextureRegion : public DrawableResource {
 
 	Sizei getDpSize();
 
-	Sizei getPxSize();
+	Sizef getPxSize();
 
 	Sizef getOriDestSize() const;
 

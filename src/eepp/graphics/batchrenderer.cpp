@@ -123,7 +123,7 @@ void BatchRenderer::flush() {
 	Uint32 NumVertex = mNumVertex;
 	mNumVertex = 0;
 
-	bool CreateMatrix = ( mRotation || mScale != 1.0f || mPosition.x || mPosition.y );
+	bool createMatrix = ( mRotation || mScale != 1.0f || mPosition.x || mPosition.y );
 
 	BlendMode::setMode( mBlend );
 
@@ -132,7 +132,7 @@ void BatchRenderer::flush() {
 		GLi->pointSize( (float)mTexture->getWidth() );
 	}
 
-	if ( CreateMatrix ) {
+	if ( createMatrix ) {
 		GLi->loadIdentity();
 		GLi->pushMatrix();
 
@@ -171,7 +171,7 @@ void BatchRenderer::flush() {
 		GLi->drawArrays( mCurrentMode, 0, NumVertex );
 	}
 
-	if ( CreateMatrix ) {
+	if ( createMatrix ) {
 		GLi->popMatrix();
 	}
 

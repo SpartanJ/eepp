@@ -36,7 +36,7 @@ UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegis
 	mCursorVisible( false ),
 	mMouseDown( false ),
 	mShowLineNumber( true ),
-	mShowIndentationGuide( true ),
+	mShowWhitespaces( true ),
 	mLocked( false ),
 	mHighlightCurrentLine( true ),
 	mHighlightMatchingBracket( true ),
@@ -161,8 +161,8 @@ void UICodeEditor::draw() {
 	}
 
 	// Draw tab marker
-	if ( mShowIndentationGuide ) {
-		drawIndentationGuide( lineRange, startScroll, lineHeight );
+	if ( mShowWhitespaces ) {
+		drawWhitespaces( lineRange, startScroll, lineHeight );
 	}
 
 	for ( int i = lineRange.first; i <= lineRange.second; i++ ) {
@@ -270,7 +270,7 @@ Uint32 UICodeEditor::onMessage( const NodeMessage* msg ) {
 
 void UICodeEditor::disableEditorFeatures() {
 	mShowLineNumber = false;
-	mShowIndentationGuide = false;
+	mShowWhitespaces = false;
 	mHighlightCurrentLine = false;
 	mHighlightMatchingBracket = false;
 	mHighlightSelectionMatch = false;
@@ -434,13 +434,13 @@ void UICodeEditor::setCaretColor( const Color& caretColor ) {
 	}
 }
 
-const Color& UICodeEditor::getIndentationGuideColor() const {
-	return mIndentationGuideColor;
+const Color& UICodeEditor::getWhitespaceColor() const {
+	return mWhitespaceColor;
 }
 
-void UICodeEditor::setIndentationGuideColor( const Color& indentationGuide ) {
-	if ( mIndentationGuideColor != indentationGuide ) {
-		mIndentationGuideColor = indentationGuide;
+void UICodeEditor::setWhitespaceColor( const Color& color ) {
+	if ( mWhitespaceColor != color ) {
+		mWhitespaceColor = color;
 		invalidateDraw();
 	}
 }
@@ -458,7 +458,7 @@ void UICodeEditor::updateColorScheme() {
 	mLineNumberBackgroundColor = mColorScheme.getEditorColor( "line_number_background" );
 	mCurrentLineBackgroundColor = mColorScheme.getEditorColor( "line_highlight" );
 	mCaretColor = mColorScheme.getEditorColor( "caret" );
-	mIndentationGuideColor = mColorScheme.getEditorColor( "guide" );
+	mWhitespaceColor = mColorScheme.getEditorColor( "guide" );
 	mLineBreakColumnColor = mColorScheme.getEditorColor( "line_break_column" );
 	mMatchingBracketColor = mColorScheme.getEditorColor( "matching_bracket" );
 	mSelectionMatchColor = mColorScheme.getEditorColor( "matching_selection" );
@@ -1372,6 +1372,14 @@ void UICodeEditor::fontSizeReset() {
 	setFontSize( mFontSize );
 }
 
+const bool& UICodeEditor::getShowWhitespaces() const {
+	return mShowWhitespaces;
+}
+
+void UICodeEditor::setShowWhitespaces( const bool& showWhitespaces ) {
+	mShowWhitespaces = showWhitespaces;
+}
+
 const Time& UICodeEditor::getFindLongestLineWidthUpdateFrequency() const {
 	return mFindLongestLineWidthUpdateFrequency;
 }
@@ -1525,41 +1533,45 @@ void UICodeEditor::drawLineNumbers( const std::pair<int, int>& lineRange,
 	}
 }
 
-void UICodeEditor::drawIndentationGuide( const std::pair<int, int>& lineRange,
-										 const Vector2f& startScroll, const Float& lineHeight ) {
-	Primitives primitives;
-	primitives.setForceDraw( false );
-	primitives.setColor( Color( mIndentationGuideColor ).blendAlpha( mAlpha ) );
-	primitives.setLineWidth( 1 );
-	for ( int i = lineRange.first; i <= lineRange.second; i++ ) {
-		Float charWidth = getGlyphWidth();
-		Float tabWidth = getTextWidth( "\t" );
-		Vector2f curPos( startScroll.x, startScroll.y + lineHeight * i );
-		auto& tokens = mHighlighter.getLine( i );
-		if ( !tokens.empty() ) {
-			size_t c = 0;
-			String::StringBaseType curChar;
-			while ( c < tokens[0].text.size() &&
-					( tokens[0].text[c] == '\t' || tokens[0].text[c] == ' ' ) ) {
-				curChar = tokens[0].text[c];
-				if ( curChar == '\t' ) {
-					primitives.drawLine( {{eefloor( curPos.x + tabWidth * 0.25f ),
-										   eeceil( curPos.y + lineHeight * 0.5f )},
-										  {eefloor( curPos.x + tabWidth * 0.75f ),
-										   eeceil( curPos.y + lineHeight * 0.5f )}} );
-				} else {
-					primitives.drawLine(
-						{{eefloor( curPos.x + charWidth * 0.5f - PixelDensity::dpToPx( 1 ) ),
-						  eeceil( curPos.y + lineHeight * 0.5f )},
-						 {eefloor( curPos.x + charWidth * 0.5f + PixelDensity::dpToPx( 1 ) ),
-						  eeceil( curPos.y + lineHeight * 0.5f )}} );
+void UICodeEditor::drawWhitespaces( const std::pair<int, int>& lineRange,
+									const Vector2f& startScroll, const Float& lineHeight ) {
+	Float tabWidth = getTextWidth( "\t" );
+	Float glyphW = getGlyphWidth();
+	Color color( Color( mWhitespaceColor ).blendAlpha( mAlpha ) );
+	unsigned int fontSize = getCharacterSize();
+	// We use the GlyphDrawable since can batch the draw calls instead of Text.
+	GlyphDrawable* adv = mFont->getGlyphDrawable( u'»', fontSize );
+	GlyphDrawable* cpoint = mFont->getGlyphDrawable( u'·', fontSize );
+	Float tabCenter = ( tabWidth - adv->getPxSize().getWidth() ) * 0.5f;
+	adv->setDrawMode( GlyphDrawable::DrawMode::Text );
+	cpoint->setDrawMode( GlyphDrawable::DrawMode::Text );
+	adv->setColor( color );
+	cpoint->setColor( color );
+	for ( int index = lineRange.first; index <= lineRange.second; index++ ) {
+		Vector2f position( {startScroll.x, startScroll.y + lineHeight * index} );
+		auto& tokens = mHighlighter.getLine( index );
+		for ( auto& token : tokens ) {
+			Float textWidth = getTextWidth( token.text );
+			if ( position.x + textWidth >= mScreenPos.x &&
+				 position.x <= mScreenPos.x + mSize.getWidth() ) {
+				for ( size_t i = 0; i < token.text.size(); i++ ) {
+					if ( ' ' == token.text[i] ) {
+						cpoint->draw( Vector2f( position.x, position.y ) );
+						position.x += glyphW;
+					} else if ( '\t' == token.text[i] ) {
+						adv->draw( Vector2f( position.x + tabCenter, position.y ) );
+						position.x += tabWidth;
+					} else {
+						position.x += glyphW;
+					}
 				}
-				c++;
-				curPos.x += curChar == ' ' ? charWidth : tabWidth;
+			} else if ( position.x > mScreenPos.x + mSize.getWidth() ) {
+				break;
+			} else {
+				position.x += textWidth;
 			}
 		}
 	}
-	primitives.setForceDraw( true );
 }
 
 void UICodeEditor::registerCommands() {

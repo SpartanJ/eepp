@@ -3,8 +3,6 @@
 
 ## UICodeEditor
 
-* Add show white spaces.
-
 * Add new CSS properties related to the widget.
 
 ## TextDocument
@@ -12,22 +10,18 @@
 * Add indentation type auto-detection.
 
 * Add multi-line search and replace.
- 
+
 * Add auto-close brackets.
- 
+
 * Add XML tags auto-close.
- 
+
 * Add command to comment selected lines.
- 
+
 * On Save: trim white spaces.
- 
+
 * On Save: Ensure new line at end of file option.
- 
+
 * On Save: Allow to select line endings type.
-
-## UITreeView
-
-Implement a simple tree view widget, to at least cover the most common use cases.
 
 ## Code Editor
 
@@ -54,3 +48,7 @@ Detect errors and log them.
 # UISceneNode and UIWindow
 
 Redesign the shortcut API to use the new keybinding class.
+
+## UITreeView
+
+Implement a simple tree view widget, to at least cover the most common use cases.

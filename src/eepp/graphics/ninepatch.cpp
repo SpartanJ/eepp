@@ -25,7 +25,7 @@ NinePatch::NinePatch( const Uint32& TexId, int left, int top, int right, int bot
 	Texture* tex = TextureFactory::instance()->getTexture( TexId );
 
 	if ( NULL != tex ) {
-		mSize = tex->getPixelSize();
+		mSize = tex->getPxSize();
 
 		createFromTexture( TexId, left, top, right, bottom );
 	}
@@ -44,7 +44,7 @@ NinePatch::NinePatch( TextureRegion* textureRegion, int left, int top, int right
 	if ( NULL != textureRegion && ( tex = textureRegion->getTexture() ) != NULL ) {
 		mPixelDensity = textureRegion->getPixelDensity();
 
-		Rect r( textureRegion->getSrcRect() );
+		Rectf r( textureRegion->getSrcRect().asFloat() );
 
 		mSize = r.getSize();
 
