@@ -778,7 +778,9 @@ void App::onFileDropped( String file ) {
 	Vector2f mousePos( mUISceneNode->getEventDispatcher()->getMousePosf() );
 	Node* node = mUISceneNode->overFind( mousePos );
 	UICodeEditor* codeEditor = mCurEditor;
-	if ( node->isType( UI_TYPE_CODEEDITOR ) ) {
+	if ( !node )
+		node = codeEditor;
+	if ( node && node->isType( UI_TYPE_CODEEDITOR ) ) {
 		codeEditor = node->asType<UICodeEditor>();
 		if ( !codeEditor->getDocument().isEmpty() ) {
 			auto d = createCodeEditorInTabWidget( tabWidgetFromEditor( codeEditor ) );
@@ -793,7 +795,7 @@ void App::onTextDropped( String text ) {
 	Vector2f mousePos( mUISceneNode->getEventDispatcher()->getMousePosf() );
 	Node* node = mUISceneNode->overFind( mousePos );
 	UICodeEditor* codeEditor = mCurEditor;
-	if ( node->isType( UI_TYPE_CODEEDITOR ) )
+	if ( node && node->isType( UI_TYPE_CODEEDITOR ) )
 		codeEditor = node->asType<UICodeEditor>();
 	if ( codeEditor && !text.empty() ) {
 		if ( text[text.size() - 1] != '\n' )
@@ -927,7 +929,7 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 
 	if ( mWindow->isOpen() ) {
 		mWindow->setCloseRequestCallback(
-			[&]( auto* win ) -> bool { return onCloseRequestCallback( win ); } );
+			[&]( EE::Window::Window* win ) -> bool { return onCloseRequestCallback( win ); } );
 
 		mWindow->getInput()->pushCallback( [&]( InputEvent* event ) {
 			if ( event->Type == InputEvent::FileDropped ) {

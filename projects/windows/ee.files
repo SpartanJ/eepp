@@ -1,4 +1,5 @@
 ../../README.md
+../../bin/assets/colorschemes/colorschemes.conf
 ../../bin/assets/ee.ini
 ../../bin/assets/layouts/imported.css
 ../../bin/assets/layouts/test.css
@@ -63,6 +64,7 @@
 ../../include/eepp/graphics/globalbatchrenderer.hpp
 ../../include/eepp/graphics/globaltextureatlas.hpp
 ../../include/eepp/graphics.hpp
+../../include/eepp/graphics/glyphdrawable.hpp
 ../../include/eepp/graphics/image.hpp
 ../../include/eepp/graphics/ninepatch.hpp
 ../../include/eepp/graphics/ninepatchmanager.hpp
@@ -322,6 +324,7 @@
 ../../include/eepp/ui/doc/syntaxhighlighter.hpp
 ../../include/eepp/ui/doc/syntaxtokenizer.hpp
 ../../include/eepp/ui/doc/textdocument.hpp
+../../include/eepp/ui/doc/textdocumentline.hpp
 ../../include/eepp/ui/doc/textposition.hpp
 ../../include/eepp/ui/doc/textrange.hpp
 ../../include/eepp/ui/doc/undostack.hpp
@@ -334,12 +337,14 @@
 ../../include/eepp/ui/uicheckbox.hpp
 ../../include/eepp/ui/uicodeeditor.hpp
 ../../include/eepp/ui/uicombobox.hpp
-../../include/eepp/ui/uicommondialog.hpp
 ../../include/eepp/ui/uidropdownlist.hpp
 ../../include/eepp/ui/uieventdispatcher.hpp
+../../include/eepp/ui/uifiledialog.hpp
 ../../include/eepp/ui/uifontstyleconfig.hpp
 ../../include/eepp/ui/uigridlayout.hpp
 ../../include/eepp/ui/uihelper.hpp
+../../include/eepp/ui/uiicontheme.hpp
+../../include/eepp/ui/uiiconthememanager.hpp
 ../../include/eepp/ui/uiimage.hpp
 ../../include/eepp/ui/uiitemcontainer.hpp
 ../../include/eepp/ui/uilayout.hpp
@@ -348,9 +353,11 @@
 ../../include/eepp/ui/uilistboxitem.hpp
 ../../include/eepp/ui/uiloader.hpp
 ../../include/eepp/ui/uimanager.hpp
+../../include/eepp/ui/uimenubar.hpp
 ../../include/eepp/ui/uimenucheckbox.hpp
 ../../include/eepp/ui/uimenu.hpp
 ../../include/eepp/ui/uimenuitem.hpp
+../../include/eepp/ui/uimenuradiobutton.hpp
 ../../include/eepp/ui/uimenuseparator.hpp
 ../../include/eepp/ui/uimenusubmenu.hpp
 ../../include/eepp/ui/uimessagebox.hpp
@@ -369,6 +376,7 @@
 ../../include/eepp/ui/uiskinstate.hpp
 ../../include/eepp/ui/uislider.hpp
 ../../include/eepp/ui/uispinbox.hpp
+../../include/eepp/ui/uisplitter.hpp
 ../../include/eepp/ui/uisprite.hpp
 ../../include/eepp/ui/uistate.hpp
 ../../include/eepp/ui/uistyle.hpp
@@ -389,7 +397,6 @@
 ../../include/eepp/ui/uiwidgetcreator.hpp
 ../../include/eepp/ui/uiwidget.hpp
 ../../include/eepp/ui/uiwindow.hpp
-../../include/eepp/ui/uiwinmenu.hpp
 ../../include/eepp/version.hpp
 ../../include/eepp/window/base.hpp
 ../../include/eepp/window/clipboard.hpp
@@ -504,6 +511,7 @@
 ../../src/eepp/graphics/framebuffermanager.hpp
 ../../src/eepp/graphics/globalbatchrenderer.cpp
 ../../src/eepp/graphics/globaltextureatlas.cpp
+../../src/eepp/graphics/glyphdrawable.cpp
 ../../src/eepp/graphics/image.cpp
 ../../src/eepp/graphics/ninepatch.cpp
 ../../src/eepp/graphics/ninepatchmanager.cpp
@@ -773,6 +781,7 @@
 ../../src/eepp/ui/doc/syntaxtokenizer.cpp
 ../../src/eepp/ui/doc/textdocument.cpp
 ../../src/eepp/ui/doc/undostack.cpp
+../../src/eepp/ui/keyboardshortcut.cpp
 ../../src/eepp/ui/tools/textureatlaseditor.cpp
 ../../src/eepp/ui/tools/textureatlasnew.cpp
 ../../src/eepp/ui/tools/textureatlasnew.hpp
@@ -784,10 +793,12 @@
 ../../src/eepp/ui/uicheckbox.cpp
 ../../src/eepp/ui/uicodeeditor.cpp
 ../../src/eepp/ui/uicombobox.cpp
-../../src/eepp/ui/uicommondialog.cpp
 ../../src/eepp/ui/uidropdownlist.cpp
 ../../src/eepp/ui/uieventdispatcher.cpp
+../../src/eepp/ui/uifiledialog.cpp
 ../../src/eepp/ui/uigridlayout.cpp
+../../src/eepp/ui/uiicontheme.cpp
+../../src/eepp/ui/uiiconthememanager.cpp
 ../../src/eepp/ui/uiimage.cpp
 ../../src/eepp/ui/uilayout.cpp
 ../../src/eepp/ui/uilinearlayout.cpp
@@ -795,9 +806,11 @@
 ../../src/eepp/ui/uilistboxitem.cpp
 ../../src/eepp/ui/uiloader.cpp
 ../../src/eepp/ui/uimanager.cpp
+../../src/eepp/ui/uimenubar.cpp
 ../../src/eepp/ui/uimenucheckbox.cpp
 ../../src/eepp/ui/uimenu.cpp
 ../../src/eepp/ui/uimenuitem.cpp
+../../src/eepp/ui/uimenuradiobutton.cpp
 ../../src/eepp/ui/uimenuseparator.cpp
 ../../src/eepp/ui/uimenusubmenu.cpp
 ../../src/eepp/ui/uimessagebox.cpp
@@ -816,6 +829,7 @@
 ../../src/eepp/ui/uiskinstate.cpp
 ../../src/eepp/ui/uislider.cpp
 ../../src/eepp/ui/uispinbox.cpp
+../../src/eepp/ui/uisplitter.cpp
 ../../src/eepp/ui/uisprite.cpp
 ../../src/eepp/ui/uistate.cpp
 ../../src/eepp/ui/uistyle.cpp
@@ -836,7 +850,6 @@
 ../../src/eepp/ui/uiwidget.cpp
 ../../src/eepp/ui/uiwidgetcreator.cpp
 ../../src/eepp/ui/uiwindow.cpp
-../../src/eepp/ui/uiwinmenu.cpp
 ../../src/eepp/window/backend/allegro5/cbackendal.hpp
 ../../src/eepp/window/backend/allegro5/cclipboardal.cpp
 ../../src/eepp/window/backend/allegro5/cclipboardal.hpp
@@ -957,6 +970,7 @@
 ../../src/thirdparty/SOIL2/src/SOIL2/stbi_pvr_c.h
 ../../src/thirdparty/SOIL2/src/SOIL2/stbi_pvr.h
 ../../src/tools/codeeditor/codeeditor.cpp
+../../src/tools/codeeditor/codeeditor.hpp
 ../../src/tools/mapeditor/mapeditor.cpp
 ../../src/tools/textureatlaseditor/textureatlaseditor.cpp
 ../../src/tools/texturepacker/texturepacker.cpp

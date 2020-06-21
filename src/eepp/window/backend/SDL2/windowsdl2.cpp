@@ -16,6 +16,10 @@
 #include <eepp/window/backend/SDL2/wminfo.hpp>
 #include <eepp/window/engine.hpp>
 
+#if EE_PLATFORM == EE_PLATFORM_WIN
+#include <eepp/window/backend/SDL2/displaymanagersdl2.hpp>
+#endif
+
 #if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || \
 	defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_IOS ||        \
 	EE_PLATFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
@@ -211,6 +215,10 @@ WindowSDL::~WindowSDL() {
 }
 
 bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
+	#if EE_PLATFORM == EE_PLATFORM_WIN
+	DisplayManagerSDL2::setDPIAwareness();
+	#endif
+
 	if ( mWindow.Created )
 		return false;
 

@@ -1,3 +1,4 @@
+#include <eepp/system/sys.hpp>
 #include <eepp/window/backend/SDL2/base.hpp>
 #include <eepp/window/backend/SDL2/displaymanagersdl2.hpp>
 
@@ -6,6 +7,24 @@
 #endif
 
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
+
+static bool DISPLAY_REQUEST_DPI_AWARENESS = true;
+
+void DisplayManagerSDL2::setDPIAwareness() {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+if ( DISPLAY_REQUEST_DPI_AWARENESS ) {
+	void* user32 = Sys::loadObject( "user32.dll" );
+	if ( user32 ) {
+		int (*SetProcessDPIAware)() =
+				(int (*)()) Sys::loadFunction( user32, "SetProcessDPIAware" );
+		if ( SetProcessDPIAware ) {
+			SetProcessDPIAware();
+			DISPLAY_REQUEST_DPI_AWARENESS = false;
+		}
+	}
+}
+#endif
+}
 
 DisplaySDL2::DisplaySDL2( int index ) : Display( index ) {}
 
@@ -24,6 +43,7 @@ Float DisplaySDL2::getDPI() {
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 	return 96.f * emscripten_get_device_pixel_ratio();
 #else
+	DisplayManagerSDL2::setDPIAwareness();
 	float ddpi, hdpi, vdpi;
 	if ( 0 == SDL_GetDisplayDPI( 0, &ddpi, &hdpi, &vdpi ) )
 		return ddpi;
@@ -88,6 +108,7 @@ Rect DisplaySDL2::getUsableBounds() {
 }
 
 int DisplayManagerSDL2::getDisplayCount() {
+	setDPIAwareness();
 	if ( !SDL_WasInit( SDL_INIT_VIDEO ) )
 		SDL_Init( SDL_INIT_VIDEO );
 	return SDL_GetNumVideoDisplays();
