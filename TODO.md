@@ -41,11 +41,11 @@ Keep improving it:
 
 * Once `UITreeView` is finished add a tree view inspecto of the node tree.
 
-# StyleSheetParser
+## StyleSheetParser
 
 Detect errors and log them.
 
-# UISceneNode and UIWindow
+## UISceneNode and UIWindow
 
 Redesign the shortcut API to use the new keybinding class.
 
