@@ -13,17 +13,24 @@ class EE_API LuaPatternMatcher {
 		int end;
 	};
 
+	static std::string match( const std::string& string, const std::string& pattern );
+
 	LuaPatternMatcher( const std::string& pattern );
 
 	bool matches( const char* stringSearch, int stringStartOffset,
-				  LuaPatternMatcher::Match* matches, size_t stringLength );
+				  LuaPatternMatcher::Match* matchList, size_t stringLength );
 
-	bool find( const char* stringSearch, int stringStartOffset, int& startMatch, int& endMatch,
+	bool matches( const std::string& str, LuaPatternMatcher::Match* matchList,
+				  int stringStartOffset = 0 ) {
+		return matches( str.c_str(), stringStartOffset, matchList, str.size() );
+	}
+
+	bool find( const char* stringSearch, int& startMatch, int& endMatch, int stringStartOffset = 0,
 			   int stringLength = 0, int returnMatchIndex = 0 );
 
-	bool find( const std::string& s, int offset, int& startMatch, int& endMatch,
+	bool find( const std::string& s, int& startMatch, int& endMatch, int offset = 0,
 			   int returnedMatchIndex = 0 ) {
-		return find( s.c_str(), offset, startMatch, endMatch, s.size(), returnedMatchIndex );
+		return find( s.c_str(), startMatch, endMatch, offset, s.size(), returnedMatchIndex );
 	}
 
 	int getNumMatches();

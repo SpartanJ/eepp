@@ -343,7 +343,6 @@ const Uint32& UICodeEditor::getTabWidth() const {
 UICodeEditor* UICodeEditor::setTabWidth( const Uint32& tabWidth ) {
 	if ( mTabWidth != tabWidth ) {
 		mTabWidth = tabWidth;
-		mDoc.setTabWidth( mTabWidth );
 	}
 	return this;
 }

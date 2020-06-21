@@ -242,9 +242,9 @@ class EE_API TextDocument {
 
 	String getIndentString();
 
-	const Uint32& getTabWidth() const;
+	const Uint32& getIndentWidth() const;
 
-	void setTabWidth( const Uint32& tabWidth );
+	void setIndentWidth( const Uint32& tabWidth );
 
 	TextPosition sanitizePosition( const TextPosition& position ) const;
 
@@ -284,6 +284,10 @@ class EE_API TextDocument {
 
 	void resetSyntax();
 
+	bool getAutoDetectIndentType() const;
+
+	void setAutoDetectIndentType( bool autodetect );
+
   protected:
 	friend class UndoStack;
 	UndoStack mUndoStack;
@@ -293,7 +297,8 @@ class EE_API TextDocument {
 	std::unordered_set<Client*> mClients;
 	bool mIsCLRF{false};
 	bool mIsBOM{false};
-	Uint32 mTabWidth{4};
+	bool mAutoDetectIndentType{true};
+	Uint32 mIndentWidth{4};
 	IndentType mIndentType{IndentTabs};
 	Clock mTimer;
 	SyntaxDefinition mSyntaxDefinition;
@@ -329,6 +334,8 @@ class EE_API TextDocument {
 	TextPosition insert( TextPosition position, const String::StringBaseType& text );
 
 	void appendLineIfLastLine( Int64 line );
+
+	void guessIndentType();
 };
 
 }}} // namespace EE::UI::Doc

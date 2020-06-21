@@ -44,7 +44,7 @@ std::pair<int, int> findNonEscaped( const std::string& text, const std::string& 
 	while ( true ) {
 		LuaPatternMatcher words( pattern );
 		int start, end;
-		if ( words.find( text, offset, start, end ) ) {
+		if ( words.find( text, start, end, offset ) ) {
 			if ( !escapeStr.empty() && isScaped( text, start, escapeStr ) ) {
 				offset = end;
 			} else {
@@ -95,7 +95,7 @@ std::pair<std::vector<SyntaxToken>, int> SyntaxTokenizer::tokenize( const Syntax
 				pattern.patterns[0][0] == '^' ? pattern.patterns[0] : "^" + pattern.patterns[0] );
 			LuaPatternMatcher words( patternStr );
 			int start, end = 0;
-			if ( words.find( text, i, start, end ) ) {
+			if ( words.find( text, start, end, i ) ) {
 				std::string patternText( text.substr( start, end - start ) );
 				std::string type = syntax.getSymbol( patternText );
 				pushToken( tokens, type.empty() ? pattern.type : type, patternText );

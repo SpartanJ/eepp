@@ -13,6 +13,14 @@ static void failHandler( const char* msg ) {
 	throw std::string( msg );
 }
 
+std::string LuaPatternMatcher::match( const std::string& string, const std::string& pattern ) {
+	LuaPatternMatcher matcher( pattern );
+	int start = 0, end = 0;
+	if ( matcher.find( string, start, end ) )
+		return string.substr( start, end - start );
+	return "";
+}
+
 LuaPatternMatcher::LuaPatternMatcher( const std::string& pattern ) : mPattern( pattern ) {
 	if ( !sFailHandlerInitialized ) {
 		sFailHandlerInitialized = true;
@@ -21,15 +29,15 @@ LuaPatternMatcher::LuaPatternMatcher( const std::string& pattern ) : mPattern( p
 }
 
 bool LuaPatternMatcher::matches( const char* stringSearch, int stringStartOffset,
-								 LuaPatternMatcher::Match* matches, size_t stringLength ) {
+								 LuaPatternMatcher::Match* matchList, size_t stringLength ) {
 	LuaPatternMatcher::Match matchesBuffer[MAX_DEFAULT_MATCHES];
-	if ( matches == NULL )
-		matches = matchesBuffer;
+	if ( matchList == NULL )
+		matchList = matchesBuffer;
 	if ( stringLength == 0 )
 		stringLength = strlen( stringSearch );
 	try {
 		mMatchNum = lua_str_match( stringSearch, stringStartOffset, stringLength, mPattern.c_str(),
-							   (LuaMatch*)matches );
+								   (LuaMatch*)matchList );
 	} catch ( const std::string& patternError ) {
 		mErr = std::move( patternError );
 		mMatchNum = 0;
@@ -37,8 +45,8 @@ bool LuaPatternMatcher::matches( const char* stringSearch, int stringStartOffset
 	return mMatchNum == 0 ? false : true;
 }
 
-bool LuaPatternMatcher::find( const char* stringSearch, int stringStartOffset, int& startMatch,
-							  int& endMatch, int stringLength, int returnMatchIndex ) {
+bool LuaPatternMatcher::find( const char* stringSearch, int& startMatch, int& endMatch,
+							  int stringStartOffset, int stringLength, int returnMatchIndex ) {
 	LuaPatternMatcher::Match matchesBuffer[MAX_DEFAULT_MATCHES];
 	if ( matches( stringSearch, stringStartOffset, matchesBuffer, stringLength ) ) {
 		range( returnMatchIndex, startMatch, endMatch, matchesBuffer );
@@ -49,6 +57,7 @@ bool LuaPatternMatcher::find( const char* stringSearch, int stringStartOffset, i
 		return false;
 	}
 }
+
 bool LuaPatternMatcher::range( int indexGet, int& startMatch, int& endMatch,
 							   LuaPatternMatcher::Match* returnedMatched ) {
 	if ( indexGet == -1 ) {

@@ -1,8 +1,10 @@
+#include <algorithm>
 #include <cstdio>
 #include <eepp/core/debug.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/iostreammemory.hpp>
+#include <eepp/system/luapatternmatcher.hpp>
 #include <eepp/system/packmanager.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
@@ -133,6 +135,9 @@ bool TextDocument::loadFromStream( IOStream& file ) {
 		mLines.push_back( String( "\n" ) );
 	}
 
+	if ( mAutoDetectIndentType )
+		guessIndentType();
+
 	notifyTextChanged();
 
 	eePRINTL( "Document \"%s\" loaded in %.2fms.",
@@ -141,9 +146,53 @@ bool TextDocument::loadFromStream( IOStream& file ) {
 	return true;
 }
 
+void TextDocument::guessIndentType() {
+	int guessSpaces = 0;
+	int guessTabs = 0;
+	std::map<int, int> guessWidth;
+	int guessCoundown = 10;
+	size_t linesCount = eemin( 100ul, mLines.size() );
+	for ( size_t i = 0; i < linesCount; i++ ) {
+		const String& text = mLines[i].getText();
+		std::string match =
+			LuaPatternMatcher::match( text.size() > 128 ? text.substr( 0, 12 ) : text, "^  +" );
+		if ( !match.empty() ) {
+			guessSpaces++;
+			guessWidth[match.size()]++;
+			guessCoundown--;
+		} else {
+			match = LuaPatternMatcher::match( mLines[i].getText(), "^\t+" );
+			if ( !match.empty() ) {
+				guessTabs++;
+				guessCoundown--;
+				break; // if tab found asume tabs
+			}
+		}
+		if ( guessCoundown == 0 )
+			break;
+	}
+	if ( !guessTabs && !guessSpaces ) {
+		return;
+	}
+	if ( guessTabs > guessSpaces ) {
+		mIndentType = IndentTabs;
+	} else {
+		mIndentType = IndentSpaces;
+		mIndentWidth = guessWidth.begin()->first;
+	}
+}
+
 void TextDocument::resetSyntax() {
 	String header( getText( {{0, 0}, positionOffset( {0, 0}, 128 )} ) );
 	mSyntaxDefinition = SyntaxDefinitionManager::instance()->find( mFilePath, header );
+}
+
+bool TextDocument::getAutoDetectIndentType() const {
+	return mAutoDetectIndentType;
+}
+
+void TextDocument::setAutoDetectIndentType( bool autodetect ) {
+	mAutoDetectIndentType = autodetect;
 }
 
 bool TextDocument::loadFromFile( const std::string& path ) {
@@ -903,17 +952,17 @@ void TextDocument::appendLineIfLastLine( Int64 line ) {
 
 String TextDocument::getIndentString() {
 	if ( IndentSpaces == mIndentType ) {
-		return String( std::string( mTabWidth, ' ' ) );
+		return String( std::string( mIndentWidth, ' ' ) );
 	}
 	return String( "\t" );
 }
 
-const Uint32& TextDocument::getTabWidth() const {
-	return mTabWidth;
+const Uint32& TextDocument::getIndentWidth() const {
+	return mIndentWidth;
 }
 
-void TextDocument::setTabWidth( const Uint32& tabWidth ) {
-	mTabWidth = tabWidth;
+void TextDocument::setIndentWidth( const Uint32& tabWidth ) {
+	mIndentWidth = tabWidth;
 }
 
 void TextDocument::deleteTo( TextPosition position ) {

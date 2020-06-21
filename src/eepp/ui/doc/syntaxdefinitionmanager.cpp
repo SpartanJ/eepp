@@ -859,7 +859,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 
 	// ini / conf
 	add( {"Config File",
-		  {"%.ini$", "%.conf$", "%.desktop$", "%.service$", "Doxyfile"},
+		  {"%.ini$", "%.conf$", "%.desktop$", "%.service$", "%.cfg$", "Doxyfile"},
 		  {
 			  {{"#[%da-fA-F]+"}, "literal"},
 			  {{"#.-\n"}, "comment"},
@@ -1739,7 +1739,7 @@ SyntaxDefinitionManager::getStyleByExtension( const std::string& filePath ) cons
 				if ( String::startsWith( ext, "%." ) || String::endsWith( ext, "$" ) ) {
 					LuaPatternMatcher words( ext );
 					int start, end;
-					if ( words.find( filePath, 0, start, end ) ) {
+					if ( words.find( filePath, start, end ) ) {
 						return *style;
 					}
 				} else if ( extension == ext ) {
@@ -1758,7 +1758,7 @@ SyntaxDefinitionManager::getStyleByHeader( const std::string& header ) const {
 			for ( auto hdr : style->getHeaders() ) {
 				LuaPatternMatcher words( hdr );
 				int start, end;
-				if ( words.find( header, 0, start, end ) ) {
+				if ( words.find( header, start, end ) ) {
 					return *style;
 				}
 			}

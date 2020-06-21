@@ -7,8 +7,6 @@
 
 ## TextDocument
 
-* Add indentation type auto-detection.
-
 * Add multi-line search and replace.
 
 * Add auto-close brackets.
