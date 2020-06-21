@@ -151,7 +151,7 @@ void TextDocument::guessIndentType() {
 	int guessTabs = 0;
 	std::map<int, int> guessWidth;
 	int guessCoundown = 10;
-	size_t linesCount = eemin( 100ul, mLines.size() );
+	size_t linesCount = eemin<size_t>( 100, mLines.size() );
 	for ( size_t i = 0; i < linesCount; i++ ) {
 		const String& text = mLines[i].getText();
 		std::string match =
