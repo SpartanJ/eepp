@@ -191,11 +191,86 @@ void App::saveDoc() {
 }
 
 UICodeEditor* App::createCodeEditor() {
-	UICodeEditor* codeEditor = UICodeEditor::New();
+	UICodeEditor* codeEditor = UICodeEditor::NewOpt( false, true );
 	codeEditor->setFontSize( 11 );
 	codeEditor->setEnableColorPickerOnSelection( true );
 	codeEditor->setColorScheme( mColorSchemes[mCurrentColorScheme] );
-	codeEditor->getDocument().setCommand( "switch-to-previous-colorscheme", [&] {
+	TextDocument& doc = codeEditor->getDocument();
+
+	/* global commands */
+	doc.setCommand( "move-to-previous-line", [&] {
+		if ( mCurEditor )
+			mCurEditor->moveToPreviousLine();
+	} );
+	doc.setCommand( "move-to-next-line", [&] {
+		if ( mCurEditor )
+			mCurEditor->moveToNextLine();
+	} );
+	doc.setCommand( "select-to-previous-line", [&] {
+		if ( mCurEditor )
+			mCurEditor->selectToPreviousLine();
+	} );
+	doc.setCommand( "select-to-next-line", [&] {
+		if ( mCurEditor )
+			mCurEditor->selectToNextLine();
+	} );
+	doc.setCommand( "move-scroll-up", [&] {
+		if ( mCurEditor )
+			mCurEditor->moveScrollUp();
+	} );
+	doc.setCommand( "move-scroll-down", [&] {
+		if ( mCurEditor )
+			mCurEditor->moveScrollDown();
+	} );
+	doc.setCommand( "indent", [&] {
+		if ( mCurEditor )
+			mCurEditor->indent();
+	} );
+	doc.setCommand( "unindent", [&] {
+		if ( mCurEditor )
+			mCurEditor->unindent();
+	} );
+	doc.setCommand( "copy", [&] {
+		if ( mCurEditor )
+			mCurEditor->copy();
+	} );
+	doc.setCommand( "cut", [&] {
+		if ( mCurEditor )
+			mCurEditor->cut();
+	} );
+	doc.setCommand( "paste", [&] {
+		if ( mCurEditor )
+			mCurEditor->paste();
+	} );
+	doc.setCommand( "font-size-grow", [&] {
+		if ( mCurEditor )
+			mCurEditor->fontSizeGrow();
+	} );
+	doc.setCommand( "font-size-shrink", [&] {
+		if ( mCurEditor )
+			mCurEditor->fontSizeShrink();
+	} );
+	doc.setCommand( "font-size-reset", [&] {
+		if ( mCurEditor )
+			mCurEditor->fontSizeReset();
+	} );
+	doc.setCommand( "lock", [&] {
+		if ( mCurEditor )
+			mCurEditor->setLocked( true );
+	} );
+	doc.setCommand( "unlock", [&] {
+		if ( mCurEditor )
+			mCurEditor->setLocked( false );
+	} );
+	doc.setCommand( "lock-toggle", [&] {
+		if ( mCurEditor )
+			mCurEditor->setLocked( !mCurEditor->isLocked() );
+	} );
+	codeEditor->addUnlockedCommand( "copy" );
+	codeEditor->addUnlockedCommand( "select-all" );
+	/* global commands */
+
+	doc.setCommand( "switch-to-previous-colorscheme", [&] {
 		auto it = mColorSchemes.find( mCurrentColorScheme );
 		auto prev = std::prev( it, 1 );
 		if ( prev != mColorSchemes.end() ) {
@@ -204,7 +279,7 @@ UICodeEditor* App::createCodeEditor() {
 			setColorScheme( mColorSchemes.rbegin()->first );
 		}
 	} );
-	codeEditor->getDocument().setCommand( "switch-to-next-colorscheme", [&] {
+	doc.setCommand( "switch-to-next-colorscheme", [&] {
 		auto it = mColorSchemes.find( mCurrentColorScheme );
 		if ( ++it != mColorSchemes.end() )
 			mCurrentColorScheme = it->first;
@@ -212,21 +287,18 @@ UICodeEditor* App::createCodeEditor() {
 			mCurrentColorScheme = mColorSchemes.begin()->first;
 		applyColorScheme( mColorSchemes[mCurrentColorScheme] );
 	} );
-	codeEditor->getDocument().setCommand( "switch-to-previous-split",
-										  [&] { switchPreviousSplit( mCurEditor ); } );
-	codeEditor->getDocument().setCommand( "switch-to-next-split",
-										  [&] { switchNextSplit( mCurEditor ); } );
-	codeEditor->getDocument().setCommand( "save-doc", [&] { saveDoc(); } );
-	codeEditor->getDocument().setCommand( "save-as-doc", [&] { saveFileDialog(); } );
-	codeEditor->getDocument().setCommand( "find", [&] { showFindView(); } );
-	codeEditor->getDocument().setCommand( "repeat-find", [&] {
+	doc.setCommand( "switch-to-previous-split", [&] { switchPreviousSplit( mCurEditor ); } );
+	doc.setCommand( "switch-to-next-split", [&] { switchNextSplit( mCurEditor ); } );
+	doc.setCommand( "save-doc", [&] { saveDoc(); } );
+	doc.setCommand( "save-as-doc", [&] { saveFileDialog(); } );
+	doc.setCommand( "find", [&] { showFindView(); } );
+	doc.setCommand( "repeat-find", [&] {
 		findNextText( "", mSearchBarLayout->find<UICheckBox>( "case_sensitive" )->isChecked() );
 	} );
-	codeEditor->getDocument().setCommand( "close-app", [&] { closeApp(); } );
-	codeEditor->getDocument().setCommand( "fullscreen-toggle",
-										  [&]() { mWindow->toggleFullscreen(); } );
-	codeEditor->getDocument().setCommand( "open-file", [&] { openFileDialog(); } );
-	codeEditor->getDocument().setCommand( "console-toggle", [&] {
+	doc.setCommand( "close-app", [&] { closeApp(); } );
+	doc.setCommand( "fullscreen-toggle", [&]() { mWindow->toggleFullscreen(); } );
+	doc.setCommand( "open-file", [&] { openFileDialog(); } );
+	doc.setCommand( "console-toggle", [&] {
 		mConsole->toggle();
 		bool lock = mConsole->isActive();
 		for ( auto tabW : mTabWidgets ) {
@@ -235,12 +307,12 @@ UICodeEditor* App::createCodeEditor() {
 			}
 		}
 	} );
-	codeEditor->getDocument().setCommand( "close-doc", [&] { tryTabClose( mCurEditor ); } );
-	codeEditor->getDocument().setCommand( "create-new", [&] {
+	doc.setCommand( "close-doc", [&] { tryTabClose( mCurEditor ); } );
+	doc.setCommand( "create-new", [&] {
 		auto d = createCodeEditorInTabWidget( tabWidgetFromEditor( mCurEditor ) );
 		d.first->getTabWidget()->setTabSelected( d.first );
 	} );
-	codeEditor->getDocument().setCommand( "next-doc", [&] {
+	doc.setCommand( "next-doc", [&] {
 		UITabWidget* tabWidget = tabWidgetFromEditor( mCurEditor );
 		if ( tabWidget && tabWidget->getTabCount() > 1 ) {
 			UITab* tab = (UITab*)mCurEditor->getData();
@@ -248,7 +320,7 @@ UICodeEditor* App::createCodeEditor() {
 			switchToTab( ( tabIndex + 1 ) % tabWidget->getTabCount() );
 		}
 	} );
-	codeEditor->getDocument().setCommand( "previous-doc", [&] {
+	doc.setCommand( "previous-doc", [&] {
 		UITabWidget* tabWidget = tabWidgetFromEditor( mCurEditor );
 		if ( tabWidget && tabWidget->getTabCount() > 1 ) {
 			UITab* tab = (UITab*)mCurEditor->getData();
@@ -258,17 +330,12 @@ UICodeEditor* App::createCodeEditor() {
 		}
 	} );
 	for ( int i = 1; i <= 10; i++ )
-		codeEditor->getDocument().setCommand( String::format( "switch-to-tab-%d", i ),
-											  [&, i] { switchToTab( i - 1 ); } );
-	codeEditor->getDocument().setCommand(
-		"split-right", [&] { splitEditor( SplitDirection::Right, mCurEditor ); } );
-	codeEditor->getDocument().setCommand(
-		"split-bottom", [&] { splitEditor( SplitDirection::Bottom, mCurEditor ); } );
-	codeEditor->getDocument().setCommand(
-		"split-left", [&] { splitEditor( SplitDirection::Left, mCurEditor ); } );
-	codeEditor->getDocument().setCommand( "split-top",
-										  [&] { splitEditor( SplitDirection::Top, mCurEditor ); } );
-	codeEditor->getDocument().setCommand( "split-swap", [&] {
+		doc.setCommand( String::format( "switch-to-tab-%d", i ), [&, i] { switchToTab( i - 1 ); } );
+	doc.setCommand( "split-right", [&] { splitEditor( SplitDirection::Right, mCurEditor ); } );
+	doc.setCommand( "split-bottom", [&] { splitEditor( SplitDirection::Bottom, mCurEditor ); } );
+	doc.setCommand( "split-left", [&] { splitEditor( SplitDirection::Left, mCurEditor ); } );
+	doc.setCommand( "split-top", [&] { splitEditor( SplitDirection::Top, mCurEditor ); } );
+	doc.setCommand( "split-swap", [&] {
 		if ( UISplitter* splitter = splitterFromEditor( mCurEditor ) )
 			splitter->swap();
 	} );
@@ -447,12 +514,27 @@ std::pair<UITab*, UICodeEditor*> App::createCodeEditorInTabWidget( UITabWidget* 
 	if ( NULL == tabWidget )
 		return std::make_pair( (UITab*)NULL, (UICodeEditor*)NULL );
 	UICodeEditor* editor = createCodeEditor();
+	editor->addEventListener( Event::OnDocumentChanged, [&] (const Event* event) {
+		updateEditorTitle( event->getNode()->asType<UICodeEditor>() );
+	} );
 	UITab* tab = tabWidget->add( editor->getDocument().getFilename(), editor );
 	editor->setData( (UintPtr)tab );
 	return std::make_pair( tab, editor );
 }
 
+void App::removeUnusedTab( UITabWidget* tabWidget ) {
+	if ( tabWidget && tabWidget->getTabCount() == 2 &&
+		 tabWidget->getTab( 0 )
+			 ->getOwnedWidget()
+			 ->asType<UICodeEditor>()
+			 ->getDocument()
+			 .isEmpty() ) {
+		tabWidget->removeTab( (Uint32)0 );
+	}
+}
+
 UITabWidget* App::createEditorWithTabWidget( Node* parent ) {
+	UICodeEditor* prevCurEditor = mCurEditor;
 	UITabWidget* tabWidget = UITabWidget::New();
 	tabWidget->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
 	tabWidget->setParent( parent );
@@ -472,17 +554,11 @@ UITabWidget* App::createEditorWithTabWidget( Node* parent ) {
 	tabWidget->addEventListener( Event::OnTabClosed, [&]( const Event* event ) {
 		onTabClosed( static_cast<const TabEvent*>( event ) );
 	} );
-	tabWidget->addEventListener( Event::OnTabAdded, [&]( const Event* event ) {
-		UITabWidget* tabWidget = event->getNode()->asType<UITabWidget>();
-		if ( tabWidget->getTabCount() == 2 && tabWidget->getTab( 0 )
-												  ->getOwnedWidget()
-												  ->asType<UICodeEditor>()
-												  ->getDocument()
-												  .isEmpty() ) {
-			tabWidget->removeTab( (Uint32)0 );
-		}
-	} );
-	createCodeEditorInTabWidget( tabWidget );
+	auto editorData = createCodeEditorInTabWidget( tabWidget );
+	// Open same document in the new split
+	if ( prevCurEditor && prevCurEditor != editorData.second &&
+		 !prevCurEditor->getDocument().isEmpty() )
+		editorData.second->setDocument( prevCurEditor->getDocumentRef() );
 	mTabWidgets.push_back( tabWidget );
 	return tabWidget;
 }
@@ -513,6 +589,7 @@ bool App::loadFileFromPath( const std::string& path, UICodeEditor* codeEditor ) 
 	updateEditorTitle( codeEditor );
 	if ( codeEditor == mCurEditor )
 		updateCurrentFiletype();
+	removeUnusedTab( tabWidgetFromEditor( codeEditor ) );
 	return ret;
 }
 
@@ -959,7 +1036,8 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 			FontTrueType::New( "monospace", resPath + "assets/fonts/DejaVuSansMono.ttf" );
 		fontMono->setBoldAdvanceSameAsRegular( true );
 
-		FontTrueType* iconFont = FontTrueType::New( "icon", resPath + "assets/fonts/remixicon.ttf" );
+		FontTrueType* iconFont =
+			FontTrueType::New( "icon", resPath + "assets/fonts/remixicon.ttf" );
 
 		SceneManager::instance()->add( mUISceneNode );
 

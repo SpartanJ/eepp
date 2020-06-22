@@ -23,8 +23,6 @@ Keep improving it:
 
 * Support single instance (when a new file is opened while a previous instance exists, open it in the first instance).
 
-* Allow to open a document in any number of tabs.
-
 ## UI Editor
 
 * Integrate the `UICodeEditor` into the editor in order to be able to edit the layouts and CSS in app.

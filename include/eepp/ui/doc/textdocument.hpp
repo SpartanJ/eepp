@@ -304,6 +304,10 @@ class EE_API TextDocument {
 
 	void setTrimTrailingWhitespaces( bool trimTrailingWhitespaces );
 
+	Client* getActiveClient() const;
+
+	void setActiveClient( Client* activeClient );
+
   protected:
 	friend class UndoStack;
 	UndoStack mUndoStack;
@@ -325,6 +329,7 @@ class EE_API TextDocument {
 	Uint32 mPageSize{10};
 	std::map<std::string, DocumentCommand> mCommands;
 	String mNonWordChars;
+	Client* mActiveClient{nullptr};
 
 	void initializeCommands();
 

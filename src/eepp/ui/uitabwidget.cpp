@@ -771,6 +771,7 @@ Uint32 UITabWidget::onMessage( const NodeMessage* msg ) {
 			if ( tab->getTabWidget() != this ) {
 				tab->getTabWidget()->removeTab( tab, false, false );
 				add( tab );
+				setTabSelected( tab );
 				return 1;
 			}
 		}

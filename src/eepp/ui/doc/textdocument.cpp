@@ -219,6 +219,14 @@ void TextDocument::setTrimTrailingWhitespaces( bool trimTrailingWhitespaces ) {
 	mTrimTrailingWhitespaces = trimTrailingWhitespaces;
 }
 
+TextDocument::Client* TextDocument::getActiveClient() const {
+	return mActiveClient;
+}
+
+void TextDocument::setActiveClient( Client* activeClient ) {
+	mActiveClient = activeClient;
+}
+
 bool TextDocument::loadFromFile( const std::string& path ) {
 	if ( !FileSystem::fileExists( path ) && PackManager::instance()->isFallbackToPacksActive() ) {
 		std::string pathFix( path );
@@ -713,6 +721,8 @@ void TextDocument::registerClient( Client* client ) {
 
 void TextDocument::unregisterClient( Client* client ) {
 	mClients.erase( client );
+	if ( mActiveClient == client )
+		mActiveClient = nullptr;
 }
 
 void TextDocument::moveToPreviousChar() {

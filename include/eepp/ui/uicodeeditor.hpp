@@ -135,9 +135,17 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void setColorScheme( const SyntaxColorScheme& colorScheme );
 
+	/** If the document is managed by more than one client you need to NOT auto register base
+	 * commands and implement your own logic for those commands, since are dependant of the client
+	 * state.
+	 * @see registerCommands */
+	std::shared_ptr<Doc::TextDocument> getDocumentRef() const;
+
 	const Doc::TextDocument& getDocument() const;
 
 	Doc::TextDocument& getDocument();
+
+	void setDocument( std::shared_ptr<TextDocument> doc );
 
 	bool isDirty() const;
 
@@ -265,16 +273,16 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	const bool& getShowWhitespaces() const;
 
-	void setShowWhitespaces(const bool& showWhitespaces);
+	void setShowWhitespaces( const bool& showWhitespaces );
 
-	protected:
+  protected:
 	struct LastXOffset {
-			TextPosition position;
-			Float offset;
+		TextPosition position;
+		Float offset;
 	};
 	Font* mFont;
 	UIFontStyleConfig mFontStyleConfig;
-	Doc::TextDocument mDoc;
+	std::shared_ptr<Doc::TextDocument> mDoc;
 	Vector2f mScrollPos;
 	Clock mBlinkTimer;
 	bool mDirtyEditor;
@@ -431,6 +439,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 								  const Float& fontSize );
 
 	virtual void onFontChanged();
+
+	virtual void onDocumentChanged();
 
 	virtual Uint32 onMessage( const NodeMessage* msg );
 

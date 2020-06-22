@@ -31,6 +31,7 @@ class EE_API Event {
 		OnAlphaChange,
 		OnTextChanged,
 		OnFontChanged,
+		OnDocumentChanged,
 		OnFontStyleChanged,
 		OnPressEnter,
 		OnValueChange,

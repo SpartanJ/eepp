@@ -66,17 +66,17 @@ void UITextEdit::shrinkText( const Float& maxWidth ) {
 	text.setStyleConfig( mFontStyleConfig );
 	text.setString( getText() );
 	text.shrinkText( maxWidth );
-	mDoc.reset();
-	mDoc.textInput( text.getString() );
+	mDoc->reset();
+	mDoc->textInput( text.getString() );
 }
 
 String UITextEdit::getText() const {
-	return mDoc.getText( {mDoc.startOfDoc(), mDoc.endOfDoc()} );
+	return mDoc->getText( {mDoc->startOfDoc(), mDoc->endOfDoc()} );
 }
 
 void UITextEdit::setText( const String& text ) {
-	mDoc.reset();
-	mDoc.textInput( text );
+	mDoc->reset();
+	mDoc->textInput( text );
 	if ( mFlags & UI_WORD_WRAP ) {
 		shrinkText( getViewportWidth( true ) );
 	}
@@ -126,7 +126,7 @@ Float UITextEdit::getXOffsetCol( const TextPosition& position ) {
 		return mLines[position.line()]
 			.text
 			.findCharacterPos(
-				( position.column() == (Int64)mDoc.line( position.line() ).getText().size() )
+				( position.column() == (Int64)mDoc->line( position.line() ).getText().size() )
 					? position.column() - 1
 					: position.column() )
 			.x;
@@ -141,7 +141,7 @@ Float UITextEdit::getLineWidth( const Int64& lineIndex ) {
 
 void UITextEdit::ensureLineUpdated( const Int64& lineIndex ) {
 	if ( mLines.find( lineIndex ) == mLines.end() ||
-		 mDoc.line( lineIndex ).getHash() != mLines[lineIndex].hash ) {
+		 mDoc->line( lineIndex ).getHash() != mLines[lineIndex].hash ) {
 		updateLineCache( lineIndex );
 	}
 }
@@ -167,8 +167,8 @@ void UITextEdit::invalidateLinesCache() {
 }
 
 void UITextEdit::updateLineCache( const Int64& lineIndex ) {
-	if ( lineIndex >= 0 && lineIndex < (Int64)mDoc.linesCount() ) {
-		TextDocumentLine& line = mDoc.line( lineIndex );
+	if ( lineIndex >= 0 && lineIndex < (Int64)mDoc->linesCount() ) {
+		TextDocumentLine& line = mDoc->line( lineIndex );
 		auto& cacheLine = mLines[lineIndex];
 		cacheLine.text.setStyleConfig( mFontStyleConfig );
 		cacheLine.text.setString( line.getText() );
@@ -186,6 +186,11 @@ void UITextEdit::drawCursor( const Vector2f& startScroll, const Float& lineHeigh
 		primitives.drawRectangle(
 			Rectf( cursorPos, Sizef( PixelDensity::dpToPx( 1 ), lineHeight ) ) );
 	}
+}
+
+void UITextEdit::onDocumentChanged() {
+	UICodeEditor::onDocumentChanged();
+	invalidateLinesCache();
 }
 
 }} // namespace EE::UI

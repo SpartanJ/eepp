@@ -153,6 +153,8 @@ class App {
 	void updateEditorState();
 
 	void saveDoc();
+
+	void removeUnusedTab( UITabWidget* tabWidget );
 };
 
 #endif // EE_TOOLS_CODEEDITOR_HPP

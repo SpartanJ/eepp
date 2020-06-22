@@ -55,6 +55,8 @@ class EE_API UITextEdit : public UICodeEditor {
 	virtual void drawCursor( const Vector2f& startScroll, const Float& lineHeight,
 							 const TextPosition& cursor );
 
+	virtual void onDocumentChanged();
+
 	void invalidateLinesCache();
 
 	void updateLineCache( const Int64& lineIndex );
