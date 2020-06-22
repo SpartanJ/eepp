@@ -1653,6 +1653,7 @@ void UICodeEditor::registerKeybindings() {
 		{{KEY_MINUS, KEYMOD_CTRL}, "font-size-shrink"},
 		{{KEY_KP_MINUS, KEYMOD_CTRL}, "font-size-shrink"},
 		{{KEY_0, KEYMOD_CTRL}, "font-size-reset"},
+		{{KEY_KP_DIVIDE, KEYMOD_CTRL}, "toggle-line-comments" },
 	} );
 }
 

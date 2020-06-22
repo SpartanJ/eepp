@@ -352,6 +352,7 @@ bool SceneNode::getDrawDebugData() const {
 
 void SceneNode::setDrawBoxes( bool draw ) {
 	mDrawBoxes = draw;
+	invalidateDraw();
 }
 
 bool SceneNode::getDrawBoxes() const {
@@ -360,6 +361,7 @@ bool SceneNode::getDrawBoxes() const {
 
 void SceneNode::setHighlightOver( bool Highlight ) {
 	mHighlightOver = Highlight;
+	invalidateDraw();
 }
 
 bool SceneNode::getHighlightOver() const {
@@ -368,6 +370,7 @@ bool SceneNode::getHighlightOver() const {
 
 void SceneNode::setHighlightFocus( bool Highlight ) {
 	mHighlightFocus = Highlight;
+	invalidateDraw();
 }
 
 bool SceneNode::getHighlightFocus() const {
@@ -376,6 +379,7 @@ bool SceneNode::getHighlightFocus() const {
 
 void SceneNode::setHighlightInvalidation( bool Highlight ) {
 	mHighlightInvalidation = Highlight;
+	invalidateDraw();
 }
 
 bool SceneNode::getHighlightInvalidation() const {
@@ -384,6 +388,7 @@ bool SceneNode::getHighlightInvalidation() const {
 
 void SceneNode::setHighlightOverColor( const Color& color ) {
 	mHighlightOverColor = color;
+	invalidateDraw();
 }
 
 const Color& SceneNode::getHighlightOverColor() const {
@@ -392,6 +397,7 @@ const Color& SceneNode::getHighlightOverColor() const {
 
 void SceneNode::setHighlightFocusColor( const Color& color ) {
 	mHighlightFocusColor = color;
+	invalidateDraw();
 }
 
 const Color& SceneNode::getHighlightFocusColor() const {
@@ -400,6 +406,7 @@ const Color& SceneNode::getHighlightFocusColor() const {
 
 void SceneNode::setHighlightInvalidationColor( const Color& color ) {
 	mHighlightInvalidationColor = color;
+	invalidateDraw();
 }
 
 const Color& SceneNode::getHighlightInvalidationColor() const {

@@ -41,6 +41,8 @@ class EE_API SceneManager {
 
 	void setCurrentUISceneNode( UISceneNode* uiSceneNode );
 
+	Time getElapsed() const;
+
   protected:
 	Clock mClock;
 	UISceneNode* mUISceneNode;

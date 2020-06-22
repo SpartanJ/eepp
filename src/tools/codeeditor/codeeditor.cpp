@@ -226,7 +226,15 @@ UICodeEditor* App::createCodeEditor() {
 	codeEditor->getDocument().setCommand( "fullscreen-toggle",
 										  [&]() { mWindow->toggleFullscreen(); } );
 	codeEditor->getDocument().setCommand( "open-file", [&] { openFileDialog(); } );
-	codeEditor->getDocument().setCommand( "console-toggle", [&] { mConsole->toggle(); } );
+	codeEditor->getDocument().setCommand( "console-toggle", [&] {
+		mConsole->toggle();
+		bool lock = mConsole->isActive();
+		for ( auto tabW : mTabWidgets ) {
+			for ( size_t i = 0; i < tabW->getTabCount(); i++ ) {
+				tabW->getTab( i )->getOwnedWidget()->asType<UICodeEditor>()->setLocked( lock );
+			}
+		}
+	} );
 	codeEditor->getDocument().setCommand( "close-doc", [&] { tryTabClose( mCurEditor ); } );
 	codeEditor->getDocument().setCommand( "create-new", [&] {
 		auto d = createCodeEditorInTabWidget( tabWidgetFromEditor( mCurEditor ) );
@@ -761,13 +769,14 @@ void App::mainLoop() {
 		mUISceneNode->setDrawDebugData( !mUISceneNode->getDrawDebugData() );
 	}
 
+	Time elapsed = SceneManager::instance()->getElapsed();
 	SceneManager::instance()->update();
 
 	if ( SceneManager::instance()->getUISceneNode()->invalidated() || mConsole->isActive() ||
 		 mConsole->isFading() ) {
 		mWindow->clear();
 		SceneManager::instance()->draw();
-		mConsole->draw();
+		mConsole->draw( elapsed );
 		mWindow->display();
 	} else {
 		Sys::sleep( Milliseconds( mWindow->hasFocus() ? 1 : 16 ) );

@@ -99,10 +99,10 @@ bool TextDocument::loadFromStream( IOStream& file ) {
 				if ( lineBuffer[lineBuffer.size() - 1] == '\n' || !consume ) {
 					if ( mLines.empty() && lineBuffer.size() > 1 &&
 						 lineBuffer[lineBuffer.size() - 2] == '\r' ) {
-						mIsCLRF = true;
+						mLineEnding = LineEnding::CRLF;
 					}
 
-					if ( mIsCLRF && lineBuffer.size() > 1 ) {
+					if ( mLineEnding == LineEnding::CRLF && lineBuffer.size() > 1 ) {
 						lineBuffer[lineBuffer.size() - 2] = '\n';
 						lineBuffer.resize( lineBuffer.size() - 1 );
 					}
@@ -175,9 +175,9 @@ void TextDocument::guessIndentType() {
 		return;
 	}
 	if ( guessTabs > guessSpaces ) {
-		mIndentType = IndentTabs;
+		mIndentType = IndentType::IndentTabs;
 	} else {
-		mIndentType = IndentSpaces;
+		mIndentType = IndentType::IndentSpaces;
 		mIndentWidth = guessWidth.begin()->first;
 	}
 }
@@ -193,6 +193,30 @@ bool TextDocument::getAutoDetectIndentType() const {
 
 void TextDocument::setAutoDetectIndentType( bool autodetect ) {
 	mAutoDetectIndentType = autodetect;
+}
+
+const TextDocument::LineEnding& TextDocument::getLineEnding() const {
+	return mLineEnding;
+}
+
+void TextDocument::setLineEnding( const LineEnding& lineEnding ) {
+	mLineEnding = lineEnding;
+}
+
+bool TextDocument::getForceNewLineAtEndOfFile() const {
+	return mForceNewLineAtEndOfFile;
+}
+
+void TextDocument::setForceNewLineAtEndOfFile( bool forceNewLineAtEndOfFile ) {
+	mForceNewLineAtEndOfFile = forceNewLineAtEndOfFile;
+}
+
+bool TextDocument::getTrimTrailingWhitespaces() const {
+	return mTrimTrailingWhitespaces;
+}
+
+void TextDocument::setTrimTrailingWhitespaces( bool trimTrailingWhitespaces ) {
+	mTrimTrailingWhitespaces = trimTrailingWhitespaces;
 }
 
 bool TextDocument::loadFromFile( const std::string& path ) {
@@ -246,6 +270,7 @@ bool TextDocument::save( const std::string& path, const bool& utf8bom ) {
 bool TextDocument::save( IOStream& stream, const bool& utf8bom ) {
 	if ( !stream.isOpen() || mLines.empty() )
 		return false;
+	const std::string whitespaces( " \t\f\v\n\r" );
 	char nl = '\n';
 	if ( utf8bom ) {
 		unsigned char bom[] = {0xEF, 0xBB, 0xBF};
@@ -254,13 +279,30 @@ bool TextDocument::save( IOStream& stream, const bool& utf8bom ) {
 	size_t lastLine = mLines.size() - 1;
 	for ( size_t i = 0; i <= lastLine; i++ ) {
 		std::string text( mLines[i].toUtf8() );
-		if ( i == lastLine && !text.empty() && text[text.size() - 1] == '\n' ) {
-			// Last \n is added by the document but it's not part of the document.
-			text.pop_back();
-			if ( text.empty() )
-				continue;
+		if ( mTrimTrailingWhitespaces && text.size() > 1 &&
+			 whitespaces.find( text[text.size() - 2] ) != std::string::npos ) {
+			size_t pos = text.find_last_not_of( whitespaces );
+			if ( pos != std::string::npos ) {
+				text.erase( pos + 1 );
+				text += nl;
+			} else {
+				text = nl;
+			}
+			mLines[i].setText( text );
+			notifyLineChanged( i );
+			notifyTextChanged();
 		}
-		if ( mIsCLRF ) {
+		if ( i == lastLine ) {
+			if ( !text.empty() && text[text.size() - 1] == '\n' && !mForceNewLineAtEndOfFile ) {
+				// Last \n is added by the document but it's not part of the document.
+				text.pop_back();
+				if ( text.empty() )
+					continue;
+			} else if ( !text.empty() && text[text.size()] != '\n' && mForceNewLineAtEndOfFile ) {
+				text += mLineEnding == LineEnding::CRLF ? "\n\r" : "\n";
+			}
+		}
+		if ( mLineEnding == LineEnding::CRLF ) {
 			text[text.size() - 1] = '\r';
 			stream.write( text.c_str(), text.size() );
 			stream.write( &nl, 1 );
@@ -951,7 +993,7 @@ void TextDocument::appendLineIfLastLine( Int64 line ) {
 }
 
 String TextDocument::getIndentString() {
-	if ( IndentSpaces == mIndentType ) {
+	if ( IndentType::IndentSpaces == mIndentType ) {
 		return String( std::string( mIndentWidth, ' ' ) );
 	}
 	return String( "\t" );
@@ -1178,6 +1220,27 @@ const String& TextDocument::getNonWordChars() const {
 	return mNonWordChars;
 }
 
+void TextDocument::toggleLineComments() {
+	std::string comment = mSyntaxDefinition.getComment();
+	if ( comment.empty() )
+		return;
+	std::string commentText = comment + " ";
+	TextRange selection = getSelection( true );
+	bool uncomment = true;
+	for ( Int64 i = selection.start().line(); i < selection.end().line(); i++ ) {
+		const String& text = mLines[i].getText();
+		if ( text.find_first_not_of( " \t\n" ) != std::string::npos &&
+			 text.find( commentText ) == std::string::npos ) {
+			uncomment = false;
+		}
+	}
+	if ( uncomment ) {
+		removeFromStartOfSelectedLines( commentText, true );
+	} else {
+		insertAtStartOfSelectedLines( commentText, true );
+	}
+}
+
 void TextDocument::setNonWordChars( const String& nonWordChars ) {
 	mNonWordChars = nonWordChars;
 }
@@ -1257,6 +1320,7 @@ void TextDocument::initializeCommands() {
 	mCommands["unindent"] = [&] { unindent(); };
 	mCommands["undo"] = [&] { undo(); };
 	mCommands["redo"] = [&] { redo(); };
+	mCommands["toggle-line-comments"] = [&] { toggleLineComments(); };
 }
 
 TextDocument::Client::~Client() {}

@@ -119,7 +119,7 @@ class EE_API Console : protected LogReaderInterface {
 	void addCommand( const String& Command, ConsoleCallback CB );
 
 	/** Draw the Console ( allways call it, visible or not ) */
-	void draw();
+	void draw( const Time& elapsedTime = Time::Zero );
 
 	/** Set the line height ( distance between lines ) */
 	void setLineHeight( const Float& LineHeight );
@@ -194,7 +194,7 @@ class EE_API Console : protected LogReaderInterface {
 
 	void createDefaultCommands();
 
-	void fade();
+	void fade( const Time& elapsedTime );
 
 	/** Internal Callback for default command ( clear ) */
 	void cmdClear( const std::vector<String>& params );

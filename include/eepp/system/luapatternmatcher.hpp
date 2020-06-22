@@ -9,11 +9,14 @@ namespace EE { namespace System {
 class EE_API LuaPatternMatcher {
   public:
 	struct Match {
-		int start;
-		int end;
+		int start{-1};
+		int end{-1};
+		bool isValid() { return -1 != start && -1 != end; }
 	};
 
 	static std::string match( const std::string& string, const std::string& pattern );
+
+	static Match find( const std::string& string, const std::string& pattern );
 
 	LuaPatternMatcher( const std::string& pattern );
 

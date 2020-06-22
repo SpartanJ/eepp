@@ -216,9 +216,9 @@ void Console::addCommand( const String& Command, ConsoleCallback CB ) {
 		mCallbacks[Command] = CB;
 }
 
-void Console::draw() {
+void Console::draw( const Time& elapsedTime ) {
 	if ( mEnabled && NULL != mFontStyleConfig.Font ) {
-		fade();
+		fade( elapsedTime == Time::Zero ? mWindow->getElapsed() : elapsedTime );
 
 		if ( mY > 0.0f ) {
 			if ( mTexId == 0 ) {
@@ -473,15 +473,15 @@ void Console::toggle() {
 		fadeIn();
 }
 
-void Console::fade() {
+void Console::fade( const Time& elapsedTime ) {
 	if ( mCurSide ) {
-		mCurAlpha -= 255.f * mWindow->getElapsed().asMilliseconds() / mFadeSpeed.asMilliseconds();
+		mCurAlpha -= 255.f * elapsedTime.asMilliseconds() / mFadeSpeed.asMilliseconds();
 		if ( mCurAlpha <= 0.0f ) {
 			mCurAlpha = 0.0f;
 			mCurSide = !mCurSide;
 		}
 	} else {
-		mCurAlpha += 255.f * mWindow->getElapsed().asMilliseconds() / mFadeSpeed.asMilliseconds();
+		mCurAlpha += 255.f * elapsedTime.asMilliseconds() / mFadeSpeed.asMilliseconds();
 		if ( mCurAlpha >= 255.f ) {
 			mCurAlpha = 255.f;
 			mCurSide = !mCurSide;
@@ -495,7 +495,7 @@ void Console::fade() {
 
 	if ( mFadeIn ) {
 		mFadeOut = false;
-		mY += mCurHeight * mWindow->getElapsed().asMilliseconds() / mFadeSpeed.asMilliseconds();
+		mY += mCurHeight * elapsedTime.asMilliseconds() / mFadeSpeed.asMilliseconds();
 
 		mA = ( mY * mMaxAlpha / mCurHeight );
 		if ( mY > mCurHeight ) {
@@ -507,7 +507,7 @@ void Console::fade() {
 
 	if ( mFadeOut ) {
 		mFadeIn = false;
-		mY -= mCurHeight * mWindow->getElapsed().asMilliseconds() / mFadeSpeed.asMilliseconds();
+		mY -= mCurHeight * elapsedTime.asMilliseconds() / mFadeSpeed.asMilliseconds();
 
 		mA = ( mY * mMaxAlpha / mCurHeight );
 		if ( mY <= 0.0f ) {

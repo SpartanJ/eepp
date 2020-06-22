@@ -13,14 +13,6 @@
 
 * Add XML tags auto-close.
 
-* Add command to comment selected lines.
-
-* On Save: trim white spaces.
-
-* On Save: Ensure new line at end of file option.
-
-* On Save: Allow to select line endings type.
-
 ## Code Editor
 
 Keep improving it:

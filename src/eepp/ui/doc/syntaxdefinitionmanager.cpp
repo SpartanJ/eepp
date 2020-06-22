@@ -1687,6 +1687,46 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 			  {{"^%+.-\n"}, "function"},
 			  {{"^%-.-\n"}, "keyword2"},
 		  }} );
+
+	// Add Java
+	add( {"Java",
+		  {"%.java$"},
+		  {
+			  {{"//.-\n"}, "comment"},
+			  {{"/%*", "%*/"}, "comment"},
+			  {{"\"", "\"", "\\"}, "string"},
+			  {{"'", "'", "\\"}, "string"},
+			  {{"'\\x%x?%x?%x?%x'"}, "string"},
+			  {{"'\\u%x%x%x%x'"}, "string"},
+			  {{"'\\?.'"}, "string"},
+			  {{"-?0x%x+"}, "number"},
+			  {{"-?%d+[%d%.eE]*f?"}, "number"},
+			  {{"-?%.?%d+f?"}, "number"},
+			  {{"[%+%-=/%*%^%%<>!~|&]"}, "operator"},
+			  {{"[%a_][%w_]*%f[(]"}, "function"},
+			  {{"[%a_][%w_]*"}, "symbol"},
+		  },
+		  {
+			  {"if", "keyword"},	   {"then", "keyword"},			{"else", "keyword"},
+			  {"elseif", "keyword"},   {"do", "keyword"},			{"while", "keyword"},
+			  {"for", "keyword"},	   {"new", "keyword"},			{"break", "keyword"},
+			  {"continue", "keyword"}, {"return", "keyword"},		{"goto", "keyword"},
+			  {"class", "keyword"},	   {"implements", "keyword"},	{"extends", "keyword"},
+			  {"private", "keyword"},  {"protected", "keyword"},	{"public", "keyword"},
+			  {"abstract", "keyword"}, {"interface", "keyword"},	{"assert", "keyword"},
+			  {"import", "keyword"},   {"native", "keyword"},		{"package", "keyword"},
+			  {"super", "keyword"},	   {"synchronized", "keyword"}, {"instanceof", "keyword"},
+			  {"enum", "keyword"},	   {"catch", "keyword"},		{"throw", "keyword"},
+			  {"throws", "keyword"},   {"try", "keyword"},			{"transient", "keyword"},
+			  {"finally", "keyword"},  {"static", "keyword"},		{"volatile", "keyword"},
+			  {"final", "keyword"},	   {"switch", "keyword"},		{"case", "keyword"},
+			  {"default", "keyword"},  {"void", "keyword"},			{"int", "keyword2"},
+			  {"short", "keyword2"},   {"byte", "keyword2"},		{"long", "keyword2"},
+			  {"float", "keyword2"},   {"double", "keyword2"},		{"char", "keyword2"},
+			  {"boolean", "keyword2"}, {"true", "literal"},			{"false", "literal"},
+			  {"null", "literal"},
+		  },
+		  "//"} );
 }
 
 SyntaxDefinition& SyntaxDefinitionManager::add( SyntaxDefinition&& syntaxStyle ) {

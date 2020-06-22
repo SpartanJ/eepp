@@ -21,6 +21,15 @@ std::string LuaPatternMatcher::match( const std::string& string, const std::stri
 	return "";
 }
 
+LuaPatternMatcher::Match LuaPatternMatcher::find( const std::string& string,
+												  const std::string& pattern ) {
+	LuaPatternMatcher matcher( pattern );
+	int start = 0, end = 0;
+	if ( matcher.find( string, start, end ) )
+		return {start, end};
+	return {-1, -1};
+}
+
 LuaPatternMatcher::LuaPatternMatcher( const std::string& pattern ) : mPattern( pattern ) {
 	if ( !sFailHandlerInitialized ) {
 		sFailHandlerInitialized = true;

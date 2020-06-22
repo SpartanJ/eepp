@@ -75,4 +75,8 @@ void SceneManager::setCurrentUISceneNode( UISceneNode* uiSceneNode ) {
 	mUISceneNode = uiSceneNode;
 }
 
+Time SceneManager::getElapsed() const {
+	return mClock.getElapsedTime();
+}
+
 }} // namespace EE::Scene

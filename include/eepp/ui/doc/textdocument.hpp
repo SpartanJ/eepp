@@ -35,7 +35,9 @@ class EE_API TextDocument {
 		virtual void onDocumentLineChanged( const Int64& lineIndex ) = 0;
 	};
 
-	enum IndentType { IndentSpaces, IndentTabs };
+	enum class IndentType { IndentSpaces, IndentTabs };
+
+	enum class LineEnding { LF, CRLF };
 
 	TextDocument();
 
@@ -280,6 +282,8 @@ class EE_API TextDocument {
 
 	const String& getNonWordChars() const;
 
+	void toggleLineComments();
+
 	void setNonWordChars( const String& nonWordChars );
 
 	void resetSyntax();
@@ -288,6 +292,18 @@ class EE_API TextDocument {
 
 	void setAutoDetectIndentType( bool autodetect );
 
+	const LineEnding& getLineEnding() const;
+
+	void setLineEnding( const LineEnding& lineEnding );
+
+	bool getForceNewLineAtEndOfFile() const;
+
+	void setForceNewLineAtEndOfFile( bool forceNewLineAtEndOfFile );
+
+	bool getTrimTrailingWhitespaces() const;
+
+	void setTrimTrailingWhitespaces( bool trimTrailingWhitespaces );
+
   protected:
 	friend class UndoStack;
 	UndoStack mUndoStack;
@@ -295,11 +311,13 @@ class EE_API TextDocument {
 	std::vector<TextDocumentLine> mLines;
 	TextRange mSelection;
 	std::unordered_set<Client*> mClients;
-	bool mIsCLRF{false};
+	LineEnding mLineEnding{LineEnding::LF};
 	bool mIsBOM{false};
 	bool mAutoDetectIndentType{true};
+	bool mForceNewLineAtEndOfFile{false};
+	bool mTrimTrailingWhitespaces{false};
 	Uint32 mIndentWidth{4};
-	IndentType mIndentType{IndentTabs};
+	IndentType mIndentType{IndentType::IndentTabs};
 	Clock mTimer;
 	SyntaxDefinition mSyntaxDefinition;
 	std::string mDefaultFileName;
