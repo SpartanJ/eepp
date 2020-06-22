@@ -36,23 +36,33 @@ class EE_API SyntaxColorScheme {
 
 	static std::vector<SyntaxColorScheme> loadFromPack( Pack* pack, std::string filePackPath );
 
+	struct Style {
+		Style(){};
+		Style( const Color& color ) : color( color ) {}
+		Style( const Color& color, const Uint32& style ) : color( color ), style( style ) {}
+		Color color{Color::White};
+		Uint32 style{0};
+	};
+
 	SyntaxColorScheme();
 
 	SyntaxColorScheme( const std::string& name,
-					   const std::unordered_map<std::string, Color>& syntaxColors,
-					   const std::unordered_map<std::string, Color>& editorColors );
+					   const std::unordered_map<std::string, Style>& syntaxColors,
+					   const std::unordered_map<std::string, Style>& editorColors );
 
-	const Color& getSyntaxColor( const std::string& type ) const;
+	const Style& getSyntaxStyle( const std::string& type ) const;
 
-	void setSyntaxColors( const std::unordered_map<std::string, Color>& colors );
+	void setSyntaxStyles( const std::unordered_map<std::string, Style>& styles );
 
-	void setSyntaxColor( const std::string& type, const Color& color );
+	void setSyntaxStyle( const std::string& type, const Style& style );
+
+	const Style& getEditorSyntaxStyle( const std::string& type ) const;
 
 	const Color& getEditorColor( const std::string& type ) const;
 
-	void setEditorColors( const std::unordered_map<std::string, Color>& colors );
+	void setEditorSyntaxStyles( const std::unordered_map<std::string, Style>& styles );
 
-	void setEditorColor( const std::string& type, const Color& color );
+	void setEditorSyntaxStyle( const std::string& type, const Style& style );
 
 	const std::string& getName() const;
 
@@ -60,8 +70,8 @@ class EE_API SyntaxColorScheme {
 
   protected:
 	std::string mName;
-	std::unordered_map<std::string, Color> mSyntaxColors;
-	std::unordered_map<std::string, Color> mEditorColors;
+	std::unordered_map<std::string, Style> mSyntaxColors;
+	std::unordered_map<std::string, Style> mEditorColors;
 };
 
 }}} // namespace EE::UI::Doc

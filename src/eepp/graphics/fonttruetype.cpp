@@ -65,7 +65,8 @@ FontTrueType::FontTrueType( const std::string& FontName ) :
 	mStreamRec( NULL ),
 	mStroker( NULL ),
 	mRefCount( NULL ),
-	mInfo() {}
+	mInfo(),
+	mBoldAdvanceSameAsRegular( false ) {}
 
 FontTrueType::~FontTrueType() {
 	cleanup();
@@ -559,7 +560,7 @@ Glyph FontTrueType::loadGlyph( Uint32 codePoint, unsigned int characterSize, boo
 	// Compute the glyph's advance offset
 	glyph.advance =
 		static_cast<Float>( face->glyph->metrics.horiAdvance ) / static_cast<Float>( 1 << 6 );
-	if ( bold )
+	if ( bold && !mBoldAdvanceSameAsRegular )
 		glyph.advance += static_cast<Float>( weight ) / static_cast<Float>( 1 << 6 );
 
 	int width = bitmap.width;
@@ -744,6 +745,14 @@ bool FontTrueType::setCurrentSize( unsigned int characterSize ) const {
 	} else {
 		return true;
 	}
+}
+
+bool FontTrueType::getBoldAdvanceSameAsRegular() const {
+	return mBoldAdvanceSameAsRegular;
+}
+
+void FontTrueType::setBoldAdvanceSameAsRegular( bool boldAdvanceSameAsRegular ) {
+	mBoldAdvanceSameAsRegular = boldAdvanceSameAsRegular;
 }
 
 FontTrueType::Page::Page() : texture( NULL ), nextRow( 3 ) {

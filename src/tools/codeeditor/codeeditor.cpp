@@ -952,13 +952,14 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 
 		mUISceneNode = UISceneNode::New();
 
-		Font* font =
+		FontTrueType* font =
 			FontTrueType::New( "NotoSans-Regular", resPath + "assets/fonts/NotoSans-Regular.ttf" );
 
-		Font* fontMono =
+		FontTrueType* fontMono =
 			FontTrueType::New( "monospace", resPath + "assets/fonts/DejaVuSansMono.ttf" );
+		fontMono->setBoldAdvanceSameAsRegular( true );
 
-		Font* iconFont = FontTrueType::New( "icon", resPath + "assets/fonts/remixicon.ttf" );
+		FontTrueType* iconFont = FontTrueType::New( "icon", resPath + "assets/fonts/remixicon.ttf" );
 
 		SceneManager::instance()->add( mUISceneNode );
 

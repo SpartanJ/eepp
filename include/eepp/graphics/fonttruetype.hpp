@@ -52,6 +52,12 @@ class EE_API FontTrueType : public Font {
 
 	FontTrueType& operator=( const FontTrueType& right );
 
+	bool getBoldAdvanceSameAsRegular() const;
+
+	/** You can enable this to not add more space in the advance properties for bold fonts, so they
+	 * advance like a regular glyph (useful for monospaced fonts). */
+	void setBoldAdvanceSameAsRegular( bool boldAdvanceSameAsRegular );
+
   protected:
 	explicit FontTrueType( const std::string& FontName );
 
@@ -106,6 +112,7 @@ class EE_API FontTrueType : public Font {
 	mutable PageTable mPages;	   ///< Table containing the glyphs pages by character size
 	mutable std::vector<Uint8>
 		mPixelBuffer; ///< Pixel buffer holding a glyph's pixels before being written to the texture
+	bool mBoldAdvanceSameAsRegular;
 };
 
 }} // namespace EE::Graphics

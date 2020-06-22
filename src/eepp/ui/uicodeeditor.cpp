@@ -1462,10 +1462,13 @@ void UICodeEditor::drawLineText( const Int64& index, Vector2f position, const Fl
 		if ( position.x + textWidth >= mScreenPos.x &&
 			 position.x <= mScreenPos.x + mSize.getWidth() ) {
 			Text line( "", mFont, fontSize );
-			Color color( mColorScheme.getSyntaxColor( token.type ), mAlpha );
+			const SyntaxColorScheme::Style& style = mColorScheme.getSyntaxStyle( token.type );
+			Color color( style.color, mAlpha );
 			line.setStyleConfig( mFontStyleConfig );
-			line.setString( token.text );
+			if ( style.style )
+				line.setStyle( style.style );
 			line.setColor( color );
+			line.setString( token.text );
 			line.draw( position.x, position.y );
 		} else if ( position.x > mScreenPos.x + mSize.getWidth() ) {
 			break;

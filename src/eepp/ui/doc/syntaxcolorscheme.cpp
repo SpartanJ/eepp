@@ -1,4 +1,5 @@
 #include <eepp/core/string.hpp>
+#include <eepp/graphics/text.hpp>
 #include <eepp/system/clock.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/inifile.hpp>
@@ -61,13 +62,34 @@ std::vector<SyntaxColorScheme> SyntaxColorScheme::loadFromStream( IOStream& stre
 		for ( size_t valueIdx = 0; valueIdx < numValues; valueIdx++ ) {
 			std::string valueName( String::toLower( ini.getValueName( keyIdx, valueIdx ) ) );
 			std::string value( ini.getValue( keyIdx, valueIdx ) );
-			if ( !value.empty() && Color::isColorString( value ) ) {
-				if ( refColorScheme.mSyntaxColors.find( valueName ) !=
-					 refColorScheme.mSyntaxColors.end() ) {
-					colorScheme.setSyntaxColor( valueName, Color( value ) );
-				} else if ( refColorScheme.mEditorColors.find( valueName ) !=
-							refColorScheme.mEditorColors.end() ) {
-					colorScheme.setEditorColor( valueName, Color( value ) );
+			if ( !value.empty() ) {
+				auto values = String::split( value, ',' );
+				SyntaxColorScheme::Style style;
+				for ( auto& val : values ) {
+					String::toLowerInPlace( val );
+					String::trimInPlace( val );
+					if ( Color::isColorString( val ) ) {
+						style.color = Color::fromString( val );
+					} else {
+						if ( "bold" == val )
+							style.style |= Graphics::Text::Bold;
+						else if ( "italic" == val )
+							style.style |= Graphics::Text::Italic;
+						else if ( "underline" == val || "underlined" == val )
+							style.style |= Graphics::Text::Underlined;
+						else if ( "strikethrough" == val )
+							style.style |= Graphics::Text::StrikeThrough;
+						else if ( "shadow" == val )
+							style.style |= Graphics::Text::Shadow;
+					}
+
+					if ( refColorScheme.mSyntaxColors.find( valueName ) !=
+						 refColorScheme.mSyntaxColors.end() ) {
+						colorScheme.setSyntaxStyle( valueName, style );
+					} else if ( refColorScheme.mEditorColors.find( valueName ) !=
+								refColorScheme.mEditorColors.end() ) {
+						colorScheme.setEditorSyntaxStyle( valueName, style );
+					}
 				}
 			}
 		}
@@ -110,43 +132,53 @@ std::vector<SyntaxColorScheme> SyntaxColorScheme::loadFromPack( Pack* pack,
 SyntaxColorScheme::SyntaxColorScheme() {}
 
 SyntaxColorScheme::SyntaxColorScheme( const std::string& name,
-									  const std::unordered_map<std::string, Color>& syntaxColors,
-									  const std::unordered_map<std::string, Color>& editorColors ) :
+									  const std::unordered_map<std::string, Style>& syntaxColors,
+									  const std::unordered_map<std::string, Style>& editorColors ) :
 	mName( name ), mSyntaxColors( syntaxColors ), mEditorColors( editorColors ) {}
 
-const Color& SyntaxColorScheme::getSyntaxColor( const std::string& type ) const {
+static const SyntaxColorScheme::Style StyleEmpty = {Color::White};
+
+const SyntaxColorScheme::Style& SyntaxColorScheme::getSyntaxStyle( const std::string& type ) const {
 	auto it = mSyntaxColors.find( type );
 	if ( it != mSyntaxColors.end() )
 		return it->second;
-	return Color::White;
+	return StyleEmpty;
 }
 
-void SyntaxColorScheme::setSyntaxColors( const std::unordered_map<std::string, Color>& colors ) {
-	mSyntaxColors.insert( colors.begin(), colors.end() );
+void SyntaxColorScheme::setSyntaxStyles( const std::unordered_map<std::string, Style>& styles ) {
+	mSyntaxColors.insert( styles.begin(), styles.end() );
 }
 
-void SyntaxColorScheme::setSyntaxColor( const std::string& type, const Color& color ) {
-	mSyntaxColors[type] = color;
+void SyntaxColorScheme::setSyntaxStyle( const std::string& type,
+										const SyntaxColorScheme::Style& style ) {
+	mSyntaxColors[type] = style;
 }
 
-const Color& SyntaxColorScheme::getEditorColor( const std::string& type ) const {
+const SyntaxColorScheme::Style&
+SyntaxColorScheme::getEditorSyntaxStyle( const std::string& type ) const {
 	auto it = mEditorColors.find( type );
 	if ( it != mEditorColors.end() )
 		return it->second;
 	if ( type == "line_number_background" )
-		return getEditorColor( "background" );
+		return getEditorSyntaxStyle( "background" );
 	else if ( type == "guide" || type == "line_break_column" || type == "matching_bracket" ||
 			  type == "matching_selection" )
-		return getEditorColor( "selection" );
-	return Color::White;
+		return getEditorSyntaxStyle( "selection" );
+	return StyleEmpty;
 }
 
-void SyntaxColorScheme::setEditorColors( const std::unordered_map<std::string, Color>& colors ) {
-	mEditorColors.insert( colors.begin(), colors.end() );
+const Color& SyntaxColorScheme::getEditorColor( const std::string& type ) const {
+	return getEditorSyntaxStyle( type ).color;
 }
 
-void SyntaxColorScheme::setEditorColor( const std::string& type, const Color& color ) {
-	mEditorColors[type] = color;
+void SyntaxColorScheme::setEditorSyntaxStyles(
+	const std::unordered_map<std::string, Style>& styles ) {
+	mEditorColors.insert( styles.begin(), styles.end() );
+}
+
+void SyntaxColorScheme::setEditorSyntaxStyle( const std::string& type,
+											  const SyntaxColorScheme::Style& style ) {
+	mEditorColors[type] = style;
 }
 
 const std::string& SyntaxColorScheme::getName() const {
