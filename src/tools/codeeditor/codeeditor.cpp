@@ -820,6 +820,7 @@ void App::showFindView() {
 	} else if ( !findInput->getText().empty() ) {
 		findInput->getDocument().selectAll();
 	}
+	mCurEditor->getDocument().setActiveClient( mCurEditor );
 }
 
 void App::closeApp() {
@@ -917,6 +918,8 @@ void App::createSettingsMenu() {
 		mSettingsMenu->show();
 	} );
 	mSettingsMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
+		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+			return;
 		const String& name = event->getNode()->asType<UIMenuItem>()->getText();
 		if ( name == "New" ) {
 			runCommand( "create-new" );

@@ -29,8 +29,6 @@ class EE_API UIMenuSubMenu : public UIMenuItem {
 
 	void showSubMenu();
 
-	virtual bool inheritsFrom( const Uint32 getType );
-
 	const Time& getMouseOverTimeShowMenu() const;
 
 	void setMouseOverTimeShowMenu( const Time& maxTime );
@@ -39,13 +37,13 @@ class EE_API UIMenuSubMenu : public UIMenuItem {
 	UIMenu* mSubMenu;
 	UIWidget* mArrow;
 	Time mMaxTime;
-	Uint32 mCbId;
-	Uint32 mCbId2;
 	Action* mCurWait;
 
-	virtual Uint32 onMouseOver( const Vector2i& position, const Uint32& flags );
+	virtual Uint32 onMouseOver( const Vector2i& pos, const Uint32& flags );
 
-	virtual Uint32 onMouseLeave( const Vector2i& position, const Uint32& flags );
+	virtual Uint32 onMouseLeave( const Vector2i& pos, const Uint32& flags );
+
+	virtual Uint32 onMouseClick( const Vector2i& pos, const Uint32& flags );
 
 	virtual void onStateChange();
 

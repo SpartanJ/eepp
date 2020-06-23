@@ -30,7 +30,11 @@ class EE_API UIMenuItem : public UIPushButton {
 
 	virtual void onSizeChange();
 
-	virtual Uint32 onMouseOver( const Vector2i& position, const Uint32& flags );
+	virtual Uint32 onMouseOver( const Vector2i& pos, const Uint32& flags );
+
+	virtual Uint32 onMouseLeave( const Vector2i& pos, const Uint32& flags );
+
+	virtual Uint32 onMouseClick( const Vector2i& pos, const Uint32& flags );
 
 	virtual UIWidget* getExtraInnerWidget();
 

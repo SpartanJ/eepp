@@ -68,6 +68,8 @@ class EE_API EventDispatcher {
 
 	const Uint32& getDoubleClickTrigger() const;
 
+	const Uint32& getReleaseTrigger() const;
+
 	void setNodeDragging( Node* dragging );
 
 	bool isNodeDragging() const;

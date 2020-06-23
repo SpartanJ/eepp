@@ -35,26 +35,22 @@ void UIPopUpMenu::setTheme( UITheme* Theme ) {
 
 bool UIPopUpMenu::show() {
 	if ( !isVisible() || 0.f == mAlpha ) {
-#ifdef EE_PLATFORM_TOUCH
-		mTE.restart();
-#endif
-
 		setEnabled( true );
 		setVisible( true );
-
 		toFront();
-
 		if ( NULL != getUISceneNode() &&
 			 getUISceneNode()->getUIThemeManager()->getDefaultEffectsEnabled() ) {
+			if ( mHidingAction ) {
+				removeAction( mHidingAction );
+				mHidingAction = nullptr;
+			}
 			runAction( Actions::Sequence::New(
 				Actions::Fade::New(
 					255.f == mAlpha ? 0.f : mAlpha, 255.f,
 					getUISceneNode()->getUIThemeManager()->getWidgetsFadeOutTime() ),
 				Actions::Spawn::New( Actions::Enable::New(), Actions::Visible::New( true ) ) ) );
 		}
-
 		setFocus();
-
 		return true;
 	}
 
@@ -62,58 +58,27 @@ bool UIPopUpMenu::show() {
 }
 
 bool UIPopUpMenu::hide() {
-	if ( isVisible() ) {
-		if ( NULL != mItemSelected )
-			mItemSelected->popState( UIState::StateSelected );
-
-		mItemSelected = NULL;
-		mItemSelectedIndex = eeINDEX_NOT_FOUND;
-
+	if ( isVisible() && !mHidingAction ) {
 		if ( NULL != getUISceneNode() &&
 			 getUISceneNode()->getUIThemeManager()->getDefaultEffectsEnabled() ) {
-			runAction( Actions::Sequence::New(
+			mHidingAction = Actions::Sequence::New(
 				Actions::FadeOut::New(
 					getUISceneNode()->getUIThemeManager()->getWidgetsFadeOutTime() ),
-				Actions::Spawn::New( Actions::Disable::New(), Actions::Visible::New( false ) ) ) );
+				Actions::Spawn::New( Actions::Disable::New(), Actions::Visible::New( false ),
+									 Actions::Runnable::New( [&] { mHidingAction = nullptr; } ) ) );
+			runAction( mHidingAction );
 		} else {
 			setEnabled( false );
 			setVisible( false );
 		}
-
+		safeHide();
 		return true;
 	}
-
 	return false;
 }
 
-void UIPopUpMenu::onWidgetFocusLoss() {
-	hide();
-
-	UIMenu::onWidgetFocusLoss();
-}
-
-Uint32 UIPopUpMenu::onMessage( const NodeMessage* Msg ) {
-	switch ( Msg->getMsg() ) {
-		case NodeMessage::MouseUp: {
-#ifdef EE_PLATFORM_TOUCH
-			if ( mTE.getElapsed().asMilliseconds() > 250.f ) {
-#endif
-				if ( !Msg->getSender()->isType( UI_TYPE_MENUSUBMENU ) &&
-					 ( Msg->getFlags() & EE_BUTTONS_LRM ) ) {
-					sendCommonEvent( Event::OnHideByClick );
-
-					if ( isVisible() && NULL != mSceneNode )
-						mSceneNode->setFocus();
-
-					hide();
-				}
-#ifdef EE_PLATFORM_TOUCH
-			}
-#endif
-		}
-	}
-
-	return UIMenu::onMessage( Msg );
+bool UIPopUpMenu::isHiding() const {
+	return mHidingAction != nullptr;
 }
 
 }} // namespace EE::UI

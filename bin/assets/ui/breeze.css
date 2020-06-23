@@ -615,10 +615,10 @@ Menu::RadioButton {
 	background-color: transparent;
 }
 
-Menu::Item:hover,
-Menu::CheckBox:hover,
-Menu::SubMenu:hover,
-Menu::RadioButton:hover {
+Menu::Item:selected,
+Menu::CheckBox:selected,
+Menu::SubMenu:selected,
+Menu::RadioButton:selected {
 	background-color: var(--primary);
 }
 

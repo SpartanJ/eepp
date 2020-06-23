@@ -46,6 +46,8 @@ class EE_API UIMenu : public UIWidget {
 
 	Uint32 getCount() const;
 
+	UIWidget* getItemSelected() const;
+
 	void remove( const Uint32& index );
 
 	void remove( UIWidget* widget );
@@ -72,11 +74,13 @@ class EE_API UIMenu : public UIWidget {
 	UINode* getOwnerNode() const;
 
 	/** The owner node is the node who triggers the visibility of the menu */
-	void setOwnerNode( UINode* ownerNode );
+	void setOwnerNode( UIWidget* ownerNode );
 
 	void setIconMinimumSize( const Sizei& minIconSize );
 
 	const Sizei& getIconMinimumSize() const;
+
+	void backpropagateHide();
 
   protected:
 	friend class UIMenuItem;
@@ -90,11 +94,11 @@ class EE_API UIMenu : public UIWidget {
 	Int32 mBiggestIcon;
 	UIWidget* mItemSelected;
 	Uint32 mItemSelectedIndex;
-	bool mClickHide;
 	bool mResizing;
-	Uint32 mLastTickMove;
-	UINode* mOwnerNode;
+	UIWidget* mOwnerNode;
 	Sizei mIconMinSize;
+	UIMenu* mCurrentSubMenu{nullptr};
+	Clock mInactiveTime;
 
 	virtual void onSizeChange();
 
@@ -136,6 +140,16 @@ class EE_API UIMenu : public UIWidget {
 	void nextSel();
 
 	void trySelect( UIWidget* node, bool up );
+
+	void safeHide();
+
+	virtual void onVisibilityChange();
+
+	virtual void scheduledUpdate( const Time& time );
+
+	bool isChildOfMeOrSubMenu( Node* node );
+
+	void unselectSelected();
 };
 
 }} // namespace EE::UI

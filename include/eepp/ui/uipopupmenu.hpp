@@ -23,14 +23,10 @@ class EE_API UIPopUpMenu : public UIMenu {
 
 	virtual bool hide();
 
+	bool isHiding() const;
+
   protected:
-	virtual void onWidgetFocusLoss();
-
-	virtual Uint32 onMessage( const NodeMessage* Msg );
-
-#ifdef EE_PLATFORM_TOUCH
-	Clock mTE;
-#endif
+	Action* mHidingAction{nullptr};
 };
 
 }} // namespace EE::UI

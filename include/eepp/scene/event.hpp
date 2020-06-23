@@ -37,7 +37,6 @@ class EE_API Event {
 		OnValueChange,
 		OnWidgetFocusLoss,
 		OnItemClicked,
-		OnHideByClick,
 		OnItemKeyDown,
 		OnItemKeyUp,
 		OnItemSelected,

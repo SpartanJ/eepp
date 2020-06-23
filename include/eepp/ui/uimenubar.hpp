@@ -20,15 +20,15 @@ class EE_API UIMenuBar : public UIWidget {
 
 	virtual bool isType( const Uint32& type ) const;
 
-	void addMenuButton( const String& ButtonText, UIPopUpMenu* Menu );
+	void addMenuButton( const String& buttonText, UIPopUpMenu* Menu );
 
-	void removeMenuButton( const String& ButtonText );
+	void removeMenuButton( const String& buttonText );
 
-	virtual void setTheme( UITheme* Theme );
+	virtual void setTheme( UITheme* theme );
 
-	UISelectButton* getButton( const String& ButtonText );
+	UISelectButton* getButton( const String& buttonText );
 
-	UIPopUpMenu* getPopUpMenu( const String& ButtonText );
+	UIPopUpMenu* getPopUpMenu( const String& buttonText );
 
 	Uint32 getMenuHeight() const;
 
@@ -54,15 +54,9 @@ class EE_API UIMenuBar : public UIWidget {
 
 	virtual void onPaddingChange();
 
-	virtual void onWidgetFocusLoss();
-
 	UIPopUpMenu* getMenuFromButton( UISelectButton* Button );
 
 	bool isPopUpMenuChild( Node* node );
-
-	void onMenuFocusLoss( const Event* Event );
-
-	void onHideByClick( const Event* Event );
 
 	void unselectButtons();
 

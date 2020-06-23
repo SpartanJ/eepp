@@ -263,6 +263,10 @@ const Uint32& EventDispatcher::getDoubleClickTrigger() const {
 	return mInput->getDoubleClickTrigger();
 }
 
+const Uint32& EventDispatcher::getReleaseTrigger() const {
+	return mInput->getReleaseTrigger();
+}
+
 void EventDispatcher::setNodeDragging( Node* dragging ) {
 	mNodeDragging = dragging;
 }

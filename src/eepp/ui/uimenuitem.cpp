@@ -52,9 +52,22 @@ void UIMenuItem::onSizeChange() {
 	}
 }
 
-Uint32 UIMenuItem::onMouseOver( const Vector2i& Pos, const Uint32& Flags ) {
-	UIPushButton::onMouseOver( Pos, Flags );
+Uint32 UIMenuItem::onMouseOver( const Vector2i& pos, const Uint32& flags ) {
+	UIPushButton::onMouseOver( pos, flags );
 	getParent()->asType<UIMenu>()->setItemSelected( this );
+	return 1;
+}
+
+Uint32 UIMenuItem::onMouseLeave( const Vector2i& pos, const Uint32& flags ) {
+	UIPushButton::onMouseLeave( pos, flags );
+	if ( getParent()->asType<UIMenu>()->getItemSelected() == this )
+		getParent()->asType<UIMenu>()->unselectSelected();
+	return 1;
+}
+
+Uint32 UIMenuItem::onMouseClick( const Vector2i&, const Uint32& flags ) {
+	if ( flags & EE_BUTTON_LMASK )
+		getParent()->asType<UIMenu>()->backpropagateHide();
 	return 1;
 }
 
