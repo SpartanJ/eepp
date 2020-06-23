@@ -387,9 +387,6 @@ void UIMenu::safeHide() {
 			menu->unselectSelected();
 		menu->setFocus();
 	}
-	if ( nullptr == mOwnerNode || !mOwnerNode->isType( UI_TYPE_MENUSUBMENU ) ) {
-		eePRINTL( "sup" );
-	}
 	unselectSelected();
 	if ( mCurrentSubMenu ) {
 		mCurrentSubMenu->hide();

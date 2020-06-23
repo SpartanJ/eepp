@@ -38,7 +38,8 @@ class EE_API UITextEdit : public UICodeEditor {
 
 	virtual void onDocumentLineChanged( const Int64& lineIndex );
 
-	virtual void drawLineText( const Int64& index, Vector2f position, const Float& fontSize );
+	virtual void drawLineText( const Int64& index, Vector2f position, const Float& fontSize,
+							   const Float& lineHeight );
 
 	virtual Int64 getColFromXOffset( Int64 line, const Float& x ) const;
 
@@ -60,7 +61,6 @@ class EE_API UITextEdit : public UICodeEditor {
 	void invalidateLinesCache();
 
 	void updateLineCache( const Int64& lineIndex );
-
 };
 
 }} // namespace EE::UI

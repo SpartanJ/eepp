@@ -167,7 +167,7 @@ void UICodeEditor::draw() {
 	}
 
 	for ( int i = lineRange.first; i <= lineRange.second; i++ ) {
-		drawLineText( i, {startScroll.x, startScroll.y + lineHeight * i}, charSize );
+		drawLineText( i, {startScroll.x, startScroll.y + lineHeight * i}, charSize, lineHeight );
 	}
 
 	drawCursor( startScroll, lineHeight, cursor );
@@ -1482,19 +1482,24 @@ void UICodeEditor::drawSelectionMatch( const std::pair<int, int>& lineRange,
 	primitives.setForceDraw( true );
 }
 
-void UICodeEditor::drawLineText( const Int64& index, Vector2f position, const Float& fontSize ) {
+void UICodeEditor::drawLineText( const Int64& index, Vector2f position, const Float& fontSize,
+								 const Float& lineHeight ) {
 	auto& tokens = mHighlighter.getLine( index );
+	Primitives primitives;
 	for ( auto& token : tokens ) {
 		Float textWidth = getTextWidth( token.text );
 		if ( position.x + textWidth >= mScreenPos.x &&
 			 position.x <= mScreenPos.x + mSize.getWidth() ) {
 			Text line( "", mFont, fontSize );
 			const SyntaxColorScheme::Style& style = mColorScheme.getSyntaxStyle( token.type );
-			Color color( style.color, mAlpha );
 			line.setStyleConfig( mFontStyleConfig );
 			if ( style.style )
 				line.setStyle( style.style );
-			line.setColor( color );
+			if ( style.background != Color::Transparent ) {
+				primitives.setColor( Color( style.background ).blendAlpha( mAlpha ) );
+				primitives.drawRectangle( Rectf( position, Sizef( textWidth, lineHeight ) ) );
+			}
+			line.setColor( Color( style.color ).blendAlpha( mAlpha ) );
 			line.setString( token.text );
 			line.draw( position.x, position.y );
 		} else if ( position.x > mScreenPos.x + mSize.getWidth() ) {

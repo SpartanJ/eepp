@@ -244,7 +244,8 @@ std::string Color::toRgbString() const {
 }
 
 Color& Color::blendAlpha( const Uint8& alpha ) {
-	this->a = static_cast<Uint8>( ( alpha * this->a ) / 255.f );
+	if ( alpha != 255 )
+		this->a = static_cast<Uint8>( ( alpha * this->a ) / 255.f );
 	return *this;
 }
 

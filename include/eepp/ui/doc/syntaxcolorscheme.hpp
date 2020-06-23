@@ -39,8 +39,10 @@ class EE_API SyntaxColorScheme {
 	struct Style {
 		Style(){};
 		Style( const Color& color ) : color( color ) {}
-		Style( const Color& color, const Uint32& style ) : color( color ), style( style ) {}
+		Style( const Color& color, const Color& background, const Uint32& style ) :
+			color( color ), background( background ), style( style ) {}
 		Color color{Color::White};
+		Color background{Color::Transparent};
 		Uint32 style{0};
 	};
 

@@ -100,7 +100,7 @@ void UITextEdit::onDocumentLineChanged( const Int64& lineIndex ) {
 	updateLineCache( lineIndex );
 }
 
-void UITextEdit::drawLineText( const Int64& index, Vector2f position, const Float& ) {
+void UITextEdit::drawLineText( const Int64& index, Vector2f position, const Float&, const Float& ) {
 	ensureLineUpdated( index );
 	mLines[index].text.draw( position.x, position.y );
 }

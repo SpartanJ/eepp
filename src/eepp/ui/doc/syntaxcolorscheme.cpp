@@ -31,6 +31,7 @@ SyntaxColorScheme SyntaxColorScheme::getDefault() {
 				{"string", Color( "#f7c95c" )},
 				{"operator", Color( "#93DDFA" )},
 				{"function", Color( "#93DDFA" )},
+				{"link", {Color( "#93DDFA" ), Color::Transparent, Graphics::Text::Underlined}},
 			},
 			{
 				{"background", Color( "#2e2e32" )},
@@ -65,11 +66,17 @@ std::vector<SyntaxColorScheme> SyntaxColorScheme::loadFromStream( IOStream& stre
 			if ( !value.empty() ) {
 				auto values = String::split( value, ',' );
 				SyntaxColorScheme::Style style;
+				bool colorSet = false;
 				for ( auto& val : values ) {
 					String::toLowerInPlace( val );
 					String::trimInPlace( val );
 					if ( Color::isColorString( val ) ) {
-						style.color = Color::fromString( val );
+						if ( !colorSet ) {
+							style.color = Color::fromString( val );
+							colorSet = true;
+						} else {
+							style.background = Color::fromString( val );
+						}
 					} else {
 						if ( "bold" == val )
 							style.style |= Graphics::Text::Bold;
@@ -142,6 +149,8 @@ const SyntaxColorScheme::Style& SyntaxColorScheme::getSyntaxStyle( const std::st
 	auto it = mSyntaxColors.find( type );
 	if ( it != mSyntaxColors.end() )
 		return it->second;
+	else if ( type == "link" )
+		return getSyntaxStyle( "function" );
 	return StyleEmpty;
 }
 

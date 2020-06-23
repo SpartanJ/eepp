@@ -75,10 +75,12 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 			  {{"%-%-%-+"}, "comment"},
 			  {{"%*%s+"}, "operator"},
 			  {{"%*", "[%*\n]", "\\"}, "operator"},
-			  {{"%_", "[%_\n]", "\\"}, "keyword2"},
+			  {{"%s%_", "[%_\n]", "\\"}, "keyword2"},
+			  {{"^%_", "[%_\n]", "\\"}, "keyword2"},
 			  {{"#.-\n"}, "keyword"},
+			  {{"!?%[.-%]%(https?://%S-%)"}, "link"},
 			  {{"!?%[.-%]%(.-%)"}, "function"},
-			  {{"https?://%S+"}, "function"},
+			  {{"https?://%S+"}, "link"},
 		  }} );
 
 	// C
@@ -868,7 +870,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 			  {{"%[", "%]"}, "keyword2"},
 			  {{"[%a][%w_-]*%s*%f[=]"}, "keyword"},
 			  {{"="}, "operator"},
-			  {{"https?://%S+"}, "function"},
+			  {{"https?://%S+"}, "link"},
 		  }} );
 
 	// Makefile
