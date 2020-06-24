@@ -220,6 +220,7 @@ void UICodeEditor::updateLongestLineWidth() {
 
 void UICodeEditor::reset() {
 	mDoc->reset();
+	mHighlighter.reset();
 	invalidateDraw();
 }
 
@@ -227,6 +228,8 @@ bool UICodeEditor::loadFromFile( const std::string& path ) {
 	bool ret = mDoc->loadFromFile( path );
 	invalidateEditor();
 	updateLongestLineWidth();
+	mHighlighter.changeDoc( mDoc.get() );
+	invalidateDraw();
 	return ret;
 }
 
@@ -1669,10 +1672,10 @@ void UICodeEditor::registerKeybindings() {
 		{{KEY_END, KEYMOD_SHIFT}, "select-to-end-of-line"},
 		{{KEY_END, KEYMOD_CTRL}, "move-to-end-of-doc"},
 		{{KEY_END, 0}, "move-to-end-of-line"},
-		{{KEY_PAGEUP, KEYMOD_CTRL}, "select-to-previous-page"},
+		{{KEY_PAGEUP, KEYMOD_CTRL}, "move-to-previous-page"},
 		{{KEY_PAGEUP, KEYMOD_SHIFT}, "select-to-previous-page"},
 		{{KEY_PAGEUP, 0}, "move-to-previous-page"},
-		{{KEY_PAGEDOWN, KEYMOD_CTRL}, "select-to-next-page"},
+		{{KEY_PAGEDOWN, KEYMOD_CTRL}, "move-to-next-page"},
 		{{KEY_PAGEDOWN, KEYMOD_SHIFT}, "select-to-next-page"},
 		{{KEY_PAGEDOWN, 0}, "move-to-next-page"},
 		{{KEY_Y, KEYMOD_CTRL}, "redo"},

@@ -11,6 +11,7 @@ SyntaxHighlighter::SyntaxHighlighter( TextDocument* doc ) :
 void SyntaxHighlighter::changeDoc( TextDocument* doc ) {
 	mDoc = doc;
 	reset();
+	mMaxWantedLine = (Int64)mDoc->linesCount() - 1;
 }
 
 void SyntaxHighlighter::reset() {
@@ -77,7 +78,7 @@ bool SyntaxHighlighter::updateDirty( int visibleLinesCount ) {
 				}
 			}
 			const auto& it = mLines.find( index );
-			if ( it != mLines.end() && it->second.initState != state ) {
+			if ( it == mLines.end() || it->second.initState != state ) {
 				mLines[index] = tokenizeLine( index, state );
 				changed = true;
 			}
