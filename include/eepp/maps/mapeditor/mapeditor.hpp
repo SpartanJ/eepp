@@ -8,6 +8,7 @@
 #include <eepp/ui/tools/textureatlaseditor.hpp>
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uifiledialog.hpp>
+#include <eepp/ui/uimenubar.hpp>
 #include <eepp/ui/uimenucheckbox.hpp>
 #include <eepp/ui/uimessagebox.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
@@ -17,7 +18,6 @@
 #include <eepp/ui/uitextureregion.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uiwindow.hpp>
-#include <eepp/ui/uimenubar.hpp>
 
 namespace EE { namespace UI {
 class UIMessageBox;
@@ -251,7 +251,8 @@ class EE_API MapEditor {
 
 	void updateScroll();
 
-	bool addShortcut( const Keycode& KeyCode, const Uint32& Mod, UIWidget* Widget );
+	void addShortcut( const KeyBindings::Shortcut& shortcut, const std::string& cmd,
+					  std::function<void()> func );
 };
 
 }} // namespace EE::Maps

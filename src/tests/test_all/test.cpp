@@ -1136,7 +1136,8 @@ void EETest::createDecoratedWindow() {
 		->setParent( lay );
 	Button->addEventListener( Event::MouseClick, cb::Make1( this, &EETest::onButtonClick ) );
 
-	mUIWindow->addShortcut( KEY_C, KEYMOD_ALT, Button );
+	mUIWindow->setKeyBindingCommand( "button-click", [&] { addFlyingIcon(); } );
+	mUIWindow->addKeyBinding( {KEY_C, KEYMOD_LALT}, "button-click" );
 
 	UITabWidget* TabWidget = UITabWidget::New();
 	TabWidget->setLayoutMargin( Rect( 5, 5, 5, 5 ) )
@@ -1286,24 +1287,25 @@ void EETest::onMainClick( const Event* event ) {
 
 using namespace EE::Scene::Actions;
 
+void EETest::addFlyingIcon() {
+	UIImage* Gfx = UIImage::New();
+	Gfx->setDrawable( mSceneNode->findIcon( "ok" ) );
+	Gfx->setEnabled( false );
+
+	Gfx->runAction( Spawn::New(
+		Move::New( Vector2f( Math::randi( 0, mWindow->getWidth() ), -64 ),
+				   Vector2f( Math::randi( 0, mWindow->getWidth() ), mWindow->getHeight() + 64 ),
+				   Milliseconds( 2500 ) ),
+		Rotate::New( 0.f, 2500.f, Milliseconds( 2500 ) ),
+		Sequence::New( Scale::New( Vector2f( 1.f, 1.f ), Vector2f( 2.f, 2.f ), Seconds( 0.5f ) ),
+					   Scale::New( Vector2f( 2.f, 2.f ), Vector2f( 1.f, 1.f ), Seconds( 0.5f ) ) ),
+		Sequence::New( FadeOut::New( Milliseconds( 3500 ) ), Close::New() ) ) );
+}
+
 void EETest::onButtonClick( const Event* event ) {
 	const MouseEvent* mouseEvent = reinterpret_cast<const MouseEvent*>( event );
-
-	if ( mouseEvent->getFlags() & EE_BUTTONS_LRM ) {
-		UIImage* Gfx = UIImage::New();
-		Gfx->setDrawable( mSceneNode->findIcon( "ok" ) );
-		Gfx->setEnabled( false );
-
-		Gfx->runAction( Spawn::New(
-			Move::New( Vector2f( Math::randi( 0, mWindow->getWidth() ), -64 ),
-					   Vector2f( Math::randi( 0, mWindow->getWidth() ), mWindow->getHeight() + 64 ),
-					   Milliseconds( 2500 ) ),
-			Rotate::New( 0.f, 2500.f, Milliseconds( 2500 ) ),
-			Sequence::New(
-				Scale::New( Vector2f( 1.f, 1.f ), Vector2f( 2.f, 2.f ), Seconds( 0.5f ) ),
-				Scale::New( Vector2f( 2.f, 2.f ), Vector2f( 1.f, 1.f ), Seconds( 0.5f ) ) ),
-			Sequence::New( FadeOut::New( Milliseconds( 3500 ) ), Close::New() ) ) );
-	}
+	if ( mouseEvent->getFlags() & EE_BUTTONS_LRM )
+		addFlyingIcon();
 }
 
 void EETest::setScreen( Uint32 num ) {

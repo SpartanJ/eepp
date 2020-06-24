@@ -93,11 +93,15 @@ void MapEditor::createME() {
 	createUIMap();
 }
 
-bool MapEditor::addShortcut( const Keycode& KeyCode, const Uint32& Mod, UIWidget* Widget ) {
+void MapEditor::addShortcut( const KeyBindings::Shortcut& shortcut, const std::string& cmd,
+							 std::function<void()> func ) {
 	if ( NULL != mUIWindow ) {
-		return mUIWindow->addShortcut( KeyCode, Mod, Widget );
+		mUIWindow->setKeyBindingCommand( cmd, func );
+		mUIWindow->addKeyBinding( shortcut, cmd );
 	} else {
-		return mUIContainer->asType<UISceneNode>()->addShortcut( KeyCode, Mod, Widget );
+		UISceneNode* sceneNode = mUIContainer->asType<UISceneNode>();
+		sceneNode->setKeyBindingCommand( cmd, func );
+		sceneNode->addKeyBinding( shortcut, cmd );
 	}
 }
 
@@ -142,12 +146,13 @@ void MapEditor::createMenuBar() {
 
 	PU3->addSeparator();
 
-	addShortcut( KEY_KP_PLUS, KEYMOD_CTRL,
-				 PU3->add( "Zoom In", PU3->getUISceneNode()->findIcon( "zoom-in" ) ) );
-	addShortcut( KEY_KP_MINUS, KEYMOD_CTRL,
-				 PU3->add( "Zoom Out", PU3->getUISceneNode()->findIcon( "zoom-out" ) ) );
-	addShortcut( KEY_0, KEYMOD_CTRL,
-				 PU3->add( "Normal Size", PU3->getUISceneNode()->findIcon( "zoom-original" ) ) );
+	PU3->add( "Zoom In", PU3->getUISceneNode()->findIcon( "zoom-in" ) );
+	PU3->add( "Zoom Out", PU3->getUISceneNode()->findIcon( "zoom-out" ) );
+	PU3->add( "Normal Size", PU3->getUISceneNode()->findIcon( "zoom-original" ) );
+	addShortcut( {KEY_KP_PLUS, KEYMOD_CTRL}, "zoom-in", [&] { zoomIn(); } );
+	addShortcut( {KEY_KP_MINUS, KEYMOD_CTRL}, "zoom-out", [&] { zoomOut(); } );
+	addShortcut( {KEY_0, KEYMOD_CTRL}, "zoom-reset", [&] { mUIMap->Map()->setScale( 1 ); } );
+
 	PU3->addSeparator();
 
 	PU3->addEventListener( Event::OnItemClicked, cb::Make1( this, &MapEditor::viewMenuClick ) );

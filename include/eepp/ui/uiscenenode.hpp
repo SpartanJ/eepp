@@ -81,10 +81,6 @@ class EE_API UISceneNode : public SceneNode {
 
 	UIWidget* getRoot() const;
 
-	bool addShortcut( const Keycode& KeyCode, const Uint32& Mod, UIWidget* Widget );
-
-	bool removeShortcut( const Keycode& KeyCode, const Uint32& Mod );
-
 	bool getVerbose() const;
 
 	void setVerbose( bool verbose );
@@ -109,6 +105,28 @@ class EE_API UISceneNode : public SceneNode {
 
 	Drawable* findIcon( const std::string& iconName );
 
+	typedef std::function<void()> KeyBindingCommand;
+
+	KeyBindings& getKeyBindings();
+
+	void setKeyBindings( const KeyBindings& keyBindings );
+
+	void addKeyBindingString( const std::string& shortcut, const std::string& command );
+
+	void addKeyBinding( const KeyBindings::Shortcut& shortcut, const std::string& command );
+
+	void replaceKeyBindingString( const std::string& shortcut, const std::string& command );
+
+	void replaceKeyBinding( const KeyBindings::Shortcut& shortcut, const std::string& command );
+
+	void addKeyBindsString( const std::map<std::string, std::string>& binds );
+
+	void addKeyBinds( const std::map<KeyBindings::Shortcut, std::string>& binds );
+
+	void setKeyBindingCommand( const std::string& command, KeyBindingCommand func );
+
+	void executeKeyBindingCommand( const std::string& command );
+
   protected:
 	friend class EE::UI::UIWindow;
 	friend class EE::UI::UIWidget;
@@ -124,7 +142,8 @@ class EE_API UISceneNode : public SceneNode {
 	UIThemeManager* mUIThemeManager;
 	UIIconThemeManager* mUIIconThemeManager;
 	std::vector<Font*> mFontFaces;
-	UIKeyboardShortcuts mKbShortcuts;
+	KeyBindings mKeyBindings;
+	std::map<std::string, KeyBindingCommand> mKeyBindingCommands;
 	std::unordered_set<UIWidget*> mDirtyStyle;
 	std::unordered_set<UIWidget*> mDirtyStyleState;
 	std::unordered_map<UIWidget*, bool> mDirtyStyleStateCSSAnimations;
@@ -165,11 +184,7 @@ class EE_API UISceneNode : public SceneNode {
 
 	std::vector<UIWidget*> loadNode( pugi::xml_node node, Node* parent );
 
-	virtual Uint32 onKeyDown( const KeyEvent& Event );
-
-	void checkShortcuts( const Uint32& KeyCode, const Uint32& Mod );
-
-	UIKeyboardShortcuts::iterator existsShortcut( const Uint32& KeyCode, const Uint32& Mod );
+	virtual Uint32 onKeyDown( const KeyEvent& event );
 
 	void onWidgetDelete( Node* node );
 

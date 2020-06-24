@@ -16,20 +16,6 @@ namespace EE { namespace UI {
 
 class UIWidget;
 
-class EE_API UIKeyShortcut {
-  public:
-	UIKeyShortcut() : KeyCode( KEY_UNKNOWN ), Mod( 0 ), Widget( NULL ) {}
-
-	UIKeyShortcut( const Keycode& KeyCode, const Uint32& Mod, UIWidget* Widget ) :
-		KeyCode( KeyCode ), Mod( Mod ), Widget( Widget ) {}
-
-	Keycode KeyCode;
-	Uint32 Mod;
-	UIWidget* Widget;
-};
-
-typedef std::vector<UIKeyShortcut> UIKeyboardShortcuts;
-
 class EE_API KeyBindings {
   public:
 	struct Shortcut {

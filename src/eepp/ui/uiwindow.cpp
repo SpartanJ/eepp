@@ -44,7 +44,8 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const StyleConfig& w
 	mTitle( NULL ),
 	mModalNode( NULL ),
 	mResizeType( RESIZE_NONE ),
-	mFrameBufferBound( false ) {
+	mFrameBufferBound( false ),
+	mKeyBindings( getEventDispatcher()->getInput() ) {
 	subscribeScheduledUpdate();
 
 	bool loading = isSceneNodeLoading();
@@ -1210,12 +1211,6 @@ Uint32 UIWindow::onMouseDoubleClick( const Vector2i&, const Uint32& Flags ) {
 	return 1;
 }
 
-Uint32 UIWindow::onKeyDown( const KeyEvent& Event ) {
-	checkShortcuts( Event.getKeyCode(), Event.getMod() );
-
-	return UIWidget::onKeyDown( Event );
-}
-
 void UIWindow::internalDraw() {
 	if ( mVisible && 0 != mAlpha ) {
 		updateScreenPos();
@@ -1320,51 +1315,6 @@ void UIWindow::matrixUnset() {
 
 bool UIWindow::ownsFrameBuffer() {
 	return 0 != ( mStyleConfig.WinFlags & UI_WIN_FRAME_BUFFER );
-}
-
-void UIWindow::checkShortcuts( const Uint32& KeyCode, const Uint32& Mod ) {
-	if ( NULL == getEventDispatcher() )
-		return;
-
-	for ( auto& kb : mKbShortcuts ) {
-		if ( KeyCode == kb.KeyCode && ( Mod & kb.Mod ) ) {
-			getEventDispatcher()->sendMouseUp( kb.Widget, Vector2i( -1, -1 ), EE_BUTTON_LMASK );
-			getEventDispatcher()->sendMouseClick( kb.Widget, Vector2i( -1, -1 ), EE_BUTTON_LMASK );
-		}
-	}
-}
-
-UIKeyboardShortcuts::iterator UIWindow::existsShortcut( const Keycode& KeyCode,
-														const Uint32& Mod ) {
-	for ( UIKeyboardShortcuts::iterator it = mKbShortcuts.begin(); it != mKbShortcuts.end();
-		  ++it ) {
-		if ( ( *it ).KeyCode == KeyCode && ( *it ).Mod == Mod )
-			return it;
-	}
-
-	return mKbShortcuts.end();
-}
-
-bool UIWindow::addShortcut( const Keycode& KeyCode, const Uint32& Mod, UIWidget* Widget ) {
-	if ( inParentTreeOf( Widget ) && mKbShortcuts.end() == existsShortcut( KeyCode, Mod ) ) {
-		mKbShortcuts.push_back( UIKeyShortcut( KeyCode, Mod, Widget ) );
-
-		return true;
-	}
-
-	return false;
-}
-
-bool UIWindow::removeShortcut( const Keycode& KeyCode, const Uint32& Mod ) {
-	UIKeyboardShortcuts::iterator it = existsShortcut( KeyCode, Mod );
-
-	if ( mKbShortcuts.end() != it ) {
-		mKbShortcuts.erase( it );
-
-		return true;
-	}
-
-	return false;
 }
 
 bool UIWindow::isMaximizable() {
@@ -1683,5 +1633,61 @@ void UIWindow::loadFromXmlNode( const pugi::xml_node& node ) {
 void UIWindow::preDraw() {}
 
 void UIWindow::postDraw() {}
+
+Uint32 UIWindow::onKeyDown( const KeyEvent& event ) {
+	std::string cmd = mKeyBindings.getCommandFromKeyBind( {event.getKeyCode(), event.getMod()} );
+	if ( !cmd.empty() ) {
+		executeKeyBindingCommand( cmd );
+		return 0;
+	}
+	return UIWidget::onKeyDown( event );
+}
+
+KeyBindings& UIWindow::getKeyBindings() {
+	return mKeyBindings;
+}
+
+void UIWindow::setKeyBindings( const KeyBindings& keyBindings ) {
+	mKeyBindings = keyBindings;
+}
+
+void UIWindow::addKeyBindingString( const std::string& shortcut, const std::string& command ) {
+	mKeyBindings.addKeybindString( shortcut, command );
+}
+
+void UIWindow::addKeyBinding( const KeyBindings::Shortcut& shortcut,
+								 const std::string& command ) {
+	mKeyBindings.addKeybind( shortcut, command );
+}
+
+void UIWindow::replaceKeyBindingString( const std::string& shortcut,
+										   const std::string& command ) {
+	mKeyBindings.replaceKeybindString( shortcut, command );
+}
+
+void UIWindow::replaceKeyBinding( const KeyBindings::Shortcut& shortcut,
+									 const std::string& command ) {
+	mKeyBindings.replaceKeybind( shortcut, command );
+}
+
+void UIWindow::addKeyBindsString( const std::map<std::string, std::string>& binds ) {
+	mKeyBindings.addKeybindsString( binds );
+}
+
+void UIWindow::addKeyBinds( const std::map<KeyBindings::Shortcut, std::string>& binds ) {
+	mKeyBindings.addKeybinds( binds );
+}
+
+void UIWindow::setKeyBindingCommand( const std::string& command,
+										UIWindow::KeyBindingCommand func ) {
+	mKeyBindingCommands[command] = func;
+}
+
+void UIWindow::executeKeyBindingCommand( const std::string& command ) {
+	auto cmdIt = mKeyBindingCommands.find( command );
+	if ( cmdIt != mKeyBindingCommands.end() ) {
+		cmdIt->second();
+	}
+}
 
 }} // namespace EE::UI

@@ -155,6 +155,8 @@ class EETest : private Thread {
 	void createDecoratedWindow();
 	void createUIThemeTextureAtlas();
 
+	void addFlyingIcon();
+
 	UINode* C;
 	UIScrollBar* mScrollBar;
 	UITextView* mTextBoxValue;

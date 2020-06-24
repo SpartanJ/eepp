@@ -111,10 +111,6 @@ class EE_API UIWindow : public UIWidget {
 
 	UITextView* getTitleTextBox() const;
 
-	bool addShortcut( const Keycode& KeyCode, const Uint32& Mod, UIWidget* Widget );
-
-	bool removeShortcut( const Keycode& KeyCode, const Uint32& Mod );
-
 	bool isModal();
 
 	UIWidget* getModalWidget() const;
@@ -164,6 +160,28 @@ class EE_API UIWindow : public UIWidget {
 
 	Sizef getSizeWithoutDecoration();
 
+	typedef std::function<void()> KeyBindingCommand;
+
+	KeyBindings& getKeyBindings();
+
+	void setKeyBindings( const KeyBindings& keyBindings );
+
+	void addKeyBindingString( const std::string& shortcut, const std::string& command );
+
+	void addKeyBinding( const KeyBindings::Shortcut& shortcut, const std::string& command );
+
+	void replaceKeyBindingString( const std::string& shortcut, const std::string& command );
+
+	void replaceKeyBinding( const KeyBindings::Shortcut& shortcut, const std::string& command );
+
+	void addKeyBindsString( const std::map<std::string, std::string>& binds );
+
+	void addKeyBinds( const std::map<KeyBindings::Shortcut, std::string>& binds );
+
+	void setKeyBindingCommand( const std::string& command, KeyBindingCommand func );
+
+	void executeKeyBindingCommand( const std::string& command );
+
   protected:
 	enum UI_RESIZE_TYPE {
 		RESIZE_NONE,
@@ -196,9 +214,11 @@ class EE_API UIWindow : public UIWidget {
 	Sizef mNonMaxSize;
 	UI_RESIZE_TYPE mResizeType;
 	Vector2f mResizePos;
-	UIKeyboardShortcuts mKbShortcuts;
 
 	bool mFrameBufferBound;
+
+	KeyBindings mKeyBindings;
+	std::map<std::string, KeyBindingCommand> mKeyBindingCommands;
 
 	virtual void onSizeChange();
 
@@ -235,10 +255,6 @@ class EE_API UIWindow : public UIWidget {
 	void fixTitleSize();
 
 	Uint32 onMouseDoubleClick( const Vector2i& position, const Uint32& flags );
-
-	void checkShortcuts( const Uint32& KeyCode, const Uint32& Mod );
-
-	UIKeyboardShortcuts::iterator existsShortcut( const Keycode& KeyCode, const Uint32& Mod );
 
 	void createModalNode();
 

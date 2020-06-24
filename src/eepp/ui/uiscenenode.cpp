@@ -37,7 +37,8 @@ UISceneNode::UISceneNode( EE::Window::Window* window ) :
 	mVerbose( false ),
 	mUpdatingLayouts( false ),
 	mUIThemeManager( UIThemeManager::New() ),
-	mUIIconThemeManager( UIIconThemeManager::New()->setFallbackThemeManager( mUIThemeManager ) ) {
+	mUIIconThemeManager( UIIconThemeManager::New()->setFallbackThemeManager( mUIThemeManager ) ),
+	mKeyBindings( mWindow->getInput() ) {
 	// Reset size since the SceneNode already set it but needs to set the size from zero to emmit
 	// the required events to its childs.
 	mSize = Sizef();
@@ -776,57 +777,6 @@ void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles ) {
 	}
 }
 
-Uint32 UISceneNode::onKeyDown( const KeyEvent& Event ) {
-	checkShortcuts( Event.getKeyCode(), Event.getMod() );
-
-	return SceneNode::onKeyDown( Event );
-}
-
-void UISceneNode::checkShortcuts( const Uint32& KeyCode, const Uint32& Mod ) {
-	if ( NULL == getEventDispatcher() )
-		return;
-
-	for ( auto& kb : mKbShortcuts ) {
-		if ( KeyCode == kb.KeyCode && ( Mod & kb.Mod ) ) {
-			getEventDispatcher()->sendMouseUp( kb.Widget, Vector2i( -1, -1 ), EE_BUTTON_LMASK );
-			getEventDispatcher()->sendMouseClick( kb.Widget, Vector2i( -1, -1 ), EE_BUTTON_LMASK );
-		}
-	}
-}
-
-UIKeyboardShortcuts::iterator UISceneNode::existsShortcut( const Uint32& KeyCode,
-														   const Uint32& Mod ) {
-	for ( UIKeyboardShortcuts::iterator it = mKbShortcuts.begin(); it != mKbShortcuts.end();
-		  ++it ) {
-		if ( it->KeyCode == KeyCode && it->Mod == Mod )
-			return it;
-	}
-
-	return mKbShortcuts.end();
-}
-
-bool UISceneNode::addShortcut( const Keycode& KeyCode, const Uint32& Mod, UIWidget* Widget ) {
-	if ( inParentTreeOf( Widget ) && mKbShortcuts.end() == existsShortcut( KeyCode, Mod ) ) {
-		mKbShortcuts.push_back( UIKeyShortcut( KeyCode, Mod, Widget ) );
-
-		return true;
-	}
-
-	return false;
-}
-
-bool UISceneNode::removeShortcut( const Keycode& KeyCode, const Uint32& Mod ) {
-	UIKeyboardShortcuts::iterator it = existsShortcut( KeyCode, Mod );
-
-	if ( mKbShortcuts.end() != it ) {
-		mKbShortcuts.erase( it );
-
-		return true;
-	}
-
-	return false;
-}
-
 void UISceneNode::setInternalPixelsSize( const Sizef& size ) {
 	Sizef s( size );
 	if ( s != mSize ) {
@@ -836,6 +786,62 @@ void UISceneNode::setInternalPixelsSize( const Sizef& size ) {
 		updateCenter();
 		sendCommonEvent( Event::OnSizeChange );
 		invalidateDraw();
+	}
+}
+
+Uint32 UISceneNode::onKeyDown( const KeyEvent& event ) {
+	std::string cmd = mKeyBindings.getCommandFromKeyBind( {event.getKeyCode(), event.getMod()} );
+	if ( !cmd.empty() ) {
+		executeKeyBindingCommand( cmd );
+		return 0;
+	}
+	return SceneNode::onKeyDown( event );
+}
+
+KeyBindings& UISceneNode::getKeyBindings() {
+	return mKeyBindings;
+}
+
+void UISceneNode::setKeyBindings( const KeyBindings& keyBindings ) {
+	mKeyBindings = keyBindings;
+}
+
+void UISceneNode::addKeyBindingString( const std::string& shortcut, const std::string& command ) {
+	mKeyBindings.addKeybindString( shortcut, command );
+}
+
+void UISceneNode::addKeyBinding( const KeyBindings::Shortcut& shortcut,
+								 const std::string& command ) {
+	mKeyBindings.addKeybind( shortcut, command );
+}
+
+void UISceneNode::replaceKeyBindingString( const std::string& shortcut,
+										   const std::string& command ) {
+	mKeyBindings.replaceKeybindString( shortcut, command );
+}
+
+void UISceneNode::replaceKeyBinding( const KeyBindings::Shortcut& shortcut,
+									 const std::string& command ) {
+	mKeyBindings.replaceKeybind( shortcut, command );
+}
+
+void UISceneNode::addKeyBindsString( const std::map<std::string, std::string>& binds ) {
+	mKeyBindings.addKeybindsString( binds );
+}
+
+void UISceneNode::addKeyBinds( const std::map<KeyBindings::Shortcut, std::string>& binds ) {
+	mKeyBindings.addKeybinds( binds );
+}
+
+void UISceneNode::setKeyBindingCommand( const std::string& command,
+										UISceneNode::KeyBindingCommand func ) {
+	mKeyBindingCommands[command] = func;
+}
+
+void UISceneNode::executeKeyBindingCommand( const std::string& command ) {
+	auto cmdIt = mKeyBindingCommands.find( command );
+	if ( cmdIt != mKeyBindingCommands.end() ) {
+		cmdIt->second();
 	}
 }
 

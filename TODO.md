@@ -23,6 +23,8 @@ Keep improving it:
 
 * Support single instance (when a new file is opened while a previous instance exists, open it in the first instance).
 
+* Search and replace only over selection.
+
 ## UI Editor
 
 * Integrate the `UICodeEditor` into the editor in order to be able to edit the layouts and CSS in app.
@@ -32,10 +34,6 @@ Keep improving it:
 ## StyleSheetParser
 
 Detect errors and log them.
-
-## UISceneNode and UIWindow
-
-Redesign the shortcut API to use the new keybinding class.
 
 ## UITreeView
 

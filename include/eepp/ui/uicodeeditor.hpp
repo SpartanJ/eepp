@@ -181,10 +181,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void replaceKeyBinding( const KeyBindings::Shortcut& shortcut, const std::string& command,
 							const bool& allowLocked = false );
 
-	void addKeybindsString( const std::map<std::string, std::string>& binds,
+	void addKeyBindsString( const std::map<std::string, std::string>& binds,
 							const bool& allowLocked = false );
 
-	void addKeybinds( const std::map<KeyBindings::Shortcut, std::string>& binds,
+	void addKeyBinds( const std::map<KeyBindings::Shortcut, std::string>& binds,
 					  const bool& allowLocked = false );
 
 	const bool& getHighlightCurrentLine() const;
