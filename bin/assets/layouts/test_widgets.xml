@@ -3,7 +3,7 @@
 		<hbox id="test_1" layout_width="match_parent" layout_height="match_parent">
 			<vbox id="lvbox" layout_width="match_parent" layout_weight="0.5" layout_height="match_parent" background="#31363b" padding="12dp">
 				<TextView layout_width="wrap_content" layout_height="wrap_content" text="Testing TextView" />
-				<PushButton layout_width="wrap_content" layout_height="wrap_content" text="Testing PushButton" margin-top="8dp" />
+				<PushButton layout_width="wrap_content" layout_height="wrap_content" text="Testing PushButton" margin-top="8dp" tooltip="Testing Tooltip" />
 				<CheckBox layout_width="wrap_content" layout_height="wrap_content" margin-top="8dp" text="Testing CheckBox" />
 				<RadioButton layout_width="wrap_content" layout_height="wrap_content" margin-top="8dp" text="Testing RadioButton"/>
 				<DropDownList layout_width="300dp" layout_height="wrap_content" margin-top="8dp" text="Testing DropDownList">

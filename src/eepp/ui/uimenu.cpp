@@ -385,7 +385,9 @@ void UIMenu::safeHide() {
 			menu->mCurrentSubMenu = nullptr;
 		if ( mOwnerNode == menu->getItemSelected() )
 			menu->unselectSelected();
-		menu->setFocus();
+		if ( getEventDispatcher()->getFocusNode() == this ||
+			 isParentOf( getEventDispatcher()->getFocusNode() ) )
+			menu->setFocus();
 	}
 	unselectSelected();
 	if ( mCurrentSubMenu ) {

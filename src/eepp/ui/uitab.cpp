@@ -297,7 +297,7 @@ Uint32 UITab::onMessage( const NodeMessage* message ) {
 			}
 			break;
 		}
-		case NodeMessage::Click: {
+		case NodeMessage::MouseClick: {
 			if ( flags & EE_BUTTON_LMASK && message->getSender() == mCloseButton ) {
 				tTabW->tryCloseTab( this );
 			}

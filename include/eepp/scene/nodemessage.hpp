@@ -10,8 +10,8 @@ class Node;
 class EE_API NodeMessage {
   public:
 	enum Message {
-		Click = 0,
-		DoubleClick,
+		MouseClick = 0,
+		MouseDoubleClick,
 		MouseOver,
 		MouseLeave,
 		MouseDown,

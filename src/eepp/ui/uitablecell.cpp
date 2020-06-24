@@ -113,7 +113,7 @@ Uint32 UITableCell::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
 
 Uint32 UITableCell::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
-		case NodeMessage::Click: {
+		case NodeMessage::MouseClick: {
 			if ( Msg->getFlags() & EE_BUTTONS_LRM ) {
 				select();
 

@@ -39,18 +39,18 @@ UITextView::UITextView( const std::string& tag ) :
 		setFont( theme->getDefaultFont() );
 	}
 
-	if ( NULL != theme ) {
-		setFontSize( theme->getDefaultFontSize() );
-	} else {
-		mTextCache->setFontSize( getUISceneNode()->getUIThemeManager()->getDefaultFontSize() );
-	}
-
 	if ( NULL == getFont() ) {
 		if ( NULL != getUISceneNode()->getUIThemeManager()->getDefaultFont() ) {
 			setFont( getUISceneNode()->getUIThemeManager()->getDefaultFont() );
 		} else {
 			eePRINTL( "UITextView::UITextView : Created a without a defined font." );
 		}
+	}
+
+	if ( NULL != theme ) {
+		setFontSize( theme->getDefaultFontSize() );
+	} else {
+		setFontSize( getUISceneNode()->getUIThemeManager()->getDefaultFontSize() );
 	}
 
 	applyDefaultTheme();
@@ -383,7 +383,7 @@ Uint32 UITextView::onMouseDoubleClick( const Vector2i& Pos, const Uint32& Flags 
 		Vector2f nodePos( Vector2f( Pos.x, Pos.y ) );
 		worldToNode( nodePos );
 		nodePos = PixelDensity::dpToPx( nodePos ) - mRealAlignOffset -
-					 Vector2f( mRealPadding.Left, mRealPadding.Top );
+				  Vector2f( mRealPadding.Left, mRealPadding.Top );
 		nodePos.x = eemax( 0.f, nodePos.x );
 		nodePos.y = eemax( 0.f, nodePos.y );
 
@@ -419,7 +419,7 @@ Uint32 UITextView::onMouseDown( const Vector2i& Pos, const Uint32& Flags ) {
 		Vector2f nodePos( Vector2f( Pos.x, Pos.y ) );
 		worldToNode( nodePos );
 		nodePos = PixelDensity::dpToPx( nodePos ) - mRealAlignOffset -
-					 Vector2f( mRealPadding.Left, mRealPadding.Top );
+				  Vector2f( mRealPadding.Left, mRealPadding.Top );
 		nodePos.x = eemax( 0.f, nodePos.x );
 		nodePos.y = eemax( 0.f, nodePos.y );
 

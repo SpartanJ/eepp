@@ -796,7 +796,7 @@ Uint32 UIWindow::onMessage( const NodeMessage* Msg ) {
 				getUISceneNode()->setCursor( Cursor::Arrow );
 			break;
 		}
-		case NodeMessage::Click: {
+		case NodeMessage::MouseClick: {
 			if ( ( mStyleConfig.WinFlags & UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS ) &&
 				 ( Msg->getFlags() & EE_BUTTON_LMASK ) ) {
 				if ( Msg->getSender() == mButtonClose ) {

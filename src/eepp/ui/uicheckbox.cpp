@@ -107,7 +107,7 @@ void UICheckBox::onSizeChange() {
 
 Uint32 UICheckBox::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
-		case NodeMessage::Click: {
+		case NodeMessage::MouseClick: {
 			if ( Msg->getFlags() & EE_BUTTON_LMASK ) {
 				switchState();
 			}

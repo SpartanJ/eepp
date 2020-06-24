@@ -110,7 +110,7 @@ bool StyleSheetParser::parse( std::string& css, std::vector<std::string>& import
 					} else if ( String::startsWith( buffer, "@import" ) ) {
 						importParse( css, pos, buffer, importedList );
 					} else if ( String::startsWith( buffer, "@keyframes" ) ) {
-						keyframesParse( css, rs, pos, buffer, importedList );
+						keyframesParse( css, rs, pos, buffer );
 					}
 				}
 
@@ -344,8 +344,7 @@ void StyleSheetParser::importParse( std::string& css, std::size_t& pos, std::str
 }
 
 void StyleSheetParser::keyframesParse( std::string& css, ReadState& rs, std::size_t& pos,
-									   std::string& buffer,
-									   std::vector<std::string>& importedList ) {
+									   std::string& buffer ) {
 	std::size_t keyframesClosePos = String::findCloseBracket( css, pos - 1, '{', '}' );
 
 	if ( keyframesClosePos != std::string::npos ) {

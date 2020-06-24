@@ -146,13 +146,13 @@ void StyleSheetPropertiesParser::addProperty( std::string name, std::string valu
 			StyleSheetSpecification::instance()->getShorthand( name )->parse( value );
 
 		for ( auto& property : properties )
-			mProperties[property.getId()] = property;
+			mProperties.emplace( std::make_pair( property.getId(), std::move( property ) ) );
 	} else {
 		if ( String::startsWith( name, "--" ) ) {
-			mVariables[String::hash(name)] = StyleSheetVariable( name, value );
+			mVariables[String::hash( name )] = StyleSheetVariable( name, value );
 		} else {
-			StyleSheetProperty property( StyleSheetProperty( name, value ) );
-			mProperties[property.getId()] = property;
+			StyleSheetProperty property( name, value );
+			mProperties.emplace( std::make_pair( property.getId(), std::move( property ) ) );
 		}
 	}
 }

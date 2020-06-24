@@ -303,7 +303,7 @@ void UIFileDialog::goFolderUp() {
 
 Uint32 UIFileDialog::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
-		case NodeMessage::Click: {
+		case NodeMessage::MouseClick: {
 			if ( Msg->getFlags() & EE_BUTTON_LMASK ) {
 				if ( Msg->getSender() == mButtonOpen ) {
 					openSaveClick();
@@ -318,7 +318,7 @@ Uint32 UIFileDialog::onMessage( const NodeMessage* Msg ) {
 
 			break;
 		}
-		case NodeMessage::DoubleClick: {
+		case NodeMessage::MouseDoubleClick: {
 			if ( Msg->getFlags() & EE_BUTTON_LMASK ) {
 				if ( Msg->getSender()->isType( UI_TYPE_LISTBOXITEM ) ) {
 					openFileOrFolder();

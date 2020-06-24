@@ -262,7 +262,7 @@ UITheme::UITheme( const std::string& name, const std::string& Abbr, Graphics::Fo
 	mAbbr( Abbr ),
 	mTextureAtlas( NULL ),
 	mDefaultFont( defaultFont ),
-	mDefaultFontSize( 12 ) {}
+	mDefaultFontSize( PixelDensity::getPixelDensity() > 1.4 ? 11 : 12 ) {}
 
 UITheme::~UITheme() {}
 

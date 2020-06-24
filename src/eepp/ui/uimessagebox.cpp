@@ -119,7 +119,7 @@ void UIMessageBox::setTheme( UITheme* theme ) {
 
 Uint32 UIMessageBox::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
-		case NodeMessage::Click: {
+		case NodeMessage::MouseClick: {
 			if ( Msg->getFlags() & EE_BUTTON_LMASK ) {
 				if ( Msg->getSender() == mButtonOK ) {
 					sendCommonEvent( Event::MsgBoxConfirmClick );

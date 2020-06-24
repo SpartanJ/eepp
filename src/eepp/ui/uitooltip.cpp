@@ -20,17 +20,25 @@ UITooltip::UITooltip() :
 	mTextCache = Text::New();
 	mEnabled = false;
 
+
 	UITheme* theme = getUISceneNode()->getUIThemeManager()->getDefaultTheme();
 
-	if ( NULL != theme ) {
-		mStyleConfig.Font = theme->getDefaultFont();
+	if ( NULL != theme && NULL != theme->getDefaultFont() ) {
+		setFont( theme->getDefaultFont() );
 	}
 
 	if ( NULL == getFont() ) {
-		if ( NULL != getUISceneNode()->getUIThemeManager()->getDefaultFont() )
+		if ( NULL != getUISceneNode()->getUIThemeManager()->getDefaultFont() ) {
 			setFont( getUISceneNode()->getUIThemeManager()->getDefaultFont() );
-		else
-			eePRINTL( "UITooltip::UITooltip : Created a without a defined font." );
+		} else {
+			eePRINTL( "UITextView::UITextView : Created a without a defined font." );
+		}
+	}
+
+	if ( NULL != theme ) {
+		setFontSize( theme->getDefaultFontSize() );
+	} else {
+		setFontSize( getUISceneNode()->getUIThemeManager()->getDefaultFontSize() );
 	}
 
 	autoPadding();
@@ -259,7 +267,7 @@ Uint32 UITooltip::getCharacterSize() const {
 	return mTextCache->getCharacterSize();
 }
 
-UITooltip* UITooltip::setCharacterSize( const Uint32& characterSize ) {
+UITooltip* UITooltip::setFontSize( const Uint32& characterSize ) {
 	if ( mTextCache->getCharacterSize() != characterSize ) {
 		mStyleConfig.CharacterSize = characterSize;
 		mTextCache->setFontSize( characterSize );
@@ -390,7 +398,7 @@ bool UITooltip::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		}
 		case PropertyId::FontSize:
-			setCharacterSize( attribute.asDpDimensionI() );
+			setFontSize( attribute.asDpDimensionI() );
 			break;
 		case PropertyId::FontStyle:
 			setFontStyle( attribute.asFontStyle() );

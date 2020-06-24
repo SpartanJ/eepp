@@ -71,7 +71,7 @@ class EE_API UITooltip : public UIWidget {
 
 	Uint32 getCharacterSize() const;
 
-	UITooltip* setCharacterSize( const Uint32& characterSize );
+	UITooltip* setFontSize( const Uint32& characterSize );
 
 	UITooltip* setFontStyle( const Uint32& fontStyle );
 

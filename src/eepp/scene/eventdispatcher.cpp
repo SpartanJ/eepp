@@ -116,26 +116,25 @@ void EventDispatcher::update( const Time& time ) {
 					setFocusNode( mOverNode );
 
 				// The focused node can change after the MouseUp ( since the node can call
-				// "setFocus()" on other node And the Click would be received by the new focused
-				// node instead of the real one
+				// "setFocus()" on other node And the MouseClick would be received by the new
+				// focused node instead of the real one
 				Node* lastFocusNode = mFocusNode;
 
 				if ( NULL != mOverNode ) {
 					getMouseOverNode()->onMouseUp( mMousePosi, mInput->getReleaseTrigger() );
-
 					if ( NULL != mOverNode )
 						sendMsg( mOverNode, NodeMessage::MouseUp, mInput->getReleaseTrigger() );
 				}
 
 				if ( mInput->getClickTrigger() ) {
 					lastFocusNode->onMouseClick( mMousePosi, mInput->getClickTrigger() );
-					sendMsg( lastFocusNode, NodeMessage::Click, mInput->getClickTrigger() );
+					sendMsg( lastFocusNode, NodeMessage::MouseClick, mInput->getClickTrigger() );
 
 					if ( mInput->getDoubleClickTrigger() &&
 						 mClickPos.distance( mMousePosi ) < 10 ) {
 						lastFocusNode->onMouseDoubleClick( mMousePosi,
 														   mInput->getDoubleClickTrigger() );
-						sendMsg( lastFocusNode, NodeMessage::DoubleClick,
+						sendMsg( lastFocusNode, NodeMessage::MouseDoubleClick,
 								 mInput->getDoubleClickTrigger() );
 					}
 
@@ -199,7 +198,7 @@ void EventDispatcher::sendMsg( Node* node, const Uint32& Msg, const Uint32& Flag
 }
 
 void EventDispatcher::sendMouseClick( Node* toNode, const Vector2i& Pos, const Uint32 flags ) {
-	sendMsg( toNode, NodeMessage::Click, flags );
+	sendMsg( toNode, NodeMessage::MouseClick, flags );
 	toNode->onMouseClick( Pos, flags );
 }
 

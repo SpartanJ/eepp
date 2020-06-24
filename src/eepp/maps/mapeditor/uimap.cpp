@@ -545,7 +545,7 @@ void UIMap::setUpdateScrollCb( UpdateScrollCb Cb ) {
 }
 
 Uint32 UIMap::onMessage( const NodeMessage* Msg ) {
-	if ( Msg->getMsg() == NodeMessage::Click && Msg->getSender() == this &&
+	if ( Msg->getMsg() == NodeMessage::MouseClick && Msg->getSender() == this &&
 		 ( Msg->getFlags() & EE_BUTTON_RMASK ) ) {
 		if ( SELECT_OBJECTS == mEditingObjMode && NULL != mSelObj &&
 			 mSelObj->pointInside( mMap->getMouseMapPosf() ) ) {

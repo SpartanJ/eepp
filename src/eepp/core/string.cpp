@@ -10,21 +10,6 @@ namespace EE {
 
 const std::size_t String::InvalidPos = StringType::npos;
 
-constexpr String::HashType String::hash( const Uint8* str ) {
-	//! djb2
-	if ( NULL != str ) {
-		Uint32 hash = 5381;
-		Int32 c = 0;
-
-		while ( ( c = *str++ ) )
-			hash = ( ( hash << 5 ) + hash ) + c;
-
-		return hash;
-	}
-
-	return 0;
-}
-
 String::HashType String::hash( const std::string& str ) {
 	return String::hash( str.c_str() );
 }
@@ -67,26 +52,22 @@ bool String::isHexNotation( const std::string& value, const std::string& withPre
 		   std::string::npos;
 }
 
-std::vector<String> String::split( const String& str, const Uint32& splitchar,
+std::vector<String> String::split( const String& str, const Uint32& delim,
 								   const bool& pushEmptyString ) {
-	std::vector<String> tmp;
-	String tmpstr;
-
-	for ( unsigned int i = 0; i < str.size(); i++ ) {
-		if ( str[i] == splitchar ) {
-			if ( pushEmptyString || tmpstr.size() ) {
-				tmp.push_back( tmpstr );
-				tmpstr = "";
-			}
-		} else {
-			tmpstr += str[i];
-		}
+	std::vector<String> cont;
+	std::size_t current, previous = 0;
+	current = str.find( delim );
+	while ( current != String::InvalidPos ) {
+		String substr( str.substr( previous, current - previous ) );
+		if ( pushEmptyString || !substr.empty() )
+			cont.emplace_back( std::move( substr ) );
+		previous = current + 1;
+		current = str.find( delim, previous );
 	}
-
-	if ( tmpstr.size() )
-		tmp.push_back( tmpstr );
-
-	return tmp;
+	String substr( str.substr( previous, current - previous ) );
+	if ( pushEmptyString || !substr.empty() )
+		cont.emplace_back( std::move( substr ) );
+	return cont;
 }
 
 std::vector<std::string> String::split( const std::string& str, const std::string& delims,
@@ -148,26 +129,22 @@ std::vector<std::string> String::split( const std::string& str, const std::strin
 	return tokens;
 }
 
-std::vector<std::string> String::split( const std::string& str, const Int8& splitchar,
+std::vector<std::string> String::split( const std::string& str, const Int8& delim,
 										const bool& pushEmptyString ) {
-	std::vector<std::string> tmp;
-	std::string tmpstr;
-
-	for ( unsigned int i = 0; i < str.size(); i++ ) {
-		if ( str[i] == splitchar ) {
-			if ( pushEmptyString || tmpstr.size() ) {
-				tmp.push_back( tmpstr );
-				tmpstr = "";
-			}
-		} else {
-			tmpstr += str[i];
-		}
+	std::vector<std::string> cont;
+	std::size_t current, previous = 0;
+	current = str.find( delim );
+	while ( current != std::string::npos ) {
+		std::string substr( str.substr( previous, current - previous ) );
+		if ( pushEmptyString || !substr.empty() )
+			cont.emplace_back( std::move( substr ) );
+		previous = current + 1;
+		current = str.find( delim, previous );
 	}
-
-	if ( tmpstr.size() )
-		tmp.push_back( tmpstr );
-
-	return tmp;
+	std::string substr( str.substr( previous, current - previous ) );
+	if ( pushEmptyString || !substr.empty() )
+		cont.emplace_back( std::move( substr ) );
+	return cont;
 }
 
 std::string String::join( const std::vector<std::string>& strArray, const Int8& joinchar,
@@ -344,19 +321,15 @@ void String::replaceAll( String& target, const String& that, const String& with 
 
 void String::replace( std::string& target, const std::string& that, const std::string& with ) {
 	std::size_t start_pos = target.find( that );
-
 	if ( start_pos == std::string::npos )
 		return;
-
 	target.replace( start_pos, that.length(), with );
 }
 
 void String::replace( String& target, const String& that, const String& with ) {
 	std::size_t start_pos = target.find( that );
-
 	if ( start_pos == String::InvalidPos )
 		return;
-
 	target.replace( start_pos, that.length(), with );
 }
 
@@ -364,25 +337,22 @@ std::string String::removeNumbersAtEnd( std::string txt ) {
 	while ( txt.size() && txt[txt.size() - 1] >= '0' && txt[txt.size() - 1] <= '9' ) {
 		txt.resize( txt.size() - 1 );
 	}
-
 	return txt;
 }
 
 std::size_t String::findCloseBracket( const std::string& string, std::size_t startOffset,
 									  char openBracket, char closeBracket ) {
 	int count = 0;
-
-	for ( size_t i = startOffset; i < string.size(); i++ ) {
+	size_t len = string.size();
+	for ( size_t i = startOffset; i < len; i++ ) {
 		if ( string[i] == openBracket ) {
 			count++;
 		} else if ( string[i] == closeBracket ) {
 			count--;
-			if ( 0 == count ) {
+			if ( 0 == count )
 				return i;
-			}
 		}
 	}
-
 	return std::string::npos;
 }
 
@@ -928,7 +898,7 @@ std::size_t String::copy( StringBaseType* s, std::size_t n, std::size_t pos ) co
 }
 
 String String::substr( std::size_t pos, std::size_t n ) const {
-	return String( mString.substr( pos, n ) );
+	return mString.substr( pos, n );
 }
 
 int String::compare( const String& str ) const {

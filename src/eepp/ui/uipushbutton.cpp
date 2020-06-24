@@ -281,7 +281,7 @@ void UIPushButton::onAlignChange() {
 
 Uint32 UIPushButton::onKeyDown( const KeyEvent& Event ) {
 	if ( Event.getKeyCode() == KEY_RETURN ) {
-		NodeMessage Msg( this, NodeMessage::Click, EE_BUTTON_LMASK );
+		NodeMessage Msg( this, NodeMessage::MouseClick, EE_BUTTON_LMASK );
 		messagePost( &Msg );
 		onMouseClick( Vector2i( 0, 0 ), EE_BUTTON_LMASK );
 		pushState( UIState::StatePressed );

@@ -61,7 +61,6 @@ Tooltip,
 MenuBar::button,
 Window::title {
 	color: var(--font);
-	font-size: 11dp;
 }
 
 TextView,
@@ -203,7 +202,6 @@ TextInputPassword {
 	border-radius: var(--button-radius);
 	border-width: var(--border-width);
 	hint-color: var(--font-hint);
-	hint-font-size: 11dp;
 	transition: all 0.15;
 }
 

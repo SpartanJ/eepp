@@ -37,6 +37,26 @@ class UISearchBar : public UILinearLayout {
 
 class App {
   public:
+	struct Config {
+		struct {
+			Float pixelDensity{0};
+			Sizei size{1280, 720};
+			bool maximized{false};
+		} window;
+		struct {
+			std::string colorScheme{"lite"};
+			Float fontSize{11};
+			bool showLineNumbers{true};
+			bool showWhiteSpaces{true};
+			bool highlightMatchingBracket{true};
+			bool horizontalScrollbar{false};
+			bool highlightCurrentLine{true};
+		} editor;
+		struct {
+			Float fontSize{11};
+		} ui;
+	};
+
 	enum class SplitDirection { Left, Right, Top, Bottom };
 
 	~App();
@@ -95,6 +115,14 @@ class App {
 
 	void runCommand( const std::string& command );
 
+	void loadConfig();
+
+	void saveConfig();
+
+	void loadFileFromPathInNewTab( const std::string& path );
+
+	void setCurrentEditor( UICodeEditor* editor );
+
   protected:
 	EE::Window::Window* mWindow{NULL};
 	UISceneNode* mUISceneNode{NULL};
@@ -113,6 +141,9 @@ class App {
 	UIPopUpMenu* mColorSchemeMenu;
 	UIPopUpMenu* mFiletypeMenu;
 	UITheme* mTheme;
+	IniFile mIni;
+	std::vector<std::string> mRecentFiles;
+	Config mConfig;
 
 	void onFileDropped( String file );
 
@@ -155,6 +186,16 @@ class App {
 	void saveDoc();
 
 	void removeUnusedTab( UITabWidget* tabWidget );
+
+	void updateRecentFiles();
+
+	void forEachEditor( std::function<void( UICodeEditor* )> run );
+
+	UIMenu* createViewMenu();
+
+	UIMenu* createEditMenu();
+
+	Drawable* findIcon( const std::string& name );
 };
 
 #endif // EE_TOOLS_CODEEDITOR_HPP

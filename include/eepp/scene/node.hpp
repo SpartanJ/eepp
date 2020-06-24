@@ -188,9 +188,11 @@ class EE_API Node : public Transformable {
 
 	bool isMeOrParentTreeScaledOrRotatedOrFrameBuffer() const;
 
-	Uint32 addEventListener( const Uint32& EventType, const EventCallback& Callback );
+	Uint32 addEventListener( const Uint32& eventType, const EventCallback& callback );
 
-	void removeEventListener( const Uint32& CallbackId );
+	void removeEventsOfType( const Uint32& eventType );
+
+	void removeEventListener( const Uint32& callbackId );
 
 	Node* getFirstChild() const;
 

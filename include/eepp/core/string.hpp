@@ -57,9 +57,6 @@ class EE_API String {
 	static const std::size_t InvalidPos; ///< Represents an invalid position in the string
 
 	/** @return string hash */
-	static constexpr HashType hash( const Uint8* str );
-
-	/** @return string hash */
 	static constexpr HashType hash( const char* str ) {
 		//! djb2
 		if ( NULL != str ) {
@@ -98,11 +95,11 @@ class EE_API String {
 	static bool isHexNotation( const std::string& value, const std::string& withPrefix = "" );
 
 	/** Split a String and hold it on a vector */
-	static std::vector<String> split( const String& str, const Uint32& splitchar = '\n',
+	static std::vector<String> split( const String& str, const Uint32& delim = '\n',
 									  const bool& pushEmptyString = false );
 
 	/** Split a string and hold it on a vector */
-	static std::vector<std::string> split( const std::string& str, const Int8& splitchar = '\n',
+	static std::vector<std::string> split( const std::string& str, const Int8& delim = '\n',
 										   const bool& pushEmptyString = false );
 
 	/** Split a string and hold it on a vector. This function is meant to be used for code

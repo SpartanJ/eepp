@@ -1050,21 +1050,23 @@ void Node::updateCenter() {
 						mScreenPos.y + (Float)mSize.getHeight() * 0.5f );
 }
 
-Uint32 Node::addEventListener( const Uint32& EventType, const EventCallback& Callback ) {
+Uint32 Node::addEventListener( const Uint32& eventType, const EventCallback& callback ) {
 	mNumCallBacks++;
-
-	mEvents[EventType][mNumCallBacks] = Callback;
-
+	mEvents[eventType][mNumCallBacks] = callback;
 	return mNumCallBacks;
 }
 
-void Node::removeEventListener( const Uint32& CallbackId ) {
-	EventsMap::iterator it;
+void Node::removeEventsOfType( const Uint32& eventType ) {
+	auto it = mEvents.find( eventType );
+	if ( it != mEvents.end() )
+		mEvents.erase( it );
+}
 
+void Node::removeEventListener( const Uint32& callbackId ) {
+	EventsMap::iterator it;
 	for ( it = mEvents.begin(); it != mEvents.end(); ++it ) {
 		std::map<Uint32, EventCallback>& event = it->second;
-
-		if ( event.erase( CallbackId ) > 0 )
+		if ( event.erase( callbackId ) > 0 )
 			break;
 	}
 }

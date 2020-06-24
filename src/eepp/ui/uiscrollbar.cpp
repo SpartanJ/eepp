@@ -251,7 +251,7 @@ void UIScrollBar::adjustChilds() {
 
 Uint32 UIScrollBar::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
-		case NodeMessage::Click: {
+		case NodeMessage::MouseClick: {
 			if ( Msg->getFlags() & EE_BUTTON_LMASK ) {
 				if ( Msg->getSender() == mBtnUp ) {
 					mSlider->setValue( getValue() - getClickStep() );

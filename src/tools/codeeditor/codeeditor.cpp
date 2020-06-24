@@ -1,20 +1,20 @@
 #include "codeeditor.hpp"
 #include <args/args.hxx>
 
-App* appInstance = NULL;
+App* appInstance = nullptr;
 
 void appLoop() {
 	appInstance->mainLoop();
 }
 
 bool App::onCloseRequestCallback( EE::Window::Window* ) {
-	if ( NULL != mCurEditor && mCurEditor->isDirty() ) {
+	if ( nullptr != mCurEditor && mCurEditor->isDirty() ) {
 		mMsgBox = UIMessageBox::New(
 			UIMessageBox::OK_CANCEL,
 			"Do you really want to close the code editor?\nAll changes will be lost." );
 		mMsgBox->addEventListener( Event::MsgBoxConfirmClick,
 								   [&]( const Event* ) { mWindow->close(); } );
-		mMsgBox->addEventListener( Event::OnClose, [&]( const Event* ) { mMsgBox = NULL; } );
+		mMsgBox->addEventListener( Event::OnClose, [&]( const Event* ) { mMsgBox = nullptr; } );
 		mMsgBox->setTitle( "Close Code Editor?" );
 		mMsgBox->center();
 		mMsgBox->show();
@@ -25,14 +25,14 @@ bool App::onCloseRequestCallback( EE::Window::Window* ) {
 }
 
 bool App::tryTabClose( UICodeEditor* editor ) {
-	if ( NULL != editor && editor->isDirty() ) {
+	if ( nullptr != editor && editor->isDirty() ) {
 		mMsgBox =
 			UIMessageBox::New( UIMessageBox::OK_CANCEL,
 							   "Do you really want to close this tab?\nAll changes will be lost." );
 		mMsgBox->addEventListener( Event::MsgBoxConfirmClick,
 								   [&, editor]( const Event* ) { closeEditorTab( editor ); } );
 		mMsgBox->addEventListener( Event::OnClose, [&]( const Event* ) {
-			mMsgBox = NULL;
+			mMsgBox = nullptr;
 			if ( mCurEditor )
 				mCurEditor->setFocus();
 		} );
@@ -70,7 +70,7 @@ void App::splitEditor( const SplitDirection& direction, UICodeEditor* editor ) {
 	if ( !tabWidget )
 		return;
 	Node* parent = tabWidget->getParent();
-	UISplitter* parentSplitter = NULL;
+	UISplitter* parentSplitter = nullptr;
 	bool wasFirst = true;
 
 	if ( parent->isType( UI_TYPE_SPLITTER ) ) {
@@ -113,10 +113,10 @@ void App::switchToTab( Int32 index ) {
 
 UITabWidget* App::findPreviousSplit( UICodeEditor* editor ) {
 	if ( !editor )
-		return NULL;
+		return nullptr;
 	UISplitter* splitter = splitterFromEditor( editor );
 	if ( !splitter )
-		return NULL;
+		return nullptr;
 	UITabWidget* tabWidget = tabWidgetFromEditor( editor );
 	if ( tabWidget ) {
 		auto it = std::find( mTabWidgets.rbegin(), mTabWidgets.rend(), tabWidget );
@@ -124,7 +124,7 @@ UITabWidget* App::findPreviousSplit( UICodeEditor* editor ) {
 			return *it;
 		}
 	}
-	return NULL;
+	return nullptr;
 }
 
 void App::switchPreviousSplit( UICodeEditor* editor ) {
@@ -143,10 +143,10 @@ void App::switchPreviousSplit( UICodeEditor* editor ) {
 
 UITabWidget* App::findNextSplit( UICodeEditor* editor ) {
 	if ( !editor )
-		return NULL;
+		return nullptr;
 	UISplitter* splitter = splitterFromEditor( editor );
 	if ( !splitter )
-		return NULL;
+		return nullptr;
 	UITabWidget* tabWidget = tabWidgetFromEditor( editor );
 	if ( tabWidget ) {
 		auto it = std::find( mTabWidgets.begin(), mTabWidgets.end(), tabWidget );
@@ -154,7 +154,7 @@ UITabWidget* App::findNextSplit( UICodeEditor* editor ) {
 			return *it;
 		}
 	}
-	return NULL;
+	return nullptr;
 }
 
 void App::switchNextSplit( UICodeEditor* editor ) {
@@ -190,11 +190,22 @@ void App::saveDoc() {
 	}
 }
 
+void App::forEachEditor( std::function<void( UICodeEditor* )> run ) {
+	for ( auto tabWidget : mTabWidgets )
+		for ( size_t i = 0; i < tabWidget->getTabCount(); i++ )
+			run( tabWidget->getTab( i )->getOwnedWidget()->asType<UICodeEditor>() );
+}
+
 UICodeEditor* App::createCodeEditor() {
 	UICodeEditor* codeEditor = UICodeEditor::NewOpt( false, true );
-	codeEditor->setFontSize( 11 );
+	codeEditor->setFontSize( mConfig.editor.fontSize );
 	codeEditor->setEnableColorPickerOnSelection( true );
 	codeEditor->setColorScheme( mColorSchemes[mCurrentColorScheme] );
+	codeEditor->setShowLineNumber( mConfig.editor.showLineNumbers );
+	codeEditor->setShowWhitespaces( mConfig.editor.showWhiteSpaces );
+	codeEditor->setHighlightMatchingBracket( mConfig.editor.highlightMatchingBracket );
+	codeEditor->setHorizontalScrollBarEnabled( mConfig.editor.horizontalScrollbar );
+	codeEditor->setHighlightCurrentLine( mConfig.editor.highlightCurrentLine );
 	TextDocument& doc = codeEditor->getDocument();
 
 	/* global commands */
@@ -291,7 +302,7 @@ UICodeEditor* App::createCodeEditor() {
 	doc.setCommand( "switch-to-next-split", [&] { switchNextSplit( mCurEditor ); } );
 	doc.setCommand( "save-doc", [&] { saveDoc(); } );
 	doc.setCommand( "save-as-doc", [&] { saveFileDialog(); } );
-	doc.setCommand( "find", [&] { showFindView(); } );
+	doc.setCommand( "find-replace", [&] { showFindView(); } );
 	doc.setCommand( "repeat-find", [&] {
 		findNextText( "", mSearchBarLayout->find<UICheckBox>( "case_sensitive" )->isChecked() );
 	} );
@@ -301,11 +312,7 @@ UICodeEditor* App::createCodeEditor() {
 	doc.setCommand( "console-toggle", [&] {
 		mConsole->toggle();
 		bool lock = mConsole->isActive();
-		for ( auto tabW : mTabWidgets ) {
-			for ( size_t i = 0; i < tabW->getTabCount(); i++ ) {
-				tabW->getTab( i )->getOwnedWidget()->asType<UICodeEditor>()->setLocked( lock );
-			}
-		}
+		forEachEditor( [lock]( UICodeEditor* editor ) { editor->setLocked( lock ); } );
 	} );
 	doc.setCommand( "close-doc", [&] { tryTabClose( mCurEditor ); } );
 	doc.setCommand( "create-new", [&] {
@@ -341,8 +348,7 @@ UICodeEditor* App::createCodeEditor() {
 	} );
 
 	codeEditor->addEventListener( Event::OnFocus, [&]( const Event* event ) {
-		mCurEditor = event->getNode()->asType<UICodeEditor>();
-		updateEditorState();
+		setCurrentEditor( event->getNode()->asType<UICodeEditor>() );
 	} );
 	codeEditor->addEventListener( Event::OnTextChanged, [&]( const Event* event ) {
 		updateEditorTitle( event->getNode()->asType<UICodeEditor>() );
@@ -357,7 +363,7 @@ UICodeEditor* App::createCodeEditor() {
 	codeEditor->addKeyBindingString( "alt+return", "fullscreen-toggle", true );
 	codeEditor->addKeyBindingString( "alt+keypad enter", "fullscreen-toggle", true );
 	codeEditor->addKeyBindingString( "ctrl+s", "save-doc", false );
-	codeEditor->addKeyBindingString( "ctrl+f", "find", false );
+	codeEditor->addKeyBindingString( "ctrl+f", "find-replace", false );
 	codeEditor->addKeyBindingString( "ctrl+q", "close-app", true );
 	codeEditor->addKeyBindingString( "ctrl+o", "open-file", true );
 	codeEditor->addKeyBindingString( "ctrl+l", "lock-toggle", true );
@@ -382,8 +388,8 @@ UICodeEditor* App::createCodeEditor() {
 										 String::format( "switch-to-tab-%d", i ), true );
 	}
 
-	if ( NULL == mCurEditor ) {
-		mCurEditor = codeEditor;
+	if ( nullptr == mCurEditor ) {
+		setCurrentEditor( codeEditor );
 	}
 	return codeEditor;
 }
@@ -461,7 +467,7 @@ void App::closeSplitter( UISplitter* splitter ) {
 void App::onTabClosed( const TabEvent* tabEvent ) {
 	UICodeEditor* editor = mCurEditor;
 	if ( tabEvent->getTab()->getOwnedWidget() == mCurEditor ) {
-		mCurEditor = NULL;
+		setCurrentEditor( nullptr );
 	}
 	UITabWidget* tabWidget = tabEvent->getTab()->getTabWidget();
 	if ( tabWidget->getTabCount() == 0 ) {
@@ -498,7 +504,7 @@ void App::onTabClosed( const TabEvent* tabEvent ) {
 					eeASSERT( parent->getChildCount() == 0 );
 					remainingNode->setParent( parent );
 					addRemainingTabWidgets( remainingNode );
-					focusSomeEditor( NULL );
+					focusSomeEditor( nullptr );
 				}
 				return;
 			}
@@ -511,10 +517,10 @@ void App::onTabClosed( const TabEvent* tabEvent ) {
 }
 
 std::pair<UITab*, UICodeEditor*> App::createCodeEditorInTabWidget( UITabWidget* tabWidget ) {
-	if ( NULL == tabWidget )
-		return std::make_pair( (UITab*)NULL, (UICodeEditor*)NULL );
+	if ( nullptr == tabWidget )
+		return std::make_pair( (UITab*)nullptr, (UICodeEditor*)nullptr );
 	UICodeEditor* editor = createCodeEditor();
-	editor->addEventListener( Event::OnDocumentChanged, [&] (const Event* event) {
+	editor->addEventListener( Event::OnDocumentChanged, [&]( const Event* event ) {
 		updateEditorTitle( event->getNode()->asType<UICodeEditor>() );
 	} );
 	UITab* tab = tabWidget->add( editor->getDocument().getFilename(), editor );
@@ -544,8 +550,7 @@ UITabWidget* App::createEditorWithTabWidget( Node* parent ) {
 	tabWidget->setAllowDragAndDropTabs( true );
 	tabWidget->addEventListener( Event::OnTabSelected, [&]( const Event* event ) {
 		UITabWidget* tabWidget = event->getNode()->asType<UITabWidget>();
-		mCurEditor = tabWidget->getTabSelected()->getOwnedWidget()->asType<UICodeEditor>();
-		updateEditorState();
+		setCurrentEditor( tabWidget->getTabSelected()->getOwnedWidget()->asType<UICodeEditor>() );
 	} );
 	tabWidget->setTabTryCloseCallback( [&]( UITab* tab ) -> bool {
 		tryTabClose( tab->getOwnedWidget()->asType<UICodeEditor>() );
@@ -566,13 +571,13 @@ UITabWidget* App::createEditorWithTabWidget( Node* parent ) {
 UITabWidget* App::tabWidgetFromEditor( UICodeEditor* editor ) {
 	if ( editor )
 		return ( (UITab*)editor->getData() )->getTabWidget();
-	return NULL;
+	return nullptr;
 }
 
 UISplitter* App::splitterFromEditor( UICodeEditor* editor ) {
 	if ( editor && editor->getParent()->getParent()->getParent()->isType( UI_TYPE_SPLITTER ) )
 		return editor->getParent()->getParent()->getParent()->asType<UISplitter>();
-	return NULL;
+	return nullptr;
 }
 
 void App::setAppTitle( const std::string& title ) {
@@ -582,7 +587,7 @@ void App::setAppTitle( const std::string& title ) {
 bool App::loadFileFromPath( const std::string& path, UICodeEditor* codeEditor ) {
 	if ( FileSystem::isDirectory( path ) )
 		return false;
-	if ( NULL == codeEditor )
+	if ( nullptr == codeEditor )
 		codeEditor = mCurEditor;
 	codeEditor->setColorScheme( mColorSchemes[mCurrentColorScheme] );
 	bool ret = codeEditor->loadFromFile( path );
@@ -590,7 +595,28 @@ bool App::loadFileFromPath( const std::string& path, UICodeEditor* codeEditor ) 
 	if ( codeEditor == mCurEditor )
 		updateCurrentFiletype();
 	removeUnusedTab( tabWidgetFromEditor( codeEditor ) );
+
+	auto found = std::find( mRecentFiles.begin(), mRecentFiles.end(), path );
+	if ( found != mRecentFiles.end() )
+		mRecentFiles.erase( found );
+	mRecentFiles.insert( mRecentFiles.begin(), path );
+	if ( mRecentFiles.size() > 10 )
+		mRecentFiles.resize( 10 );
+	updateRecentFiles();
 	return ret;
+}
+
+void App::loadFileFromPathInNewTab( const std::string& path ) {
+	auto d = createCodeEditorInTabWidget( tabWidgetFromEditor( mCurEditor ) );
+	UITabWidget* tabWidget = d.first->getTabWidget();
+	UITab* addedTab = d.first;
+	loadFileFromPath( path, d.second );
+	tabWidget->setTabSelected( addedTab );
+}
+
+void App::setCurrentEditor( UICodeEditor* editor ) {
+	mCurEditor = editor;
+	updateEditorState();
 }
 
 void App::openFileDialog() {
@@ -599,11 +625,7 @@ void App::openFileDialog() {
 	dialog->setTitle( "Open File" );
 	dialog->setCloseShortcut( KEY_ESCAPE );
 	dialog->addEventListener( Event::OpenFile, [&]( const Event* event ) {
-		auto d = createCodeEditorInTabWidget( tabWidgetFromEditor( mCurEditor ) );
-		UITabWidget* tabWidget = d.first->getTabWidget();
-		UITab* addedTab = d.first;
-		loadFileFromPath( event->getNode()->asType<UIFileDialog>()->getFullPath(), d.second );
-		tabWidget->setTabSelected( addedTab );
+		loadFileFromPathInNewTab( event->getNode()->asType<UIFileDialog>()->getFullPath() );
 	} );
 	dialog->addEventListener( Event::OnWindowClose, [&]( const Event* ) {
 		if ( mCurEditor && !SceneManager::instance()->isShootingDown() )
@@ -736,6 +758,54 @@ void App::runCommand( const std::string& command ) {
 	}
 }
 
+void App::loadConfig() {
+	std::string path( Sys::getConfigPath( "ecode" ) );
+	if ( !FileSystem::fileExists( path ) )
+		FileSystem::makeDir( path );
+	FileSystem::dirPathAddSlashAtEnd( path );
+	path += "config.cfg";
+	mIni.loadFromFile( path );
+	mIni.readFile();
+	std::string recent = mIni.getValue( "files", "recentfiles", "" );
+	mRecentFiles = String::split( recent, ';' );
+	mCurrentColorScheme = mConfig.editor.colorScheme =
+		mIni.getValue( "editor", "colorscheme", "lite" );
+	mConfig.editor.fontSize = mIni.getValueF( "editor", "font_size", 11 );
+	mConfig.window.size.setWidth( mIni.getValueI( "window", "width", 1280 ) );
+	mConfig.window.size.setHeight( mIni.getValueI( "window", "height", 720 ) );
+	mConfig.window.maximized = mIni.getValueB( "window", "maximized", false );
+	mConfig.window.pixelDensity = mIni.getValueF( "window", "pixeldensity" );
+	mConfig.editor.showLineNumbers = mIni.getValueB( "editor", "show_line_numbers", true );
+	mConfig.editor.showWhiteSpaces = mIni.getValueB( "editor", "show_white_spaces", true );
+	mConfig.editor.highlightMatchingBracket =
+		mIni.getValueB( "editor", "highlight_matching_brackets", true );
+	mConfig.editor.highlightCurrentLine =
+		mIni.getValueB( "editor", "highlight_current_line", true );
+	mConfig.editor.horizontalScrollbar = mIni.getValueB( "editor", "horizontal_scrollbar", false );
+	mConfig.ui.fontSize = mIni.getValueF( "ui", "font_size", 11 );
+}
+
+void App::saveConfig() {
+	mConfig.editor.colorScheme = mCurrentColorScheme;
+	mConfig.window.size = ( mWindow->getSize().asFloat() / mConfig.window.pixelDensity ).asInt();
+	mConfig.window.maximized = mWindow->isMaximized();
+	mIni.setValue( "editor", "colorscheme", mConfig.editor.colorScheme );
+	mIni.setValueI( "window", "width", mConfig.window.size.getWidth() );
+	mIni.setValueI( "window", "height", mConfig.window.size.getHeight() );
+	mIni.setValueB( "window", "maximized", mConfig.window.maximized );
+	mIni.setValueF( "window", "pixeldensity", mConfig.window.pixelDensity );
+	mIni.setValue( "files", "recentfiles", String::join( mRecentFiles, ';' ) );
+	mIni.setValueB( "editor", "show_line_numbers", mConfig.editor.showLineNumbers );
+	mIni.setValueB( "editor", "show_white_spaces", mConfig.editor.showWhiteSpaces );
+	mIni.setValueB( "editor", "highlight_matching_brackets",
+					mConfig.editor.highlightMatchingBracket );
+	mIni.setValueB( "editor", "highlight_current_line", mConfig.editor.highlightCurrentLine );
+	mIni.setValueB( "editor", "horizontal_scrollbar", mConfig.editor.horizontalScrollbar );
+	mIni.setValueF( "editor", "font_size", mConfig.editor.fontSize );
+	mIni.setValueF( "ui", "font_size", mConfig.ui.fontSize );
+	mIni.writeFile();
+}
+
 void App::initSearchBar() {
 	auto addClickListener = [&]( UIWidget* widget, std::string cmd ) {
 		widget->addEventListener( Event::MouseClick, [this, cmd]( const Event* event ) {
@@ -824,7 +894,7 @@ void App::showFindView() {
 }
 
 void App::closeApp() {
-	if ( NULL == mMsgBox && onCloseRequestCallback( mWindow ) ) {
+	if ( nullptr == mMsgBox && onCloseRequestCallback( mWindow ) ) {
 		mWindow->close();
 	}
 }
@@ -892,23 +962,138 @@ void App::onTextDropped( String text ) {
 }
 
 App::~App() {
+	saveConfig();
 	eeSAFE_DELETE( mConsole );
+}
+
+void App::updateRecentFiles() {
+	UINode* node = nullptr;
+	if ( mSettingsMenu && ( node = mSettingsMenu->getItem( "Recent Files" ) ) ) {
+		UIMenuSubMenu* uiMenuSubMenu = static_cast<UIMenuSubMenu*>( node );
+		UIMenu* menu = uiMenuSubMenu->getSubMenu();
+		uiMenuSubMenu->setEnabled( !mRecentFiles.empty() );
+		menu->removeAll();
+		menu->removeEventsOfType( Event::OnItemClicked );
+		if ( mRecentFiles.empty() )
+			return;
+		for ( auto file : mRecentFiles )
+			menu->add( file );
+		menu->addSeparator();
+		menu->add( "Clear Menu" );
+		menu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
+			if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+				return;
+			const String& txt = event->getNode()->asType<UIMenuItem>()->getText();
+			if ( txt != "Clear Menu" ) {
+				std::string path( txt.toUtf8() );
+				if ( FileSystem::fileExists( path ) && !FileSystem::isDirectory( path ) ) {
+					loadFileFromPathInNewTab( path );
+				}
+			} else {
+				mRecentFiles.clear();
+				updateRecentFiles();
+			}
+		} );
+	}
+}
+
+UIMenu* App::createViewMenu() {
+	UIPopUpMenu* menu = UIPopUpMenu::New();
+	menu->addCheckBox( "Show Line Numbers" )->setActive( mConfig.editor.showLineNumbers );
+	menu->addCheckBox( "Show White Space" )->setActive( mConfig.editor.showWhiteSpaces );
+	menu->addCheckBox( "Highlight Matching Bracket" )
+		->setActive( mConfig.editor.highlightMatchingBracket );
+	menu->addCheckBox( "Highlight Current Line" )->setActive( mConfig.editor.highlightCurrentLine );
+	menu->addCheckBox( "Enable Horizontal ScrollBar" )
+		->setActive( mConfig.editor.horizontalScrollbar );
+	menu->addSeparator();
+	menu->add( "Split Left", findIcon( "split-horizontal" ), "Ctrl+Shift+J" );
+	menu->add( "Split Right", findIcon( "split-horizontal" ), "Ctrl+Shift+L" );
+	menu->add( "Split Top", findIcon( "split-vertical" ), "Ctrl+Shift+I" );
+	menu->add( "Split Bottom", findIcon( "split-vertical" ), "Ctrl+Shift+K" );
+	menu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
+		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+			return;
+		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
+		if ( item->getText() == "Show Line Numbers" ) {
+			mConfig.editor.showLineNumbers = item->asType<UIMenuCheckBox>()->isActive();
+			forEachEditor( [&]( UICodeEditor* editor ) {
+				editor->setShowLineNumber( mConfig.editor.showLineNumbers );
+			} );
+		} else if ( item->getText() == "Show White Space" ) {
+			mConfig.editor.showWhiteSpaces = item->asType<UIMenuCheckBox>()->isActive();
+			forEachEditor( [&]( UICodeEditor* editor ) {
+				editor->setShowWhitespaces( mConfig.editor.showWhiteSpaces );
+			} );
+		} else if ( item->getText() == "Highlight Matching Bracket" ) {
+			mConfig.editor.highlightMatchingBracket = item->asType<UIMenuCheckBox>()->isActive();
+			forEachEditor( [&]( UICodeEditor* editor ) {
+				editor->setHighlightMatchingBracket( mConfig.editor.highlightMatchingBracket );
+			} );
+		} else if ( item->getText() == "Highlight Current Line" ) {
+			mConfig.editor.highlightCurrentLine = item->asType<UIMenuCheckBox>()->isActive();
+			forEachEditor( [&]( UICodeEditor* editor ) {
+				editor->setHighlightCurrentLine( mConfig.editor.highlightCurrentLine );
+			} );
+		} else if ( item->getText() == "Enable Horizontal ScrollBar" ) {
+			mConfig.editor.horizontalScrollbar = item->asType<UIMenuCheckBox>()->isActive();
+			forEachEditor( [&]( UICodeEditor* editor ) {
+				editor->setHorizontalScrollBarEnabled( mConfig.editor.horizontalScrollbar );
+			} );
+		} else {
+			String text = String( event->getNode()->asType<UIMenuItem>()->getText() ).toLower();
+			String::replaceAll( text, " ", "-" );
+			String::replaceAll( text, "/", "-" );
+			runCommand( text );
+		}
+	} );
+	return menu;
+}
+
+Drawable* App::findIcon( const std::string& name ) {
+	return mUISceneNode->findIcon( name );
+}
+
+UIMenu* App::createEditMenu() {
+	UIPopUpMenu* menu = UIPopUpMenu::New();
+	menu->add( "Undo", findIcon( "undo" ), "Ctrl+Z" );
+	menu->add( "Redo", findIcon( "redo" ), "Ctrl+Shift+Z" );
+	menu->addSeparator();
+	menu->add( "Cut", findIcon( "cut" ), "Ctrl+X" );
+	menu->add( "Copy", findIcon( "copy" ), "Ctrl+C" );
+	menu->add( "Paste", findIcon( "paste" ), "Ctrl+V" );
+	menu->addSeparator();
+	menu->add( "Select All", findIcon( "select-all" ), "Ctrl+A" );
+	menu->addSeparator();
+	menu->add( "Find/Replace", findIcon( "find-replace" ), "Ctrl+F" );
+	menu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
+		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+			return;
+		String text = String( event->getNode()->asType<UIMenuItem>()->getText() ).toLower();
+		String::replaceAll( text, " ", "-" );
+		String::replaceAll( text, "/", "-" );
+		runCommand( text );
+	} );
+	return menu;
 }
 
 void App::createSettingsMenu() {
 	mSettingsMenu = UIPopUpMenu::New();
-	mSettingsMenu->add( "New", mUISceneNode->findIcon( "document-new" ), "Ctrl+T" );
-	mSettingsMenu->add( "Open...", mUISceneNode->findIcon( "document-open" ), "Ctrl+O" );
+	mSettingsMenu->add( "New", findIcon( "document-new" ), "Ctrl+T" );
+	mSettingsMenu->add( "Open...", findIcon( "document-open" ), "Ctrl+O" );
+	mSettingsMenu->addSubMenu( "Recent Files", findIcon( "document-recent" ), UIPopUpMenu::New() );
 	mSettingsMenu->addSeparator();
-	mSettingsMenu->add( "Save", mUISceneNode->findIcon( "document-save" ), "Ctrl+S" );
-	mSettingsMenu->add( "Save as...", mUISceneNode->findIcon( "document-save-as" ) );
+	mSettingsMenu->add( "Save", findIcon( "document-save" ), "Ctrl+S" );
+	mSettingsMenu->add( "Save as...", findIcon( "document-save-as" ) );
 	mSettingsMenu->addSeparator();
-	mSettingsMenu->addSubMenu( "Filetype", NULL, createFiletypeMenu() );
-	mSettingsMenu->addSubMenu( "Color Scheme", NULL, createColorSchemeMenu() );
+	mSettingsMenu->addSubMenu( "Edit", nullptr, createEditMenu() );
+	mSettingsMenu->addSubMenu( "View", nullptr, createViewMenu() );
+	mSettingsMenu->addSubMenu( "Filetype", nullptr, createFiletypeMenu() );
+	mSettingsMenu->addSubMenu( "Color Scheme", nullptr, createColorSchemeMenu() );
 	mSettingsMenu->addSeparator();
-	mSettingsMenu->add( "Close", mUISceneNode->findIcon( "document-close" ), "Ctrl+W" );
+	mSettingsMenu->add( "Close", findIcon( "document-close" ), "Ctrl+W" );
 	mSettingsMenu->addSeparator();
-	mSettingsMenu->add( "Quit", mUISceneNode->findIcon( "quit" ), "Ctrl+Q" );
+	mSettingsMenu->add( "Quit", findIcon( "quit" ), "Ctrl+Q" );
 	mSettingsButton = mUISceneNode->find<UITextView>( "settings" );
 	mSettingsButton->addEventListener( Event::MouseClick, [&]( const Event* ) {
 		Vector2f pos( mSettingsButton->getPixelsPosition() );
@@ -935,6 +1120,7 @@ void App::createSettingsMenu() {
 			runCommand( "close-app" );
 		}
 	} );
+	updateRecentFiles();
 }
 
 void App::setColorScheme( const std::string& name ) {
@@ -996,14 +1182,21 @@ void App::updateCurrentFiletype() {
 }
 
 void App::updateEditorState() {
-	updateEditorTitle( mCurEditor );
-	updateCurrentFiletype();
+	if ( mCurEditor ) {
+		updateEditorTitle( mCurEditor );
+		updateCurrentFiletype();
+	}
 }
 
 void App::init( const std::string& file, const Float& pidelDensity ) {
+	loadConfig();
+
 	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
 	Display* currentDisplay = displayManager->getDisplayIndex( 0 );
-	Float pixelDensity = pidelDensity > 0 ? pidelDensity : currentDisplay->getPixelDensity();
+	mConfig.window.pixelDensity =
+		pidelDensity > 0 ? pidelDensity
+						 : ( mConfig.window.pixelDensity > 0 ? mConfig.window.pixelDensity
+															 : currentDisplay->getPixelDensity() );
 
 	displayManager->enableScreenSaver();
 	displayManager->enableMouseFocusClickThrough();
@@ -1012,11 +1205,15 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 	std::string resPath( Sys::getProcessPath() );
 
 	mWindow = Engine::instance()->createWindow(
-		WindowSettings( 1280, 720, mWindowTitle, WindowStyle::Default, WindowBackend::Default, 32,
-						resPath + "assets/icon/ee.png", pixelDensity ),
+		WindowSettings( mConfig.window.size.getWidth(), mConfig.window.size.getHeight(),
+						mWindowTitle, WindowStyle::Default, WindowBackend::Default, 32,
+						resPath + "assets/icon/ee.png", mConfig.window.pixelDensity ),
 		ContextSettings( true ) );
 
 	if ( mWindow->isOpen() ) {
+		if ( mConfig.window.maximized )
+			mWindow->maximize();
+
 		mWindow->setCloseRequestCallback(
 			[&]( EE::Window::Window* win ) -> bool { return onCloseRequestCallback( win ); } );
 
@@ -1028,7 +1225,7 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 			}
 		} );
 
-		PixelDensity::setPixelDensity( eemax( mWindow->getScale(), pixelDensity ) );
+		PixelDensity::setPixelDensity( eemax( mWindow->getScale(), mConfig.window.pixelDensity ) );
 
 		mUISceneNode = UISceneNode::New();
 
@@ -1045,20 +1242,25 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		SceneManager::instance()->add( mUISceneNode );
 
 		mTheme = UITheme::load( "uitheme", "uitheme", "", font, resPath + "assets/ui/breeze.css" );
+		mTheme->setDefaultFontSize( mConfig.ui.fontSize );
 		mUISceneNode->setStyleSheet( mTheme->getStyleSheet() );
 		mUISceneNode
 			->getUIThemeManager()
 			//->setDefaultEffectsEnabled( true )
 			->setDefaultTheme( mTheme )
 			->setDefaultFont( font )
+			->setDefaultFontSize( mConfig.ui.fontSize )
 			->add( mTheme );
 
 		auto colorSchemes =
 			SyntaxColorScheme::loadFromFile( resPath + "assets/colorschemes/colorschemes.conf" );
 		if ( !colorSchemes.empty() ) {
-			mCurrentColorScheme = colorSchemes[0].getName();
 			for ( auto& colorScheme : colorSchemes )
 				mColorSchemes[colorScheme.getName()] = colorScheme;
+			mCurrentColorScheme =
+				mColorSchemes.find( mConfig.editor.colorScheme ) != mColorSchemes.end()
+					? mConfig.editor.colorScheme
+					: colorSchemes[0].getName();
 		} else {
 			mColorSchemes["default"] = SyntaxColorScheme::getDefault();
 			mCurrentColorScheme = "default";
@@ -1156,6 +1358,19 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		addIcon( "document-save-as", 0xf0b3, 12 );
 		addIcon( "document-close", 0xeb99, 12 );
 		addIcon( "quit", 0xeb97, 12 );
+		addIcon( "undo", 0xea58, 12 );
+		addIcon( "redo", 0xea5a, 12 );
+		addIcon( "redo", 0xea5a, 12 );
+		addIcon( "cut", 0xf0c1, 12 );
+		addIcon( "copy", 0xecd5, 12 );
+		addIcon( "paste", 0xeb91, 12 );
+		addIcon( "split-horizontal", 0xf17a, 12 );
+		addIcon( "split-vertical", 0xf17b, 12 );
+		addIcon( "find-replace", 0xed2b, 12 );
+		/*addIcon( "folder", 0xed54, 12 );
+		addIcon( "folder-add", 0xed5a, 12 );
+		addIcon( "file", 0xecc3, 12 );
+		addIcon( "file-code", 0xecd1, 12 );*/
 
 		mUISceneNode->getUIIconThemeManager()->setCurrentTheme( iconTheme );
 		initSearchBar();

@@ -63,8 +63,7 @@ class EE_API StyleSheetParser {
 	void importParse( std::string& css, std::size_t& pos, std::string& buffer,
 					  std::vector<std::string>& importedList );
 
-	void keyframesParse( std::string& css, ReadState& rs, std::size_t& pos, std::string& buffer,
-						 std::vector<std::string>& importedList );
+	void keyframesParse( std::string& css, ReadState& rs, std::size_t& pos, std::string& buffer );
 };
 
 }}} // namespace EE::UI::CSS
