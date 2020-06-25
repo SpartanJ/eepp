@@ -12,17 +12,17 @@ namespace EE { namespace UI {
 #define FDLG_MIN_WIDTH 420
 #define FDLG_MIN_HEIGHT 320
 
-UIFileDialog* UIFileDialog::New( Uint32 dialogFlags, std::string defaultFilePattern,
-								 std::string defaultDirectory ) {
+UIFileDialog* UIFileDialog::New( Uint32 dialogFlags, const std::string& defaultFilePattern,
+								 const std::string& defaultDirectory ) {
 	return eeNew( UIFileDialog, ( dialogFlags, defaultFilePattern, defaultDirectory ) );
 }
 
-UIFileDialog::UIFileDialog( Uint32 dialogFlags, std::string defaultFilePattern,
-							std::string defaultDirectory ) :
+UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePattern,
+							const std::string& defaultDirectory ) :
 	UIWindow(),
-	mCurPath( defaultDirectory ),
+	mCurPath( FileSystem::getRealPath( defaultDirectory ) ),
 	mDialogFlags( dialogFlags ),
-	mCloseShortcut( KEY_UNKNOWN ) {
+	mCloseShortcut( KEY_ESCAPE ) {
 	if ( getSize().getWidth() < FDLG_MIN_WIDTH ) {
 		mDpSize.x = FDLG_MIN_WIDTH;
 		mSize.x = PixelDensity::dpToPxI( FDLG_MIN_WIDTH );
@@ -67,6 +67,8 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, std::string defaultFilePattern,
 		->setLayoutMargin( Rect( 0, 0, 4, 0 ) )
 		->setParent( hLayout )
 		->setEnabled( false );
+
+	FileSystem::dirPathAddSlashAtEnd( mCurPath );
 
 	mPath = UITextInput::New();
 	mPath->setText( mCurPath )
@@ -153,6 +155,8 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, std::string defaultFilePattern,
 		->setSize( 80, 0 )
 		->setParent( hLayout );
 
+	mList->setFocus();
+
 	applyDefaultTheme();
 
 	mUISceneNode->setIsLoading( loading );
@@ -194,6 +198,7 @@ void UIFileDialog::setTheme( UITheme* Theme ) {
 }
 
 void UIFileDialog::refreshFolder() {
+	FileSystem::dirPathAddSlashAtEnd( mCurPath );
 	std::vector<String> flist = FileSystem::filesGetInPath( String( mCurPath ) );
 	std::vector<String> files;
 	std::vector<String> folders;
@@ -256,6 +261,13 @@ void UIFileDialog::updateClickStep() {
 	}
 }
 
+void UIFileDialog::setCurPath( const std::string& path ) {
+	mCurPath = path;
+	FileSystem::dirPathAddSlashAtEnd( mCurPath );
+	mPath->setText( mCurPath );
+	refreshFolder();
+}
+
 void UIFileDialog::openSaveClick() {
 	if ( isSaveDialog() ) {
 		save();
@@ -287,18 +299,14 @@ void UIFileDialog::openFileOrFolder() {
 	std::string newPath = mCurPath + mList->getItemSelectedText();
 
 	if ( FileSystem::isDirectory( newPath ) ) {
-		mCurPath = newPath + FileSystem::getOSSlash();
-		mPath->setText( mCurPath );
-		refreshFolder();
+		setCurPath( newPath );
 	} else {
 		open();
 	}
 }
 
 void UIFileDialog::goFolderUp() {
-	mCurPath = FileSystem::removeLastFolderFromPath( mCurPath );
-	mPath->setText( mCurPath );
-	refreshFolder();
+	setCurPath( FileSystem::removeLastFolderFromPath( mCurPath ) );
 }
 
 Uint32 UIFileDialog::onMessage( const NodeMessage* Msg ) {
@@ -382,11 +390,7 @@ void UIFileDialog::open() {
 
 void UIFileDialog::onPressEnter( const Event* ) {
 	if ( FileSystem::isDirectory( mPath->getText() ) ) {
-		std::string tpath = mPath->getText();
-		FileSystem::dirPathAddSlashAtEnd( tpath );
-		mPath->setText( tpath );
-		mCurPath = mPath->getText();
-		refreshFolder();
+		setCurPath( mPath->getText() );
 	}
 }
 
@@ -489,15 +493,15 @@ UIDropDownList* UIFileDialog::getFiletypeList() const {
 	return mFiletype;
 }
 
-Uint32 UIFileDialog::onKeyUp( const KeyEvent& Event ) {
-	if ( mCloseShortcut && Event.getKeyCode() == mCloseShortcut &&
-		 ( Event.getMod() & mCloseShortcut.mod ) ) {
+Uint32 UIFileDialog::onKeyUp( const KeyEvent& event ) {
+	if ( mCloseShortcut && event.getKeyCode() == mCloseShortcut &&
+		 ( mCloseShortcut.mod == 0 || ( event.getMod() & mCloseShortcut.mod ) ) ) {
 		disableButtons();
 
 		closeWindow();
 	}
 
-	return 1;
+	return UIWindow::onKeyUp( event );
 }
 
 const KeyBindings::Shortcut& UIFileDialog::getCloseShortcut() const {

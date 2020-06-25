@@ -17,8 +17,6 @@ namespace EE {
 
 bool PrintDebugInLog = true;
 
-#ifdef EE_DEBUG
-
 void eeREPORT_ASSERT( const char* File, int Line, const char* Exp ) {
 #ifdef EE_COMPILER_MSVC
 
@@ -45,8 +43,6 @@ void eeREPORT_ASSERT( const char* File, int Line, const char* Exp ) {
 
 #endif
 }
-
-#endif
 
 #ifndef EE_SILENT
 

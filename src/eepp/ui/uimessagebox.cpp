@@ -12,7 +12,7 @@ UIMessageBox* UIMessageBox::New( const Type& type, const String& message,
 }
 
 UIMessageBox::UIMessageBox( const Type& type, const String& message, const Uint32& windowFlags ) :
-	UIWindow(), mMsgBoxType( type ), mTextInput( NULL ), mCloseWithKey( KEY_UNKNOWN ) {
+	UIWindow(), mMsgBoxType( type ), mTextInput( NULL ), mCloseShortcut( KEY_UNKNOWN ) {
 	mStyleConfig.WinFlags = windowFlags;
 
 	updateWinFlags();
@@ -150,8 +150,8 @@ UIPushButton* UIMessageBox::getButtonCancel() const {
 }
 
 Uint32 UIMessageBox::onKeyUp( const KeyEvent& event ) {
-	if ( mCloseWithKey && event.getKeyCode() == mCloseWithKey &&
-		 ( event.getMod() & mCloseWithKey.mod ) ) {
+	if ( mCloseShortcut && event.getKeyCode() == mCloseShortcut &&
+		 ( mCloseShortcut.mod == 0 || ( event.getMod() & mCloseShortcut.mod ) ) ) {
 		sendCommonEvent( Event::MsgBoxCancelClick );
 		closeWindow();
 	}
@@ -169,12 +169,12 @@ bool UIMessageBox::show() {
 	return b;
 }
 
-const KeyBindings::Shortcut& UIMessageBox::getCloseWithKey() const {
-	return mCloseWithKey;
+const KeyBindings::Shortcut& UIMessageBox::getCloseShortcut() const {
+	return mCloseShortcut;
 }
 
-void UIMessageBox::setCloseWithKey( const KeyBindings::Shortcut& closeWithKey ) {
-	mCloseWithKey = closeWithKey;
+void UIMessageBox::setCloseShortcut( const KeyBindings::Shortcut& closeWithKey ) {
+	mCloseShortcut = closeWithKey;
 }
 
 UITextInput* UIMessageBox::getTextInput() const {

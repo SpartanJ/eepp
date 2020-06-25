@@ -101,6 +101,9 @@ class EE_API FileSystem {
 	/** Creates a new directory */
 	static bool makeDir( const std::string& path, const Uint16& mode = 0770 );
 
+	/** @return The absolute path of a relative path */
+	static std::string getRealPath( const std::string& path );
+
 	/** Convert a size represented in bytes, to a string converted in byes/kb/mb/tb.
 	 * For example 10485760 -> "10.0 MB"
 	 */

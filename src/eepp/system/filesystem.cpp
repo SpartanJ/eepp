@@ -279,6 +279,29 @@ bool FileSystem::makeDir( const std::string& path, const Uint16& mode ) {
 	return v == 0;
 }
 
+std::string FileSystem::getRealPath( const std::string& path ) {
+	std::string realPath;
+#ifdef EE_PLATFORM_POSIX
+	char dir[PATH_MAX];
+	realpath( path.c_str(), &dir[0] );
+	realPath = std::string( dir );
+#elif EE_PLATFORM == EE_PLATFORM_WIN
+#if defined( UNICODE ) && !defined( EE_NO_WIDECHAR )
+	wchar_t dir[_MAX_PATH + 1];
+	GetFullPathName( String::fromUtf8( path.c_str() ).toWideString().c_str(), _MAX_PATH, &dir[0],
+					 nullptr );
+	realPath = String( dir ).toUtf8();
+#else
+	char dir[_MAX_PATH + 1];
+	GetFullPathName( path.c_str(), _MAX_PATH, &dir[0], nullptr );
+	realPath = std::string( dir );
+#endif
+#else
+#warning FileSystem::getRealPath() not implemented on this platform.
+#endif
+	return realPath;
+}
+
 std::vector<String> FileSystem::filesGetInPath( const String& path, const bool& sortByName,
 												const bool& foldersFirst ) {
 	std::vector<String> files;

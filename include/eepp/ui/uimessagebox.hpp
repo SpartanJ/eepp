@@ -36,9 +36,9 @@ class EE_API UIMessageBox : public UIWindow {
 
 	virtual bool show();
 
-	const KeyBindings::Shortcut& getCloseWithKey() const;
+	const KeyBindings::Shortcut& getCloseShortcut() const;
 
-	void setCloseWithKey( const KeyBindings::Shortcut& closeWithKey );
+	void setCloseShortcut( const KeyBindings::Shortcut& closeWithKey );
 
 	UITextInput* getTextInput() const;
 
@@ -48,7 +48,7 @@ class EE_API UIMessageBox : public UIWindow {
 	UIPushButton* mButtonOK;
 	UIPushButton* mButtonCancel;
 	UITextInput* mTextInput;
-	KeyBindings::Shortcut mCloseWithKey;
+	KeyBindings::Shortcut mCloseShortcut;
 	UIWidget* mLayoutCont;
 
 	virtual void onWindowReady();

@@ -416,7 +416,7 @@ Uint32 Sys::getTicks() {
 	return ( ticks );
 #endif
 #else
-#warning eeGetTicks not implemented in this platform.
+#warning Sys::getTicks() not implemented in this platform.
 #endif
 }
 
@@ -452,7 +452,7 @@ void Sys::sleep( const Time& time ) {
 	while ( ( nanosleep( &ti, &ti ) == -1 ) && ( errno == EINTR ) ) {
 	}
 #else
-#warning Sys::Sleep not implemented in this platform.
+#warning Sys::sleep() not implemented in this platform.
 #endif
 }
 
@@ -655,11 +655,11 @@ std::string Sys::getConfigPath( std::string appname ) {
 		snprintf( path, EE_MAX_CFG_PATH_LEN, "%s/.config/%s", home, appname.c_str() );
 	}
 #elif EE_PLATFORM == EE_PLATFORM_IOS
-    return getProcessPath() + "config";
+	return getProcessPath() + "config";
 #elif EE_PLATFORM == EE_PLATFORM_ANDROID
 	return Window::Engine::instance()->getPlatformHelper()->getInternalStoragePath() + "/";
 #else
-#warning Sys::GetConfigPath not implemented for this platform ( it will use HOME directory + /.appname )
+#warning Sys::getConfigPath not implemented for this platform ( it will use HOME directory + /.appname )
 
 	char* home = getenv( "HOME" );
 
@@ -738,7 +738,7 @@ int Sys::getCPUCount() {
 		nprocs = info.cpu_count;
 	}
 #else
-#warning Sys::GetCPUCount not implemented on this platform ( it will return 1 ).
+#warning Sys::getCPUCount not implemented on this platform ( it will return 1 ).
 #endif
 
 	if ( nprocs < 1 )
@@ -781,7 +781,7 @@ void* Sys::loadObject( const std::string& sofile ) {
 	}
 	return handle;
 #else
-#warning Sys::LoadObject not implemented in this platform
+#warning Sys::loadObject not implemented in this platform
 #endif
 }
 
@@ -795,7 +795,7 @@ void Sys::unloadObject( void* handle ) {
 		FreeLibrary( (HMODULE)handle );
 	}
 #else
-#warning Sys::UnloadObject not implemented in this platform
+#warning Sys::unloadObject not implemented in this platform
 #endif
 }
 
@@ -824,7 +824,7 @@ void* Sys::loadFunction( void* handle, const std::string& name ) {
 
 	return symbol;
 #else
-#warning Sys::LoadFunction not implemented in this platform
+#warning Sys::loadFunction not implemented in this platform
 #endif
 }
 

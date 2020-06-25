@@ -24,11 +24,11 @@ class EE_API UIFileDialog : public UIWindow {
 	static const Uint32 DefaultFlags = FoldersFirst | SortAlphabetically;
 
 	static UIFileDialog* New( Uint32 dialogFlags = DefaultFlags,
-							  std::string defaultFilePattern = "*",
-							  std::string defaultDirectory = Sys::getProcessPath() );
+							  const std::string& defaultFilePattern = "*",
+							  const std::string& defaultDirectory = Sys::getProcessPath() );
 
-	UIFileDialog( Uint32 dialogFlags = DefaultFlags, std::string defaultFilePattern = "*",
-				  std::string defaultDirectory = Sys::getProcessPath() );
+	UIFileDialog( Uint32 dialogFlags = DefaultFlags, const std::string& defaultFilePattern = "*",
+				  const std::string& defaultDirectory = Sys::getProcessPath() );
 
 	virtual ~UIFileDialog();
 
@@ -119,6 +119,8 @@ class EE_API UIFileDialog : public UIWindow {
 	void goFolderUp();
 
 	void updateClickStep();
+
+	void setCurPath( const std::string& path );
 };
 
 }} // namespace EE::UI

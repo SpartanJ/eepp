@@ -645,7 +645,7 @@ void App::setCurrentEditor( UICodeEditor* editor ) {
 }
 
 void App::openFileDialog() {
-	UIFileDialog* dialog = UIFileDialog::New();
+	UIFileDialog* dialog = UIFileDialog::New( UIFileDialog::DefaultFlags, "*", "." );
 	dialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 	dialog->setTitle( "Open File" );
 	dialog->setCloseShortcut( KEY_ESCAPE );
@@ -662,7 +662,7 @@ void App::openFileDialog() {
 
 void App::saveFileDialog() {
 	UIFileDialog* dialog =
-		UIFileDialog::New( UIFileDialog::DefaultFlags | UIFileDialog::SaveDialog );
+		UIFileDialog::New( UIFileDialog::DefaultFlags | UIFileDialog::SaveDialog, "." );
 	dialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 	dialog->setTitle( "Save File As" );
 	dialog->setCloseShortcut( KEY_ESCAPE );
