@@ -138,23 +138,22 @@ class App {
 	UICodeEditor* mCurEditor{nullptr};
 	Console* mConsole{nullptr};
 	std::string mWindowTitle{"ecode"};
-	UIMessageBox* mMsgBox{nullptr};
 	String mLastSearch;
 	UILayout* mBaseLayout{nullptr};
 	UISearchBar* mSearchBarLayout{nullptr};
 	std::vector<UITabWidget*> mTabWidgets;
 	std::map<std::string, SyntaxColorScheme> mColorSchemes;
 	std::string mCurrentColorScheme;
-	UIPopUpMenu* mSettingsMenu;
-	UITextView* mSettingsButton;
-	UIPopUpMenu* mColorSchemeMenu;
-	UIPopUpMenu* mFiletypeMenu;
-	UITheme* mTheme;
+	UIPopUpMenu* mSettingsMenu{nullptr};
+	UITextView* mSettingsButton{nullptr};
+	UIPopUpMenu* mColorSchemeMenu{nullptr};
+	UIPopUpMenu* mFiletypeMenu{nullptr};
 	IniFile mIni;
 	IniFile mIniState;
 	std::vector<std::string> mRecentFiles;
 	Config mConfig;
-	UIPopUpMenu* mDocMenu;
+	UIPopUpMenu* mDocMenu{nullptr};
+	UIPopUpMenu* mViewMenu{nullptr};
 
 	void onFileDropped( String file );
 
@@ -211,6 +210,12 @@ class App {
 	UIMenu* createDocumentMenu();
 
 	void updateDocumentMenu();
+
+	void zoomIn();
+
+	void zoomOut();
+
+	void zoomReset();
 };
 
 #endif // EE_TOOLS_CODEEDITOR_HPP

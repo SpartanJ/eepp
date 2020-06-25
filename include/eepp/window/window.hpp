@@ -124,6 +124,8 @@ class WindowInfo {
 		Maximized( false ),
 		Context( 0 ) {}
 
+	Sizei getWindowSize() const { return Sizei( WindowConfig.Width, WindowConfig.Height ); }
+
 	WindowSettings WindowConfig;
 	ContextSettings ContextConfig;
 	WindowBackend Backend;
@@ -456,7 +458,9 @@ class EE_API Window {
 	 * per second. */
 	const System::Time& getRenderTimePerSecond() const;
 
-  protected:
+	const Sizei& getLastWindowedSize() const;
+
+	protected:
 	friend class Engine;
 	friend class Input;
 
@@ -469,6 +473,7 @@ class EE_API Window {
 	Uint32 mNumCallBacks;
 	std::map<Uint32, WindowResizeCallback> mCallbacks;
 	WindowRequestCloseCallback mCloseRequestCallback;
+	Sizei mLastWindowedSize;
 
 	class FrameData {
 	  public:

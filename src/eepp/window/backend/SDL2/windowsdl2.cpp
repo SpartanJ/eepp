@@ -362,6 +362,7 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 		mWindow.WindowConfig.Width = w;
 		mWindow.WindowConfig.Height = h;
 		mWindow.WindowSize = Sizei( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
+		mLastWindowedSize = mWindow.WindowSize;
 	} else {
 		eePRINTL( "Window failed to create!" );
 
@@ -528,15 +529,18 @@ bool WindowSDL::hasMouseFocus() {
 	return 0 != ( SDL_GetWindowFlags( mSDLWindow ) & ( SDL_WINDOW_MOUSE_FOCUS ) );
 }
 
-void WindowSDL::onWindowResize( Uint32 Width, Uint32 Height ) {
-	if ( Width == mWindow.WindowConfig.Width && Height == mWindow.WindowConfig.Height )
+void WindowSDL::onWindowResize( Uint32 width, Uint32 height ) {
+	if ( width == mWindow.WindowConfig.Width && height == mWindow.WindowConfig.Height )
 		return;
 
-	eePRINTL( "onWindowResize: %d Height %d.", Width, Height );
+	eePRINTL( "onWindowResize: Width %d Height %d.", width, height );
 
-	mWindow.WindowConfig.Width = Width;
-	mWindow.WindowConfig.Height = Height;
-	mWindow.WindowSize = Sizei( Width, Height );
+	mWindow.WindowConfig.Width = width;
+	mWindow.WindowConfig.Height = height;
+	mWindow.WindowSize = Sizei( width, height );
+
+	if ( isWindowed() )
+		mLastWindowedSize = Sizei( width, height );
 
 	mDefaultView.reset( Rectf( 0, 0, mWindow.WindowConfig.Width, mWindow.WindowConfig.Height ) );
 
@@ -551,55 +555,58 @@ void WindowSDL::onWindowResize( Uint32 Width, Uint32 Height ) {
 	sendVideoResizeCb();
 }
 
-void WindowSDL::setSize( Uint32 Width, Uint32 Height, bool Windowed ) {
-	if ( ( !Width || !Height ) ) {
-		Width = mWindow.DesktopResolution.getWidth();
-		Height = mWindow.DesktopResolution.getHeight();
+void WindowSDL::setSize( Uint32 width, Uint32 height, bool windowed ) {
+	if ( ( !width || !height ) ) {
+		width = mWindow.DesktopResolution.getWidth();
+		height = mWindow.DesktopResolution.getHeight();
 	}
 
-	if ( this->isWindowed() == Windowed && Width == mWindow.WindowConfig.Width &&
-		 Height == mWindow.WindowConfig.Height )
+	if ( this->isWindowed() == windowed && width == mWindow.WindowConfig.Width &&
+		 height == mWindow.WindowConfig.Height )
 		return;
 
 	eePRINTL( "Switching from %s to %s. Width: %d Height %d.",
-			  this->isWindowed() ? "windowed" : "fullscreen", Windowed ? "windowed" : "fullscreen",
-			  Width, Height );
+			  this->isWindowed() ? "windowed" : "fullscreen", windowed ? "windowed" : "fullscreen",
+			  width, height );
 
 	Uint32 oldWidth = mWindow.WindowConfig.Width;
 	Uint32 oldHeight = mWindow.WindowConfig.Height;
 
-	mWindow.WindowConfig.Width = Width;
-	mWindow.WindowConfig.Height = Height;
+	mWindow.WindowConfig.Width = width;
+	mWindow.WindowConfig.Height = height;
 
-	if ( Windowed ) {
-		mWindow.WindowSize = Sizei( Width, Height );
+	if ( windowed ) {
+		mWindow.WindowSize = Sizei( width, height );
 	} else {
 		mWindow.WindowSize = Sizei( oldWidth, oldHeight );
 	}
 
-	if ( isWindowed() && !Windowed ) {
+	if ( isWindowed() && !windowed ) {
 		mWinPos = getPosition();
 	} else {
-		SDL_SetWindowFullscreen( mSDLWindow, Windowed ? 0 : SDL_WINDOW_FULLSCREEN );
+		SDL_SetWindowFullscreen( mSDLWindow, windowed ? 0 : SDL_WINDOW_FULLSCREEN );
 	}
 
-	SDL_SetWindowSize( mSDLWindow, Width, Height );
+	if ( windowed )
+		mLastWindowedSize = Sizei( width, height );
 
-	if ( isWindowed() && !Windowed ) {
+	SDL_SetWindowSize( mSDLWindow, width, height );
+
+	if ( isWindowed() && !windowed ) {
 		mWinPos = getPosition();
 
 		setGLConfig();
 
-		SDL_SetWindowFullscreen( mSDLWindow, Windowed ? 0 : SDL_WINDOW_FULLSCREEN );
+		SDL_SetWindowFullscreen( mSDLWindow, windowed ? 0 : SDL_WINDOW_FULLSCREEN );
 	}
 
-	if ( isWindowed() && Windowed ) {
+	if ( isWindowed() && windowed ) {
 		setPosition( mWinPos.x, mWinPos.y );
 	}
 
-	BitOp::setBitFlagValue( &mWindow.WindowConfig.Style, WindowStyle::Fullscreen, !Windowed );
+	BitOp::setBitFlagValue( &mWindow.WindowConfig.Style, WindowStyle::Fullscreen, !windowed );
 
-	mDefaultView.reset( Rectf( 0, 0, Width, Height ) );
+	mDefaultView.reset( Rectf( 0, 0, width, height ) );
 
 	setup2D( false );
 

@@ -31,11 +31,12 @@ void UIMenuItem::setTheme( UITheme* Theme ) {
 	onThemeLoaded();
 }
 
-void UIMenuItem::setShortcutText( const String& text ) {
+UIMenuItem* UIMenuItem::setShortcutText( const String& text ) {
 	if ( !text.empty() )
 		createShortcutView();
 	if ( mShortcutView )
 		mShortcutView->setText( text );
+	return this;
 }
 
 UITextView* UIMenuItem::getShortcutView() const {

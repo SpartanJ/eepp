@@ -19,7 +19,7 @@ class EE_API UIMenuItem : public UIPushButton {
 
 	virtual void setTheme( UITheme* Theme );
 
-	virtual void setShortcutText( const String& text );
+	virtual UIMenuItem* setShortcutText( const String& text );
 
 	UITextView* getShortcutView() const;
 

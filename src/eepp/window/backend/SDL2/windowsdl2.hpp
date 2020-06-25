@@ -41,7 +41,7 @@ class EE_API WindowSDL : public Window {
 
 	bool hasMouseFocus();
 
-	void setSize( Uint32 Width, Uint32 Height, bool isWindowed );
+	void setSize( Uint32 width, Uint32 height, bool windowed );
 
 	std::vector<DisplayMode> getDisplayModes() const;
 
@@ -115,7 +115,7 @@ class EE_API WindowSDL : public Window {
 
 	void updateDesktopResolution();
 
-	void onWindowResize( Uint32 Width, Uint32 Height );
+	void onWindowResize( Uint32 width, Uint32 height );
 };
 
 }}}} // namespace EE::Window::Backend::SDL2

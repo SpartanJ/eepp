@@ -9,15 +9,15 @@ void appLoop() {
 
 bool App::onCloseRequestCallback( EE::Window::Window* ) {
 	if ( nullptr != mCurEditor && mCurEditor->isDirty() ) {
-		mMsgBox = UIMessageBox::New(
+		UIMessageBox* msgBox = UIMessageBox::New(
 			UIMessageBox::OK_CANCEL,
 			"Do you really want to close the code editor?\nAll changes will be lost." );
-		mMsgBox->addEventListener( Event::MsgBoxConfirmClick,
-								   [&]( const Event* ) { mWindow->close(); } );
-		mMsgBox->addEventListener( Event::OnClose, [&]( const Event* ) { mMsgBox = nullptr; } );
-		mMsgBox->setTitle( "Close Code Editor?" );
-		mMsgBox->center();
-		mMsgBox->show();
+		msgBox->addEventListener( Event::MsgBoxConfirmClick,
+								  [&]( const Event* ) { mWindow->close(); } );
+		msgBox->addEventListener( Event::OnClose, [&]( const Event* ) { msgBox = nullptr; } );
+		msgBox->setTitle( "Close " + mWindowTitle + "?" );
+		msgBox->center();
+		msgBox->show();
 		return false;
 	} else {
 		return true;
@@ -26,19 +26,19 @@ bool App::onCloseRequestCallback( EE::Window::Window* ) {
 
 bool App::tryTabClose( UICodeEditor* editor ) {
 	if ( nullptr != editor && editor->isDirty() ) {
-		mMsgBox =
+		UIMessageBox* msgBox =
 			UIMessageBox::New( UIMessageBox::OK_CANCEL,
 							   "Do you really want to close this tab?\nAll changes will be lost." );
-		mMsgBox->addEventListener( Event::MsgBoxConfirmClick,
-								   [&, editor]( const Event* ) { closeEditorTab( editor ); } );
-		mMsgBox->addEventListener( Event::OnClose, [&]( const Event* ) {
-			mMsgBox = nullptr;
+		msgBox->addEventListener( Event::MsgBoxConfirmClick,
+								  [&, editor]( const Event* ) { closeEditorTab( editor ); } );
+		msgBox->addEventListener( Event::OnClose, [&]( const Event* ) {
+			msgBox = nullptr;
 			if ( mCurEditor )
 				mCurEditor->setFocus();
 		} );
-		mMsgBox->setTitle( "Close Tab?" );
-		mMsgBox->center();
-		mMsgBox->show();
+		msgBox->setTitle( "Close Tab?" );
+		msgBox->center();
+		msgBox->show();
 		return false;
 	} else {
 		closeEditorTab( editor );
@@ -196,6 +196,18 @@ void App::forEachEditor( std::function<void( UICodeEditor* )> run ) {
 			run( tabWidget->getTab( i )->getOwnedWidget()->asType<UICodeEditor>() );
 }
 
+void App::zoomIn() {
+	forEachEditor( []( UICodeEditor* editor ) { editor->fontSizeGrow(); } );
+}
+
+void App::zoomOut() {
+	forEachEditor( []( UICodeEditor* editor ) { editor->fontSizeShrink(); } );
+}
+
+void App::zoomReset() {
+	forEachEditor( []( UICodeEditor* editor ) { editor->fontSizeReset(); } );
+}
+
 UICodeEditor* App::createCodeEditor() {
 	UICodeEditor* codeEditor = UICodeEditor::NewOpt( false, true );
 	TextDocument& doc = codeEditor->getDocument();
@@ -264,29 +276,26 @@ UICodeEditor* App::createCodeEditor() {
 		if ( mCurEditor )
 			mCurEditor->paste();
 	} );
-	doc.setCommand( "font-size-grow", [&] {
-		if ( mCurEditor )
-			mCurEditor->fontSizeGrow();
-	} );
-	doc.setCommand( "font-size-shrink", [&] {
-		if ( mCurEditor )
-			mCurEditor->fontSizeShrink();
-	} );
-	doc.setCommand( "font-size-reset", [&] {
-		if ( mCurEditor )
-			mCurEditor->fontSizeReset();
-	} );
+	doc.setCommand( "font-size-grow", [&] { zoomIn(); } );
+	doc.setCommand( "font-size-shrink", [&] { zoomOut(); } );
+	doc.setCommand( "font-size-reset", [&] { zoomReset(); } );
 	doc.setCommand( "lock", [&] {
-		if ( mCurEditor )
+		if ( mCurEditor ) {
 			mCurEditor->setLocked( true );
+			updateDocumentMenu();
+		}
 	} );
 	doc.setCommand( "unlock", [&] {
-		if ( mCurEditor )
+		if ( mCurEditor ) {
 			mCurEditor->setLocked( false );
+			updateDocumentMenu();
+		}
 	} );
 	doc.setCommand( "lock-toggle", [&] {
-		if ( mCurEditor )
+		if ( mCurEditor ) {
 			mCurEditor->setLocked( !mCurEditor->isLocked() );
+			updateDocumentMenu();
+		}
 	} );
 	codeEditor->addUnlockedCommand( "copy" );
 	codeEditor->addUnlockedCommand( "select-all" );
@@ -318,7 +327,12 @@ UICodeEditor* App::createCodeEditor() {
 		findNextText( "", mSearchBarLayout->find<UICheckBox>( "case_sensitive" )->isChecked() );
 	} );
 	doc.setCommand( "close-app", [&] { closeApp(); } );
-	doc.setCommand( "fullscreen-toggle", [&]() { mWindow->toggleFullscreen(); } );
+	doc.setCommand( "fullscreen-toggle", [&]() {
+		mWindow->toggleFullscreen();
+		mViewMenu->find( "fullscreen-mode" )
+			->asType<UIMenuCheckBox>()
+			->setActive( !mWindow->isWindowed() );
+	} );
 	doc.setCommand( "open-file", [&] { openFileDialog(); } );
 	doc.setCommand( "console-toggle", [&] {
 		mConsole->toggle();
@@ -764,9 +778,8 @@ void App::findAndReplace( String find, String replace, const bool& caseSensitive
 }
 
 void App::runCommand( const std::string& command ) {
-	if ( mCurEditor ) {
+	if ( mCurEditor )
 		mCurEditor->getDocument().execute( command );
-	}
 }
 
 void App::loadConfig() {
@@ -812,7 +825,7 @@ void App::loadConfig() {
 
 void App::saveConfig() {
 	mConfig.editor.colorScheme = mCurrentColorScheme;
-	mConfig.window.size = mWindow->getSize();
+	mConfig.window.size = mWindow->getLastWindowedSize();
 	mConfig.window.maximized = mWindow->isMaximized();
 	mIni.setValue( "editor", "colorscheme", mConfig.editor.colorScheme );
 	mIniState.setValueI( "window", "width", mConfig.window.size.getWidth() );
@@ -930,9 +943,8 @@ void App::showFindView() {
 }
 
 void App::closeApp() {
-	if ( nullptr == mMsgBox && onCloseRequestCallback( mWindow ) ) {
+	if ( onCloseRequestCallback( mWindow ) )
 		mWindow->close();
-	}
 }
 
 void App::mainLoop() {
@@ -1034,24 +1046,33 @@ void App::updateRecentFiles() {
 }
 
 UIMenu* App::createViewMenu() {
-	UIPopUpMenu* menu = UIPopUpMenu::New();
-	menu->addCheckBox( "Show Line Numbers" )->setActive( mConfig.editor.showLineNumbers );
-	menu->addCheckBox( "Show White Space" )->setActive( mConfig.editor.showWhiteSpaces );
-	menu->addCheckBox( "Highlight Matching Bracket" )
+	mViewMenu = UIPopUpMenu::New();
+	mViewMenu->addCheckBox( "Show Line Numbers" )->setActive( mConfig.editor.showLineNumbers );
+	mViewMenu->addCheckBox( "Show White Space" )->setActive( mConfig.editor.showWhiteSpaces );
+	mViewMenu->addCheckBox( "Highlight Matching Bracket" )
 		->setActive( mConfig.editor.highlightMatchingBracket );
-	menu->addCheckBox( "Highlight Current Line" )->setActive( mConfig.editor.highlightCurrentLine );
-	menu->addCheckBox( "Enable Horizontal ScrollBar" )
+	mViewMenu->addCheckBox( "Highlight Current Line" )
+		->setActive( mConfig.editor.highlightCurrentLine );
+	mViewMenu->addCheckBox( "Enable Horizontal ScrollBar" )
 		->setActive( mConfig.editor.horizontalScrollbar );
-	menu->addSeparator();
-	menu->add( "Editor Font Size", findIcon( "font-size" ) );
-	menu->add( "UI Font Size", findIcon( "font-size" ) );
-	menu->add( "Line Breaking Column" );
-	menu->addSeparator();
-	menu->add( "Split Left", findIcon( "split-horizontal" ), "Ctrl+Shift+J" );
-	menu->add( "Split Right", findIcon( "split-horizontal" ), "Ctrl+Shift+L" );
-	menu->add( "Split Top", findIcon( "split-vertical" ), "Ctrl+Shift+I" );
-	menu->add( "Split Bottom", findIcon( "split-vertical" ), "Ctrl+Shift+K" );
-	menu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
+	mViewMenu->addSeparator();
+	mViewMenu->add( "Editor Font Size", findIcon( "font-size" ) );
+	mViewMenu->add( "UI Font Size", findIcon( "font-size" ) );
+	mViewMenu->add( "Line Breaking Column" );
+	mViewMenu->addSeparator();
+	mViewMenu->addCheckBox( "Full Screen Mode" )
+		->setShortcutText( "Alt+Return" )
+		->setId( "fullscreen-mode" );
+	mViewMenu->addSeparator();
+	mViewMenu->add( "Split Left", findIcon( "split-horizontal" ), "Ctrl+Shift+J" );
+	mViewMenu->add( "Split Right", findIcon( "split-horizontal" ), "Ctrl+Shift+L" );
+	mViewMenu->add( "Split Top", findIcon( "split-vertical" ), "Ctrl+Shift+I" );
+	mViewMenu->add( "Split Bottom", findIcon( "split-vertical" ), "Ctrl+Shift+K" );
+	mViewMenu->addSeparator();
+	mViewMenu->add( "Zoom In", findIcon( "zoom-in" ), "Ctrl++" );
+	mViewMenu->add( "Zoom Out", findIcon( "zoom-out" ), "Ctrl+-" );
+	mViewMenu->add( "Zoom Reset", findIcon( "zoom-reset" ), "Ctrl+0" );
+	mViewMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
@@ -1083,7 +1104,7 @@ UIMenu* App::createViewMenu() {
 		} else if ( item->getText() == "Editor Font Size" ) {
 			UIMessageBox* msgBox =
 				UIMessageBox::New( UIMessageBox::INPUT, "Set the editor font size:" );
-			msgBox->setTitle( "ecode" );
+			msgBox->setTitle( mWindowTitle );
 			msgBox->getTextInput()->setAllowOnlyNumbers( true, true );
 			msgBox->getTextInput()->setText( String::format(
 				mConfig.editor.fontSize == (int)mConfig.editor.fontSize ? "%2.f" : "%2.1f",
@@ -1103,7 +1124,7 @@ UIMenu* App::createViewMenu() {
 		} else if ( item->getText() == "UI Font Size" ) {
 			UIMessageBox* msgBox = UIMessageBox::New( UIMessageBox::INPUT,
 													  "Set the UI font size (requires restart):" );
-			msgBox->setTitle( "ecode" );
+			msgBox->setTitle( mWindowTitle );
 			msgBox->getTextInput()->setAllowOnlyNumbers( true, true );
 			msgBox->getTextInput()->setText(
 				String::format( mConfig.ui.fontSize == (int)mConfig.ui.fontSize ? "%2.f" : "%2.1f",
@@ -1124,7 +1145,7 @@ UIMenu* App::createViewMenu() {
 			UIMessageBox* msgBox =
 				UIMessageBox::New( UIMessageBox::INPUT, "Set Line Breaking Column:\n"
 														"Set 0 to disable it.\n" );
-			msgBox->setTitle( "ecode" );
+			msgBox->setTitle( mWindowTitle );
 			msgBox->getTextInput()->setAllowOnlyNumbers( true, false );
 			msgBox->getTextInput()->setText(
 				String::toString( mConfig.editor.lineBreakingColumn ) );
@@ -1142,6 +1163,14 @@ UIMenu* App::createViewMenu() {
 				if ( mCurEditor )
 					mCurEditor->setFocus();
 			} );
+		} else if ( "Zoom In" == item->getText() ) {
+			zoomIn();
+		} else if ( "Zoom Out" == item->getText() ) {
+			zoomOut();
+		} else if ( "Zoom Reset" == item->getText() ) {
+			zoomReset();
+		} else if ( "Full Screen Mode" == item->getText() ) {
+			runCommand( "fullscreen-toggle" );
 		} else {
 			String text = String( event->getNode()->asType<UIMenuItem>()->getText() ).toLower();
 			String::replaceAll( text, " ", "-" );
@@ -1149,7 +1178,7 @@ UIMenu* App::createViewMenu() {
 			runCommand( text );
 		}
 	} );
-	return menu;
+	return mViewMenu;
 }
 
 Drawable* App::findIcon( const std::string& name ) {
@@ -1248,6 +1277,8 @@ UIMenu* App::createDocumentMenu() {
 
 	mDocMenu->addSeparator();
 
+	mDocMenu->addCheckBox( "Read Only" )->setId( "read_only" );
+
 	mDocMenu->addCheckBox( "Trim Trailing Whitespaces", mConfig.editor.trimTrailingWhitespaces )
 		->setId( "trim_whitespaces" );
 
@@ -1278,6 +1309,8 @@ UIMenu* App::createDocumentMenu() {
 			} else if ( "write_bom" == id ) {
 				doc.setBOM( item->isActive() );
 				mConfig.editor.writeUnicodeBOM = item->isActive();
+			} else if ( "read_only" == id ) {
+				mCurEditor->setLocked( item->isActive() );
 			}
 		}
 	} );
@@ -1331,6 +1364,8 @@ void App::updateDocumentMenu() {
 		->find( mConfig.editor.windowsLineEndings ? "windows" : "unix" )
 		->asType<UIMenuRadioButton>()
 		->setActive( true );
+
+	mDocMenu->find( "read_only" )->asType<UIMenuCheckBox>()->setActive( mCurEditor->isLocked() );
 }
 
 void App::createSettingsMenu() {
@@ -1501,16 +1536,17 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 
 		SceneManager::instance()->add( mUISceneNode );
 
-		mTheme = UITheme::load( "uitheme", "uitheme", "", font, resPath + "assets/ui/breeze.css" );
-		mTheme->setDefaultFontSize( mConfig.ui.fontSize );
-		mUISceneNode->setStyleSheet( mTheme->getStyleSheet() );
+		UITheme* theme =
+			UITheme::load( "uitheme", "uitheme", "", font, resPath + "assets/ui/breeze.css" );
+		theme->setDefaultFontSize( mConfig.ui.fontSize );
+		mUISceneNode->setStyleSheet( theme->getStyleSheet() );
 		mUISceneNode
 			->getUIThemeManager()
 			//->setDefaultEffectsEnabled( true )
-			->setDefaultTheme( mTheme )
+			->setDefaultTheme( theme )
 			->setDefaultFont( font )
 			->setDefaultFontSize( mConfig.ui.fontSize )
-			->add( mTheme );
+			->add( theme );
 
 		auto colorSchemes =
 			SyntaxColorScheme::loadFromFile( resPath + "assets/colorschemes/colorschemes.conf" );
@@ -1633,6 +1669,11 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		addIcon( "file-code", 0xecd1, 12 );
 		addIcon( "file-edit", 0xecdb, 12 );
 		addIcon( "font-size", 0xed8d, 12 );
+		addIcon( "color-picker", 0xf13d, 16 );
+		addIcon( "zoom-in", 0xf2db, 12 );
+		addIcon( "zoom-out", 0xf2dd, 12 );
+		addIcon( "zoom-reset", 0xeb47, 12 );
+		addIcon( "fullscreen", 0xed9c, 12 );
 
 		mUISceneNode->getUIIconThemeManager()->setCurrentTheme( iconTheme );
 		initSearchBar();

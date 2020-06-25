@@ -330,6 +330,10 @@ const Time& Window::getRenderTimePerSecond() const {
 	return mFrameData.FPS.CurRenderTime;
 }
 
+const Sizei& Window::getLastWindowedSize() const {
+	return mLastWindowedSize;
+}
+
 void Window::calculateFps() {
 	if ( mFrameData.FPS.LastCheck.getElapsedTime().asSeconds() >= 1.f ) {
 		mFrameData.FPS.Current = mFrameData.FPS.Count;

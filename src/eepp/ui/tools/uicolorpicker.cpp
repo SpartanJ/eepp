@@ -28,7 +28,7 @@ const char* COLOR_PICKER_STYLE = R"xml(
 #color_picker > .header > .current_color {
 }
 #color_picker > .header > .picker_icon {
-	icon: color-picker-white;
+	icon: color-picker;
 	gravity: center;
 }
 #color_picker > .pickers > .color_picker_container > .color_picker {
@@ -371,7 +371,7 @@ Texture* UIColorPicker::createHueTexture( const Sizef& size ) {
 	TextureFactory* TF = TextureFactory::instance();
 	Uint32 texId =
 		TF->loadFromPixels( image.getPixelsPtr(), image.getWidth(), image.getHeight(),
-							image.getChannels(), false, Texture::ClampMode::ClampRepeat );
+							image.getChannels() );
 
 	return TF->getTexture( texId );
 }

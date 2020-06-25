@@ -625,14 +625,14 @@ Uint32 UICodeEditor::onMouseUp( const Vector2i& position, const Uint32& flags ) 
 		}
 	} else if ( flags & EE_BUTTON_WDMASK ) {
 		if ( getUISceneNode()->getWindow()->getInput()->isControlPressed() ) {
-			fontSizeShrink();
+			mDoc->execute( "font-size-shrink" );
 		} else {
 			setScrollY( mScroll.y + PixelDensity::dpToPx( mMouseWheelScroll ) );
 		}
 		invalidateDraw();
 	} else if ( flags & EE_BUTTON_WUMASK ) {
 		if ( getUISceneNode()->getWindow()->getInput()->isControlPressed() ) {
-			fontSizeGrow();
+			mDoc->execute( "font-size-grow" );
 		} else {
 			setScrollY( mScroll.y - PixelDensity::dpToPx( mMouseWheelScroll ) );
 		}
