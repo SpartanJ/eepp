@@ -15,12 +15,6 @@
 
 ## Code Editor
 
-Keep improving it:
-
-* Add more menues ( Edit, Window ).
-
-* Save user configuration.
-
 * Support single instance (when a new file is opened while a previous instance exists, open it in the first instance).
 
 * Search and replace only over selection.
@@ -38,3 +32,5 @@ Detect errors and log them.
 ## UITreeView
 
 Implement a simple tree view widget, to at least cover the most common use cases.
+
+

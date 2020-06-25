@@ -237,12 +237,12 @@ bool UICodeEditor::save() {
 	return mDoc->save();
 }
 
-bool UICodeEditor::save( const std::string& path, const bool& utf8bom ) {
-	return mDoc->save( path, utf8bom );
+bool UICodeEditor::save( const std::string& path ) {
+	return mDoc->save( path );
 }
 
-bool UICodeEditor::save( IOStreamFile& stream, const bool& utf8bom ) {
-	return mDoc->save( stream, utf8bom );
+bool UICodeEditor::save( IOStreamFile& stream ) {
+	return mDoc->save( stream );
 }
 
 Font* UICodeEditor::getFont() const {

@@ -14,36 +14,22 @@ namespace EE { namespace System {
 #define iniEOL '\r' << std::endl
 #endif
 
-IniFile::IniFile( std::string const iniPath, const bool& shouldReadFile ) :
-	mCaseInsensitive( true ), mIniReaded( false ) {
+IniFile::IniFile( std::string const iniPath ) : mCaseInsensitive( true ), mIniReaded( false ) {
 	loadFromFile( iniPath );
-
-	if ( shouldReadFile )
-		readFile();
 }
 
-IniFile::IniFile( const Uint8* RAWData, const Uint32& size, const bool& shouldReadFile ) :
+IniFile::IniFile( const Uint8* RAWData, const Uint32& size ) :
 	mCaseInsensitive( true ), mIniReaded( false ) {
 	loadFromMemory( RAWData, size );
-
-	if ( shouldReadFile )
-		readFile();
 }
 
-IniFile::IniFile( Pack* Pack, std::string iniPackPath, const bool& shouldReadFile ) :
+IniFile::IniFile( Pack* Pack, std::string iniPackPath ) :
 	mCaseInsensitive( true ), mIniReaded( false ) {
 	loadFromPack( Pack, iniPackPath );
-
-	if ( shouldReadFile )
-		readFile();
 }
 
-IniFile::IniFile( IOStream& stream, const bool& shouldReadFile ) :
-	mCaseInsensitive( true ), mIniReaded( false ) {
+IniFile::IniFile( IOStream& stream ) : mCaseInsensitive( true ), mIniReaded( false ) {
 	loadFromStream( stream );
-
-	if ( shouldReadFile )
-		readFile();
 }
 
 bool IniFile::loadFromPack( Pack* Pack, std::string iniPackPath ) {
@@ -69,7 +55,7 @@ bool IniFile::loadFromStream( IOStream& stream ) {
 	clear();
 	mLines.clear();
 	mLines = String::split( myfile );
-
+	readFile();
 	return true;
 }
 
@@ -123,7 +109,7 @@ bool IniFile::readFile() {
 			// Check that the user hasn't openned a binary file by checking the first
 			// character of each line!
 			if ( !isprint( line[0] ) ) {
-				eePRINT( "IniFile::ReadFile(): Failing on char %d\n", line[0] );
+				eePRINT( "IniFile::readFile(): Failing on char %d\n", line[0] );
 				return false;
 			}
 

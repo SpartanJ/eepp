@@ -47,9 +47,9 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	bool save();
 
-	bool save( const std::string& path, const bool& utf8bom = false );
+	bool save( const std::string& path );
 
-	bool save( IOStreamFile& stream, const bool& utf8bom = false );
+	bool save( IOStreamFile& stream );
 
 	Font* getFont() const;
 

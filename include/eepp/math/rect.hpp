@@ -34,6 +34,8 @@ template <typename T> class tRECT {
 
 	T mergedArea( const tRECT<T>& rect ) const;
 
+	bool overlap( const tRECT<T>& rect ) const;
+
 	bool intersectsSegment( const Vector2<T>& a, const Vector2<T>& b ) const;
 
 	/** Determine if a RECT and a Circle are intersecting
@@ -217,6 +219,10 @@ template <typename T> bool tRECT<T>::intersect( const tRECT<T>& rect ) {
 
 template <typename T> bool tRECT<T>::contains( const Vector2<T>& Vect ) {
 	return ( Left <= Vect.x && Right >= Vect.x && Top <= Vect.y && Bottom >= Vect.y );
+}
+
+template <typename T> bool tRECT<T>::overlap( const tRECT<T>& rect ) const {
+	return Left < rect.Right && Top < rect.Bottom && rect.Left < Right && rect.Top < Bottom;
 }
 
 template <typename T> Vector2<T> tRECT<T>::getPosition() const {

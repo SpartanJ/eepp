@@ -324,7 +324,7 @@ void EETest::onShowMenu( const Event* Event ) {
 	if ( Menu->show() ) {
 		Vector2f pos( Vector2f( PB->getSize().getWidth(), 0 ) );
 		PB->nodeToWorld( pos );
-		UIMenu::fixMenuPos( pos, Menu );
+		UIMenu::findBestMenuPos( pos, Menu );
 		Menu->setPixelsPosition( pos );
 	}
 }
@@ -1272,7 +1272,7 @@ void EETest::onQuitClick( const Event* event ) {
 void EETest::showMenu() {
 	if ( NULL != Menu && Menu->show() ) {
 		Vector2f Pos = KM->getMousePosf();
-		UIMenu::fixMenuPos( Pos, Menu );
+		UIMenu::findBestMenuPos( Pos, Menu );
 		Menu->setPixelsPosition( Pos );
 	}
 }

@@ -87,7 +87,7 @@ void UIMenuSubMenu::showSubMenu() {
 	Vector2f pos = getPixelsPosition();
 	nodeToWorldTranslation( pos );
 	pos.x += mSize.getWidth() + menu->getPadding().Right;
-	UIMenu::fixMenuPos( pos, mSubMenu, menu, this );
+	UIMenu::findBestMenuPos( pos, mSubMenu, menu, this );
 	mSubMenu->getParent()->worldToNode( pos );
 	mSubMenu->setPosition( pos );
 	if ( !mSubMenu->isVisible() ) {

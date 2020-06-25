@@ -590,7 +590,7 @@ void UIMap::createObjPopUpMenu() {
 
 	if ( Menu->show() ) {
 		Vector2f Pos = getEventDispatcher()->getMousePosf();
-		UIMenu::fixMenuPos( Pos, Menu );
+		UIMenu::findBestMenuPos( Pos, Menu );
 		Menu->setPixelsPosition( Pos );
 	}
 }

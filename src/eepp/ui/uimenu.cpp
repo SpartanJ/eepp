@@ -642,7 +642,8 @@ bool UIMenu::isChildOfMeOrSubMenu( Node* node ) {
 		   ( mCurrentSubMenu && mCurrentSubMenu->isChildOfMeOrSubMenu( node ) );
 }
 
-void UIMenu::fixMenuPos( Vector2f& pos, UIMenu* menu, UIMenu* parent, UIMenuSubMenu* subMenu ) {
+void UIMenu::findBestMenuPos( Vector2f& pos, UIMenu* menu, UIMenu* parent,
+							  UIMenuSubMenu* subMenu ) {
 	SceneNode* sceneNode = menu->getSceneNode();
 
 	if ( nullptr == sceneNode )
@@ -654,11 +655,23 @@ void UIMenu::fixMenuPos( Vector2f& pos, UIMenu* menu, UIMenu* parent, UIMenuSubM
 				pos.y + menu->getPixelsSize().getHeight() );
 
 	if ( nullptr != parent && nullptr != subMenu ) {
+		Rectf qPrevMenu;
+		bool clipMenu = parent->getOwnerNode() && parent->getOwnerNode()->getParent() &&
+						parent->getOwnerNode()->getParent()->isType( UI_TYPE_MENU );
+
 		Vector2f sPos = subMenu->getPixelsPosition();
 		subMenu->nodeToWorldTranslation( sPos );
 
 		Vector2f pPos = parent->getPixelsPosition();
 		parent->nodeToWorldTranslation( pPos );
+
+		if ( clipMenu ) {
+			UIMenu* parentOwner = parent->getOwnerNode()->getParent()->asType<UIMenu>();
+			Vector2f poPos = parentOwner->getPixelsPosition();
+			parentOwner->nodeToWorldTranslation( poPos );
+			qPrevMenu = Rectf( poPos.x, poPos.y, poPos.x + parentOwner->getPixelsSize().getWidth(),
+							   poPos.y + parentOwner->getPixelsSize().getHeight() );
+		}
 
 		Rectf qParent( pPos.x, pPos.y, pPos.x + parent->getPixelsSize().getWidth(),
 					   pPos.y + parent->getPixelsSize().getHeight() );
@@ -671,13 +684,12 @@ void UIMenu::fixMenuPos( Vector2f& pos, UIMenu* menu, UIMenu* parent, UIMenuSubM
 		qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
 		Vector2f oriPos( pos );
 
-		if ( !qScreen.contains( qPos ) ) {
+		if ( !qScreen.contains( qPos ) || ( clipMenu && qPrevMenu.overlap( qPos ) ) ) {
 			pos.y =
 				sPos.y + subMenu->getPixelsSize().getHeight() - menu->getPixelsSize().getHeight();
 			qPos.Top = pos.y;
 			qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
-
-			if ( !qScreen.contains( qPos ) ) {
+			if ( !qScreen.contains( qPos ) || ( clipMenu && qPrevMenu.overlap( qPos ) ) ) {
 				pos.x = qParent.Left - menu->getPixelsSize().getWidth();
 				pos.y = sPos.y;
 				qPos.Left = pos.x;
@@ -685,7 +697,7 @@ void UIMenu::fixMenuPos( Vector2f& pos, UIMenu* menu, UIMenu* parent, UIMenuSubM
 				qPos.Top = pos.y;
 				qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
 
-				if ( !qScreen.contains( qPos ) ) {
+				if ( !qScreen.contains( qPos ) || ( clipMenu && qPrevMenu.overlap( qPos ) ) ) {
 					pos.y = sPos.y + subMenu->getPixelsSize().getHeight() -
 							menu->getPixelsSize().getHeight();
 					qPos.Top = pos.y;

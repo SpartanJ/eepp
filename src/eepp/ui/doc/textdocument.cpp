@@ -227,6 +227,14 @@ void TextDocument::setActiveClient( Client* activeClient ) {
 	mActiveClient = activeClient;
 }
 
+void TextDocument::setBOM( bool active ) {
+	mIsBOM = active;
+}
+
+bool TextDocument::getBOM() const {
+	return mIsBOM;
+}
+
 bool TextDocument::loadFromFile( const std::string& path ) {
 	if ( !FileSystem::fileExists( path ) && PackManager::instance()->isFallbackToPacksActive() ) {
 		std::string pathFix( path );
@@ -260,13 +268,13 @@ bool TextDocument::loadFromPack( Pack* pack, std::string filePackPath ) {
 	return ret;
 }
 
-bool TextDocument::save( const std::string& path, const bool& utf8bom ) {
+bool TextDocument::save( const std::string& path ) {
 	if ( path.empty() || mDefaultFileName == path )
 		return false;
 	if ( FileSystem::fileCanWrite( FileSystem::fileRemoveFileName( path ) ) ) {
 		IOStreamFile file( path, "wb" );
 		mFilePath = path;
-		if ( save( file, utf8bom ) ) {
+		if ( save( file ) ) {
 			return true;
 		} else {
 			mFilePath.clear();
@@ -275,12 +283,12 @@ bool TextDocument::save( const std::string& path, const bool& utf8bom ) {
 	return false;
 }
 
-bool TextDocument::save( IOStream& stream, const bool& utf8bom ) {
+bool TextDocument::save( IOStream& stream ) {
 	if ( !stream.isOpen() || mLines.empty() )
 		return false;
 	const std::string whitespaces( " \t\f\v\n\r" );
 	char nl = '\n';
-	if ( utf8bom ) {
+	if ( mIsBOM ) {
 		unsigned char bom[] = {0xEF, 0xBB, 0xBF};
 		stream.write( (char*)bom, sizeof( bom ) );
 	}
@@ -323,7 +331,7 @@ bool TextDocument::save( IOStream& stream, const bool& utf8bom ) {
 }
 
 bool TextDocument::save() {
-	return save( mFilePath, mIsBOM );
+	return save( mFilePath );
 }
 
 std::string TextDocument::getFilename() const {
@@ -1336,3 +1344,5 @@ void TextDocument::initializeCommands() {
 TextDocument::Client::~Client() {}
 
 }}} // namespace EE::UI::Doc
+
+

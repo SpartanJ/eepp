@@ -198,6 +198,7 @@ void App::forEachEditor( std::function<void( UICodeEditor* )> run ) {
 
 UICodeEditor* App::createCodeEditor() {
 	UICodeEditor* codeEditor = UICodeEditor::NewOpt( false, true );
+	TextDocument& doc = codeEditor->getDocument();
 	codeEditor->setFontSize( mConfig.editor.fontSize );
 	codeEditor->setEnableColorPickerOnSelection( true );
 	codeEditor->setColorScheme( mColorSchemes[mCurrentColorScheme] );
@@ -206,7 +207,17 @@ UICodeEditor* App::createCodeEditor() {
 	codeEditor->setHighlightMatchingBracket( mConfig.editor.highlightMatchingBracket );
 	codeEditor->setHorizontalScrollBarEnabled( mConfig.editor.horizontalScrollbar );
 	codeEditor->setHighlightCurrentLine( mConfig.editor.highlightCurrentLine );
-	TextDocument& doc = codeEditor->getDocument();
+	codeEditor->setTabWidth( mConfig.editor.tabWidth );
+	codeEditor->setLineBreakingColumn( mConfig.editor.lineBreakingColumn );
+	doc.setAutoDetectIndentType( mConfig.editor.autoDetectIndentType );
+	doc.setLineEnding( mConfig.editor.windowsLineEndings ? TextDocument::LineEnding::CRLF
+														 : TextDocument::LineEnding::LF );
+	doc.setTrimTrailingWhitespaces( mConfig.editor.trimTrailingWhitespaces );
+	doc.setIndentType( mConfig.editor.indentSpaces ? TextDocument::IndentType::IndentSpaces
+												   : TextDocument::IndentType::IndentTabs );
+	doc.setForceNewLineAtEndOfFile( mConfig.editor.forceNewLineAtEndOfFile );
+	doc.setIndentWidth( mConfig.editor.indentWidth );
+	doc.setBOM( mConfig.editor.writeUnicodeBOM );
 
 	/* global commands */
 	doc.setCommand( "move-to-previous-line", [&] {
@@ -763,18 +774,19 @@ void App::loadConfig() {
 	if ( !FileSystem::fileExists( path ) )
 		FileSystem::makeDir( path );
 	FileSystem::dirPathAddSlashAtEnd( path );
-	path += "config.cfg";
-	mIni.loadFromFile( path );
-	mIni.readFile();
-	std::string recent = mIni.getValue( "files", "recentfiles", "" );
+	mIni.loadFromFile( path + "config.cfg" );
+	mIniState.loadFromFile( path + "prev_state.cfg" );
+	std::string recent = mIniState.getValue( "files", "recentfiles", "" );
 	mRecentFiles = String::split( recent, ';' );
 	mCurrentColorScheme = mConfig.editor.colorScheme =
 		mIni.getValue( "editor", "colorscheme", "lite" );
 	mConfig.editor.fontSize = mIni.getValueF( "editor", "font_size", 11 );
-	mConfig.window.size.setWidth( mIni.getValueI( "window", "width", 1280 ) );
-	mConfig.window.size.setHeight( mIni.getValueI( "window", "height", 720 ) );
-	mConfig.window.maximized = mIni.getValueB( "window", "maximized", false );
-	mConfig.window.pixelDensity = mIni.getValueF( "window", "pixeldensity" );
+	mConfig.window.size.setWidth(
+		mIniState.getValueI( "window", "width", PixelDensity::dpToPxI( 1280 ) ) );
+	mConfig.window.size.setHeight(
+		mIniState.getValueI( "window", "height", PixelDensity::dpToPxI( 720 ) ) );
+	mConfig.window.maximized = mIniState.getValueB( "window", "maximized", false );
+	mConfig.window.pixelDensity = mIniState.getValueF( "window", "pixeldensity" );
 	mConfig.editor.showLineNumbers = mIni.getValueB( "editor", "show_line_numbers", true );
 	mConfig.editor.showWhiteSpaces = mIni.getValueB( "editor", "show_white_spaces", true );
 	mConfig.editor.highlightMatchingBracket =
@@ -783,18 +795,31 @@ void App::loadConfig() {
 		mIni.getValueB( "editor", "highlight_current_line", true );
 	mConfig.editor.horizontalScrollbar = mIni.getValueB( "editor", "horizontal_scrollbar", false );
 	mConfig.ui.fontSize = mIni.getValueF( "ui", "font_size", 11 );
+	mConfig.editor.trimTrailingWhitespaces =
+		mIni.getValueB( "editor", "trim_trailing_whitespaces", false );
+	mConfig.editor.forceNewLineAtEndOfFile =
+		mIni.getValueB( "editor", "force_new_line_at_end_of_file", false );
+	mConfig.editor.autoDetectIndentType =
+		mIni.getValueB( "editor", "auto_detect_indent_type", true );
+	mConfig.editor.writeUnicodeBOM = mIni.getValueB( "editor", "write_bom", false );
+	mConfig.editor.indentWidth = mIni.getValueI( "editor", "indent_width", 4 );
+	mConfig.editor.indentSpaces = mIni.getValueB( "editor", "indent_spaces", false );
+	mConfig.editor.windowsLineEndings = mIni.getValueB( "editor", "windows_line_endings", false );
+	mConfig.editor.tabWidth = eemax( 2, mIni.getValueI( "editor", "tab_width", 4 ) );
+	mConfig.editor.lineBreakingColumn =
+		eemax( 0, mIni.getValueI( "editor", "line_breaking_column", 100 ) );
 }
 
 void App::saveConfig() {
 	mConfig.editor.colorScheme = mCurrentColorScheme;
-	mConfig.window.size = ( mWindow->getSize().asFloat() / mConfig.window.pixelDensity ).asInt();
+	mConfig.window.size = mWindow->getSize();
 	mConfig.window.maximized = mWindow->isMaximized();
 	mIni.setValue( "editor", "colorscheme", mConfig.editor.colorScheme );
-	mIni.setValueI( "window", "width", mConfig.window.size.getWidth() );
-	mIni.setValueI( "window", "height", mConfig.window.size.getHeight() );
-	mIni.setValueB( "window", "maximized", mConfig.window.maximized );
-	mIni.setValueF( "window", "pixeldensity", mConfig.window.pixelDensity );
-	mIni.setValue( "files", "recentfiles", String::join( mRecentFiles, ';' ) );
+	mIniState.setValueI( "window", "width", mConfig.window.size.getWidth() );
+	mIniState.setValueI( "window", "height", mConfig.window.size.getHeight() );
+	mIniState.setValueB( "window", "maximized", mConfig.window.maximized );
+	mIniState.setValueF( "window", "pixeldensity", mConfig.window.pixelDensity );
+	mIniState.setValue( "files", "recentfiles", String::join( mRecentFiles, ';' ) );
 	mIni.setValueB( "editor", "show_line_numbers", mConfig.editor.showLineNumbers );
 	mIni.setValueB( "editor", "show_white_spaces", mConfig.editor.showWhiteSpaces );
 	mIni.setValueB( "editor", "highlight_matching_brackets",
@@ -803,7 +828,18 @@ void App::saveConfig() {
 	mIni.setValueB( "editor", "horizontal_scrollbar", mConfig.editor.horizontalScrollbar );
 	mIni.setValueF( "editor", "font_size", mConfig.editor.fontSize );
 	mIni.setValueF( "ui", "font_size", mConfig.ui.fontSize );
+	mIni.setValueB( "editor", "trim_trailing_whitespaces", mConfig.editor.trimTrailingWhitespaces );
+	mIni.setValueB( "editor", "force_new_line_at_end_of_file",
+					mConfig.editor.forceNewLineAtEndOfFile );
+	mIni.setValueB( "editor", "auto_detect_indent_type", mConfig.editor.autoDetectIndentType );
+	mIni.setValueB( "editor", "write_bom", mConfig.editor.writeUnicodeBOM );
+	mIni.setValueI( "editor", "indent_width", mConfig.editor.indentWidth );
+	mIni.setValueB( "editor", "indent_spaces", mConfig.editor.indentSpaces );
+	mIni.setValueB( "editor", "windows_line_endings", mConfig.editor.windowsLineEndings );
+	mIni.setValueI( "editor", "tab_width", mConfig.editor.tabWidth );
+	mIni.setValueI( "editor", "line_breaking_column", mConfig.editor.lineBreakingColumn );
 	mIni.writeFile();
+	mIniState.writeFile();
 }
 
 void App::initSearchBar() {
@@ -1007,6 +1043,10 @@ UIMenu* App::createViewMenu() {
 	menu->addCheckBox( "Enable Horizontal ScrollBar" )
 		->setActive( mConfig.editor.horizontalScrollbar );
 	menu->addSeparator();
+	menu->add( "Editor Font Size", findIcon( "font-size" ) );
+	menu->add( "UI Font Size", findIcon( "font-size" ) );
+	menu->add( "Line Breaking Column" );
+	menu->addSeparator();
 	menu->add( "Split Left", findIcon( "split-horizontal" ), "Ctrl+Shift+J" );
 	menu->add( "Split Right", findIcon( "split-horizontal" ), "Ctrl+Shift+L" );
 	menu->add( "Split Top", findIcon( "split-vertical" ), "Ctrl+Shift+I" );
@@ -1039,6 +1079,68 @@ UIMenu* App::createViewMenu() {
 			mConfig.editor.horizontalScrollbar = item->asType<UIMenuCheckBox>()->isActive();
 			forEachEditor( [&]( UICodeEditor* editor ) {
 				editor->setHorizontalScrollBarEnabled( mConfig.editor.horizontalScrollbar );
+			} );
+		} else if ( item->getText() == "Editor Font Size" ) {
+			UIMessageBox* msgBox =
+				UIMessageBox::New( UIMessageBox::INPUT, "Set the editor font size:" );
+			msgBox->setTitle( "ecode" );
+			msgBox->getTextInput()->setAllowOnlyNumbers( true, true );
+			msgBox->getTextInput()->setText( String::format(
+				mConfig.editor.fontSize == (int)mConfig.editor.fontSize ? "%2.f" : "%2.1f",
+				mConfig.editor.fontSize ) );
+			msgBox->show();
+			msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox]( const Event* ) {
+				Float val;
+				if ( String::fromString( val, msgBox->getTextInput()->getText() ) ) {
+					mConfig.editor.fontSize = val;
+					forEachEditor( [val]( UICodeEditor* editor ) { editor->setFontSize( val ); } );
+				}
+			} );
+			msgBox->addEventListener( Event::OnClose, [&]( const Event* ) {
+				if ( mCurEditor )
+					mCurEditor->setFocus();
+			} );
+		} else if ( item->getText() == "UI Font Size" ) {
+			UIMessageBox* msgBox = UIMessageBox::New( UIMessageBox::INPUT,
+													  "Set the UI font size (requires restart):" );
+			msgBox->setTitle( "ecode" );
+			msgBox->getTextInput()->setAllowOnlyNumbers( true, true );
+			msgBox->getTextInput()->setText(
+				String::format( mConfig.ui.fontSize == (int)mConfig.ui.fontSize ? "%2.f" : "%2.1f",
+								mConfig.ui.fontSize ) );
+			msgBox->show();
+			msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox]( const Event* ) {
+				Float val;
+				if ( String::fromString( val, msgBox->getTextInput()->getText() ) ) {
+					mConfig.ui.fontSize = val;
+					msgBox->closeWindow();
+				}
+			} );
+			msgBox->addEventListener( Event::OnClose, [&]( const Event* ) {
+				if ( mCurEditor )
+					mCurEditor->setFocus();
+			} );
+		} else if ( item->getText() == "Line Breaking Column" ) {
+			UIMessageBox* msgBox =
+				UIMessageBox::New( UIMessageBox::INPUT, "Set Line Breaking Column:\n"
+														"Set 0 to disable it.\n" );
+			msgBox->setTitle( "ecode" );
+			msgBox->getTextInput()->setAllowOnlyNumbers( true, false );
+			msgBox->getTextInput()->setText(
+				String::toString( mConfig.editor.lineBreakingColumn ) );
+			msgBox->show();
+			msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox]( const Event* ) {
+				int val;
+				if ( String::fromString( val, msgBox->getTextInput()->getText() ) && val >= 0 ) {
+					mConfig.editor.lineBreakingColumn = val;
+					forEachEditor(
+						[val]( UICodeEditor* editor ) { editor->setLineBreakingColumn( val ); } );
+					msgBox->closeWindow();
+				}
+			} );
+			msgBox->addEventListener( Event::OnClose, [&]( const Event* ) {
+				if ( mCurEditor )
+					mCurEditor->setFocus();
 			} );
 		} else {
 			String text = String( event->getNode()->asType<UIMenuItem>()->getText() ).toLower();
@@ -1077,6 +1179,160 @@ UIMenu* App::createEditMenu() {
 	return menu;
 }
 
+UIMenu* App::createDocumentMenu() {
+	mDocMenu = UIPopUpMenu::New();
+
+	mDocMenu->addCheckBox( "Auto Detect Indent Type", mConfig.editor.autoDetectIndentType )
+		->setId( "auto_indent" );
+
+	UIPopUpMenu* tabTypeMenu = UIPopUpMenu::New();
+	tabTypeMenu->addRadioButton( "Tabs" )->setId( "tabs" );
+	tabTypeMenu->addRadioButton( "Spaces" )->setId( "spaces" );
+	mDocMenu->addSubMenu( "Indentation Type", nullptr, tabTypeMenu )->setId( "indent_type" );
+	tabTypeMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
+		const String& text = event->getNode()->asType<UIMenuRadioButton>()->getId();
+		if ( mCurEditor ) {
+			TextDocument::IndentType indentType = text == "tabs"
+													  ? TextDocument::IndentType::IndentTabs
+													  : TextDocument::IndentType::IndentSpaces;
+			mCurEditor->getDocument().setIndentType( indentType );
+			mConfig.editor.indentSpaces = indentType == TextDocument::IndentType::IndentSpaces;
+		}
+	} );
+
+	UIPopUpMenu* indentWidthMenu = UIPopUpMenu::New();
+	for ( size_t w = 2; w <= 12; w++ )
+		indentWidthMenu
+			->addRadioButton( String::toString( w ),
+							  mCurEditor && mCurEditor->getDocument().getIndentWidth() == w )
+			->setId( String::format( "indent_width_%zu", w ) )
+			->setData( w );
+	mDocMenu->addSubMenu( "Indent Width", nullptr, indentWidthMenu )->setId( "indent_width" );
+	indentWidthMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
+		if ( mCurEditor ) {
+			int width = event->getNode()->getData();
+			mCurEditor->getDocument().setIndentWidth( width );
+			mConfig.editor.indentWidth = width;
+		}
+	} );
+
+	UIPopUpMenu* tabWidthMenu = UIPopUpMenu::New();
+	for ( size_t w = 2; w <= 12; w++ )
+		tabWidthMenu
+			->addRadioButton( String::toString( w ), mCurEditor && mCurEditor->getTabWidth() == w )
+			->setId( String::format( "tab_width_%zu", w ) )
+			->setData( w );
+	mDocMenu->addSubMenu( "Tab Width", nullptr, tabWidthMenu )->setId( "tab_width" );
+	tabWidthMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
+		if ( mCurEditor ) {
+			int width = event->getNode()->getData();
+			mCurEditor->setTabWidth( width );
+			mConfig.editor.tabWidth = width;
+		}
+	} );
+
+	UIPopUpMenu* lineEndingsMenu = UIPopUpMenu::New();
+	lineEndingsMenu->addRadioButton( "Windows (CR/LF)", mConfig.editor.windowsLineEndings )
+		->setId( "windows" );
+	lineEndingsMenu->addRadioButton( "Unix (LF)", !mConfig.editor.windowsLineEndings )
+		->setId( "unix" );
+	mDocMenu->addSubMenu( "Line Endings", nullptr, lineEndingsMenu )->setId( "line_endings" );
+	lineEndingsMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
+		bool winLe = event->getNode()->asType<UIRadioButton>()->getId() == "windows";
+		if ( mCurEditor ) {
+			mConfig.editor.windowsLineEndings = winLe;
+			mCurEditor->getDocument().setLineEnding( winLe ? TextDocument::LineEnding::CRLF
+														   : TextDocument::LineEnding::LF );
+		}
+	} );
+
+	mDocMenu->addSeparator();
+
+	mDocMenu->addCheckBox( "Trim Trailing Whitespaces", mConfig.editor.trimTrailingWhitespaces )
+		->setId( "trim_whitespaces" );
+
+	mDocMenu->addCheckBox( "Force New Line at End of File", mConfig.editor.forceNewLineAtEndOfFile )
+		->setId( "force_nl" );
+
+	mDocMenu->addCheckBox( "Write Unicode BOM", mConfig.editor.writeUnicodeBOM )
+		->setId( "write_bom" );
+
+	mDocMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
+		if ( !mCurEditor || event->getNode()->isType( UI_TYPE_MENU_SEPARATOR ) ||
+			 event->getNode()->isType( UI_TYPE_MENUSUBMENU ) )
+			return;
+		const String& id = event->getNode()->getId();
+		TextDocument& doc = mCurEditor->getDocument();
+
+		if ( event->getNode()->isType( UI_TYPE_MENUCHECKBOX ) ) {
+			UIMenuCheckBox* item = event->getNode()->asType<UIMenuCheckBox>();
+			if ( "auto_indent" == id ) {
+				doc.setAutoDetectIndentType( item->isActive() );
+				mConfig.editor.autoDetectIndentType = item->isActive();
+			} else if ( "trim_whitespaces" == id ) {
+				doc.setTrimTrailingWhitespaces( item->isActive() );
+				mConfig.editor.trimTrailingWhitespaces = item->isActive();
+			} else if ( "force_nl" == id ) {
+				doc.setForceNewLineAtEndOfFile( item->isActive() );
+				mConfig.editor.forceNewLineAtEndOfFile = item->isActive();
+			} else if ( "write_bom" == id ) {
+				doc.setBOM( item->isActive() );
+				mConfig.editor.writeUnicodeBOM = item->isActive();
+			}
+		}
+	} );
+	return mDocMenu;
+}
+
+void App::updateDocumentMenu() {
+	if ( !mCurEditor )
+		return;
+
+	const TextDocument& doc = mCurEditor->getDocument();
+
+	mDocMenu->find( "auto_indent" )
+		->asType<UIMenuCheckBox>()
+		->setActive( doc.getAutoDetectIndentType() );
+
+	mDocMenu->find( "indent_type" )
+		->asType<UIMenuSubMenu>()
+		->getSubMenu()
+		->find( doc.getIndentType() == TextDocument::IndentType::IndentTabs ? "tabs" : "spaces" )
+		->asType<UIMenuRadioButton>()
+		->setActive( true );
+
+	mDocMenu->find( "indent_width" )
+		->asType<UIMenuSubMenu>()
+		->getSubMenu()
+		->find( String::format( "indent_width_%d", doc.getIndentWidth() ) )
+		->asType<UIMenuRadioButton>()
+		->setActive( true );
+
+	mDocMenu->find( "tab_width" )
+		->asType<UIMenuSubMenu>()
+		->getSubMenu()
+		->find( String::format( "tab_width_%d", mCurEditor->getTabWidth() ) )
+		->asType<UIMenuRadioButton>()
+		->setActive( true );
+
+	mDocMenu->find( "trim_whitespaces" )
+		->asType<UIMenuCheckBox>()
+		->setActive( doc.getTrimTrailingWhitespaces() );
+
+	mDocMenu->find( "force_nl" )
+		->asType<UIMenuCheckBox>()
+		->setActive( doc.getForceNewLineAtEndOfFile() );
+
+	mDocMenu->find( "write_bom" )->asType<UIMenuCheckBox>()->setActive( doc.getBOM() );
+
+	mDocMenu->find( "line_endings" )
+		->asType<UIMenuSubMenu>()
+		->getSubMenu()
+		->find( mConfig.editor.windowsLineEndings ? "windows" : "unix" )
+		->asType<UIMenuRadioButton>()
+		->setActive( true );
+}
+
 void App::createSettingsMenu() {
 	mSettingsMenu = UIPopUpMenu::New();
 	mSettingsMenu->add( "New", findIcon( "document-new" ), "Ctrl+T" );
@@ -1086,10 +1342,11 @@ void App::createSettingsMenu() {
 	mSettingsMenu->add( "Save", findIcon( "document-save" ), "Ctrl+S" );
 	mSettingsMenu->add( "Save as...", findIcon( "document-save-as" ) );
 	mSettingsMenu->addSeparator();
-	mSettingsMenu->addSubMenu( "Edit", nullptr, createEditMenu() );
-	mSettingsMenu->addSubMenu( "View", nullptr, createViewMenu() );
 	mSettingsMenu->addSubMenu( "Filetype", nullptr, createFiletypeMenu() );
 	mSettingsMenu->addSubMenu( "Color Scheme", nullptr, createColorSchemeMenu() );
+	mSettingsMenu->addSubMenu( "Document", nullptr, createDocumentMenu() );
+	mSettingsMenu->addSubMenu( "Edit", nullptr, createEditMenu() );
+	mSettingsMenu->addSubMenu( "View", nullptr, createViewMenu() );
 	mSettingsMenu->addSeparator();
 	mSettingsMenu->add( "Close", findIcon( "document-close" ), "Ctrl+W" );
 	mSettingsMenu->addSeparator();
@@ -1098,7 +1355,7 @@ void App::createSettingsMenu() {
 	mSettingsButton->addEventListener( Event::MouseClick, [&]( const Event* ) {
 		Vector2f pos( mSettingsButton->getPixelsPosition() );
 		mSettingsButton->nodeToWorldTranslation( pos );
-		UIMenu::fixMenuPos( pos, mSettingsMenu );
+		UIMenu::findBestMenuPos( pos, mSettingsMenu );
 		mSettingsMenu->setPixelsPosition( pos );
 		mSettingsMenu->show();
 	} );
@@ -1185,6 +1442,7 @@ void App::updateEditorState() {
 	if ( mCurEditor ) {
 		updateEditorTitle( mCurEditor );
 		updateCurrentFiletype();
+		updateDocumentMenu();
 	}
 }
 
@@ -1207,10 +1465,12 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 	mWindow = Engine::instance()->createWindow(
 		WindowSettings( mConfig.window.size.getWidth(), mConfig.window.size.getHeight(),
 						mWindowTitle, WindowStyle::Default, WindowBackend::Default, 32,
-						resPath + "assets/icon/ee.png", mConfig.window.pixelDensity ),
+						resPath + "assets/icon/ee.png", 1 ),
 		ContextSettings( true ) );
 
 	if ( mWindow->isOpen() ) {
+		PixelDensity::setPixelDensity( mConfig.window.pixelDensity );
+
 		if ( mConfig.window.maximized )
 			mWindow->maximize();
 
@@ -1367,10 +1627,12 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		addIcon( "split-horizontal", 0xf17a, 12 );
 		addIcon( "split-vertical", 0xf17b, 12 );
 		addIcon( "find-replace", 0xed2b, 12 );
-		/*addIcon( "folder", 0xed54, 12 );
+		addIcon( "folder", 0xed54, 12 );
 		addIcon( "folder-add", 0xed5a, 12 );
 		addIcon( "file", 0xecc3, 12 );
-		addIcon( "file-code", 0xecd1, 12 );*/
+		addIcon( "file-code", 0xecd1, 12 );
+		addIcon( "file-edit", 0xecdb, 12 );
+		addIcon( "font-size", 0xed8d, 12 );
 
 		mUISceneNode->getUIIconThemeManager()->setCurrentTheme( iconTheme );
 		initSearchBar();

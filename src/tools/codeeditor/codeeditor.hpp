@@ -51,6 +51,15 @@ class App {
 			bool highlightMatchingBracket{true};
 			bool horizontalScrollbar{false};
 			bool highlightCurrentLine{true};
+			bool trimTrailingWhitespaces{false};
+			bool forceNewLineAtEndOfFile{false};
+			bool autoDetectIndentType{true};
+			bool writeUnicodeBOM{false};
+			bool indentSpaces{false};
+			bool windowsLineEndings{false};
+			int indentWidth{4};
+			int tabWidth{4};
+			int lineBreakingColumn{100};
 		} editor;
 		struct {
 			Float fontSize{11};
@@ -63,7 +72,7 @@ class App {
 
 	void init( const std::string& file, const Float& pidelDensity );
 
-	bool loadFileFromPath( const std::string& path, UICodeEditor* codeEditor = NULL );
+	bool loadFileFromPath( const std::string& path, UICodeEditor* codeEditor = nullptr );
 
 	void setAppTitle( const std::string& title );
 
@@ -93,7 +102,7 @@ class App {
 
 	void splitEditor( const SplitDirection& direction, UICodeEditor* editor );
 
-	void focusSomeEditor( Node* searchFrom = NULL );
+	void focusSomeEditor( Node* searchFrom = nullptr );
 
 	void switchToTab( Int32 index );
 
@@ -124,15 +133,15 @@ class App {
 	void setCurrentEditor( UICodeEditor* editor );
 
   protected:
-	EE::Window::Window* mWindow{NULL};
-	UISceneNode* mUISceneNode{NULL};
-	UICodeEditor* mCurEditor{NULL};
-	Console* mConsole{NULL};
+	EE::Window::Window* mWindow{nullptr};
+	UISceneNode* mUISceneNode{nullptr};
+	UICodeEditor* mCurEditor{nullptr};
+	Console* mConsole{nullptr};
 	std::string mWindowTitle{"ecode"};
-	UIMessageBox* mMsgBox{NULL};
+	UIMessageBox* mMsgBox{nullptr};
 	String mLastSearch;
-	UILayout* mBaseLayout{NULL};
-	UISearchBar* mSearchBarLayout{NULL};
+	UILayout* mBaseLayout{nullptr};
+	UISearchBar* mSearchBarLayout{nullptr};
 	std::vector<UITabWidget*> mTabWidgets;
 	std::map<std::string, SyntaxColorScheme> mColorSchemes;
 	std::string mCurrentColorScheme;
@@ -142,8 +151,10 @@ class App {
 	UIPopUpMenu* mFiletypeMenu;
 	UITheme* mTheme;
 	IniFile mIni;
+	IniFile mIniState;
 	std::vector<std::string> mRecentFiles;
 	Config mConfig;
+	UIPopUpMenu* mDocMenu;
 
 	void onFileDropped( String file );
 
@@ -196,6 +207,10 @@ class App {
 	UIMenu* createEditMenu();
 
 	Drawable* findIcon( const std::string& name );
+
+	UIMenu* createDocumentMenu();
+
+	void updateDocumentMenu();
 };
 
 #endif // EE_TOOLS_CODEEDITOR_HPP

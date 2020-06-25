@@ -88,10 +88,7 @@ void loadConfig() {
 		FileSystem::makeDir( path );
 	FileSystem::dirPathAddSlashAtEnd( path );
 	path += "config.ini";
-
 	ini.loadFromFile( path );
-	ini.readFile();
-
 	std::string recent = ini.getValue( "UIEDITOR", "recentprojects", "" );
 	recentProjects = String::split( recent, ';' );
 	recent = ini.getValue( "UIEDITOR", "recentfiles", "" );

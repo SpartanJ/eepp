@@ -59,9 +59,9 @@ class EE_API TextDocument {
 
 	bool save();
 
-	bool save( const std::string& path, const bool& utf8bom = false );
+	bool save( const std::string& path );
 
-	bool save( IOStream& stream, const bool& utf8bom = false );
+	bool save( IOStream& stream );
 
 	std::string getFilename() const;
 
@@ -307,6 +307,10 @@ class EE_API TextDocument {
 	Client* getActiveClient() const;
 
 	void setActiveClient( Client* activeClient );
+
+	void setBOM( bool active );
+
+	bool getBOM() const;
 
   protected:
 	friend class UndoStack;
