@@ -36,7 +36,7 @@ class UISearchBar : public UILinearLayout {
 };
 
 struct UIConfig {
-	Float fontSize{11};
+	StyleSheetLength fontSize{12, StyleSheetLength::Dp};
 };
 
 struct WindowConfig {
@@ -126,6 +126,7 @@ class App : public UICodeEditorSplitter::Client {
 	std::string mConfigPath;
 	std::string mKeybindingsPath;
 	SearchState mSearchState;
+	Float mDisplayDPI;
 
 	void onFileDropped( String file );
 

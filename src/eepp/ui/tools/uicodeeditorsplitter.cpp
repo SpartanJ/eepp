@@ -2,6 +2,8 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/ui/tools/uicodeeditorsplitter.hpp>
 #include <eepp/ui/uimessagebox.hpp>
+#include <eepp/window/displaymanager.hpp>
+#include <eepp/window/engine.hpp>
 
 using namespace EE::System;
 
@@ -97,7 +99,9 @@ UICodeEditor* UICodeEditorSplitter::createCodeEditor() {
 	UICodeEditor* codeEditor = UICodeEditor::NewOpt( false, true );
 	TextDocument& doc = codeEditor->getDocument();
 	const CodeEditorConfig& editorConfig = mClient->getCodeEditorConfig();
-	codeEditor->setFontSize( editorConfig.fontSize );
+	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
+	codeEditor->setFontSize(
+		editorConfig.fontSize.asDp( 0, Sizef(), displayManager->getDisplayIndex( 0 )->getDPI() ) );
 	codeEditor->setEnableColorPickerOnSelection( true );
 	codeEditor->setColorScheme( mColorSchemes[mCurrentColorScheme] );
 	codeEditor->setShowLineNumber( editorConfig.showLineNumbers );

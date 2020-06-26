@@ -34,7 +34,11 @@ class EE_API StyleSheetLength {
 
 	static Unit unitFromString( std::string unitStr );
 
+	static std::string unitToString( const Unit& unit );
+
 	StyleSheetLength();
+
+	StyleSheetLength( const Float& val, const Unit& unit );
 
 	StyleSheetLength( std::string val, const Float& defaultValue = 0 );
 
@@ -59,6 +63,8 @@ class EE_API StyleSheetLength {
 	StyleSheetLength& operator=( const Float& val );
 
 	static StyleSheetLength fromString( std::string str, const Float& defaultValue = 0 );
+
+	std::string toString() const;
 
   protected:
 	Unit mUnit;

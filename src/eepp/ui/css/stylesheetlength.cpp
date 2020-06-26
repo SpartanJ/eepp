@@ -29,8 +29,6 @@ StyleSheetLength::Unit StyleSheetLength::unitFromString( std::string unitStr ) {
 		return Unit::Pt;
 	else if ( "pc" == unitStr )
 		return Unit::Pc;
-	else if ( "px" == unitStr )
-		return Unit::Px;
 	else if ( "dpi" == unitStr )
 		return Unit::Dpi;
 	else if ( "dpcm" == unitStr )
@@ -44,11 +42,53 @@ StyleSheetLength::Unit StyleSheetLength::unitFromString( std::string unitStr ) {
 	else if ( "vmax" == unitStr )
 		return Unit::Vmax;
 	else if ( "rem" == unitStr )
-		return Unit::Dp;
+		return Unit::Rem;
 	return Unit::Px;
 }
 
+std::string StyleSheetLength::unitToString( const StyleSheetLength::Unit& unit ) {
+	switch ( unit ) {
+		case Unit::Percentage:
+			return "%";
+		case Unit::Dp:
+			return "dp";
+		case Unit::Px:
+			return "px";
+		case Unit::In:
+			return "in";
+		case Unit::Cm:
+			return "cm";
+		case Unit::Mm:
+			return "mm";
+		case Unit::Em:
+			return "em";
+		case Unit::Ex:
+			return "ex";
+		case Unit::Pt:
+			return "pt";
+		case Unit::Pc:
+			return "pc";
+		case Unit::Dpi:
+			return "dpi";
+		case Unit::Dpcm:
+			return "dpcm";
+		case Unit::Vw:
+			return "vw";
+		case Unit::Vh:
+			return "vh";
+		case Unit::Vmin:
+			return "vmin";
+		case Unit::Vmax:
+			return "vmax";
+		case Unit::Rem:
+			return "rem";
+	}
+}
+
 StyleSheetLength::StyleSheetLength() : mUnit( Px ), mValue( 0 ) {}
+
+StyleSheetLength::StyleSheetLength( const Float& val, const StyleSheetLength::Unit& unit ) :
+	mUnit( unit ), mValue( val ) {}
 
 StyleSheetLength::StyleSheetLength( std::string val, const Float& defaultValue ) :
 	StyleSheetLength( fromString( val, defaultValue ) ) {}
@@ -182,6 +222,12 @@ StyleSheetLength StyleSheetLength::fromString( std::string str, const Float& def
 	}
 
 	return length;
+}
+
+std::string StyleSheetLength::toString() const {
+	if ( (Int64)mValue == mValue )
+		return String::format( "%lld%s", (Int64)mValue, unitToString( mUnit ).c_str() );
+	return String::format( "%.2f%s", mValue, unitToString( mUnit ).c_str() );
 }
 
 }}} // namespace EE::UI::CSS

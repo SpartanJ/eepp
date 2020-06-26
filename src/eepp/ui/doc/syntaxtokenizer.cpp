@@ -96,6 +96,9 @@ std::pair<std::vector<SyntaxToken>, int> SyntaxTokenizer::tokenize( const Syntax
 			LuaPattern words( patternStr );
 			int start, end = 0;
 			if ( words.find( text, start, end, i ) && start != end ) {
+				if ( pattern.patterns.size() >= 3 && i > 0 &&
+					 text[i - 1] == pattern.patterns[2][0] )
+					continue;
 				std::string patternText( text.substr( start, end - start ) );
 				std::string type = syntax.getSymbol( patternText );
 				pushToken( tokens, type.empty() ? pattern.type : type, patternText );

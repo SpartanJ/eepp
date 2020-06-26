@@ -18,7 +18,7 @@ class EE_API UICodeEditorSplitter {
 
 	struct CodeEditorConfig {
 		std::string colorScheme{"lite"};
-		Float fontSize{11};
+		StyleSheetLength fontSize{12, StyleSheetLength::Dp};
 		bool showLineNumbers{true};
 		bool showWhiteSpaces{true};
 		bool highlightMatchingBracket{true};

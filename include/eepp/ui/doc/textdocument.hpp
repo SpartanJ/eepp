@@ -369,10 +369,8 @@ class EE_API TextDocument {
 
 	void remove( TextRange range, UndoStackContainer& undoStack, const Time& time );
 
-	TextPosition insert( const TextPosition& position, const String& text,
-						 UndoStackContainer& undoStack, const Time& time );
-
-	TextPosition insert( TextPosition position, const String::StringBaseType& text );
+	TextPosition insert( TextPosition position, const String& text, UndoStackContainer& undoStack,
+						 const Time& time );
 
 	void appendLineIfLastLine( Int64 line );
 

@@ -49,23 +49,19 @@ Uint32 UITab::onDrag( const Vector2f& pos, const Uint32&, const Sizef& dragDiff 
 	if ( !tabW )
 		return 0;
 	Vector2f newPos( mPosition - dragDiff );
+	if ( mFlags & UI_DRAG_VERTICAL )
+		newPos = tabW->convertToNodeSpace( newPos );
 	Uint32 index = tabW->getTabIndex( this );
 	if ( index > 0 ) {
 		UITab* tab = tabW->getTab( index - 1 );
-		if ( tab ) {
-			if ( newPos.x < tab->getPixelsPosition().x + tab->getPixelsSize().getWidth() * 0.5f ) {
-				tabW->swapTabs( this, tab );
-			}
-		}
+		if ( tab && newPos.x < tab->getPixelsPosition().x + tab->getPixelsSize().getWidth() * 0.5f )
+			tabW->swapTabs( this, tab );
 	}
 	if ( index + 1 < tabW->getTabCount() ) {
 		UITab* tab = tabW->getTab( index + 1 );
-		if ( tab ) {
-			if ( newPos.x + mSize.getWidth() >
-				 tab->getPixelsPosition().x + tab->getPixelsSize().getWidth() * 0.5f ) {
-				tabW->swapTabs( tab, this );
-			}
-		}
+		if ( tab && newPos.x + mSize.getWidth() >
+						tab->getPixelsPosition().x + tab->getPixelsSize().getWidth() * 0.5f )
+			tabW->swapTabs( tab, this );
 	}
 	if ( tabW->getAllowDragAndDropTabs() && !( mFlags & UI_DRAG_VERTICAL ) ) {
 		mDragTotalDiff += ( Float )( mDragPoint.y - pos.y );

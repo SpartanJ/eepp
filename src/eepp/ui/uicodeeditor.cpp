@@ -609,12 +609,11 @@ Uint32 UICodeEditor::onTextInput( const TextInputEvent& event ) {
 		return 1;
 	Input* input = getUISceneNode()->getWindow()->getInput();
 
-	if ( !input->isControlPressed() && !( input->isAltPressed() && input->isShiftPressed() ) ) {
-		if ( input->isAltPressed() && !event.getText().empty() && event.getText()[0] == '\t' )
-			return 1;
+	if ( ( input->isLeftAltPressed() && !event.getText().empty() && event.getText()[0] == '\t' ) ||
+		 ( input->isLeftAltPressed() && input->isShiftPressed() ) || input->isControlPressed() )
+		return 1;
 
-		mDoc->textInput( event.getText() );
-	}
+	mDoc->textInput( event.getText() );
 	return 1;
 }
 

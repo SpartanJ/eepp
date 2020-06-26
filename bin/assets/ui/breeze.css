@@ -607,7 +607,7 @@ Menu::CheckBox,
 Menu::Separator,
 Menu::SubMenu,
 Menu::RadioButton {
-	padding-left: 4dp;
+	padding-left: 6dp;
 	padding-top: 2dp;
 	padding-bottom: 2dp;
 	background-color: transparent;
@@ -631,7 +631,7 @@ Menu::RadioButton::text {
 Menu::Item::shortcut,
 Menu::CheckBox::shortcut,
 Menu::RadioButton::shortcut {
-	padding-left: 8dp;
+	padding-left: 48dp;
 	padding-right: 8dp;
 	color: var(--menu-font);
 }

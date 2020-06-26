@@ -95,7 +95,7 @@ class EE_API String {
 	static bool isHexNotation( const std::string& value, const std::string& withPrefix = "" );
 
 	/** Split a String and hold it on a vector */
-	static std::vector<String> split( const String& str, const Uint32& delim = '\n',
+	static std::vector<String> split( const String& str, const StringBaseType& delim = '\n',
 									  const bool& pushEmptyString = false );
 
 	/** Split a string and hold it on a vector */
@@ -760,6 +760,9 @@ class EE_API String {
 	String& toUpper();
 
 	StringBaseType lastChar() const;
+
+	std::vector<String> split( const StringBaseType& delim = '\n',
+							   const bool& pushEmptyString = false ) const;
 
   private:
 	friend EE_API bool operator==( const String& left, const String& right );

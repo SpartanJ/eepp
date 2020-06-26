@@ -247,11 +247,12 @@ void App::loadConfig() {
 	mRecentFiles = String::split( recent, ';' );
 	mInitColorScheme = mConfig.editor.colorScheme =
 		mIni.getValue( "editor", "colorscheme", "lite" );
-	mConfig.editor.fontSize = mIni.getValueF( "editor", "font_size", 11 );
+	mConfig.editor.fontSize =
+		mIni.getValue( "editor", "font_size", mDisplayDPI > 105 ? "11dp" : "14dp" );
 	mConfig.window.size.setWidth(
-		mIniState.getValueI( "window", "width", PixelDensity::dpToPxI( 1280 ) ) );
+		mIniState.getValueI( "window", "width", mDisplayDPI > 105 ? 1920 : 1280 ) );
 	mConfig.window.size.setHeight(
-		mIniState.getValueI( "window", "height", PixelDensity::dpToPxI( 720 ) ) );
+		mIniState.getValueI( "window", "height", mDisplayDPI > 105 ? 1080 : 720 ) );
 	mConfig.window.maximized = mIniState.getValueB( "window", "maximized", false );
 	mConfig.window.pixelDensity = mIniState.getValueF( "window", "pixeldensity" );
 	mConfig.editor.showLineNumbers = mIni.getValueB( "editor", "show_line_numbers", true );
@@ -261,7 +262,7 @@ void App::loadConfig() {
 	mConfig.editor.highlightCurrentLine =
 		mIni.getValueB( "editor", "highlight_current_line", true );
 	mConfig.editor.horizontalScrollbar = mIni.getValueB( "editor", "horizontal_scrollbar", false );
-	mConfig.ui.fontSize = mIni.getValueF( "ui", "font_size", 11 );
+	mConfig.ui.fontSize = mIni.getValue( "ui", "font_size", mDisplayDPI > 105 ? "11dp" : "14dp" );
 	mConfig.editor.trimTrailingWhitespaces =
 		mIni.getValueB( "editor", "trim_trailing_whitespaces", false );
 	mConfig.editor.forceNewLineAtEndOfFile =
@@ -295,8 +296,8 @@ void App::saveConfig() {
 					mConfig.editor.highlightMatchingBracket );
 	mIni.setValueB( "editor", "highlight_current_line", mConfig.editor.highlightCurrentLine );
 	mIni.setValueB( "editor", "horizontal_scrollbar", mConfig.editor.horizontalScrollbar );
-	mIni.setValueF( "editor", "font_size", mConfig.editor.fontSize );
-	mIni.setValueF( "ui", "font_size", mConfig.ui.fontSize );
+	mIni.setValue( "editor", "font_size", mConfig.editor.fontSize.toString() );
+	mIni.setValue( "ui", "font_size", mConfig.ui.fontSize.toString() );
 	mIni.setValueB( "editor", "trim_trailing_whitespaces", mConfig.editor.trimTrailingWhitespaces );
 	mIni.setValueB( "editor", "force_new_line_at_end_of_file",
 					mConfig.editor.forceNewLineAtEndOfFile );
@@ -616,18 +617,13 @@ UIMenu* App::createViewMenu() {
 			UIMessageBox* msgBox =
 				UIMessageBox::New( UIMessageBox::INPUT, "Set the editor font size:" );
 			msgBox->setTitle( mWindowTitle );
-			msgBox->getTextInput()->setAllowOnlyNumbers( true, true );
-			msgBox->getTextInput()->setText( String::format(
-				mConfig.editor.fontSize == (int)mConfig.editor.fontSize ? "%2.f" : "%2.1f",
-				mConfig.editor.fontSize ) );
+			msgBox->getTextInput()->setText( mConfig.editor.fontSize.toString() );
 			msgBox->show();
 			msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox]( const Event* ) {
-				Float val;
-				if ( String::fromString( val, msgBox->getTextInput()->getText() ) ) {
-					mConfig.editor.fontSize = val;
-					mEditorSplitter->forEachEditor(
-						[val]( UICodeEditor* editor ) { editor->setFontSize( val ); } );
-				}
+				mConfig.editor.fontSize = StyleSheetLength( msgBox->getTextInput()->getText() );
+				mEditorSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
+					editor->setFontSize( mConfig.editor.fontSize.asDp( 0, Sizef(), mDisplayDPI ) );
+				} );
 			} );
 			msgBox->addEventListener( Event::OnClose, [&]( const Event* ) {
 				if ( mEditorSplitter->getCurEditor() )
@@ -637,17 +633,11 @@ UIMenu* App::createViewMenu() {
 			UIMessageBox* msgBox = UIMessageBox::New( UIMessageBox::INPUT,
 													  "Set the UI font size (requires restart):" );
 			msgBox->setTitle( mWindowTitle );
-			msgBox->getTextInput()->setAllowOnlyNumbers( true, true );
-			msgBox->getTextInput()->setText(
-				String::format( mConfig.ui.fontSize == (int)mConfig.ui.fontSize ? "%2.f" : "%2.1f",
-								mConfig.ui.fontSize ) );
+			msgBox->getTextInput()->setText( mConfig.ui.fontSize.toString() );
 			msgBox->show();
 			msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox]( const Event* ) {
-				Float val;
-				if ( String::fromString( val, msgBox->getTextInput()->getText() ) ) {
-					mConfig.ui.fontSize = val;
-					msgBox->closeWindow();
-				}
+				mConfig.ui.fontSize = StyleSheetLength( msgBox->getTextInput()->getText() );
+				msgBox->closeWindow();
 			} );
 			msgBox->addEventListener( Event::OnClose, [&]( const Event* ) {
 				if ( mEditorSplitter->getCurEditor() )
@@ -1150,10 +1140,12 @@ void App::updateEditorState() {
 }
 
 void App::init( const std::string& file, const Float& pidelDensity ) {
-	loadConfig();
-
 	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
 	Display* currentDisplay = displayManager->getDisplayIndex( 0 );
+	mDisplayDPI = currentDisplay->getDPI();
+
+	loadConfig();
+
 	mConfig.window.pixelDensity =
 		pidelDensity > 0 ? pidelDensity
 						 : ( mConfig.window.pixelDensity > 0 ? mConfig.window.pixelDensity
@@ -1208,14 +1200,14 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 
 		UITheme* theme =
 			UITheme::load( "uitheme", "uitheme", "", font, resPath + "assets/ui/breeze.css" );
-		theme->setDefaultFontSize( mConfig.ui.fontSize );
+		theme->setDefaultFontSize( mConfig.ui.fontSize.asDp( 0, Sizef(), mDisplayDPI ) );
 		mUISceneNode->setStyleSheet( theme->getStyleSheet() );
 		mUISceneNode
 			->getUIThemeManager()
 			//->setDefaultEffectsEnabled( true )
 			->setDefaultTheme( theme )
 			->setDefaultFont( font )
-			->setDefaultFontSize( mConfig.ui.fontSize )
+			->setDefaultFontSize( mConfig.ui.fontSize.asDp( 0, Sizef(), mDisplayDPI ) )
 			->add( theme );
 
 		mUISceneNode->getRoot()->addClass( "appbackground" );
@@ -1296,41 +1288,43 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		mUISceneNode->bind( "search_bar", mSearchBarLayout );
 		mSearchBarLayout->setVisible( false )->setEnabled( false );
 		UIIconTheme* iconTheme = UIIconTheme::New( "remixicon" );
+		Float menuIconSize = mConfig.ui.fontSize.asPixels( 0, Sizef(), mDisplayDPI );
+		Float buttonIconSize =
+			StyleSheetLength::fromString( "16dp" ).asPixels( 0, Sizef(), mDisplayDPI );
 		auto addIcon = [iconTheme, iconFont]( const std::string& name, const Uint32& codePoint,
 											  const Uint32& size ) {
-			iconTheme->add( name,
-							iconFont->getGlyphDrawable( codePoint, PixelDensity::dpToPx( size ) ) );
+			iconTheme->add( name, iconFont->getGlyphDrawable( codePoint, size ) );
 		};
-		addIcon( "go-up", 0xea78, 16 );
-		addIcon( "ok", 0xeb7a, 16 );
-		addIcon( "cancel", 0xeb98, 16 );
-		addIcon( "document-new", 0xecc3, 12 );
-		addIcon( "document-open", 0xed70, 12 );
-		addIcon( "document-save", 0xf0b3, 12 );
-		addIcon( "document-save-as", 0xf0b3, 12 );
-		addIcon( "document-close", 0xeb99, 12 );
-		addIcon( "quit", 0xeb97, 12 );
-		addIcon( "undo", 0xea58, 12 );
-		addIcon( "redo", 0xea5a, 12 );
-		addIcon( "redo", 0xea5a, 12 );
-		addIcon( "cut", 0xf0c1, 12 );
-		addIcon( "copy", 0xecd5, 12 );
-		addIcon( "paste", 0xeb91, 12 );
-		addIcon( "split-horizontal", 0xf17a, 12 );
-		addIcon( "split-vertical", 0xf17b, 12 );
-		addIcon( "find-replace", 0xed2b, 12 );
-		addIcon( "folder", 0xed54, 12 );
-		addIcon( "folder-add", 0xed5a, 12 );
-		addIcon( "file", 0xecc3, 12 );
-		addIcon( "file-code", 0xecd1, 12 );
-		addIcon( "file-edit", 0xecdb, 12 );
-		addIcon( "font-size", 0xed8d, 12 );
-		addIcon( "color-picker", 0xf13d, 16 );
-		addIcon( "zoom-in", 0xf2db, 12 );
-		addIcon( "zoom-out", 0xf2dd, 12 );
-		addIcon( "zoom-reset", 0xeb47, 12 );
-		addIcon( "fullscreen", 0xed9c, 12 );
-		addIcon( "keybindings", 0xee75, 12 );
+		addIcon( "document-new", 0xecc3, menuIconSize );
+		addIcon( "document-open", 0xed70, menuIconSize );
+		addIcon( "document-save", 0xf0b3, menuIconSize );
+		addIcon( "document-save-as", 0xf0b3, menuIconSize );
+		addIcon( "document-close", 0xeb99, menuIconSize );
+		addIcon( "quit", 0xeb97, menuIconSize );
+		addIcon( "undo", 0xea58, menuIconSize );
+		addIcon( "redo", 0xea5a, menuIconSize );
+		addIcon( "redo", 0xea5a, menuIconSize );
+		addIcon( "cut", 0xf0c1, menuIconSize );
+		addIcon( "copy", 0xecd5, menuIconSize );
+		addIcon( "paste", 0xeb91, menuIconSize );
+		addIcon( "split-horizontal", 0xf17a, menuIconSize );
+		addIcon( "split-vertical", 0xf17b, menuIconSize );
+		addIcon( "find-replace", 0xed2b, menuIconSize );
+		addIcon( "folder", 0xed54, menuIconSize );
+		addIcon( "folder-add", 0xed5a, menuIconSize );
+		addIcon( "file", 0xecc3, menuIconSize );
+		addIcon( "file-code", 0xecd1, menuIconSize );
+		addIcon( "file-edit", 0xecdb, menuIconSize );
+		addIcon( "font-size", 0xed8d, menuIconSize );
+		addIcon( "zoom-in", 0xf2db, menuIconSize );
+		addIcon( "zoom-out", 0xf2dd, menuIconSize );
+		addIcon( "zoom-reset", 0xeb47, menuIconSize );
+		addIcon( "fullscreen", 0xed9c, menuIconSize );
+		addIcon( "keybindings", 0xee75, menuIconSize );
+		addIcon( "go-up", 0xea78, buttonIconSize );
+		addIcon( "ok", 0xeb7a, buttonIconSize );
+		addIcon( "cancel", 0xeb98, buttonIconSize );
+		addIcon( "color-picker", 0xf13d, buttonIconSize );
 
 		mUISceneNode->getUIIconThemeManager()->setCurrentTheme( iconTheme );
 

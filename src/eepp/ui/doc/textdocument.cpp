@@ -431,14 +431,32 @@ TextPosition TextDocument::insert( const TextPosition& position, const String& t
 	return insert( position, text, mUndoStack.getUndoStackContainer(), mTimer.getElapsedTime() );
 }
 
-TextPosition TextDocument::insert( const TextPosition& position, const String& text,
+TextPosition TextDocument::insert( TextPosition position, const String& text,
 								   UndoStackContainer& undoStack, const Time& time ) {
-	TextPosition cursor = position;
+	if ( text.empty() )
+		return position;
+
+	position = sanitizePosition( position );
 	size_t lineCount = mLines.size();
 
-	for ( size_t i = 0; i < text.length(); ++i ) {
-		cursor = insert( cursor, text[i] );
+	String before = mLines[position.line()].substr( 0, position.column() );
+	String after = mLines[position.line()].substr( position.column() );
+	std::vector<String> lines = text.split( '\n', true );
+	Int64 linesAdd = eemax<Int64>( 0, static_cast<Int64>( lines.size() ) - 1 );
+	for ( auto i = 0; i < linesAdd; i++ )
+		lines[i] = lines[i] + "\n";
+	lines[0] = before + lines[0];
+	lines[lines.size() - 1] = lines[lines.size() - 1] + after;
+
+	mLines[position.line()] = TextDocumentLine( lines[0] );
+	notifyLineChanged( position.line() );
+
+	for ( Int64 i = 1; i < (Int64)lines.size(); i++ ) {
+		mLines.insert( mLines.begin() + position.line() + i, TextDocumentLine( lines[i] ) );
+		notifyLineChanged( position.line() + i );
 	}
+
+	TextPosition cursor = positionOffset( position, text.size() );
 
 	mUndoStack.pushSelection( undoStack, getSelection(), time );
 	mUndoStack.pushRemove( undoStack, {position, cursor}, time );
@@ -450,44 +468,6 @@ TextPosition TextDocument::insert( const TextPosition& position, const String& t
 	}
 
 	return cursor;
-}
-
-TextPosition TextDocument::insert( TextPosition position, const String::StringBaseType& ch ) {
-	position = sanitizePosition( position );
-	bool atHead = position.column() == 0;
-	bool atTail = position.column() == (Int64)line( position.line() ).length() - 1;
-	if ( ch == '\n' ) {
-		if ( atTail || atHead ) {
-			size_t row = position.line();
-			String line_content;
-			for ( size_t i = position.column(); i < line( row ).length(); i++ )
-				line_content.append( line( row )[i] );
-			mLines.insert( mLines.begin() + position.line() + ( atTail ? 1 : 0 ), String( "\n" ) );
-			notifyLineChanged( position.line() );
-			return atTail
-					   ? TextPosition( position.line() + 1, line( position.line() + 1 ).length() )
-					   : TextPosition( position.line() + 1, 0 );
-		}
-		TextDocumentLine newLine( line( position.line() )
-									  .substr( position.column(), line( position.line() ).length() -
-																	  position.column() ) );
-		TextDocumentLine& oldLine = line( position.line() );
-		oldLine.setText( line( position.line() ).substr( 0, position.column() ) );
-		// TODO: Investigate why this is needed when undo is used.
-		// This fixes the case when a line ends up without an \n at the end of it.
-		if ( oldLine.empty() || oldLine[oldLine.size() - 1] != '\n' ) {
-			oldLine.append( '\n' );
-		}
-		if ( newLine.empty() || newLine[newLine.size() - 1] != '\n' ) {
-			newLine.append( '\n' );
-		}
-		mLines.insert( mLines.begin() + position.line() + 1, std::move( newLine ) );
-		notifyLineChanged( position.line() );
-		return {position.line() + 1, 0};
-	}
-	line( position.line() ).insertChar( position.column(), ch );
-	notifyLineChanged( position.line() );
-	return {position.line(), position.column() + 1};
 }
 
 void TextDocument::remove( TextPosition position ) {
@@ -577,7 +557,7 @@ TextPosition TextDocument::positionOffset( TextPosition position, int columnOffs
 	}
 	while ( position.line() < (Int64)mLines.size() - 1 &&
 			position.column() > (Int64)eemax<Int64>( 0, mLines[position.line()].size() - 1 ) ) {
-		position.setColumn( position.column() - mLines[position.line()].size() - 1 );
+		position.setColumn( position.column() - mLines[position.line()].size() );
 		position.setLine( position.line() + 1 );
 	}
 	return sanitizePosition( position );

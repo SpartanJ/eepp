@@ -52,7 +52,7 @@ bool String::isHexNotation( const std::string& value, const std::string& withPre
 		   std::string::npos;
 }
 
-std::vector<String> String::split( const String& str, const Uint32& delim,
+std::vector<String> String::split( const String& str, const StringBaseType& delim,
 								   const bool& pushEmptyString ) {
 	std::vector<String> cont;
 	std::size_t current, previous = 0;
@@ -262,6 +262,11 @@ String& String::toUpper() {
 String::StringBaseType String::lastChar() const {
 	return mString.empty() ? std::numeric_limits<StringBaseType>::max()
 						   : mString[mString.size() - 1];
+}
+
+std::vector<String> String::split( const StringBaseType& delim,
+								   const bool& pushEmptyString ) const {
+	return String::split( *this, delim, pushEmptyString );
 }
 
 std::vector<Uint8> String::stringToUint8( const std::string& str ) {
