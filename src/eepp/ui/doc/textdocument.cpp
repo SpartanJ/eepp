@@ -4,7 +4,7 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/iostreammemory.hpp>
-#include <eepp/system/luapatternmatcher.hpp>
+#include <eepp/system/luapattern.hpp>
 #include <eepp/system/packmanager.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
@@ -155,13 +155,13 @@ void TextDocument::guessIndentType() {
 	for ( size_t i = 0; i < linesCount; i++ ) {
 		const String& text = mLines[i].getText();
 		std::string match =
-			LuaPatternMatcher::match( text.size() > 128 ? text.substr( 0, 12 ) : text, "^  +" );
+			LuaPattern::match( text.size() > 128 ? text.substr( 0, 12 ) : text, "^  +" );
 		if ( !match.empty() ) {
 			guessSpaces++;
 			guessWidth[match.size()]++;
 			guessCoundown--;
 		} else {
-			match = LuaPatternMatcher::match( mLines[i].getText(), "^\t+" );
+			match = LuaPattern::match( mLines[i].getText(), "^\t+" );
 			if ( !match.empty() ) {
 				guessTabs++;
 				guessCoundown--;
@@ -275,6 +275,8 @@ bool TextDocument::save( const std::string& path ) {
 		IOStreamFile file( path, "wb" );
 		mFilePath = path;
 		if ( save( file ) ) {
+			file.close();
+			notifyDocumentSaved();
 			return true;
 		} else {
 			mFilePath.clear();
@@ -1072,10 +1074,12 @@ void TextDocument::setIndentType( const IndentType& indentType ) {
 
 void TextDocument::undo() {
 	mUndoStack.undo();
+	notifyUndoRedo( UndoRedo::Undo );
 }
 
 void TextDocument::redo() {
 	mUndoStack.redo();
+	notifyUndoRedo( UndoRedo::Redo );
 }
 
 const SyntaxDefinition& TextDocument::getSyntaxDefinition() const {
@@ -1329,6 +1333,12 @@ void TextDocument::notifySelectionChanged() {
 	}
 }
 
+void TextDocument::notifyDocumentSaved() {
+	for ( auto& client : mClients ) {
+		client->onDocumentSaved();
+	}
+}
+
 void TextDocument::notifyLineCountChanged( const size_t& lastCount, const size_t& newCount ) {
 	for ( auto& client : mClients ) {
 		client->onDocumentLineCountChange( lastCount, newCount );
@@ -1338,6 +1348,12 @@ void TextDocument::notifyLineCountChanged( const size_t& lastCount, const size_t
 void TextDocument::notifyLineChanged( const Int64& lineIndex ) {
 	for ( auto& client : mClients ) {
 		client->onDocumentLineChanged( lineIndex );
+	}
+}
+
+void TextDocument::notifyUndoRedo( const TextDocument::UndoRedo& eventType ) {
+	for ( auto& client : mClients ) {
+		client->onDocumentUndoRedo( eventType );
 	}
 }
 

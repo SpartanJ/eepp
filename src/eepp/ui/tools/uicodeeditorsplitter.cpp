@@ -7,6 +7,54 @@ using namespace EE::System;
 
 namespace EE { namespace UI { namespace Tools {
 
+const std::map<KeyBindings::Shortcut, std::string> UICodeEditorSplitter::getDefaultKeybindings() {
+	auto keybindings = UICodeEditor::getDefaultKeybindings();
+	auto localKeybindings = getLocalDefaultKeybindings();
+	keybindings.insert( localKeybindings.begin(), localKeybindings.end() );
+	return keybindings;
+}
+
+const std::map<KeyBindings::Shortcut, std::string>
+UICodeEditorSplitter::getLocalDefaultKeybindings() {
+	return {
+		{{KEY_S, KEYMOD_CTRL}, "save-doc"},
+		{{KEY_L, KEYMOD_CTRL}, "lock-toggle"},
+		{{KEY_T, KEYMOD_CTRL}, "create-new"},
+		{{KEY_W, KEYMOD_CTRL}, "close-doc"},
+		{{KEY_TAB, KEYMOD_CTRL}, "next-doc"},
+		{{KEY_TAB, KEYMOD_CTRL | KEYMOD_SHIFT}, "previous-doc"},
+		{{KEY_J, KEYMOD_LALT | KEYMOD_SHIFT}, "split-left"},
+		{{KEY_L, KEYMOD_LALT | KEYMOD_SHIFT}, "split-right"},
+		{{KEY_I, KEYMOD_LALT | KEYMOD_SHIFT}, "split-top"},
+		{{KEY_K, KEYMOD_LALT | KEYMOD_SHIFT}, "split-bottom"},
+		{{KEY_S, KEYMOD_LALT | KEYMOD_SHIFT}, "split-swap"},
+		{{KEY_J, KEYMOD_CTRL | KEYMOD_LALT}, "switch-to-previous-split"},
+		{{KEY_L, KEYMOD_CTRL | KEYMOD_LALT}, "switch-to-next-split"},
+		{{KEY_N, KEYMOD_CTRL | KEYMOD_LALT}, "switch-to-previous-colorscheme"},
+		{{KEY_M, KEYMOD_CTRL | KEYMOD_LALT}, "switch-to-next-colorscheme"},
+		{{KEY_1, KEYMOD_CTRL}, "switch-to-tab-1"},
+		{{KEY_2, KEYMOD_CTRL}, "switch-to-tab-2"},
+		{{KEY_3, KEYMOD_CTRL}, "switch-to-tab-3"},
+		{{KEY_4, KEYMOD_CTRL}, "switch-to-tab-4"},
+		{{KEY_5, KEYMOD_CTRL}, "switch-to-tab-5"},
+		{{KEY_6, KEYMOD_CTRL}, "switch-to-tab-6"},
+		{{KEY_7, KEYMOD_CTRL}, "switch-to-tab-7"},
+		{{KEY_8, KEYMOD_CTRL}, "switch-to-tab-8"},
+		{{KEY_9, KEYMOD_CTRL}, "switch-to-tab-9"},
+		{{KEY_0, KEYMOD_CTRL}, "switch-to-last-tab"},
+		{{KEY_1, KEYMOD_LALT}, "switch-to-tab-1"},
+		{{KEY_2, KEYMOD_LALT}, "switch-to-tab-2"},
+		{{KEY_3, KEYMOD_LALT}, "switch-to-tab-3"},
+		{{KEY_4, KEYMOD_LALT}, "switch-to-tab-4"},
+		{{KEY_5, KEYMOD_LALT}, "switch-to-tab-5"},
+		{{KEY_6, KEYMOD_LALT}, "switch-to-tab-6"},
+		{{KEY_7, KEYMOD_LALT}, "switch-to-tab-7"},
+		{{KEY_8, KEYMOD_LALT}, "switch-to-tab-8"},
+		{{KEY_9, KEYMOD_LALT}, "switch-to-tab-9"},
+		{{KEY_0, KEYMOD_LALT}, "switch-to-last-tab"},
+	};
+}
+
 UICodeEditorSplitter* UICodeEditorSplitter::New( UICodeEditorSplitter::Client* client,
 												 UISceneNode* sceneNode,
 												 const std::vector<SyntaxColorScheme>& colorSchemes,
@@ -215,27 +263,12 @@ UICodeEditor* UICodeEditorSplitter::createCodeEditor() {
 			event->getNode()->asType<UICodeEditor>(),
 			event->getNode()->asType<UICodeEditor>()->getDocument() );
 	} );
-	codeEditor->addKeyBindingString( "ctrl+s", "save-doc", false );
-	codeEditor->addKeyBindingString( "ctrl+l", "lock-toggle", true );
-	codeEditor->addKeyBindingString( "ctrl+t", "create-new", true );
-	codeEditor->addKeyBindingString( "ctrl+w", "close-doc", true );
-	codeEditor->addKeyBindingString( "ctrl+tab", "next-doc", true );
-	codeEditor->addKeyBindingString( "ctrl+shift+tab", "previous-doc", true );
-	codeEditor->addKeyBindingString( "alt+shift+j", "split-left", true );
-	codeEditor->addKeyBindingString( "alt+shift+l", "split-right", true );
-	codeEditor->addKeyBindingString( "alt+shift+i", "split-top", true );
-	codeEditor->addKeyBindingString( "alt+shift+k", "split-bottom", true );
-	codeEditor->addKeyBindingString( "alt+shift+s", "split-swap", true );
-	codeEditor->addKeyBindingString( "ctrl+alt+j", "switch-to-previous-split", true );
-	codeEditor->addKeyBindingString( "ctrl+alt+l", "switch-to-next-split", true );
-	codeEditor->addKeyBindingString( "ctrl+alt+n", "switch-to-previous-colorscheme", true );
-	codeEditor->addKeyBindingString( "ctrl+alt+m", "switch-to-next-colorscheme", true );
-	for ( int i = 1; i <= 10; i++ ) {
-		codeEditor->addKeyBindingString( String::format( "ctrl+%d", i ),
-										 String::format( "switch-to-tab-%d", i ), true );
-		codeEditor->addKeyBindingString( String::format( "alt+%d", i ),
-										 String::format( "switch-to-tab-%d", i ), true );
-	}
+
+	codeEditor->addKeyBinds( getLocalDefaultKeybindings() );
+	codeEditor->addUnlockedCommands(
+		{"lock-toggle", "create-new", "close-doc", "next-doc", "previous-doc", "split-left",
+		 "split-right", "split-top", "split-bottom", "split-swap", "switch-to-previous-split",
+		 "switch-to-next-split", "switch-to-previous-colorscheme", "switch-to-next-colorscheme"} );
 
 	if ( nullptr == mCurEditor )
 		setCurrentEditor( codeEditor );

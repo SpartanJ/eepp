@@ -1,4 +1,5 @@
 #include "codeeditor.hpp"
+#include <algorithm>
 #include <args/args.hxx>
 
 App* appInstance = nullptr;
@@ -239,6 +240,7 @@ void App::loadConfig() {
 	if ( !FileSystem::fileExists( mConfigPath ) )
 		FileSystem::makeDir( mConfigPath );
 	FileSystem::dirPathAddSlashAtEnd( mConfigPath );
+	mKeybindingsPath = mConfigPath + "keybindings.cfg";
 	mIni.loadFromFile( mConfigPath + "config.cfg" );
 	mIniState.loadFromFile( mConfigPath + "state.cfg" );
 	std::string recent = mIniState.getValue( "files", "recentfiles", "" );
@@ -308,6 +310,28 @@ void App::saveConfig() {
 	mIni.setValueB( "editor", "highlight_selection_match", mConfig.editor.highlightSelectionMatch );
 	mIni.writeFile();
 	mIniState.writeFile();
+}
+
+static std::string keybindFormat( std::string str ) {
+	if ( !str.empty() ) {
+		str[0] = std::toupper( str[0] );
+		size_t found = str.find_first_of( '+' );
+		while ( found != std::string::npos ) {
+			if ( found + 1 < str.size() ) {
+				str[found + 1] = std::toupper( str[found + 1] );
+			}
+			found = str.find_first_of( '+', found + 1 );
+		}
+		return str;
+	}
+	return "";
+}
+
+std::string App::getKeybind( const std::string& command ) {
+	auto it = mKeybindingsInvert.find( command );
+	if ( it != mKeybindingsInvert.end() )
+		return keybindFormat( it->second );
+	return "";
 }
 
 void App::initSearchBar() {
@@ -543,17 +567,17 @@ UIMenu* App::createViewMenu() {
 	mViewMenu->add( "Line Breaking Column" );
 	mViewMenu->addSeparator();
 	mViewMenu->addCheckBox( "Full Screen Mode" )
-		->setShortcutText( "Alt+Return" )
+		->setShortcutText( getKeybind( "fullscreen-toggle" ) )
 		->setId( "fullscreen-mode" );
 	mViewMenu->addSeparator();
-	mViewMenu->add( "Split Left", findIcon( "split-horizontal" ), "Ctrl+Shift+J" );
-	mViewMenu->add( "Split Right", findIcon( "split-horizontal" ), "Ctrl+Shift+L" );
-	mViewMenu->add( "Split Top", findIcon( "split-vertical" ), "Ctrl+Shift+I" );
-	mViewMenu->add( "Split Bottom", findIcon( "split-vertical" ), "Ctrl+Shift+K" );
+	mViewMenu->add( "Split Left", findIcon( "split-horizontal" ), getKeybind( "split-left" ) );
+	mViewMenu->add( "Split Right", findIcon( "split-horizontal" ), getKeybind( "split-right" ) );
+	mViewMenu->add( "Split Top", findIcon( "split-vertical" ), getKeybind( "split-top" ) );
+	mViewMenu->add( "Split Bottom", findIcon( "split-vertical" ), getKeybind( "split-bottom" ) );
 	mViewMenu->addSeparator();
-	mViewMenu->add( "Zoom In", findIcon( "zoom-in" ), "Ctrl++" );
-	mViewMenu->add( "Zoom Out", findIcon( "zoom-out" ), "Ctrl+-" );
-	mViewMenu->add( "Zoom Reset", findIcon( "zoom-reset" ), "Ctrl+0" );
+	mViewMenu->add( "Zoom In", findIcon( "zoom-in" ), getKeybind( "font-size-grow" ) );
+	mViewMenu->add( "Zoom Out", findIcon( "zoom-out" ), getKeybind( "font-size-shrink" ) );
+	mViewMenu->add( "Zoom Reset", findIcon( "zoom-reset" ), getKeybind( "font-size-reset" ) );
 	mViewMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
@@ -675,23 +699,29 @@ Drawable* App::findIcon( const std::string& name ) {
 
 UIMenu* App::createEditMenu() {
 	UIPopUpMenu* menu = UIPopUpMenu::New();
-	menu->add( "Undo", findIcon( "undo" ), "Ctrl+Z" );
-	menu->add( "Redo", findIcon( "redo" ), "Ctrl+Shift+Z" );
+	menu->add( "Undo", findIcon( "undo" ), getKeybind( "undo" ) );
+	menu->add( "Redo", findIcon( "redo" ), getKeybind( "redo" ) );
 	menu->addSeparator();
-	menu->add( "Cut", findIcon( "cut" ), "Ctrl+X" );
-	menu->add( "Copy", findIcon( "copy" ), "Ctrl+C" );
-	menu->add( "Paste", findIcon( "paste" ), "Ctrl+V" );
+	menu->add( "Cut", findIcon( "cut" ), getKeybind( "cut" ) );
+	menu->add( "Copy", findIcon( "copy" ), getKeybind( "copy" ) );
+	menu->add( "Paste", findIcon( "paste" ), getKeybind( "paste" ) );
 	menu->addSeparator();
-	menu->add( "Select All", findIcon( "select-all" ), "Ctrl+A" );
+	menu->add( "Select All", findIcon( "select-all" ), getKeybind( "select-all" ) );
 	menu->addSeparator();
-	menu->add( "Find/Replace", findIcon( "find-replace" ), "Ctrl+F" );
+	menu->add( "Find/Replace", findIcon( "find-replace" ), getKeybind( "find-replace" ) );
+	menu->addSeparator();
+	menu->add( "Key Bindings", findIcon( "keybindings" ), getKeybind( "keybindings" ) );
 	menu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
 		String text = String( event->getNode()->asType<UIMenuItem>()->getText() ).toLower();
-		String::replaceAll( text, " ", "-" );
-		String::replaceAll( text, "/", "-" );
-		runCommand( text );
+		if ( "key bindings" == text ) {
+			runCommand( "keybindings" );
+		} else {
+			String::replaceAll( text, " ", "-" );
+			String::replaceAll( text, "/", "-" );
+			runCommand( text );
+		}
 	} );
 	return menu;
 }
@@ -863,6 +893,24 @@ void App::updateDocumentMenu() {
 		->setActive( mEditorSplitter->getCurEditor()->isLocked() );
 }
 
+void App::loadKeybindings() {
+	if ( mKeybindings.empty() ) {
+		IniFile ini( mKeybindingsPath );
+		if ( FileSystem::fileExists( mKeybindingsPath ) ) {
+			mKeybindings = ini.getKeyMap( "keybindings" );
+		} else {
+			KeyBindings bindings( mWindow->getInput() );
+			auto map = getDefaultKeybindings();
+			for ( auto it : map )
+				ini.setValue( "keybindings", bindings.getShortcutString( it.first ), it.second );
+			ini.writeFile();
+			mKeybindings = ini.getKeyMap( "keybindings" );
+		}
+		for ( auto key : mKeybindings )
+			mKeybindingsInvert[key.second] = key.first;
+	}
+}
+
 void App::onDocumentStateChanged( UICodeEditor*, TextDocument& ) {
 	updateEditorState();
 }
@@ -911,15 +959,28 @@ const UICodeEditorSplitter::CodeEditorConfig& App::getCodeEditorConfig() const {
 	return mConfig.editor;
 }
 
+std::map<KeyBindings::Shortcut, std::string> App::getDefaultKeybindings() {
+	auto bindings = UICodeEditorSplitter::getDefaultKeybindings();
+	auto local = getLocalKeybindings();
+	bindings.insert( local.begin(), local.end() );
+	return bindings;
+}
+
+std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
+	return {
+		{{KEY_RETURN, KEYMOD_LALT}, "fullscreen-toggle"},
+		{{KEY_F3, 0}, "repeat-find"},
+		{{KEY_F12, 0}, "console-toggle"},
+		{{KEY_F, KEYMOD_CTRL}, "find-replace"},
+		{{KEY_Q, KEYMOD_CTRL}, "close-app"},
+		{{KEY_O, KEYMOD_CTRL}, "open-file"},
+	};
+}
+
 void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
-	editor->addKeyBindingString( "alt+return", "fullscreen-toggle", true );
-	editor->addKeyBindingString( "alt+keypad enter", "fullscreen-toggle", true );
-	editor->addKeyBindingString( "f2", "open-file", true );
-	editor->addKeyBindingString( "f3", "repeat-find", false );
-	editor->addKeyBindingString( "f12", "console-toggle", true );
-	editor->addKeyBindingString( "ctrl+f", "find-replace", false );
-	editor->addKeyBindingString( "ctrl+q", "close-app", true );
-	editor->addKeyBindingString( "ctrl+o", "open-file", true );
+	editor->addKeyBinds( getLocalKeybindings() );
+	editor->addUnlockedCommands(
+		{"fullscreen-toggle", "open-file", "console-toggle", "close-app"} );
 	doc.setCommand( "save-doc", [&] { saveDoc(); } );
 	doc.setCommand( "save-as-doc", [&] { saveFileDialog(); } );
 	doc.setCommand( "find-replace", [&] { showFindView(); } );
@@ -957,38 +1018,36 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 			updateDocumentMenu();
 		}
 	} );
+	doc.setCommand( "keybindings",
+					[&] { mEditorSplitter->loadFileFromPathInNewTab( mKeybindingsPath ); } );
 
-	if ( mDefKeybindings.empty() ) {
-		std::string bindingsPath = mConfigPath + "keybindings.cfg";
-		IniFile ini( bindingsPath );
-		if ( FileSystem::fileExists( bindingsPath ) ) {
-			mDefKeybindings = ini.getKeyMap( "keybindings" );
-		} else {
-			const ShortcutMap& map = editor->getKeyBindings().getShortcutMap();
-			for ( auto it : map ) {
-				KeyBindings::Shortcut shortcut( it.first );
-				ini.setValue( "keybindings", editor->getKeyBindings().getShortcutString( shortcut ),
-							  it.second );
-			}
-			ini.writeFile();
-			mDefKeybindings = ini.getKeyMap( "keybindings" );
+	editor->addEventListener( Event::OnSave, [&]( const Event* event ) {
+		UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
+		if ( editor->getDocument().getFilePath() == mKeybindingsPath ) {
+			mKeybindings.clear();
+			mKeybindingsInvert.clear();
+			loadKeybindings();
+			mEditorSplitter->forEachEditor( [&]( UICodeEditor* ed ) {
+				ed->getKeyBindings().reset();
+				ed->getKeyBindings().addKeybindsString( mKeybindings );
+			} );
 		}
-	}
+	} );
 
-	if ( !mDefKeybindings.empty() ) {
+	if ( !mKeybindings.empty() ) {
 		editor->getKeyBindings().reset();
-		editor->getKeyBindings().addKeybindsString( mDefKeybindings );
+		editor->getKeyBindings().addKeybindsString( mKeybindings );
 	}
 }
 
 void App::createSettingsMenu() {
 	mSettingsMenu = UIPopUpMenu::New();
-	mSettingsMenu->add( "New", findIcon( "document-new" ), "Ctrl+T" );
-	mSettingsMenu->add( "Open...", findIcon( "document-open" ), "Ctrl+O" );
+	mSettingsMenu->add( "New", findIcon( "document-new" ), getKeybind( "create-new" ) );
+	mSettingsMenu->add( "Open...", findIcon( "document-open" ), getKeybind( "open-file" ) );
 	mSettingsMenu->addSubMenu( "Recent Files", findIcon( "document-recent" ), UIPopUpMenu::New() );
 	mSettingsMenu->addSeparator();
-	mSettingsMenu->add( "Save", findIcon( "document-save" ), "Ctrl+S" );
-	mSettingsMenu->add( "Save as...", findIcon( "document-save-as" ) );
+	mSettingsMenu->add( "Save", findIcon( "document-save" ), getKeybind( "save-doc" ) );
+	mSettingsMenu->add( "Save as...", findIcon( "document-save-as" ), getKeybind( "save-as-doc" ) );
 	mSettingsMenu->addSeparator();
 	mSettingsMenu->addSubMenu( "Filetype", nullptr, createFiletypeMenu() );
 	mSettingsMenu->addSubMenu( "Color Scheme", nullptr, createColorSchemeMenu() );
@@ -996,9 +1055,9 @@ void App::createSettingsMenu() {
 	mSettingsMenu->addSubMenu( "Edit", nullptr, createEditMenu() );
 	mSettingsMenu->addSubMenu( "View", nullptr, createViewMenu() );
 	mSettingsMenu->addSeparator();
-	mSettingsMenu->add( "Close", findIcon( "document-close" ), "Ctrl+W" );
+	mSettingsMenu->add( "Close", findIcon( "document-close" ), getKeybind( "close-doc" ) );
 	mSettingsMenu->addSeparator();
-	mSettingsMenu->add( "Quit", findIcon( "quit" ), "Ctrl+Q" );
+	mSettingsMenu->add( "Quit", findIcon( "quit" ), getKeybind( "close-app" ) );
 	mSettingsButton = mUISceneNode->find<UITextView>( "settings" );
 	mSettingsButton->addEventListener( Event::MouseClick, [&]( const Event* ) {
 		Vector2f pos( mSettingsButton->getPixelsPosition() );
@@ -1113,6 +1172,8 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		ContextSettings( true ) );
 
 	if ( mWindow->isOpen() ) {
+		loadKeybindings();
+
 		PixelDensity::setPixelDensity( mConfig.window.pixelDensity );
 
 		if ( mConfig.window.maximized )
@@ -1269,6 +1330,7 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		addIcon( "zoom-out", 0xf2dd, 12 );
 		addIcon( "zoom-reset", 0xeb47, 12 );
 		addIcon( "fullscreen", 0xed9c, 12 );
+		addIcon( "keybindings", 0xee75, 12 );
 
 		mUISceneNode->getUIIconThemeManager()->setCurrentTheme( iconTheme );
 

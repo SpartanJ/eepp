@@ -28,6 +28,69 @@ UICodeEditor* UICodeEditor::NewOpt( const bool& autoRegisterBaseCommands,
 	return eeNew( UICodeEditor, ( autoRegisterBaseCommands, autoRegisterBaseKeybindings ) );
 }
 
+const std::map<KeyBindings::Shortcut, std::string> UICodeEditor::getDefaultKeybindings() {
+	return {
+		{{KEY_BACKSPACE, KEYMOD_CTRL}, "delete-to-previous-word"},
+		{{KEY_BACKSPACE, KEYMOD_SHIFT}, "delete-to-previous-char"},
+		{{KEY_BACKSPACE, 0}, "delete-to-previous-char"},
+		{{KEY_DELETE, KEYMOD_CTRL}, "delete-to-next-word"},
+		{{KEY_DELETE, 0}, "delete-to-next-char"},
+		{{KEY_KP_ENTER, KEYMOD_CTRL | KEYMOD_SHIFT}, "new-line-above"},
+		{{KEY_RETURN, KEYMOD_CTRL | KEYMOD_SHIFT}, "new-line-above"},
+		{{KEY_KP_ENTER, KEYMOD_CTRL}, "new-line"},
+		{{KEY_RETURN, KEYMOD_CTRL}, "new-line"},
+		{{KEY_KP_ENTER, KEYMOD_SHIFT}, "new-line"},
+		{{KEY_RETURN, KEYMOD_SHIFT}, "new-line"},
+		{{KEY_KP_ENTER, 0}, "new-line"},
+		{{KEY_RETURN, 0}, "new-line"},
+		{{KEY_UP, KEYMOD_CTRL | KEYMOD_SHIFT}, "move-lines-up"},
+		{{KEY_UP, KEYMOD_CTRL}, "move-scroll-up"},
+		{{KEY_UP, KEYMOD_SHIFT}, "select-to-previous-line"},
+		{{KEY_UP, 0}, "move-to-previous-line"},
+		{{KEY_DOWN, KEYMOD_CTRL | KEYMOD_SHIFT}, "move-lines-down"},
+		{{KEY_DOWN, KEYMOD_CTRL}, "move-scroll-down"},
+		{{KEY_DOWN, KEYMOD_SHIFT}, "select-to-next-line"},
+		{{KEY_DOWN, 0}, "move-to-next-line"},
+		{{KEY_LEFT, KEYMOD_CTRL | KEYMOD_SHIFT}, "select-to-previous-word"},
+		{{KEY_LEFT, KEYMOD_CTRL}, "move-to-previous-word"},
+		{{KEY_LEFT, KEYMOD_SHIFT}, "select-to-previous-char"},
+		{{KEY_LEFT, 0}, "move-to-previous-char"},
+		{{KEY_RIGHT, KEYMOD_CTRL | KEYMOD_SHIFT}, "select-to-next-word"},
+		{{KEY_RIGHT, KEYMOD_CTRL}, "move-to-next-word"},
+		{{KEY_RIGHT, KEYMOD_SHIFT}, "select-to-next-char"},
+		{{KEY_RIGHT, 0}, "move-to-next-char"},
+		{{KEY_Z, KEYMOD_CTRL | KEYMOD_SHIFT}, "redo"},
+		{{KEY_HOME, KEYMOD_CTRL | KEYMOD_SHIFT}, "select-to-start-of-doc"},
+		{{KEY_HOME, KEYMOD_SHIFT}, "select-to-start-of-content"},
+		{{KEY_HOME, KEYMOD_CTRL}, "move-to-start-of-doc"},
+		{{KEY_HOME, 0}, "move-to-start-of-content"},
+		{{KEY_END, KEYMOD_CTRL | KEYMOD_SHIFT}, "select-to-end-of-doc"},
+		{{KEY_END, KEYMOD_SHIFT}, "select-to-end-of-line"},
+		{{KEY_END, KEYMOD_CTRL}, "move-to-end-of-doc"},
+		{{KEY_END, 0}, "move-to-end-of-line"},
+		{{KEY_PAGEUP, KEYMOD_CTRL}, "move-to-previous-page"},
+		{{KEY_PAGEUP, KEYMOD_SHIFT}, "select-to-previous-page"},
+		{{KEY_PAGEUP, 0}, "move-to-previous-page"},
+		{{KEY_PAGEDOWN, KEYMOD_CTRL}, "move-to-next-page"},
+		{{KEY_PAGEDOWN, KEYMOD_SHIFT}, "select-to-next-page"},
+		{{KEY_PAGEDOWN, 0}, "move-to-next-page"},
+		{{KEY_Y, KEYMOD_CTRL}, "redo"},
+		{{KEY_Z, KEYMOD_CTRL}, "undo"},
+		{{KEY_TAB, KEYMOD_SHIFT}, "unindent"},
+		{{KEY_TAB, 0}, "indent"},
+		{{KEY_C, KEYMOD_CTRL}, "copy"},
+		{{KEY_X, KEYMOD_CTRL}, "cut"},
+		{{KEY_V, KEYMOD_CTRL}, "paste"},
+		{{KEY_A, KEYMOD_CTRL}, "select-all"},
+		{{KEY_PLUS, KEYMOD_CTRL}, "font-size-grow"},
+		{{KEY_KP_PLUS, KEYMOD_CTRL}, "font-size-grow"},
+		{{KEY_MINUS, KEYMOD_CTRL}, "font-size-shrink"},
+		{{KEY_KP_MINUS, KEYMOD_CTRL}, "font-size-shrink"},
+		{{KEY_0, KEYMOD_CTRL}, "font-size-reset"},
+		{{KEY_KP_DIVIDE, KEYMOD_CTRL}, "toggle-line-comments"},
+	};
+}
+
 UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegisterBaseCommands,
 							const bool& autoRegisterBaseKeybindings ) :
 	UIWidget( elementTag ),
@@ -830,6 +893,14 @@ void UICodeEditor::onDocumentLineChanged( const Int64& lineIndex ) {
 	mHighlighter.invalidate( lineIndex );
 }
 
+void UICodeEditor::onDocumentUndoRedo( const TextDocument::UndoRedo& ) {
+	onDocumentSelectionChange( {} );
+}
+
+void UICodeEditor::onDocumentSaved() {
+	sendCommonEvent( Event::OnSave );
+}
+
 std::pair<int, int> UICodeEditor::getVisibleLineRange() {
 	Float lineHeight = getLineHeight();
 	Float minLine = eemax( 0.f, eefloor( mScroll.y / lineHeight ) );
@@ -1035,6 +1106,10 @@ void UICodeEditor::setLineBreakingColumn( const Uint32& lineBreakingColumn ) {
 
 void UICodeEditor::addUnlockedCommand( const std::string& command ) {
 	mUnlockedCmd.insert( command );
+}
+
+void UICodeEditor::addUnlockedCommands( const std::vector<std::string>& commands ) {
+	mUnlockedCmd.insert( commands.begin(), commands.end() );
 }
 
 UICodeEditor* UICodeEditor::setFontShadowColor( const Color& color ) {
@@ -1671,66 +1746,7 @@ void UICodeEditor::registerCommands() {
 }
 
 void UICodeEditor::registerKeybindings() {
-	mKeyBindings.addKeybinds( {
-		{{KEY_BACKSPACE, KEYMOD_CTRL}, "delete-to-previous-word"},
-		{{KEY_BACKSPACE, KEYMOD_SHIFT}, "delete-to-previous-char"},
-		{{KEY_BACKSPACE, 0}, "delete-to-previous-char"},
-		{{KEY_DELETE, KEYMOD_CTRL}, "delete-to-next-word"},
-		{{KEY_DELETE, 0}, "delete-to-next-char"},
-		{{KEY_KP_ENTER, KEYMOD_CTRL | KEYMOD_SHIFT}, "new-line-above"},
-		{{KEY_RETURN, KEYMOD_CTRL | KEYMOD_SHIFT}, "new-line-above"},
-		{{KEY_KP_ENTER, KEYMOD_CTRL}, "new-line"},
-		{{KEY_RETURN, KEYMOD_CTRL}, "new-line"},
-		{{KEY_KP_ENTER, KEYMOD_SHIFT}, "new-line"},
-		{{KEY_RETURN, KEYMOD_SHIFT}, "new-line"},
-		{{KEY_KP_ENTER, 0}, "new-line"},
-		{{KEY_RETURN, 0}, "new-line"},
-		{{KEY_UP, KEYMOD_CTRL | KEYMOD_SHIFT}, "move-lines-up"},
-		{{KEY_UP, KEYMOD_CTRL}, "move-scroll-up"},
-		{{KEY_UP, KEYMOD_SHIFT}, "select-to-previous-line"},
-		{{KEY_UP, 0}, "move-to-previous-line"},
-		{{KEY_DOWN, KEYMOD_CTRL | KEYMOD_SHIFT}, "move-lines-down"},
-		{{KEY_DOWN, KEYMOD_CTRL}, "move-scroll-down"},
-		{{KEY_DOWN, KEYMOD_SHIFT}, "select-to-next-line"},
-		{{KEY_DOWN, 0}, "move-to-next-line"},
-		{{KEY_LEFT, KEYMOD_CTRL | KEYMOD_SHIFT}, "select-to-previous-word"},
-		{{KEY_LEFT, KEYMOD_CTRL}, "move-to-previous-word"},
-		{{KEY_LEFT, KEYMOD_SHIFT}, "select-to-previous-char"},
-		{{KEY_LEFT, 0}, "move-to-previous-char"},
-		{{KEY_RIGHT, KEYMOD_CTRL | KEYMOD_SHIFT}, "select-to-next-word"},
-		{{KEY_RIGHT, KEYMOD_CTRL}, "move-to-next-word"},
-		{{KEY_RIGHT, KEYMOD_SHIFT}, "select-to-next-char"},
-		{{KEY_RIGHT, 0}, "move-to-next-char"},
-		{{KEY_Z, KEYMOD_CTRL | KEYMOD_SHIFT}, "redo"},
-		{{KEY_HOME, KEYMOD_CTRL | KEYMOD_SHIFT}, "select-to-start-of-doc"},
-		{{KEY_HOME, KEYMOD_SHIFT}, "select-to-start-of-content"},
-		{{KEY_HOME, KEYMOD_CTRL}, "move-to-start-of-doc"},
-		{{KEY_HOME, 0}, "move-to-start-of-content"},
-		{{KEY_END, KEYMOD_CTRL | KEYMOD_SHIFT}, "select-to-end-of-doc"},
-		{{KEY_END, KEYMOD_SHIFT}, "select-to-end-of-line"},
-		{{KEY_END, KEYMOD_CTRL}, "move-to-end-of-doc"},
-		{{KEY_END, 0}, "move-to-end-of-line"},
-		{{KEY_PAGEUP, KEYMOD_CTRL}, "move-to-previous-page"},
-		{{KEY_PAGEUP, KEYMOD_SHIFT}, "select-to-previous-page"},
-		{{KEY_PAGEUP, 0}, "move-to-previous-page"},
-		{{KEY_PAGEDOWN, KEYMOD_CTRL}, "move-to-next-page"},
-		{{KEY_PAGEDOWN, KEYMOD_SHIFT}, "select-to-next-page"},
-		{{KEY_PAGEDOWN, 0}, "move-to-next-page"},
-		{{KEY_Y, KEYMOD_CTRL}, "redo"},
-		{{KEY_Z, KEYMOD_CTRL}, "undo"},
-		{{KEY_TAB, KEYMOD_SHIFT}, "unindent"},
-		{{KEY_TAB, 0}, "indent"},
-		{{KEY_C, KEYMOD_CTRL}, "copy"},
-		{{KEY_X, KEYMOD_CTRL}, "cut"},
-		{{KEY_V, KEYMOD_CTRL}, "paste"},
-		{{KEY_A, KEYMOD_CTRL}, "select-all"},
-		{{KEY_PLUS, KEYMOD_CTRL}, "font-size-grow"},
-		{{KEY_KP_PLUS, KEYMOD_CTRL}, "font-size-grow"},
-		{{KEY_MINUS, KEYMOD_CTRL}, "font-size-shrink"},
-		{{KEY_KP_MINUS, KEYMOD_CTRL}, "font-size-shrink"},
-		{{KEY_0, KEYMOD_CTRL}, "font-size-reset"},
-		{{KEY_KP_DIVIDE, KEYMOD_CTRL}, "toggle-line-comments"},
-	} );
+	mKeyBindings.addKeybinds( getDefaultKeybindings() );
 }
 
 }} // namespace EE::UI

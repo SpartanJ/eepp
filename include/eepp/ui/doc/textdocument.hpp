@@ -24,20 +24,24 @@ class EE_API TextDocument {
   public:
 	typedef std::function<void()> DocumentCommand;
 
+	enum class UndoRedo { Undo, Redo };
+
+	enum class IndentType { IndentSpaces, IndentTabs };
+
+	enum class LineEnding { LF, CRLF };
+
 	class EE_API Client {
 	  public:
 		virtual ~Client();
 		virtual void onDocumentTextChanged() = 0;
+		virtual void onDocumentUndoRedo( const UndoRedo& eventType ) = 0;
 		virtual void onDocumentCursorChange( const TextPosition& ) = 0;
 		virtual void onDocumentSelectionChange( const TextRange& ) = 0;
 		virtual void onDocumentLineCountChange( const size_t& lastCount,
 												const size_t& newCount ) = 0;
 		virtual void onDocumentLineChanged( const Int64& lineIndex ) = 0;
+		virtual void onDocumentSaved() = 0;
 	};
-
-	enum class IndentType { IndentSpaces, IndentTabs };
-
-	enum class LineEnding { LF, CRLF };
 
 	TextDocument();
 
@@ -351,9 +355,13 @@ class EE_API TextDocument {
 
 	void notifySelectionChanged();
 
+	void notifyDocumentSaved();
+
 	void notifyLineCountChanged( const size_t& lastCount, const size_t& newCount );
 
 	void notifyLineChanged( const Int64& lineIndex );
+
+	void notifyUndoRedo( const UndoRedo& eventType );
 
 	void insertAtStartOfSelectedLines( const String& text, bool skipEmpty );
 

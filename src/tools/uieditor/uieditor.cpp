@@ -790,6 +790,7 @@ void mainLoop() {
 		refreshStyleSheet();
 	}
 
+	Time elapsed = SceneManager::instance()->getElapsed();
 	SceneManager::instance()->update();
 
 	if ( appUiSceneNode->invalidated() || uiSceneNode->invalidated() || console->isActive() ||
@@ -798,7 +799,7 @@ void mainLoop() {
 
 		SceneManager::instance()->draw();
 
-		console->draw();
+		console->draw( elapsed );
 
 		window->display();
 	} else {

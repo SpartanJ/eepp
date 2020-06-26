@@ -1,6 +1,6 @@
 #include <cstring>
 #include <eepp/system/lua-str.hpp>
-#include <eepp/system/luapatternmatcher.hpp>
+#include <eepp/system/luapattern.hpp>
 
 namespace EE { namespace System {
 
@@ -13,33 +13,33 @@ static void failHandler( const char* msg ) {
 	throw std::string( msg );
 }
 
-std::string LuaPatternMatcher::match( const std::string& string, const std::string& pattern ) {
-	LuaPatternMatcher matcher( pattern );
+std::string LuaPattern::match( const std::string& string, const std::string& pattern ) {
+	LuaPattern matcher( pattern );
 	int start = 0, end = 0;
 	if ( matcher.find( string, start, end ) )
 		return string.substr( start, end - start );
 	return "";
 }
 
-LuaPatternMatcher::Match LuaPatternMatcher::find( const std::string& string,
+LuaPattern::Match LuaPattern::find( const std::string& string,
 												  const std::string& pattern ) {
-	LuaPatternMatcher matcher( pattern );
+	LuaPattern matcher( pattern );
 	int start = 0, end = 0;
 	if ( matcher.find( string, start, end ) )
 		return {start, end};
 	return {-1, -1};
 }
 
-LuaPatternMatcher::LuaPatternMatcher( const std::string& pattern ) : mPattern( pattern ) {
+LuaPattern::LuaPattern( const std::string& pattern ) : mPattern( pattern ) {
 	if ( !sFailHandlerInitialized ) {
 		sFailHandlerInitialized = true;
 		lua_str_fail_func( failHandler );
 	}
 }
 
-bool LuaPatternMatcher::matches( const char* stringSearch, int stringStartOffset,
-								 LuaPatternMatcher::Match* matchList, size_t stringLength ) {
-	LuaPatternMatcher::Match matchesBuffer[MAX_DEFAULT_MATCHES];
+bool LuaPattern::matches( const char* stringSearch, int stringStartOffset,
+								 LuaPattern::Match* matchList, size_t stringLength ) {
+	LuaPattern::Match matchesBuffer[MAX_DEFAULT_MATCHES];
 	if ( matchList == NULL )
 		matchList = matchesBuffer;
 	if ( stringLength == 0 )
@@ -54,9 +54,9 @@ bool LuaPatternMatcher::matches( const char* stringSearch, int stringStartOffset
 	return mMatchNum == 0 ? false : true;
 }
 
-bool LuaPatternMatcher::find( const char* stringSearch, int& startMatch, int& endMatch,
+bool LuaPattern::find( const char* stringSearch, int& startMatch, int& endMatch,
 							  int stringStartOffset, int stringLength, int returnMatchIndex ) {
-	LuaPatternMatcher::Match matchesBuffer[MAX_DEFAULT_MATCHES];
+	LuaPattern::Match matchesBuffer[MAX_DEFAULT_MATCHES];
 	if ( matches( stringSearch, stringStartOffset, matchesBuffer, stringLength ) ) {
 		range( returnMatchIndex, startMatch, endMatch, matchesBuffer );
 		return true;
@@ -67,8 +67,8 @@ bool LuaPatternMatcher::find( const char* stringSearch, int& startMatch, int& en
 	}
 }
 
-bool LuaPatternMatcher::range( int indexGet, int& startMatch, int& endMatch,
-							   LuaPatternMatcher::Match* returnedMatched ) {
+bool LuaPattern::range( int indexGet, int& startMatch, int& endMatch,
+							   LuaPattern::Match* returnedMatched ) {
 	if ( indexGet == -1 ) {
 		indexGet = getNumMatches() > 1 ? 1 : 0;
 	}
@@ -80,7 +80,7 @@ bool LuaPatternMatcher::range( int indexGet, int& startMatch, int& endMatch,
 	return false;
 }
 
-int LuaPatternMatcher::getNumMatches() {
+int LuaPattern::getNumMatches() {
 	return mMatchNum;
 }
 

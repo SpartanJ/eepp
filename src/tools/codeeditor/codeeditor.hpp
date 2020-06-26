@@ -99,6 +99,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	void saveConfig();
 
+	std::string getKeybind( const std::string& command );
+
   protected:
 	EE::Window::Window* mWindow{nullptr};
 	UISceneNode* mUISceneNode{nullptr};
@@ -119,8 +121,10 @@ class App : public UICodeEditorSplitter::Client {
 	UIPopUpMenu* mViewMenu{nullptr};
 	UICodeEditorSplitter* mEditorSplitter{nullptr};
 	std::string mInitColorScheme;
-	std::map<std::string, std::string> mDefKeybindings;
+	std::map<std::string, std::string> mKeybindings;
+	std::map<std::string, std::string> mKeybindingsInvert;
 	std::string mConfigPath;
+	std::string mKeybindingsPath;
 	SearchState mSearchState;
 
 	void onFileDropped( String file );
@@ -164,6 +168,12 @@ class App : public UICodeEditorSplitter::Client {
 	UIMenu* createDocumentMenu();
 
 	void updateDocumentMenu();
+
+	void loadKeybindings();
+
+	std::map<KeyBindings::Shortcut, std::string> getDefaultKeybindings();
+
+	std::map<KeyBindings::Shortcut, std::string> getLocalKeybindings();
 
 	void onDocumentStateChanged( UICodeEditor*, TextDocument& );
 

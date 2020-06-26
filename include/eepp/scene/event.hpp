@@ -69,6 +69,7 @@ class EE_API Event {
 		OnLayoutUpdate,
 		OnSelectionChanged,
 		OnNodeDropped,
+		OnSave,
 		UserEvent,
 		NoEvent = eeINDEX_NOT_FOUND
 	};

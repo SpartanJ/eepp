@@ -1,5 +1,6 @@
 #include <cctype>
 #include <cstdarg>
+#include <eepp/system/clock.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/inifile.hpp>
 #include <eepp/system/iostreamfile.hpp>
@@ -47,7 +48,7 @@ bool IniFile::loadFromPack( Pack* Pack, std::string iniPackPath ) {
 bool IniFile::loadFromStream( IOStream& stream ) {
 	if ( !stream.isOpen() )
 		return false;
-
+	Clock clock;
 	std::string myfile( (size_t)stream.getSize(), '\0' );
 
 	stream.read( (char*)&myfile[0], stream.getSize() );
@@ -56,6 +57,8 @@ bool IniFile::loadFromStream( IOStream& stream ) {
 	mLines.clear();
 	mLines = String::split( myfile );
 	readFile();
+	if ( !mPath.empty() )
+		eePRINTL( "%s loaded in %.2fms", mPath.c_str(), clock.getElapsedTime().asMilliseconds() );
 	return true;
 }
 
@@ -79,7 +82,6 @@ bool IniFile::loadFromFile( const std::string& iniPath ) {
 			return loadFromPack( tPack, tPath );
 		}
 	}
-
 	return false;
 }
 

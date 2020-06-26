@@ -6,7 +6,7 @@
 
 namespace EE { namespace System {
 
-class EE_API LuaPatternMatcher {
+class EE_API LuaPattern {
   public:
 	struct Match {
 		int start{-1};
@@ -18,12 +18,12 @@ class EE_API LuaPatternMatcher {
 
 	static Match find( const std::string& string, const std::string& pattern );
 
-	LuaPatternMatcher( const std::string& pattern );
+	LuaPattern( const std::string& pattern );
 
 	bool matches( const char* stringSearch, int stringStartOffset,
-				  LuaPatternMatcher::Match* matchList, size_t stringLength );
+				  LuaPattern::Match* matchList, size_t stringLength );
 
-	bool matches( const std::string& str, LuaPatternMatcher::Match* matchList,
+	bool matches( const std::string& str, LuaPattern::Match* matchList,
 				  int stringStartOffset = 0 ) {
 		return matches( str.c_str(), stringStartOffset, matchList, str.size() );
 	}
@@ -39,7 +39,7 @@ class EE_API LuaPatternMatcher {
 	int getNumMatches();
 
 	bool range( int indexGet, int& startMatch, int& endMatch,
-				LuaPatternMatcher::Match* returnedMatched );
+				LuaPattern::Match* returnedMatched );
 
   protected:
 	std::string mErr;

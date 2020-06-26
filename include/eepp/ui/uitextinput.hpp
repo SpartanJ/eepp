@@ -173,6 +173,10 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 
 	virtual void onDocumentLineChanged( const Int64& lineIndex );
 
+	virtual void onDocumentUndoRedo( const TextDocument::UndoRedo& );
+
+	virtual void onDocumentSaved();
+
 	void registerKeybindings();
 
 	void registerCommands();

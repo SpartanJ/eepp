@@ -12,6 +12,10 @@ namespace EE { namespace UI { namespace Tools {
 
 class EE_API UICodeEditorSplitter {
   public:
+	static const std::map<KeyBindings::Shortcut, std::string> getDefaultKeybindings();
+
+	static const std::map<KeyBindings::Shortcut, std::string> getLocalDefaultKeybindings();
+
 	struct CodeEditorConfig {
 		std::string colorScheme{"lite"};
 		Float fontSize{11};

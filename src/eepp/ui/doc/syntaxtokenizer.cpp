@@ -1,4 +1,4 @@
-#include <eepp/system/luapatternmatcher.hpp>
+#include <eepp/system/luapattern.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/doc/syntaxtokenizer.hpp>
 
@@ -31,7 +31,7 @@ static void pushToken( std::vector<SyntaxToken>& tokens, const std::string& type
 bool isScaped( const std::string& text, const size_t& startIndex, const std::string& escapeStr ) {
 	char escapeByte = escapeStr.empty() ? '\\' : escapeStr[0];
 	int count = 0;
-	for ( int i = startIndex < 1 ? 0 : startIndex - 1; i >= 0; i-- ) {
+	for ( int i = startIndex - 1; i >= 0; i-- ) {
 		if ( text[i] != escapeByte )
 			break;
 		count++;
@@ -42,7 +42,7 @@ bool isScaped( const std::string& text, const size_t& startIndex, const std::str
 std::pair<int, int> findNonEscaped( const std::string& text, const std::string& pattern, int offset,
 									const std::string& escapeStr ) {
 	while ( true ) {
-		LuaPatternMatcher words( pattern );
+		LuaPattern words( pattern );
 		int start, end;
 		if ( words.find( text, start, end, offset ) ) {
 			if ( !escapeStr.empty() && isScaped( text, start, escapeStr ) ) {
@@ -93,10 +93,9 @@ std::pair<std::vector<SyntaxToken>, int> SyntaxTokenizer::tokenize( const Syntax
 				continue;
 			const std::string& patternStr(
 				pattern.patterns[0][0] == '^' ? pattern.patterns[0] : "^" + pattern.patterns[0] );
-			LuaPatternMatcher words( patternStr );
+			LuaPattern words( patternStr );
 			int start, end = 0;
 			if ( words.find( text, start, end, i ) && start != end ) {
-				eeASSERT( start != end );
 				std::string patternText( text.substr( start, end - start ) );
 				std::string type = syntax.getSymbol( patternText );
 				pushToken( tokens, type.empty() ? pattern.type : type, patternText );
@@ -109,7 +108,7 @@ std::pair<std::vector<SyntaxToken>, int> SyntaxTokenizer::tokenize( const Syntax
 			}
 		}
 
-		if ( !matched ) {
+		if ( !matched && i < text.size() ) {
 			pushToken( tokens, "normal", text.substr( i, 1 ) );
 			i += 1;
 		}

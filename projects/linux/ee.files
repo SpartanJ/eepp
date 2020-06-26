@@ -248,7 +248,7 @@
 ../../include/eepp/system/iostreamzip.hpp
 ../../include/eepp/system/lock.hpp
 ../../include/eepp/system/log.hpp
-../../include/eepp/system/luapatternmatcher.hpp
+../../include/eepp/system/luapattern.hpp
 ../../include/eepp/system/md5.hpp
 ../../include/eepp/system/mutex.hpp
 ../../include/eepp/system/pack.hpp
@@ -716,7 +716,7 @@
 ../../src/eepp/system/log.cpp
 ../../src/eepp/system/lua-str.cpp
 ../../src/eepp/system/lua-str.hpp
-../../src/eepp/system/luapatternmatcher.cpp
+../../src/eepp/system/luapattern.cpp
 ../../src/eepp/system/md5.cpp
 ../../src/eepp/system/mutex.cpp
 ../../src/eepp/system/objectloader.cpp

@@ -26,6 +26,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	static UICodeEditor* NewOpt( const bool& autoRegisterBaseCommands,
 								 const bool& autoRegisterBaseKeybindings );
 
+	static const std::map<KeyBindings::Shortcut, std::string> getDefaultKeybindings();
+
 	UICodeEditor( const bool& autoRegisterBaseCommands = true,
 				  const bool& autoRegisterBaseKeybindings = true );
 
@@ -197,6 +199,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void setLineBreakingColumn( const Uint32& lineBreakingColumn );
 
 	void addUnlockedCommand( const std::string& command );
+
+	void addUnlockedCommands( const std::vector<std::string>& commands );
 
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
@@ -390,6 +394,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	virtual void onDocumentLineCountChange( const size_t& lastCount, const size_t& newCount );
 
 	virtual void onDocumentLineChanged( const Int64& lineIndex );
+
+	virtual void onDocumentUndoRedo( const TextDocument::UndoRedo& );
+
+	virtual void onDocumentSaved();
 
 	std::pair<int, int> getVisibleLineRange();
 

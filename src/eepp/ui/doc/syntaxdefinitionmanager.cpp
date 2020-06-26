@@ -1,6 +1,6 @@
 #include <algorithm>
 #include <eepp/system/filesystem.hpp>
-#include <eepp/system/luapatternmatcher.hpp>
+#include <eepp/system/luapattern.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
 
@@ -1800,7 +1800,7 @@ SyntaxDefinitionManager::getStyleByExtension( const std::string& filePath ) cons
 		for ( auto style = mStyles.rbegin(); style != mStyles.rend(); ++style ) {
 			for ( auto ext : style->getFiles() ) {
 				if ( String::startsWith( ext, "%." ) || String::endsWith( ext, "$" ) ) {
-					LuaPatternMatcher words( ext );
+					LuaPattern words( ext );
 					int start, end;
 					if ( words.find( filePath, start, end ) ) {
 						return *style;
@@ -1819,7 +1819,7 @@ SyntaxDefinitionManager::getStyleByHeader( const std::string& header ) const {
 	if ( !header.empty() ) {
 		for ( auto style = mStyles.rbegin(); style != mStyles.rend(); ++style ) {
 			for ( auto hdr : style->getHeaders() ) {
-				LuaPatternMatcher words( hdr );
+				LuaPattern words( hdr );
 				int start, end;
 				if ( words.find( header, start, end ) ) {
 					return *style;
