@@ -759,6 +759,8 @@ class EE_API String {
 
 	String& toUpper();
 
+	StringBaseType lastChar() const;
+
   private:
 	friend EE_API bool operator==( const String& left, const String& right );
 	friend EE_API bool operator<( const String& left, const String& right );

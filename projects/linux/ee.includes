@@ -6,8 +6,3 @@
 ../../src/thirdparty/libvorbis/include
 /usr/include/freetype2/
 ../../src/thirdparty/mbedtls/include
-../../docs/articles
-../../include/eepp/ui/doc
-../../src/eepp/ui/doc
-../../include/eepp/ui
-../../src/eepp/ui

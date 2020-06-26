@@ -445,6 +445,24 @@ bool IniFile::deleteHeaderComment( unsigned commentID ) {
 	return false;
 }
 
+std::map<std::string, std::string> IniFile::getKeyMap( const unsigned& keyID ) const {
+	std::map<std::string, std::string> map;
+	if ( keyID < mKeys.size() ) {
+		for ( size_t i = 0; i < mKeys[keyID].names.size(); i++ ) {
+			map[mKeys[keyID].names[i]] = mKeys[keyID].values[i];
+		}
+		return map;
+	}
+	return {};
+}
+
+std::map<std::string, std::string> IniFile::getKeyMap( const std::string& keyname ) const {
+	long keyID = findKey( keyname );
+	if ( keyID != noID )
+		return getKeyMap( keyID );
+	return {};
+}
+
 unsigned IniFile::getNumKeyComments( unsigned const keyID ) const {
 	if ( keyID < mKeys.size() )
 		return (unsigned int)mKeys[keyID].comments.size();

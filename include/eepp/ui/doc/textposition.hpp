@@ -35,6 +35,10 @@ class EE_API TextPosition {
 		return mLine < other.mLine || ( mLine == other.mLine && mColumn < other.mColumn );
 	}
 
+	bool operator>( const TextPosition& other ) const {
+		return mLine > other.mLine || ( mLine == other.mLine && mColumn > other.mColumn );
+	}
+
 	TextPosition operator+( const TextPosition& other ) const {
 		return {mLine + other.line(), mColumn + other.column()};
 	}

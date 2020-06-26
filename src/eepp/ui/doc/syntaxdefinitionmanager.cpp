@@ -880,15 +880,19 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	add( {"Config File",
 		  {"%.ini$", "%.conf$", "%.desktop$", "%.service$", "%.cfg$", "Doxyfile"},
 		  {
-			  {{"#[%da-fA-F]+"}, "literal"},
-			  {{"#.-\n"}, "comment"},
+			  {{"%s?#%x+"}, "string"},
+			  {{"[%a_][%w-+_%s%p]*%f[=]"}, "keyword"},
+			  {{"^#.-\n"}, "comment"},
+			  {{"%s#.-\n"}, "comment"},
 			  {{"\"", "\"", "\\"}, "string"},
 			  {{"'", "'", "\\"}, "string"},
-			  {{"%[", "%]"}, "keyword2"},
-			  {{"[%a][%w_-]*%s*%f[=]"}, "keyword"},
+			  {{"^%[.-%]"}, "keyword2"},
+			  {{"%s%[.-%]"}, "keyword2"},
 			  {{"="}, "operator"},
 			  {{"https?://%S+"}, "link"},
-		  }} );
+		  },
+		  {},
+		  "#"} );
 
 	// Makefile
 	add( {"Makefile",

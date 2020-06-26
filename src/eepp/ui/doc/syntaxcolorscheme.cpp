@@ -8,6 +8,8 @@
 #include <eepp/system/packmanager.hpp>
 #include <eepp/ui/doc/syntaxcolorscheme.hpp>
 
+using namespace EE::Graphics;
+
 namespace EE { namespace UI { namespace Doc {
 
 // Color schemes are compatible with the lite (https://github.com/rxi/lite) color schemes.
@@ -17,9 +19,10 @@ namespace EE { namespace UI { namespace Doc {
 // "line_break_column" (the right margin line column color)
 // "matching_bracket" (the background color drawn in the matching brackets)
 // "matching_selection" (the background color drawn in the text matching the current selected text)
+// "matching_search" (the background color drawn in the text matching the current searched text)
 
 SyntaxColorScheme SyntaxColorScheme::getDefault() {
-	return {"lite-theme",
+	return {"lite",
 			{
 				{"normal", Color( "#e1e1e6" )},
 				{"symbol", Color( "#e1e1e6" )},
@@ -31,7 +34,7 @@ SyntaxColorScheme SyntaxColorScheme::getDefault() {
 				{"string", Color( "#f7c95c" )},
 				{"operator", Color( "#93DDFA" )},
 				{"function", Color( "#93DDFA" )},
-				{"link", {Color( "#93DDFA" ), Color::Transparent, Graphics::Text::Underlined}},
+				{"link", {Color( "#93DDFA" ), Color::Transparent, Text::Underlined}},
 			},
 			{
 				{"background", Color( "#2e2e32" )},
@@ -47,6 +50,7 @@ SyntaxColorScheme SyntaxColorScheme::getDefault() {
 				{"line_break_column", Color( "#54575b99" )},
 				{"matching_bracket", Color( "#FFFFFF33" )},
 				{"matching_selection", Color( "#FFFFFF33" )},
+				{"matching_search", Color( "#181b1e" )},
 			}};
 }
 
@@ -79,15 +83,15 @@ std::vector<SyntaxColorScheme> SyntaxColorScheme::loadFromStream( IOStream& stre
 						}
 					} else {
 						if ( "bold" == val )
-							style.style |= Graphics::Text::Bold;
+							style.style |= Text::Bold;
 						else if ( "italic" == val )
-							style.style |= Graphics::Text::Italic;
+							style.style |= Text::Italic;
 						else if ( "underline" == val || "underlined" == val )
-							style.style |= Graphics::Text::Underlined;
+							style.style |= Text::Underlined;
 						else if ( "strikethrough" == val )
-							style.style |= Graphics::Text::StrikeThrough;
+							style.style |= Text::StrikeThrough;
 						else if ( "shadow" == val )
-							style.style |= Graphics::Text::Shadow;
+							style.style |= Text::Shadow;
 					}
 
 					if ( refColorScheme.mSyntaxColors.find( valueName ) !=

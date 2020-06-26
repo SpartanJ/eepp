@@ -152,13 +152,22 @@ void UICodeEditor::draw() {
 		drawMatchingBrackets( startScroll, lineHeight );
 	}
 
-	if ( mHighlightSelectionMatch && mDoc->hasSelection() &&
-		 mDoc->getSelection().start().line() == mDoc->getSelection().end().line() ) {
+	if ( mDoc->hasSelection() ) {
+		drawTextRange( mDoc->getSelection( true ), lineRange, startScroll, lineHeight,
+					   mFontStyleConfig.getFontSelectionBackColor() );
+	}
+
+	if ( mHighlightTextRange.isValid() && mHighlightTextRange.hasSelection() ) {
+		drawTextRange( mHighlightTextRange, lineRange, startScroll, lineHeight,
+					   mFontStyleConfig.getFontSelectionBackColor() );
+	}
+
+	if ( mHighlightSelectionMatch && mDoc->hasSelection() && mDoc->getSelection().inSameLine() ) {
 		drawSelectionMatch( lineRange, startScroll, lineHeight );
 	}
 
-	if ( mDoc->hasSelection() ) {
-		drawSelection( lineRange, startScroll, lineHeight );
+	if ( !mHighlightWord.empty() ) {
+		drawWordMatch( mHighlightWord, lineRange, startScroll, lineHeight );
 	}
 
 	// Draw tab marker
@@ -590,11 +599,13 @@ Sizef UICodeEditor::getMaxScroll() const {
 }
 
 Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags ) {
-	if ( isTextSelectionEnabled() && !getUISceneNode()->getEventDispatcher()->isNodeDragging() &&
-		 NULL != mFont && !mMouseDown && ( flags & EE_BUTTON_LMASK ) ) {
+	if ( isTextSelectionEnabled() && !getEventDispatcher()->isNodeDragging() && NULL != mFont &&
+		 !mMouseDown && getEventDispatcher()->getMouseDownNode() == this &&
+		 ( flags & EE_BUTTON_LMASK ) ) {
 		mMouseDown = true;
 		Input* input = getUISceneNode()->getWindow()->getInput();
 		input->captureMouse( true );
+		setFocus();
 		if ( input->isShiftPressed() ) {
 			mDoc->selectTo( resolveScreenPosition( position.asFloat() ) );
 		} else {
@@ -793,6 +804,7 @@ void UICodeEditor::updateEditor() {
 
 void UICodeEditor::onDocumentTextChanged() {
 	invalidateDraw();
+	checkMatchingBrackets();
 	sendCommonEvent( Event::OnTextChanged );
 	invalidateLongestLineWidth();
 }
@@ -1237,9 +1249,9 @@ const SyntaxDefinition& UICodeEditor::getSyntaxDefinition() const {
 
 void UICodeEditor::checkMatchingBrackets() {
 	if ( mHighlightMatchingBracket ) {
+		const std::vector<String::StringBaseType> open{'{', '(', '['};
+		const std::vector<String::StringBaseType> close{'}', ')', ']'};
 		mMatchingBrackets = TextRange();
-		std::vector<String::StringBaseType> open{'{', '(', '['};
-		std::vector<String::StringBaseType> close{'}', ')', ']'};
 		TextPosition pos = mDoc->getSelection().start();
 		TextDocumentLine& line = mDoc->line( pos.line() );
 		auto isOpenIt = std::find( open.begin(), open.end(), line[pos.column()] );
@@ -1406,7 +1418,32 @@ const bool& UICodeEditor::getShowWhitespaces() const {
 }
 
 void UICodeEditor::setShowWhitespaces( const bool& showWhitespaces ) {
-	mShowWhitespaces = showWhitespaces;
+	if ( mShowWhitespaces != showWhitespaces ) {
+		mShowWhitespaces = showWhitespaces;
+		invalidateDraw();
+	}
+}
+
+const String& UICodeEditor::getHighlightWord() const {
+	return mHighlightWord;
+}
+
+void UICodeEditor::setHighlightWord( const String& highlightWord ) {
+	if ( mHighlightWord != highlightWord ) {
+		mHighlightWord = highlightWord;
+		invalidateDraw();
+	}
+}
+
+const TextRange& UICodeEditor::getHighlightTextRange() const {
+	return mHighlightTextRange;
+}
+
+void UICodeEditor::setHighlightTextRange( const TextRange& highlightSelection ) {
+	if ( highlightSelection != mHighlightTextRange ) {
+		mHighlightTextRange = highlightSelection;
+		invalidateDraw();
+	}
 }
 
 const Time& UICodeEditor::getFindLongestLineWidthUpdateFrequency() const {
@@ -1449,15 +1486,18 @@ void UICodeEditor::drawSelectionMatch( const std::pair<int, int>& lineRange,
 									   const Vector2f& startScroll, const Float& lineHeight ) {
 	if ( !mDoc->hasSelection() )
 		return;
-
-	Primitives primitives;
-	primitives.setForceDraw( false );
-	primitives.setColor( Color( mSelectionMatchColor ).blendAlpha( mAlpha ) );
-
 	TextRange selection = mDoc->getSelection( true );
 	const String& selectionLine = mDoc->line( selection.start().line() ).getText();
 	String text( selectionLine.substr( selection.start().column(),
 									   selection.end().column() - selection.start().column() ) );
+	drawWordMatch( text, lineRange, startScroll, lineHeight );
+}
+
+void UICodeEditor::drawWordMatch( const String& text, const std::pair<int, int>& lineRange,
+								  const Vector2f& startScroll, const Float& lineHeight ) {
+	Primitives primitives;
+	primitives.setForceDraw( false );
+	primitives.setColor( Color( mSelectionMatchColor ).blendAlpha( mAlpha ) );
 
 	for ( auto ln = lineRange.first; ln <= lineRange.second; ln++ ) {
 		const String& line = mDoc->line( ln ).getText();
@@ -1512,34 +1552,32 @@ void UICodeEditor::drawLineText( const Int64& index, Vector2f position, const Fl
 	}
 }
 
-void UICodeEditor::drawSelection( const std::pair<int, int>& lineRange, const Vector2f& startScroll,
-								  const Float& lineHeight ) {
+void UICodeEditor::drawTextRange( const TextRange& range, const std::pair<int, int>& lineRange,
+								  const Vector2f& startScroll, const Float& lineHeight,
+								  const Color& backgrundColor ) {
 	Primitives primitives;
 	primitives.setForceDraw( false );
-	primitives.setColor(
-		Color( mFontStyleConfig.getFontSelectionBackColor() ).blendAlpha( mAlpha ) );
+	primitives.setColor( Color( backgrundColor ).blendAlpha( mAlpha ) );
 
-	TextRange selection = mDoc->getSelection( true );
-
-	int startLine = eemax<int>( lineRange.first, selection.start().line() );
-	int endLine = eemin<int>( lineRange.second, selection.end().line() );
+	int startLine = eemax<int>( lineRange.first, range.start().line() );
+	int endLine = eemin<int>( lineRange.second, range.end().line() );
 
 	for ( auto ln = startLine; ln <= endLine; ln++ ) {
 		const String& line = mDoc->line( ln ).getText();
 		Rectf selRect;
 		selRect.Top = startScroll.y + ln * lineHeight;
 		selRect.Bottom = selRect.Top + lineHeight;
-		if ( selection.start().line() == ln ) {
-			selRect.Left = startScroll.x + getXOffsetCol( {ln, selection.start().column()} );
-			if ( selection.end().line() == ln ) {
-				selRect.Right = startScroll.x + getXOffsetCol( {ln, selection.end().column()} );
+		if ( range.start().line() == ln ) {
+			selRect.Left = startScroll.x + getXOffsetCol( {ln, range.start().column()} );
+			if ( range.end().line() == ln ) {
+				selRect.Right = startScroll.x + getXOffsetCol( {ln, range.end().column()} );
 			} else {
 				selRect.Right =
 					startScroll.x + getXOffsetCol( {ln, static_cast<Int64>( line.length() )} );
 			}
-		} else if ( selection.end().line() == ln ) {
+		} else if ( range.end().line() == ln ) {
 			selRect.Left = startScroll.x + getXOffsetCol( {ln, 0} );
-			selRect.Right = startScroll.x + getXOffsetCol( {ln, selection.end().column()} );
+			selRect.Right = startScroll.x + getXOffsetCol( {ln, range.end().column()} );
 		} else {
 			selRect.Left = startScroll.x + getXOffsetCol( {ln, 0} );
 			selRect.Right =

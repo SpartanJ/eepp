@@ -126,6 +126,8 @@ class EE_API TextDocument {
 
 	TextPosition endOfDoc() const;
 
+	TextRange getDocRange() const;
+
 	void deleteTo( TextPosition position );
 
 	void deleteTo( int offset );
@@ -232,15 +234,17 @@ class EE_API TextDocument {
 
 	void setCommand( const std::string& command, DocumentCommand func );
 
-	TextPosition find( String text, TextPosition from = {0, 0}, const bool& caseSensitive = true );
+	TextPosition find( String text, TextPosition from = {0, 0}, const bool& caseSensitive = true,
+					   TextRange restrictRange = TextRange() );
 
 	TextPosition findLast( String text, TextPosition from = {0, 0},
-						   const bool& caseSensitive = true );
+						   const bool& caseSensitive = true,
+						   TextRange restrictRange = TextRange() );
 
 	TextPosition replaceSelection( const String& replace );
 
 	TextPosition replace( String search, const String& replace, TextPosition from = {0, 0},
-						  const bool& caseSensitive = true );
+						  const bool& caseSensitive = true, TextRange restrictRange = TextRange() );
 
 	String getIndentString();
 
@@ -311,6 +315,8 @@ class EE_API TextDocument {
 	void setBOM( bool active );
 
 	bool getBOM() const;
+
+	TextRange sanitizeRange( const TextRange& range );
 
   protected:
 	friend class UndoStack;

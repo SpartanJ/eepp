@@ -1,8 +1,6 @@
 #ifndef EEPP_UI_HPP
 #define EEPP_UI_HPP
 
-#include <eepp/ui/tools/textureatlaseditor.hpp>
-#include <eepp/ui/tools/uicolorpicker.hpp>
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uicombobox.hpp>
@@ -51,9 +49,8 @@
 #include <eepp/ui/uitouchdraggablewidget.hpp>
 #include <eepp/ui/uiviewpager.hpp>
 #include <eepp/ui/uiwidget.hpp>
-#include <eepp/ui/uiwindow.hpp>
-
 #include <eepp/ui/uiwidgetcreator.hpp>
+#include <eepp/ui/uiwindow.hpp>
 
 #include <eepp/ui/css/stylesheet.hpp>
 #include <eepp/ui/css/stylesheetparser.hpp>
@@ -65,5 +62,9 @@
 
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
+
+#include <eepp/ui/tools/textureatlaseditor.hpp>
+#include <eepp/ui/tools/uicodeeditorsplitter.hpp>
+#include <eepp/ui/tools/uicolorpicker.hpp>
 
 #endif

@@ -35,39 +35,36 @@ class UISearchBar : public UILinearLayout {
 	}
 };
 
-class App {
+struct UIConfig {
+	Float fontSize{11};
+};
+
+struct WindowConfig {
+	Float pixelDensity{0};
+	Sizei size{1280, 720};
+	bool maximized{false};
+};
+
+struct AppConfig {
+	WindowConfig window;
+	UICodeEditorSplitter::CodeEditorConfig editor;
+	UIConfig ui;
+};
+
+struct SearchState {
+	UICodeEditor* editor{nullptr};
+	String text;
+	TextRange range = TextRange();
+	bool caseSensitive{false};
+	void reset() {
+		editor = nullptr;
+		range = TextRange();
+		text = "";
+	}
+};
+
+class App : public UICodeEditorSplitter::Client {
   public:
-	struct Config {
-		struct {
-			Float pixelDensity{0};
-			Sizei size{1280, 720};
-			bool maximized{false};
-		} window;
-		struct {
-			std::string colorScheme{"lite"};
-			Float fontSize{11};
-			bool showLineNumbers{true};
-			bool showWhiteSpaces{true};
-			bool highlightMatchingBracket{true};
-			bool horizontalScrollbar{false};
-			bool highlightCurrentLine{true};
-			bool trimTrailingWhitespaces{false};
-			bool forceNewLineAtEndOfFile{false};
-			bool autoDetectIndentType{true};
-			bool writeUnicodeBOM{false};
-			bool indentSpaces{false};
-			bool windowsLineEndings{false};
-			int indentWidth{4};
-			int tabWidth{4};
-			int lineBreakingColumn{100};
-		} editor;
-		struct {
-			Float fontSize{11};
-		} ui;
-	};
-
-	enum class SplitDirection { Left, Right, Top, Bottom };
-
 	~App();
 
 	void init( const std::string& file, const Float& pidelDensity );
@@ -80,9 +77,9 @@ class App {
 
 	void saveFileDialog();
 
-	void findPrevText( String text = "", const bool& caseSensitive = true );
+	void findPrevText( SearchState& search );
 
-	void findNextText( String text = "", const bool& caseSensitive = true );
+	void findNextText( SearchState& search );
 
 	void closeApp();
 
@@ -90,37 +87,11 @@ class App {
 
 	void showFindView();
 
-	UICodeEditor* createCodeEditor();
+	void replaceSelection( SearchState& search, const String& replacement );
 
-	UITabWidget* tabWidgetFromEditor( UICodeEditor* editor );
+	void replaceAll( SearchState& search, const String& replace );
 
-	UISplitter* splitterFromEditor( UICodeEditor* editor );
-
-	std::pair<UITab*, UICodeEditor*> createCodeEditorInTabWidget( UITabWidget* tabWidget );
-
-	UITabWidget* createEditorWithTabWidget( Node* parent );
-
-	void splitEditor( const SplitDirection& direction, UICodeEditor* editor );
-
-	void focusSomeEditor( Node* searchFrom = nullptr );
-
-	void switchToTab( Int32 index );
-
-	UITabWidget* findPreviousSplit( UICodeEditor* editor );
-
-	void switchPreviousSplit( UICodeEditor* editor );
-
-	UITabWidget* findNextSplit( UICodeEditor* editor );
-
-	void switchNextSplit( UICodeEditor* editor );
-
-	void applyColorScheme( const SyntaxColorScheme& colorScheme );
-
-	void replaceSelection( const String& replacement );
-
-	void replaceAll( String find, const String& replace, const bool& caseSensitive );
-
-	void findAndReplace( String find, String replace, const bool& caseSensitive );
+	void findAndReplace( SearchState& search, const String& replace );
 
 	void runCommand( const std::string& command );
 
@@ -128,22 +99,14 @@ class App {
 
 	void saveConfig();
 
-	void loadFileFromPathInNewTab( const std::string& path );
-
-	void setCurrentEditor( UICodeEditor* editor );
-
   protected:
 	EE::Window::Window* mWindow{nullptr};
 	UISceneNode* mUISceneNode{nullptr};
-	UICodeEditor* mCurEditor{nullptr};
 	Console* mConsole{nullptr};
 	std::string mWindowTitle{"ecode"};
 	String mLastSearch;
 	UILayout* mBaseLayout{nullptr};
 	UISearchBar* mSearchBarLayout{nullptr};
-	std::vector<UITabWidget*> mTabWidgets;
-	std::map<std::string, SyntaxColorScheme> mColorSchemes;
-	std::string mCurrentColorScheme;
 	UIPopUpMenu* mSettingsMenu{nullptr};
 	UITextView* mSettingsButton{nullptr};
 	UIPopUpMenu* mColorSchemeMenu{nullptr};
@@ -151,9 +114,14 @@ class App {
 	IniFile mIni;
 	IniFile mIniState;
 	std::vector<std::string> mRecentFiles;
-	Config mConfig;
+	AppConfig mConfig;
 	UIPopUpMenu* mDocMenu{nullptr};
 	UIPopUpMenu* mViewMenu{nullptr};
+	UICodeEditorSplitter* mEditorSplitter{nullptr};
+	std::string mInitColorScheme;
+	std::map<std::string, std::string> mDefKeybindings;
+	std::string mConfigPath;
+	SearchState mSearchState;
 
 	void onFileDropped( String file );
 
@@ -167,14 +135,6 @@ class App {
 
 	bool onCloseRequestCallback( EE::Window::Window* );
 
-	void closeEditorTab( UICodeEditor* editor );
-
-	void onTabClosed( const TabEvent* tabEvent );
-
-	void closeSplitter( UISplitter* splitter );
-
-	void closeTabWidgets( UISplitter* splitter );
-
 	void initSearchBar();
 
 	void addRemainingTabWidgets( Node* widget );
@@ -185,8 +145,6 @@ class App {
 
 	void updateColorSchemeMenu();
 
-	void setColorScheme( const std::string& name );
-
 	UIMenu* createFiletypeMenu();
 
 	void updateCurrentFiletype();
@@ -195,11 +153,7 @@ class App {
 
 	void saveDoc();
 
-	void removeUnusedTab( UITabWidget* tabWidget );
-
 	void updateRecentFiles();
-
-	void forEachEditor( std::function<void( UICodeEditor* )> run );
 
 	UIMenu* createViewMenu();
 
@@ -211,11 +165,21 @@ class App {
 
 	void updateDocumentMenu();
 
-	void zoomIn();
+	void onDocumentStateChanged( UICodeEditor*, TextDocument& );
 
-	void zoomOut();
+	void onDocumentModified( UICodeEditor* editor, TextDocument& );
 
-	void zoomReset();
+	void onColorSchemeChanged( const std::string& );
+
+	void onDocumentLoaded( UICodeEditor* codeEditor, const std::string& path );
+
+	const UICodeEditorSplitter::CodeEditorConfig& getCodeEditorConfig() const;
+
+	void onCodeEditorCreated( UICodeEditor*, TextDocument& doc );
+
+	void onDocumentSelectionChange( UICodeEditor* editor, TextDocument& );
+
+	void onCodeEditorFocusChange( UICodeEditor* editor );
 };
 
 #endif // EE_TOOLS_CODEEDITOR_HPP

@@ -309,13 +309,15 @@ bool TextDocument::save( IOStream& stream ) {
 			notifyTextChanged();
 		}
 		if ( i == lastLine ) {
-			if ( !text.empty() && text[text.size() - 1] == '\n' && !mForceNewLineAtEndOfFile ) {
+			if ( !text.empty() && text[text.size() - 1] == '\n' ) {
 				// Last \n is added by the document but it's not part of the document.
 				text.pop_back();
 				if ( text.empty() )
 					continue;
-			} else if ( !text.empty() && text[text.size()] != '\n' && mForceNewLineAtEndOfFile ) {
-				text += mLineEnding == LineEnding::CRLF ? "\n\r" : "\n";
+			}
+			if ( mForceNewLineAtEndOfFile && !text.empty() && text[text.size() - 1] != '\n' ) {
+				text += "\n";
+				textInput( "\n" );
 			}
 		}
 		if ( mLineEnding == LineEnding::CRLF ) {
@@ -678,6 +680,10 @@ TextPosition TextDocument::endOfDoc() const {
 	return TextPosition( mLines.size() - 1, mLines[mLines.size() - 1].size() - 1 );
 }
 
+TextRange TextDocument::getDocRange() const {
+	return {startOfDoc(), endOfDoc()};
+}
+
 void TextDocument::deleteTo( int offset ) {
 	TextPosition cursorPos = getSelection( true ).start();
 	if ( hasSelection() ) {
@@ -725,12 +731,14 @@ void TextDocument::textInput( const String& text ) {
 
 void TextDocument::registerClient( Client* client ) {
 	mClients.insert( client );
+	if ( mActiveClient == nullptr )
+		setActiveClient( client );
 }
 
 void TextDocument::unregisterClient( Client* client ) {
 	mClients.erase( client );
 	if ( mActiveClient == client )
-		mActiveClient = nullptr;
+		setActiveClient( nullptr );
 }
 
 void TextDocument::moveToPreviousChar() {
@@ -1043,6 +1051,10 @@ void TextDocument::print() const {
 		printf( "%s", mLines[i].toUtf8().c_str() );
 }
 
+TextRange TextDocument::sanitizeRange( const TextRange& range ) {
+	return {sanitizePosition( range.start() ), sanitizePosition( range.end() )};
+}
+
 TextPosition TextDocument::sanitizePosition( const TextPosition& position ) const {
 	Int64 line = eeclamp<Int64>( position.line(), 0UL, mLines.size() - 1 );
 	Int64 col =
@@ -1105,18 +1117,36 @@ void TextDocument::setCommand( const std::string& command, TextDocument::Documen
 	mCommands[command] = func;
 }
 
-TextPosition TextDocument::find( String text, TextPosition from, const bool& caseSensitive ) {
+TextPosition TextDocument::find( String text, TextPosition from, const bool& caseSensitive,
+								 TextRange restrictRange ) {
+	if ( text.empty() )
+		return TextPosition();
 	from = sanitizePosition( from );
+
+	TextPosition to = endOfDoc();
+	if ( restrictRange.isValid() ) {
+		restrictRange = sanitizeRange( restrictRange.normalized() );
+		to = restrictRange.end();
+		if ( from < restrictRange.start() || from > restrictRange.end() )
+			return TextPosition();
+	}
+
 	if ( !caseSensitive )
 		text.toLower();
-	for ( size_t i = from.line(); i < linesCount(); i++ ) {
+
+	for ( Int64 i = from.line(); i <= to.line(); i++ ) {
 		size_t col;
-		if ( (Int64)i == from.line() ) {
+		if ( i == from.line() ) {
 			col = caseSensitive
 					  ? line( i ).getText().substr( from.column() ).find( text )
 					  : String::toLower( line( i ).getText() ).substr( from.column() ).find( text );
 			if ( String::StringType::npos != col )
 				col += from.column();
+		} else if ( i == to.line() && to != endOfDoc() ) {
+			col =
+				caseSensitive
+					? line( i ).getText().substr( 0, to.column() ).find( text )
+					: String::toLower( line( i ).getText() ).substr( 0, to.column() ).find( text );
 		} else {
 			col = caseSensitive ? line( i ).getText().find( text )
 								: String::toLower( line( i ).getText() ).find( text );
@@ -1128,17 +1158,35 @@ TextPosition TextDocument::find( String text, TextPosition from, const bool& cas
 	return TextPosition();
 }
 
-TextPosition TextDocument::findLast( String text, TextPosition from, const bool& caseSensitive ) {
+TextPosition TextDocument::findLast( String text, TextPosition from, const bool& caseSensitive,
+									 TextRange restrictRange ) {
+	if ( text.empty() )
+		return TextPosition();
 	from = sanitizePosition( from );
+
+	TextPosition to = startOfDoc();
+	if ( restrictRange.isValid() ) {
+		restrictRange = sanitizeRange( restrictRange.normalized() );
+		to = restrictRange.start();
+		if ( from < restrictRange.start() || from > restrictRange.end() )
+			return TextPosition();
+	}
+
 	if ( !caseSensitive )
 		text.toLower();
-	for ( Int64 i = from.line(); i >= 0; i-- ) {
+	for ( Int64 i = from.line(); i >= to.line(); i-- ) {
 		size_t col;
-		if ( (Int64)i == from.line() ) {
+		if ( i == from.line() ) {
 			col = caseSensitive ? line( i ).getText().substr( 0, from.column() ).rfind( text )
 								: String::toLower( line( i ).getText() )
 									  .substr( 0, from.column() )
 									  .rfind( text );
+		} else if ( i == to.line() ) {
+			col = caseSensitive
+					  ? line( i ).getText().substr( to.column() ).rfind( text )
+					  : String::toLower( line( i ).getText() ).substr( to.column() ).rfind( text );
+			if ( String::StringType::npos != col )
+				col += to.column();
 		} else {
 			col = caseSensitive ? line( i ).getText().rfind( text )
 								: String::toLower( line( i ).getText() ).rfind( text );
@@ -1159,8 +1207,8 @@ TextPosition TextDocument::replaceSelection( const String& replace ) {
 }
 
 TextPosition TextDocument::replace( String search, const String& replace, TextPosition from,
-									const bool& caseSensitive ) {
-	TextPosition start( find( search, from, caseSensitive ) );
+									const bool& caseSensitive, TextRange restrictRange ) {
+	TextPosition start( find( search, from, caseSensitive, restrictRange ) );
 	if ( start.isValid() ) {
 		TextPosition end = positionOffset( start, search.size() );
 		if ( end.isValid() ) {
@@ -1344,5 +1392,3 @@ void TextDocument::initializeCommands() {
 TextDocument::Client::~Client() {}
 
 }}} // namespace EE::UI::Doc
-
-

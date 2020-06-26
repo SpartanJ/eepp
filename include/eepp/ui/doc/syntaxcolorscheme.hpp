@@ -14,12 +14,15 @@ namespace EE { namespace UI { namespace Doc {
 /**
  * Syntax colors types accepted/used are:
  * "normal", "symbol", "comment", "keyword", "keyword2",
- * "number", "literal", "string", "operator", "function"
+ * "number", "literal", "string", "operator", "function",
+ * "link"
  *
  * Editor colors types accepted/used are:
  * "background", "text", "caret"
  * "selection", "line_number_background",
- * "line_number", "line_number2", "line_highlight"
+ * "line_number", "line_number2", "line_highlight",
+ * "line_number_background", "whitespace", "line_break_column",
+ * "matching_bracket", "matching_selection"
  *
  * Following the lite editor syntax colors (https://github.com/rxi/lite).
  */

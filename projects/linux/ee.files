@@ -332,6 +332,7 @@
 ../../include/eepp/ui/keyboardshortcut.hpp
 ../../include/eepp/ui/marginmove/scale.hpp
 ../../include/eepp/ui/tools/textureatlaseditor.hpp
+../../include/eepp/ui/tools/uicodeeditorsplitter.hpp
 ../../include/eepp/ui/tools/uicolorpicker.hpp
 ../../include/eepp/ui/uibackgrounddrawable.hpp
 ../../include/eepp/ui/uiborderdrawable.hpp
@@ -788,6 +789,7 @@
 ../../src/eepp/ui/tools/textureatlasnew.hpp
 ../../src/eepp/ui/tools/textureatlastextureregioneditor.cpp
 ../../src/eepp/ui/tools/textureatlastextureregioneditor.hpp
+../../src/eepp/ui/tools/uicodeeditorsplitter.cpp
 ../../src/eepp/ui/tools/uicolorpicker.cpp
 ../../src/eepp/ui/uibackgrounddrawable.cpp
 ../../src/eepp/ui/uiborderdrawable.cpp
@@ -972,6 +974,8 @@
 ../../src/thirdparty/SOIL2/src/SOIL2/stbi_pvr.h
 ../../src/tools/codeeditor/codeeditor.cpp
 ../../src/tools/codeeditor/codeeditor.hpp
+../../src/tools/codeeditor/uicodeeditorsplitter.cpp
+../../src/tools/codeeditor/uicodeeditorsplitter.hpp
 ../../src/tools/mapeditor/mapeditor.cpp
 ../../src/tools/textureatlaseditor/textureatlaseditor.cpp
 ../../src/tools/texturepacker/texturepacker.cpp

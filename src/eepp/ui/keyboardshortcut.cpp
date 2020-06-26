@@ -83,6 +83,13 @@ KeyBindings::Shortcut KeyBindings::getShortcutFromString( const std::string& key
 	Shortcut shortcut;
 	Uint32 mod = 0;
 	auto keysSplit = String::split( keys, '+' );
+	if ( keys.find( "keypad +" ) != std::string::npos )
+		mod = 0;
+	if ( keysSplit.size() == 1 && getKeyMod( keysSplit[0] ) && keys.find( "++" ) )
+		keysSplit.emplace_back( "+" );
+	if ( keysSplit.size() == 2 && getKeyMod( keysSplit[0] ) &&
+		 keys.find( " +" ) != std::string::npos )
+		keysSplit[1] += "+";
 	for ( auto& part : keysSplit ) {
 		if ( ( mod = getKeyMod( part ) ) ) {
 			shortcut.mod |= mod;
@@ -110,6 +117,32 @@ std::string KeyBindings::getCommandFromKeyBind( const KeyBindings::Shortcut& key
 		return it->second;
 	}
 	return "";
+}
+
+void KeyBindings::reset() {
+	mShortcuts.clear();
+}
+
+const ShortcutMap& KeyBindings::getShortcutMap() const {
+	return mShortcuts;
+}
+
+std::string KeyBindings::getShortcutString( KeyBindings::Shortcut shortcut ) {
+	std::vector<std::string> mods;
+	std::string keyname( String::toLower( mInput->getKeyName( shortcut.key ) ) );
+	if ( shortcut.mod & KEYMOD_CTRL )
+		mods.emplace_back( "ctrl" );
+	if ( shortcut.mod & KEYMOD_SHIFT )
+		mods.emplace_back( "shift" );
+	if ( shortcut.mod & KEYMOD_LALT )
+		mods.emplace_back( "alt" );
+	if ( shortcut.mod & KEYMOD_RALT )
+		mods.emplace_back( "altgr" );
+	if ( shortcut.mod & KEYMOD_META )
+		mods.emplace_back( "meta" );
+	if ( mods.empty() )
+		return keyname;
+	return String::join( mods, '+' ) + "+" + keyname;
 }
 
 }} // namespace EE::UI

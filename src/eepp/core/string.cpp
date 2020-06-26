@@ -259,6 +259,11 @@ String& String::toUpper() {
 	return *this;
 }
 
+String::StringBaseType String::lastChar() const {
+	return mString.empty() ? std::numeric_limits<StringBaseType>::max()
+						   : mString[mString.size() - 1];
+}
+
 std::vector<Uint8> String::stringToUint8( const std::string& str ) {
 	return std::vector<Uint8>( str.begin(), str.end() );
 }

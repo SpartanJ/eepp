@@ -16,6 +16,8 @@ namespace EE { namespace UI {
 
 class UIWidget;
 
+typedef std::map<Uint64, std::string> ShortcutMap;
+
 class EE_API KeyBindings {
   public:
 	struct Shortcut {
@@ -58,10 +60,14 @@ class EE_API KeyBindings {
 
 	std::string getCommandFromKeyBind( const Shortcut& keys );
 
+	void reset();
+
+	const ShortcutMap& getShortcutMap() const;
+
+	std::string getShortcutString( Shortcut shortcut );
+
   protected:
 	const Window::Input* mInput;
-	/** Map first keys, then Mods (Shortcut) to get the command */
-	typedef std::map<Uint64, std::string> ShortcutMap;
 	ShortcutMap mShortcuts;
 };
 

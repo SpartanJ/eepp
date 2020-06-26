@@ -54,6 +54,14 @@ class EE_API TextRange {
 		return true;
 	}
 
+	bool hasSelection() const {
+		return isValid() && mStart != mEnd;
+	}
+
+	bool inSameLine() const {
+		return isValid() && mStart.line() == mEnd.line();
+	}
+
 	std::string toString() {
 		return String::format( "%s - %s", mStart.toString().c_str(), mEnd.toString().c_str() );
 	}

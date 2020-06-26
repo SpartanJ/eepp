@@ -28,7 +28,7 @@ TextureAtlasTextureRegionEditor::TextureAtlasTextureRegionEditor( TextureAtlasEd
 	mDrag->center();
 	mDragPos = mDrag->getPixelsPosition();
 
-	mDrag->addEventListener( Event::OnPositionChange, [this]( const Event* event ) {
+	mDrag->addEventListener( Event::OnPositionChange, [this]( const Event* ) {
 		if ( NULL != mGfx->getTextureRegion() ) {
 			Vector2f Diff = -( mDragPos - mDrag->getPixelsPosition() );
 

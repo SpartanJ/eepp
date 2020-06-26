@@ -275,6 +275,14 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void setShowWhitespaces( const bool& showWhitespaces );
 
+	const String& getHighlightWord() const;
+
+	void setHighlightWord( const String& highlightWord );
+
+	const TextRange& getHighlightTextRange() const;
+
+	void setHighlightTextRange( const TextRange& highlightSelection );
+
   protected:
 	struct LastXOffset {
 		TextPosition position;
@@ -325,6 +333,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Float mLongestLineWidth{0};
 	Time mFindLongestLineWidthUpdateFrequency;
 	Clock mLongestLineWidthLastUpdate;
+	String mHighlightWord;
+	TextRange mHighlightTextRange;
 
 	UICodeEditor( const std::string& elementTag, const bool& autoRegisterBaseCommands = true,
 				  const bool& autoRegisterBaseKeybindings = true );
@@ -425,14 +435,18 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	virtual void drawSelectionMatch( const std::pair<int, int>& lineRange,
 									 const Vector2f& startScroll, const Float& lineHeight );
 
+	virtual void drawWordMatch( const String& text, const std::pair<int, int>& lineRange,
+								const Vector2f& startScroll, const Float& lineHeight );
+
 	virtual void drawLineText( const Int64& index, Vector2f position, const Float& fontSize,
 							   const Float& lineHeight );
 
 	virtual void drawWhitespaces( const std::pair<int, int>& lineRange, const Vector2f& startScroll,
 								  const Float& lineHeight );
 
-	virtual void drawSelection( const std::pair<int, int>& lineRange, const Vector2f& startScroll,
-								const Float& lineHeight );
+	virtual void drawTextRange( const TextRange& range, const std::pair<int, int>& lineRange,
+								const Vector2f& startScroll, const Float& lineHeight,
+								const Color& backgrundColor );
 
 	virtual void drawLineNumbers( const std::pair<int, int>& lineRange, const Vector2f& startScroll,
 								  const Vector2f& screenStart, const Float& lineHeight,

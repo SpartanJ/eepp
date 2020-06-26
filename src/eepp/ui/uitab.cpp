@@ -187,8 +187,6 @@ UIPushButton* UITab::setText( const String& text ) {
 			updateTab();
 
 			tTabW->orderTabs();
-
-			tTabW->setTabSelected( tTabW->getTabSelected() );
 		}
 	}
 	return this;
