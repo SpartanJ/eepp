@@ -83,6 +83,7 @@ std::string StyleSheetLength::unitToString( const StyleSheetLength::Unit& unit )
 		case Unit::Rem:
 			return "rem";
 	}
+	return "px";
 }
 
 StyleSheetLength::StyleSheetLength() : mUnit( Px ), mValue( 0 ) {}

@@ -122,7 +122,7 @@ void Engine::destroy() {
 	mWindow = NULL;
 }
 
-Backend::WindowBackendLibrary* Engine::createSDL2Backend( const WindowSettings& Settings ) {
+Backend::WindowBackendLibrary* Engine::createSDL2Backend( const WindowSettings& ) {
 #if defined( EE_SDL_VERSION_2 )
 	return eeNew( Backend::SDL2::WindowBackendSDL2, () );
 #else

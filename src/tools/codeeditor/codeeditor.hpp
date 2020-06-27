@@ -42,6 +42,7 @@ struct UIConfig {
 struct WindowConfig {
 	Float pixelDensity{0};
 	Sizei size{1280, 720};
+	std::string winIcon;
 	bool maximized{false};
 };
 
@@ -127,6 +128,7 @@ class App : public UICodeEditorSplitter::Client {
 	std::string mKeybindingsPath;
 	SearchState mSearchState;
 	Float mDisplayDPI;
+	std::string mResPath;
 
 	void onFileDropped( String file );
 

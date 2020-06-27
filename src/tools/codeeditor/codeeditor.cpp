@@ -255,6 +255,7 @@ void App::loadConfig() {
 		mIniState.getValueI( "window", "height", mDisplayDPI > 105 ? 1080 : 720 ) );
 	mConfig.window.maximized = mIniState.getValueB( "window", "maximized", false );
 	mConfig.window.pixelDensity = mIniState.getValueF( "window", "pixeldensity" );
+	mConfig.window.winIcon = mIni.getValue( "window", "winicon", mResPath + "assets/icon/ee.png" );
 	mConfig.editor.showLineNumbers = mIni.getValueB( "editor", "show_line_numbers", true );
 	mConfig.editor.showWhiteSpaces = mIni.getValueB( "editor", "show_white_spaces", true );
 	mConfig.editor.highlightMatchingBracket =
@@ -478,7 +479,7 @@ void App::mainLoop() {
 		mConsole->draw( elapsed );
 		mWindow->display();
 	} else {
-		Sys::sleep( Milliseconds( mWindow->hasFocus() ? 1 : 16 ) );
+		Sys::sleep( Milliseconds( mWindow->hasFocus() ? 16 : 100 ) );
 	}
 }
 
@@ -618,6 +619,7 @@ UIMenu* App::createViewMenu() {
 				UIMessageBox::New( UIMessageBox::INPUT, "Set the editor font size:" );
 			msgBox->setTitle( mWindowTitle );
 			msgBox->getTextInput()->setText( mConfig.editor.fontSize.toString() );
+			msgBox->setCloseShortcut( {KEY_ESCAPE, 0} );
 			msgBox->show();
 			msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox]( const Event* ) {
 				mConfig.editor.fontSize = StyleSheetLength( msgBox->getTextInput()->getText() );
@@ -634,6 +636,7 @@ UIMenu* App::createViewMenu() {
 													  "Set the UI font size (requires restart):" );
 			msgBox->setTitle( mWindowTitle );
 			msgBox->getTextInput()->setText( mConfig.ui.fontSize.toString() );
+			msgBox->setCloseShortcut( {KEY_ESCAPE, 0} );
 			msgBox->show();
 			msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox]( const Event* ) {
 				mConfig.ui.fontSize = StyleSheetLength( msgBox->getTextInput()->getText() );
@@ -648,6 +651,7 @@ UIMenu* App::createViewMenu() {
 				UIMessageBox::New( UIMessageBox::INPUT, "Set Line Breaking Column:\n"
 														"Set 0 to disable it.\n" );
 			msgBox->setTitle( mWindowTitle );
+			msgBox->setCloseShortcut( {KEY_ESCAPE, 0} );
 			msgBox->getTextInput()->setAllowOnlyNumbers( true, false );
 			msgBox->getTextInput()->setText(
 				String::toString( mConfig.editor.lineBreakingColumn ) );
@@ -1143,6 +1147,7 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
 	Display* currentDisplay = displayManager->getDisplayIndex( 0 );
 	mDisplayDPI = currentDisplay->getDPI();
+	mResPath = Sys::getProcessPath();
 
 	loadConfig();
 
@@ -1155,13 +1160,16 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 	displayManager->enableMouseFocusClickThrough();
 	displayManager->disableBypassCompositor();
 
-	std::string resPath( Sys::getProcessPath() );
+	Engine* engine = Engine::instance();
 
-	mWindow = Engine::instance()->createWindow(
-		WindowSettings( mConfig.window.size.getWidth(), mConfig.window.size.getHeight(),
-						mWindowTitle, WindowStyle::Default, WindowBackend::Default, 32,
-						resPath + "assets/icon/ee.png", 1 ),
-		ContextSettings( true ) );
+	WindowSettings winSettings = engine->createWindowSettings( &mIniState, "window" );
+	winSettings.PixelDensity = 1;
+	winSettings.Width = mConfig.window.size.getWidth();
+	winSettings.Height = mConfig.window.size.getHeight();
+	if ( winSettings.Icon.empty() )
+		winSettings.Icon = mConfig.window.winIcon;
+	ContextSettings contextSettings = engine->createContextSettings( &mIni, "window" );
+	mWindow = engine->createWindow( winSettings, contextSettings );
 
 	if ( mWindow->isOpen() ) {
 		loadKeybindings();
@@ -1187,19 +1195,19 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		mUISceneNode = UISceneNode::New();
 
 		FontTrueType* font =
-			FontTrueType::New( "NotoSans-Regular", resPath + "assets/fonts/NotoSans-Regular.ttf" );
+			FontTrueType::New( "NotoSans-Regular", mResPath + "assets/fonts/NotoSans-Regular.ttf" );
 
 		FontTrueType* fontMono =
-			FontTrueType::New( "monospace", resPath + "assets/fonts/DejaVuSansMono.ttf" );
+			FontTrueType::New( "monospace", mResPath + "assets/fonts/DejaVuSansMono.ttf" );
 		fontMono->setBoldAdvanceSameAsRegular( true );
 
 		FontTrueType* iconFont =
-			FontTrueType::New( "icon", resPath + "assets/fonts/remixicon.ttf" );
+			FontTrueType::New( "icon", mResPath + "assets/fonts/remixicon.ttf" );
 
 		SceneManager::instance()->add( mUISceneNode );
 
 		UITheme* theme =
-			UITheme::load( "uitheme", "uitheme", "", font, resPath + "assets/ui/breeze.css" );
+			UITheme::load( "uitheme", "uitheme", "", font, mResPath + "assets/ui/breeze.css" );
 		theme->setDefaultFontSize( mConfig.ui.fontSize.asDp( 0, Sizef(), mDisplayDPI ) );
 		mUISceneNode->setStyleSheet( theme->getStyleSheet() );
 		mUISceneNode
@@ -1330,7 +1338,7 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 
 		mEditorSplitter = UICodeEditorSplitter::New(
 			this, mUISceneNode,
-			SyntaxColorScheme::loadFromFile( resPath + "assets/colorschemes/colorschemes.conf" ),
+			SyntaxColorScheme::loadFromFile( mResPath + "assets/colorschemes/colorschemes.conf" ),
 			mInitColorScheme );
 
 		initSearchBar();

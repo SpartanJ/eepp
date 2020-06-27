@@ -366,10 +366,12 @@ Float UICodeEditor::getViewportWidth( const bool& forceVScroll ) const {
 	return viewWidth;
 }
 
-UICodeEditor* UICodeEditor::setFontSize( Float dpSize ) {
+UICodeEditor* UICodeEditor::setFontSize( const Float& dpSize ) {
 	if ( mFontStyleConfig.CharacterSize != dpSize ) {
-		mFontStyleConfig.CharacterSize = dpSize;
-		mFontSize = dpSize;
+		mFontStyleConfig.CharacterSize =
+			eeabs( dpSize - (int)dpSize ) == 0.5f || (int)dpSize == dpSize ? dpSize
+																		   : eefloor( dpSize );
+		mFontSize = mFontStyleConfig.CharacterSize;
 		invalidateDraw();
 		onFontChanged();
 	}
