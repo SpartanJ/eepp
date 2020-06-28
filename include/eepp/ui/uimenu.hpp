@@ -16,7 +16,7 @@ class EE_API UIMenu : public UIWidget {
 	static UIMenu* New();
 
 	static void findBestMenuPos( Vector2f& position, UIMenu* menu, UIMenu* parent = NULL,
-							UIMenuSubMenu* subMenu = NULL );
+								 UIMenuSubMenu* subMenu = NULL );
 
 	UIMenu();
 
@@ -81,6 +81,8 @@ class EE_API UIMenu : public UIWidget {
 	const Sizei& getIconMinimumSize() const;
 
 	void backpropagateHide();
+
+	const Clock& getInactiveTime() const;
 
   protected:
 	friend class UIMenuItem;

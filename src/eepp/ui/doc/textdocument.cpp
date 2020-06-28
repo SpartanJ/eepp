@@ -319,7 +319,10 @@ bool TextDocument::save( IOStream& stream ) {
 			}
 			if ( mForceNewLineAtEndOfFile && !text.empty() && text[text.size() - 1] != '\n' ) {
 				text += "\n";
-				textInput( "\n" );
+				mLines.emplace_back( TextDocumentLine( "\n" ) );
+				notifyTextChanged();
+				notifyLineChanged( i );
+				notifyLineCountChanged( lastLine, lastLine + 1 );
 			}
 		}
 		if ( mLineEnding == LineEnding::CRLF ) {

@@ -452,6 +452,10 @@ void UIMenu::backpropagateHide() {
 	}
 }
 
+const Clock& UIMenu::getInactiveTime() const {
+	return mInactiveTime;
+}
+
 void UIMenu::nextSel() {
 	if ( mItems.size() ) {
 		if ( mItemSelectedIndex != eeINDEX_NOT_FOUND ) {
@@ -624,6 +628,8 @@ void UIMenu::onVisibilityChange() {
 		} else {
 			unsubscribeScheduledUpdate();
 		}
+	} else {
+		mInactiveTime.restart();
 	}
 }
 

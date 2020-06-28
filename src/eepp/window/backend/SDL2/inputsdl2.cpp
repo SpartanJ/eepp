@@ -20,324 +20,36 @@ InputSDL::~InputSDL() {}
 
 void InputSDL::update() {
 	SDL_Event SDLEvent;
-	InputEvent EEEvent;
-
 	cleanStates();
-
-	while ( SDL_PollEvent( &SDLEvent ) ) {
-		switch ( SDLEvent.type ) {
-			case SDL_WINDOWEVENT: {
-				switch ( SDLEvent.window.event ) {
-					case SDL_WINDOWEVENT_RESIZED: {
-						EEEvent.Type = InputEvent::VideoResize;
-						EEEvent.resize.w = SDLEvent.window.data1 * mDPIScale;
-						EEEvent.resize.h = SDLEvent.window.data2 * mDPIScale;
-						break;
-					}
-					case SDL_WINDOWEVENT_HIT_TEST: {
-						EEEvent.Type = InputEvent::Window;
-						EEEvent.window.gain = 1;
-						EEEvent.window.type = InputEvent::WindowHitTest;
-						break;
-					}
-					case SDL_WINDOWEVENT_TAKE_FOCUS: {
-						EEEvent.Type = InputEvent::VideoExpose;
-						EEEvent.expose.type = EEEvent.Type;
-						break;
-					}
-					case SDL_WINDOWEVENT_CLOSE: {
-						EEEvent.Type = InputEvent::Window;
-						EEEvent.window.gain = 0;
-						EEEvent.window.type = InputEvent::WindowClose;
-						break;
-					}
-					case SDL_WINDOWEVENT_SIZE_CHANGED: {
-						EEEvent.Type = InputEvent::Window;
-						EEEvent.window.gain = 1;
-						EEEvent.window.type = InputEvent::WindowSizeChanged;
-						break;
-					}
-					case SDL_WINDOWEVENT_MAXIMIZED: {
-						EEEvent.Type = InputEvent::Window;
-						EEEvent.window.gain = 1;
-						EEEvent.window.type = InputEvent::WindowMaximized;
-						break;
-					}
-					case SDL_WINDOWEVENT_EXPOSED: {
-						EEEvent.Type = InputEvent::VideoExpose;
-						EEEvent.expose.type = EEEvent.Type;
-						break;
-					}
-					case SDL_WINDOWEVENT_MOVED: {
-						EEEvent.Type = InputEvent::Window;
-						EEEvent.window.gain = 1;
-						EEEvent.window.type = InputEvent::WindowMoved;
-						break;
-					}
-					case SDL_WINDOWEVENT_SHOWN: {
-						EEEvent.Type = InputEvent::Window;
-						EEEvent.window.gain = 1;
-						EEEvent.window.type = InputEvent::WindowShown;
-						break;
-					}
-					case SDL_WINDOWEVENT_HIDDEN: {
-						EEEvent.Type = InputEvent::Window;
-						EEEvent.window.gain = 0;
-						EEEvent.window.type = InputEvent::WindowHidden;
-						break;
-					}
-					case SDL_WINDOWEVENT_MINIMIZED: {
-						EEEvent.Type = InputEvent::Window;
-						EEEvent.window.gain = 0;
-						EEEvent.window.type = InputEvent::WindowMinimized;
-						break;
-					}
-					case SDL_WINDOWEVENT_RESTORED: {
-						EEEvent.Type = InputEvent::Window;
-						EEEvent.window.gain = 1;
-						EEEvent.window.type = InputEvent::WindowRestored;
-						break;
-					}
-					case SDL_WINDOWEVENT_ENTER: {
-						EEEvent.Type = InputEvent::Window;
-						EEEvent.window.gain = 1;
-						EEEvent.window.type = InputEvent::WindowMouseEnter;
-						break;
-					}
-					case SDL_WINDOWEVENT_LEAVE: {
-						EEEvent.Type = InputEvent::Window;
-						EEEvent.window.gain = 0;
-						EEEvent.window.type = InputEvent::WindowMouseLeave;
-						break;
-					}
-					case SDL_WINDOWEVENT_FOCUS_GAINED: {
-						EEEvent.Type = InputEvent::Window;
-						EEEvent.window.gain = 1;
-						EEEvent.window.type = InputEvent::WindowKeyboardFocusGain;
-						break;
-					}
-					case SDL_WINDOWEVENT_FOCUS_LOST: {
-						EEEvent.Type = InputEvent::Window;
-						EEEvent.window.gain = 0;
-						EEEvent.window.type = InputEvent::WindowKeyboardFocusLost;
-						break;
-					}
-				}
-
-				break;
-			}
-			case SDL_TEXTINPUT: {
-				String txt = String::fromUtf8( SDLEvent.text.text );
-				EEEvent.Type = InputEvent::TextInput;
-				EEEvent.text.timestamp = SDLEvent.text.timestamp;
-				EEEvent.text.text = txt[0];
-				break;
-			}
-			case SDL_KEYDOWN: {
-				EEEvent.Type = InputEvent::KeyDown;
-				EEEvent.key.state = SDLEvent.key.state;
-				EEEvent.key.which = SDLEvent.key.windowID;
-				EEEvent.key.keysym.sym = (Keycode)SDLEvent.key.keysym.sym;
-				EEEvent.key.keysym.scancode = (Scancode)SDLEvent.key.keysym.scancode;
-				EEEvent.key.keysym.mod = SDLEvent.key.keysym.mod;
-				EEEvent.key.keysym.unicode = 0;
-				break;
-			}
-			case SDL_KEYUP: {
-				EEEvent.Type = InputEvent::KeyUp;
-				EEEvent.key.state = SDLEvent.key.state;
-				EEEvent.key.which = SDLEvent.key.windowID;
-				EEEvent.key.keysym.sym = (Keycode)SDLEvent.key.keysym.sym;
-				EEEvent.key.keysym.scancode = (Scancode)SDLEvent.key.keysym.scancode;
-				EEEvent.key.keysym.mod = SDLEvent.key.keysym.mod;
-				EEEvent.key.keysym.unicode = 0;
-				break;
-			}
-			case SDL_MOUSEMOTION: {
-				EEEvent.Type = InputEvent::MouseMotion;
-				EEEvent.motion.which = SDLEvent.motion.windowID;
-				EEEvent.motion.state = SDLEvent.motion.state;
-				EEEvent.motion.x = SDLEvent.motion.x * mDPIScale;
-				EEEvent.motion.y = SDLEvent.motion.y * mDPIScale;
-				EEEvent.motion.xrel = SDLEvent.motion.xrel * mDPIScale;
-				EEEvent.motion.yrel = SDLEvent.motion.yrel * mDPIScale;
-				break;
-			}
-			case SDL_MOUSEBUTTONDOWN: {
-				EEEvent.Type = InputEvent::MouseButtonDown;
-				EEEvent.button.button = SDLEvent.button.button;
-				EEEvent.button.which = SDLEvent.button.windowID;
-				EEEvent.button.state = SDLEvent.button.state;
-				EEEvent.button.x = SDLEvent.button.x;
-				EEEvent.button.y = SDLEvent.button.y;
-				break;
-			}
-			case SDL_MOUSEBUTTONUP: {
-				EEEvent.Type = InputEvent::MouseButtonUp;
-				EEEvent.button.button = SDLEvent.button.button;
-				EEEvent.button.which = SDLEvent.button.windowID;
-				EEEvent.button.state = SDLEvent.button.state;
-				EEEvent.button.x = SDLEvent.button.x;
-				EEEvent.button.y = SDLEvent.button.y;
-				break;
-			}
-			case SDL_MOUSEWHEEL: {
-				Uint8 button;
-				int x, y;
-
-				if ( SDLEvent.wheel.y == 0 ) {
-					break;
-				}
-
-				SDL_GetMouseState( &x, &y );
-
-				if ( SDLEvent.wheel.y > 0 ) {
-					button = EE_BUTTON_WHEELUP;
-				} else {
-					button = EE_BUTTON_WHEELDOWN;
-				}
-
-				EEEvent.button.button = button;
-				EEEvent.button.x = x;
-				EEEvent.button.y = y;
-				EEEvent.button.which = SDLEvent.wheel.windowID;
-
-				EEEvent.Type = InputEvent::MouseButtonDown;
-				EEEvent.button.state = 1;
-				processEvent( &EEEvent );
-
-				EEEvent.Type = InputEvent::MouseButtonUp;
-				EEEvent.button.state = 0;
-				break;
-			}
-			case SDL_FINGERMOTION: {
-				EEEvent.Type = InputEvent::FingerMotion;
-				EEEvent.finger.timestamp = SDLEvent.tfinger.timestamp;
-				EEEvent.finger.touchId = SDLEvent.tfinger.touchId;
-				EEEvent.finger.fingerId = SDLEvent.tfinger.fingerId;
-				EEEvent.finger.x = SDLEvent.tfinger.x;
-				EEEvent.finger.y = SDLEvent.tfinger.y;
-				EEEvent.finger.dx = SDLEvent.tfinger.dx;
-				EEEvent.finger.dy = SDLEvent.tfinger.dy;
-				EEEvent.finger.pressure = SDLEvent.tfinger.pressure;
-				break;
-			}
-			case SDL_FINGERDOWN: {
-				EEEvent.Type = InputEvent::FingerDown;
-				EEEvent.finger.timestamp = SDLEvent.tfinger.timestamp;
-				EEEvent.finger.touchId = SDLEvent.tfinger.touchId;
-				EEEvent.finger.fingerId = SDLEvent.tfinger.fingerId;
-				EEEvent.finger.x = SDLEvent.tfinger.x;
-				EEEvent.finger.y = SDLEvent.tfinger.y;
-				EEEvent.finger.dx = SDLEvent.tfinger.dx;
-				EEEvent.finger.dy = SDLEvent.tfinger.dy;
-				EEEvent.finger.pressure = SDLEvent.tfinger.pressure;
-				break;
-			}
-			case SDL_FINGERUP: {
-				EEEvent.Type = InputEvent::FingerUp;
-				EEEvent.finger.timestamp = SDLEvent.tfinger.timestamp;
-				EEEvent.finger.touchId = SDLEvent.tfinger.touchId;
-				EEEvent.finger.fingerId = SDLEvent.tfinger.fingerId;
-				EEEvent.finger.x = SDLEvent.tfinger.x;
-				EEEvent.finger.y = SDLEvent.tfinger.y;
-				EEEvent.finger.dx = SDLEvent.tfinger.dx;
-				EEEvent.finger.dy = SDLEvent.tfinger.dy;
-				EEEvent.finger.pressure = SDLEvent.tfinger.pressure;
-				break;
-			}
-			case SDL_JOYAXISMOTION: {
-				EEEvent.Type = InputEvent::JoyAxisMotion;
-				EEEvent.jaxis.which = SDLEvent.jaxis.which;
-				EEEvent.jaxis.axis = SDLEvent.jaxis.axis;
-				EEEvent.jaxis.value = SDLEvent.jaxis.value;
-				break;
-			}
-			case SDL_JOYBALLMOTION: {
-				EEEvent.Type = InputEvent::JoyBallMotion;
-				EEEvent.jball.which = SDLEvent.jball.which;
-				EEEvent.jball.ball = SDLEvent.jball.ball;
-				EEEvent.jball.xrel = SDLEvent.jball.xrel;
-				EEEvent.jball.yrel = SDLEvent.jball.yrel;
-				break;
-			}
-			case SDL_JOYHATMOTION: {
-				EEEvent.Type = InputEvent::JoyHatMotion;
-				EEEvent.jhat.which = SDLEvent.jhat.which;
-				EEEvent.jhat.value = SDLEvent.jhat.value;
-				EEEvent.jhat.hat = SDLEvent.jhat.hat;
-				break;
-			}
-			case SDL_JOYBUTTONDOWN: {
-				EEEvent.Type = InputEvent::JoyButtonDown;
-				EEEvent.jbutton.which = SDLEvent.jbutton.which;
-				EEEvent.jbutton.state = SDLEvent.jbutton.state;
-				EEEvent.jbutton.button = SDLEvent.jbutton.button;
-				break;
-			}
-			case SDL_JOYBUTTONUP: {
-				EEEvent.Type = InputEvent::JoyButtonUp;
-				EEEvent.jbutton.which = SDLEvent.jbutton.which;
-				EEEvent.jbutton.state = SDLEvent.jbutton.state;
-				EEEvent.jbutton.button = SDLEvent.jbutton.button;
-				break;
-			}
-			case SDL_QUIT: {
-				EEEvent.Type = InputEvent::Quit;
-				EEEvent.quit.type = EEEvent.Type;
-				break;
-			}
-			case SDL_SYSWMEVENT: {
-				EEEvent.Type = InputEvent::SysWM;
-				EEEvent.syswm.msg = (InputEvent::SysWMmsg*)SDLEvent.syswm.msg;
-				break;
-			}
-			case SDL_DROPFILE: {
-				EEEvent.Type = InputEvent::FileDropped;
-				EEEvent.file.file = SDLEvent.drop.file;
-				break;
-			}
-			case SDL_DROPTEXT: {
-				EEEvent.Type = InputEvent::TextDropped;
-				EEEvent.textdrop.text = SDLEvent.drop.file;
-				break;
-			}
-			default: {
-				if ( SDLEvent.type >= SDL_USEREVENT && SDLEvent.type < SDL_LASTEVENT ) {
-					EEEvent.Type = InputEvent::EventUser + SDLEvent.type - SDL_USEREVENT;
-					EEEvent.user.type = EEEvent.Type;
-					EEEvent.user.code = SDLEvent.user.code;
-					EEEvent.user.data1 = SDLEvent.user.data1;
-					EEEvent.user.data2 = SDLEvent.user.data2;
-				} else {
-					EEEvent.Type = InputEvent::NoEvent;
-				}
-			}
-		}
-
-		if ( InputEvent::NoEvent != EEEvent.Type ) {
-			processEvent( &EEEvent );
-		}
-
-		if ( InputEvent::FileDropped == EEEvent.Type || InputEvent::TextDropped == EEEvent.Type ) {
-			SDL_free( SDLEvent.drop.file );
-		}
+	if ( !mQueuedEvents.empty() ) {
+		for ( auto prevEvent : mQueuedEvents )
+			sendEvent( prevEvent );
+		mQueuedEvents.clear();
 	}
-
+	while ( SDL_PollEvent( &SDLEvent ) )
+		sendEvent( SDLEvent );
 	InputEvent endProcessingEvent;
 	endProcessingEvent.Type = InputEvent::EventsSent;
 	processEvent( &endProcessingEvent );
 }
 
+void InputSDL::waitEvent( const Time& timeout ) {
+	SDL_Event SDLEvent;
+	if ( timeout == Time::Zero ) {
+		if ( SDL_WaitEvent( &SDLEvent ) )
+			mQueuedEvents.emplace_back( SDLEvent );
+	} else if ( SDL_WaitEventTimeout( &SDLEvent, (int)timeout.asMilliseconds() ) )
+		mQueuedEvents.emplace_back( SDLEvent );
+}
+
 bool InputSDL::grabInput() {
-	return ( SDL_GetWindowGrab( reinterpret_cast<WindowSDL*>( mWindow )->GetSDLWindow() ) ==
-			 SDL_TRUE )
+	return ( SDL_GetWindowGrab( static_cast<WindowSDL*>( mWindow )->GetSDLWindow() ) == SDL_TRUE )
 			   ? true
 			   : false;
 }
 
 void InputSDL::grabInput( const bool& Grab ) {
-	SDL_SetWindowGrab( reinterpret_cast<WindowSDL*>( mWindow )->GetSDLWindow(),
+	SDL_SetWindowGrab( static_cast<WindowSDL*>( mWindow )->GetSDLWindow(),
 					   Grab ? SDL_TRUE : SDL_FALSE );
 }
 
@@ -399,6 +111,303 @@ void InputSDL::init() {
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	mJoystickManager->open();
 #endif
+}
+
+void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
+	InputEvent event;
+	switch ( SDLEvent.type ) {
+		case SDL_WINDOWEVENT: {
+			switch ( SDLEvent.window.event ) {
+				case SDL_WINDOWEVENT_RESIZED: {
+					event.Type = InputEvent::VideoResize;
+					event.resize.w = SDLEvent.window.data1 * mDPIScale;
+					event.resize.h = SDLEvent.window.data2 * mDPIScale;
+					break;
+				}
+				case SDL_WINDOWEVENT_HIT_TEST: {
+					event.Type = InputEvent::Window;
+					event.window.gain = 1;
+					event.window.type = InputEvent::WindowHitTest;
+					break;
+				}
+				case SDL_WINDOWEVENT_TAKE_FOCUS: {
+					event.Type = InputEvent::VideoExpose;
+					event.expose.type = event.Type;
+					break;
+				}
+				case SDL_WINDOWEVENT_CLOSE: {
+					event.Type = InputEvent::Window;
+					event.window.gain = 0;
+					event.window.type = InputEvent::WindowClose;
+					break;
+				}
+				case SDL_WINDOWEVENT_SIZE_CHANGED: {
+					event.Type = InputEvent::Window;
+					event.window.gain = 1;
+					event.window.type = InputEvent::WindowSizeChanged;
+					break;
+				}
+				case SDL_WINDOWEVENT_MAXIMIZED: {
+					event.Type = InputEvent::Window;
+					event.window.gain = 1;
+					event.window.type = InputEvent::WindowMaximized;
+					break;
+				}
+				case SDL_WINDOWEVENT_EXPOSED: {
+					event.Type = InputEvent::VideoExpose;
+					event.expose.type = event.Type;
+					break;
+				}
+				case SDL_WINDOWEVENT_MOVED: {
+					event.Type = InputEvent::Window;
+					event.window.gain = 1;
+					event.window.type = InputEvent::WindowMoved;
+					break;
+				}
+				case SDL_WINDOWEVENT_SHOWN: {
+					event.Type = InputEvent::Window;
+					event.window.gain = 1;
+					event.window.type = InputEvent::WindowShown;
+					break;
+				}
+				case SDL_WINDOWEVENT_HIDDEN: {
+					event.Type = InputEvent::Window;
+					event.window.gain = 0;
+					event.window.type = InputEvent::WindowHidden;
+					break;
+				}
+				case SDL_WINDOWEVENT_MINIMIZED: {
+					event.Type = InputEvent::Window;
+					event.window.gain = 0;
+					event.window.type = InputEvent::WindowMinimized;
+					break;
+				}
+				case SDL_WINDOWEVENT_RESTORED: {
+					event.Type = InputEvent::Window;
+					event.window.gain = 1;
+					event.window.type = InputEvent::WindowRestored;
+					break;
+				}
+				case SDL_WINDOWEVENT_ENTER: {
+					event.Type = InputEvent::Window;
+					event.window.gain = 1;
+					event.window.type = InputEvent::WindowMouseEnter;
+					break;
+				}
+				case SDL_WINDOWEVENT_LEAVE: {
+					event.Type = InputEvent::Window;
+					event.window.gain = 0;
+					event.window.type = InputEvent::WindowMouseLeave;
+					break;
+				}
+				case SDL_WINDOWEVENT_FOCUS_GAINED: {
+					event.Type = InputEvent::Window;
+					event.window.gain = 1;
+					event.window.type = InputEvent::WindowKeyboardFocusGain;
+					break;
+				}
+				case SDL_WINDOWEVENT_FOCUS_LOST: {
+					event.Type = InputEvent::Window;
+					event.window.gain = 0;
+					event.window.type = InputEvent::WindowKeyboardFocusLost;
+					break;
+				}
+			}
+
+			break;
+		}
+		case SDL_TEXTINPUT: {
+			String txt = String::fromUtf8( SDLEvent.text.text );
+			event.Type = InputEvent::TextInput;
+			event.text.timestamp = SDLEvent.text.timestamp;
+			event.text.text = txt[0];
+			break;
+		}
+		case SDL_KEYDOWN: {
+			event.Type = InputEvent::KeyDown;
+			event.key.state = SDLEvent.key.state;
+			event.key.which = SDLEvent.key.windowID;
+			event.key.keysym.sym = (Keycode)SDLEvent.key.keysym.sym;
+			event.key.keysym.scancode = (Scancode)SDLEvent.key.keysym.scancode;
+			event.key.keysym.mod = SDLEvent.key.keysym.mod;
+			event.key.keysym.unicode = 0;
+			break;
+		}
+		case SDL_KEYUP: {
+			event.Type = InputEvent::KeyUp;
+			event.key.state = SDLEvent.key.state;
+			event.key.which = SDLEvent.key.windowID;
+			event.key.keysym.sym = (Keycode)SDLEvent.key.keysym.sym;
+			event.key.keysym.scancode = (Scancode)SDLEvent.key.keysym.scancode;
+			event.key.keysym.mod = SDLEvent.key.keysym.mod;
+			event.key.keysym.unicode = 0;
+			break;
+		}
+		case SDL_MOUSEMOTION: {
+			event.Type = InputEvent::MouseMotion;
+			event.motion.which = SDLEvent.motion.windowID;
+			event.motion.state = SDLEvent.motion.state;
+			event.motion.x = SDLEvent.motion.x * mDPIScale;
+			event.motion.y = SDLEvent.motion.y * mDPIScale;
+			event.motion.xrel = SDLEvent.motion.xrel * mDPIScale;
+			event.motion.yrel = SDLEvent.motion.yrel * mDPIScale;
+			break;
+		}
+		case SDL_MOUSEBUTTONDOWN: {
+			event.Type = InputEvent::MouseButtonDown;
+			event.button.button = SDLEvent.button.button;
+			event.button.which = SDLEvent.button.windowID;
+			event.button.state = SDLEvent.button.state;
+			event.button.x = SDLEvent.button.x;
+			event.button.y = SDLEvent.button.y;
+			break;
+		}
+		case SDL_MOUSEBUTTONUP: {
+			event.Type = InputEvent::MouseButtonUp;
+			event.button.button = SDLEvent.button.button;
+			event.button.which = SDLEvent.button.windowID;
+			event.button.state = SDLEvent.button.state;
+			event.button.x = SDLEvent.button.x;
+			event.button.y = SDLEvent.button.y;
+			break;
+		}
+		case SDL_MOUSEWHEEL: {
+			Uint8 button;
+			int x, y;
+
+			if ( SDLEvent.wheel.y == 0 ) {
+				break;
+			}
+
+			SDL_GetMouseState( &x, &y );
+
+			if ( SDLEvent.wheel.y > 0 ) {
+				button = EE_BUTTON_WHEELUP;
+			} else {
+				button = EE_BUTTON_WHEELDOWN;
+			}
+
+			event.button.button = button;
+			event.button.x = x;
+			event.button.y = y;
+			event.button.which = SDLEvent.wheel.windowID;
+
+			event.Type = InputEvent::MouseButtonDown;
+			event.button.state = 1;
+			processEvent( &event );
+
+			event.Type = InputEvent::MouseButtonUp;
+			event.button.state = 0;
+			break;
+		}
+		case SDL_FINGERMOTION: {
+			event.Type = InputEvent::FingerMotion;
+			event.finger.timestamp = SDLEvent.tfinger.timestamp;
+			event.finger.touchId = SDLEvent.tfinger.touchId;
+			event.finger.fingerId = SDLEvent.tfinger.fingerId;
+			event.finger.x = SDLEvent.tfinger.x;
+			event.finger.y = SDLEvent.tfinger.y;
+			event.finger.dx = SDLEvent.tfinger.dx;
+			event.finger.dy = SDLEvent.tfinger.dy;
+			event.finger.pressure = SDLEvent.tfinger.pressure;
+			break;
+		}
+		case SDL_FINGERDOWN: {
+			event.Type = InputEvent::FingerDown;
+			event.finger.timestamp = SDLEvent.tfinger.timestamp;
+			event.finger.touchId = SDLEvent.tfinger.touchId;
+			event.finger.fingerId = SDLEvent.tfinger.fingerId;
+			event.finger.x = SDLEvent.tfinger.x;
+			event.finger.y = SDLEvent.tfinger.y;
+			event.finger.dx = SDLEvent.tfinger.dx;
+			event.finger.dy = SDLEvent.tfinger.dy;
+			event.finger.pressure = SDLEvent.tfinger.pressure;
+			break;
+		}
+		case SDL_FINGERUP: {
+			event.Type = InputEvent::FingerUp;
+			event.finger.timestamp = SDLEvent.tfinger.timestamp;
+			event.finger.touchId = SDLEvent.tfinger.touchId;
+			event.finger.fingerId = SDLEvent.tfinger.fingerId;
+			event.finger.x = SDLEvent.tfinger.x;
+			event.finger.y = SDLEvent.tfinger.y;
+			event.finger.dx = SDLEvent.tfinger.dx;
+			event.finger.dy = SDLEvent.tfinger.dy;
+			event.finger.pressure = SDLEvent.tfinger.pressure;
+			break;
+		}
+		case SDL_JOYAXISMOTION: {
+			event.Type = InputEvent::JoyAxisMotion;
+			event.jaxis.which = SDLEvent.jaxis.which;
+			event.jaxis.axis = SDLEvent.jaxis.axis;
+			event.jaxis.value = SDLEvent.jaxis.value;
+			break;
+		}
+		case SDL_JOYBALLMOTION: {
+			event.Type = InputEvent::JoyBallMotion;
+			event.jball.which = SDLEvent.jball.which;
+			event.jball.ball = SDLEvent.jball.ball;
+			event.jball.xrel = SDLEvent.jball.xrel;
+			event.jball.yrel = SDLEvent.jball.yrel;
+			break;
+		}
+		case SDL_JOYHATMOTION: {
+			event.Type = InputEvent::JoyHatMotion;
+			event.jhat.which = SDLEvent.jhat.which;
+			event.jhat.value = SDLEvent.jhat.value;
+			event.jhat.hat = SDLEvent.jhat.hat;
+			break;
+		}
+		case SDL_JOYBUTTONDOWN: {
+			event.Type = InputEvent::JoyButtonDown;
+			event.jbutton.which = SDLEvent.jbutton.which;
+			event.jbutton.state = SDLEvent.jbutton.state;
+			event.jbutton.button = SDLEvent.jbutton.button;
+			break;
+		}
+		case SDL_JOYBUTTONUP: {
+			event.Type = InputEvent::JoyButtonUp;
+			event.jbutton.which = SDLEvent.jbutton.which;
+			event.jbutton.state = SDLEvent.jbutton.state;
+			event.jbutton.button = SDLEvent.jbutton.button;
+			break;
+		}
+		case SDL_QUIT: {
+			event.Type = InputEvent::Quit;
+			event.quit.type = event.Type;
+			break;
+		}
+		case SDL_SYSWMEVENT: {
+			event.Type = InputEvent::SysWM;
+			event.syswm.msg = (InputEvent::SysWMmsg*)SDLEvent.syswm.msg;
+			break;
+		}
+		case SDL_DROPFILE: {
+			event.Type = InputEvent::FileDropped;
+			event.file.file = SDLEvent.drop.file;
+			break;
+		}
+		case SDL_DROPTEXT: {
+			event.Type = InputEvent::TextDropped;
+			event.textdrop.text = SDLEvent.drop.file;
+			break;
+		}
+		default: {
+			if ( SDLEvent.type >= SDL_USEREVENT && SDLEvent.type < SDL_LASTEVENT ) {
+				event.Type = InputEvent::EventUser + SDLEvent.type - SDL_USEREVENT;
+				event.user.type = event.Type;
+				event.user.code = SDLEvent.user.code;
+				event.user.data1 = SDLEvent.user.data1;
+				event.user.data2 = SDLEvent.user.data2;
+			} else {
+				event.Type = InputEvent::NoEvent;
+			}
+		}
+	}
+	if ( InputEvent::NoEvent != event.Type )
+		processEvent( &event );
+	if ( InputEvent::FileDropped == event.Type || InputEvent::TextDropped == event.Type )
+		SDL_free( SDLEvent.drop.file );
 }
 
 }}}} // namespace EE::Window::Backend::SDL2

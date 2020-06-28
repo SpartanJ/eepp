@@ -20,8 +20,8 @@ class EE_API LuaPattern {
 
 	LuaPattern( const std::string& pattern );
 
-	bool matches( const char* stringSearch, int stringStartOffset,
-				  LuaPattern::Match* matchList, size_t stringLength );
+	bool matches( const char* stringSearch, int stringStartOffset, LuaPattern::Match* matchList,
+				  size_t stringLength );
 
 	bool matches( const std::string& str, LuaPattern::Match* matchList,
 				  int stringStartOffset = 0 ) {
@@ -38,8 +38,7 @@ class EE_API LuaPattern {
 
 	int getNumMatches();
 
-	bool range( int indexGet, int& startMatch, int& endMatch,
-				LuaPattern::Match* returnedMatched );
+	bool range( int indexGet, int& startMatch, int& endMatch, LuaPattern::Match* returnedMatched );
 
   protected:
 	std::string mErr;

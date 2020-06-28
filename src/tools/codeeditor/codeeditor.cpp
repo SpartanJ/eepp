@@ -452,23 +452,7 @@ void App::closeApp() {
 }
 
 void App::mainLoop() {
-	Input* input = mWindow->getInput();
-
-	input->update();
-
-	if ( input->isKeyUp( KEY_F6 ) ) {
-		mUISceneNode->setHighlightFocus( !mUISceneNode->getHighlightFocus() );
-		mUISceneNode->setHighlightOver( !mUISceneNode->getHighlightOver() );
-	}
-
-	if ( input->isKeyUp( KEY_F7 ) ) {
-		mUISceneNode->setDrawBoxes( !mUISceneNode->getDrawBoxes() );
-	}
-
-	if ( input->isKeyUp( KEY_F8 ) ) {
-		mUISceneNode->setDrawDebugData( !mUISceneNode->getDrawDebugData() );
-	}
-
+	mWindow->getInput()->update();
 	Time elapsed = SceneManager::instance()->getElapsed();
 	SceneManager::instance()->update();
 
@@ -479,7 +463,7 @@ void App::mainLoop() {
 		mConsole->draw( elapsed );
 		mWindow->display();
 	} else {
-		Sys::sleep( Milliseconds( mWindow->hasFocus() ? 16 : 100 ) );
+		mWindow->getInput()->waitEvent( Milliseconds( mWindow->hasFocus() ? 16 : 100 ) );
 	}
 }
 
@@ -889,19 +873,36 @@ void App::updateDocumentMenu() {
 
 void App::loadKeybindings() {
 	if ( mKeybindings.empty() ) {
+		KeyBindings bindings( mWindow->getInput() );
+		auto defKeybindings = getDefaultKeybindings();
 		IniFile ini( mKeybindingsPath );
 		if ( FileSystem::fileExists( mKeybindingsPath ) ) {
 			mKeybindings = ini.getKeyMap( "keybindings" );
 		} else {
-			KeyBindings bindings( mWindow->getInput() );
-			auto map = getDefaultKeybindings();
-			for ( auto it : map )
+			for ( auto it : defKeybindings )
 				ini.setValue( "keybindings", bindings.getShortcutString( it.first ), it.second );
 			ini.writeFile();
 			mKeybindings = ini.getKeyMap( "keybindings" );
 		}
 		for ( auto key : mKeybindings )
 			mKeybindingsInvert[key.second] = key.first;
+
+		if ( defKeybindings.size() != mKeybindings.size() ) {
+			bool added = false;
+			for ( auto key : defKeybindings ) {
+				auto foundCmd = mKeybindingsInvert.find( key.second );
+				auto shortcutStr = bindings.getShortcutString( key.first );
+				if ( foundCmd == mKeybindingsInvert.end() &&
+					 mKeybindings.find( shortcutStr ) == mKeybindings.end() ) {
+					mKeybindings[shortcutStr] = key.second;
+					mKeybindingsInvert[key.second] = shortcutStr;
+					ini.setValue( "keybindings", shortcutStr, key.second );
+					added = true;
+				}
+			}
+			if ( added )
+				ini.writeFile();
+		}
 	}
 }
 
@@ -963,11 +964,14 @@ std::map<KeyBindings::Shortcut, std::string> App::getDefaultKeybindings() {
 std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 	return {
 		{{KEY_RETURN, KEYMOD_LALT}, "fullscreen-toggle"},
-		{{KEY_F3, 0}, "repeat-find"},
-		{{KEY_F12, 0}, "console-toggle"},
+		{{KEY_F3, KEYMOD_NONE}, "repeat-find"},
+		{{KEY_F12, KEYMOD_NONE}, "console-toggle"},
 		{{KEY_F, KEYMOD_CTRL}, "find-replace"},
 		{{KEY_Q, KEYMOD_CTRL}, "close-app"},
 		{{KEY_O, KEYMOD_CTRL}, "open-file"},
+		{{KEY_F6, KEYMOD_NONE}, "debug-draw-highlight-toggle"},
+		{{KEY_F7, KEYMOD_NONE}, "debug-draw-boxes-toggle"},
+		{{KEY_F8, KEYMOD_NONE}, "debug-draw-debug-data"},
 	};
 }
 
@@ -1014,6 +1018,14 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	} );
 	doc.setCommand( "keybindings",
 					[&] { mEditorSplitter->loadFileFromPathInNewTab( mKeybindingsPath ); } );
+	doc.setCommand( "debug-draw-boxes-toggle",
+					[&] { mUISceneNode->setDrawBoxes( !mUISceneNode->getDrawBoxes() ); } );
+	doc.setCommand( "debug-draw-highlight-toggle", [&] {
+		mUISceneNode->setHighlightFocus( !mUISceneNode->getHighlightFocus() );
+		mUISceneNode->setHighlightOver( !mUISceneNode->getHighlightOver() );
+	} );
+	doc.setCommand( "debug-draw-debug-data",
+					[&] { mUISceneNode->setDrawDebugData( !mUISceneNode->getDrawDebugData() ); } );
 
 	editor->addEventListener( Event::OnSave, [&]( const Event* event ) {
 		UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
@@ -1054,11 +1066,16 @@ void App::createSettingsMenu() {
 	mSettingsMenu->add( "Quit", findIcon( "quit" ), getKeybind( "close-app" ) );
 	mSettingsButton = mUISceneNode->find<UITextView>( "settings" );
 	mSettingsButton->addEventListener( Event::MouseClick, [&]( const Event* ) {
-		Vector2f pos( mSettingsButton->getPixelsPosition() );
-		mSettingsButton->nodeToWorldTranslation( pos );
-		UIMenu::findBestMenuPos( pos, mSettingsMenu );
-		mSettingsMenu->setPixelsPosition( pos );
-		mSettingsMenu->show();
+		if ( ( !mSettingsMenu->isVisible() || mSettingsMenu->isHiding() ) &&
+			 mSettingsMenu->getInactiveTime().getElapsedTime().asMilliseconds() > 1 ) {
+			Vector2f pos( mSettingsButton->getPixelsPosition() );
+			mSettingsButton->nodeToWorldTranslation( pos );
+			UIMenu::findBestMenuPos( pos, mSettingsMenu );
+			mSettingsMenu->setPixelsPosition( pos );
+			mSettingsMenu->show();
+		} else {
+			mSettingsMenu->hide();
+		}
 	} );
 	mSettingsMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )

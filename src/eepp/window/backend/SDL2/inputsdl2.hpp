@@ -16,6 +16,8 @@ class EE_API InputSDL : public Input {
 
 	void update();
 
+	void waitEvent( const Time& timeout = Time::Zero );
+
 	bool grabInput();
 
 	void grabInput( const bool& Grab );
@@ -43,10 +45,13 @@ class EE_API InputSDL : public Input {
   protected:
 	friend class WindowSDL;
 	Float mDPIScale;
+	std::vector<SDL_Event> mQueuedEvents;
 
 	InputSDL( EE::Window::Window* window );
 
 	void init();
+
+	void sendEvent( const SDL_Event& SDLEvent );
 };
 
 }}}} // namespace EE::Window::Backend::SDL2

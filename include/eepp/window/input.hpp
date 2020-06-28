@@ -23,6 +23,11 @@ class EE_API Input {
 	/** Update the Input */
 	virtual void update() = 0;
 
+	/** If timeout is zero waits indefinitely for the next available event otherwise waits until the
+	 * specified timeout for the next available event.
+	 */
+	virtual void waitEvent( const Time& timeout = Time::Zero ) = 0;
+
 	/** @return If the mouse and keyboard are grabed. */
 	virtual bool grabInput() = 0;
 
