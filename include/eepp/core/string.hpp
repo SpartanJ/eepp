@@ -208,6 +208,10 @@ class EE_API String {
 	 */
 	static bool contains( const String& haystack, const String& needle );
 
+	static int fuzzyMatch( const String& string, const String& pattern );
+
+	static int fuzzyMatch( const std::string& string, const std::string& pattern );
+
 	/** Replace all occurrences of the search string with the replacement string. */
 	static void replaceAll( std::string& target, const std::string& that, const std::string& with );
 
@@ -764,6 +768,7 @@ class EE_API String {
 	std::vector<String> split( const StringBaseType& delim = '\n',
 							   const bool& pushEmptyString = false ) const;
 
+	std::pair<bool, int> fuzzyMatch( const String& pattern );
   private:
 	friend EE_API bool operator==( const String& left, const String& right );
 	friend EE_API bool operator<( const String& left, const String& right );

@@ -20,6 +20,7 @@
 #include <eepp/system/iostreamzip.hpp>
 #include <eepp/system/lock.hpp>
 #include <eepp/system/log.hpp>
+#include <eepp/system/luapattern.hpp>
 #include <eepp/system/md5.hpp>
 #include <eepp/system/mutex.hpp>
 #include <eepp/system/pack.hpp>

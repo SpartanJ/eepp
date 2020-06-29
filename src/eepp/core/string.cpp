@@ -269,6 +269,36 @@ std::vector<String> String::split( const StringBaseType& delim,
 	return String::split( *this, delim, pushEmptyString );
 }
 
+// Lite (https://github.com/rxi/lite) fuzzy match implementation
+template <typename T> constexpr int tFuzzyMatch( const T* str, const T* ptn ) {
+	int score = 0;
+	int run = 0;
+	while ( *str && *ptn ) {
+		while ( *str == ' ' )
+			str++;
+		while ( *ptn == ' ' )
+			ptn++;
+		if ( std::tolower( *str ) == std::tolower( *ptn ) ) {
+			score += run * 10 - ( *str != *ptn );
+			run++;
+			ptn++;
+		} else {
+			score -= 10;
+			run = 0;
+		}
+		str++;
+	}
+	return score;
+}
+
+int String::fuzzyMatch( const String& string, const String& pattern ) {
+	return tFuzzyMatch<StringBaseType>( string.c_str(), pattern.c_str() );
+}
+
+int String::fuzzyMatch( const std::string& string, const std::string& pattern ) {
+	return tFuzzyMatch<char>( string.c_str(), pattern.c_str() );
+}
+
 std::vector<Uint8> String::stringToUint8( const std::string& str ) {
 	return std::vector<Uint8>( str.begin(), str.end() );
 }
