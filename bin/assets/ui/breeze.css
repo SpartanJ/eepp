@@ -109,6 +109,11 @@ SelectButton:selectedpressed {
 	background-color: var(--primary);
 }
 
+PushButton::icon,
+SelectButton::icon {
+	margin-right: 4dp;
+}
+
 CheckBox::active,
 CheckBox::inactive {
 	width: 12dp;

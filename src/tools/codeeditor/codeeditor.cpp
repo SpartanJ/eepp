@@ -1,4 +1,5 @@
 #include "codeeditor.hpp"
+#include "autocompletemodule.hpp"
 #include <algorithm>
 #include <args/args.hxx>
 
@@ -498,9 +499,12 @@ void App::onTextDropped( String text ) {
 	}
 }
 
+App::App() {}
+
 App::~App() {
 	saveConfig();
 	eeSAFE_DELETE( mEditorSplitter );
+	eeSAFE_DELETE( mAutoCompleteModule );
 	eeSAFE_DELETE( mConsole );
 }
 
@@ -1044,6 +1048,10 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 		editor->getKeyBindings().reset();
 		editor->getKeyBindings().addKeybindsString( mKeybindings );
 	}
+
+	if ( !mAutoCompleteModule )
+		mAutoCompleteModule = eeNew( AutoCompleteModule, () );
+	editor->registerModule( mAutoCompleteModule );
 }
 
 void App::createSettingsMenu() {

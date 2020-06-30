@@ -15,7 +15,11 @@ namespace EE { namespace System {
 
 class EE_API ThreadPool : NonCopyable {
   public:
-	static std::unique_ptr<ThreadPool> create( Uint32 numThreads );
+	static std::shared_ptr<ThreadPool> createShared( Uint32 numThreads );
+
+	static std::unique_ptr<ThreadPool> createUnique( Uint32 numThreads );
+
+	static ThreadPool* createRaw( Uint32 numThreads );
 
 	virtual ~ThreadPool();
 
@@ -32,6 +36,8 @@ class EE_API ThreadPool : NonCopyable {
 	ThreadPool();
 
 	void threadFunc();
+
+	static ThreadPool* create( ThreadPool* pool, Uint32 numThreads );
 
 	std::vector<std::unique_ptr<Thread>> mThreads;
 	std::deque<std::unique_ptr<Work>> mWork;

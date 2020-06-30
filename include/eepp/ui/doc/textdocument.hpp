@@ -41,9 +41,12 @@ class EE_API TextDocument {
 												const size_t& newCount ) = 0;
 		virtual void onDocumentLineChanged( const Int64& lineIndex ) = 0;
 		virtual void onDocumentSaved() = 0;
+		virtual void onDocumentClosed( TextDocument* ) {}
 	};
 
 	TextDocument();
+
+	~TextDocument();
 
 	bool isNonWord( String::StringBaseType ch ) const;
 
@@ -357,6 +360,8 @@ class EE_API TextDocument {
 
 	void notifyDocumentSaved();
 
+	void notifyDocumentClosed();
+
 	void notifyLineCountChanged( const size_t& lastCount, const size_t& newCount );
 
 	void notifyLineChanged( const Int64& lineIndex );
@@ -375,6 +380,8 @@ class EE_API TextDocument {
 	void appendLineIfLastLine( Int64 line );
 
 	void guessIndentType();
+
+	bool loadFromStream( IOStream& file, std::string path );
 };
 
 }}} // namespace EE::UI::Doc

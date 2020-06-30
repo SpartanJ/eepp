@@ -972,6 +972,8 @@
 ../../src/thirdparty/SOIL2/src/SOIL2/stbi_pkm.h
 ../../src/thirdparty/SOIL2/src/SOIL2/stbi_pvr_c.h
 ../../src/thirdparty/SOIL2/src/SOIL2/stbi_pvr.h
+../../src/tools/codeeditor/autocompletemodule.cpp
+../../src/tools/codeeditor/autocompletemodule.hpp
 ../../src/tools/codeeditor/codeeditor.cpp
 ../../src/tools/codeeditor/codeeditor.hpp
 ../../src/tools/codeeditor/uicodeeditorsplitter.cpp

@@ -158,7 +158,15 @@ UICodeEditor::UICodeEditor( const bool& autoRegisterBaseCommands,
 	UICodeEditor( "codeeditor", autoRegisterBaseCommands, autoRegisterBaseKeybindings ) {}
 
 UICodeEditor::~UICodeEditor() {
-	mDoc->unregisterClient( this );
+	if ( mDoc.use_count() == 1 ) {
+		onDocumentClosed( mDoc.get() );
+		mDoc->unregisterClient( this );
+		mDoc.reset();
+	} else {
+		mDoc->unregisterClient( this );
+	}
+	for ( auto& module : mModules )
+		module->onUnregister( this );
 }
 
 Uint32 UICodeEditor::getType() const {
@@ -175,14 +183,16 @@ void UICodeEditor::setTheme( UITheme* Theme ) {
 }
 
 void UICodeEditor::draw() {
+	if ( !mVisible || mAlpha == 0 )
+		return;
+
 	UIWidget::draw();
 
 	if ( mFont == NULL )
 		return;
 
-	if ( mDirtyEditor ) {
+	if ( mDirtyEditor )
 		updateEditor();
-	}
 
 	Color col;
 	std::pair<int, int> lineRange = getVisibleLineRange();
@@ -196,6 +206,9 @@ void UICodeEditor::draw() {
 	Vector2f startScroll( start - mScroll );
 	Primitives primitives;
 	TextPosition cursor( mDoc->getSelection().start() );
+
+	for ( auto& module : mModules )
+		module->preDraw( this, startScroll, lineHeight, cursor );
 
 	if ( !mLocked && mHighlightCurrentLine ) {
 		primitives.setColor( Color( mCurrentLineBackgroundColor ).blendAlpha( mAlpha ) );
@@ -248,6 +261,9 @@ void UICodeEditor::draw() {
 		drawLineNumbers( lineRange, startScroll, screenStart, lineHeight, lineNumberWidth,
 						 lineNumberDigits, charSize );
 	}
+
+	for ( auto& module : mModules )
+		module->postDraw( this, startScroll, lineHeight, cursor );
 }
 
 void UICodeEditor::scheduledUpdate( const Time& ) {
@@ -277,6 +293,9 @@ void UICodeEditor::scheduledUpdate( const Time& ) {
 		 mLongestLineWidthLastUpdate.getElapsedTime() > mFindLongestLineWidthUpdateFrequency ) {
 		updateLongestLineWidth();
 	}
+
+	for ( auto& module : mModules )
+		module->update( this );
 }
 
 void UICodeEditor::updateLongestLineWidth() {
@@ -302,6 +321,8 @@ bool UICodeEditor::loadFromFile( const std::string& path ) {
 	updateLongestLineWidth();
 	mHighlighter.changeDoc( mDoc.get() );
 	invalidateDraw();
+	DocEvent event( this, mDoc.get(), Event::OnDocumentLoaded );
+	sendEvent( &event );
 	return ret;
 }
 
@@ -339,7 +360,8 @@ UICodeEditor* UICodeEditor::setFont( Font* font ) {
 void UICodeEditor::onFontChanged() {}
 
 void UICodeEditor::onDocumentChanged() {
-	sendCommonEvent( Event::OnDocumentChanged );
+	DocEvent event( this, mDoc.get(), Event::OnDocumentChanged );
+	sendEvent( &event );
 }
 
 Uint32 UICodeEditor::onMessage( const NodeMessage* msg ) {
@@ -566,6 +588,8 @@ TextDocument& UICodeEditor::getDocument() {
 void UICodeEditor::setDocument( std::shared_ptr<TextDocument> doc ) {
 	if ( mDoc.get() != doc.get() ) {
 		mDoc->unregisterClient( this );
+		if ( mDoc.use_count() == 1 )
+			onDocumentClosed( mDoc.get() );
 		mDoc = doc;
 		mDoc->registerClient( this );
 		mHighlighter.changeDoc( mDoc.get() );
@@ -594,6 +618,8 @@ Uint32 UICodeEditor::onFocus() {
 		resetCursor();
 		mDoc->setActiveClient( this );
 	}
+	for ( auto& module : mModules )
+		module->onFocus( this );
 	return UIWidget::onFocus();
 }
 
@@ -603,6 +629,8 @@ Uint32 UICodeEditor::onFocusLoss() {
 	getSceneNode()->getWindow()->stopTextInput();
 	if ( mDoc->getActiveClient() == this )
 		mDoc->setActiveClient( nullptr );
+	for ( auto& module : mModules )
+		module->onFocusLoss( this );
 	return UIWidget::onFocusLoss();
 }
 
@@ -616,12 +644,22 @@ Uint32 UICodeEditor::onTextInput( const TextInputEvent& event ) {
 		return 1;
 
 	mDoc->textInput( event.getText() );
+
+	for ( auto& module : mModules )
+		if ( module->onTextInput( this, event ) )
+			return 0;
+
 	return 1;
 }
 
 Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
 	if ( NULL == mFont )
 		return 1;
+
+	for ( auto& module : mModules )
+		if ( module->onKeyDown( this, event ) )
+			return 0;
+
 	std::string cmd = mKeyBindings.getCommandFromKeyBind( {event.getKeyCode(), event.getMod()} );
 	if ( !cmd.empty() ) {
 		// Allow copy selection on locked mode
@@ -631,6 +669,13 @@ Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
 		}
 	}
 	return 1;
+}
+
+Uint32 UICodeEditor::onKeyUp( const KeyEvent& event ) {
+	for ( auto& module : mModules )
+		if ( module->onKeyUp( this, event ) )
+			return 0;
+	return UIWidget::onKeyUp( event );
 }
 
 TextPosition UICodeEditor::resolveScreenPosition( const Vector2f& position ) const {
@@ -663,6 +708,10 @@ Sizef UICodeEditor::getMaxScroll() const {
 }
 
 Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags ) {
+	for ( auto& module : mModules )
+		if ( module->onMouseDown( this, position, flags ) )
+			return UIWidget::onMouseDown( position, flags );
+
 	if ( isTextSelectionEnabled() && !getEventDispatcher()->isNodeDragging() && NULL != mFont &&
 		 !mMouseDown && getEventDispatcher()->getMouseDownNode() == this &&
 		 ( flags & EE_BUTTON_LMASK ) ) {
@@ -680,6 +729,10 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 }
 
 Uint32 UICodeEditor::onMouseMove( const Vector2i& position, const Uint32& flags ) {
+	for ( auto& module : mModules )
+		if ( module->onMouseMove( this, position, flags ) )
+			return UIWidget::onMouseMove( position, flags );
+
 	if ( isTextSelectionEnabled() && !getUISceneNode()->getEventDispatcher()->isNodeDragging() &&
 		 NULL != mFont && mMouseDown && ( flags & EE_BUTTON_LMASK ) ) {
 		TextRange selection = mDoc->getSelection();
@@ -690,6 +743,10 @@ Uint32 UICodeEditor::onMouseMove( const Vector2i& position, const Uint32& flags 
 }
 
 Uint32 UICodeEditor::onMouseUp( const Vector2i& position, const Uint32& flags ) {
+	for ( auto& module : mModules )
+		if ( module->onMouseUp( this, position, flags ) )
+			return UIWidget::onMouseUp( position, flags );
+
 	if ( NULL == mFont )
 		return UIWidget::onMouseUp( position, flags );
 
@@ -716,7 +773,11 @@ Uint32 UICodeEditor::onMouseUp( const Vector2i& position, const Uint32& flags ) 
 	return UIWidget::onMouseUp( position, flags );
 }
 
-Uint32 UICodeEditor::onMouseClick( const Vector2i&, const Uint32& flags ) {
+Uint32 UICodeEditor::onMouseClick( const Vector2i& position, const Uint32& flags ) {
+	for ( auto& module : mModules )
+		if ( module->onMouseClick( this, position, flags ) )
+			return UIWidget::onMouseClick( position, flags );
+
 	if ( ( flags & EE_BUTTON_LMASK ) &&
 		 mLastDoubleClick.getElapsedTime() < Milliseconds( 300.f ) ) {
 		mDoc->selectLine();
@@ -724,7 +785,11 @@ Uint32 UICodeEditor::onMouseClick( const Vector2i&, const Uint32& flags ) {
 	return 1;
 }
 
-Uint32 UICodeEditor::onMouseDoubleClick( const Vector2i&, const Uint32& flags ) {
+Uint32 UICodeEditor::onMouseDoubleClick( const Vector2i& position, const Uint32& flags ) {
+	for ( auto& module : mModules )
+		if ( module->onMouseDoubleClick( this, position, flags ) )
+			return UIWidget::onMouseDoubleClick( position, flags );
+
 	if ( mLocked || NULL == mFont )
 		return 1;
 
@@ -737,11 +802,17 @@ Uint32 UICodeEditor::onMouseDoubleClick( const Vector2i&, const Uint32& flags ) 
 }
 
 Uint32 UICodeEditor::onMouseOver( const Vector2i& position, const Uint32& flags ) {
+	for ( auto& module : mModules )
+		if ( module->onMouseOver( this, position, flags ) )
+			return UIWidget::onMouseOver( position, flags );
 	getUISceneNode()->setCursor( !mLocked ? Cursor::IBeam : Cursor::Arrow );
 	return UIWidget::onMouseOver( position, flags );
 }
 
 Uint32 UICodeEditor::onMouseLeave( const Vector2i& position, const Uint32& flags ) {
+	for ( auto& module : mModules )
+		if ( module->onMouseLeave( this, position, flags ) )
+			return UIWidget::onMouseLeave( position, flags );
 	getUISceneNode()->setCursor( Cursor::Arrow );
 	return UIWidget::onMouseLeave( position, flags );
 }
@@ -878,6 +949,7 @@ void UICodeEditor::onDocumentCursorChange( const Doc::TextPosition& ) {
 	checkMatchingBrackets();
 	invalidateEditor();
 	invalidateDraw();
+	onCursorPosChange();
 }
 
 void UICodeEditor::onDocumentSelectionChange( const Doc::TextRange& ) {
@@ -900,6 +972,11 @@ void UICodeEditor::onDocumentUndoRedo( const TextDocument::UndoRedo& ) {
 
 void UICodeEditor::onDocumentSaved() {
 	sendCommonEvent( Event::OnSave );
+}
+
+void UICodeEditor::onDocumentClosed( TextDocument* doc ) {
+	DocEvent event( this, doc, Event::OnDocumentClosed );
+	sendEvent( &event );
 }
 
 std::pair<int, int> UICodeEditor::getVisibleLineRange() {
@@ -1314,9 +1391,13 @@ void UICodeEditor::setEnableColorPickerOnSelection( const bool& enableColorPicke
 }
 
 void UICodeEditor::setSyntaxDefinition( const SyntaxDefinition& definition ) {
+	std::string oldLang( mDoc->getSyntaxDefinition().getLanguageName() );
 	mDoc->setSyntaxDefinition( definition );
 	mHighlighter.reset();
 	invalidateDraw();
+	DocSyntaxDefEvent event( this, mDoc.get(), Event::OnDocumentSyntaxDefinitionChange, oldLang,
+							 mDoc->getSyntaxDefinition().getLanguageName() );
+	sendEvent( &event );
 }
 
 const SyntaxDefinition& UICodeEditor::getSyntaxDefinition() const {
@@ -1520,6 +1601,20 @@ void UICodeEditor::setHighlightTextRange( const TextRange& highlightSelection ) 
 		mHighlightTextRange = highlightSelection;
 		invalidateDraw();
 	}
+}
+
+void UICodeEditor::registerModule( UICodeEditorModule* module ) {
+	auto it = std::find( mModules.begin(), mModules.end(), module );
+	if ( it == mModules.end() )
+		mModules.push_back( module );
+	module->onRegister( this );
+}
+
+void UICodeEditor::unregisterModule( UICodeEditorModule* module ) {
+	auto it = std::find( mModules.begin(), mModules.end(), module );
+	if ( it != mModules.end() )
+		mModules.erase( it );
+	module->onUnregister( this );
 }
 
 const Time& UICodeEditor::getFindLongestLineWidthUpdateFrequency() const {
@@ -1748,6 +1843,11 @@ void UICodeEditor::registerCommands() {
 
 void UICodeEditor::registerKeybindings() {
 	mKeyBindings.addKeybinds( getDefaultKeybindings() );
+}
+
+void UICodeEditor::onCursorPosChange() {
+	sendCommonEvent( Event::OnCursorPosChange );
+	invalidateDraw();
 }
 
 }} // namespace EE::UI

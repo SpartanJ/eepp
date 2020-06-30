@@ -31,6 +31,10 @@ TextDocument::TextDocument() :
 	reset();
 }
 
+TextDocument::~TextDocument() {
+	notifyDocumentClosed();
+}
+
 bool TextDocument::hasFilepath() {
 	return mDefaultFileName != mFilePath;
 }
@@ -62,6 +66,10 @@ static String ptrGetLine( char* data, const size_t& size, size_t& position ) {
 }
 
 bool TextDocument::loadFromStream( IOStream& file ) {
+	return loadFromStream( file, "untitled" );
+}
+
+bool TextDocument::loadFromStream( IOStream& file, std::string path ) {
 	Clock clock;
 	reset();
 	mLines.clear();
@@ -140,8 +148,7 @@ bool TextDocument::loadFromStream( IOStream& file ) {
 
 	notifyTextChanged();
 
-	eePRINTL( "Document \"%s\" loaded in %.2fms.",
-			  mFilePath.empty() ? "untitled" : mFilePath.c_str(),
+	eePRINTL( "Document \"%s\" loaded in %.2fms.", path.c_str(),
 			  clock.getElapsedTime().asMilliseconds() );
 	return true;
 }
@@ -246,7 +253,7 @@ bool TextDocument::loadFromFile( const std::string& path ) {
 	}
 
 	IOStreamFile file( path, "rb" );
-	bool ret = loadFromStream( file );
+	bool ret = loadFromStream( file, path );
 	mFilePath = path;
 	resetSyntax();
 	return ret;
@@ -254,7 +261,7 @@ bool TextDocument::loadFromFile( const std::string& path ) {
 
 bool TextDocument::loadFromMemory( const Uint8* data, const Uint32& size ) {
 	IOStreamMemory stream( (const char*)data, size );
-	return loadFromStream( stream );
+	return loadFromStream( stream, mFilePath );
 }
 
 bool TextDocument::loadFromPack( Pack* pack, std::string filePackPath ) {
@@ -1319,6 +1326,12 @@ void TextDocument::notifySelectionChanged() {
 void TextDocument::notifyDocumentSaved() {
 	for ( auto& client : mClients ) {
 		client->onDocumentSaved();
+	}
+}
+
+void TextDocument::notifyDocumentClosed() {
+	for ( auto& client : mClients ) {
+		client->onDocumentClosed( this );
 	}
 }
 

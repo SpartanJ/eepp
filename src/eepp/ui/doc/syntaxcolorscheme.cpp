@@ -20,6 +20,8 @@ namespace EE { namespace UI { namespace Doc {
 // "matching_bracket" (the background color drawn in the matching brackets)
 // "matching_selection" (the background color drawn in the text matching the current selected text)
 // "matching_search" (the background color drawn in the text matching the current searched text)
+// "suggestion" (the auto-complete suggestion box text and background color
+// "suggestion_selected" (the auto-complete selected suggestion box text and background color
 
 SyntaxColorScheme SyntaxColorScheme::getDefault() {
 	return {"lite",
@@ -38,7 +40,7 @@ SyntaxColorScheme SyntaxColorScheme::getDefault() {
 			},
 			{
 				{"background", Color( "#2e2e32" )},
-				{"text", Color( "#e1e1e6" )},
+				{"text", Color( "#97979c" )},
 				{"caret", Color( "#93DDFA" )},
 				{"selection", Color( "#48484f" )},
 				{"line_highlight", Color( "#343438" )},
@@ -51,6 +53,8 @@ SyntaxColorScheme SyntaxColorScheme::getDefault() {
 				{"matching_bracket", Color( "#FFFFFF33" )},
 				{"matching_selection", Color( "#FFFFFF33" )},
 				{"matching_search", Color( "#181b1e" )},
+				{"suggestion", {Color( "#97979c" ), Color( "#252529" ), Text::Regular}},
+				{"suggestion_selected", {Color( "#e1e1e6" ), Color( "#252529" ), Text::Regular}},
 			}};
 }
 
@@ -148,6 +152,7 @@ SyntaxColorScheme::SyntaxColorScheme( const std::string& name,
 	mName( name ), mSyntaxColors( syntaxColors ), mEditorColors( editorColors ) {}
 
 static const SyntaxColorScheme::Style StyleEmpty = {Color::White};
+static const SyntaxColorScheme StyleDefault = SyntaxColorScheme::getDefault();
 
 const SyntaxColorScheme::Style& SyntaxColorScheme::getSyntaxStyle( const std::string& type ) const {
 	auto it = mSyntaxColors.find( type );
@@ -177,6 +182,10 @@ SyntaxColorScheme::getEditorSyntaxStyle( const std::string& type ) const {
 	else if ( type == "guide" || type == "line_break_column" || type == "matching_bracket" ||
 			  type == "matching_selection" )
 		return getEditorSyntaxStyle( "selection" );
+	else if ( type == "suggestion" )
+		return StyleDefault.getEditorSyntaxStyle( "suggestion" );
+	else if ( type == "suggestion_selected" )
+		return StyleDefault.getEditorSyntaxStyle( "suggestion_selected" );
 	return StyleEmpty;
 }
 

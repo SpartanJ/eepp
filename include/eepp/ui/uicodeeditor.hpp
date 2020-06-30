@@ -17,7 +17,57 @@ class Font;
 
 namespace EE { namespace UI {
 
+class UICodeEditor;
 class UIScrollBar;
+
+class UICodeEditorModule {
+  public:
+	virtual void onRegister( UICodeEditor* ) = 0;
+	virtual void onUnregister( UICodeEditor* ) = 0;
+	virtual bool onKeyDown( UICodeEditor*, const KeyEvent& ) { return false; }
+	virtual bool onKeyUp( UICodeEditor*, const KeyEvent& ) { return false; }
+	virtual bool onTextInput( UICodeEditor*, const TextInputEvent& ) { return false; }
+	virtual void update( UICodeEditor* ) {}
+	virtual void preDraw( UICodeEditor*, const Vector2f& /*startScroll*/,
+						  const Float& /*lineHeight*/, const TextPosition& /*cursor*/ ) {}
+	virtual void postDraw( UICodeEditor*, const Vector2f& /*startScroll*/,
+						   const Float& /*lineHeight*/, const TextPosition& /*cursor*/ ) {}
+	virtual void onFocus( UICodeEditor* ) {}
+	virtual void onFocusLoss( UICodeEditor* ) {}
+	virtual bool onMouseDown( UICodeEditor*, const Vector2i&, const Uint32& ) { return false; }
+	virtual bool onMouseMove( UICodeEditor*, const Vector2i&, const Uint32& ) { return false; }
+	virtual bool onMouseUp( UICodeEditor*, const Vector2i&, const Uint32& ) { return false; }
+	virtual bool onMouseClick( UICodeEditor*, const Vector2i&, const Uint32& ) { return false; }
+	virtual bool onMouseDoubleClick( UICodeEditor*, const Vector2i&, const Uint32& ) {
+		return false;
+	}
+	virtual bool onMouseOver( UICodeEditor*, const Vector2i&, const Uint32& ) { return false; }
+	virtual bool onMouseLeave( UICodeEditor*, const Vector2i&, const Uint32& ) { return false; }
+};
+
+class EE_API DocEvent : public Event {
+  public:
+	DocEvent( Node* node, TextDocument* doc, const Uint32& eventType ) :
+		Event( node, eventType ), doc( doc ) {}
+	TextDocument* getDoc() const { return doc; }
+
+  protected:
+	TextDocument* doc;
+};
+
+class EE_API DocSyntaxDefEvent : public DocEvent {
+  public:
+	DocSyntaxDefEvent( Node* node, TextDocument* doc, const Uint32& eventType,
+					   const std::string& oldLang, const std::string& newLang ) :
+		DocEvent( node, doc, eventType ), oldLang( oldLang ), newLang( newLang ) {}
+	const std::string& getOldLang() const { return oldLang; }
+	const std::string& getNewLang() const { return newLang; }
+
+  protected:
+	TextDocument* doc;
+	std::string oldLang;
+	std::string newLang;
+};
 
 class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
   public:
@@ -287,6 +337,26 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void setHighlightTextRange( const TextRange& highlightSelection );
 
+	void registerModule( UICodeEditorModule* module );
+
+	void unregisterModule( UICodeEditorModule* module );
+
+	virtual Int64 getColFromXOffset( Int64 line, const Float& x ) const;
+
+	virtual Float getColXOffset( TextPosition position );
+
+	virtual Float getXOffsetCol( const TextPosition& position );
+
+	virtual Float getLineWidth( const Int64& lineIndex );
+
+	Float getTextWidth( const String& text ) const;
+
+	Float getLineHeight() const;
+
+	Float getCharacterSize() const;
+
+	Float getGlyphWidth() const;
+
   protected:
 	struct LastXOffset {
 		TextPosition position;
@@ -339,6 +409,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Clock mLongestLineWidthLastUpdate;
 	String mHighlightWord;
 	TextRange mHighlightTextRange;
+	std::vector<UICodeEditorModule*> mModules;
 
 	UICodeEditor( const std::string& elementTag, const bool& autoRegisterBaseCommands = true,
 				  const bool& autoRegisterBaseKeybindings = true );
@@ -355,8 +426,6 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	virtual void findLongestLine();
 
-	virtual Float getLineWidth( const Int64& lineIndex );
-
 	virtual Uint32 onFocus();
 
 	virtual Uint32 onFocusLoss();
@@ -364,6 +433,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	virtual Uint32 onTextInput( const TextInputEvent& event );
 
 	virtual Uint32 onKeyDown( const KeyEvent& event );
+
+	virtual Uint32 onKeyUp( const KeyEvent& event );
 
 	virtual Uint32 onMouseDown( const Vector2i& position, const Uint32& flags );
 
@@ -383,6 +454,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	virtual void onPaddingChange();
 
+	virtual void onCursorPosChange();
+
 	void updateEditor();
 
 	virtual void onDocumentTextChanged();
@@ -399,6 +472,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	virtual void onDocumentSaved();
 
+	virtual void onDocumentClosed( TextDocument* doc );
+
 	std::pair<int, int> getVisibleLineRange();
 
 	int getVisibleLinesCount();
@@ -408,20 +483,6 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void setScrollX( const Float& val, bool emmitEvent = true );
 
 	void setScrollY( const Float& val, bool emmitEvent = true );
-
-	virtual Int64 getColFromXOffset( Int64 line, const Float& x ) const;
-
-	virtual Float getColXOffset( TextPosition position );
-
-	virtual Float getXOffsetCol( const TextPosition& position );
-
-	Float getTextWidth( const String& text ) const;
-
-	Float getLineHeight() const;
-
-	Float getCharacterSize() const;
-
-	Float getGlyphWidth() const;
 
 	void resetCursor();
 

@@ -2,15 +2,28 @@
 
 namespace EE { namespace System {
 
-std::unique_ptr<ThreadPool> ThreadPool::create( Uint32 numThreads ) {
-	std::unique_ptr<ThreadPool> pool( new ThreadPool() );
+std::shared_ptr<ThreadPool> ThreadPool::createShared( Uint32 numThreads ) {
+	std::shared_ptr<ThreadPool> pool( new ThreadPool() );
+	create( pool.get(), numThreads );
+	return pool;
+}
 
+std::unique_ptr<ThreadPool> ThreadPool::createUnique( Uint32 numThreads ) {
+	std::unique_ptr<ThreadPool> pool( new ThreadPool() );
+	create( pool.get(), numThreads );
+	return pool;
+}
+
+ThreadPool* ThreadPool::createRaw( Uint32 numThreads ) {
+	ThreadPool* pool = eeNew( ThreadPool, () );
+	return create( pool, numThreads );
+}
+
+ThreadPool* ThreadPool::create( ThreadPool* pool, Uint32 numThreads ) {
 	for ( Uint32 i = 0; i < numThreads; ++i ) {
-		pool->mThreads.emplace_back(
-			std::make_unique<Thread>( &ThreadPool::threadFunc, pool.get() ) );
+		pool->mThreads.emplace_back( std::make_unique<Thread>( &ThreadPool::threadFunc, pool ) );
 		pool->mThreads.back().get()->launch();
 	}
-
 	return pool;
 }
 

@@ -64,8 +64,12 @@ struct SearchState {
 	}
 };
 
+class AutoCompleteModule;
+
 class App : public UICodeEditorSplitter::Client {
   public:
+	App();
+
 	~App();
 
 	void init( const std::string& file, const Float& pidelDensity );
@@ -129,6 +133,7 @@ class App : public UICodeEditorSplitter::Client {
 	SearchState mSearchState;
 	Float mDisplayDPI;
 	std::string mResPath;
+	AutoCompleteModule* mAutoCompleteModule{nullptr};
 
 	void onFileDropped( String file );
 

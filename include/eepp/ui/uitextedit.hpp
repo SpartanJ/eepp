@@ -26,6 +26,14 @@ class EE_API UITextEdit : public UICodeEditor {
 
 	void setText( const String& text );
 
+	virtual Int64 getColFromXOffset( Int64 line, const Float& x ) const;
+
+	virtual Float getColXOffset( TextPosition position );
+
+	virtual Float getXOffsetCol( const TextPosition& position );
+
+	virtual Float getLineWidth( const Int64& lineIndex );
+
   protected:
 	struct TextLine {
 		Text text;
@@ -40,14 +48,6 @@ class EE_API UITextEdit : public UICodeEditor {
 
 	virtual void drawLineText( const Int64& index, Vector2f position, const Float& fontSize,
 							   const Float& lineHeight );
-
-	virtual Int64 getColFromXOffset( Int64 line, const Float& x ) const;
-
-	virtual Float getColXOffset( TextPosition position );
-
-	virtual Float getXOffsetCol( const TextPosition& position );
-
-	virtual Float getLineWidth( const Int64& lineIndex );
 
 	void ensureLineUpdated( const Int64& lineIndex );
 
