@@ -92,21 +92,23 @@ void UIMenuRadioButton::setActive( const bool& active ) {
 		}
 	}
 
-	UIMenu* Menu = getParent()->asType<UIMenu>();
+	if ( getParent()->isType( UI_TYPE_MENU ) ) {
+		UIMenu* menu = getParent()->asType<UIMenu>();
 
-	if ( !Menu->widgetCheckSize( this ) ) {
-		if ( NULL != getIcon()->getDrawable() ) {
-			setPadding( Rectf( 0, 0, 0, 0 ) );
-		}
-	}
-
-	if ( mActive ) {
-		Node* child = Menu->getFirstChild();
-		while ( child ) {
-			if ( child->isType( UI_TYPE_MENURADIOBUTTON ) && child != this ) {
-				child->asType<UIMenuRadioButton>()->setActive( false );
+		if ( !menu->widgetCheckSize( this ) ) {
+			if ( NULL != getIcon()->getDrawable() ) {
+				setPadding( Rectf( 0, 0, 0, 0 ) );
 			}
-			child = child->getNextNode();
+		}
+
+		if ( mActive ) {
+			Node* child = menu->getFirstChild();
+			while ( child ) {
+				if ( child->isType( UI_TYPE_MENURADIOBUTTON ) && child != this ) {
+					child->asType<UIMenuRadioButton>()->setActive( false );
+				}
+				child = child->getNextNode();
+			}
 		}
 	}
 

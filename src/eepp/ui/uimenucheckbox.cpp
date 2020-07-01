@@ -87,11 +87,13 @@ void UIMenuCheckBox::setActive( const bool& active ) {
 	}
 
 	if ( oActive != active ) {
-		UIMenu* Menu = getParent()->asType<UIMenu>();
+		if ( getParent()->isType( UI_TYPE_MENU ) ) {
+			UIMenu* menu = getParent()->asType<UIMenu>();
 
-		if ( !Menu->widgetCheckSize( this ) ) {
-			if ( NULL != getIcon()->getDrawable() ) {
-				setPadding( Rectf( 0, 0, 0, 0 ) );
+			if ( !menu->widgetCheckSize( this ) ) {
+				if ( NULL != getIcon()->getDrawable() ) {
+					setPadding( Rectf( 0, 0, 0, 0 ) );
+				}
 			}
 		}
 
