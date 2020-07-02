@@ -1,6 +1,7 @@
 #ifndef EE_UICUIMESSAGEBOX_HPP
 #define EE_UICUIMESSAGEBOX_HPP
 
+#include <eepp/ui/uilayout.hpp>
 #include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uitextinput.hpp>
 #include <eepp/ui/uitextview.hpp>
@@ -49,7 +50,7 @@ class EE_API UIMessageBox : public UIWindow {
 	UIPushButton* mButtonCancel;
 	UITextInput* mTextInput;
 	KeyBindings::Shortcut mCloseShortcut;
-	UIWidget* mLayoutCont;
+	UILayout* mLayoutCont;
 
 	virtual void onWindowReady();
 

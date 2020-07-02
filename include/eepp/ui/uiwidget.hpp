@@ -53,7 +53,7 @@ class EE_API UIWidget : public UINode {
 
 	virtual Node* setId( const std::string& id );
 
-	const Sizef& getSize() const;
+	virtual const Sizef& getSize() const;
 
 	UITooltip* getTooltip();
 

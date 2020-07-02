@@ -179,6 +179,11 @@ std::unordered_set<UIWidget*>& UIStyle::getStructurallyVolatileChilds() {
 	return mStructurallyVolatileChilds;
 }
 
+bool UIStyle::hasProperty( const CSS::PropertyId& propertyId ) const {
+	return ( mGlobalDefinition && mGlobalDefinition->getProperty( (Uint32)propertyId ) ) ||
+		   ( mElementStyle && mElementStyle->getPropertyById( propertyId ) );
+}
+
 void UIStyle::subscribeRelated( UIWidget* widget ) {
 	mRelatedWidgets.insert( widget );
 }

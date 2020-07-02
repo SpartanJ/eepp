@@ -1360,10 +1360,11 @@ UIWindow* UIWindow::setMinWindowSize( const Float& width, const Float& height ) 
 }
 
 UIWindow* UIWindow::setMinWindowSize( Sizef size ) {
-	mStyleConfig.MinWindowSize = size;
+	if ( mStyleConfig.MinWindowSize != size ) {
+		mStyleConfig.MinWindowSize = size;
 
-	applyMinWinSize();
-
+		applyMinWinSize();
+	}
 	return this;
 }
 
@@ -1655,18 +1656,16 @@ void UIWindow::addKeyBindingString( const std::string& shortcut, const std::stri
 	mKeyBindings.addKeybindString( shortcut, command );
 }
 
-void UIWindow::addKeyBinding( const KeyBindings::Shortcut& shortcut,
-								 const std::string& command ) {
+void UIWindow::addKeyBinding( const KeyBindings::Shortcut& shortcut, const std::string& command ) {
 	mKeyBindings.addKeybind( shortcut, command );
 }
 
-void UIWindow::replaceKeyBindingString( const std::string& shortcut,
-										   const std::string& command ) {
+void UIWindow::replaceKeyBindingString( const std::string& shortcut, const std::string& command ) {
 	mKeyBindings.replaceKeybindString( shortcut, command );
 }
 
 void UIWindow::replaceKeyBinding( const KeyBindings::Shortcut& shortcut,
-									 const std::string& command ) {
+								  const std::string& command ) {
 	mKeyBindings.replaceKeybind( shortcut, command );
 }
 
@@ -1679,7 +1678,7 @@ void UIWindow::addKeyBinds( const std::map<KeyBindings::Shortcut, std::string>& 
 }
 
 void UIWindow::setKeyBindingCommand( const std::string& command,
-										UIWindow::KeyBindingCommand func ) {
+									 UIWindow::KeyBindingCommand func ) {
 	mKeyBindingCommands[command] = func;
 }
 

@@ -75,6 +75,8 @@ class EE_API UIStyle : public UIState {
 
 	std::unordered_set<UIWidget*>& getStructurallyVolatileChilds();
 
+	bool hasProperty( const CSS::PropertyId& propertyId ) const;
+
   protected:
 	UIWidget* mWidget;
 	std::shared_ptr<CSS::StyleSheetStyle> mElementStyle;

@@ -388,6 +388,8 @@ class EE_API Node : public Transformable {
 	/** This removes the node from its parent. Never use this unless you know what you are doing. */
 	void detach();
 
+	void forEachNode( std::function<void( Node* )> func );
+
   protected:
 	typedef std::map<Uint32, std::map<Uint32, EventCallback>> EventsMap;
 	friend class EventDispatcher;

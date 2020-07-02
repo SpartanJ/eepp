@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 4.12.2, 2020-06-30T20:58:45. -->
+<!-- Written by QtCreator 4.12.2, 2020-07-02T20:21:25. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -1843,8 +1843,8 @@
     </valuelist>
     <value type="int" key="PE.EnvironmentAspect.Base">2</value>
     <valuelist type="QVariantList" key="PE.EnvironmentAspect.Changes"/>
-    <value type="QString" key="ProjectExplorer.CustomExecutableRunConfiguration.Executable">%{buildDir}../../../bin/eepp-CodeEditor-debug</value>
-    <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">eepp-CodeEditor-debug</value>
+    <value type="QString" key="ProjectExplorer.CustomExecutableRunConfiguration.Executable">%{buildDir}../../../bin/ecode-debug</value>
+    <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">ecode-debug</value>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">ProjectExplorer.CustomExecutableRunConfiguration</value>
     <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey"></value>
     <value type="QString" key="RunConfiguration.Arguments">../src/eepp/ui/doc/textdocument.cpp</value>

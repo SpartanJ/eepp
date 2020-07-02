@@ -25,6 +25,7 @@ src/thirdparty/SDL2-2.0.12*
 *.dll
 bin/ee*
 bin/eepp-*
+bin/ecode*
 ee.tag
 log.log
 external_projects.lua

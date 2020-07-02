@@ -433,8 +433,12 @@ function build_link_configuration( package_name, use_ee_icon )
 		end
 
 		fix_shared_lib_linking_path( package_name, "libeepp-debug" )
-
-		targetname ( package_name .. "-debug" .. extension )
+		
+		if not os.is_real("emscripten") then
+			targetname ( package_name .. "-debug" .. extension )
+		else
+			targetname ( package_name .. extension )
+		end
 
 	configuration "release"
 		defines { "NDEBUG" }
@@ -1064,12 +1068,12 @@ solution "eepp"
 		files { "src/tools/uieditor/*.cpp" }
 		build_link_configuration( "eepp-UIEditor", true )
 
-	project "eepp-codeeditor"
+	project "ecode"
 		set_kind()
 		language "C++"
 		files { "src/tools/codeeditor/*.cpp" }
 		includedirs { "src/thirdparty" }
-		build_link_configuration( "eepp-CodeEditor", true )
+		build_link_configuration( "ecode", true )
 
 	project "eepp-texturepacker"
 		kind "ConsoleApp"

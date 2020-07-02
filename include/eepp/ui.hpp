@@ -35,6 +35,7 @@
 #include <eepp/ui/uispinbox.hpp>
 #include <eepp/ui/uisplitter.hpp>
 #include <eepp/ui/uisprite.hpp>
+#include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uitab.hpp>
 #include <eepp/ui/uitable.hpp>
 #include <eepp/ui/uitablecell.hpp>
@@ -52,6 +53,9 @@
 #include <eepp/ui/uiwidgetcreator.hpp>
 #include <eepp/ui/uiwindow.hpp>
 
+#include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/css/propertyidset.hpp>
+#include <eepp/ui/css/propertyspecification.hpp>
 #include <eepp/ui/css/stylesheet.hpp>
 #include <eepp/ui/css/stylesheetparser.hpp>
 #include <eepp/ui/css/stylesheetpropertiesparser.hpp>

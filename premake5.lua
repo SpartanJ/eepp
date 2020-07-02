@@ -118,7 +118,6 @@ function download_and_extract_dependencies()
 			download_and_extract_sdl(remote_sdl2_devel_vc_url)
 		elseif os.istarget("ios") then
 			download_and_extract_sdl(remote_sdl2_devel_src_url)
-			os.execute("patch -t --forward -p1 -d src/thirdparty/SDL2-2.0.10/ < projects/ios/SDL2-sensors.patch")
 		end
 	end
 end
@@ -236,6 +235,7 @@ function build_link_configuration( package_name, use_ee_icon )
 		syslibdirs { "src/thirdparty/" .. remote_sdl2_version .."/lib/x64" }
 
 	filter "system:emscripten"
+		targetname ( package_name .. extension )
 		linkoptions{ "-O2 -s TOTAL_MEMORY=67108864 -s ASM_JS=1 -s VERBOSE=1 -s DISABLE_EXCEPTION_CATCHING=0 -s USE_SDL=2 -s ERROR_ON_UNDEFINED_SYMBOLS=0 -s ERROR_ON_MISSING_LIBRARIES=0 -s FULL_ES3=1 -s \"BINARYEN_TRAP_MODE='clamp'\"" }
 		buildoptions { "-fno-strict-aliasing -O2 -s USE_SDL=2 -s PRECISE_F32=1 -s ENVIRONMENT=web" }
 
@@ -822,12 +822,12 @@ workspace "eepp"
 		filter { "system:not windows", "system:not haiku" }
 			links { "pthread" }
 
-	project "eepp-codeeditor"
+	project "ecode"
 		set_kind()
 		language "C++"
 		files { "src/tools/codeeditor/*.cpp" }
 		incdirs { "src/thirdparty" }
-		build_link_configuration( "eepp-CodeEditor", true )
+		build_link_configuration( "ecode", true )
 
 	project "eepp-texturepacker"
 		kind "ConsoleApp"

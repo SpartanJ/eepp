@@ -903,6 +903,15 @@ void Node::detach() {
 	}
 }
 
+void Node::forEachNode( std::function<void( Node* )> func ) {
+	func( this );
+	Node* node = mChild;
+	while ( node ) {
+		node->forEachNode( func );
+		node = node->getNextNode();
+	}
+}
+
 void Node::onSceneChange() {
 	mSceneNode = findSceneNode();
 

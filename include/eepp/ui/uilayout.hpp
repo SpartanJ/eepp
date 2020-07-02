@@ -15,6 +15,8 @@ class EE_API UILayout : public UIWidget {
 
 	virtual bool isType( const Uint32& type ) const;
 
+	virtual const Sizef& getSize() const;
+
   protected:
 	friend class UISceneNode;
 

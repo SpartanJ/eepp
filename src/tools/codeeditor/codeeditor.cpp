@@ -380,7 +380,6 @@ void App::initSearchBar() {
 				mSearchState.editor->setHighlightWord( "" );
 				mSearchState.editor->setHighlightTextRange( TextRange() );
 			}
-			mSearchState.reset();
 		}
 	} );
 	mSearchBarLayout->addCommand( "repeat-find", [this] { findNextText( mSearchState ); } );
@@ -650,14 +649,28 @@ UIMenu* App::createViewMenu() {
 					mEditorSplitter->getCurEditor()->setFocus();
 			} );
 		} else if ( item->getText() == "UI Font Size" ) {
-			UIMessageBox* msgBox = UIMessageBox::New( UIMessageBox::INPUT,
-													  "Set the UI font size (requires restart):" );
+			UIMessageBox* msgBox = UIMessageBox::New(
+				UIMessageBox::INPUT, "Set the UI font size:" );
 			msgBox->setTitle( mWindowTitle );
 			msgBox->getTextInput()->setText( mConfig.ui.fontSize.toString() );
 			msgBox->setCloseShortcut( {KEY_ESCAPE, 0} );
 			msgBox->show();
 			msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox]( const Event* ) {
 				mConfig.ui.fontSize = StyleSheetLength( msgBox->getTextInput()->getText() );
+				Float fontSize = mConfig.ui.fontSize.asDp( 0, Sizef(), mDisplayDPI );
+				UIThemeManager* manager = mUISceneNode->getUIThemeManager();
+				manager->setDefaultFontSize( fontSize );
+				manager->getDefaultTheme()->setDefaultFontSize( fontSize );
+				mUISceneNode->forEachNode( [&]( Node* node ) {
+					if ( node->isType( UI_TYPE_TEXTVIEW ) ) {
+						UITextView* textView = node->asType<UITextView>();
+						if ( !textView->getUIStyle()->hasProperty( PropertyId::FontSize ) ) {
+							textView->setFontSize( mConfig.ui.fontSize.asDp(
+								node->getParent()->getPixelsSize().getWidth(), Sizef(),
+								mUISceneNode->getDPI() ) );
+						}
+					}
+				} );
 				msgBox->closeWindow();
 			} );
 			msgBox->addEventListener( Event::OnClose, [&]( const Event* ) {
@@ -1115,9 +1128,8 @@ bool App::setAutoComplete( bool enable ) {
 	mConfig.editor.autoComplete = enable;
 	if ( enable && !mAutoCompleteModule ) {
 		mAutoCompleteModule = eeNew( AutoCompleteModule, () );
-		mEditorSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
-			editor->registerModule( mAutoCompleteModule );
-		} );
+		mEditorSplitter->forEachEditor(
+			[&]( UICodeEditor* editor ) { editor->registerModule( mAutoCompleteModule ); } );
 		return true;
 	}
 	if ( !enable && mAutoCompleteModule )

@@ -414,7 +414,7 @@ bool TextDocument::hasSelection() const {
 }
 
 String TextDocument::getText( const TextRange& range ) const {
-	TextRange nrange = range.normalized();
+	TextRange nrange = sanitizeRange( range.normalized() );
 	if ( nrange.start().line() == nrange.end().line() ) {
 		return mLines[nrange.start().line()].substr(
 			nrange.start().column(), nrange.end().column() - nrange.start().column() );
@@ -1043,7 +1043,7 @@ void TextDocument::print() const {
 		printf( "%s", mLines[i].toUtf8().c_str() );
 }
 
-TextRange TextDocument::sanitizeRange( const TextRange& range ) {
+TextRange TextDocument::sanitizeRange( const TextRange& range ) const {
 	return {sanitizePosition( range.start() ), sanitizePosition( range.end() )};
 }
 

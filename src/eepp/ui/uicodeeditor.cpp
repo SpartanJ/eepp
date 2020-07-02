@@ -34,6 +34,7 @@ const std::map<KeyBindings::Shortcut, std::string> UICodeEditor::getDefaultKeybi
 		{{KEY_BACKSPACE, KEYMOD_SHIFT}, "delete-to-previous-char"},
 		{{KEY_BACKSPACE, 0}, "delete-to-previous-char"},
 		{{KEY_DELETE, KEYMOD_CTRL}, "delete-to-next-word"},
+		{{KEY_DELETE, KEYMOD_SHIFT}, "delete-to-next-word"},
 		{{KEY_DELETE, 0}, "delete-to-next-char"},
 		{{KEY_KP_ENTER, KEYMOD_CTRL | KEYMOD_SHIFT}, "new-line-above"},
 		{{KEY_RETURN, KEYMOD_CTRL | KEYMOD_SHIFT}, "new-line-above"},
@@ -1676,17 +1677,23 @@ void UICodeEditor::drawSelectionMatch( const std::pair<int, int>& lineRange,
 		return;
 	TextRange selection = mDoc->getSelection( true );
 	const String& selectionLine = mDoc->line( selection.start().line() ).getText();
-	String text( selectionLine.substr( selection.start().column(),
-									   selection.end().column() - selection.start().column() ) );
-	drawWordMatch( text, lineRange, startScroll, lineHeight );
+	if ( selection.start().column() >= 0 &&
+		 selection.start().column() < (Int64)selectionLine.size() &&
+		 selection.end().column() >= 0 && selection.end().column() < (Int64)selectionLine.size() ) {
+		String text( selectionLine.substr(
+			selection.start().column(), selection.end().column() - selection.start().column() ) );
+		if ( !text.empty() )
+			drawWordMatch( text, lineRange, startScroll, lineHeight );
+	}
 }
 
 void UICodeEditor::drawWordMatch( const String& text, const std::pair<int, int>& lineRange,
 								  const Vector2f& startScroll, const Float& lineHeight ) {
+	if ( text.empty() )
+		return;
 	Primitives primitives;
 	primitives.setForceDraw( false );
 	primitives.setColor( Color( mSelectionMatchColor ).blendAlpha( mAlpha ) );
-
 	for ( auto ln = lineRange.first; ln <= lineRange.second; ln++ ) {
 		const String& line = mDoc->line( ln ).getText();
 		size_t pos = 0;

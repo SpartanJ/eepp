@@ -346,23 +346,23 @@ that emscripten have at the moment (no threads, no access to the file system, no
 Note: please wait some seconds until the resources are loaded, currently there is no loading indicator.
 Also please use a modern browser with WebGL and WASM support.
 
-* **[ecode - Text Editor](https://web.ensoft.dev/eepp/demo-fs.html?run=eepp-CodeEditor-debug.js)**
+* **[ecode - Text Editor](https://web.ensoft.dev/eepp/demo-fs.html?run=ecode.js)**
 
-* **[Texture Atlas Editor](https://web.ensoft.dev/eepp/demo-fs.html?run=eepp-TextureAtlasEditor-debug.js)**
+* **[Texture Atlas Editor](https://web.ensoft.dev/eepp/demo-fs.html?run=eepp-TextureAtlasEditor.js)**
 
-* **[Map Editor](https://web.ensoft.dev/eepp/demo-fs.html?run=eepp-MapEditor-debug.js)**
+* **[Map Editor](https://web.ensoft.dev/eepp/demo-fs.html?run=eepp-MapEditor.js)**
 
-* **[UI Hello World](https://web.ensoft.dev/eepp/demo-fs.html?run=eepp-ui-hello-world-debug.js)**
+* **[UI Hello World](https://web.ensoft.dev/eepp/demo-fs.html?run=eepp-ui-hello-world.js)**
 
-* **[UI Editor running some tests](https://web.ensoft.dev/eepp/demo-fs.html?run=eepp-UIEditor-debug.js)**
+* **[UI Editor running some tests](https://web.ensoft.dev/eepp/demo-fs.html?run=eepp-UIEditor.js)**
 
-* **[Fonts example](http://localhost/eepp/emscripten-fs.html?run=eepp-fonts-debug.js)**
+* **[Fonts example](http://localhost/eepp/emscripten-fs.html?run=eepp-fonts.js)**
 
-* **[Physics module demo](https://web.ensoft.dev/eepp/demo-fs.html?run=eepp-physics-debug.js)**
+* **[Physics module demo](https://web.ensoft.dev/eepp/demo-fs.html?run=eepp-physics.js)**
 
-* **[Sprites example](https://web.ensoft.dev/eepp/demo-fs.html?run=eepp-sprites-debug.js)**
+* **[Sprites example](https://web.ensoft.dev/eepp/demo-fs.html?run=eepp-sprites.js)**
 
-* **[Full Test](https://web.ensoft.dev/eepp/demo-fs.html?run=eepp-test-debug.js)**
+* **[Full Test](https://web.ensoft.dev/eepp/demo-fs.html?run=eepp-test.js)**
 
 ## How to build it
 

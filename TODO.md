@@ -27,6 +27,12 @@ Implement a simple tree view widget, to at least cover the most common use cases
 
 * Once `UITreeView` is finished add a directory/project tree view.
 
+* Add support for function listing.
+
+* Change pixel density from the UI.
+
+* Display current line-collumn and document line count.
+
 ## UI Editor
 
 * Integrate the `UICodeEditor` into the editor in order to be able to edit the layouts and CSS in app.

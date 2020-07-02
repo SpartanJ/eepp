@@ -323,7 +323,7 @@ class EE_API TextDocument {
 
 	bool getBOM() const;
 
-	TextRange sanitizeRange( const TextRange& range );
+	TextRange sanitizeRange( const TextRange& range ) const;
 
   protected:
 	friend class UndoStack;

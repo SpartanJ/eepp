@@ -90,6 +90,9 @@ UIMessageBox::UIMessageBox( const Type& type, const String& message, const Uint3
 	reloadStyle( true, true );
 
 	applyDefaultTheme();
+
+	setMinWindowSize( mLayoutCont->getSize() );
+	center();
 }
 
 UIMessageBox::~UIMessageBox() {}
