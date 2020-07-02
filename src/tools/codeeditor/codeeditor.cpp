@@ -283,6 +283,7 @@ void App::loadConfig() {
 	mConfig.editor.colorPickerSelection =
 		mIni.getValueB( "editor", "color_picker_selection", true );
 	mConfig.editor.colorPreview = mIni.getValueB( "editor", "color_preview", true );
+	mConfig.editor.autoComplete = mIni.getValueB( "editor", "auto_complete", true );
 }
 
 void App::saveConfig() {
@@ -316,6 +317,7 @@ void App::saveConfig() {
 	mIni.setValueB( "editor", "highlight_selection_match", mConfig.editor.highlightSelectionMatch );
 	mIni.setValueB( "editor", "color_picker_selection", mConfig.editor.colorPickerSelection );
 	mIni.setValueB( "editor", "color_preview", mConfig.editor.colorPreview );
+	mIni.setValueB( "editor", "auto_complete", mConfig.editor.autoComplete );
 	mIni.writeFile();
 	mIniState.writeFile();
 }
@@ -564,6 +566,10 @@ UIMenu* App::createViewMenu() {
 		->setActive( mConfig.editor.colorPickerSelection )
 		->setTooltipText( "Enables the color picker tool when a double click selection\n"
 						  "is done over a word representing a color." );
+	mViewMenu->addCheckBox( "Enable Auto Complete" )
+		->setActive( mConfig.editor.autoComplete )
+		->setTooltipText( "Auto complete shows the completion popup as you type, so you can fill\n"
+						  "in long words by typing only a few characters." );
 	mViewMenu->addSeparator();
 	mViewMenu->add( "Editor Font Size", findIcon( "font-size" ) );
 	mViewMenu->add( "UI Font Size", findIcon( "font-size" ) );
@@ -620,6 +626,8 @@ UIMenu* App::createViewMenu() {
 			mEditorSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
 				editor->setEnableColorPickerOnSelection( mConfig.editor.colorPickerSelection );
 			} );
+		} else if ( item->getText() == "Enable Auto Complete" ) {
+			setAutoComplete( item->asType<UIMenuCheckBox>()->isActive() );
 		} else if ( item->getText() == "Enable Color Preview" ) {
 			mConfig.editor.colorPreview = item->asType<UIMenuCheckBox>()->isActive();
 			mEditorSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
@@ -977,7 +985,7 @@ void App::onDocumentLoaded( UICodeEditor* codeEditor, const std::string& path ) 
 	updateRecentFiles();
 }
 
-const UICodeEditorSplitter::CodeEditorConfig& App::getCodeEditorConfig() const {
+const CodeEditorConfig& App::getCodeEditorConfig() const {
 	return mConfig.editor;
 }
 
@@ -1003,6 +1011,31 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 }
 
 void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
+	const CodeEditorConfig& config = mConfig.editor;
+	editor->setFontSize( config.fontSize.asDp( 0, Sizef(), mUISceneNode->getDPI() ) );
+	editor->setEnableColorPickerOnSelection( true );
+	editor->setColorScheme(
+		mEditorSplitter->getColorSchemes().at( mEditorSplitter->getCurrentColorScheme() ) );
+	editor->setShowLineNumber( config.showLineNumbers );
+	editor->setShowWhitespaces( config.showWhiteSpaces );
+	editor->setHighlightMatchingBracket( config.highlightMatchingBracket );
+	editor->setHorizontalScrollBarEnabled( config.horizontalScrollbar );
+	editor->setHighlightCurrentLine( config.highlightCurrentLine );
+	editor->setTabWidth( config.tabWidth );
+	editor->setLineBreakingColumn( config.lineBreakingColumn );
+	editor->setHighlightSelectionMatch( config.highlightSelectionMatch );
+	editor->setEnableColorPickerOnSelection( config.colorPickerSelection );
+	editor->setColorPreview( config.colorPreview );
+	doc.setAutoDetectIndentType( config.autoDetectIndentType );
+	doc.setLineEnding( config.windowsLineEndings ? TextDocument::LineEnding::CRLF
+												 : TextDocument::LineEnding::LF );
+	doc.setTrimTrailingWhitespaces( config.trimTrailingWhitespaces );
+	doc.setIndentType( config.indentSpaces ? TextDocument::IndentType::IndentSpaces
+										   : TextDocument::IndentType::IndentTabs );
+	doc.setForceNewLineAtEndOfFile( config.forceNewLineAtEndOfFile );
+	doc.setIndentWidth( config.indentWidth );
+	doc.setBOM( config.writeUnicodeBOM );
+
 	editor->addKeyBinds( getLocalKeybindings() );
 	editor->addUnlockedCommands(
 		{"fullscreen-toggle", "open-file", "console-toggle", "close-app"} );
@@ -1072,9 +1105,25 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 		editor->getKeyBindings().addKeybindsString( mKeybindings );
 	}
 
-	if ( !mAutoCompleteModule )
+	if ( config.autoComplete && !mAutoCompleteModule )
+		setAutoComplete( config.autoComplete );
+
+	if ( config.autoComplete && mAutoCompleteModule )
+		editor->registerModule( mAutoCompleteModule );
+}
+
+bool App::setAutoComplete( bool enable ) {
+	mConfig.editor.autoComplete = enable;
+	if ( enable && !mAutoCompleteModule ) {
 		mAutoCompleteModule = eeNew( AutoCompleteModule, () );
-	editor->registerModule( mAutoCompleteModule );
+		mEditorSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
+			editor->registerModule( mAutoCompleteModule );
+		} );
+		return true;
+	}
+	if ( !enable && mAutoCompleteModule )
+		eeSAFE_DELETE( mAutoCompleteModule );
+	return false;
 }
 
 void App::createSettingsMenu() {

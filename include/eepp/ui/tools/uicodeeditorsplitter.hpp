@@ -16,28 +16,6 @@ class EE_API UICodeEditorSplitter {
 
 	static const std::map<KeyBindings::Shortcut, std::string> getLocalDefaultKeybindings();
 
-	struct CodeEditorConfig {
-		std::string colorScheme{"lite"};
-		StyleSheetLength fontSize{12, StyleSheetLength::Dp};
-		bool showLineNumbers{true};
-		bool showWhiteSpaces{true};
-		bool highlightMatchingBracket{true};
-		bool horizontalScrollbar{false};
-		bool highlightCurrentLine{true};
-		bool trimTrailingWhitespaces{false};
-		bool forceNewLineAtEndOfFile{false};
-		bool autoDetectIndentType{true};
-		bool writeUnicodeBOM{false};
-		bool indentSpaces{false};
-		bool windowsLineEndings{false};
-		bool highlightSelectionMatch{true};
-		bool colorPickerSelection{false};
-		bool colorPreview{false};
-		int indentWidth{4};
-		int tabWidth{4};
-		int lineBreakingColumn{100};
-	};
-
 	enum class SplitDirection { Left, Right, Top, Bottom };
 
 	class EE_API Client {
@@ -57,8 +35,6 @@ class EE_API UICodeEditorSplitter {
 		virtual void onColorSchemeChanged( const std::string& currentColorScheme ) = 0;
 
 		virtual void onDocumentLoaded( UICodeEditor* codeEditor, const std::string& path ) = 0;
-
-		virtual const CodeEditorConfig& getCodeEditorConfig() const = 0;
 	};
 
 	static UICodeEditorSplitter* New( UICodeEditorSplitter::Client* client, UISceneNode* sceneNode,

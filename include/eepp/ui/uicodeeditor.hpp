@@ -539,6 +539,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void checkMouseOverColor( const Vector2i& position );
 
+	void resetPreviewColor();
+
 	void disableEditorFeatures();
 
 	Float getViewportWidth( const bool& forceVScroll = false ) const;

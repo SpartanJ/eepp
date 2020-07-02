@@ -46,9 +46,32 @@ struct WindowConfig {
 	bool maximized{false};
 };
 
+struct CodeEditorConfig {
+	std::string colorScheme{"lite"};
+	StyleSheetLength fontSize{12, StyleSheetLength::Dp};
+	bool showLineNumbers{true};
+	bool showWhiteSpaces{true};
+	bool highlightMatchingBracket{true};
+	bool horizontalScrollbar{false};
+	bool highlightCurrentLine{true};
+	bool trimTrailingWhitespaces{false};
+	bool forceNewLineAtEndOfFile{false};
+	bool autoDetectIndentType{true};
+	bool writeUnicodeBOM{false};
+	bool indentSpaces{false};
+	bool windowsLineEndings{false};
+	bool highlightSelectionMatch{true};
+	bool colorPickerSelection{false};
+	bool colorPreview{false};
+	bool autoComplete{true};
+	int indentWidth{4};
+	int tabWidth{4};
+	int lineBreakingColumn{100};
+};
+
 struct AppConfig {
 	WindowConfig window;
-	UICodeEditorSplitter::CodeEditorConfig editor;
+	CodeEditorConfig editor;
 	UIConfig ui;
 };
 
@@ -191,13 +214,15 @@ class App : public UICodeEditorSplitter::Client {
 
 	void onDocumentLoaded( UICodeEditor* codeEditor, const std::string& path );
 
-	const UICodeEditorSplitter::CodeEditorConfig& getCodeEditorConfig() const;
+	const CodeEditorConfig& getCodeEditorConfig() const;
 
 	void onCodeEditorCreated( UICodeEditor*, TextDocument& doc );
 
 	void onDocumentSelectionChange( UICodeEditor* editor, TextDocument& );
 
 	void onCodeEditorFocusChange( UICodeEditor* editor );
+
+	bool setAutoComplete( bool enable );
 };
 
 #endif // EE_TOOLS_CODEEDITOR_HPP

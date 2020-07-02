@@ -96,34 +96,8 @@ UISplitter* UICodeEditorSplitter::splitterFromEditor( UICodeEditor* editor ) {
 }
 
 UICodeEditor* UICodeEditorSplitter::createCodeEditor() {
-	UICodeEditor* codeEditor = UICodeEditor::NewOpt( false, true );
-	TextDocument& doc = codeEditor->getDocument();
-	const CodeEditorConfig& editorConfig = mClient->getCodeEditorConfig();
-	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
-	codeEditor->setFontSize(
-		editorConfig.fontSize.asDp( 0, Sizef(), displayManager->getDisplayIndex( 0 )->getDPI() ) );
-	codeEditor->setEnableColorPickerOnSelection( true );
-	codeEditor->setColorScheme( mColorSchemes[mCurrentColorScheme] );
-	codeEditor->setShowLineNumber( editorConfig.showLineNumbers );
-	codeEditor->setShowWhitespaces( editorConfig.showWhiteSpaces );
-	codeEditor->setHighlightMatchingBracket( editorConfig.highlightMatchingBracket );
-	codeEditor->setHorizontalScrollBarEnabled( editorConfig.horizontalScrollbar );
-	codeEditor->setHighlightCurrentLine( editorConfig.highlightCurrentLine );
-	codeEditor->setTabWidth( editorConfig.tabWidth );
-	codeEditor->setLineBreakingColumn( editorConfig.lineBreakingColumn );
-	codeEditor->setHighlightSelectionMatch( editorConfig.highlightSelectionMatch );
-	codeEditor->setEnableColorPickerOnSelection( editorConfig.colorPickerSelection );
-	codeEditor->setColorPreview( editorConfig.colorPreview );
-	doc.setAutoDetectIndentType( editorConfig.autoDetectIndentType );
-	doc.setLineEnding( editorConfig.windowsLineEndings ? TextDocument::LineEnding::CRLF
-													   : TextDocument::LineEnding::LF );
-	doc.setTrimTrailingWhitespaces( editorConfig.trimTrailingWhitespaces );
-	doc.setIndentType( editorConfig.indentSpaces ? TextDocument::IndentType::IndentSpaces
-												 : TextDocument::IndentType::IndentTabs );
-	doc.setForceNewLineAtEndOfFile( editorConfig.forceNewLineAtEndOfFile );
-	doc.setIndentWidth( editorConfig.indentWidth );
-	doc.setBOM( editorConfig.writeUnicodeBOM );
-
+	UICodeEditor* editor = UICodeEditor::NewOpt( false, true );
+	TextDocument& doc = editor->getDocument();
 	/* global commands */
 	doc.setCommand( "move-to-previous-line", [&] {
 		if ( mCurEditor )
@@ -190,8 +164,8 @@ UICodeEditor* UICodeEditorSplitter::createCodeEditor() {
 			mClient->onDocumentStateChanged( mCurEditor, mCurEditor->getDocument() );
 		}
 	} );
-	codeEditor->addUnlockedCommand( "copy" );
-	codeEditor->addUnlockedCommand( "select-all" );
+	editor->addUnlockedCommand( "copy" );
+	editor->addUnlockedCommand( "select-all" );
 	/* global commands */
 
 	doc.setCommand( "switch-to-previous-colorscheme", [&] {
@@ -257,31 +231,31 @@ UICodeEditor* UICodeEditorSplitter::createCodeEditor() {
 		if ( UISplitter* splitter = splitterFromEditor( mCurEditor ) )
 			splitter->swap();
 	} );
-	codeEditor->addEventListener( Event::OnFocus, [&]( const Event* event ) {
+	editor->addEventListener( Event::OnFocus, [&]( const Event* event ) {
 		setCurrentEditor( event->getNode()->asType<UICodeEditor>() );
 	} );
-	codeEditor->addEventListener( Event::OnTextChanged, [&]( const Event* event ) {
+	editor->addEventListener( Event::OnTextChanged, [&]( const Event* event ) {
 		mClient->onDocumentModified( event->getNode()->asType<UICodeEditor>(),
 									 event->getNode()->asType<UICodeEditor>()->getDocument() );
 	} );
-	codeEditor->addEventListener( Event::OnSelectionChanged, [&]( const Event* event ) {
+	editor->addEventListener( Event::OnSelectionChanged, [&]( const Event* event ) {
 		mClient->onDocumentSelectionChange(
 			event->getNode()->asType<UICodeEditor>(),
 			event->getNode()->asType<UICodeEditor>()->getDocument() );
 	} );
 
-	codeEditor->addKeyBinds( getLocalDefaultKeybindings() );
-	codeEditor->addUnlockedCommands(
+	editor->addKeyBinds( getLocalDefaultKeybindings() );
+	editor->addUnlockedCommands(
 		{"lock-toggle", "create-new", "close-doc", "next-doc", "previous-doc", "split-left",
 		 "split-right", "split-top", "split-bottom", "split-swap", "switch-to-previous-split",
 		 "switch-to-next-split", "switch-to-previous-colorscheme", "switch-to-next-colorscheme"} );
 
 	if ( nullptr == mCurEditor )
-		setCurrentEditor( codeEditor );
+		setCurrentEditor( editor );
 
-	mClient->onCodeEditorCreated( codeEditor, doc );
+	mClient->onCodeEditorCreated( editor, doc );
 
-	return codeEditor;
+	return editor;
 }
 
 const std::string& UICodeEditorSplitter::getCurrentColorScheme() const {

@@ -48,7 +48,16 @@ class AutoCompleteModule : public UICodeEditorModule {
 
 	void setUpdateFreq( const Time& updateFreq );
 
+	const std::string& getSymbolPattern() const;
+
+	void setSymbolPattern( const std::string& symbolPattern );
+
+	bool isDirty() const;
+
+	void setDirty( bool dirty );
+
   protected:
+	std::string mSymbolPattern;
 	Rectf mBoxPadding;
 	std::shared_ptr<ThreadPool> mPool;
 	Clock mClock;
@@ -72,7 +81,7 @@ class AutoCompleteModule : public UICodeEditorModule {
 
 	int mSuggestionIndex{0};
 	std::vector<std::string> mSuggestions;
-	Uint32 mSuggestionsMaxVisible{6};
+	Uint32 mSuggestionsMaxVisible{8};
 	UICodeEditor* mSuggestionsEditor{nullptr};
 
 	Float mRowHeight{0};

@@ -23,14 +23,18 @@ AutoCompleteModule::AutoCompleteModule() :
 }
 
 AutoCompleteModule::AutoCompleteModule( std::shared_ptr<ThreadPool> pool ) :
-	mBoxPadding( PixelDensity::dpToPx( Rectf( 4, 4, 4, 4 ) ) ), mPool( pool ) {}
+	mSymbolPattern( "[%a][%w_]*" ),
+	mBoxPadding( PixelDensity::dpToPx( Rectf( 4, 4, 4, 4 ) ) ),
+	mPool( pool ) {}
 
 AutoCompleteModule::~AutoCompleteModule() {
 	mClosing = true;
 	Lock l( mDocMutex );
+	Lock l2( mLangSymbolsMutex );
+	Lock l3( mSuggestionsMutex );
 	for ( auto editor : mEditors ) {
-		for ( auto listeners : editor.second )
-			editor.first->removeEventListener( listeners );
+		for ( auto listener : editor.second )
+			editor.first->removeEventListener( listener );
 		editor.first->unregisterModule( this );
 	}
 }
@@ -89,6 +93,7 @@ void AutoCompleteModule::onRegister( UICodeEditor* editor ) {
 	mEditors.insert( {editor, listeners} );
 	mDocs.insert( editor->getDocumentRef().get() );
 	mEditorDocs[editor] = editor->getDocumentRef().get();
+	mDirty = true;
 }
 
 void AutoCompleteModule::onUnregister( UICodeEditor* editor ) {
@@ -97,8 +102,18 @@ void AutoCompleteModule::onUnregister( UICodeEditor* editor ) {
 	if ( mSuggestionsEditor == editor )
 		resetSuggestions( editor );
 	Lock l( mDocMutex );
+	TextDocument* doc = mEditorDocs[editor];
+	auto cbs = mEditors[editor];
+	for ( auto listener : cbs )
+		editor->removeEventListener( listener );
 	mEditors.erase( editor );
 	mEditorDocs.erase( editor );
+	for ( auto editor : mEditorDocs )
+		if ( editor.second == doc )
+			return;
+	mDocs.erase( doc );
+	mDocCache.erase( doc );
+	mDirty = true;
 }
 
 bool AutoCompleteModule::onKeyDown( UICodeEditor* editor, const KeyEvent& event ) {
@@ -197,6 +212,7 @@ void AutoCompleteModule::updateLangCache( const std::string& langName ) {
 	Clock clock;
 	auto& lang = mLangCache[langName];
 	Lock l( mLangSymbolsMutex );
+	Lock l2( mDocMutex );
 	lang.clear();
 	for ( auto d : mDocCache ) {
 		if ( d.first->getSyntaxDefinition().getLanguageName() == langName )
@@ -364,16 +380,35 @@ void AutoCompleteModule::setUpdateFreq( const Time& updateFreq ) {
 	mUpdateFreq = updateFreq;
 }
 
+const std::string& AutoCompleteModule::getSymbolPattern() const {
+	return mSymbolPattern;
+}
+
+void AutoCompleteModule::setSymbolPattern( const std::string& symbolPattern ) {
+	mSymbolPattern = symbolPattern;
+}
+
+bool AutoCompleteModule::isDirty() const
+{
+	return mDirty;
+}
+
+void AutoCompleteModule::setDirty(bool dirty)
+{
+	mDirty = dirty;
+}
+
 void AutoCompleteModule::resetSuggestions( UICodeEditor* editor ) {
 	Lock l( mSuggestionsMutex );
 	mSuggestionIndex = 0;
 	mSuggestionsEditor = nullptr;
 	mSuggestions.clear();
-	editor->getUISceneNode()->setCursor( !editor->isLocked() ? Cursor::IBeam : Cursor::Arrow );
+	if ( editor )
+		editor->getUISceneNode()->setCursor( !editor->isLocked() ? Cursor::IBeam : Cursor::Arrow );
 }
 
 AutoCompleteModule::SymbolsList AutoCompleteModule::getDocumentSymbols( TextDocument* doc ) {
-	LuaPattern pattern( "[%a][%w_]*" );
+	LuaPattern pattern( mSymbolPattern );
 	AutoCompleteModule::SymbolsList symbols;
 	Int64 lc = doc->linesCount();
 	std::string current( getPartialSymbol( doc ) );

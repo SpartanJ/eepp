@@ -1620,16 +1620,18 @@ void UICodeEditor::setHighlightTextRange( const TextRange& highlightSelection ) 
 
 void UICodeEditor::registerModule( UICodeEditorModule* module ) {
 	auto it = std::find( mModules.begin(), mModules.end(), module );
-	if ( it == mModules.end() )
+	if ( it == mModules.end() ) {
 		mModules.push_back( module );
-	module->onRegister( this );
+		module->onRegister( this );
+	}
 }
 
 void UICodeEditor::unregisterModule( UICodeEditorModule* module ) {
 	auto it = std::find( mModules.begin(), mModules.end(), module );
-	if ( it != mModules.end() )
+	if ( it != mModules.end() ) {
 		mModules.erase( it );
-	module->onUnregister( this );
+		module->onUnregister( this );
+	}
 }
 
 const Time& UICodeEditor::getFindLongestLineWidthUpdateFrequency() const {
@@ -1880,8 +1882,12 @@ void UICodeEditor::checkMouseOverColor( const Vector2i& position ) {
 	if ( !mColorPreview )
 		return;
 	TextPosition pos( resolveScreenPosition( position.asFloat() ) );
+	const String& line = mDoc->line( pos.line() ).getText();
+	if ( pos.column() >= (Int64)line.size() - 1 ) {
+		resetPreviewColor();
+		return;
+	}
 	TextPosition start( mDoc->previousWordBoundary( pos ) );
-	const String& line = mDoc->line( start.line() ).getText();
 	if ( start.column() > 0 && start.column() < (Int64)line.size() ) {
 		TextPosition end( mDoc->nextWordBoundary( pos ) );
 		TextRange wordPos = {{start.line(), start.column() - 1}, end};
@@ -1911,15 +1917,17 @@ void UICodeEditor::checkMouseOverColor( const Vector2i& position ) {
 			mPreviewColorRange = wordPos;
 			invalidateDraw();
 		} else {
-			mPreviewColorRange = TextRange();
-			mPreviewColor = Color::Transparent;
-			invalidateDraw();
+			resetPreviewColor();
 		}
 	} else if ( mPreviewColorRange.isValid() ) {
-		mPreviewColorRange = TextRange();
-		mPreviewColor = Color::Transparent;
-		invalidateDraw();
+		resetPreviewColor();
 	}
+}
+
+void UICodeEditor::resetPreviewColor() {
+	mPreviewColorRange = TextRange();
+	mPreviewColor = Color::Transparent;
+	invalidateDraw();
 }
 
 }} // namespace EE::UI
