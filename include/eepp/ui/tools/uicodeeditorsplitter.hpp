@@ -31,6 +31,8 @@ class EE_API UICodeEditorSplitter {
 		bool indentSpaces{false};
 		bool windowsLineEndings{false};
 		bool highlightSelectionMatch{true};
+		bool colorPickerSelection{false};
+		bool colorPreview{false};
 		int indentWidth{4};
 		int tabWidth{4};
 		int lineBreakingColumn{100};

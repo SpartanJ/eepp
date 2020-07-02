@@ -112,6 +112,8 @@ UICodeEditor* UICodeEditorSplitter::createCodeEditor() {
 	codeEditor->setTabWidth( editorConfig.tabWidth );
 	codeEditor->setLineBreakingColumn( editorConfig.lineBreakingColumn );
 	codeEditor->setHighlightSelectionMatch( editorConfig.highlightSelectionMatch );
+	codeEditor->setEnableColorPickerOnSelection( editorConfig.colorPickerSelection );
+	codeEditor->setColorPreview( editorConfig.colorPreview );
 	doc.setAutoDetectIndentType( editorConfig.autoDetectIndentType );
 	doc.setLineEnding( editorConfig.windowsLineEndings ? TextDocument::LineEnding::CRLF
 													   : TextDocument::LineEnding::LF );

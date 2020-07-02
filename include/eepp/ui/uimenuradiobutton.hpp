@@ -21,7 +21,7 @@ class EE_API UIMenuRadioButton : public UIMenuItem {
 
 	const bool& isActive() const;
 
-	void setActive( const bool& active );
+	UIMenuRadioButton* setActive( const bool& active );
 
 	void switchActive();
 

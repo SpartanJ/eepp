@@ -108,6 +108,7 @@ UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegis
 	mEnableColorPickerOnSelection( false ),
 	mHorizontalScrollBarEnabled( false ),
 	mLongestLineWidthDirty( true ),
+	mColorPreview( false ),
 	mTabWidth( 4 ),
 	mMouseWheelScroll( 50 ),
 	mFontSize( mFontStyleConfig.getFontCharacterSize() ),
@@ -115,7 +116,8 @@ UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegis
 	mLineNumberPaddingRight( 8 ),
 	mHighlighter( mDoc.get() ),
 	mKeyBindings( getUISceneNode()->getWindow()->getInput() ),
-	mFindLongestLineWidthUpdateFrequency( Seconds( 1 ) ) {
+	mFindLongestLineWidthUpdateFrequency( Seconds( 1 ) ),
+	mPreviewColor( Color::Transparent ) {
 	mFlags |= UI_TAB_STOP;
 	setTextSelection( true );
 	setColorScheme( SyntaxColorScheme::getDefault() );
@@ -260,6 +262,10 @@ void UICodeEditor::draw() {
 	if ( mShowLineNumber ) {
 		drawLineNumbers( lineRange, startScroll, screenStart, lineHeight, lineNumberWidth,
 						 lineNumberDigits, charSize );
+	}
+
+	if ( mColorPreview && mPreviewColorRange.isValid() ) {
+		drawColorPreview( startScroll, lineHeight );
 	}
 
 	for ( auto& module : mModules )
@@ -679,9 +685,7 @@ Uint32 UICodeEditor::onKeyUp( const KeyEvent& event ) {
 }
 
 TextPosition UICodeEditor::resolveScreenPosition( const Vector2f& position ) const {
-	Vector2f localPos( position );
-	worldToNode( localPos );
-	localPos = PixelDensity::dpToPx( localPos );
+	Vector2f localPos( convertToNodeSpace( position ) );
 	localPos += mScroll;
 	localPos.x -= mRealPadding.Left + ( mShowLineNumber ? getLineNumberWidth() : 0.f );
 	localPos.y -= mRealPadding.Top;
@@ -739,6 +743,9 @@ Uint32 UICodeEditor::onMouseMove( const Vector2i& position, const Uint32& flags 
 		selection.setStart( resolveScreenPosition( position.asFloat() ) );
 		mDoc->setSelection( selection );
 	}
+
+	checkMouseOverColor( position );
+
 	return UIWidget::onMouseMove( position, flags );
 }
 
@@ -1474,6 +1481,14 @@ Float UICodeEditor::getGlyphWidth() const {
 	return mFont->getGlyph( ' ', getCharacterSize(), false ).advance;
 }
 
+const bool& UICodeEditor::getColorPreview() const {
+	return mColorPreview;
+}
+
+void UICodeEditor::setColorPreview( bool colorPreview ) {
+	mColorPreview = colorPreview;
+}
+
 void UICodeEditor::resetCursor() {
 	mCursorVisible = true;
 	mBlinkTimer.restart();
@@ -1779,6 +1794,17 @@ void UICodeEditor::drawLineNumbers( const std::pair<int, int>& lineRange,
 	}
 }
 
+void UICodeEditor::drawColorPreview( const Vector2f& startScroll, const Float& lineHeight ) {
+	Primitives primitives;
+	primitives.setColor( mPreviewColor );
+	Float startX = getXOffsetCol( mPreviewColorRange.start() );
+	Float endX = getXOffsetCol( mPreviewColorRange.end() );
+	primitives.drawRectangle( Rectf(
+		Vector2f( startScroll.x + mScroll.x + startX,
+				  startScroll.y + mPreviewColorRange.start().line() * lineHeight + lineHeight ),
+		Sizef( endX - startX, lineHeight * 2 ) ) );
+}
+
 void UICodeEditor::drawWhitespaces( const std::pair<int, int>& lineRange,
 									const Vector2f& startScroll, const Float& lineHeight ) {
 	Float tabWidth = getTextWidth( "\t" );
@@ -1848,6 +1874,52 @@ void UICodeEditor::registerKeybindings() {
 void UICodeEditor::onCursorPosChange() {
 	sendCommonEvent( Event::OnCursorPosChange );
 	invalidateDraw();
+}
+
+void UICodeEditor::checkMouseOverColor( const Vector2i& position ) {
+	if ( !mColorPreview )
+		return;
+	TextPosition pos( resolveScreenPosition( position.asFloat() ) );
+	TextPosition start( mDoc->previousWordBoundary( pos ) );
+	const String& line = mDoc->line( start.line() ).getText();
+	if ( start.column() > 0 && start.column() < (Int64)line.size() ) {
+		TextPosition end( mDoc->nextWordBoundary( pos ) );
+		TextRange wordPos = {{start.line(), start.column() - 1}, end};
+		String word = mDoc->getText( wordPos );
+		bool found = false;
+		if ( word[0] == '#' && ( word.size() == 7 || word.size() == 9 ) ) {
+			found = true;
+		} else {
+			wordPos = {start, end};
+			word = mDoc->getText( wordPos );
+			if ( end.column() < (Int64)line.size() && line[end.column()] == '(' &&
+				 ( "rgb" == word || "rgba" == word || "hsl" == word || "hsv" == word ||
+				   "hsla" == word || "hsva" == word ) ) {
+				const String& text = mDoc->line( start.line() ).getText();
+				size_t endFun = String::findCloseBracket( text, end.column(), '(', ')' );
+				if ( endFun != std::string::npos ) {
+					word = word + text.substr( end.column(), endFun - end.column() + 1 );
+					if ( word.find( "--" ) == String::InvalidPos ) {
+						found = true;
+						wordPos = {wordPos.start(), {wordPos.end().line(), (Int64)endFun + 1}};
+					}
+				}
+			}
+		}
+		if ( found ) {
+			mPreviewColor = Color::fromString( word );
+			mPreviewColorRange = wordPos;
+			invalidateDraw();
+		} else {
+			mPreviewColorRange = TextRange();
+			mPreviewColor = Color::Transparent;
+			invalidateDraw();
+		}
+	} else if ( mPreviewColorRange.isValid() ) {
+		mPreviewColorRange = TextRange();
+		mPreviewColor = Color::Transparent;
+		invalidateDraw();
+	}
 }
 
 }} // namespace EE::UI

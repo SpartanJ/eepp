@@ -688,7 +688,6 @@ void UIMenu::findBestMenuPos( Vector2f& pos, UIMenu* menu, UIMenu* parent,
 		qPos.Right = qPos.Left + menu->getPixelsSize().getWidth();
 		qPos.Top = pos.y;
 		qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
-		Vector2f oriPos( pos );
 
 		if ( !qScreen.contains( qPos ) || ( clipMenu && qPrevMenu.overlap( qPos ) ) ) {
 			pos.y =
@@ -710,7 +709,13 @@ void UIMenu::findBestMenuPos( Vector2f& pos, UIMenu* menu, UIMenu* parent,
 					qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
 
 					if ( !qScreen.contains( qPos ) ) {
-						pos = oriPos;
+						if ( menu->getPixelsSize().getHeight() <= qScreen.getHeight() ) {
+							pos = {pos.x, eefloor( ( qScreen.getHeight() -
+													 menu->getPixelsSize().getHeight() ) *
+												   0.5f )};
+						} else {
+							pos = {pos.x, 0};
+						}
 					}
 				}
 			}

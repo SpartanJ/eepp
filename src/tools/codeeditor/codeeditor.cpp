@@ -280,6 +280,9 @@ void App::loadConfig() {
 		eemax( 0, mIni.getValueI( "editor", "line_breaking_column", 100 ) );
 	mConfig.editor.highlightSelectionMatch =
 		mIni.getValueB( "editor", "highlight_selection_match", true );
+	mConfig.editor.colorPickerSelection =
+		mIni.getValueB( "editor", "color_picker_selection", true );
+	mConfig.editor.colorPreview = mIni.getValueB( "editor", "color_preview", true );
 }
 
 void App::saveConfig() {
@@ -311,6 +314,8 @@ void App::saveConfig() {
 	mIni.setValueI( "editor", "tab_width", mConfig.editor.tabWidth );
 	mIni.setValueI( "editor", "line_breaking_column", mConfig.editor.lineBreakingColumn );
 	mIni.setValueB( "editor", "highlight_selection_match", mConfig.editor.highlightSelectionMatch );
+	mIni.setValueB( "editor", "color_picker_selection", mConfig.editor.colorPickerSelection );
+	mIni.setValueB( "editor", "color_preview", mConfig.editor.colorPreview );
 	mIni.writeFile();
 	mIniState.writeFile();
 }
@@ -551,6 +556,14 @@ UIMenu* App::createViewMenu() {
 		->setActive( mConfig.editor.highlightSelectionMatch );
 	mViewMenu->addCheckBox( "Enable Horizontal ScrollBar" )
 		->setActive( mConfig.editor.horizontalScrollbar );
+	mViewMenu->addCheckBox( "Enable Color Preview" )
+		->setActive( mConfig.editor.colorPreview )
+		->setTooltipText( "Enables a quick preview of a color when the mouse\n"
+						  "is hover a word that represents a color." );
+	mViewMenu->addCheckBox( "Enable Color Picker" )
+		->setActive( mConfig.editor.colorPickerSelection )
+		->setTooltipText( "Enables the color picker tool when a double click selection\n"
+						  "is done over a word representing a color." );
 	mViewMenu->addSeparator();
 	mViewMenu->add( "Editor Font Size", findIcon( "font-size" ) );
 	mViewMenu->add( "UI Font Size", findIcon( "font-size" ) );
@@ -601,6 +614,16 @@ UIMenu* App::createViewMenu() {
 			mConfig.editor.horizontalScrollbar = item->asType<UIMenuCheckBox>()->isActive();
 			mEditorSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
 				editor->setHorizontalScrollBarEnabled( mConfig.editor.horizontalScrollbar );
+			} );
+		} else if ( item->getText() == "Enable Color Picker" ) {
+			mConfig.editor.colorPickerSelection = item->asType<UIMenuCheckBox>()->isActive();
+			mEditorSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
+				editor->setEnableColorPickerOnSelection( mConfig.editor.colorPickerSelection );
+			} );
+		} else if ( item->getText() == "Enable Color Preview" ) {
+			mConfig.editor.colorPreview = item->asType<UIMenuCheckBox>()->isActive();
+			mEditorSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
+				editor->setEnableColorPickerOnSelection( mConfig.editor.colorPreview );
 			} );
 		} else if ( item->getText() == "Editor Font Size" ) {
 			UIMessageBox* msgBox =
@@ -1285,7 +1308,7 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		<vbox layout_width="match_parent" layout_height="match_parent">
 			<vbox id="code_container" layout_width="match_parent" layout_height="0" layout_weight="1">
 			</vbox>
-			<searchbar id="search_bar" layout_width="match_parent" layout_height="wrap_content" margin-bottom="2dp">
+			<searchbar id="search_bar" layout_width="match_parent" layout_height="wrap_content" margin-bottom="2dp" margin-top="2dp">
 				<vbox layout_width="wrap_content" layout_height="wrap_content" margin-right="4dp">
 					<TextView layout_width="wrap_content" layout_height="18dp" text="Find:"  margin-bottom="2dp" />
 					<TextView layout_width="wrap_content" layout_height="18dp" text="Replace with:" />

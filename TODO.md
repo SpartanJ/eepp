@@ -25,8 +25,6 @@ Implement a simple tree view widget, to at least cover the most common use cases
 
 * Support single instance (when a new file is opened while a previous instance exists, open it in the first instance).
 
-* Add auto-completion.
-
 * Once `UITreeView` is finished add a directory/project tree view.
 
 ## UI Editor

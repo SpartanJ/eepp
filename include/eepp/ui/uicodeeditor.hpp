@@ -357,6 +357,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	Float getGlyphWidth() const;
 
+	const bool& getColorPreview() const;
+
+	void setColorPreview( bool colorPreview );
+
   protected:
 	struct LastXOffset {
 		TextPosition position;
@@ -379,6 +383,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mEnableColorPickerOnSelection;
 	bool mHorizontalScrollBarEnabled;
 	bool mLongestLineWidthDirty;
+	bool mColorPreview;
 	Uint32 mTabWidth;
 	Vector2f mScroll;
 	Float mMouseWheelScroll;
@@ -409,6 +414,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Clock mLongestLineWidthLastUpdate;
 	String mHighlightWord;
 	TextRange mHighlightTextRange;
+	Color mPreviewColor;
+	TextRange mPreviewColorRange;
 	std::vector<UICodeEditorModule*> mModules;
 
 	UICodeEditor( const std::string& elementTag, const bool& autoRegisterBaseCommands = true,
@@ -522,11 +529,15 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 								  const Float& lineNumberWidth, const int& lineNumberDigits,
 								  const Float& fontSize );
 
+	virtual void drawColorPreview( const Vector2f& startScroll, const Float& lineHeight );
+
 	virtual void onFontChanged();
 
 	virtual void onDocumentChanged();
 
 	virtual Uint32 onMessage( const NodeMessage* msg );
+
+	void checkMouseOverColor( const Vector2i& position );
 
 	void disableEditorFeatures();
 

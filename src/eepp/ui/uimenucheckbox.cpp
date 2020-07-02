@@ -43,7 +43,7 @@ const bool& UIMenuCheckBox::isActive() const {
 	return mActive;
 }
 
-void UIMenuCheckBox::setActive( const bool& active ) {
+UIMenuCheckBox* UIMenuCheckBox::setActive( const bool& active ) {
 	bool oActive = mActive;
 	mActive = active;
 
@@ -99,6 +99,8 @@ void UIMenuCheckBox::setActive( const bool& active ) {
 
 		onValueChange();
 	}
+
+	return this;
 }
 
 void UIMenuCheckBox::switchActive() {

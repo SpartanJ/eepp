@@ -47,9 +47,9 @@ const bool& UIMenuRadioButton::isActive() const {
 	return mActive;
 }
 
-void UIMenuRadioButton::setActive( const bool& active ) {
+UIMenuRadioButton* UIMenuRadioButton::setActive( const bool& active ) {
 	if ( mActive == active )
-		return;
+		return this;
 
 	mActive = active;
 
@@ -113,6 +113,7 @@ void UIMenuRadioButton::setActive( const bool& active ) {
 	}
 
 	onValueChange();
+	return this;
 }
 
 void UIMenuRadioButton::switchActive() {

@@ -21,7 +21,7 @@ class EE_API UIMenuCheckBox : public UIMenuItem {
 
 	const bool& isActive() const;
 
-	void setActive( const bool& active );
+	UIMenuCheckBox* setActive( const bool& active );
 
 	void switchActive();
 
