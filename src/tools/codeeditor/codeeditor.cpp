@@ -248,8 +248,7 @@ void App::loadConfig() {
 	mRecentFiles = String::split( recent, ';' );
 	mInitColorScheme = mConfig.editor.colorScheme =
 		mIni.getValue( "editor", "colorscheme", "lite" );
-	mConfig.editor.fontSize =
-		mIni.getValue( "editor", "font_size", mDisplayDPI > 105 ? "11dp" : "14dp" );
+	mConfig.editor.fontSize = mIni.getValue( "editor", "font_size", "11dp" );
 	mConfig.window.size.setWidth(
 		mIniState.getValueI( "window", "width", mDisplayDPI > 105 ? 1920 : 1280 ) );
 	mConfig.window.size.setHeight(
@@ -264,7 +263,7 @@ void App::loadConfig() {
 	mConfig.editor.highlightCurrentLine =
 		mIni.getValueB( "editor", "highlight_current_line", true );
 	mConfig.editor.horizontalScrollbar = mIni.getValueB( "editor", "horizontal_scrollbar", false );
-	mConfig.ui.fontSize = mIni.getValue( "ui", "font_size", mDisplayDPI > 105 ? "11dp" : "14dp" );
+	mConfig.ui.fontSize = mIni.getValue( "ui", "font_size", "11dp" );
 	mConfig.editor.trimTrailingWhitespaces =
 		mIni.getValueB( "editor", "trim_trailing_whitespaces", false );
 	mConfig.editor.forceNewLineAtEndOfFile =

@@ -196,6 +196,10 @@ function build_link_configuration( package_name, use_ee_icon )
 			linkoptions { "../../bin/assets/icon/ee.res" }
 		end
 
+	filter { "system:windows", "action:vs*" }
+		files { "bin/assets/icon/ee.rc", "bin/assets/icon/ee.ico" }
+		vpaths { ['Resources/*'] = { "ee.rc", "ee.ico" } }
+
 	filter "action:not vs*"
 		cppdialect "C++14"
 		buildoptions { "-Wall" }
@@ -567,6 +571,9 @@ workspace "eepp"
 		symbols "On"
 	filter "configurations:release*"
 		optimize "Speed"
+
+	filter { "system:windows", "action:vs*" }
+		flags { "MultiProcessorCompile" }
 
 	project "SOIL2-static"
 		kind "StaticLib"

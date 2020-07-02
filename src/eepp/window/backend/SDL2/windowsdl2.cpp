@@ -695,6 +695,11 @@ bool WindowSDL::setIcon( const std::string& Path ) {
 	Image Img( Path );
 
 	if ( NULL != Img.getPixelsPtr() ) {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+		if ( Img.getWidth() > 64 || Img.getHeight() > 64 ) {
+			Img.resize( 64, 64 );
+		}
+#endif
 		const Uint8* Ptr = Img.getPixelsPtr();
 		x = Img.getWidth();
 		y = Img.getHeight();

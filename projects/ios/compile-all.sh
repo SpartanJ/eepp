@@ -3,7 +3,7 @@ cd $(dirname "$0")
 
 if [ ! -f ../../libs/ios/libSDL2.a ]; then
 
-cd ../../src/thirdparty/SDL2-2.0.10/build-scripts
+cd ../../src/thirdparty/SDL2-2.0.12/build-scripts
 ./iosbuild.sh
 cp lib/libSDL2.a ../../../../libs/ios/
 cd ../../../../projects/ios

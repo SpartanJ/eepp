@@ -606,7 +606,7 @@ std::string Sys::getConfigPath( std::string appname ) {
 
 	_dupenv_s( &ppath, &ssize, "APPDATA" );
 
-	String::strCopy( path, ppath, EE_MAX_CFG_PATH_LEN );
+	_snprintf( path, EE_MAX_CFG_PATH_LEN, "%s\\%s", ppath, appname.c_str() );
 
 	free( ppath );
 

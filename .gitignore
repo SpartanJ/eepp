@@ -21,7 +21,7 @@ projects/android-project-ant/gen
 projects/android-project-ant/assets
 projects/android-project-ant/libs
 src/examples/strobe
-src/thirdparty/SDL2-2.0.10*
+src/thirdparty/SDL2-2.0.12*
 *.dll
 bin/ee*
 bin/eepp-*
@@ -44,3 +44,4 @@ bin/libeepp.dylib
 eepp.kdev4
 eepp.tags
 eepp.geany
+/bin/assets/icon/ee.aps

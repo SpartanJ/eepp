@@ -18,12 +18,10 @@ namespace EE {
 bool PrintDebugInLog = true;
 
 void eeREPORT_ASSERT( const char* File, int Line, const char* Exp ) {
-#ifdef EE_COMPILER_MSVC
-
+#if defined( EE_COMPILER_MSVC ) && defined( EE_DEBUG )
 	_CrtDbgReport( _CRT_ASSERT, File, Line, "", Exp );
 
 	DebugBreak();
-
 #else
 
 	if ( PrintDebugInLog ) {
