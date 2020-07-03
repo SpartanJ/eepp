@@ -664,11 +664,11 @@ UITextView* UITextInput::setHintFontStyle( const Uint32& fontStyle ) {
 }
 
 void UITextInput::copy() {
-	getUISceneNode()->getWindow()->getClipboard()->setText( mDoc.getSelectedText() );
+	getUISceneNode()->getWindow()->getClipboard()->setText( mDoc.getSelectedText().toUtf8() );
 }
 
 void UITextInput::cut() {
-	getUISceneNode()->getWindow()->getClipboard()->setText( mDoc.getSelectedText() );
+	getUISceneNode()->getWindow()->getClipboard()->setText( mDoc.getSelectedText().toUtf8() );
 	mDoc.deleteSelection();
 }
 

@@ -579,7 +579,7 @@ String String::fromUtf8( const std::string& utf8String ) {
 }
 
 String::operator std::string() const {
-	return toAnsiString();
+	return toUtf8();
 }
 
 std::string String::toAnsiString( const std::locale& locale ) const {

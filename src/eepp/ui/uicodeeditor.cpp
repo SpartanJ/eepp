@@ -1567,11 +1567,11 @@ void UICodeEditor::unindent() {
 }
 
 void UICodeEditor::copy() {
-	getUISceneNode()->getWindow()->getClipboard()->setText( mDoc->getSelectedText() );
+	getUISceneNode()->getWindow()->getClipboard()->setText( mDoc->getSelectedText().toUtf8() );
 }
 
 void UICodeEditor::cut() {
-	getUISceneNode()->getWindow()->getClipboard()->setText( mDoc->getSelectedText() );
+	getUISceneNode()->getWindow()->getClipboard()->setText( mDoc->getSelectedText().toUtf8() );
 	mDoc->deleteSelection();
 }
 
