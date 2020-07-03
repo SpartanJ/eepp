@@ -201,6 +201,8 @@ void UILinearLayout::packVertical() {
 		child = child->getNextNode();
 	}
 
+	maxX += mPadding.Left + mPadding.Right;
+
 	if ( getLayoutHeightPolicy() == SizePolicy::WrapContent ) {
 		curY += mPadding.Bottom;
 
@@ -374,6 +376,8 @@ void UILinearLayout::packHorizontal() {
 
 		child = child->getNextNode();
 	}
+
+	maxY += mPadding.Top + mPadding.Bottom;
 
 	if ( getLayoutWidthPolicy() == SizePolicy::WrapContent ) {
 		curX += mPadding.Right;

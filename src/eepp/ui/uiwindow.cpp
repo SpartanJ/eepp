@@ -101,7 +101,8 @@ UIWindow::~UIWindow() {
 
 		getUISceneNode()->windowRemove( this );
 
-		getUISceneNode()->setFocusLastWindow( this );
+		if ( isParentOf( getEventDispatcher()->getFocusNode() ) )
+			getUISceneNode()->setFocusLastWindow( this );
 	}
 
 	sendCommonEvent( Event::OnWindowClose );

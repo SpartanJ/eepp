@@ -283,6 +283,7 @@ void App::loadConfig() {
 		mIni.getValueB( "editor", "color_picker_selection", true );
 	mConfig.editor.colorPreview = mIni.getValueB( "editor", "color_preview", true );
 	mConfig.editor.autoComplete = mIni.getValueB( "editor", "auto_complete", true );
+	mConfig.editor.showDocInfo = mIni.getValueB( "editor", "show_doc_info", true );
 }
 
 void App::saveConfig() {
@@ -317,6 +318,7 @@ void App::saveConfig() {
 	mIni.setValueB( "editor", "color_picker_selection", mConfig.editor.colorPickerSelection );
 	mIni.setValueB( "editor", "color_preview", mConfig.editor.colorPreview );
 	mIni.setValueB( "editor", "auto_complete", mConfig.editor.autoComplete );
+	mIni.setValueB( "editor", "show_doc_info", mConfig.editor.showDocInfo );
 	mIni.writeFile();
 	mIniState.writeFile();
 }
@@ -548,6 +550,7 @@ UIMenu* App::createViewMenu() {
 	mViewMenu = UIPopUpMenu::New();
 	mViewMenu->addCheckBox( "Show Line Numbers" )->setActive( mConfig.editor.showLineNumbers );
 	mViewMenu->addCheckBox( "Show White Space" )->setActive( mConfig.editor.showWhiteSpaces );
+	mViewMenu->addCheckBox( "Show Document Info" )->setActive( mConfig.editor.showDocInfo );
 	mViewMenu->addCheckBox( "Highlight Matching Bracket" )
 		->setActive( mConfig.editor.highlightMatchingBracket );
 	mViewMenu->addCheckBox( "Highlight Current Line" )
@@ -568,10 +571,11 @@ UIMenu* App::createViewMenu() {
 		->setActive( mConfig.editor.autoComplete )
 		->setTooltipText( "Auto complete shows the completion popup as you type, so you can fill\n"
 						  "in long words by typing only a few characters." );
-	mViewMenu->addSeparator();
-	mViewMenu->add( "Editor Font Size", findIcon( "font-size" ) );
-	mViewMenu->add( "UI Font Size", findIcon( "font-size" ) );
 	mViewMenu->add( "Line Breaking Column" );
+	mViewMenu->addSeparator();
+	mViewMenu->add( "UI Scale Factor (Pixel Density)", findIcon( "pixel-density" ) );
+	mViewMenu->add( "UI Font Size", findIcon( "font-size" ) );
+	mViewMenu->add( "Editor Font Size", findIcon( "font-size" ) );
 	mViewMenu->addSeparator();
 	mViewMenu->addCheckBox( "Full Screen Mode" )
 		->setShortcutText( getKeybind( "fullscreen-toggle" ) )
@@ -631,6 +635,42 @@ UIMenu* App::createViewMenu() {
 			mEditorSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
 				editor->setEnableColorPickerOnSelection( mConfig.editor.colorPreview );
 			} );
+		} else if ( item->getText() == "Show Document Info" ) {
+			mConfig.editor.showDocInfo = item->asType<UIMenuCheckBox>()->isActive();
+			if ( mDocInfo )
+				mDocInfo->setVisible( mConfig.editor.showDocInfo );
+			if ( mEditorSplitter->getCurEditor() )
+				updateDocInfo( mEditorSplitter->getCurEditor()->getDocument() );
+		} else if ( item->getText() == "UI Scale Factor (Pixel Density)" ) {
+			UIMessageBox* msgBox = UIMessageBox::New(
+				UIMessageBox::INPUT, "Set the UI scale factor (pixel density):\nMinimum value is "
+									 "1, and maximum 6. Requires restart." );
+			msgBox->setTitle( mWindowTitle );
+			msgBox->getTextInput()->setText(
+				String::format( "%.2f", mConfig.window.pixelDensity ) );
+			msgBox->setCloseShortcut( {KEY_ESCAPE, 0} );
+			msgBox->show();
+			msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox]( const Event* ) {
+				msgBox->closeWindow();
+				Float val;
+				if ( String::fromString( val, msgBox->getTextInput()->getText() ) && val >= 1 &&
+					 val <= 6 ) {
+					if ( mConfig.window.pixelDensity != val ) {
+						mConfig.window.pixelDensity = val;
+						UIMessageBox* msg = UIMessageBox::New(
+							UIMessageBox::OK,
+							"New UI scale factor assigned.\nPlease restart the application." );
+						msg->show();
+						setFocusEditorOnClose( msg );
+					} else if ( mEditorSplitter && mEditorSplitter->getCurEditor() ) {
+						mEditorSplitter->getCurEditor()->setFocus();
+					}
+				} else {
+					UIMessageBox* msg = UIMessageBox::New( UIMessageBox::OK, "Invalid value!" );
+					msg->show();
+					setFocusEditorOnClose( msg );
+				}
+			} );
 		} else if ( item->getText() == "Editor Font Size" ) {
 			UIMessageBox* msgBox =
 				UIMessageBox::New( UIMessageBox::INPUT, "Set the editor font size:" );
@@ -644,13 +684,10 @@ UIMenu* App::createViewMenu() {
 					editor->setFontSize( mConfig.editor.fontSize.asDp( 0, Sizef(), mDisplayDPI ) );
 				} );
 			} );
-			msgBox->addEventListener( Event::OnClose, [&]( const Event* ) {
-				if ( mEditorSplitter->getCurEditor() )
-					mEditorSplitter->getCurEditor()->setFocus();
-			} );
+			setFocusEditorOnClose( msgBox );
 		} else if ( item->getText() == "UI Font Size" ) {
-			UIMessageBox* msgBox = UIMessageBox::New(
-				UIMessageBox::INPUT, "Set the UI font size:" );
+			UIMessageBox* msgBox =
+				UIMessageBox::New( UIMessageBox::INPUT, "Set the UI font size:" );
 			msgBox->setTitle( mWindowTitle );
 			msgBox->getTextInput()->setText( mConfig.ui.fontSize.toString() );
 			msgBox->setCloseShortcut( {KEY_ESCAPE, 0} );
@@ -673,10 +710,7 @@ UIMenu* App::createViewMenu() {
 				} );
 				msgBox->closeWindow();
 			} );
-			msgBox->addEventListener( Event::OnClose, [&]( const Event* ) {
-				if ( mEditorSplitter->getCurEditor() )
-					mEditorSplitter->getCurEditor()->setFocus();
-			} );
+			setFocusEditorOnClose( msgBox );
 		} else if ( item->getText() == "Line Breaking Column" ) {
 			UIMessageBox* msgBox =
 				UIMessageBox::New( UIMessageBox::INPUT, "Set Line Breaking Column:\n"
@@ -696,10 +730,7 @@ UIMenu* App::createViewMenu() {
 					msgBox->closeWindow();
 				}
 			} );
-			msgBox->addEventListener( Event::OnClose, [&]( const Event* ) {
-				if ( mEditorSplitter->getCurEditor() )
-					mEditorSplitter->getCurEditor()->setFocus();
-			} );
+			setFocusEditorOnClose( msgBox );
 		} else if ( "Zoom In" == item->getText() ) {
 			mEditorSplitter->zoomIn();
 		} else if ( "Zoom Out" == item->getText() ) {
@@ -716,6 +747,13 @@ UIMenu* App::createViewMenu() {
 		}
 	} );
 	return mViewMenu;
+}
+
+void App::setFocusEditorOnClose( UIMessageBox* msgBox ) {
+	msgBox->addEventListener( Event::OnClose, [&]( const Event* ) {
+		if ( mEditorSplitter && mEditorSplitter->getCurEditor() )
+			mEditorSplitter->getCurEditor()->setFocus();
+	} );
 }
 
 Drawable* App::findIcon( const std::string& name ) {
@@ -819,6 +857,7 @@ UIMenu* App::createDocumentMenu() {
 			mConfig.editor.windowsLineEndings = winLe;
 			mEditorSplitter->getCurEditor()->getDocument().setLineEnding(
 				winLe ? TextDocument::LineEnding::CRLF : TextDocument::LineEnding::LF );
+			updateDocInfo( mEditorSplitter->getCurEditor()->getDocument() );
 		}
 	} );
 
@@ -961,16 +1000,27 @@ void App::onDocumentSelectionChange( UICodeEditor* editor, TextDocument& doc ) {
 	onDocumentModified( editor, doc );
 }
 
+void App::onDocumentCursorPosChange( UICodeEditor*, TextDocument& doc ) {
+	updateDocInfo( doc );
+}
+
+void App::updateDocInfo( TextDocument& doc ) {
+	if ( mConfig.editor.showDocInfo && mDocInfoText ) {
+		mDocInfoText->setText( String::format(
+			"line: %lld / %lu  col: %lld    %s", doc.getSelection().start().line() + 1,
+			doc.linesCount(), doc.getSelection().start().column() + 1,
+			doc.getLineEnding() == TextDocument::LineEnding::LF ? "LF" : "CRLF" ) );
+	}
+}
+
 void App::onCodeEditorFocusChange( UICodeEditor* editor ) {
+	updateDocInfo( editor->getDocument() );
 	if ( mSearchState.editor && mSearchState.editor != editor ) {
-		String word;
-		/*if ( mEditorSplitter->editorExists( mSearchState.editor ) )*/ {
-			word = mSearchState.editor->getHighlightWord();
-			mSearchState.editor->setHighlightWord( "" );
-			mSearchState.editor->setHighlightTextRange( TextRange() );
-			mSearchState.text = "";
-			mSearchState.range = TextRange();
-		}
+		String word = mSearchState.editor->getHighlightWord();
+		mSearchState.editor->setHighlightWord( "" );
+		mSearchState.editor->setHighlightTextRange( TextRange() );
+		mSearchState.text = "";
+		mSearchState.range = TextRange();
 		if ( editor ) {
 			mSearchState.editor = editor;
 			mSearchState.editor->setHighlightWord( word );
@@ -1339,6 +1389,8 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 			padding-left: 4dp;
 			padding-right: 4dp;
 			padding-bottom: 3dp;
+			margin-bottom: 2dp;
+			margin-top: 2dp;
 		}
 		.close_button {
 			width: 12dp;
@@ -1363,14 +1415,29 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		#settings:hover {
 			color: var(--primary);
 		}
+		#doc_info {
+			background-color: var(--back);
+			margin-bottom: 22dp;
+			margin-right: 22dp;
+			border-radius: 8dp;
+			padding: 6dp;
+			opacity: 0.8;
+		}
+		#doc_info > TextView {
+			color: var(--font);
+		}
 		</style>
 		<RelativeLayout layout_width="match_parent" layout_height="match_parent">
 		<vbox layout_width="match_parent" layout_height="match_parent">
-			<vbox id="code_container" layout_width="match_parent" layout_height="0" layout_weight="1">
-			</vbox>
-			<searchbar id="search_bar" layout_width="match_parent" layout_height="wrap_content" margin-bottom="2dp" margin-top="2dp">
+			<RelativeLayout layout_width="match_parent" layout_height="0" layout_weight="1">
+				<vbox id="code_container" layout_width="match_parent" layout_height="match_parent"></vbox>
+				<hbox id="doc_info" layout_width="wrap_content" layout_height="wrap_content" layout_gravity="bottom|right">
+					<TextView id="doc_info_text" layout_width="wrap_content" layout_height="wrap_content" />
+				</hbox>
+			</RelativeLayout>
+			<searchbar id="search_bar" layout_width="match_parent" layout_height="wrap_content">
 				<vbox layout_width="wrap_content" layout_height="wrap_content" margin-right="4dp">
-					<TextView layout_width="wrap_content" layout_height="18dp" text="Find:"  margin-bottom="2dp" />
+					<TextView layout_width="wrap_content" layout_height="18dp" text="Find:" margin-bottom="2dp" />
 					<TextView layout_width="wrap_content" layout_height="18dp" text="Replace with:" />
 				</vbox>
 				<vbox layout_width="0" layout_weight="1" layout_height="wrap_content" margin-right="4dp">
@@ -1402,6 +1469,9 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		mUISceneNode->loadLayoutFromString( baseUI );
 		mUISceneNode->bind( "code_container", mBaseLayout );
 		mUISceneNode->bind( "search_bar", mSearchBarLayout );
+		mUISceneNode->bind( "doc_info", mDocInfo );
+		mUISceneNode->bind( "doc_info_text", mDocInfoText );
+		mDocInfo->setVisible( mConfig.editor.showDocInfo );
 		mSearchBarLayout->setVisible( false )->setEnabled( false );
 		UIIconTheme* iconTheme = UIIconTheme::New( "remixicon" );
 		Float menuIconSize = mConfig.ui.fontSize.asPixels( 0, Sizef(), mDisplayDPI );
@@ -1441,6 +1511,7 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		addIcon( "ok", 0xeb7a, buttonIconSize );
 		addIcon( "cancel", 0xeb98, buttonIconSize );
 		addIcon( "color-picker", 0xf13d, buttonIconSize );
+		addIcon( "pixel-density", 0xed8c, buttonIconSize );
 
 		mUISceneNode->getUIIconThemeManager()->setCurrentTheme( iconTheme );
 

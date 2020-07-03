@@ -64,6 +64,7 @@ struct CodeEditorConfig {
 	bool colorPickerSelection{false};
 	bool colorPreview{false};
 	bool autoComplete{true};
+	bool showDocInfo{true};
 	int indentWidth{4};
 	int tabWidth{4};
 	int lineBreakingColumn{100};
@@ -141,6 +142,8 @@ class App : public UICodeEditorSplitter::Client {
 	UITextView* mSettingsButton{nullptr};
 	UIPopUpMenu* mColorSchemeMenu{nullptr};
 	UIPopUpMenu* mFiletypeMenu{nullptr};
+	UILinearLayout* mDocInfo{nullptr};
+	UITextView* mDocInfoText{nullptr};
 	IniFile mIni;
 	IniFile mIniState;
 	std::vector<std::string> mRecentFiles;
@@ -220,9 +223,15 @@ class App : public UICodeEditorSplitter::Client {
 
 	void onDocumentSelectionChange( UICodeEditor* editor, TextDocument& );
 
+	void onDocumentCursorPosChange( UICodeEditor* editor, TextDocument& );
+
 	void onCodeEditorFocusChange( UICodeEditor* editor );
 
 	bool setAutoComplete( bool enable );
+
+	void updateDocInfo( TextDocument& doc );
+
+	void setFocusEditorOnClose( UIMessageBox* msgBox );
 };
 
 #endif // EE_TOOLS_CODEEDITOR_HPP

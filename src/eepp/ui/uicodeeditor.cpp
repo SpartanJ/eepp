@@ -366,6 +366,8 @@ UICodeEditor* UICodeEditor::setFont( Font* font ) {
 
 void UICodeEditor::onFontChanged() {}
 
+void UICodeEditor::onFontStyleChanged() {}
+
 void UICodeEditor::onDocumentChanged() {
 	DocEvent event( this, mDoc.get(), Event::OnDocumentChanged );
 	sendEvent( &event );
@@ -415,6 +417,7 @@ UICodeEditor* UICodeEditor::setFontColor( const Color& color ) {
 	if ( mFontStyleConfig.getFontColor() != color ) {
 		mFontStyleConfig.FontColor = color;
 		invalidateDraw();
+		onFontStyleChanged();
 	}
 	return this;
 }
@@ -431,6 +434,7 @@ UICodeEditor* UICodeEditor::setFontSelectedColor( const Color& color ) {
 	if ( mFontStyleConfig.getFontSelectedColor() != color ) {
 		mFontStyleConfig.FontSelectedColor = color;
 		invalidateDraw();
+		onFontStyleChanged();
 	}
 	return this;
 }
@@ -439,6 +443,7 @@ UICodeEditor* UICodeEditor::setFontSelectionBackColor( const Color& color ) {
 	if ( mFontStyleConfig.getFontSelectionBackColor() != color ) {
 		mFontStyleConfig.FontSelectionBackColor = color;
 		invalidateDraw();
+		onFontStyleChanged();
 	}
 	return this;
 }
@@ -1202,6 +1207,7 @@ UICodeEditor* UICodeEditor::setFontShadowColor( const Color& color ) {
 	if ( mFontStyleConfig.ShadowColor != color ) {
 		mFontStyleConfig.ShadowColor = color;
 		invalidateDraw();
+		onFontStyleChanged();
 	}
 
 	return this;
@@ -1211,6 +1217,7 @@ UICodeEditor* UICodeEditor::setFontStyle( const Uint32& fontStyle ) {
 	if ( mFontStyleConfig.Style != fontStyle ) {
 		mFontStyleConfig.Style = fontStyle;
 		invalidateDraw();
+		onFontStyleChanged();
 	}
 
 	return this;
@@ -1232,6 +1239,7 @@ UICodeEditor* UICodeEditor::setOutlineThickness( const Float& outlineThickness )
 	if ( mFontStyleConfig.OutlineThickness != outlineThickness ) {
 		mFontStyleConfig.OutlineThickness = outlineThickness;
 		invalidateDraw();
+		onFontStyleChanged();
 	}
 
 	return this;
@@ -1245,6 +1253,7 @@ UICodeEditor* UICodeEditor::setOutlineColor( const Color& outlineColor ) {
 	if ( mFontStyleConfig.OutlineColor != outlineColor ) {
 		mFontStyleConfig.OutlineColor = outlineColor;
 		invalidateDraw();
+		onFontStyleChanged();
 	}
 
 	return this;

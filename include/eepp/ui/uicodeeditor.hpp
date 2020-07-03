@@ -533,6 +533,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	virtual void onFontChanged();
 
+	virtual void onFontStyleChanged();
+
 	virtual void onDocumentChanged();
 
 	virtual Uint32 onMessage( const NodeMessage* msg );

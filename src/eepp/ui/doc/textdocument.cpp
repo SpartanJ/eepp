@@ -504,9 +504,10 @@ void TextDocument::remove( TextRange range, UndoStackContainer& undoStack, const
 	mUndoStack.pushInsert( undoStack, getText( range ), range.start(), time );
 
 	// First delete all the lines in between the first and last one.
-	for ( auto i = range.start().line() + 1; i < range.end().line(); ) {
-		mLines.erase( mLines.begin() + i );
-		range.end().setLine( range.end().line() - 1 );
+	if ( range.start().line() + 1 < range.end().line() ) {
+		mLines.erase( mLines.begin() + range.start().line() + 1,
+					  mLines.begin() + range.end().line() );
+		range.end().setLine( range.start().line() + 1 );
 	}
 
 	if ( range.start().line() == range.end().line() ) {

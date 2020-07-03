@@ -44,6 +44,8 @@ class EE_API UITextEdit : public UICodeEditor {
 
 	virtual void onFontChanged();
 
+	virtual void onFontStyleChanged();
+
 	virtual void onDocumentLineChanged( const Int64& lineIndex );
 
 	virtual void drawLineText( const Int64& index, Vector2f position, const Float& fontSize,

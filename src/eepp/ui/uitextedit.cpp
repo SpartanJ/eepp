@@ -95,6 +95,10 @@ void UITextEdit::onFontChanged() {
 	}
 }
 
+void UITextEdit::onFontStyleChanged() {
+	onFontChanged();
+}
+
 void UITextEdit::onDocumentLineChanged( const Int64& lineIndex ) {
 	UICodeEditor::onDocumentLineChanged( lineIndex );
 	updateLineCache( lineIndex );

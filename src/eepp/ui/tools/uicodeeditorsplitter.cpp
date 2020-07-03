@@ -243,7 +243,11 @@ UICodeEditor* UICodeEditorSplitter::createCodeEditor() {
 			event->getNode()->asType<UICodeEditor>(),
 			event->getNode()->asType<UICodeEditor>()->getDocument() );
 	} );
-
+	editor->addEventListener( Event::OnCursorPosChange, [&]( const Event* event ) {
+		mClient->onDocumentCursorPosChange(
+			event->getNode()->asType<UICodeEditor>(),
+			event->getNode()->asType<UICodeEditor>()->getDocument() );
+	} );
 	editor->addKeyBinds( getLocalDefaultKeybindings() );
 	editor->addUnlockedCommands(
 		{"lock-toggle", "create-new", "close-doc", "next-doc", "previous-doc", "split-left",

@@ -892,7 +892,8 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 			  {{"https?://%S+"}, "link"},
 		  },
 		  {},
-		  "#"} );
+		  "#",
+		  {"^%[.-%]"}} );
 
 	// Makefile
 	add( {"Makefile",

@@ -1,9 +1,21 @@
 
 # TODO - Short and mid term plans.
 
+# Log
+
+* Add log levels.
+
+# CSS transitions and animations
+
+* Add `cubic-bezier` timing function support.
+
 ## UICodeEditor
 
 * Add new CSS properties related to the widget.
+
+## StyleSheetParser
+
+Detect errors and log them.
 
 ## TextDocument
 
@@ -12,10 +24,6 @@
 * Add auto-close brackets.
 
 * Add XML tags auto-close.
-
-## StyleSheetParser
-
-Detect errors and log them.
 
 ## UITreeView
 
@@ -29,16 +37,10 @@ Implement a simple tree view widget, to at least cover the most common use cases
 
 * Add support for function listing.
 
-* Change pixel density from the UI.
-
-* Display current line-collumn and document line count.
+* Display number of results in search and number of replacements.
 
 ## UI Editor
 
 * Integrate the `UICodeEditor` into the editor in order to be able to edit the layouts and CSS in app.
 
 * Once `UITreeView` is finished add a tree view inspector of the node tree.
-
-# Log
-
-* Add log levels.

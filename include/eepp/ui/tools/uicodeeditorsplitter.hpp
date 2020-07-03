@@ -32,6 +32,8 @@ class EE_API UICodeEditorSplitter {
 
 		virtual void onDocumentSelectionChange( UICodeEditor* editor, TextDocument& doc ) = 0;
 
+		virtual void onDocumentCursorPosChange( UICodeEditor* editor, TextDocument& doc ) = 0;
+
 		virtual void onColorSchemeChanged( const std::string& currentColorScheme ) = 0;
 
 		virtual void onDocumentLoaded( UICodeEditor* codeEditor, const std::string& path ) = 0;
