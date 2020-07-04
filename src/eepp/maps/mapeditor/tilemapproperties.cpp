@@ -160,13 +160,13 @@ TileMapProperties::TileMapProperties( TileMap* Map ) :
 	mGenGrid->setParent( mUIWindow->getContainer() );
 	mGenGrid->setSize( 400, 310 )
 		->setPosition( 50, TxtBox->getPosition().y + TxtBox->getSize().getHeight() );
-	mGenGrid->setRowHeight( 24 )->setCollumnsCount( 5 );
+	mGenGrid->setRowHeight( 24 )->setColumnsCount( 5 );
 	mGenGrid->setAnchors( UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
-	mGenGrid->setCollumnWidth( 0, 10 );
-	mGenGrid->setCollumnWidth( 1, 175 );
-	mGenGrid->setCollumnWidth( 2, 10 );
-	mGenGrid->setCollumnWidth( 3, 175 );
-	mGenGrid->setCollumnWidth( 4, 10 );
+	mGenGrid->setColumnWidth( 0, 10 );
+	mGenGrid->setColumnWidth( 1, 175 );
+	mGenGrid->setColumnWidth( 2, 10 );
+	mGenGrid->setColumnWidth( 3, 175 );
+	mGenGrid->setColumnWidth( 4, 10 );
 
 	Vector2f Pos( mGenGrid->getPosition().x + mGenGrid->getSize().getWidth() + 10,
 				  mGenGrid->getPosition().y );

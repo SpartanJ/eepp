@@ -33,12 +33,12 @@ UITable* UITableCell::gridParent() const {
 	return mParentNode->getParent()->asType<UITable>();
 }
 
-void UITableCell::setCell( const Uint32& CollumnIndex, UINode* node ) {
-	eeASSERT( CollumnIndex < gridParent()->getCollumnsCount() );
+void UITableCell::setCell( const Uint32& ColumnIndex, UINode* node ) {
+	eeASSERT( ColumnIndex < gridParent()->getColumnsCount() );
 
 	UITable* P = gridParent();
 
-	mCells[CollumnIndex] = node;
+	mCells[ColumnIndex] = node;
 
 	if ( node->getParent() != this )
 		node->setParent( this );
@@ -46,17 +46,17 @@ void UITableCell::setCell( const Uint32& CollumnIndex, UINode* node ) {
 	if ( node->isWidget() )
 		static_cast<UIWidget*>( node )->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 
-	node->setPosition( P->getCellPosition( CollumnIndex ), 0 );
-	node->setSize( P->getCollumnWidth( CollumnIndex ), P->getRowHeight() );
+	node->setPosition( P->getCellPosition( ColumnIndex ), 0 );
+	node->setSize( P->getColumnWidth( ColumnIndex ), P->getRowHeight() );
 
 	node->setVisible( true );
 	node->setEnabled( true );
 }
 
-UINode* UITableCell::getCell( const Uint32& CollumnIndex ) const {
-	eeASSERT( CollumnIndex < gridParent()->getCollumnsCount() );
+UINode* UITableCell::getCell( const Uint32& ColumnIndex ) const {
+	eeASSERT( ColumnIndex < gridParent()->getColumnsCount() );
 
-	return mCells[CollumnIndex];
+	return mCells[ColumnIndex];
 }
 
 void UITableCell::fixCell() {
@@ -66,7 +66,7 @@ void UITableCell::fixCell() {
 
 	for ( Uint32 i = 0; i < mCells.size(); i++ ) {
 		mCells[i]->setPosition( P->getCellPosition( i ), 0 );
-		mCells[i]->setSize( P->getCollumnWidth( i ), P->getRowHeight() );
+		mCells[i]->setSize( P->getColumnWidth( i ), P->getRowHeight() );
 	}
 }
 
@@ -158,7 +158,7 @@ void UITableCell::onStateChange() {
 
 void UITableCell::onParentChange() {
 	if ( NULL != getParent() && NULL != gridParent() )
-		mCells.resize( gridParent()->getCollumnsCount(), NULL );
+		mCells.resize( gridParent()->getColumnsCount(), NULL );
 }
 
 void UITableCell::onAlphaChange() {

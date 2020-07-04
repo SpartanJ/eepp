@@ -18,9 +18,9 @@ class EE_API UITableCell : public UIWidget {
 
 	virtual void setTheme( UITheme* Theme );
 
-	void setCell( const Uint32& CollumnIndex, UINode* node );
+	void setCell( const Uint32& ColumnIndex, UINode* node );
 
-	UINode* getCell( const Uint32& CollumnIndex ) const;
+	UINode* getCell( const Uint32& ColumnIndex ) const;
 
 	bool isSelected() const;
 

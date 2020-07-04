@@ -23,9 +23,7 @@ UIPushButton::UIPushButton( const std::string& tag ) :
 		->setVisible( true )
 		->setEnabled( false );
 
-	auto cb = [&]( const Event* ) {
-		onSizeChange();
-	};
+	auto cb = [&]( const Event* ) { onSizeChange(); };
 
 	mIcon->addEventListener( Event::OnPaddingChange, cb );
 	mIcon->addEventListener( Event::OnMarginChange, cb );
@@ -135,6 +133,7 @@ void UIPushButton::onSizeChange() {
 	Vector2f ePos;
 	UIWidget* eWidget = getExtraInnerWidget();
 
+	Float textBoxWidth = mTextBox->getPixelsSize().getWidth();
 	Float iconWidth = mIcon->getPixelsSize().getWidth() > 0
 						  ? mIcon->getPixelsSize().getWidth() +
 								PixelDensity::dpToPxI( mIcon->getLayoutMargin().Left +
@@ -146,7 +145,13 @@ void UIPushButton::onSizeChange() {
 				  PixelDensity::dpToPxI( eWidget->getLayoutMargin().Left +
 										 eWidget->getLayoutMargin().Right )
 			: 0;
-	Float textBoxWidth = mTextBox->getPixelsSize().getWidth();
+
+	if ( iconWidth > 0 && textBoxWidth <= 0 &&
+		 Font::getHorizontalAlign( getFlags() ) == UI_HALIGN_CENTER && eWidth == 0 &&
+		 mIcon->getLayoutMargin().Left != mIcon->getLayoutMargin().Right ) {
+		iconWidth = mIcon->getPixelsSize().getWidth();
+	}
+
 	Float totalWidth = textBoxWidth + iconWidth + eWidth;
 
 	switch ( Font::getVerticalAlign( getFlags() ) ) {

@@ -479,7 +479,7 @@ void EETest::createBaseUI() {
 	UITable* genGrid = UITable::New();
 	genGrid->setSmoothScroll( true )->setFlags( UI_TOUCH_DRAG_ENABLED );
 	genGrid->setParent( C )->setPosition( 325, 245 )->setSize( 200, 130 );
-	genGrid->setCollumnsCount( 3 )->setRowHeight( 24 );
+	genGrid->setColumnsCount( 3 )->setRowHeight( 24 );
 
 	for ( Uint32 i = 0; i < 15; i++ ) {
 		UITableCell* Cell = UITableCell::New();
@@ -500,9 +500,9 @@ void EETest::createBaseUI() {
 		genGrid->add( Cell );
 	}
 
-	genGrid->setCollumnWidth( 0, 50 );
-	genGrid->setCollumnWidth( 1, 24 );
-	genGrid->setCollumnWidth( 2, 100 );
+	genGrid->setColumnWidth( 0, 50 );
+	genGrid->setColumnWidth( 1, 24 );
+	genGrid->setColumnWidth( 2, 100 );
 
 	UIWidget* w = UIWidget::New();
 	w->setParent( C )->setSize( 20, 20 )->setPosition( 260, 130 );
@@ -780,10 +780,10 @@ void EETest::createNewUI() {
 	UITable* genGrid = UITable::New();
 	genGrid->setSmoothScroll( true );
 	genGrid->setPosition( 350, 250 )->setSize( 200, 130 )->setParent( container );
-	genGrid->setCollumnsCount( 3 )->setRowHeight( 24 );
-	genGrid->setCollumnWidth( 0, 50 );
-	genGrid->setCollumnWidth( 1, 24 );
-	genGrid->setCollumnWidth( 2, 100 );
+	genGrid->setColumnsCount( 3 )->setRowHeight( 24 );
+	genGrid->setColumnWidth( 0, 50 );
+	genGrid->setColumnWidth( 1, 24 );
+	genGrid->setColumnWidth( 2, 100 );
 
 	for ( Uint32 i = 0; i < 15; i++ ) {
 		UITableCell* Cell = UITableCell::New();

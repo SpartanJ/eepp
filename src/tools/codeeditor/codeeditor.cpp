@@ -79,7 +79,8 @@ void App::openFileDialog() {
 			event->getNode()->asType<UIFileDialog>()->getFullPath() );
 	} );
 	dialog->addEventListener( Event::OnWindowClose, [&]( const Event* ) {
-		if ( mEditorSplitter->getCurEditor() && !SceneManager::instance()->isShootingDown() )
+		if ( mEditorSplitter && mEditorSplitter->getCurEditor() &&
+			 !SceneManager::instance()->isShootingDown() )
 			mEditorSplitter->getCurEditor()->setFocus();
 	} );
 	dialog->center();
@@ -948,7 +949,7 @@ void App::updateDocumentMenu() {
 	mDocMenu->find( "line_endings" )
 		->asType<UIMenuSubMenu>()
 		->getSubMenu()
-		->find( mConfig.editor.windowsLineEndings ? "windows" : "unix" )
+		->find( doc.getLineEnding() == TextDocument::LineEnding::CRLF ? "windows" : "unix" )
 		->asType<UIMenuRadioButton>()
 		->setActive( true );
 
@@ -1015,6 +1016,8 @@ void App::updateDocInfo( TextDocument& doc ) {
 
 void App::onCodeEditorFocusChange( UICodeEditor* editor ) {
 	updateDocInfo( editor->getDocument() );
+	updateDocumentMenu();
+
 	if ( mSearchState.editor && mSearchState.editor != editor ) {
 		String word = mSearchState.editor->getHighlightWord();
 		mSearchState.editor->setHighlightWord( "" );
@@ -1045,6 +1048,10 @@ void App::onDocumentLoaded( UICodeEditor* codeEditor, const std::string& path ) 
 	if ( mRecentFiles.size() > 10 )
 		mRecentFiles.resize( 10 );
 	updateRecentFiles();
+	if ( mEditorSplitter->getCurEditor() == codeEditor ) {
+		updateDocumentMenu();
+		updateDocInfo( codeEditor->getDocument() );
+	}
 }
 
 const CodeEditorConfig& App::getCodeEditorConfig() const {

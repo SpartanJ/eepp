@@ -31,15 +31,15 @@ class EE_API UITable : public UITouchDraggableWidget {
 
 	void remove( Uint32 ItemIndex );
 
-	UITable* setCollumnWidth( const Uint32& CollumnIndex, const Uint32& collumnWidth );
+	UITable* setColumnWidth( const Uint32& ColumnIndex, const Uint32& columnWidth );
 
-	const Uint32& getCollumnWidth( const Uint32& CollumnIndex ) const;
+	const Uint32& getColumnWidth( const Uint32& ColumnIndex ) const;
 
 	Uint32 getCount() const;
 
-	UITable* setCollumnsCount( const Uint32& collumnsCount );
+	UITable* setColumnsCount( const Uint32& columnsCount );
 
-	const Uint32& getCollumnsCount() const;
+	const Uint32& getColumnsCount() const;
 
 	UITable* setRowHeight( const Uint32& height );
 
@@ -55,7 +55,7 @@ class EE_API UITable : public UITouchDraggableWidget {
 
 	const ScrollBarMode& getHorizontalScrollMode();
 
-	Uint32 getCellPosition( const Uint32& CollumnIndex );
+	Uint32 getCellPosition( const Uint32& ColumnIndex );
 
 	UIScrollBar* getVerticalScrollBar() const;
 
@@ -93,10 +93,10 @@ class EE_API UITable : public UITouchDraggableWidget {
 	ScrollBarMode mVScrollMode;
 	ScrollBarMode mHScrollMode;
 	std::vector<UITableCell*> mItems;
-	Uint32 mCollumnsCount;
+	Uint32 mColumnsCount;
 	Uint32 mRowHeight;
-	std::vector<Uint32> mCollumnsWidth;
-	std::vector<Uint32> mCollumnsPos;
+	std::vector<Uint32> mColumnsWidth;
+	std::vector<Uint32> mColumnsPos;
 	Uint32 mTotalWidth;
 	Uint32 mTotalHeight;
 	Uint32 mLastPos;
@@ -110,7 +110,7 @@ class EE_API UITable : public UITouchDraggableWidget {
 
 	void updateCells();
 
-	void updateCollumnsPos();
+	void updateColumnsPos();
 
 	void autoPadding();
 
@@ -124,7 +124,7 @@ class EE_API UITable : public UITouchDraggableWidget {
 
 	void onScrollValueChange( const Event* Event );
 
-	void setDefaultCollumnsWidth();
+	void setDefaultColumnsWidth();
 
 	void updateScroll( bool FromScrollChange = false );
 
