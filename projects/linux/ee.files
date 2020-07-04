@@ -294,8 +294,12 @@
 ../../include/eepp/thirdparty/chipmunk/cpSpatialIndex.h
 ../../include/eepp/thirdparty/chipmunk/cpVect.h
 ../../include/eepp/thirdparty/PlusCallback/callback.hpp
+../../include/eepp/ui/abstract/model.hpp
 ../../include/eepp/ui/base.hpp
 ../../include/eepp/ui.hpp
+../../include/eepp/ui/abstract/modeleditingdelegate.hpp
+../../include/eepp/ui/abstract/modelindex.hpp
+../../include/eepp/ui/abstract/modelselection.hpp
 ../../include/eepp/ui/border.hpp
 ../../include/eepp/ui/css/animationdefinition.hpp
 ../../include/eepp/ui/css/drawableimageparser.hpp
@@ -331,9 +335,13 @@
 ../../include/eepp/ui/doc/undostack.hpp
 ../../include/eepp/ui/keyboardshortcut.hpp
 ../../include/eepp/ui/marginmove/scale.hpp
+../../include/eepp/ui/abstract/model.hpp
+../../include/eepp/ui/abstract/modelindex.hpp
+../../include/eepp/ui/abstract/modelselection.hpp
 ../../include/eepp/ui/tools/textureatlaseditor.hpp
 ../../include/eepp/ui/tools/uicodeeditorsplitter.hpp
 ../../include/eepp/ui/tools/uicolorpicker.hpp
+../../include/eepp/ui/uiabstractview.hpp
 ../../include/eepp/ui/uibackgrounddrawable.hpp
 ../../include/eepp/ui/uiborderdrawable.hpp
 ../../include/eepp/ui/uicheckbox.hpp
@@ -754,6 +762,8 @@
 ../../src/eepp/system/translator.cpp
 ../../src/eepp/system/virtualfilesystem.cpp
 ../../src/eepp/system/zip.cpp
+../../src/eepp/ui/abstract/model.cpp
+../../src/eepp/ui/abstract/modelselection.cpp
 ../../src/eepp/ui/border.cpp
 ../../src/eepp/ui/css/animationdefinition.cpp
 ../../src/eepp/ui/css/drawableimageparser.cpp
@@ -784,6 +794,8 @@
 ../../src/eepp/ui/doc/textdocument.cpp
 ../../src/eepp/ui/doc/undostack.cpp
 ../../src/eepp/ui/keyboardshortcut.cpp
+../../src/eepp/ui/abstract/model.cpp
+../../src/eepp/ui/abstract/modelselection.cpp
 ../../src/eepp/ui/tools/textureatlaseditor.cpp
 ../../src/eepp/ui/tools/textureatlasnew.cpp
 ../../src/eepp/ui/tools/textureatlasnew.hpp
@@ -791,6 +803,7 @@
 ../../src/eepp/ui/tools/textureatlastextureregioneditor.hpp
 ../../src/eepp/ui/tools/uicodeeditorsplitter.cpp
 ../../src/eepp/ui/tools/uicolorpicker.cpp
+../../src/eepp/ui/uiabstractview.cpp
 ../../src/eepp/ui/uibackgrounddrawable.cpp
 ../../src/eepp/ui/uiborderdrawable.cpp
 ../../src/eepp/ui/uicheckbox.cpp
