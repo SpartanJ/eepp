@@ -35,7 +35,7 @@ ModelIndex Model::sibling( int row, int column, const ModelIndex& parent ) const
 	return index( row, column, parent );
 }
 
-bool Model::acceptsDrag( const ModelIndex&, const std::string& dataType ) {
+bool Model::acceptsDrag( const ModelIndex&, const std::string& ) {
 	return false;
 }
 

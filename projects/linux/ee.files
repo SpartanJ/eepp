@@ -295,6 +295,8 @@
 ../../include/eepp/thirdparty/chipmunk/cpVect.h
 ../../include/eepp/thirdparty/PlusCallback/callback.hpp
 ../../include/eepp/ui/abstract/model.hpp
+../../include/eepp/ui/abstract/uiabstracttableview.hpp
+../../include/eepp/ui/abstract/uiabstractview.hpp
 ../../include/eepp/ui/base.hpp
 ../../include/eepp/ui.hpp
 ../../include/eepp/ui/abstract/modeleditingdelegate.hpp
@@ -764,6 +766,8 @@
 ../../src/eepp/system/zip.cpp
 ../../src/eepp/ui/abstract/model.cpp
 ../../src/eepp/ui/abstract/modelselection.cpp
+../../src/eepp/ui/abstract/uiabstracttableview.cpp
+../../src/eepp/ui/abstract/uiabstractview.cpp
 ../../src/eepp/ui/border.cpp
 ../../src/eepp/ui/css/animationdefinition.cpp
 ../../src/eepp/ui/css/drawableimageparser.cpp

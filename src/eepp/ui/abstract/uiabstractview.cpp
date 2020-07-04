@@ -1,11 +1,11 @@
 #include <eepp/scene/eventdispatcher.hpp>
-#include <eepp/ui/uiabstractview.hpp>
+#include <eepp/ui/abstract/uiabstractview.hpp>
 #include <eepp/window/input.hpp>
 
 using namespace EE::Scene;
 using namespace EE::Window;
 
-namespace EE { namespace UI {
+namespace EE { namespace UI { namespace Abstract {
 
 UIAbstractView::UIAbstractView() : m_selection( this ) {}
 
@@ -36,7 +36,7 @@ void UIAbstractView::didUpdateSelection() {
 		on_selection( selection().first() );
 }
 
-void UIAbstractView::did_scroll() {}
+void UIAbstractView::didScroll() {}
 
 void UIAbstractView::activate( const ModelIndex& index ) {
 	if ( on_activation )
@@ -56,4 +56,4 @@ void UIAbstractView::notifySelectionChange() {
 		on_selection_change();
 }
 
-}} // namespace EE::UI
+}}} // namespace EE::UI::Abstract

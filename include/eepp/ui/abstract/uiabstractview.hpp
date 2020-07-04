@@ -7,9 +7,7 @@
 #include <eepp/ui/uiwidget.hpp>
 #include <memory>
 
-using namespace EE::UI::Abstract;
-
-namespace EE { namespace UI {
+namespace EE { namespace UI { namespace Abstract {
 
 class EE_API UIAbstractView : public UIWidget {
   public:
@@ -47,7 +45,7 @@ class EE_API UIAbstractView : public UIWidget {
 
 	virtual ~UIAbstractView();
 
-	virtual void did_scroll();
+	virtual void didScroll();
 	void set_hovered_index( const ModelIndex& );
 	void activate( const ModelIndex& );
 	void activate_selected();
@@ -69,6 +67,6 @@ class EE_API UIAbstractView : public UIWidget {
 	bool m_activates_on_selection{false};
 };
 
-}} // namespace EE::UI
+}}} // namespace EE::UI::Abstract
 
 #endif // EE_UI_UIABSTRACTVIEW_HPP

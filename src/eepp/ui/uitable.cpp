@@ -16,7 +16,7 @@ UITable::UITable() :
 	mHScrollBar( NULL ),
 	mVScrollMode( ScrollBarMode::Auto ),
 	mHScrollMode( ScrollBarMode::Auto ),
-	mCollumnsCount( 0 ),
+	mColumnsCount( 0 ),
 	mRowHeight( 0 ),
 	mTotalWidth( 0 ),
 	mLastPos( eeINDEX_NOT_FOUND ),
@@ -77,8 +77,8 @@ bool UITable::isType( const Uint32& type ) const {
 	return UITable::getType() == type ? true : UITouchDraggableWidget::isType( type );
 }
 
-void UITable::setDefaultCollumnsWidth() {
-	if ( mCollWidthAssigned || 0 == mCollumnsCount || 0 == mRowHeight )
+void UITable::setDefaultColumnsWidth() {
+	if ( mCollWidthAssigned || 0 == mColumnsCount || 0 == mRowHeight )
 		return;
 
 	if ( mItemsNotVisible <= 0 ) {
@@ -94,11 +94,11 @@ void UITable::setDefaultCollumnsWidth() {
 		}
 	}
 
-	Uint32 CollumnWidh = mContainer->getSize().getWidth() / mCollumnsCount;
+	Uint32 ColumnWidh = mContainer->getSize().getWidth() / mColumnsCount;
 
-	for ( Uint32 i = 0; i < mCollumnsCount; i++ ) {
-		if ( 0 == mCollumnsWidth[i] )
-			mCollumnsWidth[i] = CollumnWidh;
+	for ( Uint32 i = 0; i < mColumnsCount; i++ ) {
+		if ( 0 == mColumnsWidth[i] )
+			mColumnsWidth[i] = ColumnWidh;
 	}
 
 	updateSize();
@@ -129,7 +129,7 @@ void UITable::autoPadding() {
 
 void UITable::onSizeChange() {
 	containerResize();
-	setDefaultCollumnsWidth();
+	setDefaultColumnsWidth();
 	updateScroll();
 	updatePageStep();
 }
@@ -154,7 +154,7 @@ void UITable::containerResize() {
 								   mContainer->getPixelsSize().getHeight() );
 	}
 
-	setDefaultCollumnsWidth();
+	setDefaultColumnsWidth();
 	updateScrollBar();
 }
 
@@ -216,9 +216,9 @@ void UITable::setHScrollStep() {
 
 	Float maxWidth = 0;
 
-	if ( mCollumnsCount > 0 ) {
-		for ( Uint32 i = 0; i < mCollumnsCount; i++ ) {
-			maxWidth += mCollumnsWidth[i];
+	if ( mColumnsCount > 0 ) {
+		for ( Uint32 i = 0; i < mColumnsCount; i++ ) {
+			maxWidth += mColumnsWidth[i];
 		}
 	}
 
@@ -357,7 +357,7 @@ void UITable::updateScroll( bool FromScrollChange ) {
 }
 
 void UITable::updateSize() {
-	updateCollumnsPos();
+	updateColumnsPos();
 
 	mTotalHeight = mItems.size() * mRowHeight;
 }
@@ -370,7 +370,7 @@ void UITable::add( UITableCell* Cell ) {
 	if ( mContainer != Cell->getParent() )
 		Cell->setParent( mContainer );
 
-	setDefaultCollumnsWidth();
+	setDefaultColumnsWidth();
 
 	Cell->onAutoSize();
 
@@ -418,7 +418,7 @@ void UITable::remove( std::vector<Uint32> ItemsIndex ) {
 
 		mItems = ItemsCpy;
 
-		setDefaultCollumnsWidth();
+		setDefaultColumnsWidth();
 		updateSize();
 		updateScroll();
 	}
@@ -428,14 +428,14 @@ void UITable::remove( Uint32 ItemIndex ) {
 	remove( std::vector<Uint32>( 1, ItemIndex ) );
 }
 
-UITable* UITable::setCollumnWidth( const Uint32& CollumnIndex, const Uint32& CollumnWidth ) {
-	eeASSERT( CollumnIndex < mCollumnsCount );
+UITable* UITable::setColumnWidth( const Uint32& ColumnIndex, const Uint32& ColumnWidth ) {
+	eeASSERT( ColumnIndex < mColumnsCount );
 
 	mCollWidthAssigned = true;
 
-	mCollumnsWidth[CollumnIndex] = CollumnWidth;
+	mColumnsWidth[ColumnIndex] = ColumnWidth;
 
-	updateCollumnsPos();
+	updateColumnsPos();
 	updateCells();
 	updateScroll();
 
@@ -446,25 +446,25 @@ Uint32 UITable::getCount() const {
 	return mItems.size();
 }
 
-UITable* UITable::setCollumnsCount( const Uint32& collumnsCount ) {
-	mCollumnsCount = collumnsCount;
+UITable* UITable::setColumnsCount( const Uint32& columnsCount ) {
+	mColumnsCount = columnsCount;
 
-	mCollumnsWidth.resize( mCollumnsCount, 0 );
-	mCollumnsPos.resize( mCollumnsCount, 0 );
+	mColumnsWidth.resize( mColumnsCount, 0 );
+	mColumnsPos.resize( mColumnsCount, 0 );
 
-	setDefaultCollumnsWidth();
+	setDefaultColumnsWidth();
 
 	return this;
 }
 
-const Uint32& UITable::getCollumnsCount() const {
-	return mCollumnsCount;
+const Uint32& UITable::getColumnsCount() const {
+	return mColumnsCount;
 }
 
-const Uint32& UITable::getCollumnWidth( const Uint32& CollumnIndex ) const {
-	eeASSERT( CollumnIndex < mCollumnsCount );
+const Uint32& UITable::getColumnWidth( const Uint32& ColumnIndex ) const {
+	eeASSERT( ColumnIndex < mColumnsCount );
 
-	return mCollumnsWidth[CollumnIndex];
+	return mColumnsWidth[ColumnIndex];
 }
 
 UITable* UITable::setRowHeight( const Uint32& height ) {
@@ -489,10 +489,10 @@ UITableCell* UITable::getCell( const Uint32& CellIndex ) const {
 	return mItems[CellIndex];
 }
 
-Uint32 UITable::getCellPosition( const Uint32& CollumnIndex ) {
-	eeASSERT( CollumnIndex < mCollumnsCount );
+Uint32 UITable::getCellPosition( const Uint32& ColumnIndex ) {
+	eeASSERT( ColumnIndex < mColumnsCount );
 
-	return mCollumnsPos[CollumnIndex];
+	return mColumnsPos[ColumnIndex];
 }
 
 void UITable::updateCells() {
@@ -501,13 +501,13 @@ void UITable::updateCells() {
 	}
 }
 
-void UITable::updateCollumnsPos() {
+void UITable::updateColumnsPos() {
 	Uint32 Pos = 0;
 
-	for ( Uint32 i = 0; i < mCollumnsCount; i++ ) {
-		mCollumnsPos[i] = Pos;
+	for ( Uint32 i = 0; i < mColumnsCount; i++ ) {
+		mColumnsPos[i] = Pos;
 
-		Pos += mCollumnsWidth[i];
+		Pos += mColumnsWidth[i];
 	}
 
 	mTotalWidth = Pos;
