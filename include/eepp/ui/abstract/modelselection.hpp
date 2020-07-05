@@ -6,11 +6,9 @@
 #include <functional>
 #include <unordered_set>
 
-namespace EE { namespace UI {
-class UIAbstractView;
-}} // namespace EE::UI
-
 namespace EE { namespace UI { namespace Abstract {
+
+class UIAbstractView;
 
 class EE_API ModelSelection {
   public:

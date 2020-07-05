@@ -4,6 +4,11 @@
 
 namespace EE { namespace UI {
 
+UILinearLayout* UILinearLayout::NewWithTag( const std::string& tag,
+											const UIOrientation& orientation ) {
+	return eeNew( UILinearLayout, ( tag, orientation ) );
+}
+
 UILinearLayout* UILinearLayout::New() {
 	return eeNew( UILinearLayout, () );
 }

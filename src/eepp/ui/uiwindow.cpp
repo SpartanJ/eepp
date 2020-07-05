@@ -60,7 +60,7 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const StyleConfig& w
 
 	switch ( type ) {
 		case LINEAR_LAYOUT:
-			mContainer = UILinearLayout::NewWithTag( "window::container" );
+			mContainer = UILinearLayout::NewWithTag( "window::container", UIOrientation::Vertical );
 			break;
 		case RELATIVE_LAYOUT:
 			mContainer = UIRelativeLayout::NewWithTag( "window::container" );

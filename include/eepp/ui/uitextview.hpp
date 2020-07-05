@@ -86,6 +86,7 @@ class EE_API UITextView : public UIWidget {
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
 										   const Uint32& propertyIndex = 0 );
 
+	void setTextAlign( const Uint32& align );
   protected:
 	Text* mTextCache;
 	String mString;

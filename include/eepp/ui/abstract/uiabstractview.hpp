@@ -11,60 +11,56 @@ namespace EE { namespace UI { namespace Abstract {
 
 class EE_API UIAbstractView : public UIWidget {
   public:
-	void set_model( std::shared_ptr<Model> );
-	Model* model() { return m_model.get(); }
-	const Model* model() const { return m_model.get(); }
+	void setModel( std::shared_ptr<Model> );
+	Model* getModel() { return mModel.get(); }
+	const Model* getModel() const { return mModel.get(); }
 
-	ModelSelection& selection() { return m_selection; }
-	const ModelSelection& selection() const { return m_selection; }
-	virtual void select_all() = 0;
+	ModelSelection& getSelection() { return mSelection; }
+	const ModelSelection& getSelection() const { return mSelection; }
+	virtual void selectAll() = 0;
 
-	bool is_editable() const { return m_editable; }
-	void set_editable( bool editable ) { m_editable = editable; }
+	bool isEditable() const { return mEditable; }
+	void setEditable( bool editable ) { mEditable = editable; }
 
-	virtual void didUpdateModel( unsigned flags );
-	virtual void didUpdateSelection();
-
-	virtual Vector2i content_rect( const ModelIndex& ) const { return {}; }
-	virtual ModelIndex index_at_event_position( const Vector2i& ) const = 0;
-
-	void set_activates_on_selection( bool b ) { m_activates_on_selection = b; }
-	bool activates_on_selection() const { return m_activates_on_selection; }
-
-	std::function<void()> on_selection_change;
-	std::function<void( const ModelIndex& )> on_activation;
-	std::function<void( const ModelIndex& )> on_selection;
-	std::function<void( const ModelIndex&, const DropEvent& )> on_drop;
-
-	//std::function<OwnPtr<ModelEditingDelegate>( const ModelIndex& )> aid_create_editing_delegate;
+	void setActivatesOnSelection( bool b ) { mActivatesOnSelection = b; }
+	bool getActivatesOnSelection() const { return mActivatesOnSelection; }
 
 	void notifySelectionChange();
 
   protected:
-	UIAbstractView();
+	friend class Model;
+
+	virtual void onModelUpdate( unsigned flags );
+
+	virtual void onModelSelectionChange();
+
+	UIAbstractView( const std::string& tag );
 
 	virtual ~UIAbstractView();
 
-	virtual void didScroll();
-	void set_hovered_index( const ModelIndex& );
+	void setHoveredIndex( const ModelIndex& );
 	void activate( const ModelIndex& );
-	void activate_selected();
+	void activateSelected();
 
-	bool m_editable{false};
-	ModelIndex m_edit_index;
-	UIWidget* m_edit_widget;
-	Vector2i m_edit_widget_content_rect;
+	bool mEditable{false};
+	ModelIndex mEditIndex;
+	UIWidget* mEditWidget;
+	Rect mEditWidgetContentRect;
 
-	Vector2i m_left_mousedown_position;
-	bool m_might_drag{false};
+	Vector2i mLeftMouseDownPosition;
+	bool mMightDrag{false};
 
-	ModelIndex m_hovered_index;
+	ModelIndex mHoveredIndex;
 
-  private:
-	std::shared_ptr<Model> m_model;
-	std::unique_ptr<ModelEditingDelegate> m_editing_delegate;
-	ModelSelection m_selection;
-	bool m_activates_on_selection{false};
+	std::shared_ptr<Model> mModel;
+	std::unique_ptr<ModelEditingDelegate> mEditingDelegate;
+	ModelSelection mSelection;
+	bool mActivatesOnSelection{false};
+
+	std::function<void()> mOnSelectionChange;
+	std::function<void( const ModelIndex& )> mOnActivation;
+	std::function<void( const ModelIndex& )> mOnSelection;
+	std::function<void( const ModelIndex&, const DropEvent& )> mOnDrop;
 };
 
 }}} // namespace EE::UI::Abstract

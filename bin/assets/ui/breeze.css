@@ -736,6 +736,27 @@ Splitter::separator:hover {
 	background-color: var(--primary);
 }
 
+table::header {
+	background-color: var(--back);
+}
+
+table::header::column {
+	background-color: var(--back);
+	border-right-color: var(--tab-line);
+	border-right-width: 1dp;
+	border-bottom-color: var(--tab-line);
+	border-bottom-width: 1dp;
+	border-type: inside;
+	color: var(--font);
+	padding: 2dp 6dp 2dp 6dp;
+	transition: all 0.125s;
+	text-align: left;
+}
+
+table::header::column:hover {
+	background-color: var(--tab-hover);
+}
+
 .appbackground {
 	background-color: var(--back);
 }

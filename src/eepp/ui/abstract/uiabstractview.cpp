@@ -1,59 +1,53 @@
-#include <eepp/scene/eventdispatcher.hpp>
 #include <eepp/ui/abstract/uiabstractview.hpp>
-#include <eepp/window/input.hpp>
-
-using namespace EE::Scene;
-using namespace EE::Window;
 
 namespace EE { namespace UI { namespace Abstract {
 
-UIAbstractView::UIAbstractView() : m_selection( this ) {}
+UIAbstractView::UIAbstractView( const std::string& tag ) : UIWidget( tag ), mSelection( this ) {}
 
 UIAbstractView::~UIAbstractView() {}
 
-void UIAbstractView::set_model( std::shared_ptr<Model> model ) {
-	if ( model.get() == m_model.get() )
+void UIAbstractView::setModel( std::shared_ptr<Model> model ) {
+	if ( model.get() == mModel.get() )
 		return;
-	if ( m_model )
-		m_model->unregisterView( this );
-	m_model = model;
-	if ( m_model )
-		m_model->registerView( this );
-	didUpdateModel( Model::InvalidateAllIndexes );
+	if ( mModel )
+		mModel->unregisterView( this );
+	mModel = model;
+	if ( mModel )
+		mModel->registerView( this );
+	onModelUpdate( Model::InvalidateAllIndexes );
 }
 
-void UIAbstractView::didUpdateModel( unsigned flags ) {
-	m_hovered_index = {};
-	if ( !model() || ( flags & Model::InvalidateAllIndexes ) ) {
-		selection().clear();
+void UIAbstractView::onModelUpdate( unsigned flags ) {
+	mHoveredIndex = {};
+	if ( !getModel() || ( flags & Model::InvalidateAllIndexes ) ) {
+		getSelection().clear();
 	} else {
-		selection().removeMatching( [this]( auto& index ) { return !model()->isValid( index ); } );
+		getSelection().removeMatching(
+			[this]( auto& index ) { return !getModel()->isValid( index ); } );
 	}
 }
 
-void UIAbstractView::didUpdateSelection() {
-	if ( model() && on_selection && selection().first().isValid() )
-		on_selection( selection().first() );
+void UIAbstractView::onModelSelectionChange() {
+	if ( getModel() && mOnSelection && getSelection().first().isValid() )
+		mOnSelection( getSelection().first() );
 }
-
-void UIAbstractView::didScroll() {}
 
 void UIAbstractView::activate( const ModelIndex& index ) {
-	if ( on_activation )
-		on_activation( index );
+	if ( mOnActivation )
+		mOnActivation( index );
 }
 
-void UIAbstractView::activate_selected() {
-	if ( !on_activation )
+void UIAbstractView::activateSelected() {
+	if ( !mOnActivation )
 		return;
 
-	selection().forEachIndex( [this]( auto& index ) { on_activation( index ); } );
+	getSelection().forEachIndex( [this]( auto& index ) { mOnActivation( index ); } );
 }
 
 void UIAbstractView::notifySelectionChange() {
-	didUpdateSelection();
-	if ( on_selection_change )
-		on_selection_change();
+	onModelSelectionChange();
+	if ( mOnSelectionChange )
+		mOnSelectionChange();
 }
 
 }}} // namespace EE::UI::Abstract

@@ -1,4 +1,23 @@
 #include <eepp/ee.hpp>
+#include <eepp/ui/abstract/model.hpp>
+#include <eepp/ui/abstract/uiabstracttableview.hpp>
+
+using namespace EE::UI::Abstract;
+
+class TestModel : public Model {
+  public:
+	virtual int rowCount( const ModelIndex& = ModelIndex() ) const { return 1; }
+
+	virtual int columnCount( const ModelIndex& = ModelIndex() ) const { return 4; }
+
+	virtual std::string columnName( const size_t& column ) const {
+		return String::format( "Column %ld", column );
+	}
+
+	virtual Variant data( const ModelIndex&, Role = Role::Display ) const { return Variant(); };
+
+	virtual void update() {}
+};
 
 // This file is used to test some UI related stuffs.
 // It's not a benchmark or a real test suite.
@@ -11,6 +30,21 @@ void mainLoop() {
 
 	if ( win->getInput()->isKeyUp( KEY_ESCAPE ) ) {
 		win->close();
+	}
+
+	UISceneNode* uiSceneNode = SceneManager::instance()->getUISceneNode();
+
+	if ( win->getInput()->isKeyUp( KEY_F6 ) ) {
+		uiSceneNode->setHighlightFocus( !uiSceneNode->getHighlightFocus() );
+		uiSceneNode->setHighlightOver( !uiSceneNode->getHighlightOver() );
+	}
+
+	if ( win->getInput()->isKeyUp( KEY_F7 ) ) {
+		uiSceneNode->setDrawBoxes( !uiSceneNode->getDrawBoxes() );
+	}
+
+	if ( win->getInput()->isKeyUp( KEY_F8 ) ) {
+		uiSceneNode->setDrawDebugData( !uiSceneNode->getDrawDebugData() );
 	}
 
 	// Update the UI scene.
@@ -50,9 +84,10 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 			pd = "1.5x";
 		else if ( PixelDensity::getPixelDensity() >= 2.f )
 			pd = "2x";
-		UITheme* theme =
+		/*UITheme* theme =
 			UITheme::load( "uitheme" + pd, "uitheme" + pd, "assets/ui/uitheme" + pd + ".eta", font,
-						   "assets/ui/uitheme.css" );
+						   "assets/ui/uitheme.css" );*/
+		UITheme* theme = UITheme::load( "breeze", "breeze", "", font, "assets/ui/breeze.css" );
 		uiSceneNode->setStyleSheet( theme->getStyleSheet() );
 		uiSceneNode->getUIThemeManager()
 			->setDefaultEffectsEnabled( true )
@@ -62,6 +97,13 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 
 		auto* vlay = UILinearLayout::NewVertical();
 		vlay->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
+
+		auto model = std::make_shared<TestModel>();
+		UIAbstractTableView* view = UIAbstractTableView::New();
+		view->setId( "abstracttable" );
+		view->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
+		view->setParent( vlay );
+		view->setModel( model );
 
 		/* ListBox test */ /*
 		std::vector<String> strings;
@@ -101,7 +143,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		uiSceneNode->getRoot()->childsCloseAll();
 		SceneManager::instance()->update();*/
 
-		total.restart();
+		/*total.restart();
 		for ( size_t i = 0; i < 100000; i++ ) {
 			auto* widget = UIWidget::New();
 			widget->setParent( vlay );
@@ -115,7 +157,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 			widget->setBackgroundColor( Color::fromHsv( col ) );
 		}
 		std::cout << "Time UIWidget total: " << total.getElapsedTime().asMilliseconds() << " ms"
-				  << std::endl;
+				  << std::endl;*/
 
 		/*UIWindow* wind = UIWindow::New();
 		wind->setSize( 500, 500 );

@@ -1,12 +1,12 @@
 #include <eepp/ui/abstract/model.hpp>
-#include <eepp/ui/uiabstractview.hpp>
+#include <eepp/ui/abstract/uiabstractview.hpp>
 
 namespace EE { namespace UI { namespace Abstract {
 
-void Model::didUpdate( unsigned flags ) {
-	if ( onUpdate )
-		onUpdate();
-	forEachView( [&]( UIAbstractView* view ) { view->didUpdateModel( flags ); } );
+void Model::onModelUpdate( unsigned flags ) {
+	if ( mOnUpdate )
+		mOnUpdate();
+	forEachView( [&]( UIAbstractView* view ) { view->onModelUpdate( flags ); } );
 }
 
 void Model::forEachView( std::function<void( UIAbstractView* )> callback ) {
@@ -24,6 +24,10 @@ void Model::registerView( UIAbstractView* view ) {
 
 ModelIndex Model::createIndex( int row, int column, const void* data ) const {
 	return ModelIndex( *this, row, column, const_cast<void*>( data ) );
+}
+
+void Model::setOnUpdate( const std::function<void()>& onUpdate ) {
+	mOnUpdate = onUpdate;
 }
 
 ModelIndex Model::sibling( int row, int column, const ModelIndex& parent ) const {

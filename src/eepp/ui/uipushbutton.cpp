@@ -11,6 +11,10 @@ UIPushButton* UIPushButton::New() {
 	return eeNew( UIPushButton, () );
 }
 
+UIPushButton* UIPushButton::NewWithTag( const std::string& tag ) {
+	return eeNew( UIPushButton, ( tag ) );
+}
+
 UIPushButton::UIPushButton( const std::string& tag ) :
 	UIWidget( tag ), mIcon( NULL ), mTextBox( NULL ) {
 	mFlags |= ( UI_AUTO_SIZE | UI_VALIGN_CENTER | UI_HALIGN_CENTER );
@@ -221,6 +225,8 @@ void UIPushButton::onSizeChange() {
 	if ( NULL != eWidget && eWidget->isVisible() ) {
 		eWidget->setPixelsPosition( ePos );
 	}
+
+	UIWidget::onSizeChange();
 }
 
 void UIPushButton::setTheme( UITheme* Theme ) {
@@ -322,6 +328,12 @@ UIWidget* UIPushButton::getExtraInnerWidget() {
 	return NULL;
 }
 
+void UIPushButton::setTextAlign( const Uint32& align ) {
+	mFlags &= ~( UI_HALIGN_CENTER | UI_HALIGN_RIGHT );
+	mFlags |= align;
+	onAlignChange();
+}
+
 std::string UIPushButton::getPropertyString( const PropertyDefinition* propertyDef,
 											 const Uint32& propertyIndex ) {
 	if ( NULL == propertyDef )
@@ -336,6 +348,11 @@ std::string UIPushButton::getPropertyString( const PropertyDefinition* propertyD
 		case PropertyId::MinIconSize:
 			return String::format( "%ddp", mIconMinSize.getWidth() ) + " " +
 				   String::format( "%ddp", mIconMinSize.getHeight() );
+		case PropertyId::TextAlign:
+			return Font::getHorizontalAlign( getFlags() ) == UI_HALIGN_CENTER
+					   ? "center"
+					   : ( Font::getHorizontalAlign( getFlags() ) == UI_HALIGN_RIGHT ? "right"
+																					 : "left" );
 		case PropertyId::Color:
 		case PropertyId::ShadowColor:
 		case PropertyId::SelectionColor:
@@ -347,7 +364,6 @@ std::string UIPushButton::getPropertyString( const PropertyDefinition* propertyD
 		case PropertyId::TextStrokeWidth:
 		case PropertyId::TextStrokeColor:
 		case PropertyId::TextSelection:
-		case PropertyId::TextAlign:
 			return mTextBox->getPropertyString( propertyDef, propertyIndex );
 		default:
 			return UIWidget::getPropertyString( propertyDef, propertyIndex );
@@ -381,6 +397,16 @@ bool UIPushButton::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::MinIconSize:
 			setIconMinimumSize( attribute.asSizei() );
 			break;
+		case PropertyId::TextAlign: {
+			std::string align = String::toLower( attribute.value() );
+			if ( align == "center" )
+				setTextAlign( UI_HALIGN_CENTER );
+			else if ( align == "left" )
+				setTextAlign( UI_HALIGN_LEFT );
+			else if ( align == "right" )
+				setTextAlign( UI_HALIGN_RIGHT );
+			break;
+		}
 		case PropertyId::Color:
 		case PropertyId::ShadowColor:
 		case PropertyId::SelectionColor:
@@ -392,7 +418,6 @@ bool UIPushButton::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::TextStrokeWidth:
 		case PropertyId::TextStrokeColor:
 		case PropertyId::TextSelection:
-		case PropertyId::TextAlign:
 			attributeSet = mTextBox->applyProperty( attribute );
 			break;
 		default:
