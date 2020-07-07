@@ -726,7 +726,7 @@ void UINode::drawBorder() {
 	}
 }
 
-void UINode::internalDraw() {
+void UINode::nodeDraw() {
 	if ( mVisible ) {
 		if ( mNodeFlags & NODE_FLAG_POSITION_DIRTY )
 			updateScreenPos();

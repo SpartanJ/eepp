@@ -257,6 +257,8 @@ class EE_API UINode : public Node {
 
 	Rectf getLocalDpBounds() const;
 
+	virtual void nodeDraw();
+
   protected:
 	Vector2f mDpPos;
 	Sizef mDpSize;
@@ -317,8 +319,6 @@ class EE_API UINode : public Node {
 	virtual void onSceneChange();
 
 	void checkClose();
-
-	virtual void internalDraw();
 
 	virtual void onWidgetFocusLoss();
 

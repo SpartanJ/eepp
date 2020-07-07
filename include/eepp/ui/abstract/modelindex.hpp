@@ -19,6 +19,10 @@ class EE_API ModelIndex {
 	ModelIndex parent() const;
 	bool hasParent() const { return parent().isValid(); }
 
+	bool operator<( const ModelIndex& other ) const {
+		return mRow != other.mRow || mColumn != other.mColumn;
+	}
+
 	bool operator==( const ModelIndex& other ) const {
 		return mModel == other.mModel && mRow == other.mRow && mColumn == other.mColumn &&
 			   mData == other.mData;
@@ -37,6 +41,6 @@ class EE_API ModelIndex {
 		mModel( &model ), mRow( row ), mColumn( column ), mData( internalData ) {}
 };
 
-}}} // namespace EE::UI::Model
+}}} // namespace EE::UI::Abstract
 
 #endif // EE_UI_MODEL_MODELINDEX_HPP

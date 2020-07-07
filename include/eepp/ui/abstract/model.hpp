@@ -110,9 +110,9 @@ class EE_API Model {
 
 	virtual ~Model(){};
 
-	virtual int rowCount( const ModelIndex& = ModelIndex() ) const = 0;
+	virtual size_t rowCount( const ModelIndex& = ModelIndex() ) const = 0;
 
-	virtual int columnCount( const ModelIndex& = ModelIndex() ) const = 0;
+	virtual size_t columnCount( const ModelIndex& = ModelIndex() ) const = 0;
 
 	virtual std::string columnName( const size_t& /*column*/ ) const { return {}; }
 
@@ -140,8 +140,8 @@ class EE_API Model {
 
 	bool isValid( const ModelIndex& index ) const {
 		auto parentIndex = this->parentIndex( index );
-		return index.row() >= 0 && index.row() < rowCount( parentIndex ) && index.column() >= 0 &&
-			   index.column() < columnCount( parentIndex );
+		return index.row() >= 0 && index.row() < (Int64)rowCount( parentIndex ) &&
+			   index.column() >= 0 && index.column() < (Int64)columnCount( parentIndex );
 	}
 
 	virtual int keyColumn() const { return -1; }

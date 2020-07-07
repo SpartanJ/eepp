@@ -1212,7 +1212,7 @@ Uint32 UIWindow::onMouseDoubleClick( const Vector2i&, const Uint32& Flags ) {
 	return 1;
 }
 
-void UIWindow::internalDraw() {
+void UIWindow::nodeDraw() {
 	if ( mVisible && 0 != mAlpha ) {
 		updateScreenPos();
 

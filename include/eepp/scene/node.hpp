@@ -390,6 +390,10 @@ class EE_API Node : public Transformable {
 
 	void forEachNode( std::function<void( Node* )> func );
 
+	void forEachChild( std::function<void( Node* )> func );
+
+	virtual void nodeDraw();
+
   protected:
 	typedef std::map<Uint32, std::map<Uint32, EventCallback>> EventsMap;
 	friend class EventDispatcher;
@@ -487,8 +491,6 @@ class EE_API Node : public Transformable {
 	virtual Uint32 onFocus();
 
 	virtual Uint32 onFocusLoss();
-
-	virtual void internalDraw();
 
 	void clipEnd();
 

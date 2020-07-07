@@ -405,6 +405,7 @@
 ../../include/eepp/ui/uithememanager.hpp
 ../../include/eepp/ui/uitooltip.hpp
 ../../include/eepp/ui/uitouchdraggablewidget.hpp
+../../include/eepp/ui/uitreeview.hpp
 ../../include/eepp/ui/uiviewpager.hpp
 ../../include/eepp/ui/uiwidgetcreator.hpp
 ../../include/eepp/ui/uiwidget.hpp
@@ -866,6 +867,7 @@
 ../../src/eepp/ui/uithememanager.cpp
 ../../src/eepp/ui/uitooltip.cpp
 ../../src/eepp/ui/uitouchdraggablewidget.cpp
+../../src/eepp/ui/uitreeview.cpp
 ../../src/eepp/ui/uiviewpager.cpp
 ../../src/eepp/ui/uiwidget.cpp
 ../../src/eepp/ui/uiwidgetcreator.cpp

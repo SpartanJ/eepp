@@ -59,7 +59,7 @@ template <class TContainer> void UIItemContainer<TContainer>::drawChilds() {
 	if ( tParent->mItems.size() ) {
 		for ( Uint32 i = tParent->mVisibleFirst; i <= tParent->mVisibleLast; i++ )
 			if ( NULL != tParent->mItems[i] )
-				tParent->mItems[i]->internalDraw();
+				tParent->mItems[i]->nodeDraw();
 	}
 }
 

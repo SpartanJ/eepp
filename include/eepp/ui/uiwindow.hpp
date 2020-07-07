@@ -141,7 +141,7 @@ class EE_API UIWindow : public UIWidget {
 
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
-	virtual void internalDraw();
+	virtual void nodeDraw();
 
 	void invalidate( Node* invalidator );
 

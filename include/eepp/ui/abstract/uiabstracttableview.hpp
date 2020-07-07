@@ -17,13 +17,15 @@ class EE_API UIAbstractTableView : public UIAbstractView {
   public:
 	static UIAbstractTableView* New();
 
-	int rowHeight() const { return PixelDensity::dpToPx( 16 ); }
+	virtual Float getRowHeight() const { return getHeaderHeight(); }
 
-	Float getHeaderHeight() const;
+	virtual Float getHeaderHeight() const;
 
-	bool headersVisible() const { return mHeadersVisible; }
+	virtual Sizef getContentSize() const;
 
-	void setHeadersVisible( bool visible ) { mHeadersVisible = visible; }
+	bool areHeadersVisible() const;
+
+	void setHeadersVisible( bool visible );
 
 	bool isColumnHidden( const size_t& column ) const;
 
@@ -34,6 +36,8 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	const Float& getDragBorderDistance() const;
 
 	void setDragBorderDistance( const Float& dragBorderDistance );
+
+	Vector2f getColumnPosition( const size_t& index );
 
   protected:
 	friend class UITableHeaderColumn;
@@ -52,7 +56,7 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	mutable std::vector<ColumnData> mColumn;
 
-	virtual size_t itemCount() const;
+	virtual size_t getItemCount() const;
 
 	virtual void onModelUpdate( unsigned flags );
 
@@ -60,9 +64,10 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	virtual void onSizeChange();
 
+	virtual void onColumnSizeChange( const size_t& colIndex );
+
 	UILinearLayout* mHeader;
 	Float mDragBorderDistance{8};
-	bool mHeadersVisible{true};
 };
 
 }}} // namespace EE::UI::Abstract

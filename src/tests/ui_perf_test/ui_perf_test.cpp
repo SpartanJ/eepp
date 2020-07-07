@@ -1,20 +1,88 @@
 #include <eepp/ee.hpp>
 #include <eepp/ui/abstract/model.hpp>
 #include <eepp/ui/abstract/uiabstracttableview.hpp>
+#include <eepp/ui/uitreeview.hpp>
 
 using namespace EE::UI::Abstract;
 
 class TestModel : public Model {
   public:
-	virtual int rowCount( const ModelIndex& = ModelIndex() ) const { return 1; }
+	struct NodeT {
+		std::vector<NodeT*> children;
+		NodeT* parent{nullptr};
 
-	virtual int columnCount( const ModelIndex& = ModelIndex() ) const { return 4; }
+		ModelIndex index( const TestModel& model, int column ) const {
+			if ( !parent )
+				return {};
+			for ( size_t row = 0; row < parent->children.size(); ++row ) {
+				if ( parent->children[row] == this )
+					return model.createIndex( row, column, const_cast<NodeT*>( this ) );
+			}
+			return {};
+		}
+	};
+
+	TestModel() : Model() {
+		for ( size_t row = 0; row < 4; ++row ) {
+			NodeT* n = new NodeT();
+			n->parent = &mRoot;
+			for ( size_t i = 0; i < 4; i++ ) {
+				NodeT* c = new NodeT();
+				c->parent = n;
+				n->children.push_back( c );
+			}
+			mRoot.children.push_back( n );
+		}
+	}
+
+	virtual ModelIndex parentIndex( const ModelIndex& index ) const {
+		if ( !index.isValid() )
+			return {};
+		auto node = this->node( index );
+		if ( !node.parent ) {
+			eeASSERT( &node == &mRoot );
+			return {};
+		}
+		return node.parent->index( *this, index.column() );
+	}
+
+	virtual size_t rowCount( const ModelIndex& index = ModelIndex() ) const {
+		auto node = this->node( index );
+		return node.children.size();
+	}
+
+	virtual size_t columnCount( const ModelIndex& index = ModelIndex() ) const { return 4; }
+
+	NodeT mRoot;
+	const NodeT& node( const ModelIndex& index ) const {
+		if ( !index.isValid() )
+			return mRoot;
+		return *(NodeT*)index.data();
+	}
+
+	ModelIndex index( int row, int column, const ModelIndex& parent ) const {
+		if ( row < 0 || column < 0 )
+			return {};
+		auto& node = this->node( parent );
+		if ( static_cast<size_t>( row ) >= node.children.size() )
+			return {};
+		return createIndex( row, column, node.children[row] );
+	}
 
 	virtual std::string columnName( const size_t& column ) const {
 		return String::format( "Column %ld", column );
 	}
 
-	virtual Variant data( const ModelIndex&, Role = Role::Display ) const { return Variant(); };
+	virtual Variant data( const ModelIndex& index, Role role = Role::Display ) const {
+		switch ( role ) {
+			case Role::Display: {
+				return Variant( String::format( "Test %lld-%lld", index.row(), index.column() ) );
+			}
+			default: {
+			}
+		}
+		return Variant();
+	};
 
 	virtual void update() {}
 };
@@ -99,8 +167,8 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		vlay->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
 
 		auto model = std::make_shared<TestModel>();
-		UIAbstractTableView* view = UIAbstractTableView::New();
-		view->setId( "abstracttable" );
+		UITreeView* view = UITreeView::New();
+		view->setId( "treeview" );
 		view->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
 		view->setParent( vlay );
 		view->setModel( model );
