@@ -243,8 +243,10 @@ void UIPushButton::onThemeLoaded() {
 }
 
 UIPushButton* UIPushButton::setIcon( Drawable* Icon ) {
-	mIcon->setDrawable( Icon );
-	onSizeChange();
+	if ( mIcon->getDrawable() != Icon ) {
+		mIcon->setDrawable( Icon );
+		onSizeChange();
+	}
 	return this;
 }
 

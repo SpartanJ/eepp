@@ -51,7 +51,7 @@ class Variant {
 	Variant( const Int64& val ) : mType( Type::Int64 ) { mValue.asInt64 = val; }
 	~Variant() { reset(); }
 	const std::string& asString() const { return *mValue.asString; }
-	const Drawable* asDrawable() const { return mValue.asDrawable; }
+	Drawable* asDrawable() const { return mValue.asDrawable; }
 	const bool& asBool() const { return mValue.asBool; }
 	const Float& asFloat() const { return mValue.asFloat; }
 	const int& asInt() const { return mValue.asInt; }

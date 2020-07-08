@@ -23,6 +23,16 @@ class EE_API UITreeView : public UIAbstractTableView {
 
 	virtual Node* overFind( const Vector2f& point );
 
+	bool isExpanded( const ModelIndex& index ) const;
+
+	Drawable* getExpandIcon() const;
+
+	void setExpandedIcon( Drawable* expandIcon );
+
+	Drawable* getContractIcon() const;
+
+	void setContractedIcon( Drawable* contractIcon );
+
   protected:
 	enum class IterationDecision {
 		Continue,
@@ -32,6 +42,8 @@ class EE_API UITreeView : public UIAbstractTableView {
 
 	Float mIndentWidth;
 	Sizef mContentSize;
+	Drawable* mExpandIcon{nullptr};
+	Drawable* mContractIcon{nullptr};
 
 	UITreeView();
 

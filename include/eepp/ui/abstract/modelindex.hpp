@@ -14,9 +14,13 @@ class EE_API ModelIndex {
 	bool isValid() const { return mRow != -1 && mColumn != -1; }
 
 	const Int64& row() const { return mRow; }
+
 	const Int64& column() const { return mColumn; }
+
 	void* data() const { return mData; }
+
 	ModelIndex parent() const;
+
 	bool hasParent() const { return parent().isValid(); }
 
 	bool operator<( const ModelIndex& other ) const {

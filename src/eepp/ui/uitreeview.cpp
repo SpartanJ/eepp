@@ -1,5 +1,6 @@
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uipushbutton.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitreeview.hpp>
 
 namespace EE { namespace UI {
@@ -12,7 +13,10 @@ UITreeView* UITreeView::New() {
 	return eeNew( UITreeView, () );
 }
 
-UITreeView::UITreeView() : UIAbstractTableView( "treeview" ), mIndentWidth( 16 ) {}
+UITreeView::UITreeView() : UIAbstractTableView( "treeview" ), mIndentWidth( 16 ) {
+	mExpandIcon = getUISceneNode()->findIcon( "tree-expanded" );
+	mContractIcon = getUISceneNode()->findIcon( "tree-contracted" );
+}
 
 UITreeView::MetadataForIndex& UITreeView::getIndexMetadata( const ModelIndex& index ) const {
 	eeASSERT( index.isValid() );
@@ -72,6 +76,8 @@ template <typename Callback> void UITreeView::traverseTree( Callback callback ) 
 }
 
 void UITreeView::createOrUpdateColumns() {
+	if ( !getModel() )
+		return;
 	UIAbstractTableView::createOrUpdateColumns();
 	updateContentSize();
 	traverseTree( [&]( const ModelIndex& index, const size_t& indentLevel, const Float& yOffset ) {
@@ -152,11 +158,13 @@ UIPushButton* UITreeView::updateCell( const ModelIndex& index, const size_t& col
 	if ( col == getModel()->treeColumn() )
 		widget->setPaddingLeft( getIndentWidth() * indentLevel );
 
-	Variant variant( getModel()->data( getModel()->index( index.row(), col, index.parent() ),
-									   Model::Role::Display ) );
+	ModelIndex idx( getModel()->index( index.row(), col, index.parent() ) );
+
+	Variant variant( getModel()->data( idx, Model::Role::Display ) );
 	if ( variant.isValid() )
 		widget->setText( variant.asString() );
-
+	if ( col == getModel()->treeColumn() && getModel()->rowCount( index ) > 0 )
+		widget->setIcon( getIndexMetadata( index ).open ? mExpandIcon : mContractIcon );
 	return widget;
 }
 
@@ -165,7 +173,10 @@ const Float& UITreeView::getIndentWidth() const {
 }
 
 void UITreeView::setIndentWidth( const Float& indentWidth ) {
-	mIndentWidth = indentWidth;
+	if ( mIndentWidth != indentWidth ) {
+		mIndentWidth = indentWidth;
+		createOrUpdateColumns();
+	}
 }
 
 Sizef UITreeView::getContentSize() const {
@@ -207,6 +218,32 @@ Node* UITreeView::overFind( const Vector2f& point ) {
 		}
 	}
 	return pOver;
+}
+
+bool UITreeView::isExpanded( const ModelIndex& index ) const {
+	return getIndexMetadata( index ).open;
+}
+
+Drawable* UITreeView::getExpandIcon() const {
+	return mExpandIcon;
+}
+
+void UITreeView::setExpandedIcon( Drawable* expandIcon ) {
+	if ( mExpandIcon != expandIcon ) {
+		mExpandIcon = expandIcon;
+		createOrUpdateColumns();
+	}
+}
+
+Drawable* UITreeView::getContractIcon() const {
+	return mContractIcon;
+}
+
+void UITreeView::setContractedIcon( Drawable* contractIcon ) {
+	if ( mContractIcon != contractIcon ) {
+		mContractIcon = contractIcon;
+		createOrUpdateColumns();
+	}
 }
 
 }} // namespace EE::UI

@@ -23,7 +23,7 @@ class TestModel : public Model {
 	};
 
 	TestModel() : Model() {
-		for ( size_t row = 0; row < 4; ++row ) {
+		for ( size_t row = 0; row < 100; ++row ) {
 			NodeT* n = new NodeT();
 			n->parent = &mRoot;
 			for ( size_t i = 0; i < 4; i++ ) {
@@ -77,6 +77,16 @@ class TestModel : public Model {
 		switch ( role ) {
 			case Role::Display: {
 				return Variant( String::format( "Test %lld-%lld", index.row(), index.column() ) );
+			}
+			case Role::Icon: {
+				if ( index.column() == 0 ) {
+					return Variant(
+						SceneManager::instance()
+							->getUISceneNode()
+							->getUIIconThemeManager()
+							->getCurrentTheme()
+							->getIcon( node( index ).children.size() ? "folder-open" : "folder" ) );
+				}
 			}
 			default: {
 			}
@@ -141,9 +151,22 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 			Engine::instance()->getDisplayManager()->getDisplayIndex( 0 )->getPixelDensity() );
 		FontTrueType* font =
 			FontTrueType::New( "NotoSans-Regular", "assets/fonts/NotoSans-Regular.ttf" );
+		FontTrueType* iconFont = FontTrueType::New( "icon", "assets/fonts/remixicon.ttf" );
+		UIIconTheme* iconTheme = UIIconTheme::New( "remixicon" );
+		auto addIcon = [iconTheme, iconFont]( const std::string& name, const Uint32& codePoint,
+											  const Uint32& size ) -> Drawable* {
+			Drawable* ic = iconFont->getGlyphDrawable( codePoint, size );
+			iconTheme->add( name, ic );
+			return ic;
+		};
+		Drawable* closed = addIcon( "folder", 0xed6a, 16 );
+		Drawable* open = addIcon( "folder-open", 0xed70, 16 );
+		addIcon( "tree-expanded", 0xea50, 24 );
+		addIcon( "tree-contracted", 0xea54, 24 );
 		UISceneNode* uiSceneNode = UISceneNode::New();
 		SceneManager::instance()->add( uiSceneNode );
 		uiSceneNode->getUIThemeManager()->setDefaultFont( font );
+		uiSceneNode->getUIIconThemeManager()->setCurrentTheme( iconTheme );
 		/*StyleSheetParser styleSheetParser;
 		styleSheetParser.loadFromFile( "assets/ui/breeze.css" );
 		uiSceneNode->setStyleSheet( styleSheetParser.getStyleSheet() );*/
@@ -169,6 +192,8 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		auto model = std::make_shared<TestModel>();
 		UITreeView* view = UITreeView::New();
 		view->setId( "treeview" );
+		view->setExpandedIcon( open );
+		view->setContractedIcon( closed );
 		view->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
 		view->setParent( vlay );
 		view->setModel( model );

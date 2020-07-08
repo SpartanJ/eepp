@@ -45,6 +45,9 @@ bool UIImage::isType( const Uint32& type ) const {
 }
 
 UIImage* UIImage::setDrawable( Drawable* drawable, bool ownIt ) {
+	if ( drawable == mDrawable )
+		return this;
+
 	safeDeleteDrawable();
 
 	mDrawable = drawable;

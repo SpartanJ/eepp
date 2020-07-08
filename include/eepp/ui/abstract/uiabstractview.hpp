@@ -12,17 +12,23 @@ namespace EE { namespace UI { namespace Abstract {
 class EE_API UIAbstractView : public UIWidget {
   public:
 	void setModel( std::shared_ptr<Model> );
+
 	Model* getModel() { return mModel.get(); }
+
 	const Model* getModel() const { return mModel.get(); }
 
 	ModelSelection& getSelection() { return mSelection; }
+
 	const ModelSelection& getSelection() const { return mSelection; }
+
 	virtual void selectAll() = 0;
 
 	bool isEditable() const { return mEditable; }
+
 	void setEditable( bool editable ) { mEditable = editable; }
 
 	void setActivatesOnSelection( bool b ) { mActivatesOnSelection = b; }
+
 	bool getActivatesOnSelection() const { return mActivatesOnSelection; }
 
 	void notifySelectionChange();
