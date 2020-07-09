@@ -381,6 +381,7 @@
 ../../include/eepp/ui/uiradiobutton.hpp
 ../../include/eepp/ui/uirelativelayout.hpp
 ../../include/eepp/ui/uiscenenode.hpp
+../../include/eepp/ui/uiscrollablewidget.hpp
 ../../include/eepp/ui/uiscrollbar.hpp
 ../../include/eepp/ui/uiscrollview.hpp
 ../../include/eepp/ui/uiselectbutton.hpp
@@ -843,6 +844,7 @@
 ../../src/eepp/ui/uiradiobutton.cpp
 ../../src/eepp/ui/uirelativelayout.cpp
 ../../src/eepp/ui/uiscenenode.cpp
+../../src/eepp/ui/uiscrollablewidget.cpp
 ../../src/eepp/ui/uiscrollbar.cpp
 ../../src/eepp/ui/uiscrollview.cpp
 ../../src/eepp/ui/uiselectbutton.cpp

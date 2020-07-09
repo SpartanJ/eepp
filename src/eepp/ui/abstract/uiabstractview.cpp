@@ -2,9 +2,18 @@
 
 namespace EE { namespace UI { namespace Abstract {
 
-UIAbstractView::UIAbstractView( const std::string& tag ) : UIWidget( tag ), mSelection( this ) {}
+UIAbstractView::UIAbstractView( const std::string& tag ) :
+	UIScrollableWidget( tag ), mSelection( this ) {}
 
 UIAbstractView::~UIAbstractView() {}
+
+Uint32 UIAbstractView::getType() const {
+	return UI_TYPE_ABSTRACTVIEW;
+}
+
+bool UIAbstractView::isType( const Uint32& type ) const {
+	return UIAbstractView::getType() == type ? true : UIScrollableWidget::isType( type );
+}
 
 void UIAbstractView::setModel( std::shared_ptr<Model> model ) {
 	if ( model.get() == mModel.get() )

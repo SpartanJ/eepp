@@ -54,6 +54,7 @@ class UITableHeaderColumn : public UIPushButton {
 			setPixelsSize( mSize.x - dragDiff.x, mSize.getHeight() );
 			if ( mSize.getWidth() != mView->columnData( mColIndex ).width ) {
 				mView->columnData( mColIndex ).width = mSize.getWidth();
+				mView->updateHeaderSize();
 				mView->onColumnSizeChange( mColIndex );
 			}
 			return 1;
@@ -80,7 +81,9 @@ class UITableHeaderColumn : public UIPushButton {
 	Uint32 onDragStop( const Vector2i& pos, const Uint32& flags ) {
 		getUISceneNode()->setCursor( Cursor::Arrow );
 		mView->columnData( mColIndex ).width = mSize.getWidth();
+		mView->updateHeaderSize();
 		mView->onColumnSizeChange( mColIndex );
+
 		return UIPushButton::onDragStop( pos, flags );
 	}
 };
@@ -99,6 +102,14 @@ UIAbstractTableView::UIAbstractTableView( const std::string& tag ) :
 }
 
 UIAbstractTableView::~UIAbstractTableView() {}
+
+Uint32 UIAbstractTableView::getType() const {
+	return UI_TYPE_ABSTRACTTABLEVIEW;
+}
+
+bool UIAbstractTableView::isType( const Uint32& type ) const {
+	return UIAbstractTableView::getType() == type ? true : UIAbstractView::isType( type );
+}
 
 void UIAbstractTableView::selectAll() {
 	getSelection().clear();
@@ -124,9 +135,8 @@ void UIAbstractTableView::createOrUpdateColumns() {
 	if ( !model )
 		return;
 
-	mHeader->setPixelsSize( mSize.getWidth(), getHeaderHeight() );
-
 	size_t count = model->columnCount();
+	Float totalWidth = 0;
 
 	for ( size_t i = 0; i < count; i++ ) {
 		ColumnData& col = columnData( i );
@@ -146,6 +156,7 @@ void UIAbstractTableView::createOrUpdateColumns() {
 		col.width = eeceil( eemax( col.width, col.widget->getPixelsSize().getWidth() ) );
 		col.widget->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 		col.widget->setPixelsSize( col.width, getHeaderHeight() );
+		totalWidth += col.width;
 	}
 
 	if ( count < mColumn.size() ) {
@@ -160,6 +171,7 @@ void UIAbstractTableView::createOrUpdateColumns() {
 		}
 	}
 
+	mHeader->setPixelsSize( totalWidth, getHeaderHeight() );
 	mHeader->updateLayout();
 }
 
@@ -177,7 +189,7 @@ Sizef UIAbstractTableView::getContentSize() const {
 		if ( !isColumnHidden( i ) )
 			size.x += columnData( i ).width;
 	size.y = getHeaderHeight();
-	size.y = getItemCount() * getRowHeight();
+	size.y += getItemCount() * getRowHeight();
 	return size;
 }
 
@@ -190,11 +202,21 @@ void UIAbstractTableView::setHeadersVisible( bool visible ) {
 }
 
 void UIAbstractTableView::onSizeChange() {
-	UIWidget::onSizeChange();
+	UIAbstractView::onSizeChange();
 	mHeader->setPixelsSize( mSize.getWidth(), getHeaderHeight() );
 }
 
 void UIAbstractTableView::onColumnSizeChange( const size_t& ) {}
+
+void UIAbstractTableView::updateHeaderSize() {
+	size_t count = getModel()->columnCount();
+	Float totalWidth = 0;
+	for ( size_t i = 0; i < count; i++ ) {
+		ColumnData& col = columnData( i );
+		totalWidth += col.width;
+	}
+	mHeader->setPixelsSize( totalWidth, getHeaderHeight() );
+}
 
 const Float& UIAbstractTableView::getDragBorderDistance() const {
 	return mDragBorderDistance;

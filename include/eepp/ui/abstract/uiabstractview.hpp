@@ -4,13 +4,17 @@
 #include <eepp/ui/abstract/model.hpp>
 #include <eepp/ui/abstract/modeleditingdelegate.hpp>
 #include <eepp/ui/abstract/modelselection.hpp>
-#include <eepp/ui/uiwidget.hpp>
+#include <eepp/ui/uiscrollablewidget.hpp>
 #include <memory>
 
 namespace EE { namespace UI { namespace Abstract {
 
-class EE_API UIAbstractView : public UIWidget {
+class EE_API UIAbstractView : public UIScrollableWidget {
   public:
+	Uint32 getType() const;
+
+	bool isType( const Uint32& type ) const;
+
 	void setModel( std::shared_ptr<Model> );
 
 	Model* getModel() { return mModel.get(); }

@@ -17,6 +17,10 @@ class EE_API UIAbstractTableView : public UIAbstractView {
   public:
 	static UIAbstractTableView* New();
 
+	Uint32 getType() const;
+
+	bool isType( const Uint32& type ) const;
+
 	virtual Float getRowHeight() const { return getHeaderHeight(); }
 
 	virtual Float getHeaderHeight() const;
@@ -65,6 +69,8 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	virtual void onSizeChange();
 
 	virtual void onColumnSizeChange( const size_t& colIndex );
+
+	void updateHeaderSize();
 
 	UILinearLayout* mHeader;
 	Float mDragBorderDistance{8};

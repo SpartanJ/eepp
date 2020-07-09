@@ -30,10 +30,11 @@ class Variant {
 		Int64,
 		Drawable,
 		Vector2f,
-		Rectf
+		Rectf,
+		cstr
 	};
 	Variant() : mType( Type::Invalid ) {}
-	Variant( const std::string& string ) : mType( Type::String ) {
+	explicit Variant( const std::string& string ) : mType( Type::String ) {
 		mValue.asString = eeNew( std::string, ( string ) );
 	}
 	Variant( Drawable* drawable, bool ownDrawable = false ) : mType( Type::Drawable ) {
@@ -49,6 +50,7 @@ class Variant {
 	Variant( const Float& val ) : mType( Type::Float ) { mValue.asFloat = val; }
 	Variant( const int& val ) : mType( Type::Int ) { mValue.asInt = val; }
 	Variant( const Int64& val ) : mType( Type::Int64 ) { mValue.asInt64 = val; }
+	explicit Variant( const char* data ) : mType( Type::cstr ) { mValue.asCStr = data; }
 	~Variant() { reset(); }
 	const std::string& asString() const { return *mValue.asString; }
 	Drawable* asDrawable() const { return mValue.asDrawable; }
@@ -58,6 +60,8 @@ class Variant {
 	const Int64& asInt64() const { return mValue.asInt64; }
 	const Vector2f& asVector2f() const { return *mValue.asVector2f; }
 	const Rectf& asRectf() const { return *mValue.asRectf; }
+	const char* asCStr() const { return mValue.asCStr; }
+	bool is( const Type& type ) const { return type == mType; }
 	void reset() {
 		switch ( mType ) {
 			case Type::String:
@@ -91,6 +95,7 @@ class Variant {
 		Int64 asInt64;
 		Vector2f* asVector2f;
 		Rectf* asRectf;
+		const char* asCStr;
 	} mValue;
 	Type mType;
 	bool mOwnsObject{false};

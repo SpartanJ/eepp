@@ -13,6 +13,10 @@ class EE_API UITreeView : public UIAbstractTableView {
   public:
 	static UITreeView* New();
 
+	Uint32 getType() const;
+
+	bool isType( const Uint32& type ) const;
+
 	const Float& getIndentWidth() const;
 
 	void setIndentWidth( const Float& indentWidth );
@@ -65,10 +69,12 @@ class EE_API UITreeView : public UIAbstractTableView {
 
 	virtual void onColumnSizeChange( const size_t& colIndex );
 
-	UIPushButton* updateCell( const ModelIndex& index, const size_t& col, const size_t& indentLevel,
-							  const Float& yOffset );
+	virtual UIPushButton* updateCell( const ModelIndex& index, const size_t& col,
+									  const size_t& indentLevel, const Float& yOffset );
 
-	UIWidget* updateRow( const ModelIndex& index, const Float& yOffset );
+	virtual UIWidget* updateRow( const ModelIndex& index, const Float& yOffset );
+
+	virtual void onScrollChange();
 
 	void updateContentSize();
 };
