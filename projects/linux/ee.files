@@ -396,6 +396,7 @@
 ../../include/eepp/ui/uitab.hpp
 ../../include/eepp/ui/uitablecell.hpp
 ../../include/eepp/ui/uitable.hpp
+../../include/eepp/ui/uitableheadercolumn.hpp
 ../../include/eepp/ui/uitabwidget.hpp
 ../../include/eepp/ui/uitextedit.hpp
 ../../include/eepp/ui/uitextinput.hpp
@@ -859,6 +860,7 @@
 ../../src/eepp/ui/uitab.cpp
 ../../src/eepp/ui/uitablecell.cpp
 ../../src/eepp/ui/uitable.cpp
+../../src/eepp/ui/uitableheadercolumn.cpp
 ../../src/eepp/ui/uitabwidget.cpp
 ../../src/eepp/ui/uitextedit.cpp
 ../../src/eepp/ui/uitextinput.cpp

@@ -3,6 +3,7 @@
 
 #include <eepp/math/rect.hpp>
 #include <eepp/ui/abstract/uiabstractview.hpp>
+#include <eepp/ui/uitableheadercolumn.hpp>
 
 using namespace EE::Math;
 
@@ -15,8 +16,6 @@ namespace EE { namespace UI { namespace Abstract {
 
 class EE_API UIAbstractTableView : public UIAbstractView {
   public:
-	static UIAbstractTableView* New();
-
 	Uint32 getType() const;
 
 	bool isType( const Uint32& type ) const;
@@ -44,7 +43,7 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	Vector2f getColumnPosition( const size_t& index );
 
   protected:
-	friend class UITableHeaderColumn;
+	friend class EE::UI::UITableHeaderColumn;
 
 	virtual ~UIAbstractTableView();
 
@@ -69,6 +68,8 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	virtual void onSizeChange();
 
 	virtual void onColumnSizeChange( const size_t& colIndex );
+
+	virtual void onColumnResizeToContent( const size_t& colIndex );
 
 	void updateHeaderSize();
 

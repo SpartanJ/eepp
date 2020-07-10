@@ -22,11 +22,15 @@ class TestModel : public Model {
 		}
 	};
 
+	size_t getRows() const { return 10000; }
+	size_t getCols() const { return 4; }
+	size_t getChilds() const { return 50; }
+
 	TestModel() : Model() {
-		for ( size_t row = 0; row < 100; ++row ) {
+		for ( size_t row = 0; row < getRows(); ++row ) {
 			NodeT* n = new NodeT();
 			n->parent = &mRoot;
-			for ( size_t i = 0; i < 4; i++ ) {
+			for ( size_t i = 0; i < getChilds(); i++ ) {
 				NodeT* c = new NodeT();
 				c->parent = n;
 				n->children.push_back( c );
@@ -38,7 +42,7 @@ class TestModel : public Model {
 	virtual ModelIndex parentIndex( const ModelIndex& index ) const {
 		if ( !index.isValid() )
 			return {};
-		auto node = this->node( index );
+		auto& node = this->node( index );
 		if ( !node.parent ) {
 			eeASSERT( &node == &mRoot );
 			return {};
@@ -47,11 +51,11 @@ class TestModel : public Model {
 	}
 
 	virtual size_t rowCount( const ModelIndex& index = ModelIndex() ) const {
-		auto node = this->node( index );
+		auto& node = this->node( index );
 		return node.children.size();
 	}
 
-	virtual size_t columnCount( const ModelIndex& index = ModelIndex() ) const { return 4; }
+	virtual size_t columnCount( const ModelIndex& = ModelIndex() ) const { return getCols(); }
 
 	NodeT mRoot;
 	const NodeT& node( const ModelIndex& index ) const {
@@ -189,6 +193,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		auto* vlay = UILinearLayout::NewVertical();
 		vlay->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
 
+		Clock clock;
 		auto model = std::make_shared<TestModel>();
 		UITreeView* view = UITreeView::New();
 		view->setId( "treeview" );
@@ -197,6 +202,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		view->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
 		view->setParent( vlay );
 		view->setModel( model );
+		eePRINTL( "Total time: %.2fms", clock.getElapsedTime().asMilliseconds() );
 
 		/* ListBox test */ /*
 		std::vector<String> strings;

@@ -31,10 +31,6 @@ class EE_API UIAbstractView : public UIScrollableWidget {
 
 	void setEditable( bool editable ) { mEditable = editable; }
 
-	void setActivatesOnSelection( bool b ) { mActivatesOnSelection = b; }
-
-	bool getActivatesOnSelection() const { return mActivatesOnSelection; }
-
 	void notifySelectionChange();
 
   protected:
@@ -48,29 +44,17 @@ class EE_API UIAbstractView : public UIScrollableWidget {
 
 	virtual ~UIAbstractView();
 
-	void setHoveredIndex( const ModelIndex& );
-	void activate( const ModelIndex& );
-	void activateSelected();
-
 	bool mEditable{false};
 	ModelIndex mEditIndex;
 	UIWidget* mEditWidget;
 	Rect mEditWidgetContentRect;
 
-	Vector2i mLeftMouseDownPosition;
-	bool mMightDrag{false};
-
-	ModelIndex mHoveredIndex;
-
 	std::shared_ptr<Model> mModel;
 	std::unique_ptr<ModelEditingDelegate> mEditingDelegate;
 	ModelSelection mSelection;
-	bool mActivatesOnSelection{false};
 
 	std::function<void()> mOnSelectionChange;
-	std::function<void( const ModelIndex& )> mOnActivation;
 	std::function<void( const ModelIndex& )> mOnSelection;
-	std::function<void( const ModelIndex&, const DropEvent& )> mOnDrop;
 };
 
 }}} // namespace EE::UI::Abstract

@@ -24,7 +24,7 @@ class EE_API ModelEditingDelegate {
 
 	std::function<void()> onCommit;
 
-	virtual Variant value() const = 0;
+	virtual Variant getValue() const = 0;
 	virtual void setValue( const Variant& ) = 0;
 	virtual void willBeginEditing() {}
 
@@ -45,4 +45,4 @@ class EE_API ModelEditingDelegate {
 
 }}} // namespace EE::UI::Abstract
 
-#endif // MODELEDITINGDELEGATE_HPP
+#endif // EE_UI_MODELEDITINGDELEGATE_HPP

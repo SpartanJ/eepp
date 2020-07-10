@@ -36,7 +36,7 @@ class EE_API UIMenuItem : public UIPushButton {
 
 	virtual Uint32 onMouseClick( const Vector2i& pos, const Uint32& flags );
 
-	virtual UIWidget* getExtraInnerWidget();
+	virtual UIWidget* getExtraInnerWidget() const;
 
 	void createShortcutView();
 };

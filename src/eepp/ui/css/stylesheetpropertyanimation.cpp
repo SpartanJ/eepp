@@ -130,7 +130,7 @@ void StyleSheetPropertyAnimation::tweenProperty( UIWidget* widget, const Float& 
 StyleSheetPropertyAnimation* StyleSheetPropertyAnimation::fromAnimationKeyframes(
 	const AnimationDefinition& animation, const KeyframesDefinition& keyframes,
 	const PropertyDefinition* propertyDef, UIWidget* widget, const Uint32& propertyIndex,
-	const AnimationOrigin& animationOrigin ) {
+	const AnimationOrigin& ) {
 	std::vector<std::string> properties;
 	std::vector<Float> times;
 
@@ -314,7 +314,7 @@ void StyleSheetPropertyAnimation::onStart() {
 	}
 }
 
-void StyleSheetPropertyAnimation::onUpdate( const Time& time ) {
+void StyleSheetPropertyAnimation::onUpdate( const Time& ) {
 	if ( NULL != mNode && mNode->isWidget() ) {
 		UIWidget* widget = mNode->asType<UIWidget>();
 

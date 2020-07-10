@@ -125,7 +125,7 @@ void UITab::onSizeChange() {
 	UISelectButton::onSizeChange();
 }
 
-UIWidget* UITab::getExtraInnerWidget() {
+UIWidget* UITab::getExtraInnerWidget() const {
 	return mCloseButton;
 }
 

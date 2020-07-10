@@ -326,7 +326,7 @@ const Sizei& UIPushButton::getIconMinimumSize() const {
 	return mIconMinSize;
 }
 
-UIWidget* UIPushButton::getExtraInnerWidget() {
+UIWidget* UIPushButton::getExtraInnerWidget() const {
 	return NULL;
 }
 
@@ -334,6 +334,31 @@ void UIPushButton::setTextAlign( const Uint32& align ) {
 	mFlags &= ~( UI_HALIGN_CENTER | UI_HALIGN_RIGHT );
 	mFlags |= align;
 	onAlignChange();
+}
+
+Sizef UIPushButton::getContentSize() const {
+	Float sH = getSkinSize().getHeight();
+	Float sHS = getSkinSize( UIState::StateFlagSelected ).getHeight();
+	Float tH = mTextBox->getPixelsSize().getHeight();
+	Float eH =
+		NULL != getExtraInnerWidget() ? getExtraInnerWidget()->getPixelsSize().getHeight() : 0;
+	Float minHeight = eeceil( eemax( eemax( PixelDensity::dpToPx( eemax( sH, sHS ) ), tH ), eH ) );
+	Int32 txtW = mTextBox->getPixelsSize().getWidth();
+	Int32 iconSize = mIcon->getPixelsSize().getWidth() > 0
+						 ? mIcon->getPixelsSize().getWidth() +
+							   PixelDensity::dpToPxI( mIcon->getLayoutMargin().Left +
+													  mIcon->getLayoutMargin().Right )
+						 : 0;
+	UIWidget* eWidget = getExtraInnerWidget();
+	Int32 eWidgetSize = NULL != eWidget ? PixelDensity::dpToPxI( eWidget->getSize().getWidth() +
+																 eWidget->getLayoutMargin().Left +
+																 eWidget->getLayoutMargin().Right )
+										: 0;
+	Int32 minWidth = txtW + iconSize + eWidgetSize + mRealPadding.Left + mRealPadding.Right +
+					 ( NULL != getSkin() ? PixelDensity::dpToPxI( getSkin()->getBorderSize().Left +
+																  getSkin()->getBorderSize().Right )
+										 : 0 );
+	return Sizef( minWidth, minHeight );
 }
 
 std::string UIPushButton::getPropertyString( const PropertyDefinition* propertyDef,

@@ -48,7 +48,7 @@ Node::~Node() {
 	if ( NULL != mParentNode )
 		mParentNode->childRemove( this );
 
-	EventDispatcher* eventDispatcher = NULL != mSceneNode ? mSceneNode->getEventDispatcher() : NULL;
+	EventDispatcher* eventDispatcher = getEventDispatcher();
 
 	if ( NULL != eventDispatcher ) {
 		if ( eventDispatcher->getFocusNode() == this && mSceneNode != this ) {

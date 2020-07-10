@@ -759,11 +759,7 @@ table::header::column:hover {
 
 table::row {
 	background-color: var(--list-back);
-	transition: all 0.125s;
-}
-
-table::row:nth-child(odd) {
-	background-color: var(--back);
+	transition: all 0.5s;
 }
 
 table::row:hover {
@@ -772,11 +768,15 @@ table::row:hover {
 
 table::cell {
 	background-color: transparent;
-	transition: all 0.125s;
+	/*transition: all 0.125s;*/
 }
 
 table::cell:hover {
-	background-color: var(--primary);
+	/*background-color: var(--primary);*/
+}
+
+TreeView > ScrollBar {
+	background-color: var(--back);
 }
 
 .appbackground {

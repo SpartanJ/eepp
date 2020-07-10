@@ -27,7 +27,6 @@ void UIAbstractView::setModel( std::shared_ptr<Model> model ) {
 }
 
 void UIAbstractView::onModelUpdate( unsigned flags ) {
-	mHoveredIndex = {};
 	if ( !getModel() || ( flags & Model::InvalidateAllIndexes ) ) {
 		getSelection().clear();
 	} else {
@@ -39,18 +38,6 @@ void UIAbstractView::onModelUpdate( unsigned flags ) {
 void UIAbstractView::onModelSelectionChange() {
 	if ( getModel() && mOnSelection && getSelection().first().isValid() )
 		mOnSelection( getSelection().first() );
-}
-
-void UIAbstractView::activate( const ModelIndex& index ) {
-	if ( mOnActivation )
-		mOnActivation( index );
-}
-
-void UIAbstractView::activateSelected() {
-	if ( !mOnActivation )
-		return;
-
-	getSelection().forEachIndex( [this]( auto& index ) { mOnActivation( index ); } );
 }
 
 void UIAbstractView::notifySelectionChange() {

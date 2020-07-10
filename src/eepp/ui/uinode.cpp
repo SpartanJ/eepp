@@ -736,20 +736,20 @@ void UINode::nodeDraw() {
 
 		matrixSet();
 
-		clipStart();
-
 		if ( mWorldBounds.intersect( mSceneNode->getWorldBounds() ) ) {
+			clipStart();
+
 			draw();
 
 			drawChilds();
 
 			if ( 0.f != mAlpha )
 				drawForeground();
+
+			clipEnd();
 		} else if ( !isClipped() ) {
 			drawChilds();
 		}
-
-		clipEnd();
 
 		drawBorder();
 
