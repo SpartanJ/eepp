@@ -116,7 +116,7 @@ void UIAbstractTableView::setHeadersVisible( bool visible ) {
 
 void UIAbstractTableView::onSizeChange() {
 	UIAbstractView::onSizeChange();
-	mHeader->setPixelsSize( mSize.getWidth(), getHeaderHeight() );
+	createOrUpdateColumns();
 }
 
 void UIAbstractTableView::onColumnSizeChange( const size_t& ) {}

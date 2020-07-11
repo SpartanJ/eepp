@@ -38,6 +38,14 @@ class EE_API UIScrollableWidget : public UIWidget {
 
 	virtual Sizef getContentSize() const = 0;
 
+	void scrollToTop();
+
+	void scrollToBottom();
+
+	Sizef getScrollableArea() const;
+
+	Sizef getVisibleArea() const;
+
   protected:
 	ScrollViewType mViewType;
 	ScrollBarMode mVScrollMode;

@@ -157,15 +157,23 @@ void UIScrollableWidget::onContentSizeChange() {
 	updateScroll();
 }
 
-void UIScrollableWidget::updateScroll() {
+Sizef UIScrollableWidget::getScrollableArea() const {
 	Sizef contentSize( getContentSize() );
+	Sizef size = getVisibleArea();
+	return contentSize - size;
+}
+
+Sizef UIScrollableWidget::getVisibleArea() const {
 	Sizef size = getPixelsSize() - mRealPadding;
 	if ( mVScroll->isVisible() )
 		size.x -= mVScroll->getPixelsSize().getWidth();
 	if ( mHScroll->isVisible() )
 		size.y -= mHScroll->getPixelsSize().getHeight();
-	Sizef totalScroll( contentSize - size );
+	return size;
+}
 
+void UIScrollableWidget::updateScroll() {
+	Sizef totalScroll = getScrollableArea();
 	Vector2f initScroll( mScrollOffset );
 	mScrollOffset = Vector2f::Zero;
 
@@ -207,6 +215,14 @@ std::string UIScrollableWidget::getPropertyString( const PropertyDefinition* pro
 		default:
 			return UIWidget::getPropertyString( propertyDef, propertyIndex );
 	}
+}
+
+void UIScrollableWidget::scrollToTop() {
+	mVScroll->setValue( 0 );
+}
+
+void UIScrollableWidget::scrollToBottom() {
+	mVScroll->setValue( 1 );
 }
 
 bool UIScrollableWidget::applyProperty( const StyleSheetProperty& attribute ) {

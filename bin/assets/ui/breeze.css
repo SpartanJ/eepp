@@ -759,20 +759,19 @@ table::header::column:hover {
 
 table::row {
 	background-color: var(--list-back);
-	transition: all 0.5s;
+	transition: all 0.125s;
 }
 
 table::row:hover {
 	background-color: var(--back);
 }
 
-table::cell {
-	background-color: transparent;
-	/*transition: all 0.125s;*/
+table::row:selected {
+	background-color: var(--primary);
 }
 
-table::cell:hover {
-	/*background-color: var(--primary);*/
+TreeView {
+	background-color: var(--list-back);
 }
 
 TreeView > ScrollBar {

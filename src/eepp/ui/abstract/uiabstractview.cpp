@@ -7,6 +7,22 @@ UIAbstractView::UIAbstractView( const std::string& tag ) :
 
 UIAbstractView::~UIAbstractView() {}
 
+std::function<void( const ModelIndex& )> UIAbstractView::getOnSelection() const {
+	return mOnSelection;
+}
+
+void UIAbstractView::setOnSelection( const std::function<void( const ModelIndex& )>& onSelection ) {
+	mOnSelection = onSelection;
+}
+
+std::function<void()> UIAbstractView::getOnSelectionChange() const {
+	return mOnSelectionChange;
+}
+
+void UIAbstractView::setOnSelectionChange( const std::function<void()>& onSelectionChange ) {
+	mOnSelectionChange = onSelectionChange;
+}
+
 Uint32 UIAbstractView::getType() const {
 	return UI_TYPE_ABSTRACTVIEW;
 }

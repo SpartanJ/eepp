@@ -83,13 +83,12 @@ class TestModel : public Model {
 				return Variant( String::format( "Test %lld-%lld", index.row(), index.column() ) );
 			}
 			case Role::Icon: {
-				if ( index.column() == 0 ) {
-					return Variant(
-						SceneManager::instance()
-							->getUISceneNode()
-							->getUIIconThemeManager()
-							->getCurrentTheme()
-							->getIcon( node( index ).children.size() ? "folder-open" : "folder" ) );
+				if ( index.column() == 0 && rowCount( index ) == 0 ) {
+					return Variant( SceneManager::instance()
+										->getUISceneNode()
+										->getUIIconThemeManager()
+										->getCurrentTheme()
+										->getIcon( "file" ) );
 				}
 			}
 			default: {
@@ -167,6 +166,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		Drawable* open = addIcon( "folder-open", 0xed70, 16 );
 		addIcon( "tree-expanded", 0xea50, 24 );
 		addIcon( "tree-contracted", 0xea54, 24 );
+		addIcon( "file", 0xecc3, 24 );
 		UISceneNode* uiSceneNode = UISceneNode::New();
 		SceneManager::instance()->add( uiSceneNode );
 		uiSceneNode->getUIThemeManager()->setDefaultFont( font );

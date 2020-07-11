@@ -9,6 +9,20 @@
 
 namespace EE { namespace UI { namespace Abstract {
 
+class ModelEvent : public Event {
+  public:
+	ModelEvent( Model* model, const ModelIndex& index, Node* node ) :
+		Event( node, Event::OnModelEvent ), model( model ), index( index ) {}
+
+	const Model* getModel() const { return model; }
+
+	const ModelIndex& getModelIndex() const { return index; }
+
+  protected:
+	const Model* model;
+	ModelIndex index;
+};
+
 class EE_API UIAbstractView : public UIScrollableWidget {
   public:
 	Uint32 getType() const;
@@ -27,11 +41,15 @@ class EE_API UIAbstractView : public UIScrollableWidget {
 
 	virtual void selectAll() = 0;
 
-	bool isEditable() const { return mEditable; }
-
-	void setEditable( bool editable ) { mEditable = editable; }
-
 	void notifySelectionChange();
+
+	std::function<void()> getOnSelectionChange() const;
+
+	void setOnSelectionChange( const std::function<void()>& onSelectionChange );
+
+	std::function<void( const ModelIndex& )> getOnSelection() const;
+
+	void setOnSelection( const std::function<void( const ModelIndex& )>& onSelection );
 
   protected:
 	friend class Model;
