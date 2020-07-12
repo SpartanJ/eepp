@@ -55,11 +55,13 @@ class EE_API UITreeView : public UIAbstractTableView {
 
 	virtual void createOrUpdateColumns();
 
-	struct MetadataForIndex;
+	struct MetadataForIndex {
+		bool open{false};
+	};
 
 	template <typename Callback> void traverseTree( Callback ) const;
 
-	mutable std::map<void*, std::unique_ptr<MetadataForIndex>> mViewMetadata;
+	mutable std::map<void*, MetadataForIndex> mViewMetadata;
 	mutable std::vector<std::map<int, UIWidget*>> mWidgets;
 	mutable std::vector<UITableRow*> mRows;
 

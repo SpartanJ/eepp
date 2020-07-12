@@ -7,10 +7,6 @@
 
 namespace EE { namespace UI {
 
-struct UITreeView::MetadataForIndex {
-	bool open{false};
-};
-
 UITreeView* UITreeView::New() {
 	return eeNew( UITreeView, () );
 }
@@ -32,9 +28,9 @@ UITreeView::MetadataForIndex& UITreeView::getIndexMetadata( const ModelIndex& in
 	eeASSERT( index.isValid() );
 	auto it = mViewMetadata.find( index.data() );
 	if ( it != mViewMetadata.end() )
-		return *it->second;
-	auto newMetadata = std::make_unique<MetadataForIndex>();
-	auto* ref = newMetadata.get();
+		return it->second;
+	auto newMetadata = MetadataForIndex();
+	auto* ref = &newMetadata;
 	mViewMetadata.insert( {index.data(), std::move( newMetadata )} );
 	return *ref;
 }
