@@ -469,7 +469,7 @@ function build_eepp( build_name )
 			"src/eepp/scene/*.cpp",
 			"src/eepp/scene/actions/*.cpp",
 			"src/eepp/ui/*.cpp",
-			"src/eepp/ui/actions/*.cpp",
+			"src/eepp/ui/abstract/*.cpp",
 			"src/eepp/ui/css/*.cpp",
 			"src/eepp/ui/doc/*.cpp",
 			"src/eepp/ui/tools/*.cpp",

@@ -649,11 +649,11 @@ bool UITextView::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::TextAlign: {
 			std::string align = String::toLower( attribute.value() );
 			if ( align == "center" )
-				setFlags( UI_HALIGN_CENTER );
+				setTextAlign( UI_HALIGN_CENTER );
 			else if ( align == "left" )
-				setFlags( UI_HALIGN_LEFT );
+				setTextAlign( UI_HALIGN_LEFT );
 			else if ( align == "right" )
-				setFlags( UI_HALIGN_RIGHT );
+				setTextAlign( UI_HALIGN_RIGHT );
 			break;
 		}
 		default:
@@ -701,6 +701,12 @@ std::string UITextView::getPropertyString( const PropertyDefinition* propertyDef
 		default:
 			return UIWidget::getPropertyString( propertyDef, propertyIndex );
 	}
+}
+
+void UITextView::setTextAlign( const Uint32& align ) {
+	mFlags &= ~(UI_HALIGN_CENTER|UI_HALIGN_RIGHT);
+	mFlags |= align;
+	onAlignChange();
 }
 
 }} // namespace EE::UI

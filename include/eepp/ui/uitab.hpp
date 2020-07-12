@@ -62,7 +62,7 @@ class EE_API UITab : public UISelectButton {
 
 	virtual void onSizeChange();
 
-	virtual UIWidget* getExtraInnerWidget();
+	virtual UIWidget* getExtraInnerWidget() const;
 
 	void setOwnedNode();
 

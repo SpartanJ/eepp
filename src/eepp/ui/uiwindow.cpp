@@ -60,7 +60,7 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const StyleConfig& w
 
 	switch ( type ) {
 		case LINEAR_LAYOUT:
-			mContainer = UILinearLayout::NewWithTag( "window::container" );
+			mContainer = UILinearLayout::NewWithTag( "window::container", UIOrientation::Vertical );
 			break;
 		case RELATIVE_LAYOUT:
 			mContainer = UIRelativeLayout::NewWithTag( "window::container" );
@@ -1212,7 +1212,7 @@ Uint32 UIWindow::onMouseDoubleClick( const Vector2i&, const Uint32& Flags ) {
 	return 1;
 }
 
-void UIWindow::internalDraw() {
+void UIWindow::nodeDraw() {
 	if ( mVisible && 0 != mAlpha ) {
 		updateScreenPos();
 

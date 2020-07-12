@@ -72,7 +72,7 @@ Uint32 UIMenuItem::onMouseClick( const Vector2i&, const Uint32& flags ) {
 	return 1;
 }
 
-UIWidget* UIMenuItem::getExtraInnerWidget() {
+UIWidget* UIMenuItem::getExtraInnerWidget() const {
 	return mShortcutView;
 }
 

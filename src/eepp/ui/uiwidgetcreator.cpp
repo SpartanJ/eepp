@@ -29,6 +29,7 @@
 #include <eepp/ui/uitextureregion.hpp>
 #include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uitouchdraggablewidget.hpp>
+#include <eepp/ui/uitreeview.hpp>
 #include <eepp/ui/uiviewpager.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
 #include <eepp/ui/uiwindow.hpp>
@@ -80,6 +81,7 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["viewpager"] = UIViewPager::New;
 		registeredWidget["codeeditor"] = UICodeEditor::New;
 		registeredWidget["splitter"] = UISplitter::New;
+		registeredWidget["treeview"] = UITreeView::New;
 
 		registeredWidget["hbox"] = UILinearLayout::NewHorizontal;
 		registeredWidget["vbox"] = UILinearLayout::NewVertical;

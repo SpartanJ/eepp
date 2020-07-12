@@ -48,7 +48,7 @@ Node::~Node() {
 	if ( NULL != mParentNode )
 		mParentNode->childRemove( this );
 
-	EventDispatcher* eventDispatcher = NULL != mSceneNode ? mSceneNode->getEventDispatcher() : NULL;
+	EventDispatcher* eventDispatcher = getEventDispatcher();
 
 	if ( NULL != eventDispatcher ) {
 		if ( eventDispatcher->getFocusNode() == this && mSceneNode != this ) {
@@ -489,7 +489,7 @@ void Node::drawChilds() {
 
 		while ( NULL != child ) {
 			if ( child->mVisible ) {
-				child->internalDraw();
+				child->nodeDraw();
 			}
 
 			child = child->mPrev;
@@ -499,7 +499,7 @@ void Node::drawChilds() {
 
 		while ( NULL != child ) {
 			if ( child->mVisible ) {
-				child->internalDraw();
+				child->nodeDraw();
 			}
 
 			child = child->mNext;
@@ -507,7 +507,7 @@ void Node::drawChilds() {
 	}
 }
 
-void Node::internalDraw() {
+void Node::nodeDraw() {
 	if ( mVisible ) {
 		if ( mNodeFlags & NODE_FLAG_POSITION_DIRTY )
 			updateScreenPos();
@@ -908,6 +908,14 @@ void Node::forEachNode( std::function<void( Node* )> func ) {
 	Node* node = mChild;
 	while ( node ) {
 		node->forEachNode( func );
+		node = node->getNextNode();
+	}
+}
+
+void Node::forEachChild( std::function<void( Node* )> func ) {
+	Node* node = mChild;
+	while ( node ) {
+		func( node );
 		node = node->getNextNode();
 	}
 }

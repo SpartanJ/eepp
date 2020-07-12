@@ -1,4 +1,104 @@
 #include <eepp/ee.hpp>
+#include <eepp/ui/abstract/model.hpp>
+#include <eepp/ui/abstract/uiabstracttableview.hpp>
+#include <eepp/ui/uitreeview.hpp>
+
+using namespace EE::UI::Abstract;
+
+class TestModel : public Model {
+  public:
+	struct NodeT {
+		std::vector<NodeT*> children;
+		NodeT* parent{nullptr};
+
+		ModelIndex index( const TestModel& model, int column ) const {
+			if ( !parent )
+				return {};
+			for ( size_t row = 0; row < parent->children.size(); ++row ) {
+				if ( parent->children[row] == this )
+					return model.createIndex( row, column, const_cast<NodeT*>( this ) );
+			}
+			return {};
+		}
+	};
+
+	size_t getRows() const { return 10000; }
+	size_t getCols() const { return 4; }
+	size_t getChilds() const { return 50; }
+
+	TestModel() : Model() {
+		for ( size_t row = 0; row < getRows(); ++row ) {
+			NodeT* n = new NodeT();
+			n->parent = &mRoot;
+			for ( size_t i = 0; i < getChilds(); i++ ) {
+				NodeT* c = new NodeT();
+				c->parent = n;
+				n->children.push_back( c );
+			}
+			mRoot.children.push_back( n );
+		}
+	}
+
+	virtual ModelIndex parentIndex( const ModelIndex& index ) const {
+		if ( !index.isValid() )
+			return {};
+		auto& node = this->node( index );
+		if ( !node.parent ) {
+			eeASSERT( &node == &mRoot );
+			return {};
+		}
+		return node.parent->index( *this, index.column() );
+	}
+
+	virtual size_t rowCount( const ModelIndex& index = ModelIndex() ) const {
+		auto& node = this->node( index );
+		return node.children.size();
+	}
+
+	virtual size_t columnCount( const ModelIndex& = ModelIndex() ) const { return getCols(); }
+
+	NodeT mRoot;
+	const NodeT& node( const ModelIndex& index ) const {
+		if ( !index.isValid() )
+			return mRoot;
+		return *(NodeT*)index.data();
+	}
+
+	ModelIndex index( int row, int column, const ModelIndex& parent ) const {
+		if ( row < 0 || column < 0 )
+			return {};
+		auto& node = this->node( parent );
+		if ( static_cast<size_t>( row ) >= node.children.size() )
+			return {};
+		return createIndex( row, column, node.children[row] );
+	}
+
+	virtual std::string columnName( const size_t& column ) const {
+		return String::format( "Column %ld", column );
+	}
+
+	virtual Variant data( const ModelIndex& index, Role role = Role::Display ) const {
+		switch ( role ) {
+			case Role::Display: {
+				return Variant( String::format( "Test %lld-%lld", index.row(), index.column() ) );
+			}
+			case Role::Icon: {
+				if ( index.column() == 0 && rowCount( index ) == 0 ) {
+					return Variant( SceneManager::instance()
+										->getUISceneNode()
+										->getUIIconThemeManager()
+										->getCurrentTheme()
+										->getIcon( "file" ) );
+				}
+			}
+			default: {
+			}
+		}
+		return Variant();
+	};
+
+	virtual void update() {}
+};
 
 // This file is used to test some UI related stuffs.
 // It's not a benchmark or a real test suite.
@@ -11,6 +111,21 @@ void mainLoop() {
 
 	if ( win->getInput()->isKeyUp( KEY_ESCAPE ) ) {
 		win->close();
+	}
+
+	UISceneNode* uiSceneNode = SceneManager::instance()->getUISceneNode();
+
+	if ( win->getInput()->isKeyUp( KEY_F6 ) ) {
+		uiSceneNode->setHighlightFocus( !uiSceneNode->getHighlightFocus() );
+		uiSceneNode->setHighlightOver( !uiSceneNode->getHighlightOver() );
+	}
+
+	if ( win->getInput()->isKeyUp( KEY_F7 ) ) {
+		uiSceneNode->setDrawBoxes( !uiSceneNode->getDrawBoxes() );
+	}
+
+	if ( win->getInput()->isKeyUp( KEY_F8 ) ) {
+		uiSceneNode->setDrawDebugData( !uiSceneNode->getDrawDebugData() );
 	}
 
 	// Update the UI scene.
@@ -39,9 +154,23 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 			Engine::instance()->getDisplayManager()->getDisplayIndex( 0 )->getPixelDensity() );
 		FontTrueType* font =
 			FontTrueType::New( "NotoSans-Regular", "assets/fonts/NotoSans-Regular.ttf" );
+		FontTrueType* iconFont = FontTrueType::New( "icon", "assets/fonts/remixicon.ttf" );
+		UIIconTheme* iconTheme = UIIconTheme::New( "remixicon" );
+		auto addIcon = [iconTheme, iconFont]( const std::string& name, const Uint32& codePoint,
+											  const Uint32& size ) -> Drawable* {
+			Drawable* ic = iconFont->getGlyphDrawable( codePoint, size );
+			iconTheme->add( name, ic );
+			return ic;
+		};
+		Drawable* closed = addIcon( "folder", 0xed6a, 16 );
+		Drawable* open = addIcon( "folder-open", 0xed70, 16 );
+		addIcon( "tree-expanded", 0xea50, 24 );
+		addIcon( "tree-contracted", 0xea54, 24 );
+		addIcon( "file", 0xecc3, 24 );
 		UISceneNode* uiSceneNode = UISceneNode::New();
 		SceneManager::instance()->add( uiSceneNode );
 		uiSceneNode->getUIThemeManager()->setDefaultFont( font );
+		uiSceneNode->getUIIconThemeManager()->setCurrentTheme( iconTheme );
 		/*StyleSheetParser styleSheetParser;
 		styleSheetParser.loadFromFile( "assets/ui/breeze.css" );
 		uiSceneNode->setStyleSheet( styleSheetParser.getStyleSheet() );*/
@@ -50,9 +179,10 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 			pd = "1.5x";
 		else if ( PixelDensity::getPixelDensity() >= 2.f )
 			pd = "2x";
-		UITheme* theme =
+		/*UITheme* theme =
 			UITheme::load( "uitheme" + pd, "uitheme" + pd, "assets/ui/uitheme" + pd + ".eta", font,
-						   "assets/ui/uitheme.css" );
+						   "assets/ui/uitheme.css" );*/
+		UITheme* theme = UITheme::load( "breeze", "breeze", "", font, "assets/ui/breeze.css" );
 		uiSceneNode->setStyleSheet( theme->getStyleSheet() );
 		uiSceneNode->getUIThemeManager()
 			->setDefaultEffectsEnabled( true )
@@ -62,6 +192,17 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 
 		auto* vlay = UILinearLayout::NewVertical();
 		vlay->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
+
+		Clock clock;
+		auto model = std::make_shared<TestModel>();
+		UITreeView* view = UITreeView::New();
+		view->setId( "treeview" );
+		view->setExpandedIcon( open );
+		view->setContractedIcon( closed );
+		view->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
+		view->setParent( vlay );
+		view->setModel( model );
+		eePRINTL( "Total time: %.2fms", clock.getElapsedTime().asMilliseconds() );
 
 		/* ListBox test */ /*
 		std::vector<String> strings;
@@ -101,7 +242,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		uiSceneNode->getRoot()->childsCloseAll();
 		SceneManager::instance()->update();*/
 
-		total.restart();
+		/*total.restart();
 		for ( size_t i = 0; i < 100000; i++ ) {
 			auto* widget = UIWidget::New();
 			widget->setParent( vlay );
@@ -115,7 +256,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 			widget->setBackgroundColor( Color::fromHsv( col ) );
 		}
 		std::cout << "Time UIWidget total: " << total.getElapsedTime().asMilliseconds() << " ms"
-				  << std::endl;
+				  << std::endl;*/
 
 		/*UIWindow* wind = UIWindow::New();
 		wind->setSize( 500, 500 );

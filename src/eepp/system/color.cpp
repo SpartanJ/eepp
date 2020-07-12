@@ -231,7 +231,7 @@ std::string Color::toHexString( const bool& prependHashtag ) const {
 	stream << std::setfill( '0' ) << std::setw( sizeof( Color ) * 2 ) << std::hex << getValue();
 	std::string str = stream.str();
 	if ( this->a == 255 )
-		return str.substr( 0, 6 );
+		return str.substr( 0, prependHashtag ? 7 : 6 );
 	return str;
 }
 

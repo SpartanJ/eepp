@@ -60,7 +60,7 @@ void UIMenuSubMenu::onAlphaChange() {
 	mArrow->setAlpha( mAlpha );
 }
 
-UIWidget* UIMenuSubMenu::getExtraInnerWidget() {
+UIWidget* UIMenuSubMenu::getExtraInnerWidget() const {
 	return mArrow;
 }
 

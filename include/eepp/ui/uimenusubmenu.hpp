@@ -51,7 +51,7 @@ class EE_API UIMenuSubMenu : public UIMenuItem {
 
 	virtual void onAlphaChange();
 
-	virtual UIWidget* getExtraInnerWidget();
+	virtual UIWidget* getExtraInnerWidget() const;
 
 	void onSubMenuFocusLoss( const Event* Event );
 

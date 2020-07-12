@@ -433,7 +433,7 @@ function build_link_configuration( package_name, use_ee_icon )
 		end
 
 		fix_shared_lib_linking_path( package_name, "libeepp-debug" )
-		
+
 		if not os.is_real("emscripten") then
 			targetname ( package_name .. "-debug" .. extension )
 		else
@@ -748,7 +748,7 @@ function build_eepp( build_name )
 			"src/eepp/scene/*.cpp",
 			"src/eepp/scene/actions/*.cpp",
 			"src/eepp/ui/*.cpp",
-			"src/eepp/ui/actions/*.cpp",
+			"src/eepp/ui/abstract/*.cpp",
 			"src/eepp/ui/css/*.cpp",
 			"src/eepp/ui/doc/*.cpp",
 			"src/eepp/ui/tools/*.cpp",

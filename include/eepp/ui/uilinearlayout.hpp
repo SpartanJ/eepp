@@ -7,6 +7,8 @@ namespace EE { namespace UI {
 
 class EE_API UILinearLayout : public UILayout {
   public:
+	static UILinearLayout* NewWithTag( const std::string& tag, const UIOrientation& orientation );
+
 	static UILinearLayout* New();
 
 	static UILinearLayout* NewVertical();

@@ -736,6 +736,48 @@ Splitter::separator:hover {
 	background-color: var(--primary);
 }
 
+table::header {
+	background-color: var(--back);
+}
+
+table::header::column {
+	background-color: var(--back);
+	border-right-color: var(--tab-line);
+	border-right-width: 1dp;
+	border-bottom-color: var(--tab-line);
+	border-bottom-width: 1dp;
+	border-type: inside;
+	color: var(--font);
+	padding: 2dp 6dp 2dp 6dp;
+	transition: all 0.125s;
+	text-align: left;
+}
+
+table::header::column:hover {
+	background-color: var(--tab-hover);
+}
+
+table::row {
+	background-color: var(--list-back);
+	transition: all 0.125s;
+}
+
+table::row:hover {
+	background-color: var(--back);
+}
+
+table::row:selected {
+	background-color: var(--primary);
+}
+
+TreeView {
+	background-color: var(--list-back);
+}
+
+TreeView > ScrollBar {
+	background-color: var(--back);
+}
+
 .appbackground {
 	background-color: var(--back);
 }

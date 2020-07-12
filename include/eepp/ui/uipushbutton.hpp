@@ -11,6 +11,8 @@ class EE_API UIPushButton : public UIWidget {
   public:
 	static UIPushButton* New();
 
+	static UIPushButton* NewWithTag( const std::string& tag );
+
 	UIPushButton();
 
 	virtual ~UIPushButton();
@@ -40,6 +42,10 @@ class EE_API UIPushButton : public UIWidget {
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
 										   const Uint32& propertyIndex = 0 );
 
+	void setTextAlign( const Uint32& align );
+
+	virtual Sizef getContentSize() const;
+
   protected:
 	UIImage* mIcon;
 	UITextView* mTextBox;
@@ -65,7 +71,7 @@ class EE_API UIPushButton : public UIWidget {
 
 	virtual Uint32 onKeyUp( const KeyEvent& Event );
 
-	virtual UIWidget* getExtraInnerWidget();
+	virtual UIWidget* getExtraInnerWidget() const;
 };
 
 }} // namespace EE::UI

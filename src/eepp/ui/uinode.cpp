@@ -726,7 +726,7 @@ void UINode::drawBorder() {
 	}
 }
 
-void UINode::internalDraw() {
+void UINode::nodeDraw() {
 	if ( mVisible ) {
 		if ( mNodeFlags & NODE_FLAG_POSITION_DIRTY )
 			updateScreenPos();
@@ -736,20 +736,20 @@ void UINode::internalDraw() {
 
 		matrixSet();
 
-		clipStart();
-
 		if ( mWorldBounds.intersect( mSceneNode->getWorldBounds() ) ) {
+			clipStart();
+
 			draw();
 
 			drawChilds();
 
 			if ( 0.f != mAlpha )
 				drawForeground();
+
+			clipEnd();
 		} else if ( !isClipped() ) {
 			drawChilds();
 		}
-
-		clipEnd();
 
 		drawBorder();
 
