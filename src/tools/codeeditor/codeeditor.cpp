@@ -241,7 +241,7 @@ void App::loadConfig() {
 	mConfigPath = Sys::getConfigPath( "ecode" );
 	if ( !FileSystem::fileExists( mConfigPath ) )
 		FileSystem::makeDir( mConfigPath );
-	FileSystem::dirPathAddSlashAtEnd( mConfigPath );
+	FileSystem::dirAddSlashAtEnd( mConfigPath );
 	mKeybindingsPath = mConfigPath + "keybindings.cfg";
 	mIni.loadFromFile( mConfigPath + "config.cfg" );
 	mIniState.loadFromFile( mConfigPath + "state.cfg" );

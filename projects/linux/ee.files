@@ -234,6 +234,7 @@
 ../../include/eepp/system/condition.hpp
 ../../include/eepp/system/container.hpp
 ../../include/eepp/system/directorypack.hpp
+../../include/eepp/system/fileinfo.hpp
 ../../include/eepp/system/filesystem.hpp
 ../../include/eepp/system.hpp
 ../../include/eepp/system/functionstring.hpp
@@ -715,6 +716,7 @@
 ../../src/eepp/system/compression.cpp
 ../../src/eepp/system/condition.cpp
 ../../src/eepp/system/directorypack.cpp
+../../src/eepp/system/fileinfo.cpp
 ../../src/eepp/system/filesystem.cpp
 ../../src/eepp/system/functionstring.cpp
 ../../src/eepp/system/inifile.cpp
@@ -767,6 +769,7 @@
 ../../src/eepp/system/translator.cpp
 ../../src/eepp/system/virtualfilesystem.cpp
 ../../src/eepp/system/zip.cpp
+../../src/eepp/ui/abstract/filesystemmodel.hpp
 ../../src/eepp/ui/abstract/model.cpp
 ../../src/eepp/ui/abstract/modelselection.cpp
 ../../src/eepp/ui/abstract/uiabstracttableview.cpp

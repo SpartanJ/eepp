@@ -435,7 +435,7 @@ void TexturePacker::createChild() {
 
 bool TexturePacker::addTexturesPath( std::string TexturesPath ) {
 	if ( FileSystem::isDirectory( TexturesPath ) ) {
-		FileSystem::dirPathAddSlashAtEnd( TexturesPath );
+		FileSystem::dirAddSlashAtEnd( TexturesPath );
 
 		std::vector<std::string> files = FileSystem::filesGetInPath( TexturesPath );
 		std::sort( files.begin(), files.end() );

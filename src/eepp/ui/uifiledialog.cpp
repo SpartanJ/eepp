@@ -68,7 +68,7 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 		->setParent( hLayout )
 		->setEnabled( false );
 
-	FileSystem::dirPathAddSlashAtEnd( mCurPath );
+	FileSystem::dirAddSlashAtEnd( mCurPath );
 
 	mPath = UITextInput::New();
 	mPath->setText( mCurPath )
@@ -198,7 +198,7 @@ void UIFileDialog::setTheme( UITheme* Theme ) {
 }
 
 void UIFileDialog::refreshFolder() {
-	FileSystem::dirPathAddSlashAtEnd( mCurPath );
+	FileSystem::dirAddSlashAtEnd( mCurPath );
 	std::vector<String> flist = FileSystem::filesGetInPath( String( mCurPath ) );
 	std::vector<String> files;
 	std::vector<String> folders;
@@ -263,7 +263,7 @@ void UIFileDialog::updateClickStep() {
 
 void UIFileDialog::setCurPath( const std::string& path ) {
 	mCurPath = path;
-	FileSystem::dirPathAddSlashAtEnd( mCurPath );
+	FileSystem::dirAddSlashAtEnd( mCurPath );
 	mPath->setText( mCurPath );
 	refreshFolder();
 }
@@ -437,7 +437,7 @@ void UIFileDialog::setAllowFolderSelect( const bool& allowFolderSelect ) {
 std::string UIFileDialog::getFullPath() {
 	std::string tPath = mCurPath;
 
-	FileSystem::dirPathAddSlashAtEnd( tPath );
+	FileSystem::dirAddSlashAtEnd( tPath );
 
 	tPath += getCurFile();
 
@@ -447,7 +447,7 @@ std::string UIFileDialog::getFullPath() {
 std::string UIFileDialog::getTempFullPath() {
 	std::string tPath = mCurPath;
 
-	FileSystem::dirPathAddSlashAtEnd( tPath );
+	FileSystem::dirAddSlashAtEnd( tPath );
 
 	tPath += mList->getItemSelectedText().toUtf8();
 

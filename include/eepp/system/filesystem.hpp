@@ -72,7 +72,7 @@ class EE_API FileSystem {
 	static bool fileCanWrite( const std::string& filepath );
 
 	/** If the directory path not end with a slash, it will add it. */
-	static void dirPathAddSlashAtEnd( std::string& path );
+	static void dirAddSlashAtEnd( std::string& path );
 
 	/** If the directory path ends with a slash, it will remove it. */
 	static void dirRemoveSlashAtEnd( std::string& dir );

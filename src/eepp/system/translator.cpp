@@ -15,7 +15,7 @@ Translator::Translator( const std::locale& locale ) : mDefaultLanguage( "en" ) {
 }
 
 void Translator::loadFromDirectory( std::string dirPath, std::string ext ) {
-	FileSystem::dirPathAddSlashAtEnd( dirPath );
+	FileSystem::dirAddSlashAtEnd( dirPath );
 
 	if ( FileSystem::isDirectory( dirPath ) ) {
 		std::vector<std::string> files = FileSystem::filesGetInPath( dirPath, true, true );

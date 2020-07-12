@@ -108,7 +108,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	}
 
 	std::string texturesPathSafe( texturesPath.Get() );
-	FileSystem::dirPathAddSlashAtEnd( texturesPathSafe );
+	FileSystem::dirAddSlashAtEnd( texturesPathSafe );
 	if ( !FileSystem::isDirectory( texturesPathSafe ) && !hasImages ) {
 		std::cout << "textures-path is invalid.";
 		return EXIT_FAILURE;

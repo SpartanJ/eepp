@@ -221,11 +221,11 @@ void TextureAtlasNew::onSelectFolder( const Event* Event ) {
 	UIFileDialog* CDL = Event->getNode()->asType<UIFileDialog>();
 	UIMessageBox* MsgBox;
 	std::string FPath( CDL->getFullPath() );
-	FileSystem::dirPathAddSlashAtEnd( FPath );
+	FileSystem::dirAddSlashAtEnd( FPath );
 
 	if ( !FileSystem::isDirectory( FPath ) ) {
 		FPath = CDL->getCurPath();
-		FileSystem::dirPathAddSlashAtEnd( FPath );
+		FileSystem::dirAddSlashAtEnd( FPath );
 	}
 
 	if ( FileSystem::isDirectory( FPath ) ) {

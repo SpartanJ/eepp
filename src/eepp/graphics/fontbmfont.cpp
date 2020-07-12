@@ -100,7 +100,7 @@ bool FontBMFont::loadFromStream( IOStream& stream ) {
 
 		mFontSize = fontSize;
 
-		FileSystem::dirPathAddSlashAtEnd( mFilePath );
+		FileSystem::dirAddSlashAtEnd( mFilePath );
 
 		{
 			TextureFactory* TF = TextureFactory::instance();

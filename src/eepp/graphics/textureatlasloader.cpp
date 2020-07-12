@@ -397,7 +397,7 @@ bool TextureAtlasLoader::updateTextureAtlas( std::string TextureAtlasPath, std::
 	Int32 NeedUpdate = ATLAS_IS_UPDATED;
 	Float pixelDensity = 1;
 
-	FileSystem::dirPathAddSlashAtEnd( ImagesPath );
+	FileSystem::dirAddSlashAtEnd( ImagesPath );
 
 	Uint32 z;
 

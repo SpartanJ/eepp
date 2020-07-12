@@ -86,7 +86,7 @@ void loadConfig() {
 	std::string path( Sys::getConfigPath( "eepp-uieditor" ) );
 	if ( !FileSystem::fileExists( path ) )
 		FileSystem::makeDir( path );
-	FileSystem::dirPathAddSlashAtEnd( path );
+	FileSystem::dirAddSlashAtEnd( path );
 	path += "config.ini";
 	ini.loadFromFile( path );
 	std::string recent = ini.getValue( "UIEDITOR", "recentprojects", "" );
@@ -175,7 +175,7 @@ static void loadFont( std::string path ) {
 static void loadImagesFromFolder( std::string folderPath ) {
 	std::vector<std::string> files = FileSystem::filesGetInPath( folderPath );
 
-	FileSystem::dirPathAddSlashAtEnd( folderPath );
+	FileSystem::dirAddSlashAtEnd( folderPath );
 
 	for ( auto it = files.begin(); it != files.end(); ++it ) {
 		if ( Image::isImageExtension( *it ) ) {
@@ -187,7 +187,7 @@ static void loadImagesFromFolder( std::string folderPath ) {
 static void loadFontsFromFolder( std::string folderPath ) {
 	std::vector<std::string> files = FileSystem::filesGetInPath( folderPath );
 
-	FileSystem::dirPathAddSlashAtEnd( folderPath );
+	FileSystem::dirAddSlashAtEnd( folderPath );
 
 	for ( auto it = files.begin(); it != files.end(); ++it ) {
 		if ( isFont( *it ) ) {
@@ -199,7 +199,7 @@ static void loadFontsFromFolder( std::string folderPath ) {
 static void loadLayoutsFromFolder( std::string folderPath ) {
 	std::vector<std::string> files = FileSystem::filesGetInPath( folderPath );
 
-	FileSystem::dirPathAddSlashAtEnd( folderPath );
+	FileSystem::dirAddSlashAtEnd( folderPath );
 
 	for ( auto it = files.begin(); it != files.end(); ++it ) {
 		if ( isXML( *it ) ) {

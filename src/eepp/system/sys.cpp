@@ -701,7 +701,7 @@ std::string Sys::getTempPath() {
 
 	std::string rpath( path );
 
-	FileSystem::dirPathAddSlashAtEnd( rpath );
+	FileSystem::dirAddSlashAtEnd( rpath );
 
 	return rpath;
 }

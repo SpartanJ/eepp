@@ -207,7 +207,7 @@ bool FileSystem::fileCanWrite( const std::string& filepath ) {
 #endif
 }
 
-void FileSystem::dirPathAddSlashAtEnd( std::string& path ) {
+void FileSystem::dirAddSlashAtEnd( std::string& path ) {
 	if ( path.size() && path[path.size() - 1] != '/' && path[path.size() - 1] != '\\' )
 		path += getOSSlash();
 }
@@ -236,13 +236,13 @@ std::string FileSystem::removeLastFolderFromPath( std::string path ) {
 		}
 
 		if ( sstr.size() ) {
-			dirPathAddSlashAtEnd( sstr );
+			dirAddSlashAtEnd( sstr );
 
 			return sstr;
 		}
 	}
 
-	dirPathAddSlashAtEnd( path );
+	dirAddSlashAtEnd( path );
 
 	return path;
 }
@@ -648,7 +648,7 @@ std::string FileSystem::fileGetNumberedFileNameFromPath( std::string directoryPa
 	std::string fileNumName;
 
 	if ( FileSystem::isDirectory( directoryPath ) ) {
-		dirPathAddSlashAtEnd( directoryPath );
+		dirAddSlashAtEnd( directoryPath );
 
 		while ( fileNum < 10000 ) {
 			fileNumName = String::format(

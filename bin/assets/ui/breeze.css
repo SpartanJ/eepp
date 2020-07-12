@@ -775,7 +775,7 @@ TreeView {
 }
 
 TreeView > ScrollBar {
-	background-color: var(--back);
+	background-color: var(--list-back);
 }
 
 .appbackground {

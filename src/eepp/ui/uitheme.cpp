@@ -147,7 +147,7 @@ UITheme* UITheme::loadFromDirectroy( UITheme* tTheme, const std::string& Path,
 
 	std::string RPath( Path );
 
-	FileSystem::dirPathAddSlashAtEnd( RPath );
+	FileSystem::dirAddSlashAtEnd( RPath );
 
 	if ( !FileSystem::isDirectory( RPath ) )
 		return NULL;

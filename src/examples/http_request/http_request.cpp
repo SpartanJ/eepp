@@ -233,7 +233,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 
 				// If output path is a directory guess a file name
 				if ( FileSystem::isDirectory( path ) ) {
-					FileSystem::dirPathAddSlashAtEnd( path );
+					FileSystem::dirAddSlashAtEnd( path );
 
 					std::string lastPathSegment = uri.getLastPathSegment();
 
