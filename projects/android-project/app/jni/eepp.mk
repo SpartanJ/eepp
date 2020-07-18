@@ -82,7 +82,8 @@ CODE_SRCS				:=  \
 	ui/*.cpp \
 	ui/css/*.cpp \
 	ui/doc/*.cpp \
-	ui/model/*.cpp \
+	ui/abstract/*.cpp \
+	ui/models/*.cpp \
 	ui/tools/*.cpp \
 	maps/*.cpp \
 	maps/mapeditor/*.cpp

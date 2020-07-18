@@ -30,9 +30,8 @@ UITreeView::MetadataForIndex& UITreeView::getIndexMetadata( const ModelIndex& in
 	if ( it != mViewMetadata.end() )
 		return it->second;
 	auto newMetadata = MetadataForIndex();
-	auto* ref = &newMetadata;
 	mViewMetadata.insert( {index.data(), std::move( newMetadata )} );
-	return *ref;
+	return mViewMetadata[index.data()];
 }
 
 template <typename Callback> void UITreeView::traverseTree( Callback callback ) const {
@@ -183,8 +182,8 @@ UIWidget* UITreeView::createCell( UIWidget* rowWidget, const ModelIndex&, const 
 				if ( pos >= Vector2f::Zero && pos <= icon->getPixelsSize() ) {
 					auto idx =
 						mouseEvent->getNode()->getParent()->asType<UITableRow>()->getCurIndex();
-					auto& data = getIndexMetadata( idx );
 					if ( getModel()->rowCount( idx ) ) {
+						auto& data = getIndexMetadata( idx );
 						data.open = !data.open;
 						createOrUpdateColumns();
 					}

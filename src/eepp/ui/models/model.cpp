@@ -1,7 +1,7 @@
-#include <eepp/ui/abstract/model.hpp>
 #include <eepp/ui/abstract/uiabstractview.hpp>
+#include <eepp/ui/models/model.hpp>
 
-namespace EE { namespace UI { namespace Abstract {
+namespace EE { namespace UI { namespace Models {
 
 void Model::onModelUpdate( unsigned flags ) {
 	if ( mOnUpdate )
@@ -43,4 +43,4 @@ bool Model::acceptsDrag( const ModelIndex&, const std::string& ) {
 	return false;
 }
 
-}}} // namespace EE::UI::Abstract
+}}} // namespace EE::UI::Model

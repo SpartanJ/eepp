@@ -1,11 +1,11 @@
 #ifndef EE_UI_MODELEDITINGDELEGATE_HPP
 #define EE_UI_MODELEDITINGDELEGATE_HPP
 
-#include <eepp/ui/abstract/model.hpp>
+#include <eepp/ui/models/model.hpp>
 #include <eepp/ui/uiwidget.hpp>
 #include <memory>
 
-namespace EE { namespace UI { namespace Abstract {
+namespace EE { namespace UI { namespace Models {
 
 class EE_API ModelEditingDelegate {
   public:
@@ -43,6 +43,6 @@ class EE_API ModelEditingDelegate {
 	UIWidget* mWidget;
 };
 
-}}} // namespace EE::UI::Abstract
+}}} // namespace EE::UI::Model
 
 #endif // EE_UI_MODELEDITINGDELEGATE_HPP

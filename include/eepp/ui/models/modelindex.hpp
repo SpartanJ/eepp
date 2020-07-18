@@ -3,7 +3,7 @@
 
 #include <eepp/config.hpp>
 
-namespace EE { namespace UI { namespace Abstract {
+namespace EE { namespace UI { namespace Models {
 
 class Model;
 
@@ -45,6 +45,6 @@ class EE_API ModelIndex {
 		mModel( &model ), mRow( row ), mColumn( column ), mData( internalData ) {}
 };
 
-}}} // namespace EE::UI::Abstract
+}}} // namespace EE::UI::Model
 
 #endif // EE_UI_MODEL_MODELINDEX_HPP

@@ -1,5 +1,5 @@
 #include <eepp/ee.hpp>
-#include <eepp/ui/abstract/model.hpp>
+#include <eepp/ui/models/model.hpp>
 #include <eepp/ui/abstract/uiabstracttableview.hpp>
 #include <eepp/ui/uitreeview.hpp>
 

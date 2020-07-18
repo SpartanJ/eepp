@@ -2,13 +2,17 @@
 #define EE_UI_MODEL_MODELSELECTION_HPP
 
 #include <algorithm>
-#include <eepp/ui/abstract/modelindex.hpp>
+#include <eepp/ui/models/modelindex.hpp>
 #include <functional>
 #include <unordered_set>
 
 namespace EE { namespace UI { namespace Abstract {
-
 class UIAbstractView;
+}}} // namespace EE::UI::Abstract
+
+using namespace EE::UI::Abstract;
+
+namespace EE { namespace UI { namespace Models {
 
 class EE_API ModelSelection {
   public:
@@ -63,6 +67,6 @@ class EE_API ModelSelection {
 	std::vector<ModelIndex> mIndexes;
 };
 
-}}} // namespace EE::UI::Abstract
+}}} // namespace EE::UI::Model
 
 #endif // EE_UI_MODEL_MODELSELECTION_HPP

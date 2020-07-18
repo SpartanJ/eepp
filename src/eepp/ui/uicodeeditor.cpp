@@ -1839,26 +1839,23 @@ void UICodeEditor::drawWhitespaces( const std::pair<int, int>& lineRange,
 	cpoint->setColor( color );
 	for ( int index = lineRange.first; index <= lineRange.second; index++ ) {
 		Vector2f position( {startScroll.x, startScroll.y + lineHeight * index} );
-		auto& tokens = mHighlighter.getLine( index );
-		for ( auto& token : tokens ) {
-			Float textWidth = getTextWidth( token.text );
-			if ( position.x + textWidth >= mScreenPos.x &&
+		const auto& text = mDoc->line( index ).getText();
+		for ( size_t i = 0; i < text.size(); i++ ) {
+			if ( position.x + glyphW >= mScreenPos.x &&
 				 position.x <= mScreenPos.x + mSize.getWidth() ) {
-				for ( size_t i = 0; i < token.text.size(); i++ ) {
-					if ( ' ' == token.text[i] ) {
-						cpoint->draw( Vector2f( position.x, position.y ) );
-						position.x += glyphW;
-					} else if ( '\t' == token.text[i] ) {
-						adv->draw( Vector2f( position.x + tabCenter, position.y ) );
-						position.x += tabWidth;
-					} else {
-						position.x += glyphW;
-					}
+				if ( ' ' == text[i] ) {
+					cpoint->draw( Vector2f( position.x, position.y ) );
+					position.x += glyphW;
+				} else if ( '\t' == text[i] ) {
+					adv->draw( Vector2f( position.x + tabCenter, position.y ) );
+					position.x += tabWidth;
+				} else {
+					position.x += glyphW;
 				}
 			} else if ( position.x > mScreenPos.x + mSize.getWidth() ) {
 				break;
 			} else {
-				position.x += textWidth;
+				position.x += glyphW;
 			}
 		}
 	}

@@ -1,15 +1,17 @@
 #ifndef EE_UI_UIABSTRACTVIEW_HPP
 #define EE_UI_UIABSTRACTVIEW_HPP
 
-#include <eepp/ui/abstract/model.hpp>
-#include <eepp/ui/abstract/modeleditingdelegate.hpp>
-#include <eepp/ui/abstract/modelselection.hpp>
+#include <eepp/ui/models/model.hpp>
+#include <eepp/ui/models/modeleditingdelegate.hpp>
+#include <eepp/ui/models/modelselection.hpp>
 #include <eepp/ui/uiscrollablewidget.hpp>
 #include <memory>
 
+using namespace EE::UI::Models;
+
 namespace EE { namespace UI { namespace Abstract {
 
-class ModelEvent : public Event {
+class EE_API ModelEvent : public Event {
   public:
 	ModelEvent( Model* model, const ModelIndex& index, Node* node ) :
 		Event( node, Event::OnModelEvent ), model( model ), index( index ) {}
@@ -52,7 +54,7 @@ class EE_API UIAbstractView : public UIScrollableWidget {
 	void setOnSelection( const std::function<void( const ModelIndex& )>& onSelection );
 
   protected:
-	friend class Model;
+	friend class EE::UI::Models::Model;
 
 	virtual void onModelUpdate( unsigned flags );
 

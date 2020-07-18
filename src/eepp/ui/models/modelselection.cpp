@@ -1,8 +1,8 @@
 #include <eepp/core.hpp>
-#include <eepp/ui/abstract/modelselection.hpp>
+#include <eepp/ui/models/modelselection.hpp>
 #include <eepp/ui/abstract/uiabstractview.hpp>
 
-namespace EE { namespace UI { namespace Abstract {
+namespace EE { namespace UI { namespace Models {
 
 void ModelSelection::removeMatching( std::function<bool( const ModelIndex& )> filter ) {
 	std::vector<std::vector<ModelIndex>::iterator> toRemove;
@@ -59,4 +59,4 @@ void ModelSelection::clear() {
 	mView->notifySelectionChange();
 }
 
-}}} // namespace EE::UI::Abstract
+}}} // namespace EE::UI::Model
