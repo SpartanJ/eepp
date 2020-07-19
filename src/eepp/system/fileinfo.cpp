@@ -27,12 +27,17 @@
 #ifndef S_ISRDBL
 #define S_ISRDBL( f ) ( (f)&_S_IREAD )
 #endif
+
 #else
 #include <unistd.h>
 
 #ifndef S_ISRDBL
 #define S_ISRDBL( f ) ( (f)&S_IRUSR )
 #endif
+#endif
+
+#ifndef S_IEXEC
+#define S_IEXEC 0100
 #endif
 
 namespace EE { namespace System {
@@ -84,7 +89,8 @@ FileInfo::FileInfo( const std::string& filepath, bool linkInfo ) :
 
 void FileInfo::getInfo() {
 #if EE_PLATFORM == EE_PLATFORM_WIN
-	if ( mFilepath.size() == 3 && mFilepath[1] == ':' && mFilepath[2] == FileSystem::getOSSlash() ) {
+	if ( mFilepath.size() == 3 && mFilepath[1] == ':' &&
+		 mFilepath[2] == FileSystem::getOSSlash() ) {
 		mFilepath += FileSystem::getOSSlash();
 	}
 #endif
@@ -195,7 +201,7 @@ bool FileInfo::isLink() const {
 #endif
 }
 
-std::string FileInfo::linksTo() {
+std::string FileInfo::linksTo() const {
 #if EE_PLATFORM != EE_PLATFORM_WIN
 	if ( isLink() ) {
 		char* ch = realpath( mFilepath.c_str(), NULL );
@@ -212,7 +218,7 @@ std::string FileInfo::linksTo() {
 	return std::string( "" );
 }
 
-bool FileInfo::exists() {
+bool FileInfo::exists() const {
 	FileSystem::dirRemoveSlashAtEnd( mFilepath );
 
 #if EE_PLATFORM != EE_PLATFORM_WIN
@@ -237,6 +243,15 @@ FileInfo& FileInfo::operator=( const FileInfo& Other ) {
 	this->mPermissions = Other.mPermissions;
 	this->mInode = Other.mInode;
 	return *this;
+}
+
+bool FileInfo::isExecutable() const {
+#if EE_PLATFORM != EE_PLATFORM_WIN
+	return mPermissions & S_IEXEC;
+#else
+	std::string ext = FileSystem::fileExtension( mFilepath );
+	return ext == "exe" || ext == "bat";
+#endif
 }
 
 bool FileInfo::sameInode( const FileInfo& Other ) const {

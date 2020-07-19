@@ -28,6 +28,8 @@ class EE_API FileInfo {
 
 	FileInfo& operator=( const FileInfo& Other );
 
+	bool isExecutable() const;
+
 	bool isDirectory() const;
 
 	bool isRegularFile() const;
@@ -38,9 +40,9 @@ class EE_API FileInfo {
 
 	bool isLink() const;
 
-	std::string linksTo();
+	std::string linksTo() const;
 
-	bool exists();
+	bool exists() const;
 
 	void getInfo();
 
@@ -61,7 +63,7 @@ class EE_API FileInfo {
 	const Uint64& getInode() const;
 
   protected:
-	std::string mFilepath;
+	mutable std::string mFilepath;
 	Uint64 mModificationTime{0};
 	Uint64 mSize{0};
 	Uint32 mOwnerId{0};

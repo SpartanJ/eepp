@@ -238,7 +238,7 @@ UIWidget* UITreeView::updateCell( const int& rowIndex, const ModelIndex& index, 
 		if ( col == getModel()->treeColumn() )
 			pushButton->setIcon( getIndexMetadata( index ).open ? mExpandIcon : mContractIcon );
 		Variant icon( getModel()->data( idx, Model::Role::Icon ) );
-		if ( icon.is( Variant::Type::Drawable ) )
+		if ( icon.is( Variant::Type::Drawable ) && icon.asDrawable() )
 			pushButton->setIcon( icon.asDrawable() );
 	}
 

@@ -129,7 +129,14 @@ std::string FileSystem::fileRemoveExtension( const std::string& filepath ) {
 }
 
 std::string FileSystem::fileNameFromPath( const std::string& filepath ) {
-	return filepath.substr( filepath.find_last_of( "/\\" ) + 1 );
+	if ( !filepath.empty() ) {
+		if ( filepath[filepath.size() - 1] == '/' || filepath[filepath.size() - 1] == '\\' ) {
+			auto fp = filepath.substr( 0, filepath.size() - 1 );
+			return fp.substr( fp.find_last_of( "/\\" ) + 1 );
+		}
+		return filepath.substr( filepath.find_last_of( "/\\" ) + 1 );
+	}
+	return "";
 }
 
 std::string FileSystem::fileRemoveFileName( const std::string& filepath ) {
@@ -423,6 +430,16 @@ std::vector<String> FileSystem::filesGetInPath( const String& path, const bool& 
 	return files;
 }
 
+std::vector<FileInfo> FileSystem::filesInfoGetInPath( std::string path, const bool& sortByName,
+													  const bool& foldersFirst ) {
+	dirAddSlashAtEnd( path );
+	std::vector<FileInfo> fileInfo;
+	auto files = filesGetInPath( path, sortByName, foldersFirst );
+	for ( auto file : files )
+		fileInfo.emplace_back( FileInfo( path + file ) );
+	return fileInfo;
+}
+
 std::vector<std::string> FileSystem::filesGetInPath( const std::string& path,
 													 const bool& sortByName,
 													 const bool& foldersFirst ) {
@@ -561,7 +578,7 @@ std::string FileSystem::sizeToString( const Int64& Size ) {
 
 	switch ( c ) {
 		case 0:
-			size = "bytes";
+			size = "B";
 			break;
 		case 1:
 			size = "KiB";
@@ -579,6 +596,8 @@ std::string FileSystem::sizeToString( const Int64& Size ) {
 			size = "WTF";
 	}
 
+	if ( mem == (Int64)mem )
+		return String::format( "%lld %s", (Int64)mem, size.c_str() );
 	return String::format( "%4.2f %s", mem, size.c_str() );
 }
 

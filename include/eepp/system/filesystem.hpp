@@ -2,6 +2,7 @@
 #define EE_SYSTEM_FILESYSTEM_HPP
 
 #include <eepp/core.hpp>
+#include <eepp/system/fileinfo.hpp>
 #include <eepp/system/scopedbuffer.hpp>
 #include <string>
 #include <vector>
@@ -88,6 +89,11 @@ class EE_API FileSystem {
 	/** @return The files and sub directories contained by a directory */
 	static std::vector<String> filesGetInPath( const String& path, const bool& sortByName = false,
 											   const bool& foldersFirst = false );
+
+	/** @return The file info of the files and sub directories contained in the directory path. */
+	static std::vector<FileInfo> filesInfoGetInPath( std::string path,
+													 const bool& sortByName = false,
+													 const bool& foldersFirst = false );
 
 	/** @return The size of a file */
 	static Uint64 fileSize( const std::string& Filepath );

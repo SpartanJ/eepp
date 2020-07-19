@@ -20,7 +20,9 @@ class EE_API Variant {
 		Bool,
 		Float,
 		Int,
+		Uint,
 		Int64,
+		Uint64,
 		Drawable,
 		Vector2f,
 		Rectf,
@@ -42,7 +44,9 @@ class EE_API Variant {
 	Variant( bool val ) : mType( Type::Bool ) { mValue.asBool = val; }
 	Variant( const Float& val ) : mType( Type::Float ) { mValue.asFloat = val; }
 	Variant( const int& val ) : mType( Type::Int ) { mValue.asInt = val; }
+	Variant( const unsigned int& val ) : mType( Type::Int ) { mValue.asUint = val; }
 	Variant( const Int64& val ) : mType( Type::Int64 ) { mValue.asInt64 = val; }
+	Variant( const Uint64& val ) : mType( Type::Uint64 ) { mValue.asUint64 = val; }
 	explicit Variant( const char* data ) : mType( Type::cstr ) { mValue.asCStr = data; }
 	~Variant() { reset(); }
 	const std::string& asString() const { return *mValue.asString; }
@@ -51,6 +55,7 @@ class EE_API Variant {
 	const Float& asFloat() const { return mValue.asFloat; }
 	const int& asInt() const { return mValue.asInt; }
 	const Int64& asInt64() const { return mValue.asInt64; }
+	const Uint64& asUint64() const { return mValue.asUint64; }
 	const Vector2f& asVector2f() const { return *mValue.asVector2f; }
 	const Rectf& asRectf() const { return *mValue.asRectf; }
 	const char* asCStr() const { return mValue.asCStr; }
@@ -85,7 +90,9 @@ class EE_API Variant {
 		bool asBool;
 		Float asFloat;
 		int asInt;
+		unsigned int asUint;
 		Int64 asInt64;
+		Uint64 asUint64;
 		Vector2f* asVector2f;
 		Rectf* asRectf;
 		const char* asCStr;
@@ -94,6 +101,6 @@ class EE_API Variant {
 	bool mOwnsObject{false};
 };
 
-}}}
+}}} // namespace EE::UI::Models
 
 #endif // EE_UI_MODEL_VARIANT_HPP

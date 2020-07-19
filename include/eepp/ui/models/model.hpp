@@ -30,6 +30,8 @@ class EE_API Model {
 	enum class Role {
 		Display,
 		Icon,
+		Sort,
+		Custom
 	};
 
 	virtual ~Model(){};

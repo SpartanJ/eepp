@@ -1,6 +1,7 @@
 #include <eepp/ee.hpp>
-#include <eepp/ui/models/model.hpp>
 #include <eepp/ui/abstract/uiabstracttableview.hpp>
+#include <eepp/ui/models/filesystemmodel.hpp>
+#include <eepp/ui/models/model.hpp>
 #include <eepp/ui/uitreeview.hpp>
 
 using namespace EE::UI::Abstract;
@@ -194,7 +195,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		vlay->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
 
 		Clock clock;
-		auto model = std::make_shared<TestModel>();
+		auto model = FileSystemModel::New( "." ); // std::make_shared<TestModel>();
 		UITreeView* view = UITreeView::New();
 		view->setId( "treeview" );
 		view->setExpandedIcon( open );
