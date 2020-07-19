@@ -116,11 +116,13 @@ void FileInfo::getInfo() {
 		mInode = st.st_ino;
 	}
 
-	FileSystem::dirAddSlashAtEnd( mFilepath );
+	if ( isDirectory() )
+		FileSystem::dirAddSlashAtEnd( mFilepath );
 }
 
 void FileInfo::getRealInfo() {
-	FileSystem::dirRemoveSlashAtEnd( mFilepath );
+	if ( isDirectory() )
+		FileSystem::dirRemoveSlashAtEnd( mFilepath );
 
 #if EE_PLATFORM != EE_PLATFORM_WIN
 	struct stat st;
@@ -139,7 +141,8 @@ void FileInfo::getRealInfo() {
 		mInode = st.st_ino;
 	}
 
-	FileSystem::dirAddSlashAtEnd( mFilepath );
+	if ( isDirectory() )
+		FileSystem::dirAddSlashAtEnd( mFilepath );
 }
 
 const std::string& FileInfo::getFilepath() const {
@@ -219,7 +222,8 @@ std::string FileInfo::linksTo() const {
 }
 
 bool FileInfo::exists() const {
-	FileSystem::dirRemoveSlashAtEnd( mFilepath );
+	if ( isDirectory() )
+		FileSystem::dirRemoveSlashAtEnd( mFilepath );
 
 #if EE_PLATFORM != EE_PLATFORM_WIN
 	struct stat st;
@@ -229,7 +233,8 @@ bool FileInfo::exists() const {
 	int res = _wstat( String::fromUtf8( mFilepath ).toWideString().c_str(), &st );
 #endif
 
-	FileSystem::dirAddSlashAtEnd( mFilepath );
+	if ( isDirectory() )
+		FileSystem::dirAddSlashAtEnd( mFilepath );
 
 	return 0 == res;
 }

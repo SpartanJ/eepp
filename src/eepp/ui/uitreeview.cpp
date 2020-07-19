@@ -35,7 +35,8 @@ UITreeView::MetadataForIndex& UITreeView::getIndexMetadata( const ModelIndex& in
 }
 
 template <typename Callback> void UITreeView::traverseTree( Callback callback ) const {
-	eeASSERT( getModel() );
+	if ( !getModel() )
+		return;
 	auto& model = *getModel();
 	int indentLevel = 1;
 	Float yOffset = getHeaderHeight();
@@ -267,8 +268,10 @@ void UITreeView::drawChilds() {
 			return IterationDecision::Stop;
 		if ( yOffset - mScrollOffset.y + getRowHeight() < 0 )
 			return IterationDecision::Continue;
-		for ( size_t colIndex = 0; colIndex < getModel()->columnCount(); colIndex++ )
-			updateCell( rowIndex, index, colIndex, indentLevel, yOffset );
+		for ( size_t colIndex = 0; colIndex < getModel()->columnCount(); colIndex++ ) {
+			if ( columnData( colIndex ).visible )
+				updateCell( rowIndex, index, colIndex, indentLevel, yOffset );
+		}
 		updateRow( rowIndex, index, yOffset )->nodeDraw();
 		return IterationDecision::Continue;
 	} );

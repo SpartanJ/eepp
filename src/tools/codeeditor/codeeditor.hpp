@@ -98,8 +98,6 @@ class App : public UICodeEditorSplitter::Client {
 
 	void init( const std::string& file, const Float& pidelDensity );
 
-	bool loadFileFromPath( const std::string& path, UICodeEditor* codeEditor = nullptr );
-
 	void setAppTitle( const std::string& title );
 
 	void openFileDialog();

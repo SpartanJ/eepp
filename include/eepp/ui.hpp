@@ -48,6 +48,7 @@
 #include <eepp/ui/uitheme.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uitouchdraggablewidget.hpp>
+#include <eepp/ui/uitreeview.hpp>
 #include <eepp/ui/uiviewpager.hpp>
 #include <eepp/ui/uiwidget.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
@@ -70,5 +71,9 @@
 #include <eepp/ui/tools/textureatlaseditor.hpp>
 #include <eepp/ui/tools/uicodeeditorsplitter.hpp>
 #include <eepp/ui/tools/uicolorpicker.hpp>
+
+#include <eepp/ui/models/filesystemmodel.hpp>
+#include <eepp/ui/models/model.hpp>
+#include <eepp/ui/models/modelselection.hpp>
 
 #endif

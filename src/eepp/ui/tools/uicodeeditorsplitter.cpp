@@ -370,6 +370,20 @@ UITabWidget* UICodeEditorSplitter::createEditorWithTabWidget( Node* parent ) {
 	return tabWidget;
 }
 
+UITab* UICodeEditorSplitter::isDocumentOpen( const std::string& path ) const {
+	for ( auto tabWidget : mTabWidgets ) {
+		for ( size_t i = 0; i < tabWidget->getTabCount(); i++ ) {
+			UITab* tab = tabWidget->getTab( i );
+			UICodeEditor* editor = tab->getOwnedWidget()->asType<UICodeEditor>();
+
+			if ( editor->getDocument().getFilePath() == path ) {
+				return tab;
+			}
+		}
+	}
+	return nullptr;
+}
+
 void UICodeEditorSplitter::applyColorScheme( const SyntaxColorScheme& colorScheme ) {
 	forEachEditor(
 		[colorScheme]( UICodeEditor* editor ) { editor->setColorScheme( colorScheme ); } );

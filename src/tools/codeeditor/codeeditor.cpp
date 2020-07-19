@@ -1435,51 +1435,49 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		}
 		</style>
 		<RelativeLayout layout_width="match_parent" layout_height="match_parent">
-		<vbox layout_width="match_parent" layout_height="match_parent">
-			<RelativeLayout layout_width="match_parent" layout_height="0" layout_weight="1">
-				<vbox id="code_container" layout_width="match_parent" layout_height="match_parent"></vbox>
-				<hbox id="doc_info" layout_width="wrap_content" layout_height="wrap_content" layout_gravity="bottom|right">
-					<TextView id="doc_info_text" layout_width="wrap_content" layout_height="wrap_content" />
-				</hbox>
-			</RelativeLayout>
-			<searchbar id="search_bar" layout_width="match_parent" layout_height="wrap_content">
-				<vbox layout_width="wrap_content" layout_height="wrap_content" margin-right="4dp">
-					<TextView layout_width="wrap_content" layout_height="18dp" text="Find:" margin-bottom="2dp" />
-					<TextView layout_width="wrap_content" layout_height="18dp" text="Replace with:" />
-				</vbox>
-				<vbox layout_width="0" layout_weight="1" layout_height="wrap_content" margin-right="4dp">
-					<TextInput id="search_find" layout_width="match_parent" layout_height="18dp" padding="0" margin-bottom="2dp" />
-					<TextInput id="search_replace" layout_width="match_parent" layout_height="18dp" padding="0" />
-				</vbox>
-				<vbox layout_width="wrap_content" layout_height="wrap_content">
-					<hbox layout_width="wrap_content" layout_height="wrap_content" margin-bottom="2dp">
-						<PushButton id="find_prev" layout_width="wrap_content" layout_height="18dp" text="Previous" margin-right="4dp" />
-						<PushButton id="find_next" layout_width="wrap_content" layout_height="18dp" text="Next" margin-right="4dp" />
-						<CheckBox id="case_sensitive" layout_width="wrap_content" layout_height="wrap_content" text="Case sensitive" selected="true" />
-						<RelativeLayout layout_width="0" layout_weight="1" layout_height="18dp">
-							<Widget id="searchbar_close" class="close_button" layout_width="wrap_content" layout_height="wrap_content" layout_gravity="center_vertical|right" />
-						</RelativeLayout>
+		<Splitter id="project_splitter" layout_width="match_parent" layout_height="match_parent">
+			<TabWidget id="panel" tabbar-hide-on-single-tab="true" tabbar-allow-rearrange="true">
+				<TreeView id="project_view" />
+				<Tab text="Project" owns="project_view" />
+			</TabWidget>
+			<vbox>
+				<RelativeLayout layout_width="match_parent" layout_height="0" layout_weight="1">
+					<vbox id="code_container" layout_width="match_parent" layout_height="match_parent"></vbox>
+					<hbox id="doc_info" layout_width="wrap_content" layout_height="wrap_content" layout_gravity="bottom|right">
+						<TextView id="doc_info_text" layout_width="wrap_content" layout_height="wrap_content" />
 					</hbox>
-					<hbox layout_width="wrap_content" layout_height="wrap_content">
-						<PushButton id="replace" layout_width="wrap_content" layout_height="18dp" text="Replace" margin-right="4dp" />
-						<PushButton id="replace_find" layout_width="wrap_content" layout_height="18dp" text="Replace & Find" margin-right="4dp" />
-						<PushButton id="replace_all" layout_width="wrap_content" layout_height="18dp" text="Replace All" />
-					</hbox>
-				</vbox>
-			</searchbar>
-		</vbox>
+				</RelativeLayout>
+				<searchbar id="search_bar" layout_width="match_parent" layout_height="wrap_content">
+					<vbox layout_width="wrap_content" layout_height="wrap_content" margin-right="4dp">
+						<TextView layout_width="wrap_content" layout_height="18dp" text="Find:" margin-bottom="2dp" />
+						<TextView layout_width="wrap_content" layout_height="18dp" text="Replace with:" />
+					</vbox>
+					<vbox layout_width="0" layout_weight="1" layout_height="wrap_content" margin-right="4dp">
+						<TextInput id="search_find" layout_width="match_parent" layout_height="18dp" padding="0" margin-bottom="2dp" />
+						<TextInput id="search_replace" layout_width="match_parent" layout_height="18dp" padding="0" />
+					</vbox>
+					<vbox layout_width="wrap_content" layout_height="wrap_content">
+						<hbox layout_width="wrap_content" layout_height="wrap_content" margin-bottom="2dp">
+							<PushButton id="find_prev" layout_width="wrap_content" layout_height="18dp" text="Previous" margin-right="4dp" />
+							<PushButton id="find_next" layout_width="wrap_content" layout_height="18dp" text="Next" margin-right="4dp" />
+							<CheckBox id="case_sensitive" layout_width="wrap_content" layout_height="wrap_content" text="Case sensitive" selected="true" />
+							<RelativeLayout layout_width="0" layout_weight="1" layout_height="18dp">
+								<Widget id="searchbar_close" class="close_button" layout_width="wrap_content" layout_height="wrap_content" layout_gravity="center_vertical|right" />
+							</RelativeLayout>
+						</hbox>
+						<hbox layout_width="wrap_content" layout_height="wrap_content">
+							<PushButton id="replace" layout_width="wrap_content" layout_height="18dp" text="Replace" margin-right="4dp" />
+							<PushButton id="replace_find" layout_width="wrap_content" layout_height="18dp" text="Replace & Find" margin-right="4dp" />
+							<PushButton id="replace_all" layout_width="wrap_content" layout_height="18dp" text="Replace All" />
+						</hbox>
+					</vbox>
+				</searchbar>
+			</vbox>
+		</Splitter>
 		<TextView id="settings" layout_width="wrap_content" layout_height="wrap_content" text="&#xf0e9;" layout_gravity="top|right" />
 		</RelativeLayout>
 		)xml";
 
-		UIWidgetCreator::registerWidget( "searchbar", [] { return UISearchBar::New(); } );
-		mUISceneNode->loadLayoutFromString( baseUI );
-		mUISceneNode->bind( "code_container", mBaseLayout );
-		mUISceneNode->bind( "search_bar", mSearchBarLayout );
-		mUISceneNode->bind( "doc_info", mDocInfo );
-		mUISceneNode->bind( "doc_info_text", mDocInfoText );
-		mDocInfo->setVisible( mConfig.editor.showDocInfo );
-		mSearchBarLayout->setVisible( false )->setEnabled( false );
 		UIIconTheme* iconTheme = UIIconTheme::New( "remixicon" );
 		Float menuIconSize = mConfig.ui.fontSize.asPixels( 0, Sizef(), mDisplayDPI );
 		Float buttonIconSize =
@@ -1504,6 +1502,7 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		addIcon( "split-vertical", 0xf17b, menuIconSize );
 		addIcon( "find-replace", 0xed2b, menuIconSize );
 		addIcon( "folder", 0xed54, menuIconSize );
+		addIcon( "folder-open", 0xed70, menuIconSize );
 		addIcon( "folder-add", 0xed5a, menuIconSize );
 		addIcon( "file", 0xecc3, menuIconSize );
 		addIcon( "file-code", 0xecd1, menuIconSize );
@@ -1519,8 +1518,18 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		addIcon( "cancel", 0xeb98, buttonIconSize );
 		addIcon( "color-picker", 0xf13d, buttonIconSize );
 		addIcon( "pixel-density", 0xed8c, buttonIconSize );
-
+		addIcon( "tree-expanded", 0xed70, menuIconSize );
+		addIcon( "tree-contracted", 0xed54, menuIconSize );
 		mUISceneNode->getUIIconThemeManager()->setCurrentTheme( iconTheme );
+
+		UIWidgetCreator::registerWidget( "searchbar", [] { return UISearchBar::New(); } );
+		mUISceneNode->loadLayoutFromString( baseUI );
+		mUISceneNode->bind( "code_container", mBaseLayout );
+		mUISceneNode->bind( "search_bar", mSearchBarLayout );
+		mUISceneNode->bind( "doc_info", mDocInfo );
+		mUISceneNode->bind( "doc_info_text", mDocInfoText );
+		mDocInfo->setVisible( mConfig.editor.showDocInfo );
+		mSearchBarLayout->setVisible( false )->setEnabled( false );
 
 		mEditorSplitter = UICodeEditorSplitter::New(
 			this, mUISceneNode,
@@ -1532,10 +1541,46 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		createSettingsMenu();
 
 		mEditorSplitter->createEditorWithTabWidget( mBaseLayout );
-		if ( !file.empty() && FileSystem::fileExists( file ) )
-			mEditorSplitter->loadFileFromPath( FileSystem::getRealPath( file ) );
 
 		mConsole = eeNew( Console, ( fontMono, true, true, 1024 * 1000, 0, mWindow ) );
+
+		UISplitter* projectSplitter = mUISceneNode->find<UISplitter>( "project_splitter" );
+		projectSplitter->setDivisionSplit( 0.15f );
+		UITreeView* tree = mUISceneNode->find<UITreeView>( "project_view" );
+		tree->setColumnsHidden( {FileSystemModel::Icon, FileSystemModel::Size,
+								 FileSystemModel::Group, FileSystemModel::Inode,
+								 FileSystemModel::Owner, FileSystemModel::SymlinkTarget,
+								 FileSystemModel::Permissions, FileSystemModel::ModificationTime},
+								true );
+		tree->setHeadersVisible( false );
+		tree->addEventListener( Event::OnModelEvent, [&]( const Event* event ) {
+			const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
+			if ( modelEvent->getModelEventType() == ModelEventType::Open ) {
+				Variant vPath( modelEvent->getModel()->data( modelEvent->getModelIndex(),
+															 Model::Role::Custom ) );
+				if ( vPath.isValid() && vPath.is( Variant::Type::String ) ) {
+					std::string path ( vPath.asString() );
+					UITab* tab = mEditorSplitter->isDocumentOpen( path );
+					if ( !tab ) {
+						mEditorSplitter->loadFileFromPathInNewTab( path );
+					} else {
+						tab->getTabWidget()->setTabSelected( tab );
+					}
+				}
+			}
+		} );
+
+		if ( !file.empty() && FileSystem::fileExists( file ) ) {
+			if ( FileSystem::isDirectory( file ) ) {
+				tree->setModel( FileSystemModel::New( file ) );
+			} else {
+				std::string rpath( FileSystem::getRealPath( file ) );
+				tree->setModel( FileSystemModel::New( FileSystem::fileRemoveFileName( rpath ) ) );
+				mEditorSplitter->loadFileFromPath( rpath );
+			}
+		} else {
+			tree->setModel( FileSystemModel::New( "." ) );
+		}
 
 		mWindow->runMainLoop( &appLoop );
 	}

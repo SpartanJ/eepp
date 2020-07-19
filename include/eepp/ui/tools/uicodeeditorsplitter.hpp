@@ -81,6 +81,8 @@ class EE_API UICodeEditorSplitter {
 
 	UITabWidget* createEditorWithTabWidget( Node* parent );
 
+	UITab* isDocumentOpen( const std::string& path ) const;
+
 	void applyColorScheme( const SyntaxColorScheme& colorScheme );
 
 	void forEachEditor( std::function<void( UICodeEditor* )> run );

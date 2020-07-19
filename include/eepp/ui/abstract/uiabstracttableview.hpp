@@ -20,7 +20,7 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	bool isType( const Uint32& type ) const;
 
-	virtual Float getRowHeight() const { return getHeaderHeight(); }
+	virtual Float getRowHeight() const;
 
 	virtual Float getHeaderHeight() const;
 
@@ -34,6 +34,8 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	void setColumnHidden( const size_t& column, bool hidden );
 
+	void setColumnsHidden( const std::vector<size_t> columns, bool hidden );
+
 	virtual void selectAll();
 
 	const Float& getDragBorderDistance() const;
@@ -41,6 +43,8 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	void setDragBorderDistance( const Float& dragBorderDistance );
 
 	Vector2f getColumnPosition( const size_t& index );
+
+	int visibleColumnCount() const;
 
   protected:
 	friend class EE::UI::UITableHeaderColumn;
@@ -71,7 +75,13 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	virtual void onColumnResizeToContent( const size_t& colIndex );
 
+	virtual void updateColumnsWidth();
+
+	virtual void updateScroll();
+
 	void updateHeaderSize();
+
+	int visibleColumn();
 
 	UILinearLayout* mHeader;
 	Float mDragBorderDistance{8};

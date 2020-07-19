@@ -11,18 +11,27 @@ using namespace EE::UI::Models;
 
 namespace EE { namespace UI { namespace Abstract {
 
+enum class ModelEventType { Open };
+
 class EE_API ModelEvent : public Event {
   public:
-	ModelEvent( Model* model, const ModelIndex& index, Node* node ) :
-		Event( node, Event::OnModelEvent ), model( model ), index( index ) {}
+	ModelEvent( Model* model, const ModelIndex& index, Node* node,
+				const ModelEventType& modelEventType = ModelEventType::Open ) :
+		Event( node, Event::OnModelEvent ),
+		model( model ),
+		index( index ),
+		modelEventType( modelEventType ) {}
 
 	const Model* getModel() const { return model; }
 
 	const ModelIndex& getModelIndex() const { return index; }
 
+	const ModelEventType& getModelEventType() const { return modelEventType; }
+
   protected:
 	const Model* model;
 	ModelIndex index;
+	ModelEventType modelEventType;
 };
 
 class EE_API UIAbstractView : public UIScrollableWidget {

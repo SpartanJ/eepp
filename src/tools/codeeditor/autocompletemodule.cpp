@@ -403,7 +403,7 @@ void AutoCompleteModule::resetSuggestions( UICodeEditor* editor ) {
 	mSuggestionIndex = 0;
 	mSuggestionsEditor = nullptr;
 	mSuggestions.clear();
-	if ( editor )
+	if ( editor && editor->hasFocus() )
 		editor->getUISceneNode()->setCursor( !editor->isLocked() ? Cursor::IBeam : Cursor::Arrow );
 }
 

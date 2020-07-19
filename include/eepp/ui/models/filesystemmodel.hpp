@@ -45,6 +45,7 @@ class EE_API FileSystemModel : public Model {
 		FileInfo mInfo;
 		std::vector<Node> mChildren;
 		bool mHasTraversed{false};
+		bool mInfoDirty{true};
 		bool mSelected{false};
 		ModelIndex index( const FileSystemModel& model, int column ) const;
 		void traverseIfNeeded( const FileSystemModel& );

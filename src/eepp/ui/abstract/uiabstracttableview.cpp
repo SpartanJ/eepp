@@ -2,6 +2,7 @@
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uiscrollbar.hpp>
 
 namespace EE { namespace UI { namespace Abstract {
 
@@ -22,6 +23,11 @@ Uint32 UIAbstractTableView::getType() const {
 
 bool UIAbstractTableView::isType( const Uint32& type ) const {
 	return UIAbstractTableView::getType() == type ? true : UIAbstractView::isType( type );
+}
+
+Float UIAbstractTableView::getRowHeight() const {
+	return eeceil( columnData( 0 ).widget ? columnData( 0 ).widget->getPixelsSize().getHeight()
+										  : 16 );
 }
 
 void UIAbstractTableView::selectAll() {
@@ -86,6 +92,8 @@ void UIAbstractTableView::createOrUpdateColumns() {
 
 	mHeader->setPixelsSize( totalWidth, getHeaderHeight() );
 	mHeader->updateLayout();
+
+	updateColumnsWidth();
 }
 
 Float UIAbstractTableView::getHeaderHeight() const {
@@ -133,6 +141,32 @@ void UIAbstractTableView::updateHeaderSize() {
 	mHeader->setPixelsSize( totalWidth, getHeaderHeight() );
 }
 
+int UIAbstractTableView::visibleColumn() {
+	for ( size_t i = 0; i < getModel()->columnCount(); i++ ) {
+		if ( columnData( i ).visible )
+			return i;
+	}
+	return -1;
+}
+
+void UIAbstractTableView::updateColumnsWidth() {
+	int col = 0;
+	Float width =
+		eefloor( getPixelsSize().getWidth() - getPixelsPadding().Left - getPixelsPadding().Right -
+				 ( mVScroll->isVisible() ? mVScroll->getPixelsSize().getWidth() : 0 ) );
+
+	if ( visibleColumnCount() == 1 && ( col = visibleColumn() ) != -1 ) {
+		columnData( col ).width = width;
+		updateHeaderSize();
+		onColumnSizeChange( col );
+	}
+}
+
+void UIAbstractTableView::updateScroll() {
+	UIAbstractView::updateScroll();
+	updateColumnsWidth();
+}
+
 const Float& UIAbstractTableView::getDragBorderDistance() const {
 	return mDragBorderDistance;
 }
@@ -143,6 +177,17 @@ void UIAbstractTableView::setDragBorderDistance( const Float& dragBorderDistance
 
 Vector2f UIAbstractTableView::getColumnPosition( const size_t& index ) {
 	return columnData( index ).widget->getPixelsPosition();
+}
+
+int UIAbstractTableView::visibleColumnCount() const {
+	if ( !getModel() )
+		return 0;
+	int count = 0;
+	for ( size_t i = 0; i < getModel()->columnCount(); i++ ) {
+		if ( columnData( i ).visible )
+			count++;
+	}
+	return count;
 }
 
 UIAbstractTableView::ColumnData& UIAbstractTableView::columnData( const size_t& column ) const {
@@ -160,6 +205,12 @@ void UIAbstractTableView::setColumnHidden( const size_t& column, bool hidden ) {
 		columnData( column ).visible = !hidden;
 		createOrUpdateColumns();
 	}
+}
+
+void UIAbstractTableView::setColumnsHidden( const std::vector<size_t> columns, bool hidden ) {
+	for ( auto col : columns )
+		columnData( col ).visible = !hidden;
+	createOrUpdateColumns();
 }
 
 }}} // namespace EE::UI::Abstract

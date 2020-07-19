@@ -13,6 +13,7 @@ namespace EE { namespace UI { namespace Models {
 
 FileSystemModel::Node::Node( const std::string& rootPath, const FileSystemModel& model ) :
 	mInfo( FileSystem::getRealPath( rootPath ) ) {
+	mInfoDirty = false;
 	mName = FileSystem::fileNameFromPath( mInfo.getFilepath() );
 	mMimeType = "";
 	traverseIfNeeded( model );
@@ -20,6 +21,7 @@ FileSystemModel::Node::Node( const std::string& rootPath, const FileSystemModel&
 
 FileSystemModel::Node::Node( FileInfo&& info, FileSystemModel::Node* parent ) :
 	mParent( parent ), mInfo( info ) {
+	mInfoDirty = false;
 	mName = FileSystem::fileNameFromPath( mInfo.getFilepath() );
 	if ( !mInfo.isDirectory() ) {
 		mMimeType = "filetype-" + FileSystem::fileExtension( mName );
@@ -59,11 +61,15 @@ void FileSystemModel::Node::traverseIfNeeded( const FileSystemModel& model ) {
 
 void FileSystemModel::Node::reifyIfNeeded( const FileSystemModel& model ) {
 	traverseIfNeeded( model );
-	fetchData( fullPath() );
+	if ( mInfoDirty )
+		fetchData( fullPath() );
 }
 
 bool FileSystemModel::Node::fetchData( const String& fullPath ) {
-	mInfo = FileInfo( fullPath, mParent == nullptr );
+	if ( mInfoDirty ) {
+		mInfo = FileInfo( fullPath, mParent == nullptr );
+		mInfoDirty = false;
+	}
 	return true;
 }
 
