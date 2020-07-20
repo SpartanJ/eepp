@@ -80,6 +80,8 @@ class EE_API Model {
 
 	void unregisterView( UIAbstractView* );
 
+	void refreshView();
+
 	void setOnUpdate( const std::function<void()>& onUpdate );
 
   protected:

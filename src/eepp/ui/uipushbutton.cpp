@@ -108,15 +108,7 @@ void UIPushButton::onAutoSize() {
 	}
 }
 
-void UIPushButton::onPaddingChange() {
-	onSizeChange();
-
-	UIWidget::onPaddingChange();
-}
-
-void UIPushButton::onSizeChange() {
-	onAutoSize();
-
+void UIPushButton::updateLayout() {
 	Rectf autoPadding;
 
 	if ( mFlags & UI_AUTO_PADDING ) {
@@ -225,6 +217,18 @@ void UIPushButton::onSizeChange() {
 	if ( NULL != eWidget && eWidget->isVisible() ) {
 		eWidget->setPixelsPosition( ePos );
 	}
+}
+
+void UIPushButton::onPaddingChange() {
+	onSizeChange();
+
+	UIWidget::onPaddingChange();
+}
+
+void UIPushButton::onSizeChange() {
+	onAutoSize();
+
+	updateLayout();
 
 	UIWidget::onSizeChange();
 }
@@ -237,7 +241,7 @@ void UIPushButton::setTheme( UITheme* Theme ) {
 }
 
 void UIPushButton::onThemeLoaded() {
-	onSizeChange();
+	updateLayout();
 
 	UIWidget::onThemeLoaded();
 }
@@ -245,7 +249,7 @@ void UIPushButton::onThemeLoaded() {
 UIPushButton* UIPushButton::setIcon( Drawable* Icon ) {
 	if ( mIcon->getDrawable() != Icon ) {
 		mIcon->setDrawable( Icon );
-		onSizeChange();
+		updateLayout();
 	}
 	return this;
 }
@@ -255,8 +259,10 @@ UIImage* UIPushButton::getIcon() const {
 }
 
 UIPushButton* UIPushButton::setText( const String& text ) {
-	mTextBox->setText( text );
-	onSizeChange();
+	if ( text != mTextBox->getText() ) {
+		mTextBox->setText( text );
+		updateLayout();
+	}
 	return this;
 }
 

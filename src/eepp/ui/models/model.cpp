@@ -18,6 +18,10 @@ void Model::unregisterView( UIAbstractView* view ) {
 	mViews.erase( view );
 }
 
+void Model::refreshView() {
+	forEachView( [&]( UIAbstractView* view ) { view->invalidateDraw(); } );
+}
+
 void Model::registerView( UIAbstractView* view ) {
 	mViews.insert( view );
 }
@@ -43,4 +47,4 @@ bool Model::acceptsDrag( const ModelIndex&, const std::string& ) {
 	return false;
 }
 
-}}} // namespace EE::UI::Model
+}}} // namespace EE::UI::Models

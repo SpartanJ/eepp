@@ -53,6 +53,8 @@ class EE_API UIPushButton : public UIWidget {
 
 	explicit UIPushButton( const std::string& tag );
 
+	virtual void updateLayout();
+
 	virtual void onSizeChange();
 
 	virtual void onAlphaChange();

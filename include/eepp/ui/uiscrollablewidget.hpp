@@ -42,9 +42,14 @@ class EE_API UIScrollableWidget : public UIWidget {
 
 	void scrollToBottom();
 
+	void scrollToPosition( const Vector2f& pos, const bool& scrollVertically = true,
+						   const bool& scrollHorizontally = false );
+
 	Sizef getScrollableArea() const;
 
 	Sizef getVisibleArea() const;
+
+	Rectf getVisibleRect() const;
 
   protected:
 	ScrollViewType mViewType;

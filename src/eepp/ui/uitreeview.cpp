@@ -1,3 +1,4 @@
+#include <deque>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uipushbutton.hpp>
@@ -96,49 +97,29 @@ void UITreeView::onColumnSizeChange( const size_t& ) {
 	updateContentSize();
 }
 
-class UITableRow : public UIWidget {
-  public:
-	UITableRow( const std::string& tag ) : UIWidget( tag ) {}
-
-	ModelIndex getCurIndex() const { return mCurIndex; }
-
-	void setCurIndex( const ModelIndex& curIndex ) { mCurIndex = curIndex; }
-
-  protected:
-	virtual Uint32 onMessage( const NodeMessage* msg ) {
-		if ( msg->getMsg() == NodeMessage::MouseDown && ( msg->getFlags() & EE_BUTTON_LMASK ) &&
-			 ( !getEventDispatcher()->getMouseDownNode() ||
+UITableRow* UITreeView::createRow() {
+	UITableRow* rowWidget = UITableRow::New( "table::row" );
+	rowWidget->setParent( this );
+	rowWidget->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	rowWidget->reloadStyle( true, true, true );
+	rowWidget->addEventListener( Event::MouseDown, [&]( const Event* event ) {
+		if ( ( !getEventDispatcher()->getMouseDownNode() ||
 			   getEventDispatcher()->getMouseDownNode() == this ||
 			   isParentOf( getEventDispatcher()->getMouseDownNode() ) ) &&
 			 getEventDispatcher()->getNodeDragging() == nullptr ) {
-			sendMouseEvent( Event::MouseDown, getEventDispatcher()->getMousePos(),
-							msg->getFlags() );
+			getSelection().set( event->getNode()->asType<UITableRow>()->getCurIndex() );
 		}
-		return 0;
-	}
+	} );
+	return rowWidget;
+}
 
-	ModelIndex mCurIndex;
-};
-
-UIWidget* UITreeView::updateRow( const int& rowIndex, const ModelIndex& index,
-								 const Float& yOffset ) {
+UITableRow* UITreeView::updateRow( const int& rowIndex, const ModelIndex& index,
+								   const Float& yOffset ) {
 	if ( rowIndex >= (int)mRows.size() )
 		mRows.resize( rowIndex + 1, nullptr );
 	UITableRow* rowWidget = nullptr;
 	if ( mRows[rowIndex] == nullptr ) {
-		rowWidget = eeNew( UITableRow, ( "table::row" ) );
-		rowWidget->clipEnable();
-		rowWidget->setParent( this );
-		rowWidget->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
-		rowWidget->reloadStyle( true, true, true );
-		rowWidget->addEventListener( Event::MouseDown, [&]( const Event* event ) {
-			if ( ( !getEventDispatcher()->getMouseDownNode() ||
-				   getEventDispatcher()->getMouseDownNode() == this ||
-				   isParentOf( getEventDispatcher()->getMouseDownNode() ) ) &&
-				 getEventDispatcher()->getNodeDragging() == nullptr ) {
-				getSelection().set( event->getNode()->asType<UITableRow>()->getCurIndex() );
-			}
-		} );
+		rowWidget = createRow();
 		mRows[rowIndex] = rowWidget;
 	} else {
 		rowWidget = mRows[rowIndex];
@@ -375,10 +356,63 @@ Uint32 UITreeView::onKeyDown( const KeyEvent& event ) {
 	auto curIndex = getSelection().first();
 
 	switch ( event.getKeyCode() ) {
+		case KEY_PAGEUP: {
+			int pageSize = eefloor( getVisibleArea().getHeight() / getRowHeight() ) - 1;
+			std::deque<std::pair<ModelIndex, Float>> deque;
+			Float curY;
+			traverseTree(
+				[&]( const int&, const ModelIndex& index, const size_t&, const Float& offsetY ) {
+					deque.push_back( {index, offsetY} );
+					if ( (int)deque.size() > pageSize )
+						deque.pop_front();
+					if ( index == curIndex )
+						return IterationDecision::Break;
+					return IterationDecision::Continue;
+				} );
+			curY = deque.front().second - getHeaderHeight();
+			getSelection().set( deque.front().first );
+			scrollToPosition( {mScrollOffset.x, curY} );
+			break;
+		}
+		case KEY_PAGEDOWN: {
+			int pageSize = eefloor( getVisibleArea().getHeight() / getRowHeight() ) - 1;
+			int counted = 0;
+			bool foundStart = false;
+			bool resultFound = false;
+			ModelIndex foundIndex;
+			Float curY;
+			Float lastOffsetY;
+			ModelIndex lastIndex;
+			traverseTree(
+				[&]( const int&, const ModelIndex& index, const size_t&, const Float& offsetY ) {
+					if ( index == curIndex ) {
+						foundStart = true;
+					} else if ( foundStart ) {
+						counted++;
+						if ( counted == pageSize ) {
+							foundIndex = index;
+							curY = offsetY;
+							resultFound = true;
+							return IterationDecision::Break;
+						}
+					}
+					lastOffsetY = offsetY;
+					lastIndex = index;
+					return IterationDecision::Continue;
+				} );
+			if ( !resultFound ) {
+				foundIndex = lastIndex;
+				curY = lastOffsetY;
+			}
+			curY += getRowHeight();
+			getSelection().set( foundIndex );
+			scrollToPosition( {mScrollOffset.x, curY} );
+			break;
+		}
 		case KEY_UP: {
 			ModelIndex prevIndex;
 			ModelIndex foundIndex;
-			Float curY;
+			Float curY = 0;
 			traverseTree(
 				[&]( const int&, const ModelIndex& index, const size_t&, const Float& offsetY ) {
 					if ( index == curIndex ) {
@@ -404,7 +438,7 @@ Uint32 UITreeView::onKeyDown( const KeyEvent& event ) {
 		case KEY_DOWN: {
 			ModelIndex prevIndex;
 			ModelIndex foundIndex;
-			Float curY;
+			Float curY = 0;
 			traverseTree(
 				[&]( const int&, const ModelIndex& index, const size_t&, const Float& offsetY ) {
 					if ( prevIndex == curIndex ) {

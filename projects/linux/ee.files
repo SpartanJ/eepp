@@ -399,6 +399,7 @@
 ../../include/eepp/ui/uitablecell.hpp
 ../../include/eepp/ui/uitable.hpp
 ../../include/eepp/ui/uitableheadercolumn.hpp
+../../include/eepp/ui/uitablerow.hpp
 ../../include/eepp/ui/uitabwidget.hpp
 ../../include/eepp/ui/uitextedit.hpp
 ../../include/eepp/ui/uitextinput.hpp

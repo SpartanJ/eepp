@@ -20,6 +20,7 @@ class EE_API FileSystemModel : public Model {
 		Permissions,
 		ModificationTime,
 		Inode,
+		Path,
 		SymlinkTarget,
 		Count,
 	};
@@ -32,10 +33,14 @@ class EE_API FileSystemModel : public Model {
 		Node* getParent() const { return mParent; }
 		const FileInfo& info() const { return mInfo; }
 		bool isSelected() const { return mSelected; }
-		void setSelected( bool selected );
+		void setSelected( bool selected ) { mSelected = selected; };
 		const std::string& fullPath() const;
 		const std::string& getMimeType() const { return mMimeType; }
 		size_t childCount() const { return mChildren.size(); }
+		const Node& getChild( const size_t& index ) {
+			eeASSERT( index < mChildren.size() );
+			return mChildren[index];
+		}
 
 	  private:
 		friend class FileSystemModel;
@@ -49,7 +54,7 @@ class EE_API FileSystemModel : public Model {
 		bool mSelected{false};
 		ModelIndex index( const FileSystemModel& model, int column ) const;
 		void traverseIfNeeded( const FileSystemModel& );
-		void reifyIfNeeded( const FileSystemModel& );
+		void refreshIfNeeded( const FileSystemModel& );
 		bool fetchData( const String& fullPath );
 	};
 
@@ -61,6 +66,8 @@ class EE_API FileSystemModel : public Model {
 	std::string getRootPath() const;
 
 	void setRootPath( const std::string& rootPath );
+
+	void reload();
 
 	void update();
 
@@ -76,14 +83,24 @@ class EE_API FileSystemModel : public Model {
 
 	virtual Drawable* iconFor( const Node& node, const ModelIndex& index ) const;
 
-	FileSystemModel( const std::string& rootPath, const Mode& mode );
+	void setMode( const Mode& mode );
+
+	void updateNodeSelection( const ModelIndex& index, const bool selected );
+
+	ModelIndex getPreviouslySelectedIndex() const;
+
+	void setPreviouslySelectedIndex( const ModelIndex& previouslySelectedIndex );
 
   protected:
 	std::string mRootPath;
 	std::unique_ptr<Node> mRoot{nullptr};
 	Mode mMode{Mode::FilesAndDirectories};
 
+	ModelIndex mPreviouslySelectedIndex{};
+
 	Node& nodeRef( const ModelIndex& index ) const;
+
+	FileSystemModel( const std::string& rootPath, const Mode& mode );
 };
 
 }}} // namespace EE::UI::Models

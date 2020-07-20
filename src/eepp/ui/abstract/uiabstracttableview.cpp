@@ -26,8 +26,29 @@ bool UIAbstractTableView::isType( const Uint32& type ) const {
 }
 
 Float UIAbstractTableView::getRowHeight() const {
-	return eeceil( columnData( 0 ).widget ? columnData( 0 ).widget->getPixelsSize().getHeight()
-										  : 16 );
+	return mRowHeight != 0 ? mRowHeight
+						   : ( eeceil( columnData( 0 ).widget
+										   ? columnData( 0 ).widget->getPixelsSize().getHeight()
+										   : 16 ) );
+}
+
+void UIAbstractTableView::setRowHeight( const Float& rowHeight ) {
+	if ( mRowHeight != rowHeight ) {
+		mRowHeight = rowHeight;
+		createOrUpdateColumns();
+	}
+}
+
+void UIAbstractTableView::columnResizeToContent( const size_t& colIndex ) {
+	onColumnResizeToContent( colIndex );
+}
+
+void UIAbstractTableView::setColumnWidth( const size_t& colIndex, const Float& width ) {
+	if ( columnData( colIndex ).width != width ) {
+		columnData( colIndex ).width = width;
+		updateHeaderSize();
+		onColumnSizeChange( colIndex );
+	}
 }
 
 void UIAbstractTableView::selectAll() {

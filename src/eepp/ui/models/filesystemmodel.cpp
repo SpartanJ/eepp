@@ -59,7 +59,7 @@ void FileSystemModel::Node::traverseIfNeeded( const FileSystemModel& model ) {
 	}
 }
 
-void FileSystemModel::Node::reifyIfNeeded( const FileSystemModel& model ) {
+void FileSystemModel::Node::refreshIfNeeded( const FileSystemModel& model ) {
 	traverseIfNeeded( model );
 	if ( mInfoDirty )
 		fetchData( fullPath() );
@@ -75,7 +75,7 @@ bool FileSystemModel::Node::fetchData( const String& fullPath ) {
 
 std::shared_ptr<FileSystemModel> FileSystemModel::New( const std::string& rootPath,
 													   const FileSystemModel::Mode& mode ) {
-	return std::make_shared<FileSystemModel>( rootPath, mode );
+	return std::shared_ptr<FileSystemModel>( new FileSystemModel( rootPath, mode ) );
 }
 
 FileSystemModel::FileSystemModel( const std::string& rootPath, const FileSystemModel::Mode& mode ) :
@@ -90,6 +90,10 @@ std::string FileSystemModel::getRootPath() const {
 void FileSystemModel::setRootPath( const std::string& rootPath ) {
 	mRootPath = rootPath;
 	update();
+}
+
+void FileSystemModel::reload() {
+	setRootPath( mRootPath );
 }
 
 void FileSystemModel::update() {
@@ -109,7 +113,7 @@ FileSystemModel::Node& FileSystemModel::nodeRef( const ModelIndex& index ) const
 
 size_t FileSystemModel::rowCount( const ModelIndex& index ) const {
 	Node& node = const_cast<Node&>( this->node( index ) );
-	node.reifyIfNeeded( *this );
+	node.refreshIfNeeded( *this );
 	if ( node.info().isDirectory() )
 		return node.mChildren.size();
 	return 0;
@@ -139,6 +143,8 @@ std::string FileSystemModel::columnName( const size_t& column ) const {
 			return "Inode";
 		case Column::SymlinkTarget:
 			return "Symlink target";
+		case Column::Path:
+			return "Path";
 		default:
 			return "";
 	}
@@ -172,7 +178,7 @@ Variant FileSystemModel::data( const ModelIndex& index, Model::Role role ) const
 
 	if ( role == Role::Custom ) {
 		eeASSERT( index.column() == Column::Name );
-		return Variant( node.info().getFilepath() );
+		return Variant( node.info().getFilepath().c_str() );
 	}
 
 	if ( role == Role::Sort ) {
@@ -195,6 +201,8 @@ Variant FileSystemModel::data( const ModelIndex& index, Model::Role role ) const
 				return node.info().getInode();
 			case Column::SymlinkTarget:
 				return Variant( node.info().linksTo() );
+			case Column::Path:
+				return Variant( node.info().getFilepath().c_str() );
 			default:
 				eeASSERT( false );
 		}
@@ -220,6 +228,8 @@ Variant FileSystemModel::data( const ModelIndex& index, Model::Role role ) const
 				return Variant( String::toString( node.info().getInode() ) );
 			case Column::SymlinkTarget:
 				return node.info().isLink() ? Variant( node.info().linksTo() ) : Variant();
+			case Column::Path:
+				return Variant( node.info().getFilepath().c_str() );
 		}
 	}
 
@@ -244,7 +254,7 @@ ModelIndex FileSystemModel::index( int row, int column, const ModelIndex& parent
 	if ( row < 0 || column < 0 )
 		return {};
 	auto& node = this->node( parent );
-	const_cast<Node&>( node ).reifyIfNeeded( *this );
+	const_cast<Node&>( node ).refreshIfNeeded( *this );
 	if ( static_cast<size_t>( row ) >= node.mChildren.size() )
 		return {};
 	return createIndex( row, column, &node.mChildren[row] );
@@ -256,6 +266,27 @@ Drawable* FileSystemModel::iconFor( const Node& node, const ModelIndex& index ) 
 	if ( !d && !node.info().isDirectory() && index.column() == (Int64)treeColumn() )
 		return scene->findIcon( "file" );
 	return nullptr;
+}
+
+void FileSystemModel::setMode( const Mode& mode ) {
+	if ( mode != mMode ) {
+		mMode = mode;
+		reload();
+	}
+}
+
+void FileSystemModel::updateNodeSelection( const ModelIndex& index, const bool selected ) {
+	Node& node = const_cast<Node&>( this->node( index ) );
+	node.setSelected( selected );
+	setPreviouslySelectedIndex( index );
+}
+
+ModelIndex FileSystemModel::getPreviouslySelectedIndex() const {
+	return mPreviouslySelectedIndex;
+}
+
+void FileSystemModel::setPreviouslySelectedIndex( const ModelIndex& previouslySelectedIndex ) {
+	mPreviouslySelectedIndex = previouslySelectedIndex;
 }
 
 }}} // namespace EE::UI::Models

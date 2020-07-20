@@ -46,12 +46,22 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	int visibleColumnCount() const;
 
+	/** In pixels. */
+	void setRowHeight( const Float& rowHeight );
+
+	void columnResizeToContent( const size_t& colIndex );
+
+	/** In pixels. */
+	void setColumnWidth( const size_t& colIndex, const Float& width );
+
   protected:
 	friend class EE::UI::UITableHeaderColumn;
 
 	virtual ~UIAbstractTableView();
 
 	UIAbstractTableView( const std::string& tag );
+
+	Float mRowHeight{0};
 
 	struct ColumnData {
 		Float width{0};

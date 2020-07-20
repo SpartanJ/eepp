@@ -40,7 +40,7 @@ class EE_API StyleSheetLength {
 
 	StyleSheetLength( const Float& val, const Unit& unit );
 
-	StyleSheetLength( std::string val, const Float& defaultValue = 0 );
+	StyleSheetLength( const std::string& val, const Float& defaultValue = 0 );
 
 	StyleSheetLength( const StyleSheetLength& val );
 
@@ -56,7 +56,9 @@ class EE_API StyleSheetLength {
 	Float asDp( const Float& parentSize, const Sizef& viewSize, const Float& displayDpi,
 				const Float& elFontSize = 12, const Float& globalFontSize = 12 ) const;
 
-	bool operator==( const StyleSheetLength& val );
+	bool operator==( const StyleSheetLength& val ) const;
+
+	bool operator!=( const StyleSheetLength& val ) const;
 
 	StyleSheetLength& operator=( const StyleSheetLength& val );
 

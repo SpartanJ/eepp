@@ -11,9 +11,8 @@ UISplitter* UISplitter::New() {
 UISplitter::UISplitter() :
 	UILayout( "splitter" ),
 	mOrientation( UIOrientation::Horizontal ),
-	mSplitOnlyWhenNeeded( true ),
 	mAlwaysShowSplitter( true ),
-	mDivisionSplit( 0.5f ),
+	mSplitPartition( StyleSheetLength( "50%" ) ),
 	mFirstWidget( NULL ),
 	mLastWidget( NULL ) {
 	mFlags |= UI_OWNS_CHILDS_POSITION;
@@ -77,13 +76,13 @@ void UISplitter::setAlwaysShowSplitter( bool alwaysShowSplitter ) {
 	}
 }
 
-const Float& UISplitter::getDivisionSplit() const {
-	return mDivisionSplit;
+const StyleSheetLength& UISplitter::getSplitPartition() const {
+	return mSplitPartition;
 }
 
-void UISplitter::setDivisionSplit( const Float& divisionSplit ) {
-	if ( eeclamp( divisionSplit, 0.f, 1.f ) != mDivisionSplit ) {
-		mDivisionSplit = eeclamp( divisionSplit, 0.f, 1.f );
+void UISplitter::setSplitPartition( const StyleSheetLength& divisionSplit ) {
+	if ( divisionSplit != mSplitPartition ) {
+		mSplitPartition = divisionSplit;
 		setLayoutDirty();
 	}
 }
@@ -113,6 +112,35 @@ UIWidget* UISplitter::getLastWidget() const {
 	return mLastWidget;
 }
 
+bool UISplitter::applyProperty( const StyleSheetProperty& attribute ) {
+	if ( !checkPropertyDefinition( attribute ) )
+		return false;
+
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::SplitterPartition:
+			setSplitPartition( StyleSheetLength( attribute.asString() ) );
+		case PropertyId::SplitterAlwaysShow:
+			setAlwaysShowSplitter( attribute.asBool() );
+		default:
+			return UILayout::applyProperty( attribute );
+	}
+}
+
+std::string UISplitter::getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& propertyIndex ) {
+	if ( NULL == propertyDef )
+		return "";
+
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::SplitterPartition:
+			return getSplitPartition().toString();
+		case PropertyId::SplitterAlwaysShow:
+			return alwaysShowSplitter() ? "true" : "false";
+		default:
+			return UILayout::getPropertyString( propertyDef, propertyIndex );
+	}
+}
+
 void UISplitter::onChildCountChange( Node* child, const bool& removed ) {
 	if ( child != mSplitter ) {
 		if ( !removed ) {
@@ -131,6 +159,7 @@ void UISplitter::onChildCountChange( Node* child, const bool& removed ) {
 				} else {
 					mLastWidget = childWidget;
 				}
+				childWidget->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 				mSplitter->toFront();
 			}
 		} else {
@@ -234,13 +263,19 @@ void UISplitter::updateFromDrag() {
 	}
 
 	if ( UIOrientation::Horizontal == mOrientation ) {
-		mDivisionSplit =
-			( mSplitter->getPixelsPosition().x + mSplitter->getPixelsSize().getWidth() ) /
-			( mSize.getWidth() - mRealPadding.Left - mRealPadding.Right );
+		mSplitPartition = StyleSheetLength(
+			eeclamp<Float>(
+				( mSplitter->getPixelsPosition().x + mSplitter->getPixelsSize().getWidth() ) /
+					( mSize.getWidth() - mRealPadding.Left - mRealPadding.Right ) * 100,
+				0, 100 ),
+			StyleSheetLength::Percentage );
 	} else {
-		mDivisionSplit =
-			( mSplitter->getPixelsPosition().y + mSplitter->getPixelsSize().getHeight() ) /
-			( mSize.getHeight() - mRealPadding.Top - mRealPadding.Bottom );
+		mSplitPartition = StyleSheetLength(
+			eeclamp<Float>(
+				( mSplitter->getPixelsPosition().y + mSplitter->getPixelsSize().getHeight() ) /
+					( mSize.getHeight() - mRealPadding.Top - mRealPadding.Bottom ) * 100,
+				0, 100 ),
+			StyleSheetLength::Percentage );
 	}
 
 	mDirtyLayout = false;
@@ -286,7 +321,7 @@ void UISplitter::updateLayout() {
 		}
 	}
 
-	if ( mSplitOnlyWhenNeeded && !mLastWidget ) {
+	if ( !mLastWidget ) {
 		mSplitter->setVisible( false )->setEnabled( false );
 
 		if ( mFirstWidget ) {
@@ -311,7 +346,7 @@ void UISplitter::updateLayout() {
 						  : mSplitter->getPixelsSize().getHeight();
 	}
 
-	Float firstSplit = ( totalSpace * mDivisionSplit );
+	Float firstSplit = convertLength( mSplitPartition, totalSpace );
 	Float secondSplit = totalSpace - firstSplit;
 
 	if ( mFirstWidget ) {

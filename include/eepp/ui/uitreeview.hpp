@@ -2,6 +2,7 @@
 #define EE_UI_UITREEVIEW_HPP
 
 #include <eepp/ui/abstract/uiabstracttableview.hpp>
+#include <eepp/ui/uitablerow.hpp>
 #include <memory>
 #include <unordered_map>
 
@@ -71,11 +72,13 @@ class EE_API UITreeView : public UIAbstractTableView {
 
 	virtual void onColumnSizeChange( const size_t& colIndex );
 
+	virtual UITableRow* createRow();
+
+	virtual UITableRow* updateRow( const int& rowIndex, const ModelIndex& index,
+								   const Float& yOffset );
+
 	virtual UIWidget* updateCell( const int& rowIndex, const ModelIndex& index, const size_t& col,
 								  const size_t& indentLevel, const Float& yOffset );
-
-	virtual UIWidget* updateRow( const int& rowIndex, const ModelIndex& index,
-								 const Float& yOffset );
 
 	virtual UIWidget* createCell( UIWidget* rowWidget, const ModelIndex& index, const size_t& col );
 

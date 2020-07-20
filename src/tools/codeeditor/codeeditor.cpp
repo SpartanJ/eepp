@@ -257,6 +257,7 @@ void App::loadConfig() {
 	mConfig.window.maximized = mIniState.getValueB( "window", "maximized", false );
 	mConfig.window.pixelDensity = mIniState.getValueF( "window", "pixeldensity" );
 	mConfig.window.winIcon = mIni.getValue( "window", "winicon", mResPath + "assets/icon/ee.png" );
+	mConfig.window.panelPartition = mIniState.getValue( "window", "panel_partition", "15%" );
 	mConfig.editor.showLineNumbers = mIni.getValueB( "editor", "show_line_numbers", true );
 	mConfig.editor.showWhiteSpaces = mIni.getValueB( "editor", "show_white_spaces", true );
 	mConfig.editor.highlightMatchingBracket =
@@ -265,6 +266,7 @@ void App::loadConfig() {
 		mIni.getValueB( "editor", "highlight_current_line", true );
 	mConfig.editor.horizontalScrollbar = mIni.getValueB( "editor", "horizontal_scrollbar", false );
 	mConfig.ui.fontSize = mIni.getValue( "ui", "font_size", "11dp" );
+	mConfig.ui.showSidePanel = mIni.getValueB( "ui", "show_side_panel", true );
 	mConfig.editor.trimTrailingWhitespaces =
 		mIni.getValueB( "editor", "trim_trailing_whitespaces", false );
 	mConfig.editor.forceNewLineAtEndOfFile =
@@ -296,6 +298,9 @@ void App::saveConfig() {
 	mIniState.setValueI( "window", "height", mConfig.window.size.getHeight() );
 	mIniState.setValueB( "window", "maximized", mConfig.window.maximized );
 	mIniState.setValueF( "window", "pixeldensity", mConfig.window.pixelDensity );
+	mIniState.setValue( "window", "panel_partition",
+						mProjectSplitter ? mProjectSplitter->getSplitPartition().toString()
+										 : "15%" );
 	mIniState.setValue( "files", "recentfiles", String::join( mRecentFiles, ';' ) );
 	mIni.setValueB( "editor", "show_line_numbers", mConfig.editor.showLineNumbers );
 	mIni.setValueB( "editor", "show_white_spaces", mConfig.editor.showWhiteSpaces );
@@ -305,6 +310,7 @@ void App::saveConfig() {
 	mIni.setValueB( "editor", "horizontal_scrollbar", mConfig.editor.horizontalScrollbar );
 	mIni.setValue( "editor", "font_size", mConfig.editor.fontSize.toString() );
 	mIni.setValue( "ui", "font_size", mConfig.ui.fontSize.toString() );
+	mIni.setValueB( "ui", "show_side_panel", mConfig.ui.showSidePanel );
 	mIni.setValueB( "editor", "trim_trailing_whitespaces", mConfig.editor.trimTrailingWhitespaces );
 	mIni.setValueB( "editor", "force_new_line_at_end_of_file",
 					mConfig.editor.forceNewLineAtEndOfFile );
@@ -547,101 +553,46 @@ void App::updateRecentFiles() {
 	}
 }
 
-UIMenu* App::createViewMenu() {
-	mViewMenu = UIPopUpMenu::New();
-	mViewMenu->addCheckBox( "Show Line Numbers" )->setActive( mConfig.editor.showLineNumbers );
-	mViewMenu->addCheckBox( "Show White Space" )->setActive( mConfig.editor.showWhiteSpaces );
-	mViewMenu->addCheckBox( "Show Document Info" )->setActive( mConfig.editor.showDocInfo );
-	mViewMenu->addCheckBox( "Highlight Matching Bracket" )
-		->setActive( mConfig.editor.highlightMatchingBracket );
-	mViewMenu->addCheckBox( "Highlight Current Line" )
-		->setActive( mConfig.editor.highlightCurrentLine );
-	mViewMenu->addCheckBox( "Highlight Selection Match" )
-		->setActive( mConfig.editor.highlightSelectionMatch );
-	mViewMenu->addCheckBox( "Enable Horizontal ScrollBar" )
-		->setActive( mConfig.editor.horizontalScrollbar );
-	mViewMenu->addCheckBox( "Enable Color Preview" )
-		->setActive( mConfig.editor.colorPreview )
-		->setTooltipText( "Enables a quick preview of a color when the mouse\n"
-						  "is hover a word that represents a color." );
-	mViewMenu->addCheckBox( "Enable Color Picker" )
-		->setActive( mConfig.editor.colorPickerSelection )
-		->setTooltipText( "Enables the color picker tool when a double click selection\n"
-						  "is done over a word representing a color." );
-	mViewMenu->addCheckBox( "Enable Auto Complete" )
-		->setActive( mConfig.editor.autoComplete )
-		->setTooltipText( "Auto complete shows the completion popup as you type, so you can fill\n"
-						  "in long words by typing only a few characters." );
-	mViewMenu->add( "Line Breaking Column" );
-	mViewMenu->addSeparator();
-	mViewMenu->add( "UI Scale Factor (Pixel Density)", findIcon( "pixel-density" ) );
-	mViewMenu->add( "UI Font Size", findIcon( "font-size" ) );
-	mViewMenu->add( "Editor Font Size", findIcon( "font-size" ) );
-	mViewMenu->addSeparator();
-	mViewMenu->addCheckBox( "Full Screen Mode" )
+void App::showSidePanel( bool show ) {
+	if ( show == mSidePanel->isVisible() )
+		return;
+
+	if ( show ) {
+		mSidePanel->setVisible( true );
+		mSidePanel->setParent( mProjectSplitter );
+		mProjectSplitter->swap();
+	} else {
+		mSidePanel->setVisible( false );
+		mSidePanel->setParent( mUISceneNode->getRoot() );
+	}
+}
+
+UIMenu* App::createWindowMenu() {
+	mWindowMenu = UIPopUpMenu::New();
+	mWindowMenu->add( "UI Scale Factor (Pixel Density)", findIcon( "pixel-density" ) );
+	mWindowMenu->add( "UI Font Size", findIcon( "font-size" ) );
+	mWindowMenu->add( "Editor Font Size", findIcon( "font-size" ) );
+	mWindowMenu->addSeparator();
+	mWindowMenu->addCheckBox( "Full Screen Mode" )
 		->setShortcutText( getKeybind( "fullscreen-toggle" ) )
 		->setId( "fullscreen-mode" );
-	mViewMenu->addSeparator();
-	mViewMenu->add( "Split Left", findIcon( "split-horizontal" ), getKeybind( "split-left" ) );
-	mViewMenu->add( "Split Right", findIcon( "split-horizontal" ), getKeybind( "split-right" ) );
-	mViewMenu->add( "Split Top", findIcon( "split-vertical" ), getKeybind( "split-top" ) );
-	mViewMenu->add( "Split Bottom", findIcon( "split-vertical" ), getKeybind( "split-bottom" ) );
-	mViewMenu->addSeparator();
-	mViewMenu->add( "Zoom In", findIcon( "zoom-in" ), getKeybind( "font-size-grow" ) );
-	mViewMenu->add( "Zoom Out", findIcon( "zoom-out" ), getKeybind( "font-size-shrink" ) );
-	mViewMenu->add( "Zoom Reset", findIcon( "zoom-reset" ), getKeybind( "font-size-reset" ) );
-	mViewMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
+	mWindowMenu->addCheckBox( "Show Side Panel" )->setActive( mConfig.ui.showSidePanel );
+	mWindowMenu->addSeparator();
+	mWindowMenu->add( "Split Left", findIcon( "split-horizontal" ), getKeybind( "split-left" ) );
+	mWindowMenu->add( "Split Right", findIcon( "split-horizontal" ), getKeybind( "split-right" ) );
+	mWindowMenu->add( "Split Top", findIcon( "split-vertical" ), getKeybind( "split-top" ) );
+	mWindowMenu->add( "Split Bottom", findIcon( "split-vertical" ), getKeybind( "split-bottom" ) );
+	mWindowMenu->addSeparator();
+	mWindowMenu->add( "Zoom In", findIcon( "zoom-in" ), getKeybind( "font-size-grow" ) );
+	mWindowMenu->add( "Zoom Out", findIcon( "zoom-out" ), getKeybind( "font-size-shrink" ) );
+	mWindowMenu->add( "Zoom Reset", findIcon( "zoom-reset" ), getKeybind( "font-size-reset" ) );
+	mWindowMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
-		if ( item->getText() == "Show Line Numbers" ) {
-			mConfig.editor.showLineNumbers = item->asType<UIMenuCheckBox>()->isActive();
-			mEditorSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
-				editor->setShowLineNumber( mConfig.editor.showLineNumbers );
-			} );
-		} else if ( item->getText() == "Show White Space" ) {
-			mConfig.editor.showWhiteSpaces = item->asType<UIMenuCheckBox>()->isActive();
-			mEditorSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
-				editor->setShowWhitespaces( mConfig.editor.showWhiteSpaces );
-			} );
-		} else if ( item->getText() == "Highlight Matching Bracket" ) {
-			mConfig.editor.highlightMatchingBracket = item->asType<UIMenuCheckBox>()->isActive();
-			mEditorSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
-				editor->setHighlightMatchingBracket( mConfig.editor.highlightMatchingBracket );
-			} );
-		} else if ( item->getText() == "Highlight Current Line" ) {
-			mConfig.editor.highlightCurrentLine = item->asType<UIMenuCheckBox>()->isActive();
-			mEditorSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
-				editor->setHighlightCurrentLine( mConfig.editor.highlightCurrentLine );
-			} );
-		} else if ( item->getText() == "Highlight Selection Match" ) {
-			mConfig.editor.highlightSelectionMatch = item->asType<UIMenuCheckBox>()->isActive();
-			mEditorSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
-				editor->setHighlightSelectionMatch( mConfig.editor.highlightSelectionMatch );
-			} );
-		} else if ( item->getText() == "Enable Horizontal ScrollBar" ) {
-			mConfig.editor.horizontalScrollbar = item->asType<UIMenuCheckBox>()->isActive();
-			mEditorSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
-				editor->setHorizontalScrollBarEnabled( mConfig.editor.horizontalScrollbar );
-			} );
-		} else if ( item->getText() == "Enable Color Picker" ) {
-			mConfig.editor.colorPickerSelection = item->asType<UIMenuCheckBox>()->isActive();
-			mEditorSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
-				editor->setEnableColorPickerOnSelection( mConfig.editor.colorPickerSelection );
-			} );
-		} else if ( item->getText() == "Enable Auto Complete" ) {
-			setAutoComplete( item->asType<UIMenuCheckBox>()->isActive() );
-		} else if ( item->getText() == "Enable Color Preview" ) {
-			mConfig.editor.colorPreview = item->asType<UIMenuCheckBox>()->isActive();
-			mEditorSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
-				editor->setEnableColorPickerOnSelection( mConfig.editor.colorPreview );
-			} );
-		} else if ( item->getText() == "Show Document Info" ) {
-			mConfig.editor.showDocInfo = item->asType<UIMenuCheckBox>()->isActive();
-			if ( mDocInfo )
-				mDocInfo->setVisible( mConfig.editor.showDocInfo );
-			if ( mEditorSplitter->getCurEditor() )
-				updateDocInfo( mEditorSplitter->getCurEditor()->getDocument() );
+		if ( item->getText() == "Show Side Panel" ) {
+			mConfig.ui.showSidePanel = item->asType<UIMenuCheckBox>()->isActive();
+			showSidePanel( mConfig.ui.showSidePanel );
 		} else if ( item->getText() == "UI Scale Factor (Pixel Density)" ) {
 			UIMessageBox* msgBox = UIMessageBox::New(
 				UIMessageBox::INPUT, "Set the UI scale factor (pixel density):\nMinimum value is "
@@ -712,6 +663,104 @@ UIMenu* App::createViewMenu() {
 				msgBox->closeWindow();
 			} );
 			setFocusEditorOnClose( msgBox );
+		} else if ( "Zoom In" == item->getText() ) {
+			mEditorSplitter->zoomIn();
+		} else if ( "Zoom Out" == item->getText() ) {
+			mEditorSplitter->zoomOut();
+		} else if ( "Zoom Reset" == item->getText() ) {
+			mEditorSplitter->zoomReset();
+		} else if ( "Full Screen Mode" == item->getText() ) {
+			runCommand( "fullscreen-toggle" );
+		} else {
+			String text = String( event->getNode()->asType<UIMenuItem>()->getText() ).toLower();
+			String::replaceAll( text, " ", "-" );
+			String::replaceAll( text, "/", "-" );
+			runCommand( text );
+		}
+	} );
+	return mWindowMenu;
+}
+
+UIMenu* App::createViewMenu() {
+	mViewMenu = UIPopUpMenu::New();
+	mViewMenu->addCheckBox( "Show Line Numbers" )->setActive( mConfig.editor.showLineNumbers );
+	mViewMenu->addCheckBox( "Show White Space" )->setActive( mConfig.editor.showWhiteSpaces );
+	mViewMenu->addCheckBox( "Show Document Info" )->setActive( mConfig.editor.showDocInfo );
+	mViewMenu->addCheckBox( "Highlight Matching Bracket" )
+		->setActive( mConfig.editor.highlightMatchingBracket );
+	mViewMenu->addCheckBox( "Highlight Current Line" )
+		->setActive( mConfig.editor.highlightCurrentLine );
+	mViewMenu->addCheckBox( "Highlight Selection Match" )
+		->setActive( mConfig.editor.highlightSelectionMatch );
+	mViewMenu->addCheckBox( "Enable Horizontal ScrollBar" )
+		->setActive( mConfig.editor.horizontalScrollbar );
+	mViewMenu->addCheckBox( "Enable Color Preview" )
+		->setActive( mConfig.editor.colorPreview )
+		->setTooltipText( "Enables a quick preview of a color when the mouse\n"
+						  "is hover a word that represents a color." );
+	mViewMenu->addCheckBox( "Enable Color Picker" )
+		->setActive( mConfig.editor.colorPickerSelection )
+		->setTooltipText( "Enables the color picker tool when a double click selection\n"
+						  "is done over a word representing a color." );
+	mViewMenu->addCheckBox( "Enable Auto Complete" )
+		->setActive( mConfig.editor.autoComplete )
+		->setTooltipText( "Auto complete shows the completion popup as you type, so you can fill\n"
+						  "in long words by typing only a few characters." );
+	mViewMenu->add( "Line Breaking Column" );
+
+	mViewMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
+		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+			return;
+		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
+		if ( item->getText() == "Show Line Numbers" ) {
+			mConfig.editor.showLineNumbers = item->asType<UIMenuCheckBox>()->isActive();
+			mEditorSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
+				editor->setShowLineNumber( mConfig.editor.showLineNumbers );
+			} );
+		} else if ( item->getText() == "Show White Space" ) {
+			mConfig.editor.showWhiteSpaces = item->asType<UIMenuCheckBox>()->isActive();
+			mEditorSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
+				editor->setShowWhitespaces( mConfig.editor.showWhiteSpaces );
+			} );
+		} else if ( item->getText() == "Highlight Matching Bracket" ) {
+			mConfig.editor.highlightMatchingBracket = item->asType<UIMenuCheckBox>()->isActive();
+			mEditorSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
+				editor->setHighlightMatchingBracket( mConfig.editor.highlightMatchingBracket );
+			} );
+		} else if ( item->getText() == "Highlight Current Line" ) {
+			mConfig.editor.highlightCurrentLine = item->asType<UIMenuCheckBox>()->isActive();
+			mEditorSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
+				editor->setHighlightCurrentLine( mConfig.editor.highlightCurrentLine );
+			} );
+		} else if ( item->getText() == "Highlight Selection Match" ) {
+			mConfig.editor.highlightSelectionMatch = item->asType<UIMenuCheckBox>()->isActive();
+			mEditorSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
+				editor->setHighlightSelectionMatch( mConfig.editor.highlightSelectionMatch );
+			} );
+		} else if ( item->getText() == "Enable Horizontal ScrollBar" ) {
+			mConfig.editor.horizontalScrollbar = item->asType<UIMenuCheckBox>()->isActive();
+			mEditorSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
+				editor->setHorizontalScrollBarEnabled( mConfig.editor.horizontalScrollbar );
+			} );
+		} else if ( item->getText() == "Enable Color Picker" ) {
+			mConfig.editor.colorPickerSelection = item->asType<UIMenuCheckBox>()->isActive();
+			mEditorSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
+				editor->setEnableColorPickerOnSelection( mConfig.editor.colorPickerSelection );
+			} );
+		} else if ( item->getText() == "Enable Auto Complete" ) {
+			setAutoComplete( item->asType<UIMenuCheckBox>()->isActive() );
+		} else if ( item->getText() == "Enable Color Preview" ) {
+			mConfig.editor.colorPreview = item->asType<UIMenuCheckBox>()->isActive();
+			mEditorSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
+				editor->setEnableColorPickerOnSelection( mConfig.editor.colorPreview );
+			} );
+		} else if ( item->getText() == "Show Document Info" ) {
+			mConfig.editor.showDocInfo = item->asType<UIMenuCheckBox>()->isActive();
+			if ( mDocInfo )
+				mDocInfo->setVisible( mConfig.editor.showDocInfo );
+			if ( mEditorSplitter->getCurEditor() )
+				updateDocInfo( mEditorSplitter->getCurEditor()->getDocument() );
+
 		} else if ( item->getText() == "Line Breaking Column" ) {
 			UIMessageBox* msgBox =
 				UIMessageBox::New( UIMessageBox::INPUT, "Set Line Breaking Column:\n"
@@ -732,14 +781,6 @@ UIMenu* App::createViewMenu() {
 				}
 			} );
 			setFocusEditorOnClose( msgBox );
-		} else if ( "Zoom In" == item->getText() ) {
-			mEditorSplitter->zoomIn();
-		} else if ( "Zoom Out" == item->getText() ) {
-			mEditorSplitter->zoomOut();
-		} else if ( "Zoom Reset" == item->getText() ) {
-			mEditorSplitter->zoomReset();
-		} else if ( "Full Screen Mode" == item->getText() ) {
-			runCommand( "fullscreen-toggle" );
 		} else {
 			String text = String( event->getNode()->asType<UIMenuItem>()->getText() ).toLower();
 			String::replaceAll( text, " ", "-" );
@@ -1009,7 +1050,7 @@ void App::updateDocInfo( TextDocument& doc ) {
 	if ( mConfig.editor.showDocInfo && mDocInfoText ) {
 		mDocInfoText->setText( String::format(
 			"line: %lld / %lu  col: %lld    %s", doc.getSelection().start().line() + 1,
-			doc.linesCount(), doc.getSelection().start().column() + 1,
+			doc.linesCount(), doc.getSelection().start().column(),
 			doc.getLineEnding() == TextDocument::LineEnding::LF ? "LF" : "CRLF" ) );
 	}
 }
@@ -1115,7 +1156,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	doc.setCommand( "close-app", [&] { closeApp(); } );
 	doc.setCommand( "fullscreen-toggle", [&]() {
 		mWindow->toggleFullscreen();
-		mViewMenu->find( "fullscreen-mode" )
+		mWindowMenu->find( "fullscreen-mode" )
 			->asType<UIMenuCheckBox>()
 			->setActive( !mWindow->isWindowed() );
 	} );
@@ -1208,6 +1249,7 @@ void App::createSettingsMenu() {
 	mSettingsMenu->addSubMenu( "Document", nullptr, createDocumentMenu() );
 	mSettingsMenu->addSubMenu( "Edit", nullptr, createEditMenu() );
 	mSettingsMenu->addSubMenu( "View", nullptr, createViewMenu() );
+	mSettingsMenu->addSubMenu( "Window", nullptr, createWindowMenu() );
 	mSettingsMenu->addSeparator();
 	mSettingsMenu->add( "Close", findIcon( "document-close" ), getKeybind( "close-doc" ) );
 	mSettingsMenu->addSeparator();
@@ -1528,8 +1570,13 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		mUISceneNode->bind( "search_bar", mSearchBarLayout );
 		mUISceneNode->bind( "doc_info", mDocInfo );
 		mUISceneNode->bind( "doc_info_text", mDocInfoText );
+		mUISceneNode->bind( "panel", mSidePanel );
+		mUISceneNode->bind( "project_splitter", mProjectSplitter );
 		mDocInfo->setVisible( mConfig.editor.showDocInfo );
 		mSearchBarLayout->setVisible( false )->setEnabled( false );
+		mProjectSplitter->setSplitPartition( StyleSheetLength( mConfig.window.panelPartition ) );
+		if ( !mConfig.ui.showSidePanel )
+			showSidePanel( mConfig.ui.showSidePanel );
 
 		mEditorSplitter = UICodeEditorSplitter::New(
 			this, mUISceneNode,
@@ -1544,13 +1591,12 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 
 		mConsole = eeNew( Console, ( fontMono, true, true, 1024 * 1000, 0, mWindow ) );
 
-		UISplitter* projectSplitter = mUISceneNode->find<UISplitter>( "project_splitter" );
-		projectSplitter->setDivisionSplit( 0.15f );
 		UITreeView* tree = mUISceneNode->find<UITreeView>( "project_view" );
 		tree->setColumnsHidden( {FileSystemModel::Icon, FileSystemModel::Size,
 								 FileSystemModel::Group, FileSystemModel::Inode,
 								 FileSystemModel::Owner, FileSystemModel::SymlinkTarget,
-								 FileSystemModel::Permissions, FileSystemModel::ModificationTime},
+								 FileSystemModel::Permissions, FileSystemModel::ModificationTime,
+								 FileSystemModel::Path},
 								true );
 		tree->setHeadersVisible( false );
 		tree->addEventListener( Event::OnModelEvent, [&]( const Event* event ) {
@@ -1558,8 +1604,8 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 			if ( modelEvent->getModelEventType() == ModelEventType::Open ) {
 				Variant vPath( modelEvent->getModel()->data( modelEvent->getModelIndex(),
 															 Model::Role::Custom ) );
-				if ( vPath.isValid() && vPath.is( Variant::Type::String ) ) {
-					std::string path ( vPath.asString() );
+				if ( vPath.isValid() && vPath.is( Variant::Type::cstr ) ) {
+					std::string path( vPath.asCStr() );
 					UITab* tab = mEditorSplitter->isDocumentOpen( path );
 					if ( !tab ) {
 						mEditorSplitter->loadFileFromPathInNewTab( path );

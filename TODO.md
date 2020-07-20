@@ -25,19 +25,17 @@ Detect errors and log them.
 
 * Add XML tags auto-close.
 
-## UITreeView
-
-Implement a simple tree view widget, to at least cover the most common use cases.
-
 ## Code Editor
 
 * Support single instance (when a new file is opened while a previous instance exists, open it in the first instance).
 
-* Once `UITreeView` is finished add a directory/project tree view.
-
 * Add support for function listing.
 
 * Display number of results in search and number of replacements.
+
+* Add support for global/project search.
+
+* Add support for find and open file.
 
 ## UI Editor
 

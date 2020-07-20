@@ -9,8 +9,6 @@ class EE_API UISplitter : public UILayout {
   public:
 	static UISplitter* New();
 
-	UISplitter();
-
 	~UISplitter();
 
 	Uint32 getType() const;
@@ -25,9 +23,9 @@ class EE_API UISplitter : public UILayout {
 
 	void setAlwaysShowSplitter( bool alwaysShowSplitter );
 
-	const Float& getDivisionSplit() const;
+	const StyleSheetLength& getSplitPartition() const;
 
-	void setDivisionSplit( const Float& divisionSplit );
+	void setSplitPartition( const StyleSheetLength& divisionSplit );
 
 	void swap();
 
@@ -39,14 +37,20 @@ class EE_API UISplitter : public UILayout {
 
 	UIWidget* getLastWidget() const;
 
+	bool applyProperty( const StyleSheetProperty& attribute );
+
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& propertyIndex = 0 );
+
   protected:
 	UIOrientation mOrientation;
-	bool mSplitOnlyWhenNeeded;
 	bool mAlwaysShowSplitter;
-	Float mDivisionSplit;
+	StyleSheetLength mSplitPartition;
 	UIWidget* mSplitter;
 	UIWidget* mFirstWidget;
 	UIWidget* mLastWidget;
+
+	UISplitter();
 
 	virtual void onChildCountChange( Node* child, const bool& removed );
 

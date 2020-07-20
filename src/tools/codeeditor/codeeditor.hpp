@@ -37,6 +37,7 @@ class UISearchBar : public UILinearLayout {
 
 struct UIConfig {
 	StyleSheetLength fontSize{12, StyleSheetLength::Dp};
+	bool showSidePanel{true};
 };
 
 struct WindowConfig {
@@ -44,6 +45,7 @@ struct WindowConfig {
 	Sizei size{1280, 720};
 	std::string winIcon;
 	bool maximized{false};
+	std::string panelPartition;
 };
 
 struct CodeEditorConfig {
@@ -148,6 +150,9 @@ class App : public UICodeEditorSplitter::Client {
 	AppConfig mConfig;
 	UIPopUpMenu* mDocMenu{nullptr};
 	UIPopUpMenu* mViewMenu{nullptr};
+	UIPopUpMenu* mWindowMenu{nullptr};
+	UISplitter* mProjectSplitter{nullptr};
+	UITabWidget* mSidePanel{nullptr};
 	UICodeEditorSplitter* mEditorSplitter{nullptr};
 	std::string mInitColorScheme;
 	std::map<std::string, std::string> mKeybindings;
@@ -158,6 +163,8 @@ class App : public UICodeEditorSplitter::Client {
 	Float mDisplayDPI;
 	std::string mResPath;
 	AutoCompleteModule* mAutoCompleteModule{nullptr};
+
+	void showSidePanel( bool show );
 
 	void onFileDropped( String file );
 
@@ -194,6 +201,8 @@ class App : public UICodeEditorSplitter::Client {
 	UIMenu* createViewMenu();
 
 	UIMenu* createEditMenu();
+
+	UIMenu* createWindowMenu();
 
 	Drawable* findIcon( const std::string& name );
 

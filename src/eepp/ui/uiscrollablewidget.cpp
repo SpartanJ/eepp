@@ -172,7 +172,7 @@ void UIScrollableWidget::onContentSizeChange() {
 
 Sizef UIScrollableWidget::getScrollableArea() const {
 	Sizef contentSize( getContentSize() );
-	Sizef size = getVisibleArea();
+	Sizef size( getVisibleArea() );
 	return contentSize - size;
 }
 
@@ -183,6 +183,10 @@ Sizef UIScrollableWidget::getVisibleArea() const {
 	if ( mHScroll->isVisible() )
 		size.y -= mHScroll->getPixelsSize().getHeight();
 	return size;
+}
+
+Rectf UIScrollableWidget::getVisibleRect() const {
+	return Rectf( mScrollOffset, getVisibleArea() );
 }
 
 void UIScrollableWidget::updateScroll() {
@@ -236,6 +240,25 @@ void UIScrollableWidget::scrollToTop() {
 
 void UIScrollableWidget::scrollToBottom() {
 	mVScroll->setValue( 1 );
+}
+
+void UIScrollableWidget::scrollToPosition( const Vector2f& pos, const bool& scrollVertically,
+										   const bool& scrollHorizontally ) {
+	Rectf visibleRect( getVisibleRect() );
+	if ( visibleRect.contains( pos ) )
+		return;
+
+	if ( scrollVertically ) {
+		if ( pos.y < visibleRect.Top || pos.y > visibleRect.Bottom ) {
+			mVScroll->setValue( pos.y / getContentSize().y );
+		}
+	}
+
+	if ( scrollHorizontally ) {
+		if ( pos.x < visibleRect.Left || pos.x > visibleRect.Right ) {
+			mHScroll->setValue( pos.x / getContentSize().x );
+		}
+	}
 }
 
 bool UIScrollableWidget::applyProperty( const StyleSheetProperty& attribute ) {

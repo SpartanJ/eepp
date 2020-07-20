@@ -191,6 +191,8 @@ enum class PropertyId : Uint32 {
 	TabBarHideOnSingleTab = String::hash( "tabbar-hide-on-single-tab" ),
 	TabBarAllowRearrange = String::hash( "tabbar-allow-rearrange" ),
 	TabBarAllowDragAndDrop = String::hash( "tabbar-allow-drag-and-drop-tabs" ),
+	SplitterPartition = String::hash( "splitter-partition" ),
+	SplitterAlwaysShow = String::hash( "splitter-always-show" ),
 };
 
 enum class PropertyType : Uint32 {

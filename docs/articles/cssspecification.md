@@ -1508,6 +1508,27 @@ Sets the [skin](#skin) tint color.
 
 ---
 
+### splitter-always-show
+
+Sets if the splitter divisor is always visible. If false it will be shown only if two views are
+attached to the splitter.
+
+* Applicable to: EE::UI::UISplitter (Splitter)
+* Data Type: [boolean](#boolean-data-type)
+* Default value: `true`
+
+---
+
+### splitter-partition
+
+Sets the space ocuppied by the first view contained by the splitter.
+
+* Applicable to: EE::UI::UISplitter (Splitter)
+* Data Type: [length-percentage](#length-percentage-data-type)
+* Default value: `50%`
+
+---
+
 ### src
 
 Sets the source of a resource in an element that supports source.

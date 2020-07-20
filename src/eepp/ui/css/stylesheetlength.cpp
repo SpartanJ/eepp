@@ -91,7 +91,7 @@ StyleSheetLength::StyleSheetLength() : mUnit( Px ), mValue( 0 ) {}
 StyleSheetLength::StyleSheetLength( const Float& val, const StyleSheetLength::Unit& unit ) :
 	mUnit( unit ), mValue( val ) {}
 
-StyleSheetLength::StyleSheetLength( std::string val, const Float& defaultValue ) :
+StyleSheetLength::StyleSheetLength( const std::string& val, const Float& defaultValue ) :
 	StyleSheetLength( fromString( val, defaultValue ) ) {}
 
 StyleSheetLength::StyleSheetLength( const StyleSheetLength& val ) {
@@ -170,8 +170,12 @@ Float StyleSheetLength::asDp( const Float& parentSize, const Sizef& viewSize,
 		asPixels( parentSize, viewSize, displayDpi, elFontSize, globalFontSize ) );
 }
 
-bool StyleSheetLength::operator==( const StyleSheetLength& length ) {
+bool StyleSheetLength::operator==( const StyleSheetLength& length ) const {
 	return mValue == length.mValue && mUnit == length.mUnit;
+}
+
+bool StyleSheetLength::operator!=( const StyleSheetLength& length ) const {
+	return !( *this == length );
 }
 
 StyleSheetLength& StyleSheetLength::operator=( const Float& val ) {

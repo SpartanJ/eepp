@@ -364,6 +364,11 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "tabbar-allow-rearrange", "false" );
 	registerProperty( "tabbar-allow-drag-and-drop-tabs", "false" );
 
+	registerProperty( "splitter-partition", "50%" )
+		.setType( PropertyType::NumberLength )
+		.setRelativeTarget( PropertyRelativeTarget::LocalBlockWidth );
+	registerProperty( "splitter-always-show", "true" ).setType( PropertyType::Bool );
+
 	// Shorthands
 	registerShorthand( "margin", {"margin-top", "margin-right", "margin-bottom", "margin-left"},
 					   "box" );

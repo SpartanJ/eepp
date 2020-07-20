@@ -10,7 +10,7 @@ class UIAbstractTableView;
 }
 using namespace Abstract;
 
-class UITableHeaderColumn : public UIPushButton {
+class EE_API UITableHeaderColumn : public UIPushButton {
   public:
 	UITableHeaderColumn( UIAbstractTableView* view, const size_t& colIndex );
 
