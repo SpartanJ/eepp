@@ -19,8 +19,16 @@ Sizef UISkin::getSize() {
 	return getSize( UIState::StateFlagNormal );
 }
 
+Sizef UISkin::getPixelsSize() {
+	return StateListDrawable::getPixelsSize( UIState::StateFlagNormal );
+}
+
 Sizef UISkin::getSize( const Uint32& state ) {
 	return StateListDrawable::getSize( state );
+}
+
+Sizef UISkin::getPixelsSize( const Uint32& state ) {
+	return StateListDrawable::getPixelsSize( state );
 }
 
 UISkin* UISkin::clone( const std::string& NewName ) {
@@ -52,8 +60,8 @@ Rectf UISkin::getBorderSize( const Uint32& state ) {
 		TextureRegion* str( ninePatch->getTextureRegion( NinePatch::Right ) );
 		TextureRegion* stt( ninePatch->getTextureRegion( NinePatch::Up ) );
 		TextureRegion* stb( ninePatch->getTextureRegion( NinePatch::Down ) );
-		Rectf size( stl->getPxSize().getWidth(), stt->getPxSize().getHeight(),
-					str->getPxSize().getWidth(), stb->getPxSize().getHeight() );
+		Rectf size( stl->getPixelsSize().getWidth(), stt->getPixelsSize().getHeight(),
+					str->getPixelsSize().getWidth(), stb->getPixelsSize().getHeight() );
 		return size;
 	}
 

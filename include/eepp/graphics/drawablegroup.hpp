@@ -16,6 +16,8 @@ class EE_API DrawableGroup : public Drawable {
 
 	virtual Sizef getSize();
 
+	virtual Sizef getPixelsSize();
+
 	virtual void draw();
 
 	virtual void draw( const Vector2f& position );

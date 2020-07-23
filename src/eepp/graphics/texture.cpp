@@ -929,7 +929,7 @@ Sizef Texture::getSize() {
 	return Sizef( PixelDensity::pxToDp( mImgWidth ), PixelDensity::pxToDp( mImgHeight ) );
 }
 
-Sizef Texture::getPxSize() {
+Sizef Texture::getPixelsSize() {
 	return Sizef( mImgWidth, mImgHeight );
 }
 

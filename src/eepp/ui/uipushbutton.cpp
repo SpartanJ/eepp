@@ -32,6 +32,7 @@ UIPushButton::UIPushButton( const std::string& tag ) :
 	mIcon->addEventListener( Event::OnPaddingChange, cb );
 	mIcon->addEventListener( Event::OnMarginChange, cb );
 	mIcon->addEventListener( Event::OnSizeChange, cb );
+	mIcon->addEventListener( Event::OnVisibleChange, cb );
 
 	mTextBox = UITextView::NewWithTag( "pushbutton::text" );
 	mTextBox->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent )
@@ -43,12 +44,6 @@ UIPushButton::UIPushButton( const std::string& tag ) :
 	mTextBox->addEventListener( Event::OnFontStyleChanged, cb );
 	mTextBox->addEventListener( Event::OnTextChanged, cb );
 	mTextBox->addEventListener( Event::OnVisibleChange, cb );
-
-	if ( NULL != getExtraInnerWidget() ) {
-		getExtraInnerWidget()->addEventListener( Event::OnPaddingChange, cb );
-		getExtraInnerWidget()->addEventListener( Event::OnMarginChange, cb );
-		getExtraInnerWidget()->addEventListener( Event::OnSizeChange, cb );
-	}
 
 	onSizeChange();
 
@@ -73,8 +68,7 @@ void UIPushButton::onAutoSize() {
 		Float sH = getSkinSize().getHeight();
 		Float sHS = getSkinSize( UIState::StateFlagSelected ).getHeight();
 		Float tH = mTextBox->getPixelsSize().getHeight();
-		Float eH =
-			NULL != getExtraInnerWidget() ? getExtraInnerWidget()->getPixelsSize().getHeight() : 0;
+		Float eH = getExtraInnerWidget() ? getExtraInnerWidget()->getPixelsSize().getHeight() : 0;
 		Float h = eemax( eemax( PixelDensity::dpToPx( eemax( sH, sHS ) ), tH ), eH );
 		setInternalPixelsHeight( h + mRealPadding.Top + mRealPadding.Bottom );
 	} else if ( ( mFlags & UI_AUTO_SIZE ) && NULL != getSkin() ) {
@@ -82,39 +76,100 @@ void UIPushButton::onAutoSize() {
 	}
 
 	if ( ( mFlags & UI_AUTO_SIZE ) || mWidthPolicy == SizePolicy::WrapContent ) {
-		Int32 txtW = mTextBox->getPixelsSize().getWidth();
-		Int32 iconSize = mIcon->getPixelsSize().getWidth() > 0
-							 ? mIcon->getPixelsSize().getWidth() +
-								   PixelDensity::dpToPxI( mIcon->getLayoutMargin().Left +
-														  mIcon->getLayoutMargin().Right )
-							 : 0;
-
-		UIWidget* eWidget = getExtraInnerWidget();
-		Int32 eWidgetSize = NULL != eWidget
-								? PixelDensity::dpToPxI( eWidget->getSize().getWidth() +
-														 eWidget->getLayoutMargin().Left +
-														 eWidget->getLayoutMargin().Right )
-								: 0;
-
 		Int32 minSize =
-			txtW + iconSize + eWidgetSize + mRealPadding.Left + mRealPadding.Right +
+			getContentSize().getWidth() +
 			( NULL != getSkin() ? PixelDensity::dpToPxI( getSkin()->getBorderSize().Left +
 														 getSkin()->getBorderSize().Right )
 								: 0 );
 
 		if ( minSize > mSize.getWidth() ) {
-			setInternalPixelsWidth( minSize );
+			setInternalPixelsWidth( getContentSize().getWidth() );
 		}
 	}
 }
 
+Vector2f UIPushButton::packLayout( const std::vector<UIWidget*>& widgets, const Rectf& padding ) {
+	std::vector<Vector2f> pos( widgets.size() );
+	Vector2f totSize{padding.Left, padding.Top + padding.Bottom};
+	UIWidget* widget;
+	for ( size_t i = 0; i < widgets.size(); i++ ) {
+		if ( !widgets[i] || !widgets[i]->isVisible() )
+			continue;
+		widget = widgets[i];
+		pos[i].x = totSize.x;
+		switch ( Font::getVerticalAlign( getFlags() ) ) {
+			case UI_VALIGN_CENTER:
+				pos[i].y =
+					eefloor( ( mSize.getHeight() - widget->getPixelsSize().getHeight() ) * 0.5f );
+				break;
+			case UI_VALIGN_BOTTOM:
+				pos[i].y = mSize.y - widget->getPixelsSize().getHeight() - padding.Bottom;
+				break;
+			case UI_VALIGN_TOP:
+				pos[i].y = padding.Top;
+				break;
+		}
+		if ( 0 == i )
+			pos[i].x += PixelDensity::dpToPxI( widget->getLayoutMargin().Left );
+		totSize.x += widget->getPixelsSize().getWidth() > 0
+						 ? PixelDensity::dpToPxI( widget->getLayoutMargin().Left +
+												  widget->getLayoutMargin().Right ) +
+							   widget->getPixelsSize().getWidth()
+						 : 0;
+		totSize.y = eemax<Float>( totSize.y, padding.Top + padding.Bottom +
+												 widget->getPixelsSize().getHeight() );
+	}
+	totSize.x += padding.Right;
+	Vector2f align;
+	switch ( Font::getHorizontalAlign( getFlags() ) ) {
+		case UI_HALIGN_RIGHT:
+			align.x = mSize.getWidth() - totSize.x;
+			break;
+		case UI_HALIGN_CENTER:
+			if ( mSize.getWidth() > totSize.x ) {
+				align.x = ( mSize.getWidth() - totSize.x ) * 0.5f;
+			} else {
+				align.x = ( totSize.x - mSize.getWidth() ) * 0.5f;
+			}
+			break;
+		case UI_HALIGN_LEFT:
+			break;
+	}
+	for ( size_t i = 0; i < widgets.size(); i++ ) {
+		if ( widgets[i] && widgets[i]->isVisible() )
+			widgets[i]->setPixelsPosition( pos[i] + align );
+	}
+	return totSize;
+}
+
+UIWidget* UIPushButton::getFirstInnerItem() const {
+	switch ( mInnerWidgetOrientation ) {
+		case InnerWidgetOrientation::Left:
+			return getExtraInnerWidget() && getExtraInnerWidget()->isVisible()
+					   ? getExtraInnerWidget()
+					   : mIcon;
+		case InnerWidgetOrientation::Center:
+			return mIcon->isVisible()
+					   ? mIcon
+					   : ( getExtraInnerWidget() && getExtraInnerWidget()->isVisible()
+							   ? getExtraInnerWidget()
+							   : mTextBox );
+		case InnerWidgetOrientation::Right:
+			if ( mIcon->isVisible() )
+				return mIcon;
+			else
+				return mTextBox;
+	}
+	return mChild->isWidget() ? mChild->asType<UIWidget>() : nullptr;
+}
+
 void UIPushButton::updateLayout() {
 	Rectf autoPadding;
-
 	if ( mFlags & UI_AUTO_PADDING ) {
 		autoPadding = makePadding( true, true, true, true );
+		if ( autoPadding != Rectf() )
+			autoPadding = PixelDensity::dpToPx( autoPadding );
 	}
-
 	if ( mRealPadding.Top > autoPadding.Top )
 		autoPadding.Top = mRealPadding.Top;
 	if ( mRealPadding.Bottom > autoPadding.Bottom )
@@ -124,98 +179,16 @@ void UIPushButton::updateLayout() {
 	if ( mRealPadding.Right > autoPadding.Right )
 		autoPadding.Right = mRealPadding.Right;
 
-	Vector2f position;
-	Vector2f iconPos;
-	Vector2f ePos;
-	UIWidget* eWidget = getExtraInnerWidget();
-
-	Float textBoxWidth = mTextBox->getPixelsSize().getWidth();
-	Float iconWidth = mIcon->getPixelsSize().getWidth() > 0
-						  ? mIcon->getPixelsSize().getWidth() +
-								PixelDensity::dpToPxI( mIcon->getLayoutMargin().Left +
-													   mIcon->getLayoutMargin().Right )
-						  : 0;
-	Float eWidth =
-		NULL != eWidget && eWidget->isVisible() && eWidget->getPixelsSize().getWidth() > 0
-			? eWidget->getPixelsSize().getWidth() +
-				  PixelDensity::dpToPxI( eWidget->getLayoutMargin().Left +
-										 eWidget->getLayoutMargin().Right )
-			: 0;
-
-	if ( iconWidth > 0 && textBoxWidth <= 0 &&
-		 Font::getHorizontalAlign( getFlags() ) == UI_HALIGN_CENTER && eWidth == 0 &&
-		 mIcon->getLayoutMargin().Left != mIcon->getLayoutMargin().Right ) {
-		iconWidth = mIcon->getPixelsSize().getWidth();
-	}
-
-	Float totalWidth = textBoxWidth + iconWidth + eWidth;
-
-	switch ( Font::getVerticalAlign( getFlags() ) ) {
-		case UI_VALIGN_CENTER:
-			iconPos.y =
-				eefloor( ( mSize.getHeight() - mIcon->getPixelsSize().getHeight() ) * 0.5f );
-			position.y =
-				eefloor( ( mSize.getHeight() - mTextBox->getPixelsSize().getHeight() ) * 0.5f );
-			ePos.y =
-				NULL != eWidget && eWidget->isVisible()
-					? eefloor( ( mSize.getHeight() - eWidget->getPixelsSize().getHeight() ) * 0.5f )
-					: 0;
+	switch ( mInnerWidgetOrientation ) {
+		case InnerWidgetOrientation::Left:
+			packLayout( {getExtraInnerWidget(), mIcon, mTextBox}, autoPadding );
 			break;
-		case UI_VALIGN_BOTTOM:
-			iconPos.y = mSize.y - mIcon->getPixelsSize().getHeight() - autoPadding.Bottom;
-			position.y = mSize.y - mTextBox->getPixelsSize().getHeight() - autoPadding.Bottom;
-			ePos.y = NULL != eWidget && eWidget->isVisible()
-						 ? mSize.y - eWidget->getPixelsSize().getHeight() - autoPadding.Bottom
-						 : 0;
+		case InnerWidgetOrientation::Center:
+			packLayout( {mIcon, getExtraInnerWidget(), mTextBox}, autoPadding );
 			break;
-		case UI_VALIGN_TOP:
-			iconPos.y = autoPadding.Top;
-			position.y = autoPadding.Top;
-			ePos.y = autoPadding.Top;
+		case InnerWidgetOrientation::Right:
+			packLayout( {mIcon, mTextBox, getExtraInnerWidget()}, autoPadding );
 			break;
-	}
-
-	switch ( Font::getHorizontalAlign( getFlags() ) ) {
-		case UI_HALIGN_RIGHT:
-			position.x = mSize.getWidth() - autoPadding.Right;
-			ePos.x = position.x;
-
-			if ( NULL != eWidget && eWidget->isVisible() ) {
-				ePos.x = position.x - PixelDensity::dpToPx( eWidget->getLayoutMargin().Right ) -
-						 eWidget->getPixelsSize().getWidth();
-				position.x = ePos.x - PixelDensity::dpToPx( eWidget->getLayoutMargin().Left );
-			}
-
-			position.x -= textBoxWidth;
-
-			iconPos.x = position.x - PixelDensity::dpToPxI( mIcon->getLayoutMargin().Right ) -
-						mIcon->getPixelsSize().getWidth();
-			break;
-		case UI_HALIGN_CENTER:
-			position.x = ( mSize.getWidth() - totalWidth ) / 2 + iconWidth;
-			iconPos.x = ( mSize.getWidth() - totalWidth ) / 2 +
-						PixelDensity::dpToPxI( mIcon->getLayoutMargin().Left );
-
-			if ( NULL != eWidget && eWidget->isVisible() ) {
-				ePos.x = position.x + textBoxWidth +
-						 PixelDensity::dpToPx( eWidget->getLayoutMargin().Left );
-			}
-			break;
-		case UI_HALIGN_LEFT:
-			position.x = autoPadding.Left + iconWidth;
-			iconPos.x = autoPadding.Left + PixelDensity::dpToPxI( mIcon->getLayoutMargin().Left );
-
-			if ( NULL != eWidget && eWidget->isVisible() ) {
-				ePos.x = position.x + textBoxWidth +
-						 PixelDensity::dpToPx( eWidget->getLayoutMargin().Left );
-			}
-			break;
-	}
-
-	mTextBox->setPixelsPosition( position );
-	mIcon->setPixelsPosition( iconPos );
-	if ( NULL != eWidget && eWidget->isVisible() ) {
-		eWidget->setPixelsPosition( ePos );
 	}
 }
 
@@ -246,9 +219,10 @@ void UIPushButton::onThemeLoaded() {
 	UIWidget::onThemeLoaded();
 }
 
-UIPushButton* UIPushButton::setIcon( Drawable* Icon ) {
-	if ( mIcon->getDrawable() != Icon ) {
-		mIcon->setDrawable( Icon );
+UIPushButton* UIPushButton::setIcon( Drawable* icon ) {
+	if ( mIcon->getDrawable() != icon ) {
+		mIcon->setSize( icon->getSize() );
+		mIcon->setDrawable( icon );
 		updateLayout();
 	}
 	return this;
@@ -365,6 +339,18 @@ Sizef UIPushButton::getContentSize() const {
 																  getSkin()->getBorderSize().Right )
 										 : 0 );
 	return Sizef( minWidth, minHeight );
+}
+
+const InnerWidgetOrientation& UIPushButton::getInnerWidgetOrientation() const {
+	return mInnerWidgetOrientation;
+}
+
+void UIPushButton::setInnerWidgetOrientation(
+	const InnerWidgetOrientation& innerWidgetOrientation ) {
+	if ( mInnerWidgetOrientation != innerWidgetOrientation ) {
+		mInnerWidgetOrientation = innerWidgetOrientation;
+		updateLayout();
+	}
 }
 
 std::string UIPushButton::getPropertyString( const PropertyDefinition* propertyDef,

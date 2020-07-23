@@ -49,10 +49,20 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	/** In pixels. */
 	void setRowHeight( const Float& rowHeight );
 
-	void columnResizeToContent( const size_t& colIndex );
-
 	/** In pixels. */
 	void setColumnWidth( const size_t& colIndex, const Float& width );
+
+	const Float& getColumnWidth( const size_t& colIndex ) const;
+
+	virtual Float getMaxColumnContentWidth( const size_t& colIndex );
+
+	bool getAutoExpandOnSingleColumn() const;
+
+	void setAutoExpandOnSingleColumn( bool autoExpandOnSingleColumn );
+
+	void columnResizeToContent( const size_t& colIndex );
+
+	Float getContentSpaceWidth() const;
 
   protected:
 	friend class EE::UI::UITableHeaderColumn;
@@ -87,14 +97,13 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	virtual void updateColumnsWidth();
 
-	virtual void updateScroll();
-
 	void updateHeaderSize();
 
 	int visibleColumn();
 
 	UILinearLayout* mHeader;
 	Float mDragBorderDistance{8};
+	bool mAutoExpandOnSingleColumn{false};
 };
 
 }}} // namespace EE::UI::Abstract

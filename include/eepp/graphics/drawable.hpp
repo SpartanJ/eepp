@@ -38,6 +38,8 @@ class EE_API Drawable {
 
 	virtual Sizef getSize() = 0;
 
+	virtual Sizef getPixelsSize() = 0;
+
 	virtual void draw() = 0;
 
 	virtual void draw( const Vector2f& position ) = 0;

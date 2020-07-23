@@ -57,16 +57,16 @@ Sizef GlyphDrawable::getSize() {
 	return Sizef( mSrcRect.Right / mPixelDensity, mSrcRect.Bottom / mPixelDensity );
 }
 
+Sizef GlyphDrawable::getPixelsSize() {
+	return Sizef( mSrcRect.Right, mSrcRect.Bottom );
+}
+
 const Float& GlyphDrawable::getPixelDensity() const {
 	return mPixelDensity;
 }
 
 void GlyphDrawable::setPixelDensity( const Float& pixelDensity ) {
 	mPixelDensity = pixelDensity;
-}
-
-Sizef GlyphDrawable::getPxSize() const {
-	return Sizef( mSrcRect.Right, mSrcRect.Bottom );
 }
 
 const Vector2f& GlyphDrawable::getGlyphOffset() const {

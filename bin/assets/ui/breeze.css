@@ -110,7 +110,9 @@ SelectButton:selectedpressed {
 }
 
 PushButton::icon,
-SelectButton::icon {
+SelectButton::icon,
+TreeView::cell::icon,
+TreeView::cell::expander {
 	margin-right: 4dp;
 }
 
@@ -768,6 +770,12 @@ table::row:hover {
 
 table::row:selected {
 	background-color: var(--primary);
+}
+
+table::cell,
+TreeView::cell {
+	padding-left: 6dp;
+	padding-right: 6dp;
 }
 
 TreeView {

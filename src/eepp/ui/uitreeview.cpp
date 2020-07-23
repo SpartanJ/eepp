@@ -12,7 +12,8 @@ UITreeView* UITreeView::New() {
 	return eeNew( UITreeView, () );
 }
 
-UITreeView::UITreeView() : UIAbstractTableView( "treeview" ), mIndentWidth( 16 ) {
+UITreeView::UITreeView() :
+	UIAbstractTableView( "treeview" ), mIndentWidth( PixelDensity::dpToPx( 12 ) ) {
 	mExpandIcon = getUISceneNode()->findIcon( "tree-expanded" );
 	mContractIcon = getUISceneNode()->findIcon( "tree-contracted" );
 }
@@ -39,7 +40,7 @@ template <typename Callback> void UITreeView::traverseTree( Callback callback ) 
 	if ( !getModel() )
 		return;
 	auto& model = *getModel();
-	int indentLevel = 1;
+	int indentLevel = 0;
 	Float yOffset = getHeaderHeight();
 	int rowIndex = -1;
 	std::function<IterationDecision( const ModelIndex& )> traverseIndex =
@@ -55,7 +56,7 @@ template <typename Callback> void UITreeView::traverseTree( Callback callback ) 
 					return IterationDecision::Continue;
 				}
 			}
-			if ( indentLevel > 0 && !index.isValid() )
+			if ( indentLevel >= 0 && !index.isValid() )
 				return IterationDecision::Continue;
 			++indentLevel;
 			int rowCount = model.rowCount( index );
@@ -135,8 +136,85 @@ UITableRow* UITreeView::updateRow( const int& rowIndex, const ModelIndex& index,
 	return rowWidget;
 }
 
+class UITreeViewCell : public UIPushButton {
+  public:
+	static UITreeViewCell* New() { return eeNew( UITreeViewCell, () ); }
+
+	Uint32 getType() const { return UI_TYPE_TREEVIEW_CELL; }
+
+	bool isType( const Uint32& type ) const {
+		return UITreeViewCell::getType() == type ? true : UIPushButton::isType( type );
+	}
+
+	UIImage* getImage() const { return mImage; }
+
+	void updateLayout() {
+		Rectf autoPadding;
+		if ( mFlags & UI_AUTO_PADDING ) {
+			autoPadding = makePadding( true, true, true, true );
+			if ( autoPadding != Rectf() )
+				autoPadding = PixelDensity::dpToPx( autoPadding );
+		}
+		if ( mRealPadding.Top > autoPadding.Top )
+			autoPadding.Top = mRealPadding.Top;
+		if ( mRealPadding.Bottom > autoPadding.Bottom )
+			autoPadding.Bottom = mRealPadding.Bottom;
+		if ( mRealPadding.Left > autoPadding.Left )
+			autoPadding.Left = mRealPadding.Left;
+		if ( mRealPadding.Right > autoPadding.Right )
+			autoPadding.Right = mRealPadding.Right;
+		autoPadding.Left += mIndent;
+		switch ( mInnerWidgetOrientation ) {
+			case InnerWidgetOrientation::Left:
+				packLayout( {getExtraInnerWidget(), mIcon, mTextBox}, autoPadding );
+				break;
+			case InnerWidgetOrientation::Center:
+				packLayout( {mIcon, getExtraInnerWidget(), mTextBox}, autoPadding );
+				break;
+			case InnerWidgetOrientation::Right:
+				packLayout( {mIcon, mTextBox, getExtraInnerWidget()}, autoPadding );
+				break;
+		}
+	}
+
+	void setIndentation( const Float& indent ) {
+		if ( mIndent != indent ) {
+			mIndent = indent;
+			updateLayout();
+		}
+	}
+
+	const Float& getIndentation() const { return mIndent; }
+
+  protected:
+	mutable UIImage* mImage{nullptr};
+	Float mIndent{0};
+
+	UITreeViewCell() : UIPushButton( "treeview::cell" ) {
+		mTextBox->setElementTag( mTag + "::text" );
+		mIcon->setElementTag( mTag + "::icon" );
+		mInnerWidgetOrientation = InnerWidgetOrientation::Left;
+		auto cb = [&]( const Event* ) { updateLayout(); };
+		mImage = UIImage::NewWithTag( mTag + "::expander" );
+		mImage->setScaleType( UIScaleType::FitInside )
+			->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent )
+			->setFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER )
+			->setParent( const_cast<UITreeViewCell*>( this ) )
+			->setVisible( false )
+			->setEnabled( false );
+		mImage->addEventListener( Event::OnPaddingChange, cb );
+		mImage->addEventListener( Event::OnMarginChange, cb );
+		mImage->addEventListener( Event::OnSizeChange, cb );
+		mImage->addEventListener( Event::OnVisibleChange, cb );
+	}
+
+	virtual UIWidget* getExtraInnerWidget() const { return mImage; }
+};
+
 UIWidget* UITreeView::createCell( UIWidget* rowWidget, const ModelIndex&, const size_t& col ) {
-	UIPushButton* widget = UIPushButton::NewWithTag( "table::cell" );
+	UIPushButton* widget = col == getModel()->treeColumn()
+							   ? UITreeViewCell::New()
+							   : UIPushButton::NewWithTag( "table::cell" );
 	widget->setParent( rowWidget );
 	widget->unsetFlags( UI_AUTO_SIZE );
 	widget->clipEnable();
@@ -151,6 +229,7 @@ UIWidget* UITreeView::createCell( UIWidget* rowWidget, const ModelIndex&, const 
 					auto& data = getIndexMetadata( idx );
 					data.open = !data.open;
 					createOrUpdateColumns();
+					onOpenTreeModelIndex( idx, data.open );
 				} else {
 					onOpenModelIndex( idx );
 				}
@@ -158,7 +237,7 @@ UIWidget* UITreeView::createCell( UIWidget* rowWidget, const ModelIndex&, const 
 		} );
 		widget->addEventListener( Event::MouseClick, [&]( const Event* event ) {
 			auto mouseEvent = static_cast<const MouseEvent*>( event );
-			UIImage* icon = mouseEvent->getNode()->asType<UIPushButton>()->getIcon();
+			UIWidget* icon = mouseEvent->getNode()->asType<UIPushButton>()->getExtraInnerWidget();
 			if ( icon ) {
 				Vector2f pos( icon->convertToNodeSpace( mouseEvent->getPosition().asFloat() ) );
 				if ( pos >= Vector2f::Zero && pos <= icon->getPixelsSize() ) {
@@ -168,6 +247,7 @@ UIWidget* UITreeView::createCell( UIWidget* rowWidget, const ModelIndex&, const 
 						auto& data = getIndexMetadata( idx );
 						data.open = !data.open;
 						createOrUpdateColumns();
+						onOpenTreeModelIndex( idx, data.open );
 					}
 				}
 			}
@@ -188,40 +268,75 @@ void UITreeView::updateContentSize() {
 		onContentSizeChange();
 }
 
-UIWidget* UITreeView::updateCell( const int& rowIndex, const ModelIndex& index, const size_t& col,
+UIWidget* UITreeView::updateCell( const int& rowIndex, const ModelIndex& index,
 								  const size_t& indentLevel, const Float& yOffset ) {
 	if ( rowIndex >= (int)mWidgets.size() )
 		mWidgets.resize( rowIndex + 1 );
-	auto* widget = mWidgets[rowIndex][col];
+	auto* widget = mWidgets[rowIndex][index.column()];
 	if ( !widget ) {
 		UIWidget* rowWidget = updateRow( rowIndex, index, yOffset );
-		widget = createCell( rowWidget, index, col );
-		mWidgets[rowIndex][col] = widget;
+		widget = createCell( rowWidget, index, index.column() );
+		mWidgets[rowIndex][index.column()] = widget;
+		widget->reloadStyle( true, true, true );
 	}
-	widget->setPixelsSize( columnData( col ).width, getRowHeight() );
-	widget->setPixelsPosition( {getColumnPosition( col ).x, 0} );
-
-	if ( col == getModel()->treeColumn() )
-		widget->setPaddingLeft( getIndentWidth() * indentLevel );
-
-	ModelIndex idx( getModel()->index( index.row(), col, index.parent() ) );
-
-	Variant txt( getModel()->data( idx, Model::Role::Display ) );
+	widget->setPixelsSize( columnData( index.column() ).width, getRowHeight() );
+	widget->setPixelsPosition( {getColumnPosition( index.column() ).x, 0} );
 
 	if ( widget->isType( UI_TYPE_PUSHBUTTON ) ) {
 		UIPushButton* pushButton = widget->asType<UIPushButton>();
+
+		Variant txt( getModel()->data( index, Model::Role::Display ) );
 		if ( txt.isValid() ) {
 			if ( txt.is( Variant::Type::String ) )
 				pushButton->setText( txt.asString() );
 			else if ( txt.is( Variant::Type::cstr ) )
 				pushButton->setText( txt.asCStr() );
 		}
-		pushButton->setIcon( nullptr );
-		if ( col == getModel()->treeColumn() )
-			pushButton->setIcon( getIndexMetadata( index ).open ? mExpandIcon : mContractIcon );
-		Variant icon( getModel()->data( idx, Model::Role::Icon ) );
-		if ( icon.is( Variant::Type::Drawable ) && icon.asDrawable() )
+
+		bool hasChilds = false;
+
+		if ( widget->isType( UI_TYPE_TREEVIEW_CELL ) ) {
+			UITreeViewCell* cell = widget->asType<UITreeViewCell>();
+			UIImage* image = widget->asType<UITreeViewCell>()->getImage();
+
+			Float minIndent = !mExpandersAsIcons
+								  ? eemax( mExpandIcon->getPixelsSize().getWidth(),
+										   mContractIcon->getPixelsSize().getWidth() ) +
+										PixelDensity::dpToPx( image->getLayoutMargin().Right )
+								  : 0;
+
+			if ( index.column() == (Int64)getModel()->treeColumn() )
+				cell->setIndentation( minIndent + getIndentWidth() * indentLevel );
+
+			hasChilds = getModel()->rowCount( index ) > 0;
+
+			if ( hasChilds ) {
+				Drawable* icon = getIndexMetadata( index ).open ? mExpandIcon : mContractIcon;
+
+				image->setVisible( true );
+				image->setDrawable( icon );
+				if ( !mExpandersAsIcons ) {
+					cell->setIndentation( cell->getIndentation() -
+										  image->getPixelsSize().getWidth() -
+										  PixelDensity::dpToPx( image->getLayoutMargin().Right ) );
+				}
+			} else {
+				image->setVisible( false );
+			}
+		}
+
+		if ( hasChilds && mExpandersAsIcons ) {
+			pushButton->getIcon()->setVisible( false );
+			return widget;
+		}
+
+		bool isVisible = false;
+		Variant icon( getModel()->data( index, Model::Role::Icon ) );
+		if ( icon.is( Variant::Type::Drawable ) && icon.asDrawable() ) {
+			isVisible = true;
 			pushButton->setIcon( icon.asDrawable() );
+		}
+		pushButton->getIcon()->setVisible( isVisible );
 	}
 
 	return widget;
@@ -250,8 +365,15 @@ void UITreeView::drawChilds() {
 		if ( yOffset - mScrollOffset.y + getRowHeight() < 0 )
 			return IterationDecision::Continue;
 		for ( size_t colIndex = 0; colIndex < getModel()->columnCount(); colIndex++ ) {
-			if ( columnData( colIndex ).visible )
-				updateCell( rowIndex, index, colIndex, indentLevel, yOffset );
+			if ( columnData( colIndex ).visible ) {
+				if ( (Int64)colIndex != index.column() ) {
+					updateCell( rowIndex,
+								getModel()->index( index.row(), colIndex, index.parent() ),
+								indentLevel, yOffset );
+				} else {
+					updateCell( rowIndex, index, indentLevel, yOffset );
+				}
+			}
 		}
 		updateRow( rowIndex, index, yOffset )->nodeDraw();
 		return IterationDecision::Continue;
@@ -321,27 +443,31 @@ void UITreeView::setContractedIcon( Drawable* contractIcon ) {
 	}
 }
 
-void UITreeView::onColumnResizeToContent( const size_t& colIndex ) {
-	UIWidget* lWidget = nullptr;
+bool UITreeView::getExpandersAsIcons() const {
+	return mExpandersAsIcons;
+}
+
+void UITreeView::setExpandersAsIcons( bool expandersAsIcons ) {
+	mExpandersAsIcons = expandersAsIcons;
+}
+
+Float UITreeView::getMaxColumnContentWidth( const size_t& colIndex ) {
 	Float lWidth = 0;
 	getUISceneNode()->setIsLoading( true );
 	traverseTree( [&, colIndex]( const int& rowIndex, const ModelIndex& index,
 								 const size_t& indentLevel, const Float& yOffset ) {
-		UIWidget* widget = updateCell( rowIndex, index, colIndex, indentLevel, yOffset );
+		UIWidget* widget =
+			updateCell( rowIndex, getModel()->index( index.row(), colIndex, index.parent() ),
+						indentLevel, yOffset );
 		if ( widget->isType( UI_TYPE_PUSHBUTTON ) ) {
 			Float w = widget->asType<UIPushButton>()->getContentSize().getWidth();
-			if ( w > lWidth ) {
-				lWidget = widget;
+			if ( w > lWidth )
 				lWidth = w;
-			}
 		}
 		return IterationDecision::Continue;
 	} );
 	getUISceneNode()->setIsLoading( false );
-	if ( lWidget ) {
-		columnData( colIndex ).width = lWidth;
-		createOrUpdateColumns();
-	}
+	return lWidth;
 }
 
 void UITreeView::onModelSelectionChange() {
@@ -526,6 +652,12 @@ Uint32 UITreeView::onKeyDown( const KeyEvent& event ) {
 
 void UITreeView::onOpenModelIndex( const ModelIndex& index ) {
 	ModelEvent event( getModel(), index, this );
+	sendEvent( &event );
+}
+
+void UITreeView::onOpenTreeModelIndex( const ModelIndex& index, bool open ) {
+	ModelEvent event( getModel(), index, this,
+					  open ? ModelEventType::OpenTree : ModelEventType::CloseTree );
 	sendEvent( &event );
 }
 

@@ -183,7 +183,7 @@ class EE_API TextureRegion : public DrawableResource {
 
 	Sizei getDpSize();
 
-	Sizef getPxSize();
+	Sizef getPixelsSize();
 
 	Sizef getOriDestSize() const;
 

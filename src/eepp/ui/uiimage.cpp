@@ -61,10 +61,6 @@ UIImage* UIImage::setDrawable( Drawable* drawable, bool ownIt ) {
 
 	onAutoSize();
 
-	if ( NULL != mDrawable && getSize().getWidth() == 0 && getSize().getHeight() == 0 ) {
-		setSize( mDrawable->getSize() );
-	}
-
 	autoAlign();
 
 	invalidateDraw();
@@ -79,13 +75,13 @@ void UIImage::onAutoSize() {
 		}
 
 		if ( mWidthPolicy == SizePolicy::WrapContent ) {
-			setInternalPixelsWidth( (int)mDrawable->getSize().getWidth() + mRealPadding.Left +
-									mRealPadding.Right );
+			setInternalWidth( (int)mDrawable->getSize().getWidth() + mPadding.Left +
+							  mPadding.Right );
 		}
 
 		if ( mHeightPolicy == SizePolicy::WrapContent ) {
-			setInternalPixelsHeight( (int)mDrawable->getSize().getHeight() + mRealPadding.Top +
-									 mRealPadding.Bottom );
+			setInternalHeight( (int)mDrawable->getSize().getHeight() + mPadding.Top +
+							   mPadding.Bottom );
 		}
 	}
 }
@@ -98,7 +94,7 @@ void UIImage::calcDestSize() {
 		if ( NULL == mDrawable )
 			return;
 
-		Sizef pxSize( PixelDensity::dpToPx( mDrawable->getSize() ) );
+		Sizef pxSize( mDrawable->getPixelsSize() );
 		Float Scale1 = ( mSize.x - mRealPadding.Left - mRealPadding.Right ) / pxSize.x;
 		Float Scale2 = ( mSize.y - mRealPadding.Top - mRealPadding.Bottom ) / pxSize.y;
 
@@ -110,10 +106,7 @@ void UIImage::calcDestSize() {
 		} else {
 			mDestSize = pxSize;
 		}
-	} else {
-		if ( NULL == mDrawable )
-			return;
-
+	} else if ( mDrawable ) {
 		mDestSize = mDrawable->getSize();
 	}
 

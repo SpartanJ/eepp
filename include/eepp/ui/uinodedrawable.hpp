@@ -39,6 +39,8 @@ class EE_API UINodeDrawable : public Drawable {
 
 		virtual Sizef getSize();
 
+		virtual Sizef getPixelsSize();
+
 		virtual void setSize( const Sizef& size );
 
 		Drawable* getDrawable() const;
@@ -112,6 +114,8 @@ class EE_API UINodeDrawable : public Drawable {
 	virtual ~UINodeDrawable();
 
 	virtual Sizef getSize();
+
+	virtual Sizef getPixelsSize();
 
 	virtual void setSize( const Sizef& size );
 

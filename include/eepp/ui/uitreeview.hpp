@@ -40,6 +40,12 @@ class EE_API UITreeView : public UIAbstractTableView {
 
 	void setContractedIcon( Drawable* contractIcon );
 
+	bool getExpandersAsIcons() const;
+
+	void setExpandersAsIcons( bool expandersAsIcons );
+
+	Float getMaxColumnContentWidth( const size_t& colIndex );
+
   protected:
 	enum class IterationDecision {
 		Continue,
@@ -51,6 +57,7 @@ class EE_API UITreeView : public UIAbstractTableView {
 	Sizef mContentSize;
 	Drawable* mExpandIcon{nullptr};
 	Drawable* mContractIcon{nullptr};
+	bool mExpandersAsIcons{false};
 
 	UITreeView();
 
@@ -77,20 +84,20 @@ class EE_API UITreeView : public UIAbstractTableView {
 	virtual UITableRow* updateRow( const int& rowIndex, const ModelIndex& index,
 								   const Float& yOffset );
 
-	virtual UIWidget* updateCell( const int& rowIndex, const ModelIndex& index, const size_t& col,
+	virtual UIWidget* updateCell( const int& rowIndex, const ModelIndex& index,
 								  const size_t& indentLevel, const Float& yOffset );
 
 	virtual UIWidget* createCell( UIWidget* rowWidget, const ModelIndex& index, const size_t& col );
 
 	virtual void onScrollChange();
 
-	virtual void onColumnResizeToContent( const size_t& colIndex );
-
 	virtual void onModelSelectionChange();
 
 	virtual Uint32 onKeyDown( const KeyEvent& event );
 
 	virtual void onOpenModelIndex( const ModelIndex& index );
+
+	virtual void onOpenTreeModelIndex( const ModelIndex& index, bool open );
 
 	void updateContentSize();
 };

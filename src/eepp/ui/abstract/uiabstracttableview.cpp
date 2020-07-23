@@ -39,16 +39,16 @@ void UIAbstractTableView::setRowHeight( const Float& rowHeight ) {
 	}
 }
 
-void UIAbstractTableView::columnResizeToContent( const size_t& colIndex ) {
-	onColumnResizeToContent( colIndex );
-}
-
 void UIAbstractTableView::setColumnWidth( const size_t& colIndex, const Float& width ) {
 	if ( columnData( colIndex ).width != width ) {
 		columnData( colIndex ).width = width;
 		updateHeaderSize();
 		onColumnSizeChange( colIndex );
 	}
+}
+
+const Float& UIAbstractTableView::getColumnWidth( const size_t& colIndex ) const {
+	return columnData( colIndex ).width;
 }
 
 void UIAbstractTableView::selectAll() {
@@ -150,7 +150,14 @@ void UIAbstractTableView::onSizeChange() {
 
 void UIAbstractTableView::onColumnSizeChange( const size_t& ) {}
 
-void UIAbstractTableView::onColumnResizeToContent( const size_t& ) {}
+Float UIAbstractTableView::getMaxColumnContentWidth( const size_t& ) {
+	return 0;
+}
+
+void UIAbstractTableView::onColumnResizeToContent( const size_t& colIndex ) {
+	columnData( colIndex ).width = getMaxColumnContentWidth( colIndex );
+	createOrUpdateColumns();
+}
 
 void UIAbstractTableView::updateHeaderSize() {
 	size_t count = getModel()->columnCount();
@@ -170,22 +177,37 @@ int UIAbstractTableView::visibleColumn() {
 	return -1;
 }
 
-void UIAbstractTableView::updateColumnsWidth() {
-	int col = 0;
-	Float width =
-		eefloor( getPixelsSize().getWidth() - getPixelsPadding().Left - getPixelsPadding().Right -
-				 ( mVScroll->isVisible() ? mVScroll->getPixelsSize().getWidth() : 0 ) );
+bool UIAbstractTableView::getAutoExpandOnSingleColumn() const {
+	return mAutoExpandOnSingleColumn;
+}
 
-	if ( visibleColumnCount() == 1 && ( col = visibleColumn() ) != -1 ) {
-		columnData( col ).width = width;
-		updateHeaderSize();
-		onColumnSizeChange( col );
+void UIAbstractTableView::setAutoExpandOnSingleColumn( bool autoExpandOnSingleColumn ) {
+	if ( autoExpandOnSingleColumn != mAutoExpandOnSingleColumn ) {
+		mAutoExpandOnSingleColumn = autoExpandOnSingleColumn;
+		updateColumnsWidth();
 	}
 }
 
-void UIAbstractTableView::updateScroll() {
-	UIAbstractView::updateScroll();
-	updateColumnsWidth();
+void UIAbstractTableView::columnResizeToContent( const size_t& colIndex ) {
+	onColumnResizeToContent( colIndex );
+}
+
+Float UIAbstractTableView::getContentSpaceWidth() const {
+	return eefloor( getPixelsSize().getWidth() - getPixelsPadding().Left -
+					getPixelsPadding().Right -
+					( mVScroll->isVisible() ? mVScroll->getPixelsSize().getWidth() : 0 ) );
+}
+
+void UIAbstractTableView::updateColumnsWidth() {
+	if ( mAutoExpandOnSingleColumn ) {
+		int col = 0;
+		if ( visibleColumnCount() == 1 && ( col = visibleColumn() ) != -1 ) {
+			Float width = eemax( getContentSpaceWidth(), getMaxColumnContentWidth( col ) );
+			columnData( col ).width = width;
+			updateHeaderSize();
+			onColumnSizeChange( col );
+		}
+	}
 }
 
 const Float& UIAbstractTableView::getDragBorderDistance() const {

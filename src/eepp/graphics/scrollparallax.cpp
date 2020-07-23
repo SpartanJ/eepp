@@ -27,8 +27,8 @@ void ScrollParallax::setTextureRegion( TextureRegion* textureRegion ) {
 void ScrollParallax::setTextureRegion() {
 	if ( NULL != mTextureRegion ) {
 		mRect = mTextureRegion->getSrcRect();
-		mRealSize = Vector2f( (Float)mTextureRegion->getPxSize().getWidth(),
-							  (Float)mTextureRegion->getPxSize().getHeight() );
+		mRealSize = Vector2f( (Float)mTextureRegion->getPixelsSize().getWidth(),
+							  (Float)mTextureRegion->getPixelsSize().getHeight() );
 
 		mTiles.x = ( (Int32)mSize.getWidth() / (Int32)mRealSize.getWidth() ) + 1;
 		mTiles.y = ( (Int32)mSize.getHeight() / (Int32)mRealSize.getHeight() ) + 1;

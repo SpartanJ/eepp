@@ -13,6 +13,10 @@ Sizef ConvexShapeDrawable::getSize() {
 	return mPolygon.getBounds().getSize();
 }
 
+Sizef ConvexShapeDrawable::getPixelsSize() {
+	return mPolygon.getBounds().getSize();
+}
+
 void ConvexShapeDrawable::draw() {
 	draw( mPosition, getSize() );
 }

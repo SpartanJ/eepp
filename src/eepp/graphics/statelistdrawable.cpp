@@ -40,11 +40,25 @@ Sizef StateListDrawable::getSize() {
 	return NULL != mCurrentDrawable ? mCurrentDrawable->getSize() : Sizef();
 }
 
+Sizef StateListDrawable::getPixelsSize() {
+	return mCurrentDrawable ? mCurrentDrawable->getPixelsSize() : Sizef();
+}
+
 Sizef StateListDrawable::getSize( const Uint32& state ) {
 	auto it = mDrawables.find( state );
 
 	if ( it != mDrawables.end() ) {
 		return it->second->getSize();
+	}
+
+	return Sizef();
+}
+
+Sizef StateListDrawable::getPixelsSize( const Uint32& state ) {
+	auto it = mDrawables.find( state );
+
+	if ( it != mDrawables.end() ) {
+		return it->second->getPixelsSize();
 	}
 
 	return Sizef();

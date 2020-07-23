@@ -70,6 +70,10 @@ Sizef UIBorderDrawable::getSize() {
 	return mSize;
 }
 
+Sizef UIBorderDrawable::getPixelsSize() {
+	return mSize;
+}
+
 Float UIBorderDrawable::getLineWidth() const {
 	return mBorders.top.width;
 }

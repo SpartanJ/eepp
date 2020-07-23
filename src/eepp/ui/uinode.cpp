@@ -46,6 +46,7 @@ UINode::UINode() :
 	if ( NULL != mUISceneNode )
 		setParent( (Node*)mUISceneNode->getRoot() );
 }
+
 UINode::~UINode() {
 	removeSkin();
 
@@ -53,7 +54,7 @@ UINode::~UINode() {
 	eeSAFE_DELETE( mForeground );
 	eeSAFE_DELETE( mBorder );
 
-	if ( isDragging() )
+	if ( isDragging() && getEventDispatcher() )
 		getEventDispatcher()->setNodeDragging( NULL );
 }
 

@@ -22,6 +22,10 @@ Sizef TriangleDrawable::getSize() {
 	return mTriangle.getSize();
 }
 
+Sizef TriangleDrawable::getPixelsSize() {
+	return mTriangle.getSize();
+}
+
 void TriangleDrawable::draw() {
 	draw( mPosition );
 }

@@ -1599,6 +1599,7 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 								 FileSystemModel::Path},
 								true );
 		tree->setHeadersVisible( false );
+		tree->setExpandersAsIcons( true );
 		tree->addEventListener( Event::OnModelEvent, [&]( const Event* event ) {
 			const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
 			if ( modelEvent->getModelEventType() == ModelEventType::Open ) {
@@ -1627,6 +1628,8 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		} else {
 			tree->setModel( FileSystemModel::New( "." ) );
 		}
+
+		tree->setAutoExpandOnSingleColumn( true );
 
 		mWindow->runMainLoop( &appLoop );
 	}

@@ -36,11 +36,11 @@ class EE_API GlyphDrawable : public DrawableResource {
 	/** @return This is the same as Destination Size but with the values rounded as integers. */
 	Sizef getSize();
 
+	Sizef getPixelsSize();
+
 	const Float& getPixelDensity() const;
 
 	void setPixelDensity( const Float& pixelDensity );
-
-	Sizef getPxSize() const;
 
 	const Vector2f& getGlyphOffset() const;
 

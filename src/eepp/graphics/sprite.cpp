@@ -690,6 +690,10 @@ Sizef Sprite::getSize() {
 	return mFrames[mCurrentFrame].Spr[mCurrentSubFrame]->getSize();
 }
 
+Sizef Sprite::getPixelsSize() {
+	return mFrames[mCurrentFrame].Spr[mCurrentSubFrame]->getPixelsSize();
+}
+
 void Sprite::setRepetitions( const int& Repeations ) {
 	mRepetitions = Repeations;
 }

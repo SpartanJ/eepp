@@ -7,6 +7,8 @@
 
 namespace EE { namespace UI {
 
+enum class InnerWidgetOrientation { Left, Right, Center };
+
 class EE_API UIPushButton : public UIWidget {
   public:
 	static UIPushButton* New();
@@ -46,10 +48,19 @@ class EE_API UIPushButton : public UIWidget {
 
 	virtual Sizef getContentSize() const;
 
+	const InnerWidgetOrientation& getInnerWidgetOrientation() const;
+
+	void setInnerWidgetOrientation( const InnerWidgetOrientation& innerWidgetOrientation );
+
+	virtual UIWidget* getExtraInnerWidget() const;
+
+	UIWidget* getFirstInnerItem() const;
+
   protected:
 	UIImage* mIcon;
 	UITextView* mTextBox;
 	Sizei mIconMinSize;
+	InnerWidgetOrientation mInnerWidgetOrientation{InnerWidgetOrientation::Right};
 
 	explicit UIPushButton( const std::string& tag );
 
@@ -73,7 +84,7 @@ class EE_API UIPushButton : public UIWidget {
 
 	virtual Uint32 onKeyUp( const KeyEvent& Event );
 
-	virtual UIWidget* getExtraInnerWidget() const;
+	Vector2f packLayout( const std::vector<UIWidget*>& widgets, const Rectf& padding );
 };
 
 }} // namespace EE::UI

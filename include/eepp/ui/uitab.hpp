@@ -36,13 +36,15 @@ class EE_API UITab : public UISelectButton {
 
 	UITabWidget* getTabWidget();
 
+	virtual UIWidget* getExtraInnerWidget() const;
+
   protected:
 	friend class UITabWidget;
 
 	Node* mOwnedWidget;
 	String mText;
 	std::string mOwnedName;
-	UIWidget* mCloseButton;
+	mutable UIWidget* mCloseButton{nullptr};
 	Float mDragTotalDiff;
 	UITabWidget* mTabWidget;
 
@@ -61,8 +63,6 @@ class EE_API UITab : public UISelectButton {
 	virtual void onParentChange();
 
 	virtual void onSizeChange();
-
-	virtual UIWidget* getExtraInnerWidget() const;
 
 	void setOwnedNode();
 

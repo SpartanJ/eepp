@@ -17,9 +17,12 @@ UITab::UITab() :
 	mTextBox->addEventListener( Event::OnSizeChange, cb );
 	mIcon->addEventListener( Event::OnSizeChange, cb );
 	mCloseButton = UIWidget::NewWithTag( mTag + "::close" );
-	mCloseButton->setParent( this );
+	mCloseButton->setParent( const_cast<UITab*>( this ) );
 	mCloseButton->setEnabled( false );
 	mCloseButton->setVisible( false );
+	mCloseButton->addEventListener( Event::OnPaddingChange, cb );
+	mCloseButton->addEventListener( Event::OnMarginChange, cb );
+	mCloseButton->addEventListener( Event::OnSizeChange, cb );
 	applyDefaultTheme();
 	unsetFlags( UI_DRAG_VERTICAL );
 }

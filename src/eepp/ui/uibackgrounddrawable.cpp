@@ -138,6 +138,10 @@ Sizef UIBackgroundDrawable::getSize() {
 	return mSize;
 }
 
+Sizef UIBackgroundDrawable::getPixelsSize() {
+	return mSize;
+}
+
 void UIBackgroundDrawable::onAlphaChange() {
 	mColorNeedsUpdate = true;
 }

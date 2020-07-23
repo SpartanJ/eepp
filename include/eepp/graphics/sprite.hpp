@@ -22,7 +22,7 @@ class EE_API Sprite : public Drawable {
 		SPRITE_EVENT_LAST_FRAME,
 		SPRITE_EVENT_FIRST_FRAME,
 		SPRITE_EVENT_END_ANIM_TO,
-		SPRITE_EVENT_USER // User Events
+		SPRITE_EVENT_USER // User vents
 	};
 
 	static Sprite* New();
@@ -118,6 +118,8 @@ class EE_API Sprite : public Drawable {
 
 	/** @return The current Frame Size */
 	Sizef getSize();
+
+	Sizef getPixelsSize();
 
 	/** Set the sprite animation speed ( AnimSpeed equals to Animation Frames per Second ) */
 	void setAnimationSpeed( const Float& animSpeed );

@@ -132,6 +132,10 @@ Sizef UINodeDrawable::getSize() {
 	return mSize;
 }
 
+Sizef UINodeDrawable::getPixelsSize() {
+	return mSize;
+}
+
 void UINodeDrawable::setSize( const Sizef& size ) {
 	if ( size != mSize ) {
 		mSize = size;
@@ -345,6 +349,10 @@ void UINodeDrawable::LayerDrawable::draw( const Vector2f& position, const Sizef&
 }
 
 Sizef UINodeDrawable::LayerDrawable::getSize() {
+	return mSize;
+}
+
+Sizef UINodeDrawable::LayerDrawable::getPixelsSize() {
 	return mSize;
 }
 

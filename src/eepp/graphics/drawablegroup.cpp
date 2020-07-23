@@ -64,6 +64,10 @@ Sizef DrawableGroup::getSize() {
 	return mSize;
 }
 
+Sizef DrawableGroup::getPixelsSize() {
+	return mSize;
+}
+
 void DrawableGroup::draw( const Vector2f& position, const Sizef& size ) {
 	if ( position != mPosition ) {
 		mPosition = position;

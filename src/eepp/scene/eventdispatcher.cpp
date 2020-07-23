@@ -267,6 +267,7 @@ const Uint32& EventDispatcher::getReleaseTrigger() const {
 }
 
 void EventDispatcher::setNodeDragging( Node* dragging ) {
+	eeASSERT( mNodeDragging == nullptr || mNodeDragging == dragging || dragging == nullptr );
 	mNodeDragging = dragging;
 }
 

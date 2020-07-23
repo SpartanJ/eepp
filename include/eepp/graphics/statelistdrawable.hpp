@@ -16,7 +16,11 @@ class EE_API StateListDrawable : public StatefulDrawable {
 
 	virtual Sizef getSize();
 
+	virtual Sizef getPixelsSize();
+
 	virtual Sizef getSize( const Uint32& state );
+
+	virtual Sizef getPixelsSize( const Uint32& state );
 
 	virtual void draw();
 

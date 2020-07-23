@@ -23,6 +23,8 @@ class EE_API UIMenuItem : public UIPushButton {
 
 	UITextView* getShortcutView() const;
 
+	virtual UIWidget* getExtraInnerWidget() const;
+
   protected:
 	UITextView* mShortcutView;
 
@@ -35,8 +37,6 @@ class EE_API UIMenuItem : public UIPushButton {
 	virtual Uint32 onMouseLeave( const Vector2i& pos, const Uint32& flags );
 
 	virtual Uint32 onMouseClick( const Vector2i& pos, const Uint32& flags );
-
-	virtual UIWidget* getExtraInnerWidget() const;
 
 	void createShortcutView();
 };

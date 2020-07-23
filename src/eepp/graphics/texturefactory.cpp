@@ -160,8 +160,8 @@ void TextureFactory::bind( const Texture* texture, Texture::CoordinateType coord
 			GLfloat matrix[16] = {1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f,
 								  0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f};
 
-			matrix[0] = 1.f / const_cast<Texture*>( texture )->getPxSize().x;
-			matrix[5] = 1.f / const_cast<Texture*>( texture )->getPxSize().y;
+			matrix[0] = 1.f / const_cast<Texture*>( texture )->getPixelsSize().x;
+			matrix[5] = 1.f / const_cast<Texture*>( texture )->getPixelsSize().y;
 
 			GLi->matrixMode( GL_TEXTURE );
 			GLi->loadMatrixf( matrix );

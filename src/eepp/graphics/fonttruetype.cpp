@@ -668,7 +668,7 @@ Rect FontTrueType::findGlyphRect( Page& page, unsigned int width, unsigned int h
 			continue;
 
 		// Check if there's enough horizontal space left in the row
-		if ( width > page.texture->getPxSize().x - it->width )
+		if ( width > page.texture->getPixelsSize().x - it->width )
 			continue;
 
 		// Make sure that this new row is the best found so far
@@ -683,11 +683,11 @@ Rect FontTrueType::findGlyphRect( Page& page, unsigned int width, unsigned int h
 	// If we didn't find a matching row, create a new one (10% taller than the glyph)
 	if ( !row ) {
 		int rowHeight = height + height / 10;
-		while ( ( page.nextRow + rowHeight >= (Uint32)page.texture->getPxSize().y ) ||
-				( width >= (Uint32)page.texture->getPxSize().x ) ) {
+		while ( ( page.nextRow + rowHeight >= (Uint32)page.texture->getPixelsSize().y ) ||
+				( width >= (Uint32)page.texture->getPixelsSize().x ) ) {
 			// Not enough space: resize the texture if possible
-			unsigned int textureWidth = page.texture->getPxSize().x;
-			unsigned int textureHeight = page.texture->getPxSize().y;
+			unsigned int textureWidth = page.texture->getPixelsSize().x;
+			unsigned int textureHeight = page.texture->getPixelsSize().y;
 			if ( ( textureWidth * 2 <= Texture::getMaximumSize() ) &&
 				 ( textureHeight * 2 <= Texture::getMaximumSize() ) ) {
 				// Make the texture 2 times bigger

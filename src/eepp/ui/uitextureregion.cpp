@@ -56,12 +56,12 @@ void UITextureRegion::onAutoSize() {
 
 		if ( mWidthPolicy == SizePolicy::WrapContent || mHeightPolicy == SizePolicy::WrapContent ) {
 			if ( mWidthPolicy == SizePolicy::WrapContent ) {
-				setInternalPixelsWidth( mTextureRegion->getPxSize().getWidth() + mRealPadding.Left +
+				setInternalPixelsWidth( mTextureRegion->getPixelsSize().getWidth() + mRealPadding.Left +
 										mRealPadding.Right );
 			}
 
 			if ( mHeightPolicy == SizePolicy::WrapContent ) {
-				setInternalPixelsHeight( mTextureRegion->getPxSize().getHeight() +
+				setInternalPixelsHeight( mTextureRegion->getPixelsSize().getHeight() +
 										 mRealPadding.Top + mRealPadding.Bottom );
 			}
 
@@ -91,7 +91,7 @@ void UITextureRegion::draw() {
 			} else if ( mScaleType == UIScaleType::FitInside ) {
 				mTextureRegion->setOffset( Vector2i( 0, 0 ) );
 
-				Sizef pxSize = mTextureRegion->getPxSize();
+				Sizef pxSize = mTextureRegion->getPixelsSize();
 				Float Scale1 =
 					( mSize.x - mRealPadding.Left - mRealPadding.Right ) / (Float)pxSize.x;
 				Float Scale2 =
@@ -121,8 +121,8 @@ void UITextureRegion::draw() {
 							  ( Int32 )( (Float)oOff.y / mTextureRegion->getPixelDensity() *
 										 PixelDensity::getPixelDensity() ) ) );
 
-				mTextureRegion->setDestSize( Vector2f( (Float)mTextureRegion->getPxSize().x,
-													   (Float)mTextureRegion->getPxSize().y ) );
+				mTextureRegion->setDestSize( Vector2f( (Float)mTextureRegion->getPixelsSize().x,
+													   (Float)mTextureRegion->getPixelsSize().y ) );
 
 				autoAlign();
 

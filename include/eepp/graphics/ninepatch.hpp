@@ -38,6 +38,8 @@ class EE_API NinePatch : public DrawableResource {
 
 	virtual Sizef getSize();
 
+	virtual Sizef getPixelsSize();
+
 	virtual void draw();
 
 	virtual void draw( const Vector2f& position );

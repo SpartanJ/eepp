@@ -163,11 +163,11 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 			iconTheme->add( name, ic );
 			return ic;
 		};
-		Drawable* closed = addIcon( "folder", 0xed6a, 16 );
-		Drawable* open = addIcon( "folder-open", 0xed70, 16 );
+		addIcon( "folder", 0xed6a, 16 );
+		addIcon( "folder-open", 0xed70, 16 );
 		addIcon( "tree-expanded", 0xea50, 24 );
 		addIcon( "tree-contracted", 0xea54, 24 );
-		addIcon( "file", 0xecc3, 24 );
+		addIcon( "file", 0xecc3, 16 );
 		UISceneNode* uiSceneNode = UISceneNode::New();
 		SceneManager::instance()->add( uiSceneNode );
 		uiSceneNode->getUIThemeManager()->setDefaultFont( font );
@@ -198,8 +198,8 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		auto model = FileSystemModel::New( "." ); // std::make_shared<TestModel>();
 		UITreeView* view = UITreeView::New();
 		view->setId( "treeview" );
-		view->setExpandedIcon( open );
-		view->setContractedIcon( closed );
+		/*view->setExpandedIcon( open );
+		view->setContractedIcon( closed );*/
 		view->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
 		view->setParent( vlay );
 		view->setModel( model );

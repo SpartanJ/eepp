@@ -61,7 +61,7 @@ void UISprite::draw() {
 
 			if ( NULL != textureRegion ) {
 				Sizef oDestSize = textureRegion->getDestSize();
-				Sizef pxSize = textureRegion->getPxSize();
+				Sizef pxSize = textureRegion->getPixelsSize();
 
 				textureRegion->setDestSize( Sizef( (Float)pxSize.x, (Float)pxSize.y ) );
 
@@ -137,13 +137,13 @@ void UISprite::updateSize() {
 
 		if ( NULL != mSprite->getCurrentTextureRegion() ) {
 			if ( mWidthPolicy == SizePolicy::WrapContent ) {
-				setInternalPixelsWidth( mSprite->getCurrentTextureRegion()->getPxSize().getWidth() +
+				setInternalPixelsWidth( mSprite->getCurrentTextureRegion()->getPixelsSize().getWidth() +
 										mRealPadding.Left + mRealPadding.Right );
 			}
 
 			if ( mHeightPolicy == SizePolicy::WrapContent ) {
 				setInternalPixelsHeight(
-					mSprite->getCurrentTextureRegion()->getPxSize().getHeight() + mRealPadding.Top +
+					mSprite->getCurrentTextureRegion()->getPixelsSize().getHeight() + mRealPadding.Top +
 					mRealPadding.Bottom );
 			}
 		}
@@ -157,19 +157,19 @@ void UISprite::autoAlign() {
 	TextureRegion* tTextureRegion = mSprite->getCurrentTextureRegion();
 
 	if ( Font::getHorizontalAlign( mFlags ) == UI_HALIGN_CENTER ) {
-		mAlignOffset.x = ( mSize.getWidth() - tTextureRegion->getPxSize().getWidth() ) / 2;
+		mAlignOffset.x = ( mSize.getWidth() - tTextureRegion->getPixelsSize().getWidth() ) / 2;
 	} else if ( Font::getHorizontalAlign( mFlags ) == UI_HALIGN_RIGHT ) {
 		mAlignOffset.x =
-			mSize.getWidth() - tTextureRegion->getPxSize().getWidth() - mRealPadding.Right;
+			mSize.getWidth() - tTextureRegion->getPixelsSize().getWidth() - mRealPadding.Right;
 	} else {
 		mAlignOffset.x = mRealPadding.Left;
 	}
 
 	if ( Font::getVerticalAlign( mFlags ) == UI_VALIGN_CENTER ) {
-		mAlignOffset.y = ( mSize.getHeight() - tTextureRegion->getPxSize().getHeight() ) / 2;
+		mAlignOffset.y = ( mSize.getHeight() - tTextureRegion->getPixelsSize().getHeight() ) / 2;
 	} else if ( Font::getVerticalAlign( mFlags ) == UI_VALIGN_BOTTOM ) {
 		mAlignOffset.y =
-			mSize.getHeight() - tTextureRegion->getPxSize().getHeight() - mRealPadding.Bottom;
+			mSize.getHeight() - tTextureRegion->getPixelsSize().getHeight() - mRealPadding.Bottom;
 	} else {
 		mAlignOffset.y = mRealPadding.Top;
 	}

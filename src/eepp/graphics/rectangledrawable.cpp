@@ -33,6 +33,10 @@ Sizef RectangleDrawable::getSize() {
 	return mSize;
 }
 
+Sizef RectangleDrawable::getPixelsSize() {
+	return mSize;
+}
+
 void RectangleDrawable::draw() {
 	draw( mPosition );
 }

@@ -261,10 +261,18 @@ ModelIndex FileSystemModel::index( int row, int column, const ModelIndex& parent
 }
 
 Drawable* FileSystemModel::iconFor( const Node& node, const ModelIndex& index ) const {
-	auto* scene = SceneManager::instance()->getUISceneNode();
-	Drawable* d = scene->findIcon( node.getMimeType() );
-	if ( !d && !node.info().isDirectory() && index.column() == (Int64)treeColumn() )
-		return scene->findIcon( "file" );
+	if ( index.column() == (Int64)treeColumn() ) {
+		auto* scene = SceneManager::instance()->getUISceneNode();
+		Drawable* d = scene->findIcon( node.getMimeType() );
+		if ( !d ) {
+			if ( !node.info().isDirectory() ) {
+				return scene->findIcon( "file" );
+			} else {
+				return scene->findIcon( "folder" );
+			}
+		}
+		return d;
+	}
 	return nullptr;
 }
 

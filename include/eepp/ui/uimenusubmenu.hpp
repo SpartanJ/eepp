@@ -33,6 +33,8 @@ class EE_API UIMenuSubMenu : public UIMenuItem {
 
 	void setMouseOverTimeShowMenu( const Time& maxTime );
 
+	virtual UIWidget* getExtraInnerWidget() const;
+
   protected:
 	UIMenu* mSubMenu;
 	UIWidget* mArrow;
@@ -50,8 +52,6 @@ class EE_API UIMenuSubMenu : public UIMenuItem {
 	virtual void onSizeChange();
 
 	virtual void onAlphaChange();
-
-	virtual UIWidget* getExtraInnerWidget() const;
 
 	void onSubMenuFocusLoss( const Event* Event );
 
