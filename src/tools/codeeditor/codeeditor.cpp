@@ -248,7 +248,7 @@ void App::loadConfig() {
 	std::string recent = mIniState.getValue( "files", "recentfiles", "" );
 	mRecentFiles = String::split( recent, ';' );
 	mInitColorScheme = mConfig.editor.colorScheme =
-		mIni.getValue( "editor", "colorscheme", "lite" );
+		mIni.getValue( "editor", "colorscheme", "eepp" );
 	mConfig.editor.fontSize = mIni.getValue( "editor", "font_size", "11dp" );
 	mConfig.window.size.setWidth(
 		mIniState.getValueI( "window", "width", mDisplayDPI > 105 ? 1920 : 1280 ) );

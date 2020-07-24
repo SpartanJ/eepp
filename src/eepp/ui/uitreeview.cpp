@@ -358,7 +358,11 @@ Sizef UITreeView::getContentSize() const {
 }
 
 void UITreeView::drawChilds() {
-	traverseTree( [&]( const int& rowIndex, const ModelIndex& index, const size_t& indentLevel,
+	int realIndex = 0;
+
+	mUISceneNode->setIsLoading( true );
+
+	traverseTree( [&]( const int&, const ModelIndex& index, const size_t& indentLevel,
 					   const Float& yOffset ) {
 		if ( yOffset - mScrollOffset.y > mSize.getHeight() )
 			return IterationDecision::Stop;
@@ -367,17 +371,21 @@ void UITreeView::drawChilds() {
 		for ( size_t colIndex = 0; colIndex < getModel()->columnCount(); colIndex++ ) {
 			if ( columnData( colIndex ).visible ) {
 				if ( (Int64)colIndex != index.column() ) {
-					updateCell( rowIndex,
+					updateCell( realIndex,
 								getModel()->index( index.row(), colIndex, index.parent() ),
 								indentLevel, yOffset );
 				} else {
-					updateCell( rowIndex, index, indentLevel, yOffset );
+					updateCell( realIndex, index, indentLevel, yOffset );
 				}
 			}
 		}
-		updateRow( rowIndex, index, yOffset )->nodeDraw();
+		updateRow( realIndex, index, yOffset )->nodeDraw();
+		realIndex++;
 		return IterationDecision::Continue;
 	} );
+
+	mUISceneNode->setIsLoading( false );
+
 	if ( mHeader && mHeader->isVisible() )
 		mHeader->nodeDraw();
 	if ( mHScroll->isVisible() )
@@ -399,17 +407,19 @@ Node* UITreeView::overFind( const Vector2f& point ) {
 				return pOver;
 			if ( mHeader && ( pOver = mHeader->overFind( point ) ) )
 				return pOver;
-			traverseTree( [&, point]( int rowIndex, const ModelIndex& index, const size_t&,
-									  const Float& yOffset ) {
-				if ( yOffset - mScrollOffset.y > mSize.getHeight() )
-					return IterationDecision::Stop;
-				if ( yOffset - mScrollOffset.y + getRowHeight() < 0 )
+			int realIndex = 0;
+			traverseTree(
+				[&, point]( int, const ModelIndex& index, const size_t&, const Float& yOffset ) {
+					if ( yOffset - mScrollOffset.y > mSize.getHeight() )
+						return IterationDecision::Stop;
+					if ( yOffset - mScrollOffset.y + getRowHeight() < 0 )
+						return IterationDecision::Continue;
+					pOver = updateRow( realIndex, index, yOffset )->overFind( point );
+					realIndex++;
+					if ( pOver )
+						return IterationDecision::Stop;
 					return IterationDecision::Continue;
-				pOver = updateRow( rowIndex, index, yOffset )->overFind( point );
-				if ( pOver )
-					return IterationDecision::Stop;
-				return IterationDecision::Continue;
-			} );
+				} );
 			if ( !pOver )
 				pOver = this;
 		}
@@ -454,11 +464,10 @@ void UITreeView::setExpandersAsIcons( bool expandersAsIcons ) {
 Float UITreeView::getMaxColumnContentWidth( const size_t& colIndex ) {
 	Float lWidth = 0;
 	getUISceneNode()->setIsLoading( true );
-	traverseTree( [&, colIndex]( const int& rowIndex, const ModelIndex& index,
-								 const size_t& indentLevel, const Float& yOffset ) {
-		UIWidget* widget =
-			updateCell( rowIndex, getModel()->index( index.row(), colIndex, index.parent() ),
-						indentLevel, yOffset );
+	traverseTree( [&, colIndex]( const int&, const ModelIndex& index, const size_t& indentLevel,
+								 const Float& yOffset ) {
+		UIWidget* widget = updateCell(
+			0, getModel()->index( index.row(), colIndex, index.parent() ), indentLevel, yOffset );
 		if ( widget->isType( UI_TYPE_PUSHBUTTON ) ) {
 			Float w = widget->asType<UIPushButton>()->getContentSize().getWidth();
 			if ( w > lWidth )
