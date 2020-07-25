@@ -137,8 +137,9 @@ bool UIMenu::widgetCheckSize( UIWidget* widget, const bool& resize ) {
 						   tItem->getIcon()->getSize().getWidth();
 		}
 		if ( mFlags & UI_AUTO_SIZE ) {
-			if ( widget->getPixelsSize().getWidth() > (Int32)mMaxWidth ) {
-				mMaxWidth = widget->getPixelsSize().getWidth();
+			Sizef contentSize( tItem->getContentSize() );
+			if ( contentSize.getWidth() > (Int32)mMaxWidth ) {
+				mMaxWidth = contentSize.getWidth();
 				if ( resize ) {
 					widgetsResize();
 					return true;

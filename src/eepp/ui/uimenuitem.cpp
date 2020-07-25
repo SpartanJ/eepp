@@ -8,6 +8,8 @@ UIMenuItem* UIMenuItem::New() {
 }
 
 UIMenuItem::UIMenuItem( const std::string& tag ) : UIPushButton( tag ), mShortcutView( NULL ) {
+	unsetFlags( UI_AUTO_SIZE );
+	setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::WrapContent );
 	mIcon->setElementTag( mTag + "::icon" );
 	mTextBox->setElementTag( mTag + "::text" );
 	applyDefaultTheme();

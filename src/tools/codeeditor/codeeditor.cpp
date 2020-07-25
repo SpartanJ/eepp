@@ -127,11 +127,11 @@ void App::saveFileDialog() {
 	dialog->show();
 }
 
-void App::findPrevText( SearchState& search ) {
+bool App::findPrevText( SearchState& search ) {
 	if ( search.text.empty() )
 		search.text = mLastSearch;
 	if ( !search.editor || !mEditorSplitter->editorExists( search.editor ) || search.text.empty() )
-		return;
+		return false;
 
 	search.editor->getDocument().setActiveClient( search.editor );
 	mLastSearch = search.text;
@@ -146,19 +146,22 @@ void App::findPrevText( SearchState& search ) {
 	TextPosition found = doc.findLast( search.text, from, search.caseSensitive, search.range );
 	if ( found.isValid() ) {
 		doc.setSelection( {doc.positionOffset( found, search.text.size() ), found} );
+		return true;
 	} else {
 		found = doc.findLast( search.text, range.end() );
 		if ( found.isValid() ) {
 			doc.setSelection( {doc.positionOffset( found, search.text.size() ), found} );
+			return true;
 		}
 	}
+	return false;
 }
 
-void App::findNextText( SearchState& search ) {
+bool App::findNextText( SearchState& search ) {
 	if ( search.text.empty() )
 		search.text = mLastSearch;
 	if ( !search.editor || !mEditorSplitter->editorExists( search.editor ) || search.text.empty() )
-		return;
+		return false;
 
 	search.editor->getDocument().setActiveClient( search.editor );
 	mLastSearch = search.text;
@@ -173,30 +176,35 @@ void App::findNextText( SearchState& search ) {
 	TextPosition found = doc.find( search.text, from, search.caseSensitive, range );
 	if ( found.isValid() ) {
 		doc.setSelection( {doc.positionOffset( found, search.text.size() ), found} );
+		return true;
 	} else {
 		found = doc.find( search.text, range.start(), search.caseSensitive, range );
 		if ( found.isValid() ) {
 			doc.setSelection( {doc.positionOffset( found, search.text.size() ), found} );
+			return true;
 		}
 	}
+	return false;
 }
 
-void App::replaceSelection( SearchState& search, const String& replacement ) {
+bool App::replaceSelection( SearchState& search, const String& replacement ) {
 	if ( !search.editor || !mEditorSplitter->editorExists( search.editor ) ||
 		 !search.editor->getDocument().hasSelection() )
-		return;
+		return false;
 	search.editor->getDocument().setActiveClient( search.editor );
 	search.editor->getDocument().replaceSelection( replacement );
+	return true;
 }
 
-void App::replaceAll( SearchState& search, const String& replace ) {
+int App::replaceAll( SearchState& search, const String& replace ) {
 	if ( !search.editor || !mEditorSplitter->editorExists( search.editor ) )
-		return;
+		return 0;
 	if ( search.text.empty() )
 		search.text = mLastSearch;
 	if ( search.text.empty() )
-		return;
+		return 0;
 
+	int count = 0;
 	search.editor->getDocument().setActiveClient( search.editor );
 	mLastSearch = search.text;
 	TextDocument& doc = search.editor->getDocument();
@@ -210,25 +218,27 @@ void App::replaceAll( SearchState& search, const String& replace ) {
 		if ( found.isValid() ) {
 			doc.setSelection( {doc.positionOffset( found, search.text.size() ), found} );
 			from = doc.replaceSelection( replace );
+			count++;
 		}
 	} while ( found.isValid() );
 	doc.setSelection( startedPosition );
+	return count;
 }
 
-void App::findAndReplace( SearchState& search, const String& replace ) {
+bool App::findAndReplace( SearchState& search, const String& replace ) {
 	if ( !search.editor || !mEditorSplitter->editorExists( search.editor ) )
-		return;
+		return false;
 	if ( search.text.empty() )
 		search.text = mLastSearch;
 	if ( search.text.empty() )
-		return;
+		return false;
 	search.editor->getDocument().setActiveClient( search.editor );
 	mLastSearch = search.text;
 	TextDocument& doc = search.editor->getDocument();
 	if ( doc.hasSelection() && doc.getSelectedText() == search.text ) {
-		replaceSelection( search, replace );
+		return replaceSelection( search, replace );
 	} else {
-		findNextText( search );
+		return findNextText( search );
 	}
 }
 
@@ -374,7 +384,11 @@ void App::initSearchBar() {
 			mSearchState.editor->setHighlightWord( mSearchState.text );
 			if ( !mSearchState.text.empty() ) {
 				mSearchState.editor->getDocument().setSelection( {0, 0} );
-				findNextText( mSearchState );
+				if ( !findNextText( mSearchState ) ) {
+					findInput->addClass( "error" );
+				} else {
+					findInput->removeClass( "error" );
+				}
 			} else {
 				mSearchState.editor->getDocument().setSelection(
 					mSearchState.editor->getDocument().getSelection().start() );
@@ -1474,6 +1488,10 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		}
 		#doc_info > TextView {
 			color: var(--font);
+		}
+		#search_find.error,
+		#search_replace.error {
+			border-color: red;
 		}
 		</style>
 		<RelativeLayout layout_width="match_parent" layout_height="match_parent">

@@ -129,6 +129,7 @@ UITableRow* UITreeView::updateRow( const int& rowIndex, const ModelIndex& index,
 	rowWidget->setPixelsSize( getContentSize().getWidth(), getRowHeight() );
 	rowWidget->setPixelsPosition( {-mScrollOffset.x, yOffset - mScrollOffset.y} );
 	if ( getSelection().first() == index ) {
+		rowWidget->clearActions();
 		rowWidget->pushState( UIState::StateSelected );
 	} else {
 		rowWidget->popState( UIState::StateSelected );

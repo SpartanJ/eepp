@@ -106,9 +106,9 @@ class App : public UICodeEditorSplitter::Client {
 
 	void saveFileDialog();
 
-	void findPrevText( SearchState& search );
+	bool findPrevText( SearchState& search );
 
-	void findNextText( SearchState& search );
+	bool findNextText( SearchState& search );
 
 	void closeApp();
 
@@ -116,11 +116,11 @@ class App : public UICodeEditorSplitter::Client {
 
 	void showFindView();
 
-	void replaceSelection( SearchState& search, const String& replacement );
+	bool replaceSelection( SearchState& search, const String& replacement );
 
-	void replaceAll( SearchState& search, const String& replace );
+	int replaceAll( SearchState& search, const String& replace );
 
-	void findAndReplace( SearchState& search, const String& replace );
+	bool findAndReplace( SearchState& search, const String& replace );
 
 	void runCommand( const std::string& command );
 
