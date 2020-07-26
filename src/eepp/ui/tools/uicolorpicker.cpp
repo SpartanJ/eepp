@@ -369,9 +369,8 @@ Texture* UIColorPicker::createHueTexture( const Sizef& size ) {
 	}
 
 	TextureFactory* TF = TextureFactory::instance();
-	Uint32 texId =
-		TF->loadFromPixels( image.getPixelsPtr(), image.getWidth(), image.getHeight(),
-							image.getChannels() );
+	Uint32 texId = TF->loadFromPixels( image.getPixelsPtr(), image.getWidth(), image.getHeight(),
+									   image.getChannels() );
 
 	return TF->getTexture( texId );
 }
@@ -424,14 +423,14 @@ void UIColorPicker::updateColorPicker() {
 
 void UIColorPicker::updateGuideLines() {
 	mVerticalLine->setLayoutMargin(
-		Rect( mColorPicker->getSize().getWidth() * mHsv.hsv.s, 0.f, 0.f, 0.f ) );
-	mHorizontalLine->setLayoutMargin( Rect(
+		Rectf( mColorPicker->getSize().getWidth() * mHsv.hsv.s, 0.f, 0.f, 0.f ) );
+	mHorizontalLine->setLayoutMargin( Rectf(
 		0.f, mColorPicker->getSize().getHeight() - mColorPicker->getSize().getHeight() * mHsv.hsv.v,
 		0.f, 0.f ) );
-	mHueLine->setLayoutMargin( Rect( 0.f,
-									 mHuePicker->getSize().getHeight() -
-										 mHsv.hsv.h / 360.f * mHuePicker->getSize().getHeight(),
-									 0.f, 0.f ) );
+	mHueLine->setLayoutMargin( Rectf( 0.f,
+									  mHuePicker->getSize().getHeight() -
+										  mHsv.hsv.h / 360.f * mHuePicker->getSize().getHeight(),
+									  0.f, 0.f ) );
 	mCurrentColor->setForegroundColor( Color::fromHsv( mHsv ) );
 }
 

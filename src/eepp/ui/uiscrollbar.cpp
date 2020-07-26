@@ -146,7 +146,7 @@ void UIScrollBar::onAutoSize() {
 	}
 
 	if ( mWidthPolicy == SizePolicy::WrapContent || mHeightPolicy == SizePolicy::WrapContent ) {
-		size = PixelDensity::dpToPx( mSlider->getSize() ) + mRealPadding;
+		size = PixelDensity::dpToPx( mSlider->getSize() ) + mPaddingPx;
 
 		if ( mScrollBarStyle == TwoButtons ) {
 			if ( mSlider->isVertical() ) {

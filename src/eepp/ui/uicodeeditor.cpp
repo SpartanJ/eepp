@@ -203,8 +203,8 @@ void UICodeEditor::draw() {
 	Float lineHeight = getLineHeight();
 	int lineNumberDigits = getLineNumberDigits();
 	Float lineNumberWidth = mShowLineNumber ? getLineNumberWidth() : 0.f;
-	Vector2f screenStart( eefloor( mScreenPos.x + mRealPadding.Left ),
-						  eefloor( mScreenPos.y + mRealPadding.Top ) );
+	Vector2f screenStart( eefloor( mScreenPos.x + mPaddingPx.Left ),
+						  eefloor( mScreenPos.y + mPaddingPx.Top ) );
 	Vector2f start( screenStart.x + lineNumberWidth, screenStart.y );
 	Vector2f startScroll( start - mScroll );
 	Primitives primitives;
@@ -392,7 +392,7 @@ void UICodeEditor::disableEditorFeatures() {
 Float UICodeEditor::getViewportWidth( const bool& forceVScroll ) const {
 	Float vScrollWidth =
 		mVScrollBar->isVisible() || forceVScroll ? mVScrollBar->getPixelsSize().getWidth() : 0.f;
-	Float viewWidth = eefloor( mSize.getWidth() - mRealPadding.Left - mRealPadding.Right -
+	Float viewWidth = eefloor( mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right -
 							   getLineNumberWidth() - vScrollWidth );
 	return viewWidth;
 }
@@ -693,8 +693,8 @@ Uint32 UICodeEditor::onKeyUp( const KeyEvent& event ) {
 TextPosition UICodeEditor::resolveScreenPosition( const Vector2f& position ) const {
 	Vector2f localPos( convertToNodeSpace( position ) );
 	localPos += mScroll;
-	localPos.x -= mRealPadding.Left + ( mShowLineNumber ? getLineNumberWidth() : 0.f );
-	localPos.y -= mRealPadding.Top;
+	localPos.x -= mPaddingPx.Left + ( mShowLineNumber ? getLineNumberWidth() : 0.f );
+	localPos.y -= mPaddingPx.Top;
 	Int64 line = eeclamp<Int64>( (Int64)eefloor( localPos.y / getLineHeight() ), 0,
 								 ( Int64 )( mDoc->linesCount() - 1 ) );
 	return TextPosition( line, getColFromXOffset( line, localPos.x ) );
@@ -703,7 +703,7 @@ TextPosition UICodeEditor::resolveScreenPosition( const Vector2f& position ) con
 Vector2f UICodeEditor::getViewPortLineCount() const {
 	return Vector2f(
 		eefloor( getViewportWidth() / getGlyphWidth() ),
-		eefloor( ( mSize.getHeight() - mRealPadding.Top -
+		eefloor( ( mSize.getHeight() - mPaddingPx.Top -
 				   ( mHScrollBar->isVisible() ? mHScrollBar->getPixelsSize().getHeight() : 0.f ) ) /
 				 getLineHeight() ) );
 }
@@ -1201,6 +1201,10 @@ void UICodeEditor::addUnlockedCommand( const std::string& command ) {
 
 void UICodeEditor::addUnlockedCommands( const std::vector<std::string>& commands ) {
 	mUnlockedCmd.insert( commands.begin(), commands.end() );
+}
+
+bool UICodeEditor::isUnlockedCommand( const std::string& command ) {
+	return mUnlockedCmd.find( command ) != mUnlockedCmd.end();
 }
 
 UICodeEditor* UICodeEditor::setFontShadowColor( const Color& color ) {

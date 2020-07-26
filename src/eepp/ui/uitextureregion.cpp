@@ -56,13 +56,13 @@ void UITextureRegion::onAutoSize() {
 
 		if ( mWidthPolicy == SizePolicy::WrapContent || mHeightPolicy == SizePolicy::WrapContent ) {
 			if ( mWidthPolicy == SizePolicy::WrapContent ) {
-				setInternalPixelsWidth( mTextureRegion->getPixelsSize().getWidth() + mRealPadding.Left +
-										mRealPadding.Right );
+				setInternalPixelsWidth( mTextureRegion->getPixelsSize().getWidth() + mPaddingPx.Left +
+										mPaddingPx.Right );
 			}
 
 			if ( mHeightPolicy == SizePolicy::WrapContent ) {
 				setInternalPixelsHeight( mTextureRegion->getPixelsSize().getHeight() +
-										 mRealPadding.Top + mRealPadding.Bottom );
+										 mPaddingPx.Top + mPaddingPx.Bottom );
 			}
 
 			autoAlign();
@@ -81,8 +81,8 @@ void UITextureRegion::draw() {
 			if ( mScaleType == UIScaleType::Expand ) {
 				mTextureRegion->setOffset( Vector2i( 0, 0 ) );
 				mTextureRegion->setDestSize(
-					Vector2f( (int)mSize.x - mRealPadding.Left - mRealPadding.Right,
-							  (int)mSize.y - mRealPadding.Top - mRealPadding.Bottom ) );
+					Vector2f( (int)mSize.x - mPaddingPx.Left - mPaddingPx.Right,
+							  (int)mSize.y - mPaddingPx.Top - mPaddingPx.Bottom ) );
 
 				autoAlign();
 
@@ -93,9 +93,9 @@ void UITextureRegion::draw() {
 
 				Sizef pxSize = mTextureRegion->getPixelsSize();
 				Float Scale1 =
-					( mSize.x - mRealPadding.Left - mRealPadding.Right ) / (Float)pxSize.x;
+					( mSize.x - mPaddingPx.Left - mPaddingPx.Right ) / (Float)pxSize.x;
 				Float Scale2 =
-					( mSize.y - mRealPadding.Top - mRealPadding.Bottom ) / (Float)pxSize.y;
+					( mSize.y - mPaddingPx.Top - mPaddingPx.Bottom ) / (Float)pxSize.y;
 
 				if ( Scale1 < 1 || Scale2 < 1 ) {
 					if ( Scale2 < Scale1 )
@@ -175,17 +175,17 @@ void UITextureRegion::autoAlign() {
 	if ( Font::getHorizontalAlign( mFlags ) == UI_HALIGN_CENTER ) {
 		mAlignOffset.x = ( mSize.getWidth() - mTextureRegion->getDestSize().x ) / 2;
 	} else if ( Font::getHorizontalAlign( mFlags ) == UI_HALIGN_RIGHT ) {
-		mAlignOffset.x = mSize.getWidth() - mTextureRegion->getDestSize().x - mRealPadding.Right;
+		mAlignOffset.x = mSize.getWidth() - mTextureRegion->getDestSize().x - mPaddingPx.Right;
 	} else {
-		mAlignOffset.x = mRealPadding.Left;
+		mAlignOffset.x = mPaddingPx.Left;
 	}
 
 	if ( Font::getVerticalAlign( mFlags ) == UI_VALIGN_CENTER ) {
 		mAlignOffset.y = ( mSize.getHeight() - mTextureRegion->getDestSize().y ) / 2;
 	} else if ( Font::getVerticalAlign( mFlags ) == UI_VALIGN_BOTTOM ) {
-		mAlignOffset.y = mSize.getHeight() - mTextureRegion->getDestSize().y - mRealPadding.Bottom;
+		mAlignOffset.y = mSize.getHeight() - mTextureRegion->getDestSize().y - mPaddingPx.Bottom;
 	} else {
-		mAlignOffset.y = mRealPadding.Top;
+		mAlignOffset.y = mPaddingPx.Top;
 	}
 }
 

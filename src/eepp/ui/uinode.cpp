@@ -353,9 +353,10 @@ void UINode::updateDebugData() {
 									p.Left );
 		}
 
-		if ( widget->getLayoutMargin() != Rect( 0, 0, 0, 0 ) ) {
-			Rect m( widget->getLayoutMargin() );
-			text += String::format( "\nmargin: %d %d %d %d", m.Top, m.Right, m.Bottom, m.Left );
+		if ( widget->getLayoutMargin() != Rectf( 0, 0, 0, 0 ) ) {
+			Rectf m( widget->getLayoutMargin() );
+			text +=
+				String::format( "\nmargin: %.2f %.2f %.2f %.2f", m.Top, m.Right, m.Bottom, m.Left );
 		}
 
 		widget->setTooltipText( text );

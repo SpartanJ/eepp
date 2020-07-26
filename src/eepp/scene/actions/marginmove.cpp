@@ -132,14 +132,14 @@ void MarginMove::onUpdate( const Time& ) {
 		UIWidget* widget = static_cast<UIWidget*>( mNode );
 
 		widget->setLayoutMargin(
-			Rect( ( mFlags & InterpolateFlag::Left ) ? mInterpolationLeft.getPosition()
-													 : widget->getLayoutMargin().Left,
-				  ( mFlags & InterpolateFlag::Top ) ? mInterpolationTop.getPosition()
-													: widget->getLayoutMargin().Top,
-				  ( mFlags & InterpolateFlag::Right ) ? mInterpolationRight.getPosition()
-													  : widget->getLayoutMargin().Right,
-				  ( mFlags & InterpolateFlag::Bottom ) ? mInterpolationBottom.getPosition()
-													   : widget->getLayoutMargin().Bottom ) );
+			Rectf( ( mFlags & InterpolateFlag::Left ) ? mInterpolationLeft.getPosition()
+													  : widget->getLayoutMargin().Left,
+				   ( mFlags & InterpolateFlag::Top ) ? mInterpolationTop.getPosition()
+													 : widget->getLayoutMargin().Top,
+				   ( mFlags & InterpolateFlag::Right ) ? mInterpolationRight.getPosition()
+													   : widget->getLayoutMargin().Right,
+				   ( mFlags & InterpolateFlag::Bottom ) ? mInterpolationBottom.getPosition()
+														: widget->getLayoutMargin().Bottom ) );
 	}
 }
 

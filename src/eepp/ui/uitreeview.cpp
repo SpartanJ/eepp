@@ -125,14 +125,14 @@ class UITreeViewCell : public UIPushButton {
 			if ( autoPadding != Rectf() )
 				autoPadding = PixelDensity::dpToPx( autoPadding );
 		}
-		if ( mRealPadding.Top > autoPadding.Top )
-			autoPadding.Top = mRealPadding.Top;
-		if ( mRealPadding.Bottom > autoPadding.Bottom )
-			autoPadding.Bottom = mRealPadding.Bottom;
-		if ( mRealPadding.Left > autoPadding.Left )
-			autoPadding.Left = mRealPadding.Left;
-		if ( mRealPadding.Right > autoPadding.Right )
-			autoPadding.Right = mRealPadding.Right;
+		if ( mPaddingPx.Top > autoPadding.Top )
+			autoPadding.Top = mPaddingPx.Top;
+		if ( mPaddingPx.Bottom > autoPadding.Bottom )
+			autoPadding.Bottom = mPaddingPx.Bottom;
+		if ( mPaddingPx.Left > autoPadding.Left )
+			autoPadding.Left = mPaddingPx.Left;
+		if ( mPaddingPx.Right > autoPadding.Right )
+			autoPadding.Right = mPaddingPx.Right;
 		autoPadding.Left += mIndent;
 		switch ( mInnerWidgetOrientation ) {
 			case InnerWidgetOrientation::Left:
@@ -441,7 +441,7 @@ Float UITreeView::getMaxColumnContentWidth( const size_t& colIndex ) {
 
 Uint32 UITreeView::onKeyDown( const KeyEvent& event ) {
 	if ( event.getMod() != 0 )
-		return 0;
+		return UIAbstractTableView::onKeyDown( event );
 
 	auto curIndex = getSelection().first();
 
@@ -464,7 +464,7 @@ Uint32 UITreeView::onKeyDown( const KeyEvent& event ) {
 			scrollToPosition(
 				{{mScrollOffset.x, curY},
 				 {columnData( deque.front().first.column() ).width, getRowHeight()}} );
-			break;
+			return 1;
 		}
 		case KEY_PAGEDOWN: {
 			int pageSize = eefloor( getVisibleArea().getHeight() / getRowHeight() ) - 1;
@@ -500,7 +500,7 @@ Uint32 UITreeView::onKeyDown( const KeyEvent& event ) {
 			getSelection().set( foundIndex );
 			scrollToPosition( {{mScrollOffset.x, curY},
 							   {columnData( foundIndex.column() ).width, getRowHeight()}} );
-			break;
+			return 1;
 		}
 		case KEY_UP: {
 			ModelIndex prevIndex;
@@ -519,14 +519,14 @@ Uint32 UITreeView::onKeyDown( const KeyEvent& event ) {
 			if ( foundIndex.isValid() ) {
 				getSelection().set( foundIndex );
 				if ( curY < mScrollOffset.y + getHeaderHeight() + getRowHeight() ||
-					 curY > mScrollOffset.y + getPixelsSize().getHeight() - mRealPadding.Top -
-								mRealPadding.Bottom - getRowHeight() ) {
+					 curY > mScrollOffset.y + getPixelsSize().getHeight() - mPaddingPx.Top -
+								mPaddingPx.Bottom - getRowHeight() ) {
 					curY -= getHeaderHeight() + getRowHeight();
 					mVScroll->setValue( eemin<Float>(
 						1.f, eemax<Float>( 0.f, curY / getScrollableArea().getHeight() ) ) );
 				}
 			}
-			break;
+			return 1;
 		}
 		case KEY_DOWN: {
 			ModelIndex prevIndex;
@@ -545,8 +545,8 @@ Uint32 UITreeView::onKeyDown( const KeyEvent& event ) {
 			if ( foundIndex.isValid() ) {
 				getSelection().set( foundIndex );
 				if ( curY < mScrollOffset.y ||
-					 curY > mScrollOffset.y + getPixelsSize().getHeight() - mRealPadding.Top -
-								mRealPadding.Bottom - getRowHeight() ) {
+					 curY > mScrollOffset.y + getPixelsSize().getHeight() - mPaddingPx.Top -
+								mPaddingPx.Bottom - getRowHeight() ) {
 					curY -=
 						eefloor( getVisibleArea().getHeight() / getRowHeight() ) * getRowHeight() -
 						getRowHeight();
@@ -554,7 +554,7 @@ Uint32 UITreeView::onKeyDown( const KeyEvent& event ) {
 						eemin<Float>( 1.f, curY / getScrollableArea().getHeight() ) );
 				}
 			}
-			break;
+			return 1;
 		}
 		case KEY_END: {
 			scrollToBottom();
@@ -564,12 +564,12 @@ Uint32 UITreeView::onKeyDown( const KeyEvent& event ) {
 				return IterationDecision::Continue;
 			} );
 			getSelection().set( lastIndex );
-			break;
+			return 1;
 		}
 		case KEY_HOME: {
 			scrollToTop();
 			getSelection().set( getModel()->index( 0, 0 ) );
-			break;
+			return 1;
 		}
 		case KEY_RIGHT: {
 			if ( curIndex.isValid() && getModel()->rowCount( curIndex ) ) {
@@ -581,7 +581,7 @@ Uint32 UITreeView::onKeyDown( const KeyEvent& event ) {
 				}
 				getSelection().set( getModel()->index( 0, getModel()->treeColumn(), curIndex ) );
 			}
-			break;
+			return 1;
 		}
 		case KEY_LEFT: {
 			if ( curIndex.isValid() && getModel()->rowCount( curIndex ) ) {
@@ -596,7 +596,7 @@ Uint32 UITreeView::onKeyDown( const KeyEvent& event ) {
 				getSelection().set( curIndex.parent() );
 				return 0;
 			}
-			break;
+			return 1;
 		}
 		case KEY_RETURN:
 		case KEY_SPACE: {
@@ -609,12 +609,12 @@ Uint32 UITreeView::onKeyDown( const KeyEvent& event ) {
 					onOpenModelIndex( curIndex );
 				}
 			}
-			break;
+			return 1;
 		}
 		default:
 			break;
 	}
-	return 0;
+	return UIAbstractTableView::onKeyDown( event );
 }
 
 void UITreeView::onOpenTreeModelIndex( const ModelIndex& index, bool open ) {

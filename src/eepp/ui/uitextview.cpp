@@ -78,16 +78,16 @@ void UITextView::draw() {
 			drawSelection( mTextCache );
 
 			if ( isClipped() ) {
-				clipSmartEnable( mScreenPos.x + mRealPadding.Left, mScreenPos.y + mRealPadding.Top,
-								 mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
-								 mSize.getHeight() - mRealPadding.Top - mRealPadding.Bottom );
+				clipSmartEnable( mScreenPos.x + mPaddingPx.Left, mScreenPos.y + mPaddingPx.Top,
+								 mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right,
+								 mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom );
 			}
 
 			mTextCache->setAlign( getFlags() );
 			mTextCache->draw( (Float)mScreenPosi.x + (int)mRealAlignOffset.x +
-								  (int)mRealPadding.Left,
+								  (int)mPaddingPx.Left,
 							  mFontLineCenter + (Float)mScreenPosi.y + (int)mRealAlignOffset.y +
-								  (int)mRealPadding.Top,
+								  (int)mPaddingPx.Top,
 							  Vector2f::One, 0.f, getBlendMode() );
 
 			if ( isClipped() ) {
@@ -268,13 +268,13 @@ void UITextView::onAutoSize() {
 	}
 
 	if ( mWidthPolicy == SizePolicy::WrapContent ) {
-		setInternalPixelsWidth( (int)mTextCache->getTextWidth() + mRealPadding.Left +
-								mRealPadding.Right );
+		setInternalPixelsWidth( (int)mTextCache->getTextWidth() + mPaddingPx.Left +
+								mPaddingPx.Right );
 	}
 
 	if ( mHeightPolicy == SizePolicy::WrapContent ) {
-		setInternalPixelsHeight( (int)mTextCache->getTextHeight() + mRealPadding.Top +
-								 mRealPadding.Bottom );
+		setInternalPixelsHeight( (int)mTextCache->getTextHeight() + mPaddingPx.Top +
+								 mPaddingPx.Bottom );
 	}
 }
 
@@ -282,11 +282,11 @@ void UITextView::alignFix() {
 	switch ( Font::getHorizontalAlign( getFlags() ) ) {
 		case UI_HALIGN_CENTER:
 			mRealAlignOffset.x =
-				( Float )( ( Int32 )( ( mSize.x - mRealPadding.Left - mRealPadding.Right ) / 2 -
+				( Float )( ( Int32 )( ( mSize.x - mPaddingPx.Left - mPaddingPx.Right ) / 2 -
 									  mTextCache->getTextWidth() / 2 ) );
 			break;
 		case UI_HALIGN_RIGHT:
-			mRealAlignOffset.x = ( (Float)mSize.x - mRealPadding.Left - mRealPadding.Right -
+			mRealAlignOffset.x = ( (Float)mSize.x - mPaddingPx.Left - mPaddingPx.Right -
 								   (Float)mTextCache->getTextWidth() );
 			break;
 		case UI_HALIGN_LEFT:
@@ -297,12 +297,12 @@ void UITextView::alignFix() {
 	switch ( Font::getVerticalAlign( getFlags() ) ) {
 		case UI_VALIGN_CENTER:
 			mRealAlignOffset.y =
-				( Float )( ( Int32 )( ( mSize.y - mRealPadding.Top - mRealPadding.Bottom ) / 2 -
+				( Float )( ( Int32 )( ( mSize.y - mPaddingPx.Top - mPaddingPx.Bottom ) / 2 -
 									  mTextCache->getTextHeight() / 2 ) ) -
 				1;
 			break;
 		case UI_VALIGN_BOTTOM:
-			mRealAlignOffset.y = ( (Float)mSize.y - mRealPadding.Top - mRealPadding.Bottom -
+			mRealAlignOffset.y = ( (Float)mSize.y - mPaddingPx.Top - mPaddingPx.Bottom -
 								   (Float)mTextCache->getTextHeight() );
 			break;
 		case UI_VALIGN_TOP:
@@ -383,7 +383,7 @@ Uint32 UITextView::onMouseDoubleClick( const Vector2i& Pos, const Uint32& Flags 
 		Vector2f nodePos( Vector2f( Pos.x, Pos.y ) );
 		worldToNode( nodePos );
 		nodePos = PixelDensity::dpToPx( nodePos ) - mRealAlignOffset -
-				  Vector2f( mRealPadding.Left, mRealPadding.Top );
+				  Vector2f( mPaddingPx.Left, mPaddingPx.Top );
 		nodePos.x = eemax( 0.f, nodePos.x );
 		nodePos.y = eemax( 0.f, nodePos.y );
 
@@ -419,7 +419,7 @@ Uint32 UITextView::onMouseDown( const Vector2i& Pos, const Uint32& Flags ) {
 		Vector2f nodePos( Vector2f( Pos.x, Pos.y ) );
 		worldToNode( nodePos );
 		nodePos = PixelDensity::dpToPx( nodePos ) - mRealAlignOffset -
-				  Vector2f( mRealPadding.Left, mRealPadding.Top );
+				  Vector2f( mPaddingPx.Left, mPaddingPx.Top );
 		nodePos.x = eemax( 0.f, nodePos.x );
 		nodePos.y = eemax( 0.f, nodePos.y );
 
@@ -485,10 +485,10 @@ void UITextView::drawSelection( Text* textCache ) {
 				endPos = mSelPosCache[i].endPos;
 
 				P.drawRectangle( Rectf(
-					mScreenPos.x + initPos.x + mRealAlignOffset.x + mRealPadding.Left,
-					mScreenPos.y + initPos.y + mRealAlignOffset.y + mRealPadding.Top,
-					mScreenPos.x + endPos.x + mRealAlignOffset.x + mRealPadding.Left,
-					mScreenPos.y + endPos.y + vspace + mRealAlignOffset.y + mRealPadding.Top ) );
+					mScreenPos.x + initPos.x + mRealAlignOffset.x + mPaddingPx.Left,
+					mScreenPos.y + initPos.y + mRealAlignOffset.y + mPaddingPx.Top,
+					mScreenPos.x + endPos.x + mRealAlignOffset.x + mPaddingPx.Left,
+					mScreenPos.y + endPos.y + vspace + mRealAlignOffset.y + mPaddingPx.Top ) );
 			}
 		}
 	}

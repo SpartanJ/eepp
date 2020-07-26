@@ -30,15 +30,15 @@ void UITextInputPassword::draw() {
 			drawSelection( mPassCache );
 
 			if ( isClipped() ) {
-				clipSmartEnable( mScreenPos.x + mRealPadding.Left, mScreenPos.y + mRealPadding.Top,
-								 mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
-								 mSize.getHeight() - mRealPadding.Top - mRealPadding.Bottom );
+				clipSmartEnable( mScreenPos.x + mPaddingPx.Left, mScreenPos.y + mPaddingPx.Top,
+								 mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right,
+								 mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom );
 			}
 
 			mPassCache->setAlign( getFlags() );
 			mPassCache->draw(
-				(Float)mScreenPosi.x + (int)mRealAlignOffset.x + (int)mRealPadding.Left,
-				(Float)mScreenPosi.y + (int)mRealAlignOffset.y + (int)mRealPadding.Top,
+				(Float)mScreenPosi.x + (int)mRealAlignOffset.x + (int)mPaddingPx.Left,
+				(Float)mScreenPosi.y + (int)mRealAlignOffset.y + (int)mPaddingPx.Top,
 				Vector2f::One, 0.f, getBlendMode() );
 
 			if ( isClipped() ) {
@@ -46,15 +46,15 @@ void UITextInputPassword::draw() {
 			}
 		} else if ( !mHintCache->getString().empty() ) {
 			if ( isClipped() ) {
-				clipSmartEnable( mScreenPos.x + mRealPadding.Left, mScreenPos.y + mRealPadding.Top,
-								 mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
-								 mSize.getHeight() - mRealPadding.Top - mRealPadding.Bottom );
+				clipSmartEnable( mScreenPos.x + mPaddingPx.Left, mScreenPos.y + mPaddingPx.Top,
+								 mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right,
+								 mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom );
 			}
 
 			mHintCache->draw( (Float)mScreenPosi.x + (int)mHintAlignOffset.x +
-								  (int)mRealPadding.Left,
+								  (int)mPaddingPx.Left,
 							  mFontLineCenter + (Float)mScreenPosi.y + (int)mHintAlignOffset.y +
-								  (int)mRealPadding.Top,
+								  (int)mPaddingPx.Top,
 							  Vector2f::One, 0.f, getBlendMode() );
 
 			if ( isClipped() ) {
@@ -85,12 +85,12 @@ void UITextInputPassword::alignFix() {
 	switch ( Font::getVerticalAlign( getFlags() ) ) {
 		case UI_VALIGN_CENTER:
 			mRealAlignOffset.y =
-				( Float )( ( ( Int32 )( mSize.y - mRealPadding.Top - mRealPadding.Bottom -
+				( Float )( ( ( Int32 )( mSize.y - mPaddingPx.Top - mPaddingPx.Bottom -
 										mPassCache->getTextHeight() ) ) /
 						   2.f ) -
 				1;
 			mHintAlignOffset.y =
-				( Float )( ( ( Int32 )( mSize.y - mRealPadding.Top - mRealPadding.Bottom -
+				( Float )( ( ( Int32 )( mSize.y - mPaddingPx.Top - mPaddingPx.Bottom -
 										mHintCache->getTextHeight() ) ) /
 						   2.f ) -
 				1;
@@ -114,8 +114,8 @@ void UITextInputPassword::alignFix() {
 
 		if ( tX < 0.f ) {
 			mRealAlignOffset.x = -( mRealAlignOffset.x + ( tW - mRealAlignOffset.x ) );
-		} else if ( tX > mSize.getWidth() - mRealPadding.Left - mRealPadding.Right ) {
-			mRealAlignOffset.x = mSize.getWidth() - mRealPadding.Left - mRealPadding.Right -
+		} else if ( tX > mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right ) {
+			mRealAlignOffset.x = mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right -
 								 ( mRealAlignOffset.x + ( tW - mRealAlignOffset.x ) );
 		}
 	}

@@ -138,13 +138,13 @@ void UISprite::updateSize() {
 		if ( NULL != mSprite->getCurrentTextureRegion() ) {
 			if ( mWidthPolicy == SizePolicy::WrapContent ) {
 				setInternalPixelsWidth( mSprite->getCurrentTextureRegion()->getPixelsSize().getWidth() +
-										mRealPadding.Left + mRealPadding.Right );
+										mPaddingPx.Left + mPaddingPx.Right );
 			}
 
 			if ( mHeightPolicy == SizePolicy::WrapContent ) {
 				setInternalPixelsHeight(
-					mSprite->getCurrentTextureRegion()->getPixelsSize().getHeight() + mRealPadding.Top +
-					mRealPadding.Bottom );
+					mSprite->getCurrentTextureRegion()->getPixelsSize().getHeight() + mPaddingPx.Top +
+					mPaddingPx.Bottom );
 			}
 		}
 	}
@@ -160,18 +160,18 @@ void UISprite::autoAlign() {
 		mAlignOffset.x = ( mSize.getWidth() - tTextureRegion->getPixelsSize().getWidth() ) / 2;
 	} else if ( Font::getHorizontalAlign( mFlags ) == UI_HALIGN_RIGHT ) {
 		mAlignOffset.x =
-			mSize.getWidth() - tTextureRegion->getPixelsSize().getWidth() - mRealPadding.Right;
+			mSize.getWidth() - tTextureRegion->getPixelsSize().getWidth() - mPaddingPx.Right;
 	} else {
-		mAlignOffset.x = mRealPadding.Left;
+		mAlignOffset.x = mPaddingPx.Left;
 	}
 
 	if ( Font::getVerticalAlign( mFlags ) == UI_VALIGN_CENTER ) {
 		mAlignOffset.y = ( mSize.getHeight() - tTextureRegion->getPixelsSize().getHeight() ) / 2;
 	} else if ( Font::getVerticalAlign( mFlags ) == UI_VALIGN_BOTTOM ) {
 		mAlignOffset.y =
-			mSize.getHeight() - tTextureRegion->getPixelsSize().getHeight() - mRealPadding.Bottom;
+			mSize.getHeight() - tTextureRegion->getPixelsSize().getHeight() - mPaddingPx.Bottom;
 	} else {
-		mAlignOffset.y = mRealPadding.Top;
+		mAlignOffset.y = mPaddingPx.Top;
 	}
 }
 

@@ -65,9 +65,11 @@ class EE_API UIWidget : public UINode {
 
 	void updateAnchorsDistances();
 
-	const Rect& getLayoutMargin() const;
+	const Rectf& getLayoutMargin() const;
 
-	UIWidget* setLayoutMargin( const Rect& margin );
+	const Rectf& getLayoutPixelsMargin() const;
+
+	UIWidget* setLayoutMargin( const Rectf& margin );
 
 	UIWidget* setLayoutMarginLeft( const Float& marginLeft );
 
@@ -249,9 +251,10 @@ class EE_API UIWidget : public UINode {
 	UIStyle* mStyle;
 	UITooltip* mTooltip;
 	Rect mDistToBorder;
-	Rect mLayoutMargin;
+	Rectf mLayoutMargin;
+	Rectf mLayoutMarginPx;
 	Rectf mPadding;
-	Rectf mRealPadding;
+	Rectf mPaddingPx;
 	Float mLayoutWeight;
 	Uint32 mLayoutGravity;
 	SizePolicy mWidthPolicy;

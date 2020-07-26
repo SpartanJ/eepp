@@ -89,8 +89,8 @@ void UITabWidget::setContainerSize() {
 		mTabBar->setVisible( false );
 		mTabBar->setEnabled( false );
 		mNodeContainer->setPosition( mPadding.Left, mPadding.Top );
-		Sizef s( mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
-				 mSize.getHeight() - mRealPadding.Top - mRealPadding.Bottom );
+		Sizef s( mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right,
+				 mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom );
 		if ( s != mNodeContainer->getPixelsSize() ) {
 			mNodeContainer->setPixelsSize( s );
 
@@ -101,13 +101,13 @@ void UITabWidget::setContainerSize() {
 	} else {
 		mTabBar->setVisible( true );
 		mTabBar->setEnabled( true );
-		mTabBar->setPixelsSize( mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
+		mTabBar->setPixelsSize( mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right,
 								PixelDensity::dpToPx( mStyleConfig.TabHeight ) );
 		mTabBar->setPosition( mPadding.Left, mPadding.Top );
 		mNodeContainer->setPosition( mPadding.Left, mPadding.Top + mStyleConfig.TabHeight );
-		Sizef s( mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
+		Sizef s( mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right,
 				 mSize.getHeight() - PixelDensity::dpToPx( mStyleConfig.TabHeight ) -
-					 mRealPadding.Top - mRealPadding.Bottom );
+					 mPaddingPx.Top - mPaddingPx.Bottom );
 		if ( s != mNodeContainer->getPixelsSize() ) {
 			mNodeContainer->setPixelsSize( s );
 

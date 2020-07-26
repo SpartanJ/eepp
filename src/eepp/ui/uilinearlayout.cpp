@@ -72,17 +72,18 @@ void UILinearLayout::packVertical() {
 		return;
 	mPacking = true;
 	bool sizeChanged = false;
-	Sizef size( getSize() );
+	Sizef size( getPixelsSize() );
 
 	if ( getLayoutWidthPolicy() == SizePolicy::MatchParent && 0 == getLayoutWeight() ) {
-		Float w = getParent()->getSize().getWidth() - mLayoutMargin.Left - mLayoutMargin.Right;
+		Float w =
+			getParent()->getPixelsSize().getWidth() - mLayoutMarginPx.Left - mLayoutMarginPx.Right;
 
 		if ( getParent()->isType( UI_TYPE_LAYOUT ) ) {
 			UILayout* pLay = static_cast<UILayout*>( getParent() );
-			w = w - pLay->getPadding().Left - pLay->getPadding().Right;
+			w = w - pLay->getPixelsPadding().Left - pLay->getPixelsPadding().Right;
 		}
 
-		if ( (int)w != (int)getSize().getWidth() ) {
+		if ( (int)w != (int)getPixelsSize().getWidth() ) {
 			sizeChanged = true;
 
 			size.setWidth( w );
@@ -90,14 +91,15 @@ void UILinearLayout::packVertical() {
 	}
 
 	if ( getLayoutHeightPolicy() == SizePolicy::MatchParent ) {
-		Float h = getParent()->getSize().getHeight() - mLayoutMargin.Top - mLayoutMargin.Bottom;
+		Float h =
+			getParent()->getPixelsSize().getHeight() - mLayoutMarginPx.Top - mLayoutMarginPx.Bottom;
 
 		if ( getParent()->isType( UI_TYPE_LAYOUT ) ) {
 			UILayout* pLay = static_cast<UILayout*>( getParent() );
-			h = h - pLay->getPadding().Top - pLay->getPadding().Bottom;
+			h = h - pLay->getPixelsPadding().Top - pLay->getPixelsPadding().Bottom;
 		}
 
-		if ( (int)h != (int)getSize().getHeight() ) {
+		if ( (int)h != (int)getPixelsSize().getHeight() ) {
 			sizeChanged = true;
 
 			size.setHeight( h );
@@ -105,7 +107,7 @@ void UILinearLayout::packVertical() {
 	}
 
 	if ( sizeChanged ) {
-		setInternalSize( size );
+		setInternalPixelsSize( size );
 	}
 
 	Node* child = mChild;
@@ -124,11 +126,12 @@ void UILinearLayout::packVertical() {
 					break;
 				}
 				case SizePolicy::MatchParent: {
-					int w = getSize().getWidth() - widget->getLayoutMargin().Left -
-							widget->getLayoutMargin().Right - mPadding.Left - mPadding.Right;
+					int w = getPixelsSize().getWidth() - widget->getLayoutPixelsMargin().Left -
+							widget->getLayoutPixelsMargin().Right - mPaddingPx.Left -
+							mPaddingPx.Right;
 
-					if ( (int)widget->getSize().getWidth() != w && w > 0 )
-						widget->setSize( w, widget->getSize().getHeight() );
+					if ( (int)widget->getPixelsSize().getWidth() != w && w > 0 )
+						widget->setPixelsSize( w, widget->getPixelsSize().getHeight() );
 
 					break;
 				}
@@ -139,20 +142,22 @@ void UILinearLayout::packVertical() {
 
 			if ( widget->getLayoutHeightPolicy() == SizePolicy::MatchParent &&
 				 widget->getLayoutWeight() == 0 &&
-				 widget->getSize().getHeight() !=
-					 getSize().getHeight() - widget->getLayoutMargin().Top -
-						 widget->getLayoutMargin().Bottom - mPadding.Top - mPadding.Bottom ) {
-				widget->setSize( widget->getSize().getWidth(),
-								 getSize().getHeight() - widget->getLayoutMargin().Top -
-									 widget->getLayoutMargin().Bottom - mPadding.Top -
-									 mPadding.Bottom );
+				 widget->getPixelsSize().getHeight() != getPixelsSize().getHeight() -
+															widget->getLayoutPixelsMargin().Top -
+															widget->getLayoutPixelsMargin().Bottom -
+															mPaddingPx.Top - mPaddingPx.Bottom ) {
+				widget->setPixelsSize( widget->getPixelsSize().getWidth(),
+									   getPixelsSize().getHeight() -
+										   widget->getLayoutPixelsMargin().Top -
+										   widget->getLayoutPixelsMargin().Bottom - mPaddingPx.Top -
+										   mPaddingPx.Bottom );
 			}
 		}
 
 		child = child->getNextNode();
 	}
 
-	Float curY = mPadding.Top;
+	Float curY = mPaddingPx.Top;
 	Float maxX = 0;
 	Sizei freeSize = getTotalUsedSize();
 
@@ -161,77 +166,80 @@ void UILinearLayout::packVertical() {
 	while ( NULL != child ) {
 		if ( child->isWidget() && child->isVisible() ) {
 			UIWidget* widget = child->asType<UIWidget>();
-			Rect margin = widget->getLayoutMargin();
+			Rectf margin = widget->getLayoutPixelsMargin();
 
 			curY += eeceil( margin.Top );
 
-			Vector2f pos( mPadding.Left, curY );
+			Vector2f pos( mPaddingPx.Left, curY );
 
 			if ( widget->getLayoutWeight() != 0 ) {
-				Int32 totSize = ( getLayoutHeightPolicy() == SizePolicy::MatchParent )
-									? getSize().getHeight() - mPadding.Top - mPadding.Bottom
-									: getParent()->getSize().getHeight() - mLayoutMargin.Bottom -
-										  mLayoutMargin.Top - mPadding.Top - mPadding.Bottom;
+				Int32 totSize =
+					( getLayoutHeightPolicy() == SizePolicy::MatchParent )
+						? getPixelsSize().getHeight() - mPaddingPx.Top - mPaddingPx.Bottom
+						: getParent()->getPixelsSize().getHeight() - mLayoutMarginPx.Bottom -
+							  mLayoutMarginPx.Top - mPaddingPx.Top - mPaddingPx.Bottom;
 				Float size =
 					( Float )( totSize - freeSize.getHeight() ) * widget->getLayoutWeight();
 
-				widget->setSize( widget->getSize().getWidth(), (Int32)size );
+				widget->setPixelsSize( widget->getPixelsSize().getWidth(), (Int32)size );
 			}
 
 			switch ( Font::getHorizontalAlign( widget->getLayoutGravity() ) ) {
 				case UI_HALIGN_CENTER:
-					pos.x = ( getSize().getWidth() - mPadding.Left - mPadding.Right -
-							  widget->getSize().getWidth() ) /
+					pos.x = ( getPixelsSize().getWidth() - mPaddingPx.Left - mPaddingPx.Right -
+							  widget->getPixelsSize().getWidth() ) /
 							2;
 					break;
 				case UI_HALIGN_RIGHT:
-					pos.x = getSize().getWidth() - mPadding.Left - mPadding.Right -
-							widget->getSize().getWidth() - widget->getLayoutMargin().Right;
+					pos.x = getPixelsSize().getWidth() - mPaddingPx.Left - mPaddingPx.Right -
+							widget->getPixelsSize().getWidth() -
+							widget->getLayoutPixelsMargin().Right;
 					break;
 				case UI_HALIGN_LEFT:
 				default:
-					pos.x = widget->getLayoutMargin().Left + mPadding.Left;
+					pos.x = widget->getLayoutPixelsMargin().Left + mPaddingPx.Left;
 					break;
 			}
 
-			widget->setPosition( pos );
+			widget->setPixelsPosition( pos );
 
-			curY += eeceil( widget->getSize().getHeight() + margin.Bottom );
+			curY += eeceil( widget->getPixelsSize().getHeight() + margin.Bottom );
 
-			maxX = eeceil(
-				eemax( maxX, ( widget->getSize().getWidth() + widget->getLayoutMargin().Left +
-							   widget->getLayoutMargin().Right ) ) );
+			maxX = eeceil( eemax( maxX, ( widget->getPixelsSize().getWidth() +
+										  widget->getLayoutPixelsMargin().Left +
+										  widget->getLayoutPixelsMargin().Right ) ) );
 		}
 
 		child = child->getNextNode();
 	}
 
-	maxX += mPadding.Left + mPadding.Right;
+	maxX += mPaddingPx.Left + mPaddingPx.Right;
 
 	if ( getLayoutHeightPolicy() == SizePolicy::WrapContent ) {
-		curY += mPadding.Bottom;
+		curY += mPaddingPx.Bottom;
 
-		if ( curY != (int)getSize().getHeight() ) {
-			setInternalHeight( curY );
+		if ( curY != (int)getPixelsSize().getHeight() ) {
+			setInternalPixelsHeight( curY );
 			notifyLayoutAttrChangeParent();
 		}
 	} else if ( getLayoutHeightPolicy() == SizePolicy::MatchParent ) {
-		int h = getParent()->getSize().getHeight() - mLayoutMargin.Top - mLayoutMargin.Bottom;
+		int h =
+			getParent()->getPixelsSize().getHeight() - mLayoutMarginPx.Top - mLayoutMarginPx.Bottom;
 
 		if ( getParent()->isType( UI_TYPE_LAYOUT ) ) {
 			UILayout* pLay = static_cast<UILayout*>( getParent() );
-			h = h - pLay->getPadding().Top - pLay->getPadding().Bottom;
+			h = h - pLay->getPixelsPadding().Top - pLay->getPixelsPadding().Bottom;
 		}
 
-		if ( h != (int)getSize().getHeight() )
-			setInternalHeight( h );
+		if ( h != (int)getPixelsSize().getHeight() )
+			setInternalPixelsHeight( h );
 	}
 
-	if ( getLayoutWidthPolicy() == SizePolicy::WrapContent && getSize().getWidth() != maxX ) {
+	if ( getLayoutWidthPolicy() == SizePolicy::WrapContent && getPixelsSize().getWidth() != maxX ) {
 		if ( !( 0 != getLayoutWeight() && getParent()->isType( UI_TYPE_LINEAR_LAYOUT ) &&
 				getParent()->asType<UILinearLayout>()->getOrientation() ==
 					UIOrientation::Horizontal ) ) {
-			setInternalWidth( maxX );
+			setInternalPixelsWidth( maxX );
 			mPacking = false;
 			packVertical();
 			notifyLayoutAttrChangeParent();
@@ -249,17 +257,18 @@ void UILinearLayout::packHorizontal() {
 		return;
 	mPacking = true;
 	bool sizeChanged = false;
-	Sizef size( getSize() );
+	Sizef size( getPixelsSize() );
 
 	if ( getLayoutWidthPolicy() == SizePolicy::MatchParent ) {
-		Float w = getParent()->getSize().getWidth() - mLayoutMargin.Left - mLayoutMargin.Right;
+		Float w =
+			getParent()->getPixelsSize().getWidth() - mLayoutMarginPx.Left - mLayoutMarginPx.Right;
 
 		if ( getParent()->isType( UI_TYPE_LAYOUT ) ) {
 			UILayout* pLay = static_cast<UILayout*>( getParent() );
-			w = w - pLay->getPadding().Left - pLay->getPadding().Right;
+			w = w - pLay->getPixelsPadding().Left - pLay->getPixelsPadding().Right;
 		}
 
-		if ( (int)w != (int)getSize().getWidth() ) {
+		if ( (int)w != (int)getPixelsSize().getWidth() ) {
 			sizeChanged = true;
 
 			size.setWidth( w );
@@ -267,14 +276,15 @@ void UILinearLayout::packHorizontal() {
 	}
 
 	if ( getLayoutHeightPolicy() == SizePolicy::MatchParent && 0 == getLayoutWeight() ) {
-		Float h = getParent()->getSize().getHeight() - mLayoutMargin.Top - mLayoutMargin.Bottom;
+		Float h =
+			getParent()->getPixelsSize().getHeight() - mLayoutMarginPx.Top - mLayoutMarginPx.Bottom;
 
 		if ( getParent()->isType( UI_TYPE_LAYOUT ) ) {
 			UILayout* pLay = static_cast<UILayout*>( getParent() );
-			h = h - pLay->getPadding().Top - pLay->getPadding().Bottom;
+			h = h - pLay->getPixelsPadding().Top - pLay->getPixelsPadding().Bottom;
 		}
 
-		if ( (int)h != (int)getSize().getHeight() ) {
+		if ( (int)h != (int)getPixelsSize().getHeight() ) {
 			sizeChanged = true;
 
 			size.setHeight( h );
@@ -282,7 +292,7 @@ void UILinearLayout::packHorizontal() {
 	}
 
 	if ( sizeChanged ) {
-		setInternalSize( size );
+		setInternalPixelsSize( size );
 	}
 
 	Node* child = mChild;
@@ -301,11 +311,12 @@ void UILinearLayout::packHorizontal() {
 					break;
 				}
 				case SizePolicy::MatchParent: {
-					int h = getSize().getHeight() - widget->getLayoutMargin().Top -
-							widget->getLayoutMargin().Bottom - mPadding.Top - mPadding.Bottom;
+					int h = getPixelsSize().getHeight() - widget->getLayoutPixelsMargin().Top -
+							widget->getLayoutPixelsMargin().Bottom - mPaddingPx.Top -
+							mPaddingPx.Bottom;
 
-					if ( h != (int)widget->getSize().getHeight() && h > 0 )
-						widget->setSize( widget->getSize().getWidth(), h );
+					if ( h != (int)widget->getPixelsSize().getHeight() && h > 0 )
+						widget->setPixelsSize( widget->getPixelsSize().getWidth(), h );
 
 					break;
 				}
@@ -316,20 +327,21 @@ void UILinearLayout::packHorizontal() {
 
 			if ( widget->getLayoutWidthPolicy() == SizePolicy::MatchParent &&
 				 widget->getLayoutWeight() == 0 &&
-				 widget->getSize().getWidth() !=
-					 getSize().getWidth() - widget->getLayoutMargin().Left -
-						 widget->getLayoutMargin().Right - mPadding.Left - mPadding.Right ) {
-				widget->setSize( getSize().getWidth() - widget->getLayoutMargin().Left -
-									 widget->getLayoutMargin().Right - mPadding.Left -
-									 mPadding.Right,
-								 widget->getSize().getHeight() );
+				 widget->getPixelsSize().getWidth() != getPixelsSize().getWidth() -
+														   widget->getLayoutPixelsMargin().Left -
+														   widget->getLayoutPixelsMargin().Right -
+														   mPaddingPx.Left - mPaddingPx.Right ) {
+				widget->setPixelsSize(
+					getPixelsSize().getWidth() - widget->getLayoutPixelsMargin().Left -
+						widget->getLayoutPixelsMargin().Right - mPaddingPx.Left - mPaddingPx.Right,
+					widget->getPixelsSize().getHeight() );
 			}
 		}
 
 		child = child->getNextNode();
 	}
 
-	Float curX = mPadding.Left;
+	Float curX = mPaddingPx.Left;
 	Float maxY = 0;
 	Sizei freeSize = getTotalUsedSize();
 
@@ -338,76 +350,80 @@ void UILinearLayout::packHorizontal() {
 	while ( NULL != child ) {
 		if ( child->isWidget() && child->isVisible() ) {
 			UIWidget* widget = static_cast<UIWidget*>( child );
-			Rect margin = widget->getLayoutMargin();
+			Rectf margin = widget->getLayoutPixelsMargin();
 
 			curX += eeceil( margin.Left );
 
-			Vector2f pos( curX, mPadding.Top );
+			Vector2f pos( curX, mPaddingPx.Top );
 
 			if ( widget->getLayoutWeight() != 0 ) {
-				Int32 totSize = ( getLayoutWidthPolicy() == SizePolicy::MatchParent )
-									? getSize().getWidth() - mPadding.Left - mPadding.Right
-									: getParent()->getSize().getWidth() - mLayoutMargin.Right -
-										  mLayoutMargin.Left - mPadding.Left - mPadding.Right;
+				Int32 totSize =
+					( getLayoutWidthPolicy() == SizePolicy::MatchParent )
+						? getPixelsSize().getWidth() - mPaddingPx.Left - mPaddingPx.Right
+						: getParent()->getPixelsSize().getWidth() - mLayoutMarginPx.Right -
+							  mLayoutMarginPx.Left - mPaddingPx.Left - mPaddingPx.Right;
 				Float size = ( Float )( totSize - freeSize.getWidth() ) * widget->getLayoutWeight();
 
-				widget->setSize( (Int32)size, widget->getSize().getHeight() );
+				widget->setPixelsSize( (Int32)size, widget->getPixelsSize().getHeight() );
 			}
 
 			switch ( Font::getVerticalAlign( widget->getLayoutGravity() ) ) {
 				case UI_VALIGN_CENTER:
-					pos.y = ( getSize().getHeight() - mPadding.Top - mPadding.Bottom -
-							  widget->getSize().getHeight() ) /
+					pos.y = ( getPixelsSize().getHeight() - mPaddingPx.Top - mPaddingPx.Bottom -
+							  widget->getPixelsSize().getHeight() ) /
 							2;
 					break;
 				case UI_VALIGN_BOTTOM:
-					pos.y = getSize().getHeight() - mPadding.Top - mPadding.Bottom -
-							widget->getSize().getHeight() - widget->getLayoutMargin().Bottom;
+					pos.y = getPixelsSize().getHeight() - mPaddingPx.Top - mPaddingPx.Bottom -
+							widget->getPixelsSize().getHeight() -
+							widget->getLayoutPixelsMargin().Bottom;
 					break;
 				case UI_VALIGN_TOP:
 				default:
-					pos.y = widget->getLayoutMargin().Top + mPadding.Top;
+					pos.y = widget->getLayoutPixelsMargin().Top + mPaddingPx.Top;
 					break;
 			}
 
-			widget->setPosition( pos );
+			widget->setPixelsPosition( pos );
 
-			curX += eeceil( widget->getSize().getWidth() + margin.Right );
+			curX += eeceil( widget->getPixelsSize().getWidth() + margin.Right );
 
-			maxY = eeceil(
-				eemax( maxY, ( widget->getSize().getHeight() + widget->getLayoutMargin().Top +
-							   widget->getLayoutMargin().Bottom ) ) );
+			maxY = eeceil( eemax( maxY, ( widget->getPixelsSize().getHeight() +
+										  widget->getLayoutPixelsMargin().Top +
+										  widget->getLayoutPixelsMargin().Bottom ) ) );
 		}
 
 		child = child->getNextNode();
 	}
 
-	maxY += mPadding.Top + mPadding.Bottom;
+	maxY += mPaddingPx.Top + mPaddingPx.Bottom;
 
 	if ( getLayoutWidthPolicy() == SizePolicy::WrapContent ) {
-		curX += mPadding.Right;
+		curX += mPaddingPx.Right;
 
-		if ( curX != (int)getSize().getWidth() ) {
-			setInternalWidth( curX );
+		if ( curX != (int)getPixelsSize().getWidth() ) {
+			setInternalPixelsWidth( curX );
 			notifyLayoutAttrChangeParent();
 		}
 	} else if ( getLayoutWidthPolicy() == SizePolicy::MatchParent ) {
-		int w = getParent()->getSize().getWidth() - mLayoutMargin.Left - mLayoutMargin.Right;
+		int w =
+			getParent()->getPixelsSize().getWidth() - mLayoutMarginPx.Left - mLayoutMarginPx.Right;
 
 		if ( getParent()->isType( UI_TYPE_LAYOUT ) ) {
 			UILayout* pLay = static_cast<UILayout*>( getParent() );
-			w = w - pLay->getPadding().Left - pLay->getPadding().Right;
+			w = w - pLay->getPixelsPadding().Left - pLay->getPixelsPadding().Right;
 		}
 
-		if ( w != (int)getSize().getWidth() )
-			setInternalWidth( w );
+		if ( w != (int)getPixelsSize().getWidth() )
+			setInternalPixelsWidth( w );
 	}
 
-	if ( getLayoutHeightPolicy() == SizePolicy::WrapContent && getSize().getHeight() != maxY ) {
+	if ( getLayoutHeightPolicy() == SizePolicy::WrapContent &&
+		 getPixelsSize().getHeight() != maxY ) {
 		if ( !( 0 != getLayoutWeight() && getParent()->isType( UI_TYPE_LINEAR_LAYOUT ) &&
 				getParent()->asType<UILinearLayout>()->getOrientation() ==
 					UIOrientation::Vertical ) ) {
-			setInternalHeight( maxY );
+			setInternalPixelsHeight( maxY );
 			mPacking = false;
 			packHorizontal();
 			notifyLayoutAttrChangeParent();
@@ -417,6 +433,7 @@ void UILinearLayout::packHorizontal() {
 	if ( getParent()->isUINode() && !getParent()->asType<UINode>()->ownsChildPosition() ) {
 		alignAgainstLayout();
 	}
+
 	mPacking = false;
 }
 
@@ -427,7 +444,7 @@ Sizei UILinearLayout::getTotalUsedSize() {
 	while ( NULL != child ) {
 		if ( child->isWidget() && child->isVisible() ) {
 			UIWidget* widget = static_cast<UIWidget*>( child );
-			Rect margin = widget->getLayoutMargin();
+			Rectf margin = widget->getLayoutPixelsMargin();
 
 			size.x += margin.Left + margin.Right;
 
@@ -436,14 +453,14 @@ Sizei UILinearLayout::getTotalUsedSize() {
 			if ( widget->getLayoutWidthPolicy() == SizePolicy::Fixed ||
 				 widget->getLayoutWidthPolicy() == SizePolicy::WrapContent ) {
 				if ( 0 == widget->getLayoutWeight() && mOrientation == UIOrientation::Horizontal ) {
-					size.x += widget->getSize().getWidth();
+					size.x += widget->getPixelsSize().getWidth();
 				}
 			}
 
 			if ( widget->getLayoutHeightPolicy() == SizePolicy::Fixed ||
 				 widget->getLayoutHeightPolicy() == SizePolicy::WrapContent ) {
 				if ( 0 == widget->getLayoutWeight() && mOrientation == UIOrientation::Vertical ) {
-					size.y += widget->getSize().getHeight();
+					size.y += widget->getPixelsSize().getHeight();
 				}
 			}
 		}

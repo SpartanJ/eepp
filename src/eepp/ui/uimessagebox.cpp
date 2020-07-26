@@ -23,7 +23,7 @@ UIMessageBox::UIMessageBox( const Type& type, const String& message, const Uint3
 
 	UILinearLayout* vlay = UILinearLayout::NewVertical();
 	vlay->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent )
-		->setLayoutMargin( Rect( 8, 8, 8, 8 ) )
+		->setLayoutMargin( Rectf( 8, 8, 8, 8 ) )
 		->setParent( mLayoutCont )
 		->clipDisable();
 
@@ -35,7 +35,7 @@ UIMessageBox::UIMessageBox( const Type& type, const String& message, const Uint3
 	if ( mMsgBoxType == INPUT ) {
 		mTextInput = UITextInput::New();
 		mTextInput->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
-			->setLayoutMargin( Rect( 0, 4, 0, 4 ) )
+			->setLayoutMargin( Rectf( 0, 4, 0, 4 ) )
 			->setParent( vlay )
 			->addEventListener( Event::OnPressEnter, [&]( const Event* ) {
 				sendCommonEvent( Event::MsgBoxConfirmClick );
@@ -43,7 +43,7 @@ UIMessageBox::UIMessageBox( const Type& type, const String& message, const Uint3
 	}
 
 	UILinearLayout* hlay = UILinearLayout::NewHorizontal();
-	hlay->setLayoutMargin( Rect( 0, 8, 0, 0 ) )
+	hlay->setLayoutMargin( Rectf( 0, 8, 0, 0 ) )
 		->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent )
 		->setLayoutGravity( UI_HALIGN_RIGHT | UI_VALIGN_CENTER )
 		->setParent( vlay )
@@ -53,7 +53,7 @@ UIMessageBox::UIMessageBox( const Type& type, const String& message, const Uint3
 	mButtonOK->setSize( 90, 0 )->setParent( hlay );
 
 	mButtonCancel = UIPushButton::New();
-	mButtonCancel->setLayoutMargin( Rect( 8, 0, 0, 0 ) )->setSize( 90, 0 )->setParent( hlay );
+	mButtonCancel->setLayoutMargin( Rectf( 8, 0, 0, 0 ) )->setSize( 90, 0 )->setParent( hlay );
 
 	switch ( mMsgBoxType ) {
 		case UIMessageBox::INPUT:

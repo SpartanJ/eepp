@@ -142,7 +142,7 @@ void UITableView::onColumnSizeChange( const size_t& ) {
 
 Uint32 UITableView::onKeyDown( const KeyEvent& event ) {
 	if ( event.getMod() != 0 )
-		return 0;
+		return UIAbstractTableView::onKeyDown( event );
 
 	auto curIndex = getSelection().first();
 	int pageSize = eefloor( getVisibleArea().getHeight() / getRowHeight() ) - 1;
@@ -155,7 +155,7 @@ Uint32 UITableView::onKeyDown( const KeyEvent& event ) {
 			} else {
 				moveSelection( -pageSize );
 			}
-			break;
+			return 1;
 		}
 		case KEY_PAGEDOWN: {
 			if ( curIndex.row() + pageSize >= (Int64)getModel()->rowCount() ) {
@@ -164,36 +164,36 @@ Uint32 UITableView::onKeyDown( const KeyEvent& event ) {
 			} else {
 				moveSelection( pageSize );
 			}
-			break;
+			return 1;
 		}
 		case KEY_UP: {
 			moveSelection( -1 );
-			break;
+			return 1;
 		}
 		case KEY_DOWN: {
 			moveSelection( 1 );
-			break;
+			return 1;
 		}
 		case KEY_END: {
 			scrollToBottom();
 			getSelection().set( getModel()->index( getItemCount() - 1 ) );
-			break;
+			return 1;
 		}
 		case KEY_HOME: {
 			scrollToTop();
 			getSelection().set( getModel()->index( 0, 0 ) );
-			break;
+			return 1;
 		}
 		case KEY_RETURN:
 		case KEY_KP_ENTER: {
 			if ( curIndex.isValid() )
 				onOpenModelIndex( curIndex );
-			break;
+			return 1;
 		}
 		default:
 			break;
 	}
-	return 0;
+	return UIAbstractTableView::onKeyDown( event );
 }
 
 }} // namespace EE::UI

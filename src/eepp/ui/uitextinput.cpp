@@ -101,8 +101,8 @@ void UITextInput::onCursorPosChange() {
 void UITextInput::drawWaitingCursor() {
 	if ( mVisible && hasFocus() && mShowingWait && mAllowEditing ) {
 		Vector2f cursor(
-			eefloor( mScreenPos.x + mRealAlignOffset.x + mCurPos.x + mRealPadding.Left ),
-			mScreenPos.y + mRealAlignOffset.y + mCurPos.y + mRealPadding.Top );
+			eefloor( mScreenPos.x + mRealAlignOffset.x + mCurPos.x + mPaddingPx.Left ),
+			mScreenPos.y + mRealAlignOffset.y + mCurPos.y + mPaddingPx.Top );
 
 		Primitives primitives;
 		primitives.setColor( Color( mFontStyleConfig.FontColor ).blendAlpha( mAlpha ) );
@@ -132,16 +132,16 @@ void UITextInput::draw() {
 			drawSelection( mTextCache );
 
 			if ( isClipped() ) {
-				clipSmartEnable( mScreenPos.x + mRealPadding.Left, mScreenPos.y + mRealPadding.Top,
-								 mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
-								 mSize.getHeight() - mRealPadding.Top - mRealPadding.Bottom );
+				clipSmartEnable( mScreenPos.x + mPaddingPx.Left, mScreenPos.y + mPaddingPx.Top,
+								 mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right,
+								 mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom );
 			}
 
 			mTextCache->setAlign( getFlags() );
 			mTextCache->draw( (Float)mScreenPosi.x + (int)mRealAlignOffset.x +
-								  (int)mRealPadding.Left,
+								  (int)mPaddingPx.Left,
 							  mFontLineCenter + (Float)mScreenPosi.y + (int)mRealAlignOffset.y +
-								  (int)mRealPadding.Top,
+								  (int)mPaddingPx.Top,
 							  Vector2f::One, 0.f, getBlendMode() );
 
 			if ( isClipped() ) {
@@ -149,15 +149,15 @@ void UITextInput::draw() {
 			}
 		} else if ( !mHintCache->getString().empty() ) {
 			if ( isClipped() ) {
-				clipSmartEnable( mScreenPos.x + mRealPadding.Left, mScreenPos.y + mRealPadding.Top,
-								 mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
-								 mSize.getHeight() - mRealPadding.Top - mRealPadding.Bottom );
+				clipSmartEnable( mScreenPos.x + mPaddingPx.Left, mScreenPos.y + mPaddingPx.Top,
+								 mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right,
+								 mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom );
 			}
 
 			mHintCache->draw( (Float)mScreenPosi.x + (int)mRealAlignOffset.x +
-								  (int)mRealPadding.Left,
+								  (int)mPaddingPx.Left,
 							  mFontLineCenter + (Float)mScreenPosi.y + (int)mRealAlignOffset.y +
-								  (int)mRealPadding.Top,
+								  (int)mPaddingPx.Top,
 							  Vector2f::One, 0.f, getBlendMode() );
 
 			if ( isClipped() ) {
@@ -203,13 +203,13 @@ void UITextInput::alignFix() {
 	switch ( Font::getVerticalAlign( getFlags() ) ) {
 		case UI_VALIGN_CENTER:
 			mRealAlignOffset.y =
-				( Float )( ( Int32 )( ( mSize.y - mRealPadding.Top - mRealPadding.Bottom ) / 2 -
+				( Float )( ( Int32 )( ( mSize.y - mPaddingPx.Top - mPaddingPx.Bottom ) / 2 -
 									  mTextCache->getLineSpacing() / 2 ) ) -
 				1;
 			break;
 		case UI_VALIGN_BOTTOM:
 			mRealAlignOffset.y =
-				mSize.y - mRealPadding.Top - mRealPadding.Bottom - mTextCache->getLineSpacing();
+				mSize.y - mPaddingPx.Top - mPaddingPx.Bottom - mTextCache->getLineSpacing();
 			break;
 		case UI_VALIGN_TOP:
 			mRealAlignOffset.y = 0;
@@ -227,8 +227,8 @@ void UITextInput::alignFix() {
 
 			if ( tX < 0.f ) {
 				mRealAlignOffset.x = -( mRealAlignOffset.x + ( tW - mRealAlignOffset.x ) );
-			} else if ( tX > mSize.getWidth() - mRealPadding.Left - mRealPadding.Right ) {
-				mRealAlignOffset.x = mSize.getWidth() - mRealPadding.Left - mRealPadding.Right -
+			} else if ( tX > mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right ) {
+				mRealAlignOffset.x = mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right -
 									 ( mRealAlignOffset.x + ( tW - mRealAlignOffset.x ) );
 			}
 		}
@@ -258,10 +258,10 @@ void UITextInput::onAutoSize() {
 	if ( mHeightPolicy == SizePolicy::WrapContent ) {
 		int minHeight = eemax<int>( mTextCache->getLineSpacing(),
 									PixelDensity::dpToPxI( getSkinSize().getHeight() ) );
-		setInternalPixelsHeight( minHeight + mRealPadding.Top + mRealPadding.Bottom );
+		setInternalPixelsHeight( minHeight + mPaddingPx.Top + mPaddingPx.Bottom );
 	} else if ( ( mFlags & UI_AUTO_SIZE ) && 0 == getSize().getHeight() ) {
 		setInternalPixelsHeight( PixelDensity::dpToPxI( getSkinSize().getHeight() ) +
-								 mRealPadding.Top + mRealPadding.Bottom );
+								 mPaddingPx.Top + mPaddingPx.Bottom );
 	}
 }
 

@@ -77,7 +77,7 @@ void UICheckBox::onAutoSize() {
 		if ( getSize().getWidth() == 0 ) {
 			setInternalPixelsWidth( (int)mTextCache->getTextWidth() +
 									mActiveButton->getPixelsSize().getWidth() + mTextSeparation +
-									mRealPadding.Left + mRealPadding.Right );
+									mPaddingPx.Left + mPaddingPx.Right );
 		}
 
 		if ( getSize().getHeight() == 0 ) {
@@ -87,14 +87,14 @@ void UICheckBox::onAutoSize() {
 	}
 
 	if ( mWidthPolicy == SizePolicy::WrapContent ) {
-		setInternalPixelsWidth( (int)mTextCache->getTextWidth() + mRealPadding.Left +
-								mRealPadding.Right + mActiveButton->getPixelsSize().getWidth() +
+		setInternalPixelsWidth( (int)mTextCache->getTextWidth() + mPaddingPx.Left +
+								mPaddingPx.Right + mActiveButton->getPixelsSize().getWidth() +
 								PixelDensity::dpToPx( mTextSeparation ) );
 	}
 
 	if ( mHeightPolicy == SizePolicy::WrapContent ) {
-		setInternalPixelsHeight( (int)mTextCache->getTextHeight() + mRealPadding.Top +
-								 mRealPadding.Bottom );
+		setInternalPixelsHeight( (int)mTextCache->getTextHeight() + mPaddingPx.Top +
+								 mPaddingPx.Bottom );
 	}
 
 	alignFix();
@@ -171,7 +171,7 @@ void UICheckBox::alignFix() {
 	switch ( Font::getHorizontalAlign( getFlags() ) ) {
 		case UI_HALIGN_CENTER:
 			mRealAlignOffset.x =
-				( Float )( ( Int32 )( ( mSize.x - mRealPadding.Left - mRealPadding.Right -
+				( Float )( ( Int32 )( ( mSize.x - mPaddingPx.Left - mPaddingPx.Right -
 										mTextCache->getTextWidth() -
 										mActiveButton->getPixelsSize().getWidth() +
 										PixelDensity::dpToPx( mTextSeparation ) ) /
@@ -179,7 +179,7 @@ void UICheckBox::alignFix() {
 				mActiveButton->getPixelsSize().getWidth() + PixelDensity::dpToPx( mTextSeparation );
 			break;
 		case UI_HALIGN_RIGHT:
-			mRealAlignOffset.x = ( (Float)mSize.x - mRealPadding.Left - mRealPadding.Right -
+			mRealAlignOffset.x = ( (Float)mSize.x - mPaddingPx.Left - mPaddingPx.Right -
 								   (Float)mTextCache->getTextWidth() );
 			break;
 		case UI_HALIGN_LEFT:

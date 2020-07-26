@@ -184,8 +184,8 @@ void UISplitter::updateFromDrag() {
 	mSplitter->setVisible( !mAlwaysShowSplitter && !mLastWidget ? false : true );
 	mSplitter->setEnabled( mSplitter->isVisible() );
 	Float totalSpace = mOrientation == UIOrientation::Horizontal
-						   ? mSize.getWidth() - mRealPadding.Left - mRealPadding.Right
-						   : mSize.getHeight() - mRealPadding.Top - mRealPadding.Bottom;
+						   ? mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right
+						   : mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom;
 	if ( mSplitter->isVisible() ) {
 		totalSpace -= UIOrientation::Horizontal == mOrientation
 						  ? mSplitter->getPixelsSize().getWidth()
@@ -209,7 +209,7 @@ void UISplitter::updateFromDrag() {
 		}
 
 		mSplitter->setPixelsSize( mSplitter->getPixelsSize().getWidth(),
-								  mSize.getHeight() - mRealPadding.Top - mRealPadding.Bottom );
+								  mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom );
 	} else {
 		Float fMinSize = mFirstWidget ? mFirstWidget->getCurrentMinSize().getHeight() : 0.f;
 
@@ -226,19 +226,19 @@ void UISplitter::updateFromDrag() {
 										mSplitter->getSize().getHeight() );
 		}
 
-		mSplitter->setPixelsSize( mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
+		mSplitter->setPixelsSize( mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right,
 								  mSplitter->getPixelsSize().getHeight() );
 	}
 
 	if ( mFirstWidget ) {
-		mFirstWidget->setPixelsPosition( mRealPadding.Left, mRealPadding.Top );
+		mFirstWidget->setPixelsPosition( mPaddingPx.Left, mPaddingPx.Top );
 		if ( UIOrientation::Horizontal == mOrientation ) {
-			mFirstWidget->setPixelsSize( mSplitter->getPixelsPosition().x - mRealPadding.Left,
-										 mSize.getHeight() - mRealPadding.Top -
-											 mRealPadding.Bottom );
+			mFirstWidget->setPixelsSize( mSplitter->getPixelsPosition().x - mPaddingPx.Left,
+										 mSize.getHeight() - mPaddingPx.Top -
+											 mPaddingPx.Bottom );
 		} else {
-			mFirstWidget->setPixelsSize( mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
-										 mSplitter->getPixelsPosition().y - mRealPadding.Top );
+			mFirstWidget->setPixelsSize( mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right,
+										 mSplitter->getPixelsPosition().y - mPaddingPx.Top );
 		}
 	}
 
@@ -246,17 +246,17 @@ void UISplitter::updateFromDrag() {
 		if ( UIOrientation::Horizontal == mOrientation ) {
 			mLastWidget->setPixelsPosition( mSplitter->getPixelsPosition().x +
 												mSplitter->getPixelsSize().getWidth(),
-											mRealPadding.Top );
+											mPaddingPx.Top );
 			mLastWidget->setPixelsSize(
-				mSize.getWidth() - mRealPadding.Right - mSplitter->getPixelsPosition().x -
+				mSize.getWidth() - mPaddingPx.Right - mSplitter->getPixelsPosition().x -
 					mSplitter->getPixelsSize().getWidth(),
-				mSize.getHeight() - mRealPadding.Top - mRealPadding.Bottom );
+				mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom );
 		} else {
-			mLastWidget->setPixelsPosition( mRealPadding.Left,
+			mLastWidget->setPixelsPosition( mPaddingPx.Left,
 											mSplitter->getPixelsPosition().y +
 												mSplitter->getPixelsSize().getHeight() );
-			mLastWidget->setPixelsSize( mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
-										mSize.getHeight() - mRealPadding.Bottom -
+			mLastWidget->setPixelsSize( mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right,
+										mSize.getHeight() - mPaddingPx.Bottom -
 											mSplitter->getPixelsPosition().y -
 											mSplitter->getPixelsSize().getHeight() );
 		}
@@ -266,14 +266,14 @@ void UISplitter::updateFromDrag() {
 		mSplitPartition = StyleSheetLength(
 			eeclamp<Float>(
 				( mSplitter->getPixelsPosition().x + mSplitter->getPixelsSize().getWidth() ) /
-					( mSize.getWidth() - mRealPadding.Left - mRealPadding.Right ) * 100,
+					( mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right ) * 100,
 				0, 100 ),
 			StyleSheetLength::Percentage );
 	} else {
 		mSplitPartition = StyleSheetLength(
 			eeclamp<Float>(
 				( mSplitter->getPixelsPosition().y + mSplitter->getPixelsSize().getHeight() ) /
-					( mSize.getHeight() - mRealPadding.Top - mRealPadding.Bottom ) * 100,
+					( mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom ) * 100,
 				0, 100 ),
 			StyleSheetLength::Percentage );
 	}
@@ -325,10 +325,10 @@ void UISplitter::updateLayout() {
 		mSplitter->setVisible( false )->setEnabled( false );
 
 		if ( mFirstWidget ) {
-			mFirstWidget->setPixelsPosition( mRealPadding.Left, mRealPadding.Top );
-			mFirstWidget->setPixelsSize( mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
-										 mSize.getHeight() - mRealPadding.Top -
-											 mRealPadding.Bottom );
+			mFirstWidget->setPixelsPosition( mPaddingPx.Left, mPaddingPx.Top );
+			mFirstWidget->setPixelsSize( mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right,
+										 mSize.getHeight() - mPaddingPx.Top -
+											 mPaddingPx.Bottom );
 		}
 
 		mDirtyLayout = false;
@@ -338,8 +338,8 @@ void UISplitter::updateLayout() {
 	mSplitter->setVisible( !mAlwaysShowSplitter && !mLastWidget ? false : true );
 	mSplitter->setEnabled( mSplitter->isVisible() );
 	Float totalSpace = mOrientation == UIOrientation::Horizontal
-						   ? mSize.getWidth() - mRealPadding.Left - mRealPadding.Right
-						   : mSize.getHeight() - mRealPadding.Top - mRealPadding.Bottom;
+						   ? mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right
+						   : mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom;
 	if ( mSplitter->isVisible() ) {
 		totalSpace -= UIOrientation::Horizontal == mOrientation
 						  ? mSplitter->getPixelsSize().getWidth()
@@ -350,7 +350,7 @@ void UISplitter::updateLayout() {
 	Float secondSplit = totalSpace - firstSplit;
 
 	if ( mFirstWidget ) {
-		mFirstWidget->setPixelsPosition( mRealPadding.Left, mRealPadding.Top );
+		mFirstWidget->setPixelsPosition( mPaddingPx.Left, mPaddingPx.Top );
 
 		if ( UIOrientation::Horizontal == mOrientation ) {
 			Float fMinSize = mFirstWidget ? mFirstWidget->getCurrentMinSize().getWidth() : 0.f;
@@ -358,14 +358,14 @@ void UISplitter::updateLayout() {
 			firstSplit = eemax( firstSplit, fMinSize );
 			secondSplit = totalSpace - firstSplit;
 
-			mFirstWidget->setPixelsSize( firstSplit, mSize.getHeight() - mRealPadding.Top -
-														 mRealPadding.Bottom );
+			mFirstWidget->setPixelsSize( firstSplit, mSize.getHeight() - mPaddingPx.Top -
+														 mPaddingPx.Bottom );
 
 			mSplitter->setPixelsPosition( mFirstWidget->getPixelsPosition().x +
 											  mFirstWidget->getPixelsSize().getWidth(),
-										  mRealPadding.Top );
+										  mPaddingPx.Top );
 			mSplitter->setPixelsSize( mSplitter->getPixelsSize().getWidth(),
-									  mSize.getHeight() - mRealPadding.Top - mRealPadding.Bottom );
+									  mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom );
 		} else {
 
 			Float fMinSize = mFirstWidget ? mFirstWidget->getCurrentMinSize().getHeight() : 0.f;
@@ -373,13 +373,13 @@ void UISplitter::updateLayout() {
 			firstSplit = eemax( firstSplit, fMinSize );
 			secondSplit = totalSpace - firstSplit;
 
-			mFirstWidget->setPixelsSize( mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
+			mFirstWidget->setPixelsSize( mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right,
 										 firstSplit );
 
-			mSplitter->setPixelsPosition( mRealPadding.Left,
+			mSplitter->setPixelsPosition( mPaddingPx.Left,
 										  mFirstWidget->getPixelsPosition().y +
 											  mFirstWidget->getPixelsSize().getHeight() );
-			mSplitter->setPixelsSize( mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
+			mSplitter->setPixelsSize( mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right,
 									  mSplitter->getPixelsSize().getHeight() );
 		}
 	}
@@ -388,14 +388,14 @@ void UISplitter::updateLayout() {
 		if ( UIOrientation::Horizontal == mOrientation ) {
 			mLastWidget->setPixelsPosition( mSplitter->getPixelsPosition().x +
 												mSplitter->getPixelsSize().getWidth(),
-											mRealPadding.Top );
-			mLastWidget->setPixelsSize( secondSplit, mSize.getHeight() - mRealPadding.Top -
-														 mRealPadding.Bottom );
+											mPaddingPx.Top );
+			mLastWidget->setPixelsSize( secondSplit, mSize.getHeight() - mPaddingPx.Top -
+														 mPaddingPx.Bottom );
 		} else {
-			mLastWidget->setPixelsPosition( mRealPadding.Left,
+			mLastWidget->setPixelsPosition( mPaddingPx.Left,
 											mSplitter->getPixelsPosition().y +
 												mSplitter->getPixelsSize().getHeight() );
-			mLastWidget->setPixelsSize( mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
+			mLastWidget->setPixelsSize( mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right,
 										secondSplit );
 		}
 	}

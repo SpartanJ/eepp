@@ -80,13 +80,18 @@ void UIWidget::updateAnchorsDistances() {
 	}
 }
 
-const Rect& UIWidget::getLayoutMargin() const {
+const Rectf& UIWidget::getLayoutMargin() const {
 	return mLayoutMargin;
 }
 
-UIWidget* UIWidget::setLayoutMargin( const Rect& margin ) {
+const Rectf& UIWidget::getLayoutPixelsMargin() const {
+	return mLayoutMarginPx;
+}
+
+UIWidget* UIWidget::setLayoutMargin( const Rectf& margin ) {
 	if ( mLayoutMargin != margin ) {
 		mLayoutMargin = margin;
+		mLayoutMarginPx = PixelDensity::dpToPx( mLayoutMargin );
 		onMarginChange();
 		notifyLayoutAttrChange();
 	}
@@ -97,6 +102,7 @@ UIWidget* UIWidget::setLayoutMargin( const Rect& margin ) {
 UIWidget* UIWidget::setLayoutMarginLeft( const Float& marginLeft ) {
 	if ( mLayoutMargin.Left != marginLeft ) {
 		mLayoutMargin.Left = marginLeft;
+		mLayoutMarginPx.Left = PixelDensity::dpToPx( mLayoutMargin.Left );
 		onMarginChange();
 		notifyLayoutAttrChange();
 	}
@@ -107,6 +113,7 @@ UIWidget* UIWidget::setLayoutMarginLeft( const Float& marginLeft ) {
 UIWidget* UIWidget::setLayoutMarginRight( const Float& marginRight ) {
 	if ( mLayoutMargin.Right != marginRight ) {
 		mLayoutMargin.Right = marginRight;
+		mLayoutMarginPx.Right = PixelDensity::dpToPx( mLayoutMargin.Right );
 		onMarginChange();
 		notifyLayoutAttrChange();
 	}
@@ -117,6 +124,7 @@ UIWidget* UIWidget::setLayoutMarginRight( const Float& marginRight ) {
 UIWidget* UIWidget::setLayoutMarginTop( const Float& marginTop ) {
 	if ( mLayoutMargin.Top != marginTop ) {
 		mLayoutMargin.Top = marginTop;
+		mLayoutMarginPx.Top = PixelDensity::dpToPx( mLayoutMargin.Top );
 		onMarginChange();
 		notifyLayoutAttrChange();
 	}
@@ -127,6 +135,7 @@ UIWidget* UIWidget::setLayoutMarginTop( const Float& marginTop ) {
 UIWidget* UIWidget::setLayoutMarginBottom( const Float& marginBottom ) {
 	if ( mLayoutMargin.Bottom != marginBottom ) {
 		mLayoutMargin.Bottom = marginBottom;
+		mLayoutMarginPx.Bottom = PixelDensity::dpToPx( mLayoutMargin.Bottom );
 		onMarginChange();
 		notifyLayoutAttrChange();
 	}
@@ -734,13 +743,13 @@ const Rectf& UIWidget::getPadding() const {
 }
 
 const Rectf& UIWidget::getPixelsPadding() const {
-	return mRealPadding;
+	return mPaddingPx;
 }
 
 UIWidget* UIWidget::setPadding( const Rectf& padding ) {
 	if ( padding != mPadding ) {
 		mPadding = padding;
-		mRealPadding = PixelDensity::dpToPx( mPadding );
+		mPaddingPx = PixelDensity::dpToPx( mPadding );
 		onAutoSize();
 		onPaddingChange();
 		notifyLayoutAttrChange();
@@ -752,7 +761,7 @@ UIWidget* UIWidget::setPadding( const Rectf& padding ) {
 UIWidget* UIWidget::setPaddingLeft( const Float& paddingLeft ) {
 	if ( paddingLeft != mPadding.Left ) {
 		mPadding.Left = paddingLeft;
-		mRealPadding.Left = PixelDensity::dpToPx( mPadding.Left );
+		mPaddingPx.Left = PixelDensity::dpToPx( mPadding.Left );
 		onAutoSize();
 		onPaddingChange();
 		notifyLayoutAttrChange();
@@ -764,7 +773,7 @@ UIWidget* UIWidget::setPaddingLeft( const Float& paddingLeft ) {
 UIWidget* UIWidget::setPaddingRight( const Float& paddingRight ) {
 	if ( paddingRight != mPadding.Right ) {
 		mPadding.Right = paddingRight;
-		mRealPadding.Right = PixelDensity::dpToPx( mPadding.Right );
+		mPaddingPx.Right = PixelDensity::dpToPx( mPadding.Right );
 		onAutoSize();
 		onPaddingChange();
 		notifyLayoutAttrChange();
@@ -776,7 +785,7 @@ UIWidget* UIWidget::setPaddingRight( const Float& paddingRight ) {
 UIWidget* UIWidget::setPaddingTop( const Float& paddingTop ) {
 	if ( paddingTop != mPadding.Top ) {
 		mPadding.Top = paddingTop;
-		mRealPadding.Top = PixelDensity::dpToPx( mPadding.Top );
+		mPaddingPx.Top = PixelDensity::dpToPx( mPadding.Top );
 		onAutoSize();
 		onPaddingChange();
 		notifyLayoutAttrChange();
@@ -788,7 +797,7 @@ UIWidget* UIWidget::setPaddingTop( const Float& paddingTop ) {
 UIWidget* UIWidget::setPaddingBottom( const Float& paddingBottom ) {
 	if ( paddingBottom != mPadding.Bottom ) {
 		mPadding.Bottom = paddingBottom;
-		mRealPadding.Bottom = PixelDensity::dpToPx( mPadding.Bottom );
+		mPaddingPx.Bottom = PixelDensity::dpToPx( mPadding.Bottom );
 		onAutoSize();
 		onPaddingChange();
 		notifyLayoutAttrChange();
@@ -1241,13 +1250,13 @@ std::string UIWidget::getPropertyString( const PropertyDefinition* propertyDef,
 		case PropertyId::Height:
 			return String::fromFloat( getSize().getHeight(), "dp" );
 		case PropertyId::MarginLeft:
-			return String::format( "%ddp", getLayoutMargin().Left );
+			return String::format( "%.2fdp", getLayoutMargin().Left );
 		case PropertyId::MarginTop:
-			return String::format( "%ddp", getLayoutMargin().Top );
+			return String::format( "%.2fdp", getLayoutMargin().Top );
 		case PropertyId::MarginRight:
-			return String::format( "%ddp", getLayoutMargin().Right );
+			return String::format( "%.2fdp", getLayoutMargin().Right );
 		case PropertyId::MarginBottom:
-			return String::format( "%ddp", getLayoutMargin().Bottom );
+			return String::format( "%.2fdp", getLayoutMargin().Bottom );
 		case PropertyId::PaddingLeft:
 			return String::fromFloat( getPadding().Left, "dp" );
 		case PropertyId::PaddingTop:

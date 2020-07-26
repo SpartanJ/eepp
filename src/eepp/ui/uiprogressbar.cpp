@@ -144,11 +144,11 @@ Uint32 UIProgressBar::onValueChange() {
 }
 
 void UIProgressBar::onSizeChange() {
-	Sizef fSize( ( ( mSize.getWidth() - mRealPadding.Left - mRealPadding.Right ) * getProgress() ) /
+	Sizef fSize( ( ( mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right ) * getProgress() ) /
 					 getTotalSteps(),
-				 mSize.getHeight() - mRealPadding.Top - mRealPadding.Bottom );
+				 mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom );
 	mFiller->setPixelsSize( fSize );
-	mFiller->setPixelsPosition( mRealPadding.Left, mRealPadding.Top );
+	mFiller->setPixelsPosition( mPaddingPx.Left, mPaddingPx.Top );
 	updateTextBox();
 }
 

@@ -646,8 +646,8 @@ void UIWindow::fixChildsSize() {
 	}
 
 	if ( NULL == mWindowDecoration && NULL != mContainer ) {
-		mContainer->setPixelsSize( mSize - mRealPadding );
-		mContainer->setPosition( mRealPadding.Left, mRealPadding.Top );
+		mContainer->setPixelsSize( mSize - mPaddingPx );
+		mContainer->setPosition( mPaddingPx.Left, mPaddingPx.Top );
 		return;
 	}
 
@@ -690,14 +690,14 @@ void UIWindow::fixChildsSize() {
 	mBorderBottom->setPixelsPosition( 0, mWindowDecoration->getPixelsSize().getHeight() +
 											 mBorderLeft->getPixelsSize().getHeight() );
 
-	mContainer->setPixelsPosition( mBorderLeft->getPixelsSize().getWidth() + mRealPadding.Left,
+	mContainer->setPixelsPosition( mBorderLeft->getPixelsSize().getWidth() + mPaddingPx.Left,
 								   mWindowDecoration->getPixelsSize().getHeight() +
-									   mRealPadding.Top );
+									   mPaddingPx.Top );
 	mContainer->setPixelsSize(
 		mSize.getWidth() - mBorderLeft->getPixelsSize().getWidth() -
-			mBorderRight->getPixelsSize().getWidth() - mRealPadding.Left - mRealPadding.Right,
+			mBorderRight->getPixelsSize().getWidth() - mPaddingPx.Left - mPaddingPx.Right,
 		mSize.getHeight() - mWindowDecoration->getPixelsSize().getHeight() -
-			mBorderBottom->getPixelsSize().getHeight() - mRealPadding.Top - mRealPadding.Bottom );
+			mBorderBottom->getPixelsSize().getHeight() - mPaddingPx.Top - mPaddingPx.Bottom );
 
 	Uint32 yPos;
 	Vector2f posFix( PixelDensity::dpToPx(

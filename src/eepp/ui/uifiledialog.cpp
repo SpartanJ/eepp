@@ -52,19 +52,19 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 
 	UILinearLayout* linearLayout = UILinearLayout::NewVertical();
 	linearLayout->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent )
-		->setLayoutMargin( Rect( 4, 2, 4, 2 ) )
+		->setLayoutMargin( Rectf( 4, 2, 4, 2 ) )
 		->setParent( getContainer() );
 
 	UILinearLayout* hLayout = UILinearLayout::NewHorizontal();
 	hLayout->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
-		->setLayoutMargin( Rect( 0, 0, 0, 4 ) )
+		->setLayoutMargin( Rectf( 0, 0, 0, 4 ) )
 		->setParent( linearLayout )
 		->setId( "lay1" );
 
 	UITextView::New()
 		->setText( "Look in:" )
 		->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::MatchParent )
-		->setLayoutMargin( Rect( 0, 0, 4, 0 ) )
+		->setLayoutMargin( Rectf( 0, 0, 4, 0 ) )
 		->setParent( hLayout )
 		->setEnabled( false );
 
@@ -87,7 +87,7 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 	mList->setParent( linearLayout );
 	mList->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
 		->setLayoutWeight( 1 )
-		->setLayoutMargin( Rect( 0, 0, 0, 4 ) );
+		->setLayoutMargin( Rectf( 0, 0, 0, 4 ) );
 	mList->addEventListener( Event::KeyDown, [&]( const Event* event ) {
 		const KeyEvent* KEvent = reinterpret_cast<const KeyEvent*>( event );
 		if ( KEvent->getKeyCode() == KEY_BACKSPACE ) {
@@ -105,7 +105,7 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 
 	hLayout = UILinearLayout::NewHorizontal();
 	hLayout->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
-		->setLayoutMargin( Rect( 0, 0, 0, 4 ) )
+		->setLayoutMargin( Rectf( 0, 0, 0, 4 ) )
 		->setParent( linearLayout );
 
 	UITextView::New()
@@ -119,7 +119,7 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 	mFile->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::MatchParent )
 		->setLayoutWeight( 1 )
 		->setParent( hLayout );
-	mFile->setLayoutMargin( Rect( 0, 0, 4, 0 ) );
+	mFile->setLayoutMargin( Rectf( 0, 0, 4, 0 ) );
 	mFile->addEventListener( Event::OnPressEnter,
 							 cb::Make1( this, &UIFileDialog::onPressFileEnter ) );
 
@@ -147,7 +147,7 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 	mFiletype->setPopUpToRoot( true );
 	mFiletype->getListBox()->addListBoxItem( defaultFilePattern );
 	mFiletype->getListBox()->setSelected( 0 );
-	mFiletype->setLayoutMargin( Rect( 0, 0, 4, 0 ) );
+	mFiletype->setLayoutMargin( Rectf( 0, 0, 4, 0 ) );
 
 	mButtonCancel = UIPushButton::New();
 	mButtonCancel->setText( "Cancel" )

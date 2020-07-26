@@ -845,7 +845,7 @@ void EETest::createNewUI() {
 
 	UILinearLayout* layPar = UILinearLayout::NewHorizontal();
 	layPar->setParent( layWin );
-	layPar->setLayoutMargin( Rect( 10, 10, 10, 10 ) );
+	layPar->setLayoutMargin( Rectf( 10, 10, 10, 10 ) );
 	layPar->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent );
 	layPar->setLayoutGravity( UI_VALIGN_CENTER | UI_HALIGN_CENTER );
 	layPar->setBackgroundColor( 0x999999FF );
@@ -858,31 +858,31 @@ void EETest::createNewUI() {
 
 	UITextView::New()
 		->setText( "Text on test 1" )
-		->setLayoutMargin( Rect( 10, 10, 10, 10 ) )
+		->setLayoutMargin( Rectf( 10, 10, 10, 10 ) )
 		->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent )
 		->setParent( lay );
 	UITextView::New()
 		->setText( "Text on test 2" )
-		->setLayoutMargin( Rect( 10, 10, 10, 10 ) )
+		->setLayoutMargin( Rectf( 10, 10, 10, 10 ) )
 		->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
 		->setParent( lay );
 	UICheckBox::New()
 		->setText( "Checkbox" )
-		->setLayoutMargin( Rect( 10, 10, 10, 10 ) )
+		->setLayoutMargin( Rectf( 10, 10, 10, 10 ) )
 		->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
 		->setParent( lay );
 	UITextView::New()
 		->setText( "Text on test 3" )
-		->setLayoutMargin( Rect( 10, 10, 10, 10 ) )
+		->setLayoutMargin( Rectf( 10, 10, 10, 10 ) )
 		->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
 		->setParent( lay );
 	UITextView::New()
 		->setText( "Text on test 4" )
-		->setLayoutMargin( Rect( 10, 10, 10, 10 ) )
+		->setLayoutMargin( Rectf( 10, 10, 10, 10 ) )
 		->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
 		->setParent( lay );
 	UITextInput::New()
-		->setLayoutMargin( Rect( 10, 10, 10, 10 ) )
+		->setLayoutMargin( Rectf( 10, 10, 10, 10 ) )
 		->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
 		->setParent( lay );
 
@@ -894,12 +894,12 @@ void EETest::createNewUI() {
 
 	UIPushButton::New()
 		->setText( "PushButton" )
-		->setLayoutMargin( Rect( 10, 10, 10, 10 ) )
+		->setLayoutMargin( Rectf( 10, 10, 10, 10 ) )
 		->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
 		->setLayoutGravity( UI_VALIGN_CENTER )
 		->setParent( lay2 );
 	UIListBox* lbox = UIListBox::New();
-	lbox->setLayoutMargin( Rect( 10, 10, 10, 10 ) )
+	lbox->setLayoutMargin( Rectf( 10, 10, 10, 10 ) )
 		->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::Fixed )
 		->setSize( 0, 105 )
 		->setParent( lay2 );
@@ -908,7 +908,7 @@ void EETest::createNewUI() {
 	lay->setParent( layPar );
 
 	UIDropDownList* drop = UIDropDownList::New();
-	drop->setLayoutMargin( Rect( 10, 10, 10, 10 ) )
+	drop->setLayoutMargin( Rectf( 10, 10, 10, 10 ) )
 		->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
 		->setParent( layWin );
 	drop->getListBox()->addListBoxItems( {"Car", "Bus", "Plane", "Submarine"} );
@@ -922,19 +922,19 @@ void EETest::createNewUI() {
 	UIRelativeLayout* rlay = UIRelativeLayout::New();
 	rlay->setParent( win2 );
 	rlay->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
-	rlay->setLayoutMargin( Rect( 16, 16, 16, 16 ) );
+	rlay->setLayoutMargin( Rectf( 16, 16, 16, 16 ) );
 	rlay->setBackgroundColor( 0x333333CC );
 
 	UIPushButton* ofBut = UIPushButton::New();
 	ofBut->setText( "OK" )
 		->setLayoutGravity( UI_VALIGN_BOTTOM | UI_HALIGN_RIGHT )
-		->setLayoutMargin( Rect( 0, 0, 16, 16 ) )
+		->setLayoutMargin( Rectf( 0, 0, 16, 16 ) )
 		->setParent( rlay );
 
 	UIPushButton::New()
 		->setText( "Cancel" )
 		->setLayoutGravity( UI_VALIGN_BOTTOM | UI_HALIGN_RIGHT )
-		->setLayoutMargin( Rect( 0, 0, 8, 0 ) )
+		->setLayoutMargin( Rectf( 0, 0, 8, 0 ) )
 		->setLayoutPositionPolicy( PositionPolicy::LeftOf, ofBut )
 		->setParent( rlay );
 
@@ -1130,7 +1130,7 @@ void EETest::createDecoratedWindow() {
 	MenuBar->addMenuButton( "Edit", PopMenu2 );
 
 	UIPushButton* Button = UIPushButton::New();
-	Button->setLayoutMargin( Rect( 5, 5, 5, 5 ) );
+	Button->setLayoutMargin( Rectf( 5, 5, 5, 5 ) );
 	Button->setText( "Click Me" );
 	Button->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
 		->setParent( lay );
@@ -1140,7 +1140,7 @@ void EETest::createDecoratedWindow() {
 	mUIWindow->addKeyBinding( {KEY_C, KEYMOD_LALT}, "button-click" );
 
 	UITabWidget* TabWidget = UITabWidget::New();
-	TabWidget->setLayoutMargin( Rect( 5, 5, 5, 5 ) )
+	TabWidget->setLayoutMargin( Rectf( 5, 5, 5, 5 ) )
 		->setLayoutWeight( 1 )
 		->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
 		->setFlags( UI_HALIGN_CENTER | UI_VALIGN_CENTER )

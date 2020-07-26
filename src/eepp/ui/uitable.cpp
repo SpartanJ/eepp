@@ -135,7 +135,7 @@ void UITable::onSizeChange() {
 }
 
 void UITable::containerResize() {
-	Rectf padding = mContainerPadding + mRealPadding;
+	Rectf padding = mContainerPadding + mPaddingPx;
 
 	mContainer->setPosition( padding.Left, padding.Top );
 
@@ -627,7 +627,7 @@ UITable* UITable::setSmoothScroll( bool smoothScroll ) {
 }
 
 Rectf UITable::getContainerPadding() const {
-	return PixelDensity::pxToDp( mContainerPadding + mRealPadding );
+	return PixelDensity::pxToDp( mContainerPadding + mPaddingPx );
 }
 
 void UITable::onPaddingChange() {

@@ -88,15 +88,15 @@ void UIImage::onAutoSize() {
 
 void UIImage::calcDestSize() {
 	if ( mScaleType == UIScaleType::Expand ) {
-		mDestSize = Sizef( mSize.x - mRealPadding.Left - mRealPadding.Right,
-						   mSize.y - mRealPadding.Top - mRealPadding.Bottom );
+		mDestSize = Sizef( mSize.x - mPaddingPx.Left - mPaddingPx.Right,
+						   mSize.y - mPaddingPx.Top - mPaddingPx.Bottom );
 	} else if ( mScaleType == UIScaleType::FitInside ) {
 		if ( NULL == mDrawable )
 			return;
 
 		Sizef pxSize( mDrawable->getPixelsSize() );
-		Float Scale1 = ( mSize.x - mRealPadding.Left - mRealPadding.Right ) / pxSize.x;
-		Float Scale2 = ( mSize.y - mRealPadding.Top - mRealPadding.Bottom ) / pxSize.y;
+		Float Scale1 = ( mSize.x - mPaddingPx.Left - mPaddingPx.Right ) / pxSize.x;
+		Float Scale2 = ( mSize.y - mPaddingPx.Top - mPaddingPx.Bottom ) / pxSize.y;
 
 		if ( Scale1 < 1 || Scale2 < 1 ) {
 			if ( Scale2 < Scale1 )
@@ -157,17 +157,17 @@ void UIImage::autoAlign() {
 	if ( Font::getHorizontalAlign( mFlags ) == UI_HALIGN_CENTER ) {
 		mAlignOffset.x = ( mSize.getWidth() - mDestSize.x ) / 2;
 	} else if ( Font::getHorizontalAlign( mFlags ) == UI_HALIGN_RIGHT ) {
-		mAlignOffset.x = mSize.getWidth() - mDestSize.x - mRealPadding.Right;
+		mAlignOffset.x = mSize.getWidth() - mDestSize.x - mPaddingPx.Right;
 	} else {
-		mAlignOffset.x = mRealPadding.Left;
+		mAlignOffset.x = mPaddingPx.Left;
 	}
 
 	if ( Font::getVerticalAlign( mFlags ) == UI_VALIGN_CENTER ) {
 		mAlignOffset.y = ( mSize.getHeight() - mDestSize.y ) / 2;
 	} else if ( Font::getVerticalAlign( mFlags ) == UI_VALIGN_BOTTOM ) {
-		mAlignOffset.y = mSize.getHeight() - mDestSize.y - mRealPadding.Bottom;
+		mAlignOffset.y = mSize.getHeight() - mDestSize.y - mPaddingPx.Bottom;
 	} else {
-		mAlignOffset.y = mRealPadding.Top;
+		mAlignOffset.y = mPaddingPx.Top;
 	}
 }
 

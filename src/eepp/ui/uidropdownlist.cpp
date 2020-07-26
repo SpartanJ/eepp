@@ -89,7 +89,7 @@ void UIDropDownList::onAutoSize() {
 							  mTextCache->getLineSpacing() );
 
 	if ( mHeightPolicy == SizePolicy::WrapContent ) {
-		setInternalPixelsHeight( eeceil( max + mRealPadding.Top + mRealPadding.Bottom ) );
+		setInternalPixelsHeight( eeceil( max + mPaddingPx.Top + mPaddingPx.Bottom ) );
 	} else if ( ( ( mFlags & UI_AUTO_SIZE ) || 0 == getSize().getHeight() ) && max > 0 ) {
 		setInternalPixelsHeight( eeceil( max ) );
 	}

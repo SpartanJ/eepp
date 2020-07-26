@@ -173,42 +173,42 @@ void UITooltip::setFontShadowColor( const Color& color ) {
 void UITooltip::onAutoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
 		setInternalPixelsSize(
-			Sizef( (int)mTextCache->getTextWidth() + mRealPadding.Left + mRealPadding.Right,
-				   (int)mTextCache->getTextHeight() + mRealPadding.Top + mRealPadding.Bottom ) );
+			Sizef( (int)mTextCache->getTextWidth() + mPaddingPx.Left + mPaddingPx.Right,
+				   (int)mTextCache->getTextHeight() + mPaddingPx.Top + mPaddingPx.Bottom ) );
 
 		autoAlign();
 	}
 }
 
 void UITooltip::autoAlign() {
-	Uint32 Width = mSize.getWidth() - mRealPadding.Left - mRealPadding.Right;
-	Uint32 Height = mSize.getHeight() - mRealPadding.Top - mRealPadding.Bottom;
+	Uint32 Width = mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right;
+	Uint32 Height = mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom;
 
 	switch ( Font::getHorizontalAlign( getFlags() ) ) {
 		case UI_HALIGN_CENTER:
-			mAlignOffset.x = mRealPadding.Left +
+			mAlignOffset.x = mPaddingPx.Left +
 							 ( Float )( ( Int32 )( Width - mTextCache->getTextWidth() ) / 2 );
 			break;
 		case UI_HALIGN_RIGHT:
 			mAlignOffset.x =
-				( (Float)Width - (Float)mTextCache->getTextWidth() ) - mRealPadding.Right;
+				( (Float)Width - (Float)mTextCache->getTextWidth() ) - mPaddingPx.Right;
 			break;
 		case UI_HALIGN_LEFT:
-			mAlignOffset.x = mRealPadding.Left;
+			mAlignOffset.x = mPaddingPx.Left;
 			break;
 	}
 
 	switch ( Font::getVerticalAlign( getFlags() ) ) {
 		case UI_VALIGN_CENTER:
-			mAlignOffset.y = mRealPadding.Top +
+			mAlignOffset.y = mPaddingPx.Top +
 							 ( Float )( ( ( Int32 )( Height - mTextCache->getTextHeight() ) ) / 2 );
 			break;
 		case UI_VALIGN_BOTTOM:
 			mAlignOffset.y =
-				( (Float)Height - (Float)mTextCache->getTextHeight() ) - mRealPadding.Bottom;
+				( (Float)Height - (Float)mTextCache->getTextHeight() ) - mPaddingPx.Bottom;
 			break;
 		case UI_VALIGN_TOP:
-			mAlignOffset.y = mRealPadding.Top;
+			mAlignOffset.y = mPaddingPx.Top;
 			break;
 	}
 }

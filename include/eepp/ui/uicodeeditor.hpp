@@ -252,6 +252,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void addUnlockedCommands( const std::vector<std::string>& commands );
 
+	bool isUnlockedCommand( const std::string& command );
+
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,

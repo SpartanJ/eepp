@@ -155,7 +155,7 @@ UIWidget* UIMenu::add( UIWidget* widget ) {
 		widget->setParent( this );
 	widgetCheckSize( widget );
 	setWidgetSize( widget );
-	widget->setPixelsPosition( mRealPadding.Left, mRealPadding.Top + mNextPosY );
+	widget->setPixelsPosition( mPaddingPx.Left, mPaddingPx.Top + mNextPosY );
 	mNextPosY += widget->getPixelsSize().getHeight();
 	mItems.push_back( widget );
 	widget->addEventListener( Event::OnSizeChange, [&]( const Event* ) {
@@ -177,8 +177,8 @@ void UIMenu::setWidgetSize( UIWidget* widget ) {
 UIMenuSeparator* UIMenu::addSeparator() {
 	UIMenuSeparator* separator = UIMenuSeparator::New();
 	separator->setParent( this );
-	separator->setPixelsPosition( mRealPadding.Left, mRealPadding.Top + mNextPosY );
-	separator->setPixelsSize( mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
+	separator->setPixelsPosition( mPaddingPx.Left, mPaddingPx.Top + mNextPosY );
+	separator->setPixelsSize( mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right,
 							  PixelDensity::dpToPxI( separator->getSkinSize().getHeight() ) );
 	mNextPosY += separator->getPixelsSize().getHeight();
 	mItems.push_back( separator );
@@ -350,7 +350,7 @@ void UIMenu::widgetsSetPos() {
 
 	for ( i = 0; i < mItems.size(); i++ ) {
 		UIWidget* widget = mItems[i];
-		widget->setPixelsPosition( mRealPadding.Left, mRealPadding.Top + mNextPosY );
+		widget->setPixelsPosition( mPaddingPx.Left, mPaddingPx.Top + mNextPosY );
 		mNextPosY += widget->getPixelsSize().getHeight();
 	}
 
@@ -360,9 +360,9 @@ void UIMenu::widgetsSetPos() {
 
 void UIMenu::resizeMe() {
 	if ( mFlags & UI_AUTO_SIZE ) {
-		setPixelsSize( mMaxWidth, mNextPosY + mRealPadding.Top + mRealPadding.Bottom );
+		setPixelsSize( mMaxWidth, mNextPosY + mPaddingPx.Top + mPaddingPx.Bottom );
 	} else {
-		setPixelsSize( mSize.getWidth(), mNextPosY + mRealPadding.Top + mRealPadding.Bottom );
+		setPixelsSize( mSize.getWidth(), mNextPosY + mPaddingPx.Top + mPaddingPx.Bottom );
 	}
 }
 

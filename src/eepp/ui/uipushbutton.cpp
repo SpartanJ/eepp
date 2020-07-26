@@ -70,7 +70,7 @@ void UIPushButton::onAutoSize() {
 		Float tH = mTextBox->getPixelsSize().getHeight();
 		Float eH = getExtraInnerWidget() ? getExtraInnerWidget()->getPixelsSize().getHeight() : 0;
 		Float h = eemax( eemax( PixelDensity::dpToPx( eemax( sH, sHS ) ), tH ), eH );
-		setInternalPixelsHeight( h + mRealPadding.Top + mRealPadding.Bottom );
+		setInternalPixelsHeight( h + mPaddingPx.Top + mPaddingPx.Bottom );
 	} else if ( ( mFlags & UI_AUTO_SIZE ) && NULL != getSkin() ) {
 		setInternalHeight( getSkinSize().getHeight() );
 	}
@@ -170,14 +170,14 @@ void UIPushButton::updateLayout() {
 		if ( autoPadding != Rectf() )
 			autoPadding = PixelDensity::dpToPx( autoPadding );
 	}
-	if ( mRealPadding.Top > autoPadding.Top )
-		autoPadding.Top = mRealPadding.Top;
-	if ( mRealPadding.Bottom > autoPadding.Bottom )
-		autoPadding.Bottom = mRealPadding.Bottom;
-	if ( mRealPadding.Left > autoPadding.Left )
-		autoPadding.Left = mRealPadding.Left;
-	if ( mRealPadding.Right > autoPadding.Right )
-		autoPadding.Right = mRealPadding.Right;
+	if ( mPaddingPx.Top > autoPadding.Top )
+		autoPadding.Top = mPaddingPx.Top;
+	if ( mPaddingPx.Bottom > autoPadding.Bottom )
+		autoPadding.Bottom = mPaddingPx.Bottom;
+	if ( mPaddingPx.Left > autoPadding.Left )
+		autoPadding.Left = mPaddingPx.Left;
+	if ( mPaddingPx.Right > autoPadding.Right )
+		autoPadding.Right = mPaddingPx.Right;
 
 	switch ( mInnerWidgetOrientation ) {
 		case InnerWidgetOrientation::Left:
@@ -334,7 +334,7 @@ Sizef UIPushButton::getContentSize() const {
 																 eWidget->getLayoutMargin().Left +
 																 eWidget->getLayoutMargin().Right )
 										: 0;
-	Int32 minWidth = txtW + iconSize + eWidgetSize + mRealPadding.Left + mRealPadding.Right +
+	Int32 minWidth = txtW + iconSize + eWidgetSize + mPaddingPx.Left + mPaddingPx.Right +
 					 ( NULL != getSkin() ? PixelDensity::dpToPxI( getSkin()->getBorderSize().Left +
 																  getSkin()->getBorderSize().Right )
 										 : 0 );

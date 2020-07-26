@@ -420,7 +420,7 @@ void UIListBox::itemUpdateSize( UIListBoxItem* Item ) {
 }
 
 void UIListBox::containerResize() {
-	Rectf padding = mContainerPadding + mRealPadding;
+	Rectf padding = mContainerPadding + mPaddingPx;
 
 	mContainer->setPixelsPosition( padding.Left, padding.Top );
 

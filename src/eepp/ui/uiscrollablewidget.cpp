@@ -137,7 +137,7 @@ void UIScrollableWidget::onContentSizeChange() {
 		mHScroll->setEnabled( visible );
 	}
 
-	Sizef size = getPixelsSize() - mRealPadding;
+	Sizef size = getPixelsSize() - mPaddingPx;
 
 	if ( Exclusive == mViewType ) {
 		if ( mVScroll->isVisible() )
@@ -148,17 +148,17 @@ void UIScrollableWidget::onContentSizeChange() {
 	}
 
 	mVScroll->setPixelsPosition( getPixelsSize().getWidth() - mVScroll->getPixelsSize().getWidth() -
-									 mRealPadding.Right,
-								 mRealPadding.Top );
-	mHScroll->setPixelsPosition( mRealPadding.Left, getPixelsSize().getHeight() -
+									 mPaddingPx.Right,
+								 mPaddingPx.Top );
+	mHScroll->setPixelsPosition( mPaddingPx.Left, getPixelsSize().getHeight() -
 														mHScroll->getPixelsSize().getHeight() -
-														mRealPadding.Bottom );
+														mPaddingPx.Bottom );
 
 	mVScroll->setPixelsSize( mVScroll->getPixelsSize().getWidth(),
-							 getPixelsSize().getHeight() - mRealPadding.Top - mRealPadding.Bottom );
+							 getPixelsSize().getHeight() - mPaddingPx.Top - mPaddingPx.Bottom );
 
 	mHScroll->setPixelsSize(
-		getPixelsSize().getWidth() - mRealPadding.Left - mRealPadding.Right -
+		getPixelsSize().getWidth() - mPaddingPx.Left - mPaddingPx.Right -
 			( mVScroll->isVisible() ? mVScroll->getPixelsSize().getWidth() : 0 ),
 		mHScroll->getPixelsSize().getHeight() );
 
@@ -177,7 +177,7 @@ Sizef UIScrollableWidget::getScrollableArea() const {
 }
 
 Sizef UIScrollableWidget::getVisibleArea() const {
-	Sizef size = getPixelsSize() - mRealPadding;
+	Sizef size = getPixelsSize() - mPaddingPx;
 	if ( mVScroll->isVisible() )
 		size.x -= mVScroll->getPixelsSize().getWidth();
 	if ( mHScroll->isVisible() )

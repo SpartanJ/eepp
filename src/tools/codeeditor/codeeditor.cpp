@@ -362,8 +362,8 @@ std::string App::getKeybind( const std::string& command ) {
 	return "";
 }
 
-static int MAX_VISIBLE_ITEMS = 18;
-static int MAX_RESULT_ITEMS = 100;
+static int LOCATEBAR_MAX_VISIBLE_ITEMS = 18;
+static int LOCATEBAR_MAX_RESULTS = 100;
 
 void App::initLocateBar() {
 	auto addClickListener = [&]( UIWidget* widget, std::string cmd ) {
@@ -378,16 +378,16 @@ void App::initLocateBar() {
 	mLocateTable->setHeadersVisible( false );
 	mLocateTable->setVisible( false );
 	mLocateInput->addEventListener( Event::OnTextChanged, [&]( const Event* ) {
-		Vector2f pos( mLocateBarLayout->convertToWorldSpace( {0, 0} ) );
+		Vector2f pos( mLocateInput->convertToWorldSpace( {0, 0} ) );
 		pos.y -= mLocateTable->getPixelsSize().getHeight();
 		mLocateTable->setPixelsPosition( pos );
 		if ( !mDirTreeReady )
 			return;
 		if ( !mLocateInput->getText().empty() ) {
 			mLocateTable->setModel(
-				mDirTree->fuzzyMatchTree( mLocateInput->getText(), MAX_RESULT_ITEMS ) );
+				mDirTree->fuzzyMatchTree( mLocateInput->getText(), LOCATEBAR_MAX_RESULTS ) );
 		} else {
-			mLocateTable->setModel( mDirTree->asModel( MAX_RESULT_ITEMS ) );
+			mLocateTable->setModel( mDirTree->asModel( LOCATEBAR_MAX_RESULTS ) );
 		}
 		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
 	} );
@@ -435,17 +435,17 @@ void App::showLocateBar() {
 	mLocateInput->setFocus();
 	mLocateTable->setVisible( true );
 	if ( mDirTree && !mLocateTable->getModel() ) {
-		mLocateTable->setModel( mDirTree->asModel( MAX_RESULT_ITEMS ) );
+		mLocateTable->setModel( mDirTree->asModel( LOCATEBAR_MAX_RESULTS ) );
 		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
 	}
 	mLocateBarLayout->runOnMainThread( [&] {
 		Float width = eeceil( mLocateInput->getPixelsSize().getWidth() );
-		mLocateTable->setPixelsSize( width, mLocateTable->getRowHeight() * MAX_VISIBLE_ITEMS );
+		mLocateTable->setPixelsSize( width,
+									 mLocateTable->getRowHeight() * LOCATEBAR_MAX_VISIBLE_ITEMS );
 		mLocateTable->setColumnWidth( 0, width * 0.5f );
 		mLocateTable->setColumnWidth(
-			1,
-			width * 0.5f - mLocateTable->getVerticalScrollBar()->getPixelsSize().getWidth() - 4 );
-		Vector2f pos( mLocateBarLayout->convertToWorldSpace( {0, 0} ) );
+			1, width * 0.5f - mLocateTable->getVerticalScrollBar()->getPixelsSize().getWidth() );
+		Vector2f pos( mLocateInput->convertToWorldSpace( {0, 0} ) );
 		pos.y -= mLocateTable->getPixelsSize().getHeight();
 		mLocateTable->setPixelsPosition( pos );
 	} );
@@ -1221,7 +1221,7 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 		{{KEY_F6, KEYMOD_NONE}, "debug-draw-highlight-toggle"},
 		{{KEY_F7, KEYMOD_NONE}, "debug-draw-boxes-toggle"},
 		{{KEY_F8, KEYMOD_NONE}, "debug-draw-debug-data"},
-		{{KEY_K, KEYMOD_CTRL}, "locate"},
+		{{KEY_K, KEYMOD_CTRL}, "open-locatebar"},
 	};
 }
 
@@ -1253,11 +1253,11 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 
 	editor->addKeyBinds( getLocalKeybindings() );
 	editor->addUnlockedCommands(
-		{"fullscreen-toggle", "open-file", "console-toggle", "close-app"} );
+		{"fullscreen-toggle", "open-file", "console-toggle", "close-app", "open-locatebar"} );
 	doc.setCommand( "save-doc", [&] { saveDoc(); } );
 	doc.setCommand( "save-as-doc", [&] { saveFileDialog(); } );
 	doc.setCommand( "find-replace", [&] { showFindView(); } );
-	doc.setCommand( "locate", [&] { showLocateBar(); } );
+	doc.setCommand( "open-locatebar", [&] { showLocateBar(); } );
 	doc.setCommand( "repeat-find", [&] { findNextText( mSearchState ); } );
 	doc.setCommand( "close-app", [&] { closeApp(); } );
 	doc.setCommand( "fullscreen-toggle", [&]() {
@@ -1494,6 +1494,17 @@ void App::initProjectTreeView( const std::string& path ) {
 				} else {
 					tab->getTabWidget()->setTabSelected( tab );
 				}
+			}
+		}
+	} );
+	mProjectTreeView->addEventListener( Event::KeyDown, [&]( const Event* event ) {
+		const KeyEvent* keyEvent = reinterpret_cast<const KeyEvent*>( event );
+		if ( mEditorSplitter->getCurEditor() ) {
+			std::string cmd =
+				mEditorSplitter->getCurEditor()->getKeyBindings().getCommandFromKeyBind(
+					{keyEvent->getKeyCode(), keyEvent->getMod()} );
+			if ( !cmd.empty() && mEditorSplitter->getCurEditor()->isUnlockedCommand( cmd ) ) {
+				mEditorSplitter->getCurEditor()->getDocument().execute( cmd );
 			}
 		}
 	} );
