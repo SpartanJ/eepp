@@ -72,6 +72,10 @@ class EE_API FileSystem {
 	/** @return If a file path is writeable */
 	static bool fileCanWrite( const std::string& filepath );
 
+	/** @return If the file is hidden (hidden attribute in Windows, files starting with '.' in other
+	 * systems */
+	static bool fileIsHidden( const std::string& filepath );
+
 	/** If the directory path not end with a slash, it will add it. */
 	static void dirAddSlashAtEnd( std::string& path );
 
@@ -84,16 +88,19 @@ class EE_API FileSystem {
 	/** @return The files and sub directories contained by a directory */
 	static std::vector<std::string> filesGetInPath( const std::string& path,
 													const bool& sortByName = false,
-													const bool& foldersFirst = false );
+													const bool& foldersFirst = false,
+													const bool& ignoreHidden = false );
 
 	/** @return The files and sub directories contained by a directory */
 	static std::vector<String> filesGetInPath( const String& path, const bool& sortByName = false,
-											   const bool& foldersFirst = false );
+											   const bool& foldersFirst = false,
+											   const bool& ignoreHidden = false );
 
 	/** @return The file info of the files and sub directories contained in the directory path. */
-	static std::vector<FileInfo> filesInfoGetInPath( std::string path,
+	static std::vector<FileInfo> filesInfoGetInPath( std::string path, bool linkInfo = false,
 													 const bool& sortByName = false,
-													 const bool& foldersFirst = false );
+													 const bool& foldersFirst = false,
+													 const bool& ignoreHidden = false );
 
 	/** @return The size of a file */
 	static Uint64 fileSize( const std::string& Filepath );

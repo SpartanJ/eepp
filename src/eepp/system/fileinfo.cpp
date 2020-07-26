@@ -203,6 +203,10 @@ bool FileInfo::isLink() const {
 #endif
 }
 
+bool FileInfo::isHidden() const {
+	return FileSystem::fileIsHidden( mFilepath );
+}
+
 std::string FileInfo::linksTo() const {
 #if EE_PLATFORM != EE_PLATFORM_WIN
 	if ( isLink() ) {

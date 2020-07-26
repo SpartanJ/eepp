@@ -173,8 +173,7 @@ ListBox::item {
 	background-position: left bottom, right bottom;
 }
 
-ListBox:hover,
-Table::hover {
+ListBox:hover {
 	border-color: var(--primary);
 }
 

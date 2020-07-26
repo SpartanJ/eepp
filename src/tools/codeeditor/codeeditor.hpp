@@ -209,6 +209,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	void initLocateBar();
 
+	void initProjectTreeView( const std::string& path );
+
 	void loadDirTree( const std::string& path );
 
 	void showSidePanel( bool show );

@@ -343,8 +343,9 @@ void UINode::updateDebugData() {
 			text += "Classes: " + String::join( widget->getStyleSheetClasses(), ' ' ) + "\n";
 		}
 
-		text += String::format( "X: %.2f Y: %.2f\nW: %.2f (%.2f) H: %.2f (%.2f)", mSize.x, mDpPos.x,
-								mSize.y, mDpPos.y, mDpSize.x, mDpSize.y );
+		text += String::format(
+			"X: %.2fpx (%.2fdp) Y: %.2fpx (%.2fdp)\nW: %.2fpx (%.2fdp) H: %.2fpx (%.2fdp)",
+			mPosition.x, mDpPos.x, mPosition.y, mDpPos.y, mSize.x, mDpSize.y, mSize.y, mDpSize.y );
 
 		if ( widget->getPadding() != Rectf( 0, 0, 0, 0 ) ) {
 			Rectf p( widget->getPadding() );

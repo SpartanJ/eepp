@@ -50,7 +50,8 @@ class ProjectDirectoryTree {
 	ProjectDirectoryTree( const std::string& path, std::shared_ptr<ThreadPool> threadPool );
 
 	void scan( const ScanCompleteEvent& scanComplete,
-			   const std::vector<std::string>& acceptedPattern = {} );
+			   const std::vector<std::string>& acceptedPattern = {},
+			   const bool& ignoreHidden = true );
 
 	std::shared_ptr<FileListModel> fuzzyMatchTree( const std::string& match,
 												   const size_t& max ) const;
@@ -70,7 +71,8 @@ class ProjectDirectoryTree {
 	Mutex mFilesMutex;
 
 	void getDirectoryFiles( std::vector<std::string>& files, std::vector<std::string>& names,
-							std::string directory, std::set<std::string> currentDirs );
+							std::string directory, std::set<std::string> currentDirs,
+							const bool& ignoreHidden );
 };
 
 #endif // EE_TOOLS_PROJECTDIRECTORYTREE_HPP

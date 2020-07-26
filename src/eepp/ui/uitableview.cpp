@@ -149,11 +149,21 @@ Uint32 UITableView::onKeyDown( const KeyEvent& event ) {
 
 	switch ( event.getKeyCode() ) {
 		case KEY_PAGEUP: {
-			moveSelection( -pageSize );
+			if ( curIndex.row() - pageSize < 0 ) {
+				getSelection().set( getModel()->index( 0, 0 ) );
+				scrollToTop();
+			} else {
+				moveSelection( -pageSize );
+			}
 			break;
 		}
 		case KEY_PAGEDOWN: {
-			moveSelection( pageSize );
+			if ( curIndex.row() + pageSize >= (Int64)getModel()->rowCount() ) {
+				getSelection().set( getModel()->index( getItemCount() - 1 ) );
+				scrollToBottom();
+			} else {
+				moveSelection( pageSize );
+			}
 			break;
 		}
 		case KEY_UP: {
@@ -175,7 +185,7 @@ Uint32 UITableView::onKeyDown( const KeyEvent& event ) {
 			break;
 		}
 		case KEY_RETURN:
-		case KEY_SPACE: {
+		case KEY_KP_ENTER: {
 			if ( curIndex.isValid() )
 				onOpenModelIndex( curIndex );
 			break;

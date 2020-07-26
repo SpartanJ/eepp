@@ -9,7 +9,8 @@ ProjectDirectoryTree::ProjectDirectoryTree( const std::string& path,
 }
 
 void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& scanComplete,
-								 const std::vector<std::string>& acceptedPattern ) {
+								 const std::vector<std::string>& acceptedPattern,
+								 const bool& ignoreHidden ) {
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	mPool->run(
 		[&, acceptedPattern] {
@@ -22,7 +23,7 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 				for ( auto& strPattern : acceptedPattern )
 					patterns.emplace_back( LuaPattern( strPattern ) );
 				std::set<std::string> info;
-				getDirectoryFiles( files, names, mPath, info );
+				getDirectoryFiles( files, names, mPath, info, ignoreHidden );
 				size_t namesCount = names.size();
 				bool found;
 				for ( size_t i = 0; i < namesCount; i++ ) {
@@ -40,7 +41,7 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 				}
 			} else {
 				std::set<std::string> info;
-				getDirectoryFiles( mFiles, mNames, mPath, info );
+				getDirectoryFiles( mFiles, mNames, mPath, info, ignoreHidden );
 			}
 			mIsReady = true;
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
@@ -93,6 +94,9 @@ std::shared_ptr<FileListModel> ProjectDirectoryTree::matchTree( const std::strin
 }
 
 std::shared_ptr<FileListModel> ProjectDirectoryTree::asModel( const size_t& max ) const {
+	if ( mNames.empty() )
+		return std::make_shared<FileListModel>( std::vector<std::string>(),
+												std::vector<std::string>() );
 	size_t rmax = eemin( mNames.size(), max );
 	std::vector<std::string> files( rmax );
 	std::vector<std::string> names( rmax );
@@ -110,9 +114,11 @@ size_t ProjectDirectoryTree::getFilesCount() const {
 void ProjectDirectoryTree::getDirectoryFiles( std::vector<std::string>& files,
 											  std::vector<std::string>& names,
 											  std::string directory,
-											  std::set<std::string> currentDirs ) {
+											  std::set<std::string> currentDirs,
+											  const bool& ignoreHidden ) {
 	currentDirs.insert( directory );
-	std::vector<std::string> pathFiles = FileSystem::filesGetInPath( directory );
+	std::vector<std::string> pathFiles =
+		FileSystem::filesGetInPath( directory, false, false, ignoreHidden );
 	for ( auto& file : pathFiles ) {
 		std::string fullpath( directory + file );
 		if ( FileSystem::isDirectory( fullpath ) ) {
@@ -124,7 +130,7 @@ void ProjectDirectoryTree::getDirectoryFiles( std::vector<std::string>& files,
 				if ( currentDirs.find( fullpath ) == currentDirs.end() )
 					continue;
 			}
-			getDirectoryFiles( files, names, fullpath, currentDirs );
+			getDirectoryFiles( files, names, fullpath, currentDirs, ignoreHidden );
 		} else {
 			files.emplace_back( fullpath );
 			names.emplace_back( file );

@@ -11,6 +11,20 @@ class EE_API FileSystemModel : public Model {
   public:
 	enum class Mode { DirectoriesOnly, FilesAndDirectories };
 
+	struct DisplayConfig {
+		DisplayConfig() {}
+		DisplayConfig( bool sortByName, bool foldersFirst, bool ignoreHidden ) :
+			sortByName( sortByName ), foldersFirst( foldersFirst ), ignoreHidden( ignoreHidden ) {}
+		bool sortByName{true};
+		bool foldersFirst{true};
+		bool ignoreHidden{false};
+		bool operator==( const DisplayConfig& other ) {
+			return sortByName == other.sortByName && foldersFirst == other.foldersFirst &&
+				   ignoreHidden == other.ignoreHidden;
+		}
+		bool operator!=( const DisplayConfig& other ) { return !( *this == other ); }
+	};
+
 	enum Column {
 		Icon = 0,
 		Name,
@@ -58,8 +72,9 @@ class EE_API FileSystemModel : public Model {
 		bool fetchData( const String& fullPath );
 	};
 
-	static std::shared_ptr<FileSystemModel> New( const std::string& rootPath,
-												 const Mode& mode = Mode::FilesAndDirectories );
+	static std::shared_ptr<FileSystemModel>
+	New( const std::string& rootPath, const Mode& mode = Mode::FilesAndDirectories,
+		 const DisplayConfig displayConfig = DisplayConfig() );
 
 	const Mode& getMode() const { return mMode; }
 
@@ -85,22 +100,22 @@ class EE_API FileSystemModel : public Model {
 
 	void setMode( const Mode& mode );
 
-	void updateNodeSelection( const ModelIndex& index, const bool selected );
+	const DisplayConfig& getDisplayConfig() const;
 
-	ModelIndex getPreviouslySelectedIndex() const;
-
-	void setPreviouslySelectedIndex( const ModelIndex& previouslySelectedIndex );
+	void setDisplayConfig( const DisplayConfig& displayConfig );
 
   protected:
 	std::string mRootPath;
 	std::unique_ptr<Node> mRoot{nullptr};
 	Mode mMode{Mode::FilesAndDirectories};
+	DisplayConfig mDisplayConfig;
 
 	ModelIndex mPreviouslySelectedIndex{};
 
 	Node& nodeRef( const ModelIndex& index ) const;
 
-	FileSystemModel( const std::string& rootPath, const Mode& mode );
+	FileSystemModel( const std::string& rootPath, const Mode& mode,
+					 const DisplayConfig displayConfig );
 };
 
 }}} // namespace EE::UI::Models

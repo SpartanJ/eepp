@@ -50,7 +50,9 @@ void FileSystemModel::Node::traverseIfNeeded( const FileSystemModel& model ) {
 		return;
 	mHasTraversed = true;
 
-	auto files = FileSystem::filesInfoGetInPath( mInfo.getFilepath(), true, true );
+	auto files = FileSystem::filesInfoGetInPath(
+		mInfo.getFilepath(), true, model.getDisplayConfig().sortByName,
+		model.getDisplayConfig().foldersFirst, model.getDisplayConfig().ignoreHidden );
 
 	for ( auto file : files ) {
 		if ( ( model.getMode() == Mode::DirectoriesOnly && file.isDirectory() ) ||
@@ -74,12 +76,14 @@ bool FileSystemModel::Node::fetchData( const String& fullPath ) {
 }
 
 std::shared_ptr<FileSystemModel> FileSystemModel::New( const std::string& rootPath,
-													   const FileSystemModel::Mode& mode ) {
-	return std::shared_ptr<FileSystemModel>( new FileSystemModel( rootPath, mode ) );
+													   const FileSystemModel::Mode& mode,
+													   const DisplayConfig displayConfig ) {
+	return std::shared_ptr<FileSystemModel>( new FileSystemModel( rootPath, mode, displayConfig ) );
 }
 
-FileSystemModel::FileSystemModel( const std::string& rootPath, const FileSystemModel::Mode& mode ) :
-	mRootPath( rootPath ), mMode( mode ) {
+FileSystemModel::FileSystemModel( const std::string& rootPath, const FileSystemModel::Mode& mode,
+								  const DisplayConfig displayConfig ) :
+	mRootPath( rootPath ), mMode( mode ), mDisplayConfig( displayConfig ) {
 	update();
 }
 
@@ -199,10 +203,10 @@ Variant FileSystemModel::data( const ModelIndex& index, Model::Role role ) const
 				return node.info().getModificationTime();
 			case Column::Inode:
 				return node.info().getInode();
-			case Column::SymlinkTarget:
-				return Variant( node.info().linksTo() );
 			case Column::Path:
 				return Variant( node.info().getFilepath().c_str() );
+			case Column::SymlinkTarget:
+				return node.info().isLink() ? Variant( node.info().linksTo() ) : Variant( "" );
 			default:
 				eeASSERT( false );
 		}
@@ -211,7 +215,7 @@ Variant FileSystemModel::data( const ModelIndex& index, Model::Role role ) const
 	if ( role == Role::Display ) {
 		switch ( index.column() ) {
 			case Column::Icon:
-				return !node.getMimeType().empty() ? Variant( iconFor( node, index ) ) : Variant();
+				return iconFor( node, index );
 			case Column::Name:
 				return Variant( node.getName().c_str() );
 			case Column::Size:
@@ -226,10 +230,10 @@ Variant FileSystemModel::data( const ModelIndex& index, Model::Role role ) const
 				return Variant( timestampString( node.info().getModificationTime() ) );
 			case Column::Inode:
 				return Variant( String::toString( node.info().getInode() ) );
-			case Column::SymlinkTarget:
-				return node.info().isLink() ? Variant( node.info().linksTo() ) : Variant();
 			case Column::Path:
 				return Variant( node.info().getFilepath().c_str() );
+			case Column::SymlinkTarget:
+				return node.info().isLink() ? Variant( node.info().linksTo() ) : Variant( "" );
 		}
 	}
 
@@ -261,7 +265,7 @@ ModelIndex FileSystemModel::index( int row, int column, const ModelIndex& parent
 }
 
 Drawable* FileSystemModel::iconFor( const Node& node, const ModelIndex& index ) const {
-	if ( index.column() == (Int64)treeColumn() ) {
+	if ( index.column() == (Int64)treeColumn() || Column::Icon == index.column() ) {
 		auto* scene = SceneManager::instance()->getUISceneNode();
 		Drawable* d = scene->findIcon( node.getMimeType() );
 		if ( !d ) {
@@ -283,18 +287,15 @@ void FileSystemModel::setMode( const Mode& mode ) {
 	}
 }
 
-void FileSystemModel::updateNodeSelection( const ModelIndex& index, const bool selected ) {
-	Node& node = const_cast<Node&>( this->node( index ) );
-	node.setSelected( selected );
-	setPreviouslySelectedIndex( index );
+const FileSystemModel::DisplayConfig& FileSystemModel::getDisplayConfig() const {
+	return mDisplayConfig;
 }
 
-ModelIndex FileSystemModel::getPreviouslySelectedIndex() const {
-	return mPreviouslySelectedIndex;
-}
-
-void FileSystemModel::setPreviouslySelectedIndex( const ModelIndex& previouslySelectedIndex ) {
-	mPreviouslySelectedIndex = previouslySelectedIndex;
+void FileSystemModel::setDisplayConfig( const DisplayConfig& displayConfig ) {
+	if ( mDisplayConfig != displayConfig ) {
+		mDisplayConfig = displayConfig;
+		reload();
+	}
 }
 
 }}} // namespace EE::UI::Models

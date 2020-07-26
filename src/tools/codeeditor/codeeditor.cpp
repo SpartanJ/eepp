@@ -434,7 +434,7 @@ void App::showLocateBar() {
 	mLocateBarLayout->setVisible( true );
 	mLocateInput->setFocus();
 	mLocateTable->setVisible( true );
-	if ( !mLocateTable->getModel() ) {
+	if ( mDirTree && !mLocateTable->getModel() ) {
 		mLocateTable->setModel( mDirTree->asModel( MAX_RESULT_ITEMS ) );
 		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
 	}
@@ -1456,6 +1456,69 @@ void App::updateEditorState() {
 	}
 }
 
+void App::loadDirTree( const std::string& path ) {
+	Clock* clock = eeNew( Clock, () );
+	mDirTree = std::make_unique<ProjectDirectoryTree>( path, mThreadPool );
+	eePRINTL( "Loading DirTree: %s", path.c_str() );
+	mDirTree->scan(
+		[&, clock]( ProjectDirectoryTree& dirTree ) {
+			eePRINTL( "DirTree read in: %.2fms. Found %ld files.",
+					  clock->getElapsedTime().asMilliseconds(), dirTree.getFilesCount() );
+			eeDelete( clock );
+			mDirTreeReady = true;
+		},
+		SyntaxDefinitionManager::instance()->getExtensionsPatternsSupported() );
+}
+
+void App::initProjectTreeView( const std::string& path ) {
+	mProjectTreeView = mUISceneNode->find<UITreeView>( "project_view" );
+	mProjectTreeView->setColumnsHidden(
+		{FileSystemModel::Icon, FileSystemModel::Size, FileSystemModel::Group,
+		 FileSystemModel::Inode, FileSystemModel::Owner, FileSystemModel::SymlinkTarget,
+		 FileSystemModel::Permissions, FileSystemModel::ModificationTime, FileSystemModel::Path},
+		true );
+	mProjectTreeView->setHeadersVisible( false );
+	mProjectTreeView->setExpandersAsIcons( true );
+	mProjectTreeView->addEventListener( Event::OnModelEvent, [&]( const Event* event ) {
+		const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
+		if ( modelEvent->getModelEventType() == ModelEventType::Open ) {
+			Variant vPath(
+				modelEvent->getModel()->data( modelEvent->getModelIndex(), Model::Role::Custom ) );
+			if ( vPath.isValid() && vPath.is( Variant::Type::cstr ) ) {
+				std::string path( vPath.asCStr() );
+				UITab* tab = mEditorSplitter->isDocumentOpen( path );
+				if ( !tab ) {
+					FileInfo fileInfo( path );
+					if ( fileInfo.exists() && fileInfo.isRegularFile() )
+						mEditorSplitter->loadFileFromPathInNewTab( path );
+				} else {
+					tab->getTabWidget()->setTabSelected( tab );
+				}
+			}
+		}
+	} );
+
+	if ( !path.empty() && FileSystem::fileExists( path ) ) {
+		if ( FileSystem::isDirectory( path ) ) {
+			loadDirTree( FileSystem::getRealPath( path ) );
+			mProjectTreeView->setModel( FileSystemModel::New(
+				path, FileSystemModel::Mode::FilesAndDirectories, {true, true, true} ) );
+		} else {
+			std::string rpath( FileSystem::getRealPath( path ) );
+			mProjectTreeView->setModel( FileSystemModel::New(
+				FileSystem::fileRemoveFileName( rpath ), FileSystemModel::Mode::FilesAndDirectories,
+				{true, true, true} ) );
+			mEditorSplitter->loadFileFromPath( rpath );
+		}
+	} else {
+		loadDirTree( FileSystem::getRealPath( "." ) );
+		mProjectTreeView->setModel( FileSystemModel::New(
+			".", FileSystemModel::Mode::FilesAndDirectories, {true, true, true} ) );
+	}
+
+	mProjectTreeView->setAutoExpandOnSingleColumn( true );
+}
+
 void App::init( const std::string& file, const Float& pidelDensity ) {
 	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
 	Display* currentDisplay = displayManager->getDisplayIndex( 0 );
@@ -1713,67 +1776,10 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 
 		mConsole = eeNew( Console, ( fontMono, true, true, 1024 * 1000, 0, mWindow ) );
 
-		mProjectTreeView = mUISceneNode->find<UITreeView>( "project_view" );
-		mProjectTreeView->setColumnsHidden(
-			{FileSystemModel::Icon, FileSystemModel::Size, FileSystemModel::Group,
-			 FileSystemModel::Inode, FileSystemModel::Owner, FileSystemModel::SymlinkTarget,
-			 FileSystemModel::Permissions, FileSystemModel::ModificationTime,
-			 FileSystemModel::Path},
-			true );
-		mProjectTreeView->setHeadersVisible( false );
-		mProjectTreeView->setExpandersAsIcons( true );
-		mProjectTreeView->addEventListener( Event::OnModelEvent, [&]( const Event* event ) {
-			const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
-			if ( modelEvent->getModelEventType() == ModelEventType::Open ) {
-				Variant vPath( modelEvent->getModel()->data( modelEvent->getModelIndex(),
-															 Model::Role::Custom ) );
-				if ( vPath.isValid() && vPath.is( Variant::Type::cstr ) ) {
-					std::string path( vPath.asCStr() );
-					UITab* tab = mEditorSplitter->isDocumentOpen( path );
-					if ( !tab ) {
-						FileInfo fileInfo( path );
-						if ( fileInfo.exists() && fileInfo.isRegularFile() )
-							mEditorSplitter->loadFileFromPathInNewTab( path );
-					} else {
-						tab->getTabWidget()->setTabSelected( tab );
-					}
-				}
-			}
-		} );
-
-		if ( !file.empty() && FileSystem::fileExists( file ) ) {
-			if ( FileSystem::isDirectory( file ) ) {
-				loadDirTree( FileSystem::getRealPath( file ) );
-				mProjectTreeView->setModel( FileSystemModel::New( file ) );
-			} else {
-				std::string rpath( FileSystem::getRealPath( file ) );
-				mProjectTreeView->setModel(
-					FileSystemModel::New( FileSystem::fileRemoveFileName( rpath ) ) );
-				mEditorSplitter->loadFileFromPath( rpath );
-			}
-		} else {
-			loadDirTree( FileSystem::getRealPath( "." ) );
-			mProjectTreeView->setModel( FileSystemModel::New( "." ) );
-		}
-
-		mProjectTreeView->setAutoExpandOnSingleColumn( true );
+		initProjectTreeView( file );
 
 		mWindow->runMainLoop( &appLoop );
 	}
-}
-
-void App::loadDirTree( const std::string& path ) {
-	Clock* clock = eeNew( Clock, () );
-	mDirTree = std::make_unique<ProjectDirectoryTree>( path, mThreadPool );
-	eePRINTL( "Loading DirTree: %s", path.c_str() );
-	mDirTree->scan(
-		[&, clock]( ProjectDirectoryTree& dirTree ) {
-			eePRINTL( "DirTree read in: %.2fms. Found %ld files.",
-					  clock->getElapsedTime().asMilliseconds(), dirTree.getFilesCount() );
-			eeDelete( clock );
-			mDirTreeReady = true;
-		},
-		SyntaxDefinitionManager::instance()->getExtensionsPatternsSupported() );
 }
 
 EE_MAIN_FUNC int main( int argc, char* argv[] ) {

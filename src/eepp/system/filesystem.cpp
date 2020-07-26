@@ -214,6 +214,20 @@ bool FileSystem::fileCanWrite( const std::string& filepath ) {
 #endif
 }
 
+bool FileSystem::fileIsHidden( const std::string& filepath ) {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+#if UNICODE
+	return 0 == ( GetFileAttributes( String::fromUtf8( filepath ).toWideString().c_str() ) &
+				  FILE_ATTRIBUTE_HIDDEN );
+#else
+	return 0 == ( GetFileAttributes( (LPCTSTR)filepath.c_str() ) & FILE_ATTRIBUTE_HIDDEN );
+#endif
+#else
+	std::string filename( fileNameFromPath( filepath ) );
+	return filename.empty() ? false : filename[0] == '.';
+#endif
+}
+
 void FileSystem::dirAddSlashAtEnd( std::string& path ) {
 	if ( path.size() && path[path.size() - 1] != '/' && path[path.size() - 1] != '\\' )
 		path += getOSSlash();
@@ -310,7 +324,8 @@ std::string FileSystem::getRealPath( const std::string& path ) {
 }
 
 std::vector<String> FileSystem::filesGetInPath( const String& path, const bool& sortByName,
-												const bool& foldersFirst ) {
+												const bool& foldersFirst,
+												const bool& ignoreHidden ) {
 	std::vector<String> files;
 
 #ifdef EE_COMPILER_MSVC
@@ -395,19 +410,16 @@ std::vector<String> FileSystem::filesGetInPath( const String& path, const bool& 
 	closedir( dp );
 #endif
 
-	if ( sortByName == true ) {
+	if ( sortByName ) {
 		std::sort( files.begin(), files.end() );
 	}
 
-	if ( foldersFirst == true ) {
+	if ( foldersFirst ) {
 		String fpath( path );
-
 		if ( fpath[fpath.size() - 1] != '/' && fpath[fpath.size() - 1] != '\\' )
 			fpath += getOSSlash();
-
-		std::list<String> folders;
-		std::list<String> file;
-
+		std::vector<String> folders;
+		std::vector<String> file;
 		for ( size_t i = 0; i < files.size(); i++ ) {
 			if ( FileSystem::isDirectory( fpath + files[i] ) ) {
 				folders.push_back( files[i] );
@@ -415,34 +427,43 @@ std::vector<String> FileSystem::filesGetInPath( const String& path, const bool& 
 				file.push_back( files[i] );
 			}
 		}
-
 		files.clear();
+		for ( auto& folder : folders )
+			files.push_back( folder );
+		for ( auto& f : file )
+			files.push_back( f );
+	}
 
-		std::list<String>::iterator it;
-
-		for ( it = folders.begin(); it != folders.end(); ++it )
-			files.push_back( *it );
-
-		for ( it = file.begin(); it != file.end(); ++it )
-			files.push_back( *it );
+	if ( ignoreHidden ) {
+		String fpath( path );
+		if ( fpath[fpath.size() - 1] != '/' && fpath[fpath.size() - 1] != '\\' )
+			fpath += getOSSlash();
+		std::vector<String> filtered;
+		for ( size_t i = 0; i < files.size(); i++ )
+			if ( !FileSystem::fileIsHidden( fpath + files[i] ) )
+				filtered.push_back( files[i] );
+		return filtered;
 	}
 
 	return files;
 }
 
-std::vector<FileInfo> FileSystem::filesInfoGetInPath( std::string path, const bool& sortByName,
-													  const bool& foldersFirst ) {
+std::vector<FileInfo> FileSystem::filesInfoGetInPath( std::string path, bool linkInfo,
+													  const bool& sortByName,
+													  const bool& foldersFirst,
+													  const bool& ignoreHidden ) {
 	dirAddSlashAtEnd( path );
 	std::vector<FileInfo> fileInfo;
-	auto files = filesGetInPath( path, sortByName, foldersFirst );
+	auto files = filesGetInPath( path, sortByName, foldersFirst, ignoreHidden );
 	for ( auto file : files )
-		fileInfo.emplace_back( FileInfo( path + file ) );
+		fileInfo.emplace_back( FileInfo( path + file, linkInfo ) );
 	return fileInfo;
 }
 
 std::vector<std::string> FileSystem::filesGetInPath( const std::string& path,
 													 const bool& sortByName,
-													 const bool& foldersFirst ) {
+													 const bool& foldersFirst,
+													 const bool& ignoreHidden ) {
 	std::vector<std::string> files;
 
 #ifdef EE_COMPILER_MSVC
@@ -516,19 +537,15 @@ std::vector<std::string> FileSystem::filesGetInPath( const std::string& path,
 	closedir( dp );
 #endif
 
-	if ( sortByName == true ) {
+	if ( sortByName ) {
 		std::sort( files.begin(), files.end() );
 	}
 
-	if ( foldersFirst == true ) {
-		String fpath( path );
-
-		if ( fpath[fpath.size() - 1] != '/' && fpath[fpath.size() - 1] != '\\' )
-			fpath += getOSSlash();
-
-		std::list<String> folders;
-		std::list<String> file;
-
+	if ( foldersFirst ) {
+		std::string fpath( path );
+		dirAddSlashAtEnd( fpath );
+		std::vector<std::string> folders;
+		std::vector<std::string> file;
 		for ( size_t i = 0; i < files.size(); i++ ) {
 			if ( FileSystem::isDirectory( fpath + files[i] ) ) {
 				folders.push_back( files[i] );
@@ -536,16 +553,21 @@ std::vector<std::string> FileSystem::filesGetInPath( const std::string& path,
 				file.push_back( files[i] );
 			}
 		}
-
 		files.clear();
+		for ( auto& folder : folders )
+			files.push_back( folder );
+		for ( auto& f : file )
+			files.push_back( f );
+	}
 
-		std::list<String>::iterator it;
-
-		for ( it = folders.begin(); it != folders.end(); ++it )
-			files.push_back( *it );
-
-		for ( it = file.begin(); it != file.end(); ++it )
-			files.push_back( *it );
+	if ( ignoreHidden ) {
+		std::string fpath( path );
+		dirAddSlashAtEnd( fpath );
+		std::vector<std::string> filtered;
+		for ( size_t i = 0; i < files.size(); i++ )
+			if ( !FileSystem::fileIsHidden( fpath + files[i] ) )
+				filtered.push_back( files[i] );
+		return filtered;
 	}
 
 	return files;

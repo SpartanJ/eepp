@@ -242,21 +242,27 @@ void UIScrollableWidget::scrollToBottom() {
 	mVScroll->setValue( 1 );
 }
 
-void UIScrollableWidget::scrollToPosition( const Vector2f& pos, const bool& scrollVertically,
+void UIScrollableWidget::scrollToPosition( const Rectf& pos, const bool& scrollVertically,
 										   const bool& scrollHorizontally ) {
 	Rectf visibleRect( getVisibleRect() );
 	if ( visibleRect.contains( pos ) )
 		return;
 
 	if ( scrollVertically ) {
-		if ( pos.y < visibleRect.Top || pos.y > visibleRect.Bottom ) {
-			mVScroll->setValue( pos.y / getContentSize().y );
+		if ( pos.getPosition().y <= visibleRect.Top ) {
+			mVScroll->setValue( pos.getPosition().y / getContentSize().y );
+		} else if ( pos.getPosition().y + pos.getSize().getHeight() >= visibleRect.Bottom ) {
+			mVScroll->setValue( ( pos.getPosition().y + pos.getSize().getHeight() ) /
+								getContentSize().y );
 		}
 	}
 
 	if ( scrollHorizontally ) {
-		if ( pos.x < visibleRect.Left || pos.x > visibleRect.Right ) {
-			mHScroll->setValue( pos.x / getContentSize().x );
+		if ( pos.getPosition().x <= visibleRect.Left ) {
+			mHScroll->setValue( pos.getPosition().x / getContentSize().x );
+		} else if ( pos.getPosition().x + pos.getSize().getWidth() >= visibleRect.Right ) {
+			mHScroll->setValue( ( pos.getPosition().x + pos.getSize().getWidth() ) /
+								getContentSize().x );
 		}
 	}
 }

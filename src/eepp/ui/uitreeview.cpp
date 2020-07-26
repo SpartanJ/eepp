@@ -14,6 +14,7 @@ UITreeView* UITreeView::New() {
 
 UITreeView::UITreeView() :
 	UIAbstractTableView( "treeview" ), mIndentWidth( PixelDensity::dpToPx( 12 ) ) {
+	clipEnable();
 	mExpandIcon = getUISceneNode()->findIcon( "tree-expanded" );
 	mContractIcon = getUISceneNode()->findIcon( "tree-contracted" );
 }
@@ -81,8 +82,8 @@ template <typename Callback> void UITreeView::traverseTree( Callback callback ) 
 void UITreeView::createOrUpdateColumns() {
 	if ( !getModel() )
 		return;
-	UIAbstractTableView::createOrUpdateColumns();
 	updateContentSize();
+	UIAbstractTableView::createOrUpdateColumns();
 }
 
 size_t UITreeView::getItemCount() const {
@@ -460,7 +461,9 @@ Uint32 UITreeView::onKeyDown( const KeyEvent& event ) {
 				} );
 			curY = deque.front().second - getHeaderHeight();
 			getSelection().set( deque.front().first );
-			scrollToPosition( {mScrollOffset.x, curY} );
+			scrollToPosition(
+				{{mScrollOffset.x, curY},
+				 {columnData( deque.front().first.column() ).width, getRowHeight()}} );
 			break;
 		}
 		case KEY_PAGEDOWN: {
@@ -495,7 +498,8 @@ Uint32 UITreeView::onKeyDown( const KeyEvent& event ) {
 			}
 			curY += getRowHeight();
 			getSelection().set( foundIndex );
-			scrollToPosition( {mScrollOffset.x, curY} );
+			scrollToPosition( {{mScrollOffset.x, curY},
+							   {columnData( foundIndex.column() ).width, getRowHeight()}} );
 			break;
 		}
 		case KEY_UP: {

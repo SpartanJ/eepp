@@ -303,7 +303,6 @@ UITableRow* UIAbstractTableView::updateRow( const int& rowIndex, const ModelInde
 
 void UIAbstractTableView::onScrollChange() {
 	mHeader->setPixelsPosition( -mScrollOffset.x, 0 );
-	invalidateDraw();
 }
 
 UIWidget* UIAbstractTableView::createCell( UIWidget* rowWidget, const ModelIndex& ) {
@@ -336,7 +335,6 @@ UIWidget* UIAbstractTableView::updateCell( const int& rowIndex, const ModelIndex
 	}
 	widget->setPixelsSize( columnData( index.column() ).width, getRowHeight() );
 	widget->setPixelsPosition( {getColumnPosition( index.column() ).x, 0} );
-
 	if ( widget->isType( UI_TYPE_PUSHBUTTON ) ) {
 		UIPushButton* pushButton = widget->asType<UIPushButton>();
 
@@ -373,7 +371,8 @@ void UIAbstractTableView::moveSelection( int steps ) {
 	}
 	if ( model.isValid( newIndex ) ) {
 		getSelection().set( newIndex );
-		scrollToPosition( {mScrollOffset.x, getHeaderHeight() + newIndex.row() * getRowHeight()} );
+		scrollToPosition( {{mScrollOffset.x, getHeaderHeight() + newIndex.row() * getRowHeight()},
+						   {columnData( newIndex.column() ).width, getRowHeight()}} );
 	}
 }
 
