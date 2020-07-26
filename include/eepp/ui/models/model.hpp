@@ -1,5 +1,5 @@
-#ifndef EE_UI_MODEL_MODEL_HPP
-#define EE_UI_MODEL_MODEL_HPP
+#ifndef EE_UI_MODELS_MODEL_HPP
+#define EE_UI_MODELS_MODEL_HPP
 
 #include <eepp/ui/models/modelindex.hpp>
 #include <eepp/ui/models/variant.hpp>
@@ -102,6 +102,6 @@ inline ModelIndex ModelIndex::parent() const {
 	return mModel ? mModel->parentIndex( *this ) : ModelIndex();
 }
 
-}}} // namespace EE::UI::Model
+}}} // namespace EE::UI::Models
 
-#endif // EE_UI_MODEL_MODEL_HPP
+#endif // EE_UI_MODELS_MODEL_HPP

@@ -42,6 +42,8 @@ class EE_API UISplitter : public UILayout {
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
 										   const Uint32& propertyIndex = 0 );
 
+	virtual void updateLayout();
+
   protected:
 	UIOrientation mOrientation;
 	bool mAlwaysShowSplitter;
@@ -53,8 +55,6 @@ class EE_API UISplitter : public UILayout {
 	UISplitter();
 
 	virtual void onChildCountChange( Node* child, const bool& removed );
-
-	virtual void updateLayout();
 
 	virtual Uint32 onMessage( const NodeMessage* Msg );
 

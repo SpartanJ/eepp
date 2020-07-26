@@ -394,6 +394,12 @@ class EE_API Node : public Transformable {
 
 	virtual void nodeDraw();
 
+	void forceKeyDown( const KeyEvent& event );
+
+	void foceKeyUp( const KeyEvent& event );
+
+	void forceTextInput( const TextInputEvent& Event );
+
   protected:
 	typedef std::map<Uint32, std::map<Uint32, EventCallback>> EventsMap;
 	friend class EventDispatcher;

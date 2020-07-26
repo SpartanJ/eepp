@@ -362,6 +362,95 @@ std::string App::getKeybind( const std::string& command ) {
 	return "";
 }
 
+static int MAX_VISIBLE_ITEMS = 18;
+static int MAX_RESULT_ITEMS = 100;
+
+void App::initLocateBar() {
+	auto addClickListener = [&]( UIWidget* widget, std::string cmd ) {
+		widget->addEventListener( Event::MouseClick, [this, cmd]( const Event* event ) {
+			const MouseEvent* mouseEvent = static_cast<const MouseEvent*>( event );
+			if ( mouseEvent->getFlags() & EE_BUTTON_LMASK )
+				mLocateBarLayout->execute( cmd );
+		} );
+	};
+	mLocateTable = UITableView::New();
+	mLocateTable->setParent( mUISceneNode->getRoot() );
+	mLocateTable->setHeadersVisible( false );
+	mLocateTable->setVisible( false );
+	mLocateInput->addEventListener( Event::OnTextChanged, [&]( const Event* ) {
+		Vector2f pos( mLocateBarLayout->convertToWorldSpace( {0, 0} ) );
+		pos.y -= mLocateTable->getPixelsSize().getHeight();
+		mLocateTable->setPixelsPosition( pos );
+		if ( !mDirTreeReady )
+			return;
+		if ( !mLocateInput->getText().empty() ) {
+			mLocateTable->setModel(
+				mDirTree->fuzzyMatchTree( mLocateInput->getText(), MAX_RESULT_ITEMS ) );
+		} else {
+			mLocateTable->setModel( mDirTree->asModel( MAX_RESULT_ITEMS ) );
+		}
+		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
+	} );
+	mLocateInput->addEventListener( Event::OnPressEnter, [&]( const Event* ) {
+		KeyEvent keyEvent( mLocateTable, Event::KeyDown, KEY_RETURN, 0, 0 );
+		mLocateTable->forceKeyDown( keyEvent );
+	} );
+	mLocateInput->addEventListener( Event::KeyDown, [&]( const Event* event ) {
+		const KeyEvent* keyEvent = reinterpret_cast<const KeyEvent*>( event );
+		mLocateTable->forceKeyDown( *keyEvent );
+	} );
+	mLocateBarLayout->addCommand( "close-locatebar", [&] {
+		mLocateBarLayout->setVisible( false );
+		mLocateTable->setVisible( false );
+		mEditorSplitter->getCurEditor()->setFocus();
+	} );
+	mLocateBarLayout->getKeyBindings().addKeybindsString( {
+		{"escape", "close-locatebar"},
+	} );
+	addClickListener( mLocateBarLayout->find<UIWidget>( "locatebar_close" ), "close-locatebar" );
+	mLocateTable->addEventListener( Event::OnModelEvent, [&]( const Event* event ) {
+		const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
+		if ( modelEvent->getModelEventType() == ModelEventType::Open ) {
+			Variant vPath( modelEvent->getModel()->data(
+				modelEvent->getModel()->index( modelEvent->getModelIndex().row(), 1 ),
+				Model::Role::Display ) );
+			if ( vPath.isValid() && vPath.is( Variant::Type::cstr ) ) {
+				std::string path( vPath.asCStr() );
+				UITab* tab = mEditorSplitter->isDocumentOpen( path );
+				if ( !tab ) {
+					FileInfo fileInfo( path );
+					if ( fileInfo.exists() && fileInfo.isRegularFile() )
+						mEditorSplitter->loadFileFromPathInNewTab( path );
+				} else {
+					tab->getTabWidget()->setTabSelected( tab );
+				}
+				mLocateBarLayout->execute( "close-locatebar" );
+			}
+		}
+	} );
+}
+
+void App::showLocateBar() {
+	mLocateBarLayout->setVisible( true );
+	mLocateInput->setFocus();
+	mLocateTable->setVisible( true );
+	if ( !mLocateTable->getModel() ) {
+		mLocateTable->setModel( mDirTree->asModel( MAX_RESULT_ITEMS ) );
+		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
+	}
+	mLocateBarLayout->runOnMainThread( [&] {
+		Float width = eeceil( mLocateInput->getPixelsSize().getWidth() );
+		mLocateTable->setPixelsSize( width, mLocateTable->getRowHeight() * MAX_VISIBLE_ITEMS );
+		mLocateTable->setColumnWidth( 0, width * 0.5f );
+		mLocateTable->setColumnWidth(
+			1,
+			width * 0.5f - mLocateTable->getVerticalScrollBar()->getPixelsSize().getWidth() - 4 );
+		Vector2f pos( mLocateBarLayout->convertToWorldSpace( {0, 0} ) );
+		pos.y -= mLocateTable->getPixelsSize().getHeight();
+		mLocateTable->setPixelsPosition( pos );
+	} );
+}
+
 void App::initSearchBar() {
 	auto addClickListener = [&]( UIWidget* widget, std::string cmd ) {
 		widget->addEventListener( Event::MouseClick, [this, cmd]( const Event* event ) {
@@ -390,6 +479,7 @@ void App::initSearchBar() {
 					findInput->removeClass( "error" );
 				}
 			} else {
+				findInput->removeClass( "error" );
 				mSearchState.editor->getDocument().setSelection(
 					mSearchState.editor->getDocument().getSelection().start() );
 			}
@@ -527,7 +617,7 @@ void App::onTextDropped( String text ) {
 	}
 }
 
-App::App() {}
+App::App() : mThreadPool( ThreadPool::createShared( eemin<int>( 4, Sys::getCPUCount() ) ) ) {}
 
 App::~App() {
 	saveConfig();
@@ -1131,6 +1221,7 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 		{{KEY_F6, KEYMOD_NONE}, "debug-draw-highlight-toggle"},
 		{{KEY_F7, KEYMOD_NONE}, "debug-draw-boxes-toggle"},
 		{{KEY_F8, KEYMOD_NONE}, "debug-draw-debug-data"},
+		{{KEY_K, KEYMOD_CTRL}, "locate"},
 	};
 }
 
@@ -1166,6 +1257,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	doc.setCommand( "save-doc", [&] { saveDoc(); } );
 	doc.setCommand( "save-as-doc", [&] { saveFileDialog(); } );
 	doc.setCommand( "find-replace", [&] { showFindView(); } );
+	doc.setCommand( "locate", [&] { showLocateBar(); } );
 	doc.setCommand( "repeat-find", [&] { findNextText( mSearchState ); } );
 	doc.setCommand( "close-app", [&] { closeApp(); } );
 	doc.setCommand( "fullscreen-toggle", [&]() {
@@ -1239,7 +1331,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 bool App::setAutoComplete( bool enable ) {
 	mConfig.editor.autoComplete = enable;
 	if ( enable && !mAutoCompleteModule ) {
-		mAutoCompleteModule = eeNew( AutoCompleteModule, () );
+		mAutoCompleteModule = eeNew( AutoCompleteModule, ( mThreadPool ) );
 		mEditorSplitter->forEachEditor(
 			[&]( UICodeEditor* editor ) { editor->registerModule( mAutoCompleteModule ); } );
 		return true;
@@ -1444,11 +1536,13 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		const std::string baseUI = R"xml(
 		<style>
 		TextInput#search_find,
-		TextInput#search_replace {
+		TextInput#search_replace,
+		TextInput#locate_find {
 			padding-top: 0;
 			padding-bottom: 0;
 		}
-		#search_bar {
+		#search_bar,
+		#locate_bar {
 			padding-left: 4dp;
 			padding-right: 4dp;
 			padding-bottom: 3dp;
@@ -1491,10 +1585,10 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		}
 		#search_find.error,
 		#search_replace.error {
-			border-color: red;
+			border-color: #ff4040;
 		}
 		</style>
-		<RelativeLayout layout_width="match_parent" layout_height="match_parent">
+		<RelativeLayout id="main_layout" layout_width="match_parent" layout_height="match_parent">
 		<Splitter id="project_splitter" layout_width="match_parent" layout_height="match_parent">
 			<TabWidget id="panel" tabbar-hide-on-single-tab="true" tabbar-allow-rearrange="true">
 				<TreeView id="project_view" />
@@ -1532,6 +1626,10 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 						</hbox>
 					</vbox>
 				</searchbar>
+				<locatebar id="locate_bar" layout_width="match_parent" layout_height="wrap_content" visible="false">
+					<TextInput id="locate_find" layout_width="0" layout_weight="1" layout_height="18dp" padding="0" margin-bottom="2dp" margin-right="4dp" hint="Type to locate..." />
+					<Widget id="locatebar_close" class="close_button" layout_width="wrap_content" layout_height="wrap_content" layout_gravity="center_vertical|right"/>
+				</locatebar>
 			</vbox>
 		</Splitter>
 		<TextView id="settings" layout_width="wrap_content" layout_height="wrap_content" text="&#xf0e9;" layout_gravity="top|right" />
@@ -1583,13 +1681,17 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		mUISceneNode->getUIIconThemeManager()->setCurrentTheme( iconTheme );
 
 		UIWidgetCreator::registerWidget( "searchbar", [] { return UISearchBar::New(); } );
+		UIWidgetCreator::registerWidget( "locatebar", [] { return UILocateBar::New(); } );
 		mUISceneNode->loadLayoutFromString( baseUI );
+		mUISceneNode->bind( "main_layout", mMainLayout );
 		mUISceneNode->bind( "code_container", mBaseLayout );
 		mUISceneNode->bind( "search_bar", mSearchBarLayout );
+		mUISceneNode->bind( "locate_bar", mLocateBarLayout );
 		mUISceneNode->bind( "doc_info", mDocInfo );
 		mUISceneNode->bind( "doc_info_text", mDocInfoText );
 		mUISceneNode->bind( "panel", mSidePanel );
 		mUISceneNode->bind( "project_splitter", mProjectSplitter );
+		mUISceneNode->bind( "locate_find", mLocateInput );
 		mDocInfo->setVisible( mConfig.editor.showDocInfo );
 		mSearchBarLayout->setVisible( false )->setEnabled( false );
 		mProjectSplitter->setSplitPartition( StyleSheetLength( mConfig.window.panelPartition ) );
@@ -1603,22 +1705,24 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 
 		initSearchBar();
 
+		initLocateBar();
+
 		createSettingsMenu();
 
 		mEditorSplitter->createEditorWithTabWidget( mBaseLayout );
 
 		mConsole = eeNew( Console, ( fontMono, true, true, 1024 * 1000, 0, mWindow ) );
 
-		UITreeView* tree = mUISceneNode->find<UITreeView>( "project_view" );
-		tree->setColumnsHidden( {FileSystemModel::Icon, FileSystemModel::Size,
-								 FileSystemModel::Group, FileSystemModel::Inode,
-								 FileSystemModel::Owner, FileSystemModel::SymlinkTarget,
-								 FileSystemModel::Permissions, FileSystemModel::ModificationTime,
-								 FileSystemModel::Path},
-								true );
-		tree->setHeadersVisible( false );
-		tree->setExpandersAsIcons( true );
-		tree->addEventListener( Event::OnModelEvent, [&]( const Event* event ) {
+		mProjectTreeView = mUISceneNode->find<UITreeView>( "project_view" );
+		mProjectTreeView->setColumnsHidden(
+			{FileSystemModel::Icon, FileSystemModel::Size, FileSystemModel::Group,
+			 FileSystemModel::Inode, FileSystemModel::Owner, FileSystemModel::SymlinkTarget,
+			 FileSystemModel::Permissions, FileSystemModel::ModificationTime,
+			 FileSystemModel::Path},
+			true );
+		mProjectTreeView->setHeadersVisible( false );
+		mProjectTreeView->setExpandersAsIcons( true );
+		mProjectTreeView->addEventListener( Event::OnModelEvent, [&]( const Event* event ) {
 			const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
 			if ( modelEvent->getModelEventType() == ModelEventType::Open ) {
 				Variant vPath( modelEvent->getModel()->data( modelEvent->getModelIndex(),
@@ -1627,7 +1731,9 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 					std::string path( vPath.asCStr() );
 					UITab* tab = mEditorSplitter->isDocumentOpen( path );
 					if ( !tab ) {
-						mEditorSplitter->loadFileFromPathInNewTab( path );
+						FileInfo fileInfo( path );
+						if ( fileInfo.exists() && fileInfo.isRegularFile() )
+							mEditorSplitter->loadFileFromPathInNewTab( path );
 					} else {
 						tab->getTabWidget()->setTabSelected( tab );
 					}
@@ -1637,20 +1743,37 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 
 		if ( !file.empty() && FileSystem::fileExists( file ) ) {
 			if ( FileSystem::isDirectory( file ) ) {
-				tree->setModel( FileSystemModel::New( file ) );
+				loadDirTree( FileSystem::getRealPath( file ) );
+				mProjectTreeView->setModel( FileSystemModel::New( file ) );
 			} else {
 				std::string rpath( FileSystem::getRealPath( file ) );
-				tree->setModel( FileSystemModel::New( FileSystem::fileRemoveFileName( rpath ) ) );
+				mProjectTreeView->setModel(
+					FileSystemModel::New( FileSystem::fileRemoveFileName( rpath ) ) );
 				mEditorSplitter->loadFileFromPath( rpath );
 			}
 		} else {
-			tree->setModel( FileSystemModel::New( "." ) );
+			loadDirTree( FileSystem::getRealPath( "." ) );
+			mProjectTreeView->setModel( FileSystemModel::New( "." ) );
 		}
 
-		tree->setAutoExpandOnSingleColumn( true );
+		mProjectTreeView->setAutoExpandOnSingleColumn( true );
 
 		mWindow->runMainLoop( &appLoop );
 	}
+}
+
+void App::loadDirTree( const std::string& path ) {
+	Clock* clock = eeNew( Clock, () );
+	mDirTree = std::make_unique<ProjectDirectoryTree>( path, mThreadPool );
+	eePRINTL( "Loading DirTree: %s", path.c_str() );
+	mDirTree->scan(
+		[&, clock]( ProjectDirectoryTree& dirTree ) {
+			eePRINTL( "DirTree read in: %.2fms. Found %ld files.",
+					  clock->getElapsedTime().asMilliseconds(), dirTree.getFilesCount() );
+			eeDelete( clock );
+			mDirTreeReady = true;
+		},
+		SyntaxDefinitionManager::instance()->getExtensionsPatternsSupported() );
 }
 
 EE_MAIN_FUNC int main( int argc, char* argv[] ) {

@@ -98,43 +98,11 @@ void UITreeView::onColumnSizeChange( const size_t& ) {
 	updateContentSize();
 }
 
-UITableRow* UITreeView::createRow() {
-	UITableRow* rowWidget = UITableRow::New( "table::row" );
-	rowWidget->setParent( this );
-	rowWidget->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
-	rowWidget->reloadStyle( true, true, true );
-	rowWidget->addEventListener( Event::MouseDown, [&]( const Event* event ) {
-		if ( ( !getEventDispatcher()->getMouseDownNode() ||
-			   getEventDispatcher()->getMouseDownNode() == this ||
-			   isParentOf( getEventDispatcher()->getMouseDownNode() ) ) &&
-			 getEventDispatcher()->getNodeDragging() == nullptr ) {
-			getSelection().set( event->getNode()->asType<UITableRow>()->getCurIndex() );
-		}
-	} );
-	return rowWidget;
-}
-
-UITableRow* UITreeView::updateRow( const int& rowIndex, const ModelIndex& index,
-								   const Float& yOffset ) {
-	if ( rowIndex >= (int)mRows.size() )
-		mRows.resize( rowIndex + 1, nullptr );
-	UITableRow* rowWidget = nullptr;
-	if ( mRows[rowIndex] == nullptr ) {
-		rowWidget = createRow();
-		mRows[rowIndex] = rowWidget;
-	} else {
-		rowWidget = mRows[rowIndex];
-	}
-	rowWidget->setCurIndex( index );
-	rowWidget->setPixelsSize( getContentSize().getWidth(), getRowHeight() );
-	rowWidget->setPixelsPosition( {-mScrollOffset.x, yOffset - mScrollOffset.y} );
-	if ( getSelection().first() == index ) {
-		rowWidget->clearActions();
-		rowWidget->pushState( UIState::StateSelected );
-	} else {
-		rowWidget->popState( UIState::StateSelected );
-	}
-	return rowWidget;
+void UITreeView::updateContentSize() {
+	Sizef oldSize( mContentSize );
+	mContentSize = UIAbstractTableView::getContentSize();
+	if ( oldSize != mContentSize )
+		onContentSizeChange();
 }
 
 class UITreeViewCell : public UIPushButton {
@@ -198,7 +166,7 @@ class UITreeViewCell : public UIPushButton {
 		auto cb = [&]( const Event* ) { updateLayout(); };
 		mImage = UIImage::NewWithTag( mTag + "::expander" );
 		mImage->setScaleType( UIScaleType::FitInside )
-			->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent )
+			->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed )
 			->setFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER )
 			->setParent( const_cast<UITreeViewCell*>( this ) )
 			->setVisible( false )
@@ -212,16 +180,16 @@ class UITreeViewCell : public UIPushButton {
 	virtual UIWidget* getExtraInnerWidget() const { return mImage; }
 };
 
-UIWidget* UITreeView::createCell( UIWidget* rowWidget, const ModelIndex&, const size_t& col ) {
-	UIPushButton* widget = col == getModel()->treeColumn()
+UIWidget* UITreeView::createCell( UIWidget* rowWidget, const ModelIndex& index ) {
+	UIPushButton* widget = index.column() == (Int64)getModel()->treeColumn()
 							   ? UITreeViewCell::New()
 							   : UIPushButton::NewWithTag( "table::cell" );
 	widget->setParent( rowWidget );
 	widget->unsetFlags( UI_AUTO_SIZE );
 	widget->clipEnable();
 	widget->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
-	widget->asType<UIPushButton>()->setTextAlign( UI_HALIGN_LEFT );
-	if ( col == getModel()->treeColumn() ) {
+	widget->setTextAlign( UI_HALIGN_LEFT );
+	if ( index.column() == (Int64)getModel()->treeColumn() ) {
 		widget->addEventListener( Event::MouseDoubleClick, [&]( const Event* event ) {
 			auto mouseEvent = static_cast<const MouseEvent*>( event );
 			auto idx = mouseEvent->getNode()->getParent()->asType<UITableRow>()->getCurIndex();
@@ -257,18 +225,6 @@ UIWidget* UITreeView::createCell( UIWidget* rowWidget, const ModelIndex&, const 
 	return widget;
 }
 
-void UITreeView::onScrollChange() {
-	mHeader->setPixelsPosition( -mScrollOffset.x, 0 );
-	invalidateDraw();
-}
-
-void UITreeView::updateContentSize() {
-	Sizef oldSize( mContentSize );
-	mContentSize = UIAbstractTableView::getContentSize();
-	if ( oldSize != mContentSize )
-		onContentSizeChange();
-}
-
 UIWidget* UITreeView::updateCell( const int& rowIndex, const ModelIndex& index,
 								  const size_t& indentLevel, const Float& yOffset ) {
 	if ( rowIndex >= (int)mWidgets.size() )
@@ -276,7 +232,7 @@ UIWidget* UITreeView::updateCell( const int& rowIndex, const ModelIndex& index,
 	auto* widget = mWidgets[rowIndex][index.column()];
 	if ( !widget ) {
 		UIWidget* rowWidget = updateRow( rowIndex, index, yOffset );
-		widget = createCell( rowWidget, index, index.column() );
+		widget = createCell( rowWidget, index );
 		mWidgets[rowIndex][index.column()] = widget;
 		widget->reloadStyle( true, true, true );
 	}
@@ -315,6 +271,7 @@ UIWidget* UITreeView::updateCell( const int& rowIndex, const ModelIndex& index,
 				Drawable* icon = getIndexMetadata( index ).open ? mExpandIcon : mContractIcon;
 
 				image->setVisible( true );
+				image->setPixelsSize( icon->getPixelsSize() );
 				image->setDrawable( icon );
 				if ( !mExpandersAsIcons ) {
 					cell->setIndentation( cell->getIndentation() -
@@ -361,8 +318,6 @@ Sizef UITreeView::getContentSize() const {
 void UITreeView::drawChilds() {
 	int realIndex = 0;
 
-	mUISceneNode->setIsLoading( true );
-
 	traverseTree( [&]( const int&, const ModelIndex& index, const size_t& indentLevel,
 					   const Float& yOffset ) {
 		if ( yOffset - mScrollOffset.y > mSize.getHeight() )
@@ -385,8 +340,6 @@ void UITreeView::drawChilds() {
 		return IterationDecision::Continue;
 	} );
 
-	mUISceneNode->setIsLoading( false );
-
 	if ( mHeader && mHeader->isVisible() )
 		mHeader->nodeDraw();
 	if ( mHScroll->isVisible() )
@@ -396,6 +349,8 @@ void UITreeView::drawChilds() {
 }
 
 Node* UITreeView::overFind( const Vector2f& point ) {
+	mUISceneNode->setIsLoading( true );
+
 	Node* pOver = NULL;
 	if ( mEnabled && mVisible ) {
 		updateWorldPolygon();
@@ -425,6 +380,9 @@ Node* UITreeView::overFind( const Vector2f& point ) {
 				pOver = this;
 		}
 	}
+
+	mUISceneNode->setIsLoading( false );
+
 	return pOver;
 }
 
@@ -478,11 +436,6 @@ Float UITreeView::getMaxColumnContentWidth( const size_t& colIndex ) {
 	} );
 	getUISceneNode()->setIsLoading( false );
 	return lWidth;
-}
-
-void UITreeView::onModelSelectionChange() {
-	UIAbstractTableView::onModelSelectionChange();
-	invalidateDraw();
 }
 
 Uint32 UITreeView::onKeyDown( const KeyEvent& event ) {
@@ -596,8 +549,8 @@ Uint32 UITreeView::onKeyDown( const KeyEvent& event ) {
 					mVScroll->setValue(
 						eemin<Float>( 1.f, curY / getScrollableArea().getHeight() ) );
 				}
-				break;
 			}
+			break;
 		}
 		case KEY_END: {
 			scrollToBottom();
@@ -658,11 +611,6 @@ Uint32 UITreeView::onKeyDown( const KeyEvent& event ) {
 			break;
 	}
 	return 0;
-}
-
-void UITreeView::onOpenModelIndex( const ModelIndex& index ) {
-	ModelEvent event( getModel(), index, this );
-	sendEvent( &event );
 }
 
 void UITreeView::onOpenTreeModelIndex( const ModelIndex& index, bool open ) {

@@ -4,6 +4,7 @@
 #include <eepp/math/rect.hpp>
 #include <eepp/ui/abstract/uiabstractview.hpp>
 #include <eepp/ui/uitableheadercolumn.hpp>
+#include <eepp/ui/uitablerow.hpp>
 
 using namespace EE::Math;
 
@@ -64,14 +65,10 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	Float getContentSpaceWidth() const;
 
+	void moveSelection( int steps );
+
   protected:
 	friend class EE::UI::UITableHeaderColumn;
-
-	virtual ~UIAbstractTableView();
-
-	UIAbstractTableView( const std::string& tag );
-
-	Float mRowHeight{0};
 
 	struct ColumnData {
 		Float width{0};
@@ -79,9 +76,19 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 		UIPushButton* widget{nullptr};
 	};
 
-	ColumnData& columnData( const size_t& column ) const;
-
+	Float mRowHeight{0};
+	mutable std::vector<UITableRow*> mRows;
 	mutable std::vector<ColumnData> mColumn;
+	mutable std::vector<std::map<int, UIWidget*>> mWidgets;
+	UILinearLayout* mHeader;
+	Float mDragBorderDistance{8};
+	bool mAutoExpandOnSingleColumn{false};
+
+	virtual ~UIAbstractTableView();
+
+	UIAbstractTableView( const std::string& tag );
+
+	ColumnData& columnData( const size_t& column ) const;
 
 	virtual size_t getItemCount() const;
 
@@ -97,13 +104,23 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	virtual void updateColumnsWidth();
 
+	virtual UITableRow* createRow();
+
+	virtual UITableRow* updateRow( const int& rowIndex, const ModelIndex& index,
+								   const Float& yOffset );
+
+	virtual UIWidget* updateCell( const int& rowIndex, const ModelIndex& index,
+								  const size_t& indentLevel, const Float& yOffset );
+
+	virtual UIWidget* createCell( UIWidget* rowWidget, const ModelIndex& index );
+
+	virtual void onScrollChange();
+
+	virtual void onOpenModelIndex( const ModelIndex& index );
+
 	void updateHeaderSize();
 
 	int visibleColumn();
-
-	UILinearLayout* mHeader;
-	Float mDragBorderDistance{8};
-	bool mAutoExpandOnSingleColumn{false};
 };
 
 }}} // namespace EE::UI::Abstract

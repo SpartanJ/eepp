@@ -29,6 +29,8 @@ class EE_API SyntaxDefinitionManager {
 
 	std::vector<std::string> getLanguageNames() const;
 
+	std::vector<std::string> getExtensionsPatternsSupported() const;
+
   protected:
 	SyntaxDefinitionManager();
 

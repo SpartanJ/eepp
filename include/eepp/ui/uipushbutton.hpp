@@ -56,6 +56,8 @@ class EE_API UIPushButton : public UIWidget {
 
 	UIWidget* getFirstInnerItem() const;
 
+	virtual void updateLayout();
+
   protected:
 	UIImage* mIcon;
 	UITextView* mTextBox;
@@ -63,8 +65,6 @@ class EE_API UIPushButton : public UIWidget {
 	InnerWidgetOrientation mInnerWidgetOrientation{InnerWidgetOrientation::Right};
 
 	explicit UIPushButton( const std::string& tag );
-
-	virtual void updateLayout();
 
 	virtual void onSizeChange();
 

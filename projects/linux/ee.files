@@ -339,6 +339,7 @@
 ../../include/eepp/ui/keyboardshortcut.hpp
 ../../include/eepp/ui/marginmove/scale.hpp
 ../../include/eepp/ui/models/filesystemmodel.hpp
+../../include/eepp/ui/models/itemlistmodel.hpp
 ../../include/eepp/ui/models/model.hpp
 ../../include/eepp/ui/models/modelindex.hpp
 ../../include/eepp/ui/models/modelselection.hpp
@@ -400,6 +401,7 @@
 ../../include/eepp/ui/uitable.hpp
 ../../include/eepp/ui/uitableheadercolumn.hpp
 ../../include/eepp/ui/uitablerow.hpp
+../../include/eepp/ui/uitableview.hpp
 ../../include/eepp/ui/uitabwidget.hpp
 ../../include/eepp/ui/uitextedit.hpp
 ../../include/eepp/ui/uitextinput.hpp
@@ -867,6 +869,7 @@
 ../../src/eepp/ui/uitablecell.cpp
 ../../src/eepp/ui/uitable.cpp
 ../../src/eepp/ui/uitableheadercolumn.cpp
+../../src/eepp/ui/uitableview.cpp
 ../../src/eepp/ui/uitabwidget.cpp
 ../../src/eepp/ui/uitextedit.cpp
 ../../src/eepp/ui/uitextinput.cpp
@@ -1005,6 +1008,8 @@
 ../../src/tools/codeeditor/autocompletemodule.hpp
 ../../src/tools/codeeditor/codeeditor.cpp
 ../../src/tools/codeeditor/codeeditor.hpp
+../../src/tools/codeeditor/projectdirectorytree.cpp
+../../src/tools/codeeditor/projectdirectorytree.hpp
 ../../src/tools/codeeditor/uicodeeditorsplitter.cpp
 ../../src/tools/codeeditor/uicodeeditorsplitter.hpp
 ../../src/tools/mapeditor/mapeditor.cpp

@@ -343,8 +343,8 @@ void UINode::updateDebugData() {
 			text += "Classes: " + String::join( widget->getStyleSheetClasses(), ' ' ) + "\n";
 		}
 
-		text += String::format( "X: %.2f Y: %.2f\nW: %.2f H: %.2f", mDpPos.x, mDpPos.y, mDpSize.x,
-								mDpSize.y );
+		text += String::format( "X: %.2f Y: %.2f\nW: %.2f (%.2f) H: %.2f (%.2f)", mSize.x, mDpPos.x,
+								mSize.y, mDpPos.y, mDpSize.x, mDpSize.y );
 
 		if ( widget->getPadding() != Rectf( 0, 0, 0, 0 ) ) {
 			Rectf p( widget->getPadding() );
@@ -1179,10 +1179,10 @@ Float UINode::getPropertyRelativeTargetContainerLength(
 	Float containerLength = defaultValue;
 	switch ( relativeTarget ) {
 		case PropertyRelativeTarget::ContainingBlockWidth:
-			containerLength = getParent()->getPixelsSize().getWidth();
+			containerLength = getParent() ? getParent()->getPixelsSize().getWidth() : 0;
 			break;
 		case PropertyRelativeTarget::ContainingBlockHeight:
-			containerLength = getParent()->getPixelsSize().getHeight();
+			containerLength = getParent() ? getParent()->getPixelsSize().getHeight() : 0;
 			break;
 		case PropertyRelativeTarget::LocalBlockWidth:
 			containerLength = getPixelsSize().getWidth();

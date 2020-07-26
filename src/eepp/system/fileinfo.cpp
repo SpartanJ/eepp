@@ -121,8 +121,7 @@ void FileInfo::getInfo() {
 }
 
 void FileInfo::getRealInfo() {
-	if ( isDirectory() )
-		FileSystem::dirRemoveSlashAtEnd( mFilepath );
+	FileSystem::dirRemoveSlashAtEnd( mFilepath );
 
 #if EE_PLATFORM != EE_PLATFORM_WIN
 	struct stat st;

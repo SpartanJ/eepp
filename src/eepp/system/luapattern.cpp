@@ -36,7 +36,7 @@ LuaPattern::LuaPattern( const std::string& pattern ) : mPattern( pattern ) {
 }
 
 bool LuaPattern::matches( const char* stringSearch, int stringStartOffset,
-						  LuaPattern::Range* matchList, size_t stringLength ) {
+						  LuaPattern::Range* matchList, size_t stringLength ) const {
 	LuaPattern::Range matchesBuffer[MAX_DEFAULT_MATCHES];
 	if ( matchList == nullptr )
 		matchList = matchesBuffer;
@@ -53,12 +53,12 @@ bool LuaPattern::matches( const char* stringSearch, int stringStartOffset,
 }
 
 bool LuaPattern::matches( const std::string& str, LuaPattern::Range* matchList,
-						  int stringStartOffset ) {
+						  int stringStartOffset ) const {
 	return matches( str.c_str(), stringStartOffset, matchList, str.size() );
 }
 
 bool LuaPattern::find( const char* stringSearch, int& startMatch, int& endMatch,
-					   int stringStartOffset, int stringLength, int returnMatchIndex ) {
+					   int stringStartOffset, int stringLength, int returnMatchIndex ) const {
 	LuaPattern::Range matchesBuffer[MAX_DEFAULT_MATCHES];
 	if ( matches( stringSearch, stringStartOffset, matchesBuffer, stringLength ) ) {
 		range( returnMatchIndex, startMatch, endMatch, matchesBuffer );
@@ -71,12 +71,12 @@ bool LuaPattern::find( const char* stringSearch, int& startMatch, int& endMatch,
 }
 
 bool LuaPattern::find( const std::string& s, int& startMatch, int& endMatch, int offset,
-					   int returnedMatchIndex ) {
+					   int returnedMatchIndex ) const {
 	return find( s.c_str(), startMatch, endMatch, offset, s.size(), returnedMatchIndex );
 }
 
 bool LuaPattern::range( int indexGet, int& startMatch, int& endMatch,
-						LuaPattern::Range* returnedMatched ) {
+						LuaPattern::Range* returnedMatched ) const {
 	if ( indexGet == -1 )
 		indexGet = getNumMatches() > 1 ? 1 : 0;
 	if ( indexGet >= 0 && indexGet < (int)getNumMatches() ) {
@@ -87,7 +87,7 @@ bool LuaPattern::range( int indexGet, int& startMatch, int& endMatch,
 	return false;
 }
 
-const size_t& LuaPattern::getNumMatches() {
+const size_t& LuaPattern::getNumMatches() const {
 	return mMatchNum;
 }
 

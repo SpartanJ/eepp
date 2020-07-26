@@ -22,6 +22,7 @@
 #include <eepp/ui/uitab.hpp>
 #include <eepp/ui/uitable.hpp>
 #include <eepp/ui/uitablecell.hpp>
+#include <eepp/ui/uitableview.hpp>
 #include <eepp/ui/uitabwidget.hpp>
 #include <eepp/ui/uitextedit.hpp>
 #include <eepp/ui/uitextinput.hpp>
@@ -82,6 +83,7 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["codeeditor"] = UICodeEditor::New;
 		registeredWidget["splitter"] = UISplitter::New;
 		registeredWidget["treeview"] = UITreeView::New;
+		registeredWidget["tableview"] = UITableView::New;
 
 		registeredWidget["hbox"] = UILinearLayout::NewHorizontal;
 		registeredWidget["vbox"] = UILinearLayout::NewVertical;

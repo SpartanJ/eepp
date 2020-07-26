@@ -221,7 +221,7 @@ void UIPushButton::onThemeLoaded() {
 
 UIPushButton* UIPushButton::setIcon( Drawable* icon ) {
 	if ( mIcon->getDrawable() != icon ) {
-		mIcon->setSize( icon->getSize() );
+		mIcon->setPixelsSize( icon->getPixelsSize() );
 		mIcon->setDrawable( icon );
 		updateLayout();
 	}

@@ -761,11 +761,10 @@ table::header::column:hover {
 
 table::row {
 	background-color: var(--list-back);
-	transition: all 0.125s;
 }
 
 table::row:hover {
-	background-color: var(--back);
+	background-color: var(--tab-hover);
 }
 
 table::row:selected {
@@ -778,11 +777,13 @@ TreeView::cell {
 	padding-right: 6dp;
 }
 
-TreeView {
+TreeView,
+TableView {
 	background-color: var(--list-back);
 }
 
-TreeView > ScrollBar {
+TreeView > ScrollBar,
+TableView > ScrollBar {
 	background-color: var(--list-back);
 }
 

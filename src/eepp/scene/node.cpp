@@ -526,6 +526,18 @@ void Node::nodeDraw() {
 	}
 }
 
+void Node::forceKeyDown( const KeyEvent& event ) {
+	onKeyDown( event );
+}
+
+void Node::foceKeyUp( const KeyEvent& event ) {
+	onKeyUp( event );
+}
+
+void Node::forceTextInput( const TextInputEvent& event ) {
+	onTextInput( event );
+}
+
 void Node::clipStart() {
 	if ( mVisible && isClipped() ) {
 		clipSmartEnable( mScreenPos.x, mScreenPos.y, mSize.getWidth(), mSize.getHeight() );

@@ -51,8 +51,7 @@ TextureRegion::TextureRegion( const Uint32& TexId, const std::string& name ) :
 	mTexture( TextureFactory::instance()->getTexture( TexId ) ),
 	mSrcRect( Rect( 0, 0, NULL != mTexture ? mTexture->getImageWidth() : 0,
 					NULL != mTexture ? mTexture->getImageHeight() : 0 ) ),
-	mOriDestSize( PixelDensity::dpToPx(
-		Sizef( (Float)mSrcRect.getSize().getWidth(), (Float)mSrcRect.getSize().getHeight() ) ) ),
+	mOriDestSize( PixelDensity::dpToPx( mSrcRect.getSize().asFloat() ) ),
 	mDestSize( mOriDestSize ),
 	mOffset( 0, 0 ),
 	mPixelDensity( 1 ) {}

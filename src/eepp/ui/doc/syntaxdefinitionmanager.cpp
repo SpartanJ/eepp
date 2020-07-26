@@ -1788,6 +1788,14 @@ std::vector<std::string> SyntaxDefinitionManager::getLanguageNames() const {
 	return names;
 }
 
+std::vector<std::string> SyntaxDefinitionManager::getExtensionsPatternsSupported() const {
+	std::vector<std::string> exts;
+	for ( auto& style : mStyles )
+		for ( auto& pattern : style.getFiles() )
+			exts.emplace_back( pattern );
+	return exts;
+}
+
 const SyntaxDefinition&
 SyntaxDefinitionManager::getStyleByExtension( const std::string& filePath ) const {
 	std::string extension( FileSystem::fileExtension( filePath ) );

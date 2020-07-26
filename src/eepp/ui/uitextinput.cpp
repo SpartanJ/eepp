@@ -729,7 +729,7 @@ Uint32 UITextInput::onKeyDown( const KeyEvent& event ) {
 			return 1;
 		}
 	}
-	return 0;
+	return UITextView::onKeyDown( event );
 }
 
 Uint32 UITextInput::onTextInput( const TextInputEvent& event ) {

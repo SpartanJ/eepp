@@ -1,6 +1,7 @@
 #ifndef EE_TOOLS_CODEEDITOR_HPP
 #define EE_TOOLS_CODEEDITOR_HPP
 
+#include "projectdirectorytree.hpp"
 #include <eepp/ee.hpp>
 
 class UISearchBar : public UILinearLayout {
@@ -9,6 +10,38 @@ class UISearchBar : public UILinearLayout {
 	static UISearchBar* New() { return eeNew( UISearchBar, () ); }
 	UISearchBar() :
 		UILinearLayout( "searchbar", UIOrientation::Horizontal ),
+		mKeyBindings( getUISceneNode()->getWindow()->getInput() ) {}
+	void addCommand( const std::string& name, const CommandCallback& cb ) { mCommands[name] = cb; }
+	void execute( const std::string& command ) {
+		auto cmdIt = mCommands.find( command );
+		if ( cmdIt != mCommands.end() )
+			cmdIt->second();
+	}
+	KeyBindings& getKeyBindings() { return mKeyBindings; }
+
+  protected:
+	KeyBindings mKeyBindings;
+	std::unordered_map<std::string, std::function<void()>> mCommands;
+	Uint32 onKeyDown( const KeyEvent& event ) {
+		std::string cmd =
+			mKeyBindings.getCommandFromKeyBind( {event.getKeyCode(), event.getMod()} );
+		if ( !cmd.empty() ) {
+			auto cmdIt = mCommands.find( cmd );
+			if ( cmdIt != mCommands.end() ) {
+				cmdIt->second();
+				return 0;
+			}
+		}
+		return 1;
+	}
+};
+
+class UILocateBar : public UILinearLayout {
+  public:
+	typedef std::function<void()> CommandCallback;
+	static UILocateBar* New() { return eeNew( UILocateBar, () ); }
+	UILocateBar() :
+		UILinearLayout( "locatebar", UIOrientation::Horizontal ),
 		mKeyBindings( getUISceneNode()->getWindow()->getInput() ) {}
 	void addCommand( const std::string& name, const CommandCallback& cb ) { mCommands[name] = cb; }
 	void execute( const std::string& command ) {
@@ -116,6 +149,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	void showFindView();
 
+	void showLocateBar();
+
 	bool replaceSelection( SearchState& search, const String& replacement );
 
 	int replaceAll( SearchState& search, const String& replace );
@@ -136,8 +171,10 @@ class App : public UICodeEditorSplitter::Client {
 	Console* mConsole{nullptr};
 	std::string mWindowTitle{"ecode"};
 	String mLastSearch;
+	UILayout* mMainLayout{nullptr};
 	UILayout* mBaseLayout{nullptr};
 	UISearchBar* mSearchBarLayout{nullptr};
+	UILocateBar* mLocateBarLayout{nullptr};
 	UIPopUpMenu* mSettingsMenu{nullptr};
 	UITextView* mSettingsButton{nullptr};
 	UIPopUpMenu* mColorSchemeMenu{nullptr};
@@ -163,6 +200,16 @@ class App : public UICodeEditorSplitter::Client {
 	Float mDisplayDPI;
 	std::string mResPath;
 	AutoCompleteModule* mAutoCompleteModule{nullptr};
+	std::shared_ptr<ThreadPool> mThreadPool;
+	std::unique_ptr<ProjectDirectoryTree> mDirTree;
+	UITreeView* mProjectTreeView{nullptr};
+	UITableView* mLocateTable{nullptr};
+	UITextInput* mLocateInput{nullptr};
+	bool mDirTreeReady{false};
+
+	void initLocateBar();
+
+	void loadDirTree( const std::string& path );
 
 	void showSidePanel( bool show );
 

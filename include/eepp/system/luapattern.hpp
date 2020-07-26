@@ -97,19 +97,21 @@ class EE_API LuaPattern {
 	LuaPattern( const std::string& pattern );
 
 	bool matches( const char* stringSearch, int stringStartOffset, LuaPattern::Range* matchList,
-				  size_t stringLength );
+				  size_t stringLength ) const;
 
-	bool matches( const std::string& str, LuaPattern::Range* matchList, int stringStartOffset = 0 );
+	bool matches( const std::string& str, LuaPattern::Range* matchList = nullptr,
+				  int stringStartOffset = 0 ) const;
 
 	bool find( const char* stringSearch, int& startMatch, int& endMatch, int stringStartOffset = 0,
-			   int stringLength = 0, int returnMatchIndex = 0 );
+			   int stringLength = 0, int returnMatchIndex = 0 ) const;
 
 	bool find( const std::string& s, int& startMatch, int& endMatch, int offset = 0,
-			   int returnedMatchIndex = 0 );
+			   int returnedMatchIndex = 0 ) const;
 
-	const size_t& getNumMatches();
+	const size_t& getNumMatches() const;
 
-	bool range( int indexGet, int& startMatch, int& endMatch, LuaPattern::Range* returnedMatched );
+	bool range( int indexGet, int& startMatch, int& endMatch,
+				LuaPattern::Range* returnedMatched ) const;
 
 	const std::string& getPatern() const { return mPattern; }
 
@@ -126,9 +128,9 @@ class EE_API LuaPattern {
 	std::string gsub( const std::string& text, const std::string& replace );
 
   protected:
-	std::string mErr;
+	mutable std::string mErr;
 	std::string mPattern;
-	size_t mMatchNum;
+	mutable size_t mMatchNum;
 };
 
 }} // namespace EE::System

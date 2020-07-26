@@ -70,8 +70,6 @@ class EE_API UITreeView : public UIAbstractTableView {
 	template <typename Callback> void traverseTree( Callback ) const;
 
 	mutable std::map<void*, MetadataForIndex> mViewMetadata;
-	mutable std::vector<std::map<int, UIWidget*>> mWidgets;
-	mutable std::vector<UITableRow*> mRows;
 
 	virtual size_t getItemCount() const;
 
@@ -79,23 +77,12 @@ class EE_API UITreeView : public UIAbstractTableView {
 
 	virtual void onColumnSizeChange( const size_t& colIndex );
 
-	virtual UITableRow* createRow();
-
-	virtual UITableRow* updateRow( const int& rowIndex, const ModelIndex& index,
-								   const Float& yOffset );
-
 	virtual UIWidget* updateCell( const int& rowIndex, const ModelIndex& index,
 								  const size_t& indentLevel, const Float& yOffset );
 
-	virtual UIWidget* createCell( UIWidget* rowWidget, const ModelIndex& index, const size_t& col );
-
-	virtual void onScrollChange();
-
-	virtual void onModelSelectionChange();
+	virtual UIWidget* createCell( UIWidget* rowWidget, const ModelIndex& index );
 
 	virtual Uint32 onKeyDown( const KeyEvent& event );
-
-	virtual void onOpenModelIndex( const ModelIndex& index );
 
 	virtual void onOpenTreeModelIndex( const ModelIndex& index, bool open );
 

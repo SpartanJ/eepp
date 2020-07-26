@@ -17,6 +17,8 @@ class EE_API UILayout : public UIWidget {
 
 	virtual const Sizef& getSize() const;
 
+	virtual void updateLayout();
+
   protected:
 	friend class UISceneNode;
 
@@ -33,8 +35,6 @@ class EE_API UILayout : public UIWidget {
 	virtual void onLayoutUpdate();
 
 	virtual void tryUpdateLayout();
-
-	virtual void updateLayout();
 
 	virtual void updateLayoutTree();
 
