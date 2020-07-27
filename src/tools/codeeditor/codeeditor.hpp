@@ -137,6 +137,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	void openFileDialog();
 
+	void openFolderDialog();
+
 	void saveFileDialog();
 
 	bool findPrevText( SearchState& search );
@@ -184,6 +186,7 @@ class App : public UICodeEditorSplitter::Client {
 	IniFile mIni;
 	IniFile mIniState;
 	std::vector<std::string> mRecentFiles;
+	std::vector<std::string> mRecentFolders;
 	AppConfig mConfig;
 	UIPopUpMenu* mDocMenu{nullptr};
 	UIPopUpMenu* mViewMenu{nullptr};
@@ -246,6 +249,10 @@ class App : public UICodeEditorSplitter::Client {
 	void saveDoc();
 
 	void updateRecentFiles();
+
+	void updateRecentFolders();
+
+	void loadFolder( const std::string& path );
 
 	UIMenu* createViewMenu();
 

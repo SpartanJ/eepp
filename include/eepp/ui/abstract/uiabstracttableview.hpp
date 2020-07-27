@@ -3,6 +3,7 @@
 
 #include <eepp/math/rect.hpp>
 #include <eepp/ui/abstract/uiabstractview.hpp>
+#include <eepp/ui/uitablecell.hpp>
 #include <eepp/ui/uitableheadercolumn.hpp>
 #include <eepp/ui/uitablerow.hpp>
 

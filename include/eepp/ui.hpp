@@ -37,8 +37,8 @@
 #include <eepp/ui/uisprite.hpp>
 #include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uitab.hpp>
-#include <eepp/ui/uitable.hpp>
-#include <eepp/ui/uitablecell.hpp>
+#include <eepp/ui/uiwidgettable.hpp>
+#include <eepp/ui/uiwidgettablerow.hpp>
 #include <eepp/ui/uitableview.hpp>
 #include <eepp/ui/uitabwidget.hpp>
 #include <eepp/ui/uitextedit.hpp>

@@ -1,15 +1,15 @@
 #include <eepp/ui/css/propertydefinition.hpp>
-#include <eepp/ui/uitable.hpp>
+#include <eepp/ui/uiwidgettable.hpp>
 #include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 
-UITable* UITable::New() {
-	return eeNew( UITable, () );
+UIWidgetTable* UIWidgetTable::New() {
+	return eeNew( UIWidgetTable, () );
 }
 
-UITable::UITable() :
-	UITouchDraggableWidget( "table" ),
+UIWidgetTable::UIWidgetTable() :
+	UITouchDraggableWidget( "widgettable" ),
 	mContainerPadding(),
 	mContainer( NULL ),
 	mVScrollBar( NULL ),
@@ -31,7 +31,7 @@ UITable::UITable() :
 
 	auto cb = [&]( const Event* ) { containerResize(); };
 
-	mContainer = eeNew( UIItemContainer<UITable>, () );
+	mContainer = eeNew( UIItemContainer<UIWidgetTable>, () );
 	mContainer->setVisible( true );
 	mContainer->setEnabled( true );
 	mContainer->setParent( this );
@@ -57,9 +57,9 @@ UITable::UITable() :
 	mVScrollBar->setEnabled( ScrollBarMode::AlwaysOn == mVScrollMode );
 
 	mVScrollBar->addEventListener( Event::OnValueChange,
-								   cb::Make1( this, &UITable::onScrollValueChange ) );
+								   cb::Make1( this, &UIWidgetTable::onScrollValueChange ) );
 	mHScrollBar->addEventListener( Event::OnValueChange,
-								   cb::Make1( this, &UITable::onScrollValueChange ) );
+								   cb::Make1( this, &UIWidgetTable::onScrollValueChange ) );
 
 	mVScrollBar->addEventListener( Event::OnSizeChange, cb );
 	mHScrollBar->addEventListener( Event::OnSizeChange, cb );
@@ -67,17 +67,17 @@ UITable::UITable() :
 	applyDefaultTheme();
 }
 
-UITable::~UITable() {}
+UIWidgetTable::~UIWidgetTable() {}
 
-Uint32 UITable::getType() const {
-	return UI_TYPE_TABLE;
+Uint32 UIWidgetTable::getType() const {
+	return UI_TYPE_WIDGETTABLE;
 }
 
-bool UITable::isType( const Uint32& type ) const {
-	return UITable::getType() == type ? true : UITouchDraggableWidget::isType( type );
+bool UIWidgetTable::isType( const Uint32& type ) const {
+	return UIWidgetTable::getType() == type ? true : UITouchDraggableWidget::isType( type );
 }
 
-void UITable::setDefaultColumnsWidth() {
+void UIWidgetTable::setDefaultColumnsWidth() {
 	if ( mCollWidthAssigned || 0 == mColumnsCount || 0 == mRowHeight )
 		return;
 
@@ -105,11 +105,11 @@ void UITable::setDefaultColumnsWidth() {
 	updateCells();
 }
 
-void UITable::onScrollValueChange( const Event* ) {
+void UIWidgetTable::onScrollValueChange( const Event* ) {
 	updateScroll( true );
 }
 
-void UITable::setTheme( UITheme* Theme ) {
+void UIWidgetTable::setTheme( UITheme* Theme ) {
 	UIWidget::setTheme( Theme );
 
 	setThemeSkin( Theme, "genericgrid" );
@@ -121,20 +121,20 @@ void UITable::setTheme( UITheme* Theme ) {
 	onThemeLoaded();
 }
 
-void UITable::autoPadding() {
+void UIWidgetTable::autoPadding() {
 	if ( mFlags & UI_AUTO_PADDING ) {
 		mContainerPadding = PixelDensity::dpToPx( makePadding() );
 	}
 }
 
-void UITable::onSizeChange() {
+void UIWidgetTable::onSizeChange() {
 	containerResize();
 	setDefaultColumnsWidth();
 	updateScroll();
 	updatePageStep();
 }
 
-void UITable::containerResize() {
+void UIWidgetTable::containerResize() {
 	Rectf padding = mContainerPadding + mPaddingPx;
 
 	mContainer->setPosition( padding.Left, padding.Top );
@@ -158,7 +158,7 @@ void UITable::containerResize() {
 	updateScrollBar();
 }
 
-void UITable::updateVScroll() {
+void UIWidgetTable::updateVScroll() {
 	if ( mItemsNotVisible <= 0 ) {
 		if ( ScrollBarMode::AlwaysOn == mVScrollMode ) {
 			mVScrollBar->setVisible( true );
@@ -180,7 +180,7 @@ void UITable::updateVScroll() {
 	containerResize();
 }
 
-void UITable::updateHScroll() {
+void UIWidgetTable::updateHScroll() {
 	if ( mContainer->isClipped() &&
 		 ( ScrollBarMode::Auto == mHScrollMode || ScrollBarMode::AlwaysOn == mHScrollMode ) ) {
 		if ( mContainer->getSize().getWidth() < (Int32)mTotalWidth ) {
@@ -207,7 +207,7 @@ void UITable::updateHScroll() {
 	}
 }
 
-void UITable::setHScrollStep() {
+void UIWidgetTable::setHScrollStep() {
 	Float width = (Float)mContainer->getPixelsSize().getWidth();
 
 	if ( ( mItemsNotVisible > 0 && ScrollBarMode::Auto == mVScrollMode ) ||
@@ -229,7 +229,7 @@ void UITable::setHScrollStep() {
 	mHScrollBar->setClickStep( stepVal );
 }
 
-void UITable::updateScrollBar() {
+void UIWidgetTable::updateScrollBar() {
 	mVScrollBar->setPosition( getSize().getWidth() - mVScrollBar->getSize().getWidth(), 0 );
 	mVScrollBar->setSize( mVScrollBar->getSize().getWidth(), getSize().getHeight() );
 
@@ -246,11 +246,11 @@ void UITable::updateScrollBar() {
 	}
 }
 
-void UITable::updateScroll( bool FromScrollChange ) {
+void UIWidgetTable::updateScroll( bool FromScrollChange ) {
 	if ( !mItems.size() )
 		return;
 
-	UITableCell* Item;
+	UIWidgetTableRow* Item;
 	Uint32 i, RelPos = 0, RelPosMax;
 	Int32 ItemPos, ItemPosMax;
 	Int32 tHLastScroll = mHScrollInit;
@@ -356,23 +356,23 @@ void UITable::updateScroll( bool FromScrollChange ) {
 	setHScrollStep();
 }
 
-void UITable::updateSize() {
+void UIWidgetTable::updateSize() {
 	updateColumnsPos();
 
 	mTotalHeight = mItems.size() * mRowHeight;
 }
 
-void UITable::add( UITableCell* Cell ) {
-	Cell->setParent( getContainer() );
+void UIWidgetTable::add( UIWidgetTableRow* row ) {
+	row->setParent( getContainer() );
 
-	mItems.push_back( Cell );
+	mItems.push_back( row );
 
-	if ( mContainer != Cell->getParent() )
-		Cell->setParent( mContainer );
+	if ( mContainer != row->getParent() )
+		row->setParent( mContainer );
 
 	setDefaultColumnsWidth();
 
-	Cell->onAutoSize();
+	row->onAutoSize();
 
 	updateSize();
 
@@ -381,24 +381,24 @@ void UITable::add( UITableCell* Cell ) {
 	updatePageStep();
 }
 
-void UITable::remove( UITableCell* Cell ) {
-	return remove( getItemIndex( Cell ) );
+void UIWidgetTable::remove( UIWidgetTableRow* row ) {
+	return remove( getItemIndex( row ) );
 }
 
-void UITable::remove( std::vector<Uint32> ItemsIndex ) {
-	if ( ItemsIndex.size() && eeINDEX_NOT_FOUND != ItemsIndex[0] ) {
-		std::vector<UITableCell*> ItemsCpy;
+void UIWidgetTable::remove( std::vector<Uint32> itemsIndex ) {
+	if ( itemsIndex.size() && eeINDEX_NOT_FOUND != itemsIndex[0] ) {
+		std::vector<UIWidgetTableRow*> ItemsCpy;
 		bool erase;
 
 		for ( Uint32 i = 0; i < mItems.size(); i++ ) {
 			erase = false;
 
-			for ( Uint32 z = 0; z < ItemsIndex.size(); z++ ) {
-				if ( ItemsIndex[z] == i ) {
-					if ( (Int32)ItemsIndex[z] == mSelected )
+			for ( Uint32 z = 0; z < itemsIndex.size(); z++ ) {
+				if ( itemsIndex[z] == i ) {
+					if ( (Int32)itemsIndex[z] == mSelected )
 						mSelected = -1;
 
-					ItemsIndex.erase( ItemsIndex.begin() + z );
+					itemsIndex.erase( itemsIndex.begin() + z );
 
 					erase = true;
 
@@ -424,16 +424,17 @@ void UITable::remove( std::vector<Uint32> ItemsIndex ) {
 	}
 }
 
-void UITable::remove( Uint32 ItemIndex ) {
-	remove( std::vector<Uint32>( 1, ItemIndex ) );
+void UIWidgetTable::remove( Uint32 itemIndex ) {
+	remove( std::vector<Uint32>( 1, itemIndex ) );
 }
 
-UITable* UITable::setColumnWidth( const Uint32& ColumnIndex, const Uint32& ColumnWidth ) {
-	eeASSERT( ColumnIndex < mColumnsCount );
+UIWidgetTable* UIWidgetTable::setColumnWidth( const Uint32& columnIndex,
+											  const Uint32& ColumnWidth ) {
+	eeASSERT( columnIndex < mColumnsCount );
 
 	mCollWidthAssigned = true;
 
-	mColumnsWidth[ColumnIndex] = ColumnWidth;
+	mColumnsWidth[columnIndex] = ColumnWidth;
 
 	updateColumnsPos();
 	updateCells();
@@ -442,11 +443,11 @@ UITable* UITable::setColumnWidth( const Uint32& ColumnIndex, const Uint32& Colum
 	return this;
 }
 
-Uint32 UITable::getCount() const {
+Uint32 UIWidgetTable::getCount() const {
 	return mItems.size();
 }
 
-UITable* UITable::setColumnsCount( const Uint32& columnsCount ) {
+UIWidgetTable* UIWidgetTable::setColumnsCount( const Uint32& columnsCount ) {
 	mColumnsCount = columnsCount;
 
 	mColumnsWidth.resize( mColumnsCount, 0 );
@@ -457,17 +458,17 @@ UITable* UITable::setColumnsCount( const Uint32& columnsCount ) {
 	return this;
 }
 
-const Uint32& UITable::getColumnsCount() const {
+const Uint32& UIWidgetTable::getColumnsCount() const {
 	return mColumnsCount;
 }
 
-const Uint32& UITable::getColumnWidth( const Uint32& ColumnIndex ) const {
-	eeASSERT( ColumnIndex < mColumnsCount );
+const Uint32& UIWidgetTable::getColumnWidth( const Uint32& columnIndex ) const {
+	eeASSERT( columnIndex < mColumnsCount );
 
-	return mColumnsWidth[ColumnIndex];
+	return mColumnsWidth[columnIndex];
 }
 
-UITable* UITable::setRowHeight( const Uint32& height ) {
+UIWidgetTable* UIWidgetTable::setRowHeight( const Uint32& height ) {
 	if ( mRowHeight != height ) {
 		mRowHeight = height;
 
@@ -479,29 +480,29 @@ UITable* UITable::setRowHeight( const Uint32& height ) {
 	return this;
 }
 
-const Uint32& UITable::getRowHeight() const {
+const Uint32& UIWidgetTable::getRowHeight() const {
 	return mRowHeight;
 }
 
-UITableCell* UITable::getCell( const Uint32& CellIndex ) const {
-	eeASSERT( CellIndex < mItems.size() );
+UIWidgetTableRow* UIWidgetTable::getRow( const Uint32& rowIndex ) const {
+	eeASSERT( rowIndex < mItems.size() );
 
-	return mItems[CellIndex];
+	return mItems[rowIndex];
 }
 
-Uint32 UITable::getCellPosition( const Uint32& ColumnIndex ) {
-	eeASSERT( ColumnIndex < mColumnsCount );
+Uint32 UIWidgetTable::getColumnPosition( const Uint32& columnIndex ) {
+	eeASSERT( columnIndex < mColumnsCount );
 
-	return mColumnsPos[ColumnIndex];
+	return mColumnsPos[columnIndex];
 }
 
-void UITable::updateCells() {
+void UIWidgetTable::updateCells() {
 	for ( Uint32 i = 0; i < mItems.size(); i++ ) {
-		mItems[i]->fixCell();
+		mItems[i]->updateRow();
 	}
 }
 
-void UITable::updateColumnsPos() {
+void UIWidgetTable::updateColumnsPos() {
 	Uint32 Pos = 0;
 
 	for ( Uint32 i = 0; i < mColumnsCount; i++ ) {
@@ -513,28 +514,28 @@ void UITable::updateColumnsPos() {
 	mTotalWidth = Pos;
 }
 
-void UITable::onAlphaChange() {
+void UIWidgetTable::onAlphaChange() {
 	UINode::onAlphaChange();
 
 	mVScrollBar->setAlpha( mAlpha );
 	mHScrollBar->setAlpha( mAlpha );
 }
 
-void UITable::setVerticalScrollMode( const ScrollBarMode& Mode ) {
-	if ( Mode != mVScrollMode ) {
-		mVScrollMode = Mode;
+void UIWidgetTable::setVerticalScrollMode( const ScrollBarMode& mode ) {
+	if ( mode != mVScrollMode ) {
+		mVScrollMode = mode;
 
 		updateScroll();
 	}
 }
 
-const ScrollBarMode& UITable::getVerticalScrollMode() {
+const ScrollBarMode& UIWidgetTable::getVerticalScrollMode() {
 	return mVScrollMode;
 }
 
-void UITable::setHorizontalScrollMode( const ScrollBarMode& Mode ) {
-	if ( Mode != mHScrollMode ) {
-		mHScrollMode = Mode;
+void UIWidgetTable::setHorizontalScrollMode( const ScrollBarMode& mode ) {
+	if ( mode != mHScrollMode ) {
+		mHScrollMode = mode;
 
 		if ( ScrollBarMode::AlwaysOn == mHScrollMode ) {
 			mHScrollBar->setVisible( true );
@@ -550,45 +551,45 @@ void UITable::setHorizontalScrollMode( const ScrollBarMode& Mode ) {
 	}
 }
 
-const ScrollBarMode& UITable::getHorizontalScrollMode() {
+const ScrollBarMode& UIWidgetTable::getHorizontalScrollMode() {
 	return mHScrollMode;
 }
 
-UIScrollBar* UITable::getVerticalScrollBar() const {
+UIScrollBar* UIWidgetTable::getVerticalScrollBar() const {
 	return mVScrollBar;
 }
 
-UIScrollBar* UITable::getHorizontalScrollBar() const {
+UIScrollBar* UIWidgetTable::getHorizontalScrollBar() const {
 	return mHScrollBar;
 }
 
-Uint32 UITable::getItemIndex( UITableCell* Item ) {
+Uint32 UIWidgetTable::getItemIndex( UIWidgetTableRow* item ) {
 	for ( Uint32 i = 0; i < mItems.size(); i++ ) {
-		if ( Item == mItems[i] )
+		if ( item == mItems[i] )
 			return i;
 	}
 
 	return eeINDEX_NOT_FOUND;
 }
 
-Uint32 UITable::onSelected() {
+Uint32 UIWidgetTable::onSelected() {
 	sendCommonEvent( Event::OnItemSelected );
 
 	return 1;
 }
 
-UITableCell* UITable::getItemSelected() {
+UIWidgetTableRow* UIWidgetTable::getItemSelected() {
 	if ( -1 != mSelected )
 		return mItems[mSelected];
 
 	return NULL;
 }
 
-Uint32 UITable::getItemSelectedIndex() const {
+Uint32 UIWidgetTable::getItemSelectedIndex() const {
 	return mSelected;
 }
 
-Uint32 UITable::onMessage( const NodeMessage* Msg ) {
+Uint32 UIWidgetTable::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
 		case NodeMessage::FocusLoss: {
 			if ( NULL != getEventDispatcher() ) {
@@ -606,15 +607,15 @@ Uint32 UITable::onMessage( const NodeMessage* Msg ) {
 	return 0;
 }
 
-UIItemContainer<UITable>* UITable::getContainer() const {
+UIItemContainer<UIWidgetTable>* UIWidgetTable::getContainer() const {
 	return mContainer;
 }
 
-bool UITable::getSmoothScroll() const {
+bool UIWidgetTable::getSmoothScroll() const {
 	return mSmoothScroll;
 }
 
-UITable* UITable::setSmoothScroll( bool smoothScroll ) {
+UIWidgetTable* UIWidgetTable::setSmoothScroll( bool smoothScroll ) {
 	mSmoothScroll = smoothScroll;
 
 	if ( mSmoothScroll ) {
@@ -626,15 +627,15 @@ UITable* UITable::setSmoothScroll( bool smoothScroll ) {
 	return this;
 }
 
-Rectf UITable::getContainerPadding() const {
+Rectf UIWidgetTable::getContainerPadding() const {
 	return PixelDensity::pxToDp( mContainerPadding + mPaddingPx );
 }
 
-void UITable::onPaddingChange() {
+void UIWidgetTable::onPaddingChange() {
 	containerResize();
 }
 
-void UITable::onTouchDragValueChange( Vector2f diff ) {
+void UIWidgetTable::onTouchDragValueChange( Vector2f diff ) {
 	if ( mVScrollBar->isEnabled() )
 		mVScrollBar->setValue( mVScrollBar->getValue() +
 							   ( -diff.y / ( Float )( ( mItems.size() - 1 ) * mRowHeight ) ) );
@@ -643,18 +644,18 @@ void UITable::onTouchDragValueChange( Vector2f diff ) {
 		mHScrollBar->setValue( mHScrollBar->getValue() + ( -diff.x / mTotalWidth ) );
 }
 
-bool UITable::isTouchOverAllowedChilds() {
+bool UIWidgetTable::isTouchOverAllowedChilds() {
 	return isMouseOverMeOrChilds() && !mVScrollBar->isMouseOverMeOrChilds() &&
 		   !mHScrollBar->isMouseOverMeOrChilds();
 }
 
-void UITable::updatePageStep() {
+void UIWidgetTable::updatePageStep() {
 	mVScrollBar->setPageStep( ( (Float)mContainer->getSize().getHeight() / (Float)mRowHeight ) /
 							  (Float)mItems.size() );
 }
 
-std::string UITable::getPropertyString( const PropertyDefinition* propertyDef,
-										const Uint32& propertyIndex ) {
+std::string UIWidgetTable::getPropertyString( const PropertyDefinition* propertyDef,
+											  const Uint32& propertyIndex ) {
 	if ( NULL == propertyDef )
 		return "";
 
@@ -677,7 +678,7 @@ std::string UITable::getPropertyString( const PropertyDefinition* propertyDef,
 	}
 }
 
-bool UITable::applyProperty( const StyleSheetProperty& attribute ) {
+bool UIWidgetTable::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) )
 		return false;
 

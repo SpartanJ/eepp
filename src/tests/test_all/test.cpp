@@ -476,13 +476,13 @@ void EETest::createBaseUI() {
 	TextEdit->setParent( C )->setPosition( 5, 245 )->setSize( 315, 130 );
 	TextEdit->setText( mBuda );
 
-	UITable* genGrid = UITable::New();
+	UIWidgetTable* genGrid = UIWidgetTable::New();
 	genGrid->setSmoothScroll( true )->setFlags( UI_TOUCH_DRAG_ENABLED );
 	genGrid->setParent( C )->setPosition( 325, 245 )->setSize( 200, 130 );
 	genGrid->setColumnsCount( 3 )->setRowHeight( 24 );
 
 	for ( Uint32 i = 0; i < 15; i++ ) {
-		UITableCell* Cell = UITableCell::New();
+		UIWidgetTableRow* Cell = UIWidgetTableRow::New();
 		UITextView* TxtBox = UITextView::New();
 		UITextInput* TxtInput = UITextInput::New();
 		UIImage* TxtGfx = UIImage::New();
@@ -493,9 +493,9 @@ void EETest::createBaseUI() {
 		TxtGfx->setDrawable( mSceneNode->findIcon( "ok" ) );
 		TxtBox->setText( "Test " + String::toString( i + 1 ) );
 
-		Cell->setCell( 0, TxtBox );
-		Cell->setCell( 1, TxtGfx );
-		Cell->setCell( 2, TxtInput );
+		Cell->setColumn( 0, TxtBox );
+		Cell->setColumn( 1, TxtGfx );
+		Cell->setColumn( 2, TxtInput );
 
 		genGrid->add( Cell );
 	}
@@ -777,7 +777,7 @@ void EETest::createNewUI() {
 	UISpinBox* spinBox = UISpinBox::New();
 	spinBox->setPosition( 350, 210 )->setSize( 200, 0 )->setParent( container );
 
-	UITable* genGrid = UITable::New();
+	UIWidgetTable* genGrid = UIWidgetTable::New();
 	genGrid->setSmoothScroll( true );
 	genGrid->setPosition( 350, 250 )->setSize( 200, 130 )->setParent( container );
 	genGrid->setColumnsCount( 3 )->setRowHeight( 24 );
@@ -786,7 +786,7 @@ void EETest::createNewUI() {
 	genGrid->setColumnWidth( 2, 100 );
 
 	for ( Uint32 i = 0; i < 15; i++ ) {
-		UITableCell* Cell = UITableCell::New();
+		UIWidgetTableRow* Cell = UIWidgetTableRow::New();
 		UITextView* TxtBox = UITextView::New();
 		UITextInput* TxtInput = UITextInput::New();
 		UIImage* TxtGfx = UIImage::New();
@@ -794,9 +794,9 @@ void EETest::createNewUI() {
 
 		Cell->setParent( genGrid->getContainer() );
 
-		Cell->setCell( 0, TxtBox );
-		Cell->setCell( 1, TxtGfx );
-		Cell->setCell( 2, TxtInput );
+		Cell->setColumn( 0, TxtBox );
+		Cell->setColumn( 1, TxtGfx );
+		Cell->setColumn( 2, TxtInput );
 
 		TxtGfx->setDrawable( mSceneNode->findIcon( "ok" ) );
 		TxtBox->setText( "Test " + String::toString( i + 1 ) );

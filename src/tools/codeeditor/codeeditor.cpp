@@ -87,6 +87,28 @@ void App::openFileDialog() {
 	dialog->show();
 }
 
+void App::openFolderDialog() {
+	UIFileDialog* dialog =
+		UIFileDialog::New( UIFileDialog::DefaultFlags | UIFileDialog::AllowFolderSelect |
+							   UIFileDialog::ShowOnlyFolders,
+						   "*", "." );
+	dialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
+	dialog->setTitle( "Open Folder" );
+	dialog->setCloseShortcut( KEY_ESCAPE );
+	dialog->addEventListener( Event::OpenFile, [&]( const Event* event ) {
+		String path( event->getNode()->asType<UIFileDialog>()->getFullPath() );
+		if ( FileSystem::isDirectory( path ) )
+			loadFolder( path );
+	} );
+	dialog->addEventListener( Event::OnWindowClose, [&]( const Event* ) {
+		if ( mEditorSplitter && mEditorSplitter->getCurEditor() &&
+			 !SceneManager::instance()->isShootingDown() )
+			mEditorSplitter->getCurEditor()->setFocus();
+	} );
+	dialog->center();
+	dialog->show();
+}
+
 void App::saveFileDialog() {
 	UIFileDialog* dialog =
 		UIFileDialog::New( UIFileDialog::DefaultFlags | UIFileDialog::SaveDialog, "." );
@@ -257,6 +279,8 @@ void App::loadConfig() {
 	mIniState.loadFromFile( mConfigPath + "state.cfg" );
 	std::string recent = mIniState.getValue( "files", "recentfiles", "" );
 	mRecentFiles = String::split( recent, ';' );
+	std::string recentFolders = mIniState.getValue( "folders", "recentfolders", "" );
+	mRecentFolders = String::split( recentFolders, ';' );
 	mInitColorScheme = mConfig.editor.colorScheme =
 		mIni.getValue( "editor", "colorscheme", "eepp" );
 	mConfig.editor.fontSize = mIni.getValue( "editor", "font_size", "11dp" );
@@ -312,6 +336,7 @@ void App::saveConfig() {
 						mProjectSplitter ? mProjectSplitter->getSplitPartition().toString()
 										 : "15%" );
 	mIniState.setValue( "files", "recentfiles", String::join( mRecentFiles, ';' ) );
+	mIniState.setValue( "folders", "recentfolders", String::join( mRecentFolders, ';' ) );
 	mIni.setValueB( "editor", "show_line_numbers", mConfig.editor.showLineNumbers );
 	mIni.setValueB( "editor", "show_white_spaces", mConfig.editor.showWhiteSpaces );
 	mIni.setValueB( "editor", "highlight_matching_brackets",
@@ -374,6 +399,7 @@ void App::initLocateBar() {
 		} );
 	};
 	mLocateTable = UITableView::New();
+	mLocateTable->setId( "locate_bar_table" );
 	mLocateTable->setParent( mUISceneNode->getRoot() );
 	mLocateTable->setHeadersVisible( false );
 	mLocateTable->setVisible( false );
@@ -652,6 +678,34 @@ void App::updateRecentFiles() {
 			} else {
 				mRecentFiles.clear();
 				updateRecentFiles();
+			}
+		} );
+	}
+}
+
+void App::updateRecentFolders() {
+	UINode* node = nullptr;
+	if ( mSettingsMenu && ( node = mSettingsMenu->getItem( "Recent Folders" ) ) ) {
+		UIMenuSubMenu* uiMenuSubMenu = static_cast<UIMenuSubMenu*>( node );
+		UIMenu* menu = uiMenuSubMenu->getSubMenu();
+		uiMenuSubMenu->setEnabled( !mRecentFolders.empty() );
+		menu->removeAll();
+		menu->removeEventsOfType( Event::OnItemClicked );
+		if ( mRecentFolders.empty() )
+			return;
+		for ( auto file : mRecentFolders )
+			menu->add( file );
+		menu->addSeparator();
+		menu->add( "Clear Menu" );
+		menu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
+			if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+				return;
+			const String& txt = event->getNode()->asType<UIMenuItem>()->getText();
+			if ( txt != "Clear Menu" ) {
+				loadFolder( txt );
+			} else {
+				mRecentFolders.clear();
+				updateRecentFolders();
 			}
 		} );
 	}
@@ -1252,8 +1306,8 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	doc.setBOM( config.writeUnicodeBOM );
 
 	editor->addKeyBinds( getLocalKeybindings() );
-	editor->addUnlockedCommands(
-		{"fullscreen-toggle", "open-file", "console-toggle", "close-app", "open-locatebar"} );
+	editor->addUnlockedCommands( {"fullscreen-toggle", "open-file", "open-folder", "console-toggle",
+								  "close-app", "open-locatebar"} );
 	doc.setCommand( "save-doc", [&] { saveDoc(); } );
 	doc.setCommand( "save-as-doc", [&] { saveFileDialog(); } );
 	doc.setCommand( "find-replace", [&] { showFindView(); } );
@@ -1267,6 +1321,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 			->setActive( !mWindow->isWindowed() );
 	} );
 	doc.setCommand( "open-file", [&] { openFileDialog(); } );
+	doc.setCommand( "open-folder", [&] { openFolderDialog(); } );
 	doc.setCommand( "console-toggle", [&] {
 		mConsole->toggle();
 		bool lock = mConsole->isActive();
@@ -1344,8 +1399,12 @@ bool App::setAutoComplete( bool enable ) {
 void App::createSettingsMenu() {
 	mSettingsMenu = UIPopUpMenu::New();
 	mSettingsMenu->add( "New", findIcon( "document-new" ), getKeybind( "create-new" ) );
-	mSettingsMenu->add( "Open...", findIcon( "document-open" ), getKeybind( "open-file" ) );
+	mSettingsMenu->add( "Open File...", findIcon( "document-open" ), getKeybind( "open-file" ) );
+	mSettingsMenu->add( "Open Folder...", findIcon( "document-open" ),
+						getKeybind( "open-folder" ) );
 	mSettingsMenu->addSubMenu( "Recent Files", findIcon( "document-recent" ), UIPopUpMenu::New() );
+	mSettingsMenu->addSubMenu( "Recent Folders", findIcon( "document-recent" ),
+							   UIPopUpMenu::New() );
 	mSettingsMenu->addSeparator();
 	mSettingsMenu->add( "Save", findIcon( "document-save" ), getKeybind( "save-doc" ) );
 	mSettingsMenu->add( "Save as...", findIcon( "document-save-as" ), getKeybind( "save-as-doc" ) );
@@ -1379,8 +1438,10 @@ void App::createSettingsMenu() {
 		const String& name = event->getNode()->asType<UIMenuItem>()->getText();
 		if ( name == "New" ) {
 			runCommand( "create-new" );
-		} else if ( name == "Open..." ) {
+		} else if ( name == "Open File..." ) {
 			runCommand( "open-file" );
+		} else if ( name == "Open Folder..." ) {
+			runCommand( "open-folder" );
 		} else if ( name == "Save" ) {
 			runCommand( "save-doc" );
 		} else if ( name == "Save as..." ) {
@@ -1511,23 +1572,38 @@ void App::initProjectTreeView( const std::string& path ) {
 
 	if ( !path.empty() && FileSystem::fileExists( path ) ) {
 		if ( FileSystem::isDirectory( path ) ) {
-			loadDirTree( FileSystem::getRealPath( path ) );
-			mProjectTreeView->setModel( FileSystemModel::New(
-				path, FileSystemModel::Mode::FilesAndDirectories, {true, true, true} ) );
+			loadFolder( path );
 		} else {
 			std::string rpath( FileSystem::getRealPath( path ) );
+
 			mProjectTreeView->setModel( FileSystemModel::New(
 				FileSystem::fileRemoveFileName( rpath ), FileSystemModel::Mode::FilesAndDirectories,
 				{true, true, true} ) );
+
 			mEditorSplitter->loadFileFromPath( rpath );
 		}
 	} else {
-		loadDirTree( FileSystem::getRealPath( "." ) );
-		mProjectTreeView->setModel( FileSystemModel::New(
-			".", FileSystemModel::Mode::FilesAndDirectories, {true, true, true} ) );
+		loadFolder( "." );
 	}
 
 	mProjectTreeView->setAutoExpandOnSingleColumn( true );
+}
+
+void App::loadFolder( const std::string& path ) {
+	std::string rpath( FileSystem::getRealPath( path ) );
+	loadDirTree( rpath );
+
+	mProjectTreeView->setModel( FileSystemModel::New(
+		rpath, FileSystemModel::Mode::FilesAndDirectories, {true, true, true} ) );
+
+	auto found = std::find( mRecentFolders.begin(), mRecentFolders.end(), rpath );
+	if ( found != mRecentFolders.end() )
+		mRecentFolders.erase( found );
+	mRecentFolders.insert( mRecentFolders.begin(), rpath );
+	if ( mRecentFolders.size() > 10 )
+		mRecentFolders.resize( 10 );
+
+	updateRecentFolders();
 }
 
 void App::init( const std::string& file, const Float& pidelDensity ) {
@@ -1660,6 +1736,12 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		#search_find.error,
 		#search_replace.error {
 			border-color: #ff4040;
+		}
+		TableView#locate_bar_table > table::row > table::cell:nth-child(2) {
+			color: var(--font-hint);
+		}
+		TableView#locate_bar_table > table::row:selected > table::cell:nth-child(2) {
+			color: var(--font);
 		}
 		</style>
 		<RelativeLayout id="main_layout" layout_width="match_parent" layout_height="match_parent">

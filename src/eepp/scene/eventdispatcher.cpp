@@ -230,6 +230,10 @@ Node* EventDispatcher::getMouseDownNode() const {
 	return mDownNode;
 }
 
+void EventDispatcher::resetMouseDownNode() {
+	mDownNode = mSceneNode;
+}
+
 Node* EventDispatcher::getMouseOverNode() const {
 	return mOverNode;
 }

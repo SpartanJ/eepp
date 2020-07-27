@@ -58,6 +58,10 @@ Node::~Node() {
 		if ( eventDispatcher->getMouseOverNode() == this && mSceneNode != this ) {
 			eventDispatcher->setMouseOverNode( mSceneNode );
 		}
+
+		if ( eventDispatcher->getMouseDownNode() == this ) {
+			eventDispatcher->resetMouseDownNode();
+		}
 	}
 }
 

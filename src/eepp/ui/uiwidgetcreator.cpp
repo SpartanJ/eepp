@@ -20,8 +20,8 @@
 #include <eepp/ui/uisplitter.hpp>
 #include <eepp/ui/uisprite.hpp>
 #include <eepp/ui/uitab.hpp>
-#include <eepp/ui/uitable.hpp>
-#include <eepp/ui/uitablecell.hpp>
+#include <eepp/ui/uiwidgettable.hpp>
+#include <eepp/ui/uiwidgettablerow.hpp>
 #include <eepp/ui/uitableview.hpp>
 #include <eepp/ui/uitabwidget.hpp>
 #include <eepp/ui/uitextedit.hpp>
@@ -65,8 +65,8 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["spinbox"] = UISpinBox::New;
 		registeredWidget["sprite"] = UISprite::New;
 		registeredWidget["tab"] = UITab::New;
-		registeredWidget["table"] = UITable::New;
-		registeredWidget["tablecell"] = UITableCell::New;
+		registeredWidget["widgettable"] = UIWidgetTable::New;
+		registeredWidget["widgettablerow"] = UIWidgetTableRow::New;
 		registeredWidget["tabwidget"] = UITabWidget::New;
 		registeredWidget["textedit"] = UITextEdit::New;
 		registeredWidget["textinput"] = UITextInput::New;

@@ -264,7 +264,7 @@ void UIAbstractTableView::setColumnsHidden( const std::vector<size_t> columns, b
 UITableRow* UIAbstractTableView::createRow() {
 	mUISceneNode->invalidateStyle( this );
 	mUISceneNode->invalidateStyleState( this, true );
-	UITableRow* rowWidget = UITableRow::New( "table::row" );
+	UITableRow* rowWidget = UITableRow::New();
 	rowWidget->setParent( this );
 	rowWidget->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 	rowWidget->reloadStyle( true, true, true );
@@ -305,13 +305,14 @@ void UIAbstractTableView::onScrollChange() {
 	mHeader->setPixelsPosition( -mScrollOffset.x, 0 );
 }
 
-UIWidget* UIAbstractTableView::createCell( UIWidget* rowWidget, const ModelIndex& ) {
-	UIPushButton* widget = UIPushButton::NewWithTag( "table::cell" );
+UIWidget* UIAbstractTableView::createCell( UIWidget* rowWidget, const ModelIndex& index ) {
+	UITableCell* widget = UITableCell::New();
 	widget->setParent( rowWidget );
 	widget->unsetFlags( UI_AUTO_SIZE );
 	widget->clipEnable();
 	widget->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 	widget->setTextAlign( UI_HALIGN_LEFT );
+	widget->setCurIndex( index );
 	widget->addEventListener( Event::MouseDoubleClick, [&]( const Event* event ) {
 		auto mouseEvent = static_cast<const MouseEvent*>( event );
 		auto idx = mouseEvent->getNode()->getParent()->asType<UITableRow>()->getCurIndex();
@@ -335,24 +336,25 @@ UIWidget* UIAbstractTableView::updateCell( const int& rowIndex, const ModelIndex
 	}
 	widget->setPixelsSize( columnData( index.column() ).width, getRowHeight() );
 	widget->setPixelsPosition( {getColumnPosition( index.column() ).x, 0} );
-	if ( widget->isType( UI_TYPE_PUSHBUTTON ) ) {
-		UIPushButton* pushButton = widget->asType<UIPushButton>();
+	if ( widget->isType( UI_TYPE_TABLECELL ) ) {
+		UITableCell* cell = widget->asType<UITableCell>();
+		cell->setCurIndex( index );
 
 		Variant txt( getModel()->data( index, Model::Role::Display ) );
 		if ( txt.isValid() ) {
 			if ( txt.is( Variant::Type::String ) )
-				pushButton->setText( txt.asString() );
+				cell->setText( txt.asString() );
 			else if ( txt.is( Variant::Type::cstr ) )
-				pushButton->setText( txt.asCStr() );
+				cell->setText( txt.asCStr() );
 		}
 
 		bool isVisible = false;
 		Variant icon( getModel()->data( index, Model::Role::Icon ) );
 		if ( icon.is( Variant::Type::Drawable ) && icon.asDrawable() ) {
 			isVisible = true;
-			pushButton->setIcon( icon.asDrawable() );
+			cell->setIcon( icon.asDrawable() );
 		}
-		pushButton->getIcon()->setVisible( isVisible );
+		cell->getIcon()->setVisible( isVisible );
 	}
 
 	return widget;

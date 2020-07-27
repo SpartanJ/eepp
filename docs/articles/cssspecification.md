@@ -745,7 +745,7 @@ Sets the horizontal scroll mode to any scrollable element.
 The mode defines the visibility of the horizontal scroll.
 
 * Applicable to: EE::UI::DropDownList (DropDownList), EE::UI::UIListBox (ListBox),
-  EE::UI::UIScrollView (ScrollView), EE::UI::UITable (Table), EE::UI::UITextEdit (TextEdit).
+  EE::UI::UIScrollView (ScrollView), EE::UI::UIWidgetTable (WidgetTable), EE::UI::UITextEdit (TextEdit).
 * Data Type: [string-list](#string-list-data-type)
 * Value List:
   * `auto`: The horizontal scrollbar will be visible only when needed.
@@ -1282,7 +1282,7 @@ rotation-origin-point-y: 100%;
 
 Sets the row height in any element that contains fixed size rows.
 
-* Applicable to: EE::UI::UIListBox (ListBox), EE::UI::UIDropDownList (DropDownList), EE::UI::UITable (Table), EE::UI::UIGridLayout (GridLayout)
+* Applicable to: EE::UI::UIListBox (ListBox), EE::UI::UIDropDownList (DropDownList), EE::UI::UIWidgetTable (WidgetTable), EE::UI::UIGridLayout (GridLayout)
 * Data Type: [length](#length-data-type)
 * Default value: Varies on each case. ListBox and DropDownList will guess the value based on the [font-size](#font-size). Table requires this value to be manually set in order to work. GridLayout
 will require the value only if [row-mode](#row-mode) is `size`.
@@ -1403,7 +1403,7 @@ Defines how the scrollbar should fit inside an scrollable element.
 Sets the scrollbar style (for the moment defines if it contains buttons at its edge or it's simply a bar).
 
 * Applicable to: EE::UI::UIScrollBar (ScrollBar), EE::UI::UIListBox (ListBox), EE::UI::UIDropDownList
-  (DropDownList), EE::UI::UITable (Table), EE::UI::UIScrollView (ScrollView)
+  (DropDownList), EE::UI::UIWidgetTable (WidgetTable), EE::UI::UIScrollView (ScrollView)
 * Data Type: [string-list](#string-list-data-type)
 * Value List:
   * `no-buttons`: It's just a scroll bar.
@@ -1760,7 +1760,7 @@ Sets the total steps required to complete a progress bar (the maximum value a pr
 Enables/disables the element as draggable. When enabled the element will be able to be dragged.
 
 * Applicable to: EE::UI::UITouchDraggable (TouchDraggable), (EE::UI::UIListBox (ListBox),
-  EE::UI::UIScrollView (ScrollView), EE::UI::UITable (Table)
+  EE::UI::UIScrollView (ScrollView), EE::UI::UIWidgetTable (WidgetTable)
 * Data Type: [boolean](#boolean-data-type)
 * Default value: `false`
 
@@ -1771,7 +1771,7 @@ Enables/disables the element as draggable. When enabled the element will be able
 Sets a acceleration value that defines how much will accelerate the drag when the mouse or touch is released.
 
 * Applicable to: EE::UI::UITouchDraggable (TouchDraggable), (EE::UI::UIListBox (ListBox),
-  EE::UI::UIScrollView (ScrollView), EE::UI::UITable (Table)
+  EE::UI::UIScrollView (ScrollView), EE::UI::UIWidgetTable (WidgetTable)
 * Data Type: [vector2-number](#vector2-number-data-type)
 * Default value: `5 5`
 
@@ -1843,7 +1843,7 @@ Sets the vertical scroll mode to any scrollable element.
 The mode defines the visibility of the vertical scroll.
 
 * Applicable to: EE::UI::DropDownList (DropDownList), EE::UI::UIListBox (ListBox),
-  EE::UI::UIScrollView (ScrollView), EE::UI::UITable (Table), EE::UI::UITextEdit (TextEdit).
+  EE::UI::UIScrollView (ScrollView), EE::UI::UIWidgetTable (WidgetTable), EE::UI::UITextEdit (TextEdit).
 * Data Type: [string-list](#string-list-data-type)
 * Value List:
   * `auto`: The vertical scrollbar will be visible only when needed.

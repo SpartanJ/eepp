@@ -18,10 +18,12 @@ class EE_API UIFileDialog : public UIWindow {
 		SaveDialog = ( 1 << 0 ),
 		FoldersFirst = ( 1 << 1 ),
 		SortAlphabetically = ( 1 << 2 ),
-		AllowFolderSelect = ( 1 << 3 )
+		AllowFolderSelect = ( 1 << 3 ),
+		ShowOnlyFolders = ( 1 << 4 ),
+		ShowHidden = ( 1 << 5 )
 	};
 
-	static const Uint32 DefaultFlags = FoldersFirst | SortAlphabetically;
+	static const Uint32 DefaultFlags = FoldersFirst | SortAlphabetically | UIFileDialog::ShowHidden;
 
 	static UIFileDialog* New( Uint32 dialogFlags = DefaultFlags,
 							  const std::string& defaultFilePattern = "*",
@@ -74,6 +76,10 @@ class EE_API UIFileDialog : public UIWindow {
 
 	bool getFoldersFirst();
 
+	bool getShowOnlyFolders();
+
+	bool getShowHidden();
+
 	bool getAllowFolderSelect();
 
 	void setSortAlphabetically( const bool& sortAlphabetically );
@@ -81,6 +87,10 @@ class EE_API UIFileDialog : public UIWindow {
 	void setFoldersFirst( const bool& foldersFirst );
 
 	void setAllowFolderSelect( const bool& allowFolderSelect );
+
+	void setShowOnlyFolders( const bool& showOnlyFolders );
+
+	void setShowHidden( const bool& showHidden );
 
 	const KeyBindings::Shortcut& getCloseShortcut() const;
 

@@ -12,12 +12,16 @@ class EE_API UITableRow : public UIWidget {
   public:
 	static UITableRow* New( const std::string& tag ) { return eeNew( UITableRow, ( tag ) ); }
 
+	static UITableRow* New() { return eeNew( UITableRow, () ); }
+
 	ModelIndex getCurIndex() const { return mCurIndex; }
 
 	void setCurIndex( const ModelIndex& curIndex ) { mCurIndex = curIndex; }
 
   protected:
 	UITableRow( const std::string& tag ) : UIWidget( tag ) {}
+
+	UITableRow() : UIWidget( "table::row" ) {}
 
 	virtual Uint32 onMessage( const NodeMessage* msg ) {
 		if ( msg->getMsg() == NodeMessage::MouseDown && ( msg->getFlags() & EE_BUTTON_LMASK ) &&

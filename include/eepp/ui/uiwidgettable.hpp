@@ -4,18 +4,16 @@
 #include <eepp/ui/uiitemcontainer.hpp>
 #include <eepp/ui/uinode.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
-#include <eepp/ui/uitablecell.hpp>
 #include <eepp/ui/uitouchdraggablewidget.hpp>
+#include <eepp/ui/uiwidgettablerow.hpp>
 
 namespace EE { namespace UI {
 
-class EE_API UITable : public UITouchDraggableWidget {
+class EE_API UIWidgetTable : public UITouchDraggableWidget {
   public:
-	static UITable* New();
+	static UIWidgetTable* New();
 
-	UITable();
-
-	~UITable();
+	~UIWidgetTable();
 
 	virtual Uint32 getType() const;
 
@@ -23,57 +21,57 @@ class EE_API UITable : public UITouchDraggableWidget {
 
 	virtual void setTheme( UITheme* Theme );
 
-	void add( UITableCell* Cell );
+	void add( UIWidgetTableRow* row );
 
-	void remove( UITableCell* Cell );
+	void remove( UIWidgetTableRow* row );
 
-	void remove( std::vector<Uint32> ItemsIndex );
+	void remove( std::vector<Uint32> itemsIndex );
 
-	void remove( Uint32 ItemIndex );
+	void remove( Uint32 itemIndex );
 
-	UITable* setColumnWidth( const Uint32& ColumnIndex, const Uint32& columnWidth );
+	UIWidgetTable* setColumnWidth( const Uint32& columnIndex, const Uint32& columnWidth );
 
-	const Uint32& getColumnWidth( const Uint32& ColumnIndex ) const;
+	const Uint32& getColumnWidth( const Uint32& columnIndex ) const;
 
 	Uint32 getCount() const;
 
-	UITable* setColumnsCount( const Uint32& columnsCount );
+	UIWidgetTable* setColumnsCount( const Uint32& columnsCount );
 
 	const Uint32& getColumnsCount() const;
 
-	UITable* setRowHeight( const Uint32& height );
+	UIWidgetTable* setRowHeight( const Uint32& height );
 
 	const Uint32& getRowHeight() const;
 
-	UITableCell* getCell( const Uint32& CellIndex ) const;
+	UIWidgetTableRow* getRow( const Uint32& rowIndex ) const;
 
-	void setVerticalScrollMode( const ScrollBarMode& Mode );
+	void setVerticalScrollMode( const ScrollBarMode& mode );
 
 	const ScrollBarMode& getVerticalScrollMode();
 
-	void setHorizontalScrollMode( const ScrollBarMode& Mode );
+	void setHorizontalScrollMode( const ScrollBarMode& mode );
 
 	const ScrollBarMode& getHorizontalScrollMode();
 
-	Uint32 getCellPosition( const Uint32& ColumnIndex );
+	Uint32 getColumnPosition( const Uint32& columnIndex );
 
 	UIScrollBar* getVerticalScrollBar() const;
 
 	UIScrollBar* getHorizontalScrollBar() const;
 
-	Uint32 getItemIndex( UITableCell* Item );
+	Uint32 getItemIndex( UIWidgetTableRow* item );
 
-	UITableCell* getItemSelected();
+	UIWidgetTableRow* getItemSelected();
 
 	Uint32 getItemSelectedIndex() const;
 
 	Uint32 onMessage( const NodeMessage* Msg );
 
-	UIItemContainer<UITable>* getContainer() const;
+	UIItemContainer<UIWidgetTable>* getContainer() const;
 
 	bool getSmoothScroll() const;
 
-	UITable* setSmoothScroll( bool smoothScroll );
+	UIWidgetTable* setSmoothScroll( bool smoothScroll );
 
 	Rectf getContainerPadding() const;
 
@@ -83,16 +81,16 @@ class EE_API UITable : public UITouchDraggableWidget {
 										   const Uint32& propertyIndex = 0 );
 
   protected:
-	friend class UIItemContainer<UITable>;
-	friend class UITableCell;
+	friend class UIItemContainer<UIWidgetTable>;
+	friend class UIWidgetTableRow;
 
 	Rectf mContainerPadding;
-	UIItemContainer<UITable>* mContainer;
+	UIItemContainer<UIWidgetTable>* mContainer;
 	UIScrollBar* mVScrollBar;
 	UIScrollBar* mHScrollBar;
 	ScrollBarMode mVScrollMode;
 	ScrollBarMode mHScrollMode;
-	std::vector<UITableCell*> mItems;
+	std::vector<UIWidgetTableRow*> mItems;
 	Uint32 mColumnsCount;
 	Uint32 mRowHeight;
 	std::vector<Uint32> mColumnsWidth;
@@ -107,6 +105,8 @@ class EE_API UITable : public UITouchDraggableWidget {
 	Int32 mSelected;
 	bool mSmoothScroll;
 	bool mCollWidthAssigned;
+
+	UIWidgetTable();
 
 	void updateCells();
 

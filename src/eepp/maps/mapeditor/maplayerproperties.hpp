@@ -4,7 +4,7 @@
 #include <eepp/maps/base.hpp>
 #include <eepp/maps/maphelper.hpp>
 #include <eepp/maps/maplayer.hpp>
-#include <eepp/ui/uitable.hpp>
+#include <eepp/ui/uiwidgettable.hpp>
 #include <eepp/ui/uitextinput.hpp>
 #include <eepp/ui/uiwindow.hpp>
 
@@ -25,7 +25,7 @@ class EE_API MapLayerProperties {
   protected:
 	UITheme* mUITheme;
 	UIWindow* mUIWindow;
-	UITable* mGenGrid;
+	UIWidgetTable* mGenGrid;
 	MapLayer* mLayer;
 	UITextInput* mUIInput;
 	RefreshLayerListCb mRefreshCb;
@@ -46,7 +46,7 @@ class EE_API MapLayerProperties {
 
 	void loadProperties();
 
-	UITableCell* createCell();
+	UIWidgetTableRow* createCell();
 };
 
 }}} // namespace EE::Maps::Private

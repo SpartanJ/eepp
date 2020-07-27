@@ -1,56 +1,37 @@
-#ifndef EE_UICUIGRIDCELL_HPP
-#define EE_UICUIGRIDCELL_HPP
+#ifndef EE_UI_UITABLECELL_HPP
+#define EE_UI_UITABLECELL_HPP
 
-#include <eepp/ui/uiitemcontainer.hpp>
-#include <eepp/ui/uiwidget.hpp>
+#include <eepp/ui/models/modelindex.hpp>
+#include <eepp/ui/uipushbutton.hpp>
+
+using namespace EE::UI::Models;
 
 namespace EE { namespace UI {
 
-class UITable;
-
-class EE_API UITableCell : public UIWidget {
+class EE_API UITableCell : public UIPushButton {
   public:
-	static UITableCell* New();
+	static UITableCell* New() { return eeNew( UITableCell, () ); }
 
-	UITableCell();
+	static UITableCell* New( const std::string& tag ) { return eeNew( UITableCell, ( tag ) ); }
 
-	virtual ~UITableCell();
+	Uint32 getType() const { return UI_TYPE_TABLECELL; }
 
-	virtual void setTheme( UITheme* Theme );
+	bool isType( const Uint32& type ) const {
+		return UITableCell::getType() == type ? true : UIPushButton::isType( type );
+	}
 
-	void setCell( const Uint32& ColumnIndex, UINode* node );
+	ModelIndex getCurIndex() const { return mCurIndex; }
 
-	UINode* getCell( const Uint32& ColumnIndex ) const;
-
-	bool isSelected() const;
-
-	void unselect();
-
-	void select();
-
-	virtual Uint32 onMessage( const NodeMessage* Msg );
+	void setCurIndex( const ModelIndex& curIndex ) { mCurIndex = curIndex; }
 
   protected:
-	friend class UIItemContainer<UITable>;
-	friend class UITable;
+	ModelIndex mCurIndex;
 
-	std::vector<UINode*> mCells;
+	UITableCell() : UIPushButton( "table::cell" ) {}
 
-	UITable* gridParent() const;
-
-	void fixCell();
-
-	virtual Uint32 onMouseLeave( const Vector2i& position, const Uint32& flags );
-
-	virtual void onStateChange();
-
-	virtual void onParentChange();
-
-	virtual void onAlphaChange();
-
-	virtual void onAutoSize();
+	UITableCell( const std::string& tag ) : UIPushButton( tag ) {}
 };
 
 }} // namespace EE::UI
 
-#endif
+#endif // EE_UI_UITABLECELL_HPP

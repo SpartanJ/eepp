@@ -110,12 +110,14 @@ Vector2f UIPushButton::packLayout( const std::vector<UIWidget*>& widgets, const 
 				break;
 		}
 		if ( 0 == i )
-			pos[i].x += PixelDensity::dpToPxI( widget->getLayoutMargin().Left );
-		totSize.x += widget->getPixelsSize().getWidth() > 0
-						 ? PixelDensity::dpToPxI( widget->getLayoutMargin().Left +
-												  widget->getLayoutMargin().Right ) +
-							   widget->getPixelsSize().getWidth()
-						 : 0;
+			pos[i].x += widget->getLayoutPixelsMargin().Left;
+		if ( widget->getPixelsSize().getWidth() > 0 ) {
+			totSize.x += widget->getLayoutPixelsMargin().Left + widget->getPixelsSize().getWidth();
+			if ( ( i + 1 < widgets.size() && widgets[i + 1] && widgets[i + 1]->isVisible() ) ||
+				 ( i + 2 < widgets.size() && widgets[i + 2] && widgets[i + 2]->isVisible() ) ) {
+				totSize.x += widget->getLayoutPixelsMargin().Right;
+			}
+		}
 		totSize.y = eemax<Float>( totSize.y, padding.Top + padding.Bottom +
 												 widget->getPixelsSize().getHeight() );
 	}
@@ -223,6 +225,7 @@ UIPushButton* UIPushButton::setIcon( Drawable* icon ) {
 	if ( mIcon->getDrawable() != icon ) {
 		mIcon->setPixelsSize( icon->getPixelsSize() );
 		mIcon->setDrawable( icon );
+		mTextBox->setVisible( !getText().empty() );
 		updateLayout();
 	}
 	return this;
@@ -234,6 +237,7 @@ UIImage* UIPushButton::getIcon() const {
 
 UIPushButton* UIPushButton::setText( const String& text ) {
 	if ( text != mTextBox->getText() ) {
+		mTextBox->setVisible( !text.empty() );
 		mTextBox->setText( text );
 		updateLayout();
 	}

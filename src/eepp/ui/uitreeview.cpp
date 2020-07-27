@@ -106,14 +106,14 @@ void UITreeView::updateContentSize() {
 		onContentSizeChange();
 }
 
-class UITreeViewCell : public UIPushButton {
+class UITreeViewCell : public UITableCell {
   public:
 	static UITreeViewCell* New() { return eeNew( UITreeViewCell, () ); }
 
 	Uint32 getType() const { return UI_TYPE_TREEVIEW_CELL; }
 
 	bool isType( const Uint32& type ) const {
-		return UITreeViewCell::getType() == type ? true : UIPushButton::isType( type );
+		return UITreeViewCell::getType() == type ? true : UITableCell::isType( type );
 	}
 
 	UIImage* getImage() const { return mImage; }
@@ -160,7 +160,7 @@ class UITreeViewCell : public UIPushButton {
 	mutable UIImage* mImage{nullptr};
 	Float mIndent{0};
 
-	UITreeViewCell() : UIPushButton( "treeview::cell" ) {
+	UITreeViewCell() : UITableCell( "treeview::cell" ) {
 		mTextBox->setElementTag( mTag + "::text" );
 		mIcon->setElementTag( mTag + "::icon" );
 		mInnerWidgetOrientation = InnerWidgetOrientation::Left;
@@ -182,14 +182,14 @@ class UITreeViewCell : public UIPushButton {
 };
 
 UIWidget* UITreeView::createCell( UIWidget* rowWidget, const ModelIndex& index ) {
-	UIPushButton* widget = index.column() == (Int64)getModel()->treeColumn()
-							   ? UITreeViewCell::New()
-							   : UIPushButton::NewWithTag( "table::cell" );
+	UITableCell* widget = index.column() == (Int64)getModel()->treeColumn() ? UITreeViewCell::New()
+																			: UITableCell::New();
 	widget->setParent( rowWidget );
 	widget->unsetFlags( UI_AUTO_SIZE );
 	widget->clipEnable();
 	widget->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 	widget->setTextAlign( UI_HALIGN_LEFT );
+	widget->setCurIndex( index );
 	if ( index.column() == (Int64)getModel()->treeColumn() ) {
 		widget->addEventListener( Event::MouseDoubleClick, [&]( const Event* event ) {
 			auto mouseEvent = static_cast<const MouseEvent*>( event );
@@ -240,15 +240,16 @@ UIWidget* UITreeView::updateCell( const int& rowIndex, const ModelIndex& index,
 	widget->setPixelsSize( columnData( index.column() ).width, getRowHeight() );
 	widget->setPixelsPosition( {getColumnPosition( index.column() ).x, 0} );
 
-	if ( widget->isType( UI_TYPE_PUSHBUTTON ) ) {
-		UIPushButton* pushButton = widget->asType<UIPushButton>();
+	if ( widget->isType( UI_TYPE_TABLECELL ) ) {
+		UITableCell* cell = widget->asType<UITableCell>();
+		cell->setCurIndex( index );
 
 		Variant txt( getModel()->data( index, Model::Role::Display ) );
 		if ( txt.isValid() ) {
 			if ( txt.is( Variant::Type::String ) )
-				pushButton->setText( txt.asString() );
+				cell->setText( txt.asString() );
 			else if ( txt.is( Variant::Type::cstr ) )
-				pushButton->setText( txt.asCStr() );
+				cell->setText( txt.asCStr() );
 		}
 
 		bool hasChilds = false;
@@ -285,7 +286,7 @@ UIWidget* UITreeView::updateCell( const int& rowIndex, const ModelIndex& index,
 		}
 
 		if ( hasChilds && mExpandersAsIcons ) {
-			pushButton->getIcon()->setVisible( false );
+			cell->getIcon()->setVisible( false );
 			return widget;
 		}
 
@@ -293,9 +294,9 @@ UIWidget* UITreeView::updateCell( const int& rowIndex, const ModelIndex& index,
 		Variant icon( getModel()->data( index, Model::Role::Icon ) );
 		if ( icon.is( Variant::Type::Drawable ) && icon.asDrawable() ) {
 			isVisible = true;
-			pushButton->setIcon( icon.asDrawable() );
+			cell->setIcon( icon.asDrawable() );
 		}
-		pushButton->getIcon()->setVisible( isVisible );
+		cell->getIcon()->setVisible( isVisible );
 	}
 
 	return widget;

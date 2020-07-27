@@ -4,7 +4,7 @@
 #include <eepp/maps/base.hpp>
 #include <eepp/maps/tilemap.hpp>
 #include <eepp/ui/uislider.hpp>
-#include <eepp/ui/uitable.hpp>
+#include <eepp/ui/uiwidgettable.hpp>
 #include <eepp/ui/uitextinput.hpp>
 #include <eepp/ui/uiwindow.hpp>
 
@@ -21,7 +21,7 @@ class EE_API TileMapProperties {
   protected:
 	UITheme* mUITheme;
 	UIWindow* mUIWindow;
-	UITable* mGenGrid;
+	UIWidgetTable* mGenGrid;
 	TileMap* mMap;
 	UIWidget* mUIBaseColor;
 	UISlider* mUIRedSlider;
@@ -53,7 +53,7 @@ class EE_API TileMapProperties {
 
 	void loadProperties();
 
-	UITableCell* createCell();
+	UIWidgetTableRow* createCell();
 };
 
 }}} // namespace EE::Maps::Private

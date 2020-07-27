@@ -199,9 +199,9 @@ void UIFileDialog::setTheme( UITheme* Theme ) {
 
 void UIFileDialog::refreshFolder() {
 	FileSystem::dirAddSlashAtEnd( mCurPath );
-	std::vector<String> flist = FileSystem::filesGetInPath( String( mCurPath ) );
+	std::vector<String> flist = FileSystem::filesGetInPath(
+		String( mCurPath ), getSortAlphabetically(), getFoldersFirst(), !getShowHidden() );
 	std::vector<String> files;
-	std::vector<String> folders;
 	std::vector<std::string> patterns;
 	bool accepted;
 	Uint32 i, z;
@@ -214,9 +214,9 @@ void UIFileDialog::refreshFolder() {
 	}
 
 	for ( i = 0; i < flist.size(); i++ ) {
-		if ( getFoldersFirst() && FileSystem::isDirectory( mCurPath + flist[i] ) ) {
-			folders.push_back( flist[i] );
-		} else {
+		if ( FileSystem::isDirectory( mCurPath + flist[i] ) ) {
+			files.push_back( flist[i] );
+		} else if ( !getShowOnlyFolders() ) {
 			accepted = false;
 
 			if ( patterns.size() ) {
@@ -235,16 +235,7 @@ void UIFileDialog::refreshFolder() {
 		}
 	}
 
-	if ( getSortAlphabetically() ) {
-		std::sort( folders.begin(), folders.end() );
-		std::sort( files.begin(), files.end() );
-	}
-
 	mList->clear();
-
-	if ( getFoldersFirst() ) {
-		mList->addListBoxItems( folders );
-	}
 
 	mList->addListBoxItems( files );
 
@@ -420,6 +411,14 @@ bool UIFileDialog::getAllowFolderSelect() {
 	return 0 != ( mDialogFlags & AllowFolderSelect );
 }
 
+bool UIFileDialog::getShowOnlyFolders() {
+	return 0 != ( mDialogFlags & ShowOnlyFolders );
+}
+
+bool UIFileDialog::getShowHidden() {
+	return 0 != ( mDialogFlags & ShowHidden );
+}
+
 void UIFileDialog::setSortAlphabetically( const bool& sortAlphabetically ) {
 	BitOp::setBitFlagValue( &mDialogFlags, SortAlphabetically, sortAlphabetically ? 1 : 0 );
 	refreshFolder();
@@ -432,6 +431,16 @@ void UIFileDialog::setFoldersFirst( const bool& foldersFirst ) {
 
 void UIFileDialog::setAllowFolderSelect( const bool& allowFolderSelect ) {
 	BitOp::setBitFlagValue( &mDialogFlags, AllowFolderSelect, allowFolderSelect ? 1 : 0 );
+}
+
+void UIFileDialog::setShowOnlyFolders( const bool& showOnlyFolders ) {
+	BitOp::setBitFlagValue( &mDialogFlags, ShowOnlyFolders, showOnlyFolders ? 1 : 0 );
+	refreshFolder();
+}
+
+void UIFileDialog::setShowHidden( const bool& showHidden ) {
+	BitOp::setBitFlagValue( &mDialogFlags, ShowHidden, showHidden ? 1 : 0 );
+	refreshFolder();
 }
 
 std::string UIFileDialog::getFullPath() {

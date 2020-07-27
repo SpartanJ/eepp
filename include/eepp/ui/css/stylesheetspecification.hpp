@@ -16,12 +16,12 @@ namespace EE { namespace UI { namespace CSS {
 
 class PropertySpecification;
 
-typedef std::function<bool( const UIWidget* node, int a, int b, FunctionString data )>
+typedef std::function<bool( const UIWidget* node, int a, int b, const FunctionString& data )>
 	StyleSheetNodeSelector;
 
 struct StructuralSelector {
 	StructuralSelector( StyleSheetNodeSelector selector, int a = 0, int b = 0,
-						FunctionString data = FunctionString::parse( "" ) ) :
+						const FunctionString& data = FunctionString::parse( "" ) ) :
 		selector( selector ), a( a ), b( b ), data( data ) {}
 	StyleSheetNodeSelector selector;
 	int a;

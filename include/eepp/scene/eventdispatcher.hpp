@@ -44,6 +44,8 @@ class EE_API EventDispatcher {
 
 	Node* getMouseDownNode() const;
 
+	void resetMouseDownNode();
+
 	Node* getLossFocusNode() const;
 
 	void sendMsg( Node* node, const Uint32& Msg, const Uint32& Flags = 0 );

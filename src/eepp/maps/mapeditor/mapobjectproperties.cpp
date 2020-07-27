@@ -105,7 +105,7 @@ MapObjectProperties::MapObjectProperties( GameObjectObject* Obj ) :
 	CancelButton->setText( "Cancel" );
 	CancelButton->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
 
-	mGenGrid = UITable::New();
+	mGenGrid = UIWidgetTable::New();
 	mGenGrid->setParent( mUIWindow->getContainer() );
 	mGenGrid->setSize( 400, 340 )
 		->setPosition( 50, TxtBox->getPosition().y + TxtBox->getSize().getHeight() );
@@ -154,10 +154,10 @@ void MapObjectProperties::saveProperties() {
 	mObj->clearProperties();
 
 	for ( Uint32 i = 0; i < mGenGrid->getCount(); i++ ) {
-		UITableCell* Cell = mGenGrid->getCell( i );
+		UIWidgetTableRow* Cell = mGenGrid->getRow( i );
 
-		UITextInput* Input = Cell->getCell( 1 )->asType<UITextInput>();
-		UITextInput* Input2 = Cell->getCell( 3 )->asType<UITextInput>();
+		UITextInput* Input = Cell->getColumn( 1 )->asType<UITextInput>();
+		UITextInput* Input2 = Cell->getColumn( 3 )->asType<UITextInput>();
 
 		if ( NULL != Cell && Input->getText().size() && Input2->getText().size() ) {
 			mObj->addProperty( Input->getText(), Input2->getText() );
@@ -170,10 +170,10 @@ void MapObjectProperties::loadProperties() {
 
 	for ( GameObjectObject::PropertiesMap::iterator it = Proper.begin(); it != Proper.end();
 		  ++it ) {
-		UITableCell* Cell = createCell();
+		UIWidgetTableRow* Cell = createCell();
 
-		UITextInput* Input = Cell->getCell( 1 )->asType<UITextInput>();
-		UITextInput* Input2 = Cell->getCell( 3 )->asType<UITextInput>();
+		UITextInput* Input = Cell->getColumn( 1 )->asType<UITextInput>();
+		UITextInput* Input2 = Cell->getColumn( 3 )->asType<UITextInput>();
 
 		Input->setText( it->first );
 		Input2->setText( it->second );
@@ -205,7 +205,7 @@ void MapObjectProperties::onAddCellClick( const Event* Event ) {
 	Uint32 Index = mGenGrid->getItemSelectedIndex();
 
 	if ( eeINDEX_NOT_FOUND == Index ) {
-		mGenGrid->getCell( 0 )->select();
+		mGenGrid->getRow( 0 )->select();
 	}
 }
 
@@ -216,11 +216,11 @@ void MapObjectProperties::onRemoveCellClick( const Event* Event ) {
 		mGenGrid->remove( Index );
 
 		if ( Index < mGenGrid->getCount() ) {
-			mGenGrid->getCell( Index )->select();
+			mGenGrid->getRow( Index )->select();
 		} else {
 			if ( mGenGrid->getCount() ) {
 				if ( Index > 0 )
-					mGenGrid->getCell( Index - 1 )->select();
+					mGenGrid->getRow( Index - 1 )->select();
 			}
 		}
 	}
@@ -232,12 +232,12 @@ void MapObjectProperties::createGridElems() {
 	if ( 0 == mGenGrid->getCount() ) {
 		onAddCellClick( NULL );
 	} else {
-		mGenGrid->getCell( 0 )->select();
+		mGenGrid->getRow( 0 )->select();
 	}
 }
 
-UITableCell* MapObjectProperties::createCell() {
-	UITableCell* Cell = UITableCell::New();
+UIWidgetTableRow* MapObjectProperties::createCell() {
+	UIWidgetTableRow* Cell = UIWidgetTableRow::New();
 	UITextInput* TxtInput = UITextInput::New();
 	UITextInput* TxtInput2 = UITextInput::New();
 
@@ -245,11 +245,11 @@ UITableCell* MapObjectProperties::createCell() {
 	TxtInput->setMaxLength( LAYER_NAME_SIZE );
 	TxtInput2->setMaxLength( LAYER_NAME_SIZE );
 
-	Cell->setCell( 0, UIWidget::New() );
-	Cell->setCell( 1, TxtInput );
-	Cell->setCell( 2, UIWidget::New() );
-	Cell->setCell( 3, TxtInput2 );
-	Cell->setCell( 4, UIWidget::New() );
+	Cell->setColumn( 0, UIWidget::New() );
+	Cell->setColumn( 1, TxtInput );
+	Cell->setColumn( 2, UIWidget::New() );
+	Cell->setColumn( 3, TxtInput2 );
+	Cell->setColumn( 4, UIWidget::New() );
 
 	return Cell;
 }

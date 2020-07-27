@@ -424,19 +424,19 @@ static bool isNth( int a, int b, int count ) {
 
 void StyleSheetSpecification::registerDefaultNodeSelectors() {
 	mNodeSelectors["empty"] = []( const UIWidget* node, int a, int b,
-								  FunctionString data ) -> bool {
+								  const FunctionString& data ) -> bool {
 		return node->getFirstChild() == NULL;
 	};
 	mNodeSelectors["first-child"] = []( const UIWidget* node, int a, int b,
-										FunctionString data ) -> bool {
+										const FunctionString& data ) -> bool {
 		return NULL != node->getParent() && node->getParent()->getFirstChild() == node;
 	};
 	mNodeSelectors["enabled"] = []( const UIWidget* node, int a, int b,
-									FunctionString data ) -> bool { return node->isEnabled(); };
+									const FunctionString& data ) -> bool { return node->isEnabled(); };
 	mNodeSelectors["disabled"] = []( const UIWidget* node, int a, int b,
-									 FunctionString data ) -> bool { return !node->isEnabled(); };
+									 const FunctionString& data ) -> bool { return !node->isEnabled(); };
 	mNodeSelectors["first-of-type"] = []( const UIWidget* node, int a, int b,
-										  FunctionString data ) -> bool {
+										  const FunctionString& data ) -> bool {
 		Node* child = NULL != node->getParent() ? node->getParent()->getFirstChild() : NULL;
 		Uint32 type = node->getType();
 		while ( NULL != child ) {
@@ -448,11 +448,11 @@ void StyleSheetSpecification::registerDefaultNodeSelectors() {
 		return false;
 	};
 	mNodeSelectors["last-child"] = []( const UIWidget* node, int a, int b,
-									   FunctionString data ) -> bool {
+									   const FunctionString& data ) -> bool {
 		return NULL != node->getParent() && node->getParent()->getLastChild() == node;
 	};
 	mNodeSelectors["last-of-type"] = []( const UIWidget* node, int a, int b,
-										 FunctionString data ) -> bool {
+										 const FunctionString& data ) -> bool {
 		Node* child = NULL != node->getParent() ? node->getParent()->getLastChild() : NULL;
 		Uint32 type = node->getType();
 		while ( NULL != child ) {
@@ -464,11 +464,11 @@ void StyleSheetSpecification::registerDefaultNodeSelectors() {
 		return false;
 	};
 	mNodeSelectors["only-child"] = []( const UIWidget* node, int a, int b,
-									   FunctionString data ) -> bool {
+									   const FunctionString& data ) -> bool {
 		return NULL != node->getParent() && node->getParent()->getChildCount() == 1;
 	};
 	mNodeSelectors["only-of-type"] = []( const UIWidget* node, int a, int b,
-										 FunctionString data ) -> bool {
+										 const FunctionString& data ) -> bool {
 		Node* child = NULL != node->getParent() ? node->getParent()->getFirstChild() : NULL;
 		Uint32 type = node->getType();
 		Uint32 typeCount = 0;
@@ -483,19 +483,19 @@ void StyleSheetSpecification::registerDefaultNodeSelectors() {
 		return typeCount == 1;
 	};
 	mNodeSelectors["nth-child"] = []( const UIWidget* node, int a, int b,
-									  FunctionString data ) -> bool {
+									  const FunctionString& data ) -> bool {
 		return isNth( a, b, node->getNodeIndex() + 1 );
 	};
 	mNodeSelectors["nth-last-child"] = []( const UIWidget* node, int a, int b,
-										   FunctionString data ) -> bool {
+										   const FunctionString& data ) -> bool {
 		return isNth( a, b, node->getChildCount() - node->getNodeIndex() );
 	};
 	mNodeSelectors["nth-of-type"] = []( const UIWidget* node, int a, int b,
-										FunctionString data ) -> bool {
+										const FunctionString& data ) -> bool {
 		return isNth( a, b, node->getNodeOfTypeIndex() + 1 );
 	};
 	mNodeSelectors["nth-last-of-type"] = []( const UIWidget* node, int a, int b,
-											 FunctionString data ) -> bool {
+											 const FunctionString& data ) -> bool {
 		return node->getParent() != NULL
 				   ? isNth( a, b,
 							node->getParent()->getChildOfTypeCount( node->getType() ) -
@@ -503,10 +503,10 @@ void StyleSheetSpecification::registerDefaultNodeSelectors() {
 				   : false;
 	};
 	mNodeSelectors["checked"] = []( const UIWidget* node, int a, int b,
-									FunctionString data ) -> bool {
+									const FunctionString& data ) -> bool {
 		return 0 != ( node->getFlags() & UI_CHECKED );
 	};
-	mNodeSelectors["not"] = []( const UIWidget* node, int a, int b, FunctionString data ) -> bool {
+	mNodeSelectors["not"] = []( const UIWidget* node, int a, int b, const FunctionString& data ) -> bool {
 		if ( !data.isEmpty() && !data.getParameters().empty() && data.getName() == "not" ) {
 			for ( const auto& param : data.getParameters() ) {
 				if ( !param.empty() ) {
