@@ -91,10 +91,13 @@ void UIAbstractTableView::createOrUpdateColumns() {
 		col.widget->setVisible( col.visible );
 		if ( !col.visible )
 			continue;
-		col.widget->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent );
-		col.widget->setText( model->columnName( i ) );
-		col.widget->reloadStyle( true, true, true );
-		col.width = eeceil( eemax( col.width, col.widget->getPixelsSize().getWidth() ) );
+		if ( col.minWidth == 0 ) {
+			col.widget->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent );
+			col.widget->setText( model->columnName( i ) );
+			col.widget->reloadStyle( true, true, true );
+			col.minWidth = col.widget->getPixelsSize().getWidth();
+		}
+		col.width = eeceil( eemax( col.width, col.minWidth ) );
 		col.widget->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 		col.widget->setPixelsSize( col.width, getHeaderHeight() );
 		totalWidth += col.width;

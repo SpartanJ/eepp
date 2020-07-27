@@ -456,25 +456,31 @@ void App::initLocateBar() {
 	} );
 }
 
-void App::showLocateBar() {
-	mLocateBarLayout->setVisible( true );
-	mLocateInput->setFocus();
-	mLocateTable->setVisible( true );
-	if ( mDirTree && !mLocateTable->getModel() ) {
-		mLocateTable->setModel( mDirTree->asModel( LOCATEBAR_MAX_RESULTS ) );
-		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
-	}
+void App::updateLocateBar() {
 	mLocateBarLayout->runOnMainThread( [&] {
 		Float width = eeceil( mLocateInput->getPixelsSize().getWidth() );
 		mLocateTable->setPixelsSize( width,
 									 mLocateTable->getRowHeight() * LOCATEBAR_MAX_VISIBLE_ITEMS );
-		mLocateTable->setColumnWidth( 0, width * 0.5f );
-		mLocateTable->setColumnWidth(
-			1, width * 0.5f - mLocateTable->getVerticalScrollBar()->getPixelsSize().getWidth() );
+		width -= mLocateTable->getVerticalScrollBar()->getPixelsSize().getWidth();
+		mLocateTable->setColumnWidth( 0, eeceil( width * 0.5 ) );
+		mLocateTable->setColumnWidth( 1, width - mLocateTable->getColumnWidth( 0 ) );
 		Vector2f pos( mLocateInput->convertToWorldSpace( {0, 0} ) );
 		pos.y -= mLocateTable->getPixelsSize().getHeight();
 		mLocateTable->setPixelsPosition( pos );
 	} );
+}
+
+void App::showLocateBar() {
+	mLocateBarLayout->setVisible( true );
+	mLocateInput->setFocus();
+	mLocateTable->setVisible( true );
+	mLocateInput->addEventListener( Event::OnSizeChange,
+									[&]( const Event* ) { updateLocateBar(); } );
+	if ( mDirTree && !mLocateTable->getModel() ) {
+		mLocateTable->setModel( mDirTree->asModel( LOCATEBAR_MAX_RESULTS ) );
+		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
+	}
+	updateLocateBar();
 }
 
 void App::initSearchBar() {
@@ -1453,6 +1459,7 @@ void App::createSettingsMenu() {
 		}
 	} );
 	updateRecentFiles();
+	updateRecentFolders();
 }
 
 void App::updateColorSchemeMenu() {
@@ -1851,6 +1858,7 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		mDocInfo->setVisible( mConfig.editor.showDocInfo );
 		mSearchBarLayout->setVisible( false )->setEnabled( false );
 		mProjectSplitter->setSplitPartition( StyleSheetLength( mConfig.window.panelPartition ) );
+
 		if ( !mConfig.ui.showSidePanel )
 			showSidePanel( mConfig.ui.showSidePanel );
 
@@ -1866,6 +1874,10 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		createSettingsMenu();
 
 		mEditorSplitter->createEditorWithTabWidget( mBaseLayout );
+
+		std::string locateKeybind( getKeybind( "open-locatebar" ) );
+		if ( !locateKeybind.empty() )
+			mLocateInput->setHint( "Type to locate (" + locateKeybind + ")" );
 
 		mConsole = eeNew( Console, ( fontMono, true, true, 1024 * 1000, 0, mWindow ) );
 

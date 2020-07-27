@@ -651,6 +651,9 @@ void UICodeEditorSplitter::onTabClosed( const TabEvent* tabEvent ) {
 					closeSplitter( splitter );
 					eeASSERT( parent->getChildCount() == 0 );
 					remainingNode->setParent( parent );
+					if ( remainingNode->isWidget() )
+						remainingNode->asType<UIWidget>()->setLayoutSizePolicy(
+							SizePolicy::MatchParent, SizePolicy::MatchParent );
 					addRemainingTabWidgets( remainingNode );
 					focusSomeEditor( nullptr );
 				}

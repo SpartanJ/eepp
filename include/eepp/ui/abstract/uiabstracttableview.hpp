@@ -72,6 +72,7 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	friend class EE::UI::UITableHeaderColumn;
 
 	struct ColumnData {
+		Float minWidth{0};
 		Float width{0};
 		bool visible{true};
 		UIPushButton* widget{nullptr};

@@ -295,6 +295,8 @@ class App : public UICodeEditorSplitter::Client {
 	void updateDocInfo( TextDocument& doc );
 
 	void setFocusEditorOnClose( UIMessageBox* msgBox );
+
+	void updateLocateBar();
 };
 
 #endif // EE_TOOLS_CODEEDITOR_HPP
