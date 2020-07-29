@@ -116,8 +116,11 @@ class EE_API String {
 	static String join( const std::vector<String>& strArray, const Int8& joinchar = ' ',
 						const bool& appendLastJoinChar = false );
 
-	/** Remove the first space ( or the specified character ) on the string */
+	/** Removes the trailing prefix. */
 	static std::string lTrim( const std::string& str, char character = ' ' );
+
+	/** Removes the trailing suffix. */
+	static std::string rTrim( const std::string& str, char character );
 
 	/** Removes all spaces ( or the specified character ) on the string */
 	static std::string trim( const std::string& str, char character = ' ' );
@@ -125,8 +128,11 @@ class EE_API String {
 	/** Removes all spaces ( or the specified character ) on the string */
 	static void trimInPlace( std::string& str, char character = ' ' );
 
-	/** Remove the first space ( or the specified character ) on the string */
+	/** Removes the trailing prefix. */
 	static String lTrim( const String& str, char character = ' ' );
+
+	/** Removes the trailing suffix. */
+	static String rTrim( const String& str, char character = ' ' );
 
 	/** Removes all spaces ( or the specified character ) on the string */
 	static String trim( const String& str, char character = ' ' );
@@ -769,6 +775,7 @@ class EE_API String {
 							   const bool& pushEmptyString = false ) const;
 
 	std::pair<bool, int> fuzzyMatch( const String& pattern );
+
   private:
 	friend EE_API bool operator==( const String& left, const String& right );
 	friend EE_API bool operator<( const String& left, const String& right );

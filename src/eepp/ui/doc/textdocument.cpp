@@ -139,9 +139,10 @@ bool TextDocument::loadFromStream( IOStream& file, std::string path ) {
 			pending -= read;
 			blockSize = eemin( pending, BLOCK_SIZE );
 		};
-	} else {
-		mLines.push_back( String( "\n" ) );
 	}
+
+	if ( mLines.empty() )
+		mLines.push_back( String( "\n" ) );
 
 	if ( mAutoDetectIndentType )
 		guessIndentType();

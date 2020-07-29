@@ -1535,14 +1535,14 @@ void UICodeEditor::moveToNextLine() {
 void UICodeEditor::selectToPreviousLine() {
 	TextPosition position = mDoc->getSelection().start();
 	if ( position.line() == 0 )
-		return mDoc->moveToStartOfDoc();
+		return mDoc->selectToStartOfDoc();
 	mDoc->selectTo( moveToLineOffset( position, -1 ) );
 }
 
 void UICodeEditor::selectToNextLine() {
 	TextPosition position = mDoc->getSelection().start();
 	if ( position.line() == (Int64)mDoc->linesCount() - 1 )
-		return mDoc->moveToEndOfDoc();
+		return mDoc->selectToEndOfDoc();
 	mDoc->selectTo( moveToLineOffset( position, 1 ) );
 }
 

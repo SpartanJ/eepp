@@ -191,6 +191,7 @@ class App : public UICodeEditorSplitter::Client {
 	UIPopUpMenu* mDocMenu{nullptr};
 	UIPopUpMenu* mViewMenu{nullptr};
 	UIPopUpMenu* mWindowMenu{nullptr};
+	UIPopUpMenu* mToolsMenu{nullptr};
 	UISplitter* mProjectSplitter{nullptr};
 	UITabWidget* mSidePanel{nullptr};
 	UICodeEditorSplitter* mEditorSplitter{nullptr};
@@ -297,6 +298,10 @@ class App : public UICodeEditorSplitter::Client {
 	void setFocusEditorOnClose( UIMessageBox* msgBox );
 
 	void updateLocateBar();
+
+	void updateLocateTable();
+
+	UIPopUpMenu* createToolsMenu();
 };
 
 #endif // EE_TOOLS_CODEEDITOR_HPP

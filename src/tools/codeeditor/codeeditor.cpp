@@ -390,6 +390,16 @@ std::string App::getKeybind( const std::string& command ) {
 static int LOCATEBAR_MAX_VISIBLE_ITEMS = 18;
 static int LOCATEBAR_MAX_RESULTS = 100;
 
+void App::updateLocateTable() {
+	if ( !mLocateInput->getText().empty() ) {
+		mLocateTable->setModel(
+			mDirTree->fuzzyMatchTree( mLocateInput->getText(), LOCATEBAR_MAX_RESULTS ) );
+	} else {
+		mLocateTable->setModel( mDirTree->asModel( LOCATEBAR_MAX_RESULTS ) );
+	}
+	mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
+}
+
 void App::initLocateBar() {
 	auto addClickListener = [&]( UIWidget* widget, std::string cmd ) {
 		widget->addEventListener( Event::MouseClick, [this, cmd]( const Event* event ) {
@@ -409,13 +419,7 @@ void App::initLocateBar() {
 		mLocateTable->setPixelsPosition( pos );
 		if ( !mDirTreeReady )
 			return;
-		if ( !mLocateInput->getText().empty() ) {
-			mLocateTable->setModel(
-				mDirTree->fuzzyMatchTree( mLocateInput->getText(), LOCATEBAR_MAX_RESULTS ) );
-		} else {
-			mLocateTable->setModel( mDirTree->asModel( LOCATEBAR_MAX_RESULTS ) );
-		}
-		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
+		updateLocateTable();
 	} );
 	mLocateInput->addEventListener( Event::OnPressEnter, [&]( const Event* ) {
 		KeyEvent keyEvent( mLocateTable, Event::KeyDown, KEY_RETURN, 0, 0 );
@@ -1402,6 +1406,20 @@ bool App::setAutoComplete( bool enable ) {
 	return false;
 }
 
+UIPopUpMenu* App::createToolsMenu() {
+	mToolsMenu = UIPopUpMenu::New();
+	mToolsMenu->add( "Locate...", findIcon( "search" ), getKeybind( "open-locatebar" ) );
+	mToolsMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
+		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+			return;
+		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
+		if ( item->getText() == "Locate..." ) {
+			showLocateBar();
+		}
+	} );
+	return mToolsMenu;
+}
+
 void App::createSettingsMenu() {
 	mSettingsMenu = UIPopUpMenu::New();
 	mSettingsMenu->add( "New", findIcon( "document-new" ), getKeybind( "create-new" ) );
@@ -1420,6 +1438,7 @@ void App::createSettingsMenu() {
 	mSettingsMenu->addSubMenu( "Document", nullptr, createDocumentMenu() );
 	mSettingsMenu->addSubMenu( "Edit", nullptr, createEditMenu() );
 	mSettingsMenu->addSubMenu( "View", nullptr, createViewMenu() );
+	mSettingsMenu->addSubMenu( "Tools", nullptr, createToolsMenu() );
 	mSettingsMenu->addSubMenu( "Window", nullptr, createWindowMenu() );
 	mSettingsMenu->addSeparator();
 	mSettingsMenu->add( "Close", findIcon( "document-close" ), getKeybind( "close-doc" ) );
@@ -1534,6 +1553,7 @@ void App::loadDirTree( const std::string& path ) {
 					  clock->getElapsedTime().asMilliseconds(), dirTree.getFilesCount() );
 			eeDelete( clock );
 			mDirTreeReady = true;
+			mUISceneNode->runOnMainThread( [&] { updateLocateTable(); } );
 		},
 		SyntaxDefinitionManager::instance()->getExtensionsPatternsSupported() );
 }
@@ -1779,7 +1799,7 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 							<PushButton id="find_next" layout_width="wrap_content" layout_height="18dp" text="Next" margin-right="4dp" />
 							<CheckBox id="case_sensitive" layout_width="wrap_content" layout_height="wrap_content" text="Case sensitive" selected="true" />
 							<RelativeLayout layout_width="0" layout_weight="1" layout_height="18dp">
-								<Widget id="searchbar_close" class="close_button" layout_width="wrap_content" layout_height="wrap_content" layout_gravity="center_vertical|right" />
+								<Widget id="searchbar_close" class="close_button" layout_width="wrap_content" layout_height="wrap_content" layout_gravity="center_vertical|right" margin-right="2dp" />
 							</RelativeLayout>
 						</hbox>
 						<hbox layout_width="wrap_content" layout_height="wrap_content">
@@ -1841,6 +1861,7 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		addIcon( "pixel-density", 0xed8c, buttonIconSize );
 		addIcon( "tree-expanded", 0xed70, menuIconSize );
 		addIcon( "tree-contracted", 0xed54, menuIconSize );
+		addIcon( "search", 0xf0d1, menuIconSize );
 		mUISceneNode->getUIIconThemeManager()->setCurrentTheme( iconTheme );
 
 		UIWidgetCreator::registerWidget( "searchbar", [] { return UISearchBar::New(); } );

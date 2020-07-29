@@ -1,10 +1,11 @@
 #include "projectdirectorytree.hpp"
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/lock.hpp>
+#include <eepp/system/luapattern.hpp>
 
 ProjectDirectoryTree::ProjectDirectoryTree( const std::string& path,
 											std::shared_ptr<ThreadPool> threadPool ) :
-	mPath( path ), mPool( threadPool ), mIsReady( false ) {
+	mPath( path ), mPool( threadPool ), mIsReady( false ), mIgnoreMatcher( path ) {
 	FileSystem::dirAddSlashAtEnd( mPath );
 }
 
@@ -117,10 +118,14 @@ void ProjectDirectoryTree::getDirectoryFiles( std::vector<std::string>& files,
 											  std::set<std::string> currentDirs,
 											  const bool& ignoreHidden ) {
 	currentDirs.insert( directory );
+	std::string localDirPath( directory.substr( mPath.size() ) );
 	std::vector<std::string> pathFiles =
 		FileSystem::filesGetInPath( directory, false, false, ignoreHidden );
 	for ( auto& file : pathFiles ) {
 		std::string fullpath( directory + file );
+		std::string localpath( localDirPath + file );
+		if ( mIgnoreMatcher.foundMatch() && mIgnoreMatcher.match( localpath ) )
+			continue;
 		if ( FileSystem::isDirectory( fullpath ) ) {
 			fullpath += FileSystem::getOSSlash();
 			FileInfo dirInfo( fullpath, true );

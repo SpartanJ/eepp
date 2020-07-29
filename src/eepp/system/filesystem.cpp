@@ -51,7 +51,7 @@ bool FileSystem::fileGet( const std::string& path, ScopedBuffer& data ) {
 	if ( fileExists( path ) ) {
 		IOStreamFile fs( path );
 
-		data.reset( fileSize( path ) );
+		data.reset( fs.getSize() );
 
 		fs.read( reinterpret_cast<char*>( data.get() ), data.length() );
 
@@ -64,7 +64,23 @@ bool FileSystem::fileGet( const std::string& path, ScopedBuffer& data ) {
 bool FileSystem::fileGet( const std::string& path, std::vector<Uint8>& data ) {
 	if ( fileExists( path ) ) {
 		IOStreamFile fs( path );
-		Uint32 fsize = fileSize( path );
+		ios_size fsize = fs.getSize();
+
+		data.clear();
+		data.resize( fsize );
+
+		fs.read( reinterpret_cast<char*>( &data[0] ), fsize );
+
+		return true;
+	}
+
+	return false;
+}
+
+bool FileSystem::fileGet( const std::string& path, std::string& data ) {
+	if ( fileExists( path ) ) {
+		IOStreamFile fs( path );
+		ios_size fsize = fs.getSize();
 
 		data.clear();
 		data.resize( fsize );

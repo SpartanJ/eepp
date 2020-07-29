@@ -411,6 +411,8 @@ AutoCompleteModule::SymbolsList AutoCompleteModule::getDocumentSymbols( TextDocu
 	LuaPattern pattern( mSymbolPattern );
 	AutoCompleteModule::SymbolsList symbols;
 	Int64 lc = doc->linesCount();
+	if ( lc == 0 )
+		return symbols;
 	std::string current( getPartialSymbol( doc ) );
 	TextPosition end = doc->getSelection().end();
 	for ( Int64 i = 0; i < lc; i++ ) {

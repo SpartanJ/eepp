@@ -32,6 +32,13 @@ class EE_API FileSystem {
 	 */
 	static bool fileGet( const std::string& path, ScopedBuffer& data );
 
+	/** Copy a file to memory
+	 * @param path The file path
+	 * @param data The string to allocate the file in memory
+	 * @return True if returned the file to the vector.
+	 */
+	static bool fileGet( const std::string& path, std::string& data );
+
 	/** Copy a file to location.
 	 * @param src Source File Path
 	 * @param dst Destination File Path

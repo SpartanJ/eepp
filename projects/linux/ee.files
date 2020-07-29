@@ -1009,6 +1009,8 @@
 ../../src/tools/codeeditor/autocompletemodule.hpp
 ../../src/tools/codeeditor/codeeditor.cpp
 ../../src/tools/codeeditor/codeeditor.hpp
+../../src/tools/codeeditor/ignorematcher.cpp
+../../src/tools/codeeditor/ignorematcher.hpp
 ../../src/tools/codeeditor/projectdirectorytree.cpp
 ../../src/tools/codeeditor/projectdirectorytree.hpp
 ../../src/tools/codeeditor/uicodeeditorsplitter.cpp

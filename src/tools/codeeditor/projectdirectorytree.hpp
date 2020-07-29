@@ -1,7 +1,7 @@
 #ifndef EE_TOOLS_PROJECTDIRECTORYTREE_HPP
 #define EE_TOOLS_PROJECTDIRECTORYTREE_HPP
 
-#include <eepp/system/luapattern.hpp>
+#include "ignorematcher.hpp"
 #include <eepp/system/mutex.hpp>
 #include <eepp/system/threadpool.hpp>
 #include <eepp/ui/models/model.hpp>
@@ -69,6 +69,7 @@ class ProjectDirectoryTree {
 	std::vector<std::string> mNames;
 	bool mIsReady;
 	Mutex mFilesMutex;
+	IgnoreMatcherManager mIgnoreMatcher;
 
 	void getDirectoryFiles( std::vector<std::string>& files, std::vector<std::string>& names,
 							std::string directory, std::set<std::string> currentDirs,
