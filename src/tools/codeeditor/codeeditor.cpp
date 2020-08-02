@@ -1631,6 +1631,9 @@ void App::loadFolder( const std::string& path ) {
 		mRecentFolders.resize( 10 );
 
 	updateRecentFolders();
+
+	if ( mEditorSplitter->getCurEditor() )
+		mEditorSplitter->getCurEditor()->setFocus();
 }
 
 void App::init( const std::string& file, const Float& pidelDensity ) {

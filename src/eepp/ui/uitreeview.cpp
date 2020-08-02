@@ -118,7 +118,8 @@ class UITreeViewCell : public UITableCell {
 
 	UIImage* getImage() const { return mImage; }
 
-	void updateLayout() {
+	Rectf calculatePadding() const {
+		Sizef size;
 		Rectf autoPadding;
 		if ( mFlags & UI_AUTO_PADDING ) {
 			autoPadding = makePadding( true, true, true, true );
@@ -134,17 +135,7 @@ class UITreeViewCell : public UITableCell {
 		if ( mPaddingPx.Right > autoPadding.Right )
 			autoPadding.Right = mPaddingPx.Right;
 		autoPadding.Left += mIndent;
-		switch ( mInnerWidgetOrientation ) {
-			case InnerWidgetOrientation::Left:
-				packLayout( {getExtraInnerWidget(), mIcon, mTextBox}, autoPadding );
-				break;
-			case InnerWidgetOrientation::Center:
-				packLayout( {mIcon, getExtraInnerWidget(), mTextBox}, autoPadding );
-				break;
-			case InnerWidgetOrientation::Right:
-				packLayout( {mIcon, mTextBox, getExtraInnerWidget()}, autoPadding );
-				break;
-		}
+		return autoPadding;
 	}
 
 	void setIndentation( const Float& indent ) {

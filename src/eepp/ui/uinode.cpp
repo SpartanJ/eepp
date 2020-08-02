@@ -345,7 +345,7 @@ void UINode::updateDebugData() {
 
 		text += String::format(
 			"X: %.2fpx (%.2fdp) Y: %.2fpx (%.2fdp)\nW: %.2fpx (%.2fdp) H: %.2fpx (%.2fdp)",
-			mPosition.x, mDpPos.x, mPosition.y, mDpPos.y, mSize.x, mDpSize.y, mSize.y, mDpSize.y );
+			mPosition.x, mDpPos.x, mPosition.y, mDpPos.y, mSize.x, mDpSize.x, mSize.y, mDpSize.y );
 
 		if ( widget->getPadding() != Rectf( 0, 0, 0, 0 ) ) {
 			Rectf p( widget->getPadding() );
@@ -958,7 +958,7 @@ void UINode::applyDefaultTheme() {
 }
 
 Rectf UINode::makePadding( bool PadLeft, bool PadRight, bool PadTop, bool PadBottom,
-						   bool SkipFlags ) {
+						   bool SkipFlags ) const {
 	Rectf tPadding( 0, 0, 0, 0 );
 
 	if ( mFlags & UI_AUTO_PADDING || SkipFlags ) {

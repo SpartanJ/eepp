@@ -167,11 +167,56 @@ Uint32 UITableView::onKeyDown( const KeyEvent& event ) {
 			return 1;
 		}
 		case KEY_UP: {
-			moveSelection( -1 );
+			if ( !getModel() )
+				return 0;
+			auto& model = *this->getModel();
+			ModelIndex foundIndex;
+			if ( !getSelection().isEmpty() ) {
+				auto oldIndex = getSelection().first();
+				if ( oldIndex.row() == 0 ) {
+					getSelection().set( getModel()->index( 0, 0 ) );
+					scrollToTop();
+					return 1;
+				}
+				foundIndex = model.index( oldIndex.row() - 1, oldIndex.column() );
+			} else {
+				foundIndex = model.index( 0, 0 );
+			}
+			if ( model.isValid( foundIndex ) ) {
+				Float curY = getHeaderHeight() + getRowHeight() * foundIndex.row();
+				getSelection().set( foundIndex );
+				if ( curY < mScrollOffset.y + getHeaderHeight() + getRowHeight() ||
+					 curY > mScrollOffset.y + getPixelsSize().getHeight() - mPaddingPx.Top -
+								mPaddingPx.Bottom - getRowHeight() ) {
+					curY -= getHeaderHeight();
+					mVScroll->setValue( curY / getScrollableArea().getHeight() );
+				}
+			}
 			return 1;
 		}
 		case KEY_DOWN: {
-			moveSelection( 1 );
+			if ( !getModel() )
+				return 0;
+			auto& model = *this->getModel();
+			ModelIndex foundIndex;
+			if ( !getSelection().isEmpty() ) {
+				auto oldIndex = getSelection().first();
+				foundIndex = model.index( oldIndex.row() + 1, oldIndex.column() );
+			} else {
+				foundIndex = model.index( 0, 0 );
+			}
+			if ( model.isValid( foundIndex ) ) {
+				Float curY = getHeaderHeight() + getRowHeight() * foundIndex.row();
+				getSelection().set( foundIndex );
+				if ( curY < mScrollOffset.y ||
+					 curY > mScrollOffset.y + getPixelsSize().getHeight() - mPaddingPx.Top -
+								mPaddingPx.Bottom - getRowHeight() ) {
+					curY -=
+						eefloor( getVisibleArea().getHeight() / getRowHeight() ) * getRowHeight() -
+						getRowHeight();
+					mVScroll->setValue( curY / getScrollableArea().getHeight() );
+				}
+			}
 			return 1;
 		}
 		case KEY_END: {

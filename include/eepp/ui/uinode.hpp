@@ -325,7 +325,7 @@ class EE_API UINode : public Node {
 	void writeFlag( const Uint32& Flag, const Uint32& Val );
 
 	Rectf makePadding( bool PadLeft = true, bool PadRight = true, bool PadTop = true,
-					   bool PadBottom = true, bool SkipFlags = false );
+					   bool PadBottom = true, bool SkipFlags = false ) const;
 
 	Sizef getSkinSize( UISkin* Skin, const Uint32& State = UIState::StateFlagNormal ) const;
 

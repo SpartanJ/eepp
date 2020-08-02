@@ -56,7 +56,7 @@ class EE_API UIPushButton : public UIWidget {
 
 	UIWidget* getFirstInnerItem() const;
 
-	virtual void updateLayout();
+	virtual Sizef updateLayout();
 
   protected:
 	UIImage* mIcon;
@@ -65,6 +65,8 @@ class EE_API UIPushButton : public UIWidget {
 	InnerWidgetOrientation mInnerWidgetOrientation{InnerWidgetOrientation::Right};
 
 	explicit UIPushButton( const std::string& tag );
+
+	virtual Rectf calculatePadding() const;
 
 	virtual void onSizeChange();
 
@@ -85,6 +87,8 @@ class EE_API UIPushButton : public UIWidget {
 	virtual Uint32 onKeyUp( const KeyEvent& Event );
 
 	Vector2f packLayout( const std::vector<UIWidget*>& widgets, const Rectf& padding );
+
+	Vector2f calcLayoutSize( const std::vector<UIWidget*>& widgets, const Rectf& padding ) const;
 };
 
 }} // namespace EE::UI

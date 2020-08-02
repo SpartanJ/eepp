@@ -49,7 +49,7 @@ class EE_API UIScrollableWidget : public UIWidget {
 
 	Sizef getVisibleArea() const;
 
-	Rectf getVisibleRect() const;
+	virtual Rectf getVisibleRect() const;
 
   protected:
 	ScrollViewType mViewType;

@@ -388,13 +388,11 @@ void AutoCompleteModule::setSymbolPattern( const std::string& symbolPattern ) {
 	mSymbolPattern = symbolPattern;
 }
 
-bool AutoCompleteModule::isDirty() const
-{
+bool AutoCompleteModule::isDirty() const {
 	return mDirty;
 }
 
-void AutoCompleteModule::setDirty(bool dirty)
-{
+void AutoCompleteModule::setDirty( bool dirty ) {
 	mDirty = dirty;
 }
 
@@ -418,10 +416,11 @@ AutoCompleteModule::SymbolsList AutoCompleteModule::getDocumentSymbols( TextDocu
 	for ( Int64 i = 0; i < lc; i++ ) {
 		const auto& string = doc->line( i ).getText().toUtf8();
 		for ( auto& match : pattern.gmatch( string ) ) {
+			std::string matchStr( match[0] );
 			// Ignore the symbol if is actually the current symbol being written
-			if ( end.line() == i && current == match[0] )
+			if ( matchStr.size() < 3 || ( end.line() == i && current == matchStr ) )
 				continue;
-			symbols.insert( match[0] );
+			symbols.insert( std::move( matchStr ) );
 		}
 	}
 	return symbols;

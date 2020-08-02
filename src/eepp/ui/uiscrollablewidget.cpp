@@ -151,8 +151,8 @@ void UIScrollableWidget::onContentSizeChange() {
 									 mPaddingPx.Right,
 								 mPaddingPx.Top );
 	mHScroll->setPixelsPosition( mPaddingPx.Left, getPixelsSize().getHeight() -
-														mHScroll->getPixelsSize().getHeight() -
-														mPaddingPx.Bottom );
+													  mHScroll->getPixelsSize().getHeight() -
+													  mPaddingPx.Bottom );
 
 	mVScroll->setPixelsSize( mVScroll->getPixelsSize().getWidth(),
 							 getPixelsSize().getHeight() - mPaddingPx.Top - mPaddingPx.Bottom );
