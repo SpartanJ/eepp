@@ -192,8 +192,8 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 
 		Clock clock;
 		auto model = FileSystemModel::New( "." ); // std::make_shared<TestModel>();
-		//UITreeView* view = UITreeView::New();
-		UITableView* view = UITableView::New();
+		UITreeView* view = UITreeView::New();
+		//UITableView* view = UITableView::New();
 		view->setId( "treeview" );
 		/*view->setExpandedIcon( open );
 		view->setContractedIcon( closed );*/

@@ -639,6 +639,7 @@ Uint32 UICodeEditor::onFocusLoss() {
 	mMouseDown = false;
 	mCursorVisible = false;
 	getSceneNode()->getWindow()->stopTextInput();
+	getUISceneNode()->setCursor( Cursor::Arrow );
 	if ( mDoc->getActiveClient() == this )
 		mDoc->setActiveClient( nullptr );
 	for ( auto& module : mModules )

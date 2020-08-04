@@ -44,7 +44,7 @@ class EE_API TextDocument {
 		virtual void onDocumentClosed( TextDocument* ) {}
 	};
 
-	TextDocument();
+	TextDocument( bool verbose = true );
 
 	~TextDocument();
 
@@ -337,6 +337,7 @@ class EE_API TextDocument {
 	bool mAutoDetectIndentType{true};
 	bool mForceNewLineAtEndOfFile{false};
 	bool mTrimTrailingWhitespaces{false};
+	bool mVerbose{false};
 	Uint32 mIndentWidth{4};
 	IndentType mIndentType{IndentType::IndentTabs};
 	Clock mTimer;

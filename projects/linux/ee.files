@@ -1013,6 +1013,8 @@
 ../../src/tools/codeeditor/ignorematcher.hpp
 ../../src/tools/codeeditor/projectdirectorytree.cpp
 ../../src/tools/codeeditor/projectdirectorytree.hpp
+../../src/tools/codeeditor/projectsearch.cpp
+../../src/tools/codeeditor/projectsearch.hpp
 ../../src/tools/codeeditor/uicodeeditorsplitter.cpp
 ../../src/tools/codeeditor/uicodeeditorsplitter.hpp
 ../../src/tools/mapeditor/mapeditor.cpp

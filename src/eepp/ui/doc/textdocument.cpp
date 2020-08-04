@@ -22,7 +22,7 @@ bool TextDocument::isNonWord( String::StringBaseType ch ) const {
 	return mNonWordChars.find_first_of( ch ) != String::InvalidPos;
 }
 
-TextDocument::TextDocument() :
+TextDocument::TextDocument( bool verbose ) :
 	mUndoStack( this ),
 	mDefaultFileName( "untitled" ),
 	mCleanChangeId( 0 ),
@@ -149,8 +149,9 @@ bool TextDocument::loadFromStream( IOStream& file, std::string path ) {
 
 	notifyTextChanged();
 
-	eePRINTL( "Document \"%s\" loaded in %.2fms.", path.c_str(),
-			  clock.getElapsedTime().asMilliseconds() );
+	if ( mVerbose )
+		eePRINTL( "Document \"%s\" loaded in %.2fms.", path.c_str(),
+				  clock.getElapsedTime().asMilliseconds() );
 	return true;
 }
 

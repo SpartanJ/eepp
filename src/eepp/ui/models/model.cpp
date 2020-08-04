@@ -26,8 +26,9 @@ void Model::registerView( UIAbstractView* view ) {
 	mViews.insert( view );
 }
 
-ModelIndex Model::createIndex( int row, int column, const void* data ) const {
-	return ModelIndex( *this, row, column, const_cast<void*>( data ) );
+ModelIndex Model::createIndex( int row, int column, const void* data,
+							   const Int64& internalId ) const {
+	return ModelIndex( *this, row, column, const_cast<void*>( data ), internalId );
 }
 
 void Model::setOnUpdate( const std::function<void()>& onUpdate ) {

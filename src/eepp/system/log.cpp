@@ -53,7 +53,9 @@ void Log::write( std::string Text, const bool& newLine ) {
 		Text += '\n';
 	}
 
+	lock();
 	mData += Text;
+	unlock();
 
 	writeToReaders( Text );
 
@@ -115,7 +117,9 @@ void Log::writef( const char* format, ... ) {
 			tstr.resize( n );
 			tstr += '\n';
 
+			lock();
 			mData += tstr;
+			unlock();
 
 			writeToReaders( tstr );
 
@@ -169,8 +173,10 @@ void Log::setConsoleOutput( const bool& output ) {
 	mConsoleOutput = output;
 
 	if ( !OldOutput && output ) {
+		lock();
 		std::string data( mData );
 		mData = "";
+		unlock();
 		write( data, false );
 	}
 }

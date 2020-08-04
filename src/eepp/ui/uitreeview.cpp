@@ -383,6 +383,33 @@ bool UITreeView::isExpanded( const ModelIndex& index ) const {
 	return getIndexMetadata( index ).open;
 }
 
+void UITreeView::setAllExpanded( const ModelIndex& index, bool expanded ) {
+	Model& model = *getModel();
+	size_t count = model.rowCount( index );
+	for ( size_t i = 0; i < count; i++ ) {
+		auto curIndex = model.index( i, model.treeColumn(), index );
+		getIndexMetadata( curIndex ).open = expanded;
+		if ( model.rowCount( curIndex ) > 0 )
+			setAllExpanded( curIndex, expanded );
+	}
+
+	createOrUpdateColumns();
+}
+
+void UITreeView::expandAll( const ModelIndex& index ) {
+	if ( !getModel() )
+		return;
+	setAllExpanded( index, true );
+	createOrUpdateColumns();
+}
+
+void UITreeView::contractAll( const ModelIndex& index ) {
+	if ( !getModel() )
+		return;
+	setAllExpanded( index, false );
+	createOrUpdateColumns();
+}
+
 Drawable* UITreeView::getExpandIcon() const {
 	return mExpandIcon;
 }
@@ -394,6 +421,10 @@ void UITreeView::setExpandedIcon( Drawable* expandIcon ) {
 	}
 }
 
+void UITreeView::setExpandedIcon( const std::string& expandIcon ) {
+	setExpandedIcon( mUISceneNode->findIcon( expandIcon ) );
+}
+
 Drawable* UITreeView::getContractIcon() const {
 	return mContractIcon;
 }
@@ -403,6 +434,10 @@ void UITreeView::setContractedIcon( Drawable* contractIcon ) {
 		mContractIcon = contractIcon;
 		createOrUpdateColumns();
 	}
+}
+
+void UITreeView::setContractedIcon( const std::string& contractIcon ) {
+	setContractedIcon( mUISceneNode->findIcon( contractIcon ) );
 }
 
 bool UITreeView::getExpandersAsIcons() const {

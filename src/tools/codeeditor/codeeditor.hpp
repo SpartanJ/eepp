@@ -68,6 +68,38 @@ class UILocateBar : public UILinearLayout {
 	}
 };
 
+class UIGlobalSearchBar : public UILinearLayout {
+  public:
+	typedef std::function<void()> CommandCallback;
+	static UIGlobalSearchBar* New() { return eeNew( UIGlobalSearchBar, () ); }
+	UIGlobalSearchBar() :
+		UILinearLayout( "globalsearchbar", UIOrientation::Vertical ),
+		mKeyBindings( getUISceneNode()->getWindow()->getInput() ) {}
+	void addCommand( const std::string& name, const CommandCallback& cb ) { mCommands[name] = cb; }
+	void execute( const std::string& command ) {
+		auto cmdIt = mCommands.find( command );
+		if ( cmdIt != mCommands.end() )
+			cmdIt->second();
+	}
+	KeyBindings& getKeyBindings() { return mKeyBindings; }
+
+  protected:
+	KeyBindings mKeyBindings;
+	std::unordered_map<std::string, std::function<void()>> mCommands;
+	Uint32 onKeyDown( const KeyEvent& event ) {
+		std::string cmd =
+			mKeyBindings.getCommandFromKeyBind( {event.getKeyCode(), event.getMod()} );
+		if ( !cmd.empty() ) {
+			auto cmdIt = mCommands.find( cmd );
+			if ( cmdIt != mCommands.end() ) {
+				cmdIt->second();
+				return 0;
+			}
+		}
+		return 1;
+	}
+};
+
 struct UIConfig {
 	StyleSheetLength fontSize{12, StyleSheetLength::Dp};
 	bool showSidePanel{true};
@@ -151,6 +183,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	void showFindView();
 
+	void showGlobalSearch();
+
 	void showLocateBar();
 
 	bool replaceSelection( SearchState& search, const String& replacement );
@@ -177,6 +211,7 @@ class App : public UICodeEditorSplitter::Client {
 	UILayout* mBaseLayout{nullptr};
 	UISearchBar* mSearchBarLayout{nullptr};
 	UILocateBar* mLocateBarLayout{nullptr};
+	UILocateBar* mGlobalSearchBarLayout{nullptr};
 	UIPopUpMenu* mSettingsMenu{nullptr};
 	UITextView* mSettingsButton{nullptr};
 	UIPopUpMenu* mColorSchemeMenu{nullptr};
@@ -209,6 +244,8 @@ class App : public UICodeEditorSplitter::Client {
 	UITreeView* mProjectTreeView{nullptr};
 	UITableView* mLocateTable{nullptr};
 	UITextInput* mLocateInput{nullptr};
+	UITreeView* mGlobalSearchTree{nullptr};
+	UITextInput* mGlobalSearchInput;
 	bool mDirTreeReady{false};
 
 	void initLocateBar();
@@ -232,6 +269,8 @@ class App : public UICodeEditorSplitter::Client {
 	bool onCloseRequestCallback( EE::Window::Window* );
 
 	void initSearchBar();
+
+	void initGlobalSearchBar();
 
 	void addRemainingTabWidgets( Node* widget );
 
@@ -301,7 +340,15 @@ class App : public UICodeEditorSplitter::Client {
 
 	void updateLocateTable();
 
+	void updateGlobalSearchBar();
+
 	UIPopUpMenu* createToolsMenu();
+
+	void hideGlobalSearchBar();
+
+	void hideSearchBar();
+
+	void hideLocateBar();
 };
 
 #endif // EE_TOOLS_CODEEDITOR_HPP

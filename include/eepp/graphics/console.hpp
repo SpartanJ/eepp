@@ -141,6 +141,7 @@ class EE_API Console : protected LogReaderInterface {
 	const bool& isFading() const;
 
   protected:
+	Mutex mMutex;
 	std::map<String, ConsoleCallback> mCallbacks;
 	std::deque<String> mCmdLog;
 	std::deque<String> mLastCommands;

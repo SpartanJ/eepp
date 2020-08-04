@@ -29,7 +29,7 @@ class FileListModel : public Model {
 	}
 
 	virtual Variant data( const ModelIndex& index, Role role = Role::Display ) const {
-		if ( role == Role::Display ) {
+		if ( role == Role::Display && index.row() < (Int64)mFiles.size() ) {
 			return Variant( index.column() == 0 ? mNames[index.row()].c_str()
 												: mFiles[index.row()].c_str() );
 		}
@@ -61,6 +61,8 @@ class ProjectDirectoryTree {
 	std::shared_ptr<FileListModel> asModel( const size_t& max ) const;
 
 	size_t getFilesCount() const;
+
+	const std::vector<std::string>& getFiles() const;
 
   protected:
 	std::string mPath;

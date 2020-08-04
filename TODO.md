@@ -33,10 +33,6 @@ Detect errors and log them.
 
 * Display number of results in search and number of replacements.
 
-* Add support for global/project search.
-
-* Add support for find and open file.
-
 ## UI Editor
 
 * Integrate the `UICodeEditor` into the editor in order to be able to edit the layouts and CSS in app.

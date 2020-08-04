@@ -2,6 +2,7 @@
 #define EE_UI_MODEL_MODELINDEX_HPP
 
 #include <eepp/config.hpp>
+#include <limits>
 
 namespace EE { namespace UI { namespace Models {
 
@@ -18,6 +19,8 @@ class EE_API ModelIndex {
 	const Int64& column() const { return mColumn; }
 
 	void* data() const { return mData; }
+
+	Int64 internalId() const { return mInternalId; }
 
 	ModelIndex parent() const;
 
@@ -40,11 +43,17 @@ class EE_API ModelIndex {
 	Int64 mRow{-1};
 	Int64 mColumn{-1};
 	void* mData{nullptr};
+	Int64 mInternalId{0};
 
-	ModelIndex( const Model& model, int row, int column, void* internalData ) :
-		mModel( &model ), mRow( row ), mColumn( column ), mData( internalData ) {}
+	ModelIndex( const Model& model, int row, int column, void* internalData,
+				const Int64& internalId = 0 ) :
+		mModel( &model ),
+		mRow( row ),
+		mColumn( column ),
+		mData( internalData ),
+		mInternalId( internalId ) {}
 };
 
-}}} // namespace EE::UI::Model
+}}} // namespace EE::UI::Models
 
 #endif // EE_UI_MODEL_MODELINDEX_HPP

@@ -32,13 +32,21 @@ class EE_API UITreeView : public UIAbstractTableView {
 
 	bool isExpanded( const ModelIndex& index ) const;
 
+	void expandAll( const ModelIndex& index = {} );
+
+	void contractAll( const ModelIndex& index = {} );
+
 	Drawable* getExpandIcon() const;
 
 	void setExpandedIcon( Drawable* expandIcon );
 
+	void setExpandedIcon( const std::string& expandIcon );
+
 	Drawable* getContractIcon() const;
 
 	void setContractedIcon( Drawable* contractIcon );
+
+	void setContractedIcon( const std::string& contractIcon );
 
 	bool getExpandersAsIcons() const;
 
@@ -87,6 +95,8 @@ class EE_API UITreeView : public UIAbstractTableView {
 	virtual void onOpenTreeModelIndex( const ModelIndex& index, bool open );
 
 	void updateContentSize();
+
+	void setAllExpanded( const ModelIndex& index = {}, bool expanded = true );
 };
 
 }} // namespace EE::UI

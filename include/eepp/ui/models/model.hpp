@@ -27,12 +27,7 @@ class EE_API Model {
 		InvalidateAllIndexes = 1 << 0,
 	};
 
-	enum class Role {
-		Display,
-		Icon,
-		Sort,
-		Custom
-	};
+	enum class Role { Display, Icon, Sort, Custom };
 
 	virtual ~Model(){};
 
@@ -91,7 +86,8 @@ class EE_API Model {
 
 	void onModelUpdate( unsigned flags = UpdateFlag::InvalidateAllIndexes );
 
-	ModelIndex createIndex( int row, int column, const void* data = nullptr ) const;
+	ModelIndex createIndex( int row, int column, const void* data = nullptr,
+							const Int64& internalId = 0 ) const;
 
   private:
 	std::unordered_set<UIAbstractView*> mViews;

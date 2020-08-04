@@ -14,7 +14,7 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 								 const bool& ignoreHidden ) {
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	mPool->run(
-		[&, acceptedPattern] {
+		[&, acceptedPattern, ignoreHidden] {
 #endif
 			Lock l( mFilesMutex );
 			if ( !acceptedPattern.empty() ) {
@@ -110,6 +110,10 @@ std::shared_ptr<FileListModel> ProjectDirectoryTree::asModel( const size_t& max 
 
 size_t ProjectDirectoryTree::getFilesCount() const {
 	return mFiles.size();
+}
+
+const std::vector<std::string>& ProjectDirectoryTree::getFiles() const {
+	return mFiles;
 }
 
 void ProjectDirectoryTree::getDirectoryFiles( std::vector<std::string>& files,

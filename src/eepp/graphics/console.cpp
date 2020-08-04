@@ -5,6 +5,7 @@
 #include <eepp/graphics/pixeldensity.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/lock.hpp>
 #include <eepp/window/cursormanager.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/input.hpp>
@@ -217,6 +218,7 @@ void Console::addCommand( const String& Command, ConsoleCallback CB ) {
 }
 
 void Console::draw( const Time& elapsedTime ) {
+	Lock l( mMutex );
 	if ( mEnabled && NULL != mFontStyleConfig.Font ) {
 		fade( elapsedTime == Time::Zero ? mWindow->getElapsed() : elapsedTime );
 
@@ -418,6 +420,7 @@ void Console::processLine() {
 }
 
 void Console::privPushText( const String& str ) {
+	Lock l( mMutex );
 	mCmdLog.push_back( str );
 
 	if ( mCmdLog.size() >= mMaxLogLines )
@@ -726,7 +729,12 @@ void Console::privInputCallback( InputEvent* Event ) {
 				}
 
 				if ( KeyCode == KEY_HOME ) {
-					if ( static_cast<Int32>( mCmdLog.size() ) > linesOnScreen() )
+					size_t size;
+					{
+						Lock l( mMutex );
+						size = mCmdLog.size();
+					}
+					if ( static_cast<Int32>( size ) > linesOnScreen() )
 						mCon.ConModif = mCon.ConMin;
 				}
 

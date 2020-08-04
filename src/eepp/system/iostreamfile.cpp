@@ -9,7 +9,6 @@ IOStreamFile* IOStreamFile::New( const std::string& path, const char* modes ) {
 
 IOStreamFile::IOStreamFile( const std::string& path, const char* modes ) : mFS( NULL ), mSize( 0 ) {
 	mFS = std::fopen( path.c_str(), modes );
-	;
 }
 
 IOStreamFile::~IOStreamFile() {
