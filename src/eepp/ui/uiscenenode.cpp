@@ -845,4 +845,8 @@ void UISceneNode::executeKeyBindingCommand( const std::string& command ) {
 	}
 }
 
+UIEventDispatcher* UISceneNode::getUIEventDispatcher() const {
+	return static_cast<UIEventDispatcher*>( mEventDispatcher );
+}
+
 }} // namespace EE::UI

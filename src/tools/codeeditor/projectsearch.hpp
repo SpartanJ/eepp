@@ -101,6 +101,11 @@ class ProjectSearch {
 												.results[index.row()]
 												.position.column() );
 					}
+				} else {
+					switch ( index.column() ) {
+						case FileOrPosition:
+							return Variant( mResult[index.row()].file.c_str() );
+					}
 				}
 			}
 			return Variant( EMPTY );

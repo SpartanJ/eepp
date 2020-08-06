@@ -11,6 +11,8 @@ class UISearchBar : public UILinearLayout {
 	UISearchBar() :
 		UILinearLayout( "searchbar", UIOrientation::Horizontal ),
 		mKeyBindings( getUISceneNode()->getWindow()->getInput() ) {}
+
+  public:
 	void addCommand( const std::string& name, const CommandCallback& cb ) { mCommands[name] = cb; }
 	void execute( const std::string& command ) {
 		auto cmdIt = mCommands.find( command );
@@ -29,10 +31,10 @@ class UISearchBar : public UILinearLayout {
 			auto cmdIt = mCommands.find( cmd );
 			if ( cmdIt != mCommands.end() ) {
 				cmdIt->second();
-				return 0;
+				return 1;
 			}
 		}
-		return 1;
+		return 0;
 	}
 };
 
@@ -43,6 +45,8 @@ class UILocateBar : public UILinearLayout {
 	UILocateBar() :
 		UILinearLayout( "locatebar", UIOrientation::Horizontal ),
 		mKeyBindings( getUISceneNode()->getWindow()->getInput() ) {}
+
+  public:
 	void addCommand( const std::string& name, const CommandCallback& cb ) { mCommands[name] = cb; }
 	void execute( const std::string& command ) {
 		auto cmdIt = mCommands.find( command );
@@ -61,10 +65,10 @@ class UILocateBar : public UILinearLayout {
 			auto cmdIt = mCommands.find( cmd );
 			if ( cmdIt != mCommands.end() ) {
 				cmdIt->second();
-				return 0;
+				return 1;
 			}
 		}
-		return 1;
+		return 0;
 	}
 };
 
@@ -75,6 +79,8 @@ class UIGlobalSearchBar : public UILinearLayout {
 	UIGlobalSearchBar() :
 		UILinearLayout( "globalsearchbar", UIOrientation::Vertical ),
 		mKeyBindings( getUISceneNode()->getWindow()->getInput() ) {}
+
+  public:
 	void addCommand( const std::string& name, const CommandCallback& cb ) { mCommands[name] = cb; }
 	void execute( const std::string& command ) {
 		auto cmdIt = mCommands.find( command );
@@ -93,10 +99,10 @@ class UIGlobalSearchBar : public UILinearLayout {
 			auto cmdIt = mCommands.find( cmd );
 			if ( cmdIt != mCommands.end() ) {
 				cmdIt->second();
-				return 0;
+				return 1;
 			}
 		}
-		return 1;
+		return 0;
 	}
 };
 
@@ -349,6 +355,10 @@ class App : public UICodeEditorSplitter::Client {
 	void hideSearchBar();
 
 	void hideLocateBar();
+
+	bool trySendUnlockedCmd( const KeyEvent& keyEvent );
+
+	void goToLine();
 };
 
 #endif // EE_TOOLS_CODEEDITOR_HPP

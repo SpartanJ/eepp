@@ -394,11 +394,11 @@ class EE_API Node : public Transformable {
 
 	virtual void nodeDraw();
 
-	void forceKeyDown( const KeyEvent& event );
+	Uint32 forceKeyDown( const KeyEvent& event );
 
-	void foceKeyUp( const KeyEvent& event );
+	Uint32 foceKeyUp( const KeyEvent& event );
 
-	void forceTextInput( const TextInputEvent& Event );
+	Uint32 forceTextInput( const TextInputEvent& Event );
 
   protected:
 	typedef std::map<Uint32, std::map<Uint32, EventCallback>> EventsMap;

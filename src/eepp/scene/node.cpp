@@ -530,16 +530,16 @@ void Node::nodeDraw() {
 	}
 }
 
-void Node::forceKeyDown( const KeyEvent& event ) {
-	onKeyDown( event );
+Uint32 Node::forceKeyDown( const KeyEvent& event ) {
+	return onKeyDown( event );
 }
 
-void Node::foceKeyUp( const KeyEvent& event ) {
-	onKeyUp( event );
+Uint32 Node::foceKeyUp( const KeyEvent& event ) {
+	return onKeyUp( event );
 }
 
-void Node::forceTextInput( const TextInputEvent& event ) {
-	onTextInput( event );
+Uint32 Node::forceTextInput( const TextInputEvent& event ) {
+	return onTextInput( event );
 }
 
 void Node::clipStart() {

@@ -363,6 +363,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void setColorPreview( bool colorPreview );
 
+	void goToLine( const TextPosition& position );
   protected:
 	struct LastXOffset {
 		TextPosition position;

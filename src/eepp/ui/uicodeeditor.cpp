@@ -649,45 +649,45 @@ Uint32 UICodeEditor::onFocusLoss() {
 
 Uint32 UICodeEditor::onTextInput( const TextInputEvent& event ) {
 	if ( mLocked || NULL == mFont )
-		return 1;
+		return 0;
 	Input* input = getUISceneNode()->getWindow()->getInput();
 
 	if ( ( input->isLeftAltPressed() && !event.getText().empty() && event.getText()[0] == '\t' ) ||
 		 ( input->isLeftAltPressed() && input->isShiftPressed() ) || input->isControlPressed() )
-		return 1;
+		return 0;
 
 	mDoc->textInput( event.getText() );
 
 	for ( auto& module : mModules )
 		if ( module->onTextInput( this, event ) )
-			return 0;
+			return 1;
 
-	return 1;
+	return 0;
 }
 
 Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
-	if ( NULL == mFont )
-		return 1;
+	if ( NULL == mFont || mUISceneNode->getUIEventDispatcher()->justGainedFocus() )
+		return 0;
 
 	for ( auto& module : mModules )
 		if ( module->onKeyDown( this, event ) )
-			return 0;
+			return 1;
 
 	std::string cmd = mKeyBindings.getCommandFromKeyBind( {event.getKeyCode(), event.getMod()} );
 	if ( !cmd.empty() ) {
 		// Allow copy selection on locked mode
 		if ( !mLocked || mUnlockedCmd.find( cmd ) != mUnlockedCmd.end() ) {
 			mDoc->execute( cmd );
-			return 0;
+			return 1;
 		}
 	}
-	return 1;
+	return 0;
 }
 
 Uint32 UICodeEditor::onKeyUp( const KeyEvent& event ) {
 	for ( auto& module : mModules )
 		if ( module->onKeyUp( this, event ) )
-			return 0;
+			return 1;
 	return UIWidget::onKeyUp( event );
 }
 
@@ -941,6 +941,11 @@ void UICodeEditor::updateScrollBar() {
 	mVScrollBar->setEnabled( notVisibleLineCount > 0 );
 	mVScrollBar->setVisible( notVisibleLineCount > 0 );
 	setScrollY( mScroll.y );
+}
+
+void UICodeEditor::goToLine( const TextPosition& position ) {
+	mDoc->setSelection( position );
+	scrollToMakeVisible( mDoc->getSelection().start() );
 }
 
 void UICodeEditor::updateEditor() {

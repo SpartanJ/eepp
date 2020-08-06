@@ -406,6 +406,23 @@ void App::updateLocateTable() {
 	mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
 }
 
+bool App::trySendUnlockedCmd( const KeyEvent& keyEvent ) {
+	if ( mEditorSplitter->getCurEditor() ) {
+		std::string cmd = mEditorSplitter->getCurEditor()->getKeyBindings().getCommandFromKeyBind(
+			{keyEvent.getKeyCode(), keyEvent.getMod()} );
+		if ( !cmd.empty() && mEditorSplitter->getCurEditor()->isUnlockedCommand( cmd ) ) {
+			mEditorSplitter->getCurEditor()->getDocument().execute( cmd );
+			return true;
+		}
+	}
+	return false;
+}
+
+void App::goToLine() {
+	showLocateBar();
+	mLocateInput->setText( "l " );
+}
+
 void App::initLocateBar() {
 	auto addClickListener = [&]( UIWidget* widget, std::string cmd ) {
 		widget->addEventListener( Event::MouseClick, [this, cmd]( const Event* event ) {
@@ -420,19 +437,30 @@ void App::initLocateBar() {
 	mLocateTable->setHeadersVisible( false );
 	mLocateTable->setVisible( false );
 	mLocateInput->addEventListener( Event::OnTextChanged, [&]( const Event* ) {
-		Vector2f pos( mLocateInput->convertToWorldSpace( {0, 0} ) );
-		pos.y -= mLocateTable->getPixelsSize().getHeight();
-		mLocateTable->setPixelsPosition( pos );
-		if ( !mDirTreeReady )
-			return;
-		updateLocateTable();
+		if ( mEditorSplitter->getCurEditor() &&
+			 String::startsWith( mLocateInput->getText(), String( "l " ) ) ) {
+			String number( mLocateInput->getText().substr( 2 ) );
+			Int64 val;
+			if ( String::fromString( val, number ) && val - 1 >= 0 ) {
+				mEditorSplitter->getCurEditor()->goToLine( {val - 1, 0} );
+				mLocateTable->setVisible( false );
+			}
+		} else {
+			mLocateTable->setVisible( true );
+			Vector2f pos( mLocateInput->convertToWorldSpace( {0, 0} ) );
+			pos.y -= mLocateTable->getPixelsSize().getHeight();
+			mLocateTable->setPixelsPosition( pos );
+			if ( !mDirTreeReady )
+				return;
+			updateLocateTable();
+		}
 	} );
 	mLocateInput->addEventListener( Event::OnPressEnter, [&]( const Event* ) {
 		KeyEvent keyEvent( mLocateTable, Event::KeyDown, KEY_RETURN, 0, 0 );
 		mLocateTable->forceKeyDown( keyEvent );
 	} );
 	mLocateInput->addEventListener( Event::KeyDown, [&]( const Event* event ) {
-		const KeyEvent* keyEvent = reinterpret_cast<const KeyEvent*>( event );
+		const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );
 		mLocateTable->forceKeyDown( *keyEvent );
 	} );
 	mLocateBarLayout->addCommand( "close-locatebar", [&] {
@@ -443,7 +471,7 @@ void App::initLocateBar() {
 		{"escape", "close-locatebar"},
 	} );
 	mLocateTable->addEventListener( Event::KeyDown, [&]( const Event* event ) {
-		const KeyEvent* keyEvent = reinterpret_cast<const KeyEvent*>( event );
+		const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );
 		if ( keyEvent->getKeyCode() == KEY_ESCAPE )
 			mLocateBarLayout->execute( "close-locatebar" );
 	} );
@@ -495,6 +523,7 @@ void App::showLocateBar() {
 	mLocateBarLayout->setVisible( true );
 	mLocateInput->setFocus();
 	mLocateTable->setVisible( true );
+	mLocateInput->getDocument().selectAll();
 	mLocateInput->addEventListener( Event::OnSizeChange,
 									[&]( const Event* ) { updateLocateBar(); } );
 	if ( mDirTree && !mLocateTable->getModel() ) {
@@ -590,6 +619,7 @@ void App::showGlobalSearch() {
 	mGlobalSearchBarLayout->setVisible( true )->setEnabled( true );
 	mGlobalSearchInput->setFocus();
 	mGlobalSearchTree->setVisible( true );
+	mGlobalSearchInput->getDocument().selectAll();
 	updateGlobalSearchBar();
 }
 
@@ -623,9 +653,6 @@ void App::initGlobalSearchBar() {
 	UICheckBox* caseSensitiveBox = mGlobalSearchBarLayout->find<UICheckBox>( "case_sensitive" );
 	UIWidget* searchBarClose = mGlobalSearchBarLayout->find<UIWidget>( "global_searchbar_close" );
 	mGlobalSearchInput = mGlobalSearchBarLayout->find<UITextInput>( "global_search_find" );
-	mGlobalSearchInput->addEventListener( Event::OnPressEnter, [this]( const Event* ) {
-		mGlobalSearchBarLayout->execute( "search-in-files" );
-	} );
 	mGlobalSearchBarLayout->addCommand( "search-in-files", [&, caseSensitiveBox] {
 		if ( mDirTree && mDirTree->getFilesCount() > 0 && !mGlobalSearchInput->getText().empty() ) {
 			UILoader* loader = UILoader::New();
@@ -668,12 +695,20 @@ void App::initGlobalSearchBar() {
 		{"escape", "close-global-searchbar"},
 	} );
 	mGlobalSearchInput->addEventListener( Event::OnPressEnter, [&]( const Event* ) {
-		KeyEvent keyEvent( mGlobalSearchTree, Event::KeyDown, KEY_RETURN, 0, 0 );
-		mGlobalSearchTree->forceKeyDown( keyEvent );
+		if ( mGlobalSearchInput->hasFocus() ) {
+			mGlobalSearchBarLayout->execute( "search-in-files" );
+		} else {
+			KeyEvent keyEvent( mGlobalSearchTree, Event::KeyDown, KEY_RETURN, 0, 0 );
+			mGlobalSearchTree->forceKeyDown( keyEvent );
+		}
 	} );
 	mGlobalSearchInput->addEventListener( Event::KeyDown, [&]( const Event* event ) {
-		const KeyEvent* keyEvent = reinterpret_cast<const KeyEvent*>( event );
-		mGlobalSearchTree->forceKeyDown( *keyEvent );
+		const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );
+		Uint32 keyCode = keyEvent->getKeyCode();
+		if ( ( keyCode == KEY_UP || keyCode == KEY_DOWN ) &&
+			 mGlobalSearchTree->forceKeyDown( *keyEvent ) && !mGlobalSearchTree->hasFocus() ) {
+			mGlobalSearchTree->setFocus();
+		}
 	} );
 	addClickListener( searchButton, "search-in-files" );
 	addClickListener( searchBarClose, "close-global-searchbar" );
@@ -685,7 +720,7 @@ void App::initGlobalSearchBar() {
 	mGlobalSearchTree->setColumnsHidden(
 		{ProjectSearch::ResultModel::Line, ProjectSearch::ResultModel::ColumnPosition}, true );
 	mGlobalSearchTree->addEventListener( Event::KeyDown, [&]( const Event* event ) {
-		const KeyEvent* keyEvent = reinterpret_cast<const KeyEvent*>( event );
+		const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );
 		if ( keyEvent->getKeyCode() == KEY_ESCAPE )
 			mGlobalSearchBarLayout->execute( "close-global-searchbar" );
 	} );
@@ -695,9 +730,9 @@ void App::initGlobalSearchBar() {
 			const Model* model = modelEvent->getModel();
 			if ( !model )
 				return;
-			Variant vPath(
-				model->data( model->index( modelEvent->getModelIndex().internalId(),
-										   ProjectSearch::ResultModel::FileOrPosition ) ) );
+			Variant vPath( model->data( model->index( modelEvent->getModelIndex().internalId(),
+													  ProjectSearch::ResultModel::FileOrPosition ),
+										Model::Role::Custom ) );
 			if ( vPath.isValid() && vPath.is( Variant::Type::cstr ) ) {
 				std::string path( vPath.asCStr() );
 				UITab* tab = mEditorSplitter->isDocumentOpen( path );
@@ -722,6 +757,7 @@ void App::initGlobalSearchBar() {
 					 lineNum.is( Variant::Type::Int64 ) && colNum.is( Variant::Type::Int64 ) ) {
 					mEditorSplitter->getCurEditor()->getDocument().setSelection(
 						{lineNum.asInt64(), colNum.asInt64()} );
+					hideGlobalSearchBar();
 				}
 			}
 		}
@@ -1451,7 +1487,8 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 		{{KEY_F7, KEYMOD_NONE}, "debug-draw-boxes-toggle"},
 		{{KEY_F8, KEYMOD_NONE}, "debug-draw-debug-data"},
 		{{KEY_K, KEYMOD_CTRL}, "open-locatebar"},
-		{{KEY_F, KEYMOD_CTRL | KEYMOD_SHIFT}, "global-find"},
+		{{KEY_F, KEYMOD_CTRL | KEYMOD_SHIFT}, "open-global-search"},
+		{{KEY_L, KEYMOD_CTRL}, "go-to-line"},
 	};
 }
 
@@ -1483,11 +1520,11 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 
 	editor->addKeyBinds( getLocalKeybindings() );
 	editor->addUnlockedCommands( {"fullscreen-toggle", "open-file", "open-folder", "console-toggle",
-								  "close-app", "open-locatebar"} );
+								  "close-app", "open-locatebar", "open-global-search"} );
 	doc.setCommand( "save-doc", [&] { saveDoc(); } );
 	doc.setCommand( "save-as-doc", [&] { saveFileDialog(); } );
 	doc.setCommand( "find-replace", [&] { showFindView(); } );
-	doc.setCommand( "global-find", [&] { showGlobalSearch(); } );
+	doc.setCommand( "open-global-search", [&] { showGlobalSearch(); } );
 	doc.setCommand( "open-locatebar", [&] { showLocateBar(); } );
 	doc.setCommand( "repeat-find", [&] { findNextText( mSearchState ); } );
 	doc.setCommand( "close-app", [&] { closeApp(); } );
@@ -1534,7 +1571,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	} );
 	doc.setCommand( "debug-draw-debug-data",
 					[&] { mUISceneNode->setDrawDebugData( !mUISceneNode->getDrawDebugData() ); } );
-
+	doc.setCommand( "go-to-line", [&] { goToLine(); } );
 	editor->addEventListener( Event::OnSave, [&]( const Event* event ) {
 		UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
 		if ( editor->getDocument().getFilePath() == mKeybindingsPath ) {
@@ -1576,7 +1613,8 @@ bool App::setAutoComplete( bool enable ) {
 UIPopUpMenu* App::createToolsMenu() {
 	mToolsMenu = UIPopUpMenu::New();
 	mToolsMenu->add( "Locate...", findIcon( "search" ), getKeybind( "open-locatebar" ) );
-	mToolsMenu->add( "Project Find...", findIcon( "search" ), getKeybind( "global-find" ) );
+	mToolsMenu->add( "Project Find...", findIcon( "search" ), getKeybind( "open-global-search" ) );
+	mToolsMenu->add( "Go to line...", findIcon( "go-to-line" ), getKeybind( "go-to-line" ) );
 	mToolsMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
@@ -1585,6 +1623,8 @@ UIPopUpMenu* App::createToolsMenu() {
 			showLocateBar();
 		} else if ( item->getText() == "Project Find..." ) {
 			showGlobalSearch();
+		} else if ( item->getText() == "Go to line..." ) {
+			goToLine();
 		}
 	} );
 	return mToolsMenu;
@@ -1758,7 +1798,7 @@ void App::initProjectTreeView( const std::string& path ) {
 		}
 	} );
 	mProjectTreeView->addEventListener( Event::KeyDown, [&]( const Event* event ) {
-		const KeyEvent* keyEvent = reinterpret_cast<const KeyEvent*>( event );
+		const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );
 		if ( mEditorSplitter->getCurEditor() ) {
 			std::string cmd =
 				mEditorSplitter->getCurEditor()->getKeyBindings().getCommandFromKeyBind(
@@ -1990,7 +2030,7 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 					</vbox>
 				</searchbar>
 				<locatebar id="locate_bar" layout_width="match_parent" layout_height="wrap_content" visible="false">
-					<TextInput id="locate_find" layout_width="0" layout_weight="1" layout_height="18dp" padding="0" margin-bottom="2dp" margin-right="4dp" hint="Type to locate..." />
+					<TextInput id="locate_find" layout_width="0" layout_weight="1" layout_height="18dp" padding="0" margin-bottom="2dp" margin-right="4dp" hint="Search files by name ( append `l ` to go to line )" />
 					<Widget id="locatebar_close" class="close_button" layout_width="wrap_content" layout_height="wrap_content" layout_gravity="center_vertical|right"/>
 				</locatebar>
 				<globalsearchbar id="global_search_bar" layout_width="match_parent" layout_height="wrap_content">
@@ -2053,6 +2093,7 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		addIcon( "cancel", 0xeb98, buttonIconSize );
 		addIcon( "color-picker", 0xf13d, buttonIconSize );
 		addIcon( "pixel-density", 0xed8c, buttonIconSize );
+		addIcon( "go-to-line", 0xf1f8, buttonIconSize );
 		addIcon( "tree-expanded", 0xea50, PixelDensity::dpToPx( 24 ) );
 		addIcon( "tree-contracted", 0xea54, PixelDensity::dpToPx( 24 ) );
 		addIcon( "search", 0xf0d1, menuIconSize );
@@ -2073,6 +2114,9 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		mUISceneNode->bind( "panel", mSidePanel );
 		mUISceneNode->bind( "project_splitter", mProjectSplitter );
 		mUISceneNode->bind( "locate_find", mLocateInput );
+		mUISceneNode->addEventListener( Event::KeyDown, [&]( const Event* event ) {
+			trySendUnlockedCmd( *static_cast<const KeyEvent*>( event ) );
+		} );
 		mDocInfo->setVisible( mConfig.editor.showDocInfo );
 		mSearchBarLayout->setVisible( false )->setEnabled( false );
 		mGlobalSearchBarLayout->setVisible( false )->setEnabled( false );
@@ -2095,10 +2139,6 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		createSettingsMenu();
 
 		mEditorSplitter->createEditorWithTabWidget( mBaseLayout );
-
-		std::string locateKeybind( getKeybind( "open-locatebar" ) );
-		if ( !locateKeybind.empty() )
-			mLocateInput->setHint( "Type to locate (" + locateKeybind + ")" );
 
 		mConsole = eeNew( Console, ( fontMono, true, true, 1024 * 1000, 0, mWindow ) );
 

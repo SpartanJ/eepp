@@ -20,7 +20,7 @@ const std::map<KeyBindings::Shortcut, std::string>
 UICodeEditorSplitter::getLocalDefaultKeybindings() {
 	return {
 		{{KEY_S, KEYMOD_CTRL}, "save-doc"},
-		{{KEY_L, KEYMOD_CTRL}, "lock-toggle"},
+		{{KEY_L, KEYMOD_CTRL | KEYMOD_SHIFT}, "lock-toggle"},
 		{{KEY_T, KEYMOD_CTRL}, "create-new"},
 		{{KEY_W, KEYMOD_CTRL}, "close-doc"},
 		{{KEY_TAB, KEYMOD_CTRL}, "next-doc"},

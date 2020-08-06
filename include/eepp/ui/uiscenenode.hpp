@@ -15,6 +15,7 @@ namespace EE { namespace UI {
 
 class UIThemeManager;
 class UIIconThemeManager;
+class UIEventDispatcher;
 class UIWidget;
 class UIWindow;
 class UIWidget;
@@ -126,6 +127,8 @@ class EE_API UISceneNode : public SceneNode {
 	void setKeyBindingCommand( const std::string& command, KeyBindingCommand func );
 
 	void executeKeyBindingCommand( const std::string& command );
+
+	UIEventDispatcher* getUIEventDispatcher() const;
 
   protected:
 	friend class EE::UI::UIWindow;
