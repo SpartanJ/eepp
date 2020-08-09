@@ -1,33 +1,3 @@
-////////////////////////////////////////////////////////////
-//
-// SFML - Simple and Fast Multimedia Library
-// Copyright (C) 2007-2009 Laurent Gomila (laurent.gom@gmail.com)
-//
-// This software is provided 'as-is', without any express or implied warranty.
-// In no event will the authors be held liable for any damages arising from the use of this
-// software.
-//
-// Permission is granted to anyone to use this software for any purpose,
-// including commercial applications, and to alter it and redistribute it freely,
-// subject to the following restrictions:
-//
-// 1. The origin of this software must not be misrepresented;
-//    you must not claim that you wrote the original software.
-//    If you use this software in a product, an acknowledgment
-//    in the product documentation would be appreciated but is not required.
-//
-// 2. Altered source versions must be plainly marked as such,
-//    and must not be misrepresented as being the original software.
-//
-// 3. This notice may not be removed or altered from any source distribution.
-//
-////////////////////////////////////////////////////////////
-/*
-** The class was modified to fit EEPP own needs. This is not the original implementation from SFML2.
-** Functions and methods are the same that in std::string to facilitate portability.
-** Also added a lot of utilities for string manipulation
-**/
-
 #ifndef EE_STRING_HPP
 #define EE_STRING_HPP
 
@@ -43,6 +13,12 @@
 
 namespace EE {
 
+/*
+** The class was modified to fit EEPP own needs. This is not the original implementation from SFML2.
+** Functions and methods are the same that in std::string to facilitate portability.
+** Also added a lot of utilities for string manipulation
+**/
+
 /** Utility string class that automatically handles conversions between types and encodings **/
 class EE_API String {
   public:
@@ -55,6 +31,27 @@ class EE_API String {
 	typedef Uint32 HashType;
 
 	static const std::size_t InvalidPos; ///< Represents an invalid position in the string
+
+	/** Boyer–Moore–Horspool fast string search. */
+	class EE_API BMH {
+	  public:
+		typedef std::vector<size_t> OccTable;
+
+		static const OccTable createOccTable( const unsigned char* needle, size_t needleLength );
+
+		/** @returns haystackLength if not found, otherwise the position */
+		static size_t search( const unsigned char* haystack, size_t haystackLength, const unsigned char* needle,
+							  const size_t needleLength,
+							  const OccTable& occ );
+
+		/** @returns -1 if not found otherwise the position */
+		static Int64 find( const std::string& haystack, const std::string& needle,
+						   const size_t& haystackOffset, const OccTable& occ );
+
+		/** @returns -1 if not found otherwise the position */
+		static Int64 find( const std::string& haystack, const std::string& needle,
+						   const size_t& haystackOffset = 0 );
+	};
 
 	/** @return string hash */
 	static constexpr HashType hash( const char* str ) {

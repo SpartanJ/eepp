@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cctype>
+#include <climits>
 #include <cstdarg>
 #include <eepp/core/string.hpp>
 #include <eepp/core/utf.hpp>
@@ -9,6 +10,106 @@
 namespace EE {
 
 const std::size_t String::InvalidPos = StringType::npos;
+
+/*
+ * Originally written by Joel Yliluoma <joel.yliluoma@iki.fi>
+ * http://en.wikipedia.org/wiki/Talk:Boyer%E2%80%93Moore_string_search_algorithm#Common_functions
+ *
+ * Copyright (c) 2008 Joel Yliluoma
+ * Copyright (c) 2010 Hongli Lai
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
+/* This function creates an occ table to be used by the search algorithms. */
+/* It only needs to be created once per a needle to search. */
+const String::BMH::OccTable String::BMH::createOccTable( const unsigned char* needle,
+														 size_t needleLength ) {
+	OccTable occ(
+		UCHAR_MAX + 1,
+		needleLength ); // initialize a table of UCHAR_MAX+1 elements to value needle_length
+
+	/* Populate it with the analysis of the needle */
+	/* But ignoring the last letter */
+	if ( needleLength >= 1 ) {
+		const size_t needleLengthMinus1 = needleLength - 1;
+		for ( size_t a = 0; a < needleLengthMinus1; ++a )
+			occ[needle[a]] = needleLengthMinus1 - a;
+	}
+	return occ;
+}
+
+/* A Boyer-Moore-Horspool search algorithm. */
+/* If it finds the needle, it returns an offset to haystack from which
+ * the needle was found. Otherwise, it returns haystack_length.
+ */
+size_t String::BMH::search( const unsigned char* haystack, size_t haystackLength,
+							const unsigned char* needle, const size_t needleLength,
+							const OccTable& occ ) {
+	if ( needleLength > haystackLength )
+		return haystackLength;
+	if ( needleLength == 1 ) {
+		const unsigned char* result =
+			(const unsigned char*)std::memchr( haystack, *needle, haystackLength );
+		return result ? size_t( result - haystack ) : haystackLength;
+	}
+
+	const size_t needleLengthMinus1 = needleLength - 1;
+
+	const unsigned char lastNeedleChar = needle[needleLengthMinus1];
+
+	size_t haystackPosition = 0;
+	while ( haystackPosition <= haystackLength - needleLength ) {
+		const unsigned char occChar = haystack[haystackPosition + needleLengthMinus1];
+
+		// The author modified this part. Original algorithm matches needle right-to-left.
+		// This code calls memcmp() (usually matches left-to-right) after matching the last
+		// character, thereby incorporating some ideas from
+		// "Tuning the Boyer-Moore-Horspool String Searching Algorithm"
+		// by Timo Raita, 1992.
+		if ( lastNeedleChar == occChar &&
+			 std::memcmp( needle, haystack + haystackPosition, needleLengthMinus1 ) == 0 ) {
+			return haystackPosition;
+		}
+
+		haystackPosition += occ[occChar];
+	}
+	return haystackLength;
+}
+
+Int64 String::BMH::find( const std::string& haystack, const std::string& needle,
+						 const size_t& haystackOffset, const OccTable& occ ) {
+	size_t result = search( (const unsigned char*)haystack.c_str() + haystackOffset,
+							haystack.size() - haystackOffset, (const unsigned char*)needle.c_str(),
+							needle.size(), occ );
+	if ( result == haystack.size() - haystackOffset ) {
+		return -1;
+	} else {
+		return (Int64)haystackOffset + result;
+	}
+}
+
+Int64 String::BMH::find( const std::string& haystack, const std::string& needle,
+						 const size_t& haystackOffset ) {
+	const auto occ = createOccTable( (const unsigned char*)needle.c_str(), needle.size() );
+	return find( haystack, needle, haystackOffset, occ );
+}
 
 String::HashType String::hash( const std::string& str ) {
 	return String::hash( str.c_str() );

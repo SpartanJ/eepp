@@ -650,10 +650,10 @@ void App::initGlobalSearchBar() {
 		} );
 	};
 	UIPushButton* searchButton = mGlobalSearchBarLayout->find<UIPushButton>( "search" );
-	UICheckBox* caseSensitiveBox = mGlobalSearchBarLayout->find<UICheckBox>( "case_sensitive" );
+	UICheckBox* caseSensitiveChk = mGlobalSearchBarLayout->find<UICheckBox>( "case_sensitive" );
 	UIWidget* searchBarClose = mGlobalSearchBarLayout->find<UIWidget>( "global_searchbar_close" );
 	mGlobalSearchInput = mGlobalSearchBarLayout->find<UITextInput>( "global_search_find" );
-	mGlobalSearchBarLayout->addCommand( "search-in-files", [&, caseSensitiveBox] {
+	mGlobalSearchBarLayout->addCommand( "search-in-files", [&, caseSensitiveChk] {
 		if ( mDirTree && mDirTree->getFilesCount() > 0 && !mGlobalSearchInput->getText().empty() ) {
 			UILoader* loader = UILoader::New();
 			loader->setId( "loader " );
@@ -665,7 +665,7 @@ void App::initGlobalSearchBar() {
 								 mGlobalSearchTree->getSize() * 0.5f - loader->getSize() * 0.5f );
 			Clock* clock = eeNew( Clock, () );
 			std::string search( mGlobalSearchInput->getText().toUtf8() );
-			ProjectSearch::find(
+			ProjectSearch::findHorspool(
 				mDirTree->getFiles(), search,
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 				mThreadPool,
@@ -683,7 +683,7 @@ void App::initGlobalSearchBar() {
 						loader->close();
 					} );
 				},
-				caseSensitiveBox->isChecked() );
+				caseSensitiveChk->isChecked() );
 		}
 	} );
 	mGlobalSearchBarLayout->addCommand( "close-global-searchbar", [&] {
@@ -693,6 +693,10 @@ void App::initGlobalSearchBar() {
 	} );
 	mGlobalSearchBarLayout->getKeyBindings().addKeybindsString( {
 		{"escape", "close-global-searchbar"},
+		{"ctrl+s", "change-case"},
+	} );
+	mGlobalSearchBarLayout->addCommand( "change-case", [&, caseSensitiveChk] {
+		caseSensitiveChk->setChecked( !caseSensitiveChk->isChecked() );
 	} );
 	mGlobalSearchInput->addEventListener( Event::OnPressEnter, [&]( const Event* ) {
 		if ( mGlobalSearchInput->hasFocus() ) {
@@ -1325,12 +1329,12 @@ void App::updateDocumentMenu() {
 		->asType<UIMenuCheckBox>()
 		->setActive( doc.getAutoDetectIndentType() );
 
-	mDocMenu->find( "indent_width" )
-		->asType<UIMenuSubMenu>()
-		->getSubMenu()
-		->find( String::format( "indent_width_%d", doc.getIndentWidth() ) )
-		->asType<UIMenuRadioButton>()
-		->setActive( true );
+	auto* curIndent = mDocMenu->find( "indent_width" )
+						  ->asType<UIMenuSubMenu>()
+						  ->getSubMenu()
+						  ->find( String::format( "indent_width_%d", doc.getIndentWidth() ) );
+	if ( curIndent )
+		curIndent->asType<UIMenuRadioButton>()->setActive( true );
 
 	mDocMenu->find( "indent_type" )
 		->asType<UIMenuSubMenu>()

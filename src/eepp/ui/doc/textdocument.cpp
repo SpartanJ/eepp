@@ -189,6 +189,9 @@ void TextDocument::guessIndentType() {
 		mIndentType = IndentType::IndentSpaces;
 		mIndentWidth = guessWidth.begin()->first;
 	}
+
+	if ( mIndentWidth == 0 )
+		mIndentWidth = 4;
 }
 
 void TextDocument::resetSyntax() {

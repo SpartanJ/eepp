@@ -83,7 +83,8 @@ class ProjectSearch {
 						case FileOrPosition:
 							return Variant( String::format(
 								"%6lld      %s",
-								mResult[index.internalId()].results[index.row()].position.line(),
+								mResult[index.internalId()].results[index.row()].position.line() +
+									1,
 								mResult[index.internalId()].results[index.row()].line.c_str() ) );
 					}
 				}
@@ -124,8 +125,15 @@ class ProjectSearch {
 	static void find( const std::vector<std::string> files, const std::string& string,
 					  ResultCb result, bool caseSensitive );
 
-	static void find( const std::vector<std::string> files, const std::string& string,
+	static void find( const std::vector<std::string> files, std::string string,
 					  std::shared_ptr<ThreadPool> pool, ResultCb result, bool caseSensitive );
+
+	static void findHorspool( const std::vector<std::string> files, const std::string& string,
+							  ResultCb result, bool caseSensitive );
+
+	static void findHorspool( const std::vector<std::string> files, std::string string,
+							  std::shared_ptr<ThreadPool> pool, ResultCb result,
+							  bool caseSensitive );
 };
 
 #endif // PROJECTSEARCH_HPP

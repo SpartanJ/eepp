@@ -879,10 +879,10 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	add( {"Config File",
 		  {"%.ini$", "%.conf$", "%.desktop$", "%.service$", "%.cfg$", "Doxyfile"},
 		  {
-			  {{"%s?#%x+"}, "string"},
-			  {{"[%a_][%w-+_%s%p]*%f[=]"}, "keyword"},
 			  {{"^#.-\n"}, "comment"},
 			  {{"%s#.-\n"}, "comment"},
+			  {{"%s?#%x+"}, "string"},
+			  {{"[%a_][%w-+_%s%p]*%f[=]"}, "keyword"},
 			  {{"\"", "\"", "\\"}, "string"},
 			  {{"'", "'", "\\"}, "string"},
 			  {{"^%[.-%]"}, "keyword2"},
