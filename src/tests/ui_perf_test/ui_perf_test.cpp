@@ -142,7 +142,7 @@ void mainLoop() {
 }
 
 EE_MAIN_FUNC int main( int argc, char* argv[] ) {
-	win = Engine::instance()->createWindow( WindowSettings( 800, 600, "eepp - UI Perf Test" ),
+	win = Engine::instance()->createWindow( WindowSettings( 1024, 768, "eepp - UI Perf Test" ),
 											ContextSettings( true ) );
 
 	if ( win->isOpen() ) {
@@ -193,7 +193,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		Clock clock;
 		auto model = FileSystemModel::New( "." ); // std::make_shared<TestModel>();
 		UITreeView* view = UITreeView::New();
-		//UITableView* view = UITableView::New();
+		// UITableView* view = UITableView::New();
 		view->setId( "treeview" );
 		/*view->setExpandedIcon( open );
 		view->setContractedIcon( closed );*/
@@ -201,6 +201,16 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		view->setParent( vlay );
 		view->setModel( model );
 		eePRINTL( "Total time: %.2fms", clock.getElapsedTime().asMilliseconds() );
+
+		UIWindow* uiWin = UIWindow::NewOpt( UIWindow::LINEAR_LAYOUT );
+		uiWin->setMinWindowSize( 500, 400 );
+		uiWin->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_RESIZEABLE | UI_WIN_MAXIMIZE_BUTTON );
+		UITreeView* widgetTree = UITreeView::New();
+		widgetTree->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
+		widgetTree->setParent( uiWin );
+		widgetTree->setHeadersVisible( false );
+		widgetTree->setAutoExpandOnSingleColumn( true );
+		widgetTree->setModel( WidgetTreeModel::New( uiSceneNode ) );
 
 		/* ListBox test */ /*
 		std::vector<String> strings;

@@ -37,8 +37,6 @@
 #include <eepp/ui/uisprite.hpp>
 #include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uitab.hpp>
-#include <eepp/ui/uiwidgettable.hpp>
-#include <eepp/ui/uiwidgettablerow.hpp>
 #include <eepp/ui/uitableview.hpp>
 #include <eepp/ui/uitabwidget.hpp>
 #include <eepp/ui/uitextedit.hpp>
@@ -53,6 +51,8 @@
 #include <eepp/ui/uiviewpager.hpp>
 #include <eepp/ui/uiwidget.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
+#include <eepp/ui/uiwidgettable.hpp>
+#include <eepp/ui/uiwidgettablerow.hpp>
 #include <eepp/ui/uiwindow.hpp>
 
 #include <eepp/ui/css/propertydefinition.hpp>
@@ -76,5 +76,6 @@
 #include <eepp/ui/models/filesystemmodel.hpp>
 #include <eepp/ui/models/model.hpp>
 #include <eepp/ui/models/modelselection.hpp>
+#include <eepp/ui/models/widgettreemodel.hpp>
 
 #endif

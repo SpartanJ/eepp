@@ -55,7 +55,8 @@ class EE_API UIWindow : public UIWidget {
 
 	enum WindowBaseContainerType { SIMPLE_LAYOUT, LINEAR_LAYOUT, RELATIVE_LAYOUT };
 
-	static UIWindow* NewOpt( WindowBaseContainerType type, const StyleConfig& windowStyleConfig );
+	static UIWindow* NewOpt( WindowBaseContainerType type,
+							 const StyleConfig& windowStyleConfig = StyleConfig() );
 
 	static UIWindow* New();
 

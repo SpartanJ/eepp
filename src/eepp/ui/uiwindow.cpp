@@ -52,6 +52,7 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const StyleConfig& w
 	mUISceneNode->setIsLoading( true );
 
 	mNodeFlags |= NODE_FLAG_WINDOW | NODE_FLAG_VIEW_DIRTY;
+	mFlags |= UI_OWNS_CHILDS_POSITION;
 
 	setHorizontalAlign( UI_HALIGN_CENTER );
 
@@ -647,7 +648,7 @@ void UIWindow::fixChildsSize() {
 
 	if ( NULL == mWindowDecoration && NULL != mContainer ) {
 		mContainer->setPixelsSize( mSize - mPaddingPx );
-		mContainer->setPosition( mPaddingPx.Left, mPaddingPx.Top );
+		mContainer->setPixelsPosition( mPaddingPx.Left, mPaddingPx.Top );
 		return;
 	}
 
