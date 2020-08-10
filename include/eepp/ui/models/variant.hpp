@@ -4,6 +4,7 @@
 #include <eepp/core/core.hpp>
 #include <eepp/graphics/drawable.hpp>
 #include <eepp/math/rect.hpp>
+#include <eepp/ui/uiicon.hpp>
 #include <string>
 
 using namespace EE::Graphics;
@@ -24,6 +25,7 @@ class EE_API Variant {
 		Int64,
 		Uint64,
 		Drawable,
+		Icon,
 		Vector2f,
 		Rectf,
 		cstr
@@ -36,6 +38,7 @@ class EE_API Variant {
 		mValue.asDrawable = drawable;
 		mOwnsObject = ownDrawable;
 	}
+	Variant( UIIcon* icon ) : mType( Type::Icon ) { mValue.asIcon = icon; }
 	Variant( const Vector2f& v ) : mType( Type::Vector2f ) {
 		mValue.asVector2f = eeNew( Vector2f, ( v ) );
 	}
@@ -59,6 +62,7 @@ class EE_API Variant {
 	const Vector2f& asVector2f() const { return *mValue.asVector2f; }
 	const Rectf& asRectf() const { return *mValue.asRectf; }
 	const char* asCStr() const { return mValue.asCStr; }
+	UIIcon* asIcon() const { return mValue.asIcon; }
 	bool is( const Type& type ) const { return type == mType; }
 	void reset() {
 		switch ( mType ) {
@@ -86,6 +90,7 @@ class EE_API Variant {
 	union {
 		void* asDataPtr;
 		Drawable* asDrawable;
+		UIIcon* asIcon;
 		std::string* asString;
 		bool asBool;
 		Float asFloat;

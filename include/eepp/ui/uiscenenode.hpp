@@ -20,6 +20,7 @@ class UIWidget;
 class UIWindow;
 class UIWidget;
 class UILayout;
+class UIIcon;
 
 class EE_API UISceneNode : public SceneNode {
   public:
@@ -104,7 +105,9 @@ class EE_API UISceneNode : public SceneNode {
 
 	UIIconThemeManager* getUIIconThemeManager() const;
 
-	Drawable* findIcon( const std::string& iconName );
+	UIIcon* findIcon( const std::string& iconName );
+
+	Drawable* findIconDrawable( const std::string& iconName, const size_t& drawableSize );
 
 	typedef std::function<void()> KeyBindingCommand;
 

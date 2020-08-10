@@ -1,6 +1,7 @@
 #include <eepp/graphics/drawablesearcher.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/uiicon.hpp>
 #include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uithememanager.hpp>
@@ -426,9 +427,11 @@ bool UIPushButton::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::Icon: {
 			std::string val = attribute.asString();
 			Drawable* icon = NULL;
-
-			if ( NULL != mTheme && NULL != ( icon = getUISceneNode()->findIcon( val ) ) ) {
-				setIcon( icon );
+			UIIcon* iconF = getUISceneNode()->findIcon( val );
+			if ( iconF ) {
+				setIcon( iconF->getSize(
+					eemax<size_t>( mSize.getHeight() - mPaddingPx.Top - mPadding.Bottom,
+								   PixelDensity::dpToPxI( 16 ) ) ) );
 			} else if ( NULL != ( icon = DrawableSearcher::searchByName( val ) ) ) {
 				setIcon( icon );
 			}

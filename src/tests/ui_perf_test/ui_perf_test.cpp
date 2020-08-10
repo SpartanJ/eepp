@@ -153,17 +153,17 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 			FontTrueType::New( "NotoSans-Regular", "assets/fonts/NotoSans-Regular.ttf" );
 		FontTrueType* iconFont = FontTrueType::New( "icon", "assets/fonts/remixicon.ttf" );
 		UIIconTheme* iconTheme = UIIconTheme::New( "remixicon" );
-		auto addIcon = [iconTheme, iconFont]( const std::string& name, const Uint32& codePoint,
-											  const Uint32& size ) -> Drawable* {
-			Drawable* ic = iconFont->getGlyphDrawable( codePoint, size );
-			iconTheme->add( name, ic );
-			return ic;
+		auto addIcon = [iconTheme, iconFont]( const std::string& name,
+											  const Uint32& codePoint ) -> UIIcon* {
+			auto* icon = UIGlyphIcon::New( name, iconFont, codePoint );
+			iconTheme->add( icon );
+			return icon;
 		};
-		addIcon( "folder", 0xed6a, 16 );
-		addIcon( "folder-open", 0xed70, 16 );
-		addIcon( "tree-expanded", 0xea50, 24 );
-		addIcon( "tree-contracted", 0xea54, 24 );
-		addIcon( "file", 0xecc3, 16 );
+		addIcon( "folder", 0xed6a );
+		addIcon( "folder-open", 0xed70 );
+		addIcon( "tree-expanded", 0xea50 );
+		addIcon( "tree-contracted", 0xea54 );
+		addIcon( "file", 0xecc3 );
 		UISceneNode* uiSceneNode = UISceneNode::New();
 		SceneManager::instance()->add( uiSceneNode );
 		uiSceneNode->getUIThemeManager()->setDefaultFont( font );
@@ -194,6 +194,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		auto model = FileSystemModel::New( "." ); // std::make_shared<TestModel>();
 		UITreeView* view = UITreeView::New();
 		// UITableView* view = UITableView::New();
+		view->setExpanderIconSize( PixelDensity::dpToPx( 20 ) );
 		view->setId( "treeview" );
 		/*view->setExpandedIcon( open );
 		view->setContractedIcon( closed );*/
@@ -210,6 +211,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		widgetTree->setParent( uiWin );
 		widgetTree->setHeadersVisible( false );
 		widgetTree->setAutoExpandOnSingleColumn( true );
+		widgetTree->setExpanderIconSize( PixelDensity::dpToPx( 20 ) );
 		widgetTree->setModel( WidgetTreeModel::New( uiSceneNode ) );
 
 		/* ListBox test */ /*

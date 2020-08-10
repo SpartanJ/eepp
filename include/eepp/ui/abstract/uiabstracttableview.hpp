@@ -68,6 +68,10 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	void moveSelection( int steps );
 
+	const size_t& getIconSize() const;
+
+	void setIconSize( const size_t& iconSize );
+
   protected:
 	friend class EE::UI::UITableHeaderColumn;
 
@@ -84,6 +88,7 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	mutable std::vector<std::map<int, UIWidget*>> mWidgets;
 	UILinearLayout* mHeader;
 	Float mDragBorderDistance{8};
+	size_t mIconSize{16};
 	bool mAutoExpandOnSingleColumn{false};
 
 	virtual ~UIAbstractTableView();

@@ -3,6 +3,7 @@
 
 #include <eepp/system/fileinfo.hpp>
 #include <eepp/ui/models/model.hpp>
+#include <eepp/ui/uiicon.hpp>
 #include <memory>
 
 namespace EE { namespace UI { namespace Models {
@@ -96,7 +97,7 @@ class EE_API FileSystemModel : public Model {
 	virtual ModelIndex index( int row, int column = 0,
 							  const ModelIndex& parent = ModelIndex() ) const;
 
-	virtual Drawable* iconFor( const Node& node, const ModelIndex& index ) const;
+	virtual UIIcon* iconFor( const Node& node, const ModelIndex& index ) const;
 
 	void setMode( const Mode& mode );
 

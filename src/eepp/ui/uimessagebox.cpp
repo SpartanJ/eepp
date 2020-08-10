@@ -105,8 +105,9 @@ void UIMessageBox::setTheme( UITheme* theme ) {
 	mButtonCancel->setTheme( theme );
 
 	if ( "Retry" != mButtonOK->getText() ) {
-		Drawable* okIcon = getUISceneNode()->findIcon( "ok" );
-		Drawable* cancelIcon = getUISceneNode()->findIcon( "cancel" );
+		Drawable* okIcon = getUISceneNode()->findIconDrawable( "ok", PixelDensity::dpToPxI( 16 ) );
+		Drawable* cancelIcon =
+			getUISceneNode()->findIconDrawable( "cancel", PixelDensity::dpToPxI( 16 ) );
 
 		if ( NULL != okIcon ) {
 			mButtonOK->setIcon( okIcon );

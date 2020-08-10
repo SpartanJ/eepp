@@ -518,8 +518,13 @@ Uint32 UIMenu::onKeyDown( const KeyEvent& event ) {
 
 static Drawable* getIconDrawable( const std::string& name, UIIconThemeManager* iconThemeManager ) {
 	Drawable* iconDrawable = nullptr;
-	if ( nullptr != iconThemeManager )
-		iconDrawable = iconThemeManager->findIcon( name );
+	if ( nullptr != iconThemeManager ) {
+		UIIcon* icon = iconThemeManager->findIcon( name );
+		if ( icon ) {
+			// TODO: Fix size
+			iconDrawable = icon->getSize( PixelDensity::dpToPx( 16 ) );
+		}
+	}
 	if ( nullptr == iconDrawable )
 		iconDrawable = DrawableSearcher::searchByName( name );
 	return iconDrawable;

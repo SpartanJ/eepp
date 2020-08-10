@@ -264,10 +264,10 @@ ModelIndex FileSystemModel::index( int row, int column, const ModelIndex& parent
 	return createIndex( row, column, &node.mChildren[row] );
 }
 
-Drawable* FileSystemModel::iconFor( const Node& node, const ModelIndex& index ) const {
+UIIcon* FileSystemModel::iconFor( const Node& node, const ModelIndex& index ) const {
 	if ( index.column() == (Int64)treeColumn() || Column::Icon == index.column() ) {
 		auto* scene = SceneManager::instance()->getUISceneNode();
-		Drawable* d = scene->findIcon( node.getMimeType() );
+		auto* d = scene->findIcon( node.getMimeType() );
 		if ( !d ) {
 			if ( !node.info().isDirectory() ) {
 				return scene->findIcon( "file" );

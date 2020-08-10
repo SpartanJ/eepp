@@ -7,14 +7,19 @@ UIIconTheme* UIIconTheme::New( const std::string& name ) {
 	return eeNew( UIIconTheme, ( name ) );
 }
 
+UIIconTheme::~UIIconTheme() {
+	for ( auto icon : mIcons )
+		eeDelete( icon.second );
+}
+
 UIIconTheme::UIIconTheme( const std::string& name ) : mName( name ) {}
 
-UIIconTheme* UIIconTheme::add( const std::string& name, Drawable* drawable ) {
-	mIcons[name] = drawable;
+UIIconTheme* UIIconTheme::add( UIIcon* icon ) {
+	mIcons[icon->getName()] = icon;
 	return this;
 }
 
-UIIconTheme* UIIconTheme::add( const std::unordered_map<std::string, Drawable*>& icons ) {
+UIIconTheme* UIIconTheme::add( const std::unordered_map<std::string, UIIcon*>& icons ) {
 	mIcons.insert( icons.begin(), icons.end() );
 	return this;
 }
@@ -23,7 +28,7 @@ const std::string& UIIconTheme::getName() const {
 	return mName;
 }
 
-Drawable* UIIconTheme::getIcon( const std::string& name ) const {
+UIIcon* UIIconTheme::getIcon( const std::string& name ) const {
 	auto it = mIcons.find( name );
 	return it != mIcons.end() ? it->second : nullptr;
 }

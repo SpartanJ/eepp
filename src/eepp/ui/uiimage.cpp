@@ -2,6 +2,7 @@
 #include <eepp/graphics/drawablesearcher.hpp>
 #include <eepp/graphics/sprite.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/uiicon.hpp>
 #include <eepp/ui/uiimage.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 
@@ -256,8 +257,10 @@ bool UIImage::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::Icon: {
 			std::string val = attribute.asString();
 			Drawable* icon = NULL;
-			if ( NULL != ( icon = getUISceneNode()->findIcon( val ) ) ) {
-				setDrawable( icon );
+			UIIcon* iconF = getUISceneNode()->findIcon( val );
+			if ( iconF ) {
+				setDrawable(
+					iconF->getSize( mSize.getHeight() - mPaddingPx.Top - mPadding.Bottom ) );
 			} else if ( NULL != ( icon = DrawableSearcher::searchByName( val ) ) ) {
 				setDrawable( icon );
 			}

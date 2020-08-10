@@ -48,8 +48,8 @@ UIIconThemeManager* UIIconThemeManager::setFallbackTheme( UIIconTheme* fallbackT
 	return this;
 }
 
-Drawable* UIIconThemeManager::findIcon( const std::string& name ) {
-	Drawable* icon = nullptr;
+UIIcon* UIIconThemeManager::findIcon( const std::string& name ) {
+	UIIcon* icon = nullptr;
 	if ( mCurrentTheme ) {
 		icon = mCurrentTheme->getIcon( name );
 		if ( icon )

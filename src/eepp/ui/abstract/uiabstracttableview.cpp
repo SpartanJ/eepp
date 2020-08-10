@@ -7,7 +7,9 @@
 namespace EE { namespace UI { namespace Abstract {
 
 UIAbstractTableView::UIAbstractTableView( const std::string& tag ) :
-	UIAbstractView( tag ), mDragBorderDistance( PixelDensity::dpToPx( 4 ) ) {
+	UIAbstractView( tag ),
+	mDragBorderDistance( PixelDensity::dpToPx( 4 ) ),
+	mIconSize( PixelDensity::dpToPxI( 12 ) ) {
 	mHeader = UILinearLayout::NewWithTag( "table::header", UIOrientation::Horizontal );
 	mHeader->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 	mHeader->setParent( this );
@@ -356,6 +358,9 @@ UIWidget* UIAbstractTableView::updateCell( const int& rowIndex, const ModelIndex
 		if ( icon.is( Variant::Type::Drawable ) && icon.asDrawable() ) {
 			isVisible = true;
 			cell->setIcon( icon.asDrawable() );
+		} else if ( icon.is( Variant::Type::Icon ) && icon.asIcon() ) {
+			isVisible = true;
+			cell->setIcon( icon.asIcon()->getSize( mIconSize ) );
 		}
 		cell->getIcon()->setVisible( isVisible );
 	}
@@ -379,6 +384,14 @@ void UIAbstractTableView::moveSelection( int steps ) {
 		scrollToPosition( {{mScrollOffset.x, getHeaderHeight() + newIndex.row() * getRowHeight()},
 						   {columnData( newIndex.column() ).width, getRowHeight()}} );
 	}
+}
+
+const size_t& UIAbstractTableView::getIconSize() const {
+	return mIconSize;
+}
+
+void UIAbstractTableView::setIconSize( const size_t& iconSize ) {
+	mIconSize = iconSize;
 }
 
 void UIAbstractTableView::onOpenModelIndex( const ModelIndex& index ) {

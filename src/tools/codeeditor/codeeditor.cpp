@@ -719,6 +719,7 @@ void App::initGlobalSearchBar() {
 	mGlobalSearchTree = UITreeView::New();
 	mGlobalSearchTree->setId( "search_tree" );
 	mGlobalSearchTree->setParent( mUISceneNode->getRoot() );
+	mGlobalSearchTree->setExpanderIconSize( PixelDensity::dpToPx( 20 ) );
 	mGlobalSearchTree->setHeadersVisible( false );
 	mGlobalSearchTree->setVisible( false );
 	mGlobalSearchTree->setColumnsHidden(
@@ -1173,7 +1174,10 @@ void App::setFocusEditorOnClose( UIMessageBox* msgBox ) {
 }
 
 Drawable* App::findIcon( const std::string& name ) {
-	return mUISceneNode->findIcon( name );
+	UIIcon* icon = mUISceneNode->findIcon( name );
+	if ( icon )
+		return icon->getSize( mMenuIconSize );
+	return nullptr;
 }
 
 UIMenu* App::createEditMenu() {
@@ -1798,6 +1802,8 @@ void App::initProjectTreeView( const std::string& path ) {
 		 FileSystemModel::Inode, FileSystemModel::Owner, FileSystemModel::SymlinkTarget,
 		 FileSystemModel::Permissions, FileSystemModel::ModificationTime, FileSystemModel::Path},
 		true );
+	mProjectTreeView->setIconSize( mMenuIconSize );
+	mProjectTreeView->setExpanderIconSize( mMenuIconSize );
 	mProjectTreeView->setExpandedIcon( "folder-open" );
 	mProjectTreeView->setContractedIcon( "folder" );
 	mProjectTreeView->setHeadersVisible( false );
@@ -2077,49 +2083,53 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		)xml";
 
 		UIIconTheme* iconTheme = UIIconTheme::New( "remixicon" );
-		Float menuIconSize = mConfig.ui.fontSize.asPixels( 0, Sizef(), mDisplayDPI );
-		Float buttonIconSize =
-			StyleSheetLength::fromString( "16dp" ).asPixels( 0, Sizef(), mDisplayDPI );
-		auto addIcon = [iconTheme, iconFont]( const std::string& name, const Uint32& codePoint,
-											  const Uint32& size ) {
-			iconTheme->add( name, iconFont->getGlyphDrawable( codePoint, size ) );
+		mMenuIconSize = mConfig.ui.fontSize.asPixels( 0, Sizef(), mDisplayDPI );
+		/*Float buttonIconSize =
+			StyleSheetLength::fromString( "16dp" ).asPixels( 0, Sizef(), mDisplayDPI );*/
+		auto addIcon = [iconTheme, iconFont]( const std::string& name,
+											  const Uint32& codePoint ) -> UIIcon* {
+			auto* icon = UIGlyphIcon::New( name, iconFont, codePoint );
+			iconTheme->add( icon );
+			return icon;
 		};
-		addIcon( "document-new", 0xecc3, menuIconSize );
-		addIcon( "document-open", 0xed70, menuIconSize );
-		addIcon( "document-save", 0xf0b3, menuIconSize );
-		addIcon( "document-save-as", 0xf0b3, menuIconSize );
-		addIcon( "document-close", 0xeb99, menuIconSize );
-		addIcon( "quit", 0xeb97, menuIconSize );
-		addIcon( "undo", 0xea58, menuIconSize );
-		addIcon( "redo", 0xea5a, menuIconSize );
-		addIcon( "redo", 0xea5a, menuIconSize );
-		addIcon( "cut", 0xf0c1, menuIconSize );
-		addIcon( "copy", 0xecd5, menuIconSize );
-		addIcon( "paste", 0xeb91, menuIconSize );
-		addIcon( "split-horizontal", 0xf17a, menuIconSize );
-		addIcon( "split-vertical", 0xf17b, menuIconSize );
-		addIcon( "find-replace", 0xed2b, menuIconSize );
-		addIcon( "folder", 0xed54, menuIconSize );
-		addIcon( "folder-open", 0xed70, menuIconSize );
-		addIcon( "folder-add", 0xed5a, menuIconSize );
-		addIcon( "file", 0xecc3, menuIconSize );
-		addIcon( "file-code", 0xecd1, menuIconSize );
-		addIcon( "file-edit", 0xecdb, menuIconSize );
-		addIcon( "font-size", 0xed8d, menuIconSize );
-		addIcon( "zoom-in", 0xf2db, menuIconSize );
-		addIcon( "zoom-out", 0xf2dd, menuIconSize );
-		addIcon( "zoom-reset", 0xeb47, menuIconSize );
-		addIcon( "fullscreen", 0xed9c, menuIconSize );
-		addIcon( "keybindings", 0xee75, menuIconSize );
-		addIcon( "go-up", 0xea78, buttonIconSize );
-		addIcon( "ok", 0xeb7a, buttonIconSize );
-		addIcon( "cancel", 0xeb98, buttonIconSize );
-		addIcon( "color-picker", 0xf13d, buttonIconSize );
-		addIcon( "pixel-density", 0xed8c, buttonIconSize );
-		addIcon( "go-to-line", 0xf1f8, buttonIconSize );
-		addIcon( "tree-expanded", 0xea50, PixelDensity::dpToPx( 24 ) );
-		addIcon( "tree-contracted", 0xea54, PixelDensity::dpToPx( 24 ) );
-		addIcon( "search", 0xf0d1, menuIconSize );
+		addIcon( "document-new", 0xecc3 );
+		addIcon( "document-open", 0xed70 );
+		addIcon( "document-save", 0xf0b3 );
+		addIcon( "document-save-as", 0xf0b3 );
+		addIcon( "document-close", 0xeb99 );
+		addIcon( "quit", 0xeb97 );
+		addIcon( "undo", 0xea58 );
+		addIcon( "redo", 0xea5a );
+		addIcon( "redo", 0xea5a );
+		addIcon( "cut", 0xf0c1 );
+		addIcon( "copy", 0xecd5 );
+		addIcon( "paste", 0xeb91 );
+		addIcon( "split-horizontal", 0xf17a );
+		addIcon( "split-vertical", 0xf17b );
+		addIcon( "find-replace", 0xed2b );
+		addIcon( "folder", 0xed54 );
+		addIcon( "folder-open", 0xed70 );
+		addIcon( "folder-add", 0xed5a );
+		addIcon( "file", 0xecc3 );
+		addIcon( "file-code", 0xecd1 );
+		addIcon( "file-edit", 0xecdb );
+		addIcon( "font-size", 0xed8d );
+		addIcon( "zoom-in", 0xf2db );
+		addIcon( "zoom-out", 0xf2dd );
+		addIcon( "zoom-reset", 0xeb47 );
+		addIcon( "fullscreen", 0xed9c );
+		addIcon( "keybindings", 0xee75 );
+		addIcon( "tree-expanded", 0xea50 );
+		addIcon( "tree-contracted", 0xea54 );
+		addIcon( "search", 0xf0d1 );
+
+		addIcon( "go-up", 0xea78 );
+		addIcon( "ok", 0xeb7a );
+		addIcon( "cancel", 0xeb98 );
+		addIcon( "color-picker", 0xf13d );
+		addIcon( "pixel-density", 0xed8c );
+		addIcon( "go-to-line", 0xf1f8 );
+
 		mUISceneNode->getUIIconThemeManager()->setCurrentTheme( iconTheme );
 
 		UIWidgetCreator::registerWidget( "searchbar", [] { return UISearchBar::New(); } );

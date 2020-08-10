@@ -85,7 +85,7 @@ MapObjectProperties::MapObjectProperties( GameObjectObject* Obj ) :
 
 	UIPushButton* OKButton = UIPushButton::New();
 	OKButton->setParent( mUIWindow->getContainer() )->setSize( 80, 0 );
-	OKButton->setIcon( sceneNode->findIcon( "ok" ) );
+	OKButton->setIcon( sceneNode->findIconDrawable( "ok", PixelDensity::dpToPxI( 16 ) ) );
 	OKButton->setPosition(
 		mUIWindow->getContainer()->getSize().getWidth() - OKButton->getSize().getWidth() - 4,
 		mUIWindow->getContainer()->getSize().getHeight() - OKButton->getSize().getHeight() - 4 );
@@ -99,7 +99,7 @@ MapObjectProperties::MapObjectProperties( GameObjectObject* Obj ) :
 		->setSize( OKButton->getSize() )
 		->setPosition( OKButton->getPosition().x - OKButton->getSize().getWidth() - 4,
 					   OKButton->getPosition().y );
-	CancelButton->setIcon( sceneNode->findIcon( "cancel" ) );
+	CancelButton->setIcon( sceneNode->findIconDrawable( "cancel", PixelDensity::dpToPxI( 16 ) ) );
 	CancelButton->addEventListener( Event::MouseClick,
 									cb::Make1( this, &MapObjectProperties::onCancelClick ) );
 	CancelButton->setText( "Cancel" );
@@ -122,7 +122,7 @@ MapObjectProperties::MapObjectProperties( GameObjectObject* Obj ) :
 
 	UIPushButton* AddButton = UIPushButton::New();
 	AddButton->setParent( mUIWindow->getContainer() )->setSize( 24, 0 )->setPosition( Pos );
-	AddButton->setIcon( sceneNode->findIcon( "add" ) );
+	AddButton->setIcon( sceneNode->findIconDrawable( "add", PixelDensity::dpToPxI( 16 ) ) );
 	AddButton->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
 	AddButton->addEventListener( Event::MouseClick,
 								 cb::Make1( this, &MapObjectProperties::onAddCellClick ) );
@@ -134,7 +134,7 @@ MapObjectProperties::MapObjectProperties( GameObjectObject* Obj ) :
 
 	UIPushButton* RemoveButton = UIPushButton::New();
 	RemoveButton->setParent( mUIWindow->getContainer() )->setSize( 24, 0 )->setPosition( Pos );
-	RemoveButton->setIcon( sceneNode->findIcon( "remove" ) );
+	RemoveButton->setIcon( sceneNode->findIconDrawable( "remove", PixelDensity::dpToPxI( 16 ) ) );
 	RemoveButton->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
 	RemoveButton->addEventListener( Event::MouseClick,
 									cb::Make1( this, &MapObjectProperties::onRemoveCellClick ) );

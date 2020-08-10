@@ -252,6 +252,7 @@ class App : public UICodeEditorSplitter::Client {
 	UITextInput* mLocateInput{nullptr};
 	UITreeView* mGlobalSearchTree{nullptr};
 	UITextInput* mGlobalSearchInput;
+	size_t mMenuIconSize;
 	bool mDirTreeReady{false};
 
 	void initLocateBar();

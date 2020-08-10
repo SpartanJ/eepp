@@ -359,6 +359,7 @@
 ../../include/eepp/ui/uifontstyleconfig.hpp
 ../../include/eepp/ui/uigridlayout.hpp
 ../../include/eepp/ui/uihelper.hpp
+../../include/eepp/ui/uiicon.hpp
 ../../include/eepp/ui/uiicontheme.hpp
 ../../include/eepp/ui/uiiconthememanager.hpp
 ../../include/eepp/ui/uiimage.hpp
@@ -831,6 +832,7 @@
 ../../src/eepp/ui/uieventdispatcher.cpp
 ../../src/eepp/ui/uifiledialog.cpp
 ../../src/eepp/ui/uigridlayout.cpp
+../../src/eepp/ui/uiicon.cpp
 ../../src/eepp/ui/uiicontheme.cpp
 ../../src/eepp/ui/uiiconthememanager.cpp
 ../../src/eepp/ui/uiimage.cpp

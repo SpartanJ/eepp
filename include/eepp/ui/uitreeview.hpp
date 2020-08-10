@@ -2,6 +2,7 @@
 #define EE_UI_UITREEVIEW_HPP
 
 #include <eepp/ui/abstract/uiabstracttableview.hpp>
+#include <eepp/ui/uiicon.hpp>
 #include <eepp/ui/uitablerow.hpp>
 #include <memory>
 #include <unordered_map>
@@ -36,15 +37,15 @@ class EE_API UITreeView : public UIAbstractTableView {
 
 	void contractAll( const ModelIndex& index = {} );
 
-	Drawable* getExpandIcon() const;
+	UIIcon* getExpandIcon() const;
 
-	void setExpandedIcon( Drawable* expandIcon );
+	void setExpandedIcon( EE::UI::UIIcon* expandIcon );
 
 	void setExpandedIcon( const std::string& expandIcon );
 
-	Drawable* getContractIcon() const;
+	UIIcon* getContractIcon() const;
 
-	void setContractedIcon( Drawable* contractIcon );
+	void setContractedIcon( EE::UI::UIIcon* contractIcon );
 
 	void setContractedIcon( const std::string& contractIcon );
 
@@ -53,6 +54,10 @@ class EE_API UITreeView : public UIAbstractTableView {
 	void setExpandersAsIcons( bool expandersAsIcons );
 
 	Float getMaxColumnContentWidth( const size_t& colIndex );
+
+	const size_t& getExpanderIconSize() const;
+
+	void setExpanderIconSize( const size_t& expanderSize );
 
   protected:
 	enum class IterationDecision {
@@ -63,8 +68,9 @@ class EE_API UITreeView : public UIAbstractTableView {
 
 	Float mIndentWidth;
 	Sizef mContentSize;
-	Drawable* mExpandIcon{nullptr};
-	Drawable* mContractIcon{nullptr};
+	UIIcon* mExpandIcon{nullptr};
+	UIIcon* mContractIcon{nullptr};
+	size_t mExpanderIconSize{16};
 	bool mExpandersAsIcons{false};
 
 	UITreeView();

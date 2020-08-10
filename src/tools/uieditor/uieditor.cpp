@@ -891,27 +891,32 @@ void createAppMenu() {
 
 	uiMenuBar = UIMenuBar::New();
 
+	size_t iconSize = PixelDensity::dpToPxI( 16 );
 	UIPopUpMenu* uiPopMenu = UIPopUpMenu::New();
-	uiPopMenu->add( "Open project...", appUiSceneNode->findIcon( "document-open" ) );
+	uiPopMenu->add( "Open project...",
+					appUiSceneNode->findIconDrawable( "document-open", iconSize ) );
 	uiPopMenu->addSeparator();
-	uiPopMenu->add( "Open layout...", appUiSceneNode->findIcon( "document-open" ) );
+	uiPopMenu->add( "Open layout...",
+					appUiSceneNode->findIconDrawable( "document-open", iconSize ) );
 	uiPopMenu->addSeparator();
 	uiPopMenu->addSubMenu( "Recent files", NULL, UIPopUpMenu::New() );
 	uiPopMenu->addSubMenu( "Recent projects", NULL, UIPopUpMenu::New() );
 	uiPopMenu->addSeparator();
-	uiPopMenu->add( "Close", appUiSceneNode->findIcon( "document-close" ) );
+	uiPopMenu->add( "Close", appUiSceneNode->findIconDrawable( "document-close", iconSize ) );
 	uiPopMenu->addSeparator();
-	uiPopMenu->add( "Quit", appUiSceneNode->findIcon( "quit" ) );
+	uiPopMenu->add( "Quit", appUiSceneNode->findIconDrawable( "quit", iconSize ) );
 	uiMenuBar->addMenuButton( "File", uiPopMenu );
 	uiPopMenu->addEventListener( Event::OnItemClicked, cb::Make1( fileMenuClick ) );
 
 	UIPopUpMenu* uiResourceMenu = UIPopUpMenu::New();
-	uiResourceMenu->add( "Load images from path...", appUiSceneNode->findIcon( "document-open" ) );
+	uiResourceMenu->add( "Load images from path...",
+						 appUiSceneNode->findIconDrawable( "document-open", iconSize ) );
 	uiResourceMenu->addSeparator();
-	uiResourceMenu->add( "Load fonts from path...", appUiSceneNode->findIcon( "document-open" ) );
+	uiResourceMenu->add( "Load fonts from path...",
+						 appUiSceneNode->findIconDrawable( "document-open", iconSize ) );
 	uiResourceMenu->addSeparator();
 	uiResourceMenu->add( "Load style sheet from path...",
-						 appUiSceneNode->findIcon( "document-open" ) );
+						 appUiSceneNode->findIconDrawable( "document-open", iconSize ) );
 	uiMenuBar->addMenuButton( "Resources", uiResourceMenu );
 	uiResourceMenu->addEventListener( Event::OnItemClicked, cb::Make1( fileMenuClick ) );
 

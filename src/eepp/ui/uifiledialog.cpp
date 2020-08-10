@@ -187,7 +187,7 @@ void UIFileDialog::setTheme( UITheme* Theme ) {
 	mFile->setTheme( Theme );
 	mFiletype->setTheme( Theme );
 
-	Drawable* icon = getUISceneNode()->findIcon( "go-up" );
+	Drawable* icon = getUISceneNode()->findIconDrawable( "go-up", PixelDensity::dpToPxI( 16 ) );
 
 	if ( NULL != icon ) {
 		mButtonUp->setText( "" );

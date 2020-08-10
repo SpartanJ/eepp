@@ -24,7 +24,7 @@ class EE_API UIIconThemeManager {
 
 	UIIconThemeManager* setFallbackTheme( UIIconTheme* fallbackTheme );
 
-	Drawable* findIcon( const std::string& name );
+	UIIcon* findIcon( const std::string& name );
 
 	UIThemeManager* getFallbackThemeManager() const;
 

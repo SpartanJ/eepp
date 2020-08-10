@@ -17,6 +17,9 @@ class Drawable;
 
 namespace EE { namespace UI {
 
+class UIIcon;
+class UIIconTheme;
+
 class EE_API UITheme : protected ResourceManagerMulti<UISkin> {
   public:
 	using ResourceManagerMulti<UISkin>::getById;
@@ -43,8 +46,6 @@ class EE_API UITheme : protected ResourceManagerMulti<UISkin> {
 	static UITheme* loadFromDirectroy( const std::string& Path, const std::string& Name,
 									   const std::string& NameAbbr, const Float& pixelDensity = 1 );
 
-	UITheme( const std::string& name, const std::string& abbr, Graphics::Font* defaultFont = NULL );
-
 	virtual ~UITheme();
 
 	const std::string& getName() const;
@@ -59,7 +60,7 @@ class EE_API UITheme : protected ResourceManagerMulti<UISkin> {
 
 	Graphics::TextureAtlas* getTextureAtlas() const;
 
-	EE::Graphics::Drawable* getIconByName( const std::string& name );
+	UIIcon* getIconByName( const std::string& name );
 
 	UISkin* getSkin( const std::string& widgetName );
 
@@ -75,6 +76,8 @@ class EE_API UITheme : protected ResourceManagerMulti<UISkin> {
 
 	void setDefaultFontSize( const Float& defaultFontSize );
 
+	UIIconTheme* getIconTheme() const;
+
   protected:
 	std::string mName;
 	String::HashType mNameHash;
@@ -83,8 +86,11 @@ class EE_API UITheme : protected ResourceManagerMulti<UISkin> {
 	Font* mDefaultFont;
 	Float mDefaultFontSize;
 	CSS::StyleSheet mStyleSheet;
+	UIIconTheme* mIconTheme;
 
 	void setTextureAtlas( Graphics::TextureAtlas* SG );
+
+	UITheme( const std::string& name, const std::string& abbr, Graphics::Font* defaultFont = NULL );
 };
 
 }} // namespace EE::UI

@@ -391,7 +391,7 @@ void EETest::createBaseUI() {
 
 	UIPushButton* Button = UIPushButton::New();
 	Button->setParent( C )->setPosition( 225, 215 )->setSize( 90, 0 );
-	Button->setIcon( mSceneNode->findIcon( "ok" ) );
+	Button->setIcon( mSceneNode->findIconDrawable( "ok", PixelDensity::dpToPxI( 16 ) ) );
 	Button->setText( "Click Me" );
 	Button->addEventListener( Event::MouseClick, cb::Make1( this, &EETest::onButtonClick ) );
 	Button->setTooltipText( "Click and see what happens..." );
@@ -490,7 +490,7 @@ void EETest::createBaseUI() {
 		Cell->setParent( genGrid->getContainer() );
 
 		TxtGfx->setVerticalAlign( UI_VALIGN_CENTER );
-		TxtGfx->setDrawable( mSceneNode->findIcon( "ok" ) );
+		TxtGfx->setDrawable( mSceneNode->findIconDrawable( "ok", PixelDensity::dpToPxI( 16 ) ) );
 		TxtBox->setText( "Test " + String::toString( i + 1 ) );
 
 		Cell->setColumn( 0, TxtBox );
@@ -514,9 +514,10 @@ void EETest::createBaseUI() {
 	C = C->getParent()->asType<UINode>();
 
 	Menu = UIPopUpMenu::New();
-	Menu->add( "New", mSceneNode->findIcon( "document-new" ) );
+	Menu->add( "New", mSceneNode->findIconDrawable( "document-new", PixelDensity::dpToPxI( 16 ) ) );
 
-	Menu->add( "Open...", mSceneNode->findIcon( "document-open" ) );
+	Menu->add( "Open...",
+			   mSceneNode->findIconDrawable( "document-open", PixelDensity::dpToPxI( 16 ) ) );
 	Menu->addSeparator();
 	Menu->add( "Map Editor" );
 	Menu->add( "Texture Atlas Editor" );
@@ -699,7 +700,7 @@ void EETest::createNewUI() {
 	UIImage* gfx = UIImage::New();
 	gfx->setPosition( 50, 140 )->setSize( 16, 16 )->setParent( container );
 	gfx->setBackgroundColor( 0x33333333 );
-	gfx->setDrawable( mSceneNode->findIcon( "ok" ) );
+	gfx->setDrawable( mSceneNode->findIconDrawable( "ok", PixelDensity::dpToPxI( 16 ) ) );
 
 	UISlider* slider = UISlider::New();
 	slider->setOrientation( UIOrientation::Horizontal )
@@ -733,7 +734,7 @@ void EETest::createNewUI() {
 	UIPushButton* pushButton = UIPushButton::New();
 	pushButton->setPosition( 50, 560 )->setSize( 200, 0 )->setParent( container );
 	pushButton->setText( "PushButton" );
-	pushButton->setIcon( mSceneNode->findIcon( "ok" ) );
+	pushButton->setIcon( mSceneNode->findIconDrawable( "ok", PixelDensity::dpToPxI( 16 ) ) );
 	pushButton->addEventListener( Event::MouseClick, [&, pushButton]( const Event* event ) {
 		if ( static_cast<const MouseEvent*>( event )->getFlags() & EE_BUTTON_LMASK )
 			createColorPicker( pushButton );
@@ -798,7 +799,7 @@ void EETest::createNewUI() {
 		Cell->setColumn( 1, TxtGfx );
 		Cell->setColumn( 2, TxtInput );
 
-		TxtGfx->setDrawable( mSceneNode->findIcon( "ok" ) );
+		TxtGfx->setDrawable( mSceneNode->findIconDrawable( "ok", PixelDensity::dpToPxI( 16 ) ) );
 		TxtBox->setText( "Test " + String::toString( i + 1 ) );
 
 		genGrid->add( Cell );
@@ -808,11 +809,11 @@ void EETest::createNewUI() {
 	TabWidget->setPosition( 350, 530 )->setSize( 200, 64 )->setParent( container );
 
 	TabWidget->add( "Tab 1", UIWidget::New()->setThemeSkin( "winback" ),
-					mSceneNode->findIcon( "ok" ) );
+					mSceneNode->findIconDrawable( "ok", PixelDensity::dpToPxI( 16 ) ) );
 	TabWidget->add( "Tab 2", UIWidget::New()->setThemeSkin( "winback" ),
-					mSceneNode->findIcon( "go-up" ) );
+					mSceneNode->findIconDrawable( "go-up", PixelDensity::dpToPxI( 16 ) ) );
 	TabWidget->add( "Tab 3", UIWidget::New()->setThemeSkin( "winback" ),
-					mSceneNode->findIcon( "add" ) );
+					mSceneNode->findIconDrawable( "add", PixelDensity::dpToPxI( 16 ) ) );
 
 	UIWindow* MenuCont = UIWindow::New();
 	MenuCont->setPosition( 350, 390 )->setSize( 200, 115 );
@@ -1289,7 +1290,7 @@ using namespace EE::Scene::Actions;
 
 void EETest::addFlyingIcon() {
 	UIImage* Gfx = UIImage::New();
-	Gfx->setDrawable( mSceneNode->findIcon( "ok" ) );
+	Gfx->setDrawable( mSceneNode->findIconDrawable( "ok", PixelDensity::dpToPxI( 16 ) ) );
 	Gfx->setEnabled( false );
 
 	Gfx->runAction( Spawn::New(

@@ -677,8 +677,15 @@ UIIconThemeManager* UISceneNode::getUIIconThemeManager() const {
 	return mUIIconThemeManager;
 }
 
-Drawable* UISceneNode::findIcon( const std::string& iconName ) {
+UIIcon* UISceneNode::findIcon( const std::string& iconName ) {
 	return getUIIconThemeManager()->findIcon( iconName );
+}
+
+Drawable* UISceneNode::findIconDrawable( const std::string& iconName, const size_t& drawableSize ) {
+	UIIcon* icon = findIcon( iconName );
+	if ( icon )
+		return icon->getSize( drawableSize );
+	return nullptr;
 }
 
 bool UISceneNode::onMediaChanged() {

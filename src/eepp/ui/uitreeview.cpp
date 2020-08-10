@@ -13,7 +13,9 @@ UITreeView* UITreeView::New() {
 }
 
 UITreeView::UITreeView() :
-	UIAbstractTableView( "treeview" ), mIndentWidth( PixelDensity::dpToPx( 12 ) ) {
+	UIAbstractTableView( "treeview" ),
+	mIndentWidth( PixelDensity::dpToPx( 12 ) ),
+	mExpanderIconSize( PixelDensity::dpToPxI( 12 ) ) {
 	clipEnable();
 	mExpandIcon = getUISceneNode()->findIcon( "tree-expanded" );
 	mContractIcon = getUISceneNode()->findIcon( "tree-contracted" );
@@ -249,11 +251,14 @@ UIWidget* UITreeView::updateCell( const int& rowIndex, const ModelIndex& index,
 			UITreeViewCell* cell = widget->asType<UITreeViewCell>();
 			UIImage* image = widget->asType<UITreeViewCell>()->getImage();
 
-			Float minIndent = !mExpandersAsIcons
-								  ? eemax( mExpandIcon->getPixelsSize().getWidth(),
-										   mContractIcon->getPixelsSize().getWidth() ) +
-										PixelDensity::dpToPx( image->getLayoutMargin().Right )
-								  : 0;
+			Float minIndent =
+				!mExpandersAsIcons
+					? eemax( mExpandIcon->getSize( mExpanderIconSize )->getPixelsSize().getWidth(),
+							 mContractIcon->getSize( mExpanderIconSize )
+								 ->getPixelsSize()
+								 .getWidth() ) +
+						  PixelDensity::dpToPx( image->getLayoutMargin().Right )
+					: 0;
 
 			if ( index.column() == (Int64)getModel()->treeColumn() )
 				cell->setIndentation( minIndent + getIndentWidth() * indentLevel );
@@ -261,11 +266,12 @@ UIWidget* UITreeView::updateCell( const int& rowIndex, const ModelIndex& index,
 			hasChilds = getModel()->rowCount( index ) > 0;
 
 			if ( hasChilds ) {
-				Drawable* icon = getIndexMetadata( index ).open ? mExpandIcon : mContractIcon;
+				UIIcon* icon = getIndexMetadata( index ).open ? mExpandIcon : mContractIcon;
+				Drawable* drawable = icon->getSize( mExpanderIconSize );
 
 				image->setVisible( true );
-				image->setPixelsSize( icon->getPixelsSize() );
-				image->setDrawable( icon );
+				image->setPixelsSize( drawable->getPixelsSize() );
+				image->setDrawable( drawable );
 				if ( !mExpandersAsIcons ) {
 					cell->setIndentation( cell->getIndentation() -
 										  image->getPixelsSize().getWidth() -
@@ -286,6 +292,9 @@ UIWidget* UITreeView::updateCell( const int& rowIndex, const ModelIndex& index,
 		if ( icon.is( Variant::Type::Drawable ) && icon.asDrawable() ) {
 			isVisible = true;
 			cell->setIcon( icon.asDrawable() );
+		} else if ( icon.is( Variant::Type::Icon ) && icon.asIcon() ) {
+			isVisible = true;
+			cell->setIcon( icon.asIcon()->getSize( mIconSize ) );
 		}
 		cell->getIcon()->setVisible( isVisible );
 	}
@@ -410,11 +419,11 @@ void UITreeView::contractAll( const ModelIndex& index ) {
 	createOrUpdateColumns();
 }
 
-Drawable* UITreeView::getExpandIcon() const {
+UIIcon* UITreeView::getExpandIcon() const {
 	return mExpandIcon;
 }
 
-void UITreeView::setExpandedIcon( Drawable* expandIcon ) {
+void UITreeView::setExpandedIcon( UIIcon* expandIcon ) {
 	if ( mExpandIcon != expandIcon ) {
 		mExpandIcon = expandIcon;
 		createOrUpdateColumns();
@@ -425,11 +434,11 @@ void UITreeView::setExpandedIcon( const std::string& expandIcon ) {
 	setExpandedIcon( mUISceneNode->findIcon( expandIcon ) );
 }
 
-Drawable* UITreeView::getContractIcon() const {
+UIIcon* UITreeView::getContractIcon() const {
 	return mContractIcon;
 }
 
-void UITreeView::setContractedIcon( Drawable* contractIcon ) {
+void UITreeView::setContractedIcon( UIIcon* contractIcon ) {
 	if ( mContractIcon != contractIcon ) {
 		mContractIcon = contractIcon;
 		createOrUpdateColumns();
@@ -464,6 +473,14 @@ Float UITreeView::getMaxColumnContentWidth( const size_t& colIndex ) {
 	} );
 	getUISceneNode()->setIsLoading( false );
 	return lWidth;
+}
+
+const size_t& UITreeView::getExpanderIconSize() const {
+	return mExpanderIconSize;
+}
+
+void UITreeView::setExpanderIconSize( const size_t& expanderSize ) {
+	mExpanderIconSize = expanderSize;
 }
 
 Uint32 UITreeView::onKeyDown( const KeyEvent& event ) {

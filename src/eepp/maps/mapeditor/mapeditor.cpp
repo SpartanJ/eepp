@@ -123,15 +123,21 @@ void MapEditor::createMenuBar() {
 	UIPopUpMenu* PU1 = UIPopUpMenu::New();
 
 	PU1->setParent( mUIContainer );
-	PU1->add( "New...", PU1->getUISceneNode()->findIcon( "document-new" ) );
-	PU1->add( "Open...", PU1->getUISceneNode()->findIcon( "document-open" ) );
+	PU1->add( "New...", PU1->getUISceneNode()->findIconDrawable( "document-new",
+																 PixelDensity::dpToPxI( 16 ) ) );
+	PU1->add( "Open...", PU1->getUISceneNode()->findIconDrawable( "document-open",
+																  PixelDensity::dpToPxI( 16 ) ) );
 	PU1->addSeparator();
-	PU1->add( "Save", PU1->getUISceneNode()->findIcon( "document-save" ) );
-	PU1->add( "Save As...", PU1->getUISceneNode()->findIcon( "document-save-as" ) );
+	PU1->add( "Save", PU1->getUISceneNode()->findIconDrawable( "document-save",
+															   PixelDensity::dpToPxI( 16 ) ) );
+	PU1->add( "Save As...", PU1->getUISceneNode()->findIconDrawable(
+								"document-save-as", PixelDensity::dpToPxI( 16 ) ) );
 	PU1->addSeparator();
-	PU1->add( "Close", PU1->getUISceneNode()->findIcon( "document-close" ) );
+	PU1->add( "Close", PU1->getUISceneNode()->findIconDrawable( "document-close",
+																PixelDensity::dpToPxI( 16 ) ) );
 	PU1->addSeparator();
-	PU1->add( "Quit", PU1->getUISceneNode()->findIcon( "quit" ) );
+	PU1->add( "Quit",
+			  PU1->getUISceneNode()->findIconDrawable( "quit", PixelDensity::dpToPxI( 16 ) ) );
 
 	PU1->addEventListener( Event::OnItemClicked, cb::Make1( this, &MapEditor::fileMenuClick ) );
 	MenuBar->addMenuButton( "File", PU1 );
@@ -146,9 +152,12 @@ void MapEditor::createMenuBar() {
 
 	PU3->addSeparator();
 
-	PU3->add( "Zoom In", PU3->getUISceneNode()->findIcon( "zoom-in" ) );
-	PU3->add( "Zoom Out", PU3->getUISceneNode()->findIcon( "zoom-out" ) );
-	PU3->add( "Normal Size", PU3->getUISceneNode()->findIcon( "zoom-original" ) );
+	PU3->add( "Zoom In",
+			  PU3->getUISceneNode()->findIconDrawable( "zoom-in", PixelDensity::dpToPxI( 16 ) ) );
+	PU3->add( "Zoom Out",
+			  PU3->getUISceneNode()->findIconDrawable( "zoom-out", PixelDensity::dpToPxI( 16 ) ) );
+	PU3->add( "Normal Size", PU3->getUISceneNode()->findIconDrawable(
+								 "zoom-original", PixelDensity::dpToPxI( 16 ) ) );
 	addShortcut( {KEY_KP_PLUS, KEYMOD_CTRL}, "zoom-in", [&] { zoomIn(); } );
 	addShortcut( {KEY_KP_MINUS, KEYMOD_CTRL}, "zoom-out", [&] { zoomOut(); } );
 	addShortcut( {KEY_0, KEYMOD_CTRL}, "zoom-reset", [&] { mUIMap->Map()->setScale( 1 ); } );
@@ -310,7 +319,9 @@ void MapEditor::createTextureRegionContainer( Int32 Width ) {
 		->setSize( 24, mGOTypeList->getSize().getHeight() )
 		->setPosition( mGOTypeList->getPosition().x + mGOTypeList->getSize().getWidth() + 2,
 					   mGOTypeList->getPosition().y );
-	mBtnGOTypeAdd->setIcon( mBtnGOTypeAdd->getUISceneNode()->findIcon( "add" ) )
+	mBtnGOTypeAdd
+		->setIcon( mBtnGOTypeAdd->getUISceneNode()->findIconDrawable(
+			"add", PixelDensity::dpToPxI( 16 ) ) )
 		->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
 	mBtnGOTypeAdd->setTooltipText( "Adds a new game object type\nunknown by the map editor." );
 	mBtnGOTypeAdd->addEventListener( Event::MouseClick,

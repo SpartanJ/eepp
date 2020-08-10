@@ -10,6 +10,7 @@
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/ui/css/stylesheetparser.hpp>
+#include <eepp/ui/uiicontheme.hpp>
 #include <eepp/ui/uistate.hpp>
 #include <eepp/ui/uitheme.hpp>
 #include <eepp/ui/uithememanager.hpp>
@@ -68,6 +69,7 @@ UITheme* UITheme::loadFromTextureAtlas( UITheme* tTheme, Graphics::TextureAtlas*
 
 	auto& resources = textureAtlas->getResources();
 	std::string sAbbr( tTheme->getAbbr() + "_" );
+	std::string sAbbrIcon( tTheme->getAbbr() + "_icon_" );
 	std::map<std::string, UISkin*> skins;
 
 	for ( auto& it : resources ) {
@@ -75,7 +77,11 @@ UITheme* UITheme::loadFromTextureAtlas( UITheme* tTheme, Graphics::TextureAtlas*
 
 		std::string name( textureRegion->getName() );
 
-		if ( String::startsWith( name, sAbbr ) ) {
+		if ( String::startsWith( name, sAbbrIcon ) ) {
+			auto* icon = UIIcon::New( name.substr( sAbbrIcon.size() ) );
+			icon->setSize( textureRegion->getPixelsSize().getWidth(), textureRegion );
+			tTheme->getIconTheme()->add( icon );
+		} else if ( String::startsWith( name, sAbbr ) ) {
 			std::vector<std::string> dotParts = String::split( name, '.' );
 
 			if ( dotParts.size() >= 3 && dotParts[dotParts.size() - 1] == "9" ) {
@@ -168,8 +174,12 @@ UITheme* UITheme::loadFromDirectroy( UITheme* tTheme, const std::string& Path,
 
 		if ( !FileSystem::isDirectory( fpath ) ) {
 			if ( String::startsWith( name, sAbbrIcon ) ) {
-				tSG->add(
-					TextureRegion::New( TextureFactory::instance()->loadFromFile( fpath ), name ) );
+				auto* drawable =
+					TextureRegion::New( TextureFactory::instance()->loadFromFile( fpath ), name );
+				tSG->add( drawable );
+				auto* icon = UIIcon::New( name.substr( sAbbrIcon.size() ) );
+				icon->setSize( drawable->getPixelsSize().getWidth(), drawable );
+				tTheme->getIconTheme()->add( icon );
 			} else if ( String::startsWith( name, sAbbr ) ) {
 				std::vector<std::string> dotParts = String::split( name, '.' );
 
@@ -262,9 +272,12 @@ UITheme::UITheme( const std::string& name, const std::string& Abbr, Graphics::Fo
 	mAbbr( Abbr ),
 	mTextureAtlas( NULL ),
 	mDefaultFont( defaultFont ),
-	mDefaultFontSize( PixelDensity::getPixelDensity() > 1.4 ? 11 : 12 ) {}
+	mDefaultFontSize( PixelDensity::getPixelDensity() > 1.4 ? 11 : 12 ),
+	mIconTheme( UIIconTheme::New( name ) ) {}
 
-UITheme::~UITheme() {}
+UITheme::~UITheme() {
+	eeSAFE_DELETE( mIconTheme );
+}
 
 const std::string& UITheme::getName() const {
 	return mName;
@@ -295,11 +308,8 @@ void UITheme::setTextureAtlas( Graphics::TextureAtlas* SG ) {
 	mTextureAtlas = SG;
 }
 
-Drawable* UITheme::getIconByName( const std::string& name ) {
-	if ( NULL != mTextureAtlas )
-		return mTextureAtlas->getByName( mAbbr + "_icon_" + name );
-
-	return NULL;
+UIIcon* UITheme::getIconByName( const std::string& name ) {
+	return mIconTheme->getIcon( name );
 }
 
 UISkin* UITheme::getSkin( const std::string& widgetName ) {
@@ -320,6 +330,10 @@ const Float& UITheme::getDefaultFontSize() const {
 
 void UITheme::setDefaultFontSize( const Float& defaultFontSize ) {
 	mDefaultFontSize = defaultFontSize;
+}
+
+UIIconTheme* UITheme::getIconTheme() const {
+	return mIconTheme;
 }
 
 Font* UITheme::getDefaultFont() const {
