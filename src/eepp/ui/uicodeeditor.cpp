@@ -943,9 +943,9 @@ void UICodeEditor::updateScrollBar() {
 	setScrollY( mScroll.y );
 }
 
-void UICodeEditor::goToLine( const TextPosition& position ) {
+void UICodeEditor::goToLine( const TextPosition& position, bool centered ) {
 	mDoc->setSelection( position );
-	scrollToMakeVisible( mDoc->getSelection().start() );
+	scrollToMakeVisible( mDoc->getSelection().start(), centered );
 }
 
 void UICodeEditor::updateEditor() {
@@ -1011,7 +1011,7 @@ int UICodeEditor::getVisibleLinesCount() {
 	return lines.second - lines.first;
 }
 
-void UICodeEditor::scrollToMakeVisible( const TextPosition& position ) {
+void UICodeEditor::scrollToMakeVisible( const TextPosition& position, bool centered ) {
 	auto lineRange = getVisibleLineRange();
 
 	Int64 minDistance = mHScrollBar->isVisible() ? 3 : 2;
@@ -1021,10 +1021,22 @@ void UICodeEditor::scrollToMakeVisible( const TextPosition& position ) {
 		Float lineHeight = getLineHeight();
 		Float min = eefloor( lineHeight * ( eemax<Float>( 0, position.line() - 1 ) ) );
 		Float max = eefloor( lineHeight * ( position.line() + minDistance ) - mSize.getHeight() );
-		if ( min < mScroll.y )
+		Float halfScreenLines = eefloor( mSize.getHeight() / lineHeight * 0.5f );
+		if ( min < mScroll.y ) {
+			if ( centered ) {
+				if ( position.line() - 1 - halfScreenLines >= 0 )
+					min = eefloor( lineHeight *
+								   ( eemax<Float>( 0, position.line() - 1 - halfScreenLines ) ) );
+			}
 			setScrollY( min );
-		else if ( max > mScroll.y )
+		} else if ( max > mScroll.y ) {
+			if ( centered ) {
+				max = eefloor( lineHeight * ( position.line() + minDistance + halfScreenLines ) -
+							   mSize.getHeight() );
+				max = eemin( max, getMaxScroll().y );
+			}
 			setScrollY( max );
+		}
 	}
 
 	// Horizontal Scroll

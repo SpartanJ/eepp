@@ -759,8 +759,9 @@ void App::initGlobalSearchBar() {
 								 Model::Role::Custom ) );
 				if ( mEditorSplitter->getCurEditor() && lineNum.isValid() && colNum.isValid() &&
 					 lineNum.is( Variant::Type::Int64 ) && colNum.is( Variant::Type::Int64 ) ) {
-					mEditorSplitter->getCurEditor()->getDocument().setSelection(
-						{lineNum.asInt64(), colNum.asInt64()} );
+					TextPosition pos{lineNum.asInt64(), colNum.asInt64()};
+					mEditorSplitter->getCurEditor()->getDocument().setSelection( pos );
+					mEditorSplitter->getCurEditor()->goToLine( pos );
 					hideGlobalSearchBar();
 				}
 			}
@@ -1576,6 +1577,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	doc.setCommand( "debug-draw-debug-data",
 					[&] { mUISceneNode->setDrawDebugData( !mUISceneNode->getDrawDebugData() ); } );
 	doc.setCommand( "go-to-line", [&] { goToLine(); } );
+	doc.setCommand( "load-current-dir", [&] { loadCurrentDirectory(); } );
 	editor->addEventListener( Event::OnSave, [&]( const Event* event ) {
 		UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
 		if ( editor->getDocument().getFilePath() == mKeybindingsPath ) {
@@ -1614,21 +1616,38 @@ bool App::setAutoComplete( bool enable ) {
 	return false;
 }
 
+void App::loadCurrentDirectory() {
+	if ( !mEditorSplitter->getCurEditor() )
+		return;
+	std::string path( mEditorSplitter->getCurEditor()->getDocument().getFilePath() );
+	if ( path.empty() )
+		return;
+	path = FileSystem::fileRemoveFileName( path );
+	if ( !FileSystem::isDirectory( path ) )
+		return;
+	loadFolder( path );
+}
+
 UIPopUpMenu* App::createToolsMenu() {
 	mToolsMenu = UIPopUpMenu::New();
 	mToolsMenu->add( "Locate...", findIcon( "search" ), getKeybind( "open-locatebar" ) );
 	mToolsMenu->add( "Project Find...", findIcon( "search" ), getKeybind( "open-global-search" ) );
 	mToolsMenu->add( "Go to line...", findIcon( "go-to-line" ), getKeybind( "go-to-line" ) );
+	mToolsMenu->add( "Load current directory as folder", findIcon( "folder" ),
+					 getKeybind( "load-current-dir" ) );
 	mToolsMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
-		if ( item->getText() == "Locate..." ) {
+		std::string txt( item->getText() );
+		if ( txt == "Locate..." ) {
 			showLocateBar();
-		} else if ( item->getText() == "Project Find..." ) {
+		} else if ( txt == "Project Find..." ) {
 			showGlobalSearch();
-		} else if ( item->getText() == "Go to line..." ) {
+		} else if ( txt == "Go to line..." ) {
 			goToLine();
+		} else if ( txt == "Load current directory as folder" ) {
+			loadCurrentDirectory();
 		}
 	} );
 	return mToolsMenu;

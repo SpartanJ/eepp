@@ -363,7 +363,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void setColorPreview( bool colorPreview );
 
-	void goToLine( const TextPosition& position );
+	void goToLine( const TextPosition& position, bool centered = true );
+
   protected:
 	struct LastXOffset {
 		TextPosition position;
@@ -488,7 +489,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	int getVisibleLinesCount();
 
-	void scrollToMakeVisible( const TextPosition& position );
+	void scrollToMakeVisible( const TextPosition& position, bool centered = false );
 
 	void setScrollX( const Float& val, bool emmitEvent = true );
 

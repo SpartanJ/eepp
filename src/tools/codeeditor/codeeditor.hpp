@@ -359,6 +359,8 @@ class App : public UICodeEditorSplitter::Client {
 	bool trySendUnlockedCmd( const KeyEvent& keyEvent );
 
 	void goToLine();
+
+	void loadCurrentDirectory();
 };
 
 #endif // EE_TOOLS_CODEEDITOR_HPP
