@@ -1,4 +1,4 @@
-#ifndef EE_TOOLS_IGNOREMATHCER_HPP
+#ifndef EE_TOOLS_IGNOREMATCHER_HPP
 #define EE_TOOLS_IGNOREMATCHER_HPP
 
 #include <eepp/system/filesystem.hpp>
@@ -11,6 +11,8 @@ using namespace EE::System;
 class IgnoreMatcher {
   public:
 	IgnoreMatcher( const std::string& rootPath );
+
+	virtual ~IgnoreMatcher();
 
 	virtual bool canMatch() = 0;
 

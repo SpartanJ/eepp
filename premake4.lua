@@ -1063,6 +1063,8 @@ solution "eepp"
 
 		if not os.is("windows") and not os.is("haiku") then
 			links { "pthread" }
+		elseif os.is("macosx") then
+			links { "CoreFoundation.framework", "CoreServices.framework" }
 		end
 
 		links { "efsw-static", "pugixml-static" }

@@ -143,6 +143,8 @@ IgnoreMatcher::IgnoreMatcher( const std::string& rootPath ) : mPath( rootPath ) 
 	FileSystem::dirAddSlashAtEnd( mPath );
 }
 
+IgnoreMatcher::~IgnoreMatcher() {}
+
 GitIgnoreMatcher::GitIgnoreMatcher( const std::string& rootPath ) : IgnoreMatcher( rootPath ) {
 	if ( canMatch() )
 		parse();

@@ -2100,7 +2100,6 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		addIcon( "quit", 0xeb97 );
 		addIcon( "undo", 0xea58 );
 		addIcon( "redo", 0xea5a );
-		addIcon( "redo", 0xea5a );
 		addIcon( "cut", 0xf0c1 );
 		addIcon( "copy", 0xecd5 );
 		addIcon( "paste", 0xeb91 );
