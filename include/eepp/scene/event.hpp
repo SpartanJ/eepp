@@ -74,6 +74,7 @@ class EE_API Event {
 		OnNodeDropped,
 		OnSave,
 		OnModelEvent,
+		OnResourceChange,
 		UserEvent,
 		NoEvent = eeINDEX_NOT_FOUND
 	};

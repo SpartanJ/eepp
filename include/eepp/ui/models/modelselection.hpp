@@ -62,11 +62,25 @@ class EE_API ModelSelection {
 
 	void removeMatching( std::function<bool( const ModelIndex& )> );
 
+	template <typename Function> void changeFromModel( Function f ) {
+		{
+			mDisableNotify = true;
+			mNotifyPending = false;
+			f( *this );
+			mDisableNotify = false;
+		}
+		if ( mNotifyPending )
+			notifySelectionChanged();
+	}
+
   protected:
 	UIAbstractView* mView;
 	std::vector<ModelIndex> mIndexes;
+	bool mDisableNotify{false};
+	bool mNotifyPending{false};
+	void notifySelectionChanged();
 };
 
-}}} // namespace EE::UI::Model
+}}} // namespace EE::UI::Models
 
 #endif // EE_UI_MODEL_MODELSELECTION_HPP

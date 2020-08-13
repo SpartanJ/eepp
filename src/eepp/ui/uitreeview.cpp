@@ -484,9 +484,6 @@ void UITreeView::setExpanderIconSize( const size_t& expanderSize ) {
 }
 
 Uint32 UITreeView::onKeyDown( const KeyEvent& event ) {
-	if ( event.getMod() != 0 )
-		return UIAbstractTableView::onKeyDown( event );
-
 	auto curIndex = getSelection().first();
 
 	switch ( event.getKeyCode() ) {

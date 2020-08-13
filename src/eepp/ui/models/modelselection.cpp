@@ -1,6 +1,6 @@
 #include <eepp/core.hpp>
-#include <eepp/ui/models/modelselection.hpp>
 #include <eepp/ui/abstract/uiabstractview.hpp>
+#include <eepp/ui/models/modelselection.hpp>
 
 namespace EE { namespace UI { namespace Models {
 
@@ -59,4 +59,13 @@ void ModelSelection::clear() {
 	mView->notifySelectionChange();
 }
 
-}}} // namespace EE::UI::Model
+void ModelSelection::notifySelectionChanged() {
+	if ( !mDisableNotify ) {
+		mView->notifySelectionChange();
+		mNotifyPending = false;
+	} else {
+		mNotifyPending = true;
+	}
+}
+
+}}} // namespace EE::UI::Models

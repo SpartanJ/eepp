@@ -7,6 +7,18 @@ namespace EE { namespace UI {
 UITableHeaderColumn::UITableHeaderColumn( UIAbstractTableView* view, const size_t& colIndex ) :
 	UIPushButton( "table::header::column" ), mView( view ), mColIndex( colIndex ) {
 	setDragEnabled( true );
+	mInnerWidgetOrientation = InnerWidgetOrientation::Right;
+	auto cb = [&]( const Event* ) { updateLayout(); };
+	mImage = UIImage::NewWithTag( mTag + "::arrow" );
+	mImage->setScaleType( UIScaleType::FitInside )
+		->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent )
+		->setFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER )
+		->setParent( const_cast<UITableHeaderColumn*>( this ) );
+	mImage->setEnabled( false );
+	mImage->addEventListener( Event::OnPaddingChange, cb );
+	mImage->addEventListener( Event::OnMarginChange, cb );
+	mImage->addEventListener( Event::OnSizeChange, cb );
+	mImage->addEventListener( Event::OnVisibleChange, cb );
 }
 
 Uint32 UITableHeaderColumn::onCalculateDrag( const Vector2f& position, const Uint32& flags ) {
@@ -39,6 +51,16 @@ Uint32 UITableHeaderColumn::onMouseDown( const Vector2i& position, const Uint32&
 	}
 	pushState( UIState::StatePressed );
 	return Node::onMouseDown( position, flags );
+}
+
+Uint32 UITableHeaderColumn::onMouseClick( const Vector2i& position, const Uint32& flags ) {
+	Vector2f localPos( convertToNodeSpace( position.asFloat() ) );
+	if ( ( flags & EE_BUTTON_LMASK ) && !isDragging() &&
+		 localPos.x < mSize.getWidth() - mView->getDragBorderDistance() ) {
+		mView->onSortColumn( mColIndex );
+		return 1;
+	}
+	return UIPushButton::onMouseClick( position, flags );
 }
 
 Uint32 UITableHeaderColumn::onDrag( const Vector2f& position, const Uint32&,
@@ -85,6 +107,10 @@ Uint32 UITableHeaderColumn::onDragStop( const Vector2i& pos, const Uint32& flags
 	mView->updateHeaderSize();
 	mView->onColumnSizeChange( mColIndex );
 	return UIPushButton::onDragStop( pos, flags );
+}
+
+UIWidget* UITableHeaderColumn::getExtraInnerWidget() const {
+	return mImage;
 }
 
 }} // namespace EE::UI

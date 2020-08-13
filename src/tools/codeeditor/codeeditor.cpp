@@ -619,6 +619,11 @@ void App::showGlobalSearch() {
 	mGlobalSearchBarLayout->setVisible( true )->setEnabled( true );
 	mGlobalSearchInput->setFocus();
 	mGlobalSearchTree->setVisible( true );
+	if ( mEditorSplitter->getCurEditor() &&
+		 mEditorSplitter->getCurEditor()->getDocument().hasSelection() ) {
+		mGlobalSearchInput->setText(
+			mEditorSplitter->getCurEditor()->getDocument().getSelectedText() );
+	}
 	mGlobalSearchInput->getDocument().selectAll();
 	updateGlobalSearchBar();
 }

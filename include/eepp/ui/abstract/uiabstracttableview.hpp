@@ -125,6 +125,8 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	virtual void onOpenModelIndex( const ModelIndex& index );
 
+	virtual void onSortColumn( const size_t& colIndex );
+
 	void updateHeaderSize();
 
 	int visibleColumn();

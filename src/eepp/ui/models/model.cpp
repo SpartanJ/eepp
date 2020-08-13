@@ -6,6 +6,8 @@ namespace EE { namespace UI { namespace Models {
 void Model::onModelUpdate( unsigned flags ) {
 	if ( mOnUpdate )
 		mOnUpdate();
+	for ( auto client : mClients )
+		client->onModelUpdated( flags );
 	forEachView( [&]( UIAbstractView* view ) { view->onModelUpdate( flags ); } );
 }
 
@@ -16,6 +18,14 @@ void Model::forEachView( std::function<void( UIAbstractView* )> callback ) {
 
 void Model::unregisterView( UIAbstractView* view ) {
 	mViews.erase( view );
+}
+
+void Model::registerClient( Model::Client* client ) {
+	mClients.insert( client );
+}
+
+void Model::unregisterClient( Model::Client* client ) {
+	mClients.erase( client );
 }
 
 void Model::refreshView() {

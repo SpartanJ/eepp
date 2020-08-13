@@ -144,10 +144,9 @@ Vector2f UIPushButton::packLayout( const std::vector<UIWidget*>& widgets, const 
 				pos[i].y = padding.Top;
 				break;
 		}
-		if ( 0 == i )
-			pos[i].x += widget->getLayoutPixelsMargin().Left;
-		if ( widget->getPixelsSize().getWidth() > 0 ) {
-			totSize.x += widget->getLayoutPixelsMargin().Left + widget->getPixelsSize().getWidth();
+		pos[i].x += 0 == i || widget->isVisible() ? widget->getLayoutPixelsMargin().Left : 0;
+		if ( widget->isVisible() && widget->getPixelsSize().getWidth() > 0 ) {
+			totSize.x += widget->getPixelsSize().getWidth();
 			if ( ( i + 1 < widgets.size() && widgets[i + 1] && widgets[i + 1]->isVisible() ) ||
 				 ( i + 2 < widgets.size() && widgets[i + 2] && widgets[i + 2]->isVisible() ) ) {
 				totSize.x += widget->getLayoutPixelsMargin().Right;

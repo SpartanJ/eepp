@@ -34,7 +34,7 @@ const std::map<KeyBindings::Shortcut, std::string> UICodeEditor::getDefaultKeybi
 		{{KEY_BACKSPACE, KEYMOD_SHIFT}, "delete-to-previous-char"},
 		{{KEY_BACKSPACE, 0}, "delete-to-previous-char"},
 		{{KEY_DELETE, KEYMOD_CTRL}, "delete-to-next-word"},
-		{{KEY_DELETE, KEYMOD_SHIFT}, "delete-to-next-word"},
+		{{KEY_DELETE, KEYMOD_SHIFT}, "delete-current-line"},
 		{{KEY_DELETE, 0}, "delete-to-next-char"},
 		{{KEY_KP_ENTER, KEYMOD_CTRL | KEYMOD_SHIFT}, "new-line-above"},
 		{{KEY_RETURN, KEYMOD_CTRL | KEYMOD_SHIFT}, "new-line-above"},

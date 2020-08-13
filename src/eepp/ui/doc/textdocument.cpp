@@ -841,6 +841,22 @@ void TextDocument::deleteToNextWord() {
 	deleteTo( nextWordBoundary( getSelection().start() ) );
 }
 
+void TextDocument::deleteCurrentLine() {
+	if ( hasSelection() ) {
+		deleteSelection();
+		return;
+	}
+	if ( getSelection().start().line() + 1 >= (Int64)linesCount() ) {
+		remove( {startOfLine( getSelection().start() ),
+				 startOfLine( {getSelection().start().line() - 1, 0} )} );
+		setSelection( startOfLine( getSelection().start() ) );
+	} else {
+		remove( {startOfLine( getSelection().start() ),
+				 startOfLine( {getSelection().start().line() + 1, 0} )} );
+		setSelection( startOfLine( getSelection().start() ) );
+	}
+}
+
 void TextDocument::selectToPreviousChar() {
 	selectTo( -1 );
 }
@@ -1366,6 +1382,7 @@ void TextDocument::initializeCommands() {
 	mCommands["delete-to-previous-char"] = [&] { deleteToPreviousChar(); };
 	mCommands["delete-to-next-word"] = [&] { deleteToNextWord(); };
 	mCommands["delete-to-next-char"] = [&] { deleteToNextChar(); };
+	mCommands["delete-current-line"] = [&] { deleteCurrentLine(); };
 	mCommands["delete-selection"] = [&] { deleteSelection(); };
 	mCommands["move-to-previous-char"] = [&] { moveToPreviousChar(); };
 	mCommands["move-to-previous-word"] = [&] { moveToPreviousWord(); };

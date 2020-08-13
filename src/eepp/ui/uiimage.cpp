@@ -53,6 +53,7 @@ UIImage* UIImage::setDrawable( Drawable* drawable, bool ownIt ) {
 
 	mDrawable = drawable;
 	mDrawableOwner = ownIt;
+	sendCommonEvent( Event::OnResourceChange );
 
 	if ( NULL != mDrawable && mDrawable->isDrawableResource() ) {
 		mResourceChangeCb = static_cast<DrawableResource*>( mDrawable )

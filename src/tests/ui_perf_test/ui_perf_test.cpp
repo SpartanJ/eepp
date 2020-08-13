@@ -164,6 +164,8 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		addIcon( "tree-expanded", 0xea50 );
 		addIcon( "tree-contracted", 0xea54 );
 		addIcon( "file", 0xecc3 );
+		addIcon( "arrow-up", 0xea77 );
+		addIcon( "arrow-down", 0xea4d );
 		UISceneNode* uiSceneNode = UISceneNode::New();
 		SceneManager::instance()->add( uiSceneNode );
 		uiSceneNode->getUIThemeManager()->setDefaultFont( font );
@@ -192,15 +194,15 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 
 		Clock clock;
 		auto model = FileSystemModel::New( "." ); // std::make_shared<TestModel>();
-		UITreeView* view = UITreeView::New();
-		// UITableView* view = UITableView::New();
-		view->setExpanderIconSize( PixelDensity::dpToPx( 20 ) );
+		//UITreeView* view = UITreeView::New();
+		UITableView* view = UITableView::New();
+		//view->setExpanderIconSize( PixelDensity::dpToPx( 20 ) );
 		view->setId( "treeview" );
 		/*view->setExpandedIcon( open );
 		view->setContractedIcon( closed );*/
 		view->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
 		view->setParent( vlay );
-		view->setModel( model );
+		view->setModel( SortingProxyModel::New( model ) );
 		eePRINTL( "Total time: %.2fms", clock.getElapsedTime().asMilliseconds() );
 
 		UIWindow* uiWin = UIWindow::NewOpt( UIWindow::LINEAR_LAYOUT );

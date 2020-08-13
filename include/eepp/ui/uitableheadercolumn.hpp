@@ -14,9 +14,12 @@ class EE_API UITableHeaderColumn : public UIPushButton {
   public:
 	UITableHeaderColumn( UIAbstractTableView* view, const size_t& colIndex );
 
+	virtual UIWidget* getExtraInnerWidget() const;
+
   protected:
 	UIAbstractTableView* mView;
 	size_t mColIndex;
+	mutable UIImage* mImage{nullptr};
 
 	Uint32 onCalculateDrag( const Vector2f& position, const Uint32& flags );
 
@@ -28,11 +31,13 @@ class EE_API UITableHeaderColumn : public UIPushButton {
 
 	Uint32 onMouseMove( const Vector2i& position, const Uint32& flags );
 
+	Uint32 onMouseClick( const Vector2i& position, const Uint32& flags );
+
 	Uint32 onMouseDoubleClick( const Vector2i& position, const Uint32& flags );
 
 	Uint32 onDragStop( const Vector2i& pos, const Uint32& flags );
 };
 
-}}
+}} // namespace EE::UI
 
 #endif // EE_UI_UITABLEHEADERCOLUMN_HPP

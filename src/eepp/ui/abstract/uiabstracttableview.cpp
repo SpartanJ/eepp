@@ -1,4 +1,5 @@
 #include <eepp/ui/abstract/uiabstracttableview.hpp>
+#include <eepp/ui/uiimage.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uiscenenode.hpp>
@@ -397,6 +398,28 @@ void UIAbstractTableView::setIconSize( const size_t& iconSize ) {
 void UIAbstractTableView::onOpenModelIndex( const ModelIndex& index ) {
 	ModelEvent event( getModel(), index, this );
 	sendEvent( &event );
+}
+
+void UIAbstractTableView::onSortColumn( const size_t& colIndex ) {
+	Model* model = getModel();
+	if ( !model )
+		return;
+	if ( model->isColumnSortable( colIndex ) ) {
+		if ( -1 != model->keyColumn() && (Int64)colIndex != model->keyColumn() &&
+			 columnData( model->keyColumn() ).widget ) {
+			UIImage* image =
+				columnData( model->keyColumn() ).widget->getExtraInnerWidget()->asType<UIImage>();
+			image->setDrawable( nullptr );
+		}
+		SortOrder sortOrder = model->sortOrder() == SortOrder::Ascending ? SortOrder::Descending
+																		 : SortOrder::Ascending;
+		Drawable* icon = mUISceneNode->findIconDrawable(
+			sortOrder == SortOrder::Ascending ? "arrow-down" : "arrow-up", mIconSize );
+		UIImage* image = columnData( colIndex ).widget->getExtraInnerWidget()->asType<UIImage>();
+		if ( image && icon )
+			image->setDrawable( icon );
+		model->setKeyColumnAndSortOrder( colIndex, sortOrder );
+	}
 }
 
 }}} // namespace EE::UI::Abstract

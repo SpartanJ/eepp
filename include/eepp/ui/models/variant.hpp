@@ -3,6 +3,7 @@
 
 #include <eepp/core/core.hpp>
 #include <eepp/graphics/drawable.hpp>
+#include <eepp/graphics/drawableresource.hpp>
 #include <eepp/math/rect.hpp>
 #include <eepp/ui/uiicon.hpp>
 #include <string>
@@ -57,12 +58,14 @@ class EE_API Variant {
 	const bool& asBool() const { return mValue.asBool; }
 	const Float& asFloat() const { return mValue.asFloat; }
 	const int& asInt() const { return mValue.asInt; }
+	const unsigned int& asUint() const { return mValue.asUint; }
 	const Int64& asInt64() const { return mValue.asInt64; }
 	const Uint64& asUint64() const { return mValue.asUint64; }
 	const Vector2f& asVector2f() const { return *mValue.asVector2f; }
 	const Rectf& asRectf() const { return *mValue.asRectf; }
 	const char* asCStr() const { return mValue.asCStr; }
 	UIIcon* asIcon() const { return mValue.asIcon; }
+	void* asDataPtr() const { return mValue.asDataPtr; }
 	bool is( const Type& type ) const { return type == mType; }
 	void reset() {
 		switch ( mType ) {
@@ -85,6 +88,115 @@ class EE_API Variant {
 		mType = Type::Invalid;
 	}
 	bool isValid() { return mType != Type::Invalid; }
+
+	std::string toString() const {
+		switch ( mType ) {
+			case Type::Bool:
+				return asBool() ? "true" : "false";
+			case Type::Int:
+				return String::toString( asInt() );
+			case Type::Uint:
+				return String::toString( asUint() );
+			case Type::Int64:
+				return String::toString( asInt64() );
+			case Type::Uint64:
+				return String::toString( asUint64() );
+			case Type::Float:
+				return String::toString( asFloat() );
+			case Type::String:
+				return asString();
+			case Type::Drawable:
+				return asDrawable()->isDrawableResource()
+						   ? static_cast<DrawableResource*>( asDrawable() )->getName()
+						   : "Drawable";
+			case Type::Icon:
+				return asIcon()->getName();
+			case Type::DataPtr:
+				return String::format( "%p", asDataPtr() );
+			case Type::Vector2f:
+				return String::format( "%.2f-%.2f", asVector2f().x, asVector2f().y );
+			case Type::Rectf:
+				return String::format( "%.2f-%.2f-%.2f-%.2f", asRectf().Top, asRectf().Right,
+									   asRectf().Bottom, asRectf().Left );
+			case Type::cstr:
+				return asCStr();
+			case Type::Invalid:
+				break;
+		}
+		return "";
+	}
+
+	bool operator<( const Variant& other ) const {
+		if ( mType != other.mType )
+			return toString() < other.toString();
+		switch ( mType ) {
+			case Type::Bool:
+				return asBool() < other.asBool();
+			case Type::Int:
+				return asInt() < other.asInt();
+			case Type::Uint:
+				return asUint() < other.asUint();
+			case Type::Int64:
+				return asInt64() < other.asInt64();
+			case Type::Uint64:
+				return asUint64() < other.asUint64();
+			case Type::Float:
+				return asFloat() < other.asFloat();
+			case Type::String:
+				return asString() < other.asString();
+			case Type::Drawable:
+				return asDrawable() < other.asDrawable();
+			case Type::Icon:
+				return asIcon() < other.asIcon();
+			case Type::DataPtr:
+				return asDataPtr() < other.asDataPtr();
+			case Type::Vector2f:
+				return asVector2f() < other.asVector2f();
+			case Type::Rectf:
+				return asRectf().getSize() < other.asRectf().getSize();
+			case Type::cstr:
+				return strcmp( asCStr(), other.asCStr() ) < 0;
+			case Type::Invalid:
+				break;
+		}
+		return false;
+	}
+
+	bool operator==( const Variant& other ) const {
+		if ( mType != other.mType )
+			return toString() == other.toString();
+		switch ( mType ) {
+			case Type::Bool:
+				return asBool() == other.asBool();
+			case Type::Int:
+				return asInt() == other.asInt();
+			case Type::Uint:
+				return asUint() == other.asUint();
+			case Type::Int64:
+				return asInt64() == other.asInt64();
+			case Type::Uint64:
+				return asUint64() == other.asUint64();
+			case Type::Float:
+				return asFloat() == other.asFloat();
+			case Type::String:
+				return asString() == other.asString();
+			case Type::Drawable:
+				return asDrawable() == other.asDrawable();
+			case Type::Icon:
+				return asIcon() == other.asIcon();
+			case Type::DataPtr:
+				return asDataPtr() == other.asDataPtr();
+			case Type::Vector2f:
+				return asVector2f() == other.asVector2f();
+			case Type::Rectf:
+				return asRectf().getSize() == other.asRectf().getSize();
+			case Type::cstr:
+				return strcmp( asCStr(), other.asCStr() ) == 0;
+			case Type::Invalid:
+				break;
+		}
+		return false;
+	}
 
   private:
 	union {

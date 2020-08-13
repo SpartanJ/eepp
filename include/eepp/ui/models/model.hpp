@@ -22,6 +22,13 @@ enum class SortOrder { None, Ascending, Descending };
 
 class EE_API Model {
   public:
+	class Client {
+	  public:
+		virtual ~Client() {}
+
+		virtual void onModelUpdated( unsigned flags ) = 0;
+	};
+
 	enum UpdateFlag {
 		DontInvalidateIndexes = 0,
 		InvalidateAllIndexes = 1 << 0,
@@ -75,6 +82,10 @@ class EE_API Model {
 
 	void unregisterView( UIAbstractView* );
 
+	void registerClient( Client* );
+
+	void unregisterClient( Client* );
+
 	void refreshView();
 
 	void setOnUpdate( const std::function<void()>& onUpdate );
@@ -91,6 +102,7 @@ class EE_API Model {
 
   private:
 	std::unordered_set<UIAbstractView*> mViews;
+	std::unordered_set<Client*> mClients;
 	std::function<void()> mOnUpdate;
 };
 

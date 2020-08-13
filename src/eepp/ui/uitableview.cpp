@@ -141,9 +141,6 @@ void UITableView::onColumnSizeChange( const size_t& ) {
 }
 
 Uint32 UITableView::onKeyDown( const KeyEvent& event ) {
-	if ( event.getMod() != 0 )
-		return UIAbstractTableView::onKeyDown( event );
-
 	auto curIndex = getSelection().first();
 	int pageSize = eefloor( getVisibleArea().getHeight() / getRowHeight() ) - 1;
 

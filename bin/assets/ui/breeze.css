@@ -786,6 +786,10 @@ TableView > ScrollBar {
 	background-color: var(--list-back);
 }
 
+table::header::column::arrow {
+	margin-left: 2dp;
+}
+
 .appbackground {
 	background-color: var(--back);
 }
