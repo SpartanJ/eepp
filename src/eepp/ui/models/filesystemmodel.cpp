@@ -180,10 +180,8 @@ Variant FileSystemModel::data( const ModelIndex& index, Model::Role role ) const
 
 	auto& node = this->nodeRef( index );
 
-	if ( role == Role::Custom ) {
-		eeASSERT( index.column() == Column::Name );
+	if ( role == Role::Custom )
 		return Variant( node.info().getFilepath().c_str() );
-	}
 
 	if ( role == Role::Sort ) {
 		switch ( index.column() ) {

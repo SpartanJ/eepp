@@ -164,8 +164,8 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		addIcon( "tree-expanded", 0xea50 );
 		addIcon( "tree-contracted", 0xea54 );
 		addIcon( "file", 0xecc3 );
-		addIcon( "arrow-up", 0xea77 );
-		addIcon( "arrow-down", 0xea4d );
+		//addIcon( "arrow-up", 0xea78 );
+		//addIcon( "arrow-down", 0xea4e );
 		UISceneNode* uiSceneNode = UISceneNode::New();
 		SceneManager::instance()->add( uiSceneNode );
 		uiSceneNode->getUIThemeManager()->setDefaultFont( font );

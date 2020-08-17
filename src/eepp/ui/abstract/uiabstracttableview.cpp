@@ -1,6 +1,7 @@
 #include <eepp/ui/abstract/uiabstracttableview.hpp>
 #include <eepp/ui/uiimage.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
+#include <eepp/ui/uinodedrawable.hpp>
 #include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
@@ -10,7 +11,8 @@ namespace EE { namespace UI { namespace Abstract {
 UIAbstractTableView::UIAbstractTableView( const std::string& tag ) :
 	UIAbstractView( tag ),
 	mDragBorderDistance( PixelDensity::dpToPx( 4 ) ),
-	mIconSize( PixelDensity::dpToPxI( 12 ) ) {
+	mIconSize( PixelDensity::dpToPxI( 12 ) ),
+	mSortIconSize( PixelDensity::dpToPxI( 20 ) ) {
 	mHeader = UILinearLayout::NewWithTag( "table::header", UIOrientation::Horizontal );
 	mHeader->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 	mHeader->setParent( this );
@@ -267,6 +269,16 @@ void UIAbstractTableView::setColumnsHidden( const std::vector<size_t> columns, b
 	createOrUpdateColumns();
 }
 
+void UIAbstractTableView::setColumnsVisible( const std::vector<size_t> columns ) {
+	if ( !getModel() )
+		return;
+	for ( size_t i = 0; i < getModel()->columnCount(); i++ )
+		columnData( i).visible = false;
+	for ( auto col : columns )
+		columnData( col ).visible = true;
+	createOrUpdateColumns();
+}
+
 UITableRow* UIAbstractTableView::createRow() {
 	mUISceneNode->invalidateStyle( this );
 	mUISceneNode->invalidateStyleState( this, true );
@@ -395,6 +407,14 @@ void UIAbstractTableView::setIconSize( const size_t& iconSize ) {
 	mIconSize = iconSize;
 }
 
+const size_t& UIAbstractTableView::getSortIconSize() const {
+	return mSortIconSize;
+}
+
+void UIAbstractTableView::setSortIconSize( const size_t& sortIconSize ) {
+	mSortIconSize = sortIconSize;
+}
+
 void UIAbstractTableView::onOpenModelIndex( const ModelIndex& index ) {
 	ModelEvent event( getModel(), index, this );
 	sendEvent( &event );
@@ -413,11 +433,17 @@ void UIAbstractTableView::onSortColumn( const size_t& colIndex ) {
 		}
 		SortOrder sortOrder = model->sortOrder() == SortOrder::Ascending ? SortOrder::Descending
 																		 : SortOrder::Ascending;
-		Drawable* icon = mUISceneNode->findIconDrawable(
-			sortOrder == SortOrder::Ascending ? "arrow-down" : "arrow-up", mIconSize );
-		UIImage* image = columnData( colIndex ).widget->getExtraInnerWidget()->asType<UIImage>();
-		if ( image && icon )
-			image->setDrawable( icon );
+		UIPushButton* button = columnData( colIndex ).widget;
+		UIImage* image = button->getExtraInnerWidget()->asType<UIImage>();
+		std::string tag = button->getElementTag() + "::arrow";
+		image->setElementTag( sortOrder == SortOrder::Ascending ? tag + "-up" : tag + "-down" );
+		image->reloadStyle();
+		if ( image && image->getForeground() == nullptr ) {
+			Drawable* icon = mUISceneNode->findIconDrawable(
+				sortOrder == SortOrder::Ascending ? "arrow-down" : "arrow-up", mSortIconSize );
+			if ( icon )
+				image->setDrawable( icon );
+		}
 		model->setKeyColumnAndSortOrder( colIndex, sortOrder );
 	}
 }

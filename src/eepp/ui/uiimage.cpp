@@ -1,6 +1,7 @@
 #include <eepp/graphics/drawable.hpp>
 #include <eepp/graphics/drawablesearcher.hpp>
 #include <eepp/graphics/sprite.hpp>
+#include <eepp/ui/css/drawableimageparser.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/uiicon.hpp>
 #include <eepp/ui/uiimage.hpp>
@@ -240,18 +241,20 @@ bool UIImage::applyProperty( const StyleSheetProperty& attribute ) {
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::Src: {
 			std::string path( attribute.getValue() );
+			bool ownIt;
+			Drawable* createdDrawable =
+				CSS::StyleSheetSpecification::instance()->getDrawableImageParser().createDrawable(
+					path, mSize, ownIt, this );
+			if ( createdDrawable ) {
+				setDrawable( createdDrawable, ownIt );
+			} else {
+				Drawable* res = NULL;
+				if ( NULL != ( res = DrawableSearcher::searchByName( path ) ) ) {
+					if ( res->getDrawableType() == Drawable::SPRITE )
+						mDrawableOwner = true;
 
-			FunctionString func( FunctionString::parse( path ) );
-			if ( !func.getParameters().empty() && func.getName() == "url" ) {
-				path = func.getParameters().at( 0 );
-			}
-
-			Drawable* res = NULL;
-			if ( NULL != ( res = DrawableSearcher::searchByName( path ) ) ) {
-				if ( res->getDrawableType() == Drawable::SPRITE )
-					mDrawableOwner = true;
-
-				setDrawable( res );
+					setDrawable( res );
+				}
 			}
 			break;
 		}

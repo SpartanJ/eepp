@@ -213,7 +213,7 @@ Sizef UIPushButton::updateLayout() {
 			size = packLayout( {mIcon, mTextBox, getExtraInnerWidget()}, autoPadding );
 			break;
 	}
-	return size;
+	return size.ceil();
 }
 
 void UIPushButton::onPaddingChange() {

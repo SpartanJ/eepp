@@ -790,6 +790,7 @@ void App::showFindView() {
 	mSearchBarLayout->setEnabled( true )->setVisible( true );
 
 	UITextInput* findInput = mSearchBarLayout->find<UITextInput>( "search_find" );
+	findInput->getDocument().selectAll();
 	findInput->setFocus();
 
 	const TextDocument& doc = editor->getDocument();

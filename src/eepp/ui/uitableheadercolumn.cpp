@@ -10,10 +10,9 @@ UITableHeaderColumn::UITableHeaderColumn( UIAbstractTableView* view, const size_
 	mInnerWidgetOrientation = InnerWidgetOrientation::Right;
 	auto cb = [&]( const Event* ) { updateLayout(); };
 	mImage = UIImage::NewWithTag( mTag + "::arrow" );
-	mImage->setScaleType( UIScaleType::FitInside )
-		->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent )
+	mImage->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent )
 		->setFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER )
-		->setParent( const_cast<UITableHeaderColumn*>( this ) );
+		->setParent( this );
 	mImage->setEnabled( false );
 	mImage->addEventListener( Event::OnPaddingChange, cb );
 	mImage->addEventListener( Event::OnMarginChange, cb );
@@ -39,6 +38,19 @@ Uint32 UITableHeaderColumn::onCalculateDrag( const Vector2f& position, const Uin
 		}
 	}
 	return 1;
+}
+
+Sizef UITableHeaderColumn::updateLayout() {
+	Sizef res = UIPushButton::updateLayout();
+	updateSortIconPosition();
+	return res;
+}
+
+void UITableHeaderColumn::updateSortIconPosition() {
+	mImage->setPixelsPosition( getPixelsSize().getWidth() - mImage->getPixelsSize().getWidth() -
+								   mImage->getLayoutPixelsMargin().Right,
+							   0 );
+	mImage->centerVertical();
 }
 
 Uint32 UITableHeaderColumn::onMouseDown( const Vector2i& position, const Uint32& flags ) {

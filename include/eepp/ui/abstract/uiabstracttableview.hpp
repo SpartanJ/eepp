@@ -72,6 +72,12 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	void setIconSize( const size_t& iconSize );
 
+	const size_t& getSortIconSize() const;
+
+	void setSortIconSize( const size_t& sortIconSize );
+
+	void setColumnsVisible( const std::vector<size_t> columns );
+
   protected:
 	friend class EE::UI::UITableHeaderColumn;
 
@@ -88,7 +94,8 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	mutable std::vector<std::map<int, UIWidget*>> mWidgets;
 	UILinearLayout* mHeader;
 	Float mDragBorderDistance{8};
-	size_t mIconSize{16};
+	size_t mIconSize{12};
+	size_t mSortIconSize{16};
 	bool mAutoExpandOnSingleColumn{false};
 
 	virtual ~UIAbstractTableView();

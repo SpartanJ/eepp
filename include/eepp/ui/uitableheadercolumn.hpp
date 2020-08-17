@@ -36,6 +36,10 @@ class EE_API UITableHeaderColumn : public UIPushButton {
 	Uint32 onMouseDoubleClick( const Vector2i& position, const Uint32& flags );
 
 	Uint32 onDragStop( const Vector2i& pos, const Uint32& flags );
+
+	Sizef updateLayout();
+
+	virtual void updateSortIconPosition();
 };
 
 }} // namespace EE::UI

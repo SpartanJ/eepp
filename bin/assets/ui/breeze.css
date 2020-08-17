@@ -4,7 +4,6 @@
 	--back: #31363b;
 	--font: #eff0f1;
 	--font-hint: #898b8d;
-	--menu-font-disabled: #6e7275;
 	--button-back: #30353a;
 	--button-border: #6b6f73;
 	--button-radius: 2dp;
@@ -25,18 +24,19 @@
 	--tab-line: #616569;
 	--tab-active: #31363b;
 	--tab-hover: #334e5e;
+	--tab-close: #909396;
+	--tab-close-hover: #863d47;
 	--icon: #b6bbc2;
 	--icon-active: white;
+	--icon-back-hover: #eff0f1;
+	--icon-line-hover: #3d4246;
+	--icon-back-alert: #e49aa2;
 	--menu-back: #2d3136;
 	--menu-font: #eff0f1;
 	--menu-border: #616569;
 	--menu-font-active: white;
-	--icon-back-hover: #eff0f1;
-	--icon-line-hover: #3d4246;
-	--icon-back-alert: #e49aa2;
+	--menu-font-disabled: #6e7275;
 	--win-icon: #dbdbdd;
-	--tab-close: #909396;
-	--tab-close-hover: #863d47;
 }
 
 CheckBox,
@@ -168,7 +168,7 @@ Table {
 ListBox::item {
 	padding-left: 4dp;
 	background-color: transparent;
-	background-image: linear-gradient( to right, #232629, #383a3d ), linear-gradient( to right, #383a3d, #232629 );
+	background-image: linear-gradient( to right, var(--list-back), var(--separator) ), linear-gradient( to right, var(--separator), var(--list-back) );
 	background-size: 50% 1dp, 50% 1dp;
 	background-position: left bottom, right bottom;
 }
@@ -652,10 +652,6 @@ Menu::SubMenu:disabled > Menu::SubMenu::text {
 	color: var(--menu-font-disabled);
 }
 
-Menu::SubMenu::arrow {
-	margin-right: 1dp;
-}
-
 Menu::Item:hover > Menu::Item::text,
 Menu::CheckBox:hover > Menu::Item::text,
 Menu::RadioButton:hover > Menu::Item::text,
@@ -678,6 +674,7 @@ Menu::Separator {
 Menu::SubMenu::Arrow {
 	width: 16dp;
 	height: 16dp;
+	margin-right: 1dp;
 	foreground-image: poly(line, var(--icon), "5dp 3dp, 10dp 8dp"), poly(line, var(--icon), "5dp 13dp, 10dp 8dp");
 }
 
@@ -786,8 +783,16 @@ TableView > ScrollBar {
 	background-color: var(--list-back);
 }
 
-table::header::column::arrow {
-	margin-left: 2dp;
+table::header::column::arrow-up {
+	width: 16dp;
+	height: 12dp;
+	foreground-image: poly(line, var(--icon), "1dp 4dp, 5dp 7dp"), poly(line, var(--icon), "5dp 7dp, 9dp 4dp");
+}
+
+table::header::column::arrow-down {
+	width: 16dp;
+	height: 12dp;
+	foreground-image: poly(line, var(--icon), "1dp 7dp, 5dp 4dp"), poly(line, var(--icon), "5dp 4dp, 9dp 7dp");
 }
 
 .appbackground {
