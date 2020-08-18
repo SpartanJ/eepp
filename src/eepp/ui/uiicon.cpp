@@ -53,10 +53,18 @@ Drawable* UIGlyphIcon::getSize( const int& size ) const {
 UIGlyphIcon::UIGlyphIcon( const std::string& name, FontTrueType* font, const Uint32& codePoint ) :
 	UIIcon( name ), mFont( font ), mCodePoint( codePoint ) {
 	eeASSERT( mFont );
-	mFont->pushFontEventCallback( [&]( Uint32, Font::Event event, Font* ) {
+	mCloseCb = mFont->pushFontEventCallback( [&]( Uint32, Font::Event event, Font* ) {
 		if ( event == Font::Event::Unload )
 			mFont = nullptr;
 	} );
+}
+
+UIGlyphIcon::~UIGlyphIcon() {
+	if ( mFont && mCloseCb != 0 ) {
+		mFont->popFontEventCallback( mCloseCb );
+		mFont = nullptr;
+		mCloseCb = 0;
+	}
 }
 
 }} // namespace EE::UI

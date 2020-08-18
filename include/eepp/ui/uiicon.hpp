@@ -34,6 +34,8 @@ class EE_API UIGlyphIcon : public UIIcon {
   public:
 	static UIIcon* New( const std::string& name, FontTrueType* font, const Uint32& codePoint );
 
+	virtual ~UIGlyphIcon();
+
 	virtual Drawable* getSize( const int& size ) const;
 
   protected:
@@ -41,6 +43,7 @@ class EE_API UIGlyphIcon : public UIIcon {
 
 	mutable FontTrueType* mFont;
 	Uint32 mCodePoint;
+	Uint32 mCloseCb{0};
 };
 
 }} // namespace EE::UI

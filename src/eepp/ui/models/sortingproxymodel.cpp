@@ -105,8 +105,9 @@ void SortingProxyModel::resort( unsigned flags ) {
 		return;
 	}
 	std::sort( mRowMappings.begin(), mRowMappings.end(), [&]( auto row1, auto row2 ) -> bool {
-		Variant data1 = target().data( target().index( row1, mKeyColumn ), mSortRole );
-		Variant data2 = target().data( target().index( row2, mKeyColumn ), mSortRole );
+		Model& target = this->target();
+		Variant data1 = target.data( target.index( row1, mKeyColumn ), mSortRole );
+		Variant data2 = target.data( target.index( row2, mKeyColumn ), mSortRole );
 		if ( data1 == data2 )
 			return 0;
 		bool isLessThan;

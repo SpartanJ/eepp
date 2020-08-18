@@ -446,6 +446,9 @@ FontTrueType& FontTrueType::operator=( const FontTrueType& right ) {
 void FontTrueType::cleanup() {
 	sendEvent( Event::Unload );
 
+	mCallbacks.clear();
+	mNumCallBacks = 0;
+
 	// Check if we must destroy the FreeType pointers
 	if ( mRefCount ) {
 		// Decrease the reference counter
