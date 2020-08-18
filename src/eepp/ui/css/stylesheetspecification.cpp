@@ -432,9 +432,13 @@ void StyleSheetSpecification::registerDefaultNodeSelectors() {
 		return NULL != node->getParent() && node->getParent()->getFirstChild() == node;
 	};
 	mNodeSelectors["enabled"] = []( const UIWidget* node, int a, int b,
-									const FunctionString& data ) -> bool { return node->isEnabled(); };
+									const FunctionString& data ) -> bool {
+		return node->isEnabled();
+	};
 	mNodeSelectors["disabled"] = []( const UIWidget* node, int a, int b,
-									 const FunctionString& data ) -> bool { return !node->isEnabled(); };
+									 const FunctionString& data ) -> bool {
+		return !node->isEnabled();
+	};
 	mNodeSelectors["first-of-type"] = []( const UIWidget* node, int a, int b,
 										  const FunctionString& data ) -> bool {
 		Node* child = NULL != node->getParent() ? node->getParent()->getFirstChild() : NULL;
@@ -506,7 +510,8 @@ void StyleSheetSpecification::registerDefaultNodeSelectors() {
 									const FunctionString& data ) -> bool {
 		return 0 != ( node->getFlags() & UI_CHECKED );
 	};
-	mNodeSelectors["not"] = []( const UIWidget* node, int a, int b, const FunctionString& data ) -> bool {
+	mNodeSelectors["not"] = []( const UIWidget* node, int a, int b,
+								const FunctionString& data ) -> bool {
 		if ( !data.isEmpty() && !data.getParameters().empty() && data.getName() == "not" ) {
 			for ( const auto& param : data.getParameters() ) {
 				if ( !param.empty() ) {

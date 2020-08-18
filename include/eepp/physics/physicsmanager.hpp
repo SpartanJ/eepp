@@ -41,11 +41,11 @@ class EE_API PhysicsManager {
 	~PhysicsManager();
 
 	/** The Memory Manager will keep track of all the allocations from Space, Body, Shape and
-	*Constraint and will release any non-released pointer.
-	***	This is a lazy deallocation for the lazy programmers. It is disabled by default.
-	*** To work properly set as active before allocating anything, activate it just after the
-	*singleton instantiation.
-	*/
+	 *Constraint and will release any non-released pointer.
+	 ***	This is a lazy deallocation for the lazy programmers. It is disabled by default.
+	 *** To work properly set as active before allocating anything, activate it just after the
+	 *singleton instantiation.
+	 */
 	void setMemoryManager( bool memoryManager );
 
 	const bool& isMemoryManagerEnabled() const;

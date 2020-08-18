@@ -70,13 +70,11 @@ class EE_API TexturePacker {
 	 *is not compatible with eepp ( since it can't flip the textures back to the original
 	 *orientation ). So avoid it for eepp.
 	 */
-	static TexturePacker*
-	New( const Uint32& maxWidth, const Uint32& maxHeight,
-		 const Float& pixelDensity = 1,
-		 const bool& forcePowOfTwo = true, const bool& scalableSVG = false,
-		 const Uint32& pixelBorder = 2,
-		 const Texture::Filter& textureFilter = Texture::Filter::Linear,
-		 const bool& allowChilds = false, const bool& allowFlipping = false );
+	static TexturePacker* New( const Uint32& maxWidth, const Uint32& maxHeight,
+							   const Float& pixelDensity = 1, const bool& forcePowOfTwo = true,
+							   const bool& scalableSVG = false, const Uint32& pixelBorder = 2,
+							   const Texture::Filter& textureFilter = Texture::Filter::Linear,
+							   const bool& allowChilds = false, const bool& allowFlipping = false );
 
 	/** Creates a new texture packer ( you will need to call SetOptions before adding any texture or
 	 * image ). */
@@ -102,8 +100,7 @@ class EE_API TexturePacker {
 	 *is not compatible with eepp ( since it can't flip the textures back to the original
 	 *orientation ). So avoid it for eepp.
 	 */
-	TexturePacker( const Uint32& maxWidth, const Uint32& maxHeight,
-				   const Float& pixelDensity = 1,
+	TexturePacker( const Uint32& maxWidth, const Uint32& maxHeight, const Float& pixelDensity = 1,
 				   const bool& forcePowOfTwo = true, const bool& scalableSVG = false,
 				   const Uint32& pixelBorder = 2,
 				   const Texture::Filter& textureFilter = Texture::Filter::Linear,
@@ -168,8 +165,7 @@ class EE_API TexturePacker {
 	 *is not compatible with eepp ( since it can't flip the textures back to the original
 	 *orientation ). So avoid it for eepp.
 	 */
-	void setOptions( const Uint32& maxWidth, const Uint32& maxHeight,
-					 const Float& pixelDensity = 1,
+	void setOptions( const Uint32& maxWidth, const Uint32& maxHeight, const Float& pixelDensity = 1,
 					 const bool& forcePowOfTwo = true, const bool& scalableSVG = false,
 					 const Uint32& pixelBorder = 2,
 					 const Texture::Filter& textureFilter = Texture::Filter::Linear,

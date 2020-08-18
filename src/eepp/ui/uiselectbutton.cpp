@@ -1,6 +1,6 @@
+#include <eepp/ui/uimenubar.hpp>
 #include <eepp/ui/uiselectbutton.hpp>
 #include <eepp/ui/uistyle.hpp>
-#include <eepp/ui/uimenubar.hpp>
 
 namespace EE { namespace UI {
 

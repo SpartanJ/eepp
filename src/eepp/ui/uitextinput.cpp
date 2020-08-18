@@ -100,9 +100,8 @@ void UITextInput::onCursorPosChange() {
 
 void UITextInput::drawWaitingCursor() {
 	if ( mVisible && hasFocus() && mShowingWait && mAllowEditing ) {
-		Vector2f cursor(
-			eefloor( mScreenPos.x + mRealAlignOffset.x + mCurPos.x + mPaddingPx.Left ),
-			mScreenPos.y + mRealAlignOffset.y + mCurPos.y + mPaddingPx.Top );
+		Vector2f cursor( eefloor( mScreenPos.x + mRealAlignOffset.x + mCurPos.x + mPaddingPx.Left ),
+						 mScreenPos.y + mRealAlignOffset.y + mCurPos.y + mPaddingPx.Top );
 
 		Primitives primitives;
 		primitives.setColor( Color( mFontStyleConfig.FontColor ).blendAlpha( mAlpha ) );
@@ -138,8 +137,7 @@ void UITextInput::draw() {
 			}
 
 			mTextCache->setAlign( getFlags() );
-			mTextCache->draw( (Float)mScreenPosi.x + (int)mRealAlignOffset.x +
-								  (int)mPaddingPx.Left,
+			mTextCache->draw( (Float)mScreenPosi.x + (int)mRealAlignOffset.x + (int)mPaddingPx.Left,
 							  mFontLineCenter + (Float)mScreenPosi.y + (int)mRealAlignOffset.y +
 								  (int)mPaddingPx.Top,
 							  Vector2f::One, 0.f, getBlendMode() );
@@ -154,8 +152,7 @@ void UITextInput::draw() {
 								 mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom );
 			}
 
-			mHintCache->draw( (Float)mScreenPosi.x + (int)mRealAlignOffset.x +
-								  (int)mPaddingPx.Left,
+			mHintCache->draw( (Float)mScreenPosi.x + (int)mRealAlignOffset.x + (int)mPaddingPx.Left,
 							  mFontLineCenter + (Float)mScreenPosi.y + (int)mRealAlignOffset.y +
 								  (int)mPaddingPx.Top,
 							  Vector2f::One, 0.f, getBlendMode() );

@@ -20,7 +20,6 @@ UITooltip::UITooltip() :
 	mTextCache = Text::New();
 	mEnabled = false;
 
-
 	UITheme* theme = getUISceneNode()->getUIThemeManager()->getDefaultTheme();
 
 	if ( NULL != theme && NULL != theme->getDefaultFont() ) {
@@ -186,8 +185,8 @@ void UITooltip::autoAlign() {
 
 	switch ( Font::getHorizontalAlign( getFlags() ) ) {
 		case UI_HALIGN_CENTER:
-			mAlignOffset.x = mPaddingPx.Left +
-							 ( Float )( ( Int32 )( Width - mTextCache->getTextWidth() ) / 2 );
+			mAlignOffset.x =
+				mPaddingPx.Left + ( Float )( ( Int32 )( Width - mTextCache->getTextWidth() ) / 2 );
 			break;
 		case UI_HALIGN_RIGHT:
 			mAlignOffset.x =

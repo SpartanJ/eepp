@@ -41,9 +41,9 @@ class InputEvent {
 
 	struct KeySym {
 		Scancode scancode; /**< physical key code - see ::Scancode for details */
-		Keycode sym;	/**< virtual key code - see ::Keycode for details */
-		Uint32 mod;		/** current key modifiers */
-		Uint32 unicode; /** translated character */
+		Keycode sym;	   /**< virtual key code - see ::Keycode for details */
+		Uint32 mod;		   /** current key modifiers */
+		Uint32 unicode;	   /** translated character */
 	};
 
 	/** Application visibility event structure */

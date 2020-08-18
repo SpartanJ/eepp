@@ -84,8 +84,7 @@ void UITextView::draw() {
 			}
 
 			mTextCache->setAlign( getFlags() );
-			mTextCache->draw( (Float)mScreenPosi.x + (int)mRealAlignOffset.x +
-								  (int)mPaddingPx.Left,
+			mTextCache->draw( (Float)mScreenPosi.x + (int)mRealAlignOffset.x + (int)mPaddingPx.Left,
 							  mFontLineCenter + (Float)mScreenPosi.y + (int)mRealAlignOffset.y +
 								  (int)mPaddingPx.Top,
 							  Vector2f::One, 0.f, getBlendMode() );
@@ -704,7 +703,7 @@ std::string UITextView::getPropertyString( const PropertyDefinition* propertyDef
 }
 
 void UITextView::setTextAlign( const Uint32& align ) {
-	mFlags &= ~(UI_HALIGN_CENTER|UI_HALIGN_RIGHT);
+	mFlags &= ~( UI_HALIGN_CENTER | UI_HALIGN_RIGHT );
 	mFlags |= align;
 	onAlignChange();
 }

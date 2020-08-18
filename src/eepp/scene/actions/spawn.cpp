@@ -98,7 +98,7 @@ Time Spawn::getTotalTime() {
 		max = eemax( max, spawn->getTotalTime().asMicroseconds() );
 	}
 
-	return Microseconds(max);
+	return Microseconds( max );
 }
 
 Action* Spawn::clone() const {

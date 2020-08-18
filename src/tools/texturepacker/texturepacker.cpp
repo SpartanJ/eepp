@@ -71,8 +71,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		parser, "texture-filter",
 		"Texture filter to use with the texture atlas. Available filters: \"linear\" or "
 		"\"nearest\".",
-		{"texture-filter"}, textureFilterMap, Texture::Filter::Linear,
-		args::Options::Single );
+		{"texture-filter"}, textureFilterMap, Texture::Filter::Linear, args::Options::Single );
 
 	try {
 		parser.ParseCLI( argc, argv );

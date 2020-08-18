@@ -171,7 +171,7 @@ class EE_API Http : NonCopyable {
 					 ///< target resource.
 			Patch,	 ///< The PATCH method is used to apply partial modifications to a resource.
 			Connect	 ///< The CONNECT method starts two-way communications with the requested
-					 ///< resource. It can be used to open a tunnel.
+					///< resource. It can be used to open a tunnel.
 		};
 
 		/** @brief Enumerate the available states for a request */

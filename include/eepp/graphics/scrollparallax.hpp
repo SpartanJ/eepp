@@ -11,11 +11,11 @@ using namespace EE::System;
 namespace EE { namespace Graphics {
 
 /** @brief The scroll parallax renders a TextureRegion to the screen from a position and a size
-*specified. If the size is bigger than the TextureRegion, the TextureRegion is rendered as a
-*repeated TextureRegion until it covers all the size of the parallax, adding movement to more than
-*one Scroll Parallax will generate the ilusion of depth. *	More info in wikipedia:
-*http://en.wikipedia.org/wiki/Parallax_scrolling
-*/
+ *specified. If the size is bigger than the TextureRegion, the TextureRegion is rendered as a
+ *repeated TextureRegion until it covers all the size of the parallax, adding movement to more than
+ *one Scroll Parallax will generate the ilusion of depth. *	More info in wikipedia:
+ *http://en.wikipedia.org/wiki/Parallax_scrolling
+ */
 class EE_API ScrollParallax {
   public:
 	ScrollParallax();

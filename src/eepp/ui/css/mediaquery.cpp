@@ -10,7 +10,7 @@ namespace EE { namespace UI { namespace CSS {
 
 #define MediaOrientationStrings "portrait;landscape"
 
-#define MediaFeatureStrings                                                                  \
+#define MediaFeatureStrings                                                                    \
 	"none;width;min-width;max-width;height;min-height;max-height;device-width;min-device-"     \
 	"width;max-device-width;device-height;min-device-height;max-device-height;orientation;"    \
 	"aspect-ratio;min-aspect-ratio;max-aspect-ratio;device-aspect-ratio;min-device-aspect-"    \
@@ -18,8 +18,7 @@ namespace EE { namespace UI { namespace CSS {
 	"color-index;monochrome;min-monochrome;max-monochrome;resolution;min-resolution;max-"      \
 	"resolution"
 
-#define MediaTypeStrings \
-	"none;all;screen;print;braille;embossed;handheld;projection;speech;tty;tv"
+#define MediaTypeStrings "none;all;screen;print;braille;embossed;handheld;projection;speech;tty;tv"
 
 MediaQuery::MediaQuery() {
 	mMediaType = media_type_all;
@@ -56,8 +55,8 @@ MediaQuery::ptr MediaQuery::parse( const std::string& str ) {
 			if ( !exprTokens.empty() ) {
 				String::trimInPlace( exprTokens[0] );
 
-				expr.feature = (MediaFeature)String::valueIndex(
-					exprTokens[0], MediaFeatureStrings, media_feature_none );
+				expr.feature = (MediaFeature)String::valueIndex( exprTokens[0], MediaFeatureStrings,
+																 media_feature_none );
 
 				if ( expr.feature != media_feature_none ) {
 					if ( exprTokens.size() == 1 ) {

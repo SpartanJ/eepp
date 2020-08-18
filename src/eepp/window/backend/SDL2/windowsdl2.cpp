@@ -215,9 +215,9 @@ WindowSDL::~WindowSDL() {
 }
 
 bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
-	#if EE_PLATFORM == EE_PLATFORM_WIN
+#if EE_PLATFORM == EE_PLATFORM_WIN
 	DisplayManagerSDL2::setDPIAwareness();
-	#endif
+#endif
 
 	if ( mWindow.Created )
 		return false;

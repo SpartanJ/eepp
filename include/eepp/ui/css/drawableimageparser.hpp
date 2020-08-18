@@ -20,8 +20,8 @@ using namespace EE::System;
 
 namespace EE { namespace UI { namespace CSS {
 
-typedef std::function<Drawable*( const FunctionString& functionType, const Sizef& size,
-								 bool& ownIt, UINode* node )>
+typedef std::function<Drawable*( const FunctionString& functionType, const Sizef& size, bool& ownIt,
+								 UINode* node )>
 	DrawableImageParserFunc;
 
 class EE_API DrawableImageParser {

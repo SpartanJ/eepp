@@ -28,9 +28,9 @@ class EE_API DisplaySDL2 : public Display {
 
 class EE_API DisplayManagerSDL2 : public DisplayManager {
   public:
-	#if EE_PLATFORM == EE_PLATFORM_WIN
+#if EE_PLATFORM == EE_PLATFORM_WIN
 	static void setDPIAwareness();
-	#endif
+#endif
 
 	int getDisplayCount();
 

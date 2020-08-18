@@ -234,8 +234,7 @@ void UISplitter::updateFromDrag() {
 		mFirstWidget->setPixelsPosition( mPaddingPx.Left, mPaddingPx.Top );
 		if ( UIOrientation::Horizontal == mOrientation ) {
 			mFirstWidget->setPixelsSize( mSplitter->getPixelsPosition().x - mPaddingPx.Left,
-										 mSize.getHeight() - mPaddingPx.Top -
-											 mPaddingPx.Bottom );
+										 mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom );
 		} else {
 			mFirstWidget->setPixelsSize( mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right,
 										 mSplitter->getPixelsPosition().y - mPaddingPx.Top );
@@ -247,10 +246,10 @@ void UISplitter::updateFromDrag() {
 			mLastWidget->setPixelsPosition( mSplitter->getPixelsPosition().x +
 												mSplitter->getPixelsSize().getWidth(),
 											mPaddingPx.Top );
-			mLastWidget->setPixelsSize(
-				mSize.getWidth() - mPaddingPx.Right - mSplitter->getPixelsPosition().x -
-					mSplitter->getPixelsSize().getWidth(),
-				mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom );
+			mLastWidget->setPixelsSize( mSize.getWidth() - mPaddingPx.Right -
+											mSplitter->getPixelsPosition().x -
+											mSplitter->getPixelsSize().getWidth(),
+										mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom );
 		} else {
 			mLastWidget->setPixelsPosition( mPaddingPx.Left,
 											mSplitter->getPixelsPosition().y +
@@ -327,8 +326,7 @@ void UISplitter::updateLayout() {
 		if ( mFirstWidget ) {
 			mFirstWidget->setPixelsPosition( mPaddingPx.Left, mPaddingPx.Top );
 			mFirstWidget->setPixelsSize( mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right,
-										 mSize.getHeight() - mPaddingPx.Top -
-											 mPaddingPx.Bottom );
+										 mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom );
 		}
 
 		mDirtyLayout = false;
@@ -358,8 +356,8 @@ void UISplitter::updateLayout() {
 			firstSplit = eemax( firstSplit, fMinSize );
 			secondSplit = totalSpace - firstSplit;
 
-			mFirstWidget->setPixelsSize( firstSplit, mSize.getHeight() - mPaddingPx.Top -
-														 mPaddingPx.Bottom );
+			mFirstWidget->setPixelsSize( firstSplit,
+										 mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom );
 
 			mSplitter->setPixelsPosition( mFirstWidget->getPixelsPosition().x +
 											  mFirstWidget->getPixelsSize().getWidth(),
@@ -389,8 +387,8 @@ void UISplitter::updateLayout() {
 			mLastWidget->setPixelsPosition( mSplitter->getPixelsPosition().x +
 												mSplitter->getPixelsSize().getWidth(),
 											mPaddingPx.Top );
-			mLastWidget->setPixelsSize( secondSplit, mSize.getHeight() - mPaddingPx.Top -
-														 mPaddingPx.Bottom );
+			mLastWidget->setPixelsSize( secondSplit,
+										mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom );
 		} else {
 			mLastWidget->setPixelsPosition( mPaddingPx.Left,
 											mSplitter->getPixelsPosition().y +

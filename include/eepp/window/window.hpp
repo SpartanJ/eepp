@@ -460,7 +460,7 @@ class EE_API Window {
 
 	const Sizei& getLastWindowedSize() const;
 
-	protected:
+  protected:
 	friend class Engine;
 	friend class Input;
 

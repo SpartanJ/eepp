@@ -12,9 +12,9 @@ And for the C++ implementation of Henrik Krysell.
 namespace EE { namespace Math {
 
 /** @brief Perlin noise can be used to generate gradients, textures and effects. For more
-*information go to http://en.wikipedia.org/wiki/Perlin_noise *	To get a better understanding of
-*the variables to generate the noise, visit
-*http://freespace.virgin.net/hugo.elias/models/m_perlin.htm */
+ *information go to http://en.wikipedia.org/wiki/Perlin_noise *	To get a better understanding of
+ *the variables to generate the noise, visit
+ *http://freespace.virgin.net/hugo.elias/models/m_perlin.htm */
 class EE_API PerlinNoise {
   public:
 	PerlinNoise();

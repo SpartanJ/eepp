@@ -233,10 +233,10 @@ bool FileSystem::fileCanWrite( const std::string& filepath ) {
 bool FileSystem::fileIsHidden( const std::string& filepath ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 #if UNICODE
-	return 0 == ( GetFileAttributes( String::fromUtf8( filepath ).toWideString().c_str() ) &
+	return 0 != ( GetFileAttributes( String::fromUtf8( filepath ).toWideString().c_str() ) &
 				  FILE_ATTRIBUTE_HIDDEN );
 #else
-	return 0 == ( GetFileAttributes( (LPCTSTR)filepath.c_str() ) & FILE_ATTRIBUTE_HIDDEN );
+	return 0 != ( GetFileAttributes( (LPCTSTR)filepath.c_str() ) & FILE_ATTRIBUTE_HIDDEN );
 #endif
 #else
 	std::string filename( fileNameFromPath( filepath ) );

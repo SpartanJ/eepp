@@ -143,7 +143,7 @@ class EE_API Interpolation1d {
 
 	/** @return The current progress porcentage of the current interpolation.
 	 * This is the partial progress, not the global of the whole interpolation.
-	*/
+	 */
 	Float getPartialCurrentProgress();
 
   protected:

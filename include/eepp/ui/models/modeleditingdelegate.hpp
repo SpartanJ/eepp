@@ -43,6 +43,6 @@ class EE_API ModelEditingDelegate {
 	UIWidget* mWidget;
 };
 
-}}} // namespace EE::UI::Model
+}}} // namespace EE::UI::Models
 
 #endif // EE_UI_MODELEDITINGDELEGATE_HPP

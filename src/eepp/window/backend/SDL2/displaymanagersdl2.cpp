@@ -15,8 +15,8 @@ void DisplayManagerSDL2::setDPIAwareness() {
 	if ( DISPLAY_REQUEST_DPI_AWARENESS ) {
 		void* user32 = Sys::loadObject( "user32.dll" );
 		if ( user32 ) {
-			int (*SetProcessDPIAware)() =
-					(int (*)()) Sys::loadFunction( user32, "SetProcessDPIAware" );
+			int ( *SetProcessDPIAware )() =
+				(int ( * )())Sys::loadFunction( user32, "SetProcessDPIAware" );
 			if ( SetProcessDPIAware ) {
 				SetProcessDPIAware();
 				DISPLAY_REQUEST_DPI_AWARENESS = false;
@@ -43,9 +43,9 @@ Float DisplaySDL2::getDPI() {
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 	return 96.f * emscripten_get_device_pixel_ratio();
 #else
-	#if EE_PLATFORM == EE_PLATFORM_WIN
+#if EE_PLATFORM == EE_PLATFORM_WIN
 	DisplayManagerSDL2::setDPIAwareness();
-	#endif
+#endif
 	float ddpi, hdpi, vdpi;
 	if ( 0 == SDL_GetDisplayDPI( 0, &ddpi, &hdpi, &vdpi ) )
 		return ddpi;
@@ -110,9 +110,9 @@ Rect DisplaySDL2::getUsableBounds() {
 }
 
 int DisplayManagerSDL2::getDisplayCount() {
-	#if EE_PLATFORM == EE_PLATFORM_WIN
+#if EE_PLATFORM == EE_PLATFORM_WIN
 	setDPIAwareness();
-	#endif
+#endif
 	if ( !SDL_WasInit( SDL_INIT_VIDEO ) )
 		SDL_Init( SDL_INIT_VIDEO );
 	return SDL_GetNumVideoDisplays();

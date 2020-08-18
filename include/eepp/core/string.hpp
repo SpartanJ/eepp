@@ -40,8 +40,8 @@ class EE_API String {
 		static const OccTable createOccTable( const unsigned char* needle, size_t needleLength );
 
 		/** @returns haystackLength if not found, otherwise the position */
-		static size_t search( const unsigned char* haystack, size_t haystackLength, const unsigned char* needle,
-							  const size_t needleLength,
+		static size_t search( const unsigned char* haystack, size_t haystackLength,
+							  const unsigned char* needle, const size_t needleLength,
 							  const OccTable& occ );
 
 		/** @returns -1 if not found otherwise the position */

@@ -30,10 +30,10 @@ class EE_API TextureAtlasNew {
 	UIDropDownList* mSaveFileType;
 	UIDropDownList* mPixelDensity;
 	UIDropDownList* mTextureFilter;
-	UICheckBox * mForcePow2;
-	UICheckBox * mScalableSVG;
-	UICheckBox * mSaveExtensions;
-	UICheckBox * mAllowChilds;
+	UICheckBox* mForcePow2;
+	UICheckBox* mScalableSVG;
+	UICheckBox* mSaveExtensions;
+	UICheckBox* mAllowChilds;
 
 	void windowClose( const Event* Event );
 

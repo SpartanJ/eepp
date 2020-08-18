@@ -44,8 +44,7 @@ UIDropDownList::UIDropDownList( const std::string& tag ) :
 	mListBox->addEventListener( Event::OnItemKeyDown,
 								cb::Make1( this, &UIDropDownList::onItemKeyDown ) );
 	mListBox->addEventListener( Event::KeyDown, cb::Make1( this, &UIDropDownList::onItemKeyDown ) );
-	mListBox->addEventListener( Event::OnClear,
-								cb::Make1( this, &UIDropDownList::onWidgetClear ) );
+	mListBox->addEventListener( Event::OnClear, cb::Make1( this, &UIDropDownList::onWidgetClear ) );
 }
 
 UIDropDownList::~UIDropDownList() {
@@ -277,8 +276,7 @@ void UIDropDownList::hide() {
 	if ( NULL != getUISceneNode() &&
 		 getUISceneNode()->getUIThemeManager()->getDefaultEffectsEnabled() ) {
 		mListBox->runAction( Actions::Sequence::New(
-			Actions::FadeOut::New(
-				getUISceneNode()->getUIThemeManager()->getWidgetsFadeOutTime() ),
+			Actions::FadeOut::New( getUISceneNode()->getUIThemeManager()->getWidgetsFadeOutTime() ),
 			Actions::Spawn::New( Actions::Disable::New(), Actions::Visible::New( false ) ) ) );
 	} else {
 		mListBox->setEnabled( false );

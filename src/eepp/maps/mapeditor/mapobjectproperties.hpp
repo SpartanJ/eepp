@@ -4,8 +4,8 @@
 #include <eepp/maps/base.hpp>
 #include <eepp/maps/gameobjectobject.hpp>
 #include <eepp/maps/maphelper.hpp>
-#include <eepp/ui/uiwidgettable.hpp>
 #include <eepp/ui/uitextinput.hpp>
+#include <eepp/ui/uiwidgettable.hpp>
 #include <eepp/ui/uiwindow.hpp>
 
 using namespace EE::UI;

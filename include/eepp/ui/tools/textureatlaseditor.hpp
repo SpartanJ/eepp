@@ -9,9 +9,9 @@
 #include <eepp/ui/uidropdownlist.hpp>
 #include <eepp/ui/uigridlayout.hpp>
 #include <eepp/ui/uilistbox.hpp>
+#include <eepp/ui/uimenubar.hpp>
 #include <eepp/ui/uispinbox.hpp>
 #include <eepp/ui/uiwindow.hpp>
-#include <eepp/ui/uimenubar.hpp>
 
 namespace EE { namespace UI { namespace Tools {
 

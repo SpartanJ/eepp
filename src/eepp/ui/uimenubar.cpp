@@ -74,7 +74,7 @@ void UIMenuBar::addMenuButton( const String& buttonText, UIPopUpMenu* menu ) {
 			button->unselect();
 		}
 	} );
-	menu->addEventListener( Event::OnItemClicked, [&] ( const Event* ) {
+	menu->addEventListener( Event::OnItemClicked, [&]( const Event* ) {
 		mWaitingUp = nullptr;
 		mCurrentMenu = nullptr;
 	} );

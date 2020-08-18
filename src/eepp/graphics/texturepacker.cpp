@@ -16,8 +16,8 @@ TexturePacker* TexturePacker::New() {
 TexturePacker* TexturePacker::New( const Uint32& maxWidth, const Uint32& maxHeight,
 								   const Float& pixelDensity, const bool& forcePowOfTwo,
 								   const bool& scalableSVG, const Uint32& pixelBorder,
-								   const Texture::Filter& textureFilter,
-								   const bool& allowChilds, const bool& allowFlipping ) {
+								   const Texture::Filter& textureFilter, const bool& allowChilds,
+								   const bool& allowFlipping ) {
 	return eeNew( TexturePacker, ( maxWidth, maxHeight, pixelDensity, forcePowOfTwo, scalableSVG,
 								   pixelBorder, textureFilter, allowChilds, allowFlipping ) );
 }
@@ -136,8 +136,8 @@ Uint32 TexturePacker::getAtlasNumChannels() {
 void TexturePacker::setOptions( const Uint32& maxWidth, const Uint32& maxHeight,
 								const Float& pixelDensity, const bool& forcePowOfTwo,
 								const bool& scalableSVG, const Uint32& pixelBorder,
-								const Texture::Filter& textureFilter,
-								const bool& allowChilds, const bool& allowFlipping ) {
+								const Texture::Filter& textureFilter, const bool& allowChilds,
+								const bool& allowFlipping ) {
 	if ( !mTextures.size() ) { // only can change the dimensions before adding any texture
 		mMaxSize.x = maxWidth;
 		mMaxSize.y = maxHeight;

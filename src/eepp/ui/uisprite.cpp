@@ -137,14 +137,15 @@ void UISprite::updateSize() {
 
 		if ( NULL != mSprite->getCurrentTextureRegion() ) {
 			if ( mWidthPolicy == SizePolicy::WrapContent ) {
-				setInternalPixelsWidth( mSprite->getCurrentTextureRegion()->getPixelsSize().getWidth() +
-										mPaddingPx.Left + mPaddingPx.Right );
+				setInternalPixelsWidth(
+					mSprite->getCurrentTextureRegion()->getPixelsSize().getWidth() +
+					mPaddingPx.Left + mPaddingPx.Right );
 			}
 
 			if ( mHeightPolicy == SizePolicy::WrapContent ) {
 				setInternalPixelsHeight(
-					mSprite->getCurrentTextureRegion()->getPixelsSize().getHeight() + mPaddingPx.Top +
-					mPaddingPx.Bottom );
+					mSprite->getCurrentTextureRegion()->getPixelsSize().getHeight() +
+					mPaddingPx.Top + mPaddingPx.Bottom );
 			}
 		}
 	}

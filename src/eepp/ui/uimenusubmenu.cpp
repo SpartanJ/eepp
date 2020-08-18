@@ -125,7 +125,7 @@ Uint32 UIMenuSubMenu::onMouseLeave( const Vector2i& pos, const Uint32& flags ) {
 }
 
 Uint32 UIMenuSubMenu::onMouseClick( const Vector2i&, const Uint32& flags ) {
-	if (  (flags & EE_BUTTON_LMASK) && !mSubMenu->isVisible() )
+	if ( ( flags & EE_BUTTON_LMASK ) && !mSubMenu->isVisible() )
 		showSubMenu();
 	return 1;
 }

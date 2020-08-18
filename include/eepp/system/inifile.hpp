@@ -211,7 +211,7 @@ class EE_API IniFile {
 	/** Delete all header comments. */
 	void deleteHeaderComments() { mComments.clear(); }
 
-	std::map<std::string, std::string> getKeyMap( const unsigned & keyID ) const;
+	std::map<std::string, std::string> getKeyMap( const unsigned& keyID ) const;
 
 	std::map<std::string, std::string> getKeyMap( const std::string& keyname ) const;
 

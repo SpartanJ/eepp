@@ -62,6 +62,6 @@ class EE_API TextDocumentLine {
 	void updateHash() { mHash = mText.getHash(); }
 };
 
-}}}
+}}} // namespace EE::UI::Doc
 
 #endif // EE_UI_DOC_TEXTDOCUMENTLINE_HPP

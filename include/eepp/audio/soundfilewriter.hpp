@@ -65,7 +65,7 @@ class EE_API SoundFileWriter {
 ///	 }
 ///
 ///	 virtual bool open(const std::string& filename, unsigned int sampleRate, unsigned int
-///channelCount)
+/// channelCount)
 ///	 {
 ///		 // open the file 'filename' for writing,
 ///		 // write the given sample rate and channel count to the file header

@@ -23,7 +23,7 @@ class EE_API SceneManager {
 
 	~SceneManager();
 
-	SceneNode* add(SceneNode* sceneNode );
+	SceneNode* add( SceneNode* sceneNode );
 
 	bool remove( SceneNode* sceneNode );
 

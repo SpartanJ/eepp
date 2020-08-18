@@ -23,7 +23,7 @@ template <typename T> class ItemListModel final : public Model {
 
 	virtual Variant data( const ModelIndex& index, Role role = Role::Display ) const {
 		if ( role == Role::Display )
-			return Variant( mData[ index.row() ] );
+			return Variant( mData[index.row()] );
 		return {};
 	}
 

@@ -59,8 +59,8 @@ template <typename R> class Callback0 {
   public:
 	/// Constructs the callback to a specific object and member function.
 	///\param object Pointer to the object to call upon. Care should be taken that this object
-	///remains valid as long as the callback may be invoked. \param function Member function address
-	///to call.
+	/// remains valid as long as the callback may be invoked. \param function Member function
+	/// address to call.
 	template <typename C>
 	Callback0( C* object, R ( C::*function )() ) :
 		mCallback( new ( &mMem ) ChildMethod<C>( object, function ) ) {}
@@ -93,8 +93,8 @@ template <typename R> class Callback0 {
 
 	/// Sets the callback to a specific object and member function.
 	///\param object Pointer to the object to call upon. Care should be taken that this object
-	///remains valid as long as the callback may be invoked. \param function Member function address
-	///to call.
+	/// remains valid as long as the callback may be invoked. \param function Member function
+	/// address to call.
 	template <typename C> void Reset( C* object, R ( C::*function )() ) {
 		mCallback = new ( &mMem ) ChildMethod<C>( object, function );
 	}
@@ -240,8 +240,8 @@ template <typename R, typename T0> class Callback1 {
   public:
 	/// Constructs the callback to a specific object and member function.
 	///\param object Pointer to the object to call upon. Care should be taken that this object
-	///remains valid as long as the callback may be invoked. \param function Member function address
-	///to call.
+	/// remains valid as long as the callback may be invoked. \param function Member function
+	/// address to call.
 	template <typename C>
 	Callback1( C* object, R ( C::*function )( T0 t0 ) ) :
 		mCallback( new ( &mMem ) ChildMethod<C>( object, function ) ) {}
@@ -274,8 +274,8 @@ template <typename R, typename T0> class Callback1 {
 
 	/// Sets the callback to a specific object and member function.
 	///\param object Pointer to the object to call upon. Care should be taken that this object
-	///remains valid as long as the callback may be invoked. \param function Member function address
-	///to call.
+	/// remains valid as long as the callback may be invoked. \param function Member function
+	/// address to call.
 	template <typename C> void Reset( C* object, R ( C::*function )( T0 t0 ) ) {
 		mCallback = new ( &mMem ) ChildMethod<C>( object, function );
 	}
@@ -422,8 +422,8 @@ template <typename R, typename T0, typename T1> class Callback2 {
   public:
 	/// Constructs the callback to a specific object and member function.
 	///\param object Pointer to the object to call upon. Care should be taken that this object
-	///remains valid as long as the callback may be invoked. \param function Member function address
-	///to call.
+	/// remains valid as long as the callback may be invoked. \param function Member function
+	/// address to call.
 	template <typename C>
 	Callback2( C* object, R ( C::*function )( T0 t0, T1 t1 ) ) :
 		mCallback( new ( &mMem ) ChildMethod<C>( object, function ) ) {}
@@ -457,8 +457,8 @@ template <typename R, typename T0, typename T1> class Callback2 {
 
 	/// Sets the callback to a specific object and member function.
 	///\param object Pointer to the object to call upon. Care should be taken that this object
-	///remains valid as long as the callback may be invoked. \param function Member function address
-	///to call.
+	/// remains valid as long as the callback may be invoked. \param function Member function
+	/// address to call.
 	template <typename C> void Reset( C* object, R ( C::*function )( T0 t0, T1 t1 ) ) {
 		mCallback = new ( &mMem ) ChildMethod<C>( object, function );
 	}
@@ -609,8 +609,8 @@ template <typename R, typename T0, typename T1, typename T2> class Callback3 {
   public:
 	/// Constructs the callback to a specific object and member function.
 	///\param object Pointer to the object to call upon. Care should be taken that this object
-	///remains valid as long as the callback may be invoked. \param function Member function address
-	///to call.
+	/// remains valid as long as the callback may be invoked. \param function Member function
+	/// address to call.
 	template <typename C>
 	Callback3( C* object, R ( C::*function )( T0 t0, T1 t1, T2 t2 ) ) :
 		mCallback( new ( &mMem ) ChildMethod<C>( object, function ) ) {}
@@ -644,8 +644,8 @@ template <typename R, typename T0, typename T1, typename T2> class Callback3 {
 
 	/// Sets the callback to a specific object and member function.
 	///\param object Pointer to the object to call upon. Care should be taken that this object
-	///remains valid as long as the callback may be invoked. \param function Member function address
-	///to call.
+	/// remains valid as long as the callback may be invoked. \param function Member function
+	/// address to call.
 	template <typename C> void Reset( C* object, R ( C::*function )( T0 t0, T1 t1, T2 t2 ) ) {
 		mCallback = new ( &mMem ) ChildMethod<C>( object, function );
 	}
@@ -796,8 +796,8 @@ template <typename R, typename T0, typename T1, typename T2, typename T3> class 
   public:
 	/// Constructs the callback to a specific object and member function.
 	///\param object Pointer to the object to call upon. Care should be taken that this object
-	///remains valid as long as the callback may be invoked. \param function Member function address
-	///to call.
+	/// remains valid as long as the callback may be invoked. \param function Member function
+	/// address to call.
 	template <typename C>
 	Callback4( C* object, R ( C::*function )( T0 t0, T1 t1, T2 t2, T3 t3 ) ) :
 		mCallback( new ( &mMem ) ChildMethod<C>( object, function ) ) {}
@@ -831,8 +831,8 @@ template <typename R, typename T0, typename T1, typename T2, typename T3> class 
 
 	/// Sets the callback to a specific object and member function.
 	///\param object Pointer to the object to call upon. Care should be taken that this object
-	///remains valid as long as the callback may be invoked. \param function Member function address
-	///to call.
+	/// remains valid as long as the callback may be invoked. \param function Member function
+	/// address to call.
 	template <typename C>
 	void Reset( C* object, R ( C::*function )( T0 t0, T1 t1, T2 t2, T3 t3 ) ) {
 		mCallback = new ( &mMem ) ChildMethod<C>( object, function );
@@ -987,8 +987,8 @@ class Callback5 {
   public:
 	/// Constructs the callback to a specific object and member function.
 	///\param object Pointer to the object to call upon. Care should be taken that this object
-	///remains valid as long as the callback may be invoked. \param function Member function address
-	///to call.
+	/// remains valid as long as the callback may be invoked. \param function Member function
+	/// address to call.
 	template <typename C>
 	Callback5( C* object, R ( C::*function )( T0 t0, T1 t1, T2 t2, T3 t3, T4 t4 ) ) :
 		mCallback( new ( &mMem ) ChildMethod<C>( object, function ) ) {}
@@ -1022,8 +1022,8 @@ class Callback5 {
 
 	/// Sets the callback to a specific object and member function.
 	///\param object Pointer to the object to call upon. Care should be taken that this object
-	///remains valid as long as the callback may be invoked. \param function Member function address
-	///to call.
+	/// remains valid as long as the callback may be invoked. \param function Member function
+	/// address to call.
 	template <typename C>
 	void Reset( C* object, R ( C::*function )( T0 t0, T1 t1, T2 t2, T3 t3, T4 t4 ) ) {
 		mCallback = new ( &mMem ) ChildMethod<C>( object, function );
@@ -1181,8 +1181,8 @@ class Callback6 {
   public:
 	/// Constructs the callback to a specific object and member function.
 	///\param object Pointer to the object to call upon. Care should be taken that this object
-	///remains valid as long as the callback may be invoked. \param function Member function address
-	///to call.
+	/// remains valid as long as the callback may be invoked. \param function Member function
+	/// address to call.
 	template <typename C>
 	Callback6( C* object, R ( C::*function )( T0 t0, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5 ) ) :
 		mCallback( new ( &mMem ) ChildMethod<C>( object, function ) ) {}
@@ -1216,8 +1216,8 @@ class Callback6 {
 
 	/// Sets the callback to a specific object and member function.
 	///\param object Pointer to the object to call upon. Care should be taken that this object
-	///remains valid as long as the callback may be invoked. \param function Member function address
-	///to call.
+	/// remains valid as long as the callback may be invoked. \param function Member function
+	/// address to call.
 	template <typename C>
 	void Reset( C* object, R ( C::*function )( T0 t0, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5 ) ) {
 		mCallback = new ( &mMem ) ChildMethod<C>( object, function );
@@ -1379,8 +1379,8 @@ class Callback7 {
   public:
 	/// Constructs the callback to a specific object and member function.
 	///\param object Pointer to the object to call upon. Care should be taken that this object
-	///remains valid as long as the callback may be invoked. \param function Member function address
-	///to call.
+	/// remains valid as long as the callback may be invoked. \param function Member function
+	/// address to call.
 	template <typename C>
 	Callback7( C* object, R ( C::*function )( T0 t0, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6 ) ) :
 		mCallback( new ( &mMem ) ChildMethod<C>( object, function ) ) {}
@@ -1414,8 +1414,8 @@ class Callback7 {
 
 	/// Sets the callback to a specific object and member function.
 	///\param object Pointer to the object to call upon. Care should be taken that this object
-	///remains valid as long as the callback may be invoked. \param function Member function address
-	///to call.
+	/// remains valid as long as the callback may be invoked. \param function Member function
+	/// address to call.
 	template <typename C>
 	void Reset( C* object, R ( C::*function )( T0 t0, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6 ) ) {
 		mCallback = new ( &mMem ) ChildMethod<C>( object, function );
@@ -1579,8 +1579,8 @@ class Callback8 {
   public:
 	/// Constructs the callback to a specific object and member function.
 	///\param object Pointer to the object to call upon. Care should be taken that this object
-	///remains valid as long as the callback may be invoked. \param function Member function address
-	///to call.
+	/// remains valid as long as the callback may be invoked. \param function Member function
+	/// address to call.
 	template <typename C>
 	Callback8( C* object,
 			   R ( C::*function )( T0 t0, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7 ) ) :
@@ -1615,8 +1615,8 @@ class Callback8 {
 
 	/// Sets the callback to a specific object and member function.
 	///\param object Pointer to the object to call upon. Care should be taken that this object
-	///remains valid as long as the callback may be invoked. \param function Member function address
-	///to call.
+	/// remains valid as long as the callback may be invoked. \param function Member function
+	/// address to call.
 	template <typename C>
 	void Reset( C* object,
 				R ( C::*function )( T0 t0, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7 ) ) {
@@ -1781,8 +1781,8 @@ class Callback9 {
   public:
 	/// Constructs the callback to a specific object and member function.
 	///\param object Pointer to the object to call upon. Care should be taken that this object
-	///remains valid as long as the callback may be invoked. \param function Member function address
-	///to call.
+	/// remains valid as long as the callback may be invoked. \param function Member function
+	/// address to call.
 	template <typename C>
 	Callback9( C* object, R ( C::*function )( T0 t0, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6,
 											  T7 t7, T8 t8 ) ) :
@@ -1817,8 +1817,8 @@ class Callback9 {
 
 	/// Sets the callback to a specific object and member function.
 	///\param object Pointer to the object to call upon. Care should be taken that this object
-	///remains valid as long as the callback may be invoked. \param function Member function address
-	///to call.
+	/// remains valid as long as the callback may be invoked. \param function Member function
+	/// address to call.
 	template <typename C>
 	void Reset( C* object, R ( C::*function )( T0 t0, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6,
 											   T7 t7, T8 t8 ) ) {

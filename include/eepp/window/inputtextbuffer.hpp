@@ -141,6 +141,7 @@ class EE_API InputTextBuffer {
 	void setSelectionChangeCallback( const SelectionChangeCallback& selectionChangeCallback );
 
 	void selectAll();
+
   protected:
 	enum Flags {
 		SUPPORT_NEW_LINE = 0,
@@ -188,7 +189,7 @@ class EE_API InputTextBuffer {
 
 	bool isIgnoredChar( const String::StringBaseType& c );
 
-	bool validChar(const String::StringBaseType& c );
+	bool validChar( const String::StringBaseType& c );
 
 	void tryAddChar( const String::StringBaseType& c );
 

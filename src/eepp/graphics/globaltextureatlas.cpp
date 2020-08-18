@@ -7,7 +7,6 @@ SINGLETON_DECLARE_IMPLEMENTATION( GlobalTextureAtlas )
 
 GlobalTextureAtlas::GlobalTextureAtlas() : TextureAtlas( "global" ) {}
 
-GlobalTextureAtlas::~GlobalTextureAtlas() {
-}
+GlobalTextureAtlas::~GlobalTextureAtlas() {}
 
 }} // namespace EE::Graphics

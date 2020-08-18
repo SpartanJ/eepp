@@ -41,7 +41,7 @@ template <typename T> class tSoundManager {
 	SoundBuffer& getBuffer( const T& id );
 
 	/** Play the sound. This method will open a new channel if the channel seted for the sound is
-	*already playing. *	@param id The sound id to play */
+	 *already playing. *	@param id The sound id to play */
 	Sound* play( const T& id );
 
 	/** Remove a sound from the sound manager.
@@ -52,7 +52,7 @@ template <typename T> class tSoundManager {
 	Sound& operator[]( const T& id );
 
 	/** @brief Search for the sound id, and return a sound that is not playing, if all the sounds
-	*are playing, creates a new sound. *	@return The sound */
+	 *are playing, creates a new sound. *	@return The sound */
 	Sound& getFreeSound( const T& id );
 
 	~tSoundManager();
