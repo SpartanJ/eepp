@@ -10,9 +10,11 @@ UITableView* UITableView::New() {
 	return eeNew( UITableView, () );
 }
 
-UITableView::UITableView() : UIAbstractTableView( "tableview" ) {
+UITableView::UITableView( const std::string& tag ) : UIAbstractTableView( tag ) {
 	clipEnable();
 }
+
+UITableView::UITableView() : UITableView( "tableview" ) {}
 
 Uint32 UITableView::getType() const {
 	return UI_TYPE_TABLEVIEW;
@@ -236,6 +238,22 @@ Uint32 UITableView::onKeyDown( const KeyEvent& event ) {
 			break;
 	}
 	return UIAbstractTableView::onKeyDown( event );
+}
+
+ModelIndex UITableView::findRowWithText( const std::string& text ) {
+	Model* model = getModel();
+	if ( !model || model->rowCount() == 0 )
+		return {};
+	size_t rc = model->rowCount();
+	for ( size_t i = 0; i < rc; i++ ) {
+		ModelIndex index = model->index(
+			i, model->keyColumn() != -1 ? model->keyColumn()
+										: ( model->treeColumn() >= 0 ? model->treeColumn() : 0 ) );
+		Variant var = model->data( index );
+		if ( var.isValid() && String::startsWith( String::toLower( var.toString() ), text ) )
+			return model->index( index.row(), 0 );
+	}
+	return {};
 }
 
 }} // namespace EE::UI

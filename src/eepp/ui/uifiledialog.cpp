@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/ui/models/filesystemmodel.hpp>
 #include <eepp/ui/uifiledialog.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uilistboxitem.hpp>
@@ -83,7 +84,7 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 		->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::MatchParent )
 		->setParent( hLayout );
 
-	mList = UIListBox::New();
+	mList = UIListView::New();
 	mList->setParent( linearLayout );
 	mList->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
 		->setLayoutWeight( 1 )
@@ -94,14 +95,27 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 			goFolderUp();
 		}
 	} );
-	mList->addEventListener( Event::OnItemKeyDown, [&]( const Event* event ) {
-		const KeyEvent* KEvent = reinterpret_cast<const KeyEvent*>( event );
-		if ( KEvent->getKeyCode() == KEY_RETURN || KEvent->getKeyCode() == KEY_KP_ENTER ) {
-			openFileOrFolder();
-		} else if ( KEvent->getKeyCode() == KEY_BACKSPACE ) {
-			goFolderUp();
+	mList->addEventListener( Event::OnModelEvent, [&]( const Event* event ) {
+		const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
+		if ( modelEvent->getModelEventType() == ModelEventType::Open ) {
+			Variant vPath(
+				modelEvent->getModel()->data( modelEvent->getModelIndex(), Model::Role::Custom ) );
+			if ( vPath.isValid() && vPath.is( Variant::Type::cstr ) )
+				openFileOrFolder();
 		}
 	} );
+	mList->setOnSelectionChange( [&] {
+		if ( mList->getSelection().isEmpty() )
+			return;
+		auto* node = (FileSystemModel::Node*)mList->getSelection().first().data();
+		if ( !isSaveDialog() ) {
+			if ( getAllowFolderSelect() || !FileSystem::isDirectory( node->fullPath() ) )
+				mFile->setText( node->getName() );
+		} else if ( !FileSystem::isDirectory( node->fullPath() ) ) {
+			mFile->setText( node->getName() );
+		}
+	} );
+	mList->setAutoExpandOnSingleColumn( true );
 
 	hLayout = UILinearLayout::NewHorizontal();
 	hLayout->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
@@ -203,41 +217,23 @@ void UIFileDialog::refreshFolder() {
 		String( mCurPath ), getSortAlphabetically(), getFoldersFirst(), !getShowHidden() );
 	std::vector<String> files;
 	std::vector<std::string> patterns;
-	bool accepted;
-	Uint32 i, z;
 
 	if ( "*" != mFiletype->getText() ) {
 		patterns = String::split( mFiletype->getText().toUtf8(), ';' );
 
-		for ( i = 0; i < patterns.size(); i++ )
+		for ( size_t i = 0; i < patterns.size(); i++ )
 			patterns[i] = FileSystem::fileExtension( patterns[i] );
 	}
 
-	for ( i = 0; i < flist.size(); i++ ) {
-		if ( FileSystem::isDirectory( mCurPath + flist[i] ) ) {
-			files.push_back( flist[i] );
-		} else if ( !getShowOnlyFolders() ) {
-			accepted = false;
+	mList->setModel( FileSystemModel::New(
+		mCurPath,
+		getShowOnlyFolders() ? FileSystemModel::Mode::DirectoriesOnly
+							 : FileSystemModel::Mode::FilesAndDirectories,
+		FileSystemModel::DisplayConfig( getSortAlphabetically(), getFoldersFirst(),
+										!getShowHidden(), patterns ) ) );
 
-			if ( patterns.size() ) {
-				for ( z = 0; z < patterns.size(); z++ ) {
-					if ( patterns[z] == FileSystem::fileExtension( flist[i] ) ) {
-						accepted = true;
-						break;
-					}
-				}
-			} else {
-				accepted = true;
-			}
-
-			if ( accepted )
-				files.push_back( flist[i] );
-		}
-	}
-
-	mList->clear();
-
-	mList->addListBoxItems( files );
+	mList->setColumnsVisible( {FileSystemModel::Name} );
+	mList->setHeadersVisible( false );
 
 	updateClickStep();
 
@@ -247,7 +243,7 @@ void UIFileDialog::refreshFolder() {
 void UIFileDialog::updateClickStep() {
 	if ( NULL != mList->getVerticalScrollBar() ) {
 		mList->getVerticalScrollBar()->setClickStep(
-			1.f / ( ( mList->getCount() * mList->getRowHeight() ) /
+			1.f / ( ( mList->getModel()->rowCount() * mList->getRowHeight() ) /
 					(Float)mList->getSize().getHeight() ) );
 	}
 }
@@ -287,7 +283,11 @@ void UIFileDialog::disableButtons() {
 }
 
 void UIFileDialog::openFileOrFolder() {
-	std::string newPath = mCurPath + mList->getItemSelectedText();
+	if ( mList->getSelection().isEmpty() )
+		return;
+	auto* node = (FileSystemModel::Node*)mList->getSelection().first().data();
+
+	std::string newPath = mCurPath + node->getName();
 
 	if ( FileSystem::isDirectory( newPath ) ) {
 		setCurPath( newPath );
@@ -327,21 +327,7 @@ Uint32 UIFileDialog::onMessage( const NodeMessage* Msg ) {
 			break;
 		}
 		case NodeMessage::Selected: {
-			if ( Msg->getSender() == mList ) {
-				if ( !isSaveDialog() ) {
-					if ( getAllowFolderSelect() ) {
-						mFile->setText( mList->getItemSelectedText() );
-					} else {
-						if ( !FileSystem::isDirectory( getTempFullPath() ) ) {
-							mFile->setText( mList->getItemSelectedText() );
-						}
-					}
-				} else {
-					if ( !FileSystem::isDirectory( getTempFullPath() ) ) {
-						mFile->setText( mList->getItemSelectedText() );
-					}
-				}
-			} else if ( Msg->getSender() == mFiletype ) {
+			if ( Msg->getSender() == mFiletype ) {
 				refreshFolder();
 			}
 
@@ -361,7 +347,12 @@ void UIFileDialog::save() {
 }
 
 void UIFileDialog::open() {
-	if ( "" != mList->getItemSelectedText() || getAllowFolderSelect() ) {
+	if ( mList->getSelection().isEmpty() )
+		return;
+
+	auto* node = (FileSystemModel::Node*)mList->getSelection().first().data();
+
+	if ( "" != node->getName() || getAllowFolderSelect() ) {
 		if ( !getAllowFolderSelect() ) {
 			if ( FileSystem::isDirectory( getFullPath() ) )
 				return;
@@ -453,16 +444,6 @@ std::string UIFileDialog::getFullPath() {
 	return tPath;
 }
 
-std::string UIFileDialog::getTempFullPath() {
-	std::string tPath = mCurPath;
-
-	FileSystem::dirAddSlashAtEnd( tPath );
-
-	tPath += mList->getItemSelectedText().toUtf8();
-
-	return tPath;
-}
-
 std::string UIFileDialog::getCurPath() const {
 	return mCurPath;
 }
@@ -470,8 +451,10 @@ std::string UIFileDialog::getCurPath() const {
 std::string UIFileDialog::getCurFile() const {
 	if ( mDialogFlags & SaveDialog )
 		return mFile->getText();
-
-	return mList->getItemSelectedText().toUtf8();
+	if ( mList->getSelection().isEmpty() )
+		return "";
+	auto* node = (FileSystemModel::Node*)mList->getSelection().first().data();
+	return node->getName();
 }
 
 UIPushButton* UIFileDialog::getButtonOpen() const {
@@ -486,7 +469,7 @@ UIPushButton* UIFileDialog::getButtonUp() const {
 	return mButtonUp;
 }
 
-UIListBox* UIFileDialog::getList() const {
+UIListView* UIFileDialog::getList() const {
 	return mList;
 }
 
@@ -518,9 +501,8 @@ const KeyBindings::Shortcut& UIFileDialog::getCloseShortcut() const {
 }
 
 void UIFileDialog::setFileName( const std::string& name ) {
-	if ( mFile ) {
+	if ( mFile )
 		mFile->setText( name );
-	}
 }
 
 void UIFileDialog::setCloseShortcut( const KeyBindings::Shortcut& closeWithKey ) {

@@ -186,7 +186,7 @@ its submodules, in order to achieve this easily you can simply clone with:
 
 ### ecode - Text Editor
 
-Text editor inspired in [lite](https://github.com/rxi/lite) (in development, already fully functional).
+Text editor inspired in [lite](https://github.com/rxi/lite).
 It's using the newest pure CSS theme based on the default [Plasma](https://kde.org/plasma-desktop)
 dark theme: Breeze Dark.
 
@@ -635,7 +635,7 @@ Probably deprecate the Maps module, since I will focus my efforts on the UI syst
 
 * Yuri Kobets for [litehtml](https://github.com/litehtml/litehtml)
 
-* Michael R. P. Ragazzon [RmlUI](https://github.com/mikke89/RmlUi)
+* Michael R. P. Ragazzon for [RmlUI](https://github.com/mikke89/RmlUi)
 
 * rxi for [lite](https://github.com/rxi/lite)
 

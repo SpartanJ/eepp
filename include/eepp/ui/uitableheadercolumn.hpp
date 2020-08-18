@@ -12,7 +12,8 @@ using namespace Abstract;
 
 class EE_API UITableHeaderColumn : public UIPushButton {
   public:
-	UITableHeaderColumn( UIAbstractTableView* view, const size_t& colIndex );
+	UITableHeaderColumn( const std::string& parentTag, UIAbstractTableView* view,
+						 const size_t& colIndex );
 
 	virtual UIWidget* getExtraInnerWidget() const;
 

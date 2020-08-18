@@ -369,6 +369,7 @@
 ../../include/eepp/ui/uilinearlayout.hpp
 ../../include/eepp/ui/uilistbox.hpp
 ../../include/eepp/ui/uilistboxitem.hpp
+../../include/eepp/ui/uilistview.hpp
 ../../include/eepp/ui/uiloader.hpp
 ../../include/eepp/ui/uimanager.hpp
 ../../include/eepp/ui/uimenubar.hpp
@@ -842,6 +843,7 @@
 ../../src/eepp/ui/uilinearlayout.cpp
 ../../src/eepp/ui/uilistbox.cpp
 ../../src/eepp/ui/uilistboxitem.cpp
+../../src/eepp/ui/uilistview.cpp
 ../../src/eepp/ui/uiloader.cpp
 ../../src/eepp/ui/uimanager.cpp
 ../../src/eepp/ui/uimenubar.cpp

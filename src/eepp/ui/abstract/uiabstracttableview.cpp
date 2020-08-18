@@ -13,7 +13,7 @@ UIAbstractTableView::UIAbstractTableView( const std::string& tag ) :
 	mDragBorderDistance( PixelDensity::dpToPx( 4 ) ),
 	mIconSize( PixelDensity::dpToPxI( 12 ) ),
 	mSortIconSize( PixelDensity::dpToPxI( 20 ) ) {
-	mHeader = UILinearLayout::NewWithTag( "table::header", UIOrientation::Horizontal );
+	mHeader = UILinearLayout::NewWithTag( mTag + "::header", UIOrientation::Horizontal );
 	mHeader->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 	mHeader->setParent( this );
 	mHeader->setVisible( true );
@@ -87,7 +87,7 @@ void UIAbstractTableView::createOrUpdateColumns() {
 	for ( size_t i = 0; i < count; i++ ) {
 		ColumnData& col = columnData( i );
 		if ( !col.widget ) {
-			col.widget = eeNew( UITableHeaderColumn, ( this, i ) );
+			col.widget = eeNew( UITableHeaderColumn, ( mTag, this, i ) );
 			col.widget->setParent( mHeader );
 			col.widget->setEnabled( true );
 			col.widget->setVisible( true );
@@ -273,7 +273,7 @@ void UIAbstractTableView::setColumnsVisible( const std::vector<size_t> columns )
 	if ( !getModel() )
 		return;
 	for ( size_t i = 0; i < getModel()->columnCount(); i++ )
-		columnData( i).visible = false;
+		columnData( i ).visible = false;
 	for ( auto col : columns )
 		columnData( col ).visible = true;
 	createOrUpdateColumns();
@@ -282,7 +282,7 @@ void UIAbstractTableView::setColumnsVisible( const std::vector<size_t> columns )
 UITableRow* UIAbstractTableView::createRow() {
 	mUISceneNode->invalidateStyle( this );
 	mUISceneNode->invalidateStyleState( this, true );
-	UITableRow* rowWidget = UITableRow::New();
+	UITableRow* rowWidget = UITableRow::New( mTag + "::row" );
 	rowWidget->setParent( this );
 	rowWidget->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 	rowWidget->reloadStyle( true, true, true );
@@ -324,7 +324,7 @@ void UIAbstractTableView::onScrollChange() {
 }
 
 UIWidget* UIAbstractTableView::createCell( UIWidget* rowWidget, const ModelIndex& index ) {
-	UITableCell* widget = UITableCell::New();
+	UITableCell* widget = UITableCell::New( mTag + "::cell" );
 	widget->setParent( rowWidget );
 	widget->unsetFlags( UI_AUTO_SIZE );
 	widget->clipEnable();
@@ -424,7 +424,7 @@ void UIAbstractTableView::onSortColumn( const size_t& colIndex ) {
 	Model* model = getModel();
 	if ( !model )
 		return;
-	if ( model->isColumnSortable( colIndex ) ) {
+	if ( model->isSortable() && model->isColumnSortable( colIndex ) ) {
 		if ( -1 != model->keyColumn() && (Int64)colIndex != model->keyColumn() &&
 			 columnData( model->keyColumn() ).widget ) {
 			UIImage* image =
@@ -446,6 +446,65 @@ void UIAbstractTableView::onSortColumn( const size_t& colIndex ) {
 		}
 		model->setKeyColumnAndSortOrder( colIndex, sortOrder );
 	}
+}
+
+Uint32 UIAbstractTableView::onTextInput( const TextInputEvent& event ) {
+	if ( !mRowSearchByName )
+		return 0;
+	if ( mSearchTextAction )
+		removeAction( mSearchTextAction );
+	mSearchTextAction = Actions::Runnable::New(
+		[&] {
+			mSearchTextAction = nullptr;
+			mSearchText = "";
+		},
+		Milliseconds( 350 ) );
+	runAction( mSearchTextAction );
+	mSearchText += String::toLower( event.getText() );
+	ModelIndex index = findRowWithText( mSearchText );
+	if ( index.isValid() )
+		getSelection().set( index );
+	return 1;
+}
+
+ModelIndex UIAbstractTableView::findRowWithText( const std::string& ) {
+	return {};
+}
+
+bool UIAbstractTableView::applyProperty( const StyleSheetProperty& attribute ) {
+	if ( !checkPropertyDefinition( attribute ) )
+		return false;
+
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::RowHeight:
+			setRowHeight( lengthFromValue( attribute.getValue(), PropertyRelativeTarget::None ) );
+			break;
+		default:
+			return UIAbstractView::applyProperty( attribute );
+	}
+
+	return true;
+}
+
+std::string UIAbstractTableView::getPropertyString( const PropertyDefinition* propertyDef,
+													const Uint32& propertyIndex ) {
+	if ( NULL == propertyDef )
+		return "";
+
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::RowHeight:
+			return String::format( "%.2fdp", getRowHeight() );
+		default:
+			return UIAbstractView::getPropertyString( propertyDef, propertyIndex );
+	}
+}
+
+bool UIAbstractTableView::getRowSearchByName() const {
+	return mRowSearchByName;
+}
+
+void UIAbstractTableView::setRowSearchByName( bool rowSearchByName ) {
+	mRowSearchByName = rowSearchByName;
 }
 
 }}} // namespace EE::UI::Abstract

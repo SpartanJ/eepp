@@ -664,4 +664,25 @@ void UITreeView::onOpenTreeModelIndex( const ModelIndex& index, bool open ) {
 	sendEvent( &event );
 }
 
+void UITreeView::onSortColumn( const size_t& ) {
+	// Do nothing.
+	return;
+}
+
+ModelIndex UITreeView::findRowWithText( const std::string& text ) {
+	Model* model = getModel();
+	if ( !model || model->rowCount() == 0 )
+		return {};
+	ModelIndex foundIndex = {};
+	traverseTree( [&]( const int&, const ModelIndex& index, const size_t&, const Float& ) {
+		Variant var = model->data( index );
+		if ( var.isValid() && String::startsWith( String::toLower( var.toString() ), text ) ) {
+			foundIndex = index;
+			return IterationDecision::Stop;
+		}
+		return IterationDecision::Continue;
+	} );
+	return foundIndex;
+}
+
 }} // namespace EE::UI

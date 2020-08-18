@@ -54,10 +54,29 @@ void FileSystemModel::Node::traverseIfNeeded( const FileSystemModel& model ) {
 		mInfo.getFilepath(), true, model.getDisplayConfig().sortByName,
 		model.getDisplayConfig().foldersFirst, model.getDisplayConfig().ignoreHidden );
 
+	const auto& patterns = model.getDisplayConfig().acceptedExtensions;
+	bool accepted;
 	for ( auto file : files ) {
 		if ( ( model.getMode() == Mode::DirectoriesOnly && file.isDirectory() ) ||
-			 model.getMode() == Mode::FilesAndDirectories )
-			mChildren.emplace_back( Node( std::move( file ), this ) );
+			 model.getMode() == Mode::FilesAndDirectories ) {
+			if ( file.isDirectory() || patterns.empty() ) {
+				mChildren.emplace_back( Node( std::move( file ), this ) );
+			} else {
+				accepted = false;
+				if ( patterns.size() ) {
+					for ( size_t z = 0; z < patterns.size(); z++ ) {
+						if ( patterns[z] == FileSystem::fileExtension( file.getFilepath() ) ) {
+							accepted = true;
+							break;
+						}
+					}
+				} else {
+					accepted = true;
+				}
+				if ( accepted )
+					mChildren.emplace_back( Node( std::move( file ), this ) );
+			}
+		}
 	}
 }
 
@@ -266,13 +285,8 @@ UIIcon* FileSystemModel::iconFor( const Node& node, const ModelIndex& index ) co
 	if ( index.column() == (Int64)treeColumn() || Column::Icon == index.column() ) {
 		auto* scene = SceneManager::instance()->getUISceneNode();
 		auto* d = scene->findIcon( node.getMimeType() );
-		if ( !d ) {
-			if ( !node.info().isDirectory() ) {
-				return scene->findIcon( "file" );
-			} else {
-				return scene->findIcon( "folder" );
-			}
-		}
+		if ( !d )
+			return scene->findIcon( !node.info().isDirectory() ? "file" : "folder" );
 		return d;
 	}
 	return nullptr;

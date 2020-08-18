@@ -18,8 +18,14 @@ class EE_API UITableRow : public UIWidget {
 
 	void setCurIndex( const ModelIndex& curIndex ) { mCurIndex = curIndex; }
 
+	void setTheme( UITheme* Theme ) {
+		UIWidget::setTheme( Theme );
+		setThemeSkin( Theme, "tablerow" );
+		onThemeLoaded();
+	}
+
   protected:
-	UITableRow( const std::string& tag ) : UIWidget( tag ) {}
+	UITableRow( const std::string& tag ) : UIWidget( tag ) { applyDefaultTheme(); }
 
 	UITableRow() : UIWidget( "table::row" ) {}
 

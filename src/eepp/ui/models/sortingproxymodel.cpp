@@ -75,6 +75,10 @@ int SortingProxyModel::keyColumn() const {
 	return mKeyColumn;
 }
 
+size_t SortingProxyModel::treeColumn() const {
+	return target().treeColumn();
+}
+
 SortOrder SortingProxyModel::sortOrder() const {
 	return mSortOrder;
 }

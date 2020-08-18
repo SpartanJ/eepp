@@ -65,7 +65,8 @@ Menu::SubMenu:hover,
 ListBox::item:hover,
 Tab:selected,
 Tab:hover,
-Tab:pressed {
+Tab:pressed,
+ListView::cell:hover, {
 	color: #FFF;
 }
 
@@ -90,6 +91,18 @@ Window::title {
 Tab::text {
 	padding-left: 4dp;
 	padding-right: 4dp;
+}
+
+ListView {
+	row-height: 16dp;
+}
+
+ListView::cell {
+	padding-left: 4dp;
+}
+
+ListView::row {
+	skin: listboxitem;
 }
 
 Tooltip {

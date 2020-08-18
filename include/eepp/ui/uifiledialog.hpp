@@ -4,7 +4,7 @@
 #include <eepp/ui/base.hpp>
 #include <eepp/ui/keyboardshortcut.hpp>
 #include <eepp/ui/uicombobox.hpp>
-#include <eepp/ui/uilistbox.hpp>
+#include <eepp/ui/uilistview.hpp>
 #include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uitextinput.hpp>
 #include <eepp/ui/uiwidget.hpp>
@@ -60,7 +60,7 @@ class EE_API UIFileDialog : public UIWindow {
 
 	UIPushButton* getButtonUp() const;
 
-	UIListBox* getList() const;
+	UIListView* getList() const;
 
 	UITextInput* getPathInput() const;
 
@@ -103,7 +103,7 @@ class EE_API UIFileDialog : public UIWindow {
 	UIPushButton* mButtonOpen;
 	UIPushButton* mButtonCancel;
 	UIPushButton* mButtonUp;
-	UIListBox* mList;
+	UIListView* mList;
 	UITextInput* mPath;
 	UITextInput* mFile;
 	UIDropDownList* mFiletype;
@@ -119,8 +119,6 @@ class EE_API UIFileDialog : public UIWindow {
 	void onPressFileEnter( const Event* Event );
 
 	void openSaveClick();
-
-	std::string getTempFullPath();
 
 	void disableButtons();
 

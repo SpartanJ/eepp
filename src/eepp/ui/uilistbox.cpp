@@ -306,7 +306,7 @@ void UIListBox::setRowHeight() {
 			FontSize = fontStyleConfig.getFont()->getFontHeight(
 				PixelDensity::dpToPxI( fontStyleConfig.getFontCharacterSize() ) );
 
-		mRowHeight = (Uint32)PixelDensity::pxToDpI( FontSize ) + 4;
+		mRowHeight = (Uint32)PixelDensity::pxToDpI( FontSize + 4 );
 	}
 
 	if ( tOldRowHeight != mRowHeight ) {

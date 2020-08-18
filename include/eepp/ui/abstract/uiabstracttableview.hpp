@@ -78,6 +78,15 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	void setColumnsVisible( const std::vector<size_t> columns );
 
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
+
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& propertyIndex = 0 );
+
+	bool getRowSearchByName() const;
+
+	void setRowSearchByName( bool rowSearchByName );
+
   protected:
 	friend class EE::UI::UITableHeaderColumn;
 
@@ -97,6 +106,9 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	size_t mIconSize{12};
 	size_t mSortIconSize{16};
 	bool mAutoExpandOnSingleColumn{false};
+	bool mRowSearchByName{true};
+	Action* mSearchTextAction{nullptr};
+	std::string mSearchText;
 
 	virtual ~UIAbstractTableView();
 
@@ -133,6 +145,10 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	virtual void onOpenModelIndex( const ModelIndex& index );
 
 	virtual void onSortColumn( const size_t& colIndex );
+
+	virtual Uint32 onTextInput( const TextInputEvent& event );
+
+	virtual ModelIndex findRowWithText( const std::string& text );
 
 	void updateHeaderSize();
 

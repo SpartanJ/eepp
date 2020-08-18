@@ -6,6 +6,7 @@
 #include <eepp/ui/uiimage.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uilistbox.hpp>
+#include <eepp/ui/uilistview.hpp>
 #include <eepp/ui/uiloader.hpp>
 #include <eepp/ui/uimenubar.hpp>
 #include <eepp/ui/uiprogressbar.hpp>
@@ -20,8 +21,6 @@
 #include <eepp/ui/uisplitter.hpp>
 #include <eepp/ui/uisprite.hpp>
 #include <eepp/ui/uitab.hpp>
-#include <eepp/ui/uiwidgettable.hpp>
-#include <eepp/ui/uiwidgettablerow.hpp>
 #include <eepp/ui/uitableview.hpp>
 #include <eepp/ui/uitabwidget.hpp>
 #include <eepp/ui/uitextedit.hpp>
@@ -33,6 +32,8 @@
 #include <eepp/ui/uitreeview.hpp>
 #include <eepp/ui/uiviewpager.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
+#include <eepp/ui/uiwidgettable.hpp>
+#include <eepp/ui/uiwidgettablerow.hpp>
 #include <eepp/ui/uiwindow.hpp>
 
 namespace EE { namespace UI {
@@ -84,6 +85,7 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["splitter"] = UISplitter::New;
 		registeredWidget["treeview"] = UITreeView::New;
 		registeredWidget["tableview"] = UITableView::New;
+		registeredWidget["listview"] = UIListView::New;
 
 		registeredWidget["hbox"] = UILinearLayout::NewHorizontal;
 		registeredWidget["vbox"] = UILinearLayout::NewVertical;

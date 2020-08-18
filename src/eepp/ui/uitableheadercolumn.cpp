@@ -4,8 +4,9 @@
 
 namespace EE { namespace UI {
 
-UITableHeaderColumn::UITableHeaderColumn( UIAbstractTableView* view, const size_t& colIndex ) :
-	UIPushButton( "table::header::column" ), mView( view ), mColIndex( colIndex ) {
+UITableHeaderColumn::UITableHeaderColumn( const std::string& parentTag, UIAbstractTableView* view,
+										  const size_t& colIndex ) :
+	UIPushButton( parentTag + "::header::column" ), mView( view ), mColIndex( colIndex ) {
 	setDragEnabled( true );
 	mInnerWidgetOrientation = InnerWidgetOrientation::Right;
 	auto cb = [&]( const Event* ) { updateLayout(); };

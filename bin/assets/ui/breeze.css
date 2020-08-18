@@ -59,7 +59,8 @@ TextInputPassword,
 TextView,
 Tooltip,
 MenuBar::button,
-Window::title {
+Window::title,
+ListView::cell {
 	color: var(--font);
 }
 
@@ -157,7 +158,8 @@ RadioButton::active {
 ListBox,
 DropDownList::ListBox,
 ComboBox::DropDownList::ListBox,
-Table {
+Table,
+ListView {
 	background-color: var(--list-back);
 	border-color: var(--button-border);
 	border-radius: var(--button-radius);
@@ -173,15 +175,29 @@ ListBox::item {
 	background-position: left bottom, right bottom;
 }
 
-ListBox:hover {
+ListView::row {
+	background-color: transparent;
+	background-image: linear-gradient( to right, var(--list-back), var(--separator) ), linear-gradient( to right, var(--separator), var(--list-back) );
+	background-size: 50% 1dp, 50% 1dp;
+	background-position: left bottom, right bottom;
+}
+
+ListView::cell {
+	padding-left: 4dp;
+}
+
+ListBox:hover,
+ListView:hover {
 	border-color: var(--primary);
 }
 
-ListBox::item:hover {
+ListBox::item:hover,
+ListView::row:hover {
 	background-color: var(--item-hover);
 }
 
-ListBox::item:selected {
+ListBox::item:selected,
+ListView::row:selected {
 	background-color: var(--primary);
 }
 
@@ -734,11 +750,14 @@ Splitter::separator:hover {
 	background-color: var(--primary);
 }
 
-table::header {
+tableview::header,
+listview::header {
 	background-color: var(--back);
 }
 
-table::header::column {
+tableview::header::column,
+treeview::header::column,
+listview::header::column {
 	background-color: var(--back);
 	border-right-color: var(--tab-line);
 	border-right-width: 1dp;
@@ -751,24 +770,29 @@ table::header::column {
 	text-align: left;
 }
 
-table::header::column:hover {
+tableview::header::column:hover,
+treeview::header::column:hover,
+listview::header::column:hover {
 	background-color: var(--tab-hover);
 }
 
-table::row {
+tableview::row,
+treeview::row {
 	background-color: var(--list-back);
 }
 
-table::row:hover {
+tableview::row:hover,
+treeview::row:hover {
 	background-color: var(--tab-hover);
 }
 
-table::row:selected {
+tableview::row:selected,
+treeview::row:selected {
 	background-color: var(--primary);
 }
 
-table::cell,
-TreeView::cell {
+tableview::cell,
+treeview::cell {
 	padding-left: 6dp;
 	padding-right: 6dp;
 }
@@ -783,13 +807,17 @@ TableView > ScrollBar {
 	background-color: var(--list-back);
 }
 
-table::header::column::arrow-up {
+tableview::header::column::arrow-up,
+treeview::header::column::arrow-up,
+listview::header::column::arrow-up {
 	width: 16dp;
 	height: 12dp;
 	foreground-image: poly(line, var(--icon), "1dp 4dp, 5dp 7dp"), poly(line, var(--icon), "5dp 7dp, 9dp 4dp");
 }
 
-table::header::column::arrow-down {
+tableview::header::column::arrow-down,
+treeview::header::column::arrow-down,
+listview::header::column::arrow-down {
 	width: 16dp;
 	height: 12dp;
 	foreground-image: poly(line, var(--icon), "1dp 7dp, 5dp 4dp"), poly(line, var(--icon), "5dp 4dp, 9dp 7dp");

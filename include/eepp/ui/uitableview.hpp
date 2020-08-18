@@ -26,6 +26,8 @@ class EE_API UITableView : public UIAbstractTableView {
 
 	UITableView();
 
+	UITableView( const std::string& tag );
+
 	virtual void createOrUpdateColumns();
 
 	void updateContentSize();
@@ -34,6 +36,7 @@ class EE_API UITableView : public UIAbstractTableView {
 
 	virtual Uint32 onKeyDown( const KeyEvent& event );
 
+	virtual ModelIndex findRowWithText( const std::string& text );
 };
 
 }} // namespace EE::UI

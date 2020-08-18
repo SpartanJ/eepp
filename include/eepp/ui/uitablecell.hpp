@@ -24,12 +24,18 @@ class EE_API UITableCell : public UIPushButton {
 
 	void setCurIndex( const ModelIndex& curIndex ) { mCurIndex = curIndex; }
 
+	void setTheme( UITheme* Theme ) {
+		UIPushButton::setTheme( Theme );
+		setThemeSkin( Theme, "tablerow" );
+		onThemeLoaded();
+	}
+
   protected:
 	ModelIndex mCurIndex;
 
-	UITableCell() : UIPushButton( "table::cell" ) {}
+	UITableCell() : UITableCell( "table::cell" ) {}
 
-	UITableCell( const std::string& tag ) : UIPushButton( tag ) {}
+	UITableCell( const std::string& tag ) : UIPushButton( tag ) { applyDefaultTheme(); }
 };
 
 }} // namespace EE::UI

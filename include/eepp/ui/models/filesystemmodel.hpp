@@ -14,14 +14,20 @@ class EE_API FileSystemModel : public Model {
 
 	struct DisplayConfig {
 		DisplayConfig() {}
-		DisplayConfig( bool sortByName, bool foldersFirst, bool ignoreHidden ) :
-			sortByName( sortByName ), foldersFirst( foldersFirst ), ignoreHidden( ignoreHidden ) {}
+		DisplayConfig( bool sortByName, bool foldersFirst, bool ignoreHidden,
+					   std::vector<std::string> acceptedExtensions = {} ) :
+			sortByName( sortByName ),
+			foldersFirst( foldersFirst ),
+			ignoreHidden( ignoreHidden ),
+			acceptedExtensions( acceptedExtensions ) {}
 		bool sortByName{true};
 		bool foldersFirst{true};
 		bool ignoreHidden{false};
+		std::vector<std::string> acceptedExtensions;
 		bool operator==( const DisplayConfig& other ) {
 			return sortByName == other.sortByName && foldersFirst == other.foldersFirst &&
-				   ignoreHidden == other.ignoreHidden;
+				   ignoreHidden == other.ignoreHidden &&
+				   acceptedExtensions == other.acceptedExtensions;
 		}
 		bool operator!=( const DisplayConfig& other ) { return !( *this == other ); }
 	};

@@ -28,6 +28,10 @@ class EE_API SortingProxyModel final : public Model, private Model::Client {
 
 	virtual int keyColumn() const;
 
+	virtual size_t treeColumn() const;
+
+	virtual bool isSortable() { return true; }
+
 	virtual SortOrder sortOrder() const;
 
 	virtual void setKeyColumnAndSortOrder( const size_t&, const SortOrder& );

@@ -76,6 +76,8 @@ class EE_API Model {
 
 	virtual SortOrder sortOrder() const { return SortOrder::None; }
 
+	virtual bool isSortable() { return false; }
+
 	virtual void setKeyColumnAndSortOrder( const size_t& /*column*/, const SortOrder& /*order*/ ) {}
 
 	void registerView( UIAbstractView* );

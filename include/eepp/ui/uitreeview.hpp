@@ -100,6 +100,10 @@ class EE_API UITreeView : public UIAbstractTableView {
 
 	virtual void onOpenTreeModelIndex( const ModelIndex& index, bool open );
 
+	virtual void onSortColumn( const size_t& colIndex );
+
+	virtual ModelIndex findRowWithText( const std::string& text );
+
 	void updateContentSize();
 
 	void setAllExpanded( const ModelIndex& index = {}, bool expanded = true );

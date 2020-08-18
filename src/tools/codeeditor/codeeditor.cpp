@@ -2016,10 +2016,10 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		#search_replace.error {
 			border-color: #ff4040;
 		}
-		TableView#locate_bar_table > table::row > table::cell:nth-child(2) {
+		TableView#locate_bar_table > tableview::row > tableview::cell:nth-child(2) {
 			color: var(--font-hint);
 		}
-		TableView#locate_bar_table > table::row:selected > table::cell:nth-child(2) {
+		TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child(2) {
 			color: var(--font);
 		}
 		#search_tree treeview::cell {
@@ -2127,7 +2127,6 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		addIcon( "tree-expanded", 0xea50 );
 		addIcon( "tree-contracted", 0xea54 );
 		addIcon( "search", 0xf0d1 );
-
 		addIcon( "go-up", 0xea78 );
 		addIcon( "ok", 0xeb7a );
 		addIcon( "cancel", 0xeb98 );
