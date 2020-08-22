@@ -68,6 +68,8 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	void moveSelection( int steps );
 
+	void setSelection( const ModelIndex& index, bool scrollToSelection = true );
+
 	const size_t& getIconSize() const;
 
 	void setIconSize( const size_t& iconSize );
@@ -86,6 +88,8 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	bool getRowSearchByName() const;
 
 	void setRowSearchByName( bool rowSearchByName );
+
+	virtual ModelIndex findRowWithText( const std::string& text );
 
   protected:
 	friend class EE::UI::UITableHeaderColumn;
@@ -147,8 +151,6 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	virtual void onSortColumn( const size_t& colIndex );
 
 	virtual Uint32 onTextInput( const TextInputEvent& event );
-
-	virtual ModelIndex findRowWithText( const std::string& text );
 
 	void updateHeaderSize();
 

@@ -252,6 +252,7 @@ void UIFileDialog::setCurPath( const std::string& path ) {
 	mCurPath = path;
 	FileSystem::dirAddSlashAtEnd( mCurPath );
 	mPath->setText( mCurPath );
+	mFile->setText( "" );
 	refreshFolder();
 }
 
@@ -297,7 +298,11 @@ void UIFileDialog::openFileOrFolder() {
 }
 
 void UIFileDialog::goFolderUp() {
+	std::string prevFolderName( FileSystem::fileNameFromPath( mCurPath ) );
 	setCurPath( FileSystem::removeLastFolderFromPath( mCurPath ) );
+	ModelIndex index = mList->findRowWithText( prevFolderName );
+	if ( index.isValid() )
+		mList->setSelection( index );
 }
 
 Uint32 UIFileDialog::onMessage( const NodeMessage* Msg ) {

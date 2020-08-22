@@ -21,6 +21,7 @@ class EE_API UITableView : public UIAbstractTableView {
 
 	Float getMaxColumnContentWidth( const size_t& colIndex );
 
+	virtual ModelIndex findRowWithText( const std::string& text );
   protected:
 	Sizef mContentSize;
 
@@ -35,8 +36,6 @@ class EE_API UITableView : public UIAbstractTableView {
 	void onColumnSizeChange( const size_t& );
 
 	virtual Uint32 onKeyDown( const KeyEvent& event );
-
-	virtual ModelIndex findRowWithText( const std::string& text );
 };
 
 }} // namespace EE::UI

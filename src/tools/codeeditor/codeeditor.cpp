@@ -1498,13 +1498,20 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 		{{KEY_F, KEYMOD_CTRL}, "find-replace"},
 		{{KEY_Q, KEYMOD_CTRL}, "close-app"},
 		{{KEY_O, KEYMOD_CTRL}, "open-file"},
+		{{KEY_O, KEYMOD_CTRL | KEYMOD_SHIFT}, "open-folder"},
 		{{KEY_F6, KEYMOD_NONE}, "debug-draw-highlight-toggle"},
 		{{KEY_F7, KEYMOD_NONE}, "debug-draw-boxes-toggle"},
 		{{KEY_F8, KEYMOD_NONE}, "debug-draw-debug-data"},
 		{{KEY_K, KEYMOD_CTRL}, "open-locatebar"},
 		{{KEY_F, KEYMOD_CTRL | KEYMOD_SHIFT}, "open-global-search"},
 		{{KEY_L, KEYMOD_CTRL}, "go-to-line"},
+		{{KEY_M, KEYMOD_CTRL}, "menu-toggle"},
 	};
+}
+
+std::vector<std::string> App::getUnlockedCommands() {
+	return {"fullscreen-toggle", "open-file",	   "open-folder",		 "console-toggle",
+			"close-app",		 "open-locatebar", "open-global-search", "menu-toggle"};
 }
 
 void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
@@ -1534,8 +1541,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	doc.setBOM( config.writeUnicodeBOM );
 
 	editor->addKeyBinds( getLocalKeybindings() );
-	editor->addUnlockedCommands( {"fullscreen-toggle", "open-file", "open-folder", "console-toggle",
-								  "close-app", "open-locatebar", "open-global-search"} );
+	editor->addUnlockedCommands( getUnlockedCommands() );
 	doc.setCommand( "save-doc", [&] { saveDoc(); } );
 	doc.setCommand( "save-as-doc", [&] { saveFileDialog(); } );
 	doc.setCommand( "find-replace", [&] { showFindView(); } );
@@ -1588,6 +1594,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 					[&] { mUISceneNode->setDrawDebugData( !mUISceneNode->getDrawDebugData() ); } );
 	doc.setCommand( "go-to-line", [&] { goToLine(); } );
 	doc.setCommand( "load-current-dir", [&] { loadCurrentDirectory(); } );
+	doc.setCommand( "menu-toggle", [&] { toggleSettingsMenu(); } );
 	editor->addEventListener( Event::OnSave, [&]( const Event* event ) {
 		UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
 		if ( editor->getDocument().getFilePath() == mKeybindingsPath ) {
@@ -1663,6 +1670,19 @@ UIPopUpMenu* App::createToolsMenu() {
 	return mToolsMenu;
 }
 
+void App::toggleSettingsMenu() {
+	if ( ( !mSettingsMenu->isVisible() || mSettingsMenu->isHiding() ) &&
+		 mSettingsMenu->getInactiveTime().getElapsedTime().asMilliseconds() > 1 ) {
+		Vector2f pos( mSettingsButton->getPixelsPosition() );
+		mSettingsButton->nodeToWorldTranslation( pos );
+		UIMenu::findBestMenuPos( pos, mSettingsMenu );
+		mSettingsMenu->setPixelsPosition( pos );
+		mSettingsMenu->show();
+	} else {
+		mSettingsMenu->hide();
+	}
+}
+
 void App::createSettingsMenu() {
 	mSettingsMenu = UIPopUpMenu::New();
 	mSettingsMenu->add( "New", findIcon( "document-new" ), getKeybind( "create-new" ) );
@@ -1688,18 +1708,8 @@ void App::createSettingsMenu() {
 	mSettingsMenu->addSeparator();
 	mSettingsMenu->add( "Quit", findIcon( "quit" ), getKeybind( "close-app" ) );
 	mSettingsButton = mUISceneNode->find<UITextView>( "settings" );
-	mSettingsButton->addEventListener( Event::MouseClick, [&]( const Event* ) {
-		if ( ( !mSettingsMenu->isVisible() || mSettingsMenu->isHiding() ) &&
-			 mSettingsMenu->getInactiveTime().getElapsedTime().asMilliseconds() > 1 ) {
-			Vector2f pos( mSettingsButton->getPixelsPosition() );
-			mSettingsButton->nodeToWorldTranslation( pos );
-			UIMenu::findBestMenuPos( pos, mSettingsMenu );
-			mSettingsMenu->setPixelsPosition( pos );
-			mSettingsMenu->show();
-		} else {
-			mSettingsMenu->hide();
-		}
-	} );
+	mSettingsButton->addEventListener( Event::MouseClick,
+									   [&]( const Event* ) { toggleSettingsMenu(); } );
 	mSettingsMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
@@ -2090,49 +2100,45 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 
 		UIIconTheme* iconTheme = UIIconTheme::New( "remixicon" );
 		mMenuIconSize = mConfig.ui.fontSize.asPixels( 0, Sizef(), mDisplayDPI );
-		/*Float buttonIconSize =
-			StyleSheetLength::fromString( "16dp" ).asPixels( 0, Sizef(), mDisplayDPI );*/
-		auto addIcon = [iconTheme, iconFont]( const std::string& name,
-											  const Uint32& codePoint ) -> UIIcon* {
-			auto* icon = UIGlyphIcon::New( name, iconFont, codePoint );
-			iconTheme->add( icon );
-			return icon;
+		std::unordered_map<std::string, Uint32> icons = {
+			{"document-new", 0xecc3},
+			{"document-open", 0xed70},
+			{"document-save", 0xf0b3},
+			{"document-save-as", 0xf0b3},
+			{"document-close", 0xeb99},
+			{"quit", 0xeb97},
+			{"undo", 0xea58},
+			{"redo", 0xea5a},
+			{"cut", 0xf0c1},
+			{"copy", 0xecd5},
+			{"paste", 0xeb91},
+			{"split-horizontal", 0xf17a},
+			{"split-vertical", 0xf17b},
+			{"find-replace", 0xed2b},
+			{"folder", 0xed54},
+			{"folder-open", 0xed70},
+			{"folder-add", 0xed5a},
+			{"file", 0xecc3},
+			{"file-code", 0xecd1},
+			{"file-edit", 0xecdb},
+			{"font-size", 0xed8d},
+			{"zoom-in", 0xf2db},
+			{"zoom-out", 0xf2dd},
+			{"zoom-reset", 0xeb47},
+			{"fullscreen", 0xed9c},
+			{"keybindings", 0xee75},
+			{"tree-expanded", 0xea50},
+			{"tree-contracted", 0xea54},
+			{"search", 0xf0d1},
+			{"go-up", 0xea78},
+			{"ok", 0xeb7a},
+			{"cancel", 0xeb98},
+			{"color-picker", 0xf13d},
+			{"pixel-density", 0xed8c},
+			{"go-to-line", 0xf1f8},
 		};
-		addIcon( "document-new", 0xecc3 );
-		addIcon( "document-open", 0xed70 );
-		addIcon( "document-save", 0xf0b3 );
-		addIcon( "document-save-as", 0xf0b3 );
-		addIcon( "document-close", 0xeb99 );
-		addIcon( "quit", 0xeb97 );
-		addIcon( "undo", 0xea58 );
-		addIcon( "redo", 0xea5a );
-		addIcon( "cut", 0xf0c1 );
-		addIcon( "copy", 0xecd5 );
-		addIcon( "paste", 0xeb91 );
-		addIcon( "split-horizontal", 0xf17a );
-		addIcon( "split-vertical", 0xf17b );
-		addIcon( "find-replace", 0xed2b );
-		addIcon( "folder", 0xed54 );
-		addIcon( "folder-open", 0xed70 );
-		addIcon( "folder-add", 0xed5a );
-		addIcon( "file", 0xecc3 );
-		addIcon( "file-code", 0xecd1 );
-		addIcon( "file-edit", 0xecdb );
-		addIcon( "font-size", 0xed8d );
-		addIcon( "zoom-in", 0xf2db );
-		addIcon( "zoom-out", 0xf2dd );
-		addIcon( "zoom-reset", 0xeb47 );
-		addIcon( "fullscreen", 0xed9c );
-		addIcon( "keybindings", 0xee75 );
-		addIcon( "tree-expanded", 0xea50 );
-		addIcon( "tree-contracted", 0xea54 );
-		addIcon( "search", 0xf0d1 );
-		addIcon( "go-up", 0xea78 );
-		addIcon( "ok", 0xeb7a );
-		addIcon( "cancel", 0xeb98 );
-		addIcon( "color-picker", 0xf13d );
-		addIcon( "pixel-density", 0xed8c );
-		addIcon( "go-to-line", 0xf1f8 );
+		for ( auto icon : icons )
+			iconTheme->add( UIGlyphIcon::New( icon.first, iconFont, icon.second ) );
 
 		mUISceneNode->getUIIconThemeManager()->setCurrentTheme( iconTheme );
 

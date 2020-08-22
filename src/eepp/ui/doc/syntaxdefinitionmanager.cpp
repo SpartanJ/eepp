@@ -180,7 +180,8 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 		   {"typeof", "keyword"},	  {"undefined", "literal"},	 {"var", "keyword"},
 		   {"void", "keyword"},		  {"while", "keyword"},		 {"with", "keyword"},
 		   {"yield", "keyword"},	  {"implements", "keyword"}, {"Array", "keyword2"},
-		   {"any", "keyword"},		  {"from", "keyword"},		 {"public", "keyword"}},
+		   {"any", "keyword"},		  {"from", "keyword"},		 {"public", "keyword"},
+		   {"private", "keyword"},	  {"declare", "keyword"},	 {"namespace", "keyword"}},
 		  "//"} );
 
 	// Python
@@ -1750,6 +1751,30 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 			  {"null", "literal"},
 		  },
 		  "//"} );
+
+	// YAML
+	add( {"YAML",
+		  {"%.yml$", "%.yaml$"},
+		  {
+			  {{"^#.-\n"}, "comment"},
+			  {{"%s#.-\n"}, "comment"},
+			  {{"\"", "\"", "\\"}, "string"},
+			  {{"'", "'", "\\"}, "string"},
+			  {{"!!str", "\n", "\\"}, "string"},
+			  {{"%s-%-%s+.*\n"}, "keyword2"},
+			  {{"%s+[%w%s-_]+:%s+"}, "keyword"},
+			  {{"^[%w%s-_]+:%s+"}, "keyword"},
+			  {{"%f[%S]%-?0x%x+"}, "number"},
+			  {{"%f[%S]%-?%d+[%d%.eE]*f?"}, "number"},
+			  {{"%f[%S]%-?%.?%d+f?"}, "number"},
+			  {{"!!float", "\n", "\\"}, "number"},
+			  {{"https?://(([%w_.~!*:@&+$/?%%#-]-)(%w[-.%w]*%.)(%w%w%w?%w?)(:?)(%d*)(/"
+				"?)([%w_.~!*:@&+$/?%%#=-]*))"},
+			   "link"},
+			  {{"%-%-%-"}, "literal"},
+		  },
+		  {},
+		  "#"} );
 }
 
 SyntaxDefinition& SyntaxDefinitionManager::add( SyntaxDefinition&& syntaxStyle ) {

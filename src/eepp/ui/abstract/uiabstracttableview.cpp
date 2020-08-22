@@ -392,10 +392,17 @@ void UIAbstractTableView::moveSelection( int steps ) {
 	} else {
 		newIndex = model.index( 0, 0 );
 	}
-	if ( model.isValid( newIndex ) ) {
-		getSelection().set( newIndex );
-		scrollToPosition( {{mScrollOffset.x, getHeaderHeight() + newIndex.row() * getRowHeight()},
-						   {columnData( newIndex.column() ).width, getRowHeight()}} );
+	setSelection( newIndex );
+}
+
+void UIAbstractTableView::setSelection( const ModelIndex& index, bool scrollToSelection ) {
+	if ( !getModel() )
+		return;
+	auto& model = *this->getModel();
+	if ( model.isValid( index ) && scrollToSelection ) {
+		getSelection().set( index );
+		scrollToPosition( {{mScrollOffset.x, getHeaderHeight() + index.row() * getRowHeight()},
+						   {columnData( index.column() ).width, getRowHeight()}} );
 	}
 }
 

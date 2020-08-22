@@ -593,11 +593,11 @@ UITab* UITabWidget::setTabSelected( UITab* tab ) {
 	if ( tab->getOwnedWidget() )
 		tab->getOwnedWidget()->setFocus();
 
-	Uint32 TabIndex = getTabIndex( tab );
+	Uint32 tabIndex = getTabIndex( tab );
 
-	if ( eeINDEX_NOT_FOUND != TabIndex ) {
+	if ( eeINDEX_NOT_FOUND != tabIndex ) {
 		mTabSelected = tab;
-		mTabSelectedIndex = TabIndex;
+		mTabSelectedIndex = tabIndex;
 
 		refreshOwnedWidget( mTabSelected );
 
@@ -689,6 +689,10 @@ void UITabWidget::swapTabs( UITab* left, UITab* right ) {
 	Uint32 leftIndex = getTabIndex( left );
 	Uint32 rightIndex = getTabIndex( right );
 	if ( leftIndex != eeINDEX_NOT_FOUND && rightIndex != eeINDEX_NOT_FOUND ) {
+		if ( leftIndex == mTabSelectedIndex )
+			mTabSelectedIndex = rightIndex;
+		else if ( rightIndex == mTabSelectedIndex )
+			mTabSelectedIndex = leftIndex;
 		mTabs[leftIndex] = right;
 		mTabs[rightIndex] = left;
 		posTabs();

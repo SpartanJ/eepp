@@ -207,6 +207,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	std::string getKeybind( const std::string& command );
 
+	std::vector<std::string> getUnlockedCommands();
+
   protected:
 	EE::Window::Window* mWindow{nullptr};
 	UISceneNode* mUISceneNode{nullptr};
@@ -362,6 +364,8 @@ class App : public UICodeEditorSplitter::Client {
 	void goToLine();
 
 	void loadCurrentDirectory();
+
+	void toggleSettingsMenu();
 };
 
 #endif // EE_TOOLS_CODEEDITOR_HPP
