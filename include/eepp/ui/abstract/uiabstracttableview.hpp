@@ -89,7 +89,9 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	void setRowSearchByName( bool rowSearchByName );
 
-	virtual ModelIndex findRowWithText( const std::string& text );
+	virtual ModelIndex findRowWithText( const std::string& text,
+										const bool& caseSensitive = false,
+										const bool& exactMatch = false );
 
   protected:
 	friend class EE::UI::UITableHeaderColumn;

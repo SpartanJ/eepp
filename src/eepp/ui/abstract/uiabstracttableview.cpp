@@ -474,7 +474,7 @@ Uint32 UIAbstractTableView::onTextInput( const TextInputEvent& event ) {
 	return 1;
 }
 
-ModelIndex UIAbstractTableView::findRowWithText( const std::string& ) {
+ModelIndex UIAbstractTableView::findRowWithText( const std::string&, const bool&, const bool& ) {
 	return {};
 }
 

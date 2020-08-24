@@ -669,14 +669,19 @@ void UITreeView::onSortColumn( const size_t& ) {
 	return;
 }
 
-ModelIndex UITreeView::findRowWithText( const std::string& text ) {
+ModelIndex UITreeView::findRowWithText( const std::string& text, const bool& caseSensitive,
+										const bool& exactMatch ) {
 	Model* model = getModel();
 	if ( !model || model->rowCount() == 0 )
 		return {};
 	ModelIndex foundIndex = {};
 	traverseTree( [&]( const int&, const ModelIndex& index, const size_t&, const Float& ) {
 		Variant var = model->data( index );
-		if ( var.isValid() && String::startsWith( String::toLower( var.toString() ), text ) ) {
+		if ( var.isValid() &&
+			 ( exactMatch ? var.toString() == text
+						  : String::startsWith( caseSensitive ? var.toString()
+															  : String::toLower( var.toString() ),
+												text ) ) ) {
 			foundIndex = index;
 			return IterationDecision::Stop;
 		}

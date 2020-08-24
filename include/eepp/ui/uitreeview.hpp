@@ -59,7 +59,9 @@ class EE_API UITreeView : public UIAbstractTableView {
 
 	void setExpanderIconSize( const size_t& expanderSize );
 
-	virtual ModelIndex findRowWithText( const std::string& text );
+	virtual ModelIndex findRowWithText( const std::string& text,
+										const bool& caseSensitive = false,
+										const bool& exactMatch = false );
 
   protected:
 	enum class IterationDecision {

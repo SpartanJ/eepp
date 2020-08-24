@@ -69,13 +69,22 @@ Uint32 UIMenuItem::onMouseLeave( const Vector2i& pos, const Uint32& flags ) {
 }
 
 Uint32 UIMenuItem::onMouseClick( const Vector2i&, const Uint32& flags ) {
-	if ( flags & EE_BUTTON_LMASK )
+	if ( ( flags & EE_BUTTON_LMASK ) && ( !mOnShouldCloseCb || mOnShouldCloseCb( this ) ) )
 		getParent()->asType<UIMenu>()->backpropagateHide();
 	return 1;
 }
 
 UIWidget* UIMenuItem::getExtraInnerWidget() const {
 	return mShortcutView;
+}
+
+UIMenuItem::OnShouldCloseCb UIMenuItem::getOnShouldCloseCb() const {
+	return mOnShouldCloseCb;
+}
+
+UIMenuItem* UIMenuItem::setOnShouldCloseCb( const OnShouldCloseCb& onShouldCloseCb ) {
+	mOnShouldCloseCb = onShouldCloseCb;
+	return this;
 }
 
 void UIMenuItem::createShortcutView() {

@@ -21,7 +21,10 @@ class EE_API UITableView : public UIAbstractTableView {
 
 	Float getMaxColumnContentWidth( const size_t& colIndex );
 
-	virtual ModelIndex findRowWithText( const std::string& text );
+	virtual ModelIndex findRowWithText( const std::string& text,
+										const bool& caseSensitive = false,
+										const bool& exactMatch = false );
+
   protected:
 	Sizef mContentSize;
 

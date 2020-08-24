@@ -327,6 +327,17 @@ class EE_API TextDocument {
 
 	TextRange sanitizeRange( const TextRange& range ) const;
 
+	bool getAutoCloseBrackets() const;
+
+	void setAutoCloseBrackets( bool autoCloseBrackets );
+
+	const std::vector<std::pair<String::StringBaseType, String::StringBaseType>>&
+	getAutoCloseBracketsPairs() const;
+
+	void setAutoCloseBracketsPairs(
+		const std::vector<std::pair<String::StringBaseType, String::StringBaseType>>&
+			autoCloseBracketsPairs );
+
   protected:
 	friend class UndoStack;
 	UndoStack mUndoStack;
@@ -340,6 +351,8 @@ class EE_API TextDocument {
 	bool mForceNewLineAtEndOfFile{false};
 	bool mTrimTrailingWhitespaces{false};
 	bool mVerbose{false};
+	bool mAutoCloseBrackets{false};
+	std::vector<std::pair<String::StringBaseType, String::StringBaseType>> mAutoCloseBracketsPairs;
 	Uint32 mIndentWidth{4};
 	IndentType mIndentType{IndentType::IndentTabs};
 	Clock mTimer;

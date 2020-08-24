@@ -240,7 +240,8 @@ Uint32 UITableView::onKeyDown( const KeyEvent& event ) {
 	return UIAbstractTableView::onKeyDown( event );
 }
 
-ModelIndex UITableView::findRowWithText( const std::string& text ) {
+ModelIndex UITableView::findRowWithText( const std::string& text, const bool& caseSensitive,
+										 const bool& exactMatch ) {
 	Model* model = getModel();
 	if ( !model || model->rowCount() == 0 )
 		return {};
@@ -250,7 +251,11 @@ ModelIndex UITableView::findRowWithText( const std::string& text ) {
 			i, model->keyColumn() != -1 ? model->keyColumn()
 										: ( model->treeColumn() >= 0 ? model->treeColumn() : 0 ) );
 		Variant var = model->data( index );
-		if ( var.isValid() && String::startsWith( String::toLower( var.toString() ), text ) )
+		if ( var.isValid() &&
+			 ( exactMatch ? var.toString() == text
+						  : String::startsWith( caseSensitive ? var.toString()
+															  : String::toLower( var.toString() ),
+												text ) ) )
 			return model->index( index.row(), 0 );
 	}
 	return {};

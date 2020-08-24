@@ -109,6 +109,8 @@ class UIGlobalSearchBar : public UILinearLayout {
 struct UIConfig {
 	StyleSheetLength fontSize{12, StyleSheetLength::Dp};
 	bool showSidePanel{true};
+	std::string serifFont;
+	std::string monospaceFont;
 };
 
 struct WindowConfig {
@@ -138,6 +140,7 @@ struct CodeEditorConfig {
 	bool colorPreview{false};
 	bool autoComplete{true};
 	bool showDocInfo{true};
+	std::string autoCloseBrackets{""};
 	int indentWidth{4};
 	int tabWidth{4};
 	int lineBreakingColumn{100};
@@ -176,6 +179,8 @@ class App : public UICodeEditorSplitter::Client {
 	void openFileDialog();
 
 	void openFolderDialog();
+
+	void openFontDialog( std::string& fontPath );
 
 	void saveFileDialog();
 
@@ -366,6 +371,9 @@ class App : public UICodeEditorSplitter::Client {
 	void loadCurrentDirectory();
 
 	void toggleSettingsMenu();
+
+	FontTrueType* loadFont( const std::string& name, std::string fontPath,
+							const std::string& fallback );
 };
 
 #endif // EE_TOOLS_CODEEDITOR_HPP

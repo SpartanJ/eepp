@@ -365,6 +365,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void goToLine( const TextPosition& position, bool centered = true );
 
+	bool getAutoCloseBrackets() const;
+
+	void setAutoCloseBrackets( bool autoCloseBracket );
+
   protected:
 	struct LastXOffset {
 		TextPosition position;

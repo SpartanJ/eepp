@@ -21,11 +21,9 @@ Detect errors and log them.
 
 * Add multi-line search and replace.
 
-* Add auto-close brackets.
-
 * Add XML tags auto-close.
 
-## Code Editor
+## ecode - Code Editor
 
 * Support single instance (when a new file is opened while a previous instance exists, open it in the first instance).
 

@@ -948,6 +948,14 @@ void UICodeEditor::goToLine( const TextPosition& position, bool centered ) {
 	scrollToMakeVisible( mDoc->getSelection().start(), centered );
 }
 
+bool UICodeEditor::getAutoCloseBrackets() const {
+	return mDoc->getAutoCloseBrackets();
+}
+
+void UICodeEditor::setAutoCloseBrackets( bool autoCloseBrackets ) {
+	mDoc->setAutoCloseBrackets( autoCloseBrackets );
+}
+
 void UICodeEditor::updateEditor() {
 	mDoc->setPageSize( getVisibleLinesCount() );
 	if ( mDoc->getActiveClient() == this )

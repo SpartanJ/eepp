@@ -110,6 +110,36 @@ void App::openFolderDialog() {
 	dialog->show();
 }
 
+void App::openFontDialog( std::string& fontPath ) {
+	UIFileDialog* dialog = UIFileDialog::New( UIFileDialog::DefaultFlags, "*.ttf; *.otf; *.wolff",
+											  FileSystem::fileRemoveFileName( fontPath ) );
+	ModelIndex index =
+		dialog->getList()->findRowWithText( FileSystem::fileNameFromPath( fontPath ), true, true );
+	if ( index.isValid() )
+		dialog->getList()->setSelection( index );
+	dialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
+	dialog->setTitle( "Select Font File" );
+	dialog->setCloseShortcut( KEY_ESCAPE );
+	dialog->addEventListener( Event::OpenFile, [&]( const Event* event ) {
+		auto newPath = event->getNode()->asType<UIFileDialog>()->getFullPath();
+		if ( String::startsWith( newPath, mResPath ) )
+			newPath = newPath.substr( mResPath.size() );
+		if ( fontPath != newPath ) {
+			fontPath = newPath;
+			UIMessageBox::New( UIMessageBox::OK,
+							   "You will need to restart the editor to see font changes." )
+				->show();
+		}
+	} );
+	dialog->addEventListener( Event::OnWindowClose, [&]( const Event* ) {
+		if ( mEditorSplitter && mEditorSplitter->getCurEditor() &&
+			 !SceneManager::instance()->isShootingDown() )
+			mEditorSplitter->getCurEditor()->setFocus();
+	} );
+	dialog->center();
+	dialog->show();
+}
+
 void App::saveFileDialog() {
 	UIFileDialog* dialog =
 		UIFileDialog::New( UIFileDialog::DefaultFlags | UIFileDialog::SaveDialog, "." );
@@ -302,6 +332,9 @@ void App::loadConfig() {
 	mConfig.editor.horizontalScrollbar = mIni.getValueB( "editor", "horizontal_scrollbar", false );
 	mConfig.ui.fontSize = mIni.getValue( "ui", "font_size", "11dp" );
 	mConfig.ui.showSidePanel = mIni.getValueB( "ui", "show_side_panel", true );
+	mConfig.ui.serifFont = mIni.getValue( "ui", "serif_font", "assets/fonts/NotoSans-Regular.ttf" );
+	mConfig.ui.monospaceFont =
+		mIni.getValue( "ui", "monospace_font", "assets/fonts/DejaVuSansMono.ttf" );
 	mConfig.editor.trimTrailingWhitespaces =
 		mIni.getValueB( "editor", "trim_trailing_whitespaces", false );
 	mConfig.editor.forceNewLineAtEndOfFile =
@@ -309,6 +342,7 @@ void App::loadConfig() {
 	mConfig.editor.autoDetectIndentType =
 		mIni.getValueB( "editor", "auto_detect_indent_type", true );
 	mConfig.editor.writeUnicodeBOM = mIni.getValueB( "editor", "write_bom", false );
+	mConfig.editor.autoCloseBrackets = mIni.getValue( "editor", "auto_close_brackets", "" );
 	mConfig.editor.indentWidth = mIni.getValueI( "editor", "indent_width", 4 );
 	mConfig.editor.indentSpaces = mIni.getValueB( "editor", "indent_spaces", false );
 	mConfig.editor.windowsLineEndings = mIni.getValueB( "editor", "windows_line_endings", false );
@@ -347,11 +381,14 @@ void App::saveConfig() {
 	mIni.setValue( "editor", "font_size", mConfig.editor.fontSize.toString() );
 	mIni.setValue( "ui", "font_size", mConfig.ui.fontSize.toString() );
 	mIni.setValueB( "ui", "show_side_panel", mConfig.ui.showSidePanel );
+	mIni.setValue( "ui", "serif_font", mConfig.ui.serifFont );
+	mIni.setValue( "ui", "monospace_font", mConfig.ui.monospaceFont );
 	mIni.setValueB( "editor", "trim_trailing_whitespaces", mConfig.editor.trimTrailingWhitespaces );
 	mIni.setValueB( "editor", "force_new_line_at_end_of_file",
 					mConfig.editor.forceNewLineAtEndOfFile );
 	mIni.setValueB( "editor", "auto_detect_indent_type", mConfig.editor.autoDetectIndentType );
 	mIni.setValueB( "editor", "write_bom", mConfig.editor.writeUnicodeBOM );
+	mIni.setValue( "editor", "auto_close_brackets", mConfig.editor.autoCloseBrackets );
 	mIni.setValueI( "editor", "indent_width", mConfig.editor.indentWidth );
 	mIni.setValueB( "editor", "indent_spaces", mConfig.editor.indentSpaces );
 	mIni.setValueB( "editor", "windows_line_endings", mConfig.editor.windowsLineEndings );
@@ -953,6 +990,8 @@ UIMenu* App::createWindowMenu() {
 	mWindowMenu->add( "UI Scale Factor (Pixel Density)", findIcon( "pixel-density" ) );
 	mWindowMenu->add( "UI Font Size", findIcon( "font-size" ) );
 	mWindowMenu->add( "Editor Font Size", findIcon( "font-size" ) );
+	mWindowMenu->add( "Serif Font...", findIcon( "font-size" ) );
+	mWindowMenu->add( "Monospace Font...", findIcon( "font-size" ) );
 	mWindowMenu->addSeparator();
 	mWindowMenu->addCheckBox( "Full Screen Mode" )
 		->setShortcutText( getKeybind( "fullscreen-toggle" ) )
@@ -1044,6 +1083,10 @@ UIMenu* App::createWindowMenu() {
 				msgBox->closeWindow();
 			} );
 			setFocusEditorOnClose( msgBox );
+		} else if ( item->getText() == "Serif Font..." ) {
+			openFontDialog( mConfig.ui.serifFont );
+		} else if ( item->getText() == "Monospace Font..." ) {
+			openFontDialog( mConfig.ui.monospaceFont );
 		} else if ( "Zoom In" == item->getText() ) {
 			mEditorSplitter->zoomIn();
 		} else if ( "Zoom Out" == item->getText() ) {
@@ -1215,6 +1258,17 @@ UIMenu* App::createEditMenu() {
 	return menu;
 }
 
+static std::vector<std::pair<String::StringBaseType, String::StringBaseType>>
+makeAutoClosePairs( const std::string& strPairs ) {
+	auto curPairs = String::split( strPairs, ',' );
+	std::vector<std::pair<String::StringBaseType, String::StringBaseType>> pairs;
+	for ( auto pair : curPairs ) {
+		if ( pair.size() == 2 )
+			pairs.emplace_back( std::make_pair( pair[0], pair[1] ) );
+	}
+	return pairs;
+}
+
 UIMenu* App::createDocumentMenu() {
 	mDocMenu = UIPopUpMenu::New();
 
@@ -1284,6 +1338,49 @@ UIMenu* App::createDocumentMenu() {
 			mEditorSplitter->getCurEditor()->getDocument().setLineEnding(
 				winLe ? TextDocument::LineEnding::CRLF : TextDocument::LineEnding::LF );
 			updateDocInfo( mEditorSplitter->getCurEditor()->getDocument() );
+		}
+	} );
+
+	UIPopUpMenu* bracketsMenu = UIPopUpMenu::New();
+	mDocMenu->addSubMenu( "Auto-Close Brackets", nullptr, bracketsMenu );
+	auto& closeBrackets = mConfig.editor.autoCloseBrackets;
+	auto shouldCloseCb = []( UIMenuItem* ) -> bool { return false; };
+	bracketsMenu->addCheckBox( "Brackets ()", closeBrackets.find( '(' ) != std::string::npos )
+		->setOnShouldCloseCb( shouldCloseCb )
+		->setId( "()" );
+	bracketsMenu->addCheckBox( "Curly Brackets {}", closeBrackets.find( '{' ) != std::string::npos )
+		->setOnShouldCloseCb( shouldCloseCb )
+		->setId( "{}" );
+	bracketsMenu
+		->addCheckBox( "Square Brackets []", closeBrackets.find( '[' ) != std::string::npos )
+		->setOnShouldCloseCb( shouldCloseCb )
+		->setId( "[]" );
+	bracketsMenu->addCheckBox( "Single Quotes ''", closeBrackets.find( '\'' ) != std::string::npos )
+		->setOnShouldCloseCb( shouldCloseCb )
+		->setId( "''" );
+	bracketsMenu
+		->addCheckBox( "Double Quotes \"\"", closeBrackets.find( '"' ) != std::string::npos )
+		->setOnShouldCloseCb( shouldCloseCb )
+		->setId( "\"\"" );
+	bracketsMenu->addCheckBox( "Back Quotes ``", closeBrackets.find( '`' ) != std::string::npos )
+		->setOnShouldCloseCb( shouldCloseCb )
+		->setId( "``" );
+	bracketsMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
+		const String& id = event->getNode()->getId();
+		if ( event->getNode()->isType( UI_TYPE_MENUCHECKBOX ) ) {
+			UIMenuCheckBox* item = event->getNode()->asType<UIMenuCheckBox>();
+			auto curPairs = String::split( mConfig.editor.autoCloseBrackets, ',' );
+			if ( item->isActive() ) {
+				auto found = std::find( curPairs.begin(), curPairs.end(), id );
+				if ( found == curPairs.end() )
+					curPairs.push_back( id );
+			}
+			mConfig.editor.autoCloseBrackets = String::join( curPairs, ',' );
+			auto pairs = makeAutoClosePairs( mConfig.editor.autoCloseBrackets );
+			mEditorSplitter->forEachEditor( [&, pairs]( UICodeEditor* editor ) {
+				editor->getDocument().setAutoCloseBrackets( !pairs.empty() );
+				editor->getDocument().setAutoCloseBracketsPairs( pairs );
+			} );
 		}
 	} );
 
@@ -1530,6 +1627,8 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	editor->setHighlightSelectionMatch( config.highlightSelectionMatch );
 	editor->setEnableColorPickerOnSelection( config.colorPickerSelection );
 	editor->setColorPreview( config.colorPreview );
+	doc.setAutoCloseBrackets( !mConfig.editor.autoCloseBrackets.empty() );
+	doc.setAutoCloseBracketsPairs( makeAutoClosePairs( mConfig.editor.autoCloseBrackets ) );
 	doc.setAutoDetectIndentType( config.autoDetectIndentType );
 	doc.setLineEnding( config.windowsLineEndings ? TextDocument::LineEnding::CRLF
 												 : TextDocument::LineEnding::LF );
@@ -1650,7 +1749,7 @@ UIPopUpMenu* App::createToolsMenu() {
 	mToolsMenu->add( "Locate...", findIcon( "search" ), getKeybind( "open-locatebar" ) );
 	mToolsMenu->add( "Project Find...", findIcon( "search" ), getKeybind( "open-global-search" ) );
 	mToolsMenu->add( "Go to line...", findIcon( "go-to-line" ), getKeybind( "go-to-line" ) );
-	mToolsMenu->add( "Load current directory as folder", findIcon( "folder" ),
+	mToolsMenu->add( "Load current document directory as folder", findIcon( "folder" ),
 					 getKeybind( "load-current-dir" ) );
 	mToolsMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
@@ -1663,7 +1762,7 @@ UIPopUpMenu* App::createToolsMenu() {
 			showGlobalSearch();
 		} else if ( txt == "Go to line..." ) {
 			goToLine();
-		} else if ( txt == "Load current directory as folder" ) {
+		} else if ( txt == "Load current document directory as folder" ) {
 			loadCurrentDirectory();
 		}
 	} );
@@ -1893,6 +1992,27 @@ void App::loadFolder( const std::string& path ) {
 		mEditorSplitter->getCurEditor()->setFocus();
 }
 
+static bool isRelativePath( const std::string& path ) {
+	if ( !path.empty() ) {
+		if ( path[0] == '/' )
+			return false;
+		if ( path.size() >= 2 && String::isLetter( path[0] ) && path[1] == ':' )
+			return false;
+	}
+	return true;
+}
+
+FontTrueType* App::loadFont( const std::string& name, std::string fontPath,
+							 const std::string& fallback ) {
+	if ( fontPath.empty() )
+		fontPath = fallback;
+	if ( isRelativePath( fontPath ) )
+		fontPath = mResPath + fontPath;
+	if ( !FileSystem::fileExists( fontPath ) )
+		return nullptr;
+	return FontTrueType::New( name, fontPath );
+}
+
 void App::init( const std::string& file, const Float& pidelDensity ) {
 	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
 	Display* currentDisplay = displayManager->getDisplayIndex( 0 );
@@ -1945,14 +2065,19 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		mUISceneNode = UISceneNode::New();
 
 		FontTrueType* font =
-			FontTrueType::New( "NotoSans-Regular", mResPath + "assets/fonts/NotoSans-Regular.ttf" );
-
+			loadFont( "sans-serif", mConfig.ui.serifFont, "assets/fonts/NotoSans-Regular.ttf" );
 		FontTrueType* fontMono =
-			FontTrueType::New( "monospace", mResPath + "assets/fonts/DejaVuSansMono.ttf" );
-		fontMono->setBoldAdvanceSameAsRegular( true );
+			loadFont( "monospace", mConfig.ui.monospaceFont, "assets/fonts/DejaVuSansMono.ttf" );
+		if ( fontMono )
+			fontMono->setBoldAdvanceSameAsRegular( true );
 
 		FontTrueType* iconFont =
 			FontTrueType::New( "icon", mResPath + "assets/fonts/remixicon.ttf" );
+
+		if ( !font || !fontMono || !iconFont ) {
+			printf( "Font not found!" );
+			return;
+		}
 
 		SceneManager::instance()->add( mUISceneNode );
 

@@ -24,6 +24,9 @@ bool TextDocument::isNonWord( String::StringBaseType ch ) const {
 
 TextDocument::TextDocument( bool verbose ) :
 	mUndoStack( this ),
+	mVerbose( verbose ),
+	mAutoCloseBracketsPairs(
+		{{'(', ')'}, {'[', ']'}, {'{', '}'}, {'\'', '\''}, {'"', '"'}, {'`', '`'}} ),
 	mDefaultFileName( "untitled" ),
 	mCleanChangeId( 0 ),
 	mNonWordChars( DEFAULT_NON_WORD_CHARS ) {
@@ -721,9 +724,39 @@ void TextDocument::moveTo( int columnOffset ) {
 }
 
 void TextDocument::textInput( const String& text ) {
-	if ( hasSelection() ) {
-		deleteTo( 0 );
+	if ( mAutoCloseBrackets && 1 == text.size() ) {
+		size_t pos = 0xFFFFFFFF;
+		for ( size_t i = 0; i < mAutoCloseBracketsPairs.size(); i++ ) {
+			if ( text[0] == mAutoCloseBracketsPairs[i].first ) {
+				pos = i;
+				break;
+			}
+		}
+		if ( pos != 0xFFFFFFFF ) {
+			if ( hasSelection() ) {
+				replaceSelection( mAutoCloseBracketsPairs[pos].first + getSelectedText() +
+								  mAutoCloseBracketsPairs[pos].second );
+				return;
+			} else {
+				auto closeChar = mAutoCloseBracketsPairs[pos].second;
+				bool mustClose = true;
+				if ( getSelection().start().column() <
+					 (Int64)line( getSelection().start().line() ).size() ) {
+					auto ch = line( getSelection().start().line() )
+								  .getText()[getSelection().start().column()];
+					if ( ch == closeChar )
+						mustClose = false;
+				}
+				if ( mustClose ) {
+					setSelection( insert( getSelection().start(), text ) );
+					insert( getSelection().start(), String( closeChar ) );
+					return;
+				}
+			}
+		}
 	}
+	if ( hasSelection() )
+		deleteTo( 0 );
 	setSelection( insert( getSelection().start(), text ) );
 }
 
@@ -1067,6 +1100,25 @@ void TextDocument::print() const {
 
 TextRange TextDocument::sanitizeRange( const TextRange& range ) const {
 	return {sanitizePosition( range.start() ), sanitizePosition( range.end() )};
+}
+
+bool TextDocument::getAutoCloseBrackets() const {
+	return mAutoCloseBrackets;
+}
+
+void TextDocument::setAutoCloseBrackets( bool autoCloseBrackets ) {
+	mAutoCloseBrackets = autoCloseBrackets;
+}
+
+const std::vector<std::pair<String::StringBaseType, String::StringBaseType>>&
+TextDocument::getAutoCloseBracketsPairs() const {
+	return mAutoCloseBracketsPairs;
+}
+
+void TextDocument::setAutoCloseBracketsPairs(
+	const std::vector<std::pair<String::StringBaseType, String::StringBaseType>>&
+		autoCloseBracketsPairs ) {
+	mAutoCloseBracketsPairs = autoCloseBracketsPairs;
 }
 
 TextPosition TextDocument::sanitizePosition( const TextPosition& position ) const {

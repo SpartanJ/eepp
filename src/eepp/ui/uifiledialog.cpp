@@ -222,7 +222,7 @@ void UIFileDialog::refreshFolder() {
 		patterns = String::split( mFiletype->getText().toUtf8(), ';' );
 
 		for ( size_t i = 0; i < patterns.size(); i++ )
-			patterns[i] = FileSystem::fileExtension( patterns[i] );
+			patterns[i] = FileSystem::fileExtension( String::trim( patterns[i] ) );
 	}
 
 	mList->setModel( FileSystemModel::New(

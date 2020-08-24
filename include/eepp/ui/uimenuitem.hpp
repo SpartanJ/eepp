@@ -7,6 +7,8 @@ namespace EE { namespace UI {
 
 class EE_API UIMenuItem : public UIPushButton {
   public:
+	typedef std::function<bool( UIMenuItem* item )> OnShouldCloseCb;
+
 	static UIMenuItem* New();
 
 	UIMenuItem();
@@ -25,8 +27,13 @@ class EE_API UIMenuItem : public UIPushButton {
 
 	virtual UIWidget* getExtraInnerWidget() const;
 
+	OnShouldCloseCb getOnShouldCloseCb() const;
+
+	UIMenuItem* setOnShouldCloseCb( const OnShouldCloseCb& onShouldCloseCb );
+
   protected:
 	UITextView* mShortcutView;
+	OnShouldCloseCb mOnShouldCloseCb;
 
 	explicit UIMenuItem( const std::string& tag );
 
