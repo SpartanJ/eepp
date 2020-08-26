@@ -1366,14 +1366,16 @@ UIMenu* App::createDocumentMenu() {
 		->setOnShouldCloseCb( shouldCloseCb )
 		->setId( "``" );
 	bracketsMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
-		const String& id = event->getNode()->getId();
+		std::string id = event->getNode()->getId();
 		if ( event->getNode()->isType( UI_TYPE_MENUCHECKBOX ) ) {
 			UIMenuCheckBox* item = event->getNode()->asType<UIMenuCheckBox>();
 			auto curPairs = String::split( mConfig.editor.autoCloseBrackets, ',' );
+			auto found = std::find( curPairs.begin(), curPairs.end(), id );
 			if ( item->isActive() ) {
-				auto found = std::find( curPairs.begin(), curPairs.end(), id );
 				if ( found == curPairs.end() )
 					curPairs.push_back( id );
+			} else if ( found != curPairs.end() ) {
+				curPairs.erase( found );
 			}
 			mConfig.editor.autoCloseBrackets = String::join( curPairs, ',' );
 			auto pairs = makeAutoClosePairs( mConfig.editor.autoCloseBrackets );
