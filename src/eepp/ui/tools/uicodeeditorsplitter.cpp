@@ -262,8 +262,12 @@ UICodeEditor* UICodeEditorSplitter::createCodeEditor() {
 	return editor;
 }
 
-const std::string& UICodeEditorSplitter::getCurrentColorScheme() const {
+const std::string& UICodeEditorSplitter::getCurrentColorSchemeName() const {
 	return mCurrentColorScheme;
+}
+
+const SyntaxColorScheme& UICodeEditorSplitter::getCurrentColorScheme() const {
+	return mColorSchemes.at( mCurrentColorScheme );
 }
 
 void UICodeEditorSplitter::setColorScheme( const std::string& name ) {

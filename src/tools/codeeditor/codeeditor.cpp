@@ -359,7 +359,7 @@ void App::loadConfig() {
 }
 
 void App::saveConfig() {
-	mConfig.editor.colorScheme = mEditorSplitter->getCurrentColorScheme();
+	mConfig.editor.colorScheme = mEditorSplitter->getCurrentColorSchemeName();
 	mConfig.window.size = mWindow->getLastWindowedSize();
 	mConfig.window.maximized = mWindow->isMaximized();
 	mIni.setValue( "editor", "colorscheme", mConfig.editor.colorScheme );
@@ -683,6 +683,83 @@ void App::hideGlobalSearchBar() {
 	mGlobalSearchTree->setVisible( false );
 }
 
+class UITreeViewCellGlobalSearch : public UITreeViewCell {
+  public:
+	static UITreeViewCellGlobalSearch* New() { return eeNew( UITreeViewCellGlobalSearch, () ); }
+
+	UITreeViewCellGlobalSearch() : UITreeViewCell() {}
+
+	UIPushButton* setText( const String& text );
+
+	UIPushButton* updateText( const String& text );
+};
+
+class UITreeViewGlobalSearch : public UITreeView {
+  public:
+	static UITreeViewGlobalSearch* New( const SyntaxColorScheme& colorScheme ) {
+		return eeNew( UITreeViewGlobalSearch, ( colorScheme ) );
+	}
+
+	UITreeViewGlobalSearch( const SyntaxColorScheme& colorScheme ) :
+		UITreeView(), mColorScheme( colorScheme ) {
+		mLineNumColor = Color::fromString(
+			mUISceneNode->getRoot()->getUIStyle()->getVariable( "--font-hint" ).getValue() );
+	}
+
+	UIWidget* createCell( UIWidget* rowWidget, const ModelIndex& index ) {
+		UITableCell* widget = index.column() == (Int64)getModel()->treeColumn()
+								  ? UITreeViewCellGlobalSearch::New()
+								  : UITableCell::New();
+		return setupCell( widget, rowWidget, index );
+	}
+
+	const SyntaxColorScheme& getColorScheme() const { return mColorScheme; }
+
+	const Color& getLineNumColor() const { return mLineNumColor; }
+
+	void updateColorScheme( const SyntaxColorScheme& colorScheme ) { mColorScheme = colorScheme; }
+
+  protected:
+	Color mLineNumColor;
+	SyntaxColorScheme mColorScheme;
+};
+
+UIPushButton* UITreeViewCellGlobalSearch::updateText( const String& text ) {
+	if ( getCurIndex().internalId() != -1 ) {
+		UITreeViewGlobalSearch* pp = getParent()->getParent()->asType<UITreeViewGlobalSearch>();
+
+		ProjectSearch::ResultData* res = (ProjectSearch::ResultData*)getCurIndex().parent().data();
+
+		auto styleDef = SyntaxDefinitionManager::instance()->getStyleByExtension( res->file );
+
+		auto tokens =
+			SyntaxTokenizer::tokenize( styleDef, text, SYNTAX_TOKENIZER_STATE_NONE ).first;
+
+		size_t start = 0;
+		for ( auto& token : tokens ) {
+			mTextBox->setFontFillColor( pp->getColorScheme().getSyntaxStyle( token.type ).color,
+										start, start + token.text.size() );
+			start += token.text.size();
+		}
+
+		Uint32 from = text.find_first_not_of( ' ' );
+		if ( from != String::InvalidPos )
+			mTextBox->setFontFillColor( pp->getLineNumColor(), from,
+										text.find_first_of( ' ', from ) );
+	}
+	return this;
+}
+
+UIPushButton* UITreeViewCellGlobalSearch::setText( const String& text ) {
+	if ( text != mTextBox->getText() ) {
+		mTextBox->setVisible( !text.empty() );
+		mTextBox->setText( text );
+		updateText( text );
+		updateLayout();
+	}
+	return this;
+}
+
 void App::initGlobalSearchBar() {
 	auto addClickListener = [&]( UIWidget* widget, std::string cmd ) {
 		widget->addEventListener( Event::MouseClick, [this, cmd]( const Event* event ) {
@@ -758,7 +835,7 @@ void App::initGlobalSearchBar() {
 	} );
 	addClickListener( searchButton, "search-in-files" );
 	addClickListener( searchBarClose, "close-global-searchbar" );
-	mGlobalSearchTree = UITreeView::New();
+	mGlobalSearchTree = UITreeViewGlobalSearch::New( mEditorSplitter->getCurrentColorScheme() );
 	mGlobalSearchTree->setId( "search_tree" );
 	mGlobalSearchTree->setParent( mUISceneNode->getRoot() );
 	mGlobalSearchTree->setExpanderIconSize( PixelDensity::dpToPx( 20 ) );
@@ -1558,6 +1635,9 @@ void App::onCodeEditorFocusChange( UICodeEditor* editor ) {
 
 void App::onColorSchemeChanged( const std::string& ) {
 	updateColorSchemeMenu();
+
+	mGlobalSearchTree->asType<UITreeViewGlobalSearch>()->updateColorScheme(
+		mEditorSplitter->getCurrentColorScheme() );
 }
 
 void App::onDocumentLoaded( UICodeEditor* codeEditor, const std::string& path ) {
@@ -1617,8 +1697,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	const CodeEditorConfig& config = mConfig.editor;
 	editor->setFontSize( config.fontSize.asDp( 0, Sizef(), mUISceneNode->getDPI() ) );
 	editor->setEnableColorPickerOnSelection( true );
-	editor->setColorScheme(
-		mEditorSplitter->getColorSchemes().at( mEditorSplitter->getCurrentColorScheme() ) );
+	editor->setColorScheme( mEditorSplitter->getCurrentColorScheme() );
 	editor->setShowLineNumber( config.showLineNumbers );
 	editor->setShowWhitespaces( config.showWhiteSpaces );
 	editor->setHighlightMatchingBracket( config.highlightMatchingBracket );
@@ -1838,7 +1917,7 @@ void App::createSettingsMenu() {
 void App::updateColorSchemeMenu() {
 	for ( size_t i = 0; i < mColorSchemeMenu->getCount(); i++ ) {
 		UIMenuRadioButton* menuItem = mColorSchemeMenu->getItem( i )->asType<UIMenuRadioButton>();
-		menuItem->setActive( mEditorSplitter->getCurrentColorScheme() == menuItem->getText() );
+		menuItem->setActive( mEditorSplitter->getCurrentColorSchemeName() == menuItem->getText() );
 	}
 }
 
@@ -1846,7 +1925,7 @@ UIMenu* App::createColorSchemeMenu() {
 	mColorSchemeMenu = UIPopUpMenu::New();
 	for ( auto& colorScheme : mEditorSplitter->getColorSchemes() ) {
 		mColorSchemeMenu->addRadioButton(
-			colorScheme.first, mEditorSplitter->getCurrentColorScheme() == colorScheme.first );
+			colorScheme.first, mEditorSplitter->getCurrentColorSchemeName() == colorScheme.first );
 	}
 	mColorSchemeMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();

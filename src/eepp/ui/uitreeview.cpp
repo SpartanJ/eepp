@@ -108,75 +108,8 @@ void UITreeView::updateContentSize() {
 		onContentSizeChange();
 }
 
-class UITreeViewCell : public UITableCell {
-  public:
-	static UITreeViewCell* New() { return eeNew( UITreeViewCell, () ); }
-
-	Uint32 getType() const { return UI_TYPE_TREEVIEW_CELL; }
-
-	bool isType( const Uint32& type ) const {
-		return UITreeViewCell::getType() == type ? true : UITableCell::isType( type );
-	}
-
-	UIImage* getImage() const { return mImage; }
-
-	Rectf calculatePadding() const {
-		Sizef size;
-		Rectf autoPadding;
-		if ( mFlags & UI_AUTO_PADDING ) {
-			autoPadding = makePadding( true, true, true, true );
-			if ( autoPadding != Rectf() )
-				autoPadding = PixelDensity::dpToPx( autoPadding );
-		}
-		if ( mPaddingPx.Top > autoPadding.Top )
-			autoPadding.Top = mPaddingPx.Top;
-		if ( mPaddingPx.Bottom > autoPadding.Bottom )
-			autoPadding.Bottom = mPaddingPx.Bottom;
-		if ( mPaddingPx.Left > autoPadding.Left )
-			autoPadding.Left = mPaddingPx.Left;
-		if ( mPaddingPx.Right > autoPadding.Right )
-			autoPadding.Right = mPaddingPx.Right;
-		autoPadding.Left += mIndent;
-		return autoPadding;
-	}
-
-	void setIndentation( const Float& indent ) {
-		if ( mIndent != indent ) {
-			mIndent = indent;
-			updateLayout();
-		}
-	}
-
-	const Float& getIndentation() const { return mIndent; }
-
-  protected:
-	mutable UIImage* mImage{nullptr};
-	Float mIndent{0};
-
-	UITreeViewCell() : UITableCell( "treeview::cell" ) {
-		mTextBox->setElementTag( mTag + "::text" );
-		mIcon->setElementTag( mTag + "::icon" );
-		mInnerWidgetOrientation = InnerWidgetOrientation::Left;
-		auto cb = [&]( const Event* ) { updateLayout(); };
-		mImage = UIImage::NewWithTag( mTag + "::expander" );
-		mImage->setScaleType( UIScaleType::FitInside )
-			->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed )
-			->setFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER )
-			->setParent( const_cast<UITreeViewCell*>( this ) )
-			->setVisible( false )
-			->setEnabled( false );
-		mImage->addEventListener( Event::OnPaddingChange, cb );
-		mImage->addEventListener( Event::OnMarginChange, cb );
-		mImage->addEventListener( Event::OnSizeChange, cb );
-		mImage->addEventListener( Event::OnVisibleChange, cb );
-	}
-
-	virtual UIWidget* getExtraInnerWidget() const { return mImage; }
-};
-
-UIWidget* UITreeView::createCell( UIWidget* rowWidget, const ModelIndex& index ) {
-	UITableCell* widget = index.column() == (Int64)getModel()->treeColumn() ? UITreeViewCell::New()
-																			: UITableCell::New();
+UIWidget* UITreeView::setupCell( UITableCell* widget, UIWidget* rowWidget,
+								 const ModelIndex& index ) {
 	widget->setParent( rowWidget );
 	widget->unsetFlags( UI_AUTO_SIZE );
 	widget->clipEnable();
@@ -217,6 +150,12 @@ UIWidget* UITreeView::createCell( UIWidget* rowWidget, const ModelIndex& index )
 		} );
 	}
 	return widget;
+}
+
+UIWidget* UITreeView::createCell( UIWidget* rowWidget, const ModelIndex& index ) {
+	UITableCell* widget = index.column() == (Int64)getModel()->treeColumn() ? UITreeViewCell::New()
+																			: UITableCell::New();
+	return setupCell( widget, rowWidget, index );
 }
 
 UIWidget* UITreeView::updateCell( const int& rowIndex, const ModelIndex& index,

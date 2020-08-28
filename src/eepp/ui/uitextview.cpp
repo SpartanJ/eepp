@@ -216,6 +216,13 @@ UITextView* UITextView::setFontColor( const Color& color ) {
 	return this;
 }
 
+UITextView* UITextView::setFontFillColor( const Color& color, Uint32 from, Uint32 to ) {
+	Color newColor( color.r, color.g, color.b, color.a * mAlpha / 255.f );
+	mTextCache->setFillColor( newColor, from, to );
+	invalidateDraw();
+	return this;
+}
+
 const Color& UITextView::getFontShadowColor() const {
 	return mFontStyleConfig.ShadowColor;
 }

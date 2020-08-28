@@ -88,6 +88,8 @@ class EE_API UITextView : public UIWidget {
 
 	void setTextAlign( const Uint32& align );
 
+	UITextView* setFontFillColor( const Color& color, Uint32 from, Uint32 to );
+
   protected:
 	Text* mTextCache;
 	String mString;

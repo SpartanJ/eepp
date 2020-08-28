@@ -101,7 +101,9 @@ class EE_API UICodeEditorSplitter {
 
 	UICodeEditor* getCurEditor() const;
 
-	const std::string& getCurrentColorScheme() const;
+	const SyntaxColorScheme& getCurrentColorScheme() const;
+
+	const std::string& getCurrentColorSchemeName() const;
 
 	void setColorScheme( const std::string& name );
 
