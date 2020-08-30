@@ -208,10 +208,8 @@ void EETest::init() {
 
 		physicsCreate();
 
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
-		launch();
-#endif
-
+		if ( EE->isThreaded() )
+			launch();
 	} else {
 		Engine::destroySingleton();
 
@@ -2161,9 +2159,8 @@ void EETest::update() {
 
 	render();
 
-#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
-	updateParticles();
-#endif
+	if ( !EE->isThreaded() )
+		updateParticles();
 
 	if ( KM->isKeyUp( KEY_F12 ) )
 		mWindow->takeScreenshot( MyPath + "screenshots/" ); // After render and before Display

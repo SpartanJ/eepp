@@ -373,9 +373,7 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 		return false;
 	}
 
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	SDL_GL_SetSwapInterval( ( mWindow.ContextConfig.VSync ? 1 : 0 ) ); // VSync
-#endif
 
 	SDL_GL_MakeCurrent( mSDLWindow, mGLContext );
 

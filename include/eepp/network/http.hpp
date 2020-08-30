@@ -79,6 +79,9 @@ class EE_API Http : NonCopyable {
 		/** @return The status string */
 		static const char* statusToString( const Status& status );
 
+		/** @return True if the value is a valid Status */
+		static Status intAsStatus( const int& value );
+
 		/** Creates a faked response. Useful for testing. */
 		static Response createFakeResponse( const FieldTable& fields, Status& status,
 											const std::string& body, unsigned int majorVersion = 1,

@@ -47,6 +47,10 @@
 #include <sys/time.h>
 #endif
 
+#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+#include <emscripten.h>
+#endif
+
 namespace EE { namespace System {
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
@@ -717,6 +721,8 @@ int Sys::getCPUCount() {
 #elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_SOLARIS || \
 	EE_PLATFORM == EE_PLATFORM_ANDROID
 	nprocs = sysconf( _SC_NPROCESSORS_ONLN );
+#elif EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+	return EM_ASM_INT( { return navigator.hardwareConcurrency; } );
 #elif EE_PLATFORM == EE_PLATFORM_MACOSX || EE_PLATFORM == EE_PLATFORM_BSD || \
 	EE_PLATFORM == EE_PLATFORM_IOS
 	int mib[2];

@@ -1,8 +1,12 @@
 #ifndef UITREEVIEWGLOBALSEARCH_HPP
 #define UITREEVIEWGLOBALSEARCH_HPP
 
-#include <eepp/ee.hpp>
 #include "projectsearch.hpp"
+#include <eepp/ui/doc/syntaxcolorscheme.hpp>
+#include <eepp/ui/uitreeview.hpp>
+
+using namespace EE::UI;
+using namespace EE::UI::Doc;
 
 class UITreeViewCellGlobalSearch : public UITreeViewCell {
   public:

@@ -1,5 +1,5 @@
-#ifndef EE_UI_DOC_SYNTAXSTYLE_HPP
-#define EE_UI_DOC_SYNTAXSTYLE_HPP
+#ifndef EE_UI_DOC_SYNTAXCOLORSCHEME_HPP
+#define EE_UI_DOC_SYNTAXCOLORSCHEME_HPP
 
 #include <eepp/system/color.hpp>
 #include <eepp/system/iostream.hpp>
@@ -81,4 +81,4 @@ class EE_API SyntaxColorScheme {
 
 }}} // namespace EE::UI::Doc
 
-#endif // EE_UI_DOC_SYNTAXSTYLE_HPP
+#endif // EE_UI_DOC_SYNTAXCOLORSCHEME_HPP

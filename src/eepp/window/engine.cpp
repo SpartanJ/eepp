@@ -358,7 +358,7 @@ bool Engine::isSharedGLContextEnabled() {
 }
 
 bool Engine::isThreaded() {
-#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN && !defined(__EMSCRIPTEN_PTHREADS__)
 	return false;
 #else
 	return true;

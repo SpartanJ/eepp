@@ -7,6 +7,7 @@ newoption { trigger = "with-gles1", description = "Compile with GLES1 support" }
 newoption { trigger = "with-mojoal", description = "Compile with mojoAL as OpenAL implementation instead of using openal-soft (requires SDL2 backend)" }
 newoption { trigger = "use-frameworks", description = "In macOS it will try to link the external libraries from its frameworks. For example, instead of linking against SDL2 it will link against SDL2.framework." }
 newoption { trigger = "windows-vc-build", description = "This is used to build the framework in Visual Studio downloading its external dependencies and making them available to the VS project without having to install them manually." }
+newoption { trigger = "with-emscripten-pthreads", description = "Enables emscripten build to use posix threads" }
 newoption {
 	trigger = "with-backend",
 	description = "Select the backend to use for window and input handling.\n\t\t\tIf no backend is selected or if the selected is not installed the script will search for a backend present in the system, and will use it.",
@@ -143,6 +144,12 @@ function build_base_configuration( package_name )
 
 	filter "action:vs*"
 		incdirs { "src/thirdparty/libzip/vs" }
+
+	filter "system:emscripten"
+		buildoptions { "-O3 -s USE_SDL=2 -s PRECISE_F32=1 -s ENVIRONMENT=worker,web" }
+		if _OPTIONS["with-emscripten-pthreads"] then
+			buildoptions { "-s USE_PTHREADS=1" }
+		end
 end
 
 function build_base_cpp_configuration( package_name )
@@ -164,6 +171,12 @@ function build_base_cpp_configuration( package_name )
 	filter "configurations:release*"
 		optimize "Speed"
 		targetname ( package_name )
+
+	filter "system:emscripten"
+		buildoptions { "-O3 -s USE_SDL=2 -s PRECISE_F32=1 -s ENVIRONMENT=worker,web" }
+		if _OPTIONS["with-emscripten-pthreads"] then
+			buildoptions { "-s USE_PTHREADS=1" }
+		end
 end
 
 function build_link_configuration( package_name, use_ee_icon )
@@ -236,8 +249,14 @@ function build_link_configuration( package_name, use_ee_icon )
 
 	filter "system:emscripten"
 		targetname ( package_name .. extension )
-		linkoptions{ "-O2 -s TOTAL_MEMORY=67108864 -s ASM_JS=1 -s VERBOSE=1 -s DISABLE_EXCEPTION_CATCHING=0 -s USE_SDL=2 -s ERROR_ON_UNDEFINED_SYMBOLS=0 -s ERROR_ON_MISSING_LIBRARIES=0 -s FULL_ES3=1 -s \"BINARYEN_TRAP_MODE='clamp'\"" }
-		buildoptions { "-fno-strict-aliasing -O2 -s USE_SDL=2 -s PRECISE_F32=1 -s ENVIRONMENT=web" }
+		linkoptions { "-O3 -s TOTAL_MEMORY=67108864" }
+		linkoptions { "-s USE_SDL=2" }
+		buildoptions { "-O3 -s USE_SDL=2 -s PRECISE_F32=1 -s ENVIRONMENT=worker,web" }
+
+		if _OPTIONS["with-emscripten-pthreads"] then
+			buildoptions { "-s USE_PTHREADS=1" }
+			linkoptions { "-s USE_PTHREADS=1" }
+		end
 
 		if _OPTIONS["with-gles1"] and ( not _OPTIONS["with-gles2"] or _OPTIONS["force-gles1"] ) then
 			linkoptions{ "-s LEGACY_GL_EMULATION=1" }

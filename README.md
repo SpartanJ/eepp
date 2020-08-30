@@ -344,7 +344,7 @@ Since eepp supports emscripten you can take a quick look on some of the examples
 the library currently provides. Please be aware that you'll find some differences based on the limitations
 that emscripten have at the moment (no threads, no access to the file system, no custom cursors, etc).
 Note: please wait some seconds until the resources are loaded, currently there is no loading indicator.
-Also please use a modern browser with WebGL and WASM support.
+Also please use a modern browser with good WebGL and WASM support (Chrome/ium 70+ or Firefox 80+).
 
 * **[ecode - Text Editor](https://web.ensoft.dev/eepp/demo-fs.html?run=ecode.js)**
 

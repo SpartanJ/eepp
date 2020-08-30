@@ -317,6 +317,37 @@ const char* Http::Response::statusToString( const Http::Response::Status& status
 	}
 }
 
+Http::Response::Status Http::Response::intAsStatus( const int& value ) {
+	switch ( value ) {
+		case Ok:
+		case Created:
+		case Accepted:
+		case NoContent:
+		case ResetContent:
+		case PartialContent:
+		case MultipleChoices:
+		case MovedPermanently:
+		case MovedTemporarily:
+		case NotModified:
+		case BadRequest:
+		case Unauthorized:
+		case Forbidden:
+		case NotFound:
+		case RangeNotSatisfiable:
+		case InternalServerError:
+		case NotImplemented:
+		case BadGateway:
+		case ServiceNotAvailable:
+		case GatewayTimeout:
+		case VersionNotSupported:
+		case InvalidResponse:
+		case ConnectionFailed:
+			return (Status)value;
+		default:
+			return InternalServerError;
+	}
+}
+
 Http::Response Http::Response::createFakeResponse( const Http::Response::FieldTable& fields,
 												   Http::Response::Status& status,
 												   const std::string& body,
@@ -1154,21 +1185,29 @@ bool Http::isProxied() const {
 	return !mProxy.empty();
 }
 
+#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 struct WGetAsyncRequest {
 	Http* http;
 	Http::Request request;
 	Http::AsyncResponseCallback cb;
+	IOStream* writeTo{nullptr};
 };
 
-#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 void emscripten_async_wget2_got_data( unsigned, void* vwget, void* buffer, unsigned bufferSize ) {
 	WGetAsyncRequest* wget = reinterpret_cast<WGetAsyncRequest*>( vwget );
-	std::string responseBody;
 	Http::Response::Status status = Http::Response::Status::Ok;
-	responseBody.insert( 0, (const char*)buffer, bufferSize );
-	Http::Response response =
-		Http::Response::createFakeResponse( Http::Response::FieldTable(), status, responseBody );
-	wget->cb( *wget->http, wget->request, response );
+	if ( wget->writeTo ) {
+		wget->writeTo->write( (const char*)buffer, bufferSize );
+		Http::Response response =
+			Http::Response::createFakeResponse( Http::Response::FieldTable(), status, "" );
+		wget->cb( *wget->http, wget->request, response );
+	} else {
+		std::string responseBody;
+		responseBody.insert( 0, (const char*)buffer, bufferSize );
+		Http::Response response = Http::Response::createFakeResponse( Http::Response::FieldTable(),
+																	  status, responseBody );
+		wget->cb( *wget->http, wget->request, response );
+	}
 	delete wget;
 }
 
@@ -1185,7 +1224,7 @@ void emscripten_async_wget2_got_error_data( unsigned, void* vwget, int errorCode
 											const char* errorDescription ) {
 	WGetAsyncRequest* wget = reinterpret_cast<WGetAsyncRequest*>( vwget );
 	std::string responseBody;
-	Http::Response::Status status = Http::Response::Status::InternalServerError;
+	Http::Response::Status status = Http::Response::intAsStatus( errorCode );
 	Http::Response response =
 		Http::Response::createFakeResponse( Http::Response::FieldTable(), status, responseBody );
 	wget->cb( *wget->http, wget->request, response );
@@ -1195,7 +1234,7 @@ void emscripten_async_wget2_got_error_data( unsigned, void* vwget, int errorCode
 void emscripten_async_wget2_got_error_file( unsigned int, void* vwget, int errorCode ) {
 	WGetAsyncRequest* wget = reinterpret_cast<WGetAsyncRequest*>( vwget );
 	std::string responseBody;
-	Http::Response::Status status = Http::Response::Status::InternalServerError;
+	Http::Response::Status status = Http::Response::intAsStatus( errorCode );
 	Http::Response response =
 		Http::Response::createFakeResponse( Http::Response::FieldTable(), status, responseBody );
 	wget->cb( *wget->http, wget->request, response );
@@ -1231,6 +1270,18 @@ void Http::sendAsyncRequest( const Http::AsyncResponseCallback& cb, const Http::
 
 void Http::downloadAsyncRequest( const Http::AsyncResponseCallback& cb,
 								 const Http::Request& request, IOStream& writeTo, Time timeout ) {
+#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+	WGetAsyncRequest* wget = new WGetAsyncRequest();
+	wget->http = this;
+	wget->cb = cb;
+	wget->writeTo = &writeTo;
+	wget->request = Http::Request( request );
+	emscripten_async_wget2_data( ( getURI().toString() + request.getUri() ).c_str(),
+								 Request::methodToString( request.getMethod() ).c_str(),
+								 URI( request.getUri() ).getQuery().c_str(), wget, 1,
+								 emscripten_async_wget2_got_data,
+								 emscripten_async_wget2_got_error_data, NULL );
+#else
 	AsyncRequest* thread = eeNew( AsyncRequest, ( this, cb, request, writeTo, timeout ) );
 
 	thread->launch();
@@ -1241,6 +1292,7 @@ void Http::downloadAsyncRequest( const Http::AsyncResponseCallback& cb,
 	removeOldThreads();
 
 	mThreads.push_back( thread );
+#endif
 }
 
 void Http::downloadAsyncRequest( const Http::AsyncResponseCallback& cb,

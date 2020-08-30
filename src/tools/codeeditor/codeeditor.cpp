@@ -770,7 +770,7 @@ void App::initGlobalSearchBar() {
 			std::string search( mGlobalSearchInput->getText().toUtf8() );
 			ProjectSearch::findHorspool(
 				mDirTree->getFiles(), search,
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined(__EMSCRIPTEN_PTHREADS__)
 				mThreadPool,
 #endif
 				[&, clock, search, loader]( const ProjectSearch::Result& res ) {

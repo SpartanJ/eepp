@@ -7,7 +7,7 @@
 using namespace EE::Graphics;
 using namespace EE::System;
 
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined(__EMSCRIPTEN_PTHREADS__)
 #define AUTO_COMPLETE_THREADED 1
 #else
 #define AUTO_COMPLETE_THREADED 0

@@ -152,6 +152,7 @@ newoption { trigger = "with-gles2", description = "Compile with GLES2 support" }
 newoption { trigger = "with-gles1", description = "Compile with GLES1 support" }
 newoption { trigger = "with-mojoal", description = "Compile with mojoAL as OpenAL implementation instead of using openal-soft (requires SDL2 backend)" }
 newoption { trigger = "use-frameworks", description = "In macOS it will try to link the external libraries from its frameworks. For example, instead of linking against SDL2 it will link agains SDL2.framework." }
+newoption { trigger = "with-emscripten-pthreads", description = "Enables emscripten build to use posix threads" }
 newoption {
 	trigger = "with-backend",
 	description = "Select the backend to use for window and input handling.\n\t\t\tIf no backend is selected or if the selected is not installed the script will search for a backend present in the system, and will use it.",
@@ -184,11 +185,11 @@ function os.get_real()
 		return "android"
 	end
 
-	if 	_OPTIONS.platform == "mingw32" then
+	if _OPTIONS.platform == "mingw32" then
 		return _OPTIONS.platform
 	end
 
-	if 	_OPTIONS.platform == "emscripten" then
+	if _OPTIONS.platform == "emscripten" then
 		return _OPTIONS.platform
 	end
 
@@ -316,6 +317,12 @@ function build_base_configuration( package_name )
 			buildoptions{ "-Wall", "-std=gnu99" }
 		end
 		targetname ( package_name )
+
+	configuration "emscripten"
+		buildoptions { "-O3 -s USE_SDL=2 -s PRECISE_F32=1 -s ENVIRONMENT=worker,web" }
+		if _OPTIONS["with-emscripten-pthreads"] then
+			buildoptions { "-s USE_PTHREADS=1" }
+		end
 end
 
 function build_base_cpp_configuration( package_name )
@@ -341,6 +348,12 @@ function build_base_cpp_configuration( package_name )
 			buildoptions{ "-Wall" }
 		end
 		targetname ( package_name )
+
+	configuration "emscripten"
+		buildoptions { "-O3 -s USE_SDL=2 -s PRECISE_F32=1 -s ENVIRONMENT=worker,web" }
+		if _OPTIONS["with-emscripten-pthreads"] then
+			buildoptions { "-s USE_PTHREADS=1" }
+		end
 end
 
 function add_cross_config_links()
@@ -460,9 +473,14 @@ function build_link_configuration( package_name, use_ee_icon )
 		add_cross_config_links()
 
 	configuration "emscripten"
-		linkoptions { "-O3 -s TOTAL_MEMORY=67108864 -s VERBOSE=1" }
+		linkoptions { "-O3 -s TOTAL_MEMORY=67108864" }
 		linkoptions { "-s USE_SDL=2" }
-		buildoptions { "-O3 -s USE_SDL=2 -s PRECISE_F32=1 -s ENVIRONMENT=web" }
+		buildoptions { "-O3 -s USE_SDL=2 -s PRECISE_F32=1 -s ENVIRONMENT=worker,web" }
+
+		if _OPTIONS["with-emscripten-pthreads"] then
+			buildoptions { "-s USE_PTHREADS=1" }
+			linkoptions { "-s USE_PTHREADS=1" }
+		end
 
 		if _OPTIONS["with-gles1"] and ( not _OPTIONS["with-gles2"] or _OPTIONS["force-gles1"] ) then
 			linkoptions{ "-s LEGACY_GL_EMULATION=1" }

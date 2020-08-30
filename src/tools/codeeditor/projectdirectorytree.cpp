@@ -12,7 +12,7 @@ ProjectDirectoryTree::ProjectDirectoryTree( const std::string& path,
 void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& scanComplete,
 								 const std::vector<std::string>& acceptedPattern,
 								 const bool& ignoreHidden ) {
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined(__EMSCRIPTEN_PTHREADS__)
 	mPool->run(
 		[&, acceptedPattern, ignoreHidden] {
 #endif
@@ -45,11 +45,11 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 				getDirectoryFiles( mFiles, mNames, mPath, info, ignoreHidden, mIgnoreMatcher );
 			}
 			mIsReady = true;
-#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN && !defined(__EMSCRIPTEN_PTHREADS__)
 			if ( scanComplete )
 				scanComplete( *this );
 #endif
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined(__EMSCRIPTEN_PTHREADS__)
 		},
 		[scanComplete, this] {
 			if ( scanComplete )
