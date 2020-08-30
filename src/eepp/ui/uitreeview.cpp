@@ -127,7 +127,7 @@ UIWidget* UITreeView::setupCell( UITableCell* widget, UIWidget* rowWidget,
 					createOrUpdateColumns();
 					onOpenTreeModelIndex( idx, data.open );
 				} else {
-					onOpenModelIndex( idx );
+					onOpenModelIndex( idx, event );
 				}
 			}
 		} );
@@ -586,7 +586,7 @@ Uint32 UITreeView::onKeyDown( const KeyEvent& event ) {
 					metadata.open = !metadata.open;
 					createOrUpdateColumns();
 				} else {
-					onOpenModelIndex( curIndex );
+					onOpenModelIndex( curIndex, &event );
 				}
 			}
 			return 1;

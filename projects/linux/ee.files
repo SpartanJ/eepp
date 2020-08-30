@@ -1025,6 +1025,8 @@
 ../../src/tools/codeeditor/projectsearch.hpp
 ../../src/tools/codeeditor/uicodeeditorsplitter.cpp
 ../../src/tools/codeeditor/uicodeeditorsplitter.hpp
+../../src/tools/codeeditor/uitreeviewglobalsearch.cpp
+../../src/tools/codeeditor/uitreeviewglobalsearch.hpp
 ../../src/tools/mapeditor/mapeditor.cpp
 ../../src/tools/textureatlaseditor/textureatlaseditor.cpp
 ../../src/tools/texturepacker/texturepacker.cpp

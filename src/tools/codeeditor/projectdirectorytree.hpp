@@ -75,7 +75,7 @@ class ProjectDirectoryTree {
 
 	void getDirectoryFiles( std::vector<std::string>& files, std::vector<std::string>& names,
 							std::string directory, std::set<std::string> currentDirs,
-							const bool& ignoreHidden );
+							const bool& ignoreHidden, const IgnoreMatcherManager& ignoreMatcher );
 };
 
 #endif // EE_TOOLS_PROJECTDIRECTORYTREE_HPP

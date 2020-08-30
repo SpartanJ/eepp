@@ -6,6 +6,18 @@
 
 App* appInstance = nullptr;
 
+static bool isRelativePath( const std::string& path ) {
+	if ( !path.empty() ) {
+		if ( path[0] == '/' )
+			return false;
+#if EE_PLATFORM == EE_PLATFORM_WIN
+		if ( path.size() >= 2 && String::isLetter( path[0] ) && path[1] == ':' )
+			return false;
+#endif
+	}
+	return true;
+}
+
 void appLoop() {
 	appInstance->mainLoop();
 }
@@ -33,8 +45,45 @@ void App::saveDoc() {
 		if ( mEditorSplitter->getCurEditor()->save() )
 			updateEditorState();
 	} else {
-		saveFileDialog();
+		saveFileDialog( mEditorSplitter->getCurEditor() );
 	}
+}
+
+void App::saveAllProcess() {
+	if ( mTmpDocs.empty() )
+		return;
+
+	mEditorSplitter->forEachEditorStoppable( [&]( UICodeEditor* editor ) {
+		if ( editor->getDocument().isDirty() &&
+			 std::find( mTmpDocs.begin(), mTmpDocs.end(), &editor->getDocument() ) !=
+				 mTmpDocs.end() ) {
+			if ( editor->getDocument().hasFilepath() ) {
+				editor->save();
+				updateEditorTabTitle( editor );
+				mTmpDocs.erase( &editor->getDocument() );
+			} else {
+				UIFileDialog* dialog = saveFileDialog( editor, false );
+				dialog->addEventListener( Event::SaveFile, [&, editor]( const Event* ) {
+					updateEditorTabTitle( editor );
+				} );
+				dialog->addEventListener( Event::OnWindowClose, [&, editor]( const Event* ) {
+					mTmpDocs.erase( &editor->getDocument() );
+					if ( !SceneManager::instance()->isShootingDown() && !mTmpDocs.empty() )
+						saveAllProcess();
+				} );
+				return true;
+			}
+		}
+		return false;
+	} );
+}
+
+void App::saveAll() {
+	mEditorSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
+		if ( editor->isDirty() )
+			mTmpDocs.insert( &editor->getDocument() );
+	} );
+	saveAllProcess();
 }
 
 std::string App::titleFromEditor( UICodeEditor* editor ) {
@@ -42,12 +91,17 @@ std::string App::titleFromEditor( UICodeEditor* editor ) {
 	return editor->getDocument().isDirty() ? title + "*" : title;
 }
 
-void App::updateEditorTitle( UICodeEditor* editor ) {
+void App::updateEditorTabTitle( UICodeEditor* editor ) {
 	std::string title( titleFromEditor( editor ) );
 	if ( editor->getData() ) {
 		UITab* tab = (UITab*)editor->getData();
 		tab->setText( title );
 	}
+}
+
+void App::updateEditorTitle( UICodeEditor* editor ) {
+	std::string title( titleFromEditor( editor ) );
+	updateEditorTabTitle( editor );
 	setAppTitle( title );
 }
 
@@ -111,8 +165,11 @@ void App::openFolderDialog() {
 }
 
 void App::openFontDialog( std::string& fontPath ) {
+	std::string absoluteFontPath( fontPath );
+	if ( isRelativePath( absoluteFontPath ) )
+		absoluteFontPath = mResPath + fontPath;
 	UIFileDialog* dialog = UIFileDialog::New( UIFileDialog::DefaultFlags, "*.ttf; *.otf; *.wolff",
-											  FileSystem::fileRemoveFileName( fontPath ) );
+											  FileSystem::fileRemoveFileName( absoluteFontPath ) );
 	ModelIndex index =
 		dialog->getList()->findRowWithText( FileSystem::fileNameFromPath( fontPath ), true, true );
 	if ( index.isValid() )
@@ -140,23 +197,24 @@ void App::openFontDialog( std::string& fontPath ) {
 	dialog->show();
 }
 
-void App::saveFileDialog() {
+UIFileDialog* App::saveFileDialog( UICodeEditor* editor, bool focusOnClose ) {
+	if ( !editor )
+		return nullptr;
 	UIFileDialog* dialog =
 		UIFileDialog::New( UIFileDialog::DefaultFlags | UIFileDialog::SaveDialog, "." );
 	dialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 	dialog->setTitle( "Save File As" );
 	dialog->setCloseShortcut( KEY_ESCAPE );
-	std::string filename( mEditorSplitter->getCurEditor()->getDocument().getFilename() );
-	if ( FileSystem::fileExtension( mEditorSplitter->getCurEditor()->getDocument().getFilename() )
-			 .empty() )
-		filename += mEditorSplitter->getCurEditor()->getSyntaxDefinition().getFileExtension();
+	std::string filename( editor->getDocument().getFilename() );
+	if ( FileSystem::fileExtension( editor->getDocument().getFilename() ).empty() )
+		filename += editor->getSyntaxDefinition().getFileExtension();
 	dialog->setFileName( filename );
-	dialog->addEventListener( Event::SaveFile, [&]( const Event* event ) {
-		if ( mEditorSplitter->getCurEditor() ) {
+	dialog->addEventListener( Event::SaveFile, [&, editor]( const Event* event ) {
+		if ( editor ) {
 			std::string path( event->getNode()->asType<UIFileDialog>()->getFullPath() );
 			if ( !path.empty() && !FileSystem::isDirectory( path ) &&
 				 FileSystem::fileCanWrite( FileSystem::fileRemoveFileName( path ) ) ) {
-				if ( mEditorSplitter->getCurEditor()->getDocument().save( path ) ) {
+				if ( editor->getDocument().save( path ) ) {
 					updateEditorState();
 				} else {
 					UIMessageBox* msg =
@@ -172,12 +230,15 @@ void App::saveFileDialog() {
 			}
 		}
 	} );
-	dialog->addEventListener( Event::OnWindowClose, [&]( const Event* ) {
-		if ( mEditorSplitter->getCurEditor() && !SceneManager::instance()->isShootingDown() )
-			mEditorSplitter->getCurEditor()->setFocus();
-	} );
+	if ( focusOnClose ) {
+		dialog->addEventListener( Event::OnWindowClose, [&, editor]( const Event* ) {
+			if ( editor && !SceneManager::instance()->isShootingDown() )
+				editor->setFocus();
+		} );
+	}
 	dialog->center();
 	dialog->show();
+	return dialog;
 }
 
 bool App::findPrevText( SearchState& search ) {
@@ -683,83 +744,6 @@ void App::hideGlobalSearchBar() {
 	mGlobalSearchTree->setVisible( false );
 }
 
-class UITreeViewCellGlobalSearch : public UITreeViewCell {
-  public:
-	static UITreeViewCellGlobalSearch* New() { return eeNew( UITreeViewCellGlobalSearch, () ); }
-
-	UITreeViewCellGlobalSearch() : UITreeViewCell() {}
-
-	UIPushButton* setText( const String& text );
-
-	UIPushButton* updateText( const String& text );
-};
-
-class UITreeViewGlobalSearch : public UITreeView {
-  public:
-	static UITreeViewGlobalSearch* New( const SyntaxColorScheme& colorScheme ) {
-		return eeNew( UITreeViewGlobalSearch, ( colorScheme ) );
-	}
-
-	UITreeViewGlobalSearch( const SyntaxColorScheme& colorScheme ) :
-		UITreeView(), mColorScheme( colorScheme ) {
-		mLineNumColor = Color::fromString(
-			mUISceneNode->getRoot()->getUIStyle()->getVariable( "--font-hint" ).getValue() );
-	}
-
-	UIWidget* createCell( UIWidget* rowWidget, const ModelIndex& index ) {
-		UITableCell* widget = index.column() == (Int64)getModel()->treeColumn()
-								  ? UITreeViewCellGlobalSearch::New()
-								  : UITableCell::New();
-		return setupCell( widget, rowWidget, index );
-	}
-
-	const SyntaxColorScheme& getColorScheme() const { return mColorScheme; }
-
-	const Color& getLineNumColor() const { return mLineNumColor; }
-
-	void updateColorScheme( const SyntaxColorScheme& colorScheme ) { mColorScheme = colorScheme; }
-
-  protected:
-	Color mLineNumColor;
-	SyntaxColorScheme mColorScheme;
-};
-
-UIPushButton* UITreeViewCellGlobalSearch::updateText( const String& text ) {
-	if ( getCurIndex().internalId() != -1 ) {
-		UITreeViewGlobalSearch* pp = getParent()->getParent()->asType<UITreeViewGlobalSearch>();
-
-		ProjectSearch::ResultData* res = (ProjectSearch::ResultData*)getCurIndex().parent().data();
-
-		auto styleDef = SyntaxDefinitionManager::instance()->getStyleByExtension( res->file );
-
-		auto tokens =
-			SyntaxTokenizer::tokenize( styleDef, text, SYNTAX_TOKENIZER_STATE_NONE ).first;
-
-		size_t start = 0;
-		for ( auto& token : tokens ) {
-			mTextBox->setFontFillColor( pp->getColorScheme().getSyntaxStyle( token.type ).color,
-										start, start + token.text.size() );
-			start += token.text.size();
-		}
-
-		Uint32 from = text.find_first_not_of( ' ' );
-		if ( from != String::InvalidPos )
-			mTextBox->setFontFillColor( pp->getLineNumColor(), from,
-										text.find_first_of( ' ', from ) );
-	}
-	return this;
-}
-
-UIPushButton* UITreeViewCellGlobalSearch::setText( const String& text ) {
-	if ( text != mTextBox->getText() ) {
-		mTextBox->setVisible( !text.empty() );
-		mTextBox->setText( text );
-		updateText( text );
-		updateLayout();
-	}
-	return this;
-}
-
 void App::initGlobalSearchBar() {
 	auto addClickListener = [&]( UIWidget* widget, std::string cmd ) {
 		widget->addEventListener( Event::MouseClick, [this, cmd]( const Event* event ) {
@@ -793,8 +777,9 @@ void App::initGlobalSearchBar() {
 					eePRINTL( "Global search for \"%s\" took %.2fms", search.c_str(),
 							  clock->getElapsedTime().asMilliseconds() );
 					eeDelete( clock );
-					mUISceneNode->runOnMainThread( [&, loader, res] {
+					mUISceneNode->runOnMainThread( [&, loader, res, search] {
 						updateGlobalSearchBar();
+						mGlobalSearchTree->setSearchStr( search );
 						mGlobalSearchTree->setModel( ProjectSearch::asModel( res ) );
 						if ( mGlobalSearchTree->getModel()->rowCount() < 50 )
 							mGlobalSearchTree->expandAll();
@@ -1636,8 +1621,7 @@ void App::onCodeEditorFocusChange( UICodeEditor* editor ) {
 void App::onColorSchemeChanged( const std::string& ) {
 	updateColorSchemeMenu();
 
-	mGlobalSearchTree->asType<UITreeViewGlobalSearch>()->updateColorScheme(
-		mEditorSplitter->getCurrentColorScheme() );
+	mGlobalSearchTree->updateColorScheme( mEditorSplitter->getCurrentColorScheme() );
 }
 
 void App::onDocumentLoaded( UICodeEditor* codeEditor, const std::string& path ) {
@@ -1685,6 +1669,7 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 		{{KEY_F, KEYMOD_CTRL | KEYMOD_SHIFT}, "open-global-search"},
 		{{KEY_L, KEYMOD_CTRL}, "go-to-line"},
 		{{KEY_M, KEYMOD_CTRL}, "menu-toggle"},
+		{{KEY_S, KEYMOD_CTRL | KEYMOD_SHIFT}, "save-all"},
 	};
 }
 
@@ -1723,7 +1708,8 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	editor->addKeyBinds( getLocalKeybindings() );
 	editor->addUnlockedCommands( getUnlockedCommands() );
 	doc.setCommand( "save-doc", [&] { saveDoc(); } );
-	doc.setCommand( "save-as-doc", [&] { saveFileDialog(); } );
+	doc.setCommand( "save-as-doc", [&] { saveFileDialog( mEditorSplitter->getCurEditor() ); } );
+	doc.setCommand( "save-all", [&] { saveAll(); } );
 	doc.setCommand( "find-replace", [&] { showFindView(); } );
 	doc.setCommand( "open-global-search", [&] { showGlobalSearch(); } );
 	doc.setCommand( "open-locatebar", [&] { showLocateBar(); } );
@@ -1875,6 +1861,7 @@ void App::createSettingsMenu() {
 	mSettingsMenu->addSeparator();
 	mSettingsMenu->add( "Save", findIcon( "document-save" ), getKeybind( "save-doc" ) );
 	mSettingsMenu->add( "Save as...", findIcon( "document-save-as" ), getKeybind( "save-as-doc" ) );
+	mSettingsMenu->add( "Save All", findIcon( "document-save-as" ), getKeybind( "save-all" ) );
 	mSettingsMenu->addSeparator();
 	mSettingsMenu->addSubMenu( "Filetype", nullptr, createFiletypeMenu() );
 	mSettingsMenu->addSubMenu( "Color Scheme", nullptr, createColorSchemeMenu() );
@@ -1904,6 +1891,8 @@ void App::createSettingsMenu() {
 			runCommand( "save-doc" );
 		} else if ( name == "Save as..." ) {
 			runCommand( "save-as-doc" );
+		} else if ( name == "Save All" ) {
+			runCommand( "save-all" );
 		} else if ( name == "Close" ) {
 			runCommand( "close-doc" );
 		} else if ( name == "Quit" ) {
@@ -2071,16 +2060,6 @@ void App::loadFolder( const std::string& path ) {
 
 	if ( mEditorSplitter->getCurEditor() )
 		mEditorSplitter->getCurEditor()->setFocus();
-}
-
-static bool isRelativePath( const std::string& path ) {
-	if ( !path.empty() ) {
-		if ( path[0] == '/' )
-			return false;
-		if ( path.size() >= 2 && String::isLetter( path[0] ) && path[1] == ':' )
-			return false;
-	}
-	return true;
 }
 
 FontTrueType* App::loadFont( const std::string& name, std::string fontPath,

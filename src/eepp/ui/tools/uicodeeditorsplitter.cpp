@@ -400,6 +400,28 @@ void UICodeEditorSplitter::forEachEditor( std::function<void( UICodeEditor* )> r
 			run( tabWidget->getTab( i )->getOwnedWidget()->asType<UICodeEditor>() );
 }
 
+void UICodeEditorSplitter::forEachEditorStoppable( std::function<bool( UICodeEditor* )> run ) {
+	for ( auto tabWidget : mTabWidgets ) {
+		for ( size_t i = 0; i < tabWidget->getTabCount(); i++ ) {
+			if ( run( tabWidget->getTab( i )->getOwnedWidget()->asType<UICodeEditor>() ) ) {
+				return;
+			}
+		}
+	}
+}
+
+bool UICodeEditorSplitter::isAnyEditorDirty() {
+	bool any = false;
+	forEachEditorStoppable( [&any]( UICodeEditor* editor ) {
+		if ( editor->isDirty() ) {
+			any = true;
+			return true;
+		}
+		return false;
+	} );
+	return any;
+}
+
 void UICodeEditorSplitter::zoomIn() {
 	forEachEditor( []( UICodeEditor* editor ) { editor->fontSizeGrow(); } );
 }

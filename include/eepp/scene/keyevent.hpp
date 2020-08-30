@@ -14,6 +14,8 @@ class EE_API KeyEvent : public Event {
 	KeyEvent( Node* node, const Uint32& eventNum, const Keycode& keyCode, const Uint32& chr,
 			  const Uint32& mod );
 
+	KeyEvent( const KeyEvent& event );
+
 	~KeyEvent();
 
 	const Keycode& getKeyCode() const;
@@ -23,9 +25,9 @@ class EE_API KeyEvent : public Event {
 	const Uint32& getMod() const;
 
   protected:
-	Keycode mKeyCode;
-	String::StringBaseType mChar;
-	Uint32 mMod;
+	Keycode mKeyCode{Keycode::KEY_UNKNOWN};
+	String::StringBaseType mChar{0};
+	Uint32 mMod{0};
 };
 
 class EE_API TextInputEvent : public Event {

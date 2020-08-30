@@ -111,6 +111,10 @@ class EE_API UICodeEditorSplitter {
 
 	bool editorExists( UICodeEditor* editor ) const;
 
+	bool isAnyEditorDirty();
+
+	void forEachEditorStoppable( std::function<bool( UICodeEditor* )> run );
+
   protected:
 	UISceneNode* mUISceneNode{nullptr};
 	UICodeEditor* mCurEditor{nullptr};

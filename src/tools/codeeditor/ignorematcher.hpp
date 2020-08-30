@@ -16,7 +16,9 @@ class IgnoreMatcher {
 
 	virtual bool canMatch() = 0;
 
-	virtual bool match( const std::string& value ) = 0;
+	virtual bool match( const std::string& value ) const = 0;
+
+	const std::string& getPath() const { return mPath; }
 
   protected:
 	std::string mPath;
@@ -30,7 +32,7 @@ class GitIgnoreMatcher : public IgnoreMatcher {
 
 	bool canMatch() override;
 
-	bool match( const std::string& value ) override;
+	bool match( const std::string& value ) const override;
 
   protected:
 	bool parse() override;
@@ -45,7 +47,9 @@ class IgnoreMatcherManager {
 
 	bool foundMatch() const;
 
-	bool match( const std::string& value );
+	bool match( const std::string& value ) const;
+
+	const std::string& getPath() const;
 
   protected:
 	std::unique_ptr<IgnoreMatcher> mMatcher;

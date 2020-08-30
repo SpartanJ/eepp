@@ -177,7 +177,7 @@ bool GitIgnoreMatcher::parse() {
 	return !mPatterns.empty();
 }
 
-bool GitIgnoreMatcher::match( const std::string& value ) {
+bool GitIgnoreMatcher::match( const std::string& value ) const {
 	for ( size_t i = 0; i < mPatterns.size(); i++ ) {
 		if ( gitignore_glob_match( value, mPatterns[i].first ) ) {
 			if ( mHasNegates ) {
@@ -204,7 +204,12 @@ bool IgnoreMatcherManager::foundMatch() const {
 	return mMatcher != nullptr;
 }
 
-bool IgnoreMatcherManager::match( const std::string& value ) {
+bool IgnoreMatcherManager::match( const std::string& value ) const {
 	eeASSERT( foundMatch() );
 	return mMatcher->match( value );
+}
+
+const std::string& IgnoreMatcherManager::getPath() const {
+	eeASSERT( foundMatch() );
+	return mMatcher->getPath();
 }

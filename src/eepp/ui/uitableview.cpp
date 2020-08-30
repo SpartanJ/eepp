@@ -231,7 +231,7 @@ Uint32 UITableView::onKeyDown( const KeyEvent& event ) {
 		case KEY_RETURN:
 		case KEY_KP_ENTER: {
 			if ( curIndex.isValid() )
-				onOpenModelIndex( curIndex );
+				onOpenModelIndex( curIndex, &event );
 			return 1;
 		}
 		default:

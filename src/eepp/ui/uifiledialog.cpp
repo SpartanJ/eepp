@@ -100,8 +100,18 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 		if ( modelEvent->getModelEventType() == ModelEventType::Open ) {
 			Variant vPath(
 				modelEvent->getModel()->data( modelEvent->getModelIndex(), Model::Role::Custom ) );
-			if ( vPath.isValid() && vPath.is( Variant::Type::cstr ) )
-				openFileOrFolder();
+			if ( vPath.isValid() && vPath.is( Variant::Type::cstr ) ) {
+				bool shouldOpenFolder = false;
+				if ( getAllowFolderSelect() && modelEvent->getTriggerEvent() &&
+					 modelEvent->getTriggerEvent()->getType() == Event::EventType::KeyDown ) {
+					const KeyEvent* keyEvent =
+						static_cast<const KeyEvent*>( modelEvent->getTriggerEvent() );
+					if ( keyEvent->getMod() & KEYMOD_CTRL ) {
+						shouldOpenFolder = true;
+					}
+				}
+				openFileOrFolder( shouldOpenFolder );
+			}
 		}
 	} );
 	mList->setOnSelectionChange( [&] {
@@ -110,9 +120,9 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 		auto* node = (FileSystemModel::Node*)mList->getSelection().first().data();
 		if ( !isSaveDialog() ) {
 			if ( getAllowFolderSelect() || !FileSystem::isDirectory( node->fullPath() ) )
-				mFile->setText( node->getName() );
+				setFileName( node->getName() );
 		} else if ( !FileSystem::isDirectory( node->fullPath() ) ) {
-			mFile->setText( node->getName() );
+			setFileName( node->getName() );
 		}
 	} );
 	mList->setAutoExpandOnSingleColumn( true );
@@ -252,7 +262,8 @@ void UIFileDialog::setCurPath( const std::string& path ) {
 	mCurPath = path;
 	FileSystem::dirAddSlashAtEnd( mCurPath );
 	mPath->setText( mCurPath );
-	mFile->setText( "" );
+	if ( !isSaveDialog() )
+		mFile->setText( "" );
 	refreshFolder();
 }
 
@@ -283,7 +294,7 @@ void UIFileDialog::disableButtons() {
 		mButtonMaximize->setEnabled( false );
 }
 
-void UIFileDialog::openFileOrFolder() {
+void UIFileDialog::openFileOrFolder( bool shouldOpenFolder = false ) {
 	if ( mList->getSelection().isEmpty() )
 		return;
 	auto* node = (FileSystemModel::Node*)mList->getSelection().first().data();
@@ -291,7 +302,11 @@ void UIFileDialog::openFileOrFolder() {
 	std::string newPath = mCurPath + node->getName();
 
 	if ( FileSystem::isDirectory( newPath ) ) {
-		setCurPath( newPath );
+		if ( shouldOpenFolder ) {
+			open();
+		} else {
+			setCurPath( newPath );
+		}
 	} else {
 		open();
 	}

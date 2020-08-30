@@ -122,7 +122,7 @@ class EE_API UIFileDialog : public UIWindow {
 
 	void disableButtons();
 
-	void openFileOrFolder();
+	void openFileOrFolder( bool shouldOpenFolder );
 
 	void goFolderUp();
 

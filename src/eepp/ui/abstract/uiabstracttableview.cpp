@@ -335,7 +335,7 @@ UIWidget* UIAbstractTableView::createCell( UIWidget* rowWidget, const ModelIndex
 		auto mouseEvent = static_cast<const MouseEvent*>( event );
 		auto idx = mouseEvent->getNode()->getParent()->asType<UITableRow>()->getCurIndex();
 		if ( mouseEvent->getFlags() & EE_BUTTON_LMASK ) {
-			onOpenModelIndex( idx );
+			onOpenModelIndex( idx, event );
 		}
 	} );
 	return widget;
@@ -422,8 +422,8 @@ void UIAbstractTableView::setSortIconSize( const size_t& sortIconSize ) {
 	mSortIconSize = sortIconSize;
 }
 
-void UIAbstractTableView::onOpenModelIndex( const ModelIndex& index ) {
-	ModelEvent event( getModel(), index, this );
+void UIAbstractTableView::onOpenModelIndex( const ModelIndex& index, const Event* triggerEvent ) {
+	ModelEvent event( getModel(), index, this, ModelEventType::Open, triggerEvent );
 	sendEvent( &event );
 }
 
@@ -470,7 +470,7 @@ Uint32 UIAbstractTableView::onTextInput( const TextInputEvent& event ) {
 	mSearchText += String::toLower( event.getText() );
 	ModelIndex index = findRowWithText( mSearchText );
 	if ( index.isValid() )
-		getSelection().set( index );
+		setSelection( index );
 	return 1;
 }
 

@@ -2,28 +2,29 @@
 #define EE_TOOLS_CODEEDITOR_HPP
 
 #include "projectdirectorytree.hpp"
+#include "uitreeviewglobalsearch.hpp"
 #include <eepp/ee.hpp>
 
-class UISearchBar : public UILinearLayout {
+class WidgetCommandExecuter {
   public:
 	typedef std::function<void()> CommandCallback;
-	static UISearchBar* New() { return eeNew( UISearchBar, () ); }
-	UISearchBar() :
-		UILinearLayout( "searchbar", UIOrientation::Horizontal ),
-		mKeyBindings( getUISceneNode()->getWindow()->getInput() ) {}
 
-  public:
+	WidgetCommandExecuter( const KeyBindings& keybindings ) : mKeyBindings( keybindings ) {}
+
 	void addCommand( const std::string& name, const CommandCallback& cb ) { mCommands[name] = cb; }
+
 	void execute( const std::string& command ) {
 		auto cmdIt = mCommands.find( command );
 		if ( cmdIt != mCommands.end() )
 			cmdIt->second();
 	}
+
 	KeyBindings& getKeyBindings() { return mKeyBindings; }
 
   protected:
 	KeyBindings mKeyBindings;
 	std::unordered_map<std::string, std::function<void()>> mCommands;
+
 	Uint32 onKeyDown( const KeyEvent& event ) {
 		std::string cmd =
 			mKeyBindings.getCommandFromKeyBind( {event.getKeyCode(), event.getMod()} );
@@ -38,71 +39,41 @@ class UISearchBar : public UILinearLayout {
 	}
 };
 
-class UILocateBar : public UILinearLayout {
+class UISearchBar : public UILinearLayout, public WidgetCommandExecuter {
   public:
-	typedef std::function<void()> CommandCallback;
+	static UISearchBar* New() { return eeNew( UISearchBar, () ); }
+
+	UISearchBar() :
+		UILinearLayout( "searchbar", UIOrientation::Horizontal ),
+		WidgetCommandExecuter( getUISceneNode()->getWindow()->getInput() ) {}
+
+	virtual Uint32 onKeyDown( const KeyEvent& event ) {
+		return WidgetCommandExecuter::onKeyDown( event );
+	}
+};
+
+class UILocateBar : public UILinearLayout, public WidgetCommandExecuter {
+  public:
 	static UILocateBar* New() { return eeNew( UILocateBar, () ); }
 	UILocateBar() :
 		UILinearLayout( "locatebar", UIOrientation::Horizontal ),
-		mKeyBindings( getUISceneNode()->getWindow()->getInput() ) {}
+		WidgetCommandExecuter( getUISceneNode()->getWindow()->getInput() ) {}
 
-  public:
-	void addCommand( const std::string& name, const CommandCallback& cb ) { mCommands[name] = cb; }
-	void execute( const std::string& command ) {
-		auto cmdIt = mCommands.find( command );
-		if ( cmdIt != mCommands.end() )
-			cmdIt->second();
-	}
-	KeyBindings& getKeyBindings() { return mKeyBindings; }
-
-  protected:
-	KeyBindings mKeyBindings;
-	std::unordered_map<std::string, std::function<void()>> mCommands;
-	Uint32 onKeyDown( const KeyEvent& event ) {
-		std::string cmd =
-			mKeyBindings.getCommandFromKeyBind( {event.getKeyCode(), event.getMod()} );
-		if ( !cmd.empty() ) {
-			auto cmdIt = mCommands.find( cmd );
-			if ( cmdIt != mCommands.end() ) {
-				cmdIt->second();
-				return 1;
-			}
-		}
-		return 0;
+	virtual Uint32 onKeyDown( const KeyEvent& event ) {
+		return WidgetCommandExecuter::onKeyDown( event );
 	}
 };
 
-class UIGlobalSearchBar : public UILinearLayout {
+class UIGlobalSearchBar : public UILinearLayout, public WidgetCommandExecuter {
   public:
-	typedef std::function<void()> CommandCallback;
 	static UIGlobalSearchBar* New() { return eeNew( UIGlobalSearchBar, () ); }
+
 	UIGlobalSearchBar() :
 		UILinearLayout( "globalsearchbar", UIOrientation::Vertical ),
-		mKeyBindings( getUISceneNode()->getWindow()->getInput() ) {}
+		WidgetCommandExecuter( getUISceneNode()->getWindow()->getInput() ) {}
 
-  public:
-	void addCommand( const std::string& name, const CommandCallback& cb ) { mCommands[name] = cb; }
-	void execute( const std::string& command ) {
-		auto cmdIt = mCommands.find( command );
-		if ( cmdIt != mCommands.end() )
-			cmdIt->second();
-	}
-	KeyBindings& getKeyBindings() { return mKeyBindings; }
-
-  protected:
-	KeyBindings mKeyBindings;
-	std::unordered_map<std::string, std::function<void()>> mCommands;
-	Uint32 onKeyDown( const KeyEvent& event ) {
-		std::string cmd =
-			mKeyBindings.getCommandFromKeyBind( {event.getKeyCode(), event.getMod()} );
-		if ( !cmd.empty() ) {
-			auto cmdIt = mCommands.find( cmd );
-			if ( cmdIt != mCommands.end() ) {
-				cmdIt->second();
-				return 1;
-			}
-		}
-		return 0;
+	virtual Uint32 onKeyDown( const KeyEvent& event ) {
+		return WidgetCommandExecuter::onKeyDown( event );
 	}
 };
 
@@ -182,7 +153,7 @@ class App : public UICodeEditorSplitter::Client {
 
 	void openFontDialog( std::string& fontPath );
 
-	void saveFileDialog();
+	UIFileDialog* saveFileDialog( UICodeEditor* editor, bool focusOnClose = true );
 
 	bool findPrevText( SearchState& search );
 
@@ -213,6 +184,8 @@ class App : public UICodeEditorSplitter::Client {
 	std::string getKeybind( const std::string& command );
 
 	std::vector<std::string> getUnlockedCommands();
+
+	void saveAll();
 
   protected:
 	EE::Window::Window* mWindow{nullptr};
@@ -257,10 +230,13 @@ class App : public UICodeEditorSplitter::Client {
 	UITreeView* mProjectTreeView{nullptr};
 	UITableView* mLocateTable{nullptr};
 	UITextInput* mLocateInput{nullptr};
-	UITreeView* mGlobalSearchTree{nullptr};
+	UITreeViewGlobalSearch* mGlobalSearchTree{nullptr};
 	UITextInput* mGlobalSearchInput;
 	size_t mMenuIconSize;
 	bool mDirTreeReady{false};
+	std::unordered_set<Doc::TextDocument*> mTmpDocs;
+
+	void saveAllProcess();
 
 	void initLocateBar();
 
@@ -275,6 +251,8 @@ class App : public UICodeEditorSplitter::Client {
 	void onTextDropped( String text );
 
 	void updateEditorTitle( UICodeEditor* editor );
+
+	void updateEditorTabTitle( UICodeEditor* editor );
 
 	std::string titleFromEditor( UICodeEditor* editor );
 

@@ -16,11 +16,13 @@ enum class ModelEventType { Open, OpenTree, CloseTree };
 class EE_API ModelEvent : public Event {
   public:
 	ModelEvent( Model* model, const ModelIndex& index, Node* node,
-				const ModelEventType& modelEventType = ModelEventType::Open ) :
-		Event( node, Event::OnModelEvent ),
+				const ModelEventType& modelEventType = ModelEventType::Open,
+				const Event* triggerEvent = nullptr ) :
+		Event( node, EventType::OnModelEvent ),
 		model( model ),
 		index( index ),
-		modelEventType( modelEventType ) {}
+		modelEventType( modelEventType ),
+		triggerEvent( triggerEvent ) {}
 
 	const Model* getModel() const { return model; }
 
@@ -28,10 +30,13 @@ class EE_API ModelEvent : public Event {
 
 	const ModelEventType& getModelEventType() const { return modelEventType; }
 
+	const Event* getTriggerEvent() const { return triggerEvent; }
+
   protected:
 	const Model* model;
 	ModelIndex index;
 	ModelEventType modelEventType;
+	const Event* triggerEvent{nullptr};
 };
 
 class EE_API UIAbstractView : public UIScrollableWidget {

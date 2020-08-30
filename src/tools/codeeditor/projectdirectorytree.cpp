@@ -24,7 +24,7 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 				for ( auto& strPattern : acceptedPattern )
 					patterns.emplace_back( LuaPattern( strPattern ) );
 				std::set<std::string> info;
-				getDirectoryFiles( files, names, mPath, info, ignoreHidden );
+				getDirectoryFiles( files, names, mPath, info, ignoreHidden, mIgnoreMatcher );
 				size_t namesCount = names.size();
 				bool found;
 				for ( size_t i = 0; i < namesCount; i++ ) {
@@ -42,7 +42,7 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 				}
 			} else {
 				std::set<std::string> info;
-				getDirectoryFiles( mFiles, mNames, mPath, info, ignoreHidden );
+				getDirectoryFiles( mFiles, mNames, mPath, info, ignoreHidden, mIgnoreMatcher );
 			}
 			mIsReady = true;
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
@@ -120,15 +120,17 @@ void ProjectDirectoryTree::getDirectoryFiles( std::vector<std::string>& files,
 											  std::vector<std::string>& names,
 											  std::string directory,
 											  std::set<std::string> currentDirs,
-											  const bool& ignoreHidden ) {
+											  const bool& ignoreHidden,
+											  const IgnoreMatcherManager& ignoreMatcher ) {
 	currentDirs.insert( directory );
-	std::string localDirPath( directory.substr( mPath.size() ) );
+	std::string localDirPath( directory.substr(
+		ignoreMatcher.foundMatch() ? ignoreMatcher.getPath().size() : mPath.size() ) );
 	std::vector<std::string> pathFiles =
 		FileSystem::filesGetInPath( directory, false, false, ignoreHidden );
 	for ( auto& file : pathFiles ) {
 		std::string fullpath( directory + file );
 		std::string localpath( localDirPath + file );
-		if ( mIgnoreMatcher.foundMatch() && mIgnoreMatcher.match( localpath ) )
+		if ( ignoreMatcher.foundMatch() && ignoreMatcher.match( localpath ) )
 			continue;
 		if ( FileSystem::isDirectory( fullpath ) ) {
 			fullpath += FileSystem::getOSSlash();
@@ -139,7 +141,9 @@ void ProjectDirectoryTree::getDirectoryFiles( std::vector<std::string>& files,
 				if ( currentDirs.find( fullpath ) == currentDirs.end() )
 					continue;
 			}
-			getDirectoryFiles( files, names, fullpath, currentDirs, ignoreHidden );
+			IgnoreMatcherManager dirMatcher( fullpath );
+			getDirectoryFiles( files, names, fullpath, currentDirs, ignoreHidden,
+							   dirMatcher.foundMatch() ? dirMatcher : ignoreMatcher );
 		} else {
 			files.emplace_back( fullpath );
 			names.emplace_back( file );
