@@ -7,6 +7,7 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/iostreammemory.hpp>
+#include <eepp/system/log.hpp>
 #include <eepp/system/md5.hpp>
 #include <eepp/system/packmanager.hpp>
 #include <iterator>
@@ -282,9 +283,9 @@ void TextureAtlasLoader::createTextureRegions() {
 				}
 			}
 		} else {
-			eePRINTL( "TextureAtlasLoader::createTextureRegions: Failed to find texture atlas "
-					  "texture, it seems that is not loaded for some reason. Couldn't find: %s",
-					  path.c_str() );
+			Log::error( "TextureAtlasLoader::createTextureRegions: Failed to find texture atlas "
+						"texture, it seems that is not loaded for some reason. Couldn't find: %s",
+						path.c_str() );
 
 			eeASSERT( NULL != tTex );
 

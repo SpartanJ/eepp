@@ -4,6 +4,7 @@
 #include <eepp/system/iostream.hpp>
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/iostreammemory.hpp>
+#include <eepp/system/log.hpp>
 #include <eepp/system/pack.hpp>
 #include <eepp/system/packmanager.hpp>
 
@@ -50,7 +51,7 @@ bool FontBMFont::loadFromFile( const std::string& filename ) {
 		Pack* pack = PackManager::instance()->exists( path );
 
 		if ( NULL != pack ) {
-			eePRINTL( "Loading font from pack: %s", path.c_str() );
+			Log::info( "Loading font from pack: %s", path.c_str() );
 
 			return loadFromPack( pack, path );
 		}

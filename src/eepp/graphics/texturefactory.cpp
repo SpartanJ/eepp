@@ -6,6 +6,7 @@
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/graphics/textureloader.hpp>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/log.hpp>
 #include <jpeg-compressor/jpge.h>
 
 namespace EE { namespace Graphics {
@@ -199,7 +200,7 @@ void TextureFactory::unloadTextures() {
 
 	mTextures.clear();
 
-	eePRINTL( "Textures Unloaded." );
+	Log::debug( "Textures Unloaded." );
 }
 
 bool TextureFactory::remove( Uint32 TexId ) {
@@ -268,7 +269,7 @@ void TextureFactory::reloadAllTextures() {
 			Tex->reload();
 	}
 
-	eePRINTL( "Textures Reloaded." );
+	Log::debug( "Textures Reloaded." );
 }
 
 void TextureFactory::grabTextures() {

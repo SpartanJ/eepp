@@ -220,30 +220,30 @@ UIWidget* UISceneNode::loadLayoutNodes( pugi::xml_node node, Node* parent ) {
 				const std::pair<Float, std::string>& right ) { return left.first < right.first; } );
 
 		for ( auto& time : mTimes ) {
-			eePRINTL( "Widget %s created in %.2f ms", time.second.c_str(), time.first );
+			Log::debug( "Widget %s created in %.2f ms", time.second.c_str(), time.first );
 		}
 
 		mTimes.clear();
 
-		eePRINTL( "UISceneNode::loadLayoutNodes loaded nodes%s in: %.2f ms",
-				  id.empty() ? "" : std::string( " (id=" + id + ")" ).c_str(),
-				  innerClock.getElapsed().asMilliseconds() );
+		Log::debug( "UISceneNode::loadLayoutNodes loaded nodes%s in: %.2f ms",
+					id.empty() ? "" : std::string( " (id=" + id + ")" ).c_str(),
+					innerClock.getElapsed().asMilliseconds() );
 	}
 
 	for ( auto& widget : widgets )
 		widget->reloadStyle( true, true, true );
 
 	if ( mVerbose ) {
-		eePRINTL( "UISceneNode::loadLayoutNodes reloaded styles in: %.2f ms",
-				  innerClock.getElapsed().asMilliseconds() );
+		Log::debug( "UISceneNode::loadLayoutNodes reloaded styles in: %.2f ms",
+					innerClock.getElapsed().asMilliseconds() );
 	}
 
 	mIsLoading = false;
 	SceneManager::instance()->setCurrentUISceneNode( prevUISceneNode );
 
 	if ( mVerbose ) {
-		eePRINTL( "UISceneNode::loadLayoutNodes loaded in: %.2f ms",
-				  clock.getElapsedTime().asMilliseconds() );
+		Log::debug( "UISceneNode::loadLayoutNodes loaded in: %.2f ms",
+					clock.getElapsedTime().asMilliseconds() );
 	}
 
 	return widgets.empty() ? NULL : widgets[0];
@@ -310,9 +310,9 @@ UIWidget* UISceneNode::loadLayoutFromFile( const std::string& layoutPath, Node* 
 		if ( result ) {
 			return loadLayoutNodes( doc.first_child(), NULL != parent ? parent : this );
 		} else {
-			eePRINTL( "Error: Couldn't load UI Layout: %s", layoutPath.c_str() );
-			eePRINTL( "Error description: %s", result.description() );
-			eePRINTL( "Error offset: %d", result.offset );
+			Log::error( "Couldn't load UI Layout: %s", layoutPath.c_str() );
+			Log::error( "Error description: %s", result.description() );
+			Log::error( "Error offset: %d", result.offset );
 		}
 	} else if ( PackManager::instance()->isFallbackToPacksActive() ) {
 		std::string path( layoutPath );
@@ -333,9 +333,9 @@ UIWidget* UISceneNode::loadLayoutFromString( const std::string& layoutString, No
 	if ( result ) {
 		return loadLayoutNodes( doc.first_child(), NULL != parent ? parent : this );
 	} else {
-		eePRINTL( "Error: Couldn't load UI Layout from string: %s", layoutString.c_str() );
-		eePRINTL( "Error description: %s", result.description() );
-		eePRINTL( "Error offset: %d", result.offset );
+		Log::error( "Couldn't load UI Layout from string: %s", layoutString.c_str() );
+		Log::error( "Error description: %s", result.description() );
+		Log::error( "Error offset: %d", result.offset );
 	}
 
 	return NULL;
@@ -348,9 +348,9 @@ UIWidget* UISceneNode::loadLayoutFromMemory( const void* buffer, Int32 bufferSiz
 	if ( result ) {
 		return loadLayoutNodes( doc.first_child(), NULL != parent ? parent : this );
 	} else {
-		eePRINTL( "Error: Couldn't load UI Layout from buffer" );
-		eePRINTL( "Error description: %s", result.description() );
-		eePRINTL( "Error offset: %d", result.offset );
+		Log::error( "Couldn't load UI Layout from buffer" );
+		Log::error( "Error description: %s", result.description() );
+		Log::error( "Error offset: %d", result.offset );
 	}
 
 	return NULL;
@@ -370,9 +370,9 @@ UIWidget* UISceneNode::loadLayoutFromStream( IOStream& stream, Node* parent ) {
 	if ( result ) {
 		return loadLayoutNodes( doc.first_child(), NULL != parent ? parent : this );
 	} else {
-		eePRINTL( "Error: Couldn't load UI Layout from stream" );
-		eePRINTL( "Error description: %s", result.description() );
-		eePRINTL( "Error offset: %d", result.offset );
+		Log::error( "Couldn't load UI Layout from stream" );
+		Log::error( "Error description: %s", result.description() );
+		Log::error( "Error offset: %d", result.offset );
 	}
 
 	return NULL;
@@ -650,7 +650,7 @@ void UISceneNode::updateDirtyStyles() {
 		mDirtyStyle.clear();
 
 		if ( mVerbose )
-			eePRINTL( "CSS Styles Reloaded in %.2f ms", clock.getElapsedTime().asMilliseconds() );
+			Log::info( "CSS Styles Reloaded in %.2f ms", clock.getElapsedTime().asMilliseconds() );
 	}
 }
 
@@ -664,7 +664,7 @@ void UISceneNode::updateDirtyStyleStates() {
 		mDirtyStyleStateCSSAnimations.clear();
 
 		if ( mVerbose )
-			eePRINTL( "CSS Style State Invalidated, reapplied state in %.2f ms",
+			Log::debug( "CSS Style State Invalidated, reapplied state in %.2f ms",
 					  clock.getElapsedTime().asMilliseconds() );
 	}
 }

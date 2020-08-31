@@ -8,6 +8,7 @@
 #include <eepp/network/packet.hpp>
 #include <eepp/network/ssl/backend/openssl/curl_hostcheck.h>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/log.hpp>
 #include <eepp/system/packmanager.hpp>
 
 namespace EE { namespace Network { namespace SSL {
@@ -106,8 +107,8 @@ int OpenSSLSocket::certVerifyCb( X509_STORE_CTX* x509_ctx, void* arg ) {
 	bool base_cert_valid = 0 != X509_verify_cert( x509_ctx );
 
 	if ( !base_cert_valid ) {
-		eePRINTL( "Cause: %s",
-				  X509_verify_cert_error_string( X509_STORE_CTX_get_error( x509_ctx ) ) );
+		Log::error( "Cause: %s",
+					X509_verify_cert_error_string( X509_STORE_CTX_get_error( x509_ctx ) ) );
 		ERR_print_errors_fp( stdout );
 	}
 
@@ -116,8 +117,8 @@ int OpenSSLSocket::certVerifyCb( X509_STORE_CTX* x509_ctx, void* arg ) {
 	char cert_str[256];
 	X509_NAME_oneline( X509_get_subject_name( server_cert ), cert_str, sizeof( cert_str ) );
 
-	eePRINTL( "CERT STR: %s", cert_str );
-	eePRINTL( "VALID: %d", (int)base_cert_valid );
+	Log::debug( "CERT STR: %s", cert_str );
+	Log::debug( "VALID: %d", (int)base_cert_valid );
 
 	if ( !base_cert_valid ) {
 		return 0;
@@ -217,8 +218,8 @@ OpenSSLSocket::~OpenSSLSocket() {
 	disconnect();
 }
 
-Socket::Status OpenSSLSocket::connect( const IpAddress& remoteAddress, unsigned short remotePort,
-									   Time timeout ) {
+Socket::Status OpenSSLSocket::connect( const IpAddress& /*remoteAddress*/,
+									   unsigned short /*remotePort*/, Time /*timeout*/ ) {
 	if ( mConnected ) {
 		disconnect();
 	}
@@ -305,7 +306,7 @@ Socket::Status OpenSSLSocket::connect( const IpAddress& remoteAddress, unsigned 
 	X509* peer = SSL_get_peer_certificate( mSSL );
 
 	if ( peer ) {
-		// eePRINTL( "cert_ok: %d", (int)( SSL_get_verify_result(mSSL) == X509_V_OK ) );
+		// Log::debug( "cert_ok: %d", (int)( SSL_get_verify_result(mSSL) == X509_V_OK ) );
 		mStatus = Socket::Done;
 	} else if ( mSSLSocket->mValidateCertificate ) {
 		mStatus = Socket::Error;
@@ -337,28 +338,28 @@ void OpenSSLSocket::printError( int err ) {
 
 	switch ( err ) {
 		case SSL_ERROR_NONE:
-			eePRINTL( "NO ERROR: The TLS/SSL I/O operation completed" );
+			Log::error( "NO ERROR: The TLS/SSL I/O operation completed" );
 			break;
 		case SSL_ERROR_ZERO_RETURN:
-			eePRINTL( "The TLS/SSL connection has been closed." );
+			Log::error( "The TLS/SSL connection has been closed." );
 		case SSL_ERROR_WANT_READ:
 		case SSL_ERROR_WANT_WRITE:
-			eePRINTL( "The operation did not complete." );
+			Log::error( "The operation did not complete." );
 			break;
 		case SSL_ERROR_WANT_CONNECT:
 		case SSL_ERROR_WANT_ACCEPT:
-			eePRINTL( "The connect/accept operation did not complete" );
+			Log::error( "The connect/accept operation did not complete" );
 			break;
 		case SSL_ERROR_WANT_X509_LOOKUP:
-			eePRINTL( "The operation did not complete because an application callback set by "
-					  "SSL_CTX_set_client_cert_cb() has asked to be called again." );
+			Log::error( "The operation did not complete because an application callback set by "
+						"SSL_CTX_set_client_cert_cb() has asked to be called again." );
 			break;
 		case SSL_ERROR_SYSCALL:
-			eePRINTL( "Some I/O error occurred. The OpenSSL error queue may contain more "
-					  "information on the error." );
+			Log::error( "Some I/O error occurred. The OpenSSL error queue may contain more "
+						"information on the error." );
 			break;
 		case SSL_ERROR_SSL:
-			eePRINTL( "A failure in the SSL library occurred, usually a protocol error." );
+			Log::error( "A failure in the SSL library occurred, usually a protocol error." );
 			break;
 	}
 }

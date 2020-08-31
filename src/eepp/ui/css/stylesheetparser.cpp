@@ -6,6 +6,7 @@
 #include <eepp/system/functionstring.hpp>
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/iostreammemory.hpp>
+#include <eepp/system/log.hpp>
 #include <eepp/system/pack.hpp>
 #include <eepp/system/packmanager.hpp>
 #include <eepp/system/virtualfilesystem.hpp>
@@ -27,7 +28,7 @@ bool StyleSheetParser::loadFromStream( IOStream& stream ) {
 	mCSS.resize( stream.getSize() );
 	stream.read( &mCSS[0], stream.getSize() );
 	bool ok = parse( mCSS, importedList );
-	eePRINTL( "StyleSheet loaded in: %4.3f ms.", elapsed.getElapsedTime().asMilliseconds() );
+	Log::info( "StyleSheet loaded in: %4.3f ms.", elapsed.getElapsedTime().asMilliseconds() );
 	mLoaded = ok;
 	return ok;
 }
@@ -257,7 +258,7 @@ std::string StyleSheetParser::importCSS( std::string path,
 			if ( std::find( importedList.begin(), importedList.end(), path ) ==
 				 importedList.end() ) {
 				if ( NULL != pack ) {
-					eePRINTL( "Loading css from pack: %s", path.c_str() );
+					Log::debug( "Loading css from pack: %s", path.c_str() );
 					ScopedBuffer buffer;
 					if ( pack->isOpen() && pack->extractFileToMemory( path, buffer ) ) {
 						importedList.push_back( path );

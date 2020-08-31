@@ -4,6 +4,9 @@
 #include <cstdlib>
 #include <eepp/audio/soundfilewriterogg.hpp>
 #include <eepp/core/debug.hpp>
+#include <eepp/system/log.hpp>
+
+using namespace EE::System;
 
 namespace EE { namespace Audio { namespace Private {
 
@@ -35,8 +38,8 @@ bool SoundFileWriterOgg::open( const std::string& filename, unsigned int sampleR
 	int status = vorbis_encode_init_vbr( &mVorbis, channelCount, sampleRate, 0.4f );
 
 	if ( status < 0 ) {
-		eePRINTL( "Failed to write ogg/vorbis file \"%s\" (unsupported bitrate)",
-				  filename.c_str() );
+		Log::error( "Failed to write ogg/vorbis file \"%s\" (unsupported bitrate)",
+					filename.c_str() );
 		close();
 		return false;
 	}
@@ -47,7 +50,7 @@ bool SoundFileWriterOgg::open( const std::string& filename, unsigned int sampleR
 	mFile.open( filename.c_str(), std::ios::binary );
 
 	if ( !mFile ) {
-		eePRINTL( "Failed to write ogg/vorbis file \"%s\" (cannot open file)", filename.c_str() );
+		Log::error( "Failed to write ogg/vorbis file \"%s\" (cannot open file)", filename.c_str() );
 		close();
 		return false;
 	}
@@ -61,8 +64,8 @@ bool SoundFileWriterOgg::open( const std::string& filename, unsigned int sampleR
 	status = vorbis_analysis_headerout( &mState, &comment, &header, &headerComm, &headerCode );
 	vorbis_comment_clear( &comment );
 	if ( status < 0 ) {
-		eePRINTL( "Failed to write ogg/vorbis file \"%s\" (cannot generate the headers)",
-				  filename.c_str() );
+		Log::error( "Failed to write ogg/vorbis file \"%s\" (cannot generate the headers)",
+					filename.c_str() );
 		close();
 		return false;
 	}

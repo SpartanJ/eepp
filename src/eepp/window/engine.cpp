@@ -91,8 +91,6 @@ Engine::~Engine() {
 
 	VirtualFileSystem::destroySingleton();
 
-	Log::destroySingleton();
-
 #ifdef EE_SSL_SUPPORT
 	Network::SSL::SSLSocket::end();
 #endif
@@ -110,6 +108,8 @@ Engine::~Engine() {
 	eeSAFE_DELETE( mDisplayManager );
 
 	eeSAFE_DELETE( mBackend );
+
+	Log::destroySingleton();
 }
 
 void Engine::destroy() {
@@ -358,7 +358,7 @@ bool Engine::isSharedGLContextEnabled() {
 }
 
 bool Engine::isThreaded() {
-#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN && !defined(__EMSCRIPTEN_PTHREADS__)
+#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN && !defined( __EMSCRIPTEN_PTHREADS__ )
 	return false;
 #else
 	return true;

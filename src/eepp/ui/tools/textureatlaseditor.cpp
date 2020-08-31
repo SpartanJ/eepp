@@ -37,7 +37,7 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow* attachTo, const TGEditorCloseC
 
 	if ( NULL == uiSceneNode || NULL == uiSceneNode->getUIThemeManager() ||
 		 NULL == uiSceneNode->getUIThemeManager()->getDefaultTheme() ) {
-		eePRINTL( "TextureAtlasEditor needs a default theme assigned to work." );
+		Log::error( "TextureAtlasEditor needs a default theme assigned to work." );
 		return;
 	}
 

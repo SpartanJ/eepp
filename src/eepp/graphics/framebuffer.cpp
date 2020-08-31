@@ -18,7 +18,7 @@ FrameBuffer* FrameBuffer::New( const Uint32& Width, const Uint32& Height, bool S
 	if ( FrameBufferFBO::isSupported() )
 		return eeNew( FrameBufferFBO, ( Width, Height, StencilBuffer, DepthBuffer, useColorBuffer,
 										channels, window ) );
-	eePRINTL( "FBO not supported" );
+	Log::warning( "FBO not supported" );
 	return NULL;
 }
 

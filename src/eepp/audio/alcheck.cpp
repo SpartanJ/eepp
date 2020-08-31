@@ -1,6 +1,9 @@
 #include <eepp/audio/alcheck.hpp>
 #include <eepp/core/core.hpp>
+#include <eepp/system/log.hpp>
 #include <string>
+
+using namespace EE::System;
 
 namespace EE { namespace Audio {
 
@@ -44,10 +47,10 @@ void alCheckError( const char* file, unsigned int line, const char* expression )
 		}
 
 		// Log the error
-		eePRINTL( "An internal OpenAL call failed in %s ( %d )\nExpression:\n%s\nError "
-				  "description:\n   %s\n%s\n",
-				  fileString.substr( fileString.find_last_of( "\\/" ) + 1 ).c_str(), line,
-				  expression, error.c_str(), description.c_str() );
+		Log::error( "An internal OpenAL call failed in %s ( %d )\nExpression:\n%s\nError "
+					"description:\n   %s\n%s\n",
+					fileString.substr( fileString.find_last_of( "\\/" ) + 1 ).c_str(), line,
+					expression, error.c_str(), description.c_str() );
 	}
 }
 

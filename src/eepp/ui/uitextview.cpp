@@ -43,7 +43,7 @@ UITextView::UITextView( const std::string& tag ) :
 		if ( NULL != getUISceneNode()->getUIThemeManager()->getDefaultFont() ) {
 			setFont( getUISceneNode()->getUIThemeManager()->getDefaultFont() );
 		} else {
-			eePRINTL( "UITextView::UITextView : Created a without a defined font." );
+			Log::error( "UITextView::UITextView : Created a without a defined font." );
 		}
 	}
 

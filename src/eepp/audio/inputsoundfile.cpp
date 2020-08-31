@@ -5,6 +5,7 @@
 #include <eepp/system/iostream.hpp>
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/iostreammemory.hpp>
+#include <eepp/system/log.hpp>
 
 namespace EE { namespace Audio {
 
@@ -101,7 +102,7 @@ bool InputSoundFile::openFromStream( IOStream& stream ) {
 
 	// Don't forget to reset the stream to its beginning before re-opening it
 	if ( stream.seek( 0 ) != 0 ) {
-		eePRINTL( "Failed to open sound file from stream (cannot restart stream)" );
+		Log::error( "Failed to open sound file from stream (cannot restart stream)" );
 		return false;
 	}
 

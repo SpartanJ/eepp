@@ -35,13 +35,13 @@ StyleSheetProperty::StyleSheetProperty( const PropertyDefinition* definition,
 	checkVars();
 
 	if ( NULL == mShorthandDefinition && NULL == mPropertyDefinition ) {
-		eePRINTL( "Property %s is not defined!", mName.c_str() );
+		Log::warning( "Property %s is not defined!", mName.c_str() );
 	}
 }
 
 StyleSheetProperty::StyleSheetProperty( const bool& isVolatile,
 										const PropertyDefinition* definition,
-										const std::string& value, const Uint32& specificity,
+										const std::string& value, const Uint32& /*specificity*/,
 										const Uint32& index ) :
 	mName( definition->getName() ),
 	mNameHash( definition->getId() ),
@@ -59,7 +59,7 @@ StyleSheetProperty::StyleSheetProperty( const bool& isVolatile,
 	checkVars();
 
 	if ( NULL == mShorthandDefinition && NULL == mPropertyDefinition ) {
-		eePRINTL( "Property %s is not defined!", mName.c_str() );
+		Log::warning( "Property %s is not defined!", mName.c_str() );
 	}
 }
 
@@ -85,7 +85,7 @@ StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::stri
 	checkVars();
 
 	if ( NULL == mShorthandDefinition && NULL == mPropertyDefinition ) {
-		eePRINTL( "Property %s is not defined!", mName.c_str() );
+		Log::warning( "Property %s is not defined!", mName.c_str() );
 	}
 }
 
@@ -111,7 +111,7 @@ StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::stri
 	checkVars();
 
 	if ( NULL == mShorthandDefinition && NULL == mPropertyDefinition ) {
-		eePRINTL( "Property %s is not defined!" );
+		Log::warning( "Property %s is not defined!" );
 	}
 }
 

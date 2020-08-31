@@ -49,7 +49,7 @@ UITextInput::UITextInput( const std::string& tag ) :
 		if ( NULL != getUISceneNode()->getUIThemeManager()->getDefaultFont() ) {
 			mHintCache->setFont( getUISceneNode()->getUIThemeManager()->getDefaultFont() );
 		} else {
-			eePRINTL( "UITextInput::UITextInput : Created a without a defined font." );
+			Log::error( "UITextInput::UITextInput : Created a without a defined font." );
 		}
 	}
 

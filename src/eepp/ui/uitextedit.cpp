@@ -35,7 +35,7 @@ UITextEdit::UITextEdit() : UICodeEditor( "textedit", true, true ), mIsMonoSpace(
 		if ( NULL != getUISceneNode()->getUIThemeManager()->getDefaultFont() ) {
 			setFont( getUISceneNode()->getUIThemeManager()->getDefaultFont() );
 		} else {
-			eePRINTL( "UITextEdit::UITextEdit : Created a without a defined font." );
+			Log::error( "UITextEdit::UITextEdit : Created a without a defined font." );
 		}
 	}
 

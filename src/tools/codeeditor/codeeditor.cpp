@@ -770,12 +770,12 @@ void App::initGlobalSearchBar() {
 			std::string search( mGlobalSearchInput->getText().toUtf8() );
 			ProjectSearch::findHorspool(
 				mDirTree->getFiles(), search,
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined(__EMSCRIPTEN_PTHREADS__)
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 				mThreadPool,
 #endif
 				[&, clock, search, loader]( const ProjectSearch::Result& res ) {
-					eePRINTL( "Global search for \"%s\" took %.2fms", search.c_str(),
-							  clock->getElapsedTime().asMilliseconds() );
+					Log::info( "Global search for \"%s\" took %.2fms", search.c_str(),
+							   clock->getElapsedTime().asMilliseconds() );
 					eeDelete( clock );
 					mUISceneNode->runOnMainThread( [&, loader, res, search] {
 						updateGlobalSearchBar();
@@ -1968,11 +1968,11 @@ void App::updateEditorState() {
 void App::loadDirTree( const std::string& path ) {
 	Clock* clock = eeNew( Clock, () );
 	mDirTree = std::make_unique<ProjectDirectoryTree>( path, mThreadPool );
-	eePRINTL( "Loading DirTree: %s", path.c_str() );
+	Log::info( "Loading DirTree: %s", path.c_str() );
 	mDirTree->scan(
 		[&, clock]( ProjectDirectoryTree& dirTree ) {
-			eePRINTL( "DirTree read in: %.2fms. Found %ld files.",
-					  clock->getElapsedTime().asMilliseconds(), dirTree.getFilesCount() );
+			Log::info( "DirTree read in: %.2fms. Found %ld files.",
+					   clock->getElapsedTime().asMilliseconds(), dirTree.getFilesCount() );
 			eeDelete( clock );
 			mDirTreeReady = true;
 			mUISceneNode->runOnMainThread( [&] { updateLocateTable(); } );
@@ -2327,10 +2327,9 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 
 		mUISceneNode->getUIIconThemeManager()->setCurrentTheme( iconTheme );
 
-		UIWidgetCreator::registerWidget( "searchbar", [] { return UISearchBar::New(); } );
-		UIWidgetCreator::registerWidget( "locatebar", [] { return UILocateBar::New(); } );
-		UIWidgetCreator::registerWidget( "globalsearchbar",
-										 [] { return UIGlobalSearchBar::New(); } );
+		UIWidgetCreator::registerWidget( "searchbar", UISearchBar::New );
+		UIWidgetCreator::registerWidget( "locatebar", UILocateBar::New );
+		UIWidgetCreator::registerWidget( "globalsearchbar", UIGlobalSearchBar::New );
 		mUISceneNode->loadLayoutFromString( baseUI );
 		mUISceneNode->bind( "main_layout", mMainLayout );
 		mUISceneNode->bind( "code_container", mBaseLayout );
@@ -2377,6 +2376,9 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 }
 
 EE_MAIN_FUNC int main( int argc, char* argv[] ) {
+#ifndef EE_DEBUG
+	Log::create( LogLevel::Info, false, true );
+#endif
 	args::ArgumentParser parser( "ecode" );
 	args::HelpFlag help( parser, "help", "Display this help menu", {'h', "help"} );
 	args::Positional<std::string> file( parser, "file", "The file path" );

@@ -41,8 +41,9 @@ Drawable* DrawableImageParser::createDrawable( const std::string& value, const S
 void DrawableImageParser::addParser( const std::string& name,
 									 const DrawableImageParserFunc& func ) {
 	if ( exists( name ) ) {
-		eePRINTL( "DrawableImageParser::addParser: image parser function \"%s\" already exists.",
-				  name.c_str() );
+		Log::warning(
+			"DrawableImageParser::addParser: image parser function \"%s\" already exists.",
+			name.c_str() );
 		return;
 	}
 
@@ -50,7 +51,7 @@ void DrawableImageParser::addParser( const std::string& name,
 }
 
 void DrawableImageParser::registerBaseParsers() {
-	mFuncs["linear-gradient"] = []( const FunctionString& functionType, const Sizef& size,
+	mFuncs["linear-gradient"] = []( const FunctionString& functionType, const Sizef& /*size*/,
 									bool& ownIt, UINode* node ) -> Drawable* {
 		if ( functionType.getParameters().size() < 2 ) {
 			return NULL;
@@ -300,8 +301,9 @@ void DrawableImageParser::registerBaseParsers() {
 		return drawable;
 	};
 
-	mFuncs["url"] = []( const FunctionString& functionType, const Sizef& size, bool& ownIt,
-						UINode* node ) -> Drawable* {
+	mFuncs["url"] = []( const FunctionString& functionType, const Sizef& /*size*/, bool& /*ownIt*/,
+						UINode *
+						/*node*/ ) -> Drawable* {
 		if ( functionType.getParameters().size() < 1 ) {
 			return NULL;
 		}

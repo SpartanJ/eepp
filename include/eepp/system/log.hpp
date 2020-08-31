@@ -16,21 +16,56 @@ class LogReaderInterface {
 	virtual void writeLog( const std::string& Text ) = 0;
 };
 
+enum class LogLevel : int {
+	Debug,	 ///< Detailed debug information.
+	Info,	 ///< Interesting events in your application.
+	Notice,	 ///< Normal, but significant events in your application.
+	Warning, ///< Exceptional occurrences that are not errors.
+	Error,	 ///< Runtime errors that do not require immediate action but should typically be
+		   ///< logged and monitored.
+	Critical, ///< Critical conditions.
+	Assert,	  ///< Asserted critical condition.
+};
+
 /** @brief Global log file. The engine will log everything in this file. */
 class EE_API Log : protected Mutex {
 	SINGLETON_DECLARE_HEADERS( Log )
 
   public:
+
+	static Log* create( const LogLevel& level, bool consoleOutput, bool liveWrite );
+
+	virtual ~Log();
+
 	/** @brief Indicates that the log must be writed to a file when the Log instance is closed.
 	**	@param filepath The path to the file to write the log.
 	*/
 	void save( const std::string& filepath = "" );
 
 	/** @brief Writes the text to the log
-	**	@param Text The text to write
-	**	@param newLine Indicates if a new line character is appended at the end of the text
-	*/
-	void write( std::string Text, const bool& newLine = true );
+	**	@param text The text to write */
+	void write( const std::string& text );
+
+	/** @brief Writes the text to the log with a log level.
+	 ** @param level The log level that will try to write.
+	 ** @param text The text to write */
+	void write( const LogLevel& level, const std::string& text );
+
+	/** @brief Writes the text to the log and appends a new line character at the end.
+	**	@param text The text to write */
+	void writel( const std::string& text );
+
+	/** @brief Writes the text to the log and appends a new line character at the end with a log
+	 *level.
+	 ** @param levelThe log level that will try to write.
+	 ** @param text The text to write */
+	void writel( const LogLevel& level, const std::string& text );
+
+	/** @brief Writes a formated string to the log with a log level.
+	 ** @param level The log level that will try to write.
+	 ** @param format The Text format.
+	 */
+	void writef( const LogLevel& level, const char* format, ... );
 
 	/** @brief Writes a formated string to the log */
 	void writef( const char* format, ... );
@@ -58,16 +93,82 @@ class EE_API Log : protected Mutex {
 	/** @brief Removes the reader interface */
 	void removeLogReader( LogReaderInterface* reader );
 
-	virtual ~Log();
+	/** @return The log level threshold. */
+	const LogLevel& getLogLevelThreshold() const;
+
+	/** Sets the log level threshold. This is the minimum level that message will actually be
+	 * logged. */
+	void setLogLevelThreshold( const LogLevel& logLevelThreshold );
+
+	static void debug( const std::string& text ) {
+		Log::instance()->writel( LogLevel::Debug, text );
+	}
+
+	static void info( const std::string& text ) { Log::instance()->writel( LogLevel::Info, text ); }
+
+	static void notice( const std::string& text ) {
+		Log::instance()->writel( LogLevel::Notice, text );
+	}
+
+	static void warning( const std::string& text ) {
+		Log::instance()->writel( LogLevel::Warning, text );
+	}
+
+	static void error( const std::string& text ) {
+		Log::instance()->writel( LogLevel::Error, text );
+	}
+
+	static void critical( const std::string& text ) {
+		Log::instance()->writel( LogLevel::Critical, text );
+	}
+
+	static void assertLog( const std::string& text ) {
+		Log::instance()->writel( LogLevel::Assert, text );
+	}
+
+	template <class... Args> static void debug( const char* format, Args&&... args ) {
+		Log::instance()->writef( LogLevel::Debug, format, std::forward<Args>( args )... );
+	}
+
+	template <class... Args> static void info( const char* format, Args&&... args ) {
+		Log::instance()->writef( LogLevel::Info, format, std::forward<Args>( args )... );
+	}
+
+	template <class... Args> static void notice( const char* format, Args&&... args ) {
+		Log::instance()->writef( LogLevel::Notice, format, std::forward<Args>( args )... );
+	}
+
+	template <class... Args> static void warning( const char* format, Args&&... args ) {
+		Log::instance()->writef( LogLevel::Warning, format, std::forward<Args>( args )... );
+	}
+
+	template <class... Args> static void error( const char* format, Args&&... args ) {
+		Log::instance()->writef( LogLevel::Error, format, std::forward<Args>( args )... );
+	}
+
+	template <class... Args> static void critical( const char* format, Args&&... args ) {
+		Log::instance()->writef( LogLevel::Critical, format, std::forward<Args>( args )... );
+	}
+
+	template <class... Args> static void assertLog( const char* format, Args&&... args ) {
+		Log::instance()->writef( LogLevel::Assert, format, std::forward<Args>( args )... );
+	}
 
   protected:
 	Log();
+
+	Log( const LogLevel& level, bool consoleOutput, bool liveWrite );
 
 	std::string mData;
 	std::string mFilePath;
 	bool mSave;
 	bool mConsoleOutput;
 	bool mLiveWrite;
+#ifdef EE_DEBUG
+	LogLevel mLogLevelThreshold{LogLevel::Debug};
+#else
+	LogLevel mLogLevelThreshold{LogLevel::Notice};
+#endif
 	IOStreamFile* mFS;
 	std::list<LogReaderInterface*> mReaders;
 
@@ -75,7 +176,7 @@ class EE_API Log : protected Mutex {
 
 	void closeFS();
 
-	void writeToReaders( std::string& text );
+	void writeToReaders( const std::string& text );
 };
 
 }} // namespace EE::System

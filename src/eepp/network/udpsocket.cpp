@@ -3,6 +3,7 @@
 #include <eepp/network/packet.hpp>
 #include <eepp/network/platform/platformimpl.hpp>
 #include <eepp/network/udpsocket.hpp>
+#include <eepp/system/log.hpp>
 
 namespace EE { namespace Network {
 
@@ -40,7 +41,7 @@ Socket::Status UdpSocket::bind( unsigned short port, const IpAddress& address ) 
 	// Bind the socket
 	sockaddr_in addr = Private::SocketImpl::createAddress( address.toInteger(), port );
 	if ( ::bind( getHandle(), reinterpret_cast<sockaddr*>( &addr ), sizeof( addr ) ) == -1 ) {
-		eePRINTL( "Failed to bind socket to port %d", port );
+		Log::error( "Failed to bind socket to port %d", port );
 		return Error;
 	}
 
@@ -59,8 +60,9 @@ Socket::Status UdpSocket::send( const void* data, std::size_t size, const IpAddr
 
 	// Make sure that all the data will fit in one datagram
 	if ( size > MaxDatagramSize ) {
-		eePRINTL( "Cannot send data over the network (the number of bytes to send is greater than "
-				  "UdpSocket::MaxDatagramSize)" );
+		Log::error(
+			"Cannot send data over the network (the number of bytes to send is greater than "
+			"UdpSocket::MaxDatagramSize)" );
 		return Error;
 	}
 
@@ -88,7 +90,7 @@ Socket::Status UdpSocket::receive( void* data, std::size_t size, std::size_t& re
 
 	// Check the destination buffer
 	if ( !data ) {
-		eePRINTL( "Cannot receive data from the network (the destination buffer is invalid)" );
+		Log::error( "Cannot receive data from the network (the destination buffer is invalid)" );
 		return Error;
 	}
 

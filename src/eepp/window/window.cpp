@@ -453,15 +453,15 @@ void Window::logSuccessfulInit( const std::string& BackendName ) {
 		"x" + String::toString( getHeight() ) );
 
 #ifndef EE_SILENT
-	eePRINTL( msg.c_str() );
+	Log::info( msg );
 #else
-	Log::instance()->write( msg );
+	Log::instance()->writel( msg );
 #endif
 }
 
 void Window::logFailureInit( const std::string& ClassName, const std::string& BackendName ) {
-	eePRINTL( "Error on %s::Init. Backend %s failed to start.", ClassName.c_str(),
-			  BackendName.c_str() );
+	Log::error( "Error on %s::Init. Backend %s failed to start.", ClassName.c_str(),
+				BackendName.c_str() );
 }
 
 void Window::onCloseRequest() {

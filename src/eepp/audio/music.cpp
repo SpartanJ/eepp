@@ -3,6 +3,7 @@
 #include <eepp/core/debug.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/lock.hpp>
+#include <eepp/system/log.hpp>
 #include <eepp/system/pack.hpp>
 #include <eepp/system/packmanager.hpp>
 #include <fstream>
@@ -97,7 +98,7 @@ void Music::setLoopPoints( TimeSpan timePoints ) {
 
 	// Check our state. This averts a divide-by-zero. GetChannelCount() is cheap enough to use often
 	if ( getChannelCount() == 0 || mFile.getSampleCount() == 0 ) {
-		eePRINTL( "Music is not in a valid state to assign Loop Points." );
+		Log::error( "Music is not in a valid state to assign Loop Points." );
 		return;
 	}
 
@@ -109,12 +110,12 @@ void Music::setLoopPoints( TimeSpan timePoints ) {
 
 	// Validate
 	if ( samplePoints.offset >= mFile.getSampleCount() ) {
-		eePRINTL( "LoopPoints offset val must be in range [0, Duration)." );
+		Log::error( "LoopPoints offset val must be in range [0, Duration)." );
 		return;
 	}
 
 	if ( samplePoints.length == 0 ) {
-		eePRINTL( "LoopPoints length val must be nonzero." );
+		Log::error( "LoopPoints length val must be nonzero." );
 		return;
 	}
 

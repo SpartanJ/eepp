@@ -65,7 +65,7 @@ MapEditor::MapEditor( UIWindow* AttatchTo, const MapEditorCloseCb& callback ) :
 	mTheme = SceneManager::instance()->getUISceneNode()->getUIThemeManager()->getDefaultTheme();
 
 	if ( NULL == mTheme ) {
-		eePRINTL( "MapEditor needs a default theme seted to work." );
+		Log::error( "MapEditor needs a default theme seted to work." );
 		return;
 	}
 

@@ -7,7 +7,7 @@
 using namespace EE::Graphics;
 using namespace EE::System;
 
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined(__EMSCRIPTEN_PTHREADS__)
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 #define AUTO_COMPLETE_THREADED 1
 #else
 #define AUTO_COMPLETE_THREADED 0
@@ -204,8 +204,8 @@ void AutoCompleteModule::updateDocCache( TextDocument* doc ) {
 				lang.insert( d.second.symbols.begin(), d.second.symbols.end() );
 		}
 	}
-	eePRINTL( "Dictionary for %s updated in: %.2fms", doc->getFilename().c_str(),
-			  clock.getElapsedTime().asMilliseconds() );
+	Log::debug( "Dictionary for %s updated in: %.2fms", doc->getFilename().c_str(),
+				clock.getElapsedTime().asMilliseconds() );
 }
 
 void AutoCompleteModule::updateLangCache( const std::string& langName ) {
@@ -218,8 +218,8 @@ void AutoCompleteModule::updateLangCache( const std::string& langName ) {
 		if ( d.first->getSyntaxDefinition().getLanguageName() == langName )
 			lang.insert( d.second.symbols.begin(), d.second.symbols.end() );
 	}
-	eePRINTL( "Lang dictionary for %s updated in: %.2fms", langName.c_str(),
-			  clock.getElapsedTime().asMilliseconds() );
+	Log::debug( "Lang dictionary for %s updated in: %.2fms", langName.c_str(),
+				clock.getElapsedTime().asMilliseconds() );
 }
 
 void AutoCompleteModule::pickSuggestion( UICodeEditor* editor ) {

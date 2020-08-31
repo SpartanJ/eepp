@@ -4,6 +4,7 @@
 #include <ctime>
 #include <ctype.h>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/log.hpp>
 #include <eepp/system/sys.hpp>
 
 // This taints the System module!
@@ -758,7 +759,7 @@ int WIN_SetError( std::string prefix = "" ) {
 	TCHAR buffer[1024];
 	FormatMessage( FORMAT_MESSAGE_FROM_SYSTEM, NULL, GetLastError(), 0, buffer,
 				   eeARRAY_SIZE( buffer ), NULL );
-	eePRINTL( "%s%s%s", prefix.c_str(), !prefix.empty() ? ": " : "", buffer );
+	Log::warning( "%s%s%s", prefix.c_str(), !prefix.empty() ? ": " : "", buffer );
 	return -1;
 }
 #endif
@@ -770,7 +771,7 @@ void* Sys::loadObject( const std::string& sofile ) {
 	const char* loaderror = (char*)dlerror();
 
 	if ( handle == NULL ) {
-		eePRINTL( "Failed loading %s: %s", sofile.c_str(), loaderror );
+		Log::warning( "Failed loading %s: %s", sofile.c_str(), loaderror );
 	}
 
 	return ( handle );
@@ -816,7 +817,7 @@ void* Sys::loadFunction( void* handle, const std::string& name ) {
 		symbol = dlsym( handle, _name.c_str() );
 
 		if ( symbol == NULL ) {
-			eePRINTL( "Failed loading %s: %s", name.c_str(), (const char*)dlerror() );
+			Log::warning( "Failed loading %s: %s", name.c_str(), (const char*)dlerror() );
 		}
 	}
 

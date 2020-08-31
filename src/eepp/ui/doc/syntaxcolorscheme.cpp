@@ -5,6 +5,7 @@
 #include <eepp/system/inifile.hpp>
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/iostreammemory.hpp>
+#include <eepp/system/log.hpp>
 #include <eepp/system/packmanager.hpp>
 #include <eepp/ui/doc/syntaxcolorscheme.hpp>
 
@@ -110,7 +111,7 @@ std::vector<SyntaxColorScheme> SyntaxColorScheme::loadFromStream( IOStream& stre
 		}
 		colorSchemes.emplace_back( colorScheme );
 	}
-	eePRINTL( "Color Schemes loaded in %.2fms.", clock.getElapsedTime().asMilliseconds() );
+	Log::info( "Color Schemes loaded in %.2fms.", clock.getElapsedTime().asMilliseconds() );
 	return colorSchemes;
 }
 

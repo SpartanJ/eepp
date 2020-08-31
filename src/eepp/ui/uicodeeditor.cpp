@@ -139,8 +139,9 @@ UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegis
 	} );
 
 	if ( NULL == mFont && elementTag == "codeeditor" )
-		eePRINTL( "A monospace font must be loaded to be able to use the code editor.\nTry loading "
-				  "a font with the name \"monospace\"" );
+		Log::error(
+			"A monospace font must be loaded to be able to use the code editor.\nTry loading "
+			"a font with the name \"monospace\"" );
 
 	mFontStyleConfig.Font = mFont;
 

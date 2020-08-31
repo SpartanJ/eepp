@@ -1,5 +1,6 @@
 #include <eepp/graphics/image.hpp>
 #include <eepp/graphics/texture.hpp>
+#include <eepp/system/log.hpp>
 #include <eepp/window/cursor.hpp>
 
 namespace EE { namespace Window {
@@ -17,7 +18,7 @@ Cursor::Cursor( Texture* tex, const Vector2i& hotspot, const std::string& name,
 
 		tex->unlock();
 	} else {
-		eePRINTL( "Cursor::Cursor: Error creating cursor from Texture." );
+		Log::error( "Cursor::Cursor: Error creating cursor from Texture." );
 	}
 }
 
@@ -32,7 +33,7 @@ Cursor::Cursor( Graphics::Image* img, const Vector2i& hotspot, const std::string
 		mImage = Graphics::Image::New( img->getPixelsPtr(), img->getWidth(), img->getHeight(),
 									   img->getChannels() );
 	} else {
-		eePRINTL( "Cursor::Cursor: Error creating cursor from Image." );
+		Log::error( "Cursor::Cursor: Error creating cursor from Image." );
 	}
 }
 
@@ -46,7 +47,7 @@ Cursor::Cursor( const std::string& path, const Vector2i& hotspot, const std::str
 	mImage = Graphics::Image::New( path );
 
 	if ( NULL == mImage->getPixels() ) {
-		eePRINTL( "Cursor::Cursor: Error creating cursor from path." );
+		Log::error( "Cursor::Cursor: Error creating cursor from path." );
 	}
 }
 

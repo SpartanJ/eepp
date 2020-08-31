@@ -47,7 +47,7 @@ Shader::Shader( const Uint32& Type, const std::string& Filename ) {
 
 			setSource( reinterpret_cast<char*>( buffer.get() ), buffer.length() );
 		} else {
-			eePRINTL( "Couldn't open shader object: %s", Filename.c_str() );
+			Log::error( "Couldn't open shader object: %s", Filename.c_str() );
 		}
 	}
 
@@ -129,8 +129,8 @@ void Shader::ensureVersion() {
 #ifdef EE_GL3_ENABLED
 	if ( Shader::ensure() &&
 		 ( GLi->version() == GLv_3 || GLi->version() == GLv_3CP || GLi->version() == GLv_ES2 ) ) {
-		eePRINTL( "Shader %s converted to programmable pipeline automatically.",
-				  getName().c_str() );
+		Log::info( "Shader %s converted to programmable pipeline automatically.",
+				   getName().c_str() );
 
 		if ( GL_VERTEX_SHADER == mType ) {
 			if ( mSource.find( "ftransform" ) != std::string::npos ||
@@ -190,7 +190,7 @@ void Shader::ensureVersion() {
 
 void Shader::setSource( const std::string& Source ) {
 	if ( isCompiled() ) {
-		eePRINTL( "Shader %s report: can't set source for compiled shaders", getName().c_str() );
+		Log::error( "Shader %s report: can't set source for compiled shaders", getName().c_str() );
 		return;
 	}
 
@@ -235,7 +235,7 @@ void Shader::setSource( const std::vector<Uint8>& Source ) {
 
 bool Shader::compile() {
 	if ( isCompiled() ) {
-		eePRINTL( "Shader %s report: can't compile a shader twice", getName().c_str() );
+		Log::warning( "Shader %s report: can't compile a shader twice", getName().c_str() );
 		return false;
 	}
 
@@ -259,11 +259,11 @@ bool Shader::compile() {
 								reinterpret_cast<GLchar*>( &mCompileLog[0] ) );
 		}
 
-		eePRINTL( "Couldn't compile shader %s. Log follows:\n", getName().c_str() );
-		eePRINTL( mCompileLog.c_str() );
-		eePRINTL( mSource.c_str() );
+		Log::error( "Couldn't compile shader %s. Log follows:\n", getName().c_str() );
+		Log::error( mCompileLog.c_str() );
+		Log::error( mSource.c_str() );
 	} else {
-		eePRINTL( "Shader %s compiled succesfully", getName().c_str() );
+		Log::info( "Shader %s compiled succesfully", getName().c_str() );
 	}
 
 #endif

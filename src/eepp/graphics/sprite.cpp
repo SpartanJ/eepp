@@ -385,8 +385,8 @@ bool Sprite::addFramesByPatternId( const Uint32& TextureRegionId, const std::str
 		return true;
 	}
 
-	eePRINTL( "Sprite::AddFramesByPatternId: Couldn't find any pattern with Id: %d",
-			  TextureRegionId );
+	Log::warning( "Sprite::AddFramesByPatternId: Couldn't find any pattern with Id: %d",
+				  TextureRegionId );
 
 	return false;
 }
@@ -403,7 +403,7 @@ bool Sprite::addFramesByPattern( const std::string& name, const std::string& ext
 		return true;
 	}
 
-	eePRINTL( "Sprite::AddFramesByPattern: Couldn't find any pattern with: %s", name.c_str() );
+	Log::warning( "Sprite::AddFramesByPattern: Couldn't find any pattern with: %s", name.c_str() );
 
 	return false;
 }

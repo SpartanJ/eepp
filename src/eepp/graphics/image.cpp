@@ -454,7 +454,7 @@ Image::Image( std::string Path, const unsigned int& forceChannels,
 				NULL != ( tPack = PackManager::instance()->exists( Path ) ) ) {
 		loadFromPack( tPack, Path );
 	} else {
-		eePRINTL( "Failed to load image %s. Reason: %s", Path.c_str(), stbi_failure_reason() );
+		Log::error( "Failed to load image %s. Reason: %s", Path.c_str(), stbi_failure_reason() );
 	}
 }
 
@@ -494,7 +494,7 @@ Image::Image( const Uint8* imageData, const unsigned int& imageDataSize,
 			reason = ", reason: " + std::string( stbi_failure_reason() );
 		}
 
-		eePRINTL( "Failed to load image from memory. Reason: %s", reason.c_str() );
+		Log::error( "Failed to load image from memory. Reason: %s", reason.c_str() );
 	}
 }
 
@@ -551,10 +551,10 @@ Image::Image( IOStream& stream, const unsigned int& forceChannels,
 
 			svgLoad( nsvgParse( (char*)data.get(), "px", 96.0f ) );
 		} else {
-			eePRINTL( "Failed to load image. Reason: %s", stbi_failure_reason() );
+			Log::error( "Failed to load image. Reason: %s", stbi_failure_reason() );
 		}
 	} else {
-		eePRINTL( "Failed to load image from stream." );
+		Log::error( "Failed to load image from stream." );
 	}
 }
 
@@ -620,11 +620,11 @@ void Image::loadFromPack( Pack* Pack, const std::string& FilePackPath ) {
 			data[buffer.length()] = '\0';
 			svgLoad( nsvgParse( (char*)data.get(), "px", 96.0f ) );
 		} else {
-			eePRINTL( "Failed to load image %s. Reason: %s", FilePackPath.c_str(),
-					  stbi_failure_reason() );
+			Log::error( "Failed to load image %s. Reason: %s", FilePackPath.c_str(),
+						stbi_failure_reason() );
 		}
 	} else {
-		eePRINTL( "Failed to load image %s from pack.", FilePackPath.c_str() );
+		Log::error( "Failed to load image %s from pack.", FilePackPath.c_str() );
 	}
 }
 

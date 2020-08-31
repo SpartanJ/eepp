@@ -1,6 +1,7 @@
 #include <eepp/graphics/blendmode.hpp>
 #include <eepp/graphics/renderer/openglext.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
+#include <eepp/system/log.hpp>
 
 namespace EE { namespace Graphics {
 
@@ -28,7 +29,7 @@ Uint32 factorToGlConstant( BlendMode::Factor blendFactor ) {
 			return GL_ONE_MINUS_DST_ALPHA;
 	}
 
-	eePRINTL( "Invalid value for BlendMode::Factor! Fallback to BlendMode::Zero." );
+	Log::warning( "Invalid value for BlendMode::Factor! Fallback to BlendMode::Zero." );
 
 	return GL_ZERO;
 }
@@ -43,7 +44,7 @@ Uint32 equationToGlConstant( BlendMode::Equation blendEquation ) {
 			return GL_FUNC_REVERSE_SUBTRACT;
 	}
 
-	eePRINTL( "Invalid value for BlendMode::Equation! Fallback to BlendMode::Add." );
+	Log::warning( "Invalid value for BlendMode::Equation! Fallback to BlendMode::Add." );
 
 	return GL_FUNC_ADD;
 }

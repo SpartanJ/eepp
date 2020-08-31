@@ -3,6 +3,7 @@
 #include <cstdarg>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostream.hpp>
+#include <eepp/system/log.hpp>
 #include <eepp/system/pack.hpp>
 #include <eepp/system/packmanager.hpp>
 #include <eepp/system/translator.hpp>
@@ -41,8 +42,8 @@ void Translator::loadNodes( pugi::xml_node node, std::string lang ) {
 			lang = lang.size() == 2 ? lang : resources.attribute( "language" ).as_string();
 
 			if ( lang.empty() || lang.size() != 2 ) {
-				eePRINTL( "Error: Couldn't load i18n language strings: language not specified in "
-						  "file name or resources attribute \"language\"." );
+				Log::error( "Error: Couldn't load i18n language strings: language not specified in "
+							"file name or resources attribute \"language\"." );
 				return;
 			}
 
@@ -72,9 +73,9 @@ void Translator::loadFromFile( const std::string& path, std::string lang ) {
 		if ( result ) {
 			loadNodes( doc.first_child(), lang );
 		} else {
-			eePRINTL( "Error: Couldn't load i18n file: %s", path.c_str() );
-			eePRINTL( "Error description: %s", result.description() );
-			eePRINTL( "Error offset: %d", result.offset );
+			Log::error( "Couldn't load i18n file: %s", path.c_str() );
+			Log::error( "Error description: %s", result.description() );
+			Log::error( "Error offset: %d", result.offset );
 		}
 	} else if ( PackManager::instance()->isFallbackToPacksActive() ) {
 		std::string packPath( path );
@@ -92,9 +93,9 @@ void Translator::loadFromString( const std::string& string, std::string lang ) {
 	if ( result ) {
 		loadNodes( doc.first_child(), lang );
 	} else {
-		eePRINTL( "Error: Couldn't load i18n file from string: %s", string.c_str() );
-		eePRINTL( "Error description: %s", result.description() );
-		eePRINTL( "Error offset: %d", result.offset );
+		Log::error( "Couldn't load i18n file from string: %s", string.c_str() );
+		Log::error( "Error description: %s", result.description() );
+		Log::error( "Error offset: %d", result.offset );
 	}
 }
 
@@ -105,9 +106,9 @@ void Translator::loadFromMemory( const void* buffer, Int32 bufferSize, std::stri
 	if ( result ) {
 		loadNodes( doc.first_child(), lang );
 	} else {
-		eePRINTL( "Error: Couldn't load i18n file from buffer" );
-		eePRINTL( "Error description: %s", result.description() );
-		eePRINTL( "Error offset: %d", result.offset );
+		Log::error( "Couldn't load i18n file from buffer" );
+		Log::error( "Error description: %s", result.description() );
+		Log::error( "Error offset: %d", result.offset );
 	}
 }
 
@@ -125,9 +126,9 @@ void Translator::loadFromStream( IOStream& stream, std::string lang ) {
 	if ( result ) {
 		loadNodes( doc.first_child(), lang );
 	} else {
-		eePRINTL( "Error: Couldn't load i18n file from stream" );
-		eePRINTL( "Error description: %s", result.description() );
-		eePRINTL( "Error offset: %d", result.offset );
+		Log::error( "Couldn't load i18n file from stream" );
+		Log::error( "Error description: %s", result.description() );
+		Log::error( "Error offset: %d", result.offset );
 	}
 }
 

@@ -3,6 +3,7 @@
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/shaderprogram.hpp>
 #include <eepp/graphics/shaderprogrammanager.hpp>
+#include <eepp/system/log.hpp>
 
 namespace EE { namespace Graphics {
 
@@ -181,7 +182,7 @@ void ShaderProgram::init() {
 		mUniformLocations.clear();
 		mAttributeLocations.clear();
 	} else {
-		eePRINTL( "ShaderProgram::init() %s: Couldn't create program.", mName.c_str() );
+		Log::error( "ShaderProgram::init() %s: Couldn't create program.", mName.c_str() );
 	}
 }
 
@@ -208,7 +209,7 @@ void ShaderProgram::reload() {
 
 void ShaderProgram::addShader( Shader* Shader ) {
 	if ( !Shader->isValid() ) {
-		eePRINTL( "ShaderProgram::addShader() %s: Cannot add invalid shader", mName.c_str() );
+		Log::error( "ShaderProgram::addShader() %s: Cannot add invalid shader", mName.c_str() );
 		return;
 	}
 
@@ -248,12 +249,12 @@ bool ShaderProgram::link() {
 #endif
 
 	if ( !mValid ) {
-		eePRINTL( "ShaderProgram::Link(): %s: Couldn't link program. Log follows:\n%s",
-				  mName.c_str(), mLinkLog.c_str() );
+		Log::error( "ShaderProgram::Link(): %s: Couldn't link program. Log follows:\n%s",
+					mName.c_str(), mLinkLog.c_str() );
 	} else {
 		if ( mLinkLog.size() > 1 ) {
-			eePRINTL( "ShaderProgram::Link() %s: Program linked, but received some log:\n%s",
-					  mName.c_str(), mLinkLog.c_str() );
+			Log::warning( "ShaderProgram::Link() %s: Program linked, but received some log:\n%s",
+						  mName.c_str(), mLinkLog.c_str() );
 		}
 
 		mUniformLocations.clear();

@@ -2,6 +2,7 @@
 #include <eepp/network/platform/platformimpl.hpp>
 #include <eepp/network/socket.hpp>
 #include <eepp/network/socketselector.hpp>
+#include <eepp/system/log.hpp>
 #include <utility>
 
 #if EE_PLATFORM == EE_PLATFORM_HAIKU
@@ -39,9 +40,8 @@ void SocketSelector::add( Socket& socket ) {
 	if ( handle != Private::SocketImpl::invalidSocket() ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 		if ( mImpl->SocketCount >= FD_SETSIZE ) {
-			eePRINT( "The socket can't be added to the selector because its " );
-			eePRINT( "ID is too high. This is a limitation of your operating " );
-			eePRINTL( "system's FD_SETSIZE setting." );
+			Log::error( "The socket can't be added to the selector because its ID is too high. "
+						"This is a limitation of your operating system's FD_SETSIZE setting." );
 			return;
 		}
 
@@ -51,9 +51,8 @@ void SocketSelector::add( Socket& socket ) {
 		mImpl->SocketCount++;
 #else
 		if ( handle >= FD_SETSIZE ) {
-			eePRINT( "The socket can't be added to the selector because its " );
-			eePRINT( "ID is too high. This is a limitation of your operating " );
-			eePRINTL( "system's FD_SETSIZE setting." );
+			Log::error( "The socket can't be added to the selector because its ID is too high. "
+						"This is a limitation of your operating system's FD_SETSIZE setting." );
 			return;
 		}
 

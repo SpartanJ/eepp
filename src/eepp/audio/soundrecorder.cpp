@@ -4,6 +4,7 @@
 #include <eepp/audio/audiodevice.hpp>
 #include <eepp/audio/soundrecorder.hpp>
 #include <eepp/core/debug.hpp>
+#include <eepp/system/log.hpp>
 #include <eepp/system/sys.hpp>
 
 #ifdef _MSC_VER
@@ -38,14 +39,14 @@ SoundRecorder::~SoundRecorder() {
 bool SoundRecorder::start( unsigned int sampleRate ) {
 	// Check if the device can do audio capture
 	if ( !isAvailable() ) {
-		eePRINTL( "Failed to start capture: your system cannot capture audio data (call "
-				  "SoundRecorder::isAvailable to check it)" );
+		Log::error( "Failed to start capture: your system cannot capture audio data (call "
+					"SoundRecorder::isAvailable to check it)" );
 		return false;
 	}
 
 	// Check that another capture is not already running
 	if ( captureDevice ) {
-		eePRINTL( "Trying to start audio capture, but another capture is already running" );
+		Log::error( "Trying to start audio capture, but another capture is already running" );
 		return false;
 	}
 
@@ -55,8 +56,8 @@ bool SoundRecorder::start( unsigned int sampleRate ) {
 	// Open the capture device for capturing 16 bits samples
 	captureDevice = alcCaptureOpenDevice( mDeviceName.c_str(), sampleRate, format, sampleRate );
 	if ( !captureDevice ) {
-		eePRINTL( "Failed to open the audio capture device with the name: %s",
-				  mDeviceName.c_str() );
+		Log::error( "Failed to open the audio capture device with the name: %s",
+					mDeviceName.c_str() );
 		return false;
 	}
 
@@ -137,8 +138,8 @@ bool SoundRecorder::setDevice( const std::string& name ) {
 			// Notify derived class
 			onStop();
 
-			eePRINTL( "Failed to open the audio capture device with the name: %s",
-					  mDeviceName.c_str() );
+			Log::error( "Failed to open the audio capture device with the name: %s",
+						mDeviceName.c_str() );
 			return false;
 		}
 
@@ -159,14 +160,15 @@ const std::string& SoundRecorder::getDevice() const {
 
 void SoundRecorder::setChannelCount( unsigned int channelCount ) {
 	if ( mIsCapturing ) {
-		eePRINTL( "It's not possible to change the channels while recording." );
+		Log::error( "It's not possible to change the channels while recording." );
 		return;
 	}
 
 	if ( channelCount < 1 || channelCount > 2 ) {
-		eePRINTL( "Unsupported channel count: %d Currently only mono (1) and stereo (2) recording "
-				  "is supported.",
-				  channelCount );
+		Log::error(
+			"Unsupported channel count: %d Currently only mono (1) and stereo (2) recording "
+			"is supported.",
+			channelCount );
 		return;
 	}
 

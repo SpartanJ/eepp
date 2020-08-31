@@ -1,4 +1,5 @@
 #include <eepp/core/core.hpp>
+#include <eepp/system/log.hpp>
 #include <eepp/ui/css/propertyspecification.hpp>
 
 namespace EE { namespace UI { namespace CSS {
@@ -13,7 +14,7 @@ PropertyDefinition& PropertySpecification::registerProperty( const std::string& 
 	PropertyDefinition* property = const_cast<PropertyDefinition*>( getProperty( propertyVame ) );
 
 	if ( nullptr != property ) {
-		eePRINTL( "Property %s already registered.", propertyVame.c_str() );
+		Log::warning( "Property %s already registered.", propertyVame.c_str() );
 		return *property;
 	}
 
@@ -52,7 +53,7 @@ PropertySpecification::registerShorthand( const std::string& name,
 	ShorthandDefinition* shorthand = const_cast<ShorthandDefinition*>( getShorthand( name ) );
 
 	if ( nullptr != shorthand ) {
-		eePRINTL( "Shorthand %s already registered.", name.c_str() );
+		Log::warning( "Shorthand %s already registered.", name.c_str() );
 		return *shorthand;
 	}
 

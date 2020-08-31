@@ -133,7 +133,7 @@ UIColorPicker* UIColorPicker::NewWindow( const ColorPickedCb& colorPickedCb, con
 	tWin->setStyleConfig( windowStyleConfig );
 	UIColorPicker* colorPicker = Tools::UIColorPicker::New( tWin, colorPickedCb, modalAlpha );
 	tWin->show();
-	eePRINTL( "UIColorPicker created in: %.2fms", clock.getElapsedTime().asMilliseconds() );
+	Log::debug( "UIColorPicker created in: %.2fms", clock.getElapsedTime().asMilliseconds() );
 	return colorPicker;
 }
 
@@ -236,8 +236,8 @@ UIColorPicker::UIColorPicker( UIWindow* attachTo, const UIColorPicker::ColorPick
 
 		mRoot = uiSceneNode->loadLayoutFromString( layout, mUIContainer );
 
-		eePRINTL( "UIColorPicker loadLayoutFromString time: %.2f",
-				  clock.getElapsedTime().asMilliseconds() );
+		Log::debug( "UIColorPicker loadLayoutFromString time: %.2f",
+					clock.getElapsedTime().asMilliseconds() );
 	}
 
 	if ( NULL != mUIWindow ) {

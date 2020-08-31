@@ -5,6 +5,7 @@
 #include <eepp/system/inifile.hpp>
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/iostreammemory.hpp>
+#include <eepp/system/log.hpp>
 #include <eepp/system/packmanager.hpp>
 
 namespace EE { namespace System {
@@ -58,7 +59,7 @@ bool IniFile::loadFromStream( IOStream& stream ) {
 	mLines = String::split( myfile );
 	readFile();
 	if ( !mPath.empty() )
-		eePRINTL( "%s loaded in %.2fms", mPath.c_str(), clock.getElapsedTime().asMilliseconds() );
+		Log::info( "%s loaded in %.2fms", mPath.c_str(), clock.getElapsedTime().asMilliseconds() );
 	return true;
 }
 
@@ -111,7 +112,7 @@ bool IniFile::readFile() {
 			// Check that the user hasn't openned a binary file by checking the first
 			// character of each line!
 			if ( !isprint( line[0] ) ) {
-				eePRINT( "IniFile::readFile(): Failing on char %d\n", line[0] );
+				Log::error( "IniFile::readFile(): Failing on char %d.", line[0] );
 				return false;
 			}
 

@@ -141,8 +141,8 @@ UITheme* UITheme::loadFromTextureAtlas( UITheme* tTheme, Graphics::TextureAtlas*
 		}
 	}
 
-	eePRINTL( "UI Theme Loaded in: %4.3f ms ( from TextureAtlas )",
-			  TE.getElapsed().asMilliseconds() );
+	Log::info( "UI Theme Loaded in: %4.3f ms ( from TextureAtlas )",
+			   TE.getElapsed().asMilliseconds() );
 
 	return tTheme;
 }
@@ -250,7 +250,7 @@ UITheme* UITheme::loadFromDirectroy( UITheme* tTheme, const std::string& Path,
 	else
 		eeSAFE_DELETE( tSG );
 
-	eePRINTL( "UI Theme Loaded in: %4.3f ms ( from path )", TE.getElapsed().asMilliseconds() );
+	Log::info( "UI Theme Loaded in: %4.3f ms ( from path )", TE.getElapsed().asMilliseconds() );
 
 	return tTheme;
 }

@@ -4,6 +4,7 @@
 #include <eepp/audio/soundfilereaderogg.hpp>
 #include <eepp/core/debug.hpp>
 #include <eepp/system/iostreammemory.hpp>
+#include <eepp/system/log.hpp>
 
 namespace {
 size_t read( void* ptr, size_t size, size_t nmemb, void* data ) {
@@ -58,7 +59,7 @@ bool SoundFileReaderOgg::open( IOStream& stream, Info& info ) {
 	int status = ov_open_callbacks( &stream, &mVorbis, NULL, 0, callbacks );
 
 	if ( status < 0 ) {
-		eePRINTL( "Failed to open Vorbis file for reading" );
+		Log::error( "Failed to open Vorbis file for reading" );
 		return false;
 	}
 

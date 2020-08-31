@@ -693,9 +693,9 @@ void loadProject( std::string projectPath ) {
 
 			updateRecentProjects();
 		} else {
-			eePRINTL( "Error: Couldn't load UI Layout: %s", projectPath.c_str() );
-			eePRINTL( "Error description: %s", result.description() );
-			eePRINTL( "Error offset: %d", result.offset );
+			Log::error( "Couldn't load UI Layout: %s", projectPath.c_str() );
+			Log::error( "Error description: %s", result.description() );
+			Log::error( "Error offset: %d", result.offset );
 		}
 	}
 }
@@ -764,8 +764,8 @@ void mainLoop() {
 	if ( window->getInput()->isKeyUp( KEY_F9 ) ) {
 		Clock clock;
 		uiSceneNode->getRoot()->reportStyleStateChangeRecursive();
-		eePRINTL( "Applied style state changes in: %.2fms",
-				  clock.getElapsedTime().asMilliseconds() );
+		Log::info( "Applied style state changes in: %.2fms",
+				   clock.getElapsedTime().asMilliseconds() );
 	}
 
 	if ( mousePos != window->getInput()->getMousePos() ) {

@@ -204,7 +204,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		view->setParent( vlay );
 		view->setModel( SortingProxyModel::New( model ) );
 		// view->setModel( model );
-		eePRINTL( "Total time: %.2fms", clock.getElapsedTime().asMilliseconds() );
+		Log::notice( "Total time: %.2fms", clock.getElapsedTime().asMilliseconds() );
 
 		UIWindow* uiWin = UIWindow::NewOpt( UIWindow::LINEAR_LAYOUT );
 		uiWin->setMinWindowSize( 500, 400 );

@@ -3,6 +3,7 @@
 #ifdef EE_MBEDTLS
 
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/log.hpp>
 #include <eepp/system/packmanager.hpp>
 #include <mbedtls/error.h>
 
@@ -39,11 +40,11 @@ bool MbedTLSSocket::init() {
 		if ( err != 0 ) {
 			char errStr[1024];
 			mbedtls_strerror( err, errStr, eeARRAY_SIZE( errStr ) );
-			eePRINTL( "Error parsing some certificates \"%s\": %d. Description: %s",
-					  SSLSocket::CertificatesPath.c_str(), err, errStr );
+			Log::error( "Error parsing some certificates \"%s\": %d. Description: %s",
+						SSLSocket::CertificatesPath.c_str(), err, errStr );
 		}
 	} else {
-		eePRINTL( "No certificate provided for TLS/SSL requests" );
+		Log::warning( "No certificate provided for TLS/SSL requests" );
 	}
 
 	return true;
@@ -106,8 +107,8 @@ int MbedTLSSocket::bio_recv( void* ctx, unsigned char* buf, size_t len ) {
 	return got;
 }
 
-Socket::Status MbedTLSSocket::connect( const IpAddress& remoteAddress, unsigned short remotePort,
-									   Time timeout ) {
+Socket::Status MbedTLSSocket::connect( const IpAddress& /*remoteAddress*/,
+									   unsigned short /*remotePort*/, Time /*timeout*/ ) {
 	if ( mConnected ) {
 		disconnect();
 	}
@@ -124,7 +125,7 @@ Socket::Status MbedTLSSocket::connect( const IpAddress& remoteAddress, unsigned 
 	ret = mbedtls_ctr_drbg_seed( &mCtrDrbg, mbedtls_entropy_func, &mEntropy, NULL, 0 );
 
 	if ( ret != 0 ) {
-		eePRINTL( " failed\n  ! mbedtls_ctr_drbg_seed returned an error: %d", ret );
+		Log::error( " failed\n  ! mbedtls_ctr_drbg_seed returned an error: %d", ret );
 		return Socket::Error;
 	}
 

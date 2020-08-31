@@ -4,6 +4,7 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/iostreammemory.hpp>
+#include <eepp/system/log.hpp>
 #include <eepp/system/luapattern.hpp>
 #include <eepp/system/packmanager.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
@@ -153,8 +154,8 @@ bool TextDocument::loadFromStream( IOStream& file, std::string path ) {
 	notifyTextChanged();
 
 	if ( mVerbose )
-		eePRINTL( "Document \"%s\" loaded in %.2fms.", path.c_str(),
-				  clock.getElapsedTime().asMilliseconds() );
+		Log::info( "Document \"%s\" loaded in %.2fms.", path.c_str(),
+				   clock.getElapsedTime().asMilliseconds() );
 	return true;
 }
 

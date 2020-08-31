@@ -9,6 +9,7 @@
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/graphics/vertexbuffermanager.hpp>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/log.hpp>
 #include <eepp/window/backend/SDL2/clipboardsdl2.hpp>
 #include <eepp/window/backend/SDL2/cursormanagersdl2.hpp>
 #include <eepp/window/backend/SDL2/inputsdl2.hpp>
@@ -163,7 +164,8 @@ void showOSK() {
 				ONBOARD_PID = pid;
 			}
 		} else {
-			EE::eePRINTL( "onboard must be installed to be able to use the On Screen Keyboard" );
+			EE::System::Log::error(
+				"\"onboard\" must be installed to be able to use the On Screen Keyboard" );
 		}
 	}
 }
@@ -226,7 +228,7 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 	mWindow.ContextConfig = Context;
 
 	if ( SDL_Init( SDL_INIT_VIDEO ) != 0 ) {
-		eePRINTL( "Unable to initialize SDL: %s", SDL_GetError() );
+		Log::error( "Unable to initialize SDL: %s", SDL_GetError() );
 
 		logFailureInit( "WindowSDL", getVersion() );
 
@@ -281,7 +283,7 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 								   mWindow.WindowConfig.Height, tmpFlags );
 
 	if ( NULL == mSDLWindow ) {
-		eePRINTL( "Unable to create window: %s", SDL_GetError() );
+		Log::error( "Unable to create window: %s", SDL_GetError() );
 
 		logFailureInit( "WindowSDL", getVersion() );
 
@@ -289,31 +291,31 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 	}
 
 #if EE_PLATFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_IOS
-	eePRINTL( "Choosing GL Version from: %d", Context.Version );
+	Log::notice( "Choosing GL Version from: %d", Context.Version );
 
 	if ( GLv_default != Context.Version ) {
 		if ( GLv_ES1 == Context.Version || GLv_2 == Context.Version ) {
 			if ( GLv_2 == Context.Version )
 				mWindow.ContextConfig.Version = GLv_ES1;
 
-			eePRINTL( "Starting GLES1" );
+			Log::notice( "Starting GLES1" );
 
 			SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 1 );
 			SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 1 );
 		} else {
-			eePRINTL( "Starting GLES2" );
+			Log::notice( "Starting GLES2" );
 
 			SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 2 );
 			SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 0 );
 		}
 	} else {
 #if defined( EE_GLES2 )
-		eePRINTL( "Starting GLES2 default" );
+		Log::notice( "Starting GLES2 default" );
 
 		SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 2 );
 		SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 0 );
 #else
-		eePRINTL( "Starting GLES1 default" );
+		Log::notice( "Starting GLES1 default" );
 
 		SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 1 );
 		SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 1 );
@@ -346,7 +348,7 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 		 || ( mWindow.ContextConfig.SharedGLContext && NULL == mGLContextThread )
 #endif
 	) {
-		eePRINTL( "Unable to create context: %s", SDL_GetError() );
+		Log::error( "Unable to create context: %s", SDL_GetError() );
 
 		logFailureInit( "WindowSDL", getVersion() );
 
@@ -364,10 +366,10 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 		mWindow.WindowSize = Sizei( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
 		mLastWindowedSize = mWindow.WindowSize;
 	} else {
-		eePRINTL( "Window failed to create!" );
+		Log::error( "Window failed to create!" );
 
 		if ( NULL != SDL_GetError() ) {
-			eePRINTL( "Error: %s", SDL_GetError() );
+			Log::error( "SDL Error: %s", SDL_GetError() );
 		}
 
 		return false;
@@ -437,7 +439,7 @@ int WindowSDL::getCurrentDisplayIndex() {
 	int index = SDL_GetWindowDisplayIndex( mSDLWindow );
 
 	if ( index < 0 ) {
-		eePRINTL( SDL_GetError() );
+		Log::error( SDL_GetError() );
 		return 0;
 	}
 
@@ -474,7 +476,7 @@ void WindowSDL::setGLConfig() {
 }
 
 void WindowSDL::toggleFullscreen() {
-	eePRINTL( "toggleFullscreen called: %s", isWindowed() ? "is windowed" : "is fullscreen" );
+	Log::info( "toggleFullscreen called: %s", isWindowed() ? "is windowed" : "is fullscreen" );
 
 	if ( isWindowed() ) {
 		mWinPos = getPosition();
@@ -531,7 +533,7 @@ void WindowSDL::onWindowResize( Uint32 width, Uint32 height ) {
 	if ( width == mWindow.WindowConfig.Width && height == mWindow.WindowConfig.Height )
 		return;
 
-	eePRINTL( "onWindowResize: Width %d Height %d.", width, height );
+	Log::debug( "onWindowResize: Width %d Height %d.", width, height );
 
 	mWindow.WindowConfig.Width = width;
 	mWindow.WindowConfig.Height = height;
@@ -563,9 +565,9 @@ void WindowSDL::setSize( Uint32 width, Uint32 height, bool windowed ) {
 		 height == mWindow.WindowConfig.Height )
 		return;
 
-	eePRINTL( "Switching from %s to %s. Width: %d Height %d.",
-			  this->isWindowed() ? "windowed" : "fullscreen", windowed ? "windowed" : "fullscreen",
-			  width, height );
+	Log::debug( "Switching from %s to %s. Width: %d Height %d.",
+				this->isWindowed() ? "windowed" : "fullscreen",
+				windowed ? "windowed" : "fullscreen", width, height );
 
 	Uint32 oldWidth = mWindow.WindowConfig.Width;
 	Uint32 oldHeight = mWindow.WindowConfig.Height;

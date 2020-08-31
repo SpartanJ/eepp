@@ -41,7 +41,7 @@ StyleSheetSpecification::registerShorthand( const std::string& name,
 void StyleSheetSpecification::registerShorthandParser( const std::string& name,
 													   ShorthandParserFunc shorthandParserFunc ) {
 	if ( mShorthandParsers.find( name ) != mShorthandParsers.end() ) {
-		eePRINTL( "Shorthand parser \"%s\" is already registered.", name.c_str() );
+		Log::error( "Shorthand parser \"%s\" is already registered.", name.c_str() );
 		return;
 	}
 
@@ -50,7 +50,7 @@ void StyleSheetSpecification::registerShorthandParser( const std::string& name,
 
 ShorthandParserFunc StyleSheetSpecification::getShorthandParser( const std::string& name ) {
 	if ( mShorthandParsers.find( name ) == mShorthandParsers.end() ) {
-		eePRINTL( "Shorthand parser \"%s\" not found.", name.c_str() );
+		Log::error( "Shorthand parser \"%s\" not found.", name.c_str() );
 		return mShorthandParsers["empty"];
 	}
 	return mShorthandParsers[name];
@@ -643,8 +643,8 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 		std::vector<StyleSheetProperty> properties;
 		const std::vector<std::string> propNames( shorthand->getProperties() );
 		if ( propNames.size() != 4 ) {
-			eePRINTL( "ShorthandType::Box properties must be 4 for %s",
-					  shorthand->getName().c_str() );
+			Log::error( "ShorthandType::Box properties must be 4 for %s",
+						shorthand->getName().c_str() );
 			return properties;
 		}
 
@@ -678,8 +678,8 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 		std::vector<StyleSheetProperty> properties;
 		const std::vector<std::string> propNames( shorthand->getProperties() );
 		if ( propNames.size() != 2 ) {
-			eePRINTL( "ShorthandType::Vector2 properties must be 2 for %s",
-					  shorthand->getName().c_str() );
+			Log::error( "ShorthandType::Vector2 properties must be 2 for %s",
+						shorthand->getName().c_str() );
 			return properties;
 		}
 

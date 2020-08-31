@@ -9,6 +9,7 @@
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/iostreammemory.hpp>
 #include <eepp/system/lock.hpp>
+#include <eepp/system/log.hpp>
 #include <eepp/system/mutex.hpp>
 using namespace EE::System;
 
@@ -44,7 +45,7 @@ SoundFileReader* SoundFileFactory::createReaderFromFilename( const std::string& 
 	// Wrap the input file into a file stream
 	IOStreamFile stream( filename );
 	if ( !stream.isOpen() ) {
-		eePRINTL( "Failed to open sound file \"%s\" (couldn't open stream)", filename.c_str() );
+		Log::error( "Failed to open sound file \"%s\" (couldn't open stream)", filename.c_str() );
 		return NULL;
 	}
 
@@ -56,7 +57,7 @@ SoundFileReader* SoundFileFactory::createReaderFromFilename( const std::string& 
 	}
 
 	// No suitable reader found
-	eePRINTL( "Failed to open sound file \"%s\" (format not supported)", filename.c_str() );
+	Log::error( "Failed to open sound file \"%s\" (format not supported)", filename.c_str() );
 
 	return NULL;
 }
@@ -77,7 +78,7 @@ SoundFileReader* SoundFileFactory::createReaderFromMemory( const void* data,
 	}
 
 	// No suitable reader found
-	eePRINTL( "Failed to open sound file from memory (format not supported)" );
+	Log::error( "Failed to open sound file from memory (format not supported)" );
 	return NULL;
 }
 
@@ -93,7 +94,7 @@ SoundFileReader* SoundFileFactory::createReaderFromStream( IOStream& stream ) {
 	}
 
 	// No suitable reader found
-	eePRINTL( "Failed to open sound file from stream (format not supported)" );
+	Log::error( "Failed to open sound file from stream (format not supported)" );
 	return NULL;
 }
 
@@ -108,7 +109,7 @@ SoundFileWriter* SoundFileFactory::createWriterFromFilename( const std::string& 
 	}
 
 	// No suitable writer found
-	eePRINTL( "Failed to open sound file \"%s\" (format not supported)", filename.c_str() );
+	Log::error( "Failed to open sound file \"%s\" (format not supported)", filename.c_str() );
 	return NULL;
 }
 

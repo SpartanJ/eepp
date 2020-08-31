@@ -25,7 +25,7 @@ void eeREPORT_ASSERT( const char* File, int Line, const char* Exp ) {
 #else
 
 	if ( PrintDebugInLog ) {
-		Log::instance()->writef( "ASSERT: %s file:%s line:%d", Exp, File, Line );
+		Log::instance()->writef( LogLevel::Assert, "%s file:%s line:%d", Exp, File, Line );
 
 		if ( !Log::instance()->isConsoleOutput() )
 			printf( "ASSERT: %s file:%s line:%d", Exp, File, Line );
@@ -44,7 +44,7 @@ void eeREPORT_ASSERT( const char* File, int Line, const char* Exp ) {
 
 #ifndef EE_SILENT
 
-static void print_buffer( std::string& buf, bool newLine ) {
+static void printBuffer( std::string& buf, bool newLine ) {
 	if ( newLine )
 		buf += "\n";
 
@@ -52,7 +52,7 @@ static void print_buffer( std::string& buf, bool newLine ) {
 	OutputDebugStringA( buf.c_str() );
 #else
 	if ( PrintDebugInLog && Log::instance()->isConsoleOutput() ) {
-		Log::instance()->write( buf, false );
+		Log::instance()->write( buf );
 		return;
 	} else {
 		printf( "%s", buf.c_str() );
@@ -60,7 +60,7 @@ static void print_buffer( std::string& buf, bool newLine ) {
 #endif
 
 	if ( PrintDebugInLog )
-		Log::instance()->write( buf, false );
+		Log::instance()->write( buf );
 }
 
 void eePRINT( const char* format, ... ) {
@@ -77,7 +77,7 @@ void eePRINT( const char* format, ... ) {
 		if ( n > -1 && n < size ) {
 			buf.resize( n );
 
-			print_buffer( buf, false );
+			printBuffer( buf, false );
 
 			va_end( args );
 
@@ -107,7 +107,7 @@ void eePRINTL( const char* format, ... ) {
 		if ( n > -1 && n < size ) {
 			buf.resize( n );
 
-			print_buffer( buf, true );
+			printBuffer( buf, true );
 
 			va_end( args );
 
@@ -140,7 +140,7 @@ void eePRINTC( unsigned int cond, const char* format, ... ) {
 		if ( n > -1 && n < size ) {
 			buf.resize( n );
 
-			print_buffer( buf, false );
+			printBuffer( buf, false );
 
 			va_end( args );
 

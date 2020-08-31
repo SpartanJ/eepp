@@ -3,9 +3,11 @@
 #include <cctype>
 #include <eepp/audio/soundfilewriterwav.hpp>
 #include <eepp/core/debug.hpp>
+#include <eepp/system/log.hpp>
 
 namespace {
 using namespace EE;
+using namespace EE::System;
 
 // The following functions takes integers in host byte order
 // and writes them to a stream as little endian
@@ -53,13 +55,13 @@ bool SoundFileWriterWav::open( const std::string& filename, unsigned int sampleR
 	mFile.open( filename.c_str(), std::ios::binary );
 
 	if ( !mFile ) {
-		eePRINTL( "Failed to open WAV sound file \"%s\" for writing", filename.c_str() );
+		Log::error( "Failed to open WAV sound file \"%s\" for writing", filename.c_str() );
 		return false;
 	}
 
 	// Write the header
 	if ( !writeHeader( sampleRate, channelCount ) ) {
-		eePRINTL( "Failed to write header of WAV sound file \"%s\"", filename.c_str() );
+		Log::error( "Failed to write header of WAV sound file \"%s\"", filename.c_str() );
 		return false;
 	}
 

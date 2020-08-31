@@ -124,7 +124,7 @@ Drawable* DrawableSearcher::searchByName( const std::string& name, bool firstSea
 	}
 
 	if ( NULL == drawable && sPrintWarnings )
-		eePRINTL( "DrawableSearcher::searchByName: \"%s\" not found", name.c_str() );
+		Log::warning( "DrawableSearcher::searchByName: \"%s\" not found", name.c_str() );
 
 	return drawable;
 }
@@ -137,7 +137,7 @@ Drawable* DrawableSearcher::searchById( const Uint32& id ) {
 	}
 
 	if ( NULL == drawable && sPrintWarnings )
-		eePRINTL( "DrawableSearcher::searchById: \"%ld\" not found", id );
+		Log::warning( "DrawableSearcher::searchById: \"%ld\" not found", id );
 
 	return drawable;
 }

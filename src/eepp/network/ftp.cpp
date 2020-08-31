@@ -2,6 +2,7 @@
 #include <eepp/network/ftp.hpp>
 #include <eepp/network/ipaddress.hpp>
 #include <eepp/network/ssl/sslsocket.hpp>
+#include <eepp/system/log.hpp>
 #include <fstream>
 #include <iterator>
 #include <sstream>
@@ -329,7 +330,7 @@ Ftp::Response Ftp::sendCommand( const std::string& command, const std::string& p
 	else
 		commandStr = command + "\r\n";
 
-	eePRINTL( "Command: %s", commandStr.c_str() );
+	Log::debug( "Command: %s", commandStr.c_str() );
 
 	// Send it to the server
 	if ( mIsTLS && !mConnected ) {
@@ -421,7 +422,7 @@ Ftp::Response Ftp::getResponse() {
 							message = separator + line;
 						}
 
-						eePRINTL( "Response: %d - %s", code, message.c_str() );
+						Log::debug( "Response: %d - %s", code, message.c_str() );
 
 						// Return the response code and message
 						return Response( static_cast<Response::Status>( code ), message );
@@ -580,7 +581,7 @@ void Ftp::DataChannel::receive( std::ostream& stream ) {
 		stream.write( buffer, static_cast<std::streamsize>( received ) );
 
 		if ( !stream.good() ) {
-			eePRINTL( "FTP Error: Writing to the file has failed" );
+			Log::error( "FTP Error: Writing to the file has failed" );
 			break;
 		}
 	}
@@ -602,7 +603,7 @@ void Ftp::DataChannel::send( std::istream& stream ) {
 		stream.read( buffer, sizeof( buffer ) );
 
 		if ( !stream.good() && !stream.eof() ) {
-			eePRINTL( "FTP Error: Reading from the file has failed" );
+			Log::error( "FTP Error: Reading from the file has failed" );
 			break;
 		}
 

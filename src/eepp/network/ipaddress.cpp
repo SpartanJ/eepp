@@ -2,6 +2,7 @@
 #include <eepp/network/http.hpp>
 #include <eepp/network/ipaddress.hpp>
 #include <eepp/network/platform/platformimpl.hpp>
+#include <eepp/system/log.hpp>
 #include <utility>
 
 namespace EE { namespace Network {
@@ -123,7 +124,7 @@ void IpAddress::resolve( const std::string& address ) {
 					mValid = true;
 				}
 			} else {
-				eePRINTL( "getaddrinfo on \"%s\": %s", address.c_str(), gai_strerror( res ) );
+				Log::error( "getaddrinfo on \"%s\": %s", address.c_str(), gai_strerror( res ) );
 			}
 		}
 	}

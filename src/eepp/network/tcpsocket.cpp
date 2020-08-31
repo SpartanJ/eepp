@@ -4,6 +4,7 @@
 #include <eepp/network/packet.hpp>
 #include <eepp/network/platform/platformimpl.hpp>
 #include <eepp/network/tcpsocket.hpp>
+#include <eepp/system/log.hpp>
 
 #if EE_PLATFORM == EE_PLATFORM_HAIKU
 #include <sys/select.h>
@@ -168,7 +169,7 @@ void TcpSocket::disconnect() {
 
 Socket::Status TcpSocket::send( const void* data, std::size_t size ) {
 	if ( !isBlocking() )
-		eePRINTL( "Warning: Partial sends might not be handled properly." );
+		Log::warning( "Partial sends might not be handled properly." );
 
 	std::size_t sent;
 
@@ -178,7 +179,7 @@ Socket::Status TcpSocket::send( const void* data, std::size_t size ) {
 Socket::Status TcpSocket::send( const void* data, std::size_t size, std::size_t& sent ) {
 	// Check the parameters
 	if ( !data || ( size == 0 ) ) {
-		eePRINTL( "Cannot send data over the network (no data to send)" );
+		Log::error( "Cannot send data over the network (no data to send)" );
 		return Error;
 	}
 
@@ -209,7 +210,7 @@ Socket::Status TcpSocket::receive( void* data, std::size_t size, std::size_t& re
 
 	// Check the destination buffer
 	if ( !data ) {
-		eePRINTL( "Cannot receive data from the network (the destination buffer is invalid)" );
+		Log::error( "Cannot receive data from the network (the destination buffer is invalid)" );
 		return Error;
 	}
 
@@ -324,13 +325,13 @@ Socket::Status TcpSocket::receive( Packet& packet ) {
 	return Done;
 }
 
-void TcpSocket::setSendTimeout( SocketHandle sock, const Time& timeout ) {
+void TcpSocket::setSendTimeout( SocketHandle /*sock*/, const Time& timeout ) {
 	if ( getHandle() != Private::SocketImpl::invalidSocket() ) {
 		Private::SocketImpl::setSendTimeout( getHandle(), timeout );
 	}
 }
 
-void TcpSocket::setReceiveTimeout( SocketHandle sock, const Time& timeout ) {
+void TcpSocket::setReceiveTimeout( SocketHandle /*sock*/, const Time& timeout ) {
 	if ( getHandle() != Private::SocketImpl::invalidSocket() ) {
 		Private::SocketImpl::setReceiveTimeout( getHandle(), timeout );
 	}

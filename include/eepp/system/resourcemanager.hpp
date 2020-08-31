@@ -166,7 +166,7 @@ template <class T> T* ResourceManager<T>::getById( const String::HashType& id ) 
 
 template <class T> void ResourceManager<T>::printNames() {
 	for ( auto& it : mResources ) {
-		eePRINT( "'%s'\n", it.second->getName().c_str() );
+		eePRINTL( "'%s'", it.second->getName().c_str() );
 	}
 }
 
@@ -329,7 +329,7 @@ template <class T> T* ResourceManagerMulti<T>::getById( const String::HashType& 
 
 template <class T> void ResourceManagerMulti<T>::printNames() {
 	for ( auto& it : mResources ) {
-		eePRINT( "'%s'\n", it.second->getName().c_str() );
+		eePRINTL( "'%s'", it.second->getName().c_str() );
 	}
 }
 

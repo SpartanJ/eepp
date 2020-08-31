@@ -6,6 +6,7 @@
 #include <eepp/audio/soundbuffer.hpp>
 #include <eepp/core/debug.hpp>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/log.hpp>
 #include <eepp/system/pack.hpp>
 #include <eepp/system/packmanager.hpp>
 #include <eepp/system/scopedbuffer.hpp>
@@ -95,9 +96,9 @@ bool SoundBuffer::loadFromSamples( const Int16* samples, Uint64 sampleCount,
 		return update( channelCount, sampleRate );
 	} else {
 		// Error...
-		eePRINTL( "Failed to load sound buffer from samples (array: %d, count: %d, channels: %d, "
-				  "samplerate: %d)",
-				  samples, sampleCount, channelCount, sampleRate );
+		Log::error( "Failed to load sound buffer from samples (array: %d, count: %d, channels: %d, "
+					"samplerate: %d)",
+					samples, sampleCount, channelCount, sampleRate );
 		return false;
 	}
 }
@@ -187,8 +188,8 @@ bool SoundBuffer::update( unsigned int channelCount, unsigned int sampleRate ) {
 
 	// Check if the format is valid
 	if ( format == 0 ) {
-		eePRINTL( "Failed to load sound buffer (unsupported number of channels: %d)",
-				  channelCount );
+		Log::error( "Failed to load sound buffer (unsupported number of channels: %d)",
+					channelCount );
 		return false;
 	}
 

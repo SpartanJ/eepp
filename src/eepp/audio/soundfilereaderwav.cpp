@@ -5,6 +5,7 @@
 #include <eepp/audio/soundfilereaderwav.hpp>
 #include <eepp/core/debug.hpp>
 #include <eepp/system/iostream.hpp>
+#include <eepp/system/log.hpp>
 using namespace EE::System;
 
 namespace {
@@ -87,7 +88,7 @@ bool SoundFileReaderWav::open( IOStream& stream, Info& info ) {
 	mStream = &stream;
 
 	if ( !parseHeader( info ) ) {
-		eePRINTL( "Failed to open WAV sound file (invalid or unsupported file)" );
+		Log::error( "Failed to open WAV sound file (invalid or unsupported file)" );
 		return false;
 	}
 
@@ -214,7 +215,7 @@ bool SoundFileReaderWav::parseHeader( Info& info ) {
 
 			if ( bitsPerSample != 8 && bitsPerSample != 16 && bitsPerSample != 24 &&
 				 bitsPerSample != 32 ) {
-				eePRINTL(
+				Log::error(
 					"Unsupported sample size: %d bit (Supported sample sizes are 8/16/24/32 bit)",
 					bitsPerSample );
 				return false;
@@ -243,14 +244,15 @@ bool SoundFileReaderWav::parseHeader( Info& info ) {
 					return false;
 
 				if ( std::memcmp( subformat, waveSubformatPcm, sizeof( subformat ) ) != 0 ) {
-					eePRINTL( "Unsupported format: extensible format with non-PCM subformat" );
+					Log::error( "Unsupported format: extensible format with non-PCM subformat" );
 					return false;
 				}
 
 				if ( validBitsPerSample != bitsPerSample ) {
-					eePRINTL( "Unsupported format: sample size (%d bits) and sample container size "
-							  "(%d bits) differ",
-							  validBitsPerSample, bitsPerSample );
+					Log::error(
+						"Unsupported format: sample size (%d bits) and sample container size "
+						"(%d bits) differ",
+						validBitsPerSample, bitsPerSample );
 					return false;
 				}
 			}

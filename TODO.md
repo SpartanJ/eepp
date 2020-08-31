@@ -1,10 +1,6 @@
 
 # TODO - Short and mid term plans.
 
-# Log
-
-* Add log levels.
-
 # CSS transitions and animations
 
 * Add `cubic-bezier` timing function support.

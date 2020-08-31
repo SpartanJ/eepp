@@ -255,7 +255,7 @@ void EETest::onFontLoaded() {
 	TTF = FontManager::instance()->getByName( "NotoSans-Regular" );
 	Font* monospace = FontManager::instance()->getByName( "monospace" );
 
-	eePRINTL( "Fonts loading time: %4.3f ms.", mFTE.getElapsed().asMilliseconds() );
+	Log::info( "Fonts loading time: %4.3f ms.", mFTE.getElapsed().asMilliseconds() );
 
 	eeASSERT( TTF != NULL );
 	eeASSERT( monospace != NULL );
@@ -597,7 +597,7 @@ void EETest::createUI() {
 
 	createUIThemeTextureAtlas();
 
-	eePRINTL( "Texture Atlas Loading Time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
+	Log::info( "Texture Atlas Loading Time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
 
 	mSceneNode = UISceneNode::New();
 
@@ -617,9 +617,9 @@ void EETest::createUI() {
 
 	SceneManager::instance()->add( mSceneNode );
 
-	eePRINTL( "Node size: %d", sizeof( Node ) );
-	eePRINTL( "UINode size: %d", sizeof( UINode ) );
-	eePRINTL( "UIWidget size: %d", sizeof( UIWidget ) );
+	Log::info( "Node size: %d", sizeof( Node ) );
+	Log::info( "UINode size: %d", sizeof( UINode ) );
+	Log::info( "UIWidget size: %d", sizeof( UIWidget ) );
 
 	mTheme = UITheme::load( mThemeName, mThemeName,
 							MyPath + "ui/" + mThemeName + EE_TEXTURE_ATLAS_EXTENSION, TTF,
@@ -637,7 +637,7 @@ void EETest::createUI() {
 	createBaseUI();
 	createNewUI();
 
-	eePRINTL( "CreateUI time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
+	Log::info( "CreateUI time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
 }
 
 void EETest::createNewUI() {
@@ -1007,7 +1007,7 @@ void EETest::createMapEditor() {
 
 	Clock mapEditorTime;
 	mMapEditor = MapEditor::New( tWin, cb::Make0( this, &EETest::onMapEditorClose ) );
-	eePRINTL( "Map Editor created in: %s.", mapEditorTime.getElapsedTime().toString().c_str() );
+	Log::info( "Map Editor created in: %s.", mapEditorTime.getElapsedTime().toString().c_str() );
 	tWin->center();
 	tWin->show();
 }
@@ -1487,7 +1487,7 @@ void EETest::loadTextures() {
 	mCircleSprite = Sprite::New(
 		GlobalTextureAtlas::instance()->add( TextureRegion::New( TN[1], "thecircle" ) ) );
 
-	eePRINTL( "Textures loading time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
+	Log::info( "Textures loading time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
 
 	Map.loadFromFile( MyPath + "maps/test.eem" );
 	Map.setDrawGrid( false );
@@ -1495,7 +1495,7 @@ void EETest::loadTextures() {
 	Map.setDrawBackground( false );
 	Map.setViewSize( mWindow->getSize().asFloat() );
 
-	eePRINTL( "Map creation time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
+	Log::info( "Map creation time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
 }
 
 void EETest::run() {

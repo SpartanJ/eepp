@@ -3,6 +3,7 @@
 #include <eepp/audio/soundstream.hpp>
 #include <eepp/core/debug.hpp>
 #include <eepp/system/lock.hpp>
+#include <eepp/system/log.hpp>
 #include <eepp/system/sys.hpp>
 
 #ifdef _MSC_VER
@@ -50,15 +51,15 @@ void SoundStream::initialize( unsigned int channelCount, unsigned int sampleRate
 	if ( mFormat == 0 ) {
 		mChannelCount = 0;
 		mSampleRate = 0;
-		eePRINTL( "Unsupported number of channels (%d)", mChannelCount );
+		Log::error( "SoundStream: Unsupported number of channels (%d)", mChannelCount );
 	}
 }
 
 void SoundStream::play() {
 	// Check if the sound parameters have been set
 	if ( mFormat == 0 ) {
-		eePRINTL( "Failed to play audio stream: sound parameters have not been initialized (call "
-				  "initialize() first)" );
+		Log::error( "Failed to play audio stream: sound parameters have not been initialized (call "
+					"initialize() first)" );
 		return;
 	}
 
@@ -265,8 +266,9 @@ void SoundStream::streamData() {
 
 				// Bits can be 0 if the format or parameters are corrupt, avoid division by zero
 				if ( bits == 0 ) {
-					eePRINTL( "Bits in sound stream are 0: make sure that the audio format is not "
-							  "corrupt and initialize() has been called correctly." );
+					Log::warning(
+						"SoundStream: Bits in sound stream are 0: make sure that the "
+						"audio format is not corrupt and initialize() has been called correctly." );
 
 					// Abort streaming (exit main loop)
 					Lock lock( mThreadMutex );

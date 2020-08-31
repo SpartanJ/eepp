@@ -96,7 +96,7 @@ bool FrameBufferFBO::create( const Uint32& Width, const Uint32& Height, bool Ste
 	mFrameBuffer = static_cast<Int32>( frameBuffer );
 
 	if ( !mFrameBuffer ) {
-		eePRINTL( "FrameBufferFBO::create: Failed to created FrameBuffer Object" );
+		Log::error( "FrameBufferFBO::create: Failed to created FrameBuffer Object" );
 		return false;
 	}
 
@@ -110,7 +110,7 @@ bool FrameBufferFBO::create( const Uint32& Width, const Uint32& Height, bool Ste
 		mDepthBuffer = static_cast<unsigned int>( depth );
 
 		if ( !mDepthBuffer ) {
-			eePRINTL( "FrameBufferFBO::create: Failed to created Depth Buffer" );
+			Log::error( "FrameBufferFBO::create: Failed to created Depth Buffer" );
 			return false;
 		}
 
@@ -131,7 +131,7 @@ bool FrameBufferFBO::create( const Uint32& Width, const Uint32& Height, bool Ste
 		mStencilBuffer = static_cast<Uint32>( stencil );
 
 		if ( !mStencilBuffer ) {
-			eePRINTL( "FrameBufferFBO::create: Failed to created Stencil Buffer" );
+			Log::error( "FrameBufferFBO::create: Failed to created Stencil Buffer" );
 			return false;
 		}
 
@@ -169,7 +169,7 @@ bool FrameBufferFBO::create( const Uint32& Width, const Uint32& Height, bool Ste
 			if ( TextureFactory::instance()->existsId( TexId ) ) {
 				mTexture = TextureFactory::instance()->getTexture( TexId );
 			} else {
-				eePRINTL( "FrameBufferFBO::create: failed to create texture" );
+				Log::error( "FrameBufferFBO::create: failed to create texture" );
 				return false;
 			}
 		}
@@ -180,7 +180,7 @@ bool FrameBufferFBO::create( const Uint32& Width, const Uint32& Height, bool Ste
 
 	Uint32 status = GLi->checkFramebufferStatus( GL_FRAMEBUFFER );
 	if ( status != GL_FRAMEBUFFER_COMPLETE ) {
-		eePRINTL( "FrameBufferFBO::create: Failed to attach Frame Buffer. Status: %04X", status );
+		Log::error( "FrameBufferFBO::create: Failed to attach Frame Buffer. Status: %04X", status );
 		GLi->bindFramebuffer( GL_FRAMEBUFFER, mLastFB );
 		return false;
 	}

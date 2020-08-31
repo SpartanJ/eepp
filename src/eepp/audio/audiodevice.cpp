@@ -2,6 +2,7 @@
 #include <eepp/audio/audiodevice.hpp>
 #include <eepp/audio/listener.hpp>
 #include <eepp/core/core.hpp>
+#include <eepp/system/log.hpp>
 #include <memory>
 
 namespace {
@@ -13,6 +14,8 @@ Vector3f listenerPosition( 0.f, 0.f, 0.f );
 Vector3f listenerDirection( 0.f, 0.f, -1.f );
 Vector3f listenerUpVector( 0.f, 1.f, 0.f );
 } // namespace
+
+using namespace EE::System;
 
 namespace EE { namespace Audio { namespace Private {
 
@@ -40,10 +43,10 @@ AudioDevice::AudioDevice() {
 								   listenerPosition.z ) );
 			alCheck( alListenerfv( AL_ORIENTATION, orientation ) );
 		} else {
-			eePRINTL( "Failed to create the audio context" );
+			Log::error( "Failed to create the audio context" );
 		}
 	} else {
-		eePRINTL( "Failed to open the audio device" );
+		Log::error( "Failed to open the audio device" );
 	}
 }
 

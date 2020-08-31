@@ -4,6 +4,7 @@
 #include <eepp/graphics/texturepackertex.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreamfile.hpp>
+#include <eepp/system/log.hpp>
 #include <eepp/system/md5.hpp>
 #include <eepp/system/sys.hpp>
 
@@ -536,15 +537,17 @@ Int32 TexturePacker::packTextures() {
 
 		if ( NULL == bestFit ) {
 			if ( PackBig == mStrategy ) {
-				eePRINTL( "Chaging Strategy to Tiny. %s faults.", t->name().c_str() );
+				Log::debug( "TexturePacker: Chaging Strategy to Tiny. %s faults.",
+							t->name().c_str() );
 				reset();
 				addBorderToTextures( -( (Int32)mPixelBorder ) );
 				mStrategy = PackTiny;
 				return packTextures();
 			} else if ( PackTiny == mStrategy ) {
 				mStrategy = PackFail;
-				eePRINTL( "Strategy fail, must expand image or create a new one. %s faults.",
-						  t->name().c_str() );
+				Log::warning( "TexturePacker: Strategy fail, must expand image or create a new "
+							  "one. %s faults.",
+							  t->name().c_str() );
 			}
 		} else {
 			insertTexture( t, bestFit, edgeCount, previousBestFit );
@@ -581,8 +584,8 @@ Int32 TexturePacker::packTextures() {
 
 	if ( mCount > 0 ) {
 		if ( mAllowChilds ) {
-			eePRINTL( "Creating a new image as a child. Some textures couldn't get it: %d",
-					  mCount );
+			Log::debug( "Creating a new image as a child. Some textures couldn't get it: %d",
+						mCount );
 			createChild();
 		} else {
 			return 0;
@@ -598,8 +601,8 @@ Int32 TexturePacker::packTextures() {
 			mTotalArea -= ( *it )->area();
 	}
 
-	eePRINTL( "Total Area Used: %d. This represents the %4.3f percent", mTotalArea,
-			  ( (double)mTotalArea / (double)( mWidth * mHeight ) ) * 100.0 );
+	Log::debug( "Total Area Used: %d. This represents the %4.3f percent", mTotalArea,
+				( (double)mTotalArea / (double)( mWidth * mHeight ) ) * 100.0 );
 
 	return mTotalArea;
 }

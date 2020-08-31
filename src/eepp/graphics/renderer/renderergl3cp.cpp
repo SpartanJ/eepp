@@ -66,8 +66,8 @@ RendererGL3CP::~RendererGL3CP() {
 	deleteVertexArrays( 1, &mVAO );
 
 #ifdef EE_DEBUG
-	Log::instance()->write( "Biggest VBO allocation on GL3 Renderer: " +
-							FileSystem::sizeToString( mBiggestAlloc ) );
+	Log::instance()->writel( "Biggest VBO allocation on GL3 Renderer: " +
+							 FileSystem::sizeToString( mBiggestAlloc ) );
 #endif
 }
 
@@ -569,7 +569,7 @@ void RendererGL3CP::bindGlobalVAO() {
 
 void RendererGL3CP::allocateBuffers( const Uint32& size ) {
 	if ( mVBOSizeAlloc != size )
-		Log::instance()->write( "Allocating new VBO buffers size: " + String::toString( size ) );
+		Log::instance()->writel( "Allocating new VBO buffers size: " + String::toString( size ) );
 
 	mVBOSizeAlloc = size;
 

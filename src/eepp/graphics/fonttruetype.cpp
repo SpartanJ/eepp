@@ -2,6 +2,7 @@
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostream.hpp>
+#include <eepp/system/log.hpp>
 #include <eepp/system/pack.hpp>
 #include <eepp/system/packmanager.hpp>
 
@@ -79,7 +80,7 @@ bool FontTrueType::loadFromFile( const std::string& filename ) {
 		Pack* pack = PackManager::instance()->exists( path );
 
 		if ( NULL != pack ) {
-			eePRINTL( "Loading font from pack: %s", path.c_str() );
+			Log::info( "Loading font from pack: %s", path.c_str() );
 
 			return loadFromPack( pack, path );
 		}
@@ -94,7 +95,8 @@ bool FontTrueType::loadFromFile( const std::string& filename ) {
 	// Initialize FreeType
 	FT_Library library;
 	if ( FT_Init_FreeType( &library ) != 0 ) {
-		eePRINTL( "Failed to load font \"%s\" (failed to initialize FreeType)", filename.c_str() );
+		Log::error( "Failed to load font \"%s\" (failed to initialize FreeType)",
+					filename.c_str() );
 		return false;
 	}
 	mLibrary = library;
@@ -102,22 +104,23 @@ bool FontTrueType::loadFromFile( const std::string& filename ) {
 	// Load the new font face from the specified file
 	FT_Face face;
 	if ( FT_New_Face( static_cast<FT_Library>( mLibrary ), filename.c_str(), 0, &face ) != 0 ) {
-		eePRINTL( "Failed to load font \"%s\" (failed to create the font face)", filename.c_str() );
+		Log::error( "Failed to load font \"%s\" (failed to create the font face)",
+					filename.c_str() );
 		return false;
 	}
 
 	// Load the stroker that will be used to outline the font
 	FT_Stroker stroker;
 	if ( FT_Stroker_New( static_cast<FT_Library>( mLibrary ), &stroker ) != 0 ) {
-		eePRINTL( "Failed to load font \"%s\" (failed to create the stroker)", filename.c_str() );
+		Log::error( "Failed to load font \"%s\" (failed to create the stroker)", filename.c_str() );
 		FT_Done_Face( face );
 		return false;
 	}
 
 	// Select the unicode character map
 	if ( FT_Select_Charmap( face, FT_ENCODING_UNICODE ) != 0 ) {
-		eePRINTL( "Failed to load font \"%s\" (failed to set the Unicode character set)",
-				  filename.c_str() );
+		Log::error( "Failed to load font \"%s\" (failed to set the Unicode character set)",
+					filename.c_str() );
 		FT_Stroker_Done( stroker );
 		FT_Done_Face( face );
 		return false;
@@ -151,7 +154,7 @@ bool FontTrueType::loadFromMemory( const void* data, std::size_t sizeInBytes, bo
 	// Initialize FreeType
 	FT_Library library;
 	if ( FT_Init_FreeType( &library ) != 0 ) {
-		eePRINTL( "Failed to load font from memory (failed to initialize FreeType)" );
+		Log::error( "Failed to load font from memory (failed to initialize FreeType)" );
 		return false;
 	}
 	mLibrary = library;
@@ -161,21 +164,21 @@ bool FontTrueType::loadFromMemory( const void* data, std::size_t sizeInBytes, bo
 	if ( FT_New_Memory_Face( static_cast<FT_Library>( mLibrary ),
 							 reinterpret_cast<const FT_Byte*>( ptr ),
 							 static_cast<FT_Long>( sizeInBytes ), 0, &face ) != 0 ) {
-		eePRINTL( "Failed to load font from memory (failed to create the font face)" );
+		Log::error( "Failed to load font from memory (failed to create the font face)" );
 		return false;
 	}
 
 	// Load the stroker that will be used to outline the font
 	FT_Stroker stroker;
 	if ( FT_Stroker_New( static_cast<FT_Library>( mLibrary ), &stroker ) != 0 ) {
-		eePRINTL( "Failed to load font from memory (failed to create the stroker)" );
+		Log::error( "Failed to load font from memory (failed to create the stroker)" );
 		FT_Done_Face( face );
 		return false;
 	}
 
 	// Select the Unicode character map
 	if ( FT_Select_Charmap( face, FT_ENCODING_UNICODE ) != 0 ) {
-		eePRINTL( "Failed to load font from memory (failed to set the Unicode character set)" );
+		Log::error( "Failed to load font from memory (failed to set the Unicode character set)" );
 		FT_Stroker_Done( stroker );
 		FT_Done_Face( face );
 		return false;
@@ -201,7 +204,7 @@ bool FontTrueType::loadFromStream( IOStream& stream ) {
 	// Initialize FreeType
 	FT_Library library;
 	if ( FT_Init_FreeType( &library ) != 0 ) {
-		eePRINTL( "Failed to load font from stream (failed to initialize FreeType)" );
+		Log::error( "Failed to load font from stream (failed to initialize FreeType)" );
 		return false;
 	}
 	mLibrary = library;
@@ -228,7 +231,7 @@ bool FontTrueType::loadFromStream( IOStream& stream ) {
 	// Load the new font face from the specified stream
 	FT_Face face;
 	if ( FT_Open_Face( static_cast<FT_Library>( mLibrary ), &args, 0, &face ) != 0 ) {
-		eePRINTL( "Failed to load font from stream (failed to create the font face)" );
+		Log::error( "Failed to load font from stream (failed to create the font face)" );
 		delete rec;
 		return false;
 	}
@@ -236,7 +239,7 @@ bool FontTrueType::loadFromStream( IOStream& stream ) {
 	// Load the stroker that will be used to outline the font
 	FT_Stroker stroker;
 	if ( FT_Stroker_New( static_cast<FT_Library>( mLibrary ), &stroker ) != 0 ) {
-		eePRINTL( "Failed to load font from stream (failed to create the stroker)" );
+		Log::error( "Failed to load font from stream (failed to create the stroker)" );
 		FT_Done_Face( face );
 		delete rec;
 		return false;
@@ -244,7 +247,7 @@ bool FontTrueType::loadFromStream( IOStream& stream ) {
 
 	// Select the Unicode character map
 	if ( FT_Select_Charmap( face, FT_ENCODING_UNICODE ) != 0 ) {
-		eePRINTL( "Failed to load font from stream (failed to set the Unicode character set)" );
+		Log::error( "Failed to load font from stream (failed to set the Unicode character set)" );
 		FT_Stroker_Done( stroker );
 		FT_Done_Face( face );
 		delete rec;
@@ -495,15 +498,16 @@ Glyph FontTrueType::loadGlyph( Uint32 codePoint, unsigned int characterSize, boo
 	// First, transform our ugly void* to a FT_Face
 	FT_Face face = static_cast<FT_Face>( mFace );
 	if ( !face ) {
-		eePRINTL( "FT_Face failed for: codePoint %d characterSize: %d font %s", codePoint,
-				  characterSize, mFontName.c_str() );
+		Log::error( "FT_Face failed for: codePoint %d characterSize: %d font %s", codePoint,
+					characterSize, mFontName.c_str() );
 		return glyph;
 	}
 
 	// Set the character size
 	if ( !setCurrentSize( characterSize ) ) {
-		eePRINTL( "FontTrueType::setCurrentSize failed for: codePoint %d characterSize: %d font %s",
-				  codePoint, characterSize, mFontName.c_str() );
+		Log::error(
+			"FontTrueType::setCurrentSize failed for: codePoint %d characterSize: %d font %s",
+			codePoint, characterSize, mFontName.c_str() );
 		return glyph;
 	}
 
@@ -514,16 +518,16 @@ Glyph FontTrueType::loadGlyph( Uint32 codePoint, unsigned int characterSize, boo
 	if ( outlineThickness != 0 )
 		flags |= FT_LOAD_NO_BITMAP;
 	if ( ( err = FT_Load_Char( face, codePoint, flags ) ) != 0 ) {
-		eePRINTL( "FT_Load_Char failed for: codePoint %d characterSize: %d font: %s error: %d",
-				  codePoint, characterSize, mFontName.c_str(), err );
+		Log::error( "FT_Load_Char failed for: codePoint %d characterSize: %d font: %s error: %d",
+					codePoint, characterSize, mFontName.c_str(), err );
 		return glyph;
 	}
 
 	// Retrieve the glyph
 	FT_Glyph glyphDesc;
 	if ( FT_Get_Glyph( face->glyph, &glyphDesc ) != 0 ) {
-		eePRINTL( "FT_Get_Glyph failed for: codePoint %d characterSize: %d font: %s", codePoint,
-				  characterSize, mFontName.c_str() );
+		Log::error( "FT_Get_Glyph failed for: codePoint %d characterSize: %d font: %s", codePoint,
+					characterSize, mFontName.c_str() );
 		return glyph;
 	}
 
@@ -557,7 +561,7 @@ Glyph FontTrueType::loadGlyph( Uint32 codePoint, unsigned int characterSize, boo
 			FT_Bitmap_Embolden( static_cast<FT_Library>( mLibrary ), &bitmap, weight, weight );
 
 		if ( outlineThickness != 0 )
-			eePRINTL( "Failed to outline glyph (no fallback available)" );
+			Log::error( "Failed to outline glyph (no fallback available)" );
 	}
 
 	// Compute the glyph's advance offset
@@ -701,8 +705,9 @@ Rect FontTrueType::findGlyphRect( Page& page, unsigned int width, unsigned int h
 				page.texture->replace( &newImage );
 			} else {
 				// Oops, we've reached the maximum texture size...
-				eePRINTL( "Failed to add a new character to the font: the maximum texture size has "
-						  "been reached" );
+				Log::error(
+					"Failed to add a new character to the font: the maximum texture size has "
+					"been reached" );
 				return Rect( 0, 0, 2, 2 );
 			}
 		}
@@ -736,11 +741,12 @@ bool FontTrueType::setCurrentSize( unsigned int characterSize ) const {
 			// In the case of bitmap fonts, resizing can
 			// fail if the requested size is not available
 			if ( !FT_IS_SCALABLE( face ) ) {
-				eePRINTL( "Failed to set bitmap font size to %d", characterSize );
-				eePRINTL( "Available sizes are: " );
+				Log::warning( "Failed to set bitmap font size to %d", characterSize );
+				Log::warning( "Available sizes are: " );
+				std::string str;
 				for ( int i = 0; i < face->num_fixed_sizes; ++i )
-					eePRINT( "%d ", face->available_sizes[i].height );
-				eePRINTL( "" );
+					str += String::format( "%d ", face->available_sizes[i].height );
+				Log::warning( str );
 			}
 		}
 

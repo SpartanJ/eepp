@@ -35,7 +35,7 @@ bool StyleSheet::addStyleToNodeIndex( StyleSheetStyle* style ) {
 			nodes.push_back( style );
 			return true;
 		} else {
-			eePRINTL( "Ignored style %s", style->getSelector().getName().c_str() );
+			Log::debug( "Ignored style %s", style->getSelector().getName().c_str() );
 		}
 	}
 	return false;

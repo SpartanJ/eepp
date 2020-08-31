@@ -1,6 +1,7 @@
 #include <eepp/network/platform/platformimpl.hpp>
 #include <eepp/network/tcplistener.hpp>
 #include <eepp/network/tcpsocket.hpp>
+#include <eepp/system/log.hpp>
 
 namespace EE { namespace Network {
 
@@ -36,14 +37,14 @@ Socket::Status TcpListener::listen( unsigned short port, const IpAddress& addres
 	sockaddr_in addr = Private::SocketImpl::createAddress( address.toInteger(), port );
 	if ( bind( getHandle(), reinterpret_cast<sockaddr*>( &addr ), sizeof( addr ) ) == -1 ) {
 		// Not likely to happen, but...
-		eePRINTL( "Failed to bind listener socket to port %d", port );
+		Log::error( "Failed to bind listener socket to port %d", port );
 		return Error;
 	}
 
 	// Listen to the bound port
 	if ( ::listen( getHandle(), SOMAXCONN ) == -1 ) {
 		// Oops, socket is deaf
-		eePRINTL( "Failed to Listen to port %d", port );
+		Log::error( "Failed to Listen to port %d", port );
 		return Error;
 	}
 
@@ -58,7 +59,7 @@ void TcpListener::close() {
 Socket::Status TcpListener::accept( TcpSocket& socket ) {
 	// Make sure that we're listening
 	if ( getHandle() == Private::SocketImpl::invalidSocket() ) {
-		eePRINTL( "Failed to accept a new connection, the socket is not listening" );
+		Log::error( "Failed to accept a new connection, the socket is not listening" );
 		return Error;
 	}
 

@@ -430,14 +430,14 @@ void TextureLoader::loadFromPixels() {
 					mClampMode, mCompressTexture || mIsCompressed, mLocalCopy, mSize );
 
 				if ( mFilepath.empty() ) {
-					eePRINTL( "Texture ID %d loaded in %4.3f ms.", mTexId,
-							  mTE.getElapsed().asMilliseconds() );
+					Log::info( "Texture ID %d loaded in %4.3f ms.", mTexId,
+							   mTE.getElapsed().asMilliseconds() );
 				} else {
-					eePRINTL( "Texture %s loaded in %4.3f ms.", mFilepath.c_str(),
-							  mTE.getElapsed().asMilliseconds() );
+					Log::info( "Texture %s loaded in %4.3f ms.", mFilepath.c_str(),
+							   mTE.getElapsed().asMilliseconds() );
 				}
 			} else {
-				eePRINTL( "Failed to create texture. Reason: %s", SOIL_last_result() );
+				Log::warning( "Failed to create texture. Reason: %s", SOIL_last_result() );
 			}
 
 			if ( TEX_LT_PIXELS != mLoadType ) {
@@ -452,14 +452,14 @@ void TextureLoader::loadFromPixels() {
 		} else {
 			if ( NULL != stbi_failure_reason() ) {
 				if ( TEX_LT_PATH != mLoadType )
-					eePRINTL( stbi_failure_reason() );
+					Log::warning( stbi_failure_reason() );
 			} else {
 				std::string failText( "Texture " + mFilepath + " failed to load" );
 
 				failText +=
 					( NULL != mPack ) ? ( " from Pack " + mPack->getPackPath() + "." ) : ".";
 
-				eePRINTL( failText.c_str() );
+				Log::warning( failText.c_str() );
 			}
 		}
 
