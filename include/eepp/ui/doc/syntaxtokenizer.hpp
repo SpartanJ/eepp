@@ -19,7 +19,8 @@ class EE_API SyntaxTokenizer {
   public:
 	std::pair<std::vector<SyntaxToken>, int> static tokenize( const SyntaxDefinition& syntax,
 															  const std::string& text,
-															  const int& state );
+															  const int& state,
+															  const size_t& startIndex = 0 );
 };
 
 }}} // namespace EE::UI::Doc

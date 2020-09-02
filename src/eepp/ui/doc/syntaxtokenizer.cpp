@@ -58,14 +58,15 @@ std::pair<int, int> findNonEscaped( const std::string& text, const std::string& 
 
 std::pair<std::vector<SyntaxToken>, int> SyntaxTokenizer::tokenize( const SyntaxDefinition& syntax,
 																	const std::string& text,
-																	const int& state ) {
+																	const int& state,
+																	const size_t& startIndex ) {
 	std::vector<SyntaxToken> tokens;
 	if ( syntax.getPatterns().empty() ) {
 		pushToken( tokens, "normal", text );
 		return std::make_pair( tokens, SYNTAX_TOKENIZER_STATE_NONE );
 	}
 
-	size_t i = 0;
+	size_t i = startIndex;
 	int retState = state;
 
 	while ( i < text.size() ) {

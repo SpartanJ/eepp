@@ -16,7 +16,7 @@ class UITreeViewCellGlobalSearch : public UITreeViewCell {
 
 	UIPushButton* setText( const String& text );
 
-	UIPushButton* updateText( const String& text );
+	UIPushButton* updateText( const std::string& text );
 };
 
 class UITreeViewGlobalSearch : public UITreeView {

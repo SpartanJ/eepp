@@ -5,10 +5,12 @@ static int countNewLines( const std::string& text, const size_t& start, const si
 	const char* startPtr = text.c_str() + start;
 	const char* endPtr = text.c_str() + end;
 	size_t count = 0;
-	do {
-		if ( '\n' == *startPtr )
-			count++;
-	} while ( ++startPtr && startPtr != endPtr );
+	if ( startPtr != endPtr ) {
+		while ( ++startPtr && startPtr != endPtr ) {
+			if ( '\n' == *startPtr )
+				count++;
+		} ;
+	}
 	return count;
 }
 
@@ -23,7 +25,7 @@ static std::string textLine( const std::string& fileText, const size_t& fromPos,
 	const char* nlStartPtr = ptr + 1;
 	start = ptr - stringStartPtr + 1;
 	ptr = startPtr;
-	while ( ++ptr && *ptr != '\n' ) {
+	while ( ++ptr && *ptr != '\0' && *ptr != '\n' ) {
 	}
 	end = ptr - stringStartPtr;
 	relCol = startPtr - nlStartPtr;

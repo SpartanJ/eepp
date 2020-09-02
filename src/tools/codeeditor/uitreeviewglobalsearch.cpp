@@ -21,13 +21,13 @@ UIPushButton* UITreeViewCellGlobalSearch::setText( const String& text ) {
 	if ( text != mTextBox->getText() ) {
 		mTextBox->setVisible( !text.empty() );
 		mTextBox->setText( text );
-		updateText( text );
+		updateText( text + '\n' );
 		updateLayout();
 	}
 	return this;
 }
 
-UIPushButton* UITreeViewCellGlobalSearch::updateText( const String& text ) {
+UIPushButton* UITreeViewCellGlobalSearch::updateText( const std::string& text ) {
 	if ( getCurIndex().internalId() != -1 ) {
 		UITreeViewGlobalSearch* pp = getParent()->getParent()->asType<UITreeViewGlobalSearch>();
 
@@ -35,20 +35,22 @@ UIPushButton* UITreeViewCellGlobalSearch::updateText( const String& text ) {
 
 		auto styleDef = SyntaxDefinitionManager::instance()->getStyleByExtension( res->file );
 
-		auto tokens =
-			SyntaxTokenizer::tokenize( styleDef, text, SYNTAX_TOKENIZER_STATE_NONE ).first;
+		Uint32 from = text.find_first_not_of( ' ' );
+		Uint32 to = from;
+		if ( from != String::InvalidPos ) {
+			to = text.find_first_of( ' ', from );
+			mTextBox->setFontFillColor( pp->getLineNumColor(), from, to );
+		}
 
-		size_t start = 0;
+		auto tokens =
+			SyntaxTokenizer::tokenize( styleDef, text, SYNTAX_TOKENIZER_STATE_NONE, to ).first;
+
+		size_t start = to;
 		for ( auto& token : tokens ) {
 			mTextBox->setFontFillColor( pp->getColorScheme().getSyntaxStyle( token.type ).color,
 										start, start + token.text.size() );
 			start += token.text.size();
 		}
-
-		Uint32 from = text.find_first_not_of( ' ' );
-		if ( from != String::InvalidPos )
-			mTextBox->setFontFillColor( pp->getLineNumColor(), from,
-										text.find_first_of( ' ', from ) );
 	}
 	return this;
 }

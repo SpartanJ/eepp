@@ -260,8 +260,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 			  {{"-?%.?%d+f?"}, "number"},
 			  {{"[%+%-=/%*%^%%<>!~|&]"}, "operator"},
 			  {{"[%a_][%w_]*%f[(]"}, "function"},
-			  {{"std%:%:[%w_]-%<.-%>"}, "keyword2"},
-			  {{"std%:%:.-%s"}, "keyword2"},
+			  {{"std%:%:[%w_]*"}, "keyword2"},
 			  {{"[%a_][%w_]*"}, "symbol"},
 		  },
 		  {

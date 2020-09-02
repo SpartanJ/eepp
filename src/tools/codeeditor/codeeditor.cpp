@@ -723,6 +723,9 @@ void App::showGlobalSearch() {
 			mEditorSplitter->getCurEditor()->getDocument().getSelectedText() );
 	}
 	mGlobalSearchInput->getDocument().selectAll();
+	auto* loader = mGlobalSearchTree->getParent()->find( "loader" );
+	if ( loader )
+		loader->setVisible( true );
 	updateGlobalSearchBar();
 }
 
@@ -742,6 +745,9 @@ void App::updateGlobalSearchBar() {
 void App::hideGlobalSearchBar() {
 	mGlobalSearchBarLayout->setEnabled( false )->setVisible( false );
 	mGlobalSearchTree->setVisible( false );
+	auto* loader = mGlobalSearchTree->getParent()->find( "loader" );
+	if ( loader )
+		loader->setVisible( false );
 }
 
 void App::initGlobalSearchBar() {
@@ -759,7 +765,7 @@ void App::initGlobalSearchBar() {
 	mGlobalSearchBarLayout->addCommand( "search-in-files", [&, caseSensitiveChk] {
 		if ( mDirTree && mDirTree->getFilesCount() > 0 && !mGlobalSearchInput->getText().empty() ) {
 			UILoader* loader = UILoader::New();
-			loader->setId( "loader " );
+			loader->setId( "loader" );
 			loader->setRadius( 48 );
 			loader->setOutlineThickness( 6 );
 			loader->setFillColor( Color::Red );

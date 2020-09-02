@@ -734,26 +734,23 @@ Uint32 UITextInput::onTextInput( const TextInputEvent& event ) {
 		return 0;
 	Input* input = getUISceneNode()->getWindow()->getInput();
 
-	if ( !input->isControlPressed() && !( input->isAltPressed() && input->isShiftPressed() ) ) {
-		if ( input->isAltPressed() && !event.getText().empty() && event.getText()[0] == '\t' )
+	if ( ( input->isLeftAltPressed() && !event.getText().empty() && event.getText()[0] == '\t' ) ||
+		 ( input->isLeftAltPressed() && input->isShiftPressed() ) || input->isControlPressed() )
+		return 0;
+
+	const String& text = event.getText();
+
+	for ( size_t i = 0; i < text.size(); i++ ) {
+		if ( text[i] == '\n' )
 			return 0;
-
-		const String& text = event.getText();
-
-		for ( size_t i = 0; i < text.size(); i++ ) {
-			if ( text[i] == '\n' )
-				return 0;
-			if ( mOnlyNumbers &&
-				 ( ( mAllowFloat && text[i] == '.' && mDoc.find( "." ).isValid() ) ||
-				   !String::isNumber( text[i], mAllowFloat ) ) ) {
-				return 0;
-			}
+		if ( mOnlyNumbers && ( ( mAllowFloat && text[i] == '.' && mDoc.find( "." ).isValid() ) ||
+							   !String::isNumber( text[i], mAllowFloat ) ) ) {
+			return 0;
 		}
-
-		mDoc.textInput( text );
-		return 1;
 	}
-	return 0;
+
+	mDoc.textInput( text );
+	return 1;
 }
 
 void UITextInput::setAllowOnlyNumbers( const bool& onlyNumbers, const bool& allowFloat ) {
