@@ -211,8 +211,6 @@ class EE_API String {
 	 */
 	static bool contains( const String& haystack, const String& needle );
 
-	static int fuzzyMatch( const String& string, const String& pattern );
-
 	static int fuzzyMatch( const std::string& string, const std::string& pattern );
 
 	/** Replace all occurrences of the search string with the replacement string. */

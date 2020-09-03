@@ -1,6 +1,5 @@
 #include "projectdirectorytree.hpp"
 #include <eepp/system/filesystem.hpp>
-#include <eepp/system/lock.hpp>
 #include <eepp/system/luapattern.hpp>
 
 ProjectDirectoryTree::ProjectDirectoryTree( const std::string& path,
@@ -12,7 +11,7 @@ ProjectDirectoryTree::ProjectDirectoryTree( const std::string& path,
 void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& scanComplete,
 								 const std::vector<std::string>& acceptedPattern,
 								 const bool& ignoreHidden ) {
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined(__EMSCRIPTEN_PTHREADS__)
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 	mPool->run(
 		[&, acceptedPattern, ignoreHidden] {
 #endif
@@ -45,11 +44,11 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 				getDirectoryFiles( mFiles, mNames, mPath, info, ignoreHidden, mIgnoreMatcher );
 			}
 			mIsReady = true;
-#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN && !defined(__EMSCRIPTEN_PTHREADS__)
+#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN && !defined( __EMSCRIPTEN_PTHREADS__ )
 			if ( scanComplete )
 				scanComplete( *this );
 #endif
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined(__EMSCRIPTEN_PTHREADS__)
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 		},
 		[scanComplete, this] {
 			if ( scanComplete )
@@ -63,12 +62,8 @@ std::shared_ptr<FileListModel> ProjectDirectoryTree::fuzzyMatchTree( const std::
 	std::multimap<int, int, std::greater<int>> matchesMap;
 	std::vector<std::string> files;
 	std::vector<std::string> names;
-	int score;
-	for ( size_t i = 0; i < mNames.size(); i++ ) {
-		if ( ( score = String::fuzzyMatch( mNames[i], match ) ) > 0 ) {
-			matchesMap.insert( {score, i} );
-		}
-	}
+	for ( size_t i = 0; i < mNames.size(); i++ )
+		matchesMap.insert( {String::fuzzyMatch( mNames[i], match ), i} );
 	for ( auto& res : matchesMap ) {
 		if ( names.size() < max ) {
 			names.emplace_back( mNames[res.second] );
@@ -92,6 +87,16 @@ std::shared_ptr<FileListModel> ProjectDirectoryTree::matchTree( const std::strin
 		}
 	}
 	return std::make_shared<FileListModel>( files, names );
+}
+
+void ProjectDirectoryTree::asyncFuzzyMatchTree( const std::string& match, const size_t& max,
+												ProjectDirectoryTree::MatchResultCb res ) const {
+	mPool->run( [&, match, max, res]() { res( fuzzyMatchTree( match, max ) ); }, []() {} );
+}
+
+void ProjectDirectoryTree::asyncMatchTree( const std::string& match, const size_t& max,
+										   ProjectDirectoryTree::MatchResultCb res ) const {
+	mPool->run( [&, match, max, res]() { res( matchTree( match, max ) ); }, []() {} );
 }
 
 std::shared_ptr<FileListModel> ProjectDirectoryTree::asModel( const size_t& max ) const {

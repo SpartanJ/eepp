@@ -496,12 +496,23 @@ void App::hideLocateBar() {
 
 void App::updateLocateTable() {
 	if ( !mLocateInput->getText().empty() ) {
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
+		mDirTree->asyncFuzzyMatchTree(
+			mLocateInput->getText(), LOCATEBAR_MAX_RESULTS, [&]( auto res ) {
+				mUISceneNode->runOnMainThread( [&, res] {
+					mLocateTable->setModel( res );
+					mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
+				} );
+			} );
+#else
 		mLocateTable->setModel(
 			mDirTree->fuzzyMatchTree( mLocateInput->getText(), LOCATEBAR_MAX_RESULTS ) );
+		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
+#endif
 	} else {
 		mLocateTable->setModel( mDirTree->asModel( LOCATEBAR_MAX_RESULTS ) );
+		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
 	}
-	mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
 }
 
 bool App::trySendUnlockedCmd( const KeyEvent& keyEvent ) {
@@ -2384,6 +2395,8 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 #ifndef EE_DEBUG
 	Log::create( LogLevel::Info, false, true );
+#else
+	Log::create( LogLevel::Debug, true, true );
 #endif
 	args::ArgumentParser parser( "ecode" );
 	args::HelpFlag help( parser, "help", "Display this help menu", {'h', "help"} );

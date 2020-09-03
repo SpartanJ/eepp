@@ -46,6 +46,7 @@ class FileListModel : public Model {
 class ProjectDirectoryTree {
   public:
 	typedef std::function<void( ProjectDirectoryTree& dirTree )> ScanCompleteEvent;
+	typedef std::function<void( std::shared_ptr<FileListModel> )> MatchResultCb;
 
 	ProjectDirectoryTree( const std::string& path, std::shared_ptr<ThreadPool> threadPool );
 
@@ -57,6 +58,11 @@ class ProjectDirectoryTree {
 												   const size_t& max ) const;
 
 	std::shared_ptr<FileListModel> matchTree( const std::string& match, const size_t& max ) const;
+
+	void asyncFuzzyMatchTree( const std::string& match, const size_t& max,
+							  MatchResultCb res ) const;
+
+	void asyncMatchTree( const std::string& match, const size_t& max, MatchResultCb res ) const;
 
 	std::shared_ptr<FileListModel> asModel( const size_t& max ) const;
 

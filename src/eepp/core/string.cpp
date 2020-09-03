@@ -399,11 +399,9 @@ template <typename T> constexpr int tFuzzyMatch( const T* str, const T* ptn ) {
 		}
 		str++;
 	}
-	return score;
-}
-
-int String::fuzzyMatch( const String& string, const String& pattern ) {
-	return tFuzzyMatch<StringBaseType>( string.c_str(), pattern.c_str() );
+	if ( *ptn )
+		return INT_MIN;
+	return score - strlen( str );
 }
 
 int String::fuzzyMatch( const std::string& string, const std::string& pattern ) {
