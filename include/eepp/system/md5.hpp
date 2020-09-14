@@ -7,7 +7,7 @@
 
 namespace EE { namespace System {
 
-class MD5 {
+class EE_API MD5 {
   public:
 	struct Result {
 		std::vector<Uint8> digest;
