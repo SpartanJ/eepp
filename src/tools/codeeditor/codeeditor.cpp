@@ -28,14 +28,19 @@ bool App::onCloseRequestCallback( EE::Window::Window* ) {
 		UIMessageBox* msgBox = UIMessageBox::New(
 			UIMessageBox::OK_CANCEL,
 			"Do you really want to close the code editor?\nAll changes will be lost." );
-		msgBox->addEventListener( Event::MsgBoxConfirmClick,
-								  [&]( const Event* ) { mWindow->close(); } );
+		msgBox->addEventListener( Event::MsgBoxConfirmClick, [&]( const Event* ) {
+			if ( !mCurrentProject.empty() )
+				mConfig.saveProject( mCurrentProject, mEditorSplitter, mConfigPath );
+			mWindow->close();
+		} );
 		msgBox->addEventListener( Event::OnClose, [&]( const Event* ) { msgBox = nullptr; } );
 		msgBox->setTitle( "Close " + mWindowTitle + "?" );
 		msgBox->center();
 		msgBox->show();
 		return false;
 	} else {
+		if ( !mCurrentProject.empty() )
+			mConfig.saveProject( mCurrentProject, mEditorSplitter, mConfigPath );
 		return true;
 	}
 }
@@ -259,12 +264,12 @@ bool App::findPrevText( SearchState& search ) {
 
 	TextPosition found = doc.findLast( search.text, from, search.caseSensitive, search.range );
 	if ( found.isValid() ) {
-		doc.setSelection( {doc.positionOffset( found, search.text.size() ), found} );
+		doc.setSelection( { doc.positionOffset( found, search.text.size() ), found } );
 		return true;
 	} else {
 		found = doc.findLast( search.text, range.end() );
 		if ( found.isValid() ) {
-			doc.setSelection( {doc.positionOffset( found, search.text.size() ), found} );
+			doc.setSelection( { doc.positionOffset( found, search.text.size() ), found } );
 			return true;
 		}
 	}
@@ -289,12 +294,12 @@ bool App::findNextText( SearchState& search ) {
 
 	TextPosition found = doc.find( search.text, from, search.caseSensitive, range );
 	if ( found.isValid() ) {
-		doc.setSelection( {doc.positionOffset( found, search.text.size() ), found} );
+		doc.setSelection( { doc.positionOffset( found, search.text.size() ), found } );
 		return true;
 	} else {
 		found = doc.find( search.text, range.start(), search.caseSensitive, range );
 		if ( found.isValid() ) {
-			doc.setSelection( {doc.positionOffset( found, search.text.size() ), found} );
+			doc.setSelection( { doc.positionOffset( found, search.text.size() ), found } );
 			return true;
 		}
 	}
@@ -330,7 +335,7 @@ int App::replaceAll( SearchState& search, const String& replace ) {
 	do {
 		found = doc.find( search.text, from, search.caseSensitive, search.range );
 		if ( found.isValid() ) {
-			doc.setSelection( {doc.positionOffset( found, search.text.size() ), found} );
+			doc.setSelection( { doc.positionOffset( found, search.text.size() ), found } );
 			from = doc.replaceSelection( replace );
 			count++;
 		}
@@ -362,106 +367,14 @@ void App::runCommand( const std::string& command ) {
 }
 
 void App::loadConfig() {
-	mConfigPath = Sys::getConfigPath( "ecode" );
-	if ( !FileSystem::fileExists( mConfigPath ) )
-		FileSystem::makeDir( mConfigPath );
-	FileSystem::dirAddSlashAtEnd( mConfigPath );
-	mKeybindingsPath = mConfigPath + "keybindings.cfg";
-	mIni.loadFromFile( mConfigPath + "config.cfg" );
-	mIniState.loadFromFile( mConfigPath + "state.cfg" );
-	std::string recent = mIniState.getValue( "files", "recentfiles", "" );
-	mRecentFiles = String::split( recent, ';' );
-	std::string recentFolders = mIniState.getValue( "folders", "recentfolders", "" );
-	mRecentFolders = String::split( recentFolders, ';' );
-	mInitColorScheme = mConfig.editor.colorScheme =
-		mIni.getValue( "editor", "colorscheme", "eepp" );
-	mConfig.editor.fontSize = mIni.getValue( "editor", "font_size", "11dp" );
-	mConfig.window.size.setWidth(
-		mIniState.getValueI( "window", "width", mDisplayDPI > 105 ? 1920 : 1280 ) );
-	mConfig.window.size.setHeight(
-		mIniState.getValueI( "window", "height", mDisplayDPI > 105 ? 1080 : 720 ) );
-	mConfig.window.maximized = mIniState.getValueB( "window", "maximized", false );
-	mConfig.window.pixelDensity = mIniState.getValueF( "window", "pixeldensity" );
-	mConfig.window.winIcon = mIni.getValue( "window", "winicon", mResPath + "assets/icon/ee.png" );
-	mConfig.window.panelPartition = mIniState.getValue( "window", "panel_partition", "15%" );
-	mConfig.editor.showLineNumbers = mIni.getValueB( "editor", "show_line_numbers", true );
-	mConfig.editor.showWhiteSpaces = mIni.getValueB( "editor", "show_white_spaces", true );
-	mConfig.editor.highlightMatchingBracket =
-		mIni.getValueB( "editor", "highlight_matching_brackets", true );
-	mConfig.editor.highlightCurrentLine =
-		mIni.getValueB( "editor", "highlight_current_line", true );
-	mConfig.editor.horizontalScrollbar = mIni.getValueB( "editor", "horizontal_scrollbar", false );
-	mConfig.ui.fontSize = mIni.getValue( "ui", "font_size", "11dp" );
-	mConfig.ui.showSidePanel = mIni.getValueB( "ui", "show_side_panel", true );
-	mConfig.ui.serifFont = mIni.getValue( "ui", "serif_font", "assets/fonts/NotoSans-Regular.ttf" );
-	mConfig.ui.monospaceFont =
-		mIni.getValue( "ui", "monospace_font", "assets/fonts/DejaVuSansMono.ttf" );
-	mConfig.editor.trimTrailingWhitespaces =
-		mIni.getValueB( "editor", "trim_trailing_whitespaces", false );
-	mConfig.editor.forceNewLineAtEndOfFile =
-		mIni.getValueB( "editor", "force_new_line_at_end_of_file", false );
-	mConfig.editor.autoDetectIndentType =
-		mIni.getValueB( "editor", "auto_detect_indent_type", true );
-	mConfig.editor.writeUnicodeBOM = mIni.getValueB( "editor", "write_bom", false );
-	mConfig.editor.autoCloseBrackets = mIni.getValue( "editor", "auto_close_brackets", "" );
-	mConfig.editor.indentWidth = mIni.getValueI( "editor", "indent_width", 4 );
-	mConfig.editor.indentSpaces = mIni.getValueB( "editor", "indent_spaces", false );
-	mConfig.editor.windowsLineEndings = mIni.getValueB( "editor", "windows_line_endings", false );
-	mConfig.editor.tabWidth = eemax( 2, mIni.getValueI( "editor", "tab_width", 4 ) );
-	mConfig.editor.lineBreakingColumn =
-		eemax( 0, mIni.getValueI( "editor", "line_breaking_column", 100 ) );
-	mConfig.editor.highlightSelectionMatch =
-		mIni.getValueB( "editor", "highlight_selection_match", true );
-	mConfig.editor.colorPickerSelection =
-		mIni.getValueB( "editor", "color_picker_selection", true );
-	mConfig.editor.colorPreview = mIni.getValueB( "editor", "color_preview", true );
-	mConfig.editor.autoComplete = mIni.getValueB( "editor", "auto_complete", true );
-	mConfig.editor.showDocInfo = mIni.getValueB( "editor", "show_doc_info", true );
+	mConfig.load( mConfigPath, mKeybindingsPath, mInitColorScheme, mRecentFiles, mRecentFolders,
+				  mResPath, mDisplayDPI );
 }
 
 void App::saveConfig() {
-	mConfig.editor.colorScheme = mEditorSplitter->getCurrentColorSchemeName();
-	mConfig.window.size = mWindow->getLastWindowedSize();
-	mConfig.window.maximized = mWindow->isMaximized();
-	mIni.setValue( "editor", "colorscheme", mConfig.editor.colorScheme );
-	mIniState.setValueI( "window", "width", mConfig.window.size.getWidth() );
-	mIniState.setValueI( "window", "height", mConfig.window.size.getHeight() );
-	mIniState.setValueB( "window", "maximized", mConfig.window.maximized );
-	mIniState.setValueF( "window", "pixeldensity", mConfig.window.pixelDensity );
-	mIniState.setValue( "window", "panel_partition",
-						mProjectSplitter ? mProjectSplitter->getSplitPartition().toString()
-										 : "15%" );
-	mIniState.setValue( "files", "recentfiles", String::join( mRecentFiles, ';' ) );
-	mIniState.setValue( "folders", "recentfolders", String::join( mRecentFolders, ';' ) );
-	mIni.setValueB( "editor", "show_line_numbers", mConfig.editor.showLineNumbers );
-	mIni.setValueB( "editor", "show_white_spaces", mConfig.editor.showWhiteSpaces );
-	mIni.setValueB( "editor", "highlight_matching_brackets",
-					mConfig.editor.highlightMatchingBracket );
-	mIni.setValueB( "editor", "highlight_current_line", mConfig.editor.highlightCurrentLine );
-	mIni.setValueB( "editor", "horizontal_scrollbar", mConfig.editor.horizontalScrollbar );
-	mIni.setValue( "editor", "font_size", mConfig.editor.fontSize.toString() );
-	mIni.setValue( "ui", "font_size", mConfig.ui.fontSize.toString() );
-	mIni.setValueB( "ui", "show_side_panel", mConfig.ui.showSidePanel );
-	mIni.setValue( "ui", "serif_font", mConfig.ui.serifFont );
-	mIni.setValue( "ui", "monospace_font", mConfig.ui.monospaceFont );
-	mIni.setValueB( "editor", "trim_trailing_whitespaces", mConfig.editor.trimTrailingWhitespaces );
-	mIni.setValueB( "editor", "force_new_line_at_end_of_file",
-					mConfig.editor.forceNewLineAtEndOfFile );
-	mIni.setValueB( "editor", "auto_detect_indent_type", mConfig.editor.autoDetectIndentType );
-	mIni.setValueB( "editor", "write_bom", mConfig.editor.writeUnicodeBOM );
-	mIni.setValue( "editor", "auto_close_brackets", mConfig.editor.autoCloseBrackets );
-	mIni.setValueI( "editor", "indent_width", mConfig.editor.indentWidth );
-	mIni.setValueB( "editor", "indent_spaces", mConfig.editor.indentSpaces );
-	mIni.setValueB( "editor", "windows_line_endings", mConfig.editor.windowsLineEndings );
-	mIni.setValueI( "editor", "tab_width", mConfig.editor.tabWidth );
-	mIni.setValueI( "editor", "line_breaking_column", mConfig.editor.lineBreakingColumn );
-	mIni.setValueB( "editor", "highlight_selection_match", mConfig.editor.highlightSelectionMatch );
-	mIni.setValueB( "editor", "color_picker_selection", mConfig.editor.colorPickerSelection );
-	mIni.setValueB( "editor", "color_preview", mConfig.editor.colorPreview );
-	mIni.setValueB( "editor", "auto_complete", mConfig.editor.autoComplete );
-	mIni.setValueB( "editor", "show_doc_info", mConfig.editor.showDocInfo );
-	mIni.writeFile();
-	mIniState.writeFile();
+	mConfig.save( mRecentFiles, mRecentFolders,
+				  mProjectSplitter ? mProjectSplitter->getSplitPartition().toString() : "15%",
+				  mWindow, mEditorSplitter->getCurrentColorSchemeName() );
 }
 
 static std::string keybindFormat( std::string str ) {
@@ -518,7 +431,7 @@ void App::updateLocateTable() {
 bool App::trySendUnlockedCmd( const KeyEvent& keyEvent ) {
 	if ( mEditorSplitter->getCurEditor() ) {
 		std::string cmd = mEditorSplitter->getCurEditor()->getKeyBindings().getCommandFromKeyBind(
-			{keyEvent.getKeyCode(), keyEvent.getMod()} );
+			{ keyEvent.getKeyCode(), keyEvent.getMod() } );
 		if ( !cmd.empty() && mEditorSplitter->getCurEditor()->isUnlockedCommand( cmd ) ) {
 			mEditorSplitter->getCurEditor()->getDocument().execute( cmd );
 			return true;
@@ -551,12 +464,12 @@ void App::initLocateBar() {
 			String number( mLocateInput->getText().substr( 2 ) );
 			Int64 val;
 			if ( String::fromString( val, number ) && val - 1 >= 0 ) {
-				mEditorSplitter->getCurEditor()->goToLine( {val - 1, 0} );
+				mEditorSplitter->getCurEditor()->goToLine( { val - 1, 0 } );
 				mLocateTable->setVisible( false );
 			}
 		} else {
 			mLocateTable->setVisible( true );
-			Vector2f pos( mLocateInput->convertToWorldSpace( {0, 0} ) );
+			Vector2f pos( mLocateInput->convertToWorldSpace( { 0, 0 } ) );
 			pos.y -= mLocateTable->getPixelsSize().getHeight();
 			mLocateTable->setPixelsPosition( pos );
 			if ( !mDirTreeReady )
@@ -577,7 +490,7 @@ void App::initLocateBar() {
 		mEditorSplitter->getCurEditor()->setFocus();
 	} );
 	mLocateBarLayout->getKeyBindings().addKeybindsString( {
-		{"escape", "close-locatebar"},
+		{ "escape", "close-locatebar" },
 	} );
 	mLocateTable->addEventListener( Event::KeyDown, [&]( const Event* event ) {
 		const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );
@@ -615,7 +528,7 @@ void App::updateLocateBar() {
 		width -= mLocateTable->getVerticalScrollBar()->getPixelsSize().getWidth();
 		mLocateTable->setColumnWidth( 0, eeceil( width * 0.5 ) );
 		mLocateTable->setColumnWidth( 1, width - mLocateTable->getColumnWidth( 0 ) );
-		Vector2f pos( mLocateInput->convertToWorldSpace( {0, 0} ) );
+		Vector2f pos( mLocateInput->convertToWorldSpace( { 0, 0 } ) );
 		pos.y -= mLocateTable->getPixelsSize().getHeight();
 		mLocateTable->setPixelsPosition( pos );
 	} );
@@ -663,7 +576,7 @@ void App::initSearchBar() {
 			mSearchState.text = findInput->getText();
 			mSearchState.editor->setHighlightWord( mSearchState.text );
 			if ( !mSearchState.text.empty() ) {
-				mSearchState.editor->getDocument().setSelection( {0, 0} );
+				mSearchState.editor->getDocument().setSelection( { 0, 0 } );
 				if ( !findNextText( mSearchState ) ) {
 					findInput->addClass( "error" );
 				} else {
@@ -704,11 +617,11 @@ void App::initSearchBar() {
 		mSearchState.caseSensitive = caseSensitiveChk->isChecked();
 	} );
 	mSearchBarLayout->getKeyBindings().addKeybindsString( {
-		{"f3", "repeat-find"},
-		{"ctrl+g", "repeat-find"},
-		{"escape", "close-searchbar"},
-		{"ctrl+r", "replace-all"},
-		{"ctrl+s", "change-case"},
+		{ "f3", "repeat-find" },
+		{ "ctrl+g", "repeat-find" },
+		{ "escape", "close-searchbar" },
+		{ "ctrl+r", "replace-all" },
+		{ "ctrl+s", "change-case" },
 	} );
 	addReturnListener( findInput, "repeat-find" );
 	addReturnListener( replaceInput, "find-and-replace" );
@@ -747,7 +660,7 @@ void App::updateGlobalSearchBar() {
 		mGlobalSearchTree->setPixelsSize( width, rowHeight );
 		width -= mGlobalSearchTree->getVerticalScrollBar()->getPixelsSize().getWidth();
 		mGlobalSearchTree->setColumnWidth( 0, eeceil( width ) );
-		Vector2f pos( mGlobalSearchInput->convertToWorldSpace( {0, 0} ) );
+		Vector2f pos( mGlobalSearchInput->convertToWorldSpace( { 0, 0 } ) );
 		pos.y -= mGlobalSearchTree->getPixelsSize().getHeight();
 		mGlobalSearchTree->setPixelsPosition( pos );
 	} );
@@ -813,8 +726,8 @@ void App::initGlobalSearchBar() {
 			mEditorSplitter->getCurEditor()->setFocus();
 	} );
 	mGlobalSearchBarLayout->getKeyBindings().addKeybindsString( {
-		{"escape", "close-global-searchbar"},
-		{"ctrl+s", "change-case"},
+		{ "escape", "close-global-searchbar" },
+		{ "ctrl+s", "change-case" },
 	} );
 	mGlobalSearchBarLayout->addCommand( "change-case", [&, caseSensitiveChk] {
 		caseSensitiveChk->setChecked( !caseSensitiveChk->isChecked() );
@@ -830,7 +743,8 @@ void App::initGlobalSearchBar() {
 	mGlobalSearchInput->addEventListener( Event::KeyDown, [&]( const Event* event ) {
 		const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );
 		Uint32 keyCode = keyEvent->getKeyCode();
-		if ( ( keyCode == KEY_UP || keyCode == KEY_DOWN ) &&
+		if ( ( keyCode == KEY_UP || keyCode == KEY_DOWN || keyCode == KEY_PAGEUP ||
+			   keyCode == KEY_PAGEDOWN || keyCode == KEY_HOME || keyCode == KEY_END ) &&
 			 mGlobalSearchTree->forceKeyDown( *keyEvent ) && !mGlobalSearchTree->hasFocus() ) {
 			mGlobalSearchTree->setFocus();
 		}
@@ -844,7 +758,7 @@ void App::initGlobalSearchBar() {
 	mGlobalSearchTree->setHeadersVisible( false );
 	mGlobalSearchTree->setVisible( false );
 	mGlobalSearchTree->setColumnsHidden(
-		{ProjectSearch::ResultModel::Line, ProjectSearch::ResultModel::ColumnPosition}, true );
+		{ ProjectSearch::ResultModel::Line, ProjectSearch::ResultModel::ColumnPosition }, true );
 	mGlobalSearchTree->addEventListener( Event::KeyDown, [&]( const Event* event ) {
 		const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );
 		if ( keyEvent->getKeyCode() == KEY_ESCAPE )
@@ -881,7 +795,7 @@ void App::initGlobalSearchBar() {
 								 Model::Role::Custom ) );
 				if ( mEditorSplitter->getCurEditor() && lineNum.isValid() && colNum.isValid() &&
 					 lineNum.is( Variant::Type::Int64 ) && colNum.is( Variant::Type::Int64 ) ) {
-					TextPosition pos{lineNum.asInt64(), colNum.asInt64()};
+					TextPosition pos{ lineNum.asInt64(), colNum.asInt64() };
 					mEditorSplitter->getCurEditor()->getDocument().setSelection( pos );
 					mEditorSplitter->getCurEditor()->goToLine( pos );
 					hideGlobalSearchBar();
@@ -1099,7 +1013,7 @@ UIMenu* App::createWindowMenu() {
 			msgBox->setTitle( mWindowTitle );
 			msgBox->getTextInput()->setText(
 				String::format( "%.2f", mConfig.window.pixelDensity ) );
-			msgBox->setCloseShortcut( {KEY_ESCAPE, 0} );
+			msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
 			msgBox->show();
 			msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox]( const Event* ) {
 				msgBox->closeWindow();
@@ -1127,7 +1041,7 @@ UIMenu* App::createWindowMenu() {
 				UIMessageBox::New( UIMessageBox::INPUT, "Set the editor font size:" );
 			msgBox->setTitle( mWindowTitle );
 			msgBox->getTextInput()->setText( mConfig.editor.fontSize.toString() );
-			msgBox->setCloseShortcut( {KEY_ESCAPE, 0} );
+			msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
 			msgBox->show();
 			msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox]( const Event* ) {
 				mConfig.editor.fontSize = StyleSheetLength( msgBox->getTextInput()->getText() );
@@ -1141,7 +1055,7 @@ UIMenu* App::createWindowMenu() {
 				UIMessageBox::New( UIMessageBox::INPUT, "Set the UI font size:" );
 			msgBox->setTitle( mWindowTitle );
 			msgBox->getTextInput()->setText( mConfig.ui.fontSize.toString() );
-			msgBox->setCloseShortcut( {KEY_ESCAPE, 0} );
+			msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
 			msgBox->show();
 			msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox]( const Event* ) {
 				mConfig.ui.fontSize = StyleSheetLength( msgBox->getTextInput()->getText() );
@@ -1269,7 +1183,7 @@ UIMenu* App::createViewMenu() {
 				UIMessageBox::New( UIMessageBox::INPUT, "Set Line Breaking Column:\n"
 														"Set 0 to disable it.\n" );
 			msgBox->setTitle( mWindowTitle );
-			msgBox->setCloseShortcut( {KEY_ESCAPE, 0} );
+			msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
 			msgBox->getTextInput()->setAllowOnlyNumbers( true, false );
 			msgBox->getTextInput()->setText(
 				String::toString( mConfig.editor.lineBreakingColumn ) );
@@ -1672,27 +1586,56 @@ std::map<KeyBindings::Shortcut, std::string> App::getDefaultKeybindings() {
 
 std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 	return {
-		{{KEY_RETURN, KEYMOD_LALT}, "fullscreen-toggle"},
-		{{KEY_F3, KEYMOD_NONE}, "repeat-find"},
-		{{KEY_F12, KEYMOD_NONE}, "console-toggle"},
-		{{KEY_F, KEYMOD_CTRL}, "find-replace"},
-		{{KEY_Q, KEYMOD_CTRL}, "close-app"},
-		{{KEY_O, KEYMOD_CTRL}, "open-file"},
-		{{KEY_O, KEYMOD_CTRL | KEYMOD_SHIFT}, "open-folder"},
-		{{KEY_F6, KEYMOD_NONE}, "debug-draw-highlight-toggle"},
-		{{KEY_F7, KEYMOD_NONE}, "debug-draw-boxes-toggle"},
-		{{KEY_F8, KEYMOD_NONE}, "debug-draw-debug-data"},
-		{{KEY_K, KEYMOD_CTRL}, "open-locatebar"},
-		{{KEY_F, KEYMOD_CTRL | KEYMOD_SHIFT}, "open-global-search"},
-		{{KEY_L, KEYMOD_CTRL}, "go-to-line"},
-		{{KEY_M, KEYMOD_CTRL}, "menu-toggle"},
-		{{KEY_S, KEYMOD_CTRL | KEYMOD_SHIFT}, "save-all"},
+		{ { KEY_RETURN, KEYMOD_LALT }, "fullscreen-toggle" },
+		{ { KEY_F3, KEYMOD_NONE }, "repeat-find" },
+		{ { KEY_F12, KEYMOD_NONE }, "console-toggle" },
+		{ { KEY_F, KEYMOD_CTRL }, "find-replace" },
+		{ { KEY_Q, KEYMOD_CTRL }, "close-app" },
+		{ { KEY_O, KEYMOD_CTRL }, "open-file" },
+		{ { KEY_O, KEYMOD_CTRL | KEYMOD_SHIFT }, "open-folder" },
+		{ { KEY_F6, KEYMOD_NONE }, "debug-draw-highlight-toggle" },
+		{ { KEY_F7, KEYMOD_NONE }, "debug-draw-boxes-toggle" },
+		{ { KEY_F8, KEYMOD_NONE }, "debug-draw-debug-data" },
+		{ { KEY_K, KEYMOD_CTRL }, "open-locatebar" },
+		{ { KEY_F, KEYMOD_CTRL | KEYMOD_SHIFT }, "open-global-search" },
+		{ { KEY_L, KEYMOD_CTRL }, "go-to-line" },
+		{ { KEY_M, KEYMOD_CTRL }, "menu-toggle" },
+		{ { KEY_S, KEYMOD_CTRL | KEYMOD_SHIFT }, "save-all" },
 	};
 }
 
 std::vector<std::string> App::getUnlockedCommands() {
-	return {"fullscreen-toggle", "open-file",	   "open-folder",		 "console-toggle",
-			"close-app",		 "open-locatebar", "open-global-search", "menu-toggle"};
+	return { "fullscreen-toggle", "open-file",		"open-folder",		  "console-toggle",
+			 "close-app",		  "open-locatebar", "open-global-search", "menu-toggle" };
+}
+
+void App::closeEditors() {
+	mConfig.saveProject( mCurrentProject, mEditorSplitter, mConfigPath );
+	std::vector<UICodeEditor*> editors = mEditorSplitter->getAllEditors();
+	for ( auto editor : editors ) {
+		UITabWidget* tabWidget = mEditorSplitter->tabWidgetFromEditor( editor );
+		tabWidget->removeTab( (UITab*)editor->getData() );
+	}
+	mCurrentProject = "";
+}
+
+void App::closeFolder() {
+	if ( mCurrentProject.empty() )
+		return;
+
+	if ( mEditorSplitter->isAnyEditorDirty() ) {
+		UIMessageBox* msgBox = UIMessageBox::New(
+			UIMessageBox::OK_CANCEL,
+			"Do you really want to close the folder?\nSome files haven't been saved." );
+		msgBox->addEventListener( Event::MsgBoxConfirmClick,
+								  [&]( const Event* ) { closeEditors(); } );
+		msgBox->addEventListener( Event::OnClose, [&]( const Event* ) { msgBox = nullptr; } );
+		msgBox->setTitle( "Close Folder?" );
+		msgBox->center();
+		msgBox->show();
+	} else {
+		closeEditors();
+	}
 }
 
 void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
@@ -1731,6 +1674,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	doc.setCommand( "open-global-search", [&] { showGlobalSearch(); } );
 	doc.setCommand( "open-locatebar", [&] { showLocateBar(); } );
 	doc.setCommand( "repeat-find", [&] { findNextText( mSearchState ); } );
+	doc.setCommand( "close-folder", [&] { closeFolder(); } );
 	doc.setCommand( "close-app", [&] { closeApp(); } );
 	doc.setCommand( "fullscreen-toggle", [&]() {
 		mWindow->toggleFullscreen();
@@ -1889,6 +1833,8 @@ void App::createSettingsMenu() {
 	mSettingsMenu->addSubMenu( "Window", nullptr, createWindowMenu() );
 	mSettingsMenu->addSeparator();
 	mSettingsMenu->add( "Close", findIcon( "document-close" ), getKeybind( "close-doc" ) );
+	mSettingsMenu->add( "Close Folder", findIcon( "document-close" ),
+						getKeybind( "close-folder" ) );
 	mSettingsMenu->addSeparator();
 	mSettingsMenu->add( "Quit", findIcon( "quit" ), getKeybind( "close-app" ) );
 	mSettingsButton = mUISceneNode->find<UITextView>( "settings" );
@@ -1912,6 +1858,8 @@ void App::createSettingsMenu() {
 			runCommand( "save-all" );
 		} else if ( name == "Close" ) {
 			runCommand( "close-doc" );
+		} else if ( name == "Close Folder" ) {
+			runCommand( "close-folder" );
 		} else if ( name == "Quit" ) {
 			runCommand( "close-app" );
 		}
@@ -2000,9 +1948,9 @@ void App::loadDirTree( const std::string& path ) {
 void App::initProjectTreeView( const std::string& path ) {
 	mProjectTreeView = mUISceneNode->find<UITreeView>( "project_view" );
 	mProjectTreeView->setColumnsHidden(
-		{FileSystemModel::Icon, FileSystemModel::Size, FileSystemModel::Group,
-		 FileSystemModel::Inode, FileSystemModel::Owner, FileSystemModel::SymlinkTarget,
-		 FileSystemModel::Permissions, FileSystemModel::ModificationTime, FileSystemModel::Path},
+		{ FileSystemModel::Icon, FileSystemModel::Size, FileSystemModel::Group,
+		  FileSystemModel::Inode, FileSystemModel::Owner, FileSystemModel::SymlinkTarget,
+		  FileSystemModel::Permissions, FileSystemModel::ModificationTime, FileSystemModel::Path },
 		true );
 	mProjectTreeView->setIconSize( mMenuIconSize );
 	mProjectTreeView->setExpanderIconSize( mMenuIconSize );
@@ -2033,7 +1981,7 @@ void App::initProjectTreeView( const std::string& path ) {
 		if ( mEditorSplitter->getCurEditor() ) {
 			std::string cmd =
 				mEditorSplitter->getCurEditor()->getKeyBindings().getCommandFromKeyBind(
-					{keyEvent->getKeyCode(), keyEvent->getMod()} );
+					{ keyEvent->getKeyCode(), keyEvent->getMod() } );
 			if ( !cmd.empty() && mEditorSplitter->getCurEditor()->isUnlockedCommand( cmd ) ) {
 				mEditorSplitter->getCurEditor()->getDocument().execute( cmd );
 			}
@@ -2048,7 +1996,7 @@ void App::initProjectTreeView( const std::string& path ) {
 
 			mProjectTreeView->setModel( FileSystemModel::New(
 				FileSystem::fileRemoveFileName( rpath ), FileSystemModel::Mode::FilesAndDirectories,
-				{true, true, true} ) );
+				{ true, true, true } ) );
 
 			mEditorSplitter->loadFileFromPath( rpath );
 		}
@@ -2061,10 +2009,13 @@ void App::initProjectTreeView( const std::string& path ) {
 
 void App::loadFolder( const std::string& path ) {
 	std::string rpath( FileSystem::getRealPath( path ) );
+	mCurrentProject = rpath;
 	loadDirTree( rpath );
 
+	mConfig.loadProject( rpath, mEditorSplitter, mConfigPath );
+
 	mProjectTreeView->setModel( FileSystemModel::New(
-		rpath, FileSystemModel::Mode::FilesAndDirectories, {true, true, true} ) );
+		rpath, FileSystemModel::Mode::FilesAndDirectories, { true, true, true } ) );
 
 	auto found = std::find( mRecentFolders.begin(), mRecentFolders.end(), rpath );
 	if ( found != mRecentFolders.end() )
@@ -2109,13 +2060,13 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 
 	Engine* engine = Engine::instance();
 
-	WindowSettings winSettings = engine->createWindowSettings( &mIniState, "window" );
+	WindowSettings winSettings = engine->createWindowSettings( &mConfig.iniState, "window" );
 	winSettings.PixelDensity = 1;
 	winSettings.Width = mConfig.window.size.getWidth();
 	winSettings.Height = mConfig.window.size.getHeight();
 	if ( winSettings.Icon.empty() )
 		winSettings.Icon = mConfig.window.winIcon;
-	ContextSettings contextSettings = engine->createContextSettings( &mIni, "window" );
+	ContextSettings contextSettings = engine->createContextSettings( &mConfig.ini, "window" );
 	mWindow = engine->createWindow( winSettings, contextSettings );
 
 	if ( mWindow->isOpen() ) {
@@ -2303,41 +2254,41 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		UIIconTheme* iconTheme = UIIconTheme::New( "remixicon" );
 		mMenuIconSize = mConfig.ui.fontSize.asPixels( 0, Sizef(), mDisplayDPI );
 		std::unordered_map<std::string, Uint32> icons = {
-			{"document-new", 0xecc3},
-			{"document-open", 0xed70},
-			{"document-save", 0xf0b3},
-			{"document-save-as", 0xf0b3},
-			{"document-close", 0xeb99},
-			{"quit", 0xeb97},
-			{"undo", 0xea58},
-			{"redo", 0xea5a},
-			{"cut", 0xf0c1},
-			{"copy", 0xecd5},
-			{"paste", 0xeb91},
-			{"split-horizontal", 0xf17a},
-			{"split-vertical", 0xf17b},
-			{"find-replace", 0xed2b},
-			{"folder", 0xed54},
-			{"folder-open", 0xed70},
-			{"folder-add", 0xed5a},
-			{"file", 0xecc3},
-			{"file-code", 0xecd1},
-			{"file-edit", 0xecdb},
-			{"font-size", 0xed8d},
-			{"zoom-in", 0xf2db},
-			{"zoom-out", 0xf2dd},
-			{"zoom-reset", 0xeb47},
-			{"fullscreen", 0xed9c},
-			{"keybindings", 0xee75},
-			{"tree-expanded", 0xea50},
-			{"tree-contracted", 0xea54},
-			{"search", 0xf0d1},
-			{"go-up", 0xea78},
-			{"ok", 0xeb7a},
-			{"cancel", 0xeb98},
-			{"color-picker", 0xf13d},
-			{"pixel-density", 0xed8c},
-			{"go-to-line", 0xf1f8},
+			{ "document-new", 0xecc3 },
+			{ "document-open", 0xed70 },
+			{ "document-save", 0xf0b3 },
+			{ "document-save-as", 0xf0b3 },
+			{ "document-close", 0xeb99 },
+			{ "quit", 0xeb97 },
+			{ "undo", 0xea58 },
+			{ "redo", 0xea5a },
+			{ "cut", 0xf0c1 },
+			{ "copy", 0xecd5 },
+			{ "paste", 0xeb91 },
+			{ "split-horizontal", 0xf17a },
+			{ "split-vertical", 0xf17b },
+			{ "find-replace", 0xed2b },
+			{ "folder", 0xed54 },
+			{ "folder-open", 0xed70 },
+			{ "folder-add", 0xed5a },
+			{ "file", 0xecc3 },
+			{ "file-code", 0xecd1 },
+			{ "file-edit", 0xecdb },
+			{ "font-size", 0xed8d },
+			{ "zoom-in", 0xf2db },
+			{ "zoom-out", 0xf2dd },
+			{ "zoom-reset", 0xeb47 },
+			{ "fullscreen", 0xed9c },
+			{ "keybindings", 0xee75 },
+			{ "tree-expanded", 0xea50 },
+			{ "tree-contracted", 0xea54 },
+			{ "search", 0xf0d1 },
+			{ "go-up", 0xea78 },
+			{ "ok", 0xeb7a },
+			{ "cancel", 0xeb98 },
+			{ "color-picker", 0xf13d },
+			{ "pixel-density", 0xed8c },
+			{ "go-to-line", 0xf1f8 },
 		};
 		for ( auto icon : icons )
 			iconTheme->add( UIGlyphIcon::New( icon.first, iconFont, icon.second ) );
@@ -2399,10 +2350,11 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	Log::create( LogLevel::Debug, true, true );
 #endif
 	args::ArgumentParser parser( "ecode" );
-	args::HelpFlag help( parser, "help", "Display this help menu", {'h', "help"} );
+	args::HelpFlag help( parser, "help", "Display this help menu", { 'h', "help" } );
 	args::Positional<std::string> file( parser, "file", "The file path" );
-	args::ValueFlag<Float> pixelDenstiyConf(
-		parser, "pixel-density", "Set default application pixel density", {'d', "pixel-density"} );
+	args::ValueFlag<Float> pixelDenstiyConf( parser, "pixel-density",
+											 "Set default application pixel density",
+											 { 'd', "pixel-density" } );
 
 	try {
 		parser.ParseCLI( argc, argv );

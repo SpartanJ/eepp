@@ -16,22 +16,30 @@ namespace EE { namespace System {
 #define iniEOL '\r' << std::endl
 #endif
 
-IniFile::IniFile( std::string const iniPath ) : mCaseInsensitive( true ), mIniReaded( false ) {
-	loadFromFile( iniPath );
-}
-
-IniFile::IniFile( const Uint8* RAWData, const Uint32& size ) :
+IniFile::IniFile( std::string const iniPath, bool autoLoad ) :
 	mCaseInsensitive( true ), mIniReaded( false ) {
-	loadFromMemory( RAWData, size );
+	if ( autoLoad )
+		loadFromFile( iniPath );
+	else
+		path( iniPath );
 }
 
-IniFile::IniFile( Pack* Pack, std::string iniPackPath ) :
+IniFile::IniFile( const Uint8* RAWData, const Uint32& size, bool autoLoad ) :
 	mCaseInsensitive( true ), mIniReaded( false ) {
-	loadFromPack( Pack, iniPackPath );
+	if ( autoLoad )
+		loadFromMemory( RAWData, size );
 }
 
-IniFile::IniFile( IOStream& stream ) : mCaseInsensitive( true ), mIniReaded( false ) {
-	loadFromStream( stream );
+IniFile::IniFile( Pack* Pack, std::string iniPackPath, bool autoLoad ) :
+	mCaseInsensitive( true ), mIniReaded( false ) {
+	if ( autoLoad )
+		loadFromPack( Pack, iniPackPath );
+}
+
+IniFile::IniFile( IOStream& stream, bool autoLoad ) :
+	mCaseInsensitive( true ), mIniReaded( false ) {
+	if ( autoLoad )
+		loadFromStream( stream );
 }
 
 bool IniFile::loadFromPack( Pack* Pack, std::string iniPackPath ) {

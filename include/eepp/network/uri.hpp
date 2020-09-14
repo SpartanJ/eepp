@@ -233,6 +233,12 @@ class EE_API URI {
 	 * is appended to decodedStr. */
 	static void decode( const std::string& str, std::string& decodedStr );
 
+	/** URI encodes the string.  */
+	static std::string encode( const std::string& str );
+
+	/** URI decodes the string. */
+	static std::string decode( const std::string& str );
+
   protected:
 	/** @returns true if both uri's are equivalent. */
 	bool equals( const URI& uri ) const;

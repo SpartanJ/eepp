@@ -33,16 +33,16 @@ class EE_API IniFile {
 	enum errors { noID = -1 };
 
 	/** Initialize and load the ini file from path  */
-	IniFile( std::string const iniPath = "" );
+	IniFile( std::string const iniPath = "", bool autoLoad = true );
 
 	/** Initialize and load the ini file from memory  */
-	IniFile( const Uint8* RAWData, const Uint32& size );
+	IniFile( const Uint8* RAWData, const Uint32& size, bool autoLoad = true );
 
 	/** Initialize and load the ini file from a pack file  */
-	IniFile( Pack* Pack, std::string iniPackPath );
+	IniFile( Pack* Pack, std::string iniPackPath, bool autoLoad = true );
 
 	/** Initialize and load the ini file from a stream  */
-	IniFile( IOStream& stream );
+	IniFile( IOStream& stream, bool autoLoad = true );
 
 	virtual ~IniFile() {}
 

@@ -19,41 +19,41 @@ const std::map<KeyBindings::Shortcut, std::string> UICodeEditorSplitter::getDefa
 const std::map<KeyBindings::Shortcut, std::string>
 UICodeEditorSplitter::getLocalDefaultKeybindings() {
 	return {
-		{{KEY_S, KEYMOD_CTRL}, "save-doc"},
-		{{KEY_L, KEYMOD_CTRL | KEYMOD_SHIFT}, "lock-toggle"},
-		{{KEY_T, KEYMOD_CTRL}, "create-new"},
-		{{KEY_W, KEYMOD_CTRL}, "close-doc"},
-		{{KEY_TAB, KEYMOD_CTRL}, "next-doc"},
-		{{KEY_TAB, KEYMOD_CTRL | KEYMOD_SHIFT}, "previous-doc"},
-		{{KEY_J, KEYMOD_LALT | KEYMOD_SHIFT}, "split-left"},
-		{{KEY_L, KEYMOD_LALT | KEYMOD_SHIFT}, "split-right"},
-		{{KEY_I, KEYMOD_LALT | KEYMOD_SHIFT}, "split-top"},
-		{{KEY_K, KEYMOD_LALT | KEYMOD_SHIFT}, "split-bottom"},
-		{{KEY_S, KEYMOD_LALT | KEYMOD_SHIFT}, "split-swap"},
-		{{KEY_J, KEYMOD_CTRL | KEYMOD_LALT}, "switch-to-previous-split"},
-		{{KEY_L, KEYMOD_CTRL | KEYMOD_LALT}, "switch-to-next-split"},
-		{{KEY_N, KEYMOD_CTRL | KEYMOD_LALT}, "switch-to-previous-colorscheme"},
-		{{KEY_M, KEYMOD_CTRL | KEYMOD_LALT}, "switch-to-next-colorscheme"},
-		{{KEY_1, KEYMOD_CTRL}, "switch-to-tab-1"},
-		{{KEY_2, KEYMOD_CTRL}, "switch-to-tab-2"},
-		{{KEY_3, KEYMOD_CTRL}, "switch-to-tab-3"},
-		{{KEY_4, KEYMOD_CTRL}, "switch-to-tab-4"},
-		{{KEY_5, KEYMOD_CTRL}, "switch-to-tab-5"},
-		{{KEY_6, KEYMOD_CTRL}, "switch-to-tab-6"},
-		{{KEY_7, KEYMOD_CTRL}, "switch-to-tab-7"},
-		{{KEY_8, KEYMOD_CTRL}, "switch-to-tab-8"},
-		{{KEY_9, KEYMOD_CTRL}, "switch-to-tab-9"},
-		{{KEY_0, KEYMOD_CTRL}, "switch-to-last-tab"},
-		{{KEY_1, KEYMOD_LALT}, "switch-to-tab-1"},
-		{{KEY_2, KEYMOD_LALT}, "switch-to-tab-2"},
-		{{KEY_3, KEYMOD_LALT}, "switch-to-tab-3"},
-		{{KEY_4, KEYMOD_LALT}, "switch-to-tab-4"},
-		{{KEY_5, KEYMOD_LALT}, "switch-to-tab-5"},
-		{{KEY_6, KEYMOD_LALT}, "switch-to-tab-6"},
-		{{KEY_7, KEYMOD_LALT}, "switch-to-tab-7"},
-		{{KEY_8, KEYMOD_LALT}, "switch-to-tab-8"},
-		{{KEY_9, KEYMOD_LALT}, "switch-to-tab-9"},
-		{{KEY_0, KEYMOD_LALT}, "switch-to-last-tab"},
+		{ { KEY_S, KEYMOD_CTRL }, "save-doc" },
+		{ { KEY_L, KEYMOD_CTRL | KEYMOD_SHIFT }, "lock-toggle" },
+		{ { KEY_T, KEYMOD_CTRL }, "create-new" },
+		{ { KEY_W, KEYMOD_CTRL }, "close-doc" },
+		{ { KEY_TAB, KEYMOD_CTRL }, "next-doc" },
+		{ { KEY_TAB, KEYMOD_CTRL | KEYMOD_SHIFT }, "previous-doc" },
+		{ { KEY_J, KEYMOD_LALT | KEYMOD_SHIFT }, "split-left" },
+		{ { KEY_L, KEYMOD_LALT | KEYMOD_SHIFT }, "split-right" },
+		{ { KEY_I, KEYMOD_LALT | KEYMOD_SHIFT }, "split-top" },
+		{ { KEY_K, KEYMOD_LALT | KEYMOD_SHIFT }, "split-bottom" },
+		{ { KEY_S, KEYMOD_LALT | KEYMOD_SHIFT }, "split-swap" },
+		{ { KEY_J, KEYMOD_CTRL | KEYMOD_LALT }, "switch-to-previous-split" },
+		{ { KEY_L, KEYMOD_CTRL | KEYMOD_LALT }, "switch-to-next-split" },
+		{ { KEY_N, KEYMOD_CTRL | KEYMOD_LALT }, "switch-to-previous-colorscheme" },
+		{ { KEY_M, KEYMOD_CTRL | KEYMOD_LALT }, "switch-to-next-colorscheme" },
+		{ { KEY_1, KEYMOD_CTRL }, "switch-to-tab-1" },
+		{ { KEY_2, KEYMOD_CTRL }, "switch-to-tab-2" },
+		{ { KEY_3, KEYMOD_CTRL }, "switch-to-tab-3" },
+		{ { KEY_4, KEYMOD_CTRL }, "switch-to-tab-4" },
+		{ { KEY_5, KEYMOD_CTRL }, "switch-to-tab-5" },
+		{ { KEY_6, KEYMOD_CTRL }, "switch-to-tab-6" },
+		{ { KEY_7, KEYMOD_CTRL }, "switch-to-tab-7" },
+		{ { KEY_8, KEYMOD_CTRL }, "switch-to-tab-8" },
+		{ { KEY_9, KEYMOD_CTRL }, "switch-to-tab-9" },
+		{ { KEY_0, KEYMOD_CTRL }, "switch-to-last-tab" },
+		{ { KEY_1, KEYMOD_LALT }, "switch-to-tab-1" },
+		{ { KEY_2, KEYMOD_LALT }, "switch-to-tab-2" },
+		{ { KEY_3, KEYMOD_LALT }, "switch-to-tab-3" },
+		{ { KEY_4, KEYMOD_LALT }, "switch-to-tab-4" },
+		{ { KEY_5, KEYMOD_LALT }, "switch-to-tab-5" },
+		{ { KEY_6, KEYMOD_LALT }, "switch-to-tab-6" },
+		{ { KEY_7, KEYMOD_LALT }, "switch-to-tab-7" },
+		{ { KEY_8, KEYMOD_LALT }, "switch-to-tab-8" },
+		{ { KEY_9, KEYMOD_LALT }, "switch-to-tab-9" },
+		{ { KEY_0, KEYMOD_LALT }, "switch-to-last-tab" },
 	};
 }
 
@@ -249,10 +249,11 @@ UICodeEditor* UICodeEditorSplitter::createCodeEditor() {
 			event->getNode()->asType<UICodeEditor>()->getDocument() );
 	} );
 	editor->addKeyBinds( getLocalDefaultKeybindings() );
-	editor->addUnlockedCommands(
-		{"lock-toggle", "create-new", "close-doc", "next-doc", "previous-doc", "split-left",
-		 "split-right", "split-top", "split-bottom", "split-swap", "switch-to-previous-split",
-		 "switch-to-next-split", "switch-to-previous-colorscheme", "switch-to-next-colorscheme"} );
+	editor->addUnlockedCommands( { "lock-toggle", "create-new", "close-doc", "next-doc",
+								   "previous-doc", "split-left", "split-right", "split-top",
+								   "split-bottom", "split-swap", "switch-to-previous-split",
+								   "switch-to-next-split", "switch-to-previous-colorscheme",
+								   "switch-to-next-colorscheme" } );
 
 	if ( nullptr == mCurEditor )
 		setCurrentEditor( editor );
@@ -408,6 +409,12 @@ void UICodeEditorSplitter::forEachEditorStoppable( std::function<bool( UICodeEdi
 			}
 		}
 	}
+}
+
+std::vector<UICodeEditor*> UICodeEditorSplitter::getAllEditors() {
+	std::vector<UICodeEditor*> editors;
+	forEachEditor( [&]( UICodeEditor* editor ) { editors.push_back( editor ); } );
+	return editors;
 }
 
 bool UICodeEditorSplitter::isAnyEditorDirty() {

@@ -115,9 +115,11 @@ class EE_API UICodeEditorSplitter {
 
 	void forEachEditorStoppable( std::function<bool( UICodeEditor* )> run );
 
+	std::vector<UICodeEditor*> getAllEditors();
+
   protected:
-	UISceneNode* mUISceneNode{nullptr};
-	UICodeEditor* mCurEditor{nullptr};
+	UISceneNode* mUISceneNode{ nullptr };
+	UICodeEditor* mCurEditor{ nullptr };
 	std::map<std::string, SyntaxColorScheme> mColorSchemes;
 	std::string mCurrentColorScheme;
 	std::vector<UITabWidget*> mTabWidgets;

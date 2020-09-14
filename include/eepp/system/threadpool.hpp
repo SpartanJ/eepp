@@ -21,6 +21,8 @@ class EE_API ThreadPool : NonCopyable {
 
 	static ThreadPool* createRaw( Uint32 numThreads );
 
+	ThreadPool( Uint32 numThreads );
+
 	virtual ~ThreadPool();
 
 	void run( const std::function<void()>& func, const std::function<void()>& doneCallback );
@@ -33,11 +35,7 @@ class EE_API ThreadPool : NonCopyable {
 		const std::function<void()> callback;
 	};
 
-	ThreadPool();
-
 	void threadFunc();
-
-	static ThreadPool* create( ThreadPool* pool, Uint32 numThreads );
 
 	std::vector<std::unique_ptr<Thread>> mThreads;
 	std::deque<std::unique_ptr<Work>> mWork;
