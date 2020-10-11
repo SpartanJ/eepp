@@ -1,6 +1,5 @@
 #include "codeeditor.hpp"
 #include "autocompletemodule.hpp"
-#include "projectsearch.hpp"
 #include <algorithm>
 #include <args/args.hxx>
 
@@ -674,6 +673,15 @@ void App::hideGlobalSearchBar() {
 		loader->setVisible( false );
 }
 
+void App::updateGlobalSearchBarResults( const std::string& search,
+										std::shared_ptr<ProjectSearch::ResultModel> model ) {
+	updateGlobalSearchBar();
+	mGlobalSearchTree->setSearchStr( search );
+	mGlobalSearchTree->setModel( model );
+	if ( mGlobalSearchTree->getModel()->rowCount() < 50 )
+		mGlobalSearchTree->expandAll();
+}
+
 void App::initGlobalSearchBar() {
 	auto addClickListener = [&]( UIWidget* widget, std::string cmd ) {
 		widget->addEventListener( Event::MouseClick, [this, cmd]( const Event* event ) {
@@ -682,10 +690,12 @@ void App::initGlobalSearchBar() {
 				mGlobalSearchBarLayout->execute( cmd );
 		} );
 	};
-	UIPushButton* searchButton = mGlobalSearchBarLayout->find<UIPushButton>( "search" );
+	UIPushButton* searchButton = mGlobalSearchBarLayout->find<UIPushButton>( "global_search" );
 	UICheckBox* caseSensitiveChk = mGlobalSearchBarLayout->find<UICheckBox>( "case_sensitive" );
 	UIWidget* searchBarClose = mGlobalSearchBarLayout->find<UIWidget>( "global_searchbar_close" );
 	mGlobalSearchInput = mGlobalSearchBarLayout->find<UITextInput>( "global_search_find" );
+	mGlobalSearchHistoryList =
+		mGlobalSearchBarLayout->find<UIDropDownList>( "global_search_history" );
 	mGlobalSearchBarLayout->addCommand( "search-in-files", [&, caseSensitiveChk] {
 		if ( mDirTree && mDirTree->getFilesCount() > 0 && !mGlobalSearchInput->getText().empty() ) {
 			UILoader* loader = UILoader::New();
@@ -708,11 +718,35 @@ void App::initGlobalSearchBar() {
 							   clock->getElapsedTime().asMilliseconds() );
 					eeDelete( clock );
 					mUISceneNode->runOnMainThread( [&, loader, res, search] {
-						updateGlobalSearchBar();
-						mGlobalSearchTree->setSearchStr( search );
-						mGlobalSearchTree->setModel( ProjectSearch::asModel( res ) );
-						if ( mGlobalSearchTree->getModel()->rowCount() < 50 )
-							mGlobalSearchTree->expandAll();
+						auto model = ProjectSearch::asModel( res );
+						mGlobalSearchHistory.push_back( std::make_pair( search, model ) );
+						if ( mGlobalSearchHistory.size() > 10 )
+							mGlobalSearchHistory.pop_front();
+
+						std::vector<String> items;
+						for ( auto item = mGlobalSearchHistory.rbegin();
+							  item != mGlobalSearchHistory.rend(); item++ ) {
+							items.push_back( item->first );
+						}
+
+						auto listBox = mGlobalSearchHistoryList->getListBox();
+						listBox->clear();
+						listBox->addListBoxItems( items );
+						if ( mGlobalSearchHistoryOnItemSelectedCb )
+							mGlobalSearchHistoryList->removeEventListener(
+								mGlobalSearchHistoryOnItemSelectedCb );
+						listBox->setSelected( 0 );
+						mGlobalSearchHistoryOnItemSelectedCb =
+							mGlobalSearchHistoryList->addEventListener(
+								Event::OnItemSelected, [&]( const Event* ) {
+									auto idx = mGlobalSearchHistoryList->getListBox()
+												   ->getItemSelectedIndex();
+									auto idxItem = mGlobalSearchHistory.at(
+										mGlobalSearchHistory.size() - 1 - idx );
+									updateGlobalSearchBarResults( idxItem.first, idxItem.second );
+								} );
+
+						updateGlobalSearchBarResults( search, model );
 						loader->setVisible( false );
 						loader->close();
 					} );
@@ -2008,6 +2042,9 @@ void App::initProjectTreeView( const std::string& path ) {
 }
 
 void App::loadFolder( const std::string& path ) {
+	if ( !mCurrentProject.empty() )
+		closeEditors();
+
 	std::string rpath( FileSystem::getRealPath( path ) );
 	mCurrentProject = rpath;
 	loadDirTree( rpath );
@@ -2188,6 +2225,10 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		#search_tree treeview::cell {
 			font-family: monospace;
 		}
+		#global_search_history {
+			padding-top: 0dp;
+			padding-bottom: 0dp;
+		}
 		</style>
 		<RelativeLayout id="main_layout" layout_width="match_parent" layout_height="match_parent">
 		<Splitter id="project_splitter" layout_width="match_parent" layout_height="match_parent">
@@ -2239,7 +2280,9 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 							<hbox layout_width="match_parent" layout_height="wrap_content">
 								<CheckBox id="case_sensitive" layout_width="wrap_content" layout_height="wrap_content" text="Case sensitive" selected="true" />
 								<Widget layout_width="0" layout_weight="1" layout_height="match_parent" />
-								<PushButton id="search" layout_width="wrap_content" layout_height="18dp" text="Search" />
+								<TextView layout_width="wrap_content" layout_height="wrap_content" text="History:" margin-right="4dp" layout_height="18dp" />
+								<DropDownList id="global_search_history" layout_width="300dp" layout_height="18dp" margin-right="4dp" />
+								<PushButton id="global_search" layout_width="wrap_content" layout_height="18dp" text="Search" />
 							</hbox>
 						</vbox>
 						<Widget id="global_searchbar_close" class="close_button" layout_width="wrap_content" layout_height="wrap_content" layout_gravity="top|right" margin-left="4dp" margin-top="4dp" />

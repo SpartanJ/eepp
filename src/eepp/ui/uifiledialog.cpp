@@ -242,7 +242,7 @@ void UIFileDialog::refreshFolder() {
 		FileSystemModel::DisplayConfig( getSortAlphabetically(), getFoldersFirst(),
 										!getShowHidden(), patterns ) ) );
 
-	mList->setColumnsVisible( {FileSystemModel::Name} );
+	mList->setColumnsVisible( { FileSystemModel::Name } );
 	mList->setHeadersVisible( false );
 
 	updateClickStep();
@@ -367,12 +367,15 @@ void UIFileDialog::save() {
 }
 
 void UIFileDialog::open() {
-	if ( mList->getSelection().isEmpty() )
+	if ( mList->getSelection().isEmpty() &&
+		 !( getAllowFolderSelect() && FileSystem::isDirectory( getFullPath() ) ) )
 		return;
 
-	auto* node = (FileSystemModel::Node*)mList->getSelection().first().data();
+	auto* node = !mList->getSelection().isEmpty()
+					 ? (FileSystemModel::Node*)mList->getSelection().first().data()
+					 : nullptr;
 
-	if ( "" != node->getName() || getAllowFolderSelect() ) {
+	if ( ( node && "" != node->getName() ) || getAllowFolderSelect() ) {
 		if ( !getAllowFolderSelect() ) {
 			if ( FileSystem::isDirectory( getFullPath() ) )
 				return;

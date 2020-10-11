@@ -3,6 +3,7 @@
 
 #include "appconfig.hpp"
 #include "projectdirectorytree.hpp"
+#include "projectsearch.hpp"
 #include "uitreeviewglobalsearch.hpp"
 #include <eepp/ee.hpp>
 
@@ -184,7 +185,11 @@ class App : public UICodeEditorSplitter::Client {
 	UITableView* mLocateTable{ nullptr };
 	UITextInput* mLocateInput{ nullptr };
 	UITreeViewGlobalSearch* mGlobalSearchTree{ nullptr };
-	UITextInput* mGlobalSearchInput;
+	UITextInput* mGlobalSearchInput{ nullptr };
+	UIDropDownList* mGlobalSearchHistoryList{ nullptr };
+	Uint32 mGlobalSearchHistoryOnItemSelectedCb{ 0 };
+	std::deque<std::pair<std::string, std::shared_ptr<ProjectSearch::ResultModel>>>
+		mGlobalSearchHistory;
 	size_t mMenuIconSize;
 	bool mDirTreeReady{ false };
 	std::unordered_set<Doc::TextDocument*> mTmpDocs;
@@ -310,6 +315,9 @@ class App : public UICodeEditorSplitter::Client {
 	void closeFolder();
 
 	void closeEditors();
+
+	void updateGlobalSearchBarResults( const std::string& search,
+									   std::shared_ptr<ProjectSearch::ResultModel> model );
 };
 
 #endif // EE_TOOLS_CODEEDITOR_HPP

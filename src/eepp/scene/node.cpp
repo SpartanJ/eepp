@@ -1104,6 +1104,10 @@ void Node::removeEventListener( const Uint32& callbackId ) {
 	}
 }
 
+void Node::clearEventListener() {
+	mEvents.clear();
+}
+
 void Node::sendEvent( const Event* event ) {
 	if ( 0 != mEvents.count( event->getType() ) ) {
 		std::map<Uint32, EventCallback> eventMap = mEvents[event->getType()];

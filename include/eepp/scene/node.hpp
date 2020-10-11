@@ -194,6 +194,8 @@ class EE_API Node : public Transformable {
 
 	void removeEventListener( const Uint32& callbackId );
 
+	void clearEventListener();
+
 	Node* getFirstChild() const;
 
 	Node* getLastChild() const;

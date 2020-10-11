@@ -64,9 +64,14 @@ Uint32 UIListBoxItem::onMouseUp( const Vector2i& Pos, const Uint32& Flags ) {
 
 Uint32 UIListBoxItem::onMouseClick( const Vector2i& Pos, const Uint32& Flags ) {
 	if ( Flags & EE_BUTTONS_LRM ) {
-		getParent()->getParent()->asType<UIListBox>()->itemClicked( this );
+		UIListBox* LBParent = getParent()->getParent()->asType<UIListBox>();
+
+		LBParent->itemClicked( this );
 
 		select();
+
+		if ( !LBParent->isMultiSelect() )
+			setFocus();
 	}
 
 	return UITextView::onMouseClick( Pos, Flags );
@@ -107,8 +112,6 @@ void UIListBoxItem::select() {
 		if ( !wasSelected ) {
 			LBParent->onSelected();
 		}
-
-		setFocus();
 	}
 }
 

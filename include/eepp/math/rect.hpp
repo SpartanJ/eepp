@@ -18,11 +18,11 @@ template <typename T> class tRECT {
 
 	tRECT<T> copy() const;
 
-	bool intersect( const tRECT<T>& rect );
+	bool intersect( const tRECT<T>& rect ) const;
 
-	bool contains( const tRECT<T>& rect );
+	bool contains( const tRECT<T>& rect ) const;
 
-	bool contains( const Vector2<T>& Vect );
+	bool contains( const Vector2<T>& Vect ) const;
 
 	void expand( const tRECT<T>& rect );
 
@@ -209,15 +209,15 @@ tRECT<T>::tRECT( const Vector2<T>& Pos, const tSize<T>& Size ) :
 
 template <typename T> tRECT<T>::tRECT() : Left( 0 ), Right( 0 ), Top( 0 ), Bottom( 0 ) {}
 
-template <typename T> bool tRECT<T>::contains( const tRECT<T>& rect ) {
+template <typename T> bool tRECT<T>::contains( const tRECT<T>& rect ) const {
 	return ( Left <= rect.Left && Right >= rect.Right && Top <= rect.Top && Bottom >= rect.Bottom );
 }
 
-template <typename T> bool tRECT<T>::intersect( const tRECT<T>& rect ) {
+template <typename T> bool tRECT<T>::intersect( const tRECT<T>& rect ) const {
 	return !( Left > rect.Right || Right < rect.Left || Top > rect.Bottom || Bottom < rect.Top );
 }
 
-template <typename T> bool tRECT<T>::contains( const Vector2<T>& Vect ) {
+template <typename T> bool tRECT<T>::contains( const Vector2<T>& Vect ) const {
 	return ( Left <= Vect.x && Right >= Vect.x && Top <= Vect.y && Bottom >= Vect.y );
 }
 

@@ -132,29 +132,6 @@ void UIDropDownList::showList() {
 		return;
 
 	if ( !mListBox->isVisible() ) {
-		if ( !mStyleConfig.PopUpToRoot )
-			mListBox->setParent( getWindowContainer() );
-		else
-			mListBox->setParent( getUISceneNode()->getRoot() );
-
-		mListBox->toFront();
-
-		Vector2f Pos( mDpPos.x, mDpPos.y + getSize().getHeight() );
-
-		if ( mStyleConfig.PopUpToRoot ) {
-			getParent()->nodeToWorld( Pos );
-			Pos = PixelDensity::pxToDp( Pos );
-		} else {
-			Node* ParentLoop = getParent();
-			Node* rp = getWindowContainer();
-			while ( rp != ParentLoop ) {
-				Pos += ParentLoop->getPosition();
-				ParentLoop = ParentLoop->getParent();
-			}
-		}
-
-		mListBox->setPosition( Pos );
-
 		if ( mListBox->getCount() ) {
 			Rectf tPadding = mListBox->getContainerPadding();
 
@@ -173,6 +150,36 @@ void UIDropDownList::showList() {
 			}
 
 			mListBox->getVerticalScrollBar()->setValue( sliderValue );
+
+			if ( !mStyleConfig.PopUpToRoot )
+				mListBox->setParent( getWindowContainer() );
+			else
+				mListBox->setParent( getUISceneNode()->getRoot() );
+
+			mListBox->toFront();
+
+			Vector2f pos( mDpPos.x, mDpPos.y + getSize().getHeight() );
+			Vector2f posCpy( pos );
+			nodeToWorld( posCpy );
+
+			if ( !getUISceneNode()->getWorldBounds().contains(
+					 Rectf( posCpy, mListBox->getSize() ) ) ) {
+				pos = Vector2f( mDpPos.x, mDpPos.y - mListBox->getSize().getHeight() );
+			}
+
+			if ( mStyleConfig.PopUpToRoot ) {
+				getParent()->nodeToWorld( pos );
+				pos = PixelDensity::pxToDp( pos );
+			} else {
+				Node* parentNode = getParent();
+				Node* rp = getWindowContainer();
+				while ( rp != parentNode ) {
+					pos += parentNode->getPosition();
+					parentNode = parentNode->getParent();
+				}
+			}
+
+			mListBox->setPosition( pos );
 
 			show();
 

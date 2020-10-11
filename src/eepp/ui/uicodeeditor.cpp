@@ -82,6 +82,7 @@ const std::map<KeyBindings::Shortcut, std::string> UICodeEditor::getDefaultKeybi
 		{{KEY_C, KEYMOD_CTRL}, "copy"},
 		{{KEY_X, KEYMOD_CTRL}, "cut"},
 		{{KEY_V, KEYMOD_CTRL}, "paste"},
+		{{KEY_INSERT, KEYMOD_SHIFT}, "paste"},
 		{{KEY_A, KEYMOD_CTRL}, "select-all"},
 		{{KEY_PLUS, KEYMOD_CTRL}, "font-size-grow"},
 		{{KEY_KP_PLUS, KEYMOD_CTRL}, "font-size-grow"},
