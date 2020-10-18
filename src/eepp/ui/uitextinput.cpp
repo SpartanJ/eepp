@@ -36,21 +36,21 @@ UITextInput::UITextInput( const std::string& tag ) :
 	UITheme* theme = getUISceneNode()->getUIThemeManager()->getDefaultTheme();
 
 	if ( NULL != theme && NULL != theme->getDefaultFont() ) {
-		mHintCache->setFont( theme->getDefaultFont() );
-	}
-
-	if ( NULL != theme ) {
-		mHintCache->setFontSize( theme->getDefaultFontSize() );
-	} else {
-		mHintCache->setFontSize( getUISceneNode()->getUIThemeManager()->getDefaultFontSize() );
+		setHintFont( theme->getDefaultFont() );
 	}
 
 	if ( NULL == mHintCache->getFont() ) {
 		if ( NULL != getUISceneNode()->getUIThemeManager()->getDefaultFont() ) {
-			mHintCache->setFont( getUISceneNode()->getUIThemeManager()->getDefaultFont() );
+			setHintFont( getUISceneNode()->getUIThemeManager()->getDefaultFont() );
 		} else {
 			Log::error( "UITextInput::UITextInput : Created a without a defined font." );
 		}
+	}
+
+	if ( NULL != theme ) {
+		setHintFontSize( theme->getDefaultFontSize() );
+	} else {
+		setHintFontSize( getUISceneNode()->getUIThemeManager()->getDefaultFontSize() );
 	}
 
 	subscribeScheduledUpdate();
@@ -369,13 +369,13 @@ Uint32 UITextInput::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
 
 void UITextInput::selCurInit( const Int32& init ) {
 	if ( mDoc.getSelection().start().column() != init && -1 != init ) {
-		mDoc.setSelection( {{0, init}, mDoc.getSelection().end()} );
+		mDoc.setSelection( { { 0, init }, mDoc.getSelection().end() } );
 	}
 }
 
 void UITextInput::selCurEnd( const Int32& end ) {
 	if ( mDoc.getSelection().end().column() != end && -1 != end ) {
-		mDoc.setSelection( {mDoc.getSelection().start(), {0, end}} );
+		mDoc.setSelection( { mDoc.getSelection().start(), { 0, end } } );
 	} else if ( -1 == end ) {
 		mDoc.setSelection( mDoc.getSelection().end() );
 	}
@@ -462,7 +462,7 @@ std::string UITextInput::getPropertyString( const PropertyDefinition* propertyDe
 		case PropertyId::HintShadowColor:
 			return getHintShadowColor().toHexString();
 		case PropertyId::HintFontSize:
-			return String::format( "%ddp", getHintCharacterSize() );
+			return String::format( "%ddp", getHintFontSize() );
 		case PropertyId::HintFontFamily:
 			return NULL != getHintFont() ? getFont()->getName() : "";
 		case PropertyId::HintFontStyle:
@@ -508,7 +508,7 @@ bool UITextInput::applyProperty( const StyleSheetProperty& attribute ) {
 			setHintShadowColor( attribute.asColor() );
 			break;
 		case PropertyId::HintFontSize:
-			setHintCharacterSize( attribute.asDpDimensionI() );
+			setHintFontSize( attribute.asDpDimensionI() );
 			break;
 		case PropertyId::HintFontFamily:
 			setHintFont( FontManager::instance()->getByName( attribute.asString() ) );
@@ -602,14 +602,14 @@ UITextInput* UITextInput::setHintFont( Font* font ) {
 	return this;
 }
 
-Uint32 UITextInput::getHintCharacterSize() const {
+Uint32 UITextInput::getHintFontSize() const {
 	return mHintCache->getCharacterSize();
 }
 
-UITextView* UITextInput::setHintCharacterSize( const Uint32& characterSize ) {
+UITextView* UITextInput::setHintFontSize( const Uint32& characterSize ) {
 	if ( mHintCache->getCharacterSize() != characterSize ) {
-		mHintCache->setFontSize( characterSize );
 		mHintStyleConfig.CharacterSize = characterSize;
+		mHintCache->setFontSize( characterSize );
 		invalidateDraw();
 	}
 
@@ -684,41 +684,41 @@ void UITextInput::registerCommands() {
 
 void UITextInput::registerKeybindings() {
 	mKeyBindings.addKeybinds( {
-		{{KEY_BACKSPACE, KEYMOD_CTRL}, "delete-to-previous-word"},
-		{{KEY_BACKSPACE, KEYMOD_SHIFT}, "delete-to-previous-char"},
-		{{KEY_BACKSPACE, 0}, "delete-to-previous-char"},
-		{{KEY_DELETE, KEYMOD_CTRL}, "delete-to-next-word"},
-		{{KEY_DELETE, 0}, "delete-to-next-char"},
-		{{KEY_KP_ENTER, 0}, "press-enter"},
-		{{KEY_RETURN, 0}, "press-enter"},
-		{{KEY_LEFT, KEYMOD_CTRL | KEYMOD_SHIFT}, "select-to-previous-word"},
-		{{KEY_LEFT, KEYMOD_CTRL}, "move-to-previous-word"},
-		{{KEY_LEFT, KEYMOD_SHIFT}, "select-to-previous-char"},
-		{{KEY_LEFT, 0}, "move-to-previous-char"},
-		{{KEY_RIGHT, KEYMOD_CTRL | KEYMOD_SHIFT}, "select-to-next-word"},
-		{{KEY_RIGHT, KEYMOD_CTRL}, "move-to-next-word"},
-		{{KEY_RIGHT, KEYMOD_SHIFT}, "select-to-next-char"},
-		{{KEY_RIGHT, 0}, "move-to-next-char"},
-		{{KEY_Z, KEYMOD_CTRL | KEYMOD_SHIFT}, "redo"},
-		{{KEY_HOME, KEYMOD_CTRL | KEYMOD_SHIFT}, "select-to-start-of-doc"},
-		{{KEY_HOME, KEYMOD_SHIFT}, "select-to-start-of-content"},
-		{{KEY_HOME, KEYMOD_CTRL}, "move-to-start-of-doc"},
-		{{KEY_HOME, 0}, "move-to-start-of-content"},
-		{{KEY_END, KEYMOD_CTRL | KEYMOD_SHIFT}, "select-to-end-of-doc"},
-		{{KEY_END, KEYMOD_SHIFT}, "select-to-end-of-line"},
-		{{KEY_END, KEYMOD_CTRL}, "move-to-end-of-doc"},
-		{{KEY_END, 0}, "move-to-end-of-line"},
-		{{KEY_Y, KEYMOD_CTRL}, "redo"},
-		{{KEY_Z, KEYMOD_CTRL}, "undo"},
-		{{KEY_C, KEYMOD_CTRL}, "copy"},
-		{{KEY_X, KEYMOD_CTRL}, "cut"},
-		{{KEY_V, KEYMOD_CTRL}, "paste"},
-		{{KEY_A, KEYMOD_CTRL}, "select-all"},
+		{ { KEY_BACKSPACE, KEYMOD_CTRL }, "delete-to-previous-word" },
+		{ { KEY_BACKSPACE, KEYMOD_SHIFT }, "delete-to-previous-char" },
+		{ { KEY_BACKSPACE, 0 }, "delete-to-previous-char" },
+		{ { KEY_DELETE, KEYMOD_CTRL }, "delete-to-next-word" },
+		{ { KEY_DELETE, 0 }, "delete-to-next-char" },
+		{ { KEY_KP_ENTER, 0 }, "press-enter" },
+		{ { KEY_RETURN, 0 }, "press-enter" },
+		{ { KEY_LEFT, KEYMOD_CTRL | KEYMOD_SHIFT }, "select-to-previous-word" },
+		{ { KEY_LEFT, KEYMOD_CTRL }, "move-to-previous-word" },
+		{ { KEY_LEFT, KEYMOD_SHIFT }, "select-to-previous-char" },
+		{ { KEY_LEFT, 0 }, "move-to-previous-char" },
+		{ { KEY_RIGHT, KEYMOD_CTRL | KEYMOD_SHIFT }, "select-to-next-word" },
+		{ { KEY_RIGHT, KEYMOD_CTRL }, "move-to-next-word" },
+		{ { KEY_RIGHT, KEYMOD_SHIFT }, "select-to-next-char" },
+		{ { KEY_RIGHT, 0 }, "move-to-next-char" },
+		{ { KEY_Z, KEYMOD_CTRL | KEYMOD_SHIFT }, "redo" },
+		{ { KEY_HOME, KEYMOD_CTRL | KEYMOD_SHIFT }, "select-to-start-of-doc" },
+		{ { KEY_HOME, KEYMOD_SHIFT }, "select-to-start-of-content" },
+		{ { KEY_HOME, KEYMOD_CTRL }, "move-to-start-of-doc" },
+		{ { KEY_HOME, 0 }, "move-to-start-of-content" },
+		{ { KEY_END, KEYMOD_CTRL | KEYMOD_SHIFT }, "select-to-end-of-doc" },
+		{ { KEY_END, KEYMOD_SHIFT }, "select-to-end-of-line" },
+		{ { KEY_END, KEYMOD_CTRL }, "move-to-end-of-doc" },
+		{ { KEY_END, 0 }, "move-to-end-of-line" },
+		{ { KEY_Y, KEYMOD_CTRL }, "redo" },
+		{ { KEY_Z, KEYMOD_CTRL }, "undo" },
+		{ { KEY_C, KEYMOD_CTRL }, "copy" },
+		{ { KEY_X, KEYMOD_CTRL }, "cut" },
+		{ { KEY_V, KEYMOD_CTRL }, "paste" },
+		{ { KEY_A, KEYMOD_CTRL }, "select-all" },
 	} );
 }
 
 Uint32 UITextInput::onKeyDown( const KeyEvent& event ) {
-	std::string cmd = mKeyBindings.getCommandFromKeyBind( {event.getKeyCode(), event.getMod()} );
+	std::string cmd = mKeyBindings.getCommandFromKeyBind( { event.getKeyCode(), event.getMod() } );
 	if ( !cmd.empty() ) {
 		// Allow copy selection on locked mode
 		if ( mAllowEditing ) {

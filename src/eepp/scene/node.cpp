@@ -675,7 +675,8 @@ void Node::childRemove( Node* node ) {
 		if ( mChildLast == node )
 			mChildLast = mChildLast->mPrev;
 
-		node->mPrev->mNext = node->mNext;
+		if ( node->mPrev )
+			node->mPrev->mNext = node->mNext;
 
 		if ( NULL != node->mNext ) {
 			node->mNext->mPrev = node->mPrev;

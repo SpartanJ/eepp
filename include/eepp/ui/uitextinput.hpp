@@ -70,9 +70,9 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 
 	UITextInput* setHintFont( Font* font );
 
-	Uint32 getHintCharacterSize() const;
+	Uint32 getHintFontSize() const;
 
-	UITextView* setHintCharacterSize( const Uint32& characterSize );
+	UITextView* setHintFontSize( const Uint32& characterSize );
 
 	const Uint32& getHintFontStyle() const;
 

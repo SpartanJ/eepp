@@ -1589,11 +1589,11 @@ void App::onColorSchemeChanged( const std::string& ) {
 	mGlobalSearchTree->updateColorScheme( mEditorSplitter->getCurrentColorScheme() );
 }
 
-void App::onDocumentLoaded( UICodeEditor* codeEditor, const std::string& path ) {
-	updateEditorTitle( codeEditor );
-	if ( codeEditor == mEditorSplitter->getCurEditor() )
+void App::onDocumentLoaded( UICodeEditor* editor, const std::string& path ) {
+	updateEditorTitle( editor );
+	if ( editor == mEditorSplitter->getCurEditor() )
 		updateCurrentFiletype();
-	mEditorSplitter->removeUnusedTab( mEditorSplitter->tabWidgetFromEditor( codeEditor ) );
+	mEditorSplitter->removeUnusedTab( mEditorSplitter->tabWidgetFromEditor( editor ) );
 	auto found = std::find( mRecentFiles.begin(), mRecentFiles.end(), path );
 	if ( found != mRecentFiles.end() )
 		mRecentFiles.erase( found );
@@ -1601,9 +1601,14 @@ void App::onDocumentLoaded( UICodeEditor* codeEditor, const std::string& path ) 
 	if ( mRecentFiles.size() > 10 )
 		mRecentFiles.resize( 10 );
 	updateRecentFiles();
-	if ( mEditorSplitter->getCurEditor() == codeEditor ) {
+	if ( mEditorSplitter->getCurEditor() == editor ) {
 		updateDocumentMenu();
-		updateDocInfo( codeEditor->getDocument() );
+		updateDocInfo( editor->getDocument() );
+	}
+
+	if ( !path.empty() ) {
+		UITab* tab = reinterpret_cast<UITab*>( editor->getData() );
+		tab->setTooltipText( path );
 	}
 }
 

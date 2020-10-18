@@ -3,6 +3,7 @@
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uitabwidget.hpp>
 #include <eepp/ui/uithememanager.hpp>
@@ -29,7 +30,6 @@ UITabWidget::UITabWidget() :
 	mTabBar->setPixelsSize( mSize.getWidth(), mStyleConfig.TabHeight )
 		->setParent( this )
 		->setPosition( 0, 0 );
-	mTabBar->clipEnable();
 
 	mNodeContainer = UIWidget::NewWithTag( "tabwidget::container" );
 	mNodeContainer
@@ -38,6 +38,12 @@ UITabWidget::UITabWidget() :
 		->setParent( this )
 		->setPosition( 0, mStyleConfig.TabHeight );
 	mNodeContainer->clipEnable();
+
+	mTabScroll = UIScrollBar::NewHorizontalWithTag( "scrollbarmini" );
+	mTabScroll->setParent( this );
+	mTabScroll->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::WrapContent );
+	mTabScroll->addEventListener( Event::OnSizeChange, [&]( const Event* ) { updateScrollBar(); } );
+	mTabScroll->addEventListener( Event::OnValueChange, [&]( const Event* ) { updateScroll(); } );
 
 	onSizeChange();
 
@@ -101,7 +107,12 @@ void UITabWidget::setContainerSize() {
 	} else {
 		mTabBar->setVisible( true );
 		mTabBar->setEnabled( true );
-		mTabBar->setPixelsSize( mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right,
+		Float totalTabsWidth = mTabs.empty() ? 0
+											 : mTabs.back()->getPixelsPosition().x +
+												   mTabs.back()->getPixelsSize().getWidth() +
+												   mPaddingPx.Left + mPaddingPx.Right;
+		Float totalSize = totalTabsWidth > mSize.getWidth() ? totalTabsWidth : mSize.getWidth();
+		mTabBar->setPixelsSize( totalSize - mPaddingPx.Left - mPaddingPx.Right,
 								PixelDensity::dpToPx( mStyleConfig.TabHeight ) );
 		mTabBar->setPosition( mPadding.Left, mPadding.Top );
 		mNodeContainer->setPosition( mPadding.Left, mPadding.Top + mStyleConfig.TabHeight );
@@ -165,13 +176,18 @@ bool UITabWidget::isDrawInvalidator() const {
 void UITabWidget::invalidate( Node* invalidator ) {
 	// Only invalidate if the invalidator is actually visible in the current active tab.
 	if ( NULL != invalidator ) {
-		if ( invalidator == mNodeContainer || invalidator == mTabBar ||
-			 mTabBar->inParentTreeOf( invalidator ) ) {
+		if ( invalidator == mTabScroll || mTabScroll->inParentTreeOf( invalidator ) ) {
+			if ( NULL != mNodeDrawInvalidator ) {
+				mNodeDrawInvalidator->invalidate( this );
+			} else if ( NULL != mSceneNode ) {
+				mSceneNode->invalidate( this );
+			}
+		} else if ( invalidator == mNodeContainer || invalidator == mTabBar ||
+					mTabBar->inParentTreeOf( invalidator ) ) {
 			mNodeDrawInvalidator->invalidate( mNodeContainer );
 		} else if ( invalidator->getParent() == mNodeContainer ) {
-			if ( invalidator->isVisible() ) {
+			if ( invalidator->isVisible() )
 				mNodeDrawInvalidator->invalidate( mNodeContainer );
-			}
 		} else {
 			Node* container = invalidator->getParent();
 			while ( container->getParent() != NULL && container->getParent() != mNodeContainer ) {
@@ -305,6 +321,7 @@ void UITabWidget::setTabsHeight( const Float& height ) {
 		mStyleConfig.TabHeight = height;
 		setContainerSize();
 		orderTabs();
+		updateScrollBar();
 	}
 }
 
@@ -360,6 +377,8 @@ void UITabWidget::posTabs() {
 
 		x += mTabs[i]->getPixelsSize().getWidth() + mStyleConfig.TabSeparation;
 	}
+
+	updateScrollBar();
 }
 
 void UITabWidget::zorderTabs() {
@@ -508,6 +527,9 @@ void UITabWidget::removeTab( const Uint32& index, bool destroyOwnedNode, bool de
 
 	orderTabs();
 
+	updateScrollBar();
+	updateScroll();
+
 	TabEvent tabEvent( this, tab, index, Event::OnTabClosed );
 	sendEvent( &tabEvent );
 }
@@ -605,6 +627,8 @@ UITab* UITabWidget::setTabSelected( UITab* tab ) {
 
 		sendCommonEvent( Event::OnTabSelected );
 	}
+
+	updateScroll();
 
 	return tab;
 }
@@ -727,11 +751,14 @@ void UITabWidget::onSizeChange() {
 		mTabSelected->getOwnedWidget()->setSize( mNodeContainer->getSize() );
 	}
 
+	updateScrollBar();
+	updateScroll();
+
 	UIWidget::onSizeChange();
 }
 
 void UITabWidget::onChildCountChange( Node* child, const bool& removed ) {
-	if ( !removed && child != mTabBar && child != mNodeContainer ) {
+	if ( !removed && child != mTabBar && child != mNodeContainer && child != mTabScroll ) {
 		if ( child->isType( UI_TYPE_TAB ) ) {
 			// This must be a tab that was dragging.
 			if ( std::find( mTabs.begin(), mTabs.end(), child->asType<UITab>() ) != mTabs.end() )
@@ -797,6 +824,31 @@ UIWidget* UITabWidget::getTabBar() const {
 
 UIWidget* UITabWidget::getContainerNode() const {
 	return mNodeContainer;
+}
+
+void UITabWidget::updateScrollBar() {
+	mTabScroll->setPixelsSize(
+		{ getPixelsSize().getWidth(), mTabScroll->getPixelsSize().getHeight() } );
+	mTabScroll->setPixelsPosition(
+		{ 0, mTabBar->getPixelsSize().getHeight() - mTabScroll->getPixelsSize().getHeight() } );
+
+	Float totalSize = mTabs.empty() ? 0
+									: mTabs.back()->getPixelsPosition().x +
+										  mTabs.back()->getPixelsSize().getWidth();
+	mTabScroll->setVisible( totalSize > getPixelsSize().getWidth() );
+
+	if ( mTabScroll->isVisible() ) {
+		mTabScroll->setMaxValue( totalSize - mSize.getWidth() );
+		mTabScroll->setClickStep( eefloor( mTabScroll->getMaxValue() * 0.2f ) );
+		mTabScroll->setPageStep( ( totalSize - mSize.getWidth() ) *
+								 ( mSize.getWidth() / totalSize ) );
+	}
+}
+
+void UITabWidget::updateScroll() {
+	if ( mTabScroll->isVisible() )
+		mTabBar->setPixelsPosition(
+			{ mPaddingPx.Left + -mTabScroll->getValue(), mTabBar->getPixelsPosition().y } );
 }
 
 }} // namespace EE::UI

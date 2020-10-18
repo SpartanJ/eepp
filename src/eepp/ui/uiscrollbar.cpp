@@ -5,19 +5,31 @@
 namespace EE { namespace UI {
 
 UIScrollBar* UIScrollBar::New() {
-	return eeNew( UIScrollBar, ( UIOrientation::Vertical ) );
+	return eeNew( UIScrollBar, () );
 }
 
 UIScrollBar* UIScrollBar::NewHorizontal() {
-	return eeNew( UIScrollBar, ( UIOrientation::Horizontal ) );
+	return eeNew( UIScrollBar, ( "scrollbar", UIOrientation::Horizontal ) );
 }
 
 UIScrollBar* UIScrollBar::NewVertical() {
-	return eeNew( UIScrollBar, ( UIOrientation::Vertical ) );
+	return eeNew( UIScrollBar, ( "scrollbar", UIOrientation::Vertical ) );
 }
 
-UIScrollBar::UIScrollBar( const UIOrientation& orientation ) :
-	UIWidget( "scrollbar" ),
+UIScrollBar* UIScrollBar::NewWithTag( const std::string& tag ) {
+	return eeNew( UIScrollBar, ( tag, UIOrientation::Vertical ) );
+}
+
+UIScrollBar* UIScrollBar::NewHorizontalWithTag( const std::string& tag ) {
+	return eeNew( UIScrollBar, ( tag, UIOrientation::Horizontal ) );
+}
+
+UIScrollBar* UIScrollBar::NewVerticalWithTag( const std::string& tag ) {
+	return eeNew( UIScrollBar, ( tag, UIOrientation::Vertical ) );
+}
+
+UIScrollBar::UIScrollBar( const std::string& tag, const UIOrientation& orientation ) :
+	UIWidget( tag ),
 #ifdef EE_PLATFORM_TOUCH
 	mScrollBarStyle( NoButtons )
 #else
@@ -29,19 +41,19 @@ UIScrollBar::UIScrollBar( const UIOrientation& orientation ) :
 	setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 
 	if ( orientation == UIOrientation::Vertical ) {
-		mBtnDown = UIWidget::NewWithTag( "scrollbar::btndown" );
-		mBtnUp = UIWidget::NewWithTag( "scrollbar::btnup" );
+		mBtnDown = UIWidget::NewWithTag( mTag + "::btndown" );
+		mBtnUp = UIWidget::NewWithTag( mTag + "::btnup" );
 	} else {
-		mBtnDown = UIWidget::NewWithTag( "scrollbar::btnleft" );
-		mBtnUp = UIWidget::NewWithTag( "scrollbar::btnright" );
+		mBtnDown = UIWidget::NewWithTag( mTag + "::btnleft" );
+		mBtnUp = UIWidget::NewWithTag( mTag + "::btnright" );
 	}
 	mBtnUp->setParent( this );
 	mBtnUp->setSize( 8, 8 );
 	mBtnDown->setParent( this );
 	mBtnDown->setSize( 8, 8 );
 
-	mSlider = UISlider::NewWithTag( orientation == UIOrientation::Vertical ? "scrollbar::vslider"
-																		   : "scrollbar::hslider",
+	mSlider = UISlider::NewWithTag( orientation == UIOrientation::Vertical ? mTag + "::vslider"
+																		   : mTag + "::hslider",
 									orientation );
 	mSlider->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 	mSlider->setOrientation( orientation );
@@ -51,11 +63,11 @@ UIScrollBar::UIScrollBar( const UIOrientation& orientation ) :
 	mSlider->addEventListener( Event::OnValueChange,
 							   cb::Make1( this, &UIScrollBar::onValueChangeCb ) );
 	if ( orientation == UIOrientation::Vertical ) {
-		mSlider->getSliderButton()->setElementTag( "scrollbar::vbutton" );
-		mSlider->getBackSlider()->setElementTag( "scrollbar::vback" );
+		mSlider->getSliderButton()->setElementTag( mTag + "::vbutton" );
+		mSlider->getBackSlider()->setElementTag( mTag + "::vback" );
 	} else {
-		mSlider->getSliderButton()->setElementTag( "scrollbar::hbutton" );
-		mSlider->getBackSlider()->setElementTag( "scrollbar::hback" );
+		mSlider->getSliderButton()->setElementTag( mTag + "::hbutton" );
+		mSlider->getBackSlider()->setElementTag( mTag + "::hback" );
 	}
 
 	applyDefaultTheme();
@@ -440,16 +452,16 @@ UIOrientation UIScrollBar::getOrientation() const {
 UINode* UIScrollBar::setOrientation( const UIOrientation& orientation ) {
 	if ( mSlider->getOrientation() != orientation ) {
 		if ( orientation == UIOrientation::Vertical ) {
-			mSlider->setElementTag( "scrollbar::vslider" );
+			mSlider->setElementTag( mTag + "::vslider" );
 			mBtnDown->setElementTag( mTag + "::btndown" );
 			mBtnUp->setElementTag( mTag + "::btnup" );
 		} else {
-			mSlider->setElementTag( "scrollbar::hslider" );
+			mSlider->setElementTag( mTag + "::hslider" );
 			mBtnDown->setElementTag( mTag + "::btnleft" );
 			mBtnUp->setElementTag( mTag + "::btnright" );
 		}
 
-		mSlider->setOrientation( orientation, "scrollbar" );
+		mSlider->setOrientation( orientation, mTag );
 
 		applyDefaultTheme();
 

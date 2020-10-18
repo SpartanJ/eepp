@@ -7,6 +7,8 @@
 
 namespace EE { namespace UI {
 
+class UIScrollBar;
+
 class EE_API TabEvent : public Event {
   public:
 	TabEvent( Node* node, UITab* tabEvent, Uint32 tabIndex, const Uint32& eventType ) :
@@ -154,6 +156,7 @@ class EE_API UITabWidget : public UIWidget {
 
 	UIWidget* mNodeContainer;
 	UIWidget* mTabBar;
+	UIScrollBar* mTabScroll;
 	StyleConfig mStyleConfig;
 	std::deque<UITab*> mTabs;
 	UITab* mTabSelected;
@@ -197,6 +200,10 @@ class EE_API UITabWidget : public UIWidget {
 	void tryCloseTab( UITab* tab );
 
 	void swapTabs( UITab* left, UITab* right );
+
+	void updateScrollBar();
+
+	void updateScroll();
 };
 
 }} // namespace EE::UI

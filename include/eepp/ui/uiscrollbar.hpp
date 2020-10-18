@@ -16,7 +16,14 @@ class EE_API UIScrollBar : public UIWidget {
 
 	static UIScrollBar* NewVertical();
 
-	explicit UIScrollBar( const UIOrientation& orientation = UIOrientation::Vertical );
+	static UIScrollBar* NewWithTag( const std::string& tag );
+
+	static UIScrollBar* NewHorizontalWithTag( const std::string& tag );
+
+	static UIScrollBar* NewVerticalWithTag( const std::string& tag );
+
+	explicit UIScrollBar( const std::string& tag = "scrollbar",
+						  const UIOrientation& orientation = UIOrientation::Vertical );
 
 	virtual ~UIScrollBar();
 

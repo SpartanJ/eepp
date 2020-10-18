@@ -8,7 +8,7 @@
 	--button-border: #6b6f73;
 	--button-radius: 2dp;
 	--base-horizontal-padding: 5dp;
-	--base-vertical-padding: 7dp;
+	--base-vertical-padding: 5dp;
 	--border-width: 1dp;
 	--list-back: #232629;
 	--separator: #383a3d;
@@ -821,6 +821,56 @@ listview::header::column::arrow-down {
 	width: 16dp;
 	height: 12dp;
 	foreground-image: poly(line, var(--icon), "1dp 7dp, 5dp 4dp"), poly(line, var(--icon), "5dp 4dp, 9dp 7dp");
+}
+
+ScrollBarMini {
+	scrollbar-style: no-buttons;
+	min-width: 4dp;
+	min-height: 4dp;
+}
+
+ScrollBarMini::hback {
+	min-height: 4dp;
+	border-radius: 2dp;
+	background-color: transparent;
+}
+
+ScrollBarMini::vback {
+	min-width: 4dp;
+	border-radius: 2dp;
+	background-color: transparent;
+}
+
+ScrollBarMini::hslider,
+ScrollBarMini::vslider {
+	border-width: 1dp;
+	border-color: var(--scrollbar-border);
+	transition: all 0.15s;
+}
+
+ScrollBarMini::hbutton {
+	min-width: 4dp;
+	min-height: 4dp;
+	background-color: var(--scrollbar-button);
+	border-radius: 2dp;
+	border-width: 0dp;
+	transition: all 0.15s;
+}
+
+ScrollBarMini::vbutton {
+	min-width: 4dp;
+	min-height: 4dp;
+	background-color: var(--scrollbar-button);
+	border-radius: 2dp;
+	border-width: 0dp;
+	transition: all 0.15s;
+}
+
+ScrollBarMini::vslider:hover ScrollBar::vbutton,
+ScrollBarMini::vbutton:hover,
+ScrollBarMini::hslider:hover ScrollBar::hbutton,
+ScrollBarMini::hbutton:hover {
+	background-color: var(--primary);
 }
 
 .appbackground {

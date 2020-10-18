@@ -295,6 +295,8 @@ Uint32 UIWidget::onMouseMove( const Vector2i& position, const Uint32& flags ) {
 
 			if ( themeManager->getTooltipFollowMouse() ) {
 				mTooltip->setPixelsPosition( getTooltipPosition() );
+			} else {
+				mTooltip->hide();
 			}
 		}
 	}
