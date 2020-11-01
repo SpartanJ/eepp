@@ -12,8 +12,8 @@ namespace EE { namespace UI { namespace Tools {
 const std::map<KeyBindings::Shortcut, std::string> UICodeEditorSplitter::getDefaultKeybindings() {
 	auto keybindings = UICodeEditor::getDefaultKeybindings();
 	auto localKeybindings = getLocalDefaultKeybindings();
-	keybindings.insert( localKeybindings.begin(), localKeybindings.end() );
-	return keybindings;
+	localKeybindings.insert( keybindings.begin(), keybindings.end() );
+	return localKeybindings;
 }
 
 const std::map<KeyBindings::Shortcut, std::string>

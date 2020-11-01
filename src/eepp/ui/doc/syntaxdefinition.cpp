@@ -63,6 +63,15 @@ SyntaxDefinition& SyntaxDefinition::addPattern( const SyntaxPattern& pattern ) {
 	return *this;
 }
 
+SyntaxDefinition& SyntaxDefinition::addPatternToFront( const SyntaxPattern& pattern ) {
+	auto patterns = mPatterns;
+	mPatterns.clear();
+	mPatterns.push_back( pattern );
+	for ( auto pa : patterns )
+		mPatterns.push_back( pa );
+	return *this;
+}
+
 SyntaxDefinition& SyntaxDefinition::addSymbol( const std::string& symbolName,
 											   const std::string& typeName ) {
 	mSymbols[symbolName] = typeName;

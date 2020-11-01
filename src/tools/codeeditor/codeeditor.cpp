@@ -1619,8 +1619,8 @@ const CodeEditorConfig& App::getCodeEditorConfig() const {
 std::map<KeyBindings::Shortcut, std::string> App::getDefaultKeybindings() {
 	auto bindings = UICodeEditorSplitter::getDefaultKeybindings();
 	auto local = getLocalKeybindings();
-	bindings.insert( local.begin(), local.end() );
-	return bindings;
+	local.insert( bindings.begin(), bindings.end() );
+	return local;
 }
 
 std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
