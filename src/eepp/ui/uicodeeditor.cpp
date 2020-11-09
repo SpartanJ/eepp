@@ -30,66 +30,66 @@ UICodeEditor* UICodeEditor::NewOpt( const bool& autoRegisterBaseCommands,
 
 const std::map<KeyBindings::Shortcut, std::string> UICodeEditor::getDefaultKeybindings() {
 	return {
-		{{KEY_BACKSPACE, KEYMOD_CTRL}, "delete-to-previous-word"},
-		{{KEY_BACKSPACE, KEYMOD_SHIFT}, "delete-to-previous-char"},
-		{{KEY_BACKSPACE, 0}, "delete-to-previous-char"},
-		{{KEY_DELETE, KEYMOD_CTRL}, "delete-to-next-word"},
-		{{KEY_DELETE, KEYMOD_SHIFT}, "delete-current-line"},
-		{{KEY_DELETE, 0}, "delete-to-next-char"},
-		{{KEY_KP_ENTER, KEYMOD_CTRL | KEYMOD_SHIFT}, "new-line-above"},
-		{{KEY_RETURN, KEYMOD_CTRL | KEYMOD_SHIFT}, "new-line-above"},
-		{{KEY_KP_ENTER, KEYMOD_CTRL}, "new-line"},
-		{{KEY_RETURN, KEYMOD_CTRL}, "new-line"},
-		{{KEY_KP_ENTER, KEYMOD_SHIFT}, "new-line"},
-		{{KEY_RETURN, KEYMOD_SHIFT}, "new-line"},
-		{{KEY_KP_ENTER, 0}, "new-line"},
-		{{KEY_RETURN, 0}, "new-line"},
-		{{KEY_UP, KEYMOD_CTRL | KEYMOD_SHIFT}, "move-lines-up"},
-		{{KEY_UP, KEYMOD_CTRL}, "move-scroll-up"},
-		{{KEY_UP, KEYMOD_SHIFT}, "select-to-previous-line"},
-		{{KEY_UP, 0}, "move-to-previous-line"},
-		{{KEY_DOWN, KEYMOD_CTRL | KEYMOD_SHIFT}, "move-lines-down"},
-		{{KEY_DOWN, KEYMOD_CTRL}, "move-scroll-down"},
-		{{KEY_DOWN, KEYMOD_SHIFT}, "select-to-next-line"},
-		{{KEY_DOWN, 0}, "move-to-next-line"},
-		{{KEY_LEFT, KEYMOD_CTRL | KEYMOD_SHIFT}, "select-to-previous-word"},
-		{{KEY_LEFT, KEYMOD_CTRL}, "move-to-previous-word"},
-		{{KEY_LEFT, KEYMOD_SHIFT}, "select-to-previous-char"},
-		{{KEY_LEFT, 0}, "move-to-previous-char"},
-		{{KEY_RIGHT, KEYMOD_CTRL | KEYMOD_SHIFT}, "select-to-next-word"},
-		{{KEY_RIGHT, KEYMOD_CTRL}, "move-to-next-word"},
-		{{KEY_RIGHT, KEYMOD_SHIFT}, "select-to-next-char"},
-		{{KEY_RIGHT, 0}, "move-to-next-char"},
-		{{KEY_Z, KEYMOD_CTRL | KEYMOD_SHIFT}, "redo"},
-		{{KEY_HOME, KEYMOD_CTRL | KEYMOD_SHIFT}, "select-to-start-of-doc"},
-		{{KEY_HOME, KEYMOD_SHIFT}, "select-to-start-of-content"},
-		{{KEY_HOME, KEYMOD_CTRL}, "move-to-start-of-doc"},
-		{{KEY_HOME, 0}, "move-to-start-of-content"},
-		{{KEY_END, KEYMOD_CTRL | KEYMOD_SHIFT}, "select-to-end-of-doc"},
-		{{KEY_END, KEYMOD_SHIFT}, "select-to-end-of-line"},
-		{{KEY_END, KEYMOD_CTRL}, "move-to-end-of-doc"},
-		{{KEY_END, 0}, "move-to-end-of-line"},
-		{{KEY_PAGEUP, KEYMOD_CTRL}, "move-to-previous-page"},
-		{{KEY_PAGEUP, KEYMOD_SHIFT}, "select-to-previous-page"},
-		{{KEY_PAGEUP, 0}, "move-to-previous-page"},
-		{{KEY_PAGEDOWN, KEYMOD_CTRL}, "move-to-next-page"},
-		{{KEY_PAGEDOWN, KEYMOD_SHIFT}, "select-to-next-page"},
-		{{KEY_PAGEDOWN, 0}, "move-to-next-page"},
-		{{KEY_Y, KEYMOD_CTRL}, "redo"},
-		{{KEY_Z, KEYMOD_CTRL}, "undo"},
-		{{KEY_TAB, KEYMOD_SHIFT}, "unindent"},
-		{{KEY_TAB, 0}, "indent"},
-		{{KEY_C, KEYMOD_CTRL}, "copy"},
-		{{KEY_X, KEYMOD_CTRL}, "cut"},
-		{{KEY_V, KEYMOD_CTRL}, "paste"},
-		{{KEY_INSERT, KEYMOD_SHIFT}, "paste"},
-		{{KEY_A, KEYMOD_CTRL}, "select-all"},
-		{{KEY_PLUS, KEYMOD_CTRL}, "font-size-grow"},
-		{{KEY_KP_PLUS, KEYMOD_CTRL}, "font-size-grow"},
-		{{KEY_MINUS, KEYMOD_CTRL}, "font-size-shrink"},
-		{{KEY_KP_MINUS, KEYMOD_CTRL}, "font-size-shrink"},
-		{{KEY_0, KEYMOD_CTRL}, "font-size-reset"},
-		{{KEY_KP_DIVIDE, KEYMOD_CTRL}, "toggle-line-comments"},
+		{ { KEY_BACKSPACE, KEYMOD_CTRL }, "delete-to-previous-word" },
+		{ { KEY_BACKSPACE, KEYMOD_SHIFT }, "delete-to-previous-char" },
+		{ { KEY_BACKSPACE, 0 }, "delete-to-previous-char" },
+		{ { KEY_DELETE, KEYMOD_CTRL }, "delete-to-next-word" },
+		{ { KEY_DELETE, KEYMOD_SHIFT }, "delete-current-line" },
+		{ { KEY_DELETE, 0 }, "delete-to-next-char" },
+		{ { KEY_KP_ENTER, KEYMOD_CTRL | KEYMOD_SHIFT }, "new-line-above" },
+		{ { KEY_RETURN, KEYMOD_CTRL | KEYMOD_SHIFT }, "new-line-above" },
+		{ { KEY_KP_ENTER, KEYMOD_CTRL }, "new-line" },
+		{ { KEY_RETURN, KEYMOD_CTRL }, "new-line" },
+		{ { KEY_KP_ENTER, KEYMOD_SHIFT }, "new-line" },
+		{ { KEY_RETURN, KEYMOD_SHIFT }, "new-line" },
+		{ { KEY_KP_ENTER, 0 }, "new-line" },
+		{ { KEY_RETURN, 0 }, "new-line" },
+		{ { KEY_UP, KEYMOD_CTRL | KEYMOD_SHIFT }, "move-lines-up" },
+		{ { KEY_UP, KEYMOD_CTRL }, "move-scroll-up" },
+		{ { KEY_UP, KEYMOD_SHIFT }, "select-to-previous-line" },
+		{ { KEY_UP, 0 }, "move-to-previous-line" },
+		{ { KEY_DOWN, KEYMOD_CTRL | KEYMOD_SHIFT }, "move-lines-down" },
+		{ { KEY_DOWN, KEYMOD_CTRL }, "move-scroll-down" },
+		{ { KEY_DOWN, KEYMOD_SHIFT }, "select-to-next-line" },
+		{ { KEY_DOWN, 0 }, "move-to-next-line" },
+		{ { KEY_LEFT, KEYMOD_CTRL | KEYMOD_SHIFT }, "select-to-previous-word" },
+		{ { KEY_LEFT, KEYMOD_CTRL }, "move-to-previous-word" },
+		{ { KEY_LEFT, KEYMOD_SHIFT }, "select-to-previous-char" },
+		{ { KEY_LEFT, 0 }, "move-to-previous-char" },
+		{ { KEY_RIGHT, KEYMOD_CTRL | KEYMOD_SHIFT }, "select-to-next-word" },
+		{ { KEY_RIGHT, KEYMOD_CTRL }, "move-to-next-word" },
+		{ { KEY_RIGHT, KEYMOD_SHIFT }, "select-to-next-char" },
+		{ { KEY_RIGHT, 0 }, "move-to-next-char" },
+		{ { KEY_Z, KEYMOD_CTRL | KEYMOD_SHIFT }, "redo" },
+		{ { KEY_HOME, KEYMOD_CTRL | KEYMOD_SHIFT }, "select-to-start-of-doc" },
+		{ { KEY_HOME, KEYMOD_SHIFT }, "select-to-start-of-content" },
+		{ { KEY_HOME, KEYMOD_CTRL }, "move-to-start-of-doc" },
+		{ { KEY_HOME, 0 }, "move-to-start-of-content" },
+		{ { KEY_END, KEYMOD_CTRL | KEYMOD_SHIFT }, "select-to-end-of-doc" },
+		{ { KEY_END, KEYMOD_SHIFT }, "select-to-end-of-line" },
+		{ { KEY_END, KEYMOD_CTRL }, "move-to-end-of-doc" },
+		{ { KEY_END, 0 }, "move-to-end-of-line" },
+		{ { KEY_PAGEUP, KEYMOD_CTRL }, "move-to-previous-page" },
+		{ { KEY_PAGEUP, KEYMOD_SHIFT }, "select-to-previous-page" },
+		{ { KEY_PAGEUP, 0 }, "move-to-previous-page" },
+		{ { KEY_PAGEDOWN, KEYMOD_CTRL }, "move-to-next-page" },
+		{ { KEY_PAGEDOWN, KEYMOD_SHIFT }, "select-to-next-page" },
+		{ { KEY_PAGEDOWN, 0 }, "move-to-next-page" },
+		{ { KEY_Y, KEYMOD_CTRL }, "redo" },
+		{ { KEY_Z, KEYMOD_CTRL }, "undo" },
+		{ { KEY_TAB, KEYMOD_SHIFT }, "unindent" },
+		{ { KEY_TAB, 0 }, "indent" },
+		{ { KEY_C, KEYMOD_CTRL }, "copy" },
+		{ { KEY_X, KEYMOD_CTRL }, "cut" },
+		{ { KEY_V, KEYMOD_CTRL }, "paste" },
+		{ { KEY_INSERT, KEYMOD_SHIFT }, "paste" },
+		{ { KEY_A, KEYMOD_CTRL }, "select-all" },
+		{ { KEY_PLUS, KEYMOD_CTRL }, "font-size-grow" },
+		{ { KEY_KP_PLUS, KEYMOD_CTRL }, "font-size-grow" },
+		{ { KEY_MINUS, KEYMOD_CTRL }, "font-size-shrink" },
+		{ { KEY_KP_MINUS, KEYMOD_CTRL }, "font-size-shrink" },
+		{ { KEY_0, KEYMOD_CTRL }, "font-size-reset" },
+		{ { KEY_KP_DIVIDE, KEYMOD_CTRL }, "toggle-line-comments" },
 	};
 }
 
@@ -225,8 +225,8 @@ void UICodeEditor::draw() {
 	if ( mLineBreakingColumn ) {
 		Float lineBreakingOffset = start.x + getGlyphWidth() * mLineBreakingColumn;
 		primitives.setColor( Color( mLineBreakColumnColor ).blendAlpha( mAlpha ) );
-		primitives.drawLine(
-			{{lineBreakingOffset, start.y}, {lineBreakingOffset, start.y + mSize.getHeight()}} );
+		primitives.drawLine( { { lineBreakingOffset, start.y },
+							   { lineBreakingOffset, start.y + mSize.getHeight() } } );
 	}
 
 	if ( mHighlightMatchingBracket ) {
@@ -257,7 +257,7 @@ void UICodeEditor::draw() {
 	}
 
 	for ( int i = lineRange.first; i <= lineRange.second; i++ ) {
-		drawLineText( i, {startScroll.x, startScroll.y + lineHeight * i}, charSize, lineHeight );
+		drawLineText( i, { startScroll.x, startScroll.y + lineHeight * i }, charSize, lineHeight );
 	}
 
 	drawCursor( startScroll, lineHeight, cursor );
@@ -675,7 +675,7 @@ Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
 		if ( module->onKeyDown( this, event ) )
 			return 1;
 
-	std::string cmd = mKeyBindings.getCommandFromKeyBind( {event.getKeyCode(), event.getMod()} );
+	std::string cmd = mKeyBindings.getCommandFromKeyBind( { event.getKeyCode(), event.getMod() } );
 	if ( !cmd.empty() ) {
 		// Allow copy selection on locked mode
 		if ( !mLocked || mUnlockedCmd.find( cmd ) != mUnlockedCmd.end() ) {
@@ -797,6 +797,17 @@ Uint32 UICodeEditor::onMouseClick( const Vector2i& position, const Uint32& flags
 	if ( ( flags & EE_BUTTON_LMASK ) &&
 		 mLastDoubleClick.getElapsedTime() < Milliseconds( 300.f ) ) {
 		mDoc->selectLine();
+	} else if ( flags & EE_BUTTON_MMASK ) {
+		auto txt( getUISceneNode()->getWindow()->getClipboard()->getText() );
+		if ( !txt.empty() ) {
+			if ( mDoc->hasSelection() ) {
+				auto selTxt = mDoc->getSelectedText();
+				if ( !selTxt.empty() )
+					txt = selTxt;
+			}
+			mDoc->setSelection( resolveScreenPosition( position.asFloat() ) );
+			mDoc->textInput( txt );
+		}
 	}
 	return 1;
 }
@@ -857,9 +868,9 @@ void UICodeEditor::checkColorPickerAction() {
 			colorPicker->setColor( Color( '#' + text ) );
 		} else if ( isRgba || isRgb ) {
 			TextPosition position = mDoc->findCloseBracket(
-				{range.start().line(), static_cast<Int64>( range.end().column() )}, '(', ')' );
+				{ range.start().line(), static_cast<Int64>( range.end().column() ) }, '(', ')' );
 			if ( position.isValid() ) {
-				mDoc->setSelection( {position.line(), position.column() + 1}, range.start() );
+				mDoc->setSelection( { position.line(), position.column() + 1 }, range.start() );
 				colorPicker = UIColorPicker::NewModal( this, [&, isRgba]( Color color ) {
 					mDoc->replaceSelection( isRgba || color.a != 255 ? color.toRgbaString()
 																	 : color.toRgbString() );
@@ -1455,8 +1466,8 @@ const SyntaxDefinition& UICodeEditor::getSyntaxDefinition() const {
 
 void UICodeEditor::checkMatchingBrackets() {
 	if ( mHighlightMatchingBracket ) {
-		const std::vector<String::StringBaseType> open{'{', '(', '['};
-		const std::vector<String::StringBaseType> close{'}', ')', ']'};
+		const std::vector<String::StringBaseType> open{ '{', '(', '[' };
+		const std::vector<String::StringBaseType> close{ '}', ')', ']' };
 		mMatchingBrackets = TextRange();
 		TextPosition pos = mDoc->getSelection().start();
 		TextDocumentLine& line = mDoc->line( pos.line() );
@@ -1476,13 +1487,13 @@ void UICodeEditor::checkMatchingBrackets() {
 			String::StringBaseType openBracket = open[index];
 			String::StringBaseType closeBracket = close[index];
 			TextPosition closePosition = mDoc->findCloseBracket( pos, openBracket, closeBracket );
-			mMatchingBrackets = {pos, closePosition};
+			mMatchingBrackets = { pos, closePosition };
 		} else if ( isCloseIt != close.end() ) {
 			size_t index = std::distance( close.begin(), isCloseIt );
 			String::StringBaseType openBracket = open[index];
 			String::StringBaseType closeBracket = close[index];
 			TextPosition closePosition = mDoc->findOpenBracket( pos, openBracket, closeBracket );
-			mMatchingBrackets = {pos, closePosition};
+			mMatchingBrackets = { pos, closePosition };
 		}
 	}
 }
@@ -1749,8 +1760,8 @@ void UICodeEditor::drawWordMatch( const String& text, const std::pair<int, int>&
 				Int64 endCol = pos + text.size();
 				selRect.Top = startScroll.y + ln * lineHeight;
 				selRect.Bottom = selRect.Top + lineHeight;
-				selRect.Left = startScroll.x + getXOffsetCol( {ln, startCol} );
-				selRect.Right = startScroll.x + getXOffsetCol( {ln, endCol} );
+				selRect.Left = startScroll.x + getXOffsetCol( { ln, startCol } );
+				selRect.Right = startScroll.x + getXOffsetCol( { ln, endCol } );
 				primitives.drawRectangle( selRect );
 				pos = endCol;
 			} else {
@@ -1804,20 +1815,20 @@ void UICodeEditor::drawTextRange( const TextRange& range, const std::pair<int, i
 		selRect.Top = startScroll.y + ln * lineHeight;
 		selRect.Bottom = selRect.Top + lineHeight;
 		if ( range.start().line() == ln ) {
-			selRect.Left = startScroll.x + getXOffsetCol( {ln, range.start().column()} );
+			selRect.Left = startScroll.x + getXOffsetCol( { ln, range.start().column() } );
 			if ( range.end().line() == ln ) {
-				selRect.Right = startScroll.x + getXOffsetCol( {ln, range.end().column()} );
+				selRect.Right = startScroll.x + getXOffsetCol( { ln, range.end().column() } );
 			} else {
 				selRect.Right =
-					startScroll.x + getXOffsetCol( {ln, static_cast<Int64>( line.length() )} );
+					startScroll.x + getXOffsetCol( { ln, static_cast<Int64>( line.length() ) } );
 			}
 		} else if ( range.end().line() == ln ) {
-			selRect.Left = startScroll.x + getXOffsetCol( {ln, 0} );
-			selRect.Right = startScroll.x + getXOffsetCol( {ln, range.end().column()} );
+			selRect.Left = startScroll.x + getXOffsetCol( { ln, 0 } );
+			selRect.Right = startScroll.x + getXOffsetCol( { ln, range.end().column() } );
 		} else {
-			selRect.Left = startScroll.x + getXOffsetCol( {ln, 0} );
+			selRect.Left = startScroll.x + getXOffsetCol( { ln, 0 } );
 			selRect.Right =
-				startScroll.x + getXOffsetCol( {ln, static_cast<Int64>( line.length() )} );
+				startScroll.x + getXOffsetCol( { ln, static_cast<Int64>( line.length() ) } );
 		}
 
 		primitives.drawRectangle( selRect );
@@ -1870,7 +1881,7 @@ void UICodeEditor::drawWhitespaces( const std::pair<int, int>& lineRange,
 	adv->setColor( color );
 	cpoint->setColor( color );
 	for ( int index = lineRange.first; index <= lineRange.second; index++ ) {
-		Vector2f position( {startScroll.x, startScroll.y + lineHeight * index} );
+		Vector2f position( { startScroll.x, startScroll.y + lineHeight * index } );
 		const auto& text = mDoc->line( index ).getText();
 		for ( size_t i = 0; i < text.size(); i++ ) {
 			if ( position.x + glyphW >= mScreenPos.x &&
@@ -1911,7 +1922,7 @@ void UICodeEditor::registerCommands() {
 	mDoc->setCommand( "lock", [&] { setLocked( true ); } );
 	mDoc->setCommand( "unlock", [&] { setLocked( false ); } );
 	mDoc->setCommand( "lock-toggle", [&] { setLocked( !isLocked() ); } );
-	mUnlockedCmd.insert( {"copy", "select-all"} );
+	mUnlockedCmd.insert( { "copy", "select-all" } );
 }
 
 void UICodeEditor::registerKeybindings() {
@@ -1935,13 +1946,13 @@ void UICodeEditor::checkMouseOverColor( const Vector2i& position ) {
 	TextPosition start( mDoc->previousWordBoundary( pos ) );
 	if ( start.column() > 0 && start.column() < (Int64)line.size() ) {
 		TextPosition end( mDoc->nextWordBoundary( pos ) );
-		TextRange wordPos = {{start.line(), start.column() - 1}, end};
+		TextRange wordPos = { { start.line(), start.column() - 1 }, end };
 		String word = mDoc->getText( wordPos );
 		bool found = false;
 		if ( word[0] == '#' && ( word.size() == 7 || word.size() == 9 ) ) {
 			found = true;
 		} else {
-			wordPos = {start, end};
+			wordPos = { start, end };
 			word = mDoc->getText( wordPos );
 			if ( end.column() < (Int64)line.size() && line[end.column()] == '(' &&
 				 ( "rgb" == word || "rgba" == word || "hsl" == word || "hsv" == word ||
@@ -1952,7 +1963,7 @@ void UICodeEditor::checkMouseOverColor( const Vector2i& position ) {
 					word = word + text.substr( end.column(), endFun - end.column() + 1 );
 					if ( word.find( "--" ) == String::InvalidPos ) {
 						found = true;
-						wordPos = {wordPos.start(), {wordPos.end().line(), (Int64)endFun + 1}};
+						wordPos = { wordPos.start(), { wordPos.end().line(), (Int64)endFun + 1 } };
 					}
 				}
 			}
