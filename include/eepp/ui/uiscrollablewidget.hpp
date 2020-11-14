@@ -51,6 +51,8 @@ class EE_API UIScrollableWidget : public UIWidget {
 
 	virtual Rectf getVisibleRect() const;
 
+	bool shouldVerticalScrollBeVisible() const;
+
   protected:
 	ScrollViewType mViewType;
 	ScrollBarMode mVScrollMode;

@@ -326,6 +326,8 @@ class EE_API Node : public Transformable {
 
 	bool hasFocus() const;
 
+	bool hasFocusWithin() const;
+
 	virtual void setFocus();
 
 	Node* getFirstWidget() const;

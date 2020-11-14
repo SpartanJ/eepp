@@ -63,4 +63,8 @@ void UIAbstractView::notifySelectionChange() {
 		mOnSelectionChange();
 }
 
+ModelIndex UIAbstractView::findRowWithText( const std::string&, const bool&, const bool& ) const {
+	return {};
+}
+
 }}} // namespace EE::UI::Abstract

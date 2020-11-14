@@ -189,6 +189,12 @@ Rectf UIScrollableWidget::getVisibleRect() const {
 	return Rectf( mScrollOffset, getVisibleArea() );
 }
 
+bool UIScrollableWidget::shouldVerticalScrollBeVisible() const {
+	Float totH = getPixelsSize().getHeight() - getPixelsPadding().Top - getPixelsPadding().Bottom -
+				 mHScroll->getPixelsSize().getHeight();
+	return getContentSize().getHeight() > totH;
+}
+
 void UIScrollableWidget::updateScroll() {
 	Sizef totalScroll = getScrollableArea();
 	Vector2f initScroll( mScrollOffset );

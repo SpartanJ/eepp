@@ -74,19 +74,22 @@ UIMenuItem* UIMenu::add( const String& text, Drawable* icon, const String& short
 	return menuItem;
 }
 
-UIMenuCheckBox* UIMenu::createMenuCheckBox( const String& text, const bool& active ) {
+UIMenuCheckBox* UIMenu::createMenuCheckBox( const String& text, const bool& active,
+											const String& shortcutText ) {
 	UIMenuCheckBox* widget = UIMenuCheckBox::New();
 	widget->setHorizontalAlign( UI_HALIGN_LEFT );
 	widget->setParent( this );
 	widget->setIconMinimumSize( mIconMinSize );
 	widget->setText( text );
+	widget->setShortcutText( shortcutText );
 	if ( active )
 		widget->setActive( active );
 	return widget;
 }
 
-UIMenuCheckBox* UIMenu::addCheckBox( const String& text, const bool& active ) {
-	UIMenuCheckBox* chkBox = createMenuCheckBox( text, active );
+UIMenuCheckBox* UIMenu::addCheckBox( const String& text, const bool& active,
+									 const String& shortcutText ) {
+	UIMenuCheckBox* chkBox = createMenuCheckBox( text, active, shortcutText );
 	add( chkBox );
 	return chkBox;
 }
@@ -716,11 +719,11 @@ void UIMenu::findBestMenuPos( Vector2f& pos, UIMenu* menu, UIMenu* parent,
 
 					if ( !qScreen.contains( qPos ) ) {
 						if ( menu->getPixelsSize().getHeight() <= qScreen.getHeight() ) {
-							pos = {pos.x, eefloor( ( qScreen.getHeight() -
-													 menu->getPixelsSize().getHeight() ) *
-												   0.5f )};
+							pos = { pos.x, eefloor( ( qScreen.getHeight() -
+													  menu->getPixelsSize().getHeight() ) *
+													0.5f ) };
 						} else {
-							pos = {pos.x, 0};
+							pos = { pos.x, 0 };
 						}
 					}
 				}

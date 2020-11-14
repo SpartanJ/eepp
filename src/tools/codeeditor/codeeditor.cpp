@@ -174,10 +174,11 @@ void App::openFontDialog( std::string& fontPath ) {
 		absoluteFontPath = mResPath + fontPath;
 	UIFileDialog* dialog = UIFileDialog::New( UIFileDialog::DefaultFlags, "*.ttf; *.otf; *.wolff",
 											  FileSystem::fileRemoveFileName( absoluteFontPath ) );
-	ModelIndex index =
-		dialog->getList()->findRowWithText( FileSystem::fileNameFromPath( fontPath ), true, true );
+	ModelIndex index = dialog->getMultiView()->getListView()->findRowWithText(
+		FileSystem::fileNameFromPath( fontPath ), true, true );
 	if ( index.isValid() )
-		dialog->getList()->setSelection( index );
+		dialog->runOnMainThread(
+			[&, dialog, index]() { dialog->getMultiView()->setSelection( index ); } );
 	dialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 	dialog->setTitle( "Select Font File" );
 	dialog->setCloseShortcut( KEY_ESCAPE );
@@ -187,9 +188,17 @@ void App::openFontDialog( std::string& fontPath ) {
 			newPath = newPath.substr( mResPath.size() );
 		if ( fontPath != newPath ) {
 			fontPath = newPath;
-			UIMessageBox::New( UIMessageBox::OK,
-							   "You will need to restart the editor to see font changes." )
-				->show();
+			auto fontName =
+				FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( fontPath ) );
+			FontTrueType* fontMono = loadFont( fontName, fontPath );
+			if ( fontMono ) {
+				mFontMono = fontMono;
+				mFontMono->setBoldAdvanceSameAsRegular( true );
+				if ( mEditorSplitter ) {
+					mEditorSplitter->forEachEditor(
+						[&]( UICodeEditor* editor ) { editor->setFont( mFontMono ); } );
+				}
+			}
 		}
 	} );
 	dialog->addEventListener( Event::OnWindowClose, [&]( const Event* ) {
@@ -1012,6 +1021,14 @@ void App::showSidePanel( bool show ) {
 	}
 }
 
+void App::switchSidePanel() {
+	mConfig.ui.showSidePanel = !mConfig.ui.showSidePanel;
+	mWindowMenu->getItem( "Show Left Sidebar" )
+		->asType<UIMenuCheckBox>()
+		->setActive( mConfig.ui.showSidePanel );
+	showSidePanel( mConfig.ui.showSidePanel );
+}
+
 UIMenu* App::createWindowMenu() {
 	mWindowMenu = UIPopUpMenu::New();
 	mWindowMenu->add( "UI Scale Factor (Pixel Density)", findIcon( "pixel-density" ) );
@@ -1020,10 +1037,10 @@ UIMenu* App::createWindowMenu() {
 	mWindowMenu->add( "Serif Font...", findIcon( "font-size" ) );
 	mWindowMenu->add( "Monospace Font...", findIcon( "font-size" ) );
 	mWindowMenu->addSeparator();
-	mWindowMenu->addCheckBox( "Full Screen Mode" )
-		->setShortcutText( getKeybind( "fullscreen-toggle" ) )
+	mWindowMenu->addCheckBox( "Full Screen Mode", false, getKeybind( "fullscreen-toggle" ) )
 		->setId( "fullscreen-mode" );
-	mWindowMenu->addCheckBox( "Show Side Panel" )->setActive( mConfig.ui.showSidePanel );
+	mWindowMenu->addCheckBox( "Show Left Sidebar", mConfig.ui.showSidePanel,
+							  getKeybind( "switch-side-panel" ) );
 	mWindowMenu->addSeparator();
 	mWindowMenu->add( "Split Left", findIcon( "split-horizontal" ), getKeybind( "split-left" ) );
 	mWindowMenu->add( "Split Right", findIcon( "split-horizontal" ), getKeybind( "split-right" ) );
@@ -1037,7 +1054,7 @@ UIMenu* App::createWindowMenu() {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
-		if ( item->getText() == "Show Side Panel" ) {
+		if ( item->getText() == "Show Left Sidebar" ) {
 			mConfig.ui.showSidePanel = item->asType<UIMenuCheckBox>()->isActive();
 			showSidePanel( mConfig.ui.showSidePanel );
 		} else if ( item->getText() == "UI Scale Factor (Pixel Density)" ) {
@@ -1624,28 +1641,28 @@ std::map<KeyBindings::Shortcut, std::string> App::getDefaultKeybindings() {
 }
 
 std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
-	return {
-		{ { KEY_RETURN, KEYMOD_LALT }, "fullscreen-toggle" },
-		{ { KEY_F3, KEYMOD_NONE }, "repeat-find" },
-		{ { KEY_F12, KEYMOD_NONE }, "console-toggle" },
-		{ { KEY_F, KEYMOD_CTRL }, "find-replace" },
-		{ { KEY_Q, KEYMOD_CTRL }, "close-app" },
-		{ { KEY_O, KEYMOD_CTRL }, "open-file" },
-		{ { KEY_O, KEYMOD_CTRL | KEYMOD_SHIFT }, "open-folder" },
-		{ { KEY_F6, KEYMOD_NONE }, "debug-draw-highlight-toggle" },
-		{ { KEY_F7, KEYMOD_NONE }, "debug-draw-boxes-toggle" },
-		{ { KEY_F8, KEYMOD_NONE }, "debug-draw-debug-data" },
-		{ { KEY_K, KEYMOD_CTRL }, "open-locatebar" },
-		{ { KEY_F, KEYMOD_CTRL | KEYMOD_SHIFT }, "open-global-search" },
-		{ { KEY_L, KEYMOD_CTRL }, "go-to-line" },
-		{ { KEY_M, KEYMOD_CTRL }, "menu-toggle" },
-		{ { KEY_S, KEYMOD_CTRL | KEYMOD_SHIFT }, "save-all" },
-	};
+	return { { { KEY_RETURN, KEYMOD_LALT }, "fullscreen-toggle" },
+			 { { KEY_F3, KEYMOD_NONE }, "repeat-find" },
+			 { { KEY_F12, KEYMOD_NONE }, "console-toggle" },
+			 { { KEY_F, KEYMOD_CTRL }, "find-replace" },
+			 { { KEY_Q, KEYMOD_CTRL }, "close-app" },
+			 { { KEY_O, KEYMOD_CTRL }, "open-file" },
+			 { { KEY_O, KEYMOD_CTRL | KEYMOD_SHIFT }, "open-folder" },
+			 { { KEY_F6, KEYMOD_NONE }, "debug-draw-highlight-toggle" },
+			 { { KEY_F7, KEYMOD_NONE }, "debug-draw-boxes-toggle" },
+			 { { KEY_F8, KEYMOD_NONE }, "debug-draw-debug-data" },
+			 { { KEY_K, KEYMOD_CTRL }, "open-locatebar" },
+			 { { KEY_F, KEYMOD_CTRL | KEYMOD_SHIFT }, "open-global-search" },
+			 { { KEY_L, KEYMOD_CTRL }, "go-to-line" },
+			 { { KEY_M, KEYMOD_CTRL }, "menu-toggle" },
+			 { { KEY_S, KEYMOD_CTRL | KEYMOD_SHIFT }, "save-all" },
+			 { { KEY_F9, KEYMOD_LALT }, "switch-side-panel" } };
 }
 
 std::vector<std::string> App::getUnlockedCommands() {
-	return { "fullscreen-toggle", "open-file",		"open-folder",		  "console-toggle",
-			 "close-app",		  "open-locatebar", "open-global-search", "menu-toggle" };
+	return { "fullscreen-toggle",  "open-file",	  "open-folder",
+			 "console-toggle",	   "close-app",	  "open-locatebar",
+			 "open-global-search", "menu-toggle", "switch-side-panel" };
 }
 
 void App::closeEditors() {
@@ -1692,6 +1709,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	editor->setHighlightSelectionMatch( config.highlightSelectionMatch );
 	editor->setEnableColorPickerOnSelection( config.colorPickerSelection );
 	editor->setColorPreview( config.colorPreview );
+	editor->setFont( mFontMono );
 	doc.setAutoCloseBrackets( !mConfig.editor.autoCloseBrackets.empty() );
 	doc.setAutoCloseBracketsPairs( makeAutoClosePairs( mConfig.editor.autoCloseBrackets ) );
 	doc.setAutoDetectIndentType( config.autoDetectIndentType );
@@ -1761,6 +1779,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	doc.setCommand( "go-to-line", [&] { goToLine(); } );
 	doc.setCommand( "load-current-dir", [&] { loadCurrentDirectory(); } );
 	doc.setCommand( "menu-toggle", [&] { toggleSettingsMenu(); } );
+	doc.setCommand( "switch-side-panel", [&] { switchSidePanel(); } );
 	editor->addEventListener( Event::OnSave, [&]( const Event* event ) {
 		UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
 		if ( editor->getDocument().getFilePath() == mKeybindingsPath ) {
@@ -2134,17 +2153,16 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 
 		mUISceneNode = UISceneNode::New();
 
-		FontTrueType* font =
-			loadFont( "sans-serif", mConfig.ui.serifFont, "assets/fonts/NotoSans-Regular.ttf" );
-		FontTrueType* fontMono =
+		mFont = loadFont( "sans-serif", mConfig.ui.serifFont, "assets/fonts/NotoSans-Regular.ttf" );
+		mFontMono =
 			loadFont( "monospace", mConfig.ui.monospaceFont, "assets/fonts/DejaVuSansMono.ttf" );
-		if ( fontMono )
-			fontMono->setBoldAdvanceSameAsRegular( true );
+		if ( mFontMono )
+			mFontMono->setBoldAdvanceSameAsRegular( true );
 
 		FontTrueType* iconFont =
 			FontTrueType::New( "icon", mResPath + "assets/fonts/remixicon.ttf" );
 
-		if ( !font || !fontMono || !iconFont ) {
+		if ( !mFont || !mFontMono || !iconFont ) {
 			printf( "Font not found!" );
 			return;
 		}
@@ -2152,14 +2170,14 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		SceneManager::instance()->add( mUISceneNode );
 
 		UITheme* theme =
-			UITheme::load( "uitheme", "uitheme", "", font, mResPath + "assets/ui/breeze.css" );
+			UITheme::load( "uitheme", "uitheme", "", mFont, mResPath + "assets/ui/breeze.css" );
 		theme->setDefaultFontSize( mConfig.ui.fontSize.asDp( 0, Sizef(), mDisplayDPI ) );
 		mUISceneNode->setStyleSheet( theme->getStyleSheet() );
 		mUISceneNode
 			->getUIThemeManager()
 			//->setDefaultEffectsEnabled( true )
 			->setDefaultTheme( theme )
-			->setDefaultFont( font )
+			->setDefaultFont( mFont )
 			->setDefaultFontSize( mConfig.ui.fontSize.asDp( 0, Sizef(), mDisplayDPI ) )
 			->add( theme );
 
@@ -2337,6 +2355,8 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 			{ "color-picker", 0xf13d },
 			{ "pixel-density", 0xed8c },
 			{ "go-to-line", 0xf1f8 },
+			{ "table-view", 0xf1de },
+			{ "list-view", 0xecf1 },
 		};
 		for ( auto icon : icons )
 			iconTheme->add( UIGlyphIcon::New( icon.first, iconFont, icon.second ) );
@@ -2383,7 +2403,7 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 
 		mEditorSplitter->createEditorWithTabWidget( mBaseLayout );
 
-		mConsole = eeNew( Console, ( fontMono, true, true, 1024 * 1000, 0, mWindow ) );
+		mConsole = eeNew( Console, ( mFontMono, true, true, 1024 * 1000, 0, mWindow ) );
 
 		initProjectTreeView( file );
 

@@ -768,6 +768,14 @@ void UINode::nodeDraw() {
 	}
 }
 
+void UINode::clearForeground() {
+	eeSAFE_DELETE( mForeground );
+}
+
+void UINode::clearBackground() {
+	eeSAFE_DELETE( mBackground );
+}
+
 UINodeDrawable* UINode::getBackground() {
 	if ( NULL == mBackground ) {
 		mBackground = UINodeDrawable::New( this );

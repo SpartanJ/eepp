@@ -241,8 +241,8 @@ Uint32 UITableView::onKeyDown( const KeyEvent& event ) {
 }
 
 ModelIndex UITableView::findRowWithText( const std::string& text, const bool& caseSensitive,
-										 const bool& exactMatch ) {
-	Model* model = getModel();
+										 const bool& exactMatch ) const {
+	const Model* model = getModel();
 	if ( !model || model->rowCount() == 0 )
 		return {};
 	size_t rc = model->rowCount();

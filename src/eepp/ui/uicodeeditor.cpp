@@ -797,7 +797,7 @@ Uint32 UICodeEditor::onMouseClick( const Vector2i& position, const Uint32& flags
 	if ( ( flags & EE_BUTTON_LMASK ) &&
 		 mLastDoubleClick.getElapsedTime() < Milliseconds( 300.f ) ) {
 		mDoc->selectLine();
-	} else if ( flags & EE_BUTTON_MMASK ) {
+	} else if ( ( flags & EE_BUTTON_MMASK ) && isMouseOverMeOrChilds() ) {
 		auto txt( getUISceneNode()->getWindow()->getClipboard()->getText() );
 		if ( !txt.empty() ) {
 			if ( mDoc->hasSelection() ) {

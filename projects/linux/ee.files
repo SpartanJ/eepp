@@ -380,6 +380,7 @@
 ../../include/eepp/ui/uimenuseparator.hpp
 ../../include/eepp/ui/uimenusubmenu.hpp
 ../../include/eepp/ui/uimessagebox.hpp
+../../include/eepp/ui/uimultimodelview.hpp
 ../../include/eepp/ui/uinode.hpp
 ../../include/eepp/ui/uinodedrawable.hpp
 ../../include/eepp/ui/uipopupmenu.hpp
@@ -398,6 +399,7 @@
 ../../include/eepp/ui/uispinbox.hpp
 ../../include/eepp/ui/uisplitter.hpp
 ../../include/eepp/ui/uisprite.hpp
+../../include/eepp/ui/uistackwidget.hpp
 ../../include/eepp/ui/uistate.hpp
 ../../include/eepp/ui/uistyle.hpp
 ../../include/eepp/ui/uitab.hpp
@@ -854,6 +856,7 @@
 ../../src/eepp/ui/uimenuseparator.cpp
 ../../src/eepp/ui/uimenusubmenu.cpp
 ../../src/eepp/ui/uimessagebox.cpp
+../../src/eepp/ui/uimultimodelview.cpp
 ../../src/eepp/ui/uinode.cpp
 ../../src/eepp/ui/uinodedrawable.cpp
 ../../src/eepp/ui/uipopupmenu.cpp
@@ -872,6 +875,7 @@
 ../../src/eepp/ui/uispinbox.cpp
 ../../src/eepp/ui/uisplitter.cpp
 ../../src/eepp/ui/uisprite.cpp
+../../src/eepp/ui/uistackwidget.cpp
 ../../src/eepp/ui/uistate.cpp
 ../../src/eepp/ui/uistyle.cpp
 ../../src/eepp/ui/uitab.cpp

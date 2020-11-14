@@ -23,7 +23,7 @@ class EE_API UITableView : public UIAbstractTableView {
 
 	virtual ModelIndex findRowWithText( const std::string& text,
 										const bool& caseSensitive = false,
-										const bool& exactMatch = false );
+										const bool& exactMatch = false ) const;
 
   protected:
 	Sizef mContentSize;

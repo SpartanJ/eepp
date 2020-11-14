@@ -35,7 +35,7 @@ UITreeView::MetadataForIndex& UITreeView::getIndexMetadata( const ModelIndex& in
 	if ( it != mViewMetadata.end() )
 		return it->second;
 	auto newMetadata = MetadataForIndex();
-	mViewMetadata.insert( {index.data(), std::move( newMetadata )} );
+	mViewMetadata.insert( { index.data(), std::move( newMetadata ) } );
 	return mViewMetadata[index.data()];
 }
 
@@ -170,7 +170,7 @@ UIWidget* UITreeView::updateCell( const int& rowIndex, const ModelIndex& index,
 		widget->reloadStyle( true, true, true );
 	}
 	widget->setPixelsSize( columnData( index.column() ).width, getRowHeight() );
-	widget->setPixelsPosition( {getColumnPosition( index.column() ).x, 0} );
+	widget->setPixelsPosition( { getColumnPosition( index.column() ).x, 0 } );
 
 	if ( widget->isType( UI_TYPE_TABLECELL ) ) {
 		UITableCell* cell = widget->asType<UITableCell>();
@@ -432,7 +432,7 @@ Uint32 UITreeView::onKeyDown( const KeyEvent& event ) {
 			Float curY;
 			traverseTree(
 				[&]( const int&, const ModelIndex& index, const size_t&, const Float& offsetY ) {
-					deque.push_back( {index, offsetY} );
+					deque.push_back( { index, offsetY } );
 					if ( (int)deque.size() > pageSize )
 						deque.pop_front();
 					if ( index == curIndex )
@@ -442,8 +442,8 @@ Uint32 UITreeView::onKeyDown( const KeyEvent& event ) {
 			curY = deque.front().second - getHeaderHeight();
 			getSelection().set( deque.front().first );
 			scrollToPosition(
-				{{mScrollOffset.x, curY},
-				 {columnData( deque.front().first.column() ).width, getRowHeight()}} );
+				{ { mScrollOffset.x, curY },
+				  { columnData( deque.front().first.column() ).width, getRowHeight() } } );
 			return 1;
 		}
 		case KEY_PAGEDOWN: {
@@ -478,8 +478,8 @@ Uint32 UITreeView::onKeyDown( const KeyEvent& event ) {
 			}
 			curY += getRowHeight();
 			getSelection().set( foundIndex );
-			scrollToPosition( {{mScrollOffset.x, curY},
-							   {columnData( foundIndex.column() ).width, getRowHeight()}} );
+			scrollToPosition( { { mScrollOffset.x, curY },
+								{ columnData( foundIndex.column() ).width, getRowHeight() } } );
 			return 1;
 		}
 		case KEY_UP: {
@@ -609,8 +609,8 @@ void UITreeView::onSortColumn( const size_t& ) {
 }
 
 ModelIndex UITreeView::findRowWithText( const std::string& text, const bool& caseSensitive,
-										const bool& exactMatch ) {
-	Model* model = getModel();
+										const bool& exactMatch ) const {
+	const Model* model = getModel();
 	if ( !model || model->rowCount() == 0 )
 		return {};
 	ModelIndex foundIndex = {};

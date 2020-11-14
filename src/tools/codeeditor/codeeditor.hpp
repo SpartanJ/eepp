@@ -194,6 +194,8 @@ class App : public UICodeEditorSplitter::Client {
 	bool mDirTreeReady{ false };
 	std::unordered_set<Doc::TextDocument*> mTmpDocs;
 	std::string mCurrentProject;
+	FontTrueType* mFont{ nullptr };
+	FontTrueType* mFontMono{ nullptr };
 
 	void saveAllProcess();
 
@@ -310,7 +312,7 @@ class App : public UICodeEditorSplitter::Client {
 	void toggleSettingsMenu();
 
 	FontTrueType* loadFont( const std::string& name, std::string fontPath,
-							const std::string& fallback );
+							const std::string& fallback = "" );
 
 	void closeFolder();
 
@@ -318,6 +320,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	void updateGlobalSearchBarResults( const std::string& search,
 									   std::shared_ptr<ProjectSearch::ResultModel> model );
+
+	void switchSidePanel();
 };
 
 #endif // EE_TOOLS_CODEEDITOR_HPP

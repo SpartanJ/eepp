@@ -28,8 +28,8 @@ MenuBar {
 }
 
 MenuBar::button {
-	padding-left: -3dp;
-	padding-right: -3dp;
+	padding-left: 4dp;
+	padding-right: 4dp;
 }
 
 Menu,

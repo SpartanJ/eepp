@@ -89,31 +89,27 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	void setRowSearchByName( bool rowSearchByName );
 
-	virtual ModelIndex findRowWithText( const std::string& text,
-										const bool& caseSensitive = false,
-										const bool& exactMatch = false );
-
   protected:
 	friend class EE::UI::UITableHeaderColumn;
 
 	struct ColumnData {
-		Float minWidth{0};
-		Float width{0};
-		bool visible{true};
-		UIPushButton* widget{nullptr};
+		Float minWidth{ 0 };
+		Float width{ 0 };
+		bool visible{ true };
+		UIPushButton* widget{ nullptr };
 	};
 
-	Float mRowHeight{0};
+	Float mRowHeight{ 0 };
 	mutable std::vector<UITableRow*> mRows;
 	mutable std::vector<ColumnData> mColumn;
 	mutable std::vector<std::map<int, UIWidget*>> mWidgets;
 	UILinearLayout* mHeader;
-	Float mDragBorderDistance{8};
-	size_t mIconSize{12};
-	size_t mSortIconSize{16};
-	bool mAutoExpandOnSingleColumn{false};
-	bool mRowSearchByName{true};
-	Action* mSearchTextAction{nullptr};
+	Float mDragBorderDistance{ 8 };
+	size_t mIconSize{ 12 };
+	size_t mSortIconSize{ 16 };
+	bool mAutoExpandOnSingleColumn{ false };
+	bool mRowSearchByName{ true };
+	Action* mSearchTextAction{ nullptr };
 	std::string mSearchText;
 
 	virtual ~UIAbstractTableView();

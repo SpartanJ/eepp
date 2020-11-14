@@ -20,6 +20,7 @@
 #include <eepp/ui/uispinbox.hpp>
 #include <eepp/ui/uisplitter.hpp>
 #include <eepp/ui/uisprite.hpp>
+#include <eepp/ui/uistackwidget.hpp>
 #include <eepp/ui/uitab.hpp>
 #include <eepp/ui/uitableview.hpp>
 #include <eepp/ui/uitabwidget.hpp>
@@ -86,6 +87,7 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["treeview"] = UITreeView::New;
 		registeredWidget["tableview"] = UITableView::New;
 		registeredWidget["listview"] = UIListView::New;
+		registeredWidget["stackwidget"] = UIStackWidget::New;
 
 		registeredWidget["hbox"] = UILinearLayout::NewHorizontal;
 		registeredWidget["vbox"] = UILinearLayout::NewVertical;

@@ -94,7 +94,9 @@ void UIPushButton::onAutoSize() {
 		setInternalHeight( getSkinSize().getHeight() );
 	}
 
-	if ( ( mFlags & UI_AUTO_SIZE ) || mWidthPolicy == SizePolicy::WrapContent ) {
+	if ( mWidthPolicy == SizePolicy::WrapContent ) {
+		setInternalPixelsWidth( getContentSize().getWidth() );
+	} else if ( mFlags & UI_AUTO_SIZE ) {
 		Float minSize = getContentSize().getWidth();
 		if ( minSize > mSize.getWidth() )
 			setInternalPixelsWidth( minSize );
@@ -103,7 +105,7 @@ void UIPushButton::onAutoSize() {
 
 Vector2f UIPushButton::calcLayoutSize( const std::vector<UIWidget*>& widgets,
 									   const Rectf& padding ) const {
-	Vector2f totSize{padding.Left, padding.Top + padding.Bottom};
+	Vector2f totSize{ padding.Left, padding.Top + padding.Bottom };
 	UIWidget* widget;
 	for ( size_t i = 0; i < widgets.size(); i++ ) {
 		if ( !widgets[i] || !widgets[i]->isVisible() )
@@ -125,7 +127,7 @@ Vector2f UIPushButton::calcLayoutSize( const std::vector<UIWidget*>& widgets,
 
 Vector2f UIPushButton::packLayout( const std::vector<UIWidget*>& widgets, const Rectf& padding ) {
 	std::vector<Vector2f> pos( widgets.size() );
-	Vector2f totSize{padding.Left, padding.Top + padding.Bottom};
+	Vector2f totSize{ padding.Left, padding.Top + padding.Bottom };
 	UIWidget* widget;
 	for ( size_t i = 0; i < widgets.size(); i++ ) {
 		if ( !widgets[i] || !widgets[i]->isVisible() )
@@ -204,13 +206,13 @@ Sizef UIPushButton::updateLayout() {
 	Rectf autoPadding = calculatePadding();
 	switch ( mInnerWidgetOrientation ) {
 		case InnerWidgetOrientation::Left:
-			size = packLayout( {getExtraInnerWidget(), mIcon, mTextBox}, autoPadding );
+			size = packLayout( { getExtraInnerWidget(), mIcon, mTextBox }, autoPadding );
 			break;
 		case InnerWidgetOrientation::Center:
-			size = packLayout( {mIcon, getExtraInnerWidget(), mTextBox}, autoPadding );
+			size = packLayout( { mIcon, getExtraInnerWidget(), mTextBox }, autoPadding );
 			break;
 		case InnerWidgetOrientation::Right:
-			size = packLayout( {mIcon, mTextBox, getExtraInnerWidget()}, autoPadding );
+			size = packLayout( { mIcon, mTextBox, getExtraInnerWidget() }, autoPadding );
 			break;
 	}
 	return size.ceil();
@@ -248,6 +250,7 @@ UIPushButton* UIPushButton::setIcon( Drawable* icon ) {
 		mIcon->setPixelsSize( icon->getPixelsSize() );
 		mIcon->setDrawable( icon );
 		mTextBox->setVisible( !getText().empty() );
+		onAutoSize();
 		updateLayout();
 	}
 	return this;
@@ -261,6 +264,7 @@ UIPushButton* UIPushButton::setText( const String& text ) {
 	if ( text != mTextBox->getText() ) {
 		mTextBox->setVisible( !text.empty() );
 		mTextBox->setText( text );
+		onAutoSize();
 		updateLayout();
 	}
 	return this;
@@ -347,13 +351,13 @@ Sizef UIPushButton::getContentSize() const {
 	Rectf autoPadding = calculatePadding();
 	switch ( mInnerWidgetOrientation ) {
 		case InnerWidgetOrientation::Left:
-			size = calcLayoutSize( {getExtraInnerWidget(), mIcon, mTextBox}, autoPadding );
+			size = calcLayoutSize( { getExtraInnerWidget(), mIcon, mTextBox }, autoPadding );
 			break;
 		case InnerWidgetOrientation::Center:
-			size = calcLayoutSize( {mIcon, getExtraInnerWidget(), mTextBox}, autoPadding );
+			size = calcLayoutSize( { mIcon, getExtraInnerWidget(), mTextBox }, autoPadding );
 			break;
 		case InnerWidgetOrientation::Right:
-			size = calcLayoutSize( {mIcon, mTextBox, getExtraInnerWidget()}, autoPadding );
+			size = calcLayoutSize( { mIcon, mTextBox, getExtraInnerWidget() }, autoPadding );
 			break;
 	}
 	if ( getSkin() )

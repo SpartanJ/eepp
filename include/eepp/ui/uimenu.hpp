@@ -32,7 +32,8 @@ class EE_API UIMenu : public UIWidget {
 
 	UIMenuSeparator* addSeparator();
 
-	UIMenuCheckBox* addCheckBox( const String& text, const bool& active = false );
+	UIMenuCheckBox* addCheckBox( const String& text, const bool& active = false,
+								 const String& shortcutText = "" );
 
 	UIMenuRadioButton* addRadioButton( const String& text, const bool& active = false );
 
@@ -99,7 +100,7 @@ class EE_API UIMenu : public UIWidget {
 	bool mResizing;
 	UIWidget* mOwnerNode;
 	Sizei mIconMinSize;
-	UIMenu* mCurrentSubMenu{nullptr};
+	UIMenu* mCurrentSubMenu{ nullptr };
 	Clock mInactiveTime;
 
 	virtual void onSizeChange();
@@ -119,7 +120,8 @@ class EE_API UIMenu : public UIWidget {
 	UIMenuItem* createMenuItem( const String& text, Drawable* icon,
 								const String& shortcutText = "" );
 
-	UIMenuCheckBox* createMenuCheckBox( const String& text, const bool& active );
+	UIMenuCheckBox* createMenuCheckBox( const String& text, const bool& active,
+										const String& shortcutText = "" );
 
 	UIMenuRadioButton* createMenuRadioButton( const String& text, const bool& active );
 

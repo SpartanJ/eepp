@@ -259,6 +259,10 @@ class EE_API UINode : public Node {
 
 	virtual void nodeDraw();
 
+	void clearForeground();
+
+	void clearBackground();
+
   protected:
 	Vector2f mDpPos;
 	Sizef mDpSize;

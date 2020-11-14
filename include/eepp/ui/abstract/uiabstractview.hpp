@@ -36,7 +36,7 @@ class EE_API ModelEvent : public Event {
 	const Model* model;
 	ModelIndex index;
 	ModelEventType modelEventType;
-	const Event* triggerEvent{nullptr};
+	const Event* triggerEvent{ nullptr };
 };
 
 class EE_API UIAbstractView : public UIScrollableWidget {
@@ -67,6 +67,9 @@ class EE_API UIAbstractView : public UIScrollableWidget {
 
 	void setOnSelection( const std::function<void( const ModelIndex& )>& onSelection );
 
+	virtual ModelIndex findRowWithText( const std::string& text, const bool& caseSensitive = false,
+										const bool& exactMatch = false ) const;
+
   protected:
 	friend class EE::UI::Models::Model;
 
@@ -78,7 +81,7 @@ class EE_API UIAbstractView : public UIScrollableWidget {
 
 	virtual ~UIAbstractView();
 
-	bool mEditable{false};
+	bool mEditable{ false };
 	ModelIndex mEditIndex;
 	UIWidget* mEditWidget;
 	Rect mEditWidgetContentRect;

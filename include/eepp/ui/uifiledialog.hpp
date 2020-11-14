@@ -5,7 +5,9 @@
 #include <eepp/ui/keyboardshortcut.hpp>
 #include <eepp/ui/uicombobox.hpp>
 #include <eepp/ui/uilistview.hpp>
+#include <eepp/ui/uimultimodelview.hpp>
 #include <eepp/ui/uipushbutton.hpp>
+#include <eepp/ui/uiselectbutton.hpp>
 #include <eepp/ui/uitextinput.hpp>
 #include <eepp/ui/uiwidget.hpp>
 #include <eepp/ui/uiwindow.hpp>
@@ -40,7 +42,7 @@ class EE_API UIFileDialog : public UIWindow {
 
 	virtual void setTheme( UITheme* Theme );
 
-	void refreshFolder();
+	void refreshFolder( bool resetScroll = false );
 
 	virtual Uint32 onMessage( const NodeMessage* Msg );
 
@@ -60,7 +62,7 @@ class EE_API UIFileDialog : public UIWindow {
 
 	UIPushButton* getButtonUp() const;
 
-	UIListView* getList() const;
+	UIMultiModelView* getMultiView() const;
 
 	UITextInput* getPathInput() const;
 
@@ -98,12 +100,31 @@ class EE_API UIFileDialog : public UIWindow {
 
 	void setCloseShortcut( const KeyBindings::Shortcut& closeWithKey );
 
+	UIIcon* getIconNewFolder() const;
+
+	void setIconNewFolder( UIIcon* iconNewFolder );
+
+	UIIcon* getIconListView() const;
+
+	void setIconListView( UIIcon* iconListView );
+
+	UIIcon* getIconTableView() const;
+
+	void setIconTableView( UIIcon* iconTableView );
+
+	void setViewMode( const UIMultiModelView::ViewMode& viewMode );
+
+	const UIMultiModelView::ViewMode& getViewMode() const;
+
   protected:
 	std::string mCurPath;
 	UIPushButton* mButtonOpen;
 	UIPushButton* mButtonCancel;
 	UIPushButton* mButtonUp;
-	UIListView* mList;
+	UIPushButton* mButtonNewFolder;
+	UISelectButton* mButtonListView;
+	UISelectButton* mButtonTableView;
+	UIMultiModelView* mMultiView;
 	UITextInput* mPath;
 	UITextInput* mFile;
 	UIDropDownList* mFiletype;

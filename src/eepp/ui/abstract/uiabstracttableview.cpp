@@ -216,6 +216,8 @@ void UIAbstractTableView::updateColumnsWidth() {
 		int col = 0;
 		if ( visibleColumnCount() == 1 && ( col = visibleColumn() ) != -1 ) {
 			Float width = eemax( getContentSpaceWidth(), getMaxColumnContentWidth( col ) );
+			if ( shouldVerticalScrollBeVisible() )
+				width -= getVerticalScrollBar()->getPixelsSize().getWidth();
 			columnData( col ).width = width;
 			updateHeaderSize();
 			onColumnSizeChange( col );
@@ -310,7 +312,7 @@ UITableRow* UIAbstractTableView::updateRow( const int& rowIndex, const ModelInde
 	}
 	rowWidget->setCurIndex( index );
 	rowWidget->setPixelsSize( getContentSize().getWidth(), getRowHeight() );
-	rowWidget->setPixelsPosition( {-mScrollOffset.x, yOffset - mScrollOffset.y} );
+	rowWidget->setPixelsPosition( { -mScrollOffset.x, yOffset - mScrollOffset.y } );
 	if ( getSelection().contains( index ) ) {
 		rowWidget->pushState( UIState::StateSelected );
 	} else {
@@ -353,7 +355,7 @@ UIWidget* UIAbstractTableView::updateCell( const int& rowIndex, const ModelIndex
 		widget->reloadStyle( true, true, true );
 	}
 	widget->setPixelsSize( columnData( index.column() ).width, getRowHeight() );
-	widget->setPixelsPosition( {getColumnPosition( index.column() ).x, 0} );
+	widget->setPixelsPosition( { getColumnPosition( index.column() ).x, 0 } );
 	if ( widget->isType( UI_TYPE_TABLECELL ) ) {
 		UITableCell* cell = widget->asType<UITableCell>();
 		cell->setCurIndex( index );
@@ -401,8 +403,8 @@ void UIAbstractTableView::setSelection( const ModelIndex& index, bool scrollToSe
 	auto& model = *this->getModel();
 	if ( model.isValid( index ) && scrollToSelection ) {
 		getSelection().set( index );
-		scrollToPosition( {{mScrollOffset.x, getHeaderHeight() + index.row() * getRowHeight()},
-						   {columnData( index.column() ).width, getRowHeight()}} );
+		scrollToPosition( { { mScrollOffset.x, getHeaderHeight() + index.row() * getRowHeight() },
+							{ columnData( index.column() ).width, getRowHeight() } } );
 	}
 }
 
@@ -436,6 +438,7 @@ void UIAbstractTableView::onSortColumn( const size_t& colIndex ) {
 			 columnData( model->keyColumn() ).widget ) {
 			UIImage* image =
 				columnData( model->keyColumn() ).widget->getExtraInnerWidget()->asType<UIImage>();
+			image->setForegroundFillEnabled( false );
 			image->setDrawable( nullptr );
 		}
 		SortOrder sortOrder = model->sortOrder() == SortOrder::Ascending ? SortOrder::Descending
@@ -444,7 +447,10 @@ void UIAbstractTableView::onSortColumn( const size_t& colIndex ) {
 		UIImage* image = button->getExtraInnerWidget()->asType<UIImage>();
 		std::string tag = button->getElementTag() + "::arrow";
 		image->setElementTag( sortOrder == SortOrder::Ascending ? tag + "-up" : tag + "-down" );
+		image->setForegroundFillEnabled( true );
 		image->reloadStyle();
+		if ( image->getForeground() )
+			image->getForeground()->setAlpha( 255 );
 		if ( image && image->getForeground() == nullptr ) {
 			Drawable* icon = mUISceneNode->findIconDrawable(
 				sortOrder == SortOrder::Ascending ? "arrow-down" : "arrow-up", mSortIconSize );
@@ -472,10 +478,6 @@ Uint32 UIAbstractTableView::onTextInput( const TextInputEvent& event ) {
 	if ( index.isValid() )
 		setSelection( index );
 	return 1;
-}
-
-ModelIndex UIAbstractTableView::findRowWithText( const std::string&, const bool&, const bool& ) {
-	return {};
 }
 
 bool UIAbstractTableView::applyProperty( const StyleSheetProperty& attribute ) {

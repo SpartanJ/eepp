@@ -1523,6 +1523,10 @@ bool Node::hasFocus() const {
 	return 0 != ( mNodeFlags & NODE_FLAG_HAS_FOCUS );
 }
 
+bool Node::hasFocusWithin() const {
+	return hasFocus() || inParentTreeOf( getEventDispatcher()->getFocusNode() );
+}
+
 void Node::setFocus() {}
 
 Node* Node::getFirstWidget() const {
