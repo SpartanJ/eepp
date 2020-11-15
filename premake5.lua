@@ -524,6 +524,10 @@ function build_eepp( build_name )
 
 	build_link_configuration( build_name )
 
+	if _OPTIONS["with-dynamic-freetype"] and not os.istarget("ios") and os_findlib("freetype") then
+		table.insert( link_list, get_backend_link_name( "freetype" ) )
+	end
+
 	filter "options:use-frameworks"
 		defines { "EE_USE_FRAMEWORKS" }
 
@@ -550,11 +554,6 @@ function build_eepp( build_name )
 
 	filter "action:not vs*"
 		cppdialect "C++14"
-
-	filter "options:with-dynamic-freetype"
-		if not os.istarget("ios") and os_findlib("freetype") then
-			table.insert( link_list, get_backend_link_name( "freetype" ) )
-		end
 end
 
 workspace "eepp"
