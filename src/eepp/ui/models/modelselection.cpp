@@ -52,11 +52,12 @@ bool ModelSelection::remove( const ModelIndex& index ) {
 	return true;
 }
 
-void ModelSelection::clear() {
+void ModelSelection::clear( bool notify ) {
 	if ( mIndexes.empty() )
 		return;
 	mIndexes.clear();
-	mView->notifySelectionChange();
+	if ( notify )
+		mView->notifySelectionChange();
 }
 
 void ModelSelection::notifySelectionChanged() {

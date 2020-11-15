@@ -207,6 +207,10 @@ bool FileInfo::isHidden() const {
 	return FileSystem::fileIsHidden( mFilepath );
 }
 
+bool FileInfo::linksToDirectory() const {
+	return isLink() && FileInfo( linksTo() ).isDirectory();
+}
+
 std::string FileInfo::linksTo() const {
 #if EE_PLATFORM != EE_PLATFORM_WIN
 	if ( isLink() ) {

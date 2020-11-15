@@ -22,7 +22,11 @@ class EE_API SortingProxyModel final : public Model, private Model::Client {
 
 	virtual std::string columnName( const size_t& ) const;
 
-	virtual Variant data( const ModelIndex&, Role = Role::Display ) const;
+	virtual Variant data( const ModelIndex& proxyIndex, Role = Role::Display ) const;
+
+	virtual ModelIndex parentIndex( const ModelIndex& ) const;
+
+	virtual ModelIndex index( int row, int column = 0, const ModelIndex& = ModelIndex() ) const;
 
 	virtual void update();
 
@@ -34,38 +38,57 @@ class EE_API SortingProxyModel final : public Model, private Model::Client {
 
 	virtual SortOrder sortOrder() const;
 
-	virtual void setKeyColumnAndSortOrder( const size_t&, const SortOrder& );
+	virtual void sort( const size_t& column, const SortOrder& );
 
 	virtual bool isColumnSortable( const size_t& columnIndex ) const;
 
-	ModelIndex mapToTarget( const ModelIndex& ) const;
+	ModelIndex mapToSource( const ModelIndex& ) const;
+
+	ModelIndex mapToProxy( const ModelIndex& sourceIndex ) const;
 
 	Role sortRole() const;
 
 	void setSortRrole( Role role );
 
+	bool lessThan( const ModelIndex& index1, const ModelIndex& index2 ) const;
+
+	std::shared_ptr<Model> getSource() const;
+
   private:
+	// NOTE: The data() of indexes points to the corresponding Mapping object for that index.
+	struct Mapping {
+		std::vector<int> sourceRows;
+		std::vector<int> proxyRows;
+		ModelIndex sourceParent;
+	};
+
+	using InternalMapIterator = std::map<ModelIndex, std::unique_ptr<Mapping>>::iterator;
+
 	SortingProxyModel( std::shared_ptr<Model> );
 
 	virtual void onModelUpdated( unsigned );
 
-	Model& target();
+	Model& source();
 
-	const Model& target() const;
+	const Model& source() const;
 
-	void resort( unsigned flags = Model::UpdateFlag::DontInvalidateIndexes );
+	void sortMapping( Mapping&, int column, SortOrder );
+
+	InternalMapIterator buildMapping( const ModelIndex& proxyIndex );
+
+	void invalidate( unsigned flags = Model::UpdateFlag::DontInvalidateIndexes );
 
 	void setSortingCaseSensitive( bool b );
 
 	bool isSortingCaseSensitive();
 
-	std::shared_ptr<Model> mTarget;
-	std::vector<int> mRowMappings;
-	int mKeyColumn{-1};
-	SortOrder mSortOrder{SortOrder::Ascending};
-	Role mSortRole{Role::Sort};
-	bool mSortingCaseSensitive{false};
-	bool mSorting{false};
+	std::shared_ptr<Model> mSource;
+	std::map<ModelIndex, std::unique_ptr<Mapping>> mMappings;
+	int mKeyColumn{ -1 };
+	SortOrder mSortOrder{ SortOrder::Ascending };
+	Role mSortRole{ Role::Sort };
+	bool mSortingCaseSensitive{ false };
+	bool mSorting{ false };
 };
 
 }}} // namespace EE::UI::Models

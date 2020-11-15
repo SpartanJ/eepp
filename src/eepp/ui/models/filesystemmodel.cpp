@@ -57,9 +57,10 @@ void FileSystemModel::Node::traverseIfNeeded( const FileSystemModel& model ) {
 	const auto& patterns = model.getDisplayConfig().acceptedExtensions;
 	bool accepted;
 	for ( auto file : files ) {
-		if ( ( model.getMode() == Mode::DirectoriesOnly && file.isDirectory() ) ||
+		if ( ( model.getMode() == Mode::DirectoriesOnly &&
+			   ( file.isDirectory() || file.linksToDirectory() ) ) ||
 			 model.getMode() == Mode::FilesAndDirectories ) {
-			if ( file.isDirectory() || patterns.empty() ) {
+			if ( file.isDirectory() || file.linksToDirectory() || patterns.empty() ) {
 				mChildren.emplace_back( Node( std::move( file ), this ) );
 			} else {
 				accepted = false;

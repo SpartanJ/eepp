@@ -3,6 +3,7 @@
 
 #include <eepp/ui/base.hpp>
 #include <eepp/ui/keyboardshortcut.hpp>
+#include <eepp/ui/models/filesystemmodel.hpp>
 #include <eepp/ui/uicombobox.hpp>
 #include <eepp/ui/uilistview.hpp>
 #include <eepp/ui/uimultimodelview.hpp>
@@ -130,6 +131,7 @@ class EE_API UIFileDialog : public UIWindow {
 	UIDropDownList* mFiletype;
 	Uint32 mDialogFlags;
 	KeyBindings::Shortcut mCloseShortcut;
+	std::shared_ptr<FileSystemModel> mModel;
 
 	virtual void onWindowReady();
 
@@ -150,6 +152,8 @@ class EE_API UIFileDialog : public UIWindow {
 	void updateClickStep();
 
 	void setCurPath( const std::string& path );
+
+	const FileSystemModel::Node* getSelectionNode() const;
 };
 
 }} // namespace EE::UI

@@ -457,7 +457,7 @@ void UIAbstractTableView::onSortColumn( const size_t& colIndex ) {
 			if ( icon )
 				image->setDrawable( icon );
 		}
-		model->setKeyColumnAndSortOrder( colIndex, sortOrder );
+		model->sort( colIndex, sortOrder );
 	}
 }
 

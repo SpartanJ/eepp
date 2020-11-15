@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/log.hpp>
 #include <eepp/ui/models/filesystemmodel.hpp>
 #include <eepp/ui/models/sortingproxymodel.hpp>
 #include <eepp/ui/uifiledialog.hpp>
@@ -12,8 +13,8 @@
 
 namespace EE { namespace UI {
 
-#define FDLG_MIN_WIDTH 420
-#define FDLG_MIN_HEIGHT 320
+#define FDLG_MIN_WIDTH 640
+#define FDLG_MIN_HEIGHT 400
 
 UIFileDialog* UIFileDialog::New( Uint32 dialogFlags, const std::string& defaultFilePattern,
 								 const std::string& defaultDirectory ) {
@@ -165,9 +166,13 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 	mMultiView->setOnSelectionChange( [&] {
 		if ( mMultiView->getSelection().isEmpty() )
 			return;
-		auto* node = (FileSystemModel::Node*)mMultiView->getSelection().first().data();
-		if ( !node )
+		const FileSystemModel::Node* node = getSelectionNode();
+		if ( !node ) {
+			Log::error( "UIFileDialog() - mMultiView->setOnSelectionChange - "
+						"UIFileDialog::getSelectionNode() was empty, shouldn't "
+						"be empty" );
 			return;
+		}
 		if ( !isSaveDialog() ) {
 			if ( getAllowFolderSelect() || !FileSystem::isDirectory( node->fullPath() ) )
 				setFileName( node->getName() );
@@ -306,12 +311,17 @@ void UIFileDialog::refreshFolder( bool resetScroll ) {
 			patterns[i] = FileSystem::fileExtension( String::trim( patterns[i] ) );
 	}
 
-	mMultiView->setModel( /*SortingProxyModel::New(*/ FileSystemModel::New(
-		mCurPath,
-		getShowOnlyFolders() ? FileSystemModel::Mode::DirectoriesOnly
-							 : FileSystemModel::Mode::FilesAndDirectories,
-		FileSystemModel::DisplayConfig( getSortAlphabetically(), getFoldersFirst(),
-										!getShowHidden(), patterns ) ) /*)*/ );
+	if ( !mModel ) {
+		mModel = FileSystemModel::New(
+			mCurPath,
+			getShowOnlyFolders() ? FileSystemModel::Mode::DirectoriesOnly
+								 : FileSystemModel::Mode::FilesAndDirectories,
+			FileSystemModel::DisplayConfig( getSortAlphabetically(), getFoldersFirst(),
+											!getShowHidden(), patterns ) );
+		mMultiView->setModel( SortingProxyModel::New( mModel ) );
+	} else {
+		mModel->setRootPath( mCurPath );
+	}
 
 	updateClickStep();
 
@@ -337,6 +347,16 @@ void UIFileDialog::setCurPath( const std::string& path ) {
 	if ( !isSaveDialog() )
 		mFile->setText( "" );
 	refreshFolder( true );
+}
+
+const FileSystemModel::Node* UIFileDialog::getSelectionNode() const {
+	if ( mMultiView->getSelection().isEmpty() )
+		return nullptr;
+	auto index = mMultiView->getSelection().first();
+	auto* filterModel = (SortingProxyModel*)mMultiView->getModel().get();
+	auto localIndex = filterModel->mapToSource( index );
+	const FileSystemModel::Node& node = mModel.get()->node( localIndex );
+	return &node;
 }
 
 void UIFileDialog::openSaveClick() {
@@ -369,9 +389,11 @@ void UIFileDialog::disableButtons() {
 void UIFileDialog::openFileOrFolder( bool shouldOpenFolder = false ) {
 	if ( mMultiView->getSelection().isEmpty() )
 		return;
-	auto* node = (FileSystemModel::Node*)mMultiView->getSelection().first().data();
-	if ( !node )
+	auto* node = getSelectionNode();
+	if ( !node ) {
+		Log::error( "UIFileDialog::getSelectionNode() was empty, shouldn't be empty" );
 		return;
+	}
 	std::string newPath = mCurPath + node->getName();
 
 	if ( FileSystem::isDirectory( newPath ) ) {
@@ -444,9 +466,12 @@ void UIFileDialog::open() {
 		 !( getAllowFolderSelect() && FileSystem::isDirectory( getFullPath() ) ) )
 		return;
 
-	auto* node = !mMultiView->getSelection().isEmpty()
-					 ? (FileSystemModel::Node*)mMultiView->getSelection().first().data()
-					 : nullptr;
+	auto* node = !mMultiView->getSelection().isEmpty() ? getSelectionNode() : nullptr;
+	if ( !node ) {
+		Log::error( "UIFileDialog::open() - UIFileDialog::getSelectionNode() was empty, shouldn't "
+					"be empty" );
+		return;
+	}
 
 	if ( ( node && "" != node->getName() ) || getAllowFolderSelect() ) {
 		if ( !getAllowFolderSelect() ) {
@@ -549,7 +574,13 @@ std::string UIFileDialog::getCurFile() const {
 		return mFile->getText();
 	if ( mMultiView->getSelection().isEmpty() )
 		return "";
-	auto* node = (FileSystemModel::Node*)mMultiView->getSelection().first().data();
+	auto* node = getSelectionNode();
+
+	if ( !node ) {
+		Log::error( "UIFileDialog::getCurFile() - UIFileDialog::getSelectionNode() was empty, "
+					"shouldn't be empty" );
+		return "";
+	}
 	return node->getName();
 }
 

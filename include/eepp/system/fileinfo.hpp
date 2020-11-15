@@ -42,6 +42,8 @@ class EE_API FileInfo {
 
 	bool isHidden() const;
 
+	bool linksToDirectory() const;
+
 	std::string linksTo() const;
 
 	bool exists() const;

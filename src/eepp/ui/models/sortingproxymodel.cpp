@@ -9,44 +9,115 @@ using namespace EE::UI::Abstract;
 namespace EE { namespace UI { namespace Models {
 
 SortingProxyModel::SortingProxyModel( std::shared_ptr<Model> target ) :
-	mTarget( target ), mKeyColumn( -1 ) {
-	mTarget->registerClient( this );
-	resort();
+	mSource( target ), mKeyColumn( -1 ) {
+	mSource->registerClient( this );
+	invalidate();
 }
 
 SortingProxyModel::~SortingProxyModel() {
-	mTarget->unregisterClient( this );
+	mSource->unregisterClient( this );
+}
+
+void SortingProxyModel::invalidate( unsigned int flags ) {
+	if ( flags == UpdateFlag::DontInvalidateIndexes ) {
+		sort( mKeyColumn, mSortOrder );
+	} else {
+		mMappings.clear();
+
+		// FIXME: This is really harsh, but without precise invalidation, not much we can do.
+		forEachView( [&]( UIAbstractView* view ) { view->getSelection().clear( false ); } );
+		forEachView( [&]( UIAbstractView* view ) { view->notifySelectionChange(); } );
+	}
+	onModelUpdate( flags );
 }
 
 void SortingProxyModel::onModelUpdated( unsigned flags ) {
-	resort( flags );
+	invalidate( flags );
 }
 
-Model& SortingProxyModel::target() {
-	return *mTarget;
+Model& SortingProxyModel::source() {
+	return *mSource;
 }
 
-const Model& SortingProxyModel::target() const {
-	return *mTarget;
+const Model& SortingProxyModel::source() const {
+	return *mSource;
 }
 
 size_t SortingProxyModel::rowCount( const ModelIndex& index ) const {
-	auto targetIndex = mapToTarget( index );
-	return target().rowCount( targetIndex );
+	auto targetIndex = mapToSource( index );
+	return source().rowCount( targetIndex );
 }
 
 size_t SortingProxyModel::columnCount( const ModelIndex& index ) const {
-	auto targetIndex = mapToTarget( index );
-	return target().columnCount( targetIndex );
+	auto targetIndex = mapToSource( index );
+	return source().columnCount( targetIndex );
 }
 
-ModelIndex SortingProxyModel::mapToTarget( const ModelIndex& index ) const {
-	if ( !index.isValid() )
+ModelIndex SortingProxyModel::mapToSource( const ModelIndex& proxyIndex ) const {
+	if ( !proxyIndex.isValid() )
 		return {};
-	if ( static_cast<size_t>( index.row() ) >= mRowMappings.size() ||
-		 static_cast<size_t>( index.column() ) >= columnCount() )
+
+	eeASSERT( proxyIndex.model() == this );
+	eeASSERT( proxyIndex.data() );
+
+	auto& indexMapping = *static_cast<Mapping*>( proxyIndex.data() );
+	auto it = mMappings.find( indexMapping.sourceParent );
+	eeASSERT( it != mMappings.end() );
+
+	auto& mapping = *it->second;
+	if ( static_cast<size_t>( proxyIndex.row() ) >= mapping.sourceRows.size() ||
+		 proxyIndex.column() >= (Int64)columnCount() )
 		return {};
-	return target().index( mRowMappings[index.row()], index.column() );
+	int sourceRow = mapping.sourceRows[proxyIndex.row()];
+	int sourceColumn = proxyIndex.column();
+	return source().index( sourceRow, sourceColumn, it->first );
+}
+
+SortingProxyModel::InternalMapIterator
+SortingProxyModel::buildMapping( const ModelIndex& sourceParent ) {
+	auto it = mMappings.find( sourceParent );
+	if ( it != mMappings.end() )
+		return it;
+
+	auto mapping = std::make_unique<Mapping>();
+
+	mapping->sourceParent = sourceParent;
+
+	int rowCount = source().rowCount( sourceParent );
+	mapping->sourceRows.resize( rowCount );
+	mapping->proxyRows.resize( rowCount );
+
+	sortMapping( *mapping, mKeyColumn, mSortOrder );
+
+	if ( sourceParent.isValid() ) {
+		auto sourceGrandParent = sourceParent.parent();
+		buildMapping( sourceGrandParent );
+	}
+
+	mMappings.insert( std::make_pair( sourceParent, std::move( mapping ) ) );
+	return mMappings.find( sourceParent );
+}
+
+ModelIndex SortingProxyModel::mapToProxy( const ModelIndex& sourceIndex ) const {
+	if ( !sourceIndex.isValid() )
+		return {};
+
+	eeASSERT( sourceIndex.model() == mSource.get() );
+
+	auto sourceParent = sourceIndex.parent();
+	auto it = const_cast<SortingProxyModel*>( this )->buildMapping( sourceParent );
+
+	auto& mapping = *( it->second );
+
+	if ( sourceIndex.row() >= static_cast<int>( mapping.proxyRows.size() ) ||
+		 sourceIndex.column() >= (Int64)columnCount() )
+		return {};
+
+	int proxyRow = mapping.proxyRows[sourceIndex.row()];
+	int proxyColumn = sourceIndex.column();
+	if ( proxyRow < 0 || proxyColumn < 0 )
+		return {};
+	return createIndex( proxyRow, proxyColumn, &mapping );
 }
 
 Model::Role SortingProxyModel::sortRole() const {
@@ -58,17 +129,46 @@ void SortingProxyModel::setSortRrole( Model::Role role ) {
 }
 
 std::string SortingProxyModel::columnName( const size_t& column ) const {
-	return target().columnName( column );
+	return source().columnName( column );
 }
 
-Variant SortingProxyModel::data( const ModelIndex& index, Role role ) const {
-	auto targetIndex = mapToTarget( index );
+Variant SortingProxyModel::data( const ModelIndex& proxyIndex, Role role ) const {
+	auto targetIndex = mapToSource( proxyIndex );
 	eeASSERT( targetIndex.isValid() );
-	return target().data( targetIndex, role );
+	return source().data( targetIndex, role );
+}
+
+ModelIndex SortingProxyModel::index( int row, int column, const ModelIndex& parent ) const {
+	if ( row < 0 || column < 0 )
+		return {};
+
+	auto sourceParent = mapToSource( parent );
+	const_cast<SortingProxyModel*>( this )->buildMapping( sourceParent );
+
+	auto it = mMappings.find( sourceParent );
+	eeASSERT( it != mMappings.end() );
+	auto& mapping = *it->second;
+	if ( row >= static_cast<int>( mapping.sourceRows.size() ) || column >= (Int64)columnCount() )
+		return {};
+	return createIndex( row, column, &mapping );
+}
+
+ModelIndex SortingProxyModel::parentIndex( const ModelIndex& proxyIndex ) const {
+	if ( !proxyIndex.isValid() )
+		return {};
+
+	eeASSERT( proxyIndex.model() == this );
+	eeASSERT( proxyIndex.data() );
+
+	auto& index_mapping = *static_cast<Mapping*>( proxyIndex.data() );
+	auto it = mMappings.find( index_mapping.sourceParent );
+	eeASSERT( it != mMappings.end() );
+
+	return mapToProxy( it->second->sourceParent );
 }
 
 void SortingProxyModel::update() {
-	target().update();
+	source().update();
 }
 
 int SortingProxyModel::keyColumn() const {
@@ -76,74 +176,23 @@ int SortingProxyModel::keyColumn() const {
 }
 
 size_t SortingProxyModel::treeColumn() const {
-	return target().treeColumn();
+	return source().treeColumn();
 }
 
 SortOrder SortingProxyModel::sortOrder() const {
 	return mSortOrder;
 }
 
-void SortingProxyModel::setKeyColumnAndSortOrder( const size_t& column,
-												  const SortOrder& sortOrder ) {
-	if ( column == (size_t)mKeyColumn && sortOrder == mSortOrder )
-		return;
-	eeASSERT( column >= 0 && column < columnCount() );
+void SortingProxyModel::sort( const size_t& column, const SortOrder& sortOrder ) {
+	for ( auto& it : mMappings ) {
+		auto& mapping = *it.second;
+		sortMapping( mapping, column, sortOrder );
+	}
+
 	mKeyColumn = column;
 	mSortOrder = sortOrder;
-	resort();
-}
 
-void SortingProxyModel::resort( unsigned flags ) {
-	mSorting = true;
-	auto old_row_mappings = mRowMappings;
-	int rowCount = target().rowCount();
-	mRowMappings.resize( rowCount );
-	for ( int i = 0; i < rowCount; ++i )
-		mRowMappings[i] = i;
-	if ( mKeyColumn == -1 ) {
-		onModelUpdate( flags );
-		return;
-	}
-	std::sort( mRowMappings.begin(), mRowMappings.end(), [&]( auto row1, auto row2 ) -> bool {
-		Model& target = this->target();
-		Variant data1 = target.data( target.index( row1, mKeyColumn ), mSortRole );
-		Variant data2 = target.data( target.index( row2, mKeyColumn ), mSortRole );
-		if ( data1 == data2 )
-			return 0;
-		bool isLessThan;
-		if ( !mSortingCaseSensitive && data1.is( Variant::Type::String ) &&
-			 data2.is( Variant::Type::String ) ) {
-			isLessThan = String::toLower( data1.asString() ) < String::toLower( data2.asString() );
-		} else if ( !mSortingCaseSensitive && data1.is( Variant::Type::cstr ) &&
-					data2.is( Variant::Type::cstr ) ) {
-			isLessThan = String::toLower( std::string( data1.asCStr() ) ) <
-						 String::toLower( std::string( data2.asCStr() ) );
-		} else {
-			isLessThan = data1 < data2;
-		}
-		return mSortOrder == SortOrder::Ascending ? isLessThan : !isLessThan;
-	} );
-	forEachView( [&]( UIAbstractView* view ) {
-		view->getSelection().changeFromModel( [&]( ModelSelection& selection ) {
-			std::vector<ModelIndex> selectedIndexesInTarget;
-			selection.forEachIndex( [&]( const ModelIndex& index ) {
-				selectedIndexesInTarget.emplace_back(
-					target().index( old_row_mappings[index.row()], index.column() ) );
-			} );
-
-			selection.clear();
-			for ( auto& index : selectedIndexesInTarget ) {
-				for ( size_t i = 0; i < mRowMappings.size(); ++i ) {
-					if ( mRowMappings[i] == index.row() ) {
-						selection.add( this->index( i, index.column() ) );
-						continue;
-					}
-				}
-			}
-		} );
-	} );
-	onModelUpdate( flags );
-	mSorting = false;
+	onModelUpdate( UpdateFlag::DontInvalidateIndexes );
 }
 
 void SortingProxyModel::setSortingCaseSensitive( bool b ) {
@@ -154,8 +203,81 @@ bool SortingProxyModel::isSortingCaseSensitive() {
 	return mSortingCaseSensitive;
 }
 
+std::shared_ptr<Model> SortingProxyModel::getSource() const {
+	return mSource;
+}
+
 bool SortingProxyModel::isColumnSortable( const size_t& columnIndex ) const {
-	return target().isColumnSortable( columnIndex );
+	return source().isColumnSortable( columnIndex );
+}
+
+bool SortingProxyModel::lessThan( const ModelIndex& index1, const ModelIndex& index2 ) const {
+	auto data1 = mSource->data( index1, mSortRole );
+	auto data2 = mSource->data( index2, mSortRole );
+	if ( data1.is( Variant::Type::String ) && data2.is( Variant::Type::String ) )
+		return String::toLower( data1.asString() ) < String::toLower( data2.asString() );
+	if ( data1.is( Variant::Type::cstr ) && data2.is( Variant::Type::cstr ) )
+		return String::toLower( std::string( data1.asCStr() ) ) <
+			   String::toLower( std::string( data2.asCStr() ) );
+	return data1 < data2;
+}
+
+void SortingProxyModel::sortMapping( SortingProxyModel::Mapping& mapping, int column,
+									 SortOrder sortOrder ) {
+	if ( column == -1 ) {
+		int rowCount = source().rowCount( mapping.sourceParent );
+		for ( int i = 0; i < rowCount; ++i ) {
+			mapping.sourceRows[i] = i;
+			mapping.proxyRows[i] = i;
+		}
+		return;
+	}
+
+	auto oldSourceRows = mapping.sourceRows;
+
+	int rowCount = source().rowCount( mapping.sourceParent );
+	for ( int i = 0; i < rowCount; ++i )
+		mapping.sourceRows[i] = i;
+
+	std::stable_sort(
+		mapping.sourceRows.begin(), mapping.sourceRows.end(), [&]( auto row1, auto row2 ) -> bool {
+			bool isLessThan = lessThan( source().index( row1, column, mapping.sourceParent ),
+										source().index( row2, column, mapping.sourceParent ) );
+			return sortOrder == SortOrder::Ascending ? isLessThan : !isLessThan;
+		} );
+
+	for ( int i = 0; i < rowCount; ++i )
+		mapping.proxyRows[mapping.sourceRows[i]] = i;
+
+	// FIXME: I really feel like this should be done at the view layer somehow.
+	forEachView( [&]( UIAbstractView* view ) {
+		// Update the view's selection.
+		view->getSelection().changeFromModel( [&]( ModelSelection& selection ) {
+			std::vector<ModelIndex> selectedIndexesInSource;
+			std::vector<ModelIndex> staleIndexesInSelection;
+			selection.forEachIndex( [&]( const ModelIndex& index ) {
+				if ( index.parent() == mapping.sourceParent ) {
+					staleIndexesInSelection.push_back( index );
+					selectedIndexesInSource.push_back( source().index(
+						oldSourceRows[index.row()], index.column(), mapping.sourceParent ) );
+				}
+			} );
+
+			for ( auto& index : staleIndexesInSelection )
+				selection.remove( index );
+
+			for ( auto& index : selectedIndexesInSource ) {
+				for ( size_t i = 0; i < mapping.sourceRows.size(); ++i ) {
+					if ( mapping.sourceRows[i] == index.row() ) {
+						auto newSourceIndex =
+							this->index( i, index.column(), mapping.sourceParent );
+						selection.add( newSourceIndex );
+						break;
+					}
+				}
+			}
+		} );
+	} );
 }
 
 }}} // namespace EE::UI::Models

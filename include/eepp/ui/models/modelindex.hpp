@@ -37,13 +37,15 @@ class EE_API ModelIndex {
 
 	bool operator!=( const ModelIndex& other ) const { return !( *this == other ); }
 
+	const Model* model() const { return mModel; }
+
   protected:
 	friend class Model;
-	const Model* mModel{nullptr};
-	Int64 mRow{-1};
-	Int64 mColumn{-1};
-	void* mData{nullptr};
-	Int64 mInternalId{0};
+	const Model* mModel{ nullptr };
+	Int64 mRow{ -1 };
+	Int64 mColumn{ -1 };
+	void* mData{ nullptr };
+	Int64 mInternalId{ 0 };
 
 	ModelIndex( const Model& model, int row, int column, void* internalData,
 				const Int64& internalId = 0 ) :

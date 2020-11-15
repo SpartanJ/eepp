@@ -35,7 +35,7 @@ class EE_API ModelSelection {
 	void add( const ModelIndex& );
 	void toggle( const ModelIndex& );
 	bool remove( const ModelIndex& );
-	void clear();
+	void clear( bool notify = true );
 
 	template <typename Callback> void forEachIndex( Callback callback ) {
 		for ( auto& index : indexes() )
