@@ -79,7 +79,7 @@ SortingProxyModel::buildMapping( const ModelIndex& sourceParent ) {
 	if ( it != mMappings.end() )
 		return it;
 
-	auto mapping = std::make_unique<Mapping>();
+	auto mapping = std::make_shared<Mapping>();
 
 	mapping->sourceParent = sourceParent;
 
@@ -93,8 +93,7 @@ SortingProxyModel::buildMapping( const ModelIndex& sourceParent ) {
 		auto sourceGrandParent = sourceParent.parent();
 		buildMapping( sourceGrandParent );
 	}
-
-	mMappings.insert( std::make_pair( sourceParent, std::move( mapping ) ) );
+	mMappings.insert( std::make_pair( sourceParent, mapping ) );
 	return mMappings.find( sourceParent );
 }
 

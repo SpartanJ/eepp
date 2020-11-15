@@ -22,7 +22,7 @@ enum class SortOrder { None, Ascending, Descending };
 
 class EE_API Model {
   public:
-	class Client {
+	class EE_API Client {
 	  public:
 		virtual ~Client() {}
 

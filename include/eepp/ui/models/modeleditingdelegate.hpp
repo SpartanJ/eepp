@@ -40,7 +40,7 @@ class EE_API ModelEditingDelegate {
 
 	std::shared_ptr<Model> mModel;
 	ModelIndex mIndex;
-	UIWidget* mWidget;
+	UIWidget* mWidget{ nullptr };
 };
 
 }}} // namespace EE::UI::Models
