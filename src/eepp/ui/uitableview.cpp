@@ -106,19 +106,43 @@ Node* UITableView::overFind( const Vector2f& point ) {
 	return pOver;
 }
 
-Float UITableView::getMaxColumnContentWidth( const size_t& colIndex ) {
+Float UITableView::getMaxColumnContentWidth( const size_t& colIndex, bool bestGuess ) {
 	Float lWidth = 0;
+	if ( getModel()->rowCount() == 0 )
+		return lWidth;
 	getUISceneNode()->setIsLoading( true );
 	Float yOffset = getHeaderHeight();
-	for ( size_t i = 0; i < getItemCount(); i++ ) {
-		ModelIndex index( getModel()->index( i, colIndex ) );
+	auto worstCaseFunc = [&]( const ModelIndex& index ) {
 		UIWidget* widget = updateCell( 0, index, 0, yOffset );
 		if ( widget->isType( UI_TYPE_PUSHBUTTON ) ) {
 			Float w = widget->asType<UIPushButton>()->getContentSize().getWidth();
 			if ( w > lWidth )
 				lWidth = w;
 		}
-		yOffset += getRowHeight();
+	};
+	if ( bestGuess ) {
+		Variant dataTest( getModel()->data( getModel()->index( 0, colIndex ) ) );
+		bool isString = dataTest.is( Variant::Type::String );
+		if ( isString || dataTest.is( Variant::Type::cstr ) ) {
+			std::map<size_t, ModelIndex> lengths;
+			for ( size_t i = 0; i < getItemCount(); i++ ) {
+				ModelIndex index( getModel()->index( i, colIndex ) );
+				Variant data( getModel()->data( index ) );
+				size_t length = isString ? data.asString().length() : strlen( data.asCStr() );
+				if ( lengths.empty() || length > lengths.rbegin()->first )
+					lengths[length] = index;
+			}
+			size_t i = 0;
+			auto it = lengths.rbegin();
+			for ( ; it != lengths.rend() && i < 10; it++, i++ )
+				worstCaseFunc( it->second );
+		} else {
+			for ( size_t i = 0; i < getItemCount(); i++ )
+				worstCaseFunc( getModel()->index( i, colIndex ) );
+		}
+	} else {
+		for ( size_t i = 0; i < getItemCount(); i++ )
+			worstCaseFunc( getModel()->index( i, colIndex ) );
 	}
 	getUISceneNode()->setIsLoading( false );
 	return lWidth;
@@ -138,7 +162,8 @@ void UITableView::updateContentSize() {
 		onContentSizeChange();
 }
 
-void UITableView::onColumnSizeChange( const size_t& ) {
+void UITableView::onColumnSizeChange( const size_t& colIndex, bool fromUserInteraction ) {
+	UIAbstractTableView::onColumnSizeChange( colIndex, fromUserInteraction );
 	updateContentSize();
 }
 

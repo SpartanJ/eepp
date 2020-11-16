@@ -84,7 +84,7 @@ Uint32 UITableHeaderColumn::onDrag( const Vector2f& position, const Uint32&,
 		if ( mSize.getWidth() != mView->columnData( mColIndex ).width ) {
 			mView->columnData( mColIndex ).width = mSize.getWidth();
 			mView->updateHeaderSize();
-			mView->onColumnSizeChange( mColIndex );
+			mView->onColumnSizeChange( mColIndex, true );
 		}
 		return 1;
 	}
@@ -118,7 +118,7 @@ Uint32 UITableHeaderColumn::onDragStop( const Vector2i& pos, const Uint32& flags
 	getUISceneNode()->setCursor( Cursor::Arrow );
 	mView->columnData( mColIndex ).width = mSize.getWidth();
 	mView->updateHeaderSize();
-	mView->onColumnSizeChange( mColIndex );
+	mView->onColumnSizeChange( mColIndex, true );
 	return UIPushButton::onDragStop( pos, flags );
 }
 

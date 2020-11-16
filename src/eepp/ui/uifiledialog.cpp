@@ -237,7 +237,8 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 	mMultiView->getListView()->setColumnsVisible( { FileSystemModel::Name } );
 	mMultiView->getTableView()->setColumnsVisible(
 		{ FileSystemModel::Name, FileSystemModel::Size, FileSystemModel::ModificationTime } );
-
+	mMultiView->getTableView()->setAutoColumnsWidth( true );
+	mMultiView->getTableView()->setMainColumn( FileSystemModel::Name );
 	setViewMode( UIMultiModelView::ViewMode::List );
 
 	applyDefaultTheme();
@@ -318,6 +319,7 @@ void UIFileDialog::refreshFolder( bool resetScroll ) {
 								 : FileSystemModel::Mode::FilesAndDirectories,
 			FileSystemModel::DisplayConfig( getSortAlphabetically(), getFoldersFirst(),
 											!getShowHidden(), patterns ) );
+
 		mMultiView->setModel( SortingProxyModel::New( mModel ) );
 	} else {
 		mModel->setRootPath( mCurPath );
@@ -332,11 +334,19 @@ void UIFileDialog::refreshFolder( bool resetScroll ) {
 }
 
 void UIFileDialog::updateClickStep() {
-	if ( NULL != mMultiView->getListView()->getVerticalScrollBar() ) {
+	if ( mMultiView->getListView()->getVerticalScrollBar() ) {
 		mMultiView->getListView()->getVerticalScrollBar()->setClickStep(
 			1.f /
 			( ( mMultiView->getModel()->rowCount() * mMultiView->getListView()->getRowHeight() ) /
 			  (Float)mMultiView->getListView()->getSize().getHeight() ) );
+	}
+	if ( mMultiView->getTableView()->getVerticalScrollBar() ) {
+		Float step =
+			1.f /
+			( ( mMultiView->getModel()->rowCount() * mMultiView->getTableView()->getRowHeight() ) /
+			  (Float)mMultiView->getTableView()->getSize().getHeight() );
+		mMultiView->getTableView()->getVerticalScrollBar()->setClickStep(
+			step > 0 ? step : mMultiView->getListView()->getVerticalScrollBar()->getClickStep() );
 	}
 }
 

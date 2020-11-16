@@ -19,10 +19,9 @@ class EE_API UITableView : public UIAbstractTableView {
 
 	virtual Node* overFind( const Vector2f& point );
 
-	Float getMaxColumnContentWidth( const size_t& colIndex );
+	Float getMaxColumnContentWidth( const size_t& colIndex, bool bestGuess = false );
 
-	virtual ModelIndex findRowWithText( const std::string& text,
-										const bool& caseSensitive = false,
+	virtual ModelIndex findRowWithText( const std::string& text, const bool& caseSensitive = false,
 										const bool& exactMatch = false ) const;
 
   protected:
@@ -36,7 +35,7 @@ class EE_API UITableView : public UIAbstractTableView {
 
 	void updateContentSize();
 
-	void onColumnSizeChange( const size_t& );
+	void onColumnSizeChange( const size_t&, bool );
 
 	virtual Uint32 onKeyDown( const KeyEvent& event );
 };

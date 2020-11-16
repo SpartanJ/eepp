@@ -84,6 +84,29 @@ void UIAbstractTableView::createOrUpdateColumns() {
 	size_t count = model->columnCount();
 	Float totalWidth = 0;
 
+	auto visibleColCount = visibleColumnCount();
+
+	if ( mAutoColumnsWidth && visibleColCount > 1 && getModel()->rowCount() > 0 ) {
+		Float contentWidth = getContentSpaceWidth();
+		bool shouldVScrollBeVisible = shouldVerticalScrollBeVisible();
+		if ( !mVScroll->isVisible() && shouldVScrollBeVisible )
+			contentWidth -= getVerticalScrollBar()->getPixelsSize().getWidth();
+		else if ( mVScroll->isVisible() && !shouldVScrollBeVisible )
+			contentWidth += getVerticalScrollBar()->getPixelsSize().getWidth();
+		Float usedWidth = 0;
+		for ( size_t col = 0; col < count; col++ ) {
+			if ( col != mMainColumn && !isColumnHidden( col ) ) {
+				Float colWidth = getMaxColumnContentWidth( col, true );
+				usedWidth += colWidth;
+				columnData( col ).width = colWidth;
+			}
+		}
+		Float mainColMaxWidth = getMaxColumnContentWidth( mMainColumn, true );
+		columnData( mMainColumn ).width = contentWidth - usedWidth >= mainColMaxWidth
+											  ? contentWidth - usedWidth
+											  : mainColMaxWidth;
+	}
+
 	for ( size_t i = 0; i < count; i++ ) {
 		ColumnData& col = columnData( i );
 		if ( !col.widget ) {
@@ -101,7 +124,25 @@ void UIAbstractTableView::createOrUpdateColumns() {
 			col.widget->setText( model->columnName( i ) );
 			col.widget->reloadStyle( true, true, true );
 			col.minWidth = col.widget->getPixelsSize().getWidth();
+			col.minHeight = col.widget->getPixelsSize().getHeight();
 		}
+		col.width = eeceil( eemax( col.width, col.minWidth ) );
+		col.widget->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+		col.widget->setPixelsSize( col.width, getHeaderHeight() );
+	}
+
+	mHeaderHeight = 0;
+	for ( size_t i = 0; i < count; i++ ) {
+		ColumnData& col = columnData( i );
+		if ( !col.visible )
+			continue;
+		mHeaderHeight = eemax( mHeaderHeight, col.minHeight );
+	}
+
+	for ( size_t i = 0; i < count; i++ ) {
+		ColumnData& col = columnData( i );
+		if ( !col.visible )
+			continue;
 		col.width = eeceil( eemax( col.width, col.minWidth ) );
 		col.widget->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 		col.widget->setPixelsSize( col.width, getHeaderHeight() );
@@ -127,10 +168,12 @@ void UIAbstractTableView::createOrUpdateColumns() {
 }
 
 Float UIAbstractTableView::getHeaderHeight() const {
-	return areHeadersVisible() ? eeceil( columnData( 0 ).widget
-											 ? columnData( 0 ).widget->getPixelsSize().getHeight()
-											 : 16 )
-							   : 0;
+	return areHeadersVisible()
+			   ? eeceil( columnData( 0 ).widget
+							 ? eemax( mHeaderHeight,
+									  columnData( 0 ).widget->getPixelsSize().getHeight() )
+							 : 16 )
+			   : 0;
 }
 
 Sizef UIAbstractTableView::getContentSize() const {
@@ -159,14 +202,17 @@ void UIAbstractTableView::onSizeChange() {
 	createOrUpdateColumns();
 }
 
-void UIAbstractTableView::onColumnSizeChange( const size_t& ) {}
+void UIAbstractTableView::onColumnSizeChange( const size_t&, bool fromUserInteraction ) {
+	if ( fromUserInteraction && mAutoColumnsWidth )
+		mAutoColumnsWidth = false;
+}
 
-Float UIAbstractTableView::getMaxColumnContentWidth( const size_t& ) {
+Float UIAbstractTableView::getMaxColumnContentWidth( const size_t&, bool ) {
 	return 0;
 }
 
 void UIAbstractTableView::onColumnResizeToContent( const size_t& colIndex ) {
-	columnData( colIndex ).width = getMaxColumnContentWidth( colIndex );
+	columnData( colIndex ).width = getMaxColumnContentWidth( colIndex, true );
 	createOrUpdateColumns();
 }
 
@@ -212,12 +258,15 @@ Float UIAbstractTableView::getContentSpaceWidth() const {
 }
 
 void UIAbstractTableView::updateColumnsWidth() {
-	if ( mAutoExpandOnSingleColumn ) {
+	if ( mAutoExpandOnSingleColumn || mAutoColumnsWidth ) {
 		int col = 0;
 		if ( visibleColumnCount() == 1 && ( col = visibleColumn() ) != -1 ) {
-			Float width = eemax( getContentSpaceWidth(), getMaxColumnContentWidth( col ) );
-			if ( shouldVerticalScrollBeVisible() )
+			Float width = eemax( getContentSpaceWidth(), getMaxColumnContentWidth( col, true ) );
+			bool shouldVScrollBeVisible = shouldVerticalScrollBeVisible();
+			if ( !mVScroll->isVisible() && shouldVScrollBeVisible )
 				width -= getVerticalScrollBar()->getPixelsSize().getWidth();
+			else if ( mVScroll->isVisible() && !shouldVScrollBeVisible )
+				width += getVerticalScrollBar()->getPixelsSize().getWidth();
 			columnData( col ).width = width;
 			updateHeaderSize();
 			onColumnSizeChange( col );
@@ -514,6 +563,26 @@ bool UIAbstractTableView::getRowSearchByName() const {
 
 void UIAbstractTableView::setRowSearchByName( bool rowSearchByName ) {
 	mRowSearchByName = rowSearchByName;
+}
+
+bool UIAbstractTableView::getAutoColumnsWidth() const {
+	return mAutoColumnsWidth;
+}
+
+void UIAbstractTableView::setAutoColumnsWidth( bool autoColumnsWidth ) {
+	if ( mAutoColumnsWidth != autoColumnsWidth ) {
+		mAutoColumnsWidth = autoColumnsWidth;
+		if ( mAutoColumnsWidth )
+			updateColumnsWidth();
+	}
+}
+
+const size_t& UIAbstractTableView::getMainColumn() const {
+	return mMainColumn;
+}
+
+void UIAbstractTableView::setMainColumn( const size_t& mainColumn ) {
+	mMainColumn = mainColumn;
 }
 
 }}} // namespace EE::UI::Abstract

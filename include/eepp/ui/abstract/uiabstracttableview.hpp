@@ -56,7 +56,7 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	const Float& getColumnWidth( const size_t& colIndex ) const;
 
-	virtual Float getMaxColumnContentWidth( const size_t& colIndex );
+	virtual Float getMaxColumnContentWidth( const size_t& colIndex, bool bestGuess = false );
 
 	bool getAutoExpandOnSingleColumn() const;
 
@@ -89,17 +89,29 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	void setRowSearchByName( bool rowSearchByName );
 
+	bool getAutoColumnsWidth() const;
+
+	void setAutoColumnsWidth( bool autoColumnsWidth );
+
+	const size_t& getMainColumn() const;
+
+	/** The main column is the column that should be prioritized to occupy as much space as
+	 * possible. */
+	void setMainColumn( const size_t& mainColumn );
+
   protected:
 	friend class EE::UI::UITableHeaderColumn;
 
 	struct ColumnData {
 		Float minWidth{ 0 };
+		Float minHeight{ 0 };
 		Float width{ 0 };
 		bool visible{ true };
 		UIPushButton* widget{ nullptr };
 	};
 
 	Float mRowHeight{ 0 };
+	Float mHeaderHeight{ 16 };
 	mutable std::vector<UITableRow*> mRows;
 	mutable std::vector<ColumnData> mColumn;
 	mutable std::vector<std::map<int, UIWidget*>> mWidgets;
@@ -108,9 +120,11 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	size_t mIconSize{ 12 };
 	size_t mSortIconSize{ 16 };
 	bool mAutoExpandOnSingleColumn{ false };
+	bool mAutoColumnsWidth{ false };
 	bool mRowSearchByName{ true };
 	Action* mSearchTextAction{ nullptr };
 	std::string mSearchText;
+	size_t mMainColumn{ 0 };
 
 	virtual ~UIAbstractTableView();
 
@@ -126,7 +140,7 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	virtual void onSizeChange();
 
-	virtual void onColumnSizeChange( const size_t& colIndex );
+	virtual void onColumnSizeChange( const size_t& colIndex, bool fromUserInteraction = false );
 
 	virtual void onColumnResizeToContent( const size_t& colIndex );
 

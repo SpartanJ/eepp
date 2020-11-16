@@ -97,7 +97,8 @@ size_t UITreeView::getItemCount() const {
 	return count;
 }
 
-void UITreeView::onColumnSizeChange( const size_t& ) {
+void UITreeView::onColumnSizeChange( const size_t& colIndex, bool fromUserInteraction ) {
+	UIAbstractTableView::onColumnSizeChange( colIndex, fromUserInteraction );
 	updateContentSize();
 }
 
@@ -396,7 +397,7 @@ void UITreeView::setExpandersAsIcons( bool expandersAsIcons ) {
 	mExpandersAsIcons = expandersAsIcons;
 }
 
-Float UITreeView::getMaxColumnContentWidth( const size_t& colIndex ) {
+Float UITreeView::getMaxColumnContentWidth( const size_t& colIndex, bool ) {
 	Float lWidth = 0;
 	getUISceneNode()->setIsLoading( true );
 	traverseTree( [&, colIndex]( const int&, const ModelIndex& index, const size_t& indentLevel,
