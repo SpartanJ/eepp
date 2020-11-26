@@ -70,11 +70,18 @@ class ProjectDirectoryTree {
 
 	const std::vector<std::string>& getFiles() const;
 
+	const std::vector<std::string>& getDirectories() const;
+
+	bool isFileInTree( const std::string& filePath ) const;
+
+	bool isDirInTree( const std::string& dirTree ) const;
+
   protected:
 	std::string mPath;
 	std::shared_ptr<ThreadPool> mPool;
 	std::vector<std::string> mFiles;
 	std::vector<std::string> mNames;
+	std::vector<std::string> mDirectories;
 	bool mIsReady;
 	Mutex mFilesMutex;
 	IgnoreMatcherManager mIgnoreMatcher;

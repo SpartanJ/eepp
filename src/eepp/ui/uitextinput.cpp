@@ -428,7 +428,7 @@ void UITextInput::onDocumentUndoRedo( const TextDocument::UndoRedo& ) {
 	onSelectionChange();
 }
 
-void UITextInput::onDocumentSaved() {}
+void UITextInput::onDocumentSaved( TextDocument* ) {}
 
 UITextInput* UITextInput::setMaxLength( const Uint32& maxLength ) {
 	mMaxLength = maxLength;

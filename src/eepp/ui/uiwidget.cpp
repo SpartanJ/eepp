@@ -522,9 +522,9 @@ UITooltip* UIWidget::getTooltip() {
 	return mTooltip;
 }
 
-void UIWidget::onParentSizeChange( const Vector2f& SizeChange ) {
-	updateAnchors( SizeChange );
-	UINode::onParentSizeChange( SizeChange );
+void UIWidget::onParentSizeChange( const Vector2f& sizeChange ) {
+	updateAnchors( sizeChange );
+	UINode::onParentSizeChange( sizeChange );
 }
 
 void UIWidget::onPositionChange() {
@@ -574,14 +574,18 @@ void UIWidget::notifyLayoutAttrChangeParent() {
 	}
 }
 
-void UIWidget::updateAnchors( const Vector2f& SizeChange ) {
+void UIWidget::updateAnchors( const Vector2f& sizeChange ) {
+	if ( hasClass( "doc_alert" ) ) {
+		clipDisable();
+	}
+
 	if ( !( mFlags & ( UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM ) ) )
 		return;
 
 	Sizef newSize( getSize() );
 
 	if ( !( mFlags & UI_ANCHOR_LEFT ) ) {
-		setInternalPosition( Vector2f( mDpPos.x += SizeChange.x, mDpPos.y ) );
+		setInternalPosition( Vector2f( mDpPos.x += sizeChange.x, mDpPos.y ) );
 	}
 
 	if ( mFlags & UI_ANCHOR_RIGHT ) {
@@ -595,7 +599,7 @@ void UIWidget::updateAnchors( const Vector2f& SizeChange ) {
 	}
 
 	if ( !( mFlags & UI_ANCHOR_TOP ) ) {
-		setInternalPosition( Vector2f( mDpPos.x, mDpPos.y += SizeChange.y ) );
+		setInternalPosition( Vector2f( mDpPos.x, mDpPos.y += sizeChange.y ) );
 	}
 
 	if ( mFlags & UI_ANCHOR_BOTTOM ) {
@@ -620,7 +624,7 @@ void UIWidget::alignAgainstLayout() {
 			pos.x = ( getParent()->getSize().getWidth() - getSize().getWidth() ) / 2;
 			break;
 		case UI_HALIGN_RIGHT:
-			pos.x = getParent()->getSize().getWidth() - mLayoutMargin.Right;
+			pos.x = getParent()->getSize().getWidth() - getSize().getWidth() - mLayoutMargin.Right;
 			break;
 		case UI_HALIGN_LEFT:
 			pos.x = mLayoutMargin.Left;
@@ -632,7 +636,8 @@ void UIWidget::alignAgainstLayout() {
 			pos.y = ( getParent()->getSize().getHeight() - getSize().getHeight() ) / 2;
 			break;
 		case UI_VALIGN_BOTTOM:
-			pos.y = getParent()->getSize().getHeight() - mLayoutMargin.Bottom;
+			pos.y =
+				getParent()->getSize().getHeight() - getSize().getHeight() - mLayoutMargin.Bottom;
 			break;
 		case UI_VALIGN_TOP:
 			pos.y = mLayoutMargin.Top;

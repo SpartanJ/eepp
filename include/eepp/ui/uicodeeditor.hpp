@@ -485,9 +485,11 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	virtual void onDocumentUndoRedo( const TextDocument::UndoRedo& );
 
-	virtual void onDocumentSaved();
+	virtual void onDocumentSaved( TextDocument* );
 
 	virtual void onDocumentClosed( TextDocument* doc );
+
+	virtual void onDocumentDirtyOnFileSystem( TextDocument* doc );
 
 	std::pair<int, int> getVisibleLineRange();
 

@@ -172,6 +172,10 @@ const Uint64& FileInfo::getInode() const {
 	return mInode;
 }
 
+bool FileInfo::isUninitialized() const {
+	return mModificationTime == 0;
+}
+
 bool FileInfo::operator==( const FileInfo& Other ) const {
 	return ( mModificationTime == Other.mModificationTime && mSize == Other.mSize &&
 			 mOwnerId == Other.mOwnerId && mGroupId == Other.mGroupId &&

@@ -48,7 +48,8 @@ std::vector<Action*> ActionManager::getActionsFromTarget( Node* target ) {
 	return actions;
 }
 
-std::vector<Action*> ActionManager::getActionsByTagFromTarget( Node* target, const Uint32& tag ) {
+std::vector<Action*> ActionManager::getActionsByTagFromTarget( Node* target,
+															   const String::HashType& tag ) {
 	std::vector<Action*> actions;
 
 	for ( auto it = mActions.begin(); it != mActions.end(); ++it ) {
@@ -65,7 +66,7 @@ void ActionManager::removeActionByTag( const Uint32& tag ) {
 	removeAction( getActionByTag( tag ) );
 }
 
-void ActionManager::removeActionsByTagFromTarget( Node* target, const Uint32& tag ) {
+void ActionManager::removeActionsByTagFromTarget( Node* target, const String::HashType& tag ) {
 	std::vector<Action*> removeList;
 
 	for ( auto it = mActions.begin(); it != mActions.end(); ++it ) {

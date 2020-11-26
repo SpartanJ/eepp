@@ -17,7 +17,7 @@ void Action::setFlags( const Uint32& flags ) {
 	mFlags = flags;
 }
 
-Uint32 Action::getTag() const {
+String::HashType Action::getTag() const {
 	return mTag;
 }
 

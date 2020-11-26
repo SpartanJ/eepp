@@ -832,7 +832,8 @@ Uint32 UICodeEditor::onMouseOver( const Vector2i& position, const Uint32& flags 
 	for ( auto& module : mModules )
 		if ( module->onMouseOver( this, position, flags ) )
 			return UIWidget::onMouseOver( position, flags );
-	getUISceneNode()->setCursor( !mLocked ? Cursor::IBeam : Cursor::Arrow );
+	if ( getEventDispatcher()->getMouseOverNode() == this )
+		getUISceneNode()->setCursor( !mLocked ? Cursor::IBeam : Cursor::Arrow );
 	return UIWidget::onMouseOver( position, flags );
 }
 
@@ -1010,12 +1011,18 @@ void UICodeEditor::onDocumentUndoRedo( const TextDocument::UndoRedo& ) {
 	onDocumentSelectionChange( {} );
 }
 
-void UICodeEditor::onDocumentSaved() {
-	sendCommonEvent( Event::OnSave );
+void UICodeEditor::onDocumentSaved( TextDocument* doc ) {
+	DocEvent event( this, doc, Event::OnDocumentSave );
+	sendEvent( &event );
 }
 
 void UICodeEditor::onDocumentClosed( TextDocument* doc ) {
 	DocEvent event( this, doc, Event::OnDocumentClosed );
+	sendEvent( &event );
+}
+
+void UICodeEditor::onDocumentDirtyOnFileSystem( TextDocument* doc ) {
+	DocEvent event( this, doc, Event::OnDocumentDirtyOnFileSysten );
 	sendEvent( &event );
 }
 
@@ -1781,6 +1788,7 @@ void UICodeEditor::drawLineText( const Int64& index, Vector2f position, const Fl
 		if ( position.x + textWidth >= mScreenPos.x &&
 			 position.x <= mScreenPos.x + mSize.getWidth() ) {
 			Text line( "", mFont, fontSize );
+			line.setTabWidth( mTabWidth );
 			const SyntaxColorScheme::Style& style = mColorScheme.getSyntaxStyle( token.type );
 			line.setStyleConfig( mFontStyleConfig );
 			if ( style.style )

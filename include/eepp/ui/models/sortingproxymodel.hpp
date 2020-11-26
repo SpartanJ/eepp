@@ -88,7 +88,6 @@ class EE_API SortingProxyModel final : public Model, private Model::Client {
 	SortOrder mSortOrder{ SortOrder::Ascending };
 	Role mSortRole{ Role::Sort };
 	bool mSortingCaseSensitive{ false };
-	bool mSorting{ false };
 };
 
 }}} // namespace EE::UI::Models

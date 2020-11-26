@@ -302,7 +302,7 @@ class EE_API Node : public Transformable {
 
 	void removeActions( const std::vector<Action*>& actions );
 
-	void removeActionsByTag( const Uint32& tag );
+	void removeActionsByTag( const String::HashType& tag );
 
 	std::vector<Action*> getActions();
 
@@ -373,7 +373,7 @@ class EE_API Node : public Transformable {
 	Uint32 getNodeOfTypeIndex() const;
 
 	void runOnMainThread( Actions::Runnable::RunnableFunc runnable,
-						  const Time& delay = Seconds( 0 ) );
+						  const Time& delay = Seconds( 0 ), const Uint32& tag = 0 );
 
 	bool isChild( Node* child ) const;
 
@@ -510,7 +510,7 @@ class EE_API Node : public Transformable {
 
 	void checkClose();
 
-	void sendParentSizeChange( const Vector2f& SizeChange );
+	void sendParentSizeChange( const Vector2f& sizeChange );
 
 	void childDeleteAll();
 

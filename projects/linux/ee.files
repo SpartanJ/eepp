@@ -1023,6 +1023,8 @@
 ../../src/tools/codeeditor/autocompletemodule.hpp
 ../../src/tools/codeeditor/codeeditor.cpp
 ../../src/tools/codeeditor/codeeditor.hpp
+../../src/tools/codeeditor/filesystemlistener.cpp
+../../src/tools/codeeditor/filesystemlistener.hpp
 ../../src/tools/codeeditor/ignorematcher.cpp
 ../../src/tools/codeeditor/ignorematcher.hpp
 ../../src/tools/codeeditor/projectdirectorytree.cpp

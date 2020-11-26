@@ -1442,7 +1442,7 @@ void Node::removeActions( const std::vector<Action*>& actions ) {
 	getActionManager()->removeActions( actions );
 }
 
-void Node::removeActionsByTag( const Uint32& tag ) {
+void Node::removeActionsByTag( const String::HashType& tag ) {
 	getActionManager()->removeActionsByTagFromTarget( this, tag );
 }
 
@@ -1458,8 +1458,11 @@ void Node::clearActions() {
 	getActionManager()->removeAllActionsFromTarget( this );
 }
 
-void Node::runOnMainThread( Actions::Runnable::RunnableFunc runnable, const Time& delay ) {
-	runAction( Actions::Runnable::New( runnable, delay ) );
+void Node::runOnMainThread( Actions::Runnable::RunnableFunc runnable, const Time& delay,
+							const Uint32& tag ) {
+	Action* action = Actions::Runnable::New( runnable, delay );
+	action->setTag( tag );
+	runAction( action );
 }
 
 Transform Node::getLocalTransform() const {
@@ -1554,12 +1557,12 @@ Node* Node::getParentWidget() const {
 	return NULL;
 }
 
-void Node::sendParentSizeChange( const Vector2f& SizeChange ) {
+void Node::sendParentSizeChange( const Vector2f& sizeChange ) {
 	if ( reportSizeChangeToChilds() ) {
 		Node* child = mChild;
 
 		while ( NULL != child ) {
-			child->onParentSizeChange( SizeChange );
+			child->onParentSizeChange( sizeChange );
 			child = child->getNextNode();
 		}
 	}

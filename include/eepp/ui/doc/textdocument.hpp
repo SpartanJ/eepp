@@ -3,6 +3,7 @@
 
 #include <eepp/core/string.hpp>
 #include <eepp/system/clock.hpp>
+#include <eepp/system/fileinfo.hpp>
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/pack.hpp>
 #include <eepp/system/time.hpp>
@@ -40,8 +41,9 @@ class EE_API TextDocument {
 		virtual void onDocumentLineCountChange( const size_t& lastCount,
 												const size_t& newCount ) = 0;
 		virtual void onDocumentLineChanged( const Int64& lineIndex ) = 0;
-		virtual void onDocumentSaved() = 0;
+		virtual void onDocumentSaved( TextDocument* ) = 0;
 		virtual void onDocumentClosed( TextDocument* ) {}
+		virtual void onDocumentDirtyOnFileSystem( TextDocument* ) {}
 	};
 
 	TextDocument( bool verbose = true );
@@ -63,6 +65,8 @@ class EE_API TextDocument {
 	bool loadFromMemory( const Uint8* data, const Uint32& size );
 
 	bool loadFromPack( Pack* pack, std::string filePackPath );
+
+	bool reload();
 
 	bool save();
 
@@ -243,16 +247,16 @@ class EE_API TextDocument {
 
 	void setCommand( const std::string& command, DocumentCommand func );
 
-	TextPosition find( String text, TextPosition from = {0, 0}, const bool& caseSensitive = true,
+	TextPosition find( String text, TextPosition from = { 0, 0 }, const bool& caseSensitive = true,
 					   TextRange restrictRange = TextRange() );
 
-	TextPosition findLast( String text, TextPosition from = {0, 0},
+	TextPosition findLast( String text, TextPosition from = { 0, 0 },
 						   const bool& caseSensitive = true,
 						   TextRange restrictRange = TextRange() );
 
 	TextPosition replaceSelection( const String& replace );
 
-	TextPosition replace( String search, const String& replace, TextPosition from = {0, 0},
+	TextPosition replace( String search, const String& replace, TextPosition from = { 0, 0 },
 						  const bool& caseSensitive = true, TextRange restrictRange = TextRange() );
 
 	String getIndentString();
@@ -278,6 +282,8 @@ class EE_API TextDocument {
 	void setDefaultFileName( const std::string& defaultFileName );
 
 	const std::string& getFilePath() const;
+
+	const FileInfo& getFileInfo() const;
 
 	bool isDirty() const;
 
@@ -338,31 +344,40 @@ class EE_API TextDocument {
 		const std::vector<std::pair<String::StringBaseType, String::StringBaseType>>&
 			autoCloseBracketsPairs );
 
+	bool isDirtyOnFileSystem() const;
+
+	void setDirtyOnFileSystem( bool dirtyOnFileSystem );
+
+	bool isSaving() const;
+
   protected:
 	friend class UndoStack;
 	UndoStack mUndoStack;
 	std::string mFilePath;
+	FileInfo mFileRealPath;
 	std::vector<TextDocumentLine> mLines;
 	TextRange mSelection;
 	std::unordered_set<Client*> mClients;
-	LineEnding mLineEnding{LineEnding::LF};
-	bool mIsBOM{false};
-	bool mAutoDetectIndentType{true};
-	bool mForceNewLineAtEndOfFile{false};
-	bool mTrimTrailingWhitespaces{false};
-	bool mVerbose{false};
-	bool mAutoCloseBrackets{false};
+	LineEnding mLineEnding{ LineEnding::LF };
+	bool mIsBOM{ false };
+	bool mAutoDetectIndentType{ true };
+	bool mForceNewLineAtEndOfFile{ false };
+	bool mTrimTrailingWhitespaces{ false };
+	bool mVerbose{ false };
+	bool mAutoCloseBrackets{ false };
+	bool mDirtyOnFileSystem{ false };
+	bool mSaving{ false };
 	std::vector<std::pair<String::StringBaseType, String::StringBaseType>> mAutoCloseBracketsPairs;
-	Uint32 mIndentWidth{4};
-	IndentType mIndentType{IndentType::IndentTabs};
+	Uint32 mIndentWidth{ 4 };
+	IndentType mIndentType{ IndentType::IndentTabs };
 	Clock mTimer;
 	SyntaxDefinition mSyntaxDefinition;
 	std::string mDefaultFileName;
 	Uint64 mCleanChangeId;
-	Uint32 mPageSize{10};
+	Uint32 mPageSize{ 10 };
 	std::map<std::string, DocumentCommand> mCommands;
 	String mNonWordChars;
-	Client* mActiveClient{nullptr};
+	Client* mActiveClient{ nullptr };
 
 	void initializeCommands();
 
@@ -384,6 +399,8 @@ class EE_API TextDocument {
 
 	void notifyUndoRedo( const UndoRedo& eventType );
 
+	void notifyDirtyOnFileSystem();
+
 	void insertAtStartOfSelectedLines( const String& text, bool skipEmpty );
 
 	void removeFromStartOfSelectedLines( const String& text, bool skipEmpty );
@@ -397,7 +414,7 @@ class EE_API TextDocument {
 
 	void guessIndentType();
 
-	bool loadFromStream( IOStream& file, std::string path );
+	bool loadFromStream( IOStream& file, std::string path, bool callReset );
 };
 
 }}} // namespace EE::UI::Doc

@@ -1,4 +1,5 @@
 #include "projectdirectorytree.hpp"
+#include <algorithm>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/luapattern.hpp>
 
@@ -16,6 +17,7 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 		[&, acceptedPattern, ignoreHidden] {
 #endif
 			Lock l( mFilesMutex );
+			mDirectories.push_back( mPath );
 			if ( !acceptedPattern.empty() ) {
 				std::vector<std::string> files;
 				std::vector<std::string> names;
@@ -63,7 +65,7 @@ std::shared_ptr<FileListModel> ProjectDirectoryTree::fuzzyMatchTree( const std::
 	std::vector<std::string> files;
 	std::vector<std::string> names;
 	for ( size_t i = 0; i < mNames.size(); i++ )
-		matchesMap.insert( {String::fuzzyMatch( mNames[i], match ), i} );
+		matchesMap.insert( { String::fuzzyMatch( mNames[i], match ), i } );
 	for ( auto& res : matchesMap ) {
 		if ( names.size() < max ) {
 			names.emplace_back( mNames[res.second] );
@@ -121,6 +123,20 @@ const std::vector<std::string>& ProjectDirectoryTree::getFiles() const {
 	return mFiles;
 }
 
+const std::vector<std::string>& ProjectDirectoryTree::getDirectories() const {
+	return mDirectories;
+}
+
+bool ProjectDirectoryTree::isFileInTree( const std::string& filePath ) const {
+	return std::find( mFiles.begin(), mFiles.end(), filePath ) != mFiles.end();
+}
+
+bool ProjectDirectoryTree::isDirInTree( const std::string& dirTree ) const {
+	std::string dir( FileSystem::fileRemoveFileName( dirTree ) );
+	FileSystem::dirAddSlashAtEnd( dir );
+	return std::find( mDirectories.begin(), mDirectories.end(), dirTree ) != mDirectories.end();
+}
+
 void ProjectDirectoryTree::getDirectoryFiles( std::vector<std::string>& files,
 											  std::vector<std::string>& names,
 											  std::string directory,
@@ -145,6 +161,9 @@ void ProjectDirectoryTree::getDirectoryFiles( std::vector<std::string>& files,
 				FileSystem::dirAddSlashAtEnd( fullpath );
 				if ( currentDirs.find( fullpath ) == currentDirs.end() )
 					continue;
+				mDirectories.push_back( fullpath );
+			} else {
+				mDirectories.push_back( fullpath );
 			}
 			IgnoreMatcherManager dirMatcher( fullpath );
 			getDirectoryFiles( files, names, fullpath, currentDirs, ignoreHidden,

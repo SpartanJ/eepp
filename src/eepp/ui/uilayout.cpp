@@ -43,8 +43,8 @@ void UILayout::onPaddingChange() {
 	tryUpdateLayout();
 }
 
-void UILayout::onParentSizeChange( const Vector2f& ) {
-	UIWidget::onParentChange();
+void UILayout::onParentSizeChange( const Vector2f& sizeChange ) {
+	UIWidget::onParentSizeChange( sizeChange );
 	if ( !getParent()->isLayout() ) {
 		mPacking = false;
 		tryUpdateLayout();

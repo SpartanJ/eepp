@@ -401,10 +401,31 @@ void UICodeEditorSplitter::forEachEditor( std::function<void( UICodeEditor* )> r
 			run( tabWidget->getTab( i )->getOwnedWidget()->asType<UICodeEditor>() );
 }
 
+void UICodeEditorSplitter::forEachDoc( std::function<void( TextDocument& )> run ) {
+	std::unordered_set<TextDocument*> docs;
+	forEachEditor( [&]( UICodeEditor* editor ) { docs.insert( editor->getDocumentRef().get() ); } );
+	for ( auto doc : docs )
+		run( *doc );
+}
+
 void UICodeEditorSplitter::forEachEditorStoppable( std::function<bool( UICodeEditor* )> run ) {
 	for ( auto tabWidget : mTabWidgets ) {
 		for ( size_t i = 0; i < tabWidget->getTabCount(); i++ ) {
 			if ( run( tabWidget->getTab( i )->getOwnedWidget()->asType<UICodeEditor>() ) ) {
+				return;
+			}
+		}
+	}
+}
+
+void UICodeEditorSplitter::forEachDocStoppable( std::function<bool( TextDocument& )> run ) {
+	for ( auto tabWidget : mTabWidgets ) {
+		for ( size_t i = 0; i < tabWidget->getTabCount(); i++ ) {
+			if ( run( *tabWidget->getTab( i )
+						   ->getOwnedWidget()
+						   ->asType<UICodeEditor>()
+						   ->getDocumentRef()
+						   .get() ) ) {
 				return;
 			}
 		}

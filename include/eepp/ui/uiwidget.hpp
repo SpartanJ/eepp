@@ -282,7 +282,7 @@ class EE_API UIWidget : public UINode {
 
 	virtual Uint32 onMouseLeave( const Vector2i& Pos, const Uint32& Flags );
 
-	virtual void onParentSizeChange( const Vector2f& SizeChange );
+	virtual void onParentSizeChange( const Vector2f& sizeChange );
 
 	virtual void onPositionChange();
 
@@ -308,7 +308,7 @@ class EE_API UIWidget : public UINode {
 
 	virtual void onTabPress();
 
-	void updateAnchors( const Vector2f& SizeChange );
+	void updateAnchors( const Vector2f& sizeChange );
 
 	void alignAgainstLayout();
 

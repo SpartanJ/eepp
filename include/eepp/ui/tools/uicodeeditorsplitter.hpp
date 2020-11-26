@@ -87,6 +87,8 @@ class EE_API UICodeEditorSplitter {
 
 	void forEachEditor( std::function<void( UICodeEditor* )> run );
 
+	void forEachDoc( std::function<void( TextDocument& doc )> run );
+
 	void zoomIn();
 
 	void zoomOut();
@@ -116,6 +118,8 @@ class EE_API UICodeEditorSplitter {
 	void forEachEditorStoppable( std::function<bool( UICodeEditor* )> run );
 
 	std::vector<UICodeEditor*> getAllEditors();
+
+	void forEachDocStoppable( std::function<bool( TextDocument& )> run );
 
   protected:
 	UISceneNode* mUISceneNode{ nullptr };

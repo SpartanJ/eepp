@@ -52,7 +52,7 @@ class EE_API Action {
 	void setFlags( const Uint32& flags );
 
 	/** @return The action tag. */
-	Uint32 getTag() const;
+	String::HashType getTag() const;
 
 	/** Sets a tag to identify and filter actions. */
 	void setTag( const Uint32& tag );
@@ -94,7 +94,7 @@ class EE_API Action {
 
 	Node* mNode;
 	Uint32 mFlags;
-	Uint32 mTag;
+	String::HashType mTag;
 	Uint32 mNumCallBacks;
 	Uint32 mId;
 	ActionCallbackMap mCallbacks;

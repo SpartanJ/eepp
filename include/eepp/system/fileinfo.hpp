@@ -66,14 +66,16 @@ class EE_API FileInfo {
 
 	const Uint64& getInode() const;
 
+	bool isUninitialized() const;
+
   protected:
 	mutable std::string mFilepath;
-	Uint64 mModificationTime{0};
-	Uint64 mSize{0};
-	Uint32 mOwnerId{0};
-	Uint32 mGroupId{0};
-	Uint32 mPermissions{0};
-	Uint64 mInode{0};
+	Uint64 mModificationTime{ 0 };
+	Uint64 mSize{ 0 };
+	Uint32 mOwnerId{ 0 };
+	Uint32 mGroupId{ 0 };
+	Uint32 mPermissions{ 0 };
+	Uint64 mInode{ 0 };
 };
 
 typedef std::map<std::string, FileInfo> FileInfoMap;

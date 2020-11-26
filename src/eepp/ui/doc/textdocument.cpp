@@ -27,7 +27,7 @@ TextDocument::TextDocument( bool verbose ) :
 	mUndoStack( this ),
 	mVerbose( verbose ),
 	mAutoCloseBracketsPairs(
-		{{'(', ')'}, {'[', ']'}, {'{', '}'}, {'\'', '\''}, {'"', '"'}, {'`', '`'}} ),
+		{ { '(', ')' }, { '[', ']' }, { '{', '}' }, { '\'', '\'' }, { '"', '"' }, { '`', '`' } } ),
 	mDefaultFileName( "untitled" ),
 	mCleanChangeId( 0 ),
 	mNonWordChars( DEFAULT_NON_WORD_CHARS ) {
@@ -49,7 +49,8 @@ bool TextDocument::isEmpty() {
 
 void TextDocument::reset() {
 	mFilePath = mDefaultFileName;
-	mSelection.set( {0, 0}, {0, 0} );
+	mFileRealPath = FileInfo();
+	mSelection.set( { 0, 0 }, { 0, 0 } );
 	mLines.clear();
 	mLines.emplace_back( String( "\n" ) );
 	mSyntaxDefinition = SyntaxDefinitionManager::instance()->getPlainStyle();
@@ -70,12 +71,13 @@ static String ptrGetLine( char* data, const size_t& size, size_t& position ) {
 }
 
 bool TextDocument::loadFromStream( IOStream& file ) {
-	return loadFromStream( file, "untitled" );
+	return loadFromStream( file, "untitled", true );
 }
 
-bool TextDocument::loadFromStream( IOStream& file, std::string path ) {
+bool TextDocument::loadFromStream( IOStream& file, std::string path, bool callReset ) {
 	Clock clock;
-	reset();
+	if ( callReset )
+		reset();
 	mLines.clear();
 	if ( file.isOpen() ) {
 		const size_t BLOCK_SIZE = EE_1MB;
@@ -199,7 +201,7 @@ void TextDocument::guessIndentType() {
 }
 
 void TextDocument::resetSyntax() {
-	String header( getText( {{0, 0}, positionOffset( {0, 0}, 128 )} ) );
+	String header( getText( { { 0, 0 }, positionOffset( { 0, 0 }, 128 ) } ) );
 	mSyntaxDefinition = SyntaxDefinitionManager::instance()->find( mFilePath, header );
 }
 
@@ -257,20 +259,23 @@ bool TextDocument::loadFromFile( const std::string& path ) {
 		Pack* pack = PackManager::instance()->exists( pathFix );
 		if ( NULL != pack ) {
 			mFilePath = pathFix;
+			mFileRealPath = FileInfo();
 			return loadFromPack( pack, pathFix );
 		}
 	}
 
 	IOStreamFile file( path, "rb" );
-	bool ret = loadFromStream( file, path );
+	bool ret = loadFromStream( file, path, true );
 	mFilePath = path;
+	mFileRealPath = FileInfo::isLink( mFilePath ) ? FileInfo( FileInfo( mFilePath ).linksTo() )
+												  : FileInfo( mFilePath );
 	resetSyntax();
 	return ret;
 }
 
 bool TextDocument::loadFromMemory( const Uint8* data, const Uint32& size ) {
 	IOStreamMemory stream( (const char*)data, size );
-	return loadFromStream( stream, mFilePath );
+	return loadFromStream( stream, mFilePath, true );
 }
 
 bool TextDocument::loadFromPack( Pack* pack, std::string filePackPath ) {
@@ -284,18 +289,42 @@ bool TextDocument::loadFromPack( Pack* pack, std::string filePackPath ) {
 	return ret;
 }
 
+bool TextDocument::reload() {
+	bool ret = false;
+	std::string path( mFilePath );
+	if ( mFileRealPath.exists() ) {
+		auto selection = mSelection;
+		mUndoStack.clear();
+		cleanChangeId();
+		IOStreamFile file( path, "rb" );
+		ret = loadFromStream( file, path, false );
+		mFileRealPath = FileInfo::isLink( mFilePath ) ? FileInfo( FileInfo( mFilePath ).linksTo() )
+													  : FileInfo( mFilePath );
+		resetSyntax();
+		notifyTextChanged();
+		setSelection( selection.start() );
+	}
+	return ret;
+}
+
 bool TextDocument::save( const std::string& path ) {
 	if ( path.empty() || mDefaultFileName == path )
 		return false;
 	if ( FileSystem::fileCanWrite( FileSystem::fileRemoveFileName( path ) ) ) {
 		IOStreamFile file( path, "wb" );
 		mFilePath = path;
+		mSaving = true;
 		if ( save( file ) ) {
 			file.close();
+			mFileRealPath =
+				FileInfo::isLink( mFilePath ) ? FileInfo( mFilePath ).linksTo() : mFilePath;
+			mSaving = false;
 			notifyDocumentSaved();
 			return true;
 		} else {
 			mFilePath.clear();
+			mFileRealPath = FileInfo();
+			mSaving = false;
 		}
 	}
 	return false;
@@ -307,7 +336,7 @@ bool TextDocument::save( IOStream& stream ) {
 	const std::string whitespaces( " \t\f\v\n\r" );
 	char nl = '\n';
 	if ( mIsBOM ) {
-		unsigned char bom[] = {0xEF, 0xBB, 0xBF};
+		unsigned char bom[] = { 0xEF, 0xBB, 0xBF };
 		stream.write( (char*)bom, sizeof( bom ) );
 	}
 	size_t lastLine = mLines.size() - 1;
@@ -428,7 +457,7 @@ String TextDocument::getText( const TextRange& range ) const {
 		return mLines[nrange.start().line()].substr(
 			nrange.start().column(), nrange.end().column() - nrange.start().column() );
 	}
-	std::vector<String> lines = {mLines[nrange.start().line()].substr( nrange.start().column() )};
+	std::vector<String> lines = { mLines[nrange.start().line()].substr( nrange.start().column() ) };
 	for ( auto i = nrange.start().line() + 1; i <= nrange.end().line() - 1; i++ ) {
 		lines.emplace_back( mLines[i].getText() );
 	}
@@ -478,7 +507,7 @@ TextPosition TextDocument::insert( TextPosition position, const String& text,
 	TextPosition cursor = positionOffset( position, text.size() );
 
 	mUndoStack.pushSelection( undoStack, getSelection(), time );
-	mUndoStack.pushRemove( undoStack, {position, cursor}, time );
+	mUndoStack.pushRemove( undoStack, { position, cursor }, time );
 
 	notifyTextChanged();
 
@@ -671,7 +700,7 @@ TextPosition TextDocument::startOfContent( TextPosition start ) {
 			break;
 		}
 	}
-	return {start.line(), indent};
+	return { start.line(), indent };
 }
 
 TextPosition TextDocument::startOfDoc() const {
@@ -683,7 +712,7 @@ TextPosition TextDocument::endOfDoc() const {
 }
 
 TextRange TextDocument::getDocRange() const {
-	return {startOfDoc(), endOfDoc()};
+	return { startOfDoc(), endOfDoc() };
 }
 
 void TextDocument::deleteTo( int offset ) {
@@ -847,8 +876,9 @@ void TextDocument::moveToStartOfContent() {
 void TextDocument::selectToStartOfContent() {
 	TextPosition start = getSelection().start();
 	TextPosition indented = startOfContent( getSelection().start() );
-	setSelection( {indented.column() == start.column() ? TextPosition( start.line(), 0 ) : indented,
-				   getSelection().end()} );
+	setSelection(
+		{ indented.column() == start.column() ? TextPosition( start.line(), 0 ) : indented,
+		  getSelection().end() } );
 }
 
 void TextDocument::moveToStartOfLine() {
@@ -881,12 +911,12 @@ void TextDocument::deleteCurrentLine() {
 		return;
 	}
 	if ( getSelection().start().line() + 1 >= (Int64)linesCount() ) {
-		remove( {startOfLine( getSelection().start() ),
-				 startOfLine( {getSelection().start().line() - 1, 0} )} );
+		remove( { startOfLine( getSelection().start() ),
+				  startOfLine( { getSelection().start().line() - 1, 0 } ) } );
 		setSelection( startOfLine( getSelection().start() ) );
 	} else {
-		remove( {startOfLine( getSelection().start() ),
-				 startOfLine( {getSelection().start().line() + 1, 0} )} );
+		remove( { startOfLine( getSelection().start() ),
+				  startOfLine( { getSelection().start().line() + 1, 0 } ) } );
 		setSelection( startOfLine( getSelection().start() ) );
 	}
 }
@@ -900,25 +930,25 @@ void TextDocument::selectToNextChar() {
 }
 
 void TextDocument::selectToPreviousWord() {
-	setSelection( {previousWordBoundary( getSelection().start() ), getSelection().end()} );
+	setSelection( { previousWordBoundary( getSelection().start() ), getSelection().end() } );
 }
 
 void TextDocument::selectToNextWord() {
-	setSelection( {nextWordBoundary( getSelection().start() ), getSelection().end()} );
+	setSelection( { nextWordBoundary( getSelection().start() ), getSelection().end() } );
 }
 
 void TextDocument::selectWord() {
-	setSelection( {nextWordBoundary( getSelection().start() ),
-				   previousWordBoundary( getSelection().start() )} );
+	setSelection( { nextWordBoundary( getSelection().start() ),
+					previousWordBoundary( getSelection().start() ) } );
 }
 void TextDocument::selectLine() {
 	if ( getSelection().start().line() + 1 < (Int64)linesCount() ) {
 		setSelection(
-			{{getSelection().start().line() + 1, 0}, {getSelection().start().line(), 0}} );
+			{ { getSelection().start().line() + 1, 0 }, { getSelection().start().line(), 0 } } );
 	} else {
-		setSelection(
-			{{getSelection().start().line(), (Int64)line( getSelection().start().line() ).size()},
-			 {getSelection().start().line(), 0}} );
+		setSelection( { { getSelection().start().line(),
+						  (Int64)line( getSelection().start().line() ).size() },
+						{ getSelection().start().line(), 0 } } );
 	}
 }
 
@@ -981,8 +1011,8 @@ void TextDocument::newLineAbove() {
 	TextPosition indent = startOfContent( getSelection().start() );
 	if ( indent.column() != 0 )
 		input.insert( 0, line( start.line() ).getText().substr( 0, indent.column() ) );
-	insert( {start.line(), 0}, input );
-	setSelection( {start.line(), (Int64)input.size()} );
+	insert( { start.line(), 0 }, input );
+	setSelection( { start.line(), (Int64)input.size() } );
 }
 
 void TextDocument::insertAtStartOfSelectedLines( const String& text, bool skipEmpty ) {
@@ -992,7 +1022,7 @@ void TextDocument::insertAtStartOfSelectedLines( const String& text, bool skipEm
 	for ( auto i = range.start().line(); i <= range.end().line(); i++ ) {
 		const String& line = this->line( i ).getText();
 		if ( !skipEmpty || line.length() != 1 ) {
-			insert( {i, 0}, text );
+			insert( { i, 0 }, text );
 		}
 	}
 	setSelection( TextPosition( range.start().line(), range.start().column() + text.size() ),
@@ -1009,7 +1039,7 @@ void TextDocument::removeFromStartOfSelectedLines( const String& text, bool skip
 		const String& line = this->line( i ).getText();
 		if ( !skipEmpty || line.length() != 1 ) {
 			if ( line.substr( 0, text.length() ) == text ) {
-				remove( {{i, 0}, {i, static_cast<Int64>( text.length() )}} );
+				remove( { { i, 0 }, { i, static_cast<Int64>( text.length() ) } } );
 				if ( i == range.start().line() ) {
 					startRemoved = text.size();
 				} else if ( i == range.end().line() ) {
@@ -1040,10 +1070,10 @@ void TextDocument::moveLinesUp() {
 	appendLineIfLastLine( range.end().line() );
 	if ( range.start().line() > 0 ) {
 		auto& text = line( range.start().line() - 1 );
-		insert( {range.end().line() + 1, 0}, text.getText() );
-		remove( {{range.start().line() - 1, 0}, {range.start().line(), 0}} );
-		setSelection( {range.start().line() - 1, range.start().column()},
-					  {range.end().line() - 1, range.end().column()}, swap );
+		insert( { range.end().line() + 1, 0 }, text.getText() );
+		remove( { { range.start().line() - 1, 0 }, { range.start().line(), 0 } } );
+		setSelection( { range.start().line() - 1, range.start().column() },
+					  { range.end().line() - 1, range.end().column() }, swap );
 	}
 }
 
@@ -1053,10 +1083,10 @@ void TextDocument::moveLinesDown() {
 	appendLineIfLastLine( range.end().line() + 1 );
 	if ( range.end().line() < (Int64)mLines.size() - 1 ) {
 		auto text = line( range.end().line() + 1 );
-		remove( {{range.end().line() + 1, 0}, {range.end().line() + 2, 0}} );
-		insert( {range.start().line(), 0}, text.getText() );
-		setSelection( {range.start().line() + 1, range.start().column()},
-					  {range.end().line() + 1, range.end().column()}, swap );
+		remove( { { range.end().line() + 1, 0 }, { range.end().line() + 2, 0 } } );
+		insert( { range.start().line(), 0 }, text.getText() );
+		setSelection( { range.start().line() + 1, range.start().column() },
+					  { range.end().line() + 1, range.end().column() }, swap );
 	}
 }
 
@@ -1100,7 +1130,7 @@ void TextDocument::print() const {
 }
 
 TextRange TextDocument::sanitizeRange( const TextRange& range ) const {
-	return {sanitizePosition( range.start() ), sanitizePosition( range.end() )};
+	return { sanitizePosition( range.start() ), sanitizePosition( range.end() ) };
 }
 
 bool TextDocument::getAutoCloseBrackets() const {
@@ -1122,11 +1152,25 @@ void TextDocument::setAutoCloseBracketsPairs(
 	mAutoCloseBracketsPairs = autoCloseBracketsPairs;
 }
 
+bool TextDocument::isDirtyOnFileSystem() const {
+	return mDirtyOnFileSystem;
+}
+
+void TextDocument::setDirtyOnFileSystem( bool dirtyOnFileSystem ) {
+	mDirtyOnFileSystem = dirtyOnFileSystem;
+	if ( mDirtyOnFileSystem )
+		notifyDirtyOnFileSystem();
+}
+
+bool TextDocument::isSaving() const {
+	return mSaving;
+}
+
 TextPosition TextDocument::sanitizePosition( const TextPosition& position ) const {
 	Int64 line = eeclamp<Int64>( position.line(), 0UL, mLines.size() - 1 );
 	Int64 col =
 		eeclamp<Int64>( position.column(), 0UL, eemax<Int64>( 0, mLines[line].size() - 1 ) );
-	return {line, col};
+	return { line, col };
 }
 
 const TextDocument::IndentType& TextDocument::getIndentType() const {
@@ -1169,6 +1213,10 @@ void TextDocument::setDefaultFileName( const std::string& defaultFileName ) {
 
 const std::string& TextDocument::getFilePath() const {
 	return mFilePath;
+}
+
+const FileInfo& TextDocument::getFileInfo() const {
+	return mFileRealPath;
 }
 
 bool TextDocument::isDirty() const {
@@ -1221,7 +1269,7 @@ TextPosition TextDocument::find( String text, TextPosition from, const bool& cas
 								: String::toLower( line( i ).getText() ).find( text );
 		}
 		if ( String::StringType::npos != col ) {
-			return {(Int64)i, (Int64)col};
+			return { (Int64)i, (Int64)col };
 		}
 	}
 	return TextPosition();
@@ -1261,7 +1309,7 @@ TextPosition TextDocument::findLast( String text, TextPosition from, const bool&
 								: String::toLower( line( i ).getText() ).rfind( text );
 		}
 		if ( String::StringType::npos != col ) {
-			return {(Int64)i, (Int64)col};
+			return { (Int64)i, (Int64)col };
 		}
 	}
 	return TextPosition();
@@ -1281,7 +1329,7 @@ TextPosition TextDocument::replace( String search, const String& replace, TextPo
 	if ( start.isValid() ) {
 		TextPosition end = positionOffset( start, search.size() );
 		if ( end.isValid() ) {
-			setSelection( {start, end} );
+			setSelection( { start, end } );
 			deleteTo( 0 );
 			textInput( replace );
 			return end;
@@ -1318,7 +1366,7 @@ TextPosition TextDocument::findOpenBracket( TextPosition startPosition,
 			} else if ( string[i] == openBracket ) {
 				count--;
 				if ( 0 == count ) {
-					return {line, i};
+					return { line, i };
 				}
 			}
 		}
@@ -1343,7 +1391,7 @@ TextPosition TextDocument::findCloseBracket( TextPosition startPosition,
 			} else if ( string[i] == closeBracket ) {
 				count--;
 				if ( 0 == count ) {
-					return {line, i};
+					return { line, i };
 				}
 			}
 		}
@@ -1400,7 +1448,7 @@ void TextDocument::notifySelectionChanged() {
 
 void TextDocument::notifyDocumentSaved() {
 	for ( auto& client : mClients ) {
-		client->onDocumentSaved();
+		client->onDocumentSaved( this );
 	}
 }
 
@@ -1425,6 +1473,12 @@ void TextDocument::notifyLineChanged( const Int64& lineIndex ) {
 void TextDocument::notifyUndoRedo( const TextDocument::UndoRedo& eventType ) {
 	for ( auto& client : mClients ) {
 		client->onDocumentUndoRedo( eventType );
+	}
+}
+
+void TextDocument::notifyDirtyOnFileSystem() {
+	for ( auto& client : mClients ) {
+		client->onDocumentDirtyOnFileSystem( this );
 	}
 }
 

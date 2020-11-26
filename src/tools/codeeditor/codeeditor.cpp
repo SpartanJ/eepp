@@ -946,6 +946,10 @@ App::~App() {
 	eeSAFE_DELETE( mEditorSplitter );
 	eeSAFE_DELETE( mAutoCompleteModule );
 	eeSAFE_DELETE( mConsole );
+	if ( mFileWatcher )
+		delete mFileWatcher;
+	if ( mFileSystemListener )
+		delete mFileSystemListener;
 }
 
 void App::updateRecentFiles() {
@@ -1627,6 +1631,14 @@ void App::onDocumentLoaded( UICodeEditor* editor, const std::string& path ) {
 		UITab* tab = reinterpret_cast<UITab*>( editor->getData() );
 		tab->setTooltipText( path );
 	}
+
+	TextDocument& doc = editor->getDocument();
+
+	if ( mFileWatcher && doc.hasFilepath() &&
+		 ( !mDirTree || !mDirTree->isDirInTree( doc.getFileInfo().getFilepath() ) ) ) {
+		std::string dir( FileSystem::fileRemoveFileName( doc.getFileInfo().getFilepath() ) );
+		mFilesFolderWatches[dir] = mFileWatcher->addWatch( dir, mFileSystemListener );
+	}
 }
 
 const CodeEditorConfig& App::getCodeEditorConfig() const {
@@ -1666,6 +1678,7 @@ std::vector<std::string> App::getUnlockedCommands() {
 }
 
 void App::closeEditors() {
+	removeFolderWatches();
 	mConfig.saveProject( mCurrentProject, mEditorSplitter, mConfigPath );
 	std::vector<UICodeEditor*> editors = mEditorSplitter->getAllEditors();
 	for ( auto editor : editors ) {
@@ -1692,6 +1705,62 @@ void App::closeFolder() {
 	} else {
 		closeEditors();
 	}
+}
+
+void App::createDocAlert( UICodeEditor* editor ) {
+	UILinearLayout* docAlert = editor->findByClass<UILinearLayout>( "doc_alert" );
+
+	if ( docAlert )
+		return;
+
+	const std::string& msg = R"xml(
+	<hbox class="doc_alert" layout_width="wrap_content" layout_height="wrap_content" layout_gravity="top|right">
+		<TextView id="doc_alert_text" layout_width="wrap_content" layout_height="wrap_content" margin-right="24dp"
+			text="The file on the disk is more recent that the current buffer.&#xA;Do you want to reload it?"
+		/>
+		<PushButton id="file_reload" layout_width="wrap_content" layout_height="18dp" text="Reload" margin-right="4dp"
+					tooltip="Reload the file from disk. Unsaved changes will be lost." />
+		<PushButton id="file_overwrite" layout_width="wrap_content" layout_height="18dp" text="Overwrite" margin-right="4dp"
+					tooltip="Writes the local changes on disk, overwriting the disk changes" />
+		<PushButton id="file_ignore" layout_width="wrap_content" layout_height="18dp" text="Ignore"
+					tooltip="Ignores the changes on disk without any action." />
+	</hbox>
+	)xml";
+	docAlert = static_cast<UILinearLayout*>( mUISceneNode->loadLayoutFromString( msg, editor ) );
+
+	editor->enableReportSizeChangeToChilds();
+
+	docAlert->find( "file_reload" )
+		->addEventListener( Event::MouseClick, [editor, docAlert]( const Event* event ) {
+			const MouseEvent* mouseEvent = static_cast<const MouseEvent*>( event );
+			if ( mouseEvent->getFlags() & EE_BUTTON_LMASK ) {
+				editor->getDocument().reload();
+				editor->disableReportSizeChangeToChilds();
+				docAlert->close();
+				editor->setFocus();
+			}
+		} );
+
+	docAlert->find( "file_overwrite" )
+		->addEventListener( Event::MouseClick, [editor, docAlert]( const Event* event ) {
+			const MouseEvent* mouseEvent = static_cast<const MouseEvent*>( event );
+			if ( mouseEvent->getFlags() & EE_BUTTON_LMASK ) {
+				editor->getDocument().save();
+				editor->disableReportSizeChangeToChilds();
+				docAlert->close();
+				editor->setFocus();
+			}
+		} );
+
+	docAlert->find( "file_ignore" )
+		->addEventListener( Event::MouseClick, [docAlert, editor]( const Event* event ) {
+			const MouseEvent* mouseEvent = static_cast<const MouseEvent*>( event );
+			if ( mouseEvent->getFlags() & EE_BUTTON_LMASK ) {
+				editor->disableReportSizeChangeToChilds();
+				docAlert->close();
+				editor->setFocus();
+			}
+		} );
 }
 
 void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
@@ -1780,8 +1849,12 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	doc.setCommand( "load-current-dir", [&] { loadCurrentDirectory(); } );
 	doc.setCommand( "menu-toggle", [&] { toggleSettingsMenu(); } );
 	doc.setCommand( "switch-side-panel", [&] { switchSidePanel(); } );
-	editor->addEventListener( Event::OnSave, [&]( const Event* event ) {
+
+	editor->addEventListener( Event::OnDocumentSave, [&]( const Event* event ) {
 		UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
+		updateEditorTabTitle( editor );
+		if ( mEditorSplitter->getCurEditor() == editor )
+			editor->setFocus();
 		if ( editor->getDocument().getFilePath() == mKeybindingsPath ) {
 			mKeybindings.clear();
 			mKeybindingsInvert.clear();
@@ -1793,10 +1866,40 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 		}
 	} );
 
+	editor->addEventListener(
+		Event::OnDocumentDirtyOnFileSysten, [&, editor]( const Event* event ) {
+			const DocEvent* docEvent = static_cast<const DocEvent*>( event );
+			FileInfo file( docEvent->getDoc()->getFileInfo().getFilepath() );
+			TextDocument* doc = docEvent->getDoc();
+			if ( doc->getFileInfo() != file ) {
+				if ( doc->isDirty() ) {
+					editor->runOnMainThread( [&, editor]() { createDocAlert( editor ); } );
+				} else {
+					auto hash = String::hash( docEvent->getDoc()->getFilePath() );
+					editor->removeActionsByTag( hash );
+					editor->runOnMainThread( [doc]() { doc->reload(); }, Seconds( 0.5f ), hash );
+				}
+			}
+		} );
+
 	if ( !mKeybindings.empty() ) {
 		editor->getKeyBindings().reset();
 		editor->getKeyBindings().addKeybindsString( mKeybindings );
 	}
+
+	editor->addEventListener( Event::OnDocumentClosed, [&]( const Event* event ) {
+		if ( !appInstance )
+			return;
+		const DocEvent* docEvent = static_cast<const DocEvent*>( event );
+		std::string dir( FileSystem::fileRemoveFileName( docEvent->getDoc()->getFilePath() ) );
+		auto itWatch = mFilesFolderWatches.find( dir );
+		if ( mFileWatcher && itWatch != mFilesFolderWatches.end() ) {
+			if ( !mDirTree || !mDirTree->isDirInTree( dir ) ) {
+				mFileWatcher->removeWatch( itWatch->second );
+			}
+			mFilesFolderWatches.erase( itWatch );
+		}
+	} );
 
 	if ( config.autoComplete && !mAutoCompleteModule )
 		setAutoComplete( config.autoComplete );
@@ -1988,6 +2091,18 @@ void App::updateEditorState() {
 	}
 }
 
+void App::removeFolderWatches() {
+	if ( mFileWatcher ) {
+		for ( auto dir : mFolderWatches )
+			mFileWatcher->removeWatch( dir );
+		mFolderWatches.clear();
+
+		for ( auto fileFolder : mFilesFolderWatches )
+			mFileWatcher->removeWatch( fileFolder.second );
+		mFilesFolderWatches.clear();
+	}
+}
+
 void App::loadDirTree( const std::string& path ) {
 	Clock* clock = eeNew( Clock, () );
 	mDirTree = std::make_unique<ProjectDirectoryTree>( path, mThreadPool );
@@ -1999,6 +2114,12 @@ void App::loadDirTree( const std::string& path ) {
 			eeDelete( clock );
 			mDirTreeReady = true;
 			mUISceneNode->runOnMainThread( [&] { updateLocateTable(); } );
+			if ( mFileWatcher ) {
+				removeFolderWatches();
+				auto newDirs = dirTree.getDirectories();
+				for ( auto dir : newDirs )
+					mFolderWatches.insert( mFileWatcher->addWatch( dir, mFileSystemListener ) );
+			}
 		},
 		SyntaxDefinitionManager::instance()->getExtensionsPatternsSupported() );
 }
@@ -2252,6 +2373,16 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 			padding-top: 0dp;
 			padding-bottom: 0dp;
 		}
+		.doc_alert {
+			padding: 16dp;
+			border-width: 2dp;
+			border-radius: 4dp;
+			border-color: var(--primary);
+			background-color: var(--back);
+			margin-right: 24dp;
+			margin-top: 24dp;
+			cursor: arrow;
+		}
 		</style>
 		<RelativeLayout id="main_layout" layout_width="match_parent" layout_height="match_parent">
 		<Splitter id="project_splitter" layout_width="match_parent" layout_height="match_parent">
@@ -2262,7 +2393,7 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 			<vbox>
 				<RelativeLayout layout_width="match_parent" layout_height="0" layout_weight="1">
 					<vbox id="code_container" layout_width="match_parent" layout_height="match_parent"></vbox>
-					<hbox id="doc_info" layout_width="wrap_content" layout_height="wrap_content" layout_gravity="bottom|right">
+					<hbox id="doc_info" layout_width="wrap_content" layout_height="wrap_content" layout_gravity="bottom|right" enabled="false">
 						<TextView id="doc_info_text" layout_width="wrap_content" layout_height="wrap_content" />
 					</hbox>
 				</RelativeLayout>
@@ -2392,6 +2523,12 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 			this, mUISceneNode,
 			SyntaxColorScheme::loadFromFile( mResPath + "assets/colorschemes/colorschemes.conf" ),
 			mInitColorScheme );
+
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+		mFileWatcher = new efsw::FileWatcher();
+		mFileSystemListener = new FileSystemListener( mEditorSplitter );
+		mFileWatcher->watch();
+#endif
 
 		initSearchBar();
 

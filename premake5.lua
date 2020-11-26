@@ -845,8 +845,13 @@ workspace "eepp"
 		set_kind()
 		language "C++"
 		files { "src/tools/codeeditor/*.cpp" }
-		incdirs { "src/thirdparty" }
+		incdirs { "src/thirdparty/efsw/include", "src/thirdparty" }
+		links { "efsw-static" }
 		build_link_configuration( "ecode", true )
+		filter "system:macosx"
+			links { "CoreFoundation.framework", "CoreServices.framework" }
+		filter { "system:not windows", "system:not haiku" }
+			links { "pthread" }
 
 	project "eepp-texturepacker"
 		kind "ConsoleApp"

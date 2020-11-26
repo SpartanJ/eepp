@@ -32,11 +32,11 @@ class EE_API ActionManager {
 
 	void removeAllActionsFromTarget( Node* target );
 
-	void removeActionsByTagFromTarget( Node* target, const Uint32& tag );
+	void removeActionsByTagFromTarget( Node* target, const String::HashType& tag );
 
 	std::vector<Action*> getActionsFromTarget( Node* target );
 
-	std::vector<Action*> getActionsByTagFromTarget( Node* target, const Uint32& tag );
+	std::vector<Action*> getActionsByTagFromTarget( Node* target, const String::HashType& tag );
 
 	void update( const Time& time );
 

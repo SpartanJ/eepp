@@ -2,10 +2,12 @@
 #define EE_TOOLS_CODEEDITOR_HPP
 
 #include "appconfig.hpp"
+#include "filesystemlistener.hpp"
 #include "projectdirectorytree.hpp"
 #include "projectsearch.hpp"
 #include "uitreeviewglobalsearch.hpp"
 #include <eepp/ee.hpp>
+#include <efsw/efsw.hpp>
 
 class WidgetCommandExecuter {
   public:
@@ -196,6 +198,10 @@ class App : public UICodeEditorSplitter::Client {
 	std::string mCurrentProject;
 	FontTrueType* mFont{ nullptr };
 	FontTrueType* mFontMono{ nullptr };
+	efsw::FileWatcher* mFileWatcher{ nullptr };
+	FileSystemListener* mFileSystemListener{ nullptr };
+	std::unordered_set<efsw::WatchID> mFolderWatches;
+	std::unordered_map<std::string, efsw::WatchID> mFilesFolderWatches;
 
 	void saveAllProcess();
 
@@ -322,6 +328,10 @@ class App : public UICodeEditorSplitter::Client {
 									   std::shared_ptr<ProjectSearch::ResultModel> model );
 
 	void switchSidePanel();
+
+	void removeFolderWatches();
+
+	void createDocAlert( UICodeEditor* editor );
 };
 
 #endif // EE_TOOLS_CODEEDITOR_HPP

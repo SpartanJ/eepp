@@ -175,7 +175,7 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 
 	virtual void onDocumentUndoRedo( const TextDocument::UndoRedo& );
 
-	virtual void onDocumentSaved();
+	virtual void onDocumentSaved( TextDocument* );
 
 	void registerKeybindings();
 
