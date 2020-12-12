@@ -382,7 +382,9 @@ void App::loadConfig() {
 void App::saveConfig() {
 	mConfig.save( mRecentFiles, mRecentFolders,
 				  mProjectSplitter ? mProjectSplitter->getSplitPartition().toString() : "15%",
-				  mWindow, mEditorSplitter->getCurrentColorSchemeName() );
+				  mWindow,
+				  mEditorSplitter ? mEditorSplitter->getCurrentColorSchemeName()
+								  : mConfig.editor.colorScheme );
 }
 
 static std::string keybindFormat( std::string str ) {
@@ -2214,12 +2216,10 @@ void App::loadFolder( const std::string& path ) {
 
 FontTrueType* App::loadFont( const std::string& name, std::string fontPath,
 							 const std::string& fallback ) {
-	if ( fontPath.empty() )
+	if ( fontPath.empty() || !FileSystem::fileExists( fontPath ) )
 		fontPath = fallback;
 	if ( isRelativePath( fontPath ) )
 		fontPath = mResPath + fontPath;
-	if ( !FileSystem::fileExists( fontPath ) )
-		return nullptr;
 	return FontTrueType::New( name, fontPath );
 }
 

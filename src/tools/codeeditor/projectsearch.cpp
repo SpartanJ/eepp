@@ -6,10 +6,11 @@ static int countNewLines( const std::string& text, const size_t& start, const si
 	const char* endPtr = text.c_str() + end;
 	size_t count = 0;
 	if ( startPtr != endPtr ) {
+		count = *startPtr == '\n' ? 1 : 0;
 		while ( ++startPtr && startPtr != endPtr ) {
 			if ( '\n' == *startPtr )
 				count++;
-		} ;
+		};
 	}
 	return count;
 }
@@ -53,7 +54,7 @@ searchInFileHorspool( const std::string& file, const std::string& text, const bo
 				std::string str = textLine( fileTextOriginal, searchRes, relCol );
 				pos.setLine( totNl );
 				pos.setColumn( relCol );
-				res.push_back( {str, pos} );
+				res.push_back( { str, pos } );
 				lSearchRes = searchRes;
 				searchRes += text.size();
 			}
@@ -68,7 +69,7 @@ searchInFileHorspool( const std::string& file, const std::string& text, const bo
 				std::string str = textLine( fileText, searchRes, relCol );
 				pos.setLine( totNl );
 				pos.setColumn( relCol );
-				res.push_back( {str, pos} );
+				res.push_back( { str, pos } );
 				lSearchRes = searchRes;
 				searchRes += text.size();
 			}
@@ -81,14 +82,14 @@ static std::vector<ProjectSearch::ResultData::Result>
 searchInFile( const std::string& file, const std::string& text, const bool& caseSensitive ) {
 	std::vector<ProjectSearch::ResultData::Result> res;
 	TextDocument doc( false );
-	TextPosition pos{0, 0};
+	TextPosition pos{ 0, 0 };
 	String searchText( text );
 	if ( doc.loadFromFile( file ) ) {
 		do {
 			pos = doc.find( searchText, pos, caseSensitive );
 			if ( pos.isValid() ) {
 				const auto& l = doc.line( pos.line() ).getText();
-				res.push_back( {l.substr( 0, l.size() - 1 ).toUtf8(), pos} );
+				res.push_back( { l.substr( 0, l.size() - 1 ).toUtf8(), pos } );
 				pos = doc.positionOffset( pos, searchText.size() );
 			}
 		} while ( pos.isValid() );
@@ -102,7 +103,7 @@ void ProjectSearch::find( const std::vector<std::string> files, const std::strin
 	for ( auto& file : files ) {
 		auto fileRes = searchInFile( file, string, caseSensitive );
 		if ( !fileRes.empty() )
-			res.push_back( {file, fileRes} );
+			res.push_back( { file, fileRes } );
 	}
 	result( res );
 }
@@ -115,7 +116,7 @@ void ProjectSearch::findHorspool( const std::vector<std::string> files, const st
 	for ( auto& file : files ) {
 		auto fileRes = searchInFileHorspool( file, string, caseSensitive, occ );
 		if ( !fileRes.empty() )
-			res.push_back( {file, fileRes} );
+			res.push_back( { file, fileRes } );
 	}
 	result( res );
 }
@@ -123,7 +124,7 @@ void ProjectSearch::findHorspool( const std::vector<std::string> files, const st
 struct FindData {
 	Mutex resMutex;
 	Mutex countMutex;
-	int resCount{0};
+	int resCount{ 0 };
 	ProjectSearch::Result res;
 };
 
@@ -139,7 +140,7 @@ void ProjectSearch::find( const std::vector<std::string> files, std::string stri
 				auto fileRes = searchInFile( file, string, caseSensitive );
 				if ( !fileRes.empty() ) {
 					Lock l( findData->resMutex );
-					findData->res.push_back( {file, fileRes} );
+					findData->res.push_back( { file, fileRes } );
 				}
 			},
 			[result, findData] {
@@ -174,7 +175,7 @@ void ProjectSearch::findHorspool( const std::vector<std::string> files, std::str
 				auto fileRes = searchInFileHorspool( file, string, caseSensitive, occ );
 				if ( !fileRes.empty() ) {
 					Lock l( findData->resMutex );
-					findData->res.push_back( {file, fileRes} );
+					findData->res.push_back( { file, fileRes } );
 				}
 			},
 			[result, findData] {
