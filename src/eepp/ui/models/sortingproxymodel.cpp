@@ -240,8 +240,8 @@ void SortingProxyModel::sortMapping( SortingProxyModel::Mapping& mapping, int co
 
 	std::stable_sort(
 		mapping.sourceRows.begin(), mapping.sourceRows.end(), [&]( auto row1, auto row2 ) -> bool {
-			bool isLessThan = lessThan( source().index( row1, column, mapping.sourceParent ),
-										source().index( row2, column, mapping.sourceParent ) );
+			bool isLessThan = this->lessThan( mSource->index( row1, column, mapping.sourceParent ),
+											 mSource->index( row2, column, mapping.sourceParent ) );
 			return sortOrder == SortOrder::Ascending ? isLessThan : !isLessThan;
 		} );
 

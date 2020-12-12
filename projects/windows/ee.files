@@ -380,6 +380,7 @@
 ../../include/eepp/ui/uimenuseparator.hpp
 ../../include/eepp/ui/uimenusubmenu.hpp
 ../../include/eepp/ui/uimessagebox.hpp
+../../include/eepp/ui/uimultimodelview.hpp
 ../../include/eepp/ui/uinode.hpp
 ../../include/eepp/ui/uinodedrawable.hpp
 ../../include/eepp/ui/uipopupmenu.hpp
@@ -398,6 +399,7 @@
 ../../include/eepp/ui/uispinbox.hpp
 ../../include/eepp/ui/uisplitter.hpp
 ../../include/eepp/ui/uisprite.hpp
+../../include/eepp/ui/uistackwidget.hpp
 ../../include/eepp/ui/uistate.hpp
 ../../include/eepp/ui/uistyle.hpp
 ../../include/eepp/ui/uitab.hpp
@@ -854,6 +856,7 @@
 ../../src/eepp/ui/uimenuseparator.cpp
 ../../src/eepp/ui/uimenusubmenu.cpp
 ../../src/eepp/ui/uimessagebox.cpp
+../../src/eepp/ui/uimultimodelview.cpp
 ../../src/eepp/ui/uinode.cpp
 ../../src/eepp/ui/uinodedrawable.cpp
 ../../src/eepp/ui/uipopupmenu.cpp
@@ -872,6 +875,7 @@
 ../../src/eepp/ui/uispinbox.cpp
 ../../src/eepp/ui/uisplitter.cpp
 ../../src/eepp/ui/uisprite.cpp
+../../src/eepp/ui/uistackwidget.cpp
 ../../src/eepp/ui/uistate.cpp
 ../../src/eepp/ui/uistyle.cpp
 ../../src/eepp/ui/uitab.cpp
@@ -1013,10 +1017,14 @@
 ../../src/thirdparty/SOIL2/src/SOIL2/stbi_pkm.h
 ../../src/thirdparty/SOIL2/src/SOIL2/stbi_pvr_c.h
 ../../src/thirdparty/SOIL2/src/SOIL2/stbi_pvr.h
+../../src/tools/codeeditor/appconfig.cpp
+../../src/tools/codeeditor/appconfig.hpp
 ../../src/tools/codeeditor/autocompletemodule.cpp
 ../../src/tools/codeeditor/autocompletemodule.hpp
 ../../src/tools/codeeditor/codeeditor.cpp
 ../../src/tools/codeeditor/codeeditor.hpp
+../../src/tools/codeeditor/filesystemlistener.cpp
+../../src/tools/codeeditor/filesystemlistener.hpp
 ../../src/tools/codeeditor/ignorematcher.cpp
 ../../src/tools/codeeditor/ignorematcher.hpp
 ../../src/tools/codeeditor/projectdirectorytree.cpp
@@ -1025,6 +1033,8 @@
 ../../src/tools/codeeditor/projectsearch.hpp
 ../../src/tools/codeeditor/uicodeeditorsplitter.cpp
 ../../src/tools/codeeditor/uicodeeditorsplitter.hpp
+../../src/tools/codeeditor/uitreeviewglobalsearch.cpp
+../../src/tools/codeeditor/uitreeviewglobalsearch.hpp
 ../../src/tools/mapeditor/mapeditor.cpp
 ../../src/tools/textureatlaseditor/textureatlaseditor.cpp
 ../../src/tools/texturepacker/texturepacker.cpp
