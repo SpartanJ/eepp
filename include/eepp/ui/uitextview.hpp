@@ -29,7 +29,9 @@ class EE_API UITextView : public UIWidget {
 
 	UITextView* setFont( Graphics::Font* font );
 
-	Uint32 getCharacterSize() const;
+	Uint32 getFontSize() const;
+
+	Uint32 getPixelsFontSize() const;
 
 	UITextView* setFontSize( const Uint32& characterSize );
 
@@ -89,6 +91,8 @@ class EE_API UITextView : public UIWidget {
 	void setTextAlign( const Uint32& align );
 
 	UITextView* setFontFillColor( const Color& color, Uint32 from, Uint32 to );
+
+	const Text* getTextCache() const;
 
   protected:
 	Text* mTextCache;

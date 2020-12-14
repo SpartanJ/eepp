@@ -2,6 +2,7 @@
 #include <cmath>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/pixeldensity.hpp>
+#include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/renderer/opengl.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/text.hpp>
@@ -515,6 +516,14 @@ const Uint32& Text::getTabWidth() const {
 	return mTabWidth;
 }
 
+Color Text::getBackgroundColor() const {
+	return mBackgroundColor;
+}
+
+void Text::setBackgroundColor( const Color& backgroundColor ) {
+	mBackgroundColor = backgroundColor;
+}
+
 Rectf Text::getLocalBounds() {
 	ensureGeometryUpdate();
 
@@ -539,8 +548,8 @@ Float Text::getLineSpacing() {
 	return NULL != mFont ? mFont->getLineSpacing( mRealFontSize ) : 0;
 }
 
-void Text::draw( const Float& X, const Float& Y, const Vector2f& Scale, const Float& Rotation,
-				 BlendMode Effect, const OriginPoint& rotationCenter,
+void Text::draw( const Float& X, const Float& Y, const Vector2f& scale, const Float& rotation,
+				 BlendMode effect, const OriginPoint& rotationCenter,
 				 const OriginPoint& scaleCenter ) {
 	if ( NULL != mFont ) {
 		ensureColorUpdate();
@@ -551,17 +560,13 @@ void Text::draw( const Float& X, const Float& Y, const Vector2f& Scale, const Fl
 		if ( 0 == numvert )
 			return;
 
-		GlobalBatchRenderer::instance()->draw();
-		Texture* texture = mFont->getTexture( mRealFontSize );
-		if ( !texture )
-			return;
-		texture->bind();
-		BlendMode::setMode( Effect );
-
 		if ( mStyle & Shadow ) {
 			mStyle &= ~Shadow;
 
 			Color Col = getFillColor();
+			Color Back = getBackgroundColor();
+
+			setBackgroundColor( Color::Transparent );
 
 			if ( Col.a != 255 ) {
 				Color ShadowColor = getShadowColor();
@@ -576,15 +581,18 @@ void Text::draw( const Float& X, const Float& Y, const Vector2f& Scale, const Fl
 
 			Float pd = PixelDensity::dpToPx( 1 );
 
-			draw( X + pd, Y + pd, Scale, Rotation, Effect );
+			draw( X + pd, Y + pd, scale, rotation, effect );
 
 			mStyle |= Shadow;
 
+			setBackgroundColor( Back );
 			setFillColor( Col );
 			mColors.assign( mColors.size(), getFillColor() );
 		}
 
-		if ( Rotation != 0.0f || Scale != 1.0f ) {
+		GlobalBatchRenderer::instance()->draw();
+
+		if ( rotation != 0.0f || scale != 1.0f ) {
 			Float cX = ( Float )( (Int32)X );
 			Float cY = ( Float )( (Int32)Y );
 			Vector2f Center( cX + mCachedWidth * 0.5f, cY + getTextHeight() * 0.5f );
@@ -598,7 +606,7 @@ void Text::draw( const Float& X, const Float& Y, const Vector2f& Scale, const Fl
 				center = Vector2f( scaleCenter.x, scaleCenter.y );
 
 			GLi->translatef( center.x, center.y, 0.f );
-			GLi->scalef( Scale.x, Scale.y, 1.0f );
+			GLi->scalef( scale.x, scale.y, 1.0f );
 			GLi->translatef( -center.x, -center.y, 0.f );
 
 			center = Center;
@@ -608,11 +616,24 @@ void Text::draw( const Float& X, const Float& Y, const Vector2f& Scale, const Fl
 				center = Vector2f( rotationCenter.x, rotationCenter.y );
 
 			GLi->translatef( center.x, center.y, 0.f );
-			GLi->rotatef( Rotation, 0.0f, 0.0f, 1.0f );
+			GLi->rotatef( rotation, 0.0f, 0.0f, 1.0f );
 			GLi->translatef( -center.x + cX, -center.y + cY, 0.f );
 		} else {
 			GLi->translatef( X, Y, 0 );
 		}
+
+		if ( mBackgroundColor != Color::Transparent ) {
+			Primitives p;
+			p.setForceDraw( true );
+			p.setColor( mBackgroundColor );
+			p.drawRectangle( getLocalBounds() );
+		}
+
+		Texture* texture = mFont->getTexture( mRealFontSize );
+		if ( !texture )
+			return;
+		texture->bind();
+		BlendMode::setMode( effect );
 
 		Uint32 alloc = numvert * sizeof( VertexCoords );
 		Uint32 allocC = numvert * GLi->quadVertexs();
@@ -645,7 +666,7 @@ void Text::draw( const Float& X, const Float& Y, const Vector2f& Scale, const Fl
 			GLi->drawArrays( GL_TRIANGLES, 0, numvert );
 		}
 
-		if ( Rotation != 0.0f || Scale != 1.0f ) {
+		if ( rotation != 0.0f || scale != 1.0f ) {
 			GLi->popMatrix();
 		} else {
 			GLi->translatef( -X, -Y, 0 );
@@ -859,8 +880,8 @@ void Text::ensureGeometryUpdate() {
 	// Update the bounding rectangle
 	mBounds.Left = minX;
 	mBounds.Top = minY;
-	mBounds.Right = maxX - minX;
-	mBounds.Bottom = maxY - minY;
+	mBounds.Right = maxX;
+	mBounds.Bottom = maxY;
 }
 
 void Text::ensureColorUpdate() {

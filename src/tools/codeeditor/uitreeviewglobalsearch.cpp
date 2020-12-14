@@ -1,4 +1,5 @@
 #include "uitreeviewglobalsearch.hpp"
+#include <eepp/graphics/primitives.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/doc/syntaxtokenizer.hpp>
 #include <eepp/ui/uiscenenode.hpp>
@@ -42,6 +43,8 @@ UIPushButton* UITreeViewCellGlobalSearch::updateText( const std::string& text ) 
 			mTextBox->setFontFillColor( pp->getLineNumColor(), from, to );
 		}
 
+		mSearchStrPos = { text.find( pp->getSearchStr() ), pp->getSearchStr().size() };
+
 		auto tokens =
 			SyntaxTokenizer::tokenize( styleDef, text, SYNTAX_TOKENIZER_STATE_NONE, to ).first;
 
@@ -53,4 +56,45 @@ UIPushButton* UITreeViewCellGlobalSearch::updateText( const std::string& text ) 
 		}
 	}
 	return this;
+}
+
+static Float getTextWidth( Float glyphWidth, Uint32 tabWidth, const String& line ) {
+	size_t len = line.length();
+	Float x = 0;
+	for ( size_t i = 0; i < len; i++ )
+		x += ( line[i] == '\t' ) ? glyphWidth * tabWidth : glyphWidth;
+	return x;
+}
+
+static Float getXOffsetCol( Float glyphWidth, Uint32 tabWidth, const String& line, Int64 col ) {
+	Float x = 0;
+	for ( auto i = 0; i < col; i++ ) {
+		if ( line[i] == '\t' ) {
+			x += glyphWidth * tabWidth;
+		} else if ( line[i] != '\n' && line[i] != '\r' ) {
+			x += glyphWidth;
+		}
+	}
+	return x;
+}
+
+void UITreeViewCellGlobalSearch::draw() {
+	UITreeViewCell::draw();
+	if ( getCurIndex().internalId() != -1 ) {
+		UITreeViewGlobalSearch* pp = getParent()->getParent()->asType<UITreeViewGlobalSearch>();
+		if ( mSearchStrPos.first != std::string::npos && mSearchStrPos.second > 0 ) {
+			auto hspace =
+				mTextBox->getFont()->getGlyph( L' ', mTextBox->getPixelsFontSize(), false ).advance;
+			Primitives p;
+			p.setColor( pp->getColorScheme().getEditorSyntaxStyle( "selection" ).color );
+			p.drawRectangle(
+				Rectf( { mScreenPos.x + mTextBox->getPixelsPosition().x +
+							 getXOffsetCol( hspace, mTextBox->getTextCache()->getTabWidth(),
+											mTextBox->getText(), mSearchStrPos.first ),
+						 mScreenPos.y + mTextBox->getPixelsPosition().y },
+					   Sizef( getTextWidth( hspace, mTextBox->getTextCache()->getTabWidth(),
+											pp->getSearchStr() ),
+							  mTextBox->getPixelsSize().getHeight() ) ) );
+		}
+	}
 }

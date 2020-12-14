@@ -57,6 +57,10 @@ class EE_API SyntaxDefinition {
 
 	SyntaxDefinition& setHeaders( const std::vector<std::string>& headers );
 
+	void clearPatterns();
+
+	void clearSymbols();
+
   protected:
 	std::string mLanguageName;
 	std::vector<std::string> mFiles;

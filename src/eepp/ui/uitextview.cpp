@@ -113,8 +113,12 @@ UITextView* UITextView::setFont( Graphics::Font* font ) {
 	return this;
 }
 
-Uint32 UITextView::getCharacterSize() const {
+Uint32 UITextView::getFontSize() const {
 	return mTextCache->getCharacterSize();
+}
+
+Uint32 UITextView::getPixelsFontSize() const {
+	return mTextCache->getCharacterSizePx();
 }
 
 UITextView* UITextView::setFontSize( const Uint32& characterSize ) {
@@ -221,6 +225,10 @@ UITextView* UITextView::setFontFillColor( const Color& color, Uint32 from, Uint3
 	mTextCache->setFillColor( newColor, from, to );
 	invalidateDraw();
 	return this;
+}
+
+const Text* UITextView::getTextCache() const {
+	return mTextCache;
 }
 
 const Color& UITextView::getFontShadowColor() const {
@@ -688,7 +696,7 @@ std::string UITextView::getPropertyString( const PropertyDefinition* propertyDef
 		case PropertyId::FontFamily:
 			return NULL != getFont() ? getFont()->getName() : "";
 		case PropertyId::FontSize:
-			return String::format( "%ddp", getCharacterSize() );
+			return String::format( "%ddp", getFontSize() );
 		case PropertyId::FontStyle:
 			return Text::styleFlagToString( getFontStyle() );
 		case PropertyId::TextStrokeWidth:

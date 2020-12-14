@@ -100,6 +100,14 @@ SyntaxDefinition& SyntaxDefinition::setHeaders( const std::vector<std::string>& 
 	return *this;
 }
 
+void SyntaxDefinition::clearPatterns() {
+	mPatterns.clear();
+}
+
+void SyntaxDefinition::clearSymbols() {
+	mSymbols.clear();
+}
+
 const std::string& SyntaxDefinition::getLanguageName() const {
 	return mLanguageName;
 }

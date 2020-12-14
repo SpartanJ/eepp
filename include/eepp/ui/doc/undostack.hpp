@@ -72,7 +72,7 @@ using UndoStackContainer = std::deque<TextUndoCommand*>;
 
 class EE_API UndoStack {
   public:
-	UndoStack( TextDocument* owner, const Uint32& maxStackSize = 1000 );
+	UndoStack( TextDocument* owner, const Uint32& maxStackSize = 10000 );
 
 	~UndoStack();
 

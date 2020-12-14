@@ -95,8 +95,8 @@ class EE_API Text {
 	Float getLineSpacing();
 
 	/** Draw the cached text on screen */
-	void draw( const Float& X, const Float& Y, const Vector2f& Scale = Vector2f::One,
-			   const Float& Rotation = 0, BlendMode Effect = BlendAlpha,
+	void draw( const Float& X, const Float& Y, const Vector2f& scale = Vector2f::One,
+			   const Float& rotation = 0, BlendMode effect = BlendAlpha,
 			   const OriginPoint& rotationCenter = OriginPoint::OriginCenter,
 			   const OriginPoint& scaleCenter = OriginPoint::OriginCenter );
 
@@ -144,6 +144,12 @@ class EE_API Text {
 	/** @return The tab character width */
 	const Uint32& getTabWidth() const;
 
+	/** @return The text background color */
+	Color getBackgroundColor() const;
+
+	/** Sets text background color. */
+	void setBackgroundColor( const Color& backgroundColor );
+
   protected:
 	struct VertexCoords {
 		Vector2f texCoords;
@@ -154,9 +160,10 @@ class EE_API Text {
 	Font* mFont;			///< FontTrueType used to display the string
 	unsigned int mFontSize; ///< Base size of characters, in pixels
 	unsigned int mRealFontSize;
-	Uint32 mStyle;			 ///< Text style (see Style enum)
-	Color mFillColor;		 ///< Text fill color
-	Color mOutlineColor;	 ///< Text outline color
+	Uint32 mStyle;		 ///< Text style (see Style enum)
+	Color mFillColor;	 ///< Text fill color
+	Color mOutlineColor; ///< Text outline color
+	Color mBackgroundColor{ Color::Transparent };
 	Float mOutlineThickness; ///< Thickness of the text's outline
 
 	mutable Rectf mBounds;			  ///< Bounding rectangle of the text (in local coordinates)
