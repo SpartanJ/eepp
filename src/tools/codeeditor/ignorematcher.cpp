@@ -165,6 +165,7 @@ bool GitIgnoreMatcher::parse() {
 		if ( pattern[0] == '#' )
 			continue;
 		pattern = String::rTrim( pattern, ' ' );
+		pattern = String::rTrim( pattern, '\r' );
 		if ( pattern[0] == '!' ) {
 			negates = true;
 			pattern = String::lTrim( pattern, '!' );
