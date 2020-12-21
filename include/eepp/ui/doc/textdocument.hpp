@@ -72,7 +72,7 @@ class EE_API TextDocument {
 
 	bool save( const std::string& path );
 
-	bool save( IOStream& stream );
+	bool save( IOStream& stream, bool keepUndoRedoStatus = false );
 
 	std::string getFilename() const;
 

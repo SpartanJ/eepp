@@ -50,6 +50,7 @@ struct CodeEditorConfig {
 	bool colorPreview{ false };
 	bool autoComplete{ true };
 	bool showDocInfo{ true };
+	bool linter{ true };
 	std::string autoCloseBrackets{ "" };
 	int indentWidth{ 4 };
 	int tabWidth{ 4 };

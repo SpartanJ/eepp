@@ -43,6 +43,11 @@ class UICodeEditorModule {
 	}
 	virtual bool onMouseOver( UICodeEditor*, const Vector2i&, const Uint32& ) { return false; }
 	virtual bool onMouseLeave( UICodeEditor*, const Vector2i&, const Uint32& ) { return false; }
+
+	virtual void drawBeforeLineText( UICodeEditor*, const Int64&, Vector2f, const Float&,
+									 const Float& ){};
+	virtual void drawAfterLineText( UICodeEditor*, const Int64&, Vector2f, const Float&,
+									const Float& ){};
 };
 
 class EE_API DocEvent : public Event {
@@ -411,13 +416,13 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	SyntaxHighlighter mHighlighter;
 	UIScrollBar* mVScrollBar;
 	UIScrollBar* mHScrollBar;
-	LastXOffset mLastXOffset{{0, 0}, 0.f};
+	LastXOffset mLastXOffset{ { 0, 0 }, 0.f };
 	KeyBindings mKeyBindings;
 	std::unordered_set<std::string> mUnlockedCmd;
 	Clock mLastDoubleClick;
-	Uint32 mLineBreakingColumn{100};
+	Uint32 mLineBreakingColumn{ 100 };
 	TextRange mMatchingBrackets;
-	Float mLongestLineWidth{0};
+	Float mLongestLineWidth{ 0 };
 	Time mFindLongestLineWidthUpdateFrequency;
 	Clock mLongestLineWidthLastUpdate;
 	String mHighlightWord;

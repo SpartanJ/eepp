@@ -257,7 +257,15 @@ void UICodeEditor::draw() {
 	}
 
 	for ( int i = lineRange.first; i <= lineRange.second; i++ ) {
+		for ( auto& module : mModules )
+			module->drawBeforeLineText( this, i, { startScroll.x, startScroll.y + lineHeight * i },
+										charSize, lineHeight );
+
 		drawLineText( i, { startScroll.x, startScroll.y + lineHeight * i }, charSize, lineHeight );
+
+		for ( auto& module : mModules )
+			module->drawAfterLineText( this, i, { startScroll.x, startScroll.y + lineHeight * i },
+									   charSize, lineHeight );
 	}
 
 	drawCursor( startScroll, lineHeight, cursor );

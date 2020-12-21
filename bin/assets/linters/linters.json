@@ -1,0 +1,19 @@
+[
+  {
+	"file_patterns": ["%.php$"],
+	"warning_pattern": "[%a ]+:%s+(.*)%s+in%s.*on%sline%s+(%d+)",
+	"warning_pattern_order": { "line": 2, "col": 0, "message": 1 },
+	"command": "php -l $FILENAME"
+  },
+  {
+	"file_patterns": ["%.js$", "%.ts$"],
+	"warning_pattern": "[^:]:(%d+):(%d+): ([^%[]+)%[([^\n]+)",
+	"warning_pattern_order": { "line": 1, "col": 2, "message": 3, "type": 4 },
+	"command": "eslint --no-ignore --format unix $FILENAME"
+  },
+  {
+	"file_patterns": ["%.lua$"],
+	"warning_pattern": "[^:]:(%d+):(%d+):[%s]?([^\n]+)",
+	"command": "luacheck $FILENAME --formatter=plain -g --no-max-line-length"
+  }
+]

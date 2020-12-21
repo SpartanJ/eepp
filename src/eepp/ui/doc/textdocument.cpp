@@ -330,7 +330,7 @@ bool TextDocument::save( const std::string& path ) {
 	return false;
 }
 
-bool TextDocument::save( IOStream& stream ) {
+bool TextDocument::save( IOStream& stream, bool keepUndoRedoStatus ) {
 	if ( !stream.isOpen() || mLines.empty() )
 		return false;
 	const std::string whitespaces( " \t\f\v\n\r" );
@@ -378,7 +378,8 @@ bool TextDocument::save( IOStream& stream ) {
 			stream.write( text.c_str(), text.size() );
 		}
 	}
-	cleanChangeId();
+	if ( !keepUndoRedoStatus )
+		cleanChangeId();
 	return true;
 }
 

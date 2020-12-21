@@ -90,7 +90,7 @@ void AutoCompleteModule::onRegister( UICodeEditor* editor ) {
 #endif
 		} ) );
 
-	mEditors.insert( {editor, listeners} );
+	mEditors.insert( { editor, listeners } );
 	mDocs.insert( editor->getDocumentRef().get() );
 	mEditorDocs[editor] = editor->getDocumentRef().get();
 	mDirty = true;
@@ -233,7 +233,7 @@ void AutoCompleteModule::pickSuggestion( UICodeEditor* editor ) {
 std::string AutoCompleteModule::getPartialSymbol( TextDocument* doc ) {
 	TextPosition end = doc->getSelection().end();
 	TextPosition start = doc->startOfWord( end );
-	return doc->getText( {start, end} ).toUtf8();
+	return doc->getText( { start, end } ).toUtf8();
 }
 
 void AutoCompleteModule::update( UICodeEditor* ) {
@@ -283,7 +283,7 @@ void AutoCompleteModule::postDraw( UICodeEditor* editor, const Vector2f& startSc
 		largestString = eemax<size_t>( largestString, editor->getTextWidth( suggestions[i] ) );
 
 	mBoxRect =
-		Rectf( Vector2f( cursorPos.x, cursorPos.y ),
+		Rectf( Vector2f( cursorPos.x, cursorPos.y ) - editor->getScreenPos(),
 			   Sizef( largestString + mBoxPadding.Left + mBoxPadding.Right, mRowHeight * max ) );
 
 	for ( size_t i = 0; i < max; i++ ) {
@@ -321,7 +321,7 @@ bool AutoCompleteModule::onMouseClick( UICodeEditor* editor, const Vector2i& pos
 
 	Vector2f localPos( editor->convertToNodeSpace( position.asFloat() ) );
 	if ( mBoxRect.contains( localPos ) ) {
-		localPos -= {mBoxRect.Left, mBoxRect.Top};
+		localPos -= { mBoxRect.Left, mBoxRect.Top };
 		mSuggestionIndex = localPos.y / mRowHeight;
 		editor->invalidateDraw();
 		return true;
@@ -433,7 +433,7 @@ static std::vector<std::string> fuzzyMatchSymbols( const AutoCompleteModule::Sym
 	int score;
 	for ( const auto& symbol : symbols ) {
 		if ( ( score = String::fuzzyMatch( symbol, match ) ) > 0 ) {
-			matchesMap.insert( {score, symbol} );
+			matchesMap.insert( { score, symbol } );
 		}
 	}
 	for ( auto& res : matchesMap ) {

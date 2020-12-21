@@ -94,6 +94,7 @@ struct SearchState {
 };
 
 class AutoCompleteModule;
+class LinterModule;
 
 class App : public UICodeEditorSplitter::Client {
   public:
@@ -181,6 +182,7 @@ class App : public UICodeEditorSplitter::Client {
 	Float mDisplayDPI;
 	std::string mResPath;
 	AutoCompleteModule* mAutoCompleteModule{ nullptr };
+	LinterModule* mLinterModule{ nullptr };
 	std::shared_ptr<ThreadPool> mThreadPool;
 	std::unique_ptr<ProjectDirectoryTree> mDirTree;
 	UITreeView* mProjectTreeView{ nullptr };
@@ -290,6 +292,8 @@ class App : public UICodeEditorSplitter::Client {
 	void onCodeEditorFocusChange( UICodeEditor* editor );
 
 	bool setAutoComplete( bool enable );
+
+	bool setLinter( bool enable );
 
 	void updateDocInfo( TextDocument& doc );
 

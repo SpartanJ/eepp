@@ -15,6 +15,7 @@ namespace EE { namespace UI { namespace Doc {
 
 // Color schemes are compatible with the lite (https://github.com/rxi/lite) color schemes.
 // But I also added:
+// "link" (link style)
 // "line_number_background" (the gutter background color)
 // "whitespace" (the whitespace color)
 // "line_break_column" (the right margin line column color)
@@ -23,40 +24,42 @@ namespace EE { namespace UI { namespace Doc {
 // "matching_search" (the background color drawn in the text matching the current searched text)
 // "suggestion" (the auto-complete suggestion box text and background color
 // "suggestion_selected" (the auto-complete selected suggestion box text and background color
+// "error" (error underline color)
+// "warning" (warning underline color)
 
 SyntaxColorScheme SyntaxColorScheme::getDefault() {
-	return {"lite",
-			{
-				{"normal", Color( "#e1e1e6" )},
-				{"symbol", Color( "#e1e1e6" )},
-				{"comment", Color( "#676b6f" )},
-				{"keyword", Color( "#E58AC9" )},
-				{"keyword2", Color( "#F77483" )},
-				{"number", Color( "#FFA94D" )},
-				{"literal", Color( "#FFA94D" )},
-				{"string", Color( "#f7c95c" )},
-				{"operator", Color( "#93DDFA" )},
-				{"function", Color( "#93DDFA" )},
-				{"link", {Color( "#93DDFA" ), Color::Transparent, Text::Underlined}},
-			},
-			{
-				{"background", Color( "#2e2e32" )},
-				{"text", Color( "#97979c" )},
-				{"caret", Color( "#93DDFA" )},
-				{"selection", Color( "#48484f" )},
-				{"line_highlight", Color( "#343438" )},
-				{"line_number", Color( "#525259" )},
-				{"line_number2", Color( "#83838f" )},
-				// eepp colors
-				{"line_number_background", Color( "#2e2e32" )},
-				{"whitespace", Color( "#54575b" )},
-				{"line_break_column", Color( "#54575b99" )},
-				{"matching_bracket", Color( "#FFFFFF33" )},
-				{"matching_selection", Color( "#FFFFFF33" )},
-				{"matching_search", Color( "#181b1e" )},
-				{"suggestion", {Color( "#97979c" ), Color( "#252529" ), Text::Regular}},
-				{"suggestion_selected", {Color( "#e1e1e6" ), Color( "#252529" ), Text::Regular}},
-			}};
+	return { "lite",
+			 {
+				 { "normal", Color( "#e1e1e6" ) },
+				 { "symbol", Color( "#e1e1e6" ) },
+				 { "comment", Color( "#676b6f" ) },
+				 { "keyword", Color( "#E58AC9" ) },
+				 { "keyword2", Color( "#F77483" ) },
+				 { "number", Color( "#FFA94D" ) },
+				 { "literal", Color( "#FFA94D" ) },
+				 { "string", Color( "#f7c95c" ) },
+				 { "operator", Color( "#93DDFA" ) },
+				 { "function", Color( "#93DDFA" ) },
+				 { "link", { Color( "#93DDFA" ), Color::Transparent, Text::Underlined } },
+			 },
+			 { { "background", Color( "#2e2e32" ) },
+			   { "text", Color( "#97979c" ) },
+			   { "caret", Color( "#93DDFA" ) },
+			   { "selection", Color( "#48484f" ) },
+			   { "line_highlight", Color( "#343438" ) },
+			   { "line_number", Color( "#525259" ) },
+			   { "line_number2", Color( "#83838f" ) },
+			   // eepp colors
+			   { "line_number_background", Color( "#2e2e32" ) },
+			   { "whitespace", Color( "#54575b" ) },
+			   { "line_break_column", Color( "#54575b99" ) },
+			   { "matching_bracket", Color( "#FFFFFF33" ) },
+			   { "matching_selection", Color( "#FFFFFF33" ) },
+			   { "matching_search", Color( "#181b1e" ) },
+			   { "suggestion", { Color( "#97979c" ), Color( "#252529" ), Text::Regular } },
+			   { "suggestion_selected", { Color( "#e1e1e6" ), Color( "#252529" ), Text::Regular } },
+			   { "error", { Color::Red } },
+			   { "warning", { Color::Yellow } } } };
 }
 
 std::vector<SyntaxColorScheme> SyntaxColorScheme::loadFromStream( IOStream& stream ) {
@@ -152,7 +155,7 @@ SyntaxColorScheme::SyntaxColorScheme( const std::string& name,
 									  const std::unordered_map<std::string, Style>& editorColors ) :
 	mName( name ), mSyntaxColors( syntaxColors ), mEditorColors( editorColors ) {}
 
-static const SyntaxColorScheme::Style StyleEmpty = {Color::White};
+static const SyntaxColorScheme::Style StyleEmpty = { Color::White };
 static const SyntaxColorScheme StyleDefault = SyntaxColorScheme::getDefault();
 
 const SyntaxColorScheme::Style& SyntaxColorScheme::getSyntaxStyle( const std::string& type ) const {
@@ -187,6 +190,10 @@ SyntaxColorScheme::getEditorSyntaxStyle( const std::string& type ) const {
 		return StyleDefault.getEditorSyntaxStyle( "suggestion" );
 	else if ( type == "suggestion_selected" )
 		return StyleDefault.getEditorSyntaxStyle( "suggestion_selected" );
+	else if ( type == "error" )
+		return StyleDefault.getEditorSyntaxStyle( "error" );
+	else if ( type == "warning" )
+		return StyleDefault.getEditorSyntaxStyle( "warning" );
 	return StyleEmpty;
 }
 

@@ -1,5 +1,6 @@
 #include "codeeditor.hpp"
 #include "autocompletemodule.hpp"
+#include "lintermodule.hpp"
 #include <algorithm>
 #include <args/args.hxx>
 
@@ -947,6 +948,7 @@ App::~App() {
 	saveConfig();
 	eeSAFE_DELETE( mEditorSplitter );
 	eeSAFE_DELETE( mAutoCompleteModule );
+	eeSAFE_DELETE( mLinterModule );
 	eeSAFE_DELETE( mConsole );
 	if ( mFileWatcher )
 		delete mFileWatcher;
@@ -1180,6 +1182,10 @@ UIMenu* App::createViewMenu() {
 		->setActive( mConfig.editor.autoComplete )
 		->setTooltipText( "Auto complete shows the completion popup as you type, so you can fill\n"
 						  "in long words by typing only a few characters." );
+	mViewMenu->addCheckBox( "Enable Linter" )
+		->setActive( mConfig.editor.linter )
+		->setTooltipText( "Use static code analysis tool used to flag programming errors, bugs,\n"
+						  "stylistic errors, and suspicious constructs." );
 	mViewMenu->add( "Line Breaking Column" );
 
 	mViewMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
@@ -1223,6 +1229,8 @@ UIMenu* App::createViewMenu() {
 			} );
 		} else if ( item->getText() == "Enable Auto Complete" ) {
 			setAutoComplete( item->asType<UIMenuCheckBox>()->isActive() );
+		} else if ( item->getText() == "Enable Linter" ) {
+			setLinter( item->asType<UIMenuCheckBox>()->isActive() );
 		} else if ( item->getText() == "Enable Color Preview" ) {
 			mConfig.editor.colorPreview = item->asType<UIMenuCheckBox>()->isActive();
 			mEditorSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
@@ -1908,6 +1916,12 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 
 	if ( config.autoComplete && mAutoCompleteModule )
 		editor->registerModule( mAutoCompleteModule );
+
+	if ( config.linter && !mLinterModule )
+		setLinter( config.linter );
+
+	if ( config.linter && mLinterModule )
+		editor->registerModule( mLinterModule );
 }
 
 bool App::setAutoComplete( bool enable ) {
@@ -1920,6 +1934,20 @@ bool App::setAutoComplete( bool enable ) {
 	}
 	if ( !enable && mAutoCompleteModule )
 		eeSAFE_DELETE( mAutoCompleteModule );
+	return false;
+}
+
+bool App::setLinter( bool enable ) {
+	mConfig.editor.linter = enable;
+	if ( enable && !mLinterModule ) {
+		mLinterModule =
+			eeNew( LinterModule, ( mResPath + "assets/linters/linters.json", mThreadPool ) );
+		mEditorSplitter->forEachEditor(
+			[&]( UICodeEditor* editor ) { editor->registerModule( mLinterModule ); } );
+		return true;
+	}
+	if ( !enable && mLinterModule )
+		eeSAFE_DELETE( mLinterModule );
 	return false;
 }
 

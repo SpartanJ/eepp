@@ -542,6 +542,10 @@ Uint32 Node::forceTextInput( const TextInputEvent& event ) {
 	return onTextInput( event );
 }
 
+const Vector2f& Node::getScreenPos() const {
+	return mScreenPos;
+}
+
 void Node::clipStart() {
 	if ( mVisible && isClipped() ) {
 		clipSmartEnable( mScreenPos.x, mScreenPos.y, mSize.getWidth(), mSize.getHeight() );
