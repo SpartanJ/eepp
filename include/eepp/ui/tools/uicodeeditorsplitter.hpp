@@ -89,6 +89,8 @@ class EE_API UICodeEditorSplitter {
 
 	void forEachDoc( std::function<void( TextDocument& doc )> run );
 
+	void forEachTabWidget( std::function<void( UITabWidget* )> run );
+
 	void zoomIn();
 
 	void zoomOut();
@@ -121,6 +123,10 @@ class EE_API UICodeEditorSplitter {
 
 	void forEachDocStoppable( std::function<bool( TextDocument& )> run );
 
+	bool getHideTabBarOnSingleTab() const;
+
+	void setHideTabBarOnSingleTab( bool hideTabBarOnSingleTab );
+
   protected:
 	UISceneNode* mUISceneNode{ nullptr };
 	UICodeEditor* mCurEditor{ nullptr };
@@ -128,6 +134,7 @@ class EE_API UICodeEditorSplitter {
 	std::string mCurrentColorScheme;
 	std::vector<UITabWidget*> mTabWidgets;
 	Client* mClient;
+	bool mHideTabBarOnSingleTab{ true };
 
 	UICodeEditorSplitter( UICodeEditorSplitter::Client* client, UISceneNode* sceneNode,
 						  const std::vector<SyntaxColorScheme>& colorSchemes,

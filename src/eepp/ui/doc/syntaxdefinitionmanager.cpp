@@ -186,7 +186,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 
 	// Python
 	add( { "Python",
-		   { "%.py$" },
+		   { "%.py$", "%.pyw$" },
 		   {
 			   { { "#", "\n" }, "comment" },
 			   { { "[ruU]?\"", "\"", "\\" }, "string" },

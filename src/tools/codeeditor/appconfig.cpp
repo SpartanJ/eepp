@@ -71,6 +71,7 @@ void AppConfig::load( std::string& confPath, std::string& keybindingsPath,
 	editor.autoComplete = ini.getValueB( "editor", "auto_complete", true );
 	editor.linter = ini.getValueB( "editor", "linter", true );
 	editor.showDocInfo = ini.getValueB( "editor", "show_doc_info", true );
+	editor.hideTabBarOnSingleTab = ini.getValueB( "editor", "hide_tab_bar_on_single_tab", true );
 }
 
 void AppConfig::save( const std::vector<std::string>& recentFiles,
@@ -115,6 +116,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "editor", "auto_complete", editor.autoComplete );
 	ini.setValueB( "editor", "linter", editor.linter );
 	ini.setValueB( "editor", "show_doc_info", editor.showDocInfo );
+	ini.setValueB( "editor", "hide_tab_bar_on_single_tab", editor.hideTabBarOnSingleTab );
 	ini.writeFile();
 	iniState.writeFile();
 }

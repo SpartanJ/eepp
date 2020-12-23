@@ -86,6 +86,7 @@ struct SearchState {
 	String text;
 	TextRange range = TextRange();
 	bool caseSensitive{ false };
+	bool wholeWord{ false };
 	void reset() {
 		editor = nullptr;
 		range = TextRange();

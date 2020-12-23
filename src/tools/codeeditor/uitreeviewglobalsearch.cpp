@@ -43,7 +43,15 @@ UIPushButton* UITreeViewCellGlobalSearch::updateText( const std::string& text ) 
 			mTextBox->setFontFillColor( pp->getLineNumColor(), from, to );
 		}
 
-		mSearchStrPos = { text.find( pp->getSearchStr() ), pp->getSearchStr().size() };
+		ModelIndex curIndex = getCurIndex();
+		ModelIndex index = pp->getModel()->index(
+			curIndex.row(), ProjectSearch::ResultModel::ColumnPosition, curIndex.parent() );
+		Variant variant = pp->getModel()->data( index, Model::Role::Custom );
+		Int64 iniPos = 0;
+		if ( variant.is( Variant::Type::Int64 ) )
+			iniPos = variant.asInt64();
+		String txt( text );
+		mSearchStrPos = { txt.find( pp->getSearchStr(), iniPos ), pp->getSearchStr().size() };
 
 		auto tokens =
 			SyntaxTokenizer::tokenize( styleDef, text, SYNTAX_TOKENIZER_STATE_NONE, to ).first;

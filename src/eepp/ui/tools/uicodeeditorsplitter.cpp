@@ -352,7 +352,7 @@ UITabWidget* UICodeEditorSplitter::createEditorWithTabWidget( Node* parent ) {
 	tabWidget->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
 	tabWidget->setParent( parent );
 	tabWidget->setTabsClosable( true );
-	tabWidget->setHideTabBarOnSingleTab( true );
+	tabWidget->setHideTabBarOnSingleTab( mHideTabBarOnSingleTab );
 	tabWidget->setAllowRearrangeTabs( true );
 	tabWidget->setAllowDragAndDropTabs( true );
 	tabWidget->addEventListener( Event::OnTabSelected, [&]( const Event* event ) {
@@ -408,6 +408,11 @@ void UICodeEditorSplitter::forEachDoc( std::function<void( TextDocument& )> run 
 		run( *doc );
 }
 
+void UICodeEditorSplitter::forEachTabWidget( std::function<void( UITabWidget* )> run ) {
+	for ( auto widget : mTabWidgets )
+		run( widget );
+}
+
 void UICodeEditorSplitter::forEachEditorStoppable( std::function<bool( UICodeEditor* )> run ) {
 	for ( auto tabWidget : mTabWidgets ) {
 		for ( size_t i = 0; i < tabWidget->getTabCount(); i++ ) {
@@ -429,6 +434,19 @@ void UICodeEditorSplitter::forEachDocStoppable( std::function<bool( TextDocument
 				return;
 			}
 		}
+	}
+}
+
+bool UICodeEditorSplitter::getHideTabBarOnSingleTab() const {
+	return mHideTabBarOnSingleTab;
+}
+
+void UICodeEditorSplitter::setHideTabBarOnSingleTab( bool hideTabBarOnSingleTab ) {
+	if ( hideTabBarOnSingleTab != mHideTabBarOnSingleTab ) {
+		mHideTabBarOnSingleTab = hideTabBarOnSingleTab;
+
+		for ( auto widget : mTabWidgets )
+			widget->setHideTabBarOnSingleTab( hideTabBarOnSingleTab );
 	}
 }
 

@@ -582,6 +582,7 @@ void App::initSearchBar() {
 	UITextInput* findInput = mSearchBarLayout->find<UITextInput>( "search_find" );
 	UITextInput* replaceInput = mSearchBarLayout->find<UITextInput>( "search_replace" );
 	UICheckBox* caseSensitiveChk = mSearchBarLayout->find<UICheckBox>( "case_sensitive" );
+	UICheckBox* wholeWordChk = mSearchBarLayout->find<UICheckBox>( "whole_word" );
 	findInput->addEventListener( Event::OnTextChanged, [&, findInput]( const Event* ) {
 		if ( mSearchState.editor && mEditorSplitter->editorExists( mSearchState.editor ) ) {
 			mSearchState.text = findInput->getText();
@@ -627,12 +628,17 @@ void App::initSearchBar() {
 		caseSensitiveChk->setChecked( !caseSensitiveChk->isChecked() );
 		mSearchState.caseSensitive = caseSensitiveChk->isChecked();
 	} );
+	mSearchBarLayout->addCommand( "change-whole-word", [&, wholeWordChk] {
+		wholeWordChk->setChecked( !wholeWordChk->isChecked() );
+		mSearchState.wholeWord = wholeWordChk->isChecked();
+	} );
 	mSearchBarLayout->getKeyBindings().addKeybindsString( {
 		{ "f3", "repeat-find" },
 		{ "ctrl+g", "repeat-find" },
 		{ "escape", "close-searchbar" },
 		{ "ctrl+r", "replace-all" },
 		{ "ctrl+s", "change-case" },
+		{ "ctrl+w", "change-whole-word" },
 	} );
 	addReturnListener( findInput, "repeat-find" );
 	addReturnListener( replaceInput, "find-and-replace" );
@@ -704,11 +710,12 @@ void App::initGlobalSearchBar() {
 	};
 	UIPushButton* searchButton = mGlobalSearchBarLayout->find<UIPushButton>( "global_search" );
 	UICheckBox* caseSensitiveChk = mGlobalSearchBarLayout->find<UICheckBox>( "case_sensitive" );
+	UICheckBox* wholeWordChk = mGlobalSearchBarLayout->find<UICheckBox>( "whole_word" );
 	UIWidget* searchBarClose = mGlobalSearchBarLayout->find<UIWidget>( "global_searchbar_close" );
 	mGlobalSearchInput = mGlobalSearchBarLayout->find<UITextInput>( "global_search_find" );
 	mGlobalSearchHistoryList =
 		mGlobalSearchBarLayout->find<UIDropDownList>( "global_search_history" );
-	mGlobalSearchBarLayout->addCommand( "search-in-files", [&, caseSensitiveChk] {
+	mGlobalSearchBarLayout->addCommand( "search-in-files", [&, caseSensitiveChk, wholeWordChk] {
 		if ( mDirTree && mDirTree->getFilesCount() > 0 && !mGlobalSearchInput->getText().empty() ) {
 			UILoader* loader = UILoader::New();
 			loader->setId( "loader" );
@@ -720,7 +727,7 @@ void App::initGlobalSearchBar() {
 								 mGlobalSearchTree->getSize() * 0.5f - loader->getSize() * 0.5f );
 			Clock* clock = eeNew( Clock, () );
 			std::string search( mGlobalSearchInput->getText().toUtf8() );
-			ProjectSearch::findHorspool(
+			ProjectSearch::find(
 				mDirTree->getFiles(), search,
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 				mThreadPool,
@@ -763,7 +770,7 @@ void App::initGlobalSearchBar() {
 						loader->close();
 					} );
 				},
-				caseSensitiveChk->isChecked() );
+				caseSensitiveChk->isChecked(), wholeWordChk->isChecked() );
 		}
 	} );
 	mGlobalSearchBarLayout->addCommand( "close-global-searchbar", [&] {
@@ -774,9 +781,13 @@ void App::initGlobalSearchBar() {
 	mGlobalSearchBarLayout->getKeyBindings().addKeybindsString( {
 		{ "escape", "close-global-searchbar" },
 		{ "ctrl+s", "change-case" },
+		{ "ctrl+w", "change-whole-word" },
 	} );
 	mGlobalSearchBarLayout->addCommand( "change-case", [&, caseSensitiveChk] {
 		caseSensitiveChk->setChecked( !caseSensitiveChk->isChecked() );
+	} );
+	mGlobalSearchBarLayout->addCommand( "change-whole-word", [&, wholeWordChk] {
+		wholeWordChk->setChecked( !wholeWordChk->isChecked() );
 	} );
 	mGlobalSearchInput->addEventListener( Event::OnPressEnter, [&]( const Event* ) {
 		if ( mGlobalSearchInput->hasFocus() ) {
@@ -863,6 +874,7 @@ void App::showFindView() {
 	mSearchState.range = TextRange();
 	mSearchState.caseSensitive =
 		mSearchBarLayout->find<UICheckBox>( "case_sensitive" )->isChecked();
+	mSearchState.wholeWord = mSearchBarLayout->find<UICheckBox>( "whole_word" )->isChecked();
 	mSearchBarLayout->setEnabled( true )->setVisible( true );
 
 	UITextInput* findInput = mSearchBarLayout->find<UITextInput>( "search_find" );
@@ -1186,6 +1198,9 @@ UIMenu* App::createViewMenu() {
 		->setActive( mConfig.editor.linter )
 		->setTooltipText( "Use static code analysis tool used to flag programming errors, bugs,\n"
 						  "stylistic errors, and suspicious constructs." );
+	mViewMenu->addCheckBox( "Hide tabbar on single tab" )
+		->setActive( mConfig.editor.hideTabBarOnSingleTab )
+		->setTooltipText( "Hides the tabbar if there's only one element in the tab widget." );
 	mViewMenu->add( "Line Breaking Column" );
 
 	mViewMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
@@ -1242,7 +1257,9 @@ UIMenu* App::createViewMenu() {
 				mDocInfo->setVisible( mConfig.editor.showDocInfo );
 			if ( mEditorSplitter->getCurEditor() )
 				updateDocInfo( mEditorSplitter->getCurEditor()->getDocument() );
-
+		} else if ( item->getText() == "Hide tabbar on single tab" ) {
+			mConfig.editor.hideTabBarOnSingleTab = item->asType<UIMenuCheckBox>()->isActive();
+			mEditorSplitter->setHideTabBarOnSingleTab( mConfig.editor.hideTabBarOnSingleTab );
 		} else if ( item->getText() == "Line Breaking Column" ) {
 			UIMessageBox* msgBox =
 				UIMessageBox::New( UIMessageBox::INPUT, "Set Line Breaking Column:\n"
@@ -2439,6 +2456,7 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 							<PushButton id="find_prev" layout_width="wrap_content" layout_height="18dp" text="Previous" margin-right="4dp" />
 							<PushButton id="find_next" layout_width="wrap_content" layout_height="18dp" text="Next" margin-right="4dp" />
 							<CheckBox id="case_sensitive" layout_width="wrap_content" layout_height="wrap_content" text="Case sensitive" selected="true" />
+							<CheckBox id="whole_word" layout_width="wrap_content" layout_height="wrap_content" text="Match Whole Word" selected="false" margin-left="8dp" visible="false" />
 							<RelativeLayout layout_width="0" layout_weight="1" layout_height="18dp">
 								<Widget id="searchbar_close" class="close_button" layout_width="wrap_content" layout_height="wrap_content" layout_gravity="center_vertical|right" margin-right="2dp" />
 							</RelativeLayout>
@@ -2461,6 +2479,7 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 							<TextInput id="global_search_find" layout_width="match_parent" layout_height="wrap_content" layout_height="18dp" padding="0" margin-bottom="2dp" />
 							<hbox layout_width="match_parent" layout_height="wrap_content">
 								<CheckBox id="case_sensitive" layout_width="wrap_content" layout_height="wrap_content" text="Case sensitive" selected="true" />
+								<CheckBox id="whole_word" layout_width="wrap_content" layout_height="wrap_content" text="Match Whole Word" selected="false" margin-left="8dp" />
 								<Widget layout_width="0" layout_weight="1" layout_height="match_parent" />
 								<TextView layout_width="wrap_content" layout_height="wrap_content" text="History:" margin-right="4dp" layout_height="18dp" />
 								<DropDownList id="global_search_history" layout_width="300dp" layout_height="18dp" margin-right="4dp" />
@@ -2551,6 +2570,7 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 			this, mUISceneNode,
 			SyntaxColorScheme::loadFromFile( mResPath + "assets/colorschemes/colorschemes.conf" ),
 			mInitColorScheme );
+		mEditorSplitter->setHideTabBarOnSingleTab( mConfig.editor.hideTabBarOnSingleTab );
 
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 		mFileWatcher = new efsw::FileWatcher();

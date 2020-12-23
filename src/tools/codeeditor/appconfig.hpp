@@ -51,6 +51,7 @@ struct CodeEditorConfig {
 	bool autoComplete{ true };
 	bool showDocInfo{ true };
 	bool linter{ true };
+	bool hideTabBarOnSingleTab{ true };
 	std::string autoCloseBrackets{ "" };
 	int indentWidth{ 4 };
 	int tabWidth{ 4 };

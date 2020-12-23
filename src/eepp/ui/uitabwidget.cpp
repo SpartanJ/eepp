@@ -25,6 +25,7 @@ UITabWidget::UITabWidget() :
 	mAllowDragAndDropTabs( false ),
 	mTabVerticalDragResistance( PixelDensity::dpToPx( 64 ) ) {
 	setHorizontalAlign( UI_HALIGN_CENTER );
+	clipEnable();
 
 	mTabBar = UIWidget::NewWithTag( "tabwidget::tabbar" );
 	mTabBar->setPixelsSize( mSize.getWidth(), mStyleConfig.TabHeight )
@@ -37,7 +38,6 @@ UITabWidget::UITabWidget() :
 						 mSize.getHeight() - PixelDensity::dpToPx( mStyleConfig.TabHeight ) )
 		->setParent( this )
 		->setPosition( 0, mStyleConfig.TabHeight );
-	mNodeContainer->clipEnable();
 
 	mTabScroll = UIScrollBar::NewHorizontalWithTag( "scrollbarmini" );
 	mTabScroll->setParent( this );

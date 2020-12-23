@@ -19,7 +19,7 @@ class ProjectSearch {
 	struct ResultData {
 		struct Result {
 			Result( const String& line, const TextPosition& pos ) : line( line ), position( pos ) {}
-			std::string line;
+			String line;
 			TextPosition position;
 		};
 		std::string file;
@@ -85,7 +85,10 @@ class ProjectSearch {
 								"%6lld      %s",
 								mResult[index.internalId()].results[index.row()].position.line() +
 									1,
-								mResult[index.internalId()].results[index.row()].line.c_str() ) );
+								mResult[index.internalId()]
+									.results[index.row()]
+									.line.toUtf8()
+									.c_str() ) );
 					}
 				}
 			} else if ( role == Role::Custom ) {
@@ -123,17 +126,11 @@ class ProjectSearch {
 	}
 
 	static void find( const std::vector<std::string> files, const std::string& string,
-					  ResultCb result, bool caseSensitive );
+					  ResultCb result, bool caseSensitive, bool wholeWord = false );
 
 	static void find( const std::vector<std::string> files, std::string string,
-					  std::shared_ptr<ThreadPool> pool, ResultCb result, bool caseSensitive );
-
-	static void findHorspool( const std::vector<std::string> files, const std::string& string,
-							  ResultCb result, bool caseSensitive );
-
-	static void findHorspool( const std::vector<std::string> files, std::string string,
-							  std::shared_ptr<ThreadPool> pool, ResultCb result,
-							  bool caseSensitive );
+					  std::shared_ptr<ThreadPool> pool, ResultCb result, bool caseSensitive,
+					  bool wholeWord = false );
 };
 
 #endif // PROJECTSEARCH_HPP
