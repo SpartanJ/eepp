@@ -271,7 +271,8 @@ bool App::findPrevText( SearchState& search ) {
 		from = from < range.start() ? range.start() : from;
 	}
 
-	TextPosition found = doc.findLast( search.text, from, search.caseSensitive, search.range );
+	TextPosition found =
+		doc.findLast( search.text, from, search.caseSensitive, search.wholeWord, search.range );
 	if ( found.isValid() ) {
 		doc.setSelection( { doc.positionOffset( found, search.text.size() ), found } );
 		return true;
@@ -301,14 +302,16 @@ bool App::findNextText( SearchState& search ) {
 		from = from < range.start() ? range.start() : from;
 	}
 
-	TextPosition found = doc.find( search.text, from, search.caseSensitive, range );
+	TextRange found =
+		doc.find( search.text, from, search.caseSensitive, search.wholeWord, search.type, range );
 	if ( found.isValid() ) {
-		doc.setSelection( { doc.positionOffset( found, search.text.size() ), found } );
+		doc.setSelection( found.reversed() );
 		return true;
 	} else {
-		found = doc.find( search.text, range.start(), search.caseSensitive, range );
+		found = doc.find( search.text, range.start(), search.caseSensitive, search.wholeWord,
+						  search.type, range );
 		if ( found.isValid() ) {
-			doc.setSelection( { doc.positionOffset( found, search.text.size() ), found } );
+			doc.setSelection( found.reversed() );
 			return true;
 		}
 	}
@@ -331,24 +334,12 @@ int App::replaceAll( SearchState& search, const String& replace ) {
 		search.text = mLastSearch;
 	if ( search.text.empty() )
 		return 0;
-
-	int count = 0;
 	search.editor->getDocument().setActiveClient( search.editor );
 	mLastSearch = search.text;
 	TextDocument& doc = search.editor->getDocument();
-	TextPosition found;
 	TextPosition startedPosition = doc.getSelection().start();
-	TextPosition from = doc.startOfDoc();
-	if ( search.range.isValid() )
-		from = search.range.normalized().start();
-	do {
-		found = doc.find( search.text, from, search.caseSensitive, search.range );
-		if ( found.isValid() ) {
-			doc.setSelection( { doc.positionOffset( found, search.text.size() ), found } );
-			from = doc.replaceSelection( replace );
-			count++;
-		}
-	} while ( found.isValid() );
+	int count = doc.replaceAll( search.text, replace, search.caseSensitive, search.wholeWord,
+								search.type, search.range );
 	doc.setSelection( startedPosition );
 	return count;
 }
@@ -583,6 +574,22 @@ void App::initSearchBar() {
 	UITextInput* replaceInput = mSearchBarLayout->find<UITextInput>( "search_replace" );
 	UICheckBox* caseSensitiveChk = mSearchBarLayout->find<UICheckBox>( "case_sensitive" );
 	UICheckBox* wholeWordChk = mSearchBarLayout->find<UICheckBox>( "whole_word" );
+	UICheckBox* luaPatternChk = mSearchBarLayout->find<UICheckBox>( "lua_pattern" );
+
+	caseSensitiveChk->addEventListener(
+		Event::OnValueChange, [&, caseSensitiveChk]( const Event* ) {
+			mSearchState.caseSensitive = caseSensitiveChk->isChecked();
+		} );
+
+	wholeWordChk->addEventListener( Event::OnValueChange, [&, wholeWordChk]( const Event* ) {
+		mSearchState.wholeWord = wholeWordChk->isChecked();
+	} );
+
+	luaPatternChk->addEventListener( Event::OnValueChange, [&, luaPatternChk]( const Event* ) {
+		mSearchState.type = luaPatternChk->isChecked() ? TextDocument::FindReplaceType::LuaPattern
+													   : TextDocument::FindReplaceType::Normal;
+	} );
+
 	findInput->addEventListener( Event::OnTextChanged, [&, findInput]( const Event* ) {
 		if ( mSearchState.editor && mEditorSplitter->editorExists( mSearchState.editor ) ) {
 			mSearchState.text = findInput->getText();
@@ -626,20 +633,20 @@ void App::initSearchBar() {
 	} );
 	mSearchBarLayout->addCommand( "change-case", [&, caseSensitiveChk] {
 		caseSensitiveChk->setChecked( !caseSensitiveChk->isChecked() );
-		mSearchState.caseSensitive = caseSensitiveChk->isChecked();
 	} );
 	mSearchBarLayout->addCommand( "change-whole-word", [&, wholeWordChk] {
 		wholeWordChk->setChecked( !wholeWordChk->isChecked() );
-		mSearchState.wholeWord = wholeWordChk->isChecked();
 	} );
-	mSearchBarLayout->getKeyBindings().addKeybindsString( {
-		{ "f3", "repeat-find" },
-		{ "ctrl+g", "repeat-find" },
-		{ "escape", "close-searchbar" },
-		{ "ctrl+r", "replace-all" },
-		{ "ctrl+s", "change-case" },
-		{ "ctrl+w", "change-whole-word" },
+	mSearchBarLayout->addCommand( "toggle-lua-pattern", [&, luaPatternChk] {
+		luaPatternChk->setChecked( !luaPatternChk->isChecked() );
 	} );
+	mSearchBarLayout->getKeyBindings().addKeybindsString( { { "f3", "repeat-find" },
+															{ "ctrl+g", "repeat-find" },
+															{ "escape", "close-searchbar" },
+															{ "ctrl+r", "replace-all" },
+															{ "ctrl+s", "change-case" },
+															{ "ctrl+w", "change-whole-word" },
+															{ "ctrl+l", "toggle-lua-pattern" } } );
 	addReturnListener( findInput, "repeat-find" );
 	addReturnListener( replaceInput, "find-and-replace" );
 	addClickListener( mSearchBarLayout->find<UIPushButton>( "find_prev" ), "find-prev" );
@@ -2451,12 +2458,15 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 						<TextInput id="search_find" layout_width="match_parent" layout_height="18dp" padding="0" margin-bottom="2dp" />
 						<TextInput id="search_replace" layout_width="match_parent" layout_height="18dp" padding="0" />
 					</vbox>
+					<vbox layout_width="wrap_content" layout_height="wrap_content" margin-right="4dp">
+						<CheckBox id="case_sensitive" layout_width="wrap_content" layout_height="wrap_content" text="Case sensitive" selected="true" />
+						<CheckBox id="whole_word" layout_width="wrap_content" layout_height="wrap_content" text="Match Whole Word" selected="false" />
+						<CheckBox id="lua_pattern" layout_width="wrap_content" layout_height="wrap_content" text="Lua Pattern" selected="false" />
+					</vbox>
 					<vbox layout_width="wrap_content" layout_height="wrap_content">
 						<hbox layout_width="wrap_content" layout_height="wrap_content" margin-bottom="2dp">
 							<PushButton id="find_prev" layout_width="wrap_content" layout_height="18dp" text="Previous" margin-right="4dp" />
 							<PushButton id="find_next" layout_width="wrap_content" layout_height="18dp" text="Next" margin-right="4dp" />
-							<CheckBox id="case_sensitive" layout_width="wrap_content" layout_height="wrap_content" text="Case sensitive" selected="true" />
-							<CheckBox id="whole_word" layout_width="wrap_content" layout_height="wrap_content" text="Match Whole Word" selected="false" margin-left="8dp" visible="false" />
 							<RelativeLayout layout_width="0" layout_weight="1" layout_height="18dp">
 								<Widget id="searchbar_close" class="close_button" layout_width="wrap_content" layout_height="wrap_content" layout_gravity="center_vertical|right" margin-right="2dp" />
 							</RelativeLayout>

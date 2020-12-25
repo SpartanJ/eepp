@@ -12,6 +12,7 @@ class EE_API TextRange {
 		mStart( start ), mEnd( end ) {}
 
 	bool isValid() const { return mStart.isValid() && mEnd.isValid(); }
+
 	void clear() {
 		mStart = {};
 		mEnd = {};
@@ -26,6 +27,8 @@ class EE_API TextRange {
 	const TextPosition& end() const { return mEnd; }
 
 	TextRange normalized() const { return TextRange( normalizedStart(), normalizedEnd() ); }
+
+	TextRange reversed() { return TextRange( mEnd, mStart ); }
 
 	void setStart( const TextPosition& position ) { mStart = position; }
 

@@ -145,6 +145,10 @@ bool String::isLetter( const int& value ) {
 			 ( value != 215 ) && ( value != 247 ) );
 }
 
+bool String::isAlphaNum( const int& value ) {
+	return isLetter( value ) || isNumber( value );
+}
+
 bool String::isHexNotation( const std::string& value, const std::string& withPrefix ) {
 	if ( !withPrefix.empty() && !String::startsWith( value, withPrefix ) ) {
 		return false;
@@ -1163,6 +1167,19 @@ String operator+( const String& left, const String& right ) {
 	string += right;
 
 	return string;
+}
+
+bool String::isWholeWord( const std::string& haystack, const std::string& needle,
+						  const Int64& startPos ) {
+	return ( 0 == startPos || !( std::isalnum( haystack[startPos - 1] ) ) ) &&
+		   ( startPos + needle.size() >= haystack.size() ||
+			 !( std::isalnum( haystack[startPos + needle.size()] ) ) );
+}
+
+bool String::isWholeWord( const String& haystack, const String& needle, const Int64& startPos ) {
+	return ( 0 == startPos || !( isAlphaNum( haystack[startPos - 1] ) ) ) &&
+		   ( startPos + needle.size() >= haystack.size() ||
+			 !( isAlphaNum( haystack[startPos + needle.size()] ) ) );
 }
 
 } // namespace EE

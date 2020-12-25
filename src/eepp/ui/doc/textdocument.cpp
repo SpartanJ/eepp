@@ -1235,10 +1235,31 @@ void TextDocument::setCommand( const std::string& command, TextDocument::Documen
 	mCommands[command] = func;
 }
 
-TextPosition TextDocument::find( String text, TextPosition from, const bool& caseSensitive,
-								 TextRange restrictRange ) {
+static std::pair<size_t, size_t> findType( const String& str, const String& findStr,
+										   const TextDocument::FindReplaceType& type ) {
+	switch ( type ) {
+		case TextDocument::FindReplaceType::LuaPattern: {
+			LuaPattern words( findStr );
+			int start, end = 0;
+			words.find( str, start, end );
+			if ( start < 0 )
+				return { String::StringType::npos, String::StringType::npos };
+			else
+				return { start, end };
+		}
+		case TextDocument::FindReplaceType::Normal:
+		default: {
+			size_t res = str.find( findStr );
+			return { res, String::InvalidPos == res ? res : res + findStr.size() };
+		}
+	}
+}
+
+TextRange TextDocument::find( String text, TextPosition from, const bool& caseSensitive,
+							  const bool& wholeWord, const FindReplaceType& type,
+							  TextRange restrictRange ) {
 	if ( text.empty() )
-		return TextPosition();
+		return TextRange();
 	from = sanitizePosition( from );
 
 	TextPosition to = endOfDoc();
@@ -1246,38 +1267,42 @@ TextPosition TextDocument::find( String text, TextPosition from, const bool& cas
 		restrictRange = sanitizeRange( restrictRange.normalized() );
 		to = restrictRange.end();
 		if ( from < restrictRange.start() || from > restrictRange.end() )
-			return TextPosition();
+			return TextRange();
 	}
 
 	if ( !caseSensitive )
 		text.toLower();
 
 	for ( Int64 i = from.line(); i <= to.line(); i++ ) {
-		size_t col;
+		std::pair<size_t, size_t> col;
 		if ( i == from.line() ) {
 			col = caseSensitive
-					  ? line( i ).getText().substr( from.column() ).find( text )
-					  : String::toLower( line( i ).getText() ).substr( from.column() ).find( text );
-			if ( String::StringType::npos != col )
-				col += from.column();
+					  ? findType( line( i ).getText().substr( from.column() ), text, type )
+					  : findType( String::toLower( line( i ).getText() ).substr( from.column() ),
+								  text, type );
+			if ( String::StringType::npos != col.first ) {
+				col.first += from.column();
+				col.second += from.column();
+			}
 		} else if ( i == to.line() && to != endOfDoc() ) {
-			col =
-				caseSensitive
-					? line( i ).getText().substr( 0, to.column() ).find( text )
-					: String::toLower( line( i ).getText() ).substr( 0, to.column() ).find( text );
+			col = caseSensitive
+					  ? findType( line( i ).getText().substr( 0, to.column() ), text, type )
+					  : findType( String::toLower( line( i ).getText() ).substr( 0, to.column() ),
+								  text, type );
 		} else {
-			col = caseSensitive ? line( i ).getText().find( text )
-								: String::toLower( line( i ).getText() ).find( text );
+			col = caseSensitive ? findType( line( i ).getText(), text, type )
+								: findType( String::toLower( line( i ).getText() ), text, type );
 		}
-		if ( String::StringType::npos != col ) {
-			return { (Int64)i, (Int64)col };
+		if ( String::StringType::npos != col.first &&
+			 ( !wholeWord || String::isWholeWord( line( i ).getText(), text, col.first ) ) ) {
+			return { { (Int64)i, (Int64)col.first }, { (Int64)i, (Int64)col.second } };
 		}
 	}
-	return TextPosition();
+	return TextRange();
 }
 
 TextPosition TextDocument::findLast( String text, TextPosition from, const bool& caseSensitive,
-									 TextRange restrictRange ) {
+									 const bool& wholeWord, TextRange restrictRange ) {
 	if ( text.empty() )
 		return TextPosition();
 	from = sanitizePosition( from );
@@ -1309,11 +1334,53 @@ TextPosition TextDocument::findLast( String text, TextPosition from, const bool&
 			col = caseSensitive ? line( i ).getText().rfind( text )
 								: String::toLower( line( i ).getText() ).rfind( text );
 		}
-		if ( String::StringType::npos != col ) {
+		if ( String::StringType::npos != col &&
+			 ( !wholeWord || String::isWholeWord( line( i ).getText(), text, col ) ) ) {
 			return { (Int64)i, (Int64)col };
 		}
 	}
 	return TextPosition();
+}
+
+std::vector<TextRange> TextDocument::findAll( const String& text, const bool& caseSensitive,
+											  const bool& wholeWord, const FindReplaceType& type,
+											  TextRange restrictRange ) {
+	std::vector<TextRange> all;
+	TextRange found;
+	TextPosition from = startOfDoc();
+	if ( restrictRange.isValid() )
+		from = restrictRange.normalized().start();
+	do {
+		found = find( text, from, caseSensitive, wholeWord, type, restrictRange );
+		if ( found.isValid() ) {
+			from = found.end();
+			all.push_back( found );
+		}
+	} while ( found.isValid() );
+	return all;
+}
+
+int TextDocument::replaceAll( const String& text, const String& replace, const bool& caseSensitive,
+							  const bool& wholeWord, const FindReplaceType& type,
+							  TextRange restrictRange ) {
+	if ( text.empty() )
+		return 0;
+	int count = 0;
+	TextRange found;
+	TextPosition startedPosition = getSelection().start();
+	TextPosition from = startOfDoc();
+	if ( restrictRange.isValid() )
+		from = restrictRange.normalized().start();
+	do {
+		found = find( text, from, caseSensitive, wholeWord, type, restrictRange );
+		if ( found.isValid() ) {
+			setSelection( found );
+			from = replaceSelection( replace );
+			count++;
+		}
+	} while ( found.isValid() );
+	setSelection( startedPosition );
+	return count;
 }
 
 TextPosition TextDocument::replaceSelection( const String& replace ) {
@@ -1325,16 +1392,14 @@ TextPosition TextDocument::replaceSelection( const String& replace ) {
 }
 
 TextPosition TextDocument::replace( String search, const String& replace, TextPosition from,
-									const bool& caseSensitive, TextRange restrictRange ) {
-	TextPosition start( find( search, from, caseSensitive, restrictRange ) );
-	if ( start.isValid() ) {
-		TextPosition end = positionOffset( start, search.size() );
-		if ( end.isValid() ) {
-			setSelection( { start, end } );
-			deleteTo( 0 );
-			textInput( replace );
-			return end;
-		}
+									const bool& caseSensitive, const bool& wholeWord,
+									const FindReplaceType& type, TextRange restrictRange ) {
+	TextRange found( find( search, from, caseSensitive, wholeWord, type, restrictRange ) );
+	if ( found.isValid() ) {
+		setSelection( found );
+		deleteTo( 0 );
+		textInput( replace );
+		return found.end();
 	}
 	return TextPosition();
 }

@@ -31,6 +31,8 @@ class EE_API TextDocument {
 
 	enum class LineEnding { LF, CRLF };
 
+	enum class FindReplaceType { Normal, LuaPattern };
+
 	class EE_API Client {
 	  public:
 		virtual ~Client();
@@ -247,17 +249,31 @@ class EE_API TextDocument {
 
 	void setCommand( const std::string& command, DocumentCommand func );
 
-	TextPosition find( String text, TextPosition from = { 0, 0 }, const bool& caseSensitive = true,
-					   TextRange restrictRange = TextRange() );
+	TextRange find( String text, TextPosition from = { 0, 0 }, const bool& caseSensitive = true,
+					const bool& wholeWord = false,
+					const FindReplaceType& type = FindReplaceType::Normal,
+					TextRange restrictRange = TextRange() );
 
 	TextPosition findLast( String text, TextPosition from = { 0, 0 },
-						   const bool& caseSensitive = true,
+						   const bool& caseSensitive = true, const bool& wholeWord = false,
 						   TextRange restrictRange = TextRange() );
+
+	std::vector<TextRange> findAll( const String& text, const bool& caseSensitive = true,
+									const bool& wholeWord = false,
+									const FindReplaceType& type = FindReplaceType::Normal,
+									TextRange restrictRange = TextRange() );
+
+	int replaceAll( const String& text, const String& replace, const bool& caseSensitive = true,
+					const bool& wholeWord = false,
+					const FindReplaceType& type = FindReplaceType::Normal,
+					TextRange restrictRange = TextRange() );
 
 	TextPosition replaceSelection( const String& replace );
 
 	TextPosition replace( String search, const String& replace, TextPosition from = { 0, 0 },
-						  const bool& caseSensitive = true, TextRange restrictRange = TextRange() );
+						  const bool& caseSensitive = true, const bool& wholeWord = false,
+						  const FindReplaceType& type = FindReplaceType::Normal,
+						  TextRange restrictRange = TextRange() );
 
 	String getIndentString();
 

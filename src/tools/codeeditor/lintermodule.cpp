@@ -28,7 +28,7 @@ LinterModule::LinterModule( const std::string& lintersPath, std::shared_ptr<Thre
 
 LinterModule::~LinterModule() {
 	mClosing = true;
-	for ( auto editor : mEditors ) {
+	for ( const auto& editor : mEditors ) {
 		for ( auto listener : editor.second )
 			editor.first->removeEventListener( listener );
 		editor.first->unregisterModule( this );
@@ -294,8 +294,12 @@ void LinterModule::drawAfterLineText( UICodeEditor* editor, const Int64& index, 
 	const String& text = doc->line( index ).getText();
 	size_t minCol = text.find_first_not_of( " \t\f\v\n\r", match.pos.column() );
 	if ( minCol == String::InvalidPos )
-		match.pos.column();
+		minCol = match.pos.column();
 	minCol = std::max( (Int64)minCol, match.pos.column() );
+	if ( minCol >= text.size() )
+		minCol = match.pos.column();
+	if ( minCol >= text.size() )
+		minCol = text.size() - 1;
 
 	std::string str( text.substr( minCol ).size() - 1, '~' );
 	String string( str );
@@ -312,7 +316,7 @@ bool LinterModule::onMouseMove( UICodeEditor* editor, const Vector2i& pos, const
 	auto it = mMatches.find( editor->getDocumentRef().get() );
 	if ( it != mMatches.end() ) {
 		Vector2f localPos( editor->convertToNodeSpace( pos.asFloat() ) );
-		for ( auto matchIt : it->second ) {
+		for ( const auto& matchIt : it->second ) {
 			auto& match = matchIt.second;
 			if ( match.box.contains( localPos ) ) {
 				editor->setTooltipText( match.text );

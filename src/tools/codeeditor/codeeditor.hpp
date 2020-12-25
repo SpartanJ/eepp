@@ -87,6 +87,7 @@ struct SearchState {
 	TextRange range = TextRange();
 	bool caseSensitive{ false };
 	bool wholeWord{ false };
+	TextDocument::FindReplaceType type{ TextDocument::FindReplaceType::Normal };
 	void reset() {
 		editor = nullptr;
 		range = TextRange();

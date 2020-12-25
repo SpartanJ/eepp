@@ -88,8 +88,18 @@ class EE_API String {
 	/** @return If the value passed is a letter */
 	static bool isLetter( const int& value );
 
+	/** @return If the value passed is a letter or a number */
+	static bool isAlphaNum( const int& value );
+
 	/** @return If the string is a representation of a hexa number */
 	static bool isHexNotation( const std::string& value, const std::string& withPrefix = "" );
+
+	/** @return If the needle substring, found starting at startPos is a whole-word. */
+	static bool isWholeWord( const std::string& haystack, const std::string& needle,
+							 const Int64& startPos );
+
+	/** @return If the needle substring, found starting at startPos is a whole-word. */
+	static bool isWholeWord( const String& haystack, const String& needle, const Int64& startPos );
 
 	/** Split a String and hold it on a vector */
 	static std::vector<String> split( const String& str, const StringBaseType& delim = '\n',

@@ -33,13 +33,6 @@ static String textLine( const std::string& fileText, const size_t& fromPos, size
 	return fileText.substr( start, end - start );
 }
 
-static bool isWholeWord( const std::string& fileText, const std::string& text,
-						 const Int64& searchRes ) {
-	return ( 0 == searchRes || !( std::isalnum( fileText[searchRes - 1] ) ) ) &&
-		   ( searchRes + text.size() >= fileText.size() ||
-			 !( std::isalnum( fileText[searchRes + text.size()] ) ) );
-}
-
 static std::vector<ProjectSearch::ResultData::Result>
 searchInFileHorspool( const std::string& file, const std::string& text, const bool& caseSensitive,
 					  const bool& wholeWord, const String::BMH::OccTable& occ ) {
@@ -55,7 +48,7 @@ searchInFileHorspool( const std::string& file, const std::string& text, const bo
 		do {
 			searchRes = String::BMH::find( fileText, text, searchRes, occ );
 			if ( searchRes != -1 ) {
-				if ( wholeWord && !isWholeWord( fileText, text, searchRes ) ) {
+				if ( wholeWord && !String::isWholeWord( fileText, text, searchRes ) ) {
 					lSearchRes = searchRes;
 					searchRes += text.size();
 					continue;
@@ -75,7 +68,7 @@ searchInFileHorspool( const std::string& file, const std::string& text, const bo
 		do {
 			searchRes = String::BMH::find( fileText, text, searchRes, occ );
 			if ( searchRes != -1 ) {
-				if ( wholeWord && !isWholeWord( fileText, text, searchRes ) ) {
+				if ( wholeWord && !String::isWholeWord( fileText, text, searchRes ) ) {
 					lSearchRes = searchRes;
 					searchRes += text.size();
 					continue;
