@@ -43,15 +43,27 @@ UIPushButton* UITreeViewCellGlobalSearch::updateText( const std::string& text ) 
 			mTextBox->setFontFillColor( pp->getLineNumColor(), from, to );
 		}
 
-		ModelIndex curIndex = getCurIndex();
-		ModelIndex index = pp->getModel()->index(
-			curIndex.row(), ProjectSearch::ResultModel::ColumnPosition, curIndex.parent() );
-		Variant variant = pp->getModel()->data( index, Model::Role::Custom );
 		Int64 iniPos = 0;
-		if ( variant.is( Variant::Type::Int64 ) )
-			iniPos = variant.asInt64();
-		String txt( text );
-		mSearchStrPos = { txt.find( pp->getSearchStr(), iniPos ), pp->getSearchStr().size() };
+		Int64 endPos = 0;
+		Model* model = pp->getModel();
+		ModelIndex curIndex = getCurIndex();
+		ModelIndex indexStart = model->index(
+			curIndex.row(), ProjectSearch::ResultModel::ColumnStart, curIndex.parent() );
+		ModelIndex indexEnd = model->index( curIndex.row(), ProjectSearch::ResultModel::ColumnEnd,
+											curIndex.parent() );
+		Variant variantStart = model->data( indexStart, Model::Role::Custom );
+		Variant variantEnd = model->data( indexEnd, Model::Role::Custom );
+		iniPos = variantStart.asInt64();
+		endPos = variantEnd.asInt64();
+		mSearchStrPos = { iniPos + 12, endPos + 12 };
+		const String& txt = mTextBox->getText();
+
+		if ( mSearchStrPos.second < txt.size() ) {
+			mResultStr =
+				txt.substr( mSearchStrPos.first, mSearchStrPos.second - mSearchStrPos.first );
+		} else {
+			mResultStr = "";
+		}
 
 		auto tokens =
 			SyntaxTokenizer::tokenize( styleDef, text, SYNTAX_TOKENIZER_STATE_NONE, to ).first;
@@ -95,14 +107,13 @@ void UITreeViewCellGlobalSearch::draw() {
 				mTextBox->getFont()->getGlyph( L' ', mTextBox->getPixelsFontSize(), false ).advance;
 			Primitives p;
 			p.setColor( pp->getColorScheme().getEditorSyntaxStyle( "selection" ).color );
-			p.drawRectangle(
-				Rectf( { mScreenPos.x + mTextBox->getPixelsPosition().x +
-							 getXOffsetCol( hspace, mTextBox->getTextCache()->getTabWidth(),
-											mTextBox->getText(), mSearchStrPos.first ),
-						 mScreenPos.y + mTextBox->getPixelsPosition().y },
-					   Sizef( getTextWidth( hspace, mTextBox->getTextCache()->getTabWidth(),
-											pp->getSearchStr() ),
-							  mTextBox->getPixelsSize().getHeight() ) ) );
+			p.drawRectangle( Rectf(
+				{ mScreenPos.x + mTextBox->getPixelsPosition().x +
+					  getXOffsetCol( hspace, mTextBox->getTextCache()->getTabWidth(),
+									 mTextBox->getText(), mSearchStrPos.first ),
+				  mScreenPos.y + mTextBox->getPixelsPosition().y },
+				Sizef( getTextWidth( hspace, mTextBox->getTextCache()->getTabWidth(), mResultStr ),
+					   mTextBox->getPixelsSize().getHeight() ) ) );
 		}
 	}
 }

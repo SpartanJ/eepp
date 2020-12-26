@@ -18,9 +18,9 @@ class ProjectSearch {
   public:
 	struct ResultData {
 		struct Result {
-			Result( const String& line, const TextPosition& pos ) : line( line ), position( pos ) {}
+			Result( const String& line, const TextRange& pos ) : line( line ), position( pos ) {}
 			String line;
-			TextPosition position;
+			TextRange position;
 		};
 		std::string file;
 		std::vector<Result> results;
@@ -31,7 +31,7 @@ class ProjectSearch {
 
 	class ResultModel : public Model {
 	  public:
-		enum Column { FileOrPosition, Line, ColumnPosition };
+		enum Column { FileOrPosition, Line, LineEnd, ColumnStart, ColumnEnd };
 
 		ResultModel( const Result& result ) : mResult( result ) {}
 
@@ -81,29 +81,39 @@ class ProjectSearch {
 				} else {
 					switch ( index.column() ) {
 						case FileOrPosition:
-							return Variant( String::format(
-								"%6lld      %s",
-								mResult[index.internalId()].results[index.row()].position.line() +
-									1,
-								mResult[index.internalId()]
-									.results[index.row()]
-									.line.toUtf8()
-									.c_str() ) );
+							return Variant( String::format( "%6lld      %s",
+															mResult[index.internalId()]
+																	.results[index.row()]
+																	.position.start()
+																	.line() +
+																1,
+															mResult[index.internalId()]
+																.results[index.row()]
+																.line.toUtf8()
+																.c_str() ) );
 					}
 				}
 			} else if ( role == Role::Custom ) {
 				if ( index.internalId() != -1 ) {
 					switch ( index.column() ) {
 						case FileOrPosition:
-							return Variant(
-								mResult[index.internalId()].results[index.row()].position.line() );
+							return Variant( mResult[index.internalId()]
+												.results[index.row()]
+												.position.start()
+												.line() );
 						case Line:
 							return Variant(
 								mResult[index.internalId()].results[index.row()].line.c_str() );
-						case ColumnPosition:
+						case ColumnStart:
 							return Variant( mResult[index.internalId()]
 												.results[index.row()]
-												.position.column() );
+												.position.start()
+												.column() );
+						case ColumnEnd:
+							return Variant( mResult[index.internalId()]
+												.results[index.row()]
+												.position.end()
+												.column() );
 					}
 				} else {
 					switch ( index.column() ) {
@@ -125,12 +135,16 @@ class ProjectSearch {
 		return std::make_shared<ResultModel>( result );
 	}
 
-	static void find( const std::vector<std::string> files, const std::string& string,
-					  ResultCb result, bool caseSensitive, bool wholeWord = false );
+	static void
+	find( const std::vector<std::string> files, const std::string& string, ResultCb result,
+		  bool caseSensitive, bool wholeWord = false,
+		  const TextDocument::FindReplaceType& type = TextDocument::FindReplaceType::Normal );
 
-	static void find( const std::vector<std::string> files, std::string string,
-					  std::shared_ptr<ThreadPool> pool, ResultCb result, bool caseSensitive,
-					  bool wholeWord = false );
+	static void
+	find( const std::vector<std::string> files, std::string string,
+		  std::shared_ptr<ThreadPool> pool, ResultCb result, bool caseSensitive,
+		  bool wholeWord = false,
+		  const TextDocument::FindReplaceType& type = TextDocument::FindReplaceType::Normal );
 };
 
 #endif // PROJECTSEARCH_HPP

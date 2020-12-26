@@ -19,8 +19,10 @@ class UITreeViewCellGlobalSearch : public UITreeViewCell {
 	UIPushButton* updateText( const std::string& text );
 
 	virtual void draw();
+
   protected:
 	std::pair<size_t, size_t> mSearchStrPos;
+	String mResultStr;
 };
 
 class UITreeViewGlobalSearch : public UITreeView {

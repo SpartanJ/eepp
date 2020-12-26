@@ -718,11 +718,13 @@ void App::initGlobalSearchBar() {
 	UIPushButton* searchButton = mGlobalSearchBarLayout->find<UIPushButton>( "global_search" );
 	UICheckBox* caseSensitiveChk = mGlobalSearchBarLayout->find<UICheckBox>( "case_sensitive" );
 	UICheckBox* wholeWordChk = mGlobalSearchBarLayout->find<UICheckBox>( "whole_word" );
+	UICheckBox* luaPatternChk = mGlobalSearchBarLayout->find<UICheckBox>( "lua_pattern" );
 	UIWidget* searchBarClose = mGlobalSearchBarLayout->find<UIWidget>( "global_searchbar_close" );
 	mGlobalSearchInput = mGlobalSearchBarLayout->find<UITextInput>( "global_search_find" );
 	mGlobalSearchHistoryList =
 		mGlobalSearchBarLayout->find<UIDropDownList>( "global_search_history" );
-	mGlobalSearchBarLayout->addCommand( "search-in-files", [&, caseSensitiveChk, wholeWordChk] {
+	mGlobalSearchBarLayout->addCommand( "search-in-files", [&, caseSensitiveChk, wholeWordChk,
+															luaPatternChk] {
 		if ( mDirTree && mDirTree->getFilesCount() > 0 && !mGlobalSearchInput->getText().empty() ) {
 			UILoader* loader = UILoader::New();
 			loader->setId( "loader" );
@@ -777,7 +779,9 @@ void App::initGlobalSearchBar() {
 						loader->close();
 					} );
 				},
-				caseSensitiveChk->isChecked(), wholeWordChk->isChecked() );
+				caseSensitiveChk->isChecked(), wholeWordChk->isChecked(),
+				luaPatternChk->isChecked() ? TextDocument::FindReplaceType::LuaPattern
+										   : TextDocument::FindReplaceType::Normal );
 		}
 	} );
 	mGlobalSearchBarLayout->addCommand( "close-global-searchbar", [&] {
@@ -789,12 +793,16 @@ void App::initGlobalSearchBar() {
 		{ "escape", "close-global-searchbar" },
 		{ "ctrl+s", "change-case" },
 		{ "ctrl+w", "change-whole-word" },
+		{ "ctrl+l", "toggle-lua-pattern" },
 	} );
 	mGlobalSearchBarLayout->addCommand( "change-case", [&, caseSensitiveChk] {
 		caseSensitiveChk->setChecked( !caseSensitiveChk->isChecked() );
 	} );
 	mGlobalSearchBarLayout->addCommand( "change-whole-word", [&, wholeWordChk] {
 		wholeWordChk->setChecked( !wholeWordChk->isChecked() );
+	} );
+	mGlobalSearchBarLayout->addCommand( "toggle-lua-pattern", [&, luaPatternChk] {
+		luaPatternChk->setChecked( !luaPatternChk->isChecked() );
 	} );
 	mGlobalSearchInput->addEventListener( Event::OnPressEnter, [&]( const Event* ) {
 		if ( mGlobalSearchInput->hasFocus() ) {
@@ -822,7 +830,7 @@ void App::initGlobalSearchBar() {
 	mGlobalSearchTree->setHeadersVisible( false );
 	mGlobalSearchTree->setVisible( false );
 	mGlobalSearchTree->setColumnsHidden(
-		{ ProjectSearch::ResultModel::Line, ProjectSearch::ResultModel::ColumnPosition }, true );
+		{ ProjectSearch::ResultModel::Line, ProjectSearch::ResultModel::ColumnStart }, true );
 	mGlobalSearchTree->addEventListener( Event::KeyDown, [&]( const Event* event ) {
 		const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );
 		if ( keyEvent->getKeyCode() == KEY_ESCAPE )
@@ -852,11 +860,10 @@ void App::initGlobalSearchBar() {
 											   ProjectSearch::ResultModel::FileOrPosition,
 											   modelEvent->getModelIndex().parent() ),
 								 Model::Role::Custom ) );
-				Variant colNum(
-					model->data( model->index( modelEvent->getModelIndex().row(),
-											   ProjectSearch::ResultModel::ColumnPosition,
-											   modelEvent->getModelIndex().parent() ),
-								 Model::Role::Custom ) );
+				Variant colNum( model->data( model->index( modelEvent->getModelIndex().row(),
+														   ProjectSearch::ResultModel::ColumnStart,
+														   modelEvent->getModelIndex().parent() ),
+											 Model::Role::Custom ) );
 				if ( mEditorSplitter->getCurEditor() && lineNum.isValid() && colNum.isValid() &&
 					 lineNum.is( Variant::Type::Int64 ) && colNum.is( Variant::Type::Int64 ) ) {
 					TextPosition pos{ lineNum.asInt64(), colNum.asInt64() };
@@ -2490,6 +2497,7 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 							<hbox layout_width="match_parent" layout_height="wrap_content">
 								<CheckBox id="case_sensitive" layout_width="wrap_content" layout_height="wrap_content" text="Case sensitive" selected="true" />
 								<CheckBox id="whole_word" layout_width="wrap_content" layout_height="wrap_content" text="Match Whole Word" selected="false" margin-left="8dp" />
+								<CheckBox id="lua_pattern" layout_width="wrap_content" layout_height="wrap_content" text="Lua Pattern" selected="false" margin-left="8dp" />
 								<Widget layout_width="0" layout_weight="1" layout_height="match_parent" />
 								<TextView layout_width="wrap_content" layout_height="wrap_content" text="History:" margin-right="4dp" layout_height="18dp" />
 								<DropDownList id="global_search_history" layout_width="300dp" layout_height="18dp" margin-right="4dp" />

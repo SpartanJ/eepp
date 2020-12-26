@@ -1,5 +1,6 @@
 #include "projectsearch.hpp"
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/luapattern.hpp>
 
 static int countNewLines( const std::string& text, const size_t& start, const size_t& end ) {
 	const char* startPtr = text.c_str() + start;
@@ -21,10 +22,13 @@ static String textLine( const std::string& fileText, const size_t& fromPos, size
 	const char* stringStartPtr = fileText.c_str();
 	const char* startPtr = fileText.c_str() + fromPos;
 	const char* ptr = startPtr;
-	while ( stringStartPtr != ptr && *--ptr != '\n' ) {
+	const char* nlStartPtr = stringStartPtr;
+	if ( stringStartPtr != ptr ) {
+		while ( stringStartPtr != ptr && *--ptr != '\n' ) {
+		}
+		nlStartPtr = ptr + 1;
+		start = ptr - stringStartPtr + 1;
 	}
-	const char* nlStartPtr = ptr + 1;
-	start = ptr - stringStartPtr + 1;
 	ptr = startPtr;
 	while ( ++ptr && *ptr != '\0' && *ptr != '\n' ) {
 	}
@@ -53,13 +57,12 @@ searchInFileHorspool( const std::string& file, const std::string& text, const bo
 					searchRes += text.size();
 					continue;
 				}
-				TextPosition pos;
 				size_t relCol;
 				totNl += countNewLines( fileText, lSearchRes, searchRes );
 				String str( textLine( fileTextOriginal, searchRes, relCol ) );
-				pos.setLine( totNl );
-				pos.setColumn( relCol );
-				res.push_back( { str, pos } );
+				res.push_back( { str,
+								 { { (Int64)totNl, (Int64)relCol },
+								   { (Int64)totNl, ( Int64 )( relCol + text.size() ) } } } );
 				lSearchRes = searchRes;
 				searchRes += text.size();
 			}
@@ -73,13 +76,12 @@ searchInFileHorspool( const std::string& file, const std::string& text, const bo
 					searchRes += text.size();
 					continue;
 				}
-				TextPosition pos;
 				size_t relCol;
 				totNl += countNewLines( fileText, lSearchRes, searchRes );
-				std::string str = textLine( fileText, searchRes, relCol );
-				pos.setLine( totNl );
-				pos.setColumn( relCol );
-				res.push_back( { str, pos } );
+				String str( textLine( fileText, searchRes, relCol ) );
+				res.push_back( { str,
+								 { { (Int64)totNl, (Int64)relCol },
+								   { (Int64)totNl, ( Int64 )( relCol + text.size() ) } } } );
 				lSearchRes = searchRes;
 				searchRes += text.size();
 			}
@@ -88,13 +90,70 @@ searchInFileHorspool( const std::string& file, const std::string& text, const bo
 	return res;
 }
 
+static std::vector<ProjectSearch::ResultData::Result>
+searchInFileLuaPattern( const std::string& file, const std::string& text, const bool& caseSensitive,
+						const bool& wholeWord ) {
+	std::string fileText;
+	FileSystem::fileGet( file, fileText );
+	LuaPattern pattern( text );
+	std::vector<ProjectSearch::ResultData::Result> res;
+	size_t totNl = 0;
+	bool matched = false;
+	Int64 searchRes = 0;
+	if ( !caseSensitive ) {
+		std::string fileTextOriginal( fileText );
+		String::toLowerInPlace( fileText );
+		do {
+			int start, end = 0;
+			if ( ( matched = pattern.find( fileText, start, end, searchRes ) ) ) {
+				if ( wholeWord && !String::isWholeWord(
+									  fileText, fileText.substr( start, end - start ), start ) ) {
+					searchRes = end;
+					continue;
+				}
+				size_t relCol;
+				totNl += countNewLines( fileText, searchRes, end );
+				String str( textLine( fileTextOriginal, start, relCol ) );
+				int len = end - start;
+				res.push_back( { str,
+								 { { (Int64)totNl, (Int64)relCol },
+								   { (Int64)totNl, ( Int64 )( relCol + len ) } } } );
+				searchRes = end;
+			}
+		} while ( matched );
+	} else {
+		do {
+			int start, end = 0;
+			if ( ( matched = pattern.find( fileText, start, end, searchRes ) ) ) {
+				if ( wholeWord && !String::isWholeWord(
+									  fileText, fileText.substr( start, end - start ), start ) ) {
+					searchRes = end;
+					continue;
+				}
+				size_t relCol;
+				totNl += countNewLines( fileText, searchRes, end );
+				String str( textLine( fileText, start, relCol ) );
+				int len = end - start;
+				res.push_back( { str,
+								 { { (Int64)totNl, (Int64)relCol },
+								   { (Int64)totNl, ( Int64 )( relCol + len ) } } } );
+				searchRes = end;
+			}
+		} while ( matched );
+	}
+	return res;
+}
+
 void ProjectSearch::find( const std::vector<std::string> files, const std::string& string,
-						  ResultCb result, bool caseSensitive, bool wholeWord ) {
+						  ResultCb result, bool caseSensitive, bool wholeWord,
+						  const TextDocument::FindReplaceType& type ) {
 	Result res;
 	const auto occ =
 		String::BMH::createOccTable( (const unsigned char*)string.c_str(), string.size() );
 	for ( auto& file : files ) {
-		auto fileRes = searchInFileHorspool( file, string, caseSensitive, wholeWord, occ );
+		auto fileRes = type == TextDocument::FindReplaceType::Normal
+						   ? searchInFileHorspool( file, string, caseSensitive, wholeWord, occ )
+						   : searchInFileLuaPattern( file, string, caseSensitive, wholeWord );
 		if ( !fileRes.empty() )
 			res.push_back( { file, fileRes } );
 	}
@@ -110,7 +169,7 @@ struct FindData {
 
 void ProjectSearch::find( const std::vector<std::string> files, std::string string,
 						  std::shared_ptr<ThreadPool> pool, ResultCb result, bool caseSensitive,
-						  bool wholeWord ) {
+						  bool wholeWord, const TextDocument::FindReplaceType& type ) {
 	if ( files.empty() )
 		result( {} );
 	FindData* findData = eeNew( FindData, () );
@@ -121,8 +180,11 @@ void ProjectSearch::find( const std::vector<std::string> files, std::string stri
 		String::BMH::createOccTable( (const unsigned char*)string.c_str(), string.size() );
 	for ( auto& file : files ) {
 		pool->run(
-			[findData, file, string, caseSensitive, wholeWord, occ] {
-				auto fileRes = searchInFileHorspool( file, string, caseSensitive, wholeWord, occ );
+			[findData, file, string, caseSensitive, wholeWord, occ, type] {
+				auto fileRes =
+					type == TextDocument::FindReplaceType::Normal
+						? searchInFileHorspool( file, string, caseSensitive, wholeWord, occ )
+						: searchInFileLuaPattern( file, string, caseSensitive, wholeWord );
 				if ( !fileRes.empty() ) {
 					Lock l( findData->resMutex );
 					findData->res.push_back( { file, fileRes } );
