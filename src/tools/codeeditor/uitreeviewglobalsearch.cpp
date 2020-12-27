@@ -1,22 +1,93 @@
 #include "uitreeviewglobalsearch.hpp"
+#include "projectsearch.hpp"
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/doc/syntaxtokenizer.hpp>
+#include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uistyle.hpp>
 
-UITreeViewGlobalSearch::UITreeViewGlobalSearch( const SyntaxColorScheme& colorScheme ) :
-	UITreeView(), mColorScheme( colorScheme ) {
+UITreeViewGlobalSearch::UITreeViewGlobalSearch( const SyntaxColorScheme& colorScheme,
+												bool searchReplace ) :
+	UITreeView(), mColorScheme( colorScheme ), mSearchReplace( searchReplace ) {
 	mLineNumColor = Color::fromString(
 		mUISceneNode->getRoot()->getUIStyle()->getVariable( "--font-hint" ).getValue() );
 }
 
 UIWidget* UITreeViewGlobalSearch::createCell( UIWidget* rowWidget, const ModelIndex& index ) {
 	UITableCell* widget = index.column() == (Int64)getModel()->treeColumn()
-							  ? UITreeViewCellGlobalSearch::New()
+							  ? UITreeViewCellGlobalSearch::New( mSearchReplace )
 							  : UITableCell::New();
 	return setupCell( widget, rowWidget, index );
 }
+
+std::function<UITextView*()> UITreeViewCellGlobalSearch::getCheckBoxFn() {
+	return [&]() -> UITextView* {
+		UICheckBox* chk = UICheckBox::New();
+
+		addEventListener( Event::MouseClick, [&, chk]( const Event* event ) {
+			const MouseEvent* mouseEvent = static_cast<const MouseEvent*>( event );
+
+			Vector2f pos = convertToNodeSpace( mouseEvent->getPosition().asFloat() );
+			Rectf box( { convertToNodeSpace( chk->getCurrentButton()->convertToWorldSpace(
+							 chk->getCurrentButton()->getPixelsPosition() ) ),
+						 chk->getCurrentButton()->getPixelsSize() } );
+
+			if ( box.contains( pos ) ) {
+				if ( getCurIndex().internalId() != -1 ) {
+					ProjectSearch::ResultData::Result* result = getResultPtr();
+					if ( result ) {
+						result->selected = !result->selected;
+						chk->setChecked( result->selected );
+
+						ProjectSearch::ResultData* parentData =
+							(ProjectSearch::ResultData*)getDataPtr( getCurIndex().parent() );
+						if ( parentData )
+							parentData->selected = parentData->allResultsSelected();
+					}
+				} else {
+					auto* result = getResultDataPtr();
+					result->setResultsSelected( !result->selected );
+					chk->setChecked( result->selected );
+				}
+			}
+			return 1;
+		} );
+		return chk;
+	};
+}
+
+void* UITreeViewCellGlobalSearch::getDataPtr( const ModelIndex& modelIndex ) {
+	const ProjectSearch::ResultModel* model =
+		static_cast<const ProjectSearch::ResultModel*>( modelIndex.model() );
+	ModelIndex index =
+		model->index( modelIndex.row(), ProjectSearch::ResultModel::Data, modelIndex.parent() );
+	Variant var( model->data( index, Model::Role::Custom ) );
+	if ( var.is( Variant::Type::DataPtr ) )
+		return var.asDataPtr();
+	return nullptr;
+}
+
+ProjectSearch::ResultData::Result* UITreeViewCellGlobalSearch::getResultPtr() {
+	if ( getCurIndex().internalId() == -1 )
+		return nullptr;
+	void* ptr = getDataPtr( getCurIndex() );
+	if ( ptr )
+		return (ProjectSearch::ResultData::Result*)ptr;
+	return nullptr;
+}
+
+ProjectSearch::ResultData* UITreeViewCellGlobalSearch::getResultDataPtr() {
+	if ( getCurIndex().internalId() != -1 )
+		return nullptr;
+	void* ptr = getDataPtr( getCurIndex() );
+	if ( ptr )
+		return (ProjectSearch::ResultData*)ptr;
+	return nullptr;
+}
+
+UITreeViewCellGlobalSearch::UITreeViewCellGlobalSearch( bool selectionEnabled ) :
+	UITreeViewCell( selectionEnabled ? getCheckBoxFn() : nullptr ) {}
 
 UIPushButton* UITreeViewCellGlobalSearch::setText( const String& text ) {
 	if ( text != mTextBox->getText() ) {
@@ -107,13 +178,30 @@ void UITreeViewCellGlobalSearch::draw() {
 				mTextBox->getFont()->getGlyph( L' ', mTextBox->getPixelsFontSize(), false ).advance;
 			Primitives p;
 			p.setColor( pp->getColorScheme().getEditorSyntaxStyle( "selection" ).color );
+			Vector2f screenPos( mScreenPos );
+			if ( mTextBox->isType( UI_TYPE_CHECKBOX ) ) {
+				UICheckBox* chk = mTextBox->asType<UICheckBox>();
+				screenPos.x += chk->getRealAlignOffset().x;
+			}
 			p.drawRectangle( Rectf(
-				{ mScreenPos.x + mTextBox->getPixelsPosition().x +
+				{ screenPos.x + mTextBox->getPixelsPosition().x +
 					  getXOffsetCol( hspace, mTextBox->getTextCache()->getTabWidth(),
 									 mTextBox->getText(), mSearchStrPos.first ),
-				  mScreenPos.y + mTextBox->getPixelsPosition().y },
+				  screenPos.y + mTextBox->getPixelsPosition().y },
 				Sizef( getTextWidth( hspace, mTextBox->getTextCache()->getTabWidth(), mResultStr ),
 					   mTextBox->getPixelsSize().getHeight() ) ) );
+		}
+	}
+}
+
+void UITreeViewCellGlobalSearch::updateCell( Model* ) {
+	if ( mTextBox->isType( UI_TYPE_CHECKBOX ) ) {
+		UICheckBox* chk = mTextBox->asType<UICheckBox>();
+		auto* result = getResultPtr();
+		if ( result ) {
+			chk->setChecked( result->selected );
+		} else if ( auto* dataResult = getResultDataPtr() ) {
+			chk->setChecked( dataResult->selected );
 		}
 	}
 }

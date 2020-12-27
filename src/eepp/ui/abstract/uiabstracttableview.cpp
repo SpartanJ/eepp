@@ -427,6 +427,8 @@ UIWidget* UIAbstractTableView::updateCell( const int& rowIndex, const ModelIndex
 			cell->setIcon( icon.asIcon()->getSize( mIconSize ) );
 		}
 		cell->getIcon()->setVisible( isVisible );
+
+		cell->updateCell( getModel() );
 	}
 
 	return widget;

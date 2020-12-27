@@ -92,6 +92,8 @@ class EE_API Model {
 
 	void setOnUpdate( const std::function<void()>& onUpdate );
 
+	void invalidate();
+
   protected:
 	Model(){};
 

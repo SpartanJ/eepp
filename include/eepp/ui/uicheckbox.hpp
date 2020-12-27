@@ -10,7 +10,7 @@ class EE_API UICheckBox : public UITextView {
   public:
 	static UICheckBox* New();
 
-	UICheckBox();
+	static UICheckBox* NewWithTag( const std::string& tag );
 
 	virtual ~UICheckBox();
 
@@ -28,6 +28,8 @@ class EE_API UICheckBox : public UITextView {
 
 	UIWidget* getInactiveButton() const;
 
+	UIWidget* getCurrentButton() const;
+
 	Int32 getTextSeparation() const;
 
 	void setTextSeparation( const Int32& textSeparation );
@@ -43,6 +45,10 @@ class EE_API UICheckBox : public UITextView {
 	bool mChecked;
 	Uint32 mLastTick;
 	Int32 mTextSeparation;
+
+	UICheckBox();
+
+	UICheckBox( const std::string& tag );
 
 	virtual void onSizeChange();
 

@@ -16,7 +16,15 @@ UIPushButton* UIPushButton::NewWithTag( const std::string& tag ) {
 	return eeNew( UIPushButton, ( tag ) );
 }
 
-UIPushButton::UIPushButton( const std::string& tag ) :
+UIPushButton* UIPushButton::NewWithOpt( const std::string& tag,
+										const std::function<UITextView*()>& newTextViewCb ) {
+	return eeNew( UIPushButton, ( tag, newTextViewCb ) );
+}
+
+UIPushButton::UIPushButton( const std::string& tag ) : UIPushButton( tag, nullptr ) {}
+
+UIPushButton::UIPushButton( const std::string& tag,
+							const std::function<UITextView*()>& newTextViewCb ) :
 	UIWidget( tag ), mIcon( NULL ), mTextBox( NULL ) {
 	mFlags |= ( UI_AUTO_SIZE | UI_VALIGN_CENTER | UI_HALIGN_CENTER );
 
@@ -35,7 +43,7 @@ UIPushButton::UIPushButton( const std::string& tag ) :
 	mIcon->addEventListener( Event::OnSizeChange, cb );
 	mIcon->addEventListener( Event::OnVisibleChange, cb );
 
-	mTextBox = UITextView::NewWithTag( "pushbutton::text" );
+	mTextBox = newTextViewCb ? newTextViewCb() : UITextView::NewWithTag( "pushbutton::text" );
 	mTextBox->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent )
 		->setFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER )
 		->setParent( this )

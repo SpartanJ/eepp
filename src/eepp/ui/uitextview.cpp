@@ -231,6 +231,10 @@ const Text* UITextView::getTextCache() const {
 	return mTextCache;
 }
 
+const Vector2f& UITextView::getRealAlignOffset() const {
+	return mRealAlignOffset;
+}
+
 const Color& UITextView::getFontShadowColor() const {
 	return mFontStyleConfig.ShadowColor;
 }

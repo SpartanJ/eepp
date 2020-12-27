@@ -300,6 +300,10 @@ Rect UINode::getRect() const {
 	return Rect( Vector2i( mDpPos.x, mDpPos.y ), Sizei( mDpSize.x, mDpSize.y ) );
 }
 
+Rectf UINode::getRectBox() const {
+	return Rectf( mPosition, mSize );
+}
+
 const Sizef& UINode::getSize() const {
 	return mDpSize;
 }

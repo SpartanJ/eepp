@@ -9,10 +9,17 @@ UICheckBox* UICheckBox::New() {
 	return eeNew( UICheckBox, () );
 }
 
-UICheckBox::UICheckBox() : UITextView( "checkbox" ), mChecked( false ), mTextSeparation( 4 ) {
+UICheckBox* UICheckBox::NewWithTag( const std::string& tag ) {
+	return eeNew( UICheckBox, ( tag ) );
+}
+
+UICheckBox::UICheckBox() : UICheckBox( "checkbox" ) {}
+
+UICheckBox::UICheckBox( const std::string& tag ) :
+	UITextView( tag ), mChecked( false ), mTextSeparation( 4 ) {
 	auto cb = [&]( const Event* ) { onAutoSize(); };
 
-	mActiveButton = UIWidget::NewWithTag( "checkbox::active" );
+	mActiveButton = UIWidget::NewWithTag( tag + "::active" );
 	mActiveButton->setVisible( false );
 	mActiveButton->setEnabled( true );
 	mActiveButton->setParent( this );
@@ -20,7 +27,7 @@ UICheckBox::UICheckBox() : UITextView( "checkbox" ), mChecked( false ), mTextSep
 	mActiveButton->setSize( 8, 8 );
 	mActiveButton->addEventListener( Event::OnSizeChange, cb );
 
-	mInactiveButton = UIWidget::NewWithTag( "checkbox::inactive" );
+	mInactiveButton = UIWidget::NewWithTag( tag + "::inactive" );
 	mInactiveButton->setVisible( true );
 	mInactiveButton->setEnabled( true );
 	mInactiveButton->setParent( this );
@@ -195,6 +202,10 @@ UIWidget* UICheckBox::getCheckedButton() const {
 
 UIWidget* UICheckBox::getInactiveButton() const {
 	return mInactiveButton;
+}
+
+UIWidget* UICheckBox::getCurrentButton() const {
+	return mChecked ? mActiveButton : mInactiveButton;
 }
 
 Int32 UICheckBox::getTextSeparation() const {

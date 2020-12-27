@@ -823,7 +823,8 @@ void App::initGlobalSearchBar() {
 	} );
 	addClickListener( searchButton, "search-in-files" );
 	addClickListener( searchBarClose, "close-global-searchbar" );
-	mGlobalSearchTree = UITreeViewGlobalSearch::New( mEditorSplitter->getCurrentColorScheme() );
+	mGlobalSearchTree =
+		UITreeViewGlobalSearch::New( mEditorSplitter->getCurrentColorScheme(), false );
 	mGlobalSearchTree->setId( "search_tree" );
 	mGlobalSearchTree->setParent( mUISceneNode->getRoot() );
 	mGlobalSearchTree->setExpanderIconSize( PixelDensity::dpToPx( 20 ) );
@@ -1971,8 +1972,10 @@ bool App::setAutoComplete( bool enable ) {
 bool App::setLinter( bool enable ) {
 	mConfig.editor.linter = enable;
 	if ( enable && !mLinterModule ) {
-		mLinterModule =
-			eeNew( LinterModule, ( mResPath + "assets/linters/linters.json", mThreadPool ) );
+		std::string path( mResPath + "assets/linters/linters.json" );
+		if ( FileSystem::fileExists( mConfigPath + "linters.json" ) )
+			path = mConfigPath + "linters.json";
+		mLinterModule = eeNew( LinterModule, ( path, mThreadPool ) );
 		mEditorSplitter->forEachEditor(
 			[&]( UICodeEditor* editor ) { editor->registerModule( mLinterModule ); } );
 		return true;
@@ -2234,9 +2237,14 @@ void App::initProjectTreeView( const std::string& path ) {
 		} else {
 			std::string rpath( FileSystem::getRealPath( path ) );
 
-			mProjectTreeView->setModel( FileSystemModel::New(
-				FileSystem::fileRemoveFileName( rpath ), FileSystemModel::Mode::FilesAndDirectories,
-				{ true, true, true } ) );
+			mFileSystemModel = FileSystemModel::New( FileSystem::fileRemoveFileName( rpath ),
+													 FileSystemModel::Mode::FilesAndDirectories,
+													 { true, true, true } );
+
+			mProjectTreeView->setModel( mFileSystemModel );
+
+			if ( mFileSystemListener )
+				mFileSystemListener->setFileSystemModel( mFileSystemModel );
 
 			mEditorSplitter->loadFileFromPath( rpath );
 		}
@@ -2257,8 +2265,13 @@ void App::loadFolder( const std::string& path ) {
 
 	mConfig.loadProject( rpath, mEditorSplitter, mConfigPath );
 
-	mProjectTreeView->setModel( FileSystemModel::New(
-		rpath, FileSystemModel::Mode::FilesAndDirectories, { true, true, true } ) );
+	mFileSystemModel = FileSystemModel::New( rpath, FileSystemModel::Mode::FilesAndDirectories,
+											 { true, true, true } );
+
+	mProjectTreeView->setModel( mFileSystemModel );
+
+	if ( mFileSystemListener )
+		mFileSystemListener->setFileSystemModel( mFileSystemModel );
 
 	auto found = std::find( mRecentFolders.begin(), mRecentFolders.end(), rpath );
 	if ( found != mRecentFolders.end() )
@@ -2592,7 +2605,7 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 		mFileWatcher = new efsw::FileWatcher();
-		mFileSystemListener = new FileSystemListener( mEditorSplitter );
+		mFileSystemListener = new FileSystemListener( mEditorSplitter, mFileSystemModel );
 		mFileWatcher->watch();
 #endif
 

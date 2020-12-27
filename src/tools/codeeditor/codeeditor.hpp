@@ -188,6 +188,7 @@ class App : public UICodeEditorSplitter::Client {
 	std::shared_ptr<ThreadPool> mThreadPool;
 	std::unique_ptr<ProjectDirectoryTree> mDirTree;
 	UITreeView* mProjectTreeView{ nullptr };
+	std::shared_ptr<FileSystemModel> mFileSystemModel;
 	UITableView* mLocateTable{ nullptr };
 	UITextInput* mLocateInput{ nullptr };
 	UITreeViewGlobalSearch* mGlobalSearchTree{ nullptr };

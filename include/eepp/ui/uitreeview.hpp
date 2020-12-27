@@ -55,10 +55,11 @@ class EE_API UITreeViewCell : public UITableCell {
 	const Float& getIndentation() const { return mIndent; }
 
   protected:
-	mutable UIImage* mImage{nullptr};
-	Float mIndent{0};
+	mutable UIImage* mImage{ nullptr };
+	Float mIndent{ 0 };
 
-	UITreeViewCell() : UITableCell( "treeview::cell" ) {
+	UITreeViewCell( const std::function<UITextView*()>& newTextViewCb = nullptr ) :
+		UITableCell( "treeview::cell", newTextViewCb ) {
 		mTextBox->setElementTag( mTag + "::text" );
 		mIcon->setElementTag( mTag + "::icon" );
 		mInnerWidgetOrientation = InnerWidgetOrientation::Left;
@@ -137,17 +138,17 @@ class EE_API UITreeView : public UIAbstractTableView {
 
 	Float mIndentWidth;
 	Sizef mContentSize;
-	UIIcon* mExpandIcon{nullptr};
-	UIIcon* mContractIcon{nullptr};
-	size_t mExpanderIconSize{16};
-	bool mExpandersAsIcons{false};
+	UIIcon* mExpandIcon{ nullptr };
+	UIIcon* mContractIcon{ nullptr };
+	size_t mExpanderIconSize{ 16 };
+	bool mExpandersAsIcons{ false };
 
 	UITreeView();
 
 	virtual void createOrUpdateColumns();
 
 	struct MetadataForIndex {
-		bool open{false};
+		bool open{ false };
 	};
 
 	template <typename Callback> void traverseTree( Callback ) const;

@@ -45,6 +45,10 @@ void Model::setOnUpdate( const std::function<void()>& onUpdate ) {
 	mOnUpdate = onUpdate;
 }
 
+void Model::invalidate() {
+	onModelUpdate();
+}
+
 ModelIndex Model::sibling( int row, int column, const ModelIndex& parent ) const {
 	if ( !parent.isValid() )
 		return index( row, column, {} );

@@ -20,9 +20,9 @@ class EE_API FileSystemModel : public Model {
 			foldersFirst( foldersFirst ),
 			ignoreHidden( ignoreHidden ),
 			acceptedExtensions( acceptedExtensions ) {}
-		bool sortByName{true};
-		bool foldersFirst{true};
-		bool ignoreHidden{false};
+		bool sortByName{ true };
+		bool foldersFirst{ true };
+		bool ignoreHidden{ false };
 		std::vector<std::string> acceptedExtensions;
 		bool operator==( const DisplayConfig& other ) {
 			return sortByName == other.sortByName && foldersFirst == other.foldersFirst &&
@@ -49,33 +49,49 @@ class EE_API FileSystemModel : public Model {
 	struct Node {
 	  public:
 		Node( const std::string& rootPath, const FileSystemModel& model );
+
 		Node( FileInfo&& info, Node* parent );
+
 		const std::string& getName() const { return mName; }
+
 		Node* getParent() const { return mParent; }
+
 		const FileInfo& info() const { return mInfo; }
+
 		bool isSelected() const { return mSelected; }
+
 		void setSelected( bool selected ) { mSelected = selected; };
+
 		const std::string& fullPath() const;
+
 		const std::string& getMimeType() const { return mMimeType; }
+
 		size_t childCount() const { return mChildren.size(); }
-		const Node& getChild( const size_t& index ) {
-			eeASSERT( index < mChildren.size() );
-			return mChildren[index];
-		}
+
+		const Node& getChild( const size_t& index );
+
+		void invalidate();
+
+		Node* findChildName( const std::string& name, const FileSystemModel& model,
+							 bool forceRefresh = false );
 
 	  private:
 		friend class FileSystemModel;
 		std::string mName;
 		std::string mMimeType;
-		Node* mParent{nullptr};
+		Node* mParent{ nullptr };
 		FileInfo mInfo;
 		std::vector<Node> mChildren;
-		bool mHasTraversed{false};
-		bool mInfoDirty{true};
-		bool mSelected{false};
+		bool mHasTraversed{ false };
+		bool mInfoDirty{ true };
+		bool mSelected{ false };
+
 		ModelIndex index( const FileSystemModel& model, int column ) const;
+
 		void traverseIfNeeded( const FileSystemModel& );
+
 		void refreshIfNeeded( const FileSystemModel& );
+
 		bool fetchData( const String& fullPath );
 	};
 
@@ -85,9 +101,11 @@ class EE_API FileSystemModel : public Model {
 
 	const Mode& getMode() const { return mMode; }
 
-	std::string getRootPath() const;
+	const std::string& getRootPath() const;
 
 	void setRootPath( const std::string& rootPath );
+
+	Node* getNodeFromPath( std::string path, bool folderNode = false, bool invalidateTree = true );
 
 	void reload();
 
@@ -111,10 +129,15 @@ class EE_API FileSystemModel : public Model {
 
 	void setDisplayConfig( const DisplayConfig& displayConfig );
 
+	const ModelIndex& getPreviouslySelectedIndex() const;
+
+	void setPreviouslySelectedIndex( const ModelIndex& previouslySelectedIndex );
+
   protected:
 	std::string mRootPath;
-	std::unique_ptr<Node> mRoot{nullptr};
-	Mode mMode{Mode::FilesAndDirectories};
+	std::string mRealRootPath;
+	std::unique_ptr<Node> mRoot{ nullptr };
+	Mode mMode{ Mode::FilesAndDirectories };
 	DisplayConfig mDisplayConfig;
 
 	ModelIndex mPreviouslySelectedIndex{};

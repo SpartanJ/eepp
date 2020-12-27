@@ -11,8 +11,12 @@ class EE_API Sys {
 	/** Returns the current date time */
 	static std::string getDateTimeStr();
 
+	/** Converts any epoch timestmap to a formatted string. */
+	static std::string epochToString( const Uint64& epochTimestamp,
+									  const std::string& format = "%Y-%m-%d %H:%M" );
+
 	/** @return A storage path for config files for every platform */
-	static std::string getConfigPath( std::string appname );
+	static std::string getConfigPath( const std::string& appname );
 
 	/** @return The path of the directory designated for temporary files. */
 	static std::string getTempPath();

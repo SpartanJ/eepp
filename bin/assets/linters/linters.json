@@ -15,5 +15,17 @@
 	"file_patterns": ["%.lua$"],
 	"warning_pattern": "[^:]:(%d+):(%d+):[%s]?([^\n]+)",
 	"command": "luacheck $FILENAME --formatter=plain -g --no-max-line-length"
+  },
+  {
+	"file_patterns": ["%.py$"],
+	"warning_pattern": "[^:]:(%d+):(%d+):%s([%w]+:%s[^\n]*)",
+	"column_starts_at_zero": true,
+	"command": "pylint --score=n $FILENAME"
+  },
+  {
+	"file_patterns": ["%.sh$"],
+	"warning_pattern": "[^:]:(%d+):(%d+):%s?([^%s]*)([^\n]*)",
+	"warning_pattern_order": { "line": 1, "col": 2, "message": 4, "type": 3 },
+	"command": "shellcheck -f gcc $FILENAME"
   }
 ]

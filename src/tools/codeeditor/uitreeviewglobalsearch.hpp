@@ -10,9 +10,11 @@ using namespace EE::UI::Doc;
 
 class UITreeViewCellGlobalSearch : public UITreeViewCell {
   public:
-	static UITreeViewCellGlobalSearch* New() { return eeNew( UITreeViewCellGlobalSearch, () ); }
+	static UITreeViewCellGlobalSearch* New( bool selectionEnabled ) {
+		return eeNew( UITreeViewCellGlobalSearch, ( selectionEnabled ) );
+	}
 
-	UITreeViewCellGlobalSearch() : UITreeViewCell() {}
+	UITreeViewCellGlobalSearch( bool selectionEnabled );
 
 	UIPushButton* setText( const String& text );
 
@@ -20,18 +22,28 @@ class UITreeViewCellGlobalSearch : public UITreeViewCell {
 
 	virtual void draw();
 
+	virtual void updateCell( Model* model );
+
   protected:
 	std::pair<size_t, size_t> mSearchStrPos;
 	String mResultStr;
+
+	std::function<UITextView*()> getCheckBoxFn();
+
+	void* getDataPtr( const ModelIndex& modelIndex );
+
+	ProjectSearch::ResultData::Result* getResultPtr();
+
+	ProjectSearch::ResultData* getResultDataPtr();
 };
 
 class UITreeViewGlobalSearch : public UITreeView {
   public:
-	static UITreeViewGlobalSearch* New( const SyntaxColorScheme& colorScheme ) {
-		return eeNew( UITreeViewGlobalSearch, ( colorScheme ) );
+	static UITreeViewGlobalSearch* New( const SyntaxColorScheme& colorScheme, bool searchReplace ) {
+		return eeNew( UITreeViewGlobalSearch, ( colorScheme, searchReplace ) );
 	}
 
-	UITreeViewGlobalSearch( const SyntaxColorScheme& colorScheme );
+	UITreeViewGlobalSearch( const SyntaxColorScheme& colorScheme, bool searchReplace );
 
 	UIWidget* createCell( UIWidget* rowWidget, const ModelIndex& index );
 
@@ -49,6 +61,7 @@ class UITreeViewGlobalSearch : public UITreeView {
 	Color mLineNumColor;
 	SyntaxColorScheme mColorScheme;
 	String mSearchStr;
+	bool mSearchReplace{ false };
 };
 
 #endif // UITREEVIEWGLOBALSEARCH_HPP

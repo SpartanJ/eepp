@@ -237,6 +237,8 @@ UIWidget* UITreeView::updateCell( const int& rowIndex, const ModelIndex& index,
 			cell->setIcon( icon.asIcon()->getSize( mIconSize ) );
 		}
 		cell->getIcon()->setVisible( isVisible );
+
+		cell->updateCell( getModel() );
 	}
 
 	return widget;

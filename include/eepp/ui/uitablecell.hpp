@@ -30,12 +30,18 @@ class EE_API UITableCell : public UIPushButton {
 		onThemeLoaded();
 	}
 
+	virtual void updateCell( Model* ){};
+
   protected:
 	ModelIndex mCurIndex;
 
 	UITableCell() : UITableCell( "table::cell" ) {}
 
-	UITableCell( const std::string& tag ) : UIPushButton( tag ) { applyDefaultTheme(); }
+	UITableCell( const std::string& tag,
+				 const std::function<UITextView*()>& newTextViewCb = nullptr ) :
+		UIPushButton( tag, newTextViewCb ) {
+		applyDefaultTheme();
+	}
 };
 
 }} // namespace EE::UI

@@ -50,7 +50,15 @@ void LinterModule::load( const std::string& lintersPath ) {
 			for ( auto& pattern : fp )
 				linter.files.push_back( pattern.get<std::string>() );
 
-			linter.warningPattern = obj["warning_pattern"].get<std::string>();
+			auto wp = obj["warning_pattern"];
+
+			if ( wp.is_array() ) {
+				for ( auto& warningPattern : wp )
+					linter.warningPattern.push_back( warningPattern.get<std::string>() );
+			} else {
+				linter.warningPattern = { wp.get<std::string>() };
+			}
+
 			linter.command = obj["command"].get<std::string>();
 
 			if ( obj.contains( "warning_pattern_order" ) ) {
@@ -64,6 +72,9 @@ void LinterModule::load( const std::string& lintersPath ) {
 				if ( wpo.contains( "type" ) )
 					linter.warningPatternOrder.type = wpo["type"].get<int>();
 			}
+
+			if ( obj.contains( "column_starts_at_zero" ) )
+				linter.columnsStartAtZero = obj["column_starts_at_zero"].get<bool>();
 
 			mLinters.emplace_back( std::move( linter ) );
 		}
@@ -220,35 +231,41 @@ void LinterModule::runLinter( TextDocument* doc, const Linter& linter, const std
 
 		// Log::info( "Linter result:\n%s", data.c_str() );
 
-		LuaPattern pattern( linter.warningPattern );
 		std::map<Int64, LinterMatch> matches;
-		for ( auto& match : pattern.gmatch( data ) ) {
-			LinterMatch linterMatch;
-			std::string lineStr = match.group( linter.warningPatternOrder.line );
-			std::string colStr = linter.warningPatternOrder.col >= 0
-									 ? match.group( linter.warningPatternOrder.col )
-									 : "";
-			linterMatch.text = match.group( linter.warningPatternOrder.message );
 
-			if ( linter.warningPatternOrder.type >= 0 ) {
-				std::string type( match.group( linter.warningPatternOrder.type ) );
-				String::toLowerInPlace( type );
-				if ( String::startsWith( type, "warn" ) ) {
-					linterMatch.type = LinterType::Warning;
-				} else if ( String::startsWith( type, "notice" ) ) {
-					linterMatch.type = LinterType::Notice;
+		for ( auto& warningPatterm : linter.warningPattern ) {
+			LuaPattern pattern( warningPatterm );
+			for ( auto& match : pattern.gmatch( data ) ) {
+				LinterMatch linterMatch;
+				std::string lineStr = match.group( linter.warningPatternOrder.line );
+				std::string colStr = linter.warningPatternOrder.col >= 0
+										 ? match.group( linter.warningPatternOrder.col )
+										 : "";
+				linterMatch.text = match.group( linter.warningPatternOrder.message );
+
+				if ( linter.warningPatternOrder.type >= 0 ) {
+					std::string type( match.group( linter.warningPatternOrder.type ) );
+					String::toLowerInPlace( type );
+					if ( String::startsWith( type, "warn" ) ) {
+						linterMatch.type = LinterType::Warning;
+					} else if ( String::startsWith( type, "notice" ) ) {
+						linterMatch.type = LinterType::Notice;
+					}
 				}
-			}
 
-			Int64 line;
-			Int64 col = 1;
-			if ( !linterMatch.text.empty() && !lineStr.empty() &&
-				 String::fromString( line, lineStr ) ) {
-				if ( !colStr.empty() )
-					String::fromString( col, colStr );
-				linterMatch.pos = { line - 1, col > 0 ? col - 1 : 0 };
-				linterMatch.lineCache = doc->line( line - 1 ).getHash();
-				matches.insert( { line - 1, std::move( linterMatch ) } );
+				Int64 line;
+				Int64 col = 1;
+				if ( !linterMatch.text.empty() && !lineStr.empty() &&
+					 String::fromString( line, lineStr ) ) {
+					if ( !colStr.empty() ) {
+						String::fromString( col, colStr );
+						if ( linter.columnsStartAtZero )
+							col++;
+					}
+					linterMatch.pos = { line - 1, col > 0 ? col - 1 : 0 };
+					linterMatch.lineCache = doc->line( line - 1 ).getHash();
+					matches.insert( { line - 1, std::move( linterMatch ) } );
+				}
 			}
 		}
 

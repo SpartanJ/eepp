@@ -6,6 +6,7 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/system/sys.hpp>
+#include <iomanip>
 
 // This taints the System module!
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
@@ -578,7 +579,7 @@ double Sys::getSystemTime() {
 		// High performance counter not available : use GetTickCount (less accurate)
 		return GetTickCount() * 0.001;
 #else
-	timeval Time = {0, 0};
+	timeval Time = { 0, 0 };
 	gettimeofday( &Time, NULL );
 
 	return Time.tv_sec + Time.tv_usec / 1000000.;
@@ -599,8 +600,16 @@ std::string Sys::getDateTimeStr() {
 	return std::string( buf );
 }
 
+std::string Sys::epochToString( const Uint64& epochTimestamp, const std::string& format ) {
+	std::time_t t = epochTimestamp;
+	auto tm = *std::localtime( &t );
+	std::ostringstream oss;
+	oss << std::put_time( &tm, format.c_str() );
+	return oss.str();
+}
+
 #define EE_MAX_CFG_PATH_LEN 1024
-std::string Sys::getConfigPath( std::string appname ) {
+std::string Sys::getConfigPath( const std::string& appname ) {
 	char path[EE_MAX_CFG_PATH_LEN];
 
 #if EE_PLATFORM == EE_PLATFORM_WIN

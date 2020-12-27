@@ -10,15 +10,12 @@ using namespace EE;
 using namespace EE::System;
 using namespace EE::UI;
 
-enum class LinterType {
-	Notice,
-	Warning,
-	Error
-};
+enum class LinterType { Notice, Warning, Error };
 
 struct Linter {
 	std::vector<std::string> files;
-	std::string warningPattern;
+	std::vector<std::string> warningPattern;
+	bool columnsStartAtZero{ false };
 	struct {
 		int line{ 1 };
 		int col{ 2 };
@@ -87,7 +84,6 @@ class LinterModule : public UICodeEditorModule {
 	void setDocDirty( UICodeEditor* editor );
 
 	void invalidateEditors( TextDocument* doc );
-
 };
 
 #endif // EE_TOOLS_LINTER_HPP

@@ -34,6 +34,29 @@ const std::string& FileSystemModel::Node::fullPath() const {
 	return mInfo.getFilepath();
 }
 
+const FileSystemModel::Node& FileSystemModel::Node::getChild( const size_t& index ) {
+	eeASSERT( index < mChildren.size() );
+	return mChildren[index];
+}
+
+void FileSystemModel::Node::invalidate() {
+	mHasTraversed = false;
+	mInfoDirty = true;
+	mChildren.clear();
+}
+
+FileSystemModel::Node* FileSystemModel::Node::findChildName( const std::string& name,
+															 const FileSystemModel& model,
+															 bool forceRefresh ) {
+	if ( forceRefresh )
+		refreshIfNeeded( model );
+	for ( auto& child : mChildren ) {
+		if ( child.getName() == name )
+			return &child;
+	}
+	return nullptr;
+}
+
 ModelIndex FileSystemModel::Node::index( const FileSystemModel& model, int column ) const {
 	if ( !mParent )
 		return {};
@@ -103,17 +126,54 @@ std::shared_ptr<FileSystemModel> FileSystemModel::New( const std::string& rootPa
 
 FileSystemModel::FileSystemModel( const std::string& rootPath, const FileSystemModel::Mode& mode,
 								  const DisplayConfig displayConfig ) :
-	mRootPath( rootPath ), mMode( mode ), mDisplayConfig( displayConfig ) {
+	mRootPath( rootPath ),
+	mRealRootPath( FileSystem::getRealPath( rootPath ) ),
+	mMode( mode ),
+	mDisplayConfig( displayConfig ) {
 	update();
 }
 
-std::string FileSystemModel::getRootPath() const {
+const std::string& FileSystemModel::getRootPath() const {
 	return mRootPath;
 }
 
 void FileSystemModel::setRootPath( const std::string& rootPath ) {
 	mRootPath = rootPath;
+	mRealRootPath = FileSystem::getRealPath( mRootPath );
 	update();
+}
+
+FileSystemModel::Node* FileSystemModel::getNodeFromPath( std::string path, bool folderNode,
+														 bool invalidateTree ) {
+	path = FileSystem::getRealPath( path );
+	if ( folderNode && !FileSystem::isDirectory( path ) )
+		path = FileSystem::fileRemoveFileName( path );
+	if ( String::startsWith( path, mRealRootPath ) )
+		path = path.substr( mRealRootPath.size() );
+	else if ( path.empty() ||
+			  !( path[0] == '/' ||
+				 ( path.size() >= 2 && String::isLetter( path[0] ) && path[1] == ':' ) ) ) {
+		return nullptr;
+	}
+	if ( String::contains( path, "\\" ) )
+		String::replaceAll( path, "\\", "/" );
+	auto folders = String::split( path, '/' );
+	Node* curNode = mRoot.get();
+	Node* foundNode = nullptr;
+
+	if ( !folders.empty() ) {
+		for ( size_t i = 0; i < folders.size(); i++ ) {
+			auto& part = folders[i];
+			if ( ( foundNode = curNode->findChildName(
+					   part, *this, invalidateTree || i == folders.size() - 1 ) ) ) {
+				curNode = foundNode;
+			} else {
+				return nullptr;
+			}
+		}
+	}
+
+	return curNode;
 }
 
 void FileSystemModel::reload() {
@@ -187,14 +247,6 @@ static std::string permissionString( const FileInfo& info ) {
 	return builder;
 }
 
-static std::string timestampString( const Uint64& time ) {
-	std::time_t t = time;
-	auto tm = *std::localtime( &t );
-	std::ostringstream oss;
-	oss << std::put_time( &tm, "%Y-%m-%d %H:%M" );
-	return oss.str();
-}
-
 Variant FileSystemModel::data( const ModelIndex& index, Model::Role role ) const {
 	eeASSERT( index.isValid() );
 
@@ -245,7 +297,7 @@ Variant FileSystemModel::data( const ModelIndex& index, Model::Role role ) const
 			case Column::Permissions:
 				return Variant( permissionString( node.info() ) );
 			case Column::ModificationTime:
-				return Variant( timestampString( node.info().getModificationTime() ) );
+				return Variant( Sys::epochToString( node.info().getModificationTime() ) );
 			case Column::Inode:
 				return Variant( String::toString( node.info().getInode() ) );
 			case Column::Path:
@@ -309,6 +361,14 @@ void FileSystemModel::setDisplayConfig( const DisplayConfig& displayConfig ) {
 		mDisplayConfig = displayConfig;
 		reload();
 	}
+}
+
+const ModelIndex& FileSystemModel::getPreviouslySelectedIndex() const {
+	return mPreviouslySelectedIndex;
+}
+
+void FileSystemModel::setPreviouslySelectedIndex( const ModelIndex& previouslySelectedIndex ) {
+	mPreviouslySelectedIndex = previouslySelectedIndex;
 }
 
 }}} // namespace EE::UI::Models

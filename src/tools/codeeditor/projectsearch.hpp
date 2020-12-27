@@ -21,9 +21,33 @@ class ProjectSearch {
 			Result( const String& line, const TextRange& pos ) : line( line ), position( pos ) {}
 			String line;
 			TextRange position;
+			bool selected{ false };
 		};
 		std::string file;
 		std::vector<Result> results;
+		bool selected{ false };
+
+		void setResultsSelected( bool selected ) {
+			this->selected = selected;
+			for ( auto& res : results )
+				res.selected = selected;
+		}
+
+		bool allResultsSelected() {
+			for ( const auto& res : results ) {
+				if ( !res.selected )
+					return false;
+			}
+			return true;
+		}
+
+		bool noneResultsSelected() {
+			for ( const auto& res : results ) {
+				if ( res.selected )
+					return false;
+			}
+			return true;
+		}
 	};
 
 	typedef std::vector<ResultData> Result;
@@ -31,7 +55,7 @@ class ProjectSearch {
 
 	class ResultModel : public Model {
 	  public:
-		enum Column { FileOrPosition, Line, LineEnd, ColumnStart, ColumnEnd };
+		enum Column { FileOrPosition, Line, LineEnd, ColumnStart, ColumnEnd, Selected, Data };
 
 		ResultModel( const Result& result ) : mResult( result ) {}
 
@@ -114,11 +138,19 @@ class ProjectSearch {
 												.results[index.row()]
 												.position.end()
 												.column() );
+						case Selected:
+							return Variant(
+								mResult[index.internalId()].results[index.row()].selected );
+						case Data:
+							return Variant(
+								(void*)&mResult[index.internalId()].results[index.row()] );
 					}
 				} else {
 					switch ( index.column() ) {
 						case FileOrPosition:
 							return Variant( mResult[index.row()].file.c_str() );
+						case Data:
+							return Variant( (void*)&mResult[index.row()] );
 					}
 				}
 			}

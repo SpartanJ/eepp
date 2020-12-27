@@ -51,6 +51,8 @@ class EE_API UIAbstractView : public UIScrollableWidget {
 
 	const Model* getModel() const { return mModel.get(); }
 
+	std::shared_ptr<Model> getModelShared() const { return mModel; }
+
 	ModelSelection& getSelection() { return mSelection; }
 
 	const ModelSelection& getSelection() const { return mSelection; }

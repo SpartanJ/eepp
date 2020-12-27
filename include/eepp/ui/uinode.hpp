@@ -78,6 +78,8 @@ class EE_API UINode : public Node {
 
 	Rect getRect() const;
 
+	Rectf getRectBox() const;
+
 	virtual void draw();
 
 	Uint32 getHorizontalAlign() const;

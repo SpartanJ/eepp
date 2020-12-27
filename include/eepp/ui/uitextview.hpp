@@ -94,7 +94,9 @@ class EE_API UITextView : public UIWidget {
 
 	const Text* getTextCache() const;
 
-  protected:
+	const Vector2f& getRealAlignOffset() const;
+
+	protected:
 	Text* mTextCache;
 	String mString;
 	UIFontStyleConfig mFontStyleConfig;
