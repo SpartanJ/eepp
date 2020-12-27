@@ -122,8 +122,7 @@ void App::onDocumentModified( UICodeEditor* editor, TextDocument& ) {
 	if ( isDirty != wasDirty )
 		setAppTitle( titleFromEditor( editor ) );
 
-	const String::StringBaseType& tabDirty =
-		( (UITab*)editor->getData() )->getText().lastChar() == '*';
+	bool tabDirty = ( (UITab*)editor->getData() )->getText().lastChar() == '*';
 
 	if ( isDirty != tabDirty )
 		updateEditorTitle( editor );

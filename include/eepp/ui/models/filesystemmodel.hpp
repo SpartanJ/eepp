@@ -46,7 +46,7 @@ class EE_API FileSystemModel : public Model {
 		Count,
 	};
 
-	struct Node {
+	struct EE_API Node {
 	  public:
 		Node( const std::string& rootPath, const FileSystemModel& model );
 
