@@ -73,11 +73,12 @@ class LinterModule : public UICodeEditorModule {
 
 	void load( const std::string& lintersPath );
 
-	void lintDoc( TextDocument* doc );
+	void lintDoc( std::shared_ptr<TextDocument> doc );
 
-	void runLinter( TextDocument* doc, const Linter& linter, const std::string& path );
+	void runLinter( std::shared_ptr<TextDocument> doc, const Linter& linter,
+					const std::string& path );
 
-	Linter supportsLinter( TextDocument* doc );
+	Linter supportsLinter( std::shared_ptr<TextDocument> doc );
 
 	void setDocDirty( TextDocument* doc );
 

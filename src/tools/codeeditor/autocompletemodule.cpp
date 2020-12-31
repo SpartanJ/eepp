@@ -32,7 +32,7 @@ AutoCompleteModule::~AutoCompleteModule() {
 	Lock l( mDocMutex );
 	Lock l2( mLangSymbolsMutex );
 	Lock l3( mSuggestionsMutex );
-	for ( auto editor : mEditors ) {
+	for ( const auto& editor : mEditors ) {
 		for ( auto listener : editor.second )
 			editor.first->removeEventListener( listener );
 		editor.first->unregisterModule( this );
@@ -199,7 +199,7 @@ void AutoCompleteModule::updateDocCache( TextDocument* doc ) {
 	{
 		Lock l( mLangSymbolsMutex );
 		lang.clear();
-		for ( auto d : mDocCache ) {
+		for ( const auto& d : mDocCache ) {
 			if ( d.first->getSyntaxDefinition().getLanguageName() == langName )
 				lang.insert( d.second.symbols.begin(), d.second.symbols.end() );
 		}
@@ -214,7 +214,7 @@ void AutoCompleteModule::updateLangCache( const std::string& langName ) {
 	Lock l( mLangSymbolsMutex );
 	Lock l2( mDocMutex );
 	lang.clear();
-	for ( auto d : mDocCache ) {
+	for ( const auto& d : mDocCache ) {
 		if ( d.first->getSyntaxDefinition().getLanguageName() == langName )
 			lang.insert( d.second.symbols.begin(), d.second.symbols.end() );
 	}

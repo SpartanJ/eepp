@@ -149,10 +149,10 @@ void LinterModule::onUnregister( UICodeEditor* editor ) {
 }
 
 void LinterModule::update( UICodeEditor* editor ) {
-	TextDocument* doc = editor->getDocumentRef().get();
-	auto it = mDirtyDoc.find( doc );
+	std::shared_ptr<TextDocument> doc = editor->getDocumentRef();
+	auto it = mDirtyDoc.find( doc.get() );
 	if ( it != mDirtyDoc.end() && it->second->getElapsedTime() >= mDelayTime ) {
-		mDirtyDoc.erase( doc );
+		mDirtyDoc.erase( doc.get() );
 #if LINTER_THREADED
 		mPool->run( [&, doc] { lintDoc( doc ); }, [] {} );
 #endif
@@ -175,7 +175,7 @@ static std::string randString( size_t len ) {
 	return str.substr( 0, len );
 }
 
-void LinterModule::lintDoc( TextDocument* doc ) {
+void LinterModule::lintDoc( std::shared_ptr<TextDocument> doc ) {
 	auto linter = supportsLinter( doc );
 	if ( linter.command.empty() )
 		return;
@@ -200,7 +200,8 @@ void LinterModule::lintDoc( TextDocument* doc ) {
 	}
 }
 
-void LinterModule::runLinter( TextDocument* doc, const Linter& linter, const std::string& path ) {
+void LinterModule::runLinter( std::shared_ptr<TextDocument> doc, const Linter& linter,
+							  const std::string& path ) {
 	Clock clock;
 	std::string cmd( linter.command );
 	String::replaceAll( cmd, "$FILENAME", path );
@@ -271,10 +272,10 @@ void LinterModule::runLinter( TextDocument* doc, const Linter& linter, const std
 
 		{
 			Lock matchesLock( mMatchesMutex );
-			mMatches[doc] = matches;
+			mMatches[doc.get()] = matches;
 		}
 
-		invalidateEditors( doc );
+		invalidateEditors( doc.get() );
 
 		Log::info( "LinterModule::runLinter for %s took %.2fms", path.c_str(),
 				   clock.getElapsedTime().asMilliseconds() );
@@ -357,7 +358,7 @@ bool LinterModule::onMouseLeave( UICodeEditor* editor, const Vector2i&, const Ui
 	return false;
 }
 
-Linter LinterModule::supportsLinter( TextDocument* doc ) {
+Linter LinterModule::supportsLinter( std::shared_ptr<TextDocument> doc ) {
 	std::string filePath( doc->getFilePath() );
 	std::string extension( FileSystem::fileExtension( filePath ) );
 	if ( extension.empty() ) {
