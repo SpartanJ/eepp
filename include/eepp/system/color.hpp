@@ -138,7 +138,9 @@ class EE_API Color : public tColor<Uint8> {
   public:
 	Color();
 
-	Color( std::string colorString );
+	Color( const Color& color );
+
+	Color( const std::string& colorString );
 
 	Color( Uint8 r, Uint8 g, Uint8 b, Uint8 a = 255 );
 
@@ -151,6 +153,8 @@ class EE_API Color : public tColor<Uint8> {
 	Color( const tColor<Uint8>& Col );
 
 	Color( const Uint32& Col );
+
+	Color& operator=( const Color& col );
 
 	Colorf toHsv() const;
 

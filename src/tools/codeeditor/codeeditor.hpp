@@ -156,6 +156,7 @@ class App : public UICodeEditorSplitter::Client {
 	String mLastSearch;
 	UILayout* mMainLayout{ nullptr };
 	UILayout* mBaseLayout{ nullptr };
+	UILayout* mImageLayout{ nullptr };
 	UISearchBar* mSearchBarLayout{ nullptr };
 	UILocateBar* mLocateBarLayout{ nullptr };
 	UILocateBar* mGlobalSearchBarLayout{ nullptr };
@@ -213,6 +214,8 @@ class App : public UICodeEditorSplitter::Client {
 	void initLocateBar();
 
 	void initProjectTreeView( const std::string& path );
+
+	void initImageView();
 
 	void loadDirTree( const std::string& path );
 
@@ -339,6 +342,9 @@ class App : public UICodeEditorSplitter::Client {
 	void removeFolderWatches();
 
 	void createDocAlert( UICodeEditor* editor );
+
+	void loadFileFromPath( const std::string& path, bool inNewTab = true,
+						   UICodeEditor* codeEditor = nullptr );
 };
 
 #endif // EE_TOOLS_CODEEDITOR_HPP

@@ -1,5 +1,6 @@
 #include <SOIL2/src/SOIL2/SOIL2.h>
 #include <SOIL2/src/SOIL2/stb_image.h>
+#include <algorithm>
 #include <eepp/graphics/renderer/openglext.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/texture.hpp>
@@ -158,8 +159,8 @@ void TextureFactory::bind( const Texture* texture, Texture::CoordinateType coord
 		}
 
 		if ( coordinateType == Texture::CoordinateType::Pixels ) {
-			GLfloat matrix[16] = {1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f,
-								  0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f};
+			GLfloat matrix[16] = { 1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f,
+								   0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f };
 
 			matrix[0] = 1.f / const_cast<Texture*>( texture )->getPixelsSize().x;
 			matrix[5] = 1.f / const_cast<Texture*>( texture )->getPixelsSize().y;
@@ -216,6 +217,14 @@ bool TextureFactory::remove( Uint32 TexId ) {
 		return true;
 	}
 
+	return false;
+}
+
+bool TextureFactory::remove( Texture* texture ) {
+	if ( std::find( mTextures.begin(), mTextures.end(), texture ) != mTextures.end() ) {
+		removeReference( texture );
+		return true;
+	}
 	return false;
 }
 

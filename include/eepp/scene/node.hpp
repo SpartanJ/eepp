@@ -190,6 +190,10 @@ class EE_API Node : public Transformable {
 
 	Uint32 addEventListener( const Uint32& eventType, const EventCallback& callback );
 
+	Uint32 on( const Uint32& eventType, const EventCallback& callback ) {
+		return addEventListener( eventType, callback );
+	}
+
 	void removeEventsOfType( const Uint32& eventType );
 
 	void removeEventListener( const Uint32& callbackId );
@@ -406,7 +410,7 @@ class EE_API Node : public Transformable {
 
 	const Vector2f& getScreenPos() const;
 
-	protected:
+  protected:
 	typedef std::map<Uint32, std::map<Uint32, EventCallback>> EventsMap;
 	friend class EventDispatcher;
 

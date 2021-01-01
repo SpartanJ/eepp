@@ -27,8 +27,6 @@ UIImage::UIImage( const std::string& tag ) :
 	mDrawableOwner( false ) {
 	mFlags |= UI_AUTO_SIZE;
 
-	onAutoSize();
-
 	applyDefaultTheme();
 }
 
@@ -77,15 +75,15 @@ void UIImage::onAutoSize() {
 			setInternalSize( mDrawable->getSize() );
 		}
 
-		if ( mWidthPolicy == SizePolicy::WrapContent ) {
-			setInternalWidth( (int)mDrawable->getSize().getWidth() + mPadding.Left +
-							  mPadding.Right );
-		}
+		Sizef size( getSize() );
 
-		if ( mHeightPolicy == SizePolicy::WrapContent ) {
-			setInternalHeight( (int)mDrawable->getSize().getHeight() + mPadding.Top +
-							   mPadding.Bottom );
-		}
+		if ( mWidthPolicy == SizePolicy::WrapContent )
+			size.x = ( (int)mDrawable->getSize().getWidth() + mPadding.Left + mPadding.Right );
+
+		if ( mHeightPolicy == SizePolicy::WrapContent )
+			size.y = ( (int)mDrawable->getSize().getHeight() + mPadding.Top + mPadding.Bottom );
+
+		setSize( size );
 	}
 }
 

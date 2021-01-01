@@ -128,11 +128,17 @@ class EE_API TextureFactory : protected Mutex {
 		const bool& CompressTexture = false, const bool& KeepLocalCopy = false,
 		const Image::FormatConfiguration& imageformatConfiguration = Image::FormatConfiguration() );
 
-	/** Remove and Unload the Texture Id
+	/** Removes and Unload the Texture Id
 	 * @param TexId
 	 * @return True if was removed
 	 */
 	bool remove( Uint32 TexId );
+
+	/** Removes and Unload the Texture
+	 * @param texture The texture pointer
+	 * @return True if was removed
+	 */
+	bool remove( Texture* texture );
 
 	/** Reload all loaded textures to recover the OpenGL context */
 	void reloadAllTextures();

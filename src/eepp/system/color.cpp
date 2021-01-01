@@ -89,7 +89,14 @@ Color Color::blend( Color src, Color dst ) {
 
 Color::Color() : tColor<Uint8>() {}
 
-Color::Color( std::string colorString ) {
+Color::Color( const Color& c ) {
+	r = c.r;
+	g = c.g;
+	b = c.b;
+	a = c.a;
+}
+
+Color::Color( const std::string& colorString ) {
 	Color c( fromString( colorString ) );
 	r = c.r;
 	g = c.g;
@@ -108,6 +115,14 @@ Color::Color( const tColor<Uint8>& Col, Uint8 a ) : tColor<Uint8>( Col.r, Col.g,
 Color::Color( const tColor<Uint8>& Col ) : tColor<Uint8>( Col.r, Col.g, Col.b, Col.a ) {}
 
 Color::Color( const Uint32& Col ) : tColor<Uint8>( Col ) {}
+
+Color& Color::operator=( const Color& col ) {
+	r = col.r;
+	g = col.g;
+	b = col.b;
+	a = col.a;
+	return *this;
+}
 
 Colorf Color::toHsv() const {
 	Colorf hsv;

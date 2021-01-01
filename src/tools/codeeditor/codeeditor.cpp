@@ -134,8 +134,7 @@ void App::openFileDialog() {
 	dialog->setTitle( "Open File" );
 	dialog->setCloseShortcut( KEY_ESCAPE );
 	dialog->addEventListener( Event::OpenFile, [&]( const Event* event ) {
-		mEditorSplitter->loadFileFromPathInNewTab(
-			event->getNode()->asType<UIFileDialog>()->getFullPath() );
+		loadFileFromPath( event->getNode()->asType<UIFileDialog>()->getFullPath() );
 	} );
 	dialog->addEventListener( Event::OnWindowClose, [&]( const Event* ) {
 		if ( mEditorSplitter && mEditorSplitter->getCurEditor() &&
@@ -511,7 +510,7 @@ void App::initLocateBar() {
 				if ( !tab ) {
 					FileInfo fileInfo( path );
 					if ( fileInfo.exists() && fileInfo.isRegularFile() )
-						mEditorSplitter->loadFileFromPathInNewTab( path );
+						loadFileFromPath( path );
 				} else {
 					tab->getTabWidget()->setTabSelected( tab );
 				}
@@ -851,7 +850,7 @@ void App::initGlobalSearchBar() {
 				if ( !tab ) {
 					FileInfo fileInfo( path );
 					if ( fileInfo.exists() && fileInfo.isRegularFile() )
-						mEditorSplitter->loadFileFromPathInNewTab( path );
+						loadFileFromPath( path );
 				} else {
 					tab->getTabWidget()->setTabSelected( tab );
 				}
@@ -945,14 +944,14 @@ void App::onFileDropped( String file ) {
 		node = codeEditor;
 	if ( node && node->isType( UI_TYPE_CODEEDITOR ) ) {
 		codeEditor = node->asType<UICodeEditor>();
-		if ( !codeEditor->getDocument().isEmpty() ) {
+		if ( !codeEditor->getDocument().isEmpty() && !Image::isImageExtension( file ) ) {
 			auto d = mEditorSplitter->createCodeEditorInTabWidget(
 				mEditorSplitter->tabWidgetFromEditor( codeEditor ) );
 			codeEditor = d.second;
 			d.first->getTabWidget()->setTabSelected( d.first );
 		}
 	}
-	mEditorSplitter->loadFileFromPath( file, codeEditor );
+	loadFileFromPath( file, false, codeEditor );
 }
 
 void App::onTextDropped( String text ) {
@@ -992,7 +991,7 @@ void App::updateRecentFiles() {
 		menu->removeEventsOfType( Event::OnItemClicked );
 		if ( mRecentFiles.empty() )
 			return;
-		for ( auto file : mRecentFiles )
+		for ( const auto& file : mRecentFiles )
 			menu->add( file );
 		menu->addSeparator();
 		menu->add( "Clear Menu" );
@@ -1003,7 +1002,7 @@ void App::updateRecentFiles() {
 			if ( txt != "Clear Menu" ) {
 				std::string path( txt.toUtf8() );
 				if ( FileSystem::fileExists( path ) && !FileSystem::isDirectory( path ) ) {
-					mEditorSplitter->loadFileFromPathInNewTab( path );
+					loadFileFromPath( path );
 				}
 			} else {
 				mRecentFiles.clear();
@@ -1023,7 +1022,7 @@ void App::updateRecentFolders() {
 		menu->removeEventsOfType( Event::OnItemClicked );
 		if ( mRecentFolders.empty() )
 			return;
-		for ( auto file : mRecentFolders )
+		for ( const auto& file : mRecentFolders )
 			menu->add( file );
 		menu->addSeparator();
 		menu->add( "Clear Menu" );
@@ -1579,17 +1578,17 @@ void App::loadKeybindings() {
 		if ( FileSystem::fileExists( mKeybindingsPath ) ) {
 			mKeybindings = ini.getKeyMap( "keybindings" );
 		} else {
-			for ( auto it : defKeybindings )
+			for ( const auto& it : defKeybindings )
 				ini.setValue( "keybindings", bindings.getShortcutString( it.first ), it.second );
 			ini.writeFile();
 			mKeybindings = ini.getKeyMap( "keybindings" );
 		}
-		for ( auto key : mKeybindings )
+		for ( const auto& key : mKeybindings )
 			mKeybindingsInvert[key.second] = key.first;
 
 		if ( defKeybindings.size() != mKeybindings.size() ) {
 			bool added = false;
-			for ( auto key : defKeybindings ) {
+			for ( const auto& key : defKeybindings ) {
 				auto foundCmd = mKeybindingsInvert.find( key.second );
 				auto shortcutStr = bindings.getShortcutString( key.first );
 				if ( foundCmd == mKeybindingsInvert.end() &&
@@ -1804,6 +1803,43 @@ void App::createDocAlert( UICodeEditor* editor ) {
 		} );
 }
 
+void App::loadFileFromPath( const std::string& path, bool inNewTab, UICodeEditor* codeEditor ) {
+	if ( Image::isImageExtension( path ) && Image::isImage( path ) ) {
+		UIImage* imageView = mImageLayout->findByType<UIImage>( UI_TYPE_IMAGE );
+		UILoader* loaderView = mImageLayout->findByType<UILoader>( UI_TYPE_LOADER );
+		if ( imageView ) {
+			mImageLayout->setEnabled( true )->setVisible( true );
+			loaderView->setVisible( true );
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+			mThreadPool->run(
+				[&, imageView, loaderView, path]() {
+#endif
+					Texture* image = TextureFactory::instance()->getTexture(
+						TextureFactory::instance()->loadFromFile( path ) );
+					if ( mImageLayout->isVisible() ) {
+						imageView->runOnMainThread( [imageView, loaderView, image]() {
+							imageView->setDrawable( image, true );
+							loaderView->setVisible( false );
+						} );
+					} else {
+						TextureFactory::instance()->remove( image );
+						imageView->setDrawable( nullptr );
+						loaderView->setVisible( false );
+					}
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+				},
+				[]() {} );
+#endif
+		}
+	} else {
+		if ( inNewTab ) {
+			mEditorSplitter->loadFileFromPathInNewTab( path );
+		} else {
+			mEditorSplitter->loadFileFromPath( path, codeEditor );
+		}
+	}
+}
+
 void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	const CodeEditorConfig& config = mConfig.editor;
 	editor->setFontSize( config.fontSize.asDp( 0, Sizef(), mUISceneNode->getDPI() ) );
@@ -1876,8 +1912,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 			updateDocumentMenu();
 		}
 	} );
-	doc.setCommand( "keybindings",
-					[&] { mEditorSplitter->loadFileFromPathInNewTab( mKeybindingsPath ); } );
+	doc.setCommand( "keybindings", [&] { loadFileFromPath( mKeybindingsPath ); } );
 	doc.setCommand( "debug-draw-boxes-toggle",
 					[&] { mUISceneNode->setDrawBoxes( !mUISceneNode->getDrawBoxes() ); } );
 	doc.setCommand( "debug-draw-highlight-toggle", [&] {
@@ -2156,11 +2191,11 @@ void App::updateEditorState() {
 
 void App::removeFolderWatches() {
 	if ( mFileWatcher ) {
-		for ( auto dir : mFolderWatches )
+		for ( const auto& dir : mFolderWatches )
 			mFileWatcher->removeWatch( dir );
 		mFolderWatches.clear();
 
-		for ( auto fileFolder : mFilesFolderWatches )
+		for ( const auto& fileFolder : mFilesFolderWatches )
 			mFileWatcher->removeWatch( fileFolder.second );
 		mFilesFolderWatches.clear();
 	}
@@ -2180,7 +2215,7 @@ void App::loadDirTree( const std::string& path ) {
 			if ( mFileWatcher ) {
 				removeFolderWatches();
 				auto newDirs = dirTree.getDirectories();
-				for ( auto dir : newDirs )
+				for ( const auto& dir : newDirs )
 					mFolderWatches.insert( mFileWatcher->addWatch( dir, mFileSystemListener ) );
 			}
 		},
@@ -2211,7 +2246,7 @@ void App::initProjectTreeView( const std::string& path ) {
 				if ( !tab ) {
 					FileInfo fileInfo( path );
 					if ( fileInfo.exists() && fileInfo.isRegularFile() )
-						mEditorSplitter->loadFileFromPathInNewTab( path );
+						loadFileFromPath( path );
 				} else {
 					tab->getTabWidget()->setTabSelected( tab );
 				}
@@ -2245,13 +2280,20 @@ void App::initProjectTreeView( const std::string& path ) {
 			if ( mFileSystemListener )
 				mFileSystemListener->setFileSystemModel( mFileSystemModel );
 
-			mEditorSplitter->loadFileFromPath( rpath );
+			loadFileFromPath( rpath, false );
 		}
 	} else {
 		loadFolder( "." );
 	}
 
 	mProjectTreeView->setAutoExpandOnSingleColumn( true );
+}
+
+void App::initImageView() {
+	mImageLayout->on( Event::MouseClick, [&]( const Event* ) {
+		mImageLayout->findByType<UIImage>( UI_TYPE_IMAGE )->setDrawable( nullptr );
+		mImageLayout->setEnabled( false )->setVisible( false );
+	} );
 }
 
 void App::loadFolder( const std::string& path ) {
@@ -2320,6 +2362,7 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 	if ( winSettings.Icon.empty() )
 		winSettings.Icon = mConfig.window.winIcon;
 	ContextSettings contextSettings = engine->createContextSettings( &mConfig.ini, "window" );
+	contextSettings.SharedGLContext = true;
 	mWindow = engine->createWindow( winSettings, contextSettings );
 
 	if ( mWindow->isOpen() ) {
@@ -2454,6 +2497,16 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 			margin-top: 24dp;
 			cursor: arrow;
 		}
+		#image_container {
+			background-color: #00000066;
+		}
+		#image_close {
+			color: #eff0f188;
+			font-family: icon;
+			font-size: 22dp;
+			margin-top: 32dp;
+			margin-right: 22dp;
+		}
 		</style>
 		<RelativeLayout id="main_layout" layout_width="match_parent" layout_height="match_parent">
 		<Splitter id="project_splitter" layout_width="match_parent" layout_height="match_parent">
@@ -2467,6 +2520,11 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 					<hbox id="doc_info" layout_width="wrap_content" layout_height="wrap_content" layout_gravity="bottom|right" enabled="false">
 						<TextView id="doc_info_text" layout_width="wrap_content" layout_height="wrap_content" />
 					</hbox>
+					<RelativeLayout id="image_container" layout_width="match_parent" layout_height="match_parent" visible="false" enabled="false">
+						<Image layout_width="match_parent" layout_height="match_parent" scaleType="fit_inside" gravity="center" enabled="false" layout_gravity="center" />
+						<TextView id="image_close" layout_width="wrap_content" layout_height="wrap_content" text="&#xeb99;" layout_gravity="top|right" enabled="false" />
+						<Loader id="image_loader" layout_width="64dp" layout_height="64dp" outline-thickness="6dp" layout_gravity="center" visible="false" />
+					</RelativeLayout>
 				</RelativeLayout>
 				<searchbar id="search_bar" layout_width="match_parent" layout_height="wrap_content">
 					<vbox layout_width="wrap_content" layout_height="wrap_content" margin-right="4dp">
@@ -2566,7 +2624,7 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 			{ "table-view", 0xf1de },
 			{ "list-view", 0xecf1 },
 		};
-		for ( auto icon : icons )
+		for ( const auto& icon : icons )
 			iconTheme->add( UIGlyphIcon::New( icon.first, iconFont, icon.second ) );
 
 		mUISceneNode->getUIIconThemeManager()->setCurrentTheme( iconTheme );
@@ -2577,6 +2635,7 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		mUISceneNode->loadLayoutFromString( baseUI );
 		mUISceneNode->bind( "main_layout", mMainLayout );
 		mUISceneNode->bind( "code_container", mBaseLayout );
+		mUISceneNode->bind( "image_container", mImageLayout );
 		mUISceneNode->bind( "search_bar", mSearchBarLayout );
 		mUISceneNode->bind( "global_search_bar", mGlobalSearchBarLayout );
 		mUISceneNode->bind( "locate_bar", mLocateBarLayout );
@@ -2613,6 +2672,8 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		initGlobalSearchBar();
 
 		initLocateBar();
+
+		initImageView();
 
 		createSettingsMenu();
 
