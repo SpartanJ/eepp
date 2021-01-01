@@ -705,6 +705,68 @@ void App::updateGlobalSearchBarResults( const std::string& search,
 		mGlobalSearchTree->expandAll();
 }
 
+void App::doGlobalSearch( const String& text, bool caseSensitive, bool wholeWord,
+						  bool luaPattern ) {
+	if ( mDirTree && mDirTree->getFilesCount() > 0 && !text.empty() ) {
+		UILoader* loader = UILoader::New();
+		loader->setId( "loader" );
+		loader->setRadius( 48 );
+		loader->setOutlineThickness( 6 );
+		loader->setFillColor( Color::Red );
+		loader->setParent( mGlobalSearchTree->getParent() );
+		loader->setPosition( mGlobalSearchTree->getPosition() +
+							 mGlobalSearchTree->getSize() * 0.5f - loader->getSize() * 0.5f );
+		Clock* clock = eeNew( Clock, () );
+		std::string search( text.toUtf8() );
+		ProjectSearch::find(
+			mDirTree->getFiles(), search,
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
+			mThreadPool,
+#endif
+			[&, clock, search, loader]( const ProjectSearch::Result& res ) {
+				Log::info( "Global search for \"%s\" took %.2fms", search.c_str(),
+						   clock->getElapsedTime().asMilliseconds() );
+				eeDelete( clock );
+				mUISceneNode->runOnMainThread( [&, loader, res, search] {
+					auto model = ProjectSearch::asModel( res );
+					mGlobalSearchHistory.push_back( std::make_pair( search, model ) );
+					if ( mGlobalSearchHistory.size() > 10 )
+						mGlobalSearchHistory.pop_front();
+
+					std::vector<String> items;
+					for ( auto item = mGlobalSearchHistory.rbegin();
+						  item != mGlobalSearchHistory.rend(); item++ ) {
+						items.push_back( item->first );
+					}
+
+					auto listBox = mGlobalSearchHistoryList->getListBox();
+					listBox->clear();
+					listBox->addListBoxItems( items );
+					if ( mGlobalSearchHistoryOnItemSelectedCb )
+						mGlobalSearchHistoryList->removeEventListener(
+							mGlobalSearchHistoryOnItemSelectedCb );
+					listBox->setSelected( 0 );
+					mGlobalSearchHistoryOnItemSelectedCb =
+						mGlobalSearchHistoryList->addEventListener(
+							Event::OnItemSelected, [&]( const Event* ) {
+								auto idx =
+									mGlobalSearchHistoryList->getListBox()->getItemSelectedIndex();
+								auto idxItem = mGlobalSearchHistory.at(
+									mGlobalSearchHistory.size() - 1 - idx );
+								updateGlobalSearchBarResults( idxItem.first, idxItem.second );
+							} );
+
+					updateGlobalSearchBarResults( search, model );
+					loader->setVisible( false );
+					loader->close();
+				} );
+			},
+			caseSensitive, wholeWord,
+			luaPattern ? TextDocument::FindReplaceType::LuaPattern
+					   : TextDocument::FindReplaceType::Normal );
+	}
+}
+
 void App::initGlobalSearchBar() {
 	auto addClickListener = [&]( UIWidget* widget, std::string cmd ) {
 		widget->addEventListener( Event::MouseClick, [this, cmd]( const Event* event ) {
@@ -721,67 +783,11 @@ void App::initGlobalSearchBar() {
 	mGlobalSearchInput = mGlobalSearchBarLayout->find<UITextInput>( "global_search_find" );
 	mGlobalSearchHistoryList =
 		mGlobalSearchBarLayout->find<UIDropDownList>( "global_search_history" );
-	mGlobalSearchBarLayout->addCommand( "search-in-files", [&, caseSensitiveChk, wholeWordChk,
-															luaPatternChk] {
-		if ( mDirTree && mDirTree->getFilesCount() > 0 && !mGlobalSearchInput->getText().empty() ) {
-			UILoader* loader = UILoader::New();
-			loader->setId( "loader" );
-			loader->setRadius( 48 );
-			loader->setOutlineThickness( 6 );
-			loader->setFillColor( Color::Red );
-			loader->setParent( mGlobalSearchTree->getParent() );
-			loader->setPosition( mGlobalSearchTree->getPosition() +
-								 mGlobalSearchTree->getSize() * 0.5f - loader->getSize() * 0.5f );
-			Clock* clock = eeNew( Clock, () );
-			std::string search( mGlobalSearchInput->getText().toUtf8() );
-			ProjectSearch::find(
-				mDirTree->getFiles(), search,
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
-				mThreadPool,
-#endif
-				[&, clock, search, loader]( const ProjectSearch::Result& res ) {
-					Log::info( "Global search for \"%s\" took %.2fms", search.c_str(),
-							   clock->getElapsedTime().asMilliseconds() );
-					eeDelete( clock );
-					mUISceneNode->runOnMainThread( [&, loader, res, search] {
-						auto model = ProjectSearch::asModel( res );
-						mGlobalSearchHistory.push_back( std::make_pair( search, model ) );
-						if ( mGlobalSearchHistory.size() > 10 )
-							mGlobalSearchHistory.pop_front();
-
-						std::vector<String> items;
-						for ( auto item = mGlobalSearchHistory.rbegin();
-							  item != mGlobalSearchHistory.rend(); item++ ) {
-							items.push_back( item->first );
-						}
-
-						auto listBox = mGlobalSearchHistoryList->getListBox();
-						listBox->clear();
-						listBox->addListBoxItems( items );
-						if ( mGlobalSearchHistoryOnItemSelectedCb )
-							mGlobalSearchHistoryList->removeEventListener(
-								mGlobalSearchHistoryOnItemSelectedCb );
-						listBox->setSelected( 0 );
-						mGlobalSearchHistoryOnItemSelectedCb =
-							mGlobalSearchHistoryList->addEventListener(
-								Event::OnItemSelected, [&]( const Event* ) {
-									auto idx = mGlobalSearchHistoryList->getListBox()
-												   ->getItemSelectedIndex();
-									auto idxItem = mGlobalSearchHistory.at(
-										mGlobalSearchHistory.size() - 1 - idx );
-									updateGlobalSearchBarResults( idxItem.first, idxItem.second );
-								} );
-
-						updateGlobalSearchBarResults( search, model );
-						loader->setVisible( false );
-						loader->close();
-					} );
-				},
-				caseSensitiveChk->isChecked(), wholeWordChk->isChecked(),
-				luaPatternChk->isChecked() ? TextDocument::FindReplaceType::LuaPattern
-										   : TextDocument::FindReplaceType::Normal );
-		}
-	} );
+	mGlobalSearchBarLayout->addCommand(
+		"search-in-files", [&, caseSensitiveChk, wholeWordChk, luaPatternChk] {
+			doGlobalSearch( mGlobalSearchInput->getText(), caseSensitiveChk->isChecked(),
+							wholeWordChk->isChecked(), luaPatternChk->isChecked() );
+		} );
 	mGlobalSearchBarLayout->addCommand( "close-global-searchbar", [&] {
 		hideGlobalSearchBar();
 		if ( mEditorSplitter->getCurEditor() )
@@ -1810,7 +1816,7 @@ void App::loadFileFromPath( const std::string& path, bool inNewTab, UICodeEditor
 		if ( imageView ) {
 			mImageLayout->setEnabled( true )->setVisible( true );
 			loaderView->setVisible( true );
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 			mThreadPool->run(
 				[&, imageView, loaderView, path]() {
 #endif
@@ -1826,7 +1832,7 @@ void App::loadFileFromPath( const std::string& path, bool inNewTab, UICodeEditor
 						imageView->setDrawable( nullptr );
 						loaderView->setVisible( false );
 					}
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 				},
 				[]() {} );
 #endif

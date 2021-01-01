@@ -148,6 +148,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	void saveAll();
 
+	void doGlobalSearch( const String& text, bool caseSensitive, bool wholeWord, bool luaPattern );
+
   protected:
 	EE::Window::Window* mWindow{ nullptr };
 	UISceneNode* mUISceneNode{ nullptr };
@@ -192,6 +194,7 @@ class App : public UICodeEditorSplitter::Client {
 	std::shared_ptr<FileSystemModel> mFileSystemModel;
 	UITableView* mLocateTable{ nullptr };
 	UITextInput* mLocateInput{ nullptr };
+	UILayout* mGlobalSearchLayout{ nullptr };
 	UITreeViewGlobalSearch* mGlobalSearchTree{ nullptr };
 	UITextInput* mGlobalSearchInput{ nullptr };
 	UIDropDownList* mGlobalSearchHistoryList{ nullptr };
