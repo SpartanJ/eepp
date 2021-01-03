@@ -39,7 +39,7 @@ UITreeView::MetadataForIndex& UITreeView::getIndexMetadata( const ModelIndex& in
 	return mViewMetadata[index.data()];
 }
 
-template <typename Callback> void UITreeView::traverseTree( Callback callback ) const {
+void UITreeView::traverseTree( TreeViewCallback callback ) const {
 	if ( !getModel() )
 		return;
 	auto& model = *getModel();
@@ -275,7 +275,12 @@ void UITreeView::drawChilds() {
 								getModel()->index( index.row(), colIndex, index.parent() ),
 								indentLevel, yOffset );
 				} else {
-					updateCell( realIndex, index, indentLevel, yOffset );
+					auto* cell = updateCell( realIndex, index, indentLevel, yOffset );
+
+					if ( mFocusSelectionDirty && index == getSelection().first() ) {
+						cell->setFocus();
+						mFocusSelectionDirty = false;
+					}
 				}
 			}
 		}
@@ -455,8 +460,8 @@ Uint32 UITreeView::onKeyDown( const KeyEvent& event ) {
 			bool foundStart = false;
 			bool resultFound = false;
 			ModelIndex foundIndex;
-			Float curY;
-			Float lastOffsetY;
+			Float curY = 0;
+			Float lastOffsetY = 0;
 			ModelIndex lastIndex;
 			traverseTree(
 				[&]( const int&, const ModelIndex& index, const size_t&, const Float& offsetY ) {
@@ -582,7 +587,7 @@ Uint32 UITreeView::onKeyDown( const KeyEvent& event ) {
 			return 1;
 		}
 		case KEY_RETURN:
-		case KEY_SPACE: {
+		case KEY_KP_ENTER: {
 			if ( curIndex.isValid() ) {
 				if ( getModel()->rowCount( curIndex ) ) {
 					auto& metadata = getIndexMetadata( curIndex );
@@ -630,6 +635,20 @@ ModelIndex UITreeView::findRowWithText( const std::string& text, const bool& cas
 		return IterationDecision::Continue;
 	} );
 	return foundIndex;
+}
+
+bool UITreeView::getFocusOnSelection() const {
+	return mFocusOnSelection;
+}
+
+void UITreeView::setFocusOnSelection( bool focusOnSelection ) {
+	mFocusOnSelection = focusOnSelection;
+}
+
+void UITreeView::onModelSelectionChange() {
+	UIAbstractTableView::onModelSelectionChange();
+	if ( mFocusOnSelection )
+		mFocusSelectionDirty = true;
 }
 
 }} // namespace EE::UI

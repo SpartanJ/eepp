@@ -21,11 +21,11 @@ class ProjectSearch {
 			Result( const String& line, const TextRange& pos ) : line( line ), position( pos ) {}
 			String line;
 			TextRange position;
-			bool selected{ false };
+			bool selected{ true };
 		};
 		std::string file;
 		std::vector<Result> results;
-		bool selected{ false };
+		bool selected{ true };
 
 		void setResultsSelected( bool selected ) {
 			this->selected = selected;
@@ -55,7 +55,16 @@ class ProjectSearch {
 
 	class ResultModel : public Model {
 	  public:
-		enum Column { FileOrPosition, Line, LineEnd, ColumnStart, ColumnEnd, Selected, Data };
+		enum Column {
+			FileOrPosition,
+			Line,
+			LineEnd,
+			ColumnStart,
+			ColumnEnd,
+			Selected,
+			Data,
+			ChildCount
+		};
 
 		ResultModel( const Result& result ) : mResult( result ) {}
 
@@ -91,6 +100,13 @@ class ProjectSearch {
 
 		std::string columnName( const size_t& colIndex ) const {
 			return colIndex == 0 ? "File" : "Line";
+		}
+
+		size_t resultCount() {
+			size_t count = 0;
+			for ( const auto& res : mResult )
+				count += res.results.size();
+			return count;
 		}
 
 		Variant data( const ModelIndex& index, Role role = Role::Display ) const {
@@ -144,6 +160,8 @@ class ProjectSearch {
 						case Data:
 							return Variant(
 								(void*)&mResult[index.internalId()].results[index.row()] );
+						case ChildCount:
+							return Variant( (Int64)0 );
 					}
 				} else {
 					switch ( index.column() ) {
@@ -151,6 +169,10 @@ class ProjectSearch {
 							return Variant( mResult[index.row()].file.c_str() );
 						case Data:
 							return Variant( (void*)&mResult[index.row()] );
+						case ChildCount:
+							return Variant( (Int64)mResult[index.row()].results.size() );
+						case Selected:
+							return Variant( (bool)mResult[index.row()].selected );
 					}
 				}
 			}
@@ -158,6 +180,8 @@ class ProjectSearch {
 		}
 
 		virtual void update() { onModelUpdate(); }
+
+		const Result& getResult() const { return mResult; }
 
 	  protected:
 		Result mResult;

@@ -617,6 +617,17 @@ TextPosition TextDocument::positionOffset( TextPosition position, TextPosition o
 	return sanitizePosition( position + offset );
 }
 
+bool TextDocument::replaceLine( const Int64& lineNum, const String& text ) {
+	if ( lineNum >= 0 && lineNum < (Int64)mLines.size() ) {
+		TextRange oldSelection = getSelection();
+		setSelection( { startOfLine( { lineNum, 0 } ), endOfLine( { lineNum, 0 } ) } );
+		textInput( text );
+		setSelection( oldSelection );
+		return true;
+	}
+	return false;
+}
+
 TextPosition TextDocument::nextChar( TextPosition position ) const {
 	return positionOffset( position, TextPosition( 0, 1 ) );
 }

@@ -123,6 +123,8 @@ class EE_API UICodeEditorSplitter {
 
 	void forEachDocStoppable( std::function<bool( TextDocument& )> run );
 
+	std::shared_ptr<TextDocument> findDocFromPath( const std::string& path );
+
 	bool getHideTabBarOnSingleTab() const;
 
 	void setHideTabBarOnSingleTab( bool hideTabBarOnSingleTab );

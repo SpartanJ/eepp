@@ -114,6 +114,8 @@ class EE_API TextDocument {
 
 	TextPosition positionOffset( TextPosition position, TextPosition offset ) const;
 
+	bool replaceLine( const Int64& lineNum, const String& text );
+
 	void print() const;
 
 	// Translations

@@ -22,7 +22,12 @@ class EE_API UITableCell : public UIPushButton {
 
 	ModelIndex getCurIndex() const { return mCurIndex; }
 
-	void setCurIndex( const ModelIndex& curIndex ) { mCurIndex = curIndex; }
+	void setCurIndex( const ModelIndex& curIndex ) {
+		if ( curIndex != mCurIndex ) {
+			mCurIndex = curIndex;
+			onModelIndexChange();
+		}
+	}
 
 	void setTheme( UITheme* Theme ) {
 		UIPushButton::setTheme( Theme );
@@ -42,6 +47,8 @@ class EE_API UITableCell : public UIPushButton {
 		UIPushButton( tag, newTextViewCb ) {
 		applyDefaultTheme();
 	}
+
+	virtual void onModelIndexChange() {}
 };
 
 }} // namespace EE::UI

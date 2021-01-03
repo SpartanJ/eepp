@@ -524,10 +524,12 @@ Uint32 UIAbstractTableView::onTextInput( const TextInputEvent& event ) {
 		},
 		Milliseconds( 350 ) );
 	runAction( mSearchTextAction );
-	mSearchText += String::toLower( event.getText() );
-	ModelIndex index = findRowWithText( mSearchText );
-	if ( index.isValid() )
-		setSelection( index );
+	mSearchText += String::trim( String::toLower( event.getText() ) );
+	if ( !mSearchText.empty() ) {
+		ModelIndex index = findRowWithText( mSearchText );
+		if ( index.isValid() )
+			setSelection( index );
+	}
 	return 1;
 }
 

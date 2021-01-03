@@ -21,36 +21,51 @@ UIWidget* UITreeViewGlobalSearch::createCell( UIWidget* rowWidget, const ModelIn
 	return setupCell( widget, rowWidget, index );
 }
 
+Uint32 UITreeViewGlobalSearch::onKeyDown( const KeyEvent& event ) {
+	auto curIndex = getSelection().first();
+	switch ( event.getKeyCode() ) {
+		case KEY_SPACE: {
+			if ( curIndex.isValid() )
+				onOpenModelIndex( curIndex, &event );
+			return 0;
+		}
+		default:
+			break;
+	}
+	return UITreeView::onKeyDown( event );
+}
+
+void UITreeViewCellGlobalSearch::toggleSelected() {
+	UICheckBox* chk = mTextBox->asType<UICheckBox>();
+	if ( getCurIndex().internalId() != -1 ) {
+		ProjectSearch::ResultData::Result* result = getResultPtr();
+		if ( result ) {
+			result->selected = !result->selected;
+			chk->setChecked( result->selected );
+
+			ProjectSearch::ResultData* parentData =
+				(ProjectSearch::ResultData*)getDataPtr( getCurIndex().parent() );
+			if ( parentData )
+				parentData->selected = parentData->allResultsSelected();
+		}
+	} else {
+		auto* result = getResultDataPtr();
+		result->setResultsSelected( !result->selected );
+		chk->setChecked( result->selected );
+	}
+}
+
 std::function<UITextView*()> UITreeViewCellGlobalSearch::getCheckBoxFn() {
 	return [&]() -> UITextView* {
 		UICheckBox* chk = UICheckBox::New();
-
 		addEventListener( Event::MouseClick, [&, chk]( const Event* event ) {
 			const MouseEvent* mouseEvent = static_cast<const MouseEvent*>( event );
-
 			Vector2f pos = convertToNodeSpace( mouseEvent->getPosition().asFloat() );
 			Rectf box( { convertToNodeSpace( chk->getCurrentButton()->convertToWorldSpace(
 							 chk->getCurrentButton()->getPixelsPosition() ) ),
 						 chk->getCurrentButton()->getPixelsSize() } );
-
-			if ( box.contains( pos ) ) {
-				if ( getCurIndex().internalId() != -1 ) {
-					ProjectSearch::ResultData::Result* result = getResultPtr();
-					if ( result ) {
-						result->selected = !result->selected;
-						chk->setChecked( result->selected );
-
-						ProjectSearch::ResultData* parentData =
-							(ProjectSearch::ResultData*)getDataPtr( getCurIndex().parent() );
-						if ( parentData )
-							parentData->selected = parentData->allResultsSelected();
-					}
-				} else {
-					auto* result = getResultDataPtr();
-					result->setResultsSelected( !result->selected );
-					chk->setChecked( result->selected );
-				}
-			}
+			if ( box.contains( pos ) )
+				toggleSelected();
 			return 1;
 		} );
 		return chk;
@@ -90,7 +105,11 @@ UITreeViewCellGlobalSearch::UITreeViewCellGlobalSearch( bool selectionEnabled ) 
 	UITreeViewCell( selectionEnabled ? getCheckBoxFn() : nullptr ) {}
 
 UIPushButton* UITreeViewCellGlobalSearch::setText( const String& text ) {
-	if ( text != mTextBox->getText() ) {
+	auto* result = getResultPtr();
+	if ( text != mTextBox->getText() ||
+		 ( result && std::make_pair<size_t, size_t>( result->position.start().column() + 12,
+													 result->position.end().column() + 12 ) !=
+						 mSearchStrPos ) ) {
 		mTextBox->setVisible( !text.empty() );
 		mTextBox->setText( text );
 		updateText( text + '\n' );
@@ -114,19 +133,10 @@ UIPushButton* UITreeViewCellGlobalSearch::updateText( const std::string& text ) 
 			mTextBox->setFontFillColor( pp->getLineNumColor(), from, to );
 		}
 
-		Int64 iniPos = 0;
-		Int64 endPos = 0;
-		Model* model = pp->getModel();
-		ModelIndex curIndex = getCurIndex();
-		ModelIndex indexStart = model->index(
-			curIndex.row(), ProjectSearch::ResultModel::ColumnStart, curIndex.parent() );
-		ModelIndex indexEnd = model->index( curIndex.row(), ProjectSearch::ResultModel::ColumnEnd,
-											curIndex.parent() );
-		Variant variantStart = model->data( indexStart, Model::Role::Custom );
-		Variant variantEnd = model->data( indexEnd, Model::Role::Custom );
-		iniPos = variantStart.asInt64();
-		endPos = variantEnd.asInt64();
-		mSearchStrPos = { iniPos + 12, endPos + 12 };
+		auto* result = getResultPtr();
+		mSearchStrPos = { result->position.start().column() + 12,
+						  result->position.end().column() + 12 };
+
 		const String& txt = mTextBox->getText();
 
 		if ( mSearchStrPos.second < txt.size() ) {

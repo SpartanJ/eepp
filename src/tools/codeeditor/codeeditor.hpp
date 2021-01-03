@@ -126,7 +126,7 @@ class App : public UICodeEditorSplitter::Client {
 
 	void showFindView();
 
-	void showGlobalSearch();
+	void showGlobalSearch( bool searchAndReplace = false );
 
 	void showLocateBar();
 
@@ -148,7 +148,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	void saveAll();
 
-	void doGlobalSearch( const String& text, bool caseSensitive, bool wholeWord, bool luaPattern );
+	void doGlobalSearch( const String& text, bool caseSensitive, bool wholeWord, bool luaPattern,
+						 bool searchReplace, bool searchAgain = false );
 
   protected:
 	EE::Window::Window* mWindow{ nullptr };
@@ -196,6 +197,8 @@ class App : public UICodeEditorSplitter::Client {
 	UITextInput* mLocateInput{ nullptr };
 	UILayout* mGlobalSearchLayout{ nullptr };
 	UITreeViewGlobalSearch* mGlobalSearchTree{ nullptr };
+	UITreeViewGlobalSearch* mGlobalSearchTreeSearch{ nullptr };
+	UITreeViewGlobalSearch* mGlobalSearchTreeReplace{ nullptr };
 	UITextInput* mGlobalSearchInput{ nullptr };
 	UIDropDownList* mGlobalSearchHistoryList{ nullptr };
 	Uint32 mGlobalSearchHistoryOnItemSelectedCb{ 0 };
@@ -338,7 +341,8 @@ class App : public UICodeEditorSplitter::Client {
 	void closeEditors();
 
 	void updateGlobalSearchBarResults( const std::string& search,
-									   std::shared_ptr<ProjectSearch::ResultModel> model );
+									   std::shared_ptr<ProjectSearch::ResultModel> model,
+									   bool searchReplace );
 
 	void switchSidePanel();
 
@@ -348,6 +352,11 @@ class App : public UICodeEditorSplitter::Client {
 
 	void loadFileFromPath( const std::string& path, bool inNewTab = true,
 						   UICodeEditor* codeEditor = nullptr );
+
+	void initGlobalSearchTree( UITreeViewGlobalSearch* searchTree );
+
+	void replaceInFiles( const String& replaceText,
+						 std::shared_ptr<ProjectSearch::ResultModel> model );
 };
 
 #endif // EE_TOOLS_CODEEDITOR_HPP

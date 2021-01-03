@@ -129,6 +129,10 @@ class EE_API UITreeView : public UIAbstractTableView {
 	virtual ModelIndex findRowWithText( const std::string& text, const bool& caseSensitive = false,
 										const bool& exactMatch = false ) const;
 
+	bool getFocusOnSelection() const;
+
+	void setFocusOnSelection( bool focusOnSelection );
+
   protected:
 	enum class IterationDecision {
 		Continue,
@@ -142,6 +146,8 @@ class EE_API UITreeView : public UIAbstractTableView {
 	UIIcon* mContractIcon{ nullptr };
 	size_t mExpanderIconSize{ 16 };
 	bool mExpandersAsIcons{ false };
+	bool mFocusOnSelection{ true };
+	bool mFocusSelectionDirty{ false };
 
 	UITreeView();
 
@@ -151,7 +157,11 @@ class EE_API UITreeView : public UIAbstractTableView {
 		bool open{ false };
 	};
 
-	template <typename Callback> void traverseTree( Callback ) const;
+	typedef std::function<IterationDecision( const int&, const ModelIndex&, const size_t&,
+											 const Float& )>
+		TreeViewCallback;
+
+	void traverseTree( TreeViewCallback ) const;
 
 	mutable std::map<void*, MetadataForIndex> mViewMetadata;
 
@@ -178,6 +188,8 @@ class EE_API UITreeView : public UIAbstractTableView {
 
 	virtual UIWidget* setupCell( UITableCell* widget, UIWidget* rowWidget,
 								 const ModelIndex& index );
+
+	virtual void onModelSelectionChange();
 };
 
 }} // namespace EE::UI

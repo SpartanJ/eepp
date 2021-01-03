@@ -437,6 +437,16 @@ void UICodeEditorSplitter::forEachDocStoppable( std::function<bool( TextDocument
 	}
 }
 
+std::shared_ptr<TextDocument> UICodeEditorSplitter::findDocFromPath( const std::string& path ) {
+	std::unordered_set<std::shared_ptr<TextDocument>> docs;
+	forEachEditor( [&]( UICodeEditor* editor ) { docs.insert( editor->getDocumentRef() ); } );
+	for ( const auto& doc : docs ) {
+		if ( doc->getFilePath() == path )
+			return doc;
+	}
+	return {};
+}
+
 bool UICodeEditorSplitter::getHideTabBarOnSingleTab() const {
 	return mHideTabBarOnSingleTab;
 }

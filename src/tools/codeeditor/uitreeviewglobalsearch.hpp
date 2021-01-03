@@ -24,6 +24,8 @@ class UITreeViewCellGlobalSearch : public UITreeViewCell {
 
 	virtual void updateCell( Model* model );
 
+	void toggleSelected();
+
   protected:
 	std::pair<size_t, size_t> mSearchStrPos;
 	String mResultStr;
@@ -62,6 +64,9 @@ class UITreeViewGlobalSearch : public UITreeView {
 	SyntaxColorScheme mColorScheme;
 	String mSearchStr;
 	bool mSearchReplace{ false };
+
+	virtual Uint32 onKeyDown( const KeyEvent& event );
+
 };
 
 #endif // UITREEVIEWGLOBALSEARCH_HPP
