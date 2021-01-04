@@ -374,6 +374,18 @@ void UIAbstractTableView::onScrollChange() {
 	mHeader->setPixelsPosition( -mScrollOffset.x, 0 );
 }
 
+void UIAbstractTableView::bindNavigationClick( UIWidget* widget ) {
+	mWidgetsClickCbId[widget] = widget->addEventListener(
+		mSingleClickNavigation ? Event::MouseClick : Event::MouseDoubleClick,
+		[&]( const Event* event ) {
+			auto mouseEvent = static_cast<const MouseEvent*>( event );
+			auto idx = mouseEvent->getNode()->getParent()->asType<UITableRow>()->getCurIndex();
+			if ( mouseEvent->getFlags() & EE_BUTTON_LMASK ) {
+				onOpenModelIndex( idx, event );
+			}
+		} );
+}
+
 UIWidget* UIAbstractTableView::createCell( UIWidget* rowWidget, const ModelIndex& index ) {
 	UITableCell* widget = UITableCell::New( mTag + "::cell" );
 	widget->setParent( rowWidget );
@@ -382,13 +394,7 @@ UIWidget* UIAbstractTableView::createCell( UIWidget* rowWidget, const ModelIndex
 	widget->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 	widget->setTextAlign( UI_HALIGN_LEFT );
 	widget->setCurIndex( index );
-	widget->addEventListener( Event::MouseDoubleClick, [&]( const Event* event ) {
-		auto mouseEvent = static_cast<const MouseEvent*>( event );
-		auto idx = mouseEvent->getNode()->getParent()->asType<UITableRow>()->getCurIndex();
-		if ( mouseEvent->getFlags() & EE_BUTTON_LMASK ) {
-			onOpenModelIndex( idx, event );
-		}
-	} );
+	bindNavigationClick( widget );
 	return widget;
 }
 
@@ -587,6 +593,21 @@ const size_t& UIAbstractTableView::getMainColumn() const {
 
 void UIAbstractTableView::setMainColumn( const size_t& mainColumn ) {
 	mMainColumn = mainColumn;
+}
+
+bool UIAbstractTableView::getSingleClickNavigation() const {
+	return mSingleClickNavigation;
+}
+
+void UIAbstractTableView::setSingleClickNavigation( bool singleClickNavigation ) {
+	if ( singleClickNavigation != mSingleClickNavigation ) {
+		mSingleClickNavigation = singleClickNavigation;
+		// Rebind the clicks
+		for ( const auto& widgetIt : mWidgetsClickCbId ) {
+			widgetIt.first->removeEventListener( widgetIt.second );
+			bindNavigationClick( widgetIt.first );
+		}
+	}
 }
 
 }}} // namespace EE::UI::Abstract

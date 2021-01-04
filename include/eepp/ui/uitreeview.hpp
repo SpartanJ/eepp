@@ -190,6 +190,8 @@ class EE_API UITreeView : public UIAbstractTableView {
 								 const ModelIndex& index );
 
 	virtual void onModelSelectionChange();
+
+	virtual void bindNavigationClick( UIWidget* widget );
 };
 
 }} // namespace EE::UI

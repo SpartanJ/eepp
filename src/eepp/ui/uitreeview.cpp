@@ -109,16 +109,10 @@ void UITreeView::updateContentSize() {
 		onContentSizeChange();
 }
 
-UIWidget* UITreeView::setupCell( UITableCell* widget, UIWidget* rowWidget,
-								 const ModelIndex& index ) {
-	widget->setParent( rowWidget );
-	widget->unsetFlags( UI_AUTO_SIZE );
-	widget->clipEnable();
-	widget->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
-	widget->setTextAlign( UI_HALIGN_LEFT );
-	widget->setCurIndex( index );
-	if ( index.column() == (Int64)getModel()->treeColumn() ) {
-		widget->addEventListener( Event::MouseDoubleClick, [&]( const Event* event ) {
+void UITreeView::bindNavigationClick( UIWidget* widget ) {
+	mWidgetsClickCbId[widget] = widget->addEventListener(
+		mSingleClickNavigation ? Event::MouseClick : Event::MouseDoubleClick,
+		[&]( const Event* event ) {
 			auto mouseEvent = static_cast<const MouseEvent*>( event );
 			auto idx = mouseEvent->getNode()->getParent()->asType<UITableRow>()->getCurIndex();
 			if ( mouseEvent->getFlags() & EE_BUTTON_LMASK ) {
@@ -132,6 +126,18 @@ UIWidget* UITreeView::setupCell( UITableCell* widget, UIWidget* rowWidget,
 				}
 			}
 		} );
+}
+
+UIWidget* UITreeView::setupCell( UITableCell* widget, UIWidget* rowWidget,
+								 const ModelIndex& index ) {
+	widget->setParent( rowWidget );
+	widget->unsetFlags( UI_AUTO_SIZE );
+	widget->clipEnable();
+	widget->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	widget->setTextAlign( UI_HALIGN_LEFT );
+	widget->setCurIndex( index );
+	if ( index.column() == (Int64)getModel()->treeColumn() ) {
+		bindNavigationClick( widget );
 		widget->addEventListener( Event::MouseClick, [&]( const Event* event ) {
 			auto mouseEvent = static_cast<const MouseEvent*>( event );
 			UIWidget* icon = mouseEvent->getNode()->asType<UIPushButton>()->getExtraInnerWidget();

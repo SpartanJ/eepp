@@ -31,17 +31,19 @@ template <typename T> class tSize : public Vector2<T> {
 
 	/** Set a new height */
 	void setHeight( const T& height );
+
+	tSize<T>& operator=( const tSize<T>& right );
 };
 
 template <typename T> tSize<T>::tSize() : Vector2<T>( 0, 0 ) {}
 
 template <typename T>
-tSize<T>::tSize( const T& Width, const T& Height ) : Vector2<T>( Width, Height ) {}
+tSize<T>::tSize( const T& width, const T& height ) : Vector2<T>( width, height ) {}
 
 template <typename T>
-tSize<T>::tSize( const tSize<T>& Size ) : Vector2<T>( Size.getWidth(), Size.getHeight() ) {}
+tSize<T>::tSize( const tSize<T>& size ) : Vector2<T>( size.getWidth(), size.getHeight() ) {}
 
-template <typename T> tSize<T>::tSize( const Vector2<T>& Vec ) : Vector2<T>( Vec.x, Vec.y ) {}
+template <typename T> tSize<T>::tSize( const Vector2<T>& vec ) : Vector2<T>( vec.x, vec.y ) {}
 
 template <typename T> const T& tSize<T>::getWidth() const {
 	return this->x;
@@ -57,6 +59,12 @@ template <typename T> void tSize<T>::setWidth( const T& width ) {
 
 template <typename T> void tSize<T>::setHeight( const T& height ) {
 	this->y = height;
+}
+
+template <typename T> tSize<T>& tSize<T>::operator=( const tSize<T>& right ) {
+	this->x = right.x;
+	this->y = right.y;
+	return *this;
 }
 
 typedef tSize<int> Sizei;

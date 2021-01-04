@@ -19,6 +19,8 @@ template <typename T> class Vector2 {
 	/** Creates a vector from its coordinates */
 	Vector2( T X, T Y );
 
+	Vector2( const Vector2<T>& copy ) : x( copy.x ), y( copy.y ) {}
+
 	/** @return A copy of the Vector2 */
 	Vector2<T> copy();
 
@@ -101,6 +103,8 @@ template <typename T> class Vector2 {
 	Vector2<Float> asFloat() const;
 
 	Vector2<int> asInt() const;
+
+	Vector2<T>& operator=( const Vector2<T>& right );
 
 	T x;
 	T y;
@@ -392,6 +396,12 @@ template <typename T> Vector2<Float> Vector2<T>::asFloat() const {
 
 template <typename T> Vector2<int> Vector2<T>::asInt() const {
 	return Vector2<int>( x, y );
+}
+
+template <typename T> Vector2<T>& Vector2<T>::operator=( const Vector2<T>& right ) {
+	this->x = right.x;
+	this->y = right.y;
+	return *this;
 }
 
 template <typename T> bool Vector2<T>::nearDist( const Vector2<T>& Vec, T Dist ) const {

@@ -6,6 +6,7 @@
 #include <eepp/ui/uitablecell.hpp>
 #include <eepp/ui/uitableheadercolumn.hpp>
 #include <eepp/ui/uitablerow.hpp>
+#include <unordered_map>
 
 using namespace EE::Math;
 
@@ -99,6 +100,10 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	 * possible. */
 	void setMainColumn( const size_t& mainColumn );
 
+	bool getSingleClickNavigation() const;
+
+	void setSingleClickNavigation( bool singleClickNavigation );
+
   protected:
 	friend class EE::UI::UITableHeaderColumn;
 
@@ -122,9 +127,11 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	bool mAutoExpandOnSingleColumn{ false };
 	bool mAutoColumnsWidth{ false };
 	bool mRowSearchByName{ true };
+	bool mSingleClickNavigation{ false };
 	Action* mSearchTextAction{ nullptr };
 	std::string mSearchText;
 	size_t mMainColumn{ 0 };
+	std::unordered_map<UIWidget*, Uint32> mWidgetsClickCbId;
 
 	virtual ~UIAbstractTableView();
 
@@ -163,6 +170,8 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	virtual void onSortColumn( const size_t& colIndex );
 
 	virtual Uint32 onTextInput( const TextInputEvent& event );
+
+	virtual void bindNavigationClick( UIWidget* widget );
 
 	void updateHeaderSize();
 

@@ -1097,8 +1097,14 @@
 ../../src/tools/codeeditor/autocompletemodule.hpp
 ../../src/tools/codeeditor/codeeditor.cpp
 ../../src/tools/codeeditor/codeeditor.hpp
+../../src/tools/codeeditor/docsearchcontroller.cpp
+../../src/tools/codeeditor/docsearchcontroller.hpp
+../../src/tools/codeeditor/filelocator.cpp
+../../src/tools/codeeditor/filelocator.hpp
 ../../src/tools/codeeditor/filesystemlistener.cpp
 ../../src/tools/codeeditor/filesystemlistener.hpp
+../../src/tools/codeeditor/globalsearchcontroller.cpp
+../../src/tools/codeeditor/globalsearchcontroller.hpp
 ../../src/tools/codeeditor/ignorematcher.cpp
 ../../src/tools/codeeditor/ignorematcher.hpp
 ../../src/tools/codeeditor/lintermodule.cpp
@@ -1111,6 +1117,7 @@
 ../../src/tools/codeeditor/uicodeeditorsplitter.hpp
 ../../src/tools/codeeditor/uitreeviewglobalsearch.cpp
 ../../src/tools/codeeditor/uitreeviewglobalsearch.hpp
+../../src/tools/codeeditor/widgetcommandexecuter.hpp
 ../../src/tools/mapeditor/mapeditor.cpp
 ../../src/tools/textureatlaseditor/textureatlaseditor.cpp
 ../../src/tools/texturepacker/texturepacker.cpp

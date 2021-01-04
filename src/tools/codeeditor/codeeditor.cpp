@@ -253,112 +253,6 @@ UIFileDialog* App::saveFileDialog( UICodeEditor* editor, bool focusOnClose ) {
 	return dialog;
 }
 
-bool App::findPrevText( SearchState& search ) {
-	if ( search.text.empty() )
-		search.text = mLastSearch;
-	if ( !search.editor || !mEditorSplitter->editorExists( search.editor ) || search.text.empty() )
-		return false;
-
-	search.editor->getDocument().setActiveClient( search.editor );
-	mLastSearch = search.text;
-	TextDocument& doc = search.editor->getDocument();
-	TextRange range = doc.getDocRange();
-	TextPosition from = doc.getSelection( true ).start();
-	if ( search.range.isValid() ) {
-		range = doc.sanitizeRange( search.range ).normalized();
-		from = from < range.start() ? range.start() : from;
-	}
-
-	TextPosition found =
-		doc.findLast( search.text, from, search.caseSensitive, search.wholeWord, search.range );
-	if ( found.isValid() ) {
-		doc.setSelection( { doc.positionOffset( found, search.text.size() ), found } );
-		return true;
-	} else {
-		found = doc.findLast( search.text, range.end() );
-		if ( found.isValid() ) {
-			doc.setSelection( { doc.positionOffset( found, search.text.size() ), found } );
-			return true;
-		}
-	}
-	return false;
-}
-
-bool App::findNextText( SearchState& search ) {
-	if ( search.text.empty() )
-		search.text = mLastSearch;
-	if ( !search.editor || !mEditorSplitter->editorExists( search.editor ) || search.text.empty() )
-		return false;
-
-	search.editor->getDocument().setActiveClient( search.editor );
-	mLastSearch = search.text;
-	TextDocument& doc = search.editor->getDocument();
-	TextRange range = doc.getDocRange();
-	TextPosition from = doc.getSelection( true ).end();
-	if ( search.range.isValid() ) {
-		range = doc.sanitizeRange( search.range ).normalized();
-		from = from < range.start() ? range.start() : from;
-	}
-
-	TextRange found =
-		doc.find( search.text, from, search.caseSensitive, search.wholeWord, search.type, range );
-	if ( found.isValid() ) {
-		doc.setSelection( found.reversed() );
-		return true;
-	} else {
-		found = doc.find( search.text, range.start(), search.caseSensitive, search.wholeWord,
-						  search.type, range );
-		if ( found.isValid() ) {
-			doc.setSelection( found.reversed() );
-			return true;
-		}
-	}
-	return false;
-}
-
-bool App::replaceSelection( SearchState& search, const String& replacement ) {
-	if ( !search.editor || !mEditorSplitter->editorExists( search.editor ) ||
-		 !search.editor->getDocument().hasSelection() )
-		return false;
-	search.editor->getDocument().setActiveClient( search.editor );
-	search.editor->getDocument().replaceSelection( replacement );
-	return true;
-}
-
-int App::replaceAll( SearchState& search, const String& replace ) {
-	if ( !search.editor || !mEditorSplitter->editorExists( search.editor ) )
-		return 0;
-	if ( search.text.empty() )
-		search.text = mLastSearch;
-	if ( search.text.empty() )
-		return 0;
-	search.editor->getDocument().setActiveClient( search.editor );
-	mLastSearch = search.text;
-	TextDocument& doc = search.editor->getDocument();
-	TextPosition startedPosition = doc.getSelection().start();
-	int count = doc.replaceAll( search.text, replace, search.caseSensitive, search.wholeWord,
-								search.type, search.range );
-	doc.setSelection( startedPosition );
-	return count;
-}
-
-bool App::findAndReplace( SearchState& search, const String& replace ) {
-	if ( !search.editor || !mEditorSplitter->editorExists( search.editor ) )
-		return false;
-	if ( search.text.empty() )
-		search.text = mLastSearch;
-	if ( search.text.empty() )
-		return false;
-	search.editor->getDocument().setActiveClient( search.editor );
-	mLastSearch = search.text;
-	TextDocument& doc = search.editor->getDocument();
-	if ( doc.hasSelection() && doc.getSelectedText() == search.text ) {
-		return replaceSelection( search, replace );
-	} else {
-		return findNextText( search );
-	}
-}
-
 void App::runCommand( const std::string& command ) {
 	if ( mEditorSplitter->getCurEditor() )
 		mEditorSplitter->getCurEditor()->getDocument().execute( command );
@@ -399,33 +293,12 @@ std::string App::getKeybind( const std::string& command ) {
 	return "";
 }
 
-static int LOCATEBAR_MAX_VISIBLE_ITEMS = 18;
-static int LOCATEBAR_MAX_RESULTS = 100;
-
-void App::hideLocateBar() {
-	mLocateBarLayout->setVisible( false );
-	mLocateTable->setVisible( false );
+ProjectDirectoryTree* App::getDirTree() const {
+	return mDirTree ? mDirTree.get() : nullptr;
 }
 
-void App::updateLocateTable() {
-	if ( !mLocateInput->getText().empty() ) {
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
-		mDirTree->asyncFuzzyMatchTree(
-			mLocateInput->getText(), LOCATEBAR_MAX_RESULTS, [&]( auto res ) {
-				mUISceneNode->runOnMainThread( [&, res] {
-					mLocateTable->setModel( res );
-					mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
-				} );
-			} );
-#else
-		mLocateTable->setModel(
-			mDirTree->fuzzyMatchTree( mLocateInput->getText(), LOCATEBAR_MAX_RESULTS ) );
-		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
-#endif
-	} else {
-		mLocateTable->setModel( mDirTree->asModel( LOCATEBAR_MAX_RESULTS ) );
-		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
-	}
+std::shared_ptr<ThreadPool> App::getThreadPool() const {
+	return mThreadPool;
 }
 
 bool App::trySendUnlockedCmd( const KeyEvent& keyEvent ) {
@@ -438,677 +311,6 @@ bool App::trySendUnlockedCmd( const KeyEvent& keyEvent ) {
 		}
 	}
 	return false;
-}
-
-void App::goToLine() {
-	showLocateBar();
-	mLocateInput->setText( "l " );
-}
-
-void App::initLocateBar() {
-	auto addClickListener = [&]( UIWidget* widget, std::string cmd ) {
-		widget->addEventListener( Event::MouseClick, [this, cmd]( const Event* event ) {
-			const MouseEvent* mouseEvent = static_cast<const MouseEvent*>( event );
-			if ( mouseEvent->getFlags() & EE_BUTTON_LMASK )
-				mLocateBarLayout->execute( cmd );
-		} );
-	};
-	mLocateTable = UITableView::New();
-	mLocateTable->setId( "locate_bar_table" );
-	mLocateTable->setParent( mUISceneNode->getRoot() );
-	mLocateTable->setHeadersVisible( false );
-	mLocateTable->setVisible( false );
-	mLocateInput->addEventListener( Event::OnTextChanged, [&]( const Event* ) {
-		if ( mEditorSplitter->getCurEditor() &&
-			 String::startsWith( mLocateInput->getText(), String( "l " ) ) ) {
-			String number( mLocateInput->getText().substr( 2 ) );
-			Int64 val;
-			if ( String::fromString( val, number ) && val - 1 >= 0 ) {
-				mEditorSplitter->getCurEditor()->goToLine( { val - 1, 0 } );
-				mLocateTable->setVisible( false );
-			}
-		} else {
-			mLocateTable->setVisible( true );
-			Vector2f pos( mLocateInput->convertToWorldSpace( { 0, 0 } ) );
-			pos.y -= mLocateTable->getPixelsSize().getHeight();
-			mLocateTable->setPixelsPosition( pos );
-			if ( !mDirTreeReady )
-				return;
-			updateLocateTable();
-		}
-	} );
-	mLocateInput->addEventListener( Event::OnPressEnter, [&]( const Event* ) {
-		KeyEvent keyEvent( mLocateTable, Event::KeyDown, KEY_RETURN, 0, 0 );
-		mLocateTable->forceKeyDown( keyEvent );
-	} );
-	mLocateInput->addEventListener( Event::KeyDown, [&]( const Event* event ) {
-		const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );
-		mLocateTable->forceKeyDown( *keyEvent );
-	} );
-	mLocateBarLayout->addCommand( "close-locatebar", [&] {
-		hideLocateBar();
-		mEditorSplitter->getCurEditor()->setFocus();
-	} );
-	mLocateBarLayout->getKeyBindings().addKeybindsString( {
-		{ "escape", "close-locatebar" },
-	} );
-	mLocateTable->addEventListener( Event::KeyDown, [&]( const Event* event ) {
-		const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );
-		if ( keyEvent->getKeyCode() == KEY_ESCAPE )
-			mLocateBarLayout->execute( "close-locatebar" );
-	} );
-	addClickListener( mLocateBarLayout->find<UIWidget>( "locatebar_close" ), "close-locatebar" );
-	mLocateTable->addEventListener( Event::OnModelEvent, [&]( const Event* event ) {
-		const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
-		if ( modelEvent->getModelEventType() == ModelEventType::Open ) {
-			Variant vPath( modelEvent->getModel()->data(
-				modelEvent->getModel()->index( modelEvent->getModelIndex().row(), 1 ),
-				Model::Role::Display ) );
-			if ( vPath.isValid() && vPath.is( Variant::Type::cstr ) ) {
-				std::string path( vPath.asCStr() );
-				UITab* tab = mEditorSplitter->isDocumentOpen( path );
-				if ( !tab ) {
-					FileInfo fileInfo( path );
-					if ( fileInfo.exists() && fileInfo.isRegularFile() )
-						loadFileFromPath( path );
-				} else {
-					tab->getTabWidget()->setTabSelected( tab );
-				}
-				mLocateBarLayout->execute( "close-locatebar" );
-			}
-		}
-	} );
-}
-
-void App::updateLocateBar() {
-	mLocateBarLayout->runOnMainThread( [&] {
-		Float width = eeceil( mLocateInput->getPixelsSize().getWidth() );
-		mLocateTable->setPixelsSize( width,
-									 mLocateTable->getRowHeight() * LOCATEBAR_MAX_VISIBLE_ITEMS );
-		width -= mLocateTable->getVerticalScrollBar()->getPixelsSize().getWidth();
-		mLocateTable->setColumnWidth( 0, eeceil( width * 0.5 ) );
-		mLocateTable->setColumnWidth( 1, width - mLocateTable->getColumnWidth( 0 ) );
-		Vector2f pos( mLocateInput->convertToWorldSpace( { 0, 0 } ) );
-		pos.y -= mLocateTable->getPixelsSize().getHeight();
-		mLocateTable->setPixelsPosition( pos );
-	} );
-}
-
-void App::hideSearchBar() {
-	mSearchBarLayout->setEnabled( false )->setVisible( false );
-}
-
-void App::showLocateBar() {
-	hideGlobalSearchBar();
-	hideSearchBar();
-
-	mLocateBarLayout->setVisible( true );
-	mLocateInput->setFocus();
-	mLocateTable->setVisible( true );
-	mLocateInput->getDocument().selectAll();
-	mLocateInput->addEventListener( Event::OnSizeChange,
-									[&]( const Event* ) { updateLocateBar(); } );
-	if ( mDirTree && !mLocateTable->getModel() ) {
-		mLocateTable->setModel( mDirTree->asModel( LOCATEBAR_MAX_RESULTS ) );
-		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
-	}
-	updateLocateBar();
-}
-
-void App::initSearchBar() {
-	auto addClickListener = [&]( UIWidget* widget, std::string cmd ) {
-		widget->addEventListener( Event::MouseClick, [this, cmd]( const Event* event ) {
-			const MouseEvent* mouseEvent = static_cast<const MouseEvent*>( event );
-			if ( mouseEvent->getFlags() & EE_BUTTON_LMASK )
-				mSearchBarLayout->execute( cmd );
-		} );
-	};
-	auto addReturnListener = [&]( UIWidget* widget, std::string cmd ) {
-		widget->addEventListener( Event::OnPressEnter, [this, cmd]( const Event* ) {
-			mSearchBarLayout->execute( cmd );
-		} );
-	};
-	UITextInput* findInput = mSearchBarLayout->find<UITextInput>( "search_find" );
-	UITextInput* replaceInput = mSearchBarLayout->find<UITextInput>( "search_replace" );
-	UICheckBox* caseSensitiveChk = mSearchBarLayout->find<UICheckBox>( "case_sensitive" );
-	UICheckBox* wholeWordChk = mSearchBarLayout->find<UICheckBox>( "whole_word" );
-	UICheckBox* luaPatternChk = mSearchBarLayout->find<UICheckBox>( "lua_pattern" );
-
-	caseSensitiveChk->addEventListener(
-		Event::OnValueChange, [&, caseSensitiveChk]( const Event* ) {
-			mSearchState.caseSensitive = caseSensitiveChk->isChecked();
-		} );
-
-	wholeWordChk->addEventListener( Event::OnValueChange, [&, wholeWordChk]( const Event* ) {
-		mSearchState.wholeWord = wholeWordChk->isChecked();
-	} );
-
-	luaPatternChk->addEventListener( Event::OnValueChange, [&, luaPatternChk]( const Event* ) {
-		mSearchState.type = luaPatternChk->isChecked() ? TextDocument::FindReplaceType::LuaPattern
-													   : TextDocument::FindReplaceType::Normal;
-	} );
-
-	findInput->addEventListener( Event::OnTextChanged, [&, findInput]( const Event* ) {
-		if ( mSearchState.editor && mEditorSplitter->editorExists( mSearchState.editor ) ) {
-			mSearchState.text = findInput->getText();
-			mSearchState.editor->setHighlightWord( mSearchState.text );
-			if ( !mSearchState.text.empty() ) {
-				mSearchState.editor->getDocument().setSelection( { 0, 0 } );
-				if ( !findNextText( mSearchState ) ) {
-					findInput->addClass( "error" );
-				} else {
-					findInput->removeClass( "error" );
-				}
-			} else {
-				findInput->removeClass( "error" );
-				mSearchState.editor->getDocument().setSelection(
-					mSearchState.editor->getDocument().getSelection().start() );
-			}
-		}
-	} );
-	mSearchBarLayout->addCommand( "close-searchbar", [&] {
-		hideSearchBar();
-		if ( mEditorSplitter->getCurEditor() )
-			mEditorSplitter->getCurEditor()->setFocus();
-		if ( mSearchState.editor ) {
-			if ( mEditorSplitter->editorExists( mSearchState.editor ) ) {
-				mSearchState.editor->setHighlightWord( "" );
-				mSearchState.editor->setHighlightTextRange( TextRange() );
-			}
-		}
-	} );
-	mSearchBarLayout->addCommand( "repeat-find", [this] { findNextText( mSearchState ); } );
-	mSearchBarLayout->addCommand( "replace-all", [this, replaceInput] {
-		replaceAll( mSearchState, replaceInput->getText() );
-		replaceInput->setFocus();
-	} );
-	mSearchBarLayout->addCommand( "find-and-replace", [this, replaceInput] {
-		findAndReplace( mSearchState, replaceInput->getText() );
-	} );
-	mSearchBarLayout->addCommand( "find-prev", [this] { findPrevText( mSearchState ); } );
-	mSearchBarLayout->addCommand( "replace-selection", [this, replaceInput] {
-		replaceSelection( mSearchState, replaceInput->getText() );
-	} );
-	mSearchBarLayout->addCommand( "change-case", [&, caseSensitiveChk] {
-		caseSensitiveChk->setChecked( !caseSensitiveChk->isChecked() );
-	} );
-	mSearchBarLayout->addCommand( "change-whole-word", [&, wholeWordChk] {
-		wholeWordChk->setChecked( !wholeWordChk->isChecked() );
-	} );
-	mSearchBarLayout->addCommand( "toggle-lua-pattern", [&, luaPatternChk] {
-		luaPatternChk->setChecked( !luaPatternChk->isChecked() );
-	} );
-	mSearchBarLayout->getKeyBindings().addKeybindsString( { { "f3", "repeat-find" },
-															{ "ctrl+g", "repeat-find" },
-															{ "escape", "close-searchbar" },
-															{ "ctrl+r", "replace-all" },
-															{ "ctrl+s", "change-case" },
-															{ "ctrl+w", "change-whole-word" },
-															{ "ctrl+l", "toggle-lua-pattern" } } );
-	addReturnListener( findInput, "repeat-find" );
-	addReturnListener( replaceInput, "find-and-replace" );
-	addClickListener( mSearchBarLayout->find<UIPushButton>( "find_prev" ), "find-prev" );
-	addClickListener( mSearchBarLayout->find<UIPushButton>( "find_next" ), "repeat-find" );
-	addClickListener( mSearchBarLayout->find<UIPushButton>( "replace" ), "replace-selection" );
-	addClickListener( mSearchBarLayout->find<UIPushButton>( "replace_find" ), "find-and-replace" );
-	addClickListener( mSearchBarLayout->find<UIPushButton>( "replace_all" ), "replace-all" );
-	addClickListener( mSearchBarLayout->find<UIWidget>( "searchbar_close" ), "close-searchbar" );
-	replaceInput->addEventListener( Event::OnTabNavigate,
-									[findInput]( const Event* ) { findInput->setFocus(); } );
-}
-
-void App::showGlobalSearch( bool searchReplace ) {
-	hideLocateBar();
-	hideSearchBar();
-	bool wasReplaceTree = mGlobalSearchTreeReplace == mGlobalSearchTree;
-	mGlobalSearchTree = searchReplace ? mGlobalSearchTreeReplace : mGlobalSearchTreeSearch;
-	mGlobalSearchTreeSearch->setVisible( !searchReplace );
-	mGlobalSearchTreeReplace->setVisible( searchReplace );
-	mGlobalSearchBarLayout->setVisible( true )->setEnabled( true );
-	mGlobalSearchInput->setFocus();
-	mGlobalSearchLayout->setVisible( true );
-	if ( mEditorSplitter->getCurEditor() &&
-		 mEditorSplitter->getCurEditor()->getDocument().hasSelection() ) {
-		mGlobalSearchInput->setText(
-			mEditorSplitter->getCurEditor()->getDocument().getSelectedText() );
-	}
-	mGlobalSearchInput->getDocument().selectAll();
-	auto* loader = mGlobalSearchTree->getParent()->find( "loader" );
-	if ( loader )
-		loader->setVisible( true );
-	if ( !searchReplace ) {
-		mGlobalSearchLayout->findByClass( "replace_box" )->setVisible( searchReplace );
-		if ( wasReplaceTree ) {
-			updateGlobalSearchBarResults( mGlobalSearchTreeReplace->getSearchStr(),
-										  std::static_pointer_cast<ProjectSearch::ResultModel>(
-											  mGlobalSearchTreeReplace->getModelShared() ),
-										  searchReplace );
-		}
-	}
-	updateGlobalSearchBar();
-}
-
-void App::updateGlobalSearchBar() {
-	mGlobalSearchBarLayout->runOnMainThread( [&] {
-		Float width = eeceil( mGlobalSearchInput->getPixelsSize().getWidth() );
-		Float rowHeight = mGlobalSearchTree->getRowHeight() * LOCATEBAR_MAX_VISIBLE_ITEMS;
-		mGlobalSearchLayout->setPixelsSize( width, 0 );
-		mGlobalSearchTree->setPixelsSize( width, rowHeight );
-		width -= mGlobalSearchTree->getVerticalScrollBar()->getPixelsSize().getWidth();
-		mGlobalSearchTree->setColumnWidth( 0, eeceil( width ) );
-		Vector2f pos( mGlobalSearchInput->convertToWorldSpace( { 0, 0 } ) );
-		pos = PixelDensity::pxToDp( pos );
-		mGlobalSearchLayout->setLayoutMarginLeft( pos.x );
-		mGlobalSearchLayout->setLayoutMarginTop( pos.y -
-												 mGlobalSearchLayout->getSize().getHeight() );
-	} );
-}
-
-void App::hideGlobalSearchBar() {
-	mGlobalSearchBarLayout->setEnabled( false )->setVisible( false );
-	mGlobalSearchLayout->setVisible( false );
-	auto* loader = mGlobalSearchTree->getParent()->find( "loader" );
-	if ( loader )
-		loader->setVisible( false );
-}
-
-void App::updateGlobalSearchBarResults( const std::string& search,
-										std::shared_ptr<ProjectSearch::ResultModel> model,
-										bool searchReplace ) {
-	updateGlobalSearchBar();
-	mGlobalSearchTree->setSearchStr( search );
-	mGlobalSearchTree->setModel( model );
-	if ( mGlobalSearchTree->getModel()->rowCount() < 50 )
-		mGlobalSearchTree->expandAll();
-	mGlobalSearchLayout->findByClass<UITextView>( "search_str" )->setText( search );
-	mGlobalSearchLayout->findByClass<UITextView>( "search_total" )
-		->setText( String::format( "%zu matches found.", model->resultCount() ) );
-	mGlobalSearchLayout->findByClass( "status_box" )->setVisible( true );
-	mGlobalSearchLayout->findByClass( "replace_box" )->setVisible( searchReplace );
-	if ( searchReplace && mGlobalSearchBarLayout->isVisible() ) {
-		auto* replaceInput =
-			mGlobalSearchLayout->find<UITextInput>( "global_search_replace_input" );
-		replaceInput->setText( search );
-		replaceInput->setFocus();
-	}
-}
-
-void App::doGlobalSearch( const String& text, bool caseSensitive, bool wholeWord, bool luaPattern,
-						  bool searchReplace, bool searchAgain ) {
-	if ( mDirTree && mDirTree->getFilesCount() > 0 && !text.empty() ) {
-		mGlobalSearchTree = searchReplace ? mGlobalSearchTreeReplace : mGlobalSearchTreeSearch;
-		mGlobalSearchTreeSearch->setVisible( !searchReplace );
-		mGlobalSearchTreeReplace->setVisible( searchReplace );
-		mGlobalSearchLayout->findByClass( "status_box" )->setVisible( true );
-		mGlobalSearchLayout->findByClass( "replace_box" )->setVisible( false );
-		mGlobalSearchLayout->findByClass<UITextView>( "search_str" )->setText( text );
-		UILoader* loader = UILoader::New();
-		loader->setId( "loader" );
-		loader->setRadius( 48 );
-		loader->setOutlineThickness( 6 );
-		loader->setFillColor( Color::Red );
-		loader->setParent( mGlobalSearchLayout->getParent() );
-		loader->setPosition( mGlobalSearchLayout->getPosition() +
-							 mGlobalSearchLayout->getSize() * 0.5f - loader->getSize() * 0.5f );
-		Clock* clock = eeNew( Clock, () );
-		std::string search( text.toUtf8() );
-		ProjectSearch::find(
-			mDirTree->getFiles(), search,
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
-			mThreadPool,
-#endif
-			[&, clock, search, loader, searchReplace,
-			 searchAgain]( const ProjectSearch::Result& res ) {
-				Log::info( "Global search for \"%s\" took %.2fms", search.c_str(),
-						   clock->getElapsedTime().asMilliseconds() );
-				eeDelete( clock );
-				mUISceneNode->runOnMainThread( [&, loader, res, search, searchReplace,
-												searchAgain] {
-					auto model = ProjectSearch::asModel( res );
-					auto listBox = mGlobalSearchHistoryList->getListBox();
-
-					if ( !searchAgain ) {
-						mGlobalSearchHistory.push_back( std::make_pair( search, model ) );
-						if ( mGlobalSearchHistory.size() > 10 )
-							mGlobalSearchHistory.pop_front();
-
-						std::vector<String> items;
-						for ( auto item = mGlobalSearchHistory.rbegin();
-							  item != mGlobalSearchHistory.rend(); item++ ) {
-							items.push_back( item->first );
-						}
-
-						listBox->clear();
-						listBox->addListBoxItems( items );
-						if ( mGlobalSearchHistoryOnItemSelectedCb )
-							mGlobalSearchHistoryList->removeEventListener(
-								mGlobalSearchHistoryOnItemSelectedCb );
-						listBox->setSelected( 0 );
-						mGlobalSearchHistoryOnItemSelectedCb =
-							mGlobalSearchHistoryList->addEventListener(
-								Event::OnItemSelected, [&, searchReplace]( const Event* ) {
-									auto idx = mGlobalSearchHistoryList->getListBox()
-												   ->getItemSelectedIndex();
-									auto idxItem = mGlobalSearchHistory.at(
-										mGlobalSearchHistory.size() - 1 - idx );
-									updateGlobalSearchBarResults( idxItem.first, idxItem.second,
-																  searchReplace );
-								} );
-					} else if ( listBox->getItemSelectedIndex() < mGlobalSearchHistory.size() ) {
-						mGlobalSearchHistory[mGlobalSearchHistory.size() - 1 -
-											 listBox->getItemSelectedIndex()]
-							.second = model;
-					}
-
-					updateGlobalSearchBarResults( search, model, searchReplace );
-					loader->setVisible( false );
-					loader->close();
-				} );
-			},
-			caseSensitive, wholeWord,
-			luaPattern ? TextDocument::FindReplaceType::LuaPattern
-					   : TextDocument::FindReplaceType::Normal );
-	}
-}
-
-void App::initGlobalSearchTree( UITreeViewGlobalSearch* searchTree ) {
-	searchTree->addClass( "search_tree" );
-	searchTree->setParent( mGlobalSearchLayout );
-	searchTree->setVisible( false );
-	searchTree->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::Fixed );
-	searchTree->setExpanderIconSize( PixelDensity::dpToPx( 20 ) );
-	searchTree->setHeadersVisible( false );
-	searchTree->setColumnsHidden(
-		{ ProjectSearch::ResultModel::Line, ProjectSearch::ResultModel::ColumnStart }, true );
-	searchTree->addEventListener( Event::KeyDown, [&]( const Event* event ) {
-		const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );
-		if ( keyEvent->getKeyCode() == KEY_ESCAPE )
-			mGlobalSearchBarLayout->execute( "close-global-searchbar" );
-	} );
-	searchTree->addEventListener( Event::OnModelEvent, [&]( const Event* event ) {
-		const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
-		if ( modelEvent->getModelEventType() == ModelEventType::Open ) {
-			const Model* model = modelEvent->getModel();
-			if ( !model )
-				return;
-			if ( mGlobalSearchTreeReplace == mGlobalSearchTree ) {
-				if ( modelEvent->getTriggerEvent()->getType() == Event::KeyDown ) {
-					const KeyEvent* keyEvent =
-						static_cast<const KeyEvent*>( modelEvent->getTriggerEvent() );
-					if ( keyEvent->getKeyCode() == KEY_SPACE &&
-						 keyEvent->getNode()->isType( UI_TYPE_TREEVIEW_CELL ) ) {
-						auto* cell =
-							static_cast<UITreeViewCellGlobalSearch*>( keyEvent->getNode() );
-						cell->toggleSelected();
-						return;
-					}
-				}
-			}
-
-			Variant vPath( model->data( model->index( modelEvent->getModelIndex().internalId(),
-													  ProjectSearch::ResultModel::FileOrPosition ),
-										Model::Role::Custom ) );
-			if ( vPath.isValid() && vPath.is( Variant::Type::cstr ) ) {
-				std::string path( vPath.asCStr() );
-				UITab* tab = mEditorSplitter->isDocumentOpen( path );
-				if ( !tab ) {
-					FileInfo fileInfo( path );
-					if ( fileInfo.exists() && fileInfo.isRegularFile() )
-						loadFileFromPath( path );
-				} else {
-					tab->getTabWidget()->setTabSelected( tab );
-				}
-				Variant lineNum(
-					model->data( model->index( modelEvent->getModelIndex().row(),
-											   ProjectSearch::ResultModel::FileOrPosition,
-											   modelEvent->getModelIndex().parent() ),
-								 Model::Role::Custom ) );
-				Variant colNum( model->data( model->index( modelEvent->getModelIndex().row(),
-														   ProjectSearch::ResultModel::ColumnStart,
-														   modelEvent->getModelIndex().parent() ),
-											 Model::Role::Custom ) );
-				if ( mEditorSplitter->getCurEditor() && lineNum.isValid() && colNum.isValid() &&
-					 lineNum.is( Variant::Type::Int64 ) && colNum.is( Variant::Type::Int64 ) ) {
-					TextPosition pos{ lineNum.asInt64(), colNum.asInt64() };
-					mEditorSplitter->getCurEditor()->getDocument().setSelection( pos );
-					mEditorSplitter->getCurEditor()->goToLine( pos );
-					hideGlobalSearchBar();
-				}
-			}
-		}
-	} );
-}
-
-static String replaceInText( String text, const String& replaceText,
-							 std::vector<TextRange> replacements ) {
-	Int64 diff = 0;
-	String oldText( text );
-	for ( const auto& range : replacements ) {
-		Int64 len = range.end().column() - range.start().column();
-		auto before = text.substr( 0, range.start().column() + diff );
-		auto after = !text.empty() ? text.substr( range.end().column() + diff ) : "";
-		text = before + replaceText + after;
-		diff += replaceText.size() - len;
-	}
-	return text;
-}
-
-void App::replaceInFiles( const String& replaceText,
-						  std::shared_ptr<ProjectSearch::ResultModel> model ) {
-	const ProjectSearch::Result& res = model.get()->getResult();
-	for ( const auto& fileResult : res ) {
-		std::map<Int64, std::pair<String, std::vector<TextRange>>> replaceRangeMap;
-		std::map<Int64, String> replaceStringMap;
-		for ( const auto& result : fileResult.results ) {
-			if ( result.selected ) {
-				replaceRangeMap[result.position.start().line()].first = result.line;
-				replaceRangeMap[result.position.start().line()].second.push_back( result.position );
-			}
-		}
-
-		for ( const auto& replace : replaceRangeMap )
-			replaceStringMap[replace.second.second.front().start().line()] =
-				replaceInText( replace.second.first, replaceText, replace.second.second );
-
-		std::shared_ptr<TextDocument> doc = mEditorSplitter->findDocFromPath( fileResult.file );
-		bool loaded = doc ? true : false;
-		bool save = false;
-		bool inMemoryAndNotDirty = doc ? !doc->isDirty() : false;
-
-		if ( !doc ) {
-			doc = std::make_shared<TextDocument>();
-			loaded = doc->loadFromFile( fileResult.file );
-			save = true;
-		}
-
-		if ( doc && loaded ) {
-			for ( const auto& replaceString : replaceStringMap )
-				doc->replaceLine( replaceString.first, replaceString.second );
-
-			if ( save || inMemoryAndNotDirty )
-				doc->save();
-		}
-	}
-}
-
-void App::initGlobalSearchBar() {
-	auto addClickListener = [&]( UIWidget* widget, std::string cmd ) {
-		widget->addEventListener( Event::MouseClick, [this, cmd]( const Event* event ) {
-			const MouseEvent* mouseEvent = static_cast<const MouseEvent*>( event );
-			if ( mouseEvent->getFlags() & EE_BUTTON_LMASK )
-				mGlobalSearchBarLayout->execute( cmd );
-		} );
-	};
-	UIPushButton* searchButton = mGlobalSearchBarLayout->find<UIPushButton>( "global_search" );
-	UIPushButton* searchReplaceButton =
-		mGlobalSearchBarLayout->find<UIPushButton>( "global_search_replace" );
-	UICheckBox* caseSensitiveChk = mGlobalSearchBarLayout->find<UICheckBox>( "case_sensitive" );
-	UICheckBox* wholeWordChk = mGlobalSearchBarLayout->find<UICheckBox>( "whole_word" );
-	UICheckBox* luaPatternChk = mGlobalSearchBarLayout->find<UICheckBox>( "lua_pattern" );
-	UIWidget* searchBarClose = mGlobalSearchBarLayout->find<UIWidget>( "global_searchbar_close" );
-	mGlobalSearchInput = mGlobalSearchBarLayout->find<UITextInput>( "global_search_find" );
-	mGlobalSearchHistoryList =
-		mGlobalSearchBarLayout->find<UIDropDownList>( "global_search_history" );
-	mGlobalSearchBarLayout->addCommand(
-		"search-in-files", [&, caseSensitiveChk, wholeWordChk, luaPatternChk] {
-			doGlobalSearch( mGlobalSearchInput->getText(), caseSensitiveChk->isChecked(),
-							wholeWordChk->isChecked(), luaPatternChk->isChecked(), false );
-		} );
-	mGlobalSearchBarLayout->addCommand(
-		"search-replace-in-files", [&, caseSensitiveChk, wholeWordChk, luaPatternChk] {
-			doGlobalSearch( mGlobalSearchInput->getText(), caseSensitiveChk->isChecked(),
-							wholeWordChk->isChecked(), luaPatternChk->isChecked(), true );
-		} );
-	mGlobalSearchBarLayout->addCommand(
-		"search-again", [&, caseSensitiveChk, wholeWordChk, luaPatternChk] {
-			auto listBox = mGlobalSearchHistoryList->getListBox();
-			if ( listBox->getItemSelectedIndex() < mGlobalSearchHistory.size() ) {
-				doGlobalSearch( mGlobalSearchHistory[mGlobalSearchHistory.size() - 1 -
-													 listBox->getItemSelectedIndex()]
-									.first,
-								caseSensitiveChk->isChecked(), wholeWordChk->isChecked(),
-								luaPatternChk->isChecked(),
-								mGlobalSearchTreeReplace == mGlobalSearchTree, true );
-			}
-		} );
-	mGlobalSearchBarLayout->addCommand( "close-global-searchbar", [&] {
-		hideGlobalSearchBar();
-		if ( mEditorSplitter->getCurEditor() )
-			mEditorSplitter->getCurEditor()->setFocus();
-	} );
-	mGlobalSearchBarLayout->getKeyBindings().addKeybindsString( {
-		{ "escape", "close-global-searchbar" },
-		{ "ctrl+s", "change-case" },
-		{ "ctrl+w", "change-whole-word" },
-		{ "ctrl+l", "toggle-lua-pattern" },
-		{ "ctrl+r", "search-replace-in-files" },
-		{ "ctrl+g", "search-again" },
-	} );
-	mGlobalSearchBarLayout->addCommand( "change-case", [&, caseSensitiveChk] {
-		caseSensitiveChk->setChecked( !caseSensitiveChk->isChecked() );
-	} );
-	mGlobalSearchBarLayout->addCommand( "change-whole-word", [&, wholeWordChk] {
-		wholeWordChk->setChecked( !wholeWordChk->isChecked() );
-	} );
-	mGlobalSearchBarLayout->addCommand( "toggle-lua-pattern", [&, luaPatternChk] {
-		luaPatternChk->setChecked( !luaPatternChk->isChecked() );
-	} );
-	mGlobalSearchInput->addEventListener( Event::OnPressEnter, [&]( const Event* ) {
-		if ( mGlobalSearchInput->hasFocus() ) {
-			mGlobalSearchBarLayout->execute( "search-in-files" );
-		} else {
-			KeyEvent keyEvent( mGlobalSearchTree, Event::KeyDown, KEY_RETURN, 0, 0 );
-			mGlobalSearchTree->forceKeyDown( keyEvent );
-		}
-	} );
-	mGlobalSearchInput->addEventListener( Event::KeyDown, [&]( const Event* event ) {
-		const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );
-		Uint32 keyCode = keyEvent->getKeyCode();
-		if ( ( keyCode == KEY_UP || keyCode == KEY_DOWN || keyCode == KEY_PAGEUP ||
-			   keyCode == KEY_PAGEDOWN || keyCode == KEY_HOME || keyCode == KEY_END ) &&
-			 mGlobalSearchTree->forceKeyDown( *keyEvent ) && !mGlobalSearchTree->hasFocus() ) {
-			mGlobalSearchTree->setFocus();
-		}
-	} );
-	mGlobalSearchInput->addEventListener( Event::OnSizeChange, [&]( const Event* ) {
-		if ( mGlobalSearchBarLayout->isVisible() )
-			updateGlobalSearchBar();
-	} );
-	addClickListener( searchButton, "search-in-files" );
-	addClickListener( searchReplaceButton, "search-replace-in-files" );
-	addClickListener( searchBarClose, "close-global-searchbar" );
-	mGlobalSearchLayout = mUISceneNode
-							  ->loadLayoutFromString( R"xml(
-		<vbox id="global_search_layout" layout_width="wrap_content" layout_height="wrap_content" visible="false">
-			<hbox class="status_box" layout_width="match_parent" layout_height="wrap_content" visible="false">
-				<TextView layout_width="wrap_content" layout_height="match_parent" text="Searched for:" margin-right="4dp" />
-				<TextView class="search_str" layout_width="wrap_content" layout_height="match_parent" />
-				<PushButton id="global_search_again" layout_width="wrap_content" layout_height="18dp" text="Search Again" margin-left="8dp" />
-				<Widget layout_width="0" layout_weight="1" layout_height="match_parent" />
-				<TextView class="search_total" layout_width="wrap_content" layout_height="match_parent" margin-right="8dp" />
-			</hbox>
-			<hbox class="replace_box" layout_width="match_parent" layout_height="wrap_content" visible="false">
-				<TextView layout_width="wrap_content" layout_height="wrap_content" text="Replace with:" margin-right="4dp" />
-				<TextInput id="global_search_replace_input" class="small_input" layout_width="200dp" layout_height="18dp" padding="0" margin-right="4dp" />
-				<PushButton id="global_search_replace_button" layout_width="wrap_content" layout_height="18dp" text="Replace" />
-			</hbox>
-		</vbox>
-	)xml",
-													  mUISceneNode->getRoot() )
-							  ->asType<UILayout>();
-	UIPushButton* searchAgainBtn = mGlobalSearchLayout->find<UIPushButton>( "global_search_again" );
-	UITextInput* replaceInput =
-		mGlobalSearchLayout->find<UITextInput>( "global_search_replace_input" );
-	UIPushButton* replaceButton =
-		mGlobalSearchLayout->find<UIPushButton>( "global_search_replace_button" );
-	addClickListener( searchAgainBtn, "search-again" );
-	addClickListener( replaceButton, "replace-in-files" );
-	replaceInput->addEventListener( Event::OnPressEnter, [&, replaceInput]( const Event* ) {
-		if ( replaceInput->hasFocus() )
-			mGlobalSearchBarLayout->execute( "replace-in-files" );
-	} );
-	replaceInput->addEventListener( Event::KeyDown, [&]( const Event* event ) {
-		const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );
-		if ( keyEvent->getKeyCode() == KEY_ESCAPE )
-			mGlobalSearchBarLayout->execute( "close-global-searchbar" );
-	} );
-	mGlobalSearchBarLayout->addCommand( "replace-in-files", [&, replaceInput] {
-		auto listBox = mGlobalSearchHistoryList->getListBox();
-		if ( listBox->getItemSelectedIndex() < mGlobalSearchHistory.size() ) {
-			const auto& replaceData = mGlobalSearchHistory[mGlobalSearchHistory.size() - 1 -
-														   listBox->getItemSelectedIndex()];
-			replaceInFiles( replaceInput->getText(), replaceData.second );
-			mGlobalSearchBarLayout->execute( "search-again" );
-			mGlobalSearchBarLayout->execute( "close-global-searchbar" );
-		}
-	} );
-	mGlobalSearchTreeSearch =
-		UITreeViewGlobalSearch::New( mEditorSplitter->getCurrentColorScheme(), false );
-	mGlobalSearchTreeReplace =
-		UITreeViewGlobalSearch::New( mEditorSplitter->getCurrentColorScheme(), true );
-	initGlobalSearchTree( mGlobalSearchTreeSearch );
-	initGlobalSearchTree( mGlobalSearchTreeReplace );
-	mGlobalSearchTree = mGlobalSearchTreeSearch;
-}
-
-void App::showFindView() {
-	hideLocateBar();
-	hideGlobalSearchBar();
-
-	UICodeEditor* editor = mEditorSplitter->getCurEditor();
-	if ( !editor )
-		return;
-
-	mSearchState.editor = editor;
-	mSearchState.range = TextRange();
-	mSearchState.caseSensitive =
-		mSearchBarLayout->find<UICheckBox>( "case_sensitive" )->isChecked();
-	mSearchState.wholeWord = mSearchBarLayout->find<UICheckBox>( "whole_word" )->isChecked();
-	mSearchBarLayout->setEnabled( true )->setVisible( true );
-
-	UITextInput* findInput = mSearchBarLayout->find<UITextInput>( "search_find" );
-	findInput->getDocument().selectAll();
-	findInput->setFocus();
-
-	const TextDocument& doc = editor->getDocument();
-
-	if ( doc.getSelection().hasSelection() && doc.getSelection().inSameLine() ) {
-		String text = doc.getSelectedText();
-		if ( !text.empty() ) {
-			findInput->setText( text );
-			findInput->getDocument().selectAll();
-		} else if ( !findInput->getText().empty() ) {
-			findInput->getDocument().selectAll();
-		}
-	} else if ( doc.getSelection().hasSelection() ) {
-		mSearchState.range = doc.getSelection( true );
-		if ( !findInput->getText().empty() )
-			findInput->getDocument().selectAll();
-	}
-	mSearchState.text = findInput->getText();
-	editor->setHighlightTextRange( mSearchState.range );
-	editor->setHighlightWord( mSearchState.text );
-	editor->getDocument().setActiveClient( editor );
 }
 
 void App::closeApp() {
@@ -1410,6 +612,10 @@ UIMenu* App::createViewMenu() {
 	mViewMenu->addCheckBox( "Hide tabbar on single tab" )
 		->setActive( mConfig.editor.hideTabBarOnSingleTab )
 		->setTooltipText( "Hides the tabbar if there's only one element in the tab widget." );
+	mViewMenu->addCheckBox( "Single Click Navigation in Tree View" )
+		->setActive( mConfig.editor.singleClickTreeNavigation )
+		->setTooltipText(
+			"Uses single click to open files and expand subfolders in\nthe directory tree." );
 	mViewMenu->add( "Line Breaking Column" );
 
 	mViewMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
@@ -1469,6 +675,9 @@ UIMenu* App::createViewMenu() {
 		} else if ( item->getText() == "Hide tabbar on single tab" ) {
 			mConfig.editor.hideTabBarOnSingleTab = item->asType<UIMenuCheckBox>()->isActive();
 			mEditorSplitter->setHideTabBarOnSingleTab( mConfig.editor.hideTabBarOnSingleTab );
+		} else if ( item->getText() == "Single Click Navigation in Tree View" ) {
+			mConfig.editor.singleClickTreeNavigation = item->asType<UIMenuCheckBox>()->isActive();
+			mProjectTreeView->setSingleClickNavigation( mConfig.editor.singleClickTreeNavigation );
 		} else if ( item->getText() == "Line Breaking Column" ) {
 			UIMessageBox* msgBox =
 				UIMessageBox::New( UIMessageBox::INPUT, "Set Line Breaking Column:\n"
@@ -1825,25 +1034,12 @@ void App::updateDocInfo( TextDocument& doc ) {
 void App::onCodeEditorFocusChange( UICodeEditor* editor ) {
 	updateDocInfo( editor->getDocument() );
 	updateDocumentMenu();
-
-	if ( mSearchState.editor && mSearchState.editor != editor ) {
-		String word = mSearchState.editor->getHighlightWord();
-		mSearchState.editor->setHighlightWord( "" );
-		mSearchState.editor->setHighlightTextRange( TextRange() );
-		mSearchState.text = "";
-		mSearchState.range = TextRange();
-		if ( editor ) {
-			mSearchState.editor = editor;
-			mSearchState.editor->setHighlightWord( word );
-			mSearchState.range = TextRange();
-		}
-	}
+	mDocSearchController->onCodeEditorFocusChange( editor );
 }
 
 void App::onColorSchemeChanged( const std::string& ) {
 	updateColorSchemeMenu();
-	mGlobalSearchTreeSearch->updateColorScheme( mEditorSplitter->getCurrentColorScheme() );
-	mGlobalSearchTreeReplace->updateColorScheme( mEditorSplitter->getCurrentColorScheme() );
+	mGlobalSearchController->updateColorScheme( mEditorSplitter->getCurrentColorScheme() );
 }
 
 void App::onDocumentLoaded( UICodeEditor* editor, const std::string& path ) {
@@ -2036,6 +1232,22 @@ void App::loadFileFromPath( const std::string& path, bool inNewTab, UICodeEditor
 	}
 }
 
+void App::hideGlobalSearchBar() {
+	mGlobalSearchController->hideGlobalSearchBar();
+}
+
+void App::hideSearchBar() {
+	mDocSearchController->hideSearchBar();
+}
+
+void App::hideLocateBar() {
+	mFileLocator->hideLocateBar();
+}
+
+bool App::isDirTreeReady() const {
+	return mDirTreeReady;
+}
+
 void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	const CodeEditorConfig& config = mConfig.editor;
 	editor->setFontSize( config.fontSize.asDp( 0, Sizef(), mUISceneNode->getDPI() ) );
@@ -2069,11 +1281,15 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	doc.setCommand( "save-doc", [&] { saveDoc(); } );
 	doc.setCommand( "save-as-doc", [&] { saveFileDialog( mEditorSplitter->getCurEditor() ); } );
 	doc.setCommand( "save-all", [&] { saveAll(); } );
-	doc.setCommand( "find-replace", [&] { showFindView(); } );
-	doc.setCommand( "open-global-search",
-					[&] { showGlobalSearch( mGlobalSearchTreeReplace == mGlobalSearchTree ); } );
-	doc.setCommand( "open-locatebar", [&] { showLocateBar(); } );
-	doc.setCommand( "repeat-find", [&] { findNextText( mSearchState ); } );
+	doc.setCommand( "find-replace", [&] { mDocSearchController->showFindView(); } );
+	doc.setCommand( "open-global-search", [&] {
+		mGlobalSearchController->showGlobalSearch(
+			mGlobalSearchController->isUsingSearchReplaceTree() );
+	} );
+	doc.setCommand( "open-locatebar", [&] { mFileLocator->showLocateBar(); } );
+	doc.setCommand( "repeat-find", [&] {
+		mDocSearchController->findNextText( mDocSearchController->getSearchState() );
+	} );
 	doc.setCommand( "close-folder", [&] { closeFolder(); } );
 	doc.setCommand( "close-app", [&] { closeApp(); } );
 	doc.setCommand( "fullscreen-toggle", [&]() {
@@ -2118,7 +1334,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	} );
 	doc.setCommand( "debug-draw-debug-data",
 					[&] { mUISceneNode->setDrawDebugData( !mUISceneNode->getDrawDebugData() ); } );
-	doc.setCommand( "go-to-line", [&] { goToLine(); } );
+	doc.setCommand( "go-to-line", [&] { mFileLocator->goToLine(); } );
 	doc.setCommand( "load-current-dir", [&] { loadCurrentDirectory(); } );
 	doc.setCommand( "menu-toggle", [&] { toggleSettingsMenu(); } );
 	doc.setCommand( "switch-side-panel", [&] { switchSidePanel(); } );
@@ -2241,11 +1457,11 @@ UIPopUpMenu* App::createToolsMenu() {
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
 		std::string txt( item->getText() );
 		if ( txt == "Locate..." ) {
-			showLocateBar();
+			mFileLocator->showLocateBar();
 		} else if ( txt == "Project Find..." ) {
-			showGlobalSearch();
+			mGlobalSearchController->showGlobalSearch();
 		} else if ( txt == "Go to line..." ) {
-			goToLine();
+			mFileLocator->goToLine();
 		} else if ( txt == "Load current document directory as folder" ) {
 			loadCurrentDirectory();
 		}
@@ -2408,7 +1624,7 @@ void App::loadDirTree( const std::string& path ) {
 					   clock->getElapsedTime().asMilliseconds(), dirTree.getFilesCount() );
 			eeDelete( clock );
 			mDirTreeReady = true;
-			mUISceneNode->runOnMainThread( [&] { updateLocateTable(); } );
+			mUISceneNode->runOnMainThread( [&] { mFileLocator->updateLocateTable(); } );
 			if ( mFileWatcher ) {
 				removeFolderWatches();
 				auto newDirs = dirTree.getDirectories();
@@ -2432,6 +1648,7 @@ void App::initProjectTreeView( const std::string& path ) {
 	mProjectTreeView->setContractedIcon( "folder" );
 	mProjectTreeView->setHeadersVisible( false );
 	mProjectTreeView->setExpandersAsIcons( true );
+	mProjectTreeView->setSingleClickNavigation( mConfig.editor.singleClickTreeNavigation );
 	mProjectTreeView->addEventListener( Event::OnModelEvent, [&]( const Event* event ) {
 		const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
 		if ( modelEvent->getModelEventType() == ModelEventType::Open ) {
@@ -2842,20 +2059,15 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		mUISceneNode->bind( "main_layout", mMainLayout );
 		mUISceneNode->bind( "code_container", mBaseLayout );
 		mUISceneNode->bind( "image_container", mImageLayout );
-		mUISceneNode->bind( "search_bar", mSearchBarLayout );
-		mUISceneNode->bind( "global_search_bar", mGlobalSearchBarLayout );
-		mUISceneNode->bind( "locate_bar", mLocateBarLayout );
 		mUISceneNode->bind( "doc_info", mDocInfo );
 		mUISceneNode->bind( "doc_info_text", mDocInfoText );
 		mUISceneNode->bind( "panel", mSidePanel );
 		mUISceneNode->bind( "project_splitter", mProjectSplitter );
-		mUISceneNode->bind( "locate_find", mLocateInput );
 		mUISceneNode->addEventListener( Event::KeyDown, [&]( const Event* event ) {
 			trySendUnlockedCmd( *static_cast<const KeyEvent*>( event ) );
 		} );
 		mDocInfo->setVisible( mConfig.editor.showDocInfo );
-		mSearchBarLayout->setVisible( false )->setEnabled( false );
-		mGlobalSearchBarLayout->setVisible( false )->setEnabled( false );
+
 		mProjectSplitter->setSplitPartition( StyleSheetLength( mConfig.window.panelPartition ) );
 
 		if ( !mConfig.ui.showSidePanel )
@@ -2873,11 +2085,17 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		mFileWatcher->watch();
 #endif
 
-		initSearchBar();
+		mDocSearchController = std::make_unique<DocSearchController>( mEditorSplitter, this );
+		mDocSearchController->initSearchBar( mUISceneNode->find<UISearchBar>( "search_bar" ) );
 
-		initGlobalSearchBar();
+		mGlobalSearchController =
+			std::make_unique<GlobalSearchController>( mEditorSplitter, mUISceneNode, this );
+		mGlobalSearchController->initGlobalSearchBar(
+			mUISceneNode->find<UIGlobalSearchBar>( "global_search_bar" ) );
 
-		initLocateBar();
+		mFileLocator = std::make_unique<FileLocator>( mEditorSplitter, mUISceneNode, this );
+		mFileLocator->initLocateBar( mUISceneNode->find<UILocateBar>( "locate_bar" ),
+									 mUISceneNode->find<UITextInput>( "locate_find" ) );
 
 		initImageView();
 
