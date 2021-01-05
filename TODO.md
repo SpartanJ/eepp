@@ -25,8 +25,6 @@ Detect errors and log them.
 
 * Add support for function listing.
 
-* Display number of results in search and number of replacements.
-
 ## UI Editor
 
 * Integrate the `UICodeEditor` into the editor in order to be able to edit the layouts and CSS in app.

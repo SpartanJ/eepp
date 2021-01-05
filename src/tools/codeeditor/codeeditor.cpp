@@ -1248,6 +1248,10 @@ bool App::isDirTreeReady() const {
 	return mDirTreeReady;
 }
 
+NotificationCenter* App::getNotificationCenter() const {
+	return mNotificationCenter.get();
+}
+
 void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	const CodeEditorConfig& config = mConfig.editor;
 	editor->setFontSize( config.fontSize.asDp( 0, Sizef(), mUISceneNode->getDPI() ) );
@@ -1929,6 +1933,17 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		#global_search_layout > .replace_box {
 			padding: 4dp;
 		}
+		.notification {
+			background-color: var(--button-back);
+			border-color: var(--button-border);
+			border-width: 1dp;
+			border-radius: 8dp;
+			color: var(--font);
+			padding: 4dp;
+			min-height: 48dp;
+			margin-bottom: 8dp;
+			opacity: 0.8;
+		}
 		</style>
 		<RelativeLayout id="main_layout" layout_width="match_parent" layout_height="match_parent">
 		<Splitter id="project_splitter" layout_width="match_parent" layout_height="match_parent">
@@ -1947,6 +1962,9 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 						<TextView id="image_close" layout_width="wrap_content" layout_height="wrap_content" text="&#xeb99;" layout_gravity="top|right" enabled="false" />
 						<Loader id="image_loader" layout_width="64dp" layout_height="64dp" outline-thickness="6dp" layout_gravity="center" visible="false" />
 					</RelativeLayout>
+					<vbox id="notification_center" layout_width="256dp" layout_height="wrap_content"
+						  layout_gravity="right|bottom" margin-right="22dp" margin-bottom="56dp">
+					</vbox>
 				</RelativeLayout>
 				<searchbar id="search_bar" layout_width="match_parent" layout_height="wrap_content">
 					<vbox layout_width="wrap_content" layout_height="wrap_content" margin-right="4dp">
@@ -2084,6 +2102,9 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		mFileSystemListener = new FileSystemListener( mEditorSplitter, mFileSystemModel );
 		mFileWatcher->watch();
 #endif
+
+		mNotificationCenter = std::make_unique<NotificationCenter>(
+			mUISceneNode->find<UILayout>( "notification_center" ) );
 
 		mDocSearchController = std::make_unique<DocSearchController>( mEditorSplitter, this );
 		mDocSearchController->initSearchBar( mUISceneNode->find<UISearchBar>( "search_bar" ) );

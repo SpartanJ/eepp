@@ -27,8 +27,8 @@ class GlobalSearchController {
 	void doGlobalSearch( const String& text, bool caseSensitive, bool wholeWord, bool luaPattern,
 						 bool searchReplace, bool searchAgain = false );
 
-	void replaceInFiles( const String& replaceText,
-						 std::shared_ptr<ProjectSearch::ResultModel> model );
+	size_t replaceInFiles( const String& replaceText,
+						   std::shared_ptr<ProjectSearch::ResultModel> model );
 
 	void showGlobalSearch( bool searchAndReplace = false );
 

@@ -1109,6 +1109,8 @@
 ../../src/tools/codeeditor/ignorematcher.hpp
 ../../src/tools/codeeditor/lintermodule.cpp
 ../../src/tools/codeeditor/lintermodule.hpp
+../../src/tools/codeeditor/notificationcenter.cpp
+../../src/tools/codeeditor/notificationcenter.hpp
 ../../src/tools/codeeditor/projectdirectorytree.cpp
 ../../src/tools/codeeditor/projectdirectorytree.hpp
 ../../src/tools/codeeditor/projectsearch.cpp

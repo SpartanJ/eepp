@@ -70,7 +70,9 @@ void DocSearchController::initSearchBar( UISearchBar* searchBar ) {
 	} );
 	mSearchBarLayout->addCommand( "repeat-find", [this] { findNextText( mSearchState ); } );
 	mSearchBarLayout->addCommand( "replace-all", [this, replaceInput] {
-		replaceAll( mSearchState, replaceInput->getText() );
+		size_t count = replaceAll( mSearchState, replaceInput->getText() );
+		mApp->getNotificationCenter()->addNotification(
+			String::format( "Replaced %zu occurrences.", count ) );
 		replaceInput->setFocus();
 	} );
 	mSearchBarLayout->addCommand( "find-and-replace", [this, replaceInput] {

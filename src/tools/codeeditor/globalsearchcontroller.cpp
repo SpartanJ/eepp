@@ -22,9 +22,11 @@ static String replaceInText( String text, const String& replaceText,
 	return text;
 }
 
-void GlobalSearchController::replaceInFiles( const String& replaceText,
-											 std::shared_ptr<ProjectSearch::ResultModel> model ) {
+size_t GlobalSearchController::replaceInFiles( const String& replaceText,
+											   std::shared_ptr<ProjectSearch::ResultModel> model ) {
 	const ProjectSearch::Result& res = model.get()->getResult();
+	size_t count = 0;
+
 	for ( const auto& fileResult : res ) {
 		std::map<Int64, std::pair<String, std::vector<TextRange>>> replaceRangeMap;
 		std::map<Int64, String> replaceStringMap;
@@ -32,6 +34,7 @@ void GlobalSearchController::replaceInFiles( const String& replaceText,
 			if ( result.selected ) {
 				replaceRangeMap[result.position.start().line()].first = result.line;
 				replaceRangeMap[result.position.start().line()].second.push_back( result.position );
+				count++;
 			}
 		}
 
@@ -58,7 +61,10 @@ void GlobalSearchController::replaceInFiles( const String& replaceText,
 				doc->save();
 		}
 	}
+
+	return count;
 }
+
 void GlobalSearchController::initGlobalSearchBar( UIGlobalSearchBar* globalSearchBar ) {
 	mGlobalSearchBarLayout = globalSearchBar;
 	mGlobalSearchBarLayout->setVisible( false )->setEnabled( false );
@@ -187,9 +193,11 @@ void GlobalSearchController::initGlobalSearchBar( UIGlobalSearchBar* globalSearc
 		if ( listBox->getItemSelectedIndex() < mGlobalSearchHistory.size() ) {
 			const auto& replaceData = mGlobalSearchHistory[mGlobalSearchHistory.size() - 1 -
 														   listBox->getItemSelectedIndex()];
-			replaceInFiles( replaceInput->getText(), replaceData.second );
+			size_t count = replaceInFiles( replaceInput->getText(), replaceData.second );
 			mGlobalSearchBarLayout->execute( "search-again" );
 			mGlobalSearchBarLayout->execute( "close-global-searchbar" );
+			mApp->getNotificationCenter()->addNotification(
+				String::format( "Replaced %zu occurrences.", count ) );
 		}
 	} );
 	mGlobalSearchTreeSearch =

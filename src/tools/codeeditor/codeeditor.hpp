@@ -6,6 +6,7 @@
 #include "filelocator.hpp"
 #include "filesystemlistener.hpp"
 #include "globalsearchcontroller.hpp"
+#include "notificationcenter.hpp"
 #include "projectdirectorytree.hpp"
 #include "projectsearch.hpp"
 #include "uitreeviewglobalsearch.hpp"
@@ -65,6 +66,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	bool isDirTreeReady() const;
 
+	NotificationCenter* getNotificationCenter() const;
+
   protected:
 	EE::Window::Window* mWindow{ nullptr };
 	UISceneNode* mUISceneNode{ nullptr };
@@ -115,6 +118,7 @@ class App : public UICodeEditorSplitter::Client {
 	std::unique_ptr<GlobalSearchController> mGlobalSearchController;
 	std::unique_ptr<DocSearchController> mDocSearchController;
 	std::unique_ptr<FileLocator> mFileLocator;
+	std::unique_ptr<NotificationCenter> mNotificationCenter;
 
 	void saveAllProcess();
 
