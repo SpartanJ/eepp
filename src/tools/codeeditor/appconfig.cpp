@@ -70,6 +70,7 @@ void AppConfig::load( std::string& confPath, std::string& keybindingsPath,
 	editor.colorPreview = ini.getValueB( "editor", "color_preview", true );
 	editor.autoComplete = ini.getValueB( "editor", "auto_complete", true );
 	editor.linter = ini.getValueB( "editor", "linter", true );
+	editor.formatter = ini.getValueB( "editor", "formatter", true );
 	editor.showDocInfo = ini.getValueB( "editor", "show_doc_info", true );
 	editor.hideTabBarOnSingleTab = ini.getValueB( "editor", "hide_tab_bar_on_single_tab", true );
 	editor.singleClickTreeNavigation = ini.getValueB( "editor", "single_click_tree_navigation", false );
@@ -116,6 +117,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "editor", "color_preview", editor.colorPreview );
 	ini.setValueB( "editor", "auto_complete", editor.autoComplete );
 	ini.setValueB( "editor", "linter", editor.linter );
+	ini.setValueB( "editor", "formatter", editor.formatter );
 	ini.setValueB( "editor", "show_doc_info", editor.showDocInfo );
 	ini.setValueB( "editor", "hide_tab_bar_on_single_tab", editor.hideTabBarOnSingleTab );
 	ini.setValueB( "editor", "single_click_tree_navigation", editor.singleClickTreeNavigation );

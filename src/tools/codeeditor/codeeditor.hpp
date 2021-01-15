@@ -16,6 +16,7 @@
 
 class AutoCompleteModule;
 class LinterModule;
+class FormatterModule;
 
 class App : public UICodeEditorSplitter::Client {
   public:
@@ -101,6 +102,7 @@ class App : public UICodeEditorSplitter::Client {
 	std::string mResPath;
 	AutoCompleteModule* mAutoCompleteModule{ nullptr };
 	LinterModule* mLinterModule{ nullptr };
+	FormatterModule* mFormatterModule{ nullptr };
 	std::shared_ptr<ThreadPool> mThreadPool;
 	std::unique_ptr<ProjectDirectoryTree> mDirTree;
 	UITreeView* mProjectTreeView{ nullptr };
@@ -207,6 +209,8 @@ class App : public UICodeEditorSplitter::Client {
 	bool setAutoComplete( bool enable );
 
 	bool setLinter( bool enable );
+
+	bool setFormatter( bool enable );
 
 	void updateDocInfo( TextDocument& doc );
 

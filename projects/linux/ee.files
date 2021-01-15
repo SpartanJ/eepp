@@ -1103,6 +1103,8 @@
 ../../src/tools/codeeditor/filelocator.hpp
 ../../src/tools/codeeditor/filesystemlistener.cpp
 ../../src/tools/codeeditor/filesystemlistener.hpp
+../../src/tools/codeeditor/formattermodule.cpp
+../../src/tools/codeeditor/formattermodule.hpp
 ../../src/tools/codeeditor/globalsearchcontroller.cpp
 ../../src/tools/codeeditor/globalsearchcontroller.hpp
 ../../src/tools/codeeditor/ignorematcher.cpp

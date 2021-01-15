@@ -1246,6 +1246,10 @@ void TextDocument::setCommand( const std::string& command, TextDocument::Documen
 	mCommands[command] = func;
 }
 
+bool TextDocument::hasCommand( const std::string& command ) {
+	return mCommands.find( command ) != mCommands.end();
+}
+
 static std::pair<size_t, size_t> findType( const String& str, const String& findStr,
 										   const TextDocument::FindReplaceType& type ) {
 	switch ( type ) {

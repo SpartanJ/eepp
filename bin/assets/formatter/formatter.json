@@ -1,0 +1,10 @@
+[
+  {
+	"file_patterns": ["%.js$", "%.ts$"],
+	"command": "prettier $FILENAME"
+  },
+  {
+	"file_patterns": ["%.cpp$", "%.h$", "%.hpp$"],
+	"command": "clang-format --style=file $FILENAME"
+  }
+]

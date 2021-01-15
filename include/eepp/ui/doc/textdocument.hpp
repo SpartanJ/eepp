@@ -251,6 +251,8 @@ class EE_API TextDocument {
 
 	void setCommand( const std::string& command, DocumentCommand func );
 
+	bool hasCommand( const std::string& command );
+
 	TextRange find( String text, TextPosition from = { 0, 0 }, const bool& caseSensitive = true,
 					const bool& wholeWord = false,
 					const FindReplaceType& type = FindReplaceType::Normal,

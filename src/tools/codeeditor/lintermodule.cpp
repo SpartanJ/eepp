@@ -176,6 +176,8 @@ static std::string randString( size_t len ) {
 }
 
 void LinterModule::lintDoc( std::shared_ptr<TextDocument> doc ) {
+	if ( !mReady )
+		return;
 	auto linter = supportsLinter( doc );
 	if ( linter.command.empty() )
 		return;
@@ -232,7 +234,7 @@ void LinterModule::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 
 		// Log::info( "Linter result:\n%s", data.c_str() );
 
-		std::map<Int64, LinterMatch> matches;
+		std::map<Int64, std::vector<LinterMatch>> matches;
 
 		for ( auto& warningPatterm : linter.warningPattern ) {
 			LuaPattern pattern( warningPatterm );
@@ -265,7 +267,7 @@ void LinterModule::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 					}
 					linterMatch.pos = { line - 1, col > 0 ? col - 1 : 0 };
 					linterMatch.lineCache = doc->line( line - 1 ).getHash();
-					matches.insert( { line - 1, std::move( linterMatch ) } );
+					matches[line - 1].emplace_back( std::move( linterMatch ) );
 				}
 			}
 		}
@@ -292,42 +294,46 @@ void LinterModule::drawAfterLineText( UICodeEditor* editor, const Int64& index, 
 	}
 	mMatchesMutex.unlock();
 
-	std::map<Int64, LinterMatch>& map = matchIt->second;
+	std::map<Int64, std::vector<LinterMatch>>& map = matchIt->second;
 	auto lineIt = map.find( index );
 	if ( lineIt == map.end() )
 		return;
 	TextDocument* doc = matchIt->first;
-	LinterMatch& match = lineIt->second;
-	if ( match.lineCache != doc->line( index ).getHash() )
-		return;
-	Text line( "", editor->getFont(), editor->getFontSize() );
-	line.setTabWidth( editor->getTabWidth() );
-	line.setStyleConfig( editor->getFontStyleConfig() );
-	line.setColor( editor->getColorScheme()
-					   .getEditorSyntaxStyle( match.type == LinterType::Warning ||
-													  match.type == LinterType::Notice
-												  ? "warning"
-												  : "error" )
-					   .color );
-	const String& text = doc->line( index ).getText();
-	size_t minCol = text.find_first_not_of( " \t\f\v\n\r", match.pos.column() );
-	if ( minCol == String::InvalidPos )
-		minCol = match.pos.column();
-	minCol = std::max( (Int64)minCol, match.pos.column() );
-	if ( minCol >= text.size() )
-		minCol = match.pos.column();
-	if ( minCol >= text.size() )
-		minCol = text.size() - 1;
+	std::vector<LinterMatch>& matches = lineIt->second;
+	for ( auto& match : matches ) {
+		if ( match.lineCache != doc->line( index ).getHash() )
+			return;
+		Text line( "", editor->getFont(), editor->getFontSize() );
+		line.setTabWidth( editor->getTabWidth() );
+		line.setStyleConfig( editor->getFontStyleConfig() );
+		line.setColor( editor->getColorScheme()
+						   .getEditorSyntaxStyle( match.type == LinterType::Warning ||
+														  match.type == LinterType::Notice
+													  ? "warning"
+													  : "error" )
+						   .color );
+		const String& text = doc->line( index ).getText();
+		size_t minCol = text.find_first_not_of( " \t\f\v\n\r", match.pos.column() );
+		if ( minCol == String::InvalidPos )
+			minCol = match.pos.column();
+		minCol = std::max( (Int64)minCol, match.pos.column() );
+		if ( minCol >= text.size() )
+			minCol = match.pos.column();
+		if ( minCol >= text.size() )
+			minCol = text.size() - 1;
 
-	std::string str( text.substr( minCol ).size() - 1, '~' );
-	String string( str );
-	line.setString( string );
+		TextPosition endPos = doc->nextWordBoundary( { index, (Int64)minCol } );
+		Int64 strSize = eemax( (Int64)0, static_cast<Int64>( endPos.column() - minCol ) );
+		std::string str( strSize, '~' );
+		String string( str );
+		line.setString( string );
 
-	Vector2f pos( position.x + editor->getXOffsetCol( { match.pos.line(), (Int64)minCol } ),
-				  position.y );
-	Rectf box( pos - editor->getScreenPos(), { editor->getTextWidth( string ), lineHeight } );
-	match.box = box;
-	line.draw( pos.x, pos.y + lineHeight * 0.5f );
+		Vector2f pos( position.x + editor->getXOffsetCol( { match.pos.line(), (Int64)minCol } ),
+					  position.y );
+		Rectf box( pos - editor->getScreenPos(), { editor->getTextWidth( string ), lineHeight } );
+		match.box = box;
+		line.draw( pos.x, pos.y + lineHeight * 0.5f );
+	}
 }
 
 bool LinterModule::onMouseMove( UICodeEditor* editor, const Vector2i& pos, const Uint32& ) {
@@ -335,15 +341,17 @@ bool LinterModule::onMouseMove( UICodeEditor* editor, const Vector2i& pos, const
 	if ( it != mMatches.end() ) {
 		Vector2f localPos( editor->convertToNodeSpace( pos.asFloat() ) );
 		for ( const auto& matchIt : it->second ) {
-			auto& match = matchIt.second;
-			if ( match.box.contains( localPos ) ) {
-				editor->setTooltipText( match.text );
-				editor->getTooltip()->setPixelsPosition( Vector2f( pos.x, pos.y ) );
-				editor->runOnMainThread( [&, editor] { editor->getTooltip()->show(); } );
-				return false;
-			} else if ( editor->getTooltip() && editor->getTooltip()->isVisible() ) {
-				editor->setTooltipText( "" );
-				editor->getTooltip()->hide();
+			auto& matches = matchIt.second;
+			for ( const auto& match : matches ) {
+				if ( match.box.contains( localPos ) ) {
+					editor->setTooltipText( match.text );
+					editor->getTooltip()->setPixelsPosition( Vector2f( pos.x, pos.y ) );
+					editor->runOnMainThread( [&, editor] { editor->getTooltip()->show(); } );
+					return false;
+				} else if ( editor->getTooltip() && editor->getTooltip()->isVisible() ) {
+					editor->setTooltipText( "" );
+					editor->getTooltip()->hide();
+				}
 			}
 		}
 	}

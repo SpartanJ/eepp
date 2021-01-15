@@ -63,7 +63,7 @@ class LinterModule : public UICodeEditorModule {
 	std::set<TextDocument*> mDocs;
 	std::unordered_map<UICodeEditor*, TextDocument*> mEditorDocs;
 	std::unordered_map<TextDocument*, std::unique_ptr<Clock>> mDirtyDoc;
-	std::unordered_map<TextDocument*, std::map<Int64, LinterMatch>> mMatches;
+	std::unordered_map<TextDocument*, std::map<Int64, std::vector<LinterMatch>>> mMatches;
 	Time mDelayTime{ Seconds( 0.5f ) };
 	Mutex mDocMutex;
 	Mutex mMatchesMutex;

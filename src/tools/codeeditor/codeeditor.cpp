@@ -1,5 +1,6 @@
 #include "codeeditor.hpp"
 #include "autocompletemodule.hpp"
+#include "formattermodule.hpp"
 #include "lintermodule.hpp"
 #include <algorithm>
 #include <args/args.hxx>
@@ -372,6 +373,7 @@ App::~App() {
 	eeSAFE_DELETE( mEditorSplitter );
 	eeSAFE_DELETE( mAutoCompleteModule );
 	eeSAFE_DELETE( mLinterModule );
+	eeSAFE_DELETE( mFormatterModule );
 	eeSAFE_DELETE( mConsole );
 	if ( mFileWatcher )
 		delete mFileWatcher;
@@ -609,6 +611,9 @@ UIMenu* App::createViewMenu() {
 		->setActive( mConfig.editor.linter )
 		->setTooltipText( "Use static code analysis tool used to flag programming errors, bugs,\n"
 						  "stylistic errors, and suspicious constructs." );
+	mViewMenu->addCheckBox( "Enable Code Formatter" )
+		->setActive( mConfig.editor.formatter )
+		->setTooltipText( "Enables the code formatter/prettifier module." );
 	mViewMenu->addCheckBox( "Hide tabbar on single tab" )
 		->setActive( mConfig.editor.hideTabBarOnSingleTab )
 		->setTooltipText( "Hides the tabbar if there's only one element in the tab widget." );
@@ -661,6 +666,8 @@ UIMenu* App::createViewMenu() {
 			setAutoComplete( item->asType<UIMenuCheckBox>()->isActive() );
 		} else if ( item->getText() == "Enable Linter" ) {
 			setLinter( item->asType<UIMenuCheckBox>()->isActive() );
+		} else if ( item->getText() == "Enable Code Formatter" ) {
+			setFormatter( item->asType<UIMenuCheckBox>()->isActive() );
 		} else if ( item->getText() == "Enable Color Preview" ) {
 			mConfig.editor.colorPreview = item->asType<UIMenuCheckBox>()->isActive();
 			mEditorSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
@@ -1100,7 +1107,8 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 			 { { KEY_L, KEYMOD_CTRL }, "go-to-line" },
 			 { { KEY_M, KEYMOD_CTRL }, "menu-toggle" },
 			 { { KEY_S, KEYMOD_CTRL | KEYMOD_SHIFT }, "save-all" },
-			 { { KEY_F9, KEYMOD_LALT }, "switch-side-panel" } };
+			 { { KEY_F9, KEYMOD_LALT }, "switch-side-panel" },
+			 { { KEY_F, KEYMOD_LALT }, "format-doc" } };
 }
 
 std::vector<std::string> App::getUnlockedCommands() {
@@ -1403,8 +1411,14 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	if ( config.linter && !mLinterModule )
 		setLinter( config.linter );
 
+	if ( config.formatter && !mFormatterModule )
+		setFormatter( config.formatter );
+
 	if ( config.linter && mLinterModule )
 		editor->registerModule( mLinterModule );
+
+	if ( config.formatter && mFormatterModule )
+		editor->registerModule( mFormatterModule );
 }
 
 bool App::setAutoComplete( bool enable ) {
@@ -1433,6 +1447,22 @@ bool App::setLinter( bool enable ) {
 	}
 	if ( !enable && mLinterModule )
 		eeSAFE_DELETE( mLinterModule );
+	return false;
+}
+
+bool App::setFormatter( bool enable ) {
+	mConfig.editor.formatter = enable;
+	if ( enable && !mFormatterModule ) {
+		std::string path( mResPath + "assets/formatter/formatter.json" );
+		if ( FileSystem::fileExists( mConfigPath + "formatter.json" ) )
+			path = mConfigPath + "formatter.json";
+		mFormatterModule = eeNew( FormatterModule, ( path, mThreadPool ) );
+		mEditorSplitter->forEachEditor(
+			[&]( UICodeEditor* editor ) { editor->registerModule( mFormatterModule ); } );
+		return true;
+	}
+	if ( !enable && mFormatterModule )
+		eeSAFE_DELETE( mFormatterModule );
 	return false;
 }
 
