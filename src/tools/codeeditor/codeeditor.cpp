@@ -1126,6 +1126,9 @@ void App::closeEditors() {
 		tabWidget->removeTab( (UITab*)editor->getData() );
 	}
 	mCurrentProject = "";
+	mDirTree = nullptr;
+	if ( mFileSystemListener )
+		mFileSystemListener->setDirTree( mDirTree );
 }
 
 void App::closeFolder() {
@@ -1253,7 +1256,7 @@ void App::hideLocateBar() {
 }
 
 bool App::isDirTreeReady() const {
-	return mDirTreeReady;
+	return mDirTreeReady && mDirTree != nullptr;
 }
 
 NotificationCenter* App::getNotificationCenter() const {
@@ -1650,7 +1653,8 @@ void App::removeFolderWatches() {
 
 void App::loadDirTree( const std::string& path ) {
 	Clock* clock = eeNew( Clock, () );
-	mDirTree = std::make_unique<ProjectDirectoryTree>( path, mThreadPool );
+	mDirTreeReady = false;
+	mDirTree = std::make_shared<ProjectDirectoryTree>( path, mThreadPool );
 	Log::info( "Loading DirTree: %s", path.c_str() );
 	mDirTree->scan(
 		[&, clock]( ProjectDirectoryTree& dirTree ) {
@@ -1664,6 +1668,7 @@ void App::loadDirTree( const std::string& path ) {
 				auto newDirs = dirTree.getDirectories();
 				for ( const auto& dir : newDirs )
 					mFolderWatches.insert( mFileWatcher->addWatch( dir, mFileSystemListener ) );
+				mFileSystemListener->setDirTree( mDirTree );
 			}
 		},
 		SyntaxDefinitionManager::instance()->getExtensionsPatternsSupported() );

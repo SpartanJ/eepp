@@ -104,7 +104,7 @@ class App : public UICodeEditorSplitter::Client {
 	LinterModule* mLinterModule{ nullptr };
 	FormatterModule* mFormatterModule{ nullptr };
 	std::shared_ptr<ThreadPool> mThreadPool;
-	std::unique_ptr<ProjectDirectoryTree> mDirTree;
+	std::shared_ptr<ProjectDirectoryTree> mDirTree;
 	UITreeView* mProjectTreeView{ nullptr };
 	std::shared_ptr<FileSystemModel> mFileSystemModel;
 	size_t mMenuIconSize;

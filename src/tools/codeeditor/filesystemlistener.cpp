@@ -6,7 +6,7 @@ FileSystemListener::FileSystemListener( UICodeEditorSplitter* splitter,
 
 void FileSystemListener::handleFileAction( efsw::WatchID, const std::string& dir,
 										   const std::string& filename, efsw::Action action,
-										   std::string ) {
+										   std::string oldFilename ) {
 	FileInfo file( dir + filename );
 
 	switch ( action ) {
@@ -18,6 +18,9 @@ void FileSystemListener::handleFileAction( efsw::WatchID, const std::string& dir
 				node->invalidate();
 				mFileSystemModel.get()->invalidate();
 			}
+
+			if ( mDirTree )
+				mDirTree.get()->onChange( (ProjectDirectoryTree::Action)action, file, oldFilename );
 		}
 		case efsw::Actions::Modified: {
 			if ( file.isLink() )
@@ -26,6 +29,10 @@ void FileSystemListener::handleFileAction( efsw::WatchID, const std::string& dir
 				notifyChange( file );
 		}
 	}
+}
+
+void FileSystemListener::setDirTree( const std::shared_ptr<ProjectDirectoryTree>& dirTree ) {
+	mDirTree = dirTree;
 }
 
 bool FileSystemListener::isFileOpen( const FileInfo& file ) {

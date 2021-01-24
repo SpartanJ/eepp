@@ -148,6 +148,21 @@ const std::string& FileInfo::getFilepath() const {
 	return mFilepath;
 }
 
+std::string FileInfo::getFileName() const {
+	if ( !mFilepath.empty() && mFilepath[mFilepath.size() - 1] != '\\' &&
+		 mFilepath[mFilepath.size() - 1] != '/' )
+		return FileSystem::fileNameFromPath( mFilepath );
+	std::string path( mFilepath );
+	FileSystem::dirRemoveSlashAtEnd( mFilepath );
+	return FileSystem::fileNameFromPath( path );
+}
+
+std::string FileInfo::getDirectoryPath() const {
+	if ( isDirectory() )
+		return mFilepath;
+	return FileSystem::fileRemoveFileName( mFilepath );
+}
+
 const Uint64& FileInfo::getModificationTime() const {
 	return mModificationTime;
 }
