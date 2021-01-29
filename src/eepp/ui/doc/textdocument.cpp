@@ -342,7 +342,7 @@ bool TextDocument::save( IOStream& stream, bool keepUndoRedoStatus ) {
 	size_t lastLine = mLines.size() - 1;
 	for ( size_t i = 0; i <= lastLine; i++ ) {
 		std::string text( mLines[i].toUtf8() );
-		if ( mTrimTrailingWhitespaces && text.size() > 1 &&
+		if ( !keepUndoRedoStatus && mTrimTrailingWhitespaces && text.size() > 1 &&
 			 whitespaces.find( text[text.size() - 2] ) != std::string::npos ) {
 			size_t pos = text.find_last_not_of( whitespaces );
 			if ( pos != std::string::npos ) {
@@ -362,7 +362,8 @@ bool TextDocument::save( IOStream& stream, bool keepUndoRedoStatus ) {
 				if ( text.empty() )
 					continue;
 			}
-			if ( mForceNewLineAtEndOfFile && !text.empty() && text[text.size() - 1] != '\n' ) {
+			if ( !keepUndoRedoStatus && mForceNewLineAtEndOfFile && !text.empty() &&
+				 text[text.size() - 1] != '\n' ) {
 				text += "\n";
 				mLines.emplace_back( TextDocumentLine( "\n" ) );
 				notifyTextChanged();
