@@ -20,7 +20,7 @@
 	"file_patterns": ["%.py$"],
 	"warning_pattern": "[^:]:(%d+):(%d+):%s([%w]+:%s[^\n]*)",
 	"column_starts_at_zero": true,
-	"command": "pylint --score=n $FILENAME"
+	"command": "pylint --disable=C0114,C0115,C0116,C0103 --score=n $FILENAME"
   },
   {
 	"file_patterns": ["%.sh$"],

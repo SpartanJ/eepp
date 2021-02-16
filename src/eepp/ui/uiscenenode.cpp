@@ -534,9 +534,7 @@ void UISceneNode::invalidateStyle( UIWidget* node ) {
 	for ( auto it = mDirtyStyle.begin(); it != mDirtyStyle.end(); ++it ) {
 		itNode = *it;
 
-		if ( NULL != itNode && node->isParentOf( itNode ) ) {
-			itEraseList.push_back( it );
-		} else if ( NULL == itNode ) {
+		if ( NULL == itNode || node->isParentOf( itNode ) ) {
 			itEraseList.push_back( it );
 		}
 	}

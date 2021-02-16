@@ -561,7 +561,7 @@ void TextDocument::remove( TextRange range, UndoStackContainer& undoStack, const
 		} else {
 			auto beforeSelection = line.substr( 0, range.start().column() );
 			auto afterSelection =
-				!line.empty()
+				!line.empty() && range.end().column() < (Int64)line.size()
 					? line.substr( range.end().column(), line.length() - range.end().column() )
 					: "";
 
@@ -578,7 +578,7 @@ void TextDocument::remove( TextRange range, UndoStackContainer& undoStack, const
 		TextDocumentLine& firstLine = line( range.start().line() );
 		TextDocumentLine& secondLine = line( range.end().line() );
 		auto beforeSelection = firstLine.substr( 0, range.start().column() );
-		auto afterSelection = !secondLine.empty()
+		auto afterSelection = !secondLine.empty() && range.end().column() < (Int64)secondLine.size()
 								  ? secondLine.substr( range.end().column(),
 													   secondLine.length() - range.end().column() )
 								  : "";

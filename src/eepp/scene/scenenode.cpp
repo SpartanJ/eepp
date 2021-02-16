@@ -181,8 +181,15 @@ void SceneNode::addToCloseQueue( Node* node ) {
 	if ( mCloseList.count( node ) > 0 )
 		return;
 
+	// If the parent is closing all his children, we skip all the verifications and add it to the
+	// close list
+	if ( node->getParent() && node->getParent()->isClosingChildren() ) {
+		mCloseList.insert( node );
+		return;
+	}
+
 	for ( auto& closeNode : mCloseList ) {
-		if ( NULL != closeNode && closeNode->isParentOf( node ) ) {
+		if ( closeNode && closeNode->isParentOf( node ) ) {
 			// If a parent will be removed, means that the node
 			// that we are trying to queue will be removed by the father
 			// so we skip it
@@ -195,12 +202,10 @@ void SceneNode::addToCloseQueue( Node* node ) {
 	for ( auto it = mCloseList.begin(); it != mCloseList.end(); ++it ) {
 		itNode = *it;
 
-		if ( NULL != itNode && node->isParentOf( itNode ) ) {
+		if ( NULL == itNode || node->isParentOf( itNode ) ) {
 			// if the node added is parent of another node already added,
 			// we remove the already added node because it will be deleted
 			// by its parent
-			itEraseList.push_back( it );
-		} else if ( NULL == itNode ) {
 			itEraseList.push_back( it );
 		}
 	}

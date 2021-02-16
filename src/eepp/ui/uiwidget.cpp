@@ -51,8 +51,6 @@ UIWidget::UIWidget( const std::string& tag ) :
 		mUISceneNode->invalidateStyle( this );
 		mUISceneNode->invalidateStyleState( this, true );
 	}
-
-	updateAnchorsDistances();
 }
 
 UIWidget::UIWidget() : UIWidget( "widget" ) {}

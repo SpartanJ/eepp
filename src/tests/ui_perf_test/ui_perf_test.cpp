@@ -6,7 +6,7 @@ class TestModel : public Model {
   public:
 	struct NodeT {
 		std::vector<NodeT*> children;
-		NodeT* parent{nullptr};
+		NodeT* parent{ nullptr };
 
 		ModelIndex index( const TestModel& model, int column ) const {
 			if ( !parent )
@@ -217,7 +217,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		widgetTree->setExpanderIconSize( PixelDensity::dpToPx( 20 ) );
 		widgetTree->setModel( WidgetTreeModel::New( uiSceneNode ) );
 
-		/* ListBox test */ /*
+		/* ListBox test *//*
 		std::vector<String> strings;
 		for ( size_t i = 0; i < 10000; i++ )
 			strings.emplace_back( String::format(
@@ -228,7 +228,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		 lbox->setParent( vlay );
 		 std::cout << "Time setParent: " << clock.getElapsed().asMilliseconds() << " ms"
 				   << std::endl;
-		 lbox->setLayoutMargin( Rect( 4, 4, 4, 4 ) );
+		 lbox->setLayoutMargin( Rectf( 4, 4, 4, 4 ) );
 		 std::cout << "Time setLayoutMargin: " << clock.getElapsed().asMilliseconds() << " ms"
 				   << std::endl;
 		 lbox->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
@@ -247,12 +247,22 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		/* Create Widget test */
 		Clock total;
 		/*for ( size_t i = 0; i < 10000; i++ ) {
-			auto* widget = UINode::New();
+			UINode::New();
 		}
 		std::cout << "Time UINode total: " << total.getElapsedTime().asMilliseconds() << " ms"
 				  << std::endl;
 
 		uiSceneNode->getRoot()->childsCloseAll();
+
+		total.restart();
+		for ( size_t i = 0; i < 10000; i++ ) {
+			UIWidget::New();
+		}
+		std::cout << "Time UIWidget total: " << total.getElapsedTime().asMilliseconds() << " ms"
+				  << std::endl;
+
+		uiSceneNode->getRoot()->childsCloseAll();
+
 		SceneManager::instance()->update();*/
 
 		/*total.restart();

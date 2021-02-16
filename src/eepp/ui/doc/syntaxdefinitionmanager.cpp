@@ -218,7 +218,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 
 	// sh - bash
 	add( { "Bash",
-		   { "%.sh$", "%.bash$" },
+		   { "%.sh$", "%.bash$", "%.bashrc$", "%.bash_profile$" },
 		   {
 			   { { "#.*\n" }, "comment" },
 			   { { "[[\\.]]" }, "normal" },
@@ -1670,8 +1670,8 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	auto prepareBatchSymbols = []( std::unordered_map<std::string, std::vector<std::string>> table )
 		-> std::unordered_map<std::string, std::string> {
 		std::unordered_map<std::string, std::string> symbols;
-		for ( auto el : table ) {
-			for ( auto it : el.second ) {
+		for ( auto& el : table ) {
+			for ( const auto& it : el.second ) {
 				symbols[String::toLower( it )] = el.first;
 				symbols[String::toUpper( it )] = el.first;
 			}
@@ -1996,6 +1996,82 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 			   { "Optional", "keyword2" },
 		   },
 		   "//" } );
+
+	add( { "Solidity",
+		   { "%.sol$" },
+		   {
+			   { { "//.-\n" }, "comment" },
+			   { { "/%*", "%*/" }, "comment" },
+			   { { "\"\"\"", "\"\"\"" }, "string" },
+			   { { "\"", "\"", "\\" }, "string" },
+			   { { "-?0x%x+" }, "number" },
+			   { { "-?%d+[%d%.eE]*f?" }, "number" },
+			   { { "-?%.?%d+f?" }, "number" },
+			   { { "[%+%-=/%*%^%%<>!~|&]" }, "operator" },
+			   { { "[%a_][%w_]*%f[(]" }, "function" },
+			   { { "[%a_][%w_]*" }, "symbol" },
+		   },
+		   {
+			   { "if", "keyword" },			 { "else", "keyword" },
+			   { "for", "keyword" },		 { "while", "keyword" },
+			   { "do", "keyword" },			 { "break", "keyword" },
+			   { "continue", "keyword" },	 { "throw", "keyword" },
+			   { "returns", "keyword" },	 { "return", "keyword" },
+			   { "function", "keyword" },	 { "private", "keyword2" },
+			   { "public", "keyword2" },	 { "internal", "keyword2" },
+			   { "external", "keyword2" },	 { "constant", "keyword2" },
+			   { "immutable", "keyword2" },	 { "pure", "keyword2" },
+			   { "view", "keyword2" },		 { "payable", "keyword2" },
+			   { "nonpayable", "keyword2" }, { "inherited", "keyword2" },
+			   { "indexed", "keyword2" },	 { "storage", "keyword2" },
+			   { "memory", "keyword2" },	 { "virtual", "keyword2" },
+			   { "calldata", "keyword2" },	 { "override", "keyword2" },
+			   { "abstract", "keyword" },	 { "library", "keyword" },
+			   { "enum", "keyword" },		 { "constructor", "keyword" },
+			   { "event", "keyword" },		 { "modifier", "keyword" },
+			   { "assembly", "keyword" },	 { "let", "keyword" },
+			   { "msg", "keyword2" },		 { "block", "keyword2" },
+			   { "tx", "keyword2" },		 { "now", "keyword2" },
+			   { "this", "keyword2" },		 { "super", "keyword2" },
+			   { "require", "keyword" },	 { "assert", "keyword2" },
+			   { "revert", "keyword2" },	 { "selfdestruct", "keyword2" },
+			   { "suicide", "keyword2" },	 { "addmod", "keyword2" },
+			   { "mulmod", "keyword2" },	 { "keccak256", "keyword2" },
+			   { "sha256", "keyword2" },	 { "sha3", "keyword2" },
+			   { "ripemd160", "keyword2" },	 { "ecrecover", "keyword2" },
+			   { "blockhash", "keyword2" },	 { "gasleft", "keyword2" },
+			   { "contract", "keyword" },	 { "interface", "keyword" },
+			   { "modifier", "keyword" },	 { "mapping", "keyword2" },
+			   { "address", "keyword2" },	 { "string", "keyword2" },
+			   { "byte", "keyword2" },		 { "bytes", "keyword2" },
+			   { "bytes1", "keyword2" },	 { "bytes2", "keyword2" },
+			   { "bytes3", "keyword2" },	 { "bytes4", "keyword2" },
+			   { "bytes5", "keyword2" },	 { "bytes6", "keyword2" },
+			   { "bytes7", "keyword2" },	 { "bytes8", "keyword2" },
+			   { "bytes9", "keyword2" },	 { "bytes10", "keyword2" },
+			   { "bytes11", "keyword2" },	 { "bytes12", "keyword2" },
+			   { "bytes13", "keyword2" },	 { "bytes14", "keyword2" },
+			   { "bytes15", "keyword2" },	 { "bytes16", "keyword2" },
+			   { "bytes17", "keyword2" },	 { "bytes18", "keyword2" },
+			   { "bytes19", "keyword2" },	 { "bytes20", "keyword2" },
+			   { "bytes21", "keyword2" },	 { "bytes22", "keyword2" },
+			   { "bytes23", "keyword2" },	 { "bytes24", "keyword2" },
+			   { "bytes25", "keyword2" },	 { "bytes26", "keyword2" },
+			   { "bytes27", "keyword2" },	 { "bytes28", "keyword2" },
+			   { "bytes29", "keyword2" },	 { "bytes30", "keyword2" },
+			   { "bytes31", "keyword2" },	 { "bytes32", "keyword2" },
+			   { "int", "keyword2" },		 { "int8", "keyword2" },
+			   { "int16", "keyword2" },		 { "int32", "keyword2" },
+			   { "int64", "keyword2" },		 { "int128", "keyword2" },
+			   { "int256", "keyword2" },	 { "uint", "keyword2" },
+			   { "uint8", "keyword2" },		 { "uint16", "keyword2" },
+			   { "uint32", "keyword2" },	 { "uint64", "keyword2" },
+			   { "uint128", "keyword2" },	 { "uint256", "keyword2" },
+			   { "bool", "keyword2" },		 { "hash", "keyword2" },
+			   { "pragma", "keyword2" },	 { "using", "keyword" },
+			   { "is", "keyword" },			 { "new", "keyword" },
+			   { "delete", "keyword" },		 { "emit", "keyword" },
+		   } } );
 }
 
 SyntaxDefinition& SyntaxDefinitionManager::add( SyntaxDefinition&& syntaxStyle ) {
@@ -2052,7 +2128,7 @@ SyntaxDefinitionManager::getStyleByExtension( const std::string& filePath ) cons
 
 	if ( !extension.empty() ) {
 		for ( auto style = mStyles.rbegin(); style != mStyles.rend(); ++style ) {
-			for ( auto ext : style->getFiles() ) {
+			for ( const auto& ext : style->getFiles() ) {
 				if ( String::startsWith( ext, "%." ) || String::endsWith( ext, "$" ) ) {
 					LuaPattern words( ext );
 					int start, end;
@@ -2072,7 +2148,7 @@ const SyntaxDefinition&
 SyntaxDefinitionManager::getStyleByHeader( const std::string& header ) const {
 	if ( !header.empty() ) {
 		for ( auto style = mStyles.rbegin(); style != mStyles.rend(); ++style ) {
-			for ( auto hdr : style->getHeaders() ) {
+			for ( const auto& hdr : style->getHeaders() ) {
 				LuaPattern words( hdr );
 				int start, end;
 				if ( words.find( header, start, end ) ) {

@@ -62,7 +62,8 @@ enum NodeFlags {
 	NODE_FLAG_LAYOUT = ( 1 << 26 ),
 
 	NODE_FLAG_LOADING = ( 1 << 27 ),
-	NODE_FLAG_FREE_USE = ( 1 << 28 )
+	NODE_FLAG_CLOSING_CHILDREN = ( 1 << 28 ),
+	NODE_FLAG_FREE_USE = ( 1 << 29 )
 };
 
 class EE_API Node : public Transformable {
@@ -390,6 +391,8 @@ class EE_API Node : public Transformable {
 	virtual void onIdChange();
 
 	bool isClosing() const;
+
+	bool isClosingChildren() const;
 
 	virtual Node* overFind( const Vector2f& Point );
 

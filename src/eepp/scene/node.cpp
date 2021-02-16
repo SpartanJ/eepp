@@ -696,12 +696,13 @@ void Node::childRemove( Node* node ) {
 }
 
 void Node::childsCloseAll() {
-	Node* ChildLoop = mChild;
-
-	while ( NULL != ChildLoop ) {
-		ChildLoop->close();
-		ChildLoop = ChildLoop->mNext;
+	Node* childLoop = mChild;
+	writeNodeFlag( NODE_FLAG_CLOSING_CHILDREN, 1 );
+	while ( NULL != childLoop ) {
+		childLoop->close();
+		childLoop = childLoop->mNext;
 	}
+	writeNodeFlag( NODE_FLAG_CLOSING_CHILDREN, 0 );
 }
 
 std::string Node::getId() const {
@@ -721,6 +722,10 @@ void Node::onIdChange() {
 
 bool Node::isClosing() const {
 	return 0 != ( mNodeFlags & NODE_FLAG_CLOSE );
+}
+
+bool Node::isClosingChildren() const {
+	return 0 != ( mNodeFlags & NODE_FLAG_CLOSING_CHILDREN );
 }
 
 const String::HashType& Node::getIdHash() const {
