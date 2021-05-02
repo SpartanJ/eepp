@@ -109,16 +109,18 @@ bool TextDocument::loadFromStream( IOStream& file, std::string path, bool callRe
 				lineBuffer += ptrGetLine( bufferPtr, consume, position );
 				bufferPtr += position;
 				consume -= position;
+				size_t lineBufferSize = lineBuffer.size();
 
-				if ( lineBuffer[lineBuffer.size() - 1] == '\n' || !consume ) {
-					if ( mLines.empty() && lineBuffer.size() > 1 &&
-						 lineBuffer[lineBuffer.size() - 2] == '\r' ) {
+				if ( lineBuffer[lineBufferSize - 1] == '\n' || !consume ) {
+					if ( mLines.empty() && lineBufferSize > 1 &&
+						 lineBuffer[lineBufferSize - 2] == '\r' ) {
 						mLineEnding = LineEnding::CRLF;
 					}
 
-					if ( mLineEnding == LineEnding::CRLF && lineBuffer.size() > 1 ) {
+					if ( mLineEnding == LineEnding::CRLF && lineBufferSize > 1 &&
+						 lineBuffer[lineBufferSize - 1] == '\n' ) {
 						lineBuffer[lineBuffer.size() - 2] = '\n';
-						lineBuffer.resize( lineBuffer.size() - 1 );
+						lineBuffer.resize( lineBufferSize - 1 );
 					}
 
 					mLines.push_back( lineBuffer );

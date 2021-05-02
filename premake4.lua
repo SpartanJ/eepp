@@ -496,7 +496,11 @@ end
 
 function generate_os_links()
 	if os.is_real("linux") then
-		multiple_insert( os_links, { "rt", "pthread", "X11", "openal", "GL", "Xcursor" } )
+		multiple_insert( os_links, { "rt", "pthread", "X11", "GL" } )
+
+		if not _OPTIONS["with-mojoal"] then
+			table.insert( os_links, "openal" )
+		end
 
 		if _OPTIONS["with-static-eepp"] then
 			table.insert( os_links, "dl" )
