@@ -2071,6 +2071,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 			   { "pragma", "keyword2" },	 { "using", "keyword" },
 			   { "is", "keyword" },			 { "new", "keyword" },
 			   { "delete", "keyword" },		 { "emit", "keyword" },
+			   { "struct", "keyword" },
 		   } } );
 }
 

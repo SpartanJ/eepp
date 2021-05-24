@@ -219,7 +219,9 @@ bool FileSystem::fileCanWrite( const std::string& filepath ) {
 #else
 	struct stat st;
 	if ( stat( filepath.c_str(), &st ) == 0 ) {
-		if ( st.st_uid == geteuid() )
+		if ( 0 == geteuid() )
+			return true;
+		else if ( st.st_uid == geteuid() )
 			return ( st.st_mode & S_IWUSR ) != 0;
 		else if ( st.st_gid == getegid() )
 			return ( st.st_mode & S_IWGRP ) != 0;
