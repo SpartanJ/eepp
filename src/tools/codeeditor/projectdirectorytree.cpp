@@ -225,6 +225,9 @@ void ProjectDirectoryTree::addFile( const FileInfo& file ) {
 			getDirectoryFiles( mFiles, mNames, mPath, info, mIgnoreHidden, mIgnoreMatcher );
 		}
 	} else {
+		if ( file.isHidden() && mIgnoreHidden )
+			return;
+
 		IgnoreMatcherManager matcher( getIgnoreMatcherFromPath( file.getFilepath() ) );
 		if ( !matcher.foundMatch() ||
 			 ( matcher.foundMatch() && !matcher.match( file.getFilepath() ) ) ) {
