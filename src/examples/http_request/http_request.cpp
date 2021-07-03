@@ -84,7 +84,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 			}
 
 			// Set the host and port from the URI
-			http.setHost( uri.getHost(), uri.getPort() );
+			http.setHost( uri.getHost(), uri.getPort(), uri.getScheme() == "https" );
 
 			// Set the path and query parts for the request
 			request.setUri( uri.getPathEtc() );

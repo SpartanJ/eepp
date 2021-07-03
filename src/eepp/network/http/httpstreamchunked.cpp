@@ -31,7 +31,7 @@ ios_size HttpStreamChunked::write( const char* data, ios_size size ) {
 			retry = false;
 
 			// Check for the first \r\n to find the end of the length definition
-			std::string::size_type lenEnd = mChunkBuffer.find_first_of( "\r\n" );
+			std::string::size_type lenEnd = mChunkBuffer.find( "\r\n" );
 
 			if ( lenEnd != std::string::npos ) {
 				std::string::size_type firstCharPos = lenEnd + 2;

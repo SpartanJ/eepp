@@ -6,6 +6,7 @@
 #include <eepp/core/utf.hpp>
 #include <functional>
 #include <iterator>
+#include <limits>
 
 namespace EE {
 
