@@ -1,4 +1,4 @@
-#include <algorithm>
+﻿#include <algorithm>
 #include <cstdio>
 #include <eepp/core/debug.hpp>
 #include <eepp/system/filesystem.hpp>
@@ -381,13 +381,25 @@ bool TextDocument::save( IOStream& stream, bool keepUndoRedoStatus ) {
 			stream.write( text.c_str(), text.size() );
 		}
 	}
+
+	sanitizeCurrentSelection();
+
 	if ( !keepUndoRedoStatus )
 		cleanChangeId();
+
 	return true;
 }
 
 bool TextDocument::save() {
 	return save( mFilePath );
+}
+
+void TextDocument::sanitizeCurrentSelection() {
+	auto newSelection =
+		TextRange( sanitizePosition( mSelection.start() ), sanitizePosition( mSelection.end() ) );
+
+	if ( mSelection != newSelection )
+		setSelection( newSelection );
 }
 
 std::string TextDocument::getFilename() const {

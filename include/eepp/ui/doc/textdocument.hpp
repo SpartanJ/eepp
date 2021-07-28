@@ -370,6 +370,8 @@ class EE_API TextDocument {
 
 	bool isSaving() const;
 
+	void sanitizeCurrentSelection();
+
   protected:
 	friend class UndoStack;
 	UndoStack mUndoStack;
