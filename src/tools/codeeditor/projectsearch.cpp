@@ -62,7 +62,7 @@ searchInFileHorspool( const std::string& file, const std::string& text, const bo
 				String str( textLine( fileTextOriginal, searchRes, relCol ) );
 				res.push_back( { str,
 								 { { (Int64)totNl, (Int64)relCol },
-								   { (Int64)totNl, ( Int64 )( relCol + text.size() ) } } } );
+								   { (Int64)totNl, (Int64)( relCol + text.size() ) } } } );
 				lSearchRes = searchRes;
 				searchRes += text.size();
 			}
@@ -81,7 +81,7 @@ searchInFileHorspool( const std::string& file, const std::string& text, const bo
 				String str( textLine( fileText, searchRes, relCol ) );
 				res.push_back( { str,
 								 { { (Int64)totNl, (Int64)relCol },
-								   { (Int64)totNl, ( Int64 )( relCol + text.size() ) } } } );
+								   { (Int64)totNl, (Int64)( relCol + text.size() ) } } } );
 				lSearchRes = searchRes;
 				searchRes += text.size();
 			}
@@ -117,7 +117,7 @@ searchInFileLuaPattern( const std::string& file, const std::string& text, const 
 				int len = end - start;
 				res.push_back( { str,
 								 { { (Int64)totNl, (Int64)relCol },
-								   { (Int64)totNl, ( Int64 )( relCol + len ) } } } );
+								   { (Int64)totNl, (Int64)( relCol + len ) } } } );
 				searchRes = end;
 			}
 		} while ( matched );
@@ -136,7 +136,7 @@ searchInFileLuaPattern( const std::string& file, const std::string& text, const 
 				int len = end - start;
 				res.push_back( { str,
 								 { { (Int64)totNl, (Int64)relCol },
-								   { (Int64)totNl, ( Int64 )( relCol + len ) } } } );
+								   { (Int64)totNl, (Int64)( relCol + len ) } } } );
 				searchRes = end;
 			}
 		} while ( matched );
@@ -149,7 +149,9 @@ void ProjectSearch::find( const std::vector<std::string> files, const std::strin
 						  const TextDocument::FindReplaceType& type ) {
 	Result res;
 	const auto occ =
-		String::BMH::createOccTable( (const unsigned char*)string.c_str(), string.size() );
+		type == TextDocument::FindReplaceType::Normal
+			? String::BMH::createOccTable( (const unsigned char*)string.c_str(), string.size() )
+			: std::vector<size_t>();
 	for ( auto& file : files ) {
 		auto fileRes = type == TextDocument::FindReplaceType::Normal
 						   ? searchInFileHorspool( file, string, caseSensitive, wholeWord, occ )
@@ -177,7 +179,9 @@ void ProjectSearch::find( const std::vector<std::string> files, std::string stri
 	if ( !caseSensitive )
 		String::toLowerInPlace( string );
 	const auto occ =
-		String::BMH::createOccTable( (const unsigned char*)string.c_str(), string.size() );
+		type == TextDocument::FindReplaceType::Normal
+			? String::BMH::createOccTable( (const unsigned char*)string.c_str(), string.size() )
+			: std::vector<size_t>();
 	for ( auto& file : files ) {
 		pool->run(
 			[findData, file, string, caseSensitive, wholeWord, occ, type] {

@@ -112,7 +112,11 @@ void App::updateEditorTitle( UICodeEditor* editor ) {
 }
 
 void App::setAppTitle( const std::string& title ) {
-	mWindow->setTitle( mWindowTitle + String( title.empty() ? "" : " - " + title ) );
+	mWindow->setTitle( mWindowTitle +
+					   String( mCurrentProject.empty()
+								   ? ""
+								   : " - " + FileSystem::fileNameFromPath( mCurrentProject ) ) +
+					   String( title.empty() ? "" : " - " + title ) );
 }
 
 void App::onDocumentModified( UICodeEditor* editor, TextDocument& ) {

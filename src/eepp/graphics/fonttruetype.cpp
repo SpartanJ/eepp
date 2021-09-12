@@ -514,7 +514,7 @@ Glyph FontTrueType::loadGlyph( Uint32 codePoint, unsigned int characterSize, boo
 	FT_Error err = 0;
 
 	// Load the glyph corresponding to the code point
-	FT_Int32 flags = FT_LOAD_TARGET_NORMAL; //  | FT_LOAD_FORCE_AUTOHINT
+	FT_Int32 flags = FT_LOAD_TARGET_NORMAL | FT_LOAD_FORCE_AUTOHINT;
 	if ( outlineThickness != 0 )
 		flags |= FT_LOAD_NO_BITMAP;
 	if ( ( err = FT_Load_Char( face, codePoint, flags ) ) != 0 ) {
