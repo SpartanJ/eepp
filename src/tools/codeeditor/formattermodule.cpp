@@ -2,6 +2,8 @@
 #include "thirdparty/json.hpp"
 #include "thirdparty/subprocess.h"
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/iostreamstring.hpp>
+#include <random>
 
 using json = nlohmann::json;
 
@@ -78,17 +80,47 @@ void FormatterModule::load( const std::string& formatterPath ) {
 		Log::error( "Parsing formatter failed:\n%s", e.what() );
 	}
 }
+static std::string randString( size_t len ) {
+	std::string str( "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz" );
+	std::random_device rd;
+	std::mt19937 generator( rd() );
+	std::shuffle( str.begin(), str.end(), generator );
+	return str.substr( 0, len );
+}
 
 void FormatterModule::formatDoc( UICodeEditor* editor ) {
 	if ( !mReady )
 		return;
-	Clock clock;
 	std::shared_ptr<TextDocument> doc = editor->getDocumentRef();
 	auto formatter = supportsFormatter( doc );
 	if ( formatter.command.empty() && doc->getFilePath().empty() )
 		return;
+	IOStreamString fileString;
+	if ( doc->isDirty() || !doc->hasFilepath() ) {
+		std::string tmpPath;
+		if ( !doc->hasFilepath() ) {
+			tmpPath = Sys::getTempPath() + ".ecode-" + doc->getFilename() + "." + randString( 8 );
+		} else {
+			std::string fileDir( FileSystem::fileRemoveFileName( doc->getFilePath() ) );
+			FileSystem::dirAddSlashAtEnd( fileDir );
+			tmpPath = fileDir + "." + randString( 8 ) + "." + doc->getFilename();
+		}
+
+		doc->save( fileString, true );
+		FileSystem::fileWrite( tmpPath, (Uint8*)fileString.getStreamPointer(),
+							   fileString.getSize() );
+		runFormatter( editor, formatter, tmpPath );
+		FileSystem::fileRemove( tmpPath );
+	} else {
+		runFormatter( editor, formatter, doc->getFilePath() );
+	}
+}
+
+void FormatterModule::runFormatter( UICodeEditor* editor, const Formatter& formatter,
+									const std::string& path ) {
+	Clock clock;
+
 	std::string cmd( formatter.command );
-	std::string path( doc->getFilePath() );
 	String::replaceAll( cmd, "$FILENAME", path );
 	std::vector<std::string> cmdArr = String::split( cmd, ' ' );
 	std::vector<const char*> strings;

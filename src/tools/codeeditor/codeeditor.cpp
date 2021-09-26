@@ -373,16 +373,16 @@ void App::onTextDropped( String text ) {
 App::App() : mThreadPool( ThreadPool::createShared( eemax<int>( 2, Sys::getCPUCount() ) ) ) {}
 
 App::~App() {
+	if ( mFileWatcher )
+		delete mFileWatcher;
+	if ( mFileSystemListener )
+		delete mFileSystemListener;
 	saveConfig();
 	eeSAFE_DELETE( mEditorSplitter );
 	eeSAFE_DELETE( mAutoCompleteModule );
 	eeSAFE_DELETE( mLinterModule );
 	eeSAFE_DELETE( mFormatterModule );
 	eeSAFE_DELETE( mConsole );
-	if ( mFileWatcher )
-		delete mFileWatcher;
-	if ( mFileSystemListener )
-		delete mFileSystemListener;
 }
 
 void App::updateRecentFiles() {

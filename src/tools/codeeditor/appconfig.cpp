@@ -73,13 +73,22 @@ void AppConfig::load( std::string& confPath, std::string& keybindingsPath,
 	editor.formatter = ini.getValueB( "editor", "formatter", true );
 	editor.showDocInfo = ini.getValueB( "editor", "show_doc_info", true );
 	editor.hideTabBarOnSingleTab = ini.getValueB( "editor", "hide_tab_bar_on_single_tab", true );
-	editor.singleClickTreeNavigation = ini.getValueB( "editor", "single_click_tree_navigation", false );
+	editor.singleClickTreeNavigation =
+		ini.getValueB( "editor", "single_click_tree_navigation", false );
+	iniInfo = FileInfo( ini.path() );
 }
 
 void AppConfig::save( const std::vector<std::string>& recentFiles,
 					  const std::vector<std::string>& recentFolders,
 					  const std::string& panelPartition, EE::Window::Window* win,
 					  const std::string& colorSchemeName ) {
+
+	FileInfo configInfo( ini.path() );
+	if ( iniInfo.getModificationTime() != 0 &&
+		 iniInfo.getModificationTime() != configInfo.getModificationTime() ) {
+		ini.loadFromFile( ini.path() );
+	}
+
 	editor.colorScheme = colorSchemeName;
 	window.size = win->getLastWindowedSize();
 	window.maximized = win->isMaximized();

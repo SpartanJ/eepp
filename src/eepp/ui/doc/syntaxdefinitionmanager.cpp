@@ -150,7 +150,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 
 	// JavaScript
 	add( { "Javascript",
-		   { "%.js$", "%.json$", "%.cson$", "%.ts$" },
+		   { "%.js$", "%.json$", "%.cson$", "%.ts$", "%.tsx$" },
 		   {
 			   { { "//.-\n" }, "comment" },
 			   { { "/%*", "%*/" }, "comment" },

@@ -67,7 +67,7 @@ bool SyntaxHighlighter::updateDirty( int visibleLinesCount ) {
 		mMaxWantedLine = 0;
 	} else {
 		bool changed = false;
-		Int64 max = eemin( mFirstInvalidLine + visibleLinesCount, mMaxWantedLine );
+		Int64 max = eemax( 0LL, eemin( mFirstInvalidLine + visibleLinesCount, mMaxWantedLine ) );
 
 		for ( Int64 index = mFirstInvalidLine; index <= max; index++ ) {
 			int state = SYNTAX_TOKENIZER_STATE_NONE;

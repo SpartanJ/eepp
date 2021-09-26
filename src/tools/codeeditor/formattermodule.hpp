@@ -40,6 +40,8 @@ class FormatterModule : public UICodeEditorModule {
 
 	void formatDoc( UICodeEditor* editor );
 
+	void runFormatter( UICodeEditor* editor, const Formatter& formatter, const std::string& path );
+
 	FormatterModule::Formatter supportsFormatter( std::shared_ptr<TextDocument> doc );
 };
 
