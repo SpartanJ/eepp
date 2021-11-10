@@ -220,11 +220,9 @@ void LinterModule::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 	if ( 0 == result ) {
 		std::string buffer( 1024, '\0' );
 		std::string data;
-		unsigned index = 0;
 		unsigned bytesRead = 0;
 		do {
 			bytesRead = subprocess_read_stdout( &subprocess, &buffer[0], buffer.size() );
-			index += bytesRead;
 			data += buffer.substr( 0, bytesRead );
 		} while ( bytesRead != 0 );
 

@@ -27,5 +27,11 @@
 	"warning_pattern": "[^:]:(%d+):(%d+):%s?([^%s]*)([^\n]*)",
 	"warning_pattern_order": { "line": 1, "col": 2, "message": 4, "type": 3 },
 	"command": "shellcheck -f gcc $FILENAME"
+  },
+  {
+	"file_patterns": ["%.sol$"],
+	"warning_pattern": "(%d+):(%d+)%s.(%w*)%s.([^\n]*)",
+	"warning_pattern_order": { "line": 1, "col": 2, "message": 4, "type": 3 },
+	"command": "solhint $FILENAME"
   }
 ]

@@ -15,19 +15,25 @@ namespace EE { namespace System {
 
 class EE_API ThreadPool : NonCopyable {
   public:
-	static std::shared_ptr<ThreadPool> createShared( Uint32 numThreads );
+	static std::shared_ptr<ThreadPool> createShared( Uint32 numThreads,
+													 bool terminateOnClose = false );
 
-	static std::unique_ptr<ThreadPool> createUnique( Uint32 numThreads );
+	static std::unique_ptr<ThreadPool> createUnique( Uint32 numThreads,
+													 bool terminateOnClose = false );
 
-	static ThreadPool* createRaw( Uint32 numThreads );
+	static ThreadPool* createRaw( Uint32 numThreads, bool terminateOnClose = false );
 
-	ThreadPool( Uint32 numThreads );
+	ThreadPool( Uint32 numThreads, bool terminateOnClose = false );
 
 	virtual ~ThreadPool();
 
 	void run( const std::function<void()>& func, const std::function<void()>& doneCallback );
 
 	Uint32 numThreads() const;
+
+	bool terminateOnClose() const;
+
+	void setTerminateOnClose( bool terminateOnClose );
 
   private:
 	struct Work {
@@ -40,6 +46,7 @@ class EE_API ThreadPool : NonCopyable {
 	std::vector<std::unique_ptr<Thread>> mThreads;
 	std::deque<std::unique_ptr<Work>> mWork;
 	bool mShuttingDown = false;
+	bool mTerminateOnClose = false;
 	mutable std::mutex mMutex;
 	std::condition_variable mWorkAvailable;
 };

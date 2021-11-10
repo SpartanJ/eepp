@@ -2,21 +2,22 @@
 
 namespace EE { namespace System {
 
-std::shared_ptr<ThreadPool> ThreadPool::createShared( Uint32 numThreads ) {
-	std::shared_ptr<ThreadPool> pool( new ThreadPool( numThreads ) );
+std::shared_ptr<ThreadPool> ThreadPool::createShared( Uint32 numThreads, bool terminateOnClose ) {
+	std::shared_ptr<ThreadPool> pool( new ThreadPool( numThreads, terminateOnClose ) );
 	return pool;
 }
 
-std::unique_ptr<ThreadPool> ThreadPool::createUnique( Uint32 numThreads ) {
-	std::unique_ptr<ThreadPool> pool( new ThreadPool( numThreads ) );
+std::unique_ptr<ThreadPool> ThreadPool::createUnique( Uint32 numThreads, bool terminateOnClose ) {
+	std::unique_ptr<ThreadPool> pool( new ThreadPool( numThreads, terminateOnClose ) );
 	return pool;
 }
 
-ThreadPool* ThreadPool::createRaw( Uint32 numThreads ) {
-	return eeNew( ThreadPool, ( numThreads ) );
+ThreadPool* ThreadPool::createRaw( Uint32 numThreads, bool terminateOnClose ) {
+	return eeNew( ThreadPool, ( numThreads, terminateOnClose ) );
 }
 
-ThreadPool::ThreadPool( Uint32 numThreads ) {
+ThreadPool::ThreadPool( Uint32 numThreads, bool terminateOnClose ) :
+	mTerminateOnClose( terminateOnClose ) {
 	for ( Uint32 i = 0; i < numThreads; ++i ) {
 		mThreads.emplace_back( std::make_unique<Thread>( &ThreadPool::threadFunc, this ) );
 		mThreads.back().get()->launch();
@@ -32,7 +33,11 @@ ThreadPool::~ThreadPool() {
 	mWorkAvailable.notify_all();
 
 	for ( auto& t : mThreads ) {
-		t.get()->wait();
+		if ( terminateOnClose() ) {
+			t.get()->terminate();
+		} else {
+			t.get()->wait();
+		}
 	}
 }
 
@@ -60,6 +65,14 @@ void ThreadPool::threadFunc() {
 	}
 }
 
+bool ThreadPool::terminateOnClose() const {
+	return mTerminateOnClose;
+}
+
+void ThreadPool::setTerminateOnClose( bool terminateOnClose ) {
+	mTerminateOnClose = terminateOnClose;
+}
+
 void ThreadPool::run( const std::function<void()>& func,
 					  const std::function<void()>& doneCallback ) {
 	{
@@ -68,7 +81,7 @@ void ThreadPool::run( const std::function<void()>& func,
 		if ( mShuttingDown )
 			return;
 
-		mWork.emplace_back( new Work{func, doneCallback} );
+		mWork.emplace_back( new Work{ func, doneCallback } );
 	}
 
 	mWorkAvailable.notify_one();
