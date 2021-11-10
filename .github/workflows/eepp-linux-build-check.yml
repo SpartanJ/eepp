@@ -12,7 +12,8 @@ jobs:
         fetch-depth: 2
         ref: develop  
     - name: Checkout submodules
-      uses: textbook/git-checkout-submodule-action@2.0.0
+      run: |
+        git submodule update --init --recursive
     - name: Install dependencies
       run: |
         sudo apt-get update
