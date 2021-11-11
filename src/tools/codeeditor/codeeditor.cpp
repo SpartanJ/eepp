@@ -370,7 +370,7 @@ void App::onTextDropped( String text ) {
 	}
 }
 
-App::App() : mThreadPool( ThreadPool::createShared( eemax<int>( 2, Sys::getCPUCount() ), true ) ) {}
+App::App() : mThreadPool( ThreadPool::createShared( eemax<int>( 2, Sys::getCPUCount() ) ) ) {}
 
 App::~App() {
 	if ( mFileWatcher )
