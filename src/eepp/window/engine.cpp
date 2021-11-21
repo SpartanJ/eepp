@@ -369,6 +369,10 @@ Uint32 Engine::getMainThreadId() {
 	return mMainThreadId;
 }
 
+bool Engine::isMainThread() const {
+	return Thread::getCurrentThreadId() == Engine::instance()->getMainThreadId();
+}
+
 PlatformHelper* Engine::getPlatformHelper() {
 	if ( NULL == mPlatformHelper ) {
 #if DEFAULT_BACKEND == BACKEND_SDL2

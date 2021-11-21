@@ -84,8 +84,8 @@ Texture::~Texture() {
 void Texture::deleteTexture() {
 	if ( mTexture ) {
 		unsigned int Texture = static_cast<unsigned int>( mTexture );
-		bool threaded = Engine::instance()->isSharedGLContextEnabled() &&
-						Thread::getCurrentThreadId() != Engine::instance()->getMainThreadId();
+		bool threaded =
+			Engine::instance()->isSharedGLContextEnabled() && !Engine::instance()->isMainThread();
 
 		if ( threaded )
 			Engine::instance()->getCurrentWindow()->setGLContextThread();
@@ -139,8 +139,8 @@ void Texture::setCoordinateType( const CoordinateType& coordinateType ) {
 }
 
 Uint8* Texture::iLock( const bool& ForceRGBA, const bool& KeepFormat ) {
-	bool threaded = Engine::instance()->isSharedGLContextEnabled() &&
-					Thread::getCurrentThreadId() != Engine::instance()->getMainThreadId();
+	bool threaded =
+		Engine::instance()->isSharedGLContextEnabled() && !Engine::instance()->isMainThread();
 
 #ifndef EE_GLES
 	if ( !( mFlags & TEX_FLAG_LOCKED ) ) {
@@ -323,8 +323,8 @@ void Texture::iTextureFilter( const Filter& filter ) {
 	if ( mTexture ) {
 		mFilter = filter;
 
-		bool threaded = Engine::instance()->isSharedGLContextEnabled() &&
-						Thread::getCurrentThreadId() != Engine::instance()->getMainThreadId();
+		bool threaded =
+			Engine::instance()->isSharedGLContextEnabled() && !Engine::instance()->isMainThread();
 
 		if ( threaded )
 			Engine::instance()->getCurrentWindow()->setGLContextThread();
@@ -460,8 +460,8 @@ void Texture::reload() {
 		Int32 width = (Int32)mWidth;
 		Int32 height = (Int32)mHeight;
 
-		bool threaded = Engine::instance()->isSharedGLContextEnabled() &&
-						Thread::getCurrentThreadId() != Engine::instance()->getMainThreadId();
+		bool threaded =
+			Engine::instance()->isSharedGLContextEnabled() && !Engine::instance()->isMainThread();
 
 		if ( threaded )
 			Engine::instance()->getCurrentWindow()->setGLContextThread();
@@ -539,8 +539,8 @@ static unsigned int convertPixelFormatToGLFormat( Image::PixelFormat pf ) {
 void Texture::update( const Uint8* pixels, Uint32 width, Uint32 height, Uint32 x, Uint32 y,
 					  PixelFormat pf ) {
 	if ( NULL != pixels && mTexture && x + width <= mWidth && y + height <= mHeight ) {
-		bool threaded = Engine::instance()->isSharedGLContextEnabled() &&
-						Thread::getCurrentThreadId() != Engine::instance()->getMainThreadId();
+		bool threaded =
+			Engine::instance()->isSharedGLContextEnabled() && !Engine::instance()->isMainThread();
 
 		if ( threaded )
 			Engine::instance()->getCurrentWindow()->setGLContextThread();
@@ -576,8 +576,8 @@ void Texture::update( Image* image, Uint32 x, Uint32 y ) {
 }
 
 void Texture::replace( Image* image ) {
-	bool threaded = Engine::instance()->isSharedGLContextEnabled() &&
-					Thread::getCurrentThreadId() != Engine::instance()->getMainThreadId();
+	bool threaded =
+		Engine::instance()->isSharedGLContextEnabled() && !Engine::instance()->isMainThread();
 
 	if ( threaded )
 		Engine::instance()->getCurrentWindow()->setGLContextThread();
@@ -718,8 +718,8 @@ void Texture::drawEx( Float x, Float y, Float width, Float height, const Float& 
 						Sector.Left / w, Sector.Top / h, Sector.Left / w, Sector.Bottom / h,
 						Sector.Right / w, Sector.Bottom / h, Sector.Right / w, Sector.Top / h );
 
-					Float sw = ( Float )( Sector.Right - Sector.Left );
-					Float sh = ( Float )( Sector.Bottom - Sector.Top );
+					Float sw = (Float)( Sector.Right - Sector.Left );
+					Float sh = (Float)( Sector.Bottom - Sector.Top );
 					Float tx = width / sw;
 					Float ty = height / sh;
 					Int32 ttx = (Int32)tx;

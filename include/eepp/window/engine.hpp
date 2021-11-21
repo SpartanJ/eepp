@@ -125,6 +125,9 @@ class EE_API Engine {
 	/** @return The id of the thread that was used to initialize the OpenGL Context. */
 	Uint32 getMainThreadId();
 
+	/** @returns True if the current thread is the main thread. */
+	bool isMainThread() const;
+
 	/** @return The instance of platform class that provides some helpers for some platforms */
 	PlatformHelper* getPlatformHelper();
 

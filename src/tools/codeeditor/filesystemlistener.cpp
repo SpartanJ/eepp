@@ -15,8 +15,11 @@ void FileSystemListener::handleFileAction( efsw::WatchID, const std::string& dir
 		case efsw::Actions::Moved: {
 			auto* node = mFileSystemModel.get()->getNodeFromPath( file.getFilepath(), true, false );
 			if ( node ) {
-				node->invalidate();
-				mFileSystemModel.get()->invalidate();
+				if ( !mFileSystemModel.get()->getDisplayConfig().ignoreHidden ||
+					 !file.isHidden() ) {
+					node->invalidate();
+					mFileSystemModel.get()->invalidate();
+				}
 			}
 
 			if ( mDirTree )

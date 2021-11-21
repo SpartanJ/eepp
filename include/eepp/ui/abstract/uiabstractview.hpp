@@ -79,6 +79,8 @@ class EE_API UIAbstractView : public UIScrollableWidget {
 
 	virtual void onModelSelectionChange();
 
+	void modelUpdate( unsigned flags );
+
 	UIAbstractView( const std::string& tag );
 
 	virtual ~UIAbstractView();

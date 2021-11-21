@@ -1,4 +1,6 @@
+#include <eepp/system/thread.hpp>
 #include <eepp/ui/abstract/uiabstractview.hpp>
+#include <eepp/window/engine.hpp>
 
 namespace EE { namespace UI { namespace Abstract {
 
@@ -42,12 +44,20 @@ void UIAbstractView::setModel( std::shared_ptr<Model> model ) {
 	onModelUpdate( Model::InvalidateAllIndexes );
 }
 
-void UIAbstractView::onModelUpdate( unsigned flags ) {
+void UIAbstractView::modelUpdate( unsigned flags ) {
 	if ( !getModel() || ( flags & Model::InvalidateAllIndexes ) ) {
 		getSelection().clear();
 	} else {
 		getSelection().removeMatching(
 			[this]( auto& index ) { return !getModel()->isValid( index ); } );
+	}
+}
+
+void UIAbstractView::onModelUpdate( unsigned flags ) {
+	if ( !Engine::instance()->isMainThread() ) {
+		runOnMainThread( [&] { modelUpdate( flags ); } );
+	} else {
+		modelUpdate( flags );
 	}
 }
 

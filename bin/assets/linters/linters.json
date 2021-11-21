@@ -18,9 +18,8 @@
   },
   {
 	"file_patterns": ["%.py$"],
-	"warning_pattern": "[^:]:(%d+):(%d+):%s([%w]+:%s[^\n]*)",
-	"column_starts_at_zero": true,
-	"command": "pylint --disable=C0114,C0115,C0116,C0103 --score=n $FILENAME"
+	"warning_pattern": "[^:]:(%d+):(%d+):%s([^\n]+)",
+	"command": "pycodestyle --ignore=E402 $FILENAME"
   },
   {
 	"file_patterns": ["%.sh$"],

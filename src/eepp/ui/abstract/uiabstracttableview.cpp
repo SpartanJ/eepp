@@ -1,3 +1,4 @@
+#include <eepp/system/thread.hpp>
 #include <eepp/ui/abstract/uiabstracttableview.hpp>
 #include <eepp/ui/uiimage.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
@@ -5,6 +6,7 @@
 #include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
+#include <eepp/window/engine.hpp>
 
 namespace EE { namespace UI { namespace Abstract {
 
@@ -72,8 +74,15 @@ size_t UIAbstractTableView::getItemCount() const {
 }
 
 void UIAbstractTableView::onModelUpdate( unsigned flags ) {
-	UIAbstractView::onModelUpdate( flags );
-	createOrUpdateColumns();
+	if ( !Engine::instance()->isMainThread() ) {
+		runOnMainThread( [&] {
+			modelUpdate( flags );
+			createOrUpdateColumns();
+		} );
+	} else {
+		UIAbstractView::onModelUpdate( flags );
+		createOrUpdateColumns();
+	}
 }
 
 void UIAbstractTableView::createOrUpdateColumns() {

@@ -355,8 +355,7 @@ void TextureLoader::loadFromPixels() {
 						: flags;
 			flags = ( mCompressTexture ) ? ( flags | SOIL_FLAG_COMPRESS_TO_DXT ) : flags;
 
-			bool threadedLoad =
-				Thread::getCurrentThreadId() != Engine::instance()->getMainThreadId();
+			bool threadedLoad = !Engine::instance()->isMainThread();
 
 			if ( threadedLoad && Engine::instance()->isSharedGLContextEnabled() ) {
 				Engine::instance()->getCurrentWindow()->setGLContextThread();

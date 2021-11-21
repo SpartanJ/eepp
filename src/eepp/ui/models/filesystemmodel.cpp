@@ -42,7 +42,6 @@ const FileSystemModel::Node& FileSystemModel::Node::getChild( const size_t& inde
 void FileSystemModel::Node::invalidate() {
 	mHasTraversed = false;
 	mInfoDirty = true;
-	mChildren.clear();
 }
 
 FileSystemModel::Node* FileSystemModel::Node::findChildName( const std::string& name,
@@ -72,6 +71,7 @@ void FileSystemModel::Node::traverseIfNeeded( const FileSystemModel& model ) {
 	if ( !mInfo.isDirectory() || mHasTraversed )
 		return;
 	mHasTraversed = true;
+	mChildren.clear();
 
 	auto files = FileSystem::filesInfoGetInPath(
 		mInfo.getFilepath(), true, model.getDisplayConfig().sortByName,
@@ -130,7 +130,8 @@ FileSystemModel::FileSystemModel( const std::string& rootPath, const FileSystemM
 	mRealRootPath( FileSystem::getRealPath( rootPath ) ),
 	mMode( mode ),
 	mDisplayConfig( displayConfig ) {
-	update();
+	mRoot = std::make_unique<Node>( mRootPath, *this );
+	onModelUpdate();
 }
 
 const std::string& FileSystemModel::getRootPath() const {
