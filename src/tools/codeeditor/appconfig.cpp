@@ -75,6 +75,8 @@ void AppConfig::load( std::string& confPath, std::string& keybindingsPath,
 	editor.hideTabBarOnSingleTab = ini.getValueB( "editor", "hide_tab_bar_on_single_tab", true );
 	editor.singleClickTreeNavigation =
 		ini.getValueB( "editor", "single_click_tree_navigation", false );
+	editor.syncProjectTreeWithEditor =
+		ini.getValueB( "editor", "sync_project_tree_with_editor", false );
 	iniInfo = FileInfo( ini.path() );
 }
 
@@ -130,6 +132,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "editor", "show_doc_info", editor.showDocInfo );
 	ini.setValueB( "editor", "hide_tab_bar_on_single_tab", editor.hideTabBarOnSingleTab );
 	ini.setValueB( "editor", "single_click_tree_navigation", editor.singleClickTreeNavigation );
+	ini.setValueB( "editor", "sync_project_tree_with_editor", editor.syncProjectTreeWithEditor );
 	ini.writeFile();
 	iniState.writeFile();
 }

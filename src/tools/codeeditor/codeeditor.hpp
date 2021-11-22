@@ -236,6 +236,8 @@ class App : public UICodeEditorSplitter::Client {
 	void removeFolderWatches();
 
 	void createDocAlert( UICodeEditor* editor );
+
+	void syncProjectTreeWithEditor( UICodeEditor* editor );
 };
 
 #endif // EE_TOOLS_CODEEDITOR_HPP

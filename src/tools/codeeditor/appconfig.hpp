@@ -54,6 +54,7 @@ struct CodeEditorConfig {
 	bool formatter{ true };
 	bool hideTabBarOnSingleTab{ true };
 	bool singleClickTreeNavigation{ false };
+	bool syncProjectTreeWithEditor{ true };
 	std::string autoCloseBrackets{ "" };
 	int indentWidth{ 4 };
 	int tabWidth{ 4 };

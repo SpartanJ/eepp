@@ -625,6 +625,10 @@ UIMenu* App::createViewMenu() {
 		->setActive( mConfig.editor.singleClickTreeNavigation )
 		->setTooltipText(
 			"Uses single click to open files and expand subfolders in\nthe directory tree." );
+	mViewMenu->addCheckBox( "Synchronize project tree with editor" )
+		->setActive( mConfig.editor.syncProjectTreeWithEditor )
+		->setTooltipText( "Syncronizes the current focused document as the selected\nfile in the "
+						  "directory tree." );
 	mViewMenu->add( "Line Breaking Column" );
 
 	mViewMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
@@ -689,6 +693,8 @@ UIMenu* App::createViewMenu() {
 		} else if ( item->getText() == "Single Click Navigation in Tree View" ) {
 			mConfig.editor.singleClickTreeNavigation = item->asType<UIMenuCheckBox>()->isActive();
 			mProjectTreeView->setSingleClickNavigation( mConfig.editor.singleClickTreeNavigation );
+		} else if ( item->getText() == "Synchronize project tree with editor" ) {
+			mConfig.editor.syncProjectTreeWithEditor = item->asType<UIMenuCheckBox>()->isActive();
 		} else if ( item->getText() == "Line Breaking Column" ) {
 			UIMessageBox* msgBox =
 				UIMessageBox::New( UIMessageBox::INPUT, "Set Line Breaking Column:\n"
@@ -1042,10 +1048,21 @@ void App::updateDocInfo( TextDocument& doc ) {
 	}
 }
 
+void App::syncProjectTreeWithEditor( UICodeEditor* editor ) {
+	if ( mConfig.editor.syncProjectTreeWithEditor && editor->getDocument().hasFilepath() ) {
+		std::string path = editor->getDocument().getFilePath();
+		if ( path.size() >= mCurrentProject.size() ) {
+			path = path.substr( mCurrentProject.size() );
+			mProjectTreeView->selectRowWithPath( path );
+		}
+	}
+}
+
 void App::onCodeEditorFocusChange( UICodeEditor* editor ) {
 	updateDocInfo( editor->getDocument() );
 	updateDocumentMenu();
 	mDocSearchController->onCodeEditorFocusChange( editor );
+	syncProjectTreeWithEditor( editor );
 }
 
 void App::onColorSchemeChanged( const std::string& ) {
@@ -1666,12 +1683,14 @@ void App::loadDirTree( const std::string& path ) {
 					   clock->getElapsedTime().asMilliseconds(), dirTree.getFilesCount() );
 			eeDelete( clock );
 			mDirTreeReady = true;
-			mUISceneNode->runOnMainThread( [&] { mFileLocator->updateLocateTable(); } );
+			mUISceneNode->runOnMainThread( [&] {
+				mFileLocator->updateLocateTable();
+				syncProjectTreeWithEditor( mEditorSplitter->getCurEditor() );
+			} );
 			if ( mFileWatcher ) {
 				removeFolderWatches();
-				auto newDirs = dirTree.getDirectories();
-				for ( const auto& dir : newDirs )
-					mFolderWatches.insert( mFileWatcher->addWatch( dir, mFileSystemListener ) );
+				mFolderWatches.insert(
+					mFileWatcher->addWatch( dirTree.getPath(), mFileSystemListener, true ) );
 				mFileSystemListener->setDirTree( mDirTree );
 			}
 		},

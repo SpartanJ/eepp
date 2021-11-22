@@ -69,7 +69,7 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	void moveSelection( int steps );
 
-	void setSelection( const ModelIndex& index, bool scrollToSelection = true );
+	virtual void setSelection( const ModelIndex& index, bool scrollToSelection = true );
 
 	const size_t& getIconSize() const;
 

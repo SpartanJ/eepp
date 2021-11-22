@@ -90,6 +90,8 @@ class ProjectDirectoryTree {
 
 	void onChange( const Action& action, const FileInfo& file, const std::string& oldFilename );
 
+	const std::string& getPath() const { return mPath; }
+
   protected:
 	std::string mPath;
 	std::shared_ptr<ThreadPool> mPool;
@@ -115,7 +117,6 @@ class ProjectDirectoryTree {
 	IgnoreMatcherManager getIgnoreMatcherFromPath( const std::string& path );
 
 	size_t findFileIndex( const std::string& path );
-
 };
 
 #endif // EE_TOOLS_PROJECTDIRECTORYTREE_HPP

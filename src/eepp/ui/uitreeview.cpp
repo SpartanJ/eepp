@@ -643,6 +643,81 @@ ModelIndex UITreeView::findRowWithText( const std::string& text, const bool& cas
 	return foundIndex;
 }
 
+ModelIndex UITreeView::selectRowWithPath( std::string path ) {
+	const Model* model = getModel();
+	if ( !model || model->rowCount() == 0 )
+		return {};
+	String::replaceAll( path, "\\", "/" );
+	auto pathPart = String::split( path, "/" );
+	if ( pathPart.empty() )
+		return {};
+
+	for ( size_t i = 0; i < pathPart.size(); i++ ) {
+		ModelIndex foundIndex = {};
+		const auto& part = pathPart[i];
+
+		traverseTree( [&]( const int&, const ModelIndex& index, const size_t&, const Float& ) {
+			Variant var = model->data( index );
+			if ( var.isValid() && var.toString() == part ) {
+				foundIndex = index;
+				return IterationDecision::Stop;
+			}
+			return IterationDecision::Continue;
+		} );
+
+		if ( foundIndex == ModelIndex() )
+			break;
+
+		if ( getModel()->rowCount( foundIndex ) ) {
+			auto& data = getIndexMetadata( foundIndex );
+			if ( !data.open ) {
+				data.open = true;
+				createOrUpdateColumns();
+				onOpenTreeModelIndex( foundIndex, data.open );
+			}
+		}
+
+		if ( i == pathPart.size() - 1 ) {
+			setSelection( foundIndex );
+			return foundIndex;
+		}
+	}
+	return {};
+}
+
+void UITreeView::setSelection( const ModelIndex& index, bool scrollToSelection ) {
+	if ( !getModel() )
+		return;
+	auto& model = *this->getModel();
+	if ( model.isValid( index ) && scrollToSelection ) {
+		getSelection().set( index );
+
+		ModelIndex prevIndex;
+		ModelIndex foundIndex;
+		Float curY = 0;
+		traverseTree(
+			[&]( const int&, const ModelIndex& _index, const size_t&, const Float& offsetY ) {
+				if ( index == _index ) {
+					foundIndex = prevIndex;
+					curY = offsetY;
+					return IterationDecision::Break;
+				}
+				prevIndex = index;
+				return IterationDecision::Continue;
+			} );
+
+		if ( foundIndex.isValid() ) {
+			if ( curY < mScrollOffset.y + getHeaderHeight() + getRowHeight() ||
+				 curY > mScrollOffset.y + getPixelsSize().getHeight() - mPaddingPx.Top -
+							mPaddingPx.Bottom - getRowHeight() ) {
+				curY -= getHeaderHeight() + getRowHeight();
+				mVScroll->setValue( eemin<Float>(
+					1.f, eemax<Float>( 0.f, curY / getScrollableArea().getHeight() ) ) );
+			}
+		}
+	}
+}
+
 bool UITreeView::getFocusOnSelection() const {
 	return mFocusOnSelection;
 }
