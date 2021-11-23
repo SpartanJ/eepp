@@ -473,7 +473,7 @@ std::vector<FileInfo> FileSystem::filesInfoGetInPath( std::string path, bool lin
 	dirAddSlashAtEnd( path );
 	std::vector<FileInfo> fileInfo;
 	auto files = filesGetInPath( path, sortByName, foldersFirst, ignoreHidden );
-	for ( auto file : files )
+	for ( const auto &file : files )
 		fileInfo.emplace_back( FileInfo( path + file, linkInfo ) );
 	return fileInfo;
 }

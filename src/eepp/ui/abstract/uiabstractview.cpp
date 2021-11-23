@@ -55,7 +55,7 @@ void UIAbstractView::modelUpdate( unsigned flags ) {
 
 void UIAbstractView::onModelUpdate( unsigned flags ) {
 	if ( !Engine::instance()->isMainThread() ) {
-		runOnMainThread( [&] { modelUpdate( flags ); } );
+		runOnMainThread( [&, flags] { modelUpdate( flags ); } );
 	} else {
 		modelUpdate( flags );
 	}
