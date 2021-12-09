@@ -149,8 +149,45 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 		   { "^#!.*[ /]lua" } } );
 
 	// JavaScript
-	add( { "Javascript",
-		   { "%.js$", "%.json$", "%.cson$", "%.ts$", "%.tsx$" },
+	add( { "JavaScript",
+		   { "%.js$", "%.json$", "%.cson$" },
+		   {
+			   { { "//.-\n" }, "comment" },
+			   { { "/%*", "%*/" }, "comment" },
+			   { { "\"", "\"", "\\" }, "string" },
+			   { { "'", "'", "\\" }, "string" },
+			   { { "`", "`", "\\" }, "string" },
+			   { { "0x[%da-fA-F]+" }, "number" },
+			   { { "-?%d+[%d%.eE]*" }, "number" },
+			   { { "-?%.?%d+" }, "number" },
+			   { { "[%+%-=/%*%^%%<>!~|&]" }, "operator" },
+			   { { "[%a_][%w_]*%s*%f[(]" }, "function" },
+			   { { "[%a_][%w_]*" }, "symbol" },
+		   },
+		   { { "arguments", "keyword2" }, { "async", "keyword" },	   { "await", "keyword" },
+			 { "break", "keyword" },	  { "case", "keyword" },	   { "catch", "keyword" },
+			 { "class", "keyword" },	  { "const", "keyword" },	   { "continue", "keyword" },
+			 { "debugger", "keyword" },	  { "default", "keyword" },	   { "delete", "keyword" },
+			 { "do", "keyword" },		  { "else", "keyword" },	   { "export", "keyword" },
+			 { "extends", "keyword" },	  { "false", "literal" },	   { "finally", "keyword" },
+			 { "for", "keyword" },		  { "function", "keyword" },   { "get", "keyword" },
+			 { "if", "keyword" },		  { "import", "keyword" },	   { "in", "keyword" },
+			 { "Infinity", "keyword2" },  { "instanceof", "keyword" }, { "let", "keyword" },
+			 { "NaN", "keyword2" },		  { "new", "keyword" },		   { "null", "literal" },
+			 { "return", "keyword" },	  { "set", "keyword" },		   { "super", "keyword" },
+			 { "static", "keyword" },	  { "switch", "keyword" },	   { "this", "keyword2" },
+			 { "throw", "keyword" },	  { "true", "literal" },	   { "try", "keyword" },
+			 { "typeof", "keyword" },	  { "undefined", "literal" },  { "var", "keyword" },
+			 { "void", "keyword" },		  { "while", "keyword" },	   { "with", "keyword" },
+			 { "yield", "keyword" },	  { "implements", "keyword" }, { "Array", "keyword2" },
+			 { "any", "keyword" },		  { "from", "keyword" },	   { "public", "keyword" },
+			 { "private", "keyword" },	  { "declare", "keyword" },	   { "namespace", "keyword" },
+			 { "protected", "keyword" },  { "enum", "keyword" } },
+		   "//" } );
+
+	// TypeScript
+	add( { "TypeScript",
+		   { "%.ts$", "%.tsx$", "%.d.ts$" },
 		   {
 			   { { "//.-\n" }, "comment" },
 			   { { "/%*", "%*/" }, "comment" },

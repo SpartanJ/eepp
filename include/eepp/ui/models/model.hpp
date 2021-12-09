@@ -92,7 +92,7 @@ class EE_API Model {
 
 	void setOnUpdate( const std::function<void()>& onUpdate );
 
-	void invalidate();
+	void invalidate( unsigned int flags = Model::UpdateFlag::InvalidateAllIndexes );
 
   protected:
 	Model(){};
