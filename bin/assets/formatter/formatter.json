@@ -6,5 +6,10 @@
   {
 	"file_patterns": ["%.cpp$", "%.h$", "%.hpp$"],
 	"command": "clang-format --style=file $FILENAME"
+  },
+  {
+	"file_patterns": ["%.py$", "%.pyw$"],
+	"command": "black $FILENAME",
+	"type": "inplace"
   }
 ]

@@ -91,12 +91,15 @@ static std::string randString( size_t len ) {
 void FormatterModule::formatDoc( UICodeEditor* editor ) {
 	if ( !mReady )
 		return;
+
+	Clock clock;
 	std::shared_ptr<TextDocument> doc = editor->getDocumentRef();
 	auto formatter = supportsFormatter( doc );
-	if ( formatter.command.empty() && doc->getFilePath().empty() )
+	if ( formatter.command.empty() || doc->getFilePath().empty() )
 		return;
 	IOStreamString fileString;
-	if ( doc->isDirty() || !doc->hasFilepath() ) {
+	std::string path;
+	if ( doc->isDirty() || !doc->hasFilepath() || formatter.type == FormatterType::Inplace ) {
 		std::string tmpPath;
 		if ( !doc->hasFilepath() ) {
 			tmpPath = Sys::getTempPath() + ".ecode-" + doc->getFilename() + "." + randString( 8 );
@@ -110,15 +113,33 @@ void FormatterModule::formatDoc( UICodeEditor* editor ) {
 		FileSystem::fileWrite( tmpPath, (Uint8*)fileString.getStreamPointer(),
 							   fileString.getSize() );
 		runFormatter( editor, formatter, tmpPath );
+
+		if ( formatter.type == FormatterType::Inplace ) {
+			std::string data;
+			FileSystem::fileGet( tmpPath, data );
+
+			editor->runOnMainThread( [&, data, editor]() {
+				std::shared_ptr<TextDocument> doc = editor->getDocumentRef();
+				TextPosition pos = doc->getSelection().start();
+				doc->selectAll();
+				doc->textInput( data );
+				doc->setSelection( pos );
+			} );
+		}
+
 		FileSystem::fileRemove( tmpPath );
+		path = tmpPath;
 	} else {
 		runFormatter( editor, formatter, doc->getFilePath() );
+		path = doc->getFilePath();
 	}
+
+	Log::info( "FormatterModule::formatDoc for %s took %.2fms", path.c_str(),
+			   clock.getElapsedTime().asMilliseconds() );
 }
 
 void FormatterModule::runFormatter( UICodeEditor* editor, const Formatter& formatter,
 									const std::string& path ) {
-	Clock clock;
 
 	std::string cmd( formatter.command );
 	String::replaceAll( cmd, "$FILENAME", path );
@@ -156,9 +177,6 @@ void FormatterModule::runFormatter( UICodeEditor* editor, const Formatter& forma
 				doc->setSelection( pos );
 			} );
 		}
-
-		Log::info( "FormatterModule::formatDoc for %s took %.2fms", path.c_str(),
-				   clock.getElapsedTime().asMilliseconds() );
 	}
 }
 

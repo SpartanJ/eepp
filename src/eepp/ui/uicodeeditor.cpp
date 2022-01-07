@@ -1210,7 +1210,7 @@ void UICodeEditor::replaceKeyBinding( const KeyBindings::Shortcut& shortcut,
 void UICodeEditor::addKeyBindsString( const std::map<std::string, std::string>& binds,
 									  const bool& allowLocked ) {
 	mKeyBindings.addKeybindsString( binds );
-	for ( auto bind : binds ) {
+	for ( const auto &bind : binds ) {
 		if ( allowLocked ) {
 			mUnlockedCmd.insert( bind.second );
 		}
@@ -1220,7 +1220,7 @@ void UICodeEditor::addKeyBindsString( const std::map<std::string, std::string>& 
 void UICodeEditor::addKeyBinds( const std::map<KeyBindings::Shortcut, std::string>& binds,
 								const bool& allowLocked ) {
 	mKeyBindings.addKeybinds( binds );
-	for ( auto bind : binds ) {
+	for ( const auto &bind : binds ) {
 		if ( allowLocked ) {
 			mUnlockedCmd.insert( bind.second );
 		}
