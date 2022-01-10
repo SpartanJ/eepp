@@ -834,17 +834,19 @@ void Image::copyImage( Graphics::Image* image, const Uint32& x, const Uint32& y 
 }
 
 void Image::resize( const Uint32& newWidth, const Uint32& newHeight, ResamplerFilter filter ) {
-	if ( NULL != mPixels && mWidth != newWidth && mHeight != newHeight ) {
+	if ( NULL != mPixels && ( mWidth != newWidth || mHeight != newHeight ) ) {
 		unsigned char* resampled =
 			resample_image( mPixels, mWidth, mHeight, mChannels, newWidth, newHeight, filter );
 
 		if ( NULL != resampled ) {
-			clearCache();
+			if ( !mAvoidFree )
+				clearCache();
 
 			mPixels = resampled;
 			mWidth = newWidth;
 			mHeight = newHeight;
 			mLoadedFromStbi = false;
+			mAvoidFree = false;
 		}
 	}
 }
@@ -853,8 +855,8 @@ void Image::scale( const Float& scale, ResamplerFilter filter ) {
 	if ( 1.f == scale )
 		return;
 
-	Int32 new_width = ( Int32 )( (Float)mWidth * scale );
-	Int32 new_height = ( Int32 )( (Float)mHeight * scale );
+	Int32 new_width = (Int32)( (Float)mWidth * scale );
+	Int32 new_height = (Int32)( (Float)mHeight * scale );
 
 	resize( new_width, new_height, filter );
 }
@@ -865,8 +867,8 @@ Graphics::Image* Image::thumbnail( const Uint32& maxWidth, const Uint32& maxHeig
 		Float iScaleX = ( (Float)maxWidth / (Float)mWidth );
 		Float iScaleY = ( (Float)maxHeight / (Float)mHeight );
 		Float iScale = ( iScaleY < iScaleX ) ? iScaleY : iScaleX;
-		Int32 new_width = ( Int32 )( (Float)mWidth * iScale );
-		Int32 new_height = ( Int32 )( (Float)mHeight * iScale );
+		Int32 new_width = (Int32)( (Float)mWidth * iScale );
+		Int32 new_height = (Int32)( (Float)mHeight * iScale );
 
 		unsigned char* resampled =
 			resample_image( mPixels, mWidth, mHeight, mChannels, new_width, new_height, filter );
