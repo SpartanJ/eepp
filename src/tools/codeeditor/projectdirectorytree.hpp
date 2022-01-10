@@ -110,6 +110,8 @@ class ProjectDirectoryTree {
 
 	void addFile( const FileInfo& file );
 
+	void tryAddFile( const FileInfo& file );
+
 	void moveFile( const FileInfo& file, const std::string& oldFilename );
 
 	void removeFile( const FileInfo& file );

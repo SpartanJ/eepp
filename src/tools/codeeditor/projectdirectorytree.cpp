@@ -195,6 +195,28 @@ void ProjectDirectoryTree::onChange( const ProjectDirectoryTree::Action& action,
 	}
 }
 
+void ProjectDirectoryTree::tryAddFile( const FileInfo& file ) {
+	if ( file.isHidden() && mIgnoreHidden )
+		return;
+
+	IgnoreMatcherManager matcher( getIgnoreMatcherFromPath( file.getFilepath() ) );
+	if ( !matcher.foundMatch() ||
+		 ( matcher.foundMatch() && !matcher.match( file.getFilepath() ) ) ) {
+		bool foundPattern = mAcceptedPatterns.empty();
+		for ( auto& pattern : mAcceptedPatterns ) {
+			if ( pattern.matches( file.getFilepath() ) ) {
+				foundPattern = true;
+				break;
+			}
+		}
+		if ( foundPattern ) {
+			Lock l( mFilesMutex );
+			mFiles.emplace_back( file.getFilepath() );
+			mNames.emplace_back( file.getFileName() );
+		}
+	}
+}
+
 void ProjectDirectoryTree::addFile( const FileInfo& file ) {
 	if ( file.isDirectory() ) {
 		if ( !String::startsWith( file.getFilepath(), mPath ) || isDirInTree( file.getFilepath() ) )
@@ -225,25 +247,7 @@ void ProjectDirectoryTree::addFile( const FileInfo& file ) {
 			getDirectoryFiles( mFiles, mNames, mPath, info, mIgnoreHidden, mIgnoreMatcher );
 		}
 	} else {
-		if ( file.isHidden() && mIgnoreHidden )
-			return;
-
-		IgnoreMatcherManager matcher( getIgnoreMatcherFromPath( file.getFilepath() ) );
-		if ( !matcher.foundMatch() ||
-			 ( matcher.foundMatch() && !matcher.match( file.getFilepath() ) ) ) {
-			bool foundPattern = mAcceptedPatterns.empty();
-			for ( auto& pattern : mAcceptedPatterns ) {
-				if ( pattern.matches( file.getFilepath() ) ) {
-					foundPattern = true;
-					break;
-				}
-			}
-			if ( foundPattern ) {
-				Lock l( mFilesMutex );
-				mFiles.emplace_back( file.getFilepath() );
-				mNames.emplace_back( file.getFileName() );
-			}
-		}
+		tryAddFile( file );
 	}
 }
 
@@ -282,6 +286,8 @@ void ProjectDirectoryTree::moveFile( const FileInfo& file, const std::string& ol
 		if ( index != std::string::npos ) {
 			mFiles[index] = file.getFilepath();
 			mNames[index] = file.getFileName();
+		} else {
+			tryAddFile( file );
 		}
 	}
 }
