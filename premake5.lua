@@ -702,6 +702,7 @@ workspace "eepp"
 		incdirs { "src/thirdparty/efsw/include", "src/thirdparty/efsw/src" }
 		files { "src/thirdparty/efsw/src/efsw/*.cpp" }
 		build_base_cpp_configuration( "efsw" )
+		defines { "EFSW_USE_CXX11" }
 		filter "system:windows"
 			files { "src/thirdparty/efsw/src/efsw/platform/win/*.cpp" }
 			excludes {

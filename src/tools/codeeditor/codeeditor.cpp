@@ -1139,7 +1139,6 @@ std::vector<std::string> App::getUnlockedCommands() {
 }
 
 void App::closeEditors() {
-	removeFolderWatches();
 	mConfig.saveProject( mCurrentProject, mEditorSplitter, mConfigPath );
 	std::vector<UICodeEditor*> editors = mEditorSplitter->getAllEditors();
 	for ( auto editor : editors ) {

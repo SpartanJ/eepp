@@ -942,7 +942,7 @@ solution "eepp"
 		language "C++"
 		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
 		includedirs { "src/thirdparty/efsw/include", "src/thirdparty/efsw/src" }
-
+		defines { "EFSW_USE_CXX11" }
 		if os.is("windows") then
 			osfiles = "src/thirdparty/efsw/src/efsw/platform/win/*.cpp"
 		else
