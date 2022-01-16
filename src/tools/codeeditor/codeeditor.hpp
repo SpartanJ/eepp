@@ -121,6 +121,7 @@ class App : public UICodeEditorSplitter::Client {
 	std::unique_ptr<DocSearchController> mDocSearchController;
 	std::unique_ptr<FileLocator> mFileLocator;
 	std::unique_ptr<NotificationCenter> mNotificationCenter;
+	std::string mLastFileFolder;
 
 	void saveAllProcess();
 

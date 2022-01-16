@@ -139,6 +139,8 @@ UIWidget* UITreeView::setupCell( UITableCell* widget, UIWidget* rowWidget,
 	if ( index.column() == (Int64)getModel()->treeColumn() ) {
 		bindNavigationClick( widget );
 		widget->addEventListener( Event::MouseClick, [&]( const Event* event ) {
+			if ( mSingleClickNavigation )
+				return;
 			auto mouseEvent = static_cast<const MouseEvent*>( event );
 			UIWidget* icon = mouseEvent->getNode()->asType<UIPushButton>()->getExtraInnerWidget();
 			if ( icon ) {

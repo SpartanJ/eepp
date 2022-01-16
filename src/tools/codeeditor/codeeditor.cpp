@@ -134,12 +134,15 @@ void App::onDocumentModified( UICodeEditor* editor, TextDocument& ) {
 }
 
 void App::openFileDialog() {
-	UIFileDialog* dialog = UIFileDialog::New( UIFileDialog::DefaultFlags, "*", "." );
+	UIFileDialog* dialog = UIFileDialog::New( UIFileDialog::DefaultFlags, "*",
+											  mLastFileFolder.empty() ? "." : mLastFileFolder );
 	dialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 	dialog->setTitle( "Open File" );
 	dialog->setCloseShortcut( KEY_ESCAPE );
 	dialog->addEventListener( Event::OpenFile, [&]( const Event* event ) {
-		loadFileFromPath( event->getNode()->asType<UIFileDialog>()->getFullPath() );
+		auto file = event->getNode()->asType<UIFileDialog>()->getFullPath();
+		mLastFileFolder = FileSystem::fileRemoveFileName( file );
+		loadFileFromPath( file );
 	} );
 	dialog->addEventListener( Event::OnWindowClose, [&]( const Event* ) {
 		if ( mEditorSplitter && mEditorSplitter->getCurEditor() &&
