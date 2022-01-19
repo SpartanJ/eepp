@@ -2,6 +2,7 @@
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/ui/abstract/uiabstractview.hpp>
 #include <eepp/ui/models/filesystemmodel.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <iomanip>
@@ -54,6 +55,21 @@ FileSystemModel::Node* FileSystemModel::Node::findChildName( const std::string& 
 			return &child;
 	}
 	return nullptr;
+}
+
+FileSystemModel::Node FileSystemModel::Node::createChild( const std::string& childName,
+														  const FileSystemModel& model ) {
+	std::string childPath( mInfo.getDirectoryPath() + childName );
+	FileInfo file( childPath );
+	auto child = Node( std::move( file ), this );
+
+	if ( model.getDisplayConfig().ignoreHidden && file.isHidden() )
+		return {};
+
+	if ( model.getMode() == Mode::DirectoriesOnly && !file.isDirectory() )
+		return {};
+
+	return child;
 }
 
 ModelIndex FileSystemModel::Node::index( const FileSystemModel& model, int column ) const {
@@ -113,6 +129,7 @@ void FileSystemModel::Node::refreshIfNeeded( const FileSystemModel& model ) {
 bool FileSystemModel::Node::fetchData( const String& fullPath ) {
 	if ( mInfoDirty ) {
 		mInfo = FileInfo( fullPath, mParent == nullptr );
+		mName = FileSystem::fileNameFromPath( mInfo.getFilepath() );
 		mInfoDirty = false;
 	}
 	return true;
@@ -131,7 +148,12 @@ FileSystemModel::FileSystemModel( const std::string& rootPath, const FileSystemM
 	mMode( mode ),
 	mDisplayConfig( displayConfig ) {
 	mRoot = std::make_unique<Node>( mRootPath, *this );
+	mInitOK = true;
 	onModelUpdate();
+}
+
+FileSystemModel::~FileSystemModel() {
+	mInitOK = false;
 }
 
 const std::string& FileSystemModel::getRootPath() const {
@@ -193,7 +215,7 @@ const FileSystemModel::Node& FileSystemModel::node( const ModelIndex& index ) co
 FileSystemModel::Node& FileSystemModel::nodeRef( const ModelIndex& index ) const {
 	if ( !index.isValid() )
 		return *mRoot;
-	return *(Node*)index.data();
+	return *(Node*)index.internalData();
 }
 
 size_t FileSystemModel::rowCount( const ModelIndex& index ) const {
@@ -248,15 +270,15 @@ static std::string permissionString( const FileInfo& info ) {
 	return builder;
 }
 
-Variant FileSystemModel::data( const ModelIndex& index, Model::Role role ) const {
+Variant FileSystemModel::data( const ModelIndex& index, ModelRole role ) const {
 	eeASSERT( index.isValid() );
 
 	auto& node = this->nodeRef( index );
 
-	if ( role == Role::Custom )
+	if ( role == ModelRole::Custom )
 		return Variant( node.info().getFilepath().c_str() );
 
-	if ( role == Role::Sort ) {
+	if ( role == ModelRole::Sort ) {
 		switch ( index.column() ) {
 			case Column::Icon:
 				return node.info().isDirectory() ? 0 : 1;
@@ -283,7 +305,7 @@ Variant FileSystemModel::data( const ModelIndex& index, Model::Role role ) const
 		}
 	}
 
-	if ( role == Role::Display ) {
+	if ( role == ModelRole::Display ) {
 		switch ( index.column() ) {
 			case Column::Icon:
 				return iconFor( node, index );
@@ -308,7 +330,7 @@ Variant FileSystemModel::data( const ModelIndex& index, Model::Role role ) const
 		}
 	}
 
-	if ( role == Role::Icon )
+	if ( role == ModelRole::Icon )
 		return iconFor( node, index );
 
 	return {};
@@ -370,6 +392,92 @@ const ModelIndex& FileSystemModel::getPreviouslySelectedIndex() const {
 
 void FileSystemModel::setPreviouslySelectedIndex( const ModelIndex& previouslySelectedIndex ) {
 	mPreviouslySelectedIndex = previouslySelectedIndex;
+}
+
+void FileSystemModel::handleFileEvent( const FileEvent& event ) {
+	if ( !mInitOK )
+		return;
+
+	switch ( event.type ) {
+		case FileSystemEventType::Add: {
+			FileInfo file( event.directory + event.filename );
+			auto* parent = getNodeFromPath(
+				file.isDirectory() ? FileSystem::removeLastFolderFromPath( file.getDirectoryPath() )
+								   : file.getDirectoryPath(),
+				true, false );
+
+			if ( parent ) {
+				auto* childNodeExists =
+					getNodeFromPath( file.getFilepath(), file.isDirectory(), false );
+				if ( childNodeExists )
+					return;
+
+				size_t childCount = parent->childCount();
+
+				Node childNode = parent->createChild( file.getFilepath(), *this );
+
+				if ( !childNode.getName().empty() ) {
+					beginInsertRows( parent->index( *this, 0 ), childCount, childCount );
+
+					parent->mChildren.emplace_back( std::move( childNode ) );
+
+					endInsertRows();
+				} else {
+					return;
+				}
+			}
+			break;
+		}
+		case FileSystemEventType::Delete: {
+			FileInfo file( event.directory + event.filename );
+
+			auto* child = getNodeFromPath( file.getFilepath(), file.isDirectory(), false );
+			if ( !child )
+				return;
+
+			Node* parent = child->mParent;
+			if ( !parent )
+				return;
+
+			ModelIndex index = child->index( *this, 0 );
+			if ( !index.isValid() )
+				return;
+
+			beginDeleteRows( index.parent(), index.row(), index.row() );
+
+			parent->mChildren.erase( parent->mChildren.begin() + index.row() );
+
+			endDeleteRows();
+
+			forEachView( [&]( UIAbstractView* view ) {
+				view->getSelection().removeAllMatching( [&]( auto& selectionIndex ) {
+					return selectionIndex.internalData() == index.internalData();
+				} );
+			} );
+
+			break;
+		}
+		case FileSystemEventType::Moved: {
+			FileInfo file( event.directory + event.filename );
+			if ( file.exists() ) {
+				auto* node = getNodeFromPath( event.directory + event.oldFilename,
+											  file.isDirectory(), false );
+				if ( node ) {
+					node->mInfo = std::move( file );
+					node->mName = FileSystem::fileNameFromPath( node->mInfo.getFilepath() );
+				} else {
+					handleFileEvent(
+						{ FileSystemEventType::Add, event.directory, event.filename } );
+				}
+			}
+			break;
+		}
+		case FileSystemEventType::Modified: {
+			break;
+		}
+	}
+
+	onModelUpdate( UpdateFlag::DontInvalidateIndexes );
 }
 
 }}} // namespace EE::UI::Models

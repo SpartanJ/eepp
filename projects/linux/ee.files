@@ -343,7 +343,9 @@
 ../../include/eepp/ui/models/itemlistmodel.hpp
 ../../include/eepp/ui/models/model.hpp
 ../../include/eepp/ui/models/modelindex.hpp
+../../include/eepp/ui/models/modelrole.hpp
 ../../include/eepp/ui/models/modelselection.hpp
+../../include/eepp/ui/models/persistentmodelindex.hpp
 ../../include/eepp/ui/models/sortingproxymodel.hpp
 ../../include/eepp/ui/models/widgettreemodel.hpp
 ../../include/eepp/ui/tools/textureatlaseditor.hpp
@@ -818,7 +820,9 @@
 ../../src/eepp/ui/keyboardshortcut.cpp
 ../../src/eepp/ui/models/filesystemmodel.cpp
 ../../src/eepp/ui/models/model.cpp
+../../src/eepp/ui/models/modelindex.cpp
 ../../src/eepp/ui/models/modelselection.cpp
+../../src/eepp/ui/models/persistentmodelindex.cpp
 ../../src/eepp/ui/models/sortingproxymodel.cpp
 ../../src/eepp/ui/models/widgettreemodel.cpp
 ../../src/eepp/ui/tools/textureatlaseditor.cpp

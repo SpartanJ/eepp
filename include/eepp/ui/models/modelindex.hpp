@@ -2,6 +2,9 @@
 #define EE_UI_MODEL_MODELINDEX_HPP
 
 #include <eepp/config.hpp>
+#include <eepp/core/core.hpp>
+#include <eepp/ui/models/modelrole.hpp>
+#include <eepp/ui/models/variant.hpp>
 #include <limits>
 
 namespace EE { namespace UI { namespace Models {
@@ -18,7 +21,9 @@ class EE_API ModelIndex {
 
 	const Int64& column() const { return mColumn; }
 
-	void* data() const { return mData; }
+	Variant data( ModelRole = ModelRole::Display ) const;
+
+	void* internalData() const { return mData; }
 
 	Int64 internalId() const { return mInternalId; }
 
@@ -38,6 +43,10 @@ class EE_API ModelIndex {
 	bool operator!=( const ModelIndex& other ) const { return !( *this == other ); }
 
 	const Model* model() const { return mModel; }
+
+	ModelIndex sibling( int row, int column ) const;
+
+	ModelIndex siblingAtColumn( int column ) const;
 
   protected:
 	friend class Model;

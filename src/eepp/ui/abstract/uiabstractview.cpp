@@ -48,7 +48,7 @@ void UIAbstractView::modelUpdate( unsigned flags ) {
 	if ( !getModel() || ( flags & Model::InvalidateAllIndexes ) ) {
 		getSelection().clear();
 	} else {
-		getSelection().removeMatching(
+		getSelection().removeAllMatching(
 			[this]( auto& index ) { return !getModel()->isValid( index ); } );
 	}
 }

@@ -31,12 +31,12 @@ bool UITreeView::isType( const Uint32& type ) const {
 
 UITreeView::MetadataForIndex& UITreeView::getIndexMetadata( const ModelIndex& index ) const {
 	eeASSERT( index.isValid() );
-	auto it = mViewMetadata.find( index.data() );
+	auto it = mViewMetadata.find( index.internalData() );
 	if ( it != mViewMetadata.end() )
 		return it->second;
 	auto newMetadata = MetadataForIndex();
-	mViewMetadata.insert( { index.data(), std::move( newMetadata ) } );
-	return mViewMetadata[index.data()];
+	mViewMetadata.insert( { index.internalData(), std::move( newMetadata ) } );
+	return mViewMetadata[index.internalData()];
 }
 
 void UITreeView::traverseTree( TreeViewCallback callback ) const {
@@ -185,7 +185,7 @@ UIWidget* UITreeView::updateCell( const int& rowIndex, const ModelIndex& index,
 		UITableCell* cell = widget->asType<UITableCell>();
 		cell->setCurIndex( index );
 
-		Variant txt( getModel()->data( index, Model::Role::Display ) );
+		Variant txt( getModel()->data( index, ModelRole::Display ) );
 		if ( txt.isValid() ) {
 			if ( txt.is( Variant::Type::String ) )
 				cell->setText( txt.asString() );
@@ -236,7 +236,7 @@ UIWidget* UITreeView::updateCell( const int& rowIndex, const ModelIndex& index,
 		}
 
 		bool isVisible = false;
-		Variant icon( getModel()->data( index, Model::Role::Icon ) );
+		Variant icon( getModel()->data( index, ModelRole::Icon ) );
 		if ( icon.is( Variant::Type::Drawable ) && icon.asDrawable() ) {
 			isVisible = true;
 			cell->setIcon( icon.asDrawable() );

@@ -22,7 +22,7 @@ class EE_API SortingProxyModel final : public Model, private Model::Client {
 
 	virtual std::string columnName( const size_t& ) const;
 
-	virtual Variant data( const ModelIndex& proxyIndex, Role = Role::Display ) const;
+	virtual Variant data( const ModelIndex& proxyIndex, ModelRole role = ModelRole::Display ) const;
 
 	virtual ModelIndex parentIndex( const ModelIndex& ) const;
 
@@ -46,9 +46,9 @@ class EE_API SortingProxyModel final : public Model, private Model::Client {
 
 	ModelIndex mapToProxy( const ModelIndex& sourceIndex ) const;
 
-	Role sortRole() const;
+	ModelRole sortRole() const;
 
-	void setSortRrole( Role role );
+	void setSortRrole( ModelRole role );
 
 	bool lessThan( const ModelIndex& index1, const ModelIndex& index2 ) const;
 
@@ -86,7 +86,7 @@ class EE_API SortingProxyModel final : public Model, private Model::Client {
 	std::map<ModelIndex, std::shared_ptr<Mapping>> mMappings;
 	int mKeyColumn{ -1 };
 	SortOrder mSortOrder{ SortOrder::Ascending };
-	Role mSortRole{ Role::Sort };
+	ModelRole mSortRole{ ModelRole::Sort };
 	bool mSortingCaseSensitive{ false };
 };
 

@@ -424,7 +424,7 @@ UIWidget* UIAbstractTableView::updateCell( const int& rowIndex, const ModelIndex
 		UITableCell* cell = widget->asType<UITableCell>();
 		cell->setCurIndex( index );
 
-		Variant txt( getModel()->data( index, Model::Role::Display ) );
+		Variant txt( getModel()->data( index, ModelRole::Display ) );
 		if ( txt.isValid() ) {
 			if ( txt.is( Variant::Type::String ) )
 				cell->setText( txt.asString() );
@@ -433,7 +433,7 @@ UIWidget* UIAbstractTableView::updateCell( const int& rowIndex, const ModelIndex
 		}
 
 		bool isVisible = false;
-		Variant icon( getModel()->data( index, Model::Role::Icon ) );
+		Variant icon( getModel()->data( index, ModelRole::Icon ) );
 		if ( icon.is( Variant::Type::Drawable ) && icon.asDrawable() ) {
 			isVisible = true;
 			cell->setIcon( icon.asDrawable() );

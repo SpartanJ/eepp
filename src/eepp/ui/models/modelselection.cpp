@@ -4,14 +4,14 @@
 
 namespace EE { namespace UI { namespace Models {
 
-void ModelSelection::removeMatching( std::function<bool( const ModelIndex& )> filter ) {
-	std::vector<std::vector<ModelIndex>::iterator> toRemove;
-	for ( auto it = mIndexes.begin(); it != mIndexes.end(); it++ ) {
-		if ( filter( *it ) )
-			toRemove.push_back( it );
+void ModelSelection::removeAllMatching( std::function<bool( const ModelIndex& )> filter ) {
+	std::vector<ModelIndex> notMatching;
+	for ( auto& index : mIndexes ) {
+		if ( !filter( index ) ) {
+			notMatching.emplace_back( index );
+		}
 	}
-	for ( auto& index : toRemove )
-		mIndexes.erase( index );
+	mIndexes = notMatching;
 }
 
 void ModelSelection::set( const ModelIndex& index ) {

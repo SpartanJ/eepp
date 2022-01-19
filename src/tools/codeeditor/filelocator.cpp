@@ -98,7 +98,7 @@ void FileLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locateInpu
 		if ( modelEvent->getModelEventType() == ModelEventType::Open ) {
 			Variant vPath( modelEvent->getModel()->data(
 				modelEvent->getModel()->index( modelEvent->getModelIndex().row(), 1 ),
-				Model::Role::Display ) );
+				ModelRole::Display ) );
 			if ( vPath.isValid() && vPath.is( Variant::Type::cstr ) ) {
 				std::string path( vPath.asCStr() );
 				UITab* tab = mEditorSplitter->isDocumentOpen( path );

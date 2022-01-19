@@ -1,12 +1,35 @@
 #ifndef EE_UI_MODELS_FILESYSTEMMODEL_HPP
 #define EE_UI_MODELS_FILESYSTEMMODEL_HPP
 
+#include <atomic>
 #include <eepp/system/fileinfo.hpp>
 #include <eepp/ui/models/model.hpp>
 #include <eepp/ui/uiicon.hpp>
 #include <memory>
 
 namespace EE { namespace UI { namespace Models {
+
+enum FileSystemEventType {
+	/// Sent when a file is created or renamed
+	Add = 1,
+	/// Sent when a file is deleted or renamed
+	Delete = 2,
+	/// Sent when a file is modified
+	Modified = 3,
+	/// Sent when a file is moved
+	Moved = 4
+};
+
+struct FileEvent {
+	FileSystemEventType type;
+	std::string directory;
+	std::string filename;
+	std::string oldFilename;
+
+	FileEvent( const FileSystemEventType& action, const std::string& directory,
+			   const std::string& filename, const std::string& oldFilename = "" ) :
+		type( action ), directory( directory ), filename( filename ), oldFilename( oldFilename ) {}
+};
 
 class EE_API FileSystemModel : public Model {
   public:
@@ -77,6 +100,13 @@ class EE_API FileSystemModel : public Model {
 
 	  private:
 		friend class FileSystemModel;
+
+		Node() {}
+
+		FileSystemModel::Node createChild( const std::string& childName,
+										   const FileSystemModel& model );
+
+		friend class FileSystemModel;
 		std::string mName;
 		std::string mMimeType;
 		Node* mParent{ nullptr };
@@ -116,7 +146,7 @@ class EE_API FileSystemModel : public Model {
 	virtual size_t rowCount( const ModelIndex& = ModelIndex() ) const;
 	virtual size_t columnCount( const ModelIndex& = ModelIndex() ) const;
 	virtual std::string columnName( const size_t& column ) const;
-	virtual Variant data( const ModelIndex&, Role role = Role::Display ) const;
+	virtual Variant data( const ModelIndex&, ModelRole role = ModelRole::Display ) const;
 	virtual ModelIndex parentIndex( const ModelIndex& ) const;
 	virtual ModelIndex index( int row, int column = 0,
 							  const ModelIndex& parent = ModelIndex() ) const;
@@ -133,7 +163,11 @@ class EE_API FileSystemModel : public Model {
 
 	void setPreviouslySelectedIndex( const ModelIndex& previouslySelectedIndex );
 
+	void handleFileEvent( const FileEvent& event );
+
+	~FileSystemModel();
   protected:
+	std::atomic<bool> mInitOK;
 	std::string mRootPath;
 	std::string mRealRootPath;
 	std::unique_ptr<Node> mRoot{ nullptr };
@@ -146,6 +180,7 @@ class EE_API FileSystemModel : public Model {
 
 	FileSystemModel( const std::string& rootPath, const Mode& mode,
 					 const DisplayConfig displayConfig );
+
 };
 
 }}} // namespace EE::UI::Models

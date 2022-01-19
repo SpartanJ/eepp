@@ -1717,7 +1717,7 @@ void App::initProjectTreeView( const std::string& path ) {
 		const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
 		if ( modelEvent->getModelEventType() == ModelEventType::Open ) {
 			Variant vPath(
-				modelEvent->getModel()->data( modelEvent->getModelIndex(), Model::Role::Custom ) );
+				modelEvent->getModel()->data( modelEvent->getModelIndex(), ModelRole::Custom ) );
 			if ( vPath.isValid() && vPath.is( Variant::Type::cstr ) ) {
 				std::string path( vPath.asCStr() );
 				UITab* tab = mEditorSplitter->isDocumentOpen( path );

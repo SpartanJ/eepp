@@ -14,7 +14,7 @@ WidgetTreeModel::WidgetTreeModel( Node* node ) : mRoot( node ) {
 size_t WidgetTreeModel::rowCount( const ModelIndex& index ) const {
 	if ( !index.isValid() )
 		return mRoot->getChildCount();
-	Node* node = static_cast<Node*>( index.data() );
+	Node* node = static_cast<Node*>( index.internalData() );
 	return node->getChildCount();
 }
 
@@ -22,10 +22,10 @@ size_t WidgetTreeModel::columnCount( const ModelIndex& ) const {
 	return 1;
 }
 
-Variant WidgetTreeModel::data( const ModelIndex& index, Model::Role role ) const {
+Variant WidgetTreeModel::data( const ModelIndex& index, ModelRole role ) const {
 	const char* EMPTY = "";
-	Node* node = static_cast<Node*>( index.data() );
-	if ( role == Role::Display ) {
+	Node* node = static_cast<Node*>( index.internalData() );
+	if ( role == ModelRole::Display ) {
 		if ( node->isWidget() ) {
 			return Variant( node->asType<UIWidget>()->getElementTag().c_str() );
 		} else if ( node->isUISceneNode() ) {
@@ -42,14 +42,14 @@ Variant WidgetTreeModel::data( const ModelIndex& index, Model::Role role ) const
 ModelIndex WidgetTreeModel::index( int row, int column, const ModelIndex& parent ) const {
 	if ( !parent.isValid() )
 		return createIndex( row, column, mRoot );
-	Node* parentNode = static_cast<Node*>( parent.data() );
+	Node* parentNode = static_cast<Node*>( parent.internalData() );
 	return createIndex( row, column, parentNode->getChildAt( row ) );
 }
 
 ModelIndex WidgetTreeModel::parentIndex( const ModelIndex& index ) const {
 	if ( !index.isValid() )
 		return {};
-	Node* node = static_cast<Node*>( index.data() );
+	Node* node = static_cast<Node*>( index.internalData() );
 	if ( node == mRoot )
 		return {};
 	return createIndex( node->getParent()->getNodeIndex(), 0, node->getParent() );
