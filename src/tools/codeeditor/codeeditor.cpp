@@ -1100,6 +1100,7 @@ void App::onDocumentLoaded( UICodeEditor* editor, const std::string& path ) {
 	if ( mFileWatcher && doc.hasFilepath() &&
 		 ( !mDirTree || !mDirTree->isDirInTree( doc.getFileInfo().getFilepath() ) ) ) {
 		std::string dir( FileSystem::fileRemoveFileName( doc.getFileInfo().getFilepath() ) );
+		Lock l( mWatchesLock );
 		mFilesFolderWatches[dir] = mFileWatcher->addWatch( dir, mFileSystemListener );
 	}
 }
@@ -1419,6 +1420,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 			return;
 		const DocEvent* docEvent = static_cast<const DocEvent*>( event );
 		std::string dir( FileSystem::fileRemoveFileName( docEvent->getDoc()->getFilePath() ) );
+		Lock l( mWatchesLock );
 		auto itWatch = mFilesFolderWatches.find( dir );
 		if ( mFileWatcher && itWatch != mFilesFolderWatches.end() ) {
 			if ( !mDirTree || !mDirTree->isDirInTree( dir ) ) {
@@ -1664,13 +1666,21 @@ void App::updateEditorState() {
 
 void App::removeFolderWatches() {
 	if ( mFileWatcher ) {
-		for ( const auto& dir : mFolderWatches )
-			mFileWatcher->removeWatch( dir );
-		mFolderWatches.clear();
+		std::unordered_set<efsw::WatchID> folderWatches;
+		std::unordered_map<std::string, efsw::WatchID> filesFolderWatches;
+		{
+			Lock l( mWatchesLock );
+			folderWatches = mFolderWatches;
+			filesFolderWatches = mFilesFolderWatches;
+			mFolderWatches.clear();
+			mFilesFolderWatches.clear();
+		}
 
-		for ( const auto& fileFolder : mFilesFolderWatches )
+		for ( const auto& dir : folderWatches )
+			mFileWatcher->removeWatch( dir );
+
+		for ( const auto& fileFolder : filesFolderWatches )
 			mFileWatcher->removeWatch( fileFolder.second );
-		mFilesFolderWatches.clear();
 	}
 }
 
@@ -1691,8 +1701,11 @@ void App::loadDirTree( const std::string& path ) {
 			} );
 			if ( mFileWatcher ) {
 				removeFolderWatches();
-				mFolderWatches.insert(
-					mFileWatcher->addWatch( dirTree.getPath(), mFileSystemListener, true ) );
+				{
+					Lock l( mWatchesLock );
+					mFolderWatches.insert(
+						mFileWatcher->addWatch( dirTree.getPath(), mFileSystemListener, true ) );
+				}
 				mFileSystemListener->setDirTree( mDirTree );
 			}
 		},

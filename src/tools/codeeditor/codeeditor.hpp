@@ -115,6 +115,7 @@ class App : public UICodeEditorSplitter::Client {
 	FontTrueType* mFontMono{ nullptr };
 	efsw::FileWatcher* mFileWatcher{ nullptr };
 	FileSystemListener* mFileSystemListener{ nullptr };
+	Mutex mWatchesLock;
 	std::unordered_set<efsw::WatchID> mFolderWatches;
 	std::unordered_map<std::string, efsw::WatchID> mFilesFolderWatches;
 	std::unique_ptr<GlobalSearchController> mGlobalSearchController;
