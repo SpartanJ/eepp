@@ -409,7 +409,7 @@ void GlobalSearchController::initGlobalSearchTree( UITreeViewGlobalSearch* searc
 
 			Variant vPath( model->data( model->index( modelEvent->getModelIndex().internalId(),
 													  ProjectSearch::ResultModel::FileOrPosition ),
-										Model::Role::Custom ) );
+										ModelRole::Custom ) );
 			if ( vPath.isValid() && vPath.is( Variant::Type::cstr ) ) {
 				std::string path( vPath.asCStr() );
 				UITab* tab = mEditorSplitter->isDocumentOpen( path );
@@ -424,11 +424,11 @@ void GlobalSearchController::initGlobalSearchTree( UITreeViewGlobalSearch* searc
 					model->data( model->index( modelEvent->getModelIndex().row(),
 											   ProjectSearch::ResultModel::FileOrPosition,
 											   modelEvent->getModelIndex().parent() ),
-								 Model::Role::Custom ) );
+								 ModelRole::Custom ) );
 				Variant colNum( model->data( model->index( modelEvent->getModelIndex().row(),
 														   ProjectSearch::ResultModel::ColumnStart,
 														   modelEvent->getModelIndex().parent() ),
-											 Model::Role::Custom ) );
+											 ModelRole::Custom ) );
 				if ( mEditorSplitter->getCurEditor() && lineNum.isValid() && colNum.isValid() &&
 					 lineNum.is( Variant::Type::Int64 ) && colNum.is( Variant::Type::Int64 ) ) {
 					TextPosition pos{ lineNum.asInt64(), colNum.asInt64() };

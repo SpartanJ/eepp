@@ -1,5 +1,6 @@
 #include <deque>
 #include <eepp/graphics/renderer/renderer.hpp>
+#include <eepp/system/lock.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uiscenenode.hpp>
@@ -31,18 +32,19 @@ bool UITreeView::isType( const Uint32& type ) const {
 
 UITreeView::MetadataForIndex& UITreeView::getIndexMetadata( const ModelIndex& index ) const {
 	eeASSERT( index.isValid() );
-	auto it = mViewMetadata.find( index.data() );
+	auto it = mViewMetadata.find( index.internalData() );
 	if ( it != mViewMetadata.end() )
 		return it->second;
 	auto newMetadata = MetadataForIndex();
-	mViewMetadata.insert( { index.data(), std::move( newMetadata ) } );
-	return mViewMetadata[index.data()];
+	mViewMetadata.insert( { index.internalData(), std::move( newMetadata ) } );
+	return mViewMetadata[index.internalData()];
 }
 
 void UITreeView::traverseTree( TreeViewCallback callback ) const {
 	if ( !getModel() )
 		return;
 	auto& model = *getModel();
+	Lock l( const_cast<Model*>( getModel() )->resourceLock() );
 	int indentLevel = 0;
 	Float yOffset = getHeaderHeight();
 	int rowIndex = -1;
@@ -116,6 +118,7 @@ void UITreeView::bindNavigationClick( UIWidget* widget ) {
 			auto mouseEvent = static_cast<const MouseEvent*>( event );
 			auto idx = mouseEvent->getNode()->getParent()->asType<UITableRow>()->getCurIndex();
 			if ( mouseEvent->getFlags() & EE_BUTTON_LMASK ) {
+				Lock l( const_cast<Model*>( getModel() )->resourceLock() );
 				if ( getModel()->rowCount( idx ) ) {
 					auto& data = getIndexMetadata( idx );
 					data.open = !data.open;
@@ -146,6 +149,7 @@ UIWidget* UITreeView::setupCell( UITableCell* widget, UIWidget* rowWidget,
 			if ( icon ) {
 				Vector2f pos( icon->convertToNodeSpace( mouseEvent->getPosition().asFloat() ) );
 				if ( pos >= Vector2f::Zero && pos <= icon->getPixelsSize() ) {
+					Lock l( const_cast<Model*>( getModel() )->resourceLock() );
 					auto idx =
 						mouseEvent->getNode()->getParent()->asType<UITableRow>()->getCurIndex();
 					if ( getModel()->rowCount( idx ) ) {
@@ -185,7 +189,7 @@ UIWidget* UITreeView::updateCell( const int& rowIndex, const ModelIndex& index,
 		UITableCell* cell = widget->asType<UITableCell>();
 		cell->setCurIndex( index );
 
-		Variant txt( getModel()->data( index, Model::Role::Display ) );
+		Variant txt( getModel()->data( index, ModelRole::Display ) );
 		if ( txt.isValid() ) {
 			if ( txt.is( Variant::Type::String ) )
 				cell->setText( txt.asString() );
@@ -236,7 +240,7 @@ UIWidget* UITreeView::updateCell( const int& rowIndex, const ModelIndex& index,
 		}
 
 		bool isVisible = false;
-		Variant icon( getModel()->data( index, Model::Role::Icon ) );
+		Variant icon( getModel()->data( index, ModelRole::Icon ) );
 		if ( icon.is( Variant::Type::Drawable ) && icon.asDrawable() ) {
 			isVisible = true;
 			cell->setIcon( icon.asDrawable() );
@@ -627,6 +631,7 @@ void UITreeView::onSortColumn( const size_t& ) {
 ModelIndex UITreeView::findRowWithText( const std::string& text, const bool& caseSensitive,
 										const bool& exactMatch ) const {
 	const Model* model = getModel();
+	Lock l( const_cast<Model*>( getModel() )->resourceLock() );
 	if ( !model || model->rowCount() == 0 )
 		return {};
 	ModelIndex foundIndex = {};
@@ -670,7 +675,12 @@ ModelIndex UITreeView::selectRowWithPath( std::string path ) {
 		if ( foundIndex == ModelIndex() )
 			break;
 
-		if ( getModel()->rowCount( foundIndex ) ) {
+		size_t rowCount = 0;
+		{
+			Lock l( const_cast<Model*>( getModel() )->resourceLock() );
+			rowCount = getModel()->rowCount( foundIndex );
+		}
+		if ( rowCount ) {
 			auto& data = getIndexMetadata( foundIndex );
 			if ( !data.open ) {
 				data.open = true;

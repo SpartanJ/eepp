@@ -29,8 +29,8 @@ class FileListModel : public Model {
 		return index == 0 ? "Name" : "Path";
 	}
 
-	virtual Variant data( const ModelIndex& index, Role role = Role::Display ) const {
-		if ( role == Role::Display && index.row() < (Int64)mFiles.size() ) {
+	virtual Variant data( const ModelIndex& index, ModelRole role = ModelRole::Display ) const {
+		if ( role == ModelRole::Display && index.row() < (Int64)mFiles.size() ) {
 			return Variant( index.column() == 0 ? mNames[index.row()].c_str()
 												: mFiles[index.row()].c_str() );
 		}

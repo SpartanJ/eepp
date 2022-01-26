@@ -77,7 +77,7 @@ void* UITreeViewCellGlobalSearch::getDataPtr( const ModelIndex& modelIndex ) {
 		static_cast<const ProjectSearch::ResultModel*>( modelIndex.model() );
 	ModelIndex index =
 		model->index( modelIndex.row(), ProjectSearch::ResultModel::Data, modelIndex.parent() );
-	Variant var( model->data( index, Model::Role::Custom ) );
+	Variant var( model->data( index, ModelRole::Custom ) );
 	if ( var.is( Variant::Type::DataPtr ) )
 		return var.asDataPtr();
 	return nullptr;
@@ -122,7 +122,7 @@ UIPushButton* UITreeViewCellGlobalSearch::updateText( const std::string& text ) 
 	if ( getCurIndex().internalId() != -1 ) {
 		UITreeViewGlobalSearch* pp = getParent()->getParent()->asType<UITreeViewGlobalSearch>();
 
-		ProjectSearch::ResultData* res = (ProjectSearch::ResultData*)getCurIndex().parent().data();
+		ProjectSearch::ResultData* res = (ProjectSearch::ResultData*)getCurIndex().parent().internalData();
 
 		auto styleDef = SyntaxDefinitionManager::instance()->getStyleByExtension( res->file );
 

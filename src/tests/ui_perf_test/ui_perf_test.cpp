@@ -58,7 +58,7 @@ class TestModel : public Model {
 	const NodeT& node( const ModelIndex& index ) const {
 		if ( !index.isValid() )
 			return mRoot;
-		return *(NodeT*)index.data();
+		return *(NodeT*)index.internalData();
 	}
 
 	ModelIndex index( int row, int column, const ModelIndex& parent ) const {
@@ -74,12 +74,12 @@ class TestModel : public Model {
 		return String::format( "Column %ld", column );
 	}
 
-	virtual Variant data( const ModelIndex& index, Role role = Role::Display ) const {
+	virtual Variant data( const ModelIndex& index, ModelRole role = ModelRole::Display ) const {
 		switch ( role ) {
-			case Role::Display: {
+			case ModelRole::Display: {
 				return Variant( String::format( "Test %lld-%lld", index.row(), index.column() ) );
 			}
-			case Role::Icon: {
+			case ModelRole::Icon: {
 				if ( index.column() == 0 && rowCount( index ) == 0 ) {
 					return Variant( SceneManager::instance()
 										->getUISceneNode()
@@ -141,7 +141,7 @@ void mainLoop() {
 	}
 }
 
-EE_MAIN_FUNC int main( int argc, char* argv[] ) {
+EE_MAIN_FUNC int main( int, char*[] ) {
 	win = Engine::instance()->createWindow( WindowSettings( 1024, 768, "eepp - UI Perf Test" ),
 											ContextSettings( true ) );
 

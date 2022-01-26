@@ -60,7 +60,7 @@ class EE_API ModelSelection {
 		return *mIndexes.begin();
 	}
 
-	void removeMatching( std::function<bool( const ModelIndex& )> );
+	void removeAllMatching( std::function<bool( ModelIndex const& )> filter );
 
 	template <typename Function> void changeFromModel( Function f ) {
 		{
@@ -76,8 +76,8 @@ class EE_API ModelSelection {
   protected:
 	UIAbstractView* mView;
 	std::vector<ModelIndex> mIndexes;
-	bool mDisableNotify{false};
-	bool mNotifyPending{false};
+	bool mDisableNotify{ false };
+	bool mNotifyPending{ false };
 	void notifySelectionChanged();
 };
 

@@ -21,8 +21,8 @@ template <typename T> class ItemListModel final : public Model {
 
 	virtual std::string columnName( const size_t& ) const { return "Data"; }
 
-	virtual Variant data( const ModelIndex& index, Role role = Role::Display ) const {
-		if ( role == Role::Display )
+	virtual Variant data( const ModelIndex& index, ModelRole role = ModelRole::Display ) const {
+		if ( role == ModelRole::Display )
 			return Variant( mData[index.row()] );
 		return {};
 	}

@@ -82,7 +82,7 @@ class ProjectSearch {
 				return {};
 			if ( !parent.isValid() )
 				return createIndex( row, column, &mResult[row], -1 );
-			if ( parent.data() )
+			if ( parent.internalData() )
 				return createIndex( row, column, &mResult[parent.row()].results[row],
 									parent.row() );
 			return {};
@@ -109,9 +109,9 @@ class ProjectSearch {
 			return count;
 		}
 
-		Variant data( const ModelIndex& index, Role role = Role::Display ) const {
+		Variant data( const ModelIndex& index, ModelRole role = ModelRole::Display ) const {
 			static const char* EMPTY = "";
-			if ( role == Role::Display ) {
+			if ( role == ModelRole::Display ) {
 				if ( index.internalId() == -1 ) {
 					if ( index.column() == FileOrPosition ) {
 						return Variant( String::format( "%s (%zu)",
@@ -133,7 +133,7 @@ class ProjectSearch {
 																.c_str() ) );
 					}
 				}
-			} else if ( role == Role::Custom ) {
+			} else if ( role == ModelRole::Custom ) {
 				if ( index.internalId() != -1 ) {
 					switch ( index.column() ) {
 						case FileOrPosition:

@@ -65,10 +65,12 @@ Vector2i InputSDL::queryMousePos() {
 	SDL_Window* sdlw = reinterpret_cast<WindowSDL*>( mWindow )->GetSDLWindow();
 	SDL_GetGlobalMouseState( &tempMouse.x, &tempMouse.y );
 	SDL_GetWindowPosition( sdlw, &tempWinPos.x, &tempWinPos.y );
-	SDL_GetWindowBordersSize( sdlw, &bordersSize.Top, &bordersSize.Left, &bordersSize.Bottom,
-							  &bordersSize.Right );
-	mousePos.x = (int)tempMouse.x - tempWinPos.x - bordersSize.Left;
-	mousePos.y = (int)tempMouse.y - tempWinPos.y - bordersSize.Top;
+	// Since an unknown version the window position includes the margin from the border size.
+	// So we don't need to compute that manually.
+	/*SDL_GetWindowBordersSize( sdlw, &bordersSize.Top, &bordersSize.Left, &bordersSize.Bottom,
+							  &bordersSize.Right );*/
+	mousePos.x = (int)tempMouse.x - tempWinPos.x /* - bordersSize.Left*/;
+	mousePos.y = (int)tempMouse.y - tempWinPos.y /* - bordersSize.Top*/;
 	return mousePos;
 }
 

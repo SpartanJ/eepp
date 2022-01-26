@@ -58,9 +58,9 @@ ModelIndex SortingProxyModel::mapToSource( const ModelIndex& proxyIndex ) const 
 		return {};
 
 	eeASSERT( proxyIndex.model() == this );
-	eeASSERT( proxyIndex.data() );
+	eeASSERT( proxyIndex.internalData() );
 
-	auto& indexMapping = *static_cast<Mapping*>( proxyIndex.data() );
+	auto& indexMapping = *static_cast<Mapping*>( proxyIndex.internalData() );
 	auto it = mMappings.find( indexMapping.sourceParent );
 	eeASSERT( it != mMappings.end() );
 
@@ -119,11 +119,11 @@ ModelIndex SortingProxyModel::mapToProxy( const ModelIndex& sourceIndex ) const 
 	return createIndex( proxyRow, proxyColumn, &mapping );
 }
 
-Model::Role SortingProxyModel::sortRole() const {
+ModelRole SortingProxyModel::sortRole() const {
 	return mSortRole;
 }
 
-void SortingProxyModel::setSortRrole( Model::Role role ) {
+void SortingProxyModel::setSortRrole( ModelRole role ) {
 	mSortRole = role;
 }
 
@@ -131,7 +131,7 @@ std::string SortingProxyModel::columnName( const size_t& column ) const {
 	return source().columnName( column );
 }
 
-Variant SortingProxyModel::data( const ModelIndex& proxyIndex, Role role ) const {
+Variant SortingProxyModel::data( const ModelIndex& proxyIndex, ModelRole role ) const {
 	auto targetIndex = mapToSource( proxyIndex );
 	eeASSERT( targetIndex.isValid() );
 	return source().data( targetIndex, role );
@@ -157,9 +157,9 @@ ModelIndex SortingProxyModel::parentIndex( const ModelIndex& proxyIndex ) const 
 		return {};
 
 	eeASSERT( proxyIndex.model() == this );
-	eeASSERT( proxyIndex.data() );
+	eeASSERT( proxyIndex.internalData() );
 
-	auto& index_mapping = *static_cast<Mapping*>( proxyIndex.data() );
+	auto& index_mapping = *static_cast<Mapping*>( proxyIndex.internalData() );
 	auto it = mMappings.find( index_mapping.sourceParent );
 	eeASSERT( it != mMappings.end() );
 
