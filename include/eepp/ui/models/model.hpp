@@ -1,6 +1,8 @@
 #ifndef EE_UI_MODELS_MODEL_HPP
 #define EE_UI_MODELS_MODEL_HPP
 
+#include <eepp/system/lock.hpp>
+#include <eepp/system/mutex.hpp>
 #include <eepp/ui/models/modelindex.hpp>
 #include <eepp/ui/models/modelrole.hpp>
 #include <eepp/ui/models/variant.hpp>
@@ -120,10 +122,10 @@ class EE_API Model {
 
 	void beginInsertRows( ModelIndex const& parent, int first, int last );
 	void beginInsertColumns( ModelIndex const& parent, int first, int last );
-	void beginMoveRows( ModelIndex const& source_parent, int first, int last,
-						ModelIndex const& target_parent, int target_index );
-	void beginMoveColumns( ModelIndex const& source_parent, int first, int last,
-						   ModelIndex const& target_parent, int target_index );
+	void beginMoveRows( ModelIndex const& sourceParent, int first, int last,
+						ModelIndex const& targetParent, int target_index );
+	void beginMoveColumns( ModelIndex const& sourceParent, int first, int last,
+						   ModelIndex const& targetParent, int target_index );
 	void beginDeleteRows( ModelIndex const& parent, int first, int last );
 	void beginDeleteColumns( ModelIndex const& parent, int first, int last );
 
@@ -133,6 +135,12 @@ class EE_API Model {
 	void endMoveColumns();
 	void endDeleteRows();
 	void endDeleteColumns();
+
+	Mutex& resourceLock();
+
+	void acquireResourceLock() { mResourceLock.lock(); }
+
+	void releaseResourceLock() { mResourceLock.unlock(); }
 
   protected:
 	Model(){};
@@ -150,10 +158,10 @@ class EE_API Model {
 	struct Operation {
 		OperationType type{ OperationType::Invalid };
 		Direction direction{ Direction::Row };
-		ModelIndex source_parent;
+		ModelIndex sourceParent;
 		int first{ 0 };
 		int last{ 0 };
-		ModelIndex target_parent;
+		ModelIndex targetParent;
 		int target{ 0 };
 
 		Operation( OperationType type ) : type( type ) {}
@@ -162,7 +170,7 @@ class EE_API Model {
 				   int last ) :
 			type( type ),
 			direction( direction ),
-			source_parent( parent ),
+			sourceParent( parent ),
 			first( first ),
 			last( last ) {}
 
@@ -170,10 +178,10 @@ class EE_API Model {
 				   int first, int last, ModelIndex const& targetParent, int target ) :
 			type( type ),
 			direction( direction ),
-			source_parent( sourceParent ),
+			sourceParent( sourceParent ),
 			first( first ),
 			last( last ),
-			target_parent( targetParent ),
+			targetParent( targetParent ),
 			target( target ) {}
 	};
 
@@ -195,6 +203,7 @@ class EE_API Model {
 	std::unordered_set<UIAbstractView*> mViews;
 	std::unordered_set<Client*> mClients;
 	std::function<void()> mOnUpdate;
+	Mutex mResourceLock;
 };
 
 inline ModelIndex ModelIndex::parent() const {

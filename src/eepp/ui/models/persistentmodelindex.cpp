@@ -7,57 +7,57 @@ PersistentModelIndex::PersistentModelIndex( ModelIndex const& index ) {
 		return;
 
 	auto* model = const_cast<Model*>( index.model() );
-	m_handle = model->registerPersistentIndex( index );
+	mHandle = model->registerPersistentIndex( index );
 }
 
 int PersistentModelIndex::row() const {
 	if ( !hasValidHandle() )
 		return -1;
-	return m_handle.lock()->m_index.row();
+	return mHandle.lock()->mIndex.row();
 }
 
 int PersistentModelIndex::column() const {
 	if ( !hasValidHandle() )
 		return -1;
-	return m_handle.lock()->m_index.column();
+	return mHandle.lock()->mIndex.column();
 }
 
 PersistentModelIndex PersistentModelIndex::parent() const {
 	if ( !hasValidHandle() )
 		return {};
-	return { m_handle.lock()->m_index.parent() };
+	return { mHandle.lock()->mIndex.parent() };
 }
 
 PersistentModelIndex PersistentModelIndex::siblingAtColumn( int column ) const {
 	if ( !hasValidHandle() )
 		return {};
 
-	return { m_handle.lock()->m_index.siblingAtColumn( column ) };
+	return { mHandle.lock()->mIndex.siblingAtColumn( column ) };
 }
 
 Variant PersistentModelIndex::data( ModelRole role ) const {
 	if ( !hasValidHandle() )
 		return {};
-	return { m_handle.lock()->m_index.data( role ) };
+	return { mHandle.lock()->mIndex.data( role ) };
 }
 
 PersistentModelIndex::operator ModelIndex() const {
 	if ( !hasValidHandle() )
 		return {};
 	else
-		return m_handle.lock()->m_index;
+		return mHandle.lock()->mIndex;
 }
 
 bool PersistentModelIndex::operator==( PersistentModelIndex const& other ) const {
-	bool is_this_valid = hasValidHandle();
-	bool is_other_valid = other.hasValidHandle();
+	bool isThisValid = hasValidHandle();
+	bool isOtherValid = other.hasValidHandle();
 
-	if ( !is_this_valid && !is_other_valid )
+	if ( !isThisValid && !isOtherValid )
 		return true;
-	if ( is_this_valid != is_other_valid )
+	if ( isThisValid != isOtherValid )
 		return false;
 
-	return m_handle.lock()->m_index == other.m_handle.lock()->m_index;
+	return mHandle.lock()->mIndex == other.mHandle.lock()->mIndex;
 }
 
 bool PersistentModelIndex::operator!=( PersistentModelIndex const& other ) const {
@@ -69,7 +69,7 @@ bool PersistentModelIndex::operator==( ModelIndex const& other ) const {
 		return !other.isValid();
 	}
 
-	return m_handle.lock()->m_index == other;
+	return mHandle.lock()->mIndex == other;
 }
 
 bool PersistentModelIndex::operator!=( ModelIndex const& other ) const {

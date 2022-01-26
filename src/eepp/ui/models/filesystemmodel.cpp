@@ -394,13 +394,86 @@ void FileSystemModel::setPreviouslySelectedIndex( const ModelIndex& previouslySe
 	mPreviouslySelectedIndex = previouslySelectedIndex;
 }
 
+size_t FileSystemModel::getFileIndex( Node* parent, const FileInfo& file ) {
+	std::vector<FileInfo> files;
+
+	for ( const auto& nodeFile : parent->mChildren ) {
+		files.emplace_back( nodeFile.info() );
+	}
+
+	files.emplace_back( file );
+
+	std::sort( files.begin(), files.end(), []( FileInfo a, FileInfo b ) {
+		return std::strcmp( a.getFileName().c_str(), b.getFileName().c_str() ) < 0;
+	} );
+
+	if ( getDisplayConfig().foldersFirst ) {
+		std::vector<FileInfo> folders;
+		std::vector<FileInfo> file;
+		for ( size_t i = 0; i < files.size(); i++ ) {
+			if ( files[i].isDirectory() ) {
+				folders.push_back( files[i] );
+			} else {
+				file.push_back( files[i] );
+			}
+		}
+		files.clear();
+		for ( auto& folder : folders )
+			files.push_back( folder );
+		for ( auto& f : file )
+			files.push_back( f );
+	}
+
+	size_t pos = parent->childCount();
+
+	for ( size_t i = 0; i < files.size(); ++i ) {
+		if ( file.getFileName() == files[i].getFileName() ) {
+			pos = i;
+			break;
+		}
+	}
+
+	return pos;
+}
+
+std::string getFileSystemEventTypeName( FileSystemEventType action ) {
+	switch ( action ) {
+		case FileSystemEventType::Add:
+			return "Add";
+		case FileSystemEventType::Modified:
+			return "Modified";
+		case FileSystemEventType::Delete:
+			return "Delete";
+		case FileSystemEventType::Moved:
+			return "Moved";
+		default:
+			return "Bad Action";
+	}
+}
+
 void FileSystemModel::handleFileEvent( const FileEvent& event ) {
 	if ( !mInitOK )
 		return;
 
+	Lock l( resourceLock() );
+
+	if ( Log::instance() && Log::instance()->getLogLevelThreshold() == LogLevel::Debug ) {
+		Log::debug(
+			"DIR ( %s ) FILE ( %s ) has event %s", event.directory.c_str(),
+			( ( event.oldFilename.empty() ? "" : "from file " + event.oldFilename + " to " ) +
+			  event.filename )
+				.c_str(),
+			getFileSystemEventTypeName( event.type ).c_str() );
+	}
+
 	switch ( event.type ) {
 		case FileSystemEventType::Add: {
 			FileInfo file( event.directory + event.filename );
+
+			if ( ( getMode() == Mode::DirectoriesOnly && !file.isDirectory() ) ||
+				 ( getDisplayConfig().ignoreHidden && file.isHidden() ) )
+				return;
+
 			auto* parent = getNodeFromPath(
 				file.isDirectory() ? FileSystem::removeLastFolderFromPath( file.getDirectoryPath() )
 								   : file.getDirectoryPath(),
@@ -412,14 +485,19 @@ void FileSystemModel::handleFileEvent( const FileEvent& event ) {
 				if ( childNodeExists )
 					return;
 
-				size_t childCount = parent->childCount();
-
 				Node childNode = parent->createChild( file.getFilepath(), *this );
 
 				if ( !childNode.getName().empty() ) {
-					beginInsertRows( parent->index( *this, 0 ), childCount, childCount );
+					size_t pos = getFileIndex( parent, file );
 
-					parent->mChildren.emplace_back( std::move( childNode ) );
+					beginInsertRows( parent->index( *this, 0 ), pos, pos );
+
+					if ( pos == SIZE_MAX ) {
+						parent->mChildren.emplace_back( std::move( childNode ) );
+					} else {
+						parent->mChildren.insert( parent->mChildren.begin() + pos,
+												  std::move( childNode ) );
+					}
 
 					endInsertRows();
 				} else {
@@ -459,12 +537,47 @@ void FileSystemModel::handleFileEvent( const FileEvent& event ) {
 		}
 		case FileSystemEventType::Moved: {
 			FileInfo file( event.directory + event.filename );
+
 			if ( file.exists() ) {
 				auto* node = getNodeFromPath( event.directory + event.oldFilename,
 											  file.isDirectory(), false );
 				if ( node ) {
-					node->mInfo = std::move( file );
-					node->mName = FileSystem::fileNameFromPath( node->mInfo.getFilepath() );
+					ModelIndex index = node->index( *this, 0 );
+					if ( !index.isValid() )
+						return;
+
+					Node* parent = node->mParent;
+					if ( !parent )
+						return;
+
+					if ( ( getMode() == Mode::DirectoriesOnly && !file.isDirectory() ) )
+						return;
+
+					if ( !node->info().isHidden() && getDisplayConfig().ignoreHidden &&
+						 file.isHidden() ) {
+						handleFileEvent(
+							{ FileSystemEventType::Delete, event.directory, event.oldFilename } );
+						return;
+					}
+
+					size_t pos = getFileIndex( node->getParent(), file );
+
+					if ( pos != SIZE_MAX )
+						beginMoveRows( index.parent(), index.row(), index.row(), index.parent(),
+									   pos );
+
+					parent->mChildren.erase( parent->mChildren.begin() + index.row() );
+					Node childNode = parent->createChild( file.getFilepath(), *this );
+
+					if ( pos == SIZE_MAX ) {
+						parent->mChildren.emplace_back( std::move( childNode ) );
+					} else {
+						parent->mChildren.insert( parent->mChildren.begin() + pos,
+												  std::move( childNode ) );
+					}
+
+					if ( pos != SIZE_MAX )
+						endMoveRows();
 				} else {
 					handleFileEvent(
 						{ FileSystemEventType::Add, event.directory, event.filename } );

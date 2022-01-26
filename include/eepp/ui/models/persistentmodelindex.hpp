@@ -13,9 +13,9 @@ class PersistentHandle {
 	friend class Model;
 	friend class PersistentModelIndex;
 
-	PersistentHandle( ModelIndex const& index ) : m_index( index ) {}
+	PersistentHandle( ModelIndex const& index ) : mIndex( index ) {}
 
-	ModelIndex m_index;
+	ModelIndex mIndex;
 };
 
 class PersistentModelIndex {
@@ -28,8 +28,8 @@ class PersistentModelIndex {
 	PersistentModelIndex& operator=( PersistentModelIndex const& ) = default;
 	PersistentModelIndex& operator=( PersistentModelIndex&& ) = default;
 
-	bool isValid() const { return hasValidHandle() && m_handle.lock()->m_index.isValid(); }
-	bool hasValidHandle() const { return !m_handle.expired(); }
+	bool isValid() const { return hasValidHandle() && mHandle.lock()->mIndex.isValid(); }
+	bool hasValidHandle() const { return !mHandle.expired(); }
 
 	int row() const;
 	int column() const;
@@ -39,7 +39,7 @@ class PersistentModelIndex {
 
 	void* internalData() const {
 		if ( hasValidHandle() )
-			return m_handle.lock()->m_index.internalData();
+			return mHandle.lock()->mIndex.internalData();
 		else
 			return nullptr;
 	}
@@ -51,7 +51,7 @@ class PersistentModelIndex {
 	bool operator!=( ModelIndex const& ) const;
 
   private:
-	std::weak_ptr<PersistentHandle> m_handle;
+	std::weak_ptr<PersistentHandle> mHandle;
 };
 
 }}} // namespace EE::UI::Models

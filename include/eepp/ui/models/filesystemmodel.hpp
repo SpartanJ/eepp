@@ -166,6 +166,7 @@ class EE_API FileSystemModel : public Model {
 	void handleFileEvent( const FileEvent& event );
 
 	~FileSystemModel();
+
   protected:
 	std::atomic<bool> mInitOK;
 	std::string mRootPath;
@@ -181,6 +182,7 @@ class EE_API FileSystemModel : public Model {
 	FileSystemModel( const std::string& rootPath, const Mode& mode,
 					 const DisplayConfig displayConfig );
 
+	size_t getFileIndex( Node* parent, const FileInfo& file );
 };
 
 }}} // namespace EE::UI::Models

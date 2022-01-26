@@ -75,22 +75,22 @@ void Model::beginInsertColumns( ModelIndex const& parent, int first, int last ) 
 	mOperationStack.push( { OperationType::Insert, Direction::Column, parent, first, last } );
 }
 
-void Model::beginMoveRows( ModelIndex const& source_parent, int first, int last,
-						   ModelIndex const& target_parent, int target_index ) {
+void Model::beginMoveRows( ModelIndex const& sourceParent, int first, int last,
+						   ModelIndex const& targetParent, int targetIndex ) {
 	eeASSERT( first >= 0 );
 	eeASSERT( first <= last );
-	eeASSERT( target_index >= 0 );
-	mOperationStack.push( { OperationType::Move, Direction::Row, source_parent, first, last,
-							target_parent, target_index } );
+	eeASSERT( targetIndex >= 0 );
+	mOperationStack.push( { OperationType::Move, Direction::Row, sourceParent, first, last,
+							targetParent, targetIndex } );
 }
 
-void Model::beginMoveColumns( ModelIndex const& source_parent, int first, int last,
-							  ModelIndex const& target_parent, int target_index ) {
+void Model::beginMoveColumns( ModelIndex const& sourceParent, int first, int last,
+							  ModelIndex const& targetParent, int targetIndex ) {
 	eeASSERT( first >= 0 );
 	eeASSERT( first <= last );
-	eeASSERT( target_index >= 0 );
-	mOperationStack.push( { OperationType::Move, Direction::Column, source_parent, first, last,
-							target_parent, target_index } );
+	eeASSERT( targetIndex >= 0 );
+	mOperationStack.push( { OperationType::Move, Direction::Column, sourceParent, first, last,
+							targetParent, targetIndex } );
 }
 
 void Model::beginDeleteRows( ModelIndex const& parent, int first, int last ) {
@@ -131,31 +131,31 @@ std::weak_ptr<PersistentHandle> Model::registerPersistentIndex( ModelIndex const
 
 template <bool IsRow>
 void Model::saveDeletedIndices( ModelIndex const& parent, int first, int last ) {
-	std::vector<ModelIndex> deleted_indices;
+	std::vector<ModelIndex> deletedIndices;
 
 	for ( auto& entry : mPersistentHandles ) {
-		auto current_index = entry.first;
+		auto currentIndex = entry.first;
 
 		// Walk up the persistent handle's parents to see if it is contained
 		// within the range that is being deleted.
-		while ( current_index.isValid() ) {
-			auto current_parent = current_index.parent();
+		while ( currentIndex.isValid() ) {
+			auto currentParent = currentIndex.parent();
 
-			if ( current_parent == parent ) {
+			if ( currentParent == parent ) {
 				if ( IsRow ) {
-					if ( current_index.row() >= first && current_index.row() <= last )
-						deleted_indices.emplace_back( current_index );
+					if ( currentIndex.row() >= first && currentIndex.row() <= last )
+						deletedIndices.emplace_back( currentIndex );
 				} else {
-					if ( current_index.column() >= first && current_index.column() <= last )
-						deleted_indices.emplace_back( current_index );
+					if ( currentIndex.column() >= first && currentIndex.column() <= last )
+						deletedIndices.emplace_back( currentIndex );
 				}
 			}
 
-			current_index = current_parent;
+			currentIndex = currentParent;
 		}
 	}
 
-	mDeletedIndicesStack.push( std::move( deleted_indices ) );
+	mDeletedIndicesStack.push( std::move( deletedIndices ) );
 }
 
 void Model::endInsertRows() {
@@ -166,7 +166,7 @@ void Model::endInsertRows() {
 	handleInsert( operation );
 
 	for ( auto& client : mClients ) {
-		client->modelDidInsertRows( operation.source_parent, operation.first, operation.last );
+		client->modelDidInsertRows( operation.sourceParent, operation.first, operation.last );
 	}
 }
 
@@ -178,7 +178,7 @@ void Model::endInsertColumns() {
 	handleInsert( operation );
 
 	for ( auto& client : mClients )
-		client->modelDidInsertColumns( operation.source_parent, operation.first, operation.last );
+		client->modelDidInsertColumns( operation.sourceParent, operation.first, operation.last );
 }
 
 void Model::endMoveRows() {
@@ -189,8 +189,8 @@ void Model::endMoveRows() {
 	handleMove( operation );
 
 	for ( auto& client : mClients )
-		client->modelDidMoveRows( operation.source_parent, operation.first, operation.last,
-								  operation.target_parent, operation.target );
+		client->modelDidMoveRows( operation.sourceParent, operation.first, operation.last,
+								  operation.targetParent, operation.target );
 }
 
 void Model::endMoveColumns() {
@@ -201,8 +201,8 @@ void Model::endMoveColumns() {
 	handleMove( operation );
 
 	for ( auto& client : mClients ) {
-		client->modeldidMoveColumns( operation.source_parent, operation.first, operation.last,
-									 operation.target_parent, operation.target );
+		client->modeldidMoveColumns( operation.sourceParent, operation.first, operation.last,
+									 operation.targetParent, operation.target );
 	}
 }
 
@@ -214,7 +214,7 @@ void Model::endDeleteRows() {
 	handleDelete( operation );
 
 	for ( auto& client : mClients ) {
-		client->modelDidDeleteRows( operation.source_parent, operation.first, operation.last );
+		client->modelDidDeleteRows( operation.sourceParent, operation.first, operation.last );
 	}
 }
 
@@ -226,61 +226,61 @@ void Model::endDeleteColumns() {
 	handleDelete( operation );
 
 	for ( auto& client : mClients ) {
-		client->modelDidDeleteColumns( operation.source_parent, operation.first, operation.last );
+		client->modelDidDeleteColumns( operation.sourceParent, operation.first, operation.last );
 	}
 }
 
 void Model::handleInsert( Operation const& operation ) {
-	bool is_row = operation.direction == Direction::Row;
-	std::vector<const ModelIndex*> to_shift;
+	bool isRow = operation.direction == Direction::Row;
+	std::vector<const ModelIndex*> toShift;
 
 	for ( auto& entry : mPersistentHandles ) {
-		if ( entry.first.parent() == operation.source_parent ) {
-			if ( is_row && entry.first.row() >= operation.first ) {
-				to_shift.emplace_back( &entry.first );
-			} else if ( !is_row && entry.first.column() >= operation.first ) {
-				to_shift.emplace_back( &entry.first );
+		if ( entry.first.parent() == operation.sourceParent ) {
+			if ( isRow && entry.first.row() >= operation.first ) {
+				toShift.emplace_back( &entry.first );
+			} else if ( !isRow && entry.first.column() >= operation.first ) {
+				toShift.emplace_back( &entry.first );
 			}
 		}
 	}
 
 	int offset = operation.last - operation.first + 1;
 
-	for ( auto current_index : to_shift ) {
-		int new_row = is_row ? current_index->row() + offset : current_index->row();
-		int new_column = is_row ? current_index->column() : current_index->column() + offset;
-		auto new_index = createIndex( new_row, new_column, current_index->internalData() );
+	for ( auto currentIndex : toShift ) {
+		int newRow = isRow ? currentIndex->row() + offset : currentIndex->row();
+		int newColumn = isRow ? currentIndex->column() : currentIndex->column() + offset;
+		auto newIndex = createIndex( newRow, newColumn, currentIndex->internalData() );
 
-		auto it = mPersistentHandles.find( *current_index );
+		auto it = mPersistentHandles.find( *currentIndex );
 		auto handle = std::move( it->second );
 
-		handle->m_index = new_index;
+		handle->mIndex = newIndex;
 
 		mPersistentHandles.erase( it );
-		mPersistentHandles[std::move( new_index )] = std::move( handle );
+		mPersistentHandles[std::move( newIndex )] = std::move( handle );
 	}
 }
 
 void Model::handleDelete( Operation const& operation ) {
-	bool is_row = operation.direction == Direction::Row;
-	std::vector<ModelIndex> deleted_indices = mDeletedIndicesStack.top();
+	bool isRow = operation.direction == Direction::Row;
+	std::vector<ModelIndex> deletedIndices = mDeletedIndicesStack.top();
 	mDeletedIndicesStack.pop();
-	std::vector<const ModelIndex*> to_shift;
+	std::vector<const ModelIndex*> toShift;
 
 	// Get rid of all persistent handles which have been marked for death
-	for ( auto& deleted_index : deleted_indices ) {
-		mPersistentHandles.erase( deleted_index );
+	for ( auto& deletedIndex : deletedIndices ) {
+		mPersistentHandles.erase( deletedIndex );
 	}
 
 	for ( auto& entry : mPersistentHandles ) {
-		if ( entry.first.parent() == operation.source_parent ) {
-			if ( is_row ) {
+		if ( entry.first.parent() == operation.sourceParent ) {
+			if ( isRow ) {
 				if ( entry.first.row() > operation.last ) {
-					to_shift.emplace_back( &entry.first );
+					toShift.emplace_back( &entry.first );
 				}
 			} else {
 				if ( entry.first.column() > operation.last ) {
-					to_shift.emplace_back( &entry.first );
+					toShift.emplace_back( &entry.first );
 				}
 			}
 		}
@@ -288,118 +288,121 @@ void Model::handleDelete( Operation const& operation ) {
 
 	int offset = operation.last - operation.first + 1;
 
-	for ( auto current_index : to_shift ) {
-		int new_row = is_row ? current_index->row() - offset : current_index->row();
-		int new_column = is_row ? current_index->column() : current_index->column() - offset;
-		auto new_index = createIndex( new_row, new_column, current_index->internalData() );
+	for ( auto currentIndex : toShift ) {
+		int newRow = isRow ? currentIndex->row() - offset : currentIndex->row();
+		int newColumn = isRow ? currentIndex->column() : currentIndex->column() - offset;
+		auto newIndex = createIndex( newRow, newColumn, currentIndex->internalData() );
 
-		auto it = mPersistentHandles.find( *current_index );
+		auto it = mPersistentHandles.find( *currentIndex );
 		auto handle = std::move( it->second );
 
-		handle->m_index = new_index;
+		handle->mIndex = newIndex;
 
 		mPersistentHandles.erase( it );
-		mPersistentHandles[std::move( new_index )] = std::move( handle );
+		mPersistentHandles[std::move( newIndex )] = std::move( handle );
 	}
 }
 
-void Model::handleMove( Operation const& operation ) {
-	bool is_row = operation.direction == Direction::Row;
-	bool move_within = operation.source_parent == operation.target_parent;
-	bool moving_down = operation.target > operation.first;
+Mutex& Model::resourceLock() {
+	return mResourceLock;
+}
 
-	if ( move_within && operation.first == operation.target )
+void Model::handleMove( Operation const& operation ) {
+	bool isRow = operation.direction == Direction::Row;
+	bool moveWithin = operation.sourceParent == operation.targetParent;
+	bool movingDown = operation.target > operation.first;
+
+	if ( moveWithin && operation.first == operation.target )
 		return;
 
-	if ( is_row ) {
-		eeASSERT( operation.target <= (int)rowCount( operation.target_parent ) );
-		eeASSERT( operation.last < (int)rowCount( operation.source_parent ) );
+	if ( isRow ) {
+		eeASSERT( operation.target <= (int)rowCount( operation.targetParent ) );
+		eeASSERT( operation.last < (int)rowCount( operation.sourceParent ) );
 	} else {
-		eeASSERT( operation.target <= (int)columnCount( operation.target_parent ) );
-		eeASSERT( operation.last < (int)columnCount( operation.source_parent ) );
+		eeASSERT( operation.target <= (int)columnCount( operation.targetParent ) );
+		eeASSERT( operation.last < (int)columnCount( operation.sourceParent ) );
 	}
 
 	// NOTE: to_shift_down is used as a generic "to shift" when move_within is true.
-	std::vector<const ModelIndex*> to_move;		  // Items to be moved between the source and target
-	std::vector<const ModelIndex*> to_shift_down; // Items to be shifted down after a move-to
-	std::vector<const ModelIndex*> to_shift_up;	  // Items to be shifted up after a move-from
+	std::vector<const ModelIndex*> toMove;		// Items to be moved between the source and target
+	std::vector<const ModelIndex*> toShiftDown; // Items to be shifted down after a move-to
+	std::vector<const ModelIndex*> toShiftUp;	// Items to be shifted up after a move-from
 
 	int count = operation.last - operation.first + 1;
 	// [start, end)
-	int work_area_start = std::min( operation.first, operation.target );
+	int workAreaStart = std::min( operation.first, operation.target );
 	int work_area_end = std::max( operation.last + 1, operation.target + count );
 
 	for ( auto& entry : mPersistentHandles ) {
-		int dimension = is_row ? entry.first.row() : entry.first.column();
+		int dimension = isRow ? entry.first.row() : entry.first.column();
 
-		if ( move_within ) {
-			if ( entry.first.parent() == operation.source_parent ) {
+		if ( moveWithin ) {
+			if ( entry.first.parent() == operation.sourceParent ) {
 				if ( dimension >= operation.first && dimension <= operation.last ) {
-					to_move.emplace_back( &entry.first );
-				} else if ( moving_down && dimension > operation.last &&
+					toMove.emplace_back( &entry.first );
+				} else if ( movingDown && dimension > operation.last &&
 							dimension < work_area_end ) {
-					to_shift_down.emplace_back( &entry.first );
-				} else if ( !moving_down && dimension >= work_area_start &&
+					toShiftDown.emplace_back( &entry.first );
+				} else if ( !movingDown && dimension >= workAreaStart &&
 							dimension < operation.first ) {
-					to_shift_down.emplace_back( &entry.first );
+					toShiftDown.emplace_back( &entry.first );
 				}
 			}
 		} else {
-			if ( entry.first.parent() == operation.source_parent ) {
+			if ( entry.first.parent() == operation.sourceParent ) {
 				if ( dimension >= operation.first && dimension <= operation.last ) {
-					to_move.emplace_back( &entry.first );
+					toMove.emplace_back( &entry.first );
 				} else if ( dimension > operation.last ) {
-					to_shift_up.emplace_back( &entry.first );
+					toShiftUp.emplace_back( &entry.first );
 				}
-			} else if ( entry.first.parent() == operation.target_parent ) {
+			} else if ( entry.first.parent() == operation.targetParent ) {
 				if ( dimension >= operation.target ) {
-					to_shift_down.emplace_back( &entry.first );
+					toShiftDown.emplace_back( &entry.first );
 				}
 			}
 		}
 	}
 
-	auto replace_handle = [&]( ModelIndex const& current_index, int new_dimension, bool relative ) {
-		int new_row = is_row ? ( relative ? current_index.row() + new_dimension : new_dimension )
-							 : current_index.row();
-		int new_column = !is_row
-							 ? ( relative ? current_index.column() + new_dimension : new_dimension )
-							 : current_index.column();
-		auto new_index = index( new_row, new_column, operation.target_parent );
+	auto replaceHandle = [&]( ModelIndex const& currentIndex, int newDimension, bool relative ) {
+		int newRow = isRow ? ( relative ? currentIndex.row() + newDimension : newDimension )
+						   : currentIndex.row();
+		int newColumn = !isRow ? ( relative ? currentIndex.column() + newDimension : newDimension )
+							   : currentIndex.column();
+		auto newIndex = index( newRow, newColumn, operation.targetParent );
 
-		auto it = mPersistentHandles.find( current_index );
+		auto it = mPersistentHandles.find( currentIndex );
 		auto handle = std::move( it->second );
 
-		handle->m_index = new_index;
+		handle->mIndex = newIndex;
 
 		mPersistentHandles.erase( it );
-		mPersistentHandles[std::move( new_index )] = std::move( handle );
+		mPersistentHandles[std::move( newIndex )] = std::move( handle );
 	};
 
-	for ( auto current_index : to_move ) {
-		int dimension = is_row ? current_index->row() : current_index->column();
-		int target_offset = dimension - operation.first;
-		int new_dimension = operation.target + target_offset;
+	for ( auto currentIndex : toMove ) {
+		int dimension = isRow ? currentIndex->row() : currentIndex->column();
+		int targetOffset = dimension - operation.first;
+		int newDimension = operation.target + targetOffset;
 
-		replace_handle( *current_index, new_dimension, false );
+		replaceHandle( *currentIndex, newDimension, false );
 	}
 
-	if ( move_within ) {
-		for ( auto current_index : to_shift_down ) {
-			int dimension = is_row ? current_index->row() : current_index->column();
-			int target_offset = moving_down ? dimension - ( operation.last + 1 )
-											: dimension - work_area_start + count;
-			int new_dimension = work_area_start + target_offset;
+	if ( moveWithin ) {
+		for ( auto currentIndex : toShiftDown ) {
+			int dimension = isRow ? currentIndex->row() : currentIndex->column();
+			int targetOffset =
+				movingDown ? dimension - ( operation.last + 1 ) : dimension - workAreaStart + count;
+			int newDimension = workAreaStart + targetOffset;
 
-			replace_handle( *current_index, new_dimension, false );
+			replaceHandle( *currentIndex, newDimension, false );
 		}
 	} else {
-		for ( auto current_index : to_shift_down ) {
-			replace_handle( *current_index, count, true );
+		for ( auto currentIndex : toShiftDown ) {
+			replaceHandle( *currentIndex, count, true );
 		}
 
-		for ( auto current_index : to_shift_up ) {
-			replace_handle( *current_index, count, true );
+		for ( auto currentIndex : toShiftUp ) {
+			replaceHandle( *currentIndex, count, true );
 		}
 	}
 }

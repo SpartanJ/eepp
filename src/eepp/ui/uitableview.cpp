@@ -26,7 +26,7 @@ bool UITableView::isType( const Uint32& type ) const {
 
 void UITableView::drawChilds() {
 	int realIndex = 0;
-
+	Lock l( const_cast<Model*>( getModel() )->resourceLock() );
 	size_t start = mScrollOffset.y / getRowHeight();
 	size_t end =
 		eemin<size_t>( (size_t)eeceil( ( mScrollOffset.y + mSize.getHeight() ) / getRowHeight() ),
@@ -62,6 +62,8 @@ Node* UITableView::overFind( const Vector2f& point ) {
 
 	Node* pOver = NULL;
 	if ( mEnabled && mVisible ) {
+		Lock l( const_cast<Model*>( getModel() )->resourceLock() );
+
 		updateWorldPolygon();
 		if ( mWorldBounds.contains( point ) && mPoly.pointInside( point ) ) {
 			writeNodeFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 1 );
@@ -108,6 +110,7 @@ Node* UITableView::overFind( const Vector2f& point ) {
 
 Float UITableView::getMaxColumnContentWidth( const size_t& colIndex, bool bestGuess ) {
 	Float lWidth = 0;
+	Lock l( const_cast<Model*>( getModel() )->resourceLock() );
 	if ( getModel()->rowCount() == 0 )
 		return lWidth;
 	getUISceneNode()->setIsLoading( true );
@@ -170,6 +173,7 @@ void UITableView::onColumnSizeChange( const size_t& colIndex, bool fromUserInter
 Uint32 UITableView::onKeyDown( const KeyEvent& event ) {
 	auto curIndex = getSelection().first();
 	int pageSize = eefloor( getVisibleArea().getHeight() / getRowHeight() ) - 1;
+	Lock l( const_cast<Model*>( getModel() )->resourceLock() );
 
 	switch ( event.getKeyCode() ) {
 		case KEY_PAGEUP: {
@@ -268,6 +272,7 @@ Uint32 UITableView::onKeyDown( const KeyEvent& event ) {
 ModelIndex UITableView::findRowWithText( const std::string& text, const bool& caseSensitive,
 										 const bool& exactMatch ) const {
 	const Model* model = getModel();
+	Lock l( const_cast<Model*>( getModel() )->resourceLock() );
 	if ( !model || model->rowCount() == 0 )
 		return {};
 	size_t rc = model->rowCount();

@@ -1,5 +1,6 @@
 #include <deque>
 #include <eepp/graphics/renderer/renderer.hpp>
+#include <eepp/system/lock.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uiscenenode.hpp>
@@ -43,6 +44,7 @@ void UITreeView::traverseTree( TreeViewCallback callback ) const {
 	if ( !getModel() )
 		return;
 	auto& model = *getModel();
+	Lock l( const_cast<Model*>( getModel() )->resourceLock() );
 	int indentLevel = 0;
 	Float yOffset = getHeaderHeight();
 	int rowIndex = -1;
@@ -116,6 +118,7 @@ void UITreeView::bindNavigationClick( UIWidget* widget ) {
 			auto mouseEvent = static_cast<const MouseEvent*>( event );
 			auto idx = mouseEvent->getNode()->getParent()->asType<UITableRow>()->getCurIndex();
 			if ( mouseEvent->getFlags() & EE_BUTTON_LMASK ) {
+				Lock l( const_cast<Model*>( getModel() )->resourceLock() );
 				if ( getModel()->rowCount( idx ) ) {
 					auto& data = getIndexMetadata( idx );
 					data.open = !data.open;
@@ -146,6 +149,7 @@ UIWidget* UITreeView::setupCell( UITableCell* widget, UIWidget* rowWidget,
 			if ( icon ) {
 				Vector2f pos( icon->convertToNodeSpace( mouseEvent->getPosition().asFloat() ) );
 				if ( pos >= Vector2f::Zero && pos <= icon->getPixelsSize() ) {
+					Lock l( const_cast<Model*>( getModel() )->resourceLock() );
 					auto idx =
 						mouseEvent->getNode()->getParent()->asType<UITableRow>()->getCurIndex();
 					if ( getModel()->rowCount( idx ) ) {
@@ -627,6 +631,7 @@ void UITreeView::onSortColumn( const size_t& ) {
 ModelIndex UITreeView::findRowWithText( const std::string& text, const bool& caseSensitive,
 										const bool& exactMatch ) const {
 	const Model* model = getModel();
+	Lock l( const_cast<Model*>( getModel() )->resourceLock() );
 	if ( !model || model->rowCount() == 0 )
 		return {};
 	ModelIndex foundIndex = {};
@@ -670,7 +675,12 @@ ModelIndex UITreeView::selectRowWithPath( std::string path ) {
 		if ( foundIndex == ModelIndex() )
 			break;
 
-		if ( getModel()->rowCount( foundIndex ) ) {
+		size_t rowCount = 0;
+		{
+			Lock l( const_cast<Model*>( getModel() )->resourceLock() );
+			rowCount = getModel()->rowCount( foundIndex );
+		}
+		if ( rowCount ) {
 			auto& data = getIndexMetadata( foundIndex );
 			if ( !data.open ) {
 				data.open = true;
