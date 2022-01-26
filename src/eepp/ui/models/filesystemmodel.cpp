@@ -529,17 +529,18 @@ void FileSystemModel::handleFileEvent( const FileEvent& event ) {
 
 					forEachView( [&]( UIAbstractView* view ) {
 						std::vector<ModelIndex> newIndexes;
-						view->getSelection().forEachIndex( [&]( const ModelIndex& index ) {
-							Node* curNode = static_cast<Node*>( index.internalData() );
+						view->getSelection().forEachIndex( [&]( const ModelIndex& selectedIndex ) {
+							Node* curNode = static_cast<Node*>( selectedIndex.internalData() );
 							if ( curNode->getParent() == parent ) {
-								if ( index.row() >= (Int64)pos ) {
+								if ( selectedIndex.row() >= (Int64)pos ) {
 									newIndexes.emplace_back( this->index(
-										index.row() + 1, index.column(), index.parent() ) );
+										selectedIndex.row() + 1, selectedIndex.column(),
+										selectedIndex.parent() ) );
 								} else {
-									newIndexes.emplace_back( index );
+									newIndexes.emplace_back( selectedIndex );
 								}
 							} else {
-								newIndexes.emplace_back( index );
+								newIndexes.emplace_back( selectedIndex );
 							}
 						} );
 						view->getSelection().set( newIndexes, false );
@@ -578,19 +579,20 @@ void FileSystemModel::handleFileEvent( const FileEvent& event ) {
 					return selectionIndex.internalData() == index.internalData();
 				} );
 				std::vector<ModelIndex> newIndexes;
-				view->getSelection().forEachIndex( [&]( const ModelIndex& index ) {
-					if ( !index.isValid() )
+				view->getSelection().forEachIndex( [&]( const ModelIndex& selectedIndex ) {
+					if ( !selectedIndex.isValid() )
 						return;
-					Node* curNode = static_cast<Node*>( index.internalData() );
+					Node* curNode = static_cast<Node*>( selectedIndex.internalData() );
 					if ( curNode->getParent() == parent ) {
-						if ( index.row() >= (Int64)pos ) {
-							newIndexes.emplace_back(
-								this->index( index.row() - 1, index.column(), index.parent() ) );
+						if ( selectedIndex.row() >= (Int64)pos ) {
+							newIndexes.emplace_back( this->index( selectedIndex.row() - 1,
+																  selectedIndex.column(),
+																  selectedIndex.parent() ) );
 						} else {
-							newIndexes.emplace_back( index );
+							newIndexes.emplace_back( selectedIndex );
 						}
 					} else {
-						newIndexes.emplace_back( index );
+						newIndexes.emplace_back( selectedIndex );
 					}
 				} );
 				view->getSelection().set( newIndexes, false );
@@ -634,16 +636,16 @@ void FileSystemModel::handleFileEvent( const FileEvent& event ) {
 					std::map<UIAbstractView*, std::vector<ModelIndex>> prevSelectionsModelIndex;
 
 					forEachView( [&]( UIAbstractView* view ) {
-						view->getSelection().forEachIndex( [&]( const ModelIndex& index ) {
-							Node* curNode = static_cast<Node*>( index.internalData() );
+						view->getSelection().forEachIndex( [&]( const ModelIndex& selectedIndex ) {
+							Node* curNode = static_cast<Node*>( selectedIndex.internalData() );
 							if ( curNode->mParent == parent ) {
-								prevSelectionsModelIndex[view].emplace_back( index );
+								prevSelectionsModelIndex[view].emplace_back( selectedIndex );
 								prevSelections[view].emplace_back(
 									( curNode->getName() == event.oldFilename )
 										? event.filename
 										: curNode->getName() );
 							} else {
-								keptSelections[view].emplace_back( index );
+								keptSelections[view].emplace_back( selectedIndex );
 							}
 						} );
 					} );
