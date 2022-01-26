@@ -23,6 +23,15 @@ void ModelSelection::set( const ModelIndex& index ) {
 	mView->notifySelectionChange();
 }
 
+void ModelSelection::set( const std::vector<ModelIndex>& indexes, bool notify ) {
+	for ( auto& index : indexes )
+		eeASSERT( index.isValid() );
+	mIndexes.clear();
+	mIndexes = indexes;
+	if ( notify )
+		mView->notifySelectionChange();
+}
+
 void ModelSelection::add( const ModelIndex& index ) {
 	eeASSERT( index.isValid() );
 	auto contains = std::find( mIndexes.begin(), mIndexes.end(), index );

@@ -32,6 +32,7 @@ class EE_API ModelSelection {
 	}
 
 	void set( const ModelIndex& );
+	void set( const std::vector<ModelIndex>& indexes, bool notify = true );
 	void add( const ModelIndex& );
 	void toggle( const ModelIndex& );
 	bool remove( const ModelIndex& );
@@ -48,10 +49,10 @@ class EE_API ModelSelection {
 	}
 
 	std::vector<ModelIndex> indexes() const {
-		std::vector<ModelIndex> selectedIndexes;
+		std::vector<ModelIndex> indexes;
 		for ( auto& index : mIndexes )
-			selectedIndexes.push_back( index );
-		return selectedIndexes;
+			indexes.push_back( index );
+		return indexes;
 	}
 
 	ModelIndex first() const {

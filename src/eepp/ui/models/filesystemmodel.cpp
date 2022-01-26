@@ -57,6 +57,32 @@ FileSystemModel::Node* FileSystemModel::Node::findChildName( const std::string& 
 	return nullptr;
 }
 
+Int64 FileSystemModel::Node::findChildRowFromInternalData( void* internalData,
+														   const FileSystemModel& model,
+														   bool forceRefresh ) {
+	if ( forceRefresh )
+		refreshIfNeeded( model );
+	for ( size_t i = 0; i < mChildren.size(); i++ ) {
+		if ( &mChildren[i] == internalData ) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+Int64 FileSystemModel::Node::findChildRowFromName( const std::string& name,
+												   const FileSystemModel& model,
+												   bool forceRefresh ) {
+	if ( forceRefresh )
+		refreshIfNeeded( model );
+	for ( size_t i = 0; i < mChildren.size(); i++ ) {
+		if ( mChildren[i].getName() == name ) {
+			return i;
+		}
+	}
+	return -1;
+}
+
 FileSystemModel::Node FileSystemModel::Node::createChild( const std::string& childName,
 														  const FileSystemModel& model ) {
 	std::string childPath( mInfo.getDirectoryPath() + childName );
@@ -485,14 +511,14 @@ void FileSystemModel::handleFileEvent( const FileEvent& event ) {
 				if ( childNodeExists )
 					return;
 
-				Node childNode = parent->createChild( file.getFilepath(), *this );
+				Node childNode = parent->createChild( file.getFileName(), *this );
 
 				if ( !childNode.getName().empty() ) {
 					size_t pos = getFileIndex( parent, file );
 
 					beginInsertRows( parent->index( *this, 0 ), pos, pos );
 
-					if ( pos == SIZE_MAX ) {
+					if ( pos >= parent->mChildren.size() ) {
 						parent->mChildren.emplace_back( std::move( childNode ) );
 					} else {
 						parent->mChildren.insert( parent->mChildren.begin() + pos,
@@ -500,6 +526,24 @@ void FileSystemModel::handleFileEvent( const FileEvent& event ) {
 					}
 
 					endInsertRows();
+
+					forEachView( [&]( UIAbstractView* view ) {
+						std::vector<ModelIndex> newIndexes;
+						view->getSelection().forEachIndex( [&]( ModelIndex& index ) {
+							Node* curNode = static_cast<Node*>( index.internalData() );
+							if ( curNode->getParent() == parent ) {
+								if ( index.row() >= (Int64)pos ) {
+									newIndexes.emplace_back( this->index(
+										index.row() + 1, index.column(), index.parent() ) );
+								} else {
+									newIndexes.emplace_back( index );
+								}
+							} else {
+								newIndexes.emplace_back( index );
+							}
+						} );
+						view->getSelection().set( newIndexes, false );
+					} );
 				} else {
 					return;
 				}
@@ -521,6 +565,8 @@ void FileSystemModel::handleFileEvent( const FileEvent& event ) {
 			if ( !index.isValid() )
 				return;
 
+			Int64 pos = index.row();
+
 			beginDeleteRows( index.parent(), index.row(), index.row() );
 
 			parent->mChildren.erase( parent->mChildren.begin() + index.row() );
@@ -531,6 +577,23 @@ void FileSystemModel::handleFileEvent( const FileEvent& event ) {
 				view->getSelection().removeAllMatching( [&]( auto& selectionIndex ) {
 					return selectionIndex.internalData() == index.internalData();
 				} );
+				std::vector<ModelIndex> newIndexes;
+				view->getSelection().forEachIndex( [&]( ModelIndex& index ) {
+					if ( !index.isValid() )
+						return;
+					Node* curNode = static_cast<Node*>( index.internalData() );
+					if ( curNode->getParent() == parent ) {
+						if ( index.row() >= (Int64)pos ) {
+							newIndexes.emplace_back(
+								this->index( index.row() - 1, index.column(), index.parent() ) );
+						} else {
+							newIndexes.emplace_back( index );
+						}
+					} else {
+						newIndexes.emplace_back( index );
+					}
+				} );
+				view->getSelection().set( newIndexes, false );
 			} );
 
 			break;
@@ -566,10 +629,29 @@ void FileSystemModel::handleFileEvent( const FileEvent& event ) {
 						beginMoveRows( index.parent(), index.row(), index.row(), index.parent(),
 									   pos );
 
-					parent->mChildren.erase( parent->mChildren.begin() + index.row() );
-					Node childNode = parent->createChild( file.getFilepath(), *this );
+					std::map<UIAbstractView*, std::vector<ModelIndex>> keptSelections;
+					std::map<UIAbstractView*, std::vector<std::string>> prevSelections;
+					std::map<UIAbstractView*, std::vector<ModelIndex>> prevSelectionsModelIndex;
 
-					if ( pos == SIZE_MAX ) {
+					forEachView( [&]( UIAbstractView* view ) {
+						view->getSelection().forEachIndex( [&]( ModelIndex& index ) {
+							Node* curNode = static_cast<Node*>( index.internalData() );
+							if ( curNode->mParent == parent ) {
+								prevSelectionsModelIndex[view].emplace_back( index );
+								prevSelections[view].emplace_back(
+									( curNode->getName() == event.oldFilename )
+										? event.filename
+										: curNode->getName() );
+							} else {
+								keptSelections[view].emplace_back( index );
+							}
+						} );
+					} );
+
+					parent->mChildren.erase( parent->mChildren.begin() + index.row() );
+					Node childNode = parent->createChild( file.getFileName(), *this );
+
+					if ( pos >= parent->mChildren.size() ) {
 						parent->mChildren.emplace_back( std::move( childNode ) );
 					} else {
 						parent->mChildren.insert( parent->mChildren.begin() + pos,
@@ -578,6 +660,22 @@ void FileSystemModel::handleFileEvent( const FileEvent& event ) {
 
 					if ( pos != SIZE_MAX )
 						endMoveRows();
+
+					forEachView( [&]( UIAbstractView* view ) {
+						std::vector<std::string> names = prevSelections[view];
+						std::vector<ModelIndex> newIndexes = keptSelections[view];
+						int i = 0;
+						for ( const auto& name : names ) {
+							size_t row = parent->findChildRowFromName( name, *this );
+							if ( row >= 0 ) {
+								newIndexes.emplace_back(
+									this->index( row, prevSelectionsModelIndex[view][i].column(),
+												 prevSelectionsModelIndex[view][i].parent() ) );
+							}
+							++i;
+						}
+						view->getSelection().set( newIndexes, false );
+					} );
 				} else {
 					handleFileEvent(
 						{ FileSystemEventType::Add, event.directory, event.filename } );

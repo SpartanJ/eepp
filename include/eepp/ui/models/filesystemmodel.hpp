@@ -98,6 +98,12 @@ class EE_API FileSystemModel : public Model {
 		Node* findChildName( const std::string& name, const FileSystemModel& model,
 							 bool forceRefresh = false );
 
+		Int64 findChildRowFromInternalData( void* internalData, const FileSystemModel& model,
+											bool forceRefresh = false );
+
+		Int64 findChildRowFromName( const std::string& name, const FileSystemModel& model,
+									bool forceRefresh = false );
+
 	  private:
 		friend class FileSystemModel;
 
