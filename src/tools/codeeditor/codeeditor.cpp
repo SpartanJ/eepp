@@ -2010,8 +2010,11 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 	winSettings.PixelDensity = 1;
 	winSettings.Width = mConfig.window.size.getWidth();
 	winSettings.Height = mConfig.window.size.getHeight();
-	if ( winSettings.Icon.empty() )
+	if ( winSettings.Icon.empty() ) {
 		winSettings.Icon = mConfig.window.winIcon;
+		if ( isRelativePath( winSettings.Icon ) )
+			winSettings.Icon = mResPath + winSettings.Icon;
+	}
 	ContextSettings contextSettings = engine->createContextSettings( &mConfig.ini, "window" );
 	contextSettings.SharedGLContext = true;
 	mWindow = engine->createWindow( winSettings, contextSettings );
