@@ -90,6 +90,7 @@ class App : public UICodeEditorSplitter::Client {
 	UIPopUpMenu* mViewMenu{ nullptr };
 	UIPopUpMenu* mWindowMenu{ nullptr };
 	UIPopUpMenu* mToolsMenu{ nullptr };
+	UIPopUpMenu* mProjectTreeMenu{ nullptr };
 	UISplitter* mProjectSplitter{ nullptr };
 	UITabWidget* mSidePanel{ nullptr };
 	UICodeEditorSplitter* mEditorSplitter{ nullptr };
@@ -240,6 +241,8 @@ class App : public UICodeEditorSplitter::Client {
 	void createDocAlert( UICodeEditor* editor );
 
 	void syncProjectTreeWithEditor( UICodeEditor* editor );
+
+	void createProjectTreeMenu( const FileInfo& file );
 };
 
 #endif // EE_TOOLS_CODEEDITOR_HPP

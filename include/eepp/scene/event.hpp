@@ -77,6 +77,7 @@ class EE_API Event {
 		OnModelEvent,
 		OnResourceChange,
 		OnActiveWidgetChange,
+		OnWindowReady,
 		UserEvent,
 		NoEvent = eeINDEX_NOT_FOUND
 	};

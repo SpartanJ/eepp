@@ -37,7 +37,7 @@ bool App::onCloseRequestCallback( EE::Window::Window* ) {
 		msgBox->addEventListener( Event::OnClose, [&]( const Event* ) { msgBox = nullptr; } );
 		msgBox->setTitle( "Close " + mWindowTitle + "?" );
 		msgBox->center();
-		msgBox->show();
+		msgBox->showWhenReady();
 		return false;
 	} else {
 		if ( !mCurrentProject.empty() )
@@ -505,7 +505,7 @@ UIMenu* App::createWindowMenu() {
 			msgBox->getTextInput()->setText(
 				String::format( "%.2f", mConfig.window.pixelDensity ) );
 			msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
-			msgBox->show();
+			msgBox->showWhenReady();
 			msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox]( const Event* ) {
 				msgBox->closeWindow();
 				Float val;
@@ -533,7 +533,7 @@ UIMenu* App::createWindowMenu() {
 			msgBox->setTitle( mWindowTitle );
 			msgBox->getTextInput()->setText( mConfig.editor.fontSize.toString() );
 			msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
-			msgBox->show();
+			msgBox->showWhenReady();
 			msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox]( const Event* ) {
 				mConfig.editor.fontSize = StyleSheetLength( msgBox->getTextInput()->getText() );
 				mEditorSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
@@ -547,7 +547,7 @@ UIMenu* App::createWindowMenu() {
 			msgBox->setTitle( mWindowTitle );
 			msgBox->getTextInput()->setText( mConfig.ui.fontSize.toString() );
 			msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
-			msgBox->show();
+			msgBox->showWhenReady();
 			msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox]( const Event* ) {
 				mConfig.ui.fontSize = StyleSheetLength( msgBox->getTextInput()->getText() );
 				Float fontSize = mConfig.ui.fontSize.asDp( 0, Sizef(), mDisplayDPI );
@@ -707,7 +707,7 @@ UIMenu* App::createViewMenu() {
 			msgBox->getTextInput()->setAllowOnlyNumbers( true, false );
 			msgBox->getTextInput()->setText(
 				String::toString( mConfig.editor.lineBreakingColumn ) );
-			msgBox->show();
+			msgBox->showWhenReady();
 			msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox]( const Event* ) {
 				int val;
 				if ( String::fromString( val, msgBox->getTextInput()->getText() ) && val >= 0 ) {
@@ -1168,7 +1168,7 @@ void App::closeFolder() {
 		msgBox->addEventListener( Event::OnClose, [&]( const Event* ) { msgBox = nullptr; } );
 		msgBox->setTitle( "Close Folder?" );
 		msgBox->center();
-		msgBox->show();
+		msgBox->showWhenReady();
 	} else {
 		closeEditors();
 	}
@@ -1712,6 +1712,142 @@ void App::loadDirTree( const std::string& path ) {
 		SyntaxDefinitionManager::instance()->getExtensionsPatternsSupported() );
 }
 
+UIMessageBox* errorMsgBox( const String& msg ) {
+	UIMessageBox* msgBox = UIMessageBox::New( UIMessageBox::OK, msg );
+	msgBox->setTitle( "Error" );
+	msgBox->showWhenReady();
+	return msgBox;
+}
+
+UIMessageBox* fileAlreadyExistsMsgBox() {
+	return errorMsgBox( "File already exists!" );
+}
+
+std::string getNewFilePath( const FileInfo& file, UIMessageBox* msgBox ) {
+	auto folderName( msgBox->getTextInput()->getText() );
+	auto folderPath( file.getDirectoryPath() );
+	FileSystem::dirAddSlashAtEnd( folderPath );
+	return folderPath + folderName;
+}
+
+UIMessageBox* newInputMsgBox( const String& title, const String& msg ) {
+	UIMessageBox* msgBox = UIMessageBox::New( UIMessageBox::INPUT, msg );
+	msgBox->setTitle( title );
+	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
+	msgBox->showWhenReady();
+	return msgBox;
+}
+
+void renameFile( const FileInfo& file ) {
+	if ( !file.exists() )
+		return;
+	UIMessageBox* msgBox =
+		newInputMsgBox( "Rename file \"" + file.getFileName() + "\"", "Enter new file name:" );
+	msgBox->getTextInput()->setText( file.getFileName() );
+	msgBox->addEventListener( Event::MsgBoxConfirmClick, [file, msgBox]( const Event* ) {
+		auto newFilePath( getNewFilePath( file, msgBox ) );
+		if ( !FileSystem::fileExists( newFilePath ) ) {
+			if ( 0 != std::rename( file.getFilepath().c_str(), newFilePath.c_str() ) )
+				errorMsgBox( "Error renaming file." );
+			msgBox->closeWindow();
+		} else {
+			fileAlreadyExistsMsgBox();
+		}
+	} );
+}
+
+void App::createProjectTreeMenu( const FileInfo& file ) {
+	if ( mProjectTreeMenu && mProjectTreeMenu->isVisible() )
+		mProjectTreeMenu->close();
+	mProjectTreeMenu = UIPopUpMenu::New();
+	if ( file.isDirectory() ) {
+		mProjectTreeMenu->add( "New File...", findIcon( "file-add" ) )->setId( "new_file" );
+		mProjectTreeMenu->add( "New Folder...", findIcon( "folder-add" ) )->setId( "new_folder" );
+	} else {
+		mProjectTreeMenu->add( "Open File", findIcon( "document-open" ) )->setId( "open_file" );
+		mProjectTreeMenu->add( "New File in directory...", findIcon( "file-add" ) )
+			->setId( "new_file_in_place" );
+		mProjectTreeMenu->add( "Duplicate File...", findIcon( "file-copy" ) )
+			->setId( "duplicate_file" );
+	}
+	mProjectTreeMenu->add( "Rename", findIcon( "edit" ) )->setId( "rename" );
+	mProjectTreeMenu->add( "Remove...", findIcon( "delete-bin" ), "F2" )->setId( "remove" );
+	mProjectTreeMenu->addEventListener( Event::OnItemClicked, [&, file]( const Event* event ) {
+		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+			return;
+		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
+		std::string txt( item->getId() );
+
+		if ( "new_file" == txt || "new_file_in_place" == txt ) {
+			UIMessageBox* msgBox = newInputMsgBox( "Create new file", "Enter new file name:" );
+			msgBox->addEventListener( Event::MsgBoxConfirmClick, [file, msgBox]( const Event* ) {
+				auto newFilePath( getNewFilePath( file, msgBox ) );
+				if ( !FileSystem::fileExists( newFilePath ) ) {
+					if ( !FileSystem::fileWrite( newFilePath, nullptr, 0 ) )
+						errorMsgBox( "Couldn't create file." );
+					msgBox->closeWindow();
+				} else {
+					fileAlreadyExistsMsgBox();
+				}
+			} );
+		} else if ( "new_folder" == txt ) {
+			UIMessageBox* msgBox = newInputMsgBox( "Create new folder", "Enter new folder name:" );
+			msgBox->addEventListener( Event::MsgBoxConfirmClick, [file, msgBox]( const Event* ) {
+				auto newFolderPath( getNewFilePath( file, msgBox ) );
+				if ( !FileSystem::fileExists( newFolderPath ) ) {
+					if ( !FileSystem::makeDir( newFolderPath ) )
+						errorMsgBox( "Couldn't create directory." );
+					msgBox->closeWindow();
+				} else {
+					fileAlreadyExistsMsgBox();
+				}
+			} );
+		} else if ( "open_file" == txt ) {
+			loadFileFromPath( file.getFilepath() );
+		} else if ( "remove" == txt ) {
+			if ( file.isDirectory() && !FileSystem::filesGetInPath( file.getFilepath() ).empty() ) {
+				errorMsgBox( "Cannot remove non-empty directory." );
+				return;
+			}
+
+			UIMessageBox* msgBox =
+				UIMessageBox::New( UIMessageBox::OK_CANCEL,
+								   "Do you really want to remove \"" + file.getFileName() + "\"?" );
+			msgBox->addEventListener( Event::MsgBoxConfirmClick, [file, msgBox]( const Event* ) {
+				if ( !FileSystem::fileRemove( file.getFilepath() ) ) {
+					errorMsgBox( String::format( "Couldn't remove %s.",
+												 file.isDirectory() ? "directory" : "file" ) );
+				}
+				msgBox->closeWindow();
+			} );
+			msgBox->setTitle( "Remove file?" );
+			msgBox->center();
+			msgBox->showWhenReady();
+		} else if ( "duplicate_file" == txt ) {
+			UIMessageBox* msgBox = newInputMsgBox( "Duplicate file \"" + file.getFileName() + "\"",
+												   "Enter duplicate file name:" );
+			msgBox->addEventListener( Event::MsgBoxConfirmClick, [file, msgBox]( const Event* ) {
+				auto newFilePath( getNewFilePath( file, msgBox ) );
+				if ( !FileSystem::fileExists( newFilePath ) ) {
+					if ( !FileSystem::fileCopy( file.getFilepath(), newFilePath ) )
+						errorMsgBox( "Error copying file." );
+					msgBox->closeWindow();
+				} else {
+					fileAlreadyExistsMsgBox();
+				}
+			} );
+		} else if ( "rename" == txt ) {
+			renameFile( file );
+		}
+	} );
+
+	Vector2f pos( mWindow->getInput()->getMousePosf() );
+	mProjectTreeMenu->nodeToWorldTranslation( pos );
+	UIMenu::findBestMenuPos( pos, mProjectTreeMenu );
+	mProjectTreeMenu->setPixelsPosition( pos );
+	mProjectTreeMenu->show();
+}
+
 void App::initProjectTreeView( const std::string& path ) {
 	mProjectTreeView = mUISceneNode->find<UITreeView>( "project_view" );
 	mProjectTreeView->setColumnsHidden(
@@ -1728,24 +1864,43 @@ void App::initProjectTreeView( const std::string& path ) {
 	mProjectTreeView->setSingleClickNavigation( mConfig.editor.singleClickTreeNavigation );
 	mProjectTreeView->addEventListener( Event::OnModelEvent, [&]( const Event* event ) {
 		const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
-		if ( modelEvent->getModelEventType() == ModelEventType::Open ) {
+		ModelEventType type = modelEvent->getModelEventType();
+		if ( type == ModelEventType::Open || type == ModelEventType::OpenMenu ) {
 			Variant vPath(
 				modelEvent->getModel()->data( modelEvent->getModelIndex(), ModelRole::Custom ) );
 			if ( vPath.isValid() && vPath.is( Variant::Type::cstr ) ) {
 				std::string path( vPath.asCStr() );
-				UITab* tab = mEditorSplitter->isDocumentOpen( path );
-				if ( !tab ) {
-					FileInfo fileInfo( path );
-					if ( fileInfo.exists() && fileInfo.isRegularFile() )
-						loadFileFromPath( path );
-				} else {
-					tab->getTabWidget()->setTabSelected( tab );
+				if ( type == ModelEventType::Open ) {
+					UITab* tab = mEditorSplitter->isDocumentOpen( path );
+					if ( !tab ) {
+						FileInfo fileInfo( path );
+						if ( fileInfo.exists() && fileInfo.isRegularFile() )
+							loadFileFromPath( path );
+					} else {
+						tab->getTabWidget()->setTabSelected( tab );
+					}
+				} else { // ModelEventType::OpenMenu
+					bool focusOnSelection = mProjectTreeView->getFocusOnSelection();
+					mProjectTreeView->setFocusOnSelection( false );
+					mProjectTreeView->getSelection().set( modelEvent->getModelIndex() );
+					mProjectTreeView->setFocusOnSelection( focusOnSelection );
+					createProjectTreeMenu( FileInfo( path ) );
 				}
 			}
 		}
 	} );
 	mProjectTreeView->addEventListener( Event::KeyDown, [&]( const Event* event ) {
 		const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );
+		if ( keyEvent->getKeyCode() == KEY_F2 ) {
+			ModelIndex modelIndex = mProjectTreeView->getSelection().first();
+			if ( !modelIndex.isValid() )
+				return 0;
+			Variant vPath( mProjectTreeView->getModel()->data( modelIndex, ModelRole::Custom ) );
+			if ( vPath.isValid() && vPath.is( Variant::Type::cstr ) )
+				renameFile( FileInfo( vPath.asCStr() ) );
+			return 1;
+		}
+
 		if ( mEditorSplitter->getCurEditor() ) {
 			std::string cmd =
 				mEditorSplitter->getCurEditor()->getKeyBindings().getCommandFromKeyBind(
@@ -1754,6 +1909,8 @@ void App::initProjectTreeView( const std::string& path ) {
 				mEditorSplitter->getCurEditor()->getDocument().execute( cmd );
 			}
 		}
+
+		return 1;
 	} );
 
 	if ( !path.empty() && FileSystem::fileExists( path ) ) {
@@ -1828,12 +1985,15 @@ FontTrueType* App::loadFont( const std::string& name, std::string fontPath,
 }
 
 void App::init( const std::string& file, const Float& pidelDensity ) {
+	loadConfig();
+
 	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
-	Display* currentDisplay = displayManager->getDisplayIndex( 0 );
+	Display* currentDisplay = displayManager->getDisplayIndex(
+		mConfig.window.displayIndex < displayManager->getDisplayCount()
+			? mConfig.window.displayIndex
+			: 0 );
 	mDisplayDPI = currentDisplay->getDPI();
 	mResPath = Sys::getProcessPath();
-
-	loadConfig();
 
 	mConfig.window.pixelDensity =
 		pidelDensity > 0 ? pidelDensity
@@ -1857,6 +2017,10 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 	mWindow = engine->createWindow( winSettings, contextSettings );
 
 	if ( mWindow->isOpen() ) {
+		if ( mConfig.window.position != Vector2i( -1, -1 ) &&
+			 mConfig.window.displayIndex < displayManager->getDisplayCount() )
+			mWindow->setPosition( mConfig.window.position.x, mConfig.window.position.y );
+
 		loadKeybindings();
 
 		PixelDensity::setPixelDensity( mConfig.window.pixelDensity );
@@ -2111,6 +2275,7 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 			{ "cut", 0xf0c1 },
 			{ "copy", 0xecd5 },
 			{ "paste", 0xeb91 },
+			{ "edit", 0xec86 },
 			{ "split-horizontal", 0xf17a },
 			{ "split-vertical", 0xf17b },
 			{ "find-replace", 0xed2b },
@@ -2118,9 +2283,12 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 			{ "folder-open", 0xed70 },
 			{ "folder-add", 0xed5a },
 			{ "file", 0xecc3 },
+			{ "file-add", 0xecc9 },
+			{ "file-copy", 0xecd3 },
 			{ "file-code", 0xecd1 },
 			{ "file-edit", 0xecdb },
 			{ "font-size", 0xed8d },
+			{ "delete-bin", 0xec1e },
 			{ "zoom-in", 0xf2db },
 			{ "zoom-out", 0xf2dd },
 			{ "zoom-reset", 0xeb47 },

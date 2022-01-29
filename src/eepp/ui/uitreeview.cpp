@@ -129,6 +129,14 @@ void UITreeView::bindNavigationClick( UIWidget* widget ) {
 				}
 			}
 		} );
+
+	widget->addEventListener( Event::MouseClick, [&]( const Event* event ) {
+		auto mouseEvent = static_cast<const MouseEvent*>( event );
+		auto idx = mouseEvent->getNode()->getParent()->asType<UITableRow>()->getCurIndex();
+		if ( mouseEvent->getFlags() & EE_BUTTON_RMASK ) {
+			onOpenMenuModelIndex( idx, event );
+		}
+	} );
 }
 
 UIWidget* UITreeView::setupCell( UITableCell* widget, UIWidget* rowWidget,
@@ -609,6 +617,11 @@ Uint32 UITreeView::onKeyDown( const KeyEvent& event ) {
 					onOpenModelIndex( curIndex, &event );
 				}
 			}
+			return 1;
+		}
+		case KEY_MENU: {
+			if ( curIndex.isValid() )
+				onOpenMenuModelIndex( curIndex, &event );
 			return 1;
 		}
 		default:

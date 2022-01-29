@@ -77,7 +77,6 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const StyleConfig& w
 	mContainer->setParent( this );
 	mContainer->clipEnable();
 	mContainer->enableReportSizeChangeToChilds();
-	mContainer->setSize( getSize() );
 	mContainer->addEventListener( Event::OnPositionChange,
 								  cb::Make1( this, &UIWindow::onContainerPositionChange ) );
 
@@ -432,12 +431,21 @@ Sizei UIWindow::getFrameBufferSize() {
 			   : mSize.ceil().asInt();
 }
 
-void UIWindow::onWindowReady() {
+void UIWindow::forcedApplyStyle() {
 	if ( NULL != mStyle ) {
 		mStyle->setForceReapplyProperties( true );
 		mStyle->setDisableAnimations( true );
 		reportStyleStateChange();
 		mStyle->setDisableAnimations( false );
+	}
+}
+
+void UIWindow::onWindowReady() {
+	forcedApplyStyle();
+
+	if ( mShowWhenReady ) {
+		mShowWhenReady = false;
+		show();
 	}
 }
 
@@ -1105,6 +1113,11 @@ bool UIWindow::hide() {
 	return false;
 }
 
+void UIWindow::showWhenReady() {
+	hide();
+	mShowWhenReady = true;
+}
+
 void UIWindow::onAlphaChange() {
 	if ( mStyleConfig.WinFlags & UI_WIN_SHARE_ALPHA_WITH_CHILDS ) {
 		Node* CurChild = mChild;
@@ -1157,6 +1170,7 @@ void UIWindow::setTitle( const String& text ) {
 		mTitle->setHorizontalAlign( getHorizontalAlign() );
 		mTitle->setVerticalAlign( getVerticalAlign() );
 		mTitle->setEnabled( false );
+		mTitle->clipEnable();
 		mTitle->setVisible( !( mStyleConfig.WinFlags & UI_WIN_NO_DECORATION ) );
 	}
 
@@ -1385,6 +1399,28 @@ Sizef UIWindow::getSizeWithoutDecoration() {
 		size.x -= mBorderLeft->getSize().getWidth() + mBorderRight->getSize().getWidth();
 		size.y -= mWindowDecoration->getSize().getHeight() + mBorderBottom->getSize().getHeight();
 	}
+	return size;
+}
+
+Sizef UIWindow::getMinWindowTitleSizeRequired() {
+	Sizef size( PixelDensity::pxToDp( mTitle->getTextWidth() + mTitle->getFontSize() * 4 ) +
+					mPadding.Left + mPadding.Right,
+				0 );
+
+	if ( NULL != mWindowDecoration ) {
+		size.x += mBorderLeft->getSize().getWidth() + mBorderRight->getSize().getWidth();
+		size.y += mWindowDecoration->getSize().getHeight();
+	}
+
+	if ( NULL != mButtonClose )
+		size.x += mButtonClose->getSize().getWidth();
+
+	if ( NULL != mButtonMaximize )
+		size.x += mButtonMaximize->getSize().getWidth();
+
+	if ( NULL != mButtonMinimize )
+		size.x += mButtonMinimize->getSize().getWidth();
+
 	return size;
 }
 
@@ -1638,7 +1674,7 @@ void UIWindow::preDraw() {}
 void UIWindow::postDraw() {}
 
 Uint32 UIWindow::onKeyDown( const KeyEvent& event ) {
-	std::string cmd = mKeyBindings.getCommandFromKeyBind( {event.getKeyCode(), event.getMod()} );
+	std::string cmd = mKeyBindings.getCommandFromKeyBind( { event.getKeyCode(), event.getMod() } );
 	if ( !cmd.empty() ) {
 		executeKeyBindingCommand( cmd );
 		return 0;

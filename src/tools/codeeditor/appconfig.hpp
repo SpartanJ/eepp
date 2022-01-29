@@ -29,6 +29,8 @@ struct WindowConfig {
 	std::string winIcon;
 	bool maximized{ false };
 	std::string panelPartition;
+	int displayIndex{ 0 };
+	Vector2i position{ -1, -1 };
 };
 
 struct CodeEditorConfig {

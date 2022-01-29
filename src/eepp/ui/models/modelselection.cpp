@@ -24,8 +24,10 @@ void ModelSelection::set( const ModelIndex& index ) {
 }
 
 void ModelSelection::set( const std::vector<ModelIndex>& indexes, bool notify ) {
+#ifdef EE_DEBUG
 	for ( auto& index : indexes )
 		eeASSERT( index.isValid() );
+#endif
 	mIndexes.clear();
 	mIndexes = indexes;
 	if ( notify )

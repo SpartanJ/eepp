@@ -11,7 +11,7 @@ using namespace EE::UI::Models;
 
 namespace EE { namespace UI { namespace Abstract {
 
-enum class ModelEventType { Open, OpenTree, CloseTree };
+enum class ModelEventType { Open, OpenTree, CloseTree, OpenMenu };
 
 class EE_API ModelEvent : public Event {
   public:

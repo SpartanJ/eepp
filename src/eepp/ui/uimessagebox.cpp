@@ -92,6 +92,7 @@ UIMessageBox::UIMessageBox( const Type& type, const String& message, const Uint3
 	applyDefaultTheme();
 
 	setMinWindowSize( mLayoutCont->getSize() );
+
 	center();
 }
 
@@ -104,7 +105,8 @@ void UIMessageBox::setTheme( UITheme* theme ) {
 	mButtonOK->setTheme( theme );
 	mButtonCancel->setTheme( theme );
 
-	if ( "Retry" != mButtonOK->getText() ) {
+	if ( getUISceneNode()->getTranslatorString( "@string/msg_box_retry", "Retry" ) !=
+		 mButtonOK->getText() ) {
 		Drawable* okIcon = getUISceneNode()->findIconDrawable( "ok", PixelDensity::dpToPxI( 16 ) );
 		Drawable* cancelIcon =
 			getUISceneNode()->findIconDrawable( "cancel", PixelDensity::dpToPxI( 16 ) );
@@ -186,9 +188,26 @@ UITextInput* UIMessageBox::getTextInput() const {
 }
 
 void UIMessageBox::onWindowReady() {
-	UIWindow::onWindowReady();
-	setMinWindowSize( mLayoutCont->getSize() );
+	forcedApplyStyle();
+
+	Sizef size( mLayoutCont->getSize() );
+	Sizef minWinTitle( getMinWindowTitleSizeRequired() );
+	if ( size.x < minWinTitle.x ) {
+		size.x = minWinTitle.x;
+		mLayoutCont->setLayoutWidthPolicy( SizePolicy::MatchParent );
+		mLayoutCont->getFirstChild()->asType<UIWidget>()->setLayoutWidthPolicy(
+			SizePolicy::MatchParent );
+		mTextBox->setLayoutWidthPolicy( SizePolicy::MatchParent );
+	}
+	setMinWindowSize( size );
 	center();
+
+	if ( mShowWhenReady ) {
+		mShowWhenReady = false;
+		show();
+	}
+
+	sendCommonEvent( Event::OnWindowReady );
 }
 
 }} // namespace EE::UI

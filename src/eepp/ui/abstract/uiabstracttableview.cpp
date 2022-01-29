@@ -393,6 +393,14 @@ void UIAbstractTableView::bindNavigationClick( UIWidget* widget ) {
 				onOpenModelIndex( idx, event );
 			}
 		} );
+
+	widget->addEventListener( Event::MouseClick, [&]( const Event* event ) {
+		auto mouseEvent = static_cast<const MouseEvent*>( event );
+		auto idx = mouseEvent->getNode()->getParent()->asType<UITableRow>()->getCurIndex();
+		if ( mouseEvent->getFlags() & EE_BUTTON_RMASK ) {
+			onOpenMenuModelIndex( idx, event );
+		}
+	} );
 }
 
 UIWidget* UIAbstractTableView::createCell( UIWidget* rowWidget, const ModelIndex& index ) {
@@ -492,6 +500,12 @@ void UIAbstractTableView::setSortIconSize( const size_t& sortIconSize ) {
 
 void UIAbstractTableView::onOpenModelIndex( const ModelIndex& index, const Event* triggerEvent ) {
 	ModelEvent event( getModel(), index, this, ModelEventType::Open, triggerEvent );
+	sendEvent( &event );
+}
+
+void UIAbstractTableView::onOpenMenuModelIndex( const ModelIndex& index,
+												const Event* triggerEvent ) {
+	ModelEvent event( getModel(), index, this, ModelEventType::OpenMenu, triggerEvent );
 	sendEvent( &event );
 }
 

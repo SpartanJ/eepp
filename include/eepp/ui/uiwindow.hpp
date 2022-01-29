@@ -96,6 +96,8 @@ class EE_API UIWindow : public UIWidget {
 
 	virtual bool hide();
 
+	void showWhenReady();
+
 	virtual void scheduledUpdate( const Time& time );
 
 	virtual void closeWindow();
@@ -161,6 +163,8 @@ class EE_API UIWindow : public UIWidget {
 
 	Sizef getSizeWithoutDecoration();
 
+	Sizef getMinWindowTitleSizeRequired();
+
 	typedef std::function<void()> KeyBindingCommand;
 
 	KeyBindings& getKeyBindings();
@@ -217,6 +221,7 @@ class EE_API UIWindow : public UIWidget {
 	Vector2f mResizePos;
 
 	bool mFrameBufferBound;
+	bool mShowWhenReady{ false };
 
 	KeyBindings mKeyBindings;
 	std::map<std::string, KeyBindingCommand> mKeyBindingCommands;
@@ -279,13 +284,15 @@ class EE_API UIWindow : public UIWidget {
 
 	virtual void postDraw();
 
-	virtual Sizei getFrameBufferSize();
+	Sizei getFrameBufferSize();
 
 	virtual void onWindowReady();
 
 	void onContainerPositionChange( const Event* Event );
 
 	void setupModal();
+
+	void forcedApplyStyle();
 };
 
 }} // namespace EE::UI

@@ -44,6 +44,9 @@ void AppConfig::load( std::string& confPath, std::string& keybindingsPath,
 	window.pixelDensity = iniState.getValueF( "window", "pixeldensity" );
 	window.winIcon = ini.getValue( "window", "winicon", resPath + "assets/icon/ee.png" );
 	window.panelPartition = iniState.getValue( "window", "panel_partition", "15%" );
+	window.displayIndex = iniState.getValueI( "window", "display_index", 0 );
+	window.position.x = iniState.getValueI( "window", "x", -1 );
+	window.position.y = iniState.getValueI( "window", "y", -1 );
 	editor.showLineNumbers = ini.getValueB( "editor", "show_line_numbers", true );
 	editor.showWhiteSpaces = ini.getValueB( "editor", "show_white_spaces", true );
 	editor.highlightMatchingBracket =
@@ -94,12 +97,17 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	editor.colorScheme = colorSchemeName;
 	window.size = win->getLastWindowedSize();
 	window.maximized = win->isMaximized();
+	window.displayIndex = win->getCurrentDisplayIndex();
+	window.position = win->getPosition() - win->getBorderSize().getSize();
 	ini.setValue( "editor", "colorscheme", editor.colorScheme );
 	iniState.setValueI( "window", "width", window.size.getWidth() );
 	iniState.setValueI( "window", "height", window.size.getHeight() );
 	iniState.setValueB( "window", "maximized", window.maximized );
 	iniState.setValueF( "window", "pixeldensity", window.pixelDensity );
 	iniState.setValue( "window", "panel_partition", panelPartition );
+	iniState.setValueI( "window", "display_index", window.displayIndex );
+	iniState.setValueI( "window", "x", window.position.x );
+	iniState.setValueI( "window", "y", window.position.y );
 	iniState.setValue( "files", "recentfiles", String::join( urlEncode( recentFiles ), ';' ) );
 	iniState.setValue( "folders", "recentfolders",
 					   String::join( urlEncode( recentFolders ), ';' ) );
