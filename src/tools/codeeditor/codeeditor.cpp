@@ -1770,8 +1770,8 @@ void App::createProjectTreeMenu( const FileInfo& file ) {
 		mProjectTreeMenu->add( "Duplicate File...", findIcon( "file-copy" ) )
 			->setId( "duplicate_file" );
 	}
-	mProjectTreeMenu->add( "Rename", findIcon( "edit" ) )->setId( "rename" );
-	mProjectTreeMenu->add( "Remove...", findIcon( "delete-bin" ), "F2" )->setId( "remove" );
+	mProjectTreeMenu->add( "Rename", findIcon( "edit" ), "F2" )->setId( "rename" );
+	mProjectTreeMenu->add( "Remove...", findIcon( "delete-bin" ) )->setId( "remove" );
 	mProjectTreeMenu->addEventListener( Event::OnItemClicked, [&, file]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;

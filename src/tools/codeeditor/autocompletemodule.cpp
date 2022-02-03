@@ -195,9 +195,9 @@ void AutoCompleteModule::updateDocCache( TextDocument* doc ) {
 	cache.changeId = doc->getCurrentChangeId();
 	cache.symbols = getDocumentSymbols( doc );
 	std::string langName( doc->getSyntaxDefinition().getLanguageName() );
-	auto& lang = mLangCache[langName];
 	{
 		Lock l( mLangSymbolsMutex );
+		auto& lang = mLangCache[langName];
 		lang.clear();
 		for ( const auto& d : mDocCache ) {
 			if ( d.first->getSyntaxDefinition().getLanguageName() == langName )
@@ -210,9 +210,9 @@ void AutoCompleteModule::updateDocCache( TextDocument* doc ) {
 
 void AutoCompleteModule::updateLangCache( const std::string& langName ) {
 	Clock clock;
-	auto& lang = mLangCache[langName];
 	Lock l( mLangSymbolsMutex );
 	Lock l2( mDocMutex );
+	auto& lang = mLangCache[langName];
 	lang.clear();
 	for ( const auto& d : mDocCache ) {
 		if ( d.first->getSyntaxDefinition().getLanguageName() == langName )
@@ -454,6 +454,7 @@ void AutoCompleteModule::runUpdateSuggestions( const std::string& symbol,
 
 void AutoCompleteModule::updateSuggestions( const std::string& symbol, UICodeEditor* editor ) {
 	const std::string& lang = editor->getDocument().getSyntaxDefinition().getLanguageName();
+	Lock l( mLangSymbolsMutex );
 	auto langSuggestions = mLangCache.find( lang );
 	if ( langSuggestions == mLangCache.end() )
 		return;
