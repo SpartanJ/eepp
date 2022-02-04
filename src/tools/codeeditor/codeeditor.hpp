@@ -99,7 +99,7 @@ class App : public UICodeEditorSplitter::Client {
 	std::map<std::string, std::string> mKeybindingsInvert;
 	std::string mConfigPath;
 	std::string mKeybindingsPath;
-	Float mDisplayDPI;
+	Float mDisplayDPI{ 96 };
 	std::string mResPath;
 	AutoCompleteModule* mAutoCompleteModule{ nullptr };
 	LinterModule* mLinterModule{ nullptr };

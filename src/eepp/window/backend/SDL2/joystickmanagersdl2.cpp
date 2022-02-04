@@ -5,10 +5,18 @@
 
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
+void closeSubsystem() {
+	if ( SDL_WasInit( SDL_INIT_JOYSTICK ) )
+		SDL_QuitSubSystem( SDL_INIT_JOYSTICK );
+}
+
 JoystickManagerSDL::JoystickManagerSDL() :
 	JoystickManager(), mAsyncInit( &JoystickManagerSDL::openAsync, this ) {}
 
-JoystickManagerSDL::~JoystickManagerSDL() {}
+JoystickManagerSDL::~JoystickManagerSDL() {
+	closeSubsystem();
+	mInit = false;
+}
 
 void JoystickManagerSDL::update() {
 	if ( mInit ) {
@@ -40,11 +48,8 @@ void JoystickManagerSDL::open() {
 }
 
 void JoystickManagerSDL::close() {
-	if ( SDL_WasInit( SDL_INIT_JOYSTICK ) ) {
-		SDL_QuitSubSystem( SDL_INIT_JOYSTICK );
-
-		mInit = false;
-	}
+	closeSubsystem();
+	mInit = false;
 }
 
 void JoystickManagerSDL::create( const Uint32& index ) {

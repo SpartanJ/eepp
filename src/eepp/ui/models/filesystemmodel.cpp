@@ -37,7 +37,7 @@ const std::string& FileSystemModel::Node::fullPath() const {
 
 const FileSystemModel::Node& FileSystemModel::Node::getChild( const size_t& index ) {
 	eeASSERT( index < mChildren.size() );
-	return mChildren[index];
+	return *mChildren[index];
 }
 
 void FileSystemModel::Node::invalidate() {
@@ -51,8 +51,8 @@ FileSystemModel::Node* FileSystemModel::Node::findChildName( const std::string& 
 	if ( forceRefresh )
 		refreshIfNeeded( model );
 	for ( auto& child : mChildren ) {
-		if ( child.getName() == name )
-			return &child;
+		if ( child->getName() == name )
+			return child;
 	}
 	return nullptr;
 }
@@ -63,7 +63,7 @@ Int64 FileSystemModel::Node::findChildRowFromInternalData( void* internalData,
 	if ( forceRefresh )
 		refreshIfNeeded( model );
 	for ( size_t i = 0; i < mChildren.size(); i++ ) {
-		if ( &mChildren[i] == internalData ) {
+		if ( mChildren[i] == internalData ) {
 			return i;
 		}
 	}
@@ -76,18 +76,22 @@ Int64 FileSystemModel::Node::findChildRowFromName( const std::string& name,
 	if ( forceRefresh )
 		refreshIfNeeded( model );
 	for ( size_t i = 0; i < mChildren.size(); i++ ) {
-		if ( mChildren[i].getName() == name ) {
+		if ( mChildren[i]->getName() == name ) {
 			return i;
 		}
 	}
 	return -1;
 }
 
-FileSystemModel::Node FileSystemModel::Node::createChild( const std::string& childName,
-														  const FileSystemModel& model ) {
+FileSystemModel::Node::~Node() {
+	cleanChildren();
+}
+
+FileSystemModel::Node* FileSystemModel::Node::createChild( const std::string& childName,
+														   const FileSystemModel& model ) {
 	std::string childPath( mInfo.getDirectoryPath() + childName );
 	FileInfo file( childPath );
-	auto child = Node( std::move( file ), this );
+	auto child = eeNew( Node, ( std::move( file ), this ) );
 
 	if ( model.getDisplayConfig().ignoreHidden && file.isHidden() )
 		return {};
@@ -102,18 +106,24 @@ ModelIndex FileSystemModel::Node::index( const FileSystemModel& model, int colum
 	if ( !mParent )
 		return {};
 	for ( size_t row = 0; row < mParent->mChildren.size(); ++row ) {
-		if ( &mParent->mChildren[row] == this )
+		if ( mParent->mChildren[row] == this )
 			return model.createIndex( row, column, const_cast<Node*>( this ) );
 	}
 	eeASSERT( false );
 	return {};
 }
 
+void FileSystemModel::Node::cleanChildren() {
+	for ( size_t i = 0; i < mChildren.size(); ++i )
+		eeDelete( mChildren[i] );
+	mChildren.clear();
+}
+
 void FileSystemModel::Node::traverseIfNeeded( const FileSystemModel& model ) {
 	if ( !mInfo.isDirectory() || mHasTraversed )
 		return;
 	mHasTraversed = true;
-	mChildren.clear();
+	cleanChildren();
 
 	auto files = FileSystem::filesInfoGetInPath(
 		mInfo.getFilepath(), true, model.getDisplayConfig().sortByName,
@@ -126,7 +136,7 @@ void FileSystemModel::Node::traverseIfNeeded( const FileSystemModel& model ) {
 			   ( file.isDirectory() || file.linksToDirectory() ) ) ||
 			 model.getMode() == Mode::FilesAndDirectories ) {
 			if ( file.isDirectory() || file.linksToDirectory() || patterns.empty() ) {
-				mChildren.emplace_back( Node( std::move( file ), this ) );
+				mChildren.emplace_back( eeNew( Node, ( std::move( file ), this ) ) );
 			} else {
 				accepted = false;
 				if ( patterns.size() ) {
@@ -140,7 +150,7 @@ void FileSystemModel::Node::traverseIfNeeded( const FileSystemModel& model ) {
 					accepted = true;
 				}
 				if ( accepted )
-					mChildren.emplace_back( Node( std::move( file ), this ) );
+					mChildren.emplace_back( eeNew( Node, ( std::move( file ), this ) ) );
 			}
 		}
 	}
@@ -241,7 +251,8 @@ const FileSystemModel::Node& FileSystemModel::node( const ModelIndex& index ) co
 FileSystemModel::Node& FileSystemModel::nodeRef( const ModelIndex& index ) const {
 	if ( !index.isValid() )
 		return *mRoot;
-	return *(Node*)index.internalData();
+	Node* node = static_cast<Node*>( index.internalData() );
+	return *node;
 }
 
 size_t FileSystemModel::rowCount( const ModelIndex& index ) const {
@@ -380,7 +391,7 @@ ModelIndex FileSystemModel::index( int row, int column, const ModelIndex& parent
 	const_cast<Node&>( node ).refreshIfNeeded( *this );
 	if ( static_cast<size_t>( row ) >= node.mChildren.size() )
 		return {};
-	return createIndex( row, column, &node.mChildren[row] );
+	return createIndex( row, column, node.mChildren[row] );
 }
 
 UIIcon* FileSystemModel::iconFor( const Node& node, const ModelIndex& index ) const {
@@ -423,8 +434,8 @@ void FileSystemModel::setPreviouslySelectedIndex( const ModelIndex& previouslySe
 size_t FileSystemModel::getFileIndex( Node* parent, const FileInfo& file ) {
 	std::vector<FileInfo> files;
 
-	for ( const auto& nodeFile : parent->mChildren ) {
-		files.emplace_back( nodeFile.info() );
+	for ( Node* nodeFile : parent->mChildren ) {
+		files.emplace_back( nodeFile->info() );
 	}
 
 	files.emplace_back( file );
@@ -484,12 +495,13 @@ void FileSystemModel::handleFileEvent( const FileEvent& event ) {
 	Lock l( resourceLock() );
 
 	if ( Log::instance() && Log::instance()->getLogLevelThreshold() == LogLevel::Debug ) {
-		Log::debug(
-			"DIR ( %s ) FILE ( %s ) has event %s", event.directory.c_str(),
+		std::string txt =
+			"DIR ( " + event.directory + " ) FILE ( " +
 			( ( event.oldFilename.empty() ? "" : "from file " + event.oldFilename + " to " ) +
-			  event.filename )
-				.c_str(),
-			getFileSystemEventTypeName( event.type ).c_str() );
+			  event.filename ) +
+			" ) has event " + getFileSystemEventTypeName( event.type );
+		eeASSERT( event.directory[0] == '/' );
+		Log::debug( txt );
 	}
 
 	switch ( event.type ) {
@@ -511,18 +523,17 @@ void FileSystemModel::handleFileEvent( const FileEvent& event ) {
 				if ( childNodeExists )
 					return;
 
-				Node childNode = parent->createChild( file.getFileName(), *this );
+				Node* childNode = parent->createChild( file.getFileName(), *this );
 
-				if ( !childNode.getName().empty() ) {
+				if ( !childNode->getName().empty() ) {
 					size_t pos = getFileIndex( parent, file );
 
 					beginInsertRows( parent->index( *this, 0 ), pos, pos );
 
 					if ( pos >= parent->mChildren.size() ) {
-						parent->mChildren.emplace_back( std::move( childNode ) );
+						parent->mChildren.emplace_back( childNode );
 					} else {
-						parent->mChildren.insert( parent->mChildren.begin() + pos,
-												  std::move( childNode ) );
+						parent->mChildren.insert( parent->mChildren.begin() + pos, childNode );
 					}
 
 					endInsertRows();
@@ -570,6 +581,7 @@ void FileSystemModel::handleFileEvent( const FileEvent& event ) {
 
 			beginDeleteRows( index.parent(), index.row(), index.row() );
 
+			eeDelete( parent->mChildren[index.row()] );
 			parent->mChildren.erase( parent->mChildren.begin() + index.row() );
 
 			endDeleteRows();
@@ -650,14 +662,14 @@ void FileSystemModel::handleFileEvent( const FileEvent& event ) {
 						} );
 					} );
 
+					eeDelete( parent->mChildren[index.row()] );
 					parent->mChildren.erase( parent->mChildren.begin() + index.row() );
-					Node childNode = parent->createChild( file.getFileName(), *this );
+					Node* childNode = parent->createChild( file.getFileName(), *this );
 
 					if ( pos >= parent->mChildren.size() ) {
-						parent->mChildren.emplace_back( std::move( childNode ) );
+						parent->mChildren.emplace_back( childNode );
 					} else {
-						parent->mChildren.insert( parent->mChildren.begin() + pos,
-												  std::move( childNode ) );
+						parent->mChildren.insert( parent->mChildren.begin() + pos, childNode );
 					}
 
 					if ( pos != SIZE_MAX )

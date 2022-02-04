@@ -10,10 +10,8 @@ JoystickManager::JoystickManager() : mInit( false ), mCount( 0 ) {
 }
 
 JoystickManager::~JoystickManager() {
-	for ( Uint32 i = 0; i < getCount(); i++ )
+	for ( Uint32 i = 0; i < mCount; i++ )
 		eeSAFE_DELETE( mJoysticks[i] );
-
-	close();
 }
 
 Uint32 JoystickManager::getCount() {

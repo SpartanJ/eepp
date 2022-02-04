@@ -1985,13 +1985,16 @@ FontTrueType* App::loadFont( const std::string& name, std::string fontPath,
 }
 
 void App::init( const std::string& file, const Float& pidelDensity ) {
+	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
+	Display* currentDisplay = displayManager->getDisplayIndex( 0 );
+	mDisplayDPI = currentDisplay->getDPI();
+
 	loadConfig();
 
-	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
-	Display* currentDisplay = displayManager->getDisplayIndex(
-		mConfig.window.displayIndex < displayManager->getDisplayCount()
-			? mConfig.window.displayIndex
-			: 0 );
+	currentDisplay = displayManager->getDisplayIndex( mConfig.window.displayIndex <
+															  displayManager->getDisplayCount()
+														  ? mConfig.window.displayIndex
+														  : 0 );
 	mDisplayDPI = currentDisplay->getDPI();
 	mResPath = Sys::getProcessPath();
 

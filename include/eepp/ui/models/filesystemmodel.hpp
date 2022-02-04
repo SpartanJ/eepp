@@ -104,25 +104,28 @@ class EE_API FileSystemModel : public Model {
 		Int64 findChildRowFromName( const std::string& name, const FileSystemModel& model,
 									bool forceRefresh = false );
 
+		~Node();
+
 	  private:
 		friend class FileSystemModel;
 
 		Node() {}
 
-		FileSystemModel::Node createChild( const std::string& childName,
-										   const FileSystemModel& model );
+		Node* createChild( const std::string& childName, const FileSystemModel& model );
 
 		friend class FileSystemModel;
 		std::string mName;
 		std::string mMimeType;
 		Node* mParent{ nullptr };
 		FileInfo mInfo;
-		std::vector<Node> mChildren;
+		std::vector<Node*> mChildren;
 		bool mHasTraversed{ false };
 		bool mInfoDirty{ true };
 		bool mSelected{ false };
 
 		ModelIndex index( const FileSystemModel& model, int column ) const;
+
+		void cleanChildren();
 
 		void traverseIfNeeded( const FileSystemModel& );
 

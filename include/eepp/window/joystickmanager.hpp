@@ -14,7 +14,7 @@ class EE_API JoystickManager {
 	virtual ~JoystickManager();
 
 	/** @return The number of joysticks attached to the system */
-	virtual Uint32 getCount();
+	Uint32 getCount();
 
 	/** Update the states of all joysticks */
 	virtual void update() = 0;

@@ -3,10 +3,8 @@
 ../../src/thirdparty
 ../../include/eepp/thirdparty
 ../../src/thirdparty/efsw/include
+../../src/thirdparty/efsw/src
 ../../src/thirdparty/libvorbis/include
-/usr/include/freetype2/
 ../../src/thirdparty/mbedtls/include
-../../include/eepp/ui/tools
-../../include/eepp/ui
-../../src/eepp/ui
+/usr/include/freetype2/
 /usr/lib64/gcc/x86_64-suse-linux/10/include
