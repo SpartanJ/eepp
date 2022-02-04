@@ -500,7 +500,6 @@ void FileSystemModel::handleFileEvent( const FileEvent& event ) {
 			( ( event.oldFilename.empty() ? "" : "from file " + event.oldFilename + " to " ) +
 			  event.filename ) +
 			" ) has event " + getFileSystemEventTypeName( event.type );
-		eeASSERT( event.directory[0] == '/' );
 		Log::debug( txt );
 	}
 
