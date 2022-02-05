@@ -139,10 +139,9 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 		->setLayoutWeight( 1 )
 		->setLayoutMargin( Rectf( 0, 0, 0, 4 ) );
 	mMultiView->addEventListener( Event::KeyDown, [&]( const Event* event ) {
-		const KeyEvent* KEvent = reinterpret_cast<const KeyEvent*>( event );
-		if ( KEvent->getKeyCode() == KEY_BACKSPACE ) {
+		const KeyEvent* kevent = reinterpret_cast<const KeyEvent*>( event );
+		if ( kevent->getKeyCode() == KEY_BACKSPACE )
 			goFolderUp();
-		}
 	} );
 	mMultiView->addEventListener( Event::OnModelEvent, [&]( const Event* event ) {
 		const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
@@ -396,6 +395,9 @@ void UIFileDialog::disableButtons() {
 
 	if ( NULL != mButtonMaximize )
 		mButtonMaximize->setEnabled( false );
+
+	mOpenShortut = {};
+	mCloseShortcut = {};
 }
 
 void UIFileDialog::openFileOrFolder( bool shouldOpenFolder = false ) {
@@ -475,14 +477,18 @@ void UIFileDialog::save() {
 
 void UIFileDialog::open() {
 	if ( mMultiView->getSelection().isEmpty() &&
-		 !( getAllowFolderSelect() && FileSystem::isDirectory( getFullPath() ) ) )
+		 !( getAllowFolderSelect() && FileSystem::isDirectory( getFullPath() ) ) &&
+		 !FileSystem::fileExists( getFullPath() ) )
 		return;
 
 	auto* node = !mMultiView->getSelection().isEmpty() ? getSelectionNode() : nullptr;
 	if ( !node ) {
-		Log::error( "UIFileDialog::open() - UIFileDialog::getSelectionNode() was empty, shouldn't "
-					"be empty" );
-		return;
+		node = mModel->getNodeFromPath( getFullPath() );
+
+		if ( !node ) {
+			Log::warning( "UIFileDialog::open() - Should contain a valid path." );
+			return;
+		}
 	}
 
 	if ( ( node && "" != node->getName() ) || getAllowFolderSelect() ) {
@@ -625,7 +631,7 @@ UIDropDownList* UIFileDialog::getFiletypeList() const {
 }
 
 Uint32 UIFileDialog::onKeyUp( const KeyEvent& event ) {
-	if ( mCloseShortcut && event.getKeyCode() == mCloseShortcut &&
+	if ( mCloseShortcut && event.getKeyCode() == mCloseShortcut.key &&
 		 ( mCloseShortcut.mod == 0 || ( event.getMod() & mCloseShortcut.mod ) ) ) {
 		disableButtons();
 
@@ -633,6 +639,15 @@ Uint32 UIFileDialog::onKeyUp( const KeyEvent& event ) {
 	}
 
 	return UIWindow::onKeyUp( event );
+}
+
+Uint32 UIFileDialog::onKeyDown( const KeyEvent& event ) {
+	if ( mOpenShortut && event.getKeyCode() == mOpenShortut.key &&
+		 ( mOpenShortut.mod == 0 || ( event.getMod() & mOpenShortut.mod ) ) ) {
+		open();
+	}
+
+	return UIWindow::onKeyDown( event );
 }
 
 const KeyBindings::Shortcut& UIFileDialog::getCloseShortcut() const {
@@ -665,6 +680,14 @@ void UIFileDialog::setViewMode( const UIMultiModelView::ViewMode& viewMode ) {
 
 const UIMultiModelView::ViewMode& UIFileDialog::getViewMode() const {
 	return mMultiView->getViewMode();
+}
+
+const KeyBindings::Shortcut& UIFileDialog::openShortut() const {
+	return mOpenShortut;
+}
+
+void UIFileDialog::setOpenShortut( const KeyBindings::Shortcut& newOpenShortut ) {
+	mOpenShortut = newOpenShortut;
 }
 
 }} // namespace EE::UI

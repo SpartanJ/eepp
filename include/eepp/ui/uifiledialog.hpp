@@ -117,6 +117,10 @@ class EE_API UIFileDialog : public UIWindow {
 
 	const UIMultiModelView::ViewMode& getViewMode() const;
 
+	const KeyBindings::Shortcut& openShortut() const;
+
+	void setOpenShortut( const KeyBindings::Shortcut& newOpenShortut );
+
   protected:
 	std::string mCurPath;
 	UIPushButton* mButtonOpen;
@@ -131,11 +135,14 @@ class EE_API UIFileDialog : public UIWindow {
 	UIDropDownList* mFiletype;
 	Uint32 mDialogFlags;
 	KeyBindings::Shortcut mCloseShortcut;
+	KeyBindings::Shortcut mOpenShortut{ KEY_RETURN, KEYMOD_CTRL };
 	std::shared_ptr<FileSystemModel> mModel;
 
 	virtual void onWindowReady();
 
-	virtual Uint32 onKeyUp( const KeyEvent& Event );
+	virtual Uint32 onKeyUp( const KeyEvent& event );
+
+	virtual Uint32 onKeyDown( const KeyEvent& event );
 
 	void onPressEnter( const Event* Event );
 

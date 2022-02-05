@@ -475,10 +475,12 @@ void UIAbstractTableView::setSelection( const ModelIndex& index, bool scrollToSe
 	if ( !getModel() )
 		return;
 	auto& model = *this->getModel();
-	if ( model.isValid( index ) && scrollToSelection ) {
+	if ( model.isValid( index ) ) {
 		getSelection().set( index );
-		scrollToPosition( { { mScrollOffset.x, getHeaderHeight() + index.row() * getRowHeight() },
-							{ columnData( index.column() ).width, getRowHeight() } } );
+		if ( scrollToSelection )
+			scrollToPosition(
+				{ { mScrollOffset.x, getHeaderHeight() + index.row() * getRowHeight() },
+				  { columnData( index.column() ).width, getRowHeight() } } );
 	}
 }
 
@@ -556,8 +558,37 @@ Uint32 UIAbstractTableView::onTextInput( const TextInputEvent& event ) {
 	mSearchText += String::trim( String::toLower( event.getText() ) );
 	if ( !mSearchText.empty() ) {
 		ModelIndex index = findRowWithText( mSearchText );
-		if ( index.isValid() )
+		if ( index.isValid() ) {
 			setSelection( index );
+		} else {
+			if ( mSearchText.size() >= 2 &&
+				 mSearchText[mSearchText.size() - 2] == mSearchText[mSearchText.size() - 1] ) {
+				mSearchText.pop_back();
+				const Model* model = getModel();
+				ModelIndex sel = getSelection().first();
+				ModelIndex next =
+					model->index( sel.row() + 1,
+								  model->keyColumn() != -1
+									  ? model->keyColumn()
+									  : ( model->treeColumn() >= 0 ? model->treeColumn() : 0 ),
+								  sel.parent() );
+				if ( next.isValid() ) {
+					Variant var = model->data( next );
+					if ( var.isValid() &&
+						 String::startsWith( String::toLower( var.toString() ), mSearchText ) ) {
+						setSelection( model->index( next.row(), 0, next.parent() ) );
+					} else {
+						ModelIndex index = findRowWithText( mSearchText );
+						if ( index.isValid() )
+							setSelection( index );
+					}
+				} else {
+					ModelIndex index = findRowWithText( mSearchText );
+					if ( index.isValid() )
+						setSelection( index );
+				}
+			}
+		}
 	}
 	return 1;
 }

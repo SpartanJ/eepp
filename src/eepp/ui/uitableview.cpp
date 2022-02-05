@@ -171,10 +171,11 @@ void UITableView::onColumnSizeChange( const size_t& colIndex, bool fromUserInter
 }
 
 Uint32 UITableView::onKeyDown( const KeyEvent& event ) {
+	if ( event.getMod() )
+		return UIAbstractTableView::onKeyDown( event );
 	auto curIndex = getSelection().first();
 	int pageSize = eefloor( getVisibleArea().getHeight() / getRowHeight() ) - 1;
 	Lock l( const_cast<Model*>( getModel() )->resourceLock() );
-
 	switch ( event.getKeyCode() ) {
 		case KEY_PAGEUP: {
 			if ( curIndex.row() - pageSize < 0 ) {
