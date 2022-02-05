@@ -323,8 +323,8 @@ GlyphDrawable* FontTrueType::getGlyphDrawable( Uint32 codePoint, unsigned int ch
 		GlyphDrawable* region = GlyphDrawable::New(
 			page.texture, glyph.textureRect,
 			String::format( "%s_%d_%u", mFontName.c_str(), characterSize, codePoint ) );
-		region->setGlyphOffset( {glyph.bounds.Left - outlineThickness,
-								 characterSize + glyph.bounds.Top - outlineThickness} );
+		region->setGlyphOffset( { glyph.bounds.Left - outlineThickness,
+								  characterSize + glyph.bounds.Top - outlineThickness } );
 		drawables[key] = region;
 		return region;
 	}
@@ -741,12 +741,35 @@ bool FontTrueType::setCurrentSize( unsigned int characterSize ) const {
 			// In the case of bitmap fonts, resizing can
 			// fail if the requested size is not available
 			if ( !FT_IS_SCALABLE( face ) ) {
-				Log::warning( "Failed to set bitmap font size to %d", characterSize );
-				Log::warning( "Available sizes are: " );
-				std::string str;
-				for ( int i = 0; i < face->num_fixed_sizes; ++i )
-					str += String::format( "%d ", face->available_sizes[i].height );
-				Log::warning( str );
+				auto it = mClosestCharacterSize.find( characterSize );
+
+				if ( it == mClosestCharacterSize.end() ) {
+					Log::warning( "Failed to set bitmap font size to %d", characterSize );
+					Log::warning( "Available sizes are: " );
+					std::string str;
+					if ( face->num_fixed_sizes > 0 ) {
+						unsigned int selectedHeight = face->available_sizes[0].height;
+						int curDistance = eeabs( characterSize - selectedHeight );
+						for ( int i = 0; i < face->num_fixed_sizes; ++i ) {
+							str += String::format( "%d ", face->available_sizes[i].height );
+							int tDistance =
+								eeabs( characterSize - face->available_sizes[i].height );
+							if ( tDistance < curDistance ) {
+								curDistance = tDistance;
+								selectedHeight = face->available_sizes[i].height;
+							}
+						}
+						Log::warning( str );
+						Log::warning( "Setting closest bitmap font size available: ",
+									  selectedHeight );
+						mClosestCharacterSize[characterSize] = selectedHeight;
+						return setCurrentSize( selectedHeight );
+					} else {
+						return false;
+					}
+				} else {
+					return setCurrentSize( it->second );
+				}
 			}
 		}
 

@@ -113,6 +113,7 @@ class EE_API FontTrueType : public Font {
 	mutable std::vector<Uint8>
 		mPixelBuffer; ///< Pixel buffer holding a glyph's pixels before being written to the texture
 	bool mBoldAdvanceSameAsRegular;
+	mutable std::map<unsigned int, unsigned int> mClosestCharacterSize;
 };
 
 }} // namespace EE::Graphics
