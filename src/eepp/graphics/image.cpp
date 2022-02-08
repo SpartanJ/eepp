@@ -855,10 +855,10 @@ void Image::scale( const Float& scale, ResamplerFilter filter ) {
 	if ( 1.f == scale )
 		return;
 
-	Int32 new_width = (Int32)( (Float)mWidth * scale );
-	Int32 new_height = (Int32)( (Float)mHeight * scale );
+	Int32 newWidth = (Int32)( (Float)mWidth * scale );
+	Int32 newHeight = (Int32)( (Float)mHeight * scale );
 
-	resize( new_width, new_height, filter );
+	resize( newWidth, newHeight, filter );
 }
 
 Graphics::Image* Image::thumbnail( const Uint32& maxWidth, const Uint32& maxHeight,

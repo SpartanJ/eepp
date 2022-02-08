@@ -12,6 +12,7 @@
 #include FT_OUTLINE_H
 #include FT_BITMAP_H
 #include FT_STROKER_H
+#include FT_TRUETYPE_TABLES_H
 #include <cstdlib>
 #include <cstring>
 
@@ -73,6 +74,13 @@ FontTrueType::~FontTrueType() {
 	cleanup();
 }
 
+bool isColorEmojiFont( const FT_Face& face ) {
+	static const uint32_t tag = FT_MAKE_TAG( 'C', 'B', 'D', 'T' );
+	unsigned long length = 0;
+	FT_Load_Sfnt_Table( face, tag, 0, nullptr, &length );
+	return length > 0;
+}
+
 bool FontTrueType::loadFromFile( const std::string& filename ) {
 	if ( !FileSystem::fileExists( filename ) &&
 		 PackManager::instance()->isFallbackToPacksActive() ) {
@@ -109,26 +117,32 @@ bool FontTrueType::loadFromFile( const std::string& filename ) {
 		return false;
 	}
 
-	// Load the stroker that will be used to outline the font
-	FT_Stroker stroker;
-	if ( FT_Stroker_New( static_cast<FT_Library>( mLibrary ), &stroker ) != 0 ) {
-		Log::error( "Failed to load font \"%s\" (failed to create the stroker)", filename.c_str() );
-		FT_Done_Face( face );
-		return false;
+	mFace = face;
+	mIsColorEmojiFont = isColorEmojiFont( static_cast<FT_Face>( mFace ) );
+
+	FT_Stroker stroker = nullptr;
+	if ( !mIsColorEmojiFont ) {
+		// Load the stroker that will be used to outline the font
+		if ( FT_Stroker_New( static_cast<FT_Library>( mLibrary ), &stroker ) != 0 ) {
+			Log::error( "Failed to load font \"%s\" (failed to create the stroker)",
+						filename.c_str() );
+			FT_Done_Face( face );
+			return false;
+		}
+
+		// Store the loaded font in our ugly void* :)
+		mStroker = stroker;
 	}
 
 	// Select the unicode character map
 	if ( FT_Select_Charmap( face, FT_ENCODING_UNICODE ) != 0 ) {
 		Log::error( "Failed to load font \"%s\" (failed to set the Unicode character set)",
 					filename.c_str() );
-		FT_Stroker_Done( stroker );
+		if ( stroker )
+			FT_Stroker_Done( stroker );
 		FT_Done_Face( face );
 		return false;
 	}
-
-	// Store the loaded font in our ugly void* :)
-	mStroker = stroker;
-	mFace = face;
 
 	// Store the font information
 	mInfo.family = face->family_name ? face->family_name : std::string();
@@ -168,25 +182,30 @@ bool FontTrueType::loadFromMemory( const void* data, std::size_t sizeInBytes, bo
 		return false;
 	}
 
+	mFace = face;
+	mIsColorEmojiFont = isColorEmojiFont( static_cast<FT_Face>( mFace ) );
+
 	// Load the stroker that will be used to outline the font
-	FT_Stroker stroker;
-	if ( FT_Stroker_New( static_cast<FT_Library>( mLibrary ), &stroker ) != 0 ) {
-		Log::error( "Failed to load font from memory (failed to create the stroker)" );
-		FT_Done_Face( face );
-		return false;
+	FT_Stroker stroker = nullptr;
+	if ( !mIsColorEmojiFont ) {
+		if ( FT_Stroker_New( static_cast<FT_Library>( mLibrary ), &stroker ) != 0 ) {
+			Log::error( "Failed to load font from memory (failed to create the stroker)" );
+			FT_Done_Face( face );
+			return false;
+		}
 	}
 
 	// Select the Unicode character map
 	if ( FT_Select_Charmap( face, FT_ENCODING_UNICODE ) != 0 ) {
 		Log::error( "Failed to load font from memory (failed to set the Unicode character set)" );
-		FT_Stroker_Done( stroker );
+		if ( stroker )
+			FT_Stroker_Done( stroker );
 		FT_Done_Face( face );
 		return false;
 	}
 
 	// Store the loaded font in our ugly void* :)
 	mStroker = stroker;
-	mFace = face;
 
 	// Store the font information
 	mInfo.family = face->family_name ? face->family_name : std::string();
@@ -236,19 +255,25 @@ bool FontTrueType::loadFromStream( IOStream& stream ) {
 		return false;
 	}
 
-	// Load the stroker that will be used to outline the font
-	FT_Stroker stroker;
-	if ( FT_Stroker_New( static_cast<FT_Library>( mLibrary ), &stroker ) != 0 ) {
-		Log::error( "Failed to load font from stream (failed to create the stroker)" );
-		FT_Done_Face( face );
-		delete rec;
-		return false;
+	mFace = face;
+	mIsColorEmojiFont = isColorEmojiFont( static_cast<FT_Face>( mFace ) );
+	FT_Stroker stroker = nullptr;
+
+	if ( !mIsColorEmojiFont ) {
+		// Load the stroker that will be used to outline the font
+		if ( FT_Stroker_New( static_cast<FT_Library>( mLibrary ), &stroker ) != 0 ) {
+			Log::error( "Failed to load font from stream (failed to create the stroker)" );
+			FT_Done_Face( face );
+			delete rec;
+			return false;
+		}
 	}
 
 	// Select the Unicode character map
 	if ( FT_Select_Charmap( face, FT_ENCODING_UNICODE ) != 0 ) {
 		Log::error( "Failed to load font from stream (failed to set the Unicode character set)" );
-		FT_Stroker_Done( stroker );
+		if ( stroker )
+			FT_Stroker_Done( stroker );
 		FT_Done_Face( face );
 		delete rec;
 		return false;
@@ -256,7 +281,6 @@ bool FontTrueType::loadFromStream( IOStream& stream ) {
 
 	// Store the loaded font in our ugly void* :)
 	mStroker = stroker;
-	mFace = face;
 	mStreamRec = rec;
 
 	// Store the font information
@@ -514,7 +538,7 @@ Glyph FontTrueType::loadGlyph( Uint32 codePoint, unsigned int characterSize, boo
 	FT_Error err = 0;
 
 	// Load the glyph corresponding to the code point
-	FT_Int32 flags = FT_LOAD_TARGET_NORMAL | FT_LOAD_FORCE_AUTOHINT;
+	FT_Int32 flags = FT_LOAD_TARGET_NORMAL | FT_LOAD_FORCE_AUTOHINT | FT_LOAD_COLOR;
 	if ( outlineThickness != 0 )
 		flags |= FT_LOAD_NO_BITMAP;
 	if ( ( err = FT_Load_Char( face, codePoint, flags ) ) != 0 ) {
@@ -578,14 +602,28 @@ Glyph FontTrueType::loadGlyph( Uint32 codePoint, unsigned int characterSize, boo
 		// pollute them with pixels from neighbors
 		const int padding = 2;
 
+		Float scale =
+			mIsColorEmojiFont ? (Float)characterSize / (Float)eemax( width, height ) : 1.f;
+
+		int destWidth = width;
+		int destHeight = height;
+
+		if ( mIsColorEmojiFont ) {
+			destWidth *= scale;
+			destHeight *= scale;
+			glyph.advance *= scale;
+		}
+
 		width += 2 * padding;
 		height += 2 * padding;
+		destWidth += 2 * padding;
+		destHeight += 2 * padding;
 
 		// Get the glyphs page corresponding to the character size
 		Page& page = mPages[characterSize];
 
 		// Find a good position for the new glyph into the texture
-		glyph.textureRect = findGlyphRect( page, width, height );
+		glyph.textureRect = findGlyphRect( page, destWidth, destHeight );
 
 		// Make sure the texture data is positioned in the center
 		// of the allocated texture rectangle
@@ -593,6 +631,12 @@ Glyph FontTrueType::loadGlyph( Uint32 codePoint, unsigned int characterSize, boo
 		glyph.textureRect.Top += padding;
 		glyph.textureRect.Right -= 2 * padding;
 		glyph.textureRect.Bottom -= 2 * padding;
+
+		// Write the pixels to the texture
+		unsigned int x = glyph.textureRect.Left - padding;
+		unsigned int y = glyph.textureRect.Top - padding;
+		unsigned int w = glyph.textureRect.Right + 2 * padding;
+		unsigned int h = glyph.textureRect.Bottom + 2 * padding;
 
 		// Compute the glyph's bounding box
 		glyph.bounds.Left =
@@ -609,14 +653,17 @@ Glyph FontTrueType::loadGlyph( Uint32 codePoint, unsigned int characterSize, boo
 		// Resize the pixel buffer to the new size and fill it with transparent white pixels
 		mPixelBuffer.resize( width * height * 4 );
 
-		Uint8* current = &mPixelBuffer[0];
+		Uint8* pixelPtr = &mPixelBuffer[0];
+		Uint8* current = pixelPtr;
 		Uint8* end = current + width * height * 4;
 
-		while ( current != end ) {
-			( *current++ ) = 255;
-			( *current++ ) = 255;
-			( *current++ ) = 255;
-			( *current++ ) = 0;
+		if ( bitmap.pixel_mode != FT_PIXEL_MODE_BGRA ) {
+			while ( current != end ) {
+				( *current++ ) = 255;
+				( *current++ ) = 255;
+				( *current++ ) = 255;
+				( *current++ ) = 0;
+			}
 		}
 
 		// Extract the glyph's pixels from the bitmap
@@ -636,6 +683,30 @@ Glyph FontTrueType::loadGlyph( Uint32 codePoint, unsigned int characterSize, boo
 				}
 				pixels += bitmap.pitch;
 			}
+		} else if ( bitmap.pixel_mode == FT_PIXEL_MODE_BGRA ) {
+			Image source( (Uint8*)pixels, bitmap.width, bitmap.rows, 4 );
+			Image dest( &mPixelBuffer[0], width, height, 4 );
+			source.avoidFreeImage( true );
+			dest.avoidFreeImage( true );
+			for ( size_t y = 0; y < bitmap.rows; ++y ) {
+				for ( size_t x = 0; x < bitmap.width; ++x ) {
+					Color col = source.getPixel( x, y );
+					dest.setPixel( padding + x, padding + y, Color( col.b, col.g, col.r, col.a ) );
+				}
+			}
+
+			if ( scale < 1.f ) {
+				dest.scale( scale );
+				pixelPtr = dest.getPixels();
+				dest.saveToFile( String::format( "/home/downloads/%uld.png", codePoint ),
+								 Image::SAVE_TYPE_PNG );
+				glyph.bounds.Left *= scale;
+				glyph.bounds.Right *= scale;
+				glyph.bounds.Top *= scale;
+				glyph.bounds.Bottom *= scale;
+				w = dest.getWidth();
+				h = dest.getHeight();
+			}
 		} else {
 			// Pixels are 8 bits gray levels
 			for ( int y = padding; y < height - padding; ++y ) {
@@ -648,12 +719,7 @@ Glyph FontTrueType::loadGlyph( Uint32 codePoint, unsigned int characterSize, boo
 			}
 		}
 
-		// Write the pixels to the texture
-		unsigned int x = glyph.textureRect.Left - padding;
-		unsigned int y = glyph.textureRect.Top - padding;
-		unsigned int w = glyph.textureRect.Right + 2 * padding;
-		unsigned int h = glyph.textureRect.Bottom + 2 * padding;
-		page.texture->update( &mPixelBuffer[0], w, h, x, y );
+		page.texture->update( pixelPtr, w, h, x, y );
 	}
 
 	// Delete the FT glyph
@@ -735,7 +801,21 @@ bool FontTrueType::setCurrentSize( unsigned int characterSize ) const {
 	FT_UShort currentSize = face->size->metrics.x_ppem;
 
 	if ( currentSize != characterSize ) {
-		FT_Error result = FT_Set_Pixel_Sizes( face, 0, characterSize );
+		if ( mIsColorEmojiFont ) {
+			int bestMatch = 0;
+			int diff = eeabs( characterSize - face->available_sizes[0].width );
+			for ( int i = 1; i < face->num_fixed_sizes; ++i ) {
+				int ndiff = eeabs( characterSize - face->available_sizes[i].width );
+				if ( ndiff < diff ) {
+					bestMatch = i;
+					diff = ndiff;
+				}
+			}
+			characterSize = bestMatch;
+		}
+
+		FT_Error result = mIsColorEmojiFont ? FT_Select_Size( face, characterSize )
+											: FT_Set_Pixel_Sizes( face, 0, characterSize );
 
 		if ( result == FT_Err_Invalid_Pixel_Size ) {
 			// In the case of bitmap fonts, resizing can
@@ -767,7 +847,7 @@ bool FontTrueType::setCurrentSize( unsigned int characterSize ) const {
 					} else {
 						return false;
 					}
-				} else {
+				} else if ( characterSize != currentSize && face->size->metrics.x_ppem > 0 ) {
 					return setCurrentSize( it->second );
 				}
 			}

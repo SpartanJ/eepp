@@ -9,6 +9,11 @@ namespace EE { namespace UI { namespace Models {
 
 class EE_API ModelEditingDelegate {
   public:
+	enum SelectionBehavior {
+		DoNotSelect,
+		SelectAll,
+	};
+
 	virtual ~ModelEditingDelegate() {}
 
 	void bind( std::shared_ptr<Model> model, const ModelIndex& index ) {
@@ -23,9 +28,12 @@ class EE_API ModelEditingDelegate {
 	UIWidget* getWidget() const { return mWidget; }
 
 	std::function<void()> onCommit;
+	std::function<void()> onRollback;
+	std::function<void()> onChange;
 
 	virtual Variant getValue() const = 0;
-	virtual void setValue( const Variant& ) = 0;
+	virtual void setValue( const Variant&,
+						   SelectionBehavior selectionBehavior = SelectionBehavior::SelectAll ) = 0;
 	virtual void willBeginEditing() {}
 
   protected:
@@ -38,6 +46,16 @@ class EE_API ModelEditingDelegate {
 			onCommit();
 	}
 
+	void rollback() {
+		if ( onRollback )
+			onRollback();
+	}
+	void change() {
+		if ( onChange )
+			onChange();
+	}
+
+  private:
 	std::shared_ptr<Model> mModel;
 	ModelIndex mIndex;
 	UIWidget* mWidget{ nullptr };

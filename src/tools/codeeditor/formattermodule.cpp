@@ -149,10 +149,8 @@ void FormatterModule::runFormatter( UICodeEditor* editor, const Formatter& forma
 		strings.push_back( cmdArr[i].c_str() );
 	strings.push_back( NULL );
 	struct subprocess_s subprocess;
-	int result = subprocess_create( strings.data(),
-									subprocess_option_inherit_environment |
-										subprocess_option_combined_stdout_stderr,
-									&subprocess );
+	int result =
+		subprocess_create( strings.data(), subprocess_option_inherit_environment, &subprocess );
 	if ( 0 == result ) {
 		std::string buffer( 1024, '\0' );
 		std::string data;

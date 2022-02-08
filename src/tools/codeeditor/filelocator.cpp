@@ -24,7 +24,7 @@ void FileLocator::updateLocateTable() {
 			} );
 #else
 		mLocateTable->setModel(
-			mDirTree->fuzzyMatchTree( mLocateInput->getText(), LOCATEBAR_MAX_RESULTS ) );
+			mApp->getDirTree()->fuzzyMatchTree( mLocateInput->getText(), LOCATEBAR_MAX_RESULTS ) );
 		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
 #endif
 	} else {

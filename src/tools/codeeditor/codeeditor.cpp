@@ -1056,7 +1056,9 @@ void App::syncProjectTreeWithEditor( UICodeEditor* editor ) {
 		std::string path = editor->getDocument().getFilePath();
 		if ( path.size() >= mCurrentProject.size() ) {
 			path = path.substr( mCurrentProject.size() );
+			mProjectTreeView->setFocusOnSelection( false );
 			mProjectTreeView->selectRowWithPath( path );
+			mProjectTreeView->setFocusOnSelection( true );
 		}
 	}
 }

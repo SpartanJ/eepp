@@ -3,6 +3,7 @@
 EE::Window::Window* win = NULL;
 FontTrueType* fontTest;
 FontTrueType* fontTest2;
+FontTrueType* fontEmoji;
 FontBMFont* fontBMFont;
 FontSprite* fontSprite;
 Text text;
@@ -10,6 +11,7 @@ Text text2;
 Text text3;
 Text text4;
 Text text5;
+Text text6;
 
 void mainLoop() {
 	// Clear the screen buffer
@@ -37,6 +39,8 @@ void mainLoop() {
 	text4.draw( ( win->getWidth() - text4.getTextWidth() ) * 0.5f, 590 );
 
 	text5.draw( ( win->getWidth() - text5.getTextWidth() ) * 0.5f, 640 );
+
+	text6.draw( ( win->getWidth() - text6.getTextWidth() ) * 0.5f, 690 );
 
 	// Draw frame
 	win->display();
@@ -112,6 +116,13 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		text5.setFont( fontSprite );
 		text5.setString( "Lorem ipsum dolor sit amet, consectetur adipisicing elit." );
 		text5.setFontSize( 38 );
+
+		fontEmoji = FontTrueType::New( "NotoColorEmoji" );
+		fontEmoji->loadFromFile( "assets/fonts/NotoColorEmoji.ttf" );
+
+		text6.setFont( fontEmoji );
+		text6.setFontSize( 64 );
+		text6.setString( "👽 😀 💩 😃 👻" );
 
 		// Application loop
 		win->runMainLoop( &mainLoop );

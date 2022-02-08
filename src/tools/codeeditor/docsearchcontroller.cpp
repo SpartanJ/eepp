@@ -261,7 +261,6 @@ void DocSearchController::hideSearchBar() {
 }
 
 void DocSearchController::onCodeEditorFocusChange( UICodeEditor* editor ) {
-
 	if ( mSearchState.editor && mSearchState.editor != editor ) {
 		String word = mSearchState.editor->getHighlightWord();
 		mSearchState.editor->setHighlightWord( "" );
