@@ -62,12 +62,15 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
 		// Create a new text string
-		String Txt( "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod "
+		String Txt( "👽Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod "
 					"tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, "
 					"quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo "
 					"consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse "
 					"cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non "
 					"proident, sunt in culpa qui officia deserunt mollit anim id est laborum." );
+
+		fontEmoji = FontTrueType::New( "NotoColorEmoji" );
+		fontEmoji->loadFromFile( "assets/fonts/NotoColorEmoji.ttf" );
 
 		fontTest = FontTrueType::New( "DejaVuSansMono" );
 		fontTest->loadFromFile( "assets/fonts/DejaVuSansMono.ttf" );
@@ -82,7 +85,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		// Create a gradient
 		int size = (int)Txt.size();
 
-		for ( int i = 0; i < size; i++ ) {
+		for ( int i = 1; i < size; i++ ) {
 			text.setFillColor( Color( 255 * i / size, 0, 0, 255 ), i, i + 1 );
 		}
 
@@ -116,9 +119,6 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		text5.setFont( fontSprite );
 		text5.setString( "Lorem ipsum dolor sit amet, consectetur adipisicing elit." );
 		text5.setFontSize( 38 );
-
-		fontEmoji = FontTrueType::New( "NotoColorEmoji" );
-		fontEmoji->loadFromFile( "assets/fonts/NotoColorEmoji.ttf" );
 
 		text6.setFont( fontEmoji );
 		text6.setFontSize( 64 );

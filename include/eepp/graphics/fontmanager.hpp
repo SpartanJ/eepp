@@ -23,7 +23,12 @@ class EE_API FontManager : public ResourceManager<Font> {
 	/** @brief Adds a new font to the manager */
 	Graphics::Font* add( Graphics::Font* Font );
 
+	void setColorEmojiFont( Graphics::Font* font ) { mColorEmojiFont = font; }
+
+	Font* getColorEmojiFont() const { return mColorEmojiFont; }
+
   protected:
+	Font* mColorEmojiFont{ nullptr };
 	FontManager();
 };
 

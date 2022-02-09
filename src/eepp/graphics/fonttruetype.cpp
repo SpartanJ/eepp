@@ -1,3 +1,4 @@
+#include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/system/filesystem.hpp>
@@ -74,11 +75,26 @@ FontTrueType::~FontTrueType() {
 	cleanup();
 }
 
-bool isColorEmojiFont( const FT_Face& face ) {
+bool checkIsColorEmojiFont( const FT_Face& face ) {
 	static const uint32_t tag = FT_MAKE_TAG( 'C', 'B', 'D', 'T' );
 	unsigned long length = 0;
 	FT_Load_Sfnt_Table( face, tag, 0, nullptr, &length );
 	return length > 0;
+}
+
+bool isEmojiCodePoint( const Uint32& codePoint ) {
+	const Uint32 rangeMin = 127744;
+	const Uint32 rangeMax = 131069;
+	const Uint32 rangeMin2 = 126980;
+	const Uint32 rangeMax2 = 127569;
+	const Uint32 rangeMin3 = 169;
+	const Uint32 rangeMax3 = 174;
+	const Uint32 rangeMin4 = 8205;
+	const Uint32 rangeMax4 = 12953;
+	return ( ( rangeMin <= codePoint && codePoint <= rangeMax ) ||
+			 ( rangeMin2 <= codePoint && codePoint <= rangeMax2 ) ||
+			 ( rangeMin3 <= codePoint && codePoint <= rangeMax3 ) ||
+			 ( rangeMin4 <= codePoint && codePoint <= rangeMax4 ) );
 }
 
 bool FontTrueType::loadFromFile( const std::string& filename ) {
@@ -118,7 +134,10 @@ bool FontTrueType::loadFromFile( const std::string& filename ) {
 	}
 
 	mFace = face;
-	mIsColorEmojiFont = isColorEmojiFont( static_cast<FT_Face>( mFace ) );
+	mIsColorEmojiFont = checkIsColorEmojiFont( static_cast<FT_Face>( mFace ) );
+
+	if ( mIsColorEmojiFont && FontManager::instance()->getColorEmojiFont() == nullptr )
+		FontManager::instance()->setColorEmojiFont( this );
 
 	FT_Stroker stroker = nullptr;
 	if ( !mIsColorEmojiFont ) {
@@ -183,7 +202,10 @@ bool FontTrueType::loadFromMemory( const void* data, std::size_t sizeInBytes, bo
 	}
 
 	mFace = face;
-	mIsColorEmojiFont = isColorEmojiFont( static_cast<FT_Face>( mFace ) );
+	mIsColorEmojiFont = checkIsColorEmojiFont( static_cast<FT_Face>( mFace ) );
+
+	if ( mIsColorEmojiFont && FontManager::instance()->getColorEmojiFont() == nullptr )
+		FontManager::instance()->setColorEmojiFont( this );
 
 	// Load the stroker that will be used to outline the font
 	FT_Stroker stroker = nullptr;
@@ -256,8 +278,11 @@ bool FontTrueType::loadFromStream( IOStream& stream ) {
 	}
 
 	mFace = face;
-	mIsColorEmojiFont = isColorEmojiFont( static_cast<FT_Face>( mFace ) );
+	mIsColorEmojiFont = checkIsColorEmojiFont( static_cast<FT_Face>( mFace ) );
 	FT_Stroker stroker = nullptr;
+
+	if ( mIsColorEmojiFont && FontManager::instance()->getColorEmojiFont() == nullptr )
+		FontManager::instance()->setColorEmojiFont( this );
 
 	if ( !mIsColorEmojiFont ) {
 		// Load the stroker that will be used to outline the font
@@ -326,7 +351,8 @@ const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSiz
 		return it->second;
 	} else {
 		// Not found: we have to load it
-		Glyph glyph = loadGlyph( codePoint, characterSize, bold, outlineThickness );
+		Glyph glyph =
+			loadGlyph( codePoint, characterSize, bold, outlineThickness, mPages[characterSize] );
 		return glyphs.insert( std::make_pair( key, glyph ) ).first->second;
 	}
 }
@@ -473,6 +499,9 @@ FontTrueType& FontTrueType::operator=( const FontTrueType& right ) {
 void FontTrueType::cleanup() {
 	sendEvent( Event::Unload );
 
+	if ( FontManager::existsSingleton() && FontManager::instance()->getColorEmojiFont() == this )
+		FontManager::instance()->setColorEmojiFont( nullptr );
+
 	mCallbacks.clear();
 	mNumCallBacks = 0;
 
@@ -515,9 +544,18 @@ void FontTrueType::cleanup() {
 }
 
 Glyph FontTrueType::loadGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
-							   Float outlineThickness ) const {
+							   Float outlineThickness, Page& page ) const {
 	// The glyph to return
 	Glyph glyph;
+
+	if ( !mIsColorEmojiFont && isEmojiCodePoint( codePoint ) ) {
+		if ( FontManager::instance()->getColorEmojiFont() != nullptr &&
+			 FontManager::instance()->getColorEmojiFont()->getType() == FontType::TTF ) {
+			FontTrueType* fontEmoji =
+				static_cast<FontTrueType*>( FontManager::instance()->getColorEmojiFont() );
+			return fontEmoji->loadGlyph( codePoint, characterSize, bold, outlineThickness, page );
+		}
+	}
 
 	// First, transform our ugly void* to a FT_Face
 	FT_Face face = static_cast<FT_Face>( mFace );
@@ -619,9 +657,6 @@ Glyph FontTrueType::loadGlyph( Uint32 codePoint, unsigned int characterSize, boo
 		destWidth += 2 * padding;
 		destHeight += 2 * padding;
 
-		// Get the glyphs page corresponding to the character size
-		Page& page = mPages[characterSize];
-
 		// Find a good position for the new glyph into the texture
 		glyph.textureRect = findGlyphRect( page, destWidth, destHeight );
 
@@ -698,8 +733,6 @@ Glyph FontTrueType::loadGlyph( Uint32 codePoint, unsigned int characterSize, boo
 			if ( scale < 1.f ) {
 				dest.scale( scale );
 				pixelPtr = dest.getPixels();
-				dest.saveToFile( String::format( "/home/downloads/%uld.png", codePoint ),
-								 Image::SAVE_TYPE_PNG );
 				glyph.bounds.Left *= scale;
 				glyph.bounds.Right *= scale;
 				glyph.bounds.Top *= scale;
@@ -857,6 +890,10 @@ bool FontTrueType::setCurrentSize( unsigned int characterSize ) const {
 	} else {
 		return true;
 	}
+}
+
+bool FontTrueType::isColorEmojiFont() const {
+	return mIsColorEmojiFont;
 }
 
 bool FontTrueType::getBoldAdvanceSameAsRegular() const {

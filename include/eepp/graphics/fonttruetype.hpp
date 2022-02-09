@@ -58,6 +58,8 @@ class EE_API FontTrueType : public Font {
 	 * advance like a regular glyph (useful for monospaced fonts). */
 	void setBoldAdvanceSameAsRegular( bool boldAdvanceSameAsRegular );
 
+	bool isColorEmojiFont() const;
+
   protected:
 	explicit FontTrueType( const std::string& FontName );
 
@@ -89,7 +91,7 @@ class EE_API FontTrueType : public Font {
 	void cleanup();
 
 	Glyph loadGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
-					 Float outlineThickness ) const;
+					 Float outlineThickness, Page& page ) const;
 
 	Rect findGlyphRect( Page& page, unsigned int width, unsigned int height ) const;
 
