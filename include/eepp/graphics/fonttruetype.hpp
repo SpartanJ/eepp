@@ -60,6 +60,8 @@ class EE_API FontTrueType : public Font {
 
 	bool isColorEmojiFont() const;
 
+	bool isMonospace() const;
+
   protected:
 	explicit FontTrueType( const std::string& FontName );
 
@@ -117,6 +119,8 @@ class EE_API FontTrueType : public Font {
 	bool mBoldAdvanceSameAsRegular;
 	bool mIsColorEmojiFont{ false };
 	mutable std::map<unsigned int, unsigned int> mClosestCharacterSize;
+
+	Uint64 getCharIndexKey( Uint32 codePoint, bool bold, Float outlineThickness ) const;
 };
 
 }} // namespace EE::Graphics

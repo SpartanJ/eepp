@@ -179,8 +179,9 @@ void App::openFontDialog( std::string& fontPath ) {
 	std::string absoluteFontPath( fontPath );
 	if ( isRelativePath( absoluteFontPath ) )
 		absoluteFontPath = mResPath + fontPath;
-	UIFileDialog* dialog = UIFileDialog::New( UIFileDialog::DefaultFlags, "*.ttf; *.otf; *.wolff; *.otb",
-											  FileSystem::fileRemoveFileName( absoluteFontPath ) );
+	UIFileDialog* dialog =
+		UIFileDialog::New( UIFileDialog::DefaultFlags, "*.ttf; *.otf; *.wolff; *.otb",
+						   FileSystem::fileRemoveFileName( absoluteFontPath ) );
 	ModelIndex index = dialog->getMultiView()->getListView()->findRowWithText(
 		FileSystem::fileNameFromPath( fontPath ), true, true );
 	if ( index.isValid() )
@@ -2056,6 +2057,10 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 			loadFont( "monospace", mConfig.ui.monospaceFont, "assets/fonts/DejaVuSansMono.ttf" );
 		if ( mFontMono )
 			mFontMono->setBoldAdvanceSameAsRegular( true );
+
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+		loadFont( "NotoColorEmoji", "assets/fonts/NotoColorEmoji.ttf" );
+#endif
 
 		FontTrueType* iconFont =
 			FontTrueType::New( "icon", mResPath + "assets/fonts/remixicon.ttf" );

@@ -335,14 +335,31 @@ const FontTrueType::Info& FontTrueType::getInfo() const {
 	return mInfo;
 }
 
+Uint64 FontTrueType::getCharIndexKey( Uint32 codePoint, bool bold, Float outlineThickness ) const {
+	Uint64 key = combine( outlineThickness, bold,
+						  FT_Get_Char_Index( static_cast<FT_Face>( mFace ), codePoint ) );
+
+	if ( key == 0 && !mIsColorEmojiFont && isEmojiCodePoint( codePoint ) && !isMonospace() ) {
+		if ( FontManager::instance()->getColorEmojiFont() != nullptr &&
+			 FontManager::instance()->getColorEmojiFont()->getType() == FontType::TTF ) {
+			FontTrueType* fontEmoji =
+				static_cast<FontTrueType*>( FontManager::instance()->getColorEmojiFont() );
+			key =
+				combine( outlineThickness, bold,
+						 FT_Get_Char_Index( static_cast<FT_Face>( fontEmoji->mFace ), codePoint ) );
+		}
+	}
+
+	return key;
+}
+
 const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
 									 Float outlineThickness ) const {
 	// Get the page corresponding to the character size
 	GlyphTable& glyphs = mPages[characterSize].glyphs;
 
 	// Build the key by combining the code point, bold flag, and outline thickness
-	Uint64 key = combine( outlineThickness, bold,
-						  FT_Get_Char_Index( static_cast<FT_Face>( mFace ), codePoint ) );
+	Uint64 key = getCharIndexKey( codePoint, bold, outlineThickness );
 
 	// Search the glyph into the cache
 	GlyphTable::const_iterator it = glyphs.find( key );
@@ -361,8 +378,7 @@ GlyphDrawable* FontTrueType::getGlyphDrawable( Uint32 codePoint, unsigned int ch
 											   bool bold, Float outlineThickness ) const {
 	GlyphDrawableTable& drawables = mPages[characterSize].drawables;
 
-	Uint64 key = combine( outlineThickness, bold,
-						  FT_Get_Char_Index( static_cast<FT_Face>( mFace ), codePoint ) );
+	Uint64 key = getCharIndexKey( codePoint, bold, outlineThickness );
 
 	auto it = drawables.find( key );
 	if ( it != drawables.end() ) {
@@ -548,7 +564,7 @@ Glyph FontTrueType::loadGlyph( Uint32 codePoint, unsigned int characterSize, boo
 	// The glyph to return
 	Glyph glyph;
 
-	if ( !mIsColorEmojiFont && isEmojiCodePoint( codePoint ) ) {
+	if ( !mIsColorEmojiFont && isEmojiCodePoint( codePoint ) && !isMonospace() ) {
 		if ( FontManager::instance()->getColorEmojiFont() != nullptr &&
 			 FontManager::instance()->getColorEmojiFont()->getType() == FontType::TTF ) {
 			FontTrueType* fontEmoji =
@@ -640,8 +656,7 @@ Glyph FontTrueType::loadGlyph( Uint32 codePoint, unsigned int characterSize, boo
 		// pollute them with pixels from neighbors
 		const int padding = 2;
 
-		Float scale =
-			mIsColorEmojiFont ? (Float)characterSize / (Float)eemax( width, height ) : 1.f;
+		Float scale = mIsColorEmojiFont ? (Float)characterSize / (Float)height : 1.f;
 
 		int destWidth = width;
 		int destHeight = height;
@@ -657,22 +672,6 @@ Glyph FontTrueType::loadGlyph( Uint32 codePoint, unsigned int characterSize, boo
 		destWidth += 2 * padding;
 		destHeight += 2 * padding;
 
-		// Find a good position for the new glyph into the texture
-		glyph.textureRect = findGlyphRect( page, destWidth, destHeight );
-
-		// Make sure the texture data is positioned in the center
-		// of the allocated texture rectangle
-		glyph.textureRect.Left += padding;
-		glyph.textureRect.Top += padding;
-		glyph.textureRect.Right -= 2 * padding;
-		glyph.textureRect.Bottom -= 2 * padding;
-
-		// Write the pixels to the texture
-		unsigned int x = glyph.textureRect.Left - padding;
-		unsigned int y = glyph.textureRect.Top - padding;
-		unsigned int w = glyph.textureRect.Right + 2 * padding;
-		unsigned int h = glyph.textureRect.Bottom + 2 * padding;
-
 		// Compute the glyph's bounding box
 		glyph.bounds.Left =
 			static_cast<Float>( face->glyph->metrics.horiBearingX ) / static_cast<Float>( 1 << 6 );
@@ -686,19 +685,18 @@ Glyph FontTrueType::loadGlyph( Uint32 codePoint, unsigned int characterSize, boo
 			outlineThickness * 2;
 
 		// Resize the pixel buffer to the new size and fill it with transparent white pixels
-		mPixelBuffer.resize( width * height * 4 );
+		const Uint32 bufferSize = width * height * 4;
+		mPixelBuffer.resize( bufferSize );
 
 		Uint8* pixelPtr = &mPixelBuffer[0];
 		Uint8* current = pixelPtr;
-		Uint8* end = current + width * height * 4;
+		Uint8* end = current + bufferSize;
 
-		if ( bitmap.pixel_mode != FT_PIXEL_MODE_BGRA ) {
-			while ( current != end ) {
-				( *current++ ) = 255;
-				( *current++ ) = 255;
-				( *current++ ) = 255;
-				( *current++ ) = 0;
-			}
+		while ( current != end ) {
+			( *current++ ) = 255;
+			( *current++ ) = 255;
+			( *current++ ) = 255;
+			( *current++ ) = 0;
 		}
 
 		// Extract the glyph's pixels from the bitmap
@@ -726,19 +724,20 @@ Glyph FontTrueType::loadGlyph( Uint32 codePoint, unsigned int characterSize, boo
 			for ( size_t y = 0; y < bitmap.rows; ++y ) {
 				for ( size_t x = 0; x < bitmap.width; ++x ) {
 					Color col = source.getPixel( x, y );
-					dest.setPixel( padding + x, padding + y, Color( col.b, col.g, col.r, col.a ) );
+					dest.setPixel( x + padding, y + padding, Color( col.b, col.g, col.r, col.a ) );
 				}
 			}
 
 			if ( scale < 1.f ) {
 				dest.scale( scale );
+				dest.avoidFreeImage( true );
 				pixelPtr = dest.getPixels();
 				glyph.bounds.Left *= scale;
 				glyph.bounds.Right *= scale;
 				glyph.bounds.Top *= scale;
 				glyph.bounds.Bottom *= scale;
-				w = dest.getWidth();
-				h = dest.getHeight();
+				destWidth = dest.getWidth() + 2 * padding;
+				destHeight = dest.getHeight() + 2 * padding;
 			}
 		} else {
 			// Pixels are 8 bits gray levels
@@ -752,7 +751,33 @@ Glyph FontTrueType::loadGlyph( Uint32 codePoint, unsigned int characterSize, boo
 			}
 		}
 
+		// Find a good position for the new glyph into the texture
+		glyph.textureRect = findGlyphRect( page, destWidth, destHeight );
+
+		// Write the pixels to the texture
+		unsigned int x = glyph.textureRect.Left;
+		unsigned int y = glyph.textureRect.Top;
+		unsigned int w = glyph.textureRect.Right;
+		unsigned int h = glyph.textureRect.Bottom;
+
+		if ( bitmap.pixel_mode == FT_PIXEL_MODE_BGRA && scale < 1.f ) {
+			w = destWidth - 2 * padding;
+			h = destHeight - 2 * padding;
+			x += padding;
+			y += padding;
+		}
+
+		// Make sure the texture data is positioned in the center
+		// of the allocated texture rectangle
+		glyph.textureRect.Left += padding;
+		glyph.textureRect.Top += padding;
+		glyph.textureRect.Right -= 2 * padding;
+		glyph.textureRect.Bottom -= 2 * padding;
+
 		page.texture->update( pixelPtr, w, h, x, y );
+
+		if ( scale < 1.f )
+			eeFree( pixelPtr );
 	}
 
 	// Delete the FT glyph
@@ -894,6 +919,10 @@ bool FontTrueType::setCurrentSize( unsigned int characterSize ) const {
 
 bool FontTrueType::isColorEmojiFont() const {
 	return mIsColorEmojiFont;
+}
+
+bool FontTrueType::isMonospace() const {
+	return FT_IS_FIXED_WIDTH( static_cast<FT_Face>( mFace ) );
 }
 
 bool FontTrueType::getBoldAdvanceSameAsRegular() const {

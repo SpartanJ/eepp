@@ -845,6 +845,7 @@ void Image::resize( const Uint32& newWidth, const Uint32& newHeight, ResamplerFi
 			mPixels = resampled;
 			mWidth = newWidth;
 			mHeight = newHeight;
+			mSize = mWidth * mHeight * mChannels;
 			mLoadedFromStbi = false;
 			mAvoidFree = false;
 		}
