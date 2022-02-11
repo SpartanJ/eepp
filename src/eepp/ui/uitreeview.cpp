@@ -379,7 +379,7 @@ void UITreeView::expandAll( const ModelIndex& index ) {
 	createOrUpdateColumns();
 }
 
-void UITreeView::contractAll( const ModelIndex& index ) {
+void UITreeView::collapseAll( const ModelIndex& index ) {
 	if ( !getModel() )
 		return;
 	setAllExpanded( index, false );

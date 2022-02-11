@@ -87,9 +87,9 @@ os_links = { }
 backends = { }
 static_backends = { }
 backend_selected = false
-remote_sdl2_version = "SDL2-2.0.12"
-remote_sdl2_devel_src_url = "https://libsdl.org/release/SDL2-2.0.12.zip"
-remote_sdl2_devel_vc_url = "https://www.libsdl.org/release/SDL2-devel-2.0.12-VC.zip"
+remote_sdl2_version = "SDL2-2.0.20"
+remote_sdl2_devel_src_url = "https://libsdl.org/release/SDL2-2.0.20.zip"
+remote_sdl2_devel_vc_url = "https://www.libsdl.org/release/SDL2-devel-2.0.20-VC.zip"
 
 function incdirs( dirs )
 	if is_xcode() then
@@ -323,7 +323,7 @@ function add_static_links()
 	end
 
 	if not _OPTIONS["with-dynamic-freetype"] then
-		links { "freetype-static" }
+		links { "freetype-static", "libpng-static" }
 	end
 
 	links { "SOIL2-static",
@@ -649,13 +649,21 @@ workspace "eepp"
 		incdirs { "src/thirdparty/zlib" }
 		build_base_configuration( "libzip" )
 
+	project "libpng-static"
+		kind "StaticLib"
+		language "C"
+		targetdir("libs/" .. os.target() .. "/thirdparty/")
+		files { "src/thirdparty/libpng/**.c" }
+		incdirs { "src/thirdparty/libpng/include" }
+		build_base_configuration( "libpng" )
+
 	project "freetype-static"
 		kind "StaticLib"
 		language "C"
 		targetdir("libs/" .. os.target() .. "/thirdparty/")
 		defines { "FT2_BUILD_LIBRARY" }
 		files { "src/thirdparty/freetype2/src/**.c" }
-		incdirs { "src/thirdparty/freetype2/include" }
+		incdirs { "src/thirdparty/freetype2/include", "src/thirdparty/libpng" }
 		build_base_configuration( "freetype" )
 
 	project "chipmunk-static"

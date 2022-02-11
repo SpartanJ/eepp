@@ -102,7 +102,7 @@ class EE_API UITreeView : public UIAbstractTableView {
 
 	void expandAll( const ModelIndex& index = {} );
 
-	void contractAll( const ModelIndex& index = {} );
+	void collapseAll( const ModelIndex& index = {} );
 
 	UIIcon* getExpandIcon() const;
 

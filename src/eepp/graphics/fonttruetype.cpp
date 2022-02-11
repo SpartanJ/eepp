@@ -119,8 +119,8 @@ bool FontTrueType::loadFromFile( const std::string& filename ) {
 	// Initialize FreeType
 	FT_Library library;
 	if ( FT_Init_FreeType( &library ) != 0 ) {
-		Log::error( "Failed to load font \"%s\" (failed to initialize FreeType)",
-					filename.c_str() );
+		Log::error( "Failed to load font \"%s\" (%s) (failed to initialize FreeType)",
+					filename.c_str(), mFontName.c_str() );
 		return false;
 	}
 	mLibrary = library;
@@ -128,8 +128,8 @@ bool FontTrueType::loadFromFile( const std::string& filename ) {
 	// Load the new font face from the specified file
 	FT_Face face;
 	if ( FT_New_Face( static_cast<FT_Library>( mLibrary ), filename.c_str(), 0, &face ) != 0 ) {
-		Log::error( "Failed to load font \"%s\" (failed to create the font face)",
-					filename.c_str() );
+		Log::error( "Failed to load font \"%s\" (%s) (failed to create the font face)",
+					filename.c_str(), mFontName.c_str() );
 		return false;
 	}
 

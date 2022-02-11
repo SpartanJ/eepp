@@ -286,7 +286,7 @@ os_links = { }
 backends = { }
 static_backends = { }
 backend_selected = false
-remote_sdl2_version = "SDL2-2.0.10"
+remote_sdl2_version = "SDL2-2.0.20"
 
 function build_base_configuration( package_name )
 	includedirs { "src/thirdparty/zlib" }
@@ -552,7 +552,7 @@ function add_static_links()
 	end
 
 	if not _OPTIONS["with-dynamic-freetype"] then
-		links { "freetype-static" }
+		links { "freetype-static", "libpng-static" }
 	end
 
 	links { "SOIL2-static",
@@ -888,13 +888,21 @@ solution "eepp"
 		includedirs { "src/thirdparty/zlib" }
 		build_base_configuration( "libzip" )
 
+	project "libpng-static"
+		kind "StaticLib"
+		language "C"
+		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+		files { "src/thirdparty/libpng/**.c" }
+		includedirs { "src/thirdparty/libpng/include" }
+		build_base_configuration( "libpng" )
+
 	project "freetype-static"
 		kind "StaticLib"
 		language "C"
 		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
 		defines { "FT2_BUILD_LIBRARY" }
 		files { "src/thirdparty/freetype2/src/**.c" }
-		includedirs { "src/thirdparty/freetype2/include" }
+		includedirs { "src/thirdparty/freetype2/include", "src/thirdparty/libpng" }
 		build_base_configuration( "freetype" )
 
 	project "chipmunk-static"

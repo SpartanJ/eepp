@@ -1980,10 +1980,10 @@ void App::loadFolder( const std::string& path ) {
 
 FontTrueType* App::loadFont( const std::string& name, std::string fontPath,
 							 const std::string& fallback ) {
-	if ( fontPath.empty() || !FileSystem::fileExists( fontPath ) )
-		fontPath = fallback;
 	if ( isRelativePath( fontPath ) )
 		fontPath = mResPath + fontPath;
+	if ( fontPath.empty() || !FileSystem::fileExists( fontPath ) )
+		fontPath = fallback;
 	return FontTrueType::New( name, fontPath );
 }
 
@@ -2318,6 +2318,8 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 			{ "go-to-line", 0xf1f8 },
 			{ "table-view", 0xf1de },
 			{ "list-view", 0xecf1 },
+			{ "menu-unfold", 0xef40 },
+			{ "menu-fold", 0xef3d },
 		};
 		for ( const auto& icon : icons )
 			iconTheme->add( UIGlyphIcon::New( icon.first, iconFont, icon.second ) );

@@ -112,6 +112,14 @@ void GlobalSearchController::initGlobalSearchBar( UIGlobalSearchBar* globalSearc
 		if ( mEditorSplitter->getCurEditor() )
 			mEditorSplitter->getCurEditor()->setFocus();
 	} );
+	mGlobalSearchBarLayout->addCommand( "expand-all", [&] {
+		mGlobalSearchTree->expandAll();
+		mGlobalSearchTree->setFocus();
+	} );
+	mGlobalSearchBarLayout->addCommand( "collapse-all", [&] {
+		mGlobalSearchTree->collapseAll();
+		mGlobalSearchTree->setFocus();
+	} );
 	mGlobalSearchBarLayout->getKeyBindings().addKeybindsString( {
 		{ "escape", "close-global-searchbar" },
 		{ "ctrl+s", "change-case" },
@@ -119,6 +127,8 @@ void GlobalSearchController::initGlobalSearchBar( UIGlobalSearchBar* globalSearc
 		{ "ctrl+l", "toggle-lua-pattern" },
 		{ "ctrl+r", "search-replace-in-files" },
 		{ "ctrl+g", "search-again" },
+		{ "ctrl+e", "expand-all" },
+		{ "ctrl+shift+e", "collapse-all" },
 	} );
 	mGlobalSearchBarLayout->addCommand( "change-case", [&, caseSensitiveChk] {
 		caseSensitiveChk->setChecked( !caseSensitiveChk->isChecked() );
@@ -160,6 +170,8 @@ void GlobalSearchController::initGlobalSearchBar( UIGlobalSearchBar* globalSearc
 				<TextView layout_width="wrap_content" layout_height="match_parent" text="Searched for:" margin-right="4dp" />
 				<TextView class="search_str" layout_width="wrap_content" layout_height="match_parent" />
 				<PushButton id="global_search_again" layout_width="wrap_content" layout_height="18dp" text="Search Again" margin-left="8dp" />
+				<PushButton id="global_search_collapse" layout_width="wrap_content" layout_height="18dp" tooltip="Collapse All" margin-left="8dp" icon="menu-fold" />
+				<PushButton id="global_search_expand" layout_width="wrap_content" layout_height="18dp" tooltip="Expand All" margin-left="8dp" icon="menu-unfold" />
 				<Widget layout_width="0" layout_weight="1" layout_height="match_parent" />
 				<TextView class="search_total" layout_width="wrap_content" layout_height="match_parent" margin-right="8dp" />
 			</hbox>
@@ -177,8 +189,14 @@ void GlobalSearchController::initGlobalSearchBar( UIGlobalSearchBar* globalSearc
 		mGlobalSearchLayout->find<UITextInput>( "global_search_replace_input" );
 	UIPushButton* replaceButton =
 		mGlobalSearchLayout->find<UIPushButton>( "global_search_replace_button" );
+	UIPushButton* searchExpandButton =
+		mGlobalSearchLayout->find<UIPushButton>( "global_search_expand" );
+	UIPushButton* searchCollapseButton =
+		mGlobalSearchLayout->find<UIPushButton>( "global_search_collapse" );
 	addClickListener( searchAgainBtn, "search-again" );
 	addClickListener( replaceButton, "replace-in-files" );
+	addClickListener( searchExpandButton, "expand-all" );
+	addClickListener( searchCollapseButton, "collapse-all" );
 	replaceInput->addEventListener( Event::OnPressEnter, [&, replaceInput]( const Event* ) {
 		if ( replaceInput->hasFocus() )
 			mGlobalSearchBarLayout->execute( "replace-in-files" );
