@@ -356,7 +356,7 @@ Also please use a modern browser with good WebGL and WASM support (Chrome/ium 70
 
 * **[UI Editor running some tests](https://web.ensoft.dev/eepp/demo-fs.html?run=eepp-UIEditor.js)**
 
-* **[Fonts example](http://localhost/eepp/emscripten-fs.html?run=eepp-fonts.js)**
+* **[Fonts example](https://web.ensoft.dev/eepp/demo-fs.html?run=eepp-fonts.js)**
 
 * **[Physics module demo](https://web.ensoft.dev/eepp/demo-fs.html?run=eepp-physics.js)**
 
