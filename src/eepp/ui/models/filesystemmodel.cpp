@@ -1,12 +1,9 @@
-#include <ctime>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
 #include <eepp/ui/abstract/uiabstractview.hpp>
 #include <eepp/ui/models/filesystemmodel.hpp>
 #include <eepp/ui/uiscenenode.hpp>
-#include <iomanip>
-#include <iostream>
 
 using namespace EE::Scene;
 
@@ -488,12 +485,7 @@ std::string getFileSystemEventTypeName( FileSystemEventType action ) {
 	}
 }
 
-void FileSystemModel::handleFileEvent( const FileEvent& event ) {
-	if ( !mInitOK )
-		return;
-
-	Lock l( resourceLock() );
-
+bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 	if ( Log::instance() && Log::instance()->getLogLevelThreshold() == LogLevel::Debug ) {
 		std::string txt =
 			"DIR ( " + event.directory + " ) FILE ( " +
@@ -509,7 +501,7 @@ void FileSystemModel::handleFileEvent( const FileEvent& event ) {
 
 			if ( ( getMode() == Mode::DirectoriesOnly && !file.isDirectory() ) ||
 				 ( getDisplayConfig().ignoreHidden && file.isHidden() ) )
-				return;
+				return false;
 
 			auto* parent = getNodeFromPath(
 				file.isDirectory() ? FileSystem::removeLastFolderFromPath( file.getDirectoryPath() )
@@ -520,7 +512,7 @@ void FileSystemModel::handleFileEvent( const FileEvent& event ) {
 				auto* childNodeExists =
 					getNodeFromPath( file.getFilepath(), file.isDirectory(), false );
 				if ( childNodeExists )
-					return;
+					return false;
 
 				Node* childNode = parent->createChild( file.getFileName(), *this );
 
@@ -556,7 +548,7 @@ void FileSystemModel::handleFileEvent( const FileEvent& event ) {
 						view->getSelection().set( newIndexes, false );
 					} );
 				} else {
-					return;
+					return false;
 				}
 			}
 			break;
@@ -566,15 +558,15 @@ void FileSystemModel::handleFileEvent( const FileEvent& event ) {
 
 			auto* child = getNodeFromPath( file.getFilepath(), file.isDirectory(), false );
 			if ( !child )
-				return;
+				return false;
 
 			Node* parent = child->mParent;
 			if ( !parent )
-				return;
+				return false;
 
 			ModelIndex index = child->index( *this, 0 );
 			if ( !index.isValid() )
-				return;
+				return false;
 
 			Int64 pos = index.row();
 
@@ -620,20 +612,19 @@ void FileSystemModel::handleFileEvent( const FileEvent& event ) {
 				if ( node ) {
 					ModelIndex index = node->index( *this, 0 );
 					if ( !index.isValid() )
-						return;
+						return false;
 
 					Node* parent = node->mParent;
 					if ( !parent )
-						return;
+						return false;
 
 					if ( ( getMode() == Mode::DirectoriesOnly && !file.isDirectory() ) )
-						return;
+						return false;
 
 					if ( !node->info().isHidden() && getDisplayConfig().ignoreHidden &&
 						 file.isHidden() ) {
-						handleFileEvent(
+						return handleFileEventLocked(
 							{ FileSystemEventType::Delete, event.directory, event.oldFilename } );
-						return;
 					}
 
 					size_t pos = getFileIndex( node->getParent(), file );
@@ -690,7 +681,7 @@ void FileSystemModel::handleFileEvent( const FileEvent& event ) {
 						view->getSelection().set( newIndexes, false );
 					} );
 				} else {
-					handleFileEvent(
+					return handleFileEventLocked(
 						{ FileSystemEventType::Add, event.directory, event.filename } );
 				}
 			}
@@ -701,7 +692,24 @@ void FileSystemModel::handleFileEvent( const FileEvent& event ) {
 		}
 	}
 
+	return true;
+}
+
+bool FileSystemModel::handleFileEvent( const FileEvent& event ) {
+	if ( !mInitOK )
+		return false;
+
+	bool ret;
+
+	{
+		Lock l( resourceLock() );
+
+		ret = handleFileEventLocked( event );
+	}
+
 	onModelUpdate( UpdateFlag::DontInvalidateIndexes );
+
+	return ret;
 }
 
 }}} // namespace EE::UI::Models

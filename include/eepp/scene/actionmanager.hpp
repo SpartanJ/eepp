@@ -1,10 +1,11 @@
 #ifndef EE_SCENEACTIONMANAGER_HPP
 #define EE_SCENEACTIONMANAGER_HPP
 
+#include <atomic>
 #include <eepp/config.hpp>
 #include <eepp/system/mutex.hpp>
 #include <eepp/system/time.hpp>
-#include <list>
+#include <vector>
 using namespace EE::System;
 
 namespace EE { namespace Scene {
@@ -47,9 +48,10 @@ class EE_API ActionManager {
 	void clear();
 
   protected:
-	std::list<Action*> mActions;
-	std::list<Action*> mActionsRemoveList;
-	bool mUpdating;
+	std::vector<Action*> mActions;
+	std::vector<Action*> mActionsRemoveList;
+	mutable Mutex mMutex;
+	std::atomic<bool> mUpdating;
 };
 
 }} // namespace EE::Scene

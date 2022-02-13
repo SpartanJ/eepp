@@ -172,7 +172,7 @@ class EE_API FileSystemModel : public Model {
 
 	void setPreviouslySelectedIndex( const ModelIndex& previouslySelectedIndex );
 
-	void handleFileEvent( const FileEvent& event );
+	bool handleFileEvent( const FileEvent& event );
 
 	~FileSystemModel();
 
@@ -192,6 +192,10 @@ class EE_API FileSystemModel : public Model {
 					 const DisplayConfig displayConfig );
 
 	size_t getFileIndex( Node* parent, const FileInfo& file );
+
+
+	bool handleFileEventLocked( const FileEvent& event );
+
 };
 
 }}} // namespace EE::UI::Models
