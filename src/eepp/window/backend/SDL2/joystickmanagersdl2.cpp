@@ -14,6 +14,8 @@ JoystickManagerSDL::JoystickManagerSDL() :
 	JoystickManager(), mAsyncInit( &JoystickManagerSDL::openAsync, this ) {}
 
 JoystickManagerSDL::~JoystickManagerSDL() {
+	for ( Uint32 i = 0; i < mCount; i++ )
+		eeSAFE_DELETE( mJoysticks[i] );
 	closeSubsystem();
 	mInit = false;
 }
