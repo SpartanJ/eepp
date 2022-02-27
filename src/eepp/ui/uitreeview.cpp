@@ -44,7 +44,7 @@ void UITreeView::traverseTree( TreeViewCallback callback ) const {
 	if ( !getModel() )
 		return;
 	auto& model = *getModel();
-	Lock l( const_cast<Model*>( getModel() )->resourceLock() );
+	Lock l( const_cast<Model*>( getModel() )->resourceMutex() );
 	int indentLevel = 0;
 	Float yOffset = getHeaderHeight();
 	int rowIndex = -1;
@@ -118,7 +118,8 @@ void UITreeView::bindNavigationClick( UIWidget* widget ) {
 			auto mouseEvent = static_cast<const MouseEvent*>( event );
 			auto idx = mouseEvent->getNode()->getParent()->asType<UITableRow>()->getCurIndex();
 			if ( mouseEvent->getFlags() & EE_BUTTON_LMASK ) {
-				Lock l( const_cast<Model*>( getModel() )->resourceLock() );
+				ConditionalLock l( getModel() != nullptr,
+								   getModel() ? &getModel()->resourceMutex() : nullptr );
 				if ( getModel()->rowCount( idx ) ) {
 					auto& data = getIndexMetadata( idx );
 					data.open = !data.open;
@@ -157,7 +158,8 @@ UIWidget* UITreeView::setupCell( UITableCell* widget, UIWidget* rowWidget,
 			if ( icon ) {
 				Vector2f pos( icon->convertToNodeSpace( mouseEvent->getPosition().asFloat() ) );
 				if ( pos >= Vector2f::Zero && pos <= icon->getPixelsSize() ) {
-					Lock l( const_cast<Model*>( getModel() )->resourceLock() );
+					ConditionalLock l( getModel() != nullptr,
+									   getModel() ? &getModel()->resourceMutex() : nullptr );
 					auto idx =
 						mouseEvent->getNode()->getParent()->asType<UITableRow>()->getCurIndex();
 					if ( getModel()->rowCount( idx ) ) {
@@ -646,7 +648,8 @@ void UITreeView::onSortColumn( const size_t& ) {
 ModelIndex UITreeView::findRowWithText( const std::string& text, const bool& caseSensitive,
 										const bool& exactMatch ) const {
 	const Model* model = getModel();
-	Lock l( const_cast<Model*>( getModel() )->resourceLock() );
+	ConditionalLock l( getModel() != nullptr,
+					   getModel() ? &const_cast<Model*>( getModel() )->resourceMutex() : nullptr );
 	if ( !model || model->rowCount() == 0 )
 		return {};
 	ModelIndex foundIndex = {};
@@ -692,7 +695,8 @@ ModelIndex UITreeView::selectRowWithPath( std::string path ) {
 
 		size_t rowCount = 0;
 		{
-			Lock l( const_cast<Model*>( getModel() )->resourceLock() );
+			ConditionalLock l( getModel() != nullptr,
+							   getModel() ? &getModel()->resourceMutex() : nullptr );
 			rowCount = getModel()->rowCount( foundIndex );
 		}
 		if ( rowCount ) {

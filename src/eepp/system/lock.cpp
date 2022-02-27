@@ -11,4 +11,15 @@ Lock::~Lock() {
 	mMutex.unlock();
 }
 
+ConditionalLock::ConditionalLock( bool condition, Mutex* mutex ) :
+	mMutex( mutex ), mCondition( condition ) {
+	if ( mMutex && mCondition )
+		mMutex->lock();
+}
+
+ConditionalLock::~ConditionalLock() {
+	if ( mMutex && mCondition )
+		mMutex->unlock();
+}
+
 }} // namespace EE::System

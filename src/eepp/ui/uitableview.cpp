@@ -26,7 +26,7 @@ bool UITableView::isType( const Uint32& type ) const {
 
 void UITableView::drawChilds() {
 	int realIndex = 0;
-	Lock l( const_cast<Model*>( getModel() )->resourceLock() );
+	ConditionalLock l( getModel() != nullptr, getModel() ? &getModel()->resourceMutex() : nullptr );
 	size_t start = mScrollOffset.y / getRowHeight();
 	size_t end =
 		eemin<size_t>( (size_t)eeceil( ( mScrollOffset.y + mSize.getHeight() ) / getRowHeight() ),
@@ -62,7 +62,8 @@ Node* UITableView::overFind( const Vector2f& point ) {
 
 	Node* pOver = NULL;
 	if ( mEnabled && mVisible ) {
-		Lock l( const_cast<Model*>( getModel() )->resourceLock() );
+		ConditionalLock l( getModel() != nullptr,
+						   getModel() ? &getModel()->resourceMutex() : nullptr );
 
 		updateWorldPolygon();
 		if ( mWorldBounds.contains( point ) && mPoly.pointInside( point ) ) {
@@ -110,7 +111,7 @@ Node* UITableView::overFind( const Vector2f& point ) {
 
 Float UITableView::getMaxColumnContentWidth( const size_t& colIndex, bool bestGuess ) {
 	Float lWidth = 0;
-	Lock l( const_cast<Model*>( getModel() )->resourceLock() );
+	ConditionalLock l( getModel() != nullptr, getModel() ? &getModel()->resourceMutex() : nullptr );
 	if ( getModel()->rowCount() == 0 )
 		return lWidth;
 	getUISceneNode()->setIsLoading( true );
@@ -175,7 +176,7 @@ Uint32 UITableView::onKeyDown( const KeyEvent& event ) {
 		return UIAbstractTableView::onKeyDown( event );
 	auto curIndex = getSelection().first();
 	int pageSize = eefloor( getVisibleArea().getHeight() / getRowHeight() ) - 1;
-	Lock l( const_cast<Model*>( getModel() )->resourceLock() );
+	ConditionalLock l( getModel() != nullptr, getModel() ? &getModel()->resourceMutex() : nullptr );
 	switch ( event.getKeyCode() ) {
 		case KEY_PAGEUP: {
 			if ( curIndex.row() - pageSize < 0 ) {
@@ -278,7 +279,8 @@ Uint32 UITableView::onKeyDown( const KeyEvent& event ) {
 ModelIndex UITableView::findRowWithText( const std::string& text, const bool& caseSensitive,
 										 const bool& exactMatch ) const {
 	const Model* model = getModel();
-	Lock l( const_cast<Model*>( getModel() )->resourceLock() );
+	ConditionalLock l( getModel() != nullptr,
+					   getModel() ? &const_cast<Model*>( getModel() )->resourceMutex() : nullptr );
 	if ( !model || model->rowCount() == 0 )
 		return {};
 	size_t rc = model->rowCount();

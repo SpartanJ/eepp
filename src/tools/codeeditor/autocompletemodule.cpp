@@ -445,10 +445,12 @@ static std::vector<std::string> fuzzyMatchSymbols( const AutoCompleteModule::Sym
 
 void AutoCompleteModule::runUpdateSuggestions( const std::string& symbol,
 											   const SymbolsList& symbols, UICodeEditor* editor ) {
-	Lock l( mLangSymbolsMutex );
-	Lock l2( mSuggestionsMutex );
-	mSuggestions = fuzzyMatchSymbols( symbols, symbol, mSuggestionsMaxVisible );
-	mSuggestionsEditor = editor;
+	{
+		Lock l( mLangSymbolsMutex );
+		Lock l2( mSuggestionsMutex );
+		mSuggestions = fuzzyMatchSymbols( symbols, symbol, mSuggestionsMaxVisible );
+		mSuggestionsEditor = editor;
+	}
 	editor->runOnMainThread( [editor] { editor->invalidateDraw(); } );
 }
 

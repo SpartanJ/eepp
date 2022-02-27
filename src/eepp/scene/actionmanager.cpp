@@ -101,7 +101,10 @@ void ActionManager::update( const Time& time ) {
 
 		Lock l( mMutex );
 
-		for ( auto it = mActions.begin(); it != mActions.end(); ++it ) {
+		// Actions can be added during action updates, we need to only iterate the current actions
+		auto actions = mActions;
+
+		for ( auto it = actions.begin(); it != actions.end(); ++it ) {
 			Action* action = *it;
 
 			action->update( time );

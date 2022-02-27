@@ -1920,22 +1920,28 @@ void App::initProjectTreeView( const std::string& path ) {
 		return 1;
 	} );
 
-	if ( !path.empty() && FileSystem::fileExists( path ) ) {
+	if ( !path.empty() ) {
 		if ( FileSystem::isDirectory( path ) ) {
 			loadFolder( path );
 		} else {
 			std::string rpath( FileSystem::getRealPath( path ) );
+			std::string folderPath( FileSystem::fileRemoveFileName( rpath ) );
 
-			mFileSystemModel = FileSystemModel::New( FileSystem::fileRemoveFileName( rpath ),
-													 FileSystemModel::Mode::FilesAndDirectories,
-													 { true, true, true } );
+			if ( FileSystem::isDirectory( folderPath ) ) {
+				mFileSystemModel = FileSystemModel::New(
+					folderPath, FileSystemModel::Mode::FilesAndDirectories, { true, true, true } );
 
-			mProjectTreeView->setModel( mFileSystemModel );
+				mProjectTreeView->setModel( mFileSystemModel );
 
-			if ( mFileSystemListener )
-				mFileSystemListener->setFileSystemModel( mFileSystemModel );
+				if ( mFileSystemListener )
+					mFileSystemListener->setFileSystemModel( mFileSystemModel );
 
-			loadFileFromPath( rpath, false );
+				if ( FileSystem::fileExists( rpath ) ) {
+					loadFileFromPath( rpath, false );
+				} else if ( FileSystem::fileCanWrite( folderPath ) ) {
+					loadFileFromPath( path, false );
+				}
+			}
 		}
 	} else {
 		loadFolder( "." );

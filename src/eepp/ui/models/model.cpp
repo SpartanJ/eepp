@@ -303,7 +303,7 @@ void Model::handleDelete( Operation const& operation ) {
 	}
 }
 
-Mutex& Model::resourceLock() {
+Mutex& Model::resourceMutex() {
 	return mResourceLock;
 }
 

@@ -136,11 +136,11 @@ class EE_API Model {
 	void endDeleteRows();
 	void endDeleteColumns();
 
-	Mutex& resourceLock();
+	Mutex& resourceMutex();
 
-	void acquireResourceLock() { mResourceLock.lock(); }
+	void acquireResourceMutex() { mResourceLock.lock(); }
 
-	void releaseResourceLock() { mResourceLock.unlock(); }
+	void releaseResourceMutex() { mResourceLock.unlock(); }
 
   protected:
 	Model(){};

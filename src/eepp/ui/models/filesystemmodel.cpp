@@ -702,7 +702,7 @@ bool FileSystemModel::handleFileEvent( const FileEvent& event ) {
 	bool ret;
 
 	{
-		Lock l( resourceLock() );
+		Lock l( resourceMutex() );
 
 		ret = handleFileEventLocked( event );
 	}
