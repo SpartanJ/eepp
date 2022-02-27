@@ -66,11 +66,15 @@ void App::saveAllProcess() {
 			if ( editor->getDocument().hasFilepath() ) {
 				editor->save();
 				updateEditorTabTitle( editor );
+				if ( mEditorSplitter->getCurEditor() == editor )
+					updateEditorTitle( editor );
 				mTmpDocs.erase( &editor->getDocument() );
 			} else {
 				UIFileDialog* dialog = saveFileDialog( editor, false );
 				dialog->addEventListener( Event::SaveFile, [&, editor]( const Event* ) {
 					updateEditorTabTitle( editor );
+					if ( mEditorSplitter->getCurEditor() == editor )
+						updateEditorTitle( editor );
 				} );
 				dialog->addEventListener( Event::OnWindowClose, [&, editor]( const Event* ) {
 					mTmpDocs.erase( &editor->getDocument() );
