@@ -52,6 +52,12 @@ class EE_API Font {
 		return flags & TEXT_VALIGN_MASK;
 	}
 
+	static bool isEmojiCodePoint( const Uint32& codePoint );
+
+	static bool containsEmojiCodePoint( const String& string );
+
+	static std::vector<std::size_t> emojiCodePointsPositions( const String& string );
+
 	virtual ~Font();
 
 	/** @return The current font height */

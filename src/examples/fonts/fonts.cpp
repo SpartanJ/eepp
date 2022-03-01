@@ -72,6 +72,19 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		fontTest = FontTrueType::New( "DejaVuSansMono" );
 		fontTest->loadFromFile( "assets/fonts/DejaVuSansMono.ttf" );
 
+		fontTest2 = FontTrueType::New( "NotoSans-Regular" );
+		fontTest2->loadFromFile( "assets/fonts/NotoSans-Regular.ttf" );
+
+		fontEmoji = FontTrueType::New( "NotoColorEmoji" );
+		fontEmoji->loadFromFile( "assets/fonts/NotoColorEmoji.ttf" );
+
+		fontBMFont = FontBMFont::New( "bmfont" );
+		fontBMFont->loadFromFile( "assets/fonts/bmfont.fnt" );
+
+		fontSprite = FontSprite::New(
+			"alagard" ); // Alagard - Hewett Tsoi ( https://www.dafont.com/alagard.font )
+		fontSprite->loadFromFile( "assets/fonts/custom_alagard.png", Color::Fuchsia, 32, -4 );
+
 		text.setFont( fontTest );
 		text.setFontSize( 24 );
 		text.setAlign( TEXT_ALIGN_CENTER );
@@ -86,11 +99,8 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 			text.setFillColor( Color( 255 * i / size, 0, 0, 255 ), i, i + 1 );
 		}
 
-		fontTest2 = FontTrueType::New( "NotoSans-Regular" );
-		fontTest2->loadFromFile( "assets/fonts/NotoSans-Regular.ttf" );
-
 		text2.setFont( fontTest2 );
-		text2.setString( "Lorem ipsum dolor sit amet, consectetur adipisicing elit." );
+		text2.setString( "Lorem ipsum dolor sit amet, consectetur adipisicing elit. 👽" );
 		text2.setFontSize( 32 );
 		text2.setFillColor( Color::Black );
 
@@ -101,24 +111,14 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		text3.setFillColor( Color( 255, 255, 255, 255 ) );
 		text3.setOutlineColor( Color( 0, 0, 0, 255 ) );
 
-		fontBMFont = FontBMFont::New( "bmfont" );
-		fontBMFont->loadFromFile( "assets/fonts/bmfont.fnt" );
-
 		text4.setFont( fontBMFont );
 		text4.setString( "Lorem ipsum dolor sit amet, consectetur adipisicing elit." );
 		text4.setFontSize( 45 );
 		text4.setFillColor( Color::Black );
 
-		fontSprite = FontSprite::New(
-			"alagard" ); // Alagard - Hewett Tsoi ( https://www.dafont.com/alagard.font )
-		fontSprite->loadFromFile( "assets/fonts/custom_alagard.png", Color::Fuchsia, 32, -4 );
-
 		text5.setFont( fontSprite );
 		text5.setString( "Lorem ipsum dolor sit amet, consectetur adipisicing elit." );
 		text5.setFontSize( 38 );
-
-		fontEmoji = FontTrueType::New( "NotoColorEmoji" );
-		fontEmoji->loadFromFile( "assets/fonts/NotoColorEmoji.ttf" );
 
 		text6.setFont( fontEmoji );
 		text6.setFontSize( 64 );

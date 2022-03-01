@@ -170,6 +170,7 @@ class EE_API Text {
 	mutable bool mGeometryNeedUpdate; ///< Does the geometry need to be recomputed?
 	mutable bool mCachedWidthNeedUpdate;
 	mutable bool mColorsNeedUpdate;
+	mutable bool mContainsColorEmoji{ false };
 
 	Float mCachedWidth;
 	int mNumLines;

@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cmath>
+#include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/pixeldensity.hpp>
 #include <eepp/graphics/primitives.hpp>
@@ -160,6 +161,8 @@ void Text::setString( const String& string ) {
 		mColorsNeedUpdate = true;
 		mGeometryNeedUpdate = true;
 		mCachedWidthNeedUpdate = true;
+		if ( FontManager::instance()->getColorEmojiFont() != nullptr )
+			mContainsColorEmoji = Font::containsEmojiCodePoint( string );
 	}
 }
 
@@ -570,7 +573,7 @@ void Text::draw( const Float& X, const Float& Y, const Vector2f& scale, const Fl
 
 			if ( Col.a != 255 ) {
 				Color ShadowColor = getShadowColor();
-				ShadowColor.a = ( Uint8 )( (Float)ShadowColor.a * ( (Float)Col.a / (Float)255 ) );
+				ShadowColor.a = (Uint8)( (Float)ShadowColor.a * ( (Float)Col.a / (Float)255 ) );
 
 				setFillColor( ShadowColor );
 			} else {
@@ -593,8 +596,8 @@ void Text::draw( const Float& X, const Float& Y, const Vector2f& scale, const Fl
 		GlobalBatchRenderer::instance()->draw();
 
 		if ( rotation != 0.0f || scale != 1.0f ) {
-			Float cX = ( Float )( (Int32)X );
-			Float cY = ( Float )( (Int32)Y );
+			Float cX = (Float)( (Int32)X );
+			Float cY = (Float)( (Int32)Y );
 			Vector2f Center( cX + mCachedWidth * 0.5f, cY + getTextHeight() * 0.5f );
 
 			GLi->pushMatrix();
@@ -726,7 +729,7 @@ void Text::ensureGeometryUpdate() {
 
 	switch ( Font::getHorizontalAlign( mAlign ) ) {
 		case TEXT_ALIGN_CENTER:
-			centerDiffX = ( Float )( ( Int32 )( ( mCachedWidth - mLinesWidth[Line] ) * 0.5f ) );
+			centerDiffX = (Float)( (Int32)( ( mCachedWidth - mLinesWidth[Line] ) * 0.5f ) );
 			Line++;
 			break;
 		case TEXT_ALIGN_RIGHT:
@@ -764,8 +767,7 @@ void Text::ensureGeometryUpdate() {
 		if ( curChar == L'\n' ) {
 			switch ( Font::getHorizontalAlign( mAlign ) ) {
 				case TEXT_ALIGN_CENTER:
-					centerDiffX =
-						( Float )( ( Int32 )( ( mCachedWidth - mLinesWidth[Line] ) * 0.5f ) );
+					centerDiffX = (Float)( (Int32)( ( mCachedWidth - mLinesWidth[Line] ) * 0.5f ) );
 					break;
 				case TEXT_ALIGN_RIGHT:
 					centerDiffX = mCachedWidth - mLinesWidth[Line];
@@ -901,6 +903,12 @@ void Text::ensureColorUpdate() {
 		}
 
 		mColorsNeedUpdate = false;
+
+		if ( mContainsColorEmoji ) {
+			auto positions = Font::emojiCodePointsPositions( mString );
+			for ( auto& position : positions )
+				setFillColor( Color( 255, 255, 255, mFillColor.a ), position, position + 1 );
+		}
 	}
 }
 

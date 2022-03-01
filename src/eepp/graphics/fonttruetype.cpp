@@ -82,21 +82,6 @@ bool checkIsColorEmojiFont( const FT_Face& face ) {
 	return length > 0;
 }
 
-bool isEmojiCodePoint( const Uint32& codePoint ) {
-	const Uint32 rangeMin = 127744;
-	const Uint32 rangeMax = 131069;
-	const Uint32 rangeMin2 = 126980;
-	const Uint32 rangeMax2 = 127569;
-	const Uint32 rangeMin3 = 169;
-	const Uint32 rangeMax3 = 174;
-	const Uint32 rangeMin4 = 8205;
-	const Uint32 rangeMax4 = 12953;
-	return ( ( rangeMin <= codePoint && codePoint <= rangeMax ) ||
-			 ( rangeMin2 <= codePoint && codePoint <= rangeMax2 ) ||
-			 ( rangeMin3 <= codePoint && codePoint <= rangeMax3 ) ||
-			 ( rangeMin4 <= codePoint && codePoint <= rangeMax4 ) );
-}
-
 bool FontTrueType::loadFromFile( const std::string& filename ) {
 	if ( !FileSystem::fileExists( filename ) &&
 		 PackManager::instance()->isFallbackToPacksActive() ) {
@@ -339,7 +324,7 @@ Uint64 FontTrueType::getCharIndexKey( Uint32 codePoint, bool bold, Float outline
 	Uint64 key = combine( outlineThickness, bold,
 						  FT_Get_Char_Index( static_cast<FT_Face>( mFace ), codePoint ) );
 
-	if ( key == 0 && !mIsColorEmojiFont && isEmojiCodePoint( codePoint ) && !isMonospace() ) {
+	if ( key == 0 && !mIsColorEmojiFont && Font::isEmojiCodePoint( codePoint ) && !isMonospace() ) {
 		if ( FontManager::instance()->getColorEmojiFont() != nullptr &&
 			 FontManager::instance()->getColorEmojiFont()->getType() == FontType::TTF ) {
 			FontTrueType* fontEmoji =
@@ -564,7 +549,7 @@ Glyph FontTrueType::loadGlyph( Uint32 codePoint, unsigned int characterSize, boo
 	// The glyph to return
 	Glyph glyph;
 
-	if ( !mIsColorEmojiFont && isEmojiCodePoint( codePoint ) && !isMonospace() ) {
+	if ( !mIsColorEmojiFont && Font::isEmojiCodePoint( codePoint ) && !isMonospace() ) {
 		if ( FontManager::instance()->getColorEmojiFont() != nullptr &&
 			 FontManager::instance()->getColorEmojiFont()->getType() == FontType::TTF ) {
 			FontTrueType* fontEmoji =

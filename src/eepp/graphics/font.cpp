@@ -5,6 +5,38 @@
 
 namespace EE { namespace Graphics {
 
+bool Font::isEmojiCodePoint( const Uint32& codePoint ) {
+	const Uint32 rangeMin = 127744;
+	const Uint32 rangeMax = 131069;
+	const Uint32 rangeMin2 = 126980;
+	const Uint32 rangeMax2 = 127569;
+	const Uint32 rangeMin3 = 169;
+	const Uint32 rangeMax3 = 174;
+	const Uint32 rangeMin4 = 8205;
+	const Uint32 rangeMax4 = 12953;
+	return ( ( rangeMin <= codePoint && codePoint <= rangeMax ) ||
+			 ( rangeMin2 <= codePoint && codePoint <= rangeMax2 ) ||
+			 ( rangeMin3 <= codePoint && codePoint <= rangeMax3 ) ||
+			 ( rangeMin4 <= codePoint && codePoint <= rangeMax4 ) );
+}
+
+bool Font::containsEmojiCodePoint( const String& string ) {
+	for ( auto& codePoint : string ) {
+		if ( Font::isEmojiCodePoint( codePoint ) )
+			return true;
+	}
+	return false;
+}
+
+std::vector<std::size_t> Font::emojiCodePointsPositions( const String& string ) {
+	std::vector<std::size_t> positions;
+	for ( size_t i = 0; i < string.size(); i++ ) {
+		if ( Font::isEmojiCodePoint( string[i] ) )
+			positions.emplace_back( i );
+	}
+	return positions;
+}
+
 Font::Font( const FontType& Type, const std::string& Name ) : mType( Type ), mNumCallBacks( 0 ) {
 	this->setName( Name );
 	FontManager::instance()->add( this );
