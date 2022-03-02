@@ -1792,7 +1792,8 @@ void UICodeEditor::drawLineText( const Int64& index, Vector2f position, const Fl
 	auto& tokens = mHighlighter.getLine( index );
 	Primitives primitives;
 	for ( auto& token : tokens ) {
-		Float textWidth = getTextWidth( token.text );
+		String text( token.text );
+		Float textWidth = getTextWidth( text );
 		if ( position.x + textWidth >= mScreenPos.x &&
 			 position.x <= mScreenPos.x + mSize.getWidth() ) {
 			Text line( "", mFont, fontSize );
@@ -1806,7 +1807,7 @@ void UICodeEditor::drawLineText( const Int64& index, Vector2f position, const Fl
 				primitives.drawRectangle( Rectf( position, Sizef( textWidth, lineHeight ) ) );
 			}
 			line.setColor( Color( style.color ).blendAlpha( mAlpha ) );
-			line.setString( token.text );
+			line.setString( text );
 			line.draw( position.x, position.y );
 		} else if ( position.x > mScreenPos.x + mSize.getWidth() ) {
 			break;

@@ -907,7 +907,7 @@ void Text::ensureColorUpdate() {
 		if ( mContainsColorEmoji ) {
 			auto positions = Font::emojiCodePointsPositions( mString );
 			for ( auto& position : positions )
-				setFillColor( Color( 255, 255, 255, mFillColor.a ), position, position + 1 );
+				setFillColor( Color( 255, 255, 255, mFillColor.a ), position, position );
 		}
 	}
 }
