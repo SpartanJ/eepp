@@ -93,7 +93,7 @@ class EE_API FontTrueType : public Font {
 	void cleanup();
 
 	Glyph loadGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
-					 Float outlineThickness, Page& page ) const;
+					 Float outlineThickness, Page& page, const Float& forceSize = 0.f ) const;
 
 	Rect findGlyphRect( Page& page, unsigned int width, unsigned int height ) const;
 

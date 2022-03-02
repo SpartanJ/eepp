@@ -324,7 +324,7 @@ Uint64 FontTrueType::getCharIndexKey( Uint32 codePoint, bool bold, Float outline
 	Uint64 key = combine( outlineThickness, bold,
 						  FT_Get_Char_Index( static_cast<FT_Face>( mFace ), codePoint ) );
 
-	if ( key == 0 && !mIsColorEmojiFont && Font::isEmojiCodePoint( codePoint ) && !isMonospace() ) {
+	if ( key == 0 && !mIsColorEmojiFont && Font::isEmojiCodePoint( codePoint ) ) {
 		if ( FontManager::instance()->getColorEmojiFont() != nullptr &&
 			 FontManager::instance()->getColorEmojiFont()->getType() == FontType::TTF ) {
 			FontTrueType* fontEmoji =
@@ -545,16 +545,25 @@ void FontTrueType::cleanup() {
 }
 
 Glyph FontTrueType::loadGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
-							   Float outlineThickness, Page& page ) const {
+							   Float outlineThickness, Page& page, const Float& forceSize ) const {
 	// The glyph to return
 	Glyph glyph;
 
-	if ( !mIsColorEmojiFont && Font::isEmojiCodePoint( codePoint ) && !isMonospace() ) {
+	if ( !mIsColorEmojiFont && Font::isEmojiCodePoint( codePoint ) ) {
 		if ( FontManager::instance()->getColorEmojiFont() != nullptr &&
 			 FontManager::instance()->getColorEmojiFont()->getType() == FontType::TTF ) {
+
+			Float forcedSize = 0.f;
+
+			if ( isMonospace() ) {
+				Glyph monospaceGlyph = getGlyph( ' ', characterSize, bold, outlineThickness );
+				forcedSize = monospaceGlyph.advance;
+			}
+
 			FontTrueType* fontEmoji =
 				static_cast<FontTrueType*>( FontManager::instance()->getColorEmojiFont() );
-			return fontEmoji->loadGlyph( codePoint, characterSize, bold, outlineThickness, page );
+			return fontEmoji->loadGlyph( codePoint, characterSize, bold, outlineThickness, page,
+										 forcedSize );
 		}
 	}
 
@@ -630,6 +639,10 @@ Glyph FontTrueType::loadGlyph( Uint32 codePoint, unsigned int characterSize, boo
 	// Compute the glyph's advance offset
 	glyph.advance =
 		static_cast<Float>( face->glyph->metrics.horiAdvance ) / static_cast<Float>( 1 << 6 );
+
+	if ( forceSize > 0.f )
+		glyph.advance = forceSize;
+
 	if ( bold && !mBoldAdvanceSameAsRegular )
 		glyph.advance += static_cast<Float>( weight ) / static_cast<Float>( 1 << 6 );
 
@@ -641,7 +654,9 @@ Glyph FontTrueType::loadGlyph( Uint32 codePoint, unsigned int characterSize, boo
 		// pollute them with pixels from neighbors
 		const int padding = 2;
 
-		Float scale = mIsColorEmojiFont ? (Float)characterSize / (Float)height : 1.f;
+		Float scale = mIsColorEmojiFont
+						  ? (Float)( forceSize > 0.f ? forceSize : characterSize ) / (Float)height
+						  : 1.f;
 
 		int destWidth = width;
 		int destHeight = height;
@@ -649,7 +664,8 @@ Glyph FontTrueType::loadGlyph( Uint32 codePoint, unsigned int characterSize, boo
 		if ( mIsColorEmojiFont ) {
 			destWidth *= scale;
 			destHeight *= scale;
-			glyph.advance *= scale;
+			if ( forceSize <= 0.f )
+				glyph.advance *= scale;
 		}
 
 		width += 2 * padding;
