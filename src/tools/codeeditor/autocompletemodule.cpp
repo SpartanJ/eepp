@@ -23,7 +23,7 @@ AutoCompleteModule::AutoCompleteModule() :
 }
 
 AutoCompleteModule::AutoCompleteModule( std::shared_ptr<ThreadPool> pool ) :
-	mSymbolPattern( "[%a][%w_]*" ),
+	mSymbolPattern( "[%añàáâãäåèéêëìíîïòóôõöùúûüýÿÑÀÁÂÃÄÅÈÉÊËÌÍÎÏÒÓÔÕÖÙÚÛÜÝ][%w_ñàáâãäåèéêëìíîïòóôõöùúûüýÿÑÀÁÂÃÄÅÈÉÊËÌÍÎÏÒÓÔÕÖÙÚÛÜÝ]*" ),
 	mBoxPadding( PixelDensity::dpToPx( Rectf( 4, 4, 4, 4 ) ) ),
 	mPool( pool ) {}
 

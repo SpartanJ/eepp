@@ -321,10 +321,10 @@ const FontTrueType::Info& FontTrueType::getInfo() const {
 }
 
 Uint64 FontTrueType::getCharIndexKey( Uint32 codePoint, bool bold, Float outlineThickness ) const {
-	Uint64 key = combine( outlineThickness, bold,
-						  FT_Get_Char_Index( static_cast<FT_Face>( mFace ), codePoint ) );
+	Uint32 charIndex = FT_Get_Char_Index( static_cast<FT_Face>( mFace ), codePoint );
+	Uint64 key = combine( outlineThickness, bold, charIndex );
 
-	if ( key == 0 && !mIsColorEmojiFont && Font::isEmojiCodePoint( codePoint ) ) {
+	if ( charIndex == 0 && !mIsColorEmojiFont && Font::isEmojiCodePoint( codePoint ) ) {
 		if ( FontManager::instance()->getColorEmojiFont() != nullptr &&
 			 FontManager::instance()->getColorEmojiFont()->getType() == FontType::TTF ) {
 			FontTrueType* fontEmoji =
@@ -587,7 +587,7 @@ Glyph FontTrueType::loadGlyph( Uint32 codePoint, unsigned int characterSize, boo
 
 	// Load the glyph corresponding to the code point
 	FT_Int32 flags = FT_LOAD_TARGET_NORMAL | FT_LOAD_FORCE_AUTOHINT | FT_LOAD_COLOR;
-	if ( outlineThickness != 0 )
+	if ( outlineThickness != 0 && !mIsColorEmojiFont )
 		flags |= FT_LOAD_NO_BITMAP;
 	if ( ( err = FT_Load_Char( face, codePoint, flags ) ) != 0 ) {
 		Log::error( "FT_Load_Char failed for: codePoint %d characterSize: %d font: %s error: %d",
@@ -613,7 +613,7 @@ Glyph FontTrueType::loadGlyph( Uint32 codePoint, unsigned int characterSize, boo
 			FT_Outline_Embolden( &outlineGlyph->outline, weight );
 		}
 
-		if ( outlineThickness != 0 ) {
+		if ( outlineThickness != 0 && !mIsColorEmojiFont ) {
 			FT_Stroker stroker = static_cast<FT_Stroker>( mStroker );
 
 			FT_Stroker_Set(
@@ -632,7 +632,7 @@ Glyph FontTrueType::loadGlyph( Uint32 codePoint, unsigned int characterSize, boo
 		if ( bold )
 			FT_Bitmap_Embolden( static_cast<FT_Library>( mLibrary ), &bitmap, weight, weight );
 
-		if ( outlineThickness != 0 )
+		if ( outlineThickness != 0 && !mIsColorEmojiFont )
 			Log::error( "Failed to outline glyph (no fallback available)" );
 	}
 
@@ -733,9 +733,9 @@ Glyph FontTrueType::loadGlyph( Uint32 codePoint, unsigned int characterSize, boo
 				dest.scale( scale );
 				dest.avoidFreeImage( true );
 				pixelPtr = dest.getPixels();
-				glyph.bounds.Left *= scale;
+				glyph.bounds.Left = glyph.bounds.Left * scale + outlineThickness;
 				glyph.bounds.Right *= scale;
-				glyph.bounds.Top *= scale;
+				glyph.bounds.Top = glyph.bounds.Top * scale + outlineThickness;
 				glyph.bounds.Bottom *= scale;
 				destWidth = dest.getWidth() + 2 * padding;
 				destHeight = dest.getHeight() + 2 * padding;
