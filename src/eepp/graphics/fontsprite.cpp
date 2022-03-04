@@ -222,7 +222,7 @@ Float FontSprite::getLineSpacing( unsigned int characterSize ) const {
 	return ( (Float)characterSize / mFontSize ) * mFontSize;
 }
 
-Uint32 FontSprite::getFontHeight( const Uint32& characterSize ) {
+Uint32 FontSprite::getFontHeight( const Uint32& characterSize ) const {
 	return ( Uint32 )( (Float)characterSize / mFontSize ) * mFontSize;
 }
 

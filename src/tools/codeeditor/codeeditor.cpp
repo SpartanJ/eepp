@@ -2068,6 +2068,8 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		if ( mFontMono )
 			mFontMono->setBoldAdvanceSameAsRegular( true );
 
+		loadFont( "NotoEmoji-Regular", "assets/fonts/NotoEmoji-Regular.ttf" );
+
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 		loadFont( "NotoColorEmoji", "assets/fonts/NotoColorEmoji.ttf" );
 #endif

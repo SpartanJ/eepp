@@ -4,6 +4,7 @@ EE::Window::Window* win = NULL;
 FontTrueType* fontTest;
 FontTrueType* fontTest2;
 FontTrueType* fontEmoji;
+FontTrueType* fontEmojiColor;
 FontBMFont* fontBMFont;
 FontSprite* fontSprite;
 Text text;
@@ -12,6 +13,7 @@ Text text3;
 Text text4;
 Text text5;
 Text text6;
+Text text7;
 
 void mainLoop() {
 	// Clear the screen buffer
@@ -29,6 +31,8 @@ void mainLoop() {
 	text.draw( ( win->getWidth() - text.getTextWidth() ) * 0.5f, 32 );
 
 	text2.draw( ( win->getWidth() - text2.getTextWidth() ) * 0.5f, 300 );
+
+	text7.draw( ( win->getWidth() - text7.getTextWidth() ) * 0.5f, 400 );
 
 	// Text rotated and scaled
 	text2.draw( ( win->getWidth() - text2.getTextWidth() ) * 0.5f, 430, Vector2f( 1.1f, 1.1f ),
@@ -75,8 +79,11 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		fontTest2 = FontTrueType::New( "NotoSans-Regular" );
 		fontTest2->loadFromFile( "assets/fonts/NotoSans-Regular.ttf" );
 
-		fontEmoji = FontTrueType::New( "NotoColorEmoji" );
-		fontEmoji->loadFromFile( "assets/fonts/NotoColorEmoji.ttf" );
+		fontEmoji= FontTrueType::New( "NotoEmoji-Regular" );
+		fontEmoji->loadFromFile( "assets/fonts/NotoEmoji-Regular.ttf" );
+
+		fontEmojiColor = FontTrueType::New( "NotoColorEmoji" );
+		fontEmojiColor->loadFromFile( "assets/fonts/NotoColorEmoji.ttf" );
 
 		fontBMFont = FontBMFont::New( "bmfont" );
 		fontBMFont->loadFromFile( "assets/fonts/bmfont.fnt" );
@@ -106,23 +113,30 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 
 		text3.setFont( fontTest );
 		text3.setString( text2.getString() );
-		text3.setOutlineThickness( 2 );
 		text3.setFontSize( 24 );
 		text3.setFillColor( Color( 255, 255, 255, 255 ) );
+		text3.setOutlineThickness( 2 );
 		text3.setOutlineColor( Color( 0, 0, 0, 255 ) );
 
 		text4.setFont( fontBMFont );
-		text4.setString( "Lorem ipsum dolor sit amet, consectetur adipisicing elit." );
+		text4.setString( text2.getString() );
 		text4.setFontSize( 45 );
 		text4.setFillColor( Color::Black );
 
 		text5.setFont( fontSprite );
-		text5.setString( "Lorem ipsum dolor sit amet, consectetur adipisicing elit." );
+		text5.setString( text2.getString() );
 		text5.setFontSize( 38 );
 
-		text6.setFont( fontEmoji );
+		text6.setFont( fontEmojiColor );
 		text6.setFontSize( 64 );
 		text6.setString( "👽 😀 💩 😃 👻" );
+
+		text7.setFont( fontEmoji );
+		text7.setFontSize( 32 );
+		text7.setString( "👽 😀 💩 😃 👻" );
+		text7.setFillColor( Color::Gray );
+		text7.setOutlineThickness( 2 );
+		text7.setOutlineColor( Color( 0, 0, 0, 255 ) );
 
 		// Application loop
 		win->runMainLoop( &mainLoop );

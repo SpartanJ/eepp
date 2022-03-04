@@ -61,7 +61,7 @@ class EE_API Font {
 	virtual ~Font();
 
 	/** @return The current font height */
-	virtual Uint32 getFontHeight( const Uint32& characterSize ) = 0;
+	virtual Uint32 getFontHeight( const Uint32& characterSize ) const = 0;
 
 	/** @return The type of the instance of the font */
 	const FontType& getType() const;

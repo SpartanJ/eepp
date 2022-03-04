@@ -42,7 +42,7 @@ class EE_API FontBMFont : public Font {
 
 	Float getLineSpacing( unsigned int characterSize ) const;
 
-	Uint32 getFontHeight( const Uint32& characterSize );
+	Uint32 getFontHeight( const Uint32& characterSize ) const;
 
 	Float getUnderlinePosition( unsigned int characterSize ) const;
 

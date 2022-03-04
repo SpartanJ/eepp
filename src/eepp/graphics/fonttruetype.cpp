@@ -120,9 +120,13 @@ bool FontTrueType::loadFromFile( const std::string& filename ) {
 
 	mFace = face;
 	mIsColorEmojiFont = checkIsColorEmojiFont( static_cast<FT_Face>( mFace ) );
+	mIsEmojiFont = FT_Get_Char_Index( static_cast<FT_Face>( mFace ), 0x1F600 ) != 0;
 
 	if ( mIsColorEmojiFont && FontManager::instance()->getColorEmojiFont() == nullptr )
 		FontManager::instance()->setColorEmojiFont( this );
+
+	if ( mIsEmojiFont && FontManager::instance()->getEmojiFont() == nullptr )
+		FontManager::instance()->setEmojiFont( this );
 
 	FT_Stroker stroker = nullptr;
 	if ( !mIsColorEmojiFont ) {
@@ -188,9 +192,13 @@ bool FontTrueType::loadFromMemory( const void* data, std::size_t sizeInBytes, bo
 
 	mFace = face;
 	mIsColorEmojiFont = checkIsColorEmojiFont( static_cast<FT_Face>( mFace ) );
+	mIsEmojiFont = FT_Get_Char_Index( static_cast<FT_Face>( mFace ), 0x1F600 ) != 0;
 
 	if ( mIsColorEmojiFont && FontManager::instance()->getColorEmojiFont() == nullptr )
 		FontManager::instance()->setColorEmojiFont( this );
+
+	if ( mIsEmojiFont && FontManager::instance()->getEmojiFont() == nullptr )
+		FontManager::instance()->setEmojiFont( this );
 
 	// Load the stroker that will be used to outline the font
 	FT_Stroker stroker = nullptr;
@@ -264,10 +272,14 @@ bool FontTrueType::loadFromStream( IOStream& stream ) {
 
 	mFace = face;
 	mIsColorEmojiFont = checkIsColorEmojiFont( static_cast<FT_Face>( mFace ) );
+	mIsEmojiFont = FT_Get_Char_Index( static_cast<FT_Face>( mFace ), 0x1F600 ) != 0;
 	FT_Stroker stroker = nullptr;
 
 	if ( mIsColorEmojiFont && FontManager::instance()->getColorEmojiFont() == nullptr )
 		FontManager::instance()->setColorEmojiFont( this );
+
+	if ( mIsEmojiFont && FontManager::instance()->getEmojiFont() == nullptr )
+		FontManager::instance()->setEmojiFont( this );
 
 	if ( !mIsColorEmojiFont ) {
 		// Load the stroker that will be used to outline the font
@@ -324,11 +336,19 @@ Uint64 FontTrueType::getCharIndexKey( Uint32 codePoint, bool bold, Float outline
 	Uint32 charIndex = FT_Get_Char_Index( static_cast<FT_Face>( mFace ), codePoint );
 	Uint64 key = combine( outlineThickness, bold, charIndex );
 
-	if ( charIndex == 0 && !mIsColorEmojiFont && Font::isEmojiCodePoint( codePoint ) ) {
+	if ( charIndex == 0 && Font::isEmojiCodePoint( codePoint ) && !mIsColorEmojiFont &&
+		 !mIsEmojiFont ) {
 		if ( FontManager::instance()->getColorEmojiFont() != nullptr &&
 			 FontManager::instance()->getColorEmojiFont()->getType() == FontType::TTF ) {
 			FontTrueType* fontEmoji =
 				static_cast<FontTrueType*>( FontManager::instance()->getColorEmojiFont() );
+			key =
+				combine( outlineThickness, bold,
+						 FT_Get_Char_Index( static_cast<FT_Face>( fontEmoji->mFace ), codePoint ) );
+		} else if ( FontManager::instance()->getEmojiFont() != nullptr &&
+					FontManager::instance()->getEmojiFont()->getType() == FontType::TTF ) {
+			FontTrueType* fontEmoji =
+				static_cast<FontTrueType*>( FontManager::instance()->getEmojiFont() );
 			key =
 				combine( outlineThickness, bold,
 						 FT_Get_Char_Index( static_cast<FT_Face>( fontEmoji->mFace ), codePoint ) );
@@ -422,7 +442,7 @@ Float FontTrueType::getLineSpacing( unsigned int characterSize ) const {
 #define FT_FLOOR( X ) ( ( X & -64 ) / 64 )
 #define FT_CEIL( X ) ( ( ( X + 63 ) & -64 ) / 64 )
 
-Uint32 FontTrueType::getFontHeight( const Uint32& characterSize ) {
+Uint32 FontTrueType::getFontHeight( const Uint32& characterSize ) const {
 	FT_Face face = static_cast<FT_Face>( mFace );
 
 	if ( face && setCurrentSize( characterSize ) ) {
@@ -545,25 +565,39 @@ void FontTrueType::cleanup() {
 }
 
 Glyph FontTrueType::loadGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
-							   Float outlineThickness, Page& page, const Float& forceSize ) const {
+							   Float outlineThickness, Page& page, const Float& maxWidth ) const {
 	// The glyph to return
 	Glyph glyph;
 
-	if ( !mIsColorEmojiFont && Font::isEmojiCodePoint( codePoint ) ) {
-		if ( FontManager::instance()->getColorEmojiFont() != nullptr &&
+	if ( Font::isEmojiCodePoint( codePoint ) && !mIsColorEmojiFont && !mIsEmojiFont ) {
+		if ( !mIsColorEmojiFont && FontManager::instance()->getColorEmojiFont() != nullptr &&
 			 FontManager::instance()->getColorEmojiFont()->getType() == FontType::TTF ) {
 
-			Float forcedSize = 0.f;
+			Float maxWidth = 0.f;
 
 			if ( isMonospace() ) {
 				Glyph monospaceGlyph = getGlyph( ' ', characterSize, bold, outlineThickness );
-				forcedSize = monospaceGlyph.advance;
+				maxWidth = monospaceGlyph.advance;
 			}
 
 			FontTrueType* fontEmoji =
 				static_cast<FontTrueType*>( FontManager::instance()->getColorEmojiFont() );
 			return fontEmoji->loadGlyph( codePoint, characterSize, bold, outlineThickness, page,
-										 forcedSize );
+										 maxWidth );
+		} else if ( !mIsEmojiFont && FontManager::instance()->getEmojiFont() != nullptr &&
+					FontManager::instance()->getEmojiFont()->getType() == FontType::TTF ) {
+
+			Float maxWidth = 0.f;
+
+			if ( isMonospace() ) {
+				Glyph monospaceGlyph = getGlyph( ' ', characterSize, bold, outlineThickness );
+				maxWidth = monospaceGlyph.advance;
+			}
+
+			FontTrueType* fontEmoji =
+				static_cast<FontTrueType*>( FontManager::instance()->getEmojiFont() );
+			return fontEmoji->loadGlyph( codePoint, characterSize, bold, outlineThickness, page,
+										 maxWidth );
 		}
 	}
 
@@ -640,8 +674,8 @@ Glyph FontTrueType::loadGlyph( Uint32 codePoint, unsigned int characterSize, boo
 	glyph.advance =
 		static_cast<Float>( face->glyph->metrics.horiAdvance ) / static_cast<Float>( 1 << 6 );
 
-	if ( forceSize > 0.f )
-		glyph.advance = forceSize;
+	if ( maxWidth > 0.f )
+		glyph.advance = maxWidth;
 
 	if ( bold && !mBoldAdvanceSameAsRegular )
 		glyph.advance += static_cast<Float>( weight ) / static_cast<Float>( 1 << 6 );
@@ -654,22 +688,25 @@ Glyph FontTrueType::loadGlyph( Uint32 codePoint, unsigned int characterSize, boo
 		// pollute them with pixels from neighbors
 		const int padding = 2;
 
-		Float scale = mIsColorEmojiFont
-						  ? (Float)( forceSize > 0.f ? forceSize : characterSize ) / (Float)height
-						  : 1.f;
+		Float scale = 1.f;
+
+		if ( mIsColorEmojiFont || mIsEmojiFont )
+			scale = eemin( 1.f, (Float)( maxWidth > 0.f ? maxWidth : characterSize ) /
+									(Float)( maxWidth > 0.f ? width : height ) );
 
 		int destWidth = width;
 		int destHeight = height;
 
-		if ( mIsColorEmojiFont ) {
+		if ( maxWidth <= 0.f )
+			glyph.advance *= scale;
+
+		if ( scale >= 1.f ) {
 			destWidth *= scale;
 			destHeight *= scale;
-			if ( forceSize <= 0.f )
-				glyph.advance *= scale;
+			width += 2 * padding;
+			height += 2 * padding;
 		}
 
-		width += 2 * padding;
-		height += 2 * padding;
 		destWidth += 2 * padding;
 		destHeight += 2 * padding;
 
@@ -725,7 +762,7 @@ Glyph FontTrueType::loadGlyph( Uint32 codePoint, unsigned int characterSize, boo
 			for ( size_t y = 0; y < bitmap.rows; ++y ) {
 				for ( size_t x = 0; x < bitmap.width; ++x ) {
 					Color col = source.getPixel( x, y );
-					dest.setPixel( x + padding, y + padding, Color( col.b, col.g, col.r, col.a ) );
+					dest.setPixel( x, y, Color( col.b, col.g, col.r, col.a ) );
 				}
 			}
 
@@ -741,14 +778,38 @@ Glyph FontTrueType::loadGlyph( Uint32 codePoint, unsigned int characterSize, boo
 				destHeight = dest.getHeight() + 2 * padding;
 			}
 		} else {
-			// Pixels are 8 bits gray levels
-			for ( int y = padding; y < height - padding; ++y ) {
-				for ( int x = padding; x < width - padding; ++x ) {
-					// The color channels remain white, just fill the alpha channel
-					std::size_t index = x + y * width;
-					mPixelBuffer[index * 4 + 3] = pixels[x - padding];
+			if ( scale < 1.f ) {
+				// Pixels are 8 bits gray levels
+				for ( int y = 0; y < height; ++y ) {
+					for ( int x = 0; x < width; ++x ) {
+						// The color channels remain white, just fill the alpha channel
+						std::size_t index = x + y * width;
+						mPixelBuffer[index * 4 + 3] = pixels[x];
+					}
+					pixels += bitmap.pitch;
 				}
-				pixels += bitmap.pitch;
+
+				Image dest( &mPixelBuffer[0], bitmap.width, bitmap.rows, 4 );
+				dest.avoidFreeImage( true );
+				dest.scale( scale );
+				dest.avoidFreeImage( true );
+				pixelPtr = dest.getPixels();
+				glyph.bounds.Left = glyph.bounds.Left * scale;
+				glyph.bounds.Right *= scale;
+				glyph.bounds.Top = glyph.bounds.Top * scale;
+				glyph.bounds.Bottom *= scale;
+				destWidth = dest.getWidth() + 2 * padding;
+				destHeight = dest.getHeight() + 2 * padding;
+			} else {
+				// Pixels are 8 bits gray levels
+				for ( int y = padding; y < height - padding; ++y ) {
+					for ( int x = padding; x < width - padding; ++x ) {
+						// The color channels remain white, just fill the alpha channel
+						std::size_t index = x + y * width;
+						mPixelBuffer[index * 4 + 3] = pixels[x - padding];
+					}
+					pixels += bitmap.pitch;
+				}
 			}
 		}
 
@@ -761,7 +822,7 @@ Glyph FontTrueType::loadGlyph( Uint32 codePoint, unsigned int characterSize, boo
 		unsigned int w = glyph.textureRect.Right;
 		unsigned int h = glyph.textureRect.Bottom;
 
-		if ( bitmap.pixel_mode == FT_PIXEL_MODE_BGRA && scale < 1.f ) {
+		if ( scale < 1.f ) {
 			w = destWidth - 2 * padding;
 			h = destHeight - 2 * padding;
 			x += padding;

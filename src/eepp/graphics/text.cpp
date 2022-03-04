@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cmath>
 #include <eepp/graphics/fontmanager.hpp>
+#include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/pixeldensity.hpp>
 #include <eepp/graphics/primitives.hpp>
@@ -161,8 +162,13 @@ void Text::setString( const String& string ) {
 		mColorsNeedUpdate = true;
 		mGeometryNeedUpdate = true;
 		mCachedWidthNeedUpdate = true;
-		if ( FontManager::instance()->getColorEmojiFont() != nullptr )
-			mContainsColorEmoji = Font::containsEmojiCodePoint( string );
+		if ( FontManager::instance()->getColorEmojiFont() != nullptr ) {
+			if ( mFont->getType() == FontType::TTF ) {
+				FontTrueType* fontTrueType = static_cast<FontTrueType*>( mFont );
+				if ( fontTrueType->isColorEmojiFont() || !fontTrueType->isEmojiFont() )
+					mContainsColorEmoji = Font::containsEmojiCodePoint( string );
+			}
+		}
 	}
 }
 

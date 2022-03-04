@@ -40,7 +40,7 @@ class EE_API FontTrueType : public Font {
 
 	Float getLineSpacing( unsigned int characterSize ) const;
 
-	Uint32 getFontHeight( const Uint32& characterSize );
+	Uint32 getFontHeight( const Uint32& characterSize ) const;
 
 	Float getUnderlinePosition( unsigned int characterSize ) const;
 
@@ -61,6 +61,8 @@ class EE_API FontTrueType : public Font {
 	bool isColorEmojiFont() const;
 
 	bool isMonospace() const;
+
+	bool isEmojiFont() const { return mIsEmojiFont; }
 
   protected:
 	explicit FontTrueType( const std::string& FontName );
@@ -118,6 +120,7 @@ class EE_API FontTrueType : public Font {
 		mPixelBuffer; ///< Pixel buffer holding a glyph's pixels before being written to the texture
 	bool mBoldAdvanceSameAsRegular;
 	bool mIsColorEmojiFont{ false };
+	bool mIsEmojiFont{ false };
 	mutable std::map<unsigned int, unsigned int> mClosestCharacterSize;
 
 	Uint64 getCharIndexKey( Uint32 codePoint, bool bold, Float outlineThickness ) const;
