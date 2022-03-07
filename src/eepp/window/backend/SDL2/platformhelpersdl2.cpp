@@ -9,6 +9,10 @@ namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
 PlatformHelperSDL2::PlatformHelperSDL2() {}
 
+bool PlatformHelperSDL2::openURL( const std::string& url ) {
+	return SDL_OpenURL( url.c_str() ) == 0;
+}
+
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
 void* PlatformHelperSDL2::getActivity() {
 	return SDL_AndroidGetActivity();

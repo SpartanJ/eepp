@@ -134,10 +134,12 @@ Display* DisplayManagerSDL2::getDisplayIndex( int index ) {
 
 void DisplayManagerSDL2::enableScreenSaver() {
 	SDL_EnableScreenSaver();
+	SDL_SetHint( SDL_HINT_VIDEO_ALLOW_SCREENSAVER, "1" );
 }
 
 void DisplayManagerSDL2::disableScreenSaver() {
 	SDL_DisableScreenSaver();
+	SDL_SetHint( SDL_HINT_VIDEO_ALLOW_SCREENSAVER, "0" );
 }
 
 void DisplayManagerSDL2::enableMouseFocusClickThrough() {

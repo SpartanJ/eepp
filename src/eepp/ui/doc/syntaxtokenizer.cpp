@@ -10,17 +10,17 @@ namespace EE { namespace UI { namespace Doc {
 // tokenizer. This allows eepp to support the same color schemes and syntax definitions from
 // lite. Making much easier to implement a complete code editor.
 
-static bool allSpaces( const std::string& str ) {
+/*static bool allSpaces( const std::string& str ) {
 	for ( auto& chr : str )
 		if ( ' ' != chr )
 			return false;
 	return true;
-}
+}*/
 
 static void pushToken( std::vector<SyntaxToken>& tokens, const std::string& type,
 					   const std::string& text ) {
-	if ( !tokens.empty() && ( tokens[tokens.size() - 1].type == type ||
-							  allSpaces( tokens[tokens.size() - 1].text ) ) ) {
+	if ( !tokens.empty() && ( tokens[tokens.size() - 1].type == type /*||
+							  allSpaces( tokens[tokens.size() - 1].text )*/ ) ) {
 		tokens[tokens.size() - 1].type = type;
 		tokens[tokens.size() - 1].text += text;
 	} else {

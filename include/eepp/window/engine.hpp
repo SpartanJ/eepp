@@ -134,6 +134,11 @@ class EE_API Engine {
 	/** @return The display manager. Holds the physical displays information. */
 	DisplayManager* getDisplayManager();
 
+	/** Open a URL in a separate, system-provided application.
+	 * @return true if success
+	 */
+	bool openURL( const std::string& url );
+
   protected:
 	friend class Window;
 

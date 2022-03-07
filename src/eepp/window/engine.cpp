@@ -393,6 +393,12 @@ DisplayManager* Engine::getDisplayManager() {
 	return mDisplayManager;
 }
 
+bool Engine::openURL( const std::string& url ) {
+	if ( NULL != mPlatformHelper )
+		return mPlatformHelper->openURL( url );
+	return false;
+}
+
 struct EngineInitializer {
 	EngineInitializer() { Engine::createSingleton(); }
 

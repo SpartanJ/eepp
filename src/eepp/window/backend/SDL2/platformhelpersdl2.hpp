@@ -10,6 +10,8 @@ class EE_API PlatformHelperSDL2 : public PlatformHelper {
   public:
 	PlatformHelperSDL2();
 
+	bool openURL( const std::string& url );
+
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
 	void* getActivity();
 
