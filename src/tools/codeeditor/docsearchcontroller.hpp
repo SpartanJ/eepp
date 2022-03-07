@@ -9,6 +9,7 @@ struct SearchState {
 	TextRange range = TextRange();
 	bool caseSensitive{ false };
 	bool wholeWord{ false };
+	bool escapeSequences{ false };
 	TextDocument::FindReplaceType type{ TextDocument::FindReplaceType::Normal };
 	void reset() {
 		editor = nullptr;

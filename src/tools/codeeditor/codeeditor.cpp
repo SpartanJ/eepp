@@ -1126,6 +1126,7 @@ std::map<KeyBindings::Shortcut, std::string> App::getDefaultKeybindings() {
 std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 	return { { { KEY_RETURN, KEYMOD_LALT }, "fullscreen-toggle" },
 			 { { KEY_F3, KEYMOD_NONE }, "repeat-find" },
+			 { { KEY_F3, KEYMOD_SHIFT }, "find-prev" },
 			 { { KEY_F12, KEYMOD_NONE }, "console-toggle" },
 			 { { KEY_F, KEYMOD_CTRL }, "find-replace" },
 			 { { KEY_Q, KEYMOD_CTRL }, "close-app" },
@@ -1335,6 +1336,9 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	doc.setCommand( "open-locatebar", [&] { mFileLocator->showLocateBar(); } );
 	doc.setCommand( "repeat-find", [&] {
 		mDocSearchController->findNextText( mDocSearchController->getSearchState() );
+	} );
+	doc.setCommand( "find-prev", [&] {
+		mDocSearchController->findPrevText( mDocSearchController->getSearchState() );
 	} );
 	doc.setCommand( "close-folder", [&] { closeFolder(); } );
 	doc.setCommand( "close-app", [&] { closeApp(); } );
@@ -2239,8 +2243,11 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 					</vbox>
 					<vbox layout_width="wrap_content" layout_height="wrap_content" margin-right="4dp">
 						<CheckBox id="case_sensitive" layout_width="wrap_content" layout_height="wrap_content" text="Case sensitive" selected="true" />
-						<CheckBox id="whole_word" layout_width="wrap_content" layout_height="wrap_content" text="Match Whole Word" selected="false" />
 						<CheckBox id="lua_pattern" layout_width="wrap_content" layout_height="wrap_content" text="Lua Pattern" selected="false" />
+					</vbox>
+					<vbox layout_width="wrap_content" layout_height="wrap_content" margin-right="4dp">
+						<CheckBox id="whole_word" layout_width="wrap_content" layout_height="wrap_content" text="Match Whole Word" selected="false" />
+						<CheckBox id="escape_sequence" layout_width="wrap_content" layout_height="wrap_content" text="Use escape sequences" selected="false" tooltip="Replace \\, \t, \n, \r and \uXXXX (Unicode characters) with the corresponding control" />
 					</vbox>
 					<vbox layout_width="wrap_content" layout_height="wrap_content">
 						<hbox layout_width="wrap_content" layout_height="wrap_content" margin-bottom="2dp">

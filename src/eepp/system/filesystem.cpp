@@ -211,10 +211,11 @@ Uint32 FileSystem::fileGetModificationDate( const std::string& filepath ) {
 bool FileSystem::fileCanWrite( const std::string& filepath ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 #if UNICODE
-	return 0 == ( GetFileAttributes( String::fromUtf8( filepath ).toWideString().c_str() ) &
-				  FILE_ATTRIBUTE_READONLY );
+	auto attrs = GetFileAttributes( String::fromUtf8( filepath ).toWideString().c_str() );
+	return attrs != INVALID_FILE_ATTRIBUTES && 0 == ( attrs & FILE_ATTRIBUTE_READONLY );
 #else
-	return 0 == ( GetFileAttributes( (LPCTSTR)filepath.c_str() ) & FILE_ATTRIBUTE_READONLY );
+	auto attrs = GetFileAttributes( (LPCTSTR)filepath.c_str() );
+	return attrs != INVALID_FILE_ATTRIBUTES && 0 == ( attrs & FILE_ATTRIBUTE_READONLY );
 #endif
 #else
 	struct stat st;
@@ -235,10 +236,11 @@ bool FileSystem::fileCanWrite( const std::string& filepath ) {
 bool FileSystem::fileIsHidden( const std::string& filepath ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 #if UNICODE
-	return 0 != ( GetFileAttributes( String::fromUtf8( filepath ).toWideString().c_str() ) &
-				  FILE_ATTRIBUTE_HIDDEN );
+	auto attrs = GetFileAttributes( String::fromUtf8( filepath ).toWideString().c_str() );
+	return attrs != INVALID_FILE_ATTRIBUTES && 0 != ( attrs & FILE_ATTRIBUTE_HIDDEN );
 #else
-	return 0 != ( GetFileAttributes( (LPCTSTR)filepath.c_str() ) & FILE_ATTRIBUTE_HIDDEN );
+	auto attrs = GetFileAttributes( (LPCTSTR)filepath.c_str() );
+	return attrs != INVALID_FILE_ATTRIBUTES && 0 != ( attrs & FILE_ATTRIBUTE_HIDDEN );
 #endif
 #else
 	std::string filename( fileNameFromPath( filepath ) );
@@ -296,10 +298,11 @@ bool FileSystem::isDirectory( const std::string& path ) {
 	return ( stat( path.c_str(), &st ) == 0 ) && S_ISDIR( st.st_mode );
 #else
 #if UNICODE
-	return 0 != ( GetFileAttributes( String::fromUtf8( path ).toWideString().c_str() ) &
-				  FILE_ATTRIBUTE_DIRECTORY );
+	auto attrs = GetFileAttributes( String::fromUtf8( path ).toWideString().c_str() );
+	return attrs != INVALID_FILE_ATTRIBUTES && 0 != ( attrs & FILE_ATTRIBUTE_DIRECTORY );
 #else
-	return 0 != ( GetFileAttributes( (LPCTSTR)path.c_str() ) & FILE_ATTRIBUTE_DIRECTORY );
+	auto attrs = GetFileAttributes( (LPCTSTR)path.c_str() );
+	return attrs != INVALID_FILE_ATTRIBUTES && 0 != ( attrs & FILE_ATTRIBUTE_DIRECTORY );
 #endif
 #endif
 }
@@ -473,7 +476,7 @@ std::vector<FileInfo> FileSystem::filesInfoGetInPath( std::string path, bool lin
 	dirAddSlashAtEnd( path );
 	std::vector<FileInfo> fileInfo;
 	auto files = filesGetInPath( path, sortByName, foldersFirst, ignoreHidden );
-	for ( const auto &file : files )
+	for ( const auto& file : files )
 		fileInfo.emplace_back( FileInfo( path + file, linkInfo ) );
 	return fileInfo;
 }

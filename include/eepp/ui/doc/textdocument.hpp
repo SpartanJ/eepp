@@ -258,9 +258,10 @@ class EE_API TextDocument {
 					const FindReplaceType& type = FindReplaceType::Normal,
 					TextRange restrictRange = TextRange() );
 
-	TextPosition findLast( String text, TextPosition from = { 0, 0 },
-						   const bool& caseSensitive = true, const bool& wholeWord = false,
-						   TextRange restrictRange = TextRange() );
+	TextRange findLast( String text, TextPosition from = { 0, 0 }, const bool& caseSensitive = true,
+						const bool& wholeWord = false,
+						const FindReplaceType& type = FindReplaceType::Normal,
+						TextRange restrictRange = TextRange() );
 
 	std::vector<TextRange> findAll( const String& text, const bool& caseSensitive = true,
 									const bool& wholeWord = false,
@@ -437,6 +438,16 @@ class EE_API TextDocument {
 	void guessIndentType();
 
 	bool loadFromStream( IOStream& file, std::string path, bool callReset );
+
+	TextRange findText( String text, TextPosition from = { 0, 0 }, const bool& caseSensitive = true,
+						const bool& wholeWord = false,
+						const FindReplaceType& type = FindReplaceType::Normal,
+						TextRange restrictRange = TextRange() );
+
+	TextRange findTextLast( String text, TextPosition from = { 0, 0 },
+							const bool& caseSensitive = true, const bool& wholeWord = false,
+							const FindReplaceType& type = FindReplaceType::Normal,
+							TextRange restrictRange = TextRange() );
 };
 
 }}} // namespace EE::UI::Doc

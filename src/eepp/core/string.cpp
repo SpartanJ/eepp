@@ -159,7 +159,7 @@ bool String::isHexNotation( const std::string& value, const std::string& withPre
 }
 
 std::vector<String> String::split( const String& str, const StringBaseType& delim,
-								   const bool& pushEmptyString ) {
+								   const bool& pushEmptyString, const bool& keepDelim ) {
 	std::vector<String> cont;
 	std::size_t current, previous = 0;
 	current = str.find( delim );
@@ -173,7 +173,46 @@ std::vector<String> String::split( const String& str, const StringBaseType& deli
 	String substr( str.substr( previous, current - previous ) );
 	if ( pushEmptyString || !substr.empty() )
 		cont.emplace_back( std::move( substr ) );
+	if ( keepDelim ) {
+		for ( size_t i = 0; i < cont.size(); i++ ) {
+			if ( i != cont.size() - 1 )
+				cont[i].push_back( delim );
+			if ( cont[cont.size() - 1].empty() )
+				cont.pop_back();
+		}
+	}
 	return cont;
+}
+
+std::vector<std::string> String::split( const std::string& str, const Int8& delim,
+										const bool& pushEmptyString, const bool& keepDelim ) {
+	std::vector<std::string> cont;
+	std::size_t current, previous = 0;
+	current = str.find( delim );
+	while ( current != std::string::npos ) {
+		std::string substr( str.substr( previous, current - previous ) );
+		if ( pushEmptyString || !substr.empty() )
+			cont.emplace_back( std::move( substr ) );
+		previous = current + 1;
+		current = str.find( delim, previous );
+	}
+	std::string substr( str.substr( previous, current - previous ) );
+	if ( pushEmptyString || !substr.empty() )
+		cont.emplace_back( std::move( substr ) );
+	if ( keepDelim ) {
+		for ( size_t i = 0; i < cont.size(); i++ ) {
+			if ( i != cont.size() - 1 )
+				cont[i].push_back( delim );
+			if ( cont[cont.size() - 1].empty() )
+				cont.pop_back();
+		}
+	}
+	return cont;
+}
+
+std::vector<String> String::split( const StringBaseType& delim, const bool& pushEmptyString,
+								   const bool& keepDelim ) const {
+	return String::split( *this, delim, pushEmptyString, keepDelim );
 }
 
 std::vector<std::string> String::split( const std::string& str, const std::string& delims,
@@ -233,24 +272,6 @@ std::vector<std::string> String::split( const std::string& str, const std::strin
 	}
 
 	return tokens;
-}
-
-std::vector<std::string> String::split( const std::string& str, const Int8& delim,
-										const bool& pushEmptyString ) {
-	std::vector<std::string> cont;
-	std::size_t current, previous = 0;
-	current = str.find( delim );
-	while ( current != std::string::npos ) {
-		std::string substr( str.substr( previous, current - previous ) );
-		if ( pushEmptyString || !substr.empty() )
-			cont.emplace_back( std::move( substr ) );
-		previous = current + 1;
-		current = str.find( delim, previous );
-	}
-	std::string substr( str.substr( previous, current - previous ) );
-	if ( pushEmptyString || !substr.empty() )
-		cont.emplace_back( std::move( substr ) );
-	return cont;
 }
 
 std::string String::join( const std::vector<std::string>& strArray, const Int8& joinchar,
@@ -378,11 +399,6 @@ String& String::toUpper() {
 String::StringBaseType String::lastChar() const {
 	return mString.empty() ? std::numeric_limits<StringBaseType>::max()
 						   : mString[mString.size() - 1];
-}
-
-std::vector<String> String::split( const StringBaseType& delim,
-								   const bool& pushEmptyString ) const {
-	return String::split( *this, delim, pushEmptyString );
 }
 
 // Lite (https://github.com/rxi/lite) fuzzy match implementation

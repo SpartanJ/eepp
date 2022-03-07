@@ -103,11 +103,13 @@ class EE_API String {
 
 	/** Split a String and hold it on a vector */
 	static std::vector<String> split( const String& str, const StringBaseType& delim = '\n',
-									  const bool& pushEmptyString = false );
+									  const bool& pushEmptyString = false,
+									  const bool& keepDelim = false );
 
 	/** Split a string and hold it on a vector */
 	static std::vector<std::string> split( const std::string& str, const Int8& delim = '\n',
-										   const bool& pushEmptyString = false );
+										   const bool& pushEmptyString = false,
+										   const bool& keepDelim = false );
 
 	/** Split a string and hold it on a vector. This function is meant to be used for code
 	 * splitting, detects functions, arrays, braces and quotes for the splitting. */
@@ -777,7 +779,8 @@ class EE_API String {
 	StringBaseType lastChar() const;
 
 	std::vector<String> split( const StringBaseType& delim = '\n',
-							   const bool& pushEmptyString = false ) const;
+							   const bool& pushEmptyString = false,
+							   const bool& keepDelim = false ) const;
 
 	std::pair<bool, int> fuzzyMatch( const String& pattern );
 

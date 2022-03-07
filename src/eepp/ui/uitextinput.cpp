@@ -200,8 +200,8 @@ void UITextInput::alignFix() {
 	switch ( Font::getVerticalAlign( getFlags() ) ) {
 		case UI_VALIGN_CENTER:
 			mRealAlignOffset.y =
-				( Float )( ( Int32 )( ( mSize.y - mPaddingPx.Top - mPaddingPx.Bottom ) / 2 -
-									  mTextCache->getLineSpacing() / 2 ) ) -
+				(Float)( (Int32)( ( mSize.y - mPaddingPx.Top - mPaddingPx.Bottom ) / 2 -
+								  mTextCache->getLineSpacing() / 2 ) ) -
 				1;
 			break;
 		case UI_VALIGN_BOTTOM:
