@@ -1437,13 +1437,13 @@ TextRange TextDocument::find( String text, TextPosition from, const bool& caseSe
 				if ( TextPosition( initPos.line(), (Int64)currentLine.size() - 1 ) > to )
 					return find( text, range.end(), caseSensitive, wholeWord, type, restrictRange );
 
-				if ( caseSensitive ) {
+				if ( !caseSensitive ) {
 					currentLine.toLower();
 					textLines[i].toLower();
 				}
 
 				if ( currentLine == textLines[i] ) {
-					initPos = TextPosition( initPos.line(), 0 );
+					initPos = TextPosition( i + 1, 0 );
 				} else {
 					return find( text, range.end(), caseSensitive, wholeWord, type, restrictRange );
 				}
@@ -1461,8 +1461,13 @@ TextRange TextDocument::find( String text, TextPosition from, const bool& caseSe
 			if ( lastLine.size() < curSearch.size() )
 				return find( text, range.end(), caseSensitive, wholeWord, type, restrictRange );
 
-			if ( String::startsWith( lastLine, curSearch ) )
-				return TextRange( range.start(), TextPosition( initPos.line(), curSearch.size() ) );
+			if ( String::startsWith( lastLine, curSearch ) ) {
+				TextRange foundRange( range.start(),
+									  TextPosition( initPos.line(), curSearch.size() ) );
+				if ( foundRange.end().column() == (Int64)mLines[foundRange.end().line()].size() )
+					foundRange.setEnd( positionOffset( foundRange.end(), 1 ) );
+				return foundRange;
+			}
 		}
 	}
 
@@ -1505,13 +1510,13 @@ TextRange TextDocument::findLast( String text, TextPosition from, const bool& ca
 					return findLast( text, range.end(), caseSensitive, wholeWord, type,
 									 restrictRange );
 
-				if ( caseSensitive ) {
+				if ( !caseSensitive ) {
 					currentLine.toLower();
 					textLines[i].toLower();
 				}
 
 				if ( currentLine == textLines[i] ) {
-					initPos = TextPosition( initPos.line(), 0 );
+					initPos = TextPosition( i + 1, 0 );
 				} else {
 					return findLast( text, range.end(), caseSensitive, wholeWord, type,
 									 restrictRange );
@@ -1530,8 +1535,13 @@ TextRange TextDocument::findLast( String text, TextPosition from, const bool& ca
 			if ( lastLine.size() < curSearch.size() )
 				return findLast( text, range.end(), caseSensitive, wholeWord, type, restrictRange );
 
-			if ( String::startsWith( lastLine, curSearch ) )
-				return TextRange( range.start(), TextPosition( initPos.line(), curSearch.size() ) );
+			if ( String::startsWith( lastLine, curSearch ) ) {
+				TextRange foundRange( range.start(),
+									  TextPosition( initPos.line(), curSearch.size() ) );
+				if ( foundRange.end().column() == (Int64)mLines[foundRange.end().line()].size() )
+					foundRange.setEnd( positionOffset( foundRange.end(), 1 ) );
+				return foundRange;
+			}
 		}
 	}
 

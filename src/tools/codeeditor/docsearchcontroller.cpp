@@ -14,7 +14,7 @@ static void replaceAllEscapedSequences( String& target, const String& that, cons
 	}
 }
 
-static void escapeSequences( String& txt ) {
+static void unescapeSequences( String& txt ) {
 	replaceAllEscapedSequences( txt, "\\n", String( '\n' ) );
 	replaceAllEscapedSequences( txt, "\\t", String( '\t' ) );
 	replaceAllEscapedSequences( txt, "\\r", String( '\r' ) );
@@ -203,7 +203,7 @@ bool DocSearchController::findPrevText( SearchState& search ) {
 
 	String txt( search.text );
 	if ( search.escapeSequences )
-		escapeSequences( txt );
+		unescapeSequences( txt );
 
 	TextRange found = doc.findLast( txt, from, search.caseSensitive, search.wholeWord,
 											 search.type, search.range );
@@ -243,7 +243,7 @@ bool DocSearchController::findNextText( SearchState& search ) {
 
 	String txt( search.text );
 	if ( search.escapeSequences )
-		escapeSequences( txt );
+		unescapeSequences( txt );
 
 	TextRange found =
 		doc.find( txt, from, search.caseSensitive, search.wholeWord, search.type, range );
@@ -288,8 +288,8 @@ int DocSearchController::replaceAll( SearchState& search, const String& replace 
 	String txt( search.text );
 	String repl( replace );
 	if ( search.escapeSequences ) {
-		escapeSequences( txt );
-		escapeSequences( repl );
+		unescapeSequences( txt );
+		unescapeSequences( repl );
 	}
 
 	int count = doc.replaceAll( txt, repl, search.caseSensitive, search.wholeWord, search.type,
@@ -312,8 +312,8 @@ bool DocSearchController::findAndReplace( SearchState& search, const String& rep
 	String txt( search.text );
 	String repl( replace );
 	if ( search.escapeSequences ) {
-		escapeSequences( txt );
-		escapeSequences( repl );
+		unescapeSequences( txt );
+		unescapeSequences( repl );
 	}
 
 	if ( doc.hasSelection() && doc.getSelectedText() == txt ) {

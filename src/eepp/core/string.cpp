@@ -175,7 +175,8 @@ std::vector<String> String::split( const String& str, const StringBaseType& deli
 		cont.emplace_back( std::move( substr ) );
 	if ( keepDelim ) {
 		for ( size_t i = 0; i < cont.size(); i++ ) {
-			if ( i != cont.size() - 1 )
+			if ( i != cont.size() - 1 ||
+				 ( str.lastChar() == delim && cont[cont.size() - 1].lastChar() != delim ) )
 				cont[i].push_back( delim );
 			if ( cont[cont.size() - 1].empty() )
 				cont.pop_back();
@@ -201,7 +202,10 @@ std::vector<std::string> String::split( const std::string& str, const Int8& deli
 		cont.emplace_back( std::move( substr ) );
 	if ( keepDelim ) {
 		for ( size_t i = 0; i < cont.size(); i++ ) {
-			if ( i != cont.size() - 1 )
+			if ( i != cont.size() - 1 ||
+				 ( !str.empty() && str[str.size() - 1] == delim && !cont.empty() &&
+				   !cont[cont.size() - 1].empty() &&
+				   cont[cont.size() - 1][cont[cont.size() - 1].size() - 1] != delim ) )
 				cont[i].push_back( delim );
 			if ( cont[cont.size() - 1].empty() )
 				cont.pop_back();
