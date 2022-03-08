@@ -1403,7 +1403,9 @@ Sizef UIWindow::getSizeWithoutDecoration() {
 }
 
 Sizef UIWindow::getMinWindowTitleSizeRequired() {
-	Sizef size( PixelDensity::pxToDp( mTitle->getTextWidth() + mTitle->getFontSize() * 4 ) +
+	Sizef size( PixelDensity::pxToDp( mTitle != nullptr
+										  ? ( mTitle->getTextWidth() + mTitle->getFontSize() * 4 )
+										  : 0 ) +
 					mPadding.Left + mPadding.Right,
 				0 );
 

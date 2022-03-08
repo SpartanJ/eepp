@@ -5,7 +5,7 @@ using namespace EE::Window;
 
 namespace EE { namespace UI {
 
-static std::map<std::string, Uint32> MOD_MAP = {
+std::map<std::string, Uint32> MOD_MAP = {
 	{"lshift", KEYMOD_SHIFT},	   {"rshift", KEYMOD_SHIFT},	{"left shift", KEYMOD_SHIFT},
 	{"right shift", KEYMOD_SHIFT}, {"shift", KEYMOD_SHIFT},		{"lctrl", KEYMOD_CTRL},
 	{"rctrl", KEYMOD_CTRL},		   {"left ctrl", KEYMOD_CTRL},	{"right ctrl", KEYMOD_CTRL},
@@ -73,7 +73,6 @@ void KeyBindings::replaceKeybind( const KeyBindings::Shortcut& keys, const std::
 		if ( it != mShortcuts.end() ) {
 			mShortcuts.erase( it );
 			erased = true;
-			break;
 		}
 	} while ( erased );
 	mShortcuts[sanitizeShortcut( keys )] = command;
@@ -83,8 +82,6 @@ KeyBindings::Shortcut KeyBindings::getShortcutFromString( const std::string& key
 	Shortcut shortcut;
 	Uint32 mod = 0;
 	auto keysSplit = String::split( keys, '+' );
-	if ( keys.find( "keypad +" ) != std::string::npos )
-		mod = 0;
 	if ( keysSplit.size() == 1 && getKeyMod( keysSplit[0] ) && keys.find( "++" ) )
 		keysSplit.emplace_back( "+" );
 	if ( keysSplit.size() == 2 && getKeyMod( keysSplit[0] ) &&

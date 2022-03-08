@@ -22,12 +22,18 @@ void DocSearchController::initSearchBar( UISearchBar* searchBar ) {
 	UITextInput* findInput = mSearchBarLayout->find<UITextInput>( "search_find" );
 	UITextInput* replaceInput = mSearchBarLayout->find<UITextInput>( "search_replace" );
 	UICheckBox* caseSensitiveChk = mSearchBarLayout->find<UICheckBox>( "case_sensitive" );
+	UICheckBox* escapeSequenceChk = mSearchBarLayout->find<UICheckBox>( "escape_sequence" );
 	UICheckBox* wholeWordChk = mSearchBarLayout->find<UICheckBox>( "whole_word" );
 	UICheckBox* luaPatternChk = mSearchBarLayout->find<UICheckBox>( "lua_pattern" );
 
 	caseSensitiveChk->addEventListener(
 		Event::OnValueChange, [&, caseSensitiveChk]( const Event* ) {
 			mSearchState.caseSensitive = caseSensitiveChk->isChecked();
+		} );
+
+	escapeSequenceChk->addEventListener(
+		Event::OnValueChange, [&, escapeSequenceChk]( const Event* ) {
+			mSearchState.escapeSequences = escapeSequenceChk->isChecked();
 		} );
 
 	wholeWordChk->addEventListener( Event::OnValueChange, [&, wholeWordChk]( const Event* ) {
@@ -88,16 +94,22 @@ void DocSearchController::initSearchBar( UISearchBar* searchBar ) {
 	mSearchBarLayout->addCommand( "change-whole-word", [&, wholeWordChk] {
 		wholeWordChk->setChecked( !wholeWordChk->isChecked() );
 	} );
+	mSearchBarLayout->addCommand( "change-escape-sequence", [&, escapeSequenceChk] {
+		escapeSequenceChk->setChecked( !escapeSequenceChk->isChecked() );
+	} );
 	mSearchBarLayout->addCommand( "toggle-lua-pattern", [&, luaPatternChk] {
 		luaPatternChk->setChecked( !luaPatternChk->isChecked() );
 	} );
-	mSearchBarLayout->getKeyBindings().addKeybindsString( { { "f3", "repeat-find" },
-															{ "ctrl+g", "repeat-find" },
-															{ "escape", "close-searchbar" },
-															{ "ctrl+r", "replace-all" },
-															{ "ctrl+s", "change-case" },
-															{ "ctrl+w", "change-whole-word" },
-															{ "ctrl+l", "toggle-lua-pattern" } } );
+	mSearchBarLayout->getKeyBindings().addKeybindsString(
+		{ { mApp->getKeybind( "repeat-find" ), "repeat-find" },
+		  { mApp->getKeybind( "find-prev" ), "find-prev" },
+		  { "ctrl+g", "repeat-find" },
+		  { "escape", "close-searchbar" },
+		  { "ctrl+r", "replace-all" },
+		  { "ctrl+s", "change-case" },
+		  { "ctrl+w", "change-whole-word" },
+		  { "ctrl+l", "toggle-lua-pattern" },
+		  { "ctrl+e", "change-escape-sequence" } } );
 	addReturnListener( findInput, "repeat-find" );
 	addReturnListener( replaceInput, "find-and-replace" );
 	addClickListener( mSearchBarLayout->find<UIPushButton>( "find_prev" ), "find-prev" );
@@ -123,6 +135,8 @@ void DocSearchController::showFindView() {
 	mSearchState.caseSensitive =
 		mSearchBarLayout->find<UICheckBox>( "case_sensitive" )->isChecked();
 	mSearchState.wholeWord = mSearchBarLayout->find<UICheckBox>( "whole_word" )->isChecked();
+	mSearchState.escapeSequences =
+		mSearchBarLayout->find<UICheckBox>( "escape_sequence" )->isChecked();
 	mSearchBarLayout->setEnabled( true )->setVisible( true );
 
 	UITextInput* findInput = mSearchBarLayout->find<UITextInput>( "search_find" );
@@ -131,8 +145,14 @@ void DocSearchController::showFindView() {
 
 	const TextDocument& doc = editor->getDocument();
 
-	if ( doc.getSelection().hasSelection() && doc.getSelection().inSameLine() ) {
+	if ( doc.getSelection().hasSelection() ) {
 		String text = doc.getSelectedText();
+		if ( !doc.getSelection().inSameLine() ) {
+			text.escape();
+			UICheckBox* escapeSequenceChk = mSearchBarLayout->find<UICheckBox>( "escape_sequence" );
+			if ( !escapeSequenceChk->isChecked() )
+				escapeSequenceChk->setChecked( true );
+		}
 		if ( !text.empty() ) {
 			findInput->setText( text );
 			findInput->getDocument().selectAll();
@@ -156,6 +176,7 @@ bool DocSearchController::findPrevText( SearchState& search ) {
 	if ( !search.editor || !mEditorSplitter->editorExists( search.editor ) || search.text.empty() )
 		return false;
 
+	UITextInput* findInput = mSearchBarLayout->find<UITextInput>( "search_find" );
 	search.editor->getDocument().setActiveClient( search.editor );
 	mLastSearch = search.text;
 	TextDocument& doc = search.editor->getDocument();
@@ -166,18 +187,26 @@ bool DocSearchController::findPrevText( SearchState& search ) {
 		from = from < range.start() ? range.start() : from;
 	}
 
-	TextPosition found =
-		doc.findLast( search.text, from, search.caseSensitive, search.wholeWord, search.range );
+	String txt( search.text );
+	if ( search.escapeSequences )
+		txt.unescape();
+
+	TextRange found = doc.findLast( txt, from, search.caseSensitive, search.wholeWord, search.type,
+									search.range );
 	if ( found.isValid() ) {
-		doc.setSelection( { doc.positionOffset( found, search.text.size() ), found } );
+		doc.setSelection( found );
+		findInput->removeClass( "error" );
 		return true;
 	} else {
-		found = doc.findLast( search.text, range.end() );
+		found = doc.findLast( txt, range.end(), search.caseSensitive, search.wholeWord, search.type,
+							  range );
 		if ( found.isValid() ) {
-			doc.setSelection( { doc.positionOffset( found, search.text.size() ), found } );
+			doc.setSelection( found );
+			findInput->removeClass( "error" );
 			return true;
 		}
 	}
+	findInput->addClass( "error" );
 	return false;
 }
 
@@ -187,6 +216,7 @@ bool DocSearchController::findNextText( SearchState& search ) {
 	if ( !search.editor || !mEditorSplitter->editorExists( search.editor ) || search.text.empty() )
 		return false;
 
+	UITextInput* findInput = mSearchBarLayout->find<UITextInput>( "search_find" );
 	search.editor->getDocument().setActiveClient( search.editor );
 	mLastSearch = search.text;
 	TextDocument& doc = search.editor->getDocument();
@@ -197,19 +227,26 @@ bool DocSearchController::findNextText( SearchState& search ) {
 		from = from < range.start() ? range.start() : from;
 	}
 
+	String txt( search.text );
+	if ( search.escapeSequences )
+		txt.unescape();
+
 	TextRange found =
-		doc.find( search.text, from, search.caseSensitive, search.wholeWord, search.type, range );
+		doc.find( txt, from, search.caseSensitive, search.wholeWord, search.type, range );
 	if ( found.isValid() ) {
 		doc.setSelection( found.reversed() );
+		findInput->removeClass( "error" );
 		return true;
 	} else {
-		found = doc.find( search.text, range.start(), search.caseSensitive, search.wholeWord,
-						  search.type, range );
+		found = doc.find( txt, range.start(), search.caseSensitive, search.wholeWord, search.type,
+						  range );
 		if ( found.isValid() ) {
 			doc.setSelection( found.reversed() );
+			findInput->removeClass( "error" );
 			return true;
 		}
 	}
+	findInput->addClass( "error" );
 	return false;
 }
 
@@ -233,8 +270,16 @@ int DocSearchController::replaceAll( SearchState& search, const String& replace 
 	mLastSearch = search.text;
 	TextDocument& doc = search.editor->getDocument();
 	TextPosition startedPosition = doc.getSelection().start();
-	int count = doc.replaceAll( search.text, replace, search.caseSensitive, search.wholeWord,
-								search.type, search.range );
+
+	String txt( search.text );
+	String repl( replace );
+	if ( search.escapeSequences ) {
+		txt.unescape();
+		repl.unescape();
+	}
+
+	int count = doc.replaceAll( txt, repl, search.caseSensitive, search.wholeWord, search.type,
+								search.range );
 	doc.setSelection( startedPosition );
 	return count;
 }
@@ -249,8 +294,16 @@ bool DocSearchController::findAndReplace( SearchState& search, const String& rep
 	search.editor->getDocument().setActiveClient( search.editor );
 	mLastSearch = search.text;
 	TextDocument& doc = search.editor->getDocument();
-	if ( doc.hasSelection() && doc.getSelectedText() == search.text ) {
-		return replaceSelection( search, replace );
+
+	String txt( search.text );
+	String repl( replace );
+	if ( search.escapeSequences ) {
+		txt.unescape();
+		repl.unescape();
+	}
+
+	if ( doc.hasSelection() && doc.getSelectedText() == txt ) {
+		return replaceSelection( search, repl );
 	} else {
 		return findNextText( search );
 	}

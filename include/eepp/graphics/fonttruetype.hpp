@@ -123,7 +123,7 @@ class EE_API FontTrueType : public Font {
 	bool mIsEmojiFont{ false };
 	mutable std::map<unsigned int, unsigned int> mClosestCharacterSize;
 
-	Uint64 getCharIndexKey( Uint32 codePoint, bool bold, Float outlineThickness ) const;
+	Uint64 getCodePointIndexKey( Uint32 codePoint, bool bold, Float outlineThickness ) const;
 };
 
 }} // namespace EE::Graphics

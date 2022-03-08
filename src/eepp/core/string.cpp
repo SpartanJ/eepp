@@ -112,6 +112,154 @@ Int64 String::BMH::find( const std::string& haystack, const std::string& needle,
 	return find( haystack, needle, haystackOffset, occ );
 }
 
+String String::escape( const String& str ) {
+	String output;
+	for ( size_t i = 0; i < str.size(); i++ ) {
+		switch ( str[i] ) {
+			case '\r':
+				output += "\\r";
+				break;
+			case '\t':
+				output += "\\t";
+				break;
+			case '\n':
+				output += "\\n";
+				break;
+			case '\a':
+				output += "\\a";
+				break;
+			case '\b':
+				output += "\\b";
+				break;
+			case '\f':
+				output += "\\f";
+				break;
+			case '\v':
+				output += "\\v";
+				break;
+			default: {
+				output += str[i];
+				break;
+			}
+		}
+	}
+	return output;
+}
+
+String String::unescape( const String& str ) {
+	String output;
+	for ( size_t i = 0; i < str.size(); i++ ) {
+		if ( i > 0 && str[i - 1] == '\\' ) {
+			switch ( str[i] ) {
+				case '\\':
+					output.push_back( '\\' );
+					break;
+				case 'r':
+					output.push_back( '\r' );
+					break;
+				case 't':
+					output.push_back( '\t' );
+					break;
+				case 'n':
+					output.push_back( '\n' );
+					break;
+				case '\'':
+					output.push_back( '\'' );
+					break;
+				case '"':
+					output.push_back( '"' );
+					break;
+				case '?':
+					output.push_back( '\?' );
+					break;
+				case 'a':
+					output.push_back( '\a' );
+					break;
+				case 'b':
+					output.push_back( '\b' );
+					break;
+				case 'f':
+					output.push_back( '\f' );
+					break;
+				case 'v':
+					output.push_back( '\v' );
+					break;
+				case 'x': {
+					size_t len = 2;
+					if ( i + len < str.size() ) {
+						std::string buffer;
+						for ( i = i + 1; i < str.size(); i++ )
+							if ( std::isdigit( str[i] ) || ( str[i] >= 'a' && str[i] <= 'f' ) ||
+								 ( str[i] >= 'A' && str[i] <= 'F' ) ) {
+								buffer.push_back( str[i] );
+							} else {
+								break;
+							}
+						if ( buffer.size() >= len ) {
+							Uint32 value;
+							if ( String::fromString( value, buffer, std::hex ) )
+								output.push_back( value );
+						}
+					}
+					break;
+				}
+				case 'u':
+				case 'U': {
+					size_t len = str[i] == 'u' ? 4 : 8;
+					if ( i + len < str.size() ) {
+						size_t to = i + len;
+						std::string buffer;
+						for ( i = i + 1; i <= to; i++ ) {
+							if ( std::isdigit( str[i] ) || ( str[i] >= 'a' && str[i] <= 'f' ) ||
+								 ( str[i] >= 'A' && str[i] <= 'F' ) ) {
+								buffer.push_back( str[i] );
+							}
+						}
+						if ( buffer.size() == len ) {
+							Uint32 value;
+							if ( String::fromString( value, buffer, std::hex ) )
+								output.push_back( value );
+						}
+					}
+					break;
+				}
+				case '0':
+				case '1':
+				case '2':
+				case '3':
+				case '4':
+				case '5':
+				case '6':
+				case '7':
+				case '8': {
+					size_t to = eemin( (size_t)i + 3, str.size() );
+					std::string buffer;
+					for ( ; i < to; i++ ) {
+						if ( ( str[i] >= '0' && str[i] <= '8' ) ) {
+							buffer.push_back( str[i] );
+						} else {
+							break;
+						}
+					}
+					if ( buffer.size() <= 3 ) {
+						Uint32 value;
+						if ( String::fromString( value, buffer, std::oct ) )
+							output.push_back( value );
+					}
+					break;
+				}
+				default: {
+					// Undefined behavior
+					break;
+				}
+			}
+		} else if ( str[i] != '\\' ) {
+			output.push_back( str[i] );
+		}
+	}
+	return output;
+}
+
 String::HashType String::hash( const std::string& str ) {
 	return String::hash( str.c_str() );
 }
@@ -159,7 +307,7 @@ bool String::isHexNotation( const std::string& value, const std::string& withPre
 }
 
 std::vector<String> String::split( const String& str, const StringBaseType& delim,
-								   const bool& pushEmptyString ) {
+								   const bool& pushEmptyString, const bool& keepDelim ) {
 	std::vector<String> cont;
 	std::size_t current, previous = 0;
 	current = str.find( delim );
@@ -173,7 +321,50 @@ std::vector<String> String::split( const String& str, const StringBaseType& deli
 	String substr( str.substr( previous, current - previous ) );
 	if ( pushEmptyString || !substr.empty() )
 		cont.emplace_back( std::move( substr ) );
+	if ( keepDelim ) {
+		for ( size_t i = 0; i < cont.size(); i++ ) {
+			if ( i != cont.size() - 1 ||
+				 ( str.lastChar() == delim && cont[cont.size() - 1].lastChar() != delim ) )
+				cont[i].push_back( delim );
+			if ( cont[cont.size() - 1].empty() )
+				cont.pop_back();
+		}
+	}
 	return cont;
+}
+
+std::vector<std::string> String::split( const std::string& str, const Int8& delim,
+										const bool& pushEmptyString, const bool& keepDelim ) {
+	std::vector<std::string> cont;
+	std::size_t current, previous = 0;
+	current = str.find( delim );
+	while ( current != std::string::npos ) {
+		std::string substr( str.substr( previous, current - previous ) );
+		if ( pushEmptyString || !substr.empty() )
+			cont.emplace_back( std::move( substr ) );
+		previous = current + 1;
+		current = str.find( delim, previous );
+	}
+	std::string substr( str.substr( previous, current - previous ) );
+	if ( pushEmptyString || !substr.empty() )
+		cont.emplace_back( std::move( substr ) );
+	if ( keepDelim ) {
+		for ( size_t i = 0; i < cont.size(); i++ ) {
+			if ( i != cont.size() - 1 ||
+				 ( !str.empty() && str[str.size() - 1] == delim && !cont.empty() &&
+				   !cont[cont.size() - 1].empty() &&
+				   cont[cont.size() - 1][cont[cont.size() - 1].size() - 1] != delim ) )
+				cont[i].push_back( delim );
+			if ( cont[cont.size() - 1].empty() )
+				cont.pop_back();
+		}
+	}
+	return cont;
+}
+
+std::vector<String> String::split( const StringBaseType& delim, const bool& pushEmptyString,
+								   const bool& keepDelim ) const {
+	return String::split( *this, delim, pushEmptyString, keepDelim );
 }
 
 std::vector<std::string> String::split( const std::string& str, const std::string& delims,
@@ -233,24 +424,6 @@ std::vector<std::string> String::split( const std::string& str, const std::strin
 	}
 
 	return tokens;
-}
-
-std::vector<std::string> String::split( const std::string& str, const Int8& delim,
-										const bool& pushEmptyString ) {
-	std::vector<std::string> cont;
-	std::size_t current, previous = 0;
-	current = str.find( delim );
-	while ( current != std::string::npos ) {
-		std::string substr( str.substr( previous, current - previous ) );
-		if ( pushEmptyString || !substr.empty() )
-			cont.emplace_back( std::move( substr ) );
-		previous = current + 1;
-		current = str.find( delim, previous );
-	}
-	std::string substr( str.substr( previous, current - previous ) );
-	if ( pushEmptyString || !substr.empty() )
-		cont.emplace_back( std::move( substr ) );
-	return cont;
 }
 
 std::string String::join( const std::vector<std::string>& strArray, const Int8& joinchar,
@@ -375,14 +548,19 @@ String& String::toUpper() {
 	return *this;
 }
 
+String& String::escape() {
+	this->assign( String::escape( *this ) );
+	return *this;
+}
+
+String& String::unescape() {
+	this->assign( String::unescape( *this ) );
+	return *this;
+}
+
 String::StringBaseType String::lastChar() const {
 	return mString.empty() ? std::numeric_limits<StringBaseType>::max()
 						   : mString[mString.size() - 1];
-}
-
-std::vector<String> String::split( const StringBaseType& delim,
-								   const bool& pushEmptyString ) const {
-	return String::split( *this, delim, pushEmptyString );
 }
 
 // Lite (https://github.com/rxi/lite) fuzzy match implementation

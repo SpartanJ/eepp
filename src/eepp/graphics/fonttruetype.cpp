@@ -18,6 +18,7 @@
 #include <cstring>
 
 namespace {
+
 // FreeType callbacks that operate on a IOStream
 unsigned long read( FT_Stream rec, unsigned long offset, unsigned char* buffer,
 					unsigned long count ) {
@@ -43,8 +44,8 @@ template <typename T, typename U> inline T reinterpret( const U& input ) {
 
 // Combine outline thickness, boldness and font glyph index into a single 64-bit key
 EE::Uint64 combine( float outlineThickness, bool bold, EE::Uint32 index ) {
-	return ( static_cast<EE::Uint64>( reinterpret<EE::Uint32>( outlineThickness ) ) << 32 ) |
-		   ( static_cast<EE::Uint64>( bold ) << 31 ) | index;
+	return ( static_cast<EE::Uint64>( reinterpret<EE::Uint32>( outlineThickness * 100 ) ) << 33 ) |
+		   ( static_cast<EE::Uint64>( bold ) << 32 ) | index;
 }
 
 } // namespace
@@ -332,30 +333,8 @@ const FontTrueType::Info& FontTrueType::getInfo() const {
 	return mInfo;
 }
 
-Uint64 FontTrueType::getCharIndexKey( Uint32 codePoint, bool bold, Float outlineThickness ) const {
-	Uint32 charIndex = FT_Get_Char_Index( static_cast<FT_Face>( mFace ), codePoint );
-	Uint64 key = combine( outlineThickness, bold, charIndex );
-
-	if ( charIndex == 0 && Font::isEmojiCodePoint( codePoint ) && !mIsColorEmojiFont &&
-		 !mIsEmojiFont ) {
-		if ( FontManager::instance()->getColorEmojiFont() != nullptr &&
-			 FontManager::instance()->getColorEmojiFont()->getType() == FontType::TTF ) {
-			FontTrueType* fontEmoji =
-				static_cast<FontTrueType*>( FontManager::instance()->getColorEmojiFont() );
-			key =
-				combine( outlineThickness, bold,
-						 FT_Get_Char_Index( static_cast<FT_Face>( fontEmoji->mFace ), codePoint ) );
-		} else if ( FontManager::instance()->getEmojiFont() != nullptr &&
-					FontManager::instance()->getEmojiFont()->getType() == FontType::TTF ) {
-			FontTrueType* fontEmoji =
-				static_cast<FontTrueType*>( FontManager::instance()->getEmojiFont() );
-			key =
-				combine( outlineThickness, bold,
-						 FT_Get_Char_Index( static_cast<FT_Face>( fontEmoji->mFace ), codePoint ) );
-		}
-	}
-
-	return key;
+Uint64 FontTrueType::getCodePointIndexKey( Uint32 codePoint, bool bold, Float outlineThickness ) const {
+	return combine( outlineThickness, bold, codePoint );
 }
 
 const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
@@ -364,7 +343,7 @@ const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSiz
 	GlyphTable& glyphs = mPages[characterSize].glyphs;
 
 	// Build the key by combining the code point, bold flag, and outline thickness
-	Uint64 key = getCharIndexKey( codePoint, bold, outlineThickness );
+	Uint64 key = getCodePointIndexKey( codePoint, bold, outlineThickness );
 
 	// Search the glyph into the cache
 	GlyphTable::const_iterator it = glyphs.find( key );
@@ -383,7 +362,7 @@ GlyphDrawable* FontTrueType::getGlyphDrawable( Uint32 codePoint, unsigned int ch
 											   bool bold, Float outlineThickness ) const {
 	GlyphDrawableTable& drawables = mPages[characterSize].drawables;
 
-	Uint64 key = getCharIndexKey( codePoint, bold, outlineThickness );
+	Uint64 key = getCodePointIndexKey( codePoint, bold, outlineThickness );
 
 	auto it = drawables.find( key );
 	if ( it != drawables.end() ) {
