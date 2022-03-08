@@ -1,26 +1,6 @@
 #include "docsearchcontroller.hpp"
 #include "codeeditor.hpp"
 
-static void replaceAllEscapedSequences( String& target, const String& that, const String& with ) {
-	std::string::size_type pos = 0;
-	while ( ( pos = target.find( that, pos ) ) != String::InvalidPos ) {
-		if ( pos > 0 && target[pos - 1] == '\\' ) {
-			target.erase( pos, 1 );
-		} else {
-			target.erase( pos, that.length() );
-			target.insert( pos, with );
-		}
-		pos += with.length();
-	}
-}
-
-static void unescapeSequences( String& txt ) {
-	replaceAllEscapedSequences( txt, "\\n", String( '\n' ) );
-	replaceAllEscapedSequences( txt, "\\t", String( '\t' ) );
-	replaceAllEscapedSequences( txt, "\\r", String( '\r' ) );
-	replaceAllEscapedSequences( txt, "\\\\", String( '\\' ) );
-}
-
 DocSearchController::DocSearchController( UICodeEditorSplitter* editorSplitter, App* app ) :
 	mEditorSplitter( editorSplitter ), mApp( app ) {}
 
@@ -165,8 +145,14 @@ void DocSearchController::showFindView() {
 
 	const TextDocument& doc = editor->getDocument();
 
-	if ( doc.getSelection().hasSelection() && doc.getSelection().inSameLine() ) {
+	if ( doc.getSelection().hasSelection() ) {
 		String text = doc.getSelectedText();
+		if ( !doc.getSelection().inSameLine() ) {
+			text.escape();
+			UICheckBox* escapeSequenceChk = mSearchBarLayout->find<UICheckBox>( "escape_sequence" );
+			if ( !escapeSequenceChk->isChecked() )
+				escapeSequenceChk->setChecked( true );
+		}
 		if ( !text.empty() ) {
 			findInput->setText( text );
 			findInput->getDocument().selectAll();
@@ -203,17 +189,17 @@ bool DocSearchController::findPrevText( SearchState& search ) {
 
 	String txt( search.text );
 	if ( search.escapeSequences )
-		unescapeSequences( txt );
+		txt.unescape();
 
-	TextRange found = doc.findLast( txt, from, search.caseSensitive, search.wholeWord,
-											 search.type, search.range );
+	TextRange found = doc.findLast( txt, from, search.caseSensitive, search.wholeWord, search.type,
+									search.range );
 	if ( found.isValid() ) {
 		doc.setSelection( found );
 		findInput->removeClass( "error" );
 		return true;
 	} else {
-		found = doc.findLast( txt, range.end(), search.caseSensitive, search.wholeWord,
-									   search.type, range );
+		found = doc.findLast( txt, range.end(), search.caseSensitive, search.wholeWord, search.type,
+							  range );
 		if ( found.isValid() ) {
 			doc.setSelection( found );
 			findInput->removeClass( "error" );
@@ -243,7 +229,7 @@ bool DocSearchController::findNextText( SearchState& search ) {
 
 	String txt( search.text );
 	if ( search.escapeSequences )
-		unescapeSequences( txt );
+		txt.unescape();
 
 	TextRange found =
 		doc.find( txt, from, search.caseSensitive, search.wholeWord, search.type, range );
@@ -252,8 +238,8 @@ bool DocSearchController::findNextText( SearchState& search ) {
 		findInput->removeClass( "error" );
 		return true;
 	} else {
-		found = doc.find( txt, range.start(), search.caseSensitive, search.wholeWord,
-								   search.type, range );
+		found = doc.find( txt, range.start(), search.caseSensitive, search.wholeWord, search.type,
+						  range );
 		if ( found.isValid() ) {
 			doc.setSelection( found.reversed() );
 			findInput->removeClass( "error" );
@@ -288,8 +274,8 @@ int DocSearchController::replaceAll( SearchState& search, const String& replace 
 	String txt( search.text );
 	String repl( replace );
 	if ( search.escapeSequences ) {
-		unescapeSequences( txt );
-		unescapeSequences( repl );
+		txt.unescape();
+		repl.unescape();
 	}
 
 	int count = doc.replaceAll( txt, repl, search.caseSensitive, search.wholeWord, search.type,
@@ -312,8 +298,8 @@ bool DocSearchController::findAndReplace( SearchState& search, const String& rep
 	String txt( search.text );
 	String repl( replace );
 	if ( search.escapeSequences ) {
-		unescapeSequences( txt );
-		unescapeSequences( repl );
+		txt.unescape();
+		repl.unescape();
 	}
 
 	if ( doc.hasSelection() && doc.getSelectedText() == txt ) {

@@ -112,6 +112,154 @@ Int64 String::BMH::find( const std::string& haystack, const std::string& needle,
 	return find( haystack, needle, haystackOffset, occ );
 }
 
+String String::escape( const String& str ) {
+	String output;
+	for ( size_t i = 0; i < str.size(); i++ ) {
+		switch ( str[i] ) {
+			case '\r':
+				output += "\\r";
+				break;
+			case '\t':
+				output += "\\t";
+				break;
+			case '\n':
+				output += "\\n";
+				break;
+			case '\a':
+				output += "\\a";
+				break;
+			case '\b':
+				output += "\\b";
+				break;
+			case '\f':
+				output += "\\f";
+				break;
+			case '\v':
+				output += "\\v";
+				break;
+			default: {
+				output += str[i];
+				break;
+			}
+		}
+	}
+	return output;
+}
+
+String String::unescape( const String& str ) {
+	String output;
+	for ( size_t i = 0; i < str.size(); i++ ) {
+		if ( i > 0 && str[i - 1] == '\\' ) {
+			switch ( str[i] ) {
+				case '\\':
+					output.push_back( '\\' );
+					break;
+				case 'r':
+					output.push_back( '\r' );
+					break;
+				case 't':
+					output.push_back( '\t' );
+					break;
+				case 'n':
+					output.push_back( '\n' );
+					break;
+				case '\'':
+					output.push_back( '\'' );
+					break;
+				case '"':
+					output.push_back( '"' );
+					break;
+				case '?':
+					output.push_back( '\?' );
+					break;
+				case 'a':
+					output.push_back( '\a' );
+					break;
+				case 'b':
+					output.push_back( '\b' );
+					break;
+				case 'f':
+					output.push_back( '\f' );
+					break;
+				case 'v':
+					output.push_back( '\v' );
+					break;
+				case 'x': {
+					size_t len = 2;
+					if ( i + len < str.size() ) {
+						std::string buffer;
+						for ( i = i + 1; i < str.size(); i++ )
+							if ( std::isdigit( str[i] ) || ( str[i] >= 'a' && str[i] <= 'f' ) ||
+								 ( str[i] >= 'A' && str[i] <= 'F' ) ) {
+								buffer.push_back( str[i] );
+							} else {
+								break;
+							}
+						if ( buffer.size() >= len ) {
+							Uint32 value;
+							if ( String::fromString( value, buffer, std::hex ) )
+								output.push_back( value );
+						}
+					}
+					break;
+				}
+				case 'u':
+				case 'U': {
+					size_t len = str[i] == 'u' ? 4 : 8;
+					if ( i + len < str.size() ) {
+						size_t to = i + len;
+						std::string buffer;
+						for ( i = i + 1; i <= to; i++ ) {
+							if ( std::isdigit( str[i] ) || ( str[i] >= 'a' && str[i] <= 'f' ) ||
+								 ( str[i] >= 'A' && str[i] <= 'F' ) ) {
+								buffer.push_back( str[i] );
+							}
+						}
+						if ( buffer.size() == len ) {
+							Uint32 value;
+							if ( String::fromString( value, buffer, std::hex ) )
+								output.push_back( value );
+						}
+					}
+					break;
+				}
+				case '0':
+				case '1':
+				case '2':
+				case '3':
+				case '4':
+				case '5':
+				case '6':
+				case '7':
+				case '8': {
+					size_t to = eemin( (size_t)i + 3, str.size() );
+					std::string buffer;
+					for ( ; i < to; i++ ) {
+						if ( ( str[i] >= '0' && str[i] <= '8' ) ) {
+							buffer.push_back( str[i] );
+						} else {
+							break;
+						}
+					}
+					if ( buffer.size() <= 3 ) {
+						Uint32 value;
+						if ( String::fromString( value, buffer, std::oct ) )
+							output.push_back( value );
+					}
+					break;
+				}
+				default: {
+					// Undefined behavior
+					break;
+				}
+			}
+		} else if ( str[i] != '\\' ) {
+			output.push_back( str[i] );
+		}
+	}
+	return output;
+}
+
 String::HashType String::hash( const std::string& str ) {
 	return String::hash( str.c_str() );
 }
@@ -397,6 +545,16 @@ String& String::toLower() {
 String& String::toUpper() {
 	for ( StringType::iterator i = mString.begin(); i != mString.end(); ++i )
 		*i = static_cast<Uint32>( std::toupper( *i ) );
+	return *this;
+}
+
+String& String::escape() {
+	this->assign( String::escape( *this ) );
+	return *this;
+}
+
+String& String::unescape() {
+	this->assign( String::unescape( *this ) );
 	return *this;
 }
 

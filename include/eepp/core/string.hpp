@@ -69,6 +69,12 @@ class EE_API String {
 		return 0;
 	}
 
+	/** Escape string sequence */
+	static String escape( const String& str );
+
+	/** Unescape string sequence */
+	static String unescape( const String& str );
+
 	/** @return string hash */
 	static String::HashType hash( const std::string& str );
 
@@ -775,6 +781,10 @@ class EE_API String {
 	String& toLower();
 
 	String& toUpper();
+
+	String& escape();
+
+	String& unescape();
 
 	StringBaseType lastChar() const;
 
