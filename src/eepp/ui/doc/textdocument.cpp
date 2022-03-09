@@ -1452,7 +1452,7 @@ TextRange TextDocument::find( String text, TextPosition from, const bool& caseSe
 		if ( restrictRange.isValid() ) {
 			restrictRange = sanitizeRange( restrictRange.normalized() );
 			to = restrictRange.end();
-			if ( from < restrictRange.start() || from > restrictRange.end() )
+			if ( from < restrictRange.start() || from >= restrictRange.end() )
 				return TextRange();
 		}
 
@@ -1479,7 +1479,10 @@ TextRange TextDocument::find( String text, TextPosition from, const bool& caseSe
 				}
 
 				if ( currentLine == textLines[i] ) {
-					initPos = TextPosition( i + 1, 0 );
+					initPos = TextPosition( initPos.line() + 1, 0 );
+
+					if ( initPos >= restrictRange.end() )
+						return TextRange();
 				} else {
 					return find( text, range.end(), caseSensitive, wholeWord, type, restrictRange );
 				}
