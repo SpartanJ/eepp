@@ -681,6 +681,42 @@ TextPosition TextDocument::nextWordBoundary( TextPosition position ) const {
 	return position;
 }
 
+TextPosition TextDocument::previousSpaceBoundaryInLine( TextPosition position ) const {
+	auto ch = getChar( positionOffset( position, -1 ) );
+	bool inWord = ch != ' ';
+	String::StringBaseType nextChar = 0;
+	do {
+		TextPosition curPos = position;
+		position = positionOffset( position, -1 );
+		if ( curPos == position )
+			break;
+		if ( curPos.line() != position.line() ) {
+			position = curPos;
+			break;
+		}
+		nextChar = getChar( positionOffset( position, -1 ) );
+	} while ( ( inWord && nextChar != ' ' ) || ( !inWord && nextChar == ch ) );
+	return position;
+}
+
+TextPosition TextDocument::nextSpaceBoundaryInLine( TextPosition position ) const {
+	auto ch = getChar( position );
+	bool inWord = ch != ' ';
+	String::StringBaseType nextChar = 0;
+	do {
+		TextPosition curPos = position;
+		position = positionOffset( position, 1 );
+		if ( curPos == position )
+			break;
+		if ( curPos.line() != position.line() ) {
+			position = curPos;
+			break;
+		}
+		nextChar = getChar( position );
+	} while ( ( inWord && nextChar != ' ' ) || ( !inWord && nextChar == ch ) );
+	return position;
+}
+
 TextPosition TextDocument::startOfWord( TextPosition position ) const {
 	while ( true ) {
 		TextPosition curPos = positionOffset( position, -1 );

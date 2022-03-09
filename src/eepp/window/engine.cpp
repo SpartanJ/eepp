@@ -394,9 +394,7 @@ DisplayManager* Engine::getDisplayManager() {
 }
 
 bool Engine::openURL( const std::string& url ) {
-	if ( NULL != mPlatformHelper )
-		return mPlatformHelper->openURL( url );
-	return false;
+	return NULL != getPlatformHelper() && getPlatformHelper()->openURL( url );
 }
 
 struct EngineInitializer {

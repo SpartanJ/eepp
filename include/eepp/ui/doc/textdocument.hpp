@@ -127,6 +127,10 @@ class EE_API TextDocument {
 
 	TextPosition nextWordBoundary( TextPosition position ) const;
 
+	TextPosition previousSpaceBoundaryInLine( TextPosition position ) const;
+
+	TextPosition nextSpaceBoundaryInLine( TextPosition position ) const;
+
 	TextPosition startOfWord( TextPosition position ) const;
 
 	TextPosition endOfWord( TextPosition position ) const;

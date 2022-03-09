@@ -4,6 +4,7 @@
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/scene/scenemanager.hpp>
+#include <eepp/system/luapattern.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/tools/uicolorpicker.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
@@ -12,6 +13,7 @@
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/window/clipboard.hpp>
+#include <eepp/window/engine.hpp>
 #include <eepp/window/input.hpp>
 #include <eepp/window/window.hpp>
 
@@ -111,6 +113,7 @@ UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegis
 	mHorizontalScrollBarEnabled( false ),
 	mLongestLineWidthDirty( true ),
 	mColorPreview( false ),
+	mInteractiveLinks( true ),
 	mTabWidth( 4 ),
 	mMouseWheelScroll( 50 ),
 	mFontSize( mFontStyleConfig.getFontCharacterSize() ),
@@ -698,16 +701,19 @@ Uint32 UICodeEditor::onKeyUp( const KeyEvent& event ) {
 	for ( auto& module : mModules )
 		if ( module->onKeyUp( this, event ) )
 			return 1;
+	if ( mHandShown && !getUISceneNode()->getWindow()->getInput()->isControlPressed() )
+		getUISceneNode()->setCursor( Cursor::IBeam );
 	return UIWidget::onKeyUp( event );
 }
 
-TextPosition UICodeEditor::resolveScreenPosition( const Vector2f& position ) const {
+TextPosition UICodeEditor::resolveScreenPosition( const Vector2f& position, bool clamp ) const {
 	Vector2f localPos( convertToNodeSpace( position ) );
 	localPos += mScroll;
 	localPos.x -= mPaddingPx.Left + ( mShowLineNumber ? getLineNumberWidth() : 0.f );
 	localPos.y -= mPaddingPx.Top;
-	Int64 line = eeclamp<Int64>( (Int64)eefloor( localPos.y / getLineHeight() ), 0,
-								 ( Int64 )( mDoc->linesCount() - 1 ) );
+	Int64 line = (Int64)eefloor( localPos.y / getLineHeight() );
+	if ( clamp )
+		line = eeclamp<Int64>( line, 0, (Int64)( mDoc->linesCount() - 1 ) );
 	return TextPosition( line, getColFromXOffset( line, localPos.x ) );
 }
 
@@ -763,6 +769,8 @@ Uint32 UICodeEditor::onMouseMove( const Vector2i& position, const Uint32& flags 
 
 	checkMouseOverColor( position );
 
+	checkMouseOverLink( position );
+
 	return UIWidget::onMouseMove( position, flags );
 }
 
@@ -803,7 +811,14 @@ Uint32 UICodeEditor::onMouseClick( const Vector2i& position, const Uint32& flags
 			return UIWidget::onMouseClick( position, flags );
 
 	if ( ( flags & EE_BUTTON_LMASK ) &&
-		 mLastDoubleClick.getElapsedTime() < Milliseconds( 300.f ) ) {
+		 getUISceneNode()->getWindow()->getInput()->isControlPressed() ) {
+		String link( checkMouseOverLink( position ) );
+		if ( !link.empty() ) {
+			Engine::instance()->openURL( link.toUtf8() );
+			getUISceneNode()->setCursor( Cursor::IBeam );
+		}
+	} else if ( ( flags & EE_BUTTON_LMASK ) &&
+				mLastDoubleClick.getElapsedTime() < Milliseconds( 300.f ) ) {
 		mDoc->selectLine();
 	} else if ( ( flags & EE_BUTTON_MMASK ) && isMouseOverMeOrChilds() ) {
 		auto txt( getUISceneNode()->getWindow()->getClipboard()->getText() );
@@ -976,6 +991,14 @@ bool UICodeEditor::getAutoCloseBrackets() const {
 
 void UICodeEditor::setAutoCloseBrackets( bool autoCloseBrackets ) {
 	mDoc->setAutoCloseBrackets( autoCloseBrackets );
+}
+
+bool UICodeEditor::getInteractiveLinks() const {
+	return mInteractiveLinks;
+}
+
+void UICodeEditor::setInteractiveLinks( bool newInteractiveLinks ) {
+	mInteractiveLinks = newInteractiveLinks;
 }
 
 void UICodeEditor::updateEditor() {
@@ -1210,7 +1233,7 @@ void UICodeEditor::replaceKeyBinding( const KeyBindings::Shortcut& shortcut,
 void UICodeEditor::addKeyBindsString( const std::map<std::string, std::string>& binds,
 									  const bool& allowLocked ) {
 	mKeyBindings.addKeybindsString( binds );
-	for ( const auto &bind : binds ) {
+	for ( const auto& bind : binds ) {
 		if ( allowLocked ) {
 			mUnlockedCmd.insert( bind.second );
 		}
@@ -1220,7 +1243,7 @@ void UICodeEditor::addKeyBindsString( const std::map<std::string, std::string>& 
 void UICodeEditor::addKeyBinds( const std::map<KeyBindings::Shortcut, std::string>& binds,
 								const bool& allowLocked ) {
 	mKeyBindings.addKeybinds( binds );
-	for ( const auto &bind : binds ) {
+	for ( const auto& bind : binds ) {
 		if ( allowLocked ) {
 			mUnlockedCmd.insert( bind.second );
 		}
@@ -1995,6 +2018,72 @@ void UICodeEditor::checkMouseOverColor( const Vector2i& position ) {
 	} else if ( mPreviewColorRange.isValid() ) {
 		resetPreviewColor();
 	}
+}
+
+String UICodeEditor::checkMouseOverLink( const Vector2i& position ) {
+	if ( !mInteractiveLinks || !getUISceneNode()->getWindow()->getInput()->isControlPressed() ) {
+		getUISceneNode()->setCursor( Cursor::IBeam );
+		return "";
+	}
+
+	TextPosition pos( resolveScreenPosition( position.asFloat(), false ) );
+	if ( mDoc->getChar( pos ) == '\n' ) {
+		getUISceneNode()->setCursor( Cursor::IBeam );
+		return "";
+	}
+
+	if ( pos.line() > (Int64)mDoc->linesCount() ) {
+		getUISceneNode()->setCursor( Cursor::IBeam );
+		return "";
+	}
+
+	const String& line = mDoc->line( pos.line() ).getText();
+	if ( pos.column() >= (Int64)line.size() - 1 ) {
+		getUISceneNode()->setCursor( Cursor::IBeam );
+		return "";
+	}
+
+	TextPosition startB( mDoc->previousSpaceBoundaryInLine( pos ) );
+	TextPosition endB( mDoc->nextSpaceBoundaryInLine( pos ) );
+
+	if ( startB.column() >= (Int64)line.size() || endB.column() >= (Int64)line.size() ) {
+		getUISceneNode()->setCursor( Cursor::IBeam );
+		return "";
+	}
+
+	if ( pos.column() <= startB.column() || pos.column() >= endB.column() ) {
+		getUISceneNode()->setCursor( Cursor::IBeam );
+		return "";
+	}
+
+	String partialLine( line.substr( startB.column(), endB.column() ) );
+
+	LuaPattern words( LuaPattern::getHttpURLPattern() );
+	int start, end = 0;
+	std::string linkStr( partialLine.toUtf8() );
+
+	int offset = 0;
+	std::vector<std::pair<int, int>> links;
+	do {
+		if ( words.find( linkStr, start, end, offset ) ) {
+			links.emplace_back( std::make_pair( start, end ) );
+			offset = end;
+		}
+	} while ( start != end );
+
+	if ( !links.empty() ) {
+		for ( const auto& link : links ) {
+			if ( pos.column() >= startB.column() + link.first &&
+				 pos.column() <= startB.column() + link.second ) {
+				getUISceneNode()->setCursor( Cursor::Hand );
+				mHandShown = true;
+				return String( linkStr.substr( link.first, link.second - link.first ) );
+			}
+		}
+	}
+
+	getUISceneNode()->setCursor( Cursor::IBeam );
+	return "";
 }
 
 void UICodeEditor::resetPreviewColor() {

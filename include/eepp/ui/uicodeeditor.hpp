@@ -374,6 +374,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void setAutoCloseBrackets( bool autoCloseBracket );
 
+	bool getInteractiveLinks() const;
+
+	void setInteractiveLinks( bool newInteractiveLinks );
+
   protected:
 	struct LastXOffset {
 		TextPosition position;
@@ -397,6 +401,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mHorizontalScrollBarEnabled;
 	bool mLongestLineWidthDirty;
 	bool mColorPreview;
+	bool mInteractiveLinks;
+	bool mHandShown{ false };
 	Uint32 mTabWidth;
 	Vector2f mScroll;
 	Float mMouseWheelScroll;
@@ -508,7 +514,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void resetCursor();
 
-	TextPosition resolveScreenPosition( const Vector2f& position ) const;
+	TextPosition resolveScreenPosition( const Vector2f& position, bool clamp = true ) const;
 
 	Vector2f getViewPortLineCount() const;
 
@@ -555,6 +561,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	virtual Uint32 onMessage( const NodeMessage* msg );
 
 	void checkMouseOverColor( const Vector2i& position );
+
+	String checkMouseOverLink( const Vector2i& position );
 
 	void resetPreviewColor();
 
