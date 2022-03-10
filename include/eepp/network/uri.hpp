@@ -150,8 +150,11 @@ class EE_API URI {
 	/** @returns The path part of the URI. */
 	const std::string& getPath() const;
 
+	/** @returns The last path segment. */
+	std::string getLastPathSegment() const;
+
 	/** Sets the path part of the URI. */
-	void getPath( const std::string& path );
+	void setPath( const std::string& path );
 
 	/** @returns the query part of the URI. */
 	std::string getQuery() const;

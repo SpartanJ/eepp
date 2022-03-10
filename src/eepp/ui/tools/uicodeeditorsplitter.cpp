@@ -299,8 +299,15 @@ bool UICodeEditorSplitter::loadFileFromPath( const std::string& path, UICodeEdit
 	if ( nullptr == codeEditor )
 		codeEditor = mCurEditor;
 	codeEditor->setColorScheme( mColorSchemes[mCurrentColorScheme] );
-	bool ret = codeEditor->loadFromFile( path );
-	mClient->onDocumentLoaded( codeEditor, path );
+	bool isUrl = String::startsWith( path, "https://" ) || String::startsWith( path, "http://" );
+	bool ret = isUrl ? codeEditor->loadAsyncFromURL(
+						   path, Http::Request::FieldTable(),
+						   [&, codeEditor, path]( std::shared_ptr<TextDocument>, bool ) {
+							   mClient->onDocumentLoaded( codeEditor, path );
+						   } )
+					 : codeEditor->loadFromFile( path );
+	if ( ret && !isUrl )
+		mClient->onDocumentLoaded( codeEditor, path );
 	return ret;
 }
 

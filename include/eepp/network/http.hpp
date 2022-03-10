@@ -174,7 +174,7 @@ class EE_API Http : NonCopyable {
 					 ///< target resource.
 			Patch,	 ///< The PATCH method is used to apply partial modifications to a resource.
 			Connect	 ///< The CONNECT method starts two-way communications with the requested
-					///< resource. It can be used to open a tunnel.
+					 ///< resource. It can be used to open a tunnel.
 		};
 
 		/** @brief Enumerate the available states for a request */
@@ -635,6 +635,9 @@ class EE_API Http : NonCopyable {
 		const Request::ProgressCallback& progressCallback = Request::ProgressCallback(),
 		const Request::FieldTable& headers = Request::FieldTable(), const std::string& body = "",
 		const bool& validateCertificate = true, const URI& proxy = URI() );
+
+	/** It will try to get the proxy from the environment variables. */
+	static URI getEnvProxyURI();
 
   private:
 	class AsyncRequest : public Thread {

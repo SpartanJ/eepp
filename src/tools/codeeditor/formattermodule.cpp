@@ -80,13 +80,6 @@ void FormatterModule::load( const std::string& formatterPath ) {
 		Log::error( "Parsing formatter failed:\n%s", e.what() );
 	}
 }
-static std::string randString( size_t len ) {
-	std::string str( "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz" );
-	std::random_device rd;
-	std::mt19937 generator( rd() );
-	std::shuffle( str.begin(), str.end(), generator );
-	return str.substr( 0, len );
-}
 
 void FormatterModule::formatDoc( UICodeEditor* editor ) {
 	if ( !mReady )
@@ -102,11 +95,12 @@ void FormatterModule::formatDoc( UICodeEditor* editor ) {
 	if ( doc->isDirty() || !doc->hasFilepath() || formatter.type == FormatterType::Inplace ) {
 		std::string tmpPath;
 		if ( !doc->hasFilepath() ) {
-			tmpPath = Sys::getTempPath() + ".ecode-" + doc->getFilename() + "." + randString( 8 );
+			tmpPath =
+				Sys::getTempPath() + ".ecode-" + doc->getFilename() + "." + String::randString( 8 );
 		} else {
 			std::string fileDir( FileSystem::fileRemoveFileName( doc->getFilePath() ) );
 			FileSystem::dirAddSlashAtEnd( fileDir );
-			tmpPath = fileDir + "." + randString( 8 ) + "." + doc->getFilename();
+			tmpPath = fileDir + "." + String::randString( 8 ) + "." + doc->getFilename();
 		}
 
 		doc->save( fileString, true );

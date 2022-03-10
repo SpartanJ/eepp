@@ -22,6 +22,13 @@ class AutoCompleteModule : public UICodeEditorModule {
 
 	virtual ~AutoCompleteModule();
 
+	std::string getTitle() { return "Auto Complete"; }
+
+	std::string getDescription() {
+		return "Auto complete shows the completion popup as you type, so you can fill\n"
+			   "in long words by typing only a few characters.";
+	}
+
 	void onRegister( UICodeEditor* );
 	void onUnregister( UICodeEditor* );
 	bool onKeyDown( UICodeEditor*, const KeyEvent& );
@@ -64,27 +71,27 @@ class AutoCompleteModule : public UICodeEditorModule {
 	Mutex mLangSymbolsMutex;
 	Mutex mSuggestionsMutex;
 	Mutex mDocMutex;
-	Time mUpdateFreq{Seconds( 5 )};
+	Time mUpdateFreq{ Seconds( 5 ) };
 	std::unordered_map<UICodeEditor*, std::vector<Uint32>> mEditors;
 	std::set<TextDocument*> mDocs;
 	std::unordered_map<UICodeEditor*, TextDocument*> mEditorDocs;
-	bool mDirty{false};
-	bool mClosing{false};
-	bool mReplacing{false};
+	bool mDirty{ false };
+	bool mClosing{ false };
+	bool mReplacing{ false };
 	struct DocCache {
-		Uint64 changeId{static_cast<Uint64>( -1 )};
+		Uint64 changeId{ static_cast<Uint64>( -1 ) };
 		SymbolsList symbols;
 	};
 	std::unordered_map<TextDocument*, DocCache> mDocCache;
 	std::unordered_map<std::string, SymbolsList> mLangCache;
 	SymbolsList mLangDirty;
 
-	int mSuggestionIndex{0};
+	int mSuggestionIndex{ 0 };
 	std::vector<std::string> mSuggestions;
-	Uint32 mSuggestionsMaxVisible{8};
-	UICodeEditor* mSuggestionsEditor{nullptr};
+	Uint32 mSuggestionsMaxVisible{ 8 };
+	UICodeEditor* mSuggestionsEditor{ nullptr };
 
-	Float mRowHeight{0};
+	Float mRowHeight{ 0 };
 	Rectf mBoxRect;
 
 	void resetSuggestions( UICodeEditor* editor );

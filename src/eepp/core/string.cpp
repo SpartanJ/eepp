@@ -7,6 +7,7 @@
 #include <functional>
 #include <iterator>
 #include <limits>
+#include <random>
 
 namespace EE {
 
@@ -719,6 +720,13 @@ int String::valueIndex( const std::string& val, const std::string& strings, int 
 		delimEnd = strings.find( delim, delimStart );
 	}
 	return defValue;
+}
+
+std::string String::randString( size_t len, std::string dictionary ) {
+	std::random_device rd;
+	std::mt19937 generator( rd() );
+	std::shuffle( dictionary.begin(), dictionary.end(), generator );
+	return dictionary.substr( 0, len );
 }
 
 std::string String::fromFloat( const Float& value, const std::string& append,

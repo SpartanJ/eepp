@@ -16,6 +16,10 @@ class FormatterModule : public UICodeEditorModule {
 
 	virtual ~FormatterModule();
 
+	std::string getTitle() { return "Auto Formatter"; }
+
+	std::string getDescription() { return "Enables the code formatter/prettifier module."; }
+
 	void onRegister( UICodeEditor* );
 
 	void onUnregister( UICodeEditor* );

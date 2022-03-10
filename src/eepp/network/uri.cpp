@@ -225,7 +225,17 @@ std::string URI::getSchemeAndAuthority() const {
 	return getScheme() + "://" + getAuthority();
 }
 
-void URI::getPath( const std::string& path ) {
+std::string URI::getLastPathSegment() const {
+	std::string path( getPath() );
+	if ( !path.empty() ) {
+		auto split = String::split( path, '/' );
+		if ( !split.empty() )
+			return split[split.size() - 1];
+	}
+	return "";
+}
+
+void URI::setPath( const std::string& path ) {
 	mPath.clear();
 	decode( path, mPath );
 }

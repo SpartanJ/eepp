@@ -1,6 +1,7 @@
 ﻿#include <algorithm>
 #include <cstdio>
 #include <eepp/core/debug.hpp>
+#include <eepp/network/uri.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/iostreammemory.hpp>
@@ -11,6 +12,8 @@
 #include <eepp/ui/doc/textdocument.hpp>
 #include <sstream>
 #include <string>
+
+using namespace EE::Network;
 
 namespace EE { namespace UI { namespace Doc {
 
@@ -75,6 +78,7 @@ bool TextDocument::loadFromStream( IOStream& file ) {
 }
 
 bool TextDocument::loadFromStream( IOStream& file, std::string path, bool callReset ) {
+	mLoading = true;
 	Clock clock;
 	if ( callReset )
 		reset();
@@ -160,6 +164,7 @@ bool TextDocument::loadFromStream( IOStream& file, std::string path, bool callRe
 	if ( mVerbose )
 		Log::info( "Document \"%s\" loaded in %.2fms.", path.c_str(),
 				   clock.getElapsedTime().asMilliseconds() );
+	mLoading = false;
 	return true;
 }
 
@@ -256,6 +261,7 @@ bool TextDocument::getBOM() const {
 }
 
 bool TextDocument::loadFromFile( const std::string& path ) {
+	mLoading = true;
 	if ( !FileSystem::fileExists( path ) && PackManager::instance()->isFallbackToPacksActive() ) {
 		std::string pathFix( path );
 		Pack* pack = PackManager::instance()->exists( pathFix );
@@ -272,6 +278,7 @@ bool TextDocument::loadFromFile( const std::string& path ) {
 	mFileRealPath = FileInfo::isLink( mFilePath ) ? FileInfo( FileInfo( mFilePath ).linksTo() )
 												  : FileInfo( mFilePath );
 	resetSyntax();
+	mLoading = false;
 	return ret;
 }
 
@@ -289,6 +296,65 @@ bool TextDocument::loadFromPack( Pack* pack, std::string filePackPath ) {
 		ret = loadFromMemory( buffer.get(), buffer.length() );
 	}
 	return ret;
+}
+
+static std::string getTempPathFromURI( const URI& uri ) {
+	std::string lastSegment( uri.getLastPathSegment() );
+	std::string name( String::randString( 8 ) +
+					  ( lastSegment.empty() ? ".txt" : "." + lastSegment ) );
+	std::string tmpPath( Sys::getTempPath() + name );
+	return tmpPath;
+}
+
+bool TextDocument::loadFromURL( const std::string& url, const Http::Request::FieldTable& headers ) {
+	URI uri( url );
+
+	if ( uri.getScheme().empty() )
+		return false;
+
+	mLoading = true;
+
+	Http::Response response =
+		Http::get( uri, Seconds( 10 ), nullptr, headers, "", true, Http::getEnvProxyURI() );
+
+	if ( response.getStatus() <= Http::Response::Ok ) {
+		std::string path( getTempPathFromURI( uri ) );
+		FileSystem::fileWrite( path, (const Uint8*)response.getBody().c_str(),
+							   response.getBody().size() );
+		loadFromFile( path );
+		return true;
+	}
+
+	mLoading = false;
+	return false;
+}
+
+bool TextDocument::loadAsyncFromURL( const std::string& url,
+									 const Http::Request::FieldTable& headers,
+									 std::function<void( TextDocument*, bool success )> onLoaded,
+									 const Http::Request::ProgressCallback& progressCallback ) {
+	URI uri( url );
+
+	if ( uri.getScheme().empty() || ( uri.getScheme() != "https" && uri.getScheme() != "http" ) )
+		return false;
+
+	mLoading = true;
+
+	Http::getAsync(
+		[=]( const Http&, Http::Request&, Http::Response& response ) {
+			if ( response.getStatus() <= Http::Response::Ok ) {
+				std::string path( getTempPathFromURI( uri ) );
+				FileSystem::fileWrite( path, (const Uint8*)response.getBody().c_str(),
+									   response.getBody().size() );
+				if ( loadFromFile( path ) && onLoaded )
+					onLoaded( this, true );
+			} else {
+				onLoaded( this, false );
+			}
+			mLoading = false;
+		},
+		uri, Seconds( 10 ), progressCallback, headers, "", true, Http::getEnvProxyURI() );
+	return true;
 }
 
 bool TextDocument::reload() {
@@ -400,6 +466,10 @@ void TextDocument::sanitizeCurrentSelection() {
 
 	if ( mSelection != newSelection )
 		setSelection( newSelection );
+}
+
+bool TextDocument::isLoading() const {
+	return mLoading;
 }
 
 std::string TextDocument::getFilename() const {

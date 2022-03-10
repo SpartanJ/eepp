@@ -18,10 +18,19 @@ class Font;
 namespace EE { namespace UI {
 
 class UICodeEditor;
+class UIWindow;
 class UIScrollBar;
+class UILoader;
 
 class UICodeEditorModule {
   public:
+	virtual std::string getTitle() = 0;
+	virtual std::string getDescription() = 0;
+	virtual bool hasGUIConfig() { return false; }
+	virtual bool hasFileConfig() { return false; }
+	virtual UIWindow* getGUIConfig() { return nullptr; }
+	virtual std::string getFileConfigPath() { return ""; }
+
 	virtual void onRegister( UICodeEditor* ) = 0;
 	virtual void onUnregister( UICodeEditor* ) = 0;
 	virtual bool onKeyDown( UICodeEditor*, const KeyEvent& ) { return false; }
@@ -101,6 +110,15 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void reset();
 
 	bool loadFromFile( const std::string& path );
+
+	bool loadFromURL(
+		const std::string& url,
+		const EE::Network::Http::Request::FieldTable& headers = Http::Request::FieldTable() );
+
+	bool loadAsyncFromURL( const std::string& url,
+						   const Http::Request::FieldTable& headers = Http::Request::FieldTable(),
+						   std::function<void( std::shared_ptr<TextDocument>, bool )> onLoaded =
+							   std::function<void( std::shared_ptr<TextDocument>, bool )>() );
 
 	bool save();
 
@@ -378,6 +396,12 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void setInteractiveLinks( bool newInteractiveLinks );
 
+	UILoader* getLoader();
+
+	bool getDisplayLoaderIfDocumentLoading() const;
+
+	void setDisplayLoaderIfDocumentLoading( bool newDisplayLoaderIfDocumentLoading );
+
   protected:
 	struct LastXOffset {
 		TextPosition position;
@@ -388,21 +412,22 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	std::shared_ptr<Doc::TextDocument> mDoc;
 	Vector2f mScrollPos;
 	Clock mBlinkTimer;
-	bool mDirtyEditor;
-	bool mCursorVisible;
-	bool mMouseDown;
-	bool mShowLineNumber;
-	bool mShowWhitespaces;
-	bool mLocked;
-	bool mHighlightCurrentLine;
-	bool mHighlightMatchingBracket;
-	bool mHighlightSelectionMatch;
-	bool mEnableColorPickerOnSelection;
-	bool mHorizontalScrollBarEnabled;
-	bool mLongestLineWidthDirty;
-	bool mColorPreview;
-	bool mInteractiveLinks;
+	bool mDirtyEditor{ false };
+	bool mCursorVisible{ false };
+	bool mMouseDown{ false };
+	bool mShowLineNumber{ true };
+	bool mShowWhitespaces{ true };
+	bool mLocked{ false };
+	bool mHighlightCurrentLine{ true };
+	bool mHighlightMatchingBracket{ true };
+	bool mHighlightSelectionMatch{ true };
+	bool mEnableColorPickerOnSelection{ false };
+	bool mHorizontalScrollBarEnabled{ false };
+	bool mLongestLineWidthDirty{ true };
+	bool mColorPreview{ false };
+	bool mInteractiveLinks{ true };
 	bool mHandShown{ false };
+	bool mDisplayLoaderIfDocumentLoading{ true };
 	Uint32 mTabWidth;
 	Vector2f mScroll;
 	Float mMouseWheelScroll;
@@ -436,6 +461,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Color mPreviewColor;
 	TextRange mPreviewColorRange;
 	std::vector<UICodeEditorModule*> mModules;
+	UILoader* mLoader{ nullptr };
 
 	UICodeEditor( const std::string& elementTag, const bool& autoRegisterBaseCommands = true,
 				  const bool& autoRegisterBaseKeybindings = true );
@@ -498,7 +524,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	virtual void onDocumentSaved( TextDocument* );
 
-	virtual void onDocumentClosed( TextDocument* doc );
+	void onDocumentClosed( TextDocument* doc );
 
 	virtual void onDocumentDirtyOnFileSystem( TextDocument* doc );
 

@@ -255,6 +255,20 @@ const std::string& Http::Request::getField( const std::string& field ) const {
 	}
 }
 
+URI Http::getEnvProxyURI() {
+	char* http_proxy = getenv( "http_proxy" );
+	std::string httpProxy;
+	URI proxy;
+
+	if ( NULL != http_proxy ) {
+		httpProxy = std::string( http_proxy );
+		if ( !httpProxy.empty() && httpProxy.find( "://" ) == std::string::npos )
+			httpProxy = "http://" + httpProxy;
+		proxy = URI( httpProxy );
+	}
+	return proxy;
+}
+
 const char* Http::Response::statusToString( const Http::Response::Status& status ) {
 	switch ( status ) {
 		// 2xx: success
@@ -834,6 +848,8 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 		// Convert the request to string and send it through the connected socket
 		std::string requestStr = toSend.prepare( *this );
 
+		eePRINTL( "%s", requestStr.c_str() );
+
 		if ( !requestStr.empty() ) {
 			Socket::Status status;
 
@@ -954,21 +970,34 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 											 request.getMaxRedirects() ) {
 											std::string location( received.getField( "location" ) );
 											URI uri( location );
-											Http http( uri.getHost(), uri.getPort(),
-													   uri.getScheme() == "https" ? true : false );
-											Http::Request newRequest( request );
-											newRequest.setUri( uri.getPathEtc() );
 
 											// Close the connection
 											if ( !mConnection->isKeepAlive() )
 												mConnection->disconnect();
 
-											request.mRedirectionCount++;
-
 											eeSAFE_DELETE( chunkedStream );
 											eeSAFE_DELETE( inflateStream );
-											return http.downloadRequest( request, writeTo,
-																		 timeout );
+
+											Http::Request newRequest( request );
+											newRequest.setUri( uri.getPathAndQuery() );
+
+											request.mRedirectionCount++;
+											newRequest.mRedirectionCount =
+												request.mRedirectionCount;
+
+											// Same host, expects a path in the same domain
+											if ( uri.getHost().empty() ||
+												 uri.getHost() == getHost() ) {
+												return downloadRequest( newRequest, writeTo,
+																		timeout );
+											} else {
+												// New host, we need to solve the host
+												Http http( uri.getHost(), uri.getPort(),
+														   uri.getScheme() == "https" ? true
+																					  : false );
+												return http.downloadRequest( request, writeTo,
+																			 timeout );
+											}
 										}
 									}
 
@@ -1190,7 +1219,7 @@ struct WGetAsyncRequest {
 	Http* http;
 	Http::Request request;
 	Http::AsyncResponseCallback cb;
-	IOStream* writeTo{nullptr};
+	IOStream* writeTo{ nullptr };
 };
 
 void emscripten_async_wget2_got_data( unsigned, void* vwget, void* buffer, unsigned bufferSize ) {

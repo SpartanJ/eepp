@@ -222,6 +222,10 @@ void App::openFontDialog( std::string& fontPath ) {
 	dialog->show();
 }
 
+void App::downloadFileWeb( const std::string& url ) {
+	loadFileFromPath( url, true );
+}
+
 UIFileDialog* App::saveFileDialog( UICodeEditor* editor, bool focusOnClose ) {
 	if ( !editor )
 		return nullptr;
@@ -413,7 +417,9 @@ void App::updateRecentFiles() {
 			const String& txt = event->getNode()->asType<UIMenuItem>()->getText();
 			if ( txt != "Clear Menu" ) {
 				std::string path( txt.toUtf8() );
-				if ( FileSystem::fileExists( path ) && !FileSystem::isDirectory( path ) ) {
+				if ( ( FileSystem::fileExists( path ) && !FileSystem::isDirectory( path ) ) ||
+					 String::startsWith( path, "https://" ) ||
+					 String::startsWith( path, "http://" ) ) {
 					loadFileFromPath( path );
 				}
 			} else {
@@ -1131,6 +1137,7 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 			 { { KEY_F, KEYMOD_CTRL }, "find-replace" },
 			 { { KEY_Q, KEYMOD_CTRL }, "close-app" },
 			 { { KEY_O, KEYMOD_CTRL }, "open-file" },
+			 { { KEY_W, KEYMOD_CTRL | KEYMOD_SHIFT }, "download-file-web" },
 			 { { KEY_O, KEYMOD_CTRL | KEYMOD_SHIFT }, "open-folder" },
 			 { { KEY_F6, KEYMOD_NONE }, "debug-draw-highlight-toggle" },
 			 { { KEY_F7, KEYMOD_NONE }, "debug-draw-boxes-toggle" },
@@ -1145,9 +1152,9 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 }
 
 std::vector<std::string> App::getUnlockedCommands() {
-	return { "fullscreen-toggle",  "open-file",	  "open-folder",
-			 "console-toggle",	   "close-app",	  "open-locatebar",
-			 "open-global-search", "menu-toggle", "switch-side-panel" };
+	return { "fullscreen-toggle", "open-file",		  "open-folder",		"console-toggle",
+			 "close-app",		  "open-locatebar",	  "open-global-search", "menu-toggle",
+			 "switch-side-panel", "download-file-web" };
 }
 
 void App::closeEditors() {
@@ -1388,6 +1395,21 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	doc.setCommand( "load-current-dir", [&] { loadCurrentDirectory(); } );
 	doc.setCommand( "menu-toggle", [&] { toggleSettingsMenu(); } );
 	doc.setCommand( "switch-side-panel", [&] { switchSidePanel(); } );
+	doc.setCommand( "download-file-web", [&] {
+		UIMessageBox* msgBox =
+			UIMessageBox::New( UIMessageBox::INPUT, "Please enter the file URL..." );
+
+		msgBox->setTitle( mWindowTitle );
+		msgBox->getTextInput()->setHint( "Any https or http URL" );
+		msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
+		msgBox->showWhenReady();
+		msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox]( const Event* ) {
+			std::string url( msgBox->getTextInput()->getText().toUtf8() );
+			downloadFileWeb( url );
+			if ( mEditorSplitter->getCurEditor() )
+				mEditorSplitter->getCurEditor()->setFocus();
+		} );
+	} );
 
 	editor->addEventListener( Event::OnDocumentSave, [&]( const Event* event ) {
 		UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
@@ -1444,14 +1466,14 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	if ( config.autoComplete && !mAutoCompleteModule )
 		setAutoComplete( config.autoComplete );
 
-	if ( config.autoComplete && mAutoCompleteModule )
-		editor->registerModule( mAutoCompleteModule );
-
 	if ( config.linter && !mLinterModule )
 		setLinter( config.linter );
 
 	if ( config.formatter && !mFormatterModule )
 		setFormatter( config.formatter );
+
+	if ( config.autoComplete && mAutoCompleteModule )
+		editor->registerModule( mAutoCompleteModule );
 
 	if ( config.linter && mLinterModule )
 		editor->registerModule( mLinterModule );
@@ -1561,6 +1583,8 @@ void App::createSettingsMenu() {
 	mSettingsMenu->add( "Open File...", findIcon( "document-open" ), getKeybind( "open-file" ) );
 	mSettingsMenu->add( "Open Folder...", findIcon( "document-open" ),
 						getKeybind( "open-folder" ) );
+	mSettingsMenu->add( "Open File from Web...", findIcon( "download-cloud" ),
+						getKeybind( "download-file-web" ) );
 	mSettingsMenu->addSubMenu( "Recent Files", findIcon( "document-recent" ), UIPopUpMenu::New() );
 	mSettingsMenu->addSubMenu( "Recent Folders", findIcon( "document-recent" ),
 							   UIPopUpMenu::New() );
@@ -1595,6 +1619,8 @@ void App::createSettingsMenu() {
 			runCommand( "open-file" );
 		} else if ( name == "Open Folder..." ) {
 			runCommand( "open-folder" );
+		} else if ( name == "Open File from Web..." ) {
+			runCommand( "download-file-web" );
 		} else if ( name == "Save" ) {
 			runCommand( "save-doc" );
 		} else if ( name == "Save as..." ) {
@@ -2339,6 +2365,7 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 			{ "list-view", 0xecf1 },
 			{ "menu-unfold", 0xef40 },
 			{ "menu-fold", 0xef3d },
+			{ "download-cloud", 0xec58 },
 		};
 		for ( const auto& icon : icons )
 			iconTheme->add( UIGlyphIcon::New( icon.first, iconFont, icon.second ) );

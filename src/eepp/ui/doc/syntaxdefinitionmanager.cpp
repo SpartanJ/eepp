@@ -38,7 +38,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 		   },
 		   {},
 		   "",
-		   { "<%?xml" } } );
+		   { "<%?xml", "<![Dd][Oo][Cc][Tt][Yy][Pp][Ee]%s[Hh][Tt][Mm][Ll]>" } } );
 
 	// CSS
 	add( { "CSS",

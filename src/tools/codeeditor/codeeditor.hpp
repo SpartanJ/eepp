@@ -34,6 +34,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	void openFontDialog( std::string& fontPath );
 
+	void downloadFileWeb( const std::string& url );
+
 	UIFileDialog* saveFileDialog( UICodeEditor* editor, bool focusOnClose = true );
 
 	void closeApp();

@@ -255,6 +255,11 @@ class EE_API String {
 	static int valueIndex( const std::string& val, const std::string& strings, int defValue = -1,
 						   char delim = ';' );
 
+	/** Creates a random string using the dictionary characters. */
+	static std::string randString(
+		size_t len,
+		std::string dictionary = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz" );
+
 	/** Converts from any basic type to std::string */
 	template <class T> static std::string toString( const T& i ) {
 		std::ostringstream ss;

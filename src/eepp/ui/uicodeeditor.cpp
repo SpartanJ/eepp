@@ -9,6 +9,7 @@
 #include <eepp/ui/tools/uicolorpicker.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uieventdispatcher.hpp>
+#include <eepp/ui/uiloader.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uithememanager.hpp>
@@ -100,20 +101,6 @@ UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegis
 	UIWidget( elementTag ),
 	mFont( FontManager::instance()->getByName( "monospace" ) ),
 	mDoc( std::make_shared<TextDocument>() ),
-	mDirtyEditor( false ),
-	mCursorVisible( false ),
-	mMouseDown( false ),
-	mShowLineNumber( true ),
-	mShowWhitespaces( true ),
-	mLocked( false ),
-	mHighlightCurrentLine( true ),
-	mHighlightMatchingBracket( true ),
-	mHighlightSelectionMatch( true ),
-	mEnableColorPickerOnSelection( false ),
-	mHorizontalScrollBarEnabled( false ),
-	mLongestLineWidthDirty( true ),
-	mColorPreview( false ),
-	mInteractiveLinks( true ),
 	mTabWidth( 4 ),
 	mMouseWheelScroll( 50 ),
 	mFontSize( mFontStyleConfig.getFontCharacterSize() ),
@@ -284,6 +271,16 @@ void UICodeEditor::draw() {
 
 	for ( auto& module : mModules )
 		module->postDraw( this, startScroll, lineHeight, cursor );
+
+	if ( mDisplayLoaderIfDocumentLoading && mDoc->isLoading() ) {
+		UILoader* loader = getLoader();
+		loader->setParent( this );
+		loader->setVisible( true );
+		loader->setEnabled( false );
+		loader->setPixelsSize( getPixelsSize() );
+	} else if ( mLoader != nullptr && !mDoc->isLoading() && mLoader->isVisible() ) {
+		mLoader->setVisible( false );
+	}
 }
 
 void UICodeEditor::scheduledUpdate( const Time& ) {
@@ -337,12 +334,61 @@ void UICodeEditor::reset() {
 
 bool UICodeEditor::loadFromFile( const std::string& path ) {
 	bool ret = mDoc->loadFromFile( path );
-	invalidateEditor();
-	updateLongestLineWidth();
-	mHighlighter.changeDoc( mDoc.get() );
-	invalidateDraw();
-	DocEvent event( this, mDoc.get(), Event::OnDocumentLoaded );
-	sendEvent( &event );
+	if ( ret ) {
+		invalidateEditor();
+		updateLongestLineWidth();
+		mHighlighter.changeDoc( mDoc.get() );
+		invalidateDraw();
+		DocEvent event( this, mDoc.get(), Event::OnDocumentLoaded );
+		sendEvent( &event );
+	}
+	return ret;
+}
+
+bool UICodeEditor::loadFromURL( const std::string& url, const Http::Request::FieldTable& headers ) {
+	bool ret = mDoc->loadFromURL( url, headers );
+	if ( ret ) {
+		invalidateEditor();
+		updateLongestLineWidth();
+		mHighlighter.changeDoc( mDoc.get() );
+		invalidateDraw();
+		DocEvent event( this, mDoc.get(), Event::OnDocumentLoaded );
+		sendEvent( &event );
+	}
+	return ret;
+}
+
+bool UICodeEditor::loadAsyncFromURL(
+	const std::string& url, const Http::Request::FieldTable& headers,
+	std::function<void( std::shared_ptr<TextDocument>, bool )> onLoaded ) {
+	bool wasLocked = isLocked();
+	if ( !wasLocked )
+		setLocked( true );
+	bool ret = mDoc->loadAsyncFromURL(
+		url, headers,
+		[this, onLoaded, wasLocked]( TextDocument*, bool success ) {
+			runOnMainThread( [&, onLoaded] {
+				invalidateEditor();
+				updateLongestLineWidth();
+				mHighlighter.changeDoc( mDoc.get() );
+				invalidateDraw();
+				DocEvent event( this, mDoc.get(), Event::OnDocumentLoaded );
+				sendEvent( &event );
+				if ( !wasLocked )
+					setLocked( false );
+				if ( onLoaded )
+					onLoaded( mDoc, success );
+			} );
+		},
+		[&]( const Http&, const Http::Request&, const Http::Response&,
+			 const Http::Request::Status& status, size_t /*totalBytes*/, size_t /*currentBytes*/ ) {
+			if ( status == Http::Request::ContentReceived ) {
+				runOnMainThread( [&] { invalidateDraw(); } );
+			}
+			return true;
+		} );
+	if ( !ret && !wasLocked )
+		setLocked( false );
 	return ret;
 }
 
@@ -822,7 +868,7 @@ Uint32 UICodeEditor::onMouseClick( const Vector2i& position, const Uint32& flags
 		mDoc->selectLine();
 	} else if ( ( flags & EE_BUTTON_MMASK ) && isMouseOverMeOrChilds() ) {
 		auto txt( getUISceneNode()->getWindow()->getClipboard()->getText() );
-		if ( !txt.empty() ) {
+		if ( !isLocked() && !txt.empty() ) {
 			if ( mDoc->hasSelection() ) {
 				auto selTxt = mDoc->getSelectedText();
 				if ( !selTxt.empty() )
@@ -999,6 +1045,25 @@ bool UICodeEditor::getInteractiveLinks() const {
 
 void UICodeEditor::setInteractiveLinks( bool newInteractiveLinks ) {
 	mInteractiveLinks = newInteractiveLinks;
+}
+
+UILoader* UICodeEditor::getLoader() {
+	if ( nullptr == mLoader )
+		mLoader = UILoader::New();
+	return mLoader;
+}
+
+bool UICodeEditor::getDisplayLoaderIfDocumentLoading() const {
+	return mDisplayLoaderIfDocumentLoading;
+}
+
+void UICodeEditor::setDisplayLoaderIfDocumentLoading( bool newDisplayLoaderIfDocumentLoading ) {
+	mDisplayLoaderIfDocumentLoading = newDisplayLoaderIfDocumentLoading;
+	if ( !mDisplayLoaderIfDocumentLoading && mLoader != nullptr && mLoader->isVisible() ) {
+		mLoader->setVisible( false );
+		mLoader->close();
+		mLoader = nullptr;
+	}
 }
 
 void UICodeEditor::updateEditor() {

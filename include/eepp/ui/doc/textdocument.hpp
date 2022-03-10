@@ -1,7 +1,9 @@
 #ifndef EE_UI_DOC_TEXTDOCUMENT
 #define EE_UI_DOC_TEXTDOCUMENT
 
+#include <atomic>
 #include <eepp/core/string.hpp>
+#include <eepp/network/http.hpp>
 #include <eepp/system/clock.hpp>
 #include <eepp/system/fileinfo.hpp>
 #include <eepp/system/iostreamfile.hpp>
@@ -18,6 +20,7 @@
 #include <vector>
 
 using namespace EE::System;
+using namespace EE::Network;
 
 namespace EE { namespace UI { namespace Doc {
 
@@ -44,8 +47,8 @@ class EE_API TextDocument {
 												const size_t& newCount ) = 0;
 		virtual void onDocumentLineChanged( const Int64& lineIndex ) = 0;
 		virtual void onDocumentSaved( TextDocument* ) = 0;
-		virtual void onDocumentClosed( TextDocument* ) {}
-		virtual void onDocumentDirtyOnFileSystem( TextDocument* ) {}
+		virtual void onDocumentClosed( TextDocument* ) = 0;
+		virtual void onDocumentDirtyOnFileSystem( TextDocument* ) = 0;
 	};
 
 	TextDocument( bool verbose = true );
@@ -67,6 +70,22 @@ class EE_API TextDocument {
 	bool loadFromMemory( const Uint8* data, const Uint32& size );
 
 	bool loadFromPack( Pack* pack, std::string filePackPath );
+
+	/**
+	 * @brief loadFromURL
+	 * @param url Resources URL.
+	 * @param headers Key value map of headers
+	 * @return
+	 */
+	bool loadFromURL(
+		const std::string& url,
+		const EE::Network::Http::Request::FieldTable& headers = Http::Request::FieldTable() );
+
+	bool loadAsyncFromURL( const std::string& url,
+						   const Http::Request::FieldTable& headers = Http::Request::FieldTable(),
+						   std::function<void( TextDocument*, bool )> onLoaded =
+							   std::function<void( TextDocument*, bool success )>(),
+						   const Http::Request::ProgressCallback& progressCallback = nullptr );
 
 	bool reload();
 
@@ -377,6 +396,8 @@ class EE_API TextDocument {
 
 	void sanitizeCurrentSelection();
 
+	bool isLoading() const;
+
   protected:
 	friend class UndoStack;
 	UndoStack mUndoStack;
@@ -386,6 +407,7 @@ class EE_API TextDocument {
 	TextRange mSelection;
 	std::unordered_set<Client*> mClients;
 	LineEnding mLineEnding{ LineEnding::LF };
+	std::atomic<bool> mLoading{ false };
 	bool mIsBOM{ false };
 	bool mAutoDetectIndentType{ true };
 	bool mForceNewLineAtEndOfFile{ false };

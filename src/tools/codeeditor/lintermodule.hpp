@@ -39,6 +39,13 @@ class LinterModule : public UICodeEditorModule {
 
 	virtual ~LinterModule();
 
+	std::string getTitle() { return "Linter"; }
+
+	std::string getDescription() {
+		return "Use static code analysis tool used to flag programming errors, bugs,\n"
+			   "stylistic errors, and suspicious constructs.";
+	}
+
 	void onRegister( UICodeEditor* );
 
 	void onUnregister( UICodeEditor* );

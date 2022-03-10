@@ -490,6 +490,11 @@ Loader {
 	fill-color: var(--primary);
 }
 
+CodeEditor > Loader {
+	background-color: #0000002d;
+	radius: 64dp;
+}
+
 Window::close {
 	width: 12dp;
 	height: 12dp;

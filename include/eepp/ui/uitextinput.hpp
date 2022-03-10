@@ -111,7 +111,7 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 	bool mOnlyNumbers;
 	bool mAllowFloat;
 	bool mMouseDown;
-	Uint32 mMaxLength{0};
+	Uint32 mMaxLength{ 0 };
 	KeyBindings mKeyBindings;
 	Clock mLastDoubleClick;
 
@@ -176,6 +176,10 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 	virtual void onDocumentUndoRedo( const TextDocument::UndoRedo& );
 
 	virtual void onDocumentSaved( TextDocument* );
+
+	void onDocumentClosed( TextDocument* ){};
+
+	void onDocumentDirtyOnFileSystem( TextDocument* ){};
 
 	void registerKeybindings();
 
