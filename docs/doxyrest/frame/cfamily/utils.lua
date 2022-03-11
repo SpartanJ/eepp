@@ -29,8 +29,8 @@ if not EXTRA_PAGE_LIST then
 	EXTRA_PAGE_LIST = {}
 end
 
-if not IMPORT_URL_MAP then
-	IMPORT_URL_MAP = {}
+if not EXTERNAL_CREF_DB then
+	EXTERNAL_CREF_DB = {}
 end
 
 if ML_PARAM_LIST_COUNT_THRESHOLD then
@@ -142,6 +142,20 @@ function getLinkedTextString(text, isRef)
 	return s
 end
 
+function findLinkedTextEnum(text)
+	for i = 1, #text.refTextArray do
+		local refText = text.refTextArray[i]
+		if refText.id ~= "" then
+			local member = findMemberById(refText.id)
+			if member ~= nil and member.memberKind == "enum" then
+				return member
+			end
+		end
+	end
+
+	return nil
+end
+
 -------------------------------------------------------------------------------
 
 -- param array formatting
@@ -207,18 +221,19 @@ function getParamArrayString_ml(paramArray, isRef, lbrace, rbrace, indent, nl)
 	elseif count == 1  then
 		s = lbrace .. getParamString(paramArray[1], isRef) .. rbrace
 	else
-		s = lbrace .. nl .. indent .. "\t"
+		s = lbrace .. nl
 
 		for i = 1, count do
-			s = s .. getParamString(paramArray[i], isRef)
+			s = s .. indent .. "\t" .. getParamString(paramArray[i], isRef)
 
 			if i ~= count then
 				s = s .. ","
 			end
 
-			s = s .. nl .. indent .. "\t"
+			s = s .. nl
 		end
-		s = s .. rbrace
+
+		s = s .. indent .. rbrace
 	end
 
 	return s
@@ -256,9 +271,7 @@ function getParamArrayString(prefix, paramArray, isRef, lbrace, rbrace, indent, 
 
 		if ML_PARAM_LIST_LENGTH_THRESHOLD then
 			local decl = prefix .. space .. s
-			if isRef then
-				decl = string.gsub(decl, ":ref:`[^`]*`", "")
-			end
+			decl = replaceRolesWithPlainText(decl)
 
 			if string.len(decl) > ML_PARAM_LIST_LENGTH_THRESHOLD then
 				s = getParamArrayString_ml(paramArray, isRef, lbrace, rbrace, indent, nl)
@@ -382,7 +395,7 @@ function getPropertyDeclString(item, nameTemplate, indent)
 	local s = getLinkedTextString(item.returnType, true)
 
 	if item.modifiers ~= "" then
-		s = string.gsub(s, "property", item.modifiers .. " property")
+		s = string.gsub(s, "property$", item.modifiers .. " property")
 	end
 
 	s = s .. getFunctionModifierDelimiter(indent)
@@ -558,7 +571,7 @@ function getBaseClassString(class, protection)
 	else
 		-- class without id (imported)
 
-		local url = IMPORT_URL_MAP[class.importId]
+		local url = EXTERNAL_CREF_DB[class.name]
 		if url then
 			s = s .. ":ref:`" .. class.name .. "<" .. url .. ">`"
 		else
@@ -785,8 +798,9 @@ function filterDefineArray(defineArray)
 
 		local isExcluded =
 			isItemExcludedByLocationFilter(item) or
-			EXCLUDE_EMPTY_DEFINES and item.initializer.isEmpty or
-			EXCLUDE_DEFINE_PATTERN and string.match(item.name, EXCLUDE_DEFINE_PATTERN)
+			EXCLUDE_DEFINE_PATTERN and string.match(item.name, EXCLUDE_DEFINE_PATTERN) or
+			EXCLUDE_EMPTY_DEFINES and item.initializer.isEmpty and
+			item.briefDescription.isEmpty and item.detailedDescription.isEmpty
 
 		if isExcluded then
 			table.remove(defineArray, i)

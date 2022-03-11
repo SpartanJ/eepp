@@ -13,7 +13,6 @@
 local argArray = table.pack(...)
 local enum = argArray[1]
 
-local enumKind = getItemKindString(enum, "enum")
 local enumStats = prepareEnum(enum)
 
 if FORCE_INCLUDE_FILE then
@@ -25,7 +24,7 @@ end -- if
 .. index:: pair: enum; $(enum.name)
 .. _doxid-$(enum.id):
 
-$(getTitle(enumKind .. " " .. getItemQualifiedName(enum), 1))
+$(getTitle("enumeration " .. enum.name, 1))
 
 %{
 local hasDetails =
@@ -47,35 +46,21 @@ $(getItemDetailedDocumentation(enum))
 %{
 end -- if
 }
-.. ref-code-block:: $LANGUAGE
+.. ref-code-block:: lua
 	:class: doxyrest-overview-code-block
 
-	$(getEnumImportString(enum))
-%{
-if enum.baseType.isEmpty then
-}
-	$enumKind $(enum.name)$g_preBodySpace{
-%{
-else
-}
-	$enumKind $(enum.name): ${getLinkedTextString(enum.baseType, true)}$g_preBodySpace{
-%{
-end --if
+	$(enum.name) =$g_preBodySpace{
+		-- enumeration values
 
+%{
 for i = 1, #enum.enumValueArray do
 	local item = enum.enumValueArray[i]
-	local initializer = getLinkedTextString(item.initializer, true)
-
-	if string.len(initializer) > 0 then
-		local spaceCount = enumStats.maxEnumValueNameLength - string.len(item.name) + 1
-		initializer = string.rep(" ", spaceCount) .. initializer
-	end
 }
-	    $(getItemNameForOverview(item))$initializer,
+		$(getEnumValueString(item)),
 %{
 end -- for
 }
-	};
+	}
 
 %{
 if hasDetails then
@@ -92,8 +77,8 @@ end -- if
 
 if enumStats.hasDocumentedEnumValues then
 }
-Enum Values
------------
+Enumeration Values
+------------------
 
 %{
 	for i = 1, #enum.enumValueArray do
@@ -104,13 +89,13 @@ $(getItemRefTargetString(item))
 .. ref-code-block:: $LANGUAGE
 	:class: doxyrest-title-code-block
 
-	$(item.name)
+	$(getEnumValueString(item))
 %{
 		if item.isSubGroupHead then
 			for j = 1, #item.subGroupSlaveArray do
 				slaveItem = item.subGroupSlaveArray[j]
 }
-	$(slaveItem.name)
+	$(getEnumValueString(slaveItem))
 %{
 			end -- for
 		end -- if

@@ -13,23 +13,43 @@
 local argArray = table.pack(...)
 local itemArray = argArray[1]
 
+local function addEnumValues(enum, rootEnum)
+	if LANGUAGE == "jancy" and not enum.baseType.isEmpty then
+		baseEnum = findLinkedTextEnum(enum.baseType)
+		if baseEnum ~= nil then
+			if not rootEnum then
+				rootEnum = enum
+			end
+			addEnumValues(baseEnum, rootEnum)
+		end
+	end
+
+	for i = 1, #enum.enumValueArray do
+		local enumValue = enum.enumValueArray[i]
+		local enumValueName
+
+		if rootEnum then
+			enumValueName = getItemQualifiedName(rootEnum) .. g_nameDelimiter .. enumValue.name
+		else
+			enumValueName = getItemQualifiedName(enumValue)
+
+			-- remove parent enum name (C++ only)
+			enumValueName = string.gsub(enumValueName, "([%w_]+)::([%w_]+)$", "%2")
+		end
+}
+	'$enumValueName' : 'doxid-$(enumValue.id)',
+%{
+	end -- for
+end
+
 for i = 1, #itemArray do
 	local item = itemArray[i]
 	if not isUnnamedItem(item) then
 }
 	'$(getItemQualifiedName(item))' : 'doxid-$(item.id)',
 %{
-	end
+	end -- if
 
-	for j = 1, #item.enumValueArray do
-		local enumValue = item.enumValueArray[j]
-		local enumValueName = getItemQualifiedName(enumValue)
-
-		-- remove parent enum name (C++ only)
-		enumValueName = string.gsub(enumValueName, "([%w_]+)::([%w_]+)$", "%2")
-}
-	'$enumValueName' : 'doxid-$(enumValue.id)',
-%{
-	end -- for
+	addEnumValues(item)
 end -- for
 }

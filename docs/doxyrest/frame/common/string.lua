@@ -98,4 +98,9 @@ function replaceCommonSpacePrefix(source, replacement)
 	return s
 end
 
+function replaceRolesWithPlainText(source)
+	local s = string.gsub(source, ":[^:]*:`([^<`]*)[^`]*`", "%1")
+	return s
+end
+
 -------------------------------------------------------------------------------

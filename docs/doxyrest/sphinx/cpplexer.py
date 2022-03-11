@@ -307,3 +307,9 @@ def setup(app):
     lexers['c++'] = cpp_lexer
     lexers['c++'] = cpp_lexer
     lexers['idl'] = idl_lexer
+
+    return {
+        'version': 'builtin',
+        'parallel_read_safe': True,
+        'parallel_write_safe': True,
+    }

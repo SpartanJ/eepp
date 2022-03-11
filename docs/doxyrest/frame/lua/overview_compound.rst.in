@@ -1,0 +1,89 @@
+%{
+--------------------------------------------------------------------------------
+--
+--  This file is part of the Doxyrest toolkit.
+--
+--  Doxyrest is distributed under the MIT license.
+--  For details see accompanying license.txt file,
+--  the public copy of which is also available at:
+--  http://tibbo.com/downloads/archive/doxyrest/license.txt
+--
+--------------------------------------------------------------------------------
+
+local argArray = table.pack(...)
+local compound = argArray[1]
+local variableSectionName = string.lower(argArray[2])
+local functionSectionName = string.lower(argArray[3])
+}
+.. ref-code-block:: lua
+	:class: doxyrest-overview-code-block
+
+%{
+if #compound.namespaceArray > 0 then
+	includeFile("overview_modules.rst.in", compound)
+	emit("\n")
+end
+
+if #compound.enumArray > 0 then
+	includeFile("overview_enums.rst.in", compound)
+	emit("\n")
+end
+
+if #compound.classArray > 0 then
+	includeFile("overview_classes.rst.in", compound)
+	emit("\n")
+end
+
+if #compound.structArray > 0 then
+	includeFile("overview_structs.rst.in", compound)
+	emit("\n")
+end
+
+if compound.compoundKind == "class" or compound.compoundKind == "struct" then
+	if #compound.variableArray > 0 then
+}
+	$(compound.name) =$g_preBodySpace{
+%{
+		includeFileWithIndent("\t", "overview_variables.rst.in", compound, variableSectionName, ",")
+
+		if compound.baseTypeArray and #compound.baseTypeArray then
+
+			-- always link inherited members (even when no documentation)
+
+			local prevHasItemDocumentation = hasItemDocumentation
+			hasItemDocumentation = function(item)
+				return true
+			end
+
+			for i = 1, #compound.baseTypeArray do
+				local baseType = compound.baseTypeArray[i]
+}
+
+		-- inherited from :ref:`$(baseType.name)<doxid-$(baseType.id)>`
+
+%{
+				includeFileWithIndent("\t", "overview_variables.rst.in", baseType, null, ",")
+			end -- for
+
+			hasItemDocumentation = prevHasItemDocumentation
+		end --if
+}
+	}
+
+%{
+	else
+}
+	$(compound.name) = {}
+
+%{
+	end -- if
+elseif #compound.variableArray > 0 then
+		includeFile("overview_variables.rst.in", compound, variableSectionName)
+		emit("\n")
+end
+
+if #compound.functionArray > 0 then
+	includeFile("overview_functions.rst.in", compound, functionSectionName)
+	emit("\n")
+end
+}

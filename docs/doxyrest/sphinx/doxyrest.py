@@ -12,29 +12,60 @@
 import os
 import re
 import warnings
+from packaging import version
 from docutils import nodes
 from docutils.parsers.rst import Directive, directives
 from docutils.transforms import Transform
-from docutils.statemachine import StringList, string2lines
-from sphinx import roles, addnodes, config
-from sphinx.io import SphinxBaseFileInput, SphinxRSTFileInput
+from sphinx import __version__ as sphinx_version_string, roles, addnodes, config
 from sphinx.directives.other import Include
+from sphinx.domains import Domain
 
 #...............................................................................
 #
 #  utils
 #
 
+sphinx_version = version.parse(sphinx_version_string)
 this_dir = os.path.dirname(os.path.realpath(__file__))
+url_re_prog = re.compile('(ftp|https?)://')
 crefdb = {}
+cref_w_target_re_prog = re.compile('(.+?)\s*<([^<>]*)>$')
 
-def get_cref_target(text):
-    if text in crefdb:
-        return crefdb[text]
+def get_cref_target(text, target=None):
+    if not target:
+        target = text
 
-    warnings.warn('target not found for cref: ' + text, Warning, 2)
+    if target in crefdb:
+        return crefdb[target]
+
+    warnings.warn('target not found for cref: ' + target, Warning, 2)
     return None
 
+def get_cref_target_ex(text):
+    match = cref_w_target_re_prog.match(text)
+    if match:
+        text = match.group(1)
+        target = match.group(2)
+    else:
+        target = text
+
+    return get_cref_target(text, target), text
+
+# Sphinx.add_javascript was renamed to add_js_file in 1.8.0
+# Sphinx.add_stylesheet was renamed to add_css_file in 1.8.0
+
+if sphinx_version >= version.parse('1.8.0'):
+    def add_js_file(app, filename):
+        app.add_js_file(filename)
+
+    def add_css_file(app, filename):
+        app.add_css_file(filename)
+else:
+    def add_js_file(app, filename):
+        app.add_javascript(filename)
+
+    def add_css_file(app, filename):
+        app.add_stylesheet(filename)
 
 #...............................................................................
 #
@@ -76,9 +107,12 @@ def visit_highlighted_text_node(self, node):
 
     raise nodes.SkipNode
 
-def create_xref_node(raw_text, text, target):
+def create_ref_node(raw_text, text, target):
     if not target:
         return nodes.Text(text, text)
+
+    if url_re_prog.match(target):
+        return nodes.reference(raw_text, text, refuri=target)
 
     node = addnodes.pending_xref(raw_text)
     node['reftype'] = 'ref'
@@ -136,7 +170,6 @@ class RefCodeBlock(Directive):
         role_re_src += '`(.+?)(\s*<([^<>]*)>)?`'
         self.role_re_prog = re.compile(role_re_src)
         self.ws_re_prog = re.compile('\s+')
-        self.url_re_prog = re.compile('(ftp|https?)://')
 
     def run(self):
         config = self.state.document.settings.env.config
@@ -167,7 +200,6 @@ class RefCodeBlock(Directive):
             role = match.group(1)
             text = match.group(2)
             target = match.group(4)
-
             pos = match.end()
 
             if text:
@@ -191,32 +223,18 @@ class RefCodeBlock(Directive):
                     ['doxyrest-code-target']
                     )
 
-            elif not role or role == ':cref:':
-                target = get_cref_target(target if target else text)
-                new_node = create_xref_node(raw_text, text, target)
-
-            else: # :ref:
-                if not target:
+            else:
+                if not role or role == ':cref:':
+                    target = get_cref_target(text, target)
+                elif not target:
                     target = text
 
-                if self.url_re_prog.match(target):
-                    new_node = nodes.reference(raw_text, text, refuri=target)
-                else:
-                    new_node = create_xref_node(raw_text, text, target)
+                new_node = create_ref_node(raw_text, text, target)
 
             node += new_node
 
         self.add_name(node)
         return [node]
-
-
-class TabAwareInclude(Include):
-    def run(self):
-        # update tab_width setting
-        self.state.document.settings.tab_width = \
-        self.state.document.settings.env.config.doxyrest_tab_width
-        return Include.run(self)
-
 
 #...............................................................................
 #
@@ -274,9 +292,9 @@ class RefTransform(Transform):
                 target = match.group(4)
 
                 if not role or role == ':cref:':
-                    target = get_cref_target(text)
+                    target = get_cref_target(text, target)
 
-                node += create_xref_node(raw_text, text, target)
+                node += create_ref_node(raw_text, text, target)
                 pos = match.end()
 
 
@@ -286,15 +304,10 @@ class RefTransform(Transform):
 #
 
 def cref_role(typ, raw_text, text, lineno, inliner, options={}, content=[]):
-    target = get_cref_target(text)
-
-    if text.find(' ') == -1:
-        node = nodes.literal(raw_text, '')
-    else:
-        node = nodes.inline(raw_text, '')
-
+    target, text = get_cref_target_ex(text)
+    node = nodes.literal(raw_text, '')
     node['classes'] += ['doxyrest-cref']
-    node += create_xref_node(raw_text, text, target)
+    node += create_ref_node(raw_text, text, target)
     return [node], []
 
 def target_role(typ, raw_text, text, lineno, inliner, options={}, content=[]):
@@ -304,27 +317,70 @@ def target_role(typ, raw_text, text, lineno, inliner, options={}, content=[]):
 
 #...............................................................................
 #
-#  Sphinx source inputs
+#  Doxyrest domain -- so that the cref-database is checked for :any: refs
 #
 
-class TabAwareSphinxRSTFileInput(SphinxRSTFileInput):
-    def read(self):
-        # type: () -> StringList
-        inputstring = SphinxBaseFileInput.read(self)
-        tab_width = self.env.config.doxyrest_tab_width
-        lines = string2lines(inputstring, convert_whitespace=True, tab_width=tab_width)
+class DoxyrestDomain(Domain):
+    name = 'doxyrest'
+    label = 'Doxyrest'
 
-        content = StringList()
-        for lineno, line in enumerate(lines):
-            content.append(line, self.source_path, lineno)
+    def merge_domaindata(self, docnames, otherdata):
+        pass # as to avoid errors on parallel builds
 
-        if self.env.config.rst_prolog:
-            self.prepend_prolog(content, self.env.config.rst_prolog)
-        if self.env.config.rst_epilog:
-            self.append_epilog(content, self.env.config.rst_epilog)
+    def resolve_any_xref(self, env, fromdocname, builder, target, node, contnode):
+        cref_target = get_cref_target(target, target)
+        if not cref_target:
+            return []
 
-        return content
+        std = env.get_domain('std')
+        node['refexplicit'] = True
+        resolved_node = std.resolve_xref(env, fromdocname, builder, 'ref', cref_target, node, contnode)
+        if not resolved_node: # shouldn't really happen
+            return []
 
+        result_node = nodes.literal(target, '')
+        result_node += resolved_node
+        return [('std:ref', result_node)]
+
+
+#...............................................................................
+#
+#  Sphinx source inputs --  a workaround for sphinx-2.0.1 (and below)
+#  completely ignoring docutils.conf:tab_width
+#
+
+is_sphinx_tab_aware = sphinx_version >= version.parse('2.1.0')
+
+if not is_sphinx_tab_aware:
+    from sphinx.io import SphinxBaseFileInput, SphinxRSTFileInput
+    from docutils.statemachine import StringList, string2lines
+
+
+    class TabAwareSphinxRSTFileInput(SphinxRSTFileInput):
+        def read(self):
+            # type: () -> StringList
+            inputstring = SphinxBaseFileInput.read(self)
+            tab_width = self.env.config.doxyrest_tab_width
+            lines = string2lines(inputstring, convert_whitespace=True, tab_width=tab_width)
+
+            content = StringList()
+            for lineno, line in enumerate(lines):
+                content.append(line, self.source_path, lineno)
+
+            if self.env.config.rst_prolog:
+                self.prepend_prolog(content, self.env.config.rst_prolog)
+            if self.env.config.rst_epilog:
+                self.append_epilog(content, self.env.config.rst_epilog)
+
+            return content
+
+
+    class TabAwareInclude(Include):
+        def run(self):
+            # update tab_width setting
+            self.state.document.settings.tab_width = \
+            self.state.document.settings.env.config.doxyrest_tab_width
+            return Include.run(self)
 
 #...............................................................................
 #
@@ -337,8 +393,8 @@ def on_builder_inited(app):
         this_dir + '/js/target-highlight.js'
     ]
 
-    app.add_stylesheet('doxyrest-pygments.css')
-    app.add_javascript('target-highlight.js')
+    add_css_file(app, 'doxyrest-pygments.css')
+    add_js_file(app, 'target-highlight.js')
 
     supported_themes = {
         'sphinx_rtd_theme',
@@ -348,7 +404,7 @@ def on_builder_inited(app):
     if app.config.html_theme in supported_themes:
         css_file = 'doxyrest-' + app.config.html_theme + '.css'
         app.config.html_static_path += [this_dir + '/css/' + css_file];
-        app.add_stylesheet(css_file);
+        add_css_file(app, css_file);
 
     for basedir, dirnames, filenames in os.walk(app.srcdir):
         if 'crefdb.py' in filenames:
@@ -361,12 +417,42 @@ def on_builder_inited(app):
                 global crefdb
                 crefdb.update(new_crefdb)
 
+def on_config_inited(app, config):
+
+    # prepare and register doxyrest-specific docutils.conf
+
+    # it's OK to put yet another docutils.conf into your config dir to
+    # override settings if necessary
+
+    docutils_conf_in_path = this_dir + '/conf/doxyrest-docutils.conf.in'
+    docutils_conf_path = app.doctreedir + '/doxyrest-docutils.conf'
+
+    src_file = open(docutils_conf_in_path, 'r')
+    contents = src_file.read()
+    contents = contents.replace('%tab_width%', str(config.doxyrest_tab_width))
+    src_file.close()
+
+    if not os.path.exists(app.doctreedir):
+        os.makedirs(app.doctreedir)
+
+    dst_file = open(docutils_conf_path, 'w')
+    dst_file.write(contents)
+    dst_file.close()
+
+    if 'DOCUTILSCONFIG' in os.environ:
+        prev_docutils_conf = os.environ['DOCUTILSCONFIG']
+        os.environ['DOCUTILSCONFIG'] = docutils_conf_path + os.pathsep + prev_docutils_conf
+    else:
+        os.environ['DOCUTILSCONFIG'] = docutils_conf_path
+
 #...............................................................................
 #
 #  Doxyrest extenstion setup
 #
 
 def setup(app):
+    app.add_domain(DoxyrestDomain)
+
     app.add_node(
         HighlightedText,
         html=(visit_highlighted_text_node, None),
@@ -375,23 +461,19 @@ def setup(app):
 
     app.add_role('cref', cref_role)
     app.add_role('target', target_role)
-    app.add_config_value('doxyrest_tab_width', default=4, rebuild=True)
     app.add_config_value('doxyrest_cref_file', default=None, rebuild=True)
-    app.registry.source_inputs['restructuredtext'] = TabAwareSphinxRSTFileInput
+    app.add_config_value('doxyrest_tab_width', default=4, rebuild=True)
     directives.register_directive('ref-code-block', RefCodeBlock)
-    directives.register_directive('include', TabAwareInclude)
     app.add_transform(RefTransform)
     app.connect('builder-inited', on_builder_inited)
+    app.connect('config-inited', on_config_inited)
 
-    # register our docutils.conf
+    if not is_sphinx_tab_aware:
+        app.registry.source_inputs['restructuredtext'] = TabAwareSphinxRSTFileInput
+        directives.register_directive('include', TabAwareInclude)
 
-    prevConfig = None
-
-    if 'DOCUTILSCONFIG' in os.environ:
-        prevConfig = os.environ['DOCUTILSCONFIG']
-
-    os.environ['DOCUTILSCONFIG'] = this_dir + '/conf/docutils.conf'
-
-    if prevConfig:
-        os.environ['DOCUTILSCONFIG'] += os.pathsep
-        os.environ['DOCUTILSCONFIG'] += prevConfig
+    return {
+        'version': 'builtin',
+        'parallel_read_safe': True,
+        'parallel_write_safe': True,
+    }
