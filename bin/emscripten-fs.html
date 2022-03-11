@@ -25,11 +25,41 @@
             image-rendering: pixelated;
             -ms-interpolation-mode: nearest-neighbor;
         }
+        .loader {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: inline-block;
+            border-top: 3px solid #3daee9;
+            border-right: 3px solid transparent;
+            box-sizing: border-box;
+            animation: rotation 1s linear infinite;
+        }
+        .loader-cont {
+            display: flex;
+            width: 100vw;
+            justify-content: center;
+            height: 100vh;
+            align-items: center;
+        }
+        @keyframes rotation {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
     </style>
   </head>
   <body>
     <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()"></canvas>
+    <div id="cont" class="loader-cont">
+      <span class="loader"></span>
+    </div>
     <script type='text/javascript'>
+        var loaderCont;
+
         function getDemoScript(name) {
             if (name)
                 return name;
@@ -43,6 +73,7 @@
         }
 
         function loadScript(url, callback) {
+            loaderCont = document.getElementById('cont');
             let head = document.head;
             let script = document.createElement('script');
             script.type = 'text/javascript';
@@ -71,6 +102,8 @@
             })(),
             setStatus: function(text) {
                 console.log("status: " + text);
+                if (text == "Running...")
+                  loaderCont.style.display = 'none';
             },
             monitorRunDependencies: function(left) {
                 // no run dependencies to log

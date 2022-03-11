@@ -1408,6 +1408,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 			downloadFileWeb( url );
 			if ( mEditorSplitter->getCurEditor() )
 				mEditorSplitter->getCurEditor()->setFocus();
+			msgBox->closeWindow();
 		} );
 	} );
 
@@ -2429,6 +2430,10 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		mConsole = eeNew( Console, ( mFontMono, true, true, 1024 * 1000, 0, mWindow ) );
 
 		initProjectTreeView( file );
+
+#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+		downloadFileWeb( "https://raw.githubusercontent.com/SpartanJ/eepp/develop/README.md" );
+#endif
 
 		mWindow->runMainLoop( &appLoop );
 	}

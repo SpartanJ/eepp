@@ -39,7 +39,6 @@ UIMessageBox::UIMessageBox( const Type& type, const String& message, const Uint3
 			->setParent( vlay )
 			->addEventListener( Event::OnPressEnter, [&]( const Event* ) {
 				sendCommonEvent( Event::MsgBoxConfirmClick );
-				closeWindow();
 			} );
 	}
 
