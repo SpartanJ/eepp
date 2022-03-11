@@ -172,7 +172,7 @@ void UITableView::onColumnSizeChange( const size_t& colIndex, bool fromUserInter
 }
 
 Uint32 UITableView::onKeyDown( const KeyEvent& event ) {
-	if ( event.getMod() )
+	if ( event.getMod() & KEYMOD_CTRL_SHIFT_ALT_META )
 		return UIAbstractTableView::onKeyDown( event );
 	auto curIndex = getSelection().first();
 	int pageSize = eefloor( getVisibleArea().getHeight() / getRowHeight() ) - 1;

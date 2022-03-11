@@ -453,7 +453,7 @@ void UITreeView::setExpanderIconSize( const size_t& expanderSize ) {
 }
 
 Uint32 UITreeView::onKeyDown( const KeyEvent& event ) {
-	if ( event.getMod() )
+	if ( event.getMod() & KEYMOD_CTRL_SHIFT_ALT_META )
 		return UIAbstractTableView::onKeyDown( event );
 	auto curIndex = getSelection().first();
 

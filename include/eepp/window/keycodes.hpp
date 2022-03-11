@@ -683,6 +683,7 @@ enum KeyModTable {
 #define KEYMOD_SHIFT ( KEYMOD_LSHIFT | KEYMOD_RSHIFT )
 #define KEYMOD_ALT ( KEYMOD_LALT | KEYMOD_RALT )
 #define KEYMOD_META ( KEYMOD_LMETA | KEYMOD_RMETA )
+#define KEYMOD_CTRL_SHIFT_ALT_META ( KEYMOD_CTRL | KEYMOD_SHIFT | KEYMOD_ALT | KEYMOD_META )
 
 /** @enum MouseButton Mouse buttons */
 enum MouseButton {
