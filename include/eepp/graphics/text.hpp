@@ -150,6 +150,13 @@ class EE_API Text {
 	/** Sets text background color. */
 	void setBackgroundColor( const Color& backgroundColor );
 
+	/** @return True if the text width cache is disabled. */
+	bool getDisableCacheWidth() const;
+
+	/** The text width is cached every time the geometry of the text is updated. It's possible to
+	 * disable this to improve performance in very specific scenarios. */
+	void setDisableCacheWidth( bool newDisableCacheWidth );
+
   protected:
 	struct VertexCoords {
 		Vector2f texCoords;
@@ -171,6 +178,7 @@ class EE_API Text {
 	mutable bool mCachedWidthNeedUpdate;
 	mutable bool mColorsNeedUpdate;
 	mutable bool mContainsColorEmoji{ false };
+	bool mDisableCacheWidth{ false };
 
 	Float mCachedWidth;
 	int mNumLines;

@@ -492,7 +492,8 @@ Loader {
 
 CodeEditor > Loader {
 	background-color: #0000002d;
-	radius: 64dp;
+	radius: 32dp;
+	outline-thickness: 6dp;
 }
 
 Window::close {

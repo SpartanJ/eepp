@@ -423,9 +423,13 @@ UICodeEditor* UICodeEditor::setFont( Font* font ) {
 	return this;
 }
 
-void UICodeEditor::onFontChanged() {}
+void UICodeEditor::onFontChanged() {
+	udpateGlyphWidth();
+}
 
-void UICodeEditor::onFontStyleChanged() {}
+void UICodeEditor::onFontStyleChanged() {
+	udpateGlyphWidth();
+}
 
 void UICodeEditor::onDocumentChanged() {
 	DocEvent event( this, mDoc.get(), Event::OnDocumentChanged );
@@ -462,6 +466,7 @@ UICodeEditor* UICodeEditor::setFontSize( const Float& dpSize ) {
 			eeabs( dpSize - (int)dpSize ) == 0.5f || (int)dpSize == dpSize ? dpSize
 																		   : eefloor( dpSize );
 		mFontSize = mFontStyleConfig.CharacterSize;
+		udpateGlyphWidth();
 		invalidateDraw();
 		onFontChanged();
 	}
@@ -1634,7 +1639,11 @@ Float UICodeEditor::getCharacterSize() const {
 }
 
 Float UICodeEditor::getGlyphWidth() const {
-	return mFont->getGlyph( ' ', getCharacterSize(), false ).advance;
+	return mGlyphWidth;
+}
+
+void UICodeEditor::udpateGlyphWidth() {
+	mGlyphWidth = mFont->getGlyph( ' ', getCharacterSize(), false ).advance;
 }
 
 const bool& UICodeEditor::getColorPreview() const {
@@ -1879,12 +1888,18 @@ void UICodeEditor::drawLineText( const Int64& index, Vector2f position, const Fl
 								 const Float& lineHeight ) {
 	auto& tokens = mHighlighter.getLine( index );
 	Primitives primitives;
+	Int64 curChar = 0;
+	Int64 maxWidth = eeceil( mSize.getWidth() / getGlyphWidth() + 1 );
 	for ( auto& token : tokens ) {
 		String text( token.text );
 		Float textWidth = getTextWidth( text );
 		if ( position.x + textWidth >= mScreenPos.x &&
 			 position.x <= mScreenPos.x + mSize.getWidth() ) {
+			Int64 curCharsWidth = text.size();
+			Int64 curPositionChar = eefloor( mScroll.x / getGlyphWidth() );
+			Float curMaxPositionChar = curPositionChar + maxWidth;
 			Text line( "", mFont, fontSize );
+			line.setDisableCacheWidth( true );
 			line.setTabWidth( mTabWidth );
 			const SyntaxColorScheme::Style& style = mColorScheme.getSyntaxStyle( token.type );
 			line.setStyleConfig( mFontStyleConfig );
@@ -1895,12 +1910,33 @@ void UICodeEditor::drawLineText( const Int64& index, Vector2f position, const Fl
 				primitives.drawRectangle( Rectf( position, Sizef( textWidth, lineHeight ) ) );
 			}
 			line.setColor( Color( style.color ).blendAlpha( mAlpha ) );
-			line.setString( text );
-			line.draw( position.x, position.y );
+			if ( curPositionChar + curChar + curCharsWidth > curMaxPositionChar ) {
+				if ( curChar < curPositionChar ) {
+					Int64 charsToVisible = curPositionChar - curChar;
+					Int64 start = eemax( (Int64)0, curPositionChar - curChar );
+					Int64 minimumCharsToCoverScreen = maxWidth + charsToVisible - start;
+					Int64 totalChars = curCharsWidth - start;
+					Int64 end = eemin( totalChars, minimumCharsToCoverScreen );
+					if ( curCharsWidth >= charsToVisible ) {
+						line.setString( text.substr( start, end ) );
+						line.draw( position.x + start * getGlyphWidth(), position.y );
+						if ( minimumCharsToCoverScreen == end )
+							break;
+					}
+				} else {
+					line.setString( text.substr( 0, eemin( curCharsWidth, maxWidth ) ) );
+					line.draw( position.x, position.y );
+				}
+			} else {
+				line.setString( text );
+				line.draw( position.x, position.y );
+			}
 		} else if ( position.x > mScreenPos.x + mSize.getWidth() ) {
 			break;
 		}
+
 		position.x += textWidth;
+		curChar += text.size();
 	}
 }
 

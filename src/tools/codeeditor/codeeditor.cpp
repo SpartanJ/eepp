@@ -116,11 +116,17 @@ void App::updateEditorTitle( UICodeEditor* editor ) {
 }
 
 void App::setAppTitle( const std::string& title ) {
-	mWindow->setTitle( mWindowTitle +
-					   String( mCurrentProject.empty()
-								   ? ""
-								   : " - " + FileSystem::fileNameFromPath( mCurrentProject ) ) +
-					   String( title.empty() ? "" : " - " + title ) );
+	std::string fullTitle( mWindowTitle );
+	if ( !mCurrentProject.empty() ) {
+		std::string currentProject( FileSystem::fileNameFromPath( mCurrentProject ) );
+		if ( !currentProject.empty() )
+			fullTitle += " - " + currentProject;
+	}
+
+	if ( !title.empty() )
+		fullTitle += " - " + title;
+
+	mWindow->setTitle( fullTitle );
 }
 
 void App::onDocumentModified( UICodeEditor* editor, TextDocument& ) {

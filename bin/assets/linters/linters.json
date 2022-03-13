@@ -38,5 +38,11 @@
     "warning_pattern": "[^:]:(%d+):(%d+):%s?([^%s]*)([^\n]*)",
     "warning_pattern_order": { "line": 1, "col": 2, "message": 4, "type": 3 },
     "command": "cppcheck --language=c++ --enable=all --template=gcc $FILENAME"
+  },
+  {
+    "file_patterns": ["%.kt$"],
+    "warning_pattern": "[^:]:(%d+):(%d+):%s([^\n]+)",
+    "warning_pattern_order": { "line": 1, "col": 2, "message": 3, "type": 4 },
+    "command": "ktlint $FILENAME"
   }
 ]

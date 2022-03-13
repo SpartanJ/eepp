@@ -1,15 +1,20 @@
 [
   {
-	"file_patterns": ["%.js$", "%.ts$"],
-	"command": "prettier $FILENAME"
+    "file_patterns": ["%.js$", "%.ts$"],
+    "command": "prettier $FILENAME"
   },
   {
-	"file_patterns": ["%.cpp$", "%.h$", "%.hpp$"],
-	"command": "clang-format --style=file $FILENAME"
+    "file_patterns": ["%.cpp$", "%.h$", "%.hpp$"],
+    "command": "clang-format --style=file $FILENAME"
   },
   {
-	"file_patterns": ["%.py$", "%.pyw$"],
-	"command": "black $FILENAME",
-	"type": "inplace"
+    "file_patterns": ["%.py$", "%.pyw$"],
+    "command": "black $FILENAME",
+    "type": "inplace"
+  },
+  {
+    "file_patterns": ["%.kt$"],
+    "command": "ktlint -F $FILENAME",
+    "type": "inplace"
   }
 ]

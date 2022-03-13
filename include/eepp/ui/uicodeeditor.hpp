@@ -462,6 +462,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	TextRange mPreviewColorRange;
 	std::vector<UICodeEditorModule*> mModules;
 	UILoader* mLoader{ nullptr };
+	Float mGlyphWidth{ 0 };
 
 	UICodeEditor( const std::string& elementTag, const bool& autoRegisterBaseCommands = true,
 				  const bool& autoRegisterBaseKeybindings = true );
@@ -595,6 +596,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void disableEditorFeatures();
 
 	Float getViewportWidth( const bool& forceVScroll = false ) const;
+
+	void udpateGlyphWidth();
 };
 
 }} // namespace EE::UI

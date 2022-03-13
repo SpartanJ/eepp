@@ -533,6 +533,14 @@ void Text::setBackgroundColor( const Color& backgroundColor ) {
 	mBackgroundColor = backgroundColor;
 }
 
+bool Text::getDisableCacheWidth() const {
+	return mDisableCacheWidth;
+}
+
+void Text::setDisableCacheWidth( bool newDisableCacheWidth ) {
+	mDisableCacheWidth = newDisableCacheWidth;
+}
+
 Rectf Text::getLocalBounds() {
 	ensureGeometryUpdate();
 
@@ -684,7 +692,8 @@ void Text::draw( const Float& X, const Float& Y, const Vector2f& scale, const Fl
 }
 
 void Text::ensureGeometryUpdate() {
-	cacheWidth();
+	if ( !mDisableCacheWidth )
+		cacheWidth();
 
 	// Do nothing, if geometry has not changed
 	if ( !mGeometryNeedUpdate )
@@ -714,8 +723,11 @@ void Text::ensureGeometryUpdate() {
 	// Compute the location of the strike through dynamically
 	// We use the center point of the lowercase 'x' glyph as the reference
 	// We reuse the underline thickness as the thickness of the strike through as well
-	Rectf xBounds = mFont->getGlyph( L'x', mRealFontSize, bold ).bounds;
-	Float strikeThroughOffset = xBounds.Top + xBounds.Bottom / 2.f;
+	Float strikeThroughOffset = 0;
+	if ( strikeThrough ) {
+		Rectf xBounds = mFont->getGlyph( L'x', mRealFontSize, bold ).bounds;
+		strikeThroughOffset = xBounds.Top + xBounds.Bottom / 2.f;
+	}
 
 	// Precompute the variables needed by the algorithm
 	Float hspace = static_cast<Float>( mFont->getGlyph( L' ', mRealFontSize, bold ).advance );

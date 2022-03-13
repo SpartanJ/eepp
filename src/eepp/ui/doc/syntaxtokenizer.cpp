@@ -17,6 +17,8 @@ namespace EE { namespace UI { namespace Doc {
 	return true;
 }*/
 
+#define MAX_TOKEN_SIZE ( 512 )
+
 static void pushToken( std::vector<SyntaxToken>& tokens, const std::string& type,
 					   const std::string& text ) {
 	if ( !tokens.empty() && ( tokens[tokens.size() - 1].type == type /*||
@@ -24,7 +26,18 @@ static void pushToken( std::vector<SyntaxToken>& tokens, const std::string& type
 		tokens[tokens.size() - 1].type = type;
 		tokens[tokens.size() - 1].text += text;
 	} else {
-		tokens.push_back( {type, text} );
+		if ( text.size() > MAX_TOKEN_SIZE ) {
+			size_t textSize = text.size();
+			size_t steps = textSize / MAX_TOKEN_SIZE + 1;
+
+			for ( size_t i = 0; i < steps; ++i ) {
+				size_t strSize =
+					( i == steps - 1 ) ? textSize - MAX_TOKEN_SIZE * i : MAX_TOKEN_SIZE;
+				tokens.push_back( { type, text.substr( i * MAX_TOKEN_SIZE, strSize ) } );
+			}
+		} else {
+			tokens.push_back( { type, text } );
+		}
 	}
 }
 
