@@ -5,5 +5,6 @@
 cd $(dirname "$0")
 premake4 --file=../../premake4.lua --with-gles2 --with-static-eepp --platform=emscripten --with-backend=SDL2 gmake
 cd ../../make/emscripten/
-ln -sf ../../bin/assets/ ./
+rm -rf ./assets
+cp -r ../../bin/assets/ .
 emmake make -j`nproc` $@
