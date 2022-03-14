@@ -980,11 +980,11 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 
 	// ini / conf
 	add( { "Config File",
-		   { "%.ini$", "%.conf$", "%.desktop$", "%.service$", "%.cfg$", "Doxyfile" },
+		   { "%.ini$", "%.conf$", "%.desktop$", "%.service$", "%.cfg$", "%.env$", "Doxyfile" },
 		   { { { "^#.-\n" }, "comment" },
 			 { { "%s#.-\n" }, "comment" },
 			 { { "%s?#%x+" }, "string" },
-			 { { "[%a_][%w-+_%s%p]*%f[=]" }, "keyword" },
+			 { { "[%a_][%w-+_%s%p]-%f[=]" }, "keyword" },
 			 { { "\"", "\"", "\\" }, "string" },
 			 { { "'", "'", "\\" }, "string" },
 			 { { "^%[.-%]" }, "keyword2" },

@@ -1,6 +1,13 @@
 #include <eepp/window/backend/SDL2/base.hpp>
 #include <eepp/window/backend/SDL2/platformhelpersdl2.hpp>
 
+#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+#include <emscripten.h>
+EM_JS(void, emscripten_open_url, (const char *msg), {
+  window.open(UTF8ToString(msg), 'blank');
+});
+#endif
+
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
 #include <jni.h>
 #endif
@@ -10,10 +17,15 @@ namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 PlatformHelperSDL2::PlatformHelperSDL2() {}
 
 bool PlatformHelperSDL2::openURL( const std::string& url ) {
-#if SDL_VERSION_ATLEAST(2,0,14)
-	return SDL_OpenURL( url.c_str() ) == 0;
+#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+	emscripten_open_url(url.c_str());
+	return true;
 #else
-	return false;
+	#if SDL_VERSION_ATLEAST(2,0,14)
+		return SDL_OpenURL( url.c_str() ) == 0;
+	#else
+		return false;
+	#endif
 #endif
 }
 
