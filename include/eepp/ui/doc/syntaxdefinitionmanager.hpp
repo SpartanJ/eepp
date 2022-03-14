@@ -25,6 +25,8 @@ class EE_API SyntaxDefinitionManager {
 
 	const SyntaxDefinition& getStyleByLanguageName( const std::string& name ) const;
 
+	const SyntaxDefinition& getStyleByLanguageId( const String::HashType& id) const;
+
 	SyntaxDefinition& getStyleByLanguageNameRef( const std::string& name );
 
 	std::vector<std::string> getLanguageNames() const;

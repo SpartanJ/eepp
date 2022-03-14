@@ -10,19 +10,11 @@ namespace EE { namespace UI { namespace Doc {
 // tokenizer. This allows eepp to support the same color schemes and syntax definitions from
 // lite. Making much easier to implement a complete code editor.
 
-/*static bool allSpaces( const std::string& str ) {
-	for ( auto& chr : str )
-		if ( ' ' != chr )
-			return false;
-	return true;
-}*/
-
 #define MAX_TOKEN_SIZE ( 512 )
 
 static void pushToken( std::vector<SyntaxToken>& tokens, const std::string& type,
 					   const std::string& text ) {
-	if ( !tokens.empty() && ( tokens[tokens.size() - 1].type == type /*||
-							  allSpaces( tokens[tokens.size() - 1].text )*/ ) ) {
+	if ( !tokens.empty() && ( tokens[tokens.size() - 1].type == type ) ) {
 		tokens[tokens.size() - 1].type = type;
 		tokens[tokens.size() - 1].text += text;
 	} else {
@@ -69,10 +61,45 @@ std::pair<int, int> findNonEscaped( const std::string& text, const std::string& 
 	}
 }
 
-std::pair<std::vector<SyntaxToken>, int> SyntaxTokenizer::tokenize( const SyntaxDefinition& syntax,
-																	const std::string& text,
-																	const int& state,
-																	const size_t& startIndex ) {
+struct SyntaxState {
+	const SyntaxDefinition* currentSyntax{ nullptr };
+	const SyntaxPattern* subsyntaxInfo{ nullptr };
+	Uint64 currentPatternIdx{ 0 };
+	Uint64 currentLevel{ 0 };
+};
+
+SyntaxState retrieveSyntaxState( const SyntaxDefinition& syntax, const Uint64& state ) {
+	SyntaxState syntaxState{ &syntax, nullptr, state, 0 };
+	if ( state > 0 &&
+		 ( state > 255 ||
+		   ( state < syntaxState.currentSyntax->getPatterns().size() &&
+			 !syntaxState.currentSyntax->getPatterns()[state - 1].syntax.empty() ) ) ) {
+		for ( size_t i = 0; i <= 2; ++i ) {
+			Uint64 target = ( state >> ( 8 * i ) ) & 0xFF;
+			if ( target != SYNTAX_TOKENIZER_STATE_NONE ) {
+				if ( target < syntaxState.currentSyntax->getPatterns().size() &&
+					 !syntaxState.currentSyntax->getPatterns()[target - 1].syntax.empty() ) {
+					syntaxState.subsyntaxInfo =
+						&syntaxState.currentSyntax->getPatterns()[target - 1];
+					syntaxState.currentSyntax =
+						&SyntaxDefinitionManager::instance()->getStyleByLanguageName(
+							syntaxState.subsyntaxInfo->syntax );
+					syntaxState.currentPatternIdx = SYNTAX_TOKENIZER_STATE_NONE;
+					syntaxState.currentLevel++;
+				} else {
+					syntaxState.currentPatternIdx = target;
+				}
+			} else {
+				break;
+			}
+		}
+	}
+	return syntaxState;
+}
+
+std::pair<std::vector<SyntaxToken>, Uint64>
+SyntaxTokenizer::tokenize( const SyntaxDefinition& syntax, const std::string& text,
+						   const Uint64& state, const size_t& startIndex ) {
 	std::vector<SyntaxToken> tokens;
 	if ( syntax.getPatterns().empty() ) {
 		pushToken( tokens, "normal", text );
@@ -81,28 +108,89 @@ std::pair<std::vector<SyntaxToken>, int> SyntaxTokenizer::tokenize( const Syntax
 
 	size_t i = startIndex;
 	int retState = state;
+	SyntaxState curState = retrieveSyntaxState( syntax, state );
+
+	auto setSubsyntaxPatternIdx = [&curState, &retState]( const Uint64& patternIndex ) {
+		curState.currentPatternIdx = patternIndex;
+		retState &= ~( 0xFF << ( curState.currentLevel * 8 ) );
+		retState |= ( patternIndex << ( curState.currentLevel * 8 ) );
+	};
+
+	auto pushSubsyntax = [&setSubsyntaxPatternIdx, &curState](
+							 const SyntaxPattern& enteringSubsyntax, const Uint64& patternIndex ) {
+		setSubsyntaxPatternIdx( patternIndex );
+		curState.currentLevel++;
+		curState.subsyntaxInfo = &enteringSubsyntax;
+		curState.currentSyntax = &SyntaxDefinitionManager::instance()->getStyleByLanguageName(
+			curState.subsyntaxInfo->syntax );
+		setSubsyntaxPatternIdx( SYNTAX_TOKENIZER_STATE_NONE );
+	};
+
+	auto popSubsyntax = [&setSubsyntaxPatternIdx, &curState, &syntax, &retState]() {
+		setSubsyntaxPatternIdx( SYNTAX_TOKENIZER_STATE_NONE );
+		curState.currentLevel--;
+		setSubsyntaxPatternIdx( SYNTAX_TOKENIZER_STATE_NONE );
+		curState = retrieveSyntaxState( syntax, retState );
+	};
 
 	while ( i < text.size() ) {
-		if ( retState != SYNTAX_TOKENIZER_STATE_NONE ) {
-			const SyntaxPattern& pattern = syntax.getPatterns()[retState];
+		if ( curState.currentPatternIdx != SYNTAX_TOKENIZER_STATE_NONE ) {
+			const SyntaxPattern& pattern =
+				curState.currentSyntax->getPatterns()[curState.currentPatternIdx - 1];
 			std::pair<int, int> range =
 				findNonEscaped( text, pattern.patterns[1], i,
 								pattern.patterns.size() >= 3 ? pattern.patterns[2] : "" );
-			if ( range.first != -1 ) {
-				pushToken( tokens, pattern.type, text.substr( i, range.second - i ) );
-				retState = SYNTAX_TOKENIZER_STATE_NONE;
-				i = range.second;
-			} else {
-				pushToken( tokens, pattern.type, text.substr( i ) );
-				break;
+
+			bool skip = false;
+
+			if ( curState.subsyntaxInfo != nullptr ) {
+				std::pair<int, int> rangeSubsyntax =
+					findNonEscaped( text, curState.subsyntaxInfo->patterns[1], i,
+									curState.subsyntaxInfo->patterns.size() >= 3
+										? curState.subsyntaxInfo->patterns[2]
+										: "" );
+
+				if ( rangeSubsyntax.first != -1 &&
+					 ( range.first == -1 || rangeSubsyntax.first < range.first ) ) {
+					pushToken( tokens, curState.subsyntaxInfo->type,
+							   text.substr( i, rangeSubsyntax.second - i ) );
+					popSubsyntax();
+					i = rangeSubsyntax.second;
+					skip = true;
+				}
+			}
+
+			if ( !skip ) {
+				if ( range.first != -1 ) {
+					pushToken( tokens, pattern.type, text.substr( i, range.second - i ) );
+					setSubsyntaxPatternIdx( SYNTAX_TOKENIZER_STATE_NONE );
+					i = range.second;
+				} else {
+					pushToken( tokens, pattern.type, text.substr( i ) );
+					break;
+				}
+			}
+		}
+
+		if ( curState.subsyntaxInfo != nullptr ) {
+			std::pair<int, int> rangeSubsyntax = findNonEscaped(
+				text, "^" + curState.subsyntaxInfo->patterns[1], i,
+				curState.subsyntaxInfo->patterns.size() >= 3 ? curState.subsyntaxInfo->patterns[2]
+															 : "" );
+
+			if ( rangeSubsyntax.first != -1 ) {
+				pushToken( tokens, curState.subsyntaxInfo->type,
+						   text.substr( i, rangeSubsyntax.second - i ) );
+				popSubsyntax();
+				i = rangeSubsyntax.second;
 			}
 		}
 
 		bool matched = false;
 
-		for ( size_t patternIndex = 0; patternIndex < syntax.getPatterns().size();
+		for ( size_t patternIndex = 0; patternIndex < curState.currentSyntax->getPatterns().size();
 			  patternIndex++ ) {
-			const SyntaxPattern& pattern = syntax.getPatterns()[patternIndex];
+			const SyntaxPattern& pattern = curState.currentSyntax->getPatterns()[patternIndex];
 			if ( i != 0 && pattern.patterns[0][0] == '^' )
 				continue;
 			const std::string& patternStr(
@@ -114,10 +202,12 @@ std::pair<std::vector<SyntaxToken>, int> SyntaxTokenizer::tokenize( const Syntax
 					 text[i - 1] == pattern.patterns[2][0] )
 					continue;
 				std::string patternText( text.substr( start, end - start ) );
-				std::string type = syntax.getSymbol( patternText );
+				std::string type = curState.currentSyntax->getSymbol( patternText );
 				pushToken( tokens, type.empty() ? pattern.type : type, patternText );
-				if ( pattern.patterns.size() > 1 ) {
-					retState = patternIndex;
+				if ( !pattern.syntax.empty() ) {
+					pushSubsyntax( pattern, patternIndex + 1 );
+				} else if ( pattern.patterns.size() > 1 ) {
+					setSubsyntaxPatternIdx( patternIndex + 1 );
 				}
 				i = end;
 				matched = true;

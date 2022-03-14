@@ -25,11 +25,11 @@ void SyntaxHighlighter::invalidate( Int64 lineIndex ) {
 	mMaxWantedLine = eemin<Int64>( mMaxWantedLine, (Int64)mDoc->linesCount() - 1 );
 }
 
-TokenizedLine SyntaxHighlighter::tokenizeLine( const size_t& line, const int& state ) {
+TokenizedLine SyntaxHighlighter::tokenizeLine( const size_t& line, const Uint64& state ) {
 	TokenizedLine tokenizedLine;
 	tokenizedLine.initState = state;
 	tokenizedLine.hash = mDoc->line( line ).getHash();
-	std::pair<std::vector<SyntaxToken>, int> res = SyntaxTokenizer::tokenize(
+	std::pair<std::vector<SyntaxToken>, Uint64> res = SyntaxTokenizer::tokenize(
 		mDoc->getSyntaxDefinition(), mDoc->line( line ).toUtf8(), state );
 	tokenizedLine.tokens = std::move( res.first );
 	tokenizedLine.state = std::move( res.second );
@@ -70,7 +70,7 @@ bool SyntaxHighlighter::updateDirty( int visibleLinesCount ) {
 		Int64 max = eemax( 0LL, eemin( mFirstInvalidLine + visibleLinesCount, mMaxWantedLine ) );
 
 		for ( Int64 index = mFirstInvalidLine; index <= max; index++ ) {
-			int state = SYNTAX_TOKENIZER_STATE_NONE;
+			Uint64 state = SYNTAX_TOKENIZER_STATE_NONE;
 			if ( index > 0 ) {
 				auto prevIt = mLines.find( index - 1 );
 				if ( prevIt != mLines.end() ) {

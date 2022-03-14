@@ -2,6 +2,7 @@
 #define EE_UI_DOC_DEFINITION_HPP
 
 #include <eepp/config.hpp>
+#include <eepp/core/string.hpp>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -11,6 +12,7 @@ namespace EE { namespace UI { namespace Doc {
 struct EE_API SyntaxPattern {
 	std::vector<std::string> patterns;
 	std::string type;
+	std::string syntax{ "" };
 };
 
 class EE_API SyntaxDefinition {
@@ -25,6 +27,8 @@ class EE_API SyntaxDefinition {
 					  const std::vector<std::string> headers = {} );
 
 	const std::string& getLanguageName() const;
+
+	const String::HashType& getLanguageId() const;
 
 	const std::vector<std::string>& getFiles() const;
 
@@ -63,6 +67,7 @@ class EE_API SyntaxDefinition {
 
   protected:
 	std::string mLanguageName;
+	String::HashType mLanguageId;
 	std::vector<std::string> mFiles;
 	std::vector<SyntaxPattern> mPatterns;
 	std::unordered_map<std::string, std::string> mSymbols;

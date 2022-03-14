@@ -13,14 +13,14 @@ struct EE_API SyntaxToken {
 	std::string text;
 };
 
-#define SYNTAX_TOKENIZER_STATE_NONE ( -1 )
+#define SYNTAX_TOKENIZER_STATE_NONE ( 0 )
 
 class EE_API SyntaxTokenizer {
   public:
-	std::pair<std::vector<SyntaxToken>, int> static tokenize( const SyntaxDefinition& syntax,
-															  const std::string& text,
-															  const int& state,
-															  const size_t& startIndex = 0 );
+	static std::pair<std::vector<SyntaxToken>, Uint64> tokenize( const SyntaxDefinition& syntax,
+																 const std::string& text,
+																 const Uint64& state,
+																 const size_t& startIndex = 0 );
 };
 
 }}} // namespace EE::UI::Doc

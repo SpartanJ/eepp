@@ -8,10 +8,10 @@
 namespace EE { namespace UI { namespace Doc {
 
 struct TokenizedLine {
-	int initState;
+	Uint64 initState;
 	String::HashType hash;
 	std::vector<SyntaxToken> tokens;
-	int state;
+	Uint64 state;
 };
 
 class EE_API SyntaxHighlighter {
@@ -37,7 +37,7 @@ class EE_API SyntaxHighlighter {
 	std::map<size_t, TokenizedLine> mLines;
 	Int64 mFirstInvalidLine;
 	Int64 mMaxWantedLine;
-	TokenizedLine tokenizeLine( const size_t& line, const int& state );
+	TokenizedLine tokenizeLine( const size_t& line, const Uint64& state );
 };
 
 }}} // namespace EE::UI::Doc

@@ -19,9 +19,9 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	// Plain text
 	add( { "Plain Text", { "%.txt$" }, {} } );
 
-	// XML - HTML
+	// XML
 	add( { "XML",
-		   { "%.xml$", "%.html?$", "%.svg$" },
+		   { "%.xml$", "%.svg$" },
 		   {
 			   { { "<!%-%-", "%-%->" }, "comment" },
 			   { { "%f[^>][^<]", "%f[<]" }, "normal" },
@@ -38,7 +38,39 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 		   },
 		   {},
 		   "",
-		   { "<%?xml", "<![Dd][Oo][Cc][Tt][Yy][Pp][Ee]%s[Hh][Tt][Mm][Ll]>" } } );
+		   { "<%?xml" } } );
+
+	// HTML
+	add( { "HTML",
+		   { "%.html?$" },
+		   {
+			   { { "<%s*[sS][cC][rR][iI][pP][tT]%s+[tT][yY][pP][eE]%s*=%s*['\"]%a+/"
+				   "[jJ][aA][vV][aA][sS][cC][rR][iI][pP][tT]['\"]%s*>",
+				   "<%s*/[sS][cC][rR][iI][pP][tT]>" },
+				 "function",
+				 "JavaScript" },
+			   { { "<%s*[sS][cC][rR][iI][pP][tT]%s*>", "<%s*/%s*[sS][cC][rR][iI][pP][tT]>" },
+				 "function",
+				 "JavaScript" },
+			   { { "<%s*[sS][tT][yY][lL][eE][^>]*>", "<%s*/%s*[sS][tT][yY][lL][eE]%s*>" },
+				 "function",
+				 "CSS" },
+			   { { "<!%-%-", "%-%->" }, "comment" },
+			   { { "%f[^>][^<]", "%f[<]" }, "normal" },
+			   { { "\"", "\"", "\\" }, "string" },
+			   { { "'", "'", "\\" }, "string" },
+			   { { "0x[%da-fA-F]+" }, "number" },
+			   { { "-?%d+[%d%.]*f?" }, "number" },
+			   { { "-?%.?%d+f?" }, "number" },
+			   { { "%f[^<]![%a_][%w_]*" }, "keyword2" },
+			   { { "%f[^<][%a_][%w_]*" }, "function" },
+			   { { "%f[^<]/[%a_][%w_]*" }, "function" },
+			   { { "[%a_][%w_]*" }, "keyword" },
+			   { { "[/<>=]" }, "operator" },
+		   },
+		   {},
+		   "",
+		   { "<html", "<![Dd][Oo][Cc][Tt][Yy][Pp][Ee]%s[Hh][Tt][Mm][Ll]>" } } );
 
 	// CSS
 	add( { "CSS",
@@ -55,9 +87,9 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 			   { { "-?%d+[%d%.]*deg" }, "number" },
 			   { { "-?%d+[%d%.]*" }, "number" },
 			   { { "[%a_][%w_]*" }, "symbol" },
-			   { { "#[%a][%w_-]*" }, "keyword2" },
+			   { { "#[_-%a][%w_-]*" }, "keyword2" },
 			   { { "@[%a][%w_-]*" }, "keyword2" },
-			   { { "%.[%a][%w_-]*" }, "keyword2" },
+			   { { "%.[_-%a][%w_-]*" }, "keyword2" },
 			   { { "[{}:]" }, "operator" },
 		   } } )
 		.addSymbols( UIWidgetCreator::getWidgetNames(), "keyword2" );
@@ -67,6 +99,35 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 		   { "%.md$", "%.markdown$" },
 		   {
 			   { { "\\." }, "normal" },
+			   { { "```[Xx][Mm][Ll]", "```" }, "function", "XML" },
+			   { { "```[Hh][Tt][Mm][Ll]", "```" }, "function", "html" },
+			   { { "```[Cc]++", "```" }, "function", "C++" },
+			   { { "```[Cc][Pp][Pp]", "```" }, "function", "C++" },
+			   { { "```[Cc]%#", "```" }, "function", "C#" },
+			   { { "```[Cc][Ss][Ss]", "```" }, "function", "CSS" },
+			   { { "```[Cc]", "```" }, "function", "C" },
+			   { { "```[Dd]", "```" }, "function", "D" },
+			   { { "```[Ll]ua", "```" }, "function", "Lua" },
+			   { { "```[Ja]va[Ss]cript", "```" }, "function", "JavaScript" },
+			   { { "```[Tt]ype[Ss]cript", "```" }, "function", "TypeScript" },
+			   { { "```[Pp]ython", "```" }, "function", "Python" },
+			   { { "```[Bb]ash", "```" }, "function", "Bash" },
+			   { { "```[Pp][Hh][Pp]", "```" }, "function", "PHP" },
+			   { { "```[Ss][Qq][Ll]", "```" }, "function", "SQL" },
+			   { { "```[Gg][Ll][Ss][Ll]", "```" }, "function", "GLSL" },
+			   { { "```[Ii][Nn][Ii]", "```" }, "function", "Config File" },
+			   { { "```[Mm]makefile", "```" }, "function", "Makefile" },
+			   { { "```[Gg][Oo]", "```" }, "function", "Go" },
+			   { { "```[Rr]ust", "```" }, "function", "Rust" },
+			   { { "```[Gg][Dd][Ss]cript", "```" }, "function", "GSCript" },
+			   { { "```[Jj]ava", "```" }, "function", "java" },
+			   { { "```[Ss]wift", "```" }, "function", "Swift" },
+			   { { "```[Dd]art", "```" }, "function", "Dart" },
+			   { { "```[Oo]bjective[Cc]", "```" }, "function", "Objective-C" },
+			   { { "```[Yy][Aa][Mm][Ll]", "```" }, "function", "YAML" },
+			   { { "```[Kk]otlin", "```" }, "function", "Kotlin" },
+			   { { "```[Ss]olidity", "```" }, "function", "Solidity" },
+			   { { "```[Hh]askell", "```" }, "function", "Haskell" },
 			   { { "<!%-%-", "%-%->" }, "comment" },
 			   { { "```", "```" }, "string" },
 			   { { "``", "``" }, "string" },
@@ -2256,6 +2317,15 @@ const SyntaxDefinition&
 SyntaxDefinitionManager::getStyleByLanguageName( const std::string& name ) const {
 	for ( auto& style : mStyles ) {
 		if ( style.getLanguageName() == name )
+			return style;
+	}
+	return mStyles[0];
+}
+
+const SyntaxDefinition&
+SyntaxDefinitionManager::getStyleByLanguageId( const String::HashType& id ) const {
+	for ( auto& style : mStyles ) {
+		if ( style.getLanguageId() == id )
 			return style;
 	}
 	return mStyles[0];

@@ -13,6 +13,7 @@ SyntaxDefinition::SyntaxDefinition( const std::string& languageName,
 									const std::string& comment,
 									const std::vector<std::string> headers ) :
 	mLanguageName( languageName ),
+	mLanguageId( String::hash( languageName ) ),
 	mFiles( files ),
 	mPatterns( patterns ),
 	mSymbols( symbols ),
@@ -67,7 +68,7 @@ SyntaxDefinition& SyntaxDefinition::addPatternToFront( const SyntaxPattern& patt
 	auto patterns = mPatterns;
 	mPatterns.clear();
 	mPatterns.push_back( pattern );
-	for ( auto pa : patterns )
+	for ( const auto& pa : patterns )
 		mPatterns.push_back( pa );
 	return *this;
 }
@@ -110,6 +111,10 @@ void SyntaxDefinition::clearSymbols() {
 
 const std::string& SyntaxDefinition::getLanguageName() const {
 	return mLanguageName;
+}
+
+const String::HashType& SyntaxDefinition::getLanguageId() const {
+	return mLanguageId;
 }
 
 }}} // namespace EE::UI::Doc
