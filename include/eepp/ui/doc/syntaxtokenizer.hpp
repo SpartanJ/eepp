@@ -17,9 +17,9 @@ struct EE_API SyntaxToken {
 
 class EE_API SyntaxTokenizer {
   public:
-	static std::pair<std::vector<SyntaxToken>, Uint64> tokenize( const SyntaxDefinition& syntax,
+	static std::pair<std::vector<SyntaxToken>, Uint32> tokenize( const SyntaxDefinition& syntax,
 																 const std::string& text,
-																 const Uint64& state,
+																 const Uint32& state,
 																 const size_t& startIndex = 0 );
 };
 

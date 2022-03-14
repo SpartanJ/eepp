@@ -64,18 +64,18 @@ std::pair<int, int> findNonEscaped( const std::string& text, const std::string& 
 struct SyntaxState {
 	const SyntaxDefinition* currentSyntax{ nullptr };
 	const SyntaxPattern* subsyntaxInfo{ nullptr };
-	Uint64 currentPatternIdx{ 0 };
-	Uint64 currentLevel{ 0 };
+	Uint32 currentPatternIdx{ 0 };
+	Uint32 currentLevel{ 0 };
 };
 
-SyntaxState retrieveSyntaxState( const SyntaxDefinition& syntax, const Uint64& state ) {
+SyntaxState retrieveSyntaxState( const SyntaxDefinition& syntax, const Uint32& state ) {
 	SyntaxState syntaxState{ &syntax, nullptr, state, 0 };
 	if ( state > 0 &&
 		 ( state > 255 ||
 		   ( state < syntaxState.currentSyntax->getPatterns().size() &&
 			 !syntaxState.currentSyntax->getPatterns()[state - 1].syntax.empty() ) ) ) {
 		for ( size_t i = 0; i <= 2; ++i ) {
-			Uint64 target = ( state >> ( 8 * i ) ) & 0xFF;
+			Uint32 target = ( state >> ( 8 * i ) ) & 0xFF;
 			if ( target != SYNTAX_TOKENIZER_STATE_NONE ) {
 				if ( target < syntaxState.currentSyntax->getPatterns().size() &&
 					 !syntaxState.currentSyntax->getPatterns()[target - 1].syntax.empty() ) {
@@ -97,9 +97,9 @@ SyntaxState retrieveSyntaxState( const SyntaxDefinition& syntax, const Uint64& s
 	return syntaxState;
 }
 
-std::pair<std::vector<SyntaxToken>, Uint64>
+std::pair<std::vector<SyntaxToken>, Uint32>
 SyntaxTokenizer::tokenize( const SyntaxDefinition& syntax, const std::string& text,
-						   const Uint64& state, const size_t& startIndex ) {
+						   const Uint32& state, const size_t& startIndex ) {
 	std::vector<SyntaxToken> tokens;
 	if ( syntax.getPatterns().empty() ) {
 		pushToken( tokens, "normal", text );
@@ -110,14 +110,14 @@ SyntaxTokenizer::tokenize( const SyntaxDefinition& syntax, const std::string& te
 	int retState = state;
 	SyntaxState curState = retrieveSyntaxState( syntax, state );
 
-	auto setSubsyntaxPatternIdx = [&curState, &retState]( const Uint64& patternIndex ) {
+	auto setSubsyntaxPatternIdx = [&curState, &retState]( const Uint32& patternIndex ) {
 		curState.currentPatternIdx = patternIndex;
 		retState &= ~( 0xFF << ( curState.currentLevel * 8 ) );
 		retState |= ( patternIndex << ( curState.currentLevel * 8 ) );
 	};
 
 	auto pushSubsyntax = [&setSubsyntaxPatternIdx, &curState](
-							 const SyntaxPattern& enteringSubsyntax, const Uint64& patternIndex ) {
+							 const SyntaxPattern& enteringSubsyntax, const Uint32& patternIndex ) {
 		setSubsyntaxPatternIdx( patternIndex );
 		curState.currentLevel++;
 		curState.subsyntaxInfo = &enteringSubsyntax;
