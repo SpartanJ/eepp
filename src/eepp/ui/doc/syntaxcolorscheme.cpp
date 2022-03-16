@@ -40,7 +40,8 @@ SyntaxColorScheme SyntaxColorScheme::getDefault() {
 				 { "string", Color( "#f7c95c" ) },
 				 { "operator", Color( "#93DDFA" ) },
 				 { "function", Color( "#93DDFA" ) },
-				 { "link", { Color( "#93DDFA" ), Color::Transparent, Text::Underlined } },
+				 { "link", { Color( "#93DDFA" ) } },
+				 { "link_hover", { Color( "#93DDFA" ), Color::Transparent, Text::Underlined } },
 			 },
 			 { { "background", Color( "#2e2e32" ) },
 			   { "text", Color( "#97979c" ) },
@@ -162,9 +163,13 @@ const SyntaxColorScheme::Style& SyntaxColorScheme::getSyntaxStyle( const std::st
 	auto it = mSyntaxColors.find( type );
 	if ( it != mSyntaxColors.end() )
 		return it->second;
-	else if ( type == "link" )
+	else if ( type == "link" || type == "link_hover" )
 		return getSyntaxStyle( "function" );
 	return StyleEmpty;
+}
+
+bool SyntaxColorScheme::hasSyntaxStyle( const std::string& type ) const {
+	return mSyntaxColors.find( type ) != mSyntaxColors.end();
 }
 
 void SyntaxColorScheme::setSyntaxStyles( const std::unordered_map<std::string, Style>& styles ) {

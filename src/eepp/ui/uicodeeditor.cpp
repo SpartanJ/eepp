@@ -753,7 +753,7 @@ Uint32 UICodeEditor::onKeyUp( const KeyEvent& event ) {
 		if ( module->onKeyUp( this, event ) )
 			return 1;
 	if ( mHandShown && !getUISceneNode()->getWindow()->getInput()->isControlPressed() )
-		getUISceneNode()->setCursor( Cursor::IBeam );
+		resetLinkOver();
 	return UIWidget::onKeyUp( event );
 }
 
@@ -866,7 +866,7 @@ Uint32 UICodeEditor::onMouseClick( const Vector2i& position, const Uint32& flags
 		String link( checkMouseOverLink( position ) );
 		if ( !link.empty() ) {
 			Engine::instance()->openURL( link.toUtf8() );
-			getUISceneNode()->setCursor( Cursor::IBeam );
+			resetLinkOver();
 		}
 	} else if ( ( flags & EE_BUTTON_LMASK ) &&
 				mLastDoubleClick.getElapsedTime() < Milliseconds( 300.f ) ) {
@@ -1905,11 +1905,85 @@ void UICodeEditor::drawLineText( const Int64& index, Vector2f position, const Fl
 			line.setStyleConfig( mFontStyleConfig );
 			if ( style.style )
 				line.setStyle( style.style );
+			line.setColor( Color( style.color ).blendAlpha( mAlpha ) );
+
+			if ( mHandShown && mLinkPosition.isValid() && mLinkPosition.inSameLine() &&
+				 mLinkPosition.start().line() == index ) {
+				if ( mLinkPosition.start().column() >= curChar &&
+					 mLinkPosition.end().column() <= curChar + curCharsWidth ) {
+					size_t linkPos = text.find( mLink );
+					if ( linkPos != String::InvalidPos ) {
+						String beforeString( text.substr( 0, linkPos ) );
+						String afterString( text.substr( linkPos + mLink.size() ) );
+
+						Float offset = 0.f;
+						Uint32 lineStyle = line.getStyle();
+
+						if ( !beforeString.empty() ) {
+							Float beforeWidth = getTextWidth( beforeString );
+							if ( style.background != Color::Transparent ) {
+								primitives.setColor(
+									Color( style.background ).blendAlpha( mAlpha ) );
+								primitives.drawRectangle(
+									Rectf( position, Sizef( beforeWidth, lineHeight ) ) );
+							}
+							line.setString( beforeString );
+							line.draw( position.x, position.y );
+							offset += beforeWidth;
+						}
+
+						SyntaxColorScheme::Style linkStyle = style;
+
+						if ( mColorScheme.hasSyntaxStyle( "link_hover" ) ) {
+							linkStyle = mColorScheme.getSyntaxStyle( "link_hover" );
+							if ( linkStyle.color != Color::Transparent )
+								line.setColor( Color( linkStyle.color ).blendAlpha( mAlpha ) );
+							line.setStyle( linkStyle.style );
+						} else {
+							line.setStyle( ( lineStyle & Text::Underlined )
+											   ? ( lineStyle | Text::Bold )
+											   : ( lineStyle | Text::Underlined ) );
+						}
+
+						Float linkWidth = getTextWidth( mLink );
+						if ( linkStyle.background != Color::Transparent ) {
+							primitives.setColor(
+								Color( linkStyle.background ).blendAlpha( mAlpha ) );
+							primitives.drawRectangle(
+								Rectf( Vector2f( position.x + offset, position.y ),
+									   Sizef( linkWidth, lineHeight ) ) );
+						}
+						line.setString( mLink );
+						line.draw( position.x + offset, position.y );
+						offset += linkWidth;
+
+						if ( !afterString.empty() ) {
+							Float afterWidth = getTextWidth( afterString );
+							if ( style.background != Color::Transparent ) {
+								primitives.setColor(
+									Color( style.background ).blendAlpha( mAlpha ) );
+								primitives.drawRectangle(
+									Rectf( Vector2f( position.x + offset, position.y ),
+										   Sizef( afterWidth, lineHeight ) ) );
+							}
+							line.setColor( Color( style.color ).blendAlpha( mAlpha ) );
+							line.setStyle( lineStyle );
+							line.setString( afterString );
+							line.draw( position.x + offset, position.y );
+						}
+
+						position.x += textWidth;
+						curChar += text.size();
+						continue;
+					}
+				}
+			}
+
 			if ( style.background != Color::Transparent ) {
 				primitives.setColor( Color( style.background ).blendAlpha( mAlpha ) );
 				primitives.drawRectangle( Rectf( position, Sizef( textWidth, lineHeight ) ) );
 			}
-			line.setColor( Color( style.color ).blendAlpha( mAlpha ) );
+
 			if ( curPositionChar + curChar + curCharsWidth > curMaxPositionChar ) {
 				if ( curChar < curPositionChar ) {
 					Int64 charsToVisible = curPositionChar - curChar;
@@ -2122,40 +2196,28 @@ void UICodeEditor::checkMouseOverColor( const Vector2i& position ) {
 }
 
 String UICodeEditor::checkMouseOverLink( const Vector2i& position ) {
-	if ( !mInteractiveLinks || !getUISceneNode()->getWindow()->getInput()->isControlPressed() ) {
-		getUISceneNode()->setCursor( Cursor::IBeam );
-		return "";
-	}
+	if ( !mInteractiveLinks || !getUISceneNode()->getWindow()->getInput()->isControlPressed() )
+		return resetLinkOver();
 
 	TextPosition pos( resolveScreenPosition( position.asFloat(), false ) );
-	if ( mDoc->getChar( pos ) == '\n' ) {
-		getUISceneNode()->setCursor( Cursor::IBeam );
-		return "";
-	}
+	if ( mDoc->getChar( pos ) == '\n' )
+		return resetLinkOver();
 
-	if ( pos.line() > (Int64)mDoc->linesCount() ) {
-		getUISceneNode()->setCursor( Cursor::IBeam );
-		return "";
-	}
+	if ( pos.line() > (Int64)mDoc->linesCount() )
+		return resetLinkOver();
 
 	const String& line = mDoc->line( pos.line() ).getText();
-	if ( pos.column() >= (Int64)line.size() - 1 ) {
-		getUISceneNode()->setCursor( Cursor::IBeam );
-		return "";
-	}
+	if ( pos.column() >= (Int64)line.size() - 1 )
+		return resetLinkOver();
 
 	TextPosition startB( mDoc->previousSpaceBoundaryInLine( pos ) );
 	TextPosition endB( mDoc->nextSpaceBoundaryInLine( pos ) );
 
-	if ( startB.column() >= (Int64)line.size() || endB.column() >= (Int64)line.size() ) {
-		getUISceneNode()->setCursor( Cursor::IBeam );
-		return "";
-	}
+	if ( startB.column() >= (Int64)line.size() || endB.column() >= (Int64)line.size() )
+		return resetLinkOver();
 
-	if ( pos.column() <= startB.column() || pos.column() >= endB.column() ) {
-		getUISceneNode()->setCursor( Cursor::IBeam );
-		return "";
-	}
+	if ( pos.column() <= startB.column() || pos.column() >= endB.column() )
+		return resetLinkOver();
 
 	String partialLine( line.substr( startB.column(), endB.column() ) );
 
@@ -2178,12 +2240,25 @@ String UICodeEditor::checkMouseOverLink( const Vector2i& position ) {
 				 pos.column() <= startB.column() + link.second ) {
 				getUISceneNode()->setCursor( Cursor::Hand );
 				mHandShown = true;
-				return String( linkStr.substr( link.first, link.second - link.first ) );
+				mLinkPosition = { { startB.line(), startB.column() + link.first },
+								  { startB.line(), startB.column() + link.second } };
+				mLink = String( linkStr.substr( link.first, link.second - link.first ) );
+				invalidateDraw();
+				return mLink;
 			}
 		}
 	}
 
+	return resetLinkOver();
+}
+
+String UICodeEditor::resetLinkOver() {
+	if ( mHandShown )
+		invalidateDraw();
+	mHandShown = false;
 	getUISceneNode()->setCursor( Cursor::IBeam );
+	mLinkPosition = TextRange();
+	mLink.clear();
 	return "";
 }
 

@@ -44,9 +44,9 @@ class EE_API SyntaxColorScheme {
 		Style( const Color& color ) : color( color ) {}
 		Style( const Color& color, const Color& background, const Uint32& style ) :
 			color( color ), background( background ), style( style ) {}
-		Color color{Color::White};
-		Color background{Color::Transparent};
-		Uint32 style{0};
+		Color color{ Color::White };
+		Color background{ Color::Transparent };
+		Uint32 style{ 0 };
 	};
 
 	SyntaxColorScheme();
@@ -56,6 +56,8 @@ class EE_API SyntaxColorScheme {
 					   const std::unordered_map<std::string, Style>& editorColors );
 
 	const Style& getSyntaxStyle( const std::string& type ) const;
+
+	bool hasSyntaxStyle( const std::string& type ) const;
 
 	void setSyntaxStyles( const std::unordered_map<std::string, Style>& styles );
 

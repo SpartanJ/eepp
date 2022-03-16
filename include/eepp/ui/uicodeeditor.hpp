@@ -428,6 +428,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mInteractiveLinks{ true };
 	bool mHandShown{ false };
 	bool mDisplayLoaderIfDocumentLoading{ true };
+	TextRange mLinkPosition;
+	String mLink;
 	Uint32 mTabWidth;
 	Vector2f mScroll;
 	Float mMouseWheelScroll;
@@ -590,6 +592,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void checkMouseOverColor( const Vector2i& position );
 
 	String checkMouseOverLink( const Vector2i& position );
+
+	String resetLinkOver();
 
 	void resetPreviewColor();
 

@@ -496,7 +496,7 @@ end
 
 function generate_os_links()
 	if os.is_real("linux") then
-		multiple_insert( os_links, { "rt", "pthread", "X11", "GL" } )
+		multiple_insert( os_links, { "rt", "pthread", "GL" } )
 
 		if not _OPTIONS["with-mojoal"] then
 			table.insert( os_links, "openal" )
@@ -512,7 +512,7 @@ function generate_os_links()
 	elseif os.is_real("macosx") then
 		multiple_insert( os_links, { "OpenGL.framework", "CoreFoundation.framework" } )
 	elseif os.is_real("freebsd") then
-		multiple_insert( os_links, { "rt", "pthread", "X11", "GL", "Xcursor" } )
+		multiple_insert( os_links, { "rt", "pthread", "GL" } )
 	elseif os.is_real("haiku") then
 		multiple_insert( os_links, { "GL", "network" } )
 	elseif os.is_real("ios") then
