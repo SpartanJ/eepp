@@ -20,14 +20,14 @@ class GlobalSearchController {
 
 	void updateGlobalSearchBarResults( const std::string& search,
 									   std::shared_ptr<ProjectSearch::ResultModel> model,
-									   bool searchReplace );
+									   bool searchReplace, bool isEscaped );
 
 	void initGlobalSearchTree( UITreeViewGlobalSearch* searchTree );
 
-	void doGlobalSearch( const String& text, bool caseSensitive, bool wholeWord, bool luaPattern,
-						 bool searchReplace, bool searchAgain = false );
+	void doGlobalSearch( String text, bool caseSensitive, bool wholeWord, bool luaPattern,
+						 bool escapeSequence, bool searchReplace, bool searchAgain = false );
 
-	size_t replaceInFiles( const String& replaceText,
+	size_t replaceInFiles( const std::string& replaceText,
 						   std::shared_ptr<ProjectSearch::ResultModel> model );
 
 	void showGlobalSearch( bool searchAndReplace = false );

@@ -46,47 +46,35 @@ searchInFileHorspool( const std::string& file, const std::string& text, const bo
 	Int64 searchRes = 0;
 	size_t totNl = 0;
 	FileSystem::fileGet( file, fileText );
+	std::string fileTextOriginal;
+
 	if ( !caseSensitive ) {
-		std::string fileTextOriginal( fileText );
+		fileTextOriginal = fileText;
 		String::toLowerInPlace( fileText );
-		do {
-			searchRes = String::BMH::find( fileText, text, searchRes, occ );
-			if ( searchRes != -1 ) {
-				if ( wholeWord && !String::isWholeWord( fileText, text, searchRes ) ) {
-					lSearchRes = searchRes;
-					searchRes += text.size();
-					continue;
-				}
-				size_t relCol;
-				totNl += countNewLines( fileText, lSearchRes, searchRes );
-				String str( textLine( fileTextOriginal, searchRes, relCol ) );
-				res.push_back( { str,
-								 { { (Int64)totNl, (Int64)relCol },
-								   { (Int64)totNl, (Int64)( relCol + text.size() ) } } } );
-				lSearchRes = searchRes;
-				searchRes += text.size();
-			}
-		} while ( searchRes != -1 );
-	} else {
-		do {
-			searchRes = String::BMH::find( fileText, text, searchRes, occ );
-			if ( searchRes != -1 ) {
-				if ( wholeWord && !String::isWholeWord( fileText, text, searchRes ) ) {
-					lSearchRes = searchRes;
-					searchRes += text.size();
-					continue;
-				}
-				size_t relCol;
-				totNl += countNewLines( fileText, lSearchRes, searchRes );
-				String str( textLine( fileText, searchRes, relCol ) );
-				res.push_back( { str,
-								 { { (Int64)totNl, (Int64)relCol },
-								   { (Int64)totNl, (Int64)( relCol + text.size() ) } } } );
-				lSearchRes = searchRes;
-				searchRes += text.size();
-			}
-		} while ( searchRes != -1 );
 	}
+
+	do {
+		searchRes = String::BMH::find( fileText, text, searchRes, occ );
+		if ( searchRes != -1 ) {
+			if ( wholeWord && !String::isWholeWord( fileText, text, searchRes ) ) {
+				lSearchRes = searchRes;
+				searchRes += text.size();
+				continue;
+			}
+			size_t relCol;
+			totNl += countNewLines( fileText, lSearchRes, searchRes );
+			String str(
+				textLine( caseSensitive ? fileText : fileTextOriginal, searchRes, relCol ) );
+			res.push_back( { str,
+							 { { (Int64)totNl, (Int64)relCol },
+							   { (Int64)totNl, (Int64)( relCol + text.size() ) } },
+							 searchRes,
+							 static_cast<Int64>( searchRes + text.size() ) } );
+			lSearchRes = searchRes;
+			searchRes += text.size();
+		}
+	} while ( searchRes != -1 );
+
 	return res;
 }
 
@@ -100,47 +88,34 @@ searchInFileLuaPattern( const std::string& file, const std::string& text, const 
 	size_t totNl = 0;
 	bool matched = false;
 	Int64 searchRes = 0;
+	std::string fileTextOriginal;
+
 	if ( !caseSensitive ) {
-		std::string fileTextOriginal( fileText );
+		fileTextOriginal = fileText;
 		String::toLowerInPlace( fileText );
-		do {
-			int start, end = 0;
-			if ( ( matched = pattern.find( fileText, start, end, searchRes ) ) ) {
-				if ( wholeWord && !String::isWholeWord(
-									  fileText, fileText.substr( start, end - start ), start ) ) {
-					searchRes = end;
-					continue;
-				}
-				size_t relCol;
-				totNl += countNewLines( fileText, searchRes, end );
-				String str( textLine( fileTextOriginal, start, relCol ) );
-				int len = end - start;
-				res.push_back( { str,
-								 { { (Int64)totNl, (Int64)relCol },
-								   { (Int64)totNl, (Int64)( relCol + len ) } } } );
-				searchRes = end;
-			}
-		} while ( matched );
-	} else {
-		do {
-			int start, end = 0;
-			if ( ( matched = pattern.find( fileText, start, end, searchRes ) ) ) {
-				if ( wholeWord && !String::isWholeWord(
-									  fileText, fileText.substr( start, end - start ), start ) ) {
-					searchRes = end;
-					continue;
-				}
-				size_t relCol;
-				totNl += countNewLines( fileText, searchRes, end );
-				String str( textLine( fileText, start, relCol ) );
-				int len = end - start;
-				res.push_back( { str,
-								 { { (Int64)totNl, (Int64)relCol },
-								   { (Int64)totNl, (Int64)( relCol + len ) } } } );
-				searchRes = end;
-			}
-		} while ( matched );
 	}
+
+	do {
+		int start, end = 0;
+		if ( ( matched = pattern.find( fileText, start, end, searchRes ) ) ) {
+			if ( wholeWord &&
+				 !String::isWholeWord( fileText, fileText.substr( start, end - start ), start ) ) {
+				searchRes = end;
+				continue;
+			}
+			size_t relCol;
+			totNl += countNewLines( fileText, searchRes, end );
+			String str( textLine( caseSensitive ? fileText : fileTextOriginal, start, relCol ) );
+			int len = end - start;
+			res.push_back(
+				{ str,
+				  { { (Int64)totNl, (Int64)relCol }, { (Int64)totNl, (Int64)( relCol + len ) } },
+				  start,
+				  end } );
+			searchRes = end;
+		}
+	} while ( matched );
+
 	return res;
 }
 

@@ -18,9 +18,12 @@ class ProjectSearch {
   public:
 	struct ResultData {
 		struct Result {
-			Result( const String& line, const TextRange& pos ) : line( line ), position( pos ) {}
+			Result( const String& line, const TextRange& pos, Int64 s, Int64 e ) :
+				line( line ), position( pos ), start( s ), end( e ) {}
 			String line;
 			TextRange position;
+			Int64 start;
+			Int64 end;
 			bool selected{ true };
 		};
 		std::string file;
