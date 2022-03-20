@@ -434,7 +434,9 @@ UIWidget* UIAbstractTableView::updateCell( const int& rowIndex, const ModelIndex
 
 		Variant txt( getModel()->data( index, ModelRole::Display ) );
 		if ( txt.isValid() ) {
-			if ( txt.is( Variant::Type::String ) )
+			if ( txt.is( Variant::Type::StdString ) )
+				cell->setText( txt.asStdString() );
+			else if ( txt.is( Variant::Type::String ) )
 				cell->setText( txt.asString() );
 			else if ( txt.is( Variant::Type::cstr ) )
 				cell->setText( txt.asCStr() );

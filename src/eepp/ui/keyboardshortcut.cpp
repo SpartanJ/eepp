@@ -5,15 +5,29 @@ using namespace EE::Window;
 
 namespace EE { namespace UI {
 
-std::map<std::string, Uint32> MOD_MAP = {
-	{"lshift", KEYMOD_SHIFT},	   {"rshift", KEYMOD_SHIFT},	{"left shift", KEYMOD_SHIFT},
-	{"right shift", KEYMOD_SHIFT}, {"shift", KEYMOD_SHIFT},		{"lctrl", KEYMOD_CTRL},
-	{"rctrl", KEYMOD_CTRL},		   {"left ctrl", KEYMOD_CTRL},	{"right ctrl", KEYMOD_CTRL},
-	{"ctrl", KEYMOD_CTRL},		   {"lalt", KEYMOD_ALT},		{"ralt", KEYMOD_RALT},
-	{"left alt", KEYMOD_LALT},	   {"right alt", KEYMOD_RALT},	{"altgr", KEYMOD_RALT},
-	{"alt", KEYMOD_LALT},		   {"lmeta", KEYMOD_META},		{"lmeta", KEYMOD_META},
-	{"left meta", KEYMOD_META},	   {"right meta", KEYMOD_META}, {"meta", KEYMOD_META},
-};
+std::map<std::string, Uint32> MOD_MAP = { { "lshift", KEYMOD_SHIFT },
+										  { "rshift", KEYMOD_SHIFT },
+										  { "left shift", KEYMOD_SHIFT },
+										  { "right shift", KEYMOD_SHIFT },
+										  { "shift", KEYMOD_SHIFT },
+										  { "lctrl", KEYMOD_CTRL },
+										  { "rctrl", KEYMOD_CTRL },
+										  { "left ctrl", KEYMOD_CTRL },
+										  { "right ctrl", KEYMOD_CTRL },
+										  { "ctrl", KEYMOD_CTRL },
+										  { "lalt", KEYMOD_ALT },
+										  { "ralt", KEYMOD_RALT },
+										  { "left alt", KEYMOD_LALT },
+										  { "right alt", KEYMOD_RALT },
+										  { "altgr", KEYMOD_RALT },
+										  { "alt", KEYMOD_LALT },
+										  { "lmeta", KEYMOD_META },
+										  { "lmeta", KEYMOD_META },
+										  { "left meta", KEYMOD_META },
+										  { "right meta", KEYMOD_META },
+										  { "meta", KEYMOD_META },
+										  { "mod", KEYMOD_DEFAULT_MODIFIER },
+										  { "modifier", KEYMOD_DEFAULT_MODIFIER } };
 
 Uint32 KeyBindings::getKeyMod( std::string key ) {
 	String::toLowerInPlace( key );
@@ -140,6 +154,15 @@ std::string KeyBindings::getShortcutString( KeyBindings::Shortcut shortcut ) {
 	if ( mods.empty() )
 		return keyname;
 	return String::join( mods, '+' ) + "+" + keyname;
+}
+
+Uint32 KeyBindings::getDefaultModifier() const {
+	return MOD_MAP["mod"];
+}
+
+void KeyBindings::setDefaultModifier( Uint32 newDefaultModifier ) {
+	MOD_MAP["mod"] = newDefaultModifier;
+	MOD_MAP["modifier"] = newDefaultModifier;
 }
 
 }} // namespace EE::UI

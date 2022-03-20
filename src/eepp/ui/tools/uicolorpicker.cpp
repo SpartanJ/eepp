@@ -17,7 +17,7 @@ namespace EE { namespace UI { namespace Tools {
 static CSS::StyleSheetParser sStyleSheetParser;
 static UISceneNode* sLastSceneNode = NULL;
 
-const char* COLOR_PICKER_STYLE = R"xml(
+const char* COLOR_PICKER_STYLE = R"css(
 #color_picker {
 	margin: 4dp;
 	window-min-size: 320dp 478dp;
@@ -79,7 +79,7 @@ const char* COLOR_PICKER_STYLE = R"xml(
 	padding-right: 8dp;
 	icon: ok;
 }
-)xml";
+)css";
 
 UIColorPicker* UIColorPicker::NewModal( Node* nodeCreator,
 										const UIColorPicker::ColorPickedCb& colorPickedCb,

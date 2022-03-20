@@ -24,6 +24,10 @@ class FormatterModule : public UICodeEditorModule {
 
 	void onUnregister( UICodeEditor* );
 
+	bool getAutoFormatOnSave() const;
+
+	void setAutoFormatOnSave( bool autoFormatOnSave );
+
   protected:
 	enum class FormatterType { Inplace, Output };
 
@@ -36,8 +40,9 @@ class FormatterModule : public UICodeEditorModule {
 	std::shared_ptr<ThreadPool> mPool;
 	std::vector<Formatter> mFormatters;
 	std::set<UICodeEditor*> mEditors;
-	bool mClosing{ false };
 
+	bool mAutoFormatOnSave{ false };
+	bool mClosing{ false };
 	bool mReady{ false };
 
 	void load( const std::string& formatterPath );

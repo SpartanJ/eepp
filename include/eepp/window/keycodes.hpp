@@ -1,6 +1,8 @@
 #ifndef EE_INPUT_KEYKODES_HPP
 #define EE_INPUT_KEYKODES_HPP
 
+#include <eepp/config.hpp>
+
 namespace EE { namespace Window {
 
 // This is a exact copy from the SDL_keycode and SDL_scancode.
@@ -684,6 +686,14 @@ enum KeyModTable {
 #define KEYMOD_ALT ( KEYMOD_LALT | KEYMOD_RALT )
 #define KEYMOD_META ( KEYMOD_LMETA | KEYMOD_RMETA )
 #define KEYMOD_CTRL_SHIFT_ALT_META ( KEYMOD_CTRL | KEYMOD_SHIFT | KEYMOD_ALT | KEYMOD_META )
+
+#if EE_PLATFORM == EE_PLATFORM_MACOSX
+#define KEYMOD_DEFAULT_MODIFIER KEYMOD_META
+#elif EE_PLATFORM == EE_PLATFORM_HAIKU
+#define KEYMOD_DEFAULT_MODIFIER KEYMOD_ALT
+#else
+#define KEYMOD_DEFAULT_MODIFIER KEYMOD_CTRL
+#endif
 
 /** @enum MouseButton Mouse buttons */
 enum MouseButton {

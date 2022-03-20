@@ -16,9 +16,12 @@ using namespace EE::UI::Tools;
 using namespace EE::System;
 using namespace EE::Window;
 
+enum class PanelPosition { Left, Right };
+
 struct UIConfig {
 	StyleSheetLength fontSize{ 12, StyleSheetLength::Dp };
 	bool showSidePanel{ true };
+	PanelPosition panelPosition{ PanelPosition::Left };
 	std::string serifFont;
 	std::string monospaceFont;
 };

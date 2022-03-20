@@ -15,8 +15,6 @@ Detect errors and log them.
 
 ## TextDocument
 
-* Add multi-line search and replace.
-
 * Add XML tags auto-close.
 
 ## ecode - Code Editor

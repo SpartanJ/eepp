@@ -27,7 +27,7 @@ class EE_API UISplitter : public UILayout {
 
 	void setSplitPartition( const StyleSheetLength& divisionSplit );
 
-	void swap();
+	void swap( bool swapSplitPartition = false );
 
 	bool isEmpty();
 

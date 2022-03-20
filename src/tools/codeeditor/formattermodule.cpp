@@ -38,12 +38,25 @@ void FormatterModule::onRegister( UICodeEditor* editor ) {
 		return;
 
 	doc.setCommand( "format-doc", [&, editor]() { formatDoc( editor ); } );
+
+	editor->addEventListener( Event::OnDocumentSave, [&]( const Event* event ) {
+		if ( mAutoFormatOnSave && event->getNode()->isType( UI_TYPE_CODEEDITOR ) )
+			formatDoc( event->getNode()->asType<UICodeEditor>() );
+	} );
 }
 
 void FormatterModule::onUnregister( UICodeEditor* editor ) {
 	if ( mClosing )
 		return;
 	mEditors.erase( editor );
+}
+
+bool FormatterModule::getAutoFormatOnSave() const {
+	return mAutoFormatOnSave;
+}
+
+void FormatterModule::setAutoFormatOnSave( bool autoFormatOnSave ) {
+	mAutoFormatOnSave = autoFormatOnSave;
 }
 
 void FormatterModule::load( const std::string& formatterPath ) {

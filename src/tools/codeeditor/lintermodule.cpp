@@ -234,7 +234,8 @@ void LinterModule::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 
 		std::map<Int64, std::vector<LinterMatch>> matches;
 
-		for ( auto& warningPatterm : linter.warningPattern ) {
+		for ( auto warningPatterm : linter.warningPattern ) {
+			String::replaceAll( warningPatterm, "$FILENAME", path );
 			LuaPattern pattern( warningPatterm );
 			for ( auto& match : pattern.gmatch( data ) ) {
 				LinterMatch linterMatch;

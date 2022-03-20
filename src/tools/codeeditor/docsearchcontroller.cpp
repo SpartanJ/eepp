@@ -103,13 +103,13 @@ void DocSearchController::initSearchBar( UISearchBar* searchBar ) {
 	mSearchBarLayout->getKeyBindings().addKeybindsString(
 		{ { mApp->getKeybind( "repeat-find" ), "repeat-find" },
 		  { mApp->getKeybind( "find-prev" ), "find-prev" },
-		  { "ctrl+g", "repeat-find" },
+		  { "mod+g", "repeat-find" },
 		  { "escape", "close-searchbar" },
-		  { "ctrl+r", "replace-all" },
-		  { "ctrl+s", "change-case" },
-		  { "ctrl+w", "change-whole-word" },
-		  { "ctrl+l", "toggle-lua-pattern" },
-		  { "ctrl+e", "change-escape-sequence" } } );
+		  { "mod+r", "replace-all" },
+		  { "mod+s", "change-case" },
+		  { "mod+w", "change-whole-word" },
+		  { "mod+l", "toggle-lua-pattern" },
+		  { "mod+e", "change-escape-sequence" } } );
 	addReturnListener( findInput, "repeat-find" );
 	addReturnListener( replaceInput, "find-and-replace" );
 	addClickListener( mSearchBarLayout->find<UIPushButton>( "find_prev" ), "find-prev" );

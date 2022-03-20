@@ -34,7 +34,9 @@ static String textLine( const std::string& fileText, const size_t& fromPos, size
 	}
 	end = ptr - stringStartPtr;
 	relCol = String( fileText.substr( start, startPtr - nlStartPtr ) ).size();
-	return fileText.substr( start, end - start );
+	// if the line to substract is massive we only get the fist kilobyte of that line, since the
+	// line is only shared for visual aid.
+	return fileText.substr( start, end - start > EE_1KB ? EE_1KB : end - start );
 }
 
 static std::vector<ProjectSearch::ResultData::Result>

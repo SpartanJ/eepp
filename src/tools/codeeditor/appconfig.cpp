@@ -6,6 +6,18 @@
 
 using namespace EE::Network;
 
+static PanelPosition panelPositionFromString( const std::string& str ) {
+	if ( String::toLower( str ) == "right" )
+		return PanelPosition::Right;
+	return PanelPosition::Left;
+}
+
+static std::string panelPositionToString( const PanelPosition& pos ) {
+	if ( pos == PanelPosition::Right )
+		return "right";
+	return "left";
+}
+
 static std::vector<std::string> urlEncode( const std::vector<std::string>& vec ) {
 	std::vector<std::string> encoded;
 	for ( const auto& item : vec )
@@ -55,6 +67,7 @@ void AppConfig::load( std::string& confPath, std::string& keybindingsPath,
 	editor.horizontalScrollbar = ini.getValueB( "editor", "horizontal_scrollbar", false );
 	ui.fontSize = ini.getValue( "ui", "font_size", "11dp" );
 	ui.showSidePanel = ini.getValueB( "ui", "show_side_panel", true );
+	ui.panelPosition = panelPositionFromString( ini.getValue( "ui", "panel_position", "left" ) );
 	ui.serifFont = ini.getValue( "ui", "serif_font", "assets/fonts/NotoSans-Regular.ttf" );
 	ui.monospaceFont = ini.getValue( "ui", "monospace_font", "assets/fonts/DejaVuSansMono.ttf" );
 	editor.trimTrailingWhitespaces = ini.getValueB( "editor", "trim_trailing_whitespaces", false );
@@ -119,6 +132,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValue( "editor", "font_size", editor.fontSize.toString() );
 	ini.setValue( "ui", "font_size", ui.fontSize.toString() );
 	ini.setValueB( "ui", "show_side_panel", ui.showSidePanel );
+	ini.setValue( "ui", "panel_position", panelPositionToString( ui.panelPosition ) );
 	ini.setValue( "ui", "serif_font", ui.serifFont );
 	ini.setValue( "ui", "monospace_font", ui.monospaceFont );
 	ini.setValueB( "editor", "trim_trailing_whitespaces", editor.trimTrailingWhitespaces );
@@ -179,7 +193,7 @@ void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* ed
 	do {
 		std::string val( ini.getValue( "files", String::format( "file_name_%lu", i ) ) );
 		found = !val.empty();
-		if ( found )
+		if ( found && FileSystem::fileExists( val ) )
 			editorSplitter->loadFileFromPathInNewTab( val );
 		i++;
 	} while ( found );

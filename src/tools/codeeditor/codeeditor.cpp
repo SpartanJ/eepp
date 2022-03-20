@@ -480,10 +480,24 @@ void App::showSidePanel( bool show ) {
 
 void App::switchSidePanel() {
 	mConfig.ui.showSidePanel = !mConfig.ui.showSidePanel;
-	mWindowMenu->getItem( "Show Left Sidebar" )
+	mWindowMenu->getItem( "Show Side Panel" )
 		->asType<UIMenuCheckBox>()
 		->setActive( mConfig.ui.showSidePanel );
 	showSidePanel( mConfig.ui.showSidePanel );
+}
+
+void App::panelPosition( const PanelPosition& panelPosition ) {
+	mConfig.ui.panelPosition = panelPosition;
+
+	if ( !mSidePanel->isVisible() )
+		return;
+
+	if ( ( panelPosition == PanelPosition::Right &&
+		   mProjectSplitter->getFirstWidget() == mSidePanel ) ||
+		 ( panelPosition == PanelPosition::Left &&
+		   mProjectSplitter->getFirstWidget() != mSidePanel ) ) {
+		mProjectSplitter->swap( true );
+	}
 }
 
 UIMenu* App::createWindowMenu() {
@@ -496,8 +510,12 @@ UIMenu* App::createWindowMenu() {
 	mWindowMenu->addSeparator();
 	mWindowMenu->addCheckBox( "Full Screen Mode", false, getKeybind( "fullscreen-toggle" ) )
 		->setId( "fullscreen-mode" );
-	mWindowMenu->addCheckBox( "Show Left Sidebar", mConfig.ui.showSidePanel,
+	mWindowMenu->addCheckBox( "Show Side Panel", mConfig.ui.showSidePanel,
 							  getKeybind( "switch-side-panel" ) );
+	mWindowMenu->add( "Move panel to left...", findIcon( "layout-left" ),
+					  getKeybind( "layout-left" ) );
+	mWindowMenu->add( "Move panel to right...", findIcon( "layout-right" ),
+					  getKeybind( "layout-rigth" ) );
 	mWindowMenu->addSeparator();
 	mWindowMenu->add( "Split Left", findIcon( "split-horizontal" ), getKeybind( "split-left" ) );
 	mWindowMenu->add( "Split Right", findIcon( "split-horizontal" ), getKeybind( "split-right" ) );
@@ -511,7 +529,7 @@ UIMenu* App::createWindowMenu() {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
-		if ( item->getText() == "Show Left Sidebar" ) {
+		if ( item->getText() == "Show Side Panel" ) {
 			mConfig.ui.showSidePanel = item->asType<UIMenuCheckBox>()->isActive();
 			showSidePanel( mConfig.ui.showSidePanel );
 		} else if ( item->getText() == "UI Scale Factor (Pixel Density)" ) {
@@ -596,6 +614,10 @@ UIMenu* App::createWindowMenu() {
 			mEditorSplitter->zoomReset();
 		} else if ( "Full Screen Mode" == item->getText() ) {
 			runCommand( "fullscreen-toggle" );
+		} else if ( "Move panel to left..." == item->getText() ) {
+			runCommand( "move-panel-left" );
+		} else if ( "Move panel to right..." == item->getText() ) {
+			runCommand( "move-panel-right" );
 		} else {
 			String text = String( event->getNode()->asType<UIMenuItem>()->getText() ).toLower();
 			String::replaceAll( text, " ", "-" );
@@ -1140,19 +1162,19 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 			 { { KEY_F3, KEYMOD_NONE }, "repeat-find" },
 			 { { KEY_F3, KEYMOD_SHIFT }, "find-prev" },
 			 { { KEY_F12, KEYMOD_NONE }, "console-toggle" },
-			 { { KEY_F, KEYMOD_CTRL }, "find-replace" },
-			 { { KEY_Q, KEYMOD_CTRL }, "close-app" },
-			 { { KEY_O, KEYMOD_CTRL }, "open-file" },
-			 { { KEY_W, KEYMOD_CTRL | KEYMOD_SHIFT }, "download-file-web" },
-			 { { KEY_O, KEYMOD_CTRL | KEYMOD_SHIFT }, "open-folder" },
+			 { { KEY_F, KEYMOD_DEFAULT_MODIFIER }, "find-replace" },
+			 { { KEY_Q, KEYMOD_DEFAULT_MODIFIER }, "close-app" },
+			 { { KEY_O, KEYMOD_DEFAULT_MODIFIER }, "open-file" },
+			 { { KEY_W, KEYMOD_DEFAULT_MODIFIER | KEYMOD_SHIFT }, "download-file-web" },
+			 { { KEY_O, KEYMOD_DEFAULT_MODIFIER | KEYMOD_SHIFT }, "open-folder" },
 			 { { KEY_F6, KEYMOD_NONE }, "debug-draw-highlight-toggle" },
 			 { { KEY_F7, KEYMOD_NONE }, "debug-draw-boxes-toggle" },
 			 { { KEY_F8, KEYMOD_NONE }, "debug-draw-debug-data" },
-			 { { KEY_K, KEYMOD_CTRL }, "open-locatebar" },
-			 { { KEY_F, KEYMOD_CTRL | KEYMOD_SHIFT }, "open-global-search" },
-			 { { KEY_L, KEYMOD_CTRL }, "go-to-line" },
-			 { { KEY_M, KEYMOD_CTRL }, "menu-toggle" },
-			 { { KEY_S, KEYMOD_CTRL | KEYMOD_SHIFT }, "save-all" },
+			 { { KEY_K, KEYMOD_DEFAULT_MODIFIER }, "open-locatebar" },
+			 { { KEY_F, KEYMOD_DEFAULT_MODIFIER | KEYMOD_SHIFT }, "open-global-search" },
+			 { { KEY_L, KEYMOD_DEFAULT_MODIFIER }, "go-to-line" },
+			 { { KEY_M, KEYMOD_DEFAULT_MODIFIER }, "menu-toggle" },
+			 { { KEY_S, KEYMOD_DEFAULT_MODIFIER | KEYMOD_SHIFT }, "save-all" },
 			 { { KEY_F9, KEYMOD_LALT }, "switch-side-panel" },
 			 { { KEY_F, KEYMOD_LALT }, "format-doc" } };
 }
@@ -1417,6 +1439,8 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 			msgBox->closeWindow();
 		} );
 	} );
+	doc.setCommand( "move-panel-left", [&] { panelPosition( PanelPosition::Left ); } );
+	doc.setCommand( "move-panel-right", [&] { panelPosition( PanelPosition::Right ); } );
 
 	editor->addEventListener( Event::OnDocumentSave, [&]( const Event* event ) {
 		UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
@@ -1807,8 +1831,12 @@ void App::createProjectTreeMenu( const FileInfo& file ) {
 	if ( file.isDirectory() ) {
 		mProjectTreeMenu->add( "New File...", findIcon( "file-add" ) )->setId( "new_file" );
 		mProjectTreeMenu->add( "New Folder...", findIcon( "folder-add" ) )->setId( "new_folder" );
+		mProjectTreeMenu->add( "Open Folder...", findIcon( "folder-open" ) )
+			->setId( "open_folder" );
 	} else {
 		mProjectTreeMenu->add( "Open File", findIcon( "document-open" ) )->setId( "open_file" );
+		mProjectTreeMenu->add( "Open Containing Folder...", findIcon( "folder-open" ) )
+			->setId( "open_containing_folder" );
 		mProjectTreeMenu->add( "New File in directory...", findIcon( "file-add" ) )
 			->setId( "new_file_in_place" );
 		mProjectTreeMenu->add( "Duplicate File...", findIcon( "file-copy" ) )
@@ -1882,6 +1910,10 @@ void App::createProjectTreeMenu( const FileInfo& file ) {
 			} );
 		} else if ( "rename" == txt ) {
 			renameFile( file );
+		} else if ( "open_containing_folder" == txt ) {
+			Engine::instance()->openURL( file.getDirectoryPath() );
+		} else if ( "open_folder" == txt ) {
+			Engine::instance()->openURL( file.getFilepath() );
 		}
 	} );
 
@@ -2135,7 +2167,7 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 
 		mUISceneNode->getRoot()->addClass( "appbackground" );
 
-		const std::string baseUI = R"xml(
+		const std::string baseUI = R"html(
 		<style>
 		TextInput#search_find,
 		TextInput#search_replace,
@@ -2314,6 +2346,7 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 								<Widget layout_width="0" layout_weight="1" layout_height="match_parent" />
 								<TextView layout_width="wrap_content" layout_height="wrap_content" text="History:" margin-right="4dp" layout_height="18dp" />
 								<DropDownList id="global_search_history" layout_width="300dp" layout_height="18dp" margin-right="4dp" />
+								<PushButton id="global_search_clear_history" layout_width="wrap_content" layout_height="18dp" text="Clear History" margin-right="4dp" />
 								<PushButton id="global_search" layout_width="wrap_content" layout_height="18dp" text="Search" margin-right="4dp" />
 								<PushButton id="global_search_replace" layout_width="wrap_content" layout_height="18dp" text="Search & Replace" />
 							</hbox>
@@ -2325,7 +2358,7 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		</Splitter>
 		<TextView id="settings" layout_width="wrap_content" layout_height="wrap_content" text="&#xf0e9;" layout_gravity="top|right" />
 		</RelativeLayout>
-		)xml";
+		)html";
 
 		UIIconTheme* iconTheme = UIIconTheme::New( "remixicon" );
 		mMenuIconSize = mConfig.ui.fontSize.asPixels( 0, Sizef(), mDisplayDPI );
@@ -2374,6 +2407,8 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 			{ "menu-unfold", 0xef40 },
 			{ "menu-fold", 0xef3d },
 			{ "download-cloud", 0xec58 },
+			{ "layout-left", 0xee94 },
+			{ "layout-right", 0xee9b },
 		};
 		for ( const auto& icon : icons )
 			iconTheme->add( UIGlyphIcon::New( icon.first, iconFont, icon.second ) );
@@ -2397,6 +2432,8 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		mDocInfo->setVisible( mConfig.editor.showDocInfo );
 
 		mProjectSplitter->setSplitPartition( StyleSheetLength( mConfig.window.panelPartition ) );
+		if ( mConfig.ui.panelPosition == PanelPosition::Right )
+			mProjectSplitter->swap();
 
 		if ( !mConfig.ui.showSidePanel )
 			showSidePanel( mConfig.ui.showSidePanel );

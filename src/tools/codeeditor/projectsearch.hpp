@@ -124,16 +124,13 @@ class ProjectSearch {
 				} else {
 					switch ( index.column() ) {
 						case FileOrPosition:
-							return Variant( String::format( "%6lld      %s",
-															mResult[index.internalId()]
-																	.results[index.row()]
-																	.position.start()
-																	.line() +
-																1,
-															mResult[index.internalId()]
-																.results[index.row()]
-																.line.toUtf8()
-																.c_str() ) );
+							return Variant(
+								String( String::format( "%6lld      ", mResult[index.internalId()]
+																			   .results[index.row()]
+																			   .position.start()
+																			   .line() +
+																		   1 ) ) +
+								mResult[index.internalId()].results[index.row()].line );
 					}
 				}
 			} else if ( role == ModelRole::Custom ) {

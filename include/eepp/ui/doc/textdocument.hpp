@@ -398,6 +398,10 @@ class EE_API TextDocument {
 
 	bool isLoading() const;
 
+	bool isDeleteOnClose() const;
+
+	void setDeleteOnClose( bool deleteOnClose );
+
   protected:
 	friend class UndoStack;
 	UndoStack mUndoStack;
@@ -416,6 +420,7 @@ class EE_API TextDocument {
 	bool mAutoCloseBrackets{ false };
 	bool mDirtyOnFileSystem{ false };
 	bool mSaving{ false };
+	bool mDeleteOnClose{ false };
 	std::vector<std::pair<String::StringBaseType, String::StringBaseType>> mAutoCloseBracketsPairs;
 	Uint32 mIndentWidth{ 4 };
 	IndentType mIndentType{ IndentType::IndentTabs };

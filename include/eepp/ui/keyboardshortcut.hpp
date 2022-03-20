@@ -24,9 +24,9 @@ class EE_API KeyBindings {
 		Shortcut() {}
 		Shortcut( Keycode key, Uint32 mod ) : key( key ), mod( mod ) {}
 		Shortcut( const Uint64& code ) :
-			key( ( Keycode )( code & 0xFFFFFFFF ) ), mod( ( code >> 32 ) & 0xFFFFFFFF ) {}
-		Keycode key{KEY_UNKNOWN};
-		Uint32 mod{0};
+			key( (Keycode)( code & 0xFFFFFFFF ) ), mod( ( code >> 32 ) & 0xFFFFFFFF ) {}
+		Keycode key{ KEY_UNKNOWN };
+		Uint32 mod{ 0 };
 		Uint64 toUint64() const { return (Uint64)mod << 32 | (Uint64)key; }
 		operator Uint64() const { return toUint64(); }
 		bool empty() const { return 0 == mod && 0 == key; }
@@ -65,6 +65,10 @@ class EE_API KeyBindings {
 	const ShortcutMap& getShortcutMap() const;
 
 	std::string getShortcutString( Shortcut shortcut );
+
+	Uint32 getDefaultModifier() const;
+
+	void setDefaultModifier( Uint32 newDefaultModifier );
 
   protected:
 	const Window::Input* mInput;

@@ -40,6 +40,8 @@ TextDocument::TextDocument( bool verbose ) :
 
 TextDocument::~TextDocument() {
 	notifyDocumentClosed();
+	if ( mDeleteOnClose )
+		FileSystem::fileRemove( mFilePath );
 }
 
 bool TextDocument::hasFilepath() {
@@ -322,6 +324,7 @@ bool TextDocument::loadFromURL( const std::string& url, const Http::Request::Fie
 		FileSystem::fileWrite( path, (const Uint8*)response.getBody().c_str(),
 							   response.getBody().size() );
 		loadFromFile( path );
+		setDeleteOnClose( true );
 		return true;
 	}
 
@@ -346,8 +349,11 @@ bool TextDocument::loadAsyncFromURL( const std::string& url,
 				std::string path( getTempPathFromURI( uri ) );
 				FileSystem::fileWrite( path, (const Uint8*)response.getBody().c_str(),
 									   response.getBody().size() );
-				if ( loadFromFile( path ) && onLoaded )
-					onLoaded( this, true );
+				if ( loadFromFile( path ) ) {
+					setDeleteOnClose( true );
+					if ( onLoaded )
+						onLoaded( this, true );
+				}
 			} else {
 				onLoaded( this, false );
 			}
@@ -470,6 +476,14 @@ void TextDocument::sanitizeCurrentSelection() {
 
 bool TextDocument::isLoading() const {
 	return mLoading;
+}
+
+bool TextDocument::isDeleteOnClose() const {
+	return mDeleteOnClose;
+}
+
+void TextDocument::setDeleteOnClose( bool deleteOnClose ) {
+	mDeleteOnClose = deleteOnClose;
 }
 
 std::string TextDocument::getFilename() const {

@@ -87,11 +87,14 @@ void UISplitter::setSplitPartition( const StyleSheetLength& divisionSplit ) {
 	}
 }
 
-void UISplitter::swap() {
+void UISplitter::swap( bool swapSplitPartition ) {
 	if ( isFull() ) {
 		UIWidget* tmp = mFirstWidget;
 		mFirstWidget = mLastWidget;
 		mLastWidget = tmp;
+		if ( swapSplitPartition )
+			mSplitPartition.setValue( 100.f - mSplitPartition.getValue(),
+									  StyleSheetLength::Percentage );
 		setLayoutDirty();
 	}
 }
@@ -183,14 +186,6 @@ void UISplitter::updateFromDrag() {
 	mDirtyLayout = true;
 	mSplitter->setVisible( !mAlwaysShowSplitter && !mLastWidget ? false : true );
 	mSplitter->setEnabled( mSplitter->isVisible() );
-	Float totalSpace = mOrientation == UIOrientation::Horizontal
-						   ? mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right
-						   : mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom;
-	if ( mSplitter->isVisible() ) {
-		totalSpace -= UIOrientation::Horizontal == mOrientation
-						  ? mSplitter->getPixelsSize().getWidth()
-						  : mSplitter->getPixelsSize().getHeight();
-	}
 
 	if ( UIOrientation::Horizontal == mOrientation ) {
 		Float fMinSize = mFirstWidget ? mFirstWidget->getCurrentMinSize().getWidth() : 0.f;

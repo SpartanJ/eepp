@@ -126,13 +126,16 @@ Float UITableView::getMaxColumnContentWidth( const size_t& colIndex, bool bestGu
 	};
 	if ( bestGuess ) {
 		Variant dataTest( getModel()->data( getModel()->index( 0, colIndex ) ) );
+		bool isStdString = dataTest.is( Variant::Type::StdString );
 		bool isString = dataTest.is( Variant::Type::String );
-		if ( isString || dataTest.is( Variant::Type::cstr ) ) {
+		if ( isStdString || isString || dataTest.is( Variant::Type::cstr ) ) {
 			std::map<size_t, ModelIndex> lengths;
 			for ( size_t i = 0; i < getItemCount(); i++ ) {
 				ModelIndex index( getModel()->index( i, colIndex ) );
 				Variant data( getModel()->data( index ) );
-				size_t length = isString ? data.asString().length() : strlen( data.asCStr() );
+				size_t length =
+					isStdString ? data.asStdString().length()
+								: ( isString ? data.asString().length() : strlen( data.asCStr() ) );
 				if ( lengths.empty() || length > lengths.rbegin()->first )
 					lengths[length] = index;
 			}
@@ -153,8 +156,10 @@ Float UITableView::getMaxColumnContentWidth( const size_t& colIndex, bool bestGu
 }
 
 void UITableView::createOrUpdateColumns() {
-	if ( !getModel() )
+	if ( !getModel() ) {
+		updateContentSize();
 		return;
+	}
 	UIAbstractTableView::createOrUpdateColumns();
 	updateContentSize();
 }

@@ -1,48 +1,48 @@
 [
   {
-    "file_patterns": ["%.php$"],
-    "warning_pattern": "[%a ]+:%s+(.*)%s+in%s.*on%sline%s+(%d+)",
-    "warning_pattern_order": { "line": 2, "col": 0, "message": 1 },
-    "command": "php -l $FILENAME"
+	"file_patterns": ["%.php$"],
+	"warning_pattern": "[%a ]+:%s+(.*)%s+in%s.*on%sline%s+(%d+)",
+	"warning_pattern_order": { "line": 2, "col": 0, "message": 1 },
+	"command": "php -l $FILENAME"
   },
   {
-    "file_patterns": ["%.js$", "%.ts$"],
-    "warning_pattern": "[^:]:(%d+):(%d+): ([^%[]+)%[([^\n]+)",
-    "warning_pattern_order": { "line": 1, "col": 2, "message": 3, "type": 4 },
-    "command": "eslint --no-ignore --format unix $FILENAME"
+	"file_patterns": ["%.js$", "%.ts$"],
+	"warning_pattern": "[^:]:(%d+):(%d+): ([^%[]+)%[([^\n]+)",
+	"warning_pattern_order": { "line": 1, "col": 2, "message": 3, "type": 4 },
+	"command": "eslint --no-ignore --format unix $FILENAME"
   },
   {
-    "file_patterns": ["%.lua$"],
-    "warning_pattern": "[^:]:(%d+):(%d+):[%s]?([^\n]+)",
-    "command": "luacheck $FILENAME --formatter=plain -g --no-max-line-length"
+	"file_patterns": ["%.lua$"],
+	"warning_pattern": "[^:]:(%d+):(%d+):[%s]?([^\n]+)",
+	"command": "luacheck $FILENAME --formatter=plain -g --no-max-line-length"
   },
   {
-    "file_patterns": ["%.py$"],
-    "warning_pattern": "[^:]:(%d+):(%d+):%s([^\n]+)",
-    "command": "pycodestyle --ignore=E402 $FILENAME"
+	"file_patterns": ["%.py$"],
+	"warning_pattern": "[^:]:(%d+):(%d+):%s([^\n]+)",
+	"command": "pycodestyle --ignore=E402 $FILENAME"
   },
   {
-    "file_patterns": ["%.sh$"],
-    "warning_pattern": "[^:]:(%d+):(%d+):%s?([^%s]*)([^\n]*)",
-    "warning_pattern_order": { "line": 1, "col": 2, "message": 4, "type": 3 },
-    "command": "shellcheck -f gcc $FILENAME"
+	"file_patterns": ["%.sh$"],
+	"warning_pattern": "[^:]:(%d+):(%d+):%s?([^%s]*)([^\n]*)",
+	"warning_pattern_order": { "line": 1, "col": 2, "message": 4, "type": 3 },
+	"command": "shellcheck -f gcc $FILENAME"
   },
   {
-    "file_patterns": ["%.sol$"],
-    "warning_pattern": "(%d+):(%d+)%s.(%w*)%s.([^\n]*)",
-    "warning_pattern_order": { "line": 1, "col": 2, "message": 4, "type": 3 },
-    "command": "solhint $FILENAME"
+	"file_patterns": ["%.sol$"],
+	"warning_pattern": "(%d+):(%d+)%s.(%w*)%s.([^\n]*)",
+	"warning_pattern_order": { "line": 1, "col": 2, "message": 4, "type": 3 },
+	"command": "solhint $FILENAME"
   },
   {
-    "file_patterns": ["%.cpp$", "%.hpp$", "%.cxx$", "%.hxx$"],
-    "warning_pattern": "[^:]:(%d+):(%d+):%s?([^%s]*)([^\n]*)",
-    "warning_pattern_order": { "line": 1, "col": 2, "message": 4, "type": 3 },
-    "command": "cppcheck --language=c++ --enable=all --template=gcc $FILENAME"
+	"file_patterns": ["%.cpp$", "%.hpp$", "%.cxx$", "%.hxx$"],
+	"warning_pattern": "$FILENAME:(%d+):(%d+):%s?([^%s]*)([^\n]*)",
+	"warning_pattern_order": { "line": 1, "col": 2, "message": 4, "type": 3 },
+	"command": "cppcheck --language=c++ --enable=all --template=gcc $FILENAME"
   },
   {
-    "file_patterns": ["%.kt$"],
-    "warning_pattern": "[^:]:(%d+):(%d+):%s([^\n]+)",
-    "warning_pattern_order": { "line": 1, "col": 2, "message": 3, "type": 4 },
-    "command": "ktlint $FILENAME"
+	"file_patterns": ["%.kt$"],
+	"warning_pattern": "[^:]:(%d+):(%d+):%s([^\n]+)",
+	"warning_pattern_order": { "line": 1, "col": 2, "message": 3, "type": 4 },
+	"command": "ktlint $FILENAME"
   }
 ]

@@ -36,6 +36,7 @@ class GlobalSearchController {
 
 	bool isUsingSearchReplaceTree();
 
+	void clearHistory();
   protected:
 	UICodeEditorSplitter* mEditorSplitter{ nullptr };
 	UISceneNode* mUISceneNode{ nullptr };

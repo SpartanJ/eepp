@@ -59,6 +59,8 @@ void GlobalSearchController::initGlobalSearchBar( UIGlobalSearchBar* globalSearc
 	UIPushButton* searchButton = mGlobalSearchBarLayout->find<UIPushButton>( "global_search" );
 	UIPushButton* searchReplaceButton =
 		mGlobalSearchBarLayout->find<UIPushButton>( "global_search_replace" );
+	UIPushButton* searchClearHistory =
+		mGlobalSearchBarLayout->find<UIPushButton>( "global_search_clear_history" );
 	UICheckBox* caseSensitiveChk = mGlobalSearchBarLayout->find<UICheckBox>( "case_sensitive" );
 	UICheckBox* wholeWordChk = mGlobalSearchBarLayout->find<UICheckBox>( "whole_word" );
 	UICheckBox* luaPatternChk = mGlobalSearchBarLayout->find<UICheckBox>( "lua_pattern" );
@@ -68,6 +70,7 @@ void GlobalSearchController::initGlobalSearchBar( UIGlobalSearchBar* globalSearc
 
 	mGlobalSearchHistoryList =
 		mGlobalSearchBarLayout->find<UIDropDownList>( "global_search_history" );
+	mGlobalSearchBarLayout->addCommand( "global-search-clear-history", [&] { clearHistory(); } );
 	mGlobalSearchBarLayout->addCommand(
 		"search-in-files", [&, caseSensitiveChk, wholeWordChk, luaPatternChk, escapeSequenceChk] {
 			doGlobalSearch( mGlobalSearchInput->getText(), caseSensitiveChk->isChecked(),
@@ -108,14 +111,15 @@ void GlobalSearchController::initGlobalSearchBar( UIGlobalSearchBar* globalSearc
 	} );
 	mGlobalSearchBarLayout->getKeyBindings().addKeybindsString( {
 		{ "escape", "close-global-searchbar" },
-		{ "ctrl+s", "change-case" },
-		{ "ctrl+w", "change-whole-word" },
-		{ "ctrl+l", "toggle-lua-pattern" },
-		{ "ctrl+r", "search-replace-in-files" },
-		{ "ctrl+g", "search-again" },
-		{ "ctrl+a", "expand-all" },
-		{ "ctrl+shift+e", "collapse-all" },
-		{ "ctrl+e", "change-escape-sequence" },
+		{ "mod+s", "change-case" },
+		{ "mod+w", "change-whole-word" },
+		{ "mod+l", "toggle-lua-pattern" },
+		{ "mod+r", "search-replace-in-files" },
+		{ "mod+g", "search-again" },
+		{ "mod+a", "expand-all" },
+		{ "mod+shift+e", "collapse-all" },
+		{ "mod+e", "change-escape-sequence" },
+		{ "mod+h", "global-search-clear-history" },
 	} );
 	mGlobalSearchBarLayout->addCommand( "change-case", [&, caseSensitiveChk] {
 		caseSensitiveChk->setChecked( !caseSensitiveChk->isChecked() );
@@ -153,6 +157,7 @@ void GlobalSearchController::initGlobalSearchBar( UIGlobalSearchBar* globalSearc
 	addClickListener( searchButton, "search-in-files" );
 	addClickListener( searchReplaceButton, "search-replace-in-files" );
 	addClickListener( searchBarClose, "close-global-searchbar" );
+	addClickListener( searchClearHistory, "global-search-clear-history" );
 	mGlobalSearchLayout = mUISceneNode
 							  ->loadLayoutFromString( R"xml(
 		<vbox id="global_search_layout" layout_width="wrap_content" layout_height="wrap_content" visible="false">
@@ -265,6 +270,19 @@ void GlobalSearchController::updateColorScheme( const SyntaxColorScheme& colorSc
 
 bool GlobalSearchController::isUsingSearchReplaceTree() {
 	return mGlobalSearchTreeReplace == mGlobalSearchTree;
+}
+
+void GlobalSearchController::clearHistory() {
+	auto listBox = mGlobalSearchHistoryList->getListBox();
+	listBox->clear();
+	mGlobalSearchHistory.clear();
+	mGlobalSearchHistoryOnItemSelectedCb = 0;
+	mGlobalSearchTree->setSearchStr( "" );
+	mGlobalSearchTree->setModel( nullptr );
+	mGlobalSearchInput->setText( "" );
+	mGlobalSearchLayout->findByClass( "status_box" )->setVisible( false );
+	mGlobalSearchLayout->findByClass<UITextView>( "search_str" )->setText( "" );
+	updateGlobalSearchBar();
 }
 
 void GlobalSearchController::updateGlobalSearchBar() {

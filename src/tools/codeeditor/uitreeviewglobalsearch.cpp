@@ -101,18 +101,21 @@ ProjectSearch::ResultData* UITreeViewCellGlobalSearch::getResultDataPtr() {
 	return nullptr;
 }
 
+#define CELL_GLOBAL_SEARCH_PADDING ( 12 )
+
 UITreeViewCellGlobalSearch::UITreeViewCellGlobalSearch( bool selectionEnabled ) :
 	UITreeViewCell( selectionEnabled ? getCheckBoxFn() : nullptr ) {}
 
 UIPushButton* UITreeViewCellGlobalSearch::setText( const String& text ) {
 	auto* result = getResultPtr();
 	if ( text != mTextBox->getText() ||
-		 ( result && std::make_pair<size_t, size_t>( result->position.start().column() + 12,
-													 result->position.end().column() + 12 ) !=
-						 mSearchStrPos ) ) {
+		 ( result &&
+		   std::make_pair<size_t, size_t>(
+			   result->position.start().column() + CELL_GLOBAL_SEARCH_PADDING,
+			   result->position.end().column() + CELL_GLOBAL_SEARCH_PADDING ) != mSearchStrPos ) ) {
 		mTextBox->setVisible( !text.empty() );
 		mTextBox->setText( text );
-		updateText( text + '\n' );
+		updateText( text + "\n" );
 		updateLayout();
 	}
 	return this;
@@ -122,7 +125,8 @@ UIPushButton* UITreeViewCellGlobalSearch::updateText( const std::string& text ) 
 	if ( getCurIndex().internalId() != -1 ) {
 		UITreeViewGlobalSearch* pp = getParent()->getParent()->asType<UITreeViewGlobalSearch>();
 
-		ProjectSearch::ResultData* res = (ProjectSearch::ResultData*)getCurIndex().parent().internalData();
+		ProjectSearch::ResultData* res =
+			(ProjectSearch::ResultData*)getCurIndex().parent().internalData();
 
 		auto styleDef = SyntaxDefinitionManager::instance()->getStyleByExtension( res->file );
 
@@ -134,8 +138,8 @@ UIPushButton* UITreeViewCellGlobalSearch::updateText( const std::string& text ) 
 		}
 
 		auto* result = getResultPtr();
-		mSearchStrPos = { result->position.start().column() + 12,
-						  result->position.end().column() + 12 };
+		mSearchStrPos = { result->position.start().column() + CELL_GLOBAL_SEARCH_PADDING,
+						  result->position.end().column() + CELL_GLOBAL_SEARCH_PADDING };
 
 		const String& txt = mTextBox->getText();
 
@@ -193,6 +197,8 @@ void UITreeViewCellGlobalSearch::draw() {
 				UICheckBox* chk = mTextBox->asType<UICheckBox>();
 				screenPos.x += chk->getRealAlignOffset().x;
 			}
+			if ( mSearchStrPos.second >= mTextBox->getText().length() )
+				return;
 			p.drawRectangle( Rectf(
 				{ screenPos.x + mTextBox->getPixelsPosition().x +
 					  getXOffsetCol( hspace, mTextBox->getTextCache()->getTabWidth(),

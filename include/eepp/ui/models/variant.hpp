@@ -19,6 +19,7 @@ class EE_API Variant {
 		Invalid,
 		DataPtr,
 		String,
+		StdString,
 		Bool,
 		Float,
 		Int,
@@ -32,8 +33,11 @@ class EE_API Variant {
 		cstr
 	};
 	Variant() : mType( Type::Invalid ) {}
-	explicit Variant( const std::string& string ) : mType( Type::String ) {
-		mValue.asString = eeNew( std::string, ( string ) );
+	explicit Variant( const std::string& string ) : mType( Type::StdString ) {
+		mValue.asStdString = eeNew( std::string, ( string ) );
+	}
+	explicit Variant( const String& string ) : mType( Type::String ) {
+		mValue.asString = eeNew( String, ( string ) );
 	}
 	Variant( Drawable* drawable, bool ownDrawable = false ) : mType( Type::Drawable ) {
 		mValue.asDrawable = drawable;
@@ -53,7 +57,8 @@ class EE_API Variant {
 	Variant( const Uint64& val ) : mType( Type::Uint64 ) { mValue.asUint64 = val; }
 	explicit Variant( const char* data ) : mType( Type::cstr ) { mValue.asCStr = data; }
 	~Variant() { reset(); }
-	const std::string& asString() const { return *mValue.asString; }
+	const std::string& asStdString() const { return *mValue.asStdString; }
+	const String& asString() const { return *mValue.asString; }
 	Drawable* asDrawable() const { return mValue.asDrawable; }
 	const bool& asBool() const { return mValue.asBool; }
 	const Float& asFloat() const { return mValue.asFloat; }
@@ -69,8 +74,11 @@ class EE_API Variant {
 	bool is( const Type& type ) const { return type == mType; }
 	void reset() {
 		switch ( mType ) {
+			case Type::StdString:
+				eeSAFE_DELETE( mValue.asStdString );
+				break;
 			case Type::String:
-				eeSAFE_DELETE( mValue.asString );
+				eeSAFE_DELETE( mValue.asStdString );
 				break;
 			case Type::Drawable:
 				if ( mOwnsObject )
@@ -103,6 +111,8 @@ class EE_API Variant {
 				return String::toString( asUint64() );
 			case Type::Float:
 				return String::toString( asFloat() );
+			case Type::StdString:
+				return asStdString();
 			case Type::String:
 				return asString();
 			case Type::Drawable:
@@ -142,6 +152,8 @@ class EE_API Variant {
 				return asUint64() < other.asUint64();
 			case Type::Float:
 				return asFloat() < other.asFloat();
+			case Type::StdString:
+				return asStdString() < other.asStdString();
 			case Type::String:
 				return asString() < other.asString();
 			case Type::Drawable:
@@ -178,6 +190,8 @@ class EE_API Variant {
 				return asUint64() == other.asUint64();
 			case Type::Float:
 				return asFloat() == other.asFloat();
+			case Type::StdString:
+				return asStdString() == other.asStdString();
 			case Type::String:
 				return asString() == other.asString();
 			case Type::Drawable:
@@ -203,7 +217,8 @@ class EE_API Variant {
 		void* asDataPtr;
 		Drawable* asDrawable;
 		UIIcon* asIcon;
-		std::string* asString;
+		std::string* asStdString;
+		String* asString;
 		bool asBool;
 		Float asFloat;
 		int asInt;
@@ -215,7 +230,7 @@ class EE_API Variant {
 		const char* asCStr;
 	} mValue;
 	Type mType;
-	bool mOwnsObject{false};
+	bool mOwnsObject{ false };
 };
 
 }}} // namespace EE::UI::Models

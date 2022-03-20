@@ -135,7 +135,7 @@ class EE_API UIFileDialog : public UIWindow {
 	UIDropDownList* mFiletype;
 	Uint32 mDialogFlags;
 	KeyBindings::Shortcut mCloseShortcut;
-	KeyBindings::Shortcut mOpenShortut{ KEY_RETURN, KEYMOD_CTRL };
+	KeyBindings::Shortcut mOpenShortut{ KEY_RETURN, KEYMOD_DEFAULT_MODIFIER };
 	std::shared_ptr<FileSystemModel> mModel;
 
 	virtual void onWindowReady();

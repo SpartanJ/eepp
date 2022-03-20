@@ -238,6 +238,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	void switchSidePanel();
 
+	void panelPosition( const PanelPosition& panelPosition );
+
 	void removeFolderWatches();
 
 	void createDocAlert( UICodeEditor* editor );
