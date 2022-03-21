@@ -73,6 +73,7 @@ void KeyBindings::addKeybindString( const std::string& keys, const std::string& 
 
 void KeyBindings::addKeybind( const KeyBindings::Shortcut& keys, const std::string& command ) {
 	mShortcuts[sanitizeShortcut( keys )] = command;
+	mKeybindingsInvert[command] = sanitizeShortcut( keys );
 }
 
 void KeyBindings::replaceKeybindString( const std::string& keys, const std::string& command ) {
@@ -86,10 +87,12 @@ void KeyBindings::replaceKeybind( const KeyBindings::Shortcut& keys, const std::
 		auto it = mShortcuts.find( sanitizeShortcut( keys ) );
 		if ( it != mShortcuts.end() ) {
 			mShortcuts.erase( it );
+			mKeybindingsInvert.erase( it->second );
 			erased = true;
 		}
 	} while ( erased );
 	mShortcuts[sanitizeShortcut( keys )] = command;
+	mKeybindingsInvert[command] = sanitizeShortcut( keys );
 }
 
 KeyBindings::Shortcut KeyBindings::getShortcutFromString( const std::string& keys ) {
@@ -130,6 +133,28 @@ std::string KeyBindings::getCommandFromKeyBind( const KeyBindings::Shortcut& key
 	return "";
 }
 
+static std::string keybindFormat( std::string str ) {
+	if ( !str.empty() ) {
+		str[0] = std::toupper( str[0] );
+		size_t found = str.find_first_of( '+' );
+		while ( found != std::string::npos ) {
+			if ( found + 1 < str.size() ) {
+				str[found + 1] = std::toupper( str[found + 1] );
+			}
+			found = str.find_first_of( '+', found + 1 );
+		}
+		return str;
+	}
+	return "";
+}
+
+std::string KeyBindings::getCommandKeybindString( const std::string& command ) const {
+	auto it = mKeybindingsInvert.find( command );
+	if ( it == mKeybindingsInvert.end() )
+		return "";
+	return keybindFormat( getShortcutString( Shortcut( it->second ) ) );
+}
+
 void KeyBindings::reset() {
 	mShortcuts.clear();
 }
@@ -138,7 +163,7 @@ const ShortcutMap& KeyBindings::getShortcutMap() const {
 	return mShortcuts;
 }
 
-std::string KeyBindings::getShortcutString( KeyBindings::Shortcut shortcut ) {
+std::string KeyBindings::getShortcutString( KeyBindings::Shortcut shortcut ) const {
 	std::vector<std::string> mods;
 	std::string keyname( String::toLower( mInput->getKeyName( shortcut.key ) ) );
 	if ( shortcut.mod & KEYMOD_CTRL )

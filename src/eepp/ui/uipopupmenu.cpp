@@ -17,7 +17,9 @@ UIPopUpMenu::UIPopUpMenu() : UIMenu() {
 	applyDefaultTheme();
 }
 
-UIPopUpMenu::~UIPopUpMenu() {}
+UIPopUpMenu::~UIPopUpMenu() {
+	onClose();
+}
 
 Uint32 UIPopUpMenu::getType() const {
 	return UI_TYPE_POPUPMENU;
@@ -65,11 +67,17 @@ bool UIPopUpMenu::hide() {
 				Actions::FadeOut::New(
 					getUISceneNode()->getUIThemeManager()->getWidgetsFadeOutTime() ),
 				Actions::Spawn::New( Actions::Disable::New(), Actions::Visible::New( false ),
-									 Actions::Runnable::New( [&] { mHidingAction = nullptr; } ) ) );
+									 Actions::Runnable::New( [&] {
+										 mHidingAction = nullptr;
+										 if ( mCloseOnHide )
+											 close();
+									 } ) ) );
 			runAction( mHidingAction );
 		} else {
 			setEnabled( false );
 			setVisible( false );
+			if ( mCloseOnHide )
+				close();
 		}
 		safeHide();
 		return true;
@@ -79,6 +87,14 @@ bool UIPopUpMenu::hide() {
 
 bool UIPopUpMenu::isHiding() const {
 	return mHidingAction != nullptr;
+}
+
+bool UIPopUpMenu::getCloseOnHide() const {
+	return mCloseOnHide;
+}
+
+void UIPopUpMenu::setCloseOnHide( bool closeOnHide ) {
+	mCloseOnHide = closeOnHide;
 }
 
 }} // namespace EE::UI

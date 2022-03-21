@@ -209,6 +209,10 @@ void TextDocument::guessIndentType() {
 		mIndentWidth = 4;
 }
 
+bool TextDocument::hasSyntaxDefinition() const {
+	return !mSyntaxDefinition.getPatterns().empty();
+}
+
 void TextDocument::resetSyntax() {
 	String header( getText( { { 0, 0 }, positionOffset( { 0, 0 }, 128 ) } ) );
 	mSyntaxDefinition = SyntaxDefinitionManager::instance()->find( mFilePath, header );

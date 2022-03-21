@@ -402,6 +402,8 @@ class EE_API TextDocument {
 
 	void setDeleteOnClose( bool deleteOnClose );
 
+	bool hasSyntaxDefinition() const;
+
   protected:
 	friend class UndoStack;
 	UndoStack mUndoStack;

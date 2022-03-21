@@ -3,9 +3,9 @@
 
 namespace EE { namespace Scene {
 
-MouseEvent::MouseEvent( Node* node, const Uint32& EventNum, const Vector2i& Pos,
+MouseEvent::MouseEvent( Node* node, const Uint32& EventNum, const Vector2i& pos,
 						const Uint32& flags ) :
-	Event( node, EventNum ), mPos( Pos ), mFlags( flags ) {}
+	Event( node, EventNum ), mPos( pos ), mFlags( flags ) {}
 
 MouseEvent::~MouseEvent() {}
 

@@ -60,11 +60,13 @@ class EE_API KeyBindings {
 
 	std::string getCommandFromKeyBind( const Shortcut& keys );
 
+	std::string getCommandKeybindString( const std::string& command ) const;
+
 	void reset();
 
 	const ShortcutMap& getShortcutMap() const;
 
-	std::string getShortcutString( Shortcut shortcut );
+	std::string getShortcutString( Shortcut shortcut ) const;
 
 	Uint32 getDefaultModifier() const;
 
@@ -73,6 +75,7 @@ class EE_API KeyBindings {
   protected:
 	const Window::Input* mInput;
 	ShortcutMap mShortcuts;
+	std::map<std::string, Uint64> mKeybindingsInvert;
 };
 
 }} // namespace EE::UI

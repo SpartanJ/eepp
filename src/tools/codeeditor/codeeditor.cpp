@@ -1346,6 +1346,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	editor->setEnableColorPickerOnSelection( config.colorPickerSelection );
 	editor->setColorPreview( config.colorPreview );
 	editor->setFont( mFontMono );
+	editor->setMenuIconSize( mMenuIconSize );
 	doc.setAutoCloseBrackets( !mConfig.editor.autoCloseBrackets.empty() );
 	doc.setAutoCloseBracketsPairs( makeAutoClosePairs( mConfig.editor.autoCloseBrackets ) );
 	doc.setAutoDetectIndentType( config.autoDetectIndentType );
@@ -1455,6 +1456,10 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 				ed->getKeyBindings().reset();
 				ed->getKeyBindings().addKeybindsString( mKeybindings );
 			} );
+		}
+		if ( !editor->getDocument().hasSyntaxDefinition() ) {
+			editor->getDocument().resetSyntax();
+			editor->setSyntaxDefinition( editor->getDocument().getSyntaxDefinition() );
 		}
 	} );
 

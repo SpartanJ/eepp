@@ -9,7 +9,9 @@
 #include <eepp/ui/tools/uicolorpicker.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uieventdispatcher.hpp>
+#include <eepp/ui/uiicon.hpp>
 #include <eepp/ui/uiloader.hpp>
+#include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uithememanager.hpp>
@@ -339,8 +341,7 @@ bool UICodeEditor::loadFromFile( const std::string& path ) {
 		updateLongestLineWidth();
 		mHighlighter.changeDoc( mDoc.get() );
 		invalidateDraw();
-		DocEvent event( this, mDoc.get(), Event::OnDocumentLoaded );
-		sendEvent( &event );
+		onDocumentLoaded();
 	}
 	return ret;
 }
@@ -352,8 +353,7 @@ bool UICodeEditor::loadFromURL( const std::string& url, const Http::Request::Fie
 		updateLongestLineWidth();
 		mHighlighter.changeDoc( mDoc.get() );
 		invalidateDraw();
-		DocEvent event( this, mDoc.get(), Event::OnDocumentLoaded );
-		sendEvent( &event );
+		onDocumentLoaded();
 	}
 	return ret;
 }
@@ -372,8 +372,7 @@ bool UICodeEditor::loadAsyncFromURL(
 				updateLongestLineWidth();
 				mHighlighter.changeDoc( mDoc.get() );
 				invalidateDraw();
-				DocEvent event( this, mDoc.get(), Event::OnDocumentLoaded );
-				sendEvent( &event );
+				onDocumentLoaded();
 				if ( !wasLocked )
 					setLocked( false );
 				if ( onLoaded )
@@ -429,6 +428,11 @@ void UICodeEditor::onFontChanged() {
 
 void UICodeEditor::onFontStyleChanged() {
 	udpateGlyphWidth();
+}
+
+void UICodeEditor::onDocumentLoaded() {
+	DocEvent event( this, mDoc.get(), Event::OnDocumentLoaded );
+	sendEvent( &event );
 }
 
 void UICodeEditor::onDocumentChanged() {
@@ -785,14 +789,86 @@ Sizef UICodeEditor::getMaxScroll() const {
 							getLineHeight() );
 }
 
+void UICodeEditor::menuAdd( UIPopUpMenu* menu, const std::string& translateKey,
+							const String& translateString, const std::string& icon,
+							const std::string& cmd ) {
+	menu->add( menu->getUISceneNode()->getTranslatorString( "uicodeeditor_" + translateKey,
+															translateString ),
+			   findIcon( icon ), mKeyBindings.getCommandKeybindString( cmd ) )
+		->setId( cmd );
+}
+
+void UICodeEditor::createDefaultContextMenuOptions( UIPopUpMenu* menu ) {
+	if ( !mCreateDefaultContextMenuOptions )
+		return;
+
+	menuAdd( menu, "undo", "Undo", "undo", "undo" );
+	menuAdd( menu, "redo", "Redo", "redo", "redo" );
+	menu->addSeparator();
+
+	menuAdd( menu, "cut", "Cut", "cut", "cut" );
+	menuAdd( menu, "copy", "Copy", "copy", "copy" );
+	menuAdd( menu, "cut", "Paste", "paste", "paste" );
+	menuAdd( menu, "delete", "Delete", "delete", "delete-to-next-char" );
+	menu->addSeparator();
+	menuAdd( menu, "select_all", "Select All", "select-all", "select-all" );
+
+	if ( mDoc->hasFilepath() ) {
+		menu->addSeparator();
+
+		menuAdd( menu, "open_containing_folder", "Open Containing Folder...", "folder-open",
+				 "open-containing-folder" );
+		menuAdd( menu, "copy_file_path", "Copy File Path", "copy", "copy-file-path" );
+	}
+}
+
+bool UICodeEditor::onCreateContextMenu( const Vector2i& position, const Uint32& flags ) {
+	if ( mCurrentMenu )
+		return false;
+
+	UIPopUpMenu* menu = UIPopUpMenu::New();
+
+	ContextMenuEvent event( this, menu, Event::OnCreateContextMenu, position, flags );
+	sendEvent( &event );
+
+	createDefaultContextMenuOptions( menu );
+
+	for ( auto& module : mModules )
+		if ( module->onCreateContextMenu( this, position, flags ) )
+			return false;
+
+	if ( menu->getCount() == 0 ) {
+		menu->close();
+		return false;
+	}
+
+	menu->setCloseOnHide( true );
+	menu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
+		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+			return;
+		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
+		std::string txt( item->getId() );
+		mDoc.get()->execute( txt );
+	} );
+
+	Vector2f pos( position.asFloat() );
+	menu->nodeToWorldTranslation( pos );
+	UIMenu::findBestMenuPos( pos, menu );
+	menu->setPixelsPosition( pos );
+	menu->show();
+	menu->addEventListener( Event::OnClose, [&]( const Event* ) { mCurrentMenu = nullptr; } );
+	mCurrentMenu = menu;
+	return true;
+}
+
 Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags ) {
 	for ( auto& module : mModules )
 		if ( module->onMouseDown( this, position, flags ) )
 			return UIWidget::onMouseDown( position, flags );
 
-	if ( isTextSelectionEnabled() && !getEventDispatcher()->isNodeDragging() && NULL != mFont &&
-		 !mMouseDown && getEventDispatcher()->getMouseDownNode() == this &&
-		 ( flags & EE_BUTTON_LMASK ) ) {
+	if ( ( flags & EE_BUTTON_LMASK ) && isTextSelectionEnabled() &&
+		 !getEventDispatcher()->isNodeDragging() && NULL != mFont && !mMouseDown &&
+		 getEventDispatcher()->getMouseDownNode() == this ) {
 		mMouseDown = true;
 		Input* input = getUISceneNode()->getWindow()->getInput();
 		input->captureMouse( true );
@@ -852,6 +928,8 @@ Uint32 UICodeEditor::onMouseUp( const Vector2i& position, const Uint32& flags ) 
 			setScrollY( mScroll.y - PixelDensity::dpToPx( mMouseWheelScroll ) );
 		}
 		invalidateDraw();
+	} else if ( ( flags & EE_BUTTON_RMASK ) ) {
+		onCreateContextMenu( position, flags );
 	}
 	return UIWidget::onMouseUp( position, flags );
 }
@@ -1069,6 +1147,30 @@ void UICodeEditor::setDisplayLoaderIfDocumentLoading( bool newDisplayLoaderIfDoc
 		mLoader->close();
 		mLoader = nullptr;
 	}
+}
+
+size_t UICodeEditor::getMenuIconSize() const {
+	return mMenuIconSize;
+}
+
+void UICodeEditor::setMenuIconSize( size_t menuIconSize ) {
+	mMenuIconSize = menuIconSize;
+}
+
+bool UICodeEditor::getCreateDefaultContextMenuOptions() const {
+	return mCreateDefaultContextMenuOptions;
+}
+
+void UICodeEditor::setCreateDefaultContextMenuOptions( bool createDefaultContextMenuOptions ) {
+	mCreateDefaultContextMenuOptions = createDefaultContextMenuOptions;
+}
+
+void UICodeEditor::openContainingFolder() {
+	Engine::instance()->openURL( mDoc->getFileInfo().getDirectoryPath() );
+}
+
+void UICodeEditor::copyFilePath() {
+	getUISceneNode()->getWindow()->getClipboard()->setText( mDoc->getFilePath() );
 }
 
 void UICodeEditor::updateEditor() {
@@ -1646,6 +1748,13 @@ void UICodeEditor::udpateGlyphWidth() {
 	mGlyphWidth = mFont->getGlyph( ' ', getCharacterSize(), false ).advance;
 }
 
+Drawable* UICodeEditor::findIcon( const std::string& name ) {
+	UIIcon* icon = getUISceneNode()->findIcon( name );
+	if ( icon )
+		return icon->getSize( mMenuIconSize );
+	return nullptr;
+}
+
 const bool& UICodeEditor::getColorPreview() const {
 	return mColorPreview;
 }
@@ -2137,6 +2246,8 @@ void UICodeEditor::registerCommands() {
 	mDoc->setCommand( "lock", [&] { setLocked( true ); } );
 	mDoc->setCommand( "unlock", [&] { setLocked( false ); } );
 	mDoc->setCommand( "lock-toggle", [&] { setLocked( !isLocked() ); } );
+	mDoc->setCommand( "open-containing-folder", [&] { openContainingFolder(); } );
+	mDoc->setCommand( "copy-file-path", [&] { copyFilePath(); } );
 	mUnlockedCmd.insert( { "copy", "select-all" } );
 }
 

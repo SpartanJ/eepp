@@ -21,6 +21,7 @@ class UICodeEditor;
 class UIWindow;
 class UIScrollBar;
 class UILoader;
+class UIPopUpMenu;
 
 class UICodeEditorModule {
   public:
@@ -52,7 +53,9 @@ class UICodeEditorModule {
 	}
 	virtual bool onMouseOver( UICodeEditor*, const Vector2i&, const Uint32& ) { return false; }
 	virtual bool onMouseLeave( UICodeEditor*, const Vector2i&, const Uint32& ) { return false; }
-
+	virtual bool onCreateContextMenu( UICodeEditor*, const Vector2i&, const Uint32& ) {
+		return false;
+	}
 	virtual void drawBeforeLineText( UICodeEditor*, const Int64&, Vector2f, const Float&,
 									 const Float& ){};
 	virtual void drawAfterLineText( UICodeEditor*, const Int64&, Vector2f, const Float&,
@@ -402,6 +405,18 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void setDisplayLoaderIfDocumentLoading( bool newDisplayLoaderIfDocumentLoading );
 
+	size_t getMenuIconSize() const;
+
+	void setMenuIconSize( size_t menuIconSize );
+
+	bool getCreateDefaultContextMenuOptions() const;
+
+	void setCreateDefaultContextMenuOptions( bool createDefaultContextMenuOptions );
+
+	void openContainingFolder();
+
+	void copyFilePath();
+
   protected:
 	struct LastXOffset {
 		TextPosition position;
@@ -428,6 +443,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mInteractiveLinks{ true };
 	bool mHandShown{ false };
 	bool mDisplayLoaderIfDocumentLoading{ true };
+	bool mCreateDefaultContextMenuOptions{ true };
 	TextRange mLinkPosition;
 	String mLink;
 	Uint32 mTabWidth;
@@ -465,6 +481,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	std::vector<UICodeEditorModule*> mModules;
 	UILoader* mLoader{ nullptr };
 	Float mGlyphWidth{ 0 };
+	size_t mMenuIconSize{ 16 };
+	UIPopUpMenu* mCurrentMenu{ nullptr };
 
 	UICodeEditor( const std::string& elementTag, const bool& autoRegisterBaseCommands = true,
 				  const bool& autoRegisterBaseKeybindings = true );
@@ -490,6 +508,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	virtual Uint32 onKeyDown( const KeyEvent& event );
 
 	virtual Uint32 onKeyUp( const KeyEvent& event );
+
+	virtual bool onCreateContextMenu( const Vector2i& position, const Uint32& flags );
 
 	virtual Uint32 onMouseDown( const Vector2i& position, const Uint32& flags );
 
@@ -585,6 +605,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	virtual void onFontStyleChanged();
 
+	virtual void onDocumentLoaded();
+
 	virtual void onDocumentChanged();
 
 	virtual Uint32 onMessage( const NodeMessage* msg );
@@ -602,6 +624,13 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Float getViewportWidth( const bool& forceVScroll = false ) const;
 
 	void udpateGlyphWidth();
+
+	Drawable* findIcon( const std::string& name );
+
+	void createDefaultContextMenuOptions( UIPopUpMenu* menu );
+
+	void menuAdd( UIPopUpMenu* menu, const std::string& translateKey, const String& translateString,
+				  const std::string& icon, const std::string& cmd );
 };
 
 }} // namespace EE::UI

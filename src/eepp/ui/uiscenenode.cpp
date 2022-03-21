@@ -663,7 +663,7 @@ void UISceneNode::updateDirtyStyleStates() {
 
 		if ( mVerbose )
 			Log::debug( "CSS Style State Invalidated, reapplied state in %.2f ms",
-					  clock.getElapsedTime().asMilliseconds() );
+						clock.getElapsedTime().asMilliseconds() );
 	}
 }
 
@@ -795,7 +795,7 @@ void UISceneNode::setInternalPixelsSize( const Sizef& size ) {
 }
 
 Uint32 UISceneNode::onKeyDown( const KeyEvent& event ) {
-	std::string cmd = mKeyBindings.getCommandFromKeyBind( {event.getKeyCode(), event.getMod()} );
+	std::string cmd = mKeyBindings.getCommandFromKeyBind( { event.getKeyCode(), event.getMod() } );
 	if ( !cmd.empty() ) {
 		executeKeyBindingCommand( cmd );
 		return 0;

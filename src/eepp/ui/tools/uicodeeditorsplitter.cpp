@@ -231,6 +231,14 @@ UICodeEditor* UICodeEditorSplitter::createCodeEditor() {
 		if ( UISplitter* splitter = splitterFromEditor( mCurEditor ) )
 			splitter->swap();
 	} );
+	doc.setCommand( "open-containing-folder", [&] {
+		if ( mCurEditor )
+			mCurEditor->openContainingFolder();
+	} );
+	doc.setCommand( "copy-file-path", [&] {
+		if ( mCurEditor )
+			mCurEditor->copyFilePath();
+	} );
 	editor->addEventListener( Event::OnFocus, [&]( const Event* event ) {
 		setCurrentEditor( event->getNode()->asType<UICodeEditor>() );
 	} );

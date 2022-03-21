@@ -25,8 +25,25 @@ class EE_API UIPopUpMenu : public UIMenu {
 
 	bool isHiding() const;
 
+	bool getCloseOnHide() const;
+
+	void setCloseOnHide( bool closeOnHide );
+
   protected:
-	Action* mHidingAction{nullptr};
+	Action* mHidingAction{ nullptr };
+	bool mCloseOnHide{ false };
+};
+
+class EE_API ContextMenuEvent : public MouseEvent {
+  public:
+	ContextMenuEvent( Node* node, UIPopUpMenu* menu, const Uint32& eventType, const Vector2i& pos,
+					  const Uint32& flags ) :
+		MouseEvent( node, eventType, pos, flags ), menu( menu ) {}
+
+	UIPopUpMenu* getMenu() const { return menu; }
+
+  protected:
+	UIPopUpMenu* menu;
 };
 
 }} // namespace EE::UI

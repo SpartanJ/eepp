@@ -18,6 +18,7 @@
 
 #include <eepp/system/iostream.hpp>
 #include <map>
+#include <unordered_map>
 #include <vector>
 
 #define MAX_KEYNAME 128
@@ -214,6 +215,11 @@ class EE_API IniFile {
 	std::map<std::string, std::string> getKeyMap( const unsigned& keyID ) const;
 
 	std::map<std::string, std::string> getKeyMap( const std::string& keyname ) const;
+
+	std::unordered_map<std::string, std::string> getKeyUnorderedMap( const unsigned& keyID ) const;
+
+	std::unordered_map<std::string, std::string>
+	getKeyUnorderedMap( const std::string& keyname ) const;
 
 	/** Key comment functions.
 	** Key comments are those comments within a key. Any comments
