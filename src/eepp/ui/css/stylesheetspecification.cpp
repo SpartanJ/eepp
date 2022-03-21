@@ -523,6 +523,10 @@ void StyleSheetSpecification::registerDefaultNodeSelectors() {
 						if ( node->getId() == param.substr( 1 ) ) {
 							return false;
 						}
+					} else if ( param[0] == ':' ) {
+						if ( node->hasPseudoClass( param.substr( 1 ) ) ) {
+							return false;
+						}
 					} else {
 						if ( node->getElementTag() == String::toLower( param ) ) {
 							return false;

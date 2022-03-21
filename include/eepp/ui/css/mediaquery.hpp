@@ -59,6 +59,12 @@ enum MediaFeature {
 	media_feature_resolution,
 	media_feature_min_resolution,
 	media_feature_max_resolution,
+
+	media_feature_pixel_density,
+	media_feature_min_pixel_density,
+	media_feature_max_pixel_density,
+
+	media_feature_prefers_color_scheme,
 };
 
 enum MediaType {
@@ -96,16 +102,21 @@ struct MediaFeatures {
 					// device does not use a color lookup table, the value is zero.
 	int monochrome; // The number of bits per pixel in a monochrome frame buffer. If the device is
 					// not a monochrome device, the output device value will be 0.
-	int resolution; // The resolution of the output device (in DPI)
+	int resolution;		// The resolution of the output device (in DPI)
+	float pixelDensity; // Screen pixel density
+	std::string prefersColorScheme{ "dark" }; // Color Scheme Default Preference
 };
 
 struct EE_API MediaQueryExpression {
 	typedef std::vector<MediaQueryExpression> vector;
 
 	MediaFeature feature;
-	int val;
-	int val2;
-	bool checkAsBool;
+	int val{ 0 };
+	int val2{ 0 };
+	float fval{ 0 };
+	float fval2{ 0 };
+	bool checkAsBool{ false };
+	std::string valStr;
 
 	MediaQueryExpression();
 

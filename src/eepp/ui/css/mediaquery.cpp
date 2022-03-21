@@ -16,7 +16,7 @@ namespace EE { namespace UI { namespace CSS {
 	"aspect-ratio;min-aspect-ratio;max-aspect-ratio;device-aspect-ratio;min-device-aspect-"    \
 	"ratio;max-device-aspect-ratio;color;min-color;max-color;color-index;min-color-index;max-" \
 	"color-index;monochrome;min-monochrome;max-monochrome;resolution;min-resolution;max-"      \
-	"resolution"
+	"resolution;pixel-density;min-pixel-density;max-pixel-density;prefers-color-scheme"
 
 #define MediaTypeStrings "none;all;screen;print;braille;embossed;handheld;projection;speech;tty;tv"
 
@@ -77,15 +77,23 @@ MediaQuery::ptr MediaQuery::parse( const std::string& str ) {
 								String::trimInPlace( val2 );
 
 								int intVal1, intVal2;
+								float fVal1, fVal2;
 
 								if ( String::fromString( intVal1, val1 ) &&
 									 String::fromString( intVal2, val2 ) ) {
 									expr.val = intVal1;
 									expr.val2 = intVal2;
 								}
+
+								if ( String::fromString( fVal1, val1 ) &&
+									 String::fromString( fVal2, val2 ) ) {
+									expr.fval = fVal1;
+									expr.fval2 = fVal2;
+								}
 							} else {
 								StyleSheetLength length =
 									StyleSheetLength::fromString( exprTokens[1] );
+								expr.valStr = String::trim( String::toLower( exprTokens[1] ) );
 
 								if ( length.getUnit() == StyleSheetLength::Unit::Dpcm ||
 									 length.getUnit() == StyleSheetLength::Unit::Dpi ) {
@@ -93,6 +101,8 @@ MediaQuery::ptr MediaQuery::parse( const std::string& str ) {
 								} else {
 									expr.val = (int)length.asPixels( 0, Sizef::Zero, dpi );
 								}
+
+								expr.fval = length.getValue();
 							}
 						}
 					}
@@ -381,6 +391,22 @@ bool MediaQueryExpression::check( const MediaFeatures& features ) const {
 			if ( features.resolution <= val ) {
 				return true;
 			}
+			break;
+		case media_feature_pixel_density:
+			if ( features.pixelDensity == val )
+				return true;
+			break;
+		case media_feature_min_pixel_density:
+			if ( features.pixelDensity >= fval )
+				return true;
+			break;
+		case media_feature_max_pixel_density:
+			if ( features.pixelDensity <= fval )
+				return true;
+			break;
+		case media_feature_prefers_color_scheme:
+			if ( features.prefersColorScheme == valStr )
+				return true;
 			break;
 		default:
 			return false;

@@ -22,6 +22,8 @@ class UIWidget;
 class UILayout;
 class UIIcon;
 
+enum class ColorSchemePreference { Light, Dark };
+
 class EE_API UISceneNode : public SceneNode {
   public:
 	static UISceneNode* New( EE::Window::Window* window = NULL );
@@ -133,6 +135,10 @@ class EE_API UISceneNode : public SceneNode {
 
 	UIEventDispatcher* getUIEventDispatcher() const;
 
+	ColorSchemePreference getColorSchemePreference() const;
+
+	void setColorSchemePreference( const ColorSchemePreference& colorSchemePreference );
+
   protected:
 	friend class EE::UI::UIWindow;
 	friend class EE::UI::UIWidget;
@@ -155,6 +161,7 @@ class EE_API UISceneNode : public SceneNode {
 	std::unordered_map<UIWidget*, bool> mDirtyStyleStateCSSAnimations;
 	std::unordered_set<UILayout*> mDirtyLayouts;
 	std::vector<std::pair<Float, std::string>> mTimes;
+	ColorSchemePreference mColorSchemePreference{ ColorSchemePreference::Dark };
 
 	virtual void resizeNode( EE::Window::Window* win );
 

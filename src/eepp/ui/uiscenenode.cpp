@@ -698,6 +698,9 @@ bool UISceneNode::onMediaChanged() {
 		media.monochrome = 0;
 		media.colorIndex = 256;
 		media.resolution = static_cast<int>( getDPI() );
+		media.pixelDensity = PixelDensity::getPixelDensity();
+		media.prefersColorScheme =
+			mColorSchemePreference == ColorSchemePreference::Dark ? "dark" : "light";
 
 		if ( mStyleSheet.updateMediaLists( media ) ) {
 			mRoot->reportStyleStateChangeRecursive();
@@ -852,6 +855,17 @@ void UISceneNode::executeKeyBindingCommand( const std::string& command ) {
 
 UIEventDispatcher* UISceneNode::getUIEventDispatcher() const {
 	return static_cast<UIEventDispatcher*>( mEventDispatcher );
+}
+
+ColorSchemePreference UISceneNode::getColorSchemePreference() const {
+	return mColorSchemePreference;
+}
+
+void UISceneNode::setColorSchemePreference( const ColorSchemePreference& colorSchemePreference ) {
+	if ( mColorSchemePreference != colorSchemePreference ) {
+		mColorSchemePreference = colorSchemePreference;
+		onMediaChanged();
+	}
 }
 
 }} // namespace EE::UI

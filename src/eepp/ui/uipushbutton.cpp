@@ -28,7 +28,7 @@ UIPushButton::UIPushButton( const std::string& tag,
 	UIWidget( tag ), mIcon( NULL ), mTextBox( NULL ) {
 	mFlags |= ( UI_AUTO_SIZE | UI_VALIGN_CENTER | UI_HALIGN_CENTER );
 
-	mIcon = UIImage::NewWithTag( "pushbutton::icon" );
+	mIcon = UIImage::NewWithTag( tag + "::icon" );
 	mIcon->setScaleType( UIScaleType::FitInside )
 		->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed )
 		->setFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER )
@@ -43,7 +43,7 @@ UIPushButton::UIPushButton( const std::string& tag,
 	mIcon->addEventListener( Event::OnSizeChange, cb );
 	mIcon->addEventListener( Event::OnVisibleChange, cb );
 
-	mTextBox = newTextViewCb ? newTextViewCb() : UITextView::NewWithTag( "pushbutton::text" );
+	mTextBox = newTextViewCb ? newTextViewCb() : UITextView::NewWithTag( tag + "::text" );
 	mTextBox->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent )
 		->setFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER )
 		->setParent( this )

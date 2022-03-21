@@ -2145,7 +2145,16 @@ The following at-rules are currently supported:
   [color](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/color),
   [color-index](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/color-index),
   [monochrome](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/monochrome),
-  [resolution](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/resolution).
+  [resolution](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/resolution),
+  [prefers-color-scheme](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-color-scheme).
+  Note: eepp prefers dark as default.
+
+  non-standard media features:
+  *pixel-density*:
+  The `pixel-density` feature is specified as a `float` value representing the current pixel density
+  used by the application. It is a range feature, meaning that you can also use the prefixed
+  min-pixel-density and max-pixel-density variants to query minimum and maximum values, respectively.
+
   Also, eepp only uses `screen` media type.
 
 * [@font-face](https://developer.mozilla.org/en-US/docs/Web/CSS/@font-face) —

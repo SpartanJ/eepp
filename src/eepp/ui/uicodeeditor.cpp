@@ -809,7 +809,7 @@ void UICodeEditor::createDefaultContextMenuOptions( UIPopUpMenu* menu ) {
 	menuAdd( menu, "cut", "Cut", "cut", "cut" );
 	menuAdd( menu, "copy", "Copy", "copy", "copy" );
 	menuAdd( menu, "cut", "Paste", "paste", "paste" );
-	menuAdd( menu, "delete", "Delete", "delete", "delete-to-next-char" );
+	menuAdd( menu, "delete", "Delete", "delete-text", "delete-to-next-char" );
 	menu->addSeparator();
 	menuAdd( menu, "select_all", "Select All", "select-all", "select-all" );
 

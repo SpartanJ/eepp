@@ -241,6 +241,8 @@ class EE_API UIWidget : public UINode {
 
 	UIWidget* getNextTabWidget() const;
 
+	bool hasPseudoClass( const std::string& pseudoCls ) const;
+
   protected:
 	friend class UIManager;
 	friend class UISceneNode;

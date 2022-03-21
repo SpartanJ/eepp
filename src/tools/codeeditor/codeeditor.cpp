@@ -1040,12 +1040,12 @@ void App::loadKeybindings() {
 		auto defKeybindings = getDefaultKeybindings();
 		IniFile ini( mKeybindingsPath );
 		if ( FileSystem::fileExists( mKeybindingsPath ) ) {
-			mKeybindings = ini.getKeyMap( "keybindings" );
+			mKeybindings = ini.getKeyUnorderedMap( "keybindings" );
 		} else {
 			for ( const auto& it : defKeybindings )
 				ini.setValue( "keybindings", bindings.getShortcutString( it.first ), it.second );
 			ini.writeFile();
-			mKeybindings = ini.getKeyMap( "keybindings" );
+			mKeybindings = ini.getKeyUnorderedMap( "keybindings" );
 		}
 		for ( const auto& key : mKeybindings )
 			mKeybindingsInvert[key.second] = key.first;
@@ -1454,7 +1454,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 			loadKeybindings();
 			mEditorSplitter->forEachEditor( [&]( UICodeEditor* ed ) {
 				ed->getKeyBindings().reset();
-				ed->getKeyBindings().addKeybindsString( mKeybindings );
+				ed->getKeyBindings().addKeybindsStringUnordered( mKeybindings );
 			} );
 		}
 		if ( !editor->getDocument().hasSyntaxDefinition() ) {
@@ -1481,7 +1481,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 
 	if ( !mKeybindings.empty() ) {
 		editor->getKeyBindings().reset();
-		editor->getKeyBindings().addKeybindsString( mKeybindings );
+		editor->getKeyBindings().addKeybindsStringUnordered( mKeybindings );
 	}
 
 	editor->addEventListener( Event::OnDocumentClosed, [&]( const Event* event ) {
@@ -2071,7 +2071,8 @@ FontTrueType* App::loadFont( const std::string& name, std::string fontPath,
 	return FontTrueType::New( name, fontPath );
 }
 
-void App::init( const std::string& file, const Float& pidelDensity ) {
+void App::init( const std::string& file, const Float& pidelDensity,
+				const std::string& colorScheme ) {
 	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
 	Display* currentDisplay = displayManager->getDisplayIndex( 0 );
 	mDisplayDPI = currentDisplay->getDPI();
@@ -2135,6 +2136,8 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 		PixelDensity::setPixelDensity( eemax( mWindow->getScale(), mConfig.window.pixelDensity ) );
 
 		mUISceneNode = UISceneNode::New();
+		if ( colorScheme == "light" )
+			mUISceneNode->setColorSchemePreference( ColorSchemePreference::Light );
 
 		mFont = loadFont( "sans-serif", mConfig.ui.serifFont, "assets/fonts/NotoSans-Regular.ttf" );
 		mFontMono =
@@ -2393,6 +2396,7 @@ void App::init( const std::string& file, const Float& pidelDensity ) {
 			{ "file-edit", 0xecdb },
 			{ "font-size", 0xed8d },
 			{ "delete-bin", 0xec1e },
+			{ "delete-text", 0xec1e },
 			{ "zoom-in", 0xf2db },
 			{ "zoom-out", 0xf2dd },
 			{ "zoom-reset", 0xeb47 },
@@ -2500,6 +2504,9 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	args::ValueFlag<Float> pixelDenstiyConf( parser, "pixel-density",
 											 "Set default application pixel density",
 											 { 'd', "pixel-density" } );
+	args::ValueFlag<std::string> prefersColorScheme(
+		parser, "prefers-color-scheme", "Set the preferred color scheme (\"light\" or \"dark\")",
+		{ 'c', "prefers-color-scheme" } );
 
 	try {
 		parser.ParseCLI( argc, argv );
@@ -2517,7 +2524,8 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	}
 
 	appInstance = eeNew( App, () );
-	appInstance->init( file.Get(), pixelDenstiyConf ? pixelDenstiyConf.Get() : 0.f );
+	appInstance->init( file.Get(), pixelDenstiyConf ? pixelDenstiyConf.Get() : 0.f,
+					   prefersColorScheme ? prefersColorScheme.Get() : "dark" );
 	eeSAFE_DELETE( appInstance );
 
 	Engine::destroySingleton();

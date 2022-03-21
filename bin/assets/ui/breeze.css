@@ -39,6 +39,104 @@
 	--win-icon: #dbdbdd;
 }
 
+@media (prefers-color-scheme: light) {
+
+:root {
+	--primary: #3daee9;
+	--back: #fcfcfc;
+	--font: #232627;
+	--font-hint: #232627;
+	--button-back: #eff0f1;
+	--button-border: #6b6f73;
+	--button-radius: 2dp;
+	--base-horizontal-padding: 5dp;
+	--base-vertical-padding: 5dp;
+	--border-width: 1dp;
+	--list-back: #eff0f1;
+	--separator: #383a3d;
+	--item-hover: #93cee9;
+	--scroll-button: #6b6d6f;
+	--slider-back: #676a6e;
+	--slider-button: #31363b;
+	--slider-border: #787b80;
+	--scrollbar-border: #373a3d;
+	--scrollbar-button: #4085a9;
+	--scrollbar-hback-hover: #606365;
+	--tab-back: #eff0f1;
+	--tab-line: #616569;
+	--tab-active: #fcfcfc;
+	--tab-hover: #93cee9;
+	--tab-close: #909396;
+	--tab-close-hover: #863d47;
+	--icon: #232627;
+	--icon-active: #3daee9;
+	--icon-back-hover: #eff0f1;
+	--icon-line-hover: #3d4246;
+	--icon-back-alert: #e49aa2;
+	--menu-back: #eff0f1;
+	--menu-font: #232627;
+	--menu-border: #616569;
+	--menu-font-active: #fcfcfc;
+	--menu-font-disabled: #6e7275;
+	--win-icon: #232627;
+}
+
+Menu::Item:selected,
+Menu::CheckBox:selected,
+Menu::SubMenu:selected,
+Menu::RadioButton:selected,
+Menu::Item:hover > Menu::Item::text,
+Menu::Item:hover > Menu::Item::shortcut,
+Menu::CheckBox:hover > Menu::CheckBox::text,
+Menu::CheckBox:hover > Menu::CheckBox::shortcut,
+Menu::RadioButton:hover > Menu::RadioButton::text,
+Menu::RadioButton:hover > Menu::RadioButton::shortcut,
+Menu::SubMenu:hover > Menu::SubMenu::text,
+Menu::item:hover > Menu::Item::icon,
+Menu::item:hover > Menu::SubMenu::icon,
+Menu::item:hover > Menu::CheckBox::icon,
+Menu::item:hover > Menu::RadioButton::icon,
+PushButton:pressed > PushButton::icon,
+SelectButton:pressed > SelectButton::icon,
+SelectButton:selected > SelectButton::icon,
+SelectButton:selectedpressed > SelectButton::icon {
+	color: var(--menu-font-active);
+	tint: var(--menu-font-active);
+}
+
+tableview::cell::text,
+treeview::cell::text,
+listview::cell::text {
+	color: var(--font);
+}
+
+Tab:selected,
+Tab:hover,
+Tab:pressed {
+	color: var(--font);
+}
+
+pushbutton::icon,
+selectbutton::icon,
+tableview::cell::icon,
+treeview::cell::icon,
+treeview::cell::expander,
+listview::cell::icon {
+	color: var(--font);
+	tint: var(--font);
+}
+
+Tab:not(:selected):hover {
+	color: var(--menu-font-active);
+}
+
+Tooltip {
+	background-color: var(--font)!important;
+	color: var(--back)!important;
+}
+
+}
+
 CheckBox,
 ComboBox,
 ComboBox::DropDownList::ListBox::item,
@@ -112,8 +210,10 @@ SelectButton:selectedpressed {
 
 PushButton::icon,
 SelectButton::icon,
+TableView::cell::icon,
 TreeView::cell::icon,
-TreeView::cell::expander {
+TreeView::cell::expander,
+ListView::cell::icon {
 	margin-right: 4dp;
 }
 
@@ -476,7 +576,7 @@ Tab::close {
 	height: 10dp;
 	border-radius: 5dp;
 	background-color: var(--tab-close);
-	foreground-image: poly(line, var(--tab-hover), "0dp 0dp, 5dp 5dp"), poly(line, var(--icon-line-hover), "5dp 0dp, 0dp 5dp");
+	foreground-image: poly(line, var(--icon-line-hover), "0dp 0dp, 5dp 5dp"), poly(line, var(--icon-line-hover), "5dp 0dp, 0dp 5dp");
 	foreground-position: 2.5dp 2.5dp, 2.5dp 2.5dp;
 	margin-right: 4dp;
 	transition: all 0.15s;
@@ -678,10 +778,7 @@ Menu::Item:hover > Menu::Item::text,
 Menu::CheckBox:hover > Menu::Item::text,
 Menu::RadioButton:hover > Menu::Item::text,
 Menu::SubMenu:hover > Menu::Item::text,
-ListBox::item:hover,
-Tab:selected,
-Tab:hover,
-Tab:pressed {
+ListBox::item:hover {
 	color: var(--menu-font-active);
 }
 
@@ -705,6 +802,7 @@ Menu::SubMenu::icon,
 Menu::CheckBox::icon,
 Menu::RadioButton::icon {
 	margin-right: 4dp;
+	tint: var(--font);
 }
 
 Menu::CheckBox::icon {
@@ -881,4 +979,14 @@ ScrollBarMini::hbutton:hover {
 
 .appbackground {
 	background-color: var(--back);
+}
+
+
+@media screen and (min-pixel-density: 1.1) and (max-pixel-density: 1.99) {
+
+Menu::Separator {
+	height: 3px;
+	background-size: 100% 1px;
+}
+
 }

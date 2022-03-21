@@ -932,6 +932,11 @@ bool UIWidget::hasClass( const std::string& cls ) const {
 	return std::find( mClasses.begin(), mClasses.end(), cls ) != mClasses.end();
 }
 
+bool UIWidget::hasPseudoClass( const std::string& pseudoCls ) const {
+	return std::find( mPseudoClasses.begin(), mPseudoClasses.end(), pseudoCls ) !=
+		   mPseudoClasses.end();
+}
+
 void UIWidget::setElementTag( const std::string& tag ) {
 	if ( mTag != tag ) {
 		mTag = tag;

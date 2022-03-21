@@ -67,6 +67,20 @@ void KeyBindings::addKeybinds( const std::map<KeyBindings::Shortcut, std::string
 	}
 }
 
+void KeyBindings::addKeybindsStringUnordered(
+	const std::unordered_map<std::string, std::string>& binds ) {
+	for ( auto& bind : binds ) {
+		addKeybindString( bind.first, bind.second );
+	}
+}
+
+void KeyBindings::addKeybindsUnordered(
+	const std::unordered_map<KeyBindings::Shortcut, std::string>& binds ) {
+	for ( auto& bind : binds ) {
+		addKeybind( bind.first, bind.second );
+	}
+}
+
 void KeyBindings::addKeybindString( const std::string& keys, const std::string& command ) {
 	addKeybind( getShortcutFromString( keys ), command );
 }

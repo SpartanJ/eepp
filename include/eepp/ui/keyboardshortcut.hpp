@@ -5,6 +5,7 @@
 #include <eepp/window/keycodes.hpp>
 #include <map>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 using namespace EE::Window;
@@ -41,6 +42,10 @@ class EE_API KeyBindings {
 	void addKeybindsString( const std::map<std::string, std::string>& binds );
 
 	void addKeybinds( const std::map<Shortcut, std::string>& binds );
+
+	void addKeybindsStringUnordered( const std::unordered_map<std::string, std::string>& binds );
+
+	void addKeybindsUnordered( const std::unordered_map<Shortcut, std::string>& binds );
 
 	void addKeybindString( const std::string& keys, const std::string& command );
 

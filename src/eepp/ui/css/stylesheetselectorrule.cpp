@@ -4,9 +4,9 @@
 
 namespace EE { namespace UI { namespace CSS {
 
-static const char* StatePseudoClasses[] = {"normal",		  "focus",	 "selected",
-										   "hover",			  "pressed", "selectedhover",
-										   "selectedpressed", "disabled"};
+static const char* StatePseudoClasses[] = { "normal",		   "focus",	  "selected",
+											"hover",		   "pressed", "selectedhover",
+											"selectedpressed", "disabled" };
 
 static bool isPseudoClassState( const std::string& pseudoClass ) {
 	for ( Uint32 i = 0; i < eeARRAY_SIZE( StatePseudoClasses ); i++ ) {
@@ -20,7 +20,7 @@ static bool isPseudoClassState( const std::string& pseudoClass ) {
 static const char* StructuralPseudoClasses[] = {
 	"checked",		  "disabled",		  "empty",		  "enabled",	  "first-child",
 	"first-of-type",  "last-child",		  "last-of-type", "not",		  "nth-child",
-	"nth-last-child", "nth-last-of-type", "nth-of-type",  "only-of-type", "only-child"};
+	"nth-last-child", "nth-last-of-type", "nth-of-type",  "only-of-type", "only-child" };
 
 static bool isStructuralPseudoClass( const std::string& pseudoClass ) {
 	for ( Uint32 i = 0; i < eeARRAY_SIZE( StructuralPseudoClasses ); i++ ) {
@@ -35,9 +35,16 @@ static void splitSelectorPseudoClass( const std::string& selector, std::string& 
 									  std::string& realPseudoClass ) {
 	if ( !selector.empty() ) {
 		bool lastWasColon = false;
+		bool inFunction = false;
 
 		for ( int i = (Int32)selector.size() - 1; i >= 0; i-- ) {
 			char curChar = selector[i];
+
+			if ( inFunction && curChar == '(' )
+				inFunction = false;
+
+			if ( inFunction )
+				continue;
 
 			if ( lastWasColon ) {
 				if ( StyleSheetSelectorRule::PSEUDO_CLASS == curChar ) {
@@ -55,6 +62,11 @@ static void splitSelectorPseudoClass( const std::string& selector, std::string& 
 				return;
 			} else if ( StyleSheetSelectorRule::PSEUDO_CLASS == curChar ) {
 				lastWasColon = true;
+			}
+
+			if ( curChar == ')' ) {
+				inFunction = true;
+				lastWasColon = false;
 			}
 		}
 

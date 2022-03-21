@@ -24,7 +24,7 @@ class App : public UICodeEditorSplitter::Client {
 
 	~App();
 
-	void init( const std::string& file, const Float& pidelDensity );
+	void init( const std::string& file, const Float& pidelDensity, const std::string& colorScheme );
 
 	void setAppTitle( const std::string& title );
 
@@ -97,8 +97,8 @@ class App : public UICodeEditorSplitter::Client {
 	UITabWidget* mSidePanel{ nullptr };
 	UICodeEditorSplitter* mEditorSplitter{ nullptr };
 	std::string mInitColorScheme;
-	std::map<std::string, std::string> mKeybindings;
-	std::map<std::string, std::string> mKeybindingsInvert;
+	std::unordered_map<std::string, std::string> mKeybindings;
+	std::unordered_map<std::string, std::string> mKeybindingsInvert;
 	std::string mConfigPath;
 	std::string mKeybindingsPath;
 	Float mDisplayDPI{ 96 };
