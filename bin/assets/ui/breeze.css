@@ -37,48 +37,50 @@
 	--menu-font-active: white;
 	--menu-font-disabled: #6e7275;
 	--win-icon: #dbdbdd;
+	--floating-icon: #eff0f188;
 }
 
 @media (prefers-color-scheme: light) {
 
 :root {
 	--primary: #3daee9;
-	--back: #fcfcfc;
+	--back: #eff0f1;
 	--font: #232627;
 	--font-hint: #232627;
-	--button-back: #eff0f1;
-	--button-border: #6b6f73;
+	--button-back: #fcfcfc;
+	--button-border: #b3b4b5;
 	--button-radius: 2dp;
 	--base-horizontal-padding: 5dp;
 	--base-vertical-padding: 5dp;
 	--border-width: 1dp;
-	--list-back: #eff0f1;
-	--separator: #383a3d;
+	--list-back: #ffffff;
+	--separator: #cbcdcd;
 	--item-hover: #93cee9;
-	--scroll-button: #6b6d6f;
-	--slider-back: #676a6e;
-	--slider-button: #31363b;
-	--slider-border: #787b80;
-	--scrollbar-border: #373a3d;
-	--scrollbar-button: #4085a9;
-	--scrollbar-hback-hover: #606365;
+	--scroll-button: #cbcdcd;
+	--slider-back: #e9e9e9;
+	--slider-button: #cbcdcd;
+	--slider-border: #e6e6e6;
+	--scrollbar-border: #e6e6e6;
+	--scrollbar-button: #cbcdcd;
+	--scrollbar-hback-hover: #e9e9e9;
 	--tab-back: #eff0f1;
-	--tab-line: #616569;
+	--tab-line: #e6e6e6;
 	--tab-active: #fcfcfc;
 	--tab-hover: #93cee9;
-	--tab-close: #909396;
-	--tab-close-hover: #863d47;
+	--tab-close: #e6e6e6;
+	--tab-close-hover: #e49aa2;
 	--icon: #232627;
 	--icon-active: #3daee9;
-	--icon-back-hover: #eff0f1;
-	--icon-line-hover: #3d4246;
+	--icon-back-hover: #e6e6e6;
+	--icon-line-hover: #232627;
 	--icon-back-alert: #e49aa2;
 	--menu-back: #eff0f1;
 	--menu-font: #232627;
-	--menu-border: #616569;
+	--menu-border: #b3b4b5;
 	--menu-font-active: #fcfcfc;
-	--menu-font-disabled: #6e7275;
+	--menu-font-disabled: #a8a9aa;
 	--win-icon: #232627;
+	--floating-icon: #cbcdcd;
 }
 
 Menu::Item:selected,
@@ -110,6 +112,31 @@ listview::cell::text {
 	color: var(--font);
 }
 
+tableview::row:selected tableview::cell::text,
+treeview::row:selected treeview::cell::text,
+listview::row:selected listview::cell::text,
+tableview::row:selected tableview::cell::icon,
+treeview::row:selected treeview::cell::icon,
+listview::row:selected listview::cell::icon,
+tableview::row:selected tableview::cell::expander,
+treeview::row:selected treeview::cell::expander,
+listview::row:selected listview::cell::expander,
+tableview::row:hover tableview::cell::text,
+treeview::row:hover treeview::cell::text,
+listview::row:hover listview::cell::text,
+tableview::row:hover tableview::cell::icon,
+treeview::row:hover treeview::cell::icon,
+listview::row:hover listview::cell::icon,
+tableview::row:hover tableview::cell::expander,
+treeview::row:hover treeview::cell::expander,
+listview::row:hover listview::cell::expander,
+tableview::header::column:hover,
+treeview::header::column:hover,
+listview::header::column:hover {
+	color: var(--menu-font-active);
+	tint: var(--menu-font-active);
+}
+
 Tab:selected,
 Tab:hover,
 Tab:pressed {
@@ -133,6 +160,10 @@ Tab:not(:selected):hover {
 Tooltip {
 	background-color: var(--font)!important;
 	color: var(--back)!important;
+}
+
+Splitter::separator {
+	background-color: var(--back);
 }
 
 }

@@ -34,6 +34,14 @@ void StyleSheetPropertyAnimation::tweenProperty( UIWidget* widget, const Float& 
 		case PropertyType::Color: {
 			Color startColor( startValue );
 			Color endColor( endValue );
+			if ( startColor.getValue() == 0 ) {
+				startColor = endColor;
+				startColor.a = 0;
+			}
+			if ( endColor.getValue() == 0 ) {
+				endColor = startColor;
+				endColor.a = 0;
+			}
 			Float progress = easingCb[timingFunction]( normalizedProgress, 0, 1, 1.f );
 			Color resColor( startColor );
 			resColor.r = static_cast<Uint8>( eemin(
@@ -189,7 +197,7 @@ StyleSheetPropertyAnimation* StyleSheetPropertyAnimation::New(
 	animation.setDelay( delay );
 	animation.setDuration( duration );
 	animation.setTimingFunction( timingFunction );
-	return New( animation, property, {startValue, endValue}, {0, 1}, propertyIndex,
+	return New( animation, property, { startValue, endValue }, { 0, 1 }, propertyIndex,
 				animationOrigin );
 }
 

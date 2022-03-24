@@ -93,7 +93,7 @@ MediaQuery::ptr MediaQuery::parse( const std::string& str ) {
 							} else {
 								StyleSheetLength length =
 									StyleSheetLength::fromString( exprTokens[1] );
-								expr.valStr = String::trim( String::toLower( exprTokens[1] ) );
+								expr.valStr = String::toLower( exprTokens[1] );
 
 								if ( length.getUnit() == StyleSheetLength::Unit::Dpcm ||
 									 length.getUnit() == StyleSheetLength::Unit::Dpi ) {

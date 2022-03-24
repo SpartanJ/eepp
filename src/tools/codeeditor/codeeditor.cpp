@@ -2207,7 +2207,7 @@ void App::init( const std::string& file, const Float& pidelDensity,
 			background-color: var(--icon-back-alert);
 		}
 		#settings {
-			color: #eff0f188;
+			color: var(--floating-icon);
 			font-family: icon;
 			font-size: 16dp;
 			margin-top: 6dp;

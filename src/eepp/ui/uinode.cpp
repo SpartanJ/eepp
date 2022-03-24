@@ -347,6 +347,11 @@ void UINode::updateDebugData() {
 			text += "Classes: " + String::join( widget->getStyleSheetClasses(), ' ' ) + "\n";
 		}
 
+		if ( !widget->getStyleSheetPseudoClasses().empty() ) {
+			text += "Pseudo Classes: " + String::join( widget->getStyleSheetPseudoClasses(), ' ' ) +
+					"\n";
+		}
+
 		text += String::format(
 			"X: %.2fpx (%.2fdp) Y: %.2fpx (%.2fdp)\nW: %.2fpx (%.2fdp) H: %.2fpx (%.2fdp)",
 			mPosition.x, mDpPos.x, mPosition.y, mDpPos.y, mSize.x, mDpSize.x, mSize.y, mDpSize.y );
@@ -444,8 +449,8 @@ Uint32 UINode::onCalculateDrag( const Vector2f& position, const Uint32& flags ) 
 		if ( mDragPoint != pos && ( std::abs( mDragPoint.x - pos.x ) > 1.f ||
 									std::abs( mDragPoint.y - pos.y ) > 1.f ) ) {
 			Sizef dragDiff;
-			dragDiff.x = ( mFlags & UI_DRAG_HORIZONTAL ) ? ( Float )( mDragPoint.x - pos.x ) : 0;
-			dragDiff.y = ( mFlags & UI_DRAG_VERTICAL ) ? ( Float )( mDragPoint.y - pos.y ) : 0;
+			dragDiff.x = ( mFlags & UI_DRAG_HORIZONTAL ) ? (Float)( mDragPoint.x - pos.x ) : 0;
+			dragDiff.y = ( mFlags & UI_DRAG_VERTICAL ) ? (Float)( mDragPoint.y - pos.y ) : 0;
 
 			if ( onDrag( pos, flags, dragDiff ) ) {
 				setPixelsPosition( mPosition - dragDiff );
