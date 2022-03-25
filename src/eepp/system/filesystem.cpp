@@ -727,4 +727,16 @@ std::string FileSystem::fileGetNumberedFileNameFromPath( std::string directoryPa
 	return "";
 }
 
+bool FileSystem::isRelativePath( const std::string& path ) {
+	if ( !path.empty() ) {
+		if ( path[0] == '/' )
+			return false;
+#if EE_PLATFORM == EE_PLATFORM_WIN
+		if ( path.size() >= 2 && String::isLetter( path[0] ) && path[1] == ':' )
+			return false;
+#endif
+	}
+	return true;
+}
+
 }} // namespace EE::System

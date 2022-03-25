@@ -8,6 +8,7 @@
 #include <eepp/system/fileinfo.hpp>
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/pack.hpp>
+#include <eepp/system/threadpool.hpp>
 #include <eepp/system/time.hpp>
 #include <eepp/ui/doc/syntaxdefinition.hpp>
 #include <eepp/ui/doc/textdocumentline.hpp>
@@ -49,6 +50,7 @@ class EE_API TextDocument {
 		virtual void onDocumentSaved( TextDocument* ) = 0;
 		virtual void onDocumentClosed( TextDocument* ) = 0;
 		virtual void onDocumentDirtyOnFileSystem( TextDocument* ) = 0;
+		virtual void onDocumentMoved( TextDocument* ) = 0;
 	};
 
 	TextDocument( bool verbose = true );
@@ -66,6 +68,10 @@ class EE_API TextDocument {
 	bool loadFromStream( IOStream& path );
 
 	bool loadFromFile( const std::string& path );
+
+	bool loadAsyncFromFile( const std::string& path, std::shared_ptr<ThreadPool> pool,
+							std::function<void( TextDocument*, bool )> onLoaded =
+								std::function<void( TextDocument*, bool success )>() );
 
 	bool loadFromMemory( const Uint8* data, const Uint32& size );
 
@@ -404,6 +410,8 @@ class EE_API TextDocument {
 
 	bool hasSyntaxDefinition() const;
 
+	void notifyDocumentMoved( const std::string& newPath );
+
   protected:
 	friend class UndoStack;
 	UndoStack mUndoStack;
@@ -456,6 +464,8 @@ class EE_API TextDocument {
 	void notifyUndoRedo( const UndoRedo& eventType );
 
 	void notifyDirtyOnFileSystem();
+
+	void notifyDocumentMoved();
 
 	void insertAtStartOfSelectedLines( const String& text, bool skipEmpty );
 

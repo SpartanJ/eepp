@@ -150,6 +150,9 @@ class EE_API FileSystem {
 														const std::string& fileName,
 														const std::string& separator = ".",
 														const std::string& fileExtension = "" );
+
+	/** @returns True if the path provided is relative. */
+	static bool isRelativePath( const std::string& path );
 };
 
 }} // namespace EE::System

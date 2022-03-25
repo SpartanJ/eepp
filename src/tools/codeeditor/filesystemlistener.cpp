@@ -18,6 +18,23 @@ void FileSystemListener::handleFileAction( efsw::WatchID, const std::string& dir
 
 			if ( mDirTree )
 				mDirTree.get()->onChange( (ProjectDirectoryTree::Action)action, file, oldFilename );
+
+			if ( action == efsw::Actions::Moved ) {
+				FileInfo oldFile( FileSystem::isRelativePath( oldFilename ) ? dir + oldFilename
+																			: oldFilename );
+				if ( file.isLink() )
+					file = FileInfo( file.linksTo() );
+
+				if ( isFileOpen( oldFile ) )
+					notifyMove( oldFile, file );
+
+				if ( oldFile.isLink() ) {
+					oldFile = FileInfo( oldFile.linksTo() );
+
+					if ( isFileOpen( oldFile ) )
+						notifyMove( oldFile, file );
+				}
+			}
 		}
 		case efsw::Actions::Modified: {
 			if ( file.isLink() )
@@ -50,5 +67,12 @@ void FileSystemListener::notifyChange( const FileInfo& file ) {
 			 file.getModificationTime() != doc.getFileInfo().getModificationTime() &&
 			 !doc.isSaving() )
 			doc.setDirtyOnFileSystem( true );
+	} );
+}
+
+void FileSystemListener::notifyMove( const FileInfo& oldFile, const FileInfo& newFile ) {
+	mSplitter->forEachDoc( [&]( TextDocument& doc ) {
+		if ( oldFile.getFilepath() == doc.getFileInfo().getFilepath() )
+			doc.notifyDocumentMoved( newFile.getFilepath() );
 	} );
 }

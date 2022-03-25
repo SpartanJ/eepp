@@ -48,26 +48,40 @@ class EE_API TextPosition {
 	}
 
 	TextPosition operator+( const TextPosition& other ) const {
-		return {mLine + other.line(), mColumn + other.column()};
+		return { mLine + other.line(), mColumn + other.column() };
 	}
 
 	TextPosition operator+=( const TextPosition& other ) const {
-		return {mLine + other.line(), mColumn + other.column()};
+		return { mLine + other.line(), mColumn + other.column() };
 	}
 
 	TextPosition operator-( const TextPosition& other ) const {
-		return {mLine - other.line(), mColumn - other.column()};
+		return { mLine - other.line(), mColumn - other.column() };
 	}
 
 	TextPosition operator-=( const TextPosition& other ) const {
-		return {mLine - other.line(), mColumn - other.column()};
+		return { mLine - other.line(), mColumn - other.column() };
 	}
 
-	std::string toString() { return String::format( "L%lld,C%lld", mLine, mColumn ); }
+	std::string toString() const { return String::format( "L%lld,C%lld", mLine, mColumn ); }
+
+	static TextPosition fromString( const std::string& pos ) {
+		auto split = String::split( pos, ',' );
+		if ( split.size() == 2 && !split[0].empty() && !split[1].empty() ) {
+			if ( split[0][0] == 'L' || split[0][0] == 'l' )
+				split[0] = split[0].substr( 1 );
+			if ( split[1][0] == 'C' || split[0][0] == 'c' )
+				split[1] = split[1].substr( 1 );
+			Int64 l, c;
+			if ( String::fromString( l, split[0] ) && String::fromString( c, split[1] ) )
+				return TextPosition( l, c );
+		}
+		return {};
+	}
 
   private:
-	Int64 mLine{0xffffffff};
-	Int64 mColumn{0xffffffff};
+	Int64 mLine{ 0xffffffff };
+	Int64 mColumn{ 0xffffffff };
 };
 
 }}} // namespace EE::UI::Doc

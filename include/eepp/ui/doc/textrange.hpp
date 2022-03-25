@@ -61,8 +61,17 @@ class EE_API TextRange {
 
 	bool inSameLine() const { return isValid() && mStart.line() == mEnd.line(); }
 
-	std::string toString() {
+	std::string toString() const {
 		return String::format( "%s - %s", mStart.toString().c_str(), mEnd.toString().c_str() );
+	}
+
+	static TextRange fromString( const std::string& range ) {
+		auto split = String::split( range, "-" );
+		if ( split.size() == 2 ) {
+			return { TextPosition::fromString( String::trim( split[0] ) ),
+					 TextPosition::fromString( String::trim( split[1] ) ) };
+		}
+		return {};
 	}
 
   private:

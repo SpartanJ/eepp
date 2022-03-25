@@ -319,11 +319,56 @@ bool UICodeEditorSplitter::loadFileFromPath( const std::string& path, UICodeEdit
 	return ret;
 }
 
+void UICodeEditorSplitter::loadAsyncFileFromPath(
+	const std::string& path, std::shared_ptr<ThreadPool> pool, UICodeEditor* codeEditor,
+	std::function<void( UICodeEditor* codeEditor, const std::string& path )> onLoaded ) {
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
+	if ( FileSystem::isDirectory( path ) )
+		return;
+	if ( nullptr == codeEditor )
+		codeEditor = mCurEditor;
+	codeEditor->setColorScheme( mColorSchemes[mCurrentColorScheme] );
+	bool isUrl = String::startsWith( path, "https://" ) || String::startsWith( path, "http://" );
+	if ( isUrl ) {
+		codeEditor->loadAsyncFromURL(
+			path, Http::Request::FieldTable(),
+			[&, codeEditor, path, onLoaded]( std::shared_ptr<TextDocument>, bool ) {
+				mClient->onDocumentLoaded( codeEditor, path );
+				if ( onLoaded )
+					onLoaded( codeEditor, path );
+			} );
+	} else {
+		codeEditor->loadAsyncFromFile(
+			path, pool, [&, codeEditor, path, onLoaded]( std::shared_ptr<TextDocument>, bool ) {
+				mClient->onDocumentLoaded( codeEditor, path );
+				if ( onLoaded )
+					onLoaded( codeEditor, path );
+			} );
+	}
+#else
+	loadFileFromPath( path, codeEditor );
+	if ( nullptr == codeEditor )
+		codeEditor = mCurEditor;
+	if ( onLoaded )
+		onLoaded( codeEditor, path );
+#endif
+}
+
 void UICodeEditorSplitter::loadFileFromPathInNewTab( const std::string& path ) {
 	auto d = createCodeEditorInTabWidget( tabWidgetFromEditor( mCurEditor ) );
 	UITabWidget* tabWidget = d.first->getTabWidget();
 	UITab* addedTab = d.first;
 	loadFileFromPath( path, d.second );
+	tabWidget->setTabSelected( addedTab );
+}
+
+void UICodeEditorSplitter::loadAsyncFileFromPathInNewTab(
+	const std::string& path, std::shared_ptr<ThreadPool> pool,
+	std::function<void( UICodeEditor*, const std::string& )> onLoaded ) {
+	auto d = createCodeEditorInTabWidget( tabWidgetFromEditor( mCurEditor ) );
+	UITabWidget* tabWidget = d.first->getTabWidget();
+	UITab* addedTab = d.first;
+	loadAsyncFileFromPath( path, pool, d.second, onLoaded );
 	tabWidget->setTabSelected( addedTab );
 }
 
@@ -351,7 +396,7 @@ UICodeEditorSplitter::createCodeEditorInTabWidget( UITabWidget* tabWidget ) {
 }
 
 void UICodeEditorSplitter::removeUnusedTab( UITabWidget* tabWidget ) {
-	if ( tabWidget && tabWidget->getTabCount() == 2 &&
+	if ( tabWidget && tabWidget->getTabCount() >= 2 &&
 		 tabWidget->getTab( 0 )
 			 ->getOwnedWidget()
 			 ->asType<UICodeEditor>()
@@ -473,6 +518,10 @@ void UICodeEditorSplitter::setHideTabBarOnSingleTab( bool hideTabBarOnSingleTab 
 		for ( auto widget : mTabWidgets )
 			widget->setHideTabBarOnSingleTab( hideTabBarOnSingleTab );
 	}
+}
+
+const std::vector<UITabWidget*>& UICodeEditorSplitter::getTabWidgets() const {
+	return mTabWidgets;
 }
 
 std::vector<UICodeEditor*> UICodeEditorSplitter::getAllEditors() {
@@ -762,7 +811,9 @@ void UICodeEditorSplitter::onTabClosed( const TabEvent* tabEvent ) {
 		auto d = createCodeEditorInTabWidget( tabWidget );
 		d.first->getTabWidget()->setTabSelected( d.first );
 	} else {
-		tabWidget->setTabSelected( eemin( tabWidget->getTabCount() - 1, tabEvent->getTabIndex() ) );
+		if ( tabWidget->getTabSelectedIndex() >= tabWidget->getTabCount() )
+			tabWidget->setTabSelected(
+				eemin( tabWidget->getTabCount() - 1, tabEvent->getTabIndex() ) );
 	}
 	if ( tabEvent->getTab()->getOwnedWidget() == mCurEditor )
 		setCurrentEditor( nullptr );

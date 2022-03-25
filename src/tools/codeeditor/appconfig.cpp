@@ -159,14 +159,38 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	iniState.writeFile();
 }
 
+struct ProjectPath {
+	std::string path;
+	TextRange selection{ { 0, 0 }, { 0, 0 } };
+	ProjectPath() {}
+	ProjectPath( const std::string& path, const TextRange& selection ) :
+		path( path ), selection( selection ) {}
+
+	std::string toString() { return URI::encode( path ) + ";" + selection.toString(); }
+
+	static ProjectPath fromString( const std::string& str ) {
+		auto split = String::split( str, ';' );
+		if ( !split.empty() ) {
+			ProjectPath pp;
+			pp.path = URI::decode( split[0] );
+			pp.selection = split.size() >= 2
+							   ? TextRange::fromString( split[1] )
+							   : TextRange( TextPosition( 0, 0 ), TextPosition( 0, 0 ) );
+			return pp;
+		}
+		return {};
+	}
+};
+
 void AppConfig::saveProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
 							 const std::string& configPath ) {
 	FileSystem::dirAddSlashAtEnd( projectFolder );
 	std::vector<UICodeEditor*> editors = editorSplitter->getAllEditors();
-	std::vector<std::string> paths;
+	std::vector<ProjectPath> paths;
 	for ( auto editor : editors )
 		if ( editor->getDocument().hasFilepath() )
-			paths.emplace_back( editor->getDocument().getFilePath() );
+			paths.emplace_back( ProjectPath{ editor->getDocument().getFilePath(),
+											 editor->getDocument().getSelection() } );
 	std::string projectsPath( configPath + "projects" + FileSystem::getOSSlash() );
 	if ( !FileSystem::fileExists( projectsPath ) )
 		FileSystem::makeDir( projectsPath );
@@ -175,12 +199,16 @@ void AppConfig::saveProject( std::string projectFolder, UICodeEditorSplitter* ed
 	IniFile ini( projectCfgPath, false );
 	ini.setValue( "path", "folder_path", projectFolder );
 	for ( size_t i = 0; i < paths.size(); i++ )
-		ini.setValue( "files", String::format( "file_name_%lu", i ), paths[i] );
+		ini.setValue( "files", String::format( "file_name_%lu", i ), paths[i].toString() );
+	ini.setValueI( "files", "current_page",
+				   !editorSplitter->getTabWidgets().empty()
+					   ? editorSplitter->getTabWidgets()[0]->getTabSelectedIndex()
+					   : 0 );
 	ini.writeFile();
 }
 
 void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
-							 const std::string& configPath ) {
+							 const std::string& configPath, std::shared_ptr<ThreadPool> pool ) {
 	FileSystem::dirAddSlashAtEnd( projectFolder );
 	std::string projectsPath( configPath + "projects" + FileSystem::getOSSlash() );
 	MD5::Result hash = MD5::fromString( projectFolder );
@@ -190,11 +218,32 @@ void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* ed
 	IniFile ini( projectCfgPath );
 	bool found;
 	size_t i = 0;
+	std::vector<ProjectPath> paths;
 	do {
 		std::string val( ini.getValue( "files", String::format( "file_name_%lu", i ) ) );
 		found = !val.empty();
-		if ( found && FileSystem::fileExists( val ) )
-			editorSplitter->loadFileFromPathInNewTab( val );
+		if ( found ) {
+			auto pp = ProjectPath::fromString( val );
+			if ( FileSystem::fileExists( pp.path ) )
+				paths.emplace_back( pp );
+		}
 		i++;
 	} while ( found );
+
+	Int64 currentPage = ini.getValueI( "files", "current_page" );
+	size_t totalToLoad = paths.size();
+
+	for ( auto& pp : paths ) {
+		editorSplitter->loadAsyncFileFromPathInNewTab(
+			pp.path, pool,
+			[pp, editorSplitter, totalToLoad, currentPage]( UICodeEditor* editor,
+															const std::string& ) {
+				editor->getDocument().setSelection( pp.selection );
+				editor->scrollToCursor();
+
+				if ( !editorSplitter->getTabWidgets().empty() &&
+					 editorSplitter->getTabWidgets()[0]->getTabCount() == totalToLoad )
+					editorSplitter->switchToTab( currentPage );
+			} );
+	}
 }

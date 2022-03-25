@@ -7,18 +7,6 @@
 
 App* appInstance = nullptr;
 
-static bool isRelativePath( const std::string& path ) {
-	if ( !path.empty() ) {
-		if ( path[0] == '/' )
-			return false;
-#if EE_PLATFORM == EE_PLATFORM_WIN
-		if ( path.size() >= 2 && String::isLetter( path[0] ) && path[1] == ':' )
-			return false;
-#endif
-	}
-	return true;
-}
-
 void appLoop() {
 	appInstance->mainLoop();
 }
@@ -187,7 +175,7 @@ void App::openFolderDialog() {
 
 void App::openFontDialog( std::string& fontPath ) {
 	std::string absoluteFontPath( fontPath );
-	if ( isRelativePath( absoluteFontPath ) )
+	if ( FileSystem::isRelativePath( absoluteFontPath ) )
 		absoluteFontPath = mResPath + fontPath;
 	UIFileDialog* dialog =
 		UIFileDialog::New( UIFileDialog::DefaultFlags, "*.ttf; *.otf; *.wolff; *.otb",
@@ -1302,11 +1290,19 @@ void App::loadFileFromPath( const std::string& path, bool inNewTab, UICodeEditor
 #endif
 		}
 	} else {
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
+		if ( inNewTab ) {
+			mEditorSplitter->loadAsyncFileFromPathInNewTab( path, mThreadPool );
+		} else {
+			mEditorSplitter->loadAsyncFileFromPath( path, mThreadPool, codeEditor );
+		}
+#else
 		if ( inNewTab ) {
 			mEditorSplitter->loadFileFromPathInNewTab( path );
 		} else {
 			mEditorSplitter->loadFileFromPath( path, codeEditor );
 		}
+#endif
 	}
 }
 
@@ -1497,6 +1493,13 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 			}
 			mFilesFolderWatches.erase( itWatch );
 		}
+	} );
+
+	editor->addEventListener( Event::OnDocumentMoved, [&]( const Event* event ) {
+		if ( !appInstance )
+			return;
+		UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
+		updateEditorTabTitle( editor );
 	} );
 
 	if ( config.autoComplete && !mAutoCompleteModule )
@@ -2039,7 +2042,7 @@ void App::loadFolder( const std::string& path ) {
 	mCurrentProject = rpath;
 	loadDirTree( rpath );
 
-	mConfig.loadProject( rpath, mEditorSplitter, mConfigPath );
+	mConfig.loadProject( rpath, mEditorSplitter, mConfigPath, mThreadPool );
 
 	mFileSystemModel = FileSystemModel::New( rpath, FileSystemModel::Mode::FilesAndDirectories,
 											 { true, true, true } );
@@ -2064,7 +2067,7 @@ void App::loadFolder( const std::string& path ) {
 
 FontTrueType* App::loadFont( const std::string& name, std::string fontPath,
 							 const std::string& fallback ) {
-	if ( isRelativePath( fontPath ) )
+	if ( FileSystem::isRelativePath( fontPath ) )
 		fontPath = mResPath + fontPath;
 	if ( fontPath.empty() || !FileSystem::fileExists( fontPath ) )
 		fontPath = fallback;
@@ -2103,7 +2106,7 @@ void App::init( const std::string& file, const Float& pidelDensity,
 	winSettings.Height = mConfig.window.size.getHeight();
 	if ( winSettings.Icon.empty() ) {
 		winSettings.Icon = mConfig.window.winIcon;
-		if ( isRelativePath( winSettings.Icon ) )
+		if ( FileSystem::isRelativePath( winSettings.Icon ) )
 			winSettings.Icon = mResPath + winSettings.Icon;
 	}
 	ContextSettings contextSettings = engine->createContextSettings( &mConfig.ini, "window" );

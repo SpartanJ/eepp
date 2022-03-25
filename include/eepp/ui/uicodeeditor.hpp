@@ -114,6 +114,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	bool loadFromFile( const std::string& path );
 
+	bool loadAsyncFromFile( const std::string& path, std::shared_ptr<ThreadPool> pool,
+							std::function<void( std::shared_ptr<TextDocument>, bool )> onLoaded =
+								std::function<void( std::shared_ptr<TextDocument>, bool )>() );
+
 	bool loadFromURL(
 		const std::string& url,
 		const EE::Network::Http::Request::FieldTable& headers = Http::Request::FieldTable() );
@@ -417,6 +421,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void copyFilePath();
 
+	void scrollToCursor( bool centered = true );
+
+	void scrollToMakeVisible( const TextPosition& position, bool centered = false );
+
   protected:
 	struct LastXOffset {
 		TextPosition position;
@@ -547,6 +555,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	virtual void onDocumentSaved( TextDocument* );
 
+	virtual void onDocumentMoved( TextDocument* );
+
 	void onDocumentClosed( TextDocument* doc );
 
 	virtual void onDocumentDirtyOnFileSystem( TextDocument* doc );
@@ -554,8 +564,6 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	std::pair<int, int> getVisibleLineRange();
 
 	int getVisibleLinesCount();
-
-	void scrollToMakeVisible( const TextPosition& position, bool centered = false );
 
 	void setScrollX( const Float& val, bool emmitEvent = true );
 

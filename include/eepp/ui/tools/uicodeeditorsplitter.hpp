@@ -75,7 +75,17 @@ class EE_API UICodeEditorSplitter {
 
 	bool loadFileFromPath( const std::string& path, UICodeEditor* codeEditor = nullptr );
 
+	void loadAsyncFileFromPath( const std::string& path, std::shared_ptr<ThreadPool> pool,
+								UICodeEditor* codeEditor = nullptr,
+								std::function<void( UICodeEditor*, const std::string& )> onLoaded =
+									std::function<void( UICodeEditor*, const std::string& )>() );
+
 	void loadFileFromPathInNewTab( const std::string& path );
+
+	void loadAsyncFileFromPathInNewTab(
+		const std::string& path, std::shared_ptr<ThreadPool> pool,
+		std::function<void( UICodeEditor*, const std::string& )> onLoaded =
+			std::function<void( UICodeEditor*, const std::string& )>() );
 
 	void removeUnusedTab( UITabWidget* tabWidget );
 
@@ -128,6 +138,8 @@ class EE_API UICodeEditorSplitter {
 	bool getHideTabBarOnSingleTab() const;
 
 	void setHideTabBarOnSingleTab( bool hideTabBarOnSingleTab );
+
+	const std::vector<UITabWidget*>& getTabWidgets() const;
 
   protected:
 	UISceneNode* mUISceneNode{ nullptr };

@@ -266,6 +266,13 @@ bool TextDocument::getBOM() const {
 	return mIsBOM;
 }
 
+void TextDocument::notifyDocumentMoved( const std::string& path ) {
+	mFilePath = path;
+	mFileRealPath = FileInfo::isLink( mFilePath ) ? FileInfo( FileInfo( mFilePath ).linksTo() )
+												  : FileInfo( mFilePath );
+	notifyDocumentMoved();
+}
+
 bool TextDocument::loadFromFile( const std::string& path ) {
 	mLoading = true;
 	if ( !FileSystem::fileExists( path ) && PackManager::instance()->isFallbackToPacksActive() ) {
@@ -286,6 +293,19 @@ bool TextDocument::loadFromFile( const std::string& path ) {
 	resetSyntax();
 	mLoading = false;
 	return ret;
+}
+
+bool TextDocument::loadAsyncFromFile( const std::string& path, std::shared_ptr<ThreadPool> pool,
+									  std::function<void( TextDocument*, bool )> onLoaded ) {
+	mLoading = true;
+	pool->run(
+		[&, path, onLoaded] {
+			bool loaded = loadFromFile( path );
+			if ( onLoaded )
+				onLoaded( this, loaded );
+		},
+		[] {} );
+	return true;
 }
 
 bool TextDocument::loadFromMemory( const Uint8* data, const Uint32& size ) {
@@ -1878,6 +1898,12 @@ void TextDocument::notifyUndoRedo( const TextDocument::UndoRedo& eventType ) {
 void TextDocument::notifyDirtyOnFileSystem() {
 	for ( auto& client : mClients ) {
 		client->onDocumentDirtyOnFileSystem( this );
+	}
+}
+
+void TextDocument::notifyDocumentMoved() {
+	for ( auto& client : mClients ) {
+		client->onDocumentMoved( this );
 	}
 }
 

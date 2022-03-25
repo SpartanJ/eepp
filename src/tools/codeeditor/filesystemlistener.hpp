@@ -35,6 +35,8 @@ class FileSystemListener : public efsw::FileWatchListener {
 	bool isFileOpen( const FileInfo& file );
 
 	void notifyChange( const FileInfo& file );
+
+	void notifyMove( const FileInfo& oldFile, const FileInfo& newFile );
 };
 
 #endif // FILESYSTEMLISTENER_HPP

@@ -188,6 +188,19 @@ void UICodeEditor::draw() {
 	if ( mFont == NULL )
 		return;
 
+	if ( mDisplayLoaderIfDocumentLoading && mDoc->isLoading() ) {
+		UILoader* loader = getLoader();
+		loader->setParent( this );
+		loader->setVisible( true );
+		loader->setEnabled( false );
+		loader->setPixelsSize( getPixelsSize() );
+	} else if ( mLoader != nullptr && !mDoc->isLoading() && mLoader->isVisible() ) {
+		mLoader->setVisible( false );
+	}
+
+	if ( mDoc->isLoading() )
+		return;
+
 	if ( mDirtyEditor )
 		updateEditor();
 
@@ -273,16 +286,6 @@ void UICodeEditor::draw() {
 
 	for ( auto& module : mModules )
 		module->postDraw( this, startScroll, lineHeight, cursor );
-
-	if ( mDisplayLoaderIfDocumentLoading && mDoc->isLoading() ) {
-		UILoader* loader = getLoader();
-		loader->setParent( this );
-		loader->setVisible( true );
-		loader->setEnabled( false );
-		loader->setPixelsSize( getPixelsSize() );
-	} else if ( mLoader != nullptr && !mDoc->isLoading() && mLoader->isVisible() ) {
-		mLoader->setVisible( false );
-	}
 }
 
 void UICodeEditor::scheduledUpdate( const Time& ) {
@@ -346,6 +349,31 @@ bool UICodeEditor::loadFromFile( const std::string& path ) {
 	return ret;
 }
 
+bool UICodeEditor::loadAsyncFromFile(
+	const std::string& path, std::shared_ptr<ThreadPool> pool,
+	std::function<void( std::shared_ptr<TextDocument>, bool )> onLoaded ) {
+	bool wasLocked = isLocked();
+	if ( !wasLocked )
+		setLocked( true );
+	bool ret = mDoc->loadAsyncFromFile( path, pool,
+										[this, onLoaded, wasLocked]( TextDocument*, bool success ) {
+											runOnMainThread( [&, onLoaded, wasLocked] {
+												invalidateEditor();
+												updateLongestLineWidth();
+												mHighlighter.changeDoc( mDoc.get() );
+												invalidateDraw();
+												if ( !wasLocked )
+													setLocked( false );
+												onDocumentLoaded();
+												if ( onLoaded )
+													onLoaded( mDoc, success );
+											} );
+										} );
+	if ( !ret && !wasLocked )
+		setLocked( false );
+	return ret;
+}
+
 bool UICodeEditor::loadFromURL( const std::string& url, const Http::Request::FieldTable& headers ) {
 	bool ret = mDoc->loadFromURL( url, headers );
 	if ( ret ) {
@@ -367,14 +395,14 @@ bool UICodeEditor::loadAsyncFromURL(
 	bool ret = mDoc->loadAsyncFromURL(
 		url, headers,
 		[this, onLoaded, wasLocked]( TextDocument*, bool success ) {
-			runOnMainThread( [&, onLoaded] {
+			runOnMainThread( [&, onLoaded, wasLocked] {
 				invalidateEditor();
 				updateLongestLineWidth();
 				mHighlighter.changeDoc( mDoc.get() );
 				invalidateDraw();
-				onDocumentLoaded();
 				if ( !wasLocked )
 					setLocked( false );
+				onDocumentLoaded();
 				if ( onLoaded )
 					onLoaded( mDoc, success );
 			} );
@@ -1173,6 +1201,10 @@ void UICodeEditor::copyFilePath() {
 	getUISceneNode()->getWindow()->getClipboard()->setText( mDoc->getFilePath() );
 }
 
+void UICodeEditor::scrollToCursor( bool centered ) {
+	scrollToMakeVisible( mDoc->getSelection().start(), centered );
+}
+
 void UICodeEditor::updateEditor() {
 	mDoc->setPageSize( getVisibleLinesCount() );
 	if ( mDoc->getActiveClient() == this )
@@ -1216,6 +1248,11 @@ void UICodeEditor::onDocumentUndoRedo( const TextDocument::UndoRedo& ) {
 
 void UICodeEditor::onDocumentSaved( TextDocument* doc ) {
 	DocEvent event( this, doc, Event::OnDocumentSave );
+	sendEvent( &event );
+}
+
+void UICodeEditor::onDocumentMoved( TextDocument* doc ) {
+	DocEvent event( this, doc, Event::OnDocumentMoved );
 	sendEvent( &event );
 }
 

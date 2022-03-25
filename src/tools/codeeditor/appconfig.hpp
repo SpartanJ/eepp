@@ -86,7 +86,7 @@ struct AppConfig {
 					  const std::string& configPath );
 
 	void loadProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
-					  const std::string& configPath );
+					  const std::string& configPath, std::shared_ptr<ThreadPool> pool );
 };
 
 #endif // APPCONFIG_HPP
