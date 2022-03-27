@@ -223,7 +223,7 @@ Glyph FontBMFont::loadGlyph( Uint32 codePoint, unsigned int characterSize, bool,
 	return glyph;
 }
 
-Float FontBMFont::getKerning( Uint32, Uint32, unsigned int ) const {
+Float FontBMFont::getKerning( Uint32, Uint32, unsigned int, bool bold ) const {
 	return 0;
 }
 
@@ -232,7 +232,7 @@ Float FontBMFont::getLineSpacing( unsigned int characterSize ) const {
 }
 
 Uint32 FontBMFont::getFontHeight( const Uint32& characterSize ) const {
-	return ( Uint32 )( (Float)characterSize / mFontSize ) * mFontSize;
+	return (Uint32)( (Float)characterSize / mFontSize ) * mFontSize;
 }
 
 Float FontBMFont::getUnderlinePosition( unsigned int ) const {

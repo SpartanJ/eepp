@@ -11,6 +11,9 @@ using namespace EE::UI::Doc;
 
 namespace EE { namespace UI {
 
+class UIPopUpMenu;
+class UIMenuItem;
+
 class EE_API UITextInput : public UITextView, public TextDocument::Client {
   public:
 	static UITextInput* New();
@@ -99,6 +102,10 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 
 	KeyBindings& getKeyBindings();
 
+	size_t getMenuIconSize() const;
+
+	void setMenuIconSize( size_t menuIconSize );
+
   protected:
 	TextDocument mDoc;
 	Float mWaitCursorTime;
@@ -111,9 +118,12 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 	bool mOnlyNumbers;
 	bool mAllowFloat;
 	bool mMouseDown;
+	bool mCreateDefaultContextMenuOptions{ true };
 	Uint32 mMaxLength{ 0 };
 	KeyBindings mKeyBindings;
 	Clock mLastDoubleClick;
+	size_t mMenuIconSize{ 16 };
+	UIPopUpMenu* mCurrentMenu{ nullptr };
 
 	void resetWaitCursor();
 
@@ -196,6 +206,16 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 	virtual Uint32 onKeyDown( const KeyEvent& event );
 
 	virtual Uint32 onTextInput( const TextInputEvent& event );
+
+	void createDefaultContextMenuOptions( UIPopUpMenu* menu );
+
+	virtual bool onCreateContextMenu( const Vector2i& position, const Uint32& flags );
+
+	UIMenuItem* menuAdd( UIPopUpMenu* menu, const std::string& translateKey,
+						 const String& translateString, const std::string& icon,
+						 const std::string& cmd );
+
+	Drawable* findIcon( const std::string& name );
 };
 
 }} // namespace EE::UI

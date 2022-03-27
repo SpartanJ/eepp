@@ -1550,12 +1550,10 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			setLayoutMarginBottom( lengthFromValueAsDp( attribute ) );
 			break;
 		case PropertyId::Tooltip: {
-			if ( NULL != mUISceneNode ) {
-				String text = mUISceneNode->getTranslatorString( attribute.asString() );
-				setTooltipText( text );
-				if ( NULL != mTooltip )
-					mTooltip->setStringBuffer( text );
-			}
+			String text = getTranslatorString( attribute.asString() );
+			setTooltipText( text );
+			if ( NULL != mTooltip )
+				mTooltip->setStringBuffer( text );
 			break;
 		}
 		case PropertyId::LayoutWeight:
@@ -1915,6 +1913,15 @@ UIWidget* UIWidget::getNextWidget() const {
 		child = child->getNextNode();
 	}
 	return NULL;
+}
+
+String UIWidget::getTranslatorString( const std::string& str ) {
+	return getUISceneNode() != nullptr ? getUISceneNode()->getTranslatorString( str ) : String();
+}
+
+String UIWidget::getTranslatorString( const std::string& str, const String& defaultValue ) {
+	return getUISceneNode() != nullptr ? getUISceneNode()->getTranslatorString( str, defaultValue )
+									   : defaultValue;
 }
 
 UIWidget* UIWidget::getNextTabWidget() const {

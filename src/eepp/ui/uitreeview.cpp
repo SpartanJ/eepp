@@ -659,9 +659,9 @@ ModelIndex UITreeView::findRowWithText( const std::string& text, const bool& cas
 		Variant var = model->data( index );
 		if ( var.isValid() &&
 			 ( exactMatch ? var.toString() == text
-						  : String::startsWith( caseSensitive ? var.toString()
-															  : String::toLower( var.toString() ),
-												text ) ) ) {
+						  : String::startsWith(
+								caseSensitive ? var.toString() : String::toLower( var.toString() ),
+								caseSensitive ? text : String::toLower( text ) ) ) ) {
 			foundIndex = index;
 			return IterationDecision::Stop;
 		}

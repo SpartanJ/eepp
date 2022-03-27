@@ -316,9 +316,7 @@ void UIMenuBar::loadFromXmlNode( const pugi::xml_node& node ) {
 
 			subMenu->loadFromXmlNode( item );
 
-			if ( nullptr != mSceneNode && mSceneNode->isUISceneNode() )
-				addMenuButton( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( text ),
-							   subMenu );
+			addMenuButton( getTranslatorString( text ), subMenu );
 		}
 	}
 

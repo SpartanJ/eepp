@@ -4,6 +4,8 @@
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/uiicon.hpp>
+#include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitextinput.hpp>
 #include <eepp/ui/uitheme.hpp>
@@ -326,6 +328,8 @@ Uint32 UITextInput::onMouseUp( const Vector2i& position, const Uint32& flags ) {
 			mMouseDown = false;
 			getUISceneNode()->getWindow()->getInput()->captureMouse( false );
 		}
+	} else if ( ( flags & EE_BUTTON_RMASK ) ) {
+		onCreateContextMenu( position, flags );
 	}
 	return UITextView::onMouseUp( position, flags );
 }
@@ -484,8 +488,7 @@ bool UITextInput::applyProperty( const StyleSheetProperty& attribute ) {
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::Text:
-			if ( NULL != getUISceneNode() )
-				setText( getUISceneNode()->getTranslatorString( attribute.asString() ) );
+			setText( getTranslatorString( attribute.asString() ) );
 			break;
 		case PropertyId::AllowEditing:
 			setAllowEditing( attribute.asBool() );
@@ -500,8 +503,7 @@ bool UITextInput::applyProperty( const StyleSheetProperty& attribute ) {
 			setAllowOnlyNumbers( onlyNumbersAllowed(), attribute.asBool() );
 			break;
 		case PropertyId::Hint:
-			if ( NULL != getUISceneNode() )
-				setHint( getUISceneNode()->getTranslatorString( attribute.asString() ) );
+			setHint( getTranslatorString( attribute.asString() ) );
 			break;
 		case PropertyId::HintColor:
 			setHintColor( attribute.asColor() );
@@ -774,6 +776,82 @@ TextDocument& UITextInput::getDocument() {
 
 KeyBindings& UITextInput::getKeyBindings() {
 	return mKeyBindings;
+}
+
+size_t UITextInput::getMenuIconSize() const {
+	return mMenuIconSize;
+}
+
+void UITextInput::setMenuIconSize( size_t menuIconSize ) {
+	mMenuIconSize = menuIconSize;
+}
+
+Drawable* UITextInput::findIcon( const std::string& name ) {
+	UIIcon* icon = getUISceneNode()->findIcon( name );
+	if ( icon )
+		return icon->getSize( mMenuIconSize );
+	return nullptr;
+}
+
+UIMenuItem* UITextInput::menuAdd( UIPopUpMenu* menu, const std::string& translateKey,
+								  const String& translateString, const std::string& icon,
+								  const std::string& cmd ) {
+	UIMenuItem* menuItem =
+		menu->add( getTranslatorString( "@string/uicodeeditor_" + translateKey, translateString ),
+				   findIcon( icon ), mKeyBindings.getCommandKeybindString( cmd ) );
+	menuItem->setId( cmd );
+	return menuItem;
+}
+
+void UITextInput::createDefaultContextMenuOptions( UIPopUpMenu* menu ) {
+	if ( !mCreateDefaultContextMenuOptions )
+		return;
+
+	menuAdd( menu, "undo", "Undo", "undo", "undo" )->setEnabled( mDoc.hasUndo() );
+	menuAdd( menu, "redo", "Redo", "redo", "redo" )->setEnabled( mDoc.hasRedo() );
+	menu->addSeparator();
+
+	menuAdd( menu, "cut", "Cut", "cut", "cut" )->setEnabled( mDoc.hasSelection() );
+	menuAdd( menu, "copy", "Copy", "copy", "copy" )->setEnabled( mDoc.hasSelection() );
+	menuAdd( menu, "cut", "Paste", "paste", "paste" );
+	menuAdd( menu, "delete", "Delete", "delete-text", "delete-to-next-char" );
+	menu->addSeparator();
+	menuAdd( menu, "select_all", "Select All", "select-all", "select-all" );
+}
+
+bool UITextInput::onCreateContextMenu( const Vector2i& position, const Uint32& flags ) {
+	if ( mCurrentMenu )
+		return false;
+
+	UIPopUpMenu* menu = UIPopUpMenu::New();
+
+	ContextMenuEvent event( this, menu, Event::OnCreateContextMenu, position, flags );
+	sendEvent( &event );
+
+	createDefaultContextMenuOptions( menu );
+
+	if ( menu->getCount() == 0 ) {
+		menu->close();
+		return false;
+	}
+
+	menu->setCloseOnHide( true );
+	menu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
+		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+			return;
+		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
+		std::string txt( item->getId() );
+		mDoc.execute( txt );
+	} );
+
+	Vector2f pos( position.asFloat() );
+	menu->nodeToWorldTranslation( pos );
+	UIMenu::findBestMenuPos( pos, menu );
+	menu->setPixelsPosition( pos );
+	menu->show();
+	menu->addEventListener( Event::OnClose, [&]( const Event* ) { mCurrentMenu = nullptr; } );
+	mCurrentMenu = menu;
+	return true;
 }
 
 }} // namespace EE::UI

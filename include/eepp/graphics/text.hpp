@@ -125,7 +125,7 @@ class EE_API Text {
 
 	/** Simulates a selection request and return the initial and end cursor position when the
 	 * selection worked. Otherwise both parameters will be -1. */
-	void findWordFromCharacterIndex( Int32 characterIndex, Int32& InitCur, Int32& EndCur ) const;
+	void findWordFromCharacterIndex( Int32 characterIndex, Int32& initCur, Int32& endCur ) const;
 
 	/** Shrink the String to a max width
 	 * @param MaxWidth The maximum possible width

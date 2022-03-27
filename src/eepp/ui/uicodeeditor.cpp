@@ -817,25 +817,26 @@ Sizef UICodeEditor::getMaxScroll() const {
 							getLineHeight() );
 }
 
-void UICodeEditor::menuAdd( UIPopUpMenu* menu, const std::string& translateKey,
-							const String& translateString, const std::string& icon,
-							const std::string& cmd ) {
-	menu->add( menu->getUISceneNode()->getTranslatorString( "uicodeeditor_" + translateKey,
-															translateString ),
-			   findIcon( icon ), mKeyBindings.getCommandKeybindString( cmd ) )
-		->setId( cmd );
+UIMenuItem* UICodeEditor::menuAdd( UIPopUpMenu* menu, const std::string& translateKey,
+								   const String& translateString, const std::string& icon,
+								   const std::string& cmd ) {
+	UIMenuItem* menuItem =
+		menu->add( getTranslatorString( "@string/uicodeeditor_" + translateKey, translateString ),
+				   findIcon( icon ), mKeyBindings.getCommandKeybindString( cmd ) );
+	menuItem->setId( cmd );
+	return menuItem;
 }
 
 void UICodeEditor::createDefaultContextMenuOptions( UIPopUpMenu* menu ) {
 	if ( !mCreateDefaultContextMenuOptions )
 		return;
 
-	menuAdd( menu, "undo", "Undo", "undo", "undo" );
-	menuAdd( menu, "redo", "Redo", "redo", "redo" );
+	menuAdd( menu, "undo", "Undo", "undo", "undo" )->setEnabled( mDoc->hasUndo() );
+	menuAdd( menu, "redo", "Redo", "redo", "redo" )->setEnabled( mDoc->hasRedo() );
 	menu->addSeparator();
 
-	menuAdd( menu, "cut", "Cut", "cut", "cut" );
-	menuAdd( menu, "copy", "Copy", "copy", "copy" );
+	menuAdd( menu, "cut", "Cut", "cut", "cut" )->setEnabled( mDoc->hasSelection() );
+	menuAdd( menu, "copy", "Copy", "copy", "copy" )->setEnabled( mDoc->hasSelection() );
 	menuAdd( menu, "cut", "Paste", "paste", "paste" );
 	menuAdd( menu, "delete", "Delete", "delete-text", "delete-to-next-char" );
 	menu->addSeparator();

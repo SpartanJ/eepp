@@ -109,3 +109,10 @@ Tooltip {
 	padding: 8dp;
 	color: #020203;
 }
+
+Menu::Item::shortcut,
+Menu::CheckBox::shortcut,
+Menu::RadioButton::shortcut {
+	margin-right: 8dp;
+}
+

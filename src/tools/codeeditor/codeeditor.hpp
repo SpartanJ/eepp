@@ -32,7 +32,7 @@ class App : public UICodeEditorSplitter::Client {
 
 	void openFolderDialog();
 
-	void openFontDialog( std::string& fontPath );
+	void openFontDialog( std::string& fontPath, bool loadingMonoFont );
 
 	void downloadFileWeb( const std::string& url );
 

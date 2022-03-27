@@ -25,12 +25,6 @@ class EE_API SceneNode : public Node {
 
 	~SceneNode();
 
-	void setTranslator( Translator translator );
-
-	Translator& getTranslator();
-
-	String getTranslatorString( const std::string& str );
-
 	void enableFrameBuffer();
 
 	void disableFrameBuffer();

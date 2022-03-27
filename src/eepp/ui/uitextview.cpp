@@ -300,8 +300,8 @@ void UITextView::alignFix() {
 	switch ( Font::getHorizontalAlign( getFlags() ) ) {
 		case UI_HALIGN_CENTER:
 			mRealAlignOffset.x =
-				( Float )( ( Int32 )( ( mSize.x - mPaddingPx.Left - mPaddingPx.Right ) / 2 -
-									  mTextCache->getTextWidth() / 2 ) );
+				(Float)( (Int32)( ( mSize.x - mPaddingPx.Left - mPaddingPx.Right ) / 2 -
+								  mTextCache->getTextWidth() / 2 ) );
 			break;
 		case UI_HALIGN_RIGHT:
 			mRealAlignOffset.x = ( (Float)mSize.x - mPaddingPx.Left - mPaddingPx.Right -
@@ -315,8 +315,8 @@ void UITextView::alignFix() {
 	switch ( Font::getVerticalAlign( getFlags() ) ) {
 		case UI_VALIGN_CENTER:
 			mRealAlignOffset.y =
-				( Float )( ( Int32 )( ( mSize.y - mPaddingPx.Top - mPaddingPx.Bottom ) / 2 -
-									  mTextCache->getTextHeight() / 2 ) ) -
+				(Float)( (Int32)( ( mSize.y - mPaddingPx.Top - mPaddingPx.Bottom ) / 2 -
+								  mTextCache->getTextHeight() / 2 ) ) -
 				1;
 			break;
 		case UI_VALIGN_BOTTOM:
@@ -591,7 +591,7 @@ const Int32& UITextView::getFontLineCenter() {
 void UITextView::recalculate() {
 	int fontHeight = mTextCache->getCharacterSizePx();
 	mFontLineCenter = eefloor(
-		( Float )( ( mTextCache->getFont()->getLineSpacing( fontHeight ) - fontHeight ) / 2 ) );
+		(Float)( ( mTextCache->getFont()->getLineSpacing( fontHeight ) - fontHeight ) / 2 ) );
 
 	autoShrink();
 	onAutoSize();
@@ -610,8 +610,7 @@ bool UITextView::applyProperty( const StyleSheetProperty& attribute ) {
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::Text:
-			if ( NULL != mUISceneNode )
-				setText( mUISceneNode->getTranslatorString( attribute.asString() ) );
+			setText( getTranslatorString( attribute.asString() ) );
 			break;
 		case PropertyId::Color:
 			setFontColor( attribute.asColor() );

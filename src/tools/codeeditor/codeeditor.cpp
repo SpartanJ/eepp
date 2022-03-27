@@ -173,7 +173,7 @@ void App::openFolderDialog() {
 	dialog->show();
 }
 
-void App::openFontDialog( std::string& fontPath ) {
+void App::openFontDialog( std::string& fontPath, bool loadingMonoFont ) {
 	std::string absoluteFontPath( fontPath );
 	if ( FileSystem::isRelativePath( absoluteFontPath ) )
 		absoluteFontPath = mResPath + fontPath;
@@ -188,12 +188,19 @@ void App::openFontDialog( std::string& fontPath ) {
 	dialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 	dialog->setTitle( "Select Font File" );
 	dialog->setCloseShortcut( KEY_ESCAPE );
-	dialog->addEventListener( Event::OpenFile, [&]( const Event* event ) {
+	dialog->addEventListener( Event::OnWindowClose, [&]( const Event* ) {
+		if ( mEditorSplitter && mEditorSplitter->getCurEditor() &&
+			 !SceneManager::instance()->isShootingDown() )
+			mEditorSplitter->getCurEditor()->setFocus();
+	} );
+	dialog->addEventListener( Event::OpenFile, [&, loadingMonoFont]( const Event* event ) {
 		auto newPath = event->getNode()->asType<UIFileDialog>()->getFullPath();
 		if ( String::startsWith( newPath, mResPath ) )
 			newPath = newPath.substr( mResPath.size() );
 		if ( fontPath != newPath ) {
 			fontPath = newPath;
+			if ( !loadingMonoFont )
+				return;
 			auto fontName =
 				FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( fontPath ) );
 			FontTrueType* fontMono = loadFont( fontName, fontPath );
@@ -206,11 +213,6 @@ void App::openFontDialog( std::string& fontPath ) {
 				}
 			}
 		}
-	} );
-	dialog->addEventListener( Event::OnWindowClose, [&]( const Event* ) {
-		if ( mEditorSplitter && mEditorSplitter->getCurEditor() &&
-			 !SceneManager::instance()->isShootingDown() )
-			mEditorSplitter->getCurEditor()->setFocus();
 	} );
 	dialog->center();
 	dialog->show();
@@ -591,9 +593,9 @@ UIMenu* App::createWindowMenu() {
 			} );
 			setFocusEditorOnClose( msgBox );
 		} else if ( item->getText() == "Serif Font..." ) {
-			openFontDialog( mConfig.ui.serifFont );
+			openFontDialog( mConfig.ui.serifFont, false );
 		} else if ( item->getText() == "Monospace Font..." ) {
-			openFontDialog( mConfig.ui.monospaceFont );
+			openFontDialog( mConfig.ui.monospaceFont, true );
 		} else if ( "Zoom In" == item->getText() ) {
 			mEditorSplitter->zoomIn();
 		} else if ( "Zoom Out" == item->getText() ) {
@@ -2262,7 +2264,7 @@ void App::init( const std::string& file, const Float& pidelDensity,
 			background-color: #00000066;
 		}
 		#image_close {
-			color: #eff0f188;
+			color: var(--floating-icon);
 			font-family: icon;
 			font-size: 22dp;
 			margin-top: 32dp;

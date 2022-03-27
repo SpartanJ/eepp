@@ -83,7 +83,7 @@ class EE_API UIFileDialog : public UIWindow {
 
 	bool getShowHidden();
 
-	bool getAllowFolderSelect();
+	bool allowFolderSelect();
 
 	void setSortAlphabetically( const bool& sortAlphabetically );
 

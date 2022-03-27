@@ -272,6 +272,10 @@ class EE_API TextDocument {
 
 	void moveLinesDown();
 
+	bool hasUndo() const;
+
+	bool hasRedo() const;
+
 	void undo();
 
 	void redo();

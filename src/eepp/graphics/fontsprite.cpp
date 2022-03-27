@@ -214,7 +214,7 @@ Glyph FontSprite::loadGlyph( Uint32 codePoint, unsigned int characterSize ) cons
 	return glyph;
 }
 
-Float FontSprite::getKerning( Uint32, Uint32, unsigned int ) const {
+Float FontSprite::getKerning( Uint32, Uint32, unsigned int, bool ) const {
 	return 0;
 }
 
@@ -223,7 +223,7 @@ Float FontSprite::getLineSpacing( unsigned int characterSize ) const {
 }
 
 Uint32 FontSprite::getFontHeight( const Uint32& characterSize ) const {
-	return ( Uint32 )( (Float)characterSize / mFontSize ) * mFontSize;
+	return (Uint32)( (Float)characterSize / mFontSize ) * mFontSize;
 }
 
 Float FontSprite::getUnderlinePosition( unsigned int ) const {

@@ -42,7 +42,7 @@ class EE_API FontSprite : public Font {
 	GlyphDrawable* getGlyphDrawable( Uint32 codePoint, unsigned int characterSize,
 									 bool bold = false, Float outlineThickness = 0 ) const;
 
-	Float getKerning( Uint32 first, Uint32 second, unsigned int characterSize ) const;
+	Float getKerning( Uint32 first, Uint32 second, unsigned int characterSize, bool bold ) const;
 
 	Float getLineSpacing( unsigned int characterSize ) const;
 

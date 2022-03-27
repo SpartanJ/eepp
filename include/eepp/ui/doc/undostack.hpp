@@ -86,6 +86,10 @@ class EE_API UndoStack {
 
 	void redo();
 
+	bool hasUndo() const;
+
+	bool hasRedo() const;
+
 	const Uint32& getMaxStackSize() const;
 
 	const Time& getMergeTimeout() const;

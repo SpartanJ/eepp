@@ -298,7 +298,7 @@ ModelIndex UITableView::findRowWithText( const std::string& text, const bool& ca
 			 ( exactMatch ? var.toString() == text
 						  : String::startsWith( caseSensitive ? var.toString()
 															  : String::toLower( var.toString() ),
-												text ) ) )
+												caseSensitive ? text : String::toLower( text ) ) ) )
 			return model->index( index.row(), 0 );
 	}
 	return {};

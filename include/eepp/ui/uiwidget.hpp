@@ -339,6 +339,10 @@ class EE_API UIWidget : public UINode {
 	void reloadFontFamily();
 
 	UIWidget* getNextWidget() const;
+
+	String getTranslatorString( const std::string& str );
+
+	String getTranslatorString( const std::string& str, const String& defaultValue );
 };
 
 }} // namespace EE::UI

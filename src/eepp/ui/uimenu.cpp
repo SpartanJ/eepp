@@ -544,22 +544,18 @@ void UIMenu::loadFromXmlNode( const pugi::xml_node& node ) {
 			std::string text( item.attribute( "text" ).as_string() );
 			std::string icon( item.attribute( "icon" ).as_string() );
 			if ( nullptr != mSceneNode && mSceneNode->isUISceneNode() )
-				add( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( text ),
+				add( getTranslatorString( text ),
 					 getIconDrawable( icon, getUISceneNode()->getUIIconThemeManager() ) );
 		} else if ( name == "menuseparator" || name == "separator" ) {
 			addSeparator();
 		} else if ( name == "menucheckbox" || name == "checkbox" ) {
 			std::string text( item.attribute( "text" ).as_string() );
 			bool active( item.attribute( "active" ).as_bool() );
-			if ( nullptr != mSceneNode && mSceneNode->isUISceneNode() )
-				addCheckBox( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( text ),
-							 active );
+			addCheckBox( getTranslatorString( text ), active );
 		} else if ( name == "menuradiobutton" || name == "radiobutton" ) {
 			std::string text( item.attribute( "text" ).as_string() );
 			bool active( item.attribute( "active" ).as_bool() );
-			if ( nullptr != mSceneNode && mSceneNode->isUISceneNode() )
-				addRadioButton(
-					static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( text ), active );
+			addRadioButton( getTranslatorString( text ), active );
 		} else if ( name == "menusubmenu" || name == "submenu" ) {
 			std::string text( item.attribute( "text" ).as_string() );
 			std::string icon( item.attribute( "icon" ).as_string() );
@@ -567,10 +563,9 @@ void UIMenu::loadFromXmlNode( const pugi::xml_node& node ) {
 			if ( nullptr != getDrawInvalidator() )
 				subMenu->setParent( getDrawInvalidator() );
 			subMenu->loadFromXmlNode( item );
-			if ( nullptr != mSceneNode && mSceneNode->isUISceneNode() )
-				addSubMenu( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( text ),
-							getIconDrawable( icon, getUISceneNode()->getUIIconThemeManager() ),
-							subMenu );
+			addSubMenu( getTranslatorString( text ),
+						getIconDrawable( icon, getUISceneNode()->getUIIconThemeManager() ),
+						subMenu );
 		}
 	}
 	endAttributesTransaction();

@@ -797,12 +797,17 @@ Menu::RadioButton::shortcut {
 
 Menu::Item:disabled > Menu::Item::text,
 Menu::Item:disabled > Menu::Item::shortcut,
+Menu::Item:disabled > Menu::Item::icon,
 Menu::CheckBox:disabled > Menu::CheckBox::text,
 Menu::CheckBox:disabled > Menu::CheckBox::shortcut,
+Menu::CheckBox:disabled > Menu::CheckBox::icon,
 Menu::RadioButton:disabled > Menu::RadioButton::text,
 Menu::RadioButton:disabled > Menu::RadioButton::shortcut,
-Menu::SubMenu:disabled > Menu::SubMenu::text {
+Menu::RadioButton:disabled > Menu::RadioButton::icon,
+Menu::SubMenu:disabled > Menu::SubMenu::text,
+Menu::SubMenu:disabled > Menu::SubMenu::icon {
 	color: var(--menu-font-disabled);
+	tint: var(--menu-font-disabled);
 }
 
 Menu::Item:hover > Menu::Item::text,

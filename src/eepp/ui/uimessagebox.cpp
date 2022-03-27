@@ -58,29 +58,22 @@ UIMessageBox::UIMessageBox( const Type& type, const String& message, const Uint3
 	switch ( mMsgBoxType ) {
 		case UIMessageBox::INPUT:
 		case UIMessageBox::OK_CANCEL: {
-			mButtonOK->setText(
-				getUISceneNode()->getTranslatorString( "@string/msg_box_ok", "Ok" ) );
-			mButtonCancel->setText(
-				getUISceneNode()->getTranslatorString( "@string/msg_box_cancel", "Cancel" ) );
+			mButtonOK->setText( getTranslatorString( "@string/msg_box_ok", "Ok" ) );
+			mButtonCancel->setText( getTranslatorString( "@string/msg_box_cancel", "Cancel" ) );
 			break;
 		}
 		case UIMessageBox::YES_NO: {
-			mButtonOK->setText(
-				getUISceneNode()->getTranslatorString( "@string/msg_box_yes", "Yes" ) );
-			mButtonCancel->setText(
-				getUISceneNode()->getTranslatorString( "@string/msg_box_no", "No" ) );
+			mButtonOK->setText( getTranslatorString( "@string/msg_box_yes", "Yes" ) );
+			mButtonCancel->setText( getTranslatorString( "@string/msg_box_no", "No" ) );
 			break;
 		}
 		case UIMessageBox::RETRY_CANCEL: {
-			mButtonOK->setText(
-				getUISceneNode()->getTranslatorString( "@string/msg_box_retry", "Retry" ) );
-			mButtonCancel->setText(
-				getUISceneNode()->getTranslatorString( "@string/msg_box_cancel", "Cancel" ) );
+			mButtonOK->setText( getTranslatorString( "@string/msg_box_retry", "Retry" ) );
+			mButtonCancel->setText( getTranslatorString( "@string/msg_box_cancel", "Cancel" ) );
 			break;
 		}
 		case UIMessageBox::OK: {
-			mButtonOK->setText(
-				getUISceneNode()->getTranslatorString( "@string/msg_box_ok", "Ok" ) );
+			mButtonOK->setText( getTranslatorString( "@string/msg_box_ok", "Ok" ) );
 			mButtonCancel->setVisible( false );
 			mButtonCancel->setEnabled( false );
 			break;
@@ -105,8 +98,7 @@ void UIMessageBox::setTheme( UITheme* theme ) {
 	mButtonOK->setTheme( theme );
 	mButtonCancel->setTheme( theme );
 
-	if ( getUISceneNode()->getTranslatorString( "@string/msg_box_retry", "Retry" ) !=
-		 mButtonOK->getText() ) {
+	if ( getTranslatorString( "@string/msg_box_retry", "Retry" ) != mButtonOK->getText() ) {
 		Drawable* okIcon = getUISceneNode()->findIconDrawable( "ok", PixelDensity::dpToPxI( 16 ) );
 		Drawable* cancelIcon =
 			getUISceneNode()->findIconDrawable( "cancel", PixelDensity::dpToPxI( 16 ) );

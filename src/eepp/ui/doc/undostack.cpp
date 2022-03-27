@@ -153,6 +153,14 @@ void UndoStack::redo() {
 	popUndo( mRedoStack, mUndoStack );
 }
 
+bool UndoStack::hasUndo() const {
+	return !mUndoStack.empty();
+}
+
+bool UndoStack::hasRedo() const {
+	return !mRedoStack.empty();
+}
+
 const Uint32& UndoStack::getMaxStackSize() const {
 	return mMaxStackSize;
 }

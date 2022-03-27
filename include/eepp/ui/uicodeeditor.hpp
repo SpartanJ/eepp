@@ -22,6 +22,7 @@ class UIWindow;
 class UIScrollBar;
 class UILoader;
 class UIPopUpMenu;
+class UIMenuItem;
 
 class UICodeEditorModule {
   public:
@@ -637,8 +638,9 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void createDefaultContextMenuOptions( UIPopUpMenu* menu );
 
-	void menuAdd( UIPopUpMenu* menu, const std::string& translateKey, const String& translateString,
-				  const std::string& icon, const std::string& cmd );
+	UIMenuItem* menuAdd( UIPopUpMenu* menu, const std::string& translateKey,
+						 const String& translateString, const std::string& icon,
+						 const std::string& cmd );
 };
 
 }} // namespace EE::UI

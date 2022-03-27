@@ -336,19 +336,19 @@ static bool isStopSelChar( Uint32 c ) {
 		   ',' == c || ';' == c || ':' == c || '\n' == c || '"' == c || '\'' == c || '\t' == c;
 }
 
-void Text::findWordFromCharacterIndex( Int32 characterIndex, Int32& InitCur, Int32& EndCur ) const {
-	InitCur = 0;
-	EndCur = mString.size();
+void Text::findWordFromCharacterIndex( Int32 characterIndex, Int32& initCur, Int32& endCur ) const {
+	initCur = 0;
+	endCur = mString.size();
 
 	for ( std::size_t i = characterIndex; i < mString.size(); i++ ) {
 		if ( isStopSelChar( mString[i] ) ) {
-			EndCur = i;
+			endCur = i;
 			break;
 		}
 	}
 
 	if ( 0 == characterIndex ) {
-		InitCur = 0;
+		initCur = 0;
 	}
 
 	if ( characterIndex >= (Int32)mString.size() ) {
@@ -357,13 +357,13 @@ void Text::findWordFromCharacterIndex( Int32 characterIndex, Int32& InitCur, Int
 
 	for ( Int32 i = characterIndex; i >= 0; i-- ) {
 		if ( isStopSelChar( mString[i] ) ) {
-			InitCur = i + 1;
+			initCur = i + 1;
 			break;
 		}
 	}
 
-	if ( InitCur == EndCur ) {
-		InitCur = EndCur = -1;
+	if ( initCur == endCur ) {
+		initCur = endCur = -1;
 	}
 }
 
@@ -391,7 +391,7 @@ void Text::getWidthInfo() {
 		Glyph glyph = mFont->getGlyph( CharID, mRealFontSize, bold, mOutlineThickness );
 
 		if ( CharID != '\r' && CharID != '\t' ) {
-			Width += mFont->getKerning( prevChar, CharID, mRealFontSize );
+			Width += mFont->getKerning( prevChar, CharID, mRealFontSize, bold );
 			prevChar = CharID;
 			Width += glyph.advance;
 		}
@@ -455,7 +455,7 @@ void Text::shrinkText( const Uint32& maxWidth ) {
 		tWordWidth += fCharWidth;
 
 		if ( *tChar != '\r' ) {
-			tWordWidth += mFont->getKerning( prevChar, *tChar, mRealFontSize );
+			tWordWidth += mFont->getKerning( prevChar, *tChar, mRealFontSize, bold );
 			prevChar = *tChar;
 		}
 
@@ -760,7 +760,7 @@ void Text::ensureGeometryUpdate() {
 		Uint32 curChar = mString[i];
 
 		// Apply the kerning offset
-		x += mFont->getKerning( prevChar, curChar, mRealFontSize );
+		x += mFont->getKerning( prevChar, curChar, mRealFontSize, bold );
 		prevChar = curChar;
 
 		// If we're using the underlined style and there's a new line, draw a line

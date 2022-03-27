@@ -33,10 +33,13 @@ class EE_API FontTrueType : public Font {
 	const Glyph& getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
 						   Float outlineThickness = 0 ) const;
 
+	const Glyph& getGlyphByIndex( Uint32 index, unsigned int characterSize, bool bold,
+								  Float outlineThickness = 0 ) const;
+
 	GlyphDrawable* getGlyphDrawable( Uint32 codePoint, unsigned int characterSize,
 									 bool bold = false, Float outlineThickness = 0 ) const;
 
-	Float getKerning( Uint32 first, Uint32 second, unsigned int characterSize ) const;
+	Float getKerning( Uint32 first, Uint32 second, unsigned int characterSize, bool bold ) const;
 
 	Float getLineSpacing( unsigned int characterSize ) const;
 
@@ -63,6 +66,8 @@ class EE_API FontTrueType : public Font {
 	bool isMonospace() const;
 
 	bool isEmojiFont() const { return mIsEmojiFont; }
+
+	bool hasGlyph( Uint32 codePoint ) const;
 
   protected:
 	explicit FontTrueType( const std::string& FontName );
@@ -94,6 +99,13 @@ class EE_API FontTrueType : public Font {
 
 	void cleanup();
 
+	const Glyph& getGlyphByIndex( Uint32 index, unsigned int characterSize, bool bold,
+								  Float outlineThickness, Page& page,
+								  const Float& forzeSize ) const;
+
+	const Glyph& getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
+						   Float outlineThickness, Page& page, const Float& forzeSize ) const;
+
 	Glyph loadGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
 					 Float outlineThickness, Page& page, const Float& forceSize = 0.f ) const;
 
@@ -123,7 +135,7 @@ class EE_API FontTrueType : public Font {
 	bool mIsEmojiFont{ false };
 	mutable std::map<unsigned int, unsigned int> mClosestCharacterSize;
 
-	Uint64 getCodePointIndexKey( Uint32 codePoint, bool bold, Float outlineThickness ) const;
+	Uint64 getIndexKey( Uint32 index, bool bold, Float outlineThickness ) const;
 };
 
 }} // namespace EE::Graphics

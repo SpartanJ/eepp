@@ -1261,6 +1261,14 @@ void TextDocument::moveLinesDown() {
 	}
 }
 
+bool TextDocument::hasUndo() const {
+	return mUndoStack.hasUndo();
+}
+
+bool TextDocument::hasRedo() const {
+	return mUndoStack.hasRedo();
+}
+
 void TextDocument::appendLineIfLastLine( Int64 line ) {
 	if ( line >= (Int64)mLines.size() - 1 ) {
 		insert( endOfDoc(), "\n" );

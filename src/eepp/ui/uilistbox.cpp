@@ -155,7 +155,7 @@ Uint32 UIListBox::addListBoxItem( UIListBoxItem* Item ) {
 
 	updatePageStep();
 
-	return ( Uint32 )( mItems.size() - 1 );
+	return (Uint32)( mItems.size() - 1 );
 }
 
 Uint32 UIListBox::addListBoxItem( const String& text ) {
@@ -165,7 +165,7 @@ Uint32 UIListBox::addListBoxItem( const String& text ) {
 	updatePageStep();
 	updateScroll();
 
-	return ( Uint32 )( mItems.size() - 1 );
+	return (Uint32)( mItems.size() - 1 );
 }
 
 UIListBoxItem* UIListBox::createListBoxItem( const String& Name ) {
@@ -352,7 +352,7 @@ void UIListBox::updatePageStep() {
 void UIListBox::onTouchDragValueChange( Vector2f diff ) {
 	if ( mVScrollBar->isEnabled() )
 		mVScrollBar->setValue( mVScrollBar->getValue() +
-							   ( -diff.y / ( Float )( ( mItems.size() - 1 ) * mRowHeight ) ) );
+							   ( -diff.y / (Float)( ( mItems.size() - 1 ) * mRowHeight ) ) );
 
 	if ( mHScrollBar->isEnabled() )
 		mHScrollBar->setValue( mHScrollBar->getValue() + ( -diff.x / mMaxTextWidth ) );
@@ -497,7 +497,7 @@ void UIListBox::updateScrollBarState() {
 			else
 				ScrollH = PixelDensity::pxToDpI( mMaxTextWidth ) - mContainer->getSize().getWidth();
 
-			Int32 HScrolleable = ( Uint32 )( mHScrollBar->getValue() * ScrollH );
+			Int32 HScrolleable = (Uint32)( mHScrollBar->getValue() * ScrollH );
 
 			mHScrollInit = -HScrolleable;
 		} else {
@@ -538,7 +538,7 @@ void UIListBox::updateScroll( bool fromScrollChange ) {
 
 	if ( clipped && mSmoothScroll ) {
 		if ( scrolleable >= 0 )
-			relPos = ( Uint32 )( mVScrollBar->getValue() * scrolleable );
+			relPos = (Uint32)( mVScrollBar->getValue() * scrolleable );
 		else
 			relPos = 0;
 
@@ -592,7 +592,7 @@ void UIListBox::updateScroll( bool fromScrollChange ) {
 		relPosMax = (Uint32)mItems.size();
 
 		if ( mItemsNotVisible > 0 ) {
-			relPos = ( Uint32 )( mVScrollBar->getValue() * mItemsNotVisible );
+			relPos = (Uint32)( mVScrollBar->getValue() * mItemsNotVisible );
 			relPosMax = relPos + visibleItems;
 		}
 
@@ -850,8 +850,8 @@ void UIListBox::selectPrev() {
 				createItemIndex( SelIndex );
 
 			if ( mItems[SelIndex]->getPosition().y < 0 ) {
-				mVScrollBar->setValue( ( Float )( SelIndex * mRowHeight ) /
-									   ( Float )( ( mItems.size() - 1 ) * mRowHeight ) );
+				mVScrollBar->setValue( (Float)( SelIndex * mRowHeight ) /
+									   (Float)( ( mItems.size() - 1 ) * mRowHeight ) );
 
 				mItems[SelIndex]->setFocus();
 			}
@@ -874,8 +874,8 @@ void UIListBox::selectNext() {
 
 			if ( mItems[SelIndex]->getPosition().y + (Int32)getRowHeight() >
 				 mContainer->getSize().getHeight() ) {
-				mVScrollBar->setValue( ( Float )( SelIndex * mRowHeight ) /
-									   ( Float )( ( mItems.size() - 1 ) * mRowHeight ) );
+				mVScrollBar->setValue( (Float)( SelIndex * mRowHeight ) /
+									   (Float)( ( mItems.size() - 1 ) * mRowHeight ) );
 
 				mItems[SelIndex]->setFocus();
 			}
@@ -936,8 +936,8 @@ Uint32 UIListBox::onKeyDown( const KeyEvent& event ) {
 			Int32 pageSize = eefloor( mDpSize.getHeight() / mRowHeight );
 			index = eemax( 0, index - pageSize );
 			setSelected( index );
-			mVScrollBar->setValue( ( Float )( index * mRowHeight ) /
-								   ( Float )( ( mItems.size() - 1 ) * mRowHeight ) );
+			mVScrollBar->setValue( (Float)( index * mRowHeight ) /
+								   (Float)( ( mItems.size() - 1 ) * mRowHeight ) );
 			break;
 		}
 		case KEY_PAGEDOWN: {
@@ -947,8 +947,8 @@ Uint32 UIListBox::onKeyDown( const KeyEvent& event ) {
 			Int32 pageSize = eefloor( mDpSize.getHeight() / mRowHeight );
 			index = eemin( getCount() ? (Int32)getCount() - 1 : 0, index + pageSize );
 			setSelected( index );
-			mVScrollBar->setValue( ( Float )( index * mRowHeight ) /
-								   ( Float )( ( mItems.size() - 1 ) * mRowHeight ) );
+			mVScrollBar->setValue( (Float)( index * mRowHeight ) /
+								   (Float)( ( mItems.size() - 1 ) * mRowHeight ) );
 			break;
 		}
 		default: {
@@ -1125,9 +1125,8 @@ void UIListBox::loadItemsFromXmlNode( const pugi::xml_node& node ) {
 	for ( pugi::xml_node item = node.child( "item" ); item; item = item.next_sibling( "item" ) ) {
 		std::string data = item.text().as_string();
 
-		if ( NULL != mUISceneNode && !data.empty() ) {
-			items.push_back( mUISceneNode->getTranslatorString( data ) );
-		}
+		if ( !data.empty() )
+			items.push_back( getTranslatorString( data ) );
 	}
 
 	if ( !items.empty() ) {
