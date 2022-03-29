@@ -164,7 +164,8 @@ class EE_API UIWidget : public UINode {
 	UIStyle* getUIStyle() const;
 
 	void reloadStyle( const bool& reloadChilds = true, const bool& disableAnimations = false,
-					  const bool& reportStateChange = true );
+					  const bool& reportStateChange = true,
+					  const bool& forceReApplyProperties = false );
 
 	void beginAttributesTransaction();
 
@@ -229,7 +230,8 @@ class EE_API UIWidget : public UINode {
 
 	void setMaxHeightEq( const std::string& maxHeightEq );
 
-	void reportStyleStateChangeRecursive( bool disableAnimations = false );
+	void reportStyleStateChangeRecursive( bool disableAnimations = false,
+										  bool forceReApplyStyles = false );
 
 	void createTooltip();
 
@@ -314,7 +316,7 @@ class EE_API UIWidget : public UINode {
 
 	void alignAgainstLayout();
 
-	void reportStyleStateChange( bool disableAnimations = false );
+	void reportStyleStateChange( bool disableAnimations = false, bool forceReApplyStyles = false );
 
 	std::string getLayoutWidthPolicyString() const;
 

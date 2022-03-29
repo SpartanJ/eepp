@@ -24,6 +24,7 @@ struct UIConfig {
 	PanelPosition panelPosition{ PanelPosition::Left };
 	std::string serifFont;
 	std::string monospaceFont;
+	ColorSchemePreference colorScheme{ ColorSchemePreference::Dark };
 };
 
 struct WindowConfig {

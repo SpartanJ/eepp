@@ -45,6 +45,8 @@ class EE_API StyleSheet {
 
 	static size_t nodeHash( const std::string& tag, const std::string& id );
 
+	void resetCache();
+
   protected:
 	std::vector<std::shared_ptr<StyleSheetStyle>> mNodes;
 	std::unordered_map<size_t, StyleSheetStyleVector> mNodeIndex;

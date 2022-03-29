@@ -490,8 +490,28 @@ void App::panelPosition( const PanelPosition& panelPosition ) {
 	}
 }
 
+void App::setUIColorScheme( const ColorSchemePreference& colorScheme ) {
+	if ( colorScheme == mUIColorScheme )
+		return;
+	mUIColorScheme = mConfig.ui.colorScheme = colorScheme;
+	mUISceneNode->setColorSchemePreference( colorScheme );
+}
+
 UIMenu* App::createWindowMenu() {
 	mWindowMenu = UIPopUpMenu::New();
+	UIPopUpMenu* colorsMenu = UIPopUpMenu::New();
+	colorsMenu->addRadioButton( "Light", mUIColorScheme == ColorSchemePreference::Light )
+		->setId( "light" );
+	colorsMenu->addRadioButton( "Dark", mUIColorScheme == ColorSchemePreference::Dark )
+		->setId( "dark" );
+	colorsMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
+		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+			return;
+		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
+		setUIColorScheme( item->getId() == "light" ? ColorSchemePreference::Light
+												   : ColorSchemePreference::Dark );
+	} );
+	mWindowMenu->addSubMenu( "UI Prefers Color Scheme", findIcon( "color-scheme" ), colorsMenu );
 	mWindowMenu->add( "UI Scale Factor (Pixel Density)", findIcon( "pixel-density" ) );
 	mWindowMenu->add( "UI Font Size", findIcon( "font-size" ) );
 	mWindowMenu->add( "Editor Font Size", findIcon( "font-size" ) );
@@ -1620,6 +1640,7 @@ void App::toggleSettingsMenu() {
 
 void App::createSettingsMenu() {
 	mSettingsMenu = UIPopUpMenu::New();
+	mSettingsMenu->setId( "settings_menu" );
 	mSettingsMenu->add( "New", findIcon( "document-new" ), getKeybind( "create-new" ) );
 	mSettingsMenu->add( "Open File...", findIcon( "document-open" ), getKeybind( "open-file" ) );
 	mSettingsMenu->add( "Open Folder...", findIcon( "document-open" ),
@@ -2141,8 +2162,12 @@ void App::init( const std::string& file, const Float& pidelDensity,
 		PixelDensity::setPixelDensity( eemax( mWindow->getScale(), mConfig.window.pixelDensity ) );
 
 		mUISceneNode = UISceneNode::New();
-		if ( colorScheme == "light" )
-			mUISceneNode->setColorSchemePreference( ColorSchemePreference::Light );
+		mUIColorScheme = mConfig.ui.colorScheme;
+		if ( !colorScheme.empty() ) {
+			mUIColorScheme =
+				colorScheme == "light" ? ColorSchemePreference::Light : ColorSchemePreference::Dark;
+		}
+		mUISceneNode->setColorSchemePreference( mUIColorScheme );
 
 		mFont = loadFont( "sans-serif", mConfig.ui.serifFont, "assets/fonts/NotoSans-Regular.ttf" );
 		mFontMono =
@@ -2423,6 +2448,7 @@ void App::init( const std::string& file, const Float& pidelDensity,
 			{ "download-cloud", 0xec58 },
 			{ "layout-left", 0xee94 },
 			{ "layout-right", 0xee9b },
+			{ "color-scheme", 0xebd4 },
 		};
 		for ( const auto& icon : icons )
 			iconTheme->add( UIGlyphIcon::New( icon.first, iconFont, icon.second ) );
@@ -2530,7 +2556,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 
 	appInstance = eeNew( App, () );
 	appInstance->init( file.Get(), pixelDenstiyConf ? pixelDenstiyConf.Get() : 0.f,
-					   prefersColorScheme ? prefersColorScheme.Get() : "dark" );
+					   prefersColorScheme ? prefersColorScheme.Get() : "" );
 	eeSAFE_DELETE( appInstance );
 
 	Engine::destroySingleton();

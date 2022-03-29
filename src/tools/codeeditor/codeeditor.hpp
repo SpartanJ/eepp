@@ -126,6 +126,7 @@ class App : public UICodeEditorSplitter::Client {
 	std::unique_ptr<FileLocator> mFileLocator;
 	std::unique_ptr<NotificationCenter> mNotificationCenter;
 	std::string mLastFileFolder;
+	ColorSchemePreference mUIColorScheme;
 
 	void saveAllProcess();
 
@@ -247,6 +248,8 @@ class App : public UICodeEditorSplitter::Client {
 	void syncProjectTreeWithEditor( UICodeEditor* editor );
 
 	void createProjectTreeMenu( const FileInfo& file );
+
+	void setUIColorScheme( const ColorSchemePreference& colorScheme );
 };
 
 #endif // EE_TOOLS_CODEEDITOR_HPP

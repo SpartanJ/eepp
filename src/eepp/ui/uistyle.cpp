@@ -54,11 +54,15 @@ void UIStyle::setStyleSheetProperty( const StyleSheetProperty& property ) {
 	}
 }
 
+void UIStyle::resetGlobalDefinition() {
+	mGlobalDefinition =
+		mWidget->getUISceneNode()->getStyleSheet().getElementStyles( mWidget, false );
+}
+
 void UIStyle::load() {
 	removeStructurallyVolatileWidgetFromParent();
 
-	mGlobalDefinition =
-		mWidget->getUISceneNode()->getStyleSheet().getElementStyles( mWidget, false );
+	resetGlobalDefinition();
 
 	unsubscribeNonCacheableStyles();
 

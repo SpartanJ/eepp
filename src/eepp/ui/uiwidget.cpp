@@ -645,11 +645,13 @@ void UIWidget::alignAgainstLayout() {
 	setPosition( pos );
 }
 
-void UIWidget::reportStyleStateChange( bool disableAnimations ) {
+void UIWidget::reportStyleStateChange( bool disableAnimations, bool forceReApplyStyles ) {
 	if ( NULL != mStyle && !mStyle->isChangingState() ) {
 		bool hasAnimDisabled = mStyle->getDisableAnimations();
 		if ( disableAnimations )
 			mStyle->setDisableAnimations( disableAnimations );
+		if ( forceReApplyStyles )
+			mStyle->setForceReapplyProperties( true );
 		mStyle->onStateChange();
 		if ( disableAnimations )
 			mStyle->setDisableAnimations( hasAnimDisabled );
@@ -1007,7 +1009,7 @@ UIStyle* UIWidget::getUIStyle() const {
 }
 
 void UIWidget::reloadStyle( const bool& reloadChilds, const bool& disableAnimations,
-							const bool& reportStateChange ) {
+							const bool& reportStateChange, const bool& forceReApplyProperties ) {
 	createStyle();
 
 	if ( NULL != mStyle ) {
@@ -1019,14 +1021,15 @@ void UIWidget::reloadStyle( const bool& reloadChilds, const bool& disableAnimati
 			while ( NULL != child ) {
 				if ( child->isWidget() )
 					child->asType<UIWidget>()->reloadStyle( reloadChilds, disableAnimations,
-															reportStateChange );
+															reportStateChange,
+															forceReApplyProperties );
 
 				child = child->getNextNode();
 			}
 		}
 
 		if ( reportStateChange )
-			reportStyleStateChange( disableAnimations );
+			reportStyleStateChange( disableAnimations, forceReApplyProperties );
 	}
 }
 
@@ -1223,14 +1226,15 @@ bool UIWidget::checkPropertyDefinition( const StyleSheetProperty& property ) {
 	return true;
 }
 
-void UIWidget::reportStyleStateChangeRecursive( bool disableAnimations ) {
+void UIWidget::reportStyleStateChangeRecursive( bool disableAnimations, bool forceReApplyStyles ) {
 	Node* childLoop = getFirstChild();
 	while ( childLoop != NULL ) {
 		if ( childLoop->isWidget() )
-			childLoop->asType<UIWidget>()->reportStyleStateChangeRecursive( disableAnimations );
+			childLoop->asType<UIWidget>()->reportStyleStateChangeRecursive( disableAnimations,
+																			forceReApplyStyles );
 		childLoop = childLoop->getNextNode();
 	}
-	reportStyleStateChange( disableAnimations );
+	reportStyleStateChange( disableAnimations, forceReApplyStyles );
 }
 
 UIWidget* UIWidget::querySelector( const std::string& selector ) {

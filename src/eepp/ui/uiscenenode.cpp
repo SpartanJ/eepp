@@ -686,28 +686,30 @@ Drawable* UISceneNode::findIconDrawable( const std::string& iconName, const size
 	return nullptr;
 }
 
-bool UISceneNode::onMediaChanged() {
-	if ( !mStyleSheet.isMediaQueryListEmpty() ) {
-		MediaFeatures media;
-		media.type = media_type_screen;
-		media.width = mWindow->getWidth();
-		media.height = mWindow->getHeight();
-		media.deviceWidth = mWindow->getDesktopResolution().getWidth();
-		media.deviceHeight = mWindow->getDesktopResolution().getHeight();
-		media.color = 8;
-		media.monochrome = 0;
-		media.colorIndex = 256;
-		media.resolution = static_cast<int>( getDPI() );
-		media.pixelDensity = PixelDensity::getPixelDensity();
-		media.prefersColorScheme =
-			mColorSchemePreference == ColorSchemePreference::Dark ? "dark" : "light";
+CSS::MediaFeatures UISceneNode::getMediaFeatures() const {
+	CSS::MediaFeatures media;
+	media.type = media_type_screen;
+	media.width = mWindow->getWidth();
+	media.height = mWindow->getHeight();
+	media.deviceWidth = mWindow->getDesktopResolution().getWidth();
+	media.deviceHeight = mWindow->getDesktopResolution().getHeight();
+	media.color = 8;
+	media.monochrome = 0;
+	media.colorIndex = 256;
+	media.resolution = static_cast<int>( getDPI() );
+	media.pixelDensity = PixelDensity::getPixelDensity();
+	media.prefersColorScheme =
+		mColorSchemePreference == ColorSchemePreference::Dark ? "dark" : "light";
+	return media;
+}
 
-		if ( mStyleSheet.updateMediaLists( media ) ) {
-			mRoot->reportStyleStateChangeRecursive();
+bool UISceneNode::onMediaChanged( bool forceReApplyStyles ) {
+	if ( !mStyleSheet.isMediaQueryListEmpty() ) {
+		if ( mStyleSheet.updateMediaLists( getMediaFeatures() ) ) {
+			mRoot->reportStyleStateChangeRecursive( false, forceReApplyStyles );
 			return true;
 		}
 	}
-
 	return false;
 }
 
@@ -864,7 +866,12 @@ ColorSchemePreference UISceneNode::getColorSchemePreference() const {
 void UISceneNode::setColorSchemePreference( const ColorSchemePreference& colorSchemePreference ) {
 	if ( mColorSchemePreference != colorSchemePreference ) {
 		mColorSchemePreference = colorSchemePreference;
-		onMediaChanged();
+		if ( !mStyleSheet.isMediaQueryListEmpty() ) {
+			if ( mStyleSheet.updateMediaLists( getMediaFeatures() ) ) {
+				mStyleSheet.resetCache();
+				mRoot->reloadStyle( true, true, true, true );
+			}
+		}
 	}
 }
 

@@ -70,6 +70,9 @@ void AppConfig::load( std::string& confPath, std::string& keybindingsPath,
 	ui.panelPosition = panelPositionFromString( ini.getValue( "ui", "panel_position", "left" ) );
 	ui.serifFont = ini.getValue( "ui", "serif_font", "assets/fonts/NotoSans-Regular.ttf" );
 	ui.monospaceFont = ini.getValue( "ui", "monospace_font", "assets/fonts/DejaVuSansMono.ttf" );
+	ui.colorScheme = ini.getValue( "ui", "ui_color_scheme", "dark" ) == "light"
+						 ? ColorSchemePreference::Light
+						 : ColorSchemePreference::Dark;
 	editor.trimTrailingWhitespaces = ini.getValueB( "editor", "trim_trailing_whitespaces", false );
 	editor.forceNewLineAtEndOfFile =
 		ini.getValueB( "editor", "force_new_line_at_end_of_file", false );
@@ -135,6 +138,8 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValue( "ui", "panel_position", panelPositionToString( ui.panelPosition ) );
 	ini.setValue( "ui", "serif_font", ui.serifFont );
 	ini.setValue( "ui", "monospace_font", ui.monospaceFont );
+	ini.setValue( "ui", "ui_color_scheme",
+				  ui.colorScheme == ColorSchemePreference::Light ? "light" : "dark" );
 	ini.setValueB( "editor", "trim_trailing_whitespaces", editor.trimTrailingWhitespaces );
 	ini.setValueB( "editor", "force_new_line_at_end_of_file", editor.forceNewLineAtEndOfFile );
 	ini.setValueB( "editor", "auto_detect_indent_type", editor.autoDetectIndentType );

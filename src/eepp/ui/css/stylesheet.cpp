@@ -24,6 +24,10 @@ size_t StyleSheet::nodeHash( const std::string& tag, const std::string& id ) {
 	return seed;
 }
 
+void StyleSheet::resetCache() {
+	mNodeCache.clear();
+}
+
 bool StyleSheet::addStyleToNodeIndex( StyleSheetStyle* style ) {
 	const std::string& id = style->getSelector().getSelectorId();
 	const std::string& tag = style->getSelector().getSelectorTagName();
@@ -135,10 +139,8 @@ bool StyleSheet::updateMediaLists( const MediaFeatures& features ) {
 	bool updateStyles = false;
 
 	for ( auto iter = mMediaQueryList.begin(); iter != mMediaQueryList.end(); iter++ ) {
-		if ( ( *iter )->applyMediaFeatures( features ) ) {
+		if ( ( *iter )->applyMediaFeatures( features ) )
 			updateStyles = true;
-			break;
-		}
 	}
 
 	return updateStyles;

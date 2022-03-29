@@ -40,49 +40,12 @@
 	--floating-icon: #eff0f188;
 }
 
-@media (prefers-color-scheme: light) {
-
-:root {
-	--primary: #3daee9;
-	--back: #eff0f1;
-	--font: #232627;
-	--font-hint: #232627;
-	--button-back: #fcfcfc;
-	--button-border: #b3b4b5;
-	--button-radius: 2dp;
-	--base-horizontal-padding: 5dp;
-	--base-vertical-padding: 5dp;
-	--border-width: 1dp;
-	--list-back: #ffffff;
-	--separator: #cbcdcd;
-	--item-hover: #93cee9;
-	--scroll-button: #cbcdcd;
-	--slider-back: #e9e9e9;
-	--slider-button: #cbcdcd;
-	--slider-border: #e6e6e6;
-	--scrollbar-border: #e6e6e6;
-	--scrollbar-button: #cbcdcd;
-	--scrollbar-hback-hover: #e9e9e9;
-	--tab-back: #eff0f1;
-	--tab-line: #e6e6e6;
-	--tab-active: #fcfcfc;
-	--tab-hover: #93cee9;
-	--tab-close: #e6e6e6;
-	--tab-close-hover: #e49aa2;
-	--icon: #232627;
-	--icon-active: #3daee9;
-	--icon-back-hover: #e6e6e6;
-	--icon-line-hover: #232627;
-	--icon-back-alert: #e49aa2;
-	--menu-back: #eff0f1;
-	--menu-font: #232627;
-	--menu-border: #b3b4b5;
-	--menu-font-active: #fcfcfc;
-	--menu-font-disabled: #a8a9aa;
-	--win-icon: #232627;
-	--floating-icon: #cbcdcd;
-}
-
+pushbutton::icon,
+selectbutton::icon,
+tableview::cell::icon,
+treeview::cell::icon,
+treeview::cell::expander,
+listview::cell::icon,
 Menu::Item:selected,
 Menu::CheckBox:selected,
 Menu::SubMenu:selected,
@@ -95,23 +58,13 @@ Menu::RadioButton:hover > Menu::RadioButton::text,
 Menu::RadioButton:hover > Menu::RadioButton::shortcut,
 Menu::SubMenu:hover > Menu::SubMenu::text,
 Menu::item:hover > Menu::Item::icon,
-Menu::item:hover > Menu::SubMenu::icon,
+Menu::SubMenu:hover > Menu::SubMenu::icon,
 Menu::item:hover > Menu::CheckBox::icon,
 Menu::item:hover > Menu::RadioButton::icon,
 PushButton:pressed > PushButton::icon,
 SelectButton:pressed > SelectButton::icon,
 SelectButton:selected > SelectButton::icon,
-SelectButton:selectedpressed > SelectButton::icon {
-	color: var(--menu-font-active);
-	tint: var(--menu-font-active);
-}
-
-tableview::cell::text,
-treeview::cell::text,
-listview::cell::text {
-	color: var(--font);
-}
-
+SelectButton:selectedpressed > SelectButton::icon,
 tableview::row:selected tableview::cell::text,
 treeview::row:selected treeview::cell::text,
 listview::row:selected listview::cell::text,
@@ -133,39 +86,8 @@ listview::row:hover listview::cell::expander,
 tableview::header::column:hover,
 treeview::header::column:hover,
 listview::header::column:hover {
-	color: var(--menu-font-active);
-	tint: var(--menu-font-active);
-}
-
-Tab:selected,
-Tab:hover,
-Tab:pressed {
-	color: var(--font);
-}
-
-pushbutton::icon,
-selectbutton::icon,
-tableview::cell::icon,
-treeview::cell::icon,
-treeview::cell::expander,
-listview::cell::icon {
 	color: var(--font);
 	tint: var(--font);
-}
-
-Tab:not(:selected):hover {
-	color: var(--menu-font-active);
-}
-
-Tooltip {
-	background-color: var(--font)!important;
-	color: var(--back)!important;
-}
-
-Splitter::separator {
-	background-color: var(--back);
-}
-
 }
 
 CheckBox,
@@ -189,7 +111,10 @@ TextView,
 Tooltip,
 MenuBar::button,
 Window::title,
-ListView::cell {
+ListView::cell,
+tableview::cell::text,
+treeview::cell::text,
+listview::cell::text {
 	color: var(--font);
 }
 
@@ -1017,6 +942,113 @@ ScrollBarMini::hbutton:hover {
 	background-color: var(--back);
 }
 
+@media (prefers-color-scheme: light) {
+
+:root {
+	--primary: #3daee9;
+	--back: #eff0f1;
+	--font: #232627;
+	--font-hint: #232627;
+	--button-back: #fcfcfc;
+	--button-border: #b3b4b5;
+	--button-radius: 2dp;
+	--base-horizontal-padding: 5dp;
+	--base-vertical-padding: 5dp;
+	--border-width: 1dp;
+	--list-back: #ffffff;
+	--separator: #cbcdcd;
+	--item-hover: #93cee9;
+	--scroll-button: #cbcdcd;
+	--slider-back: #e9e9e9;
+	--slider-button: #cbcdcd;
+	--slider-border: #e6e6e6;
+	--scrollbar-border: #e6e6e6;
+	--scrollbar-button: #cbcdcd;
+	--scrollbar-hback-hover: #e9e9e9;
+	--tab-back: #eff0f1;
+	--tab-line: #e6e6e6;
+	--tab-active: #fcfcfc;
+	--tab-hover: #93cee9;
+	--tab-close: #e6e6e6;
+	--tab-close-hover: #e49aa2;
+	--icon: #232627;
+	--icon-active: #3daee9;
+	--icon-back-hover: #e6e6e6;
+	--icon-line-hover: #232627;
+	--icon-back-alert: #e49aa2;
+	--menu-back: #eff0f1;
+	--menu-font: #232627;
+	--menu-border: #b3b4b5;
+	--menu-font-active: #fcfcfc;
+	--menu-font-disabled: #a8a9aa;
+	--win-icon: #232627;
+	--floating-icon: #cbcdcd;
+}
+
+Menu::Item:selected,
+Menu::CheckBox:selected,
+Menu::SubMenu:selected,
+Menu::RadioButton:selected,
+Menu::Item:hover > Menu::Item::text,
+Menu::Item:hover > Menu::Item::shortcut,
+Menu::CheckBox:hover > Menu::CheckBox::text,
+Menu::CheckBox:hover > Menu::CheckBox::shortcut,
+Menu::RadioButton:hover > Menu::RadioButton::text,
+Menu::RadioButton:hover > Menu::RadioButton::shortcut,
+Menu::SubMenu:hover > Menu::SubMenu::text,
+Menu::item:hover > Menu::Item::icon,
+Menu::SubMenu:hover > Menu::SubMenu::icon,
+Menu::item:hover > Menu::CheckBox::icon,
+Menu::item:hover > Menu::RadioButton::icon,
+PushButton:pressed > PushButton::icon,
+SelectButton:pressed > SelectButton::icon,
+SelectButton:selected > SelectButton::icon,
+SelectButton:selectedpressed > SelectButton::icon {
+	color: var(--menu-font-active);
+	tint: var(--menu-font-active);
+}
+
+tableview::row:selected tableview::cell::text,
+treeview::row:selected treeview::cell::text,
+listview::row:selected listview::cell::text,
+tableview::row:selected tableview::cell::icon,
+treeview::row:selected treeview::cell::icon,
+listview::row:selected listview::cell::icon,
+tableview::row:selected tableview::cell::expander,
+treeview::row:selected treeview::cell::expander,
+listview::row:selected listview::cell::expander,
+tableview::row:hover tableview::cell::text,
+treeview::row:hover treeview::cell::text,
+listview::row:hover listview::cell::text,
+tableview::row:hover tableview::cell::icon,
+treeview::row:hover treeview::cell::icon,
+listview::row:hover listview::cell::icon,
+tableview::row:hover tableview::cell::expander,
+treeview::row:hover treeview::cell::expander,
+listview::row:hover listview::cell::expander,
+tableview::header::column:hover,
+treeview::header::column:hover,
+listview::header::column:hover {
+	color: var(--menu-font-active);
+	tint: var(--menu-font-active);
+}
+
+Tab:selected,
+Tab:hover,
+Tab:pressed {
+	color: var(--font);
+}
+
+Tab:not(:selected):hover {
+	color: var(--menu-font-active);
+}
+
+Tooltip {
+	background-color: var(--font)!important;
+	color: var(--back)!important;
+}
+
+}
 
 @media screen and (min-pixel-density: 1.1) and (max-pixel-density: 1.99) {
 

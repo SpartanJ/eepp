@@ -93,7 +93,7 @@ const std::map<KeyBindings::Shortcut, std::string> UICodeEditor::getDefaultKeybi
 		{ { KEY_KP_PLUS, KEYMOD_DEFAULT_MODIFIER }, "font-size-grow" },
 		{ { KEY_MINUS, KEYMOD_DEFAULT_MODIFIER }, "font-size-shrink" },
 		{ { KEY_KP_MINUS, KEYMOD_DEFAULT_MODIFIER }, "font-size-shrink" },
-		{ { KEY_0, KEYMOD_DEFAULT_MODIFIER }, "font-size-reset" },
+		{ { KEY_0, KEYMOD_DEFAULT_MODIFIER | KEYMOD_SHIFT }, "font-size-reset" },
 		{ { KEY_KP_DIVIDE, KEYMOD_DEFAULT_MODIFIER }, "toggle-line-comments" },
 	};
 }
@@ -228,10 +228,12 @@ void UICodeEditor::draw() {
 	}
 
 	if ( mLineBreakingColumn ) {
-		Float lineBreakingOffset = start.x + getGlyphWidth() * mLineBreakingColumn;
-		primitives.setColor( Color( mLineBreakColumnColor ).blendAlpha( mAlpha ) );
-		primitives.drawLine( { { lineBreakingOffset, start.y },
-							   { lineBreakingOffset, start.y + mSize.getHeight() } } );
+		Float lineBreakingOffset = startScroll.x + getGlyphWidth() * mLineBreakingColumn;
+		if ( lineBreakingOffset >= start.x ) {
+			primitives.setColor( Color( mLineBreakColumnColor ).blendAlpha( mAlpha ) );
+			primitives.drawLine( { { lineBreakingOffset, start.y },
+								   { lineBreakingOffset, start.y + mSize.getHeight() } } );
+		}
 	}
 
 	if ( mHighlightMatchingBracket ) {

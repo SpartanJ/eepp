@@ -185,7 +185,7 @@ class EE_API UISceneNode : public SceneNode {
 
 	void reloadStyle( const bool& disableAnimations = false );
 
-	bool onMediaChanged();
+	bool onMediaChanged( bool forceReApplyStyles = false );
 
 	virtual void onChildCountChange( Node* child, const bool& removed );
 
@@ -202,6 +202,8 @@ class EE_API UISceneNode : public SceneNode {
 	void onWidgetDelete( Node* node );
 
 	void resetTooltips( Node* node );
+
+	CSS::MediaFeatures getMediaFeatures() const;
 };
 
 }} // namespace EE::UI

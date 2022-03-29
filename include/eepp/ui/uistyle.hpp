@@ -77,6 +77,8 @@ class EE_API UIStyle : public UIState {
 
 	bool hasProperty( const CSS::PropertyId& propertyId ) const;
 
+	void resetGlobalDefinition();
+
   protected:
 	UIWidget* mWidget;
 	std::shared_ptr<CSS::StyleSheetStyle> mElementStyle;
