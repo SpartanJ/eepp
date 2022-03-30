@@ -89,6 +89,17 @@ class EE_API DocSyntaxDefEvent : public DocEvent {
 
 class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
   public:
+	struct MinimapConfig {
+		Float width{ 100 }; // dp width
+		bool syntaxHighlight{ true };
+		Float scale{ 1 };
+		int tabWidth{ 4 };
+		bool drawBackground{ true };
+		Color selectionColor{ Color::Transparent };
+		Color caretColor{ Color::Transparent };
+		Float gutterWidth{ 5 }; // dp width
+	};
+
 	static UICodeEditor* New();
 
 	static UICodeEditor* NewOpt( const bool& autoRegisterBaseCommands,
@@ -426,6 +437,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void scrollToMakeVisible( const TextPosition& position, bool centered = false );
 
+	const MinimapConfig& getMinimapConfig() const;
+
+	void setMinimapConfig( const MinimapConfig& newMinimapConfig );
+
   protected:
 	struct LastXOffset {
 		TextPosition position;
@@ -446,13 +461,15 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mHighlightMatchingBracket{ true };
 	bool mHighlightSelectionMatch{ true };
 	bool mEnableColorPickerOnSelection{ false };
-	bool mHorizontalScrollBarEnabled{ false };
+	bool mHorizontalScrollBarEnabled{ true };
 	bool mLongestLineWidthDirty{ true };
 	bool mColorPreview{ false };
 	bool mInteractiveLinks{ true };
 	bool mHandShown{ false };
 	bool mDisplayLoaderIfDocumentLoading{ true };
 	bool mCreateDefaultContextMenuOptions{ true };
+	bool mMinimapEnabled{ false };
+	bool mDraggingMinimap{ false };
 	TextRange mLinkPosition;
 	String mLink;
 	Uint32 mTabWidth;
@@ -492,6 +509,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Float mGlyphWidth{ 0 };
 	size_t mMenuIconSize{ 16 };
 	UIPopUpMenu* mCurrentMenu{ nullptr };
+	MinimapConfig mMinimapConfig;
 
 	UICodeEditor( const std::string& elementTag, const bool& autoRegisterBaseCommands = true,
 				  const bool& autoRegisterBaseKeybindings = true );
@@ -641,6 +659,16 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	UIMenuItem* menuAdd( UIPopUpMenu* menu, const std::string& translateKey,
 						 const String& translateString, const std::string& icon,
 						 const std::string& cmd );
+
+	void drawMinimap( const Vector2f& start, const std::pair<int, int>& lineRange );
+
+	Vector2f getScreenStart() const;
+
+	Float getMinimapLineSpacing() const;
+
+	bool isMinimapFileTooLarge() const;
+
+	Rectf getMinimapRect( const Vector2f& start ) const;
 };
 
 }} // namespace EE::UI

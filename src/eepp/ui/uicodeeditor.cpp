@@ -210,8 +210,7 @@ void UICodeEditor::draw() {
 	Float lineHeight = getLineHeight();
 	int lineNumberDigits = getLineNumberDigits();
 	Float lineNumberWidth = mShowLineNumber ? getLineNumberWidth() : 0.f;
-	Vector2f screenStart( eefloor( mScreenPos.x + mPaddingPx.Left ),
-						  eefloor( mScreenPos.y + mPaddingPx.Top ) );
+	Vector2f screenStart( getScreenStart() );
 	Vector2f start( screenStart.x + lineNumberWidth, screenStart.y );
 	Vector2f startScroll( start - mScroll );
 	Primitives primitives;
@@ -286,6 +285,9 @@ void UICodeEditor::draw() {
 		drawColorPreview( startScroll, lineHeight );
 	}
 
+	if ( mMinimapEnabled )
+		drawMinimap( screenStart, lineRange );
+
 	for ( auto& module : mModules )
 		module->postDraw( this, startScroll, lineHeight, cursor );
 }
@@ -301,6 +303,10 @@ void UICodeEditor::scheduledUpdate( const Time& ) {
 
 	if ( mMouseDown ) {
 		if ( !( getUISceneNode()->getWindow()->getInput()->getPressTrigger() & EE_BUTTON_LMASK ) ) {
+			if ( mDraggingMinimap ) {
+				mDraggingMinimap = false;
+				getUISceneNode()->setCursor( Cursor::Arrow );
+			}
 			mMouseDown = false;
 			getUISceneNode()->getWindow()->getInput()->captureMouse( false );
 		} else if ( !isMouseOverMeOrChilds() ) {
@@ -489,6 +495,8 @@ void UICodeEditor::disableEditorFeatures() {
 Float UICodeEditor::getViewportWidth( const bool& forceVScroll ) const {
 	Float vScrollWidth =
 		mVScrollBar->isVisible() || forceVScroll ? mVScrollBar->getPixelsSize().getWidth() : 0.f;
+	if ( mMinimapEnabled )
+		vScrollWidth += PixelDensity::dpToPx( mMinimapConfig.width );
 	Float viewWidth = eefloor( mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right -
 							   getLineNumberWidth() - vScrollWidth );
 	return viewWidth;
@@ -897,6 +905,26 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 		if ( module->onMouseDown( this, position, flags ) )
 			return UIWidget::onMouseDown( position, flags );
 
+	if ( mMinimapEnabled ) {
+		Rectf rect( getMinimapRect( getScreenStart() ) );
+		if ( rect.contains( position.asFloat() ) ) {
+			Int64 lineCount = mDoc->linesCount();
+			Float lineSpacing = getMinimapLineSpacing();
+			Float minimapHeight = lineCount * lineSpacing;
+			bool isTooLarge = isMinimapFileTooLarge();
+			if ( isTooLarge )
+				minimapHeight = rect.getHeight();
+			Float dy = position.y - rect.Top;
+			Int64 jumpToLine = eefloor( ( dy / minimapHeight ) * lineCount ) + 1;
+			scrollToMakeVisible( { jumpToLine, 0 } );
+			mDraggingMinimap = true;
+			mMouseDown = true;
+			getUISceneNode()->getWindow()->getInput()->captureMouse( true );
+			getUISceneNode()->setCursor( Cursor::Arrow );
+			return 1;
+		}
+	}
+
 	if ( ( flags & EE_BUTTON_LMASK ) && isTextSelectionEnabled() &&
 		 !getEventDispatcher()->isNodeDragging() && NULL != mFont && !mMouseDown &&
 		 getEventDispatcher()->getMouseDownNode() == this ) {
@@ -918,6 +946,21 @@ Uint32 UICodeEditor::onMouseMove( const Vector2i& position, const Uint32& flags 
 		if ( module->onMouseMove( this, position, flags ) )
 			return UIWidget::onMouseMove( position, flags );
 
+	if ( mDraggingMinimap && ( flags & EE_BUTTON_LMASK ) ) {
+		Rectf rect( getMinimapRect( getScreenStart() ) );
+		Int64 lineCount = mDoc->linesCount();
+		Float lineSpacing = getMinimapLineSpacing();
+		Float minimapHeight = lineCount * lineSpacing;
+		bool isTooLarge = isMinimapFileTooLarge();
+		if ( isTooLarge )
+			minimapHeight = rect.getHeight();
+		Float dy = position.y - rect.Top;
+		Int64 jumpToLine = eefloor( ( dy / minimapHeight ) * lineCount ) + 1;
+		scrollToMakeVisible( { jumpToLine, 0 } );
+		getUISceneNode()->setCursor( Cursor::Arrow );
+		return 1;
+	}
+
 	if ( isTextSelectionEnabled() && !getUISceneNode()->getEventDispatcher()->isNodeDragging() &&
 		 NULL != mFont && mMouseDown && ( flags & EE_BUTTON_LMASK ) ) {
 		TextRange selection = mDoc->getSelection();
@@ -925,9 +968,13 @@ Uint32 UICodeEditor::onMouseMove( const Vector2i& position, const Uint32& flags 
 		mDoc->setSelection( selection );
 	}
 
-	checkMouseOverColor( position );
+	if ( mMinimapEnabled && getMinimapRect( getScreenStart() ).contains( position.asFloat() ) ) {
+		getUISceneNode()->setCursor( Cursor::Arrow );
+	} else {
+		checkMouseOverColor( position );
 
-	checkMouseOverLink( position );
+		checkMouseOverLink( position );
+	}
 
 	return UIWidget::onMouseMove( position, flags );
 }
@@ -941,6 +988,11 @@ Uint32 UICodeEditor::onMouseUp( const Vector2i& position, const Uint32& flags ) 
 		return UIWidget::onMouseUp( position, flags );
 
 	if ( flags & EE_BUTTON_LMASK ) {
+		if ( mDraggingMinimap ) {
+			mDraggingMinimap = false;
+			getUISceneNode()->setCursor( Cursor::Arrow );
+		}
+
 		if ( mMouseDown ) {
 			mMouseDown = false;
 			getUISceneNode()->getWindow()->getInput()->captureMouse( false );
@@ -1320,6 +1372,14 @@ void UICodeEditor::scrollToMakeVisible( const TextPosition& position, bool cente
 	} else if ( offsetX < mScroll.x ) {
 		setScrollX( eefloor( eemax( 0.f, offsetX - minVisibility ) ) );
 	}
+}
+
+const UICodeEditor::MinimapConfig& UICodeEditor::getMinimapConfig() const {
+	return mMinimapConfig;
+}
+
+void UICodeEditor::setMinimapConfig( const UICodeEditor::MinimapConfig& minimapConfig ) {
+	mMinimapConfig = minimapConfig;
 }
 
 void UICodeEditor::setScrollX( const Float& val, bool emmitEvent ) {
@@ -2407,7 +2467,7 @@ String UICodeEditor::resetLinkOver() {
 	if ( mHandShown )
 		invalidateDraw();
 	mHandShown = false;
-	getUISceneNode()->setCursor( Cursor::IBeam );
+	getUISceneNode()->setCursor( !mLocked ? Cursor::IBeam : Cursor::Arrow );
 	mLinkPosition = TextRange();
 	mLink.clear();
 	return "";
@@ -2417,6 +2477,169 @@ void UICodeEditor::resetPreviewColor() {
 	mPreviewColorRange = TextRange();
 	mPreviewColor = Color::Transparent;
 	invalidateDraw();
+}
+
+Rectf UICodeEditor::getMinimapRect( const Vector2f& start ) const {
+	Float w = PixelDensity::dpToPx( mMinimapConfig.width );
+	Float h = getPixelsSize().getHeight() -
+			  ( mHScrollBar->isVisible() ? mHScrollBar->getPixelsSize().getHeight() : 0.f );
+	return Rectf(
+		{ start.x + getPixelsSize().getWidth() - w -
+			  ( mVScrollBar->isVisible() ? mVScrollBar->getPixelsSize().getWidth() : 0.f ),
+		  start.y },
+		Sizef( w, h ) );
+}
+
+void UICodeEditor::drawMinimap( const Vector2f& start, const std::pair<int, int>& lineRange ) {
+	Float charHeight = PixelDensity::getPixelDensity() * mMinimapConfig.scale;
+	Float charSpacing = eefloor( 0.8 * PixelDensity::getPixelDensity() * mMinimapConfig.scale );
+	Float lineSpacing = getMinimapLineSpacing();
+	Rectf rect( getMinimapRect( start ) );
+	int visibleLinesCount = ( lineRange.second - lineRange.first );
+	int visibleLinesStart = lineRange.first;
+	Float scrollerHeight = visibleLinesCount * lineSpacing;
+	int lineCount = mDoc->linesCount();
+	Float visibleY = rect.Top + visibleLinesStart * lineSpacing;
+	int maxMinmapLines = eefloor( rect.getHeight() / lineSpacing );
+	int minimapStartLine = 0;
+
+	if ( isMinimapFileTooLarge() ) {
+		Float scrollPos = ( visibleLinesStart - 1 ) / (Float)( lineCount - visibleLinesCount - 1 );
+		scrollPos = eeclamp( scrollPos, 0.f, 1.f );
+		Float scrollPosPixels = scrollPos * ( rect.getHeight() - scrollerHeight );
+		visibleY = rect.Top + scrollPosPixels;
+		Float t = ( lineCount - visibleLinesStart ) / visibleLinesCount;
+		if ( t <= 1 )
+			visibleY += scrollerHeight * ( 1.f - t );
+		minimapStartLine = visibleLinesStart - eefloor( scrollPosPixels / lineSpacing );
+		minimapStartLine = eemax( 0, eemin( minimapStartLine, lineCount - maxMinmapLines ) );
+	}
+
+	Primitives primitives;
+
+	if ( mMinimapConfig.drawBackground ) {
+		primitives.setColor( getBackgroundColor() );
+		primitives.drawRectangle( rect );
+	}
+
+	primitives.setColor( mCurrentLineBackgroundColor );
+	primitives.drawRectangle(
+		{ { rect.Left, visibleY }, Sizef( rect.getWidth(), scrollerHeight ) } );
+
+	Float selectionY =
+		rect.Top + ( mDoc->getSelection().start().line() - minimapStartLine ) * lineSpacing;
+	Float selectionY2 =
+		rect.Top + ( mDoc->getSelection().end().line() - minimapStartLine ) * lineSpacing;
+	Float selectionMinY = eemin( selectionY, selectionY2 );
+	Float selectionH = eeabs( selectionY2 - selectionY ) + 1;
+	primitives.setColor( mSelectionMatchColor );
+	primitives.drawRectangle( { { rect.Left, selectionMinY }, { rect.getWidth(), selectionH } } );
+	primitives.setColor( mCaretColor );
+	primitives.drawRectangle( { { rect.Left, selectionY }, { rect.getWidth(), lineSpacing } } );
+
+	Float gutterWidth = PixelDensity::dpToPx( mMinimapConfig.gutterWidth );
+	Float lineY = rect.Top;
+	Color color = mColorScheme.getSyntaxStyle( "normal" ).color;
+	color.a *= 0.5f;
+	Float batchWidth = 0;
+	Float batchStart = rect.Left;
+	Float minimapCutoffX = rect.Left + rect.getWidth();
+	std::string batchSyntaxType = "normal";
+	auto flushBatch = [&]( const std::string& type ) {
+		Color oldColor = color;
+		color = mColorScheme.getSyntaxStyle( batchSyntaxType ).color;
+		if ( mMinimapConfig.syntaxHighlight && color != Color::Transparent ) {
+			color.a *= 0.5f;
+		} else {
+			color = oldColor;
+		}
+
+		if ( batchWidth > 0 ) {
+			primitives.setColor( color );
+			primitives.drawRectangle( { { batchStart, lineY }, { batchWidth, charHeight } } );
+		}
+
+		batchSyntaxType = type;
+		batchStart += batchWidth;
+		batchWidth = 0;
+	};
+
+	int endidx = minimapStartLine + maxMinmapLines;
+	endidx = eemin( endidx, lineCount - 1 );
+
+	if ( mMinimapConfig.syntaxHighlight ) {
+		for ( int index = minimapStartLine; index <= endidx; index++ ) {
+			batchSyntaxType = "normal";
+			batchStart = rect.Left + gutterWidth;
+			batchWidth = 0;
+
+			auto& tokens = mHighlighter.getLine( index );
+			for ( auto& token : tokens ) {
+				String text( token.text );
+				if ( batchSyntaxType != token.type ) {
+					flushBatch( batchSyntaxType );
+					batchSyntaxType = token.type;
+				}
+
+				for ( size_t i = 0; i < text.size(); ++i ) {
+					String::StringBaseType ch = text[i];
+					if ( ch == ' ' || ch == '\n' ) {
+						flushBatch( token.type );
+						batchStart += charSpacing;
+					} else if ( ch == '\t' ) {
+						flushBatch( token.type );
+						batchStart += charSpacing * mMinimapConfig.tabWidth;
+					} else if ( batchStart + batchWidth > minimapCutoffX ) {
+						flushBatch( token.type );
+						break;
+					} else {
+						batchWidth += charSpacing;
+					}
+				}
+			}
+			flushBatch( "normal" );
+			lineY = lineY + lineSpacing;
+		}
+	} else {
+		for ( int index = minimapStartLine; index <= endidx; index++ ) {
+			batchSyntaxType = "normal";
+			batchStart = rect.Left + gutterWidth;
+			batchWidth = 0;
+			const String& text( mDoc->line( index ).getText() );
+			for ( size_t i = 0; i < text.size(); ++i ) {
+				String::StringBaseType ch = text[i];
+				if ( ch == ' ' || ch == '\n' ) {
+					flushBatch( "normal" );
+					batchStart += charSpacing;
+				} else if ( ch == '\t' ) {
+					flushBatch( "normal" );
+					batchStart += charSpacing * mMinimapConfig.tabWidth;
+				} else if ( batchStart + batchWidth > minimapCutoffX ) {
+					flushBatch( "normal" );
+					break;
+				} else {
+					batchWidth += charSpacing;
+				}
+			}
+			flushBatch( "normal" );
+			lineY = lineY + lineSpacing;
+		}
+	}
+}
+
+Vector2f UICodeEditor::getScreenStart() const {
+	return Vector2f( eefloor( mScreenPos.x + mPaddingPx.Left ),
+					 eefloor( mScreenPos.y + mPaddingPx.Top ) );
+}
+
+Float UICodeEditor::getMinimapLineSpacing() const {
+	return eefloor( 2 * PixelDensity::getPixelDensity() * mMinimapConfig.scale );
+}
+
+bool UICodeEditor::isMinimapFileTooLarge() const {
+	return mDoc->linesCount() > 1 &&
+		   mDoc->linesCount() >
+			   eefloor( getMinimapRect( getScreenStart() ).getHeight() / getMinimapLineSpacing() );
 }
 
 }} // namespace EE::UI
