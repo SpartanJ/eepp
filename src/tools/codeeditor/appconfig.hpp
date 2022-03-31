@@ -43,7 +43,8 @@ struct CodeEditorConfig {
 	bool showLineNumbers{ true };
 	bool showWhiteSpaces{ true };
 	bool highlightMatchingBracket{ true };
-	bool horizontalScrollbar{ false };
+	bool verticalScrollbar{ true };
+	bool horizontalScrollbar{ true };
 	bool highlightCurrentLine{ true };
 	bool trimTrailingWhitespaces{ false };
 	bool forceNewLineAtEndOfFile{ false };

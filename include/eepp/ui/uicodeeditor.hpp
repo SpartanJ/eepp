@@ -91,7 +91,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
   public:
 	struct MinimapConfig {
 		Float width{ 100 }; // dp width
-		Float maxPercentWidth{ 0.1f }; // 0..1 max width that a minimap can ocupy on the editor view.
+		Float maxPercentWidth{
+			0.1f }; // 0..1 max width that a minimap can ocupy on the editor view.
 		bool syntaxHighlight{ true };
 		Float scale{ 1 };
 		int tabWidth{ 4 };
@@ -330,6 +331,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void setHorizontalScrollBarEnabled( const bool& horizontalScrollBarEnabled );
 
+	bool getVerticalScrollBarEnabled() const;
+
+	void setVerticalScrollBarEnabled( const bool& verticalScrollBarEnabled );
+
 	const Time& getFindLongestLineWidthUpdateFrequency() const;
 
 	void setFindLongestLineWidthUpdateFrequency( const Time& findLongestLineWidthUpdateFrequency );
@@ -467,6 +472,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mHighlightMatchingBracket{ true };
 	bool mHighlightSelectionMatch{ true };
 	bool mEnableColorPickerOnSelection{ false };
+	bool mVerticalScrollBarEnabled{ true };
 	bool mHorizontalScrollBarEnabled{ true };
 	bool mLongestLineWidthDirty{ true };
 	bool mColorPreview{ false };
@@ -475,7 +481,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mDisplayLoaderIfDocumentLoading{ true };
 	bool mCreateDefaultContextMenuOptions{ true };
 	bool mMinimapEnabled{ false };
-	bool mDraggingMinimap{ false };
+	bool mMinimapDragging{ false };
+	bool mMinimapHover{ false };
 	TextRange mLinkPosition;
 	String mLink;
 	Uint32 mTabWidth;
@@ -677,6 +684,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Rectf getMinimapRect( const Vector2f& start ) const;
 
 	Float getMinimapWidth() const;
+
+	void updateMipmapHover( const Vector2f& position );
 };
 
 }} // namespace EE::UI

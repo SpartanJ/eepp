@@ -64,6 +64,7 @@ void AppConfig::load( std::string& confPath, std::string& keybindingsPath,
 	editor.highlightMatchingBracket =
 		ini.getValueB( "editor", "highlight_matching_brackets", true );
 	editor.highlightCurrentLine = ini.getValueB( "editor", "highlight_current_line", true );
+	editor.verticalScrollbar = ini.getValueB( "editor", "vertical_scrollbar", true );
 	editor.horizontalScrollbar = ini.getValueB( "editor", "horizontal_scrollbar", false );
 	ui.fontSize = ini.getValue( "ui", "font_size", "11dp" );
 	ui.showSidePanel = ini.getValueB( "ui", "show_side_panel", true );
@@ -132,6 +133,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "editor", "show_white_spaces", editor.showWhiteSpaces );
 	ini.setValueB( "editor", "highlight_matching_brackets", editor.highlightMatchingBracket );
 	ini.setValueB( "editor", "highlight_current_line", editor.highlightCurrentLine );
+	ini.setValueB( "editor", "vertical_scrollbar", editor.verticalScrollbar );
 	ini.setValueB( "editor", "horizontal_scrollbar", editor.horizontalScrollbar );
 	ini.setValue( "editor", "font_size", editor.fontSize.toString() );
 	ini.setValue( "ui", "font_size", ui.fontSize.toString() );

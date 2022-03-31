@@ -303,10 +303,11 @@ void UICodeEditor::scheduledUpdate( const Time& ) {
 
 	if ( mMouseDown ) {
 		if ( !( getUISceneNode()->getWindow()->getInput()->getPressTrigger() & EE_BUTTON_LMASK ) ) {
-			if ( mDraggingMinimap ) {
-				mDraggingMinimap = false;
+			if ( mMinimapDragging ) {
+				mMinimapDragging = false;
 				mVScrollBar->setEnabled( true );
 				getUISceneNode()->setCursor( Cursor::Arrow );
+				updateMipmapHover( getUISceneNode()->getWindow()->getInput()->getMousePosf() );
 			}
 			mMouseDown = false;
 			getUISceneNode()->getWindow()->getInput()->captureMouse( false );
@@ -908,7 +909,7 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 
 	if ( mMinimapEnabled ) {
 		Rectf rect( getMinimapRect( getScreenStart() ) );
-		if ( !mVScrollBar->isDragging() && !mDraggingMinimap &&
+		if ( !mVScrollBar->isDragging() && !mMinimapDragging &&
 			 rect.contains( position.asFloat() ) ) {
 			Int64 lineCount = mDoc->linesCount();
 			Float lineSpacing = getMinimapLineSpacing();
@@ -919,13 +920,13 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 			Float dy = position.y - rect.Top;
 			Int64 jumpToLine = eefloor( ( dy / minimapHeight ) * lineCount ) + 1;
 			scrollTo( { jumpToLine, 0 }, true, true );
-			mDraggingMinimap = true;
+			mMinimapDragging = true;
 			mMouseDown = true;
 			getUISceneNode()->getWindow()->getInput()->captureMouse( true );
 			getUISceneNode()->setCursor( Cursor::Arrow );
 			mVScrollBar->setEnabled( false );
 			return 1;
-		} else if ( mDraggingMinimap ) {
+		} else if ( mMinimapDragging ) {
 			return 1;
 		}
 	}
@@ -946,23 +947,57 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 	return UIWidget::onMouseDown( position, flags );
 }
 
+void UICodeEditor::updateMipmapHover( const Vector2f& position ) {
+	Rectf rect( getMinimapRect( getScreenStart() ) );
+	if ( !rect.contains( position ) && !mMinimapHover )
+		return;
+
+	Float lineSpacing = getMinimapLineSpacing();
+	auto lineRange = getVisibleLineRange();
+	int visibleLinesCount = ( lineRange.second - lineRange.first );
+	int visibleLinesStart = lineRange.first;
+	Float scrollerHeight = visibleLinesCount * lineSpacing;
+	int lineCount = mDoc->linesCount();
+	Float visibleY = rect.Top + visibleLinesStart * lineSpacing;
+
+	if ( isMinimapFileTooLarge() ) {
+		Float scrollPos = ( visibleLinesStart - 1 ) / (Float)( lineCount - visibleLinesCount - 1 );
+		scrollPos = eeclamp( scrollPos, 0.f, 1.f );
+		Float scrollPosPixels = scrollPos * ( rect.getHeight() - scrollerHeight );
+		visibleY = rect.Top + scrollPosPixels;
+		Float t = ( lineCount - visibleLinesStart ) / visibleLinesCount;
+		if ( t <= 1 )
+			visibleY += scrollerHeight * ( 1.f - t );
+	}
+
+	Rectf rectHover( { { rect.Left, visibleY }, Sizef( rect.getWidth(), scrollerHeight ) } );
+	bool prevState = mMinimapHover;
+	mMinimapHover = rectHover.contains( position.asFloat() );
+
+	if ( mMinimapHover != prevState )
+		invalidateDraw();
+}
+
 Uint32 UICodeEditor::onMouseMove( const Vector2i& position, const Uint32& flags ) {
 	for ( auto& module : mModules )
 		if ( module->onMouseMove( this, position, flags ) )
 			return UIWidget::onMouseMove( position, flags );
 
-	if ( mDraggingMinimap && ( flags & EE_BUTTON_LMASK ) ) {
-		Rectf rect( getMinimapRect( getScreenStart() ) );
-		Int64 lineCount = mDoc->linesCount();
-		Float lineSpacing = getMinimapLineSpacing();
-		Float minimapHeight = lineCount * lineSpacing;
-		if ( isMinimapFileTooLarge() )
-			minimapHeight = rect.getHeight();
-		Float dy = position.y - rect.Top;
-		Int64 jumpToLine = eefloor( ( dy / minimapHeight ) * lineCount ) + 1;
-		scrollTo( { jumpToLine, 0 }, true, true );
-		getUISceneNode()->setCursor( Cursor::Arrow );
-		return 1;
+	if ( mMinimapEnabled ) {
+		updateMipmapHover( position.asFloat() );
+		if ( mMinimapDragging && ( flags & EE_BUTTON_LMASK ) ) {
+			Rectf rect( getMinimapRect( getScreenStart() ) );
+			Int64 lineCount = mDoc->linesCount();
+			Float lineSpacing = getMinimapLineSpacing();
+			Float minimapHeight = lineCount * lineSpacing;
+			if ( isMinimapFileTooLarge() )
+				minimapHeight = rect.getHeight();
+			Float dy = position.y - rect.Top;
+			Int64 jumpToLine = eefloor( ( dy / minimapHeight ) * lineCount ) + 1;
+			scrollTo( { jumpToLine, 0 }, true, true );
+			getUISceneNode()->setCursor( Cursor::Arrow );
+			return 1;
+		}
 	}
 
 	if ( isTextSelectionEnabled() && !getUISceneNode()->getEventDispatcher()->isNodeDragging() &&
@@ -992,10 +1027,11 @@ Uint32 UICodeEditor::onMouseUp( const Vector2i& position, const Uint32& flags ) 
 		return UIWidget::onMouseUp( position, flags );
 
 	if ( flags & EE_BUTTON_LMASK ) {
-		if ( mDraggingMinimap ) {
-			mDraggingMinimap = false;
+		if ( mMinimapDragging ) {
+			mMinimapDragging = false;
 			mVScrollBar->setEnabled( true );
 			getUISceneNode()->setCursor( Cursor::Arrow );
+			updateMipmapHover( position.asFloat() );
 		}
 
 		if ( mMouseDown ) {
@@ -1192,8 +1228,8 @@ void UICodeEditor::updateScrollBar() {
 	mVScrollBar->setPixelsPosition( mSize.getWidth() - mVScrollBar->getPixelsSize().getWidth(), 0 );
 	mVScrollBar->setPageStep( getViewPortLineCount().y / (float)mDoc->linesCount() );
 	mVScrollBar->setClickStep( 0.2f );
-	mVScrollBar->setEnabled( notVisibleLineCount > 0 );
-	mVScrollBar->setVisible( notVisibleLineCount > 0 );
+	mVScrollBar->setEnabled( mVerticalScrollBarEnabled && notVisibleLineCount > 0 );
+	mVScrollBar->setVisible( mVerticalScrollBarEnabled && notVisibleLineCount > 0 );
 	setScrollY( mScroll.y );
 }
 
@@ -1415,7 +1451,7 @@ void UICodeEditor::setScrollY( const Float& val, bool emmitEvent ) {
 	mScroll.y = eefloor( eeclamp<Float>( val, 0, getMaxScroll().y ) );
 	if ( oldVal != mScroll.y ) {
 		invalidateDraw();
-		if ( emmitEvent )
+		if ( mVerticalScrollBarEnabled && emmitEvent )
 			mVScrollBar->setValue( mScroll.y / getMaxScroll().y, false );
 	}
 }
@@ -2043,6 +2079,18 @@ void UICodeEditor::setHorizontalScrollBarEnabled( const bool& horizontalScrollBa
 	if ( horizontalScrollBarEnabled != mHorizontalScrollBarEnabled ) {
 		mHorizontalScrollBarEnabled = horizontalScrollBarEnabled;
 		invalidateLongestLineWidth();
+		updateScrollBar();
+	}
+}
+
+bool UICodeEditor::getVerticalScrollBarEnabled() const {
+	return mVerticalScrollBarEnabled;
+}
+
+void UICodeEditor::setVerticalScrollBarEnabled( const bool& verticalScrollBarEnabled ) {
+	if ( verticalScrollBarEnabled != mVerticalScrollBarEnabled ) {
+		mVerticalScrollBarEnabled = verticalScrollBarEnabled;
+		updateScrollBar();
 	}
 }
 
@@ -2552,6 +2600,11 @@ void UICodeEditor::drawMinimap( const Vector2f& start, const std::pair<int, int>
 	primitives.setColor( Color( mCurrentLineBackgroundColor ).blendAlpha( mAlpha ) );
 	primitives.drawRectangle(
 		{ { rect.Left, visibleY }, Sizef( rect.getWidth(), scrollerHeight ) } );
+	if ( mMinimapHover || mMinimapDragging ) {
+		primitives.setColor( Color( 255, 255, 255, 26 ).blendAlpha( mAlpha ) );
+		primitives.drawRectangle(
+			{ { rect.Left, visibleY }, Sizef( rect.getWidth(), scrollerHeight ) } );
+	}
 
 	Float selectionY =
 		rect.Top + ( mDoc->getSelection().start().line() - minimapStartLine ) * lineSpacing;
@@ -2561,7 +2614,7 @@ void UICodeEditor::drawMinimap( const Vector2f& start, const std::pair<int, int>
 	Float selectionH = eeabs( selectionY2 - selectionY ) + 1;
 	primitives.setColor( Color( mSelectionMatchColor ).blendAlpha( mAlpha ) );
 	primitives.drawRectangle( { { rect.Left, selectionMinY }, { rect.getWidth(), selectionH } } );
-	primitives.setColor( Color( mCaretColor, 128 ).blendAlpha( mAlpha ) );
+	primitives.setColor( Color( mCaretColor, 64 ).blendAlpha( mAlpha ) );
 	primitives.drawRectangle( { { rect.Left, selectionY }, { rect.getWidth(), lineSpacing } } );
 
 	Float gutterWidth = PixelDensity::dpToPx( mMinimapConfig.gutterWidth );

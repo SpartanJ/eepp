@@ -650,6 +650,8 @@ UIMenu* App::createViewMenu() {
 		->setActive( mConfig.editor.highlightCurrentLine );
 	mViewMenu->addCheckBox( "Highlight Selection Match" )
 		->setActive( mConfig.editor.highlightSelectionMatch );
+	mViewMenu->addCheckBox( "Enable Vertical ScrollBar" )
+		->setActive( mConfig.editor.verticalScrollbar );
 	mViewMenu->addCheckBox( "Enable Horizontal ScrollBar" )
 		->setActive( mConfig.editor.horizontalScrollbar );
 	mViewMenu->addCheckBox( "Enable Color Preview" )
@@ -712,6 +714,11 @@ UIMenu* App::createViewMenu() {
 			mConfig.editor.highlightSelectionMatch = item->asType<UIMenuCheckBox>()->isActive();
 			mEditorSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
 				editor->setHighlightSelectionMatch( mConfig.editor.highlightSelectionMatch );
+			} );
+		} else if ( item->getText() == "Enable Vertical ScrollBar" ) {
+			mConfig.editor.verticalScrollbar = item->asType<UIMenuCheckBox>()->isActive();
+			mEditorSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
+				editor->setVerticalScrollBarEnabled( mConfig.editor.verticalScrollbar );
 			} );
 		} else if ( item->getText() == "Enable Horizontal ScrollBar" ) {
 			mConfig.editor.horizontalScrollbar = item->asType<UIMenuCheckBox>()->isActive();
@@ -1361,6 +1368,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	editor->setShowLineNumber( config.showLineNumbers );
 	editor->setShowWhitespaces( config.showWhiteSpaces );
 	editor->setHighlightMatchingBracket( config.highlightMatchingBracket );
+	editor->setVerticalScrollBarEnabled( config.verticalScrollbar );
 	editor->setHorizontalScrollBarEnabled( config.horizontalScrollbar );
 	editor->setHighlightCurrentLine( config.highlightCurrentLine );
 	editor->setTabWidth( config.tabWidth );
