@@ -79,6 +79,8 @@ class EE_API UISlider : public UIWidget {
 
 	Sizef getMinimumSize();
 
+	bool isDragging() const;
+
   protected:
 	UIOrientation mOrientation;
 	bool mAllowHalfSliderOut;

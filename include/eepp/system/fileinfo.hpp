@@ -22,11 +22,13 @@ class EE_API FileInfo {
 
 	FileInfo( const std::string& filepath, bool linkInfo );
 
-	bool operator==( const FileInfo& Other ) const;
+	FileInfo( const FileInfo& other );
 
-	bool operator!=( const FileInfo& Other ) const;
+	bool operator==( const FileInfo& other ) const;
 
-	FileInfo& operator=( const FileInfo& Other );
+	bool operator!=( const FileInfo& other ) const;
+
+	FileInfo& operator=( const FileInfo& other );
 
 	bool isExecutable() const;
 
@@ -36,7 +38,7 @@ class EE_API FileInfo {
 
 	bool isReadable() const;
 
-	bool sameInode( const FileInfo& Other ) const;
+	bool sameInode( const FileInfo& other ) const;
 
 	bool isLink() const;
 

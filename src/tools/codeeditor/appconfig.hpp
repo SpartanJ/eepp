@@ -54,6 +54,7 @@ struct CodeEditorConfig {
 	bool highlightSelectionMatch{ true };
 	bool colorPickerSelection{ false };
 	bool colorPreview{ false };
+	bool minimap{ true };
 	bool autoComplete{ true };
 	bool showDocInfo{ true };
 	bool linter{ true };

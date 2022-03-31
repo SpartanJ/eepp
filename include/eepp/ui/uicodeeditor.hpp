@@ -91,6 +91,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
   public:
 	struct MinimapConfig {
 		Float width{ 100 }; // dp width
+		Float maxPercentWidth{ 0.1f }; // 0..1 max width that a minimap can ocupy on the editor view.
 		bool syntaxHighlight{ true };
 		Float scale{ 1 };
 		int tabWidth{ 4 };
@@ -435,11 +436,16 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void scrollToCursor( bool centered = true );
 
-	void scrollToMakeVisible( const TextPosition& position, bool centered = false );
+	void scrollTo( const TextPosition& position, bool centered = false,
+				   bool forceExactPosition = false );
 
 	const MinimapConfig& getMinimapConfig() const;
 
 	void setMinimapConfig( const MinimapConfig& newMinimapConfig );
+
+	bool isMinimapShown() const;
+
+	void showMinimap( bool showMinimap );
 
   protected:
 	struct LastXOffset {
@@ -669,6 +675,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool isMinimapFileTooLarge() const;
 
 	Rectf getMinimapRect( const Vector2f& start ) const;
+
+	Float getMinimapWidth() const;
 };
 
 }} // namespace EE::UI

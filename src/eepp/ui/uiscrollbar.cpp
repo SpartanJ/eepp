@@ -380,6 +380,10 @@ std::string UIScrollBar::getPropertyString( const PropertyDefinition* propertyDe
 	}
 }
 
+bool UIScrollBar::isDragging() const {
+	return mSlider->isDragging();
+}
+
 bool UIScrollBar::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) )
 		return false;

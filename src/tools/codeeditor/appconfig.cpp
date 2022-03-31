@@ -87,6 +87,7 @@ void AppConfig::load( std::string& confPath, std::string& keybindingsPath,
 	editor.highlightSelectionMatch = ini.getValueB( "editor", "highlight_selection_match", true );
 	editor.colorPickerSelection = ini.getValueB( "editor", "color_picker_selection", true );
 	editor.colorPreview = ini.getValueB( "editor", "color_preview", true );
+	editor.minimap = ini.getValueB( "editor", "minimap", true );
 	editor.autoComplete = ini.getValueB( "editor", "auto_complete", true );
 	editor.linter = ini.getValueB( "editor", "linter", true );
 	editor.formatter = ini.getValueB( "editor", "formatter", true );
@@ -153,6 +154,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "editor", "highlight_selection_match", editor.highlightSelectionMatch );
 	ini.setValueB( "editor", "color_picker_selection", editor.colorPickerSelection );
 	ini.setValueB( "editor", "color_preview", editor.colorPreview );
+	ini.setValueB( "editor", "minimap", editor.minimap );
 	ini.setValueB( "editor", "auto_complete", editor.autoComplete );
 	ini.setValueB( "editor", "linter", editor.linter );
 	ini.setValueB( "editor", "formatter", editor.formatter );

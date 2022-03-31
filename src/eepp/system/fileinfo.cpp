@@ -87,6 +87,15 @@ FileInfo::FileInfo( const std::string& filepath, bool linkInfo ) :
 	}
 }
 
+FileInfo::FileInfo( const FileInfo& other ) :
+	mFilepath( other.mFilepath ),
+	mModificationTime( other.mModificationTime ),
+	mSize( other.mSize ),
+	mOwnerId( other.mOwnerId ),
+	mGroupId( other.mGroupId ),
+	mPermissions( other.mPermissions ),
+	mInode( other.mInode ) {}
+
 void FileInfo::getInfo() {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	if ( mFilepath.size() == 3 && mFilepath[1] == ':' &&
@@ -265,14 +274,14 @@ bool FileInfo::exists() const {
 	return 0 == res;
 }
 
-FileInfo& FileInfo::operator=( const FileInfo& Other ) {
-	this->mFilepath = Other.mFilepath;
-	this->mSize = Other.mSize;
-	this->mModificationTime = Other.mModificationTime;
-	this->mGroupId = Other.mGroupId;
-	this->mOwnerId = Other.mOwnerId;
-	this->mPermissions = Other.mPermissions;
-	this->mInode = Other.mInode;
+FileInfo& FileInfo::operator=( const FileInfo& other ) {
+	this->mFilepath = other.mFilepath;
+	this->mSize = other.mSize;
+	this->mModificationTime = other.mModificationTime;
+	this->mGroupId = other.mGroupId;
+	this->mOwnerId = other.mOwnerId;
+	this->mPermissions = other.mPermissions;
+	this->mInode = other.mInode;
 	return *this;
 }
 
@@ -285,12 +294,12 @@ bool FileInfo::isExecutable() const {
 #endif
 }
 
-bool FileInfo::sameInode( const FileInfo& Other ) const {
-	return inodeSupported() && mInode == Other.mInode;
+bool FileInfo::sameInode( const FileInfo& other ) const {
+	return inodeSupported() && mInode == other.mInode;
 }
 
-bool FileInfo::operator!=( const FileInfo& Other ) const {
-	return !( *this == Other );
+bool FileInfo::operator!=( const FileInfo& other ) const {
+	return !( *this == other );
 }
 
 }} // namespace EE::System

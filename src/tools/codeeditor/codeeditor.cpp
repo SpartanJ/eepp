@@ -643,6 +643,7 @@ UIMenu* App::createViewMenu() {
 	mViewMenu->addCheckBox( "Show Line Numbers" )->setActive( mConfig.editor.showLineNumbers );
 	mViewMenu->addCheckBox( "Show White Space" )->setActive( mConfig.editor.showWhiteSpaces );
 	mViewMenu->addCheckBox( "Show Document Info" )->setActive( mConfig.editor.showDocInfo );
+	mViewMenu->addCheckBox( "Show Minimap" )->setActive( mConfig.editor.minimap );
 	mViewMenu->addCheckBox( "Highlight Matching Bracket" )
 		->setActive( mConfig.editor.highlightMatchingBracket );
 	mViewMenu->addCheckBox( "Highlight Current Line" )
@@ -722,6 +723,10 @@ UIMenu* App::createViewMenu() {
 			mEditorSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
 				editor->setEnableColorPickerOnSelection( mConfig.editor.colorPickerSelection );
 			} );
+		} else if ( item->getText() == "Show Minimap" ) {
+			mConfig.editor.minimap = item->asType<UIMenuCheckBox>()->isActive();
+			mEditorSplitter->forEachEditor(
+				[&]( UICodeEditor* editor ) { editor->showMinimap( mConfig.editor.minimap ); } );
 		} else if ( item->getText() == "Enable Auto Complete" ) {
 			setAutoComplete( item->asType<UIMenuCheckBox>()->isActive() );
 		} else if ( item->getText() == "Enable Linter" ) {
@@ -1523,6 +1528,8 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 		UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
 		updateEditorTabTitle( editor );
 	} );
+
+	editor->showMinimap( config.minimap );
 
 	if ( config.autoComplete && !mAutoCompleteModule )
 		setAutoComplete( config.autoComplete );

@@ -78,6 +78,8 @@ class EE_API UIScrollBar : public UIWidget {
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
 										   const Uint32& propertyIndex = 0 );
 
+	bool isDragging() const;
+
   protected:
 	ScrollBarType mScrollBarStyle;
 	UISlider* mSlider;
