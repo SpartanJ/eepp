@@ -1,5 +1,5 @@
 #include "filelocator.hpp"
-#include "codeeditor.hpp"
+#include "ecode.hpp"
 
 static int LOCATEBAR_MAX_VISIBLE_ITEMS = 18;
 static int LOCATEBAR_MAX_RESULTS = 100;

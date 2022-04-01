@@ -1,5 +1,5 @@
 #include "globalsearchcontroller.hpp"
-#include "codeeditor.hpp"
+#include "ecode.hpp"
 #include "uitreeviewglobalsearch.hpp"
 
 static int LOCATEBAR_MAX_VISIBLE_ITEMS = 18;

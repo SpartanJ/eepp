@@ -1,4 +1,4 @@
-#include "codeeditor.hpp"
+#include "ecode.hpp"
 #include "autocompletemodule.hpp"
 #include "formattermodule.hpp"
 #include "lintermodule.hpp"

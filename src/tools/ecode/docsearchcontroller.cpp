@@ -1,5 +1,5 @@
 #include "docsearchcontroller.hpp"
-#include "codeeditor.hpp"
+#include "ecode.hpp"
 
 DocSearchController::DocSearchController( UICodeEditorSplitter* editorSplitter, App* app ) :
 	mEditorSplitter( editorSplitter ), mApp( app ) {}
