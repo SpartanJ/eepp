@@ -33,7 +33,7 @@
 #ifndef SHEREDOM_SUBPROCESS_H_INCLUDED
 #define SHEREDOM_SUBPROCESS_H_INCLUDED
 
-#if defined(_MSC_VER)
+#if defined(_WIN32)
 #pragma warning(push, 1)
 
 /* disable warning: '__cplusplus' is not defined as a preprocessor macro,
@@ -43,11 +43,11 @@
 
 #include <stdio.h>
 
-#if defined(_MSC_VER)
+#if defined(_WIN32)
 #pragma warning(pop)
 #endif
 
-#if defined(_MSC_VER)
+#if defined(_WIN32)
 #define subprocess_pure
 #define subprocess_weak __inline
 #elif defined(__clang__) || defined(__GNUC__)
@@ -211,7 +211,7 @@ subprocess_weak int subprocess_alive(struct subprocess_s *const process);
 #define SUBPROCESS_NULL 0
 #endif
 
-#if !defined(_MSC_VER)
+#if !defined(_WIN32)
 #include <signal.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -219,7 +219,7 @@ subprocess_weak int subprocess_alive(struct subprocess_s *const process);
 #include <unistd.h>
 #endif
 
-#if defined(_MSC_VER)
+#if defined(_WIN32)
 
 #if (_MSC_VER < 1920)
 #ifdef _WIN64
@@ -326,7 +326,7 @@ __declspec(dllimport) unsigned long __stdcall WaitForMultipleObjects(
 __declspec(dllimport) int __stdcall GetOverlappedResult(void *, LPOVERLAPPED,
                                                         unsigned long *, int);
 
-#if defined(_DLL) && (_DLL == 1)
+#if defined(_DLL)
 #define SUBPROCESS_DLLIMPORT __declspec(dllimport)
 #else
 #define SUBPROCESS_DLLIMPORT
@@ -336,7 +336,11 @@ SUBPROCESS_DLLIMPORT int __cdecl _fileno(FILE *);
 SUBPROCESS_DLLIMPORT int __cdecl _open_osfhandle(subprocess_intptr_t, int);
 SUBPROCESS_DLLIMPORT subprocess_intptr_t __cdecl _get_osfhandle(int);
 
+#ifdef _MSC_VER
 void *__cdecl _alloca(subprocess_size_t);
+#else
+#include <malloc.h>
+#endif
 #else
 typedef size_t subprocess_size_t;
 #endif
@@ -350,7 +354,7 @@ struct subprocess_s {
   FILE *stdout_file;
   FILE *stderr_file;
 
-#if defined(_MSC_VER)
+#if defined(_WIN32)
   void *hProcess;
   void *hStdInput;
   void *hEventOutput;
@@ -366,7 +370,7 @@ struct subprocess_s {
 #pragma clang diagnostic pop
 #endif
 
-#if defined(_MSC_VER)
+#if defined(_WIN32)
 subprocess_weak int subprocess_create_named_pipe_helper(void **rd, void **wr);
 int subprocess_create_named_pipe_helper(void **rd, void **wr) {
   const unsigned long pipeAccessInbound = 0x00000001;
@@ -384,7 +388,7 @@ int subprocess_create_named_pipe_helper(void **rd, void **wr) {
   __declspec(thread) static long index = 0;
   const long unique = index++;
 
-#if _MSC_VER < 1900
+#ifdef _WIN32
 #pragma warning(push, 1)
 #pragma warning(disable : 4996)
   _snprintf(name, sizeof(name) - 1,
@@ -427,13 +431,14 @@ int subprocess_create(const char *const commandLine[], int options,
 int subprocess_create_ex(const char *const commandLine[], int options,
                          const char *const environment[],
                          struct subprocess_s *const out_process) {
-#if defined(_MSC_VER)
+#if defined(_WIN32)
   int fd;
   void *rd, *wr;
   char *commandLineCombined;
   subprocess_size_t len;
   int i, j;
   unsigned long flags = 0;
+  int need_quoting;
   const unsigned long startFUseStdHandles = 0x00000100;
   const unsigned long handleFlagInherit = 0x00000001;
   const unsigned long createNoWindow = 0x08000000;
@@ -603,8 +608,12 @@ int subprocess_create_ex(const char *const commandLine[], int options,
   // Combine commandLine together into a single string
   len = 0;
   for (i = 0; commandLine[i]; i++) {
-    // For the ' ' and two '"' between items and trailing '\0'
-    len += 3;
+    // For the trailing \0
+    len++;
+
+    // Quote the argument if it has space or tabs in it
+    if (strpbrk(commandLine[i], "\t\v ") != NULL)
+        len += 2;
 
     for (j = 0; '\0' != commandLine[i][j]; j++) {
       switch (commandLine[i][j]) {
@@ -637,7 +646,10 @@ int subprocess_create_ex(const char *const commandLine[], int options,
     if (0 != i) {
       commandLineCombined[len++] = ' ';
     }
-    commandLineCombined[len++] = '"';
+    need_quoting = strpbrk(commandLine[i], "\t\v ") != NULL;
+    if (need_quoting) {
+      commandLineCombined[len++] = '"';
+    }
 
     for (j = 0; '\0' != commandLine[i][j]; j++) {
       switch (commandLine[i][j]) {
@@ -656,7 +668,10 @@ int subprocess_create_ex(const char *const commandLine[], int options,
 
       commandLineCombined[len++] = commandLine[i][j];
     }
-    commandLineCombined[len++] = '"';
+
+    if (need_quoting) {
+      commandLineCombined[len++] = '"';
+    }
   }
 
   commandLineCombined[len] = '\0';
@@ -764,7 +779,7 @@ int subprocess_create_ex(const char *const commandLine[], int options,
       _Exit(execve(commandLine[0], (char *const *)commandLine,
                    empty_environment));
     } else {
-	  _Exit(execvp(commandLine[0], (char *const *)commandLine));
+      _Exit(execvp(commandLine[0], (char *const *)commandLine));
     }
 
 #ifdef __clang__
@@ -819,7 +834,7 @@ FILE *subprocess_stderr(const struct subprocess_s *const process) {
 
 int subprocess_join(struct subprocess_s *const process,
                     int *const out_return_code) {
-#if defined(_MSC_VER)
+#if defined(_WIN32)
   const unsigned long infinite = 0xFFFFFFFF;
 
   if (process->stdin_file) {
@@ -894,7 +909,7 @@ int subprocess_destroy(struct subprocess_s *const process) {
     process->stderr_file = SUBPROCESS_NULL;
   }
 
-#if defined(_MSC_VER)
+#if defined(_WIN32)
   if (process->hProcess) {
     CloseHandle(process->hProcess);
     process->hProcess = SUBPROCESS_NULL;
@@ -917,7 +932,7 @@ int subprocess_destroy(struct subprocess_s *const process) {
 }
 
 int subprocess_terminate(struct subprocess_s *const process) {
-#if defined(_MSC_VER)
+#if defined(_WIN32)
   unsigned int killed_process_exit_code;
   int success_terminate;
   int windows_call_result;
@@ -936,7 +951,7 @@ int subprocess_terminate(struct subprocess_s *const process) {
 
 unsigned subprocess_read_stdout(struct subprocess_s *const process,
                                 char *const buffer, unsigned size) {
-#if defined(_MSC_VER)
+#if defined(_WIN32)
   void *handle;
   unsigned long bytes_read = 0;
   struct subprocess_overlapped_s overlapped = {0, 0, {{0, 0}}, SUBPROCESS_NULL};
@@ -981,7 +996,7 @@ unsigned subprocess_read_stdout(struct subprocess_s *const process,
 
 unsigned subprocess_read_stderr(struct subprocess_s *const process,
                                 char *const buffer, unsigned size) {
-#if defined(_MSC_VER)
+#if defined(_WIN32)
   void *handle;
   unsigned long bytes_read = 0;
   struct subprocess_overlapped_s overlapped = {0, 0, {{0, 0}}, SUBPROCESS_NULL};
@@ -1030,7 +1045,7 @@ int subprocess_alive(struct subprocess_s *const process) {
   if (!is_alive) {
     return 0;
   }
-#if defined(_MSC_VER)
+#if defined(_WIN32)
   {
     const unsigned long zero = 0x0;
     const unsigned long wait_object_0 = 0x00000000L;

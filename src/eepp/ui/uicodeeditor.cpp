@@ -909,17 +909,20 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 
 	if ( mMinimapEnabled ) {
 		Rectf rect( getMinimapRect( getScreenStart() ) );
-		if ( !mVScrollBar->isDragging() && !mMinimapDragging &&
+		if ( ( flags & EE_BUTTON_LMASK ) && !mVScrollBar->isDragging() && !mMinimapDragging &&
 			 rect.contains( position.asFloat() ) ) {
-			Int64 lineCount = mDoc->linesCount();
-			Float lineSpacing = getMinimapLineSpacing();
-			Float minimapHeight = lineCount * lineSpacing;
-			bool isTooLarge = isMinimapFileTooLarge();
-			if ( isTooLarge )
-				minimapHeight = rect.getHeight();
-			Float dy = position.y - rect.Top;
-			Int64 jumpToLine = eefloor( ( dy / minimapHeight ) * lineCount ) + 1;
-			scrollTo( { jumpToLine, 0 }, true, true );
+			updateMipmapHover( position.asFloat() );
+			if ( !mMinimapHover ) {
+				Int64 lineCount = mDoc->linesCount();
+				Float lineSpacing = getMinimapLineSpacing();
+				Float minimapHeight = lineCount * lineSpacing;
+				bool isTooLarge = isMinimapFileTooLarge();
+				if ( isTooLarge )
+					minimapHeight = rect.getHeight();
+				Float dy = position.y - rect.Top;
+				Int64 jumpToLine = eefloor( ( dy / minimapHeight ) * lineCount ) + 1;
+				scrollTo( { jumpToLine, 0 }, true, true );
+			}
 			mMinimapDragging = true;
 			mMouseDown = true;
 			getUISceneNode()->getWindow()->getInput()->captureMouse( true );
@@ -2566,7 +2569,7 @@ Rectf UICodeEditor::getMinimapRect( const Vector2f& start ) const {
 
 void UICodeEditor::drawMinimap( const Vector2f& start, const std::pair<int, int>& lineRange ) {
 	Float charHeight = PixelDensity::getPixelDensity() * mMinimapConfig.scale;
-	Float charSpacing = eefloor( 0.8 * PixelDensity::getPixelDensity() * mMinimapConfig.scale );
+	Float charSpacing = eemax( 1.f, eefloor( 0.8 * PixelDensity::getPixelDensity() * mMinimapConfig.scale ) );
 	Float lineSpacing = getMinimapLineSpacing();
 	Rectf rect( getMinimapRect( start ) );
 	int visibleLinesCount = ( lineRange.second - lineRange.first );
@@ -2744,7 +2747,7 @@ Vector2f UICodeEditor::getScreenStart() const {
 }
 
 Float UICodeEditor::getMinimapLineSpacing() const {
-	return eefloor( 2 * PixelDensity::getPixelDensity() * mMinimapConfig.scale );
+	return eemax( 1.f, eefloor( 2 * PixelDensity::getPixelDensity() * mMinimapConfig.scale ) );
 }
 
 bool UICodeEditor::isMinimapFileTooLarge() const {

@@ -1,6 +1,6 @@
 #!/bin/sh
 cd $(dirname "$0")
-premake5 --file=../../premake5.lua --os=windows gmake2
+premake5 --file=../../premake5.lua --os=windows --cc=mingw --with-mojoal gmake2
 cd ../../make/windows/
 mingw32-make $@
 

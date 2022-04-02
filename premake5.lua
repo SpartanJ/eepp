@@ -123,11 +123,20 @@ function download_and_extract_dependencies()
 	end
 end
 
+function build_arch_configuration()
+	filter {"architecture:x86", "options:cc=mingw"}
+		buildoptions { "-B /usr/bin/i686-w64-mingw32-" }
+
+	filter {"architecture:x86_64", "options:cc=mingw"}
+		buildoptions { "-B /usr/bin/x86_64-w64-mingw32-" }
+end
+
 function build_base_configuration( package_name )
 	incdirs { "src/thirdparty/zlib" }
 
 	set_ios_config()
 	set_xcode_config()
+	build_arch_configuration()
 
 	filter "not system:windows"
 		buildoptions{ "-fPIC" }
@@ -159,6 +168,7 @@ function build_base_cpp_configuration( package_name )
 
 	set_ios_config()
 	set_xcode_config()
+	build_arch_configuration()
 
 	filter "action:not vs*"
 		buildoptions { "-Wall" }
@@ -202,6 +212,7 @@ function build_link_configuration( package_name, use_ee_icon )
 
 	set_ios_config()
 	set_xcode_config()
+	build_arch_configuration()
 
 	filter { "system:windows", "action:not vs*" }
 		if ( true == use_ee_icon ) then

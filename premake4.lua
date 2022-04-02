@@ -79,7 +79,14 @@ newgcctoolchain {
 	name = "mingw32",
 	description = "Mingw32 to cross-compile windows binaries from *nix",
 	prefix = "i686-w64-mingw32-",
-	cppflags = ""
+	cppflags = "-B /usr/bin/i686-w64-mingw32-"
+}
+
+newgcctoolchain {
+	name = "mingw64",
+	description = "Mingw64 to cross-compile windows binaries from *nix",
+	prefix = "x86_64-w64-mingw64-",
+	cppflags = "-B /usr/bin/x86_64-w64-mingw64-"
 }
 
 newgcctoolchain {
@@ -358,11 +365,11 @@ end
 
 function add_cross_config_links()
 	if not is_vs() then
-		if os.is_real("mingw32") or os.is_real("windows") or os.is_real("ios") then -- if is crosscompiling from *nix
+		if os.is_real("mingw32") or os.is_real("mingw64") or os.is_real("windows") or os.is_real("ios") then -- if is crosscompiling from *nix
 			linkoptions { "-static-libgcc", "-static-libstdc++" }
 		end
 
-		if os.is_real("mingw32") then
+		if os.is_real("mingw32") or os.is_real("mingw64") then
 			linkoptions { "-Wl,-Bstatic -lstdc++ -lpthread -Wl,-Bdynamic" }
 		end
 	end
@@ -509,6 +516,8 @@ function generate_os_links()
 		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32" } )
 	elseif os.is_real("mingw32") then
 		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32" } )
+	elseif os.is_real("mingw64") then
+		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32" } )
 	elseif os.is_real("macosx") then
 		multiple_insert( os_links, { "OpenGL.framework", "CoreFoundation.framework" } )
 	elseif os.is_real("freebsd") then
@@ -522,7 +531,7 @@ function generate_os_links()
 	if not _OPTIONS["with-mojoal"] then
 		if os.is_real("linux") or os.is_real("freebsd") or os.is_real("haiku") or os.is_real("emscripten") then
 			multiple_insert( os_links, { "openal" } )
-		elseif os.is_real("windows") or os.is_real("mingw32") then
+		elseif os.is_real("windows") or os.is_real("mingw32") or os.is_real("mingw64") then
 			multiple_insert( os_links, { "OpenAL32" } )
 		elseif os.is_real("macosx") or os.is_real("ios") then
 			multiple_insert( os_links, { "OpenAL.framework" } )
@@ -667,7 +676,7 @@ function backend_is( name, libname )
 
 	local ret_val = os_findlib( libname ) and backend_sel
 
-	if os.is_real("mingw32") or os.is_real("emscripten") then
+	if os.is_real("mingw32") or os.is_real("mingw64") or os.is_real("emscripten") then
 		ret_val = backend_sel
 	end
 
@@ -749,7 +758,7 @@ function build_eepp( build_name )
 		buildoptions{ "-std=c++14" }
 	end
 
-	if os.is("windows") then
+	if os.is_real("mingw32") or os.is_real("mingw64") or os.is_real("windows") then
 		files { "src/eepp/system/platform/win/*.cpp" }
 		files { "src/eepp/network/platform/win/*.cpp" }
 	else
