@@ -411,6 +411,16 @@ void GlobalSearchController::doGlobalSearch( String text, bool caseSensitive, bo
 	}
 }
 
+void GlobalSearchController::onLoadDone( const Variant& lineNum, const Variant& colNum ) {
+	if ( mEditorSplitter->getCurEditor() && lineNum.isValid() && colNum.isValid() &&
+		 lineNum.is( Variant::Type::Int64 ) && colNum.is( Variant::Type::Int64 ) ) {
+		TextPosition pos{ lineNum.asInt64(), colNum.asInt64() };
+		mEditorSplitter->getCurEditor()->getDocument().setSelection( pos );
+		mEditorSplitter->getCurEditor()->goToLine( pos );
+		hideGlobalSearchBar();
+	}
+}
+
 void GlobalSearchController::initGlobalSearchTree( UITreeViewGlobalSearch* searchTree ) {
 	searchTree->addClass( "search_tree" );
 	searchTree->setParent( mGlobalSearchLayout );
@@ -451,13 +461,6 @@ void GlobalSearchController::initGlobalSearchTree( UITreeViewGlobalSearch* searc
 			if ( vPath.isValid() && vPath.is( Variant::Type::cstr ) ) {
 				std::string path( vPath.asCStr() );
 				UITab* tab = mEditorSplitter->isDocumentOpen( path );
-				if ( !tab ) {
-					FileInfo fileInfo( path );
-					if ( fileInfo.exists() && fileInfo.isRegularFile() )
-						mApp->loadFileFromPath( path );
-				} else {
-					tab->getTabWidget()->setTabSelected( tab );
-				}
 				Variant lineNum(
 					model->data( model->index( modelEvent->getModelIndex().row(),
 											   ProjectSearch::ResultModel::FileOrPosition,
@@ -467,12 +470,17 @@ void GlobalSearchController::initGlobalSearchTree( UITreeViewGlobalSearch* searc
 														   ProjectSearch::ResultModel::ColumnStart,
 														   modelEvent->getModelIndex().parent() ),
 											 ModelRole::Custom ) );
-				if ( mEditorSplitter->getCurEditor() && lineNum.isValid() && colNum.isValid() &&
-					 lineNum.is( Variant::Type::Int64 ) && colNum.is( Variant::Type::Int64 ) ) {
-					TextPosition pos{ lineNum.asInt64(), colNum.asInt64() };
-					mEditorSplitter->getCurEditor()->getDocument().setSelection( pos );
-					mEditorSplitter->getCurEditor()->goToLine( pos );
-					hideGlobalSearchBar();
+				if ( !tab ) {
+					FileInfo fileInfo( path );
+					if ( fileInfo.exists() && fileInfo.isRegularFile() )
+						mApp->loadFileFromPath(
+							path, true, nullptr,
+							[&, lineNum, colNum]( UICodeEditor*, const std::string& ) {
+								onLoadDone( lineNum, colNum );
+							} );
+				} else {
+					tab->getTabWidget()->setTabSelected( tab );
+					onLoadDone( lineNum, colNum );
 				}
 			}
 		}

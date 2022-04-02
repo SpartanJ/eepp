@@ -95,7 +95,7 @@ class EE_API Variant {
 		}
 		mType = Type::Invalid;
 	}
-	bool isValid() { return mType != Type::Invalid; }
+	bool isValid() const { return mType != Type::Invalid; }
 
 	std::string toString() const {
 		switch ( mType ) {

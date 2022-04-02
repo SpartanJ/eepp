@@ -52,6 +52,8 @@ class GlobalSearchController {
 	Uint32 mGlobalSearchHistoryOnItemSelectedCb{ 0 };
 	std::deque<std::pair<std::string, std::shared_ptr<ProjectSearch::ResultModel>>>
 		mGlobalSearchHistory;
+
+	void onLoadDone( const Variant& lineNum, const Variant& colNum );
 };
 
 #endif // GLOBALSEARCHCONTROLLER_HPP

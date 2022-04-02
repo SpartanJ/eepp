@@ -11,8 +11,8 @@ ClipboardSDL::~ClipboardSDL() {}
 
 void ClipboardSDL::init() {}
 
-void ClipboardSDL::setText( const std::string& Text ) {
-	SDL_SetClipboardText( Text.c_str() );
+void ClipboardSDL::setText( const std::string& text ) {
+	SDL_SetClipboardText( text.c_str() );
 }
 
 std::string ClipboardSDL::getText() {

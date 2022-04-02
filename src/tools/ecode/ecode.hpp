@@ -59,7 +59,9 @@ class App : public UICodeEditorSplitter::Client {
 	std::shared_ptr<ThreadPool> getThreadPool() const;
 
 	void loadFileFromPath( const std::string& path, bool inNewTab = true,
-						   UICodeEditor* codeEditor = nullptr );
+						   UICodeEditor* codeEditor = nullptr,
+						   std::function<void( UICodeEditor*, const std::string& )> onLoaded =
+							   std::function<void( UICodeEditor*, const std::string& )>() );
 
 	void hideGlobalSearchBar();
 

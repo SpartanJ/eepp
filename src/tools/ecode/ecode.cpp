@@ -1295,7 +1295,9 @@ void App::createDocAlert( UICodeEditor* editor ) {
 		} );
 }
 
-void App::loadFileFromPath( const std::string& path, bool inNewTab, UICodeEditor* codeEditor ) {
+void App::loadFileFromPath(
+	const std::string& path, bool inNewTab, UICodeEditor* codeEditor,
+	std::function<void( UICodeEditor* codeEditor, const std::string& path )> onLoaded ) {
 	if ( Image::isImageExtension( path ) && Image::isImage( path ) ) {
 		UIImage* imageView = mImageLayout->findByType<UIImage>( UI_TYPE_IMAGE );
 		UILoader* loaderView = mImageLayout->findByType<UILoader>( UI_TYPE_LOADER );
@@ -1324,19 +1326,11 @@ void App::loadFileFromPath( const std::string& path, bool inNewTab, UICodeEditor
 #endif
 		}
 	} else {
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 		if ( inNewTab ) {
-			mEditorSplitter->loadAsyncFileFromPathInNewTab( path, mThreadPool );
+			mEditorSplitter->loadAsyncFileFromPathInNewTab( path, mThreadPool, onLoaded );
 		} else {
-			mEditorSplitter->loadAsyncFileFromPath( path, mThreadPool, codeEditor );
+			mEditorSplitter->loadAsyncFileFromPath( path, mThreadPool, codeEditor, onLoaded );
 		}
-#else
-		if ( inNewTab ) {
-			mEditorSplitter->loadFileFromPathInNewTab( path );
-		} else {
-			mEditorSplitter->loadFileFromPath( path, codeEditor );
-		}
-#endif
 	}
 }
 

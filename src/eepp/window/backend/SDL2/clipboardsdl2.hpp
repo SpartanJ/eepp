@@ -19,7 +19,7 @@ class EE_API ClipboardSDL : public Clipboard {
 
 	String getWideText();
 
-	void setText( const std::string& Text );
+	void setText( const std::string& text );
 
   protected:
 	friend class WindowSDL;
