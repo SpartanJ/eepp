@@ -452,6 +452,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void showMinimap( bool showMinimap );
 
+	bool getAutoCloseXMLTags() const;
+
+	void setAutoCloseXMLTags( bool autoCloseXMLTags );
+
   protected:
 	struct LastXOffset {
 		TextPosition position;
@@ -483,6 +487,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mMinimapEnabled{ false };
 	bool mMinimapDragging{ false };
 	bool mMinimapHover{ false };
+	bool mAutoCloseXMLTags{ false };
 	TextRange mLinkPosition;
 	String mLink;
 	Uint32 mTabWidth;
@@ -686,6 +691,9 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Float getMinimapWidth() const;
 
 	void updateMipmapHover( const Vector2f& position );
+
+	bool checkAutoCloseXMLTag( const String& text );
+
 };
 
 }} // namespace EE::UI

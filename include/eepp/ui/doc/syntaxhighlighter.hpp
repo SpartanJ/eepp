@@ -32,6 +32,8 @@ class EE_API SyntaxHighlighter {
 
 	bool updateDirty( int visibleLinesCount = 40 );
 
+	const SyntaxDefinition& getSyntaxDefinitionFromTextPosition( const TextPosition& position );
+
   protected:
 	TextDocument* mDoc;
 	std::map<size_t, TokenizedLine> mLines;

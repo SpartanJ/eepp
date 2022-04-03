@@ -13,15 +13,11 @@
 
 Detect errors and log them.
 
-## TextDocument
-
-* Add XML tags auto-close.
-
 ## ecode - Code Editor
 
-* Support single instance (when a new file is opened while a previous instance exists, open it in the first instance).
+* Add LSP support.
 
-* Add support for function listing.
+* Add terminal support.
 
 ## UI Editor
 

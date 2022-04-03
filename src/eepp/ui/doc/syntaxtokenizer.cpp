@@ -61,14 +61,8 @@ std::pair<int, int> findNonEscaped( const std::string& text, const std::string& 
 	}
 }
 
-struct SyntaxState {
-	const SyntaxDefinition* currentSyntax{ nullptr };
-	const SyntaxPattern* subsyntaxInfo{ nullptr };
-	Uint32 currentPatternIdx{ 0 };
-	Uint32 currentLevel{ 0 };
-};
-
-SyntaxState retrieveSyntaxState( const SyntaxDefinition& syntax, const Uint32& state ) {
+SyntaxState SyntaxTokenizer::retrieveSyntaxState( const SyntaxDefinition& syntax,
+												  const Uint32& state ) {
 	SyntaxState syntaxState{ &syntax, nullptr, state, 0 };
 	if ( state > 0 &&
 		 ( state > 255 ||

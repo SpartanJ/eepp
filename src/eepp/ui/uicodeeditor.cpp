@@ -766,6 +766,8 @@ Uint32 UICodeEditor::onTextInput( const TextInputEvent& event ) {
 
 	mDoc->textInput( event.getText() );
 
+	checkAutoCloseXMLTag( event.getText() );
+
 	for ( auto& module : mModules )
 		if ( module->onTextInput( this, event ) )
 			return 1;
@@ -2569,7 +2571,8 @@ Rectf UICodeEditor::getMinimapRect( const Vector2f& start ) const {
 
 void UICodeEditor::drawMinimap( const Vector2f& start, const std::pair<int, int>& lineRange ) {
 	Float charHeight = PixelDensity::getPixelDensity() * mMinimapConfig.scale;
-	Float charSpacing = eemax( 1.f, eefloor( 0.8 * PixelDensity::getPixelDensity() * mMinimapConfig.scale ) );
+	Float charSpacing =
+		eemax( 1.f, eefloor( 0.8 * PixelDensity::getPixelDensity() * mMinimapConfig.scale ) );
 	Float lineSpacing = getMinimapLineSpacing();
 	Rectf rect( getMinimapRect( start ) );
 	int visibleLinesCount = ( lineRange.second - lineRange.first );
@@ -2754,6 +2757,47 @@ bool UICodeEditor::isMinimapFileTooLarge() const {
 	return mDoc->linesCount() > 1 &&
 		   mDoc->linesCount() >
 			   eefloor( getMinimapRect( getScreenStart() ).getHeight() / getMinimapLineSpacing() );
+}
+
+bool UICodeEditor::getAutoCloseXMLTags() const {
+	return mAutoCloseXMLTags;
+}
+
+void UICodeEditor::setAutoCloseXMLTags( bool autoCloseXMLTags ) {
+	mAutoCloseXMLTags = autoCloseXMLTags;
+}
+
+bool UICodeEditor::checkAutoCloseXMLTag( const String& text ) {
+	if ( !mAutoCloseXMLTags || text.empty() || text.size() > 1 || text[0] != '>' ||
+		 mDoc->getSelection().hasSelection() )
+		return false;
+	TextPosition start( mDoc->getSelection().start() );
+	if ( start.line() >= (Int64)mDoc->linesCount() )
+		return false;
+	const auto& line = mDoc->line( start.line() ).getText();
+	if ( start.column() >= (Int64)line.size() )
+		return false;
+	if ( line[start.column() - 1] != '>' || ( line.size() > 2 && line[start.column() - 2] == '/' ) )
+		return false;
+	// Only close tags if the current line syntax is XML or HTML
+	const SyntaxDefinition& definition = mHighlighter.getSyntaxDefinitionFromTextPosition( start );
+	const String::HashType xmlType = String::hash( "xml" );
+	const String::HashType htmlType = String::hash( "html" );
+	if ( definition.getLanguageId() != xmlType && definition.getLanguageId() != htmlType )
+		return false;
+	size_t foundOpenPos = line.find_last_of( "<", start.column() - 1 );
+	if ( foundOpenPos == String::InvalidPos || start.column() - foundOpenPos < 1 )
+		return false;
+	std::string tag( line.substr( foundOpenPos, start.column() - foundOpenPos ).toUtf8() );
+	LuaPattern pattern( "<([%w_%-]+).*>" );
+	auto match = pattern.gmatch( tag );
+	if ( match.matches() ) {
+		std::string tagName( match.group( 1 ) );
+		mDoc->textInput( String( "</" + tagName + ">" ) );
+		mDoc->setSelection( start );
+		return true;
+	}
+	return false;
 }
 
 }} // namespace EE::UI

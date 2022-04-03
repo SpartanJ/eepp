@@ -1,3 +1,4 @@
+#include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/doc/syntaxhighlighter.hpp>
 #include <eepp/ui/doc/syntaxtokenizer.hpp>
 
@@ -88,6 +89,22 @@ bool SyntaxHighlighter::updateDirty( int visibleLinesCount ) {
 		return changed;
 	}
 	return false;
+}
+
+const SyntaxDefinition&
+SyntaxHighlighter::getSyntaxDefinitionFromTextPosition( const TextPosition& position ) {
+	auto found = mLines.find( position.line() );
+	if ( found == mLines.end() )
+		return SyntaxDefinitionManager::instance()->getPlainStyle();
+
+	TokenizedLine& line = found->second;
+	SyntaxState state =
+		SyntaxTokenizer::retrieveSyntaxState( mDoc->getSyntaxDefinition(), line.state );
+
+	if ( nullptr == state.currentSyntax )
+		return SyntaxDefinitionManager::instance()->getPlainStyle();
+
+	return *state.currentSyntax;
 }
 
 }}} // namespace EE::UI::Doc

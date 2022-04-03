@@ -916,7 +916,7 @@ UIMenu* App::createDocumentMenu() {
 	} );
 
 	UIPopUpMenu* bracketsMenu = UIPopUpMenu::New();
-	mDocMenu->addSubMenu( "Auto-Close Brackets", nullptr, bracketsMenu );
+	mDocMenu->addSubMenu( "Auto-Close Brackets & Tags", nullptr, bracketsMenu );
 	auto& closeBrackets = mConfig.editor.autoCloseBrackets;
 	auto shouldCloseCb = []( UIMenuItem* ) -> bool { return false; };
 	bracketsMenu->addCheckBox( "Brackets ()", closeBrackets.find( '(' ) != std::string::npos )
@@ -939,10 +939,20 @@ UIMenu* App::createDocumentMenu() {
 	bracketsMenu->addCheckBox( "Back Quotes ``", closeBrackets.find( '`' ) != std::string::npos )
 		->setOnShouldCloseCb( shouldCloseCb )
 		->setId( "``" );
+	bracketsMenu->addCheckBox( "Auto Close XML Tags", mConfig.editor.autoCloseXMLTags )
+		->setOnShouldCloseCb( shouldCloseCb )
+		->setId( "XML" );
 	bracketsMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
 		std::string id = event->getNode()->getId();
 		if ( event->getNode()->isType( UI_TYPE_MENUCHECKBOX ) ) {
 			UIMenuCheckBox* item = event->getNode()->asType<UIMenuCheckBox>();
+			if ( item->getId() == "XML" ) {
+				mConfig.editor.autoCloseXMLTags = item->isActive();
+				mEditorSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
+					editor->setAutoCloseXMLTags( mConfig.editor.autoCloseXMLTags );
+				} );
+				return;
+			}
 			auto curPairs = String::split( mConfig.editor.autoCloseBrackets, ',' );
 			auto found = std::find( curPairs.begin(), curPairs.end(), id );
 			if ( item->isActive() ) {
@@ -1372,6 +1382,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	editor->setColorPreview( config.colorPreview );
 	editor->setFont( mFontMono );
 	editor->setMenuIconSize( mMenuIconSize );
+	editor->setAutoCloseXMLTags( config.autoCloseXMLTags );
 	doc.setAutoCloseBrackets( !mConfig.editor.autoCloseBrackets.empty() );
 	doc.setAutoCloseBracketsPairs( makeAutoClosePairs( mConfig.editor.autoCloseBrackets ) );
 	doc.setAutoDetectIndentType( config.autoDetectIndentType );

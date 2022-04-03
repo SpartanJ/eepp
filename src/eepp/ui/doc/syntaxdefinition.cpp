@@ -13,7 +13,7 @@ SyntaxDefinition::SyntaxDefinition( const std::string& languageName,
 									const std::string& comment,
 									const std::vector<std::string> headers ) :
 	mLanguageName( languageName ),
-	mLanguageId( String::hash( languageName ) ),
+	mLanguageId( String::hash( String::toLower( languageName ) ) ),
 	mFiles( files ),
 	mPatterns( patterns ),
 	mSymbols( symbols ),
