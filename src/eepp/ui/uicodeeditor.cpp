@@ -1057,6 +1057,10 @@ Uint32 UICodeEditor::onMouseUp( const Vector2i& position, const Uint32& flags ) 
 			setScrollY( mScroll.y - PixelDensity::dpToPx( mMouseWheelScroll ) );
 		}
 		invalidateDraw();
+	} else if ( flags & EE_BUTTON_WRMASK ) {
+		setScrollX( mScroll.x + PixelDensity::dpToPx( mMouseWheelScroll ) );
+	} else if ( flags & EE_BUTTON_WLMASK ) {
+		setScrollX( mScroll.x - PixelDensity::dpToPx( mMouseWheelScroll ) );
 	} else if ( ( flags & EE_BUTTON_RMASK ) ) {
 		onCreateContextMenu( position, flags );
 	}
@@ -1443,7 +1447,7 @@ void UICodeEditor::showMinimap( bool showMinimap ) {
 
 void UICodeEditor::setScrollX( const Float& val, bool emmitEvent ) {
 	Float oldVal = mScroll.x;
-	mScroll.x = eefloor( eemax( val, 0.f ) );
+	mScroll.x = eefloor( eeclamp<Float>( val, 0.f, getMaxScroll().x ) );
 	if ( oldVal != mScroll.x ) {
 		invalidateDraw();
 		if ( mHorizontalScrollBarEnabled && emmitEvent )

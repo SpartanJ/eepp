@@ -277,7 +277,7 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 			Uint8 button;
 			int x, y;
 
-			if ( SDLEvent.wheel.y == 0 ) {
+			if ( SDLEvent.wheel.y == 0 && SDLEvent.wheel.x == 0 ) {
 				break;
 			}
 
@@ -285,8 +285,12 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 
 			if ( SDLEvent.wheel.y > 0 ) {
 				button = EE_BUTTON_WHEELUP;
-			} else {
+			} else if ( SDLEvent.wheel.y < 0 ) {
 				button = EE_BUTTON_WHEELDOWN;
+			} else if ( SDLEvent.wheel.x > 0 ) {
+				button = EE_BUTTON_WHEELRIGHT;
+			} else if ( SDLEvent.wheel.x < 0 ) {
+				button = EE_BUTTON_WHEELLEFT;
 			}
 
 			event.button.button = button;

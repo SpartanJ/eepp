@@ -445,8 +445,8 @@ void UISlider::manageClick( const Uint32& Flags ) {
 				else
 					setValue( mValue + mClickStep );
 			}
-		} else if ( Flags & EE_BUTTONS_WUWD ) {
-			if ( Flags & EE_BUTTON_WUMASK )
+		} else if ( Flags & (EE_BUTTONS_WUWD|EE_BUTTONS_WLWR) ) {
+			if ( Flags & (EE_BUTTON_WUMASK|EE_BUTTON_WLMASK) )
 				setValue( mValue - mClickStep );
 			else
 				setValue( mValue + mClickStep );

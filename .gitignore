@@ -47,3 +47,4 @@ eepp.tags
 eepp.geany
 /bin/assets/icon/ee.aps
 /bin/.htaccess
+.qtc_clangd
