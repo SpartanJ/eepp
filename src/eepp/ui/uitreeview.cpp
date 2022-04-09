@@ -683,14 +683,15 @@ ModelIndex UITreeView::selectRowWithPath( std::string path ) {
 		ModelIndex foundIndex = {};
 		const auto& part = pathPart[i];
 
-		traverseTree( [&]( const int&, const ModelIndex& index, const size_t&, const Float& ) {
-			Variant var = model->data( index );
-			if ( var.isValid() && var.toString() == part ) {
-				foundIndex = index;
-				return IterationDecision::Stop;
-			}
-			return IterationDecision::Continue;
-		} );
+		traverseTree(
+			[&, i]( const int&, const ModelIndex& index, const size_t& indentLevel, const Float& ) {
+				Variant var = model->data( index );
+				if ( i == indentLevel && var.isValid() && var.toString() == part ) {
+					foundIndex = index;
+					return IterationDecision::Stop;
+				}
+				return IterationDecision::Continue;
+			} );
 
 		if ( foundIndex == ModelIndex() )
 			break;
