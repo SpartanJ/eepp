@@ -1622,6 +1622,8 @@ TextRange TextDocument::find( String text, TextPosition from, const bool& caseSe
 				if ( foundRange.end().column() == (Int64)mLines[foundRange.end().line()].size() )
 					foundRange.setEnd( positionOffset( foundRange.end(), 1 ) );
 				return foundRange;
+			} else {
+				return find( text, range.end(), caseSensitive, wholeWord, type, restrictRange );
 			}
 		}
 	}
