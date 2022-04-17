@@ -37,6 +37,8 @@ class EE_API TextDocument {
 
 	enum class FindReplaceType { Normal, LuaPattern };
 
+	enum class LoadStatus { Loaded, Interrupted, Failed };
+
 	class EE_API Client {
 	  public:
 		virtual ~Client();
@@ -65,17 +67,17 @@ class EE_API TextDocument {
 
 	void reset();
 
-	bool loadFromStream( IOStream& path );
+	LoadStatus loadFromStream( IOStream& path );
 
-	bool loadFromFile( const std::string& path );
+	LoadStatus loadFromFile( const std::string& path );
 
 	bool loadAsyncFromFile( const std::string& path, std::shared_ptr<ThreadPool> pool,
 							std::function<void( TextDocument*, bool )> onLoaded =
 								std::function<void( TextDocument*, bool success )>() );
 
-	bool loadFromMemory( const Uint8* data, const Uint32& size );
+	LoadStatus loadFromMemory( const Uint8* data, const Uint32& size );
 
-	bool loadFromPack( Pack* pack, std::string filePackPath );
+	LoadStatus loadFromPack( Pack* pack, std::string filePackPath );
 
 	/**
 	 * @brief loadFromURL
@@ -83,7 +85,7 @@ class EE_API TextDocument {
 	 * @param headers Key value map of headers
 	 * @return
 	 */
-	bool loadFromURL(
+	LoadStatus loadFromURL(
 		const std::string& url,
 		const EE::Network::Http::Request::FieldTable& headers = Http::Request::FieldTable() );
 
@@ -93,7 +95,7 @@ class EE_API TextDocument {
 							   std::function<void( TextDocument*, bool success )>(),
 						   const Http::Request::ProgressCallback& progressCallback = nullptr );
 
-	bool reload();
+	LoadStatus reload();
 
 	bool save();
 
@@ -446,6 +448,7 @@ class EE_API TextDocument {
 	std::map<std::string, DocumentCommand> mCommands;
 	String mNonWordChars;
 	Client* mActiveClient{ nullptr };
+	Mutex mLoadingMutex;
 
 	void initializeCommands();
 
@@ -484,7 +487,7 @@ class EE_API TextDocument {
 
 	void guessIndentType();
 
-	bool loadFromStream( IOStream& file, std::string path, bool callReset );
+	LoadStatus loadFromStream( IOStream& file, std::string path, bool callReset );
 
 	TextRange findText( String text, TextPosition from = { 0, 0 }, const bool& caseSensitive = true,
 						const bool& wholeWord = false,

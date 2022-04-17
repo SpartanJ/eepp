@@ -39,6 +39,10 @@ TextDocument::TextDocument( bool verbose ) :
 }
 
 TextDocument::~TextDocument() {
+	if ( mLoading ) {
+		mLoading = false;
+		Lock l( mLoadingMutex );
+	}
 	notifyDocumentClosed();
 	if ( mDeleteOnClose )
 		FileSystem::fileRemove( mFilePath );
@@ -75,12 +79,14 @@ static String ptrGetLine( char* data, const size_t& size, size_t& position ) {
 	return String( data, position );
 }
 
-bool TextDocument::loadFromStream( IOStream& file ) {
+TextDocument::LoadStatus TextDocument::loadFromStream( IOStream& file ) {
 	return loadFromStream( file, "untitled", true );
 }
 
-bool TextDocument::loadFromStream( IOStream& file, std::string path, bool callReset ) {
+TextDocument::LoadStatus TextDocument::loadFromStream( IOStream& file, std::string path,
+													   bool callReset ) {
 	mLoading = true;
+	Lock l( mLoadingMutex );
 	Clock clock;
 	if ( callReset )
 		reset();
@@ -96,7 +102,7 @@ bool TextDocument::loadFromStream( IOStream& file, std::string path, bool callRe
 		int consume;
 		char* bufferPtr;
 		TScopedBuffer<char> data( blockSize );
-		while ( pending ) {
+		while ( pending && mLoading ) {
 			read = file.read( data.get(), blockSize );
 			bufferPtr = data.get();
 			consume = read;
@@ -166,8 +172,11 @@ bool TextDocument::loadFromStream( IOStream& file, std::string path, bool callRe
 	if ( mVerbose )
 		Log::info( "Document \"%s\" loaded in %.2fms.", path.c_str(),
 				   clock.getElapsedTime().asMilliseconds() );
+
+	bool wasInterrupted = !mLoading;
 	mLoading = false;
-	return true;
+	return wasInterrupted ? LoadStatus::Interrupted
+						  : ( file.isOpen() ? LoadStatus::Loaded : LoadStatus::Failed );
 }
 
 void TextDocument::guessIndentType() {
@@ -273,7 +282,7 @@ void TextDocument::notifyDocumentMoved( const std::string& path ) {
 	notifyDocumentMoved();
 }
 
-bool TextDocument::loadFromFile( const std::string& path ) {
+TextDocument::LoadStatus TextDocument::loadFromFile( const std::string& path ) {
 	mLoading = true;
 	if ( !FileSystem::fileExists( path ) && PackManager::instance()->isFallbackToPacksActive() ) {
 		std::string pathFix( path );
@@ -286,7 +295,7 @@ bool TextDocument::loadFromFile( const std::string& path ) {
 	}
 
 	IOStreamFile file( path, "rb" );
-	bool ret = loadFromStream( file, path, true );
+	auto ret = loadFromStream( file, path, true );
 	mFilePath = path;
 	mFileRealPath = FileInfo::isLink( mFilePath ) ? FileInfo( FileInfo( mFilePath ).linksTo() )
 												  : FileInfo( mFilePath );
@@ -300,23 +309,23 @@ bool TextDocument::loadAsyncFromFile( const std::string& path, std::shared_ptr<T
 	mLoading = true;
 	pool->run(
 		[&, path, onLoaded] {
-			bool loaded = loadFromFile( path );
-			if ( onLoaded )
-				onLoaded( this, loaded );
+			auto loaded = loadFromFile( path );
+			if ( loaded != LoadStatus::Interrupted && onLoaded )
+				onLoaded( this, loaded == LoadStatus::Loaded );
 		},
 		[] {} );
 	return true;
 }
 
-bool TextDocument::loadFromMemory( const Uint8* data, const Uint32& size ) {
+TextDocument::LoadStatus TextDocument::loadFromMemory( const Uint8* data, const Uint32& size ) {
 	IOStreamMemory stream( (const char*)data, size );
 	return loadFromStream( stream, mFilePath, true );
 }
 
-bool TextDocument::loadFromPack( Pack* pack, std::string filePackPath ) {
+TextDocument::LoadStatus TextDocument::loadFromPack( Pack* pack, std::string filePackPath ) {
 	if ( NULL == pack )
-		return false;
-	bool ret = false;
+		return LoadStatus::Failed;
+	LoadStatus ret = LoadStatus::Failed;
 	ScopedBuffer buffer;
 	if ( pack->isOpen() && pack->extractFileToMemory( filePackPath, buffer ) ) {
 		ret = loadFromMemory( buffer.get(), buffer.length() );
@@ -332,11 +341,12 @@ static std::string getTempPathFromURI( const URI& uri ) {
 	return tmpPath;
 }
 
-bool TextDocument::loadFromURL( const std::string& url, const Http::Request::FieldTable& headers ) {
+TextDocument::LoadStatus TextDocument::loadFromURL( const std::string& url,
+													const Http::Request::FieldTable& headers ) {
 	URI uri( url );
 
 	if ( uri.getScheme().empty() )
-		return false;
+		return LoadStatus::Failed;
 
 	mLoading = true;
 
@@ -347,13 +357,13 @@ bool TextDocument::loadFromURL( const std::string& url, const Http::Request::Fie
 		std::string path( getTempPathFromURI( uri ) );
 		FileSystem::fileWrite( path, (const Uint8*)response.getBody().c_str(),
 							   response.getBody().size() );
-		loadFromFile( path );
+		auto ret = loadFromFile( path );
 		setDeleteOnClose( true );
-		return true;
+		return ret;
 	}
 
 	mLoading = false;
-	return false;
+	return LoadStatus::Failed;
 }
 
 bool TextDocument::loadAsyncFromURL( const std::string& url,
@@ -373,7 +383,7 @@ bool TextDocument::loadAsyncFromURL( const std::string& url,
 				std::string path( getTempPathFromURI( uri ) );
 				FileSystem::fileWrite( path, (const Uint8*)response.getBody().c_str(),
 									   response.getBody().size() );
-				if ( loadFromFile( path ) ) {
+				if ( loadFromFile( path ) == LoadStatus::Loaded ) {
 					setDeleteOnClose( true );
 					if ( onLoaded )
 						onLoaded( this, true );
@@ -387,8 +397,8 @@ bool TextDocument::loadAsyncFromURL( const std::string& url,
 	return true;
 }
 
-bool TextDocument::reload() {
-	bool ret = false;
+TextDocument::LoadStatus TextDocument::reload() {
+	TextDocument::LoadStatus ret = LoadStatus::Failed;
 	std::string path( mFilePath );
 	if ( mFileRealPath.exists() ) {
 		auto selection = mSelection;

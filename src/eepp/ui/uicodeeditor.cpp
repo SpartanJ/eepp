@@ -156,7 +156,8 @@ UICodeEditor::UICodeEditor( const bool& autoRegisterBaseCommands,
 
 UICodeEditor::~UICodeEditor() {
 	if ( mDoc.use_count() == 1 ) {
-		onDocumentClosed( mDoc.get() );
+		DocEvent event( this, mDoc.get(), Event::OnDocumentClosed );
+		sendEvent( &event );
 		mDoc->unregisterClient( this );
 		mDoc.reset();
 	} else {
@@ -205,7 +206,7 @@ void UICodeEditor::draw() {
 		updateEditor();
 
 	Color col;
-	std::pair<int, int> lineRange = getVisibleLineRange();
+	auto lineRange = getVisibleLineRange();
 	Float charSize = PixelDensity::pxToDp( getCharacterSize() );
 	Float lineHeight = getLineHeight();
 	int lineNumberDigits = getLineNumberDigits();
@@ -262,16 +263,22 @@ void UICodeEditor::draw() {
 		drawWhitespaces( lineRange, startScroll, lineHeight );
 	}
 
-	for ( int i = lineRange.first; i <= lineRange.second; i++ ) {
+	for ( unsigned long i = lineRange.first; i <= lineRange.second; i++ ) {
 		for ( auto& module : mModules )
-			module->drawBeforeLineText( this, i, { startScroll.x, startScroll.y + lineHeight * i },
-										charSize, lineHeight );
+			module->drawBeforeLineText(
+				this, i,
+				{ startScroll.x, static_cast<float>( startScroll.y + lineHeight * (double)i ) },
+				charSize, lineHeight );
 
-		drawLineText( i, { startScroll.x, startScroll.y + lineHeight * i }, charSize, lineHeight );
+		drawLineText(
+			i, { startScroll.x, static_cast<float>( startScroll.y + lineHeight * (double)i ) },
+			charSize, lineHeight );
 
 		for ( auto& module : mModules )
-			module->drawAfterLineText( this, i, { startScroll.x, startScroll.y + lineHeight * i },
-									   charSize, lineHeight );
+			module->drawAfterLineText(
+				this, i,
+				{ startScroll.x, static_cast<float>( startScroll.y + lineHeight * (double)i ) },
+				charSize, lineHeight );
 	}
 
 	drawCursor( startScroll, lineHeight, cursor );
@@ -321,7 +328,8 @@ void UICodeEditor::scheduledUpdate( const Time& ) {
 		invalidateDraw();
 	}
 
-	if ( mHorizontalScrollBarEnabled && hasFocus() && mLongestLineWidthDirty &&
+	if ( mDoc && !mDoc->isLoading() && mHorizontalScrollBarEnabled && hasFocus() &&
+		 mLongestLineWidthDirty &&
 		 mLongestLineWidthLastUpdate.getElapsedTime() > mFindLongestLineWidthUpdateFrequency ) {
 		updateLongestLineWidth();
 	}
@@ -347,9 +355,9 @@ void UICodeEditor::reset() {
 	invalidateDraw();
 }
 
-bool UICodeEditor::loadFromFile( const std::string& path ) {
-	bool ret = mDoc->loadFromFile( path );
-	if ( ret ) {
+TextDocument::LoadStatus UICodeEditor::loadFromFile( const std::string& path ) {
+	auto ret = mDoc->loadFromFile( path );
+	if ( ret == TextDocument::LoadStatus::Loaded ) {
 		invalidateEditor();
 		updateLongestLineWidth();
 		mHighlighter.changeDoc( mDoc.get() );
@@ -367,7 +375,16 @@ bool UICodeEditor::loadAsyncFromFile(
 		setLocked( true );
 	bool ret = mDoc->loadAsyncFromFile( path, pool,
 										[this, onLoaded, wasLocked]( TextDocument*, bool success ) {
-											runOnMainThread( [&, onLoaded, wasLocked] {
+											if ( !success ) {
+												runOnMainThread( [&, onLoaded, wasLocked, success] {
+													if ( !wasLocked )
+														setLocked( false );
+													if ( onLoaded )
+														onLoaded( mDoc, success );
+												} );
+												return;
+											}
+											runOnMainThread( [&, onLoaded, wasLocked, success] {
 												invalidateEditor();
 												updateLongestLineWidth();
 												mHighlighter.changeDoc( mDoc.get() );
@@ -384,9 +401,10 @@ bool UICodeEditor::loadAsyncFromFile(
 	return ret;
 }
 
-bool UICodeEditor::loadFromURL( const std::string& url, const Http::Request::FieldTable& headers ) {
-	bool ret = mDoc->loadFromURL( url, headers );
-	if ( ret ) {
+TextDocument::LoadStatus UICodeEditor::loadFromURL( const std::string& url,
+													const Http::Request::FieldTable& headers ) {
+	auto ret = mDoc->loadFromURL( url, headers );
+	if ( ret == TextDocument::LoadStatus::Loaded ) {
 		invalidateEditor();
 		updateLongestLineWidth();
 		mHighlighter.changeDoc( mDoc.get() );
@@ -1371,12 +1389,12 @@ void UICodeEditor::onDocumentDirtyOnFileSystem( TextDocument* doc ) {
 	sendEvent( &event );
 }
 
-std::pair<int, int> UICodeEditor::getVisibleLineRange() {
+std::pair<Uint64, Uint64> UICodeEditor::getVisibleLineRange() {
 	Float lineHeight = getLineHeight();
 	Float minLine = eemax( 0.f, eefloor( mScroll.y / lineHeight ) );
 	Float maxLine = eemin( mDoc->linesCount() - 1.f,
 						   eefloor( ( mSize.getHeight() + mScroll.y ) / lineHeight ) + 1 );
-	return std::make_pair<int, int>( (int)minLine, (int)maxLine );
+	return std::make_pair<Uint64, Uint64>( (Uint64)minLine, (Uint64)maxLine );
 }
 
 int UICodeEditor::getVisibleLinesCount() {
@@ -1390,8 +1408,8 @@ void UICodeEditor::scrollTo( const TextPosition& position, bool centered,
 
 	Int64 minDistance = mHScrollBar->isVisible() ? 3 : 2;
 
-	if ( forceExactPosition || position.line() <= lineRange.first ||
-		 position.line() >= lineRange.second - minDistance ) {
+	if ( forceExactPosition || position.line() <= (Int64)lineRange.first ||
+		 position.line() >= (Int64)lineRange.second - minDistance ) {
 		// Vertical Scroll
 		Float lineHeight = getLineHeight();
 		Float min = eefloor( lineHeight * ( eemax<Float>( 0, position.line() - 1 ) ) );
@@ -2350,7 +2368,7 @@ void UICodeEditor::drawLineNumbers( const std::pair<int, int>& lineRange,
 		line.setColor( ( i >= selection.start().line() && i <= selection.end().line() )
 						   ? mLineNumberActiveFontColor
 						   : mLineNumberFontColor );
-		line.draw( screenStart.x + mLineNumberPaddingLeft, startScroll.y + lineHeight * i );
+		line.draw( screenStart.x + mLineNumberPaddingLeft, startScroll.y + lineHeight * (double)i );
 	}
 }
 

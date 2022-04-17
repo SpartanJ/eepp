@@ -5,6 +5,7 @@
 #include <eepp/system/filesystem.hpp>
 #include <iostream>
 #include <map>
+#include <memory>
 
 using namespace EE;
 using namespace EE::System;
@@ -12,66 +13,66 @@ using namespace EE::Graphics;
 
 EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	args::ArgumentParser parser( "Texture Packer - eepp texture atlas creator." );
-	args::HelpFlag help( parser, "help", "Display this help menu", {'h', "help"} );
+	args::HelpFlag help( parser, "help", "Display this help menu", { 'h', "help" } );
 	args::ValueFlag<std::string> texturesPath( parser, "textures-path", "Textures directory path.",
-											   {'p', "textures-path"} );
+											   { 'p', "textures-path" } );
 	args::ValueFlagList<std::string> images( parser, "image-path", "Input image path.",
-											 {'i', "image-path"} );
+											 { 'i', "image-path" } );
 	args::ValueFlag<std::string> outputFile(
 		parser, "output-file", "Texture atlas file output path. Extension must be: \".eta\"",
-		{'o', "output-file"}, "", args::Options::Required | args::Options::Single );
+		{ 'o', "output-file" }, "", args::Options::Required | args::Options::Single );
 	std::unordered_map<std::string, Image::SaveType> saveTypeFormat{
-		{"PNG", Image::SaveType::SAVE_TYPE_PNG},
-		{"DDS", Image::SaveType::SAVE_TYPE_DDS},
-		{"TGA", Image::SaveType::SAVE_TYPE_TGA},
-		{"BMP", Image::SaveType::SAVE_TYPE_BMP},
-		{"JPG", Image::SaveType::SAVE_TYPE_JPG}};
+		{ "PNG", Image::SaveType::SAVE_TYPE_PNG },
+		{ "DDS", Image::SaveType::SAVE_TYPE_DDS },
+		{ "TGA", Image::SaveType::SAVE_TYPE_TGA },
+		{ "BMP", Image::SaveType::SAVE_TYPE_BMP },
+		{ "JPG", Image::SaveType::SAVE_TYPE_JPG } };
 	args::MapFlag<std::string, Image::SaveType> saveType(
-		parser, "image-format", "Output image format.", {'f', "image-format"}, saveTypeFormat,
+		parser, "image-format", "Output image format.", { 'f', "image-format" }, saveTypeFormat,
 		Image::SaveType::SAVE_TYPE_PNG, args::Options::Single );
 	std::unordered_map<std::string, PixelDensitySize> pixelDensityMap{
-		{"MDPI", PixelDensitySize::MDPI},
-		{"HDPI", PixelDensitySize::HDPI},
-		{"XHDPI", PixelDensitySize::XHDPI},
-		{"XXHDPI", PixelDensitySize::XXHDPI},
-		{"XXXHDPI", PixelDensitySize::XXXHDPI}};
+		{ "MDPI", PixelDensitySize::MDPI },
+		{ "HDPI", PixelDensitySize::HDPI },
+		{ "XHDPI", PixelDensitySize::XHDPI },
+		{ "XXHDPI", PixelDensitySize::XXHDPI },
+		{ "XXXHDPI", PixelDensitySize::XXXHDPI } };
 	args::MapFlag<std::string, PixelDensitySize> pixelDensity(
 		parser, "pixel-density",
 		"Source images pixel density size. Valid values are: MDPI (1dp = 1px), HDPI (1dp = 1.5px), "
 		"XHDPI (1dp = 2px), XXHDPI (1dp = 3px) and XXXHDPI (1dp = 4px).",
-		{'d', "pixel-density"}, pixelDensityMap, PixelDensitySize::MDPI, args::Options::Single );
+		{ 'd', "pixel-density" }, pixelDensityMap, PixelDensitySize::MDPI, args::Options::Single );
 	args::Flag forcePow2( parser, "force-power-of-two-texture", "Force power of two texture.",
-						  {"force-power-of-two"}, args::Options::Single );
+						  { "force-power-of-two" }, args::Options::Single );
 	args::Flag scalableSVG( parser, "scalable-svg",
 							"Scale SVG source files using the pixel-density provided.",
-							{"scalable-svg"}, args::Options::Single );
+							{ "scalable-svg" }, args::Options::Single );
 	args::Flag saveExtensions( parser, "save-extensions",
 							   "Save the file extensions as part of the texture regions names.",
-							   {"save-extensions"} );
+							   { "save-extensions" } );
 	args::Flag allowChilds(
 		parser, "allow-childs",
 		"When enabled in the case of an atlas not having enough space in the image to fit all the "
 		"source input images it will create new child atlas images to save them.",
-		{"allow-childs"} );
+		{ "allow-childs" } );
 	args::ValueFlag<Uint32> height( parser, "max-width", "Texture Atlas maximum allowed height.",
-									{'h', "max-height"}, 4096, args::Options::Single );
+									{ 'h', "max-height" }, 4096, args::Options::Single );
 	args::ValueFlag<Uint32> width( parser, "max-width", "Texture Atlas maximum allowed width.",
-								   {'w', "max-width"}, 4096, args::Options::Single );
+								   { 'w', "max-width" }, 4096, args::Options::Single );
 	args::ValueFlag<Uint32> pixelsBorder(
 		parser, "pixels-border",
 		"Number of pixels used as border of each image. The border is the separator between images "
 		"and it's recommended that at least there's a 2 pixel border (default value) to avoid "
 		"rendering problems.",
-		{'b', "pixels-border"}, 2, args::Options::Single );
+		{ 'b', "pixels-border" }, 2, args::Options::Single );
 	args::Flag update( parser, "update", "Update texture atlas if output file already exists.",
-					   {'u', "update"}, args::Options::Single );
+					   { 'u', "update" }, args::Options::Single );
 	std::unordered_map<std::string, Texture::Filter> textureFilterMap{
-		{"linear", Texture::Filter::Linear}, {"nearest", Texture::Filter::Nearest}};
+		{ "linear", Texture::Filter::Linear }, { "nearest", Texture::Filter::Nearest } };
 	args::MapFlag<std::string, Texture::Filter> textureFilter(
 		parser, "texture-filter",
 		"Texture filter to use with the texture atlas. Available filters: \"linear\" or "
 		"\"nearest\".",
-		{"texture-filter"}, textureFilterMap, Texture::Filter::Linear, args::Options::Single );
+		{ "texture-filter" }, textureFilterMap, Texture::Filter::Linear, args::Options::Single );
 
 	try {
 		parser.ParseCLI( argc, argv );

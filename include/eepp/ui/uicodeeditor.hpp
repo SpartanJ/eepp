@@ -126,13 +126,13 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void reset();
 
-	bool loadFromFile( const std::string& path );
+	TextDocument::LoadStatus loadFromFile( const std::string& path );
 
 	bool loadAsyncFromFile( const std::string& path, std::shared_ptr<ThreadPool> pool,
 							std::function<void( std::shared_ptr<TextDocument>, bool )> onLoaded =
 								std::function<void( std::shared_ptr<TextDocument>, bool )>() );
 
-	bool loadFromURL(
+	TextDocument::LoadStatus loadFromURL(
 		const std::string& url,
 		const EE::Network::Http::Request::FieldTable& headers = Http::Request::FieldTable() );
 
@@ -598,7 +598,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	virtual void onDocumentDirtyOnFileSystem( TextDocument* doc );
 
-	std::pair<int, int> getVisibleLineRange();
+	std::pair<Uint64, Uint64> getVisibleLineRange();
 
 	int getVisibleLinesCount();
 
@@ -693,7 +693,6 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void updateMipmapHover( const Vector2f& position );
 
 	bool checkAutoCloseXMLTag( const String& text );
-
 };
 
 }} // namespace EE::UI

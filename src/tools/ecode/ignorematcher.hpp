@@ -2,6 +2,7 @@
 #define EE_TOOLS_IGNOREMATCHER_HPP
 
 #include <eepp/system/filesystem.hpp>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -38,7 +39,7 @@ class GitIgnoreMatcher : public IgnoreMatcher {
 	bool parse() override;
 
 	std::vector<std::pair<std::string, bool>> mPatterns;
-	bool mHasNegates{false};
+	bool mHasNegates{ false };
 };
 
 class IgnoreMatcherManager {

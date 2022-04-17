@@ -313,7 +313,7 @@ bool UICodeEditorSplitter::loadFileFromPath( const std::string& path, UICodeEdit
 						   [&, codeEditor, path]( std::shared_ptr<TextDocument>, bool ) {
 							   mClient->onDocumentLoaded( codeEditor, path );
 						   } )
-					 : codeEditor->loadFromFile( path );
+					 : codeEditor->loadFromFile( path ) == TextDocument::LoadStatus::Loaded;
 	if ( ret && !isUrl )
 		mClient->onDocumentLoaded( codeEditor, path );
 	return ret;

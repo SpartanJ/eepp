@@ -23,7 +23,8 @@ AutoCompleteModule::AutoCompleteModule() :
 }
 
 AutoCompleteModule::AutoCompleteModule( std::shared_ptr<ThreadPool> pool ) :
-	mSymbolPattern( "[%añàáâãäåèéêëìíîïòóôõöùúûüýÿÑÀÁÂÃÄÅÈÉÊËÌÍÎÏÒÓÔÕÖÙÚÛÜÝ][%w_ñàáâãäåèéêëìíîïòóôõöùúûüýÿÑÀÁÂÃÄÅÈÉÊËÌÍÎÏÒÓÔÕÖÙÚÛÜÝ]*" ),
+	mSymbolPattern( "[%añàáâãäåèéêëìíîïòóôõöùúûüýÿÑÀÁÂÃÄÅÈÉÊËÌÍÎÏÒÓÔÕÖÙÚÛÜÝ][%w_"
+					"ñàáâãäåèéêëìíîïòóôõöùúûüýÿÑÀÁÂÃÄÅÈÉÊËÌÍÎÏÒÓÔÕÖÙÚÛÜÝ]*" ),
 	mBoxPadding( PixelDensity::dpToPx( Rectf( 4, 4, 4, 4 ) ) ),
 	mPool( pool ) {}
 
@@ -242,7 +243,7 @@ void AutoCompleteModule::update( UICodeEditor* ) {
 		mDirty = false;
 		Lock l( mDocMutex );
 		for ( auto& doc : mDocs ) {
-			if ( mDocCache[doc].changeId != doc->getCurrentChangeId() ) {
+			if ( !doc->isLoading() && mDocCache[doc].changeId != doc->getCurrentChangeId() ) {
 #if AUTO_COMPLETE_THREADED
 				mPool->run( [&, doc] { updateDocCache( doc ); }, [] {} );
 #else
