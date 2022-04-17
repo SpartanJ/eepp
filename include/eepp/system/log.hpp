@@ -32,6 +32,8 @@ class EE_API Log : protected Mutex {
 	SINGLETON_DECLARE_HEADERS( Log )
 
   public:
+	static Log* create( const std::string& logPath, const LogLevel& level, bool consoleOutput,
+						bool liveWrite );
 
 	static Log* create( const LogLevel& level, bool consoleOutput, bool liveWrite );
 
@@ -100,6 +102,12 @@ class EE_API Log : protected Mutex {
 	 * logged. */
 	void setLogLevelThreshold( const LogLevel& logLevelThreshold );
 
+	/** @return The file path of the log file (if any). */
+	const std::string& getFilePath() const;
+
+	/** Sets the file path of the log file. */
+	void setFilePath( const std::string& filePath );
+
 	static void debug( const std::string& text ) {
 		Log::instance()->writel( LogLevel::Debug, text );
 	}
@@ -157,7 +165,7 @@ class EE_API Log : protected Mutex {
   protected:
 	Log();
 
-	Log( const LogLevel& level, bool consoleOutput, bool liveWrite );
+	Log( const std::string& logPath, const LogLevel& level, bool consoleOutput, bool liveWrite );
 
 	std::string mData;
 	std::string mFilePath;
@@ -165,9 +173,9 @@ class EE_API Log : protected Mutex {
 	bool mConsoleOutput;
 	bool mLiveWrite;
 #ifdef EE_DEBUG
-	LogLevel mLogLevelThreshold{LogLevel::Debug};
+	LogLevel mLogLevelThreshold{ LogLevel::Debug };
 #else
-	LogLevel mLogLevelThreshold{LogLevel::Notice};
+	LogLevel mLogLevelThreshold{ LogLevel::Notice };
 #endif
 	IOStreamFile* mFS;
 	std::list<LogReaderInterface*> mReaders;

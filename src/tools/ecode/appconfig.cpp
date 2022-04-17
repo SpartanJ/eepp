@@ -32,14 +32,10 @@ static std::vector<std::string> urlDecode( const std::vector<std::string>& vec )
 	return decoded;
 }
 
-void AppConfig::load( std::string& confPath, std::string& keybindingsPath,
+void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 					  std::string& initColorScheme, std::vector<std::string>& recentFiles,
 					  std::vector<std::string>& recentFolders, const std::string& resPath,
 					  const Float& displayDPI ) {
-	confPath = Sys::getConfigPath( "ecode" );
-	if ( !FileSystem::fileExists( confPath ) )
-		FileSystem::makeDir( confPath );
-	FileSystem::dirAddSlashAtEnd( confPath );
 	keybindingsPath = confPath + "keybindings.cfg";
 	ini.loadFromFile( confPath + "config.cfg" );
 	iniState.loadFromFile( confPath + "state.cfg" );

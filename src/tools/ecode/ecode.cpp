@@ -272,6 +272,16 @@ void App::runCommand( const std::string& command ) {
 }
 
 void App::loadConfig() {
+	mConfigPath = Sys::getConfigPath( "ecode" );
+	if ( !FileSystem::fileExists( mConfigPath ) )
+		FileSystem::makeDir( mConfigPath );
+	FileSystem::dirAddSlashAtEnd( mConfigPath );
+#ifndef EE_DEBUG
+	Log::create( mConfigPath + "ecode.log", LogLevel::Info, false, true );
+#else
+	Log::create( mConfigPath + "ecode.log", LogLevel::Debug, true, true );
+#endif
+
 	mConfig.load( mConfigPath, mKeybindingsPath, mInitColorScheme, mRecentFiles, mRecentFolders,
 				  mResPath, mDisplayDPI );
 }
@@ -1228,6 +1238,8 @@ void App::closeEditors() {
 	mDirTree = nullptr;
 	if ( mFileSystemListener )
 		mFileSystemListener->setDirTree( mDirTree );
+	// Force to update the closed tabs.
+	SceneManager::instance()->update();
 }
 
 void App::closeFolder() {
@@ -2544,11 +2556,6 @@ void App::init( const std::string& file, const Float& pidelDensity,
 }
 
 EE_MAIN_FUNC int main( int argc, char* argv[] ) {
-#ifndef EE_DEBUG
-	Log::create( LogLevel::Info, false, true );
-#else
-	Log::create( LogLevel::Debug, true, true );
-#endif
 	args::ArgumentParser parser( "ecode" );
 	args::HelpFlag help( parser, "help", "Display this help menu", { 'h', "help" } );
 	args::Positional<std::string> file( parser, "file", "The file path" );

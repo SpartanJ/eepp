@@ -78,9 +78,10 @@ struct AppConfig {
 	IniFile iniState;
 	FileInfo iniInfo;
 
-	void load( std::string& confPath, std::string& keybindingsPath, std::string& initColorScheme,
-			   std::vector<std::string>& recentFiles, std::vector<std::string>& recentFolders,
-			   const std::string& resPath, const Float& displayDPI );
+	void load( const std::string& confPath, std::string& keybindingsPath,
+			   std::string& initColorScheme, std::vector<std::string>& recentFiles,
+			   std::vector<std::string>& recentFolders, const std::string& resPath,
+			   const Float& displayDPI );
 
 	void save( const std::vector<std::string>& recentFiles,
 			   const std::vector<std::string>& recentFolders, const std::string& panelPartition,

@@ -1007,12 +1007,6 @@ solution "eepp"
 		build_base_cpp_configuration( "efsw" )
 
 	-- Library
-	project "eepp-main"
-		kind "StaticLib"
-		language "C++"
-		set_targetdir("libs/" .. os.get_real() .. "/")
-		files { "src/eepp/main/eepp_main.cpp" }
-
 	project "eepp-static"
 		kind "StaticLib"
 		language "C++"

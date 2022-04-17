@@ -761,12 +761,6 @@ workspace "eepp"
 			files { "src/thirdparty/efsw/src/efsw/platform/posix/*.cpp" }
 
 	-- Library
-	project "eepp-main"
-		kind "StaticLib"
-		language "C++"
-		targetdir("libs/" .. os.target() .. "/")
-		files { "src/eepp/main/eepp_main.cpp" }
-
 	project "eepp-static"
 		kind "StaticLib"
 		language "C++"

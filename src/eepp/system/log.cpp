@@ -20,9 +20,17 @@ namespace EE { namespace System {
 
 SINGLETON_DECLARE_IMPLEMENTATION( Log )
 
+Log* Log::create( const std::string& logPath, const LogLevel& level, bool consoleOutput,
+				  bool liveWrite ) {
+	if ( NULL == ms_singleton ) {
+		ms_singleton = eeNew( Log, ( logPath, level, consoleOutput, liveWrite ) );
+	}
+	return ms_singleton;
+}
+
 Log* Log::create( const LogLevel& level, bool consoleOutput, bool liveWrite ) {
 	if ( NULL == ms_singleton ) {
-		ms_singleton = eeNew( Log, ( level, consoleOutput, liveWrite ) );
+		ms_singleton = eeNew( Log, ( "", level, consoleOutput, liveWrite ) );
 	}
 	return ms_singleton;
 }
@@ -31,13 +39,25 @@ Log::Log() : mSave( false ), mConsoleOutput( false ), mLiveWrite( false ), mFS( 
 	writel( LogLevel::Info, "eepp initialized" );
 }
 
-Log::Log( const LogLevel& level, bool consoleOutput, bool liveWrite ) :
+Log::Log( const std::string& logPath, const LogLevel& level, bool consoleOutput, bool liveWrite ) :
+	mFilePath( logPath ),
 	mSave( false ),
 	mConsoleOutput( consoleOutput ),
 	mLiveWrite( liveWrite ),
 	mLogLevelThreshold( level ),
 	mFS( NULL ) {
 	writel( LogLevel::Info, "eepp initialized" );
+}
+
+const std::string& Log::getFilePath() const {
+	return mFilePath;
+}
+
+void Log::setFilePath( const std::string& filePath ) {
+	if ( filePath != mFilePath ) {
+		closeFS();
+		mFilePath = filePath;
+	}
 }
 
 Log::~Log() {
@@ -61,10 +81,10 @@ void Log::setLogLevelThreshold( const LogLevel& logLevelThreshold ) {
 }
 
 void Log::save( const std::string& filepath ) {
-	if ( filepath.size() ) {
+	if ( !filepath.empty() ) {
 		mFilePath = filepath;
 	} else {
-		mFilePath = Sys::getProcessPath();
+		mFilePath = Sys::getProcessPath() + "log.log";
 	}
 
 	mSave = true;
@@ -171,15 +191,11 @@ void Log::writel( const LogLevel& level, const std::string& text ) {
 }
 
 void Log::openFS() {
-	if ( mFilePath.empty() ) {
-		mFilePath = Sys::getProcessPath();
-	}
+	if ( mFilePath.empty() )
+		mFilePath = Sys::getProcessPath() + "log.log";
 
-	if ( NULL == mFS ) {
-		std::string str = mFilePath + "log.log";
-
-		mFS = IOStreamFile::New( str, "a" );
-	}
+	if ( NULL == mFS )
+		mFS = IOStreamFile::New( mFilePath, "a" );
 }
 
 void Log::closeFS() {
