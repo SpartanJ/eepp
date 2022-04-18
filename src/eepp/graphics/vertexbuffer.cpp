@@ -152,7 +152,7 @@ const Int32& VertexBuffer::getElementNum() const {
 }
 
 void VertexBuffer::clear() {
-	for ( int i = 0; i < VERTEX_FLAGS_COUNT; i++ )
+	for ( int i = 0; i < VERTEX_FLAGS_COUNT - 1; i++ )
 		mVertexArray[i].clear();
 
 	mColorArray.clear();

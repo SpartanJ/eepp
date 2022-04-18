@@ -528,6 +528,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	size_t mMenuIconSize{ 16 };
 	UIPopUpMenu* mCurrentMenu{ nullptr };
 	MinimapConfig mMinimapConfig;
+	Int64 mMinimapScrollOffset{ 0 };
 
 	UICodeEditor( const std::string& elementTag, const bool& autoRegisterBaseCommands = true,
 				  const bool& autoRegisterBaseKeybindings = true );
@@ -555,6 +556,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	virtual Uint32 onKeyUp( const KeyEvent& event );
 
 	virtual bool onCreateContextMenu( const Vector2i& position, const Uint32& flags );
+
+	Int64 calculateMinimapClickedLine( const Vector2i& position );
 
 	virtual Uint32 onMouseDown( const Vector2i& position, const Uint32& flags );
 
@@ -678,7 +681,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 						 const String& translateString, const std::string& icon,
 						 const std::string& cmd );
 
-	void drawMinimap( const Vector2f& start, const std::pair<int, int>& lineRange );
+	void drawMinimap( const Vector2f& start, const std::pair<Uint64, Uint64>& lineRange );
 
 	Vector2f getScreenStart() const;
 

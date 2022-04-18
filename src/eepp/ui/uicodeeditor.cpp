@@ -922,6 +922,30 @@ bool UICodeEditor::onCreateContextMenu( const Vector2i& position, const Uint32& 
 	return true;
 }
 
+Int64 UICodeEditor::calculateMinimapClickedLine( const Vector2i& position ) {
+	auto lineRange = getVisibleLineRange();
+	Vector2f start( getScreenStart() );
+	Float lineSpacing = getMinimapLineSpacing();
+	Rectf rect( getMinimapRect( start ) );
+	Int64 visibleLinesCount = ( lineRange.second - lineRange.first );
+	Int64 visibleLinesStart = lineRange.first;
+	Float scrollerHeight = visibleLinesCount * lineSpacing;
+	size_t lineCount = mDoc->linesCount();
+	Int64 maxMinmapLines = eefloor( rect.getHeight() / lineSpacing );
+	Int64 minimapStartLine = 0;
+	if ( isMinimapFileTooLarge() ) {
+		Float scrollPos = ( visibleLinesStart - 1 ) / (Float)( lineCount - visibleLinesCount - 1 );
+		scrollPos = eeclamp( scrollPos, 0.f, 1.f );
+		Float scrollPosPixels = scrollPos * ( rect.getHeight() - scrollerHeight );
+		minimapStartLine = visibleLinesStart - eefloor( scrollPosPixels / lineSpacing );
+		minimapStartLine =
+			eemax( (Int64)0, eemin( minimapStartLine, (Int64)lineCount - maxMinmapLines ) );
+	}
+	Float dy = position.y - rect.Top;
+	Int64 ret = minimapStartLine + eefloor( dy / lineSpacing );
+	return eeclamp( ret, (Int64)0, (Int64)lineCount );
+}
+
 Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags ) {
 	for ( auto& module : mModules )
 		if ( module->onMouseDown( this, position, flags ) )
@@ -931,20 +955,18 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 		Rectf rect( getMinimapRect( getScreenStart() ) );
 		if ( ( flags & EE_BUTTON_LMASK ) && !mVScrollBar->isDragging() && !mMinimapDragging &&
 			 rect.contains( position.asFloat() ) ) {
+			if ( mMouseDown )
+				return 1;
 			updateMipmapHover( position.asFloat() );
-			if ( !mMinimapHover ) {
-				Int64 lineCount = mDoc->linesCount();
-				Float lineSpacing = getMinimapLineSpacing();
-				Float minimapHeight = lineCount * lineSpacing;
-				bool isTooLarge = isMinimapFileTooLarge();
-				if ( isTooLarge )
-					minimapHeight = rect.getHeight();
-				Float dy = position.y - rect.Top;
-				Int64 jumpToLine = eefloor( ( dy / minimapHeight ) * lineCount ) + 1;
-				scrollTo( { jumpToLine, 0 }, true, true );
-			}
-			mMinimapDragging = true;
 			mMouseDown = true;
+			if ( !mMinimapHover ) {
+				mMinimapScrollOffset = 0;
+				scrollTo( { calculateMinimapClickedLine( position ), 0 }, true, true );
+				return 1;
+			}
+			mMinimapScrollOffset =
+				calculateMinimapClickedLine( position ) - getVisibleLineRange().first;
+			mMinimapDragging = true;
 			getUISceneNode()->getWindow()->getInput()->captureMouse( true );
 			getUISceneNode()->setCursor( Cursor::Arrow );
 			mVScrollBar->setEnabled( false );
@@ -1008,19 +1030,15 @@ Uint32 UICodeEditor::onMouseMove( const Vector2i& position, const Uint32& flags 
 
 	if ( mMinimapEnabled ) {
 		updateMipmapHover( position.asFloat() );
+		Rectf rect( getMinimapRect( getScreenStart() ) );
 		if ( mMinimapDragging && ( flags & EE_BUTTON_LMASK ) ) {
-			Rectf rect( getMinimapRect( getScreenStart() ) );
-			Int64 lineCount = mDoc->linesCount();
-			Float lineSpacing = getMinimapLineSpacing();
-			Float minimapHeight = lineCount * lineSpacing;
-			if ( isMinimapFileTooLarge() )
-				minimapHeight = rect.getHeight();
-			Float dy = position.y - rect.Top;
-			Int64 jumpToLine = eefloor( ( dy / minimapHeight ) * lineCount ) + 1;
-			scrollTo( { jumpToLine, 0 }, true, true );
+			scrollTo( { calculateMinimapClickedLine( position ) - mMinimapScrollOffset, 0 }, false,
+					  true );
 			getUISceneNode()->setCursor( Cursor::Arrow );
 			return 1;
 		}
+		if ( ( flags & EE_BUTTON_LMASK ) && rect.contains( position.asFloat() ) )
+			return 1;
 	}
 
 	if ( isTextSelectionEnabled() && !getUISceneNode()->getEventDispatcher()->isNodeDragging() &&
@@ -1090,6 +1108,12 @@ Uint32 UICodeEditor::onMouseClick( const Vector2i& position, const Uint32& flags
 		if ( module->onMouseClick( this, position, flags ) )
 			return UIWidget::onMouseClick( position, flags );
 
+	if ( mMinimapEnabled ) {
+		Rectf rect( getMinimapRect( getScreenStart() ) );
+		if ( ( flags & EE_BUTTON_LMASK ) && rect.contains( position.asFloat() ) )
+			return 1;
+	}
+
 	if ( ( flags & EE_BUTTON_LMASK ) &&
 		 getUISceneNode()->getWindow()->getInput()->isControlPressed() ) {
 		String link( checkMouseOverLink( position ) );
@@ -1122,6 +1146,12 @@ Uint32 UICodeEditor::onMouseDoubleClick( const Vector2i& position, const Uint32&
 
 	if ( mLocked || NULL == mFont )
 		return 1;
+
+	if ( mMinimapEnabled ) {
+		Rectf rect( getMinimapRect( getScreenStart() ) );
+		if ( ( flags & EE_BUTTON_LMASK ) && rect.contains( position.asFloat() ) )
+			return 1;
+	}
 
 	if ( flags & EE_BUTTON_LMASK ) {
 		mDoc->selectWord();
@@ -1417,7 +1447,9 @@ void UICodeEditor::scrollTo( const TextPosition& position, bool centered,
 		Float halfScreenLines = eefloor( mSize.getHeight() / lineHeight * 0.5f );
 
 		if ( forceExactPosition ) {
-			setScrollY( lineHeight * ( eemax<Float>( 0, position.line() - 1 - halfScreenLines ) ) );
+			setScrollY(
+				lineHeight *
+				( eemax<Float>( 0, position.line() - 1 - ( centered ? halfScreenLines : 0 ) ) ) );
 		} else if ( min < mScroll.y ) {
 			if ( centered ) {
 				if ( position.line() - 1 - halfScreenLines >= 0 )
@@ -2591,7 +2623,8 @@ Rectf UICodeEditor::getMinimapRect( const Vector2f& start ) const {
 		Sizef( w, h ) );
 }
 
-void UICodeEditor::drawMinimap( const Vector2f& start, const std::pair<int, int>& lineRange ) {
+void UICodeEditor::drawMinimap( const Vector2f& start,
+								const std::pair<Uint64, Uint64>& lineRange ) {
 	Float charHeight = PixelDensity::getPixelDensity() * mMinimapConfig.scale;
 	Float charSpacing =
 		eemax( 1.f, eefloor( 0.8 * PixelDensity::getPixelDensity() * mMinimapConfig.scale ) );
