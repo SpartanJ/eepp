@@ -1,7 +1,7 @@
 #include "ecode.hpp"
-#include "autocompletemodule.hpp"
-#include "formattermodule.hpp"
-#include "lintermodule.hpp"
+#include "modules/autocomplete/autocompletemodule.hpp"
+#include "modules/formatter/formattermodule.hpp"
+#include "modules/linter/lintermodule.hpp"
 #include <algorithm>
 #include <args/args.hxx>
 
@@ -361,18 +361,23 @@ void App::onFileDropped( String file ) {
 	Vector2f mousePos( mUISceneNode->getEventDispatcher()->getMousePosf() );
 	Node* node = mUISceneNode->overFind( mousePos );
 	UICodeEditor* codeEditor = mEditorSplitter->getCurEditor();
+	UITab* tab = nullptr;
 	if ( !node )
 		node = codeEditor;
 	if ( node && node->isType( UI_TYPE_CODEEDITOR ) ) {
 		codeEditor = node->asType<UICodeEditor>();
-		if ( !codeEditor->getDocument().isEmpty() && !Image::isImageExtension( file ) ) {
+		if ( ( codeEditor->getDocument().isLoading() || !codeEditor->getDocument().isEmpty() ) &&
+			 !Image::isImageExtension( file ) ) {
 			auto d = mEditorSplitter->createCodeEditorInTabWidget(
 				mEditorSplitter->tabWidgetFromEditor( codeEditor ) );
 			codeEditor = d.second;
-			d.first->getTabWidget()->setTabSelected( d.first );
+			tab = d.first;
 		}
 	}
-	loadFileFromPath( file, false, codeEditor );
+	loadFileFromPath( file, false, codeEditor, [tab]( UICodeEditor*, const std::string& ) {
+		if ( tab )
+			tab->getTabWidget()->setTabSelected( tab );
+	} );
 }
 
 void App::onTextDropped( String text ) {

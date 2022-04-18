@@ -291,6 +291,8 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 				button = EE_BUTTON_WHEELRIGHT;
 			} else if ( SDLEvent.wheel.x < 0 ) {
 				button = EE_BUTTON_WHEELLEFT;
+			} else {
+				return;
 			}
 
 			event.button.button = button;

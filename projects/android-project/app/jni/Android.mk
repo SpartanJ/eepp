@@ -59,7 +59,7 @@ LOCAL_CFLAGS			:= $(EEPP_C_FLAGS)
 
 LOCAL_C_INCLUDES		:= $(EEPP_C_INCLUDES)
 
-CORE_SRCS				:= test/*.cpp
+CORE_SRCS				:= tests/test_all/*.cpp
 
 LOCAL_SRC_FILES			:= $(SDL_MAIN_PATH) $(foreach F, $(CORE_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
 

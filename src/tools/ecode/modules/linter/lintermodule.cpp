@@ -1,6 +1,6 @@
 #include "lintermodule.hpp"
-#include "thirdparty/json.hpp"
-#include "thirdparty/subprocess.h"
+#include "../../thirdparty/json.hpp"
+#include "../../thirdparty/subprocess.h"
 #include <algorithm>
 #include <eepp/graphics/text.hpp>
 #include <eepp/system/filesystem.hpp>

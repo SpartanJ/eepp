@@ -1028,27 +1028,29 @@ Uint32 UICodeEditor::onMouseMove( const Vector2i& position, const Uint32& flags 
 		if ( module->onMouseMove( this, position, flags ) )
 			return UIWidget::onMouseMove( position, flags );
 
+	bool minimapHover = false;
 	if ( mMinimapEnabled ) {
 		updateMipmapHover( position.asFloat() );
-		Rectf rect( getMinimapRect( getScreenStart() ) );
 		if ( mMinimapDragging && ( flags & EE_BUTTON_LMASK ) ) {
 			scrollTo( { calculateMinimapClickedLine( position ) - mMinimapScrollOffset, 0 }, false,
 					  true );
 			getUISceneNode()->setCursor( Cursor::Arrow );
 			return 1;
 		}
-		if ( ( flags & EE_BUTTON_LMASK ) && rect.contains( position.asFloat() ) )
+		minimapHover = getMinimapRect( getScreenStart() ).contains( position.asFloat() );
+		if ( ( flags & EE_BUTTON_LMASK ) && minimapHover )
 			return 1;
 	}
 
-	if ( isTextSelectionEnabled() && !getUISceneNode()->getEventDispatcher()->isNodeDragging() &&
-		 NULL != mFont && mMouseDown && ( flags & EE_BUTTON_LMASK ) ) {
+	if ( !minimapHover && isTextSelectionEnabled() &&
+		 !getUISceneNode()->getEventDispatcher()->isNodeDragging() && NULL != mFont && mMouseDown &&
+		 ( flags & EE_BUTTON_LMASK ) ) {
 		TextRange selection = mDoc->getSelection();
 		selection.setStart( resolveScreenPosition( position.asFloat() ) );
 		mDoc->setSelection( selection );
 	}
 
-	if ( mMinimapEnabled && getMinimapRect( getScreenStart() ).contains( position.asFloat() ) ) {
+	if ( minimapHover ) {
 		getUISceneNode()->setCursor( Cursor::Arrow );
 	} else {
 		checkMouseOverColor( position );
@@ -1067,6 +1069,9 @@ Uint32 UICodeEditor::onMouseUp( const Vector2i& position, const Uint32& flags ) 
 	if ( NULL == mFont )
 		return UIWidget::onMouseUp( position, flags );
 
+	bool minimapHover =
+		mMinimapEnabled && getMinimapRect( getScreenStart() ).contains( position.asFloat() );
+
 	if ( flags & EE_BUTTON_LMASK ) {
 		if ( mMinimapDragging ) {
 			mMinimapDragging = false;
@@ -1079,7 +1084,9 @@ Uint32 UICodeEditor::onMouseUp( const Vector2i& position, const Uint32& flags ) 
 			mMouseDown = false;
 			getUISceneNode()->getWindow()->getInput()->captureMouse( false );
 		}
-	} else if ( flags & EE_BUTTON_WDMASK ) {
+	}
+
+	if ( flags & EE_BUTTON_WDMASK ) {
 		if ( getUISceneNode()->getWindow()->getInput()->isControlPressed() ) {
 			mDoc->execute( "font-size-shrink" );
 		} else {
@@ -1097,9 +1104,10 @@ Uint32 UICodeEditor::onMouseUp( const Vector2i& position, const Uint32& flags ) 
 		setScrollX( mScroll.x + PixelDensity::dpToPx( mMouseWheelScroll ) );
 	} else if ( flags & EE_BUTTON_WLMASK ) {
 		setScrollX( mScroll.x - PixelDensity::dpToPx( mMouseWheelScroll ) );
-	} else if ( ( flags & EE_BUTTON_RMASK ) ) {
+	} else if ( !minimapHover && ( flags & EE_BUTTON_RMASK ) ) {
 		onCreateContextMenu( position, flags );
 	}
+
 	return UIWidget::onMouseUp( position, flags );
 }
 

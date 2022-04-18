@@ -858,7 +858,7 @@ workspace "eepp"
 	project "ecode"
 		set_kind()
 		language "C++"
-		files { "src/tools/ecode/*.cpp" }
+		files { "src/tools/ecode/**.cpp" }
 		incdirs { "src/thirdparty/efsw/include", "src/thirdparty" }
 		links { "efsw-static" }
 		build_link_configuration( "ecode", true )

@@ -1107,7 +1107,7 @@ solution "eepp"
 	project "ecode"
 		set_kind()
 		language "C++"
-		files { "src/tools/ecode/*.cpp" }
+		files { "src/tools/ecode/**.cpp" }
 		includedirs { "src/thirdparty/efsw/include", "src/thirdparty" }
 		links { "efsw-static" }
 		if not os.is("windows") and not os.is("haiku") then

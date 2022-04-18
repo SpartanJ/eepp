@@ -1,6 +1,6 @@
 #include "formattermodule.hpp"
-#include "thirdparty/json.hpp"
-#include "thirdparty/subprocess.h"
+#include "../../thirdparty/json.hpp"
+#include "../../thirdparty/subprocess.h"
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreamstring.hpp>
 #include <random>

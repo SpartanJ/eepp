@@ -9,6 +9,7 @@ SDL_MAIN_PATH			:= $(SDL_PATH)/src/main/android/*.c
 EEPP_C_INCLUDES			:= \
 	$(EEPP_THIRD_PARTY_PATH) \
 	$(EEPP_THIRD_PARTY_PATH)/freetype2/include \
+	$(EEPP_THIRD_PARTY_PATH)/libpng \
 	$(SDL_PATH)/include \
 	$(EEPP_THIRD_PARTY_PATH)/chipmunk \
 	$(EEPP_INC_PATH)/eepp/thirdparty \
@@ -92,7 +93,7 @@ LOCAL_C_INCLUDES		:= $(EEPP_C_INCLUDES)
 
 LOCAL_SRC_FILES			:= $(foreach F, $(CODE_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
 
-LOCAL_STATIC_LIBRARIES	:= chipmunk freetype
+LOCAL_STATIC_LIBRARIES	:= chipmunk freetype libpng
 
 LOCAL_SHARED_LIBRARIES	:= SDL2
 
@@ -133,13 +134,35 @@ LOCAL_MODULE			:= freetype
 
 APP_SUBDIRS				:= $(patsubst $(LOCAL_PATH)/%, %, $(shell find $(LOCAL_PATH)/src -type d))
 
-LOCAL_C_INCLUDES		:= $(foreach D, $(APP_SUBDIRS), $(LOCAL_PATH)/$(D)) $(LOCAL_PATH)/include
+LOCAL_C_INCLUDES		:= $(foreach D, $(APP_SUBDIRS), $(LOCAL_PATH)/$(D)) $(LOCAL_PATH)/include $(EEPP_THIRD_PARTY_PATH)/libpng
 LOCAL_CFLAGS			:= -Os -DFT2_BUILD_LIBRARY
 
 LOCAL_SRC_FILES			+= $(foreach F, $(APP_SUBDIRS), $(addprefix $(F)/,$(notdir $(wildcard $(LOCAL_PATH)/$(F)/*.c))))
 
 include $(BUILD_STATIC_LIBRARY)
 #*************** FREETYPE ***************
+
+#*************** LIBPNG ***************
+include $(CLEAR_VARS)
+
+LOCAL_PATH				:= $(EEPP_THIRD_PARTY_PATH)
+
+LOCAL_MODULE			:= libpng
+
+LIBPNG_SRCS			:=  \
+	libpng/*.c \
+	libpng/arm/*.c \
+	libpng/intel/*.c \
+	libpng/mips/*.c \
+	libpng/powerpc/*.c
+
+LOCAL_C_INCLUDES		:= $(LOCAL_PATH)/libpng/
+LOCAL_CFLAGS			:= -Os
+
+LOCAL_SRC_FILES			:= $(foreach F, $(LIBPNG_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
+
+include $(BUILD_STATIC_LIBRARY)
+#*************** LIBPNG ***************
 
 #**************** SDL 2 ***************
 include $(CLEAR_VARS)
