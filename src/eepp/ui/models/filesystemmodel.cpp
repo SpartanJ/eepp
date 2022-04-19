@@ -5,6 +5,10 @@
 #include <eepp/ui/models/filesystemmodel.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 
+#ifndef INDEX_ALREADY_EXISTS
+#define INDEX_ALREADY_EXISTS eeINDEX_NOT_FOUND
+#endif
+
 using namespace EE::Scene;
 
 namespace EE { namespace UI { namespace Models {
@@ -40,6 +44,16 @@ const FileSystemModel::Node& FileSystemModel::Node::getChild( const size_t& inde
 void FileSystemModel::Node::invalidate() {
 	mHasTraversed = false;
 	mInfoDirty = true;
+}
+
+bool FileSystemModel::Node::inParentTree( Node* parent ) const {
+	Node* parentLoop = mParent;
+	while ( parentLoop != nullptr ) {
+		if ( parentLoop == parent )
+			return true;
+		parentLoop = parentLoop->getParent();
+	}
+	return false;
 }
 
 FileSystemModel::Node* FileSystemModel::Node::findChildName( const std::string& name,
@@ -97,6 +111,11 @@ FileSystemModel::Node* FileSystemModel::Node::createChild( const std::string& ch
 		return {};
 
 	return child;
+}
+
+void FileSystemModel::Node::rename( const FileInfo& file ) {
+	mInfo = file;
+	mName = file.getFileName();
 }
 
 ModelIndex FileSystemModel::Node::index( const FileSystemModel& model, int column ) const {
@@ -433,6 +452,9 @@ size_t FileSystemModel::getFileIndex( Node* parent, const FileInfo& file ) {
 
 	for ( Node* nodeFile : parent->mChildren ) {
 		files.emplace_back( nodeFile->info() );
+
+		if ( nodeFile->info().getFileName() == file.getFileName() )
+			return INDEX_ALREADY_EXISTS;
 	}
 
 	files.emplace_back( file );
@@ -499,6 +521,9 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 		case FileSystemEventType::Add: {
 			FileInfo file( event.directory + event.filename );
 
+			if ( !file.exists() )
+				return false;
+
 			if ( ( getMode() == Mode::DirectoriesOnly && !file.isDirectory() ) ||
 				 ( getDisplayConfig().ignoreHidden && file.isHidden() ) )
 				return false;
@@ -518,6 +543,9 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 
 				if ( !childNode->getName().empty() ) {
 					size_t pos = getFileIndex( parent, file );
+
+					if ( pos == INDEX_ALREADY_EXISTS )
+						return false;
 
 					beginInsertRows( parent->index( *this, 0 ), pos, pos );
 
@@ -572,14 +600,12 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 
 			beginDeleteRows( index.parent(), index.row(), index.row() );
 
-			eeDelete( parent->mChildren[index.row()] );
-			parent->mChildren.erase( parent->mChildren.begin() + index.row() );
-
-			endDeleteRows();
-
 			forEachView( [&]( UIAbstractView* view ) {
 				view->getSelection().removeAllMatching( [&]( auto& selectionIndex ) {
-					return selectionIndex.internalData() == index.internalData();
+					Node* node = static_cast<Node*>( index.internalData() );
+					Node* nodeSelected = static_cast<Node*>( selectionIndex.internalData() );
+					return selectionIndex.internalData() == index.internalData() ||
+						   ( node->childCount() > 0 && nodeSelected->inParentTree( node ) );
 				} );
 				std::vector<ModelIndex> newIndexes;
 				view->getSelection().forEachIndex( [&]( const ModelIndex& selectedIndex ) {
@@ -601,14 +627,18 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 				view->getSelection().set( newIndexes, false );
 			} );
 
+			eeDelete( parent->mChildren[index.row()] );
+			parent->mChildren.erase( parent->mChildren.begin() + index.row() );
+
+			endDeleteRows();
+
 			break;
 		}
 		case FileSystemEventType::Moved: {
 			FileInfo file( event.directory + event.filename );
 
 			if ( file.exists() ) {
-				auto* node = getNodeFromPath( event.directory + event.oldFilename,
-											  file.isDirectory(), false );
+				auto* node = getNodeFromPath( event.directory + event.oldFilename, false, false );
 				if ( node ) {
 					ModelIndex index = node->index( *this, 0 );
 					if ( !index.isValid() )
@@ -627,11 +657,18 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 							{ FileSystemEventType::Delete, event.directory, event.oldFilename } );
 					}
 
+					Node* childNode = parent->mChildren[index.row()];
+					childNode->rename( file );
+					parent->mChildren.erase( parent->mChildren.begin() + index.row() );
+
 					size_t pos = getFileIndex( node->getParent(), file );
 
-					if ( pos != SIZE_MAX )
-						beginMoveRows( index.parent(), index.row(), index.row(), index.parent(),
-									   pos );
+					// Don't add the file if already exists (if moved an old file to another old
+					// file)
+					if ( pos == INDEX_ALREADY_EXISTS ) {
+						eeDelete( childNode );
+						return false;
+					}
 
 					std::map<UIAbstractView*, std::vector<ModelIndex>> keptSelections;
 					std::map<UIAbstractView*, std::vector<std::string>> prevSelections;
@@ -652,9 +689,7 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 						} );
 					} );
 
-					eeDelete( parent->mChildren[index.row()] );
-					parent->mChildren.erase( parent->mChildren.begin() + index.row() );
-					Node* childNode = parent->createChild( file.getFileName(), *this );
+					beginMoveRows( index.parent(), index.row(), index.row(), index.parent(), pos );
 
 					if ( pos >= parent->mChildren.size() ) {
 						parent->mChildren.emplace_back( childNode );
@@ -662,8 +697,7 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 						parent->mChildren.insert( parent->mChildren.begin() + pos, childNode );
 					}
 
-					if ( pos != SIZE_MAX )
-						endMoveRows();
+					endMoveRows();
 
 					forEachView( [&]( UIAbstractView* view ) {
 						std::vector<std::string> names = prevSelections[view];

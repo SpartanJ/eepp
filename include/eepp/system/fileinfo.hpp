@@ -76,6 +76,7 @@ class EE_API FileInfo {
 
   protected:
 	mutable std::string mFilepath;
+	std::string mFileName;
 	Uint64 mModificationTime{ 0 };
 	Uint64 mSize{ 0 };
 	Uint32 mOwnerId{ 0 };

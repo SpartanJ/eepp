@@ -95,6 +95,8 @@ class EE_API FileSystemModel : public Model {
 
 		void invalidate();
 
+		bool inParentTree( Node* parent ) const;
+
 		Node* findChildName( const std::string& name, const FileSystemModel& model,
 							 bool forceRefresh = false );
 
@@ -112,6 +114,8 @@ class EE_API FileSystemModel : public Model {
 		Node() {}
 
 		Node* createChild( const std::string& childName, const FileSystemModel& model );
+
+		void rename( const FileInfo& file );
 
 		friend class FileSystemModel;
 		std::string mName;

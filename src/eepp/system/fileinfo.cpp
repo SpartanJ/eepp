@@ -65,6 +65,7 @@ FileInfo::FileInfo() :
 
 FileInfo::FileInfo( const std::string& filepath ) :
 	mFilepath( filepath ),
+	mFileName( FileSystem::fileNameFromPath( filepath ) ),
 	mModificationTime( 0 ),
 	mOwnerId( 0 ),
 	mGroupId( 0 ),
@@ -75,6 +76,7 @@ FileInfo::FileInfo( const std::string& filepath ) :
 
 FileInfo::FileInfo( const std::string& filepath, bool linkInfo ) :
 	mFilepath( filepath ),
+	mFileName( FileSystem::fileNameFromPath( filepath ) ),
 	mModificationTime( 0 ),
 	mOwnerId( 0 ),
 	mGroupId( 0 ),
@@ -89,6 +91,7 @@ FileInfo::FileInfo( const std::string& filepath, bool linkInfo ) :
 
 FileInfo::FileInfo( const FileInfo& other ) :
 	mFilepath( other.mFilepath ),
+	mFileName( other.mFileName ),
 	mModificationTime( other.mModificationTime ),
 	mSize( other.mSize ),
 	mOwnerId( other.mOwnerId ),
@@ -158,12 +161,7 @@ const std::string& FileInfo::getFilepath() const {
 }
 
 std::string FileInfo::getFileName() const {
-	if ( !mFilepath.empty() && mFilepath[mFilepath.size() - 1] != '\\' &&
-		 mFilepath[mFilepath.size() - 1] != '/' )
-		return FileSystem::fileNameFromPath( mFilepath );
-	std::string path( mFilepath );
-	FileSystem::dirRemoveSlashAtEnd( mFilepath );
-	return FileSystem::fileNameFromPath( path );
+	return mFileName;
 }
 
 std::string FileInfo::getDirectoryPath() const {
@@ -276,6 +274,7 @@ bool FileInfo::exists() const {
 
 FileInfo& FileInfo::operator=( const FileInfo& other ) {
 	this->mFilepath = other.mFilepath;
+	this->mFileName = other.mFileName;
 	this->mSize = other.mSize;
 	this->mModificationTime = other.mModificationTime;
 	this->mGroupId = other.mGroupId;

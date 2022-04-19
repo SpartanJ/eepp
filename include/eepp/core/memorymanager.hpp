@@ -45,10 +45,14 @@ class EE_API MemoryManager {
 
 	template <class T> static T* free( T* Data ) {
 		::free( Data );
+#if defined( __GNUC__ ) && __GNUC__ >= 12
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wuse-after-free"
 		return Data;
 #pragma GCC diagnostic pop
+#else
+		return Data;
+#endif
 	}
 
 	inline static void* allocate( size_t size ) {
