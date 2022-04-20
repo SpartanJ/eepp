@@ -190,7 +190,7 @@ void AutoCompleteModule::updateDocCache( TextDocument* doc ) {
 	Lock l( mDocMutex );
 	Clock clock;
 	auto docCache = mDocCache.find( doc );
-	if ( docCache == mDocCache.end() )
+	if ( docCache == mDocCache.end() || mClosing )
 		return;
 	auto& cache = docCache->second;
 	cache.changeId = doc->getCurrentChangeId();
@@ -410,7 +410,7 @@ AutoCompleteModule::SymbolsList AutoCompleteModule::getDocumentSymbols( TextDocu
 	LuaPattern pattern( mSymbolPattern );
 	AutoCompleteModule::SymbolsList symbols;
 	Int64 lc = doc->linesCount();
-	if ( lc == 0 )
+	if ( lc == 0 || lc > 50000 || mClosing )
 		return symbols;
 	std::string current( getPartialSymbol( doc ) );
 	TextPosition end = doc->getSelection().end();
@@ -423,6 +423,8 @@ AutoCompleteModule::SymbolsList AutoCompleteModule::getDocumentSymbols( TextDocu
 				continue;
 			symbols.insert( std::move( matchStr ) );
 		}
+		if ( mClosing )
+			break;
 	}
 	return symbols;
 }

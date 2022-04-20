@@ -972,6 +972,11 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 			mVScrollBar->setEnabled( false );
 			return 1;
 		} else if ( mMinimapDragging ) {
+			if ( mMouseDown ) {
+				scrollTo( { calculateMinimapClickedLine( position ) - mMinimapScrollOffset, 0 },
+						  false, true );
+				getUISceneNode()->setCursor( Cursor::Arrow );
+			}
 			return 1;
 		}
 	}
