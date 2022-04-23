@@ -24,7 +24,7 @@ class App : public UICodeEditorSplitter::Client {
 
 	~App();
 
-	void init( const std::string& file, const Float& pidelDensity, const std::string& colorScheme );
+	void init( std::string file, const Float& pidelDensity, const std::string& colorScheme );
 
 	void setAppTitle( const std::string& title );
 

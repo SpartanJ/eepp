@@ -4,6 +4,7 @@
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/texture.hpp>
+#include <memory>
 
 namespace EE { namespace System {
 class Pack;
@@ -65,9 +66,13 @@ class EE_API FontTrueType : public Font {
 
 	bool isMonospace() const;
 
-	bool isEmojiFont() const { return mIsEmojiFont; }
+	bool isEmojiFont() const;
 
 	bool hasGlyph( Uint32 codePoint ) const;
+
+	void setIsColorEmojiFont( bool isColorEmojiFont );
+
+	void setIsEmojiFont( bool isEmojiFont );
 
   protected:
 	explicit FontTrueType( const std::string& FontName );
@@ -85,7 +90,7 @@ class EE_API FontTrueType : public Font {
 	typedef std::map<Uint64, GlyphDrawable*> GlyphDrawableTable;
 
 	struct Page {
-		Page();
+		Page( const Uint32 fontInternalId );
 
 		~Page();
 
@@ -95,6 +100,7 @@ class EE_API FontTrueType : public Font {
 		Texture* texture;	  ///< Texture containing the pixels of the glyphs
 		unsigned int nextRow; ///< Y position of the next new row in the texture
 		std::vector<Row> rows; ///< List containing the position of all the existing rows
+		Uint32 fontInternalId{ 0 };
 	};
 
 	void cleanup();
@@ -106,6 +112,8 @@ class EE_API FontTrueType : public Font {
 	const Glyph& getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
 						   Float outlineThickness, Page& page, const Float& forzeSize ) const;
 
+	Uint32 getGlyphIndex( const Uint32& codePoint ) const;
+
 	Glyph loadGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
 					 Float outlineThickness, Page& page, const Float& forceSize = 0.f ) const;
 
@@ -113,7 +121,9 @@ class EE_API FontTrueType : public Font {
 
 	bool setCurrentSize( unsigned int characterSize ) const;
 
-	typedef std::map<unsigned int, Page>
+	Page& getPage( unsigned int characterSize ) const;
+
+	typedef std::map<unsigned int, std::unique_ptr<Page>>
 		PageTable; ///< Table mapping a character size to its page (texture)
 
 	void* mLibrary; ///< Pointer to the internal library interface (it is typeless to avoid exposing
@@ -134,8 +144,10 @@ class EE_API FontTrueType : public Font {
 	bool mIsColorEmojiFont{ false };
 	bool mIsEmojiFont{ false };
 	mutable std::map<unsigned int, unsigned int> mClosestCharacterSize;
+	mutable std::map<Uint32, Uint32> mCodePointIndexCache;
 
-	Uint64 getIndexKey( Uint32 index, bool bold, Float outlineThickness ) const;
+	Uint64 getIndexKey( Uint32 fontInternalId, Uint32 index, bool bold,
+						Float outlineThickness ) const;
 };
 
 }} // namespace EE::Graphics

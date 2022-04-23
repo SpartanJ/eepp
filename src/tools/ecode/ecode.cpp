@@ -2060,6 +2060,10 @@ void App::initProjectTreeView( const std::string& path ) {
 	if ( !path.empty() ) {
 		if ( FileSystem::isDirectory( path ) ) {
 			loadFolder( path );
+		} else if ( String::startsWith( path, "https://" ) ||
+					String::startsWith( path, "http://" ) ) {
+			loadFolder( "." );
+			loadFileFromPath( path, false );
 		} else {
 			std::string rpath( FileSystem::getRealPath( path ) );
 			std::string folderPath( FileSystem::fileRemoveFileName( rpath ) );
@@ -2134,8 +2138,7 @@ FontTrueType* App::loadFont( const std::string& name, std::string fontPath,
 	return FontTrueType::New( name, fontPath );
 }
 
-void App::init( const std::string& file, const Float& pidelDensity,
-				const std::string& colorScheme ) {
+void App::init( std::string file, const Float& pidelDensity, const std::string& colorScheme ) {
 	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
 	Display* currentDisplay = displayManager->getDisplayIndex( 0 );
 	mDisplayDPI = currentDisplay->getDPI();
@@ -2550,20 +2553,44 @@ void App::init( const std::string& file, const Float& pidelDensity,
 
 		mConsole = eeNew( Console, ( mFontMono, true, true, 1024 * 1000, 0, mWindow ) );
 
+#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+		if ( file == "./this.program" )
+			file = "";
+#endif
+
 		initProjectTreeView( file );
 
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
-		downloadFileWeb( "https://raw.githubusercontent.com/SpartanJ/eepp/develop/README.md" );
+		if ( file.empty() )
+			downloadFileWeb( "https://raw.githubusercontent.com/SpartanJ/eepp/develop/README.md" );
 #endif
 
 		mWindow->runMainLoop( &appLoop );
 	}
 }
 
+#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+std::vector<std::string> parseEmscriptenArgs( int argc, char* argv[] ) {
+	std::vector<std::string> args;
+	args.emplace_back( argv[0] );
+	for ( int i = 1; i < argc; i++ ) {
+		auto split = String::split( std::string( argv[i] ), '=' );
+		if ( split.size() == 2 ) {
+			std::string arg( split[0] + "=" + URI::decode( split[1] ) );
+			args.emplace_back( !String::startsWith( arg, "--" ) ? ( std::string( "--" ) + arg )
+																: arg );
+		}
+	}
+	return args;
+}
+#endif
+
 EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	args::ArgumentParser parser( "ecode" );
 	args::HelpFlag help( parser, "help", "Display this help menu", { 'h', "help" } );
-	args::Positional<std::string> file( parser, "file", "The file path" );
+	args::Positional<std::string> file( parser, "file", "The file or folder path" );
+	args::ValueFlag<std::string> filePos( parser, "file", "The file or folder path",
+										  { 'f', "file", "folder" } );
 	args::ValueFlag<Float> pixelDenstiyConf( parser, "pixel-density",
 											 "Set default application pixel density",
 											 { 'd', "pixel-density" } );
@@ -2572,7 +2599,11 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		{ 'c', "prefers-color-scheme" } );
 
 	try {
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 		parser.ParseCLI( argc, argv );
+#else
+		parser.ParseCLI( parseEmscriptenArgs( argc, argv ) );
+#endif
 	} catch ( const args::Help& ) {
 		std::cout << parser;
 		return EXIT_SUCCESS;
@@ -2587,7 +2618,8 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	}
 
 	appInstance = eeNew( App, () );
-	appInstance->init( file.Get(), pixelDenstiyConf ? pixelDenstiyConf.Get() : 0.f,
+	appInstance->init( filePos ? filePos.Get() : file.Get(),
+					   pixelDenstiyConf ? pixelDenstiyConf.Get() : 0.f,
 					   prefersColorScheme ? prefersColorScheme.Get() : "" );
 	eeSAFE_DELETE( appInstance );
 

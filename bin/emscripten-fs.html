@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- This file license is CC0 (https://creativecommons.org/publicdomain/zero/1.0/). -->
 <html lang="en-us">
   <head>
     <meta charset="utf-8">
@@ -63,7 +64,7 @@
         function getDemoScript(name) {
             if (name)
                 return name;
-            return "eepp-test-debug.js";
+            return "ecode.js";
         }
 
         function getParameter(name) {
@@ -108,8 +109,9 @@
             monitorRunDependencies: function(left) {
                 // no run dependencies to log
             },
-            };
-            window.onerror = function() {
+            arguments: window.location.search.substr(1).split('&')
+        };
+        window.onerror = function() {
             console.log("onerror: " + event);
         };
 

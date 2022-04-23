@@ -14,6 +14,7 @@
 #include FT_BITMAP_H
 #include FT_STROKER_H
 #include FT_TRUETYPE_TABLES_H
+#include <atomic>
 #include <cstdlib>
 #include <cstring>
 
@@ -43,14 +44,19 @@ template <typename T, typename U> inline T reinterpret( const U& input ) {
 }
 
 // Combine outline thickness, boldness and font glyph index into a single 64-bit key
-EE::Uint64 combine( float outlineThickness, bool bold, EE::Uint32 index ) {
-	return ( static_cast<EE::Uint64>( reinterpret<EE::Uint32>( outlineThickness * 100 ) ) << 33 ) |
+EE::Uint64 combine( float outlineThickness, bool bold, EE::Uint32 index,
+					EE::Uint32 fontInternalId ) {
+	return ( static_cast<EE::Uint64>( reinterpret<EE::Uint32>( fontInternalId ) ) << 48 ) |
+		   ( static_cast<EE::Uint64>( reinterpret<EE::Uint32>( outlineThickness * 100 ) ) << 33 ) |
 		   ( static_cast<EE::Uint64>( bold ) << 32 ) | index;
 }
 
 } // namespace
 
 namespace EE { namespace Graphics {
+
+static std::map<std::string, Uint32> fontsInternalIds;
+static std::atomic<Uint32> fontInternalIdCounter{ 0 };
 
 FontTrueType* FontTrueType::New( const std::string& FontName ) {
 	return eeNew( FontTrueType, ( FontName ) );
@@ -156,6 +162,10 @@ bool FontTrueType::loadFromFile( const std::string& filename ) {
 	// Store the font information
 	mInfo.family = face->family_name ? face->family_name : std::string();
 
+	auto fontInternalId = fontsInternalIds.find( mInfo.family );
+	if ( fontsInternalIds.end() == fontInternalId )
+		fontsInternalIds[mInfo.family] = ++fontInternalIdCounter;
+
 	sendEvent( Event::Load );
 
 	return true;
@@ -225,6 +235,10 @@ bool FontTrueType::loadFromMemory( const void* data, std::size_t sizeInBytes, bo
 
 	// Store the font information
 	mInfo.family = face->family_name ? face->family_name : std::string();
+
+	auto fontInternalId = fontsInternalIds.find( mInfo.family );
+	if ( fontsInternalIds.end() == fontInternalId )
+		fontsInternalIds[mInfo.family] = ++fontInternalIdCounter;
 
 	sendEvent( Event::Load );
 
@@ -309,6 +323,10 @@ bool FontTrueType::loadFromStream( IOStream& stream ) {
 	// Store the font information
 	mInfo.family = face->family_name ? face->family_name : std::string();
 
+	auto fontInternalId = fontsInternalIds.find( mInfo.family );
+	if ( fontsInternalIds.end() == fontInternalId )
+		fontsInternalIds[mInfo.family] = ++fontInternalIdCounter;
+
 	sendEvent( Event::Load );
 
 	return true;
@@ -333,18 +351,30 @@ const FontTrueType::Info& FontTrueType::getInfo() const {
 	return mInfo;
 }
 
-Uint64 FontTrueType::getIndexKey( Uint32 index, bool bold, Float outlineThickness ) const {
-	return combine( outlineThickness, bold, index );
+Uint64 FontTrueType::getIndexKey( Uint32 fontInternalId, Uint32 index, bool bold,
+								  Float outlineThickness ) const {
+	return combine( outlineThickness, bold, index, fontInternalId );
 }
 
 bool FontTrueType::hasGlyph( Uint32 codePoint ) const {
-	return FT_Get_Char_Index( static_cast<FT_Face>( mFace ), codePoint ) != 0;
+	return getGlyphIndex( codePoint ) != 0;
+}
+
+Uint32 FontTrueType::getGlyphIndex( const Uint32& codePoint ) const {
+	Uint32 index;
+	auto indexIter = mCodePointIndexCache.find( codePoint );
+	if ( mCodePointIndexCache.end() != indexIter ) {
+		index = indexIter->second;
+	} else {
+		index = FT_Get_Char_Index( static_cast<FT_Face>( mFace ), codePoint );
+		mCodePointIndexCache[codePoint] = index;
+	}
+	return index;
 }
 
 const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
 									 Float outlineThickness ) const {
-	FT_Face face = static_cast<FT_Face>( mFace );
-	Uint32 index = FT_Get_Char_Index( face, codePoint );
+	Uint32 index = getGlyphIndex( codePoint );
 
 	if ( Font::isEmojiCodePoint( codePoint ) && !mIsColorEmojiFont && !mIsEmojiFont ) {
 		if ( !mIsColorEmojiFont && FontManager::instance()->getColorEmojiFont() != nullptr &&
@@ -360,7 +390,7 @@ const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSiz
 			FontTrueType* fontEmoji =
 				static_cast<FontTrueType*>( FontManager::instance()->getColorEmojiFont() );
 			return fontEmoji->getGlyph( codePoint, characterSize, bold, outlineThickness,
-										mPages[characterSize], maxWidth );
+										getPage( characterSize ), maxWidth );
 		} else if ( !mIsEmojiFont && FontManager::instance()->getEmojiFont() != nullptr &&
 					FontManager::instance()->getEmojiFont()->getType() == FontType::TTF ) {
 
@@ -370,11 +400,10 @@ const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSiz
 				Glyph monospaceGlyph = getGlyph( ' ', characterSize, bold, outlineThickness );
 				maxWidth = monospaceGlyph.advance;
 			}
-
 			FontTrueType* fontEmoji =
 				static_cast<FontTrueType*>( FontManager::instance()->getEmojiFont() );
 			return fontEmoji->getGlyph( codePoint, characterSize, bold, outlineThickness,
-										mPages[characterSize], maxWidth );
+										getPage( characterSize ), maxWidth );
 		}
 	}
 
@@ -384,8 +413,7 @@ const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSiz
 const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
 									 Float outlineThickness, Page& page,
 									 const Float& forzeSize ) const {
-	FT_Face face = static_cast<FT_Face>( mFace );
-	Uint32 index = FT_Get_Char_Index( face, codePoint );
+	Uint32 index = getGlyphIndex( codePoint );
 	return getGlyphByIndex( index, characterSize, bold, outlineThickness, page, forzeSize );
 }
 
@@ -396,7 +424,7 @@ const Glyph& FontTrueType::getGlyphByIndex( Uint32 index, unsigned int character
 	GlyphTable& glyphs = page.glyphs;
 
 	// Build the key by combining the code point, bold flag, and outline thickness
-	Uint64 key = getIndexKey( index, bold, outlineThickness );
+	Uint64 key = getIndexKey( fontsInternalIds[mInfo.family], index, bold, outlineThickness );
 
 	// Search the glyph into the cache
 	GlyphTable::const_iterator it = glyphs.find( key );
@@ -413,22 +441,23 @@ const Glyph& FontTrueType::getGlyphByIndex( Uint32 index, unsigned int character
 
 const Glyph& FontTrueType::getGlyphByIndex( Uint32 index, unsigned int characterSize, bool bold,
 											Float outlineThickness ) const {
-	return getGlyphByIndex( index, characterSize, bold, outlineThickness, mPages[characterSize],
+	return getGlyphByIndex( index, characterSize, bold, outlineThickness, getPage( characterSize ),
 							0.f );
 }
 
 GlyphDrawable* FontTrueType::getGlyphDrawable( Uint32 codePoint, unsigned int characterSize,
 											   bool bold, Float outlineThickness ) const {
-	GlyphDrawableTable& drawables = mPages[characterSize].drawables;
+	GlyphDrawableTable& drawables = getPage( characterSize ).drawables;
 
-	Uint64 key = getIndexKey( codePoint, bold, outlineThickness );
+	Uint64 key = getIndexKey( getPage( characterSize ).fontInternalId, getGlyphIndex( codePoint ),
+							  bold, outlineThickness );
 
 	auto it = drawables.find( key );
 	if ( it != drawables.end() ) {
 		return it->second;
 	} else {
 		const Glyph& glyph = getGlyph( codePoint, characterSize, bold, outlineThickness );
-		auto& page = mPages[characterSize];
+		auto& page = getPage( characterSize );
 		GlyphDrawable* region = GlyphDrawable::New(
 			page.texture, glyph.textureRect,
 			String::format( "%s_%d_%u", mFontName.c_str(), characterSize, codePoint ) );
@@ -442,15 +471,15 @@ GlyphDrawable* FontTrueType::getGlyphDrawable( Uint32 codePoint, unsigned int ch
 Float FontTrueType::getKerning( Uint32 first, Uint32 second, unsigned int characterSize,
 								bool bold ) const {
 	// Special case where first or second is 0 (null character)
-	if ( first == 0 || second == 0 )
+	if ( first == 0 || second == 0 || isMonospace() )
 		return 0.f;
 
 	FT_Face face = static_cast<FT_Face>( mFace );
 
 	if ( face && setCurrentSize( characterSize ) ) {
 		// Convert the characters to indices
-		FT_UInt index1 = FT_Get_Char_Index( face, first );
-		FT_UInt index2 = FT_Get_Char_Index( face, second );
+		FT_UInt index1 = getGlyphIndex( first );
+		FT_UInt index2 = getGlyphIndex( second );
 
 		// Retrieve position compensation deltas generated by FT_LOAD_FORCE_AUTOHINT flag
 		auto firstRsbDelta = static_cast<float>( getGlyph( first, characterSize, bold ).rsbDelta );
@@ -543,7 +572,7 @@ Float FontTrueType::getUnderlineThickness( unsigned int characterSize ) const {
 }
 
 Texture* FontTrueType::getTexture( unsigned int characterSize ) const {
-	return mPages[characterSize].texture;
+	return getPage( characterSize ).texture;
 }
 
 bool FontTrueType::loaded() const {
@@ -998,12 +1027,34 @@ bool FontTrueType::setCurrentSize( unsigned int characterSize ) const {
 	}
 }
 
+FontTrueType::Page& FontTrueType::getPage( unsigned int characterSize ) const {
+	auto pageIt = mPages.find( characterSize );
+	if ( pageIt == mPages.end() ) {
+		mPages.insert( std::make_pair( characterSize,
+									   std::make_unique<Page>( fontsInternalIds[mInfo.family] ) ) );
+		pageIt = mPages.find( characterSize );
+	}
+	return *pageIt->second;
+}
+
+void FontTrueType::setIsEmojiFont( bool isEmojiFont ) {
+	mIsEmojiFont = isEmojiFont;
+}
+
+void FontTrueType::setIsColorEmojiFont( bool isColorEmojiFont ) {
+	mIsColorEmojiFont = isColorEmojiFont;
+}
+
 bool FontTrueType::isColorEmojiFont() const {
 	return mIsColorEmojiFont;
 }
 
 bool FontTrueType::isMonospace() const {
 	return FT_IS_FIXED_WIDTH( static_cast<FT_Face>( mFace ) );
+}
+
+bool FontTrueType::isEmojiFont() const {
+	return mIsEmojiFont;
 }
 
 bool FontTrueType::getBoldAdvanceSameAsRegular() const {
@@ -1014,7 +1065,8 @@ void FontTrueType::setBoldAdvanceSameAsRegular( bool boldAdvanceSameAsRegular ) 
 	mBoldAdvanceSameAsRegular = boldAdvanceSameAsRegular;
 }
 
-FontTrueType::Page::Page() : texture( NULL ), nextRow( 3 ) {
+FontTrueType::Page::Page( const Uint32 fontInternalId ) :
+	texture( NULL ), nextRow( 3 ), fontInternalId( fontInternalId ) {
 	// Make sure that the texture is initialized by default
 	Image image;
 	image.create( 128, 128, 4 );
