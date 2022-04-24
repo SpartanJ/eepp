@@ -9,8 +9,7 @@ const int MAX_DEFAULT_MATCHES = 12;
 static bool sFailHandlerInitialized = false;
 
 std::string LuaPattern::getHttpURLPattern() {
-	return "https?://(([%w_.~!*:@&+$/?%%#-]-)(%w[-.%w]*%.)(%w%w%w?%w?)(:?)(%d*)(/?)([%w_.~!*:@&+$/"
-		   "?%%#=-]*))";
+	return "https?://[%w_.~!*:@&+$/?%%#-]-%w[-.%w]*%.%w%w%w?%w?:?%d*/?[%w_.~!*:@&+$/?%%#=-]*";
 }
 
 static void failHandler( const char* msg ) {

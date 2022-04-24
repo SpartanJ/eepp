@@ -30,6 +30,8 @@ class EE_API FontBMFont : public Font {
 
 	bool loadFromPack( Pack* pack, std::string filePackPath );
 
+	bool isMonospace() const;
+
 	const Font::Info& getInfo() const;
 
 	const Glyph& getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
@@ -78,6 +80,7 @@ class EE_API FontBMFont : public Font {
 	mutable PageTable mPages; ///< Table containing the glyphs pages by character size
 	std::string mFilePath;
 	Uint32 mFontSize;
+	bool mIsMonospace{ false };
 
 	Glyph loadGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
 					 Float outlineThickness ) const;

@@ -509,6 +509,7 @@ void UICodeEditor::disableEditorFeatures() {
 	mHighlightMatchingBracket = false;
 	mHighlightSelectionMatch = false;
 	mEnableColorPickerOnSelection = false;
+	mMinimapEnabled = false;
 	mLineBreakingColumn = 0;
 }
 
@@ -2363,10 +2364,10 @@ void UICodeEditor::drawLineText( const Int64& index, Vector2f position, const Fl
 
 void UICodeEditor::drawTextRange( const TextRange& range, const std::pair<int, int>& lineRange,
 								  const Vector2f& startScroll, const Float& lineHeight,
-								  const Color& backgrundColor ) {
+								  const Color& backgroundColor ) {
 	Primitives primitives;
 	primitives.setForceDraw( false );
-	primitives.setColor( Color( backgrundColor ).blendAlpha( mAlpha ) );
+	primitives.setColor( Color( backgroundColor ).blendAlpha( mAlpha ) );
 
 	int startLine = eemax<int>( lineRange.first, range.start().line() );
 	int endLine = eemin<int>( lineRange.second, range.end().line() );
@@ -2680,17 +2681,6 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 			{ { rect.Left, visibleY }, Sizef( rect.getWidth(), scrollerHeight ) } );
 	}
 
-	Float selectionY =
-		rect.Top + ( mDoc->getSelection().start().line() - minimapStartLine ) * lineSpacing;
-	Float selectionY2 =
-		rect.Top + ( mDoc->getSelection().end().line() - minimapStartLine ) * lineSpacing;
-	Float selectionMinY = eemin( selectionY, selectionY2 );
-	Float selectionH = eeabs( selectionY2 - selectionY ) + 1;
-	primitives.setColor( Color( mSelectionMatchColor ).blendAlpha( mAlpha ) );
-	primitives.drawRectangle( { { rect.Left, selectionMinY }, { rect.getWidth(), selectionH } } );
-	primitives.setColor( Color( mCaretColor, 64 ).blendAlpha( mAlpha ) );
-	primitives.drawRectangle( { { rect.Left, selectionY }, { rect.getWidth(), lineSpacing } } );
-
 	Float gutterWidth = PixelDensity::dpToPx( mMinimapConfig.gutterWidth );
 	Float lineY = rect.Top;
 	Color color = mColorScheme.getSyntaxStyle( "normal" ).color;
@@ -2699,6 +2689,7 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 	Float batchStart = rect.Left;
 	Float minimapCutoffX = rect.Left + rect.getWidth();
 	std::string batchSyntaxType = "normal";
+	Float widthScale = charSpacing / getGlyphWidth();
 	auto flushBatch = [&]( const std::string& type ) {
 		Color oldColor = color;
 		color = mColorScheme.getSyntaxStyle( batchSyntaxType ).color;
@@ -2728,7 +2719,6 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 			return;
 		primitives.setColor( Color( mSelectionMatchColor ).blendAlpha( mAlpha ) );
 
-		Float widthScale = charSpacing / getGlyphWidth();
 		do {
 			pos = line.find( text, pos );
 			if ( pos != String::InvalidPos ) {
@@ -2808,6 +2798,17 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 			lineY = lineY + lineSpacing;
 		}
 	}
+
+	Float selectionY =
+		rect.Top + ( mDoc->getSelection().start().line() - minimapStartLine ) * lineSpacing;
+	Float selectionY2 =
+		rect.Top + ( mDoc->getSelection().end().line() - minimapStartLine ) * lineSpacing;
+	Float selectionMinY = eemin( selectionY, selectionY2 );
+	Float selectionH = eeabs( selectionY2 - selectionY ) + 1;
+	primitives.setColor( Color( mFontStyleConfig.getFontSelectionBackColor(), 64 ).blendAlpha( mAlpha ) );
+	primitives.drawRectangle( { { rect.Left, selectionMinY }, { rect.getWidth(), selectionH } } );
+	primitives.setColor( Color( mCaretColor, 64 ).blendAlpha( mAlpha ) );
+	primitives.drawRectangle( { { rect.Left, selectionY }, { rect.getWidth(), lineSpacing } } );
 
 	primitives.setForceDraw( true );
 }

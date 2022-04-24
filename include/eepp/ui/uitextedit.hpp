@@ -40,7 +40,6 @@ class EE_API UITextEdit : public UICodeEditor {
 		String::HashType hash{0};
 	};
 	std::map<size_t, TextLine> mLines;
-	bool mIsMonoSpace;
 
 	virtual void onFontChanged();
 

@@ -86,7 +86,7 @@ bool FontBMFont::loadFromStream( IOStream& stream ) {
 		int base;
 		int texWidth;
 		int texHeight;
-		char texFileName[128];
+		char texFileName[129];
 		int charsCount = 0;
 
 		searchPoint = strstr( lines[1].c_str(), "lineHeight" );
@@ -157,6 +157,10 @@ bool FontBMFont::loadFromStream( IOStream& stream ) {
 			glyph.textureRect = Rect( charX, charY, charWidth, charHeight );
 		}
 
+		const Glyph& gl1 = getGlyph( '@', mFontSize, false );
+		const Glyph& gl2 = getGlyph( '.', mFontSize, false );
+		mIsMonospace = gl1.advance == gl2.advance;
+
 		sendEvent( Event::Load );
 	}
 
@@ -167,6 +171,10 @@ bool FontBMFont::loadFromPack( Pack* pack, std::string filePackPath ) {
 	cleanup();
 	mFilePath = FileSystem::fileRemoveFileName( filePackPath );
 	return loadFromStream( *pack->getFileStream( filePackPath ) );
+}
+
+bool FontBMFont::isMonospace() const {
+	return mIsMonospace;
 }
 
 const FontBMFont::Info& FontBMFont::getInfo() const {
@@ -223,7 +231,7 @@ Glyph FontBMFont::loadGlyph( Uint32 codePoint, unsigned int characterSize, bool,
 	return glyph;
 }
 
-Float FontBMFont::getKerning( Uint32, Uint32, unsigned int, bool bold ) const {
+Float FontBMFont::getKerning( Uint32, Uint32, unsigned int, bool ) const {
 	return 0;
 }
 

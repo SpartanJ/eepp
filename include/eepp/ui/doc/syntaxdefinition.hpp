@@ -11,8 +11,15 @@ namespace EE { namespace UI { namespace Doc {
 
 struct EE_API SyntaxPattern {
 	std::vector<std::string> patterns;
-	std::string type;
+	std::vector<std::string> types;
 	std::string syntax{ "" };
+
+	SyntaxPattern( std::vector<std::string> patterns, std::string type, std::string syntax = "" ) :
+		patterns( patterns ), types( { type } ), syntax( syntax ) {}
+
+	SyntaxPattern( std::vector<std::string> patterns, std::vector<std::string> types,
+				   std::string syntax = "" ) :
+		patterns( patterns ), types( types ), syntax( syntax ) {}
 };
 
 class EE_API SyntaxDefinition {

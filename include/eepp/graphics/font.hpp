@@ -75,6 +75,8 @@ class EE_API Font {
 	/** @return The font id */
 	const String::HashType& getId();
 
+	virtual bool isMonospace() const = 0;
+
 	virtual const Info& getInfo() const = 0;
 
 	virtual const Glyph& getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,

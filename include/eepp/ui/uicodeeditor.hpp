@@ -640,7 +640,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	virtual void drawTextRange( const TextRange& range, const std::pair<int, int>& lineRange,
 								const Vector2f& startScroll, const Float& lineHeight,
-								const Color& backgrundColor );
+								const Color& backgroundColor );
 
 	virtual void drawLineNumbers( const std::pair<int, int>& lineRange, const Vector2f& startScroll,
 								  const Vector2f& screenStart, const Float& lineHeight,

@@ -95,6 +95,10 @@ std::pair<std::vector<SyntaxToken>, Uint32>
 SyntaxTokenizer::tokenize( const SyntaxDefinition& syntax, const std::string& text,
 						   const Uint32& state, const size_t& startIndex ) {
 	std::vector<SyntaxToken> tokens;
+	LuaPattern::Range matches[12];
+	int start, end;
+	size_t numMatches;
+
 	if ( syntax.getPatterns().empty() ) {
 		pushToken( tokens, "normal", text );
 		return std::make_pair( tokens, SYNTAX_TOKENIZER_STATE_NONE );
@@ -146,7 +150,7 @@ SyntaxTokenizer::tokenize( const SyntaxDefinition& syntax, const std::string& te
 
 				if ( rangeSubsyntax.first != -1 &&
 					 ( range.first == -1 || rangeSubsyntax.first < range.first ) ) {
-					pushToken( tokens, curState.subsyntaxInfo->type,
+					pushToken( tokens, curState.subsyntaxInfo->types[0],
 							   text.substr( i, rangeSubsyntax.second - i ) );
 					popSubsyntax();
 					i = rangeSubsyntax.second;
@@ -156,11 +160,11 @@ SyntaxTokenizer::tokenize( const SyntaxDefinition& syntax, const std::string& te
 
 			if ( !skip ) {
 				if ( range.first != -1 ) {
-					pushToken( tokens, pattern.type, text.substr( i, range.second - i ) );
+					pushToken( tokens, pattern.types[0], text.substr( i, range.second - i ) );
 					setSubsyntaxPatternIdx( SYNTAX_TOKENIZER_STATE_NONE );
 					i = range.second;
 				} else {
-					pushToken( tokens, pattern.type, text.substr( i ) );
+					pushToken( tokens, pattern.types[0], text.substr( i ) );
 					break;
 				}
 			}
@@ -173,7 +177,7 @@ SyntaxTokenizer::tokenize( const SyntaxDefinition& syntax, const std::string& te
 															 : "" );
 
 			if ( rangeSubsyntax.first != -1 ) {
-				pushToken( tokens, curState.subsyntaxInfo->type,
+				pushToken( tokens, curState.subsyntaxInfo->types[0],
 						   text.substr( i, rangeSubsyntax.second - i ) );
 				popSubsyntax();
 				i = rangeSubsyntax.second;
@@ -190,22 +194,84 @@ SyntaxTokenizer::tokenize( const SyntaxDefinition& syntax, const std::string& te
 			const std::string& patternStr(
 				pattern.patterns[0][0] == '^' ? pattern.patterns[0] : "^" + pattern.patterns[0] );
 			LuaPattern words( patternStr );
-			int start, end = 0;
-			if ( words.find( text, start, end, i ) && start != end ) {
-				if ( pattern.patterns.size() >= 3 && i > 0 &&
-					 text[i - 1] == pattern.patterns[2][0] )
-					continue;
-				std::string patternText( text.substr( start, end - start ) );
-				std::string type = curState.currentSyntax->getSymbol( patternText );
-				pushToken( tokens, type.empty() ? pattern.type : type, patternText );
-				if ( !pattern.syntax.empty() ) {
-					pushSubsyntax( pattern, patternIndex + 1 );
-				} else if ( pattern.patterns.size() > 1 ) {
-					setSubsyntaxPatternIdx( patternIndex + 1 );
+			if ( words.matches( text, matches, i ) && ( numMatches = words.getNumMatches() ) > 0 ) {
+				if ( numMatches > 1 ) {
+					int patternMatchStart = matches[0].start;
+					int patternMatchEnd = matches[0].end;
+					std::string patternFullText(
+						text.substr( patternMatchStart, patternMatchEnd - patternMatchStart ) );
+					std::string patternType = pattern.types[0];
+					int lastStart = patternMatchStart;
+					int lastEnd = patternMatchEnd;
+
+					for ( size_t curMatch = 1; curMatch < numMatches; curMatch++ ) {
+						start = matches[curMatch].start;
+						end = matches[curMatch].end;
+						if ( pattern.patterns.size() >= 3 && i > 0 &&
+							 text[i - 1] == pattern.patterns[2][0] )
+							continue;
+						if ( curMatch == 1 && start > lastStart ) {
+							pushToken(
+								tokens, patternType,
+								text.substr( patternMatchStart, start - patternMatchStart ) );
+						} else if ( start > lastEnd ) {
+							pushToken( tokens, patternType,
+									   text.substr( lastEnd, start - lastEnd ) );
+						}
+
+						std::string patternText( text.substr( start, end - start ) );
+						std::string type = curState.currentSyntax->getSymbol( patternText );
+						pushToken( tokens,
+								   type.empty()
+									   ? ( curMatch < pattern.types.size() ? pattern.types[curMatch]
+																		   : pattern.types[0] )
+									   : type,
+								   patternText );
+
+						if ( !pattern.syntax.empty() ) {
+							pushSubsyntax( pattern, patternIndex + 1 );
+						} else if ( pattern.patterns.size() > 1 ) {
+							setSubsyntaxPatternIdx( patternIndex + 1 );
+						}
+
+						i = end;
+
+						if ( curMatch == numMatches - 1 && end < patternMatchEnd ) {
+							pushToken( tokens, patternType,
+									   text.substr( end, patternMatchEnd - end ) );
+							i = patternMatchEnd;
+						}
+
+						matched = true;
+						lastStart = start;
+						lastEnd = end;
+					}
+					break;
+				} else {
+					for ( size_t curMatch = 0; curMatch < numMatches; curMatch++ ) {
+						start = matches[curMatch].start;
+						end = matches[curMatch].end;
+						if ( pattern.patterns.size() >= 3 && i > 0 &&
+							 text[i - 1] == pattern.patterns[2][0] )
+							continue;
+						std::string patternText( text.substr( start, end - start ) );
+						std::string type = curState.currentSyntax->getSymbol( patternText );
+						pushToken( tokens,
+								   type.empty()
+									   ? ( curMatch < pattern.types.size() ? pattern.types[curMatch]
+																		   : pattern.types[0] )
+									   : type,
+								   patternText );
+						if ( !pattern.syntax.empty() ) {
+							pushSubsyntax( pattern, patternIndex + 1 );
+						} else if ( pattern.patterns.size() > 1 ) {
+							setSubsyntaxPatternIdx( patternIndex + 1 );
+						}
+						i = end;
+						matched = true;
+					}
+					break;
 				}
-				i = end;
-				matched = true;
-				break;
 			}
 		}
 

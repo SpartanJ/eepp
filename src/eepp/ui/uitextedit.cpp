@@ -13,7 +13,7 @@ UITextEdit* UITextEdit::New() {
 	return eeNew( UITextEdit, () );
 }
 
-UITextEdit::UITextEdit() : UICodeEditor( "textedit", true, true ), mIsMonoSpace( false ) {
+UITextEdit::UITextEdit() : UICodeEditor( "textedit", true, true ) {
 	setFlags( UI_AUTO_PADDING );
 	clipEnable();
 	mFont = NULL;
@@ -71,7 +71,7 @@ void UITextEdit::shrinkText( const Float& maxWidth ) {
 }
 
 String UITextEdit::getText() const {
-	return mDoc->getText( {mDoc->startOfDoc(), mDoc->endOfDoc()} );
+	return mDoc->getText( { mDoc->startOfDoc(), mDoc->endOfDoc() } );
 }
 
 void UITextEdit::setText( const String& text ) {
@@ -87,12 +87,8 @@ void UITextEdit::setText( const String& text ) {
 }
 
 void UITextEdit::onFontChanged() {
-	if ( mFont ) {
-		Float g1 = mFont->getGlyph( '@', getCharacterSize(), false ).advance;
-		Float g2 = mFont->getGlyph( '.', getCharacterSize(), false ).advance;
-		mIsMonoSpace = g1 == g2;
+	if ( mFont )
 		invalidateLinesCache();
-	}
 }
 
 void UITextEdit::onFontStyleChanged() {
@@ -110,7 +106,7 @@ void UITextEdit::drawLineText( const Int64& index, Vector2f position, const Floa
 }
 
 Int64 UITextEdit::getColFromXOffset( Int64 line, const Float& x ) const {
-	if ( !mIsMonoSpace ) {
+	if ( mFont && !mFont->isMonospace() ) {
 		const_cast<UITextEdit*>( this )->ensureLineUpdated( line );
 		return mLines.at( line ).text.findCharacterFromPos( Vector2i( x, 0 ) );
 	}
@@ -118,14 +114,14 @@ Int64 UITextEdit::getColFromXOffset( Int64 line, const Float& x ) const {
 }
 
 Float UITextEdit::getColXOffset( TextPosition position ) {
-	if ( !mIsMonoSpace ) {
+	if ( mFont && !mFont->isMonospace() ) {
 		return getXOffsetCol( position );
 	}
 	return UICodeEditor::getColXOffset( position );
 }
 
 Float UITextEdit::getXOffsetCol( const TextPosition& position ) {
-	if ( !mIsMonoSpace ) {
+	if ( mFont && !mFont->isMonospace() ) {
 		ensureLineUpdated( position.line() );
 		return mLines[position.line()]
 			.text

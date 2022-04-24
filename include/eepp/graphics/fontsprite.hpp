@@ -34,6 +34,8 @@ class EE_API FontSprite : public Font {
 	bool loadFromPack( Pack* pack, std::string filePackPath, Color key = Color::Fuchsia,
 					   Uint32 firstChar = 32, int spacing = 0 );
 
+	bool isMonospace() const { return true; }
+
 	const Font::Info& getInfo() const;
 
 	const Glyph& getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
