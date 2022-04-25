@@ -148,7 +148,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 				   "?[%w_.~!*:@&+$/?%%#=-]*)%)" },
 				 { "keyword", "function", "link" } },
 			   { { "https?://[%w_.~!*:@&+$/?%%#-]-%w[-.%w]*%.%w%w%w?%w?:?%d*/?[%w_.~!*:@&+$/"
-				   "?%%#=-]*)%" },
+				   "?%%#=-]*" },
 				 "link" },
 		   } } );
 

@@ -307,6 +307,9 @@ void UITextInput::updateText() {}
 Uint32 UITextInput::onMouseDown( const Vector2i& position, const Uint32& flags ) {
 	int endPos = selCurEnd();
 
+	if ( getUISceneNode()->getWindow()->getInput()->isShiftPressed() )
+		mSelecting = true;
+
 	UITextView::onMouseDown( position, flags );
 
 	if ( NULL != getEventDispatcher() && isTextSelectionEnabled() && ( flags & EE_BUTTON_LMASK ) &&

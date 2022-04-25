@@ -2613,9 +2613,11 @@ String UICodeEditor::resetLinkOver() {
 }
 
 void UICodeEditor::resetPreviewColor() {
-	mPreviewColorRange = TextRange();
-	mPreviewColor = Color::Transparent;
-	invalidateDraw();
+	if ( mPreviewColorRange != TextRange() ) {
+		mPreviewColorRange = TextRange();
+		mPreviewColor = Color::Transparent;
+		invalidateDraw();
+	}
 }
 
 Float UICodeEditor::getMinimapWidth() const {
@@ -2805,7 +2807,8 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 		rect.Top + ( mDoc->getSelection().end().line() - minimapStartLine ) * lineSpacing;
 	Float selectionMinY = eemin( selectionY, selectionY2 );
 	Float selectionH = eeabs( selectionY2 - selectionY ) + 1;
-	primitives.setColor( Color( mFontStyleConfig.getFontSelectionBackColor(), 64 ).blendAlpha( mAlpha ) );
+	primitives.setColor(
+		Color( mFontStyleConfig.getFontSelectionBackColor(), 64 ).blendAlpha( mAlpha ) );
 	primitives.drawRectangle( { { rect.Left, selectionMinY }, { rect.getWidth(), selectionH } } );
 	primitives.setColor( Color( mCaretColor, 64 ).blendAlpha( mAlpha ) );
 	primitives.drawRectangle( { { rect.Left, selectionY }, { rect.getWidth(), lineSpacing } } );
