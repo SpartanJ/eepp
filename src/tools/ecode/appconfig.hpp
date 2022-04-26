@@ -46,12 +46,6 @@ struct CodeEditorConfig {
 	bool verticalScrollbar{ true };
 	bool horizontalScrollbar{ true };
 	bool highlightCurrentLine{ true };
-	bool trimTrailingWhitespaces{ false };
-	bool forceNewLineAtEndOfFile{ false };
-	bool autoDetectIndentType{ true };
-	bool writeUnicodeBOM{ false };
-	bool indentSpaces{ false };
-	bool windowsLineEndings{ false };
 	bool highlightSelectionMatch{ true };
 	bool colorPickerSelection{ false };
 	bool colorPreview{ false };
@@ -65,6 +59,15 @@ struct CodeEditorConfig {
 	bool syncProjectTreeWithEditor{ true };
 	bool autoCloseXMLTags{ true };
 	std::string autoCloseBrackets{ "" };
+};
+
+struct DocumentConfig {
+	bool trimTrailingWhitespaces{ false };
+	bool forceNewLineAtEndOfFile{ false };
+	bool autoDetectIndentType{ true };
+	bool writeUnicodeBOM{ false };
+	bool indentSpaces{ false };
+	bool windowsLineEndings{ false };
 	int indentWidth{ 4 };
 	int tabWidth{ 4 };
 	int lineBreakingColumn{ 100 };
@@ -73,6 +76,7 @@ struct CodeEditorConfig {
 struct AppConfig {
 	WindowConfig window;
 	CodeEditorConfig editor;
+	DocumentConfig doc;
 	UIConfig ui;
 	IniFile ini;
 	IniFile iniState;

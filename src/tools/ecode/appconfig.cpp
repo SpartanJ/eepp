@@ -70,17 +70,17 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	ui.colorScheme = ini.getValue( "ui", "ui_color_scheme", "dark" ) == "light"
 						 ? ColorSchemePreference::Light
 						 : ColorSchemePreference::Dark;
-	editor.trimTrailingWhitespaces = ini.getValueB( "editor", "trim_trailing_whitespaces", false );
-	editor.forceNewLineAtEndOfFile =
-		ini.getValueB( "editor", "force_new_line_at_end_of_file", false );
-	editor.autoDetectIndentType = ini.getValueB( "editor", "auto_detect_indent_type", true );
-	editor.writeUnicodeBOM = ini.getValueB( "editor", "write_bom", false );
+	doc.trimTrailingWhitespaces = ini.getValueB( "document", "trim_trailing_whitespaces", false );
+	doc.forceNewLineAtEndOfFile =
+		ini.getValueB( "document", "force_new_line_at_end_of_file", false );
+	doc.autoDetectIndentType = ini.getValueB( "document", "auto_detect_indent_type", true );
+	doc.writeUnicodeBOM = ini.getValueB( "document", "write_bom", false );
+	doc.indentWidth = ini.getValueI( "document", "indent_width", 4 );
+	doc.indentSpaces = ini.getValueB( "document", "indent_spaces", false );
+	doc.windowsLineEndings = ini.getValueB( "document", "windows_line_endings", false );
+	doc.tabWidth = eemax( 2, ini.getValueI( "document", "tab_width", 4 ) );
+	doc.lineBreakingColumn = eemax( 0, ini.getValueI( "document", "line_breaking_column", 100 ) );
 	editor.autoCloseBrackets = ini.getValue( "editor", "auto_close_brackets", "" );
-	editor.indentWidth = ini.getValueI( "editor", "indent_width", 4 );
-	editor.indentSpaces = ini.getValueB( "editor", "indent_spaces", false );
-	editor.windowsLineEndings = ini.getValueB( "editor", "windows_line_endings", false );
-	editor.tabWidth = eemax( 2, ini.getValueI( "editor", "tab_width", 4 ) );
-	editor.lineBreakingColumn = eemax( 0, ini.getValueI( "editor", "line_breaking_column", 100 ) );
 	editor.highlightSelectionMatch = ini.getValueB( "editor", "highlight_selection_match", true );
 	editor.colorPickerSelection = ini.getValueB( "editor", "color_picker_selection", true );
 	editor.colorPreview = ini.getValueB( "editor", "color_preview", true );
@@ -140,16 +140,16 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValue( "ui", "monospace_font", ui.monospaceFont );
 	ini.setValue( "ui", "ui_color_scheme",
 				  ui.colorScheme == ColorSchemePreference::Light ? "light" : "dark" );
-	ini.setValueB( "editor", "trim_trailing_whitespaces", editor.trimTrailingWhitespaces );
-	ini.setValueB( "editor", "force_new_line_at_end_of_file", editor.forceNewLineAtEndOfFile );
-	ini.setValueB( "editor", "auto_detect_indent_type", editor.autoDetectIndentType );
-	ini.setValueB( "editor", "write_bom", editor.writeUnicodeBOM );
+	ini.setValueB( "document", "trim_trailing_whitespaces", doc.trimTrailingWhitespaces );
+	ini.setValueB( "document", "force_new_line_at_end_of_file", doc.forceNewLineAtEndOfFile );
+	ini.setValueB( "document", "auto_detect_indent_type", doc.autoDetectIndentType );
+	ini.setValueB( "document", "write_bom", doc.writeUnicodeBOM );
+	ini.setValueI( "document", "indent_width", doc.indentWidth );
+	ini.setValueB( "document", "indent_spaces", doc.indentSpaces );
+	ini.setValueB( "document", "windows_line_endings", doc.windowsLineEndings );
+	ini.setValueI( "document", "tab_width", doc.tabWidth );
+	ini.setValueI( "document", "line_breaking_column", doc.lineBreakingColumn );
 	ini.setValue( "editor", "auto_close_brackets", editor.autoCloseBrackets );
-	ini.setValueI( "editor", "indent_width", editor.indentWidth );
-	ini.setValueB( "editor", "indent_spaces", editor.indentSpaces );
-	ini.setValueB( "editor", "windows_line_endings", editor.windowsLineEndings );
-	ini.setValueI( "editor", "tab_width", editor.tabWidth );
-	ini.setValueI( "editor", "line_breaking_column", editor.lineBreakingColumn );
 	ini.setValueB( "editor", "highlight_selection_match", editor.highlightSelectionMatch );
 	ini.setValueB( "editor", "color_picker_selection", editor.colorPickerSelection );
 	ini.setValueB( "editor", "color_preview", editor.colorPreview );

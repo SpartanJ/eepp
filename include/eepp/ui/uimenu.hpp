@@ -41,7 +41,9 @@ class EE_API UIMenu : public UIWidget {
 
 	UIWidget* getItem( const Uint32& index );
 
-	UIWidget* getItem( const String& text );
+	UIMenuItem* getItem( const String& text );
+
+	UIMenuItem* getItemId( const String& id );
 
 	Uint32 getItemIndex( UIWidget* item );
 

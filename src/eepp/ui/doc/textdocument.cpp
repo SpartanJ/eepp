@@ -232,6 +232,8 @@ bool TextDocument::getAutoDetectIndentType() const {
 }
 
 void TextDocument::setAutoDetectIndentType( bool autodetect ) {
+	if ( !mAutoDetectIndentType && autodetect )
+		guessIndentType();
 	mAutoDetectIndentType = autodetect;
 }
 

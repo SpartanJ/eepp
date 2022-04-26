@@ -161,12 +161,14 @@ UIWidget* UIMenu::add( UIWidget* widget ) {
 	widget->setPixelsPosition( mPaddingPx.Left, mPaddingPx.Top + mNextPosY );
 	mNextPosY += widget->getPixelsSize().getHeight();
 	mItems.push_back( widget );
-	widget->addEventListener( Event::OnSizeChange, [&]( const Event* ) {
+	auto cb = [&]( const Event* ) {
 		if ( !mResizing ) {
 			widgetsSetPos();
 			widgetsResize();
 		}
-	} );
+	};
+	widget->addEventListener( Event::OnVisibleChange, cb );
+	widget->addEventListener( Event::OnSizeChange, cb );
 	resizeMe();
 	return widget;
 }
@@ -200,11 +202,22 @@ UIWidget* UIMenu::getItem( const Uint32& index ) {
 	return mItems[index];
 }
 
-UIWidget* UIMenu::getItem( const String& text ) {
+UIMenuItem* UIMenu::getItem( const String& text ) {
 	for ( Uint32 i = 0; i < mItems.size(); i++ ) {
 		if ( mItems[i]->isType( UI_TYPE_MENUITEM ) ) {
 			UIMenuItem* tMenuItem = mItems[i]->asType<UIMenuItem>();
 			if ( tMenuItem->getText() == text )
+				return tMenuItem;
+		}
+	}
+	return nullptr;
+}
+
+UIMenuItem* UIMenu::getItemId( const String& id ) {
+	for ( Uint32 i = 0; i < mItems.size(); i++ ) {
+		if ( mItems[i]->isType( UI_TYPE_MENUITEM ) ) {
+			UIMenuItem* tMenuItem = mItems[i]->asType<UIMenuItem>();
+			if ( tMenuItem->getId() == id )
 				return tMenuItem;
 		}
 	}
@@ -353,8 +366,10 @@ void UIMenu::widgetsSetPos() {
 
 	for ( i = 0; i < mItems.size(); i++ ) {
 		UIWidget* widget = mItems[i];
-		widget->setPixelsPosition( mPaddingPx.Left, mPaddingPx.Top + mNextPosY );
-		mNextPosY += widget->getPixelsSize().getHeight();
+		if ( widget->isVisible() ) {
+			widget->setPixelsPosition( mPaddingPx.Left, mPaddingPx.Top + mNextPosY );
+			mNextPosY += widget->getPixelsSize().getHeight();
+		}
 	}
 
 	resizeMe();

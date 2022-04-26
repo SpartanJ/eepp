@@ -52,6 +52,8 @@ class EE_API UISceneNode : public SceneNode {
 
 	String getTranslatorString( const std::string& str, const String& defaultValue );
 
+	String getTranslatorStringFromKey( const std::string& key, const String& defaultValue );
+
 	UIWidget* loadLayoutFromFile( const std::string& layoutPath, Node* parent = NULL );
 
 	UIWidget* loadLayoutFromString( const std::string& layoutString, Node* parent = NULL );

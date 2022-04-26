@@ -82,6 +82,7 @@ UIMenu* UIMenuSubMenu::getSubMenu() const {
 }
 
 void UIMenuSubMenu::showSubMenu() {
+	sendCommonEvent( Event::OnMenuShow );
 	UIMenu* menu = getParent()->asType<UIMenu>();
 	mSubMenu->setParent( menu->getParent() );
 	Vector2f pos = getPixelsPosition();

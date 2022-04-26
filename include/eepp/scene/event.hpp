@@ -81,6 +81,8 @@ class EE_API Event {
 		OnCreateContextMenu,
 		OnDocumentMoved,
 		UserEvent,
+		OnMenuShow,
+		OnMenuHide,
 		NoEvent = eeINDEX_NOT_FOUND
 	};
 

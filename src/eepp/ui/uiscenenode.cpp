@@ -128,6 +128,16 @@ String UISceneNode::getTranslatorString( const std::string& str, const String& d
 	return defaultValue;
 }
 
+String UISceneNode::getTranslatorStringFromKey( const std::string& key,
+												const String& defaultValue ) {
+	String tstr = mTranslator.getString( key );
+
+	if ( !tstr.empty() )
+		return tstr;
+
+	return defaultValue;
+}
+
 void UISceneNode::setFocusLastWindow( UIWindow* window ) {
 	if ( NULL != mEventDispatcher && !mWindowsList.empty() && window != mWindowsList.front() ) {
 		mEventDispatcher->setFocusNode( mWindowsList.front() );

@@ -83,8 +83,10 @@ class App : public UICodeEditorSplitter::Client {
 	UILayout* mImageLayout{ nullptr };
 	UIPopUpMenu* mSettingsMenu{ nullptr };
 	UITextView* mSettingsButton{ nullptr };
-	UIPopUpMenu* mColorSchemeMenu{ nullptr };
-	UIPopUpMenu* mFiletypeMenu{ nullptr };
+	std::vector<UIPopUpMenu*> mColorSchemeMenues;
+	Float mColorSchemeMenuesCreatedWithHeight{ 0 };
+	std::vector<UIPopUpMenu*> mFileTypeMenues;
+	Float mFileTypeMenuesCreatedWithHeight{ 0 };
 	UILinearLayout* mDocInfo{ nullptr };
 	UITextView* mDocInfoText{ nullptr };
 	std::vector<std::string> mRecentFiles;
@@ -164,9 +166,9 @@ class App : public UICodeEditorSplitter::Client {
 
 	void updateColorSchemeMenu();
 
-	UIMenu* createFiletypeMenu();
+	UIMenu* createFileTypeMenu();
 
-	void updateCurrentFiletype();
+	void updateCurrentFileType();
 
 	void updateEditorState();
 
@@ -185,6 +187,8 @@ class App : public UICodeEditorSplitter::Client {
 	UIMenu* createWindowMenu();
 
 	Drawable* findIcon( const std::string& name );
+
+	String i18n( const std::string& name, const String& def );
 
 	UIMenu* createDocumentMenu();
 
