@@ -1004,8 +1004,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 			 { { "^%[.-%]" }, "keyword2" },
 			 { { "%s%[.-%]" }, "keyword2" },
 			 { { "=" }, "operator" },
-			 { { "https?://(([%w_.~!*:@&+$/?%%#-]-)(%w[-.%w]*%.)(%w%w%w?%w?)(:?)(%d*)(/"
-				 "?)([%w_.~!*:@&+$/?%%#=-]*))" },
+			 { { "https?://[%w_.~!*:@&+$/?%%#-]-%w[-.%w]*%.%w%w%w?%w?:?%d*/?[%w_.~!*:@&+$/?%%#=-]*" },
 			   "link" },
 			 { { "[a-z]+" }, "symbol" } },
 		   { { "true", "literal" }, { "false", "literal" } },
@@ -1888,8 +1887,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 			   { { "%f[%S]%-?%d+[%d%.eE]*f?" }, "number" },
 			   { { "%f[%S]%-?%.?%d+f?" }, "number" },
 			   { { "!!float", "\n", "\\" }, "number" },
-			   { { "https?://(([%w_.~!*:@&+$/?%%#-]-)(%w[-.%w]*%.)(%w%w%w?%w?)(:?)(%d*)(/"
-				   "?)([%w_.~!*:@&+$/?%%#=-]*))" },
+			   { { "https?://[%w_.~!*:@&+$/?%%#-]-%w[-.%w]*%.%w%w%w?%w?:?%d*/?[%w_.~!*:@&+$/?%%#=-]*" },
 				 "link" },
 			   { { "%-%-%-" }, "literal" },
 		   },

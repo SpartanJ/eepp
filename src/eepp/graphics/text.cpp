@@ -162,6 +162,7 @@ void Text::setString( const String& string ) {
 		mColorsNeedUpdate = true;
 		mGeometryNeedUpdate = true;
 		mCachedWidthNeedUpdate = true;
+		mContainsColorEmoji = false;
 		if ( FontManager::instance()->getColorEmojiFont() != nullptr ) {
 			if ( mFont->getType() == FontType::TTF ) {
 				FontTrueType* fontTrueType = static_cast<FontTrueType*>( mFont );

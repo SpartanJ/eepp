@@ -312,6 +312,7 @@ void UICodeEditor::scheduledUpdate( const Time& ) {
 		if ( !( getUISceneNode()->getWindow()->getInput()->getPressTrigger() & EE_BUTTON_LMASK ) ) {
 			if ( mMinimapDragging ) {
 				mMinimapDragging = false;
+				getEventDispatcher()->setNodeDragging( NULL );
 				mVScrollBar->setEnabled( true );
 				getUISceneNode()->setCursor( Cursor::Arrow );
 				updateMipmapHover( getUISceneNode()->getWindow()->getInput()->getMousePosf() );
@@ -954,8 +955,8 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 
 	if ( mMinimapEnabled ) {
 		Rectf rect( getMinimapRect( getScreenStart() ) );
-		if ( ( flags & EE_BUTTON_LMASK ) && !mVScrollBar->isDragging() && !mMinimapDragging &&
-			 rect.contains( position.asFloat() ) ) {
+		if ( ( flags & EE_BUTTON_LMASK ) && !getEventDispatcher()->isNodeDragging() &&
+			 !mMinimapDragging && rect.contains( position.asFloat() ) ) {
 			if ( mMouseDown )
 				return 1;
 			updateMipmapHover( position.asFloat() );
@@ -968,9 +969,9 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 			mMinimapScrollOffset =
 				calculateMinimapClickedLine( position ) - getVisibleLineRange().first;
 			mMinimapDragging = true;
-			getUISceneNode()->getWindow()->getInput()->captureMouse( true );
-			getUISceneNode()->setCursor( Cursor::Arrow );
+			getEventDispatcher()->setNodeDragging( this );
 			mVScrollBar->setEnabled( false );
+			getUISceneNode()->setCursor( Cursor::Arrow );
 			return 1;
 		} else if ( mMinimapDragging ) {
 			if ( mMouseDown ) {
@@ -1081,6 +1082,7 @@ Uint32 UICodeEditor::onMouseUp( const Vector2i& position, const Uint32& flags ) 
 	if ( flags & EE_BUTTON_LMASK ) {
 		if ( mMinimapDragging ) {
 			mMinimapDragging = false;
+			getEventDispatcher()->setNodeDragging( NULL );
 			mVScrollBar->setEnabled( true );
 			getUISceneNode()->setCursor( Cursor::Arrow );
 			updateMipmapHover( position.asFloat() );

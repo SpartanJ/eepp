@@ -16,20 +16,24 @@ bool App::onCloseRequestCallback( EE::Window::Window* ) {
 		 mEditorSplitter->getCurEditor()->isDirty() ) {
 		UIMessageBox* msgBox = UIMessageBox::New(
 			UIMessageBox::OK_CANCEL,
-			"Do you really want to close the code editor?\nAll changes will be lost." );
+			i18n( "confirm_ecode_exit",
+				  "Do you really want to close the code editor?\nAll changes will be lost." )
+				.unescape() );
 		msgBox->addEventListener( Event::MsgBoxConfirmClick, [&]( const Event* ) {
 			if ( !mCurrentProject.empty() )
-				mConfig.saveProject( mCurrentProject, mEditorSplitter, mConfigPath );
+				mConfig.saveProject( mCurrentProject, mEditorSplitter, mConfigPath,
+									 mProjectDocConfig );
 			mWindow->close();
 		} );
 		msgBox->addEventListener( Event::OnClose, [&]( const Event* ) { msgBox = nullptr; } );
-		msgBox->setTitle( "Close " + mWindowTitle + "?" );
+		msgBox->setTitle( String::format( i18n( "close_title", "Close %s?" ).toUtf8().c_str(),
+										  mWindowTitle.c_str() ) );
 		msgBox->center();
 		msgBox->showWhenReady();
 		return false;
 	} else {
 		if ( !mCurrentProject.empty() )
-			mConfig.saveProject( mCurrentProject, mEditorSplitter, mConfigPath );
+			mConfig.saveProject( mCurrentProject, mEditorSplitter, mConfigPath, mProjectDocConfig );
 		return true;
 	}
 }
@@ -135,7 +139,7 @@ void App::openFileDialog() {
 	UIFileDialog* dialog = UIFileDialog::New( UIFileDialog::DefaultFlags, "*",
 											  mLastFileFolder.empty() ? "." : mLastFileFolder );
 	dialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
-	dialog->setTitle( "Open File" );
+	dialog->setTitle( i18n( "open_file", "Open File" ) );
 	dialog->setCloseShortcut( KEY_ESCAPE );
 	dialog->addEventListener( Event::OpenFile, [&]( const Event* event ) {
 		auto file = event->getNode()->asType<UIFileDialog>()->getFullPath();
@@ -157,7 +161,7 @@ void App::openFolderDialog() {
 							   UIFileDialog::ShowOnlyFolders,
 						   "*", "." );
 	dialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
-	dialog->setTitle( "Open Folder" );
+	dialog->setTitle( i18n( "open_folder", "Open Folder" ) );
 	dialog->setCloseShortcut( KEY_ESCAPE );
 	dialog->addEventListener( Event::OpenFile, [&]( const Event* event ) {
 		String path( event->getNode()->asType<UIFileDialog>()->getFullPath() );
@@ -699,7 +703,6 @@ UIMenu* App::createViewMenu() {
 		->setActive( mConfig.editor.syncProjectTreeWithEditor )
 		->setTooltipText( "Syncronizes the current focused document as the selected\nfile in the "
 						  "directory tree." );
-	mViewMenu->add( "Line Breaking Column" );
 
 	mViewMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
@@ -774,25 +777,6 @@ UIMenu* App::createViewMenu() {
 			mProjectTreeView->setSingleClickNavigation( mConfig.editor.singleClickTreeNavigation );
 		} else if ( item->getText() == "Synchronize project tree with editor" ) {
 			mConfig.editor.syncProjectTreeWithEditor = item->asType<UIMenuCheckBox>()->isActive();
-		} else if ( item->getText() == "Line Breaking Column" ) {
-			UIMessageBox* msgBox =
-				UIMessageBox::New( UIMessageBox::INPUT, "Set Line Breaking Column:\n"
-														"Set 0 to disable it.\n" );
-			msgBox->setTitle( mWindowTitle );
-			msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
-			msgBox->getTextInput()->setAllowOnlyNumbers( true, false );
-			msgBox->getTextInput()->setText( String::toString( mConfig.doc.lineBreakingColumn ) );
-			msgBox->showWhenReady();
-			msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox]( const Event* ) {
-				int val;
-				if ( String::fromString( val, msgBox->getTextInput()->getText() ) && val >= 0 ) {
-					mConfig.doc.lineBreakingColumn = val;
-					mEditorSplitter->forEachEditor(
-						[val]( UICodeEditor* editor ) { editor->setLineBreakingColumn( val ); } );
-					msgBox->closeWindow();
-				}
-			} );
-			setFocusEditorOnClose( msgBox );
 		} else {
 			String text = String( event->getNode()->asType<UIMenuItem>()->getText() ).toLower();
 			String::replaceAll( text, " ", "-" );
@@ -817,8 +801,8 @@ Drawable* App::findIcon( const std::string& name ) {
 	return nullptr;
 }
 
-String App::i18n( const std::string& name, const String& def ) {
-	return mUISceneNode->getTranslatorString( name, def );
+String App::i18n( const std::string& key, const String& def ) {
+	return mUISceneNode->getTranslatorStringFromKey( key, def );
 }
 
 UIMenu* App::createEditMenu() {
@@ -842,15 +826,16 @@ UIMenu* App::createEditMenu() {
 			   getKeybind( "find-replace" ) )
 		->setId( "find-replace" );
 	menu->addSeparator();
-	menu->add( i18n( "key_bindings", "Key Bindings" ), findIcon( "keybindings" ),
-			   getKeybind( "keybindings" ) )
-		->setId( "keybindings" );
 	menu->add( i18n( "open_containing_folder", "Open Containing Folder..." ),
 			   findIcon( "folder-open" ), getKeybind( "open-containing-folder" ) )
 		->setId( "open-containing-folder" );
 	menu->add( i18n( "copy_file_path", "Copy File Path" ), findIcon( "copy" ),
 			   getKeybind( "copy-file-path" ) )
 		->setId( "copy-file-path" );
+	menu->addSeparator();
+	menu->add( i18n( "key_bindings", "Key Bindings" ), findIcon( "keybindings" ),
+			   getKeybind( "keybindings" ) )
+		->setId( "keybindings" );
 	menu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
@@ -882,18 +867,25 @@ makeAutoClosePairs( const std::string& strPairs ) {
 }
 
 UIMenu* App::createDocumentMenu() {
+	auto shouldCloseCb = []( UIMenuItem* ) -> bool { return false; };
+
 	mDocMenu = UIPopUpMenu::New();
 
 	// **** CURRENT DOCUMENT ****
-	mDocMenu->add( "Current Document" )->setTextAlign( UI_HALIGN_CENTER );
+	mDocMenu->add( i18n( "current_document", "Current Document" ) )
+		->setTextAlign( UI_HALIGN_CENTER );
 
-	mDocMenu->addCheckBox( "Auto Detect Indent Type & Width", mConfig.doc.autoDetectIndentType )
+	mDocMenu
+		->addCheckBox(
+			i18n( "auto_detect_indent_type_and_width", "Auto Detect Indent Type & Width" ),
+			mConfig.doc.autoDetectIndentType )
 		->setId( "auto_indent_cur" );
 
 	UIPopUpMenu* tabTypeMenu = UIPopUpMenu::New();
-	tabTypeMenu->addRadioButton( "Tabs" )->setId( "tabs" );
-	tabTypeMenu->addRadioButton( "Spaces" )->setId( "spaces" );
-	mDocMenu->addSubMenu( "Indentation Type", nullptr, tabTypeMenu )->setId( "indent_type_cur" );
+	tabTypeMenu->addRadioButton( i18n( "tabs", "Tabs" ) )->setId( "tabs" );
+	tabTypeMenu->addRadioButton( i18n( "spaces", "Spaces" ) )->setId( "spaces" );
+	mDocMenu->addSubMenu( i18n( "indentation_type", "Indentation Type" ), nullptr, tabTypeMenu )
+		->setId( "indent_type_cur" );
 	tabTypeMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
 		const String& text = event->getNode()->asType<UIMenuRadioButton>()->getId();
 		if ( mEditorSplitter->getCurEditor() ) {
@@ -913,7 +905,8 @@ UIMenu* App::createDocumentMenu() {
 									  w )
 			->setId( String::format( "indent_width_%zu", w ) )
 			->setData( w );
-	mDocMenu->addSubMenu( "Indent Width", nullptr, indentWidthMenu )->setId( "indent_width_cur" );
+	mDocMenu->addSubMenu( i18n( "indent_width", "Indent Width" ), nullptr, indentWidthMenu )
+		->setId( "indent_width_cur" );
 	indentWidthMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
 		if ( mEditorSplitter->getCurEditor() ) {
 			int width = event->getNode()->getData();
@@ -929,7 +922,8 @@ UIMenu* App::createDocumentMenu() {
 								  mEditorSplitter->getCurEditor()->getTabWidth() == w )
 			->setId( String::format( "tab_width_%zu", w ) )
 			->setData( w );
-	mDocMenu->addSubMenu( "Tab Width", nullptr, tabWidthMenu )->setId( "tab_width_cur" );
+	mDocMenu->addSubMenu( i18n( "tab_width", "Tab Width" ), nullptr, tabWidthMenu )
+		->setId( "tab_width_cur" );
 	tabWidthMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
 		if ( mEditorSplitter->getCurEditor() ) {
 			int width = event->getNode()->getData();
@@ -942,7 +936,8 @@ UIMenu* App::createDocumentMenu() {
 		->setId( "windows" );
 	lineEndingsMenu->addRadioButton( "Unix (LF)", !mConfig.doc.windowsLineEndings )
 		->setId( "unix" );
-	mDocMenu->addSubMenu( "Line Endings", nullptr, lineEndingsMenu )->setId( "line_endings_cur" );
+	mDocMenu->addSubMenu( i18n( "line_endings", "Line Endings" ), nullptr, lineEndingsMenu )
+		->setId( "line_endings_cur" );
 	lineEndingsMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
 		bool winLe = event->getNode()->asType<UIRadioButton>()->getId() == "windows";
 		if ( mEditorSplitter->getCurEditor() ) {
@@ -952,18 +947,22 @@ UIMenu* App::createDocumentMenu() {
 		}
 	} );
 
-	mDocMenu->addCheckBox( "Read Only" )->setId( "read_only" );
+	mDocMenu->addCheckBox( i18n( "read_only", "Read Only" ) )->setId( "read_only" );
 
-	mDocMenu->addCheckBox( "Trim Trailing Whitespaces", mConfig.doc.trimTrailingWhitespaces )
+	mDocMenu
+		->addCheckBox( i18n( "trim_trailing_whitespaces", "Trim Trailing Whitespaces" ),
+					   mConfig.doc.trimTrailingWhitespaces )
 		->setId( "trim_whitespaces_cur" );
 
-	mDocMenu->addCheckBox( "Force New Line at End of File", mConfig.doc.forceNewLineAtEndOfFile )
+	mDocMenu
+		->addCheckBox( i18n( "force_new_line_at_end_of_file", "Force New Line at End of File" ),
+					   mConfig.doc.forceNewLineAtEndOfFile )
 		->setId( "force_nl_cur" );
 
-	mDocMenu->addCheckBox( "Write Unicode BOM", mConfig.doc.writeUnicodeBOM )
+	mDocMenu
+		->addCheckBox( i18n( "write_unicode_bom", "Write Unicode BOM" ),
+					   mConfig.doc.writeUnicodeBOM )
 		->setId( "write_bom_cur" );
-
-	mDocMenu->addSeparator();
 
 	mDocMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
 		if ( !mEditorSplitter->getCurEditor() ||
@@ -989,21 +988,28 @@ UIMenu* App::createDocumentMenu() {
 		}
 	} );
 
-	// **** GLOBAL OPTIONS ****
-	UIPopUpMenu* globalMenu = UIPopUpMenu::New();
-	mDocMenu->addSubMenu( "Global Settings", findIcon( "global_settings" ), globalMenu );
+	// **** GLOBAL SETTINGS ****
+	mDocMenu->addSeparator();
 
-	globalMenu->addCheckBox( "Auto Detect Indent Type & Width", mConfig.doc.autoDetectIndentType )
+	UIPopUpMenu* globalMenu = UIPopUpMenu::New();
+	mDocMenu->addSubMenu( i18n( "global_settings", "Global Settings" ),
+						  findIcon( "global-settings" ), globalMenu );
+
+	globalMenu
+		->addCheckBox(
+			i18n( "auto_detect_indent_type_and_width", "Auto Detect Indent Type & Width" ),
+			mConfig.doc.autoDetectIndentType )
 		->setId( "auto_indent" );
 
 	UIPopUpMenu* tabTypeMenuGlobal = UIPopUpMenu::New();
-	tabTypeMenuGlobal->addRadioButton( "Tabs" )
+	tabTypeMenuGlobal->addRadioButton( i18n( "tabs", "Tabs" ) )
 		->setActive( !mConfig.doc.indentSpaces )
 		->setId( "tabs" );
-	tabTypeMenuGlobal->addRadioButton( "Spaces" )
+	tabTypeMenuGlobal->addRadioButton( i18n( "spaces", "Spaces" ) )
 		->setActive( mConfig.doc.indentSpaces )
 		->setId( "spaces" );
-	globalMenu->addSubMenu( "Indentation Type", nullptr, tabTypeMenuGlobal )
+	globalMenu
+		->addSubMenu( i18n( "indentation_type", "Indentation Type" ), nullptr, tabTypeMenuGlobal )
 		->setId( "indent_type" );
 	tabTypeMenuGlobal->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
 		const String& text = event->getNode()->asType<UIMenuRadioButton>()->getId();
@@ -1015,7 +1021,7 @@ UIMenu* App::createDocumentMenu() {
 		indentWidthMenuGlobal->addRadioButton( String::toString( w ), mConfig.doc.indentWidth == w )
 			->setId( String::format( "indent_width_%d", w ) )
 			->setData( w );
-	globalMenu->addSubMenu( "Indent Width", nullptr, indentWidthMenuGlobal )
+	globalMenu->addSubMenu( i18n( "indent_width", "Indent Width" ), nullptr, indentWidthMenuGlobal )
 		->setId( "indent_width" );
 	indentWidthMenuGlobal->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
 		int width = event->getNode()->getData();
@@ -1027,7 +1033,8 @@ UIMenu* App::createDocumentMenu() {
 		tabWidthMenuGlobal->addRadioButton( String::toString( w ), mConfig.doc.tabWidth == w )
 			->setId( String::format( "tab_width_%d", w ) )
 			->setData( w );
-	globalMenu->addSubMenu( "Tab Width", nullptr, tabWidthMenuGlobal )->setId( "tab_width_cur" );
+	globalMenu->addSubMenu( i18n( "tab_width", "Tab Width" ), nullptr, tabWidthMenuGlobal )
+		->setId( "tab_width_cur" );
 	tabWidthMenuGlobal->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
 		int width = event->getNode()->getData();
 		mConfig.doc.tabWidth = width;
@@ -1038,7 +1045,7 @@ UIMenu* App::createDocumentMenu() {
 		->setId( "windows" );
 	lineEndingsGlobalMenu->addRadioButton( "Unix (LF)", !mConfig.doc.windowsLineEndings )
 		->setId( "unix" );
-	globalMenu->addSubMenu( "Line Endings", nullptr, lineEndingsGlobalMenu )
+	globalMenu->addSubMenu( i18n( "line_endings", "Line Endings" ), nullptr, lineEndingsGlobalMenu )
 		->setId( "line_endings" );
 	lineEndingsGlobalMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
 		bool winLe = event->getNode()->asType<UIRadioButton>()->getId() == "windows";
@@ -1046,30 +1053,42 @@ UIMenu* App::createDocumentMenu() {
 	} );
 
 	UIPopUpMenu* bracketsMenu = UIPopUpMenu::New();
-	globalMenu->addSubMenu( "Auto-Close Brackets & Tags", nullptr, bracketsMenu );
+	globalMenu->addSubMenu( i18n( "auto_close_brackets_and_tags", "Auto-Close Brackets & Tags" ),
+							nullptr, bracketsMenu );
 	auto& closeBrackets = mConfig.editor.autoCloseBrackets;
-	auto shouldCloseCb = []( UIMenuItem* ) -> bool { return false; };
-	bracketsMenu->addCheckBox( "Brackets ()", closeBrackets.find( '(' ) != std::string::npos )
+	bracketsMenu
+		->addCheckBox( i18n( "brackets", "Brackets ()" ),
+					   closeBrackets.find( '(' ) != std::string::npos )
 		->setOnShouldCloseCb( shouldCloseCb )
 		->setId( "()" );
-	bracketsMenu->addCheckBox( "Curly Brackets {}", closeBrackets.find( '{' ) != std::string::npos )
+	bracketsMenu
+		->addCheckBox( i18n( "curly_brackets", "Curly Brackets {}" ),
+					   closeBrackets.find( '{' ) != std::string::npos )
 		->setOnShouldCloseCb( shouldCloseCb )
 		->setId( "{}" );
 	bracketsMenu
-		->addCheckBox( "Square Brackets []", closeBrackets.find( '[' ) != std::string::npos )
+		->addCheckBox( i18n( "square_brakcets", "Square Brackets []" ),
+					   closeBrackets.find( '[' ) != std::string::npos )
 		->setOnShouldCloseCb( shouldCloseCb )
 		->setId( "[]" );
-	bracketsMenu->addCheckBox( "Single Quotes ''", closeBrackets.find( '\'' ) != std::string::npos )
+	bracketsMenu
+		->addCheckBox( i18n( "single_quotes", "Single Quotes ''" ),
+					   closeBrackets.find( '\'' ) != std::string::npos )
 		->setOnShouldCloseCb( shouldCloseCb )
 		->setId( "''" );
 	bracketsMenu
-		->addCheckBox( "Double Quotes \"\"", closeBrackets.find( '"' ) != std::string::npos )
+		->addCheckBox( i18n( "double_quotes", "Double Quotes \"\"" ),
+					   closeBrackets.find( '"' ) != std::string::npos )
 		->setOnShouldCloseCb( shouldCloseCb )
 		->setId( "\"\"" );
-	bracketsMenu->addCheckBox( "Back Quotes ``", closeBrackets.find( '`' ) != std::string::npos )
+	bracketsMenu
+		->addCheckBox( i18n( "back_quotes", "Back Quotes ``" ),
+					   closeBrackets.find( '`' ) != std::string::npos )
 		->setOnShouldCloseCb( shouldCloseCb )
 		->setId( "``" );
-	bracketsMenu->addCheckBox( "Auto Close XML Tags", mConfig.editor.autoCloseXMLTags )
+	bracketsMenu
+		->addCheckBox( i18n( "auto_close_xml_tags", "Auto Close XML Tags" ),
+					   mConfig.editor.autoCloseXMLTags )
 		->setOnShouldCloseCb( shouldCloseCb )
 		->setId( "XML" );
 	bracketsMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
@@ -1100,14 +1119,25 @@ UIMenu* App::createDocumentMenu() {
 		}
 	} );
 
-	globalMenu->addCheckBox( "Trim Trailing Whitespaces", mConfig.doc.trimTrailingWhitespaces )
+	globalMenu
+		->addCheckBox( i18n( "trim_trailing_whitespaces", "Trim Trailing Whitespaces" ),
+					   mConfig.doc.trimTrailingWhitespaces )
 		->setId( "trim_whitespaces" );
 
-	globalMenu->addCheckBox( "Force New Line at End of File", mConfig.doc.forceNewLineAtEndOfFile )
+	globalMenu
+		->addCheckBox( i18n( "force_new_line_at_end_of_file", "Force New Line at End of File" ),
+					   mConfig.doc.forceNewLineAtEndOfFile )
 		->setId( "force_nl" );
 
-	globalMenu->addCheckBox( "Write Unicode BOM", mConfig.doc.writeUnicodeBOM )
+	globalMenu
+		->addCheckBox( i18n( "write_unicode_bom", "Write Unicode BOM" ),
+					   mConfig.doc.writeUnicodeBOM )
 		->setId( "write_bom" );
+
+	globalMenu->addSeparator();
+
+	globalMenu->add( i18n( "line_breaking_column", "Line Breaking Column" ) )
+		->setId( "line_breaking_column" );
 
 	globalMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
 		if ( !mEditorSplitter->getCurEditor() ||
@@ -1127,10 +1157,248 @@ UIMenu* App::createDocumentMenu() {
 			} else if ( "auto_indent" == id ) {
 				mConfig.doc.autoDetectIndentType = item->isActive();
 			}
+		} else if ( "line_breaking_column" == id ) {
+			UIMessageBox* msgBox = UIMessageBox::New(
+				UIMessageBox::INPUT, i18n( "set_line_breaking_column",
+										   "Set Line Breaking Column:\nSet 0 to disable it.\n" )
+										 .unescape() );
+			msgBox->setTitle( mWindowTitle );
+			msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
+			msgBox->getTextInput()->setAllowOnlyNumbers( true, false );
+			msgBox->getTextInput()->setText( String::toString( mConfig.doc.lineBreakingColumn ) );
+			msgBox->showWhenReady();
+			msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox]( const Event* ) {
+				int val;
+				if ( String::fromString( val, msgBox->getTextInput()->getText() ) && val >= 0 ) {
+					mConfig.doc.lineBreakingColumn = val;
+					mEditorSplitter->forEachEditor(
+						[val]( UICodeEditor* editor ) { editor->setLineBreakingColumn( val ); } );
+					msgBox->closeWindow();
+				}
+			} );
+			setFocusEditorOnClose( msgBox );
 		}
 	} );
 
+	mDocMenu->addSeparator();
+
+	// **** PROJECT SETTINGS ****
+	mProjectDocConfig = mConfig.doc;
+	mProjectMenu = UIPopUpMenu::New();
+	mProjectMenu
+		->addCheckBox( i18n( "use_global_settings", "Use Global Settings" ),
+					   mProjectDocConfig.useGlobalSettings )
+		->setOnShouldCloseCb( shouldCloseCb )
+		->setId( "use_global_settings" );
+
+	mProjectMenu
+		->addCheckBox(
+			i18n( "auto_detect_indent_type_and_width", "Auto Detect Indent Type & Width" ),
+			mConfig.doc.autoDetectIndentType )
+		->setId( "auto_indent" )
+		->setEnabled( !mProjectDocConfig.useGlobalSettings );
+
+	UIPopUpMenu* tabTypeMenuProject = UIPopUpMenu::New();
+	tabTypeMenuProject->addRadioButton( i18n( "tabs", "Tabs" ) )
+		->setActive( !mProjectDocConfig.doc.indentSpaces )
+		->setId( "tabs" );
+	tabTypeMenuProject->addRadioButton( i18n( "spaces", "Spaces" ) )
+		->setActive( mProjectDocConfig.doc.indentSpaces )
+		->setId( "spaces" );
+	mProjectMenu
+		->addSubMenu( i18n( "indentation_type", "Indentation Type" ), nullptr, tabTypeMenuProject )
+		->setId( "indent_type" )
+		->setEnabled( !mProjectDocConfig.useGlobalSettings );
+	tabTypeMenuProject->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
+		const String& text = event->getNode()->asType<UIMenuRadioButton>()->getId();
+		mProjectDocConfig.doc.indentSpaces = text != "tabs";
+	} );
+
+	UIPopUpMenu* indentWidthMenuProject = UIPopUpMenu::New();
+	for ( int w = 2; w <= 12; w++ )
+		indentWidthMenuProject
+			->addRadioButton( String::toString( w ), mProjectDocConfig.doc.indentWidth == w )
+			->setId( String::format( "indent_width_%d", w ) )
+			->setData( w );
+	mProjectMenu
+		->addSubMenu( i18n( "indent_width", "Indent Width" ), nullptr, indentWidthMenuProject )
+		->setId( "indent_width" )
+		->setEnabled( !mProjectDocConfig.useGlobalSettings );
+	indentWidthMenuProject->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
+		int width = event->getNode()->getData();
+		mProjectDocConfig.doc.indentWidth = width;
+	} );
+
+	UIPopUpMenu* tabWidthMenuProject = UIPopUpMenu::New();
+	for ( int w = 2; w <= 12; w++ )
+		tabWidthMenuProject
+			->addRadioButton( String::toString( w ), mProjectDocConfig.doc.tabWidth == w )
+			->setId( String::format( "tab_width_%d", w ) )
+			->setData( w );
+	mProjectMenu->addSubMenu( i18n( "tab_width", "Tab Width" ), nullptr, tabWidthMenuProject )
+		->setId( "tab_width" )
+		->setEnabled( !mProjectDocConfig.useGlobalSettings );
+	tabWidthMenuProject->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
+		int width = event->getNode()->getData();
+		mProjectDocConfig.doc.tabWidth = width;
+	} );
+
+	UIPopUpMenu* lineEndingsProjectMenu = UIPopUpMenu::New();
+	lineEndingsProjectMenu
+		->addRadioButton( "Windows (CR/LF)", mProjectDocConfig.doc.windowsLineEndings )
+		->setId( "windows" );
+	lineEndingsProjectMenu->addRadioButton( "Unix (LF)", !mProjectDocConfig.doc.windowsLineEndings )
+		->setId( "unix" );
+	mProjectMenu
+		->addSubMenu( i18n( "line_endings", "Line Endings" ), nullptr, lineEndingsProjectMenu )
+		->setId( "line_endings" )
+		->setEnabled( !mProjectDocConfig.useGlobalSettings );
+	lineEndingsProjectMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
+		bool winLe = event->getNode()->asType<UIRadioButton>()->getId() == "windows";
+		mProjectDocConfig.doc.windowsLineEndings = winLe;
+	} );
+
+	mProjectMenu
+		->addCheckBox( i18n( "trim_trailing_whitespaces", "Trim Trailing Whitespaces" ),
+					   mConfig.doc.trimTrailingWhitespaces )
+		->setId( "trim_whitespaces" )
+		->setEnabled( !mProjectDocConfig.useGlobalSettings );
+
+	mProjectMenu
+		->addCheckBox( i18n( "force_new_line_at_end_of_file", "Force New Line at End of File" ),
+					   mConfig.doc.forceNewLineAtEndOfFile )
+		->setId( "force_nl" )
+		->setEnabled( !mProjectDocConfig.useGlobalSettings );
+
+	mProjectMenu
+		->addCheckBox( i18n( "write_unicode_bom", "Write Unicode BOM" ),
+					   mConfig.doc.writeUnicodeBOM )
+		->setId( "write_bom" )
+		->setEnabled( !mProjectDocConfig.useGlobalSettings );
+
+	mProjectMenu->addSeparator();
+
+	mProjectMenu->add( i18n( "line_breaking_column", "Line Breaking Column" ) )
+		->setId( "line_breaking_column" );
+
+	mProjectMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
+		if ( !mEditorSplitter->getCurEditor() ||
+			 event->getNode()->isType( UI_TYPE_MENU_SEPARATOR ) ||
+			 event->getNode()->isType( UI_TYPE_MENUSUBMENU ) )
+			return;
+		const String& id = event->getNode()->getId();
+
+		if ( event->getNode()->isType( UI_TYPE_MENUCHECKBOX ) ) {
+			UIMenuCheckBox* item = event->getNode()->asType<UIMenuCheckBox>();
+			if ( "use_global_settings" == id ) {
+				mProjectDocConfig.useGlobalSettings = item->isActive();
+				updateProjectSettingsMenu();
+			} else if ( "trim_whitespaces" == id ) {
+				mProjectDocConfig.doc.trimTrailingWhitespaces = item->isActive();
+			} else if ( "force_nl" == id ) {
+				mProjectDocConfig.doc.forceNewLineAtEndOfFile = item->isActive();
+			} else if ( "write_bom" == id ) {
+				mProjectDocConfig.doc.writeUnicodeBOM = item->isActive();
+			} else if ( "auto_indent" == id ) {
+				mProjectDocConfig.doc.autoDetectIndentType = item->isActive();
+			}
+		} else if ( "line_breaking_column" == id ) {
+			UIMessageBox* msgBox = UIMessageBox::New(
+				UIMessageBox::INPUT, i18n( "set_line_breaking_column",
+										   "Set Line Breaking Column:\nSet 0 to disable it.\n" )
+										 .unescape() );
+			msgBox->setTitle( mWindowTitle );
+			msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
+			msgBox->getTextInput()->setAllowOnlyNumbers( true, false );
+			msgBox->getTextInput()->setText(
+				String::toString( mProjectDocConfig.doc.lineBreakingColumn ) );
+			msgBox->showWhenReady();
+			msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox]( const Event* ) {
+				int val;
+				if ( String::fromString( val, msgBox->getTextInput()->getText() ) && val >= 0 ) {
+					mProjectDocConfig.doc.lineBreakingColumn = val;
+					mEditorSplitter->forEachEditor(
+						[val]( UICodeEditor* editor ) { editor->setLineBreakingColumn( val ); } );
+					msgBox->closeWindow();
+				}
+			} );
+			setFocusEditorOnClose( msgBox );
+		}
+	} );
+
+	mDocMenu
+		->addSubMenu( i18n( "folder_project_settings", "Folder/Project Settings" ),
+					  findIcon( "folder-user" ), mProjectMenu )
+		->setId( "project_settings" );
+
 	return mDocMenu;
+}
+
+void App::updateProjectSettingsMenu() {
+	mDocMenu->getItemId( "project_settings" )->setEnabled( !mCurrentProject.empty() );
+
+	for ( size_t i = 0; i < mProjectMenu->getCount(); i++ ) {
+		mProjectMenu->getItem( i )->setEnabled( !mCurrentProject.empty() &&
+												!mProjectDocConfig.useGlobalSettings );
+	}
+
+	mEditorSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
+		editor->setLineBreakingColumn( !mCurrentProject.empty() &&
+											   !mProjectDocConfig.useGlobalSettings
+										   ? mProjectDocConfig.doc.lineBreakingColumn
+										   : mConfig.doc.lineBreakingColumn );
+	} );
+
+	mProjectMenu->getItemId( "trim_whitespaces" )
+		->asType<UIMenuCheckBox>()
+		->setActive( mProjectDocConfig.doc.trimTrailingWhitespaces );
+
+	mProjectMenu->getItemId( "force_nl" )
+		->asType<UIMenuCheckBox>()
+		->setActive( mProjectDocConfig.doc.forceNewLineAtEndOfFile );
+
+	mProjectMenu->getItemId( "write_bom" )
+		->asType<UIMenuCheckBox>()
+		->setActive( mProjectDocConfig.doc.writeUnicodeBOM );
+
+	mProjectMenu->getItemId( "auto_indent" )
+		->asType<UIMenuCheckBox>()
+		->setActive( mProjectDocConfig.doc.autoDetectIndentType );
+
+	auto* curIndent =
+		mProjectMenu->find( "indent_width" )
+			->asType<UIMenuSubMenu>()
+			->getSubMenu()
+			->find( String::format( "indent_width_%d", mProjectDocConfig.doc.indentWidth ) );
+
+	if ( curIndent )
+		curIndent->asType<UIMenuRadioButton>()->setActive( true );
+
+	mProjectMenu->find( "indent_type" )
+		->asType<UIMenuSubMenu>()
+		->getSubMenu()
+		->find( !mProjectDocConfig.doc.indentSpaces ? "tabs" : "spaces" )
+		->asType<UIMenuRadioButton>()
+		->setActive( true );
+
+	mProjectMenu->find( "tab_width" )
+		->asType<UIMenuSubMenu>()
+		->getSubMenu()
+		->find( String::format( "tab_width_%d", mProjectDocConfig.doc.tabWidth ) )
+		->asType<UIMenuRadioButton>()
+		->setActive( true );
+
+	mProjectMenu->find( "line_endings" )
+		->asType<UIMenuSubMenu>()
+		->getSubMenu()
+		->find( mProjectDocConfig.doc.windowsLineEndings ? "windows" : "unix" )
+		->asType<UIMenuRadioButton>()
+		->setActive( true );
+
+	mProjectMenu->getItemId( "use_global_settings" )
+		->setEnabled( true )
+		->asType<UIMenuCheckBox>()
+		->setActive( mProjectDocConfig.useGlobalSettings );
 }
 
 void App::updateDocumentMenu() {
@@ -1338,7 +1606,7 @@ std::vector<std::string> App::getUnlockedCommands() {
 }
 
 void App::closeEditors() {
-	mConfig.saveProject( mCurrentProject, mEditorSplitter, mConfigPath );
+	mConfig.saveProject( mCurrentProject, mEditorSplitter, mConfigPath, mProjectDocConfig );
 	std::vector<UICodeEditor*> editors = mEditorSplitter->getAllEditors();
 	for ( auto editor : editors ) {
 		UITabWidget* tabWidget = mEditorSplitter->tabWidgetFromEditor( editor );
@@ -1348,8 +1616,12 @@ void App::closeEditors() {
 	mDirTree = nullptr;
 	if ( mFileSystemListener )
 		mFileSystemListener->setDirTree( mDirTree );
+
 	// Force to update the closed tabs.
 	SceneManager::instance()->update();
+
+	mProjectDocConfig = ProjectDocumentConfig( mConfig.doc );
+	updateProjectSettingsMenu();
 }
 
 void App::closeFolder() {
@@ -1488,7 +1760,9 @@ NotificationCenter* App::getNotificationCenter() const {
 
 void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	const CodeEditorConfig& config = mConfig.editor;
-	const DocumentConfig& docc = mConfig.doc;
+	const DocumentConfig& docc = !mCurrentProject.empty() && !mProjectDocConfig.useGlobalSettings
+									 ? mProjectDocConfig.doc
+									 : mConfig.doc;
 	editor->setFontSize( config.fontSize.asDp( 0, Sizef(), mUISceneNode->getDPI() ) );
 	editor->setEnableColorPickerOnSelection( true );
 	editor->setColorScheme( mEditorSplitter->getCurrentColorScheme() );
@@ -1895,8 +2169,8 @@ UIMenu* App::createColorSchemeMenu() {
 	const auto& colorSchemes = mEditorSplitter->getColorSchemes();
 
 	for ( auto& colorScheme : colorSchemes ) {
-		menu->addRadioButton(
-			colorScheme.first, mEditorSplitter->getCurrentColorSchemeName() == colorScheme.first );
+		menu->addRadioButton( colorScheme.first,
+							  mEditorSplitter->getCurrentColorSchemeName() == colorScheme.first );
 
 		if ( mColorSchemeMenues.size() == 1 && menu->getCount() == 1 ) {
 			menu->reloadStyle( true, true );
@@ -2294,7 +2568,7 @@ void App::loadFolder( const std::string& path ) {
 	mCurrentProject = rpath;
 	loadDirTree( rpath );
 
-	mConfig.loadProject( rpath, mEditorSplitter, mConfigPath, mThreadPool );
+	mConfig.loadProject( rpath, mEditorSplitter, mConfigPath, mProjectDocConfig, mThreadPool );
 
 	mFileSystemModel = FileSystemModel::New( rpath, FileSystemModel::Mode::FilesAndDirectories,
 											 { true, true, true } );
@@ -2312,6 +2586,7 @@ void App::loadFolder( const std::string& path ) {
 		mRecentFolders.resize( 10 );
 
 	updateRecentFolders();
+	updateProjectSettingsMenu();
 
 	if ( mEditorSplitter->getCurEditor() )
 		mEditorSplitter->getCurEditor()->setFocus();
@@ -2677,7 +2952,8 @@ void App::init( std::string file, const Float& pidelDensity, const std::string& 
 			{ "layout-left", 0xee94 },
 			{ "layout-right", 0xee9b },
 			{ "color-scheme", 0xebd4 },
-			{ "global_settings", 0xedcf },
+			{ "global-settings", 0xedcf },
+			{ "folder-user", 0xed84 },
 		};
 		for ( const auto& icon : icons )
 			iconTheme->add( UIGlyphIcon::New( icon.first, iconFont, icon.second ) );

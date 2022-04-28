@@ -106,6 +106,14 @@ void UISceneNode::setTranslator( Translator translator ) {
 	mTranslator = translator;
 }
 
+const Translator& UISceneNode::getTranslator() const {
+	return mTranslator;
+}
+
+Translator& UISceneNode::getTranslator() {
+	return mTranslator;
+}
+
 String UISceneNode::getTranslatorString( const std::string& str ) {
 	if ( String::startsWith( str, "@string/" ) ) {
 		String tstr = mTranslator.getString( str.substr( 8 ) );

@@ -46,6 +46,8 @@ class EE_API UISceneNode : public SceneNode {
 
 	void setTranslator( Translator translator );
 
+	const Translator& getTranslator() const;
+
 	Translator& getTranslator();
 
 	String getTranslatorString( const std::string& str );

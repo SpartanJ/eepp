@@ -190,7 +190,8 @@ struct ProjectPath {
 };
 
 void AppConfig::saveProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
-							 const std::string& configPath ) {
+							 const std::string& configPath,
+							 const ProjectDocumentConfig& docConfig ) {
 	FileSystem::dirAddSlashAtEnd( projectFolder );
 	std::vector<UICodeEditor*> editors = editorSplitter->getAllEditors();
 	std::vector<ProjectPath> paths;
@@ -211,11 +212,23 @@ void AppConfig::saveProject( std::string projectFolder, UICodeEditorSplitter* ed
 				   !editorSplitter->getTabWidgets().empty()
 					   ? editorSplitter->getTabWidgets()[0]->getTabSelectedIndex()
 					   : 0 );
+	ini.setValueB( "document", "use_global_settings", docConfig.useGlobalSettings );
+	ini.setValueB( "document", "trim_trailing_whitespaces", docConfig.doc.trimTrailingWhitespaces );
+	ini.setValueB( "document", "force_new_line_at_end_of_file",
+				   docConfig.doc.forceNewLineAtEndOfFile );
+	ini.setValueB( "document", "auto_detect_indent_type", docConfig.doc.autoDetectIndentType );
+	ini.setValueB( "document", "write_bom", docConfig.doc.writeUnicodeBOM );
+	ini.setValueI( "document", "indent_width", docConfig.doc.indentWidth );
+	ini.setValueB( "document", "indent_spaces", docConfig.doc.indentSpaces );
+	ini.setValueB( "document", "windows_line_endings", docConfig.doc.windowsLineEndings );
+	ini.setValueI( "document", "tab_width", docConfig.doc.tabWidth );
+	ini.setValueI( "document", "line_breaking_column", docConfig.doc.lineBreakingColumn );
 	ini.writeFile();
 }
 
 void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
-							 const std::string& configPath, std::shared_ptr<ThreadPool> pool ) {
+							 const std::string& configPath, ProjectDocumentConfig& docConfig,
+							 std::shared_ptr<ThreadPool> pool ) {
 	FileSystem::dirAddSlashAtEnd( projectFolder );
 	std::string projectsPath( configPath + "projects" + FileSystem::getOSSlash() );
 	MD5::Result hash = MD5::fromString( projectFolder );
@@ -253,4 +266,19 @@ void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* ed
 					editorSplitter->switchToTab( currentPage );
 			} );
 	}
+
+	docConfig.useGlobalSettings = ini.getValueB( "document", "use_global_settings", true );
+	docConfig.doc.trimTrailingWhitespaces =
+		ini.getValueB( "document", "trim_trailing_whitespaces", false );
+	docConfig.doc.forceNewLineAtEndOfFile =
+		ini.getValueB( "document", "force_new_line_at_end_of_file", false );
+	docConfig.doc.autoDetectIndentType =
+		ini.getValueB( "document", "auto_detect_indent_type", true );
+	docConfig.doc.writeUnicodeBOM = ini.getValueB( "document", "write_bom", false );
+	docConfig.doc.indentWidth = ini.getValueI( "document", "indent_width", 4 );
+	docConfig.doc.indentSpaces = ini.getValueB( "document", "indent_spaces", false );
+	docConfig.doc.windowsLineEndings = ini.getValueB( "document", "windows_line_endings", false );
+	docConfig.doc.tabWidth = eemax( 2, ini.getValueI( "document", "tab_width", 4 ) );
+	docConfig.doc.lineBreakingColumn =
+		eemax( 0, ini.getValueI( "document", "line_breaking_column", 100 ) );
 }

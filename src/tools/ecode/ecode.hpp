@@ -97,6 +97,7 @@ class App : public UICodeEditorSplitter::Client {
 	UIPopUpMenu* mWindowMenu{ nullptr };
 	UIPopUpMenu* mToolsMenu{ nullptr };
 	UIPopUpMenu* mProjectTreeMenu{ nullptr };
+	UIPopUpMenu* mProjectMenu{ nullptr };
 	UISplitter* mProjectSplitter{ nullptr };
 	UITabWidget* mSidePanel{ nullptr };
 	UICodeEditorSplitter* mEditorSplitter{ nullptr };
@@ -116,6 +117,7 @@ class App : public UICodeEditorSplitter::Client {
 	std::shared_ptr<FileSystemModel> mFileSystemModel;
 	size_t mMenuIconSize;
 	bool mDirTreeReady{ false };
+	ProjectDocumentConfig mProjectDocConfig;
 	std::unordered_set<Doc::TextDocument*> mTmpDocs;
 	std::string mCurrentProject;
 	FontTrueType* mFont{ nullptr };
@@ -188,7 +190,9 @@ class App : public UICodeEditorSplitter::Client {
 
 	Drawable* findIcon( const std::string& name );
 
-	String i18n( const std::string& name, const String& def );
+	String i18n( const std::string& key, const String& def );
+
+	void updateProjectSettingsMenu();
 
 	UIMenu* createDocumentMenu();
 

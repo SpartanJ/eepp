@@ -73,6 +73,13 @@ struct DocumentConfig {
 	int lineBreakingColumn{ 100 };
 };
 
+struct ProjectDocumentConfig {
+	bool useGlobalSettings{ true };
+	DocumentConfig doc;
+	ProjectDocumentConfig() {}
+	ProjectDocumentConfig( const DocumentConfig& doc ) { this->doc = doc; }
+};
+
 struct AppConfig {
 	WindowConfig window;
 	CodeEditorConfig editor;
@@ -92,10 +99,11 @@ struct AppConfig {
 			   EE::Window::Window* win, const std::string& colorSchemeName );
 
 	void saveProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
-					  const std::string& configPath );
+					  const std::string& configPath, const ProjectDocumentConfig& docConfig );
 
 	void loadProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
-					  const std::string& configPath, std::shared_ptr<ThreadPool> pool );
+					  const std::string& configPath, ProjectDocumentConfig& docConfig,
+					  std::shared_ptr<ThreadPool> pool );
 };
 
 #endif // APPCONFIG_HPP
