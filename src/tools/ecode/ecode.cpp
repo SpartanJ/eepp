@@ -5,6 +5,8 @@
 #include <algorithm>
 #include <args/args.hxx>
 
+Clock globalClock;
+bool firstFrame = true;
 App* appInstance = nullptr;
 
 void appLoop() {
@@ -356,6 +358,10 @@ void App::mainLoop() {
 		SceneManager::instance()->draw();
 		mConsole->draw( elapsed );
 		mWindow->display();
+		if ( firstFrame ) {
+			Log::info( "First frame took: %.2fms", globalClock.getElapsed().asMilliseconds() );
+			firstFrame = false;
+		}
 	} else {
 		mWindow->getInput()->waitEvent( Milliseconds( mWindow->hasFocus() ? 16 : 100 ) );
 	}
@@ -1610,15 +1616,12 @@ void App::closeEditors() {
 	std::vector<UICodeEditor*> editors = mEditorSplitter->getAllEditors();
 	for ( auto editor : editors ) {
 		UITabWidget* tabWidget = mEditorSplitter->tabWidgetFromEditor( editor );
-		tabWidget->removeTab( (UITab*)editor->getData() );
+		tabWidget->removeTab( (UITab*)editor->getData(), true, true );
 	}
 	mCurrentProject = "";
 	mDirTree = nullptr;
 	if ( mFileSystemListener )
 		mFileSystemListener->setDirTree( mDirTree );
-
-	// Force to update the closed tabs.
-	SceneManager::instance()->update();
 
 	mProjectDocConfig = ProjectDocumentConfig( mConfig.doc );
 	updateProjectSettingsMenu();

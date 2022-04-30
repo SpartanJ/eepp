@@ -485,25 +485,28 @@ Uint32 UITabWidget::getTabCount() const {
 	return mTabs.size();
 }
 
-void UITabWidget::removeTab( const Uint32& index, bool destroyOwnedNode ) {
-	removeTab( index, destroyOwnedNode, true );
+void UITabWidget::removeTab( const Uint32& index, bool destroyOwnedNode, bool immediateClose ) {
+	removeTab( index, destroyOwnedNode, true, immediateClose );
 }
 
-void UITabWidget::removeTab( const Uint32& index, bool destroyOwnedNode, bool destroyTab ) {
+void UITabWidget::removeTab( const Uint32& index, bool destroyOwnedNode, bool destroyTab,
+							 bool immediateClose ) {
 	eeASSERT( index < mTabs.size() );
 
 	UITab* tab = mTabs[index];
 
-	if ( destroyTab ) {
+	if ( destroyTab && !immediateClose ) {
 		tab->close();
 		tab->setVisible( false );
 		tab->setEnabled( false );
 	}
-	if ( destroyOwnedNode ) {
+
+	if ( destroyOwnedNode && !immediateClose ) {
 		tab->getOwnedWidget()->close();
 		tab->getOwnedWidget()->setVisible( false );
 		tab->getOwnedWidget()->setEnabled( false );
 	}
+
 	mTabs.erase( mTabs.begin() + index );
 
 	if ( index == mTabSelectedIndex ) {
@@ -532,28 +535,52 @@ void UITabWidget::removeTab( const Uint32& index, bool destroyOwnedNode, bool de
 
 	TabEvent tabEvent( this, tab, index, Event::OnTabClosed );
 	sendEvent( &tabEvent );
+
+	if ( destroyOwnedNode && immediateClose ) {
+		eeDelete( tab->getOwnedWidget() );
+	}
+
+	if ( destroyTab && immediateClose ) {
+		eeSAFE_DELETE( tab );
+	}
 }
 
-void UITabWidget::removeTab( UITab* tab, bool destroyOwnedNode ) {
-	removeTab( getTabIndex( tab ), destroyOwnedNode, true );
+void UITabWidget::removeTab( UITab* tab, bool destroyOwnedNode, bool immediateClose ) {
+	removeTab( getTabIndex( tab ), destroyOwnedNode, true, immediateClose );
 }
 
-void UITabWidget::removeTab( UITab* tab, bool destroyOwnedNode, bool destroyTab ) {
-	removeTab( getTabIndex( tab ), destroyOwnedNode, destroyTab );
+void UITabWidget::removeTab( UITab* tab, bool destroyOwnedNode, bool destroyTab,
+							 bool immediateClose ) {
+	removeTab( getTabIndex( tab ), destroyOwnedNode, destroyTab, immediateClose );
 }
 
-void UITabWidget::removeAllTabs( bool destroyOwnedNode ) {
+void UITabWidget::removeAllTabs( bool destroyOwnedNode, bool immediateClose ) {
 	std::deque<UITab*> tabs = mTabs;
+
+	if ( immediateClose ) {
+		for ( Uint32 i = 0; i < tabs.size(); i++ ) {
+			if ( NULL != tabs[i] ) {
+				TabEvent tabEvent( this, tabs[i], i, Event::OnTabClosed );
+				sendEvent( &tabEvent );
+			}
+		}
+	}
 
 	for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
 		if ( NULL != mTabs[i] ) {
-			mTabs[i]->close();
-			mTabs[i]->setVisible( false );
-			mTabs[i]->setEnabled( false );
-			if ( destroyOwnedNode ) {
-				mTabs[i]->getOwnedWidget()->close();
-				mTabs[i]->getOwnedWidget()->setVisible( false );
-				mTabs[i]->getOwnedWidget()->setEnabled( false );
+			if ( !immediateClose ) {
+				mTabs[i]->close();
+				mTabs[i]->setVisible( false );
+				mTabs[i]->setEnabled( false );
+				if ( destroyOwnedNode ) {
+					mTabs[i]->getOwnedWidget()->close();
+					mTabs[i]->getOwnedWidget()->setVisible( false );
+					mTabs[i]->getOwnedWidget()->setEnabled( false );
+				}
+			} else {
+				if ( destroyOwnedNode )
+					eeDelete( mTabs[i]->getOwnedWidget() );
+				eeDelete( mTabs[i] );
 			}
 		}
 	}
@@ -565,10 +592,12 @@ void UITabWidget::removeAllTabs( bool destroyOwnedNode ) {
 
 	orderTabs();
 
-	for ( Uint32 i = 0; i < tabs.size(); i++ ) {
-		if ( NULL != tabs[i] ) {
-			TabEvent tabEvent( this, tabs[i], i, Event::OnTabClosed );
-			sendEvent( &tabEvent );
+	if ( !immediateClose ) {
+		for ( Uint32 i = 0; i < tabs.size(); i++ ) {
+			if ( NULL != tabs[i] ) {
+				TabEvent tabEvent( this, tabs[i], i, Event::OnTabClosed );
+				sendEvent( &tabEvent );
+			}
 		}
 	}
 }

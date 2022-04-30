@@ -62,11 +62,13 @@ class EE_API UITabWidget : public UIWidget {
 
 	Uint32 getTabCount() const;
 
-	void removeTab( const Uint32& index, bool destroyOwnedNode = true );
+	void removeTab( const Uint32& index, bool destroyOwnedNode = true,
+					bool immediateClose = false );
 
-	void removeTab( UITab* tab, bool destroyOwnedNode = true );
+	void removeTab( UITab* tab, bool destroyOwnedNode = true, bool immediateClose = false );
 
-	void removeAllTabs( bool destroyOwnedNode = true );
+	void removeAllTabs( bool destroyOwnedNode = true,
+					bool immediateClose = false );
 
 	void insertTab( const String& text, UINode* nodeOwned, Drawable* icon, const Uint32& index );
 
@@ -171,9 +173,10 @@ class EE_API UITabWidget : public UIWidget {
 
 	UITab* createTab( const String& text, UINode* nodeOwned, Drawable* icon );
 
-	void removeTab( const Uint32& index, bool destroyOwnedNode, bool destroyTab = true );
+	void removeTab( const Uint32& index, bool destroyOwnedNode, bool destroyTab,
+					bool immediateClose );
 
-	void removeTab( UITab* tab, bool destroyOwnedNode, bool destroyTab );
+	void removeTab( UITab* tab, bool destroyOwnedNode, bool destroyTab, bool immediateClose );
 
 	virtual void onSizeChange();
 
