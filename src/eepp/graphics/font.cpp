@@ -10,11 +10,11 @@ bool Font::isEmojiCodePoint( const Uint32& codePoint ) {
 	const Uint32 rangeMax = 131069;
 	const Uint32 rangeMin2 = 126980;
 	const Uint32 rangeMax2 = 127569;
-	const Uint32 rangeMin3 = 8987;
+	const Uint32 rangeMin3 = 8986;
 	const Uint32 rangeMax3 = 12953;
-	return codePoint > 8987 && ( ( rangeMin <= codePoint && codePoint <= rangeMax ) ||
-								 ( rangeMin2 <= codePoint && codePoint <= rangeMax2 ) ||
-								 ( rangeMin3 <= codePoint && codePoint <= rangeMax3 ) );
+	return codePoint >= 8986 && ( ( rangeMin <= codePoint && codePoint <= rangeMax ) ||
+								  ( rangeMin2 <= codePoint && codePoint <= rangeMax2 ) ||
+								  ( rangeMin3 <= codePoint && codePoint <= rangeMax3 ) );
 }
 
 bool Font::containsEmojiCodePoint( const String& string ) {

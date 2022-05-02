@@ -36,6 +36,8 @@ class EE_API FontSprite : public Font {
 
 	bool isMonospace() const { return true; }
 
+	bool isScalable() const { return false; }
+
 	const Font::Info& getInfo() const;
 
 	const Glyph& getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,

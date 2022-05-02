@@ -32,6 +32,8 @@ class EE_API FontBMFont : public Font {
 
 	bool isMonospace() const;
 
+	bool isScalable() const;
+
 	const Font::Info& getInfo() const;
 
 	const Glyph& getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,

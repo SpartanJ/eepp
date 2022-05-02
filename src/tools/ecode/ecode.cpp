@@ -184,7 +184,7 @@ void App::openFontDialog( std::string& fontPath, bool loadingMonoFont ) {
 	if ( FileSystem::isRelativePath( absoluteFontPath ) )
 		absoluteFontPath = mResPath + fontPath;
 	UIFileDialog* dialog =
-		UIFileDialog::New( UIFileDialog::DefaultFlags, "*.ttf; *.otf; *.wolff; *.otb",
+		UIFileDialog::New( UIFileDialog::DefaultFlags, "*.ttf; *.otf; *.wolff; *.otb; *.bdf",
 						   FileSystem::fileRemoveFileName( absoluteFontPath ) );
 	ModelIndex index = dialog->getMultiView()->getListView()->findRowWithText(
 		FileSystem::fileNameFromPath( fontPath ), true, true );
@@ -211,11 +211,36 @@ void App::openFontDialog( std::string& fontPath, bool loadingMonoFont ) {
 				FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( fontPath ) );
 			FontTrueType* fontMono = loadFont( fontName, fontPath );
 			if ( fontMono ) {
-				mFontMono = fontMono;
-				mFontMono->setBoldAdvanceSameAsRegular( true );
-				if ( mEditorSplitter ) {
-					mEditorSplitter->forEachEditor(
-						[&]( UICodeEditor* editor ) { editor->setFont( mFontMono ); } );
+				auto loadMonoFont = [&]( FontTrueType* fontMono ) {
+					mFontMono = fontMono;
+					mFontMono->setBoldAdvanceSameAsRegular( true );
+					mFontMono->setForceIsMonospace( true );
+					if ( mEditorSplitter ) {
+						mEditorSplitter->forEachEditor(
+							[&]( UICodeEditor* editor ) { editor->setFont( mFontMono ); } );
+					}
+				};
+				if ( !fontMono->isMonospace() ) {
+					auto* msgBox = UIMessageBox::New(
+						UIMessageBox::YES_NO,
+						i18n(
+							"confirm_loading_none_monospace_font",
+							"The editor only supports monospaced fonts and the selected font isn't "
+							"flagged as monospace.\nDo you want to load it anyways?" )
+							.unescape() );
+					msgBox->addEventListener(
+						Event::MsgBoxConfirmClick,
+						[&, loadMonoFont, fontMono]( const Event* ) { loadMonoFont( fontMono ); } );
+					msgBox->addEventListener( Event::MsgBoxCancelClick, [fontMono]( const Event* ) {
+						FontManager::instance()->remove( fontMono );
+					} );
+					msgBox->addEventListener( Event::OnClose,
+											  [&]( const Event* ) { msgBox = nullptr; } );
+					msgBox->setTitle( i18n( "confirm_loading_font", "Font loading confirmation" ) );
+					msgBox->center();
+					msgBox->showWhenReady();
+				} else {
+					loadMonoFont( fontMono );
 				}
 			}
 		}
@@ -2643,6 +2668,8 @@ void App::init( std::string file, const Float& pidelDensity, const std::string& 
 	mWindow = engine->createWindow( winSettings, contextSettings );
 
 	if ( mWindow->isOpen() ) {
+		Log::info( "Window creation took: %.2fms", globalClock.getElapsedTime().asMilliseconds() );
+
 		if ( mConfig.window.position != Vector2i( -1, -1 ) &&
 			 mConfig.window.displayIndex < displayManager->getDisplayCount() )
 			mWindow->setPosition( mConfig.window.position.x, mConfig.window.position.y );
@@ -2678,9 +2705,10 @@ void App::init( std::string file, const Float& pidelDensity, const std::string& 
 		mFont = loadFont( "sans-serif", mConfig.ui.serifFont, "assets/fonts/NotoSans-Regular.ttf" );
 		mFontMono =
 			loadFont( "monospace", mConfig.ui.monospaceFont, "assets/fonts/DejaVuSansMono.ttf" );
-		if ( mFontMono )
+		if ( mFontMono ) {
 			mFontMono->setBoldAdvanceSameAsRegular( true );
-
+			mFontMono->setForceIsMonospace( true );
+		}
 		loadFont( "NotoEmoji-Regular", "assets/fonts/NotoEmoji-Regular.ttf" );
 
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
@@ -2992,6 +3020,8 @@ void App::init( std::string file, const Float& pidelDensity, const std::string& 
 			mInitColorScheme );
 		mEditorSplitter->setHideTabBarOnSingleTab( mConfig.editor.hideTabBarOnSingleTab );
 
+		Log::info( "Base UI took: %.2fms", globalClock.getElapsedTime().asMilliseconds() );
+
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 		mFileWatcher = new efsw::FileWatcher();
 		mFileSystemListener = new FileSystemListener( mEditorSplitter, mFileSystemModel );
@@ -3021,12 +3051,17 @@ void App::init( std::string file, const Float& pidelDensity, const std::string& 
 
 		mConsole = eeNew( Console, ( mFontMono, true, true, 1024 * 1000, 0, mWindow ) );
 
+		Log::info( "Complete UI took: %.2fms", globalClock.getElapsedTime().asMilliseconds() );
+
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 		if ( file == "./this.program" )
 			file = "";
 #endif
 
 		initProjectTreeView( file );
+
+		Log::info( "Init ProjectTreeView took: %.2fms",
+				   globalClock.getElapsedTime().asMilliseconds() );
 
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 		if ( file.empty() )

@@ -66,6 +66,8 @@ class EE_API FontTrueType : public Font {
 
 	bool isMonospace() const;
 
+	bool isScalable() const;
+
 	bool isEmojiFont() const;
 
 	bool hasGlyph( Uint32 codePoint ) const;
@@ -74,6 +76,7 @@ class EE_API FontTrueType : public Font {
 
 	void setIsEmojiFont( bool isEmojiFont );
 
+	void setForceIsMonospace( bool isMonospace );
   protected:
 	explicit FontTrueType( const std::string& FontName );
 
@@ -143,6 +146,7 @@ class EE_API FontTrueType : public Font {
 	bool mBoldAdvanceSameAsRegular;
 	bool mIsColorEmojiFont{ false };
 	bool mIsEmojiFont{ false };
+	bool mIsMonospace{ false };
 	mutable std::map<unsigned int, unsigned int> mClosestCharacterSize;
 	mutable std::map<Uint32, Uint32> mCodePointIndexCache;
 

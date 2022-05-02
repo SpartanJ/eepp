@@ -177,6 +177,10 @@ bool FontBMFont::isMonospace() const {
 	return mIsMonospace;
 }
 
+bool FontBMFont::isScalable() const {
+	return false;
+}
+
 const FontBMFont::Info& FontBMFont::getInfo() const {
 	return mInfo;
 }

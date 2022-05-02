@@ -120,7 +120,12 @@ Text::Text( const String& string, Font* font, unsigned int characterSize ) :
 	mFontShadowColor( Color( 0, 0, 0, 255 ) ),
 	mAlign( 0 ),
 	mFontHeight( mFont->getFontHeight( mRealFontSize ) ),
-	mTabWidth( 4 ) {}
+	mTabWidth( 4 ) {
+	if ( !mFont->isScalable() ) {
+		mFontSize = mFontHeight;
+		mRealFontSize = mFontHeight;
+	}
+}
 
 Text::Text( Font* font, unsigned int characterSize ) :
 	mFont( font ),
@@ -139,7 +144,12 @@ Text::Text( Font* font, unsigned int characterSize ) :
 	mFontShadowColor( Color( 0, 0, 0, 255 ) ),
 	mAlign( 0 ),
 	mFontHeight( mFont->getFontHeight( mRealFontSize ) ),
-	mTabWidth( 4 ) {}
+	mTabWidth( 4 ) {
+	if ( !mFont->isScalable() ) {
+		mFontSize = mFontHeight;
+		mRealFontSize = mFontHeight;
+	}
+}
 
 void Text::create( Font* font, const String& text, Color FontColor, Color FontShadowColor,
 				   Uint32 characterSize ) {
@@ -179,7 +189,10 @@ void Text::setFont( Font* font ) {
 
 		mRealFontSize = PixelDensity::dpToPxI( mFontSize );
 		mFontHeight = mFont->getFontHeight( mRealFontSize );
-
+		if ( !mFont->isScalable() ) {
+			mFontSize = mFontHeight;
+			mRealFontSize = mFontHeight;
+		}
 		mGeometryNeedUpdate = true;
 		mCachedWidthNeedUpdate = true;
 	}
@@ -191,6 +204,10 @@ void Text::setFontSize( unsigned int size ) {
 
 		mRealFontSize = PixelDensity::dpToPxI( mFontSize );
 		mFontHeight = mFont->getFontHeight( mRealFontSize );
+		if ( !mFont->isScalable() ) {
+			mFontSize = mFontHeight;
+			mRealFontSize = mFontHeight;
+		}
 
 		mGeometryNeedUpdate = true;
 		mCachedWidthNeedUpdate = true;

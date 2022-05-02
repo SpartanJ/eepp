@@ -126,6 +126,7 @@ bool FontTrueType::loadFromFile( const std::string& filename ) {
 	}
 
 	mFace = face;
+	mIsMonospace = FT_IS_FIXED_WIDTH( static_cast<FT_Face>( mFace ) );
 	mIsColorEmojiFont = checkIsColorEmojiFont( static_cast<FT_Face>( mFace ) );
 	mIsEmojiFont = FT_Get_Char_Index( static_cast<FT_Face>( mFace ), 0x1F600 ) != 0;
 
@@ -202,6 +203,7 @@ bool FontTrueType::loadFromMemory( const void* data, std::size_t sizeInBytes, bo
 	}
 
 	mFace = face;
+	mIsMonospace = FT_IS_FIXED_WIDTH( static_cast<FT_Face>( mFace ) );
 	mIsColorEmojiFont = checkIsColorEmojiFont( static_cast<FT_Face>( mFace ) );
 	mIsEmojiFont = FT_Get_Char_Index( static_cast<FT_Face>( mFace ), 0x1F600 ) != 0;
 
@@ -286,6 +288,7 @@ bool FontTrueType::loadFromStream( IOStream& stream ) {
 	}
 
 	mFace = face;
+	mIsMonospace = FT_IS_FIXED_WIDTH( static_cast<FT_Face>( mFace ) );
 	mIsColorEmojiFont = checkIsColorEmojiFont( static_cast<FT_Face>( mFace ) );
 	mIsEmojiFont = FT_Get_Char_Index( static_cast<FT_Face>( mFace ), 0x1F600 ) != 0;
 	FT_Stroker stroker = nullptr;
@@ -1015,8 +1018,9 @@ bool FontTrueType::setCurrentSize( unsigned int characterSize ) const {
 					} else {
 						return false;
 					}
-				} else if ( characterSize != currentSize && face->size->metrics.x_ppem > 0 ) {
-					return setCurrentSize( it->second );
+				} else if ( characterSize != currentSize &&
+							( result = FT_Set_Pixel_Sizes( face, 0, it->second ) ) == FT_Err_Ok ) {
+					return true;
 				}
 			}
 		}
@@ -1041,6 +1045,10 @@ void FontTrueType::setIsEmojiFont( bool isEmojiFont ) {
 	mIsEmojiFont = isEmojiFont;
 }
 
+void FontTrueType::setForceIsMonospace( bool isMonospace ) {
+	mIsMonospace = isMonospace;
+}
+
 void FontTrueType::setIsColorEmojiFont( bool isColorEmojiFont ) {
 	mIsColorEmojiFont = isColorEmojiFont;
 }
@@ -1050,7 +1058,11 @@ bool FontTrueType::isColorEmojiFont() const {
 }
 
 bool FontTrueType::isMonospace() const {
-	return FT_IS_FIXED_WIDTH( static_cast<FT_Face>( mFace ) );
+	return mIsMonospace;
+}
+
+bool FontTrueType::isScalable() const {
+	return FT_IS_SCALABLE( static_cast<FT_Face>( mFace ) );
 }
 
 bool FontTrueType::isEmojiFont() const {

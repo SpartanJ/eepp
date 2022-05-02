@@ -77,6 +77,8 @@ class EE_API Font {
 
 	virtual bool isMonospace() const = 0;
 
+	virtual bool isScalable() const = 0;
+
 	virtual const Info& getInfo() const = 0;
 
 	virtual const Glyph& getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
