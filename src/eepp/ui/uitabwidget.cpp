@@ -829,7 +829,7 @@ Uint32 UITabWidget::onMessage( const NodeMessage* msg ) {
 		if ( dropMsg->getDroppedNode()->isType( UI_TYPE_TAB ) ) {
 			UITab* tab = dropMsg->getDroppedNode()->asType<UITab>();
 			if ( tab->getTabWidget() != this ) {
-				tab->getTabWidget()->removeTab( tab, false, false );
+				tab->getTabWidget()->removeTab( tab, false, false, false );
 				add( tab );
 				setTabSelected( tab );
 				return 1;
