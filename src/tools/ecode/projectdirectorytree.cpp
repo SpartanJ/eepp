@@ -65,8 +65,11 @@ std::shared_ptr<FileListModel> ProjectDirectoryTree::fuzzyMatchTree( const std::
 	std::multimap<int, int, std::greater<int>> matchesMap;
 	std::vector<std::string> files;
 	std::vector<std::string> names;
-	for ( size_t i = 0; i < mNames.size(); i++ )
-		matchesMap.insert( { String::fuzzyMatch( mNames[i], match ), i } );
+	for ( size_t i = 0; i < mNames.size(); i++ ) {
+		int matchName = String::fuzzyMatch( mNames[i], match );
+		int matchPath = String::fuzzyMatch( mFiles[i], match );
+		matchesMap.insert( { std::max( matchName, matchPath ), i } );
+	}
 	for ( auto& res : matchesMap ) {
 		if ( names.size() < max ) {
 			names.emplace_back( mNames[res.second] );

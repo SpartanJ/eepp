@@ -103,6 +103,7 @@ UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegis
 	UIWidget( elementTag ),
 	mFont( FontManager::instance()->getByName( "monospace" ) ),
 	mDoc( std::make_shared<TextDocument>() ),
+	mBlinkTime( Seconds( 0.5f ) ),
 	mTabWidth( 4 ),
 	mMouseWheelScroll( 50 ),
 	mFontSize( mFontStyleConfig.getFontCharacterSize() ),
@@ -301,7 +302,7 @@ void UICodeEditor::draw() {
 
 void UICodeEditor::scheduledUpdate( const Time& ) {
 	if ( hasFocus() && getUISceneNode()->getWindow()->hasFocus() ) {
-		if ( mBlinkTimer.getElapsedTime().asSeconds() > 0.5f ) {
+		if ( mBlinkTimer.getElapsedTime() > mBlinkTime ) {
 			mCursorVisible = !mCursorVisible;
 			mBlinkTimer.restart();
 			invalidateDraw();
@@ -324,6 +325,9 @@ void UICodeEditor::scheduledUpdate( const Time& ) {
 						 getUISceneNode()->getEventDispatcher()->getPressTrigger() );
 		}
 	}
+
+	if ( !mVisible )
+		return;
 
 	if ( mHighlighter.updateDirty( getVisibleLinesCount() ) ) {
 		invalidateDraw();
@@ -705,6 +709,8 @@ void UICodeEditor::updateColorScheme() {
 	mLineBreakColumnColor = mColorScheme.getEditorColor( "line_break_column" );
 	mMatchingBracketColor = mColorScheme.getEditorColor( "matching_bracket" );
 	mSelectionMatchColor = mColorScheme.getEditorColor( "matching_selection" );
+	mErrorColor = mColorScheme.getEditorColor( "error" );
+	mWarningColor = mColorScheme.getEditorColor( "warning" );
 }
 
 void UICodeEditor::setColorScheme( const SyntaxColorScheme& colorScheme ) {
@@ -954,18 +960,19 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 			return UIWidget::onMouseDown( position, flags );
 
 	if ( mMinimapEnabled ) {
+		updateMipmapHover( position.asFloat() );
+
 		Rectf rect( getMinimapRect( getScreenStart() ) );
 		if ( ( flags & EE_BUTTON_LMASK ) && !getEventDispatcher()->isNodeDragging() &&
 			 !mMinimapDragging && rect.contains( position.asFloat() ) ) {
 			if ( mMouseDown )
 				return 1;
-			updateMipmapHover( position.asFloat() );
-			mMouseDown = true;
-			if ( !mMinimapHover ) {
+			if ( !mMinimapHover && !mMouseDown ) {
 				mMinimapScrollOffset = 0;
 				scrollTo( { calculateMinimapClickedLine( position ), 0 }, true, true );
 				return 1;
 			}
+			mMouseDown = true;
 			mMinimapScrollOffset =
 				calculateMinimapClickedLine( position ) - getVisibleLineRange().first;
 			mMinimapDragging = true;
@@ -974,7 +981,8 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 			getUISceneNode()->setCursor( Cursor::Arrow );
 			return 1;
 		} else if ( mMinimapDragging ) {
-			if ( mMouseDown ) {
+			if ( ( flags & EE_BUTTON_LMASK ) && mMouseDown &&
+				 rect.contains( position.asFloat() ) ) {
 				scrollTo( { calculateMinimapClickedLine( position ) - mMinimapScrollOffset, 0 },
 						  false, true );
 				getUISceneNode()->setCursor( Cursor::Arrow );
@@ -2721,7 +2729,7 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 		const String& line( mDoc->line( ln ).getText() );
 		if ( line.size() > 300 )
 			return;
-		primitives.setColor( Color( mSelectionMatchColor ).blendAlpha( mAlpha ) );
+		primitives.setColor( Color( mWarningColor ).blendAlpha( mAlpha ) );
 
 		do {
 			pos = line.find( text, pos );
@@ -2733,13 +2741,31 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 				selRect.Bottom = lineY + charHeight;
 				selRect.Left = batchStart + getXOffsetCol( { ln, startCol } ) * widthScale;
 				selRect.Right = batchStart + getXOffsetCol( { ln, endCol } ) * widthScale;
-				primitives.drawRectangle( selRect );
+				if ( selRect.Left < minimapCutoffX )
+					primitives.drawRectangle( selRect );
 				pos = endCol;
 			} else {
 				break;
 			}
 		} while ( true );
 	};
+
+	String selectionString;
+
+	if ( mDoc->hasSelection() ) {
+		TextRange selection = mDoc->getSelection( true );
+		const String& selectionLine = mDoc->line( selection.start().line() ).getText();
+		if ( selection.start().column() >= 0 &&
+			 selection.start().column() < (Int64)selectionLine.size() &&
+			 selection.end().column() >= 0 &&
+			 selection.end().column() < (Int64)selectionLine.size() ) {
+			String text(
+				selectionLine.substr( selection.start().column(),
+									  selection.end().column() - selection.start().column() ) );
+			if ( !text.empty() )
+				selectionString = text;
+		}
+	}
 
 	if ( mMinimapConfig.syntaxHighlight ) {
 		for ( int index = minimapStartLine; index <= endidx; index++ ) {
@@ -2749,6 +2775,8 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 
 			if ( !mHighlightWord.empty() )
 				drawWordMatch( mHighlightWord, index );
+			if ( !selectionString.empty() )
+				drawWordMatch( selectionString, index );
 
 			auto& tokens = mHighlighter.getLine( index );
 			for ( auto& token : tokens ) {
@@ -2782,6 +2810,12 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 			batchSyntaxType = "normal";
 			batchStart = rect.Left + gutterWidth;
 			batchWidth = 0;
+
+			if ( !mHighlightWord.empty() )
+				drawWordMatch( mHighlightWord, index );
+			if ( !selectionString.empty() )
+				drawWordMatch( selectionString, index );
+
 			const String& text( mDoc->line( index ).getText() );
 			for ( size_t i = 0; i < text.size(); ++i ) {
 				String::StringBaseType ch = text[i];
@@ -2831,6 +2865,14 @@ bool UICodeEditor::isMinimapFileTooLarge() const {
 	return mDoc->linesCount() > 1 &&
 		   mDoc->linesCount() >
 			   eefloor( getMinimapRect( getScreenStart() ).getHeight() / getMinimapLineSpacing() );
+}
+
+const Time& UICodeEditor::getBlinkTime() const {
+	return mBlinkTime;
+}
+
+void UICodeEditor::setBlinkTime( const Time& blinkTime ) {
+	mBlinkTime = blinkTime;
 }
 
 bool UICodeEditor::getAutoCloseXMLTags() const {

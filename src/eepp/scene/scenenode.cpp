@@ -456,6 +456,9 @@ void SceneNode::onDrawDebugDataChange() {}
 
 void SceneNode::subscribeScheduledUpdate( Node* node ) {
 	mScheduledUpdate.insert( node );
+	auto it = mScheduledUpdateRemove.find( node );
+	if ( it != mScheduledUpdateRemove.end() )
+		mScheduledUpdateRemove.erase( it );
 }
 
 void SceneNode::unsubscribeScheduledUpdate( Node* node ) {

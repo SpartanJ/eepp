@@ -456,6 +456,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void setAutoCloseXMLTags( bool autoCloseXMLTags );
 
+	const Time& getBlinkTime() const;
+
+	void setBlinkTime( const Time& blinkTime );
+
   protected:
 	struct LastXOffset {
 		TextPosition position;
@@ -466,6 +470,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	std::shared_ptr<Doc::TextDocument> mDoc;
 	Vector2f mScrollPos;
 	Clock mBlinkTimer;
+	Time mBlinkTime;
 	bool mDirtyEditor{ false };
 	bool mCursorVisible{ false };
 	bool mMouseDown{ false };
@@ -505,6 +510,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Color mLineBreakColumnColor;
 	Color mMatchingBracketColor;
 	Color mSelectionMatchColor;
+	Color mErrorColor;
+	Color mWarningColor;
 	SyntaxColorScheme mColorScheme;
 	SyntaxHighlighter mHighlighter;
 	UIScrollBar* mVScrollBar;

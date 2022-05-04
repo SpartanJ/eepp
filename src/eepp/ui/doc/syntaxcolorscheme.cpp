@@ -28,37 +28,37 @@ namespace EE { namespace UI { namespace Doc {
 // "warning" (warning underline color)
 
 SyntaxColorScheme SyntaxColorScheme::getDefault() {
-	return { "lite",
+	return { "eepp",
 			 {
 				 { "normal", Color( "#e1e1e6" ) },
 				 { "symbol", Color( "#e1e1e6" ) },
-				 { "comment", Color( "#676b6f" ) },
-				 { "keyword", Color( "#E58AC9" ) },
-				 { "keyword2", Color( "#F77483" ) },
-				 { "number", Color( "#FFA94D" ) },
-				 { "literal", Color( "#FFA94D" ) },
-				 { "string", Color( "#f7c95c" ) },
-				 { "operator", Color( "#93DDFA" ) },
-				 { "function", Color( "#93DDFA" ) },
-				 { "link", { Color( "#93DDFA" ) } },
-				 { "link_hover", { Color( "#93DDFA" ), Color::Transparent, Text::Underlined } },
+				 { "comment", Color( "#cd8b00" ) },
+				 { "keyword", { Color( "#ff79c6" ), Color::Transparent, Text::Shadow } },
+				 { "keyword2", { Color( "#8be9fd" ), Color::Transparent, Text::Shadow } },
+				 { "number", Color( "#ffd24a" ) },
+				 { "literal", { Color( "#f1fa8c" ), Color::Transparent, Text::Shadow } },
+				 { "string", Color( "#ffcd8b" ) },
+				 { "operator", Color( "#51f0e7" ) },
+				 { "function", { Color( "#00dc7f" ), Color::Transparent, Text::Shadow } },
+				 { "link", { Color( "#6ae0f9" ), Color::Transparent, Text::Shadow } },
+				 { "link_hover", { Color::Transparent, Color::Transparent, Text::Underlined } },
 			 },
-			 { { "background", Color( "#2e2e32" ) },
-			   { "text", Color( "#97979c" ) },
+			 { { "background", Color( "#282a36" ) },
+			   { "text", Color( "#e1e1e6" ) },
 			   { "caret", Color( "#93DDFA" ) },
-			   { "selection", Color( "#48484f" ) },
-			   { "line_highlight", Color( "#343438" ) },
+			   { "selection", Color( "#394484" ) },
+			   { "line_highlight", Color( "#2d303d" ) },
 			   { "line_number", Color( "#525259" ) },
 			   { "line_number2", Color( "#83838f" ) },
 			   // eepp colors
-			   { "line_number_background", Color( "#2e2e32" ) },
+			   { "line_number_background", Color( "#282a36" ) },
 			   { "whitespace", Color( "#54575b" ) },
 			   { "line_break_column", Color( "#54575b99" ) },
 			   { "matching_bracket", Color( "#FFFFFF33" ) },
-			   { "matching_selection", Color( "#FFFFFF33" ) },
+			   { "matching_selection", Color( "#3e596e" ) },
 			   { "matching_search", Color( "#181b1e" ) },
-			   { "suggestion", { Color( "#97979c" ), Color( "#252529" ), Text::Regular } },
-			   { "suggestion_selected", { Color( "#e1e1e6" ), Color( "#252529" ), Text::Regular } },
+			   { "suggestion", { Color( "#e1e1e6" ), Color( "#1d1f27" ), Text::Regular } },
+			   { "suggestion_selected", { Color( "#ffffff" ), Color( "#2f3240" ), Text::Regular } },
 			   { "error", { Color::Red } },
 			   { "warning", { Color::Yellow } } } };
 }
@@ -91,7 +91,9 @@ std::vector<SyntaxColorScheme> SyntaxColorScheme::loadFromStream( IOStream& stre
 							style.background = Color::fromString( val );
 						}
 					} else {
-						if ( "bold" == val )
+						if ( "regular" == val )
+							style.style |= Text::Regular;
+						else if ( "bold" == val )
 							style.style |= Text::Bold;
 						else if ( "italic" == val )
 							style.style |= Text::Italic;

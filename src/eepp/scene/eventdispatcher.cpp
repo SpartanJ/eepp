@@ -117,7 +117,7 @@ void EventDispatcher::update( const Time& time ) {
 				Node* lastFocusNode = mFocusNode;
 
 				if ( NULL != mOverNode ) {
-					getMouseOverNode()->onMouseUp( mMousePosi, mInput->getReleaseTrigger() );
+					mOverNode->onMouseUp( mMousePosi, mInput->getReleaseTrigger() );
 					if ( NULL != mOverNode )
 						sendMsg( mOverNode, NodeMessage::MouseUp, mInput->getReleaseTrigger() );
 				}
@@ -135,6 +135,12 @@ void EventDispatcher::update( const Time& time ) {
 					}
 
 					mClickPos = mMousePosi;
+				}
+			} else {
+				if ( NULL != mOverNode ) {
+					mOverNode->onMouseUp( mMousePosi, mInput->getReleaseTrigger() );
+					if ( NULL != mOverNode )
+						sendMsg( mOverNode, NodeMessage::MouseUp, mInput->getReleaseTrigger() );
 				}
 			}
 		}
