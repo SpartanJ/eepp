@@ -167,14 +167,6 @@ void LinterModule::setDelayTime( const Time& delayTime ) {
 	mDelayTime = delayTime;
 }
 
-static std::string randString( size_t len ) {
-	std::string str( "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz" );
-	std::random_device rd;
-	std::mt19937 generator( rd() );
-	std::shuffle( str.begin(), str.end(), generator );
-	return str.substr( 0, len );
-}
-
 void LinterModule::lintDoc( std::shared_ptr<TextDocument> doc ) {
 	if ( !mReady )
 		return;
@@ -185,11 +177,12 @@ void LinterModule::lintDoc( std::shared_ptr<TextDocument> doc ) {
 	if ( doc->isDirty() || !doc->hasFilepath() ) {
 		std::string tmpPath;
 		if ( !doc->hasFilepath() ) {
-			tmpPath = Sys::getTempPath() + ".ecode-" + doc->getFilename() + "." + randString( 8 );
+			tmpPath =
+				Sys::getTempPath() + ".ecode-" + doc->getFilename() + "." + String::randString( 8 );
 		} else {
 			std::string fileDir( FileSystem::fileRemoveFileName( doc->getFilePath() ) );
 			FileSystem::dirAddSlashAtEnd( fileDir );
-			tmpPath = fileDir + "." + randString( 8 ) + "." + doc->getFilename();
+			tmpPath = fileDir + "." + String::randString( 8 ) + "." + doc->getFilename();
 		}
 
 		doc->save( fileString, true );
