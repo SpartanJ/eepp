@@ -283,6 +283,18 @@ void LinterModule::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 	}
 }
 
+std::string LinterModule::getMatchString( const LinterType& type ) {
+	switch ( type ) {
+		case LinterType::Warning:
+			return "warning";
+		case LinterType::Notice:
+			return "notice";
+		default:
+			break;
+	}
+	return "error";
+}
+
 void LinterModule::drawAfterLineText( UICodeEditor* editor, const Int64& index, Vector2f position,
 									  const Float& /*fontSize*/, const Float& lineHeight ) {
 	mMatchesMutex.lock();
@@ -305,12 +317,8 @@ void LinterModule::drawAfterLineText( UICodeEditor* editor, const Int64& index, 
 		Text line( "", editor->getFont(), editor->getFontSize() );
 		line.setTabWidth( editor->getTabWidth() );
 		line.setStyleConfig( editor->getFontStyleConfig() );
-		line.setColor( editor->getColorScheme()
-						   .getEditorSyntaxStyle( match.type == LinterType::Warning ||
-														  match.type == LinterType::Notice
-													  ? "warning"
-													  : "error" )
-						   .color );
+		line.setColor(
+			editor->getColorScheme().getEditorSyntaxStyle( getMatchString( match.type ) ).color );
 		const String& text = doc->line( index ).getText();
 		size_t minCol = text.find_first_not_of( " \t\f\v\n\r", match.pos.column() );
 		if ( minCol == String::InvalidPos )

@@ -512,6 +512,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Color mSelectionMatchColor;
 	Color mErrorColor;
 	Color mWarningColor;
+	Color mMinimapCurrentLineColor;
+	Color mMinimapHoverColor;
+	Color mMinimapSelectionColor;
+	Color mMinimapHighlightColor;
 	SyntaxColorScheme mColorScheme;
 	SyntaxHighlighter mHighlighter;
 	UIScrollBar* mVScrollBar;

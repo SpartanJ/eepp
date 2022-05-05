@@ -92,6 +92,8 @@ class LinterModule : public UICodeEditorModule {
 	void setDocDirty( UICodeEditor* editor );
 
 	void invalidateEditors( TextDocument* doc );
+
+	std::string getMatchString( const LinterType& type );
 };
 
 #endif // EE_TOOLS_LINTER_HPP

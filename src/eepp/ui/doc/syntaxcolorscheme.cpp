@@ -26,6 +26,7 @@ namespace EE { namespace UI { namespace Doc {
 // "suggestion_selected" (the auto-complete selected suggestion box text and background color
 // "error" (error underline color)
 // "warning" (warning underline color)
+// "notice" (notice underline color)
 
 SyntaxColorScheme SyntaxColorScheme::getDefault() {
 	return { "eepp",
@@ -60,7 +61,12 @@ SyntaxColorScheme SyntaxColorScheme::getDefault() {
 			   { "suggestion", { Color( "#e1e1e6" ), Color( "#1d1f27" ), Text::Regular } },
 			   { "suggestion_selected", { Color( "#ffffff" ), Color( "#2f3240" ), Text::Regular } },
 			   { "error", { Color::Red } },
-			   { "warning", { Color::Yellow } } } };
+			   { "warning", { Color::Yellow } },
+			   { "notice", Color( "#8abdff" ) },
+			   { "minimap_current_line", Color( "#93DDFA40" ) },
+			   { "minimap_hover", Color( "#FFFFFF1A" ) },
+			   { "minimap_selection", Color( "#8abdff80" ) },
+			   { "minimap_highlight", Color( "#FFFF0040" ) } } };
 }
 
 std::vector<SyntaxColorScheme> SyntaxColorScheme::loadFromStream( IOStream& stream ) {
@@ -201,6 +207,16 @@ SyntaxColorScheme::getEditorSyntaxStyle( const std::string& type ) const {
 		return StyleDefault.getEditorSyntaxStyle( "error" );
 	else if ( type == "warning" )
 		return StyleDefault.getEditorSyntaxStyle( "warning" );
+	else if ( type == "notice" )
+		return StyleDefault.getEditorSyntaxStyle( "notice" );
+	else if ( type == "minimap_current_line" )
+		return StyleDefault.getEditorSyntaxStyle( "minimap_current_line" );
+	else if ( type == "minimap_hover" )
+		return StyleDefault.getEditorSyntaxStyle( "minimap_hover" );
+	else if ( type == "minimap_selection" )
+		return StyleDefault.getEditorSyntaxStyle( "minimap_selection" );
+	else if ( type == "minimap_highlight" )
+		return StyleDefault.getEditorSyntaxStyle( "minimap_highlight" );
 	return StyleEmpty;
 }
 

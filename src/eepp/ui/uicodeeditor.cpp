@@ -709,8 +709,11 @@ void UICodeEditor::updateColorScheme() {
 	mLineBreakColumnColor = mColorScheme.getEditorColor( "line_break_column" );
 	mMatchingBracketColor = mColorScheme.getEditorColor( "matching_bracket" );
 	mSelectionMatchColor = mColorScheme.getEditorColor( "matching_selection" );
-	mErrorColor = mColorScheme.getEditorColor( "error" );
-	mWarningColor = mColorScheme.getEditorColor( "warning" );
+	mMinimapCurrentLineColor = mColorScheme.getEditorColor( "minimap_current_line" );
+	mMinimapHoverColor = mColorScheme.getEditorColor( "minimap_hover" );
+	mMinimapSelectionColor = mColorScheme.getEditorColor( "minimap_hover" );
+	mMinimapHighlightColor = mColorScheme.getEditorColor( "minimap_highlight" );
+	mMinimapSelectionColor = mColorScheme.getEditorColor( "minimap_selection" );
 }
 
 void UICodeEditor::setColorScheme( const SyntaxColorScheme& colorScheme ) {
@@ -2688,7 +2691,7 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 	primitives.drawRectangle(
 		{ { rect.Left, visibleY }, Sizef( rect.getWidth(), scrollerHeight ) } );
 	if ( mMinimapHover || mMinimapDragging ) {
-		primitives.setColor( Color( 255, 255, 255, 26 ).blendAlpha( mAlpha ) );
+		primitives.setColor( Color( mMinimapHoverColor ).blendAlpha( mAlpha ) );
 		primitives.drawRectangle(
 			{ { rect.Left, visibleY }, Sizef( rect.getWidth(), scrollerHeight ) } );
 	}
@@ -2729,7 +2732,7 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 		const String& line( mDoc->line( ln ).getText() );
 		if ( line.size() > 300 )
 			return;
-		primitives.setColor( Color( mWarningColor ).blendAlpha( mAlpha ) );
+		primitives.setColor( Color( mMinimapHighlightColor ).blendAlpha( mAlpha ) );
 
 		do {
 			pos = line.find( text, pos );
@@ -2750,9 +2753,47 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 		} while ( true );
 	};
 
+	Float minimapStart = rect.Left + gutterWidth;
+	auto drawTextRange = [&]( const TextRange& range, const Int64& ln,
+							  const Color& backgroundColor ) {
+		if ( !( ln >= range.start().line() && ln <= range.end().line() ) )
+			return;
+
+		primitives.setColor( backgroundColor );
+
+		const String& line = mDoc->line( ln ).getText();
+		Rectf selRect;
+		selRect.Top = lineY;
+		selRect.Bottom = lineY + charHeight;
+		if ( range.start().line() == ln ) {
+			selRect.Left =
+				minimapStart + getXOffsetCol( { ln, range.start().column() } ) * widthScale;
+			if ( range.end().line() == ln ) {
+				selRect.Right =
+					minimapStart + getXOffsetCol( { ln, range.end().column() } ) * widthScale;
+			} else {
+				selRect.Right =
+					minimapStart +
+					getXOffsetCol( { ln, static_cast<Int64>( line.length() ) } ) * widthScale;
+			}
+		} else if ( range.end().line() == ln ) {
+			selRect.Left = minimapStart + getXOffsetCol( { ln, 0 } ) * widthScale;
+			selRect.Right =
+				minimapStart + getXOffsetCol( { ln, range.end().column() } ) * widthScale;
+		} else {
+			selRect.Left = minimapStart + getXOffsetCol( { ln, 0 } ) * widthScale;
+			selRect.Right =
+				minimapStart +
+				getXOffsetCol( { ln, static_cast<Int64>( line.length() ) } ) * widthScale;
+		}
+
+		primitives.drawRectangle( selRect );
+	};
+
 	String selectionString;
 
-	if ( mDoc->hasSelection() ) {
+	if ( mDoc->hasSelection() &&
+		 mDoc->getSelection().start().line() == mDoc->getSelection().end().line() ) {
 		TextRange selection = mDoc->getSelection( true );
 		const String& selectionLine = mDoc->line( selection.start().line() ).getText();
 		if ( selection.start().column() >= 0 &&
@@ -2775,6 +2816,7 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 
 			if ( !mHighlightWord.empty() )
 				drawWordMatch( mHighlightWord, index );
+
 			if ( !selectionString.empty() )
 				drawWordMatch( selectionString, index );
 
@@ -2803,6 +2845,12 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 				}
 			}
 			flushBatch( "normal" );
+
+			if ( mDoc->hasSelection() ) {
+				drawTextRange( mDoc->getSelection( true ), index,
+							   Color( mMinimapSelectionColor ).blendAlpha( mAlpha ) );
+			}
+
 			lineY = lineY + lineSpacing;
 		}
 	} else {
@@ -2839,14 +2887,7 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 
 	Float selectionY =
 		rect.Top + ( mDoc->getSelection().start().line() - minimapStartLine ) * lineSpacing;
-	Float selectionY2 =
-		rect.Top + ( mDoc->getSelection().end().line() - minimapStartLine ) * lineSpacing;
-	Float selectionMinY = eemin( selectionY, selectionY2 );
-	Float selectionH = eeabs( selectionY2 - selectionY ) + 1;
-	primitives.setColor(
-		Color( mFontStyleConfig.getFontSelectionBackColor(), 64 ).blendAlpha( mAlpha ) );
-	primitives.drawRectangle( { { rect.Left, selectionMinY }, { rect.getWidth(), selectionH } } );
-	primitives.setColor( Color( mCaretColor, 64 ).blendAlpha( mAlpha ) );
+	primitives.setColor( Color( mMinimapCurrentLineColor ).blendAlpha( mAlpha ) );
 	primitives.drawRectangle( { { rect.Left, selectionY }, { rect.getWidth(), lineSpacing } } );
 
 	primitives.setForceDraw( true );
