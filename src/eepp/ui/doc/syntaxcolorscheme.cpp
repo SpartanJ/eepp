@@ -213,7 +213,7 @@ SyntaxColorScheme::getEditorSyntaxStyle( const std::string& type ) const {
 	else if ( type == "notice" )
 		return StyleDefault.getEditorSyntaxStyle( "notice" );
 	else if ( type == "minimap_background" )
-		return StyleDefault.getEditorSyntaxStyle( "minimap_background" );
+		return StyleEmpty;
 	else if ( type == "minimap_current_line" )
 		return StyleDefault.getEditorSyntaxStyle( "minimap_current_line" );
 	else if ( type == "minimap_hover" )
