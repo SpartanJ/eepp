@@ -1533,10 +1533,10 @@ void App::onDocumentCursorPosChange( UICodeEditor*, TextDocument& doc ) {
 }
 
 void App::updateDocInfo( TextDocument& doc ) {
-	if ( mConfig.editor.showDocInfo && mDocInfoText ) {
+	if ( mConfig.editor.showDocInfo && mDocInfoText && mEditorSplitter->getCurEditor() ) {
 		mDocInfoText->setText( String::format(
 			"line: %lld / %lu  col: %lld    %s", doc.getSelection().start().line() + 1,
-			doc.linesCount(), doc.getSelection().start().column(),
+			doc.linesCount(), mEditorSplitter->getCurEditor()->getCurrentColumnCount(),
 			doc.getLineEnding() == TextDocument::LineEnding::LF ? "LF" : "CRLF" ) );
 	}
 }

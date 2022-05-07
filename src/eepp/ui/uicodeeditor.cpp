@@ -320,7 +320,7 @@ void UICodeEditor::scheduledUpdate( const Time& ) {
 			}
 			mMouseDown = false;
 			getUISceneNode()->getWindow()->getInput()->captureMouse( false );
-		} else if ( !isMouseOverMeOrChilds() ) {
+		} else if ( !isMouseOverMeOrChilds() || mMinimapDragging ) {
 			onMouseMove( getUISceneNode()->getEventDispatcher()->getMousePos(),
 						 getUISceneNode()->getEventDispatcher()->getPressTrigger() );
 		}
@@ -347,10 +347,10 @@ void UICodeEditor::updateLongestLineWidth() {
 	if ( mHorizontalScrollBarEnabled ) {
 		Float maxWidth = mLongestLineWidth;
 		findLongestLine();
-		if ( maxWidth != mLongestLineWidth )
-			updateScrollBar();
 		mLongestLineWidthLastUpdate.restart();
 		mLongestLineWidthDirty = false;
+		if ( maxWidth != mLongestLineWidth )
+			updateScrollBar();
 	}
 }
 
@@ -589,9 +589,7 @@ const Uint32& UICodeEditor::getTabWidth() const {
 }
 
 UICodeEditor* UICodeEditor::setTabWidth( const Uint32& tabWidth ) {
-	if ( mTabWidth != tabWidth ) {
-		mTabWidth = tabWidth;
-	}
+	mTabWidth = tabWidth;
 	return this;
 }
 
@@ -709,9 +707,12 @@ void UICodeEditor::updateColorScheme() {
 	mLineBreakColumnColor = mColorScheme.getEditorColor( "line_break_column" );
 	mMatchingBracketColor = mColorScheme.getEditorColor( "matching_bracket" );
 	mSelectionMatchColor = mColorScheme.getEditorColor( "matching_selection" );
+	mMinimapBackgroundColor = mColorScheme.getEditorColor( "minimap_background" );
+	if ( Color::Transparent == mMinimapBackgroundColor )
+		mMinimapBackgroundColor = getBackgroundColor();
+	mMinimapVisibleAreaColor = mColorScheme.getEditorColor( "minimap_visible_area" );
 	mMinimapCurrentLineColor = mColorScheme.getEditorColor( "minimap_current_line" );
 	mMinimapHoverColor = mColorScheme.getEditorColor( "minimap_hover" );
-	mMinimapSelectionColor = mColorScheme.getEditorColor( "minimap_hover" );
 	mMinimapHighlightColor = mColorScheme.getEditorColor( "minimap_highlight" );
 	mMinimapSelectionColor = mColorScheme.getEditorColor( "minimap_selection" );
 }
@@ -972,7 +973,7 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 				return 1;
 			if ( !mMinimapHover && !mMouseDown ) {
 				mMinimapScrollOffset = 0;
-				scrollTo( { calculateMinimapClickedLine( position ), 0 }, true, true );
+				scrollTo( { calculateMinimapClickedLine( position ), 0 }, true, true, false );
 				return 1;
 			}
 			mMouseDown = true;
@@ -987,7 +988,7 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 			if ( ( flags & EE_BUTTON_LMASK ) && mMouseDown &&
 				 rect.contains( position.asFloat() ) ) {
 				scrollTo( { calculateMinimapClickedLine( position ) - mMinimapScrollOffset, 0 },
-						  false, true );
+						  false, true, false );
 				getUISceneNode()->setCursor( Cursor::Arrow );
 			}
 			return 1;
@@ -1051,7 +1052,7 @@ Uint32 UICodeEditor::onMouseMove( const Vector2i& position, const Uint32& flags 
 		updateMipmapHover( position.asFloat() );
 		if ( mMinimapDragging && ( flags & EE_BUTTON_LMASK ) ) {
 			scrollTo( { calculateMinimapClickedLine( position ) - mMinimapScrollOffset, 0 }, false,
-					  true );
+					  true, false );
 			getUISceneNode()->setCursor( Cursor::Arrow );
 			return 1;
 		}
@@ -1298,10 +1299,11 @@ void UICodeEditor::updateScrollBar() {
 	if ( mHorizontalScrollBarEnabled ) {
 		mHScrollBar->setPixelsPosition( 0, mSize.getHeight() -
 											   mHScrollBar->getPixelsSize().getHeight() );
-		mHScrollBar->setPixelsSize(
-			mSize.getWidth() -
-				( notVisibleLineCount > 0 ? mVScrollBar->getPixelsSize().getWidth() : 0 ),
-			mHScrollBar->getPixelsSize().getHeight() );
+		mHScrollBar->setPixelsSize( mSize.getWidth() -
+										( mVerticalScrollBarEnabled && notVisibleLineCount > 0
+											  ? mVScrollBar->getPixelsSize().getWidth()
+											  : 0 ),
+									mHScrollBar->getPixelsSize().getHeight() );
 		Float viewPortWidth = getViewportWidth();
 		mHScrollBar->setPageStep( viewPortWidth / mLongestLineWidth );
 		mHScrollBar->setClickStep( 0.2f );
@@ -1459,8 +1461,8 @@ int UICodeEditor::getVisibleLinesCount() {
 	return lines.second - lines.first;
 }
 
-void UICodeEditor::scrollTo( const TextPosition& position, bool centered,
-							 bool forceExactPosition ) {
+void UICodeEditor::scrollTo( const TextPosition& position, bool centered, bool forceExactPosition,
+							 bool scrollX ) {
 	auto lineRange = getVisibleLineRange();
 
 	Int64 minDistance = mHScrollBar->isVisible() ? 3 : 2;
@@ -1495,6 +1497,8 @@ void UICodeEditor::scrollTo( const TextPosition& position, bool centered,
 	}
 
 	// Horizontal Scroll
+	if ( !scrollX )
+		return;
 	Float offsetX = getXOffsetCol( position );
 	Float glyphSize = getGlyphWidth();
 	Float minVisibility = glyphSize;
@@ -1554,6 +1558,14 @@ Float UICodeEditor::getXOffsetCol( const TextPosition& position ) {
 		}
 	}
 	return x;
+}
+
+size_t UICodeEditor::characterWidth( const String& str ) const {
+	Int64 cc = str.size();
+	Int64 count = 0;
+	for ( Int64 i = 0; i < cc; i++ )
+		count += str[i] == '\t' ? mTabWidth : 1;
+	return count;
 }
 
 Float UICodeEditor::getTextWidth( const String& line ) const {
@@ -1986,6 +1998,7 @@ Float UICodeEditor::getGlyphWidth() const {
 
 void UICodeEditor::udpateGlyphWidth() {
 	mGlyphWidth = mFont->getGlyph( ' ', getCharacterSize(), false ).advance;
+	invalidateLongestLineWidth();
 }
 
 Drawable* UICodeEditor::findIcon( const std::string& name ) {
@@ -2084,19 +2097,34 @@ void UICodeEditor::paste() {
 }
 
 void UICodeEditor::fontSizeGrow() {
+	Float line = mScroll.y / getLineHeight();
+	Float col = mScroll.x / getGlyphWidth();
 	mFontStyleConfig.CharacterSize = eemin<Float>( 96, mFontStyleConfig.CharacterSize + 1 );
 	onFontChanged();
+	updateLongestLineWidth();
+	setScrollY( getLineHeight() * line );
+	setScrollX( getGlyphWidth() * col );
 	invalidateDraw();
 }
 
 void UICodeEditor::fontSizeShrink() {
+	Float line = mScroll.y / getLineHeight();
+	Float col = mScroll.x / getGlyphWidth();
 	mFontStyleConfig.CharacterSize = eemax<Float>( 4, mFontStyleConfig.CharacterSize - 1 );
 	onFontChanged();
+	updateLongestLineWidth();
+	setScrollY( getLineHeight() * line );
+	setScrollX( getGlyphWidth() * col );
 	invalidateDraw();
 }
 
 void UICodeEditor::fontSizeReset() {
+	Float line = mScroll.y / getLineHeight();
+	Float col = mScroll.x / getGlyphWidth();
 	setFontSize( mFontSize );
+	updateLongestLineWidth();
+	setScrollY( getLineHeight() * line );
+	setScrollX( getGlyphWidth() * col );
 }
 
 const bool& UICodeEditor::getShowWhitespaces() const {
@@ -2334,7 +2362,7 @@ void UICodeEditor::drawLineText( const Int64& index, Vector2f position, const Fl
 						}
 
 						position.x += textWidth;
-						curChar += text.size();
+						curChar += characterWidth( text );
 						continue;
 					}
 				}
@@ -2371,7 +2399,7 @@ void UICodeEditor::drawLineText( const Int64& index, Vector2f position, const Fl
 		}
 
 		position.x += textWidth;
-		curChar += text.size();
+		curChar += characterWidth( text );
 	}
 }
 
@@ -2460,8 +2488,8 @@ void UICodeEditor::drawWhitespaces( const std::pair<int, int>& lineRange,
 		Vector2f position( { startScroll.x, startScroll.y + lineHeight * index } );
 		const auto& text = mDoc->line( index ).getText();
 		for ( size_t i = 0; i < text.size(); i++ ) {
-			if ( position.x + glyphW >= mScreenPos.x &&
-				 position.x <= mScreenPos.x + mSize.getWidth() ) {
+			if ( position.x + mScroll.x + ( text[i] == '\t' ? tabWidth : glyphW ) >= mScreenPos.x &&
+				 position.x <= mScreenPos.x + mScroll.x + mSize.getWidth() ) {
 				if ( ' ' == text[i] ) {
 					cpoint->draw( Vector2f( position.x, position.y ) );
 					position.x += glyphW;
@@ -2683,11 +2711,11 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 	primitives.setForceDraw( false );
 
 	if ( mMinimapConfig.drawBackground ) {
-		primitives.setColor( getBackgroundColor().blendAlpha( mAlpha ) );
+		primitives.setColor( Color( mMinimapBackgroundColor ).blendAlpha( mAlpha ) );
 		primitives.drawRectangle( rect );
 	}
 
-	primitives.setColor( Color( mCurrentLineBackgroundColor ).blendAlpha( mAlpha ) );
+	primitives.setColor( Color( mMinimapVisibleAreaColor ).blendAlpha( mAlpha ) );
 	primitives.drawRectangle(
 		{ { rect.Left, visibleY }, Sizef( rect.getWidth(), scrollerHeight ) } );
 	if ( mMinimapHover || mMinimapDragging ) {
@@ -2955,6 +2983,15 @@ bool UICodeEditor::checkAutoCloseXMLTag( const String& text ) {
 		return true;
 	}
 	return false;
+}
+
+Int64 UICodeEditor::getCurrentColumnCount() const {
+	Int64 curLine = mDoc->getSelection().start().line();
+	Int64 sel = mDoc->getSelection().start().column();
+	Int64 count = 0;
+	for ( Int64 i = 0; i < sel; i++ )
+		count += mDoc->line( curLine ).getText()[i] == '\t' ? mTabWidth : 1;
+	return count;
 }
 
 }} // namespace EE::UI

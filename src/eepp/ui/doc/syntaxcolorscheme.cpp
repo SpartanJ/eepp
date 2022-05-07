@@ -63,10 +63,13 @@ SyntaxColorScheme SyntaxColorScheme::getDefault() {
 			   { "error", { Color::Red } },
 			   { "warning", { Color::Yellow } },
 			   { "notice", Color( "#8abdff" ) },
+			   // minimap colors
+			   { "minimap_background", Color( "#282a36AA" ) },
 			   { "minimap_current_line", Color( "#93DDFA40" ) },
 			   { "minimap_hover", Color( "#FFFFFF1A" ) },
 			   { "minimap_selection", Color( "#8abdff80" ) },
-			   { "minimap_highlight", Color( "#FFFF0040" ) } } };
+			   { "minimap_highlight", Color( "#FFFF0040" ) },
+			   { "minimap_visible_area", Color( "#FFFFFF0A" ) } } };
 }
 
 std::vector<SyntaxColorScheme> SyntaxColorScheme::loadFromStream( IOStream& stream ) {
@@ -164,7 +167,7 @@ SyntaxColorScheme::SyntaxColorScheme( const std::string& name,
 									  const std::unordered_map<std::string, Style>& editorColors ) :
 	mName( name ), mSyntaxColors( syntaxColors ), mEditorColors( editorColors ) {}
 
-static const SyntaxColorScheme::Style StyleEmpty = { Color::White };
+static const SyntaxColorScheme::Style StyleEmpty = { Color::Transparent };
 static const SyntaxColorScheme StyleDefault = SyntaxColorScheme::getDefault();
 
 const SyntaxColorScheme::Style& SyntaxColorScheme::getSyntaxStyle( const std::string& type ) const {
@@ -209,6 +212,8 @@ SyntaxColorScheme::getEditorSyntaxStyle( const std::string& type ) const {
 		return StyleDefault.getEditorSyntaxStyle( "warning" );
 	else if ( type == "notice" )
 		return StyleDefault.getEditorSyntaxStyle( "notice" );
+	else if ( type == "minimap_background" )
+		return StyleDefault.getEditorSyntaxStyle( "minimap_background" );
 	else if ( type == "minimap_current_line" )
 		return StyleDefault.getEditorSyntaxStyle( "minimap_current_line" );
 	else if ( type == "minimap_hover" )
@@ -217,6 +222,8 @@ SyntaxColorScheme::getEditorSyntaxStyle( const std::string& type ) const {
 		return StyleDefault.getEditorSyntaxStyle( "minimap_selection" );
 	else if ( type == "minimap_highlight" )
 		return StyleDefault.getEditorSyntaxStyle( "minimap_highlight" );
+	else if ( type == "minimap_visible_area" )
+		return StyleDefault.getEditorSyntaxStyle( "minimap_visible_area" );
 	return StyleEmpty;
 }
 

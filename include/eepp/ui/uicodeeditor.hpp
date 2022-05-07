@@ -97,8 +97,6 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 		Float scale{ 1 };
 		int tabWidth{ 4 };
 		bool drawBackground{ true };
-		Color selectionColor{ Color::Transparent };
-		Color caretColor{ Color::Transparent };
 		Float gutterWidth{ 5 }; // dp width
 	};
 
@@ -399,6 +397,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	virtual Float getLineWidth( const Int64& lineIndex );
 
+	size_t characterWidth( const String& str ) const;
+
 	Float getTextWidth( const String& text ) const;
 
 	Float getLineHeight() const;
@@ -442,7 +442,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void scrollToCursor( bool centered = true );
 
 	void scrollTo( const TextPosition& position, bool centered = false,
-				   bool forceExactPosition = false );
+				   bool forceExactPosition = false, bool scrollX = true );
 
 	const MinimapConfig& getMinimapConfig() const;
 
@@ -459,6 +459,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	const Time& getBlinkTime() const;
 
 	void setBlinkTime( const Time& blinkTime );
+
+	Int64 getCurrentColumnCount() const;
 
   protected:
 	struct LastXOffset {
@@ -512,6 +514,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Color mSelectionMatchColor;
 	Color mErrorColor;
 	Color mWarningColor;
+	Color mMinimapBackgroundColor;
+	Color mMinimapVisibleAreaColor;
 	Color mMinimapCurrentLineColor;
 	Color mMinimapHoverColor;
 	Color mMinimapSelectionColor;
