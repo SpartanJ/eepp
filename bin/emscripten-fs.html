@@ -60,6 +60,7 @@
     </div>
     <script type='text/javascript'>
         var loaderCont;
+        var Module;
 
         function getDemoScript(name) {
             if (name)
@@ -84,38 +85,45 @@
             head.appendChild(script);
         }
 
-        var Module = {
-            preRun: [],
-            postRun: [],
-            print: (function() {
-                return function(text) {
-                    text = Array.prototype.slice.call(arguments).join(' ');
-                    console.log(text);
-                };
-            })(),
-            printErr: function(text) {
-                text = Array.prototype.slice.call(arguments).join(' ');
-                console.error(text);
-            },
-            canvas: (function() {
-                var canvas = document.getElementById('canvas');
-                return canvas;
-            })(),
-            setStatus: function(text) {
-                console.log("status: " + text);
-                if (text == "Running...")
-                  loaderCont.style.display = 'none';
-            },
-            monitorRunDependencies: function(left) {
-                // no run dependencies to log
-            },
-            arguments: window.location.search.substr(1).split('&')
-        };
         window.onerror = function() {
             console.log("onerror: " + event);
         };
 
         (function() {
+            let args = window.location.search.substr(1).split('&');
+            for (let i = 0; i < args.length; i++)
+              if (args[i].startsWith('run='))
+                args.splice(i, 1);
+
+            Module = {
+                preRun: [],
+                postRun: [],
+                print: (function() {
+                    return function(text) {
+                        text = Array.prototype.slice.call(arguments).join(' ');
+                        console.log(text);
+                    };
+                })(),
+                printErr: function(text) {
+                    text = Array.prototype.slice.call(arguments).join(' ');
+                    console.error(text);
+                },
+                canvas: (function() {
+                    var canvas = document.getElementById('canvas');
+                    return canvas;
+                })(),
+                setStatus: function(text) {
+                    console.log("status: " + text);
+                    if (text == "Running...")
+                      loaderCont.style.display = 'none';
+                },
+                monitorRunDependencies: function(left) {
+                    // no run dependencies to log
+                }
+            };
+
+            if (args.length > 0)
+              Module['arguments'] = args;
             loadScript(getDemoScript(getParameter("run")));
         })();
     </script>
