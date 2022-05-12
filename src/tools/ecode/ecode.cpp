@@ -1950,6 +1950,8 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 			return;
 		const DocEvent* docEvent = static_cast<const DocEvent*>( event );
 		std::string dir( FileSystem::fileRemoveFileName( docEvent->getDoc()->getFilePath() ) );
+		if ( dir.empty() )
+			return;
 		Lock l( mWatchesLock );
 		auto itWatch = mFilesFolderWatches.find( dir );
 		if ( mFileWatcher && itWatch != mFilesFolderWatches.end() ) {

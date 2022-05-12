@@ -402,7 +402,7 @@ void UICodeEditorSplitter::removeUnusedTab( UITabWidget* tabWidget ) {
 			 ->asType<UICodeEditor>()
 			 ->getDocument()
 			 .isEmpty() ) {
-		tabWidget->removeTab( (Uint32)0 );
+		tabWidget->removeTab( (Uint32)0, true, true );
 	}
 }
 
