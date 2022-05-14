@@ -6,8 +6,10 @@
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
 void closeSubsystem() {
+#if EE_PLATFORM != EE_PLATFORM_MACOSX && EE_PLATFORM != EE_PLATFORM_IOS
 	if ( SDL_WasInit( SDL_INIT_JOYSTICK ) )
 		SDL_QuitSubSystem( SDL_INIT_JOYSTICK );
+#endif
 }
 
 JoystickManagerSDL::JoystickManagerSDL() :

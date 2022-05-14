@@ -1096,7 +1096,8 @@ solution "eepp"
 
 		if not os.is("windows") and not os.is("haiku") then
 			links { "pthread" }
-		elseif os.is("macosx") then
+		end
+		if os.is("macosx") then
 			links { "CoreFoundation.framework", "CoreServices.framework" }
 		end
 
@@ -1110,11 +1111,14 @@ solution "eepp"
 		files { "src/tools/ecode/**.cpp" }
 		includedirs { "src/thirdparty/efsw/include", "src/thirdparty" }
 		links { "efsw-static" }
+
 		if not os.is("windows") and not os.is("haiku") then
 			links { "pthread" }
-		elseif os.is("macosx") then
+		end
+		if os.is("macosx") then
 			links { "CoreFoundation.framework", "CoreServices.framework" }
 		end
+
 		build_link_configuration( "ecode", true )
 
 	project "eepp-texturepacker"
