@@ -863,7 +863,7 @@ UIMenu* App::createEditMenu() {
 	menu->add( i18n( "copy_file_path", "Copy File Path" ), findIcon( "copy" ),
 			   getKeybind( "copy-file-path" ) )
 		->setId( "copy-file-path" );
-	menu->addSeparator();
+	UIMenuSeparator* fileSep = menu->addSeparator();
 	menu->add( i18n( "key_bindings", "Key Bindings" ), findIcon( "keybindings" ),
 			   getKeybind( "keybindings" ) )
 		->setId( "keybindings" );
@@ -872,7 +872,7 @@ UIMenu* App::createEditMenu() {
 			return;
 		runCommand( event->getNode()->getId() );
 	} );
-	menu->addEventListener( Event::OnMenuShow, [&, menu]( const Event* ) {
+	menu->addEventListener( Event::OnMenuShow, [&, menu, fileSep]( const Event* ) {
 		if ( nullptr == mEditorSplitter->getCurEditor() )
 			return;
 		auto doc = mEditorSplitter->getCurEditor()->getDocumentRef();
@@ -882,6 +882,7 @@ UIMenu* App::createEditMenu() {
 		menu->getItemId( "cut" )->setEnabled( doc->hasSelection() );
 		menu->getItemId( "open-containing-folder" )->setVisible( doc->hasFilepath() );
 		menu->getItemId( "copy-file-path" )->setVisible( doc->hasFilepath() );
+		fileSep->setVisible( doc->hasFilepath() );
 	} );
 	return menu;
 }
@@ -2576,7 +2577,7 @@ void App::initProjectTreeView( const std::string& path ) {
 				}
 			}
 		}
-	} else {
+	} else if ( !mIsMacOSApp ) {
 		loadFolder( "." );
 	}
 
@@ -2644,6 +2645,13 @@ void App::init( std::string file, const Float& pidelDensity, const std::string& 
 														  : 0 );
 	mDisplayDPI = currentDisplay->getDPI();
 	mResPath = Sys::getProcessPath();
+#if EE_PLATFORM == EE_PLATFORM_MACOSX
+	if ( String::contains( mResPath, "ecode.app" ) ) {
+		mResPath = FileSystem::getCurrentWorkingDirectory();
+		FileSystem::dirAddSlashAtEnd( mResPath );
+		mIsMacOSApp = true;
+	}
+#endif
 
 	mConfig.window.pixelDensity =
 		pidelDensity > 0 ? pidelDensity

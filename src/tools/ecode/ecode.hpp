@@ -117,6 +117,7 @@ class App : public UICodeEditorSplitter::Client {
 	std::shared_ptr<FileSystemModel> mFileSystemModel;
 	size_t mMenuIconSize;
 	bool mDirTreeReady{ false };
+	bool mIsMacOSApp{ false };
 	ProjectDocumentConfig mProjectDocConfig;
 	std::unordered_set<Doc::TextDocument*> mTmpDocs;
 	std::string mCurrentProject;

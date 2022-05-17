@@ -5,7 +5,7 @@ premake4 --file=../../premake4.lua gmake
 cd ../../make/macosx/
 sed -e "s/-Wl,-x//g" -i .make
 
-make $@
+make -j`nproc` $@
 
 cd ../../bin/
 ln -sf ../libs/macosx/libeepp.dylib .
