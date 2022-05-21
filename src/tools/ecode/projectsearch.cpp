@@ -106,7 +106,7 @@ searchInFileLuaPattern( const std::string& file, const std::string& text, const 
 				continue;
 			}
 			size_t relCol;
-			totNl += countNewLines( fileText, searchRes, end );
+			totNl += countNewLines( fileText, searchRes, start );
 			String str( textLine( caseSensitive ? fileText : fileTextOriginal, start, relCol ) );
 			int len = end - start;
 			res.push_back(

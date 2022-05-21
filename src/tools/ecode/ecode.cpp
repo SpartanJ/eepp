@@ -2755,9 +2755,11 @@ void App::init( std::string file, const Float& pidelDensity, const std::string& 
 		TextInput#search_replace,
 		TextInput#locate_find,
 		TextInput#global_search_find,
-		TextInput.small_input {
+		TextInput.small_input,
+		.search_str {
 			padding-top: 0;
 			padding-bottom: 0;
+			font-family: monospace;
 		}
 		#search_bar,
 		#global_search_bar,

@@ -96,6 +96,13 @@ void GlobalSearchController::initGlobalSearchBar( UIGlobalSearchBar* globalSearc
 								mGlobalSearchTreeReplace == mGlobalSearchTree, true );
 			}
 		} );
+	mGlobalSearchBarLayout->addCommand( "search-set-string", [&] {
+		auto listBox = mGlobalSearchHistoryList->getListBox();
+		mGlobalSearchInput->setText(
+			mGlobalSearchHistory[mGlobalSearchHistory.size() - 1 - listBox->getItemSelectedIndex()]
+				.first );
+		;
+	} );
 	mGlobalSearchBarLayout->addCommand( "close-global-searchbar", [&] {
 		hideGlobalSearchBar();
 		if ( mEditorSplitter->getCurEditor() )
@@ -165,6 +172,7 @@ void GlobalSearchController::initGlobalSearchBar( UIGlobalSearchBar* globalSearc
 				<TextView layout_width="wrap_content" layout_height="match_parent" text="Searched for:" margin-right="4dp" />
 				<TextView class="search_str" layout_width="wrap_content" layout_height="match_parent" />
 				<PushButton id="global_search_again" layout_width="wrap_content" layout_height="18dp" text="Search Again" margin-left="8dp" />
+				<PushButton id="global_search_set_search" layout_width="wrap_content" layout_height="18dp" text="Set Search String" margin-left="8dp" />
 				<PushButton id="global_search_collapse" layout_width="wrap_content" layout_height="18dp" tooltip="Collapse All" margin-left="8dp" icon="menu-fold" />
 				<PushButton id="global_search_expand" layout_width="wrap_content" layout_height="18dp" tooltip="Expand All" margin-left="8dp" icon="menu-unfold" />
 				<Widget layout_width="0" layout_weight="1" layout_height="match_parent" />
@@ -180,6 +188,8 @@ void GlobalSearchController::initGlobalSearchBar( UIGlobalSearchBar* globalSearc
 													  mUISceneNode->getRoot() )
 							  ->asType<UILayout>();
 	UIPushButton* searchAgainBtn = mGlobalSearchLayout->find<UIPushButton>( "global_search_again" );
+	UIPushButton* searchSetSearch =
+		mGlobalSearchLayout->find<UIPushButton>( "global_search_set_search" );
 	UITextInput* replaceInput =
 		mGlobalSearchLayout->find<UITextInput>( "global_search_replace_input" );
 	UIPushButton* replaceButton =
@@ -189,6 +199,7 @@ void GlobalSearchController::initGlobalSearchBar( UIGlobalSearchBar* globalSearc
 	UIPushButton* searchCollapseButton =
 		mGlobalSearchLayout->find<UIPushButton>( "global_search_collapse" );
 	addClickListener( searchAgainBtn, "search-again" );
+	addClickListener( searchSetSearch, "search-set-string" );
 	addClickListener( replaceButton, "replace-in-files" );
 	addClickListener( searchExpandButton, "expand-all" );
 	addClickListener( searchCollapseButton, "collapse-all" );
