@@ -1,5 +1,8 @@
 #include <eepp/window/backend/SDL2/base.hpp>
 #include <eepp/window/backend/SDL2/platformhelpersdl2.hpp>
+#include <eepp/system/log.hpp>
+
+using namespace EE::System;
 
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 #include <emscripten.h>
@@ -22,7 +25,10 @@ bool PlatformHelperSDL2::openURL( const std::string& url ) {
 	return true;
 #else
 	#if SDL_VERSION_ATLEAST(2,0,14)
-		return SDL_OpenURL( url.c_str() ) == 0;
+		int res = SDL_OpenURL( url.c_str() );
+		if ( res != 0 )
+			Log::error( "PlatformHelperSDL2::openURL: Failed with error - %s", SDL_GetError() );
+		return res == 0;
 	#else
 		return false;
 	#endif
