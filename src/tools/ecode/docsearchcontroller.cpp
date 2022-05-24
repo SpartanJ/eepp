@@ -4,10 +4,12 @@
 DocSearchController::DocSearchController( UICodeEditorSplitter* editorSplitter, App* app ) :
 	mEditorSplitter( editorSplitter ), mApp( app ) {}
 
-void DocSearchController::initSearchBar( UISearchBar* searchBar ) {
+void DocSearchController::initSearchBar(
+	UISearchBar* searchBar, std::unordered_map<std::string, std::string> keybindings ) {
 	mSearchBarLayout = searchBar;
 	mSearchBarLayout->setVisible( false )->setEnabled( false );
 	auto addClickListener = [&]( UIWidget* widget, std::string cmd ) {
+		widget->setTooltipText( mSearchBarLayout->getKeyBindings().getCommandKeybindString( cmd ) );
 		widget->addEventListener( Event::MouseClick, [this, cmd]( const Event* event ) {
 			const MouseEvent* mouseEvent = static_cast<const MouseEvent*>( event );
 			if ( mouseEvent->getFlags() & EE_BUTTON_LMASK )
@@ -19,12 +21,33 @@ void DocSearchController::initSearchBar( UISearchBar* searchBar ) {
 			mSearchBarLayout->execute( cmd );
 		} );
 	};
+
+	auto& kbind = mSearchBarLayout->getKeyBindings();
+	kbind.addKeybindsString( {
+		{ mApp->getKeybind( "repeat-find" ), "repeat-find" },
+		{ mApp->getKeybind( "find-prev" ), "find-prev" },
+	} );
+	kbind.addKeybindsStringUnordered( keybindings );
+
 	UITextInput* findInput = mSearchBarLayout->find<UITextInput>( "search_find" );
 	UITextInput* replaceInput = mSearchBarLayout->find<UITextInput>( "search_replace" );
 	UICheckBox* caseSensitiveChk = mSearchBarLayout->find<UICheckBox>( "case_sensitive" );
 	UICheckBox* escapeSequenceChk = mSearchBarLayout->find<UICheckBox>( "escape_sequence" );
 	UICheckBox* wholeWordChk = mSearchBarLayout->find<UICheckBox>( "whole_word" );
 	UICheckBox* luaPatternChk = mSearchBarLayout->find<UICheckBox>( "lua_pattern" );
+	UIPushButton* replaceAllButton = mSearchBarLayout->find<UIPushButton>( "replace_all" );
+	UIPushButton* findPrevButton = mSearchBarLayout->find<UIPushButton>( "find_prev" );
+	UIPushButton* findNextButton = mSearchBarLayout->find<UIPushButton>( "find_next" );
+	UIPushButton* replaceButton = mSearchBarLayout->find<UIPushButton>( "replace" );
+	UIPushButton* findReplaceButton = mSearchBarLayout->find<UIPushButton>( "replace_find" );
+
+	luaPatternChk->setTooltipText( kbind.getCommandKeybindString( "toggle-lua-pattern" ) );
+	caseSensitiveChk->setTooltipText( kbind.getCommandKeybindString( "change-case" ) );
+	wholeWordChk->setTooltipText( kbind.getCommandKeybindString( "change-whole-word" ) );
+	std::string kbindEscape = kbind.getCommandKeybindString( "change-escape-sequence" );
+	if ( !kbindEscape.empty() )
+		escapeSequenceChk->setTooltipText( escapeSequenceChk->getTooltipText() + " (" +
+										   kbindEscape + ")" );
 
 	caseSensitiveChk->addEventListener(
 		Event::OnValueChange, [&, caseSensitiveChk]( const Event* ) {
@@ -100,23 +123,14 @@ void DocSearchController::initSearchBar( UISearchBar* searchBar ) {
 	mSearchBarLayout->addCommand( "toggle-lua-pattern", [&, luaPatternChk] {
 		luaPatternChk->setChecked( !luaPatternChk->isChecked() );
 	} );
-	mSearchBarLayout->getKeyBindings().addKeybindsString(
-		{ { mApp->getKeybind( "repeat-find" ), "repeat-find" },
-		  { mApp->getKeybind( "find-prev" ), "find-prev" },
-		  { "mod+g", "repeat-find" },
-		  { "escape", "close-searchbar" },
-		  { "mod+r", "replace-all" },
-		  { "mod+s", "change-case" },
-		  { "mod+w", "change-whole-word" },
-		  { "mod+l", "toggle-lua-pattern" },
-		  { "mod+e", "change-escape-sequence" } } );
+
 	addReturnListener( findInput, "repeat-find" );
 	addReturnListener( replaceInput, "find-and-replace" );
-	addClickListener( mSearchBarLayout->find<UIPushButton>( "find_prev" ), "find-prev" );
-	addClickListener( mSearchBarLayout->find<UIPushButton>( "find_next" ), "repeat-find" );
-	addClickListener( mSearchBarLayout->find<UIPushButton>( "replace" ), "replace-selection" );
-	addClickListener( mSearchBarLayout->find<UIPushButton>( "replace_find" ), "find-and-replace" );
-	addClickListener( mSearchBarLayout->find<UIPushButton>( "replace_all" ), "replace-all" );
+	addClickListener( findPrevButton, "find-prev" );
+	addClickListener( findNextButton, "repeat-find" );
+	addClickListener( replaceButton, "replace-selection" );
+	addClickListener( findReplaceButton, "find-and-replace" );
+	addClickListener( replaceAllButton, "replace-all" );
 	addClickListener( mSearchBarLayout->find<UIWidget>( "searchbar_close" ), "close-searchbar" );
 	replaceInput->addEventListener( Event::OnTabNavigate,
 									[findInput]( const Event* ) { findInput->setFocus(); } );

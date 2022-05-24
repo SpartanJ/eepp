@@ -2,6 +2,9 @@
 #define EE_INPUT_KEYKODES_HPP
 
 #include <eepp/config.hpp>
+#include <eepp/core/string.hpp>
+#include <map>
+#include <string>
 
 namespace EE { namespace Window {
 
@@ -694,6 +697,24 @@ enum KeyModTable {
 #else
 #define KEYMOD_DEFAULT_MODIFIER KEYMOD_CTRL
 #endif
+
+class EE_API KeyMod {
+  public:
+	static Uint32 getDefaultModifier();
+
+	static void setDefaultModifier( const Uint32& mod );
+
+	static std::string getDefaultModifierString();
+
+	static bool isKeyMod( std::string key );
+
+	static Uint32 getKeyMod( std::string key );
+
+	static const std::map<std::string, Uint32>& getModMap();
+
+  private:
+	static Uint32 defaultModifier;
+};
 
 /** @enum MouseButton Mouse buttons */
 enum MouseButton {

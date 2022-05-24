@@ -290,13 +290,10 @@ std::string LinterModule::getMatchString( const LinterType& type ) {
 
 void LinterModule::drawAfterLineText( UICodeEditor* editor, const Int64& index, Vector2f position,
 									  const Float& /*fontSize*/, const Float& lineHeight ) {
-	mMatchesMutex.lock();
+	Lock l( mMatchesMutex );
 	auto matchIt = mMatches.find( editor->getDocumentRef().get() );
-	if ( matchIt == mMatches.end() ) {
-		mMatchesMutex.unlock();
+	if ( matchIt == mMatches.end() )
 		return;
-	}
-	mMatchesMutex.unlock();
 
 	std::map<Int64, std::vector<LinterMatch>>& map = matchIt->second;
 	auto lineIt = map.find( index );
@@ -337,6 +334,7 @@ void LinterModule::drawAfterLineText( UICodeEditor* editor, const Int64& index, 
 }
 
 bool LinterModule::onMouseMove( UICodeEditor* editor, const Vector2i& pos, const Uint32& ) {
+	Lock l( mMatchesMutex );
 	auto it = mMatches.find( editor->getDocumentRef().get() );
 	if ( it != mMatches.end() ) {
 		Vector2f localPos( editor->convertToNodeSpace( pos.asFloat() ) );

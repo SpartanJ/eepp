@@ -10,11 +10,28 @@ class UITreeViewGlobalSearch;
 
 class GlobalSearchController {
   public:
+	static std::unordered_map<std::string, std::string> getDefaultKeybindings() {
+		return {
+			{ "escape", "close-global-searchbar" },
+			{ "mod+s", "change-case" },
+			{ "mod+w", "change-whole-word" },
+			{ "mod+l", "toggle-lua-pattern" },
+			{ "mod+r", "search-replace-in-files" },
+			{ "mod+g", "search-again" },
+			{ "mod+a", "expand-all" },
+			{ "mod+shift+e", "collapse-all" },
+			{ "mod+e", "change-escape-sequence" },
+			{ "mod+h", "global-search-clear-history" },
+		};
+	}
+
 	GlobalSearchController( UICodeEditorSplitter*, UISceneNode*, App* );
 
 	void updateGlobalSearchBar();
 
-	void initGlobalSearchBar( UIGlobalSearchBar* globalSearchBar );
+	void initGlobalSearchBar(
+		UIGlobalSearchBar* globalSearchBar,
+		std::unordered_map<std::string, std::string> keybindings = getDefaultKeybindings() );
 
 	void hideGlobalSearchBar();
 
@@ -37,6 +54,7 @@ class GlobalSearchController {
 	bool isUsingSearchReplaceTree();
 
 	void clearHistory();
+
   protected:
 	UICodeEditorSplitter* mEditorSplitter{ nullptr };
 	UISceneNode* mUISceneNode{ nullptr };

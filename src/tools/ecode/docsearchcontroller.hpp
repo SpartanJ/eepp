@@ -23,9 +23,19 @@ class UISearchBar;
 
 class DocSearchController {
   public:
+	static std::unordered_map<std::string, std::string> getDefaultKeybindings() {
+		return { { "mod+g", "repeat-find" },		   { "escape", "close-searchbar" },
+				 { "mod+r", "replace-selection" },	   { "mod+shift+f", "find-and-replace" },
+				 { "mod+shift+r", "replace-all" },	   { "mod+s", "change-case" },
+				 { "mod+w", "change-whole-word" },	   { "mod+l", "toggle-lua-pattern" },
+				 { "mod+e", "change-escape-sequence" } };
+	}
+
 	DocSearchController( UICodeEditorSplitter*, App* app );
 
-	void initSearchBar( UISearchBar* searchBar );
+	void initSearchBar(
+		UISearchBar* searchBar,
+		std::unordered_map<std::string, std::string> keybindings = getDefaultKeybindings() );
 
 	void showFindView();
 

@@ -46,7 +46,8 @@ size_t GlobalSearchController::replaceInFiles( const std::string& replaceText,
 	return count;
 }
 
-void GlobalSearchController::initGlobalSearchBar( UIGlobalSearchBar* globalSearchBar ) {
+void GlobalSearchController::initGlobalSearchBar(
+	UIGlobalSearchBar* globalSearchBar, std::unordered_map<std::string, std::string> keybindings ) {
 	mGlobalSearchBarLayout = globalSearchBar;
 	mGlobalSearchBarLayout->setVisible( false )->setEnabled( false );
 	auto addClickListener = [&]( UIWidget* widget, std::string cmd ) {
@@ -56,16 +57,35 @@ void GlobalSearchController::initGlobalSearchBar( UIGlobalSearchBar* globalSearc
 				mGlobalSearchBarLayout->execute( cmd );
 		} );
 	};
+	auto& kbind = mGlobalSearchBarLayout->getKeyBindings();
+	kbind.addKeybindsStringUnordered( keybindings );
+
 	UIPushButton* searchButton = mGlobalSearchBarLayout->find<UIPushButton>( "global_search" );
+
 	UIPushButton* searchReplaceButton =
 		mGlobalSearchBarLayout->find<UIPushButton>( "global_search_replace" );
+	searchReplaceButton->setTooltipText(
+		kbind.getCommandKeybindString( "search-replace-in-files" ) );
+
 	UIPushButton* searchClearHistory =
 		mGlobalSearchBarLayout->find<UIPushButton>( "global_search_clear_history" );
+	searchClearHistory->setTooltipText(
+		kbind.getCommandKeybindString( "global-search-clear-history" ) );
+
 	UICheckBox* caseSensitiveChk = mGlobalSearchBarLayout->find<UICheckBox>( "case_sensitive" );
+	caseSensitiveChk->setTooltipText( kbind.getCommandKeybindString( "change-case" ) );
+
 	UICheckBox* wholeWordChk = mGlobalSearchBarLayout->find<UICheckBox>( "whole_word" );
+	wholeWordChk->setTooltipText( kbind.getCommandKeybindString( "change-whole-word" ) );
+
 	UICheckBox* luaPatternChk = mGlobalSearchBarLayout->find<UICheckBox>( "lua_pattern" );
-	UIWidget* searchBarClose = mGlobalSearchBarLayout->find<UIWidget>( "global_searchbar_close" );
+	luaPatternChk->setTooltipText( kbind.getCommandKeybindString( "toggle-lua-pattern" ) );
+
 	UICheckBox* escapeSequenceChk = mGlobalSearchBarLayout->find<UICheckBox>( "escape_sequence" );
+	escapeSequenceChk->setTooltipText( kbind.getCommandKeybindString( "change-escape-sequence" ) );
+
+	UIWidget* searchBarClose = mGlobalSearchBarLayout->find<UIWidget>( "global_searchbar_close" );
+
 	mGlobalSearchInput = mGlobalSearchBarLayout->find<UITextInput>( "global_search_find" );
 
 	mGlobalSearchHistoryList =
@@ -115,18 +135,6 @@ void GlobalSearchController::initGlobalSearchBar( UIGlobalSearchBar* globalSearc
 	mGlobalSearchBarLayout->addCommand( "collapse-all", [&] {
 		mGlobalSearchTree->collapseAll();
 		mGlobalSearchTree->setFocus();
-	} );
-	mGlobalSearchBarLayout->getKeyBindings().addKeybindsString( {
-		{ "escape", "close-global-searchbar" },
-		{ "mod+s", "change-case" },
-		{ "mod+w", "change-whole-word" },
-		{ "mod+l", "toggle-lua-pattern" },
-		{ "mod+r", "search-replace-in-files" },
-		{ "mod+g", "search-again" },
-		{ "mod+a", "expand-all" },
-		{ "mod+shift+e", "collapse-all" },
-		{ "mod+e", "change-escape-sequence" },
-		{ "mod+h", "global-search-clear-history" },
 	} );
 	mGlobalSearchBarLayout->addCommand( "change-case", [&, caseSensitiveChk] {
 		caseSensitiveChk->setChecked( !caseSensitiveChk->isChecked() );
@@ -188,16 +196,23 @@ void GlobalSearchController::initGlobalSearchBar( UIGlobalSearchBar* globalSearc
 													  mUISceneNode->getRoot() )
 							  ->asType<UILayout>();
 	UIPushButton* searchAgainBtn = mGlobalSearchLayout->find<UIPushButton>( "global_search_again" );
+	searchAgainBtn->setTooltipText( kbind.getCommandKeybindString( "search-again" ) );
+
 	UIPushButton* searchSetSearch =
 		mGlobalSearchLayout->find<UIPushButton>( "global_search_set_search" );
 	UITextInput* replaceInput =
 		mGlobalSearchLayout->find<UITextInput>( "global_search_replace_input" );
 	UIPushButton* replaceButton =
 		mGlobalSearchLayout->find<UIPushButton>( "global_search_replace_button" );
+
 	UIPushButton* searchExpandButton =
 		mGlobalSearchLayout->find<UIPushButton>( "global_search_expand" );
+	searchExpandButton->setTooltipText( kbind.getCommandKeybindString( "expand-all" ) );
+
 	UIPushButton* searchCollapseButton =
 		mGlobalSearchLayout->find<UIPushButton>( "global_search_collapse" );
+	searchCollapseButton->setTooltipText( kbind.getCommandKeybindString( "collapse-all" ) );
+
 	addClickListener( searchAgainBtn, "search-again" );
 	addClickListener( searchSetSearch, "search-set-string" );
 	addClickListener( replaceButton, "replace-in-files" );

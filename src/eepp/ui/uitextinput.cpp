@@ -691,36 +691,36 @@ void UITextInput::registerCommands() {
 
 void UITextInput::registerKeybindings() {
 	mKeyBindings.addKeybinds( {
-		{ { KEY_BACKSPACE, KEYMOD_DEFAULT_MODIFIER }, "delete-to-previous-word" },
+		{ { KEY_BACKSPACE, KeyMod::getDefaultModifier() }, "delete-to-previous-word" },
 		{ { KEY_BACKSPACE, KEYMOD_SHIFT }, "delete-to-previous-char" },
 		{ { KEY_BACKSPACE, 0 }, "delete-to-previous-char" },
-		{ { KEY_DELETE, KEYMOD_DEFAULT_MODIFIER }, "delete-to-next-word" },
+		{ { KEY_DELETE, KeyMod::getDefaultModifier() }, "delete-to-next-word" },
 		{ { KEY_DELETE, 0 }, "delete-to-next-char" },
 		{ { KEY_KP_ENTER, 0 }, "press-enter" },
 		{ { KEY_RETURN, 0 }, "press-enter" },
-		{ { KEY_LEFT, KEYMOD_DEFAULT_MODIFIER | KEYMOD_SHIFT }, "select-to-previous-word" },
-		{ { KEY_LEFT, KEYMOD_DEFAULT_MODIFIER }, "move-to-previous-word" },
+		{ { KEY_LEFT, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "select-to-previous-word" },
+		{ { KEY_LEFT, KeyMod::getDefaultModifier() }, "move-to-previous-word" },
 		{ { KEY_LEFT, KEYMOD_SHIFT }, "select-to-previous-char" },
 		{ { KEY_LEFT, 0 }, "move-to-previous-char" },
-		{ { KEY_RIGHT, KEYMOD_DEFAULT_MODIFIER | KEYMOD_SHIFT }, "select-to-next-word" },
-		{ { KEY_RIGHT, KEYMOD_DEFAULT_MODIFIER }, "move-to-next-word" },
+		{ { KEY_RIGHT, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "select-to-next-word" },
+		{ { KEY_RIGHT, KeyMod::getDefaultModifier() }, "move-to-next-word" },
 		{ { KEY_RIGHT, KEYMOD_SHIFT }, "select-to-next-char" },
 		{ { KEY_RIGHT, 0 }, "move-to-next-char" },
-		{ { KEY_Z, KEYMOD_DEFAULT_MODIFIER | KEYMOD_SHIFT }, "redo" },
-		{ { KEY_HOME, KEYMOD_DEFAULT_MODIFIER | KEYMOD_SHIFT }, "select-to-start-of-doc" },
+		{ { KEY_Z, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "redo" },
+		{ { KEY_HOME, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "select-to-start-of-doc" },
 		{ { KEY_HOME, KEYMOD_SHIFT }, "select-to-start-of-content" },
-		{ { KEY_HOME, KEYMOD_DEFAULT_MODIFIER }, "move-to-start-of-doc" },
+		{ { KEY_HOME, KeyMod::getDefaultModifier() }, "move-to-start-of-doc" },
 		{ { KEY_HOME, 0 }, "move-to-start-of-content" },
-		{ { KEY_END, KEYMOD_DEFAULT_MODIFIER | KEYMOD_SHIFT }, "select-to-end-of-doc" },
+		{ { KEY_END, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "select-to-end-of-doc" },
 		{ { KEY_END, KEYMOD_SHIFT }, "select-to-end-of-line" },
-		{ { KEY_END, KEYMOD_DEFAULT_MODIFIER }, "move-to-end-of-doc" },
+		{ { KEY_END, KeyMod::getDefaultModifier() }, "move-to-end-of-doc" },
 		{ { KEY_END, 0 }, "move-to-end-of-line" },
-		{ { KEY_Y, KEYMOD_DEFAULT_MODIFIER }, "redo" },
-		{ { KEY_Z, KEYMOD_DEFAULT_MODIFIER }, "undo" },
-		{ { KEY_C, KEYMOD_DEFAULT_MODIFIER }, "copy" },
-		{ { KEY_X, KEYMOD_DEFAULT_MODIFIER }, "cut" },
-		{ { KEY_V, KEYMOD_DEFAULT_MODIFIER }, "paste" },
-		{ { KEY_A, KEYMOD_DEFAULT_MODIFIER }, "select-all" },
+		{ { KEY_Y, KeyMod::getDefaultModifier() }, "redo" },
+		{ { KEY_Z, KeyMod::getDefaultModifier() }, "undo" },
+		{ { KEY_C, KeyMod::getDefaultModifier() }, "copy" },
+		{ { KEY_X, KeyMod::getDefaultModifier() }, "cut" },
+		{ { KEY_V, KeyMod::getDefaultModifier() }, "paste" },
+		{ { KEY_A, KeyMod::getDefaultModifier() }, "select-all" },
 	} );
 }
 
@@ -742,7 +742,7 @@ Uint32 UITextInput::onTextInput( const TextInputEvent& event ) {
 	Input* input = getUISceneNode()->getWindow()->getInput();
 
 	if ( ( input->isLeftAltPressed() && !event.getText().empty() && event.getText()[0] == '\t' ) ||
-		 ( input->isLeftAltPressed() && input->isShiftPressed() ) || input->isControlPressed() )
+		 input->isControlPressed() || input->isMetaPressed() || input->isLeftAltPressed() )
 		return 0;
 
 	const String& text = event.getText();

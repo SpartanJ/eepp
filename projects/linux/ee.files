@@ -985,6 +985,7 @@
 ../../src/eepp/window/inputtextbuffer.cpp
 ../../src/eepp/window/joystick.cpp
 ../../src/eepp/window/joystickmanager.cpp
+../../src/eepp/window/keycodes.cpp
 ../../src/eepp/window/platformhelper.hpp
 ../../src/eepp/window/window.cpp
 ../../src/examples/empty_window/empty_window.cpp

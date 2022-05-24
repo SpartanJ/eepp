@@ -35,66 +35,66 @@ UICodeEditor* UICodeEditor::NewOpt( const bool& autoRegisterBaseCommands,
 
 const std::map<KeyBindings::Shortcut, std::string> UICodeEditor::getDefaultKeybindings() {
 	return {
-		{ { KEY_BACKSPACE, KEYMOD_DEFAULT_MODIFIER }, "delete-to-previous-word" },
+		{ { KEY_BACKSPACE, KeyMod::getDefaultModifier() }, "delete-to-previous-word" },
 		{ { KEY_BACKSPACE, KEYMOD_SHIFT }, "delete-to-previous-char" },
 		{ { KEY_BACKSPACE, 0 }, "delete-to-previous-char" },
-		{ { KEY_DELETE, KEYMOD_DEFAULT_MODIFIER }, "delete-to-next-word" },
+		{ { KEY_DELETE, KeyMod::getDefaultModifier() }, "delete-to-next-word" },
 		{ { KEY_DELETE, KEYMOD_SHIFT }, "delete-current-line" },
 		{ { KEY_DELETE, 0 }, "delete-to-next-char" },
-		{ { KEY_KP_ENTER, KEYMOD_DEFAULT_MODIFIER | KEYMOD_SHIFT }, "new-line-above" },
-		{ { KEY_RETURN, KEYMOD_DEFAULT_MODIFIER | KEYMOD_SHIFT }, "new-line-above" },
-		{ { KEY_KP_ENTER, KEYMOD_DEFAULT_MODIFIER }, "new-line" },
-		{ { KEY_RETURN, KEYMOD_DEFAULT_MODIFIER }, "new-line" },
+		{ { KEY_KP_ENTER, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "new-line-above" },
+		{ { KEY_RETURN, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "new-line-above" },
+		{ { KEY_KP_ENTER, KeyMod::getDefaultModifier() }, "new-line" },
+		{ { KEY_RETURN, KeyMod::getDefaultModifier() }, "new-line" },
 		{ { KEY_KP_ENTER, KEYMOD_SHIFT }, "new-line" },
 		{ { KEY_RETURN, KEYMOD_SHIFT }, "new-line" },
 		{ { KEY_KP_ENTER, 0 }, "new-line" },
 		{ { KEY_RETURN, 0 }, "new-line" },
-		{ { KEY_UP, KEYMOD_DEFAULT_MODIFIER | KEYMOD_SHIFT }, "move-lines-up" },
-		{ { KEY_UP, KEYMOD_DEFAULT_MODIFIER }, "move-scroll-up" },
+		{ { KEY_UP, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "move-lines-up" },
+		{ { KEY_UP, KeyMod::getDefaultModifier() }, "move-scroll-up" },
 		{ { KEY_UP, KEYMOD_SHIFT }, "select-to-previous-line" },
 		{ { KEY_UP, 0 }, "move-to-previous-line" },
-		{ { KEY_DOWN, KEYMOD_DEFAULT_MODIFIER | KEYMOD_SHIFT }, "move-lines-down" },
-		{ { KEY_DOWN, KEYMOD_DEFAULT_MODIFIER }, "move-scroll-down" },
+		{ { KEY_DOWN, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "move-lines-down" },
+		{ { KEY_DOWN, KeyMod::getDefaultModifier() }, "move-scroll-down" },
 		{ { KEY_DOWN, KEYMOD_SHIFT }, "select-to-next-line" },
 		{ { KEY_DOWN, 0 }, "move-to-next-line" },
-		{ { KEY_LEFT, KEYMOD_DEFAULT_MODIFIER | KEYMOD_SHIFT }, "select-to-previous-word" },
-		{ { KEY_LEFT, KEYMOD_DEFAULT_MODIFIER }, "move-to-previous-word" },
+		{ { KEY_LEFT, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "select-to-previous-word" },
+		{ { KEY_LEFT, KeyMod::getDefaultModifier() }, "move-to-previous-word" },
 		{ { KEY_LEFT, KEYMOD_SHIFT }, "select-to-previous-char" },
 		{ { KEY_LEFT, 0 }, "move-to-previous-char" },
-		{ { KEY_RIGHT, KEYMOD_DEFAULT_MODIFIER | KEYMOD_SHIFT }, "select-to-next-word" },
-		{ { KEY_RIGHT, KEYMOD_DEFAULT_MODIFIER }, "move-to-next-word" },
+		{ { KEY_RIGHT, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "select-to-next-word" },
+		{ { KEY_RIGHT, KeyMod::getDefaultModifier() }, "move-to-next-word" },
 		{ { KEY_RIGHT, KEYMOD_SHIFT }, "select-to-next-char" },
 		{ { KEY_RIGHT, 0 }, "move-to-next-char" },
-		{ { KEY_Z, KEYMOD_DEFAULT_MODIFIER | KEYMOD_SHIFT }, "redo" },
-		{ { KEY_HOME, KEYMOD_DEFAULT_MODIFIER | KEYMOD_SHIFT }, "select-to-start-of-doc" },
+		{ { KEY_Z, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "redo" },
+		{ { KEY_HOME, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "select-to-start-of-doc" },
 		{ { KEY_HOME, KEYMOD_SHIFT }, "select-to-start-of-content" },
-		{ { KEY_HOME, KEYMOD_DEFAULT_MODIFIER }, "move-to-start-of-doc" },
+		{ { KEY_HOME, KeyMod::getDefaultModifier() }, "move-to-start-of-doc" },
 		{ { KEY_HOME, 0 }, "move-to-start-of-content" },
-		{ { KEY_END, KEYMOD_DEFAULT_MODIFIER | KEYMOD_SHIFT }, "select-to-end-of-doc" },
+		{ { KEY_END, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "select-to-end-of-doc" },
 		{ { KEY_END, KEYMOD_SHIFT }, "select-to-end-of-line" },
-		{ { KEY_END, KEYMOD_DEFAULT_MODIFIER }, "move-to-end-of-doc" },
+		{ { KEY_END, KeyMod::getDefaultModifier() }, "move-to-end-of-doc" },
 		{ { KEY_END, 0 }, "move-to-end-of-line" },
-		{ { KEY_PAGEUP, KEYMOD_DEFAULT_MODIFIER }, "move-to-previous-page" },
+		{ { KEY_PAGEUP, KeyMod::getDefaultModifier() }, "move-to-previous-page" },
 		{ { KEY_PAGEUP, KEYMOD_SHIFT }, "select-to-previous-page" },
 		{ { KEY_PAGEUP, 0 }, "move-to-previous-page" },
-		{ { KEY_PAGEDOWN, KEYMOD_DEFAULT_MODIFIER }, "move-to-next-page" },
+		{ { KEY_PAGEDOWN, KeyMod::getDefaultModifier() }, "move-to-next-page" },
 		{ { KEY_PAGEDOWN, KEYMOD_SHIFT }, "select-to-next-page" },
 		{ { KEY_PAGEDOWN, 0 }, "move-to-next-page" },
-		{ { KEY_Y, KEYMOD_DEFAULT_MODIFIER }, "redo" },
-		{ { KEY_Z, KEYMOD_DEFAULT_MODIFIER }, "undo" },
+		{ { KEY_Y, KeyMod::getDefaultModifier() }, "redo" },
+		{ { KEY_Z, KeyMod::getDefaultModifier() }, "undo" },
 		{ { KEY_TAB, KEYMOD_SHIFT }, "unindent" },
 		{ { KEY_TAB, 0 }, "indent" },
-		{ { KEY_C, KEYMOD_DEFAULT_MODIFIER }, "copy" },
-		{ { KEY_X, KEYMOD_DEFAULT_MODIFIER }, "cut" },
-		{ { KEY_V, KEYMOD_DEFAULT_MODIFIER }, "paste" },
+		{ { KEY_C, KeyMod::getDefaultModifier() }, "copy" },
+		{ { KEY_X, KeyMod::getDefaultModifier() }, "cut" },
+		{ { KEY_V, KeyMod::getDefaultModifier() }, "paste" },
 		{ { KEY_INSERT, KEYMOD_SHIFT }, "paste" },
-		{ { KEY_A, KEYMOD_DEFAULT_MODIFIER }, "select-all" },
-		{ { KEY_PLUS, KEYMOD_DEFAULT_MODIFIER }, "font-size-grow" },
-		{ { KEY_KP_PLUS, KEYMOD_DEFAULT_MODIFIER }, "font-size-grow" },
-		{ { KEY_MINUS, KEYMOD_DEFAULT_MODIFIER }, "font-size-shrink" },
-		{ { KEY_KP_MINUS, KEYMOD_DEFAULT_MODIFIER }, "font-size-shrink" },
-		{ { KEY_0, KEYMOD_DEFAULT_MODIFIER | KEYMOD_SHIFT }, "font-size-reset" },
-		{ { KEY_KP_DIVIDE, KEYMOD_DEFAULT_MODIFIER }, "toggle-line-comments" },
+		{ { KEY_A, KeyMod::getDefaultModifier() }, "select-all" },
+		{ { KEY_PLUS, KeyMod::getDefaultModifier() }, "font-size-grow" },
+		{ { KEY_KP_PLUS, KeyMod::getDefaultModifier() }, "font-size-grow" },
+		{ { KEY_MINUS, KeyMod::getDefaultModifier() }, "font-size-shrink" },
+		{ { KEY_KP_MINUS, KeyMod::getDefaultModifier() }, "font-size-shrink" },
+		{ { KEY_0, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "font-size-reset" },
+		{ { KEY_KP_DIVIDE, KeyMod::getDefaultModifier() }, "toggle-line-comments" },
 	};
 }
 
@@ -211,9 +211,9 @@ void UICodeEditor::draw() {
 	Float charSize = PixelDensity::pxToDp( getCharacterSize() );
 	Float lineHeight = getLineHeight();
 	int lineNumberDigits = getLineNumberDigits();
-	Float lineNumberWidth = mShowLineNumber ? getLineNumberWidth() : 0.f;
+	Float gutterWidth = getGutterWidth();
 	Vector2f screenStart( getScreenStart() );
-	Vector2f start( screenStart.x + lineNumberWidth, screenStart.y );
+	Vector2f start( screenStart.x + gutterWidth, screenStart.y );
 	Vector2f startScroll( start - mScroll );
 	Primitives primitives;
 	TextPosition cursor( mDoc->getSelection().start() );
@@ -241,11 +241,6 @@ void UICodeEditor::draw() {
 		drawMatchingBrackets( startScroll, lineHeight );
 	}
 
-	if ( mDoc->hasSelection() ) {
-		drawTextRange( mDoc->getSelection( true ), lineRange, startScroll, lineHeight,
-					   mFontStyleConfig.getFontSelectionBackColor() );
-	}
-
 	if ( mHighlightTextRange.isValid() && mHighlightTextRange.hasSelection() ) {
 		drawTextRange( mHighlightTextRange, lineRange, startScroll, lineHeight,
 					   mFontStyleConfig.getFontSelectionBackColor() );
@@ -257,6 +252,11 @@ void UICodeEditor::draw() {
 
 	if ( !mHighlightWord.empty() ) {
 		drawWordMatch( mHighlightWord, lineRange, startScroll, lineHeight );
+	}
+
+	if ( mDoc->hasSelection() ) {
+		drawTextRange( mDoc->getSelection( true ), lineRange, startScroll, lineHeight,
+					   mFontStyleConfig.getFontSelectionBackColor() );
 	}
 
 	// Draw tab marker
@@ -285,7 +285,7 @@ void UICodeEditor::draw() {
 	drawCursor( startScroll, lineHeight, cursor );
 
 	if ( mShowLineNumber ) {
-		drawLineNumbers( lineRange, startScroll, screenStart, lineHeight, lineNumberWidth,
+		drawLineNumbers( lineRange, startScroll, screenStart, lineHeight, gutterWidth,
 						 lineNumberDigits, charSize );
 	}
 
@@ -524,7 +524,7 @@ Float UICodeEditor::getViewportWidth( const bool& forceVScroll ) const {
 	if ( mMinimapEnabled )
 		vScrollWidth += getMinimapWidth();
 	Float viewWidth = eefloor( mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right -
-							   getLineNumberWidth() - vScrollWidth );
+							   getGutterWidth() - vScrollWidth );
 	return viewWidth;
 }
 
@@ -636,6 +636,10 @@ Float UICodeEditor::getLineNumberWidth() const {
 	return mShowLineNumber ? eeceil( getLineNumberDigits() * getGlyphWidth() +
 									 getLineNumberPaddingLeft() + getLineNumberPaddingRight() )
 						   : 0.f;
+}
+
+Float UICodeEditor::getGutterWidth() const {
+	return getLineNumberWidth();
 }
 
 const bool& UICodeEditor::getShowLineNumber() const {
@@ -791,7 +795,7 @@ Uint32 UICodeEditor::onTextInput( const TextInputEvent& event ) {
 	Input* input = getUISceneNode()->getWindow()->getInput();
 
 	if ( ( input->isLeftAltPressed() && !event.getText().empty() && event.getText()[0] == '\t' ) ||
-		 ( input->isLeftAltPressed() && input->isShiftPressed() ) || input->isControlPressed() )
+		 input->isControlPressed() || input->isMetaPressed() || input->isLeftAltPressed() )
 		return 0;
 
 	mDoc->textInput( event.getText() );
@@ -836,7 +840,7 @@ Uint32 UICodeEditor::onKeyUp( const KeyEvent& event ) {
 TextPosition UICodeEditor::resolveScreenPosition( const Vector2f& position, bool clamp ) const {
 	Vector2f localPos( convertToNodeSpace( position ) );
 	localPos += mScroll;
-	localPos.x -= mPaddingPx.Left + ( mShowLineNumber ? getLineNumberWidth() : 0.f );
+	localPos.x -= mPaddingPx.Left + getGutterWidth();
 	localPos.y -= mPaddingPx.Top;
 	Int64 line = (Int64)eefloor( localPos.y / getLineHeight() );
 	if ( clamp )

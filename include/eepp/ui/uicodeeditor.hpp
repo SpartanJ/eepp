@@ -205,6 +205,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	Float getLineNumberWidth() const;
 
+	virtual Float getGutterWidth() const;
+
 	const bool& getShowLineNumber() const;
 
 	void setShowLineNumber( const bool& showLineNumber );

@@ -327,6 +327,7 @@ void App::saveConfig() {
 
 static std::string keybindFormat( std::string str ) {
 	if ( !str.empty() ) {
+		String::replace( str, "mod", KeyMod::getDefaultModifierString() );
 		str[0] = std::toupper( str[0] );
 		size_t found = str.find_first_of( '+' );
 		while ( found != std::string::npos ) {
@@ -1486,38 +1487,100 @@ void App::updateDocumentMenu() {
 		->setActive( mEditorSplitter->getCurEditor()->isLocked() );
 }
 
+static void
+updateKeybindings( IniFile& ini, const std::string& group, Input* input,
+				   std::unordered_map<std::string, std::string>& keybindings,
+				   const std::unordered_map<std::string, std::string>& defKeybindings ) {
+	KeyBindings bindings( input );
+	bool added = false;
+
+	if ( ini.findKey( group ) != IniFile::noID ) {
+		keybindings = ini.getKeyUnorderedMap( group );
+	} else {
+		for ( const auto& it : defKeybindings )
+			ini.setValue( group, it.first, it.second );
+		added = true;
+	}
+	std::unordered_map<std::string, std::string> invertedKeybindings;
+	for ( const auto& key : keybindings )
+		invertedKeybindings[key.second] = key.first;
+
+	if ( defKeybindings.size() != keybindings.size() ) {
+		for ( const auto& key : defKeybindings ) {
+			auto foundCmd = invertedKeybindings.find( key.second );
+			auto& shortcutStr = key.first;
+			if ( foundCmd == invertedKeybindings.end() &&
+				 keybindings.find( shortcutStr ) == keybindings.end() ) {
+				keybindings[shortcutStr] = key.second;
+				invertedKeybindings[key.second] = shortcutStr;
+				ini.setValue( group, shortcutStr, key.second );
+				added = true;
+			}
+		}
+	}
+	if ( added )
+		ini.writeFile();
+}
+
+static void
+updateKeybindings( IniFile& ini, const std::string& group, Input* input,
+				   std::unordered_map<std::string, std::string>& keybindings,
+				   std::unordered_map<std::string, std::string>& invertedKeybindings,
+				   const std::map<KeyBindings::Shortcut, std::string>& defKeybindings ) {
+	KeyBindings bindings( input );
+	bool added = false;
+
+	if ( ini.findKey( group ) != IniFile::noID ) {
+		keybindings = ini.getKeyUnorderedMap( group );
+	} else {
+		for ( const auto& it : defKeybindings )
+			ini.setValue( group, bindings.getShortcutString( it.first ), it.second );
+		added = true;
+	}
+	for ( const auto& key : keybindings )
+		invertedKeybindings[key.second] = key.first;
+
+	if ( defKeybindings.size() != keybindings.size() ) {
+		for ( const auto& key : defKeybindings ) {
+			auto foundCmd = invertedKeybindings.find( key.second );
+			auto shortcutStr = bindings.getShortcutString( key.first );
+			if ( foundCmd == invertedKeybindings.end() &&
+				 keybindings.find( shortcutStr ) == keybindings.end() ) {
+				keybindings[shortcutStr] = key.second;
+				invertedKeybindings[key.second] = shortcutStr;
+				ini.setValue( group, shortcutStr, key.second );
+				added = true;
+			}
+		}
+	}
+	if ( added )
+		ini.writeFile();
+}
+
 void App::loadKeybindings() {
 	if ( mKeybindings.empty() ) {
 		KeyBindings bindings( mWindow->getInput() );
-		auto defKeybindings = getDefaultKeybindings();
 		IniFile ini( mKeybindingsPath );
-		if ( FileSystem::fileExists( mKeybindingsPath ) ) {
-			mKeybindings = ini.getKeyUnorderedMap( "keybindings" );
-		} else {
-			for ( const auto& it : defKeybindings )
-				ini.setValue( "keybindings", bindings.getShortcutString( it.first ), it.second );
-			ini.writeFile();
-			mKeybindings = ini.getKeyUnorderedMap( "keybindings" );
-		}
-		for ( const auto& key : mKeybindings )
-			mKeybindingsInvert[key.second] = key.first;
 
-		if ( defKeybindings.size() != mKeybindings.size() ) {
-			bool added = false;
-			for ( const auto& key : defKeybindings ) {
-				auto foundCmd = mKeybindingsInvert.find( key.second );
-				auto shortcutStr = bindings.getShortcutString( key.first );
-				if ( foundCmd == mKeybindingsInvert.end() &&
-					 mKeybindings.find( shortcutStr ) == mKeybindings.end() ) {
-					mKeybindings[shortcutStr] = key.second;
-					mKeybindingsInvert[key.second] = shortcutStr;
-					ini.setValue( "keybindings", shortcutStr, key.second );
-					added = true;
-				}
-			}
-			if ( added )
-				ini.writeFile();
+		std::string defMod = ini.getValue( "modifier", "mod", "" );
+		if ( defMod.empty() ) {
+			defMod = KeyMod::getDefaultModifierString();
+			ini.setValue( "modifier", "mod", defMod );
+			ini.writeFile();
 		}
+
+		Uint32 defModKeyCode = KeyMod::getKeyMod( defMod );
+		if ( 0 != defModKeyCode )
+			KeyMod::setDefaultModifier( defModKeyCode );
+
+		updateKeybindings( ini, "editor", mWindow->getInput(), mKeybindings, mKeybindingsInvert,
+						   getDefaultKeybindings() );
+
+		updateKeybindings( ini, "global_search", mWindow->getInput(), mGlobalSearchKeybindings,
+						   GlobalSearchController::getDefaultKeybindings() );
+
+		updateKeybindings( ini, "document_search", mWindow->getInput(), mDocumentSearchKeybindings,
+						   DocSearchController::getDefaultKeybindings() );
 	}
 }
 
@@ -1614,19 +1677,19 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 			 { { KEY_F3, KEYMOD_NONE }, "repeat-find" },
 			 { { KEY_F3, KEYMOD_SHIFT }, "find-prev" },
 			 { { KEY_F12, KEYMOD_NONE }, "console-toggle" },
-			 { { KEY_F, KEYMOD_DEFAULT_MODIFIER }, "find-replace" },
-			 { { KEY_Q, KEYMOD_DEFAULT_MODIFIER }, "close-app" },
-			 { { KEY_O, KEYMOD_DEFAULT_MODIFIER }, "open-file" },
-			 { { KEY_W, KEYMOD_DEFAULT_MODIFIER | KEYMOD_SHIFT }, "download-file-web" },
-			 { { KEY_O, KEYMOD_DEFAULT_MODIFIER | KEYMOD_SHIFT }, "open-folder" },
+			 { { KEY_F, KeyMod::getDefaultModifier() }, "find-replace" },
+			 { { KEY_Q, KeyMod::getDefaultModifier() }, "close-app" },
+			 { { KEY_O, KeyMod::getDefaultModifier() }, "open-file" },
+			 { { KEY_W, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "download-file-web" },
+			 { { KEY_O, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-folder" },
 			 { { KEY_F6, KEYMOD_NONE }, "debug-draw-highlight-toggle" },
 			 { { KEY_F7, KEYMOD_NONE }, "debug-draw-boxes-toggle" },
 			 { { KEY_F8, KEYMOD_NONE }, "debug-draw-debug-data" },
-			 { { KEY_K, KEYMOD_DEFAULT_MODIFIER }, "open-locatebar" },
-			 { { KEY_F, KEYMOD_DEFAULT_MODIFIER | KEYMOD_SHIFT }, "open-global-search" },
-			 { { KEY_L, KEYMOD_DEFAULT_MODIFIER }, "go-to-line" },
-			 { { KEY_M, KEYMOD_DEFAULT_MODIFIER }, "menu-toggle" },
-			 { { KEY_S, KEYMOD_DEFAULT_MODIFIER | KEYMOD_SHIFT }, "save-all" },
+			 { { KEY_K, KeyMod::getDefaultModifier() }, "open-locatebar" },
+			 { { KEY_F, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-global-search" },
+			 { { KEY_L, KeyMod::getDefaultModifier() }, "go-to-line" },
+			 { { KEY_M, KeyMod::getDefaultModifier() }, "menu-toggle" },
+			 { { KEY_S, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "save-all" },
 			 { { KEY_F9, KEYMOD_LALT }, "switch-side-panel" },
 			 { { KEY_F, KEYMOD_LALT }, "format-doc" } };
 }
@@ -3044,12 +3107,14 @@ void App::init( std::string file, const Float& pidelDensity, const std::string& 
 			mUISceneNode->find<UILayout>( "notification_center" ) );
 
 		mDocSearchController = std::make_unique<DocSearchController>( mEditorSplitter, this );
-		mDocSearchController->initSearchBar( mUISceneNode->find<UISearchBar>( "search_bar" ) );
+		mDocSearchController->initSearchBar( mUISceneNode->find<UISearchBar>( "search_bar" ),
+											 mDocumentSearchKeybindings );
 
 		mGlobalSearchController =
 			std::make_unique<GlobalSearchController>( mEditorSplitter, mUISceneNode, this );
 		mGlobalSearchController->initGlobalSearchBar(
-			mUISceneNode->find<UIGlobalSearchBar>( "global_search_bar" ) );
+			mUISceneNode->find<UIGlobalSearchBar>( "global_search_bar" ),
+			mGlobalSearchKeybindings );
 
 		mFileLocator = std::make_unique<FileLocator>( mEditorSplitter, mUISceneNode, this );
 		mFileLocator->initLocateBar( mUISceneNode->find<UILocateBar>( "locate_bar" ),

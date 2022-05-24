@@ -104,6 +104,8 @@ class App : public UICodeEditorSplitter::Client {
 	std::string mInitColorScheme;
 	std::unordered_map<std::string, std::string> mKeybindings;
 	std::unordered_map<std::string, std::string> mKeybindingsInvert;
+	std::unordered_map<std::string, std::string> mGlobalSearchKeybindings;
+	std::unordered_map<std::string, std::string> mDocumentSearchKeybindings;
 	std::string mConfigPath;
 	std::string mKeybindingsPath;
 	Float mDisplayDPI{ 96 };

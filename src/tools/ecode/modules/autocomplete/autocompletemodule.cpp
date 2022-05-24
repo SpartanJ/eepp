@@ -162,7 +162,7 @@ bool AutoCompleteModule::onKeyDown( UICodeEditor* editor, const KeyEvent& event 
 			pickSuggestion( editor );
 			return true;
 		}
-	} else if ( event.getKeyCode() == KEY_SPACE && ( event.getMod() & KEYMOD_DEFAULT_MODIFIER ) ) {
+	} else if ( event.getKeyCode() == KEY_SPACE && ( event.getMod() & KeyMod::getDefaultModifier() ) ) {
 		std::string partialSymbol( getPartialSymbol( &editor->getDocument() ) );
 		if ( partialSymbol.size() >= 3 ) {
 			updateSuggestions( partialSymbol, editor );

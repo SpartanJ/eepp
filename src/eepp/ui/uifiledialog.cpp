@@ -158,7 +158,7 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 					 modelEvent->getTriggerEvent()->getType() == Event::EventType::KeyDown ) {
 					const KeyEvent* keyEvent =
 						static_cast<const KeyEvent*>( modelEvent->getTriggerEvent() );
-					if ( keyEvent->getMod() & KEYMOD_DEFAULT_MODIFIER ) {
+					if ( keyEvent->getMod() & KeyMod::getDefaultModifier() ) {
 						shouldOpenFolder = true;
 					}
 				}

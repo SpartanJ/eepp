@@ -33,10 +33,6 @@ class EE_API KeyBindings {
 		bool empty() const { return 0 == mod && 0 == key; }
 	};
 
-	static bool isKeyMod( std::string key );
-
-	static Uint32 getKeyMod( std::string key );
-
 	KeyBindings( const Window::Input* input );
 
 	void addKeybindsString( const std::map<std::string, std::string>& binds );
@@ -72,10 +68,6 @@ class EE_API KeyBindings {
 	const ShortcutMap& getShortcutMap() const;
 
 	std::string getShortcutString( Shortcut shortcut ) const;
-
-	Uint32 getDefaultModifier() const;
-
-	void setDefaultModifier( Uint32 newDefaultModifier );
 
   protected:
 	const Window::Input* mInput;
