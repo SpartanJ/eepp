@@ -186,7 +186,7 @@ void UITooltip::autoAlign() {
 	switch ( Font::getHorizontalAlign( getFlags() ) ) {
 		case UI_HALIGN_CENTER:
 			mAlignOffset.x =
-				mPaddingPx.Left + ( Float )( ( Int32 )( Width - mTextCache->getTextWidth() ) / 2 );
+				mPaddingPx.Left + (Float)( (Int32)( Width - mTextCache->getTextWidth() ) / 2 );
 			break;
 		case UI_HALIGN_RIGHT:
 			mAlignOffset.x =
@@ -199,8 +199,8 @@ void UITooltip::autoAlign() {
 
 	switch ( Font::getVerticalAlign( getFlags() ) ) {
 		case UI_VALIGN_CENTER:
-			mAlignOffset.y = mPaddingPx.Top +
-							 ( Float )( ( ( Int32 )( Height - mTextCache->getTextHeight() ) ) / 2 );
+			mAlignOffset.y =
+				mPaddingPx.Top + (Float)( ( (Int32)( Height - mTextCache->getTextHeight() ) ) / 2 );
 			break;
 		case UI_VALIGN_BOTTOM:
 			mAlignOffset.y =
@@ -375,6 +375,14 @@ void UITooltip::setStringBuffer( const String& stringBuffer ) {
 
 void UITooltip::resetTextToStringBuffer() {
 	setText( mStringBuffer );
+}
+
+bool UITooltip::dontAutoHideOnMouseMove() const {
+	return mDontAutoHideOnMouseMove;
+}
+
+void UITooltip::setDontAutoHideOnMouseMove( bool dontAutoHideOnMouseMove ) {
+	mDontAutoHideOnMouseMove = dontAutoHideOnMouseMove;
 }
 
 bool UITooltip::applyProperty( const StyleSheetProperty& attribute ) {

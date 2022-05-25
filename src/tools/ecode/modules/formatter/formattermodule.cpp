@@ -3,6 +3,7 @@
 #include "../../thirdparty/subprocess.h"
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreamstring.hpp>
+#include <eepp/system/luapattern.hpp>
 #include <random>
 
 using json = nlohmann::json;
@@ -157,7 +158,10 @@ void FormatterModule::runFormatter( UICodeEditor* editor, const Formatter& forma
 	strings.push_back( NULL );
 	struct subprocess_s subprocess;
 	int result =
-		subprocess_create( strings.data(), subprocess_option_inherit_environment, &subprocess );
+		subprocess_create( strings.data(),
+						   subprocess_option_search_user_path |
+							   subprocess_option_inherit_environment | subprocess_option_no_window,
+						   &subprocess );
 	if ( 0 == result ) {
 		std::string buffer( 1024, '\0' );
 		std::string data;
@@ -186,17 +190,16 @@ void FormatterModule::runFormatter( UICodeEditor* editor, const Formatter& forma
 }
 
 FormatterModule::Formatter FormatterModule::supportsFormatter( std::shared_ptr<TextDocument> doc ) {
-	std::string filePath( doc->getFilePath() );
-	std::string extension( FileSystem::fileExtension( filePath ) );
-	if ( extension.empty() )
-		extension = FileSystem::fileNameFromPath( filePath );
+	std::string fileName( FileSystem::fileNameFromPath( doc->getFilePath() ) );
 	const auto& def = doc->getSyntaxDefinition();
+
 	for ( auto& formatter : mFormatters ) {
 		for ( auto& ext : formatter.files ) {
-			auto& files = def.getFiles();
-			if ( std::find( files.begin(), files.end(), ext ) != files.end() ) {
+			if ( LuaPattern::find( fileName, ext ).isValid() )
 				return formatter;
-			}
+			auto& files = def.getFiles();
+			if ( std::find( files.begin(), files.end(), ext ) != files.end() )
+				return formatter;
 		}
 	}
 	return {};

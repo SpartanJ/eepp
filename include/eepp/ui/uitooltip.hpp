@@ -96,6 +96,10 @@ class EE_API UITooltip : public UIWidget {
 
 	void resetTextToStringBuffer();
 
+	bool dontAutoHideOnMouseMove() const;
+
+	void setDontAutoHideOnMouseMove( bool dontAutoHideOnMouseMove );
+
   protected:
 	Text* mTextCache;
 	UIFontStyleConfig mStyleConfig;
@@ -103,6 +107,7 @@ class EE_API UITooltip : public UIWidget {
 	Time mTooltipTime;
 	UINode* mTooltipOf;
 	String mStringBuffer;
+	bool mDontAutoHideOnMouseMove{ false };
 
 	virtual void onAlphaChange();
 

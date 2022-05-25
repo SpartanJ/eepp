@@ -1,4 +1,4 @@
-#include "lintermodule.hpp"
+﻿#include "lintermodule.hpp"
 #include "../../thirdparty/json.hpp"
 #include "../../thirdparty/subprocess.h"
 #include <algorithm>
@@ -206,10 +206,11 @@ void LinterModule::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 		strings.push_back( cmdArr[i].c_str() );
 	strings.push_back( NULL );
 	struct subprocess_s subprocess;
-	int result = subprocess_create( strings.data(),
-									subprocess_option_inherit_environment |
-										subprocess_option_combined_stdout_stderr,
-									&subprocess );
+	int result = subprocess_create(
+		strings.data(),
+		subprocess_option_search_user_path | subprocess_option_inherit_environment |
+			subprocess_option_combined_stdout_stderr | subprocess_option_no_window,
+		&subprocess );
 	if ( 0 == result ) {
 		std::string buffer( 1024, '\0' );
 		std::string data;
@@ -271,8 +272,8 @@ void LinterModule::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 
 		invalidateEditors( doc.get() );
 
-		Log::info( "LinterModule::runLinter for %s took %.2fms", path.c_str(),
-				   clock.getElapsedTime().asMilliseconds() );
+		Log::info( "LinterModule::runLinter for %s took %.2fms. Found: %d matches.", path.c_str(),
+				   clock.getElapsedTime().asMilliseconds(), matches.size() );
 	}
 }
 
@@ -343,14 +344,17 @@ bool LinterModule::onMouseMove( UICodeEditor* editor, const Vector2i& pos, const
 			for ( const auto& match : matches ) {
 				if ( match.box.contains( localPos ) ) {
 					editor->setTooltipText( match.text );
+					editor->getTooltip()->setDontAutoHideOnMouseMove( true );
 					editor->getTooltip()->setPixelsPosition( Vector2f( pos.x, pos.y ) );
-					editor->runOnMainThread( [&, editor] { editor->getTooltip()->show(); } );
+					if ( !editor->getTooltip()->isVisible() )
+						editor->runOnMainThread( [&, editor] { editor->getTooltip()->show(); } );
 					return false;
-				} else if ( editor->getTooltip() && editor->getTooltip()->isVisible() ) {
-					editor->setTooltipText( "" );
-					editor->getTooltip()->hide();
 				}
 			}
+		}
+		if ( editor->getTooltip() && editor->getTooltip()->isVisible() ) {
+			editor->setTooltipText( "" );
+			editor->getTooltip()->hide();
 		}
 	}
 	return false;
@@ -365,15 +369,13 @@ bool LinterModule::onMouseLeave( UICodeEditor* editor, const Vector2i&, const Ui
 }
 
 Linter LinterModule::supportsLinter( std::shared_ptr<TextDocument> doc ) {
-	std::string filePath( doc->getFilePath() );
-	std::string extension( FileSystem::fileExtension( filePath ) );
-	if ( extension.empty() ) {
-		extension = FileSystem::fileNameFromPath( filePath );
-	}
+	std::string fileName( FileSystem::fileNameFromPath( doc->getFilePath() ) );
 	const auto& def = doc->getSyntaxDefinition();
 
 	for ( auto& linter : mLinters ) {
 		for ( auto& ext : linter.files ) {
+			if ( LuaPattern::find( fileName, ext ).isValid() )
+				return linter;
 			auto& files = def.getFiles();
 			if ( std::find( files.begin(), files.end(), ext ) != files.end() ) {
 				return linter;
