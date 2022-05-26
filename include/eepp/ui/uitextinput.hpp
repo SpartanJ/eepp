@@ -44,7 +44,7 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 
 	virtual UITextView* setText( const String& text );
 
-	virtual void shrinkText( const Uint32& MaxWidth );
+	virtual void wrapText( const Uint32& MaxWidth );
 
 	UITextInput* setMaxLength( const Uint32& maxLength );
 

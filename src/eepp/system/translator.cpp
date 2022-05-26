@@ -15,8 +15,9 @@ Translator::Translator( const std::locale& locale ) : mDefaultLanguage( "en" ) {
 	setLanguageFromLocale( locale );
 }
 
-void Translator::loadFromDirectory( std::string dirPath, std::string ext ) {
+bool Translator::loadFromDirectory( std::string dirPath, std::string ext ) {
 	FileSystem::dirAddSlashAtEnd( dirPath );
+	bool someFailed = false;
 
 	if ( FileSystem::isDirectory( dirPath ) ) {
 		std::vector<std::string> files = FileSystem::filesGetInPath( dirPath, true, true );
@@ -28,13 +29,16 @@ void Translator::loadFromDirectory( std::string dirPath, std::string ext ) {
 			if ( FileSystem::fileExtension( path ) == ext ) {
 				std::string lang = FileSystem::fileRemoveExtension( files[i] );
 
-				loadFromFile( path, lang );
+				if ( !loadFromFile( path, lang ) )
+					someFailed = true;
 			}
 		}
 	}
+
+	return someFailed;
 }
 
-void Translator::loadNodes( pugi::xml_node node, std::string lang ) {
+bool Translator::loadNodes( pugi::xml_node node, std::string lang ) {
 	for ( pugi::xml_node resources = node; resources; resources = resources.next_sibling() ) {
 		std::string name = String::toLower( std::string( resources.name() ) );
 
@@ -44,7 +48,7 @@ void Translator::loadNodes( pugi::xml_node node, std::string lang ) {
 			if ( lang.empty() || lang.size() != 2 ) {
 				Log::error( "Error: Couldn't load i18n language strings: language not specified in "
 							"file name or resources attribute \"language\"." );
-				return;
+				return false;
 			}
 
 			for ( pugi::xml_node string = resources.child( "string" ); string;
@@ -59,9 +63,10 @@ void Translator::loadNodes( pugi::xml_node node, std::string lang ) {
 			}
 		}
 	}
+	return true;
 }
 
-void Translator::loadFromFile( const std::string& path, std::string lang ) {
+bool Translator::loadFromFile( const std::string& path, std::string lang ) {
 	if ( FileSystem::fileExists( path ) ) {
 		lang = lang.size() == 2
 				   ? lang
@@ -71,7 +76,7 @@ void Translator::loadFromFile( const std::string& path, std::string lang ) {
 		pugi::xml_parse_result result = doc.load_file( path.c_str() );
 
 		if ( result ) {
-			loadNodes( doc.first_child(), lang );
+			return loadNodes( doc.first_child(), lang );
 		} else {
 			Log::error( "Couldn't load i18n file: %s", path.c_str() );
 			Log::error( "Error description: %s", result.description() );
@@ -82,39 +87,42 @@ void Translator::loadFromFile( const std::string& path, std::string lang ) {
 		Pack* pack = PackManager::instance()->exists( packPath );
 
 		if ( NULL != pack ) {
-			loadFromPack( pack, packPath, lang );
+			return loadFromPack( pack, packPath, lang );
 		}
 	}
+	return false;
 }
-void Translator::loadFromString( const std::string& string, std::string lang ) {
+bool Translator::loadFromString( const std::string& string, std::string lang ) {
 	pugi::xml_document doc;
 	pugi::xml_parse_result result = doc.load_string( string.c_str() );
 
 	if ( result ) {
-		loadNodes( doc.first_child(), lang );
+		return loadNodes( doc.first_child(), lang );
 	} else {
 		Log::error( "Couldn't load i18n file from string: %s", string.c_str() );
 		Log::error( "Error description: %s", result.description() );
 		Log::error( "Error offset: %d", result.offset );
 	}
+	return false;
 }
 
-void Translator::loadFromMemory( const void* buffer, Int32 bufferSize, std::string lang ) {
+bool Translator::loadFromMemory( const void* buffer, Int32 bufferSize, std::string lang ) {
 	pugi::xml_document doc;
 	pugi::xml_parse_result result = doc.load_buffer( buffer, bufferSize );
 
 	if ( result ) {
-		loadNodes( doc.first_child(), lang );
+		return loadNodes( doc.first_child(), lang );
 	} else {
 		Log::error( "Couldn't load i18n file from buffer" );
 		Log::error( "Error description: %s", result.description() );
 		Log::error( "Error offset: %d", result.offset );
 	}
+	return false;
 }
 
-void Translator::loadFromStream( IOStream& stream, std::string lang ) {
+bool Translator::loadFromStream( IOStream& stream, std::string lang ) {
 	if ( !stream.isOpen() )
-		return;
+		return false;
 
 	ios_size bufferSize = stream.getSize();
 	TScopedBuffer<char> scopedBuffer( bufferSize );
@@ -124,15 +132,17 @@ void Translator::loadFromStream( IOStream& stream, std::string lang ) {
 	pugi::xml_parse_result result = doc.load_buffer( scopedBuffer.get(), scopedBuffer.length() );
 
 	if ( result ) {
-		loadNodes( doc.first_child(), lang );
+		return loadNodes( doc.first_child(), lang );
 	} else {
 		Log::error( "Couldn't load i18n file from stream" );
 		Log::error( "Error description: %s", result.description() );
 		Log::error( "Error offset: %d", result.offset );
 	}
+
+	return false;
 }
 
-void Translator::loadFromPack( Pack* pack, const std::string& FilePackPath, std::string lang ) {
+bool Translator::loadFromPack( Pack* pack, const std::string& FilePackPath, std::string lang ) {
 	ScopedBuffer buffer;
 
 	if ( pack->isOpen() && pack->extractFileToMemory( FilePackPath, buffer ) ) {
@@ -141,8 +151,10 @@ void Translator::loadFromPack( Pack* pack, const std::string& FilePackPath, std:
 				? lang
 				: FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( FilePackPath ) );
 
-		loadFromMemory( buffer.get(), buffer.length(), lang );
+		return loadFromMemory( buffer.get(), buffer.length(), lang );
 	}
+
+	return false;
 }
 
 String Translator::getString( const std::string& key, const String& defaultValue ) {

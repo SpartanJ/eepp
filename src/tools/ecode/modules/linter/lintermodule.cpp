@@ -227,6 +227,10 @@ void LinterModule::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 		// Log::info( "Linter result:\n%s", data.c_str() );
 
 		std::map<Int64, std::vector<LinterMatch>> matches;
+		size_t totalMatches = 0;
+		size_t totalErrors = 0;
+		size_t totalWarns = 0;
+		size_t totalNotice = 0;
 
 		for ( auto warningPatterm : linter.warningPattern ) {
 			String::replaceAll( warningPatterm, "$FILENAME", path );
@@ -244,7 +248,8 @@ void LinterModule::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 					String::toLowerInPlace( type );
 					if ( String::startsWith( type, "warn" ) ) {
 						linterMatch.type = LinterType::Warning;
-					} else if ( String::startsWith( type, "notice" ) ) {
+					} else if ( String::startsWith( type, "notice" ) ||
+								String::startsWith( type, "hint" ) ) {
 						linterMatch.type = LinterType::Notice;
 					}
 				}
@@ -267,13 +272,29 @@ void LinterModule::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 
 		{
 			Lock matchesLock( mMatchesMutex );
-			mMatches[doc.get()] = matches;
+			totalMatches = matches.size();
+			for ( const auto& matchLine : matches ) {
+				for ( const auto& match : matchLine.second ) {
+					switch ( match.type ) {
+						case LinterType::Warning:
+							++totalWarns;
+						case LinterType::Notice:
+							++totalNotice;
+						case LinterType::Error:
+						default:
+							++totalErrors;
+					}
+				}
+			}
+			mMatches[doc.get()] = std::move( matches );
 		}
 
 		invalidateEditors( doc.get() );
 
-		Log::info( "LinterModule::runLinter for %s took %.2fms. Found: %d matches.", path.c_str(),
-				   clock.getElapsedTime().asMilliseconds(), matches.size() );
+		Log::info( "LinterModule::runLinter for %s took %.2fms. Found: %d matches. Errors: %d, "
+				   "Warnings: %d, Notices: %d.",
+				   path.c_str(), clock.getElapsedTime().asMilliseconds(), totalMatches, totalErrors,
+				   totalWarns, totalNotice );
 	}
 }
 

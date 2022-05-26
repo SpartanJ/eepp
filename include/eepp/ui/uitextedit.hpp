@@ -20,7 +20,7 @@ class EE_API UITextEdit : public UICodeEditor {
 
 	virtual void setTheme( UITheme* Theme );
 
-	virtual void shrinkText( const Float& maxWidth );
+	virtual void wrapText( const Float& maxWidth );
 
 	String getText() const;
 

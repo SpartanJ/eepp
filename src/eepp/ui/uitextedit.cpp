@@ -61,11 +61,11 @@ void UITextEdit::setTheme( UITheme* Theme ) {
 	onThemeLoaded();
 }
 
-void UITextEdit::shrinkText( const Float& maxWidth ) {
+void UITextEdit::wrapText( const Float& maxWidth ) {
 	Text text;
 	text.setStyleConfig( mFontStyleConfig );
 	text.setString( getText() );
-	text.shrinkText( maxWidth );
+	text.wrapText( maxWidth );
 	mDoc->reset();
 	mDoc->textInput( text.getString() );
 }
@@ -78,7 +78,7 @@ void UITextEdit::setText( const String& text ) {
 	mDoc->reset();
 	mDoc->textInput( text );
 	if ( mFlags & UI_WORD_WRAP ) {
-		shrinkText( getViewportWidth( true ) );
+		wrapText( getViewportWidth( true ) );
 	}
 	if ( !hasFocus() ) {
 		mCursorVisible = false;

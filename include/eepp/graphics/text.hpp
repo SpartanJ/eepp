@@ -130,7 +130,7 @@ class EE_API Text {
 	/** Shrink the String to a max width
 	 * @param MaxWidth The maximum possible width
 	 */
-	void shrinkText( const Uint32& maxWidth );
+	void wrapText( const Uint32& maxWidth );
 
 	/** Invalidates the color cache */
 	void invalidateColors();

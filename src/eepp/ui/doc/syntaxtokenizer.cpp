@@ -6,9 +6,10 @@ using namespace EE::System;
 
 namespace EE { namespace UI { namespace Doc {
 
-// This tokenizer is a direct conversion to C++ from the lite (https://github.com/rxi/lite)
+// This tokenizer was a direct conversion to C++ from the lite (https://github.com/rxi/lite)
 // tokenizer. This allows eepp to support the same color schemes and syntax definitions from
-// lite. Making much easier to implement a complete code editor.
+// lite. Making much easier to implement a complete code editor. Currently some improvements
+// has been made. It's still compatible with lite tokenizer.
 
 #define MAX_TOKEN_SIZE ( 512 )
 

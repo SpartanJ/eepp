@@ -16,17 +16,17 @@ class EE_API Translator {
   public:
 	Translator( const std::locale& locale = std::locale() );
 
-	void loadFromDirectory( std::string dirPath, std::string ext = "xml" );
+	bool loadFromDirectory( std::string dirPath, std::string ext = "xml" );
 
-	void loadFromFile( const std::string& path, std::string lang = "" );
+	bool loadFromFile( const std::string& path, std::string lang = "" );
 
-	void loadFromString( const std::string& string, std::string lang = "" );
+	bool loadFromString( const std::string& string, std::string lang = "" );
 
-	void loadFromMemory( const void* buffer, Int32 bufferSize, std::string lang = "" );
+	bool loadFromMemory( const void* buffer, Int32 bufferSize, std::string lang = "" );
 
-	void loadFromStream( IOStream& stream, std::string lang = "" );
+	bool loadFromStream( IOStream& stream, std::string lang = "" );
 
-	void loadFromPack( Pack* pack, const std::string& FilePackPath, std::string lang = "" );
+	bool loadFromPack( Pack* pack, const std::string& FilePackPath, std::string lang = "" );
 
 	String getString( const std::string& key, const String& defaultValue = String() );
 
@@ -50,7 +50,7 @@ class EE_API Translator {
 	std::string mCurrentLanguage;
 	StringLocaleDictionary mDictionary;
 
-	void loadNodes( pugi::xml_node node, std::string lang = "" );
+	bool loadNodes( pugi::xml_node node, std::string lang = "" );
 };
 
 }} // namespace EE::System

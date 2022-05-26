@@ -267,16 +267,16 @@ UITextView* UITextView::setSelectionBackColor( const Color& color ) {
 
 void UITextView::autoShrink() {
 	if ( mFlags & UI_WORD_WRAP ) {
-		shrinkText( mSize.getWidth() );
+		wrapText( mSize.getWidth() );
 	}
 }
 
-void UITextView::shrinkText( const Uint32& maxWidth ) {
+void UITextView::wrapText( const Uint32& maxWidth ) {
 	if ( mFlags & UI_WORD_WRAP ) {
 		mTextCache->setString( mString );
 	}
 
-	mTextCache->shrinkText( maxWidth );
+	mTextCache->wrapText( maxWidth );
 	invalidateDraw();
 }
 
@@ -496,7 +496,7 @@ void UITextView::drawSelection( Text* textCache ) {
 		if ( !mSelPosCache.empty() ) {
 			Primitives P;
 			P.setColor( mFontStyleConfig.FontSelectionBackColor );
-			Float vspace = textCache->getFont()->getFontHeight( textCache->getCharacterSizePx() );
+			Float vspace = textCache->getFont()->getLineSpacing( textCache->getCharacterSizePx() );
 
 			for ( size_t i = 0; i < mSelPosCache.size(); i++ ) {
 				initPos = mSelPosCache[i].initPos;

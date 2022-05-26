@@ -445,7 +445,7 @@ void Text::getWidthInfo() {
 	mNumLines = Lines;
 }
 
-void Text::shrinkText( const Uint32& maxWidth ) {
+void Text::wrapText( const Uint32& maxWidth ) {
 	if ( !mString.size() || NULL == mFont )
 		return;
 

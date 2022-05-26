@@ -73,7 +73,7 @@ class EE_API UITextView : public UIWidget {
 
 	Vector2f getAlignOffset() const;
 
-	virtual void shrinkText( const Uint32& MaxWidth );
+	virtual void wrapText( const Uint32& maxWidth );
 
 	bool isTextSelectionEnabled() const;
 

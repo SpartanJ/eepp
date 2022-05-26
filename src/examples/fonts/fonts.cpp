@@ -96,7 +96,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		text.setFontSize( 24 );
 		text.setAlign( TEXT_ALIGN_CENTER );
 		text.setString( Txt );
-		text.shrinkText( win->getWidth() - 96 );
+		text.wrapText( win->getWidth() - 96 );
 
 		// Set the font color to a substring of the text
 		// Create a gradient

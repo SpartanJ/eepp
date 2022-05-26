@@ -2277,9 +2277,9 @@ void UICodeEditor::drawWordMatch( const String& text, const std::pair<int, int>&
 	primitives.setForceDraw( true );
 }
 
-void UICodeEditor::drawLineText( const Int64& index, Vector2f position, const Float& fontSize,
+void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Float& fontSize,
 								 const Float& lineHeight ) {
-	auto& tokens = mHighlighter.getLine( index );
+	auto& tokens = mHighlighter.getLine( line );
 	Primitives primitives;
 	Int64 curChar = 0;
 	Int64 maxWidth = eeceil( mSize.getWidth() / getGlyphWidth() + 1 );
@@ -2291,17 +2291,17 @@ void UICodeEditor::drawLineText( const Int64& index, Vector2f position, const Fl
 			Int64 curCharsWidth = text.size();
 			Int64 curPositionChar = eefloor( mScroll.x / getGlyphWidth() );
 			Float curMaxPositionChar = curPositionChar + maxWidth;
-			Text line( "", mFont, fontSize );
-			line.setDisableCacheWidth( true );
-			line.setTabWidth( mTabWidth );
+			Text txt( "", mFont, fontSize );
+			txt.setDisableCacheWidth( true );
+			txt.setTabWidth( mTabWidth );
 			const SyntaxColorScheme::Style& style = mColorScheme.getSyntaxStyle( token.type );
-			line.setStyleConfig( mFontStyleConfig );
+			txt.setStyleConfig( mFontStyleConfig );
 			if ( style.style )
-				line.setStyle( style.style );
-			line.setColor( Color( style.color ).blendAlpha( mAlpha ) );
+				txt.setStyle( style.style );
+			txt.setColor( Color( style.color ).blendAlpha( mAlpha ) );
 
 			if ( mHandShown && mLinkPosition.isValid() && mLinkPosition.inSameLine() &&
-				 mLinkPosition.start().line() == index ) {
+				 mLinkPosition.start().line() == line ) {
 				if ( mLinkPosition.start().column() >= curChar &&
 					 mLinkPosition.end().column() <= curChar + curCharsWidth ) {
 					size_t linkPos = text.find( mLink );
@@ -2310,7 +2310,7 @@ void UICodeEditor::drawLineText( const Int64& index, Vector2f position, const Fl
 						String afterString( text.substr( linkPos + mLink.size() ) );
 
 						Float offset = 0.f;
-						Uint32 lineStyle = line.getStyle();
+						Uint32 lineStyle = txt.getStyle();
 
 						if ( !beforeString.empty() ) {
 							Float beforeWidth = getTextWidth( beforeString );
@@ -2320,8 +2320,8 @@ void UICodeEditor::drawLineText( const Int64& index, Vector2f position, const Fl
 								primitives.drawRectangle(
 									Rectf( position, Sizef( beforeWidth, lineHeight ) ) );
 							}
-							line.setString( beforeString );
-							line.draw( position.x, position.y );
+							txt.setString( beforeString );
+							txt.draw( position.x, position.y );
 							offset += beforeWidth;
 						}
 
@@ -2330,12 +2330,12 @@ void UICodeEditor::drawLineText( const Int64& index, Vector2f position, const Fl
 						if ( mColorScheme.hasSyntaxStyle( "link_hover" ) ) {
 							linkStyle = mColorScheme.getSyntaxStyle( "link_hover" );
 							if ( linkStyle.color != Color::Transparent )
-								line.setColor( Color( linkStyle.color ).blendAlpha( mAlpha ) );
-							line.setStyle( linkStyle.style );
+								txt.setColor( Color( linkStyle.color ).blendAlpha( mAlpha ) );
+							txt.setStyle( linkStyle.style );
 						} else {
-							line.setStyle( ( lineStyle & Text::Underlined )
-											   ? ( lineStyle | Text::Bold )
-											   : ( lineStyle | Text::Underlined ) );
+							txt.setStyle( ( lineStyle & Text::Underlined )
+											  ? ( lineStyle | Text::Bold )
+											  : ( lineStyle | Text::Underlined ) );
 						}
 
 						Float linkWidth = getTextWidth( mLink );
@@ -2346,8 +2346,8 @@ void UICodeEditor::drawLineText( const Int64& index, Vector2f position, const Fl
 								Rectf( Vector2f( position.x + offset, position.y ),
 									   Sizef( linkWidth, lineHeight ) ) );
 						}
-						line.setString( mLink );
-						line.draw( position.x + offset, position.y );
+						txt.setString( mLink );
+						txt.draw( position.x + offset, position.y );
 						offset += linkWidth;
 
 						if ( !afterString.empty() ) {
@@ -2359,10 +2359,10 @@ void UICodeEditor::drawLineText( const Int64& index, Vector2f position, const Fl
 									Rectf( Vector2f( position.x + offset, position.y ),
 										   Sizef( afterWidth, lineHeight ) ) );
 							}
-							line.setColor( Color( style.color ).blendAlpha( mAlpha ) );
-							line.setStyle( lineStyle );
-							line.setString( afterString );
-							line.draw( position.x + offset, position.y );
+							txt.setColor( Color( style.color ).blendAlpha( mAlpha ) );
+							txt.setStyle( lineStyle );
+							txt.setString( afterString );
+							txt.draw( position.x + offset, position.y );
 						}
 
 						position.x += textWidth;
@@ -2385,18 +2385,18 @@ void UICodeEditor::drawLineText( const Int64& index, Vector2f position, const Fl
 					Int64 totalChars = curCharsWidth - start;
 					Int64 end = eemin( totalChars, minimumCharsToCoverScreen );
 					if ( curCharsWidth >= charsToVisible ) {
-						line.setString( text.substr( start, end ) );
-						line.draw( position.x + start * getGlyphWidth(), position.y );
+						txt.setString( text.substr( start, end ) );
+						txt.draw( position.x + start * getGlyphWidth(), position.y );
 						if ( minimumCharsToCoverScreen == end )
 							break;
 					}
 				} else {
-					line.setString( text.substr( 0, eemin( curCharsWidth, maxWidth ) ) );
-					line.draw( position.x, position.y );
+					txt.setString( text.substr( 0, eemin( curCharsWidth, maxWidth ) ) );
+					txt.draw( position.x, position.y );
 				}
 			} else {
-				line.setString( text );
-				line.draw( position.x, position.y );
+				txt.setString( text );
+				txt.draw( position.x, position.y );
 			}
 		} else if ( position.x > mScreenPos.x + mSize.getWidth() ) {
 			break;

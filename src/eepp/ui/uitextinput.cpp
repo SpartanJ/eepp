@@ -300,7 +300,7 @@ const String& UITextInput::getText() {
 	return UITextView::getText();
 }
 
-void UITextInput::shrinkText( const Uint32& ) {}
+void UITextInput::wrapText( const Uint32& ) {}
 
 void UITextInput::updateText() {}
 
