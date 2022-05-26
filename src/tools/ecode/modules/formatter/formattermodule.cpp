@@ -174,10 +174,12 @@ void FormatterModule::runFormatter( UICodeEditor* editor, const Formatter& forma
 		int ret;
 		subprocess_join( &subprocess, &ret );
 		subprocess_destroy( &subprocess );
-
 		// Log::info( "Formatter result:\n%s", data.c_str() );
 
 		if ( formatter.type == FormatterType::Output ) {
+			if ( data.empty() )
+				return;
+
 			editor->runOnMainThread( [&, data, editor]() {
 				std::shared_ptr<TextDocument> doc = editor->getDocumentRef();
 				TextPosition pos = doc->getSelection().start();

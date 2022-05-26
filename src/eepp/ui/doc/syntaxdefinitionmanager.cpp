@@ -2320,6 +2320,197 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 			 { "UByteArray", "keyword2" }, { "ULongArray", "keyword2" },
 			 { "Array", "keyword2" } },
 		   "//" } );
+
+	// Zig
+	add( { "Zig",
+		   { "%.zig$" },
+		   {
+			   { { "//.-\n" }, "comment" },
+			   { { "\\\\.-\n" }, "string" },
+			   { { "\"", "\"", "\\" }, "string" },
+			   { { "'", "'", "\\" }, "string" },
+			   { { "[iu][%d_]+" }, "keyword2" },
+			   { { "0b[01_]+" }, "number" },
+			   { { "0o[0-7_]+" }, "number" },
+			   { { "0x[%x_]+" }, "number" },
+			   { { "0x[%x_]+%.[%x_]*[pP][-+]?%d+" }, "number" },
+			   { { "0x[%x_]+%.[%x_]*" }, "number" },
+			   { { "0x%.[%x_]+[pP][-+]?%d+" }, "number" },
+			   { { "0x%.[%x_]+" }, "number" },
+			   { { "0x[%x_]+[pP][-+]?%d+" }, "number" },
+			   { { "0x[%x_]+" }, "number" },
+			   { { "%d[%d_]*%.[%d_]*[eE][-+]?%d+" }, "number" },
+			   { { "%d[%d_]*%.[%d_]*" }, "number" },
+			   { { "%d[%d_]*" }, "number" },
+			   { { "[%+%-=/%*%^%%<>!~|&%.%?]" }, "operator" },
+			   { { "([%a_][%w_]*)(%s*%()" }, { "function", "function", "normal" } },
+			   { { "[A-Z][%w_]*" }, "keyword2" },
+			   { { "[%a_][%w_]*" }, "symbol" },
+			   { { "(@)([%a_][%w_]*)" }, { "operator", "operator", "function" } },
+		   },
+		   {
+			   { "fn", "keyword" },
+			   { "asm", "keyword" },
+			   { "volatile", "keyword" },
+			   { "continue", "keyword" },
+			   { "break", "keyword" },
+			   { "switch", "keyword" },
+			   { "for", "keyword" },
+			   { "while", "keyword" },
+			   { "var", "keyword" },
+			   { "anytype", "keyword" },
+			   { "anyframe", "keyword" },
+			   { "const", "keyword" },
+			   { "test", "keyword" },
+			   { "packed", "keyword" },
+			   { "extern", "keyword" },
+			   { "export", "keyword" },
+			   { "pub", "keyword" },
+			   { "defer", "keyword" },
+			   { "errdefer", "keyword" },
+			   { "align", "keyword" },
+			   { "usingnamespace", "keyword" },
+			   { "noasync", "keyword" },
+			   { "async", "keyword" },
+			   { "await", "keyword" },
+			   { "cancel", "keyword" },
+			   { "suspend", "keyword" },
+			   { "resume", "keyword" },
+			   { "threadlocal", "keyword" },
+			   { "linksection", "keyword" },
+			   { "callconv", "keyword" },
+			   { "try", "keyword" },
+			   { "catch", "keyword" },
+			   { "orelse", "keyword" },
+			   { "unreachable", "keyword" },
+			   { "error", "keyword" },
+			   { "if", "keyword" },
+			   { "else", "keyword" },
+			   { "return", "keyword" },
+			   { "comptime", "keyword" },
+			   { "stdcallcc", "keyword" },
+			   { "ccc", "keyword" },
+			   { "nakedcc", "keyword" },
+			   { "and", "keyword" },
+			   { "or", "keyword" },
+			   { "struct", "keyword" },
+			   { "enum", "keyword" },
+			   { "union", "keyword" },
+			   { "opaque", "keyword" },
+			   { "inline", "keyword" },
+			   { "allowzero", "keyword" },
+			   { "noalias", "keyword" },
+			   { "nosuspend", "keyword" },
+			   { "f16", "keyword2" },
+			   { "f32", "keyword2" },
+			   { "f64", "keyword2" },
+			   { "f128", "keyword2" },
+			   { "void", "keyword2" },
+			   { "c_void", "keyword2" },
+			   { "isize", "keyword2" },
+			   { "usize", "keyword2" },
+			   { "c_short", "keyword2" },
+			   { "c_ushort", "keyword2" },
+			   { "c_int", "keyword2" },
+			   { "c_uint", "keyword2" },
+			   { "c_long", "keyword2" },
+			   { "c_ulong", "keyword2" },
+			   { "c_longlong", "keyword2" },
+			   { "c_ulonglong", "keyword2" },
+			   { "c_longdouble", "keyword2" },
+			   { "bool", "keyword2" },
+			   { "noreturn", "keyword2" },
+			   { "type", "keyword2" },
+			   { "anyerror", "keyword2" },
+			   { "comptime_int", "keyword2" },
+			   { "comptime_float", "keyword2" },
+			   { "true", "literal" },
+			   { "false", "literal" },
+			   { "null", "literal" },
+			   { "undefined", "literal" },
+		   },
+		   "//" } );
+
+	// Nim
+	std::vector<SyntaxPattern> nim_patterns;
+	std::unordered_map<std::string, std::string> nim_symbols;
+
+	const std::vector<std::string> nim_number_patterns = {
+		"0[bB][01][01_]*",	  "0o[0-7][0-7_]*",
+		"0[xX]%x[%x_]*",	  "%d[%d_]*%.%d[%d_]*[eE][-+]?%d[%d_]*",
+		"%d[%d_]*%.%d[%d_]*", "%d[%d_]*",
+	};
+
+	std::vector<std::string> nim_type_suffix_patterns;
+	const std::vector<std::string> nim_num_number_list = { "", "8", "16", "32", "64" };
+	for ( auto& num : nim_num_number_list )
+		nim_type_suffix_patterns.push_back( "'?[fuiFUI]" + num );
+
+	for ( const auto& pattern : nim_number_patterns ) {
+		for ( const auto& suffix : nim_type_suffix_patterns )
+			nim_patterns.push_back( { { pattern + suffix }, "literal" } );
+		nim_patterns.push_back( { { pattern }, "literal" } );
+	}
+
+	const std::vector<std::string> nim_keywords = {
+		"addr",		 "and",		"as",	 "asm",		 "bind",	  "block",	"break",   "case",
+		"cast",		 "concept", "const", "continue", "converter", "defer",	"discard", "distinct",
+		"div",		 "do",		"elif",	 "else",	 "end",		  "enum",	"except",  "export",
+		"finally",	 "for",		"from",	 "func",	 "if",		  "import", "in",	   "include",
+		"interface", "is",		"isnot", "iterator", "let",		  "macro",	"method",  "mixin",
+		"mod",		 "not",		"notin", "object",	 "of",		  "or",		"out",	   "proc",
+		"ptr",		 "raise",	"ref",	 "return",	 "shl",		  "shr",	"static",  "template",
+		"try",		 "tuple",	"type",	 "using",	 "var",		  "when",	"while",   "xor",
+		"yield",
+	};
+
+	for ( const auto& keyword : nim_keywords )
+		nim_symbols[keyword] = "keyword";
+
+	const std::vector<std::string> nim_standard_types = {
+		"bool",	   "byte",		  "int",	 "int8",	"int16",   "int32",		 "int64",
+		"uint",	   "uint8",		  "uint16",	 "uint32",	"uint64",  "float",		 "float32",
+		"float64", "char",		  "string",	 "cstring", "pointer", "typedesc",	 "void",
+		"auto",	   "any",		  "untyped", "typed",	"clong",   "culong",	 "cchar",
+		"cschar",  "cshort",	  "cint",	 "csize",	"csize_t", "clonglong",	 "cfloat",
+		"cdouble", "clongdouble", "cuchar",	 "cushort", "cuint",   "culonglong", "cstringArray",
+	};
+
+	for ( const auto& keyword : nim_standard_types )
+		nim_symbols[keyword] = "keyword2";
+
+	const std::vector<std::string> nim_standard_generic_types = {
+		"range", "array", "open[aA]rray", "varargs", "seq", "set", "sink", "lent", "owned",
+	};
+
+	for ( const auto& type : nim_standard_generic_types ) {
+		nim_patterns.push_back( { { type + "%f[%[]" }, "keyword2" } );
+		nim_patterns.push_back( { { type + "+%f[%w]" }, "keyword2" } );
+	}
+
+	const std::vector<SyntaxPattern> nim_user_patterns = {
+		{ { "##?%[", "]##?" }, "comment" },
+		{ { "##?.-\n" }, "comment" },
+		{ { "\"", "\"", "\\" }, "string" },
+		{ { "\"\"\"", "\"\"\"[^\"]" }, "string" },
+		{ { "'", "'", "\\" }, "literal" },
+		{ { "[a-zA-Z][a-zA-Z0-9_]*%f[(]" }, "function" },
+		{ { "[A-Z][a-zA-Z0-9_]*" }, "keyword2" },
+		{ { "[a-zA-Z][a-zA-Z0-9_]*" }, "symbol" },
+		{ { "%.%f[^.]" }, "normal" },
+		{ { ":%f[ ]" }, "normal" },
+		{ { "[=+%-*/<>@$~&%%|!?%^&.:\\]+" }, "operator" },
+	};
+
+	nim_patterns.insert( nim_patterns.end(), nim_user_patterns.begin(), nim_user_patterns.end() );
+
+	add( {
+		"Nim",
+		{ "%.nim$", "%.nims$", "%.nimble$" },
+		nim_patterns,
+		nim_symbols,
+		"#",
+	} );
 }
 
 SyntaxDefinition& SyntaxDefinitionManager::add( SyntaxDefinition&& syntaxStyle ) {

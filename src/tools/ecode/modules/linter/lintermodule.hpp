@@ -16,6 +16,8 @@ struct Linter {
 	std::vector<std::string> files;
 	std::vector<std::string> warningPattern;
 	bool columnsStartAtZero{ false };
+	bool deduplicate{ false };
+	bool useTmpFolder{ false };
 	struct {
 		int line{ 1 };
 		int col{ 2 };
@@ -23,6 +25,7 @@ struct Linter {
 		int type{ -1 };
 	} warningPatternOrder;
 	std::string command;
+	std::vector<Int64> expectedExitCodes{ 0 };
 };
 
 struct LinterMatch {

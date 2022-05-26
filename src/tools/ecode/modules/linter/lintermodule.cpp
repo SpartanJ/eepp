@@ -61,20 +61,39 @@ void LinterModule::load( const std::string& lintersPath ) {
 
 			linter.command = obj["command"].get<std::string>();
 
+			if ( obj.contains( "expected_exitcodes" ) ) {
+				auto ee = obj["expected_exitcodes"];
+				if ( ee.is_array() ) {
+					for ( auto& number : ee )
+						if ( number.is_number() )
+							linter.expectedExitCodes.push_back( number.get<Int64>() );
+				} else if ( ee.is_number() ) {
+					linter.expectedExitCodes.push_back( ee.get<Int64>() );
+				}
+			}
+			if ( linter.expectedExitCodes.empty() )
+				linter.expectedExitCodes = { 0 };
+
 			if ( obj.contains( "warning_pattern_order" ) ) {
 				auto& wpo = obj["warning_pattern_order"];
-				if ( wpo.contains( "line" ) )
+				if ( wpo.contains( "line" ) && wpo["line"].is_number() )
 					linter.warningPatternOrder.line = wpo["line"].get<int>();
-				if ( wpo.contains( "col" ) )
+				if ( wpo.contains( "col" ) && wpo["col"].is_number() )
 					linter.warningPatternOrder.col = wpo["col"].get<int>();
-				if ( wpo.contains( "message" ) )
+				if ( wpo.contains( "message" ) && wpo["message"].is_number() )
 					linter.warningPatternOrder.message = wpo["message"].get<int>();
-				if ( wpo.contains( "type" ) )
+				if ( wpo.contains( "type" ) && wpo["type"].is_number() )
 					linter.warningPatternOrder.type = wpo["type"].get<int>();
 			}
 
 			if ( obj.contains( "column_starts_at_zero" ) )
 				linter.columnsStartAtZero = obj["column_starts_at_zero"].get<bool>();
+
+			if ( obj.contains( "deduplicate" ) )
+				linter.deduplicate = obj["deduplicate"].get<bool>();
+
+			if ( obj.contains( "use_tmp_folder" ) )
+				linter.useTmpFolder = obj["use_tmp_folder"].get<bool>();
 
 			mLinters.emplace_back( std::move( linter ) );
 		}
@@ -179,6 +198,12 @@ void LinterModule::lintDoc( std::shared_ptr<TextDocument> doc ) {
 		if ( !doc->hasFilepath() ) {
 			tmpPath =
 				Sys::getTempPath() + ".ecode-" + doc->getFilename() + "." + String::randString( 8 );
+		} else if ( linter.useTmpFolder ) {
+			tmpPath = Sys::getTempPath() + doc->getFilename();
+			if ( FileSystem::fileExists( tmpPath ) ) {
+				tmpPath = Sys::getTempPath() + ".ecode-" + doc->getFilename() + "." +
+						  String::randString( 8 );
+			}
 		} else {
 			std::string fileDir( FileSystem::fileRemoveFileName( doc->getFilePath() ) );
 			FileSystem::dirAddSlashAtEnd( fileDir );
@@ -211,7 +236,8 @@ void LinterModule::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 		subprocess_option_search_user_path | subprocess_option_inherit_environment |
 			subprocess_option_combined_stdout_stderr | subprocess_option_no_window,
 		&subprocess );
-	if ( 0 == result ) {
+	if ( std::find( linter.expectedExitCodes.begin(), linter.expectedExitCodes.end(), result ) !=
+		 linter.expectedExitCodes.end() ) {
 		std::string buffer( 1024, '\0' );
 		std::string data;
 		unsigned bytesRead = 0;
@@ -242,6 +268,8 @@ void LinterModule::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 										 ? match.group( linter.warningPatternOrder.col )
 										 : "";
 				linterMatch.text = match.group( linter.warningPatternOrder.message );
+				String::trimInPlace( linterMatch.text );
+				String::trimInPlace( linterMatch.text, '\n' );
 
 				if ( linter.warningPatternOrder.type >= 0 ) {
 					std::string type( match.group( linter.warningPatternOrder.type ) );
@@ -265,7 +293,19 @@ void LinterModule::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 					}
 					linterMatch.pos = { line - 1, col > 0 ? col - 1 : 0 };
 					linterMatch.lineCache = doc->line( line - 1 ).getHash();
-					matches[line - 1].emplace_back( std::move( linterMatch ) );
+					bool skip = false;
+
+					if ( linter.deduplicate && matches.find( line - 1 ) != matches.end() ) {
+						for ( const auto& match : matches[line - 1] ) {
+							if ( match.pos == linterMatch.pos ) {
+								skip = true;
+								break;
+							}
+						}
+					}
+
+					if ( !skip )
+						matches[line - 1].emplace_back( std::move( linterMatch ) );
 				}
 			}
 		}
@@ -341,14 +381,26 @@ void LinterModule::drawAfterLineText( UICodeEditor* editor, const Int64& index, 
 		if ( minCol >= text.size() )
 			minCol = text.size() - 1;
 
-		TextPosition endPos = doc->nextWordBoundary( { index, (Int64)minCol } );
-		Int64 strSize = eemax( (Int64)0, static_cast<Int64>( endPos.column() - minCol ) );
+		Int64 strSize = 0;
+		TextPosition endPos;
+		Vector2f pos;
+		if ( minCol < text.size() - 1 ) {
+			endPos = doc->nextWordBoundary( { index, (Int64)minCol } );
+			strSize = eemax( (Int64)0, static_cast<Int64>( endPos.column() - minCol ) );
+			pos = { position.x + editor->getXOffsetCol( { match.pos.line(), (Int64)minCol } ),
+					position.y };
+		} else {
+			endPos = doc->previousWordBoundary( { index, (Int64)minCol } );
+			strSize = eemax( (Int64)0, static_cast<Int64>( minCol - endPos.column() ) );
+			pos = { position.x +
+						editor->getXOffsetCol( { match.pos.line(), (Int64)endPos.column() } ),
+					position.y };
+		}
+		if ( strSize <= 0 )
+			return;
 		std::string str( strSize, '~' );
 		String string( str );
 		line.setString( string );
-
-		Vector2f pos( position.x + editor->getXOffsetCol( { match.pos.line(), (Int64)minCol } ),
-					  position.y );
 		Rectf box( pos - editor->getScreenPos(), { editor->getTextWidth( string ), lineHeight } );
 		match.box = box;
 		line.draw( pos.x, pos.y + lineHeight * 0.5f );
