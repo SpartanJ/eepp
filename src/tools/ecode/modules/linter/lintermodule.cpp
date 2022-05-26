@@ -318,11 +318,14 @@ void LinterModule::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 					switch ( match.type ) {
 						case LinterType::Warning:
 							++totalWarns;
+							break;
 						case LinterType::Notice:
 							++totalNotice;
+							break;
 						case LinterType::Error:
 						default:
 							++totalErrors;
+							break;
 					}
 				}
 			}
