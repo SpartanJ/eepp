@@ -25,7 +25,7 @@ struct Linter {
 		int type{ -1 };
 	} warningPatternOrder;
 	std::string command;
-	std::vector<Int64> expectedExitCodes{ 0 };
+	std::vector<Int64> expectedExitCodes{};
 };
 
 struct LinterMatch {

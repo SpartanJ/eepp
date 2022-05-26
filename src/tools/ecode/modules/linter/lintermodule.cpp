@@ -71,8 +71,6 @@ void LinterModule::load( const std::string& lintersPath ) {
 					linter.expectedExitCodes.push_back( ee.get<Int64>() );
 				}
 			}
-			if ( linter.expectedExitCodes.empty() )
-				linter.expectedExitCodes = { 0 };
 
 			if ( obj.contains( "warning_pattern_order" ) ) {
 				auto& wpo = obj["warning_pattern_order"];
@@ -236,8 +234,7 @@ void LinterModule::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 		subprocess_option_search_user_path | subprocess_option_inherit_environment |
 			subprocess_option_combined_stdout_stderr | subprocess_option_no_window,
 		&subprocess );
-	if ( std::find( linter.expectedExitCodes.begin(), linter.expectedExitCodes.end(), result ) !=
-		 linter.expectedExitCodes.end() ) {
+	if ( 0 == result ) {
 		std::string buffer( 1024, '\0' );
 		std::string data;
 		unsigned bytesRead = 0;
@@ -246,9 +243,14 @@ void LinterModule::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 			data += buffer.substr( 0, bytesRead );
 		} while ( bytesRead != 0 );
 
-		int ret;
-		subprocess_join( &subprocess, &ret );
+		int returnCode;
+		subprocess_join( &subprocess, &returnCode );
 		subprocess_destroy( &subprocess );
+
+		if ( !linter.expectedExitCodes.empty() &&
+			 std::find( linter.expectedExitCodes.begin(), linter.expectedExitCodes.end(),
+						returnCode ) == linter.expectedExitCodes.end() )
+			return;
 
 		// Log::info( "Linter result:\n%s", data.c_str() );
 
@@ -296,8 +298,9 @@ void LinterModule::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 					bool skip = false;
 
 					if ( linter.deduplicate && matches.find( line - 1 ) != matches.end() ) {
-						for ( const auto& match : matches[line - 1] ) {
+						for ( auto& match : matches[line - 1] ) {
 							if ( match.pos == linterMatch.pos ) {
+								match.text += "\n" + linterMatch.text;
 								skip = true;
 								break;
 							}
