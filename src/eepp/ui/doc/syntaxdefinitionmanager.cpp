@@ -233,25 +233,25 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 			   { { "[%a_][%w_]*%s*%f[(]" }, "function" },
 			   { { "[%a_][%w_]*" }, "symbol" },
 		   },
-		   { { "arguments", "keyword2" }, { "async", "keyword" },	   { "await", "keyword" },
-			 { "break", "keyword" },	  { "case", "keyword" },	   { "catch", "keyword" },
-			 { "class", "keyword" },	  { "const", "keyword" },	   { "continue", "keyword" },
-			 { "debugger", "keyword" },	  { "default", "keyword" },	   { "delete", "keyword" },
-			 { "do", "keyword" },		  { "else", "keyword" },	   { "export", "keyword" },
-			 { "extends", "keyword" },	  { "false", "literal" },	   { "finally", "keyword" },
-			 { "for", "keyword" },		  { "function", "keyword" },   { "get", "keyword" },
-			 { "if", "keyword" },		  { "import", "keyword" },	   { "in", "keyword" },
-			 { "Infinity", "keyword2" },  { "instanceof", "keyword" }, { "let", "keyword" },
-			 { "NaN", "keyword2" },		  { "new", "keyword" },		   { "null", "literal" },
-			 { "return", "keyword" },	  { "set", "keyword" },		   { "super", "keyword" },
-			 { "static", "keyword" },	  { "switch", "keyword" },	   { "this", "keyword2" },
-			 { "throw", "keyword" },	  { "true", "literal" },	   { "try", "keyword" },
-			 { "typeof", "keyword" },	  { "undefined", "literal" },  { "var", "keyword" },
-			 { "void", "keyword" },		  { "while", "keyword" },	   { "with", "keyword" },
-			 { "yield", "keyword" },	  { "implements", "keyword" }, { "Array", "keyword2" },
-			 { "any", "keyword" },		  { "from", "keyword" },	   { "public", "keyword" },
-			 { "private", "keyword" },	  { "declare", "keyword" },	   { "namespace", "keyword" },
-			 { "protected", "keyword" },  { "enum", "keyword" } },
+		   { { "arguments", "keyword2" }, { "async", "keyword" },	  { "await", "keyword" },
+			 { "break", "keyword" },	  { "case", "keyword" },	  { "catch", "keyword" },
+			 { "class", "keyword" },	  { "const", "keyword" },	  { "continue", "keyword" },
+			 { "debugger", "keyword" },	  { "default", "keyword" },	  { "delete", "keyword" },
+			 { "do", "keyword" },		  { "else", "keyword" },	  { "export", "keyword" },
+			 { "extends", "keyword" },	  { "false", "literal" },	  { "finally", "keyword" },
+			 { "for", "keyword" },		  { "get", "keyword" },		  { "if", "keyword" },
+			 { "import", "keyword" },	  { "in", "keyword" },		  { "Infinity", "keyword2" },
+			 { "instanceof", "keyword" }, { "let", "keyword" },		  { "NaN", "keyword2" },
+			 { "new", "keyword" },		  { "null", "literal" },	  { "return", "keyword" },
+			 { "set", "keyword" },		  { "super", "keyword" },	  { "static", "keyword" },
+			 { "switch", "keyword" },	  { "this", "keyword2" },	  { "throw", "keyword" },
+			 { "true", "literal" },		  { "try", "keyword" },		  { "typeof", "keyword" },
+			 { "undefined", "literal" },  { "var", "keyword" },		  { "void", "keyword" },
+			 { "while", "keyword" },	  { "with", "keyword" },	  { "yield", "keyword" },
+			 { "implements", "keyword" }, { "Array", "keyword2" },	  { "any", "keyword" },
+			 { "from", "keyword" },		  { "public", "keyword" },	  { "private", "keyword" },
+			 { "declare", "keyword" },	  { "namespace", "keyword" }, { "protected", "keyword" },
+			 { "enum", "keyword" } },
 		   "//" } );
 
 	// TypeScript
@@ -2452,7 +2452,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 		nim_patterns.push_back( { { pattern }, "literal" } );
 	}
 
-	const std::vector<std::string> nim_keywords = {
+	const std::vector<std::string> nim_keywords{
 		"addr",		 "and",		"as",	 "asm",		 "bind",	  "block",	"break",   "case",
 		"cast",		 "concept", "const", "continue", "converter", "defer",	"discard", "distinct",
 		"div",		 "do",		"elif",	 "else",	 "end",		  "enum",	"except",  "export",
@@ -2467,7 +2467,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	for ( const auto& keyword : nim_keywords )
 		nim_symbols[keyword] = "keyword";
 
-	const std::vector<std::string> nim_standard_types = {
+	const std::vector<std::string> nim_standard_types{
 		"bool",	   "byte",		  "int",	 "int8",	"int16",   "int32",		 "int64",
 		"uint",	   "uint8",		  "uint16",	 "uint32",	"uint64",  "float",		 "float32",
 		"float64", "char",		  "string",	 "cstring", "pointer", "typedesc",	 "void",
@@ -2479,7 +2479,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	for ( const auto& keyword : nim_standard_types )
 		nim_symbols[keyword] = "keyword2";
 
-	const std::vector<std::string> nim_standard_generic_types = {
+	const std::vector<std::string> nim_standard_generic_types{
 		"range", "array", "open[aA]rray", "varargs", "seq", "set", "sink", "lent", "owned",
 	};
 
@@ -2488,7 +2488,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 		nim_patterns.push_back( { { type + "+%f[%w]" }, "keyword2" } );
 	}
 
-	const std::vector<SyntaxPattern> nim_user_patterns = {
+	const std::vector<SyntaxPattern> nim_user_patterns{
 		{ { "##?%[", "]##?" }, "comment" },
 		{ { "##?.-\n" }, "comment" },
 		{ { "\"", "\"", "\\" }, "string" },
@@ -2511,6 +2511,90 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 		nim_symbols,
 		"#",
 	} );
+
+	// CMake
+	std::unordered_map<std::string, std::string> cmake_symbols;
+	const std::vector<std::string> cmake_keywords{
+		"ANDROID",		  "APPLE",	   "BORLAND",		 "CACHE",	   "CYGWIN",	  "ENV",
+		"GHSMULTI",		  "IOS",	   "MINGW",			 "MSVC",	   "MSVC10",	  "MSVC11",
+		"MSVC12",		  "MSVC14",	   "MSVC60",		 "MSVC70",	   "MSVC71",	  "MSVC80",
+		"MSVC90",		  "MSYS",	   "UNIX",			 "WIN32",	   "WINCE",		  "XCODE",
+		"ABSTRACT",		  "ADVANCED",  "AUTOMOC",		 "AUTORCC",	   "AUTOUIC",	  "BUNDLE",
+		"COST",			  "DEPENDS",   "DEPRECATION",	 "DISABLED",   "ENVIRONMENT", "EchoString",
+		"FOLDER",		  "FRAMEWORK", "GENERATED",		 "GNUtoMS",	   "HELPSTRING",  "IMPORTED",
+		"KEEP_EXTENSION", "LABELS",	   "LANGUAGE",		 "LOCATION",   "MACROS",	  "MEASUREMENT",
+		"MODIFIED",		  "NAME",	   "PREFIX",		 "PROCESSORS", "RESOURCE",	  "SOURCES",
+		"SOVERSION",	  "STRINGS",   "SUBDIRECTORIES", "SUFFIX",	   "SYMBOLIC",	  "TESTS",
+		"TIMEOUT",		  "TYPE",	   "VALUE",			 "VARIABLES",  "VERSION",	  "XCTEST" };
+
+	for ( const auto& keyword : cmake_keywords )
+		cmake_symbols[keyword] = "keyword2";
+
+	const std::vector<std::string> cmake_operators{ "AND", "OR", "NOT", "EQUAL", "MATCHES" };
+
+	for ( const auto& keyword : cmake_operators )
+		cmake_symbols[keyword] = "operator";
+
+	const std::vector<std::string> cmake_literals{
+		"TRUE",		   "FALSE",		"INTERFACE", "C",		"CXX",	   "EXPR",	  "LIBTYPE",
+		"ON",		   "OFF",		"WARNING",	 "REPLACE", "REGEX",   "APPEND",  "DEFINED",
+		"TOUPPER",	   "TOLOWER",	"STREQUAL",	 "GLOB",	"LIBRARY", "RUNTIME", "ARCHIVE",
+		"DESTINATION", "IMMEDIATE", "TARGET",	 "COMMAND", "STATUS" };
+
+	for ( const auto& keyword : cmake_literals )
+		cmake_symbols[keyword] = "literal";
+
+	add( { "CMake",
+		   { "%.cmake$", "CMakeLists.txt$" },
+		   {
+			   { { "#", "[^\\]\n" }, "comment" },
+			   { { "\"", "\"", "\\" }, "string" },
+			   { { "'", "'", "\\" }, "string" },
+			   { { "[%a_][%w_]*%s-%f[(]" }, "function" },
+			   { { "CMAKE_[%w%d_]+" }, "keyword" },
+			   { { "CTEST_[%w%d_]+" }, "keyword" },
+			   { { "%u[_%u%d]*_[_%u%d]+" }, "keyword" },
+			   { { "%${[%a_][%w_]*%}" }, "keyword2" },
+			   { { "[%a_][%w_]*" }, "symbol" },
+		   },
+		   cmake_symbols,
+		   "//" } );
+
+	// JSX
+	add( { "JSX",
+		   { "%.jsx$" },
+		   {
+			   { { "//.-\n" }, "comment" },
+			   { { "/%*", "%*/" }, "comment" },
+			   { { "\"", "\"", "\\" }, "string" },
+			   { { "'", "'", "\\" }, "string" },
+			   { { "`", "`", "\\" }, "string" },
+			   { { "0x[%da-fA-F]+" }, "number" },
+			   { { "-?%d+[%d%.eE]*" }, "number" },
+			   { { "-?%.?%d+" }, "number" },
+			   { { "[%+%-=/%*%^%%<>!~|&]" }, "operator" },
+			   { { "[%a_][%w_]*%f[(]" }, "function" },
+			   { { "[%a_][%w_]*" }, "symbol" },
+		   },
+		   {
+			   { "async", "keyword" },		{ "await", "keyword" },		 { "break", "keyword" },
+			   { "case", "keyword" },		{ "catch", "keyword" },		 { "class", "keyword" },
+			   { "const", "keyword" },		{ "continue", "keyword" },	 { "debugger", "keyword" },
+			   { "default", "keyword" },	{ "delete", "keyword" },	 { "do", "keyword" },
+			   { "else", "keyword" },		{ "export", "keyword" },	 { "extends", "keyword" },
+			   { "finally", "keyword" },	{ "for", "keyword" },		 { "function", "keyword" },
+			   { "get", "keyword" },		{ "if", "keyword" },		 { "import", "keyword" },
+			   { "in", "keyword" },			{ "instanceof", "keyword" }, { "let", "keyword" },
+			   { "new", "keyword" },		{ "return", "keyword" },	 { "set", "keyword" },
+			   { "static", "keyword" },		{ "super", "keyword" },		 { "switch", "keyword" },
+			   { "throw", "keyword" },		{ "try", "keyword" },		 { "typeof", "keyword" },
+			   { "var", "keyword" },		{ "void", "keyword" },		 { "while", "keyword" },
+			   { "with", "keyword" },		{ "yield", "keyword" },		 { "true", "literal" },
+			   { "false", "literal" },		{ "null", "literal" },		 { "undefined", "literal" },
+			   { "arguments", "keyword2" }, { "Infinity", "keyword2" },	 { "NaN", "keyword2" },
+			   { "this", "keyword2" },
+		   },
+		   "//" } );
 }
 
 SyntaxDefinition& SyntaxDefinitionManager::add( SyntaxDefinition&& syntaxStyle ) {
