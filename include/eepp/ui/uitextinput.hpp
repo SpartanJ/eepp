@@ -106,6 +106,10 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 
 	void setMenuIconSize( size_t menuIconSize );
 
+	bool getEscapePastedText() const;
+
+	void setEscapePastedText( bool escapePastedText );
+
   protected:
 	TextDocument mDoc;
 	Float mWaitCursorTime;
@@ -119,6 +123,7 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 	bool mAllowFloat;
 	bool mMouseDown;
 	bool mCreateDefaultContextMenuOptions{ true };
+	bool mEscapePastedText{ false };
 	Uint32 mMaxLength{ 0 };
 	KeyBindings mKeyBindings;
 	Clock mLastDoubleClick;

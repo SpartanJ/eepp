@@ -678,8 +678,13 @@ void UITextInput::cut() {
 
 void UITextInput::paste() {
 	String pasted( getUISceneNode()->getWindow()->getClipboard()->getText() );
-	String::replaceAll( pasted, "\n", "" );
+	if ( mEscapePastedText ) {
+		pasted.escape();
+	} else {
+		String::replaceAll( pasted, "\n", "" );
+	}
 	mDoc.textInput( pasted );
+	sendCommonEvent( Event::OnTextPasted );
 }
 
 void UITextInput::registerCommands() {
@@ -787,6 +792,14 @@ size_t UITextInput::getMenuIconSize() const {
 
 void UITextInput::setMenuIconSize( size_t menuIconSize ) {
 	mMenuIconSize = menuIconSize;
+}
+
+bool UITextInput::getEscapePastedText() const {
+	return mEscapePastedText;
+}
+
+void UITextInput::setEscapePastedText( bool escapePastedText ) {
+	mEscapePastedText = escapePastedText;
 }
 
 Drawable* UITextInput::findIcon( const std::string& name ) {

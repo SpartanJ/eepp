@@ -219,7 +219,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 
 	// JavaScript
 	add( { "JavaScript",
-		   { "%.js$", "%.json$", "%.cson$" },
+		   { "%.js$" },
 		   {
 			   { { "//.-\n" }, "comment" },
 			   { { "/%*", "%*/" }, "comment" },
@@ -252,6 +252,20 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 			 { "from", "keyword" },		  { "public", "keyword" },	  { "private", "keyword" },
 			 { "declare", "keyword" },	  { "namespace", "keyword" }, { "protected", "keyword" },
 			 { "enum", "keyword" } },
+		   "//" } );
+
+	// JSON
+	add( { "JSON",
+		   { "%.json$", "%.cson$" },
+		   {
+			   { { "\"", "\"", "\\" }, "string" },
+			   { { "'", "'", "\\" }, "string" },
+			   { { "`", "`", "\\" }, "string" },
+			   { { "0x[%da-fA-F]+" }, "number" },
+			   { { "-?%d+[%d%.eE]*" }, "number" },
+			   { { "-?%.?%d+" }, "number" },
+		   },
+		   {},
 		   "//" } );
 
 	// TypeScript

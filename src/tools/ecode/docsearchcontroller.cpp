@@ -30,6 +30,7 @@ void DocSearchController::initSearchBar(
 	kbind.addKeybindsStringUnordered( keybindings );
 
 	UITextInput* findInput = mSearchBarLayout->find<UITextInput>( "search_find" );
+	findInput->setEscapePastedText( true );
 	UITextInput* replaceInput = mSearchBarLayout->find<UITextInput>( "search_replace" );
 	UICheckBox* caseSensitiveChk = mSearchBarLayout->find<UICheckBox>( "case_sensitive" );
 	UICheckBox* escapeSequenceChk = mSearchBarLayout->find<UICheckBox>( "escape_sequence" );
@@ -86,6 +87,14 @@ void DocSearchController::initSearchBar(
 			}
 		}
 	} );
+	findInput->addEventListener(
+		Event::OnTextPasted, [&, findInput, escapeSequenceChk]( const Event* ) {
+			if ( findInput->getUISceneNode()->getWindow()->getClipboard()->getText().find( '\n' ) !=
+				 String::InvalidPos ) {
+				if ( !escapeSequenceChk->isChecked() )
+					escapeSequenceChk->setChecked( true );
+			}
+		} );
 	mSearchBarLayout->addCommand( "close-searchbar", [&] {
 		hideSearchBar();
 		if ( mEditorSplitter->getCurEditor() )
@@ -161,22 +170,16 @@ void DocSearchController::showFindView() {
 
 	if ( doc.getSelection().hasSelection() ) {
 		String text = doc.getSelectedText();
-		if ( !doc.getSelection().inSameLine() ) {
-			text.escape();
-			UICheckBox* escapeSequenceChk = mSearchBarLayout->find<UICheckBox>( "escape_sequence" );
-			if ( !escapeSequenceChk->isChecked() )
-				escapeSequenceChk->setChecked( true );
-		}
-		if ( !text.empty() ) {
+
+		if ( !doc.getSelection().inSameLine() )
+			mSearchState.range = doc.getSelection( true );
+
+		if ( !text.empty() && doc.getSelection().inSameLine() ) {
 			findInput->setText( text );
 			findInput->getDocument().selectAll();
 		} else if ( !findInput->getText().empty() ) {
 			findInput->getDocument().selectAll();
 		}
-	} else if ( doc.getSelection().hasSelection() ) {
-		mSearchState.range = doc.getSelection( true );
-		if ( !findInput->getText().empty() )
-			findInput->getDocument().selectAll();
 	}
 	mSearchState.text = findInput->getText();
 	editor->setHighlightTextRange( mSearchState.range );

@@ -80,6 +80,7 @@ class EE_API Event {
 		OnWindowReady,
 		OnCreateContextMenu,
 		OnDocumentMoved,
+		OnTextPasted,
 		UserEvent,
 		OnMenuShow,
 		OnMenuHide,

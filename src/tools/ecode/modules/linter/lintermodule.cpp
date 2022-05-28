@@ -93,6 +93,12 @@ void LinterModule::load( const std::string& lintersPath ) {
 			if ( obj.contains( "use_tmp_folder" ) )
 				linter.useTmpFolder = obj["use_tmp_folder"].get<bool>();
 
+			if ( obj.contains( "no_errors_exit_code" ) &&
+				 obj["no_errors_exit_code"].is_number_integer() ) {
+				linter.hasNoErrorsExitCode = true;
+				linter.noErrorsExitCode = obj["no_errors_exit_code"].get<int>();
+			}
+
 			mLinters.emplace_back( std::move( linter ) );
 		}
 
@@ -247,6 +253,12 @@ void LinterModule::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 		subprocess_join( &subprocess, &returnCode );
 		subprocess_destroy( &subprocess );
 
+		if ( linter.hasNoErrorsExitCode && linter.noErrorsExitCode == returnCode ) {
+			Lock matchesLock( mMatchesMutex );
+			mMatches[doc.get()] = {};
+			return;
+		}
+
 		if ( !linter.expectedExitCodes.empty() &&
 			 std::find( linter.expectedExitCodes.begin(), linter.expectedExitCodes.end(),
 						returnCode ) == linter.expectedExitCodes.end() )
@@ -313,25 +325,26 @@ void LinterModule::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 			}
 		}
 
-		{
-			Lock matchesLock( mMatchesMutex );
-			totalMatches = matches.size();
-			for ( const auto& matchLine : matches ) {
-				for ( const auto& match : matchLine.second ) {
-					switch ( match.type ) {
-						case LinterType::Warning:
-							++totalWarns;
-							break;
-						case LinterType::Notice:
-							++totalNotice;
-							break;
-						case LinterType::Error:
-						default:
-							++totalErrors;
-							break;
-					}
+		totalMatches = matches.size();
+		for ( const auto& matchLine : matches ) {
+			for ( const auto& match : matchLine.second ) {
+				switch ( match.type ) {
+					case LinterType::Warning:
+						++totalWarns;
+						break;
+					case LinterType::Notice:
+						++totalNotice;
+						break;
+					case LinterType::Error:
+					default:
+						++totalErrors;
+						break;
 				}
 			}
+		}
+
+		{
+			Lock matchesLock( mMatchesMutex );
 			mMatches[doc.get()] = std::move( matches );
 		}
 
@@ -390,20 +403,25 @@ void LinterModule::drawAfterLineText( UICodeEditor* editor, const Int64& index, 
 		Int64 strSize = 0;
 		TextPosition endPos;
 		Vector2f pos;
+
 		if ( minCol < text.size() - 1 ) {
-			endPos = doc->nextWordBoundary( { index, (Int64)minCol } );
+			endPos = doc->nextWordBoundary( { match.pos.line(), (Int64)minCol } );
 			strSize = eemax( (Int64)0, static_cast<Int64>( endPos.column() - minCol ) );
 			pos = { position.x + editor->getXOffsetCol( { match.pos.line(), (Int64)minCol } ),
 					position.y };
 		} else {
-			endPos = doc->previousWordBoundary( { index, (Int64)minCol } );
+			endPos = doc->previousWordBoundary( { match.pos.line(), (Int64)minCol } );
 			strSize = eemax( (Int64)0, static_cast<Int64>( minCol - endPos.column() ) );
 			pos = { position.x +
 						editor->getXOffsetCol( { match.pos.line(), (Int64)endPos.column() } ),
 					position.y };
 		}
-		if ( strSize <= 0 )
-			return;
+
+		if ( strSize == 0 ) {
+			strSize = 1;
+			pos = { position.x, position.y };
+		}
+
 		std::string str( strSize, '~' );
 		String string( str );
 		line.setString( string );

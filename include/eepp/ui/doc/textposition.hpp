@@ -40,11 +40,11 @@ class EE_API TextPosition {
 	}
 
 	bool operator<=( const TextPosition& other ) const {
-		return mLine <= other.mLine || ( mLine == other.mLine && mColumn <= other.mColumn );
+		return mLine < other.mLine || ( mLine == other.mLine && mColumn <= other.mColumn );
 	}
 
 	bool operator>=( const TextPosition& other ) const {
-		return mLine >= other.mLine || ( mLine == other.mLine && mColumn >= other.mColumn );
+		return mLine > other.mLine || ( mLine == other.mLine && mColumn >= other.mColumn );
 	}
 
 	TextPosition operator+( const TextPosition& other ) const {

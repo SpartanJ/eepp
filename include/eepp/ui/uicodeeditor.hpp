@@ -650,7 +650,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 									 const Vector2f& startScroll, const Float& lineHeight );
 
 	virtual void drawWordMatch( const String& text, const std::pair<int, int>& lineRange,
-								const Vector2f& startScroll, const Float& lineHeight );
+								const Vector2f& startScroll, const Float& lineHeight,
+								bool ignoreSelectionMatch = false );
 
 	virtual void drawWhitespaces( const std::pair<int, int>& lineRange, const Vector2f& startScroll,
 								  const Float& lineHeight );

@@ -19,9 +19,9 @@ namespace EE { namespace UI { namespace Doc {
  *
  * Editor colors types accepted/used are:
  * "background", "text", "caret"
- * "selection", "line_number_background",
+ * "selection", "gutter_background",
  * "line_number", "line_number2", "line_highlight",
- * "line_number_background", "whitespace", "line_break_column",
+ * "gutter_background", "whitespace", "line_break_column",
  * "matching_bracket", "matching_selection", "suggestion", "suggestion_selected"
  *
  * Following the lite editor syntax colors (https://github.com/rxi/lite).

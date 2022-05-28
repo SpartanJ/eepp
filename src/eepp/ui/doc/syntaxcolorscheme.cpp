@@ -16,7 +16,7 @@ namespace EE { namespace UI { namespace Doc {
 // Color schemes are compatible with the lite (https://github.com/rxi/lite) color schemes.
 // But I also added:
 // "link" (link style)
-// "line_number_background" (the gutter background color)
+// "gutter_background" (the gutter background color)
 // "whitespace" (the whitespace color)
 // "line_break_column" (the right margin line column color)
 // "matching_bracket" (the background color drawn in the matching brackets)
@@ -24,9 +24,16 @@ namespace EE { namespace UI { namespace Doc {
 // "matching_search" (the background color drawn in the text matching the current searched text)
 // "suggestion" (the auto-complete suggestion box text and background color
 // "suggestion_selected" (the auto-complete selected suggestion box text and background color
+// "selection_region" (The background color of the region you select a region to find/replace text)
 // "error" (error underline color)
 // "warning" (warning underline color)
 // "notice" (notice underline color)
+// "minimap_background" (Minimap background)
+// "minimap_current_line" (Minimap current cursor line background)
+// "minimap_hover" (Minimap mouse hover color)
+// "minimap_selection" (Minimap text selection color)
+// "minimap_highlight" (Minimap text highlight color)
+// "minimap_visible_area" (Minimap visible area marker color)
 
 SyntaxColorScheme SyntaxColorScheme::getDefault() {
 	return { "eepp",
@@ -52,7 +59,7 @@ SyntaxColorScheme SyntaxColorScheme::getDefault() {
 			   { "line_number", Color( "#525259" ) },
 			   { "line_number2", Color( "#83838f" ) },
 			   // eepp colors
-			   { "line_number_background", Color( "#282a36" ) },
+			   { "gutter_background", Color( "#282a36" ) },
 			   { "whitespace", Color( "#54575b" ) },
 			   { "line_break_column", Color( "#54575b99" ) },
 			   { "matching_bracket", Color( "#FFFFFF33" ) },
@@ -63,6 +70,7 @@ SyntaxColorScheme SyntaxColorScheme::getDefault() {
 			   { "error", { Color::Red } },
 			   { "warning", { Color::Yellow } },
 			   { "notice", Color( "#8abdff" ) },
+			   { "selection_region", Color( "#39448477" ) },
 			   // minimap colors
 			   { "minimap_background", Color( "#282a36AA" ) },
 			   { "minimap_current_line", Color( "#93DDFA40" ) },
@@ -197,10 +205,10 @@ SyntaxColorScheme::getEditorSyntaxStyle( const std::string& type ) const {
 	auto it = mEditorColors.find( type );
 	if ( it != mEditorColors.end() )
 		return it->second;
-	if ( type == "line_number_background" )
+	if ( type == "gutter_background" || "minimap_background" )
 		return getEditorSyntaxStyle( "background" );
 	else if ( type == "guide" || type == "line_break_column" || type == "matching_bracket" ||
-			  type == "matching_selection" )
+			  type == "matching_selection" || type == "selection_region" )
 		return getEditorSyntaxStyle( "selection" );
 	else if ( type == "suggestion" )
 		return StyleDefault.getEditorSyntaxStyle( "suggestion" );
@@ -212,8 +220,6 @@ SyntaxColorScheme::getEditorSyntaxStyle( const std::string& type ) const {
 		return StyleDefault.getEditorSyntaxStyle( "warning" );
 	else if ( type == "notice" )
 		return StyleDefault.getEditorSyntaxStyle( "notice" );
-	else if ( type == "minimap_background" )
-		return StyleEmpty;
 	else if ( type == "minimap_current_line" )
 		return StyleDefault.getEditorSyntaxStyle( "minimap_current_line" );
 	else if ( type == "minimap_hover" )

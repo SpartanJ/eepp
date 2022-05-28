@@ -18,6 +18,7 @@ struct Linter {
 	bool columnsStartAtZero{ false };
 	bool deduplicate{ false };
 	bool useTmpFolder{ false };
+	bool hasNoErrorsExitCode{ false };
 	struct {
 		int line{ 1 };
 		int col{ 2 };
@@ -26,6 +27,7 @@ struct Linter {
 	} warningPatternOrder;
 	std::string command;
 	std::vector<Int64> expectedExitCodes{};
+	int noErrorsExitCode{ 0 };
 };
 
 struct LinterMatch {

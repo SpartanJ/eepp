@@ -243,6 +243,11 @@ void UICodeEditor::draw() {
 
 	if ( mHighlightTextRange.isValid() && mHighlightTextRange.hasSelection() ) {
 		drawTextRange( mHighlightTextRange, lineRange, startScroll, lineHeight,
+					   mColorScheme.getEditorSyntaxStyle( "selection_region" ).color );
+	}
+
+	if ( mDoc->hasSelection() ) {
+		drawTextRange( mDoc->getSelection( true ), lineRange, startScroll, lineHeight,
 					   mFontStyleConfig.getFontSelectionBackColor() );
 	}
 
@@ -252,11 +257,6 @@ void UICodeEditor::draw() {
 
 	if ( !mHighlightWord.empty() ) {
 		drawWordMatch( mHighlightWord, lineRange, startScroll, lineHeight );
-	}
-
-	if ( mDoc->hasSelection() ) {
-		drawTextRange( mDoc->getSelection( true ), lineRange, startScroll, lineHeight,
-					   mFontStyleConfig.getFontSelectionBackColor() );
 	}
 
 	// Draw tab marker
@@ -704,7 +704,7 @@ void UICodeEditor::updateColorScheme() {
 	mFontStyleConfig.setFontSelectionBackColor( mColorScheme.getEditorColor( "selection" ) );
 	mLineNumberFontColor = mColorScheme.getEditorColor( "line_number" );
 	mLineNumberActiveFontColor = mColorScheme.getEditorColor( "line_number2" );
-	mLineNumberBackgroundColor = mColorScheme.getEditorColor( "line_number_background" );
+	mLineNumberBackgroundColor = mColorScheme.getEditorColor( "gutter_background" );
 	mCurrentLineBackgroundColor = mColorScheme.getEditorColor( "line_highlight" );
 	mCaretColor = mColorScheme.getEditorColor( "caret" );
 	mWhitespaceColor = mColorScheme.getEditorColor( "guide" );
@@ -712,8 +712,6 @@ void UICodeEditor::updateColorScheme() {
 	mMatchingBracketColor = mColorScheme.getEditorColor( "matching_bracket" );
 	mSelectionMatchColor = mColorScheme.getEditorColor( "matching_selection" );
 	mMinimapBackgroundColor = mColorScheme.getEditorColor( "minimap_background" );
-	if ( Color::Transparent == mMinimapBackgroundColor )
-		mMinimapBackgroundColor = getBackgroundColor();
 	mMinimapVisibleAreaColor = mColorScheme.getEditorColor( "minimap_visible_area" );
 	mMinimapCurrentLineColor = mColorScheme.getEditorColor( "minimap_current_line" );
 	mMinimapHoverColor = mColorScheme.getEditorColor( "minimap_hover" );
@@ -2098,6 +2096,7 @@ void UICodeEditor::cut() {
 
 void UICodeEditor::paste() {
 	mDoc->textInput( getUISceneNode()->getWindow()->getClipboard()->getText() );
+	sendCommonEvent( Event::OnTextPasted );
 }
 
 void UICodeEditor::fontSizeGrow() {
@@ -2240,12 +2239,13 @@ void UICodeEditor::drawSelectionMatch( const std::pair<int, int>& lineRange,
 		String text( selectionLine.substr(
 			selection.start().column(), selection.end().column() - selection.start().column() ) );
 		if ( !text.empty() )
-			drawWordMatch( text, lineRange, startScroll, lineHeight );
+			drawWordMatch( text, lineRange, startScroll, lineHeight, true );
 	}
 }
 
 void UICodeEditor::drawWordMatch( const String& text, const std::pair<int, int>& lineRange,
-								  const Vector2f& startScroll, const Float& lineHeight ) {
+								  const Vector2f& startScroll, const Float& lineHeight,
+								  bool ignoreSelectionMatch ) {
 	if ( text.empty() )
 		return;
 	Primitives primitives;
@@ -2257,9 +2257,17 @@ void UICodeEditor::drawWordMatch( const String& text, const std::pair<int, int>&
 		// Skip ridiculously long lines.
 		if ( line.size() > 300 )
 			continue;
+
 		do {
 			pos = line.find( text, pos );
 			if ( pos != String::InvalidPos ) {
+				if ( ignoreSelectionMatch ) {
+					TextRange selection = mDoc->getSelection( true );
+					if ( selection.inSameLine() && selection.start().line() == ln &&
+						 selection.start().column() == (Int64)pos )
+						break;
+				}
+
 				Rectf selRect;
 				Int64 startCol = pos;
 				Int64 endCol = pos + text.size();
@@ -2877,6 +2885,11 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 				}
 			}
 			flushBatch( "normal" );
+
+			if ( mHighlightTextRange.isValid() && mHighlightTextRange.hasSelection() ) {
+				drawTextRange( mHighlightTextRange, index,
+							   Color( mMinimapSelectionColor ).blendAlpha( mAlpha ) );
+			}
 
 			if ( mDoc->hasSelection() ) {
 				drawTextRange( mDoc->getSelection( true ), index,
