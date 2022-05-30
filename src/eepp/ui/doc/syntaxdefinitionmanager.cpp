@@ -230,6 +230,12 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 			   { { "-?%d+[%d%.eE]*" }, "number" },
 			   { { "-?%.?%d+" }, "number" },
 			   { { "[%+%-=/%*%^%%<>!~|&]" }, "operator" },
+			   { { "([%w_][%w_]+)%.([%w_][%w%d_]*)%s*(=)%s*(function)" },
+				 { "normal", "keyword2", "function", "operator", "keyword" } },
+			   { { "([%w_][%w_]+)%.([%w_][%w%d_]*)%s*(=)%s*(async%s*function)" },
+				 { "normal", "keyword2", "function", "operator", "keyword" } },
+			   { { "([%w_][%w_]+)%.([%w_][%w%d_]*)%s*(=)%s*%b()%s*(=>)" },
+				 { "normal", "keyword2", "function", "operator", "operator" } },
 			   { { "[%a_][%w_]*%s*%f[(]" }, "function" },
 			   { { "[%a_][%w_]*" }, "symbol" },
 		   },
@@ -251,7 +257,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 			 { "implements", "keyword" }, { "Array", "keyword2" },	  { "any", "keyword" },
 			 { "from", "keyword" },		  { "public", "keyword" },	  { "private", "keyword" },
 			 { "declare", "keyword" },	  { "namespace", "keyword" }, { "protected", "keyword" },
-			 { "enum", "keyword" } },
+			 { "enum", "keyword" },		  { "function", "keyword" } },
 		   "//" } );
 
 	// JSON

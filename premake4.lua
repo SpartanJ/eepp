@@ -483,6 +483,7 @@ function build_link_configuration( package_name, use_ee_icon )
 		linkoptions { "-O3 -s TOTAL_MEMORY=67108864" }
 		linkoptions { "-s USE_SDL=2" }
 		buildoptions { "-O3 -s USE_SDL=2 -s PRECISE_F32=1 -s ENVIRONMENT=worker,web" }
+		defines { "NO_POSIX_SPAWN" }
 
 		if _OPTIONS["with-emscripten-pthreads"] then
 			buildoptions { "-s USE_PTHREADS=1" }

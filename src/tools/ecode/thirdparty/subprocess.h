@@ -767,6 +767,10 @@ int subprocess_create_ex(const char *const commandLine[], int options,
     }
   }
 
+
+
+#if !defined(NO_POSIX_SPAWN)
+
   if (environment) {
 #ifdef __clang__
 #pragma clang diagnostic push
@@ -884,7 +888,86 @@ int subprocess_create_ex(const char *const commandLine[], int options,
   out_process->alive = 1;
 
   posix_spawn_file_actions_destroy(&actions);
+
   return 0;
+#else
+  child = fork();
+
+  if (-1 == child) {
+    return -1;
+  }
+
+  if (0 == child) {
+    // Close the stdin write end
+    close(stdinfd[1]);
+    // Map the read end to stdin
+    dup2(stdinfd[0], STDIN_FILENO);
+
+    // Close the stdout read end
+    close(stdoutfd[0]);
+    // Map the write end to stdout
+    dup2(stdoutfd[1], STDOUT_FILENO);
+
+    if (subprocess_option_combined_stdout_stderr ==
+        (options & subprocess_option_combined_stdout_stderr)) {
+      dup2(STDOUT_FILENO, STDERR_FILENO);
+    } else {
+      // Close the stderr read end
+      close(stderrfd[0]);
+      // Map the write end to stdout
+      dup2(stderrfd[1], STDERR_FILENO);
+    }
+
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wcast-qual"
+#pragma clang diagnostic ignored "-Wold-style-cast"
+#endif
+
+    if (environment) {
+      _Exit(execve(commandLine[0], (char *const *)commandLine,
+                   (char *const *)environment));
+    } else if (subprocess_option_inherit_environment !=
+               (options & subprocess_option_inherit_environment)) {
+      _Exit(execve(commandLine[0], (char *const *)commandLine,
+                   empty_environment));
+    } else {
+      _Exit(execvp(commandLine[0], (char *const *)commandLine));
+    }
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+  } else {
+    // Close the stdin read end
+    close(stdinfd[0]);
+    // Store the stdin write end
+    out_process->stdin_file = fdopen(stdinfd[1], "wb");
+
+    // Close the stdout write end
+    close(stdoutfd[1]);
+    // Store the stdout read end
+    out_process->stdout_file = fdopen(stdoutfd[0], "rb");
+
+    if (subprocess_option_combined_stdout_stderr ==
+        (options & subprocess_option_combined_stdout_stderr)) {
+      out_process->stderr_file = out_process->stdout_file;
+    } else {
+      // Close the stderr write end
+      close(stderrfd[1]);
+      // Store the stderr read end
+      out_process->stderr_file = fdopen(stderrfd[0], "rb");
+    }
+
+    // Store the child's pid
+    out_process->child = child;
+
+    out_process->alive = 1;
+
+    return 0;
+  }
+#endif
+
 #endif
 }
 
