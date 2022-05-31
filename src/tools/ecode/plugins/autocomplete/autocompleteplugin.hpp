@@ -1,5 +1,5 @@
-#ifndef AUTOCOMPLETEMODULE_HPP
-#define AUTOCOMPLETEMODULE_HPP
+#ifndef AUTOCOMPLETEPLUGIN_HPP
+#define AUTOCOMPLETEPLUGIN_HPP
 
 #include <eepp/config.hpp>
 #include <eepp/system/clock.hpp>
@@ -12,15 +12,15 @@ using namespace EE;
 using namespace EE::System;
 using namespace EE::UI;
 
-class AutoCompleteModule : public UICodeEditorModule {
+class AutoCompletePlugin : public UICodeEditorPlugin {
   public:
 	typedef std::unordered_set<std::string> SymbolsList;
 
-	AutoCompleteModule();
+	AutoCompletePlugin();
 
-	AutoCompleteModule( std::shared_ptr<ThreadPool> pool );
+	AutoCompletePlugin( std::shared_ptr<ThreadPool> pool );
 
-	virtual ~AutoCompleteModule();
+	virtual ~AutoCompletePlugin();
 
 	std::string getTitle() { return "Auto Complete"; }
 
@@ -112,4 +112,4 @@ class AutoCompleteModule : public UICodeEditorModule {
 	void pickSuggestion( UICodeEditor* editor );
 };
 
-#endif // AUTOCOMPLETEMODULE_HPP
+#endif // AUTOCOMPLETEPLUGIN_HPP

@@ -1,4 +1,4 @@
-#include "autocompletemodule.hpp"
+#include "autocompleteplugin.hpp"
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/system/lock.hpp>
@@ -13,22 +13,22 @@ using namespace EE::System;
 #define AUTO_COMPLETE_THREADED 0
 #endif
 
-AutoCompleteModule::AutoCompleteModule() :
+AutoCompletePlugin::AutoCompletePlugin() :
 #if AUTO_COMPLETE_THREADED
-	AutoCompleteModule( ThreadPool::createShared( eemin<int>( 2, Sys::getCPUCount() ) ) )
+	AutoCompletePlugin( ThreadPool::createShared( eemin<int>( 2, Sys::getCPUCount() ) ) )
 #else
-	AutoCompleteModule( nullptr )
+	AutoCompletePlugin( nullptr )
 #endif
 {
 }
 
-AutoCompleteModule::AutoCompleteModule( std::shared_ptr<ThreadPool> pool ) :
+AutoCompletePlugin::AutoCompletePlugin( std::shared_ptr<ThreadPool> pool ) :
 	mSymbolPattern( "[%añàáâãäåèéêëìíîïòóôõöùúûüýÿÑÀÁÂÃÄÅÈÉÊËÌÍÎÏÒÓÔÕÖÙÚÛÜÝ][%w_"
 					"ñàáâãäåèéêëìíîïòóôõöùúûüýÿÑÀÁÂÃÄÅÈÉÊËÌÍÎÏÒÓÔÕÖÙÚÛÜÝ]*" ),
 	mBoxPadding( PixelDensity::dpToPx( Rectf( 4, 4, 4, 4 ) ) ),
 	mPool( pool ) {}
 
-AutoCompleteModule::~AutoCompleteModule() {
+AutoCompletePlugin::~AutoCompletePlugin() {
 	mClosing = true;
 	Lock l( mDocMutex );
 	Lock l2( mLangSymbolsMutex );
@@ -36,11 +36,11 @@ AutoCompleteModule::~AutoCompleteModule() {
 	for ( const auto& editor : mEditors ) {
 		for ( auto listener : editor.second )
 			editor.first->removeEventListener( listener );
-		editor.first->unregisterModule( this );
+		editor.first->unregisterPlugin( this );
 	}
 }
 
-void AutoCompleteModule::onRegister( UICodeEditor* editor ) {
+void AutoCompletePlugin::onRegister( UICodeEditor* editor ) {
 	Lock l( mDocMutex );
 	std::vector<Uint32> listeners;
 	listeners.push_back( editor->addEventListener( Event::OnDocumentLoaded,
@@ -97,7 +97,7 @@ void AutoCompleteModule::onRegister( UICodeEditor* editor ) {
 	mDirty = true;
 }
 
-void AutoCompleteModule::onUnregister( UICodeEditor* editor ) {
+void AutoCompletePlugin::onUnregister( UICodeEditor* editor ) {
 	if ( mClosing )
 		return;
 	if ( mSuggestionsEditor == editor )
@@ -117,7 +117,7 @@ void AutoCompleteModule::onUnregister( UICodeEditor* editor ) {
 	mDirty = true;
 }
 
-bool AutoCompleteModule::onKeyDown( UICodeEditor* editor, const KeyEvent& event ) {
+bool AutoCompletePlugin::onKeyDown( UICodeEditor* editor, const KeyEvent& event ) {
 	if ( !mSuggestions.empty() ) {
 		int max = eemin<int>( mSuggestionsMaxVisible, mSuggestions.size() );
 		if ( event.getKeyCode() == KEY_DOWN ) {
@@ -162,7 +162,8 @@ bool AutoCompleteModule::onKeyDown( UICodeEditor* editor, const KeyEvent& event 
 			pickSuggestion( editor );
 			return true;
 		}
-	} else if ( event.getKeyCode() == KEY_SPACE && ( event.getMod() & KeyMod::getDefaultModifier() ) ) {
+	} else if ( event.getKeyCode() == KEY_SPACE &&
+				( event.getMod() & KeyMod::getDefaultModifier() ) ) {
 		std::string partialSymbol( getPartialSymbol( &editor->getDocument() ) );
 		if ( partialSymbol.size() >= 3 ) {
 			updateSuggestions( partialSymbol, editor );
@@ -172,11 +173,11 @@ bool AutoCompleteModule::onKeyDown( UICodeEditor* editor, const KeyEvent& event 
 	return false;
 }
 
-bool AutoCompleteModule::onKeyUp( UICodeEditor*, const KeyEvent& ) {
+bool AutoCompletePlugin::onKeyUp( UICodeEditor*, const KeyEvent& ) {
 	return false;
 }
 
-bool AutoCompleteModule::onTextInput( UICodeEditor* editor, const TextInputEvent& ) {
+bool AutoCompletePlugin::onTextInput( UICodeEditor* editor, const TextInputEvent& ) {
 	std::string partialSymbol( getPartialSymbol( &editor->getDocument() ) );
 	if ( partialSymbol.size() >= 3 ) {
 		updateSuggestions( partialSymbol, editor );
@@ -186,7 +187,7 @@ bool AutoCompleteModule::onTextInput( UICodeEditor* editor, const TextInputEvent
 	return false;
 }
 
-void AutoCompleteModule::updateDocCache( TextDocument* doc ) {
+void AutoCompletePlugin::updateDocCache( TextDocument* doc ) {
 	Lock l( mDocMutex );
 	Clock clock;
 	auto docCache = mDocCache.find( doc );
@@ -209,7 +210,7 @@ void AutoCompleteModule::updateDocCache( TextDocument* doc ) {
 				clock.getElapsedTime().asMilliseconds() );
 }
 
-void AutoCompleteModule::updateLangCache( const std::string& langName ) {
+void AutoCompletePlugin::updateLangCache( const std::string& langName ) {
 	Clock clock;
 	Lock l( mLangSymbolsMutex );
 	Lock l2( mDocMutex );
@@ -223,7 +224,7 @@ void AutoCompleteModule::updateLangCache( const std::string& langName ) {
 				clock.getElapsedTime().asMilliseconds() );
 }
 
-void AutoCompleteModule::pickSuggestion( UICodeEditor* editor ) {
+void AutoCompletePlugin::pickSuggestion( UICodeEditor* editor ) {
 	mReplacing = true;
 	editor->getDocument().execute( "delete-to-previous-word" );
 	editor->getDocument().textInput( mSuggestions[mSuggestionIndex] );
@@ -231,13 +232,13 @@ void AutoCompleteModule::pickSuggestion( UICodeEditor* editor ) {
 	resetSuggestions( editor );
 }
 
-std::string AutoCompleteModule::getPartialSymbol( TextDocument* doc ) {
+std::string AutoCompletePlugin::getPartialSymbol( TextDocument* doc ) {
 	TextPosition end = doc->getSelection().end();
 	TextPosition start = doc->startOfWord( end );
 	return doc->getText( { start, end } ).toUtf8();
 }
 
-void AutoCompleteModule::update( UICodeEditor* ) {
+void AutoCompletePlugin::update( UICodeEditor* ) {
 	if ( mClock.getElapsedTime() >= mUpdateFreq || mDirty ) {
 		mClock.restart();
 		mDirty = false;
@@ -254,10 +255,10 @@ void AutoCompleteModule::update( UICodeEditor* ) {
 	}
 }
 
-void AutoCompleteModule::preDraw( UICodeEditor*, const Vector2f&, const Float&,
+void AutoCompletePlugin::preDraw( UICodeEditor*, const Vector2f&, const Float&,
 								  const TextPosition& ) {}
 
-void AutoCompleteModule::postDraw( UICodeEditor* editor, const Vector2f& startScroll,
+void AutoCompletePlugin::postDraw( UICodeEditor* editor, const Vector2f& startScroll,
 								   const Float& lineHeight, const TextPosition& cursor ) {
 	std::vector<std::string> suggestions;
 	{
@@ -302,7 +303,7 @@ void AutoCompleteModule::postDraw( UICodeEditor* editor, const Vector2f& startSc
 	}
 }
 
-bool AutoCompleteModule::onMouseDown( UICodeEditor* editor, const Vector2i& position,
+bool AutoCompletePlugin::onMouseDown( UICodeEditor* editor, const Vector2i& position,
 									  const Uint32& flags ) {
 	if ( mSuggestions.empty() || !mSuggestionsEditor || mSuggestionsEditor != editor ||
 		 !( flags & EE_BUTTON_LMASK ) )
@@ -314,7 +315,7 @@ bool AutoCompleteModule::onMouseDown( UICodeEditor* editor, const Vector2i& posi
 	return false;
 }
 
-bool AutoCompleteModule::onMouseClick( UICodeEditor* editor, const Vector2i& position,
+bool AutoCompletePlugin::onMouseClick( UICodeEditor* editor, const Vector2i& position,
 									   const Uint32& flags ) {
 	if ( mSuggestions.empty() || !mSuggestionsEditor || mSuggestionsEditor != editor ||
 		 !( flags & EE_BUTTON_LMASK ) )
@@ -330,7 +331,7 @@ bool AutoCompleteModule::onMouseClick( UICodeEditor* editor, const Vector2i& pos
 	return false;
 }
 
-bool AutoCompleteModule::onMouseDoubleClick( UICodeEditor* editor, const Vector2i& position,
+bool AutoCompletePlugin::onMouseDoubleClick( UICodeEditor* editor, const Vector2i& position,
 											 const Uint32& flags ) {
 	if ( mSuggestions.empty() || !mSuggestionsEditor || mSuggestionsEditor != editor ||
 		 !( flags & EE_BUTTON_LMASK ) )
@@ -344,7 +345,7 @@ bool AutoCompleteModule::onMouseDoubleClick( UICodeEditor* editor, const Vector2
 	return false;
 }
 
-bool AutoCompleteModule::onMouseMove( UICodeEditor* editor, const Vector2i& position,
+bool AutoCompletePlugin::onMouseMove( UICodeEditor* editor, const Vector2i& position,
 									  const Uint32& ) {
 	if ( mSuggestions.empty() || !mSuggestionsEditor || mSuggestionsEditor != editor )
 		return false;
@@ -357,47 +358,47 @@ bool AutoCompleteModule::onMouseMove( UICodeEditor* editor, const Vector2i& posi
 	return false;
 }
 
-const Rectf& AutoCompleteModule::getBoxPadding() const {
+const Rectf& AutoCompletePlugin::getBoxPadding() const {
 	return mBoxPadding;
 }
 
-void AutoCompleteModule::setBoxPadding( const Rectf& boxPadding ) {
+void AutoCompletePlugin::setBoxPadding( const Rectf& boxPadding ) {
 	mBoxPadding = boxPadding;
 }
 
-const Uint32& AutoCompleteModule::getSuggestionsMaxVisible() const {
+const Uint32& AutoCompletePlugin::getSuggestionsMaxVisible() const {
 	return mSuggestionsMaxVisible;
 }
 
-void AutoCompleteModule::setSuggestionsMaxVisible( const Uint32& suggestionsMaxVisible ) {
+void AutoCompletePlugin::setSuggestionsMaxVisible( const Uint32& suggestionsMaxVisible ) {
 	mSuggestionsMaxVisible = suggestionsMaxVisible;
 }
 
-const Time& AutoCompleteModule::getUpdateFreq() const {
+const Time& AutoCompletePlugin::getUpdateFreq() const {
 	return mUpdateFreq;
 }
 
-void AutoCompleteModule::setUpdateFreq( const Time& updateFreq ) {
+void AutoCompletePlugin::setUpdateFreq( const Time& updateFreq ) {
 	mUpdateFreq = updateFreq;
 }
 
-const std::string& AutoCompleteModule::getSymbolPattern() const {
+const std::string& AutoCompletePlugin::getSymbolPattern() const {
 	return mSymbolPattern;
 }
 
-void AutoCompleteModule::setSymbolPattern( const std::string& symbolPattern ) {
+void AutoCompletePlugin::setSymbolPattern( const std::string& symbolPattern ) {
 	mSymbolPattern = symbolPattern;
 }
 
-bool AutoCompleteModule::isDirty() const {
+bool AutoCompletePlugin::isDirty() const {
 	return mDirty;
 }
 
-void AutoCompleteModule::setDirty( bool dirty ) {
+void AutoCompletePlugin::setDirty( bool dirty ) {
 	mDirty = dirty;
 }
 
-void AutoCompleteModule::resetSuggestions( UICodeEditor* editor ) {
+void AutoCompletePlugin::resetSuggestions( UICodeEditor* editor ) {
 	Lock l( mSuggestionsMutex );
 	mSuggestionIndex = 0;
 	mSuggestionsEditor = nullptr;
@@ -406,9 +407,9 @@ void AutoCompleteModule::resetSuggestions( UICodeEditor* editor ) {
 		editor->getUISceneNode()->setCursor( !editor->isLocked() ? Cursor::IBeam : Cursor::Arrow );
 }
 
-AutoCompleteModule::SymbolsList AutoCompleteModule::getDocumentSymbols( TextDocument* doc ) {
+AutoCompletePlugin::SymbolsList AutoCompletePlugin::getDocumentSymbols( TextDocument* doc ) {
 	LuaPattern pattern( mSymbolPattern );
-	AutoCompleteModule::SymbolsList symbols;
+	AutoCompletePlugin::SymbolsList symbols;
 	Int64 lc = doc->linesCount();
 	if ( lc == 0 || lc > 50000 || mClosing )
 		return symbols;
@@ -429,7 +430,7 @@ AutoCompleteModule::SymbolsList AutoCompleteModule::getDocumentSymbols( TextDocu
 	return symbols;
 }
 
-static std::vector<std::string> fuzzyMatchSymbols( const AutoCompleteModule::SymbolsList& symbols,
+static std::vector<std::string> fuzzyMatchSymbols( const AutoCompletePlugin::SymbolsList& symbols,
 												   const std::string& match, const size_t& max ) {
 	std::multimap<int, std::string, std::greater<int>> matchesMap;
 	std::vector<std::string> matches;
@@ -446,7 +447,7 @@ static std::vector<std::string> fuzzyMatchSymbols( const AutoCompleteModule::Sym
 	return matches;
 }
 
-void AutoCompleteModule::runUpdateSuggestions( const std::string& symbol,
+void AutoCompletePlugin::runUpdateSuggestions( const std::string& symbol,
 											   const SymbolsList& symbols, UICodeEditor* editor ) {
 	{
 		Lock l( mLangSymbolsMutex );
@@ -457,7 +458,7 @@ void AutoCompleteModule::runUpdateSuggestions( const std::string& symbol,
 	editor->runOnMainThread( [editor] { editor->invalidateDraw(); } );
 }
 
-void AutoCompleteModule::updateSuggestions( const std::string& symbol, UICodeEditor* editor ) {
+void AutoCompletePlugin::updateSuggestions( const std::string& symbol, UICodeEditor* editor ) {
 	const std::string& lang = editor->getDocument().getSyntaxDefinition().getLanguageName();
 	Lock l( mLangSymbolsMutex );
 	auto langSuggestions = mLangCache.find( lang );

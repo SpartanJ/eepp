@@ -1,4 +1,4 @@
-﻿#include "lintermodule.hpp"
+﻿#include "linterplugin.hpp"
 #include "../../thirdparty/json.hpp"
 #include "../../thirdparty/subprocess.h"
 #include <algorithm>
@@ -17,7 +17,7 @@ using json = nlohmann::json;
 #define LINTER_THREADED 0
 #endif
 
-LinterModule::LinterModule( const std::string& lintersPath, std::shared_ptr<ThreadPool> pool ) :
+LinterPlugin::LinterPlugin( const std::string& lintersPath, std::shared_ptr<ThreadPool> pool ) :
 	mPool( pool ) {
 #if LINTER_THREADED
 	mPool->run( [&, lintersPath] { load( lintersPath ); }, [] {} );
@@ -26,16 +26,16 @@ LinterModule::LinterModule( const std::string& lintersPath, std::shared_ptr<Thre
 #endif
 }
 
-LinterModule::~LinterModule() {
+LinterPlugin::~LinterPlugin() {
 	mClosing = true;
 	for ( const auto& editor : mEditors ) {
 		for ( auto listener : editor.second )
 			editor.first->removeEventListener( listener );
-		editor.first->unregisterModule( this );
+		editor.first->unregisterPlugin( this );
 	}
 }
 
-void LinterModule::load( const std::string& lintersPath ) {
+void LinterPlugin::load( const std::string& lintersPath ) {
 	if ( !FileSystem::fileExists( lintersPath ) )
 		return;
 	try {
@@ -109,7 +109,7 @@ void LinterModule::load( const std::string& lintersPath ) {
 	}
 }
 
-void LinterModule::onRegister( UICodeEditor* editor ) {
+void LinterPlugin::onRegister( UICodeEditor* editor ) {
 	Lock l( mDocMutex );
 
 	std::vector<Uint32> listeners;
@@ -152,7 +152,7 @@ void LinterModule::onRegister( UICodeEditor* editor ) {
 	mEditorDocs[editor] = editor->getDocumentRef().get();
 }
 
-void LinterModule::onUnregister( UICodeEditor* editor ) {
+void LinterPlugin::onUnregister( UICodeEditor* editor ) {
 	if ( mClosing )
 		return;
 	Lock l( mDocMutex );
@@ -171,7 +171,7 @@ void LinterModule::onUnregister( UICodeEditor* editor ) {
 	mMatches.erase( doc );
 }
 
-void LinterModule::update( UICodeEditor* editor ) {
+void LinterPlugin::update( UICodeEditor* editor ) {
 	std::shared_ptr<TextDocument> doc = editor->getDocumentRef();
 	auto it = mDirtyDoc.find( doc.get() );
 	if ( it != mDirtyDoc.end() && it->second->getElapsedTime() >= mDelayTime ) {
@@ -182,15 +182,15 @@ void LinterModule::update( UICodeEditor* editor ) {
 	}
 }
 
-const Time& LinterModule::getDelayTime() const {
+const Time& LinterPlugin::getDelayTime() const {
 	return mDelayTime;
 }
 
-void LinterModule::setDelayTime( const Time& delayTime ) {
+void LinterPlugin::setDelayTime( const Time& delayTime ) {
 	mDelayTime = delayTime;
 }
 
-void LinterModule::lintDoc( std::shared_ptr<TextDocument> doc ) {
+void LinterPlugin::lintDoc( std::shared_ptr<TextDocument> doc ) {
 	if ( !mReady )
 		return;
 	auto linter = supportsLinter( doc );
@@ -224,7 +224,7 @@ void LinterModule::lintDoc( std::shared_ptr<TextDocument> doc ) {
 	}
 }
 
-void LinterModule::runLinter( std::shared_ptr<TextDocument> doc, const Linter& linter,
+void LinterPlugin::runLinter( std::shared_ptr<TextDocument> doc, const Linter& linter,
 							  const std::string& path ) {
 	Clock clock;
 	std::string cmd( linter.command );
@@ -350,14 +350,14 @@ void LinterModule::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 
 		invalidateEditors( doc.get() );
 
-		Log::info( "LinterModule::runLinter for %s took %.2fms. Found: %d matches. Errors: %d, "
+		Log::info( "LinterPlugin::runLinter for %s took %.2fms. Found: %d matches. Errors: %d, "
 				   "Warnings: %d, Notices: %d.",
 				   path.c_str(), clock.getElapsedTime().asMilliseconds(), totalMatches, totalErrors,
 				   totalWarns, totalNotice );
 	}
 }
 
-std::string LinterModule::getMatchString( const LinterType& type ) {
+std::string LinterPlugin::getMatchString( const LinterType& type ) {
 	switch ( type ) {
 		case LinterType::Warning:
 			return "warning";
@@ -369,7 +369,7 @@ std::string LinterModule::getMatchString( const LinterType& type ) {
 	return "error";
 }
 
-void LinterModule::drawAfterLineText( UICodeEditor* editor, const Int64& index, Vector2f position,
+void LinterPlugin::drawAfterLineText( UICodeEditor* editor, const Int64& index, Vector2f position,
 									  const Float& /*fontSize*/, const Float& lineHeight ) {
 	Lock l( mMatchesMutex );
 	auto matchIt = mMatches.find( editor->getDocumentRef().get() );
@@ -431,7 +431,7 @@ void LinterModule::drawAfterLineText( UICodeEditor* editor, const Int64& index, 
 	}
 }
 
-bool LinterModule::onMouseMove( UICodeEditor* editor, const Vector2i& pos, const Uint32& ) {
+bool LinterPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& pos, const Uint32& ) {
 	Lock l( mMatchesMutex );
 	auto it = mMatches.find( editor->getDocumentRef().get() );
 	if ( it != mMatches.end() ) {
@@ -457,7 +457,7 @@ bool LinterModule::onMouseMove( UICodeEditor* editor, const Vector2i& pos, const
 	return false;
 }
 
-bool LinterModule::onMouseLeave( UICodeEditor* editor, const Vector2i&, const Uint32& ) {
+bool LinterPlugin::onMouseLeave( UICodeEditor* editor, const Vector2i&, const Uint32& ) {
 	if ( editor->getTooltip() && editor->getTooltip()->isVisible() ) {
 		editor->setTooltipText( "" );
 		editor->getTooltip()->hide();
@@ -465,7 +465,7 @@ bool LinterModule::onMouseLeave( UICodeEditor* editor, const Vector2i&, const Ui
 	return false;
 }
 
-Linter LinterModule::supportsLinter( std::shared_ptr<TextDocument> doc ) {
+Linter LinterPlugin::supportsLinter( std::shared_ptr<TextDocument> doc ) {
 	std::string fileName( FileSystem::fileNameFromPath( doc->getFilePath() ) );
 	const auto& def = doc->getSyntaxDefinition();
 
@@ -483,14 +483,14 @@ Linter LinterModule::supportsLinter( std::shared_ptr<TextDocument> doc ) {
 	return {};
 }
 
-void LinterModule::setDocDirty( TextDocument* doc ) {
+void LinterPlugin::setDocDirty( TextDocument* doc ) {
 	mDirtyDoc[doc] = std::make_unique<Clock>();
 }
-void LinterModule::setDocDirty( UICodeEditor* editor ) {
+void LinterPlugin::setDocDirty( UICodeEditor* editor ) {
 	mDirtyDoc[editor->getDocumentRef().get()] = std::make_unique<Clock>();
 }
 
-void LinterModule::invalidateEditors( TextDocument* doc ) {
+void LinterPlugin::invalidateEditors( TextDocument* doc ) {
 	Lock l( mDocMutex );
 	for ( auto& it : mEditorDocs ) {
 		if ( it.second == doc )

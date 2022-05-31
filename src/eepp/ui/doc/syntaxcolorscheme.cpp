@@ -60,7 +60,7 @@ SyntaxColorScheme SyntaxColorScheme::getDefault() {
 			   { "line_number2", Color( "#83838f" ) },
 			   // eepp colors
 			   { "gutter_background", Color( "#282a36" ) },
-			   { "whitespace", Color( "#54575b" ) },
+			   { "whitespace", Color( "#394484" ) },
 			   { "line_break_column", Color( "#54575b99" ) },
 			   { "matching_bracket", Color( "#FFFFFF33" ) },
 			   { "matching_selection", Color( "#3e596e" ) },
@@ -207,7 +207,7 @@ SyntaxColorScheme::getEditorSyntaxStyle( const std::string& type ) const {
 		return it->second;
 	if ( type == "gutter_background" || "minimap_background" )
 		return getEditorSyntaxStyle( "background" );
-	else if ( type == "guide" || type == "line_break_column" || type == "matching_bracket" ||
+	else if ( type == "whitespace" || type == "line_break_column" || type == "matching_bracket" ||
 			  type == "matching_selection" || type == "selection_region" )
 		return getEditorSyntaxStyle( "selection" );
 	else if ( type == "suggestion" )

@@ -14,9 +14,9 @@
 #include <eepp/ee.hpp>
 #include <efsw/efsw.hpp>
 
-class AutoCompleteModule;
-class LinterModule;
-class FormatterModule;
+class AutoCompletePlugin;
+class LinterPlugin;
+class FormatterPlugin;
 
 class App : public UICodeEditorSplitter::Client {
   public:
@@ -107,19 +107,20 @@ class App : public UICodeEditorSplitter::Client {
 	std::unordered_map<std::string, std::string> mGlobalSearchKeybindings;
 	std::unordered_map<std::string, std::string> mDocumentSearchKeybindings;
 	std::string mConfigPath;
+	std::string mPluginsPath;
 	std::string mKeybindingsPath;
 	Float mDisplayDPI{ 96 };
 	std::string mResPath;
-	AutoCompleteModule* mAutoCompleteModule{ nullptr };
-	LinterModule* mLinterModule{ nullptr };
-	FormatterModule* mFormatterModule{ nullptr };
+	AutoCompletePlugin* mAutoCompletePlugin{ nullptr };
+	LinterPlugin* mLinterPlugin{ nullptr };
+	FormatterPlugin* mFormatterPlugin{ nullptr };
 	std::shared_ptr<ThreadPool> mThreadPool;
 	std::shared_ptr<ProjectDirectoryTree> mDirTree;
 	UITreeView* mProjectTreeView{ nullptr };
 	std::shared_ptr<FileSystemModel> mFileSystemModel;
 	size_t mMenuIconSize;
 	bool mDirTreeReady{ false };
-	bool mIsMacOSApp{ false };
+	bool mIsBundledApp{ false };
 	ProjectDocumentConfig mProjectDocConfig;
 	std::unordered_set<Doc::TextDocument*> mTmpDocs;
 	std::string mCurrentProject;

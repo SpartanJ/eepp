@@ -24,7 +24,7 @@ class UILoader;
 class UIPopUpMenu;
 class UIMenuItem;
 
-class UICodeEditorModule {
+class UICodeEditorPlugin {
   public:
 	virtual std::string getTitle() = 0;
 	virtual std::string getDescription() = 0;
@@ -387,9 +387,9 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void setHighlightTextRange( const TextRange& highlightSelection );
 
-	void registerModule( UICodeEditorModule* module );
+	void registerPlugin( UICodeEditorPlugin* plugin );
 
-	void unregisterModule( UICodeEditorModule* module );
+	void unregisterPlugin( UICodeEditorPlugin* plugin );
 
 	virtual Int64 getColFromXOffset( Int64 line, const Float& x ) const;
 
@@ -539,7 +539,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	TextRange mHighlightTextRange;
 	Color mPreviewColor;
 	TextRange mPreviewColorRange;
-	std::vector<UICodeEditorModule*> mModules;
+	std::vector<UICodeEditorPlugin*> mPlugins;
 	UILoader* mLoader{ nullptr };
 	Float mGlyphWidth{ 0 };
 	size_t mMenuIconSize{ 16 };

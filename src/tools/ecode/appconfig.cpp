@@ -50,7 +50,7 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 		iniState.getValueI( "window", "height", displayDPI > 105 ? 1080 : 720 ) );
 	window.maximized = iniState.getValueB( "window", "maximized", false );
 	window.pixelDensity = iniState.getValueF( "window", "pixeldensity" );
-	window.winIcon = ini.getValue( "window", "winicon", resPath + "assets/icon/ee.png" );
+	window.winIcon = ini.getValue( "window", "winicon", resPath + "icon/ee.png" );
 	window.panelPartition = iniState.getValue( "window", "panel_partition", "15%" );
 	window.displayIndex = iniState.getValueI( "window", "display_index", 0 );
 	window.position.x = iniState.getValueI( "window", "x", -1 );
@@ -65,8 +65,8 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	ui.fontSize = ini.getValue( "ui", "font_size", "11dp" );
 	ui.showSidePanel = ini.getValueB( "ui", "show_side_panel", true );
 	ui.panelPosition = panelPositionFromString( ini.getValue( "ui", "panel_position", "left" ) );
-	ui.serifFont = ini.getValue( "ui", "serif_font", "assets/fonts/NotoSans-Regular.ttf" );
-	ui.monospaceFont = ini.getValue( "ui", "monospace_font", "assets/fonts/DejaVuSansMono.ttf" );
+	ui.serifFont = ini.getValue( "ui", "serif_font", "fonts/NotoSans-Regular.ttf" );
+	ui.monospaceFont = ini.getValue( "ui", "monospace_font", "fonts/DejaVuSansMono.ttf" );
 	ui.colorScheme = ini.getValue( "ui", "ui_color_scheme", "dark" ) == "light"
 						 ? ColorSchemePreference::Light
 						 : ColorSchemePreference::Dark;

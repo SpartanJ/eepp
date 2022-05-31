@@ -1,5 +1,5 @@
-#ifndef FORMATTERMODULE_HPP
-#define FORMATTERMODULE_HPP
+#ifndef FORMATTERPLUGIN_HPP
+#define FORMATTERPLUGIN_HPP
 
 #include <eepp/config.hpp>
 #include <eepp/system/mutex.hpp>
@@ -10,15 +10,15 @@ using namespace EE;
 using namespace EE::System;
 using namespace EE::UI;
 
-class FormatterModule : public UICodeEditorModule {
+class FormatterPlugin : public UICodeEditorPlugin {
   public:
-	FormatterModule( const std::string& formatterPath, std::shared_ptr<ThreadPool> pool );
+	FormatterPlugin( const std::string& formatterPath, std::shared_ptr<ThreadPool> pool );
 
-	virtual ~FormatterModule();
+	virtual ~FormatterPlugin();
 
 	std::string getTitle() { return "Auto Formatter"; }
 
-	std::string getDescription() { return "Enables the code formatter/prettifier module."; }
+	std::string getDescription() { return "Enables the code formatter/prettifier plugin."; }
 
 	void onRegister( UICodeEditor* );
 
@@ -51,7 +51,7 @@ class FormatterModule : public UICodeEditorModule {
 
 	void runFormatter( UICodeEditor* editor, const Formatter& formatter, const std::string& path );
 
-	FormatterModule::Formatter supportsFormatter( std::shared_ptr<TextDocument> doc );
+	FormatterPlugin::Formatter supportsFormatter( std::shared_ptr<TextDocument> doc );
 };
 
-#endif // FORMATTERMODULE_HPP
+#endif // FORMATTERPLUGIN_HPP

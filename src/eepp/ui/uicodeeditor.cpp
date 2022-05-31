@@ -164,8 +164,8 @@ UICodeEditor::~UICodeEditor() {
 	} else {
 		mDoc->unregisterClient( this );
 	}
-	for ( auto& module : mModules )
-		module->onUnregister( this );
+	for ( auto& plugin : mPlugins )
+		plugin->onUnregister( this );
 }
 
 Uint32 UICodeEditor::getType() const {
@@ -218,8 +218,8 @@ void UICodeEditor::draw() {
 	Primitives primitives;
 	TextPosition cursor( mDoc->getSelection().start() );
 
-	for ( auto& module : mModules )
-		module->preDraw( this, startScroll, lineHeight, cursor );
+	for ( auto& plugin : mPlugins )
+		plugin->preDraw( this, startScroll, lineHeight, cursor );
 
 	if ( !mLocked && mHighlightCurrentLine ) {
 		primitives.setColor( Color( mCurrentLineBackgroundColor ).blendAlpha( mAlpha ) );
@@ -265,8 +265,8 @@ void UICodeEditor::draw() {
 	}
 
 	for ( unsigned long i = lineRange.first; i <= lineRange.second; i++ ) {
-		for ( auto& module : mModules )
-			module->drawBeforeLineText(
+		for ( auto& plugin : mPlugins )
+			plugin->drawBeforeLineText(
 				this, i,
 				{ startScroll.x, static_cast<float>( startScroll.y + lineHeight * (double)i ) },
 				charSize, lineHeight );
@@ -275,8 +275,8 @@ void UICodeEditor::draw() {
 			i, { startScroll.x, static_cast<float>( startScroll.y + lineHeight * (double)i ) },
 			charSize, lineHeight );
 
-		for ( auto& module : mModules )
-			module->drawAfterLineText(
+		for ( auto& plugin : mPlugins )
+			plugin->drawAfterLineText(
 				this, i,
 				{ startScroll.x, static_cast<float>( startScroll.y + lineHeight * (double)i ) },
 				charSize, lineHeight );
@@ -296,8 +296,8 @@ void UICodeEditor::draw() {
 	if ( mMinimapEnabled )
 		drawMinimap( screenStart, lineRange );
 
-	for ( auto& module : mModules )
-		module->postDraw( this, startScroll, lineHeight, cursor );
+	for ( auto& plugin : mPlugins )
+		plugin->postDraw( this, startScroll, lineHeight, cursor );
 }
 
 void UICodeEditor::scheduledUpdate( const Time& ) {
@@ -339,8 +339,8 @@ void UICodeEditor::scheduledUpdate( const Time& ) {
 		updateLongestLineWidth();
 	}
 
-	for ( auto& module : mModules )
-		module->update( this );
+	for ( auto& plugin : mPlugins )
+		plugin->update( this );
 }
 
 void UICodeEditor::updateLongestLineWidth() {
@@ -707,7 +707,7 @@ void UICodeEditor::updateColorScheme() {
 	mLineNumberBackgroundColor = mColorScheme.getEditorColor( "gutter_background" );
 	mCurrentLineBackgroundColor = mColorScheme.getEditorColor( "line_highlight" );
 	mCaretColor = mColorScheme.getEditorColor( "caret" );
-	mWhitespaceColor = mColorScheme.getEditorColor( "guide" );
+	mWhitespaceColor = mColorScheme.getEditorColor( "whitespace" );
 	mLineBreakColumnColor = mColorScheme.getEditorColor( "line_break_column" );
 	mMatchingBracketColor = mColorScheme.getEditorColor( "matching_bracket" );
 	mSelectionMatchColor = mColorScheme.getEditorColor( "matching_selection" );
@@ -770,8 +770,8 @@ Uint32 UICodeEditor::onFocus() {
 		resetCursor();
 		mDoc->setActiveClient( this );
 	}
-	for ( auto& module : mModules )
-		module->onFocus( this );
+	for ( auto& plugin : mPlugins )
+		plugin->onFocus( this );
 	return UIWidget::onFocus();
 }
 
@@ -782,8 +782,8 @@ Uint32 UICodeEditor::onFocusLoss() {
 	getUISceneNode()->setCursor( Cursor::Arrow );
 	if ( mDoc->getActiveClient() == this )
 		mDoc->setActiveClient( nullptr );
-	for ( auto& module : mModules )
-		module->onFocusLoss( this );
+	for ( auto& plugin : mPlugins )
+		plugin->onFocusLoss( this );
 	return UIWidget::onFocusLoss();
 }
 
@@ -800,8 +800,8 @@ Uint32 UICodeEditor::onTextInput( const TextInputEvent& event ) {
 
 	checkAutoCloseXMLTag( event.getText() );
 
-	for ( auto& module : mModules )
-		if ( module->onTextInput( this, event ) )
+	for ( auto& plugin : mPlugins )
+		if ( plugin->onTextInput( this, event ) )
 			return 1;
 
 	return 0;
@@ -811,8 +811,8 @@ Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
 	if ( NULL == mFont || mUISceneNode->getUIEventDispatcher()->justGainedFocus() )
 		return 0;
 
-	for ( auto& module : mModules )
-		if ( module->onKeyDown( this, event ) )
+	for ( auto& plugin : mPlugins )
+		if ( plugin->onKeyDown( this, event ) )
 			return 1;
 
 	std::string cmd = mKeyBindings.getCommandFromKeyBind( { event.getKeyCode(), event.getMod() } );
@@ -827,8 +827,8 @@ Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
 }
 
 Uint32 UICodeEditor::onKeyUp( const KeyEvent& event ) {
-	for ( auto& module : mModules )
-		if ( module->onKeyUp( this, event ) )
+	for ( auto& plugin : mPlugins )
+		if ( plugin->onKeyUp( this, event ) )
 			return 1;
 	if ( mHandShown && !getUISceneNode()->getWindow()->getInput()->isControlPressed() )
 		resetLinkOver();
@@ -908,8 +908,8 @@ bool UICodeEditor::onCreateContextMenu( const Vector2i& position, const Uint32& 
 
 	createDefaultContextMenuOptions( menu );
 
-	for ( auto& module : mModules )
-		if ( module->onCreateContextMenu( this, position, flags ) )
+	for ( auto& plugin : mPlugins )
+		if ( plugin->onCreateContextMenu( this, position, flags ) )
 			return false;
 
 	if ( menu->getCount() == 0 ) {
@@ -961,8 +961,8 @@ Int64 UICodeEditor::calculateMinimapClickedLine( const Vector2i& position ) {
 }
 
 Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags ) {
-	for ( auto& module : mModules )
-		if ( module->onMouseDown( this, position, flags ) )
+	for ( auto& plugin : mPlugins )
+		if ( plugin->onMouseDown( this, position, flags ) )
 			return UIWidget::onMouseDown( position, flags );
 
 	if ( mMinimapEnabled ) {
@@ -1045,8 +1045,8 @@ void UICodeEditor::updateMipmapHover( const Vector2f& position ) {
 }
 
 Uint32 UICodeEditor::onMouseMove( const Vector2i& position, const Uint32& flags ) {
-	for ( auto& module : mModules )
-		if ( module->onMouseMove( this, position, flags ) )
+	for ( auto& plugin : mPlugins )
+		if ( plugin->onMouseMove( this, position, flags ) )
 			return UIWidget::onMouseMove( position, flags );
 
 	bool minimapHover = false;
@@ -1083,8 +1083,8 @@ Uint32 UICodeEditor::onMouseMove( const Vector2i& position, const Uint32& flags 
 }
 
 Uint32 UICodeEditor::onMouseUp( const Vector2i& position, const Uint32& flags ) {
-	for ( auto& module : mModules )
-		if ( module->onMouseUp( this, position, flags ) )
+	for ( auto& plugin : mPlugins )
+		if ( plugin->onMouseUp( this, position, flags ) )
 			return UIWidget::onMouseUp( position, flags );
 
 	if ( NULL == mFont )
@@ -1134,8 +1134,8 @@ Uint32 UICodeEditor::onMouseUp( const Vector2i& position, const Uint32& flags ) 
 }
 
 Uint32 UICodeEditor::onMouseClick( const Vector2i& position, const Uint32& flags ) {
-	for ( auto& module : mModules )
-		if ( module->onMouseClick( this, position, flags ) )
+	for ( auto& plugin : mPlugins )
+		if ( plugin->onMouseClick( this, position, flags ) )
 			return UIWidget::onMouseClick( position, flags );
 
 	if ( mMinimapEnabled ) {
@@ -1170,8 +1170,8 @@ Uint32 UICodeEditor::onMouseClick( const Vector2i& position, const Uint32& flags
 }
 
 Uint32 UICodeEditor::onMouseDoubleClick( const Vector2i& position, const Uint32& flags ) {
-	for ( auto& module : mModules )
-		if ( module->onMouseDoubleClick( this, position, flags ) )
+	for ( auto& plugin : mPlugins )
+		if ( plugin->onMouseDoubleClick( this, position, flags ) )
 			return UIWidget::onMouseDoubleClick( position, flags );
 
 	if ( mLocked || NULL == mFont )
@@ -1192,8 +1192,8 @@ Uint32 UICodeEditor::onMouseDoubleClick( const Vector2i& position, const Uint32&
 }
 
 Uint32 UICodeEditor::onMouseOver( const Vector2i& position, const Uint32& flags ) {
-	for ( auto& module : mModules )
-		if ( module->onMouseOver( this, position, flags ) )
+	for ( auto& plugin : mPlugins )
+		if ( plugin->onMouseOver( this, position, flags ) )
 			return UIWidget::onMouseOver( position, flags );
 	if ( getEventDispatcher()->getMouseOverNode() == this )
 		getUISceneNode()->setCursor( !mLocked ? Cursor::IBeam : Cursor::Arrow );
@@ -1201,8 +1201,8 @@ Uint32 UICodeEditor::onMouseOver( const Vector2i& position, const Uint32& flags 
 }
 
 Uint32 UICodeEditor::onMouseLeave( const Vector2i& position, const Uint32& flags ) {
-	for ( auto& module : mModules )
-		if ( module->onMouseLeave( this, position, flags ) )
+	for ( auto& plugin : mPlugins )
+		if ( plugin->onMouseLeave( this, position, flags ) )
 			return UIWidget::onMouseLeave( position, flags );
 	getUISceneNode()->setCursor( Cursor::Arrow );
 	return UIWidget::onMouseLeave( position, flags );
@@ -2163,19 +2163,19 @@ void UICodeEditor::setHighlightTextRange( const TextRange& highlightSelection ) 
 	}
 }
 
-void UICodeEditor::registerModule( UICodeEditorModule* module ) {
-	auto it = std::find( mModules.begin(), mModules.end(), module );
-	if ( it == mModules.end() ) {
-		mModules.push_back( module );
-		module->onRegister( this );
+void UICodeEditor::registerPlugin( UICodeEditorPlugin* plugin ) {
+	auto it = std::find( mPlugins.begin(), mPlugins.end(), plugin );
+	if ( it == mPlugins.end() ) {
+		mPlugins.push_back( plugin );
+		plugin->onRegister( this );
 	}
 }
 
-void UICodeEditor::unregisterModule( UICodeEditorModule* module ) {
-	auto it = std::find( mModules.begin(), mModules.end(), module );
-	if ( it != mModules.end() ) {
-		mModules.erase( it );
-		module->onUnregister( this );
+void UICodeEditor::unregisterPlugin( UICodeEditorPlugin* plugin ) {
+	auto it = std::find( mPlugins.begin(), mPlugins.end(), plugin );
+	if ( it != mPlugins.end() ) {
+		mPlugins.erase( it );
+		plugin->onUnregister( this );
 	}
 }
 

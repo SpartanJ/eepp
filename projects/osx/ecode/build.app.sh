@@ -16,8 +16,7 @@ install_name_tool -change libeepp.dylib @executable_path/libeepp.dylib ecode.app
 mkdir -p ecode.app/Contents/MacOS/assets/colorschemes
 cp -r ../../../bin/assets/colorschemes/ ecode.app/Contents/MacOS/assets/colorschemes/
 cp -r ../../../bin/assets/fonts ecode.app/Contents/MacOS/assets/
-cp -r ../../../bin/assets/formatter ecode.app/Contents/MacOS/assets/
+cp -r ../../../bin/assets/plugins ecode.app/Contents/MacOS/assets/
 cp -r ../../../bin/assets/icon ecode.app/Contents/MacOS/assets/
-cp -r ../../../bin/assets/linters ecode.app/Contents/MacOS/assets/
 mkdir ecode.app/Contents/MacOS/assets/ui
 cp ../../../bin/assets/ui/breeze.css ecode.app/Contents/MacOS/assets/ui/

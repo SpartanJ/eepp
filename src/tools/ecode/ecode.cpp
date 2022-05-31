@@ -1,7 +1,7 @@
 #include "ecode.hpp"
-#include "modules/autocomplete/autocompletemodule.hpp"
-#include "modules/formatter/formattermodule.hpp"
-#include "modules/linter/lintermodule.hpp"
+#include "plugins/autocomplete/autocompleteplugin.hpp"
+#include "plugins/formatter/formatterplugin.hpp"
+#include "plugins/linter/linterplugin.hpp"
 #include <algorithm>
 #include <args/args.hxx>
 
@@ -307,6 +307,10 @@ void App::loadConfig() {
 	if ( !FileSystem::fileExists( mConfigPath ) )
 		FileSystem::makeDir( mConfigPath );
 	FileSystem::dirAddSlashAtEnd( mConfigPath );
+	mPluginsPath = mConfigPath + "plugins";
+	if ( !FileSystem::fileExists( mPluginsPath ) )
+		FileSystem::makeDir( mPluginsPath );
+	FileSystem::dirAddSlashAtEnd( mPluginsPath );
 #ifndef EE_DEBUG
 	Log::create( mConfigPath + "ecode.log", LogLevel::Info, false, true );
 #else
@@ -438,9 +442,9 @@ App::~App() {
 		delete mFileSystemListener;
 	saveConfig();
 	eeSAFE_DELETE( mEditorSplitter );
-	eeSAFE_DELETE( mAutoCompleteModule );
-	eeSAFE_DELETE( mLinterModule );
-	eeSAFE_DELETE( mFormatterModule );
+	eeSAFE_DELETE( mAutoCompletePlugin );
+	eeSAFE_DELETE( mLinterPlugin );
+	eeSAFE_DELETE( mFormatterPlugin );
 	eeSAFE_DELETE( mConsole );
 }
 
@@ -723,7 +727,7 @@ UIMenu* App::createViewMenu() {
 						  "stylistic errors, and suspicious constructs." );
 	mViewMenu->addCheckBox( "Enable Code Formatter" )
 		->setActive( mConfig.editor.formatter )
-		->setTooltipText( "Enables the code formatter/prettifier module." );
+		->setTooltipText( "Enables the code formatter/prettifier plugin." );
 	mViewMenu->addCheckBox( "Hide tabbar on single tab" )
 		->setActive( mConfig.editor.hideTabBarOnSingleTab )
 		->setTooltipText( "Hides the tabbar if there's only one element in the tab widget." );
@@ -2035,67 +2039,67 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 
 	editor->showMinimap( config.minimap );
 
-	if ( config.autoComplete && !mAutoCompleteModule )
+	if ( config.autoComplete && !mAutoCompletePlugin )
 		setAutoComplete( config.autoComplete );
 
-	if ( config.linter && !mLinterModule )
+	if ( config.linter && !mLinterPlugin )
 		setLinter( config.linter );
 
-	if ( config.formatter && !mFormatterModule )
+	if ( config.formatter && !mFormatterPlugin )
 		setFormatter( config.formatter );
 
-	if ( config.autoComplete && mAutoCompleteModule )
-		editor->registerModule( mAutoCompleteModule );
+	if ( config.autoComplete && mAutoCompletePlugin )
+		editor->registerPlugin( mAutoCompletePlugin );
 
-	if ( config.linter && mLinterModule )
-		editor->registerModule( mLinterModule );
+	if ( config.linter && mLinterPlugin )
+		editor->registerPlugin( mLinterPlugin );
 
-	if ( config.formatter && mFormatterModule )
-		editor->registerModule( mFormatterModule );
+	if ( config.formatter && mFormatterPlugin )
+		editor->registerPlugin( mFormatterPlugin );
 }
 
 bool App::setAutoComplete( bool enable ) {
 	mConfig.editor.autoComplete = enable;
-	if ( enable && !mAutoCompleteModule ) {
-		mAutoCompleteModule = eeNew( AutoCompleteModule, ( mThreadPool ) );
+	if ( enable && !mAutoCompletePlugin ) {
+		mAutoCompletePlugin = eeNew( AutoCompletePlugin, ( mThreadPool ) );
 		mEditorSplitter->forEachEditor(
-			[&]( UICodeEditor* editor ) { editor->registerModule( mAutoCompleteModule ); } );
+			[&]( UICodeEditor* editor ) { editor->registerPlugin( mAutoCompletePlugin ); } );
 		return true;
 	}
-	if ( !enable && mAutoCompleteModule )
-		eeSAFE_DELETE( mAutoCompleteModule );
+	if ( !enable && mAutoCompletePlugin )
+		eeSAFE_DELETE( mAutoCompletePlugin );
 	return false;
 }
 
 bool App::setLinter( bool enable ) {
 	mConfig.editor.linter = enable;
-	if ( enable && !mLinterModule ) {
-		std::string path( mResPath + "assets/linters/linters.json" );
-		if ( FileSystem::fileExists( mConfigPath + "linters.json" ) )
-			path = mConfigPath + "linters.json";
-		mLinterModule = eeNew( LinterModule, ( path, mThreadPool ) );
+	if ( enable && !mLinterPlugin ) {
+		std::string path( mResPath + "plugins/linters.json" );
+		if ( FileSystem::fileExists( mPluginsPath + "linters.json" ) )
+			path = mPluginsPath + "linters.json";
+		mLinterPlugin = eeNew( LinterPlugin, ( path, mThreadPool ) );
 		mEditorSplitter->forEachEditor(
-			[&]( UICodeEditor* editor ) { editor->registerModule( mLinterModule ); } );
+			[&]( UICodeEditor* editor ) { editor->registerPlugin( mLinterPlugin ); } );
 		return true;
 	}
-	if ( !enable && mLinterModule )
-		eeSAFE_DELETE( mLinterModule );
+	if ( !enable && mLinterPlugin )
+		eeSAFE_DELETE( mLinterPlugin );
 	return false;
 }
 
 bool App::setFormatter( bool enable ) {
 	mConfig.editor.formatter = enable;
-	if ( enable && !mFormatterModule ) {
-		std::string path( mResPath + "assets/formatter/formatter.json" );
-		if ( FileSystem::fileExists( mConfigPath + "formatter.json" ) )
-			path = mConfigPath + "formatter.json";
-		mFormatterModule = eeNew( FormatterModule, ( path, mThreadPool ) );
+	if ( enable && !mFormatterPlugin ) {
+		std::string path( mResPath + "plugins/formatters.json" );
+		if ( FileSystem::fileExists( mPluginsPath + "formatters.json" ) )
+			path = mPluginsPath + "formatter.json";
+		mFormatterPlugin = eeNew( FormatterPlugin, ( path, mThreadPool ) );
 		mEditorSplitter->forEachEditor(
-			[&]( UICodeEditor* editor ) { editor->registerModule( mFormatterModule ); } );
+			[&]( UICodeEditor* editor ) { editor->registerPlugin( mFormatterPlugin ); } );
 		return true;
 	}
-	if ( !enable && mFormatterModule )
-		eeSAFE_DELETE( mFormatterModule );
+	if ( !enable && mFormatterPlugin )
+		eeSAFE_DELETE( mFormatterPlugin );
 	return false;
 }
 
@@ -2640,7 +2644,7 @@ void App::initProjectTreeView( const std::string& path ) {
 				}
 			}
 		}
-	} else if ( !mIsMacOSApp ) {
+	} else if ( !mIsBundledApp ) {
 		loadFolder( "." );
 	}
 
@@ -2712,9 +2716,11 @@ void App::init( std::string file, const Float& pidelDensity, const std::string& 
 	if ( String::contains( mResPath, "ecode.app" ) ) {
 		mResPath = FileSystem::getCurrentWorkingDirectory();
 		FileSystem::dirAddSlashAtEnd( mResPath );
-		mIsMacOSApp = true;
+		mIsBundledApp = true;
 	}
 #endif
+	mResPath += "assets";
+	FileSystem::dirAddSlashAtEnd( mResPath );
 
 	mConfig.window.pixelDensity =
 		pidelDensity > 0 ? pidelDensity
@@ -2775,21 +2781,19 @@ void App::init( std::string file, const Float& pidelDensity, const std::string& 
 		}
 		mUISceneNode->setColorSchemePreference( mUIColorScheme );
 
-		mFont = loadFont( "sans-serif", mConfig.ui.serifFont, "assets/fonts/NotoSans-Regular.ttf" );
-		mFontMono =
-			loadFont( "monospace", mConfig.ui.monospaceFont, "assets/fonts/DejaVuSansMono.ttf" );
+		mFont = loadFont( "sans-serif", mConfig.ui.serifFont, "fonts/NotoSans-Regular.ttf" );
+		mFontMono = loadFont( "monospace", mConfig.ui.monospaceFont, "fonts/DejaVuSansMono.ttf" );
 		if ( mFontMono ) {
 			mFontMono->setBoldAdvanceSameAsRegular( true );
 			mFontMono->setForceIsMonospace( true );
 		}
-		loadFont( "NotoEmoji-Regular", "assets/fonts/NotoEmoji-Regular.ttf" );
+		loadFont( "NotoEmoji-Regular", "fonts/NotoEmoji-Regular.ttf" );
 
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
-		loadFont( "NotoColorEmoji", "assets/fonts/NotoColorEmoji.ttf" );
+		loadFont( "NotoColorEmoji", "fonts/NotoColorEmoji.ttf" );
 #endif
 
-		FontTrueType* iconFont =
-			FontTrueType::New( "icon", mResPath + "assets/fonts/remixicon.ttf" );
+		FontTrueType* iconFont = FontTrueType::New( "icon", mResPath + "fonts/remixicon.ttf" );
 
 		if ( !mFont || !mFontMono || !iconFont ) {
 			printf( "Font not found!" );
@@ -2799,7 +2803,7 @@ void App::init( std::string file, const Float& pidelDensity, const std::string& 
 		SceneManager::instance()->add( mUISceneNode );
 
 		UITheme* theme =
-			UITheme::load( "uitheme", "uitheme", "", mFont, mResPath + "assets/ui/breeze.css" );
+			UITheme::load( "uitheme", "uitheme", "", mFont, mResPath + "ui/breeze.css" );
 		theme->setDefaultFontSize( mConfig.ui.fontSize.asDp( 0, Sizef(), mDisplayDPI ) );
 		mUISceneNode->setStyleSheet( theme->getStyleSheet() );
 		mUISceneNode
@@ -3091,7 +3095,7 @@ void App::init( std::string file, const Float& pidelDensity, const std::string& 
 
 		mEditorSplitter = UICodeEditorSplitter::New(
 			this, mUISceneNode,
-			SyntaxColorScheme::loadFromFile( mResPath + "assets/colorschemes/colorschemes.conf" ),
+			SyntaxColorScheme::loadFromFile( mResPath + "colorschemes/colorschemes.conf" ),
 			mInitColorScheme );
 		mEditorSplitter->setHideTabBarOnSingleTab( mConfig.editor.hideTabBarOnSingleTab );
 

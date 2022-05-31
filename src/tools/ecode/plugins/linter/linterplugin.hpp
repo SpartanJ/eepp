@@ -1,5 +1,5 @@
-#ifndef EE_TOOLS_LINTER_HPP
-#define EE_TOOLS_LINTER_HPP
+#ifndef LINTERPLUGIN_HPP
+#define LINTERPLUGIN_HPP
 
 #include <eepp/config.hpp>
 #include <eepp/system/mutex.hpp>
@@ -38,11 +38,11 @@ struct LinterMatch {
 	LinterType type{ LinterType::Error };
 };
 
-class LinterModule : public UICodeEditorModule {
+class LinterPlugin : public UICodeEditorPlugin {
   public:
-	LinterModule( const std::string& lintersPath, std::shared_ptr<ThreadPool> pool );
+	LinterPlugin( const std::string& lintersPath, std::shared_ptr<ThreadPool> pool );
 
-	virtual ~LinterModule();
+	virtual ~LinterPlugin();
 
 	std::string getTitle() { return "Linter"; }
 
@@ -101,4 +101,4 @@ class LinterModule : public UICodeEditorModule {
 	std::string getMatchString( const LinterType& type );
 };
 
-#endif // EE_TOOLS_LINTER_HPP
+#endif // LINTERPLUGIN_HPP

@@ -1,4 +1,4 @@
-#include "formattermodule.hpp"
+#include "formatterplugin.hpp"
 #include "../../thirdparty/json.hpp"
 #include "../../thirdparty/subprocess.h"
 #include <eepp/system/filesystem.hpp>
@@ -14,7 +14,7 @@ using json = nlohmann::json;
 #define FORMATTER_THREADED 0
 #endif
 
-FormatterModule::FormatterModule( const std::string& formattersPath,
+FormatterPlugin::FormatterPlugin( const std::string& formattersPath,
 								  std::shared_ptr<ThreadPool> pool ) :
 	mPool( pool ) {
 #if FORMATTER_THREADED
@@ -24,13 +24,13 @@ FormatterModule::FormatterModule( const std::string& formattersPath,
 #endif
 }
 
-FormatterModule::~FormatterModule() {
+FormatterPlugin::~FormatterPlugin() {
 	mClosing = true;
 	for ( auto editor : mEditors )
-		editor->unregisterModule( this );
+		editor->unregisterPlugin( this );
 }
 
-void FormatterModule::onRegister( UICodeEditor* editor ) {
+void FormatterPlugin::onRegister( UICodeEditor* editor ) {
 	mEditors.insert( editor );
 
 	auto& doc = editor->getDocument();
@@ -46,21 +46,21 @@ void FormatterModule::onRegister( UICodeEditor* editor ) {
 	} );
 }
 
-void FormatterModule::onUnregister( UICodeEditor* editor ) {
+void FormatterPlugin::onUnregister( UICodeEditor* editor ) {
 	if ( mClosing )
 		return;
 	mEditors.erase( editor );
 }
 
-bool FormatterModule::getAutoFormatOnSave() const {
+bool FormatterPlugin::getAutoFormatOnSave() const {
 	return mAutoFormatOnSave;
 }
 
-void FormatterModule::setAutoFormatOnSave( bool autoFormatOnSave ) {
+void FormatterPlugin::setAutoFormatOnSave( bool autoFormatOnSave ) {
 	mAutoFormatOnSave = autoFormatOnSave;
 }
 
-void FormatterModule::load( const std::string& formatterPath ) {
+void FormatterPlugin::load( const std::string& formatterPath ) {
 	if ( !FileSystem::fileExists( formatterPath ) )
 		return;
 	try {
@@ -95,7 +95,7 @@ void FormatterModule::load( const std::string& formatterPath ) {
 	}
 }
 
-void FormatterModule::formatDoc( UICodeEditor* editor ) {
+void FormatterPlugin::formatDoc( UICodeEditor* editor ) {
 	if ( !mReady )
 		return;
 
@@ -142,11 +142,11 @@ void FormatterModule::formatDoc( UICodeEditor* editor ) {
 		path = doc->getFilePath();
 	}
 
-	Log::info( "FormatterModule::formatDoc for %s took %.2fms", path.c_str(),
+	Log::info( "FormatterPlugin::formatDoc for %s took %.2fms", path.c_str(),
 			   clock.getElapsedTime().asMilliseconds() );
 }
 
-void FormatterModule::runFormatter( UICodeEditor* editor, const Formatter& formatter,
+void FormatterPlugin::runFormatter( UICodeEditor* editor, const Formatter& formatter,
 									const std::string& path ) {
 
 	std::string cmd( formatter.command );
@@ -191,7 +191,7 @@ void FormatterModule::runFormatter( UICodeEditor* editor, const Formatter& forma
 	}
 }
 
-FormatterModule::Formatter FormatterModule::supportsFormatter( std::shared_ptr<TextDocument> doc ) {
+FormatterPlugin::Formatter FormatterPlugin::supportsFormatter( std::shared_ptr<TextDocument> doc ) {
 	std::string fileName( FileSystem::fileNameFromPath( doc->getFilePath() ) );
 	const auto& def = doc->getSyntaxDefinition();
 
