@@ -22,7 +22,9 @@ enum class ShorthandId : Uint32 {
 	ScaleOriginPoint = String::hash( "scale-origin-point" ),
 	BorderColor = String::hash( "border-color" ),
 	BorderWidth = String::hash( "border-width" ),
-	BorderRadius = String::hash( "border-radius" )
+	BorderRadius = String::hash( "border-radius" ),
+	MinSize = String::hash( "min-size" ),
+	MaxSize = String::hash( "max-size" )
 };
 
 typedef std::function<std::vector<StyleSheetProperty>( const ShorthandDefinition* shorthand,

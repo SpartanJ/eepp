@@ -76,6 +76,8 @@ enum class PropertyId : Uint32 {
 	TextAlign = String::hash( "text-align" ),
 	Icon = String::hash( "icon" ),
 	MinIconSize = String::hash( "min-icon-size" ),
+	MinSize = String::hash( "min-size" ),
+	MaxSize = String::hash( "max-size" ),
 	Src = String::hash( "src" ),
 	ScaleType = String::hash( "scale-type" ),
 	Tint = String::hash( "tint" ),

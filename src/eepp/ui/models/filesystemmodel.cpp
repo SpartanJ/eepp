@@ -3,6 +3,7 @@
 #include <eepp/system/sys.hpp>
 #include <eepp/ui/abstract/uiabstractview.hpp>
 #include <eepp/ui/models/filesystemmodel.hpp>
+#include <eepp/ui/uiiconthememanager.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 
 #ifndef INDEX_ALREADY_EXISTS
@@ -26,7 +27,7 @@ FileSystemModel::Node::Node( FileInfo&& info, FileSystemModel::Node* parent ) :
 	mInfoDirty = false;
 	mName = FileSystem::fileNameFromPath( mInfo.getFilepath() );
 	if ( !mInfo.isDirectory() ) {
-		mMimeType = "filetype-" + FileSystem::fileExtension( mName );
+		mMimeType = UIIconThemeManager::getIconNameFromFileName( mName );
 	} else {
 		mMimeType = "folder";
 	}

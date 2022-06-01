@@ -266,14 +266,17 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	add( { "JSON",
 		   { "%.json$", "%.cson$" },
 		   {
+			   { { "(\".-\")(:)" }, { "normal", "keyword", "operator" } },
 			   { { "\"", "\"", "\\" }, "string" },
 			   { { "'", "'", "\\" }, "string" },
 			   { { "`", "`", "\\" }, "string" },
 			   { { "0x[%da-fA-F]+" }, "number" },
 			   { { "-?%d+[%d%.eE]*" }, "number" },
 			   { { "-?%.?%d+" }, "number" },
+			   { { "[%[%]%{%}]" }, "operator" },
+			   { { "[%a_][%w_]*" }, "symbol" },
 		   },
-		   {},
+		   { { "true", "literal" }, { "false", "literal" } },
 		   "//" } );
 
 	// TypeScript
@@ -1032,7 +1035,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 			 { { "[a-z]+" }, "symbol" } },
 		   { { "true", "literal" }, { "false", "literal" } },
 		   "#",
-		   { "^%[.-%]" } } );
+		   { "^%[.-%]%f[^\n]" } } );
 
 	// Makefile
 	add( { "Makefile",

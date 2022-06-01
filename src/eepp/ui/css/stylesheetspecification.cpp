@@ -370,43 +370,45 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "splitter-always-show", "true" ).setType( PropertyType::Bool );
 
 	// Shorthands
-	registerShorthand( "margin", {"margin-top", "margin-right", "margin-bottom", "margin-left"},
+	registerShorthand( "margin", { "margin-top", "margin-right", "margin-bottom", "margin-left" },
 					   "box" );
 	registerShorthand( "layout-margin",
-					   {"margin-top", "margin-right", "margin-bottom", "margin-left"}, "box" );
+					   { "margin-top", "margin-right", "margin-bottom", "margin-left" }, "box" );
 	registerShorthand( "layout_margin",
-					   {"margin-top", "margin-right", "margin-bottom", "margin-left"}, "box" );
-	registerShorthand( "padding",
-					   {"padding-top", "padding-right", "padding-bottom", "padding-left"}, "box" );
+					   { "margin-top", "margin-right", "margin-bottom", "margin-left" }, "box" );
+	registerShorthand(
+		"padding", { "padding-top", "padding-right", "padding-bottom", "padding-left" }, "box" );
 	registerShorthand(
 		"background",
-		{"background-color", "background-image", "background-repeat", "background-position"},
+		{ "background-color", "background-image", "background-repeat", "background-position" },
 		"background" );
 	registerShorthand(
 		"foreground",
-		{"foreground-color", "foreground-image", "foreground-repeat", "foreground-position"},
+		{ "foreground-color", "foreground-image", "foreground-repeat", "foreground-position" },
 		"background" );
-	registerShorthand( "box-margin", {"column-margin", "row-margin"}, "single-value-vector" );
-	registerShorthand( "background-position", {"background-position-x", "background-position-y"},
+	registerShorthand( "box-margin", { "column-margin", "row-margin" }, "single-value-vector" );
+	registerShorthand( "background-position", { "background-position-x", "background-position-y" },
 					   "background-position" );
-	registerShorthand( "foreground-position", {"foreground-position-x", "foreground-position-y"},
+	registerShorthand( "foreground-position", { "foreground-position-x", "foreground-position-y" },
 					   "background-position" );
 	registerShorthand(
 		"border-color",
-		{"border-top-color", "border-right-color", "border-bottom-color", "border-left-color"},
+		{ "border-top-color", "border-right-color", "border-bottom-color", "border-left-color" },
 		"border-box" );
 	registerShorthand(
 		"border-width",
-		{"border-top-width", "border-right-width", "border-bottom-width", "border-left-width"},
+		{ "border-top-width", "border-right-width", "border-bottom-width", "border-left-width" },
 		"border-box" );
 	registerShorthand( "border-radius",
-					   {"border-top-left-radius", "border-top-right-radius",
-						"border-bottom-right-radius", "border-bottom-left-radius"},
+					   { "border-top-left-radius", "border-top-right-radius",
+						 "border-bottom-right-radius", "border-bottom-left-radius" },
 					   "radius" );
 	registerShorthand( "rotation-origin-point",
-					   {"rotation-origin-point-x", "rotation-origin-point-y"}, "vector2" );
-	registerShorthand( "scale-origin-point", {"scale-origin-point-x", "scale-origin-point-y"},
+					   { "rotation-origin-point-x", "rotation-origin-point-y" }, "vector2" );
+	registerShorthand( "scale-origin-point", { "scale-origin-point-x", "scale-origin-point-y" },
 					   "vector2" );
+	registerShorthand( "min-size", { "min-width", "min-height" }, "vector2" );
+	registerShorthand( "max-size", { "max-width", "max-height" }, "vector2" );
 }
 
 void StyleSheetSpecification::registerNodeSelector( const std::string& name,

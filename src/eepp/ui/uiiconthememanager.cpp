@@ -1,8 +1,18 @@
 #include <algorithm>
+#include <eepp/system/filesystem.hpp>
 #include <eepp/ui/uiiconthememanager.hpp>
 #include <eepp/ui/uithememanager.hpp>
 
 namespace EE { namespace UI {
+
+std::string UIIconThemeManager::getIconNameFromFileName( const std::string& fileName ) {
+	std::string ext( FileSystem::fileExtension( fileName ) );
+	if ( !ext.empty() ) {
+		return "filetype-" + ext;
+	} else {
+		return "filetype-" + String::toLower( fileName );
+	}
+}
 
 UIIconThemeManager* UIIconThemeManager::New() {
 	return eeNew( UIIconThemeManager, () );

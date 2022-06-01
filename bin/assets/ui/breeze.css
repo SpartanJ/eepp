@@ -240,6 +240,7 @@ ListView::row {
 
 ListView::cell {
 	padding-left: 4dp;
+	min-icon-size: 16dp 16dp;
 }
 
 ListBox:hover,
@@ -525,6 +526,11 @@ Tab:selected {
 
 Tab:selectedhover {
 	background-color: var(--tab-active);
+}
+
+tab::icon {
+	margin-left: 2dp;
+	margin-right: 2dp;
 }
 
 Tab::close {
@@ -860,6 +866,11 @@ tableview::cell,
 treeview::cell {
 	padding-left: 6dp;
 	padding-right: 6dp;
+	min-icon-size: 16dp 16dp;
+}
+
+treeview::cell::expander {
+	min-size: 16dp 16dp;
 }
 
 TreeView,
