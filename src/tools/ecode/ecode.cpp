@@ -2054,6 +2054,8 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 
 	editor->addEventListener( Event::OnDocumentLoaded, docChanged );
 	editor->addEventListener( Event::OnDocumentChanged, docChanged );
+	editor->addEventListener( Event::OnDocumentSave, docChanged );
+	editor->addEventListener( Event::OnEditorTabReady, docChanged );
 
 	editor->showMinimap( config.minimap );
 

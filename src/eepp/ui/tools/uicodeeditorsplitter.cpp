@@ -392,6 +392,8 @@ UICodeEditorSplitter::createCodeEditorInTabWidget( UITabWidget* tabWidget ) {
 	} );
 	UITab* tab = tabWidget->add( editor->getDocument().getFilename(), editor );
 	editor->setData( (UintPtr)tab );
+	DocEvent docEvent( editor, &editor->getDocument(), Event::OnEditorTabReady );
+	editor->sendEvent( static_cast<const Event*>( &docEvent ) );
 	return std::make_pair( tab, editor );
 }
 

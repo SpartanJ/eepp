@@ -412,7 +412,7 @@ TextDocument::LoadStatus TextDocument::reload() {
 													  : FileInfo( mFilePath );
 		resetSyntax();
 		notifyTextChanged();
-		setSelection( selection.start() );
+		setSelection( sanitizePosition( selection.start() ) );
 	}
 	return ret;
 }

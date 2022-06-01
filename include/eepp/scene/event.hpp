@@ -84,6 +84,7 @@ class EE_API Event {
 		UserEvent,
 		OnMenuShow,
 		OnMenuHide,
+		OnEditorTabReady,
 		NoEvent = eeINDEX_NOT_FOUND
 	};
 
