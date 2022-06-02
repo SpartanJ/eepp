@@ -364,6 +364,15 @@ void UICodeEditorSplitter::loadFileFromPathInNewTab( const std::string& path ) {
 
 void UICodeEditorSplitter::loadAsyncFileFromPathInNewTab(
 	const std::string& path, std::shared_ptr<ThreadPool> pool,
+	std::function<void( UICodeEditor*, const std::string& )> onLoaded, UITabWidget* tabWidget ) {
+	auto d = createCodeEditorInTabWidget( tabWidget );
+	UITab* addedTab = d.first;
+	loadAsyncFileFromPath( path, pool, d.second, onLoaded );
+	tabWidget->setTabSelected( addedTab );
+}
+
+void UICodeEditorSplitter::loadAsyncFileFromPathInNewTab(
+	const std::string& path, std::shared_ptr<ThreadPool> pool,
 	std::function<void( UICodeEditor*, const std::string& )> onLoaded ) {
 	auto d = createCodeEditorInTabWidget( tabWidgetFromEditor( mCurEditor ) );
 	UITabWidget* tabWidget = d.first->getTabWidget();
@@ -408,7 +417,7 @@ void UICodeEditorSplitter::removeUnusedTab( UITabWidget* tabWidget ) {
 	}
 }
 
-UITabWidget* UICodeEditorSplitter::createEditorWithTabWidget( Node* parent ) {
+UITabWidget* UICodeEditorSplitter::createEditorWithTabWidget( Node* parent, bool openCurEditor ) {
 	if ( nullptr == mBaseLayout )
 		mBaseLayout = parent;
 	UICodeEditor* prevCurEditor = mCurEditor;
@@ -432,7 +441,7 @@ UITabWidget* UICodeEditorSplitter::createEditorWithTabWidget( Node* parent ) {
 	} );
 	auto editorData = createCodeEditorInTabWidget( tabWidget );
 	// Open same document in the new split
-	if ( prevCurEditor && prevCurEditor != editorData.second &&
+	if ( openCurEditor && prevCurEditor && prevCurEditor != editorData.second &&
 		 !prevCurEditor->getDocument().isEmpty() )
 		editorData.second->setDocument( prevCurEditor->getDocumentRef() );
 	mTabWidgets.push_back( tabWidget );
@@ -597,16 +606,17 @@ void UICodeEditorSplitter::closeEditorTab( UICodeEditor* editor ) {
 	}
 }
 
-void UICodeEditorSplitter::splitEditor( const SplitDirection& direction, UICodeEditor* editor ) {
+UISplitter* UICodeEditorSplitter::splitEditor( const SplitDirection& direction,
+											   UICodeEditor* editor, bool openCurEditor ) {
 	if ( !editor )
-		return;
+		return nullptr;
 	UIOrientation orientation =
 		direction == SplitDirection::Left || direction == SplitDirection::Right
 			? UIOrientation::Horizontal
 			: UIOrientation::Vertical;
 	UITabWidget* tabWidget = tabWidgetFromEditor( editor );
 	if ( !tabWidget )
-		return;
+		return nullptr;
 	Node* parent = tabWidget->getParent();
 	UISplitter* parentSplitter = nullptr;
 	bool wasFirst = true;
@@ -619,7 +629,7 @@ void UICodeEditorSplitter::splitEditor( const SplitDirection& direction, UICodeE
 			createEditorWithTabWidget( parentSplitter );
 			if ( direction == SplitDirection::Left || direction == SplitDirection::Top )
 				parentSplitter->swap();
-			return;
+			return nullptr;
 		}
 	}
 
@@ -629,7 +639,7 @@ void UICodeEditorSplitter::splitEditor( const SplitDirection& direction, UICodeE
 	tabWidget->detach();
 	splitter->setParent( parent );
 	tabWidget->setParent( splitter );
-	createEditorWithTabWidget( splitter );
+	createEditorWithTabWidget( splitter, openCurEditor );
 	if ( direction == SplitDirection::Left || direction == SplitDirection::Top )
 		splitter->swap();
 
@@ -640,6 +650,8 @@ void UICodeEditorSplitter::splitEditor( const SplitDirection& direction, UICodeE
 			parentSplitter->swap();
 		}
 	}
+
+	return splitter;
 }
 
 void UICodeEditorSplitter::switchToTab( Int32 index ) {

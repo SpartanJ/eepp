@@ -248,6 +248,10 @@ class EE_API IniFile {
 
 	bool iniParsed() { return mIniReaded; }
 
+	bool keyExists( const std::string& keyname ) const;
+
+	bool keyValueExists( const std::string& keyname, const std::string& valuename ) const;
+
   private:
 	bool mCaseInsensitive;
 	bool mIniReaded;

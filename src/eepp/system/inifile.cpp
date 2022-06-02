@@ -566,6 +566,22 @@ bool IniFile::deleteKeyComments( std::string const keyname ) {
 	return deleteKeyComments( unsigned( keyID ) );
 }
 
+bool IniFile::keyExists( const std::string& keyname ) const {
+	return findKey( keyname ) != noID;
+}
+
+bool IniFile::keyValueExists( const std::string& keyname, const std::string& valuename ) const {
+	long keyID = findKey( keyname );
+	if ( keyID == noID )
+		return false;
+
+	long valueID = findValue( unsigned( keyID ), valuename );
+	if ( valueID == noID )
+		return false;
+
+	return true;
+}
+
 std::string IniFile::checkCase( std::string s ) const {
 	if ( mCaseInsensitive )
 		for ( std::string::size_type i = 0; i < s.length(); ++i )

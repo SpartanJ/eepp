@@ -49,7 +49,8 @@ class EE_API UICodeEditorSplitter {
 
 	void closeEditorTab( UICodeEditor* editor );
 
-	void splitEditor( const SplitDirection& direction, UICodeEditor* editor );
+	UISplitter* splitEditor( const SplitDirection& direction, UICodeEditor* editor,
+							 bool openCurEditor = true );
 
 	void switchToTab( Int32 index );
 
@@ -87,9 +88,13 @@ class EE_API UICodeEditorSplitter {
 		std::function<void( UICodeEditor*, const std::string& )> onLoaded =
 			std::function<void( UICodeEditor*, const std::string& )>() );
 
+	void loadAsyncFileFromPathInNewTab(
+		const std::string& path, std::shared_ptr<ThreadPool> pool,
+		std::function<void( UICodeEditor*, const std::string& )> onLoaded, UITabWidget* tabWidget );
+
 	void removeUnusedTab( UITabWidget* tabWidget );
 
-	UITabWidget* createEditorWithTabWidget( Node* parent );
+	UITabWidget* createEditorWithTabWidget( Node* parent, bool openCurEditor = true );
 
 	UITab* isDocumentOpen( const std::string& path ) const;
 

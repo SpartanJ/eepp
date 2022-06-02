@@ -102,7 +102,7 @@ FileSystemModel::Node::~Node() {
 FileSystemModel::Node* FileSystemModel::Node::createChild( const std::string& childName,
 														   const FileSystemModel& model ) {
 	std::string childPath( mInfo.getDirectoryPath() + childName );
-	FileInfo file( childPath );
+	FileInfo file( childPath, false );
 	auto child = eeNew( Node, ( std::move( file ), this ) );
 
 	if ( model.getDisplayConfig().ignoreHidden && file.isHidden() )
@@ -143,7 +143,7 @@ void FileSystemModel::Node::traverseIfNeeded( const FileSystemModel& model ) {
 	cleanChildren();
 
 	auto files = FileSystem::filesInfoGetInPath(
-		mInfo.getFilepath(), true, model.getDisplayConfig().sortByName,
+		mInfo.getFilepath(), false, model.getDisplayConfig().sortByName,
 		model.getDisplayConfig().foldersFirst, model.getDisplayConfig().ignoreHidden );
 
 	const auto& patterns = model.getDisplayConfig().acceptedExtensions;
@@ -520,7 +520,7 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 
 	switch ( event.type ) {
 		case FileSystemEventType::Add: {
-			FileInfo file( event.directory + event.filename );
+			FileInfo file( event.directory + event.filename, false );
 
 			if ( !file.exists() )
 				return false;
@@ -583,7 +583,7 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 			break;
 		}
 		case FileSystemEventType::Delete: {
-			FileInfo file( event.directory + event.filename );
+			FileInfo file( event.directory + event.filename, false );
 
 			auto* child = getNodeFromPath( file.getFilepath(), file.isDirectory(), false );
 			if ( !child )
@@ -636,7 +636,7 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 			break;
 		}
 		case FileSystemEventType::Moved: {
-			FileInfo file( event.directory + event.filename );
+			FileInfo file( event.directory + event.filename, false );
 
 			if ( file.exists() ) {
 				auto* node = getNodeFromPath( event.directory + event.oldFilename, false, false );

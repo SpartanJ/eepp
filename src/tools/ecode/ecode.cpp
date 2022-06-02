@@ -1625,7 +1625,8 @@ void App::updateDocInfo( TextDocument& doc ) {
 }
 
 void App::syncProjectTreeWithEditor( UICodeEditor* editor ) {
-	if ( mConfig.editor.syncProjectTreeWithEditor && editor->getDocument().hasFilepath() ) {
+	if ( mConfig.editor.syncProjectTreeWithEditor && editor != nullptr &&
+		 editor->getDocument().hasFilepath() ) {
 		std::string path = editor->getDocument().getFilePath();
 		if ( path.size() >= mCurrentProject.size() ) {
 			path = path.substr( mCurrentProject.size() );
@@ -1734,6 +1735,7 @@ void App::closeEditors() {
 
 	mProjectDocConfig = ProjectDocumentConfig( mConfig.doc );
 	updateProjectSettingsMenu();
+	mEditorSplitter->createCodeEditorInTabWidget( mEditorSplitter->getTabWidgets()[0] );
 }
 
 void App::closeFolder() {
@@ -3111,65 +3113,36 @@ void App::init( std::string file, const Float& pidelDensity, const std::string& 
 
 		if ( mimeIconFont && mimeIconFont->loaded() ) {
 			std::unordered_map<std::string, Uint32> mimeIcons = {
-				{ "filetype-lua", 61826 },
-				{ "filetype-c", 61718 },
-				{ "filetype-h", 61792 },
-				{ "filetype-cs", 61720 },
-				{ "filetype-cpp", 61719 },
-				{ "filetype-css", 61743 },
-				{ "filetype-conf", 61781 },
-				{ "filetype-cfg", 61781 },
-				{ "filetype-desktop", 61781 },
-				{ "filetype-service", 61781 },
-				{ "filetype-env", 61781 },
-				{ "filetype-properties", 61781 },
-				{ "filetype-ini", 61781 },
-				{ "filetype-dart", 61744 },
-				{ "filetype-diff", 61752 },
-				{ "filetype-zip", 61775 },
-				{ "filetype-go", 61789 },
-				{ "filetype-htm", 61799 },
-				{ "filetype-html", 61799 },
-				{ "filetype-java", 61809 },
-				{ "filetype-js", 61810 },
-				{ "filetype-json", 61811 },
-				{ "filetype-kt", 61814 },
-				{ "filetype-md", 61829 },
-				{ "filetype-perl", 61853 },
-				{ "filetype-php", 61855 },
-				{ "filetype-py", 61863 },
-				{ "filetype-pyc", 61863 },
-				{ "filetype-pyd", 61863 },
-				{ "filetype-swift", 61906 },
-				{ "filetype-rb", 61880 },
-				{ "filetype-rs", 61881 },
-				{ "filetype-ts", 61923 },
-				{ "filetype-yaml", 61945 },
-				{ "filetype-yml", 61945 },
-				{ "filetype-jpg", 61801 },
-				{ "filetype-png", 61801 },
-				{ "filetype-jpeg", 61801 },
-				{ "filetype-bmp", 61801 },
-				{ "filetype-tga", 61801 },
-				{ "filetype-sh", 61911 },
-				{ "filetype-bash", 61911 },
-				{ "filetype-fish", 61911 },
-				{ "filetype-scala", 61882 },
-				{ "filetype-r", 61866 },
-				{ "filetype-rake", 61880 },
-				{ "filetype-rss", 61879 },
-				{ "filetype-sql", 61746 },
-				{ "filetype-elm", 61763 },
-				{ "filetype-ex", 61971 },
-				{ "filetype-exs", 61971 },
-				{ "filetype-awk", 61971 },
-				{ "filetype-nim", 61734 },
-				{ "filetype-xml", 61769 },
-				{ "filetype-dockerfile", 61758 },
-				{ "file", 61766 },
-				{ "folder", 0xF23B },
-				{ "folder-open", 0xF23C },
-				{ "tree-expanded", 0xF11E },
+				{ "filetype-lua", 61826 },		  { "filetype-c", 61718 },
+				{ "filetype-h", 61792 },		  { "filetype-cs", 61720 },
+				{ "filetype-cpp", 61719 },		  { "filetype-css", 61743 },
+				{ "filetype-conf", 61781 },		  { "filetype-cfg", 61781 },
+				{ "filetype-desktop", 61781 },	  { "filetype-service", 61781 },
+				{ "filetype-env", 61781 },		  { "filetype-properties", 61781 },
+				{ "filetype-ini", 61781 },		  { "filetype-dart", 61744 },
+				{ "filetype-diff", 61752 },		  { "filetype-zip", 61775 },
+				{ "filetype-go", 61789 },		  { "filetype-htm", 61799 },
+				{ "filetype-html", 61799 },		  { "filetype-java", 61809 },
+				{ "filetype-js", 61810 },		  { "filetype-json", 61811 },
+				{ "filetype-kt", 61814 },		  { "filetype-md", 61829 },
+				{ "filetype-perl", 61853 },		  { "filetype-php", 61855 },
+				{ "filetype-py", 61863 },		  { "filetype-pyc", 61863 },
+				{ "filetype-pyd", 61863 },		  { "filetype-swift", 61906 },
+				{ "filetype-rb", 61880 },		  { "filetype-rs", 61881 },
+				{ "filetype-ts", 61923 },		  { "filetype-yaml", 61945 },
+				{ "filetype-yml", 61945 },		  { "filetype-jpg", 61801 },
+				{ "filetype-png", 61801 },		  { "filetype-jpeg", 61801 },
+				{ "filetype-bmp", 61801 },		  { "filetype-tga", 61801 },
+				{ "filetype-sh", 61911 },		  { "filetype-bash", 61911 },
+				{ "filetype-fish", 61911 },		  { "filetype-scala", 61882 },
+				{ "filetype-r", 61866 },		  { "filetype-rake", 61880 },
+				{ "filetype-rss", 61879 },		  { "filetype-sql", 61746 },
+				{ "filetype-elm", 61763 },		  { "filetype-ex", 61971 },
+				{ "filetype-exs", 61971 },		  { "filetype-awk", 61971 },
+				{ "filetype-nim", 61734 },		  { "filetype-xml", 61769 },
+				{ "filetype-dockerfile", 61758 }, { "file", 61766 },
+				{ "file-symlink", 61774 },		  { "folder", 0xF23B },
+				{ "folder-open", 0xF23C },		  { "tree-expanded", 0xF11E },
 				{ "tree-contracted", 0xF120 },
 			};
 			for ( const auto& icon : mimeIcons )
