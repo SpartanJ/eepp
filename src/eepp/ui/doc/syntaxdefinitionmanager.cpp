@@ -109,6 +109,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 			   { { "```[Cc]", "```" }, "function", "C" },
 			   { { "```[Dd]", "```" }, "function", "D" },
 			   { { "```[Ll]ua", "```" }, "function", "Lua" },
+			   { { "```[Jj][Ss][Oo][Nn]", "```" }, "function", "JSON" },
 			   { { "```[Ja]va[Ss]cript", "```" }, "function", "JavaScript" },
 			   { { "```[Tt]ype[Ss]cript", "```" }, "function", "TypeScript" },
 			   { { "```[Pp]ython", "```" }, "function", "Python" },
@@ -266,7 +267,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	add( { "JSON",
 		   { "%.json$", "%.cson$" },
 		   {
-			   { { "(\".-\")(:)" }, { "normal", "keyword", "operator" } },
+			   { { "(%b\"\")(:)" }, { "normal", "keyword", "operator" } },
 			   { { "\"", "\"", "\\" }, "string" },
 			   { { "'", "'", "\\" }, "string" },
 			   { { "`", "`", "\\" }, "string" },

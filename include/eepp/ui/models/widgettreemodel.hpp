@@ -11,11 +11,19 @@ namespace EE { namespace UI { namespace Models {
 
 class EE_API WidgetTreeModel : public Model {
   public:
+	enum Column {
+		Type = 0,
+		ID,
+		Count,
+	};
+
 	static std::shared_ptr<WidgetTreeModel> New( Node* node );
 
 	virtual size_t rowCount( const ModelIndex& = ModelIndex() ) const override;
 
 	virtual size_t columnCount( const ModelIndex& = ModelIndex() ) const override;
+
+	virtual std::string columnName( const size_t& /*column*/ ) const override;
 
 	virtual Variant data( const ModelIndex&, ModelRole role = ModelRole::Display ) const override;
 

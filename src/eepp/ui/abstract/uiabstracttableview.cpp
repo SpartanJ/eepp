@@ -95,27 +95,6 @@ void UIAbstractTableView::createOrUpdateColumns() {
 
 	auto visibleColCount = visibleColumnCount();
 
-	if ( mAutoColumnsWidth && visibleColCount > 1 && getModel()->rowCount() > 0 ) {
-		Float contentWidth = getContentSpaceWidth();
-		bool shouldVScrollBeVisible = shouldVerticalScrollBeVisible();
-		if ( !mVScroll->isVisible() && shouldVScrollBeVisible )
-			contentWidth -= getVerticalScrollBar()->getPixelsSize().getWidth();
-		else if ( mVScroll->isVisible() && !shouldVScrollBeVisible )
-			contentWidth += getVerticalScrollBar()->getPixelsSize().getWidth();
-		Float usedWidth = 0;
-		for ( size_t col = 0; col < count; col++ ) {
-			if ( col != mMainColumn && !isColumnHidden( col ) ) {
-				Float colWidth = getMaxColumnContentWidth( col, true );
-				usedWidth += colWidth;
-				columnData( col ).width = colWidth;
-			}
-		}
-		Float mainColMaxWidth = getMaxColumnContentWidth( mMainColumn, true );
-		columnData( mMainColumn ).width = contentWidth - usedWidth >= mainColMaxWidth
-											  ? contentWidth - usedWidth
-											  : mainColMaxWidth;
-	}
-
 	for ( size_t i = 0; i < count; i++ ) {
 		ColumnData& col = columnData( i );
 		if ( !col.widget ) {
@@ -138,6 +117,29 @@ void UIAbstractTableView::createOrUpdateColumns() {
 		col.width = eeceil( eemax( col.width, col.minWidth ) );
 		col.widget->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 		col.widget->setPixelsSize( col.width, getHeaderHeight() );
+	}
+
+	if ( mAutoColumnsWidth && visibleColCount > 1 && getModel()->rowCount() > 0 ) {
+		Float contentWidth = getContentSpaceWidth();
+		bool shouldVScrollBeVisible = shouldVerticalScrollBeVisible();
+		if ( !mVScroll->isVisible() && shouldVScrollBeVisible )
+			contentWidth -= getVerticalScrollBar()->getPixelsSize().getWidth();
+		else if ( mVScroll->isVisible() && !shouldVScrollBeVisible )
+			contentWidth += getVerticalScrollBar()->getPixelsSize().getWidth();
+		Float usedWidth = 0;
+		for ( size_t col = 0; col < count; col++ ) {
+			if ( col != mMainColumn && !isColumnHidden( col ) ) {
+				Float colWidth = getMaxColumnContentWidth( col, true );
+				if ( colWidth == 0 )
+					colWidth = columnData( col ).widget->getPixelsSize().getWidth();
+				usedWidth += colWidth;
+				columnData( col ).width = colWidth;
+			}
+		}
+		Float mainColMaxWidth = getMaxColumnContentWidth( mMainColumn, true );
+		columnData( mMainColumn ).width = contentWidth - usedWidth >= mainColMaxWidth
+											  ? contentWidth - usedWidth
+											  : mainColMaxWidth;
 	}
 
 	mHeaderHeight = 0;

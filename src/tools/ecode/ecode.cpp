@@ -448,6 +448,21 @@ App::~App() {
 	eeSAFE_DELETE( mConsole );
 }
 
+void App::createWidgetTreeView() {
+	UIWindow* uiWin = UIWindow::NewOpt( UIWindow::LINEAR_LAYOUT );
+	uiWin->setMinWindowSize( 600, 400 );
+	uiWin->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_RESIZEABLE | UI_WIN_MAXIMIZE_BUTTON );
+	UITreeView* widgetTree = UITreeView::New();
+	widgetTree->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
+	widgetTree->setParent( uiWin );
+	widgetTree->setHeadersVisible( true );
+	widgetTree->setAutoExpandOnSingleColumn( true );
+	widgetTree->setExpanderIconSize( mMenuIconSize );
+	widgetTree->setAutoColumnsWidth( true );
+	widgetTree->setModel( WidgetTreeModel::New( mUISceneNode ) );
+	uiWin->center();
+}
+
 void App::updateRecentFiles() {
 	UINode* node = nullptr;
 	if ( mSettingsMenu && ( node = mSettingsMenu->getItem( "Recent Files" ) ) ) {
@@ -1689,6 +1704,7 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 			 { { KEY_F6, KEYMOD_NONE }, "debug-draw-highlight-toggle" },
 			 { { KEY_F7, KEYMOD_NONE }, "debug-draw-boxes-toggle" },
 			 { { KEY_F8, KEYMOD_NONE }, "debug-draw-debug-data" },
+			 { { KEY_F11, KEYMOD_NONE }, "debug-widget-tree-view" },
 			 { { KEY_K, KeyMod::getDefaultModifier() }, "open-locatebar" },
 			 { { KEY_F, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-global-search" },
 			 { { KEY_L, KeyMod::getDefaultModifier() }, "go-to-line" },
@@ -1949,6 +1965,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	} );
 	doc.setCommand( "debug-draw-debug-data",
 					[&] { mUISceneNode->setDrawDebugData( !mUISceneNode->getDrawDebugData() ); } );
+	doc.setCommand( "debug-widget-tree-view", [&] { createWidgetTreeView(); } );
 	doc.setCommand( "go-to-line", [&] { mFileLocator->goToLine(); } );
 	doc.setCommand( "load-current-dir", [&] { loadCurrentDirectory(); } );
 	doc.setCommand( "menu-toggle", [&] { toggleSettingsMenu(); } );
@@ -3012,14 +3029,15 @@ void App::init( std::string file, const Float& pidelDensity, const std::string& 
 						<TextView layout_width="wrap_content" layout_height="wrap_content" text="Search for:" margin-right="4dp" />
 						<vbox layout_width="0" layout_weight="1" layout_height="wrap_content">
 							<TextInput id="global_search_find" layout_width="match_parent" layout_height="wrap_content" layout_height="18dp" padding="0" margin-bottom="2dp" />
-							<hbox layout_width="match_parent" layout_height="wrap_content">
+							<hbox layout_width="match_parent" layout_height="wrap_content" margin-bottom="4dp">
 								<CheckBox id="case_sensitive" layout_width="wrap_content" layout_height="wrap_content" text="Case sensitive" selected="true" />
 								<CheckBox id="whole_word" layout_width="wrap_content" layout_height="wrap_content" text="Match Whole Word" selected="false" margin-left="8dp" />
 								<CheckBox id="lua_pattern" layout_width="wrap_content" layout_height="wrap_content" text="Lua Pattern" selected="false" margin-left="8dp" />
 								<CheckBox id="escape_sequence" layout_width="wrap_content" layout_height="wrap_content" text="Use escape sequences" margin-left="8dp" selected="false" tooltip="Replace \\, \t, \n, \r and \uXXXX (Unicode characters) with the corresponding control" />
-								<Widget layout_width="0" layout_weight="1" layout_height="match_parent" />
+							</hbox>
+							<hbox layout_width="match_parent" layout_height="wrap_content">
 								<TextView layout_width="wrap_content" layout_height="wrap_content" text="History:" margin-right="4dp" layout_height="18dp" />
-								<DropDownList id="global_search_history" layout_width="300dp" layout_height="18dp" margin-right="4dp" />
+								<DropDownList id="global_search_history" layout_width="0" layout_height="18dp" layout_weight="1" margin-right="4dp" />
 								<PushButton id="global_search_clear_history" layout_width="wrap_content" layout_height="18dp" text="Clear History" margin-right="4dp" />
 								<PushButton id="global_search" layout_width="wrap_content" layout_height="18dp" text="Search" margin-right="4dp" />
 								<PushButton id="global_search_replace" layout_width="wrap_content" layout_height="18dp" text="Search & Replace" />
@@ -3068,8 +3086,8 @@ void App::init( std::string file, const Float& pidelDensity, const std::string& 
 			{ "zoom-reset", 0xeb47 },
 			{ "fullscreen", 0xed9c },
 			{ "keybindings", 0xee75 },
-			{ "tree-expanded", 0xea50 },
-			{ "tree-contracted", 0xea54 },
+			//			{ "tree-expanded", 0xea50 },
+			//			{ "tree-contracted", 0xea54 },
 			{ "search", 0xf0d1 },
 			{ "go-up", 0xea78 },
 			{ "ok", 0xeb7a },
@@ -3151,6 +3169,8 @@ void App::init( std::string file, const Float& pidelDensity, const std::string& 
 				{ "file", 61766 },
 				{ "folder", 0xF23B },
 				{ "folder-open", 0xF23C },
+				{ "tree-expanded", 0xF11E },
+				{ "tree-contracted", 0xF120 },
 			};
 			for ( const auto& icon : mimeIcons )
 				iconTheme->add( UIGlyphIcon::New( icon.first, mimeIconFont, icon.second ) );

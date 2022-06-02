@@ -19,23 +19,41 @@ size_t WidgetTreeModel::rowCount( const ModelIndex& index ) const {
 }
 
 size_t WidgetTreeModel::columnCount( const ModelIndex& ) const {
-	return 1;
+	return 2;
+}
+
+std::string WidgetTreeModel::columnName( const size_t& col ) const {
+	switch ( col ) {
+		case Column::Type:
+			return "Type";
+		case Column::ID:
+			return "ID";
+	}
+	return "";
 }
 
 Variant WidgetTreeModel::data( const ModelIndex& index, ModelRole role ) const {
 	const char* EMPTY = "";
 	Node* node = static_cast<Node*>( index.internalData() );
+
 	if ( role == ModelRole::Display ) {
-		if ( node->isWidget() ) {
-			return Variant( node->asType<UIWidget>()->getElementTag().c_str() );
-		} else if ( node->isUISceneNode() ) {
-			return Variant( "UISceneNode" );
-		} else if ( node->isSceneNode() ) {
-			return Variant( "SceneNode" );
-		} else {
-			return Variant( node->getId().empty() ? "Node" : node->getId() );
+		switch ( index.column() ) {
+			case Column::Type: {
+				if ( node->isWidget() ) {
+					return Variant( node->asType<UIWidget>()->getElementTag().c_str() );
+				} else if ( node->isUISceneNode() ) {
+					return Variant( "UISceneNode" );
+				} else if ( node->isSceneNode() ) {
+					return Variant( "SceneNode" );
+				} else {
+					return Variant( node->getId().empty() ? "Node" : node->getId() );
+				}
+			}
+			case Column::ID:
+				return Variant( node->getId() );
 		}
 	}
+
 	return Variant( EMPTY );
 }
 

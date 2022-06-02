@@ -24,6 +24,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	~App();
 
+	void createWidgetTreeView();
+
 	void init( std::string file, const Float& pidelDensity, const std::string& colorScheme );
 
 	void setAppTitle( const std::string& title );

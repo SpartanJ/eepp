@@ -409,6 +409,8 @@ void UICodeEditorSplitter::removeUnusedTab( UITabWidget* tabWidget ) {
 }
 
 UITabWidget* UICodeEditorSplitter::createEditorWithTabWidget( Node* parent ) {
+	if ( nullptr == mBaseLayout )
+		mBaseLayout = parent;
 	UICodeEditor* prevCurEditor = mCurEditor;
 	UITabWidget* tabWidget = UITabWidget::New();
 	tabWidget->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
@@ -524,6 +526,10 @@ void UICodeEditorSplitter::setHideTabBarOnSingleTab( bool hideTabBarOnSingleTab 
 
 const std::vector<UITabWidget*>& UICodeEditorSplitter::getTabWidgets() const {
 	return mTabWidgets;
+}
+
+Node* UICodeEditorSplitter::getBaseLayout() const {
+	return mBaseLayout;
 }
 
 std::vector<UICodeEditor*> UICodeEditorSplitter::getAllEditors() {

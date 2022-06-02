@@ -141,12 +141,15 @@ class EE_API UICodeEditorSplitter {
 
 	const std::vector<UITabWidget*>& getTabWidgets() const;
 
+	Node* getBaseLayout() const;
+
   protected:
 	UISceneNode* mUISceneNode{ nullptr };
 	UICodeEditor* mCurEditor{ nullptr };
 	std::map<std::string, SyntaxColorScheme> mColorSchemes;
 	std::string mCurrentColorScheme;
 	std::vector<UITabWidget*> mTabWidgets;
+	Node* mBaseLayout{ nullptr };
 	Client* mClient;
 	bool mHideTabBarOnSingleTab{ true };
 
