@@ -322,11 +322,12 @@ void App::loadConfig() {
 }
 
 void App::saveConfig() {
-	mConfig.save( mRecentFiles, mRecentFolders,
-				  mProjectSplitter ? mProjectSplitter->getSplitPartition().toString() : "15%",
-				  mWindow,
-				  mEditorSplitter ? mEditorSplitter->getCurrentColorSchemeName()
-								  : mConfig.editor.colorScheme );
+	mConfig.save(
+		mRecentFiles, mRecentFolders,
+		mProjectSplitter ? mProjectSplitter->getSplitPartition().toString() : "15%", mWindow,
+		mEditorSplitter ? mEditorSplitter->getCurrentColorSchemeName() : mConfig.editor.colorScheme,
+		mDocSearchController->getSearchBarConfig(),
+		mGlobalSearchController->getGlobalSearchBarConfig() );
 }
 
 static std::string keybindFormat( std::string str ) {
@@ -3000,7 +3001,7 @@ void App::init( std::string file, const Float& pidelDensity, const std::string& 
 						<TextInput id="search_replace" layout_width="match_parent" layout_height="18dp" padding="0" />
 					</vbox>
 					<vbox layout_width="wrap_content" layout_height="wrap_content" margin-right="4dp">
-						<CheckBox id="case_sensitive" layout_width="wrap_content" layout_height="wrap_content" text="Case sensitive" selected="true" />
+						<CheckBox id="case_sensitive" layout_width="wrap_content" layout_height="wrap_content" text="Case sensitive" selected="false" />
 						<CheckBox id="lua_pattern" layout_width="wrap_content" layout_height="wrap_content" text="Lua Pattern" selected="false" />
 					</vbox>
 					<vbox layout_width="wrap_content" layout_height="wrap_content" margin-right="4dp">
@@ -3193,13 +3194,13 @@ void App::init( std::string file, const Float& pidelDensity, const std::string& 
 
 		mDocSearchController = std::make_unique<DocSearchController>( mEditorSplitter, this );
 		mDocSearchController->initSearchBar( mUISceneNode->find<UISearchBar>( "search_bar" ),
-											 mDocumentSearchKeybindings );
+											 mConfig.searchBarConfig, mDocumentSearchKeybindings );
 
 		mGlobalSearchController =
 			std::make_unique<GlobalSearchController>( mEditorSplitter, mUISceneNode, this );
 		mGlobalSearchController->initGlobalSearchBar(
 			mUISceneNode->find<UIGlobalSearchBar>( "global_search_bar" ),
-			mGlobalSearchKeybindings );
+			mConfig.globalSearchBarConfig, mGlobalSearchKeybindings );
 
 		mFileLocator = std::make_unique<FileLocator>( mEditorSplitter, mUISceneNode, this );
 		mFileLocator->initLocateBar( mUISceneNode->find<UILocateBar>( "locate_bar" ),

@@ -5,7 +5,8 @@ DocSearchController::DocSearchController( UICodeEditorSplitter* editorSplitter, 
 	mEditorSplitter( editorSplitter ), mApp( app ) {}
 
 void DocSearchController::initSearchBar(
-	UISearchBar* searchBar, std::unordered_map<std::string, std::string> keybindings ) {
+	UISearchBar* searchBar, const SearchBarConfig& searchBarConfig,
+	std::unordered_map<std::string, std::string> keybindings ) {
 	mSearchBarLayout = searchBar;
 	mSearchBarLayout->setVisible( false )->setEnabled( false );
 	auto addClickListener = [&]( UIWidget* widget, std::string cmd ) {
@@ -41,6 +42,10 @@ void DocSearchController::initSearchBar(
 	UIPushButton* findNextButton = mSearchBarLayout->find<UIPushButton>( "find_next" );
 	UIPushButton* replaceButton = mSearchBarLayout->find<UIPushButton>( "replace" );
 	UIPushButton* findReplaceButton = mSearchBarLayout->find<UIPushButton>( "replace_find" );
+	caseSensitiveChk->setChecked( searchBarConfig.caseSensitive );
+	luaPatternChk->setChecked( searchBarConfig.luaPattern );
+	wholeWordChk->setChecked( searchBarConfig.wholeWord );
+	escapeSequenceChk->setChecked( searchBarConfig.escapeSequence );
 
 	luaPatternChk->setTooltipText( kbind.getCommandKeybindString( "toggle-lua-pattern" ) );
 	caseSensitiveChk->setTooltipText( kbind.getCommandKeybindString( "change-case" ) );
@@ -347,4 +352,17 @@ void DocSearchController::onCodeEditorFocusChange( UICodeEditor* editor ) {
 
 SearchState& DocSearchController::getSearchState() {
 	return mSearchState;
+}
+
+SearchBarConfig DocSearchController::getSearchBarConfig() const {
+	UICheckBox* caseSensitiveChk = mSearchBarLayout->find<UICheckBox>( "case_sensitive" );
+	UICheckBox* escapeSequenceChk = mSearchBarLayout->find<UICheckBox>( "escape_sequence" );
+	UICheckBox* wholeWordChk = mSearchBarLayout->find<UICheckBox>( "whole_word" );
+	UICheckBox* luaPatternChk = mSearchBarLayout->find<UICheckBox>( "lua_pattern" );
+	SearchBarConfig searchBarConfig;
+	searchBarConfig.caseSensitive = caseSensitiveChk->isChecked();
+	searchBarConfig.luaPattern = luaPatternChk->isChecked();
+	searchBarConfig.wholeWord = wholeWordChk->isChecked();
+	searchBarConfig.escapeSequence = escapeSequenceChk->isChecked();
+	return searchBarConfig;
 }

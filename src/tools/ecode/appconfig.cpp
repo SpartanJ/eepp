@@ -97,13 +97,27 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	editor.syncProjectTreeWithEditor =
 		ini.getValueB( "editor", "sync_project_tree_with_editor", false );
 	editor.autoCloseXMLTags = ini.getValueB( "editor", "auto_close_xml_tags", true );
+
+	searchBarConfig.caseSensitive = ini.getValueB( "search_bar", "case_sensitive", false );
+	searchBarConfig.luaPattern = ini.getValueB( "search_bar", "lua_pattern", false );
+	searchBarConfig.wholeWord = ini.getValueB( "search_bar", "whole_word", false );
+	searchBarConfig.escapeSequence = ini.getValueB( "search_bar", "escape_sequence", false );
+
+	globalSearchBarConfig.caseSensitive =
+		ini.getValueB( "global_search_bar", "case_sensitive", false );
+	globalSearchBarConfig.luaPattern = ini.getValueB( "global_search_bar", "lua_pattern", false );
+	globalSearchBarConfig.wholeWord = ini.getValueB( "global_search_bar", "whole_word", false );
+	globalSearchBarConfig.escapeSequence =
+		ini.getValueB( "global_search_bar", "escape_sequence", false );
+
 	iniInfo = FileInfo( ini.path() );
 }
 
 void AppConfig::save( const std::vector<std::string>& recentFiles,
 					  const std::vector<std::string>& recentFolders,
 					  const std::string& panelPartition, EE::Window::Window* win,
-					  const std::string& colorSchemeName ) {
+					  const std::string& colorSchemeName, const SearchBarConfig& searchBarConfig,
+					  const GlobalSearchBarConfig& globalSearchBarConfig ) {
 
 	FileInfo configInfo( ini.path() );
 	if ( iniInfo.getModificationTime() != 0 &&
@@ -164,6 +178,17 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "editor", "single_click_tree_navigation", editor.singleClickTreeNavigation );
 	ini.setValueB( "editor", "sync_project_tree_with_editor", editor.syncProjectTreeWithEditor );
 	ini.setValueB( "editor", "auto_close_xml_tags", editor.autoCloseXMLTags );
+
+	ini.setValueB( "search_bar", "case_sensitive", searchBarConfig.caseSensitive );
+	ini.setValueB( "search_bar", "lua_pattern", searchBarConfig.luaPattern );
+	ini.setValueB( "search_bar", "whole_word", searchBarConfig.wholeWord );
+	ini.setValueB( "search_bar", "escape_sequence", searchBarConfig.escapeSequence );
+
+	ini.setValueB( "global_search_bar", "case_sensitive", globalSearchBarConfig.caseSensitive );
+	ini.setValueB( "global_search_bar", "lua_pattern", globalSearchBarConfig.luaPattern );
+	ini.setValueB( "global_search_bar", "whole_word", globalSearchBarConfig.wholeWord );
+	ini.setValueB( "global_search_bar", "escape_sequence", globalSearchBarConfig.escapeSequence );
+
 	ini.writeFile();
 	iniState.writeFile();
 }

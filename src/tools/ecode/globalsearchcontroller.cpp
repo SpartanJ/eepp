@@ -47,7 +47,8 @@ size_t GlobalSearchController::replaceInFiles( const std::string& replaceText,
 }
 
 void GlobalSearchController::initGlobalSearchBar(
-	UIGlobalSearchBar* globalSearchBar, std::unordered_map<std::string, std::string> keybindings ) {
+	UIGlobalSearchBar* globalSearchBar, const GlobalSearchBarConfig& globalSearchBarConfig,
+	std::unordered_map<std::string, std::string> keybindings ) {
 	mGlobalSearchBarLayout = globalSearchBar;
 	mGlobalSearchBarLayout->setVisible( false )->setEnabled( false );
 	auto addClickListener = [&]( UIWidget* widget, std::string cmd ) {
@@ -85,6 +86,11 @@ void GlobalSearchController::initGlobalSearchBar(
 	escapeSequenceChk->setTooltipText( kbind.getCommandKeybindString( "change-escape-sequence" ) );
 
 	UIWidget* searchBarClose = mGlobalSearchBarLayout->find<UIWidget>( "global_searchbar_close" );
+
+	caseSensitiveChk->setChecked( globalSearchBarConfig.caseSensitive );
+	luaPatternChk->setChecked( globalSearchBarConfig.luaPattern );
+	wholeWordChk->setChecked( globalSearchBarConfig.wholeWord );
+	escapeSequenceChk->setChecked( globalSearchBarConfig.escapeSequence );
 
 	mGlobalSearchInput = mGlobalSearchBarLayout->find<UITextInput>( "global_search_find" );
 
@@ -309,6 +315,19 @@ void GlobalSearchController::clearHistory() {
 	mGlobalSearchLayout->findByClass( "status_box" )->setVisible( false );
 	mGlobalSearchLayout->findByClass<UITextView>( "search_str" )->setText( "" );
 	updateGlobalSearchBar();
+}
+
+GlobalSearchBarConfig GlobalSearchController::getGlobalSearchBarConfig() const {
+	UICheckBox* caseSensitiveChk = mGlobalSearchBarLayout->find<UICheckBox>( "case_sensitive" );
+	UICheckBox* wholeWordChk = mGlobalSearchBarLayout->find<UICheckBox>( "whole_word" );
+	UICheckBox* luaPatternChk = mGlobalSearchBarLayout->find<UICheckBox>( "lua_pattern" );
+	UICheckBox* escapeSequenceChk = mGlobalSearchBarLayout->find<UICheckBox>( "escape_sequence" );
+	GlobalSearchBarConfig globalSeachBarConfig;
+	globalSeachBarConfig.caseSensitive = caseSensitiveChk->isChecked();
+	globalSeachBarConfig.luaPattern = luaPatternChk->isChecked();
+	globalSeachBarConfig.wholeWord = wholeWordChk->isChecked();
+	globalSeachBarConfig.escapeSequence = escapeSequenceChk->isChecked();
+	return globalSeachBarConfig;
 }
 
 void GlobalSearchController::updateGlobalSearchBar() {

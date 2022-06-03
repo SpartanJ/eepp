@@ -1,6 +1,7 @@
 #ifndef DOCSEARCHCONTROLLER_HPP
 #define DOCSEARCHCONTROLLER_HPP
 
+#include "appconfig.hpp"
 #include <eepp/ee.hpp>
 
 struct SearchState {
@@ -35,6 +36,7 @@ class DocSearchController {
 
 	void initSearchBar(
 		UISearchBar* searchBar,
+		const SearchBarConfig& searchBarConfig,
 		std::unordered_map<std::string, std::string> keybindings = getDefaultKeybindings() );
 
 	void showFindView();
@@ -54,6 +56,8 @@ class DocSearchController {
 	void onCodeEditorFocusChange( UICodeEditor* editor );
 
 	SearchState& getSearchState();
+
+	SearchBarConfig getSearchBarConfig() const;
 
   protected:
 	UICodeEditorSplitter* mEditorSplitter{ nullptr };

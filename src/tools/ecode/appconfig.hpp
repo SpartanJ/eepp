@@ -1,6 +1,7 @@
 #ifndef APPCONFIG_HPP
 #define APPCONFIG_HPP
 
+#include "widgetcommandexecuter.hpp"
 #include <eepp/config.hpp>
 #include <eepp/math/size.hpp>
 #include <eepp/system/inifile.hpp>
@@ -73,6 +74,20 @@ struct DocumentConfig {
 	int lineBreakingColumn{ 100 };
 };
 
+struct SearchBarConfig {
+	bool caseSensitive{ false };
+	bool luaPattern{ false };
+	bool wholeWord{ false };
+	bool escapeSequence{ false };
+};
+
+struct GlobalSearchBarConfig {
+	bool caseSensitive{ false };
+	bool luaPattern{ false };
+	bool wholeWord{ false };
+	bool escapeSequence{ false };
+};
+
 struct ProjectDocumentConfig {
 	bool useGlobalSettings{ true };
 	DocumentConfig doc;
@@ -88,6 +103,8 @@ struct AppConfig {
 	IniFile ini;
 	IniFile iniState;
 	FileInfo iniInfo;
+	SearchBarConfig searchBarConfig;
+	GlobalSearchBarConfig globalSearchBarConfig;
 
 	void load( const std::string& confPath, std::string& keybindingsPath,
 			   std::string& initColorScheme, std::vector<std::string>& recentFiles,
@@ -96,7 +113,9 @@ struct AppConfig {
 
 	void save( const std::vector<std::string>& recentFiles,
 			   const std::vector<std::string>& recentFolders, const std::string& panelPartition,
-			   EE::Window::Window* win, const std::string& colorSchemeName );
+			   EE::Window::Window* win, const std::string& colorSchemeName,
+			   const SearchBarConfig& searchBarConfig,
+			   const GlobalSearchBarConfig& globalSearchBarConfig );
 
 	void saveProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
 					  const std::string& configPath, const ProjectDocumentConfig& docConfig );

@@ -418,6 +418,10 @@ class EE_API TextDocument {
 
 	void notifyDocumentMoved( const std::string& newPath );
 
+	void toUpperSelection();
+
+	void toLowerSelection();
+
   protected:
 	friend class UndoStack;
 	UndoStack mUndoStack;

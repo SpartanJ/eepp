@@ -23,7 +23,7 @@ AutoCompletePlugin::AutoCompletePlugin() :
 }
 
 AutoCompletePlugin::AutoCompletePlugin( std::shared_ptr<ThreadPool> pool ) :
-	mSymbolPattern( "[%añàáâãäåèéêëìíîïòóôõöùúûüýÿÑÀÁÂÃÄÅÈÉÊËÌÍÎÏÒÓÔÕÖÙÚÛÜÝ][%w_"
+	mSymbolPattern( "[%a_ñàáâãäåèéêëìíîïòóôõöùúûüýÿÑÀÁÂÃÄÅÈÉÊËÌÍÎÏÒÓÔÕÖÙÚÛÜÝ][%w_"
 					"ñàáâãäåèéêëìíîïòóôõöùúûüýÿÑÀÁÂÃÄÅÈÉÊËÌÍÎÏÒÓÔÕÖÙÚÛÜÝ]*" ),
 	mBoxPadding( PixelDensity::dpToPx( Rectf( 4, 4, 4, 4 ) ) ),
 	mPool( pool ) {}

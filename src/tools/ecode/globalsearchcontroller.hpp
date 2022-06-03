@@ -1,6 +1,7 @@
 #ifndef GLOBALSEARCHCONTROLLER_HPP
 #define GLOBALSEARCHCONTROLLER_HPP
 
+#include "appconfig.hpp"
 #include "projectsearch.hpp"
 #include <eepp/ee.hpp>
 
@@ -30,7 +31,7 @@ class GlobalSearchController {
 	void updateGlobalSearchBar();
 
 	void initGlobalSearchBar(
-		UIGlobalSearchBar* globalSearchBar,
+		UIGlobalSearchBar* globalSearchBar, const GlobalSearchBarConfig& globalSearchBarConfig,
 		std::unordered_map<std::string, std::string> keybindings = getDefaultKeybindings() );
 
 	void hideGlobalSearchBar();
@@ -54,6 +55,8 @@ class GlobalSearchController {
 	bool isUsingSearchReplaceTree();
 
 	void clearHistory();
+
+	GlobalSearchBarConfig getGlobalSearchBarConfig() const;
 
   protected:
 	UICodeEditorSplitter* mEditorSplitter{ nullptr };

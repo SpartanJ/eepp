@@ -284,6 +284,30 @@ void TextDocument::notifyDocumentMoved( const std::string& path ) {
 	notifyDocumentMoved();
 }
 
+void TextDocument::toUpperSelection() {
+	if ( !hasSelection() )
+		return;
+
+	TextRange selection( getSelection() );
+	String selectedText( getSelectedText() );
+	selectedText.toUpper();
+	deleteSelection();
+	textInput( selectedText );
+	setSelection( selection );
+}
+
+void TextDocument::toLowerSelection() {
+	if ( !hasSelection() )
+		return;
+
+	TextRange selection( getSelection() );
+	String selectedText( getSelectedText() );
+	selectedText.toLower();
+	deleteSelection();
+	textInput( selectedText );
+	setSelection( selection );
+}
+
 TextDocument::LoadStatus TextDocument::loadFromFile( const std::string& path ) {
 	mLoading = true;
 	if ( !FileSystem::fileExists( path ) && PackManager::instance()->isFallbackToPacksActive() ) {
@@ -1976,6 +2000,8 @@ void TextDocument::initializeCommands() {
 	mCommands["undo"] = [&] { undo(); };
 	mCommands["redo"] = [&] { redo(); };
 	mCommands["toggle-line-comments"] = [&] { toggleLineComments(); };
+	mCommands["selection-to-upper"] = [&] { toUpperSelection(); };
+	mCommands["selection-to-lower"] = [&] { toLowerSelection(); };
 }
 
 TextDocument::Client::~Client() {}
