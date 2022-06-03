@@ -67,8 +67,7 @@ class EE_API UITabWidget : public UIWidget {
 
 	void removeTab( UITab* tab, bool destroyOwnedNode = true, bool immediateClose = false );
 
-	void removeAllTabs( bool destroyOwnedNode = true,
-					bool immediateClose = false );
+	void removeAllTabs( bool destroyOwnedNode = true, bool immediateClose = false );
 
 	void insertTab( const String& text, UINode* nodeOwned, Drawable* icon, const Uint32& index );
 
@@ -153,6 +152,10 @@ class EE_API UITabWidget : public UIWidget {
 
 	void setTabVerticalDragResistance( const Float& tabVerticalDragResistance );
 
+	bool getAllowSwitchTabsInEmptySpaces() const;
+
+	void setAllowSwitchTabsInEmptySpaces( bool allowSwitchTabsInEmptySpaces );
+
   protected:
 	friend class UITab;
 
@@ -167,6 +170,7 @@ class EE_API UITabWidget : public UIWidget {
 	bool mHideTabBarOnSingleTab;
 	bool mAllowRearrangeTabs;
 	bool mAllowDragAndDropTabs;
+	bool mAllowSwitchTabsInEmptySpaces;
 	Float mTabVerticalDragResistance;
 
 	void onThemeLoaded();

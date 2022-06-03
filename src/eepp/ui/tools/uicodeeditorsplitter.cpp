@@ -83,13 +83,13 @@ UICodeEditorSplitter::UICodeEditorSplitter( UICodeEditorSplitter::Client* client
 
 UICodeEditorSplitter::~UICodeEditorSplitter() {}
 
-UITabWidget* UICodeEditorSplitter::tabWidgetFromEditor( UICodeEditor* editor ) {
+UITabWidget* UICodeEditorSplitter::tabWidgetFromEditor( UICodeEditor* editor ) const {
 	if ( editor )
 		return ( (UITab*)editor->getData() )->getTabWidget();
 	return nullptr;
 }
 
-UISplitter* UICodeEditorSplitter::splitterFromEditor( UICodeEditor* editor ) {
+UISplitter* UICodeEditorSplitter::splitterFromEditor( UICodeEditor* editor ) const {
 	if ( editor && editor->getParent()->getParent()->getParent()->isType( UI_TYPE_SPLITTER ) )
 		return editor->getParent()->getParent()->getParent()->asType<UISplitter>();
 	return nullptr;
@@ -428,6 +428,7 @@ UITabWidget* UICodeEditorSplitter::createEditorWithTabWidget( Node* parent, bool
 	tabWidget->setHideTabBarOnSingleTab( mHideTabBarOnSingleTab );
 	tabWidget->setAllowRearrangeTabs( true );
 	tabWidget->setAllowDragAndDropTabs( true );
+	tabWidget->setAllowSwitchTabsInEmptySpaces( true );
 	tabWidget->addEventListener( Event::OnTabSelected, [&]( const Event* event ) {
 		UITabWidget* tabWidget = event->getNode()->asType<UITabWidget>();
 		setCurrentEditor( tabWidget->getTabSelected()->getOwnedWidget()->asType<UICodeEditor>() );
@@ -448,14 +449,29 @@ UITabWidget* UICodeEditorSplitter::createEditorWithTabWidget( Node* parent, bool
 	return tabWidget;
 }
 
-UITab* UICodeEditorSplitter::isDocumentOpen( const std::string& path ) const {
-	for ( auto tabWidget : mTabWidgets ) {
+UITab* UICodeEditorSplitter::isDocumentOpen( const std::string& path,
+											 bool checkOnlyInCurrentTabWidget ) const {
+	if ( checkOnlyInCurrentTabWidget ) {
+		UITabWidget* tabWidget = tabWidgetFromEditor( mCurEditor );
+		if ( nullptr == tabWidget )
+			return nullptr;
 		for ( size_t i = 0; i < tabWidget->getTabCount(); i++ ) {
 			UITab* tab = tabWidget->getTab( i );
 			UICodeEditor* editor = tab->getOwnedWidget()->asType<UICodeEditor>();
 
 			if ( editor->getDocument().getFilePath() == path ) {
 				return tab;
+			}
+		}
+	} else {
+		for ( auto tabWidget : mTabWidgets ) {
+			for ( size_t i = 0; i < tabWidget->getTabCount(); i++ ) {
+				UITab* tab = tabWidget->getTab( i );
+				UICodeEditor* editor = tab->getOwnedWidget()->asType<UICodeEditor>();
+
+				if ( editor->getDocument().getFilePath() == path ) {
+					return tab;
+				}
 			}
 		}
 	}

@@ -101,7 +101,7 @@ void FileLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locateInpu
 				ModelRole::Display ) );
 			if ( vPath.isValid() && vPath.is( Variant::Type::cstr ) ) {
 				std::string path( vPath.asCStr() );
-				UITab* tab = mEditorSplitter->isDocumentOpen( path );
+				UITab* tab = mEditorSplitter->isDocumentOpen( path, true );
 				if ( !tab ) {
 					FileInfo fileInfo( path );
 					if ( fileInfo.exists() && fileInfo.isRegularFile() )

@@ -64,9 +64,9 @@ class EE_API UICodeEditorSplitter {
 
 	void setCurrentEditor( UICodeEditor* editor );
 
-	UITabWidget* tabWidgetFromEditor( UICodeEditor* editor );
+	UITabWidget* tabWidgetFromEditor( UICodeEditor* editor ) const;
 
-	UISplitter* splitterFromEditor( UICodeEditor* editor );
+	UISplitter* splitterFromEditor( UICodeEditor* editor ) const;
 
 	std::pair<UITab*, UICodeEditor*> createCodeEditorInTabWidget( UITabWidget* tabWidget );
 
@@ -96,7 +96,8 @@ class EE_API UICodeEditorSplitter {
 
 	UITabWidget* createEditorWithTabWidget( Node* parent, bool openCurEditor = true );
 
-	UITab* isDocumentOpen( const std::string& path ) const;
+	UITab* isDocumentOpen( const std::string& path,
+						   bool checkOnlyInCurrentTabWidget = false ) const;
 
 	void applyColorScheme( const SyntaxColorScheme& colorScheme );
 

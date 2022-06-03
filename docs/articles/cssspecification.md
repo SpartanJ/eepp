@@ -1595,6 +1595,16 @@ Enables/disables the hability to move any tab from a TabWidget to another.
 
 ---
 
+### tabbar-allow-switch-tabs-in-empty-spaces
+
+Enables/disables switching tabs from empty/blank spaces in the tab widget.
+
+* Applicable to: EE::UI::UITabWidget (TabWidget)
+* Data Type: [boolean](#boolean-data-type)
+* Default value: `false`
+
+---
+
 ### tab-closable
 
 Enables/disables tabs to be closable with the middle mouse button click or by clicking on the close

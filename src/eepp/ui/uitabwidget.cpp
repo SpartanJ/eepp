@@ -164,6 +164,10 @@ std::string UITabWidget::getPropertyString( const PropertyDefinition* propertyDe
 			return getHideTabBarOnSingleTab() ? "true" : "false";
 		case PropertyId::TabBarAllowRearrange:
 			return getAllowRearrangeTabs() ? "true" : "false";
+		case PropertyId::TabBarAllowDragAndDrop:
+			return getAllowDragAndDropTabs() ? "true" : "false";
+		case PropertyId::TabAllowSwitchTabsInEmptySpaces:
+			return getAllowSwitchTabsInEmptySpaces() ? "true" : "false";
 		default:
 			return UIWidget::getPropertyString( propertyDef, propertyIndex );
 	}
@@ -239,6 +243,8 @@ bool UITabWidget::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::TabBarAllowDragAndDrop:
 			setAllowDragAndDropTabs( attribute.asBool() );
 			break;
+		case PropertyId::TabAllowSwitchTabsInEmptySpaces:
+			setAllowSwitchTabsInEmptySpaces( attribute.asBool() );
 		default:
 			return UIWidget::applyProperty( attribute );
 	}
@@ -715,6 +721,14 @@ void UITabWidget::setTabVerticalDragResistance( const Float& tabVerticalDragResi
 	mTabVerticalDragResistance = tabVerticalDragResistance;
 }
 
+bool UITabWidget::getAllowSwitchTabsInEmptySpaces() const {
+	return mAllowSwitchTabsInEmptySpaces;
+}
+
+void UITabWidget::setAllowSwitchTabsInEmptySpaces( bool allowSwitchTabsInEmptySpaces ) {
+	mAllowSwitchTabsInEmptySpaces = allowSwitchTabsInEmptySpaces;
+}
+
 void UITabWidget::refreshOwnedWidget( UITab* tab ) {
 	if ( NULL != tab && NULL != tab->getOwnedWidget() ) {
 		tab->getOwnedWidget()->setParent( mNodeContainer );
@@ -833,6 +847,15 @@ Uint32 UITabWidget::onMessage( const NodeMessage* msg ) {
 				add( tab );
 				setTabSelected( tab );
 				return 1;
+			}
+		}
+	} else if ( msg->getMsg() == NodeMessage::MouseUp && mAllowSwitchTabsInEmptySpaces ) {
+		Uint32 flags = msg->getFlags();
+		if ( flags & EE_BUTTONS_WUWD ) {
+			if ( flags & EE_BUTTON_WUMASK ) {
+				selectPreviousTab();
+			} else if ( flags & EE_BUTTON_WDMASK ) {
+				selectNextTab();
 			}
 		}
 	}

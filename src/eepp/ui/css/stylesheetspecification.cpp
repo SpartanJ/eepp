@@ -363,6 +363,7 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "tabbar-hide-on-single-tab", "false" );
 	registerProperty( "tabbar-allow-rearrange", "false" );
 	registerProperty( "tabbar-allow-drag-and-drop-tabs", "false" );
+	registerProperty( "tabbar-allow-switch-tabs-in-empty-spaces", "false" );
 
 	registerProperty( "splitter-partition", "50%" )
 		.setType( PropertyType::NumberLength )
