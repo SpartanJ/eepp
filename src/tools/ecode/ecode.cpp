@@ -214,7 +214,6 @@ void App::openFontDialog( std::string& fontPath, bool loadingMonoFont ) {
 				auto loadMonoFont = [&]( FontTrueType* fontMono ) {
 					mFontMono = fontMono;
 					mFontMono->setBoldAdvanceSameAsRegular( true );
-					mFontMono->setForceIsMonospace( true );
 					if ( mEditorSplitter ) {
 						mEditorSplitter->forEachEditor(
 							[&]( UICodeEditor* editor ) { editor->setFont( mFontMono ); } );
@@ -226,7 +225,8 @@ void App::openFontDialog( std::string& fontPath, bool loadingMonoFont ) {
 						i18n(
 							"confirm_loading_none_monospace_font",
 							"The editor only supports monospaced fonts and the selected font isn't "
-							"flagged as monospace.\nDo you want to load it anyways?" )
+							"flagged as monospace.\nDo you want to load it anyways?\nPerformance "
+							"and memory usage will be awful without a monospaced font." )
 							.unescape() );
 					msgBox->addEventListener(
 						Event::MsgBoxConfirmClick,
@@ -2823,10 +2823,8 @@ void App::init( std::string file, const Float& pidelDensity, const std::string& 
 
 		mFont = loadFont( "sans-serif", mConfig.ui.serifFont, "fonts/NotoSans-Regular.ttf" );
 		mFontMono = loadFont( "monospace", mConfig.ui.monospaceFont, "fonts/DejaVuSansMono.ttf" );
-		if ( mFontMono ) {
+		if ( mFontMono )
 			mFontMono->setBoldAdvanceSameAsRegular( true );
-			mFontMono->setForceIsMonospace( true );
-		}
 		loadFont( "NotoEmoji-Regular", "fonts/NotoEmoji-Regular.ttf" );
 
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN

@@ -26,42 +26,16 @@ class EE_API UITextEdit : public UICodeEditor {
 
 	void setText( const String& text );
 
-	virtual Int64 getColFromXOffset( Int64 line, const Float& x ) const;
-
-	virtual Float getColXOffset( TextPosition position );
-
-	virtual Float getXOffsetCol( const TextPosition& position );
-
-	virtual Float getLineWidth( const Int64& lineIndex );
-
   protected:
-	struct TextLine {
-		Text text;
-		String::HashType hash{0};
-	};
-	std::map<size_t, TextLine> mLines;
-
-	virtual void onFontChanged();
-
-	virtual void onFontStyleChanged();
-
 	virtual void onDocumentLineChanged( const Int64& lineIndex );
 
 	virtual void drawLineText( const Int64& index, Vector2f position, const Float& fontSize,
 							   const Float& lineHeight );
 
-	void ensureLineUpdated( const Int64& lineIndex );
-
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
 	virtual void drawCursor( const Vector2f& startScroll, const Float& lineHeight,
 							 const TextPosition& cursor );
-
-	virtual void onDocumentChanged();
-
-	void invalidateLinesCache();
-
-	void updateLineCache( const Int64& lineIndex );
 };
 
 }} // namespace EE::UI

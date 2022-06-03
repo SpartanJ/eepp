@@ -1,6 +1,7 @@
 ﻿#ifndef EE_UI_UICODEEDIT_HPP
 #define EE_UI_UICODEEDIT_HPP
 
+#include <eepp/graphics/text.hpp>
 #include <eepp/ui/doc/syntaxcolorscheme.hpp>
 #include <eepp/ui/doc/syntaxhighlighter.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
@@ -546,6 +547,11 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	UIPopUpMenu* mCurrentMenu{ nullptr };
 	MinimapConfig mMinimapConfig;
 	Int64 mMinimapScrollOffset{ 0 };
+	struct TextLine {
+		Text text;
+		String::HashType hash;
+	};
+	mutable std::map<Int64, TextLine> mTextCache;
 
 	UICodeEditor( const std::string& elementTag, const bool& autoRegisterBaseCommands = true,
 				  const bool& autoRegisterBaseKeybindings = true );
@@ -559,6 +565,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void invalidateEditor();
 
 	void invalidateLongestLineWidth();
+
+	void invalidateLinesCache();
 
 	virtual void findLongestLine();
 
@@ -606,7 +614,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	virtual void onDocumentLineCountChange( const size_t& lastCount, const size_t& newCount );
 
-	virtual void onDocumentLineChanged( const Int64& lineIndex );
+	virtual void onDocumentLineChanged( const Int64& lineNumber );
 
 	virtual void onDocumentUndoRedo( const TextDocument::UndoRedo& );
 
@@ -714,6 +722,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void updateMipmapHover( const Vector2f& position );
 
 	bool checkAutoCloseXMLTag( const String& text );
+
+	Text& getLineText( const Int64& lineNumber ) const;
+
+	void updateLineCache( const Int64& lineIndex );
 };
 
 }} // namespace EE::UI

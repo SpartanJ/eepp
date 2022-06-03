@@ -86,64 +86,13 @@ void UITextEdit::setText( const String& text ) {
 	invalidateLongestLineWidth();
 }
 
-void UITextEdit::onFontChanged() {
-	if ( mFont )
-		invalidateLinesCache();
-}
-
-void UITextEdit::onFontStyleChanged() {
-	onFontChanged();
-}
-
 void UITextEdit::onDocumentLineChanged( const Int64& lineIndex ) {
 	UICodeEditor::onDocumentLineChanged( lineIndex );
 	updateLineCache( lineIndex );
 }
 
 void UITextEdit::drawLineText( const Int64& index, Vector2f position, const Float&, const Float& ) {
-	ensureLineUpdated( index );
-	mLines[index].text.draw( position.x, position.y );
-}
-
-Int64 UITextEdit::getColFromXOffset( Int64 line, const Float& x ) const {
-	if ( mFont && !mFont->isMonospace() ) {
-		const_cast<UITextEdit*>( this )->ensureLineUpdated( line );
-		return mLines.at( line ).text.findCharacterFromPos( Vector2i( x, 0 ) );
-	}
-	return UICodeEditor::getColFromXOffset( line, x );
-}
-
-Float UITextEdit::getColXOffset( TextPosition position ) {
-	if ( mFont && !mFont->isMonospace() ) {
-		return getXOffsetCol( position );
-	}
-	return UICodeEditor::getColXOffset( position );
-}
-
-Float UITextEdit::getXOffsetCol( const TextPosition& position ) {
-	if ( mFont && !mFont->isMonospace() ) {
-		ensureLineUpdated( position.line() );
-		return mLines[position.line()]
-			.text
-			.findCharacterPos(
-				( position.column() == (Int64)mDoc->line( position.line() ).getText().size() )
-					? position.column() - 1
-					: position.column() )
-			.x;
-	}
-	return UICodeEditor::getXOffsetCol( position );
-}
-
-Float UITextEdit::getLineWidth( const Int64& lineIndex ) {
-	ensureLineUpdated( lineIndex );
-	return mLines[lineIndex].text.getTextWidth();
-}
-
-void UITextEdit::ensureLineUpdated( const Int64& lineIndex ) {
-	if ( mLines.find( lineIndex ) == mLines.end() ||
-		 mDoc->line( lineIndex ).getHash() != mLines[lineIndex].hash ) {
-		updateLineCache( lineIndex );
-	}
+	getLineText( index ).draw( position.x, position.y );
 }
 
 bool UITextEdit::applyProperty( const StyleSheetProperty& attribute ) {
@@ -161,21 +110,6 @@ bool UITextEdit::applyProperty( const StyleSheetProperty& attribute ) {
 	return true;
 }
 
-void UITextEdit::invalidateLinesCache() {
-	mLines.clear();
-	invalidateDraw();
-}
-
-void UITextEdit::updateLineCache( const Int64& lineIndex ) {
-	if ( lineIndex >= 0 && lineIndex < (Int64)mDoc->linesCount() ) {
-		TextDocumentLine& line = mDoc->line( lineIndex );
-		auto& cacheLine = mLines[lineIndex];
-		cacheLine.text.setStyleConfig( mFontStyleConfig );
-		cacheLine.text.setString( line.getText() );
-		cacheLine.hash = line.getHash();
-	}
-}
-
 void UITextEdit::drawCursor( const Vector2f& startScroll, const Float& lineHeight,
 							 const TextPosition& cursor ) {
 	if ( mCursorVisible && !mLocked && isTextSelectionEnabled() ) {
@@ -186,11 +120,6 @@ void UITextEdit::drawCursor( const Vector2f& startScroll, const Float& lineHeigh
 		primitives.drawRectangle(
 			Rectf( cursorPos, Sizef( PixelDensity::dpToPx( 1 ), lineHeight ) ) );
 	}
-}
-
-void UITextEdit::onDocumentChanged() {
-	UICodeEditor::onDocumentChanged();
-	invalidateLinesCache();
 }
 
 }} // namespace EE::UI

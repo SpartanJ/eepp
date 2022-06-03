@@ -313,7 +313,12 @@ Vector2f Text::findCharacterPos( std::size_t index ) const {
 }
 
 Int32 Text::findCharacterFromPos( const Vector2i& pos, bool ) const {
-	if ( NULL == mFont || mString.empty() || mLinesStartIndex.empty() )
+	if ( NULL == mFont || mString.empty() )
+		return 0;
+
+	const_cast<Text*>( this )->ensureGeometryUpdate();
+
+	if ( mLinesStartIndex.empty() )
 		return 0;
 
 	Vector2f charCenter;

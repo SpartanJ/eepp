@@ -2,7 +2,6 @@
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/primitives.hpp>
-#include <eepp/graphics/text.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/luapattern.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
@@ -486,10 +485,12 @@ UICodeEditor* UICodeEditor::setFont( Font* font ) {
 }
 
 void UICodeEditor::onFontChanged() {
+	invalidateLinesCache();
 	udpateGlyphWidth();
 }
 
 void UICodeEditor::onFontStyleChanged() {
+	invalidateLinesCache();
 	udpateGlyphWidth();
 }
 
@@ -499,6 +500,7 @@ void UICodeEditor::onDocumentLoaded() {
 }
 
 void UICodeEditor::onDocumentChanged() {
+	invalidateLinesCache();
 	DocEvent event( this, mDoc.get(), Event::OnDocumentChanged );
 	sendEvent( &event );
 }
@@ -1285,6 +1287,8 @@ void UICodeEditor::findLongestLine() {
 }
 
 Float UICodeEditor::getLineWidth( const Int64& lineIndex ) {
+	if ( mFont && !mFont->isMonospace() )
+		return getLineText( lineIndex ).getTextWidth();
 	return getTextWidth( mDoc->line( lineIndex ).getText() );
 }
 
@@ -1424,8 +1428,10 @@ void UICodeEditor::onDocumentLineCountChange( const size_t&, const size_t& ) {
 	updateScrollBar();
 }
 
-void UICodeEditor::onDocumentLineChanged( const Int64& lineIndex ) {
-	mHighlighter.invalidate( lineIndex );
+void UICodeEditor::onDocumentLineChanged( const Int64& lineNumber ) {
+	mHighlighter.invalidate( lineNumber );
+	if ( mFont && !mFont->isMonospace() )
+		updateLineCache( lineNumber );
 }
 
 void UICodeEditor::onDocumentUndoRedo( const TextDocument::UndoRedo& ) {
@@ -1551,6 +1557,15 @@ void UICodeEditor::setScrollY( const Float& val, bool emmitEvent ) {
 }
 
 Float UICodeEditor::getXOffsetCol( const TextPosition& position ) {
+	if ( mFont && !mFont->isMonospace() ) {
+		return getLineText( position.line() )
+			.findCharacterPos(
+				( position.column() == (Int64)mDoc->line( position.line() ).getText().size() )
+					? position.column() - 1
+					: position.column() )
+			.x;
+	}
+
 	const String& line = mDoc->line( position.line() ).getText();
 	Float glyphWidth = getGlyphWidth();
 	Float x = 0;
@@ -1573,6 +1588,15 @@ size_t UICodeEditor::characterWidth( const String& str ) const {
 }
 
 Float UICodeEditor::getTextWidth( const String& line ) const {
+	if ( mFont && !mFont->isMonospace() ) {
+		Float fontSize = PixelDensity::pxToDp( getCharacterSize() );
+		Text txt( "", mFont, fontSize );
+		txt.setTabWidth( mTabWidth );
+		txt.setStyleConfig( mFontStyleConfig );
+		txt.setString( line );
+		return txt.getTextWidth();
+	}
+
 	Float glyphWidth = getGlyphWidth();
 	size_t len = line.length();
 	Float x = 0;
@@ -1586,6 +1610,8 @@ Float UICodeEditor::getColXOffset( TextPosition position ) {
 	// This is different from sanitizePosition, sinze allows the last character.
 	position.setColumn( eeclamp<Int64>( position.column(), 0L,
 										eemax<Int64>( 0, mDoc->line( position.line() ).size() ) ) );
+	if ( mFont && !mFont->isMonospace() )
+		return getXOffsetCol( position );
 	return getTextWidth( mDoc->line( position.line() ).substr( 0, position.column() ) );
 }
 
@@ -1965,9 +1991,14 @@ void UICodeEditor::checkMatchingBrackets() {
 }
 
 Int64 UICodeEditor::getColFromXOffset( Int64 lineNumber, const Float& x ) const {
-	if ( x <= 0 )
+	if ( x <= 0 || !mFont )
 		return 0;
+
 	TextPosition pos = mDoc->sanitizePosition( TextPosition( lineNumber, 0 ) );
+
+	if ( mFont && !mFont->isMonospace() )
+		return getLineText( pos.line() ).findCharacterFromPos( Vector2i( x, 0 ) );
+
 	const String& line = mDoc->line( pos.line() ).getText();
 	Int64 len = line.length();
 	Float glyphWidth = getGlyphWidth();
@@ -2001,7 +2032,7 @@ Float UICodeEditor::getGlyphWidth() const {
 }
 
 void UICodeEditor::udpateGlyphWidth() {
-	mGlyphWidth = mFont->getGlyph( ' ', getCharacterSize(), false ).advance;
+	mGlyphWidth = mFont->getGlyph( '@', getCharacterSize(), false ).advance;
 	invalidateLongestLineWidth();
 }
 
@@ -2293,22 +2324,25 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 	Primitives primitives;
 	Int64 curChar = 0;
 	Int64 maxWidth = eeceil( mSize.getWidth() / getGlyphWidth() + 1 );
+	bool isMonospace = mFont->isMonospace();
 	for ( auto& token : tokens ) {
 		String text( token.text );
-		Float textWidth = getTextWidth( text );
+		Float textWidth = isMonospace ? getTextWidth( text ) : 0;
 		if ( position.x + textWidth >= mScreenPos.x &&
 			 position.x <= mScreenPos.x + mSize.getWidth() ) {
 			Int64 curCharsWidth = text.size();
 			Int64 curPositionChar = eefloor( mScroll.x / getGlyphWidth() );
 			Float curMaxPositionChar = curPositionChar + maxWidth;
 			Text txt( "", mFont, fontSize );
-			txt.setDisableCacheWidth( true );
 			txt.setTabWidth( mTabWidth );
 			const SyntaxColorScheme::Style& style = mColorScheme.getSyntaxStyle( token.type );
 			txt.setStyleConfig( mFontStyleConfig );
 			if ( style.style )
 				txt.setStyle( style.style );
 			txt.setColor( Color( style.color ).blendAlpha( mAlpha ) );
+
+			if ( isMonospace )
+				txt.setDisableCacheWidth( true );
 
 			if ( mHandShown && mLinkPosition.isValid() && mLinkPosition.inSameLine() &&
 				 mLinkPosition.start().line() == line ) {
@@ -2373,7 +2407,11 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 							txt.setStyle( lineStyle );
 							txt.setString( afterString );
 							txt.draw( position.x + offset, position.y );
+							offset += afterWidth;
 						}
+
+						if ( !isMonospace )
+							textWidth = offset;
 
 						position.x += textWidth;
 						curChar += characterWidth( text );
@@ -2408,6 +2446,9 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 				txt.setString( text );
 				txt.draw( position.x, position.y );
 			}
+
+			if ( !isMonospace )
+				textWidth = txt.getTextWidth();
 		} else if ( position.x > mScreenPos.x + mSize.getWidth() ) {
 			break;
 		}
@@ -3011,6 +3052,37 @@ Int64 UICodeEditor::getCurrentColumnCount() const {
 	for ( Int64 i = 0; i < sel; i++ )
 		count += mDoc->line( curLine ).getText()[i] == '\t' ? mTabWidth : 1;
 	return count;
+}
+
+Text& UICodeEditor::getLineText( const Int64& lineNumber ) const {
+	auto it = mTextCache.find( lineNumber );
+	if ( it == mTextCache.end() || it->second.hash != mDoc->line( lineNumber ).getHash() ) {
+		Float fontSize = PixelDensity::pxToDp( getCharacterSize() );
+		Text txt( "", mFont, fontSize );
+		txt.setTabWidth( mTabWidth );
+		txt.setStyleConfig( mFontStyleConfig );
+		txt.setString( mDoc->line( lineNumber ).getText() );
+		mTextCache[lineNumber] = { std::move( txt ), mDoc->line( lineNumber ).getHash() };
+		return mTextCache[lineNumber].text;
+	}
+	return it->second.text;
+}
+
+void UICodeEditor::updateLineCache( const Int64& lineIndex ) {
+	if ( lineIndex >= 0 && lineIndex < (Int64)mDoc->linesCount() ) {
+		TextDocumentLine& line = mDoc->line( lineIndex );
+		auto& cacheLine = mTextCache[lineIndex];
+		cacheLine.text.setStyleConfig( mFontStyleConfig );
+		cacheLine.text.setString( line.getText() );
+		cacheLine.hash = line.getHash();
+	}
+}
+
+void UICodeEditor::invalidateLinesCache() {
+	if ( mFont && !mFont->isMonospace() ) {
+		mTextCache.clear();
+		invalidateDraw();
+	}
 }
 
 }} // namespace EE::UI
