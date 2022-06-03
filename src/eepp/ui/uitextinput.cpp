@@ -861,12 +861,16 @@ bool UITextInput::onCreateContextMenu( const Vector2i& position, const Uint32& f
 	} );
 
 	Vector2f pos( position.asFloat() );
+	Int32 init = selCurInit();
+	Int32 end = selCurEnd();
 	menu->nodeToWorldTranslation( pos );
 	UIMenu::findBestMenuPos( pos, menu );
 	menu->setPixelsPosition( pos );
 	menu->show();
 	menu->addEventListener( Event::OnClose, [&]( const Event* ) { mCurrentMenu = nullptr; } );
 	mCurrentMenu = menu;
+	selCurInit( init );
+	selCurEnd( end );
 	return true;
 }
 

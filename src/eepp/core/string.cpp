@@ -190,8 +190,7 @@ String String::unescape( const String& str ) {
 					if ( i + len < str.size() ) {
 						std::string buffer;
 						for ( i = i + 1; i < str.size(); i++ )
-							if ( std::isdigit( str[i] ) || ( str[i] >= 'a' && str[i] <= 'f' ) ||
-								 ( str[i] >= 'A' && str[i] <= 'F' ) ) {
+							if ( std::isxdigit( str[i] ) ) {
 								buffer.push_back( str[i] );
 							} else {
 								break;
@@ -211,8 +210,7 @@ String String::unescape( const String& str ) {
 						size_t to = i + len;
 						std::string buffer;
 						for ( i = i + 1; i <= to; i++ ) {
-							if ( std::isdigit( str[i] ) || ( str[i] >= 'a' && str[i] <= 'f' ) ||
-								 ( str[i] >= 'A' && str[i] <= 'F' ) ) {
+							if ( std::isxdigit( str[i] ) ) {
 								buffer.push_back( str[i] );
 							}
 						}

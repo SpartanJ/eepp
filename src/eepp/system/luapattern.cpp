@@ -32,6 +32,10 @@ LuaPattern::Range LuaPattern::find( const std::string& string, const std::string
 	return { -1, -1 };
 }
 
+bool LuaPattern::matches( const std::string& string, const std::string& pattern ) {
+	return find( string, pattern ).isValid();
+}
+
 LuaPattern::LuaPattern( const std::string& pattern ) : mPattern( pattern ) {
 	if ( !sFailHandlerInitialized ) {
 		sFailHandlerInitialized = true;

@@ -2595,6 +2595,13 @@ void UICodeEditor::onCursorPosChange() {
 	invalidateDraw();
 }
 
+static bool checkHexa( const std::string& hexStr ) {
+	for ( size_t i = 1; i < hexStr.size(); ++i )
+		if ( !isxdigit( hexStr[i] ) )
+			return false;
+	return true;
+}
+
 void UICodeEditor::checkMouseOverColor( const Vector2i& position ) {
 	if ( !mColorPreview )
 		return;
@@ -2611,7 +2618,8 @@ void UICodeEditor::checkMouseOverColor( const Vector2i& position ) {
 		String word = mDoc->getText( wordPos );
 		bool found = false;
 		if ( word[0] == '#' && ( word.size() == 7 || word.size() == 9 ) ) {
-			found = true;
+			if ( checkHexa( word ) )
+				found = true;
 		} else {
 			wordPos = { start, end };
 			word = mDoc->getText( wordPos );

@@ -96,6 +96,8 @@ class EE_API LuaPattern {
 
 	static Range find( const std::string& string, const std::string& pattern );
 
+	static bool matches( const std::string& string, const std::string& pattern );
+
 	LuaPattern( const std::string& pattern );
 
 	bool matches( const char* stringSearch, int stringStartOffset, LuaPattern::Range* matchList,

@@ -660,7 +660,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 
 	// GLSL
 	add( { "GLSL",
-		   { "%.glsl$", "%.frag$", "%.vert$" },
+		   { "%.glsl$", "%.frag$", "%.vert$", "%.fs$", "%.vs$" },
 		   {
 			   { { "//.-\n" }, "comment" },
 			   { { "/%*", "%*/" }, "comment" },
