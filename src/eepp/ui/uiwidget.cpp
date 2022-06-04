@@ -43,7 +43,7 @@ UIWidget::UIWidget( const std::string& tag ) :
 	mLayoutPositionPolicyWidget( NULL ),
 	mAttributesTransactionCount( 0 ) {
 	mNodeFlags |= NODE_FLAG_WIDGET;
-	mFlags |= UI_TAB_FOCUSABLE;
+	mFlags |= UI_TAB_FOCUSABLE | UI_TOOLTIP_ENABLED;
 
 	createStyle();
 
@@ -310,7 +310,7 @@ Uint32 UIWidget::onMouseOver( const Vector2i& position, const Uint32& flags ) {
 			updateDebugData();
 		}
 
-		if ( mVisible && NULL != mTooltip && !mTooltip->getText().empty() ) {
+		if ( mVisible && NULL != mTooltip && isTooltipEnabled() && !mTooltip->getText().empty() ) {
 			UIThemeManager* themeManager = getUISceneNode()->getUIThemeManager();
 
 			if ( NULL == themeManager )
@@ -323,7 +323,8 @@ Uint32 UIWidget::onMouseOver( const Vector2i& position, const Uint32& flags ) {
 			} else {
 				runAction( Actions::Runnable::New(
 					[&] {
-						if ( getEventDispatcher()->getMouseOverNode() == this ) {
+						if ( isTooltipEnabled() &&
+							 getEventDispatcher()->getMouseOverNode() == this ) {
 							mTooltip->setPixelsPosition( getTooltipPosition() );
 							mTooltip->show();
 						}
@@ -514,6 +515,26 @@ Node* UIWidget::setId( const std::string& id ) {
 
 const Sizef& UIWidget::getSize() const {
 	return UINode::getSize();
+}
+
+bool UIWidget::acceptsDropOfWidget( const UIWidget* ) {
+	return false;
+}
+
+UIWidget* UIWidget::acceptsDropOfWidgetInTree( const UIWidget* widget ) {
+	if ( acceptsDropOfWidget( widget ) ) {
+		return this;
+	} else {
+		Node* parent = getParent();
+		while ( parent ) {
+			if ( parent->isType( UI_TYPE_WIDGET ) &&
+				 parent->asType<UIWidget>()->acceptsDropOfWidget( widget ) ) {
+				return parent->asType<UIWidget>();
+			}
+			parent = parent->getParent();
+		}
+	}
+	return nullptr;
 }
 
 UITooltip* UIWidget::getTooltip() {
@@ -937,6 +958,16 @@ bool UIWidget::hasClass( const std::string& cls ) const {
 bool UIWidget::hasPseudoClass( const std::string& pseudoCls ) const {
 	return std::find( mPseudoClasses.begin(), mPseudoClasses.end(), pseudoCls ) !=
 		   mPseudoClasses.end();
+}
+
+bool UIWidget::isTooltipEnabled() const {
+	return ( mFlags & UI_TOOLTIP_ENABLED ) != 0;
+}
+
+void UIWidget::setTooltipEnabled( bool enabled ) {
+	writeFlag( UI_TOOLTIP_ENABLED, enabled ? 1 : 0 );
+	if ( mTooltip && mTooltip->isVisible() )
+		mTooltip->setVisible( false );
 }
 
 void UIWidget::setElementTag( const std::string& tag ) {

@@ -520,6 +520,17 @@ Sets the amount of drag that is needed to start dragging an element.
 
 ---
 
+### droppable-hovering-color
+
+Sets the foreground color to highlight the current dragged element that its is hovering
+an element that accepts a drop of the dragged element.
+
+* Applicatable to: EE::UI::UITabWidget (TabWidget), EE::UI::UIRoot (:root)
+* Data Type: [color](#color-data-type)
+* Default value: `#FFFFFF20`
+
+---
+
 ### enabled
 
 Sets if the element is enabled

@@ -14,6 +14,7 @@
 #include <eepp/ui/uieventdispatcher.hpp>
 #include <eepp/ui/uiiconthememanager.hpp>
 #include <eepp/ui/uilayout.hpp>
+#include <eepp/ui/uiroot.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uitooltip.hpp>
@@ -51,7 +52,7 @@ UISceneNode::UISceneNode( EE::Window::Window* window ) :
 
 	setEventDispatcher( UIEventDispatcher::New( this ) );
 
-	mRoot = UIWidget::NewWithTag( ":root" );
+	mRoot = UIRoot::New();
 	mRoot->setParent( this )->setPosition( 0, 0 )->setId( "uiscenenode_root_node" );
 	mRoot->enableReportSizeChangeToChilds();
 

@@ -370,6 +370,8 @@ void StyleSheetSpecification::registerDefaultProperties() {
 		.setRelativeTarget( PropertyRelativeTarget::LocalBlockWidth );
 	registerProperty( "splitter-always-show", "true" ).setType( PropertyType::Bool );
 
+	registerProperty( "droppable-hovering-color", "#FFFFFF20" ).setType( PropertyType::Color );
+
 	// Shorthands
 	registerShorthand( "margin", { "margin-top", "margin-right", "margin-bottom", "margin-left" },
 					   "box" );

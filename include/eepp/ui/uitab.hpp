@@ -34,19 +34,21 @@ class EE_API UITab : public UISelectButton {
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
 										   const Uint32& propertyIndex = 0 );
 
-	UITabWidget* getTabWidget();
+	UITabWidget* getTabWidget() const;
 
 	virtual UIWidget* getExtraInnerWidget() const;
 
   protected:
 	friend class UITabWidget;
 
-	Node* mOwnedWidget;
+	Node* mOwnedWidget{ nullptr };
 	String mText;
 	std::string mOwnedName;
-	mutable UIWidget* mCloseButton{nullptr};
-	Float mDragTotalDiff;
-	UITabWidget* mTabWidget;
+	mutable UIWidget* mCloseButton{ nullptr };
+	Float mDragTotalDiff{ 0.f };
+	UITabWidget* mTabWidget{ nullptr };
+	UIWidget* mCurDropWidget{ nullptr };
+	bool mWasToolipEnabled{ true };
 
 	Uint32 onDrag( const Vector2f& position, const Uint32& flags, const Sizef& dragDiff );
 

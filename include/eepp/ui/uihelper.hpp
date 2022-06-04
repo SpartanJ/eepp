@@ -39,7 +39,8 @@ enum UIFlag {
 	UI_OWNS_CHILDS_POSITION = ( 1 << 22 ),
 	UI_DRAG_VERTICAL = ( 1 << 23 ),
 	UI_DRAG_HORIZONTAL = ( 1 << 24 ),
-	UI_TAB_FOCUSABLE = ( 1 << 25 )
+	UI_TAB_FOCUSABLE = ( 1 << 25 ),
+	UI_TOOLTIP_ENABLED = ( 1 << 26 )
 };
 
 enum UINodeType {

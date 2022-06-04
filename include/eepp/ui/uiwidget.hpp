@@ -55,6 +55,10 @@ class EE_API UIWidget : public UINode {
 
 	virtual const Sizef& getSize() const;
 
+	virtual bool acceptsDropOfWidget( const UIWidget* widget );
+
+	UIWidget* acceptsDropOfWidgetInTree( const UIWidget* widget );
+
 	UITooltip* getTooltip();
 
 	void tooltipRemove();
@@ -244,6 +248,10 @@ class EE_API UIWidget : public UINode {
 	UIWidget* getNextTabWidget() const;
 
 	bool hasPseudoClass( const std::string& pseudoCls ) const;
+
+	bool isTooltipEnabled() const;
+
+	void setTooltipEnabled( bool enabled );
 
   protected:
 	friend class UIManager;

@@ -196,6 +196,7 @@ enum class PropertyId : Uint32 {
 	TabAllowSwitchTabsInEmptySpaces = String::hash( "tabbar-allow-switch-tabs-in-empty-spaces" ),
 	SplitterPartition = String::hash( "splitter-partition" ),
 	SplitterAlwaysShow = String::hash( "splitter-always-show" ),
+	DroppableHoveringColor = String::hash( "droppable-hovering-color" )
 };
 
 enum class PropertyType : Uint32 {

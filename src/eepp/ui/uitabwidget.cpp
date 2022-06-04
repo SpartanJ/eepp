@@ -168,6 +168,8 @@ std::string UITabWidget::getPropertyString( const PropertyDefinition* propertyDe
 			return getAllowDragAndDropTabs() ? "true" : "false";
 		case PropertyId::TabAllowSwitchTabsInEmptySpaces:
 			return getAllowSwitchTabsInEmptySpaces() ? "true" : "false";
+		case PropertyId::DroppableHoveringColor:
+			return getDroppableHoveringColor().toHexString();
 		default:
 			return UIWidget::getPropertyString( propertyDef, propertyIndex );
 	}
@@ -245,6 +247,8 @@ bool UITabWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		case PropertyId::TabAllowSwitchTabsInEmptySpaces:
 			setAllowSwitchTabsInEmptySpaces( attribute.asBool() );
+		case PropertyId::DroppableHoveringColor:
+			setDroppableHoveringColor( attribute.asColor() );
 		default:
 			return UIWidget::applyProperty( attribute );
 	}
@@ -729,6 +733,19 @@ void UITabWidget::setAllowSwitchTabsInEmptySpaces( bool allowSwitchTabsInEmptySp
 	mAllowSwitchTabsInEmptySpaces = allowSwitchTabsInEmptySpaces;
 }
 
+bool UITabWidget::acceptsDropOfWidget( const UIWidget* widget ) {
+	return mAllowDragAndDropTabs && widget && UI_TYPE_TAB == widget->getType() &&
+		   !isParentOf( widget ) && widget->asConstType<UITab>()->getTabWidget() != this;
+}
+
+const Color& UITabWidget::getDroppableHoveringColor() const {
+	return mDroppableHoveringColor;
+}
+
+void UITabWidget::setDroppableHoveringColor( const Color& droppableHoveringColor ) {
+	mDroppableHoveringColor = droppableHoveringColor;
+}
+
 void UITabWidget::refreshOwnedWidget( UITab* tab ) {
 	if ( NULL != tab && NULL != tab->getOwnedWidget() ) {
 		tab->getOwnedWidget()->setParent( mNodeContainer );
@@ -849,7 +866,8 @@ Uint32 UITabWidget::onMessage( const NodeMessage* msg ) {
 				return 1;
 			}
 		}
-	} else if ( msg->getMsg() == NodeMessage::MouseUp && mAllowSwitchTabsInEmptySpaces ) {
+	} else if ( msg->getMsg() == NodeMessage::MouseUp && mAllowSwitchTabsInEmptySpaces &&
+				msg->getSender() == mTabBar ) {
 		Uint32 flags = msg->getFlags();
 		if ( flags & EE_BUTTONS_WUWD ) {
 			if ( flags & EE_BUTTON_WUMASK ) {

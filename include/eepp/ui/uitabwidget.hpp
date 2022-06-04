@@ -1,5 +1,5 @@
-﻿#ifndef EE_UICUITABWIDGET_HPP
-#define EE_UICUITABWIDGET_HPP
+﻿#ifndef EE_UI_UITABWIDGET_HPP
+#define EE_UI_UITABWIDGET_HPP
 
 #include <deque>
 #include <eepp/ui/uitab.hpp>
@@ -156,6 +156,12 @@ class EE_API UITabWidget : public UIWidget {
 
 	void setAllowSwitchTabsInEmptySpaces( bool allowSwitchTabsInEmptySpaces );
 
+	virtual bool acceptsDropOfWidget( const UIWidget* widget );
+
+	const Color& getDroppableHoveringColor() const;
+
+	void setDroppableHoveringColor( const Color& droppableHoveringColor );
+
   protected:
 	friend class UITab;
 
@@ -172,6 +178,7 @@ class EE_API UITabWidget : public UIWidget {
 	bool mAllowDragAndDropTabs;
 	bool mAllowSwitchTabsInEmptySpaces;
 	Float mTabVerticalDragResistance;
+	Color mDroppableHoveringColor{ Color::Transparent };
 
 	void onThemeLoaded();
 

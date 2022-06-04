@@ -46,7 +46,7 @@ enum NodeFlags {
 	NODE_FLAG_DRAGGING = ( 1 << 11 ),
 	NODE_FLAG_SKIN_OWNER = ( 1 << 12 ),
 	NODE_FLAG_TOUCH_DRAGGING = ( 1 << 13 ),
-	NODE_FLAG_DISABLED_BY_NODE = ( 1 << 14 ),
+	NODE_FLAG_DROPPABLE_HOVERING = ( 1 << 14 ),
 	NODE_FLAG_OWNED_BY_NODE = ( 1 << 15 ),
 	NODE_FLAG_REVERSE_DRAW = ( 1 << 16 ),
 	NODE_FLAG_FRAME_BUFFER = ( 1 << 17 ),
@@ -209,7 +209,7 @@ class EE_API Node : public Transformable {
 
 	const Rectf& getWorldBounds();
 
-	bool isParentOf( Node* node ) const;
+	bool isParentOf( const Node* node ) const;
 
 	void sendEvent( const Event* Event );
 
@@ -237,6 +237,10 @@ class EE_API Node : public Transformable {
 	}
 
 	template <typename T> T* asType() { return reinterpret_cast<T*>( this ); }
+
+	template <typename T> const T* asConstType() const {
+		return reinterpret_cast<const T*>( this );
+	}
 
 	Node* findByType( const Uint32& type ) const;
 

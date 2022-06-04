@@ -261,7 +261,7 @@ Node* Node::setParent( Node* parent ) {
 	return this;
 }
 
-bool Node::isParentOf( Node* node ) const {
+bool Node::isParentOf( const Node* node ) const {
 	eeASSERT( NULL != node );
 	Node* tParent = node->getParent();
 	while ( NULL != tParent ) {
@@ -472,7 +472,7 @@ void Node::onSizeChange() {
 
 Rectf Node::getScreenBounds() {
 	return Rectf( Vector2f( mScreenPosi.x, mScreenPosi.y ),
-				  Sizef( ( Float )(int)mSize.getWidth(), ( Float )(int)mSize.getHeight() ) );
+				  Sizef( (Float)(int)mSize.getWidth(), (Float)(int)mSize.getHeight() ) );
 }
 
 Rectf Node::getLocalBounds() const {
@@ -483,8 +483,8 @@ const Uint32& Node::getNodeFlags() const {
 	return mNodeFlags;
 }
 
-void Node::setNodeFlags( const Uint32& Flags ) {
-	mNodeFlags = Flags;
+void Node::setNodeFlags( const Uint32& flags ) {
+	mNodeFlags = flags;
 }
 
 void Node::drawChilds() {

@@ -2,6 +2,7 @@
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitab.hpp>
 #include <eepp/ui/uitabwidget.hpp>
+#include <eepp/ui/uitooltip.hpp>
 
 namespace EE { namespace UI {
 
@@ -37,7 +38,7 @@ bool UITab::isType( const Uint32& type ) const {
 	return UITab::getType() == type ? true : UISelectButton::isType( type );
 }
 
-UITabWidget* UITab::getTabWidget() {
+UITabWidget* UITab::getTabWidget() const {
 	if ( NULL != getParent() && NULL != getParent()->getParent() &&
 		 getParent()->getParent()->isType( UI_TYPE_TABWIDGET ) ) {
 		return getParent()->getParent()->asType<UITabWidget>();
@@ -67,7 +68,7 @@ Uint32 UITab::onDrag( const Vector2f& pos, const Uint32&, const Sizef& dragDiff 
 			tabW->swapTabs( tab, this );
 	}
 	if ( tabW->getAllowDragAndDropTabs() && !( mFlags & UI_DRAG_VERTICAL ) ) {
-		mDragTotalDiff += ( Float )( mDragPoint.y - pos.y );
+		mDragTotalDiff += (Float)( mDragPoint.y - pos.y );
 		if ( eeabs( mDragTotalDiff ) >= tabW->getTabVerticalDragResistance() ) {
 			setFlags( UI_DRAG_VERTICAL );
 			setPixelsPosition( mPosition.x, mPosition.y - mDragTotalDiff );
@@ -79,6 +80,25 @@ Uint32 UITab::onDrag( const Vector2f& pos, const Uint32&, const Sizef& dragDiff 
 			setPixelsPosition( pos - posDiff );
 		}
 	}
+
+	setEnabled( false );
+	Node* overFind = getUISceneNode()->overFind( pos );
+	setEnabled( true );
+
+	if ( overFind && overFind->isType( UI_TYPE_WIDGET ) ) {
+		UIWidget* widget = overFind->asType<UIWidget>()->acceptsDropOfWidgetInTree( this );
+
+		if ( mCurDropWidget ) {
+			mCurDropWidget->writeNodeFlag( NODE_FLAG_DROPPABLE_HOVERING, 0 );
+			mCurDropWidget = nullptr;
+		}
+
+		if ( widget ) {
+			mCurDropWidget = widget;
+			mCurDropWidget->writeNodeFlag( NODE_FLAG_DROPPABLE_HOVERING, 1 );
+		}
+	}
+
 	return 1;
 }
 
@@ -86,6 +106,9 @@ Uint32 UITab::onDragStart( const Vector2i& position, const Uint32& flags ) {
 	UITabWidget* tabW = getTabWidget();
 	mTabWidget = NULL;
 	mDragTotalDiff = 0;
+	mWasToolipEnabled = isTooltipEnabled();
+	if ( mWasToolipEnabled )
+		setTooltipEnabled( false );
 	unsetFlags( UI_DRAG_VERTICAL );
 	if ( tabW ) {
 		for ( size_t i = 0; i < tabW->getTabCount(); i++ ) {
@@ -99,10 +122,16 @@ Uint32 UITab::onDragStart( const Vector2i& position, const Uint32& flags ) {
 }
 
 Uint32 UITab::onDragStop( const Vector2i& position, const Uint32& flags ) {
+	if ( mWasToolipEnabled )
+		setTooltipEnabled( true );
 	UITabWidget* tabW = getTabWidget();
 	if ( mTabWidget ) {
 		setParent( tabW->getTabBar() );
 		mTabWidget = NULL;
+	}
+	if ( mCurDropWidget ) {
+		mCurDropWidget->writeNodeFlag( NODE_FLAG_DROPPABLE_HOVERING, 0 );
+		mCurDropWidget = nullptr;
 	}
 	if ( tabW ) {
 		for ( size_t i = 0; i < tabW->getTabCount(); i++ ) {

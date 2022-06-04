@@ -324,6 +324,8 @@ class EE_API UINode : public Node {
 
 	virtual void onSceneChange();
 
+	virtual void drawDroppableHovering();
+
 	void checkClose();
 
 	virtual void onWidgetFocusLoss();

@@ -38,6 +38,7 @@
 	--menu-font-disabled: #6e7275;
 	--win-icon: #dbdbdd;
 	--floating-icon: #eff0f188;
+	droppable-hovering-color: #FFFFFF20;
 }
 
 pushbutton::icon,
@@ -953,6 +954,15 @@ ScrollBarMini::hbutton:hover {
 	background-color: var(--back);
 }
 
+tab::icon {
+	tint: var(--icon);
+}
+
+tab:selected > tab::icon,
+tab:not(:selected):hover > tab::icon {
+	tint: var(--menu-font-active);
+}
+
 @media (prefers-color-scheme: light) {
 
 :root {
@@ -994,6 +1004,7 @@ ScrollBarMini::hbutton:hover {
 	--menu-font-disabled: #a8a9aa;
 	--win-icon: #232627;
 	--floating-icon: #cbcdcd;
+	droppable-hovering-color: #00000020;
 }
 
 Menu::Item:selected,
@@ -1014,11 +1025,7 @@ Menu::item:hover > Menu::RadioButton::icon,
 PushButton:pressed > PushButton::icon,
 SelectButton:pressed > SelectButton::icon,
 SelectButton:selected > SelectButton::icon,
-SelectButton:selectedpressed > SelectButton::icon {
-	color: var(--menu-font-active);
-	tint: var(--menu-font-active);
-}
-
+SelectButton:selectedpressed > SelectButton::icon,
 tableview::row:selected tableview::cell::text,
 treeview::row:selected treeview::cell::text,
 listview::row:selected listview::cell::text,
@@ -1057,6 +1064,15 @@ Tab:not(:selected):hover {
 Tooltip {
 	background-color: var(--font)!important;
 	color: var(--back)!important;
+}
+
+tab::icon,
+tab:selected > tab::icon, {
+	tint: var(--icon);
+}
+
+tab:not(:selected):hover > tab::icon {
+	tint: var(--menu-font-active);
 }
 
 }
