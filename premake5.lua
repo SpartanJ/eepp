@@ -8,6 +8,7 @@ newoption { trigger = "with-mojoal", description = "Compile with mojoAL as OpenA
 newoption { trigger = "use-frameworks", description = "In macOS it will try to link the external libraries from its frameworks. For example, instead of linking against SDL2 it will link against SDL2.framework." }
 newoption { trigger = "windows-vc-build", description = "This is used to build the framework in Visual Studio downloading its external dependencies and making them available to the VS project without having to install them manually." }
 newoption { trigger = "with-emscripten-pthreads", description = "Enables emscripten build to use posix threads" }
+newoption { trigger = "with-mold-linker", description = "Tries to use the mold linker instead of the default linker of the toolchain" }
 newoption {
 	trigger = "with-backend",
 	description = "Select the backend to use for window and input handling.\n\t\t\tIf no backend is selected or if the selected is not installed the script will search for a backend present in the system, and will use it.",
@@ -102,7 +103,7 @@ function download_and_extract_sdl(sdl_url)
 	print("Downloading: " .. sdl_url)
 	local dest_dir = "src/thirdparty/"
 	local local_file = dest_dir .. remote_sdl2_version .. ".zip"
-	local result_str, response_code = http.download(sdl_url, local_file)
+	local _, response_code = http.download(sdl_url, local_file)
 	if response_code == 200 then
 		print("Downloaded successfully to: " .. local_file)
 		zip.extract(local_file, dest_dir)
@@ -111,6 +112,22 @@ function download_and_extract_sdl(sdl_url)
 		print("Failed to download:  " .. sdl_url)
 		exit(1)
 	end
+end
+
+function version_to_number( version )
+	versionpart = 0
+	versionnum = 0
+	versionmod = 1000
+	for str in string.gmatch(version, "[^%.]+") do
+		versionnum = versionnum + tonumber(str) * versionmod
+		versionpart = versionpart + 1
+		if versionpart == 1 then
+			versionmod = 100
+		elseif versionpart == 2 then
+			versionmod = 10
+		end
+	end
+	return versionnum
 end
 
 function download_and_extract_dependencies()
@@ -207,6 +224,20 @@ function build_link_configuration( package_name, use_ee_icon )
 			defines { "EE_STATIC" }
 			add_static_links()
 			links { link_list }
+		end
+	end
+
+	if _OPTIONS["with-mold-linker"] then
+		if _OPTIONS.platform == "clang" or _OPTIONS.platform == "clang-analyzer" then
+			linkoptions { "-fuse-ld=mold" }
+		else
+			gccversion = os.outputof( "gcc -dumpfullversion" )
+			gccversionnumber = version_to_number( gccversion )
+			if gccversionnumber >= 12110 then
+				linkoptions { "-fuse-ld=mold" }
+			else
+				linkoptions { "-B/usr/bin/mold" }
+			end
 		end
 	end
 

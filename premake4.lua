@@ -160,6 +160,7 @@ newoption { trigger = "with-gles1", description = "Compile with GLES1 support" }
 newoption { trigger = "with-mojoal", description = "Compile with mojoAL as OpenAL implementation instead of using openal-soft (requires SDL2 backend)" }
 newoption { trigger = "use-frameworks", description = "In macOS it will try to link the external libraries from its frameworks. For example, instead of linking against SDL2 it will link agains SDL2.framework." }
 newoption { trigger = "with-emscripten-pthreads", description = "Enables emscripten build to use posix threads" }
+newoption { trigger = "with-mold-linker", description = "Tries to use the mold linker instead of the default linker of the toolchain" }
 newoption {
 	trigger = "with-backend",
 	description = "Select the backend to use for window and input handling.\n\t\t\tIf no backend is selected or if the selected is not installed the script will search for a backend present in the system, and will use it.",
@@ -387,6 +388,29 @@ function fix_shared_lib_linking_path( package_name, libname )
 	end
 end
 
+function version_to_number( version )
+	versionpart = 0
+	versionnum = 0
+	versionmod = 1000
+	for str in string.gmatch(version, "[^%.]+") do
+		versionnum = versionnum + tonumber(str) * versionmod
+		versionpart = versionpart + 1
+		if versionpart == 1 then
+			versionmod = 100
+		elseif versionpart == 2 then
+			versionmod = 10
+		end
+	end
+	return versionnum
+end
+
+function popen( executable_path )
+	local handle = io.popen(executable_path)
+	local result = handle:read("*a")
+	handle:close()
+	return result
+end
+
 function build_link_configuration( package_name, use_ee_icon )
 	includedirs { "include" }
 
@@ -441,6 +465,20 @@ function build_link_configuration( package_name, use_ee_icon )
 
 		if _OPTIONS.platform == "ios-cross-x86_64" then
 			extension = ".x86_64.ios"
+		end
+	end
+
+	if _OPTIONS["with-mold-linker"] then
+		if _OPTIONS.platform == "clang" or _OPTIONS.platform == "clang-analyzer" then
+			linkoptions { "-fuse-ld=mold" }
+		else
+			gccversion = popen( "gcc -dumpfullversion" )
+			gccversionnumber = version_to_number( gccversion )
+			if gccversionnumber >= 12110 then
+				linkoptions { "-fuse-ld=mold" }
+			else
+				linkoptions { "-B/usr/bin/mold" }
+			end
 		end
 	end
 
