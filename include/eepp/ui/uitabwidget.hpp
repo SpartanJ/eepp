@@ -177,6 +177,7 @@ class EE_API UITabWidget : public UIWidget {
 	bool mAllowRearrangeTabs;
 	bool mAllowDragAndDropTabs;
 	bool mAllowSwitchTabsInEmptySpaces;
+	bool mDroppableHoveringColorWasSet{ false };
 	Float mTabVerticalDragResistance;
 	Color mDroppableHoveringColor{ Color::Transparent };
 

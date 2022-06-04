@@ -169,7 +169,9 @@ std::string UITabWidget::getPropertyString( const PropertyDefinition* propertyDe
 		case PropertyId::TabAllowSwitchTabsInEmptySpaces:
 			return getAllowSwitchTabsInEmptySpaces() ? "true" : "false";
 		case PropertyId::DroppableHoveringColor:
-			return getDroppableHoveringColor().toHexString();
+			return !mDroppableHoveringColorWasSet
+					   ? UIWidget::getPropertyString( propertyDef, propertyIndex )
+					   : getDroppableHoveringColor().toHexString();
 		default:
 			return UIWidget::getPropertyString( propertyDef, propertyIndex );
 	}
@@ -744,6 +746,7 @@ const Color& UITabWidget::getDroppableHoveringColor() const {
 
 void UITabWidget::setDroppableHoveringColor( const Color& droppableHoveringColor ) {
 	mDroppableHoveringColor = droppableHoveringColor;
+	mDroppableHoveringColorWasSet = true;
 }
 
 void UITabWidget::refreshOwnedWidget( UITab* tab ) {

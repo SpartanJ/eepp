@@ -6,6 +6,8 @@ UIRoot* UIRoot::New() {
 	return eeNew( UIRoot, () );
 }
 
+UIRoot::UIRoot() : UIWidget( ":root" ) {}
+
 std::string UIRoot::getPropertyString( const PropertyDefinition* propertyDef,
 									   const Uint32& propertyIndex ) {
 	if ( NULL == propertyDef )
