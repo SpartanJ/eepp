@@ -8,3 +8,4 @@
 ../../include/eepp/ui/css
 ../../src/eepp/ui/css
 ../../src/thirdparty/mbedtls/include
+../../src/thirdparty/freetype2/include
