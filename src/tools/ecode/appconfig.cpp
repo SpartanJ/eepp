@@ -129,7 +129,11 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	window.size = win->getLastWindowedSize();
 	window.maximized = win->isMaximized();
 	window.displayIndex = win->getCurrentDisplayIndex();
-	window.position = win->getPosition() - win->getBorderSize().getSize();
+	window.position = win->getPosition();
+	if ( window.position.x < 0 )
+		window.position.x = 0;
+	if ( window.position.y < 0 )
+		window.position.y = 0;
 	ini.setValue( "editor", "colorscheme", editor.colorScheme );
 	iniState.setValueI( "window", "width", window.size.getWidth() );
 	iniState.setValueI( "window", "height", window.size.getHeight() );

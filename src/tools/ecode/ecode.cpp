@@ -2792,8 +2792,9 @@ void App::init( std::string file, const Float& pidelDensity, const std::string& 
 		Log::info( "Window creation took: %.2fms", globalClock.getElapsedTime().asMilliseconds() );
 
 		if ( mConfig.window.position != Vector2i( -1, -1 ) &&
-			 mConfig.window.displayIndex < displayManager->getDisplayCount() )
+			 mConfig.window.displayIndex < displayManager->getDisplayCount() ) {
 			mWindow->setPosition( mConfig.window.position.x, mConfig.window.position.y );
+		}
 
 		loadKeybindings();
 
