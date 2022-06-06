@@ -13,6 +13,20 @@ namespace EE { namespace UI { namespace Doc {
 
 #define MAX_TOKEN_SIZE ( 512 )
 
+static int isInMultiByteCodePoint( const char* text, const size_t& textSize, const size_t& pos ) {
+	int nextCodePoint = 1;
+	// current char is a multybyte codepoint
+	if ( ( text[pos] & 0xC0 ) == 0x80 ) {
+		while ( pos + nextCodePoint < textSize ) {
+			// search the start of the next codepoint
+			if ( ( text[pos + nextCodePoint] & 0xC0 ) != 0x80 )
+				return nextCodePoint;
+			++nextCodePoint;
+		}
+	}
+	return 0;
+}
+
 static void pushToken( std::vector<SyntaxToken>& tokens, const std::string& type,
 					   const std::string& text ) {
 	if ( !tokens.empty() && ( tokens[tokens.size() - 1].type == type ) ) {
@@ -21,12 +35,19 @@ static void pushToken( std::vector<SyntaxToken>& tokens, const std::string& type
 	} else {
 		if ( text.size() > MAX_TOKEN_SIZE ) {
 			size_t textSize = text.size();
-			size_t steps = textSize / MAX_TOKEN_SIZE + 1;
+			size_t pos = 0;
+			size_t chunkSize = 0;
+			int multiByteCodePointPos = 0;
 
-			for ( size_t i = 0; i < steps; ++i ) {
-				size_t strSize =
-					( i == steps - 1 ) ? textSize - MAX_TOKEN_SIZE * i : MAX_TOKEN_SIZE;
-				tokens.push_back( { type, text.substr( i * MAX_TOKEN_SIZE, strSize ) } );
+			while ( textSize > 0 ) {
+				chunkSize = textSize > MAX_TOKEN_SIZE ? MAX_TOKEN_SIZE : textSize;
+				if ( ( multiByteCodePointPos = isInMultiByteCodePoint( text.c_str(), text.size(),
+																	   pos + chunkSize ) ) > 0 ) {
+					chunkSize = eemin( textSize, chunkSize + multiByteCodePointPos );
+				}
+				tokens.push_back( { type, text.substr( pos, chunkSize ) } );
+				textSize -= chunkSize;
+				pos += chunkSize;
 			}
 		} else {
 			tokens.push_back( { type, text } );
