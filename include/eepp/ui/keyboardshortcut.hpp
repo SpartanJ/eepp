@@ -77,4 +77,11 @@ class EE_API KeyBindings {
 
 }} // namespace EE::UI
 
+template<>
+struct std::hash<EE::UI::KeyBindings::Shortcut> {
+	std::size_t operator()(EE::UI::KeyBindings::Shortcut const& s) const noexcept {
+		return s.toUint64();
+	}
+};
+
 #endif // EE_UI_KEYBOARDSHORTCUT_HPP
