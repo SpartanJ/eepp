@@ -51,3 +51,5 @@ eepp.geany
 /projects/osx/ecode/ecode.app
 /bin/assets/icon/ee.iconset
 ecode.dmg
+/projects/linux/ecode/ecode.app
+*.AppImage

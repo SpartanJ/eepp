@@ -2760,6 +2760,12 @@ void App::init( std::string file, const Float& pidelDensity, const std::string& 
 		FileSystem::dirAddSlashAtEnd( mResPath );
 		mIsBundledApp = true;
 	}
+#elif EE_PLATFORM == EE_PLATFORM_LINUX
+	if ( String::contains( mResPath, ".mount_" ) ) {
+		mResPath = FileSystem::getCurrentWorkingDirectory();
+		FileSystem::dirAddSlashAtEnd( mResPath );
+		mIsBundledApp = true;
+	}
 #endif
 	mResPath += "assets";
 	FileSystem::dirAddSlashAtEnd( mResPath );

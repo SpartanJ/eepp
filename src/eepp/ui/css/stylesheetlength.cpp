@@ -230,9 +230,12 @@ StyleSheetLength StyleSheetLength::fromString( std::string str, const Float& def
 }
 
 std::string StyleSheetLength::toString() const {
+	std::string res;
 	if ( (Int64)mValue == mValue )
-		return String::format( "%lld%s", (Int64)mValue, unitToString( mUnit ).c_str() );
-	return String::format( "%.2f%s", mValue, unitToString( mUnit ).c_str() );
+		res = String::format( "%lld%s", (Int64)mValue, unitToString( mUnit ).c_str() );
+	res = String::format( "%.2f%s", mValue, unitToString( mUnit ).c_str() );
+	String::replace( res, ",", "." );
+	return res;
 }
 
 }}} // namespace EE::UI::CSS
