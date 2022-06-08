@@ -2767,6 +2767,8 @@ void App::init( std::string file, const Float& pidelDensity, const std::string& 
 		FileSystem::dirAddSlashAtEnd( mResPath );
 		mIsBundledApp = true;
 	}
+#elif EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+	mResPath += "ecode/";
 #endif
 	mResPath += "assets";
 	FileSystem::dirAddSlashAtEnd( mResPath );

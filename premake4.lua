@@ -451,7 +451,11 @@ function build_link_configuration( package_name, use_ee_icon )
 					package_name ~= "eephysics" and
 					package_name ~= "eevbo-fbo-batch"
 			) then
-				linkoptions { "--preload-file assets/" }
+				if package_name == "ecode" then
+					linkoptions { "--preload-file " .. package_name .. "/assets/" }
+				else
+					linkoptions { "--preload-file assets/" }
+				end
 			end
 		end
 
