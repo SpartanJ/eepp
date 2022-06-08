@@ -2734,10 +2734,11 @@ FontTrueType* App::loadFont( const std::string& name, std::string fontPath,
 							 const std::string& fallback ) {
 	if ( FileSystem::isRelativePath( fontPath ) )
 		fontPath = mResPath + fontPath;
-	if ( fontPath.empty() || !FileSystem::fileExists( fontPath ) )
+	if ( fontPath.empty() || !FileSystem::fileExists( fontPath ) ) {
 		fontPath = fallback;
-	if ( FileSystem::isRelativePath( fontPath ) )
-		fontPath = mResPath + fontPath;
+		if ( FileSystem::isRelativePath( fontPath ) )
+			fontPath = mResPath + fontPath;
+	}
 	return FontTrueType::New( name, fontPath );
 }
 
