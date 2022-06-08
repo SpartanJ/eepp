@@ -3247,6 +3247,8 @@ void App::init( std::string file, const Float& pidelDensity, const std::string& 
 
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 std::vector<std::string> parseEmscriptenArgs( int argc, char* argv[] ) {
+	if ( argc < 1 )
+		return {};
 	std::vector<std::string> args;
 	args.emplace_back( argv[0] );
 	for ( int i = 1; i < argc; i++ ) {

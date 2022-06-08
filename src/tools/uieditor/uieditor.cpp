@@ -415,8 +415,7 @@ void resizeWindowToLayout() {
 					   : 1.f;
 	Float scale = scaleW < scaleH ? scaleW : scaleH;
 
-	window->setSize( ( Uint32 )( size.getWidth() * scale ),
-					 ( Uint32 )( size.getHeight() * scale ) );
+	window->setSize( (Uint32)( size.getWidth() * scale ), (Uint32)( size.getHeight() * scale ) );
 	window->centerToDisplay();
 }
 
@@ -929,25 +928,49 @@ void setUserDefaultTheme() {
 	uiSceneNode->combineStyleSheet( theme->getStyleSheet() );
 }
 
+#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+std::vector<std::string> parseEmscriptenArgs( int argc, char* argv[] ) {
+	if ( argc < 1 )
+		return {};
+	std::vector<std::string> args;
+	args.emplace_back( argv[0] );
+	for ( int i = 1; i < argc; i++ ) {
+		Log::debug( "argv %d %s", i, argv[i] );
+		auto split = String::split( std::string( argv[i] ), '=' );
+		if ( split.size() == 2 ) {
+			std::string arg( split[0] + "=" + URI::decode( split[1] ) );
+			args.emplace_back( !String::startsWith( arg, "--" ) ? ( std::string( "--" ) + arg )
+																: arg );
+		}
+	}
+	return args;
+}
+#endif
+
 EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	args::ArgumentParser parser( "eepp UIEditor" );
-	args::HelpFlag help( parser, "help", "Display this help menu", {'h', "help"} );
-	args::ValueFlag<std::string> xmlFile( parser, "xml", "Loads XML file", {'x', "xml"} );
-	args::ValueFlag<std::string> cssFile( parser, "css", "Loads CSS file", {'c', "css"} );
+	args::HelpFlag help( parser, "help", "Display this help menu", { 'h', "help" } );
+	args::ValueFlag<std::string> xmlFile( parser, "xml", "Loads XML file", { 'x', "xml" } );
+	args::ValueFlag<std::string> cssFile( parser, "css", "Loads CSS file", { 'c', "css" } );
 	args::ValueFlag<std::string> projectFile( parser, "project", "Loads project file",
-											  {'p', "project"} );
-	args::ValueFlag<Float> pixelDenstiyConf(
-		parser, "pixel-density", "Set default application pixel density", {'d', "pixel-density"} );
+											  { 'p', "project" } );
+	args::ValueFlag<Float> pixelDenstiyConf( parser, "pixel-density",
+											 "Set default application pixel density",
+											 { 'd', "pixel-density" } );
 	args::Flag useAppTheme( parser, "use-app-theme",
 							"Use the default application theme in the editor.",
-							{'u', "use-app-theme"} );
+							{ 'u', "use-app-theme" } );
 	args::Flag preserveContainerSizeFlag( parser, "preserve-container-size",
 										  "Using this flag the application will respect the window "
 										  "size set in the project and won't scale the window.",
-										  {'s', "preserve-container-size"} );
+										  { 's', "preserve-container-size" } );
 
 	try {
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 		parser.ParseCLI( argc, argv );
+#else
+		parser.ParseCLI( parseEmscriptenArgs( argc, argv ) );
+#endif
 	} catch ( const args::Help& ) {
 		std::cout << parser;
 		return EXIT_SUCCESS;
