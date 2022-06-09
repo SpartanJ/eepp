@@ -18,7 +18,7 @@ ParticleSystem::ParticleSystem() :
 	mPLeft( 0 ),
 	mLoops( 0 ),
 	mEffect( ParticleEffect::Nofx ),
-	mBlend( BlendAdd ),
+	mBlend( BlendMode::Add() ),
 	mColor(),
 	mProgression( 0 ),
 	mDirection( 0 ),

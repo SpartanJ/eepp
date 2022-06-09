@@ -942,7 +942,7 @@ void Texture::draw( const Vector2f& position ) {
 }
 
 void Texture::draw( const Vector2f& position, const Sizef& size ) {
-	drawFast( position.x, position.y, 0, Vector2f::One, mColor, BlendAlpha, size.x, size.y );
+	drawFast( position.x, position.y, 0, Vector2f::One, mColor, BlendMode::Alpha(), size.x, size.y );
 }
 
 }} // namespace EE::Graphics

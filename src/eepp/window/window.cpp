@@ -204,7 +204,7 @@ void Window::setup2D( const bool& KeepView ) {
 		setView( mDefaultView, true );
 	}
 
-	BlendMode::setMode( BlendAlpha, true );
+	BlendMode::setMode( BlendMode::Alpha(), true );
 
 	if ( GLv_3CP != GLi->version() && GLv_3 != GLi->version() && GLv_ES2 != GLi->version() ) {
 #if !defined( EE_GLES2 ) || defined( EE_GLES_BOTH )

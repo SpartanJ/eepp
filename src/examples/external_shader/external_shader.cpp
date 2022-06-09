@@ -21,7 +21,7 @@ Vector3ff* vertices = eeNewArray( Vector3ff, ParticlesNum );
 Vector3ff* velocities = eeNewArray( Vector3ff, ParticlesNum );
 ColorAf* colors = eeNewArray( ColorAf, ParticlesNum );
 
-void videoResize( EE::Window::Window* w ) {
+void videoResize( EE::Window::Window* ) {
 	/// Video Resize event will re-setup the 2D projection and states, so we must rebuild them.
 	aspectRatio = (Float)win->getWidth() / (Float)win->getHeight();
 	tw = (Float)win->getWidth() / 2;
@@ -57,8 +57,8 @@ void videoResize( EE::Window::Window* w ) {
 	GLi->enableClientState( GL_VERTEX_ARRAY );
 	GLi->enableClientState( GL_COLOR_ARRAY );
 
-	/// Reset the default blend func ( by default eepp use BlendAlpha )
-	BlendMode::setMode( BlendAdd );
+	/// Reset the default blend func ( by default eepp use BlendMode::Alpha() )
+	BlendMode::setMode( BlendMode::Add() );
 
 	/// Set the line width
 	GLi->lineWidth( 2 );

@@ -141,10 +141,15 @@ cpSpaceNew(void)
 	return cpSpaceInit(cpSpaceAlloc());
 }
 
+void cpBodyActivate2(cpBody *body, void *data)
+{
+	cpBodyActivate(body);
+}
+
 void
 cpSpaceDestroy(cpSpace *space)
 {
-	cpSpaceEachBody(space, (cpSpaceBodyIteratorFunc)cpBodyActivate, NULL);
+	cpSpaceEachBody(space, (cpSpaceBodyIteratorFunc)cpBodyActivate2, NULL);
 	
 	cpSpatialIndexFree(space->staticShapes);
 	cpSpatialIndexFree(space->activeShapes);

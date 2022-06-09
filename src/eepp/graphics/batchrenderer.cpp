@@ -14,40 +14,12 @@ BatchRenderer* BatchRenderer::New( const unsigned int& Prealloc ) {
 	return eeNew( BatchRenderer, ( Prealloc ) );
 }
 
-BatchRenderer::BatchRenderer() :
-	mVertex( NULL ),
-	mVertexSize( 0 ),
-	mTVertex( NULL ),
-	mNumVertex( 0 ),
-	mTexture( NULL ),
-	mBlend( BlendAlpha ),
-	mCurrentMode( PRIMITIVE_QUADS ),
-	mRotation( 0.0f ),
-	mScale( 1.0f, 1.0f ),
-	mPosition( 0.0f, 0.0f ),
-	mCenter( 0.0f, 0.0f ),
-	mCoordinateType( Texture::CoordinateType::Normalized ),
-	mForceRendering( false ),
-	mForceBlendMode( true ) {
+BatchRenderer::BatchRenderer() {
 	allocVertexs( 4096 );
 	init();
 }
 
-BatchRenderer::BatchRenderer( const unsigned int& Prealloc ) :
-	mVertex( NULL ),
-	mVertexSize( 0 ),
-	mTVertex( NULL ),
-	mNumVertex( 0 ),
-	mTexture( NULL ),
-	mBlend( BlendAlpha ),
-	mCurrentMode( PRIMITIVE_QUADS ),
-	mRotation( 0.0f ),
-	mScale( 1.0f, 1.0f ),
-	mPosition( 0.0f, 0.0f ),
-	mCenter( 0.0f, 0.0f ),
-	mCoordinateType( Texture::CoordinateType::Normalized ),
-	mForceRendering( false ),
-	mForceBlendMode( true ) {
+BatchRenderer::BatchRenderer( const unsigned int& Prealloc ) {
 	allocVertexs( Prealloc );
 	init();
 }
@@ -84,11 +56,12 @@ void BatchRenderer::setTexture( const Texture* texture, Texture::CoordinateType 
 	mCoordinateType = coordinateType;
 }
 
-void BatchRenderer::setBlendMode( const BlendMode& Blend ) {
-	if ( Blend != mBlend )
+void BatchRenderer::setBlendMode( const BlendMode& blend ) {
+	if ( blend != mBlend )
 		flush();
 
-	mBlend = Blend;
+	if ( mBlend != blend )
+		mBlend = blend;
 }
 
 void BatchRenderer::addVertexs( const unsigned int& num ) {

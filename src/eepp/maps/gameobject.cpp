@@ -122,7 +122,8 @@ RenderMode GameObject::getRenderModeFromFlags() {
 }
 
 BlendMode GameObject::getBlendModeFromFlags() {
-	return isBlendAdd() ? BlendMode( BlendMode::DstColor, BlendMode::One ) : BlendAlpha;
+	return isBlendAdd() ? BlendMode( BlendMode::Factor::DstColor, BlendMode::Factor::One )
+						: BlendMode::Alpha();
 }
 
 MapLayer* GameObject::getLayer() const {

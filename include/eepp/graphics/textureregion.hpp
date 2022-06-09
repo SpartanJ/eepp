@@ -92,19 +92,19 @@ class EE_API TextureRegion : public DrawableResource {
 
 	void draw( const Float& X, const Float& Y, const Color& color = Color::White,
 			   const Float& Angle = 0.f, const Vector2f& Scale = Vector2f::One,
-			   const BlendMode& Blend = BlendAlpha, const RenderMode& Effect = RENDER_NORMAL,
+			   const BlendMode& Blend = BlendMode::Alpha(), const RenderMode& Effect = RENDER_NORMAL,
 			   OriginPoint Center = OriginPoint( OriginPoint::OriginCenter ) );
 
 	void draw( const Float& X, const Float& Y, const Float& Angle, const Vector2f& Scale,
 			   const Color& Color0 = Color::White, const Color& Color1 = Color::White,
 			   const Color& Color2 = Color::White, const Color& Color3 = Color::White,
-			   const BlendMode& Blend = BlendAlpha, const RenderMode& Effect = RENDER_NORMAL,
+			   const BlendMode& Blend = BlendMode::Alpha(), const RenderMode& Effect = RENDER_NORMAL,
 			   OriginPoint Center = OriginPoint( OriginPoint::OriginCenter ) );
 
 	void draw( const Quad2f Q, const Vector2f& offset = Vector2f(), const Float& Angle = 0.f,
 			   const Vector2f& Scale = Vector2f::One, const Color& Color0 = Color::White,
 			   const Color& Color1 = Color::White, const Color& Color2 = Color::White,
-			   const Color& Color3 = Color::White, const BlendMode& Blend = BlendAlpha );
+			   const Color& Color3 = Color::White, const BlendMode& Blend = BlendMode::Alpha() );
 
 	virtual void draw();
 

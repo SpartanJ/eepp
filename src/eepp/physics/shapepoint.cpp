@@ -44,8 +44,6 @@ void ShapePoint::draw( Space* space ) {
 #ifdef PHYSICS_RENDERER_ENABLED
 	BatchRenderer* BR = GlobalBatchRenderer::instance();
 
-	BR->setPointSize( mDrawRadius );
-
 	BR->setTexture( NULL );
 	BR->pointsBegin();
 	BR->pointSetColor( colorForShape( mShape, space->getSpace() ) );
@@ -53,6 +51,7 @@ void ShapePoint::draw( Space* space ) {
 	cpCircleShape* cs = (cpCircleShape*)mShape;
 
 	BR->batchPoint( cs->CP_PRIVATE( tc ).x, cs->CP_PRIVATE( tc ).y );
+	BR->setPointSize( mDrawRadius );
 
 	BR->drawOpt();
 #endif

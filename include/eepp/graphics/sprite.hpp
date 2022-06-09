@@ -356,27 +356,28 @@ class EE_API Sprite : public Drawable {
 		SPRITE_FLAG_EVENTS_ENABLED = ( 1 << 4 )
 	};
 
-	Uint32 mFlags;
-	OriginPoint mOrigin;
-	Float mRotation;
-	Vector2f mScale;
-	Float mAnimSpeed;
+	Uint32 mFlags{ SPRITE_FLAG_AUTO_ANIM | SPRITE_FLAG_EVENTS_ENABLED };
+	OriginPoint mOrigin{ OriginPoint::OriginCenter };
+	Float mRotation{ 0.f };
+	Vector2f mScale{ 1.f, 1.f };
+	Float mAnimSpeed{ 16.f };
 
-	Color* mVertexColors;
+	Color* mVertexColors{ nullptr };
 
-	int mRepetitions; //!< Number of repetions of the animation, default -1 that equals to loop.
+	int mRepetitions{
+		-1 }; //!< Number of repetions of the animation, default -1 that equals to loop.
 
-	BlendMode mBlend;
-	RenderMode mEffect;
+	BlendMode mBlend{ BlendMode::Alpha() };
+	RenderMode mEffect{ RENDER_NORMAL };
 
-	unsigned int mCurrentFrame;
-	Float mfCurrentFrame;
-	unsigned int mCurrentSubFrame;
-	unsigned int mSubFrames;
-	unsigned int mAnimTo;
+	unsigned int mCurrentFrame{ 0 };
+	Float mfCurrentFrame{ 0 };
+	unsigned int mCurrentSubFrame{ 0 };
+	unsigned int mSubFrames{ 1 };
+	unsigned int mAnimTo{ 0 };
 
 	SpriteCallback mCb;
-	void* mUserData;
+	void* mUserData{ nullptr };
 
 	class Frame {
 	  public:

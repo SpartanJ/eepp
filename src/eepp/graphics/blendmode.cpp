@@ -7,25 +7,25 @@ namespace EE { namespace Graphics {
 
 Uint32 factorToGlConstant( BlendMode::Factor blendFactor ) {
 	switch ( blendFactor ) {
-		case BlendMode::Zero:
+		case BlendMode::Factor::Zero:
 			return GL_ZERO;
-		case BlendMode::One:
+		case BlendMode::Factor::One:
 			return GL_ONE;
-		case BlendMode::SrcColor:
+		case BlendMode::Factor::SrcColor:
 			return GL_SRC_COLOR;
-		case BlendMode::OneMinusSrcColor:
+		case BlendMode::Factor::OneMinusSrcColor:
 			return GL_ONE_MINUS_SRC_COLOR;
-		case BlendMode::DstColor:
+		case BlendMode::Factor::DstColor:
 			return GL_DST_COLOR;
-		case BlendMode::OneMinusDstColor:
+		case BlendMode::Factor::OneMinusDstColor:
 			return GL_ONE_MINUS_DST_COLOR;
-		case BlendMode::SrcAlpha:
+		case BlendMode::Factor::SrcAlpha:
 			return GL_SRC_ALPHA;
-		case BlendMode::OneMinusSrcAlpha:
+		case BlendMode::Factor::OneMinusSrcAlpha:
 			return GL_ONE_MINUS_SRC_ALPHA;
-		case BlendMode::DstAlpha:
+		case BlendMode::Factor::DstAlpha:
 			return GL_DST_ALPHA;
-		case BlendMode::OneMinusDstAlpha:
+		case BlendMode::Factor::OneMinusDstAlpha:
 			return GL_ONE_MINUS_DST_ALPHA;
 	}
 
@@ -36,11 +36,11 @@ Uint32 factorToGlConstant( BlendMode::Factor blendFactor ) {
 
 Uint32 equationToGlConstant( BlendMode::Equation blendEquation ) {
 	switch ( blendEquation ) {
-		case BlendMode::Add:
+		case BlendMode::Equation::Add:
 			return GL_FUNC_ADD;
-		case BlendMode::Subtract:
+		case BlendMode::Equation::Subtract:
 			return GL_FUNC_SUBTRACT;
-		case BlendMode::ReverseSubtract:
+		case BlendMode::Equation::ReverseSubtract:
 			return GL_FUNC_REVERSE_SUBTRACT;
 	}
 
@@ -49,22 +49,80 @@ Uint32 equationToGlConstant( BlendMode::Equation blendEquation ) {
 	return GL_FUNC_ADD;
 }
 
-const BlendMode BlendAlpha( BlendMode::SrcAlpha, BlendMode::OneMinusSrcAlpha, BlendMode::Add,
-							BlendMode::One, BlendMode::OneMinusSrcAlpha, BlendMode::Add );
-const BlendMode BlendAdd( BlendMode::SrcAlpha, BlendMode::One, BlendMode::Add, BlendMode::One,
-						  BlendMode::One, BlendMode::Add );
-const BlendMode BlendMultiply( BlendMode::DstColor, BlendMode::Zero );
-const BlendMode BlendNone( BlendMode::One, BlendMode::Zero );
+BlendMode BlendMode::Alpha() {
+	static const BlendMode BlendAlpha{ BlendMode::Factor::SrcAlpha,
+									   BlendMode::Factor::OneMinusSrcAlpha,
+									   BlendMode::Equation::Add,
+									   BlendMode::Factor::One,
+									   BlendMode::Factor::OneMinusSrcAlpha,
+									   BlendMode::Equation::Add };
+	return BlendAlpha;
+}
 
-BlendMode BlendMode::sLastBlend = BlendAlpha;
+BlendMode BlendMode::Add() {
+	static const BlendMode BlendAdd{ BlendMode::Factor::SrcAlpha, BlendMode::Factor::One,
+									 BlendMode::Equation::Add,	  BlendMode::Factor::One,
+									 BlendMode::Factor::One,	  BlendMode::Equation::Add };
+	return BlendAdd;
+}
+
+BlendMode BlendMode::Multiply() {
+	static const BlendMode BlendMultiply{ BlendMode::Factor::DstColor, BlendMode::Factor::Zero };
+	return BlendMultiply;
+}
+
+BlendMode BlendMode::None() {
+	static const BlendMode BlendNone{ BlendMode::Factor::One, BlendMode::Factor::Zero };
+	return BlendNone;
+}
+
+BlendMode BlendMode::sLastBlend = BlendMode::Add();
+
+std::string BlendMode::equationToString( const Equation& eq ) {
+	switch ( eq ) {
+		case BlendMode::Equation::Add:
+			return "Add";
+		case BlendMode::Equation::Subtract:
+			return "Substract";
+		case BlendMode::Equation::ReverseSubtract:
+			return "ReverseSubtract";
+	}
+	return "";
+}
+
+std::string BlendMode::factorToString( const Factor& fc ) {
+	switch ( fc ) {
+		case BlendMode::Factor::Zero:
+			return "Zero";
+		case BlendMode::Factor::One:
+			return "One";
+		case BlendMode::Factor::SrcColor:
+			return "SrcColor";
+		case BlendMode::Factor::OneMinusSrcColor:
+			return "OneMinusSrcColor";
+		case BlendMode::Factor::DstColor:
+			return "DstColor";
+		case BlendMode::Factor::OneMinusDstColor:
+			return "OneMinusDstColor";
+		case BlendMode::Factor::SrcAlpha:
+			return "SrcAlpha";
+		case BlendMode::Factor::OneMinusSrcAlpha:
+			return "OneMinusSrcAlpha";
+		case BlendMode::Factor::DstAlpha:
+			return "DstAlpha";
+		case BlendMode::Factor::OneMinusDstAlpha:
+			return "OneMinusDstAlpha";
+	}
+	return "";
+}
 
 BlendMode::BlendMode() :
-	colorSrcFactor( BlendMode::SrcAlpha ),
-	colorDstFactor( BlendMode::OneMinusSrcAlpha ),
-	colorEquation( BlendMode::Add ),
-	alphaSrcFactor( BlendMode::One ),
-	alphaDstFactor( BlendMode::OneMinusSrcAlpha ),
-	alphaEquation( BlendMode::Add ) {}
+	colorSrcFactor( BlendMode::Factor::SrcAlpha ),
+	colorDstFactor( BlendMode::Factor::OneMinusSrcAlpha ),
+	colorEquation( BlendMode::Equation::Add ),
+	alphaSrcFactor( BlendMode::Factor::One ),
+	alphaDstFactor( BlendMode::Factor::OneMinusSrcAlpha ),
+	alphaEquation( BlendMode::Equation::Add ) {}
 
 BlendMode::BlendMode( Factor sourceFactor, Factor destinationFactor, Equation blendEquation ) :
 	colorSrcFactor( sourceFactor ),
@@ -123,6 +181,12 @@ void BlendMode::setMode( const BlendMode& mode, bool force ) {
 
 BlendMode BlendMode::getPreBlendFunc() {
 	return sLastBlend;
+}
+
+std::string BlendMode::toString() const {
+	return factorToString( colorSrcFactor ) + " " + factorToString( colorDstFactor ) + " " +
+		   equationToString( colorEquation ) + " " + factorToString( alphaSrcFactor ) + " " +
+		   factorToString( alphaDstFactor ) + " " + equationToString( alphaEquation );
 }
 
 }} // namespace EE::Graphics

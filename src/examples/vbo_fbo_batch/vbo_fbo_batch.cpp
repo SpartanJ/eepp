@@ -110,7 +110,7 @@ void mainLoop() {
 	win->display();
 }
 
-EE_MAIN_FUNC int main( int argc, char* argv[] ) {
+EE_MAIN_FUNC int main( int, char*[] ) {
 	// Create a new window
 	win = Engine::instance()->createWindow(
 		WindowSettings( 1024, 768, "eepp - VBO - FBO and Batch Rendering" ),

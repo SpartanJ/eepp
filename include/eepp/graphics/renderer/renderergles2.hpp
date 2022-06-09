@@ -82,6 +82,7 @@ class EE_API RendererGLES2 : public RendererGLShader {
 	Int32 mTexActive;
 	int mTexActiveLoc;
 	int mClippingEnabledLoc;
+	int mPointSizeLoc;
 	float mPointSize;
 	int mTextureUnits[EE_MAX_TEXTURE_UNITS];
 	int mTextureUnitsStates[EE_MAX_TEXTURE_UNITS];

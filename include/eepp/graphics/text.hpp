@@ -96,7 +96,7 @@ class EE_API Text {
 
 	/** Draw the cached text on screen */
 	void draw( const Float& X, const Float& Y, const Vector2f& scale = Vector2f::One,
-			   const Float& rotation = 0, BlendMode effect = BlendAlpha,
+			   const Float& rotation = 0, BlendMode effect = BlendMode::Alpha(),
 			   const OriginPoint& rotationCenter = OriginPoint::OriginCenter,
 			   const OriginPoint& scaleCenter = OriginPoint::OriginCenter );
 

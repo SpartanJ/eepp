@@ -44,7 +44,7 @@ class EE_API BatchRenderer {
 					 Texture::CoordinateType coordinateType = Texture::CoordinateType::Normalized );
 
 	/** Set the predefined blending function to use on the batch */
-	void setBlendMode( const BlendMode& Blend );
+	void setBlendMode( const BlendMode& blend );
 
 	/** Set if every batch call have to be immediately rendered */
 	void setBatchForceRendering( const bool& force ) { mForceRendering = force; }
@@ -303,28 +303,28 @@ class EE_API BatchRenderer {
 	const bool& getForceBlendModeChange() const;
 
   protected:
-	VertexData* mVertex;
-	unsigned int mVertexSize;
-	VertexData* mTVertex;
-	unsigned int mNumVertex;
+	VertexData* mVertex{ nullptr };
+	unsigned int mVertexSize{ 0 };
+	VertexData* mTVertex{ nullptr };
+	unsigned int mNumVertex{ 0 };
 
-	const Texture* mTexture;
-	BlendMode mBlend;
+	const Texture* mTexture{ nullptr };
+	BlendMode mBlend{ BlendMode::Alpha() };
 
-	Vector2f mTexCoord[4];
-	Color mVerColor[4];
+	Vector2f mTexCoord[4]{ Vector2f::Zero, Vector2f::Zero, Vector2f::Zero, Vector2f::Zero };
+	Color mVerColor[4]{ Color::White, Color::White, Color::White, Color::White };
 
-	PrimitiveType mCurrentMode;
+	PrimitiveType mCurrentMode{ PRIMITIVE_QUADS };
 
-	Float mRotation;
-	Vector2f mScale;
-	Vector2f mPosition;
-	Vector2f mCenter;
+	Float mRotation{ 0.f };
+	Vector2f mScale{ 1.f, 1.f };
+	Vector2f mPosition{ 0.f, 0.f };
+	Vector2f mCenter{ 0.f, 0.f };
 
-	Texture::CoordinateType mCoordinateType;
+	Texture::CoordinateType mCoordinateType{ Texture::CoordinateType::Normalized };
 
-	bool mForceRendering;
-	bool mForceBlendMode;
+	bool mForceRendering{ false };
+	bool mForceBlendMode{ true };
 
 	void flush();
 

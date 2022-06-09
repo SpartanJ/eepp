@@ -179,13 +179,13 @@ class EE_API Texture : public DrawableResource, public Image, private NonCopyabl
 	 * @param Angle The Angle of the texture rendered
 	 * @param scale The Scale factor of the rendered texture
 	 * @param color The texture color
-	 * @param Blend Set the Blend Mode ( default BlendAlpha )
+	 * @param Blend Set the Blend Mode ( default BlendMode::Alpha() )
 	 * @param width The width of the texture rendered
 	 * @param height The height of the texture rendered
 	 */
 	void drawFast( const Float& x, const Float& y, const Float& Angle = 0.0f,
 				   const Vector2f& scale = Vector2f::One, const Color& color = Color::White,
-				   const BlendMode& Blend = BlendAlpha, const Float& width = 0,
+				   const BlendMode& Blend = BlendMode::Alpha(), const Float& width = 0,
 				   const Float& height = 0 );
 
 	/** Render the texture on screen
@@ -194,7 +194,7 @@ class EE_API Texture : public DrawableResource, public Image, private NonCopyabl
 	 * @param Angle The Angle of the texture rendered
 	 * @param scale The Scale factor of the rendered texture
 	 * @param color The texture color
-	 * @param Blend Set the Blend Mode ( default BlendAlpha )
+	 * @param Blend Set the Blend Mode ( default BlendMode::Alpha() )
 	 * @param Effect Set the Render Effect ( default RN_NORMAL, no effect )
 	 * @param Center The rotation and scaling center. The center point is relative to the top-left
 	 * corner of the object.
@@ -203,7 +203,7 @@ class EE_API Texture : public DrawableResource, public Image, private NonCopyabl
 	 */
 	void draw( const Float& x, const Float& y, const Float& Angle = 0,
 			   const Vector2f& scale = Vector2f::One, const Color& color = Color::White,
-			   const BlendMode& Blend = BlendAlpha, const RenderMode& Effect = RENDER_NORMAL,
+			   const BlendMode& Blend = BlendMode::Alpha(), const RenderMode& Effect = RENDER_NORMAL,
 			   OriginPoint Center = OriginPoint( OriginPoint::OriginCenter ),
 			   const Rect& texSector = Rect( 0, 0, 0, 0 ) );
 
@@ -220,7 +220,7 @@ class EE_API Texture : public DrawableResource, public Image, private NonCopyabl
 	 * @param Color1 The Left - Bottom vertex color
 	 * @param Color2 The Right - Bottom vertex color
 	 * @param Color3 The Right - Top vertex color
-	 * @param Blend Set the Blend Mode ( default BlendAlpha )
+	 * @param Blend Set the Blend Mode ( default BlendMode::Alpha() )
 	 * @param Effect Set the Render Effect ( default RN_NORMAL, no effect )
 	 * @param Center The rotation and scaling center. The center point is relative to the top-left
 	 * corner of the object.
@@ -232,7 +232,7 @@ class EE_API Texture : public DrawableResource, public Image, private NonCopyabl
 				 const Color& Color1 = Color( 255, 255, 255, 255 ),
 				 const Color& Color2 = Color( 255, 255, 255, 255 ),
 				 const Color& Color3 = Color( 255, 255, 255, 255 ),
-				 const BlendMode& Blend = BlendAlpha, const RenderMode& Effect = RENDER_NORMAL,
+				 const BlendMode& Blend = BlendMode::Alpha(), const RenderMode& Effect = RENDER_NORMAL,
 				 OriginPoint Center = OriginPoint( OriginPoint::OriginCenter ),
 				 const Rect& texSector = Rect( 0, 0, 0, 0 ) );
 
@@ -242,13 +242,13 @@ class EE_API Texture : public DrawableResource, public Image, private NonCopyabl
 	 * @param Angle The Angle of the Quad2f rendered
 	 * @param scale The Scale of the Quad2f rendered
 	 * @param color The Quad2f color
-	 * @param Blend Set the Blend Mode ( default BlendAlpha )
+	 * @param Blend Set the Blend Mode ( default BlendMode::Alpha() )
 	 * @param texSector The texture sector to render. You can render only a part of the texture. (
 	 * default render all the texture )
 	 */
 	void drawQuad( const Quad2f& Q, const Vector2f& Offset = Vector2f(), const Float& Angle = 0.0f,
 				   const Vector2f& scale = Vector2f::One, const Color& color = Color::White,
-				   const BlendMode& Blend = BlendAlpha,
+				   const BlendMode& Blend = BlendMode::Alpha(),
 				   const Rect& texSector = Rect( 0, 0, 0, 0 ) );
 
 	/** Render a quad on Screen
@@ -260,7 +260,7 @@ class EE_API Texture : public DrawableResource, public Image, private NonCopyabl
 	 * @param Color1 The Left - Bottom vertex color
 	 * @param Color2 The Right - Bottom vertex color
 	 * @param Color3 The Right - Top vertex color
-	 * @param Blend Set the Blend Mode ( default BlendAlpha )
+	 * @param Blend Set the Blend Mode ( default BlendMode::Alpha() )
 	 * @param texSector The texture sector to render. You can render only a part of the texture. (
 	 * default render all the texture )
 	 */
@@ -269,7 +269,7 @@ class EE_API Texture : public DrawableResource, public Image, private NonCopyabl
 					 const Color& Color1 = Color( 255, 255, 255, 255 ),
 					 const Color& Color2 = Color( 255, 255, 255, 255 ),
 					 const Color& Color3 = Color( 255, 255, 255, 255 ),
-					 const BlendMode& Blend = BlendAlpha, Rect texSector = Rect( 0, 0, 0, 0 ) );
+					 const BlendMode& Blend = BlendMode::Alpha(), Rect texSector = Rect( 0, 0, 0, 0 ) );
 
 	Sizef getSize();
 

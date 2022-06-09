@@ -7,18 +7,18 @@
 
 namespace EE { namespace Graphics {
 
-const char* EEGLES2_STATES_NAME[] = {"dgl_Vertex", "dgl_Normal", "dgl_FrontColor"};
+const char* EEGLES2_STATES_NAME[] = { "dgl_Vertex", "dgl_Normal", "dgl_FrontColor" };
 
-const char* EEGLES2_TEXTUREUNIT_NAMES[] = {"dgl_MultiTexCoord0", "dgl_MultiTexCoord1",
-										   "dgl_MultiTexCoord2", "dgl_MultiTexCoord3"};
+const char* EEGLES2_TEXTUREUNIT_NAMES[] = { "dgl_MultiTexCoord0", "dgl_MultiTexCoord1",
+											"dgl_MultiTexCoord2", "dgl_MultiTexCoord3" };
 
-const char* EEGLES2_PLANES_ENABLED_NAME[] = {"dgl_ClipEnabled[0]", "dgl_ClipEnabled[1]",
-											 "dgl_ClipEnabled[2]", "dgl_ClipEnabled[3]",
-											 "dgl_ClipEnabled[4]", "dgl_ClipEnabled[5]"};
+const char* EEGLES2_PLANES_ENABLED_NAME[] = { "dgl_ClipEnabled[0]", "dgl_ClipEnabled[1]",
+											  "dgl_ClipEnabled[2]", "dgl_ClipEnabled[3]",
+											  "dgl_ClipEnabled[4]", "dgl_ClipEnabled[5]" };
 
-const char* EEGLES2_PLANES_NAMENABLED_NAME[] = {"dgl_ClipPlane[0]", "dgl_ClipPlane[1]",
-												"dgl_ClipPlane[2]", "dgl_ClipPlane[3]",
-												"dgl_ClipPlane[4]", "dgl_ClipPlane[5]"};
+const char* EEGLES2_PLANES_NAMENABLED_NAME[] = { "dgl_ClipPlane[0]", "dgl_ClipPlane[1]",
+												 "dgl_ClipPlane[2]", "dgl_ClipPlane[3]",
+												 "dgl_ClipPlane[4]", "dgl_ClipPlane[5]" };
 
 #ifdef EE_GLES2
 const GLchar* GLES2_SHADER_HEAD = "precision mediump float;\nprecision lowp int;\n";
@@ -51,6 +51,9 @@ RendererGLES2::RendererGLES2() :
 	mCurShaderLocal( true ) {
 	mQuadsSupported = false;
 	mQuadVertexs = 6;
+#if !defined( EE_GLES2 )
+	Renderer::enable( GL_VERTEX_PROGRAM_POINT_SIZE );
+#endif
 }
 
 RendererGLES2::~RendererGLES2() {}
@@ -189,11 +192,15 @@ void RendererGLES2::setShader( ShaderProgram* Shader ) {
 
 	checkLocalShader();
 
+	if ( !mCurShader )
+		return;
+
 	mProjectionMatrix_id = mCurShader->getUniformLocation( "dgl_ProjectionMatrix" );
 	mModelViewMatrix_id = mCurShader->getUniformLocation( "dgl_ModelViewMatrix" );
 	mTextureMatrix_id = mCurShader->getUniformLocation( "dgl_TextureMatrix" );
 	mTexActiveLoc = mCurShader->getUniformLocation( "dgl_TexActive" );
 	mClippingEnabledLoc = mCurShader->getUniformLocation( "dgl_ClippingEnabled" );
+	mPointSizeLoc = mCurShader->getUniformLocation( "dgl_PointSize" );
 	mCurActiveTex = 0;
 
 	Uint32 i;
@@ -243,6 +250,10 @@ void RendererGLES2::setShader( ShaderProgram* Shader ) {
 		mCurShader->setUniform( mClippingEnabledLoc, 0 );
 	}
 
+	if ( -1 != mPointSizeLoc ) {
+		mCurShader->setUniform( mPointSizeLoc, mPointSize );
+	}
+
 	for ( i = 0; i < EE_MAX_PLANES; i++ ) {
 		if ( -1 != mPlanes[i] ) {
 			mCurShader->setUniform( EEGLES2_PLANES_ENABLED_NAME[i], 0 );
@@ -286,8 +297,6 @@ void RendererGLES2::enable( unsigned int cap ) {
 		case GL_POINT_SPRITE: {
 			mPointSpriteEnabled = 1;
 
-			// Renderer::Enable( GL_VERTEX_PROGRAM_POINT_SIZE );
-
 			setShader( EEGLES2_SHADER_POINTSPRITE );
 
 			return;
@@ -304,6 +313,7 @@ void RendererGLES2::disable( unsigned int cap ) {
 				mTexActive = 0;
 
 				if ( !mClippingEnabled ) {
+					disableClientState( GL_TEXTURE_COORD_ARRAY );
 					setShader( EEGLES2_SHADER_PRIMITIVE );
 				} else if ( -1 != mTexActiveLoc ) {
 					mCurShader->setUniform( mTexActiveLoc, mTexActive );
@@ -334,8 +344,6 @@ void RendererGLES2::disable( unsigned int cap ) {
 		}
 		case GL_POINT_SPRITE: {
 			mPointSpriteEnabled = 0;
-
-			// Renderer::Disable( GL_VERTEX_PROGRAM_POINT_SIZE );
 
 			setShader( EEGLES2_SHADER_BASE );
 
@@ -387,7 +395,7 @@ void RendererGLES2::disableClientState( unsigned int array ) {
 }
 
 void RendererGLES2::vertexPointer( int size, unsigned int type, int stride, const void* pointer,
-								   unsigned int allocate ) {
+								   unsigned int /*allocate*/ ) {
 	const int index = mAttribsLoc[EEGL_VERTEX_ARRAY];
 
 	if ( -1 != index ) {
@@ -402,7 +410,7 @@ void RendererGLES2::vertexPointer( int size, unsigned int type, int stride, cons
 }
 
 void RendererGLES2::colorPointer( int size, unsigned int type, int stride, const void* pointer,
-								  unsigned int allocate ) {
+								  unsigned int /*allocate*/ ) {
 	const int index = mAttribsLoc[EEGL_COLOR_ARRAY];
 
 	if ( -1 != index ) {
@@ -421,7 +429,7 @@ void RendererGLES2::colorPointer( int size, unsigned int type, int stride, const
 }
 
 void RendererGLES2::texCoordPointer( int size, unsigned int type, int stride, const void* pointer,
-									 unsigned int allocate ) {
+									 unsigned int /*allocate*/ ) {
 	if ( mCurShaderLocal ) {
 		if ( 1 == mTexActive ) {
 			if ( mCurShader == mShaders[EEGLES2_SHADER_PRIMITIVE] ) {

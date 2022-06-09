@@ -57,7 +57,7 @@ Renderer* Renderer::createSingleton( GraphicsLibraryVersion ver ) {
 	if ( GLv_default == ver )
 #ifndef EE_GLES1_DEFAULT
 #ifdef EE_GLES2
-		ver = GLv_3CP;
+		ver = GLv_ES2;
 #else
 		ver = GLv_ES1;
 #endif

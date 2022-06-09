@@ -25,7 +25,7 @@ Node::Node() :
 	mNext( NULL ),
 	mPrev( NULL ),
 	mNodeFlags( NODE_FLAG_POSITION_DIRTY | NODE_FLAG_POLYGON_DIRTY ),
-	mBlend( BlendAlpha ),
+	mBlend( BlendMode::Alpha() ),
 	mNumCallBacks( 0 ),
 	mVisible( true ),
 	mEnabled( true ),

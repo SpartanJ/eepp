@@ -88,7 +88,7 @@ void mainLoop() {
 	win->display();
 }
 
-EE_MAIN_FUNC int main( int argc, char* argv[] ) {
+EE_MAIN_FUNC int main( int, char*[] ) {
 	// Create a new window
 	win = Engine::instance()->createWindow( WindowSettings( 640, 480, "eepp - Sprites" ),
 											ContextSettings( true ) );
@@ -135,7 +135,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		Blindy.setRenderMode( RENDER_MIRROR );
 
 		// Set the Blend Mode of the sprite
-		Blindy.setBlendMode( BlendAdd );
+		Blindy.setBlendMode( BlendMode::Add() );
 
 		// Set the primitive fill mode
 		P.setFillMode( DRAW_LINE );

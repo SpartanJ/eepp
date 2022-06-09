@@ -7,7 +7,7 @@ namespace EE { namespace Graphics {
 PrimitiveDrawable::PrimitiveDrawable( Type drawableType ) :
 	Drawable( drawableType ),
 	mFillMode( DRAW_FILL ),
-	mBlendMode( BlendAlpha ),
+	mBlendMode( BlendMode::Alpha() ),
 	mLineWidth( 1.f ),
 	mNeedsUpdate( true ),
 	mRecreateVertexBuffer( true ),

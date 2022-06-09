@@ -4,7 +4,7 @@
 namespace EE { namespace Graphics {
 
 ScrollParallax::ScrollParallax() :
-	mTextureRegion( NULL ), mBlend( BlendAlpha ), mColor( 255, 255, 255, 255 ) {}
+	mTextureRegion( NULL ), mBlend( BlendMode::Alpha() ), mColor( 255, 255, 255, 255 ) {}
 
 ScrollParallax::~ScrollParallax() {}
 

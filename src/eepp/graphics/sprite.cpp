@@ -28,79 +28,21 @@ Sprite* Sprite::New( const Uint32& TexId, const Sizef& DestSize, const Vector2i&
 	return eeNew( Sprite, ( TexId, DestSize, offset, TexSector ) );
 }
 
-Sprite::Sprite() :
-	Drawable( Drawable::SPRITE ),
-	mFlags( SPRITE_FLAG_AUTO_ANIM | SPRITE_FLAG_EVENTS_ENABLED ),
-	mRotation( 0.f ),
-	mScale( 1.f, 1.f ),
-	mAnimSpeed( 16.f ),
-	mVertexColors( NULL ),
-	mRepetitions( -1 ),
-	mBlend( BlendAlpha ),
-	mEffect( RENDER_NORMAL ),
-	mCurrentFrame( 0 ),
-	mfCurrentFrame( 0.f ),
-	mCurrentSubFrame( 0 ),
-	mSubFrames( 1 ),
-	mAnimTo( 0 ),
-	mUserData( NULL ) {}
+Sprite::Sprite() : Drawable( Drawable::SPRITE ) {}
 
 Sprite::Sprite( const std::string& name, const std::string& extension,
 				TextureAtlas* SearchInTextureAtlas ) :
-	Drawable( Drawable::SPRITE ),
-	mFlags( SPRITE_FLAG_AUTO_ANIM | SPRITE_FLAG_EVENTS_ENABLED ),
-	mRotation( 0.f ),
-	mScale( 1.f, 1.f ),
-	mAnimSpeed( 16.f ),
-	mVertexColors( NULL ),
-	mRepetitions( -1 ),
-	mBlend( BlendAlpha ),
-	mEffect( RENDER_NORMAL ),
-	mCurrentFrame( 0 ),
-	mfCurrentFrame( 0.f ),
-	mCurrentSubFrame( 0 ),
-	mSubFrames( 1 ),
-	mAnimTo( 0 ),
-	mUserData( NULL ) {
+	Drawable( Drawable::SPRITE ) {
 	addFramesByPattern( name, extension, SearchInTextureAtlas );
 }
 
-Sprite::Sprite( TextureRegion* TextureRegion ) :
-	Drawable( Drawable::SPRITE ),
-	mFlags( SPRITE_FLAG_AUTO_ANIM | SPRITE_FLAG_EVENTS_ENABLED ),
-	mRotation( 0.f ),
-	mScale( 1.f, 1.f ),
-	mAnimSpeed( 16.f ),
-	mVertexColors( NULL ),
-	mRepetitions( -1 ),
-	mBlend( BlendAlpha ),
-	mEffect( RENDER_NORMAL ),
-	mCurrentFrame( 0 ),
-	mfCurrentFrame( 0.f ),
-	mCurrentSubFrame( 0 ),
-	mSubFrames( 1 ),
-	mAnimTo( 0 ),
-	mUserData( NULL ) {
+Sprite::Sprite( TextureRegion* TextureRegion ) : Drawable( Drawable::SPRITE ) {
 	createStatic( TextureRegion );
 }
 
 Sprite::Sprite( const Uint32& TexId, const Sizef& DestSize, const Vector2i& Offset,
 				const Rect& TexSector ) :
-	Drawable( Drawable::SPRITE ),
-	mFlags( SPRITE_FLAG_AUTO_ANIM | SPRITE_FLAG_EVENTS_ENABLED ),
-	mRotation( 0.f ),
-	mScale( 1.f, 1.f ),
-	mAnimSpeed( 16.f ),
-	mVertexColors( NULL ),
-	mRepetitions( -1 ),
-	mBlend( BlendAlpha ),
-	mEffect( RENDER_NORMAL ),
-	mCurrentFrame( 0 ),
-	mfCurrentFrame( 0.f ),
-	mCurrentSubFrame( 0 ),
-	mSubFrames( 1 ),
-	mAnimTo( 0 ),
-	mUserData( NULL ) {
+	Drawable( Drawable::SPRITE ) {
 	createStatic( TexId, DestSize, Offset, TexSector );
 }
 
@@ -194,7 +136,7 @@ void Sprite::reset() {
 	mRotation = 0;
 	mColor = Color::White;
 
-	mBlend = BlendAlpha;
+	mBlend = BlendMode::Alpha();
 	mEffect = RENDER_NORMAL;
 
 	mCurrentFrame = 0;

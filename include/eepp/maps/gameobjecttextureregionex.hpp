@@ -10,7 +10,7 @@ class EE_API GameObjectTextureRegionEx : public GameObjectTextureRegion {
   public:
 	GameObjectTextureRegionEx( const Uint32& Flags, MapLayer* Layer,
 							   Graphics::TextureRegion* TextureRegion = NULL,
-							   const Vector2f& Pos = Vector2f(), BlendMode Blend = BlendAlpha,
+							   const Vector2f& Pos = Vector2f(), BlendMode Blend = BlendMode::Alpha(),
 							   RenderMode Render = RENDER_NORMAL, Float Angle = 0.f,
 							   Vector2f Scale = Vector2f::One, Color color = Color::White );
 

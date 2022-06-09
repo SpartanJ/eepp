@@ -88,7 +88,7 @@ void GameObjectVirtual::draw() {
 				} else {
 					mTextureRegion->draw(
 						mPos.x, mPos.y, LM->getColorFromPos( Vector2f( mPos.x, mPos.y ) ),
-						getRotation(), Vector2f::One, BlendAlpha, getRenderModeFromFlags() );
+						getRotation(), Vector2f::One, BlendMode::Alpha(), getRenderModeFromFlags() );
 				}
 			}
 		} else {

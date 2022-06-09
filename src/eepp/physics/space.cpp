@@ -288,7 +288,7 @@ void Space::draw() {
 #ifdef PHYSICS_RENDERER_ENABLED
 
 	BatchRenderer* BR = GlobalBatchRenderer::instance();
-	BR->setBlendMode( BlendAlpha );
+	BR->setBlendMode( BlendMode::Alpha() );
 
 	PhysicsManager::DrawSpaceOptions* options = PhysicsManager::instance()->getDrawOptions();
 

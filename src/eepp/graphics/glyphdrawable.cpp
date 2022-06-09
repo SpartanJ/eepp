@@ -31,7 +31,7 @@ void GlyphDrawable::draw( const Vector2f& position, const Sizef& size ) {
 
 	BatchRenderer* BR = GlobalBatchRenderer::instance();
 	BR->setTexture( mTexture, mTexture->getCoordinateType() );
-	BR->setBlendMode( BlendAlpha );
+	BR->setBlendMode( BlendMode::Alpha() );
 	BR->quadsBegin();
 	BR->quadsSetColor( mColor );
 	BR->quadsSetTexCoord( mSrcRect.Left, mSrcRect.Top, mSrcRect.Left + mSrcRect.Right,

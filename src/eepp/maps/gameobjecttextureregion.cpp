@@ -44,7 +44,7 @@ void GameObjectTextureRegion::draw() {
 						getRenderModeFromFlags() );
 				} else {
 					mTextureRegion->draw( mPos.x, mPos.y, *LM->getTileColor( Tile ), getRotation(),
-										  Vector2f::One, BlendAlpha, getRenderModeFromFlags() );
+										  Vector2f::One, BlendMode::Alpha(), getRenderModeFromFlags() );
 				}
 			} else {
 				if ( LM->isByVertex() ) {

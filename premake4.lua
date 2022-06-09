@@ -317,6 +317,9 @@ function build_base_configuration( package_name )
 			buildoptions{ "-Wall", "-std=gnu99" }
 		end
 		targetname ( package_name .. "-debug" )
+		if os.is_real("emscripten") then
+			buildoptions{ "-g3" }
+		end
 
 	configuration "release"
 		defines { "NDEBUG" }
@@ -324,10 +327,13 @@ function build_base_configuration( package_name )
 		if not is_vs() then
 			buildoptions{ "-Wall", "-std=gnu99" }
 		end
+		if os.is_real("emscripten") then
+			buildoptions{ "-O3" }
+		end
 		targetname ( package_name )
 
 	configuration "emscripten"
-		buildoptions { "-O3 -s USE_SDL=2 -s PRECISE_F32=1 -s ENVIRONMENT=worker,web" }
+		buildoptions { "-s USE_SDL=2" }
 		if _OPTIONS["with-emscripten-pthreads"] then
 			buildoptions { "-s USE_PTHREADS=1" }
 		end
@@ -347,6 +353,9 @@ function build_base_cpp_configuration( package_name )
 		if not is_vs() then
 			buildoptions{ "-Wall" }
 		end
+		if os.is_real("emscripten") then
+			buildoptions{ "-g3" }
+		end
 		targetname ( package_name .. "-debug" )
 
 	configuration "release"
@@ -355,10 +364,13 @@ function build_base_cpp_configuration( package_name )
 		if not is_vs() then
 			buildoptions{ "-Wall" }
 		end
+		if os.is_real("emscripten") then
+			buildoptions{ "-O3" }
+		end
 		targetname ( package_name )
 
 	configuration "emscripten"
-		buildoptions { "-O3 -s USE_SDL=2 -s PRECISE_F32=1 -s ENVIRONMENT=worker,web" }
+		buildoptions { "-s USE_SDL=2" }
 		if _OPTIONS["with-emscripten-pthreads"] then
 			buildoptions { "-s USE_PTHREADS=1" }
 		end
@@ -494,6 +506,10 @@ function build_link_configuration( package_name, use_ee_icon )
 			buildoptions{ "-Wall -Wno-long-long" }
 		end
 
+		if os.is_real("emscripten") then
+			linkoptions{ "--profiling --profiling-funcs -s DEMANGLE_SUPPORT=1" }
+		end
+
 		fix_shared_lib_linking_path( package_name, "libeepp-debug" )
 
 		if not os.is_real("emscripten") then
@@ -522,9 +538,9 @@ function build_link_configuration( package_name, use_ee_icon )
 		add_cross_config_links()
 
 	configuration "emscripten"
-		linkoptions { "-O3 -s TOTAL_MEMORY=67108864" }
+		linkoptions { "-s TOTAL_MEMORY=67108864 -sALLOW_MEMORY_GROWTH" }
 		linkoptions { "-s USE_SDL=2" }
-		buildoptions { "-O3 -s USE_SDL=2 -s PRECISE_F32=1 -s ENVIRONMENT=worker,web" }
+		buildoptions { "-s USE_SDL=2" }
 		defines { "NO_POSIX_SPAWN" }
 
 		if _OPTIONS["with-emscripten-pthreads"] then

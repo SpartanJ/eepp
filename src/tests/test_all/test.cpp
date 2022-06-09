@@ -52,7 +52,6 @@ class UIBlurredWindow : public UIWindow {
 
 			mBlurShader->bind();
 
-			mBlurShader->setUniform( "radius", 16.f );
 			mBlurShader->setUniform( "dir", (Int32)0 );
 			mBlurShader->setUniform( "textureRes", mFboBlur->getSizef() );
 
@@ -186,7 +185,7 @@ void EETest::init() {
 		WP.start();
 
 		Batch.allocVertexs( 2048 );
-		Batch.setBlendMode( BlendAdd );
+		Batch.setBlendMode( BlendMode::Add() );
 
 		mFBO = FrameBuffer::New( 256, 256 );
 
@@ -1602,13 +1601,13 @@ void EETest::screen2() {
 	if ( mUseShaders )
 		mShaderProgram->unbind();
 
-	TNP[3]->draw( HWidth - 128, HHeight, 0, Vector2f::One, Color( 255, 255, 255, 150 ), BlendAlpha,
+	TNP[3]->draw( HWidth - 128, HHeight, 0, Vector2f::One, Color( 255, 255, 255, 150 ), BlendMode::Alpha(),
 				  RENDER_ISOMETRIC );
 	TNP[3]->draw( HWidth - 128, HHeight - 128, 0, Vector2f::One, Color( 255, 255, 255, 50 ),
-				  BlendAlpha, RENDER_ISOMETRIC );
-	TNP[3]->draw( HWidth - 128, HHeight, 0, Vector2f::One, Color( 255, 255, 255, 50 ), BlendAlpha,
+				  BlendMode::Alpha(), RENDER_ISOMETRIC );
+	TNP[3]->draw( HWidth - 128, HHeight, 0, Vector2f::One, Color( 255, 255, 255, 50 ), BlendMode::Alpha(),
 				  RENDER_ISOMETRIC_VERTICAL );
-	TNP[3]->draw( HWidth, HHeight, 0, Vector2f::One, Color( 255, 255, 255, 50 ), BlendAlpha,
+	TNP[3]->draw( HWidth, HHeight, 0, Vector2f::One, Color( 255, 255, 255, 50 ), BlendMode::Alpha(),
 				  RENDER_ISOMETRIC_VERTICAL_NEGATIVE );
 
 	alpha = ( !aside ) ? alpha + et.asMilliseconds() * 0.1f : alpha - et.asMilliseconds() * 0.1f;
@@ -1622,7 +1621,7 @@ void EETest::screen2() {
 
 	Color Col( 255, 255, 255, (int)alpha );
 	TNP[1]->drawEx( (Float)mWindow->getWidth() - 128.f, (Float)mWindow->getHeight() - 128.f, 128.f,
-					128.f, ang, Vector2f::One, Col, Col, Col, Col, BlendAdd,
+					128.f, ang, Vector2f::One, Col, Col, Col, Col, BlendMode::Add(),
 					RENDER_FLIPPED_MIRRORED );
 
 	SP.setPosition( Vector2f( alpha, alpha ) );
@@ -2232,30 +2231,30 @@ void EETest::demo1Create() {
 	mSpace->setGravity( cVectNew( 0, 100 ) );
 	mSpace->setSleepTimeThreshold( 0.5f );
 
-	Body *body, *statiBody = mSpace->getStaticBody();
+	Body *body, *staticBody = mSpace->getStaticBody();
 	Shape* shape;
 
 	shape = mSpace->addShape(
-		ShapeSegment::New( statiBody, cVectNew( 0, mWindow->getHeight() ),
+		ShapeSegment::New( staticBody, cVectNew( 0, mWindow->getHeight() ),
 						   cVectNew( mWindow->getWidth(), mWindow->getHeight() ), 0.0f ) );
 	shape->setE( 1.0f );
 	shape->setU( 1.0f );
 	shape->setLayers( NOT_GRABABLE_MASK );
 
 	shape = mSpace->addShape(
-		ShapeSegment::New( statiBody, cVectNew( mWindow->getWidth(), 0 ),
+		ShapeSegment::New( staticBody, cVectNew( mWindow->getWidth(), 0 ),
 						   cVectNew( mWindow->getWidth(), mWindow->getHeight() ), 0.0f ) );
 	shape->setE( 1.0f );
 	shape->setU( 1.0f );
 	shape->setLayers( NOT_GRABABLE_MASK );
 
-	shape = mSpace->addShape( ShapeSegment::New( statiBody, cVectNew( 0, 0 ),
+	shape = mSpace->addShape( ShapeSegment::New( staticBody, cVectNew( 0, 0 ),
 												 cVectNew( 0, mWindow->getHeight() ), 0.0f ) );
 	shape->setE( 1.0f );
 	shape->setU( 1.0f );
 	shape->setLayers( NOT_GRABABLE_MASK );
 
-	shape = mSpace->addShape( ShapeSegment::New( statiBody, cVectNew( 0, 0 ),
+	shape = mSpace->addShape( ShapeSegment::New( staticBody, cVectNew( 0, 0 ),
 												 cVectNew( mWindow->getWidth(), 0 ), 0.0f ) );
 	shape->setE( 1.0f );
 	shape->setU( 1.0f );

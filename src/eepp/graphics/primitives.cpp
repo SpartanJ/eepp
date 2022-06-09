@@ -10,7 +10,7 @@ namespace EE { namespace Graphics {
 static GlobalBatchRenderer* sBR = NULL;
 
 Primitives::Primitives() :
-	mFillMode( DRAW_FILL ), mBlendMode( BlendAlpha ), mLineWidth( 1.f ), mForceDraw( true ) {
+	mFillMode( DRAW_FILL ), mBlendMode( BlendMode::Alpha() ), mLineWidth( 1.f ), mForceDraw( true ) {
 	if ( NULL == sBR ) {
 		sBR = GlobalBatchRenderer::instance();
 	}

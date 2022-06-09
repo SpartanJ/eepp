@@ -102,7 +102,7 @@ static const char image_bitmap[] = {
 	127,  -1,	-29,  -4,  127,	 -64, 15,  -8,	0,	 0,	  55,	-1,	  -1,	-121, -8,  127,	 -97,
 	-25,  -8,	0,	  63,  -61,	 -61, -4,  127, -1,	 -29, -4,	63,	  -64,	15,	  -32, 0,	 0,
 	23,	  -1,	-2,	  3,   -16,	 63,  15,  -61, -16, 0,	  31,	-127, -127, -8,	  31,  -1,	 -127,
-	-8,	  31,	-128, 7,   -128, 0,	  0};
+	-8,	  31,	-128, 7,   -128, 0,	  0 };
 
 int get_pixel( int x, int y ) {
 	return ( image_bitmap[( x >> 3 ) + y * image_row_length] >> ( ~x & 0x7 ) ) & 1;
@@ -260,7 +260,7 @@ struct Emitter {
 };
 Emitter emitterInstance;
 
-cpBool blockerBegin( Arbiter* arb, Space* space, void* unused ) {
+cpBool blockerBegin( Arbiter* arb, Space*, void* ) {
 	Shape *a, *b;
 	arb->getShapes( &a, &b );
 
@@ -271,7 +271,7 @@ cpBool blockerBegin( Arbiter* arb, Space* space, void* unused ) {
 	return cpFalse; // Return values from sensors callbacks are ignored,
 }
 
-void blockerSeparate( Arbiter* arb, Space* space, void* unused ) {
+void blockerSeparate( Arbiter* arb, Space*, void* ) {
 	Shape *a, *b;
 	arb->getShapes( &a, &b );
 
@@ -280,7 +280,7 @@ void blockerSeparate( Arbiter* arb, Space* space, void* unused ) {
 	emitter->blocked--;
 }
 
-void postStepRemove( Space* space, void* tshape, void* unused ) {
+void postStepRemove( Space* space, void* tshape, void* ) {
 	Shape* shape = reinterpret_cast<Shape*>( tshape );
 
 	if ( NULL != mMouseJoint &&
@@ -295,7 +295,7 @@ void postStepRemove( Space* space, void* tshape, void* unused ) {
 	Shape::Free( shape, true );
 }
 
-cpBool catcherBarBegin( Arbiter* arb, Space* space, void* unused ) {
+cpBool catcherBarBegin( Arbiter* arb, Space* space, void* ) {
 	Shape *a, *b;
 	arb->getShapes( &a, &b );
 
@@ -303,7 +303,7 @@ cpBool catcherBarBegin( Arbiter* arb, Space* space, void* unused ) {
 
 	emitter->queue++;
 
-	space->addPostStepCallback( cb::Make3( &postStepRemove ), b, NULL );
+	space->addPostStepCallback( &postStepRemove, b, NULL );
 
 	return cpFalse;
 }
@@ -343,15 +343,15 @@ void demo3Create() {
 	Space::CollisionHandler handler;
 	handler.a = BLOCKING_SENSOR_TYPE;
 	handler.b = BALL_TYPE;
-	handler.begin = cb::Make3( &blockerBegin );
-	handler.separate = cb::Make3( &blockerSeparate );
+	handler.begin = &blockerBegin;
+	handler.separate = &blockerSeparate;
 	mSpace->addCollisionHandler( handler );
 
 	handler.reset(); // Reset all the values and the callbacks ( set the callbacks as !IsSet()
 
 	handler.a = CATCH_SENSOR_TYPE;
 	handler.b = BALL_TYPE;
-	handler.begin = cb::Make3( &catcherBarBegin );
+	handler.begin = &catcherBarBegin;
 	mSpace->addCollisionHandler( handler );
 }
 
@@ -377,12 +377,12 @@ enum { COLLIDE_STICK_SENSOR = 1 };
 
 #define STICK_SENSOR_THICKNESS 2.5f
 
-void postStepAddJoint( Space* space, void* key, void* data ) {
+void postStepAddJoint( Space* space, void* key, void* ) {
 	Constraint* joint = (Constraint*)key;
 	space->addConstraint( joint );
 }
 
-cpBool stickyPreSolve( Arbiter* arb, Space* space, void* data ) {
+cpBool stickyPreSolve( Arbiter* arb, Space* space, void* ) {
 	// We want to fudge the collisions a bit to allow shapes to overlap more.
 	// This simulates their squishy sticky surface, and more importantly
 	// keeps them from separating and destroying the joint.
@@ -424,7 +424,7 @@ cpBool stickyPreSolve( Arbiter* arb, Space* space, void* data ) {
 		joint->setMaxForce( 3e3 );
 
 		// Schedule a post-step() callback to add the joint.
-		space->addPostStepCallback( cb::Make3( &postStepAddJoint ), joint, NULL );
+		space->addPostStepCallback( &postStepAddJoint, joint, NULL );
 
 		// Store the joint on the arbiter so we can remove it later.
 		arb->setUserData( joint );
@@ -443,13 +443,13 @@ cpBool stickyPreSolve( Arbiter* arb, Space* space, void* data ) {
 	// pointer).
 }
 
-void postStepRemoveJoint( Space* space, void* key, void* data ) {
+void postStepRemoveJoint( Space* space, void* key, void* ) {
 	Constraint* joint = (Constraint*)key;
 	space->removeConstraint( joint );
 	Constraint::Free( joint );
 }
 
-void stickySeparate( Arbiter* arb, Space* space, void* data ) {
+void stickySeparate( Arbiter* arb, Space* space, void* ) {
 	Constraint* joint = (Constraint*)arb->getUserData();
 
 	if ( joint ) {
@@ -459,7 +459,7 @@ void stickySeparate( Arbiter* arb, Space* space, void* data ) {
 		joint->setMaxForce( 0.0f );
 
 		// Perform the removal in a post-step() callback.
-		space->addPostStepCallback( cb::Make3( &postStepRemoveJoint ), joint, NULL );
+		space->addPostStepCallback( &postStepRemoveJoint, joint, NULL );
 
 		// NULL out the reference to the joint.
 		// Not required, but it's a good practice.
@@ -538,8 +538,8 @@ void demo4Create() {
 	Space::CollisionHandler c;
 	c.a = COLLIDE_STICK_SENSOR;
 	c.b = COLLIDE_STICK_SENSOR;
-	c.preSolve = cb::Make3( &stickyPreSolve );
-	c.separate = cb::Make3( &stickySeparate );
+	c.preSolve = &stickyPreSolve;
+	c.separate = &stickySeparate;
 
 	mSpace->addCollisionHandler( c );
 }
@@ -570,24 +570,24 @@ void physicsCreate() {
 	// Add the demos
 	physicDemo demo;
 
-	demo.init = cb::Make0( &demo1Create );
-	demo.update = cb::Make0( &demo1Update );
-	demo.destroy = cb::Make0( &demo1Destroy );
+	demo.init = &demo1Create;
+	demo.update = &demo1Update;
+	demo.destroy = &demo1Destroy;
 	mDemo.push_back( demo );
 
-	demo.init = cb::Make0( &demo2Create );
-	demo.update = cb::Make0( &demo2Update );
-	demo.destroy = cb::Make0( &demo2Destroy );
+	demo.init = &demo2Create;
+	demo.update = &demo2Update;
+	demo.destroy = &demo2Destroy;
 	mDemo.push_back( demo );
 
-	demo.init = cb::Make0( &demo3Create );
-	demo.update = cb::Make0( &demo3Update );
-	demo.destroy = cb::Make0( &demo3Destroy );
+	demo.init = &demo3Create;
+	demo.update = &demo3Update;
+	demo.destroy = &demo3Destroy;
 	mDemo.push_back( demo );
 
-	demo.init = cb::Make0( &demo4Create );
-	demo.update = cb::Make0( &demo4Update );
-	demo.destroy = cb::Make0( &demo4Destroy );
+	demo.init = &demo4Create;
+	demo.update = &demo4Update;
+	demo.destroy = &demo4Destroy;
 	mDemo.push_back( demo );
 
 	ChangeDemo( 0 );
@@ -649,9 +649,9 @@ void mainLoop() {
 	mWindow->display();
 }
 
-EE_MAIN_FUNC int main( int argc, char* argv[] ) {
+EE_MAIN_FUNC int main( int, char*[] ) {
 	mWindow = Engine::instance()->createWindow( WindowSettings( 1024, 768, "eepp - Physics" ),
-												ContextSettings( true ) );
+												ContextSettings( true, EE::Graphics::GLv_ES2 ) );
 
 	if ( mWindow->isOpen() ) {
 		KM = mWindow->getInput();
