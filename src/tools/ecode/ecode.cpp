@@ -1725,10 +1725,15 @@ std::vector<std::string> App::getUnlockedCommands() {
 void App::closeEditors() {
 	mConfig.saveProject( mCurrentProject, mEditorSplitter, mConfigPath, mProjectDocConfig );
 	std::vector<UICodeEditor*> editors = mEditorSplitter->getAllEditors();
-	for ( auto editor : editors ) {
+	while ( !editors.empty() ) {
+		UICodeEditor* editor = editors[0];
 		UITabWidget* tabWidget = mEditorSplitter->tabWidgetFromEditor( editor );
 		tabWidget->removeTab( (UITab*)editor->getData(), true, true );
-	}
+		editors = mEditorSplitter->getAllEditors();
+		if ( editors.size() == 1 && editors[0]->getDocument().isEmpty() )
+			break;
+	};
+
 	mCurrentProject = "";
 	mDirTree = nullptr;
 	if ( mFileSystemListener )
@@ -1736,7 +1741,9 @@ void App::closeEditors() {
 
 	mProjectDocConfig = ProjectDocumentConfig( mConfig.doc );
 	updateProjectSettingsMenu();
-	mEditorSplitter->createCodeEditorInTabWidget( mEditorSplitter->getTabWidgets()[0] );
+	if ( !mEditorSplitter->getTabWidgets().empty() &&
+		 mEditorSplitter->getTabWidgets()[0]->getTabCount() == 0 )
+		mEditorSplitter->createCodeEditorInTabWidget( mEditorSplitter->getTabWidgets()[0] );
 }
 
 void App::closeFolder() {

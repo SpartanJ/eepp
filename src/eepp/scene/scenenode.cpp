@@ -219,6 +219,15 @@ void SceneNode::addToCloseQueue( Node* node ) {
 	mCloseList.insert( node );
 }
 
+bool SceneNode::removeFromCloseQueue( Node* node ) {
+	auto it = mCloseList.find( node );
+	if ( it != mCloseList.end() ) {
+		mCloseList.erase( it );
+		return true;
+	}
+	return false;
+}
+
 void SceneNode::checkClose() {
 	if ( !mCloseList.empty() ) {
 		// First we need to create a temporal copy of the close list because it can change its

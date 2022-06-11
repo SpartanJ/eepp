@@ -101,11 +101,11 @@ class EE_API UICodeEditorSplitter {
 
 	void applyColorScheme( const SyntaxColorScheme& colorScheme );
 
-	void forEachEditor( std::function<void( UICodeEditor* )> run );
+	void forEachEditor( std::function<void( UICodeEditor* )> run ) const;
 
-	void forEachDoc( std::function<void( TextDocument& doc )> run );
+	void forEachDoc( std::function<void( TextDocument& doc )> run ) const;
 
-	void forEachTabWidget( std::function<void( UITabWidget* )> run );
+	void forEachTabWidget( std::function<void( UITabWidget* )> run ) const;
 
 	void zoomIn();
 
@@ -133,11 +133,11 @@ class EE_API UICodeEditorSplitter {
 
 	bool isAnyEditorDirty();
 
-	void forEachEditorStoppable( std::function<bool( UICodeEditor* )> run );
+	void forEachEditorStoppable( std::function<bool( UICodeEditor* )> run ) const;
 
 	std::vector<UICodeEditor*> getAllEditors();
 
-	void forEachDocStoppable( std::function<bool( TextDocument& )> run );
+	void forEachDocStoppable( std::function<bool( TextDocument& )> run ) const;
 
 	std::shared_ptr<TextDocument> findDocFromPath( const std::string& path );
 
@@ -158,10 +158,16 @@ class EE_API UICodeEditorSplitter {
 	Node* mBaseLayout{ nullptr };
 	Client* mClient;
 	bool mHideTabBarOnSingleTab{ true };
+	bool mFirstCodeEditor{ true };
+	UICodeEditor* mAboutToAddEditor{ nullptr };
 
 	UICodeEditorSplitter( UICodeEditorSplitter::Client* client, UISceneNode* sceneNode,
 						  const std::vector<SyntaxColorScheme>& colorSchemes,
 						  const std::string& initColorScheme );
+
+	bool curEditorExists() const;
+
+	bool checkEditorExists( UICodeEditor* ) const;
 
 	virtual void onTabClosed( const TabEvent* tabEvent );
 };

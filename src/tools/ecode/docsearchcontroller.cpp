@@ -165,6 +165,9 @@ void DocSearchController::showFindView() {
 	mSearchState.wholeWord = mSearchBarLayout->find<UICheckBox>( "whole_word" )->isChecked();
 	mSearchState.escapeSequences =
 		mSearchBarLayout->find<UICheckBox>( "escape_sequence" )->isChecked();
+	mSearchState.type = mSearchBarLayout->find<UICheckBox>( "lua_pattern" )->isChecked()
+							? TextDocument::FindReplaceType::LuaPattern
+							: TextDocument::FindReplaceType::Normal;
 	mSearchBarLayout->setEnabled( true )->setVisible( true );
 
 	UITextInput* findInput = mSearchBarLayout->find<UITextInput>( "search_find" );

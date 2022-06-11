@@ -1205,6 +1205,10 @@ Uint32 UICodeEditor::onMouseOver( const Vector2i& position, const Uint32& flags 
 }
 
 Uint32 UICodeEditor::onMouseLeave( const Vector2i& position, const Uint32& flags ) {
+	if ( mMinimapHover ) {
+		mMinimapHover = false;
+		invalidateDraw();
+	}
 	for ( auto& plugin : mPlugins )
 		if ( plugin->onMouseLeave( this, position, flags ) )
 			return UIWidget::onMouseLeave( position, flags );

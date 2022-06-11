@@ -205,7 +205,7 @@ SyntaxColorScheme::getEditorSyntaxStyle( const std::string& type ) const {
 	auto it = mEditorColors.find( type );
 	if ( it != mEditorColors.end() )
 		return it->second;
-	if ( type == "gutter_background" || "minimap_background" )
+	if ( type == "gutter_background" || type == "minimap_background" )
 		return getEditorSyntaxStyle( "background" );
 	else if ( type == "whitespace" || type == "line_break_column" || type == "matching_bracket" ||
 			  type == "matching_selection" || type == "selection_region" )

@@ -948,6 +948,7 @@ void Node::forEachChild( std::function<void( Node* )> func ) {
 
 void Node::onSceneChange() {
 	mSceneNode = findSceneNode();
+	eeASSERT( !mSceneNode->removeFromCloseQueue( this ) );
 
 	Node* child = mChild;
 

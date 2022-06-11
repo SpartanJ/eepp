@@ -155,6 +155,8 @@ class EE_API SceneNode : public Node {
 
 	void addToCloseQueue( Node* node );
 
+	bool removeFromCloseQueue( Node* node );
+
 	void checkClose();
 
 	void createFrameBuffer();
