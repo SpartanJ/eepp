@@ -1,5 +1,5 @@
-#ifndef EE_TOOLS_CODEEDITOR_HPP
-#define EE_TOOLS_CODEEDITOR_HPP
+#ifndef ECODE_HPP
+#define ECODE_HPP
 
 #include "appconfig.hpp"
 #include "docsearchcontroller.hpp"
@@ -13,6 +13,8 @@
 #include "widgetcommandexecuter.hpp"
 #include <eepp/ee.hpp>
 #include <efsw/efsw.hpp>
+
+namespace ecode {
 
 class AutoCompletePlugin;
 class LinterPlugin;
@@ -194,6 +196,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	UIMenu* createWindowMenu();
 
+	UIMenu* createHelpMenu();
+
 	Drawable* findIcon( const std::string& name );
 
 	String i18n( const std::string& key, const String& def );
@@ -268,4 +272,6 @@ class App : public UICodeEditorSplitter::Client {
 	void setUIColorScheme( const ColorSchemePreference& colorScheme );
 };
 
-#endif // EE_TOOLS_CODEEDITOR_HPP
+} // namespace ecode
+
+#endif // ECODE_HPP

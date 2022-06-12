@@ -1,8 +1,10 @@
-#ifndef DOCSEARCHCONTROLLER_HPP
-#define DOCSEARCHCONTROLLER_HPP
+#ifndef ECODE_DOCSEARCHCONTROLLER_HPP
+#define ECODE_DOCSEARCHCONTROLLER_HPP
 
 #include "appconfig.hpp"
 #include <eepp/ee.hpp>
+
+namespace ecode {
 
 struct SearchState {
 	UICodeEditor* editor{ nullptr };
@@ -35,8 +37,7 @@ class DocSearchController {
 	DocSearchController( UICodeEditorSplitter*, App* app );
 
 	void initSearchBar(
-		UISearchBar* searchBar,
-		const SearchBarConfig& searchBarConfig,
+		UISearchBar* searchBar, const SearchBarConfig& searchBarConfig,
 		std::unordered_map<std::string, std::string> keybindings = getDefaultKeybindings() );
 
 	void showFindView();
@@ -67,4 +68,6 @@ class DocSearchController {
 	String mLastSearch;
 };
 
-#endif // DOCSEARCHCONTROLLER_HPP
+} // namespace ecode
+
+#endif // ECODE_DOCSEARCHCONTROLLER_HPP

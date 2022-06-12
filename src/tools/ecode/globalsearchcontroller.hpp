@@ -1,13 +1,15 @@
-#ifndef GLOBALSEARCHCONTROLLER_HPP
-#define GLOBALSEARCHCONTROLLER_HPP
+#ifndef ECODE_GLOBALSEARCHCONTROLLER_HPP
+#define ECODE_GLOBALSEARCHCONTROLLER_HPP
 
 #include "appconfig.hpp"
 #include "projectsearch.hpp"
 #include <eepp/ee.hpp>
 
-class App;
+namespace ecode {
+
 class UIGlobalSearchBar;
 class UITreeViewGlobalSearch;
+class App;
 
 class GlobalSearchController {
   public:
@@ -77,4 +79,6 @@ class GlobalSearchController {
 	void onLoadDone( const Variant& lineNum, const Variant& colNum );
 };
 
-#endif // GLOBALSEARCHCONTROLLER_HPP
+} // namespace ecode
+
+#endif // ECODE_GLOBALSEARCHCONTROLLER_HPP

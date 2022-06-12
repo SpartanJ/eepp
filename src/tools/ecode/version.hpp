@@ -1,32 +1,34 @@
-#ifndef EE_VERSION_HPP
-#define EE_VERSION_HPP
+#ifndef ECODE_VERSION_HPP
+#define ECODE_VERSION_HPP
 
 #include <eepp/config.hpp>
 #include <string>
 
-#define EEPP_MAJOR_VERSION 2
-#define EEPP_MINOR_VERSION 4
-#define EEPP_PATCH_LEVEL 0
-#define EEPP_CODENAME "Vimuttimagga"
+using namespace EE;
+
+#define ECODE_MAJOR_VERSION 0
+#define ECODE_MINOR_VERSION 1
+#define ECODE_PATCH_LEVEL 0
+#define ECODE_CODENAME "Viriya"
 
 /** The compiled version of the library */
-#define EEPP_VERSION( x )                  \
-	{                                      \
-		( x )->major = EEPP_MAJOR_VERSION; \
-		( x )->minor = EEPP_MINOR_VERSION; \
-		( x )->patch = EEPP_PATCH_LEVEL;   \
+#define ECODE_VERSION( x )                  \
+	{                                       \
+		( x )->major = ECODE_MAJOR_VERSION; \
+		( x )->minor = ECODE_MINOR_VERSION; \
+		( x )->patch = ECODE_PATCH_LEVEL;   \
 	}
 
-#define EEPP_VERSIONNUM( X, Y, Z ) ( (X)*1000 + (Y)*100 + ( Z ) )
+#define ECODE_VERSIONNUM( X, Y, Z ) ( (X)*1000 + (Y)*100 + ( Z ) )
 
-#define EEPP_COMPILEDVERSION \
-	EEPP_VERSIONNUM( EEPP_MAJOR_VERSION, EEPP_MINOR_VERSION, EEPP_PATCH_LEVEL )
+#define ECODE_COMPILEDVERSION \
+	ECODE_VERSIONNUM( ECODE_MAJOR_VERSION, ECODE_MINOR_VERSION, ECODE_PATCH_LEVEL )
 
-#define EEPP_VERSION_ATLEAST( X, Y, Z ) ( EEPP_COMPILEDVERSION >= EEPP_VERSIONNUM( X, Y, Z ) )
+#define ECODE_VERSION_ATLEAST( X, Y, Z ) ( ECODE_COMPILEDVERSION >= ECODE_VERSIONNUM( X, Y, Z ) )
 
-namespace EE {
+namespace ecode {
 
-class EE_API Version {
+class Version {
   public:
 	Uint8 major; /**< major version */
 	Uint8 minor; /**< minor version */
@@ -51,6 +53,6 @@ class EE_API Version {
 	}
 };
 
-} // namespace EE
+} // namespace ecode
 
 #endif

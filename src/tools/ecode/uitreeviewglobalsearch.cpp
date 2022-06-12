@@ -7,6 +7,8 @@
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uistyle.hpp>
 
+namespace ecode {
+
 UITreeViewGlobalSearch::UITreeViewGlobalSearch( const SyntaxColorScheme& colorScheme,
 												bool searchReplace ) :
 	UITreeView(), mColorScheme( colorScheme ), mSearchReplace( searchReplace ) {
@@ -220,4 +222,6 @@ void UITreeViewCellGlobalSearch::updateCell( Model* ) {
 			chk->setChecked( dataResult->selected );
 		}
 	}
+}
+
 }

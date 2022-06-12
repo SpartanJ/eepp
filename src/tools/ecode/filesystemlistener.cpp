@@ -1,5 +1,7 @@
 #include "filesystemlistener.hpp"
 
+namespace ecode {
+
 FileSystemListener::FileSystemListener( UICodeEditorSplitter* splitter,
 										std::shared_ptr<FileSystemModel> fileSystemModel ) :
 	mSplitter( splitter ), mFileSystemModel( fileSystemModel ) {}
@@ -75,4 +77,6 @@ void FileSystemListener::notifyMove( const FileInfo& oldFile, const FileInfo& ne
 		if ( oldFile.getFilepath() == doc.getFileInfo().getFilepath() )
 			doc.notifyDocumentMoved( newFile.getFilepath() );
 	} );
+}
+
 }

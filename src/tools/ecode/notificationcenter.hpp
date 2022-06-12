@@ -1,7 +1,9 @@
-#ifndef NOTIFICATIONCENTER_HPP
-#define NOTIFICATIONCENTER_HPP
+#ifndef ECODE_NOTIFICATIONCENTER_HPP
+#define ECODE_NOTIFICATIONCENTER_HPP
 
 #include <eepp/ee.hpp>
+
+namespace ecode {
 
 class NotificationCenter {
   public:
@@ -13,4 +15,6 @@ class NotificationCenter {
 	UILayout* mLayout{ nullptr };
 };
 
-#endif // NOTIFICATIONCENTER_HPP
+} // namespace ecode
+
+#endif // ECODE_NOTIFICATIONCENTER_HPP

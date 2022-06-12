@@ -1,5 +1,5 @@
-#ifndef FORMATTERPLUGIN_HPP
-#define FORMATTERPLUGIN_HPP
+#ifndef ECODE_FORMATTERPLUGIN_HPP
+#define ECODE_FORMATTERPLUGIN_HPP
 
 #include <eepp/config.hpp>
 #include <eepp/system/mutex.hpp>
@@ -9,6 +9,8 @@
 using namespace EE;
 using namespace EE::System;
 using namespace EE::UI;
+
+namespace ecode {
 
 class FormatterPlugin : public UICodeEditorPlugin {
   public:
@@ -54,4 +56,6 @@ class FormatterPlugin : public UICodeEditorPlugin {
 	FormatterPlugin::Formatter supportsFormatter( std::shared_ptr<TextDocument> doc );
 };
 
-#endif // FORMATTERPLUGIN_HPP
+}
+
+#endif // ECODE_FORMATTERPLUGIN_HPP

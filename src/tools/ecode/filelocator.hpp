@@ -1,8 +1,10 @@
-#ifndef FILELOCATOR_HPP
-#define FILELOCATOR_HPP
+#ifndef ECODE_FILELOCATOR_HPP
+#define ECODE_FILELOCATOR_HPP
 
 #include "widgetcommandexecuter.hpp"
 #include <eepp/ee.hpp>
+
+namespace ecode {
 
 class App;
 
@@ -31,4 +33,6 @@ class FileLocator {
 	void updateLocateBar();
 };
 
-#endif // FILELOCATOR_HPP
+} // namespace ecode
+
+#endif // ECODE_FILELOCATOR_HPP

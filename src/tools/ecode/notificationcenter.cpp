@@ -1,5 +1,7 @@
 #include "notificationcenter.hpp"
 
+namespace ecode {
+
 NotificationCenter::NotificationCenter( UILayout* layout ) : mLayout( layout ) {}
 
 UITextView* NotificationCenter::addNotification( const String& text ) {
@@ -19,4 +21,6 @@ UITextView* NotificationCenter::addNotification( const String& text ) {
 		  Actions::FadeOut::New( Seconds( 0.125 ) ), Actions::Close::New() } );
 	tv->runAction( sequence );
 	return tv;
+}
+
 }

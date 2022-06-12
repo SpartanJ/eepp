@@ -1,6 +1,8 @@
 #include "docsearchcontroller.hpp"
 #include "ecode.hpp"
 
+namespace ecode {
+
 DocSearchController::DocSearchController( UICodeEditorSplitter* editorSplitter, App* app ) :
 	mEditorSplitter( editorSplitter ), mApp( app ) {}
 
@@ -368,4 +370,6 @@ SearchBarConfig DocSearchController::getSearchBarConfig() const {
 	searchBarConfig.wholeWord = wholeWordChk->isChecked();
 	searchBarConfig.escapeSequence = escapeSequenceChk->isChecked();
 	return searchBarConfig;
+}
+
 }

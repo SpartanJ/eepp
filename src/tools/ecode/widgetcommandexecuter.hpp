@@ -1,7 +1,9 @@
-#ifndef WIDGETCOMMANDEXECUTER_HPP
-#define WIDGETCOMMANDEXECUTER_HPP
+#ifndef ECODE_WIDGETCOMMANDEXECUTER_HPP
+#define ECODE_WIDGETCOMMANDEXECUTER_HPP
 
 #include <eepp/ee.hpp>
+
+namespace ecode {
 
 class WidgetCommandExecuter {
   public:
@@ -75,4 +77,6 @@ class UIGlobalSearchBar : public UILinearLayout, public WidgetCommandExecuter {
 	}
 };
 
-#endif // WIDGETCOMMANDEXECUTER_HPP
+} // namespace ecode
+
+#endif // ECODE_WIDGETCOMMANDEXECUTER_HPP

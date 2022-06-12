@@ -1,5 +1,5 @@
-#ifndef APPCONFIG_HPP
-#define APPCONFIG_HPP
+#ifndef ECODE_APPCONFIG_HPP
+#define ECODE_APPCONFIG_HPP
 
 #include "widgetcommandexecuter.hpp"
 #include <eepp/config.hpp>
@@ -16,6 +16,8 @@ using namespace EE::UI::CSS;
 using namespace EE::UI::Tools;
 using namespace EE::System;
 using namespace EE::Window;
+
+namespace ecode {
 
 enum class PanelPosition { Left, Right };
 
@@ -125,4 +127,6 @@ struct AppConfig {
 					  std::shared_ptr<ThreadPool> pool );
 };
 
-#endif // APPCONFIG_HPP
+} // namespace ecode
+
+#endif // ECODE_APPCONFIG_HPP

@@ -1,5 +1,5 @@
-#ifndef UITREEVIEWGLOBALSEARCH_HPP
-#define UITREEVIEWGLOBALSEARCH_HPP
+#ifndef ECODE_UITREEVIEWGLOBALSEARCH_HPP
+#define ECODE_UITREEVIEWGLOBALSEARCH_HPP
 
 #include "projectsearch.hpp"
 #include <eepp/ui/doc/syntaxcolorscheme.hpp>
@@ -7,6 +7,8 @@
 
 using namespace EE::UI;
 using namespace EE::UI::Doc;
+
+namespace ecode {
 
 class UITreeViewCellGlobalSearch : public UITreeViewCell {
   public:
@@ -66,7 +68,8 @@ class UITreeViewGlobalSearch : public UITreeView {
 	bool mSearchReplace{ false };
 
 	virtual Uint32 onKeyDown( const KeyEvent& event );
-
 };
 
-#endif // UITREEVIEWGLOBALSEARCH_HPP
+} // namespace ecode
+
+#endif // ECODE_UITREEVIEWGLOBALSEARCH_HPP

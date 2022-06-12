@@ -7,6 +7,8 @@
 using namespace EE::Graphics;
 using namespace EE::System;
 
+namespace ecode {
+
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 #define AUTO_COMPLETE_THREADED 1
 #else
@@ -474,4 +476,6 @@ void AutoCompletePlugin::updateSuggestions( const std::string& symbol, UICodeEdi
 		runUpdateSuggestions( symbol, symbols, editor );
 #endif
 	}
+}
+
 }

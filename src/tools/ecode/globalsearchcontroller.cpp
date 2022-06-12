@@ -2,6 +2,7 @@
 #include "ecode.hpp"
 #include "uitreeviewglobalsearch.hpp"
 
+namespace ecode {
 static int LOCATEBAR_MAX_VISIBLE_ITEMS = 18;
 
 GlobalSearchController::GlobalSearchController( UICodeEditorSplitter* editorSplitter,
@@ -530,4 +531,6 @@ void GlobalSearchController::initGlobalSearchTree( UITreeViewGlobalSearch* searc
 			}
 		}
 	} );
+}
+
 }

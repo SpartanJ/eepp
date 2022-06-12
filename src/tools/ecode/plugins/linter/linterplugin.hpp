@@ -1,5 +1,5 @@
-#ifndef LINTERPLUGIN_HPP
-#define LINTERPLUGIN_HPP
+#ifndef ECODE_LINTERPLUGIN_HPP
+#define ECODE_LINTERPLUGIN_HPP
 
 #include <eepp/config.hpp>
 #include <eepp/system/mutex.hpp>
@@ -9,6 +9,8 @@
 using namespace EE;
 using namespace EE::System;
 using namespace EE::UI;
+
+namespace ecode {
 
 enum class LinterType { Notice, Warning, Error };
 
@@ -101,4 +103,6 @@ class LinterPlugin : public UICodeEditorPlugin {
 	std::string getMatchString( const LinterType& type );
 };
 
-#endif // LINTERPLUGIN_HPP
+}
+
+#endif // ECODE_LINTERPLUGIN_HPP

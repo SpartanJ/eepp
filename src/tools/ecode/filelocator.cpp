@@ -1,6 +1,8 @@
 #include "filelocator.hpp"
 #include "ecode.hpp"
 
+namespace ecode {
+
 static int LOCATEBAR_MAX_VISIBLE_ITEMS = 18;
 static int LOCATEBAR_MAX_RESULTS = 100;
 
@@ -144,4 +146,6 @@ void FileLocator::showLocateBar() {
 		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
 	}
 	updateLocateBar();
+}
+
 }

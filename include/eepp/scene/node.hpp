@@ -219,7 +219,7 @@ class EE_API Node : public Transformable {
 
 	void childsCloseAll();
 
-	std::string getId() const;
+	const std::string& getId() const;
 
 	virtual Node* setId( const std::string& id );
 

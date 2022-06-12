@@ -11,6 +11,8 @@
 
 using json = nlohmann::json;
 
+namespace ecode {
+
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 #define LINTER_THREADED 1
 #else
@@ -496,4 +498,6 @@ void LinterPlugin::invalidateEditors( TextDocument* doc ) {
 		if ( it.second == doc )
 			it.first->invalidateDraw();
 	}
+}
+
 }

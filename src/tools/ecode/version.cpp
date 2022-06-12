@@ -1,26 +1,26 @@
+#include "version.hpp"
 #include <eepp/core/string.hpp>
-#include <eepp/version.hpp>
 
-namespace EE {
+namespace ecode {
 
 Version Version::getVersion() {
 	Version ver;
-	EEPP_VERSION( &ver );
+	ECODE_VERSION( &ver );
 	return ver;
 }
 
 Uint32 Version::getVersionNum() {
 	Version ver = getVersion();
-	return EEPP_VERSIONNUM( ver.major, ver.minor, ver.patch );
+	return ECODE_VERSIONNUM( ver.major, ver.minor, ver.patch );
 }
 
 std::string Version::getVersionName() {
 	Version ver = getVersion();
-	return String::format( "eepp version %d.%d.%d", ver.major, ver.minor, ver.patch );
+	return String::format( "ecode version %d.%d.%d", ver.major, ver.minor, ver.patch );
 }
 
 std::string Version::getCodename() {
-	return std::string( EEPP_CODENAME );
+	return std::string( ECODE_CODENAME );
 }
 
-} // namespace EE
+} // namespace ecode

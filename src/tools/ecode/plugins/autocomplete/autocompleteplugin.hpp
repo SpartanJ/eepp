@@ -1,5 +1,5 @@
-#ifndef AUTOCOMPLETEPLUGIN_HPP
-#define AUTOCOMPLETEPLUGIN_HPP
+#ifndef ECODE_AUTOCOMPLETEPLUGIN_HPP
+#define ECODE_AUTOCOMPLETEPLUGIN_HPP
 
 #include <eepp/config.hpp>
 #include <eepp/system/clock.hpp>
@@ -11,6 +11,8 @@
 using namespace EE;
 using namespace EE::System;
 using namespace EE::UI;
+
+namespace ecode {
 
 class AutoCompletePlugin : public UICodeEditorPlugin {
   public:
@@ -112,4 +114,6 @@ class AutoCompletePlugin : public UICodeEditorPlugin {
 	void pickSuggestion( UICodeEditor* editor );
 };
 
-#endif // AUTOCOMPLETEPLUGIN_HPP
+}
+
+#endif // ECODE_AUTOCOMPLETEPLUGIN_HPP

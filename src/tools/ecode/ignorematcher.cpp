@@ -2,6 +2,8 @@
 #include <eepp/core/string.hpp>
 #include <eepp/system/filesystem.hpp>
 
+namespace ecode {
+
 // Author:      Robert A. van Engelen, engelen@genivia.com
 // Date:        August 5, 2019
 // License:     The Code Project Open License (CPOL)
@@ -213,4 +215,6 @@ bool IgnoreMatcherManager::match( const std::string& value ) const {
 const std::string& IgnoreMatcherManager::getPath() const {
 	eeASSERT( foundMatch() );
 	return mMatcher->getPath();
+}
+
 }

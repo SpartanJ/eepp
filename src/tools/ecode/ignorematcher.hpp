@@ -1,5 +1,5 @@
-#ifndef EE_TOOLS_IGNOREMATCHER_HPP
-#define EE_TOOLS_IGNOREMATCHER_HPP
+#ifndef ECODE_IGNOREMATCHER_HPP
+#define ECODE_IGNOREMATCHER_HPP
 
 #include <eepp/system/filesystem.hpp>
 #include <memory>
@@ -8,6 +8,8 @@
 
 using namespace EE;
 using namespace EE::System;
+
+namespace ecode {
 
 class IgnoreMatcher {
   public:
@@ -56,4 +58,6 @@ class IgnoreMatcherManager {
 	std::unique_ptr<IgnoreMatcher> mMatcher;
 };
 
-#endif // EE_TOOLS_IGNOREMATCHER_HPP
+} // namespace ecode
+
+#endif // ECODE_IGNOREMATCHER_HPP

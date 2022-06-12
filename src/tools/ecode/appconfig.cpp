@@ -8,6 +8,8 @@
 using namespace EE::Network;
 using json = nlohmann::json;
 
+namespace ecode {
+
 static PanelPosition panelPositionFromString( const std::string& str ) {
 	if ( String::toLower( str ) == "right" )
 		return PanelPosition::Right;
@@ -388,4 +390,6 @@ void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* ed
 				} );
 		}
 	}
+}
+
 }

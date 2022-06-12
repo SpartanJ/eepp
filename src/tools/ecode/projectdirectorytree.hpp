@@ -1,5 +1,5 @@
-#ifndef EE_TOOLS_PROJECTDIRECTORYTREE_HPP
-#define EE_TOOLS_PROJECTDIRECTORYTREE_HPP
+#ifndef ECODE_PROJECTDIRECTORYTREE_HPP
+#define ECODE_PROJECTDIRECTORYTREE_HPP
 
 #include "ignorematcher.hpp"
 #include <eepp/system/luapattern.hpp>
@@ -15,6 +15,8 @@
 using namespace EE;
 using namespace EE::System;
 using namespace EE::UI::Models;
+
+namespace ecode {
 
 class FileListModel : public Model {
   public:
@@ -121,4 +123,6 @@ class ProjectDirectoryTree {
 	size_t findFileIndex( const std::string& path );
 };
 
-#endif // EE_TOOLS_PROJECTDIRECTORYTREE_HPP
+}
+
+#endif // ECODE_PROJECTDIRECTORYTREE_HPP

@@ -1,5 +1,5 @@
-#ifndef PROJECTSEARCH_HPP
-#define PROJECTSEARCH_HPP
+#ifndef ECODE_PROJECTSEARCH_HPP
+#define ECODE_PROJECTSEARCH_HPP
 
 #include <eepp/core/string.hpp>
 #include <eepp/system/threadpool.hpp>
@@ -13,6 +13,8 @@ using namespace EE;
 using namespace EE::System;
 using namespace EE::UI::Doc;
 using namespace EE::UI::Models;
+
+namespace ecode {
 
 class ProjectSearch {
   public:
@@ -203,4 +205,6 @@ class ProjectSearch {
 		  const TextDocument::FindReplaceType& type = TextDocument::FindReplaceType::Normal );
 };
 
-#endif // PROJECTSEARCH_HPP
+} // namespace ecode
+
+#endif // ECODE_PROJECTSEARCH_HPP

@@ -1129,6 +1129,8 @@
 ../../src/tools/ecode/uicodeeditorsplitter.hpp
 ../../src/tools/ecode/uitreeviewglobalsearch.cpp
 ../../src/tools/ecode/uitreeviewglobalsearch.hpp
+../../src/tools/ecode/version.cpp
+../../src/tools/ecode/version.hpp
 ../../src/tools/ecode/widgetcommandexecuter.hpp
 ../../src/tools/mapeditor/mapeditor.cpp
 ../../src/tools/textureatlaseditor/textureatlaseditor.cpp

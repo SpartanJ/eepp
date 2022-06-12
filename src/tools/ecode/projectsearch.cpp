@@ -2,6 +2,8 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/luapattern.hpp>
 
+namespace ecode {
+
 static int countNewLines( const std::string& text, const size_t& start, const size_t& end ) {
 	const char* startPtr = text.c_str() + start;
 	const char* endPtr = text.c_str() + end;
@@ -184,4 +186,6 @@ void ProjectSearch::find( const std::vector<std::string> files, std::string stri
 				}
 			} );
 	}
+}
+
 }

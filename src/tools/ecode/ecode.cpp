@@ -2,8 +2,11 @@
 #include "plugins/autocomplete/autocompleteplugin.hpp"
 #include "plugins/formatter/formatterplugin.hpp"
 #include "plugins/linter/linterplugin.hpp"
+#include "version.hpp"
 #include <algorithm>
 #include <args/args.hxx>
+
+namespace ecode {
 
 Clock globalClock;
 bool firstFrame = true;
@@ -566,6 +569,27 @@ void App::setUIColorScheme( const ColorSchemePreference& colorScheme ) {
 		return;
 	mUIColorScheme = mConfig.ui.colorScheme = colorScheme;
 	mUISceneNode->setColorSchemePreference( colorScheme );
+}
+
+UIMenu* App::createHelpMenu() {
+	UIPopUpMenu* helpMenu = UIPopUpMenu::New();
+	helpMenu->add( i18n( "ecode_source", "ecode source code..." ), findIcon( "github" ) )
+		->setId( "ecode_source" );
+	helpMenu->add( i18n( "about_ecode", "About ecode..." ) )->setId( "about_ecode" );
+	helpMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
+		const std::string& id = event->getNode()->getId();
+
+		if ( "ecode_source" == id ) {
+			Engine::instance()->openURL( "https://github.com/SpartanJ/ecode" );
+		} else if ( "about_ecode" == id ) {
+			String msg( ecode::Version::getVersionName() +
+						" (codename: \"" + ecode::Version::getCodename() + "\")" );
+			UIMessageBox* msgBox = UIMessageBox::New( UIMessageBox::OK, msg );
+			msgBox->setTitle( i18n( "about_ecode", "About ecode..." ) );
+			msgBox->show();
+		}
+	} );
+	return helpMenu;
 }
 
 UIMenu* App::createWindowMenu() {
@@ -2246,6 +2270,7 @@ void App::createSettingsMenu() {
 	mSettingsMenu->addSubMenu( "View", nullptr, createViewMenu() );
 	mSettingsMenu->addSubMenu( "Tools", nullptr, createToolsMenu() );
 	mSettingsMenu->addSubMenu( "Window", nullptr, createWindowMenu() );
+	mSettingsMenu->addSubMenu( "Help", findIcon( "help" ), createHelpMenu() );
 	mSettingsMenu->addSeparator();
 	mSettingsMenu->add( "Close", findIcon( "document-close" ), getKeybind( "close-doc" ) );
 	mSettingsMenu->add( "Close Folder", findIcon( "document-close" ),
@@ -2804,6 +2829,9 @@ void App::init( std::string file, const Float& pidelDensity, const std::string& 
 	contextSettings.SharedGLContext = true;
 	mWindow = engine->createWindow( winSettings, contextSettings );
 
+	Log::info( "%s (codename: \"%s\") initializing", ecode::Version::getVersionName().c_str(),
+			   ecode::Version::getCodename().c_str() );
+
 	if ( mWindow->isOpen() ) {
 		Log::info( "Window creation took: %.2fms", globalClock.getElapsedTime().asMilliseconds() );
 
@@ -3125,6 +3153,7 @@ void App::init( std::string file, const Float& pidelDensity, const std::string& 
 			{ "color-scheme", 0xebd4 },
 			{ "global-settings", 0xedcf },
 			{ "folder-user", 0xed84 },
+			{ "help", 0xf045 },
 		};
 		for ( const auto& icon : icons )
 			iconTheme->add( UIGlyphIcon::New( icon.first, iconFont, icon.second ) );
@@ -3161,7 +3190,7 @@ void App::init( std::string file, const Float& pidelDensity, const std::string& 
 				{ "filetype-dockerfile", 61758 }, { "file", 61766 },
 				{ "file-symlink", 61774 },		  { "folder", 0xF23B },
 				{ "folder-open", 0xF23C },		  { "tree-expanded", 0xF11E },
-				{ "tree-contracted", 0xF120 },
+				{ "tree-contracted", 0xF120 },	  { "github", 0xF184 },
 			};
 			for ( const auto& icon : mimeIcons )
 				iconTheme->add( UIGlyphIcon::New( icon.first, mimeIconFont, icon.second ) );
@@ -3313,3 +3342,5 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 
 	return EXIT_SUCCESS;
 }
+
+} // namespace ecode

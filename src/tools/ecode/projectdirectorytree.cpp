@@ -2,6 +2,8 @@
 #include <algorithm>
 #include <eepp/system/filesystem.hpp>
 
+namespace ecode {
+
 ProjectDirectoryTree::ProjectDirectoryTree( const std::string& path,
 											std::shared_ptr<ThreadPool> threadPool ) :
 	mPath( path ), mPool( threadPool ), mIsReady( false ), mIgnoreMatcher( path ) {
@@ -347,4 +349,6 @@ size_t ProjectDirectoryTree::findFileIndex( const std::string& path ) {
 			return i;
 	}
 	return std::string::npos;
+}
+
 }

@@ -705,7 +705,7 @@ void Node::childsCloseAll() {
 	writeNodeFlag( NODE_FLAG_CLOSING_CHILDREN, 0 );
 }
 
-std::string Node::getId() const {
+const std::string& Node::getId() const {
 	return mId;
 }
 

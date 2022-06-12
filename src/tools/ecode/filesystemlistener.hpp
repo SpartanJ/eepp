@@ -1,5 +1,5 @@
-#ifndef FILESYSTEMLISTENER_HPP
-#define FILESYSTEMLISTENER_HPP
+#ifndef ECODE_FILESYSTEMLISTENER_HPP
+#define ECODE_FILESYSTEMLISTENER_HPP
 
 #include "projectdirectorytree.hpp"
 #include <eepp/system/fileinfo.hpp>
@@ -12,6 +12,8 @@ using namespace EE::System;
 using namespace EE::UI;
 using namespace EE::UI::Models;
 using namespace EE::UI::Tools;
+
+namespace ecode {
 
 class FileSystemListener : public efsw::FileWatchListener {
   public:
@@ -39,4 +41,6 @@ class FileSystemListener : public efsw::FileWatchListener {
 	void notifyMove( const FileInfo& oldFile, const FileInfo& newFile );
 };
 
-#endif // FILESYSTEMLISTENER_HPP
+} // namespace ecode
+
+#endif // ECODE_FILESYSTEMLISTENER_HPP
