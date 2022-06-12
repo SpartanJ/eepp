@@ -897,6 +897,10 @@ void UICodeEditor::createDefaultContextMenuOptions( UIPopUpMenu* menu ) {
 
 		menuAdd( menu, "open_containing_folder", "Open Containing Folder...", "folder-open",
 				 "open-containing-folder" );
+
+		menuAdd( menu, "copy_containing_folder_path", "Copy Containing Folder Path...", "copy",
+				 "copy-containing-folder-path" );
+
 		menuAdd( menu, "copy_file_path", "Copy File Path", "copy", "copy-file-path" );
 	}
 }
@@ -1152,7 +1156,7 @@ Uint32 UICodeEditor::onMouseClick( const Vector2i& position, const Uint32& flags
 		 getUISceneNode()->getWindow()->getInput()->isControlPressed() ) {
 		String link( checkMouseOverLink( position ) );
 		if ( !link.empty() ) {
-			Engine::instance()->openURL( link.toUtf8() );
+			Engine::instance()->openURI( link.toUtf8() );
 			resetLinkOver();
 		}
 	} else if ( ( flags & EE_BUTTON_LMASK ) &&
@@ -1388,7 +1392,12 @@ void UICodeEditor::setCreateDefaultContextMenuOptions( bool createDefaultContext
 }
 
 void UICodeEditor::openContainingFolder() {
-	Engine::instance()->openURL( mDoc->getFileInfo().getDirectoryPath() );
+	Engine::instance()->openURI( mDoc->getFileInfo().getDirectoryPath() );
+}
+
+void UICodeEditor::copyContainingFolderPath() {
+	getUISceneNode()->getWindow()->getClipboard()->setText(
+		mDoc->getFileInfo().getDirectoryPath() );
 }
 
 void UICodeEditor::copyFilePath() {
@@ -2324,6 +2333,7 @@ void UICodeEditor::drawWordMatch( const String& text, const std::pair<int, int>&
 
 void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Float& fontSize,
 								 const Float& lineHeight ) {
+	Vector2f originalPosition( position );
 	auto& tokens = mHighlighter.getLine( line );
 	Primitives primitives;
 	Int64 curChar = 0;
@@ -2586,6 +2596,7 @@ void UICodeEditor::registerCommands() {
 	mDoc->setCommand( "unlock", [&] { setLocked( false ); } );
 	mDoc->setCommand( "lock-toggle", [&] { setLocked( !isLocked() ); } );
 	mDoc->setCommand( "open-containing-folder", [&] { openContainingFolder(); } );
+	mDoc->setCommand( "copy-containing-folder-path", [&] { copyContainingFolderPath(); } );
 	mDoc->setCommand( "copy-file-path", [&] { copyFilePath(); } );
 	mUnlockedCmd.insert( { "copy", "select-all" } );
 }
@@ -2679,7 +2690,7 @@ String UICodeEditor::checkMouseOverLink( const Vector2i& position ) {
 
 	String partialLine( line.substr( startB.column(), endB.column() ) );
 
-	LuaPattern words( LuaPattern::getHttpURLPattern() );
+	LuaPattern words( LuaPattern::getURIPattern() );
 	int start, end = 0;
 	std::string linkStr( partialLine.toUtf8() );
 
@@ -2698,8 +2709,12 @@ String UICodeEditor::checkMouseOverLink( const Vector2i& position ) {
 				 pos.column() <= startB.column() + link.second ) {
 				getUISceneNode()->setCursor( Cursor::Hand );
 				mHandShown = true;
-				mLinkPosition = { { startB.line(), startB.column() + link.first },
-								  { startB.line(), startB.column() + link.second } };
+				mLinkPosition = {
+					{ startB.line(), static_cast<Int64>( characterWidth(
+										 mDoc->line( startB.line() )
+											 .getText()
+											 .substr( 0, startB.column() + link.first ) ) ) },
+					{ startB.line(), startB.column() + link.second } };
 				mLink = String( linkStr.substr( link.first, link.second - link.first ) );
 				invalidateDraw();
 				return mLink;

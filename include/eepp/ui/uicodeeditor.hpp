@@ -440,6 +440,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void openContainingFolder();
 
+	void copyContainingFolderPath();
+
 	void copyFilePath();
 
 	void scrollToCursor( bool centered = true );

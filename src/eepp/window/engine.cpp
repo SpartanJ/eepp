@@ -393,8 +393,29 @@ DisplayManager* Engine::getDisplayManager() {
 	return mDisplayManager;
 }
 
-bool Engine::openURL( const std::string& url ) {
-	return NULL != getPlatformHelper() && getPlatformHelper()->openURL( url );
+bool Engine::openURI( const std::string& url ) {
+	if ( nullptr == getPlatformHelper() )
+		return false;
+
+	if ( String::startsWith( url, "file://" ) ) {
+		std::string absolutePath( FileSystem::getCurrentWorkingDirectory() );
+		FileSystem::dirAddSlashAtEnd( absolutePath );
+		if ( "Windows" != Sys::getPlatform() ) {
+			if ( !String::startsWith( url, "file:///" ) ) {
+				absolutePath += url.substr( 7 );
+				getPlatformHelper()->openURL( "file://" + absolutePath );
+			}
+		} else {
+			std::string relativePath( url.substr( 7 ) );
+			if ( ( relativePath.size() == 1 ) ||
+				 ( relativePath.size() >= 2 && relativePath[1] != ':' ) ) {
+				absolutePath += relativePath;
+				getPlatformHelper()->openURL( "file://" + absolutePath );
+			}
+		}
+	}
+
+	return getPlatformHelper()->openURL( url );
 }
 
 struct EngineInitializer {

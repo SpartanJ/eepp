@@ -580,10 +580,10 @@ UIMenu* App::createHelpMenu() {
 		const std::string& id = event->getNode()->getId();
 
 		if ( "ecode_source" == id ) {
-			Engine::instance()->openURL( "https://github.com/SpartanJ/ecode" );
+			Engine::instance()->openURI( "https://github.com/SpartanJ/ecode" );
 		} else if ( "about_ecode" == id ) {
-			String msg( ecode::Version::getVersionName() +
-						" (codename: \"" + ecode::Version::getCodename() + "\")" );
+			String msg( ecode::Version::getVersionName() + " (codename: \"" +
+						ecode::Version::getCodename() + "\")" );
 			UIMessageBox* msgBox = UIMessageBox::New( UIMessageBox::OK, msg );
 			msgBox->setTitle( i18n( "about_ecode", "About ecode..." ) );
 			msgBox->show();
@@ -905,6 +905,9 @@ UIMenu* App::createEditMenu() {
 	menu->add( i18n( "open_containing_folder", "Open Containing Folder..." ),
 			   findIcon( "folder-open" ), getKeybind( "open-containing-folder" ) )
 		->setId( "open-containing-folder" );
+	menu->add( i18n( "copy_containing_folder_path", "Copy Containing Folder Path..." ),
+			   findIcon( "copy" ), getKeybind( "copy-containing-folder-path" ) )
+		->setId( "copy-containing-folder-path" );
 	menu->add( i18n( "copy_file_path", "Copy File Path" ), findIcon( "copy" ),
 			   getKeybind( "copy-file-path" ) )
 		->setId( "copy-file-path" );
@@ -2611,9 +2614,9 @@ void App::createProjectTreeMenu( const FileInfo& file ) {
 		} else if ( "rename" == txt ) {
 			renameFile( file );
 		} else if ( "open_containing_folder" == txt ) {
-			Engine::instance()->openURL( file.getDirectoryPath() );
+			Engine::instance()->openURI( file.getDirectoryPath() );
 		} else if ( "open_folder" == txt ) {
-			Engine::instance()->openURL( file.getFilepath() );
+			Engine::instance()->openURI( file.getFilepath() );
 		}
 	} );
 

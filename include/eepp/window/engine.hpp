@@ -137,7 +137,7 @@ class EE_API Engine {
 	/** Open a URL in a separate, system-provided application.
 	 * @return true if success
 	 */
-	bool openURL( const std::string& url );
+	bool openURI( const std::string& url );
 
   protected:
 	friend class Window;

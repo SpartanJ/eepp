@@ -8,8 +8,12 @@ namespace EE { namespace System {
 const int MAX_DEFAULT_MATCHES = 12;
 static bool sFailHandlerInitialized = false;
 
-std::string LuaPattern::getHttpURLPattern() {
+std::string LuaPattern::getURLPattern() {
 	return "https?://[%w_.~!*:@&+$/?%%#-]-%w[-.%w]*%.%w%w%w?%w?:?%d*/?[%w_.~!*:@&+$/?%%#=-]*";
+}
+
+std::string LuaPattern::getURIPattern() {
+	return "%w+://[%w_.~!*:@&+$/?%%#-]-%w[-.%w]*%.%w%w%w?%w?:?%d*/?[%w_.~!*:@&+$/?%%#=-]*";
 }
 
 static void failHandler( const char* msg ) {

@@ -11,7 +11,9 @@ namespace EE { namespace System {
 // This implementation removes all the regexp related stuffs, only leaves the Lua implementation.
 class EE_API LuaPattern {
   public:
-	static std::string getHttpURLPattern();
+	static std::string getURLPattern();
+
+	static std::string getURIPattern();
 
 	struct EE_API Range {
 		int start{ -1 };
