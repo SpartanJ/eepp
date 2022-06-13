@@ -297,7 +297,7 @@ Color Color::fromHsl( const Colorf& hsl ) {
 }
 
 Color Color::fromPointer( void* ptr ) {
-	unsigned long val = (long)ptr;
+	UintPtr val = (UintPtr)ptr;
 
 	// hash the pointer up nicely
 	val = ( val + 0x7ed55d16 ) + ( val << 12 );

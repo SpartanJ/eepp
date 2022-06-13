@@ -28,9 +28,15 @@ cp -r ../../../bin/assets/fonts/remixicon.ttf ecode.app/assets/fonts/
 cp -r ../../../bin/assets/fonts/NotoEmoji-Regular.ttf ecode.app/assets/fonts/
 cp -r ../../../bin/assets/fonts/NotoColorEmoji.ttf ecode.app/assets/fonts/
 cp -r ../../../bin/assets/plugins ecode.app/assets/
-cp -r ../../../bin/assets/icon ecode.app/assets/
+mkdir -p ecode.app/assets/icon/
+cp -r ../../../bin/assets/icon/ee.png ecode.app/assets/icon/
 mkdir ecode.app/assets/ui
 cp ../../../bin/assets/ui/breeze.css ecode.app/assets/ui/
+
+VERSIONPATH=../../../src/tools/ecode/version.hpp
+ECODE_MAJOR_VERSION=$(grep "define ECODE_MAJOR_VERSION" $VERSIONPATH | awk '{print $3}')
+ECODE_MINOR_VERSION=$(grep "define ECODE_MINOR_VERSION" $VERSIONPATH | awk '{print $3}')
+ECODE_PATCH_LEVEL=$(grep "define ECODE_PATCH_LEVEL" $VERSIONPATH | awk '{print $3}')
 
 export APPIMAGETOOL="appimagetool"
 
@@ -41,4 +47,4 @@ then
 	chmod +x "$APPIMAGETOOL"
 fi
 
-$APPIMAGETOOL ecode.app
+$APPIMAGETOOL ecode.app ecode-"$ECODE_MAJOR_VERSION"."$ECODE_MINOR_VERSION"."$ECODE_PATCH_LEVEL"-"$(arch)".AppImage

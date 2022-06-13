@@ -3284,6 +3284,10 @@ void App::init( std::string file, const Float& pidelDensity, const std::string& 
 	}
 }
 
+} // namespace ecode
+
+using namespace ecode;
+
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 std::vector<std::string> parseEmscriptenArgs( int argc, char* argv[] ) {
 	if ( argc < 1 )
@@ -3345,5 +3349,3 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 
 	return EXIT_SUCCESS;
 }
-
-} // namespace ecode

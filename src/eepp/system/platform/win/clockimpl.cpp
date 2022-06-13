@@ -11,14 +11,10 @@ ClockImpl::~ClockImpl() {}
 
 void ClockImpl::restart() {
 	// Get the current process core mask
-	DWORD procMask;
-	DWORD sysMask;
+	DWORD_PTR procMask;
+	DWORD_PTR sysMask;
 
-#if _MSC_VER >= 1400 && defined( _M_X64 )
-	GetProcessAffinityMask( GetCurrentProcess(), (PDWORD_PTR)&procMask, (PDWORD_PTR)&sysMask );
-#else
 	GetProcessAffinityMask( GetCurrentProcess(), &procMask, &sysMask );
-#endif
 
 	// Find the lowest core that this process uses
 	if ( mTimerMask == 0 ) {

@@ -538,7 +538,7 @@ function build_link_configuration( package_name, use_ee_icon )
 		add_cross_config_links()
 
 	configuration "emscripten"
-		linkoptions { "-s TOTAL_MEMORY=67108864 -sALLOW_MEMORY_GROWTH" }
+		linkoptions { "-s TOTAL_MEMORY=67108864" }
 		linkoptions { "-s USE_SDL=2" }
 		buildoptions { "-s USE_SDL=2" }
 		defines { "NO_POSIX_SPAWN" }

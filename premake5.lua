@@ -7,6 +7,7 @@ newoption { trigger = "with-gles1", description = "Compile with GLES1 support" }
 newoption { trigger = "with-mojoal", description = "Compile with mojoAL as OpenAL implementation instead of using openal-soft (requires SDL2 backend)" }
 newoption { trigger = "use-frameworks", description = "In macOS it will try to link the external libraries from its frameworks. For example, instead of linking against SDL2 it will link against SDL2.framework." }
 newoption { trigger = "windows-vc-build", description = "This is used to build the framework in Visual Studio downloading its external dependencies and making them available to the VS project without having to install them manually." }
+newoption { trigger = "windows-mingw-build", description = "This is used to build the framework with mingw downloading its external dependencies." }
 newoption { trigger = "with-emscripten-pthreads", description = "Enables emscripten build to use posix threads" }
 newoption { trigger = "with-mold-linker", description = "Tries to use the mold linker instead of the default linker of the toolchain" }
 newoption {
@@ -88,9 +89,10 @@ os_links = { }
 backends = { }
 static_backends = { }
 backend_selected = false
-remote_sdl2_version = "SDL2-2.0.20"
-remote_sdl2_devel_src_url = "https://libsdl.org/release/SDL2-2.0.20.zip"
-remote_sdl2_devel_vc_url = "https://www.libsdl.org/release/SDL2-devel-2.0.20-VC.zip"
+remote_sdl2_version = "SDL2-2.0.22"
+remote_sdl2_devel_src_url = "https://libsdl.org/release/SDL2-2.0.22.zip"
+remote_sdl2_devel_vc_url = "https://www.libsdl.org/release/SDL2-devel-2.0.2-VC.zip"
+remote_sdl2_devel_mingw_url = "https://www.libsdl.org/release/SDL2-devel-2.0.22-mingw.zip"
 
 function incdirs( dirs )
 	if is_xcode() then
@@ -103,13 +105,13 @@ function download_and_extract_sdl(sdl_url)
 	print("Downloading: " .. sdl_url)
 	local dest_dir = "src/thirdparty/"
 	local local_file = dest_dir .. remote_sdl2_version .. ".zip"
-	local _, response_code = http.download(sdl_url, local_file)
+	local res, response_code = http.download(sdl_url, local_file)
 	if response_code == 200 then
 		print("Downloaded successfully to: " .. local_file)
 		zip.extract(local_file, dest_dir)
 		print("Extracted " .. local_file .. " into " .. dest_dir)
 	else
-		print("Failed to download:  " .. sdl_url)
+		print("Failed to download: " .. sdl_url .. " res: " .. res)
 		exit(1)
 	end
 end
@@ -134,6 +136,8 @@ function download_and_extract_dependencies()
 	if not os.isdir("src/thirdparty/" .. remote_sdl2_version) then
 		if _OPTIONS["windows-vc-build"] then
 			download_and_extract_sdl(remote_sdl2_devel_vc_url)
+		elseif _OPTIONS["windows-mingw-build"] then
+			download_and_extract_sdl(remote_sdl2_devel_mingw_url)
 		elseif os.istarget("ios") then
 			download_and_extract_sdl(remote_sdl2_devel_src_url)
 		end
@@ -289,6 +293,12 @@ function build_link_configuration( package_name, use_ee_icon )
 	filter { "options:windows-vc-build", "system:windows", "platforms:x86_64" }
 		syslibdirs { "src/thirdparty/" .. remote_sdl2_version .."/lib/x64" }
 
+	filter { "options:windows-mingw-build", "architecture:x86", "options:cc=mingw" }
+		syslibdirs { "src/thirdparty/" .. remote_sdl2_version .."/i686-w64-mingw32/lib/" }
+
+	filter { "options:windows-mingw-build", "architecture:x86_64", "options:cc=mingw" }
+		syslibdirs { "src/thirdparty/" .. remote_sdl2_version .."/x86_64-w64-mingw32/lib/" }
+
 	filter "system:emscripten"
 		targetname ( package_name .. extension )
 		linkoptions { "-O3 -s TOTAL_MEMORY=67108864" }
@@ -391,7 +401,7 @@ function add_static_links()
 	end
 end
 
-function can_add_static_backend( name )
+function can_add_static_backend()
 	if _OPTIONS["with-static-backend"] then
 		return true
 	end
@@ -591,6 +601,12 @@ function build_eepp( build_name )
 	filter "options:windows-vc-build"
 		incdirs { "src/thirdparty/" .. remote_sdl2_version .. "/include" }
 
+	filter { "options:windows-mingw-build", "architecture:x86", "options:cc=mingw" }
+		incdirs { "src/thirdparty/" .. remote_sdl2_version .."/i686-w64-mingw32/include/" }
+
+	filter { "options:windows-mingw-build", "architecture:x86_64", "options:cc=mingw" }
+		incdirs { "src/thirdparty/" .. remote_sdl2_version .."/x86_64-w64-mingw32/include/" }
+
 	filter "action:vs*"
 		incdirs { "src/thirdparty/libzip/vs" }
 
@@ -744,6 +760,10 @@ workspace "eepp"
 		build_base_cpp_configuration( "mojoal" )
 		filter "options:windows-vc-build"
 			incdirs { "src/thirdparty/" .. remote_sdl2_version .. "/include" }
+		filter { "options:windows-mingw-build", "architecture:x86", "options:cc=mingw" }
+			incdirs { "src/thirdparty/" .. remote_sdl2_version .."/i686-w64-mingw32/include/" }
+		filter { "options:windows-mingw-build", "architecture:x86_64", "options:cc=mingw" }
+			incdirs { "src/thirdparty/" .. remote_sdl2_version .."/x86_64-w64-mingw32/include/" }
 
 	project "efsw-static"
 		kind "StaticLib"

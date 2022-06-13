@@ -21,7 +21,7 @@ projects/android-project-ant/gen
 projects/android-project-ant/assets
 projects/android-project-ant/libs
 src/examples/strobe
-src/thirdparty/SDL2-2.0.12*
+src/thirdparty/SDL2-2.0.*
 *.dll
 bin/ee*
 bin/eepp-*
@@ -53,3 +53,5 @@ eepp.geany
 ecode.dmg
 /projects/linux/ecode/ecode.app
 *.AppImage
+/projects/mingw32/ecode/ecode/
+/projects/mingw32/ecode/ecode-*
