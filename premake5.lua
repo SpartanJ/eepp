@@ -759,7 +759,7 @@ workspace "eepp"
 		files { "src/thirdparty/mojoAL/*.c" }
 		build_base_cpp_configuration( "mojoal" )
 		filter "options:windows-vc-build"
-			incdirs { "src/thirdparty/" .. remote_sdl2_version .. "/include" }
+			incdirs { "src/thirdparty/" .. remote_sdl2_version .. "/include", "src/thirdparty/" .. remote_sdl2_version .. "/include/SDL2" }
 		filter { "options:windows-mingw-build", "architecture:x86", "options:cc=mingw" }
 			incdirs { "src/thirdparty/" .. remote_sdl2_version .."/i686-w64-mingw32/include/" }
 		filter { "options:windows-mingw-build", "architecture:x86_64", "options:cc=mingw" }
