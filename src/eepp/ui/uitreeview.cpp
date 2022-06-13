@@ -679,6 +679,7 @@ ModelIndex UITreeView::selectRowWithPath( std::string path ) {
 	if ( pathPart.empty() )
 		return {};
 
+	ModelIndex parentIndex = {};
 	for ( size_t i = 0; i < pathPart.size(); i++ ) {
 		ModelIndex foundIndex = {};
 		const auto& part = pathPart[i];
@@ -687,8 +688,10 @@ ModelIndex UITreeView::selectRowWithPath( std::string path ) {
 			[&, i]( const int&, const ModelIndex& index, const size_t& indentLevel, const Float& ) {
 				Variant var = model->data( index );
 				if ( i == indentLevel && var.isValid() && var.toString() == part ) {
-					foundIndex = index;
-					return IterationDecision::Stop;
+					if ( !parentIndex.isValid() || parentIndex == index.parent() ) {
+						foundIndex = index;
+						return IterationDecision::Stop;
+					}
 				}
 				return IterationDecision::Continue;
 			} );
@@ -710,6 +713,8 @@ ModelIndex UITreeView::selectRowWithPath( std::string path ) {
 				onOpenTreeModelIndex( foundIndex, data.open );
 			}
 		}
+
+		parentIndex = foundIndex;
 
 		if ( i == pathPart.size() - 1 ) {
 			setSelection( foundIndex );
