@@ -91,7 +91,7 @@ static_backends = { }
 backend_selected = false
 remote_sdl2_version = "SDL2-2.0.22"
 remote_sdl2_devel_src_url = "https://libsdl.org/release/SDL2-2.0.22.zip"
-remote_sdl2_devel_vc_url = "https://www.libsdl.org/release/SDL2-devel-2.0.2-VC.zip"
+remote_sdl2_devel_vc_url = "https://www.libsdl.org/release/SDL2-devel-2.0.22-VC.zip"
 remote_sdl2_devel_mingw_url = "https://www.libsdl.org/release/SDL2-devel-2.0.22-mingw.zip"
 
 function incdirs( dirs )
@@ -759,7 +759,7 @@ workspace "eepp"
 		files { "src/thirdparty/mojoAL/*.c" }
 		build_base_cpp_configuration( "mojoal" )
 		filter "options:windows-vc-build"
-			incdirs { "src/thirdparty/" .. remote_sdl2_version .. "/include", "src/thirdparty/" .. remote_sdl2_version .. "/include/SDL2" }
+			incdirs { "src/thirdparty/" .. remote_sdl2_version .. "/include" }
 		filter { "options:windows-mingw-build", "architecture:x86", "options:cc=mingw" }
 			incdirs { "src/thirdparty/" .. remote_sdl2_version .."/i686-w64-mingw32/include/" }
 		filter { "options:windows-mingw-build", "architecture:x86_64", "options:cc=mingw" }
