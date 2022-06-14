@@ -55,3 +55,4 @@ ecode.dmg
 *.AppImage
 /projects/mingw32/ecode/ecode/
 /projects/mingw32/ecode/ecode-*
+*.dmg

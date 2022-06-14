@@ -15,13 +15,14 @@ install_name_tool -change libeepp.dylib @executable_path/libeepp.dylib ecode.app
 #cp -r ../../../bin/assets ecode.app/Contents/MacOS/assets
 mkdir -p ecode.app/Contents/MacOS/assets/colorschemes
 cp -r ../../../bin/assets/colorschemes/ ecode.app/Contents/MacOS/assets/colorschemes/
-#cp -r ../../../bin/assets/fonts ecode.app/assets/
-cp -r ../../../bin/assets/fonts/DejaVuSansMono.ttf ecode.app/assets/fonts/
-cp -r ../../../bin/assets/fonts/nonicons.ttf ecode.app/assets/fonts/
-cp -r ../../../bin/assets/fonts/NotoSans-Regular.ttf ecode.app/assets/fonts/
-cp -r ../../../bin/assets/fonts/remixicon.ttf ecode.app/assets/fonts/
-cp -r ../../../bin/assets/fonts/NotoEmoji-Regular.ttf ecode.app/assets/fonts/
-cp -r ../../../bin/assets/fonts/NotoColorEmoji.ttf ecode.app/assets/fonts/
+#cp -r ../../../bin/assets/fonts ecode.app/Contents/MacOS/assets/
+mkdir -p ecode.app/Contents/MacOS/assets/fonts
+cp -r ../../../bin/assets/fonts/DejaVuSansMono.ttf ecode.app/Contents/MacOS/assets/fonts/
+cp -r ../../../bin/assets/fonts/nonicons.ttf ecode.app/Contents/MacOS/assets/fonts/
+cp -r ../../../bin/assets/fonts/NotoSans-Regular.ttf ecode.app/Contents/MacOS/assets/fonts/
+cp -r ../../../bin/assets/fonts/remixicon.ttf ecode.app/Contents/MacOS/assets/fonts/
+cp -r ../../../bin/assets/fonts/NotoEmoji-Regular.ttf ecode.app/Contents/MacOS/assets/fonts/
+cp -r ../../../bin/assets/fonts/NotoColorEmoji.ttf ecode.app/Contents/MacOS/assets/fonts/
 cp -r ../../../bin/assets/plugins ecode.app/Contents/MacOS/assets/
 cp -r ../../../bin/assets/icon ecode.app/Contents/MacOS/assets/
 mkdir ecode.app/Contents/MacOS/assets/ui
