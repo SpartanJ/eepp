@@ -249,9 +249,14 @@ function build_link_configuration( package_name, use_ee_icon )
 	set_xcode_config()
 	build_arch_configuration()
 
-	filter { "system:windows", "action:not vs*" }
+	filter { "system:windows", "action:not vs*", "architecture:x86" }
 		if ( true == use_ee_icon ) then
 			linkoptions { "../../bin/assets/icon/ee.res" }
+		end
+
+	filter { "system:windows", "action:not vs*", "architecture:x86_64" }
+		if ( true == use_ee_icon ) then
+			linkoptions { "../../bin/assets/icon/ee.x64.res" }
 		end
 
 	filter { "system:windows", "action:vs*" }
@@ -294,10 +299,10 @@ function build_link_configuration( package_name, use_ee_icon )
 		syslibdirs { "src/thirdparty/" .. remote_sdl2_version .."/lib/x64" }
 
 	filter { "options:windows-mingw-build", "architecture:x86", "options:cc=mingw" }
-		syslibdirs { "src/thirdparty/" .. remote_sdl2_version .."/i686-w64-mingw32/lib/" }
+		syslibdirs { "src/thirdparty/" .. remote_sdl2_version .."/i686-w64-mingw32/lib/", "/usr/i686-w64-mingw32/sys-root/mingw/lib/" }
 
 	filter { "options:windows-mingw-build", "architecture:x86_64", "options:cc=mingw" }
-		syslibdirs { "src/thirdparty/" .. remote_sdl2_version .."/x86_64-w64-mingw32/lib/" }
+		syslibdirs { "src/thirdparty/" .. remote_sdl2_version .."/x86_64-w64-mingw32/lib/", "/usr/x86_64-w64-mingw32/sys-root/mingw/lib/" }
 
 	filter "system:emscripten"
 		targetname ( package_name .. extension )

@@ -3,12 +3,17 @@ CANONPATH=$(readlink -f "$0")
 DIRPATH="$(dirname "$CANONPATH")"
 cd "$DIRPATH" || exit
 
-ARCH=x86
-ARCHI=i686
+ARCH=x86_64
+ARCHI=$ARCH
+BUILDTYPE=release
 for i in "$@"; do
   case $i in
-    config=*)
-      ARCH="${i#*=}"
+    arch=*)
+      ARCH_CONFIG="${i#*=}"
+      shift
+      ;;
+    buildtype=*)
+      BUILDTYPE_CONFIG="${i#*=}"
       shift
       ;;
     *)
@@ -16,12 +21,16 @@ for i in "$@"; do
   esac
 done
 
-if [[ "$ARCH" == *"x86_64"* ]]; then
-  ARCH=x86_64
-  ARCHI=$ARCH
+if [[ "$BUILDTYPE_CONFIG" == "debug" ]]; then
+  BUILDTYPE=debug
 fi
 
-../make.sh -e config=release_"$ARCH" -j"$(nproc)" ecode
+if [[ "$ARCH_CONFIG" == "x86" ]]; then
+  ARCH=x86
+  ARCHI=i686
+fi
+
+../make.sh -e config="$BUILDTYPE"_"$ARCH" -j"$(nproc)" ecode
 
 SDLVER=$(grep "remote_sdl2_version =" ../../../premake5.lua | awk '{print $3}' | tr -d '"')
 rm -rf ./ecode
@@ -41,6 +50,8 @@ cp -r ../../../bin/assets/fonts/NotoColorEmoji.ttf ecode/assets/fonts/
 cp -r ../../../bin/assets/plugins ecode/assets/
 mkdir ecode/assets/ui
 cp ../../../bin/assets/ui/breeze.css ecode/assets/ui/
+mkdir -p ecode/assets/icon
+cp ../../../bin/assets/icon/ee.png ecode/assets/icon/
 
 VERSIONPATH=../../../src/tools/ecode/version.hpp
 ECODE_MAJOR_VERSION=$(grep "define ECODE_MAJOR_VERSION" $VERSIONPATH | awk '{print $3}')
