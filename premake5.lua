@@ -923,6 +923,12 @@ workspace "eepp"
 		filter { "system:not windows", "system:not haiku" }
 			links { "pthread" }
 
+	project "eterm"
+		set_kind()
+		language "C++"
+		files { "src/tools/eterm/**.cpp" }
+		build_link_configuration( "eterm", true )
+
 	project "eepp-texturepacker"
 		kind "ConsoleApp"
 		language "C++"

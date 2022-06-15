@@ -56,3 +56,4 @@ ecode.dmg
 /projects/mingw32/ecode/ecode/
 /projects/mingw32/ecode/ecode-*
 *.dmg
+/bin/eterm*

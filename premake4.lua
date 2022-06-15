@@ -1180,6 +1180,12 @@ solution "eepp"
 
 		build_link_configuration( "ecode", true )
 
+	project "eterm"
+		set_kind()
+		language "C++"
+		files { "src/tools/eterm/**.cpp" }
+		build_link_configuration( "eterm", true )
+
 	project "eepp-texturepacker"
 		kind "ConsoleApp"
 		language "C++"
