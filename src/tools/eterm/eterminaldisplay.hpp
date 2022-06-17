@@ -112,8 +112,7 @@ class ETerminalDisplay : public TerminalDisplay {
   public:
 	static std::shared_ptr<ETerminalDisplay>
 	Create( EE::Window::Window* window, Font* font,
-			std::shared_ptr<Hexe::Terminal::TerminalEmulator>&& terminalEmulator,
-			TerminalConfig* config = 0 );
+			std::shared_ptr<TerminalEmulator>&& terminalEmulator, TerminalConfig* config = 0 );
 
 	static std::shared_ptr<ETerminalDisplay>
 	Create( EE::Window::Window* window, Font* font, int columns, int rows,
@@ -132,8 +131,7 @@ class ETerminalDisplay : public TerminalDisplay {
 
 	virtual bool DrawBegin( int columns, int rows );
 	virtual void DrawLine( Line line, int x1, int y, int x2 );
-	virtual void DrawCursor( int cx, int cy, Hexe::Terminal::Glyph g, int ox, int oy,
-							 Hexe::Terminal::Glyph og );
+	virtual void DrawCursor( int cx, int cy, TerminalGlyph g, int ox, int oy, TerminalGlyph og );
 	virtual void DrawEnd();
 
 	virtual void Update();
@@ -144,21 +142,20 @@ class ETerminalDisplay : public TerminalDisplay {
 
 	void Draw( const Rectf& contentArea );
 
-	void Draw( Vector2i pos, const Sizei& clip_rect, bool hasFocus );
-
 	virtual void onTextInput( const Uint32& chr );
 
 	virtual void onKeyDown( const Keycode& keyCode, const Uint32& chr, const Uint32& mod,
 							const Scancode& scancode );
 
 	Float getFontSize() const;
+
 	void setFontSize( Float FontSize );
 
   protected:
 	EE::Window::Window* mWindow;
-	std::vector<Hexe::Terminal::Glyph> m_buffer;
+	std::vector<TerminalGlyph> m_buffer;
 	std::vector<std::pair<Color, std::string>> m_colors;
-	std::shared_ptr<Hexe::Terminal::TerminalEmulator> m_terminal;
+	std::shared_ptr<TerminalEmulator> m_terminal;
 	mutable std::string mClipboard;
 
 	Font* mFont;
@@ -169,7 +166,7 @@ class ETerminalDisplay : public TerminalDisplay {
 	bool m_checkDirty;
 	int m_cursorx;
 	int m_cursory;
-	Hexe::Terminal::Glyph m_cursorg;
+	TerminalGlyph m_cursorg;
 	bool m_useBoxDrawing;
 	bool m_useColorEmoji;
 	bool m_pasteNewlineFix;
@@ -177,6 +174,8 @@ class ETerminalDisplay : public TerminalDisplay {
 
 	ETerminalDisplay( EE::Window::Window* window, Font* font, int columns, int rows,
 					  TerminalConfig* config );
+
+	void Draw( Vector2i pos, const Sizei& clip_rect, bool hasFocus );
 };
 
 #endif // ETERMINALDISPLAY_HPP

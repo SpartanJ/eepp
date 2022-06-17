@@ -15,7 +15,7 @@ std::unique_ptr<IProcess> ProcessFactory::CreateWithStdioPipe( const std::string
 std::unique_ptr<IProcess> ProcessFactory::CreateWithPseudoTerminal(
 	const std::string& program, const std::vector<std::string>& args,
 	const std::string& workingDirectory, int numColumns, int numRows,
-	std::unique_ptr<Hexe::Terminal::IPseudoTerminal>& outPseudoTerminal ) {
+	std::unique_ptr<IPseudoTerminal>& outPseudoTerminal ) {
 	outPseudoTerminal = nullptr;
 
 	auto pseudoTerminal = Terminal::PseudoTerminal::Create( numColumns, numRows );

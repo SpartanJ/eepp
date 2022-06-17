@@ -23,14 +23,22 @@
 
 #include "iprocessfactory.hpp"
 
+using namespace Hexe::Terminal;
+
 namespace Hexe { namespace System {
+
 class ProcessFactory : public IProcessFactory {
   public:
 	ProcessFactory() = default;
+
 	virtual ~ProcessFactory() = default;
+
 	ProcessFactory( const ProcessFactory& ) = delete;
+
 	ProcessFactory( ProcessFactory&& ) = delete;
+
 	ProcessFactory& operator=( const ProcessFactory& ) = delete;
+
 	ProcessFactory& operator=( ProcessFactory&& ) = delete;
 
 	virtual std::unique_ptr<IProcess> CreateWithStdioPipe( const std::string& program,
@@ -39,9 +47,10 @@ class ProcessFactory : public IProcessFactory {
 														   std::unique_ptr<IPipe>& outPipe,
 														   bool withStderr = true ) override;
 
-	virtual std::unique_ptr<IProcess> CreateWithPseudoTerminal(
-		const std::string& program, const std::vector<std::string>& args,
-		const std::string& workingDirectory, int numColumns, int numRows,
-		std::unique_ptr<Hexe::Terminal::IPseudoTerminal>& outPseudoTerminal ) override;
+	virtual std::unique_ptr<IProcess>
+	CreateWithPseudoTerminal( const std::string& program, const std::vector<std::string>& args,
+							  const std::string& workingDirectory, int numColumns, int numRows,
+							  std::unique_ptr<IPseudoTerminal>& outPseudoTerminal ) override;
 };
+
 }} // namespace Hexe::System

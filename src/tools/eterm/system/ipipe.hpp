@@ -25,18 +25,26 @@
 #include <stdlib.h>
 
 namespace Hexe { namespace System {
+
 class IPipe {
   public:
 	IPipe() = default;
+
 	IPipe( IPipe&& ) = delete;
+
 	IPipe( const IPipe& ) = delete;
+
 	IPipe& operator=( IPipe&& ) = delete;
+
 	IPipe& operator=( const IPipe& ) = delete;
+
 	virtual ~IPipe() = default;
 
 	virtual bool IsTTY() const = 0;
 
 	virtual int Write( const char* s, size_t n ) = 0;
+
 	virtual int Read( char* buf, size_t n, bool block = false ) = 0;
 };
+
 }} // namespace Hexe::System

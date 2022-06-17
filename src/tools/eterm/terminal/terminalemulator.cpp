@@ -36,7 +36,6 @@
 #include "../terminal/terminalemulator.hpp"
 #include "boxdrawdata.hpp"
 
-#include "config.def.hpp"
 #include <assert.h>
 #include <cmath>
 #include <ctype.h>
@@ -49,6 +48,37 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+
+/* identification sequence returned in DA and DECID */
+static const char* vtiden = "\033[?6c";
+
+/*
+ * word delimiter string
+ *
+ * More advanced example: L" `'\"()[]{}"
+ */
+const static unsigned int worddelimiters[] = { ' ', 0 };
+
+/*
+ * spaces per tab
+ *
+ * When you are changing this value, don't forget to adapt the »it« value in
+ * the st.info and appropriately install the st.info in the environment where
+ * you use this st version.
+ *
+ *	it#$tabspaces,
+ *
+ * Secondly make sure your kernel is not expanding tabs. When running `stty
+ * -a` »tab0« should appear. You can tell the terminal to not expand tabs by
+ *  running following command:
+ *
+ *	stty tabs
+ */
+static const unsigned int tabspaces = 8;
+
+#ifdef WIN32
+#include <windows.h>
+#endif
 
 #define MIN( a, b ) ( ( a ) < ( b ) ? ( a ) : ( b ) )
 #define MAX( a, b ) ( ( a ) < ( b ) ? ( b ) : ( a ) )
@@ -73,11 +103,11 @@
 #define ISCONTROLC0( c ) ( BETWEEN( c, 0, 0x1f ) || ( c ) == 0x7f )
 #define ISCONTROLC1( c ) ( BETWEEN( c, 0x80, 0x9f ) )
 #define ISCONTROL( c ) ( ISCONTROLC0( c ) || ISCONTROLC1( c ) )
-#define ISDELIM( u ) ( u && Hexe_wcschr( worddelimiters, u ) )
+#define ISDELIM( u ) ( u && _wcschr( worddelimiters, u ) )
 
 using namespace Hexe::Terminal;
 
-static inline bool is_emoji_presentation( int32_t code ) {
+static inline bool is_emoji( int32_t code ) {
 	const int32_t rangeMin = 127744;
 	const int32_t rangeMax = 131069;
 	const int32_t rangeMin2 = 126980;
@@ -89,22 +119,16 @@ static inline bool is_emoji_presentation( int32_t code ) {
 							 ( rangeMin3 <= code && code <= rangeMax3 ) );
 }
 
-static inline bool is_emoji( int32_t code ) {
-	if ( is_emoji_presentation( code ) )
-		return true;
-	return false;
-}
-
-static size_t Hexe_wcslen( const Rune* s ) {
+static size_t _wcslen( const Rune* s ) {
 	const Rune* a;
 	for ( a = s; *s; s++ )
 		;
 	return s - a;
 }
 
-static Rune* Hexe_wcschr( const Rune* s, Rune c ) {
+static Rune* _wcschr( const Rune* s, const Rune& c ) {
 	if ( !c )
-		return (Rune*)s + Hexe_wcslen( s );
+		return (Rune*)s + _wcslen( s );
 	for ( ; *s && *s != c; s++ )
 		;
 	return *s ? (Rune*)s : 0;
@@ -115,13 +139,13 @@ static const uchar utfmask[UTF_SIZ + 1] = { 0xC0, 0x80, 0xE0, 0xF0, 0xF8 };
 static const Rune utfmin[UTF_SIZ + 1] = { 0, 0, 0x80, 0x800, 0x10000 };
 static const Rune utfmax[UTF_SIZ + 1] = { 0x10FFFF, 0x7F, 0x7FF, 0xFFFF, 0x10FFFF };
 
-int Hexe::Terminal::isboxdraw( Rune u ) {
+static int isboxdraw( const Rune& u ) {
 	Rune block = u & ~0xff;
 	return ( block == 0x2500 && boxdata[u & 0xFF] ) || ( block == 0x2800 );
 }
 
 /* the "index" is actually the entire shape data encoded as ushort */
-ushort Hexe::Terminal::boxdrawindex( const Glyph* g ) {
+ushort TerminalEmulator::boxdrawindex( const TerminalGlyph* g ) {
 	if ( ( g->u & ~0xff ) == 0x2800 )
 		return BRL | ( g->u & 0xFF );
 	if ( ( g->mode & ATTR_BOLD ) )
@@ -145,16 +169,6 @@ static void* xrealloc( void* p, size_t len ) {
 	return p;
 }
 
-static char* xstrdup( char* s ) {
-#ifdef WIN32
-	s = _strdup( s );
-#else
-	s = strdup( s );
-#endif
-	assert( s != NULL );
-	return s;
-}
-
 static size_t utf8decode( const char*, Rune*, size_t );
 static Rune utf8decodebyte( char, size_t* );
 static char utf8encodebyte( Rune, size_t );
@@ -164,7 +178,7 @@ static size_t utf8encode( Rune, char* );
 static char* base64dec( const char* );
 static char base64dec_getc( const char** );
 
-static intmax_t xwrite( int, const char*, size_t );
+// static intmax_t xwrite( int, const char*, size_t );
 
 size_t utf8decode( const char* c, Rune* u, size_t clen ) {
 	size_t i, j, len, type;
@@ -374,7 +388,7 @@ int TerminalEmulator::selected( int x, int y ) {
 void TerminalEmulator::selsnap( int* x, int* y, int direction ) {
 	int newx, newy, xt, yt;
 	int delim, prevdelim;
-	Glyph *gp, *prevgp;
+	TerminalGlyph *gp, *prevgp;
 
 	switch ( sel.snap ) {
 		case SNAP_WORD:
@@ -443,7 +457,7 @@ void TerminalEmulator::selsnap( int* x, int* y, int direction ) {
 char* TerminalEmulator::getsel( void ) {
 	char *str, *ptr;
 	int y, bufsize, lastx, linelen;
-	Glyph *gp, *last;
+	TerminalGlyph *gp, *last;
 
 	if ( sel.ob.x == -1 )
 		return NULL;
@@ -565,7 +579,7 @@ void TerminalEmulator::ttywrite( const char* s, size_t n, int may_echo ) {
 }
 
 void TerminalEmulator::ttywriteraw( const char* s, size_t n ) {
-	if ( m_pty->Write( s, n ) < n ) {
+	if ( m_pty->Write( s, n ) < (int)n ) {
 		_die( "Failed to write to TTY" );
 	}
 }
@@ -631,7 +645,7 @@ void TerminalEmulator::treset( void ) {
 	uint i;
 
 	term.c = TCursor{};
-	term.c.attr = Glyph{};
+	term.c.attr = TerminalGlyph{};
 	term.c.attr.mode = ATTR_NULL;
 	term.c.attr.fg = defaultfg;
 	term.c.attr.bg = defaultbg;
@@ -659,7 +673,7 @@ void TerminalEmulator::treset( void ) {
 void TerminalEmulator::tnew( int col, int row ) {
 	term = Term{};
 	term.c = TCursor{};
-	term.c.attr = Glyph{};
+	term.c.attr = TerminalGlyph{};
 	term.c.attr.fg = defaultfg;
 	term.c.attr.bg = defaultbg;
 
@@ -789,7 +803,7 @@ void TerminalEmulator::tmoveto( int x, int y ) {
 	term.c.y = LIMIT( y, miny, maxy );
 }
 
-void TerminalEmulator::tsetchar( Rune u, Glyph* attr, int x, int y ) {
+void TerminalEmulator::tsetchar( Rune u, TerminalGlyph* attr, int x, int y ) {
 	static const char* vt100_0[62] = {
 		/* 0x41 - 0x7e */
 		"↑", "↓", "→", "←", "█", "▚", "☃",		/* A - G */
@@ -829,7 +843,7 @@ void TerminalEmulator::tsetchar( Rune u, Glyph* attr, int x, int y ) {
 
 void TerminalEmulator::tclearregion( int x1, int y1, int x2, int y2 ) {
 	int x, y, temp;
-	Glyph* gp;
+	TerminalGlyph* gp;
 
 	if ( x1 > x2 )
 		temp = x1, x1 = x2, x2 = temp;
@@ -857,7 +871,7 @@ void TerminalEmulator::tclearregion( int x1, int y1, int x2, int y2 ) {
 
 void TerminalEmulator::tdeletechar( int n ) {
 	int dst, src, size;
-	Glyph* line;
+	TerminalGlyph* line;
 
 	LIMIT( n, 0, term.col - term.c.x );
 
@@ -866,13 +880,13 @@ void TerminalEmulator::tdeletechar( int n ) {
 	size = term.col - src;
 	line = term.line[term.c.y];
 
-	memmove( &line[dst], &line[src], size * sizeof( Glyph ) );
+	memmove( &line[dst], &line[src], size * sizeof( TerminalGlyph ) );
 	tclearregion( term.col - n, term.c.y, term.col - 1, term.c.y );
 }
 
 void TerminalEmulator::tinsertblank( int n ) {
 	int dst, src, size;
-	Glyph* line;
+	TerminalGlyph* line;
 
 	LIMIT( n, 0, term.col - term.c.x );
 
@@ -881,7 +895,7 @@ void TerminalEmulator::tinsertblank( int n ) {
 	size = term.col - dst;
 	line = term.line[term.c.y];
 
-	memmove( &line[dst], &line[src], size * sizeof( Glyph ) );
+	memmove( &line[dst], &line[src], size * sizeof( TerminalGlyph ) );
 	tclearregion( src, term.c.y, dst - 1, term.c.y );
 }
 
@@ -1434,6 +1448,7 @@ void TerminalEmulator::strhandle( void ) {
 						dec = base64dec( strescseq.args[2] );
 						if ( dec ) {
 							SetClipboard( dec );
+							free( dec );
 						} else {
 							fprintf( stderr, "erresc: invalid base64\n" );
 						}
@@ -1526,13 +1541,13 @@ void TerminalEmulator::strreset( void ) {
 	strescseq.siz = STR_BUF_SIZ;
 }
 
-void TerminalEmulator::sendbreak( const Arg* arg ) {
+void TerminalEmulator::sendbreak( const Arg* ) {
 	// TODO: Do something about this
 	// if (tcsendbreak(cmdfd, 0))
 	//     perror("Error sending break");
 }
 
-void TerminalEmulator::tprinter( const char* s, size_t len ) {
+void TerminalEmulator::tprinter( const char* /*s*/, size_t /*len*/ ) {
 	// TODO: Do something about this
 	// if (iofd != -1 && xwrite(iofd, s, len) < 0)
 	// {
@@ -1542,15 +1557,15 @@ void TerminalEmulator::tprinter( const char* s, size_t len ) {
 	// }
 }
 
-void TerminalEmulator::toggleprinter( const Arg* arg ) {
+void TerminalEmulator::toggleprinter( const Arg* ) {
 	term.mode ^= MODE_PRINT;
 }
 
-void TerminalEmulator::printscreen( const Arg* arg ) {
+void TerminalEmulator::printscreen( const Arg* ) {
 	tdump();
 }
 
-void TerminalEmulator::printsel( const Arg* arg ) {
+void TerminalEmulator::printsel( const Arg* ) {
 	tdumpsel();
 }
 
@@ -1565,7 +1580,7 @@ void TerminalEmulator::tdumpsel( void ) {
 
 void TerminalEmulator::tdumpline( int n ) {
 	char buf[UTF_SIZ];
-	Glyph *bp, *end;
+	TerminalGlyph *bp, *end;
 
 	bp = &term.line[n][0];
 	end = &bp[MIN( tlinelen( n ), term.col ) - 1];
@@ -1837,9 +1852,9 @@ static const unsigned char wtable[] = {
 #include "wide.hpp"
 };
 
-static int Hexe_wcwidth( Rune wc ) {
+static int wcwidth( Rune wc ) {
 	if ( wc < 0xffU )
-		return ( wc + 1 & 0x7f ) >= 0x21 ? 1 : wc ? -1 : 0;
+		return ( ( wc + 1 ) & 0x7f ) >= 0x21 ? 1 : wc ? -1 : 0;
 
 	if ( is_emoji( wc ) )
 		return 2;
@@ -1867,7 +1882,7 @@ void TerminalEmulator::tputc( Rune u ) {
 	int control;
 	int width;
 	size_t len;
-	Glyph* gp;
+	TerminalGlyph* gp;
 
 	control = ISCONTROL( u );
 	if ( u < 127 || !IS_SET( MODE_UTF8 ) ) {
@@ -1876,7 +1891,7 @@ void TerminalEmulator::tputc( Rune u ) {
 	} else {
 		len = utf8encode( u, c );
 		// if (!control && (width = wcwidth9(u)) < 0) {
-		if ( !control && ( width = Hexe_wcwidth( u ) ) < 0 ) {
+		if ( !control && ( width = wcwidth( u ) ) < 0 ) {
 			if ( width == -1 ) {
 				width = 0;
 			} else {
@@ -1978,7 +1993,7 @@ check_control_code:
 	}
 
 	if ( IS_SET( MODE_INSERT ) && term.c.x + width < term.col )
-		memmove( gp + width, gp, ( term.col - term.c.x - width ) * sizeof( Glyph ) );
+		memmove( gp + width, gp, ( term.col - term.c.x - width ) * sizeof( TerminalGlyph ) );
 
 	if ( term.c.x + width > term.col ) {
 		tnewline( 1 );
@@ -2009,7 +2024,7 @@ check_control_code:
 int TerminalEmulator::twrite( const char* buf, int buflen, int show_ctrl ) {
 	size_t charsize;
 	Rune u;
-	size_t n;
+	int n;
 
 	for ( n = 0; n < buflen; n += charsize ) {
 		if ( IS_SET( MODE_UTF8 ) ) {
@@ -2075,14 +2090,14 @@ void TerminalEmulator::tresize( int col, int row ) {
 
 	/* resize each row to new width, zero-pad if needed */
 	for ( i = 0; i < minrow; i++ ) {
-		term.line[i] = (Line)xrealloc( term.line[i], col * sizeof( Glyph ) );
-		term.alt[i] = (Line)xrealloc( term.alt[i], col * sizeof( Glyph ) );
+		term.line[i] = (Line)xrealloc( term.line[i], col * sizeof( TerminalGlyph ) );
+		term.alt[i] = (Line)xrealloc( term.alt[i], col * sizeof( TerminalGlyph ) );
 	}
 
 	/* allocate any new rows */
 	for ( /* i = minrow */; i < row; i++ ) {
-		term.line[i] = (Line)xmalloc( col * sizeof( Glyph ) );
-		term.alt[i] = (Line)xmalloc( col * sizeof( Glyph ) );
+		term.line[i] = (Line)xmalloc( col * sizeof( TerminalGlyph ) );
+		term.alt[i] = (Line)xmalloc( col * sizeof( TerminalGlyph ) );
 	}
 	if ( col > term.col ) {
 		bp = term.tabs + term.col;
@@ -2135,7 +2150,7 @@ void TerminalEmulator::drawregion( TerminalDisplay& dpy, int x1, int y1, int x2,
 }
 
 void TerminalEmulator::draw( void ) {
-	int cx = term.c.x, ocx = term.ocx, ocy = term.ocy;
+	int cx = term.c.x /*, ocx = term.ocx, ocy = term.ocy*/;
 
 	{
 		auto dpy = m_dpy.lock();
@@ -2153,13 +2168,16 @@ void TerminalEmulator::draw( void ) {
 			cx--;
 
 		drawregion( *dpy, 0, 0, term.col, term.row );
+
 		dpy->DrawCursor( cx, term.c.y, term.line[term.c.y][cx], term.ocx, term.ocy,
 						 term.line[term.ocy][term.ocx] );
+
 		term.ocx = cx;
 		term.ocy = term.c.y;
 
 		dpy->DrawEnd();
 	}
+
 	// if (ocx != term.ocx || ocy != term.ocy)
 	//     xximspot(term.ocx, term.ocy);
 }
@@ -2216,7 +2234,7 @@ TerminalEmulator::TerminalEmulator( PtyPtr&& pty, ProcPtr&& process,
 
 	tnew( col, row );
 	if ( display ) {
-		display->SetCursorMode( (Hexe::Terminal::cursor_mode)cursorshape );
+		display->SetCursorMode( SteadyUnderline );
 		display->Attach( this );
 		LoadColors();
 	}
@@ -2245,7 +2263,7 @@ void TerminalEmulator::Terminate() {
 	}
 }
 
-void TerminalEmulator::OnProcessExit( int exitCode ) {}
+void TerminalEmulator::OnProcessExit( int /*exitCode*/ ) {}
 
 void TerminalEmulator::SetClipboard( const char* str ) {
 	auto dpy = m_dpy.lock();
@@ -2294,7 +2312,7 @@ void TerminalEmulator::Update() {
 		return;
 	}
 
-	int n = 10;
+	int n = 1024;
 	while ( ttyread() > 0 && n > 0 ) {
 		--n;
 	}
@@ -2305,6 +2323,7 @@ void TerminalEmulator::Update() {
 	draw();
 
 	m_process->CheckExitStatus();
+
 	if ( m_process->HasExited() ) {
 		m_exitCode = m_process->GetExitCode();
 		m_status = TERMINATED;

@@ -28,14 +28,22 @@
 #include <string>
 #include <vector>
 
+using namespace Hexe::Terminal;
+
 namespace Hexe { namespace System {
+
 class IProcessFactory {
   public:
 	IProcessFactory() = default;
+
 	virtual ~IProcessFactory() = default;
+
 	IProcessFactory( const IProcessFactory& ) = delete;
+
 	IProcessFactory( IProcessFactory&& ) = delete;
+
 	IProcessFactory& operator=( const IProcessFactory& ) = delete;
+
 	IProcessFactory& operator=( IProcessFactory&& ) = delete;
 
 	virtual std::unique_ptr<IProcess> CreateWithStdioPipe( const std::string& program,
@@ -44,10 +52,10 @@ class IProcessFactory {
 														   std::unique_ptr<IPipe>& outPipe,
 														   bool withStderr = true ) = 0;
 
-	virtual std::unique_ptr<IProcess> CreateWithPseudoTerminal(
-		const std::string& program, const std::vector<std::string>& args,
-		const std::string& workingDirectory, int numColumns, int numRows,
-		std::unique_ptr<Hexe::Terminal::IPseudoTerminal>& outPseudoTerminal ) = 0;
+	virtual std::unique_ptr<IProcess>
+	CreateWithPseudoTerminal( const std::string& program, const std::vector<std::string>& args,
+							  const std::string& workingDirectory, int numColumns, int numRows,
+							  std::unique_ptr<IPseudoTerminal>& outPseudoTerminal ) = 0;
 };
 
 }} // namespace Hexe::System

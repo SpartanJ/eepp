@@ -25,18 +25,26 @@
 #include <stdint.h>
 
 namespace Hexe { namespace Terminal {
+
 class IPseudoTerminal : public Hexe::System::IPipe {
   public:
 	IPseudoTerminal() = default;
+
 	IPseudoTerminal( IPseudoTerminal&& ) = delete;
+
 	IPseudoTerminal( const IPseudoTerminal& ) = delete;
+
 	IPseudoTerminal& operator=( IPseudoTerminal&& ) = delete;
+
 	IPseudoTerminal& operator=( const IPseudoTerminal& ) = delete;
+
 	virtual ~IPseudoTerminal() = default;
 
 	virtual int GetNumColumns() const = 0;
+
 	virtual int GetNumRows() const = 0;
 
 	virtual bool Resize( int columns, int rows ) = 0;
 };
+
 }} // namespace Hexe::Terminal

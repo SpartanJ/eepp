@@ -1144,17 +1144,14 @@
 ../../src/tools/eterm/system/pipe.win32.cpp
 ../../src/tools/eterm/system/process.cpp
 ../../src/tools/eterm/system/process.hpp
-../../src/tools/eterm/system/process.win32.cpp
 ../../src/tools/eterm/system/processfactory.cpp
 ../../src/tools/eterm/system/processfactory.hpp
 ../../src/tools/eterm/terminal/boxdraw.hpp
 ../../src/tools/eterm/terminal/boxdrawdata.hpp
-../../src/tools/eterm/terminal/config.def.hpp
 ../../src/tools/eterm/terminal/ipseudoterminal.hpp
 ../../src/tools/eterm/terminal/nonspacing.hpp
 ../../src/tools/eterm/terminal/pseudoterminal.cpp
 ../../src/tools/eterm/terminal/pseudoterminal.hpp
-../../src/tools/eterm/terminal/pseudoterminal.win32.cpp
 ../../src/tools/eterm/terminal/terminaldisplay.cpp
 ../../src/tools/eterm/terminal/terminaldisplay.hpp
 ../../src/tools/eterm/terminal/terminalemulator.cpp

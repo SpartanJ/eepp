@@ -214,6 +214,7 @@ TerminalKeyMap terminalKeyMap{ keys,		 eeARRAY_SIZE( keys ),
 							   platformKeys, eeARRAY_SIZE( platformKeys ),
 							   shortcuts,	 eeARRAY_SIZE( shortcuts ) };
 
+/* Terminal colors (16 first used in escape sequence) */
 // This is the customizable colorscheme
 const char* colornames[256] = { "#1e2127", "#e06c75", "#98c379", "#d19a66", "#61afef", "#c678dd",
 								"#56b6c2", "#abb2bf", "#5c6370", "#e06c75", "#98c379", "#d19a66",
@@ -310,7 +311,7 @@ static const Color colormapped[256] = {
 
 std::shared_ptr<ETerminalDisplay>
 ETerminalDisplay::Create( EE::Window::Window* window, Font* font,
-						  std::shared_ptr<Hexe::Terminal::TerminalEmulator>&& terminalEmulator,
+						  std::shared_ptr<TerminalEmulator>&& terminalEmulator,
 						  TerminalConfig* config ) {
 	std::shared_ptr<ETerminalDisplay> terminal = std::shared_ptr<ETerminalDisplay>(
 		new ETerminalDisplay( window, font, terminalEmulator->GetNumColumns(),
@@ -369,7 +370,7 @@ ETerminalDisplay::ETerminalDisplay( EE::Window::Window* window, Font* font, int 
 			m_pasteNewlineFix = true;
 	}
 
-	Hexe::Terminal::Glyph defaultGlyph;
+	TerminalGlyph defaultGlyph;
 	defaultGlyph.mode = ATTR_INVISIBLE;
 	auto defaultColor = std::make_pair<Uint32, std::string>( 0U, "" );
 	m_cursorg = defaultGlyph;
@@ -450,7 +451,7 @@ const char* ETerminalDisplay::GetClipboard() const {
 
 bool ETerminalDisplay::DrawBegin( int columns, int rows ) {
 	if ( columns != m_columns || rows != m_rows ) {
-		Hexe::Terminal::Glyph defaultGlyph{};
+		TerminalGlyph defaultGlyph{};
 		m_buffer.resize( columns * rows, defaultGlyph );
 		m_columns = columns;
 		m_rows = rows;
@@ -462,7 +463,7 @@ bool ETerminalDisplay::DrawBegin( int columns, int rows ) {
 
 void ETerminalDisplay::DrawLine( Line line, int x1, int y, int x2 ) {
 	m_checkDirty = true;
-	memcpy( &m_buffer[y * m_columns + x1], line, ( x2 - x1 ) * sizeof( Hexe::Terminal::Glyph ) );
+	memcpy( &m_buffer[y * m_columns + x1], line, ( x2 - x1 ) * sizeof( TerminalGlyph ) );
 	for ( int i = x1; i < x2; i++ ) {
 		if ( m_terminal->selected( i, y ) ) {
 			m_buffer[y * m_columns + i].mode |= ATTR_REVERSE;
@@ -470,8 +471,7 @@ void ETerminalDisplay::DrawLine( Line line, int x1, int y, int x2 ) {
 	}
 }
 
-void ETerminalDisplay::DrawCursor( int cx, int cy, Hexe::Terminal::Glyph g, int, int,
-								   Hexe::Terminal::Glyph ) {
+void ETerminalDisplay::DrawCursor( int cx, int cy, TerminalGlyph g, int, int, TerminalGlyph ) {
 	m_cursorx = cx;
 	m_cursory = cy;
 	m_cursorg = g;
@@ -508,13 +508,8 @@ static inline Color GetCol( unsigned int terminalColor,
 				  terminalColor & 0xFF, ( ~( ( terminalColor >> 25 ) & 0xFF ) ) & 0xFF );
 }
 
-#define MIN( a, b ) ( ( a ) < ( b ) ? ( a ) : ( b ) )
-#define MAX( a, b ) ( ( a ) < ( b ) ? ( b ) : ( a ) )
-#define LEN( a ) ( sizeof( a ) / sizeof( a )[0] )
 #define BETWEEN( x, a, b ) ( ( a ) <= ( x ) && ( x ) <= ( b ) )
 #define IS_SET( flag ) ( ( mMode & ( flag ) ) != 0 )
-#define DIV( n, d ) ( ( ( n ) + ( d ) / 2.0f ) / ( d ) )
-#define DIVI( n, d ) ( ( ( n ) + ( d ) / 2 ) / ( d ) )
 #define COL32_R_SHIFT 24
 #define COL32_G_SHIFT 16
 #define COL32_B_SHIFT 8
@@ -697,25 +692,14 @@ void ETerminalDisplay::Draw( Vector2i pos, const Sizei& clip_rect, bool /*hasFoc
 				continue;
 			}
 
-			/*Text t( mFont, mFontSize );
-			t.setDisableCacheWidth( true );
-			t.setColor( fg );
-			t.setStyle( 0 | ( glyph.mode & ATTR_BOLD ? Text::Style::Bold : 0 ) |
-						( glyph.mode & ATTR_ITALIC ? Text::Style::Italic : 0 ) |
-						( glyph.mode & ATTR_UNDERLINE ? Text::Style::Underlined : 0 ) );
-			String str;
-			str.push_back( glyph.u );
-			t.setString( str );
-			t.draw( x, y );*/
 			auto* gd = mFont->getGlyphDrawable( glyph.u, mFontSize, glyph.mode & ATTR_BOLD );
 			gd->setColor( fg );
 			gd->setDrawMode( GlyphDrawable::DrawMode::Text );
 			gd->draw( { x, y } );
 
 			/*if ( glyph.mode & ATTR_BOXDRAW && m_useBoxDrawing ) {
-				auto bd = boxdrawindex( &glyph );
-				drawbox( x, y, advanceX, line_height, fg, bg, bd, vtx_write, idx_write,
-						 vtx_current_idx, drawList->_Data->TexUvWhitePixel );
+				auto bd = TerminalEmulator::boxdrawindex( &glyph );
+				drawbox( x, y, advanceX, line_height, fg, bg, bd, vtx_write );
 			}
 
 			if ( glyph.mode & ATTR_STRUCK ) {
@@ -796,7 +780,7 @@ void ETerminalDisplay::Draw( Vector2i pos, const Sizei& clip_rect, bool /*hasFoc
 										  // xdrawglyph(g, cx, cy);
 										  // break;
 				case 3:					  /* Blinking Underline */
-				case Hexe::Terminal::MAX_CURSOR:
+				case cursor_mode::MAX_CURSOR:
 				case 4: /* Steady Underline */
 					p.drawRectangle( Rectf(
 						{ pos.x + borderpx + m_cursorx * spaceCharAdvanceX,

@@ -26,7 +26,7 @@ namespace Hexe {
 // This class is designed to automatically free a resource handle when destructed
 class AutoHandle final {
   public:
-#ifdef WIN32
+#ifdef _WIN32
 	// On Windows we deal with the Windows API, which means HANDLE is used as the handle to files
 	// and pipes
 	using type = void*;

@@ -96,9 +96,9 @@ typedef struct {
 	ushort mode; /* attribute flags */
 	uint32_t fg; /* foreground  */
 	uint32_t bg; /* background  */
-} Glyph;
+} TerminalGlyph;
 
-typedef Glyph* Line;
+typedef TerminalGlyph* Line;
 
 union Arg {
 	int i;
@@ -142,7 +142,7 @@ enum escape_state {
 };
 
 typedef struct {
-	Glyph attr; /* current char attributes */
+	TerminalGlyph attr; /* current char attributes */
 	int x;
 	int y;
 	char state;

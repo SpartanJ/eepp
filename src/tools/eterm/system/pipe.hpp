@@ -21,8 +21,8 @@
 //  DEALINGS IN THE SOFTWARE.
 #pragma once
 
-#include "autohandle.hpp"
 #include "../system/ipipe.hpp"
+#include "autohandle.hpp"
 #include <memory>
 
 namespace Hexe { namespace System {
@@ -30,7 +30,7 @@ class Process;
 class Pipe : public IPipe {
   private:
 	friend class Process;
-#ifdef WIN32
+#ifdef _WIN32
 	AutoHandle m_hInput;
 	AutoHandle m_hOutput;
 
@@ -42,14 +42,19 @@ class Pipe : public IPipe {
 #endif
   public:
 	Pipe( Pipe&& ) = delete;
+
 	Pipe( const Pipe& ) = delete;
+
 	Pipe& operator=( Pipe&& ) = delete;
+
 	Pipe& operator=( const Pipe& ) = delete;
+
 	virtual ~Pipe() = default;
 
 	virtual bool IsTTY() const override;
 
 	virtual int Write( const char* s, size_t n ) override;
+
 	virtual int Read( char* buf, size_t n, bool block = false ) override;
 
 	static bool CreatePipePair( std::unique_ptr<Pipe>& outPipeA, std::unique_ptr<Pipe>& outPipeB );

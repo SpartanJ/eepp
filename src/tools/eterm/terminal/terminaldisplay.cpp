@@ -29,17 +29,22 @@ using namespace Hexe::Terminal;
 
 TerminalDisplay::TerminalDisplay() :
 	mMode( MODE_VISIBLE ), mCursorMode( SteadyBar ), mEmulator( nullptr ) {}
+
 void TerminalDisplay::Attach( TerminalEmulator* terminal ) {
 	assert( mEmulator == nullptr );
 	mEmulator = terminal;
 }
+
 void TerminalDisplay::Detach( TerminalEmulator* terminal ) {
 	assert( mEmulator == terminal );
 	mEmulator = nullptr;
 }
+
 void TerminalDisplay::Bell() {}
+
 void TerminalDisplay::ResetColors() {}
-int TerminalDisplay::ResetColor( int index, const char* name ) {
+
+int TerminalDisplay::ResetColor( int /*index*/, const char* /*name*/ ) {
 	return 0;
 }
 
@@ -58,9 +63,13 @@ void TerminalDisplay::SetCursorMode( cursor_mode cursor ) {
 cursor_mode TerminalDisplay::GetCursorMode() const {
 	return mCursorMode;
 }
-void TerminalDisplay::SetTitle( const char* title ) {}
-void TerminalDisplay::SetIconTitle( const char* title ) {}
-void TerminalDisplay::SetClipboard( const char* text ) {}
+
+void TerminalDisplay::SetTitle( const char* ) {}
+
+void TerminalDisplay::SetIconTitle( const char* ) {}
+
+void TerminalDisplay::SetClipboard( const char* ) {}
+
 const char* TerminalDisplay::GetClipboard() const {
 	return "";
 }

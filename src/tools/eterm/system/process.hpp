@@ -31,9 +31,13 @@
 #ifndef WIN32
 #include <sys/types.h>
 #include <unistd.h>
+#else
+#define NTDDI_VERSION NTDDI_WIN10_RS5
+#include <windows.h>
 #endif
 
 namespace Hexe { namespace System {
+
 class Process final : public IProcess {
   private:
 	ProcessStatus m_status;

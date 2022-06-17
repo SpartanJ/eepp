@@ -20,7 +20,8 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //  DEALINGS IN THE SOFTWARE.
 #pragma once
-#ifdef WIN32
+#ifdef _WIN32
+#define NTDDI_VERSION NTDDI_WIN10_RS5
 #include <comdef.h>
 #include <iostream>
 #include <string>

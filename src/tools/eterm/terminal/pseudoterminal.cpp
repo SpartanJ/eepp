@@ -20,9 +20,9 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //  DEALINGS IN THE SOFTWARE.
 
-#ifndef WIN32
+#ifndef _WIN32
 // Windows has its own source file
-#include "../terminal/pseudoterminal.hpp"
+#include "pseudoterminal.hpp"
 #include <cstdio>
 #include <poll.h>
 #include <pty.h>
@@ -34,6 +34,7 @@
 using namespace Hexe::Terminal;
 
 PseudoTerminal::~PseudoTerminal() {}
+
 PseudoTerminal::PseudoTerminal( int columns, int rows, AutoHandle&& master, AutoHandle&& slave ) :
 	m_columns( columns ),
 	m_rows( rows ),
@@ -121,4 +122,118 @@ std::unique_ptr<PseudoTerminal> PseudoTerminal::Create( int columns, int rows ) 
 		new PseudoTerminal( columns, rows, std::move( master ), std::move( slave ) ) );
 }
 
+#else
+#include "pseudoterminal.hpp"
+#include "windowserrors.hpp"
+#include <assert.h>
+#define NTDDI_VERSION NTDDI_WIN10_RS5
+#include <windows.h>
+
+using namespace Hexe::Terminal;
+
+PseudoTerminal::~PseudoTerminal() {
+	ClosePseudoConsole( m_phPC );
+}
+
+PseudoTerminal::PseudoTerminal( int columns, int rows, AutoHandle&& hInput, AutoHandle&& hOutput,
+								void* hPC ) :
+	m_hInput( std::move( hInput ) ),
+	m_hOutput( std::move( hOutput ) ),
+	m_phPC( hPC ),
+	m_attached( false ) {
+	m_size.x = (SHORT)columns;
+	m_size.y = (SHORT)rows;
+}
+
+bool PseudoTerminal::IsTTY() const {
+	return true;
+}
+
+bool PseudoTerminal::Resize( int columns, int rows ) {
+	HRESULT hr = ResizePseudoConsole( m_phPC, { (SHORT)columns, (SHORT)rows } );
+	if ( hr != S_OK ) {
+		PrintErrorResult( hr );
+		return false;
+	}
+	m_size.x = (SHORT)columns;
+	m_size.y = (SHORT)rows;
+	return true;
+}
+
+int PseudoTerminal::Write( const char* s, size_t n ) {
+	constexpr size_t lim = 256;
+
+	DWORD c = (DWORD)n;
+	DWORD r = 0;
+	while ( n > 0 ) {
+		if ( !WriteFile( (HANDLE)m_hOutput.Get(), s, (DWORD)( n > lim ? lim : n ), &r, nullptr ) ) {
+			PrintLastWinApiError();
+			return -1;
+		}
+
+		s += r;
+		n -= r;
+	}
+	return (int)c;
+}
+
+int PseudoTerminal::Read( char* buf, size_t n, bool block ) {
+	DWORD available;
+	DWORD read;
+
+	if ( !block ) {
+		if ( !PeekNamedPipe( (HANDLE)m_hInput.Get(), nullptr, 0, nullptr, &available, nullptr ) ) {
+			PrintLastWinApiError();
+			return -1;
+		}
+		if ( available == 0 )
+			return 0;
+	}
+
+	if ( !ReadFile( (HANDLE)m_hInput.Get(), buf, (DWORD)n, &read, nullptr ) ) {
+		PrintLastWinApiError();
+		return -1;
+	}
+	return (int)read;
+}
+
+int PseudoTerminal::GetNumColumns() const {
+	return m_size.x;
+}
+
+int PseudoTerminal::GetNumRows() const {
+	return m_size.y;
+}
+
+std::unique_ptr<PseudoTerminal> PseudoTerminal::Create( int columns, int rows ) {
+	using Pointer = std::unique_ptr<PseudoTerminal>;
+
+	HRESULT hr{ E_UNEXPECTED };
+	void* hPC{ INVALID_HANDLE_VALUE };
+	AutoHandle hPipeIn{};
+	AutoHandle hPipeOut{};
+
+	AutoHandle hPipePTYIn{};
+	AutoHandle hPipePTYOut{};
+
+	if ( CreatePipe( hPipePTYIn.Get(), hPipeOut.Get(), NULL, 0 ) &&
+		 CreatePipe( hPipeIn.Get(), hPipePTYOut.Get(), NULL, 0 ) ) {
+		COORD ptySize;
+		ptySize.X = (SHORT)columns;
+		ptySize.Y = (SHORT)rows;
+
+		assert( ptySize.X > 0 );
+		assert( ptySize.Y > 0 );
+
+		hr = CreatePseudoConsole( ptySize, (HANDLE)hPipePTYIn.Get(), (HANDLE)hPipePTYOut.Get(), 0, &hPC );
+	}
+
+	if ( hr != S_OK ) {
+		PrintErrorResult( hr );
+		return Pointer();
+	}
+
+	return Pointer(
+		new PseudoTerminal( columns, rows, std::move( hPipeIn ), std::move( hPipeOut ), hPC ) );
+}
 #endif

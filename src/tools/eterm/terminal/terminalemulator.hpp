@@ -42,9 +42,6 @@
 #include <memory>
 #include <stdint.h>
 #include <sys/types.h>
-#ifdef WIN32
-#include <windows.h>
-#endif
 
 namespace Hexe { namespace Terminal {
 constexpr int ESC_BUF_SIZ = 512;
@@ -95,14 +92,13 @@ typedef struct {
 	int narg; /* nb of args */
 } STREscape;
 
-int isboxdraw( Rune );
-ushort boxdrawindex( const Glyph* );
-
 class TerminalEmulator final {
   public:
 	using DpyPtr = std::weak_ptr<TerminalDisplay>;
 	using PtyPtr = std::unique_ptr<IPseudoTerminal>;
 	using ProcPtr = std::unique_ptr<System::IProcess>;
+
+	static ushort boxdrawindex( const TerminalGlyph* g ) ;
 
   private:
 	DpyPtr m_dpy;
@@ -131,16 +127,13 @@ class TerminalEmulator final {
 	int allowaltscreen;
 	int allowwindowops;
 
-  private:
 	void SetClipboard( const char* str );
 
 	void LoadColors();
 	int ResetColor( int x, const char* name );
 
-  private:
 	void OnProcessExit( int exitCode );
 
-  private:
 	void csidump();
 	void csihandle();
 	void csiparse();
@@ -173,7 +166,7 @@ class TerminalEmulator final {
 	void tscrollup( int, int );
 	void tscrolldown( int, int );
 	void tsetattr( int*, int );
-	void tsetchar( Rune, Glyph*, int, int );
+	void tsetchar( Rune, TerminalGlyph*, int, int );
 	void tsetdirt( int, int );
 	void tsetscroll( int, int );
 	void tswapscreen();
@@ -191,7 +184,6 @@ class TerminalEmulator final {
 	void selscroll( int, int );
 	void selsnap( int*, int*, int );
 
-  private:
 	void _die( const char*, ... );
 	void drawregion( TerminalDisplay& dpy, int, int, int, int );
 	void draw();

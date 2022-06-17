@@ -1,6 +1,7 @@
-#ifdef WIN32
-#include "../system/pipe.h"
-#include "windowserrors.h"
+#ifdef _WIN32
+#include "pipe.hpp"
+#include "../terminal/windowserrors.hpp"
+#include <windows.h>
 
 using namespace Hexe::System;
 

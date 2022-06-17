@@ -24,6 +24,7 @@
 #include "types.hpp"
 
 namespace Hexe { namespace Terminal {
+
 class TerminalEmulator;
 class TerminalDisplay {
   protected:
@@ -61,7 +62,8 @@ class TerminalDisplay {
 
 	virtual bool DrawBegin( int columns, int rows ) = 0;
 	virtual void DrawLine( Line line, int x1, int y, int x2 ) = 0;
-	virtual void DrawCursor( int cx, int cy, Glyph g, int ox, int oy, Glyph og ) = 0;
+	virtual void DrawCursor( int cx, int cy, TerminalGlyph g, int ox, int oy, TerminalGlyph og ) = 0;
 	virtual void DrawEnd() = 0;
 };
+
 }} // namespace Hexe::Terminal

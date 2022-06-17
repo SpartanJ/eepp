@@ -21,11 +21,9 @@
 //  DEALINGS IN THE SOFTWARE.
 
 #include "autohandle.hpp"
-#ifndef WIN32
+#ifndef _WIN32
 #include <unistd.h>
-#endif
-
-#ifdef WIN32
+#else
 #include <windows.h>
 #endif
 
@@ -46,7 +44,7 @@ Hexe::AutoHandle& Hexe::AutoHandle::operator=( AutoHandle&& other ) {
 	return *this;
 }
 
-#ifdef WIN32
+#ifdef _WIN32
 Hexe::AutoHandle::AutoHandle( HANDLE handle ) : m_hHandle( handle ) {}
 
 void Hexe::AutoHandle::Release() const {
@@ -63,7 +61,6 @@ void Hexe::AutoHandle::Release() const {
 		close( m_hHandle );
 	}
 }
-
 #endif
 
 Hexe::AutoHandle::operator bool() const noexcept {
@@ -82,11 +79,11 @@ Hexe::AutoHandle::operator Hexe::AutoHandle::type() const noexcept {
 	return m_hHandle;
 }
 
-#ifdef WIN32
+#ifdef _WIN32
 // On Windows we deal with the Windows API, which means HANDLE is used as the handle to files
 // and pipes
 constexpr Hexe::AutoHandle::type Hexe::AutoHandle::invalid_value() {
-	return INVALID_HANDLE_VALUE;
+	return static_cast<AutoHandle::type>( 0 );
 }
 #else
 // On non-Windows OS'es we deal with file descriptors

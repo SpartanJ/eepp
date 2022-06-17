@@ -23,7 +23,10 @@
 
 #include "../system/autohandle.hpp"
 #include "ipseudoterminal.hpp"
+#include <eepp/math/vector2.hpp>
 #include <memory>
+
+using namespace EE::Math;
 
 namespace Hexe {
 namespace System {
@@ -33,16 +36,16 @@ namespace Terminal {
 class PseudoTerminal final : public IPseudoTerminal {
   private:
 	friend class ::Hexe::System::Process;
-#ifdef WIN32
-	COORD m_size;
+#ifdef _WIN32
+	Vector2i m_size;
 
 	AutoHandle m_hInput;
 	AutoHandle m_hOutput;
-	HPCON m_phPC;
+	void* m_phPC;
 
 	bool m_attached;
 
-	PseudoTerminal( int columns, int rows, AutoHandle&& hInput, AutoHandle&& hOutput, HPCON hPC );
+	PseudoTerminal( int columns, int rows, AutoHandle&& hInput, AutoHandle&& hOutput, void* hPC );
 #else
 	int m_columns;
 	int m_rows;

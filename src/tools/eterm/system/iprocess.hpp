@@ -22,22 +22,32 @@
 #pragma once
 
 namespace Hexe { namespace System {
+
 enum class ProcessStatus { RUNNING = 0, EXITED };
 
 class IProcess {
   public:
 	IProcess() = default;
+
 	virtual ~IProcess() = default;
+
 	IProcess( const IProcess& ) = delete;
+
 	IProcess( IProcess&& ) = delete;
+
 	IProcess& operator=( const IProcess& ) = delete;
+
 	IProcess& operator=( IProcess&& ) = delete;
 
 	virtual void CheckExitStatus() = 0;
+
 	virtual bool HasExited() const = 0;
+
 	virtual int GetExitCode() const = 0;
 
 	virtual void Terminate() = 0;
+
 	virtual void WaitForExit() = 0;
 };
+
 }} // namespace Hexe::System
