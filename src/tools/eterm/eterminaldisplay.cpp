@@ -6,6 +6,214 @@
 #include <eepp/window.hpp>
 #include <eepp/window/clipboard.hpp>
 
+TerminalKeyMap::TerminalKeyMap( const TerminalKey keys[], size_t keysLen,
+								const TerminalScancode platformKeys[], size_t platformKeysLen,
+								const TerminalShortcut shortcuts[], size_t shortcutsLen ) {
+	for ( size_t i = 0; i < keysLen; i++ ) {
+		auto& e = m_keyMap[keys[i].keysym];
+		e.push_back( { keys[i].mask, keys[i].string, keys[i].appkey, keys[i].appcursor } );
+	}
+
+	for ( size_t i = 0; i < platformKeysLen; i++ ) {
+		auto& e = m_platformKeyMap[platformKeys[i].scancode];
+		e.push_back( { platformKeys[i].mask, platformKeys[i].string, platformKeys[i].appkey,
+					   platformKeys[i].appcursor } );
+	}
+
+	for ( size_t i = 0; i < shortcutsLen; i++ ) {
+		auto& e = m_shortcuts[shortcuts[i].keysym];
+		e.push_back( { shortcuts[i].mask, shortcuts[i].action, shortcuts[i].appkey,
+					   shortcuts[i].appcursor } );
+	}
+}
+
+static TerminalShortcut shortcuts[] = { { KEY_INSERT, KEYMOD_SHIFT, ShortcutAction::PASTE, 0, 0 } };
+
+static TerminalKey keys[] = {
+	/* keysym           mask            string      appkey appcursor */
+	{ KEY_KP_ENTER, KEYMOD_CTRL_SHIFT_ALT_META, "\033OM", +2, 0 },
+	{ KEY_KP_ENTER, KEYMOD_CTRL_SHIFT_ALT_META, "\r", -1, 0 },
+
+	{ KEY_UP, KEYMOD_SHIFT, "\033[1;2A", 0, 0 },
+	{ KEY_UP, KEYMOD_LALT, "\033[1;3A", 0, 0 },
+	{ KEY_UP, KEYMOD_SHIFT | KEYMOD_LALT, "\033[1;4A", 0, 0 },
+	{ KEY_UP, KEYMOD_CTRL, "\033[1;5A", 0, 0 },
+	{ KEY_UP, KEYMOD_SHIFT | KEYMOD_CTRL, "\033[1;6A", 0, 0 },
+	{ KEY_UP, KEYMOD_CTRL | KEYMOD_LALT, "\033[1;7A", 0, 0 },
+	{ KEY_UP, KEYMOD_SHIFT | KEYMOD_CTRL | KEYMOD_LALT, "\033[1;8A", 0, 0 },
+	{ KEY_UP, KEYMOD_CTRL_SHIFT_ALT_META, "\033[A", 0, -1 },
+	{ KEY_UP, KEYMOD_CTRL_SHIFT_ALT_META, "\033OA", 0, +1 },
+	{ KEY_DOWN, KEYMOD_SHIFT, "\033[1;2B", 0, 0 },
+	{ KEY_DOWN, KEYMOD_LALT, "\033[1;3B", 0, 0 },
+	{ KEY_DOWN, KEYMOD_SHIFT | KEYMOD_LALT, "\033[1;4B", 0, 0 },
+	{ KEY_DOWN, KEYMOD_CTRL, "\033[1;5B", 0, 0 },
+	{ KEY_DOWN, KEYMOD_SHIFT | KEYMOD_CTRL, "\033[1;6B", 0, 0 },
+	{ KEY_DOWN, KEYMOD_CTRL | KEYMOD_LALT, "\033[1;7B", 0, 0 },
+	{ KEY_DOWN, KEYMOD_SHIFT | KEYMOD_CTRL | KEYMOD_LALT, "\033[1;8B", 0, 0 },
+	{ KEY_DOWN, KEYMOD_CTRL_SHIFT_ALT_META, "\033[B", 0, -1 },
+	{ KEY_DOWN, KEYMOD_CTRL_SHIFT_ALT_META, "\033OB", 0, +1 },
+	{ KEY_LEFT, KEYMOD_SHIFT, "\033[1;2D", 0, 0 },
+	{ KEY_LEFT, KEYMOD_LALT, "\033[1;3D", 0, 0 },
+	{ KEY_LEFT, KEYMOD_SHIFT | KEYMOD_LALT, "\033[1;4D", 0, 0 },
+	{ KEY_LEFT, KEYMOD_CTRL, "\033[1;5D", 0, 0 },
+	{ KEY_LEFT, KEYMOD_SHIFT | KEYMOD_CTRL, "\033[1;6D", 0, 0 },
+	{ KEY_LEFT, KEYMOD_CTRL | KEYMOD_LALT, "\033[1;7D", 0, 0 },
+	{ KEY_LEFT, KEYMOD_SHIFT | KEYMOD_CTRL | KEYMOD_LALT, "\033[1;8D", 0, 0 },
+	{ KEY_LEFT, KEYMOD_CTRL_SHIFT_ALT_META, "\033[D", 0, -1 },
+	{ KEY_LEFT, KEYMOD_CTRL_SHIFT_ALT_META, "\033OD", 0, +1 },
+	{ KEY_RIGHT, KEYMOD_SHIFT, "\033[1;2C", 0, 0 },
+	{ KEY_RIGHT, KEYMOD_LALT, "\033[1;3C", 0, 0 },
+	{ KEY_RIGHT, KEYMOD_SHIFT | KEYMOD_LALT, "\033[1;4C", 0, 0 },
+	{ KEY_RIGHT, KEYMOD_CTRL, "\033[1;5C", 0, 0 },
+	{ KEY_RIGHT, KEYMOD_SHIFT | KEYMOD_CTRL, "\033[1;6C", 0, 0 },
+	{ KEY_RIGHT, KEYMOD_CTRL | KEYMOD_LALT, "\033[1;7C", 0, 0 },
+	{ KEY_RIGHT, KEYMOD_SHIFT | KEYMOD_CTRL | KEYMOD_LALT, "\033[1;8C", 0, 0 },
+	{ KEY_RIGHT, KEYMOD_CTRL_SHIFT_ALT_META, "\033[C", 0, -1 },
+	{ KEY_RIGHT, KEYMOD_CTRL_SHIFT_ALT_META, "\033OC", 0, +1 },
+	{ KEY_TAB, KEYMOD_SHIFT, "\033[Z", 0, 0 },
+	{ KEY_TAB, KEYMOD_CTRL_SHIFT_ALT_META, "\t", 0, 0 },
+	{ KEY_RETURN, KEYMOD_LALT, "\033\r", 0, 0 },
+	{ KEY_RETURN, KEYMOD_CTRL_SHIFT_ALT_META, "\r", 0, 0 },
+	{ KEY_INSERT, KEYMOD_SHIFT, "\033[4l", -1, 0 },
+	{ KEY_INSERT, KEYMOD_SHIFT, "\033[2;2~", +1, 0 },
+	{ KEY_INSERT, KEYMOD_CTRL, "\033[L", -1, 0 },
+	{ KEY_INSERT, KEYMOD_CTRL, "\033[2;5~", +1, 0 },
+	{ KEY_INSERT, KEYMOD_CTRL_SHIFT_ALT_META, "\033[4h", -1, 0 },
+	{ KEY_INSERT, KEYMOD_CTRL_SHIFT_ALT_META, "\033[2~", +1, 0 },
+	{ KEY_DELETE, KEYMOD_CTRL, "\033[M", -1, 0 },
+	{ KEY_DELETE, KEYMOD_CTRL, "\033[3;5~", +1, 0 },
+	{ KEY_DELETE, KEYMOD_SHIFT, "\033[2K", -1, 0 },
+	{ KEY_DELETE, KEYMOD_SHIFT, "\033[3;2~", +1, 0 },
+	{ KEY_DELETE, KEYMOD_CTRL_SHIFT_ALT_META, "\033[P", -1, 0 },
+	{ KEY_DELETE, KEYMOD_CTRL_SHIFT_ALT_META, "\033[3~", +1, 0 },
+	{ KEY_BACKSPACE, KEYMOD_NONE, "\177", 0, 0 },
+	{ KEY_BACKSPACE, KEYMOD_LALT, "\033\177", 0, 0 },
+	{ KEY_HOME, KEYMOD_SHIFT, "\033[2J", 0, -1 },
+	{ KEY_HOME, KEYMOD_SHIFT, "\033[1;2H", 0, +1 },
+	{ KEY_HOME, KEYMOD_CTRL_SHIFT_ALT_META, "\033[H", 0, -1 },
+	{ KEY_HOME, KEYMOD_CTRL_SHIFT_ALT_META, "\033[1~", 0, +1 },
+	{ KEY_END, KEYMOD_CTRL, "\033[J", -1, 0 },
+	{ KEY_END, KEYMOD_CTRL, "\033[1;5F", +1, 0 },
+	{ KEY_END, KEYMOD_SHIFT, "\033[K", -1, 0 },
+	{ KEY_END, KEYMOD_SHIFT, "\033[1;2F", +1, 0 },
+	{ KEY_END, KEYMOD_CTRL_SHIFT_ALT_META, "\033[4~", 0, 0 },
+	{ KEY_ESCAPE, KEYMOD_CTRL_SHIFT_ALT_META, "\033", 0, 0 },
+
+	{ KEY_PAGEUP, KEYMOD_NONE, "\033[5~", 0, 0 },
+	{ KEY_PAGEDOWN, KEYMOD_NONE, "\033[6~", 0, 0 },
+};
+
+static TerminalScancode platformKeys[] = {
+	{ SCANCODE_PRIOR, KEYMOD_CTRL, "\033[5;5~", 0, 0 },
+
+	{ SCANCODE_PRIOR, KEYMOD_CTRL, "\033[5;5~", 0, 0 },
+	{ SCANCODE_PRIOR, KEYMOD_SHIFT, "\033[5;2~", 0, 0 },
+	{ SCANCODE_PRIOR, KEYMOD_CTRL_SHIFT_ALT_META, "\033[5~", 0, 0 },
+
+	{ SCANCODE_KP_BACKSPACE, KEYMOD_CTRL, "\033[M", -1, 0 },
+	{ SCANCODE_KP_BACKSPACE, KEYMOD_CTRL, "\033[3;5~", +1, 0 },
+	{ SCANCODE_KP_BACKSPACE, KEYMOD_SHIFT, "\033[2K", -1, 0 },
+	{ SCANCODE_KP_BACKSPACE, KEYMOD_SHIFT, "\033[3;2~", +1, 0 },
+	{ SCANCODE_KP_BACKSPACE, KEYMOD_CTRL_SHIFT_ALT_META, "\033[P", -1, 0 },
+	{ SCANCODE_KP_BACKSPACE, KEYMOD_CTRL_SHIFT_ALT_META, "\033[3~", +1, 0 },
+
+	{ SCANCODE_KP_MINUS, KEYMOD_CTRL_SHIFT_ALT_META, "\033Om", +2, 0 },
+	{ SCANCODE_KP_DECIMAL, KEYMOD_CTRL_SHIFT_ALT_META, "\033On", +2, 0 },
+	{ SCANCODE_KP_DIVIDE, KEYMOD_CTRL_SHIFT_ALT_META, "\033Oo", +2, 0 },
+	{ SCANCODE_KP_MULTIPLY, KEYMOD_CTRL_SHIFT_ALT_META, "\033Oj", +2, 0 },
+	{ SCANCODE_KP_PLUS, KEYMOD_CTRL_SHIFT_ALT_META, "\033Ok", +2, 0 },
+
+	{ SCANCODE_F1, KEYMOD_NONE, "\033OP", 0, 0 },
+	{ SCANCODE_F1, /* F13 */ KEYMOD_SHIFT, "\033[1;2P", 0, 0 },
+	{ SCANCODE_F1, /* F25 */ KEYMOD_CTRL, "\033[1;5P", 0, 0 },
+	{ SCANCODE_F1, /* F37 */ KEYMOD_META, "\033[1;6P", 0, 0 },
+	{ SCANCODE_F1, /* F49 */ KEYMOD_LALT, "\033[1;3P", 0, 0 },
+	{ SCANCODE_F1, /* F61 */ KEYMOD_RALT, "\033[1;4P", 0, 0 },
+	{ SCANCODE_F2, KEYMOD_NONE, "\033OQ", 0, 0 },
+	{ SCANCODE_F2, /* F14 */ KEYMOD_SHIFT, "\033[1;2Q", 0, 0 },
+	{ SCANCODE_F2, /* F26 */ KEYMOD_CTRL, "\033[1;5Q", 0, 0 },
+	{ SCANCODE_F2, /* F38 */ KEYMOD_META, "\033[1;6Q", 0, 0 },
+	{ SCANCODE_F2, /* F50 */ KEYMOD_LALT, "\033[1;3Q", 0, 0 },
+	{ SCANCODE_F2, /* F62 */ KEYMOD_RALT, "\033[1;4Q", 0, 0 },
+	{ SCANCODE_F3, KEYMOD_NONE, "\033OR", 0, 0 },
+	{ SCANCODE_F3, /* F15 */ KEYMOD_SHIFT, "\033[1;2R", 0, 0 },
+	{ SCANCODE_F3, /* F27 */ KEYMOD_CTRL, "\033[1;5R", 0, 0 },
+	{ SCANCODE_F3, /* F39 */ KEYMOD_META, "\033[1;6R", 0, 0 },
+	{ SCANCODE_F3, /* F51 */ KEYMOD_LALT, "\033[1;3R", 0, 0 },
+	{ SCANCODE_F3, /* F63 */ KEYMOD_RALT, "\033[1;4R", 0, 0 },
+	{ SCANCODE_F4, KEYMOD_NONE, "\033OS", 0, 0 },
+	{ SCANCODE_F4, /* F16 */ KEYMOD_SHIFT, "\033[1;2S", 0, 0 },
+	{ SCANCODE_F4, /* F28 */ KEYMOD_CTRL, "\033[1;5S", 0, 0 },
+	{ SCANCODE_F4, /* F40 */ KEYMOD_META, "\033[1;6S", 0, 0 },
+	{ SCANCODE_F4, /* F52 */ KEYMOD_LALT, "\033[1;3S", 0, 0 },
+	{ SCANCODE_F5, KEYMOD_NONE, "\033[15~", 0, 0 },
+	{ SCANCODE_F5, /* F17 */ KEYMOD_SHIFT, "\033[15;2~", 0, 0 },
+	{ SCANCODE_F5, /* F29 */ KEYMOD_CTRL, "\033[15;5~", 0, 0 },
+	{ SCANCODE_F5, /* F41 */ KEYMOD_META, "\033[15;6~", 0, 0 },
+	{ SCANCODE_F5, /* F53 */ KEYMOD_LALT, "\033[15;3~", 0, 0 },
+	{ SCANCODE_F6, KEYMOD_NONE, "\033[17~", 0, 0 },
+	{ SCANCODE_F6, /* F18 */ KEYMOD_SHIFT, "\033[17;2~", 0, 0 },
+	{ SCANCODE_F6, /* F30 */ KEYMOD_CTRL, "\033[17;5~", 0, 0 },
+	{ SCANCODE_F6, /* F42 */ KEYMOD_META, "\033[17;6~", 0, 0 },
+	{ SCANCODE_F6, /* F54 */ KEYMOD_LALT, "\033[17;3~", 0, 0 },
+	{ SCANCODE_F7, KEYMOD_NONE, "\033[18~", 0, 0 },
+	{ SCANCODE_F7, /* F19 */ KEYMOD_SHIFT, "\033[18;2~", 0, 0 },
+	{ SCANCODE_F7, /* F31 */ KEYMOD_CTRL, "\033[18;5~", 0, 0 },
+	{ SCANCODE_F7, /* F43 */ KEYMOD_META, "\033[18;6~", 0, 0 },
+	{ SCANCODE_F7, /* F55 */ KEYMOD_LALT, "\033[18;3~", 0, 0 },
+	{ SCANCODE_F8, KEYMOD_NONE, "\033[19~", 0, 0 },
+	{ SCANCODE_F8, /* F20 */ KEYMOD_SHIFT, "\033[19;2~", 0, 0 },
+	{ SCANCODE_F8, /* F32 */ KEYMOD_CTRL, "\033[19;5~", 0, 0 },
+	{ SCANCODE_F8, /* F44 */ KEYMOD_META, "\033[19;6~", 0, 0 },
+	{ SCANCODE_F8, /* F56 */ KEYMOD_LALT, "\033[19;3~", 0, 0 },
+	{ SCANCODE_F9, KEYMOD_NONE, "\033[20~", 0, 0 },
+	{ SCANCODE_F9, /* F21 */ KEYMOD_SHIFT, "\033[20;2~", 0, 0 },
+	{ SCANCODE_F9, /* F33 */ KEYMOD_CTRL, "\033[20;5~", 0, 0 },
+	{ SCANCODE_F9, /* F45 */ KEYMOD_META, "\033[20;6~", 0, 0 },
+	{ SCANCODE_F9, /* F57 */ KEYMOD_LALT, "\033[20;3~", 0, 0 },
+	{ SCANCODE_F10, KEYMOD_NONE, "\033[21~", 0, 0 },
+	{ SCANCODE_F10, /* F22 */ KEYMOD_SHIFT, "\033[21;2~", 0, 0 },
+	{ SCANCODE_F10, /* F34 */ KEYMOD_CTRL, "\033[21;5~", 0, 0 },
+	{ SCANCODE_F10, /* F46 */ KEYMOD_META, "\033[21;6~", 0, 0 },
+	{ SCANCODE_F10, /* F58 */ KEYMOD_LALT, "\033[21;3~", 0, 0 },
+	{ SCANCODE_F11, KEYMOD_NONE, "\033[23~", 0, 0 },
+	{ SCANCODE_F11, /* F23 */ KEYMOD_SHIFT, "\033[23;2~", 0, 0 },
+	{ SCANCODE_F11, /* F35 */ KEYMOD_CTRL, "\033[23;5~", 0, 0 },
+	{ SCANCODE_F11, /* F47 */ KEYMOD_META, "\033[23;6~", 0, 0 },
+	{ SCANCODE_F11, /* F59 */ KEYMOD_LALT, "\033[23;3~", 0, 0 },
+	{ SCANCODE_F12, KEYMOD_NONE, "\033[24~", 0, 0 },
+	{ SCANCODE_F12, /* F24 */ KEYMOD_SHIFT, "\033[24;2~", 0, 0 },
+	{ SCANCODE_F12, /* F36 */ KEYMOD_CTRL, "\033[24;5~", 0, 0 },
+	{ SCANCODE_F12, /* F48 */ KEYMOD_META, "\033[24;6~", 0, 0 },
+	{ SCANCODE_F12, /* F60 */ KEYMOD_LALT, "\033[24;3~", 0, 0 },
+	{ SCANCODE_F13, KEYMOD_NONE, "\033[1;2P", 0, 0 },
+	{ SCANCODE_F14, KEYMOD_NONE, "\033[1;2Q", 0, 0 },
+	{ SCANCODE_F15, KEYMOD_NONE, "\033[1;2R", 0, 0 },
+	{ SCANCODE_F16, KEYMOD_NONE, "\033[1;2S", 0, 0 },
+	{ SCANCODE_F17, KEYMOD_NONE, "\033[15;2~", 0, 0 },
+	{ SCANCODE_F18, KEYMOD_NONE, "\033[17;2~", 0, 0 },
+	{ SCANCODE_F19, KEYMOD_NONE, "\033[18;2~", 0, 0 },
+	{ SCANCODE_F20, KEYMOD_NONE, "\033[19;2~", 0, 0 },
+	{ SCANCODE_F21, KEYMOD_NONE, "\033[20;2~", 0, 0 },
+	{ SCANCODE_F22, KEYMOD_NONE, "\033[21;2~", 0, 0 },
+	{ SCANCODE_F23, KEYMOD_NONE, "\033[23;2~", 0, 0 },
+	{ SCANCODE_F24, KEYMOD_NONE, "\033[24;2~", 0, 0 },
+
+	{ SCANCODE_KP_0, KEYMOD_CTRL_SHIFT_ALT_META, "\033Op", +2, 0 },
+	{ SCANCODE_KP_1, KEYMOD_CTRL_SHIFT_ALT_META, "\033Oq", +2, 0 },
+	{ SCANCODE_KP_2, KEYMOD_CTRL_SHIFT_ALT_META, "\033Or", +2, 0 },
+	{ SCANCODE_KP_3, KEYMOD_CTRL_SHIFT_ALT_META, "\033Os", +2, 0 },
+	{ SCANCODE_KP_4, KEYMOD_CTRL_SHIFT_ALT_META, "\033Ot", +2, 0 },
+	{ SCANCODE_KP_5, KEYMOD_CTRL_SHIFT_ALT_META, "\033Ou", +2, 0 },
+	{ SCANCODE_KP_6, KEYMOD_CTRL_SHIFT_ALT_META, "\033Ov", +2, 0 },
+	{ SCANCODE_KP_7, KEYMOD_CTRL_SHIFT_ALT_META, "\033Ow", +2, 0 },
+	{ SCANCODE_KP_8, KEYMOD_CTRL_SHIFT_ALT_META, "\033Ox", +2, 0 },
+	{ SCANCODE_KP_9, KEYMOD_CTRL_SHIFT_ALT_META, "\033Oy", +2, 0 } };
+
+TerminalKeyMap terminalKeyMap{ keys,		 eeARRAY_SIZE( keys ),
+							   platformKeys, eeARRAY_SIZE( platformKeys ),
+							   shortcuts,	 eeARRAY_SIZE( shortcuts ) };
+
 // This is the customizable colorscheme
 const char* colornames[256] = { "#1e2127", "#e06c75", "#98c379", "#d19a66", "#61afef", "#c678dd",
 								"#56b6c2", "#abb2bf", "#5c6370", "#e06c75", "#98c379", "#d19a66",
@@ -212,13 +420,23 @@ void ETerminalDisplay::Update() {
 		m_terminal->Update();
 }
 
+void ETerminalDisplay::Action( ShortcutAction action ) {
+	if ( action == ShortcutAction::PASTE ) {
+		auto clipboard = GetClipboard();
+		auto clipboardLen = strlen( clipboard );
+		if ( clipboardLen > 0 ) {
+			m_terminal->Write( clipboard, clipboardLen );
+		}
+	}
+}
+
 bool ETerminalDisplay::HasTerminated() const {
 	return m_terminal->HasExited();
 }
 
-void ETerminalDisplay::SetTitle( const char* title ) {}
+void ETerminalDisplay::SetTitle( const char* ) {}
 
-void ETerminalDisplay::SetIconTitle( const char* title ) {}
+void ETerminalDisplay::SetIconTitle( const char* ) {}
 
 void ETerminalDisplay::SetClipboard( const char* text ) {
 	mClipboard = text;
@@ -252,8 +470,8 @@ void ETerminalDisplay::DrawLine( Line line, int x1, int y, int x2 ) {
 	}
 }
 
-void ETerminalDisplay::DrawCursor( int cx, int cy, Hexe::Terminal::Glyph g, int ox, int oy,
-								   Hexe::Terminal::Glyph og ) {
+void ETerminalDisplay::DrawCursor( int cx, int cy, Hexe::Terminal::Glyph g, int, int,
+								   Hexe::Terminal::Glyph ) {
 	m_cursorx = cx;
 	m_cursory = cy;
 	m_cursorg = g;
@@ -297,19 +515,19 @@ static inline Color GetCol( unsigned int terminalColor,
 #define IS_SET( flag ) ( ( mMode & ( flag ) ) != 0 )
 #define DIV( n, d ) ( ( ( n ) + ( d ) / 2.0f ) / ( d ) )
 #define DIVI( n, d ) ( ( ( n ) + ( d ) / 2 ) / ( d ) )
-#define IM_COL32_R_SHIFT 24
-#define IM_COL32_G_SHIFT 16
-#define IM_COL32_B_SHIFT 8
-#define IM_COL32_A_SHIFT 0
+#define COL32_R_SHIFT 24
+#define COL32_G_SHIFT 16
+#define COL32_B_SHIFT 8
+#define COL32_A_SHIFT 0
 
-void ETerminalDisplay::Draw( Vector2i pos, const Sizei& clip_rect, bool hasFocus ) {
+void ETerminalDisplay::Draw( Vector2i pos, const Sizei& clip_rect, bool /*hasFocus*/ ) {
 	if ( mClock.getElapsedTime().asSeconds() > 0.7 ) {
 		mMode ^= MODE_BLINK;
 		mClock.restart();
 	}
 
-	auto fontSize = (Float)mFont->getFontHeight( 12 );
-	auto spaceCharAdvanceX = mFont->getGlyph( 'A', 12, false ).advance;
+	auto fontSize = (Float)mFont->getFontHeight( mFontSize );
+	auto spaceCharAdvanceX = mFont->getGlyph( 'A', mFontSize, false ).advance;
 
 	auto width = m_columns * spaceCharAdvanceX;
 	auto height = m_rows * fontSize;
@@ -328,6 +546,7 @@ void ETerminalDisplay::Draw( Vector2i pos, const Sizei& clip_rect, bool hasFocus
 	}
 
 	Primitives p;
+	p.setForceDraw( false );
 	p.setColor( mEmulator->GetDefaultBackground() );
 	p.drawRectangle( Rectf( pos.asFloat(), clip_rect.asFloat() ) );
 
@@ -351,6 +570,75 @@ void ETerminalDisplay::Draw( Vector2i pos, const Sizei& clip_rect, bool hasFocus
 			auto& glyph = m_buffer[j * m_columns + i];
 			auto fg = GetCol( glyph.fg, m_colors );
 			auto bg = GetCol( glyph.bg, m_colors );
+
+			if ( IS_SET( MODE_REVERSE ) ) {
+				if ( fg == defaultFg ) {
+					fg = defaultBg;
+				} else {
+					Uint32 red = ( fg.getValue() >> COL32_R_SHIFT ) & 0xFF;
+					Uint32 green = ( fg.getValue() >> COL32_G_SHIFT ) & 0xFF;
+					Uint32 blue = ( fg.getValue() >> COL32_B_SHIFT ) & 0xFF;
+					Uint32 alpha = ( fg.getValue() >> COL32_A_SHIFT ) & 0xFF;
+					fg = Color( ( ~red ) & 0xFF, ( ~green ) & 0xFF, ( ~blue ) & 0xFF, alpha );
+				}
+
+				if ( bg == defaultBg ) {
+					bg = defaultFg;
+				} else {
+					Uint32 red = ( bg.getValue() >> COL32_R_SHIFT ) & 0xFF;
+					Uint32 green = ( bg.getValue() >> COL32_G_SHIFT ) & 0xFF;
+					Uint32 blue = ( bg.getValue() >> COL32_B_SHIFT ) & 0xFF;
+					Uint32 alpha = ( bg.getValue() >> COL32_A_SHIFT ) & 0xFF;
+					bg = Color( ( ~red ) & 0xFF, ( ~green ) & 0xFF, ( ~blue ) & 0xFF, alpha );
+				}
+			}
+
+			if ( ( glyph.mode & ATTR_BOLD_FAINT ) == ATTR_FAINT ) {
+				Uint32 red = ( fg.getValue() >> COL32_R_SHIFT ) & 0xFF;
+				Uint32 green = ( fg.getValue() >> COL32_G_SHIFT ) & 0xFF;
+				Uint32 blue = ( fg.getValue() >> COL32_B_SHIFT ) & 0xFF;
+				Uint32 alpha = ( fg.getValue() >> COL32_A_SHIFT ) & 0xFF;
+				red /= 2;
+				green /= 2;
+				blue /= 2;
+				fg = Color( red, green, blue, alpha );
+			}
+
+			if ( glyph.mode & ATTR_REVERSE )
+				bg = fg;
+
+			bool isWide = glyph.mode & ATTR_WIDE;
+
+			auto advanceX = spaceCharAdvanceX * ( isWide ? 2.0f : 1.0f );
+
+			if ( glyph.mode & ATTR_WDUMMY ) {
+				continue;
+			}
+
+			p.setColor( bg );
+			p.drawRectangle( Rectf( { x, y }, { advanceX, line_height } ) );
+
+			x += advanceX;
+		}
+
+		y += line_height;
+	}
+
+	p.setForceDraw( true );
+	p.drawBatch();
+
+	y = std::floor( pos.y );
+
+	for ( int j = 0; j < m_rows; j++ ) {
+		x = std::floor( pos.x );
+
+		if ( pos.y + line_height * j > clip_rect.getWidth() )
+			break;
+
+		for ( int i = 0; i < m_columns; i++ ) {
+			auto& glyph = m_buffer[j * m_columns + i];
+			auto fg = GetCol( glyph.fg, m_colors );
+			auto bg = GetCol( glyph.bg, m_colors );
 			Color temp{ Color::Transparent };
 
 			if ( ( glyph.mode & ATTR_BOLD_FAINT ) == ATTR_BOLD && BETWEEN( glyph.fg, 0, 7 ) )
@@ -360,29 +648,29 @@ void ETerminalDisplay::Draw( Vector2i pos, const Sizei& clip_rect, bool hasFocus
 				if ( fg == defaultFg ) {
 					fg = defaultBg;
 				} else {
-					Uint32 red = ( fg.getValue() >> IM_COL32_R_SHIFT ) & 0xFF;
-					Uint32 green = ( fg.getValue() >> IM_COL32_G_SHIFT ) & 0xFF;
-					Uint32 blue = ( fg.getValue() >> IM_COL32_B_SHIFT ) & 0xFF;
-					Uint32 alpha = ( fg.getValue() >> IM_COL32_A_SHIFT ) & 0xFF;
+					Uint32 red = ( fg.getValue() >> COL32_R_SHIFT ) & 0xFF;
+					Uint32 green = ( fg.getValue() >> COL32_G_SHIFT ) & 0xFF;
+					Uint32 blue = ( fg.getValue() >> COL32_B_SHIFT ) & 0xFF;
+					Uint32 alpha = ( fg.getValue() >> COL32_A_SHIFT ) & 0xFF;
 					fg = Color( ( ~red ) & 0xFF, ( ~green ) & 0xFF, ( ~blue ) & 0xFF, alpha );
 				}
 
 				if ( bg == defaultBg ) {
 					bg = defaultFg;
 				} else {
-					Uint32 red = ( bg.getValue() >> IM_COL32_R_SHIFT ) & 0xFF;
-					Uint32 green = ( bg.getValue() >> IM_COL32_G_SHIFT ) & 0xFF;
-					Uint32 blue = ( bg.getValue() >> IM_COL32_B_SHIFT ) & 0xFF;
-					Uint32 alpha = ( bg.getValue() >> IM_COL32_A_SHIFT ) & 0xFF;
+					Uint32 red = ( bg.getValue() >> COL32_R_SHIFT ) & 0xFF;
+					Uint32 green = ( bg.getValue() >> COL32_G_SHIFT ) & 0xFF;
+					Uint32 blue = ( bg.getValue() >> COL32_B_SHIFT ) & 0xFF;
+					Uint32 alpha = ( bg.getValue() >> COL32_A_SHIFT ) & 0xFF;
 					bg = Color( ( ~red ) & 0xFF, ( ~green ) & 0xFF, ( ~blue ) & 0xFF, alpha );
 				}
 			}
 
 			if ( ( glyph.mode & ATTR_BOLD_FAINT ) == ATTR_FAINT ) {
-				Uint32 red = ( fg.getValue() >> IM_COL32_R_SHIFT ) & 0xFF;
-				Uint32 green = ( fg.getValue() >> IM_COL32_G_SHIFT ) & 0xFF;
-				Uint32 blue = ( fg.getValue() >> IM_COL32_B_SHIFT ) & 0xFF;
-				Uint32 alpha = ( fg.getValue() >> IM_COL32_A_SHIFT ) & 0xFF;
+				Uint32 red = ( fg.getValue() >> COL32_R_SHIFT ) & 0xFF;
+				Uint32 green = ( fg.getValue() >> COL32_G_SHIFT ) & 0xFF;
+				Uint32 blue = ( fg.getValue() >> COL32_B_SHIFT ) & 0xFF;
+				Uint32 alpha = ( fg.getValue() >> COL32_A_SHIFT ) & 0xFF;
 				red /= 2;
 				green /= 2;
 				blue /= 2;
@@ -405,13 +693,12 @@ void ETerminalDisplay::Draw( Vector2i pos, const Sizei& clip_rect, bool hasFocus
 
 			auto advanceX = spaceCharAdvanceX * ( isWide ? 2.0f : 1.0f );
 
-			if ( glyph.mode & ATTR_WDUMMY || glyph.u == 32 ) {
+			if ( glyph.mode & ATTR_WDUMMY ) {
 				continue;
 			}
 
-			Text t( mFont, 12 );
+			/*Text t( mFont, mFontSize );
 			t.setDisableCacheWidth( true );
-			t.setBackgroundColor( bg );
 			t.setColor( fg );
 			t.setStyle( 0 | ( glyph.mode & ATTR_BOLD ? Text::Style::Bold : 0 ) |
 						( glyph.mode & ATTR_ITALIC ? Text::Style::Italic : 0 ) |
@@ -419,7 +706,11 @@ void ETerminalDisplay::Draw( Vector2i pos, const Sizei& clip_rect, bool hasFocus
 			String str;
 			str.push_back( glyph.u );
 			t.setString( str );
-			t.draw( x, y );
+			t.draw( x, y );*/
+			auto* gd = mFont->getGlyphDrawable( glyph.u, mFontSize, glyph.mode & ATTR_BOLD );
+			gd->setColor( fg );
+			gd->setDrawMode( GlyphDrawable::DrawMode::Text );
+			gd->draw( { x, y } );
 
 			/*if ( glyph.mode & ATTR_BOXDRAW && m_useBoxDrawing ) {
 				auto bd = boxdrawindex( &glyph );
@@ -543,4 +834,90 @@ void ETerminalDisplay::Draw( Vector2i pos, const Sizei& clip_rect, bool hasFocus
 
 		ProcessInput( mouseX, mouseY );
 	}*/
+}
+
+void ETerminalDisplay::onTextInput( const Uint32& chr ) {
+	if ( !m_terminal )
+		return;
+	String input;
+	input.push_back( chr );
+	std::string utf8Input( input.toUtf8() );
+	m_terminal->Write( utf8Input.c_str(), utf8Input.size() );
+}
+
+void ETerminalDisplay::onKeyDown( const Keycode& keyCode, const Uint32& /*chr*/, const Uint32& mod,
+								  const Scancode& scancode ) {
+	if ( mod & KEYMOD_CTRL ) {
+		// I really dont like this, as it depends on the undelying backend implementation (SDL in
+		// this case)
+		if ( ( scancode >= SCANCODE_A && scancode <= SCANCODE_0 ) ||
+			 SCANCODE_LEFTBRACKET == scancode || SCANCODE_RIGHTBRACKET == scancode ) {
+			char tmp = 0;
+			for ( size_t i = 0; i < eeARRAY_SIZE( asciiScancodeTable ); ++i ) {
+				if ( asciiScancodeTable[i] == scancode ) {
+					tmp = i + 1;
+					break;
+				}
+			}
+
+			m_terminal->Write( &tmp, 1 );
+			return;
+		}
+	}
+
+	for ( auto& kv : terminalKeyMap.Shortcuts() ) {
+		Keycode key = kv.first;
+		if ( keyCode == key ) {
+			for ( auto& k : kv.second ) {
+				if ( ( k.mask == KEYMOD_CTRL_SHIFT_ALT_META || k.mask == mod ) &&
+					 ( k.appkey == 0 || k.appkey < 0 ) &&
+					 ( k.appcursor == 0 || k.appcursor > 0 ) ) {
+					Action( k.action );
+					return;
+				}
+			}
+		}
+	}
+
+	for ( auto& kv : terminalKeyMap.KeyMap() ) {
+		Keycode key = kv.first;
+		if ( key == keyCode ) {
+			for ( auto& k : kv.second ) {
+				if ( ( k.mask == KEYMOD_CTRL_SHIFT_ALT_META || k.mask == mod ) &&
+					 ( k.appkey == 0 || k.appkey < 0 ) &&
+					 ( k.appcursor == 0 || k.appcursor > 0 ) ) {
+					if ( k.string.size() > 0 ) {
+						m_terminal->Write( k.string.c_str(), k.string.size() );
+						return;
+					}
+					break;
+				}
+			}
+		}
+	}
+
+	for ( auto& kv : terminalKeyMap.PlatformKeyMap() ) {
+		Scancode keyIndex = kv.first;
+		if ( keyIndex == scancode ) {
+			for ( auto& k : kv.second ) {
+				if ( ( k.mask == KEYMOD_CTRL_SHIFT_ALT_META || k.mask == mod ) &&
+					 ( k.appkey == 0 || k.appkey < 0 ) &&
+					 ( k.appcursor == 0 || k.appcursor > 0 ) ) {
+					if ( k.string.size() > 0 ) {
+						m_terminal->Write( k.string.c_str(), k.string.size() );
+						return;
+					}
+					break;
+				}
+			}
+		}
+	}
+}
+
+Float ETerminalDisplay::getFontSize() const {
+	return mFontSize;
+}
+
+void ETerminalDisplay::setFontSize( Float FontSize ) {
+	mFontSize = FontSize;
 }

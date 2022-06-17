@@ -7,14 +7,20 @@
 #include <eepp/config.hpp>
 #include <eepp/graphics/font.hpp>
 #include <eepp/system/clock.hpp>
+#include <eepp/window/inputevent.hpp>
+#include <eepp/window/keycodes.hpp>
 #include <eepp/window/window.hpp>
+
 #include <memory>
+#include <unordered_map>
 #include <vector>
 
 using namespace Hexe::Terminal;
 using namespace EE;
 using namespace EE::Window;
 using namespace EE::System;
+
+enum class ShortcutAction { PASTE };
 
 enum TerminalOptions {
 	OPTION_NONE = 0,
@@ -26,6 +32,81 @@ enum TerminalOptions {
 struct TerminalConfig {
 	int options;
 };
+
+struct TerminalKey {
+	Keycode keysym;
+	Uint32 mask;
+	const char* string;
+	int appkey;
+	int appcursor;
+};
+
+struct TerminalScancode {
+	Scancode scancode;
+	Uint32 mask;
+	std::string string;
+	int appkey;
+	int appcursor;
+};
+
+struct TerminalShortcut {
+	Keycode keysym;
+	Uint32 mask;
+	ShortcutAction action;
+	int appkey;
+	int appcursor;
+};
+
+struct TerminalKeyMapEntry {
+	Uint32 mask;
+	std::string string;
+	int appkey;
+	int appcursor;
+};
+
+struct TerminalKeyMapShortcut {
+	Uint32 mask;
+	ShortcutAction action;
+	int appkey;
+	int appcursor;
+};
+
+class TerminalKeyMap {
+  private:
+	std::unordered_map<Keycode, std::vector<TerminalKeyMapEntry>> m_keyMap;
+	std::unordered_map<Scancode, std::vector<TerminalKeyMapEntry>> m_platformKeyMap;
+	std::unordered_map<Keycode, std::vector<TerminalKeyMapShortcut>> m_shortcuts;
+
+  public:
+	TerminalKeyMap( const TerminalKey keys[], size_t keysLen, const TerminalScancode platformKeys[],
+					size_t platformKeysLen, const TerminalShortcut shortcuts[],
+					size_t shortcutsLen );
+
+	inline const std::unordered_map<Keycode, std::vector<TerminalKeyMapEntry>>& KeyMap() const {
+		return m_keyMap;
+	}
+
+	inline const std::unordered_map<Scancode, std::vector<TerminalKeyMapEntry>>&
+	PlatformKeyMap() const {
+		return m_platformKeyMap;
+	}
+
+	inline const std::unordered_map<Keycode, std::vector<TerminalKeyMapShortcut>>&
+	Shortcuts() const {
+		return m_shortcuts;
+	}
+};
+
+constexpr int TerminalKeyModFlags_Any = 0xFFFFFFFF;
+
+extern TerminalKeyMap terminalKeyMap;
+
+static const Scancode asciiScancodeTable[] = {
+	SCANCODE_A, SCANCODE_B, SCANCODE_C,			  SCANCODE_D,	  SCANCODE_E,			SCANCODE_F,
+	SCANCODE_G, SCANCODE_H, SCANCODE_I,			  SCANCODE_J,	  SCANCODE_K,			SCANCODE_L,
+	SCANCODE_M, SCANCODE_N, SCANCODE_O,			  SCANCODE_P,	  SCANCODE_Q,			SCANCODE_R,
+	SCANCODE_S, SCANCODE_T, SCANCODE_U,			  SCANCODE_V,	  SCANCODE_W,			SCANCODE_X,
+	SCANCODE_Y, SCANCODE_Z, SCANCODE_LEFTBRACKET, SCANCODE_SLASH, SCANCODE_RIGHTBRACKET };
 
 class ETerminalDisplay : public TerminalDisplay {
   public:
@@ -57,11 +138,21 @@ class ETerminalDisplay : public TerminalDisplay {
 
 	virtual void Update();
 
+	void Action( ShortcutAction action );
+
 	bool HasTerminated() const;
 
 	void Draw( const Rectf& contentArea );
 
 	void Draw( Vector2i pos, const Sizei& clip_rect, bool hasFocus );
+
+	virtual void onTextInput( const Uint32& chr );
+
+	virtual void onKeyDown( const Keycode& keyCode, const Uint32& chr, const Uint32& mod,
+							const Scancode& scancode );
+
+	Float getFontSize() const;
+	void setFontSize( Float FontSize );
 
   protected:
 	EE::Window::Window* mWindow;
@@ -71,6 +162,7 @@ class ETerminalDisplay : public TerminalDisplay {
 	mutable std::string mClipboard;
 
 	Font* mFont;
+	Float mFontSize{ 12 };
 	int m_columns{ 0 };
 	int m_rows{ 0 };
 	bool m_dirty;
