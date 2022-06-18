@@ -23,7 +23,7 @@
 
 #include "types.hpp"
 
-namespace Hexe { namespace Terminal {
+namespace EE { namespace Terminal {
 
 class TerminalEmulator;
 class TerminalDisplay {
@@ -66,4 +66,4 @@ class TerminalDisplay {
 	virtual void DrawEnd() = 0;
 };
 
-}} // namespace Hexe::Terminal
+}} // namespace EE::Terminal

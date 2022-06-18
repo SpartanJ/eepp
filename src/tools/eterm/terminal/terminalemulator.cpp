@@ -74,7 +74,7 @@ const static unsigned int worddelimiters[] = { ' ', 0 };
  *
  *	stty tabs
  */
-static const unsigned int tabspaces = 8;
+static const unsigned int tabspaces = 4;
 
 #ifdef WIN32
 #include <windows.h>
@@ -105,7 +105,7 @@ static const unsigned int tabspaces = 8;
 #define ISCONTROL( c ) ( ISCONTROLC0( c ) || ISCONTROLC1( c ) )
 #define ISDELIM( u ) ( u && _wcschr( worddelimiters, u ) )
 
-using namespace Hexe::Terminal;
+using namespace EE::Terminal;
 
 static inline bool is_emoji( int32_t code ) {
 	const int32_t rangeMin = 127744;
@@ -304,6 +304,10 @@ int TerminalEmulator::tlinelen( int y ) {
 		--i;
 
 	return i;
+}
+
+selection_mode TerminalEmulator::getSelectionMode() const {
+	return (selection_mode)sel.mode;
 }
 
 void TerminalEmulator::selstart( int col, int row, int snap ) {

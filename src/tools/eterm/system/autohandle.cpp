@@ -27,15 +27,15 @@
 #include <windows.h>
 #endif
 
-Hexe::AutoHandle::AutoHandle() : m_hHandle( invalid_value() ) {}
-Hexe::AutoHandle::AutoHandle( AutoHandle&& other ) : m_hHandle( other.m_hHandle ) {
+EE::AutoHandle::AutoHandle() : m_hHandle( invalid_value() ) {}
+EE::AutoHandle::AutoHandle( AutoHandle&& other ) : m_hHandle( other.m_hHandle ) {
 	other.m_hHandle = invalid_value();
 }
-Hexe::AutoHandle::~AutoHandle() {
+EE::AutoHandle::~AutoHandle() {
 	Release();
 }
 
-Hexe::AutoHandle& Hexe::AutoHandle::operator=( AutoHandle&& other ) {
+EE::AutoHandle& EE::AutoHandle::operator=( AutoHandle&& other ) {
 	if ( m_hHandle == other.m_hHandle )
 		return *this;
 	Release();
@@ -45,49 +45,49 @@ Hexe::AutoHandle& Hexe::AutoHandle::operator=( AutoHandle&& other ) {
 }
 
 #ifdef _WIN32
-Hexe::AutoHandle::AutoHandle( HANDLE handle ) : m_hHandle( handle ) {}
+EE::AutoHandle::AutoHandle( HANDLE handle ) : m_hHandle( handle ) {}
 
-void Hexe::AutoHandle::Release() const {
+void EE::AutoHandle::Release() const {
 	if ( m_hHandle != INVALID_HANDLE_VALUE ) {
 		CloseHandle( m_hHandle );
 		m_hHandle = INVALID_HANDLE_VALUE;
 	}
 }
 #else
-Hexe::AutoHandle::AutoHandle( int fd ) : m_hHandle( fd ) {}
+EE::AutoHandle::AutoHandle( int fd ) : m_hHandle( fd ) {}
 
-void Hexe::AutoHandle::Release() const {
+void EE::AutoHandle::Release() const {
 	if ( m_hHandle != -1 ) {
 		close( m_hHandle );
 	}
 }
 #endif
 
-Hexe::AutoHandle::operator bool() const noexcept {
+EE::AutoHandle::operator bool() const noexcept {
 	return m_hHandle != invalid_value();
 }
 
-Hexe::AutoHandle::type* Hexe::AutoHandle::Get() {
+EE::AutoHandle::type* EE::AutoHandle::Get() {
 	return &m_hHandle;
 }
 
-const Hexe::AutoHandle::type* Hexe::AutoHandle::Get() const {
+const EE::AutoHandle::type* EE::AutoHandle::Get() const {
 	return &m_hHandle;
 }
 
-Hexe::AutoHandle::operator Hexe::AutoHandle::type() const noexcept {
+EE::AutoHandle::operator EE::AutoHandle::type() const noexcept {
 	return m_hHandle;
 }
 
 #ifdef _WIN32
 // On Windows we deal with the Windows API, which means HANDLE is used as the handle to files
 // and pipes
-constexpr Hexe::AutoHandle::type Hexe::AutoHandle::invalid_value() {
+constexpr EE::AutoHandle::type EE::AutoHandle::invalid_value() {
 	return static_cast<AutoHandle::type>( 0 );
 }
 #else
 // On non-Windows OS'es we deal with file descriptors
-constexpr Hexe::AutoHandle::type Hexe::AutoHandle::invalid_value() {
+constexpr EE::AutoHandle::type EE::AutoHandle::invalid_value() {
 	return -1;
 }
 #endif

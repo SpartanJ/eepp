@@ -25,8 +25,10 @@
 #include "autohandle.hpp"
 #include <memory>
 
-namespace Hexe { namespace System {
+namespace EE { namespace System {
+
 class Process;
+
 class Pipe : public IPipe {
   private:
 	friend class Process;
@@ -59,4 +61,5 @@ class Pipe : public IPipe {
 
 	static bool CreatePipePair( std::unique_ptr<Pipe>& outPipeA, std::unique_ptr<Pipe>& outPipeB );
 };
-}} // namespace Hexe::System
+
+}} // namespace EE::System

@@ -24,9 +24,9 @@
 #include "../system/ipipe.hpp"
 #include <stdint.h>
 
-namespace Hexe { namespace Terminal {
+namespace EE { namespace Terminal {
 
-class IPseudoTerminal : public Hexe::System::IPipe {
+class IPseudoTerminal : public EE::System::IPipe {
   public:
 	IPseudoTerminal() = default;
 
@@ -47,4 +47,4 @@ class IPseudoTerminal : public Hexe::System::IPipe {
 	virtual bool Resize( int columns, int rows ) = 0;
 };
 
-}} // namespace Hexe::Terminal
+}} // namespace EE::Terminal

@@ -2,7 +2,7 @@
 #include "../system/process.hpp"
 #include "../terminal/pseudoterminal.hpp"
 
-using namespace Hexe::System;
+using namespace EE::System;
 
 std::unique_ptr<IProcess> ProcessFactory::CreateWithStdioPipe( const std::string& program,
 															   const std::vector<std::string>& args,

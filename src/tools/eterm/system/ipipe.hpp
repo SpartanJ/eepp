@@ -24,7 +24,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-namespace Hexe { namespace System {
+namespace EE { namespace System {
 
 class IPipe {
   public:
@@ -47,4 +47,4 @@ class IPipe {
 	virtual int Read( char* buf, size_t n, bool block = false ) = 0;
 };
 
-}} // namespace Hexe::System
+}} // namespace EE::System

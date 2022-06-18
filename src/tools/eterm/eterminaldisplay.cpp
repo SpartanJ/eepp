@@ -320,14 +320,14 @@ ETerminalDisplay::Create( EE::Window::Window* window, Font* font,
 	return terminal;
 }
 
-static Hexe::System::IProcessFactory* g_processFactory = new Hexe::System::ProcessFactory();
+static EE::System::IProcessFactory* g_processFactory = new EE::System::ProcessFactory();
 
 std::shared_ptr<ETerminalDisplay>
 ETerminalDisplay::Create( EE::Window::Window* window, Font* font, int columns, int rows,
 						  const std::string& program, const std::vector<std::string>& args,
 						  const std::string& workingDir, uint32_t options,
-						  Hexe::System::IProcessFactory* processFactory ) {
-	using namespace Hexe::System;
+						  EE::System::IProcessFactory* processFactory ) {
+	using namespace EE::System;
 
 	TerminalConfig config{};
 	config.options = options;
@@ -440,6 +440,8 @@ void ETerminalDisplay::SetTitle( const char* ) {}
 void ETerminalDisplay::SetIconTitle( const char* ) {}
 
 void ETerminalDisplay::SetClipboard( const char* text ) {
+	if ( text == nullptr )
+		return;
 	mClipboard = text;
 	mWindow->getClipboard()->setText( mClipboard );
 }
@@ -482,9 +484,7 @@ void ETerminalDisplay::DrawEnd() {
 		m_dirty = true;
 }
 
-void ETerminalDisplay::Draw( const Rectf& contentArea ) {
-	bool hasFocus = mWindow->hasFocus();
-
+void ETerminalDisplay::Draw( bool hasFocus ) {
 	bool modeFocus = mMode & MODE_FOCUSED;
 	if ( hasFocus != modeFocus ) {
 		if ( hasFocus ) {
@@ -496,7 +496,35 @@ void ETerminalDisplay::Draw( const Rectf& contentArea ) {
 		mMode ^= MODE_FOCUS;
 	}
 
-	Draw( Vector2i( contentArea.Left, contentArea.Top ), contentArea.getSize().asInt(), hasFocus );
+	Draw( mPosition );
+}
+
+void ETerminalDisplay::onMouseMotion( const Vector2i& pos, const Uint32& flags ) {
+	if ( ( flags & EE_BUTTON_LMASK ) &&
+		 ( m_terminal->getSelectionMode() == selection_mode::SEL_EMPTY ||
+		   m_terminal->getSelectionMode() == selection_mode::SEL_READY ) ) {
+		auto gridPos{ positionToGrid( pos ) };
+		m_terminal->selextend(
+			gridPos.x, gridPos.y,
+			mWindow->getInput()->getModState() == KEYMOD_SHIFT ? SEL_RECTANGULAR : SEL_REGULAR, 0 );
+	}
+}
+
+void ETerminalDisplay::onMouseDown( const Vector2i& pos, const Uint32& flags ) {
+	if ( ( flags & EE_BUTTON_LMASK ) &&
+		 ( m_terminal->getSelectionMode() == selection_mode::SEL_IDLE ) ) {
+		auto gridPos{ positionToGrid( pos ) };
+		m_terminal->selstart( gridPos.x, gridPos.y, 0 );
+	}
+}
+
+void ETerminalDisplay::onMouseUp( const Vector2i&, const Uint32& flags ) {
+	if ( ( flags & EE_BUTTON_LMASK ) ) {
+		auto selection = m_terminal->getsel();
+		if ( selection )
+			SetClipboard( selection );
+		m_terminal->selclear();
+	}
 }
 
 static inline Color GetCol( unsigned int terminalColor,
@@ -515,7 +543,7 @@ static inline Color GetCol( unsigned int terminalColor,
 #define COL32_B_SHIFT 8
 #define COL32_A_SHIFT 0
 
-void ETerminalDisplay::Draw( Vector2i pos, const Sizei& clip_rect, bool /*hasFocus*/ ) {
+void ETerminalDisplay::Draw( Vector2f pos ) {
 	if ( mClock.getElapsedTime().asSeconds() > 0.7 ) {
 		mMode ^= MODE_BLINK;
 		mClock.restart();
@@ -527,26 +555,11 @@ void ETerminalDisplay::Draw( Vector2i pos, const Sizei& clip_rect, bool /*hasFoc
 	auto width = m_columns * spaceCharAdvanceX;
 	auto height = m_rows * fontSize;
 
-	auto clipWidth = clip_rect.getWidth();
-	auto clipHeight = clip_rect.getHeight();
-
-	auto clipColumns = (int)std::floor( std::max( 1.0f, clipWidth / spaceCharAdvanceX ) );
-	auto clipRows = (int)std::floor( std::max( 1.0f, clipHeight / fontSize ) );
-
-	if ( width < clipWidth ) {
-		pos.x = std::floor( pos.x + ( ( clipWidth - width ) / 2.0f ) );
+	if ( width < mSize.getWidth() ) {
+		pos.x = std::floor( pos.x + ( ( mSize.getWidth() - width ) / 2.0f ) );
 	}
-	if ( height < clipHeight ) {
-		pos.y = std::floor( pos.y + ( ( clipHeight - height ) / 2.0f ) );
-	}
-
-	Primitives p;
-	p.setForceDraw( false );
-	p.setColor( mEmulator->GetDefaultBackground() );
-	p.drawRectangle( Rectf( pos.asFloat(), clip_rect.asFloat() ) );
-
-	if ( clipColumns != m_terminal->GetNumColumns() || clipRows != m_terminal->GetNumRows() ) {
-		m_terminal->Resize( clipColumns, clipRows );
+	if ( height < mSize.getHeight() ) {
+		pos.y = std::floor( pos.y + ( ( mSize.getHeight() - height ) / 2.0f ) );
 	}
 
 	float x = 0.0f;
@@ -555,10 +568,15 @@ void ETerminalDisplay::Draw( Vector2i pos, const Sizei& clip_rect, bool /*hasFoc
 	auto defaultFg = GetCol( mEmulator->GetDefaultForeground(), m_colors );
 	auto defaultBg = GetCol( mEmulator->GetDefaultBackground(), m_colors );
 
+	Primitives p;
+	p.setForceDraw( false );
+	p.setColor( defaultBg );
+	p.drawRectangle( Rectf( mPosition.asFloat(), mSize.asFloat() ) );
+
 	for ( int j = 0; j < m_rows; j++ ) {
 		x = std::floor( pos.x );
 
-		if ( pos.y + line_height * j > clip_rect.getWidth() )
+		if ( pos.y + line_height * j > mSize.getWidth() )
 			break;
 
 		for ( int i = 0; i < m_columns; i++ ) {
@@ -619,15 +637,12 @@ void ETerminalDisplay::Draw( Vector2i pos, const Sizei& clip_rect, bool /*hasFoc
 		y += line_height;
 	}
 
-	p.setForceDraw( true );
-	p.drawBatch();
-
 	y = std::floor( pos.y );
 
 	for ( int j = 0; j < m_rows; j++ ) {
 		x = std::floor( pos.x );
 
-		if ( pos.y + line_height * j > clip_rect.getWidth() )
+		if ( pos.y + line_height * j > mSize.getWidth() )
 			break;
 
 		for ( int i = 0; i < m_columns; i++ ) {
@@ -688,21 +703,20 @@ void ETerminalDisplay::Draw( Vector2i pos, const Sizei& clip_rect, bool /*hasFoc
 
 			auto advanceX = spaceCharAdvanceX * ( isWide ? 2.0f : 1.0f );
 
-			if ( glyph.mode & ATTR_WDUMMY ) {
+			if ( glyph.mode & ATTR_WDUMMY )
 				continue;
-			}
 
 			auto* gd = mFont->getGlyphDrawable( glyph.u, mFontSize, glyph.mode & ATTR_BOLD );
 			gd->setColor( fg );
 			gd->setDrawMode( GlyphDrawable::DrawMode::Text );
 			gd->draw( { x, y } );
 
-			/*if ( glyph.mode & ATTR_BOXDRAW && m_useBoxDrawing ) {
-				auto bd = TerminalEmulator::boxdrawindex( &glyph );
-				drawbox( x, y, advanceX, line_height, fg, bg, bd, vtx_write );
+			if ( glyph.mode & ATTR_BOXDRAW && m_useBoxDrawing ) {
+				// auto bd = TerminalEmulator::boxdrawindex( &glyph );
+				// drawbox( x, y, advanceX, line_height, fg, bg, bd, vtx_write );
 			}
 
-			if ( glyph.mode & ATTR_STRUCK ) {
+			/*if ( glyph.mode & ATTR_STRUCK ) {
 				ImVec2 a( x, y + 2 * ascent / 3 );
 				ImVec2 c( x + advanceX, a.y + 1 );
 				ImVec2 b( c.x, a.y ), d( a.x, c.y ), uv( drawList->_Data->TexUvWhitePixel );
@@ -820,6 +834,40 @@ void ETerminalDisplay::Draw( Vector2i pos, const Sizei& clip_rect, bool /*hasFoc
 	}*/
 }
 
+Vector2i ETerminalDisplay::positionToGrid( const Vector2i& pos ) {
+	Vector2f relPos = { pos.x - mPosition.x, pos.y - mPosition.y };
+	int mouseX = 0;
+	int mouseY = 0;
+
+	auto fontSize = (Float)mFont->getFontHeight( mFontSize );
+	auto spaceCharAdvanceX = mFont->getGlyph( 'A', mFontSize, false ).advance;
+
+	auto clipColumns = (int)std::floor( std::max( 1.0f, mSize.getWidth() / spaceCharAdvanceX ) );
+	auto clipRows = (int)std::floor( std::max( 1.0f, mSize.getHeight() / fontSize ) );
+
+	if ( pos.x <= 0.0f || pos.y <= 0.0f ) {
+		mouseX = 0;
+		mouseY = 0;
+	} else if ( relPos.x >= 0.0f && relPos.y >= 0.0f ) {
+		mouseX = eeclamp( (int)std::floor( relPos.x / spaceCharAdvanceX ), 0, clipColumns );
+		mouseY = eeclamp( (int)std::floor( relPos.y / fontSize ), 0, clipRows );
+	}
+
+	return { mouseX, mouseY };
+}
+
+void ETerminalDisplay::onSizeChange() {
+	auto fontSize = (Float)mFont->getFontHeight( mFontSize );
+	auto spaceCharAdvanceX = mFont->getGlyph( 'A', mFontSize, false ).advance;
+
+	auto clipColumns = (int)std::floor( std::max( 1.0f, mSize.getWidth() / spaceCharAdvanceX ) );
+	auto clipRows = (int)std::floor( std::max( 1.0f, mSize.getHeight() / fontSize ) );
+
+	if ( clipColumns != m_terminal->GetNumColumns() || clipRows != m_terminal->GetNumRows() ) {
+		m_terminal->Resize( clipColumns, clipRows );
+	}
+}
+
 void ETerminalDisplay::onTextInput( const Uint32& chr ) {
 	if ( !m_terminal )
 		return;
@@ -904,4 +952,23 @@ Float ETerminalDisplay::getFontSize() const {
 
 void ETerminalDisplay::setFontSize( Float FontSize ) {
 	mFontSize = FontSize;
+}
+
+const Vector2f& ETerminalDisplay::getPosition() const {
+	return mPosition;
+}
+
+void ETerminalDisplay::setPosition( const Vector2f& position ) {
+	mPosition = position;
+}
+
+const Sizef& ETerminalDisplay::getSize() const {
+	return mSize;
+}
+
+void ETerminalDisplay::setSize( const Sizef& size ) {
+	if ( mSize != size ) {
+		mSize = size;
+		onSizeChange();
+	}
 }

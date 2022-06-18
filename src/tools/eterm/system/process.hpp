@@ -36,7 +36,7 @@
 #include <windows.h>
 #endif
 
-namespace Hexe { namespace System {
+namespace EE { namespace System {
 
 class Process final : public IProcess {
   private:
@@ -80,4 +80,4 @@ class Process final : public IProcess {
 							  Terminal::PseudoTerminal& pseudoTerminal );
 };
 
-}} // namespace Hexe::System
+}} // namespace EE::System

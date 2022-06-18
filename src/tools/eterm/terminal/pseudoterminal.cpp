@@ -31,7 +31,7 @@
 #include <sys/poll.h>
 #include <unistd.h>
 
-using namespace Hexe::Terminal;
+using namespace EE::Terminal;
 
 PseudoTerminal::~PseudoTerminal() {}
 
@@ -129,7 +129,7 @@ std::unique_ptr<PseudoTerminal> PseudoTerminal::Create( int columns, int rows ) 
 #define NTDDI_VERSION NTDDI_WIN10_RS5
 #include <windows.h>
 
-using namespace Hexe::Terminal;
+using namespace EE::Terminal;
 
 PseudoTerminal::~PseudoTerminal() {
 	ClosePseudoConsole( m_phPC );

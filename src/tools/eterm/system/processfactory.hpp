@@ -23,9 +23,9 @@
 
 #include "iprocessfactory.hpp"
 
-using namespace Hexe::Terminal;
+using namespace EE::Terminal;
 
-namespace Hexe { namespace System {
+namespace EE { namespace System {
 
 class ProcessFactory : public IProcessFactory {
   public:
@@ -53,4 +53,4 @@ class ProcessFactory : public IProcessFactory {
 							  std::unique_ptr<IPseudoTerminal>& outPseudoTerminal ) override;
 };
 
-}} // namespace Hexe::System
+}} // namespace EE::System

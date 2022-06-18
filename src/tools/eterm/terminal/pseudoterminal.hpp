@@ -28,14 +28,14 @@
 
 using namespace EE::Math;
 
-namespace Hexe {
+namespace EE {
 namespace System {
 class Process;
 }
 namespace Terminal {
 class PseudoTerminal final : public IPseudoTerminal {
   private:
-	friend class ::Hexe::System::Process;
+	friend class ::EE::System::Process;
 #ifdef _WIN32
 	Vector2i m_size;
 
@@ -75,4 +75,4 @@ class PseudoTerminal final : public IPseudoTerminal {
 	static std::unique_ptr<PseudoTerminal> Create( int columns, int rows );
 };
 } // namespace Terminal
-} // namespace Hexe
+} // namespace EE

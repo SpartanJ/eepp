@@ -21,7 +21,7 @@
 //  DEALINGS IN THE SOFTWARE.
 #pragma once
 
-namespace Hexe { namespace System {
+namespace EE { namespace System {
 
 enum class ProcessStatus { RUNNING = 0, EXITED };
 
@@ -50,4 +50,4 @@ class IProcess {
 	virtual void WaitForExit() = 0;
 };
 
-}} // namespace Hexe::System
+}} // namespace EE::System

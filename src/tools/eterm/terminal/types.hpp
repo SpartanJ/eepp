@@ -24,7 +24,7 @@
 #include <stdint.h>
 #include <string.h>
 
-namespace Hexe { namespace Terminal {
+namespace EE { namespace Terminal {
 
 enum cursor_mode {
 	BlinkingBlock = 0,
@@ -166,4 +166,4 @@ typedef struct {
 	int alt;
 } Selection;
 
-}} // namespace Hexe::Terminal
+}} // namespace EE::Terminal

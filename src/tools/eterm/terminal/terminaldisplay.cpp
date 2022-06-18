@@ -25,7 +25,7 @@
 
 #define MODBIT( x, set, bit ) ( ( set ) ? ( ( x ) |= ( bit ) ) : ( ( x ) &= ~( bit ) ) )
 
-using namespace Hexe::Terminal;
+using namespace EE::Terminal;
 
 TerminalDisplay::TerminalDisplay() :
 	mMode( MODE_VISIBLE ), mCursorMode( SteadyBar ), mEmulator( nullptr ) {}

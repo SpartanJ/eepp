@@ -15,7 +15,7 @@
 #include <unordered_map>
 #include <vector>
 
-using namespace Hexe::Terminal;
+using namespace EE::Terminal;
 using namespace EE;
 using namespace EE::Window;
 using namespace EE::System;
@@ -118,7 +118,7 @@ class ETerminalDisplay : public TerminalDisplay {
 	Create( EE::Window::Window* window, Font* font, int columns, int rows,
 			const std::string& program, const std::vector<std::string>& args,
 			const std::string& workingDir, uint32_t options = 0,
-			Hexe::System::IProcessFactory* processFactory = nullptr );
+			EE::System::IProcessFactory* processFactory = nullptr );
 
 	virtual void ResetColors();
 	virtual int ResetColor( int index, const char* name );
@@ -140,7 +140,13 @@ class ETerminalDisplay : public TerminalDisplay {
 
 	bool HasTerminated() const;
 
-	void Draw( const Rectf& contentArea );
+	void Draw( bool hasFocus );
+
+	virtual void onMouseMotion( const Vector2i& pos, const Uint32& flags );
+
+	virtual void onMouseDown( const Vector2i& pos, const Uint32& flags );
+
+	virtual void onMouseUp( const Vector2i& pos, const Uint32& flags );
 
 	virtual void onTextInput( const Uint32& chr );
 
@@ -151,6 +157,14 @@ class ETerminalDisplay : public TerminalDisplay {
 
 	void setFontSize( Float FontSize );
 
+	const Vector2f& getPosition() const;
+
+	void setPosition( const Vector2f& position );
+
+	const Sizef& getSize() const;
+
+	void setSize( const Sizef& size );
+
   protected:
 	EE::Window::Window* mWindow;
 	std::vector<TerminalGlyph> m_buffer;
@@ -160,6 +174,8 @@ class ETerminalDisplay : public TerminalDisplay {
 
 	Font* mFont;
 	Float mFontSize{ 12 };
+	Vector2f mPosition;
+	Sizef mSize;
 	int m_columns{ 0 };
 	int m_rows{ 0 };
 	bool m_dirty;
@@ -175,7 +191,11 @@ class ETerminalDisplay : public TerminalDisplay {
 	ETerminalDisplay( EE::Window::Window* window, Font* font, int columns, int rows,
 					  TerminalConfig* config );
 
-	void Draw( Vector2i pos, const Sizei& clip_rect, bool hasFocus );
+	void Draw( Vector2f pos );
+
+	Vector2i positionToGrid( const Vector2i& pos );
+
+	void onSizeChange();
 };
 
 #endif // ETERMINALDISPLAY_HPP

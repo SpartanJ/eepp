@@ -41,7 +41,7 @@
 #include <libutil.h>
 #endif
 
-using namespace Hexe::System;
+using namespace EE::System;
 
 Process::~Process() {
 	if ( m_pid != -1 ) {
@@ -91,7 +91,7 @@ void Process::WaitForExit() {
 }
 
 bool Process::HasExited() const {
-	return m_status == Hexe::System::ProcessStatus::EXITED;
+	return m_status == EE::System::ProcessStatus::EXITED;
 }
 
 int Process::GetExitCode() const {
@@ -196,8 +196,8 @@ Process::CreateWithPseudoTerminal( const std::string& program, const std::vector
 #include <iomanip>
 #include <sstream>
 
-using namespace Hexe::System;
-using namespace Hexe;
+using namespace EE::System;
+using namespace EE;
 
 static std::wstring stringToWideString( const std::string& str ) {
 	if ( str.empty() )

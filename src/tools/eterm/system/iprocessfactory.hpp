@@ -28,9 +28,9 @@
 #include <string>
 #include <vector>
 
-using namespace Hexe::Terminal;
+using namespace EE::Terminal;
 
-namespace Hexe { namespace System {
+namespace EE { namespace System {
 
 class IProcessFactory {
   public:
@@ -58,4 +58,4 @@ class IProcessFactory {
 							  std::unique_ptr<IPseudoTerminal>& outPseudoTerminal ) = 0;
 };
 
-}} // namespace Hexe::System
+}} // namespace EE::System

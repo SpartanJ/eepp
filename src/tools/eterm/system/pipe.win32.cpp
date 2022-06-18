@@ -3,7 +3,7 @@
 #include "../terminal/windowserrors.hpp"
 #include <windows.h>
 
-using namespace Hexe::System;
+using namespace EE::System;
 
 Pipe::Pipe( AutoHandle&& readHandle, AutoHandle&& writeHandle ) :
 	m_hInput( std::move( readHandle ) ), m_hOutput( std::move( writeHandle ) ) {}

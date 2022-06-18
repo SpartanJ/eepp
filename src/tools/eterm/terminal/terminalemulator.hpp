@@ -43,7 +43,7 @@
 #include <stdint.h>
 #include <sys/types.h>
 
-namespace Hexe { namespace Terminal {
+namespace EE { namespace Terminal {
 constexpr int ESC_BUF_SIZ = 512;
 constexpr int ESC_ARG_SIZ = 16;
 constexpr int STR_BUF_SIZ = ESC_BUF_SIZ;
@@ -98,7 +98,7 @@ class TerminalEmulator final {
 	using PtyPtr = std::unique_ptr<IPseudoTerminal>;
 	using ProcPtr = std::unique_ptr<System::IProcess>;
 
-	static ushort boxdrawindex( const TerminalGlyph* g ) ;
+	static ushort boxdrawindex( const TerminalGlyph* g );
 
   private:
 	DpyPtr m_dpy;
@@ -258,6 +258,8 @@ class TerminalEmulator final {
 	void printsel( const Arg* );
 	void sendbreak( const Arg* );
 	void toggleprinter( const Arg* );
+
+	selection_mode getSelectionMode() const;
 };
 
-}} // namespace Hexe::Terminal
+}} // namespace EE::Terminal

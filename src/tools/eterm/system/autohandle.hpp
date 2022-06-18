@@ -21,7 +21,7 @@
 //  DEALINGS IN THE SOFTWARE.
 #pragma once
 
-namespace Hexe {
+namespace EE {
 
 // This class is designed to automatically free a resource handle when destructed
 class AutoHandle final {
@@ -58,4 +58,4 @@ class AutoHandle final {
 	void Release() const;
 };
 
-} // namespace Hexe
+} // namespace EE

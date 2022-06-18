@@ -9,38 +9,41 @@ void inputCallback( InputEvent* event ) {
 		return;
 
 	switch ( event->Type ) {
+		case InputEvent::MouseMotion: {
+			terminal->onMouseMotion( win->getInput()->getMousePos(),
+									 win->getInput()->getPressTrigger() );
+			break;
+		}
+		case InputEvent::MouseButtonDown: {
+			terminal->onMouseDown( win->getInput()->getMousePos(),
+								   win->getInput()->getPressTrigger() );
+			break;
+		}
+		case InputEvent::MouseButtonUp: {
+			terminal->onMouseUp( win->getInput()->getMousePos(),
+								   win->getInput()->getReleaseTrigger() );
+			break;
+		}
 		case InputEvent::Window: {
 			break;
 		}
-		case InputEvent::KeyUp:
-
+		case InputEvent::KeyUp: {
 			break;
-		case InputEvent::KeyDown:
+		}
+		case InputEvent::KeyDown: {
 			terminal->onKeyDown( event->key.keysym.sym, event->key.keysym.unicode,
 								 event->key.keysym.mod, event->key.keysym.scancode );
 			break;
-		case InputEvent::TextInput:
-			terminal->onTextInput( event->text.text );
-		case InputEvent::SysWM:
-		case InputEvent::VideoResize:
-		case InputEvent::VideoExpose: {
 		}
-	}
-}
-
-void tryInitTerminal( Font* fontDefault ) {
-	if ( !terminal || terminal->HasTerminated() ) {
-		auto fontSize = 15;
-		auto charWidth = fontDefault->getGlyph( 'A', fontSize, false ).advance;
-		auto charHeight = terminal ? terminal->getFontSize() : fontSize;
-		Sizef contentRegion = win->getSize().asFloat();
-
-		auto columns = (int)std::floor( std::max( 1.0f, contentRegion.x / charWidth ) );
-		auto rows = (int)std::floor( std::max( 1.0f, contentRegion.y / charHeight ) );
-
-		terminal =
-			ETerminalDisplay::Create( win, fontDefault, columns, rows, "/usr/bin/fish", {}, "", 0 );
-		terminal->setFontSize( charHeight );
+		case InputEvent::TextInput: {
+			terminal->onTextInput( event->text.text );
+			break;
+		}
+		case InputEvent::VideoResize: {
+			terminal->setPosition( { 0, 0 } );
+			terminal->setSize( win->getSize().asFloat() );
+			break;
+		}
 	}
 }
 
@@ -52,7 +55,7 @@ void mainLoop() {
 	if ( terminal ) {
 		terminal->Update();
 
-		terminal->Draw( Rectf( { 0, 0 }, win->getSize().asFloat() ) );
+		terminal->Draw( win->hasFocus() );
 	}
 
 	win->display();
@@ -67,12 +70,32 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 		ContextSettings( true ) );
 
 	if ( win->isOpen() ) {
-		win->setClearColor( RGB( 50, 50, 50 ) );
+		win->setClearColor( RGB( 0, 0, 0 ) );
 
 		FontTrueType* fontMono = FontTrueType::New( "monospace" );
 		fontMono->loadFromFile( "assets/fonts/DejaVuSansMono.ttf" );
 
-		tryInitTerminal( fontMono );
+		if ( !terminal || terminal->HasTerminated() ) {
+			auto fontSize = 15;
+			auto charWidth = fontMono->getGlyph( 'A', fontSize, false ).advance;
+			auto charHeight = terminal ? terminal->getFontSize() : fontSize;
+			Sizef contentRegion = win->getSize().asFloat();
+
+			auto columns = (int)std::floor( std::max( 1.0f, contentRegion.x / charWidth ) );
+			auto rows = (int)std::floor( std::max( 1.0f, contentRegion.y / charHeight ) );
+
+			std::string shell;
+			const char* shellenv = getenv( "SHELL" );
+			if ( shellenv != nullptr ) {
+				shell = shellenv;
+			} else {
+				shell = "/bin/bash";
+			}
+
+			terminal = ETerminalDisplay::Create( win, fontMono, columns, rows, shell, {}, "", 0 );
+			terminal->setFontSize( charHeight );
+			terminal->setSize( win->getSize().asFloat() );
+		}
 
 		win->getInput()->pushCallback( &inputCallback );
 
