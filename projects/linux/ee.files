@@ -1140,8 +1140,8 @@
 ../../src/tools/eterm/system/ipipe.hpp
 ../../src/tools/eterm/system/iprocess.hpp
 ../../src/tools/eterm/system/iprocessfactory.hpp
+../../src/tools/eterm/system/pipe.cpp
 ../../src/tools/eterm/system/pipe.hpp
-../../src/tools/eterm/system/pipe.win32.cpp
 ../../src/tools/eterm/system/process.cpp
 ../../src/tools/eterm/system/process.hpp
 ../../src/tools/eterm/system/processfactory.cpp

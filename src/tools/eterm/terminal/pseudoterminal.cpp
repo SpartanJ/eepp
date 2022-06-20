@@ -231,7 +231,8 @@ std::unique_ptr<PseudoTerminal> PseudoTerminal::Create( int columns, int rows ) 
 		assert( ptySize.X > 0 );
 		assert( ptySize.Y > 0 );
 
-		hr = CreatePseudoConsole( ptySize, (HANDLE)hPipePTYIn.Get(), (HANDLE)hPipePTYOut.Get(), 0, &hPC );
+		hr = CreatePseudoConsole( ptySize, (HANDLE)hPipePTYIn.Get(), (HANDLE)hPipePTYOut.Get(), 0,
+								  &hPC );
 	}
 
 	if ( hr != S_OK ) {

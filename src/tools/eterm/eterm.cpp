@@ -21,7 +21,7 @@ void inputCallback( InputEvent* event ) {
 		}
 		case InputEvent::MouseButtonUp: {
 			terminal->onMouseUp( win->getInput()->getMousePos(),
-								   win->getInput()->getReleaseTrigger() );
+								 win->getInput()->getReleaseTrigger() );
 			break;
 		}
 		case InputEvent::Window: {
@@ -39,6 +39,9 @@ void inputCallback( InputEvent* event ) {
 			terminal->onTextInput( event->text.text );
 			break;
 		}
+		case InputEvent::VideoExpose:
+			terminal->invalidate();
+			break;
 		case InputEvent::VideoResize: {
 			terminal->setPosition( { 0, 0 } );
 			terminal->setSize( win->getSize().asFloat() );
@@ -69,13 +72,14 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 	displayManager->enableMouseFocusClickThrough();
 	displayManager->disableBypassCompositor();
 
+	Sizei winSize( 1280, 720 );
 	win = Engine::instance()->createWindow(
-		WindowSettings( 1280, 720, "eterm", WindowStyle::Default, WindowBackend::Default, 32,
-						"assets/icon/ee.png" ),
+		WindowSettings( winSize.getWidth(), winSize.getHeight(), "eterm", WindowStyle::Default,
+						WindowBackend::Default, 32, "assets/icon/ee.png",
+						currentDisplay->getPixelDensity() ),
 		ContextSettings( true ) );
 
 	if ( win->isOpen() ) {
-		PixelDensity::setPixelDensity( currentDisplay->getPixelDensity() );
 		win->setClearColor( RGB( 0, 0, 0 ) );
 
 		FontTrueType* fontMono = FontTrueType::New( "monospace" );

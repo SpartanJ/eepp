@@ -474,7 +474,7 @@ void ETerminalDisplay::DrawLine( Line line, int x1, int y, int x2 ) {
 }
 
 void ETerminalDisplay::DrawCursor( int cx, int cy, TerminalGlyph g, int, int, TerminalGlyph ) {
-	if ( m_cursor != Vector2i(cx, cy) || m_cursorg != g ) {
+	if ( m_cursor != Vector2i( cx, cy ) || m_cursorg != g ) {
 		m_cursor.x = cx;
 		m_cursor.y = cy;
 		m_cursorg = g;
@@ -482,8 +482,7 @@ void ETerminalDisplay::DrawCursor( int cx, int cy, TerminalGlyph g, int, int, Te
 	}
 }
 
-void ETerminalDisplay::DrawEnd() {
-}
+void ETerminalDisplay::DrawEnd() {}
 
 void ETerminalDisplay::Draw( bool hasFocus ) {
 	bool modeFocus = mMode & MODE_FOCUSED;
@@ -764,9 +763,10 @@ void ETerminalDisplay::Draw( Vector2f pos ) {
 				drawcol = GetCol( mEmulator->GetDefaultReverseCursorColor(), m_colors );
 			}
 		} else {
-			drawcol = GetCol( mEmulator->IsSelected( m_cursor.x, m_cursor.y ) ?
-								  mEmulator->GetDefaultReverseCursorColor() :
-								  mEmulator->GetDefaultCursorColor(), m_colors );
+			drawcol = GetCol( mEmulator->IsSelected( m_cursor.x, m_cursor.y )
+								  ? mEmulator->GetDefaultReverseCursorColor()
+								  : mEmulator->GetDefaultCursorColor(),
+							  m_colors );
 		}
 
 		Vector2f a{}, b{}, c{}, d{};
@@ -857,8 +857,25 @@ void ETerminalDisplay::onTextInput( const Uint32& chr ) {
 	m_terminal->Write( utf8Input.c_str(), utf8Input.size() );
 }
 
+static Uint32 sanitizeMod( const Uint32& mod ) {
+	Uint32 smod = 0;
+	if ( mod & KEYMOD_CTRL )
+		smod |= KEYMOD_CTRL;
+	if ( mod & KEYMOD_SHIFT )
+		smod |= KEYMOD_SHIFT;
+	if ( mod & KEYMOD_META )
+		smod |= KEYMOD_META;
+	if ( mod & KEYMOD_LALT )
+		smod |= KEYMOD_LALT;
+	if ( mod & KEYMOD_RALT )
+		smod |= KEYMOD_RALT;
+	return smod;
+}
+
 void ETerminalDisplay::onKeyDown( const Keycode& keyCode, const Uint32& /*chr*/, const Uint32& mod,
 								  const Scancode& scancode ) {
+	Uint32 smod = sanitizeMod( mod );
+
 	if ( mod & KEYMOD_CTRL ) {
 		// I really dont like this, as it depends on the undelying backend implementation (SDL in
 		// this case)
@@ -877,50 +894,41 @@ void ETerminalDisplay::onKeyDown( const Keycode& keyCode, const Uint32& /*chr*/,
 		}
 	}
 
-	for ( auto& kv : terminalKeyMap.Shortcuts() ) {
-		Keycode key = kv.first;
-		if ( keyCode == key ) {
-			for ( auto& k : kv.second ) {
-				if ( ( k.mask == KEYMOD_CTRL_SHIFT_ALT_META || k.mask == mod ) &&
-					 ( k.appkey == 0 || k.appkey < 0 ) &&
-					 ( k.appcursor == 0 || k.appcursor > 0 ) ) {
-					Action( k.action );
+	auto scIt = terminalKeyMap.Shortcuts().find( keyCode );
+	if ( scIt != terminalKeyMap.Shortcuts().end() ) {
+		for ( auto& k : scIt->second ) {
+			if ( ( k.mask == KEYMOD_CTRL_SHIFT_ALT_META || k.mask == smod ) &&
+				 ( k.appkey == 0 || k.appkey < 0 ) && ( k.appcursor == 0 || k.appcursor > 0 ) ) {
+				Action( k.action );
+				return;
+			}
+		}
+	}
+
+	auto kvIt = terminalKeyMap.KeyMap().find( keyCode );
+	if ( kvIt != terminalKeyMap.KeyMap().end() ) {
+		for ( auto& k : kvIt->second ) {
+			if ( ( k.mask == KEYMOD_CTRL_SHIFT_ALT_META || k.mask == smod ) &&
+				 ( k.appkey == 0 || k.appkey < 0 ) && ( k.appcursor == 0 || k.appcursor > 0 ) ) {
+				if ( k.string.size() > 0 ) {
+					m_terminal->Write( k.string.c_str(), k.string.size() );
 					return;
 				}
+				break;
 			}
 		}
 	}
 
-	for ( auto& kv : terminalKeyMap.KeyMap() ) {
-		Keycode key = kv.first;
-		if ( key == keyCode ) {
-			for ( auto& k : kv.second ) {
-				if ( ( k.mask == KEYMOD_CTRL_SHIFT_ALT_META || k.mask == mod ) &&
-					 ( k.appkey == 0 || k.appkey < 0 ) &&
-					 ( k.appcursor == 0 || k.appcursor > 0 ) ) {
-					if ( k.string.size() > 0 ) {
-						m_terminal->Write( k.string.c_str(), k.string.size() );
-						return;
-					}
-					break;
+	auto pkmIt = terminalKeyMap.PlatformKeyMap().find( scancode );
+	if ( pkmIt != terminalKeyMap.PlatformKeyMap().end() ) {
+		for ( auto& k : pkmIt->second ) {
+			if ( ( k.mask == KEYMOD_CTRL_SHIFT_ALT_META || k.mask == smod ) &&
+				 ( k.appkey == 0 || k.appkey < 0 ) && ( k.appcursor == 0 || k.appcursor > 0 ) ) {
+				if ( k.string.size() > 0 ) {
+					m_terminal->Write( k.string.c_str(), k.string.size() );
+					return;
 				}
-			}
-		}
-	}
-
-	for ( auto& kv : terminalKeyMap.PlatformKeyMap() ) {
-		Scancode keyIndex = kv.first;
-		if ( keyIndex == scancode ) {
-			for ( auto& k : kv.second ) {
-				if ( ( k.mask == KEYMOD_CTRL_SHIFT_ALT_META || k.mask == mod ) &&
-					 ( k.appkey == 0 || k.appkey < 0 ) &&
-					 ( k.appcursor == 0 || k.appcursor > 0 ) ) {
-					if ( k.string.size() > 0 ) {
-						m_terminal->Write( k.string.c_str(), k.string.size() );
-						return;
-					}
-					break;
-				}
+				break;
 			}
 		}
 	}
@@ -953,4 +961,6 @@ void ETerminalDisplay::setSize( const Sizef& size ) {
 	}
 }
 
-void ETerminalDisplay::invalidate() { m_dirty = true; }
+void ETerminalDisplay::invalidate() {
+	m_dirty = true;
+}
