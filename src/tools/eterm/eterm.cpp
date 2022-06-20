@@ -48,21 +48,26 @@ void inputCallback( InputEvent* event ) {
 }
 
 void mainLoop() {
-	win->clear();
-
 	win->getInput()->update();
+	terminal->Update();
 
-	if ( terminal ) {
-		terminal->Update();
-
+	if ( terminal->isDirty() ) {
+		win->clear();
 		terminal->Draw( win->hasFocus() );
+		win->display();
+	} else {
+		win->getInput()->waitEvent( Milliseconds( win->hasFocus() ? 16 : 100 ) );
 	}
-
-	win->display();
 }
 
 EE_MAIN_FUNC int main( int, char*[] ) {
+	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
+	Display* currentDisplay = displayManager->getDisplayIndex( 0 );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	displayManager->enableScreenSaver();
+	displayManager->enableMouseFocusClickThrough();
+	displayManager->disableBypassCompositor();
 
 	win = Engine::instance()->createWindow(
 		WindowSettings( 1280, 720, "eterm", WindowStyle::Default, WindowBackend::Default, 32,
@@ -70,13 +75,14 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 		ContextSettings( true ) );
 
 	if ( win->isOpen() ) {
+		PixelDensity::setPixelDensity( currentDisplay->getPixelDensity() );
 		win->setClearColor( RGB( 0, 0, 0 ) );
 
 		FontTrueType* fontMono = FontTrueType::New( "monospace" );
 		fontMono->loadFromFile( "assets/fonts/DejaVuSansMono.ttf" );
 
 		if ( !terminal || terminal->HasTerminated() ) {
-			auto fontSize = 15;
+			auto fontSize = PixelDensity::dpToPx( 12 );
 			auto charWidth = fontMono->getGlyph( 'A', fontSize, false ).advance;
 			auto charHeight = terminal ? terminal->getFontSize() : fontSize;
 			Sizef contentRegion = win->getSize().asFloat();

@@ -2153,7 +2153,7 @@ void TerminalEmulator::drawregion( TerminalDisplay& dpy, int x1, int y1, int x2,
 	}
 }
 
-void TerminalEmulator::draw( void ) {
+void TerminalEmulator::draw() {
 	int cx = term.c.x /*, ocx = term.ocx, ocy = term.ocy*/;
 
 	{
@@ -2323,7 +2323,6 @@ void TerminalEmulator::Update() {
 
 	// TODO: Handle blink
 
-	// TODO: Do not draw every update
 	draw();
 
 	m_process->CheckExitStatus();

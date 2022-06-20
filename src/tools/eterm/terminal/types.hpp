@@ -91,12 +91,20 @@ typedef unsigned short ushort;
 
 typedef uint_least32_t Rune;
 
-typedef struct {
+struct TerminalGlyph {
 	Rune u;		 /* character code */
 	ushort mode; /* attribute flags */
 	uint32_t fg; /* foreground  */
 	uint32_t bg; /* background  */
-} TerminalGlyph;
+
+	bool operator==( const TerminalGlyph& r ) {
+		return u == r.u && mode == r.mode && fg == r.fg && bg == r.bg;
+	}
+
+	bool operator!=( const TerminalGlyph& r ) {
+		return !(*this == r);
+	}
+};
 
 typedef TerminalGlyph* Line;
 

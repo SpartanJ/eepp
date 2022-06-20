@@ -457,31 +457,32 @@ bool ETerminalDisplay::DrawBegin( int columns, int rows ) {
 		m_buffer.resize( columns * rows, defaultGlyph );
 		m_columns = columns;
 		m_rows = rows;
+		invalidate();
 	}
-	m_checkDirty = false;
 
 	return ( ( mMode & MODE_VISIBLE ) != 0 );
 }
 
 void ETerminalDisplay::DrawLine( Line line, int x1, int y, int x2 ) {
-	m_checkDirty = true;
 	memcpy( &m_buffer[y * m_columns + x1], line, ( x2 - x1 ) * sizeof( TerminalGlyph ) );
 	for ( int i = x1; i < x2; i++ ) {
 		if ( m_terminal->selected( i, y ) ) {
 			m_buffer[y * m_columns + i].mode |= ATTR_REVERSE;
 		}
 	}
+	invalidate();
 }
 
 void ETerminalDisplay::DrawCursor( int cx, int cy, TerminalGlyph g, int, int, TerminalGlyph ) {
-	m_cursorx = cx;
-	m_cursory = cy;
-	m_cursorg = g;
+	if ( m_cursor != Vector2i(cx, cy) || m_cursorg != g ) {
+		m_cursor.x = cx;
+		m_cursor.y = cy;
+		m_cursorg = g;
+		invalidate();
+	}
 }
 
 void ETerminalDisplay::DrawEnd() {
-	if ( m_checkDirty )
-		m_dirty = true;
 }
 
 void ETerminalDisplay::Draw( bool hasFocus ) {
@@ -507,6 +508,7 @@ void ETerminalDisplay::onMouseMotion( const Vector2i& pos, const Uint32& flags )
 		m_terminal->selextend(
 			gridPos.x, gridPos.y,
 			mWindow->getInput()->getModState() == KEYMOD_SHIFT ? SEL_RECTANGULAR : SEL_REGULAR, 0 );
+		invalidate();
 	}
 }
 
@@ -515,6 +517,7 @@ void ETerminalDisplay::onMouseDown( const Vector2i& pos, const Uint32& flags ) {
 		 ( m_terminal->getSelectionMode() == selection_mode::SEL_IDLE ) ) {
 		auto gridPos{ positionToGrid( pos ) };
 		m_terminal->selstart( gridPos.x, gridPos.y, 0 );
+		invalidate();
 	}
 }
 
@@ -524,6 +527,7 @@ void ETerminalDisplay::onMouseUp( const Vector2i&, const Uint32& flags ) {
 		if ( selection )
 			SetClipboard( selection );
 		m_terminal->selclear();
+		invalidate();
 	}
 }
 
@@ -544,6 +548,8 @@ static inline Color GetCol( unsigned int terminalColor,
 #define COL32_A_SHIFT 0
 
 void ETerminalDisplay::Draw( Vector2f pos ) {
+	m_drawing = true;
+
 	if ( mClock.getElapsedTime().asSeconds() > 0.7 ) {
 		mMode ^= MODE_BLINK;
 		mClock.restart();
@@ -751,28 +757,16 @@ void ETerminalDisplay::Draw( Vector2f pos ) {
 
 	if ( !IS_SET( MODE_HIDE ) ) {
 		Color drawcol;
-
-		m_cursorg.mode &=
-			ATTR_BOLD | ATTR_ITALIC | ATTR_UNDERLINE | ATTR_STRUCK | ATTR_WIDE | ATTR_BOXDRAW;
 		if ( IS_SET( MODE_REVERSE ) ) {
-			m_cursorg.mode |= ATTR_REVERSE;
-			m_cursorg.bg = mEmulator->GetDefaultForeground();
-			if ( mEmulator->IsSelected( m_cursorx, m_cursory ) ) {
+			if ( mEmulator->IsSelected( m_cursor.x, m_cursor.y ) ) {
 				drawcol = GetCol( mEmulator->GetDefaultCursorColor(), m_colors );
-				m_cursorg.fg = mEmulator->GetDefaultReverseCursorColor();
 			} else {
 				drawcol = GetCol( mEmulator->GetDefaultReverseCursorColor(), m_colors );
-				m_cursorg.fg = mEmulator->GetDefaultCursorColor();
 			}
 		} else {
-			if ( mEmulator->IsSelected( m_cursorx, m_cursory ) ) {
-				m_cursorg.fg = mEmulator->GetDefaultForeground();
-				m_cursorg.bg = mEmulator->GetDefaultReverseCursorColor();
-			} else {
-				m_cursorg.fg = mEmulator->GetDefaultBackground();
-				m_cursorg.bg = mEmulator->GetDefaultCursorColor();
-			}
-			drawcol = GetCol( m_cursorg.bg, m_colors );
+			drawcol = GetCol( mEmulator->IsSelected( m_cursor.x, m_cursor.y ) ?
+								  mEmulator->GetDefaultReverseCursorColor() :
+								  mEmulator->GetDefaultCursorColor(), m_colors );
 		}
 
 		Vector2f a{}, b{}, c{}, d{};
@@ -797,41 +791,27 @@ void ETerminalDisplay::Draw( Vector2f pos ) {
 				case cursor_mode::MAX_CURSOR:
 				case 4: /* Steady Underline */
 					p.drawRectangle( Rectf(
-						{ pos.x + borderpx + m_cursorx * spaceCharAdvanceX,
-						  pos.y + borderpx + ( m_cursory + 1 ) * line_height - cursorthickness },
+						{ pos.x + borderpx + m_cursor.x * spaceCharAdvanceX,
+						  pos.y + borderpx + ( m_cursor.y + 1 ) * line_height - cursorthickness },
 						{ spaceCharAdvanceX, cursorthickness } ) );
 					break;
 				case 5: /* Blinking bar */
 				case 6: /* Steady bar */
-					p.drawRectangle( Rectf( { pos.x + borderpx + m_cursorx * spaceCharAdvanceX,
-											  pos.y + m_cursory * line_height },
+					p.drawRectangle( Rectf( { pos.x + borderpx + m_cursor.x * spaceCharAdvanceX,
+											  pos.y + m_cursor.y * line_height },
 											{ spaceCharAdvanceX, line_height } ) );
 					break;
 			}
 		} else {
 			p.setFillMode( PrimitiveFillMode::DRAW_LINE );
-			p.drawRectangle( Rectf( { pos.x + borderpx + m_cursorx * spaceCharAdvanceX,
-									  pos.y + borderpx + m_cursory * line_height },
+			p.drawRectangle( Rectf( { pos.x + borderpx + m_cursor.x * spaceCharAdvanceX,
+									  pos.y + borderpx + m_cursor.y * line_height },
 									{ spaceCharAdvanceX, line_height } ) );
 		}
 	}
 
-	/*if ( hasFocus ) {
-		auto mousePos = mWindow->getInput()->getMousePos();
-		auto relPos = Vector2i{ mousePos.x - pos.x, mousePos.y - pos.y };
-		int mouseX = 0;
-		int mouseY = 0;
-
-		if ( mousePos.x <= 0.0f || mousePos.y <= 0.0f ) {
-			mouseX = 0;
-			mouseY = 0;
-		} else if ( relPos.x >= 0.0f && relPos.y >= 0.0f ) {
-			mouseX = eeclamp( (int)std::floor( relPos.x / spaceCharAdvanceX ), 0, clipColumns );
-			mouseY = eeclamp( (int)std::floor( relPos.y / fontSize ), 0, clipRows );
-		}
-
-		ProcessInput( mouseX, mouseY );
-	}*/
+	m_drawing = false;
+	m_dirty = false;
 }
 
 Vector2i ETerminalDisplay::positionToGrid( const Vector2i& pos ) {
@@ -972,3 +952,5 @@ void ETerminalDisplay::setSize( const Sizef& size ) {
 		onSizeChange();
 	}
 }
+
+void ETerminalDisplay::invalidate() { m_dirty = true; }

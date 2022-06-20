@@ -11,6 +11,7 @@
 #include <eepp/window/keycodes.hpp>
 #include <eepp/window/window.hpp>
 
+#include <atomic>
 #include <memory>
 #include <unordered_map>
 #include <vector>
@@ -165,6 +166,10 @@ class ETerminalDisplay : public TerminalDisplay {
 
 	void setSize( const Sizef& size );
 
+	bool isDirty() const { return m_dirty; }
+
+	void invalidate();
+
   protected:
 	EE::Window::Window* mWindow;
 	std::vector<TerminalGlyph> m_buffer;
@@ -178,10 +183,9 @@ class ETerminalDisplay : public TerminalDisplay {
 	Sizef mSize;
 	int m_columns{ 0 };
 	int m_rows{ 0 };
-	bool m_dirty;
-	bool m_checkDirty;
-	int m_cursorx;
-	int m_cursory;
+	std::atomic<bool> m_dirty{ true };
+	std::atomic<bool> m_drawing{ false };
+	Vector2i m_cursor;
 	TerminalGlyph m_cursorg;
 	bool m_useBoxDrawing;
 	bool m_useColorEmoji;
