@@ -30,46 +30,46 @@ using namespace EE::Terminal;
 TerminalDisplay::TerminalDisplay() :
 	mMode( MODE_VISIBLE ), mCursorMode( SteadyBar ), mEmulator( nullptr ) {}
 
-void TerminalDisplay::Attach( TerminalEmulator* terminal ) {
+void TerminalDisplay::attach( TerminalEmulator* terminal ) {
 	assert( mEmulator == nullptr );
 	mEmulator = terminal;
 }
 
-void TerminalDisplay::Detach( TerminalEmulator* terminal ) {
+void TerminalDisplay::detach( TerminalEmulator* terminal ) {
 	assert( mEmulator == terminal );
 	mEmulator = nullptr;
 }
 
-void TerminalDisplay::Bell() {}
+void TerminalDisplay::bell() {}
 
-void TerminalDisplay::ResetColors() {}
+void TerminalDisplay::resetColors() {}
 
-int TerminalDisplay::ResetColor( int /*index*/, const char* /*name*/ ) {
+int TerminalDisplay::resetColor( int /*index*/, const char* /*name*/ ) {
 	return 0;
 }
 
-void TerminalDisplay::SetMode( win_mode mode, int set ) {
+void TerminalDisplay::setMode( TerminalWinMode mode, int set ) {
 	int m = mMode;
 	MODBIT( ( (int&)mMode ), set, mode );
 	if ( ( mMode & MODE_REVERSE ) != ( m & MODE_REVERSE ) && mEmulator ) {
-		mEmulator->Redraw();
+		mEmulator->redraw();
 	}
 }
 
-void TerminalDisplay::SetCursorMode( cursor_mode cursor ) {
+void TerminalDisplay::setCursorMode( TerminalCursorMode cursor ) {
 	mCursorMode = cursor;
 }
 
-cursor_mode TerminalDisplay::GetCursorMode() const {
+TerminalCursorMode TerminalDisplay::getCursorMode() const {
 	return mCursorMode;
 }
 
-void TerminalDisplay::SetTitle( const char* ) {}
+void TerminalDisplay::setTitle( const char* ) {}
 
-void TerminalDisplay::SetIconTitle( const char* ) {}
+void TerminalDisplay::setIconTitle( const char* ) {}
 
-void TerminalDisplay::SetClipboard( const char* ) {}
+void TerminalDisplay::setClipboard( const char* ) {}
 
-const char* TerminalDisplay::GetClipboard() const {
+const char* TerminalDisplay::getClipboard() const {
 	return "";
 }

@@ -40,6 +40,7 @@ void inputCallback( InputEvent* event ) {
 			break;
 		}
 		case InputEvent::VideoExpose:
+			terminal->setFocus( win->hasFocus() );
 			terminal->invalidate();
 			break;
 		case InputEvent::VideoResize: {
@@ -52,11 +53,11 @@ void inputCallback( InputEvent* event ) {
 
 void mainLoop() {
 	win->getInput()->update();
-	terminal->Update();
+	terminal->update();
 
 	if ( terminal->isDirty() ) {
 		win->clear();
-		terminal->Draw( win->hasFocus() );
+		terminal->draw();
 		win->display();
 	} else {
 		win->getInput()->waitEvent( Milliseconds( win->hasFocus() ? 16 : 100 ) );
@@ -85,15 +86,7 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 		FontTrueType* fontMono = FontTrueType::New( "monospace" );
 		fontMono->loadFromFile( "assets/fonts/DejaVuSansMono.ttf" );
 
-		if ( !terminal || terminal->HasTerminated() ) {
-			auto fontSize = PixelDensity::dpToPx( 12 );
-			auto charWidth = fontMono->getGlyph( 'A', fontSize, false ).advance;
-			auto charHeight = terminal ? terminal->getFontSize() : fontSize;
-			Sizef contentRegion = win->getSize().asFloat();
-
-			auto columns = (int)std::floor( std::max( 1.0f, contentRegion.x / charWidth ) );
-			auto rows = (int)std::floor( std::max( 1.0f, contentRegion.y / charHeight ) );
-
+		if ( !terminal || terminal->hasTerminated() ) {
 			std::string shell;
 			const char* shellenv = getenv( "SHELL" );
 			if ( shellenv != nullptr ) {
@@ -102,9 +95,8 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 				shell = "/bin/bash";
 			}
 
-			terminal = ETerminalDisplay::Create( win, fontMono, columns, rows, shell, {}, "", 0 );
-			terminal->setFontSize( charHeight );
-			terminal->setSize( win->getSize().asFloat() );
+			terminal = ETerminalDisplay::create( win, fontMono, PixelDensity::dpToPx( 12 ),
+												 win->getSize().asFloat(), shell, {}, "", 0 );
 		}
 
 		win->getInput()->pushCallback( &inputCallback );

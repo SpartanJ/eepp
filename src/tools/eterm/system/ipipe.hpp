@@ -40,11 +40,11 @@ class IPipe {
 
 	virtual ~IPipe() = default;
 
-	virtual bool IsTTY() const = 0;
+	virtual bool isTTY() const = 0;
 
-	virtual int Write( const char* s, size_t n ) = 0;
+	virtual int write( const char* s, size_t n ) = 0;
 
-	virtual int Read( char* buf, size_t n, bool block = false ) = 0;
+	virtual int read( char* buf, size_t n, bool block = false ) = 0;
 };
 
 }} // namespace EE::System

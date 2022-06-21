@@ -39,15 +39,15 @@ class IProcess {
 
 	IProcess& operator=( IProcess&& ) = delete;
 
-	virtual void CheckExitStatus() = 0;
+	virtual void checkExitStatus() = 0;
 
-	virtual bool HasExited() const = 0;
+	virtual bool hasExited() const = 0;
 
-	virtual int GetExitCode() const = 0;
+	virtual int getExitCode() const = 0;
 
-	virtual void Terminate() = 0;
+	virtual void terminate() = 0;
 
-	virtual void WaitForExit() = 0;
+	virtual void waitForExit() = 0;
 };
 
 }} // namespace EE::System

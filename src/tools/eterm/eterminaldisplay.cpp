@@ -27,7 +27,8 @@ TerminalKeyMap::TerminalKeyMap( const TerminalKey keys[], size_t keysLen,
 	}
 }
 
-static TerminalShortcut shortcuts[] = { { KEY_INSERT, KEYMOD_SHIFT, ShortcutAction::PASTE, 0, 0 } };
+static TerminalShortcut shortcuts[] = {
+	{ KEY_INSERT, KEYMOD_SHIFT, TerminalShortcutAction::PASTE, 0, 0 } };
 
 static TerminalKey keys[] = {
 	/* keysym           mask            string      appkey appcursor */
@@ -309,24 +310,32 @@ static const Color colormapped[256] = {
 	Color( 208, 208, 208 ), Color( 218, 218, 218 ), Color( 228, 228, 228 ),
 	Color( 238, 238, 238 ) };
 
-std::shared_ptr<ETerminalDisplay>
-ETerminalDisplay::Create( EE::Window::Window* window, Font* font,
-						  std::shared_ptr<TerminalEmulator>&& terminalEmulator,
-						  TerminalConfig* config ) {
+std::shared_ptr<ETerminalDisplay> ETerminalDisplay::create(
+	EE::Window::Window* window, Font* font, const Float& fontSize, const Sizef& pixelsSize,
+	std::shared_ptr<TerminalEmulator>&& terminalEmulator, TerminalConfig* config ) {
 	std::shared_ptr<ETerminalDisplay> terminal = std::shared_ptr<ETerminalDisplay>(
-		new ETerminalDisplay( window, font, terminalEmulator->GetNumColumns(),
-							  terminalEmulator->GetNumRows(), config ) );
-	terminal->m_terminal = std::move( terminalEmulator );
+		new ETerminalDisplay( window, font, fontSize, pixelsSize, config ) );
+	terminal->mTerminal = std::move( terminalEmulator );
 	return terminal;
 }
 
 static EE::System::IProcessFactory* g_processFactory = new EE::System::ProcessFactory();
 
+static Sizei gridSizeFromTermDimensions( Font* font, const Float& fontSize,
+										 const Sizef& pixelsSize ) {
+	auto fontHeight = (Float)font->getFontHeight( fontSize );
+	auto spaceCharAdvanceX = font->getGlyph( 'A', fontSize, false ).advance;
+	auto clipColumns =
+		(int)std::floor( std::max( 1.0f, pixelsSize.getWidth() / spaceCharAdvanceX ) );
+	auto clipRows = (int)std::floor( std::max( 1.0f, pixelsSize.getHeight() / fontHeight ) );
+	return { clipColumns, clipRows };
+}
+
 std::shared_ptr<ETerminalDisplay>
-ETerminalDisplay::Create( EE::Window::Window* window, Font* font, int columns, int rows,
-						  const std::string& program, const std::vector<std::string>& args,
-						  const std::string& workingDir, uint32_t options,
-						  EE::System::IProcessFactory* processFactory ) {
+ETerminalDisplay::create( EE::Window::Window* window, Font* font, const Float& fontSize,
+						  const Sizef& pixelsSize, const std::string& program,
+						  const std::vector<std::string>& args, const std::string& workingDir,
+						  uint32_t options, EE::System::IProcessFactory* processFactory ) {
 	using namespace EE::System;
 
 	TerminalConfig config{};
@@ -336,10 +345,11 @@ ETerminalDisplay::Create( EE::Window::Window* window, Font* font, int columns, i
 		processFactory = g_processFactory;
 	}
 
+	Sizei termSize( gridSizeFromTermDimensions( font, fontSize, pixelsSize ) );
 	std::unique_ptr<IPseudoTerminal> pseudoTerminal = nullptr;
 	std::vector<std::string> argsV( args.begin(), args.end() );
-	auto process = processFactory->CreateWithPseudoTerminal( program, argsV, workingDir, columns,
-															 rows, pseudoTerminal );
+	auto process = processFactory->createWithPseudoTerminal(
+		program, argsV, workingDir, termSize.getWidth(), termSize.getHeight(), pseudoTerminal );
 
 	if ( !pseudoTerminal ) {
 		fprintf( stderr, "Failed to create pseudo terminal\n" );
@@ -352,186 +362,192 @@ ETerminalDisplay::Create( EE::Window::Window* window, Font* font, int columns, i
 	}
 
 	std::shared_ptr<ETerminalDisplay> terminal = std::shared_ptr<ETerminalDisplay>(
-		new ETerminalDisplay( window, font, columns, rows, &config ) );
-	terminal->m_terminal =
-		TerminalEmulator::Create( std::move( pseudoTerminal ), std::move( process ), terminal );
+		new ETerminalDisplay( window, font, fontSize, pixelsSize, &config ) );
+
+	terminal->mTerminal =
+		TerminalEmulator::create( std::move( pseudoTerminal ), std::move( process ), terminal );
 	return terminal;
 }
 
-ETerminalDisplay::ETerminalDisplay( EE::Window::Window* window, Font* font, int columns, int rows,
-									TerminalConfig* config ) :
-	TerminalDisplay(), mWindow( window ), mFont( font ), m_columns( columns ), m_rows( rows ) {
+ETerminalDisplay::ETerminalDisplay( EE::Window::Window* window, Font* font, const Float& fontSize,
+									const Sizef& pixelsSize, TerminalConfig* config ) :
+	TerminalDisplay(),
+	mWindow( window ),
+	mFont( font ),
+	mFontSize( fontSize ),
+	mSize( pixelsSize ) {
+
 	if ( config != nullptr ) {
 		if ( config->options & OPTION_COLOR_EMOJI )
-			m_useColorEmoji = true;
+			mUseColorEmoji = true;
 		if ( config->options & OPTION_NO_BOXDRAWING )
-			m_useBoxDrawing = false;
+			mUseBoxDrawing = false;
 		if ( config->options & OPTION_PASTE_CRLF )
-			m_pasteNewlineFix = true;
+			mPasteNewlineFix = true;
 	}
 
 	TerminalGlyph defaultGlyph;
 	defaultGlyph.mode = ATTR_INVISIBLE;
 	auto defaultColor = std::make_pair<Uint32, std::string>( 0U, "" );
-	m_cursorg = defaultGlyph;
-	m_colors.resize( eeARRAY_SIZE( colornames ), defaultColor );
-	m_buffer.resize( m_columns * m_rows, defaultGlyph );
+	mCursorGlyph = defaultGlyph;
+	mColors.resize( eeARRAY_SIZE( colornames ), defaultColor );
+	mBuffer.resize( mColumns * mRows, defaultGlyph );
 	( (int&)mMode ) |= MODE_FOCUSED;
 
 	if ( config != nullptr ) {
 		if ( config->options & OPTION_COLOR_EMOJI )
-			m_useColorEmoji = true;
+			mUseColorEmoji = true;
 		if ( config->options & OPTION_NO_BOXDRAWING )
-			m_useBoxDrawing = false;
+			mUseBoxDrawing = false;
 		if ( config->options & OPTION_PASTE_CRLF )
-			m_pasteNewlineFix = true;
+			mPasteNewlineFix = true;
 	}
 }
 
-void ETerminalDisplay::ResetColors() {
+void ETerminalDisplay::resetColors() {
 	for ( Uint32 i = 0; i < eeARRAY_SIZE( colornames ); i++ ) {
-		ResetColor( i, colornames[i] );
+		resetColor( i, colornames[i] );
 	}
 }
 
-int ETerminalDisplay::ResetColor( int index, const char* name ) {
+int ETerminalDisplay::resetColor( int index, const char* name ) {
 	if ( !name ) {
-		if ( index >= 0 && index < (int)m_colors.size() ) {
+		if ( index >= 0 && index < (int)mColors.size() ) {
 			Color col = 0x000000FF;
 
 			if ( index < 256 )
 				col = colormapped[index];
 
-			m_colors[index].first = col;
-			m_colors[index].second = "";
+			mColors[index].first = col;
+			mColors[index].second = "";
 			return 0;
 		}
 	}
 
-	if ( index >= 0 && index < (int)m_colors.size() ) {
-		m_colors[index].first = Color::fromString( name );
-		m_colors[index].second = name;
+	if ( index >= 0 && index < (int)mColors.size() ) {
+		mColors[index].first = Color::fromString( name );
+		mColors[index].second = name;
 	}
 
 	return 1;
 }
 
-void ETerminalDisplay::Update() {
-	if ( m_terminal )
-		m_terminal->Update();
+void ETerminalDisplay::update() {
+	if ( mClock.getElapsedTime().asSeconds() > 0.7 ) {
+		mMode ^= MODE_BLINK;
+		mClock.restart();
+		invalidate();
+	}
+	if ( mTerminal )
+		mTerminal->update();
 }
 
-void ETerminalDisplay::Action( ShortcutAction action ) {
-	if ( action == ShortcutAction::PASTE ) {
-		auto clipboard = GetClipboard();
+void ETerminalDisplay::action( TerminalShortcutAction action ) {
+	if ( action == TerminalShortcutAction::PASTE ) {
+		auto clipboard = getClipboard();
 		auto clipboardLen = strlen( clipboard );
 		if ( clipboardLen > 0 ) {
-			m_terminal->Write( clipboard, clipboardLen );
+			mTerminal->write( clipboard, clipboardLen );
 		}
 	}
 }
 
-bool ETerminalDisplay::HasTerminated() const {
-	return m_terminal->HasExited();
+bool ETerminalDisplay::hasTerminated() const {
+	return mTerminal->hasExited();
 }
 
-void ETerminalDisplay::SetTitle( const char* ) {}
+void ETerminalDisplay::setTitle( const char* ) {}
 
-void ETerminalDisplay::SetIconTitle( const char* ) {}
+void ETerminalDisplay::setIconTitle( const char* ) {}
 
-void ETerminalDisplay::SetClipboard( const char* text ) {
+void ETerminalDisplay::setClipboard( const char* text ) {
 	if ( text == nullptr )
 		return;
 	mClipboard = text;
 	mWindow->getClipboard()->setText( mClipboard );
 }
 
-const char* ETerminalDisplay::GetClipboard() const {
+const char* ETerminalDisplay::getClipboard() const {
 	mClipboard = mWindow->getClipboard()->getText();
 	return mClipboard.c_str();
 }
 
-bool ETerminalDisplay::DrawBegin( int columns, int rows ) {
-	if ( columns != m_columns || rows != m_rows ) {
+bool ETerminalDisplay::drawBegin( int columns, int rows ) {
+	if ( columns != mColumns || rows != mRows ) {
 		TerminalGlyph defaultGlyph{};
-		m_buffer.resize( columns * rows, defaultGlyph );
-		m_columns = columns;
-		m_rows = rows;
+		mBuffer.resize( columns * rows, defaultGlyph );
+		mColumns = columns;
+		mRows = rows;
 		invalidate();
 	}
 
 	return ( ( mMode & MODE_VISIBLE ) != 0 );
 }
 
-void ETerminalDisplay::DrawLine( Line line, int x1, int y, int x2 ) {
-	memcpy( &m_buffer[y * m_columns + x1], line, ( x2 - x1 ) * sizeof( TerminalGlyph ) );
+void ETerminalDisplay::drawLine( Line line, int x1, int y, int x2 ) {
+	memcpy( &mBuffer[y * mColumns + x1], line, ( x2 - x1 ) * sizeof( TerminalGlyph ) );
 	for ( int i = x1; i < x2; i++ ) {
-		if ( m_terminal->selected( i, y ) ) {
-			m_buffer[y * m_columns + i].mode |= ATTR_REVERSE;
+		if ( mTerminal->selected( i, y ) ) {
+			mBuffer[y * mColumns + i].mode |= ATTR_REVERSE;
 		}
 	}
 	invalidate();
 }
 
-void ETerminalDisplay::DrawCursor( int cx, int cy, TerminalGlyph g, int, int, TerminalGlyph ) {
-	if ( m_cursor != Vector2i( cx, cy ) || m_cursorg != g ) {
-		m_cursor.x = cx;
-		m_cursor.y = cy;
-		m_cursorg = g;
+void ETerminalDisplay::drawCursor( int cx, int cy, TerminalGlyph g, int, int, TerminalGlyph ) {
+	if ( mCursor != Vector2i( cx, cy ) || mCursorGlyph != g ) {
+		mCursor.x = cx;
+		mCursor.y = cy;
+		mCursorGlyph = g;
 		invalidate();
 	}
 }
 
-void ETerminalDisplay::DrawEnd() {}
+void ETerminalDisplay::drawEnd() {}
 
-void ETerminalDisplay::Draw( bool hasFocus ) {
-	bool modeFocus = mMode & MODE_FOCUSED;
-	if ( hasFocus != modeFocus ) {
-		if ( hasFocus ) {
-			mMode |= MODE_FOCUSED | MODE_FOCUS;
-		} else {
-			mMode ^= MODE_FOCUS | MODE_FOCUSED;
-		}
-	} else {
-		mMode ^= MODE_FOCUS;
-	}
-
-	Draw( mPosition );
+void ETerminalDisplay::draw() {
+	draw( mPosition );
 }
 
 void ETerminalDisplay::onMouseMotion( const Vector2i& pos, const Uint32& flags ) {
 	if ( ( flags & EE_BUTTON_LMASK ) &&
-		 ( m_terminal->getSelectionMode() == selection_mode::SEL_EMPTY ||
-		   m_terminal->getSelectionMode() == selection_mode::SEL_READY ) ) {
+		 ( mTerminal->getSelectionMode() == TerminalSelectionMode::SEL_EMPTY ||
+		   mTerminal->getSelectionMode() == TerminalSelectionMode::SEL_READY ) ) {
 		auto gridPos{ positionToGrid( pos ) };
-		m_terminal->selextend(
+		mTerminal->selextend(
 			gridPos.x, gridPos.y,
 			mWindow->getInput()->getModState() == KEYMOD_SHIFT ? SEL_RECTANGULAR : SEL_REGULAR, 0 );
 		invalidate();
 	}
+	mTerminal->mousereport( TerminalMouseEventType::MouseMotion, positionToGrid( pos ), flags,
+							mWindow->getInput()->getModState() );
 }
 
 void ETerminalDisplay::onMouseDown( const Vector2i& pos, const Uint32& flags ) {
 	if ( ( flags & EE_BUTTON_LMASK ) &&
-		 ( m_terminal->getSelectionMode() == selection_mode::SEL_IDLE ) ) {
+		 ( mTerminal->getSelectionMode() == TerminalSelectionMode::SEL_IDLE ) ) {
 		auto gridPos{ positionToGrid( pos ) };
-		m_terminal->selstart( gridPos.x, gridPos.y, 0 );
+		mTerminal->selstart( gridPos.x, gridPos.y, 0 );
 		invalidate();
 	}
+	mTerminal->mousereport( TerminalMouseEventType::MouseButtonDown, positionToGrid( pos ), flags,
+							mWindow->getInput()->getModState() );
 }
 
-void ETerminalDisplay::onMouseUp( const Vector2i&, const Uint32& flags ) {
+void ETerminalDisplay::onMouseUp( const Vector2i& pos, const Uint32& flags ) {
 	if ( ( flags & EE_BUTTON_LMASK ) ) {
-		auto selection = m_terminal->getsel();
+		auto selection = mTerminal->getsel();
 		if ( selection )
-			SetClipboard( selection );
-		m_terminal->selclear();
+			setClipboard( selection );
+		mTerminal->selclear();
 		invalidate();
 	}
+	mTerminal->mousereport( TerminalMouseEventType::MouseButtonRelease, positionToGrid( pos ),
+							flags, mWindow->getInput()->getModState() );
 }
 
-static inline Color GetCol( unsigned int terminalColor,
-							const std::vector<std::pair<Color, std::string>>& colors ) {
+static inline Color termColor( unsigned int terminalColor,
+							   const std::vector<std::pair<Color, std::string>>& colors ) {
 	if ( ( terminalColor & ( 1 << 24 ) ) == 0 ) {
 		return colors[terminalColor & 0xFF].first;
 	}
@@ -541,24 +557,15 @@ static inline Color GetCol( unsigned int terminalColor,
 
 #define BETWEEN( x, a, b ) ( ( a ) <= ( x ) && ( x ) <= ( b ) )
 #define IS_SET( flag ) ( ( mMode & ( flag ) ) != 0 )
-#define COL32_R_SHIFT 24
-#define COL32_G_SHIFT 16
-#define COL32_B_SHIFT 8
-#define COL32_A_SHIFT 0
 
-void ETerminalDisplay::Draw( Vector2f pos ) {
-	m_drawing = true;
-
-	if ( mClock.getElapsedTime().asSeconds() > 0.7 ) {
-		mMode ^= MODE_BLINK;
-		mClock.restart();
-	}
+void ETerminalDisplay::draw( Vector2f pos ) {
+	mDrawing = true;
 
 	auto fontSize = (Float)mFont->getFontHeight( mFontSize );
 	auto spaceCharAdvanceX = mFont->getGlyph( 'A', mFontSize, false ).advance;
 
-	auto width = m_columns * spaceCharAdvanceX;
-	auto height = m_rows * fontSize;
+	auto width = mColumns * spaceCharAdvanceX;
+	auto height = mRows * fontSize;
 
 	if ( width < mSize.getWidth() ) {
 		pos.x = std::floor( pos.x + ( ( mSize.getWidth() - width ) / 2.0f ) );
@@ -570,57 +577,32 @@ void ETerminalDisplay::Draw( Vector2f pos ) {
 	float x = 0.0f;
 	float y = std::floor( pos.y );
 	const float line_height = fontSize;
-	auto defaultFg = GetCol( mEmulator->GetDefaultForeground(), m_colors );
-	auto defaultBg = GetCol( mEmulator->GetDefaultBackground(), m_colors );
+	auto defaultFg = termColor( mEmulator->getDefaultForeground(), mColors );
+	auto defaultBg = termColor( mEmulator->getDefaultBackground(), mColors );
 
 	Primitives p;
 	p.setForceDraw( false );
 	p.setColor( defaultBg );
 	p.drawRectangle( Rectf( mPosition.asFloat(), mSize.asFloat() ) );
 
-	for ( int j = 0; j < m_rows; j++ ) {
+	for ( int j = 0; j < mRows; j++ ) {
 		x = std::floor( pos.x );
 
 		if ( pos.y + line_height * j > mSize.getWidth() )
 			break;
 
-		for ( int i = 0; i < m_columns; i++ ) {
-			auto& glyph = m_buffer[j * m_columns + i];
-			auto fg = GetCol( glyph.fg, m_colors );
-			auto bg = GetCol( glyph.bg, m_colors );
+		for ( int i = 0; i < mColumns; i++ ) {
+			auto& glyph = mBuffer[j * mColumns + i];
+			auto fg = termColor( glyph.fg, mColors );
+			auto bg = termColor( glyph.bg, mColors );
 
 			if ( IS_SET( MODE_REVERSE ) ) {
-				if ( fg == defaultFg ) {
-					fg = defaultBg;
-				} else {
-					Uint32 red = ( fg.getValue() >> COL32_R_SHIFT ) & 0xFF;
-					Uint32 green = ( fg.getValue() >> COL32_G_SHIFT ) & 0xFF;
-					Uint32 blue = ( fg.getValue() >> COL32_B_SHIFT ) & 0xFF;
-					Uint32 alpha = ( fg.getValue() >> COL32_A_SHIFT ) & 0xFF;
-					fg = Color( ( ~red ) & 0xFF, ( ~green ) & 0xFF, ( ~blue ) & 0xFF, alpha );
-				}
-
-				if ( bg == defaultBg ) {
-					bg = defaultFg;
-				} else {
-					Uint32 red = ( bg.getValue() >> COL32_R_SHIFT ) & 0xFF;
-					Uint32 green = ( bg.getValue() >> COL32_G_SHIFT ) & 0xFF;
-					Uint32 blue = ( bg.getValue() >> COL32_B_SHIFT ) & 0xFF;
-					Uint32 alpha = ( bg.getValue() >> COL32_A_SHIFT ) & 0xFF;
-					bg = Color( ( ~red ) & 0xFF, ( ~green ) & 0xFF, ( ~blue ) & 0xFF, alpha );
-				}
+				fg = fg == defaultFg ? defaultBg : fg.invert();
+				bg = bg == defaultBg ? defaultFg : bg.invert();
 			}
 
-			if ( ( glyph.mode & ATTR_BOLD_FAINT ) == ATTR_FAINT ) {
-				Uint32 red = ( fg.getValue() >> COL32_R_SHIFT ) & 0xFF;
-				Uint32 green = ( fg.getValue() >> COL32_G_SHIFT ) & 0xFF;
-				Uint32 blue = ( fg.getValue() >> COL32_B_SHIFT ) & 0xFF;
-				Uint32 alpha = ( fg.getValue() >> COL32_A_SHIFT ) & 0xFF;
-				red /= 2;
-				green /= 2;
-				blue /= 2;
-				fg = Color( red, green, blue, alpha );
-			}
+			if ( ( glyph.mode & ATTR_BOLD_FAINT ) == ATTR_FAINT )
+				fg = fg.div( 2 );
 
 			if ( glyph.mode & ATTR_REVERSE )
 				bg = fg;
@@ -644,53 +626,28 @@ void ETerminalDisplay::Draw( Vector2f pos ) {
 
 	y = std::floor( pos.y );
 
-	for ( int j = 0; j < m_rows; j++ ) {
+	for ( int j = 0; j < mRows; j++ ) {
 		x = std::floor( pos.x );
 
 		if ( pos.y + line_height * j > mSize.getWidth() )
 			break;
 
-		for ( int i = 0; i < m_columns; i++ ) {
-			auto& glyph = m_buffer[j * m_columns + i];
-			auto fg = GetCol( glyph.fg, m_colors );
-			auto bg = GetCol( glyph.bg, m_colors );
+		for ( int i = 0; i < mColumns; i++ ) {
+			auto& glyph = mBuffer[j * mColumns + i];
+			auto fg = termColor( glyph.fg, mColors );
+			auto bg = termColor( glyph.bg, mColors );
 			Color temp{ Color::Transparent };
 
 			if ( ( glyph.mode & ATTR_BOLD_FAINT ) == ATTR_BOLD && BETWEEN( glyph.fg, 0, 7 ) )
-				fg = GetCol( glyph.fg + 8, m_colors );
+				fg = termColor( glyph.fg + 8, mColors );
 
 			if ( IS_SET( MODE_REVERSE ) ) {
-				if ( fg == defaultFg ) {
-					fg = defaultBg;
-				} else {
-					Uint32 red = ( fg.getValue() >> COL32_R_SHIFT ) & 0xFF;
-					Uint32 green = ( fg.getValue() >> COL32_G_SHIFT ) & 0xFF;
-					Uint32 blue = ( fg.getValue() >> COL32_B_SHIFT ) & 0xFF;
-					Uint32 alpha = ( fg.getValue() >> COL32_A_SHIFT ) & 0xFF;
-					fg = Color( ( ~red ) & 0xFF, ( ~green ) & 0xFF, ( ~blue ) & 0xFF, alpha );
-				}
-
-				if ( bg == defaultBg ) {
-					bg = defaultFg;
-				} else {
-					Uint32 red = ( bg.getValue() >> COL32_R_SHIFT ) & 0xFF;
-					Uint32 green = ( bg.getValue() >> COL32_G_SHIFT ) & 0xFF;
-					Uint32 blue = ( bg.getValue() >> COL32_B_SHIFT ) & 0xFF;
-					Uint32 alpha = ( bg.getValue() >> COL32_A_SHIFT ) & 0xFF;
-					bg = Color( ( ~red ) & 0xFF, ( ~green ) & 0xFF, ( ~blue ) & 0xFF, alpha );
-				}
+				fg = fg == defaultFg ? defaultBg : fg.invert();
+				bg = bg == defaultBg ? defaultFg : bg.invert();
 			}
 
-			if ( ( glyph.mode & ATTR_BOLD_FAINT ) == ATTR_FAINT ) {
-				Uint32 red = ( fg.getValue() >> COL32_R_SHIFT ) & 0xFF;
-				Uint32 green = ( fg.getValue() >> COL32_G_SHIFT ) & 0xFF;
-				Uint32 blue = ( fg.getValue() >> COL32_B_SHIFT ) & 0xFF;
-				Uint32 alpha = ( fg.getValue() >> COL32_A_SHIFT ) & 0xFF;
-				red /= 2;
-				green /= 2;
-				blue /= 2;
-				fg = Color( red, green, blue, alpha );
-			}
+			if ( ( glyph.mode & ATTR_BOLD_FAINT ) == ATTR_FAINT )
+				fg = fg.div( 2 );
 
 			if ( glyph.mode & ATTR_REVERSE ) {
 				temp = fg;
@@ -698,7 +655,7 @@ void ETerminalDisplay::Draw( Vector2f pos ) {
 				bg = temp;
 			}
 
-			if ( glyph.mode & ATTR_BLINK && mMode & MODE_BLINK )
+			if ( glyph.mode & ATTR_BLINK && ( mMode & MODE_BLINK ) )
 				fg = bg;
 
 			if ( glyph.mode & ATTR_INVISIBLE )
@@ -716,7 +673,7 @@ void ETerminalDisplay::Draw( Vector2f pos ) {
 			gd->setDrawMode( GlyphDrawable::DrawMode::Text );
 			gd->draw( { x, y } );
 
-			if ( glyph.mode & ATTR_BOXDRAW && m_useBoxDrawing ) {
+			if ( glyph.mode & ATTR_BOXDRAW && mUseBoxDrawing ) {
 				// auto bd = TerminalEmulator::boxdrawindex( &glyph );
 				// drawbox( x, y, advanceX, line_height, fg, bg, bd, vtx_write );
 			}
@@ -757,16 +714,16 @@ void ETerminalDisplay::Draw( Vector2f pos ) {
 	if ( !IS_SET( MODE_HIDE ) ) {
 		Color drawcol;
 		if ( IS_SET( MODE_REVERSE ) ) {
-			if ( mEmulator->IsSelected( m_cursor.x, m_cursor.y ) ) {
-				drawcol = GetCol( mEmulator->GetDefaultCursorColor(), m_colors );
+			if ( mEmulator->isSelected( mCursor.x, mCursor.y ) ) {
+				drawcol = termColor( mEmulator->getDefaultCursorColor(), mColors );
 			} else {
-				drawcol = GetCol( mEmulator->GetDefaultReverseCursorColor(), m_colors );
+				drawcol = termColor( mEmulator->getDefaultReverseCursorColor(), mColors );
 			}
 		} else {
-			drawcol = GetCol( mEmulator->IsSelected( m_cursor.x, m_cursor.y )
-								  ? mEmulator->GetDefaultReverseCursorColor()
-								  : mEmulator->GetDefaultCursorColor(),
-							  m_colors );
+			drawcol = termColor( mEmulator->isSelected( mCursor.x, mCursor.y )
+									 ? mEmulator->getDefaultReverseCursorColor()
+									 : mEmulator->getDefaultCursorColor(),
+								 mColors );
 		}
 
 		Vector2f a{}, b{}, c{}, d{};
@@ -778,40 +735,53 @@ void ETerminalDisplay::Draw( Vector2f pos ) {
 		/* draw the new one */
 		if ( IS_SET( MODE_FOCUSED ) ) {
 			switch ( mCursorMode ) {
-				case 7:					  /* st extension */
-					m_cursorg.u = 0x2603; /* snowman (U+2603) */
-										  /* FALLTHROUGH */
-				case 0:					  /* Blinking Block */
-				case 1:					  /* Blinking Block (Default) */
-				case 2:					  /* Steady Block */
-										  // TODO: Implement cursor glyph rendering
-										  // xdrawglyph(g, cx, cy);
-										  // break;
-				case 3:					  /* Blinking Underline */
-				case cursor_mode::MAX_CURSOR:
+				case 7:						 /* st extension */
+					mCursorGlyph.u = 0x2603; /* snowman (U+2603) */
+											 /* FALLTHROUGH */
+				case 0:						 /* Blinking Block */
+				case 1: {					 /* Blinking Block (Default) */
+					if ( !( mMode & MODE_BLINK ) )
+						break;
+				}
+				case 2: { /* Steady Block */
+					auto* gd = mFont->getGlyphDrawable( mCursorGlyph.u, mFontSize );
+					gd->setColor( termColor( mCursorGlyph.fg, mColors ) );
+					gd->setDrawMode( GlyphDrawable::DrawMode::Text );
+					gd->draw( { pos.x + borderpx + mCursor.x * spaceCharAdvanceX,
+								pos.y + borderpx + mCursor.y * line_height } );
+					break;
+				}
+				case 3: { /* Blinking Underline */
+					if ( !( mMode & MODE_BLINK ) )
+						break;
+				}
 				case 4: /* Steady Underline */
 					p.drawRectangle( Rectf(
-						{ pos.x + borderpx + m_cursor.x * spaceCharAdvanceX,
-						  pos.y + borderpx + ( m_cursor.y + 1 ) * line_height - cursorthickness },
+						{ pos.x + borderpx + mCursor.x * spaceCharAdvanceX,
+						  pos.y + borderpx + ( mCursor.y + 1 ) * line_height - cursorthickness },
 						{ spaceCharAdvanceX, cursorthickness } ) );
 					break;
-				case 5: /* Blinking bar */
+				case 5: { /* Blinking bar */
+					if ( !( mMode & MODE_BLINK ) )
+						break;
+				}
 				case 6: /* Steady bar */
-					p.drawRectangle( Rectf( { pos.x + borderpx + m_cursor.x * spaceCharAdvanceX,
-											  pos.y + m_cursor.y * line_height },
+				case TerminalCursorMode::MAX_CURSOR:
+					p.drawRectangle( Rectf( { pos.x + borderpx + mCursor.x * spaceCharAdvanceX,
+											  pos.y + mCursor.y * line_height },
 											{ spaceCharAdvanceX, line_height } ) );
 					break;
 			}
 		} else {
 			p.setFillMode( PrimitiveFillMode::DRAW_LINE );
-			p.drawRectangle( Rectf( { pos.x + borderpx + m_cursor.x * spaceCharAdvanceX,
-									  pos.y + borderpx + m_cursor.y * line_height },
+			p.drawRectangle( Rectf( { pos.x + borderpx + mCursor.x * spaceCharAdvanceX,
+									  pos.y + borderpx + mCursor.y * line_height },
 									{ spaceCharAdvanceX, line_height } ) );
 		}
 	}
 
-	m_drawing = false;
-	m_dirty = false;
+	mDrawing = false;
+	mDirty = false;
 }
 
 Vector2i ETerminalDisplay::positionToGrid( const Vector2i& pos ) {
@@ -837,24 +807,20 @@ Vector2i ETerminalDisplay::positionToGrid( const Vector2i& pos ) {
 }
 
 void ETerminalDisplay::onSizeChange() {
-	auto fontSize = (Float)mFont->getFontHeight( mFontSize );
-	auto spaceCharAdvanceX = mFont->getGlyph( 'A', mFontSize, false ).advance;
-
-	auto clipColumns = (int)std::floor( std::max( 1.0f, mSize.getWidth() / spaceCharAdvanceX ) );
-	auto clipRows = (int)std::floor( std::max( 1.0f, mSize.getHeight() / fontSize ) );
-
-	if ( clipColumns != m_terminal->GetNumColumns() || clipRows != m_terminal->GetNumRows() ) {
-		m_terminal->Resize( clipColumns, clipRows );
+	Sizei gridSize( gridSizeFromTermDimensions( mFont, mFontSize, mSize ) );
+	if ( gridSize.getWidth() != mTerminal->getNumColumns() ||
+		 gridSize.getHeight() != mTerminal->getNumRows() ) {
+		mTerminal->resize( gridSize.getWidth(), gridSize.getHeight() );
 	}
 }
 
 void ETerminalDisplay::onTextInput( const Uint32& chr ) {
-	if ( !m_terminal )
+	if ( !mTerminal )
 		return;
 	String input;
 	input.push_back( chr );
 	std::string utf8Input( input.toUtf8() );
-	m_terminal->Write( utf8Input.c_str(), utf8Input.size() );
+	mTerminal->write( utf8Input.c_str(), utf8Input.size() );
 }
 
 static Uint32 sanitizeMod( const Uint32& mod ) {
@@ -889,7 +855,7 @@ void ETerminalDisplay::onKeyDown( const Keycode& keyCode, const Uint32& /*chr*/,
 				}
 			}
 
-			m_terminal->Write( &tmp, 1 );
+			mTerminal->write( &tmp, 1 );
 			return;
 		}
 	}
@@ -899,7 +865,7 @@ void ETerminalDisplay::onKeyDown( const Keycode& keyCode, const Uint32& /*chr*/,
 		for ( auto& k : scIt->second ) {
 			if ( ( k.mask == KEYMOD_CTRL_SHIFT_ALT_META || k.mask == smod ) &&
 				 ( k.appkey == 0 || k.appkey < 0 ) && ( k.appcursor == 0 || k.appcursor > 0 ) ) {
-				Action( k.action );
+				action( k.action );
 				return;
 			}
 		}
@@ -911,7 +877,7 @@ void ETerminalDisplay::onKeyDown( const Keycode& keyCode, const Uint32& /*chr*/,
 			if ( ( k.mask == KEYMOD_CTRL_SHIFT_ALT_META || k.mask == smod ) &&
 				 ( k.appkey == 0 || k.appkey < 0 ) && ( k.appcursor == 0 || k.appcursor > 0 ) ) {
 				if ( k.string.size() > 0 ) {
-					m_terminal->Write( k.string.c_str(), k.string.size() );
+					mTerminal->write( k.string.c_str(), k.string.size() );
 					return;
 				}
 				break;
@@ -925,7 +891,7 @@ void ETerminalDisplay::onKeyDown( const Keycode& keyCode, const Uint32& /*chr*/,
 			if ( ( k.mask == KEYMOD_CTRL_SHIFT_ALT_META || k.mask == smod ) &&
 				 ( k.appkey == 0 || k.appkey < 0 ) && ( k.appcursor == 0 || k.appcursor > 0 ) ) {
 				if ( k.string.size() > 0 ) {
-					m_terminal->Write( k.string.c_str(), k.string.size() );
+					mTerminal->write( k.string.c_str(), k.string.size() );
 					return;
 				}
 				break;
@@ -938,8 +904,11 @@ Float ETerminalDisplay::getFontSize() const {
 	return mFontSize;
 }
 
-void ETerminalDisplay::setFontSize( Float FontSize ) {
-	mFontSize = FontSize;
+void ETerminalDisplay::setFontSize( const Float& fontSize ) {
+	if ( mFontSize != fontSize ) {
+		mFontSize = fontSize;
+		onSizeChange();
+	}
 }
 
 const Vector2f& ETerminalDisplay::getPosition() const {
@@ -948,6 +917,7 @@ const Vector2f& ETerminalDisplay::getPosition() const {
 
 void ETerminalDisplay::setPosition( const Vector2f& position ) {
 	mPosition = position;
+	invalidate();
 }
 
 const Sizef& ETerminalDisplay::getSize() const {
@@ -962,5 +932,22 @@ void ETerminalDisplay::setSize( const Sizef& size ) {
 }
 
 void ETerminalDisplay::invalidate() {
-	m_dirty = true;
+	mDirty = true;
+}
+
+void ETerminalDisplay::setFocus( bool focus ) {
+	if ( focus == mFocus )
+		return;
+	mFocus = focus;
+	bool modeFocus = mMode & MODE_FOCUSED;
+	if ( mFocus != modeFocus ) {
+		if ( mFocus ) {
+			mMode |= MODE_FOCUSED | MODE_FOCUS;
+		} else {
+			mMode ^= MODE_FOCUS | MODE_FOCUSED;
+		}
+	} else {
+		mMode ^= MODE_FOCUS;
+	}
+	invalidate();
 }

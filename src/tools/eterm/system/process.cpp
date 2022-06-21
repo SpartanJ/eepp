@@ -51,7 +51,7 @@ Process::~Process() {
 	}
 }
 
-void Process::CheckExitStatus() {
+void Process::checkExitStatus() {
 	if ( m_status == ProcessStatus::EXITED ) {
 		return;
 	}
@@ -67,7 +67,7 @@ void Process::CheckExitStatus() {
 	m_exitCode = WEXITSTATUS( status );
 }
 
-void Process::Terminate() {
+void Process::terminate() {
 	if ( m_status == ProcessStatus::EXITED ) {
 		return;
 	}
@@ -78,7 +78,7 @@ void Process::Terminate() {
 	}
 }
 
-void Process::WaitForExit() {
+void Process::waitForExit() {
 	if ( m_status == ProcessStatus::EXITED ) {
 		return;
 	}
@@ -92,11 +92,11 @@ void Process::WaitForExit() {
 	m_exitCode = WEXITSTATUS( status );
 }
 
-bool Process::HasExited() const {
+bool Process::hasExited() const {
 	return m_status == EE::System::ProcessStatus::EXITED;
 }
 
-int Process::GetExitCode() const {
+int Process::getExitCode() const {
 	return m_status == ProcessStatus::EXITED ? m_exitCode : 255;
 }
 
@@ -136,7 +136,7 @@ static void execshell( const char* cmd, const char* const* args ) {
 	_exit( 1 );
 }
 
-std::unique_ptr<Process> Process::CreateWithPipe( const std::string& /*program*/,
+std::unique_ptr<Process> Process::createWithPipe( const std::string& /*program*/,
 												  const std::vector<std::string>& /*args*/,
 												  const std::string& /*workingDirectory*/,
 												  std::unique_ptr<IPipe>& outPipe,
@@ -146,7 +146,7 @@ std::unique_ptr<Process> Process::CreateWithPipe( const std::string& /*program*/
 }
 
 std::unique_ptr<Process>
-Process::CreateWithPseudoTerminal( const std::string& program, const std::vector<std::string>& args,
+Process::createWithPseudoTerminal( const std::string& program, const std::vector<std::string>& args,
 								   const std::string& /*workingDirectory*/,
 								   Terminal::PseudoTerminal& pseudoTerminal ) {
 	int pid = fork();
@@ -183,7 +183,7 @@ Process::CreateWithPseudoTerminal( const std::string& program, const std::vector
 		argsV.push_back( nullptr );
 		execshell( program.c_str(), argsV.data() );
 	} else {
-		pseudoTerminal.m_slave.Release();
+		pseudoTerminal.m_slave.release();
 		return std::unique_ptr<Process>( new Process( pid ) );
 	}
 	return nullptr;
@@ -263,7 +263,7 @@ Process::~Process() {
 	}
 }
 
-void Process::CheckExitStatus() {
+void Process::checkExitStatus() {
 	if ( m_status == ProcessStatus::RUNNING ) {
 		DWORD exitCode;
 		if ( GetExitCodeProcess( (HANDLE)m_hProcess, &exitCode ) && exitCode != STILL_ACTIVE ) {
@@ -273,15 +273,15 @@ void Process::CheckExitStatus() {
 	}
 }
 
-bool Process::HasExited() const {
+bool Process::hasExited() const {
 	return m_status == ProcessStatus::EXITED;
 }
 
-int Process::GetExitCode() const {
+int Process::getExitCode() const {
 	return m_status == ProcessStatus::EXITED ? m_exitCode : STILL_ACTIVE;
 }
 
-void Process::Terminate() {
+void Process::terminate() {
 	if ( m_status == ProcessStatus::RUNNING ) {
 		TerminateProcess( (HANDLE)m_hProcess, EXIT_FAILURE );
 		m_exitCode = EXIT_FAILURE;
@@ -290,7 +290,7 @@ void Process::Terminate() {
 	}
 }
 
-void Process::WaitForExit() {
+void Process::waitForExit() {
 	CheckExitStatus();
 
 	if ( m_status == ProcessStatus::RUNNING ) {
@@ -298,7 +298,7 @@ void Process::WaitForExit() {
 	}
 }
 
-std::unique_ptr<Process> Process::CreateWithPipe( const std::string& program,
+std::unique_ptr<Process> Process::createWithPipe( const std::string& program,
 												  const std::vector<std::string>& args,
 												  const std::string& workingDirectory,
 												  std::unique_ptr<IPipe>& outPipe,
@@ -377,7 +377,7 @@ std::unique_ptr<Process> Process::CreateWithPipe( const std::string& program,
 }
 
 std::unique_ptr<Process>
-Process::CreateWithPseudoTerminal( const std::string& program, const std::vector<std::string>& args,
+Process::createWithPseudoTerminal( const std::string& program, const std::vector<std::string>& args,
 								   const std::string& workingDirectory,
 								   Terminal::PseudoTerminal& pseudoTerminal ) {
 	HRESULT hr{ E_UNEXPECTED };

@@ -26,45 +26,60 @@
 namespace EE { namespace Terminal {
 
 class TerminalEmulator;
-class TerminalDisplay {
-  protected:
-	int mMode;
-	cursor_mode mCursorMode;
-	TerminalEmulator* mEmulator;
 
+class TerminalDisplay {
   public:
 	TerminalDisplay();
+
 	virtual ~TerminalDisplay() = default;
+
 	TerminalDisplay( const TerminalDisplay& ) = delete;
+
 	TerminalDisplay( TerminalDisplay&& ) = delete;
+
 	TerminalDisplay& operator=( const TerminalDisplay& ) = delete;
+
 	TerminalDisplay& operator=( TerminalDisplay&& ) = delete;
 
-	virtual void Attach( TerminalEmulator* terminal );
-	virtual void Detach( TerminalEmulator* terminal );
+	virtual void attach( TerminalEmulator* terminal );
 
-	virtual void Bell();
+	virtual void detach( TerminalEmulator* terminal );
 
-	virtual void ResetColors();
-	virtual int ResetColor( int index, const char* name );
+	virtual void bell();
 
-	virtual void SetMode( win_mode mode, int set );
-	inline bool GetMode( win_mode mode ) const { return mMode & mode; }
+	virtual void resetColors();
 
-	virtual void SetCursorMode( cursor_mode cursor );
-	virtual cursor_mode GetCursorMode() const;
+	virtual int resetColor( int index, const char* name );
 
-	virtual void SetTitle( const char* title );
-	virtual void SetIconTitle( const char* title );
+	virtual void setMode( TerminalWinMode mode, int set );
 
-	virtual void SetClipboard( const char* text );
-	virtual const char* GetClipboard() const;
+	inline bool getMode( TerminalWinMode mode ) const { return mMode & mode; }
 
-	virtual bool DrawBegin( int columns, int rows ) = 0;
-	virtual void DrawLine( Line line, int x1, int y, int x2 ) = 0;
-	virtual void DrawCursor( int cx, int cy, TerminalGlyph g, int ox, int oy,
+	virtual void setCursorMode( TerminalCursorMode cursor );
+
+	virtual TerminalCursorMode getCursorMode() const;
+
+	virtual void setTitle( const char* title );
+
+	virtual void setIconTitle( const char* title );
+
+	virtual void setClipboard( const char* text );
+
+	virtual const char* getClipboard() const;
+
+	virtual bool drawBegin( int columns, int rows ) = 0;
+
+	virtual void drawLine( Line line, int x1, int y, int x2 ) = 0;
+
+	virtual void drawCursor( int cx, int cy, TerminalGlyph g, int ox, int oy,
 							 TerminalGlyph og ) = 0;
-	virtual void DrawEnd() = 0;
+
+	virtual void drawEnd() = 0;
+
+  protected:
+	int mMode;
+	TerminalCursorMode mCursorMode;
+	TerminalEmulator* mEmulator;
 };
 
 }} // namespace EE::Terminal

@@ -26,7 +26,7 @@
 
 namespace EE { namespace Terminal {
 
-enum cursor_mode {
+enum TerminalCursorMode {
 	BlinkingBlock = 0,
 	BlinkingBlockDefault = 1,
 	SteadyBlock = 2,
@@ -38,7 +38,7 @@ enum cursor_mode {
 	MAX_CURSOR
 };
 
-enum win_mode {
+enum TerminalWinMode {
 	MODE_VISIBLE = 1 << 0,
 	MODE_FOCUSED = 1 << 1,
 	MODE_APPKEYPAD = 1 << 2,
@@ -60,7 +60,7 @@ enum win_mode {
 	MODE_MOUSE = MODE_MOUSEBTN | MODE_MOUSEMOTION | MODE_MOUSEX10 | MODE_MOUSEMANY,
 };
 
-enum glyph_attribute {
+enum TerminalGlyphAttribute {
 	ATTR_NULL = 0,
 	ATTR_BOLD = 1 << 0,
 	ATTR_FAINT = 1 << 1,
@@ -78,11 +78,11 @@ enum glyph_attribute {
 	ATTR_BOLD_FAINT = ATTR_BOLD | ATTR_FAINT,
 };
 
-enum selection_mode { SEL_IDLE = 0, SEL_EMPTY = 1, SEL_READY = 2 };
+enum TerminalSelectionMode { SEL_IDLE = 0, SEL_EMPTY = 1, SEL_READY = 2 };
 
-enum selection_type { SEL_REGULAR = 1, SEL_RECTANGULAR = 2 };
+enum TerminalSelectionType { SEL_REGULAR = 1, SEL_RECTANGULAR = 2 };
 
-enum selection_snap { SNAP_WORD = 1, SNAP_LINE = 2 };
+enum TerminalSelectionSnap { SNAP_WORD = 1, SNAP_LINE = 2 };
 
 typedef unsigned char uchar;
 typedef unsigned int uint;
@@ -101,29 +101,27 @@ struct TerminalGlyph {
 		return u == r.u && mode == r.mode && fg == r.fg && bg == r.bg;
 	}
 
-	bool operator!=( const TerminalGlyph& r ) {
-		return !(*this == r);
-	}
+	bool operator!=( const TerminalGlyph& r ) { return !( *this == r ); }
 };
 
 typedef TerminalGlyph* Line;
 
-union Arg {
+union TerminalArg {
 	int i;
 	uint ui;
 	float f;
 	const void* v;
 	const char* s;
 
-	Arg() { memset( this, 0, sizeof( *this ) ); }
-	Arg( int x ) { i = x; }
-	Arg( uint x ) { ui = x; }
-	Arg( float x ) { f = x; }
-	Arg( const void* x ) { v = x; }
-	Arg( const char* x ) { s = x; }
+	TerminalArg() { memset( this, 0, sizeof( *this ) ); }
+	TerminalArg( int x ) { i = x; }
+	TerminalArg( uint x ) { ui = x; }
+	TerminalArg( float x ) { f = x; }
+	TerminalArg( const void* x ) { v = x; }
+	TerminalArg( const char* x ) { s = x; }
 };
 
-enum term_mode {
+enum TermMode {
 	MODE_WRAP = 1 << 0,
 	MODE_INSERT = 1 << 1,
 	MODE_ALTSCREEN = 1 << 2,
@@ -133,13 +131,13 @@ enum term_mode {
 	MODE_UTF8 = 1 << 6,
 };
 
-enum cursor_movement { CURSOR_SAVE, CURSOR_LOAD };
+enum TerminalCursorMovement { CURSOR_SAVE, CURSOR_LOAD };
 
-enum cursor_state { CURSOR_DEFAULT = 0, CURSOR_WRAPNEXT = 1, CURSOR_ORIGIN = 2 };
+enum TerminalCursorState { CURSOR_DEFAULT = 0, CURSOR_WRAPNEXT = 1, CURSOR_ORIGIN = 2 };
 
-enum charset { CS_GRAPHIC0, CS_GRAPHIC1, CS_UK, CS_USA, CS_MULTI, CS_GER, CS_FIN };
+enum TerminalCharset { CS_GRAPHIC0, CS_GRAPHIC1, CS_UK, CS_USA, CS_MULTI, CS_GER, CS_FIN };
 
-enum escape_state {
+enum TerminalEscapeState {
 	ESC_START = 1,
 	ESC_CSI = 2,
 	ESC_STR = 4, /* DCS, OSC, PM, APC */
@@ -149,14 +147,14 @@ enum escape_state {
 	ESC_UTF8 = 64,
 };
 
-typedef struct {
+struct TerminalCursor {
 	TerminalGlyph attr; /* current char attributes */
 	int x;
 	int y;
 	char state;
-} TCursor;
+};
 
-typedef struct {
+struct TerminalSelection {
 	int mode;
 	int type;
 	int snap;
@@ -172,6 +170,6 @@ typedef struct {
 	} nb, ne, ob, oe;
 
 	int alt;
-} Selection;
+};
 
 }} // namespace EE::Terminal

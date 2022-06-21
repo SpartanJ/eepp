@@ -41,14 +41,14 @@ class ProcessFactory : public IProcessFactory {
 
 	ProcessFactory& operator=( ProcessFactory&& ) = delete;
 
-	virtual std::unique_ptr<IProcess> CreateWithStdioPipe( const std::string& program,
+	virtual std::unique_ptr<IProcess> createWithStdioPipe( const std::string& program,
 														   const std::vector<std::string>& args,
 														   const std::string& workingDirectory,
 														   std::unique_ptr<IPipe>& outPipe,
 														   bool withStderr = true ) override;
 
 	virtual std::unique_ptr<IProcess>
-	CreateWithPseudoTerminal( const std::string& program, const std::vector<std::string>& args,
+	createWithPseudoTerminal( const std::string& program, const std::vector<std::string>& args,
 							  const std::string& workingDirectory, int numColumns, int numRows,
 							  std::unique_ptr<IPseudoTerminal>& outPseudoTerminal ) override;
 };

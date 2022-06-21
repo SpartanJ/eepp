@@ -8,11 +8,11 @@ using namespace EE::System;
 Pipe::Pipe( AutoHandle&& readHandle, AutoHandle&& writeHandle ) :
 	m_hInput( std::move( readHandle ) ), m_hOutput( std::move( writeHandle ) ) {}
 
-bool Pipe::IsTTY() const {
+bool Pipe::isTTY() const {
 	return false;
 }
 
-int Pipe::Write( const char* s, size_t n ) {
+int Pipe::write( const char* s, size_t n ) {
 	constexpr size_t lim = 256;
 
 	DWORD c = (DWORD)n;
@@ -29,7 +29,7 @@ int Pipe::Write( const char* s, size_t n ) {
 	return (int)c;
 }
 
-int Pipe::Read( char* buf, size_t n, bool block ) {
+int Pipe::read( char* buf, size_t n, bool block ) {
 	DWORD available;
 	DWORD read;
 

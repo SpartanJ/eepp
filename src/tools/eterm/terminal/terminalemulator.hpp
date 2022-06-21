@@ -39,58 +39,67 @@
 #include "ipseudoterminal.hpp"
 #include "terminaldisplay.hpp"
 #include "types.hpp"
+#include <eepp/math/vector2.hpp>
+#include <eepp/window/keycodes.hpp>
 #include <memory>
 #include <stdint.h>
 #include <sys/types.h>
 
+using namespace EE;
+using namespace EE::Math;
+using namespace EE::Window;
+
 namespace EE { namespace Terminal {
+
 constexpr int ESC_BUF_SIZ = 512;
 constexpr int ESC_ARG_SIZ = 16;
 constexpr int STR_BUF_SIZ = ESC_BUF_SIZ;
 constexpr int STR_ARG_SIZ = ESC_ARG_SIZ;
 
 /* Internal representation of the screen */
-typedef struct {
-	int row;		 /* nb row */
-	int col;		 /* nb col */
-	Line* line;		 /* screen */
-	Line* alt;		 /* alternate screen */
-	int* dirty;		 /* dirtyness of lines */
-	TCursor c;		 /* cursor */
-	int ocx;		 /* old cursor col */
-	int ocy;		 /* old cursor row */
-	int top;		 /* top    scroll limit */
-	int bot;		 /* bottom scroll limit */
-	int mode;		 /* terminal mode flags */
-	int esc;		 /* escape state flags */
-	char trantbl[4]; /* charset table translation */
-	int charset;	 /* current charset */
-	int icharset;	 /* selected charset for sequence */
+struct Term {
+	int row;		  /* nb row */
+	int col;		  /* nb col */
+	Line* line;		  /* screen */
+	Line* alt;		  /* alternate screen */
+	int* dirty;		  /* dirtyness of lines */
+	TerminalCursor c; /* cursor */
+	int ocx;		  /* old cursor col */
+	int ocy;		  /* old cursor row */
+	int top;		  /* top    scroll limit */
+	int bot;		  /* bottom scroll limit */
+	int mode;		  /* terminal mode flags */
+	int esc;		  /* escape state flags */
+	char trantbl[4];  /* charset table translation */
+	int charset;	  /* current charset */
+	int icharset;	  /* selected charset for sequence */
 	int* tabs;
 	Rune lastc; /* last printed char outside of sequence, 0 if control */
-} Term;
+};
 
 /* CSI Escape sequence structs */
 /* ESC '[' [[ [<priv>] <arg> [;]] <mode> [<mode>]] */
-typedef struct {
+struct CSIEscape {
 	char buf[ESC_BUF_SIZ]; /* raw string */
 	size_t len;			   /* raw string length */
 	char priv;
 	int arg[ESC_ARG_SIZ];
 	int narg; /* nb of args */
 	char mode[2];
-} CSIEscape;
+};
 
 /* STR Escape sequence structs */
 /* ESC type [[ [<priv>] <arg> [;]] <mode>] ESC '\' */
-typedef struct {
+struct STREscape {
 	char type;	/* ESC type ... */
 	char* buf;	/* allocated raw string */
 	size_t siz; /* allocation size */
 	size_t len; /* raw string length */
 	char* args[STR_ARG_SIZ];
 	int narg; /* nb of args */
-} STREscape;
+};
+
+enum class TerminalMouseEventType { MouseMotion, MouseButtonDown, MouseButtonRelease };
 
 class TerminalEmulator final {
   public:
@@ -100,39 +109,106 @@ class TerminalEmulator final {
 
 	static ushort boxdrawindex( const TerminalGlyph* g );
 
+	~TerminalEmulator();
+
+	TerminalEmulator( const TerminalEmulator& ) = delete;
+
+	TerminalEmulator( TerminalEmulator&& ) = delete;
+
+	TerminalEmulator& operator=( const TerminalEmulator& ) = delete;
+
+	TerminalEmulator& operator=( TerminalEmulator&& ) = delete;
+
+	static std::unique_ptr<TerminalEmulator>
+	create( PtyPtr&& pty, ProcPtr&& process, const std::shared_ptr<TerminalDisplay>& display );
+
+	void resize( int columns, int rows );
+
+	void redraw();
+
+	void logError( const char* err );
+
+	void update();
+
+	void terminate();
+
+	bool hasExited() const;
+
+	int getExitCode() const;
+
+	inline bool isSelected( int column, int row ) { return selected( column, row ); }
+
+	inline uint32_t getDefaultForeground() const { return mDefaultFg; }
+
+	inline uint32_t getDefaultBackground() const { return mDefaultBg; }
+
+	inline uint32_t getDefaultCursorColor() const { return mDefaultCs; }
+
+	inline uint32_t getDefaultReverseCursorColor() const { return mDefaultrCs; }
+
+	inline int getNumColumns() const { return mTerm.col; }
+
+	inline int getNumRows() const { return mTerm.row; }
+
+	inline int write( const char* buf, size_t buflen ) { return mPty->write( buf, (int)buflen ); }
+
+	void printscreen( const TerminalArg* );
+
+	void printsel( const TerminalArg* );
+
+	void sendbreak( const TerminalArg* );
+
+	void toggleprinter( const TerminalArg* );
+
+	TerminalSelectionMode getSelectionMode() const;
+
+	void selclear();
+
+	void selinit();
+
+	void selstart( int, int, int );
+
+	void selextend( int, int, int, int );
+
+	int selected( int, int );
+
+	char* getsel();
+
+	void mousereport( const TerminalMouseEventType& type, const Vector2i& pos, const Uint32& flags,
+					  const Uint32& mod );
+
   private:
-	DpyPtr m_dpy;
-	PtyPtr m_pty;
-	ProcPtr m_process;
+	DpyPtr mDpy;
+	PtyPtr mPty;
+	ProcPtr mProcess;
 
-	bool m_colorsLoaded;
-	int m_exitCode;
+	bool mColorsLoaded;
+	int mExitCode;
 
-	enum { STARTING = 0, RUNNING, TERMINATED } m_status;
+	enum { STARTING = 0, RUNNING, TERMINATED } mStatus;
 
-	char m_buf[8192];
-	int m_buflen;
+	char mBuf[8192];
+	int mBuflen;
 
-  private:
-	Term term;
-	Selection sel;
-	CSIEscape csiescseq;
-	STREscape strescseq;
+	Term mTerm;
+	TerminalSelection mSel;
+	CSIEscape mCsiescseq;
+	STREscape mStrescseq;
 
-	uint32_t defaultfg;
-	uint32_t defaultbg;
-	uint32_t defaultcs;
-	uint32_t defaultrcs;
+	uint32_t mDefaultFg;
+	uint32_t mDefaultBg;
+	uint32_t mDefaultCs;
+	uint32_t mDefaultrCs;
 
-	int allowaltscreen;
-	int allowwindowops;
+	int mAllowAltScreen;
+	int mAllowWindowOps;
 
-	void SetClipboard( const char* str );
+	void setClipboard( const char* str );
 
-	void LoadColors();
-	int ResetColor( int x, const char* name );
+	void loadColors();
+	int resetColor( int x, const char* name );
 
-	void OnProcessExit( int exitCode );
+	void onProcessExit( int exitCode );
 
 	void csidump();
 	void csihandle();
@@ -200,15 +276,6 @@ class TerminalEmulator final {
 
 	void resettitle();
 
-  public:
-	void selclear();
-	void selinit();
-	void selstart( int, int, int );
-	void selextend( int, int, int, int );
-	int selected( int, int );
-	char* getsel();
-
-  private:
 	void xbell();
 	void xclipcopy();
 
@@ -217,49 +284,14 @@ class TerminalEmulator final {
 	void xsettitle( char* );
 	int xsetcursor( int );
 	void xsetmode( int, unsigned int );
+	bool xgetmode( const TerminalWinMode& );
+
 	void xsetpointermotion( int );
 	void xsetsel( char* );
 	void xximspot( int, int );
 
-  private:
 	TerminalEmulator( PtyPtr&& pty, ProcPtr&& process,
 					  const std::shared_ptr<TerminalDisplay>& display );
-
-  public:
-	~TerminalEmulator();
-	TerminalEmulator( const TerminalEmulator& ) = delete;
-	TerminalEmulator( TerminalEmulator&& ) = delete;
-	TerminalEmulator& operator=( const TerminalEmulator& ) = delete;
-	TerminalEmulator& operator=( TerminalEmulator&& ) = delete;
-
-  public:
-	static std::unique_ptr<TerminalEmulator>
-	Create( PtyPtr&& pty, ProcPtr&& process, const std::shared_ptr<TerminalDisplay>& display );
-
-  public:
-	void Resize( int columns, int rows );
-	void Redraw();
-	void LogError( const char* err );
-	void Update();
-	void Terminate();
-	bool HasExited() const;
-	int GetExitCode() const;
-	inline bool IsSelected( int column, int row ) { return selected( column, row ); }
-	inline uint32_t GetDefaultForeground() const { return defaultfg; }
-	inline uint32_t GetDefaultBackground() const { return defaultbg; }
-	inline uint32_t GetDefaultCursorColor() const { return defaultcs; }
-	inline uint32_t GetDefaultReverseCursorColor() const { return defaultrcs; }
-	inline int GetNumColumns() const { return term.col; }
-	inline int GetNumRows() const { return term.row; }
-	inline int Write( const char* buf, size_t buflen ) { return m_pty->Write( buf, (int)buflen ); }
-
-  public:
-	void printscreen( const Arg* );
-	void printsel( const Arg* );
-	void sendbreak( const Arg* );
-	void toggleprinter( const Arg* );
-
-	selection_mode getSelectionMode() const;
 };
 
 }} // namespace EE::Terminal

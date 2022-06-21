@@ -162,6 +162,12 @@ class EE_API Color : public tColor<Uint8> {
 
 	Colorf toHsl() const;
 
+	Color clone() const;
+
+	Color invert() const;
+
+	Color div( int divisor, bool divAlpha = false );
+
 	std::string toHexString( const bool& prependHash = true ) const;
 
 	std::string toRgbaString() const;

@@ -32,13 +32,13 @@ EE::AutoHandle::AutoHandle( AutoHandle&& other ) : m_hHandle( other.m_hHandle ) 
 	other.m_hHandle = invalid_value();
 }
 EE::AutoHandle::~AutoHandle() {
-	Release();
+	release();
 }
 
 EE::AutoHandle& EE::AutoHandle::operator=( AutoHandle&& other ) {
 	if ( m_hHandle == other.m_hHandle )
 		return *this;
-	Release();
+	release();
 	m_hHandle = other.m_hHandle;
 	other.m_hHandle = invalid_value();
 	return *this;
@@ -56,7 +56,7 @@ void EE::AutoHandle::Release() const {
 #else
 EE::AutoHandle::AutoHandle( int fd ) : m_hHandle( fd ) {}
 
-void EE::AutoHandle::Release() const {
+void EE::AutoHandle::release() const {
 	if ( m_hHandle != -1 ) {
 		close( m_hHandle );
 	}
@@ -67,11 +67,11 @@ EE::AutoHandle::operator bool() const noexcept {
 	return m_hHandle != invalid_value();
 }
 
-EE::AutoHandle::type* EE::AutoHandle::Get() {
+EE::AutoHandle::type* EE::AutoHandle::get() {
 	return &m_hHandle;
 }
 
-const EE::AutoHandle::type* EE::AutoHandle::Get() const {
+const EE::AutoHandle::type* EE::AutoHandle::get() const {
 	return &m_hHandle;
 }
 

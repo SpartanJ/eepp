@@ -32,8 +32,31 @@ namespace EE {
 namespace System {
 class Process;
 }
+
 namespace Terminal {
 class PseudoTerminal final : public IPseudoTerminal {
+  public:
+	virtual ~PseudoTerminal();
+
+	PseudoTerminal( PseudoTerminal&& ) = delete;
+
+	PseudoTerminal( const PseudoTerminal& ) = delete;
+
+	PseudoTerminal& operator=( PseudoTerminal&& ) = delete;
+
+	PseudoTerminal& operator=( const PseudoTerminal& ) = delete;
+
+	virtual bool isTTY() const override;
+
+	virtual int getNumColumns() const override;
+	virtual int getNumRows() const override;
+
+	virtual bool resize( int columns, int rows ) override;
+	virtual int write( const char* s, size_t n ) override;
+	virtual int read( char* buf, size_t n, bool block = false ) override;
+
+	static std::unique_ptr<PseudoTerminal> create( int columns, int rows );
+
   private:
 	friend class ::EE::System::Process;
 #ifdef _WIN32
@@ -55,24 +78,6 @@ class PseudoTerminal final : public IPseudoTerminal {
 
 	PseudoTerminal( int columns, int rows, AutoHandle&& master, AutoHandle&& slave );
 #endif
-  public:
-	virtual ~PseudoTerminal();
-
-	PseudoTerminal( PseudoTerminal&& ) = delete;
-	PseudoTerminal( const PseudoTerminal& ) = delete;
-	PseudoTerminal& operator=( PseudoTerminal&& ) = delete;
-	PseudoTerminal& operator=( const PseudoTerminal& ) = delete;
-
-	virtual bool IsTTY() const override;
-
-	virtual int GetNumColumns() const override;
-	virtual int GetNumRows() const override;
-
-	virtual bool Resize( int columns, int rows ) override;
-	virtual int Write( const char* s, size_t n ) override;
-	virtual int Read( char* buf, size_t n, bool block = false ) override;
-
-	static std::unique_ptr<PseudoTerminal> Create( int columns, int rows );
 };
 } // namespace Terminal
 } // namespace EE

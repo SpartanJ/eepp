@@ -36,26 +36,32 @@ class AutoHandle final {
 	using type = int;
 	static constexpr type invalid_value();
 #endif
-  private:
-	mutable type m_hHandle;
-
-  public:
 	explicit AutoHandle( type handle );
+
 	AutoHandle();
+
 	AutoHandle( AutoHandle&& other );
+
 	~AutoHandle();
 
 	AutoHandle& operator=( AutoHandle&& other );
+
 	AutoHandle( const AutoHandle& ) = delete;
+
 	AutoHandle& operator=( const AutoHandle& ) = delete;
 
 	explicit operator type() const noexcept;
+
 	operator bool() const noexcept;
 
-	type* Get();
-	const type* Get() const;
+	type* get();
 
-	void Release() const;
+	const type* get() const;
+
+	void release() const;
+
+  private:
+	mutable type m_hHandle;
 };
 
 } // namespace EE

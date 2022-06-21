@@ -40,11 +40,11 @@ class IPseudoTerminal : public EE::System::IPipe {
 
 	virtual ~IPseudoTerminal() = default;
 
-	virtual int GetNumColumns() const = 0;
+	virtual int getNumColumns() const = 0;
 
-	virtual int GetNumRows() const = 0;
+	virtual int getNumRows() const = 0;
 
-	virtual bool Resize( int columns, int rows ) = 0;
+	virtual bool resize( int columns, int rows ) = 0;
 };
 
 }} // namespace EE::Terminal

@@ -39,6 +39,38 @@
 namespace EE { namespace System {
 
 class Process final : public IProcess {
+  public:
+	~Process();
+
+	Process( const Process& ) = delete;
+
+	Process( Process&& ) = delete;
+
+	Process& operator=( const Process& ) = delete;
+
+	Process& operator=( Process&& ) = delete;
+
+	virtual void checkExitStatus() override;
+
+	virtual bool hasExited() const override;
+
+	virtual int getExitCode() const override;
+
+	virtual void terminate() override;
+
+	virtual void waitForExit() override;
+
+	static std::unique_ptr<Process> createWithPipe( const std::string& program,
+													const std::vector<std::string>& args,
+													const std::string& workingDirectory,
+													std::unique_ptr<IPipe>& outPipe,
+													bool withStderr = true );
+
+	static std::unique_ptr<Process>
+	createWithPseudoTerminal( const std::string& program, const std::vector<std::string>& args,
+							  const std::string& workingDirectory,
+							  Terminal::PseudoTerminal& pseudoTerminal );
+
   private:
 	ProcessStatus m_status;
 	bool m_leaveRunning;
@@ -53,31 +85,6 @@ class Process final : public IProcess {
 
 	Process( int pid );
 #endif
-
-  public:
-	~Process();
-	Process( const Process& ) = delete;
-	Process( Process&& ) = delete;
-	Process& operator=( const Process& ) = delete;
-	Process& operator=( Process&& ) = delete;
-
-	virtual void CheckExitStatus() override;
-	virtual bool HasExited() const override;
-	virtual int GetExitCode() const override;
-
-	virtual void Terminate() override;
-	virtual void WaitForExit() override;
-
-	static std::unique_ptr<Process> CreateWithPipe( const std::string& program,
-													const std::vector<std::string>& args,
-													const std::string& workingDirectory,
-													std::unique_ptr<IPipe>& outPipe,
-													bool withStderr = true );
-
-	static std::unique_ptr<Process>
-	CreateWithPseudoTerminal( const std::string& program, const std::vector<std::string>& args,
-							  const std::string& workingDirectory,
-							  Terminal::PseudoTerminal& pseudoTerminal );
 };
 
 }} // namespace EE::System

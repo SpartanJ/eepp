@@ -16,12 +16,12 @@
 #include <unordered_map>
 #include <vector>
 
-using namespace EE::Terminal;
 using namespace EE;
+using namespace EE::Terminal;
 using namespace EE::Window;
 using namespace EE::System;
 
-enum class ShortcutAction { PASTE };
+enum class TerminalShortcutAction { PASTE };
 
 enum TerminalOptions {
 	OPTION_NONE = 0,
@@ -53,7 +53,7 @@ struct TerminalScancode {
 struct TerminalShortcut {
 	Keycode keysym;
 	Uint32 mask;
-	ShortcutAction action;
+	TerminalShortcutAction action;
 	int appkey;
 	int appcursor;
 };
@@ -67,7 +67,7 @@ struct TerminalKeyMapEntry {
 
 struct TerminalKeyMapShortcut {
 	Uint32 mask;
-	ShortcutAction action;
+	TerminalShortcutAction action;
 	int appkey;
 	int appcursor;
 };
@@ -112,36 +112,36 @@ static const Scancode asciiScancodeTable[] = {
 class ETerminalDisplay : public TerminalDisplay {
   public:
 	static std::shared_ptr<ETerminalDisplay>
-	Create( EE::Window::Window* window, Font* font,
+	create( EE::Window::Window* window, Font* font, const Float& fontSize, const Sizef& pixelsSize,
 			std::shared_ptr<TerminalEmulator>&& terminalEmulator, TerminalConfig* config = 0 );
 
 	static std::shared_ptr<ETerminalDisplay>
-	Create( EE::Window::Window* window, Font* font, int columns, int rows,
+	create( EE::Window::Window* window, Font* font, const Float& fontSize, const Sizef& pixelsSize,
 			const std::string& program, const std::vector<std::string>& args,
 			const std::string& workingDir, uint32_t options = 0,
 			EE::System::IProcessFactory* processFactory = nullptr );
 
-	virtual void ResetColors();
-	virtual int ResetColor( int index, const char* name );
+	virtual void resetColors();
+	virtual int resetColor( int index, const char* name );
 
-	virtual void SetTitle( const char* title );
-	virtual void SetIconTitle( const char* title );
+	virtual void setTitle( const char* title );
+	virtual void setIconTitle( const char* title );
 
-	virtual void SetClipboard( const char* text );
-	virtual const char* GetClipboard() const;
+	virtual void setClipboard( const char* text );
+	virtual const char* getClipboard() const;
 
-	virtual bool DrawBegin( int columns, int rows );
-	virtual void DrawLine( Line line, int x1, int y, int x2 );
-	virtual void DrawCursor( int cx, int cy, TerminalGlyph g, int ox, int oy, TerminalGlyph og );
-	virtual void DrawEnd();
+	virtual bool drawBegin( int columns, int rows );
+	virtual void drawLine( Line line, int x1, int y, int x2 );
+	virtual void drawCursor( int cx, int cy, TerminalGlyph g, int ox, int oy, TerminalGlyph og );
+	virtual void drawEnd();
 
-	virtual void Update();
+	virtual void update();
 
-	void Action( ShortcutAction action );
+	void action( TerminalShortcutAction action );
 
-	bool HasTerminated() const;
+	bool hasTerminated() const;
 
-	void Draw( bool hasFocus );
+	void draw();
 
 	virtual void onMouseMotion( const Vector2i& pos, const Uint32& flags );
 
@@ -156,7 +156,7 @@ class ETerminalDisplay : public TerminalDisplay {
 
 	Float getFontSize() const;
 
-	void setFontSize( Float FontSize );
+	void setFontSize( const Float& FontSize );
 
 	const Vector2f& getPosition() const;
 
@@ -166,36 +166,41 @@ class ETerminalDisplay : public TerminalDisplay {
 
 	void setSize( const Sizef& size );
 
-	bool isDirty() const { return m_dirty; }
+	bool isDirty() const { return mDirty; }
 
 	void invalidate();
 
+	bool hasFocus() const { return mFocus; }
+
+	void setFocus( bool focus );
+
   protected:
 	EE::Window::Window* mWindow;
-	std::vector<TerminalGlyph> m_buffer;
-	std::vector<std::pair<Color, std::string>> m_colors;
-	std::shared_ptr<TerminalEmulator> m_terminal;
+	std::vector<TerminalGlyph> mBuffer;
+	std::vector<std::pair<Color, std::string>> mColors;
+	std::shared_ptr<TerminalEmulator> mTerminal;
 	mutable std::string mClipboard;
 
-	Font* mFont;
+	Font* mFont{ nullptr };
 	Float mFontSize{ 12 };
 	Vector2f mPosition;
 	Sizef mSize;
-	int m_columns{ 0 };
-	int m_rows{ 0 };
-	std::atomic<bool> m_dirty{ true };
-	std::atomic<bool> m_drawing{ false };
-	Vector2i m_cursor;
-	TerminalGlyph m_cursorg;
-	bool m_useBoxDrawing;
-	bool m_useColorEmoji;
-	bool m_pasteNewlineFix;
+	int mColumns{ 0 };
+	int mRows{ 0 };
+	std::atomic<bool> mDirty{ true };
+	std::atomic<bool> mDrawing{ false };
+	Vector2i mCursor;
+	TerminalGlyph mCursorGlyph;
+	bool mUseBoxDrawing;
+	bool mUseColorEmoji;
+	bool mPasteNewlineFix;
+	bool mFocus{ true };
 	Clock mClock;
 
-	ETerminalDisplay( EE::Window::Window* window, Font* font, int columns, int rows,
-					  TerminalConfig* config );
+	ETerminalDisplay( EE::Window::Window* window, Font* font, const Float& fontSize,
+					  const Sizef& pixelsSize, TerminalConfig* config );
 
-	void Draw( Vector2f pos );
+	void draw( Vector2f pos );
 
 	Vector2i positionToGrid( const Vector2i& pos );
 

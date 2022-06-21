@@ -30,6 +30,25 @@ namespace EE { namespace System {
 class Process;
 
 class Pipe : public IPipe {
+  public:
+	Pipe( Pipe&& ) = delete;
+
+	Pipe( const Pipe& ) = delete;
+
+	Pipe& operator=( Pipe&& ) = delete;
+
+	Pipe& operator=( const Pipe& ) = delete;
+
+	virtual ~Pipe() = default;
+
+	virtual bool isTTY() const override;
+
+	virtual int write( const char* s, size_t n ) override;
+
+	virtual int read( char* buf, size_t n, bool block = false ) override;
+
+	static bool CreatePipePair( std::unique_ptr<Pipe>& outPipeA, std::unique_ptr<Pipe>& outPipeB );
+
   private:
 	friend class Process;
 #ifdef _WIN32
@@ -42,24 +61,6 @@ class Pipe : public IPipe {
 
 	Pipe( AutoHandle&& handle );
 #endif
-  public:
-	Pipe( Pipe&& ) = delete;
-
-	Pipe( const Pipe& ) = delete;
-
-	Pipe& operator=( Pipe&& ) = delete;
-
-	Pipe& operator=( const Pipe& ) = delete;
-
-	virtual ~Pipe() = default;
-
-	virtual bool IsTTY() const override;
-
-	virtual int Write( const char* s, size_t n ) override;
-
-	virtual int Read( char* buf, size_t n, bool block = false ) override;
-
-	static bool CreatePipePair( std::unique_ptr<Pipe>& outPipeA, std::unique_ptr<Pipe>& outPipeB );
 };
 
 }} // namespace EE::System

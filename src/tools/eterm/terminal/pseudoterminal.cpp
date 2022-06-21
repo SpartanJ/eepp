@@ -47,11 +47,11 @@ PseudoTerminal::PseudoTerminal( int columns, int rows, AutoHandle&& master, Auto
 	m_master( std::move( master ) ),
 	m_slave( std::move( slave ) ) {}
 
-bool PseudoTerminal::IsTTY() const {
+bool PseudoTerminal::isTTY() const {
 	return true;
 }
 
-bool PseudoTerminal::Resize( int columns, int rows ) {
+bool PseudoTerminal::resize( int columns, int rows ) {
 	struct winsize w;
 
 	w.ws_row = rows;
@@ -67,18 +67,18 @@ bool PseudoTerminal::Resize( int columns, int rows ) {
 	return true;
 }
 
-int PseudoTerminal::GetNumColumns() const {
+int PseudoTerminal::getNumColumns() const {
 	return m_columns;
 }
 
-int PseudoTerminal::GetNumRows() const {
+int PseudoTerminal::getNumRows() const {
 	return m_rows;
 }
 
-int PseudoTerminal::Write( const char* s, size_t n ) {
+int PseudoTerminal::write( const char* s, size_t n ) {
 	size_t c = n;
 	while ( n > 0 ) {
-		ssize_t r = write( (int)m_master, s, n );
+		ssize_t r = ::write( (int)m_master, s, n );
 		if ( r < 0 ) {
 			return -1;
 		}
@@ -88,7 +88,7 @@ int PseudoTerminal::Write( const char* s, size_t n ) {
 	return c;
 }
 
-int PseudoTerminal::Read( char* s, size_t n, bool block ) {
+int PseudoTerminal::read( char* s, size_t n, bool block ) {
 	struct pollfd pfd;
 	pfd.fd = (int)m_master;
 	pfd.events = POLLIN;
@@ -104,11 +104,11 @@ int PseudoTerminal::Read( char* s, size_t n, bool block ) {
 			return -1;
 		}
 	}
-	ssize_t r = read( (int)m_master, s, n );
+	ssize_t r = ::read( (int)m_master, s, n );
 	return (int)r;
 }
 
-std::unique_ptr<PseudoTerminal> PseudoTerminal::Create( int columns, int rows ) {
+std::unique_ptr<PseudoTerminal> PseudoTerminal::create( int columns, int rows ) {
 	AutoHandle master;
 	AutoHandle slave;
 
@@ -119,7 +119,7 @@ std::unique_ptr<PseudoTerminal> PseudoTerminal::Create( int columns, int rows ) 
 	win.ws_col = columns;
 	win.ws_row = rows;
 
-	if ( openpty( master.Get(), slave.Get(), nullptr, NULL, &win ) != 0 ) {
+	if ( openpty( master.get(), slave.get(), nullptr, NULL, &win ) != 0 ) {
 		perror( "PseudoTerminal::Create(openpty)" );
 		return nullptr;
 	}
@@ -151,11 +151,11 @@ PseudoTerminal::PseudoTerminal( int columns, int rows, AutoHandle&& hInput, Auto
 	m_size.y = (SHORT)rows;
 }
 
-bool PseudoTerminal::IsTTY() const {
+bool PseudoTerminal::isTTY() const {
 	return true;
 }
 
-bool PseudoTerminal::Resize( int columns, int rows ) {
+bool PseudoTerminal::resize( int columns, int rows ) {
 	HRESULT hr = ResizePseudoConsole( m_phPC, { (SHORT)columns, (SHORT)rows } );
 	if ( hr != S_OK ) {
 		PrintErrorResult( hr );
@@ -166,7 +166,7 @@ bool PseudoTerminal::Resize( int columns, int rows ) {
 	return true;
 }
 
-int PseudoTerminal::Write( const char* s, size_t n ) {
+int PseudoTerminal::write( const char* s, size_t n ) {
 	constexpr size_t lim = 256;
 
 	DWORD c = (DWORD)n;
@@ -183,7 +183,7 @@ int PseudoTerminal::Write( const char* s, size_t n ) {
 	return (int)c;
 }
 
-int PseudoTerminal::Read( char* buf, size_t n, bool block ) {
+int PseudoTerminal::read( char* buf, size_t n, bool block ) {
 	DWORD available;
 	DWORD read;
 
@@ -203,15 +203,15 @@ int PseudoTerminal::Read( char* buf, size_t n, bool block ) {
 	return (int)read;
 }
 
-int PseudoTerminal::GetNumColumns() const {
+int PseudoTerminal::getNumColumns() const {
 	return m_size.x;
 }
 
-int PseudoTerminal::GetNumRows() const {
+int PseudoTerminal::getNumRows() const {
 	return m_size.y;
 }
 
-std::unique_ptr<PseudoTerminal> PseudoTerminal::Create( int columns, int rows ) {
+std::unique_ptr<PseudoTerminal> PseudoTerminal::create( int columns, int rows ) {
 	using Pointer = std::unique_ptr<PseudoTerminal>;
 
 	HRESULT hr{ E_UNEXPECTED };
