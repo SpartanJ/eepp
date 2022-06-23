@@ -432,8 +432,14 @@ int ETerminalDisplay::resetColor( int index, const char* name ) {
 	return 1;
 }
 
+bool ETerminalDisplay::isBlinkingCursor() {
+	return mCursorMode == EE::Terminal::BlinkingBlock ||
+		   mCursorMode == EE::Terminal::BlinkingBlockDefault ||
+		   mCursorMode == EE::Terminal::BlinkUnderline || mCursorMode == EE::Terminal::BlinkBar;
+}
+
 void ETerminalDisplay::update() {
-	if ( mClock.getElapsedTime().asSeconds() > 0.7 ) {
+	if ( mFocus && isBlinkingCursor() && mClock.getElapsedTime().asSeconds() > 0.7 ) {
 		mMode ^= MODE_BLINK;
 		mClock.restart();
 		invalidate();
@@ -576,9 +582,11 @@ void ETerminalDisplay::draw( Vector2f pos ) {
 
 	float x = 0.0f;
 	float y = std::floor( pos.y );
-	const float line_height = fontSize;
+	const float lineHeight = fontSize;
 	auto defaultFg = termColor( mEmulator->getDefaultForeground(), mColors );
 	auto defaultBg = termColor( mEmulator->getDefaultBackground(), mColors );
+	auto borderPx = eeceil( PixelDensity::dpToPx( 1.f ) );
+	auto cursorThickness = eeceil( PixelDensity::dpToPx( 1.f ) );
 
 	Primitives p;
 	p.setForceDraw( false );
@@ -588,7 +596,7 @@ void ETerminalDisplay::draw( Vector2f pos ) {
 	for ( int j = 0; j < mRows; j++ ) {
 		x = std::floor( pos.x );
 
-		if ( pos.y + line_height * j > mSize.getWidth() )
+		if ( pos.y + lineHeight * j > mSize.getWidth() )
 			break;
 
 		for ( int i = 0; i < mColumns; i++ ) {
@@ -616,12 +624,12 @@ void ETerminalDisplay::draw( Vector2f pos ) {
 			}
 
 			p.setColor( bg );
-			p.drawRectangle( Rectf( { x, y }, { advanceX, line_height } ) );
+			p.drawRectangle( Rectf( { x, y }, { advanceX, lineHeight } ) );
 
 			x += advanceX;
 		}
 
-		y += line_height;
+		y += lineHeight;
 	}
 
 	y = std::floor( pos.y );
@@ -629,7 +637,7 @@ void ETerminalDisplay::draw( Vector2f pos ) {
 	for ( int j = 0; j < mRows; j++ ) {
 		x = std::floor( pos.x );
 
-		if ( pos.y + line_height * j > mSize.getWidth() )
+		if ( pos.y + lineHeight * j > mSize.getWidth() )
 			break;
 
 		for ( int i = 0; i < mColumns; i++ ) {
@@ -670,45 +678,31 @@ void ETerminalDisplay::draw( Vector2f pos ) {
 
 			auto* gd = mFont->getGlyphDrawable( glyph.u, mFontSize, glyph.mode & ATTR_BOLD );
 			gd->setColor( fg );
-			gd->setDrawMode( GlyphDrawable::DrawMode::Text );
+			gd->setDrawMode( glyph.mode & ATTR_ITALIC ? GlyphDrawable::DrawMode::TextItalic
+													  : GlyphDrawable::DrawMode::Text );
 			gd->draw( { x, y } );
+
+			if ( glyph.mode & ATTR_UNDERLINE ) {
+				p.setColor( fg );
+				p.drawRectangle( Rectf( { x, y + borderPx + lineHeight - cursorThickness },
+										{ advanceX, cursorThickness } ) );
+			}
+
+			if ( glyph.mode & ATTR_STRUCK ) {
+				p.setColor( fg );
+				p.drawRectangle( Rectf( { x, y + borderPx + eefloor( lineHeight / 2.f ) },
+										{ advanceX, cursorThickness } ) );
+			}
 
 			if ( glyph.mode & ATTR_BOXDRAW && mUseBoxDrawing ) {
 				// auto bd = TerminalEmulator::boxdrawindex( &glyph );
-				// drawbox( x, y, advanceX, line_height, fg, bg, bd, vtx_write );
+				// drawbox( x, y, advanceX, line_height, fg, bg, bd );
 			}
-
-			/*if ( glyph.mode & ATTR_STRUCK ) {
-				ImVec2 a( x, y + 2 * ascent / 3 );
-				ImVec2 c( x + advanceX, a.y + 1 );
-				ImVec2 b( c.x, a.y ), d( a.x, c.y ), uv( drawList->_Data->TexUvWhitePixel );
-				idx_write[0] = vtx_current_idx;
-				idx_write[1] = (ImDrawIdx)( vtx_current_idx + 1 );
-				idx_write[2] = (ImDrawIdx)( vtx_current_idx + 2 );
-				idx_write[3] = vtx_current_idx;
-				idx_write[4] = (ImDrawIdx)( vtx_current_idx + 2 );
-				idx_write[5] = (ImDrawIdx)( vtx_current_idx + 3 );
-				vtx_write[0].pos = a;
-				vtx_write[0].uv = uv;
-				vtx_write[0].col = fg;
-				vtx_write[1].pos = b;
-				vtx_write[1].uv = uv;
-				vtx_write[1].col = fg;
-				vtx_write[2].pos = c;
-				vtx_write[2].uv = uv;
-				vtx_write[2].col = fg;
-				vtx_write[3].pos = d;
-				vtx_write[3].uv = uv;
-				vtx_write[3].col = fg;
-				vtx_write += 4;
-				vtx_current_idx += 4;
-				idx_write += 6;
-			}*/
 
 			x += advanceX;
 		}
 
-		y += line_height;
+		y += lineHeight;
 	}
 
 	if ( !IS_SET( MODE_HIDE ) ) {
@@ -728,9 +722,6 @@ void ETerminalDisplay::draw( Vector2f pos ) {
 
 		Vector2f a{}, b{}, c{}, d{};
 
-		auto borderpx = 1.f;
-		auto cursorthickness = 2.f;
-
 		p.setColor( drawcol );
 		/* draw the new one */
 		if ( IS_SET( MODE_FOCUSED ) ) {
@@ -747,8 +738,8 @@ void ETerminalDisplay::draw( Vector2f pos ) {
 					auto* gd = mFont->getGlyphDrawable( mCursorGlyph.u, mFontSize );
 					gd->setColor( termColor( mCursorGlyph.fg, mColors ) );
 					gd->setDrawMode( GlyphDrawable::DrawMode::Text );
-					gd->draw( { pos.x + borderpx + mCursor.x * spaceCharAdvanceX,
-								pos.y + borderpx + mCursor.y * line_height } );
+					gd->draw( { pos.x + borderPx + mCursor.x * spaceCharAdvanceX,
+								pos.y + borderPx + mCursor.y * lineHeight } );
 					break;
 				}
 				case 3: { /* Blinking Underline */
@@ -757,9 +748,9 @@ void ETerminalDisplay::draw( Vector2f pos ) {
 				}
 				case 4: /* Steady Underline */
 					p.drawRectangle( Rectf(
-						{ pos.x + borderpx + mCursor.x * spaceCharAdvanceX,
-						  pos.y + borderpx + ( mCursor.y + 1 ) * line_height - cursorthickness },
-						{ spaceCharAdvanceX, cursorthickness } ) );
+						{ pos.x + borderPx + mCursor.x * spaceCharAdvanceX,
+						  pos.y + borderPx + ( mCursor.y + 1 ) * lineHeight - cursorThickness },
+						{ spaceCharAdvanceX, cursorThickness } ) );
 					break;
 				case 5: { /* Blinking bar */
 					if ( !( mMode & MODE_BLINK ) )
@@ -767,16 +758,16 @@ void ETerminalDisplay::draw( Vector2f pos ) {
 				}
 				case 6: /* Steady bar */
 				case TerminalCursorMode::MAX_CURSOR:
-					p.drawRectangle( Rectf( { pos.x + borderpx + mCursor.x * spaceCharAdvanceX,
-											  pos.y + mCursor.y * line_height },
-											{ spaceCharAdvanceX, line_height } ) );
+					p.drawRectangle( Rectf( { pos.x + borderPx + mCursor.x * spaceCharAdvanceX,
+											  pos.y + mCursor.y * lineHeight },
+											{ spaceCharAdvanceX, lineHeight } ) );
 					break;
 			}
 		} else {
 			p.setFillMode( PrimitiveFillMode::DRAW_LINE );
-			p.drawRectangle( Rectf( { pos.x + borderpx + mCursor.x * spaceCharAdvanceX,
-									  pos.y + borderpx + mCursor.y * line_height },
-									{ spaceCharAdvanceX, line_height } ) );
+			p.drawRectangle( Rectf( { pos.x + borderPx + mCursor.x * spaceCharAdvanceX,
+									  pos.y + borderPx + mCursor.y * lineHeight },
+									{ spaceCharAdvanceX, lineHeight } ) );
 		}
 	}
 

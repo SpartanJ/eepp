@@ -5,8 +5,6 @@ namespace EE { namespace Window {
 JoystickManager::JoystickManager() : mInit( false ), mCount( 0 ) {
 	for ( Uint32 i = 0; i < MAX_JOYSTICKS; i++ )
 		mJoysticks[i] = NULL;
-
-	open();
 }
 
 JoystickManager::~JoystickManager() {
@@ -28,11 +26,13 @@ Joystick* JoystickManager::getJoystick( const Uint32& index ) {
 void JoystickManager::rescan() {
 	close();
 
-	open();
+	open( mOpenCb );
 }
 
 void JoystickManager::close() {}
 
-void JoystickManager::open() {}
+void JoystickManager::open( OpenCb openCb ) {
+	mOpenCb = openCb;
+}
 
 }} // namespace EE::Window

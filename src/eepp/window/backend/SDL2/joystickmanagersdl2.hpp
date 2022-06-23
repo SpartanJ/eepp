@@ -21,7 +21,7 @@ class EE_API JoystickManagerSDL : public JoystickManager {
 
 	void close();
 
-	void open();
+	void open( OpenCb openCb = nullptr );
 
   protected:
 	void create( const Uint32& index );

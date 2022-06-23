@@ -110,9 +110,6 @@ Scancode InputSDL::getScancodeFromKey( const Keycode& scancode ) const {
 void InputSDL::init() {
 	mDPIScale = mWindow->getScale();
 	mMousePos = queryMousePos();
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
-	mJoystickManager->open();
-#endif
 }
 
 void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {

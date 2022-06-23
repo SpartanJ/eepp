@@ -177,12 +177,15 @@ class TerminalEmulator final {
 	void mousereport( const TerminalMouseEventType& type, const Vector2i& pos, const Uint32& flags,
 					  const Uint32& mod );
 
+	const bool& isDirty() const { return mDirty; }
+
   private:
 	DpyPtr mDpy;
 	PtyPtr mPty;
 	ProcPtr mProcess;
 
 	bool mColorsLoaded;
+	bool mDirty{ true };
 	int mExitCode;
 
 	enum { STARTING = 0, RUNNING, TERMINATED } mStatus;

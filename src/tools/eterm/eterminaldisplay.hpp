@@ -174,6 +174,8 @@ class ETerminalDisplay : public TerminalDisplay {
 
 	void setFocus( bool focus );
 
+	bool isBlinkingCursor();
+
   protected:
 	EE::Window::Window* mWindow;
 	std::vector<TerminalGlyph> mBuffer;
@@ -191,9 +193,9 @@ class ETerminalDisplay : public TerminalDisplay {
 	std::atomic<bool> mDrawing{ false };
 	Vector2i mCursor;
 	TerminalGlyph mCursorGlyph;
-	bool mUseBoxDrawing;
-	bool mUseColorEmoji;
-	bool mPasteNewlineFix;
+	bool mUseBoxDrawing{ true };
+	bool mUseColorEmoji{ true };
+	bool mPasteNewlineFix{ true };
 	bool mFocus{ true };
 	Clock mClock;
 

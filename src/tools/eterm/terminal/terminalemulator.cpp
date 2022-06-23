@@ -613,7 +613,7 @@ void TerminalEmulator::tsetdirt( int top, int bot ) {
 
 	LIMIT( top, 0, mTerm.row - 1 );
 	LIMIT( bot, 0, mTerm.row - 1 );
-
+	mDirty = true;
 	for ( i = top; i <= bot; i++ )
 		mTerm.dirty[i] = 1;
 }
@@ -842,6 +842,7 @@ void TerminalEmulator::tsetchar( Rune u, TerminalGlyph* attr, int x, int y ) {
 	mTerm.dirty[y] = 1;
 	mTerm.line[y][x] = *attr;
 	mTerm.line[y][x].u = u;
+	mDirty = true;
 
 	if ( isboxdraw( u ) )
 		mTerm.line[y][x].mode |= ATTR_BOXDRAW;
@@ -863,6 +864,7 @@ void TerminalEmulator::tclearregion( int x1, int y1, int x2, int y2 ) {
 
 	for ( y = y1; y <= y2; y++ ) {
 		mTerm.dirty[y] = 1;
+		mDirty = true;
 		for ( x = x1; x <= x2; x++ ) {
 			gp = &mTerm.line[y][x];
 			if ( selected( x, y ) )
@@ -2135,6 +2137,7 @@ void TerminalEmulator::tresize( int col, int row ) {
 		tcursor( CURSOR_LOAD );
 	}
 	mTerm.c = c;
+	mDirty = true;
 }
 
 void TerminalEmulator::resettitle( void ) {
@@ -2154,6 +2157,8 @@ void TerminalEmulator::drawregion( TerminalDisplay& dpy, int x1, int y1, int x2,
 
 		dpy.drawLine( mTerm.line[y], x1, y, x2 );
 	}
+
+	mDirty = false;
 }
 
 void TerminalEmulator::draw() {
@@ -2406,9 +2411,8 @@ void TerminalEmulator::update() {
 		--n;
 	}
 
-	// TODO: Handle blink
-
-	draw();
+	if ( n != 1024 || mDirty )
+		draw();
 
 	mProcess->checkExitStatus();
 

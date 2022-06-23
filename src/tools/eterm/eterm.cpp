@@ -95,7 +95,7 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 				shell = "/bin/bash";
 			}
 
-			terminal = ETerminalDisplay::create( win, fontMono, PixelDensity::dpToPx( 12 ),
+			terminal = ETerminalDisplay::create( win, fontMono, PixelDensity::dpToPx( 11 ),
 												 win->getSize().asFloat(), shell, {}, "", 0 );
 		}
 
