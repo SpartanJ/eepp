@@ -515,6 +515,19 @@ void ETerminalDisplay::draw() {
 	draw( mPosition );
 }
 
+void ETerminalDisplay::onMouseDoubleClick( const Vector2i& pos, const Uint32& flags ) {
+	if ( flags & EE_BUTTON_LMASK )
+		mLastDoubleClick.restart();
+
+	if ( ( flags & EE_BUTTON_LMASK ) &&
+		 ( mTerminal->getSelectionMode() == TerminalSelectionMode::SEL_EMPTY ||
+		   mTerminal->getSelectionMode() == TerminalSelectionMode::SEL_IDLE ) ) {
+		auto gridPos{ positionToGrid( pos ) };
+		mTerminal->selstart( gridPos.x, gridPos.y, SNAP_WORD );
+		invalidate();
+	}
+}
+
 void ETerminalDisplay::onMouseMotion( const Vector2i& pos, const Uint32& flags ) {
 	if ( ( flags & EE_BUTTON_LMASK ) &&
 		 ( mTerminal->getSelectionMode() == TerminalSelectionMode::SEL_EMPTY ||
@@ -522,7 +535,7 @@ void ETerminalDisplay::onMouseMotion( const Vector2i& pos, const Uint32& flags )
 		auto gridPos{ positionToGrid( pos ) };
 		mTerminal->selextend(
 			gridPos.x, gridPos.y,
-			mWindow->getInput()->getModState() == KEYMOD_SHIFT ? SEL_RECTANGULAR : SEL_REGULAR, 0 );
+			mWindow->getInput()->getModState() & KEYMOD_SHIFT ? SEL_RECTANGULAR : SEL_REGULAR, 0 );
 		invalidate();
 	}
 	mTerminal->mousereport( TerminalMouseEventType::MouseMotion, positionToGrid( pos ), flags,
@@ -530,11 +543,24 @@ void ETerminalDisplay::onMouseMotion( const Vector2i& pos, const Uint32& flags )
 }
 
 void ETerminalDisplay::onMouseDown( const Vector2i& pos, const Uint32& flags ) {
+	auto gridPos{ positionToGrid( pos ) };
 	if ( ( flags & EE_BUTTON_LMASK ) &&
-		 ( mTerminal->getSelectionMode() == TerminalSelectionMode::SEL_IDLE ) ) {
-		auto gridPos{ positionToGrid( pos ) };
-		mTerminal->selstart( gridPos.x, gridPos.y, 0 );
-		invalidate();
+		 mLastDoubleClick.getElapsedTime() < Milliseconds( 300.f ) ) {
+		mTerminal->selstart( gridPos.x, gridPos.y, SNAP_LINE );
+	} else if ( flags & EE_BUTTON_LMASK ) {
+		if ( mTerminal->getSelectionMode() == TerminalSelectionMode::SEL_IDLE ) {
+			auto gridPos{ positionToGrid( pos ) };
+			mTerminal->selstart( gridPos.x, gridPos.y, 0 );
+			invalidate();
+		} else if ( mTerminal->getSelectionMode() == TerminalSelectionMode::SEL_READY ) {
+			mTerminal->selclear();
+		}
+	} else if ( flags & EE_BUTTON_MMASK ) {
+		auto selection = mTerminal->getSelection();
+		if ( !selection.empty() ) {
+			for ( auto& chr : selection )
+				onTextInput( chr );
+		}
 	}
 	mTerminal->mousereport( TerminalMouseEventType::MouseButtonDown, positionToGrid( pos ), flags,
 							mWindow->getInput()->getModState() );
@@ -542,10 +568,9 @@ void ETerminalDisplay::onMouseDown( const Vector2i& pos, const Uint32& flags ) {
 
 void ETerminalDisplay::onMouseUp( const Vector2i& pos, const Uint32& flags ) {
 	if ( ( flags & EE_BUTTON_LMASK ) ) {
-		auto selection = mTerminal->getsel();
-		if ( selection )
-			setClipboard( selection );
-		mTerminal->selclear();
+		auto selection = mTerminal->getSelection();
+		if ( !selection.empty() )
+			setClipboard( selection.c_str() );
 		invalidate();
 	}
 	mTerminal->mousereport( TerminalMouseEventType::MouseButtonRelease, positionToGrid( pos ),
@@ -563,6 +588,15 @@ static inline Color termColor( unsigned int terminalColor,
 
 #define BETWEEN( x, a, b ) ( ( a ) <= ( x ) && ( x ) <= ( b ) )
 #define IS_SET( flag ) ( ( mMode & ( flag ) ) != 0 )
+
+Float ETerminalDisplay::getYOffset() const {
+	auto fontSize = (Float)mFont->getFontHeight( mFontSize );
+	auto height = mRows * fontSize;
+	float y = 0;
+	if ( height < mSize.getHeight() )
+		y = std::floor( mPosition.y + ( ( mSize.getHeight() - height ) / 2.0f ) );
+	return y;
+}
 
 void ETerminalDisplay::draw( Vector2f pos ) {
 	mDrawing = true;
@@ -776,7 +810,7 @@ void ETerminalDisplay::draw( Vector2f pos ) {
 }
 
 Vector2i ETerminalDisplay::positionToGrid( const Vector2i& pos ) {
-	Vector2f relPos = { pos.x - mPosition.x, pos.y - mPosition.y };
+	Vector2f relPos = { pos.x - mPosition.x, pos.y - mPosition.y - getYOffset() };
 	int mouseX = 0;
 	int mouseY = 0;
 

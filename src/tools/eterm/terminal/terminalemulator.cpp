@@ -295,7 +295,7 @@ void TerminalEmulator::selinit( void ) {
 	mSel.ob.x = -1;
 }
 
-int TerminalEmulator::tlinelen( int y ) {
+int TerminalEmulator::tlinelen( int y ) const {
 	int i = mTerm.col;
 
 	if ( mTerm.line[y][i - 1].mode & ATTR_WRAP )
@@ -460,7 +460,7 @@ void TerminalEmulator::selsnap( int* x, int* y, int direction ) {
 	}
 }
 
-char* TerminalEmulator::getsel( void ) {
+char* TerminalEmulator::getsel( void ) const {
 	char *str, *ptr;
 	int y, bufsize, lastx, linelen;
 	TerminalGlyph *gp, *last;
@@ -511,6 +511,16 @@ char* TerminalEmulator::getsel( void ) {
 	}
 	*ptr = 0;
 	return str;
+}
+
+std::string TerminalEmulator::getSelection() const {
+	char* sel = getsel();
+	if ( sel ) {
+		std::string selection( sel );
+		free( sel );
+		return selection;
+	}
+	return "";
 }
 
 void TerminalEmulator::selclear( void ) {

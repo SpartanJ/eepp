@@ -143,6 +143,8 @@ class ETerminalDisplay : public TerminalDisplay {
 
 	void draw();
 
+	virtual void onMouseDoubleClick( const Vector2i& pos, const Uint32& flags );
+
 	virtual void onMouseMotion( const Vector2i& pos, const Uint32& flags );
 
 	virtual void onMouseDown( const Vector2i& pos, const Uint32& flags );
@@ -198,6 +200,7 @@ class ETerminalDisplay : public TerminalDisplay {
 	bool mPasteNewlineFix{ true };
 	bool mFocus{ true };
 	Clock mClock;
+	Clock mLastDoubleClick;
 
 	ETerminalDisplay( EE::Window::Window* window, Font* font, const Float& fontSize,
 					  const Sizef& pixelsSize, TerminalConfig* config );
@@ -207,6 +210,8 @@ class ETerminalDisplay : public TerminalDisplay {
 	Vector2i positionToGrid( const Vector2i& pos );
 
 	void onSizeChange();
+
+	Float getYOffset() const;
 };
 
 #endif // ETERMINALDISPLAY_HPP

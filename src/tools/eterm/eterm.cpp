@@ -22,6 +22,12 @@ void inputCallback( InputEvent* event ) {
 		case InputEvent::MouseButtonUp: {
 			terminal->onMouseUp( win->getInput()->getMousePos(),
 								 win->getInput()->getReleaseTrigger() );
+
+			if ( win->getInput()->getDoubleClickTrigger() ) {
+				terminal->onMouseDoubleClick( win->getInput()->getMousePos(),
+											  win->getInput()->getDoubleClickTrigger() );
+			}
+
 			break;
 		}
 		case InputEvent::Window: {

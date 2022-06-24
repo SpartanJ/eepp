@@ -172,7 +172,9 @@ class TerminalEmulator final {
 
 	int selected( int, int );
 
-	char* getsel();
+	char* getsel() const;
+
+	std::string getSelection() const;
 
 	void mousereport( const TerminalMouseEventType& type, const Vector2i& pos, const Uint32& flags,
 					  const Uint32& mod );
@@ -235,7 +237,7 @@ class TerminalEmulator final {
 	void tdeleteline( int );
 	void tinsertblank( int );
 	void tinsertblankline( int );
-	int tlinelen( int );
+	int tlinelen( int ) const;
 	void tmoveto( int, int );
 	void tmoveato( int, int );
 	void tnewline( int );
