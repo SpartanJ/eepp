@@ -1133,8 +1133,6 @@
 ../../src/tools/ecode/version.hpp
 ../../src/tools/ecode/widgetcommandexecuter.hpp
 ../../src/tools/eterm/eterm.cpp
-../../src/tools/eterm/eterminaldisplay.cpp
-../../src/tools/eterm/eterminaldisplay.hpp
 ../../src/tools/eterm/system/autohandle.cpp
 ../../src/tools/eterm/system/autohandle.hpp
 ../../src/tools/eterm/system/ipipe.hpp
@@ -1149,6 +1147,8 @@
 ../../src/tools/eterm/terminal/boxdraw.hpp
 ../../src/tools/eterm/terminal/boxdrawdata.hpp
 ../../src/tools/eterm/terminal/ipseudoterminal.hpp
+../../src/tools/eterm/terminal/iterminaldisplay.cpp
+../../src/tools/eterm/terminal/iterminaldisplay.hpp
 ../../src/tools/eterm/terminal/nonspacing.hpp
 ../../src/tools/eterm/terminal/pseudoterminal.cpp
 ../../src/tools/eterm/terminal/pseudoterminal.hpp

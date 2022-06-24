@@ -77,7 +77,7 @@ const static unsigned int worddelimiters[] = { ' ', 0 };
  */
 static const unsigned int tabspaces = 4;
 
-#ifdef WIN32
+#ifdef _WIN32
 #include <windows.h>
 #endif
 
@@ -1268,7 +1268,7 @@ void TerminalEmulator::csihandle( void ) {
 	char buf[40];
 	int len;
 
-	std::shared_ptr<TerminalDisplay> dpy{};
+	std::shared_ptr<ITerminalDisplay> dpy{};
 
 	switch ( mCsiescseq.mode[0] ) {
 		default:
@@ -1509,7 +1509,7 @@ void TerminalEmulator::strhandle( void ) {
 	strparse();
 	par = ( narg = mStrescseq.narg ) ? atoi( mStrescseq.args[0] ) : 0;
 
-	std::shared_ptr<TerminalDisplay> dpy = mDpy.lock();
+	std::shared_ptr<ITerminalDisplay> dpy = mDpy.lock();
 
 	switch ( mStrescseq.type ) {
 		case ']': /* OSC -- Operating System Command */
@@ -2222,7 +2222,7 @@ void TerminalEmulator::resettitle( void ) {
 		dpy->setTitle( NULL );
 }
 
-void TerminalEmulator::drawregion( TerminalDisplay& dpy, int x1, int y1, int x2, int y2 ) {
+void TerminalEmulator::drawregion( ITerminalDisplay& dpy, int x1, int y1, int x2, int y2 ) {
 	int y;
 
 	for ( y = y1; y < y2; y++ ) {
@@ -2369,7 +2369,7 @@ void TerminalEmulator::xsetpointermotion( int ) {
 
 std::unique_ptr<TerminalEmulator>
 TerminalEmulator::create( PtyPtr&& pty, ProcPtr&& process,
-						  const std::shared_ptr<TerminalDisplay>& display ) {
+						  const std::shared_ptr<ITerminalDisplay>& display ) {
 	if ( !pty || !process ) {
 		fprintf( stderr, "Must provide valid pseudoterminal and process" );
 		return nullptr;
@@ -2380,7 +2380,7 @@ TerminalEmulator::create( PtyPtr&& pty, ProcPtr&& process,
 }
 
 TerminalEmulator::TerminalEmulator( PtyPtr&& pty, ProcPtr&& process,
-									const std::shared_ptr<TerminalDisplay>& display ) :
+									const std::shared_ptr<ITerminalDisplay>& display ) :
 	mDpy( display ),
 	mPty( std::move( pty ) ),
 	mProcess( std::move( process ) ),

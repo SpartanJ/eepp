@@ -19,7 +19,7 @@
 //  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //  DEALINGS IN THE SOFTWARE.
-#include "../terminal/terminaldisplay.hpp"
+#include "../terminal/iterminaldisplay.hpp"
 #include "../terminal/terminalemulator.hpp"
 #include <assert.h>
 
@@ -27,28 +27,28 @@
 
 using namespace EE::Terminal;
 
-TerminalDisplay::TerminalDisplay() :
+ITerminalDisplay::ITerminalDisplay() :
 	mMode( MODE_VISIBLE ), mCursorMode( SteadyBar ), mEmulator( nullptr ) {}
 
-void TerminalDisplay::attach( TerminalEmulator* terminal ) {
+void ITerminalDisplay::attach( TerminalEmulator* terminal ) {
 	assert( mEmulator == nullptr );
 	mEmulator = terminal;
 }
 
-void TerminalDisplay::detach( TerminalEmulator* terminal ) {
+void ITerminalDisplay::detach( TerminalEmulator* terminal ) {
 	assert( mEmulator == terminal );
 	mEmulator = nullptr;
 }
 
-void TerminalDisplay::bell() {}
+void ITerminalDisplay::bell() {}
 
-void TerminalDisplay::resetColors() {}
+void ITerminalDisplay::resetColors() {}
 
-int TerminalDisplay::resetColor( int /*index*/, const char* /*name*/ ) {
+int ITerminalDisplay::resetColor( int /*index*/, const char* /*name*/ ) {
 	return 0;
 }
 
-void TerminalDisplay::setMode( TerminalWinMode mode, int set ) {
+void ITerminalDisplay::setMode( TerminalWinMode mode, int set ) {
 	int m = mMode;
 	MODBIT( ( (int&)mMode ), set, mode );
 	if ( ( mMode & MODE_REVERSE ) != ( m & MODE_REVERSE ) && mEmulator ) {
@@ -56,20 +56,20 @@ void TerminalDisplay::setMode( TerminalWinMode mode, int set ) {
 	}
 }
 
-void TerminalDisplay::setCursorMode( TerminalCursorMode cursor ) {
+void ITerminalDisplay::setCursorMode( TerminalCursorMode cursor ) {
 	mCursorMode = cursor;
 }
 
-TerminalCursorMode TerminalDisplay::getCursorMode() const {
+TerminalCursorMode ITerminalDisplay::getCursorMode() const {
 	return mCursorMode;
 }
 
-void TerminalDisplay::setTitle( const char* ) {}
+void ITerminalDisplay::setTitle( const char* ) {}
 
-void TerminalDisplay::setIconTitle( const char* ) {}
+void ITerminalDisplay::setIconTitle( const char* ) {}
 
-void TerminalDisplay::setClipboard( const char* ) {}
+void ITerminalDisplay::setClipboard( const char* ) {}
 
-const char* TerminalDisplay::getClipboard() const {
+const char* ITerminalDisplay::getClipboard() const {
 	return "";
 }

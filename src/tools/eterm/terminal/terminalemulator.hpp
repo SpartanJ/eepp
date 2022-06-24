@@ -37,7 +37,7 @@
 
 #include "../system/iprocess.hpp"
 #include "ipseudoterminal.hpp"
-#include "terminaldisplay.hpp"
+#include "iterminaldisplay.hpp"
 #include "types.hpp"
 #include <eepp/math/vector2.hpp>
 #include <eepp/window/keycodes.hpp>
@@ -103,7 +103,7 @@ enum class TerminalMouseEventType { MouseMotion, MouseButtonDown, MouseButtonRel
 
 class TerminalEmulator final {
   public:
-	using DpyPtr = std::weak_ptr<TerminalDisplay>;
+	using DpyPtr = std::weak_ptr<ITerminalDisplay>;
 	using PtyPtr = std::unique_ptr<IPseudoTerminal>;
 	using ProcPtr = std::unique_ptr<System::IProcess>;
 
@@ -120,7 +120,7 @@ class TerminalEmulator final {
 	TerminalEmulator& operator=( TerminalEmulator&& ) = delete;
 
 	static std::unique_ptr<TerminalEmulator>
-	create( PtyPtr&& pty, ProcPtr&& process, const std::shared_ptr<TerminalDisplay>& display );
+	create( PtyPtr&& pty, ProcPtr&& process, const std::shared_ptr<ITerminalDisplay>& display );
 
 	void resize( int columns, int rows );
 
@@ -266,7 +266,7 @@ class TerminalEmulator final {
 	void selsnap( int*, int*, int );
 
 	void _die( const char*, ... );
-	void drawregion( TerminalDisplay& dpy, int, int, int, int );
+	void drawregion( ITerminalDisplay& dpy, int, int, int, int );
 	void draw();
 
 	int tattrset( int );
@@ -296,7 +296,7 @@ class TerminalEmulator final {
 	void xximspot( int, int );
 
 	TerminalEmulator( PtyPtr&& pty, ProcPtr&& process,
-					  const std::shared_ptr<TerminalDisplay>& display );
+					  const std::shared_ptr<ITerminalDisplay>& display );
 };
 
 }} // namespace EE::Terminal

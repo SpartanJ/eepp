@@ -1,8 +1,8 @@
-#include "eterminaldisplay.hpp"
+#include "terminal/terminaldisplay.hpp"
 #include <eepp/ee.hpp>
 
 EE::Window::Window* win = NULL;
-std::shared_ptr<ETerminalDisplay> terminal = nullptr;
+std::shared_ptr<TerminalDisplay> terminal = nullptr;
 
 void inputCallback( InputEvent* event ) {
 	if ( !terminal )
@@ -101,8 +101,8 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 				shell = "/bin/bash";
 			}
 
-			terminal = ETerminalDisplay::create( win, fontMono, PixelDensity::dpToPx( 11 ),
-												 win->getSize().asFloat(), shell, {}, "", 0 );
+			terminal = TerminalDisplay::create( win, fontMono, PixelDensity::dpToPx( 11 ),
+												win->getSize().asFloat(), shell, {}, "" );
 		}
 
 		win->getInput()->pushCallback( &inputCallback );

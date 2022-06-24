@@ -22,6 +22,7 @@
 
 #ifndef _WIN32
 #include "process.hpp"
+#include <eepp/system/filesystem.hpp>
 #include <poll.h>
 #include <pwd.h>
 #include <signal.h>
@@ -30,8 +31,6 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
-
-#define DEFAULT( a, b ) ( a ) = ( a ) ? ( a ) : ( b )
 
 #if defined( __linux )
 #include <pty.h>
@@ -102,8 +101,9 @@ int Process::getExitCode() const {
 
 Process::Process( int pid ) : m_pid( pid ) {}
 
-static void execshell( const char* cmd, const char* const* args ) {
+static void execshell( const char* cmd, const char* const* args, std::string workingDirectory ) {
 	const struct passwd* pw;
+	const char* sh;
 
 	errno = 0;
 	if ( ( pw = getpwuid( getuid() ) ) == NULL ) {
@@ -116,12 +116,20 @@ static void execshell( const char* cmd, const char* const* args ) {
 		}
 	}
 
+	if ( ( sh = getenv( "SHELL" ) ) == NULL )
+		sh = ( pw->pw_shell[0] ) ? pw->pw_shell : cmd;
+
+	if ( workingDirectory.empty() )
+		workingDirectory = pw->pw_dir;
+
+	FileSystem::changeWorkingDirectory( workingDirectory );
+
 	unsetenv( "COLUMNS" );
 	unsetenv( "LINES" );
 	unsetenv( "TERMCAP" );
 	setenv( "LOGNAME", pw->pw_name, 1 );
 	setenv( "USER", pw->pw_name, 1 );
-	// setenv( "SHELL", sh, 1 );
+	setenv( "SHELL", sh, 1 );
 	setenv( "HOME", pw->pw_dir, 1 );
 	setenv( "TERM", "st-256color", 1 );
 
@@ -147,7 +155,7 @@ std::unique_ptr<Process> Process::createWithPipe( const std::string& /*program*/
 
 std::unique_ptr<Process>
 Process::createWithPseudoTerminal( const std::string& program, const std::vector<std::string>& args,
-								   const std::string& /*workingDirectory*/,
+								   const std::string& workingDirectory,
 								   Terminal::PseudoTerminal& pseudoTerminal ) {
 	int pid = fork();
 	if ( pid == -1 ) {
@@ -181,7 +189,7 @@ Process::createWithPseudoTerminal( const std::string& program, const std::vector
 			argsV.push_back( a.c_str() );
 		}
 		argsV.push_back( nullptr );
-		execshell( program.c_str(), argsV.data() );
+		execshell( program.c_str(), argsV.data(), workingDirectory );
 	} else {
 		pseudoTerminal.m_slave.release();
 		return std::unique_ptr<Process>( new Process( pid ) );

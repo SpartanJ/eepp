@@ -27,19 +27,19 @@ namespace EE { namespace Terminal {
 
 class TerminalEmulator;
 
-class TerminalDisplay {
+class ITerminalDisplay {
   public:
-	TerminalDisplay();
+	ITerminalDisplay();
 
-	virtual ~TerminalDisplay() = default;
+	virtual ~ITerminalDisplay() = default;
 
-	TerminalDisplay( const TerminalDisplay& ) = delete;
+	ITerminalDisplay( const ITerminalDisplay& ) = delete;
 
-	TerminalDisplay( TerminalDisplay&& ) = delete;
+	ITerminalDisplay( ITerminalDisplay&& ) = delete;
 
-	TerminalDisplay& operator=( const TerminalDisplay& ) = delete;
+	ITerminalDisplay& operator=( const ITerminalDisplay& ) = delete;
 
-	TerminalDisplay& operator=( TerminalDisplay&& ) = delete;
+	ITerminalDisplay& operator=( ITerminalDisplay&& ) = delete;
 
 	virtual void attach( TerminalEmulator* terminal );
 
