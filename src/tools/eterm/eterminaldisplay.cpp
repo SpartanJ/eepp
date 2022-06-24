@@ -1,5 +1,6 @@
 #include "eterminaldisplay.hpp"
 #include "system/processfactory.hpp"
+#include "terminal/boxdraw.hpp"
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/system/color.hpp>
@@ -28,7 +29,9 @@ TerminalKeyMap::TerminalKeyMap( const TerminalKey keys[], size_t keysLen,
 }
 
 static TerminalShortcut shortcuts[] = {
-	{ KEY_INSERT, KEYMOD_SHIFT, TerminalShortcutAction::PASTE, 0, 0 } };
+	{ KEY_INSERT, KEYMOD_SHIFT, TerminalShortcutAction::PASTE, 0, 0 },
+	{ KEY_V, KEYMOD_SHIFT | KEYMOD_CTRL, TerminalShortcutAction::PASTE, 0, 0 },
+	{ KEY_C, KEYMOD_SHIFT | KEYMOD_CTRL, TerminalShortcutAction::COPY, 0, 0 } };
 
 static TerminalKey keys[] = {
 	/* keysym           mask            string      appkey appcursor */
@@ -380,8 +383,6 @@ ETerminalDisplay::ETerminalDisplay( EE::Window::Window* window, Font* font, cons
 	if ( config != nullptr ) {
 		if ( config->options & OPTION_COLOR_EMOJI )
 			mUseColorEmoji = true;
-		if ( config->options & OPTION_NO_BOXDRAWING )
-			mUseBoxDrawing = false;
 		if ( config->options & OPTION_PASTE_CRLF )
 			mPasteNewlineFix = true;
 	}
@@ -397,8 +398,6 @@ ETerminalDisplay::ETerminalDisplay( EE::Window::Window* window, Font* font, cons
 	if ( config != nullptr ) {
 		if ( config->options & OPTION_COLOR_EMOJI )
 			mUseColorEmoji = true;
-		if ( config->options & OPTION_NO_BOXDRAWING )
-			mUseBoxDrawing = false;
 		if ( config->options & OPTION_PASTE_CRLF )
 			mPasteNewlineFix = true;
 	}
@@ -449,11 +448,20 @@ void ETerminalDisplay::update() {
 }
 
 void ETerminalDisplay::action( TerminalShortcutAction action ) {
-	if ( action == TerminalShortcutAction::PASTE ) {
-		auto clipboard = getClipboard();
-		auto clipboardLen = strlen( clipboard );
-		if ( clipboardLen > 0 ) {
-			mTerminal->write( clipboard, clipboardLen );
+	switch ( action ) {
+		case TerminalShortcutAction::PASTE: {
+			auto clipboard = getClipboard();
+			auto clipboardLen = strlen( clipboard );
+			if ( clipboardLen > 0 ) {
+				mTerminal->write( clipboard, clipboardLen );
+			}
+			break;
+		}
+		case TerminalShortcutAction::COPY: {
+			auto selection = mTerminal->getSelection();
+			if ( !selection.empty() )
+				mWindow->getClipboard()->setText( selection );
+			break;
 		}
 	}
 }
@@ -586,9 +594,6 @@ static inline Color termColor( unsigned int terminalColor,
 				  terminalColor & 0xFF, ( ~( ( terminalColor >> 25 ) & 0xFF ) ) & 0xFF );
 }
 
-#define BETWEEN( x, a, b ) ( ( a ) <= ( x ) && ( x ) <= ( b ) )
-#define IS_SET( flag ) ( ( mMode & ( flag ) ) != 0 )
-
 Float ETerminalDisplay::getYOffset() const {
 	auto fontSize = (Float)mFont->getFontHeight( mFontSize );
 	auto height = mRows * fontSize;
@@ -596,6 +601,156 @@ Float ETerminalDisplay::getYOffset() const {
 	if ( height < mSize.getHeight() )
 		y = std::floor( mPosition.y + ( ( mSize.getHeight() - height ) / 2.0f ) );
 	return y;
+}
+
+#define BETWEEN( x, a, b ) ( ( a ) <= ( x ) && ( x ) <= ( b ) )
+#define IS_SET( flag ) ( ( mMode & ( flag ) ) != 0 )
+#define DIV( n, d ) ( ( ( n ) + ( d ) / 2.0f ) / ( d ) )
+#define DIVI( n, d ) ( ( ( n ) + ( d ) / 2 ) / ( d ) )
+
+inline static void drawrect( const Color& col, const float& x, const float& y, const float& w,
+							 const float& h, Primitives& p ) {
+	p.setColor( col );
+	p.drawRectangle( { { x, eefloor( y ) }, { w, eeceil( h ) } } );
+}
+
+inline static void drawboxlines( float x, float y, float w, float h, Color fg, ushort bd,
+								 Primitives& pr ) {
+	/* s: stem thickness. width/8 roughly matches underscore thickness. */
+	/* We draw bold as 1.5 * normal-stem and at least 1px thicker.      */
+	/* doubles draw at least 3px, even when w or h < 3. bold needs 6px. */
+	float mwh = eemin( w, h );
+	float base_s = eemin( 1.0f, DIV( mwh, 8.0f ) );
+	int bold = ( bd & BDB ) && mwh >= 6.0f; /* possibly ignore boldness */
+	float s = bold ? eemax( base_s + 1.0f, DIV( 3.0f * base_s, 2.0f ) ) : base_s;
+	float w2 = DIV( w - s, 2.0f ), h2 = DIV( h - s, 2.0f );
+	/* the s-by-s square (x + w2, y + h2, s, s) is the center texel.    */
+	/* The base length (per direction till edge) includes this square.  */
+
+	int light = bd & ( LL | LU | LR | LD );
+	int double_ = bd & ( DL | DU | DR | DD );
+
+	if ( light ) {
+		/* d: additional (negative) length to not-draw the center   */
+		/* texel - at arcs and avoid drawing inside (some) doubles  */
+		int arc = bd & BDA;
+		int multi_light = light & ( light - 1 );
+		int multi_double = double_ & ( double_ - 1 );
+		/* light crosses double only at DH+LV, DV+LH (ref. shapes)  */
+		float d = arc || ( multi_double && !multi_light ) ? -s : 0.0f;
+
+		if ( bd & LL )
+			drawrect( fg, x, y + h2, w2 + s + d, s, pr );
+		if ( bd & LU )
+			drawrect( fg, x + w2, y, s, h2 + s + d, pr );
+		if ( bd & LR )
+			drawrect( fg, x + w2 - d, y + h2, w - w2 + d, s, pr );
+		if ( bd & LD )
+			drawrect( fg, x + w2, y + h2 - d, s, h - h2 + d, pr );
+	}
+
+	/* double lines - also align with light to form heavy when combined */
+	if ( double_ ) {
+		/*
+		 * going clockwise, for each double-ray: p is additional length
+		 * to the single-ray nearer to the previous direction, and n to
+		 * the next. p and n adjust from the base length to lengths
+		 * which consider other doubles - shorter to avoid intersections
+		 * (p, n), or longer to draw the far-corner texel (n).
+		 */
+		int dl = bd & DL, du = bd & DU, dr = bd & DR, dd = bd & DD;
+		if ( dl ) {
+			float p = dd ? -s : 0.0f, n = du ? -s : dd ? s : 0.0f;
+			drawrect( fg, x, y + h2 + s, w2 + s + p, s, pr );
+			drawrect( fg, x, y + h2 - s, w2 + s + n, s, pr );
+		}
+		if ( du ) {
+			float p = dl ? -s : 0.0f, n = dr ? -s : dl ? s : 0.0f;
+			drawrect( fg, x + w2 - s, y, s, h2 + s + p, pr );
+			drawrect( fg, x + w2 + s, y, s, h2 + s + n, pr );
+		}
+		if ( dr ) {
+			float p = du ? -s : 0.0f, n = dd ? -s : du ? s : 0.0f;
+			drawrect( fg, x + w2 - p, y + h2 - s, w - w2 + p, s, pr );
+			drawrect( fg, x + w2 - n, y + h2 + s, w - w2 + n, s, pr );
+		}
+		if ( dd ) {
+			float p = dr ? -s : 0.0f, n = dl ? -s : dr ? s : 0.0f;
+			drawrect( fg, x + w2 + s, y + h2 - p, s, h - h2 + p, pr );
+			drawrect( fg, x + w2 - s, y + h2 - n, s, h - h2 + n, pr );
+		}
+	}
+}
+
+inline static void drawbox( float x, float y, float w, float h, Color fg, Color bg, ushort bd,
+							Primitives& p ) {
+	ushort cat = bd & ~( BDB | 0xff ); /* mask out bold and data */
+	if ( bd & ( BDL | BDA ) ) {
+		/* lines (light/double/heavy/arcs) */
+		drawboxlines( x, y, w, h, fg, bd, p );
+	} else if ( cat == BBD ) {
+		/* lower (8-X)/8 block */
+		float d = DIV( ( bd & 0xFF ) * h, 8.0f );
+		drawrect( fg, x, y + d, w, h - d, p );
+	} else if ( cat == BBU ) {
+		/* upper X/8 block */
+		drawrect( fg, x, y, w, DIV( ( bd & 0xFF ) * h, 8 ), p );
+	} else if ( cat == BBL ) {
+		/* left X/8 block */
+		drawrect( fg, x, y, DIV( ( bd & 0xFF ) * w, 8 ), h, p );
+	} else if ( cat == BBR ) {
+		/* right (8-X)/8 block */
+		float d = DIV( ( bd & 0xFF ) * w, 8.0f );
+		drawrect( fg, x + d, y, w - d, h, p );
+	} else if ( cat == BBQ ) {
+		/* Quadrants */
+		float w2 = DIV( w, 2.0f ), h2 = DIV( h, 2.0f );
+		if ( bd & TL )
+			drawrect( fg, x, y, w2, h2, p );
+		if ( bd & TR )
+			drawrect( fg, x + w2, y, w - w2, h2, p );
+		if ( bd & BL )
+			drawrect( fg, x, y + h2, w2, h - h2, p );
+		if ( bd & BR )
+			drawrect( fg, x + w2, y + h2, w - w2, h - h2, p );
+	} else if ( bd & BBS ) {
+		/* Shades - data is 1/2/3 for 25%/50%/75% alpha, respectively */
+		int d = ( bd & 0xFF );
+
+		Uint8 red = DIVI( ( ( fg.getValue() >> 24 ) & 0xFF ) * d +
+							  ( ( bg.getValue() >> 24 ) & 0xFF ) * ( 4 - d ),
+						  4 );
+		Uint8 green = DIVI( ( ( fg.getValue() >> 16 ) & 0xFF ) * d +
+								( ( bg.getValue() >> 16 ) & 0xFF ) * ( 4 - d ),
+							4 );
+		Uint8 blue = DIVI( ( ( fg.getValue() >> 8 ) & 0xFF ) * d +
+							   ( ( bg.getValue() >> 8 ) & 0xFF ) * ( 4 - d ),
+						   4 );
+		Color drawcol = Color( red, green, blue, 0xFF );
+
+		drawrect( drawcol, x, y, w, h, p );
+	} else if ( cat == BRL ) {
+		/* braille, each data bit corresponds to one dot at 2x4 grid */
+		float w1 = DIV( w, 2.0f );
+		float h1 = DIV( h, 4.0f ), h2 = DIV( h, 2.0f ), h3 = DIV( 3.0f * h, 4.0f );
+
+		if ( bd & 1 )
+			drawrect( fg, x, y, w1, h1, p );
+		if ( bd & 2 )
+			drawrect( fg, x, y + h1, w1, h2 - h1, p );
+		if ( bd & 4 )
+			drawrect( fg, x, y + h2, w1, h3 - h2, p );
+		if ( bd & 8 )
+			drawrect( fg, x + w1, y, w - w1, h1, p );
+		if ( bd & 16 )
+			drawrect( fg, x + w1, y + h1, w - w1, h2 - h1, p );
+		if ( bd & 32 )
+			drawrect( fg, x + w1, y + h2, w - w1, h3 - h2, p );
+		if ( bd & 64 )
+			drawrect( fg, x, y + h3, w1, h - h3, p );
+		if ( bd & 128 )
+			drawrect( fg, x + w1, y + h3, w - w1, h - h3, p );
+	}
 }
 
 void ETerminalDisplay::draw( Vector2f pos ) {
@@ -710,27 +865,30 @@ void ETerminalDisplay::draw( Vector2f pos ) {
 			if ( glyph.mode & ATTR_WDUMMY )
 				continue;
 
-			auto* gd = mFont->getGlyphDrawable( glyph.u, mFontSize, glyph.mode & ATTR_BOLD );
-			gd->setColor( fg );
-			gd->setDrawMode( glyph.mode & ATTR_ITALIC ? GlyphDrawable::DrawMode::TextItalic
-													  : GlyphDrawable::DrawMode::Text );
-			gd->draw( { x, y } );
+			if ( isWide )
+				isWide = true;
 
-			if ( glyph.mode & ATTR_UNDERLINE ) {
-				p.setColor( fg );
-				p.drawRectangle( Rectf( { x, y + borderPx + lineHeight - cursorThickness },
-										{ advanceX, cursorThickness } ) );
-			}
+			if ( glyph.mode & ATTR_BOXDRAW ) {
+				auto bd = TerminalEmulator::boxdrawindex( &glyph );
+				drawbox( x, y, advanceX, lineHeight, fg, bg, bd, p );
+			} else {
+				auto* gd = mFont->getGlyphDrawable( glyph.u, mFontSize, glyph.mode & ATTR_BOLD );
+				gd->setColor( fg );
+				gd->setDrawMode( glyph.mode & ATTR_ITALIC ? GlyphDrawable::DrawMode::TextItalic
+														  : GlyphDrawable::DrawMode::Text );
+				gd->draw( { x, y } );
 
-			if ( glyph.mode & ATTR_STRUCK ) {
-				p.setColor( fg );
-				p.drawRectangle( Rectf( { x, y + borderPx + eefloor( lineHeight / 2.f ) },
-										{ advanceX, cursorThickness } ) );
-			}
+				if ( glyph.mode & ATTR_UNDERLINE ) {
+					p.setColor( fg );
+					p.drawRectangle( Rectf( { x, y + borderPx + lineHeight - cursorThickness },
+											{ advanceX, cursorThickness } ) );
+				}
 
-			if ( glyph.mode & ATTR_BOXDRAW && mUseBoxDrawing ) {
-				// auto bd = TerminalEmulator::boxdrawindex( &glyph );
-				// drawbox( x, y, advanceX, line_height, fg, bg, bd );
+				if ( glyph.mode & ATTR_STRUCK ) {
+					p.setColor( fg );
+					p.drawRectangle( Rectf( { x, y + borderPx + eefloor( lineHeight / 2.f ) },
+											{ advanceX, cursorThickness } ) );
+				}
 			}
 
 			x += advanceX;

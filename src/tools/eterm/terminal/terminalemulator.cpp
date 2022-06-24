@@ -1909,7 +1909,6 @@ void TerminalEmulator::tputc( Rune u ) {
 		width = (int)( len = 1 );
 	} else {
 		len = utf8encode( u, c );
-		// if (!control && (width = wcwidth9(u)) < 0) {
 		if ( !control && ( width = wcwidth( u ) ) < 0 ) {
 			if ( width == -1 ) {
 				width = 0;

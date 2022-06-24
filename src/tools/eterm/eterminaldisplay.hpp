@@ -21,13 +21,12 @@ using namespace EE::Terminal;
 using namespace EE::Window;
 using namespace EE::System;
 
-enum class TerminalShortcutAction { PASTE };
+enum class TerminalShortcutAction { PASTE, COPY };
 
 enum TerminalOptions {
 	OPTION_NONE = 0,
 	OPTION_COLOR_EMOJI = 1 << 0,
-	OPTION_NO_BOXDRAWING = 1 << 1,
-	OPTION_PASTE_CRLF = 1 << 2
+	OPTION_PASTE_CRLF = 1 << 1
 };
 
 struct TerminalConfig {
@@ -195,7 +194,6 @@ class ETerminalDisplay : public TerminalDisplay {
 	std::atomic<bool> mDrawing{ false };
 	Vector2i mCursor;
 	TerminalGlyph mCursorGlyph;
-	bool mUseBoxDrawing{ true };
 	bool mUseColorEmoji{ true };
 	bool mPasteNewlineFix{ true };
 	bool mFocus{ true };
