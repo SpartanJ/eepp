@@ -460,7 +460,7 @@ void ETerminalDisplay::action( TerminalShortcutAction action ) {
 		case TerminalShortcutAction::COPY: {
 			auto selection = mTerminal->getSelection();
 			if ( !selection.empty() )
-				mWindow->getClipboard()->setText( selection );
+				setClipboard( selection.c_str() );
 			break;
 		}
 	}
@@ -483,6 +483,14 @@ void ETerminalDisplay::setClipboard( const char* text ) {
 
 const char* ETerminalDisplay::getClipboard() const {
 	mClipboard = mWindow->getClipboard()->getText();
+#ifdef _WIN32
+	if ( mPasteNewlineFix ) {
+		size_t pos;
+		while ( ( pos = mClipboard.find( '\r' ) ) != std::string::npos )
+			mClipboard.erase( pos, 1 );
+		return mClipboard.c_str();
+	}
+#endif
 	return mClipboard.c_str();
 }
 
@@ -577,7 +585,7 @@ void ETerminalDisplay::onMouseDown( const Vector2i& pos, const Uint32& flags ) {
 void ETerminalDisplay::onMouseUp( const Vector2i& pos, const Uint32& flags ) {
 	if ( ( flags & EE_BUTTON_LMASK ) ) {
 		auto selection = mTerminal->getSelection();
-		if ( !selection.empty() )
+		if ( !selection.empty() && selection != "\n" )
 			setClipboard( selection.c_str() );
 		invalidate();
 	}
@@ -1028,24 +1036,6 @@ void ETerminalDisplay::onKeyDown( const Keycode& keyCode, const Uint32& /*chr*/,
 								  const Scancode& scancode ) {
 	Uint32 smod = sanitizeMod( mod );
 
-	if ( mod & KEYMOD_CTRL ) {
-		// I really dont like this, as it depends on the undelying backend implementation (SDL in
-		// this case)
-		if ( ( scancode >= SCANCODE_A && scancode <= SCANCODE_0 ) ||
-			 SCANCODE_LEFTBRACKET == scancode || SCANCODE_RIGHTBRACKET == scancode ) {
-			char tmp = 0;
-			for ( size_t i = 0; i < eeARRAY_SIZE( asciiScancodeTable ); ++i ) {
-				if ( asciiScancodeTable[i] == scancode ) {
-					tmp = i + 1;
-					break;
-				}
-			}
-
-			mTerminal->write( &tmp, 1 );
-			return;
-		}
-	}
-
 	auto scIt = terminalKeyMap.Shortcuts().find( keyCode );
 	if ( scIt != terminalKeyMap.Shortcuts().end() ) {
 		for ( auto& k : scIt->second ) {
@@ -1062,6 +1052,24 @@ void ETerminalDisplay::onKeyDown( const Keycode& keyCode, const Uint32& /*chr*/,
 				action( k.action );
 				return;
 			}
+		}
+	}
+
+	if ( mod & KEYMOD_CTRL ) {
+		// I really dont like this, as it depends on the undelying backend implementation (SDL in
+		// this case)
+		if ( ( scancode >= SCANCODE_A && scancode <= SCANCODE_0 ) ||
+			 SCANCODE_LEFTBRACKET == scancode || SCANCODE_RIGHTBRACKET == scancode ) {
+			char tmp = 0;
+			for ( size_t i = 0; i < eeARRAY_SIZE( asciiScancodeTable ); ++i ) {
+				if ( asciiScancodeTable[i] == scancode ) {
+					tmp = i + 1;
+					break;
+				}
+			}
+
+			mTerminal->write( &tmp, 1 );
+			return;
 		}
 	}
 
