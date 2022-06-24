@@ -259,7 +259,7 @@ Process::~Process() {
 		HeapFree( GetProcessHeap(), 0, m_lpAttributeList );
 	}
 	if ( !m_leaveRunning ) {
-		Terminate();
+		terminate();
 	}
 }
 
@@ -286,12 +286,12 @@ void Process::terminate() {
 		TerminateProcess( (HANDLE)m_hProcess, EXIT_FAILURE );
 		m_exitCode = EXIT_FAILURE;
 		m_status = ProcessStatus::EXITED;
-		m_hProcess.Release();
+		m_hProcess.release();
 	}
 }
 
 void Process::waitForExit() {
-	CheckExitStatus();
+	checkExitStatus();
 
 	if ( m_status == ProcessStatus::RUNNING ) {
 		WaitForSingleObject( (HANDLE)m_hProcess, INFINITE );
@@ -316,7 +316,7 @@ std::unique_ptr<Process> Process::createWithPipe( const std::string& program,
 	AutoHandle g_hChildStd_OUT_Rd{};
 	AutoHandle g_hChildStd_OUT_Wr{};
 
-	if ( !CreatePipe( g_hChildStd_OUT_Rd.Get(), g_hChildStd_OUT_Wr.Get(), &saAttr, 0 ) ) {
+	if ( !CreatePipe( g_hChildStd_OUT_Rd.get(), g_hChildStd_OUT_Wr.get(), &saAttr, 0 ) ) {
 		fprintf( stderr, "Failed to create pipe (Stdout)\n" );
 		return nullptr;
 	}
@@ -326,7 +326,7 @@ std::unique_ptr<Process> Process::createWithPipe( const std::string& program,
 		return nullptr;
 	}
 
-	if ( !CreatePipe( g_hChildStd_IN_Rd.Get(), g_hChildStd_IN_Wr.Get(), &saAttr, 0 ) ) {
+	if ( !CreatePipe( g_hChildStd_IN_Rd.get(), g_hChildStd_IN_Wr.get(), &saAttr, 0 ) ) {
 		fprintf( stderr, "Failed to create pipe (Stdin)\n" );
 		return nullptr;
 	}

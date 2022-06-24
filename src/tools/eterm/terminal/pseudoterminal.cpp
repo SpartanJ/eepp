@@ -172,7 +172,7 @@ int PseudoTerminal::write( const char* s, size_t n ) {
 	DWORD c = (DWORD)n;
 	DWORD r = 0;
 	while ( n > 0 ) {
-		if ( !WriteFile( (HANDLE)m_hOutput.Get(), s, (DWORD)( n > lim ? lim : n ), &r, nullptr ) ) {
+		if ( !WriteFile( (HANDLE)m_hOutput.get(), s, (DWORD)( n > lim ? lim : n ), &r, nullptr ) ) {
 			PrintLastWinApiError();
 			return -1;
 		}
@@ -188,7 +188,7 @@ int PseudoTerminal::read( char* buf, size_t n, bool block ) {
 	DWORD read;
 
 	if ( !block ) {
-		if ( !PeekNamedPipe( (HANDLE)m_hInput.Get(), nullptr, 0, nullptr, &available, nullptr ) ) {
+		if ( !PeekNamedPipe( (HANDLE)m_hInput.get(), nullptr, 0, nullptr, &available, nullptr ) ) {
 			PrintLastWinApiError();
 			return -1;
 		}
@@ -196,7 +196,7 @@ int PseudoTerminal::read( char* buf, size_t n, bool block ) {
 			return 0;
 	}
 
-	if ( !ReadFile( (HANDLE)m_hInput.Get(), buf, (DWORD)n, &read, nullptr ) ) {
+	if ( !ReadFile( (HANDLE)m_hInput.get(), buf, (DWORD)n, &read, nullptr ) ) {
 		PrintLastWinApiError();
 		return -1;
 	}
@@ -222,8 +222,8 @@ std::unique_ptr<PseudoTerminal> PseudoTerminal::create( int columns, int rows ) 
 	AutoHandle hPipePTYIn{};
 	AutoHandle hPipePTYOut{};
 
-	if ( CreatePipe( hPipePTYIn.Get(), hPipeOut.Get(), NULL, 0 ) &&
-		 CreatePipe( hPipeIn.Get(), hPipePTYOut.Get(), NULL, 0 ) ) {
+	if ( CreatePipe( hPipePTYIn.get(), hPipeOut.get(), NULL, 0 ) &&
+		 CreatePipe( hPipeIn.get(), hPipePTYOut.get(), NULL, 0 ) ) {
 		COORD ptySize;
 		ptySize.X = (SHORT)columns;
 		ptySize.Y = (SHORT)rows;
@@ -231,7 +231,7 @@ std::unique_ptr<PseudoTerminal> PseudoTerminal::create( int columns, int rows ) 
 		assert( ptySize.X > 0 );
 		assert( ptySize.Y > 0 );
 
-		hr = CreatePseudoConsole( ptySize, (HANDLE)hPipePTYIn.Get(), (HANDLE)hPipePTYOut.Get(), 0,
+		hr = CreatePseudoConsole( ptySize, (HANDLE)hPipePTYIn.get(), (HANDLE)hPipePTYOut.get(), 0,
 								  &hPC );
 	}
 

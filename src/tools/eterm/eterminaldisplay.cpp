@@ -611,7 +611,13 @@ Float ETerminalDisplay::getYOffset() const {
 inline static void drawrect( const Color& col, const float& x, const float& y, const float& w,
 							 const float& h, Primitives& p ) {
 	p.setColor( col );
-	p.drawRectangle( { { x, eefloor( y ) }, { w, eeceil( h ) } } );
+	p.drawRectangle( { { eefloor( x ), eefloor( y ) }, { eeceil( w ), eeceil( h ) } } );
+}
+
+inline static void drawpoint( const Color& col, const float& x, const float& y, const float& w,
+							  const float& h, Primitives& p ) {
+	p.setColor( col );
+	p.drawPoint( { eefloor( x ), eefloor( y ) }, eemin( w / 2.f, h / 2.f ) );
 }
 
 inline static void drawboxlines( float x, float y, float w, float h, Color fg, ushort bd,
@@ -735,21 +741,21 @@ inline static void drawbox( float x, float y, float w, float h, Color fg, Color 
 		float h1 = DIV( h, 4.0f ), h2 = DIV( h, 2.0f ), h3 = DIV( 3.0f * h, 4.0f );
 
 		if ( bd & 1 )
-			drawrect( fg, x, y, w1, h1, p );
+			drawpoint( fg, x, y, w1, h1, p );
 		if ( bd & 2 )
-			drawrect( fg, x, y + h1, w1, h2 - h1, p );
+			drawpoint( fg, x, y + h1, w1, h2 - h1, p );
 		if ( bd & 4 )
-			drawrect( fg, x, y + h2, w1, h3 - h2, p );
+			drawpoint( fg, x, y + h2, w1, h3 - h2, p );
 		if ( bd & 8 )
-			drawrect( fg, x + w1, y, w - w1, h1, p );
+			drawpoint( fg, x + w1, y, w - w1, h1, p );
 		if ( bd & 16 )
-			drawrect( fg, x + w1, y + h1, w - w1, h2 - h1, p );
+			drawpoint( fg, x + w1, y + h1, w - w1, h2 - h1, p );
 		if ( bd & 32 )
-			drawrect( fg, x + w1, y + h2, w - w1, h3 - h2, p );
+			drawpoint( fg, x + w1, y + h2, w - w1, h3 - h2, p );
 		if ( bd & 64 )
-			drawrect( fg, x, y + h3, w1, h - h3, p );
+			drawpoint( fg, x, y + h3, w1, h - h3, p );
 		if ( bd & 128 )
-			drawrect( fg, x + w1, y + h3, w - w1, h - h3, p );
+			drawpoint( fg, x + w1, y + h3, w - w1, h - h3, p );
 	}
 }
 
@@ -864,9 +870,6 @@ void ETerminalDisplay::draw( Vector2f pos ) {
 
 			if ( glyph.mode & ATTR_WDUMMY )
 				continue;
-
-			if ( isWide )
-				isWide = true;
 
 			if ( glyph.mode & ATTR_BOXDRAW ) {
 				auto bd = TerminalEmulator::boxdrawindex( &glyph );
@@ -1046,8 +1049,16 @@ void ETerminalDisplay::onKeyDown( const Keycode& keyCode, const Uint32& /*chr*/,
 	auto scIt = terminalKeyMap.Shortcuts().find( keyCode );
 	if ( scIt != terminalKeyMap.Shortcuts().end() ) {
 		for ( auto& k : scIt->second ) {
-			if ( ( k.mask == KEYMOD_CTRL_SHIFT_ALT_META || k.mask == smod ) &&
-				 ( k.appkey == 0 || k.appkey < 0 ) && ( k.appcursor == 0 || k.appcursor > 0 ) ) {
+			if ( k.mask == KEYMOD_CTRL_SHIFT_ALT_META || k.mask == smod ) {
+				if ( IS_SET( MODE_APPKEYPAD ) ? k.appkey < 0 : k.appkey > 0 )
+					continue;
+
+				if ( IS_SET( MODE_NUMLOCK ) && k.appkey == 2 )
+					continue;
+
+				if ( IS_SET( MODE_APPCURSOR ) ? k.appcursor < 0 : k.appcursor > 0 )
+					continue;
+
 				action( k.action );
 				return;
 			}
@@ -1057,8 +1068,16 @@ void ETerminalDisplay::onKeyDown( const Keycode& keyCode, const Uint32& /*chr*/,
 	auto kvIt = terminalKeyMap.KeyMap().find( keyCode );
 	if ( kvIt != terminalKeyMap.KeyMap().end() ) {
 		for ( auto& k : kvIt->second ) {
-			if ( ( k.mask == KEYMOD_CTRL_SHIFT_ALT_META || k.mask == smod ) &&
-				 ( k.appkey == 0 || k.appkey < 0 ) && ( k.appcursor == 0 || k.appcursor > 0 ) ) {
+			if ( k.mask == KEYMOD_CTRL_SHIFT_ALT_META || k.mask == smod ) {
+				if ( IS_SET( MODE_APPKEYPAD ) ? k.appkey < 0 : k.appkey > 0 )
+					continue;
+
+				if ( IS_SET( MODE_NUMLOCK ) && k.appkey == 2 )
+					continue;
+
+				if ( IS_SET( MODE_APPCURSOR ) ? k.appcursor < 0 : k.appcursor > 0 )
+					continue;
+
 				if ( k.string.size() > 0 ) {
 					mTerminal->write( k.string.c_str(), k.string.size() );
 					return;
@@ -1071,8 +1090,16 @@ void ETerminalDisplay::onKeyDown( const Keycode& keyCode, const Uint32& /*chr*/,
 	auto pkmIt = terminalKeyMap.PlatformKeyMap().find( scancode );
 	if ( pkmIt != terminalKeyMap.PlatformKeyMap().end() ) {
 		for ( auto& k : pkmIt->second ) {
-			if ( ( k.mask == KEYMOD_CTRL_SHIFT_ALT_META || k.mask == smod ) &&
-				 ( k.appkey == 0 || k.appkey < 0 ) && ( k.appcursor == 0 || k.appcursor > 0 ) ) {
+			if ( k.mask == KEYMOD_CTRL_SHIFT_ALT_META || k.mask == smod ) {
+				if ( IS_SET( MODE_APPKEYPAD ) ? k.appkey < 0 : k.appkey > 0 )
+					continue;
+
+				if ( IS_SET( MODE_NUMLOCK ) && k.appkey == 2 )
+					continue;
+
+				if ( IS_SET( MODE_APPCURSOR ) ? k.appcursor < 0 : k.appcursor > 0 )
+					continue;
+
 				if ( k.string.size() > 0 ) {
 					mTerminal->write( k.string.c_str(), k.string.size() );
 					return;

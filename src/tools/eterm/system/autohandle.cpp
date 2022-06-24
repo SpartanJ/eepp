@@ -47,7 +47,7 @@ EE::AutoHandle& EE::AutoHandle::operator=( AutoHandle&& other ) {
 #ifdef _WIN32
 EE::AutoHandle::AutoHandle( HANDLE handle ) : m_hHandle( handle ) {}
 
-void EE::AutoHandle::Release() const {
+void EE::AutoHandle::release() const {
 	if ( m_hHandle != INVALID_HANDLE_VALUE ) {
 		CloseHandle( m_hHandle );
 		m_hHandle = INVALID_HANDLE_VALUE;
