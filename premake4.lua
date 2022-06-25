@@ -1184,6 +1184,9 @@ solution "eepp"
 		set_kind()
 		language "C++"
 		files { "src/tools/eterm/**.cpp" }
+		if os.is("linux") then
+			links { "util" }
+		end
 		build_link_configuration( "eterm", true )
 
 	project "eepp-texturepacker"

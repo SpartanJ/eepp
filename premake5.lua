@@ -927,6 +927,8 @@ workspace "eepp"
 		set_kind()
 		language "C++"
 		files { "src/tools/eterm/**.cpp" }
+		filter "system:linux"
+			links { "util" }
 		build_link_configuration( "eterm", true )
 
 	project "eepp-texturepacker"
