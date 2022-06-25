@@ -83,7 +83,7 @@ EE::AutoHandle::operator EE::AutoHandle::type() const noexcept {
 // On Windows we deal with the Windows API, which means HANDLE is used as the handle to files
 // and pipes
 constexpr EE::AutoHandle::type EE::AutoHandle::invalid_value() {
-	return static_cast<AutoHandle::type>( 0 );
+	return nullptr;
 }
 #else
 // On non-Windows OS'es we deal with file descriptors

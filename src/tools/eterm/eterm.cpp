@@ -59,9 +59,11 @@ void inputCallback( InputEvent* event ) {
 
 void mainLoop() {
 	win->getInput()->update();
-	terminal->update();
 
-	if ( terminal->isDirty() ) {
+	if ( terminal )
+		terminal->update();
+
+	if ( terminal && terminal->isDirty() ) {
 		win->clear();
 		terminal->draw();
 		win->display();
@@ -93,16 +95,8 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 		fontMono->loadFromFile( "assets/fonts/DejaVuSansMono.ttf" );
 
 		if ( !terminal || terminal->hasTerminated() ) {
-			std::string shell;
-			const char* shellenv = getenv( "SHELL" );
-			if ( shellenv != nullptr ) {
-				shell = shellenv;
-			} else {
-				shell = "/bin/bash";
-			}
-
 			terminal = TerminalDisplay::create( win, fontMono, PixelDensity::dpToPx( 11 ),
-												win->getSize().asFloat(), shell, {}, "" );
+												win->getSize().asFloat() );
 		}
 
 		win->getInput()->pushCallback( &inputCallback );

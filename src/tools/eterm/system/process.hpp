@@ -28,7 +28,7 @@
 #include "../terminal/pseudoterminal.hpp"
 #include "iprocess.hpp"
 
-#ifndef WIN32
+#ifndef _WIN32
 #include <sys/types.h>
 #include <unistd.h>
 #else
@@ -75,7 +75,7 @@ class Process final : public IProcess {
 	ProcessStatus m_status;
 	bool m_leaveRunning;
 	int m_exitCode;
-#ifdef WIN32
+#ifdef _WIN32
 	AutoHandle m_hProcess;
 	LPPROC_THREAD_ATTRIBUTE_LIST m_lpAttributeList;
 

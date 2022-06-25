@@ -57,7 +57,7 @@ void Process::checkExitStatus() {
 	int status = 0;
 	int p = waitpid( m_pid, &status, WNOHANG );
 	if ( p < 0 ) {
-		perror( "Process::CheckExitStatus(waitpid)" );
+		perror( "Process::checkExitStatus(waitpid)" );
 	}
 	if ( p == 0 ) {
 		return;
@@ -84,7 +84,7 @@ void Process::waitForExit() {
 	int status = 0;
 	int p = waitpid( m_pid, &status, 0 );
 	if ( p < 0 ) {
-		perror( "Process::WaitForExit(waitpid)" );
+		perror( "Process::waitForExit(waitpid)" );
 		return;
 	}
 	m_status = ProcessStatus::EXITED;
@@ -221,32 +221,33 @@ static std::wstring stringToWideString( const std::string& str ) {
 #define HANDLE_WIN_ERR( err ) HRESULT_FROM_WIN32( err ), PrintWinApiError( err )
 
 static HRESULT InitializeStartupInfoAttachedToPseudoConsole( STARTUPINFOEXW* pStartupInfo,
-															 void* hPC ) {
+															  HPCON hPC ) {
 	HRESULT hr{ E_UNEXPECTED };
 
 	if ( pStartupInfo ) {
-		PSIZE_T attrListSize{};
+		SIZE_T attrListSize{};
 
 		pStartupInfo->StartupInfo.cb = sizeof( STARTUPINFOEXW );
-		pStartupInfo->StartupInfo.dwFlags = STARTF_USESTDHANDLES;
+		//pStartupInfo->StartupInfo.dwFlags = STARTF_USESTDHANDLES;
 
 		// Get the size of the thread attribute list.
-		InitializeProcThreadAttributeList( NULL, 1, 0, attrListSize );
+		InitializeProcThreadAttributeList( NULL, 1, 0, &attrListSize );
 
 		// Allocate a thread attribute list of the correct size
 		pStartupInfo->lpAttributeList = reinterpret_cast<LPPROC_THREAD_ATTRIBUTE_LIST>(
-			HeapAlloc( GetProcessHeap(), 0, *attrListSize ) );
+			HeapAlloc( GetProcessHeap(), 0, attrListSize ) );
 
 		// Initialize thread attribute list
 		if ( pStartupInfo->lpAttributeList &&
 			 InitializeProcThreadAttributeList( pStartupInfo->lpAttributeList, 1, 0,
-												attrListSize ) ) {
+												&attrListSize ) ) {
 			// Set Pseudo Console attribute
 			hr = UpdateProcThreadAttribute( pStartupInfo->lpAttributeList, 0,
 											PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE, hPC, sizeof( hPC ),
 											NULL, NULL )
 					 ? S_OK
 					 : HANDLE_WIN_ERR( GetLastError() );
+			printf( "errrr1: %ld", hr );
 		} else {
 			hr = HANDLE_WIN_ERR( GetLastError() );
 		}
@@ -379,7 +380,7 @@ std::unique_ptr<Process> Process::createWithPipe( const std::string& program,
 		return std::unique_ptr<Process>( new Process( std::move( hProcess ), NULL ) );
 	}
 
-	PrintWinApiError( GetLastError() );
+	// PrintWinApiError( GetLastError() );
 
 	return nullptr;
 }
@@ -388,6 +389,9 @@ std::unique_ptr<Process>
 Process::createWithPseudoTerminal( const std::string& program, const std::vector<std::string>& args,
 								   const std::string& workingDirectory,
 								   Terminal::PseudoTerminal& pseudoTerminal ) {
+	SetEnvironmentVariableA( "WSLENV", "TERM/u" );
+	SetEnvironmentVariableA( "TERM", "st-256color" );
+
 	HRESULT hr{ E_UNEXPECTED };
 
 	AutoHandle hProcess{};
@@ -407,7 +411,8 @@ Process::createWithPseudoTerminal( const std::string& program, const std::vector
 	std::wstring workingDir = stringToWideString( workingDirectory );
 
 	if ( ( hr = InitializeStartupInfoAttachedToPseudoConsole( &startupInfo,
-															  pseudoTerminal.m_phPC ) ) != S_OK ) {
+															   pseudoTerminal.m_phPC ) ) != S_OK ) {
+		printf( "InitializeStartupInfoAttachedToPseudoConsole failed\n" );
 		PrintErrorResult( hr );
 		goto fail;
 	}
@@ -427,6 +432,7 @@ Process::createWithPseudoTerminal( const std::string& program, const std::vector
 			 : HANDLE_WIN_ERR( GetLastError() );
 
 	if ( hr != S_OK ) {
+		printf( "CreateProcessW failed\n" );
 		goto fail;
 	}
 

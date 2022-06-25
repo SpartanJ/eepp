@@ -46,6 +46,7 @@
 #include <sys/types.h>
 
 using namespace EE;
+using namespace EE::System;
 using namespace EE::Math;
 using namespace EE::Window;
 
@@ -180,6 +181,8 @@ class TerminalEmulator final {
 					  const Uint32& mod );
 
 	const bool& isDirty() const { return mDirty; }
+
+	void setPtyAndProcess( PtyPtr&& pty, ProcPtr&& process );
 
   private:
 	DpyPtr mDpy;

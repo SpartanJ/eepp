@@ -77,9 +77,13 @@ class ITerminalDisplay {
 	virtual void drawEnd() = 0;
 
   protected:
+	friend class TerminalEmulator;
+
 	int mMode;
 	TerminalCursorMode mCursorMode;
 	TerminalEmulator* mEmulator;
+
+	virtual void onProcessExit( int exitCode );
 };
 
 }} // namespace EE::Terminal

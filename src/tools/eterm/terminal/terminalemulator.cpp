@@ -1966,7 +1966,7 @@ static int wcwidth( Rune wc ) {
 void TerminalEmulator::tputc( Rune u ) {
 	char c[UTF_SIZ];
 	int control;
-	int width;
+	int width = 1;
 	size_t len;
 	TerminalGlyph* gp;
 
@@ -2363,6 +2363,13 @@ void TerminalEmulator::mousereport( const TerminalMouseEventType& type, const Ve
 	ttywrite( buf, len, 0 );
 }
 
+void TerminalEmulator::setPtyAndProcess( PtyPtr&& pty, ProcPtr&& process ) {
+	mStatus = STARTING;
+	mExitCode = 1;
+	mPty = std::move( pty );
+	mProcess = std::move( process );
+}
+
 void TerminalEmulator::xsetpointermotion( int ) {
 	// TODO: Figure something out
 }
@@ -2434,7 +2441,12 @@ void TerminalEmulator::terminate() {
 	}
 }
 
-void TerminalEmulator::onProcessExit( int /*exitCode*/ ) {}
+void TerminalEmulator::onProcessExit( int exitCode ) {
+	auto dpy = mDpy.lock();
+	if ( !dpy )
+		return;
+	dpy->onProcessExit( exitCode );
+}
 
 void TerminalEmulator::setClipboard( const char* str ) {
 	auto dpy = mDpy.lock();

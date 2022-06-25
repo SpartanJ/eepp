@@ -110,8 +110,8 @@ class TerminalDisplay : public ITerminalDisplay {
 
 	static std::shared_ptr<TerminalDisplay>
 	create( EE::Window::Window* window, Font* font, const Float& fontSize, const Sizef& pixelsSize,
-			const std::string& program, const std::vector<std::string>& args,
-			const std::string& workingDir, IProcessFactory* processFactory = nullptr );
+			std::string program = "", const std::vector<std::string>& args = {},
+			const std::string& workingDir = "", IProcessFactory* processFactory = nullptr );
 
 	virtual void resetColors();
 	virtual int resetColor( int index, const char* name );
@@ -174,6 +174,10 @@ class TerminalDisplay : public ITerminalDisplay {
 
 	void setPadding( const Sizef& padding );
 
+	const std::shared_ptr<TerminalEmulator>& getTerminal() const;
+
+	virtual void attach( TerminalEmulator* terminal );
+
   protected:
 	EE::Window::Window* mWindow;
 	std::vector<TerminalGlyph> mBuffer;
@@ -186,8 +190,6 @@ class TerminalDisplay : public ITerminalDisplay {
 	Sizef mPadding;
 	Vector2f mPosition;
 	Sizef mSize;
-	int mColumns{ 0 };
-	int mRows{ 0 };
 	std::atomic<bool> mDirty{ true };
 	std::atomic<bool> mDrawing{ false };
 	Vector2i mCursor;
@@ -197,6 +199,12 @@ class TerminalDisplay : public ITerminalDisplay {
 	bool mFocus{ true };
 	Clock mClock;
 	Clock mLastDoubleClick;
+	int mColumns{ 0 };
+	int mRows{ 0 };
+
+	std::string mProgram;
+	std::vector<std::string> mArgs;
+	std::string mWorkingDir;
 
 	TerminalDisplay( EE::Window::Window* window, Font* font, const Float& fontSize,
 					 const Sizef& pixelsSize );
@@ -206,6 +214,8 @@ class TerminalDisplay : public ITerminalDisplay {
 	Vector2i positionToGrid( const Vector2i& pos );
 
 	void onSizeChange();
+
+	virtual void onProcessExit( int exitCode );
 };
 
 #endif // ETERMINALDISPLAY_HPP

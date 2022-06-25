@@ -119,6 +119,9 @@ std::unique_ptr<PseudoTerminal> PseudoTerminal::create( int columns, int rows ) 
 	win.ws_col = columns;
 	win.ws_row = rows;
 
+#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+	return nullptr;
+#else
 	if ( openpty( master.get(), slave.get(), nullptr, NULL, &win ) != 0 ) {
 		perror( "PseudoTerminal::Create(openpty)" );
 		return nullptr;
@@ -126,6 +129,7 @@ std::unique_ptr<PseudoTerminal> PseudoTerminal::create( int columns, int rows ) 
 
 	return std::unique_ptr<PseudoTerminal>(
 		new PseudoTerminal( columns, rows, std::move( master ), std::move( slave ) ) );
+#endif
 }
 
 #else
@@ -172,7 +176,7 @@ int PseudoTerminal::write( const char* s, size_t n ) {
 	DWORD c = (DWORD)n;
 	DWORD r = 0;
 	while ( n > 0 ) {
-		if ( !WriteFile( (HANDLE)m_hOutput.get(), s, (DWORD)( n > lim ? lim : n ), &r, nullptr ) ) {
+		if ( !WriteFile( (HANDLE)m_hOutput, s, (DWORD)( n > lim ? lim : n ), &r, nullptr ) ) {
 			PrintLastWinApiError();
 			return -1;
 		}
@@ -184,11 +188,11 @@ int PseudoTerminal::write( const char* s, size_t n ) {
 }
 
 int PseudoTerminal::read( char* buf, size_t n, bool block ) {
-	DWORD available;
+	DWORD available = 0;
 	DWORD read;
 
 	if ( !block ) {
-		if ( !PeekNamedPipe( (HANDLE)m_hInput.get(), nullptr, 0, nullptr, &available, nullptr ) ) {
+		if ( !PeekNamedPipe( m_hInput.handle(), nullptr, 0, nullptr, &available, nullptr ) ) {
 			PrintLastWinApiError();
 			return -1;
 		}
@@ -196,7 +200,7 @@ int PseudoTerminal::read( char* buf, size_t n, bool block ) {
 			return 0;
 	}
 
-	if ( !ReadFile( (HANDLE)m_hInput.get(), buf, (DWORD)n, &read, nullptr ) ) {
+	if ( !ReadFile( m_hInput.handle(), buf, available, &read, nullptr ) ) {
 		PrintLastWinApiError();
 		return -1;
 	}
@@ -231,8 +235,7 @@ std::unique_ptr<PseudoTerminal> PseudoTerminal::create( int columns, int rows ) 
 		assert( ptySize.X > 0 );
 		assert( ptySize.Y > 0 );
 
-		hr = CreatePseudoConsole( ptySize, (HANDLE)hPipePTYIn.get(), (HANDLE)hPipePTYOut.get(), 0,
-								  &hPC );
+		hr = CreatePseudoConsole( ptySize, hPipePTYIn.handle(), hPipePTYOut.handle(), 0, &hPC );
 	}
 
 	if ( hr != S_OK ) {

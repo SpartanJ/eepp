@@ -315,8 +315,8 @@ static const Color colormapped[256] = {
 
 std::shared_ptr<TerminalDisplay>
 TerminalDisplay::create( EE::Window::Window* window, Font* font, const Float& fontSize,
-						  const Sizef& pixelsSize,
-						  std::shared_ptr<TerminalEmulator>&& terminalEmulator ) {
+						 const Sizef& pixelsSize,
+						 std::shared_ptr<TerminalEmulator>&& terminalEmulator ) {
 	std::shared_ptr<TerminalDisplay> terminal = std::shared_ptr<TerminalDisplay>(
 		new TerminalDisplay( window, font, fontSize, pixelsSize ) );
 	terminal->mTerminal = std::move( terminalEmulator );
@@ -335,9 +335,18 @@ static Sizei gridSizeFromTermDimensions( Font* font, const Float& fontSize,
 
 std::shared_ptr<TerminalDisplay>
 TerminalDisplay::create( EE::Window::Window* window, Font* font, const Float& fontSize,
-						  const Sizef& pixelsSize, const std::string& program,
-						  const std::vector<std::string>& args, const std::string& workingDir,
-						  IProcessFactory* processFactory ) {
+						 const Sizef& pixelsSize, std::string program,
+						 const std::vector<std::string>& args, const std::string& workingDir,
+						 IProcessFactory* processFactory ) {
+	if ( program.empty() ) {
+#ifdef _WIN32
+		program = "cmd.exe";
+#else
+		const char* shellenv = getenv( "SHELL" );
+		program = shellenv != nullptr ? shellenv : "/bin/bash";
+#endif
+	}
+
 	bool freeProcessFactory = processFactory == nullptr;
 	if ( processFactory == nullptr )
 		processFactory = eeNew( ProcessFactory, () );
@@ -350,11 +359,15 @@ TerminalDisplay::create( EE::Window::Window* window, Font* font, const Float& fo
 
 	if ( !pseudoTerminal ) {
 		fprintf( stderr, "Failed to create pseudo terminal\n" );
+		if ( freeProcessFactory )
+			eeSAFE_DELETE( processFactory );
 		return nullptr;
 	}
 
 	if ( !process ) {
 		fprintf( stderr, "Failed to spawn process\n" );
+		if ( freeProcessFactory )
+			eeSAFE_DELETE( processFactory );
 		return nullptr;
 	}
 
@@ -363,6 +376,9 @@ TerminalDisplay::create( EE::Window::Window* window, Font* font, const Float& fo
 
 	terminal->mTerminal =
 		TerminalEmulator::create( std::move( pseudoTerminal ), std::move( process ), terminal );
+	terminal->mProgram = program;
+	terminal->mArgs = args;
+	terminal->mWorkingDir = workingDir;
 
 	if ( freeProcessFactory )
 		eeSAFE_DELETE( processFactory );
@@ -371,7 +387,7 @@ TerminalDisplay::create( EE::Window::Window* window, Font* font, const Float& fo
 }
 
 TerminalDisplay::TerminalDisplay( EE::Window::Window* window, Font* font, const Float& fontSize,
-									const Sizef& pixelsSize ) :
+								  const Sizef& pixelsSize ) :
 	ITerminalDisplay(),
 	mWindow( window ),
 	mFont( font ),
@@ -429,6 +445,15 @@ void TerminalDisplay::setPadding( const Sizef& padding ) {
 		mPadding = padding.ceil();
 		onSizeChange();
 	}
+}
+
+const std::shared_ptr<TerminalEmulator>& TerminalDisplay::getTerminal() const {
+	return mTerminal;
+}
+
+void TerminalDisplay::attach( TerminalEmulator* terminal ) {
+	ITerminalDisplay::attach( terminal );
+	onSizeChange();
 }
 
 void TerminalDisplay::update() {
@@ -753,6 +778,9 @@ inline static void drawbox( float x, float y, float w, float h, Color fg, Color 
 }
 
 void TerminalDisplay::draw( const Vector2f& pos ) {
+	if ( !mEmulator )
+		return;
+
 	mDrawing = true;
 
 	auto fontSize = (Float)mFont->getFontHeight( mFontSize );
@@ -976,10 +1004,44 @@ Vector2i TerminalDisplay::positionToGrid( const Vector2i& pos ) {
 
 void TerminalDisplay::onSizeChange() {
 	Sizei gridSize( gridSizeFromTermDimensions( mFont, mFontSize, mSize - mPadding * 2.f ) );
-	if ( gridSize.getWidth() != mTerminal->getNumColumns() ||
-		 gridSize.getHeight() != mTerminal->getNumRows() ) {
-		mTerminal->resize( gridSize.getWidth(), gridSize.getHeight() );
+	if ( mTerminal ) {
+		if ( gridSize.getWidth() != mTerminal->getNumColumns() ||
+			 gridSize.getHeight() != mTerminal->getNumRows() ) {
+			mTerminal->resize( gridSize.getWidth(), gridSize.getHeight() );
+		}
+	} else if ( mEmulator ) {
+		if ( gridSize.getWidth() != mEmulator->getNumColumns() ||
+			 gridSize.getHeight() != mEmulator->getNumRows() ) {
+			mEmulator->resize( gridSize.getWidth(), gridSize.getHeight() );
+		}
 	}
+}
+
+void TerminalDisplay::onProcessExit( int ) {
+	if ( !mTerminal || mProgram.empty() )
+		return;
+
+	auto processFactory = eeNew( ProcessFactory, () );
+
+	Sizei termSize( mColumns, mRows );
+	std::unique_ptr<IPseudoTerminal> pseudoTerminal = nullptr;
+	std::vector<std::string> argsV( mArgs.begin(), mArgs.end() );
+	auto process = processFactory->createWithPseudoTerminal(
+		mProgram, argsV, mWorkingDir, termSize.getWidth(), termSize.getHeight(), pseudoTerminal );
+
+	if ( !pseudoTerminal ) {
+		eeSAFE_DELETE( processFactory );
+		fprintf( stderr, "TerminalDisplay::onProcessExit: Failed to create pseudo terminal\n" );
+	}
+
+	if ( !process ) {
+		eeSAFE_DELETE( processFactory );
+		fprintf( stderr, "TerminalDisplay::onProcessExit: Failed to spawn process\n" );
+	}
+
+	mTerminal->setPtyAndProcess( std::move( pseudoTerminal ), std::move( process ) );
+
+	eeSAFE_DELETE( processFactory );
 }
 
 void TerminalDisplay::onTextInput( const Uint32& chr ) {
@@ -1007,7 +1069,7 @@ static Uint32 sanitizeMod( const Uint32& mod ) {
 }
 
 void TerminalDisplay::onKeyDown( const Keycode& keyCode, const Uint32& /*chr*/, const Uint32& mod,
-								  const Scancode& scancode ) {
+								 const Scancode& scancode ) {
 	Uint32 smod = sanitizeMod( mod );
 
 	auto scIt = terminalKeyMap.Shortcuts().find( keyCode );

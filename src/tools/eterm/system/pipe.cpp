@@ -34,7 +34,7 @@ int Pipe::read( char* buf, size_t n, bool block ) {
 	DWORD read;
 
 	if ( !block ) {
-		if ( !PeekNamedPipe( (HANDLE)m_hInput, nullptr, 0, nullptr, &available, nullptr ) ) {
+		if ( !PeekNamedPipe( m_hInput.handle(), nullptr, 0, nullptr, &available, nullptr ) ) {
 			PrintLastWinApiError();
 			return -1;
 		}
@@ -42,7 +42,7 @@ int Pipe::read( char* buf, size_t n, bool block ) {
 			return 0;
 	}
 
-	if ( !ReadFile( (HANDLE)m_hInput, buf, (DWORD)n, &read, nullptr ) ) {
+	if ( !ReadFile( m_hInput.handle(), buf, (DWORD)n, &read, nullptr ) ) {
 		PrintLastWinApiError();
 		return -1;
 	}

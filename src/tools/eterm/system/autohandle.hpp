@@ -58,6 +58,10 @@ class AutoHandle final {
 
 	const type* get() const;
 
+	type handle() const {
+		return m_hHandle;
+	}
+
 	void release() const;
 
   private:

@@ -20,14 +20,15 @@ std::unique_ptr<IProcess> ProcessFactory::createWithPseudoTerminal(
 
 	auto pseudoTerminal = Terminal::PseudoTerminal::create( numColumns, numRows );
 	if ( !pseudoTerminal ) {
-		fprintf( stderr, "Failed to create pseudo terminal\n" );
+		fprintf( stderr,
+				 "ProcessFactory::createWithPseudoTerminal: Failed to create pseudo terminal\n" );
 		return nullptr;
 	}
 
 	auto process = System::Process::createWithPseudoTerminal( program, args, workingDirectory,
 															  *pseudoTerminal );
 	if ( !process ) {
-		fprintf( stderr, "Failed to spawn process\n" );
+		fprintf( stderr, "ProcessFactory::createWithPseudoTerminal: Failed to spawn process\n" );
 		return nullptr;
 	}
 

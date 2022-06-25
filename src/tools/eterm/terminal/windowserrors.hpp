@@ -46,7 +46,7 @@ static void PrintWinApiError( DWORD error ) {
 	// Free the buffer.
 	LocalFree( messageBuffer );
 
-	std::cerr << "ERROR: " << message << std::endl;
+	std::cerr << "ERROR WinAPI: " << message << std::endl;
 }
 
 static void PrintLastWinApiError( void ) {

@@ -73,3 +73,5 @@ void ITerminalDisplay::setClipboard( const char* ) {}
 const char* ITerminalDisplay::getClipboard() const {
 	return "";
 }
+
+void ITerminalDisplay::onProcessExit( int /*exitCode*/ ) {}
