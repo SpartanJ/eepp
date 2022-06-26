@@ -63,7 +63,10 @@ static TerminalShortcut shortcuts[] = {
 	{ KEY_PAGEUP, KEYMOD_SHIFT, TerminalShortcutAction::SCROLLUP_SCREEN, 0, 0, -1 },
 	{ KEY_PAGEDOWN, KEYMOD_SHIFT, TerminalShortcutAction::SCROLLDOWN_SCREEN, 0, 0, -1 },
 	{ KEY_UP, KEYMOD_SHIFT, TerminalShortcutAction::SCROLLUP_ROW, 0, 0, -1 },
-	{ KEY_DOWN, KEYMOD_SHIFT, TerminalShortcutAction::SCROLLDOWN_ROW, 0, 0, -1 } };
+	{ KEY_DOWN, KEYMOD_SHIFT, TerminalShortcutAction::SCROLLDOWN_ROW, 0, 0, -1 },
+	{ KEY_HOME, KEYMOD_SHIFT, TerminalShortcutAction::SCROLLUP_HISTORY, 0, 0, -1 },
+	{ KEY_END, KEYMOD_SHIFT, TerminalShortcutAction::SCROLLDOWN_HISTORY, 0, 0, -1 },
+};
 
 static TerminalMouseShortcut mouseShortcuts[] = {
 	{ EE_BUTTON_WUMASK, KEYMOD_SHIFT, TerminalShortcutAction::SCROLLUP_SCREEN, 0, 0, -1 },
@@ -539,6 +542,16 @@ void TerminalDisplay::action( TerminalShortcutAction action ) {
 		}
 		case TerminalShortcutAction::SCROLLDOWN_ROW: {
 			TerminalArg arg( (int)1 );
+			mTerminal->kscrolldown( &arg );
+			break;
+		}
+		case TerminalShortcutAction::SCROLLUP_HISTORY: {
+			TerminalArg arg( (int)INT_MAX );
+			mTerminal->kscrollup( &arg );
+			break;
+		}
+		case TerminalShortcutAction::SCROLLDOWN_HISTORY: {
+			TerminalArg arg( (int)INT_MAX );
 			mTerminal->kscrolldown( &arg );
 			break;
 		}

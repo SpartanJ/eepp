@@ -107,7 +107,7 @@ static const unsigned int tabspaces = 4;
 #define ISCONTROL( c ) ( ISCONTROLC0( c ) || ISCONTROLC1( c ) )
 #define ISDELIM( u ) ( u && _wcschr( worddelimiters, u ) )
 #define TLINE( y )                                                                                \
-	( ( y ) < mTerm.scr                                                                           \
+	( ( y ) < mTerm.scr && mTerm.histsize > 0                                                     \
 		  ? mTerm.hist[( ( y ) + mTerm.histi - mTerm.scr + mTerm.histsize + 1 ) % mTerm.histsize] \
 		  : mTerm.line[(y)-mTerm.scr] )
 
@@ -642,6 +642,9 @@ size_t TerminalEmulator::ttyread( void ) {
 void TerminalEmulator::kscrolldown( const TerminalArg* a ) {
 	int n = a->i;
 
+	if ( n == INT_MAX )
+		n = mTerm.scr;
+
 	if ( n < 0 )
 		n = mTerm.row + n;
 
@@ -657,6 +660,9 @@ void TerminalEmulator::kscrolldown( const TerminalArg* a ) {
 
 void TerminalEmulator::kscrollup( const TerminalArg* a ) {
 	int n = a->i;
+
+	if ( n == INT_MAX )
+		n = mTerm.histi - mTerm.scr;
 
 	if ( n < 0 )
 		n = mTerm.row + n;
@@ -824,13 +830,30 @@ void TerminalEmulator::tswapscreen( void ) {
 	tfulldirt();
 }
 
+void TerminalEmulator::resizeHistory() {
+	size_t oriSize = mTerm.hist.size();
+	if ( mTerm.histi >= (int)mTerm.hist.size() ) {
+		int newSize = eemin( mTerm.histi + mTerm.row, mTerm.histsize );
+		mTerm.hist.resize( newSize, nullptr );
+		for ( size_t i = oriSize; i < mTerm.hist.size(); i++ ) {
+			mTerm.hist[i] =
+				(TerminalGlyph*)xrealloc( mTerm.hist[i], mTerm.col * sizeof( TerminalGlyph ) );
+			for ( int j = 0; j < mTerm.col; j++ ) {
+				mTerm.hist[i][j] = mTerm.c.attr;
+				mTerm.hist[i][j].u = ' ';
+			}
+		}
+	}
+}
+
 void TerminalEmulator::tscrolldown( int orig, int n, int copyhist ) {
 	int i;
 	Line temp;
 
 	LIMIT( n, 0, mTerm.bot - orig + 1 );
-	if ( copyhist ) {
+	if ( copyhist && mTerm.histsize > 0 ) {
 		mTerm.histi = ( mTerm.histi - 1 + mTerm.histsize ) % mTerm.histsize;
+		resizeHistory();
 		temp = mTerm.hist[mTerm.histi];
 		mTerm.hist[mTerm.histi] = mTerm.line[mTerm.bot];
 		mTerm.line[mTerm.bot] = temp;
@@ -855,8 +878,9 @@ void TerminalEmulator::tscrollup( int orig, int n, int copyhist ) {
 
 	LIMIT( n, 0, mTerm.bot - orig + 1 );
 
-	if ( copyhist ) {
+	if ( copyhist && mTerm.histsize > 0 ) {
 		mTerm.histi = ( mTerm.histi + 1 ) % mTerm.histsize;
+		resizeHistory();
 		temp = mTerm.hist[mTerm.histi];
 		mTerm.hist[mTerm.histi] = mTerm.line[orig];
 		mTerm.line[orig] = temp;
@@ -2242,8 +2266,7 @@ void TerminalEmulator::tresize( int col, int row ) {
 	mTerm.dirty = (int*)xrealloc( mTerm.dirty, row * sizeof( *mTerm.dirty ) );
 	mTerm.tabs = (int*)xrealloc( mTerm.tabs, col * sizeof( *mTerm.tabs ) );
 
-	mTerm.hist.resize( mTerm.histsize, nullptr );
-	for ( i = 0; i < mTerm.histsize; i++ ) {
+	for ( size_t i = 0; i < mTerm.hist.size(); i++ ) {
 		mTerm.hist[i] = (TerminalGlyph*)xrealloc( mTerm.hist[i], col * sizeof( TerminalGlyph ) );
 		for ( j = mincol; j < col; j++ ) {
 			mTerm.hist[i][j] = mTerm.c.attr;

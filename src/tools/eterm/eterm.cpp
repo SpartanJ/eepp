@@ -96,7 +96,7 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 
 		if ( !terminal || terminal->hasTerminated() ) {
 			terminal = TerminalDisplay::create( win, fontMono, PixelDensity::dpToPx( 11 ),
-												win->getSize().asFloat(), "", {}, "", 10000 );
+												win->getSize().asFloat() );
 		}
 
 		win->getInput()->pushCallback( &inputCallback );

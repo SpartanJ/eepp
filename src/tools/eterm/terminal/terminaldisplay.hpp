@@ -27,7 +27,9 @@ enum class TerminalShortcutAction {
 	SCROLLUP_ROW,
 	SCROLLDOWN_ROW,
 	SCROLLUP_SCREEN,
-	SCROLLDOWN_SCREEN
+	SCROLLDOWN_SCREEN,
+	SCROLLUP_HISTORY,
+	SCROLLDOWN_HISTORY
 };
 
 struct TerminalKey {
@@ -131,7 +133,7 @@ class TerminalDisplay : public ITerminalDisplay {
 	static std::shared_ptr<TerminalDisplay>
 	create( EE::Window::Window* window, Font* font, const Float& fontSize, const Sizef& pixelsSize,
 			std::string program = "", const std::vector<std::string>& args = {},
-			const std::string& workingDir = "", const size_t& historySize = 1000,
+			const std::string& workingDir = "", const size_t& historySize = 10000,
 			IProcessFactory* processFactory = nullptr );
 
 	virtual void resetColors();

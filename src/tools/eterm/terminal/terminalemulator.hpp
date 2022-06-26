@@ -226,6 +226,7 @@ class TerminalEmulator final {
 	int mAllowAltScreen;
 	int mAllowWindowOps;
 
+	void resizeHistory();
 	void setClipboard( const char* str );
 
 	void loadColors();
