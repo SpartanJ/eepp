@@ -21,10 +21,13 @@ using namespace EE::Terminal;
 using namespace EE::Window;
 using namespace EE::System;
 
-enum class TerminalShortcutAction { PASTE, COPY };
-
-struct TerminalConfig {
-	int options;
+enum class TerminalShortcutAction {
+	PASTE,
+	COPY,
+	SCROLLUP_ROW,
+	SCROLLDOWN_ROW,
+	SCROLLUP_SCREEN,
+	SCROLLDOWN_SCREEN
 };
 
 struct TerminalKey {
@@ -49,6 +52,16 @@ struct TerminalShortcut {
 	TerminalShortcutAction action;
 	int appkey;
 	int appcursor;
+	int altscrn{ 0 }; /* 0: don't care, -1: not alt screen, 1: alt screen */
+};
+
+struct TerminalMouseShortcut {
+	MouseButtonsMask button;
+	Uint32 mask;
+	TerminalShortcutAction action;
+	int appkey;
+	int appcursor;
+	int altscrn{ 0 }; /* 0: don't care, -1: not alt screen, 1: alt screen */
 };
 
 struct TerminalKeyMapEntry {
@@ -63,6 +76,7 @@ struct TerminalKeyMapShortcut {
 	TerminalShortcutAction action;
 	int appkey;
 	int appcursor;
+	int altscrn{ 0 }; /* 0: don't care, -1: not alt screen, 1: alt screen */
 };
 
 class TerminalKeyMap {
@@ -70,11 +84,12 @@ class TerminalKeyMap {
 	std::unordered_map<Keycode, std::vector<TerminalKeyMapEntry>> mKeyMap;
 	std::unordered_map<Scancode, std::vector<TerminalKeyMapEntry>> mPlatformKeyMap;
 	std::unordered_map<Keycode, std::vector<TerminalKeyMapShortcut>> mShortcuts;
+	std::unordered_map<Uint32, std::vector<TerminalKeyMapShortcut>> mMouseShortcuts;
 
   public:
 	TerminalKeyMap( const TerminalKey keys[], size_t keysLen, const TerminalScancode platformKeys[],
-					size_t platformKeysLen, const TerminalShortcut shortcuts[],
-					size_t shortcutsLen );
+					size_t platformKeysLen, const TerminalShortcut shortcuts[], size_t shortcutsLen,
+					const TerminalMouseShortcut mouseShortcuts[], size_t mouseShortcutsLen );
 
 	inline const std::unordered_map<Keycode, std::vector<TerminalKeyMapEntry>>& KeyMap() const {
 		return mKeyMap;
@@ -88,6 +103,11 @@ class TerminalKeyMap {
 	inline const std::unordered_map<Keycode, std::vector<TerminalKeyMapShortcut>>&
 	Shortcuts() const {
 		return mShortcuts;
+	}
+
+	inline const std::unordered_map<Uint32, std::vector<TerminalKeyMapShortcut>>&
+	MouseShortcuts() const {
+		return mMouseShortcuts;
 	}
 };
 
@@ -111,7 +131,8 @@ class TerminalDisplay : public ITerminalDisplay {
 	static std::shared_ptr<TerminalDisplay>
 	create( EE::Window::Window* window, Font* font, const Float& fontSize, const Sizef& pixelsSize,
 			std::string program = "", const std::vector<std::string>& args = {},
-			const std::string& workingDir = "", IProcessFactory* processFactory = nullptr );
+			const std::string& workingDir = "", const size_t& historySize = 1000,
+			IProcessFactory* processFactory = nullptr );
 
 	virtual void resetColors();
 	virtual int resetColor( int index, const char* name );

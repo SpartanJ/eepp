@@ -7,9 +7,31 @@
 #include <eepp/window.hpp>
 #include <eepp/window/clipboard.hpp>
 
+#define BETWEEN( x, a, b ) ( ( a ) <= ( x ) && ( x ) <= ( b ) )
+#define IS_SET( flag ) ( ( mMode & ( flag ) ) != 0 )
+#define DIV( n, d ) ( ( ( n ) + ( d ) / 2.0f ) / ( d ) )
+#define DIVI( n, d ) ( ( ( n ) + ( d ) / 2 ) / ( d ) )
+
+static Uint32 sanitizeMod( const Uint32& mod ) {
+	Uint32 smod = 0;
+	if ( mod & KEYMOD_CTRL )
+		smod |= KEYMOD_CTRL;
+	if ( mod & KEYMOD_SHIFT )
+		smod |= KEYMOD_SHIFT;
+	if ( mod & KEYMOD_META )
+		smod |= KEYMOD_META;
+	if ( mod & KEYMOD_LALT )
+		smod |= KEYMOD_LALT;
+	if ( mod & KEYMOD_RALT )
+		smod |= KEYMOD_RALT;
+	return smod;
+}
+
 TerminalKeyMap::TerminalKeyMap( const TerminalKey keys[], size_t keysLen,
 								const TerminalScancode platformKeys[], size_t platformKeysLen,
-								const TerminalShortcut shortcuts[], size_t shortcutsLen ) {
+								const TerminalShortcut shortcuts[], size_t shortcutsLen,
+								const TerminalMouseShortcut mouseShortcuts[],
+								size_t mouseShortcutsLen ) {
 	for ( size_t i = 0; i < keysLen; i++ ) {
 		auto& e = mKeyMap[keys[i].keysym];
 		e.push_back( { keys[i].mask, keys[i].string, keys[i].appkey, keys[i].appcursor } );
@@ -24,14 +46,32 @@ TerminalKeyMap::TerminalKeyMap( const TerminalKey keys[], size_t keysLen,
 	for ( size_t i = 0; i < shortcutsLen; i++ ) {
 		auto& e = mShortcuts[shortcuts[i].keysym];
 		e.push_back( { shortcuts[i].mask, shortcuts[i].action, shortcuts[i].appkey,
-					   shortcuts[i].appcursor } );
+					   shortcuts[i].appcursor, shortcuts[i].altscrn } );
+	}
+
+	for ( size_t i = 0; i < mouseShortcutsLen; i++ ) {
+		auto& e = mMouseShortcuts[mouseShortcuts[i].button];
+		e.push_back( { mouseShortcuts[i].mask, mouseShortcuts[i].action, mouseShortcuts[i].appkey,
+					   mouseShortcuts[i].appcursor, mouseShortcuts[i].altscrn } );
 	}
 }
 
 static TerminalShortcut shortcuts[] = {
 	{ KEY_INSERT, KEYMOD_SHIFT, TerminalShortcutAction::PASTE, 0, 0 },
 	{ KEY_V, KEYMOD_SHIFT | KEYMOD_CTRL, TerminalShortcutAction::PASTE, 0, 0 },
-	{ KEY_C, KEYMOD_SHIFT | KEYMOD_CTRL, TerminalShortcutAction::COPY, 0, 0 } };
+	{ KEY_C, KEYMOD_SHIFT | KEYMOD_CTRL, TerminalShortcutAction::COPY, 0, 0 },
+	{ KEY_PAGEUP, KEYMOD_SHIFT, TerminalShortcutAction::SCROLLUP_SCREEN, 0, 0, -1 },
+	{ KEY_PAGEDOWN, KEYMOD_SHIFT, TerminalShortcutAction::SCROLLDOWN_SCREEN, 0, 0, -1 },
+	{ KEY_UP, KEYMOD_SHIFT, TerminalShortcutAction::SCROLLUP_ROW, 0, 0, -1 },
+	{ KEY_DOWN, KEYMOD_SHIFT, TerminalShortcutAction::SCROLLDOWN_ROW, 0, 0, -1 } };
+
+static TerminalMouseShortcut mouseShortcuts[] = {
+	{ EE_BUTTON_WUMASK, KEYMOD_SHIFT, TerminalShortcutAction::SCROLLUP_SCREEN, 0, 0, -1 },
+	{ EE_BUTTON_WDMASK, KEYMOD_SHIFT, TerminalShortcutAction::SCROLLDOWN_SCREEN, 0, 0, -1 },
+	{ EE_BUTTON_WUMASK, KEYMOD_CTRL_SHIFT_ALT_META, TerminalShortcutAction::SCROLLUP_ROW, 0, 0,
+	  -1 },
+	{ EE_BUTTON_WDMASK, KEYMOD_CTRL_SHIFT_ALT_META, TerminalShortcutAction::SCROLLDOWN_ROW, 0, 0,
+	  -1 } };
 
 static TerminalKey keys[] = {
 	/* keysym           mask            string      appkey appcursor */
@@ -214,9 +254,9 @@ static TerminalScancode platformKeys[] = {
 	{ SCANCODE_KP_8, KEYMOD_CTRL_SHIFT_ALT_META, "\033Ox", +2, 0 },
 	{ SCANCODE_KP_9, KEYMOD_CTRL_SHIFT_ALT_META, "\033Oy", +2, 0 } };
 
-TerminalKeyMap terminalKeyMap{ keys,		 eeARRAY_SIZE( keys ),
-							   platformKeys, eeARRAY_SIZE( platformKeys ),
-							   shortcuts,	 eeARRAY_SIZE( shortcuts ) };
+TerminalKeyMap terminalKeyMap{
+	keys,	   eeARRAY_SIZE( keys ),	  platformKeys,	  eeARRAY_SIZE( platformKeys ),
+	shortcuts, eeARRAY_SIZE( shortcuts ), mouseShortcuts, eeARRAY_SIZE( mouseShortcuts ) };
 
 /* Terminal colors (16 first used in escape sequence) */
 // This is the customizable colorscheme
@@ -337,7 +377,7 @@ std::shared_ptr<TerminalDisplay>
 TerminalDisplay::create( EE::Window::Window* window, Font* font, const Float& fontSize,
 						 const Sizef& pixelsSize, std::string program,
 						 const std::vector<std::string>& args, const std::string& workingDir,
-						 IProcessFactory* processFactory ) {
+						 const size_t& historySize, IProcessFactory* processFactory ) {
 	if ( program.empty() ) {
 #ifdef _WIN32
 		program = "cmd.exe";
@@ -374,8 +414,8 @@ TerminalDisplay::create( EE::Window::Window* window, Font* font, const Float& fo
 	std::shared_ptr<TerminalDisplay> terminal = std::shared_ptr<TerminalDisplay>(
 		new TerminalDisplay( window, font, fontSize, pixelsSize ) );
 
-	terminal->mTerminal =
-		TerminalEmulator::create( std::move( pseudoTerminal ), std::move( process ), terminal );
+	terminal->mTerminal = TerminalEmulator::create( std::move( pseudoTerminal ),
+													std::move( process ), terminal, historySize );
 	terminal->mProgram = program;
 	terminal->mArgs = args;
 	terminal->mWorkingDir = workingDir;
@@ -482,6 +522,26 @@ void TerminalDisplay::action( TerminalShortcutAction action ) {
 				setClipboard( selection.c_str() );
 			break;
 		}
+		case TerminalShortcutAction::SCROLLUP_SCREEN: {
+			TerminalArg arg( (int)-1 );
+			mTerminal->kscrollup( &arg );
+			break;
+		}
+		case TerminalShortcutAction::SCROLLDOWN_SCREEN: {
+			TerminalArg arg( (int)-1 );
+			mTerminal->kscrolldown( &arg );
+			break;
+		}
+		case TerminalShortcutAction::SCROLLUP_ROW: {
+			TerminalArg arg( (int)1 );
+			mTerminal->kscrollup( &arg );
+			break;
+		}
+		case TerminalShortcutAction::SCROLLDOWN_ROW: {
+			TerminalArg arg( (int)1 );
+			mTerminal->kscrolldown( &arg );
+			break;
+		}
 	}
 }
 
@@ -579,6 +639,30 @@ void TerminalDisplay::onMouseMotion( const Vector2i& pos, const Uint32& flags ) 
 
 void TerminalDisplay::onMouseDown( const Vector2i& pos, const Uint32& flags ) {
 	auto gridPos{ positionToGrid( pos ) };
+
+	Uint32 smod = sanitizeMod( mWindow->getInput()->getModState() );
+
+	auto scIt = terminalKeyMap.MouseShortcuts().find( flags );
+	if ( scIt != terminalKeyMap.MouseShortcuts().end() ) {
+		for ( auto& k : scIt->second ) {
+			if ( k.mask == 0 || k.mask == KEYMOD_CTRL_SHIFT_ALT_META || k.mask == smod ) {
+				if ( IS_SET( MODE_APPKEYPAD ) ? k.appkey < 0 : k.appkey > 0 )
+					continue;
+
+				if ( IS_SET( MODE_NUMLOCK ) && k.appkey == 2 )
+					continue;
+
+				if ( IS_SET( MODE_APPCURSOR ) ? k.appcursor < 0 : k.appcursor > 0 )
+					continue;
+
+				if ( !k.altscrn || ( k.altscrn == ( mEmulator->tisaltscr() ? 1 : -1 ) ) ) {
+					action( k.action );
+					return;
+				}
+			}
+		}
+	}
+
 	if ( ( flags & EE_BUTTON_LMASK ) &&
 		 mLastDoubleClick.getElapsedTime() < Milliseconds( 300.f ) ) {
 		mTerminal->selstart( gridPos.x, gridPos.y, SNAP_LINE );
@@ -620,11 +704,6 @@ static inline Color termColor( unsigned int terminalColor,
 	return Color( ( terminalColor >> 16 ) & 0xFF, ( terminalColor >> 8 ) & 0xFF,
 				  terminalColor & 0xFF, ( ~( ( terminalColor >> 25 ) & 0xFF ) ) & 0xFF );
 }
-
-#define BETWEEN( x, a, b ) ( ( a ) <= ( x ) && ( x ) <= ( b ) )
-#define IS_SET( flag ) ( ( mMode & ( flag ) ) != 0 )
-#define DIV( n, d ) ( ( ( n ) + ( d ) / 2.0f ) / ( d ) )
-#define DIVI( n, d ) ( ( ( n ) + ( d ) / 2 ) / ( d ) )
 
 inline static void drawrect( const Color& col, const float& x, const float& y, const float& w,
 							 const float& h, Primitives& p ) {
@@ -910,7 +989,7 @@ void TerminalDisplay::draw( const Vector2f& pos ) {
 		y += lineHeight;
 	}
 
-	if ( !IS_SET( MODE_HIDE ) ) {
+	if ( !mEmulator->isScrolling() && !IS_SET( MODE_HIDE ) ) {
 		Color drawcol;
 		if ( IS_SET( MODE_REVERSE ) ) {
 			if ( mEmulator->isSelected( mCursor.x, mCursor.y ) ) {
@@ -1050,22 +1129,7 @@ void TerminalDisplay::onTextInput( const Uint32& chr ) {
 	String input;
 	input.push_back( chr );
 	std::string utf8Input( input.toUtf8() );
-	mTerminal->write( utf8Input.c_str(), utf8Input.size() );
-}
-
-static Uint32 sanitizeMod( const Uint32& mod ) {
-	Uint32 smod = 0;
-	if ( mod & KEYMOD_CTRL )
-		smod |= KEYMOD_CTRL;
-	if ( mod & KEYMOD_SHIFT )
-		smod |= KEYMOD_SHIFT;
-	if ( mod & KEYMOD_META )
-		smod |= KEYMOD_META;
-	if ( mod & KEYMOD_LALT )
-		smod |= KEYMOD_LALT;
-	if ( mod & KEYMOD_RALT )
-		smod |= KEYMOD_RALT;
-	return smod;
+	mTerminal->ttywrite( utf8Input.c_str(), utf8Input.size(), 1 );
 }
 
 void TerminalDisplay::onKeyDown( const Keycode& keyCode, const Uint32& /*chr*/, const Uint32& mod,
@@ -1085,8 +1149,10 @@ void TerminalDisplay::onKeyDown( const Keycode& keyCode, const Uint32& /*chr*/, 
 				if ( IS_SET( MODE_APPCURSOR ) ? k.appcursor < 0 : k.appcursor > 0 )
 					continue;
 
-				action( k.action );
-				return;
+				if ( !k.altscrn || ( k.altscrn == ( mEmulator->tisaltscr() ? 1 : -1 ) ) ) {
+					action( k.action );
+					return;
+				}
 			}
 		}
 	}

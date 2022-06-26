@@ -59,23 +59,27 @@ constexpr int STR_ARG_SIZ = ESC_ARG_SIZ;
 
 /* Internal representation of the screen */
 struct Term {
-	int row;		  /* nb row */
-	int col;		  /* nb col */
-	Line* line;		  /* screen */
-	Line* alt;		  /* alternate screen */
-	int* dirty;		  /* dirtyness of lines */
-	TerminalCursor c; /* cursor */
-	int ocx;		  /* old cursor col */
-	int ocy;		  /* old cursor row */
-	int top;		  /* top    scroll limit */
-	int bot;		  /* bottom scroll limit */
-	int mode;		  /* terminal mode flags */
-	int esc;		  /* escape state flags */
-	char trantbl[4];  /* charset table translation */
-	int charset;	  /* current charset */
-	int icharset;	  /* selected charset for sequence */
-	int* tabs;
-	Rune lastc; /* last printed char outside of sequence, 0 if control */
+	int row{ 0 };				   /* nb row */
+	int col{ 0 };				   /* nb col */
+	Line* line{ nullptr };		   /* screen */
+	Line* alt{ nullptr };		   /* alternate screen */
+	std::vector<Line> hist;		   /* history buffer */
+	int histsize{ 0 };			   /* history size */
+	int histi{ 0 };				   /* history index */
+	int scr{ 0 };				   /* scroll back */
+	int* dirty{ nullptr };		   /* dirtyness of lines */
+	TerminalCursor c{};			   /* cursor */
+	int ocx{ 0 };				   /* old cursor col */
+	int ocy{ 0 };				   /* old cursor row */
+	int top{ 0 };				   /* top    scroll limit */
+	int bot{ 0 };				   /* bottom scroll limit */
+	int mode{ 0 };				   /* terminal mode flags */
+	int esc{ 0 };				   /* escape state flags */
+	char trantbl[4]{ 0, 0, 0, 0 }; /* charset table translation */
+	int charset{ 0 };			   /* current charset */
+	int icharset{ 0 };			   /* selected charset for sequence */
+	int* tabs{ nullptr };
+	Rune lastc{ 0 }; /* last printed char outside of sequence, 0 if control */
 };
 
 /* CSI Escape sequence structs */
@@ -121,7 +125,8 @@ class TerminalEmulator final {
 	TerminalEmulator& operator=( TerminalEmulator&& ) = delete;
 
 	static std::unique_ptr<TerminalEmulator>
-	create( PtyPtr&& pty, ProcPtr&& process, const std::shared_ptr<ITerminalDisplay>& display );
+	create( PtyPtr&& pty, ProcPtr&& process, const std::shared_ptr<ITerminalDisplay>& display,
+			const size_t& historySize = 1000 );
 
 	void resize( int columns, int rows );
 
@@ -151,7 +156,7 @@ class TerminalEmulator final {
 
 	inline int getNumRows() const { return mTerm.row; }
 
-	inline int write( const char* buf, size_t buflen ) { return mPty->write( buf, (int)buflen ); }
+	int write( const char* buf, size_t buflen );
 
 	void printscreen( const TerminalArg* );
 
@@ -183,6 +188,16 @@ class TerminalEmulator final {
 	const bool& isDirty() const { return mDirty; }
 
 	void setPtyAndProcess( PtyPtr&& pty, ProcPtr&& process );
+
+	void kscrolldown( const TerminalArg* a );
+
+	void kscrollup( const TerminalArg* a );
+
+	bool isScrolling() const;
+
+	void ttywrite( const char*, size_t, int );
+
+	int tisaltscr();
 
   private:
 	DpyPtr mDpy;
@@ -247,8 +262,8 @@ class TerminalEmulator final {
 	void tputtab( int );
 	void tputc( Rune );
 	void treset();
-	void tscrollup( int, int );
-	void tscrolldown( int, int );
+	void tscrollup( int, int, int );
+	void tscrolldown( int, int, int );
 	void tsetattr( int*, int );
 	void tsetchar( Rune, TerminalGlyph*, int, int );
 	void tsetdirt( int, int );
@@ -273,13 +288,12 @@ class TerminalEmulator final {
 	void draw();
 
 	int tattrset( int );
-	void tnew( int, int );
+	void tnew( int, int, size_t );
 	void tresize( int, int );
 	void tsetdirtattr( int );
 
 	void ttyhangup();
 	size_t ttyread();
-	void ttywrite( const char*, size_t, int );
 	void ttywriteraw( const char*, size_t );
 
 	void resettitle();
@@ -299,7 +313,8 @@ class TerminalEmulator final {
 	void xximspot( int, int );
 
 	TerminalEmulator( PtyPtr&& pty, ProcPtr&& process,
-					  const std::shared_ptr<ITerminalDisplay>& display );
+					  const std::shared_ptr<ITerminalDisplay>& display,
+					  const size_t& historySize = 1000 );
 };
 
 }} // namespace EE::Terminal

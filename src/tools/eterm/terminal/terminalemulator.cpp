@@ -106,6 +106,10 @@ static const unsigned int tabspaces = 4;
 #define ISCONTROLC1( c ) ( BETWEEN( c, 0x80, 0x9f ) )
 #define ISCONTROL( c ) ( ISCONTROLC0( c ) || ISCONTROLC1( c ) )
 #define ISDELIM( u ) ( u && _wcschr( worddelimiters, u ) )
+#define TLINE( y )                                                                                \
+	( ( y ) < mTerm.scr                                                                           \
+		  ? mTerm.hist[( ( y ) + mTerm.histi - mTerm.scr + mTerm.histsize + 1 ) % mTerm.histsize] \
+		  : mTerm.line[(y)-mTerm.scr] )
 
 using namespace EE::Terminal;
 
@@ -365,10 +369,10 @@ void TerminalEmulator::selinit( void ) {
 int TerminalEmulator::tlinelen( int y ) const {
 	int i = mTerm.col;
 
-	if ( mTerm.line[y][i - 1].mode & ATTR_WRAP )
+	if ( TLINE( y )[i - 1].mode & ATTR_WRAP )
 		return i;
 
-	while ( i > 0 && mTerm.line[y][i - 1].u == ' ' )
+	while ( i > 0 && TLINE( y )[i - 1].u == ' ' )
 		--i;
 
 	return i;
@@ -546,13 +550,13 @@ char* TerminalEmulator::getsel( void ) const {
 		}
 
 		if ( mSel.type == SEL_RECTANGULAR ) {
-			gp = &mTerm.line[y][mSel.nb.x];
+			gp = &TLINE( y )[mSel.nb.x];
 			lastx = mSel.ne.x;
 		} else {
-			gp = &mTerm.line[y][mSel.nb.y == y ? mSel.nb.x : 0];
+			gp = &TLINE( y )[mSel.nb.y == y ? mSel.nb.x : 0];
 			lastx = ( mSel.ne.y == y ) ? mSel.ne.x : mTerm.col - 1;
 		}
-		last = &mTerm.line[y][MIN( lastx, linelen - 1 )];
+		last = &TLINE( y )[MIN( lastx, linelen - 1 )];
 		while ( last >= gp && last->u == ' ' )
 			--last;
 
@@ -635,8 +639,54 @@ size_t TerminalEmulator::ttyread( void ) {
 	return 0;
 }
 
+void TerminalEmulator::kscrolldown( const TerminalArg* a ) {
+	int n = a->i;
+
+	if ( n < 0 )
+		n = mTerm.row + n;
+
+	if ( n > mTerm.scr )
+		n = mTerm.scr;
+
+	if ( mTerm.scr > 0 ) {
+		mTerm.scr -= n;
+		selscroll( 0, -n );
+		tfulldirt();
+	}
+}
+
+void TerminalEmulator::kscrollup( const TerminalArg* a ) {
+	int n = a->i;
+
+	if ( n < 0 )
+		n = mTerm.row + n;
+
+	if ( mTerm.scr + n > mTerm.histi )
+		n = mTerm.histi - mTerm.scr;
+
+	if ( n == 0 )
+		return;
+
+	if ( mTerm.scr <= mTerm.histsize - n && mTerm.scr + n <= mTerm.histi ) {
+		mTerm.scr += n;
+		selscroll( 0, n );
+		tfulldirt();
+	}
+}
+
+int TerminalEmulator::tisaltscr() {
+	return IS_SET( MODE_ALTSCREEN );
+}
+
+bool TerminalEmulator::isScrolling() const {
+	return mTerm.scr != 0;
+}
+
 void TerminalEmulator::ttywrite( const char* s, size_t n, int may_echo ) {
 	const char* next;
+
+	TerminalArg arg = { (int)mTerm.scr };
+	kscrolldown( &arg );
 
 	if ( may_echo && IS_SET( MODE_ECHO ) )
 		twrite( s, (int)n, 1 );
@@ -753,12 +803,13 @@ void TerminalEmulator::treset( void ) {
 	}
 }
 
-void TerminalEmulator::tnew( int col, int row ) {
+void TerminalEmulator::tnew( int col, int row, size_t historySize ) {
 	mTerm = Term{};
 	mTerm.c = TerminalCursor{};
 	mTerm.c.attr = TerminalGlyph{};
 	mTerm.c.attr.fg = mDefaultFg;
 	mTerm.c.attr.bg = mDefaultBg;
+	mTerm.histsize = historySize;
 
 	tresize( col, row );
 	treset();
@@ -773,11 +824,17 @@ void TerminalEmulator::tswapscreen( void ) {
 	tfulldirt();
 }
 
-void TerminalEmulator::tscrolldown( int orig, int n ) {
+void TerminalEmulator::tscrolldown( int orig, int n, int copyhist ) {
 	int i;
 	Line temp;
 
 	LIMIT( n, 0, mTerm.bot - orig + 1 );
+	if ( copyhist ) {
+		mTerm.histi = ( mTerm.histi - 1 + mTerm.histsize ) % mTerm.histsize;
+		temp = mTerm.hist[mTerm.histi];
+		mTerm.hist[mTerm.histi] = mTerm.line[mTerm.bot];
+		mTerm.line[mTerm.bot] = temp;
+	}
 
 	tsetdirt( orig, mTerm.bot - n );
 	tclearregion( 0, mTerm.bot - n + 1, mTerm.col - 1, mTerm.bot );
@@ -788,14 +845,25 @@ void TerminalEmulator::tscrolldown( int orig, int n ) {
 		mTerm.line[i - n] = temp;
 	}
 
-	selscroll( orig, n );
+	if ( mTerm.scr == 0 )
+		selscroll( orig, n );
 }
 
-void TerminalEmulator::tscrollup( int orig, int n ) {
+void TerminalEmulator::tscrollup( int orig, int n, int copyhist ) {
 	int i;
 	Line temp;
 
 	LIMIT( n, 0, mTerm.bot - orig + 1 );
+
+	if ( copyhist ) {
+		mTerm.histi = ( mTerm.histi + 1 ) % mTerm.histsize;
+		temp = mTerm.hist[mTerm.histi];
+		mTerm.hist[mTerm.histi] = mTerm.line[orig];
+		mTerm.line[orig] = temp;
+	}
+
+	if ( mTerm.scr > 0 && mTerm.scr < mTerm.histsize )
+		mTerm.scr = MIN( mTerm.scr + n, mTerm.histsize - 1 );
 
 	tclearregion( 0, orig, mTerm.col - 1, orig + n - 1 );
 	tsetdirt( orig + n, mTerm.bot );
@@ -806,7 +874,8 @@ void TerminalEmulator::tscrollup( int orig, int n ) {
 		mTerm.line[i + n] = temp;
 	}
 
-	selscroll( orig, -n );
+	if ( mTerm.scr == 0 )
+		selscroll( orig, -n );
 }
 
 void TerminalEmulator::selscroll( int orig, int n ) {
@@ -831,7 +900,7 @@ void TerminalEmulator::tnewline( int first_col ) {
 	int y = mTerm.c.y;
 
 	if ( y == mTerm.bot ) {
-		tscrollup( mTerm.top, 1 );
+		tscrollup( mTerm.top, 1, 1 );
 	} else {
 		y++;
 	}
@@ -906,23 +975,23 @@ void TerminalEmulator::tsetchar( Rune u, TerminalGlyph* attr, int x, int y ) {
 		 vt100_0[u - 0x41] )
 		utf8decode( vt100_0[u - 0x41], &u, UTF_SIZ );
 
-	if ( mTerm.line[y][x].mode & ATTR_WIDE ) {
+	if ( TLINE( y )[x].mode & ATTR_WIDE ) {
 		if ( x + 1 < mTerm.col ) {
-			mTerm.line[y][x + 1].u = ' ';
-			mTerm.line[y][x + 1].mode &= ~ATTR_WDUMMY;
+			TLINE( y )[x + 1].u = ' ';
+			TLINE( y )[x + 1].mode &= ~ATTR_WDUMMY;
 		}
-	} else if ( mTerm.line[y][x].mode & ATTR_WDUMMY ) {
-		mTerm.line[y][x - 1].u = ' ';
-		mTerm.line[y][x - 1].mode &= ~ATTR_WIDE;
+	} else if ( TLINE( y )[x].mode & ATTR_WDUMMY ) {
+		TLINE( y )[x - 1].u = ' ';
+		TLINE( y )[x - 1].mode &= ~ATTR_WIDE;
 	}
 
 	mTerm.dirty[y] = 1;
-	mTerm.line[y][x] = *attr;
-	mTerm.line[y][x].u = u;
+	TLINE( y )[x] = *attr;
+	TLINE( y )[x].u = u;
 	mDirty = true;
 
 	if ( isboxdraw( u ) )
-		mTerm.line[y][x].mode |= ATTR_BOXDRAW;
+		TLINE( y )[x].mode |= ATTR_BOXDRAW;
 }
 
 void TerminalEmulator::tclearregion( int x1, int y1, int x2, int y2 ) {
@@ -943,7 +1012,7 @@ void TerminalEmulator::tclearregion( int x1, int y1, int x2, int y2 ) {
 		mTerm.dirty[y] = 1;
 		mDirty = true;
 		for ( x = x1; x <= x2; x++ ) {
-			gp = &mTerm.line[y][x];
+			gp = &TLINE( y )[x];
 			if ( selected( x, y ) )
 				selclear();
 			gp->fg = mTerm.c.attr.fg;
@@ -986,12 +1055,12 @@ void TerminalEmulator::tinsertblank( int n ) {
 
 void TerminalEmulator::tinsertblankline( int n ) {
 	if ( BETWEEN( mTerm.c.y, mTerm.top, mTerm.bot ) )
-		tscrolldown( mTerm.c.y, n );
+		tscrolldown( mTerm.c.y, n, 0 );
 }
 
 void TerminalEmulator::tdeleteline( int n ) {
 	if ( BETWEEN( mTerm.c.y, mTerm.top, mTerm.bot ) )
-		tscrollup( mTerm.c.y, n );
+		tscrollup( mTerm.c.y, n, 0 );
 }
 
 int32_t TerminalEmulator::tdefcolor( int* attr, int* npar, int l ) {
@@ -1398,11 +1467,11 @@ void TerminalEmulator::csihandle( void ) {
 			break;
 		case 'S': /* SU -- Scroll <n> line up */
 			DEFAULT( mCsiescseq.arg[0], 1 );
-			tscrollup( mTerm.top, mCsiescseq.arg[0] );
+			tscrollup( mTerm.top, mCsiescseq.arg[0], 1 );
 			break;
 		case 'T': /* SD -- Scroll <n> line down */
 			DEFAULT( mCsiescseq.arg[0], 1 );
-			tscrolldown( mTerm.top, mCsiescseq.arg[0] );
+			tscrolldown( mTerm.top, mCsiescseq.arg[0], 1 );
 			break;
 		case 'L': /* IL -- Insert <n> blank lines */
 			DEFAULT( mCsiescseq.arg[0], 1 );
@@ -1880,7 +1949,7 @@ int TerminalEmulator::eschandle( uchar ascii ) {
 			return 0;
 		case 'D': /* IND -- Linefeed */
 			if ( mTerm.c.y == mTerm.bot ) {
-				tscrollup( mTerm.top, 1 );
+				tscrollup( mTerm.top, 1, 1 );
 			} else {
 				tmoveto( mTerm.c.x, mTerm.c.y + 1 );
 			}
@@ -1893,7 +1962,7 @@ int TerminalEmulator::eschandle( uchar ascii ) {
 			break;
 		case 'M': /* RI -- Reverse index */
 			if ( mTerm.c.y == mTerm.top ) {
-				tscrolldown( mTerm.top, 1 );
+				tscrolldown( mTerm.top, 1, 1 );
 			} else {
 				tmoveto( mTerm.c.x, mTerm.c.y - 1 );
 			}
@@ -2137,7 +2206,7 @@ int TerminalEmulator::twrite( const char* buf, int buflen, int show_ctrl ) {
 }
 
 void TerminalEmulator::tresize( int col, int row ) {
-	int i;
+	int i, j;
 	int minrow = MIN( row, mTerm.row );
 	int mincol = MIN( col, mTerm.col );
 	int* bp;
@@ -2172,6 +2241,15 @@ void TerminalEmulator::tresize( int col, int row ) {
 	mTerm.alt = (Line*)xrealloc( mTerm.alt, row * sizeof( Line ) );
 	mTerm.dirty = (int*)xrealloc( mTerm.dirty, row * sizeof( *mTerm.dirty ) );
 	mTerm.tabs = (int*)xrealloc( mTerm.tabs, col * sizeof( *mTerm.tabs ) );
+
+	mTerm.hist.resize( mTerm.histsize, nullptr );
+	for ( i = 0; i < mTerm.histsize; i++ ) {
+		mTerm.hist[i] = (TerminalGlyph*)xrealloc( mTerm.hist[i], col * sizeof( TerminalGlyph ) );
+		for ( j = mincol; j < col; j++ ) {
+			mTerm.hist[i][j] = mTerm.c.attr;
+			mTerm.hist[i][j].u = ' ';
+		}
+	}
 
 	/* resize each row to new width, zero-pad if needed */
 	for ( i = 0; i < minrow; i++ ) {
@@ -2231,7 +2309,7 @@ void TerminalEmulator::drawregion( ITerminalDisplay& dpy, int x1, int y1, int x2
 
 		mTerm.dirty[y] = 0;
 
-		dpy.drawLine( mTerm.line[y], x1, y, x2 );
+		dpy.drawLine( TLINE( y ), x1, y, x2 );
 	}
 
 	mDirty = false;
@@ -2257,8 +2335,9 @@ void TerminalEmulator::draw() {
 
 		drawregion( *dpy, 0, 0, mTerm.col, mTerm.row );
 
-		dpy->drawCursor( cx, mTerm.c.y, mTerm.line[mTerm.c.y][cx], mTerm.ocx, mTerm.ocy,
-						 mTerm.line[mTerm.ocy][mTerm.ocx] );
+		if ( mTerm.scr == 0 )
+			dpy->drawCursor( cx, mTerm.c.y, mTerm.line[mTerm.c.y][cx], mTerm.ocx, mTerm.ocy,
+							 mTerm.line[mTerm.ocy][mTerm.ocx] );
 
 		mTerm.ocx = cx;
 		mTerm.ocy = mTerm.c.y;
@@ -2376,18 +2455,20 @@ void TerminalEmulator::xsetpointermotion( int ) {
 
 std::unique_ptr<TerminalEmulator>
 TerminalEmulator::create( PtyPtr&& pty, ProcPtr&& process,
-						  const std::shared_ptr<ITerminalDisplay>& display ) {
+						  const std::shared_ptr<ITerminalDisplay>& display,
+						  const size_t& historySize ) {
 	if ( !pty || !process ) {
 		fprintf( stderr, "Must provide valid pseudoterminal and process" );
 		return nullptr;
 	}
 
 	return std::unique_ptr<TerminalEmulator>(
-		new TerminalEmulator( std::move( pty ), std::move( process ), display ) );
+		new TerminalEmulator( std::move( pty ), std::move( process ), display, historySize ) );
 }
 
 TerminalEmulator::TerminalEmulator( PtyPtr&& pty, ProcPtr&& process,
-									const std::shared_ptr<ITerminalDisplay>& display ) :
+									const std::shared_ptr<ITerminalDisplay>& display,
+									const size_t& historySize ) :
 	mDpy( display ),
 	mPty( std::move( pty ) ),
 	mProcess( std::move( process ) ),
@@ -2402,7 +2483,6 @@ TerminalEmulator::TerminalEmulator( PtyPtr&& pty, ProcPtr&& process,
 	mAllowAltScreen( 1 ),
 	mAllowWindowOps( 1 ) {
 	memset( mBuf, 0, sizeof( mBuf ) );
-	memset( &mTerm, 0, sizeof( mTerm ) );
 	memset( &mSel, 0, sizeof( mSel ) );
 	memset( &mCsiescseq, 0, sizeof( mCsiescseq ) );
 	memset( &mStrescseq, 0, sizeof( mStrescseq ) );
@@ -2410,7 +2490,7 @@ TerminalEmulator::TerminalEmulator( PtyPtr&& pty, ProcPtr&& process,
 	int col = mPty->getNumColumns();
 	int row = mPty->getNumRows();
 
-	tnew( col, row );
+	tnew( col, row, historySize );
 	if ( display ) {
 		display->setCursorMode( TerminalCursorMode::SteadyUnderline );
 		display->attach( this );
@@ -2477,6 +2557,10 @@ bool TerminalEmulator::hasExited() const {
 
 int TerminalEmulator::getExitCode() const {
 	return mExitCode;
+}
+
+int TerminalEmulator::write( const char* buf, size_t buflen ) {
+	return mPty->write( buf, (int)buflen );
 }
 
 void TerminalEmulator::resize( int columns, int rows ) {

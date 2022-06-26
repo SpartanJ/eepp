@@ -92,10 +92,10 @@ typedef unsigned short ushort;
 typedef uint_least32_t Rune;
 
 struct TerminalGlyph {
-	Rune u;		 /* character code */
-	ushort mode; /* attribute flags */
-	uint32_t fg; /* foreground  */
-	uint32_t bg; /* background  */
+	Rune u{ 0 };	  /* character code */
+	ushort mode{ 0 }; /* attribute flags */
+	uint32_t fg{ 0 }; /* foreground  */
+	uint32_t bg{ 0 }; /* background  */
 
 	bool operator==( const TerminalGlyph& r ) {
 		return u == r.u && mode == r.mode && fg == r.fg && bg == r.bg;
@@ -149,9 +149,9 @@ enum TerminalEscapeState {
 
 struct TerminalCursor {
 	TerminalGlyph attr; /* current char attributes */
-	int x;
-	int y;
-	char state;
+	int x{ 0 };
+	int y{ 0 };
+	char state{ 0 };
 };
 
 struct TerminalSelection {
