@@ -92,7 +92,7 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 		win->setClearColor( RGB( 0, 0, 0 ) );
 
 		FontTrueType* fontMono = FontTrueType::New( "monospace" );
-		fontMono->loadFromFile( "assets/fonts/DejaVuSansMono.ttf" );
+		fontMono->loadFromFile( "assets/fonts/DejaVuSansMonoNerdFontComplete.ttf" );
 
 		if ( !terminal || terminal->hasTerminated() ) {
 			terminal = TerminalDisplay::create( win, fontMono, PixelDensity::dpToPx( 11 ),

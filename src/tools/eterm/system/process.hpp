@@ -72,9 +72,9 @@ class Process final : public IProcess {
 							  Terminal::PseudoTerminal& pseudoTerminal );
 
   private:
-	ProcessStatus m_status;
-	bool m_leaveRunning;
-	int m_exitCode;
+	ProcessStatus m_status{ ProcessStatus::RUNNING };
+	bool m_leaveRunning{ false };
+	int m_exitCode{ 1 };
 #ifdef _WIN32
 	AutoHandle m_hProcess;
 	LPPROC_THREAD_ATTRIBUTE_LIST m_lpAttributeList;

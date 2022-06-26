@@ -71,10 +71,10 @@ static TerminalShortcut shortcuts[] = {
 static TerminalMouseShortcut mouseShortcuts[] = {
 	{ EE_BUTTON_WUMASK, KEYMOD_SHIFT, TerminalShortcutAction::SCROLLUP_SCREEN, 0, 0, -1 },
 	{ EE_BUTTON_WDMASK, KEYMOD_SHIFT, TerminalShortcutAction::SCROLLDOWN_SCREEN, 0, 0, -1 },
-	{ EE_BUTTON_WUMASK, KEYMOD_CTRL_SHIFT_ALT_META, TerminalShortcutAction::SCROLLUP_ROW, 0, 0,
-	  -1 },
-	{ EE_BUTTON_WDMASK, KEYMOD_CTRL_SHIFT_ALT_META, TerminalShortcutAction::SCROLLDOWN_ROW, 0, 0,
-	  -1 } };
+	{ EE_BUTTON_WUMASK, 0, TerminalShortcutAction::SCROLLUP_ROW, 0, 0, -1 },
+	{ EE_BUTTON_WDMASK, 0, TerminalShortcutAction::SCROLLDOWN_ROW, 0, 0, -1 },
+	{ EE_BUTTON_WUMASK, KEYMOD_CTRL, TerminalShortcutAction::FONTSIZE_GROW, 0, 0, 0 },
+	{ EE_BUTTON_WDMASK, KEYMOD_CTRL, TerminalShortcutAction::FONTSIZE_SHRINK, 0, 0, 0 } };
 
 static TerminalKey keys[] = {
 	/* keysym           mask            string      appkey appcursor */
@@ -499,6 +499,14 @@ void TerminalDisplay::attach( TerminalEmulator* terminal ) {
 	onSizeChange();
 }
 
+int TerminalDisplay::scrollSize() const {
+	return mEmulator ? mEmulator->scrollSize() : 0;
+}
+
+int TerminalDisplay::rowCount() const {
+	return mEmulator ? mEmulator->rowCount() : 0;
+}
+
 void TerminalDisplay::update() {
 	if ( mFocus && isBlinkingCursor() && mClock.getElapsedTime().asSeconds() > 0.7 ) {
 		mMode ^= MODE_BLINK;
@@ -553,6 +561,14 @@ void TerminalDisplay::action( TerminalShortcutAction action ) {
 		case TerminalShortcutAction::SCROLLDOWN_HISTORY: {
 			TerminalArg arg( (int)INT_MAX );
 			mTerminal->kscrolldown( &arg );
+			break;
+		}
+		case TerminalShortcutAction::FONTSIZE_GROW: {
+			setFontSize( getFontSize() + 1 );
+			break;
+		}
+		case TerminalShortcutAction::FONTSIZE_SHRINK: {
+			setFontSize( getFontSize() - 1 );
 			break;
 		}
 	}
@@ -658,20 +674,23 @@ void TerminalDisplay::onMouseDown( const Vector2i& pos, const Uint32& flags ) {
 	auto scIt = terminalKeyMap.MouseShortcuts().find( flags );
 	if ( scIt != terminalKeyMap.MouseShortcuts().end() ) {
 		for ( auto& k : scIt->second ) {
-			if ( k.mask == 0 || k.mask == KEYMOD_CTRL_SHIFT_ALT_META || k.mask == smod ) {
-				if ( IS_SET( MODE_APPKEYPAD ) ? k.appkey < 0 : k.appkey > 0 )
-					continue;
+			Uint32 kmask = sanitizeMod( k.mask );
 
-				if ( IS_SET( MODE_NUMLOCK ) && k.appkey == 2 )
-					continue;
+			if ( kmask != smod )
+				continue;
 
-				if ( IS_SET( MODE_APPCURSOR ) ? k.appcursor < 0 : k.appcursor > 0 )
-					continue;
+			if ( IS_SET( MODE_APPKEYPAD ) ? k.appkey < 0 : k.appkey > 0 )
+				continue;
 
-				if ( !k.altscrn || ( k.altscrn == ( mEmulator->tisaltscr() ? 1 : -1 ) ) ) {
-					action( k.action );
-					return;
-				}
+			if ( IS_SET( MODE_NUMLOCK ) && k.appkey == 2 )
+				continue;
+
+			if ( IS_SET( MODE_APPCURSOR ) ? k.appcursor < 0 : k.appcursor > 0 )
+				continue;
+
+			if ( !k.altscrn || ( k.altscrn == ( mEmulator->tisaltscr() ? 1 : -1 ) ) ) {
+				action( k.action );
+				return;
 			}
 		}
 	}
@@ -883,7 +902,9 @@ void TerminalDisplay::draw( const Vector2f& pos ) {
 	const float lineHeight = fontSize;
 	auto defaultFg = termColor( mEmulator->getDefaultForeground(), mColors );
 	auto defaultBg = termColor( mEmulator->getDefaultBackground(), mColors );
-	auto cursorThickness = eeceil( PixelDensity::dpToPx( 1.f ) );
+	auto cursorThickness = Math::roundDown( PixelDensity::dpToPx( 1.f ) );
+	Rectf xBounds = mFont->getGlyph( L'x', mFontSize, false ).bounds;
+	Float strikeThroughOffset = lineHeight + xBounds.Top + cursorThickness;
 
 	Primitives p;
 	p.setForceDraw( false );
@@ -991,8 +1012,8 @@ void TerminalDisplay::draw( const Vector2f& pos ) {
 
 				if ( glyph.mode & ATTR_STRUCK ) {
 					p.setColor( fg );
-					p.drawRectangle( Rectf( { x, y + eefloor( lineHeight / 2.f ) },
-											{ advanceX, cursorThickness } ) );
+					p.drawRectangle(
+						Rectf( { x, y + strikeThroughOffset }, { advanceX, cursorThickness } ) );
 				}
 			}
 
@@ -1238,8 +1259,9 @@ Float TerminalDisplay::getFontSize() const {
 }
 
 void TerminalDisplay::setFontSize( const Float& fontSize ) {
-	if ( mFontSize != fontSize ) {
-		mFontSize = fontSize;
+	Float fontSizeClamp = eeclamp( fontSize, 4.f, 120.f );
+	if ( mFontSize != fontSizeClamp ) {
+		mFontSize = fontSizeClamp;
 		onSizeChange();
 	}
 }

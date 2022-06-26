@@ -171,7 +171,7 @@ static const emoji_range_t smp_emoji_block = {
 
 static const emoji_range_t* emoji_ranges[] = { &bmp_emoji_block, &smp_emoji_block, 0 };
 
-static inline bool is_emoji_presentation( int32_t code ) {
+static inline bool is_emoji( int32_t code ) {
 	const emoji_range_t** curr = emoji_ranges;
 	while ( *curr != 0 ) {
 		if ( code >= ( *curr )->min_code && code <= ( *curr )->max_code ) {
@@ -182,12 +182,6 @@ static inline bool is_emoji_presentation( int32_t code ) {
 		}
 		++curr;
 	}
-	return false;
-}
-
-static inline bool is_emoji( int32_t code ) {
-	if ( is_emoji_presentation( code ) )
-		return true;
 	return false;
 }
 
@@ -682,6 +676,14 @@ void TerminalEmulator::kscrollup( const TerminalArg* a ) {
 
 int TerminalEmulator::tisaltscr() {
 	return IS_SET( MODE_ALTSCREEN );
+}
+
+int TerminalEmulator::scrollSize() const {
+	return mTerm.histi;
+}
+
+int TerminalEmulator::rowCount() const {
+	return mTerm.row;
 }
 
 bool TerminalEmulator::isScrolling() const {
@@ -2524,6 +2526,9 @@ TerminalEmulator::TerminalEmulator( PtyPtr&& pty, ProcPtr&& process,
 }
 
 TerminalEmulator::~TerminalEmulator() {
+	for ( size_t i = 0; i < mTerm.hist.size(); ++i )
+		free( mTerm.hist[i] );
+
 	{
 		auto dpy = mDpy.lock();
 		if ( dpy )
@@ -2603,9 +2608,8 @@ void TerminalEmulator::update() {
 	}
 
 	int n = 1024;
-	while ( ttyread() > 0 && n > 0 ) {
+	while ( ttyread() > 0 && n > 0 )
 		--n;
-	}
 
 	if ( n != 1024 || mDirty )
 		draw();

@@ -29,7 +29,9 @@ enum class TerminalShortcutAction {
 	SCROLLUP_SCREEN,
 	SCROLLDOWN_SCREEN,
 	SCROLLUP_HISTORY,
-	SCROLLDOWN_HISTORY
+	SCROLLDOWN_HISTORY,
+	FONTSIZE_GROW,
+	FONTSIZE_SHRINK
 };
 
 struct TerminalKey {
@@ -200,6 +202,10 @@ class TerminalDisplay : public ITerminalDisplay {
 	const std::shared_ptr<TerminalEmulator>& getTerminal() const;
 
 	virtual void attach( TerminalEmulator* terminal );
+
+	int scrollSize() const;
+
+	int rowCount() const;
 
   protected:
 	EE::Window::Window* mWindow;

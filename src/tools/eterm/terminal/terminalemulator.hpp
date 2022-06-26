@@ -199,6 +199,10 @@ class TerminalEmulator final {
 
 	int tisaltscr();
 
+	int scrollSize() const;
+
+	int rowCount() const;
+
   private:
 	DpyPtr mDpy;
 	PtyPtr mPty;
