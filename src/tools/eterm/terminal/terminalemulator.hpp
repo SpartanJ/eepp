@@ -203,6 +203,8 @@ class TerminalEmulator final {
 
 	int rowCount() const;
 
+	void clearHistory();
+
   private:
 	DpyPtr mDpy;
 	PtyPtr mPty;

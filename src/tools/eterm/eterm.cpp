@@ -93,10 +93,21 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 
 		FontTrueType* fontMono = FontTrueType::New( "monospace" );
 		fontMono->loadFromFile( "assets/fonts/DejaVuSansMonoNerdFontComplete.ttf" );
+		fontMono->setEnableEmojiFallback( false );
+
+		if ( FileSystem::fileExists( "assets/fonts/NotoColorEmoji.ttf" ) ) {
+			FontTrueType::New( "emoji-color" )->loadFromFile( "assets/fonts/NotoColorEmoji.ttf" );
+		} else if ( FileSystem::fileExists( "assets/fonts/NotoEmoji-Regular.ttf" ) ) {
+			FontTrueType::New( "emoji-font" )->loadFromFile( "assets/fonts/NotoEmoji-Regular.ttf" );
+		}
 
 		if ( !terminal || terminal->hasTerminated() ) {
 			terminal = TerminalDisplay::create( win, fontMono, PixelDensity::dpToPx( 11 ),
 												win->getSize().asFloat() );
+			terminal->pushEventCallback( [&]( const TerminalDisplay::Event& event ) {
+				if ( event.type == TerminalDisplay::EventType::TITLE )
+					win->setTitle( "eterm - " + event.eventData );
+			} );
 		}
 
 		win->getInput()->pushCallback( &inputCallback );

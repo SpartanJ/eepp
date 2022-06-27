@@ -670,8 +670,8 @@ void UIListBox::updateScroll( bool fromScrollChange ) {
 }
 
 void UIListBox::itemKeyEvent( const KeyEvent& Event ) {
-	KeyEvent ItemEvent( Event.getNode(), Event::OnItemKeyDown, Event.getKeyCode(), Event.getChar(),
-						Event.getMod() );
+	KeyEvent ItemEvent( Event.getNode(), Event::OnItemKeyDown, Event.getKeyCode(),
+						Event.getScancode(), Event.getChar(), Event.getMod() );
 	sendEvent( &ItemEvent );
 }
 

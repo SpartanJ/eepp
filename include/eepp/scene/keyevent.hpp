@@ -11,8 +11,8 @@ namespace EE { namespace Scene {
 
 class EE_API KeyEvent : public Event {
   public:
-	KeyEvent( Node* node, const Uint32& eventNum, const Keycode& keyCode, const Uint32& chr,
-			  const Uint32& mod );
+	KeyEvent( Node* node, const Uint32& eventNum, const Keycode& keyCode, const Scancode& scancode,
+			  const Uint32& chr, const Uint32& mod );
 
 	KeyEvent( const KeyEvent& event );
 
@@ -20,14 +20,17 @@ class EE_API KeyEvent : public Event {
 
 	const Keycode& getKeyCode() const;
 
+	const Scancode& getScancode() const;
+
 	const String::StringBaseType& getChar() const;
 
 	const Uint32& getMod() const;
 
   protected:
-	Keycode mKeyCode{Keycode::KEY_UNKNOWN};
-	String::StringBaseType mChar{0};
-	Uint32 mMod{0};
+	Keycode mKeyCode{ Keycode::KEY_UNKNOWN };
+	Scancode mScancode{ Scancode::SCANCODE_UNKNOWN };
+	String::StringBaseType mChar{ 0 };
+	Uint32 mMod{ 0 };
 };
 
 class EE_API TextInputEvent : public Event {

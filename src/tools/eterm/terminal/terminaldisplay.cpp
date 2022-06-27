@@ -1,6 +1,8 @@
 #include "terminaldisplay.hpp"
 #include "../system/processfactory.hpp"
 #include "boxdraw.hpp"
+#include "eepp/graphics/fonttruetype.hpp"
+#include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/system/color.hpp>
@@ -263,9 +265,10 @@ TerminalKeyMap terminalKeyMap{
 
 /* Terminal colors (16 first used in escape sequence) */
 // This is the customizable colorscheme
-const char* colornames[256] = { "#1e2127", "#e06c75", "#98c379", "#d19a66", "#61afef", "#c678dd",
-								"#56b6c2", "#abb2bf", "#5c6370", "#e06c75", "#98c379", "#d19a66",
-								"#61afef", "#c678dd", "#56b6c2", "#ffffff", "#1e2127", "#abb2bf" };
+static std::vector<std::string> colornames{ "#1e2127", "#e06c75", "#98c379", "#d19a66", "#61afef",
+											"#c678dd", "#56b6c2", "#abb2bf", "#5c6370", "#e06c75",
+											"#98c379", "#d19a66", "#61afef", "#c678dd", "#56b6c2",
+											"#ffffff", "#1e2127", "#abb2bf" };
 
 // This is the default Xterm palette
 static const Color colormapped[256] = {
@@ -440,32 +443,29 @@ TerminalDisplay::TerminalDisplay( EE::Window::Window* window, Font* font, const 
 	defaultGlyph.mode = ATTR_INVISIBLE;
 	auto defaultColor = std::make_pair<Uint32, std::string>( 0U, "" );
 	mCursorGlyph = defaultGlyph;
-	mColors.resize( eeARRAY_SIZE( colornames ), defaultColor );
+	mColors.resize( eeARRAY_SIZE( colormapped ), defaultColor );
 	mBuffer.resize( mColumns * mRows, defaultGlyph );
 	( (int&)mMode ) |= MODE_FOCUSED;
 }
 
 void TerminalDisplay::resetColors() {
-	for ( Uint32 i = 0; i < eeARRAY_SIZE( colornames ); i++ ) {
-		resetColor( i, colornames[i] );
-	}
+	for ( Uint32 i = 0; i < eeARRAY_SIZE( colormapped ); i++ )
+		resetColor( i, i < colornames.size() ? colornames[i].c_str() : nullptr );
 }
 
-int TerminalDisplay::resetColor( int index, const char* name ) {
-	if ( !name ) {
-		if ( index >= 0 && index < (int)mColors.size() ) {
-			Color col = 0x000000FF;
+int TerminalDisplay::resetColor( Uint32 index, const char* name ) {
+	if ( !name && index < mColors.size() ) {
+		Color col = 0x000000FF;
 
-			if ( index < 256 )
-				col = colormapped[index];
+		if ( index < 256 )
+			col = colormapped[index];
 
-			mColors[index].first = col;
-			mColors[index].second = "";
-			return 0;
-		}
+		mColors[index].first = col;
+		mColors[index].second = "";
+		return 0;
 	}
 
-	if ( index >= 0 && index < (int)mColors.size() ) {
+	if ( index < mColors.size() ) {
 		mColors[index].first = Color::fromString( name );
 		mColors[index].second = name;
 	}
@@ -505,6 +505,22 @@ int TerminalDisplay::scrollSize() const {
 
 int TerminalDisplay::rowCount() const {
 	return mEmulator ? mEmulator->rowCount() : 0;
+}
+
+void TerminalDisplay::sendEvent( const Event& event ) {
+	for ( auto it : mCallbacks )
+		it.second( event );
+}
+
+Uint32 TerminalDisplay::pushEventCallback( const EventFunc& func ) {
+	mCallbacks[++mNumCallBacks] = func;
+	return mNumCallBacks;
+}
+
+void TerminalDisplay::popEventCallback( const Uint32& id ) {
+	auto it = mCallbacks.find( id );
+	if ( it != mCallbacks.end() )
+		mCallbacks.erase( it );
 }
 
 void TerminalDisplay::update() {
@@ -578,9 +594,15 @@ bool TerminalDisplay::hasTerminated() const {
 	return mTerminal->hasExited();
 }
 
-void TerminalDisplay::setTitle( const char* ) {}
+void TerminalDisplay::setTitle( const char* title ) {
+	if ( title )
+		sendEvent( { EventType::TITLE, std::string( title ) } );
+}
 
-void TerminalDisplay::setIconTitle( const char* ) {}
+void TerminalDisplay::setIconTitle( const char* title ) {
+	if ( title )
+		sendEvent( { EventType::ICON_TITLE, std::string( title ) } );
+}
 
 void TerminalDisplay::setClipboard( const char* text ) {
 	if ( text == nullptr )
@@ -914,7 +936,7 @@ void TerminalDisplay::draw( const Vector2f& pos ) {
 	for ( int j = 0; j < mRows; j++ ) {
 		x = std::floor( pos.x );
 
-		if ( pos.y + lineHeight * j > mSize.getWidth() )
+		if ( pos.y + lineHeight * j > pos.y + mSize.getHeight() )
 			break;
 
 		for ( int i = 0; i < mColumns; i++ ) {
@@ -955,7 +977,7 @@ void TerminalDisplay::draw( const Vector2f& pos ) {
 	for ( int j = 0; j < mRows; j++ ) {
 		x = std::floor( pos.x );
 
-		if ( pos.y + lineHeight * j > mSize.getWidth() )
+		if ( pos.y + lineHeight * j > pos.y + mSize.getHeight() )
 			break;
 
 		for ( int i = 0; i < mColumns; i++ ) {
@@ -999,9 +1021,24 @@ void TerminalDisplay::draw( const Vector2f& pos ) {
 				drawbox( x, y, advanceX, lineHeight, fg, bg, bd, p );
 			} else {
 				auto* gd = mFont->getGlyphDrawable( glyph.u, mFontSize, glyph.mode & ATTR_BOLD );
-				gd->setColor( fg );
-				gd->setDrawMode( glyph.mode & ATTR_ITALIC ? GlyphDrawable::DrawMode::TextItalic
-														  : GlyphDrawable::DrawMode::Text );
+
+				if ( glyph.mode & ATTR_EMOJI ) {
+					if ( FontManager::instance()->getColorEmojiFont() ) {
+						Font* font = FontManager::instance()->getColorEmojiFont();
+						gd = font->getGlyphDrawable( glyph.u, mFontSize );
+						gd->setColor( Color::White );
+					} else if ( FontManager::instance()->getEmojiFont() ) {
+						Font* font = FontManager::instance()->getEmojiFont();
+						gd = font->getGlyphDrawable( glyph.u, mFontSize );
+						gd->setColor( fg );
+					}
+					gd->setDrawMode( GlyphDrawable::DrawMode::Text );
+				} else {
+					gd->setDrawMode( glyph.mode & ATTR_ITALIC ? GlyphDrawable::DrawMode::TextItalic
+															  : GlyphDrawable::DrawMode::Text );
+					gd->setColor( fg );
+				}
+
 				gd->draw( { x, y } );
 
 				if ( glyph.mode & ATTR_UNDERLINE ) {
@@ -1109,7 +1146,7 @@ Vector2i TerminalDisplay::positionToGrid( const Vector2i& pos ) {
 		mouseY = 0;
 	} else if ( relPos.x >= 0.0f && relPos.y >= 0.0f ) {
 		mouseX = eeclamp( (int)std::floor( relPos.x / spaceCharAdvanceX ), 0, clipColumns );
-		mouseY = eeclamp( (int)std::floor( relPos.y / fontSize ), 0, clipRows );
+		mouseY = eeclamp( (int)std::floor( relPos.y / fontSize ), 0, clipRows - 1 );
 	}
 
 	return { mouseX, mouseY };

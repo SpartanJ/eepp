@@ -128,6 +128,15 @@ static const Scancode asciiScancodeTable[] = {
 
 class TerminalDisplay : public ITerminalDisplay {
   public:
+	enum class EventType { TITLE, ICON_TITLE, UNKNOWN };
+
+	struct Event {
+		EventType type{ EventType::UNKNOWN };
+		std::string eventData;
+	};
+
+	typedef std::function<void( const TerminalDisplay::Event& event )> EventFunc;
+
 	static std::shared_ptr<TerminalDisplay>
 	create( EE::Window::Window* window, Font* font, const Float& fontSize, const Sizef& pixelsSize,
 			std::shared_ptr<TerminalEmulator>&& terminalEmulator );
@@ -139,7 +148,7 @@ class TerminalDisplay : public ITerminalDisplay {
 			IProcessFactory* processFactory = nullptr );
 
 	virtual void resetColors();
-	virtual int resetColor( int index, const char* name );
+	virtual int resetColor( Uint32 index, const char* name );
 
 	virtual void setTitle( const char* title );
 	virtual void setIconTitle( const char* title );
@@ -207,12 +216,18 @@ class TerminalDisplay : public ITerminalDisplay {
 
 	int rowCount() const;
 
+	Uint32 pushEventCallback( const EventFunc& func );
+
+	void popEventCallback( const Uint32& id );
+
   protected:
 	EE::Window::Window* mWindow;
 	std::vector<TerminalGlyph> mBuffer;
 	std::vector<std::pair<Color, std::string>> mColors;
 	std::shared_ptr<TerminalEmulator> mTerminal;
 	mutable std::string mClipboard;
+	Uint32 mNumCallBacks;
+	std::map<Uint32, EventFunc> mCallbacks;
 
 	Font* mFont{ nullptr };
 	Float mFontSize{ 12 };
@@ -245,6 +260,8 @@ class TerminalDisplay : public ITerminalDisplay {
 	void onSizeChange();
 
 	virtual void onProcessExit( int exitCode );
+
+	void sendEvent( const TerminalDisplay::Event& event );
 };
 
 #endif // ETERMINALDISPLAY_HPP

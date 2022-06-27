@@ -75,7 +75,7 @@ void FileLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locateInpu
 		}
 	} );
 	mLocateInput->addEventListener( Event::OnPressEnter, [&]( const Event* ) {
-		KeyEvent keyEvent( mLocateTable, Event::KeyDown, KEY_RETURN, 0, 0 );
+		KeyEvent keyEvent( mLocateTable, Event::KeyDown, KEY_RETURN, SCANCODE_UNKNOWN, 0, 0 );
 		mLocateTable->forceKeyDown( keyEvent );
 	} );
 	mLocateInput->addEventListener( Event::KeyDown, [&]( const Event* event ) {
@@ -148,4 +148,4 @@ void FileLocator::showLocateBar() {
 	updateLocateBar();
 }
 
-}
+} // namespace ecode

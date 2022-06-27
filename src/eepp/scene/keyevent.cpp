@@ -3,13 +3,18 @@
 
 namespace EE { namespace Scene {
 
-KeyEvent::KeyEvent( Node* node, const Uint32& eventNum, const Keycode& keyCode, const Uint32& chr,
-					const Uint32& mod ) :
-	Event( node, eventNum ), mKeyCode( keyCode ), mChar( chr ), mMod( mod ) {}
+KeyEvent::KeyEvent( Node* node, const Uint32& eventNum, const Keycode& keyCode,
+					const Scancode& scancode, const Uint32& chr, const Uint32& mod ) :
+	Event( node, eventNum ),
+	mKeyCode( keyCode ),
+	mScancode( scancode ),
+	mChar( chr ),
+	mMod( mod ) {}
 
 KeyEvent::KeyEvent( const KeyEvent& event ) :
 	Event( event.getNode(), event.getType() ),
 	mKeyCode( event.getKeyCode() ),
+	mScancode( event.getScancode() ),
 	mChar( event.getChar() ),
 	mMod( event.getMod() ) {}
 
@@ -17,6 +22,10 @@ KeyEvent::~KeyEvent() {}
 
 const Keycode& KeyEvent::getKeyCode() const {
 	return mKeyCode;
+}
+
+const Scancode& KeyEvent::getScancode() const {
+	return mScancode;
 }
 
 const String::StringBaseType& KeyEvent::getChar() const {

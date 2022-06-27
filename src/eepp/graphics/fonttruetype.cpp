@@ -379,7 +379,8 @@ const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSiz
 									 Float outlineThickness ) const {
 	Uint32 index = getGlyphIndex( codePoint );
 
-	if ( Font::isEmojiCodePoint( codePoint ) && !mIsColorEmojiFont && !mIsEmojiFont ) {
+	if ( mEnableEmojiFallback && Font::isEmojiCodePoint( codePoint ) && !mIsColorEmojiFont &&
+		 !mIsEmojiFont ) {
 		if ( !mIsColorEmojiFont && FontManager::instance()->getColorEmojiFont() != nullptr &&
 			 FontManager::instance()->getColorEmojiFont()->getType() == FontType::TTF ) {
 
@@ -1039,6 +1040,14 @@ FontTrueType::Page& FontTrueType::getPage( unsigned int characterSize ) const {
 		pageIt = mPages.find( characterSize );
 	}
 	return *pageIt->second;
+}
+
+bool FontTrueType::isEmojiFallbackEnabled() const {
+	return mEnableEmojiFallback;
+}
+
+void FontTrueType::setEnableEmojiFallback( bool enableEmojiFallback ) {
+	mEnableEmojiFallback = enableEmojiFallback;
 }
 
 void FontTrueType::setIsEmojiFont( bool isEmojiFont ) {

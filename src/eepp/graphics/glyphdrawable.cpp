@@ -80,7 +80,7 @@ const Vector2f& GlyphDrawable::getGlyphOffset() const {
 }
 
 void GlyphDrawable::setGlyphOffset( const Vector2f& glyphOffset ) {
-	mGlyphOffset = glyphOffset;
+	mGlyphOffset = glyphOffset.roundDown();
 }
 
 const GlyphDrawable::DrawMode& GlyphDrawable::getDrawMode() const {

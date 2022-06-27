@@ -40,10 +40,12 @@ void EventDispatcher::inputCallback( InputEvent* event ) {
 			break;
 		}
 		case InputEvent::KeyUp:
-			sendKeyUp( event->key.keysym.sym, event->key.keysym.unicode, event->key.keysym.mod );
+			sendKeyUp( event->key.keysym.sym, event->key.keysym.scancode, event->key.keysym.unicode,
+					   event->key.keysym.mod );
 			break;
 		case InputEvent::KeyDown:
-			sendKeyDown( event->key.keysym.sym, event->key.keysym.unicode, event->key.keysym.mod );
+			sendKeyDown( event->key.keysym.sym, event->key.keysym.scancode,
+						 event->key.keysym.unicode, event->key.keysym.mod );
 			break;
 		case InputEvent::TextInput:
 			sendTextInput( event->text.text, event->text.timestamp );
@@ -174,8 +176,9 @@ void EventDispatcher::sendTextInput( const Uint32& textChar, const Uint32& times
 	}
 }
 
-void EventDispatcher::sendKeyUp( const Keycode& KeyCode, const Uint32& Char, const Uint32& Mod ) {
-	KeyEvent keyEvent = KeyEvent( mFocusNode, Event::KeyUp, KeyCode, Char, Mod );
+void EventDispatcher::sendKeyUp( const Keycode& keyCode, const Scancode& scancode,
+								 const Uint32& chr, const Uint32& mod ) {
+	KeyEvent keyEvent = KeyEvent( mFocusNode, Event::KeyUp, keyCode, scancode, chr, mod );
 	Node* node = mFocusNode;
 	while ( NULL != node ) {
 		if ( node->isEnabled() && node->onKeyUp( keyEvent ) )
@@ -184,8 +187,9 @@ void EventDispatcher::sendKeyUp( const Keycode& KeyCode, const Uint32& Char, con
 	}
 }
 
-void EventDispatcher::sendKeyDown( const Keycode& KeyCode, const Uint32& Char, const Uint32& Mod ) {
-	KeyEvent keyEvent = KeyEvent( mFocusNode, Event::KeyDown, KeyCode, Char, Mod );
+void EventDispatcher::sendKeyDown( const Keycode& keyCode, const Scancode& scancode,
+								   const Uint32& chr, const Uint32& mod ) {
+	KeyEvent keyEvent = KeyEvent( mFocusNode, Event::KeyDown, keyCode, scancode, chr, mod );
 	Node* node = mFocusNode;
 	while ( NULL != node ) {
 		if ( node->isEnabled() && node->onKeyDown( keyEvent ) )

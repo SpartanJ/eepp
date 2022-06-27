@@ -686,6 +686,13 @@ int TerminalEmulator::rowCount() const {
 	return mTerm.row;
 }
 
+void TerminalEmulator::clearHistory() {
+	for ( size_t i = 0; i < mTerm.hist.size(); ++i )
+		free( mTerm.hist[i] );
+	mTerm.hist.clear();
+	mTerm.histi = 0;
+}
+
 bool TerminalEmulator::isScrolling() const {
 	return mTerm.scr != 0;
 }
@@ -2526,8 +2533,7 @@ TerminalEmulator::TerminalEmulator( PtyPtr&& pty, ProcPtr&& process,
 }
 
 TerminalEmulator::~TerminalEmulator() {
-	for ( size_t i = 0; i < mTerm.hist.size(); ++i )
-		free( mTerm.hist[i] );
+	clearHistory();
 
 	{
 		auto dpy = mDpy.lock();

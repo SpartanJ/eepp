@@ -159,7 +159,8 @@ void GlobalSearchController::initGlobalSearchBar(
 		if ( mGlobalSearchInput->hasFocus() ) {
 			mGlobalSearchBarLayout->execute( "search-in-files" );
 		} else {
-			KeyEvent keyEvent( mGlobalSearchTree, Event::KeyDown, KEY_RETURN, 0, 0 );
+			KeyEvent keyEvent( mGlobalSearchTree, Event::KeyDown, KEY_RETURN, SCANCODE_UNKNOWN, 0,
+							   0 );
 			mGlobalSearchTree->forceKeyDown( keyEvent );
 		}
 	} );
@@ -533,4 +534,4 @@ void GlobalSearchController::initGlobalSearchTree( UITreeViewGlobalSearch* searc
 	} );
 }
 
-}
+} // namespace ecode

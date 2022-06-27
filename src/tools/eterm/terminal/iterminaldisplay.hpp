@@ -22,6 +22,7 @@
 #pragma once
 
 #include "types.hpp"
+#include <eepp/config.hpp>
 
 namespace EE { namespace Terminal {
 
@@ -49,7 +50,7 @@ class ITerminalDisplay {
 
 	virtual void resetColors();
 
-	virtual int resetColor( int index, const char* name );
+	virtual int resetColor( Uint32 index, const char* name );
 
 	virtual void setMode( TerminalWinMode mode, int set );
 

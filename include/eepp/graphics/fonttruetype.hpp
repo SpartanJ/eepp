@@ -77,6 +77,11 @@ class EE_API FontTrueType : public Font {
 	void setIsEmojiFont( bool isEmojiFont );
 
 	void setForceIsMonospace( bool isMonospace );
+
+	bool isEmojiFallbackEnabled() const;
+
+	void setEnableEmojiFallback( bool enableEmojiFallback );
+
   protected:
 	explicit FontTrueType( const std::string& FontName );
 
@@ -147,6 +152,7 @@ class EE_API FontTrueType : public Font {
 	bool mIsColorEmojiFont{ false };
 	bool mIsEmojiFont{ false };
 	bool mIsMonospace{ false };
+	bool mEnableEmojiFallback{ true };
 	mutable std::map<unsigned int, unsigned int> mClosestCharacterSize;
 	mutable std::map<Uint32, Uint32> mCodePointIndexCache;
 
