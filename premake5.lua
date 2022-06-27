@@ -930,6 +930,8 @@ workspace "eepp"
 		build_link_configuration( "eterm", true )
 		filter "system:linux"
 			links { "util" }
+		filter "system:haiku"
+			links { "bsd" }
 
 	project "eepp-texturepacker"
 		kind "ConsoleApp"

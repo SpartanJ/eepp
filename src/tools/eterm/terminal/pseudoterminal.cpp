@@ -31,6 +31,9 @@
 #include <util.h>
 #elif defined( __FreeBSD__ ) || defined( __DragonFly__ )
 #include <libutil.h>
+#elif EE_PLATFORM == EE_PLATFORM_HAIKU
+#define _DEFAULT_SOURCE
+#include <bsd/pty.h>
 #endif
 #include <string.h>
 #include <sys/ioctl.h>

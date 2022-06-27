@@ -1187,6 +1187,9 @@ solution "eepp"
 		if os.is("linux") then
 			links { "util" }
 		end
+		if os.is("haiku") then
+			links { "bsd" }
+		end
 		build_link_configuration( "eterm", true )
 
 	project "eepp-texturepacker"
