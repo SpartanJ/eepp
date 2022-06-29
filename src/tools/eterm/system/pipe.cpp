@@ -6,7 +6,7 @@
 using namespace EE::System;
 
 Pipe::Pipe( AutoHandle&& readHandle, AutoHandle&& writeHandle ) :
-	m_hInput( std::move( readHandle ) ), m_hOutput( std::move( writeHandle ) ) {}
+	mInputHandle( std::move( readHandle ) ), mOutputHandle( std::move( writeHandle ) ) {}
 
 bool Pipe::isTTY() const {
 	return false;
@@ -18,7 +18,7 @@ int Pipe::write( const char* s, size_t n ) {
 	DWORD c = (DWORD)n;
 	DWORD r = 0;
 	while ( n > 0 ) {
-		if ( !WriteFile( (HANDLE)m_hOutput, s, (DWORD)( n > lim ? lim : n ), &r, nullptr ) ) {
+		if ( !WriteFile( (HANDLE)mOutputHandle, s, (DWORD)( n > lim ? lim : n ), &r, nullptr ) ) {
 			PrintLastWinApiError();
 			return -1;
 		}
@@ -34,7 +34,7 @@ int Pipe::read( char* buf, size_t n, bool block ) {
 	DWORD read;
 
 	if ( !block ) {
-		if ( !PeekNamedPipe( m_hInput.handle(), nullptr, 0, nullptr, &available, nullptr ) ) {
+		if ( !PeekNamedPipe( mInputHandle.handle(), nullptr, 0, nullptr, &available, nullptr ) ) {
 			PrintLastWinApiError();
 			return -1;
 		}
@@ -42,7 +42,7 @@ int Pipe::read( char* buf, size_t n, bool block ) {
 			return 0;
 	}
 
-	if ( !ReadFile( m_hInput.handle(), buf, (DWORD)n, &read, nullptr ) ) {
+	if ( !ReadFile( mInputHandle.handle(), buf, (DWORD)n, &read, nullptr ) ) {
 		PrintLastWinApiError();
 		return -1;
 	}

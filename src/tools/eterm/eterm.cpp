@@ -5,7 +5,7 @@ EE::Window::Window* win = NULL;
 std::shared_ptr<TerminalDisplay> terminal = nullptr;
 
 void inputCallback( InputEvent* event ) {
-	if ( !terminal )
+	if ( !terminal || event->Type == InputEvent::EventsSent )
 		return;
 
 	switch ( event->Type ) {
@@ -17,6 +17,9 @@ void inputCallback( InputEvent* event ) {
 		case InputEvent::MouseButtonDown: {
 			terminal->onMouseDown( win->getInput()->getMousePos(),
 								   win->getInput()->getPressTrigger() );
+#if EE_PLATFORM == EE_PLATFORM_ANDROID
+			win->startTextInput();
+#endif
 			break;
 		}
 		case InputEvent::MouseButtonUp: {
@@ -31,6 +34,13 @@ void inputCallback( InputEvent* event ) {
 			break;
 		}
 		case InputEvent::Window: {
+			switch ( event->window.type ) {
+				case InputEvent::WindowKeyboardFocusLost:
+				case InputEvent::WindowKeyboardFocusGain: {
+					terminal->setFocus( win->hasFocus() );
+					break;
+				}
+			}
 			break;
 		}
 		case InputEvent::KeyUp: {
@@ -39,6 +49,12 @@ void inputCallback( InputEvent* event ) {
 		case InputEvent::KeyDown: {
 			terminal->onKeyDown( event->key.keysym.sym, event->key.keysym.unicode,
 								 event->key.keysym.mod, event->key.keysym.scancode );
+#if EE_PLATFORM == EE_PLATFORM_ANDROID
+			if ( event->key.keysym.sym == KEY_RETURN ||
+				 event->key.keysym.scancode == SCANCODE_RETURN ) {
+				win->startTextInput();
+			}
+#endif
 			break;
 		}
 		case InputEvent::TextInput: {
@@ -73,6 +89,10 @@ void mainLoop() {
 }
 
 EE_MAIN_FUNC int main( int, char*[] ) {
+#ifdef EE_DEBUG
+	Log::instance()->setConsoleOutput( true );
+	Log::instance()->setLiveWrite( true );
+#endif
 	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
 	Display* currentDisplay = displayManager->getDisplayIndex( 0 );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
@@ -108,6 +128,8 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 				if ( event.type == TerminalDisplay::EventType::TITLE )
 					win->setTitle( "eterm - " + event.eventData );
 			} );
+
+			win->startTextInput();
 		}
 
 		win->getInput()->pushCallback( &inputCallback );

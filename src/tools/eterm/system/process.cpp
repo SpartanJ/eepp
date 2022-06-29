@@ -45,61 +45,61 @@
 using namespace EE::System;
 
 Process::~Process() {
-	if ( m_pid != -1 ) {
-		kill( m_pid, SIGHUP );
+	if ( mPID != -1 ) {
+		kill( mPID, SIGHUP );
 	}
 }
 
 void Process::checkExitStatus() {
-	if ( m_status == ProcessStatus::EXITED ) {
+	if ( mStatus == ProcessStatus::EXITED ) {
 		return;
 	}
 	int status = 0;
-	int p = waitpid( m_pid, &status, WNOHANG );
+	int p = waitpid( mPID, &status, WNOHANG );
 	if ( p < 0 ) {
 		perror( "Process::checkExitStatus(waitpid)" );
 	}
 	if ( p == 0 ) {
 		return;
 	}
-	m_status = ProcessStatus::EXITED;
-	m_exitCode = WEXITSTATUS( status );
+	mStatus = ProcessStatus::EXITED;
+	mExitCode = WEXITSTATUS( status );
 }
 
 void Process::terminate() {
-	if ( m_status == ProcessStatus::EXITED ) {
+	if ( mStatus == ProcessStatus::EXITED ) {
 		return;
 	}
-	if ( m_pid != -1 ) {
-		kill( m_pid, SIGHUP );
-		m_exitCode = 1;
-		m_status = ProcessStatus::EXITED;
+	if ( mPID != -1 ) {
+		kill( mPID, SIGHUP );
+		mExitCode = 1;
+		mStatus = ProcessStatus::EXITED;
 	}
 }
 
 void Process::waitForExit() {
-	if ( m_status == ProcessStatus::EXITED ) {
+	if ( mStatus == ProcessStatus::EXITED ) {
 		return;
 	}
 	int status = 0;
-	int p = waitpid( m_pid, &status, 0 );
+	int p = waitpid( mPID, &status, 0 );
 	if ( p < 0 ) {
 		perror( "Process::waitForExit(waitpid)" );
 		return;
 	}
-	m_status = ProcessStatus::EXITED;
-	m_exitCode = WEXITSTATUS( status );
+	mStatus = ProcessStatus::EXITED;
+	mExitCode = WEXITSTATUS( status );
 }
 
 bool Process::hasExited() const {
-	return m_status == EE::System::ProcessStatus::EXITED;
+	return mStatus == EE::System::ProcessStatus::EXITED;
 }
 
 int Process::getExitCode() const {
-	return m_status == ProcessStatus::EXITED ? m_exitCode : 255;
+	return mStatus == ProcessStatus::EXITED ? mExitCode : 255;
 }
 
-Process::Process( int pid ) : m_pid( pid ) {}
+Process::Process( int pid ) : mPID( pid ) {}
 
 static void execshell( const char* cmd, const char* const* args, std::string workingDirectory ) {
 	const struct passwd* pw;
@@ -163,11 +163,11 @@ Process::createWithPseudoTerminal( const std::string& program, const std::vector
 		return nullptr;
 	} else if ( pid == 0 ) {
 		setsid();
-		dup2( (int)pseudoTerminal.m_slave, 0 );
-		dup2( (int)pseudoTerminal.m_slave, 1 );
-		dup2( (int)pseudoTerminal.m_slave, 2 );
+		dup2( (int)pseudoTerminal.mSlave, 0 );
+		dup2( (int)pseudoTerminal.mSlave, 1 );
+		dup2( (int)pseudoTerminal.mSlave, 2 );
 
-		if ( ioctl( (int)pseudoTerminal.m_slave, TIOCSCTTY, NULL ) < 0 ) {
+		if ( ioctl( (int)pseudoTerminal.mSlave, TIOCSCTTY, NULL ) < 0 ) {
 			fprintf( stderr, "ioctl TIOCSCTTY failed: %s", strerror( errno ) );
 			exit( 1 );
 		}
@@ -191,7 +191,7 @@ Process::createWithPseudoTerminal( const std::string& program, const std::vector
 		argsV.push_back( nullptr );
 		execshell( program.c_str(), argsV.data(), workingDirectory );
 	} else {
-		pseudoTerminal.m_slave.release();
+		pseudoTerminal.mSlave.release();
 		return std::unique_ptr<Process>( new Process( pid ) );
 	}
 	return nullptr;
@@ -205,6 +205,8 @@ Process::createWithPseudoTerminal( const std::string& program, const std::vector
 #include <assert.h>
 #include <iomanip>
 #include <sstream>
+#define NTDDI_VERSION NTDDI_WIN10_RS5
+#include <windows.h>
 
 using namespace EE::System;
 using namespace EE;
@@ -221,14 +223,14 @@ static std::wstring stringToWideString( const std::string& str ) {
 #define HANDLE_WIN_ERR( err ) HRESULT_FROM_WIN32( err ), PrintWinApiError( err )
 
 static HRESULT InitializeStartupInfoAttachedToPseudoConsole( STARTUPINFOEXW* pStartupInfo,
-															  HPCON hPC ) {
+															 HPCON hPC ) {
 	HRESULT hr{ E_UNEXPECTED };
 
 	if ( pStartupInfo ) {
 		SIZE_T attrListSize{};
 
 		pStartupInfo->StartupInfo.cb = sizeof( STARTUPINFOEXW );
-		//pStartupInfo->StartupInfo.dwFlags = STARTF_USESTDHANDLES;
+		// pStartupInfo->StartupInfo.dwFlags = STARTF_USESTDHANDLES;
 
 		// Get the size of the thread attribute list.
 		InitializeProcThreadAttributeList( NULL, 1, 0, &attrListSize );
@@ -255,55 +257,55 @@ static HRESULT InitializeStartupInfoAttachedToPseudoConsole( STARTUPINFOEXW* pSt
 	return hr;
 }
 
-Process::Process( AutoHandle&& hProcess, LPPROC_THREAD_ATTRIBUTE_LIST lpAttributeList ) :
-	m_status( ProcessStatus::RUNNING ),
-	m_leaveRunning( false ),
-	m_exitCode( 1 ),
-	m_hProcess( std::move( hProcess ) ),
-	m_lpAttributeList( lpAttributeList ) {}
+Process::Process( AutoHandle&& hProcess, void* lpAttributeList ) :
+	mStatus( ProcessStatus::RUNNING ),
+	mLeaveRunning( false ),
+	mExitCode( 1 ),
+	mProcessHandle( std::move( hProcess ) ),
+	mLpAttributeList( lpAttributeList ) {}
 
 Process::~Process() {
-	if ( m_lpAttributeList ) {
-		DeleteProcThreadAttributeList( m_lpAttributeList );
-		HeapFree( GetProcessHeap(), 0, m_lpAttributeList );
+	if ( mLpAttributeList ) {
+		DeleteProcThreadAttributeList( (LPPROC_THREAD_ATTRIBUTE_LIST)mLpAttributeList );
+		HeapFree( GetProcessHeap(), 0, mLpAttributeList );
 	}
-	if ( !m_leaveRunning ) {
+	if ( !mLeaveRunning ) {
 		terminate();
 	}
 }
 
 void Process::checkExitStatus() {
-	if ( m_status == ProcessStatus::RUNNING ) {
+	if ( mStatus == ProcessStatus::RUNNING ) {
 		DWORD exitCode;
-		if ( GetExitCodeProcess( (HANDLE)m_hProcess, &exitCode ) && exitCode != STILL_ACTIVE ) {
-			m_status = ProcessStatus::EXITED;
-			m_exitCode = (int)exitCode;
+		if ( GetExitCodeProcess( (HANDLE)mProcessHandle, &exitCode ) && exitCode != STILL_ACTIVE ) {
+			mStatus = ProcessStatus::EXITED;
+			mExitCode = (int)exitCode;
 		}
 	}
 }
 
 bool Process::hasExited() const {
-	return m_status == ProcessStatus::EXITED;
+	return mStatus == ProcessStatus::EXITED;
 }
 
 int Process::getExitCode() const {
-	return m_status == ProcessStatus::EXITED ? m_exitCode : STILL_ACTIVE;
+	return mStatus == ProcessStatus::EXITED ? mExitCode : STILL_ACTIVE;
 }
 
 void Process::terminate() {
-	if ( m_status == ProcessStatus::RUNNING ) {
-		TerminateProcess( (HANDLE)m_hProcess, EXIT_FAILURE );
-		m_exitCode = EXIT_FAILURE;
-		m_status = ProcessStatus::EXITED;
-		m_hProcess.release();
+	if ( mStatus == ProcessStatus::RUNNING ) {
+		TerminateProcess( (HANDLE)mProcessHandle, EXIT_FAILURE );
+		mExitCode = EXIT_FAILURE;
+		mStatus = ProcessStatus::EXITED;
+		mProcessHandle.release();
 	}
 }
 
 void Process::waitForExit() {
 	checkExitStatus();
 
-	if ( m_status == ProcessStatus::RUNNING ) {
-		WaitForSingleObject( (HANDLE)m_hProcess, INFINITE );
+	if ( mStatus == ProcessStatus::RUNNING ) {
+		WaitForSingleObject( (HANDLE)mProcessHandle, INFINITE );
 	}
 }
 
@@ -411,7 +413,7 @@ Process::createWithPseudoTerminal( const std::string& program, const std::vector
 	std::wstring workingDir = stringToWideString( workingDirectory );
 
 	if ( ( hr = InitializeStartupInfoAttachedToPseudoConsole( &startupInfo,
-															   pseudoTerminal.m_phPC ) ) != S_OK ) {
+															  pseudoTerminal.mPHPC ) ) != S_OK ) {
 		printf( "InitializeStartupInfoAttachedToPseudoConsole failed\n" );
 		PrintErrorResult( hr );
 		goto fail;
@@ -439,7 +441,7 @@ Process::createWithPseudoTerminal( const std::string& program, const std::vector
 	hProcess = AutoHandle( piClient.hProcess );
 	hThread = AutoHandle( piClient.hThread );
 
-	pseudoTerminal.m_attached = true;
+	pseudoTerminal.mAttached = true;
 
 	return std::unique_ptr<Process>(
 		new Process( std::move( hProcess ), startupInfo.lpAttributeList ) );

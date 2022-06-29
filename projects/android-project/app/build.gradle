@@ -26,13 +26,67 @@ android {
         }
         externalNativeBuild {
             ndkBuild {
+                arguments "APP_LDLIBS=-llog -lGLESv2 -lGLESv1_CM -lm -lz -lOpenSLES -lEGL -landroid"
                 arguments "APP_PLATFORM=android-19"
                 arguments getProcessesCountArg()
             }
         }
+        signingConfig signingConfigs.debug
+    }
+    flavorDimensions "eepp"
+    productFlavors {
+        ecode {
+            buildConfigField "String", "SO_NAME", "\"ecode\""
+            applicationId "com.ensoft.ecode"
+            dimension "eepp"
+            resValue "string", "app_name", "ecode"
+            externalNativeBuild {
+                ndkBuild {
+                    arguments "APP_MODULES=ecode"
+                }
+            }
+        }
+        eterm {
+            buildConfigField "String", "SO_NAME", "\"eterm\""
+            applicationId "com.ensoft.eterm"
+            dimension "eepp"
+            resValue "string", "app_name", "eterm"
+            externalNativeBuild {
+                ndkBuild {
+                    arguments "APP_MODULES=eterm"
+                }
+            }
+        }
+        fulltest {
+            buildConfigField "String", "SO_NAME", "\"main\""
+            versionNameSuffix "-test"
+            dimension "eepp"
+            resValue "string", "app_name", "eepp"
+            externalNativeBuild {
+                ndkBuild {
+                    arguments "APP_MODULES=main"
+                }
+            }
+        }
     }
     buildTypes {
+        debug {
+            debuggable true
+            externalNativeBuild {
+                ndkBuild {
+                    arguments "APP_CFLAGS=-g -DDEBUG -DEE_DEBUG"
+                    arguments "APP_CPPFLAGS=-std=c++14 -frtti -fexceptions"
+                    arguments "APP_OPTIM=debug"
+                }
+            }
+        }
         release {
+            externalNativeBuild {
+                ndkBuild {
+                    arguments "APP_CFLAGS=-fno-strict-aliasing -O3 -s -DNDEBUG -ffast-math"
+                    arguments "APP_CPPFLAGS=-std=c++14 -frtti -fexceptions"
+                }
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

@@ -413,6 +413,7 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 	logSuccessfulInit( getVersion() );
 
 	SDL_SetHint( SDL_HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS, "0" );
+	SDL_SetHint( SDL_HINT_RETURN_KEY_HIDES_IME, "0" );
 
 	return true;
 }

@@ -20,7 +20,8 @@ EEPP_C_INCLUDES			:= \
 	$(EEPP_THIRD_PARTY_PATH)/libvorbis/include \
 	$(EEPP_THIRD_PARTY_PATH)/libogg/include \
 	$(EEPP_THIRD_PARTY_PATH)/mbedtls/include \
-	$(EEPP_THIRD_PARTY_PATH)/mojoAL
+	$(EEPP_THIRD_PARTY_PATH)/mojoAL \
+	$(EEPP_THIRD_PARTY_PATH)/efsw/include
 
 EEPP_C_FLAGS				:= \
 	-Wl,--undefined=Java_org_libsdl_app_SDLActivity_nativeInit \
@@ -35,6 +36,7 @@ EEPP_C_FLAGS				:= \
 	-DEE_MBEDTLS \
 	-D$(EE_SDL_VERSION) \
 	-DAL_LIBTYPE_STATIC \
+	-DNO_POSIX_SPAWN \
 	-I$(EEPP_INC_PATH) \
 	-I$(EEPP_BASE_PATH)
 
@@ -244,7 +246,6 @@ endif
 LOCAL_STATIC_LIBRARIES := cpufeatures
 
 include $(BUILD_SHARED_LIBRARY)
-#**************** SDL 2 ***************
 
 ###########################
 #
@@ -266,3 +267,24 @@ LOCAL_LDLIBS := -llog
 include $(BUILD_SHARED_LIBRARY)
 
 $(call import-module,android/cpufeatures)
+#**************** SDL 2 ***************
+
+
+#*************** EFSW ***************
+include $(CLEAR_VARS)
+
+LOCAL_PATH				:= $(EEPP_THIRD_PARTY_PATH)
+
+LOCAL_MODULE			:= efsw
+
+LIBPNG_SRCS			:=  \
+	efsw/src/efsw/*.cpp \
+	efsw/src/efsw/platform/posix/*.cpp
+
+LOCAL_C_INCLUDES		:= $(LOCAL_PATH)/efsw/include $(LOCAL_PATH)/efsw/src
+LOCAL_CFLAGS			:= -Os -DEFSW_USE_CXX11
+
+LOCAL_SRC_FILES			:= $(foreach F, $(LIBPNG_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
+
+include $(BUILD_STATIC_LIBRARY)
+#*************** EFSW ***************

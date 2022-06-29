@@ -59,13 +59,13 @@ class AutoHandle final {
 	const type* get() const;
 
 	type handle() const {
-		return m_hHandle;
+		return mHandle;
 	}
 
 	void release() const;
 
   private:
-	mutable type m_hHandle;
+	mutable type mHandle;
 };
 
 } // namespace EE

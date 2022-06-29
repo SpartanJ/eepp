@@ -46,6 +46,50 @@ LOCAL_STATIC_LIBRARIES	:= eepp
 include $(BUILD_SHARED_LIBRARY)
 #************ external_shader ************
 
+#************* ecode *************
+include $(CLEAR_VARS)
+
+LOCAL_PATH				:= $(EEPP_BASE_PATH)
+
+LOCAL_MODULE			:= ecode
+
+LOCAL_LDLIBS			:= $(EEPP_LDLIBS)
+
+LOCAL_CFLAGS			:= $(EEPP_C_FLAGS)
+
+LOCAL_C_INCLUDES		:= $(EEPP_C_INCLUDES)
+
+CORE_SRCS				:= tools/ecode/*.cpp tools/ecode/plugins/autocomplete/*.cpp tools/ecode/plugins/linter/*.cpp tools/ecode/plugins/formatter/*.cpp
+
+LOCAL_SRC_FILES			:= $(SDL_MAIN_PATH) $(foreach F, $(CORE_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
+
+LOCAL_STATIC_LIBRARIES	:= eepp efsw
+
+include $(BUILD_SHARED_LIBRARY)
+#************ ecode ************
+
+#************* etern *************
+include $(CLEAR_VARS)
+
+LOCAL_PATH				:= $(EEPP_BASE_PATH)
+
+LOCAL_MODULE			:= eterm
+
+LOCAL_LDLIBS			:= $(EEPP_LDLIBS)
+
+LOCAL_CFLAGS			:= $(EEPP_C_FLAGS)
+
+LOCAL_C_INCLUDES		:= $(EEPP_C_INCLUDES)
+
+CORE_SRCS				:= tools/eterm/*.cpp tools/eterm/system/*.cpp tools/eterm/terminal/*.cpp
+
+LOCAL_SRC_FILES			:= $(SDL_MAIN_PATH) $(foreach F, $(CORE_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
+
+LOCAL_STATIC_LIBRARIES	:= eepp
+
+include $(BUILD_SHARED_LIBRARY)
+#************ etern ************
+
 #************* full_test *************
 include $(CLEAR_VARS)
 

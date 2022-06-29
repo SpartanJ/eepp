@@ -35,20 +35,70 @@
 #define _DEFAULT_SOURCE
 #include <bsd/pty.h>
 #endif
+#include <eepp/system/log.hpp>
 #include <string.h>
 #include <sys/ioctl.h>
 #include <sys/poll.h>
 #include <unistd.h>
+using namespace EE::System;
+
+#if EE_PLATFORM == EE_PLATFORM_ANDROID
+#include <fcntl.h>
+
+int openpty( int* amaster, int* aslave, char* name, struct termios* termp, struct winsize* winp ) {
+	int master, slave;
+	char* name_slave;
+
+	master = open( "/dev/ptmx", O_RDWR | O_NONBLOCK );
+	if ( master == -1 ) {
+		Log::error( "openpty: Fail to open master" );
+		return -1;
+	}
+
+	if ( grantpt( master ) ) {
+		Log::error( "openpty: grantpt failed" );
+		goto fail;
+	}
+
+	if ( unlockpt( master ) ) {
+		Log::error( "openpty: unlockpt failed" );
+		goto fail;
+	}
+
+	name_slave = ptsname( master );
+	slave = open( name_slave, O_RDWR | O_NOCTTY );
+	if ( slave == -1 ) {
+		Log::error( "openpty: failed to open slave name %s", name_slave );
+		goto fail;
+	}
+
+	if ( termp )
+		tcsetattr( slave, TCSAFLUSH, termp );
+	if ( winp )
+		ioctl( slave, TIOCSWINSZ, winp );
+
+	*amaster = master;
+	*aslave = slave;
+	if ( name != NULL )
+		strcpy( name, name_slave );
+
+	return 0;
+
+fail:
+	close( master );
+	return -1;
+}
+#endif
 
 using namespace EE::Terminal;
 
 PseudoTerminal::~PseudoTerminal() {}
 
 PseudoTerminal::PseudoTerminal( int columns, int rows, AutoHandle&& master, AutoHandle&& slave ) :
-	m_columns( columns ),
-	m_rows( rows ),
-	m_master( std::move( master ) ),
-	m_slave( std::move( slave ) ) {}
+	mColumns( columns ),
+	mRows( rows ),
+	mMaster( std::move( master ) ),
+	mSlave( std::move( slave ) ) {}
 
 bool PseudoTerminal::isTTY() const {
 	return true;
@@ -62,7 +112,7 @@ bool PseudoTerminal::resize( int columns, int rows ) {
 	w.ws_xpixel = 0;
 	w.ws_ypixel = 0;
 
-	if ( ioctl( (int)m_master, TIOCSWINSZ, &w ) < 0 ) {
+	if ( ioctl( (int)mMaster, TIOCSWINSZ, &w ) < 0 ) {
 		perror( "PseudoTerminal::Resize" );
 		return false;
 	}
@@ -71,17 +121,17 @@ bool PseudoTerminal::resize( int columns, int rows ) {
 }
 
 int PseudoTerminal::getNumColumns() const {
-	return m_columns;
+	return mColumns;
 }
 
 int PseudoTerminal::getNumRows() const {
-	return m_rows;
+	return mRows;
 }
 
 int PseudoTerminal::write( const char* s, size_t n ) {
 	size_t c = n;
 	while ( n > 0 ) {
-		ssize_t r = ::write( (int)m_master, s, n );
+		ssize_t r = ::write( (int)mMaster, s, n );
 		if ( r < 0 ) {
 			return -1;
 		}
@@ -93,7 +143,7 @@ int PseudoTerminal::write( const char* s, size_t n ) {
 
 int PseudoTerminal::read( char* s, size_t n, bool block ) {
 	struct pollfd pfd;
-	pfd.fd = (int)m_master;
+	pfd.fd = (int)mMaster;
 	pfd.events = POLLIN;
 	pfd.revents = 0;
 
@@ -107,7 +157,7 @@ int PseudoTerminal::read( char* s, size_t n, bool block ) {
 			return -1;
 		}
 	}
-	ssize_t r = ::read( (int)m_master, s, n );
+	ssize_t r = ::read( (int)mMaster, s, n );
 	return (int)r;
 }
 
@@ -126,7 +176,8 @@ std::unique_ptr<PseudoTerminal> PseudoTerminal::create( int columns, int rows ) 
 	return nullptr;
 #else
 	if ( openpty( master.get(), slave.get(), nullptr, NULL, &win ) != 0 ) {
-		perror( "PseudoTerminal::Create(openpty)" );
+		perror( "PseudoTerminal::create(openpty)" );
+		Log::error( "PseudoTerminal::create(openpty)" );
 		return nullptr;
 	}
 
@@ -145,17 +196,17 @@ std::unique_ptr<PseudoTerminal> PseudoTerminal::create( int columns, int rows ) 
 using namespace EE::Terminal;
 
 PseudoTerminal::~PseudoTerminal() {
-	ClosePseudoConsole( m_phPC );
+	ClosePseudoConsole( mPHPC );
 }
 
 PseudoTerminal::PseudoTerminal( int columns, int rows, AutoHandle&& hInput, AutoHandle&& hOutput,
 								void* hPC ) :
-	m_hInput( std::move( hInput ) ),
-	m_hOutput( std::move( hOutput ) ),
-	m_phPC( hPC ),
-	m_attached( false ) {
-	m_size.x = (SHORT)columns;
-	m_size.y = (SHORT)rows;
+	mInputHandle( std::move( hInput ) ),
+	mOutputHandle( std::move( hOutput ) ),
+	mPHPC( hPC ),
+	mAttached( false ) {
+	mSize.x = (SHORT)columns;
+	mSize.y = (SHORT)rows;
 }
 
 bool PseudoTerminal::isTTY() const {
@@ -163,13 +214,13 @@ bool PseudoTerminal::isTTY() const {
 }
 
 bool PseudoTerminal::resize( int columns, int rows ) {
-	HRESULT hr = ResizePseudoConsole( m_phPC, { (SHORT)columns, (SHORT)rows } );
+	HRESULT hr = ResizePseudoConsole( mPHPC, { (SHORT)columns, (SHORT)rows } );
 	if ( hr != S_OK ) {
 		PrintErrorResult( hr );
 		return false;
 	}
-	m_size.x = (SHORT)columns;
-	m_size.y = (SHORT)rows;
+	mSize.x = (SHORT)columns;
+	mSize.y = (SHORT)rows;
 	return true;
 }
 
@@ -179,7 +230,7 @@ int PseudoTerminal::write( const char* s, size_t n ) {
 	DWORD c = (DWORD)n;
 	DWORD r = 0;
 	while ( n > 0 ) {
-		if ( !WriteFile( (HANDLE)m_hOutput, s, (DWORD)( n > lim ? lim : n ), &r, nullptr ) ) {
+		if ( !WriteFile( (HANDLE)mOutputHandle, s, (DWORD)( n > lim ? lim : n ), &r, nullptr ) ) {
 			PrintLastWinApiError();
 			return -1;
 		}
@@ -195,7 +246,7 @@ int PseudoTerminal::read( char* buf, size_t n, bool block ) {
 	DWORD read;
 
 	if ( !block ) {
-		if ( !PeekNamedPipe( m_hInput.handle(), nullptr, 0, nullptr, &available, nullptr ) ) {
+		if ( !PeekNamedPipe( mInputHandle.handle(), nullptr, 0, nullptr, &available, nullptr ) ) {
 			PrintLastWinApiError();
 			return -1;
 		}
@@ -203,7 +254,7 @@ int PseudoTerminal::read( char* buf, size_t n, bool block ) {
 			return 0;
 	}
 
-	if ( !ReadFile( m_hInput.handle(), buf, available, &read, nullptr ) ) {
+	if ( !ReadFile( mInputHandle.handle(), buf, available, &read, nullptr ) ) {
 		PrintLastWinApiError();
 		return -1;
 	}
@@ -211,11 +262,11 @@ int PseudoTerminal::read( char* buf, size_t n, bool block ) {
 }
 
 int PseudoTerminal::getNumColumns() const {
-	return m_size.x;
+	return mSize.x;
 }
 
 int PseudoTerminal::getNumRows() const {
-	return m_size.y;
+	return mSize.y;
 }
 
 std::unique_ptr<PseudoTerminal> PseudoTerminal::create( int columns, int rows ) {

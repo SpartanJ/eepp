@@ -28,14 +28,6 @@
 #include "../terminal/pseudoterminal.hpp"
 #include "iprocess.hpp"
 
-#ifndef _WIN32
-#include <sys/types.h>
-#include <unistd.h>
-#else
-#define NTDDI_VERSION NTDDI_WIN10_RS5
-#include <windows.h>
-#endif
-
 namespace EE { namespace System {
 
 class Process final : public IProcess {
@@ -72,16 +64,16 @@ class Process final : public IProcess {
 							  Terminal::PseudoTerminal& pseudoTerminal );
 
   private:
-	ProcessStatus m_status{ ProcessStatus::RUNNING };
-	bool m_leaveRunning{ false };
-	int m_exitCode{ 1 };
+	ProcessStatus mStatus{ ProcessStatus::RUNNING };
+	int mExitCode{ 1 };
 #ifdef _WIN32
-	AutoHandle m_hProcess;
-	LPPROC_THREAD_ATTRIBUTE_LIST m_lpAttributeList;
+	bool mLeaveRunning{ false };
+	AutoHandle mProcessHandle;
+	void* mLpAttributeList;
 
-	Process( AutoHandle&& processHandle, LPPROC_THREAD_ATTRIBUTE_LIST lpAttributeList );
+	Process( AutoHandle&& processHandle, void* lpAttributeList );
 #else
-	int m_pid;
+	int mPID;
 
 	Process( int pid );
 #endif

@@ -52,12 +52,12 @@ class Pipe : public IPipe {
   private:
 	friend class Process;
 #ifdef _WIN32
-	AutoHandle m_hInput;
-	AutoHandle m_hOutput;
+	AutoHandle mInputHandle;
+	AutoHandle mOutputHandle;
 
 	Pipe( AutoHandle&& readHandle, AutoHandle&& writeHandle );
 #else
-	AutoHandle m_handle;
+	AutoHandle mHandle;
 
 	Pipe( AutoHandle&& handle );
 #endif

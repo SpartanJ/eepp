@@ -27,56 +27,56 @@
 #include <windows.h>
 #endif
 
-EE::AutoHandle::AutoHandle() : m_hHandle( invalid_value() ) {}
-EE::AutoHandle::AutoHandle( AutoHandle&& other ) : m_hHandle( other.m_hHandle ) {
-	other.m_hHandle = invalid_value();
+EE::AutoHandle::AutoHandle() : mHandle( invalid_value() ) {}
+EE::AutoHandle::AutoHandle( AutoHandle&& other ) : mHandle( other.mHandle ) {
+	other.mHandle = invalid_value();
 }
 EE::AutoHandle::~AutoHandle() {
 	release();
 }
 
 EE::AutoHandle& EE::AutoHandle::operator=( AutoHandle&& other ) {
-	if ( m_hHandle == other.m_hHandle )
+	if ( mHandle == other.mHandle )
 		return *this;
 	release();
-	m_hHandle = other.m_hHandle;
-	other.m_hHandle = invalid_value();
+	mHandle = other.mHandle;
+	other.mHandle = invalid_value();
 	return *this;
 }
 
 #ifdef _WIN32
-EE::AutoHandle::AutoHandle( HANDLE handle ) : m_hHandle( handle ) {}
+EE::AutoHandle::AutoHandle( HANDLE handle ) : mHandle( handle ) {}
 
 void EE::AutoHandle::release() const {
-	if ( m_hHandle != INVALID_HANDLE_VALUE ) {
-		CloseHandle( m_hHandle );
-		m_hHandle = INVALID_HANDLE_VALUE;
+	if ( mHandle != INVALID_HANDLE_VALUE ) {
+		CloseHandle( mHandle );
+		mHandle = INVALID_HANDLE_VALUE;
 	}
 }
 #else
-EE::AutoHandle::AutoHandle( int fd ) : m_hHandle( fd ) {}
+EE::AutoHandle::AutoHandle( int fd ) : mHandle( fd ) {}
 
 void EE::AutoHandle::release() const {
-	if ( m_hHandle != -1 ) {
-		close( m_hHandle );
+	if ( mHandle != -1 ) {
+		close( mHandle );
 	}
 }
 #endif
 
 EE::AutoHandle::operator bool() const noexcept {
-	return m_hHandle != invalid_value();
+	return mHandle != invalid_value();
 }
 
 EE::AutoHandle::type* EE::AutoHandle::get() {
-	return &m_hHandle;
+	return &mHandle;
 }
 
 const EE::AutoHandle::type* EE::AutoHandle::get() const {
-	return &m_hHandle;
+	return &mHandle;
 }
 
 EE::AutoHandle::operator EE::AutoHandle::type() const noexcept {
-	return m_hHandle;
+	return mHandle;
 }
 
 #ifdef _WIN32

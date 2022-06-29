@@ -1,6 +1,6 @@
 #include "terminaldisplay.hpp"
 #include "../system/processfactory.hpp"
-#include "boxdraw.hpp"
+#include "boxdrawdata.hpp"
 #include "eepp/graphics/fonttruetype.hpp"
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/primitives.hpp>
@@ -153,6 +153,7 @@ static TerminalKey keys[] = {
 };
 
 static TerminalScancode platformKeys[] = {
+	{ SCANCODE_RETURN, KEYMOD_CTRL_SHIFT_ALT_META, "\r", 0, 0 },
 	{ SCANCODE_PRIOR, KEYMOD_CTRL, "\033[5;5~", 0, 0 },
 
 	{ SCANCODE_PRIOR, KEYMOD_CTRL, "\033[5;5~", 0, 0 },
@@ -389,7 +390,12 @@ TerminalDisplay::create( EE::Window::Window* window, Font* font, const Float& fo
 		program = "cmd.exe";
 #else
 		const char* shellenv = getenv( "SHELL" );
+#if EE_PLATFORM == EE_PLATFORM_ANDROID
+		program = shellenv != nullptr ? shellenv : "/bin/sh";
+#else
 		program = shellenv != nullptr ? shellenv : "/bin/bash";
+#endif
+
 #endif
 	}
 
@@ -405,6 +411,7 @@ TerminalDisplay::create( EE::Window::Window* window, Font* font, const Float& fo
 
 	if ( !pseudoTerminal ) {
 		fprintf( stderr, "Failed to create pseudo terminal\n" );
+		Log::error( "Failed to create pseudo terminal" );
 		if ( freeProcessFactory )
 			eeSAFE_DELETE( processFactory );
 		return nullptr;
@@ -412,6 +419,7 @@ TerminalDisplay::create( EE::Window::Window* window, Font* font, const Float& fo
 
 	if ( !process ) {
 		fprintf( stderr, "Failed to spawn process\n" );
+		Log::error( "Failed to spawn process" );
 		if ( freeProcessFactory )
 			eeSAFE_DELETE( processFactory );
 		return nullptr;
@@ -539,7 +547,7 @@ void TerminalDisplay::action( TerminalShortcutAction action ) {
 			auto clipboard = getClipboard();
 			auto clipboardLen = strlen( clipboard );
 			if ( clipboardLen > 0 ) {
-				mTerminal->write( clipboard, clipboardLen );
+				mTerminal->ttywrite( clipboard, clipboardLen, 1 );
 			}
 			break;
 		}
@@ -1119,10 +1127,12 @@ void TerminalDisplay::draw( const Vector2f& pos ) {
 					break;
 			}
 		} else {
-			p.setFillMode( PrimitiveFillMode::DRAW_LINE );
-			p.drawRectangle(
-				Rectf( { pos.x + mCursor.x * spaceCharAdvanceX, pos.y + mCursor.y * lineHeight },
-					   { spaceCharAdvanceX, lineHeight } ) );
+			Vector2f cpos{ pos.x + mCursor.x * spaceCharAdvanceX, pos.y + mCursor.y * lineHeight };
+			drawrect( drawcol, cpos.x, cpos.y, spaceCharAdvanceX, cursorThickness, p );
+			drawrect( drawcol, cpos.x, cpos.y, cursorThickness, lineHeight, p );
+			drawrect( drawcol, cpos.x + spaceCharAdvanceX, cpos.y, cursorThickness, lineHeight, p );
+			drawrect( drawcol, cpos.x, cpos.y + lineHeight - cursorThickness, spaceCharAdvanceX,
+					  cursorThickness, p );
 		}
 	}
 
@@ -1167,8 +1177,11 @@ void TerminalDisplay::onSizeChange() {
 	}
 }
 
-void TerminalDisplay::onProcessExit( int ) {
+void TerminalDisplay::onProcessExit( int exitCode ) {
 	if ( !mTerminal || mProgram.empty() )
+		return;
+
+	if ( exitCode != 0 )
 		return;
 
 	auto processFactory = eeNew( ProcessFactory, () );
@@ -1241,7 +1254,7 @@ void TerminalDisplay::onKeyDown( const Keycode& keyCode, const Uint32& /*chr*/, 
 				}
 			}
 
-			mTerminal->write( &tmp, 1 );
+			mTerminal->ttywrite( &tmp, 1, 1 );
 			return;
 		}
 	}
@@ -1260,7 +1273,7 @@ void TerminalDisplay::onKeyDown( const Keycode& keyCode, const Uint32& /*chr*/, 
 					continue;
 
 				if ( k.string.size() > 0 ) {
-					mTerminal->write( k.string.c_str(), k.string.size() );
+					mTerminal->ttywrite( k.string.c_str(), k.string.size(), 1 );
 					return;
 				}
 				break;
@@ -1282,7 +1295,7 @@ void TerminalDisplay::onKeyDown( const Keycode& keyCode, const Uint32& /*chr*/, 
 					continue;
 
 				if ( k.string.size() > 0 ) {
-					mTerminal->write( k.string.c_str(), k.string.size() );
+					mTerminal->ttywrite( k.string.c_str(), k.string.size(), 1 );
 					return;
 				}
 				break;
@@ -1335,6 +1348,7 @@ void TerminalDisplay::setFocus( bool focus ) {
 	if ( mFocus != modeFocus ) {
 		if ( mFocus ) {
 			mMode |= MODE_FOCUSED | MODE_FOCUS;
+			mWindow->startTextInput();
 		} else {
 			mMode ^= MODE_FOCUS | MODE_FOCUSED;
 		}

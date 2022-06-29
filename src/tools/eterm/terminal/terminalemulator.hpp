@@ -195,7 +195,7 @@ class TerminalEmulator final {
 
 	bool isScrolling() const;
 
-	void ttywrite( const char*, size_t, int );
+	void ttywrite( const char* s, size_t n, int may_echo );
 
 	int tisaltscr();
 

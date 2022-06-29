@@ -60,21 +60,21 @@ class PseudoTerminal final : public IPseudoTerminal {
   private:
 	friend class ::EE::System::Process;
 #ifdef _WIN32
-	Vector2i m_size;
+	Vector2i mSize;
 
-	AutoHandle m_hInput;
-	AutoHandle m_hOutput;
-	void* m_phPC;
+	AutoHandle mInputHandle;
+	AutoHandle mOutputHandle;
+	void* mPHPC;
 
-	bool m_attached;
+	bool mAttached;
 
 	PseudoTerminal( int columns, int rows, AutoHandle&& hInput, AutoHandle&& hOutput, void* hPC );
 #else
-	int m_columns;
-	int m_rows;
+	int mColumns;
+	int mRows;
 
-	AutoHandle m_master;
-	AutoHandle m_slave;
+	AutoHandle mMaster;
+	AutoHandle mSlave;
 
 	PseudoTerminal( int columns, int rows, AutoHandle&& master, AutoHandle&& slave );
 #endif
