@@ -415,7 +415,7 @@ Node* UIWidget::setSize( const Sizef& size ) {
 	return UINode::setSize( s );
 }
 
-Sizef UIWidget::getCurrentMinSize() {
+Sizef UIWidget::getMinSize() {
 	Sizef s;
 
 	if ( s.x < mMinSize.x )
@@ -438,19 +438,19 @@ Sizef UIWidget::getCurrentMinSize() {
 	return s;
 }
 
-Sizef UIWidget::getCurrentMaxSize() {
+Sizef UIWidget::getMaxSize() {
 	Sizef s;
 
 	if ( !mMaxWidthEq.empty() ) {
 		Float length =
 			lengthFromValueAsDp( mMaxWidthEq, CSS::PropertyRelativeTarget::ContainingBlockWidth );
-		s.x = eemin( s.x, length );
+		s.x = eemax( s.x, length );
 	}
 
 	if ( !mMaxHeightEq.empty() ) {
 		Float length =
 			lengthFromValueAsDp( mMaxHeightEq, CSS::PropertyRelativeTarget::ContainingBlockHeight );
-		s.y = eemin( s.y, length );
+		s.y = eemax( s.y, length );
 	}
 
 	return s;

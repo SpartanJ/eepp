@@ -239,9 +239,9 @@ class EE_API UIWidget : public UINode {
 
 	void createTooltip();
 
-	Sizef getCurrentMinSize();
+	Sizef getMinSize();
 
-	Sizef getCurrentMaxSize();
+	Sizef getMaxSize();
 
 	bool isTabStop() const;
 

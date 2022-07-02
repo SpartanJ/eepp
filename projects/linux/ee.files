@@ -1125,6 +1125,7 @@
 ../../src/tools/ecode/projectdirectorytree.hpp
 ../../src/tools/ecode/projectsearch.cpp
 ../../src/tools/ecode/projectsearch.hpp
+../../src/tools/ecode/scopedop.hpp
 ../../src/tools/ecode/uicodeeditorsplitter.cpp
 ../../src/tools/ecode/uicodeeditorsplitter.hpp
 ../../src/tools/ecode/uitreeviewglobalsearch.cpp

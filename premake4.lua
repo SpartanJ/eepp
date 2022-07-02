@@ -1184,7 +1184,7 @@ solution "eepp"
 		set_kind()
 		language "C++"
 		files { "src/tools/eterm/**.cpp" }
-		if os.is("linux") then
+		if os.is_real("linux") then
 			links { "util" }
 		end
 		if os.is("haiku") then

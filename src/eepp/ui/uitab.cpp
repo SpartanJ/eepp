@@ -229,8 +229,7 @@ void UITab::onAutoSize() {
 	}
 
 	if ( mFlags & UI_AUTO_SIZE ) {
-		Float w =
-			mTextBox->getSize().getWidth() +
+		Float nonTextW =
 			( NULL != mIcon ? mIcon->getSize().getWidth() + mIcon->getLayoutMargin().Left +
 								  mIcon->getLayoutMargin().Right
 							: 0 ) +
@@ -239,10 +238,17 @@ void UITab::onAutoSize() {
 						mCloseButton->getLayoutMargin().Right
 				  : 0 ) +
 			getSkinSize().getWidth();
+		Float textW = mTextBox->getSize().getWidth();
+		Float w = textW + nonTextW;
 
 		if ( NULL != tTabW ) {
-			w = eemax( w, tTabW->getMinTabWidth() );
-			w = eemin( w, tTabW->getMaxTabWidth() );
+			if ( !mMinWidthEq.empty() )
+				w = eemax( w, getMinSize().getWidth() );
+			if ( !mMaxWidthEq.empty() )
+				w = eemin( w, getMaxSize().getWidth() );
+
+			if ( textW > w - nonTextW )
+				getTextBox()->setMaxWidthEq( String::format( "%.0fdp", w - nonTextW ) );
 		}
 
 		setInternalWidth( w );
@@ -251,6 +257,9 @@ void UITab::onAutoSize() {
 			if ( NULL != getTabWidget() )
 				getTabWidget()->orderTabs();
 		}
+
+		if ( getTextBox()->getTextWidth() > getTextBox()->getSize().getWidth() )
+			getTextBox()->setHorizontalAlign( UI_HALIGN_LEFT );
 	}
 }
 
@@ -346,6 +355,8 @@ void UITab::updateTab() {
 	UITabWidget* tTabW = getTabWidget();
 
 	if ( NULL != tTabW ) {
+		setMinWidthEq( tTabW->getMinTabWidth() );
+		setMaxWidthEq( tTabW->getMaxTabWidth() );
 		if ( mText.size() > tTabW->getMaxTextLength() ) {
 			UIPushButton::setText( mText.substr( 0, tTabW->getMaxTextLength() ) );
 		} else {

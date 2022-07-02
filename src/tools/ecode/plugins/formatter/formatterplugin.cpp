@@ -1,8 +1,10 @@
 #include "formatterplugin.hpp"
+#include "../../scopedop.hpp"
 #include "../../thirdparty/json.hpp"
 #include "../../thirdparty/subprocess.h"
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreamstring.hpp>
+#include <eepp/system/lock.hpp>
 #include <eepp/system/luapattern.hpp>
 #include <random>
 
@@ -27,7 +29,13 @@ FormatterPlugin::FormatterPlugin( const std::string& formattersPath,
 }
 
 FormatterPlugin::~FormatterPlugin() {
-	mClosing = true;
+	mShuttingDown = true;
+
+	if ( mWorkersCount != 0 ) {
+		std::unique_lock<std::mutex> lock( mWorkMutex );
+		mWorkerCondition.wait( lock, [&]() { return mWorkersCount <= 0; } );
+	}
+
 	for ( auto editor : mEditors )
 		editor->unregisterPlugin( this );
 }
@@ -49,7 +57,7 @@ void FormatterPlugin::onRegister( UICodeEditor* editor ) {
 }
 
 void FormatterPlugin::onUnregister( UICodeEditor* editor ) {
-	if ( mClosing )
+	if ( mShuttingDown )
 		return;
 	mEditors.erase( editor );
 }
@@ -98,6 +106,16 @@ void FormatterPlugin::load( const std::string& formatterPath ) {
 }
 
 void FormatterPlugin::formatDoc( UICodeEditor* editor ) {
+	ScopedOp op(
+		[&]() {
+			mWorkMutex.lock();
+			mWorkersCount++;
+		},
+		[&]() {
+			mWorkersCount--;
+			mWorkMutex.unlock();
+			mWorkerCondition.notify_all();
+		} );
 	if ( !mReady )
 		return;
 
@@ -152,8 +170,8 @@ void FormatterPlugin::runFormatter( UICodeEditor* editor, const Formatter& forma
 									const std::string& path ) {
 
 	std::string cmd( formatter.command );
-	String::replaceAll( cmd, "$FILENAME", path );
-	std::vector<std::string> cmdArr = String::split( cmd, ' ' );
+	String::replaceAll( cmd, "$FILENAME", "\"" + path + "\"" );
+	std::vector<std::string> cmdArr = String::split( cmd, " " );
 	std::vector<const char*> strings;
 	for ( size_t i = 0; i < cmdArr.size(); ++i )
 		strings.push_back( cmdArr[i].c_str() );
@@ -168,13 +186,14 @@ void FormatterPlugin::runFormatter( UICodeEditor* editor, const Formatter& forma
 		std::string buffer( 1024, '\0' );
 		std::string data;
 		unsigned bytesRead = 0;
+		int returnCode;
 		do {
 			bytesRead = subprocess_read_stdout( &subprocess, &buffer[0], buffer.size() );
 			data += buffer.substr( 0, bytesRead );
-		} while ( bytesRead != 0 );
+		} while ( bytesRead != 0 && subprocess_alive( &subprocess ) && !mShuttingDown );
 
-		int ret;
-		subprocess_join( &subprocess, &ret );
+		if ( subprocess_alive( &subprocess ) && !mShuttingDown )
+			subprocess_join( &subprocess, &returnCode );
 		subprocess_destroy( &subprocess );
 		// Log::info( "Formatter result:\n%s", data.c_str() );
 
@@ -209,4 +228,4 @@ FormatterPlugin::Formatter FormatterPlugin::supportsFormatter( std::shared_ptr<T
 	return {};
 }
 
-}
+} // namespace ecode

@@ -119,7 +119,7 @@ class EE_API UITextView : public UIWidget {
 
 	virtual void onSizeChange();
 
-	virtual void autoShrink();
+	virtual void autoWrap();
 
 	virtual void onAutoSize();
 

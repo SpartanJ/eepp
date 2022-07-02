@@ -220,6 +220,10 @@ Uint32 Engine::getWindowCount() const {
 	return mWindows.size();
 }
 
+bool Engine::isEngineRunning() {
+	return existsSingleton() && Engine::instance()->isRunning();
+}
+
 bool Engine::isRunning() const {
 	return NULL != mWindow;
 }

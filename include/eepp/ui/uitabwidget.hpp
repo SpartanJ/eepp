@@ -31,8 +31,8 @@ class EE_API UITabWidget : public UIWidget {
 		Uint32 MaxTextLength = 100;
 		Float TabHeight = 0;
 		Uint32 TabTextAlign = ( UI_HALIGN_CENTER | UI_VALIGN_CENTER );
-		Float MinTabWidth = 32;
-		Float MaxTabWidth = 300;
+		std::string MinTabWidth = "32dp";
+		std::string MaxTabWidth = "300dp";
 		bool TabsClosable = false;
 		bool TabsEdgesDiffSkins = false; //! Indicates if the edge tabs ( the left and right
 										 //! border tab ) are different from the central tabs.
@@ -91,13 +91,13 @@ class EE_API UITabWidget : public UIWidget {
 
 	void setMaxTextLength( const Uint32& maxTextLength );
 
-	Float getMinTabWidth() const;
+	std::string getMinTabWidth() const;
 
-	void setMinTabWidth( const Float& minTabWidth );
+	void setMinTabWidth( const std::string& minTabWidth );
 
-	Float getMaxTabWidth() const;
+	std::string getMaxTabWidth() const;
 
-	void setMaxTabWidth( const Float& maxTabWidth );
+	void setMaxTabWidth( const std::string& maxTabWidth );
 
 	bool getTabsClosable() const;
 

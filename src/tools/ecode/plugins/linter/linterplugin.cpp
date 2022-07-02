@@ -1,10 +1,12 @@
 ﻿#include "linterplugin.hpp"
+#include "../../scopedop.hpp"
 #include "../../thirdparty/json.hpp"
 #include "../../thirdparty/subprocess.h"
 #include <algorithm>
 #include <eepp/graphics/text.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreamstring.hpp>
+#include <eepp/system/lock.hpp>
 #include <eepp/system/luapattern.hpp>
 #include <eepp/ui/uitooltip.hpp>
 #include <random>
@@ -29,7 +31,13 @@ LinterPlugin::LinterPlugin( const std::string& lintersPath, std::shared_ptr<Thre
 }
 
 LinterPlugin::~LinterPlugin() {
-	mClosing = true;
+	mShuttingDown = true;
+
+	if ( mWorkersCount != 0 ) {
+		std::unique_lock<std::mutex> lock( mWorkMutex );
+		mWorkerCondition.wait( lock, [&]() { return mWorkersCount <= 0; } );
+	}
+
 	for ( const auto& editor : mEditors ) {
 		for ( auto listener : editor.second )
 			editor.first->removeEventListener( listener );
@@ -155,7 +163,7 @@ void LinterPlugin::onRegister( UICodeEditor* editor ) {
 }
 
 void LinterPlugin::onUnregister( UICodeEditor* editor ) {
-	if ( mClosing )
+	if ( mShuttingDown )
 		return;
 	Lock l( mDocMutex );
 	TextDocument* doc = mEditorDocs[editor];
@@ -193,11 +201,22 @@ void LinterPlugin::setDelayTime( const Time& delayTime ) {
 }
 
 void LinterPlugin::lintDoc( std::shared_ptr<TextDocument> doc ) {
+	ScopedOp op(
+		[&]() {
+			mWorkMutex.lock();
+			mWorkersCount++;
+		},
+		[&]() {
+			mWorkersCount--;
+			mWorkMutex.unlock();
+			mWorkerCondition.notify_all();
+		} );
 	if ( !mReady )
 		return;
 	auto linter = supportsLinter( doc );
 	if ( linter.command.empty() )
 		return;
+
 	IOStreamString fileString;
 	if ( doc->isDirty() || !doc->hasFilepath() ) {
 		std::string tmpPath;
@@ -230,8 +249,8 @@ void LinterPlugin::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 							  const std::string& path ) {
 	Clock clock;
 	std::string cmd( linter.command );
-	String::replaceAll( cmd, "$FILENAME", path );
-	std::vector<std::string> cmdArr = String::split( cmd, ' ' );
+	String::replaceAll( cmd, "$FILENAME", "\"" + path + "\"" );
+	std::vector<std::string> cmdArr = String::split( cmd, " " );
 	std::vector<const char*> strings;
 	for ( size_t i = 0; i < cmdArr.size(); ++i )
 		strings.push_back( cmdArr[i].c_str() );
@@ -246,13 +265,14 @@ void LinterPlugin::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 		std::string buffer( 1024, '\0' );
 		std::string data;
 		unsigned bytesRead = 0;
+		int returnCode;
 		do {
 			bytesRead = subprocess_read_stdout( &subprocess, &buffer[0], buffer.size() );
 			data += buffer.substr( 0, bytesRead );
-		} while ( bytesRead != 0 );
+		} while ( bytesRead != 0 && subprocess_alive( &subprocess ) && !mShuttingDown );
 
-		int returnCode;
-		subprocess_join( &subprocess, &returnCode );
+		if ( subprocess_alive( &subprocess ) && !mShuttingDown )
+			subprocess_join( &subprocess, &returnCode );
 		subprocess_destroy( &subprocess );
 
 		if ( linter.hasNoErrorsExitCode && linter.noErrorsExitCode == returnCode ) {
@@ -500,4 +520,4 @@ void LinterPlugin::invalidateEditors( TextDocument* doc ) {
 	}
 }
 
-}
+} // namespace ecode

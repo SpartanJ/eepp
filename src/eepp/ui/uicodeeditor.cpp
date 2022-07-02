@@ -2033,7 +2033,7 @@ Int64 UICodeEditor::getColFromXOffset( Int64 lineNumber, const Float& x ) const 
 }
 
 Float UICodeEditor::getLineHeight() const {
-	return mFont->getLineSpacing( getCharacterSize() );
+	return mFont->getFontHeight( getCharacterSize() );
 }
 
 Float UICodeEditor::getCharacterSize() const {
