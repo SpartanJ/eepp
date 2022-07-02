@@ -21,11 +21,11 @@ class EE_API UIScrollView : public UITouchDraggableWidget {
 
 	void setVerticalScrollMode( const ScrollBarMode& Mode );
 
-	const ScrollBarMode& getVerticalScrollMode();
+	const ScrollBarMode& getVerticalScrollMode() const;
 
 	void setHorizontalScrollMode( const ScrollBarMode& Mode );
 
-	const ScrollBarMode& getHorizontalScrollMode();
+	const ScrollBarMode& getHorizontalScrollMode() const;
 
 	const ScrollViewType& getViewType() const;
 
@@ -40,7 +40,7 @@ class EE_API UIScrollView : public UITouchDraggableWidget {
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
-										   const Uint32& propertyIndex = 0 );
+										   const Uint32& propertyIndex = 0 ) const;
 
   protected:
 	ScrollViewType mViewType;

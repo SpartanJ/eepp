@@ -98,7 +98,7 @@ void UIScrollView::setVerticalScrollMode( const ScrollBarMode& Mode ) {
 	}
 }
 
-const ScrollBarMode& UIScrollView::getVerticalScrollMode() {
+const ScrollBarMode& UIScrollView::getVerticalScrollMode() const {
 	return mVScrollMode;
 }
 
@@ -109,7 +109,7 @@ void UIScrollView::setHorizontalScrollMode( const ScrollBarMode& Mode ) {
 	}
 }
 
-const ScrollBarMode& UIScrollView::getHorizontalScrollMode() {
+const ScrollBarMode& UIScrollView::getHorizontalScrollMode() const {
 	return mHScrollMode;
 }
 
@@ -239,11 +239,11 @@ void UIScrollView::onTouchDragValueChange( Vector2f diff ) {
 
 	if ( mVScroll->isEnabled() && 0 != mScrollView->getSize().getHeight() )
 		mVScroll->setValue( mVScroll->getValue() +
-							( -diff.y / ( Float )( mScrollView->getSize().getHeight() ) ) );
+							( -diff.y / (Float)( mScrollView->getSize().getHeight() ) ) );
 
 	if ( mHScroll->isEnabled() && 0 != mScrollView->getSize().getWidth() )
 		mHScroll->setValue( mHScroll->getValue() +
-							( -diff.x / ( Float )( mScrollView->getSize().getWidth() ) ) );
+							( -diff.x / (Float)( mScrollView->getSize().getWidth() ) ) );
 }
 
 bool UIScrollView::isTouchOverAllowedChilds() {
@@ -254,7 +254,7 @@ bool UIScrollView::isTouchOverAllowedChilds() {
 }
 
 std::string UIScrollView::getPropertyString( const PropertyDefinition* propertyDef,
-											 const Uint32& propertyIndex ) {
+											 const Uint32& propertyIndex ) const {
 	if ( NULL == propertyDef )
 		return "";
 

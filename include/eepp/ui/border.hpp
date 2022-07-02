@@ -41,7 +41,7 @@ struct EE_API Borders {
 
 	static BorderType toBorderType( const std::string& borderType );
 
-	static Sizef radiusFromString( UINode* node, const std::string& val );
+	static Sizef radiusFromString( const UINode* node, const std::string& val );
 
 	/** Creates the border geometry into the VertexBuffer provided. The VertexBuffer must be a
 	 * a EE::Graphics::PrimitiveType::PRIMITIVE_TRIANGLE_STRIP with VERTEX_FLAGS_PRIMITIVE flags. */

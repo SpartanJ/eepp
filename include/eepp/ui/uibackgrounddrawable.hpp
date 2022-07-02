@@ -12,9 +12,9 @@ class UINode;
 
 class EE_API UIBackgroundDrawable : public Drawable {
   public:
-	static UIBackgroundDrawable* New( UINode* owner );
+	static UIBackgroundDrawable* New( const UINode* owner );
 
-	UIBackgroundDrawable( UINode* owner );
+	UIBackgroundDrawable( const UINode* owner );
 
 	virtual ~UIBackgroundDrawable();
 
@@ -57,7 +57,7 @@ class EE_API UIBackgroundDrawable : public Drawable {
 	void setBottomRightRadius( const std::string& radius );
 
   protected:
-	UINode* mOwner;
+	const UINode* mOwner;
 	BorderRadiuseStr mRadiusesStr;
 	VertexBuffer* mVertexBuffer;
 	Sizef mSize;

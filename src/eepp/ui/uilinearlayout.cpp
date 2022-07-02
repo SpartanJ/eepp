@@ -472,7 +472,7 @@ Sizei UILinearLayout::getTotalUsedSize() {
 }
 
 std::string UILinearLayout::getPropertyString( const PropertyDefinition* propertyDef,
-											   const Uint32& propertyIndex ) {
+											   const Uint32& propertyIndex ) const {
 	if ( NULL == propertyDef )
 		return "";
 

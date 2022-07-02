@@ -61,7 +61,7 @@ Int64 Time::asMicroseconds() const {
 
 Time::Time( Int64 Microseconds ) : mMicroseconds( Microseconds ) {}
 
-std::string Time::toString() {
+std::string Time::toString() const {
 	Uint64 totalSeconds = asSeconds();
 
 	if ( asSeconds() < 1 ) {

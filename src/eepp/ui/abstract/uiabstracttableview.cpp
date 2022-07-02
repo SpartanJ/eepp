@@ -613,7 +613,7 @@ bool UIAbstractTableView::applyProperty( const StyleSheetProperty& attribute ) {
 }
 
 std::string UIAbstractTableView::getPropertyString( const PropertyDefinition* propertyDef,
-													const Uint32& propertyIndex ) {
+													const Uint32& propertyIndex ) const {
 	if ( NULL == propertyDef )
 		return "";
 

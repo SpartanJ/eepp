@@ -223,7 +223,7 @@ UILoader* UILoader::setAnimationSpeed( const Float& animationSpeed ) {
 }
 
 std::string UILoader::getPropertyString( const PropertyDefinition* propertyDef,
-										 const Uint32& propertyIndex ) {
+										 const Uint32& propertyIndex ) const {
 	if ( NULL == propertyDef )
 		return "";
 

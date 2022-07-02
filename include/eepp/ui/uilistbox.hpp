@@ -87,11 +87,11 @@ class EE_API UIListBox : public UITouchDraggableWidget {
 
 	void setVerticalScrollMode( const ScrollBarMode& Mode );
 
-	const ScrollBarMode& getVerticalScrollMode();
+	const ScrollBarMode& getVerticalScrollMode() const;
 
 	void setHorizontalScrollMode( const ScrollBarMode& Mode );
 
-	const ScrollBarMode& getHorizontalScrollMode();
+	const ScrollBarMode& getHorizontalScrollMode() const;
 
 	void loadFromXmlNode( const pugi::xml_node& node );
 
@@ -100,7 +100,7 @@ class EE_API UIListBox : public UITouchDraggableWidget {
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
-										   const Uint32& propertyIndex = 0 );
+										   const Uint32& propertyIndex = 0 ) const;
 
   protected:
 	friend class UIListBoxItem;

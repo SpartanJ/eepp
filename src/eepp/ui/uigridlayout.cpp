@@ -229,7 +229,7 @@ Sizef UIGridLayout::getTargetElementSize() const {
 }
 
 std::string UIGridLayout::getPropertyString( const PropertyDefinition* propertyDef,
-											 const Uint32& propertyIndex ) {
+											 const Uint32& propertyIndex ) const {
 	if ( NULL == propertyDef )
 		return "";
 

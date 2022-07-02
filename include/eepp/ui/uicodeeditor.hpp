@@ -162,7 +162,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	UICodeEditor* setFontSelectedColor( const Color& color );
 
-	const Color& getFontSelectedColor();
+	const Color& getFontSelectedColor() const;
 
 	UICodeEditor* setFontSelectionBackColor( const Color& color );
 
@@ -302,7 +302,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
-										   const Uint32& propertyIndex = 0 );
+										   const Uint32& propertyIndex = 0 ) const;
 
 	const bool& getHighlightMatchingBracket() const;
 

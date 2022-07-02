@@ -379,7 +379,7 @@ void UIWidget::tooltipRemove() {
 	mTooltip = NULL;
 }
 
-Node* UIWidget::setSize( const Sizef& size ) {
+Sizef UIWidget::fitMinMaxSize( const Sizef& size ) const {
 	Sizef s( size );
 
 	if ( s.x < mMinSize.x )
@@ -412,6 +412,12 @@ Node* UIWidget::setSize( const Sizef& size ) {
 		s.y = eemin( s.y, length );
 	}
 
+	return s;
+}
+
+Node* UIWidget::setSize( const Sizef& size ) {
+	Sizef s( size );
+	s = fitMinMaxSize( s );
 	return UINode::setSize( s );
 }
 
@@ -1276,12 +1282,12 @@ std::vector<UIWidget*> UIWidget::querySelectorAll( const std::string& selector )
 	return querySelectorAll( CSS::StyleSheetSelector( selector ) );
 }
 
-std::string UIWidget::getPropertyString( const std::string& property ) {
+std::string UIWidget::getPropertyString( const std::string& property ) const {
 	return getPropertyString( StyleSheetSpecification::instance()->getProperty( property ) );
 }
 
 std::string UIWidget::getPropertyString( const PropertyDefinition* propertyDef,
-										 const Uint32& propertyIndex ) {
+										 const Uint32& propertyIndex ) const {
 	if ( NULL == propertyDef )
 		return "";
 

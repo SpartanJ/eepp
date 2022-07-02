@@ -142,7 +142,7 @@ Uint32 UITouchDraggableWidget::onMessage( const NodeMessage* msg ) {
 }
 
 std::string UITouchDraggableWidget::getPropertyString( const PropertyDefinition* propertyDef,
-													   const Uint32& propertyIndex ) {
+													   const Uint32& propertyIndex ) const {
 	if ( NULL == propertyDef )
 		return "";
 

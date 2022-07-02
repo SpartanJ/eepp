@@ -161,7 +161,7 @@ class EE_API UINodeDrawable : public Drawable {
 
 	void invalidate();
 
-	UINode* getOwner() { return mOwner; }
+	UINode* getOwner() const { return mOwner; }
 
 	UIBackgroundDrawable& getBackgroundDrawable();
 

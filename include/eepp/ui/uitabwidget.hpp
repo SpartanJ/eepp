@@ -118,7 +118,7 @@ class EE_API UITabWidget : public UIWidget {
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
-										   const Uint32& propertyIndex = 0 );
+										   const Uint32& propertyIndex = 0 ) const;
 
 	virtual bool isDrawInvalidator() const;
 

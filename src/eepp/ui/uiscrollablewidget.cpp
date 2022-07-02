@@ -57,7 +57,7 @@ void UIScrollableWidget::setVerticalScrollMode( const ScrollBarMode& Mode ) {
 	}
 }
 
-const ScrollBarMode& UIScrollableWidget::getVerticalScrollMode() {
+const ScrollBarMode& UIScrollableWidget::getVerticalScrollMode() const {
 	return mVScrollMode;
 }
 
@@ -68,7 +68,7 @@ void UIScrollableWidget::setHorizontalScrollMode( const ScrollBarMode& Mode ) {
 	}
 }
 
-const ScrollBarMode& UIScrollableWidget::getHorizontalScrollMode() {
+const ScrollBarMode& UIScrollableWidget::getHorizontalScrollMode() const {
 	return mHScrollMode;
 }
 
@@ -217,7 +217,7 @@ void UIScrollableWidget::onValueChangeCb( const Event* ) {
 }
 
 std::string UIScrollableWidget::getPropertyString( const PropertyDefinition* propertyDef,
-												   const Uint32& propertyIndex ) {
+												   const Uint32& propertyIndex ) const {
 	if ( NULL == propertyDef )
 		return "";
 

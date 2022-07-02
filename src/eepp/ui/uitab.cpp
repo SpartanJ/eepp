@@ -201,7 +201,7 @@ void UITab::onStateChange() {
 	}
 }
 
-const String& UITab::getText() {
+const String& UITab::getText() const {
 	return UIPushButton::getText();
 }
 
@@ -264,7 +264,7 @@ void UITab::onAutoSize() {
 }
 
 std::string UITab::getPropertyString( const PropertyDefinition* propertyDef,
-									  const Uint32& propertyIndex ) {
+									  const Uint32& propertyIndex ) const {
 	if ( NULL == propertyDef )
 		return "";
 

@@ -350,7 +350,7 @@ bool UIDropDownList::applyProperty( const StyleSheetProperty& attribute ) {
 }
 
 std::string UIDropDownList::getPropertyString( const PropertyDefinition* propertyDef,
-											   const Uint32& propertyIndex ) {
+											   const Uint32& propertyIndex ) const {
 	if ( NULL == propertyDef )
 		return "";
 

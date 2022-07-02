@@ -40,7 +40,7 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 
 	const bool& isEditingAllowed() const;
 
-	virtual const String& getText();
+	virtual const String& getText() const;
 
 	virtual UITextView* setText( const String& text );
 
@@ -48,12 +48,12 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 
 	UITextInput* setMaxLength( const Uint32& maxLength );
 
-	const Uint32& getMaxLength();
+	const Uint32& getMaxLength() const;
 
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
-										   const Uint32& propertyIndex = 0 );
+										   const Uint32& propertyIndex = 0 ) const;
 
 	virtual UIWidget* setPadding( const Rectf& padding );
 
@@ -69,7 +69,7 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 
 	UITextInput* setHintShadowColor( const Color& shadowColor );
 
-	Font* getHintFont();
+	Font* getHintFont() const;
 
 	UITextInput* setHintFont( Font* font );
 
@@ -93,10 +93,10 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 	void setAllowOnlyNumbers( const bool& onlyNumbers, const bool& allowFloat = false );
 
 	/** @return If is only allowing numbers */
-	bool onlyNumbersAllowed();
+	bool onlyNumbersAllowed() const;
 
 	/** @return If is only allowing numbers, it allow floating point numbers? */
-	bool floatingPointAllowed();
+	bool floatingPointAllowed() const;
 
 	TextDocument& getDocument();
 

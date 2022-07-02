@@ -34,7 +34,7 @@ class EE_API UIPushButton : public UIWidget {
 
 	virtual UIPushButton* setText( const String& text );
 
-	virtual const String& getText();
+	virtual const String& getText() const;
 
 	UITextView* getTextBox() const;
 
@@ -45,7 +45,7 @@ class EE_API UIPushButton : public UIWidget {
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
-										   const Uint32& propertyIndex = 0 );
+										   const Uint32& propertyIndex = 0 ) const;
 
 	void setTextAlign( const Uint32& align );
 

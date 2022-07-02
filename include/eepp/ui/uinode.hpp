@@ -144,7 +144,7 @@ class EE_API UINode : public Node {
 
 	Uint32 getForegroundRadius() const;
 
-	UIBorderDrawable* setBorderEnabled( bool enabled );
+	UIBorderDrawable* setBorderEnabled( bool enabled ) const;
 
 	UINode* setBorderColor( const Color& color );
 
@@ -162,11 +162,11 @@ class EE_API UINode : public Node {
 
 	virtual UINode* resetFlags( Uint32 newFlags = 0 );
 
-	UINodeDrawable* getBackground();
+	UINodeDrawable* getBackground() const;
 
-	UINodeDrawable* getForeground();
+	UINodeDrawable* getForeground() const;
 
-	UIBorderDrawable* getBorder();
+	UIBorderDrawable* getBorder() const;
 
 	void setThemeByName( const std::string& Theme );
 
@@ -227,27 +227,29 @@ class EE_API UINode : public Node {
 	Float
 	getPropertyRelativeTargetContainerLength( const CSS::PropertyRelativeTarget& relativeTarget,
 											  const Float& defaultValue = 0,
-											  const Uint32& propertyIndex = 0 );
+											  const Uint32& propertyIndex = 0 ) const;
 
 	virtual Float convertLength( const CSS::StyleSheetLength& length,
-								 const Float& containerLength );
+								 const Float& containerLength ) const;
 
-	Float convertLengthAsDp( const CSS::StyleSheetLength& length, const Float& containerLength );
+	Float convertLengthAsDp( const CSS::StyleSheetLength& length,
+							 const Float& containerLength ) const;
 
 	Float lengthFromValue( const std::string& value,
 						   const CSS::PropertyRelativeTarget& relativeTarget,
-						   const Float& defaultValue = 0, const Uint32& propertyIndex = 0 );
+						   const Float& defaultValue = 0, const Uint32& propertyIndex = 0 ) const;
 
 	Float lengthFromValue( const CSS::StyleSheetProperty& property, const Float& defaultValue = 0 );
 
 	Float lengthFromValueAsDp( const std::string& value,
 							   const CSS::PropertyRelativeTarget& relativeTarget,
-							   const Float& defaultValue = 0, const Uint32& propertyIndex = 0 );
+							   const Float& defaultValue = 0,
+							   const Uint32& propertyIndex = 0 ) const;
 
 	Float lengthFromValueAsDp( const CSS::StyleSheetProperty& property,
-							   const Float& defaultValue = 0 );
+							   const Float& defaultValue = 0 ) const;
 
-	UISceneNode* getUISceneNode();
+	UISceneNode* getUISceneNode() const;
 
 	void setMinWidth( const Float& width );
 
@@ -272,9 +274,9 @@ class EE_API UINode : public Node {
 	Uint32 mFlags;
 	Uint32 mState;
 	UISkinState* mSkinState;
-	UINodeDrawable* mBackground;
-	UINodeDrawable* mForeground;
-	UIBorderDrawable* mBorder;
+	mutable UINodeDrawable* mBackground;
+	mutable UINodeDrawable* mForeground;
+	mutable UIBorderDrawable* mBorder;
 	Vector2f mDragPoint;
 	Uint32 mDragButton;
 	Color mSkinColor;

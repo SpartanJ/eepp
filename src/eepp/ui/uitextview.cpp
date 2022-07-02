@@ -185,7 +185,7 @@ UITextView* UITextView::setFontStyle( const Uint32& fontStyle ) {
 	return this;
 }
 
-const String& UITextView::getText() {
+const String& UITextView::getText() const {
 	if ( mFlags & UI_WORD_WRAP )
 		return mString;
 
@@ -693,7 +693,7 @@ bool UITextView::applyProperty( const StyleSheetProperty& attribute ) {
 }
 
 std::string UITextView::getPropertyString( const PropertyDefinition* propertyDef,
-										   const Uint32& propertyIndex ) {
+										   const Uint32& propertyIndex ) const {
 	if ( NULL == propertyDef )
 		return "";
 

@@ -562,7 +562,7 @@ const Color& UICodeEditor::getFontColor() const {
 	return mFontStyleConfig.getFontColor();
 }
 
-const Color& UICodeEditor::getFontSelectedColor() {
+const Color& UICodeEditor::getFontSelectedColor() const {
 	return mFontStyleConfig.getFontSelectedColor();
 }
 
@@ -1870,7 +1870,7 @@ bool UICodeEditor::applyProperty( const StyleSheetProperty& attribute ) {
 }
 
 std::string UICodeEditor::getPropertyString( const PropertyDefinition* propertyDef,
-											 const Uint32& propertyIndex ) {
+											 const Uint32& propertyIndex ) const {
 	if ( NULL == propertyDef )
 		return "";
 

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 7.0.2, 2022-07-01T23:51:49. -->
+<!-- Written by QtCreator 7.0.2, 2022-07-02T02:19:09. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -1203,7 +1203,6 @@
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">ecode-debug</value>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">ProjectExplorer.CustomExecutableRunConfiguration</value>
     <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey"></value>
-    <value type="QString" key="RunConfiguration.Arguments">&quot;/home/downloads/Reporte de facturacion de 01-06-2022 a 30-06-2022.csv&quot;</value>
     <value type="bool" key="RunConfiguration.UseCppDebugger">true</value>
     <value type="bool" key="RunConfiguration.UseCppDebuggerAuto">false</value>
     <value type="bool" key="RunConfiguration.UseQmlDebugger">false</value>

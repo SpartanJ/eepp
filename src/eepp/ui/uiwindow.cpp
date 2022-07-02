@@ -1492,7 +1492,7 @@ void UIWindow::resizeCursor() {
 	}
 }
 
-std::string UIWindow::getWindowFlagsString() {
+std::string UIWindow::getWindowFlagsString() const {
 	std::vector<std::string> flags;
 	if ( getWinFlags() & UI_WIN_DEFAULT_FLAGS )
 		flags.push_back( "default" );
@@ -1522,7 +1522,7 @@ std::string UIWindow::getWindowFlagsString() {
 }
 
 std::string UIWindow::getPropertyString( const PropertyDefinition* propertyDef,
-										 const Uint32& propertyIndex ) {
+										 const Uint32& propertyIndex ) const {
 	if ( NULL == propertyDef )
 		return "";
 

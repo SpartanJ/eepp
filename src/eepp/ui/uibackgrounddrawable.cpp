@@ -5,11 +5,11 @@
 
 namespace EE { namespace UI {
 
-UIBackgroundDrawable* UIBackgroundDrawable::New( UINode* owner ) {
+UIBackgroundDrawable* UIBackgroundDrawable::New( const UINode* owner ) {
 	return eeNew( UIBackgroundDrawable, ( owner ) );
 }
 
-UIBackgroundDrawable::UIBackgroundDrawable( UINode* owner ) :
+UIBackgroundDrawable::UIBackgroundDrawable( const UINode* owner ) :
 	Drawable( UIBACKGROUNDDRAWABLE ),
 	mOwner( owner ),
 	mVertexBuffer( nullptr ),
