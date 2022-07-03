@@ -823,6 +823,9 @@ workspace "eepp"
 		incdirs { "include", "src/modules/eterm/include/","src/modules/eterm/src/" }
 		files { "src/modules/eterm/src/**.cpp" }
 		build_base_cpp_configuration( "eterm" )
+		filter "action:not vs*"
+			cppdialect "C++14"
+			buildoptions { "-Wall" }
 
 	-- Library
 	project "eepp-static"

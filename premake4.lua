@@ -1071,6 +1071,9 @@ solution "eepp"
 		set_targetdir("libs/" .. os.get_real() .. "/")
 		includedirs { "src/modules/eterm/include/","src/modules/eterm/src/" }
 		files { "src/modules/eterm/src/**.cpp" }
+		if not is_vs() then
+			buildoptions{ "-std=c++14" }
+		end
 		build_base_cpp_configuration( "eterm" )
 
 	-- Library
