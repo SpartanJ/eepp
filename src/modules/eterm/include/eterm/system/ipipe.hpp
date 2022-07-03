@@ -1,3 +1,5 @@
+#ifndef ETERM_IPIPE_HPP
+#define ETERM_IPIPE_HPP
 // The MIT License (MIT)
 
 // Copyright (c) 2020 Fredrik A. Kristiansen
@@ -19,38 +21,32 @@
 //  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //  DEALINGS IN THE SOFTWARE.
-#pragma once
-
-#include "iprocessfactory.hpp"
-
-using namespace EE::Terminal;
+#include <stdint.h>
+#include <stdlib.h>
 
 namespace EE { namespace System {
 
-class ProcessFactory : public IProcessFactory {
+class IPipe {
   public:
-	ProcessFactory() = default;
+	IPipe() = default;
 
-	virtual ~ProcessFactory() = default;
+	IPipe( IPipe&& ) = delete;
 
-	ProcessFactory( const ProcessFactory& ) = delete;
+	IPipe( const IPipe& ) = delete;
 
-	ProcessFactory( ProcessFactory&& ) = delete;
+	IPipe& operator=( IPipe&& ) = delete;
 
-	ProcessFactory& operator=( const ProcessFactory& ) = delete;
+	IPipe& operator=( const IPipe& ) = delete;
 
-	ProcessFactory& operator=( ProcessFactory&& ) = delete;
+	virtual ~IPipe() = default;
 
-	virtual std::unique_ptr<IProcess> createWithStdioPipe( const std::string& program,
-														   const std::vector<std::string>& args,
-														   const std::string& workingDirectory,
-														   std::unique_ptr<IPipe>& outPipe,
-														   bool withStderr = true ) override;
+	virtual bool isTTY() const = 0;
 
-	virtual std::unique_ptr<IProcess>
-	createWithPseudoTerminal( const std::string& program, const std::vector<std::string>& args,
-							  const std::string& workingDirectory, int numColumns, int numRows,
-							  std::unique_ptr<IPseudoTerminal>& outPseudoTerminal ) override;
+	virtual int write( const char* s, size_t n ) = 0;
+
+	virtual int read( char* buf, size_t n, bool block = false ) = 0;
 };
 
 }} // namespace EE::System
+
+#endif

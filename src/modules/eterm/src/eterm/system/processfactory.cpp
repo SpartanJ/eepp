@@ -1,6 +1,6 @@
-#include "../system/processfactory.hpp"
-#include "../system/process.hpp"
-#include "../terminal/pseudoterminal.hpp"
+#include <eterm/system/process.hpp>
+#include <eterm/system/processfactory.hpp>
+#include <eterm/terminal/pseudoterminal.hpp>
 
 using namespace EE::System;
 

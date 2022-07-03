@@ -1,3 +1,5 @@
+#ifndef ETERM_PROCESSFACTORY_HPP
+#define ETERM_PROCESSFACTORY_HPP
 // The MIT License (MIT)
 
 // Copyright (c) 2020 Fredrik A. Kristiansen
@@ -19,35 +21,38 @@
 //  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //  DEALINGS IN THE SOFTWARE.
-#pragma once
+#include <eterm/system/iprocessfactory.hpp>
+
+using namespace EE::Terminal;
 
 namespace EE { namespace System {
 
-enum class ProcessStatus { RUNNING = 0, EXITED };
-
-class IProcess {
+class ProcessFactory : public IProcessFactory {
   public:
-	IProcess() = default;
+	ProcessFactory() = default;
 
-	virtual ~IProcess() = default;
+	virtual ~ProcessFactory() = default;
 
-	IProcess( const IProcess& ) = delete;
+	ProcessFactory( const ProcessFactory& ) = delete;
 
-	IProcess( IProcess&& ) = delete;
+	ProcessFactory( ProcessFactory&& ) = delete;
 
-	IProcess& operator=( const IProcess& ) = delete;
+	ProcessFactory& operator=( const ProcessFactory& ) = delete;
 
-	IProcess& operator=( IProcess&& ) = delete;
+	ProcessFactory& operator=( ProcessFactory&& ) = delete;
 
-	virtual void checkExitStatus() = 0;
+	virtual std::unique_ptr<IProcess> createWithStdioPipe( const std::string& program,
+														   const std::vector<std::string>& args,
+														   const std::string& workingDirectory,
+														   std::unique_ptr<IPipe>& outPipe,
+														   bool withStderr = true ) override;
 
-	virtual bool hasExited() const = 0;
-
-	virtual int getExitCode() const = 0;
-
-	virtual void terminate() = 0;
-
-	virtual void waitForExit() = 0;
+	virtual std::unique_ptr<IProcess>
+	createWithPseudoTerminal( const std::string& program, const std::vector<std::string>& args,
+							  const std::string& workingDirectory, int numColumns, int numRows,
+							  std::unique_ptr<IPseudoTerminal>& outPseudoTerminal ) override;
 };
 
 }} // namespace EE::System
+
+#endif

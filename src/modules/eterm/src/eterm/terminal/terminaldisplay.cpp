@@ -1,6 +1,3 @@
-#include "terminaldisplay.hpp"
-#include "../system/processfactory.hpp"
-#include "boxdrawdata.hpp"
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/primitives.hpp>
@@ -9,6 +6,9 @@
 #include <eepp/system/color.hpp>
 #include <eepp/window.hpp>
 #include <eepp/window/clipboard.hpp>
+#include <eterm/system/processfactory.hpp>
+#include <eterm/terminal/boxdrawdata.hpp>
+#include <eterm/terminal/terminaldisplay.hpp>
 
 #define BETWEEN( x, a, b ) ( ( a ) <= ( x ) && ( x ) <= ( b ) )
 #define IS_SET( flag ) ( ( mMode & ( flag ) ) != 0 )

@@ -1,3 +1,5 @@
+#ifndef ETERM_TERMINALEMULATOR_HPP
+#define ETERM_TERMINALEMULATOR_HPP
 // The MIT License (MIT)
 
 // Copyright (c) 2020 Fredrik A. Kristiansen
@@ -33,14 +35,12 @@
 //  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //  DEALINGS IN THE SOFTWARE.
-#pragma once
-
-#include "../system/iprocess.hpp"
-#include "ipseudoterminal.hpp"
-#include "iterminaldisplay.hpp"
-#include "types.hpp"
 #include <eepp/math/vector2.hpp>
 #include <eepp/window/keycodes.hpp>
+#include <eterm/system/iprocess.hpp>
+#include <eterm/terminal/ipseudoterminal.hpp>
+#include <eterm/terminal/iterminaldisplay.hpp>
+#include <eterm/terminal/terminaltypes.hpp>
 #include <memory>
 #include <stdint.h>
 #include <sys/types.h>
@@ -325,3 +325,5 @@ class TerminalEmulator final {
 };
 
 }} // namespace EE::Terminal
+
+#endif

@@ -1,3 +1,5 @@
+#ifndef ETERM_AUTOHANDLE_HPP
+#define ETERM_AUTOHANDLE_HPP
 // The MIT License (MIT)
 
 // Copyright (c) 2020 Fredrik A. Kristiansen
@@ -19,38 +21,54 @@
 //  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //  DEALINGS IN THE SOFTWARE.
-#pragma once
+
+namespace EE { namespace System {
+
+// This class is designed to automatically free a resource handle when destructed
+class AutoHandle final {
+  public:
 #ifdef _WIN32
-#define NTDDI_VERSION NTDDI_WIN10_RS5
-#include <comdef.h>
-#include <iostream>
-#include <string>
-#include <windows.h>
+	// On Windows we deal with the Windows API, which means HANDLE is used as the handle to files
+	// and pipes
+	using type = void*;
+	static constexpr type invalid_value();
+#else
+	// On non-Windows OS'es we deal with file descriptors
+	using type = int;
+	static constexpr type invalid_value();
+#endif
+	explicit AutoHandle( type handle );
 
-static void PrintErrorResult( HRESULT hr ) {
-	_com_error err( hr );
-	LPCTSTR errMsg = err.ErrorMessage();
-	std::cerr << "ERROR: " << errMsg << std::endl;
-}
+	AutoHandle();
 
-static void PrintWinApiError( DWORD error ) {
-	if ( error == 0 )
-		return;
-	LPSTR messageBuffer = nullptr;
-	size_t size = FormatMessageA(
-		FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-		NULL, error, MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ), (LPSTR)&messageBuffer, 0, NULL );
+	AutoHandle( AutoHandle&& other );
 
-	std::string message( messageBuffer, size );
+	~AutoHandle();
 
-	// Free the buffer.
-	LocalFree( messageBuffer );
+	AutoHandle& operator=( AutoHandle&& other );
 
-	std::cerr << "ERROR WinAPI: " << message << std::endl;
-}
+	AutoHandle( const AutoHandle& ) = delete;
 
-static void PrintLastWinApiError( void ) {
-	PrintWinApiError( GetLastError() );
-}
+	AutoHandle& operator=( const AutoHandle& ) = delete;
+
+	explicit operator type() const noexcept;
+
+	operator bool() const noexcept;
+
+	type* get();
+
+	const type* get() const;
+
+	type handle() const {
+		return mHandle;
+	}
+
+	void release() const;
+
+  private:
+	mutable type mHandle;
+};
+
+}} // namespace EE::System
 
 #endif

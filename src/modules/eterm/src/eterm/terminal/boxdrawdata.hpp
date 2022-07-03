@@ -1,3 +1,5 @@
+#ifndef ETERM_BOXDRAWDATA_HPP
+#define ETERM_BOXDRAWDATA_HPP
 /*
  * Copyright 2018 Avi Halachmi (:avih) avihpit@yahoo.com https://github.com/avih
  * MIT/X Consortium License
@@ -265,3 +267,5 @@ static const unsigned short boxdata[256] = {
 	BBQ + BL + TR,
 	BBQ + BL + TR + BR,
 };
+
+#endif

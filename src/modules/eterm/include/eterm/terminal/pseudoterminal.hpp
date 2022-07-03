@@ -1,3 +1,5 @@
+#ifndef ETERM_PSEUDOTERMINAL_HPP
+#define ETERM_PSEUDOTERMINAL_HPP
 // The MIT License (MIT)
 
 // Copyright (c) 2020 Fredrik A. Kristiansen
@@ -19,21 +21,23 @@
 //  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //  DEALINGS IN THE SOFTWARE.
-#pragma once
-
-#include "../system/autohandle.hpp"
-#include "ipseudoterminal.hpp"
 #include <eepp/math/vector2.hpp>
+#include <eterm/system/autohandle.hpp>
+#include <eterm/terminal/ipseudoterminal.hpp>
 #include <memory>
 
 using namespace EE::Math;
 
 namespace EE {
+
 namespace System {
 class Process;
 }
 
+using namespace EE::System;
+
 namespace Terminal {
+
 class PseudoTerminal final : public IPseudoTerminal {
   public:
 	virtual ~PseudoTerminal();
@@ -81,3 +85,5 @@ class PseudoTerminal final : public IPseudoTerminal {
 };
 } // namespace Terminal
 } // namespace EE
+
+#endif

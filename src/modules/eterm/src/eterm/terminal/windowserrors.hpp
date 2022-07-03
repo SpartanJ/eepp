@@ -1,3 +1,5 @@
+#ifndef ETERM_WINDOWSERRORS_HPP
+#define ETERM_WINDOWSERRORS_HPP
 // The MIT License (MIT)
 
 // Copyright (c) 2020 Fredrik A. Kristiansen
@@ -19,48 +21,39 @@
 //  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //  DEALINGS IN THE SOFTWARE.
-#pragma once
-
-#include "../system/ipipe.hpp"
-#include "autohandle.hpp"
-#include <memory>
-
-namespace EE { namespace System {
-
-class Process;
-
-class Pipe : public IPipe {
-  public:
-	Pipe( Pipe&& ) = delete;
-
-	Pipe( const Pipe& ) = delete;
-
-	Pipe& operator=( Pipe&& ) = delete;
-
-	Pipe& operator=( const Pipe& ) = delete;
-
-	virtual ~Pipe() = default;
-
-	virtual bool isTTY() const override;
-
-	virtual int write( const char* s, size_t n ) override;
-
-	virtual int read( char* buf, size_t n, bool block = false ) override;
-
-	static bool CreatePipePair( std::unique_ptr<Pipe>& outPipeA, std::unique_ptr<Pipe>& outPipeB );
-
-  private:
-	friend class Process;
 #ifdef _WIN32
-	AutoHandle mInputHandle;
-	AutoHandle mOutputHandle;
+#define NTDDI_VERSION NTDDI_WIN10_RS5
+#include <comdef.h>
+#include <iostream>
+#include <string>
+#include <windows.h>
 
-	Pipe( AutoHandle&& readHandle, AutoHandle&& writeHandle );
-#else
-	AutoHandle mHandle;
+static void PrintErrorResult( HRESULT hr ) {
+	_com_error err( hr );
+	LPCTSTR errMsg = err.ErrorMessage();
+	std::cerr << "ERROR: " << errMsg << std::endl;
+}
 
-	Pipe( AutoHandle&& handle );
+static void PrintWinApiError( DWORD error ) {
+	if ( error == 0 )
+		return;
+	LPSTR messageBuffer = nullptr;
+	size_t size = FormatMessageA(
+		FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+		NULL, error, MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ), (LPSTR)&messageBuffer, 0, NULL );
+
+	std::string message( messageBuffer, size );
+
+	// Free the buffer.
+	LocalFree( messageBuffer );
+
+	std::cerr << "ERROR WinAPI: " << message << std::endl;
+}
+
+static void PrintLastWinApiError( void ) {
+	PrintWinApiError( GetLastError() );
+}
+
 #endif
-};
 
-}} // namespace EE::System
+#endif

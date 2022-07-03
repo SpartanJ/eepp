@@ -816,6 +816,14 @@ workspace "eepp"
 		filter "system:not windows"
 			files { "src/thirdparty/efsw/src/efsw/platform/posix/*.cpp" }
 
+	project "eterm-static"
+		kind "StaticLib"
+		language "C++"
+		targetdir("libs/" .. os.target() .. "/")
+		incdirs { "include", "src/modules/eterm/include/","src/modules/eterm/src/" }
+		files { "src/modules/eterm/src/**.cpp" }
+		build_base_cpp_configuration( "eterm" )
+
 	-- Library
 	project "eepp-static"
 		kind "StaticLib"
@@ -926,7 +934,9 @@ workspace "eepp"
 	project "eterm"
 		set_kind()
 		language "C++"
+		incdirs { "src/modules/eterm/include/" }
 		files { "src/tools/eterm/**.cpp" }
+		links { "eterm-static" }
 		build_link_configuration( "eterm", true )
 		filter "system:linux"
 			links { "util" }

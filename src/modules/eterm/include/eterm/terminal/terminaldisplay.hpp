@@ -1,9 +1,6 @@
-#ifndef ETERMINALDISPLAY_HPP
-#define ETERMINALDISPLAY_HPP
+#ifndef ETERM_TERMINALDISPLAY_HPP
+#define ETERM_TERMINALDISPLAY_HPP
 
-#include "../system/iprocessfactory.hpp"
-#include "iterminaldisplay.hpp"
-#include "terminalemulator.hpp"
 #include <eepp/config.hpp>
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/framebuffer.hpp>
@@ -11,6 +8,9 @@
 #include <eepp/window/inputevent.hpp>
 #include <eepp/window/keycodes.hpp>
 #include <eepp/window/window.hpp>
+#include <eterm/system/iprocessfactory.hpp>
+#include <eterm/terminal/iterminaldisplay.hpp>
+#include <eterm/terminal/terminalemulator.hpp>
 
 #include <atomic>
 #include <memory>
@@ -286,4 +286,4 @@ class TerminalDisplay : public ITerminalDisplay {
 	void drawFrameBuffer();
 };
 
-#endif // ETERMINALDISPLAY_HPP
+#endif // ETERM_TERMINALDISPLAY_HPP

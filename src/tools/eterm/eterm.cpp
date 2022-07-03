@@ -1,5 +1,5 @@
-#include "terminal/terminaldisplay.hpp"
 #include <eepp/ee.hpp>
+#include <eterm/terminal/terminaldisplay.hpp>
 
 EE::Window::Window* win = NULL;
 std::shared_ptr<TerminalDisplay> terminal = nullptr;

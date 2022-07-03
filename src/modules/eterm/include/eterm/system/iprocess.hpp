@@ -1,3 +1,5 @@
+#ifndef ETERM_PROCESSSTATUS_HPP
+#define ETERM_PROCESSSTATUS_HPP
 // The MIT License (MIT)
 
 // Copyright (c) 2020 Fredrik A. Kristiansen
@@ -19,53 +21,36 @@
 //  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //  DEALINGS IN THE SOFTWARE.
-#pragma once
 
-namespace EE {
+namespace EE { namespace System {
 
-// This class is designed to automatically free a resource handle when destructed
-class AutoHandle final {
+enum class ProcessStatus { RUNNING = 0, EXITED };
+
+class IProcess {
   public:
-#ifdef _WIN32
-	// On Windows we deal with the Windows API, which means HANDLE is used as the handle to files
-	// and pipes
-	using type = void*;
-	static constexpr type invalid_value();
-#else
-	// On non-Windows OS'es we deal with file descriptors
-	using type = int;
-	static constexpr type invalid_value();
-#endif
-	explicit AutoHandle( type handle );
+	IProcess() = default;
 
-	AutoHandle();
+	virtual ~IProcess() = default;
 
-	AutoHandle( AutoHandle&& other );
+	IProcess( const IProcess& ) = delete;
 
-	~AutoHandle();
+	IProcess( IProcess&& ) = delete;
 
-	AutoHandle& operator=( AutoHandle&& other );
+	IProcess& operator=( const IProcess& ) = delete;
 
-	AutoHandle( const AutoHandle& ) = delete;
+	IProcess& operator=( IProcess&& ) = delete;
 
-	AutoHandle& operator=( const AutoHandle& ) = delete;
+	virtual void checkExitStatus() = 0;
 
-	explicit operator type() const noexcept;
+	virtual bool hasExited() const = 0;
 
-	operator bool() const noexcept;
+	virtual int getExitCode() const = 0;
 
-	type* get();
+	virtual void terminate() = 0;
 
-	const type* get() const;
-
-	type handle() const {
-		return mHandle;
-	}
-
-	void release() const;
-
-  private:
-	mutable type mHandle;
+	virtual void waitForExit() = 0;
 };
 
-} // namespace EE
+}} // namespace EE::System
+
+#endif

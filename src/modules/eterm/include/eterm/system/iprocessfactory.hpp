@@ -1,3 +1,5 @@
+#ifndef IPROCESSFACTORY_HPP
+#define IPROCESSFACTORY_HPP
 // The MIT License (MIT)
 
 // Copyright (c) 2020 Fredrik A. Kristiansen
@@ -19,10 +21,8 @@
 //  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //  DEALINGS IN THE SOFTWARE.
-#pragma once
-
-#include "../terminal/ipseudoterminal.hpp"
-#include "iprocess.hpp"
+#include <eterm/system/iprocess.hpp>
+#include <eterm/terminal/ipseudoterminal.hpp>
 
 #include <memory>
 #include <string>
@@ -59,3 +59,5 @@ class IProcessFactory {
 };
 
 }} // namespace EE::System
+
+#endif

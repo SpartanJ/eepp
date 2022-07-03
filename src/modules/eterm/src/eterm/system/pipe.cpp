@@ -1,6 +1,6 @@
 #ifdef _WIN32
-#include "pipe.hpp"
-#include "../terminal/windowserrors.hpp"
+#include <eterm/system/pipe.hpp>
+#include <eterm/terminal/windowserrors.hpp>
 #include <windows.h>
 
 using namespace EE::System;

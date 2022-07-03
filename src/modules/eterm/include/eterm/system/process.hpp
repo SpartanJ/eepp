@@ -1,3 +1,5 @@
+#ifndef ETERM_PROCESS_HPP
+#define ETERM_PROCESS_HPP
 // The MIT License (MIT)
 
 // Copyright (c) 2020 Fredrik A. Kristiansen
@@ -19,14 +21,12 @@
 //  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //  DEALINGS IN THE SOFTWARE.
-#pragma once
-
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "../terminal/pseudoterminal.hpp"
-#include "iprocess.hpp"
+#include <eterm/system/iprocess.hpp>
+#include <eterm/terminal/pseudoterminal.hpp>
 
 namespace EE { namespace System {
 
@@ -80,3 +80,5 @@ class Process final : public IProcess {
 };
 
 }} // namespace EE::System
+
+#endif

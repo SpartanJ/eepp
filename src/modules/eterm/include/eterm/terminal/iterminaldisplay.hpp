@@ -1,3 +1,5 @@
+#ifndef ETERM_IETERMINALDISPLAY_HPP
+#define ETERM_IETERMINALDISPLAY_HPP
 // The MIT License (MIT)
 
 // Copyright (c) 2020 Fredrik A. Kristiansen
@@ -19,10 +21,8 @@
 //  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //  DEALINGS IN THE SOFTWARE.
-#pragma once
-
-#include "types.hpp"
 #include <eepp/config.hpp>
+#include <eterm/terminal/terminaltypes.hpp>
 
 namespace EE { namespace Terminal {
 
@@ -88,3 +88,5 @@ class ITerminalDisplay {
 };
 
 }} // namespace EE::Terminal
+
+#endif

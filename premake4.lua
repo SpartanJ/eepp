@@ -1065,6 +1065,14 @@ solution "eepp"
 
 		build_base_cpp_configuration( "efsw" )
 
+	project "eterm-static"
+		kind "StaticLib"
+		language "C++"
+		set_targetdir("libs/" .. os.get_real() .. "/")
+		includedirs { "src/modules/eterm/include/","src/modules/eterm/src/" }
+		files { "src/modules/eterm/src/**.cpp" }
+		build_base_cpp_configuration( "eterm" )
+
 	-- Library
 	project "eepp-static"
 		kind "StaticLib"
@@ -1184,12 +1192,14 @@ solution "eepp"
 		set_kind()
 		language "C++"
 		files { "src/tools/eterm/**.cpp" }
+		links { "eterm-static" }
 		if os.is_real("linux") then
 			links { "util" }
 		end
 		if os.is("haiku") then
 			links { "bsd" }
 		end
+		includedirs { "src/modules/eterm/include/" }
 		build_link_configuration( "eterm", true )
 
 	project "eepp-texturepacker"

@@ -1,3 +1,5 @@
+#ifndef ETERM_PIPE_HPP
+#define ETERM_PIPE_HPP
 // The MIT License (MIT)
 
 // Copyright (c) 2020 Fredrik A. Kristiansen
@@ -19,32 +21,46 @@
 //  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //  DEALINGS IN THE SOFTWARE.
-#pragma once
+#include <eterm/system/autohandle.hpp>
+#include <eterm/system/ipipe.hpp>
+#include <memory>
 
-#include "../system/ipipe.hpp"
-#include <stdint.h>
+namespace EE { namespace System {
 
-namespace EE { namespace Terminal {
+class Process;
 
-class IPseudoTerminal : public EE::System::IPipe {
+class Pipe : public IPipe {
   public:
-	IPseudoTerminal() = default;
+	Pipe( Pipe&& ) = delete;
 
-	IPseudoTerminal( IPseudoTerminal&& ) = delete;
+	Pipe( const Pipe& ) = delete;
 
-	IPseudoTerminal( const IPseudoTerminal& ) = delete;
+	Pipe& operator=( Pipe&& ) = delete;
 
-	IPseudoTerminal& operator=( IPseudoTerminal&& ) = delete;
+	Pipe& operator=( const Pipe& ) = delete;
 
-	IPseudoTerminal& operator=( const IPseudoTerminal& ) = delete;
+	virtual ~Pipe() = default;
 
-	virtual ~IPseudoTerminal() = default;
+	virtual bool isTTY() const override;
 
-	virtual int getNumColumns() const = 0;
+	virtual int write( const char* s, size_t n ) override;
 
-	virtual int getNumRows() const = 0;
+	virtual int read( char* buf, size_t n, bool block = false ) override;
 
-	virtual bool resize( int columns, int rows ) = 0;
+  private:
+	friend class Process;
+#ifdef _WIN32
+	AutoHandle mInputHandle;
+	AutoHandle mOutputHandle;
+
+	Pipe( AutoHandle&& readHandle, AutoHandle&& writeHandle );
+#else
+	AutoHandle mHandle;
+
+	Pipe( AutoHandle&& handle );
+#endif
 };
 
-}} // namespace EE::Terminal
+}} // namespace EE::System
+
+#endif

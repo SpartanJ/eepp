@@ -1,3 +1,5 @@
+#ifndef ETERM_TERMINALTYPES_HPP
+#define ETERM_TERMINALTYPES_HPP
 // The MIT License (MIT)
 
 // Copyright (c) 2020 Fredrik A. Kristiansen
@@ -173,3 +175,5 @@ struct TerminalSelection {
 };
 
 }} // namespace EE::Terminal
+
+#endif

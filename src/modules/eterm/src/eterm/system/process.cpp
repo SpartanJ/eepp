@@ -21,8 +21,8 @@
 //  DEALINGS IN THE SOFTWARE.
 
 #ifndef _WIN32
-#include "process.hpp"
 #include <eepp/system/filesystem.hpp>
+#include <eterm/system/process.hpp>
 #include <poll.h>
 #include <pwd.h>
 #include <signal.h>
@@ -199,10 +199,10 @@ Process::createWithPseudoTerminal( const std::string& program, const std::vector
 
 #else
 
-#include "../terminal/windowserrors.hpp"
-#include "pipe.hpp"
-#include "process.hpp"
 #include <assert.h>
+#include <eterm/system/pipe.hpp>
+#include <eterm/system/process.hpp>
+#include <eterm/terminal/windowserrors.hpp>
 #include <iomanip>
 #include <sstream>
 #define NTDDI_VERSION NTDDI_WIN10_RS5

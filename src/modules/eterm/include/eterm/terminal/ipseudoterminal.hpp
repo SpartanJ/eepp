@@ -1,3 +1,5 @@
+#ifndef ETERM_IPSEUDOTERMINAL_HPP
+#define ETERM_IPSEUDOTERMINAL_HPP
 // The MIT License (MIT)
 
 // Copyright (c) 2020 Fredrik A. Kristiansen
@@ -19,32 +21,32 @@
 //  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //  DEALINGS IN THE SOFTWARE.
-#pragma once
-
+#include <eterm/system/ipipe.hpp>
 #include <stdint.h>
-#include <stdlib.h>
 
-namespace EE { namespace System {
+namespace EE { namespace Terminal {
 
-class IPipe {
+class IPseudoTerminal : public EE::System::IPipe {
   public:
-	IPipe() = default;
+	IPseudoTerminal() = default;
 
-	IPipe( IPipe&& ) = delete;
+	IPseudoTerminal( IPseudoTerminal&& ) = delete;
 
-	IPipe( const IPipe& ) = delete;
+	IPseudoTerminal( const IPseudoTerminal& ) = delete;
 
-	IPipe& operator=( IPipe&& ) = delete;
+	IPseudoTerminal& operator=( IPseudoTerminal&& ) = delete;
 
-	IPipe& operator=( const IPipe& ) = delete;
+	IPseudoTerminal& operator=( const IPseudoTerminal& ) = delete;
 
-	virtual ~IPipe() = default;
+	virtual ~IPseudoTerminal() = default;
 
-	virtual bool isTTY() const = 0;
+	virtual int getNumColumns() const = 0;
 
-	virtual int write( const char* s, size_t n ) = 0;
+	virtual int getNumRows() const = 0;
 
-	virtual int read( char* buf, size_t n, bool block = false ) = 0;
+	virtual bool resize( int columns, int rows ) = 0;
 };
 
-}} // namespace EE::System
+}} // namespace EE::Terminal
+
+#endif

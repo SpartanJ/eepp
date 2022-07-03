@@ -20,22 +20,24 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //  DEALINGS IN THE SOFTWARE.
 
-#include "autohandle.hpp"
+#include <eterm/system/autohandle.hpp>
 #ifndef _WIN32
 #include <unistd.h>
 #else
 #include <windows.h>
 #endif
 
-EE::AutoHandle::AutoHandle() : mHandle( invalid_value() ) {}
-EE::AutoHandle::AutoHandle( AutoHandle&& other ) : mHandle( other.mHandle ) {
+namespace EE { namespace System {
+
+AutoHandle::AutoHandle() : mHandle( invalid_value() ) {}
+AutoHandle::AutoHandle( AutoHandle&& other ) : mHandle( other.mHandle ) {
 	other.mHandle = invalid_value();
 }
-EE::AutoHandle::~AutoHandle() {
+AutoHandle::~AutoHandle() {
 	release();
 }
 
-EE::AutoHandle& EE::AutoHandle::operator=( AutoHandle&& other ) {
+AutoHandle& AutoHandle::operator=( AutoHandle&& other ) {
 	if ( mHandle == other.mHandle )
 		return *this;
 	release();
@@ -45,50 +47,51 @@ EE::AutoHandle& EE::AutoHandle::operator=( AutoHandle&& other ) {
 }
 
 #ifdef _WIN32
-EE::AutoHandle::AutoHandle( HANDLE handle ) : mHandle( handle ) {}
+AutoHandle::AutoHandle( HANDLE handle ) : mHandle( handle ) {}
 
-void EE::AutoHandle::release() const {
+void AutoHandle::release() const {
 	if ( mHandle != INVALID_HANDLE_VALUE ) {
 		CloseHandle( mHandle );
 		mHandle = INVALID_HANDLE_VALUE;
 	}
 }
 #else
-EE::AutoHandle::AutoHandle( int fd ) : mHandle( fd ) {}
+AutoHandle::AutoHandle( int fd ) : mHandle( fd ) {}
 
-void EE::AutoHandle::release() const {
+void AutoHandle::release() const {
 	if ( mHandle != -1 ) {
 		close( mHandle );
 	}
 }
 #endif
 
-EE::AutoHandle::operator bool() const noexcept {
+AutoHandle::operator bool() const noexcept {
 	return mHandle != invalid_value();
 }
 
-EE::AutoHandle::type* EE::AutoHandle::get() {
+AutoHandle::type* AutoHandle::get() {
 	return &mHandle;
 }
 
-const EE::AutoHandle::type* EE::AutoHandle::get() const {
+const AutoHandle::type* AutoHandle::get() const {
 	return &mHandle;
 }
 
-EE::AutoHandle::operator EE::AutoHandle::type() const noexcept {
+AutoHandle::operator AutoHandle::type() const noexcept {
 	return mHandle;
 }
 
 #ifdef _WIN32
 // On Windows we deal with the Windows API, which means HANDLE is used as the handle to files
 // and pipes
-constexpr EE::AutoHandle::type EE::AutoHandle::invalid_value() {
+constexpr AutoHandle::type AutoHandle::invalid_value() {
 	return nullptr;
 }
 #else
 // On non-Windows OS'es we deal with file descriptors
-constexpr EE::AutoHandle::type EE::AutoHandle::invalid_value() {
+constexpr AutoHandle::type AutoHandle::invalid_value() {
 	return -1;
 }
 #endif
 
+}} // namespace EE::System

@@ -22,8 +22,8 @@
 
 #ifndef _WIN32
 // Windows has its own source file
-#include "pseudoterminal.hpp"
 #include <cstdio>
+#include <eterm/terminal/pseudoterminal.hpp>
 #include <poll.h>
 #if defined( __linux )
 #include <pty.h>
@@ -187,9 +187,9 @@ std::unique_ptr<PseudoTerminal> PseudoTerminal::create( int columns, int rows ) 
 }
 
 #else
-#include "pseudoterminal.hpp"
-#include "windowserrors.hpp"
 #include <assert.h>
+#include <eterm/terminal/pseudoterminal.hpp>
+#include <eterm/terminal/windowserrors.hpp>
 #define NTDDI_VERSION NTDDI_WIN10_RS5
 #include <windows.h>
 
