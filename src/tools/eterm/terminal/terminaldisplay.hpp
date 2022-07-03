@@ -6,6 +6,7 @@
 #include "terminalemulator.hpp"
 #include <eepp/config.hpp>
 #include <eepp/graphics/font.hpp>
+#include <eepp/graphics/framebuffer.hpp>
 #include <eepp/system/clock.hpp>
 #include <eepp/window/inputevent.hpp>
 #include <eepp/window/keycodes.hpp>
@@ -139,13 +140,16 @@ class TerminalDisplay : public ITerminalDisplay {
 
 	static std::shared_ptr<TerminalDisplay>
 	create( EE::Window::Window* window, Font* font, const Float& fontSize, const Sizef& pixelsSize,
-			std::shared_ptr<TerminalEmulator>&& terminalEmulator );
+			std::shared_ptr<TerminalEmulator>&& terminalEmulator,
+			const bool& useFrameBuffer = false );
 
 	static std::shared_ptr<TerminalDisplay>
 	create( EE::Window::Window* window, Font* font, const Float& fontSize, const Sizef& pixelsSize,
 			std::string program = "", const std::vector<std::string>& args = {},
 			const std::string& workingDir = "", const size_t& historySize = 10000,
-			IProcessFactory* processFactory = nullptr );
+			IProcessFactory* processFactory = nullptr, const bool& useFrameBuffer = false );
+
+	virtual ~TerminalDisplay();
 
 	virtual void resetColors();
 	virtual int resetColor( Uint32 index, const char* name );
@@ -198,6 +202,12 @@ class TerminalDisplay : public ITerminalDisplay {
 
 	void invalidate();
 
+	void invalidateCursor();
+
+	void invalidateLine( const int& line );
+
+	void invalidateLines();
+
 	bool hasFocus() const { return mFocus; }
 
 	void setFocus( bool focus );
@@ -234,26 +244,32 @@ class TerminalDisplay : public ITerminalDisplay {
 	Sizef mPadding;
 	Vector2f mPosition;
 	Sizef mSize;
-	std::atomic<bool> mDirty{ true };
-	std::atomic<bool> mDrawing{ false };
+	std::vector<bool> mDirtyLines;
+	bool mDirty{ true };
+	bool mDirtyCursor{ true };
+	bool mDrawing{ false };
 	Vector2i mCursor;
 	TerminalGlyph mCursorGlyph;
 	bool mUseColorEmoji{ true };
 	bool mPasteNewlineFix{ true };
 	bool mFocus{ true };
+	bool mUseFrameBuffer{ true };
 	Clock mClock;
 	Clock mLastDoubleClick;
 	int mColumns{ 0 };
 	int mRows{ 0 };
+	FrameBuffer* mFrameBuffer{ nullptr };
 
 	std::string mProgram;
 	std::vector<std::string> mArgs;
 	std::string mWorkingDir;
 
 	TerminalDisplay( EE::Window::Window* window, Font* font, const Float& fontSize,
-					 const Sizef& pixelsSize );
+					 const Sizef& pixelsSize, const bool& useFrameBuffer );
 
 	void draw( const Vector2f& pos );
+
+	void drawGrid( const Vector2f& pos );
 
 	Vector2i positionToGrid( const Vector2i& pos );
 
@@ -262,6 +278,12 @@ class TerminalDisplay : public ITerminalDisplay {
 	virtual void onProcessExit( int exitCode );
 
 	void sendEvent( const TerminalDisplay::Event& event );
+
+	Sizei getFrameBufferSize();
+
+	void createFrameBuffer();
+
+	void drawFrameBuffer();
 };
 
 #endif // ETERMINALDISPLAY_HPP

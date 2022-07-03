@@ -137,6 +137,8 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 		win->runMainLoop( &mainLoop );
 	}
 
+	terminal.reset();
+
 	Engine::destroySingleton();
 
 	MemoryManager::showResults();

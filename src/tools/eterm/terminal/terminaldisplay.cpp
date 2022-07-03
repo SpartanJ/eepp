@@ -1,10 +1,11 @@
 #include "terminaldisplay.hpp"
 #include "../system/processfactory.hpp"
 #include "boxdrawdata.hpp"
-#include "eepp/graphics/fonttruetype.hpp"
 #include <eepp/graphics/fontmanager.hpp>
+#include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/text.hpp>
+#include <eepp/math/math.hpp>
 #include <eepp/system/color.hpp>
 #include <eepp/window.hpp>
 #include <eepp/window/clipboard.hpp>
@@ -360,12 +361,11 @@ static const Color colormapped[256] = {
 	Color( 208, 208, 208 ), Color( 218, 218, 218 ), Color( 228, 228, 228 ),
 	Color( 238, 238, 238 ) };
 
-std::shared_ptr<TerminalDisplay>
-TerminalDisplay::create( EE::Window::Window* window, Font* font, const Float& fontSize,
-						 const Sizef& pixelsSize,
-						 std::shared_ptr<TerminalEmulator>&& terminalEmulator ) {
+std::shared_ptr<TerminalDisplay> TerminalDisplay::create(
+	EE::Window::Window* window, Font* font, const Float& fontSize, const Sizef& pixelsSize,
+	std::shared_ptr<TerminalEmulator>&& terminalEmulator, const bool& useFrameBuffer ) {
 	std::shared_ptr<TerminalDisplay> terminal = std::shared_ptr<TerminalDisplay>(
-		new TerminalDisplay( window, font, fontSize, pixelsSize ) );
+		new TerminalDisplay( window, font, fontSize, pixelsSize, useFrameBuffer ) );
 	terminal->mTerminal = std::move( terminalEmulator );
 	return terminal;
 }
@@ -380,11 +380,10 @@ static Sizei gridSizeFromTermDimensions( Font* font, const Float& fontSize,
 	return { clipColumns, clipRows };
 }
 
-std::shared_ptr<TerminalDisplay>
-TerminalDisplay::create( EE::Window::Window* window, Font* font, const Float& fontSize,
-						 const Sizef& pixelsSize, std::string program,
-						 const std::vector<std::string>& args, const std::string& workingDir,
-						 const size_t& historySize, IProcessFactory* processFactory ) {
+std::shared_ptr<TerminalDisplay> TerminalDisplay::create(
+	EE::Window::Window* window, Font* font, const Float& fontSize, const Sizef& pixelsSize,
+	std::string program, const std::vector<std::string>& args, const std::string& workingDir,
+	const size_t& historySize, IProcessFactory* processFactory, const bool& useFrameBuffer ) {
 	if ( program.empty() ) {
 #ifdef _WIN32
 		program = "cmd.exe";
@@ -426,7 +425,7 @@ TerminalDisplay::create( EE::Window::Window* window, Font* font, const Float& fo
 	}
 
 	std::shared_ptr<TerminalDisplay> terminal = std::shared_ptr<TerminalDisplay>(
-		new TerminalDisplay( window, font, fontSize, pixelsSize ) );
+		new TerminalDisplay( window, font, fontSize, pixelsSize, useFrameBuffer ) );
 
 	terminal->mTerminal = TerminalEmulator::create( std::move( pseudoTerminal ),
 													std::move( process ), terminal, historySize );
@@ -440,13 +439,18 @@ TerminalDisplay::create( EE::Window::Window* window, Font* font, const Float& fo
 	return terminal;
 }
 
+TerminalDisplay::~TerminalDisplay() {
+	eeSAFE_DELETE( mFrameBuffer );
+}
+
 TerminalDisplay::TerminalDisplay( EE::Window::Window* window, Font* font, const Float& fontSize,
-								  const Sizef& pixelsSize ) :
+								  const Sizef& pixelsSize, const bool& useFrameBuffer ) :
 	ITerminalDisplay(),
 	mWindow( window ),
 	mFont( font ),
 	mFontSize( fontSize ),
-	mSize( pixelsSize ) {
+	mSize( pixelsSize ),
+	mUseFrameBuffer( useFrameBuffer ) {
 	TerminalGlyph defaultGlyph;
 	defaultGlyph.mode = ATTR_INVISIBLE;
 	auto defaultColor = std::make_pair<Uint32, std::string>( 0U, "" );
@@ -454,6 +458,12 @@ TerminalDisplay::TerminalDisplay( EE::Window::Window* window, Font* font, const 
 	mColors.resize( eeARRAY_SIZE( colormapped ), defaultColor );
 	mBuffer.resize( mColumns * mRows, defaultGlyph );
 	( (int&)mMode ) |= MODE_FOCUSED;
+
+	Sizei gridSize( gridSizeFromTermDimensions( mFont, mFontSize, mSize - mPadding * 2.f ) );
+	mDirtyLines.resize( gridSize.getHeight(), 1 );
+
+	if ( mUseFrameBuffer )
+		createFrameBuffer();
 }
 
 void TerminalDisplay::resetColors() {
@@ -535,7 +545,7 @@ void TerminalDisplay::update() {
 	if ( mFocus && isBlinkingCursor() && mClock.getElapsedTime().asSeconds() > 0.7 ) {
 		mMode ^= MODE_BLINK;
 		mClock.restart();
-		invalidate();
+		invalidateCursor();
 	}
 	if ( mTerminal )
 		mTerminal->update();
@@ -638,7 +648,8 @@ bool TerminalDisplay::drawBegin( int columns, int rows ) {
 		mBuffer.resize( columns * rows, defaultGlyph );
 		mColumns = columns;
 		mRows = rows;
-		invalidate();
+		invalidateLines();
+		invalidateCursor();
 	}
 
 	return ( ( mMode & MODE_VISIBLE ) != 0 );
@@ -651,7 +662,7 @@ void TerminalDisplay::drawLine( Line line, int x1, int y, int x2 ) {
 			mBuffer[y * mColumns + i].mode |= ATTR_REVERSE;
 		}
 	}
-	invalidate();
+	invalidateLine( y );
 }
 
 void TerminalDisplay::drawCursor( int cx, int cy, TerminalGlyph g, int, int, TerminalGlyph ) {
@@ -659,14 +670,14 @@ void TerminalDisplay::drawCursor( int cx, int cy, TerminalGlyph g, int, int, Ter
 		mCursor.x = cx;
 		mCursor.y = cy;
 		mCursorGlyph = g;
-		invalidate();
+		invalidateCursor();
 	}
 }
 
 void TerminalDisplay::drawEnd() {}
 
 void TerminalDisplay::draw() {
-	draw( mPosition.floor() + mPadding );
+	draw( nullptr != mFrameBuffer ? mPadding : mPosition.floor() + mPadding );
 }
 
 void TerminalDisplay::onMouseDoubleClick( const Vector2i& pos, const Uint32& flags ) {
@@ -678,7 +689,7 @@ void TerminalDisplay::onMouseDoubleClick( const Vector2i& pos, const Uint32& fla
 		   mTerminal->getSelectionMode() == TerminalSelectionMode::SEL_IDLE ) ) {
 		auto gridPos{ positionToGrid( pos ) };
 		mTerminal->selstart( gridPos.x, gridPos.y, SNAP_WORD );
-		invalidate();
+		invalidateLines();
 	}
 }
 
@@ -690,7 +701,7 @@ void TerminalDisplay::onMouseMotion( const Vector2i& pos, const Uint32& flags ) 
 		mTerminal->selextend(
 			gridPos.x, gridPos.y,
 			mWindow->getInput()->getModState() & KEYMOD_SHIFT ? SEL_RECTANGULAR : SEL_REGULAR, 0 );
-		invalidate();
+		invalidateLines();
 	}
 	mTerminal->mousereport( TerminalMouseEventType::MouseMotion, positionToGrid( pos ), flags,
 							mWindow->getInput()->getModState() );
@@ -732,7 +743,7 @@ void TerminalDisplay::onMouseDown( const Vector2i& pos, const Uint32& flags ) {
 		if ( mTerminal->getSelectionMode() == TerminalSelectionMode::SEL_IDLE ) {
 			auto gridPos{ positionToGrid( pos ) };
 			mTerminal->selstart( gridPos.x, gridPos.y, 0 );
-			invalidate();
+			invalidateLines();
 		} else if ( mTerminal->getSelectionMode() == TerminalSelectionMode::SEL_READY ) {
 			mTerminal->selclear();
 		}
@@ -918,11 +929,9 @@ inline static void drawbox( float x, float y, float w, float h, Color fg, Color 
 	}
 }
 
-void TerminalDisplay::draw( const Vector2f& pos ) {
-	if ( !mEmulator )
-		return;
-
-	mDrawing = true;
+void TerminalDisplay::drawGrid( const Vector2f& pos ) {
+	if ( mFrameBuffer )
+		mFrameBuffer->bind();
 
 	auto fontSize = (Float)mFont->getFontHeight( mFontSize );
 	auto spaceCharAdvanceX = mFont->getGlyph( 'A', mFontSize, false ).advance;
@@ -938,14 +947,17 @@ void TerminalDisplay::draw( const Vector2f& pos ) {
 
 	Primitives p;
 	p.setForceDraw( false );
-	p.setColor( defaultBg );
-	p.drawRectangle( Rectf( mPosition.asFloat(), mSize.asFloat() ) );
 
 	for ( int j = 0; j < mRows; j++ ) {
 		x = std::floor( pos.x );
 
 		if ( pos.y + lineHeight * j > pos.y + mSize.getHeight() )
 			break;
+
+		if ( mFrameBuffer && !mDirtyLines[j] ) {
+			y += lineHeight;
+			continue;
+		}
 
 		for ( int i = 0; i < mColumns; i++ ) {
 			auto& glyph = mBuffer[j * mColumns + i];
@@ -987,6 +999,13 @@ void TerminalDisplay::draw( const Vector2f& pos ) {
 
 		if ( pos.y + lineHeight * j > pos.y + mSize.getHeight() )
 			break;
+
+		if ( mFrameBuffer && !mDirtyLines[j] ) {
+			y += lineHeight;
+			continue;
+		}
+
+		mDirtyLines[j] = false;
 
 		for ( int i = 0; i < mColumns; i++ ) {
 			auto& glyph = mBuffer[j * mColumns + i];
@@ -1068,7 +1087,8 @@ void TerminalDisplay::draw( const Vector2f& pos ) {
 		y += lineHeight;
 	}
 
-	if ( !mEmulator->isScrolling() && !IS_SET( MODE_HIDE ) ) {
+	if ( !mEmulator->isScrolling() && !IS_SET( MODE_HIDE ) && mDirtyCursor ) {
+		mDirtyCursor = false;
 		Color drawcol;
 		if ( IS_SET( MODE_REVERSE ) ) {
 			if ( mEmulator->isSelected( mCursor.x, mCursor.y ) ) {
@@ -1136,6 +1156,28 @@ void TerminalDisplay::draw( const Vector2f& pos ) {
 		}
 	}
 
+	if ( mFrameBuffer )
+		mFrameBuffer->unbind();
+}
+
+void TerminalDisplay::draw( const Vector2f& pos ) {
+	if ( !mEmulator )
+		return;
+
+	mDrawing = true;
+
+	auto defaultBg = termColor( mEmulator->getDefaultBackground(), mColors );
+	Primitives p;
+	p.setForceDraw( false );
+	p.setColor( defaultBg );
+	p.drawRectangle( Rectf( mPosition.asFloat(), mSize.asFloat() ) );
+
+	if ( !mFrameBuffer || mDirty )
+		drawGrid( pos );
+
+	if ( mFrameBuffer )
+		drawFrameBuffer();
+
 	mDrawing = false;
 	mDirty = false;
 }
@@ -1168,11 +1210,23 @@ void TerminalDisplay::onSizeChange() {
 		if ( gridSize.getWidth() != mTerminal->getNumColumns() ||
 			 gridSize.getHeight() != mTerminal->getNumRows() ) {
 			mTerminal->resize( gridSize.getWidth(), gridSize.getHeight() );
+			mDirtyLines.resize( gridSize.getHeight(), 1 );
 		}
 	} else if ( mEmulator ) {
 		if ( gridSize.getWidth() != mEmulator->getNumColumns() ||
 			 gridSize.getHeight() != mEmulator->getNumRows() ) {
 			mEmulator->resize( gridSize.getWidth(), gridSize.getHeight() );
+			mDirtyLines.resize( gridSize.getHeight(), 1 );
+		}
+	}
+
+	if ( mFrameBuffer && ( mFrameBuffer->getWidth() < mSize.getWidth() ||
+						   mFrameBuffer->getHeight() < mSize.getHeight() ) ) {
+		if ( nullptr == mFrameBuffer ) {
+			createFrameBuffer();
+		} else {
+			Sizei fboSize( getFrameBufferSize() );
+			mFrameBuffer->resize( fboSize.getWidth(), fboSize.getHeight() );
 		}
 	}
 }
@@ -1202,6 +1256,7 @@ void TerminalDisplay::onProcessExit( int exitCode ) {
 		fprintf( stderr, "TerminalDisplay::onProcessExit: Failed to spawn process\n" );
 	}
 
+	mTerminal->clearHistory();
 	mTerminal->setPtyAndProcess( std::move( pseudoTerminal ), std::move( process ) );
 
 	eeSAFE_DELETE( processFactory );
@@ -1340,6 +1395,21 @@ void TerminalDisplay::invalidate() {
 	mDirty = true;
 }
 
+void TerminalDisplay::invalidateCursor() {
+	invalidateLine( mCursor.y );
+	mDirtyCursor = true;
+	mDirty = true;
+}
+
+void TerminalDisplay::invalidateLine( const int& line ) {
+	mDirtyLines[line] = true;
+	mDirty = true;
+}
+
+void TerminalDisplay::invalidateLines() {
+	mDirtyLines.assign( mDirtyLines.size(), 1 );
+	mDirty = true;
+}
 void TerminalDisplay::setFocus( bool focus ) {
 	if ( focus == mFocus )
 		return;
@@ -1355,5 +1425,33 @@ void TerminalDisplay::setFocus( bool focus ) {
 	} else {
 		mMode ^= MODE_FOCUS;
 	}
-	invalidate();
+	invalidateCursor();
+}
+
+Sizei TerminalDisplay::getFrameBufferSize() {
+	return Sizei( Math::nextPowOfTwo( (int)mSize.getWidth() ),
+				  Math::nextPowOfTwo( (int)mSize.getHeight() ) );
+}
+
+void TerminalDisplay::createFrameBuffer() {
+	eeSAFE_DELETE( mFrameBuffer );
+	Sizei fboSize( getFrameBufferSize() );
+	if ( fboSize.getWidth() < 1 )
+		fboSize.setWidth( 1 );
+	if ( fboSize.getHeight() < 1 )
+		fboSize.setHeight( 1 );
+	mFrameBuffer = FrameBuffer::New( fboSize.getWidth(), fboSize.getHeight(), true );
+
+	// Frame buffer failed to create?
+	if ( !mFrameBuffer->created() )
+		eeSAFE_DELETE( mFrameBuffer );
+}
+
+void TerminalDisplay::drawFrameBuffer() {
+	if ( mFrameBuffer ) {
+		Rect r( 0, 0, mSize.getWidth(), mSize.getHeight() );
+		TextureRegion textureRegion( mFrameBuffer->getTexture()->getTextureId(), r,
+									 r.getSize().asFloat() );
+		textureRegion.draw( mPosition.floor().x, mPosition.floor().y );
+	}
 }
