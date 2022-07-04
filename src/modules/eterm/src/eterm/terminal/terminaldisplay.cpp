@@ -1402,6 +1402,9 @@ void TerminalDisplay::invalidateCursor() {
 }
 
 void TerminalDisplay::invalidateLine( const int& line ) {
+	if ( line >= mDirtyLines.size() ) {
+		mDirtyLines.resize( line + 1 );
+	}
 	mDirtyLines[line] = true;
 	mDirty = true;
 }

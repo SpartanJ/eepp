@@ -1069,7 +1069,7 @@ solution "eepp"
 		kind "StaticLib"
 		language "C++"
 		set_targetdir("libs/" .. os.get_real() .. "/")
-		includedirs { "src/modules/eterm/include/","src/modules/eterm/src/" }
+		includedirs { "include", "src/modules/eterm/include/","src/modules/eterm/src/" }
 		files { "src/modules/eterm/src/**.cpp" }
 		if not is_vs() then
 			buildoptions{ "-std=c++14" }
