@@ -101,7 +101,6 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 	if ( String::contains( resPath, "ecode.app" ) ) {
 		resPath = FileSystem::getCurrentWorkingDirectory();
 		FileSystem::dirAddSlashAtEnd( resPath );
-		mIsBundledApp = true;
 	}
 #elif EE_PLATFORM == EE_PLATFORM_LINUX
 	if ( String::contains( resPath, ".mount_" ) ) {
