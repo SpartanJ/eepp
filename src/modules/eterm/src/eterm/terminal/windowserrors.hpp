@@ -22,16 +22,20 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //  DEALINGS IN THE SOFTWARE.
 #ifdef _WIN32
+#include <eepp/system/log.hpp>
+using namespace EE::System;
+
 #define NTDDI_VERSION NTDDI_WIN10_RS5
 #include <comdef.h>
 #include <iostream>
 #include <string>
 #include <windows.h>
 
-static void PrintErrorResult( HRESULT hr ) {
+inline void PrintErrorResult( HRESULT hr ) {
 	_com_error err( hr );
 	LPCTSTR errMsg = err.ErrorMessage();
 	std::cerr << "ERROR: " << errMsg << std::endl;
+	Log::error( "ERROR: %s", errMsg );
 }
 
 static void PrintWinApiError( DWORD error ) {
@@ -48,9 +52,10 @@ static void PrintWinApiError( DWORD error ) {
 	LocalFree( messageBuffer );
 
 	std::cerr << "ERROR WinAPI: " << message << std::endl;
+	Log::error( "ERROR WinAPI: %s", message );
 }
 
-static void PrintLastWinApiError( void ) {
+inline void PrintLastWinApiError( void ) {
 	PrintWinApiError( GetLastError() );
 }
 

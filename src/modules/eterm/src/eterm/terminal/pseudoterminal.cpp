@@ -42,6 +42,8 @@
 #include <unistd.h>
 using namespace EE::System;
 
+namespace eterm { namespace Terminal {
+
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
 #include <fcntl.h>
 
@@ -89,8 +91,6 @@ fail:
 	return -1;
 }
 #endif
-
-using namespace EE::Terminal;
 
 PseudoTerminal::~PseudoTerminal() {}
 
@@ -186,6 +186,8 @@ std::unique_ptr<PseudoTerminal> PseudoTerminal::create( int columns, int rows ) 
 #endif
 }
 
+}} // namespace eterm::Terminal
+
 #else
 #include <assert.h>
 #include <eterm/terminal/pseudoterminal.hpp>
@@ -193,7 +195,7 @@ std::unique_ptr<PseudoTerminal> PseudoTerminal::create( int columns, int rows ) 
 #define NTDDI_VERSION NTDDI_WIN10_RS5
 #include <windows.h>
 
-using namespace EE::Terminal;
+namespace eterm { namespace Terminal {
 
 PseudoTerminal::~PseudoTerminal() {
 	ClosePseudoConsole( mPHPC );
@@ -250,8 +252,9 @@ int PseudoTerminal::read( char* buf, size_t n, bool block ) {
 			PrintLastWinApiError();
 			return -1;
 		}
-		if ( available == 0 )
+		if ( available == 0 ) {
 			return 0;
+		}
 	}
 
 	if ( !ReadFile( mInputHandle.handle(), buf, available, &read, nullptr ) ) {
@@ -300,4 +303,7 @@ std::unique_ptr<PseudoTerminal> PseudoTerminal::create( int columns, int rows ) 
 	return Pointer(
 		new PseudoTerminal( columns, rows, std::move( hPipeIn ), std::move( hPipeOut ), hPC ) );
 }
+
+}} // namespace eterm::Terminal
+
 #endif

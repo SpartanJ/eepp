@@ -24,7 +24,9 @@
 #include <eepp/config.hpp>
 #include <eterm/terminal/terminaltypes.hpp>
 
-namespace EE { namespace Terminal {
+using namespace EE;
+
+namespace eterm { namespace Terminal {
 
 class TerminalEmulator;
 
@@ -87,6 +89,6 @@ class ITerminalDisplay {
 	virtual void onProcessExit( int exitCode );
 };
 
-}} // namespace EE::Terminal
+}} // namespace eterm::Terminal
 
 #endif

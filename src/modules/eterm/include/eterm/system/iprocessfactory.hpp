@@ -28,9 +28,10 @@
 #include <string>
 #include <vector>
 
-using namespace EE::Terminal;
+using namespace eterm::System;
+using namespace eterm::Terminal;
 
-namespace EE { namespace System {
+namespace eterm { namespace System {
 
 class IProcessFactory {
   public:

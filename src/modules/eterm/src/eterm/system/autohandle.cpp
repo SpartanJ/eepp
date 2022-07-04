@@ -27,7 +27,7 @@
 #include <windows.h>
 #endif
 
-namespace EE { namespace System {
+namespace eterm { namespace System {
 
 AutoHandle::AutoHandle() : mHandle( invalid_value() ) {}
 AutoHandle::AutoHandle( AutoHandle&& other ) : mHandle( other.mHandle ) {

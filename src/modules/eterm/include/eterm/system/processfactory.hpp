@@ -23,9 +23,10 @@
 //  DEALINGS IN THE SOFTWARE.
 #include <eterm/system/iprocessfactory.hpp>
 
-using namespace EE::Terminal;
+using namespace eterm::System;
+using namespace eterm::Terminal;
 
-namespace EE { namespace System {
+namespace eterm { namespace System {
 
 class ProcessFactory : public IProcessFactory {
   public:

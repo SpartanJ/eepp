@@ -22,7 +22,7 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //  DEALINGS IN THE SOFTWARE.
 
-namespace EE { namespace System {
+namespace eterm { namespace System {
 
 enum class ProcessStatus { RUNNING = 0, EXITED };
 

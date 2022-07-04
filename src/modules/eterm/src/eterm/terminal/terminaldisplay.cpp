@@ -10,6 +10,8 @@
 #include <eterm/terminal/boxdrawdata.hpp>
 #include <eterm/terminal/terminaldisplay.hpp>
 
+namespace eterm { namespace Terminal {
+
 #define BETWEEN( x, a, b ) ( ( a ) <= ( x ) && ( x ) <= ( b ) )
 #define IS_SET( flag ) ( ( mMode & ( flag ) ) != 0 )
 #define DIV( n, d ) ( ( ( n ) + ( d ) / 2.0f ) / ( d ) )
@@ -1402,7 +1404,7 @@ void TerminalDisplay::invalidateCursor() {
 }
 
 void TerminalDisplay::invalidateLine( const int& line ) {
-	if ( line >= mDirtyLines.size() ) {
+	if ( line >= (int)mDirtyLines.size() ) {
 		mDirtyLines.resize( line + 1 );
 	}
 	mDirtyLines[line] = true;
@@ -1458,3 +1460,5 @@ void TerminalDisplay::drawFrameBuffer() {
 		textureRegion.draw( mPosition.floor().x, mPosition.floor().y );
 	}
 }
+
+}} // namespace eterm::Terminal

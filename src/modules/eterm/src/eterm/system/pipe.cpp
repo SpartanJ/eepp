@@ -3,7 +3,7 @@
 #include <eterm/terminal/windowserrors.hpp>
 #include <windows.h>
 
-using namespace EE::System;
+namespace eterm { namespace System {
 
 Pipe::Pipe( AutoHandle&& readHandle, AutoHandle&& writeHandle ) :
 	mInputHandle( std::move( readHandle ) ), mOutputHandle( std::move( writeHandle ) ) {}
@@ -48,5 +48,7 @@ int Pipe::read( char* buf, size_t n, bool block ) {
 	}
 	return (int)read;
 }
+
+}}
 
 #endif

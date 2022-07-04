@@ -28,7 +28,7 @@
 #include <eterm/system/iprocess.hpp>
 #include <eterm/terminal/pseudoterminal.hpp>
 
-namespace EE { namespace System {
+namespace eterm { namespace System {
 
 class Process final : public IProcess {
   public:
@@ -70,8 +70,9 @@ class Process final : public IProcess {
 	bool mLeaveRunning{ false };
 	AutoHandle mProcessHandle;
 	void* mLpAttributeList;
+	int mPID;
 
-	Process( AutoHandle&& processHandle, void* lpAttributeList );
+	Process( AutoHandle&& processHandle, void* lpAttributeList, int pid );
 #else
 	int mPID;
 

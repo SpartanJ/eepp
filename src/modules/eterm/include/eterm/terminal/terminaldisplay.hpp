@@ -18,9 +18,12 @@
 #include <vector>
 
 using namespace EE;
-using namespace EE::Terminal;
 using namespace EE::Window;
 using namespace EE::System;
+using namespace eterm::System;
+using namespace eterm::Terminal;
+
+namespace eterm { namespace Terminal {
 
 enum class TerminalShortcutAction {
 	PASTE,
@@ -285,5 +288,7 @@ class TerminalDisplay : public ITerminalDisplay {
 
 	void drawFrameBuffer();
 };
+
+}} // namespace eterm::Terminal
 
 #endif // ETERM_TERMINALDISPLAY_HPP

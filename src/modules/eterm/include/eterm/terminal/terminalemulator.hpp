@@ -46,11 +46,11 @@
 #include <sys/types.h>
 
 using namespace EE;
-using namespace EE::System;
 using namespace EE::Math;
 using namespace EE::Window;
+using namespace eterm::System;
 
-namespace EE { namespace Terminal {
+namespace eterm { namespace Terminal {
 
 constexpr int ESC_BUF_SIZ = 512;
 constexpr int ESC_ARG_SIZ = 16;
@@ -324,6 +324,6 @@ class TerminalEmulator final {
 					  const size_t& historySize = 1000 );
 };
 
-}} // namespace EE::Terminal
+}} // namespace eterm::Terminal
 
 #endif

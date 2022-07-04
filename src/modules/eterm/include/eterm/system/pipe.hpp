@@ -25,7 +25,7 @@
 #include <eterm/system/ipipe.hpp>
 #include <memory>
 
-namespace EE { namespace System {
+namespace eterm { namespace System {
 
 class Process;
 

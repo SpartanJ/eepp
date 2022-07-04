@@ -26,7 +26,7 @@
 #include <stdint.h>
 #include <string.h>
 
-namespace EE { namespace Terminal {
+namespace eterm { namespace Terminal {
 
 enum TerminalCursorMode {
 	BlinkingBlock = 0,
@@ -174,6 +174,6 @@ struct TerminalSelection {
 	int alt;
 };
 
-}} // namespace EE::Terminal
+}} // namespace eterm::Terminal
 
 #endif

@@ -50,6 +50,8 @@
 #include <string.h>
 #include <sys/types.h>
 
+namespace eterm { namespace Terminal {
+
 /* identification sequence returned in DA and DECID */
 static const char* vtiden = "\033[?6c";
 
@@ -110,8 +112,6 @@ static const unsigned int tabspaces = 4;
 	( ( y ) < mTerm.scr && mTerm.histsize > 0                                                     \
 		  ? mTerm.hist[( ( y ) + mTerm.histi - mTerm.scr + mTerm.histsize + 1 ) % mTerm.histsize] \
 		  : mTerm.line[(y)-mTerm.scr] )
-
-using namespace EE::Terminal;
 
 typedef struct emoji_range {
 	int32_t min_code;
@@ -2632,3 +2632,5 @@ void TerminalEmulator::update() {
 		onProcessExit( mExitCode );
 	}
 }
+
+}} // namespace eterm::Terminal

@@ -22,7 +22,7 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //  DEALINGS IN THE SOFTWARE.
 
-namespace EE { namespace System {
+namespace eterm { namespace System {
 
 // This class is designed to automatically free a resource handle when destructed
 class AutoHandle final {

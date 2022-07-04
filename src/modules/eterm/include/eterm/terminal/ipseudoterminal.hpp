@@ -24,9 +24,9 @@
 #include <eterm/system/ipipe.hpp>
 #include <stdint.h>
 
-namespace EE { namespace Terminal {
+namespace eterm { namespace Terminal {
 
-class IPseudoTerminal : public EE::System::IPipe {
+class IPseudoTerminal : public eterm::System::IPipe {
   public:
 	IPseudoTerminal() = default;
 
@@ -47,6 +47,6 @@ class IPseudoTerminal : public EE::System::IPipe {
 	virtual bool resize( int columns, int rows ) = 0;
 };
 
-}} // namespace EE::Terminal
+}} // namespace eterm::Terminal
 
 #endif

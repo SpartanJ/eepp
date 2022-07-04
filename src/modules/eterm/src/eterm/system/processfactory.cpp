@@ -2,7 +2,9 @@
 #include <eterm/system/processfactory.hpp>
 #include <eterm/terminal/pseudoterminal.hpp>
 
-using namespace EE::System;
+using namespace eterm::System;
+
+namespace eterm { namespace System {
 
 std::unique_ptr<IProcess> ProcessFactory::createWithStdioPipe( const std::string& program,
 															   const std::vector<std::string>& args,
@@ -35,3 +37,5 @@ std::unique_ptr<IProcess> ProcessFactory::createWithPseudoTerminal(
 	outPseudoTerminal = std::move( pseudoTerminal );
 	return process;
 }
+
+}}

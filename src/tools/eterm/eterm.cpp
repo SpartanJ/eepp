@@ -95,7 +95,24 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 #endif
 	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
 	Display* currentDisplay = displayManager->getDisplayIndex( 0 );
-	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	std::string resPath = Sys::getProcessPath();
+#if EE_PLATFORM == EE_PLATFORM_MACOSX
+	if ( String::contains( resPath, "ecode.app" ) ) {
+		resPath = FileSystem::getCurrentWorkingDirectory();
+		FileSystem::dirAddSlashAtEnd( resPath );
+		mIsBundledApp = true;
+	}
+#elif EE_PLATFORM == EE_PLATFORM_LINUX
+	if ( String::contains( resPath, ".mount_" ) ) {
+		resPath = FileSystem::getCurrentWorkingDirectory();
+		FileSystem::dirAddSlashAtEnd( resPath );
+	}
+#elif EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+	resPath += "eterm/";
+#endif
+	resPath += "assets";
+	FileSystem::dirAddSlashAtEnd( resPath );
 
 	displayManager->enableScreenSaver();
 	displayManager->enableMouseFocusClickThrough();
@@ -104,7 +121,7 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 	Sizei winSize( 1280, 720 );
 	win = Engine::instance()->createWindow(
 		WindowSettings( winSize.getWidth(), winSize.getHeight(), "eterm", WindowStyle::Default,
-						WindowBackend::Default, 32, "assets/icon/ee.png",
+						WindowBackend::Default, 32, resPath + "icon/ee.png",
 						currentDisplay->getPixelDensity() ),
 		ContextSettings( true ) );
 
@@ -112,13 +129,15 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 		win->setClearColor( RGB( 0, 0, 0 ) );
 
 		FontTrueType* fontMono = FontTrueType::New( "monospace" );
-		fontMono->loadFromFile( "assets/fonts/DejaVuSansMonoNerdFontComplete.ttf" );
+		fontMono->loadFromFile( resPath + "fonts/DejaVuSansMonoNerdFontComplete.ttf" );
 		fontMono->setEnableEmojiFallback( false );
 
-		if ( FileSystem::fileExists( "assets/fonts/NotoColorEmoji.ttf" ) ) {
-			FontTrueType::New( "emoji-color" )->loadFromFile( "assets/fonts/NotoColorEmoji.ttf" );
-		} else if ( FileSystem::fileExists( "assets/fonts/NotoEmoji-Regular.ttf" ) ) {
-			FontTrueType::New( "emoji-font" )->loadFromFile( "assets/fonts/NotoEmoji-Regular.ttf" );
+		if ( FileSystem::fileExists( resPath + "fonts/NotoColorEmoji.ttf" ) ) {
+			FontTrueType::New( "emoji-color" )
+				->loadFromFile( resPath + "fonts/NotoColorEmoji.ttf" );
+		} else if ( FileSystem::fileExists( resPath + "fonts/NotoEmoji-Regular.ttf" ) ) {
+			FontTrueType::New( "emoji-font" )
+				->loadFromFile( resPath + "fonts/NotoEmoji-Regular.ttf" );
 		}
 
 		if ( !terminal || terminal->hasTerminated() ) {

@@ -24,7 +24,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-namespace EE { namespace System {
+namespace eterm { namespace System {
 
 class IPipe {
   public:

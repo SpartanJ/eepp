@@ -27,14 +27,13 @@
 #include <memory>
 
 using namespace EE::Math;
+using namespace eterm::System;
 
-namespace EE {
+namespace eterm {
 
 namespace System {
 class Process;
 }
-
-using namespace EE::System;
 
 namespace Terminal {
 
@@ -62,7 +61,7 @@ class PseudoTerminal final : public IPseudoTerminal {
 	static std::unique_ptr<PseudoTerminal> create( int columns, int rows );
 
   private:
-	friend class ::EE::System::Process;
+	friend class ::eterm::System::Process;
 #ifdef _WIN32
 	Vector2i mSize;
 
@@ -84,6 +83,6 @@ class PseudoTerminal final : public IPseudoTerminal {
 #endif
 };
 } // namespace Terminal
-} // namespace EE
+} // namespace eterm
 
 #endif
