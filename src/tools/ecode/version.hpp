@@ -7,7 +7,7 @@
 using namespace EE;
 
 #define ECODE_MAJOR_VERSION 0
-#define ECODE_MINOR_VERSION 1
+#define ECODE_MINOR_VERSION 2
 #define ECODE_PATCH_LEVEL 0
 #define ECODE_CODENAME "Viriya"
 

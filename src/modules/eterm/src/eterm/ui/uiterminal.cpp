@@ -1,4 +1,5 @@
 #include <eepp/scene/scenemanager.hpp>
+#include <eepp/ui/uieventdispatcher.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitabwidget.hpp>
 #include <eterm/ui/uiterminal.hpp>
@@ -38,7 +39,9 @@ void UITerminal::draw() {
 }
 
 UITerminal::UITerminal( const std::shared_ptr<TerminalDisplay>& terminalDisplay ) :
-	UIWidget( "terminal" ), mTerm( terminalDisplay ) {
+	UIWidget( "terminal" ),
+	mKeyBindings( getUISceneNode()->getWindow()->getInput() ),
+	mTerm( terminalDisplay ) {
 	mFlags |= UI_TAB_STOP;
 	mTerm->pushEventCallback( [&]( const TerminalDisplay::Event& event ) {
 		if ( event.type == TerminalDisplay::EventType::TITLE && getParent() ) {
@@ -73,12 +76,75 @@ void UITerminal::setTitle( const std::string& title ) {
 	}
 }
 
+KeyBindings& UITerminal::getKeyBindings() {
+	return mKeyBindings;
+}
+
+void UITerminal::setKeyBindings( const KeyBindings& keyBindings ) {
+	mKeyBindings = keyBindings;
+}
+
+void UITerminal::addKeyBindingString( const std::string& shortcut, const std::string& command ) {
+	mKeyBindings.addKeybindString( shortcut, command );
+}
+
+void UITerminal::addKeyBinding( const KeyBindings::Shortcut& shortcut,
+								const std::string& command ) {
+	mKeyBindings.addKeybind( shortcut, command );
+}
+
+void UITerminal::replaceKeyBindingString( const std::string& shortcut,
+										  const std::string& command ) {
+	mKeyBindings.replaceKeybindString( shortcut, command );
+}
+
+void UITerminal::replaceKeyBinding( const KeyBindings::Shortcut& shortcut,
+									const std::string& command ) {
+	mKeyBindings.replaceKeybind( shortcut, command );
+}
+
+void UITerminal::addKeyBindsString( const std::map<std::string, std::string>& binds ) {
+	mKeyBindings.addKeybindsString( binds );
+}
+
+void UITerminal::addKeyBinds( const std::map<KeyBindings::Shortcut, std::string>& binds ) {
+	mKeyBindings.addKeybinds( binds );
+}
+
+void UITerminal::execute( const std::string& command ) {
+	auto cmdIt = mCommands.find( command );
+	if ( cmdIt != mCommands.end() ) {
+		cmdIt->second();
+	}
+}
+
+void UITerminal::setCommands( const std::map<std::string, TerminalCommand>& cmds ) {
+	mCommands.insert( cmds.begin(), cmds.end() );
+}
+
+void UITerminal::setCommand( const std::string& command, const UITerminal::TerminalCommand& func ) {
+	mCommands[command] = func;
+}
+
+bool UITerminal::hasCommand( const std::string& command ) {
+	return mCommands.find( command ) != mCommands.end();
+}
+
 Uint32 UITerminal::onTextInput( const TextInputEvent& event ) {
 	mTerm->onTextInput( event.getChar() );
 	return 1;
 }
 
 Uint32 UITerminal::onKeyDown( const KeyEvent& event ) {
+	if ( mUISceneNode->getUIEventDispatcher()->justGainedFocus() )
+		return 0;
+
+	std::string cmd = mKeyBindings.getCommandFromKeyBind( { event.getKeyCode(), event.getMod() } );
+	if ( !cmd.empty() ) {
+		execute( cmd );
+		return 1;
+	}
+
 	mTerm->onKeyDown( event.getKeyCode(), event.getChar(), event.getMod(), event.getScancode() );
 	return 1;
 }

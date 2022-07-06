@@ -1,6 +1,7 @@
 #ifndef ETERM_UI_UITERMINAL_HPP
 #define ETERM_UI_UITERMINAL_HPP
 
+#include <eepp/ui/keyboardshortcut.hpp>
 #include <eepp/ui/uiwidget.hpp>
 #include <eterm/terminal/terminaldisplay.hpp>
 
@@ -16,6 +17,7 @@ class EE_API UITerminal : public UIWidget {
 							const std::string& workingDir = "", const size_t& historySize = 10000,
 							IProcessFactory* processFactory = nullptr,
 							const bool& useFrameBuffer = false );
+	typedef std::function<void()> TerminalCommand;
 
 	static UITerminal* New( const std::shared_ptr<TerminalDisplay>& terminalDisplay );
 
@@ -35,10 +37,36 @@ class EE_API UITerminal : public UIWidget {
 
 	void setTitle( const std::string& title );
 
+	KeyBindings& getKeyBindings();
+
+	void setKeyBindings( const KeyBindings& keyBindings );
+
+	void addKeyBindingString( const std::string& shortcut, const std::string& command );
+
+	void addKeyBinding( const KeyBindings::Shortcut& shortcut, const std::string& command );
+
+	void replaceKeyBindingString( const std::string& shortcut, const std::string& command );
+
+	void replaceKeyBinding( const KeyBindings::Shortcut& shortcut, const std::string& command );
+
+	void addKeyBindsString( const std::map<std::string, std::string>& binds );
+
+	void addKeyBinds( const std::map<KeyBindings::Shortcut, std::string>& binds );
+
+	void execute( const std::string& command );
+
+	void setCommands( const std::map<std::string, TerminalCommand>& cmds );
+
+	void setCommand( const std::string& command, const TerminalCommand& func );
+
+	bool hasCommand( const std::string& command );
+
   protected:
 	std::string mTitle;
 	bool mIsCustomTitle{ false };
 	bool mDraggingSel{ false };
+	KeyBindings mKeyBindings;
+	std::map<std::string, TerminalCommand> mCommands;
 
 	UITerminal( const std::shared_ptr<TerminalDisplay>& terminalDisplay );
 

@@ -300,8 +300,14 @@ UIFileDialog* App::saveFileDialog( UICodeEditor* editor, bool focusOnClose ) {
 }
 
 void App::runCommand( const std::string& command ) {
-	if ( mEditorSplitter->getCurEditor() )
-		mEditorSplitter->getCurEditor()->getDocument().execute( command );
+	if ( mEditorSplitter->getCurWidget() ) {
+		if ( mEditorSplitter->getCurWidget()->isType( UI_TYPE_CODEEDITOR ) ) {
+			mEditorSplitter->getCurWidget()->asType<UICodeEditor>()->getDocument().execute(
+				command );
+		} else if ( mEditorSplitter->getCurWidget()->isType( UI_TYPE_TERMINAL ) ) {
+			mEditorSplitter->getCurWidget()->asType<UITerminal>()->execute( command );
+		}
+	}
 }
 
 void App::loadConfig() {
@@ -1769,10 +1775,18 @@ const CodeEditorConfig& App::getCodeEditorConfig() const {
 	return mConfig.editor;
 }
 
+std::map<KeyBindings::Shortcut, std::string> App::getAppKeybindings() {
+	return {
+		{ { KEY_T, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "create-new-terminal" },
+	};
+}
+
 std::map<KeyBindings::Shortcut, std::string> App::getDefaultKeybindings() {
 	auto bindings = UICodeEditorSplitter::getDefaultKeybindings();
 	auto local = getLocalKeybindings();
+	auto app = getAppKeybindings();
 	local.insert( bindings.begin(), bindings.end() );
+	local.insert( app.begin(), app.end() );
 	return local;
 }
 
@@ -1982,12 +1996,81 @@ void App::createNewTerminal() {
 			return;
 		setAppTitle( event->getNode()->asType<UITerminal>()->getTitle() );
 	} );
-}
-
-std::map<std::string, std::function<void()>> App::getGlobalCommands() {
-	std::map<std::string, std::function<void()>> cmds;
-
-	return cmds;
+	term->addKeyBinds( getLocalKeybindings() );
+	term->addKeyBinds( UICodeEditorSplitter::getLocalDefaultKeybindings() );
+	term->addKeyBinds( getAppKeybindings() );
+	for ( int i = 1; i <= 10; i++ )
+		term->setCommand( String::format( "switch-to-tab-%d", i ),
+						  [&, i] { mEditorSplitter->switchToTab( i - 1 ); } );
+	term->setCommand( "switch-to-first-tab", [&] {
+		UITabWidget* tabWidget =
+			mEditorSplitter->tabWidgetFromWidget( mEditorSplitter->getCurWidget() );
+		if ( tabWidget && tabWidget->getTabCount() ) {
+			mEditorSplitter->switchToTab( 0 );
+		}
+	} );
+	term->setCommand( "switch-to-last-tab", [&] {
+		UITabWidget* tabWidget =
+			mEditorSplitter->tabWidgetFromWidget( mEditorSplitter->getCurWidget() );
+		if ( tabWidget && tabWidget->getTabCount() ) {
+			mEditorSplitter->switchToTab( tabWidget->getTabCount() - 1 );
+		}
+	} );
+	term->setCommand( "switch-to-previous-split", [&] {
+		mEditorSplitter->switchPreviousSplit( mEditorSplitter->getCurWidget() );
+	} );
+	term->setCommand( "switch-to-next-split", [&] {
+		mEditorSplitter->switchNextSplit( mEditorSplitter->getCurWidget() );
+	} );
+	term->setCommand( "close-tab",
+					  [&] { mEditorSplitter->tryTabClose( mEditorSplitter->getCurWidget() ); } );
+	term->setCommand( "create-new", [&] {
+		auto d = mEditorSplitter->createCodeEditorInTabWidget(
+			mEditorSplitter->tabWidgetFromWidget( mEditorSplitter->getCurWidget() ) );
+		d.first->getTabWidget()->setTabSelected( d.first );
+	} );
+	term->setCommand( "next-tab", [&] {
+		UITabWidget* tabWidget =
+			mEditorSplitter->tabWidgetFromWidget( mEditorSplitter->getCurWidget() );
+		if ( tabWidget && tabWidget->getTabCount() > 1 ) {
+			UITab* tab = (UITab*)mEditorSplitter->getCurWidget()->getData();
+			Uint32 tabIndex = tabWidget->getTabIndex( tab );
+			mEditorSplitter->switchToTab( ( tabIndex + 1 ) % tabWidget->getTabCount() );
+		}
+	} );
+	term->setCommand( "previous-tab", [&] {
+		UITabWidget* tabWidget =
+			mEditorSplitter->tabWidgetFromWidget( mEditorSplitter->getCurWidget() );
+		if ( tabWidget && tabWidget->getTabCount() > 1 ) {
+			UITab* tab = (UITab*)mEditorSplitter->getCurWidget()->getData();
+			Uint32 tabIndex = tabWidget->getTabIndex( tab );
+			Int32 newTabIndex = (Int32)tabIndex - 1;
+			mEditorSplitter->switchToTab( newTabIndex < 0 ? tabWidget->getTabCount() - newTabIndex
+														  : newTabIndex );
+		}
+	} );
+	term->setCommand( "split-right", [&] {
+		mEditorSplitter->split( UICodeEditorSplitter::SplitDirection::Right,
+								mEditorSplitter->getCurWidget() );
+	} );
+	term->setCommand( "split-bottom", [&] {
+		mEditorSplitter->split( UICodeEditorSplitter::SplitDirection::Bottom,
+								mEditorSplitter->getCurWidget() );
+	} );
+	term->setCommand( "split-left", [&] {
+		mEditorSplitter->split( UICodeEditorSplitter::SplitDirection::Left,
+								mEditorSplitter->getCurWidget() );
+	} );
+	term->setCommand( "split-top", [&] {
+		mEditorSplitter->split( UICodeEditorSplitter::SplitDirection::Top,
+								mEditorSplitter->getCurWidget() );
+	} );
+	term->setCommand( "split-swap", [&] {
+		if ( UISplitter* splitter =
+				 mEditorSplitter->splitterFromWidget( mEditorSplitter->getCurWidget() ) )
+			splitter->swap();
+	} );
+	term->setCommand( "create-new-terminal", [&] { createNewTerminal(); } );
 }
 
 void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {

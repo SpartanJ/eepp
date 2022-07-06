@@ -49,7 +49,7 @@ class EE_API UICodeEditorSplitter {
 
 	virtual ~UICodeEditorSplitter();
 
-	virtual bool tryTabClose(UIWidget* widget );
+	virtual bool tryTabClose( UIWidget* widget );
 
 	void closeTab( UIWidget* widget );
 
@@ -58,13 +58,13 @@ class EE_API UICodeEditorSplitter {
 
 	void switchToTab( Int32 index );
 
-	UITabWidget* findPreviousSplit( UICodeEditor* editor );
+	UITabWidget* findPreviousSplit( UIWidget* widget );
 
-	void switchPreviousSplit( UICodeEditor* editor );
+	void switchPreviousSplit( UIWidget* widget );
 
-	UITabWidget* findNextSplit( UICodeEditor* editor );
+	UITabWidget* findNextSplit( UIWidget* widget );
 
-	void switchNextSplit( UICodeEditor* editor );
+	void switchNextSplit( UIWidget* widget );
 
 	void setCurrentEditor( UICodeEditor* editor );
 

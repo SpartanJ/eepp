@@ -82,7 +82,7 @@ class App : public UICodeEditorSplitter::Client {
 
 	void createNewTerminal();
 
-	std::map<std::string, std::function<void()>> getGlobalCommands();
+	std::map<KeyBindings::Shortcut, std::string> getAppKeybindings();
 
   protected:
 	EE::Window::Window* mWindow{ nullptr };
@@ -170,8 +170,6 @@ class App : public UICodeEditorSplitter::Client {
 	void updateEditorTabTitle( UICodeEditor* editor );
 
 	std::string titleFromEditor( UICodeEditor* editor );
-
-	bool tryTabClose( UICodeEditor* editor );
 
 	bool onCloseRequestCallback( EE::Window::Window* );
 

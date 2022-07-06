@@ -23,8 +23,8 @@ UICodeEditorSplitter::getLocalDefaultKeybindings() {
 		{ { KEY_L, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "lock-toggle" },
 		{ { KEY_T, KeyMod::getDefaultModifier() }, "create-new" },
 		{ { KEY_W, KeyMod::getDefaultModifier() }, "close-tab" },
-		{ { KEY_TAB, KeyMod::getDefaultModifier() }, "next-doc" },
-		{ { KEY_TAB, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "previous-doc" },
+		{ { KEY_TAB, KeyMod::getDefaultModifier() }, "next-tab" },
+		{ { KEY_TAB, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "previous-tab" },
 		{ { KEY_J, KEYMOD_LALT | KEYMOD_SHIFT }, "split-left" },
 		{ { KEY_L, KEYMOD_LALT | KEYMOD_SHIFT }, "split-right" },
 		{ { KEY_I, KEYMOD_LALT | KEYMOD_SHIFT }, "split-top" },
@@ -61,8 +61,8 @@ std::vector<std::string> UICodeEditorSplitter::getUnlockedCommands() {
 	const std::vector<std::string> unlockedCmds{ "lock-toggle",
 												 "create-new",
 												 "close-tab",
-												 "next-doc",
-												 "previous-doc",
+												 "next-tab",
+												 "previous-tab",
 												 "split-left",
 												 "split-right",
 												 "split-top",
@@ -217,25 +217,27 @@ UICodeEditor* UICodeEditorSplitter::createCodeEditor() {
 			mCurrentColorScheme = mColorSchemes.begin()->first;
 		applyColorScheme( mColorSchemes[mCurrentColorScheme] );
 	} );
-	doc.setCommand( "switch-to-previous-split", [&] { switchPreviousSplit( mCurEditor ); } );
-	doc.setCommand( "switch-to-next-split", [&] { switchNextSplit( mCurEditor ); } );
-	doc.setCommand( "close-tab", [&] { tryTabClose( mCurEditor ); } );
+
+	/* Splitter commands */
+	doc.setCommand( "switch-to-previous-split", [&] { switchPreviousSplit( mCurWidget ); } );
+	doc.setCommand( "switch-to-next-split", [&] { switchNextSplit( mCurWidget ); } );
+	doc.setCommand( "close-tab", [&] { tryTabClose( mCurWidget ); } );
 	doc.setCommand( "create-new", [&] {
-		auto d = createCodeEditorInTabWidget( tabWidgetFromEditor( mCurEditor ) );
+		auto d = createCodeEditorInTabWidget( tabWidgetFromWidget( mCurWidget ) );
 		d.first->getTabWidget()->setTabSelected( d.first );
 	} );
-	doc.setCommand( "next-doc", [&] {
-		UITabWidget* tabWidget = tabWidgetFromEditor( mCurEditor );
+	doc.setCommand( "next-tab", [&] {
+		UITabWidget* tabWidget = tabWidgetFromWidget( mCurWidget );
 		if ( tabWidget && tabWidget->getTabCount() > 1 ) {
-			UITab* tab = (UITab*)mCurEditor->getData();
+			UITab* tab = (UITab*)mCurWidget->getData();
 			Uint32 tabIndex = tabWidget->getTabIndex( tab );
 			switchToTab( ( tabIndex + 1 ) % tabWidget->getTabCount() );
 		}
 	} );
-	doc.setCommand( "previous-doc", [&] {
-		UITabWidget* tabWidget = tabWidgetFromEditor( mCurEditor );
+	doc.setCommand( "previous-tab", [&] {
+		UITabWidget* tabWidget = tabWidgetFromWidget( mCurWidget );
 		if ( tabWidget && tabWidget->getTabCount() > 1 ) {
-			UITab* tab = (UITab*)mCurEditor->getData();
+			UITab* tab = (UITab*)mCurWidget->getData();
 			Uint32 tabIndex = tabWidget->getTabIndex( tab );
 			Int32 newTabIndex = (Int32)tabIndex - 1;
 			switchToTab( newTabIndex < 0 ? tabWidget->getTabCount() - newTabIndex : newTabIndex );
@@ -244,13 +246,13 @@ UICodeEditor* UICodeEditorSplitter::createCodeEditor() {
 	for ( int i = 1; i <= 10; i++ )
 		doc.setCommand( String::format( "switch-to-tab-%d", i ), [&, i] { switchToTab( i - 1 ); } );
 	doc.setCommand( "switch-to-first-tab", [&] {
-		UITabWidget* tabWidget = tabWidgetFromEditor( mCurEditor );
+		UITabWidget* tabWidget = tabWidgetFromWidget( mCurWidget );
 		if ( tabWidget && tabWidget->getTabCount() ) {
 			switchToTab( 0 );
 		}
 	} );
 	doc.setCommand( "switch-to-last-tab", [&] {
-		UITabWidget* tabWidget = tabWidgetFromEditor( mCurEditor );
+		UITabWidget* tabWidget = tabWidgetFromWidget( mCurWidget );
 		if ( tabWidget && tabWidget->getTabCount() ) {
 			switchToTab( tabWidget->getTabCount() - 1 );
 		}
@@ -263,6 +265,8 @@ UICodeEditor* UICodeEditorSplitter::createCodeEditor() {
 		if ( UISplitter* splitter = splitterFromWidget( mCurWidget ) )
 			splitter->swap();
 	} );
+	/* Splitter commands */
+
 	doc.setCommand( "open-containing-folder", [&] {
 		if ( mCurEditor )
 			mCurEditor->openContainingFolder();
@@ -797,19 +801,19 @@ UISplitter* UICodeEditorSplitter::split( const SplitDirection& direction, UIWidg
 }
 
 void UICodeEditorSplitter::switchToTab( Int32 index ) {
-	UITabWidget* tabWidget = tabWidgetFromEditor( mCurEditor );
+	UITabWidget* tabWidget = tabWidgetFromWidget( mCurWidget );
 	if ( tabWidget ) {
 		tabWidget->setTabSelected( eeclamp<Int32>( index, 0, tabWidget->getTabCount() - 1 ) );
 	}
 }
 
-UITabWidget* UICodeEditorSplitter::findPreviousSplit( UICodeEditor* editor ) {
-	if ( !editor )
+UITabWidget* UICodeEditorSplitter::findPreviousSplit( UIWidget* widget ) {
+	if ( !widget )
 		return nullptr;
-	UISplitter* splitter = splitterFromEditor( editor );
+	UISplitter* splitter = splitterFromWidget( widget );
 	if ( !splitter )
 		return nullptr;
-	UITabWidget* tabWidget = tabWidgetFromEditor( editor );
+	UITabWidget* tabWidget = tabWidgetFromWidget( widget );
 	if ( tabWidget ) {
 		auto it = std::find( mTabWidgets.rbegin(), mTabWidgets.rend(), tabWidget );
 		if ( it != mTabWidgets.rend() && ++it != mTabWidgets.rend() ) {
@@ -819,13 +823,13 @@ UITabWidget* UICodeEditorSplitter::findPreviousSplit( UICodeEditor* editor ) {
 	return nullptr;
 }
 
-void UICodeEditorSplitter::switchPreviousSplit( UICodeEditor* editor ) {
-	UITabWidget* tabWidget = findPreviousSplit( editor );
+void UICodeEditorSplitter::switchPreviousSplit( UIWidget* widget ) {
+	UITabWidget* tabWidget = findPreviousSplit( widget );
 	if ( tabWidget && tabWidget->getTabSelected() &&
 		 tabWidget->getTabSelected()->getOwnedWidget() ) {
 		tabWidget->getTabSelected()->getOwnedWidget()->setFocus();
 	} else {
-		tabWidget = findNextSplit( editor );
+		tabWidget = findNextSplit( widget );
 		if ( tabWidget && tabWidget->getTabSelected() &&
 			 tabWidget->getTabSelected()->getOwnedWidget() ) {
 			tabWidget->getTabSelected()->getOwnedWidget()->setFocus();
@@ -833,13 +837,13 @@ void UICodeEditorSplitter::switchPreviousSplit( UICodeEditor* editor ) {
 	}
 }
 
-UITabWidget* UICodeEditorSplitter::findNextSplit( UICodeEditor* editor ) {
-	if ( !editor )
+UITabWidget* UICodeEditorSplitter::findNextSplit( UIWidget* widget ) {
+	if ( !widget )
 		return nullptr;
-	UISplitter* splitter = splitterFromEditor( editor );
+	UISplitter* splitter = splitterFromWidget( widget );
 	if ( !splitter )
 		return nullptr;
-	UITabWidget* tabWidget = tabWidgetFromEditor( editor );
+	UITabWidget* tabWidget = tabWidgetFromWidget( widget );
 	if ( tabWidget ) {
 		auto it = std::find( mTabWidgets.begin(), mTabWidgets.end(), tabWidget );
 		if ( it != mTabWidgets.end() && ++it != mTabWidgets.end() ) {
@@ -849,13 +853,13 @@ UITabWidget* UICodeEditorSplitter::findNextSplit( UICodeEditor* editor ) {
 	return nullptr;
 }
 
-void UICodeEditorSplitter::switchNextSplit( UICodeEditor* editor ) {
-	UITabWidget* tabWidget = findNextSplit( editor );
+void UICodeEditorSplitter::switchNextSplit( UIWidget* widget ) {
+	UITabWidget* tabWidget = findNextSplit( widget );
 	if ( tabWidget && tabWidget->getTabSelected() &&
 		 tabWidget->getTabSelected()->getOwnedWidget() ) {
 		tabWidget->getTabSelected()->getOwnedWidget()->setFocus();
 	} else {
-		tabWidget = findPreviousSplit( editor );
+		tabWidget = findPreviousSplit( widget );
 		if ( tabWidget && tabWidget->getTabSelected() &&
 			 tabWidget->getTabSelected()->getOwnedWidget() ) {
 			tabWidget->getTabSelected()->getOwnedWidget()->setFocus();
