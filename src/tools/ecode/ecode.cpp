@@ -43,6 +43,9 @@ bool App::onCloseRequestCallback( EE::Window::Window* ) {
 }
 
 void App::saveDoc() {
+	if ( !mEditorSplitter->curEditorExistsAndFocused() )
+		return;
+
 	if ( mEditorSplitter->getCurEditor()->getDocument().hasFilepath() ) {
 		if ( mEditorSplitter->getCurEditor()->save() )
 			updateEditorState();
@@ -370,7 +373,7 @@ std::shared_ptr<ThreadPool> App::getThreadPool() const {
 }
 
 bool App::trySendUnlockedCmd( const KeyEvent& keyEvent ) {
-	if ( mEditorSplitter->getCurEditor() ) {
+	if ( mEditorSplitter->curEditorExistsAndFocused() ) {
 		std::string cmd = mEditorSplitter->getCurEditor()->getKeyBindings().getCommandFromKeyBind(
 			{ keyEvent.getKeyCode(), keyEvent.getMod() } );
 		if ( !cmd.empty() && mEditorSplitter->getCurEditor()->isUnlockedCommand( cmd ) ) {
@@ -409,10 +412,11 @@ void App::mainLoop() {
 void App::onFileDropped( String file ) {
 	Vector2f mousePos( mUISceneNode->getEventDispatcher()->getMousePosf() );
 	Node* node = mUISceneNode->overFind( mousePos );
-	UICodeEditor* codeEditor = mEditorSplitter->getCurEditor();
+	UIWidget* widget = mEditorSplitter->getCurWidget();
 	UITab* tab = nullptr;
+	UICodeEditor* codeEditor = nullptr;
 	if ( !node )
-		node = codeEditor;
+		node = widget;
 	if ( node && node->isType( UI_TYPE_CODEEDITOR ) ) {
 		codeEditor = node->asType<UICodeEditor>();
 		if ( ( codeEditor->getDocument().isLoading() || !codeEditor->getDocument().isEmpty() ) &&
@@ -432,7 +436,8 @@ void App::onFileDropped( String file ) {
 void App::onTextDropped( String text ) {
 	Vector2f mousePos( mUISceneNode->getEventDispatcher()->getMousePosf() );
 	Node* node = mUISceneNode->overFind( mousePos );
-	UICodeEditor* codeEditor = mEditorSplitter->getCurEditor();
+	UICodeEditor* codeEditor =
+		mEditorSplitter->curEditorExistsAndFocused() ? mEditorSplitter->getCurEditor() : nullptr;
 	if ( node && node->isType( UI_TYPE_CODEEDITOR ) )
 		codeEditor = node->asType<UICodeEditor>();
 	if ( codeEditor && !text.empty() ) {
@@ -848,7 +853,7 @@ UIMenu* App::createViewMenu() {
 			mConfig.editor.showDocInfo = item->asType<UIMenuCheckBox>()->isActive();
 			if ( mDocInfo )
 				mDocInfo->setVisible( mConfig.editor.showDocInfo );
-			if ( mEditorSplitter->getCurEditor() )
+			if ( mEditorSplitter->curEditorExistsAndFocused() )
 				updateDocInfo( mEditorSplitter->getCurEditor()->getDocument() );
 		} else if ( item->getText() == "Hide tabbar on single tab" ) {
 			mConfig.editor.hideTabBarOnSingleTab = item->asType<UIMenuCheckBox>()->isActive();
@@ -926,7 +931,7 @@ UIMenu* App::createEditMenu() {
 		runCommand( event->getNode()->getId() );
 	} );
 	menu->addEventListener( Event::OnMenuShow, [&, menu, fileSep]( const Event* ) {
-		if ( nullptr == mEditorSplitter->getCurEditor() )
+		if ( !mEditorSplitter->curEditorExistsAndFocused() )
 			return;
 		auto doc = mEditorSplitter->getCurEditor()->getDocumentRef();
 		menu->getItemId( "undo" )->setEnabled( doc->hasUndo() );
@@ -973,7 +978,7 @@ UIMenu* App::createDocumentMenu() {
 		->setId( "indent_type_cur" );
 	tabTypeMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
 		const String& text = event->getNode()->asType<UIMenuRadioButton>()->getId();
-		if ( mEditorSplitter->getCurEditor() ) {
+		if ( mEditorSplitter->curEditorExistsAndFocused() ) {
 			TextDocument::IndentType indentType = text == "tabs"
 													  ? TextDocument::IndentType::IndentTabs
 													  : TextDocument::IndentType::IndentSpaces;
@@ -985,7 +990,7 @@ UIMenu* App::createDocumentMenu() {
 	for ( size_t w = 2; w <= 12; w++ )
 		indentWidthMenu
 			->addRadioButton( String::toString( w ),
-							  mEditorSplitter->getCurEditor() &&
+							  mEditorSplitter->curEditorExistsAndFocused() &&
 								  mEditorSplitter->getCurEditor()->getDocument().getIndentWidth() ==
 									  w )
 			->setId( String::format( "indent_width_%zu", w ) )
@@ -993,7 +998,7 @@ UIMenu* App::createDocumentMenu() {
 	mDocMenu->addSubMenu( i18n( "indent_width", "Indent Width" ), nullptr, indentWidthMenu )
 		->setId( "indent_width_cur" );
 	indentWidthMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
-		if ( mEditorSplitter->getCurEditor() ) {
+		if ( mEditorSplitter->curEditorExistsAndFocused() ) {
 			int width = event->getNode()->getData();
 			mEditorSplitter->getCurEditor()->getDocument().setIndentWidth( width );
 		}
@@ -1003,14 +1008,14 @@ UIMenu* App::createDocumentMenu() {
 	for ( size_t w = 2; w <= 12; w++ )
 		tabWidthMenu
 			->addRadioButton( String::toString( w ),
-							  mEditorSplitter->getCurEditor() &&
+							  mEditorSplitter->curEditorExistsAndFocused() &&
 								  mEditorSplitter->getCurEditor()->getTabWidth() == w )
 			->setId( String::format( "tab_width_%zu", w ) )
 			->setData( w );
 	mDocMenu->addSubMenu( i18n( "tab_width", "Tab Width" ), nullptr, tabWidthMenu )
 		->setId( "tab_width_cur" );
 	tabWidthMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
-		if ( mEditorSplitter->getCurEditor() ) {
+		if ( mEditorSplitter->curEditorExistsAndFocused() ) {
 			int width = event->getNode()->getData();
 			mEditorSplitter->getCurEditor()->setTabWidth( width );
 		}
@@ -1025,7 +1030,7 @@ UIMenu* App::createDocumentMenu() {
 		->setId( "line_endings_cur" );
 	lineEndingsMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
 		bool winLe = event->getNode()->asType<UIRadioButton>()->getId() == "windows";
-		if ( mEditorSplitter->getCurEditor() ) {
+		if ( mEditorSplitter->curEditorExistsAndFocused() ) {
 			mEditorSplitter->getCurEditor()->getDocument().setLineEnding(
 				winLe ? TextDocument::LineEnding::CRLF : TextDocument::LineEnding::LF );
 			updateDocInfo( mEditorSplitter->getCurEditor()->getDocument() );
@@ -1050,7 +1055,7 @@ UIMenu* App::createDocumentMenu() {
 		->setId( "write_bom_cur" );
 
 	mDocMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
-		if ( !mEditorSplitter->getCurEditor() ||
+		if ( !mEditorSplitter->curEditorExistsAndFocused() ||
 			 event->getNode()->isType( UI_TYPE_MENU_SEPARATOR ) ||
 			 event->getNode()->isType( UI_TYPE_MENUSUBMENU ) )
 			return;
@@ -1225,7 +1230,7 @@ UIMenu* App::createDocumentMenu() {
 		->setId( "line_breaking_column" );
 
 	globalMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
-		if ( !mEditorSplitter->getCurEditor() ||
+		if ( !mEditorSplitter->curEditorExistsAndFocused() ||
 			 event->getNode()->isType( UI_TYPE_MENU_SEPARATOR ) ||
 			 event->getNode()->isType( UI_TYPE_MENUSUBMENU ) )
 			return;
@@ -1367,7 +1372,7 @@ UIMenu* App::createDocumentMenu() {
 		->setId( "line_breaking_column" );
 
 	mProjectMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
-		if ( !mEditorSplitter->getCurEditor() ||
+		if ( !mEditorSplitter->curEditorExistsAndFocused() ||
 			 event->getNode()->isType( UI_TYPE_MENU_SEPARATOR ) ||
 			 event->getNode()->isType( UI_TYPE_MENUSUBMENU ) )
 			return;
@@ -1694,8 +1699,8 @@ void App::onDocumentCursorPosChange( UICodeEditor*, TextDocument& doc ) {
 }
 
 void App::updateDocInfo( TextDocument& doc ) {
-	if ( mConfig.editor.showDocInfo && mDocInfoText && mEditorSplitter->getCurEditor() &&
-		 mEditorSplitter->getCurEditor()->isType( UI_TYPE_CODEEDITOR ) ) {
+	if ( mConfig.editor.showDocInfo && mDocInfoText &&
+		 mEditorSplitter->curEditorExistsAndFocused() ) {
 		mDocInfoText->setVisible( true );
 		mDocInfoText->setText( String::format(
 			"line: %lld / %lu  col: %lld    %s", doc.getSelection().start().line() + 1,
@@ -1741,7 +1746,7 @@ void App::onColorSchemeChanged( const std::string& ) {
 
 void App::onDocumentLoaded( UICodeEditor* editor, const std::string& path ) {
 	updateEditorTitle( editor );
-	if ( editor == mEditorSplitter->getCurEditor() )
+	if ( mEditorSplitter->curEditorExistsAndFocused() && editor == mEditorSplitter->getCurEditor() )
 		updateCurrentFileType();
 	mEditorSplitter->removeUnusedTab( mEditorSplitter->tabWidgetFromEditor( editor ) );
 	auto found = std::find( mRecentFiles.begin(), mRecentFiles.end(), path );
@@ -1751,7 +1756,8 @@ void App::onDocumentLoaded( UICodeEditor* editor, const std::string& path ) {
 	if ( mRecentFiles.size() > 10 )
 		mRecentFiles.resize( 10 );
 	updateRecentFiles();
-	if ( mEditorSplitter->getCurEditor() == editor ) {
+	if ( mEditorSplitter->curEditorExistsAndFocused() &&
+		 mEditorSplitter->getCurEditor() == editor ) {
 		updateDocumentMenu();
 		updateDocInfo( editor->getDocument() );
 	}
@@ -1778,6 +1784,9 @@ const CodeEditorConfig& App::getCodeEditorConfig() const {
 std::map<KeyBindings::Shortcut, std::string> App::getAppKeybindings() {
 	return {
 		{ { KEY_T, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "create-new-terminal" },
+		{ { KEY_E, KEYMOD_CTRL | KEYMOD_LALT | KEYMOD_SHIFT },
+		  UITerminal::getExclusiveModeToggleCommandName() },
+		{ { KEY_S, KEYMOD_LALT | KEYMOD_CTRL }, "terminal-rename" },
 	};
 }
 
@@ -1977,6 +1986,13 @@ NotificationCenter* App::getNotificationCenter() const {
 	return mNotificationCenter.get();
 }
 
+void App::fullscreenToggle() {
+	mWindow->toggleFullscreen();
+	mWindowMenu->find( "fullscreen-mode" )
+		->asType<UIMenuCheckBox>()
+		->setActive( !mWindow->isWindowed() );
+}
+
 void App::createNewTerminal() {
 	UIWidget* curWidget = mEditorSplitter->getCurWidget();
 	if ( !curWidget )
@@ -1999,6 +2015,8 @@ void App::createNewTerminal() {
 	term->addKeyBinds( getLocalKeybindings() );
 	term->addKeyBinds( UICodeEditorSplitter::getLocalDefaultKeybindings() );
 	term->addKeyBinds( getAppKeybindings() );
+	term->setCommand( "switch-side-panel", [&] { switchSidePanel(); } );
+	term->setCommand( "fullscreen-toggle", [&]() { fullscreenToggle(); } );
 	for ( int i = 1; i <= 10; i++ )
 		term->setCommand( String::format( "switch-to-tab-%d", i ),
 						  [&, i] { mEditorSplitter->switchToTab( i - 1 ); } );
@@ -2051,26 +2069,46 @@ void App::createNewTerminal() {
 	} );
 	term->setCommand( "split-right", [&] {
 		mEditorSplitter->split( UICodeEditorSplitter::SplitDirection::Right,
-								mEditorSplitter->getCurWidget() );
+								mEditorSplitter->getCurWidget(),
+								mEditorSplitter->curEditorExistsAndFocused() );
 	} );
 	term->setCommand( "split-bottom", [&] {
 		mEditorSplitter->split( UICodeEditorSplitter::SplitDirection::Bottom,
-								mEditorSplitter->getCurWidget() );
+								mEditorSplitter->getCurWidget(),
+								mEditorSplitter->curEditorExistsAndFocused() );
 	} );
 	term->setCommand( "split-left", [&] {
 		mEditorSplitter->split( UICodeEditorSplitter::SplitDirection::Left,
-								mEditorSplitter->getCurWidget() );
+								mEditorSplitter->getCurWidget(),
+								mEditorSplitter->curEditorExistsAndFocused() );
 	} );
 	term->setCommand( "split-top", [&] {
 		mEditorSplitter->split( UICodeEditorSplitter::SplitDirection::Top,
-								mEditorSplitter->getCurWidget() );
+								mEditorSplitter->getCurWidget(),
+								mEditorSplitter->curEditorExistsAndFocused() );
 	} );
 	term->setCommand( "split-swap", [&] {
 		if ( UISplitter* splitter =
 				 mEditorSplitter->splitterFromWidget( mEditorSplitter->getCurWidget() ) )
 			splitter->swap();
 	} );
+	term->setCommand( UITerminal::getExclusiveModeToggleCommandName(),
+					  [term] { term->setExclusiveMode( !term->getExclusiveMode() ); } );
 	term->setCommand( "create-new-terminal", [&] { createNewTerminal(); } );
+	term->setCommand( "terminal-rename", [&, term] {
+		UIMessageBox* msgBox = UIMessageBox::New(
+			UIMessageBox::INPUT, i18n( "new_terminal_name", "New terminal name:" ) );
+		msgBox->setTitle( "ecode" );
+		msgBox->getTextInput()->setHint( "Any name..." );
+		msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
+		msgBox->showWhenReady();
+		msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox, term]( const Event* ) {
+			std::string title( msgBox->getTextInput()->getText().toUtf8() );
+			term->setTitle( title );
+			msgBox->close();
+			term->setFocus();
+		} );
+	} );
 }
 
 void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
@@ -2110,7 +2148,10 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	editor->addKeyBinds( getLocalKeybindings() );
 	editor->addUnlockedCommands( getUnlockedCommands() );
 	doc.setCommand( "save-doc", [&] { saveDoc(); } );
-	doc.setCommand( "save-as-doc", [&] { saveFileDialog( mEditorSplitter->getCurEditor() ); } );
+	doc.setCommand( "save-as-doc", [&] {
+		if ( mEditorSplitter->curEditorExistsAndFocused() )
+			saveFileDialog( mEditorSplitter->getCurEditor() );
+	} );
 	doc.setCommand( "save-all", [&] { saveAll(); } );
 	doc.setCommand( "find-replace", [&] { mDocSearchController->showFindView(); } );
 	doc.setCommand( "open-global-search", [&] { mGlobalSearchController->showGlobalSearch(); } );
@@ -2123,12 +2164,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	} );
 	doc.setCommand( "close-folder", [&] { closeFolder(); } );
 	doc.setCommand( "close-app", [&] { closeApp(); } );
-	doc.setCommand( "fullscreen-toggle", [&]() {
-		mWindow->toggleFullscreen();
-		mWindowMenu->find( "fullscreen-mode" )
-			->asType<UIMenuCheckBox>()
-			->setActive( !mWindow->isWindowed() );
-	} );
+	doc.setCommand( "fullscreen-toggle", [&]() { fullscreenToggle(); } );
 	doc.setCommand( "open-file", [&] { openFileDialog(); } );
 	doc.setCommand( "open-folder", [&] { openFolderDialog(); } );
 	doc.setCommand( "console-toggle", [&] {
@@ -2138,19 +2174,19 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 			[lock]( UICodeEditor* editor ) { editor->setLocked( lock ); } );
 	} );
 	doc.setCommand( "lock", [&] {
-		if ( mEditorSplitter->getCurEditor() ) {
+		if ( mEditorSplitter->curEditorExistsAndFocused() ) {
 			mEditorSplitter->getCurEditor()->setLocked( true );
 			updateDocumentMenu();
 		}
 	} );
 	doc.setCommand( "unlock", [&] {
-		if ( mEditorSplitter->getCurEditor() ) {
+		if ( mEditorSplitter->curEditorExistsAndFocused() ) {
 			mEditorSplitter->getCurEditor()->setLocked( false );
 			updateDocumentMenu();
 		}
 	} );
 	doc.setCommand( "lock-toggle", [&] {
-		if ( mEditorSplitter->getCurEditor() ) {
+		if ( mEditorSplitter->curEditorExistsAndFocused() ) {
 			mEditorSplitter->getCurEditor()->setLocked(
 				!mEditorSplitter->getCurEditor()->isLocked() );
 			updateDocumentMenu();
@@ -2194,7 +2230,8 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	editor->addEventListener( Event::OnDocumentSave, [&]( const Event* event ) {
 		UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
 		updateEditorTabTitle( editor );
-		if ( mEditorSplitter->getCurEditor() == editor )
+		if ( mEditorSplitter->curEditorExistsAndFocused() &&
+			 mEditorSplitter->getCurEditor() == editor )
 			editor->setFocus();
 		if ( editor->getDocument().getFilePath() == mKeybindingsPath ) {
 			mKeybindings.clear();
@@ -2343,7 +2380,7 @@ bool App::setFormatter( bool enable ) {
 }
 
 void App::loadCurrentDirectory() {
-	if ( !mEditorSplitter->getCurEditor() )
+	if ( !mEditorSplitter->curEditorExistsAndFocused() )
 		return;
 	std::string path( mEditorSplitter->getCurEditor()->getDocument().getFilePath() );
 	if ( path.empty() )
@@ -2543,7 +2580,7 @@ UIMenu* App::createFileTypeMenu() {
 	auto cb = [&, dM]( const Event* event ) {
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
 		const String& name = item->getText();
-		if ( mEditorSplitter->getCurEditor() ) {
+		if ( mEditorSplitter->curEditorExistsAndFocused() ) {
 			mEditorSplitter->getCurEditor()->setSyntaxDefinition(
 				dM->getStyleByLanguageName( name ) );
 			updateCurrentFileType();
@@ -2558,7 +2595,7 @@ UIMenu* App::createFileTypeMenu() {
 	for ( const auto& name : names ) {
 		menu->addRadioButton(
 			name,
-			mEditorSplitter->getCurEditor() &&
+			mEditorSplitter->curEditorExistsAndFocused() &&
 				mEditorSplitter->getCurEditor()->getSyntaxDefinition().getLanguageName() == name );
 
 		if ( mFileTypeMenues.size() == 1 && menu->getCount() == 1 ) {
@@ -2583,7 +2620,7 @@ UIMenu* App::createFileTypeMenu() {
 }
 
 void App::updateCurrentFileType() {
-	if ( !mEditorSplitter->getCurEditor() )
+	if ( !mEditorSplitter->curEditorExistsAndFocused() )
 		return;
 	std::string curLang( mEditorSplitter->getCurEditor()->getSyntaxDefinition().getLanguageName() );
 	for ( UIPopUpMenu* menu : mFileTypeMenues ) {
@@ -2597,7 +2634,7 @@ void App::updateCurrentFileType() {
 }
 
 void App::updateEditorState() {
-	if ( mEditorSplitter->getCurEditor() ) {
+	if ( mEditorSplitter->curEditorExistsAndFocused() ) {
 		updateEditorTitle( mEditorSplitter->getCurEditor() );
 		updateCurrentFileType();
 		updateDocumentMenu();
@@ -2637,7 +2674,8 @@ void App::loadDirTree( const std::string& path ) {
 			mDirTreeReady = true;
 			mUISceneNode->runOnMainThread( [&] {
 				mFileLocator->updateLocateTable();
-				syncProjectTreeWithEditor( mEditorSplitter->getCurEditor() );
+				if ( mEditorSplitter->curEditorExistsAndFocused() )
+					syncProjectTreeWithEditor( mEditorSplitter->getCurEditor() );
 			} );
 			if ( mFileWatcher ) {
 				removeFolderWatches();
@@ -2849,7 +2887,7 @@ void App::initProjectTreeView( const std::string& path ) {
 			return 1;
 		}
 
-		if ( mEditorSplitter->getCurEditor() ) {
+		if ( mEditorSplitter->curEditorExistsAndFocused() ) {
 			std::string cmd =
 				mEditorSplitter->getCurEditor()->getKeyBindings().getCommandFromKeyBind(
 					{ keyEvent->getKeyCode(), keyEvent->getMod() } );

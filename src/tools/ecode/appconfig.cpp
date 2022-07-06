@@ -356,7 +356,7 @@ void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* ed
 		if ( j.is_discarded() )
 			return;
 		loadDocuments( editorSplitter, pool, j,
-					   editorSplitter->tabWidgetFromEditor( editorSplitter->getCurEditor() ) );
+					   editorSplitter->tabWidgetFromWidget( editorSplitter->getCurWidget() ) );
 	} else {
 		// Old format
 		bool found;

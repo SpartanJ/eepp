@@ -274,7 +274,7 @@ void GlobalSearchController::showGlobalSearch( bool searchReplace ) {
 	mGlobalSearchInput->setFocus();
 	mGlobalSearchLayout->setVisible( true );
 	UICheckBox* escapeSequenceChk = mGlobalSearchBarLayout->find<UICheckBox>( "escape_sequence" );
-	if ( mEditorSplitter->getCurEditor() &&
+	if ( mEditorSplitter->curEditorExistsAndFocused() &&
 		 mEditorSplitter->getCurEditor()->getDocument().hasSelection() ) {
 		auto& doc = mEditorSplitter->getCurEditor()->getDocument();
 		String text = doc.getSelectedText();
@@ -463,7 +463,7 @@ void GlobalSearchController::doGlobalSearch( String text, bool caseSensitive, bo
 }
 
 void GlobalSearchController::onLoadDone( const Variant& lineNum, const Variant& colNum ) {
-	if ( mEditorSplitter->getCurEditor() && lineNum.isValid() && colNum.isValid() &&
+	if ( mEditorSplitter->curEditorExistsAndFocused() && lineNum.isValid() && colNum.isValid() &&
 		 lineNum.is( Variant::Type::Int64 ) && colNum.is( Variant::Type::Int64 ) ) {
 		TextPosition pos{ lineNum.asInt64(), colNum.asInt64() };
 		mEditorSplitter->getCurEditor()->getDocument().setSelection( pos );

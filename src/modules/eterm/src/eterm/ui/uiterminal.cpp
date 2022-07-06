@@ -130,6 +130,14 @@ bool UITerminal::hasCommand( const std::string& command ) {
 	return mCommands.find( command ) != mCommands.end();
 }
 
+bool UITerminal::getExclusiveMode() const {
+	return mExclusiveMode;
+}
+
+void UITerminal::setExclusiveMode( bool exclusiveMode ) {
+	mExclusiveMode = exclusiveMode;
+}
+
 Uint32 UITerminal::onTextInput( const TextInputEvent& event ) {
 	mTerm->onTextInput( event.getChar() );
 	return 1;
@@ -141,7 +149,8 @@ Uint32 UITerminal::onKeyDown( const KeyEvent& event ) {
 
 	std::string cmd = mKeyBindings.getCommandFromKeyBind( { event.getKeyCode(), event.getMod() } );
 	if ( !cmd.empty() ) {
-		execute( cmd );
+		if ( !mExclusiveMode || cmd == getExclusiveModeToggleCommandName() )
+			execute( cmd );
 		return 1;
 	}
 

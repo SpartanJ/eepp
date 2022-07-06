@@ -155,11 +155,10 @@ void DocSearchController::initSearchBar(
 void DocSearchController::showFindView() {
 	mApp->hideLocateBar();
 	mApp->hideGlobalSearchBar();
-
-	UICodeEditor* editor = mEditorSplitter->getCurEditor();
-	if ( !editor )
+	if ( !mEditorSplitter->curEditorExistsAndFocused() )
 		return;
 
+	UICodeEditor* editor = mEditorSplitter->getCurEditor();
 	mSearchState.editor = editor;
 	mSearchState.range = TextRange();
 	mSearchState.caseSensitive =

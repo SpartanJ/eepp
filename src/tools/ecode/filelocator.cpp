@@ -56,12 +56,12 @@ void FileLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locateInpu
 	mLocateTable->setHeadersVisible( false );
 	mLocateTable->setVisible( false );
 	mLocateInput->addEventListener( Event::OnTextChanged, [&]( const Event* ) {
-		if ( mEditorSplitter->getCurEditor() &&
+		if ( mEditorSplitter->curEditorExistsAndFocused() &&
 			 String::startsWith( mLocateInput->getText(), String( "l " ) ) ) {
 			String number( mLocateInput->getText().substr( 2 ) );
 			Int64 val;
 			if ( String::fromString( val, number ) && val - 1 >= 0 ) {
-				if ( mEditorSplitter->getCurEditor() )
+				if ( mEditorSplitter->curEditorExistsAndFocused() )
 					mEditorSplitter->getCurEditor()->goToLine( { val - 1, 0 } );
 				mLocateTable->setVisible( false );
 			}

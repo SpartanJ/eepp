@@ -84,6 +84,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	std::map<KeyBindings::Shortcut, std::string> getAppKeybindings();
 
+	void fullscreenToggle();
+
   protected:
 	EE::Window::Window* mWindow{ nullptr };
 	UISceneNode* mUISceneNode{ nullptr };

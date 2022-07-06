@@ -10,7 +10,7 @@ using namespace eterm::Terminal;
 
 namespace eterm { namespace UI {
 
-class EE_API UITerminal : public UIWidget {
+class UITerminal : public UIWidget {
   public:
 	static UITerminal* New( Font* font, const Float& fontSize, const Sizef& pixelsSize,
 							std::string program = "", const std::vector<std::string>& args = {},
@@ -61,10 +61,19 @@ class EE_API UITerminal : public UIWidget {
 
 	bool hasCommand( const std::string& command );
 
+	static std::string getExclusiveModeToggleCommandName() { return "toggle-exclusive-mode"; }
+
+	bool getExclusiveMode() const;
+
+	/** Exclusive mode disables the global keybindings except for the enable/disable exclusive mode.
+	 *  This allows the user to use all the keybindings in the terminal. */
+	void setExclusiveMode( bool exclusiveMode );
+
   protected:
 	std::string mTitle;
 	bool mIsCustomTitle{ false };
 	bool mDraggingSel{ false };
+	bool mExclusiveMode{ false };
 	KeyBindings mKeyBindings;
 	std::map<std::string, TerminalCommand> mCommands;
 

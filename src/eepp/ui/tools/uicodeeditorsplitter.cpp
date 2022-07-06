@@ -257,10 +257,18 @@ UICodeEditor* UICodeEditorSplitter::createCodeEditor() {
 			switchToTab( tabWidget->getTabCount() - 1 );
 		}
 	} );
-	doc.setCommand( "split-right", [&] { split( SplitDirection::Right, mCurWidget ); } );
-	doc.setCommand( "split-bottom", [&] { split( SplitDirection::Bottom, mCurWidget ); } );
-	doc.setCommand( "split-left", [&] { split( SplitDirection::Left, mCurWidget ); } );
-	doc.setCommand( "split-top", [&] { split( SplitDirection::Top, mCurWidget ); } );
+	doc.setCommand( "split-right", [&] {
+		split( SplitDirection::Right, mCurWidget, curEditorExistsAndFocused() );
+	} );
+	doc.setCommand( "split-bottom", [&] {
+		split( SplitDirection::Bottom, mCurWidget, curEditorExistsAndFocused() );
+	} );
+	doc.setCommand( "split-left", [&] {
+		split( SplitDirection::Left, mCurWidget, curEditorExistsAndFocused() );
+	} );
+	doc.setCommand( "split-top", [&] {
+		split( SplitDirection::Top, mCurWidget, curEditorExistsAndFocused() );
+	} );
 	doc.setCommand( "split-swap", [&] {
 		if ( UISplitter* splitter = splitterFromWidget( mCurWidget ) )
 			splitter->swap();
@@ -750,6 +758,10 @@ void UICodeEditorSplitter::closeTab( UIWidget* widget ) {
 			tabWidget->removeTab( (UITab*)widget->getData() );
 		}
 	}
+}
+
+bool UICodeEditorSplitter::curEditorExistsAndFocused() const {
+	return mCurEditor && mCurEditor == mCurWidget;
 }
 
 UISplitter* UICodeEditorSplitter::split( const SplitDirection& direction, UIWidget* widget,

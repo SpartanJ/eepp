@@ -53,6 +53,8 @@ class EE_API UICodeEditorSplitter {
 
 	void closeTab( UIWidget* widget );
 
+	bool curEditorExistsAndFocused() const;
+
 	UISplitter* split( const SplitDirection& direction, UIWidget* editor,
 					   bool openCurEditor = true );
 
