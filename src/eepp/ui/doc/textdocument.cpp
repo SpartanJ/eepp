@@ -1445,6 +1445,10 @@ void TextDocument::execute( const std::string& command ) {
 	}
 }
 
+void TextDocument::setCommands( const std::map<std::string, DocumentCommand>& cmds ) {
+	mCommands.insert( cmds.begin(), cmds.end() );
+}
+
 void TextDocument::setCommand( const std::string& command, TextDocument::DocumentCommand func ) {
 	mCommands[command] = func;
 }

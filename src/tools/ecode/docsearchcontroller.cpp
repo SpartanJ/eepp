@@ -28,7 +28,7 @@ void DocSearchController::initSearchBar(
 	auto& kbind = mSearchBarLayout->getKeyBindings();
 	kbind.addKeybindsString( {
 		{ mApp->getKeybind( "repeat-find" ), "repeat-find" },
-		{ mApp->getKeybind( "find-prev" ), "find-prev" },
+		{ mApp->getKeybind( "find-prev" ), "find-prev" }
 	} );
 	kbind.addKeybindsStringUnordered( keybindings );
 
@@ -104,8 +104,8 @@ void DocSearchController::initSearchBar(
 		} );
 	mSearchBarLayout->addCommand( "close-searchbar", [&] {
 		hideSearchBar();
-		if ( mEditorSplitter->getCurEditor() )
-			mEditorSplitter->getCurEditor()->setFocus();
+		if ( mEditorSplitter->getCurWidget() )
+			mEditorSplitter->getCurWidget()->setFocus();
 		if ( mSearchState.editor ) {
 			if ( mEditorSplitter->editorExists( mSearchState.editor ) ) {
 				mSearchState.editor->setHighlightWord( "" );

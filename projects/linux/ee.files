@@ -1013,6 +1013,7 @@
 ../../src/modules/eterm/include/eterm/terminal/terminaldisplay.hpp
 ../../src/modules/eterm/include/eterm/terminal/terminalemulator.hpp
 ../../src/modules/eterm/include/eterm/terminal/terminaltypes.hpp
+../../src/modules/eterm/include/eterm/ui/uiterminal.hpp
 ../../src/modules/eterm/src/eterm/system/autohandle.cpp
 ../../src/modules/eterm/src/eterm/system/pipe.cpp
 ../../src/modules/eterm/src/eterm/system/process.cpp
@@ -1026,6 +1027,7 @@
 ../../src/modules/eterm/src/eterm/terminal/types.hpp
 ../../src/modules/eterm/src/eterm/terminal/wide.hpp
 ../../src/modules/eterm/src/eterm/terminal/windowserrors.hpp
+../../src/modules/eterm/src/eterm/ui/uiterminal.cpp
 ../../src/test/eetest.cpp
 ../../src/tests/test_all/test.cpp
 ../../src/tests/test_all/test.hpp

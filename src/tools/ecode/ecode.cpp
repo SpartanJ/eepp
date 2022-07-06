@@ -17,8 +17,7 @@ void appLoop() {
 }
 
 bool App::onCloseRequestCallback( EE::Window::Window* ) {
-	if ( nullptr != mEditorSplitter->getCurEditor() &&
-		 mEditorSplitter->getCurEditor()->isDirty() ) {
+	if ( mEditorSplitter->isAnyEditorDirty() ) {
 		UIMessageBox* msgBox = UIMessageBox::New(
 			UIMessageBox::OK_CANCEL,
 			i18n( "confirm_ecode_exit",
@@ -152,9 +151,9 @@ void App::openFileDialog() {
 		loadFileFromPath( file );
 	} );
 	dialog->addEventListener( Event::OnWindowClose, [&]( const Event* ) {
-		if ( mEditorSplitter && mEditorSplitter->getCurEditor() &&
+		if ( mEditorSplitter && mEditorSplitter->getCurWidget() &&
 			 !SceneManager::instance()->isShootingDown() )
-			mEditorSplitter->getCurEditor()->setFocus();
+			mEditorSplitter->getCurWidget()->setFocus();
 	} );
 	dialog->center();
 	dialog->show();
@@ -174,9 +173,9 @@ void App::openFolderDialog() {
 			loadFolder( path );
 	} );
 	dialog->addEventListener( Event::OnWindowClose, [&]( const Event* ) {
-		if ( mEditorSplitter && mEditorSplitter->getCurEditor() &&
+		if ( mEditorSplitter && mEditorSplitter->getCurWidget() &&
 			 !SceneManager::instance()->isShootingDown() )
-			mEditorSplitter->getCurEditor()->setFocus();
+			mEditorSplitter->getCurWidget()->setFocus();
 	} );
 	dialog->center();
 	dialog->show();
@@ -198,9 +197,9 @@ void App::openFontDialog( std::string& fontPath, bool loadingMonoFont ) {
 	dialog->setTitle( "Select Font File" );
 	dialog->setCloseShortcut( KEY_ESCAPE );
 	dialog->addEventListener( Event::OnWindowClose, [&]( const Event* ) {
-		if ( mEditorSplitter && mEditorSplitter->getCurEditor() &&
+		if ( mEditorSplitter && mEditorSplitter->getCurWidget() &&
 			 !SceneManager::instance()->isShootingDown() )
-			mEditorSplitter->getCurEditor()->setFocus();
+			mEditorSplitter->getCurWidget()->setFocus();
 	} );
 	dialog->addEventListener( Event::OpenFile, [&, loadingMonoFont]( const Event* event ) {
 		auto newPath = event->getNode()->asType<UIFileDialog>()->getFullPath();
@@ -658,8 +657,8 @@ UIMenu* App::createWindowMenu() {
 							"New UI scale factor assigned.\nPlease restart the application." );
 						msg->show();
 						setFocusEditorOnClose( msg );
-					} else if ( mEditorSplitter && mEditorSplitter->getCurEditor() ) {
-						mEditorSplitter->getCurEditor()->setFocus();
+					} else if ( mEditorSplitter && mEditorSplitter->getCurWidget() ) {
+						mEditorSplitter->getCurWidget()->setFocus();
 					}
 				} else {
 					UIMessageBox* msg = UIMessageBox::New( UIMessageBox::OK, "Invalid value!" );
@@ -865,8 +864,8 @@ UIMenu* App::createViewMenu() {
 
 void App::setFocusEditorOnClose( UIMessageBox* msgBox ) {
 	msgBox->addEventListener( Event::OnClose, [&]( const Event* ) {
-		if ( mEditorSplitter && mEditorSplitter->getCurEditor() )
-			mEditorSplitter->getCurEditor()->setFocus();
+		if ( mEditorSplitter && mEditorSplitter->getCurWidget() )
+			mEditorSplitter->getCurWidget()->setFocus();
 	} );
 }
 
@@ -1482,8 +1481,13 @@ void App::updateProjectSettingsMenu() {
 }
 
 void App::updateDocumentMenu() {
-	if ( !mEditorSplitter->getCurEditor() )
+	if ( !mEditorSplitter->getCurWidget() ||
+		 !mEditorSplitter->getCurWidget()->isType( UI_TYPE_CODEEDITOR ) ) {
+		mSettingsMenu->getItemId( "doc-menu" )->setEnabled( false );
 		return;
+	}
+
+	mSettingsMenu->getItemId( "doc-menu" )->setEnabled( true );
 
 	const TextDocument& doc = mEditorSplitter->getCurEditor()->getDocument();
 
@@ -1534,10 +1538,10 @@ void App::updateDocumentMenu() {
 		->setActive( mEditorSplitter->getCurEditor()->isLocked() );
 }
 
-static void
-updateKeybindings( IniFile& ini, const std::string& group, Input* input,
-				   std::unordered_map<std::string, std::string>& keybindings,
-				   const std::unordered_map<std::string, std::string>& defKeybindings ) {
+static void updateKeybindings( IniFile& ini, const std::string& group, Input* input,
+							   std::unordered_map<std::string, std::string>& keybindings,
+							   const std::unordered_map<std::string, std::string>& defKeybindings,
+							   bool forceRebind = false ) {
 	KeyBindings bindings( input );
 	bool added = false;
 
@@ -1552,7 +1556,7 @@ updateKeybindings( IniFile& ini, const std::string& group, Input* input,
 	for ( const auto& key : keybindings )
 		invertedKeybindings[key.second] = key.first;
 
-	if ( defKeybindings.size() != keybindings.size() ) {
+	if ( defKeybindings.size() != keybindings.size() || forceRebind ) {
 		for ( const auto& key : defKeybindings ) {
 			auto foundCmd = invertedKeybindings.find( key.second );
 			auto& shortcutStr = key.first;
@@ -1562,6 +1566,22 @@ updateKeybindings( IniFile& ini, const std::string& group, Input* input,
 				invertedKeybindings[key.second] = shortcutStr;
 				ini.setValue( group, shortcutStr, key.second );
 				added = true;
+			} else if ( foundCmd == invertedKeybindings.end() ) {
+				// Override the shortcut if the command that holds that
+				// shortcut does not exists anymore
+				auto kb = keybindings.find( shortcutStr );
+				if ( kb != keybindings.end() ) {
+					bool found = false;
+					for ( const auto& val : defKeybindings )
+						if ( val.second == kb->second )
+							found = true;
+					if ( !found ) {
+						keybindings[shortcutStr] = key.second;
+						invertedKeybindings[key.second] = shortcutStr;
+						ini.setValue( group, shortcutStr, key.second );
+						added = true;
+					}
+				}
 			}
 		}
 	}
@@ -1569,11 +1589,11 @@ updateKeybindings( IniFile& ini, const std::string& group, Input* input,
 		ini.writeFile();
 }
 
-static void
-updateKeybindings( IniFile& ini, const std::string& group, Input* input,
-				   std::unordered_map<std::string, std::string>& keybindings,
-				   std::unordered_map<std::string, std::string>& invertedKeybindings,
-				   const std::map<KeyBindings::Shortcut, std::string>& defKeybindings ) {
+static void updateKeybindings( IniFile& ini, const std::string& group, Input* input,
+							   std::unordered_map<std::string, std::string>& keybindings,
+							   std::unordered_map<std::string, std::string>& invertedKeybindings,
+							   const std::map<KeyBindings::Shortcut, std::string>& defKeybindings,
+							   bool forceRebind = false ) {
 	KeyBindings bindings( input );
 	bool added = false;
 
@@ -1587,7 +1607,7 @@ updateKeybindings( IniFile& ini, const std::string& group, Input* input,
 	for ( const auto& key : keybindings )
 		invertedKeybindings[key.second] = key.first;
 
-	if ( defKeybindings.size() != keybindings.size() ) {
+	if ( defKeybindings.size() != keybindings.size() || forceRebind ) {
 		for ( const auto& key : defKeybindings ) {
 			auto foundCmd = invertedKeybindings.find( key.second );
 			auto shortcutStr = bindings.getShortcutString( key.first );
@@ -1597,6 +1617,22 @@ updateKeybindings( IniFile& ini, const std::string& group, Input* input,
 				invertedKeybindings[key.second] = shortcutStr;
 				ini.setValue( group, shortcutStr, key.second );
 				added = true;
+			} else if ( foundCmd == invertedKeybindings.end() ) {
+				// Override the shortcut if the command that holds that
+				// shortcut does not exists anymore
+				auto kb = keybindings.find( shortcutStr );
+				if ( kb != keybindings.end() ) {
+					bool found = false;
+					for ( const auto& val : defKeybindings )
+						if ( val.second == kb->second )
+							found = true;
+					if ( !found ) {
+						keybindings[shortcutStr] = key.second;
+						invertedKeybindings[key.second] = shortcutStr;
+						ini.setValue( group, shortcutStr, key.second );
+						added = true;
+					}
+				}
 			}
 		}
 	}
@@ -1616,18 +1652,26 @@ void App::loadKeybindings() {
 			ini.writeFile();
 		}
 
+		bool forceRebind = false;
+		auto version = ini.getValueU( "version", "version", 0 );
+		if ( version != ecode::Version::getVersionNum() ) {
+			ini.setValueU( "version", "version", ecode::Version::getVersionNum() );
+			ini.writeFile();
+			forceRebind = true;
+		}
+
 		Uint32 defModKeyCode = KeyMod::getKeyMod( defMod );
-		if ( 0 != defModKeyCode )
+		if ( KEYMOD_NONE != defModKeyCode )
 			KeyMod::setDefaultModifier( defModKeyCode );
 
 		updateKeybindings( ini, "editor", mWindow->getInput(), mKeybindings, mKeybindingsInvert,
-						   getDefaultKeybindings() );
+						   getDefaultKeybindings(), forceRebind );
 
 		updateKeybindings( ini, "global_search", mWindow->getInput(), mGlobalSearchKeybindings,
-						   GlobalSearchController::getDefaultKeybindings() );
+						   GlobalSearchController::getDefaultKeybindings(), forceRebind );
 
 		updateKeybindings( ini, "document_search", mWindow->getInput(), mDocumentSearchKeybindings,
-						   DocSearchController::getDefaultKeybindings() );
+						   DocSearchController::getDefaultKeybindings(), forceRebind );
 	}
 }
 
@@ -1644,7 +1688,9 @@ void App::onDocumentCursorPosChange( UICodeEditor*, TextDocument& doc ) {
 }
 
 void App::updateDocInfo( TextDocument& doc ) {
-	if ( mConfig.editor.showDocInfo && mDocInfoText && mEditorSplitter->getCurEditor() ) {
+	if ( mConfig.editor.showDocInfo && mDocInfoText && mEditorSplitter->getCurEditor() &&
+		 mEditorSplitter->getCurEditor()->isType( UI_TYPE_CODEEDITOR ) ) {
+		mDocInfoText->setVisible( true );
 		mDocInfoText->setText( String::format(
 			"line: %lld / %lu  col: %lld    %s", doc.getSelection().start().line() + 1,
 			doc.linesCount(), mEditorSplitter->getCurEditor()->getCurrentColumnCount(),
@@ -1665,9 +1711,19 @@ void App::syncProjectTreeWithEditor( UICodeEditor* editor ) {
 	}
 }
 
+void App::onWidgetFocusChange( UIWidget* widget ) {
+	if ( mConfig.editor.showDocInfo && mDocInfoText ) {
+		mDocInfoText->setVisible( widget && widget->isType( UI_TYPE_CODEEDITOR ) );
+	}
+	updateDocumentMenu();
+	if ( widget && !widget->isType( UI_TYPE_CODEEDITOR ) ) {
+		if ( widget->isType( UI_TYPE_TERMINAL ) )
+			setAppTitle( widget->asType<UITerminal>()->getTitle() );
+	}
+}
+
 void App::onCodeEditorFocusChange( UICodeEditor* editor ) {
 	updateDocInfo( editor->getDocument() );
-	updateDocumentMenu();
 	mDocSearchController->onCodeEditorFocusChange( editor );
 	syncProjectTreeWithEditor( editor );
 }
@@ -1907,6 +1963,33 @@ NotificationCenter* App::getNotificationCenter() const {
 	return mNotificationCenter.get();
 }
 
+void App::createNewTerminal() {
+	UIWidget* curWidget = mEditorSplitter->getCurWidget();
+	if ( !curWidget )
+		return;
+	UITabWidget* tabWidget = mEditorSplitter->tabWidgetFromWidget( curWidget );
+	if ( !tabWidget ) {
+		if ( !mEditorSplitter->getTabWidgets().empty() ) {
+			tabWidget = mEditorSplitter->getTabWidgets()[0];
+		} else {
+			return;
+		}
+	}
+	UITerminal* term = UITerminal::New( mFontMono, PixelDensity::dpToPx( 11 ), Sizef( 16, 16 ) );
+	mEditorSplitter->createWidgetInTabWidget( tabWidget, term, "Shell", true );
+	term->addEventListener( Event::OnTitleChange, [&]( const Event* event ) {
+		if ( event->getNode() != mEditorSplitter->getCurWidget() )
+			return;
+		setAppTitle( event->getNode()->asType<UITerminal>()->getTitle() );
+	} );
+}
+
+std::map<std::string, std::function<void()>> App::getGlobalCommands() {
+	std::map<std::string, std::function<void()>> cmds;
+
+	return cmds;
+}
+
 void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	const CodeEditorConfig& config = mConfig.editor;
 	const DocumentConfig& docc = !mCurrentProject.empty() && !mProjectDocConfig.useGlobalSettings
@@ -1947,10 +2030,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	doc.setCommand( "save-as-doc", [&] { saveFileDialog( mEditorSplitter->getCurEditor() ); } );
 	doc.setCommand( "save-all", [&] { saveAll(); } );
 	doc.setCommand( "find-replace", [&] { mDocSearchController->showFindView(); } );
-	doc.setCommand( "open-global-search", [&] {
-		mGlobalSearchController->showGlobalSearch(
-			mGlobalSearchController->isUsingSearchReplaceTree() );
-	} );
+	doc.setCommand( "open-global-search", [&] { mGlobalSearchController->showGlobalSearch(); } );
 	doc.setCommand( "open-locatebar", [&] { mFileLocator->showLocateBar(); } );
 	doc.setCommand( "repeat-find", [&] {
 		mDocSearchController->findNextText( mDocSearchController->getSearchState() );
@@ -2013,18 +2093,20 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 
 		msgBox->setTitle( mWindowTitle );
 		msgBox->getTextInput()->setHint( "Any https or http URL" );
-		msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
+		msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
 		msgBox->showWhenReady();
 		msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox]( const Event* ) {
 			std::string url( msgBox->getTextInput()->getText().toUtf8() );
 			downloadFileWeb( url );
-			if ( mEditorSplitter->getCurEditor() )
-				mEditorSplitter->getCurEditor()->setFocus();
+			if ( mEditorSplitter->getCurWidget() )
+				mEditorSplitter->getCurWidget()->setFocus();
 			msgBox->closeWindow();
 		} );
 	} );
 	doc.setCommand( "move-panel-left", [&] { panelPosition( PanelPosition::Left ); } );
 	doc.setCommand( "move-panel-right", [&] { panelPosition( PanelPosition::Right ); } );
+	doc.setCommand( "create-new-terminal", [&] { createNewTerminal(); } );
+	editor->addUnlockedCommand( "create-new-terminal" );
 
 	editor->addEventListener( Event::OnDocumentSave, [&]( const Event* event ) {
 		UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
@@ -2204,7 +2286,7 @@ UIPopUpMenu* App::createToolsMenu() {
 		if ( txt == "Locate..." ) {
 			mFileLocator->showLocateBar();
 		} else if ( txt == "Project Find..." ) {
-			mGlobalSearchController->showGlobalSearch();
+			mGlobalSearchController->showGlobalSearch( false );
 		} else if ( txt == "Go to line..." ) {
 			mFileLocator->goToLine();
 		} else if ( txt == "Load current document directory as folder" ) {
@@ -2231,6 +2313,8 @@ void App::createSettingsMenu() {
 	mSettingsMenu = UIPopUpMenu::New();
 	mSettingsMenu->setId( "settings_menu" );
 	mSettingsMenu->add( "New", findIcon( "document-new" ), getKeybind( "create-new" ) );
+	mSettingsMenu->add( "New Terminal", findIcon( "terminal" ),
+						getKeybind( "create-new-terminal" ) );
 	mSettingsMenu->add( "Open File...", findIcon( "document-open" ), getKeybind( "open-file" ) );
 	mSettingsMenu->add( "Open Folder...", findIcon( "document-open" ),
 						getKeybind( "open-folder" ) );
@@ -2268,14 +2352,14 @@ void App::createSettingsMenu() {
 			fileTypeMenu->setSubMenu( newMenu );
 		}
 	} );
-	mSettingsMenu->addSubMenu( "Document", nullptr, createDocumentMenu() );
+	mSettingsMenu->addSubMenu( "Document", nullptr, createDocumentMenu() )->setId( "doc-menu" );
 	mSettingsMenu->addSubMenu( "Edit", nullptr, createEditMenu() );
 	mSettingsMenu->addSubMenu( "View", nullptr, createViewMenu() );
 	mSettingsMenu->addSubMenu( "Tools", nullptr, createToolsMenu() );
 	mSettingsMenu->addSubMenu( "Window", nullptr, createWindowMenu() );
 	mSettingsMenu->addSubMenu( "Help", findIcon( "help" ), createHelpMenu() );
 	mSettingsMenu->addSeparator();
-	mSettingsMenu->add( "Close", findIcon( "document-close" ), getKeybind( "close-doc" ) );
+	mSettingsMenu->add( "Close", findIcon( "document-close" ), getKeybind( "close-tab" ) );
 	mSettingsMenu->add( "Close Folder", findIcon( "document-close" ),
 						getKeybind( "close-folder" ) );
 	mSettingsMenu->addSeparator();
@@ -2289,6 +2373,8 @@ void App::createSettingsMenu() {
 		const String& name = event->getNode()->asType<UIMenuItem>()->getText();
 		if ( name == "New" ) {
 			runCommand( "create-new" );
+		} else if ( name == "New Terminal" ) {
+			runCommand( "create-new-terminal" );
 		} else if ( name == "Open File..." ) {
 			runCommand( "open-file" );
 		} else if ( name == "Open Folder..." ) {
@@ -2302,7 +2388,7 @@ void App::createSettingsMenu() {
 		} else if ( name == "Save All" ) {
 			runCommand( "save-all" );
 		} else if ( name == "Close" ) {
-			runCommand( "close-doc" );
+			runCommand( "close-tab" );
 		} else if ( name == "Close Folder" ) {
 			runCommand( "close-folder" );
 		} else if ( name == "Quit" ) {
@@ -2761,8 +2847,8 @@ void App::loadFolder( const std::string& path ) {
 	updateRecentFolders();
 	updateProjectSettingsMenu();
 
-	if ( mEditorSplitter->getCurEditor() )
-		mEditorSplitter->getCurEditor()->setFocus();
+	if ( mEditorSplitter->getCurWidget() )
+		mEditorSplitter->getCurWidget()->setFocus();
 }
 
 FontTrueType* App::loadFont( const std::string& name, std::string fontPath,
@@ -3157,6 +3243,7 @@ void App::init( std::string file, const Float& pidelDensity, const std::string& 
 			{ "global-settings", 0xedcf },
 			{ "folder-user", 0xed84 },
 			{ "help", 0xf045 },
+			{ "terminal", 0xf1f6 },
 		};
 		for ( const auto& icon : icons )
 			iconTheme->add( UIGlyphIcon::New( icon.first, iconFont, icon.second ) );

@@ -216,6 +216,8 @@ UIPushButton* UITab::setText( const String& text ) {
 
 			tTabW->orderTabs();
 		}
+
+		sendTextEvent( Event::OnTitleChange, mText.toUtf8() );
 	}
 	return this;
 }

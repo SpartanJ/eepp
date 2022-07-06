@@ -178,7 +178,7 @@ class TerminalDisplay : public ITerminalDisplay {
 
 	virtual void onMouseDoubleClick( const Vector2i& pos, const Uint32& flags );
 
-	virtual void onMouseMotion( const Vector2i& pos, const Uint32& flags );
+	virtual void onMouseMove( const Vector2i& pos, const Uint32& flags );
 
 	virtual void onMouseDown( const Vector2i& pos, const Uint32& flags );
 

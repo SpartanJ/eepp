@@ -348,7 +348,7 @@ function build_base_cpp_configuration( package_name )
 	set_xcode_config()
 
 	configuration "debug"
-		defines { "DEBUG" }
+		defines { "DEBUG", "EE_DEBUG", "EE_MEMORY_MANAGER" }
 		flags { "Symbols" }
 		if not is_vs() then
 			buildoptions{ "-Wall" }
@@ -1179,16 +1179,20 @@ solution "eepp"
 		set_kind()
 		language "C++"
 		files { "src/tools/ecode/**.cpp" }
-		includedirs { "src/thirdparty/efsw/include", "src/thirdparty" }
-		links { "efsw-static" }
-
+		includedirs { "src/thirdparty/efsw/include", "src/thirdparty", "src/modules/eterm/include/" }
+		links { "efsw-static", "eterm-static" }
 		if not os.is("windows") and not os.is("haiku") then
 			links { "pthread" }
 		end
 		if os.is("macosx") then
 			links { "CoreFoundation.framework", "CoreServices.framework" }
 		end
-
+		if os.is_real("linux") then
+			links { "util" }
+		end
+		if os.is("haiku") then
+			links { "bsd" }
+		end
 		build_link_configuration( "ecode", true )
 
 	project "eterm"

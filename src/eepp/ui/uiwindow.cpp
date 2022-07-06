@@ -1162,6 +1162,9 @@ const Uint8& UIWindow::getBaseAlpha() const {
 }
 
 void UIWindow::setTitle( const String& text ) {
+	if ( mTitle && text == mTitle->getText() )
+		return;
+
 	if ( NULL == mTitle ) {
 		mTitle = UITextView::NewWithTag( "window::title" );
 		mTitle->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
@@ -1177,6 +1180,7 @@ void UIWindow::setTitle( const String& text ) {
 	fixTitleSize();
 
 	mTitle->setText( text );
+	sendTextEvent( Event::OnTitleChange, text.toUtf8() );
 }
 
 void UIWindow::fixTitleSize() {

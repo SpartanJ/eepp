@@ -7,6 +7,7 @@
 #include <eepp/ui/css/stylesheetspecification.hpp>
 #include <eepp/ui/css/transitiondefinition.hpp>
 #include <eepp/ui/uiborderdrawable.hpp>
+#include <eepp/ui/uieventdispatcher.hpp>
 #include <eepp/ui/uinodedrawable.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uistyle.hpp>
@@ -56,6 +57,10 @@ UIWidget::UIWidget( const std::string& tag ) :
 UIWidget::UIWidget() : UIWidget( "widget" ) {}
 
 UIWidget::~UIWidget() {
+	if ( mUISceneNode && mUISceneNode->getUIEventDispatcher() &&
+		 mUISceneNode->getUIEventDispatcher()->getNodeDragging() == this )
+		mUISceneNode->getUIEventDispatcher()->setNodeDragging( nullptr );
+
 	if ( !SceneManager::instance()->isShootingDown() && NULL != mUISceneNode )
 		mUISceneNode->onWidgetDelete( this );
 	eeSAFE_DELETE( mStyle );

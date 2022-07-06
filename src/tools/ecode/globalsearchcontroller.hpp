@@ -50,7 +50,9 @@ class GlobalSearchController {
 	size_t replaceInFiles( const std::string& replaceText,
 						   std::shared_ptr<ProjectSearch::ResultModel> model );
 
-	void showGlobalSearch( bool searchAndReplace = false );
+	void showGlobalSearch();
+
+	void showGlobalSearch( bool searchAndReplace );
 
 	void updateColorScheme( const SyntaxColorScheme& colorScheme );
 

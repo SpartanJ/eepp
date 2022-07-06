@@ -466,6 +466,18 @@ UITabWidget* UITabWidget::add( UITab* tab ) {
 	return this;
 }
 
+UITab* UITabWidget::getTabFromOwnedWidget( const UIWidget* widget ) {
+	for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
+		if ( mTabs[i]->isType( UI_TYPE_TAB ) ) {
+			UITab* tTab = mTabs[i]->asType<UITab>();
+
+			if ( tTab->getOwnedWidget() == widget )
+				return tTab;
+		}
+	}
+	return nullptr;
+}
+
 UITab* UITabWidget::getTab( const Uint32& index ) {
 	eeASSERT( index < mTabs.size() );
 	return mTabs[index];

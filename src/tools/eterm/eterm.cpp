@@ -10,7 +10,7 @@ void inputCallback( InputEvent* event ) {
 
 	switch ( event->Type ) {
 		case InputEvent::MouseMotion: {
-			terminal->onMouseMotion( win->getInput()->getMousePos(),
+			terminal->onMouseMove( win->getInput()->getMousePos(),
 									 win->getInput()->getPressTrigger() );
 			break;
 		}

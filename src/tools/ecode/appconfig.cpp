@@ -229,7 +229,7 @@ json saveNode( Node* node ) {
 		res["type"] = "splitter";
 		res["split"] = splitter->getSplitPartition().toString();
 		res["orientation"] =
-			splitter->getOrientation() == UIOrientation::Horizontal ? "horizontal" : "vertial";
+			splitter->getOrientation() == UIOrientation::Horizontal ? "horizontal" : "vertical";
 		res["first"] = saveNode( splitter->getFirstWidget() );
 		res["last"] = saveNode( splitter->getLastWidget() );
 	} else if ( node->isType( UI_TYPE_TABWIDGET ) ) {
@@ -309,7 +309,7 @@ static void loadDocuments( UICodeEditorSplitter* editorSplitter, std::shared_ptr
 				curTabWidget );
 		}
 	} else if ( j["type"] == "splitter" ) {
-		UISplitter* splitter = editorSplitter->splitEditor(
+		UISplitter* splitter = editorSplitter->split(
 			j["orientation"] == "horizontal" ? UICodeEditorSplitter::SplitDirection::Right
 											 : UICodeEditorSplitter::SplitDirection::Bottom,
 			curTabWidget->getTabSelected()->getOwnedWidget()->asType<UICodeEditor>(), false );
@@ -392,4 +392,4 @@ void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* ed
 	}
 }
 
-}
+} // namespace ecode

@@ -54,6 +54,8 @@ class EE_API UITabWidget : public UIWidget {
 
 	UITabWidget* add( UITab* tab );
 
+	UITab* getTabFromOwnedWidget( const UIWidget* widget );
+
 	UITab* getTab( const Uint32& index );
 
 	UITab* getTab( const String& text );

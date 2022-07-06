@@ -695,7 +695,7 @@ void TerminalDisplay::onMouseDoubleClick( const Vector2i& pos, const Uint32& fla
 	}
 }
 
-void TerminalDisplay::onMouseMotion( const Vector2i& pos, const Uint32& flags ) {
+void TerminalDisplay::onMouseMove( const Vector2i& pos, const Uint32& flags ) {
 	if ( ( flags & EE_BUTTON_LMASK ) &&
 		 ( mTerminal->getSelectionMode() == TerminalSelectionMode::SEL_EMPTY ||
 		   mTerminal->getSelectionMode() == TerminalSelectionMode::SEL_READY ) ) {
@@ -712,6 +712,28 @@ void TerminalDisplay::onMouseMotion( const Vector2i& pos, const Uint32& flags ) 
 void TerminalDisplay::onMouseDown( const Vector2i& pos, const Uint32& flags ) {
 	auto gridPos{ positionToGrid( pos ) };
 
+	if ( ( flags & EE_BUTTON_LMASK ) &&
+		 mLastDoubleClick.getElapsedTime() < Milliseconds( 300.f ) ) {
+		mTerminal->selstart( gridPos.x, gridPos.y, SNAP_LINE );
+	} else if ( flags & EE_BUTTON_LMASK ) {
+		if ( mTerminal->getSelectionMode() == TerminalSelectionMode::SEL_IDLE ) {
+			mTerminal->selstart( gridPos.x, gridPos.y, 0 );
+			invalidateLines();
+		} else if ( mTerminal->getSelectionMode() == TerminalSelectionMode::SEL_READY ) {
+			mTerminal->selclear();
+		}
+	} else if ( flags & EE_BUTTON_MMASK ) {
+		auto selection = mTerminal->getSelection();
+		if ( !selection.empty() ) {
+			for ( auto& chr : selection )
+				onTextInput( chr );
+		}
+	}
+	mTerminal->mousereport( TerminalMouseEventType::MouseButtonDown, positionToGrid( pos ), flags,
+							mWindow->getInput()->getModState() );
+}
+
+void TerminalDisplay::onMouseUp( const Vector2i& pos, const Uint32& flags ) {
 	Uint32 smod = sanitizeMod( mWindow->getInput()->getModState() );
 
 	auto scIt = terminalKeyMap.MouseShortcuts().find( flags );
@@ -738,29 +760,6 @@ void TerminalDisplay::onMouseDown( const Vector2i& pos, const Uint32& flags ) {
 		}
 	}
 
-	if ( ( flags & EE_BUTTON_LMASK ) &&
-		 mLastDoubleClick.getElapsedTime() < Milliseconds( 300.f ) ) {
-		mTerminal->selstart( gridPos.x, gridPos.y, SNAP_LINE );
-	} else if ( flags & EE_BUTTON_LMASK ) {
-		if ( mTerminal->getSelectionMode() == TerminalSelectionMode::SEL_IDLE ) {
-			auto gridPos{ positionToGrid( pos ) };
-			mTerminal->selstart( gridPos.x, gridPos.y, 0 );
-			invalidateLines();
-		} else if ( mTerminal->getSelectionMode() == TerminalSelectionMode::SEL_READY ) {
-			mTerminal->selclear();
-		}
-	} else if ( flags & EE_BUTTON_MMASK ) {
-		auto selection = mTerminal->getSelection();
-		if ( !selection.empty() ) {
-			for ( auto& chr : selection )
-				onTextInput( chr );
-		}
-	}
-	mTerminal->mousereport( TerminalMouseEventType::MouseButtonDown, positionToGrid( pos ), flags,
-							mWindow->getInput()->getModState() );
-}
-
-void TerminalDisplay::onMouseUp( const Vector2i& pos, const Uint32& flags ) {
 	if ( ( flags & EE_BUTTON_LMASK ) ) {
 		auto selection = mTerminal->getSelection();
 		if ( !selection.empty() && selection != "\n" )
@@ -1089,7 +1088,8 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 		y += lineHeight;
 	}
 
-	if ( !mEmulator->isScrolling() && !IS_SET( MODE_HIDE ) && mDirtyCursor ) {
+	if ( !mEmulator->isScrolling() && !IS_SET( MODE_HIDE ) &&
+		 ( !mUseFrameBuffer || mDirtyCursor ) ) {
 		mDirtyCursor = false;
 		Color drawcol;
 		if ( IS_SET( MODE_REVERSE ) ) {
@@ -1172,7 +1172,7 @@ void TerminalDisplay::draw( const Vector2f& pos ) {
 	Primitives p;
 	p.setForceDraw( false );
 	p.setColor( defaultBg );
-	p.drawRectangle( Rectf( mPosition.asFloat(), mSize.asFloat() ) );
+	p.drawRectangle( Rectf( mPosition.floor().asFloat(), mSize.asFloat() ) );
 
 	if ( !mFrameBuffer || mDirty )
 		drawGrid( pos );

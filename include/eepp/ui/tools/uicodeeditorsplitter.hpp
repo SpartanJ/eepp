@@ -26,6 +26,8 @@ class EE_API UICodeEditorSplitter {
 
 		virtual void onCodeEditorFocusChange( UICodeEditor* editor ) = 0;
 
+		virtual void onWidgetFocusChange( UIWidget* widget ) = 0;
+
 		virtual void onDocumentStateChanged( UICodeEditor* editor, TextDocument& doc ) = 0;
 
 		virtual void onDocumentModified( UICodeEditor* editor, TextDocument& doc ) = 0;
@@ -39,18 +41,20 @@ class EE_API UICodeEditorSplitter {
 		virtual void onDocumentLoaded( UICodeEditor* codeEditor, const std::string& path ) = 0;
 	};
 
+	static std::vector<std::string> getUnlockedCommands();
+
 	static UICodeEditorSplitter* New( UICodeEditorSplitter::Client* client, UISceneNode* sceneNode,
 									  const std::vector<SyntaxColorScheme>& colorSchemes = {},
 									  const std::string& initColorScheme = "" );
 
 	virtual ~UICodeEditorSplitter();
 
-	virtual bool tryTabClose( UICodeEditor* editor );
+	virtual bool tryTabClose(UIWidget* widget );
 
-	void closeEditorTab( UICodeEditor* editor );
+	void closeTab( UIWidget* widget );
 
-	UISplitter* splitEditor( const SplitDirection& direction, UICodeEditor* editor,
-							 bool openCurEditor = true );
+	UISplitter* split( const SplitDirection& direction, UIWidget* editor,
+					   bool openCurEditor = true );
 
 	void switchToTab( Int32 index );
 
@@ -66,9 +70,17 @@ class EE_API UICodeEditorSplitter {
 
 	UITabWidget* tabWidgetFromEditor( UICodeEditor* editor ) const;
 
+	UITabWidget* tabWidgetFromWidget( UIWidget* widget ) const;
+
 	UISplitter* splitterFromEditor( UICodeEditor* editor ) const;
 
+	UISplitter* splitterFromWidget( UIWidget* widget ) const;
+
 	std::pair<UITab*, UICodeEditor*> createCodeEditorInTabWidget( UITabWidget* tabWidget );
+
+	std::pair<UITab*, UIWidget*> createWidgetInTabWidget( UITabWidget* tabWidget, UIWidget* widget,
+														  const std::string& tabName,
+														  bool focus = true );
 
 	UICodeEditor* createCodeEditor();
 
@@ -100,6 +112,8 @@ class EE_API UICodeEditorSplitter {
 						   bool checkOnlyInCurrentTabWidget = false ) const;
 
 	void applyColorScheme( const SyntaxColorScheme& colorScheme );
+
+	void forEachWidgetStoppable( std::function<bool( UIWidget* )> run ) const;
 
 	void forEachEditor( std::function<void( UICodeEditor* )> run ) const;
 
@@ -149,9 +163,16 @@ class EE_API UICodeEditorSplitter {
 
 	Node* getBaseLayout() const;
 
+	UIWidget* getCurWidget() const;
+
+	void setCurentWidget( UIWidget* curWidget );
+
+	bool curWidgetExists() const;
+
   protected:
 	UISceneNode* mUISceneNode{ nullptr };
 	UICodeEditor* mCurEditor{ nullptr };
+	UIWidget* mCurWidget{ nullptr };
 	std::map<std::string, SyntaxColorScheme> mColorSchemes;
 	std::string mCurrentColorScheme;
 	std::vector<UITabWidget*> mTabWidgets;

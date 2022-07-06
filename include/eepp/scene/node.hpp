@@ -217,6 +217,8 @@ class EE_API Node : public Transformable {
 
 	void sendCommonEvent( const Uint32& Event );
 
+	void sendTextEvent( const Uint32& event, const std::string& text );
+
 	void childsCloseAll();
 
 	const std::string& getId() const;

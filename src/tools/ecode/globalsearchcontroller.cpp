@@ -47,6 +47,10 @@ size_t GlobalSearchController::replaceInFiles( const std::string& replaceText,
 	return count;
 }
 
+void GlobalSearchController::showGlobalSearch() {
+	showGlobalSearch( isUsingSearchReplaceTree() );
+}
+
 void GlobalSearchController::initGlobalSearchBar(
 	UIGlobalSearchBar* globalSearchBar, const GlobalSearchBarConfig& globalSearchBarConfig,
 	std::unordered_map<std::string, std::string> keybindings ) {
@@ -132,8 +136,8 @@ void GlobalSearchController::initGlobalSearchBar(
 	} );
 	mGlobalSearchBarLayout->addCommand( "close-global-searchbar", [&] {
 		hideGlobalSearchBar();
-		if ( mEditorSplitter->getCurEditor() )
-			mEditorSplitter->getCurEditor()->setFocus();
+		if ( mEditorSplitter->getCurWidget() )
+			mEditorSplitter->getCurWidget()->setFocus();
 	} );
 	mGlobalSearchBarLayout->addCommand( "expand-all", [&] {
 		mGlobalSearchTree->expandAll();

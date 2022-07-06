@@ -13,6 +13,9 @@
 #include "widgetcommandexecuter.hpp"
 #include <eepp/ee.hpp>
 #include <efsw/efsw.hpp>
+#include <eterm/ui/uiterminal.hpp>
+
+using namespace eterm::UI;
 
 namespace ecode {
 
@@ -76,6 +79,10 @@ class App : public UICodeEditorSplitter::Client {
 	bool isDirTreeReady() const;
 
 	NotificationCenter* getNotificationCenter() const;
+
+	void createNewTerminal();
+
+	std::map<std::string, std::function<void()>> getGlobalCommands();
 
   protected:
 	EE::Window::Window* mWindow{ nullptr };
@@ -229,6 +236,8 @@ class App : public UICodeEditorSplitter::Client {
 	void onDocumentSelectionChange( UICodeEditor* editor, TextDocument& );
 
 	void onDocumentCursorPosChange( UICodeEditor* editor, TextDocument& );
+
+	void onWidgetFocusChange( UIWidget* widget );
 
 	void onCodeEditorFocusChange( UICodeEditor* editor );
 

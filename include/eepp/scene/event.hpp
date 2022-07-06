@@ -2,6 +2,7 @@
 #define EE_UICUIEVENT_HPP
 
 #include <eepp/config.hpp>
+#include <string>
 
 namespace EE { namespace Scene {
 
@@ -85,6 +86,7 @@ class EE_API Event {
 		OnMenuShow,
 		OnMenuHide,
 		OnEditorTabReady,
+		OnTitleChange,
 		NoEvent = eeINDEX_NOT_FOUND
 	};
 
@@ -113,6 +115,17 @@ class EE_API DropEvent : public Event {
 
   protected:
 	Node* droppedNode;
+};
+
+class EE_API TextEvent : public Event {
+  public:
+	TextEvent( Node* node, const Uint32& eventType, const std::string& txt ) :
+		Event( node, eventType ), text( txt ) {}
+
+	const std::string& getText() const { return text; }
+
+  protected:
+	std::string text;
 };
 
 }} // namespace EE::Scene

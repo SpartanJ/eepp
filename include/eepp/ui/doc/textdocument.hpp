@@ -284,6 +284,8 @@ class EE_API TextDocument {
 
 	void execute( const std::string& command );
 
+	void setCommands( const std::map<std::string, DocumentCommand>& cmds );
+
 	void setCommand( const std::string& command, DocumentCommand func );
 
 	bool hasCommand( const std::string& command );
