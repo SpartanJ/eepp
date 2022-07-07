@@ -723,10 +723,13 @@ void TerminalDisplay::onMouseDown( const Vector2i& pos, const Uint32& flags ) {
 			mTerminal->selclear();
 		}
 	} else if ( flags & EE_BUTTON_MMASK ) {
-		auto selection = mTerminal->getSelection();
-		if ( !selection.empty() ) {
-			for ( auto& chr : selection )
-				onTextInput( chr );
+		if ( !mAlreadyClickedMButton ) {
+			mAlreadyClickedMButton = true;
+			auto selection = mTerminal->getSelection();
+			if ( !selection.empty() ) {
+				for ( auto& chr : selection )
+					onTextInput( chr );
+			}
 		}
 	}
 	mTerminal->mousereport( TerminalMouseEventType::MouseButtonDown, positionToGrid( pos ), flags,
@@ -735,6 +738,9 @@ void TerminalDisplay::onMouseDown( const Vector2i& pos, const Uint32& flags ) {
 
 void TerminalDisplay::onMouseUp( const Vector2i& pos, const Uint32& flags ) {
 	Uint32 smod = sanitizeMod( mWindow->getInput()->getModState() );
+
+	if ( flags & EE_BUTTON_MMASK )
+		mAlreadyClickedMButton = false;
 
 	auto scIt = terminalKeyMap.MouseShortcuts().find( flags );
 	if ( scIt != terminalKeyMap.MouseShortcuts().end() ) {
@@ -760,12 +766,6 @@ void TerminalDisplay::onMouseUp( const Vector2i& pos, const Uint32& flags ) {
 		}
 	}
 
-	if ( ( flags & EE_BUTTON_LMASK ) ) {
-		auto selection = mTerminal->getSelection();
-		if ( !selection.empty() && selection != "\n" )
-			setClipboard( selection.c_str() );
-		invalidate();
-	}
 	mTerminal->mousereport( TerminalMouseEventType::MouseButtonRelease, positionToGrid( pos ),
 							flags, mWindow->getInput()->getModState() );
 }

@@ -257,6 +257,7 @@ class TerminalDisplay : public ITerminalDisplay {
 	bool mPasteNewlineFix{ true };
 	bool mFocus{ true };
 	bool mUseFrameBuffer{ true };
+	bool mAlreadyClickedMButton{ false };
 	Clock mClock;
 	Clock mLastDoubleClick;
 	int mColumns{ 0 };

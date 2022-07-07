@@ -887,7 +887,7 @@ void UICodeEditor::createDefaultContextMenuOptions( UIPopUpMenu* menu ) {
 
 	menuAdd( menu, "cut", "Cut", "cut", "cut" )->setEnabled( mDoc->hasSelection() );
 	menuAdd( menu, "copy", "Copy", "copy", "copy" )->setEnabled( mDoc->hasSelection() );
-	menuAdd( menu, "cut", "Paste", "paste", "paste" );
+	menuAdd( menu, "paste", "Paste", "paste", "paste" );
 	menuAdd( menu, "delete", "Delete", "delete-text", "delete-to-next-char" );
 	menu->addSeparator();
 	menuAdd( menu, "select_all", "Select All", "select-all", "select-all" );

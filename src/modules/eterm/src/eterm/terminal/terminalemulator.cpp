@@ -579,6 +579,10 @@ char* TerminalEmulator::getsel( void ) const {
 	return str;
 }
 
+bool TerminalEmulator::hasSelection() const {
+	return mSel.ob.x != -1;
+}
+
 std::string TerminalEmulator::getSelection() const {
 	char* sel = getsel();
 	if ( sel ) {

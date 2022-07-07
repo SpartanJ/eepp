@@ -2005,7 +2005,8 @@ void App::createNewTerminal() {
 			return;
 		}
 	}
-	UITerminal* term = UITerminal::New( mFontMono, PixelDensity::dpToPx( 11 ), Sizef( 16, 16 ) );
+	UITerminal* term = UITerminal::New( mFontMonoNerdFont ? mFontMonoNerdFont : mFontMono,
+										PixelDensity::dpToPx( 11 ), Sizef( 16, 16 ) );
 	mEditorSplitter->createWidgetInTabWidget( tabWidget, term, "Shell", true );
 	term->addEventListener( Event::OnTitleChange, [&]( const Event* event ) {
 		if ( event->getNode() != mEditorSplitter->getCurWidget() )
@@ -2978,9 +2979,11 @@ FontTrueType* App::loadFont( const std::string& name, std::string fontPath,
 		fontPath = mResPath + fontPath;
 	if ( fontPath.empty() || !FileSystem::fileExists( fontPath ) ) {
 		fontPath = fallback;
-		if ( FileSystem::isRelativePath( fontPath ) )
+		if ( !fontPath.empty() && FileSystem::isRelativePath( fontPath ) )
 			fontPath = mResPath + fontPath;
 	}
+	if ( fontPath.empty() )
+		return nullptr;
 	return FontTrueType::New( name, fontPath );
 }
 
@@ -3082,21 +3085,24 @@ void App::init( std::string file, const Float& pidelDensity, const std::string& 
 		mFontMono = loadFont( "monospace", mConfig.ui.monospaceFont, "fonts/DejaVuSansMono.ttf" );
 		if ( mFontMono )
 			mFontMono->setBoldAdvanceSameAsRegular( true );
+
 		loadFont( "NotoEmoji-Regular", "fonts/NotoEmoji-Regular.ttf" );
 
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 		loadFont( "NotoColorEmoji", "fonts/NotoColorEmoji.ttf" );
 #endif
 
-		FontTrueType* iconFont = FontTrueType::New( "icon", mResPath + "fonts/remixicon.ttf" );
+		FontTrueType* iconFont = loadFont( "icon", "fonts/remixicon.ttf" );
+		FontTrueType* mimeIconFont = loadFont( "nonicons", "fonts/nonicons.ttf" );
 
-		if ( !mFont || !mFontMono || !iconFont ) {
+		if ( !mFont || !mFontMono || !iconFont || !mimeIconFont ) {
 			printf( "Font not found!" );
+			Log::error( "Font not found!" );
 			return;
 		}
 
-		FontTrueType* mimeIconFont =
-			FontTrueType::New( "nonicons", mResPath + "fonts/nonicons.ttf" );
+		mFontMonoNerdFont =
+			loadFont( "monospace-nerdfont", "fonts/DejaVuSansMonoNerdFontComplete.ttf" );
 
 		SceneManager::instance()->add( mUISceneNode );
 

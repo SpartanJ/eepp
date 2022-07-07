@@ -180,6 +180,8 @@ class TerminalEmulator final {
 
 	char* getsel() const;
 
+	bool hasSelection() const;
+
 	std::string getSelection() const;
 
 	void mousereport( const TerminalMouseEventType& type, const Vector2i& pos, const Uint32& flags,

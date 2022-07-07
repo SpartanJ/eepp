@@ -139,6 +139,7 @@ class App : public UICodeEditorSplitter::Client {
 	std::string mCurrentProject;
 	FontTrueType* mFont{ nullptr };
 	FontTrueType* mFontMono{ nullptr };
+	FontTrueType* mFontMonoNerdFont{ nullptr };
 	efsw::FileWatcher* mFileWatcher{ nullptr };
 	FileSystemListener* mFileSystemListener{ nullptr };
 	Mutex mWatchesLock;

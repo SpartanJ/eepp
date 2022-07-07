@@ -2,6 +2,7 @@
 #define ETERM_UI_UITERMINAL_HPP
 
 #include <eepp/ui/keyboardshortcut.hpp>
+#include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uiwidget.hpp>
 #include <eterm/terminal/terminaldisplay.hpp>
 
@@ -74,8 +75,11 @@ class UITerminal : public UIWidget {
 	bool mIsCustomTitle{ false };
 	bool mDraggingSel{ false };
 	bool mExclusiveMode{ false };
+	bool mCreateDefaultContextMenuOptions{ true };
 	KeyBindings mKeyBindings;
 	std::map<std::string, TerminalCommand> mCommands;
+	UIPopUpMenu* mCurrentMenu{ nullptr };
+	size_t mMenuIconSize{ 16 };
 
 	UITerminal( const std::shared_ptr<TerminalDisplay>& terminalDisplay );
 
@@ -102,6 +106,16 @@ class UITerminal : public UIWidget {
 	virtual Uint32 onFocus();
 
 	virtual Uint32 onFocusLoss();
+
+	UIMenuItem* menuAdd( UIPopUpMenu* menu, const std::string& translateKey,
+						 const String& translateString, const std::string& icon,
+						 const std::string& cmd );
+
+	virtual bool onCreateContextMenu( const Vector2i& position, const Uint32& flags );
+
+	Drawable* findIcon( const std::string& name );
+
+	void createDefaultContextMenuOptions( UIPopUpMenu* menu );
 };
 
 }} // namespace eterm::UI

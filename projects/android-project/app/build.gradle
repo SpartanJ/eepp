@@ -53,7 +53,7 @@ android {
             resValue "string", "app_name", "eterm"
             externalNativeBuild {
                 ndkBuild {
-                    arguments "APP_MODULES=eterm"
+                    arguments "APP_MODULES=eterm-app"
                 }
             }
         }

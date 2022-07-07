@@ -1,7 +1,9 @@
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/ui/uieventdispatcher.hpp>
+#include <eepp/ui/uiicon.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitabwidget.hpp>
+#include <eepp/window/clipboard.hpp>
 #include <eterm/ui/uiterminal.hpp>
 
 using namespace EE::Scene;
@@ -51,6 +53,25 @@ UITerminal::UITerminal( const std::shared_ptr<TerminalDisplay>& terminalDisplay 
 			}
 		}
 	} );
+	setCommand( "terminal-scroll-up-screen",
+				[&] { mTerm->action( TerminalShortcutAction::SCROLLUP_SCREEN ); } );
+	setCommand( "terminal-scroll-down-screen",
+				[&] { mTerm->action( TerminalShortcutAction::SCROLLDOWN_SCREEN ); } );
+	setCommand( "terminal-scroll-up-row",
+				[&] { mTerm->action( TerminalShortcutAction::SCROLLUP_ROW ); } );
+	setCommand( "terminal-scroll-down-row",
+				[&] { mTerm->action( TerminalShortcutAction::SCROLLDOWN_ROW ); } );
+	setCommand( "terminal-scroll-up-history",
+				[&] { mTerm->action( TerminalShortcutAction::SCROLLUP_HISTORY ); } );
+	setCommand( "terminal-scroll-down-history",
+				[&] { mTerm->action( TerminalShortcutAction::SCROLLDOWN_HISTORY ); } );
+	setCommand( "terminal-font-size-grow",
+				[&] { mTerm->action( TerminalShortcutAction::FONTSIZE_GROW ); } );
+	setCommand( "terminal-font-size-shrink",
+				[&] { mTerm->action( TerminalShortcutAction::FONTSIZE_SHRINK ); } );
+	setCommand( "terminal-paste", [&] { mTerm->action( TerminalShortcutAction::PASTE ); } );
+	setCommand( "terminal-copy", [&] { mTerm->action( TerminalShortcutAction::COPY ); } );
+	setCommand( "terminal-paste", [&] { mTerm->action( TerminalShortcutAction::PASTE ); } );
 	subscribeScheduledUpdate();
 }
 
@@ -184,8 +205,12 @@ Uint32 UITerminal::onMouseDoubleClick( const Vector2i& position, const Uint32& f
 }
 
 Uint32 UITerminal::onMouseUp( const Vector2i& position, const Uint32& flags ) {
-	if ( ( flags & EE_BUTTON_LMASK ) && mDraggingSel )
+	if ( ( flags & EE_BUTTON_LMASK ) && mDraggingSel ) {
 		mDraggingSel = false;
+	} else if ( flags & EE_BUTTON_RMASK ) {
+		onCreateContextMenu( position, flags );
+		return 1;
+	}
 	mTerm->onMouseUp( position, flags );
 	return 1;
 }
@@ -210,6 +235,68 @@ Uint32 UITerminal::onFocusLoss() {
 	mTerm->setFocus( false );
 	invalidateDraw();
 	return UIWidget::onFocusLoss();
+}
+
+void UITerminal::createDefaultContextMenuOptions( UIPopUpMenu* menu ) {
+	if ( !mCreateDefaultContextMenuOptions )
+		return;
+
+	menuAdd( menu, "copy", "Copy", "copy", "terminal-copy" )
+		->setEnabled( mTerm->getTerminal() && mTerm->getTerminal()->hasSelection() );
+	menuAdd( menu, "paste", "Paste", "paste", "terminal-paste" )
+		->setEnabled( !getUISceneNode()->getWindow()->getClipboard()->getText().empty() );
+}
+
+Drawable* UITerminal::findIcon( const std::string& name ) {
+	UIIcon* icon = getUISceneNode()->findIcon( name );
+	if ( icon )
+		return icon->getSize( mMenuIconSize );
+	return nullptr;
+}
+
+UIMenuItem* UITerminal::menuAdd( UIPopUpMenu* menu, const std::string& translateKey,
+								 const String& translateString, const std::string& icon,
+								 const std::string& cmd ) {
+	UIMenuItem* menuItem =
+		menu->add( getTranslatorString( "@string/uiterminal_" + translateKey, translateString ),
+				   findIcon( icon ), mKeyBindings.getCommandKeybindString( cmd ) );
+	menuItem->setId( cmd );
+	return menuItem;
+}
+
+bool UITerminal::onCreateContextMenu( const Vector2i& position, const Uint32& flags ) {
+	if ( mCurrentMenu )
+		return false;
+
+	UIPopUpMenu* menu = UIPopUpMenu::New();
+
+	ContextMenuEvent event( this, menu, Event::OnCreateContextMenu, position, flags );
+	sendEvent( &event );
+
+	createDefaultContextMenuOptions( menu );
+
+	if ( menu->getCount() == 0 ) {
+		menu->close();
+		return false;
+	}
+
+	menu->setCloseOnHide( true );
+	menu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
+		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+			return;
+		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
+		std::string txt( item->getId() );
+		execute( txt );
+	} );
+
+	Vector2f pos( position.asFloat() );
+	menu->nodeToWorldTranslation( pos );
+	UIMenu::findBestMenuPos( pos, menu );
+	menu->setPixelsPosition( pos );
+	menu->show();
+	menu->addEventListener( Event::OnClose, [&]( const Event* ) { mCurrentMenu = nullptr; } );
+	mCurrentMenu = menu;
+	return true;
 }
 
 }} // namespace eterm::UI

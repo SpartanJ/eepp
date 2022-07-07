@@ -3,6 +3,7 @@ EEPP_BASE_PATH			:= $(LOCAL_PATH)/../../../../src
 EEPP_PATH				:= $(LOCAL_PATH)/../../../../src/eepp
 EEPP_INC_PATH			:= $(LOCAL_PATH)/../../../../include
 EEPP_THIRD_PARTY_PATH	:= $(EEPP_BASE_PATH)/thirdparty
+EEPP_MODULES_PATH		:= $(EEPP_BASE_PATH)/modules
 SDL_PATH				:= $(EEPP_THIRD_PARTY_PATH)/SDL2
 SDL_MAIN_PATH			:= $(SDL_PATH)/src/main/android/*.c
 
@@ -21,7 +22,9 @@ EEPP_C_INCLUDES			:= \
 	$(EEPP_THIRD_PARTY_PATH)/libogg/include \
 	$(EEPP_THIRD_PARTY_PATH)/mbedtls/include \
 	$(EEPP_THIRD_PARTY_PATH)/mojoAL \
-	$(EEPP_THIRD_PARTY_PATH)/efsw/include
+	$(EEPP_THIRD_PARTY_PATH)/efsw/include \
+	$(EEPP_BASE_PATH)/modules/eterm/include \
+	$(EEPP_BASE_PATH)/modules/eterm/src
 
 EEPP_C_FLAGS				:= \
 	-Wl,--undefined=Java_org_libsdl_app_SDLActivity_nativeInit \
@@ -269,7 +272,6 @@ include $(BUILD_SHARED_LIBRARY)
 $(call import-module,android/cpufeatures)
 #**************** SDL 2 ***************
 
-
 #*************** EFSW ***************
 include $(CLEAR_VARS)
 
@@ -277,14 +279,34 @@ LOCAL_PATH				:= $(EEPP_THIRD_PARTY_PATH)
 
 LOCAL_MODULE			:= efsw
 
-LIBPNG_SRCS			:=  \
+LIBEFSW_SRCS			:=  \
 	efsw/src/efsw/*.cpp \
 	efsw/src/efsw/platform/posix/*.cpp
 
 LOCAL_C_INCLUDES		:= $(LOCAL_PATH)/efsw/include $(LOCAL_PATH)/efsw/src
 LOCAL_CFLAGS			:= -Os -DEFSW_USE_CXX11
 
-LOCAL_SRC_FILES			:= $(foreach F, $(LIBPNG_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
+LOCAL_SRC_FILES			:= $(foreach F, $(LIBEFSW_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
 
 include $(BUILD_STATIC_LIBRARY)
 #*************** EFSW ***************
+
+#*************** ETERM ***************
+include $(CLEAR_VARS)
+
+LOCAL_PATH				:= $(EEPP_MODULES_PATH)
+
+LOCAL_MODULE			:= eterm
+
+LIBETERM_SRCS			:=  \
+	eterm/src/eterm/system/*.cpp \
+	eterm/src/eterm/terminal/*.cpp \
+	eterm/src/eterm/ui/*.cpp
+
+LOCAL_C_INCLUDES		:= $(EEPP_C_INCLUDES) $(EEPP_INC_PATH)
+LOCAL_CFLAGS			:= -Os
+
+LOCAL_SRC_FILES			:= $(foreach F, $(LIBETERM_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
+
+include $(BUILD_STATIC_LIBRARY)
+#*************** ETERM ***************
