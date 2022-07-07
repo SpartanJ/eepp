@@ -240,7 +240,8 @@ class TerminalDisplay : public ITerminalDisplay {
 	std::vector<TerminalGlyph> mBuffer;
 	std::vector<std::pair<Color, std::string>> mColors;
 	std::shared_ptr<TerminalEmulator> mTerminal;
-	mutable std::string mClipboard;
+	mutable String mClipboard;
+	mutable std::string mClipboardUtf8;
 	Uint32 mNumCallBacks;
 	std::map<Uint32, EventFunc> mCallbacks;
 

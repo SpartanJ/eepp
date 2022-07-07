@@ -560,11 +560,9 @@ void TerminalDisplay::update() {
 void TerminalDisplay::action( TerminalShortcutAction action ) {
 	switch ( action ) {
 		case TerminalShortcutAction::PASTE: {
-			auto clipboard = getClipboard();
-			auto clipboardLen = strlen( clipboard );
-			if ( clipboardLen > 0 ) {
-				mTerminal->ttywrite( clipboard, clipboardLen, 1 );
-			}
+			getClipboard();
+			if ( !mClipboard.empty() )
+				mTerminal->ttywrite( mClipboardUtf8.c_str(), mClipboardUtf8.size(), 1 );
 			break;
 		}
 		case TerminalShortcutAction::COPY: {
@@ -632,6 +630,7 @@ void TerminalDisplay::setClipboard( const char* text ) {
 	if ( text == nullptr )
 		return;
 	mClipboard = text;
+	mClipboardUtf8 = mClipboard.toUtf8();
 	mWindow->getClipboard()->setText( mClipboard );
 }
 
@@ -645,7 +644,8 @@ const char* TerminalDisplay::getClipboard() const {
 		return mClipboard.c_str();
 	}
 #endif
-	return mClipboard.c_str();
+	mClipboardUtf8 = mClipboard.toUtf8();
+	return mClipboardUtf8.c_str();
 }
 
 bool TerminalDisplay::drawBegin( int columns, int rows ) {
@@ -733,6 +733,12 @@ void TerminalDisplay::onMouseDown( const Vector2i& pos, const Uint32& flags ) {
 			if ( !selection.empty() ) {
 				for ( auto& chr : selection )
 					onTextInput( chr );
+			} else {
+				getClipboard();
+				if ( !mClipboard.empty() ) {
+					for ( auto& chr : mClipboard )
+						onTextInput( chr );
+				}
 			}
 		}
 	}

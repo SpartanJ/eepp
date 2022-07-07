@@ -322,7 +322,12 @@ static void loadDocuments( UICodeEditorSplitter* editorSplitter, std::shared_ptr
 					},
 					curTabWidget );
 			} else if ( file["type"] == "terminal" ) {
-				app->createNewTerminal( file.contains( "title" ) ? file["title"] : "" );
+				app->createNewTerminal( file.contains( "title" ) ? file["title"] : "",
+										curTabWidget );
+
+				if ( curTabWidget->getTabCount() == totalToLoad )
+					curTabWidget->setTabSelected(
+						eeclamp<Int32>( currentPage, 0, curTabWidget->getTabCount() - 1 ) );
 			}
 		}
 	} else if ( j["type"] == "splitter" ) {

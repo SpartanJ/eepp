@@ -1994,11 +1994,18 @@ void App::fullscreenToggle() {
 		->setActive( !mWindow->isWindowed() );
 }
 
-void App::createNewTerminal( const std::string& title ) {
-	UIWidget* curWidget = mEditorSplitter->getCurWidget();
-	if ( !curWidget )
-		return;
-	UITabWidget* tabWidget = mEditorSplitter->tabWidgetFromWidget( curWidget );
+void App::createNewTerminal( const std::string& title, UITabWidget* inTabWidget ) {
+	UITabWidget* tabWidget = nullptr;
+
+	if ( !inTabWidget ) {
+		UIWidget* curWidget = mEditorSplitter->getCurWidget();
+		if ( !curWidget )
+			return;
+		tabWidget = mEditorSplitter->tabWidgetFromWidget( curWidget );
+	} else {
+		tabWidget = inTabWidget;
+	}
+
 	if ( !tabWidget ) {
 		if ( !mEditorSplitter->getTabWidgets().empty() ) {
 			tabWidget = mEditorSplitter->getTabWidgets()[0];
@@ -2009,8 +2016,10 @@ void App::createNewTerminal( const std::string& title ) {
 	UITerminal* term = UITerminal::New( mFontMonoNerdFont ? mFontMonoNerdFont : mFontMono,
 										PixelDensity::dpToPx( 11 ), Sizef( 16, 16 ), "", {},
 										!mCurrentProject.empty() ? mCurrentProject : "" );
-	mEditorSplitter->createWidgetInTabWidget( tabWidget, term, title.empty() ? "Shell" : title,
-											  true );
+	auto ret = mEditorSplitter->createWidgetInTabWidget( tabWidget, term,
+														 title.empty() ? "Shell" : title, true );
+	mEditorSplitter->removeUnusedTab( tabWidget );
+	ret.first->setIcon( findIcon( "filetype-bash" ) );
 	term->setTitle( title );
 	term->addEventListener( Event::OnTitleChange, [&]( const Event* event ) {
 		if ( event->getNode() != mEditorSplitter->getCurWidget() )

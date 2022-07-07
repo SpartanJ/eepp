@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 7.0.2, 2022-07-07T00:38:47. -->
+<!-- Written by QtCreator 7.0.2, 2022-07-07T19:06:30. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -1203,6 +1203,7 @@
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">ecode-debug</value>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">ProjectExplorer.CustomExecutableRunConfiguration</value>
     <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey"></value>
+    <value type="QString" key="RunConfiguration.Arguments">/home/programming/lad/lad-api/</value>
     <value type="bool" key="RunConfiguration.UseCppDebugger">true</value>
     <value type="bool" key="RunConfiguration.UseCppDebuggerAuto">false</value>
     <value type="bool" key="RunConfiguration.UseQmlDebugger">false</value>

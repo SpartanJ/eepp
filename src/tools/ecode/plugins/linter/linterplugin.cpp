@@ -250,7 +250,7 @@ void LinterPlugin::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 	Clock clock;
 	std::string cmd( linter.command );
 	String::replaceAll( cmd, "$FILENAME", "\"" + path + "\"" );
-	std::vector<std::string> cmdArr = String::split( cmd, " " );
+	std::vector<std::string> cmdArr = String::split( cmd, " ", "", "\"", true );
 	std::vector<const char*> strings;
 	for ( size_t i = 0; i < cmdArr.size(); ++i )
 		strings.push_back( cmdArr[i].c_str() );
@@ -273,6 +273,8 @@ void LinterPlugin::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 
 		if ( subprocess_alive( &subprocess ) && !mShuttingDown )
 			subprocess_join( &subprocess, &returnCode );
+		else
+			returnCode = subprocess.return_status;
 		subprocess_destroy( &subprocess );
 
 		if ( linter.hasNoErrorsExitCode && linter.noErrorsExitCode == returnCode ) {

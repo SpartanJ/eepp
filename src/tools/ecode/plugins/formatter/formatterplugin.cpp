@@ -171,7 +171,7 @@ void FormatterPlugin::runFormatter( UICodeEditor* editor, const Formatter& forma
 
 	std::string cmd( formatter.command );
 	String::replaceAll( cmd, "$FILENAME", "\"" + path + "\"" );
-	std::vector<std::string> cmdArr = String::split( cmd, " " );
+	std::vector<std::string> cmdArr = String::split( cmd, " ", "", "\"", true );
 	std::vector<const char*> strings;
 	for ( size_t i = 0; i < cmdArr.size(); ++i )
 		strings.push_back( cmdArr[i].c_str() );
@@ -194,7 +194,10 @@ void FormatterPlugin::runFormatter( UICodeEditor* editor, const Formatter& forma
 
 		if ( subprocess_alive( &subprocess ) && !mShuttingDown )
 			subprocess_join( &subprocess, &returnCode );
+		else
+			returnCode = subprocess.return_status;
 		subprocess_destroy( &subprocess );
+
 		// Log::info( "Formatter result:\n%s", data.c_str() );
 
 		if ( formatter.type == FormatterType::Output ) {

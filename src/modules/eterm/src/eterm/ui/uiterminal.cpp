@@ -188,11 +188,17 @@ Uint32 UITerminal::onKeyUp( const KeyEvent& ) {
 }
 
 Uint32 UITerminal::onMouseMove( const Vector2i& position, const Uint32& flags ) {
+	if ( getUISceneNode()->getUIEventDispatcher()->isNodeDragging() )
+		return 0;
+
 	mTerm->onMouseMove( position, flags );
 	return 1;
 }
 
 Uint32 UITerminal::onMouseDown( const Vector2i& position, const Uint32& flags ) {
+	if ( getUISceneNode()->getUIEventDispatcher()->isNodeDragging() )
+		return 0;
+
 	if ( ( flags & EE_BUTTON_LMASK ) &&
 		 mTerm->getTerminal()->getSelectionMode() == TerminalSelectionMode::SEL_IDLE ) {
 		mDraggingSel = true;

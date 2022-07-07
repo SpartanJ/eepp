@@ -367,8 +367,8 @@ std::vector<String> String::split( const StringBaseType& delim, const bool& push
 }
 
 std::vector<std::string> String::split( const std::string& str, const std::string& delims,
-										const std::string& delimsPreserve,
-										const std::string& quote ) {
+										const std::string& delimsPreserve, const std::string& quote,
+										const bool& removeQuotes ) {
 	std::vector<std::string> tokens;
 	if ( str.empty() || ( delims.empty() && delimsPreserve.empty() ) ) {
 		return tokens;
@@ -380,8 +380,8 @@ std::vector<std::string> String::split( const std::string& str, const std::strin
 	std::string::size_type tokenEnd = str.find_first_of( allDelims, tokenStart );
 	std::string::size_type tokenLen = 0;
 	std::string token;
-
 	while ( true ) {
+		bool fromQuote = false;
 		while ( tokenEnd != std::string::npos &&
 				quote.find_first_of( str[tokenEnd] ) != std::string::npos ) {
 			if ( str[tokenEnd] == '(' ) {
@@ -391,6 +391,7 @@ std::vector<std::string> String::split( const std::string& str, const std::strin
 			} else if ( str[tokenEnd] == '{' ) {
 				tokenEnd = findCloseBracket( str, tokenEnd, '{', '}' );
 			} else {
+				fromQuote = true;
 				tokenEnd = str.find_first_of( str[tokenEnd], tokenEnd + 1 );
 			}
 			if ( tokenEnd != std::string::npos ) {
@@ -406,6 +407,8 @@ std::vector<std::string> String::split( const std::string& str, const std::strin
 
 		token = str.substr( tokenStart, tokenLen );
 		if ( !token.empty() ) {
+			if ( fromQuote && removeQuotes && token.size() > 2 )
+				token = token.substr( 1, token.size() - 2 );
 			tokens.push_back( token );
 		}
 		if ( tokenEnd != std::string::npos && !delimsPreserve.empty() &&
