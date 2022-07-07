@@ -641,7 +641,6 @@ const char* TerminalDisplay::getClipboard() const {
 		size_t pos;
 		while ( ( pos = mClipboard.find( '\r' ) ) != std::string::npos )
 			mClipboard.erase( pos, 1 );
-		return mClipboard.c_str();
 	}
 #endif
 	mClipboardUtf8 = mClipboard.toUtf8();
