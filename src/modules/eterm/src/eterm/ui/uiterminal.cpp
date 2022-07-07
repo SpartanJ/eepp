@@ -159,6 +159,10 @@ void UITerminal::setExclusiveMode( bool exclusiveMode ) {
 	mExclusiveMode = exclusiveMode;
 }
 
+bool UITerminal::isUsingCustomTitle() const {
+	return mIsCustomTitle;
+}
+
 Uint32 UITerminal::onTextInput( const TextInputEvent& event ) {
 	mTerm->onTextInput( event.getChar() );
 	return 1;

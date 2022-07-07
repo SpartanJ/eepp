@@ -233,6 +233,8 @@ class TerminalDisplay : public ITerminalDisplay {
 
 	void popEventCallback( const Uint32& id );
 
+	Float getLineHeight() const;
+
   protected:
 	EE::Window::Window* mWindow;
 	std::vector<TerminalGlyph> mBuffer;

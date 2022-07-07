@@ -18,6 +18,7 @@ using namespace EE::System;
 using namespace EE::Window;
 
 namespace ecode {
+class App;
 
 enum class PanelPosition { Left, Right };
 
@@ -124,7 +125,7 @@ struct AppConfig {
 
 	void loadProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
 					  const std::string& configPath, ProjectDocumentConfig& docConfig,
-					  std::shared_ptr<ThreadPool> pool );
+					  std::shared_ptr<ThreadPool> pool, ecode::App* app );
 };
 
 } // namespace ecode

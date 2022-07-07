@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 7.0.2, 2022-07-04T12:05:43. -->
+<!-- Written by QtCreator 7.0.2, 2022-07-07T00:38:47. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -267,7 +267,7 @@
     <value type="QString" key="ProjectExplorer.BuildConfiguration.BuildDirectory">../../projects/mingw32</value>
     <valuemap type="QVariantMap" key="ProjectExplorer.BuildConfiguration.BuildStepList.0">
      <valuemap type="QVariantMap" key="ProjectExplorer.BuildStepList.Step.0">
-      <value type="QString" key="GenericProjectManager.GenericMakeStep.MakeArguments">-e config=debug_x86</value>
+      <value type="QString" key="GenericProjectManager.GenericMakeStep.MakeArguments">-e config=debug_x86_64</value>
       <value type="QString" key="GenericProjectManager.GenericMakeStep.MakeCommand">make.sh</value>
       <value type="bool" key="ProjectExplorer.BuildStep.Enabled">true</value>
       <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">GenericProjectManager.GenericMakeStep</value>
@@ -302,7 +302,7 @@
     <value type="QString" key="ProjectExplorer.BuildConfiguration.BuildDirectory">../../projects/mingw32</value>
     <valuemap type="QVariantMap" key="ProjectExplorer.BuildConfiguration.BuildStepList.0">
      <valuemap type="QVariantMap" key="ProjectExplorer.BuildStepList.Step.0">
-      <value type="QString" key="GenericProjectManager.GenericMakeStep.MakeArguments">-e config=release_x86</value>
+      <value type="QString" key="GenericProjectManager.GenericMakeStep.MakeArguments">-e config=release_x86_64</value>
       <value type="QString" key="GenericProjectManager.GenericMakeStep.MakeCommand">make.sh</value>
       <value type="bool" key="ProjectExplorer.BuildStep.Enabled">true</value>
       <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">GenericProjectManager.GenericMakeStep</value>

@@ -70,6 +70,8 @@ class UITerminal : public UIWidget {
 	 *  This allows the user to use all the keybindings in the terminal. */
 	void setExclusiveMode( bool exclusiveMode );
 
+	bool isUsingCustomTitle() const;
+
   protected:
 	std::string mTitle;
 	bool mIsCustomTitle{ false };

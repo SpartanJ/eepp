@@ -80,7 +80,7 @@ class App : public UICodeEditorSplitter::Client {
 
 	NotificationCenter* getNotificationCenter() const;
 
-	void createNewTerminal();
+	void createNewTerminal( const std::string& title = "" );
 
 	std::map<KeyBindings::Shortcut, std::string> getAppKeybindings();
 

@@ -156,6 +156,8 @@ class TerminalEmulator final {
 
 	inline int getNumRows() const { return mTerm.row; }
 
+	inline int getHistorySize() const { return mTerm.histi; }
+
 	int write( const char* buf, size_t buflen );
 
 	void printscreen( const TerminalArg* );

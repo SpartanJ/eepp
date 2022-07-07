@@ -17,8 +17,6 @@ Detect errors and log them.
 
 * Add LSP support.
 
-* Add terminal support.
-
 ## UI Editor
 
 * Integrate the `UICodeEditor` into the editor in order to be able to edit the layouts and CSS in app.

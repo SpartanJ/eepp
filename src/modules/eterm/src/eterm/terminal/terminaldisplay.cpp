@@ -543,6 +543,10 @@ void TerminalDisplay::popEventCallback( const Uint32& id ) {
 		mCallbacks.erase( it );
 }
 
+Float TerminalDisplay::getLineHeight() const {
+	return mFont->getFontHeight( mFontSize );
+}
+
 void TerminalDisplay::update() {
 	if ( mFocus && isBlinkingCursor() && mClock.getElapsedTime().asSeconds() > 0.7 ) {
 		mMode ^= MODE_BLINK;
@@ -934,7 +938,7 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 	if ( mFrameBuffer )
 		mFrameBuffer->bind();
 
-	auto fontSize = (Float)mFont->getFontHeight( mFontSize );
+	auto fontSize = mFont->getFontHeight( mFontSize );
 	auto spaceCharAdvanceX = mFont->getGlyph( 'A', mFontSize, false ).advance;
 
 	float x = 0.0f;

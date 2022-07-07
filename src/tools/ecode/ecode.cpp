@@ -1701,7 +1701,8 @@ void App::onDocumentCursorPosChange( UICodeEditor*, TextDocument& doc ) {
 void App::updateDocInfo( TextDocument& doc ) {
 	if ( mConfig.editor.showDocInfo && mDocInfoText &&
 		 mEditorSplitter->curEditorExistsAndFocused() ) {
-		mDocInfoText->setVisible( true );
+		if ( mDocInfo )
+			mDocInfo->setVisible( true );
 		mDocInfoText->setText( String::format(
 			"line: %lld / %lu  col: %lld    %s", doc.getSelection().start().line() + 1,
 			doc.linesCount(), mEditorSplitter->getCurEditor()->getCurrentColumnCount(),
@@ -1723,9 +1724,9 @@ void App::syncProjectTreeWithEditor( UICodeEditor* editor ) {
 }
 
 void App::onWidgetFocusChange( UIWidget* widget ) {
-	if ( mConfig.editor.showDocInfo && mDocInfoText ) {
-		mDocInfoText->setVisible( widget && widget->isType( UI_TYPE_CODEEDITOR ) );
-	}
+	if ( mConfig.editor.showDocInfo && mDocInfoText )
+		mDocInfo->setVisible( widget && widget->isType( UI_TYPE_CODEEDITOR ) );
+
 	updateDocumentMenu();
 	if ( widget && !widget->isType( UI_TYPE_CODEEDITOR ) ) {
 		if ( widget->isType( UI_TYPE_TERMINAL ) )
@@ -1993,7 +1994,7 @@ void App::fullscreenToggle() {
 		->setActive( !mWindow->isWindowed() );
 }
 
-void App::createNewTerminal() {
+void App::createNewTerminal( const std::string& title ) {
 	UIWidget* curWidget = mEditorSplitter->getCurWidget();
 	if ( !curWidget )
 		return;
@@ -2006,8 +2007,11 @@ void App::createNewTerminal() {
 		}
 	}
 	UITerminal* term = UITerminal::New( mFontMonoNerdFont ? mFontMonoNerdFont : mFontMono,
-										PixelDensity::dpToPx( 11 ), Sizef( 16, 16 ) );
-	mEditorSplitter->createWidgetInTabWidget( tabWidget, term, "Shell", true );
+										PixelDensity::dpToPx( 11 ), Sizef( 16, 16 ), "", {},
+										!mCurrentProject.empty() ? mCurrentProject : "" );
+	mEditorSplitter->createWidgetInTabWidget( tabWidget, term, title.empty() ? "Shell" : title,
+											  true );
+	term->setTitle( title );
 	term->addEventListener( Event::OnTitleChange, [&]( const Event* event ) {
 		if ( event->getNode() != mEditorSplitter->getCurWidget() )
 			return;
@@ -2949,7 +2953,8 @@ void App::loadFolder( const std::string& path ) {
 	mCurrentProject = rpath;
 	loadDirTree( rpath );
 
-	mConfig.loadProject( rpath, mEditorSplitter, mConfigPath, mProjectDocConfig, mThreadPool );
+	mConfig.loadProject( rpath, mEditorSplitter, mConfigPath, mProjectDocConfig, mThreadPool,
+						 this );
 
 	mFileSystemModel = FileSystemModel::New( rpath, FileSystemModel::Mode::FilesAndDirectories,
 											 { true, true, true } );
