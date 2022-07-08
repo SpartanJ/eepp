@@ -9,7 +9,7 @@
 namespace EE { namespace Graphics {
 
 bool FrameBufferFBO::isSupported() {
-	return 0 != GLi->isExtension( EEGL_EXT_framebuffer_object );
+	return GLi && 0 != GLi->isExtension( EEGL_EXT_framebuffer_object );
 }
 
 FrameBufferFBO::FrameBufferFBO( EE::Window::Window* window ) :

@@ -670,8 +670,8 @@ void UIListBox::updateScroll( bool fromScrollChange ) {
 }
 
 void UIListBox::itemKeyEvent( const KeyEvent& Event ) {
-	KeyEvent ItemEvent( Event.getNode(), Event::OnItemKeyDown, Event.getKeyCode(), Event.getChar(),
-						Event.getMod() );
+	KeyEvent ItemEvent( Event.getNode(), Event::OnItemKeyDown, Event.getKeyCode(),
+						Event.getScancode(), Event.getChar(), Event.getMod() );
 	sendEvent( &ItemEvent );
 }
 
@@ -1000,7 +1000,7 @@ void UIListBox::setVerticalScrollMode( const ScrollBarMode& Mode ) {
 	}
 }
 
-const ScrollBarMode& UIListBox::getVerticalScrollMode() {
+const ScrollBarMode& UIListBox::getVerticalScrollMode() const {
 	return mVScrollMode;
 }
 
@@ -1022,12 +1022,12 @@ void UIListBox::setHorizontalScrollMode( const ScrollBarMode& Mode ) {
 	}
 }
 
-const ScrollBarMode& UIListBox::getHorizontalScrollMode() {
+const ScrollBarMode& UIListBox::getHorizontalScrollMode() const {
 	return mHScrollMode;
 }
 
 std::string UIListBox::getPropertyString( const PropertyDefinition* propertyDef,
-										  const Uint32& propertyIndex ) {
+										  const Uint32& propertyIndex ) const {
 	if ( NULL == propertyDef )
 		return "";
 

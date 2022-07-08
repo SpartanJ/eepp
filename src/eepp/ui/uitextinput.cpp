@@ -296,7 +296,7 @@ UITextView* UITextInput::setText( const String& text ) {
 	return this;
 }
 
-const String& UITextInput::getText() {
+const String& UITextInput::getText() const {
 	return UITextView::getText();
 }
 
@@ -444,12 +444,12 @@ UITextInput* UITextInput::setMaxLength( const Uint32& maxLength ) {
 	return this;
 }
 
-const Uint32& UITextInput::getMaxLength() {
+const Uint32& UITextInput::getMaxLength() const {
 	return mMaxLength;
 }
 
 std::string UITextInput::getPropertyString( const PropertyDefinition* propertyDef,
-											const Uint32& propertyIndex ) {
+											const Uint32& propertyIndex ) const {
 	if ( NULL == propertyDef )
 		return "";
 
@@ -595,7 +595,7 @@ UITextInput* UITextInput::setHintShadowColor( const Color& shadowColor ) {
 	return this;
 }
 
-Font* UITextInput::getHintFont() {
+Font* UITextInput::getHintFont() const {
 	return mHintStyleConfig.getFont();
 }
 
@@ -770,11 +770,11 @@ void UITextInput::setAllowOnlyNumbers( const bool& onlyNumbers, const bool& allo
 	mAllowFloat = allowFloat;
 }
 
-bool UITextInput::onlyNumbersAllowed() {
+bool UITextInput::onlyNumbersAllowed() const {
 	return mOnlyNumbers;
 }
 
-bool UITextInput::floatingPointAllowed() {
+bool UITextInput::floatingPointAllowed() const {
 	return mAllowFloat;
 }
 

@@ -52,9 +52,11 @@ class EE_API EventDispatcher {
 
 	void sendTextInput( const Uint32& textChar, const Uint32& timestamp );
 
-	void sendKeyUp( const Keycode& KeyCode, const Uint32& Char, const Uint32& Mod );
+	void sendKeyUp( const Keycode& keyCode, const Scancode& scancode, const Uint32& chr,
+					const Uint32& mod );
 
-	void sendKeyDown( const Keycode& KeyCode, const Uint32& Char, const Uint32& Mod );
+	void sendKeyDown( const Keycode& keyCode, const Scancode& scancode, const Uint32& chr,
+					  const Uint32& mod );
 
 	void sendMouseClick( Node* toNode, const Vector2i& pos, const Uint32 flags );
 

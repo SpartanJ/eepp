@@ -432,7 +432,7 @@ int subprocess_create_named_pipe_helper(void **rd, void **wr) {
                        pipeTypeByte | pipeWait, 1, 4096, 4096, SUBPROCESS_NULL,
                        SUBPROCESS_PTR_CAST(LPSECURITY_ATTRIBUTES, &saAttr));
 
-  if (invalidHandleValue == rd) {
+  if (invalidHandleValue == *rd) {
     return -1;
   }
 
@@ -440,7 +440,7 @@ int subprocess_create_named_pipe_helper(void **rd, void **wr) {
                     SUBPROCESS_PTR_CAST(LPSECURITY_ATTRIBUTES, &saAttr),
                     openExisting, fileAttributeNormal, SUBPROCESS_NULL);
 
-  if (invalidHandleValue == wr) {
+  if (invalidHandleValue == *wr) {
     return -1;
   }
 
@@ -740,10 +740,7 @@ int subprocess_create_ex(const char *const commandLine[], int options,
   int stdoutfd[2];
   int stderrfd[2];
   pid_t child;
-  extern char **environ;
   char *const empty_environment[1] = {SUBPROCESS_NULL};
-  posix_spawn_file_actions_t actions;
-  char *const *used_environment;
 
   if (subprocess_option_inherit_environment ==
       (options & subprocess_option_inherit_environment)) {
@@ -767,9 +764,10 @@ int subprocess_create_ex(const char *const commandLine[], int options,
     }
   }
 
-
-
 #if !defined(NO_POSIX_SPAWN)
+  extern char **environ;
+  posix_spawn_file_actions_t actions;
+  char *const *used_environment;
 
   if (environment) {
 #ifdef __clang__

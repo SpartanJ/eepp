@@ -207,10 +207,10 @@ class EE_API UIWidget : public UINode {
 
 	std::vector<UIWidget*> querySelectorAll( const std::string& selector );
 
-	std::string getPropertyString( const std::string& property );
+	std::string getPropertyString( const std::string& property ) const;
 
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
-										   const Uint32& propertyIndex = 0 );
+										   const Uint32& propertyIndex = 0 ) const;
 
 	bool isSceneNodeLoading() const;
 
@@ -239,9 +239,9 @@ class EE_API UIWidget : public UINode {
 
 	void createTooltip();
 
-	Sizef getCurrentMinSize();
+	Sizef getMinSize();
 
-	Sizef getCurrentMaxSize();
+	Sizef getMaxSize();
 
 	bool isTabStop() const;
 
@@ -252,6 +252,8 @@ class EE_API UIWidget : public UINode {
 	bool isTooltipEnabled() const;
 
 	void setTooltipEnabled( bool enabled );
+
+	Sizef fitMinMaxSize( const Sizef& size ) const;
 
   protected:
 	friend class UIManager;

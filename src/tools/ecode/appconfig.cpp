@@ -1,11 +1,14 @@
 #include "appconfig.hpp"
+#include "ecode.hpp"
 #include "thirdparty/json.hpp"
 #include <eepp/network/uri.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/md5.hpp>
 #include <eepp/system/sys.hpp>
+#include <eterm/ui/uiterminal.hpp>
 
 using namespace EE::Network;
+using namespace eterm::UI;
 using json = nlohmann::json;
 
 namespace ecode {
@@ -229,7 +232,7 @@ json saveNode( Node* node ) {
 		res["type"] = "splitter";
 		res["split"] = splitter->getSplitPartition().toString();
 		res["orientation"] =
-			splitter->getOrientation() == UIOrientation::Horizontal ? "horizontal" : "vertial";
+			splitter->getOrientation() == UIOrientation::Horizontal ? "horizontal" : "vertical";
 		res["first"] = saveNode( splitter->getFirstWidget() );
 		res["last"] = saveNode( splitter->getLastWidget() );
 	} else if ( node->isType( UI_TYPE_TABWIDGET ) ) {
@@ -237,14 +240,24 @@ json saveNode( Node* node ) {
 		std::vector<json> files;
 		for ( size_t i = 0; i < tabWidget->getTabCount(); ++i ) {
 			Node* ownedWidget = tabWidget->getTab( i )->getOwnedWidget();
-			if ( ownedWidget && ownedWidget->isType( UI_TYPE_CODEEDITOR ) ) {
+			if ( !ownedWidget )
+				continue;
+			if ( ownedWidget->isType( UI_TYPE_CODEEDITOR ) ) {
 				UICodeEditor* editor = ownedWidget->asType<UICodeEditor>();
 				if ( !editor->getDocument().getFilePath().empty() ) {
 					json f;
+					f["type"] = "editor";
 					f["path"] = editor->getDocument().getFilePath();
 					f["selection"] = editor->getDocument().getSelection().toString();
 					files.emplace_back( f );
 				}
+			} else if ( ownedWidget->isType( UI_TYPE_TERMINAL ) ) {
+				UITerminal* term = ownedWidget->asType<UITerminal>();
+				json f;
+				f["type"] = "terminal";
+				if ( term->isUsingCustomTitle() )
+					f["title"] = term->getTitle();
+				files.emplace_back( f );
 			}
 		}
 		res["type"] = "tabwidget";
@@ -289,27 +302,36 @@ void AppConfig::saveProject( std::string projectFolder, UICodeEditorSplitter* ed
 }
 
 static void loadDocuments( UICodeEditorSplitter* editorSplitter, std::shared_ptr<ThreadPool> pool,
-						   json j, UITabWidget* curTabWidget ) {
+						   json j, UITabWidget* curTabWidget, ecode::App* app ) {
 	if ( j["type"] == "tabwidget" ) {
 		Int64 currentPage = j["current_page"];
 		size_t totalToLoad = j["files"].size();
 		for ( const auto& file : j["files"] ) {
-			std::string path( file["path"] );
-			TextRange selection( TextRange::fromString( file["selection"] ) );
-			editorSplitter->loadAsyncFileFromPathInNewTab(
-				path, pool,
-				[curTabWidget, selection, totalToLoad, currentPage]( UICodeEditor* editor,
-																	 const std::string& ) {
-					editor->getDocument().setSelection( selection );
-					editor->scrollToCursor();
-					if ( curTabWidget->getTabCount() == totalToLoad )
-						curTabWidget->setTabSelected(
-							eeclamp<Int32>( currentPage, 0, curTabWidget->getTabCount() - 1 ) );
-				},
-				curTabWidget );
+			if ( !file.contains( "type" ) || file["type"] == "editor" ) {
+				std::string path( file["path"] );
+				TextRange selection( TextRange::fromString( file["selection"] ) );
+				editorSplitter->loadAsyncFileFromPathInNewTab(
+					path, pool,
+					[curTabWidget, selection, totalToLoad, currentPage]( UICodeEditor* editor,
+																		 const std::string& ) {
+						editor->getDocument().setSelection( selection );
+						editor->scrollToCursor();
+						if ( curTabWidget->getTabCount() == totalToLoad )
+							curTabWidget->setTabSelected(
+								eeclamp<Int32>( currentPage, 0, curTabWidget->getTabCount() - 1 ) );
+					},
+					curTabWidget );
+			} else if ( file["type"] == "terminal" ) {
+				app->createNewTerminal( file.contains( "title" ) ? file["title"] : "",
+										curTabWidget );
+
+				if ( curTabWidget->getTabCount() == totalToLoad )
+					curTabWidget->setTabSelected(
+						eeclamp<Int32>( currentPage, 0, curTabWidget->getTabCount() - 1 ) );
+			}
 		}
 	} else if ( j["type"] == "splitter" ) {
-		UISplitter* splitter = editorSplitter->splitEditor(
+		UISplitter* splitter = editorSplitter->split(
 			j["orientation"] == "horizontal" ? UICodeEditorSplitter::SplitDirection::Right
 											 : UICodeEditorSplitter::SplitDirection::Bottom,
 			curTabWidget->getTabSelected()->getOwnedWidget()->asType<UICodeEditor>(), false );
@@ -317,9 +339,9 @@ static void loadDocuments( UICodeEditorSplitter* editorSplitter, std::shared_ptr
 		if ( nullptr == splitter )
 			return;
 
-		loadDocuments( editorSplitter, pool, j["first"], curTabWidget );
+		loadDocuments( editorSplitter, pool, j["first"], curTabWidget, app );
 		UITabWidget* tabWidget = splitter->getLastWidget()->asType<UITabWidget>();
-		loadDocuments( editorSplitter, pool, j["last"], tabWidget );
+		loadDocuments( editorSplitter, pool, j["last"], tabWidget, app );
 
 		splitter->setSplitPartition( StyleSheetLength( j["split"] ) );
 	}
@@ -327,7 +349,7 @@ static void loadDocuments( UICodeEditorSplitter* editorSplitter, std::shared_ptr
 
 void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
 							 const std::string& configPath, ProjectDocumentConfig& docConfig,
-							 std::shared_ptr<ThreadPool> pool ) {
+							 std::shared_ptr<ThreadPool> pool, ecode::App* app ) {
 	FileSystem::dirAddSlashAtEnd( projectFolder );
 	std::string projectsPath( configPath + "projects" + FileSystem::getOSSlash() );
 	MD5::Result hash = MD5::fromString( projectFolder );
@@ -356,7 +378,7 @@ void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* ed
 		if ( j.is_discarded() )
 			return;
 		loadDocuments( editorSplitter, pool, j,
-					   editorSplitter->tabWidgetFromEditor( editorSplitter->getCurEditor() ) );
+					   editorSplitter->tabWidgetFromWidget( editorSplitter->getCurWidget() ), app );
 	} else {
 		// Old format
 		bool found;
@@ -392,4 +414,4 @@ void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* ed
 	}
 }
 
-}
+} // namespace ecode

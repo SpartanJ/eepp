@@ -84,7 +84,7 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
-										   const Uint32& propertyIndex = 0 );
+										   const Uint32& propertyIndex = 0 ) const;
 
 	bool getRowSearchByName() const;
 

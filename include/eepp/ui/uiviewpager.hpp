@@ -52,7 +52,7 @@ class EE_API UIViewPager : public UIWidget {
 	void setTimingFunction( const Ease::Interpolation& timingFunction );
 
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
-										   const Uint32& propertyIndex );
+										   const Uint32& propertyIndex ) const;
 
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 

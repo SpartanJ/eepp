@@ -195,7 +195,7 @@ function build_base_cpp_configuration( package_name )
 		buildoptions { "-Wall" }
 
 	filter "configurations:debug*"
-		defines { "DEBUG" }
+		defines { "DEBUG", "EE_DEBUG", "EE_MEMORY_MANAGER" }
 		symbols "On"
 		targetname ( package_name .. "-debug" )
 
@@ -816,6 +816,17 @@ workspace "eepp"
 		filter "system:not windows"
 			files { "src/thirdparty/efsw/src/efsw/platform/posix/*.cpp" }
 
+	project "eterm-static"
+		kind "StaticLib"
+		language "C++"
+		targetdir("libs/" .. os.target() .. "/")
+		incdirs { "include", "src/modules/eterm/include/","src/modules/eterm/src/" }
+		files { "src/modules/eterm/src/**.cpp" }
+		build_base_cpp_configuration( "eterm" )
+		filter "action:not vs*"
+			cppdialect "C++14"
+			buildoptions { "-Wall" }
+
 	-- Library
 	project "eepp-static"
 		kind "StaticLib"
@@ -915,13 +926,29 @@ workspace "eepp"
 		set_kind()
 		language "C++"
 		files { "src/tools/ecode/**.cpp" }
-		incdirs { "src/thirdparty/efsw/include", "src/thirdparty" }
-		links { "efsw-static" }
+		incdirs { "src/thirdparty/efsw/include", "src/thirdparty", "src/modules/eterm/include/" }
+		links { "efsw-static", "eterm-static" }
 		build_link_configuration( "ecode", true )
 		filter "system:macosx"
 			links { "CoreFoundation.framework", "CoreServices.framework" }
 		filter { "system:not windows", "system:not haiku" }
 			links { "pthread" }
+		filter "system:linux"
+			links { "util" }
+		filter "system:haiku"
+			links { "bsd" }
+
+	project "eterm"
+		set_kind()
+		language "C++"
+		incdirs { "src/modules/eterm/include/" }
+		files { "src/tools/eterm/**.cpp" }
+		links { "eterm-static" }
+		build_link_configuration( "eterm", true )
+		filter "system:linux"
+			links { "util" }
+		filter "system:haiku"
+			links { "bsd" }
 
 	project "eepp-texturepacker"
 		kind "ConsoleApp"

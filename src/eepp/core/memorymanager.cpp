@@ -19,18 +19,20 @@ static size_t sPeakMemoryUsage = 0;
 static AllocatedPointer sBiggestAllocation = AllocatedPointer( NULL, "", 0, 0 );
 static Mutex sAlloMutex;
 
-AllocatedPointer::AllocatedPointer( void* Data, const std::string& File, int Line, size_t Memory ) {
-	mData = Data;
-	mFile = File;
-	mLine = Line;
-	mMemory = Memory;
+AllocatedPointer::AllocatedPointer( void* data, const std::string& file, int line, size_t memory,
+									bool track ) {
+	mData = data;
+	mFile = file;
+	mLine = line;
+	mMemory = memory;
+	mTrack = track;
 }
 
-void* MemoryManager::addPointerInPlace( void* Place, const AllocatedPointer& aAllocatedPointer ) {
-	AllocatedPointerMapIt it = sMapPointers.find( Place );
+void* MemoryManager::addPointerInPlace( void* place, const AllocatedPointer& aAllocatedPointer ) {
+	AllocatedPointerMapIt it = sMapPointers.find( place );
 
 	if ( it != sMapPointers.end() ) {
-		removePointer( Place );
+		removePointer( place, aAllocatedPointer.mFile.c_str(), aAllocatedPointer.mLine );
 	}
 
 	return addPointer( aAllocatedPointer );
@@ -52,16 +54,23 @@ void* MemoryManager::addPointer( const AllocatedPointer& aAllocatedPointer ) {
 		sBiggestAllocation = aAllocatedPointer;
 	}
 
+	if ( aAllocatedPointer.mTrack )
+		eePRINTL( "Allocating pointer %p at '%s' %d", aAllocatedPointer.mData,
+				  aAllocatedPointer.mFile.c_str(), aAllocatedPointer.mLine );
+
 	return aAllocatedPointer.mData;
 }
 
-bool MemoryManager::removePointer( void* Data ) {
+bool MemoryManager::removePointer( void* data, const char* file, const size_t& line ) {
 	Lock l( sAlloMutex );
 
-	AllocatedPointerMapIt it = sMapPointers.find( Data );
+	AllocatedPointerMapIt it = sMapPointers.find( data );
+
+	if ( it->second.mTrack )
+		eePRINTL( "Deleting pointer %p at '%s' %d", data, file, line );
 
 	if ( it == sMapPointers.end() ) {
-		eePRINTL( "Trying to delete pointer %p created that does not exist!", Data );
+		eePRINTL( "Trying to delete pointer %p created that does not exist!", data );
 
 		return false;
 	}

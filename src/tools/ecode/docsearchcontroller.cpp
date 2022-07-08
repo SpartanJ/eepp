@@ -28,7 +28,7 @@ void DocSearchController::initSearchBar(
 	auto& kbind = mSearchBarLayout->getKeyBindings();
 	kbind.addKeybindsString( {
 		{ mApp->getKeybind( "repeat-find" ), "repeat-find" },
-		{ mApp->getKeybind( "find-prev" ), "find-prev" },
+		{ mApp->getKeybind( "find-prev" ), "find-prev" }
 	} );
 	kbind.addKeybindsStringUnordered( keybindings );
 
@@ -104,8 +104,8 @@ void DocSearchController::initSearchBar(
 		} );
 	mSearchBarLayout->addCommand( "close-searchbar", [&] {
 		hideSearchBar();
-		if ( mEditorSplitter->getCurEditor() )
-			mEditorSplitter->getCurEditor()->setFocus();
+		if ( mEditorSplitter->getCurWidget() )
+			mEditorSplitter->getCurWidget()->setFocus();
 		if ( mSearchState.editor ) {
 			if ( mEditorSplitter->editorExists( mSearchState.editor ) ) {
 				mSearchState.editor->setHighlightWord( "" );
@@ -155,11 +155,10 @@ void DocSearchController::initSearchBar(
 void DocSearchController::showFindView() {
 	mApp->hideLocateBar();
 	mApp->hideGlobalSearchBar();
-
-	UICodeEditor* editor = mEditorSplitter->getCurEditor();
-	if ( !editor )
+	if ( !mEditorSplitter->curEditorExistsAndFocused() )
 		return;
 
+	UICodeEditor* editor = mEditorSplitter->getCurEditor();
 	mSearchState.editor = editor;
 	mSearchState.range = TextRange();
 	mSearchState.caseSensitive =

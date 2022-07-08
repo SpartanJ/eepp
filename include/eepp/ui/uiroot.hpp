@@ -10,9 +10,10 @@ class EE_API UIRoot : public UIWidget {
 	static UIRoot* New();
 
 	std::string getPropertyString( const PropertyDefinition* propertyDef,
-								   const Uint32& propertyIndex );
+								   const Uint32& propertyIndex ) const;
 
 	bool applyProperty( const StyleSheetProperty& attribute );
+
   protected:
 	UIRoot();
 

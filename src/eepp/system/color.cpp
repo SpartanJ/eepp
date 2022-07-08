@@ -239,6 +239,28 @@ Colorf Color::toHsl() const {
 	return hsl;
 }
 
+Color Color::clone() const {
+	return Color( *this );
+}
+
+Color Color::invert() const {
+	Uint32 red = ( getValue() >> 24 ) & 0xFF;
+	Uint32 green = ( getValue() >> 16 ) & 0xFF;
+	Uint32 blue = ( getValue() >> 8 ) & 0xFF;
+	Uint32 alpha = ( getValue() >> 0 ) & 0xFF;
+	return Color( ( ~red ) & 0xFF, ( ~green ) & 0xFF, ( ~blue ) & 0xFF, alpha );
+}
+
+Color Color::div( int divisor, bool divAlpha ) {
+	Color c( *this );
+	c.r /= divisor;
+	c.g /= divisor;
+	c.b /= divisor;
+	if ( divAlpha )
+		c.a /= divisor;
+	return c;
+}
+
 std::string Color::toHexString( const bool& prependHashtag ) const {
 	std::stringstream stream;
 	if ( prependHashtag )

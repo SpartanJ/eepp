@@ -5,11 +5,11 @@
 
 namespace EE { namespace UI {
 
-UIBorderDrawable* UIBorderDrawable::New( UINode* owner ) {
+UIBorderDrawable* UIBorderDrawable::New( const UINode* owner ) {
 	return eeNew( UIBorderDrawable, ( owner ) );
 }
 
-UIBorderDrawable::UIBorderDrawable( UINode* owner ) :
+UIBorderDrawable::UIBorderDrawable( const UINode* owner ) :
 	Drawable( UIBORDERDRAWABLE ),
 	mOwner( owner ),
 	mVertexBuffer( VertexBuffer::New( VERTEX_FLAGS_PRIMITIVE, PRIMITIVE_TRIANGLE_STRIP ) ),

@@ -8,3 +8,7 @@
 ../../src/thirdparty/mbedtls/include
 /usr/include/freetype2/
 /usr/lib64/gcc/x86_64-suse-linux/10/include
+../../src/modules/eterm/src/
+../../src/modules/eterm/include/
+../../src/modules/eterm/include/eterm/ui
+../../src/modules/eterm/src/eterm/ui

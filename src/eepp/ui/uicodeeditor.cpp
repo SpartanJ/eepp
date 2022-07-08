@@ -562,7 +562,7 @@ const Color& UICodeEditor::getFontColor() const {
 	return mFontStyleConfig.getFontColor();
 }
 
-const Color& UICodeEditor::getFontSelectedColor() {
+const Color& UICodeEditor::getFontSelectedColor() const {
 	return mFontStyleConfig.getFontSelectedColor();
 }
 
@@ -887,7 +887,7 @@ void UICodeEditor::createDefaultContextMenuOptions( UIPopUpMenu* menu ) {
 
 	menuAdd( menu, "cut", "Cut", "cut", "cut" )->setEnabled( mDoc->hasSelection() );
 	menuAdd( menu, "copy", "Copy", "copy", "copy" )->setEnabled( mDoc->hasSelection() );
-	menuAdd( menu, "cut", "Paste", "paste", "paste" );
+	menuAdd( menu, "paste", "Paste", "paste", "paste" );
 	menuAdd( menu, "delete", "Delete", "delete-text", "delete-to-next-char" );
 	menu->addSeparator();
 	menuAdd( menu, "select_all", "Select All", "select-all", "select-all" );
@@ -1870,7 +1870,7 @@ bool UICodeEditor::applyProperty( const StyleSheetProperty& attribute ) {
 }
 
 std::string UICodeEditor::getPropertyString( const PropertyDefinition* propertyDef,
-											 const Uint32& propertyIndex ) {
+											 const Uint32& propertyIndex ) const {
 	if ( NULL == propertyDef )
 		return "";
 
@@ -2033,7 +2033,7 @@ Int64 UICodeEditor::getColFromXOffset( Int64 lineNumber, const Float& x ) const 
 }
 
 Float UICodeEditor::getLineHeight() const {
-	return mFont->getLineSpacing( getCharacterSize() );
+	return mFont->getFontHeight( getCharacterSize() );
 }
 
 Float UICodeEditor::getCharacterSize() const {

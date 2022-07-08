@@ -303,6 +303,11 @@ void Node::sendCommonEvent( const Uint32& event ) {
 	sendEvent( &CommonEvent );
 }
 
+void Node::sendTextEvent( const Uint32& event, const std::string& text ) {
+	TextEvent tevent( this, event, text );
+	sendEvent( &tevent );
+}
+
 Uint32 Node::onTextInput( const TextInputEvent& event ) {
 	sendEvent( &event );
 	return 0;

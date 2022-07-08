@@ -10,9 +10,9 @@ class UINode;
 
 class EE_API UIBorderDrawable : public Drawable {
   public:
-	static UIBorderDrawable* New( UINode* owner );
+	static UIBorderDrawable* New( const UINode* owner );
 
-	UIBorderDrawable( UINode* owner );
+	UIBorderDrawable( const UINode* owner );
 
 	virtual ~UIBorderDrawable();
 
@@ -79,7 +79,7 @@ class EE_API UIBorderDrawable : public Drawable {
 	const Borders& getBorders() const;
 
   protected:
-	UINode* mOwner;
+	const UINode* mOwner;
 	VertexBuffer* mVertexBuffer;
 	Borders mBorders;
 	BorderStr mBorderStr;

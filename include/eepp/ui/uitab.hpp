@@ -25,14 +25,14 @@ class EE_API UITab : public UISelectButton {
 
 	virtual void setTheme( UITheme* Theme );
 
-	virtual const String& getText();
+	virtual const String& getText() const;
 
 	virtual UIPushButton* setText( const String& text );
 
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
-										   const Uint32& propertyIndex = 0 );
+										   const Uint32& propertyIndex = 0 ) const;
 
 	UITabWidget* getTabWidget() const;
 

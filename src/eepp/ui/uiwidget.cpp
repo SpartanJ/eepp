@@ -7,6 +7,7 @@
 #include <eepp/ui/css/stylesheetspecification.hpp>
 #include <eepp/ui/css/transitiondefinition.hpp>
 #include <eepp/ui/uiborderdrawable.hpp>
+#include <eepp/ui/uieventdispatcher.hpp>
 #include <eepp/ui/uinodedrawable.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uistyle.hpp>
@@ -56,6 +57,10 @@ UIWidget::UIWidget( const std::string& tag ) :
 UIWidget::UIWidget() : UIWidget( "widget" ) {}
 
 UIWidget::~UIWidget() {
+	if ( mUISceneNode && mUISceneNode->getUIEventDispatcher() &&
+		 mUISceneNode->getUIEventDispatcher()->getNodeDragging() == this )
+		mUISceneNode->getUIEventDispatcher()->setNodeDragging( nullptr );
+
 	if ( !SceneManager::instance()->isShootingDown() && NULL != mUISceneNode )
 		mUISceneNode->onWidgetDelete( this );
 	eeSAFE_DELETE( mStyle );
@@ -379,7 +384,7 @@ void UIWidget::tooltipRemove() {
 	mTooltip = NULL;
 }
 
-Node* UIWidget::setSize( const Sizef& size ) {
+Sizef UIWidget::fitMinMaxSize( const Sizef& size ) const {
 	Sizef s( size );
 
 	if ( s.x < mMinSize.x )
@@ -412,10 +417,16 @@ Node* UIWidget::setSize( const Sizef& size ) {
 		s.y = eemin( s.y, length );
 	}
 
+	return s;
+}
+
+Node* UIWidget::setSize( const Sizef& size ) {
+	Sizef s( size );
+	s = fitMinMaxSize( s );
 	return UINode::setSize( s );
 }
 
-Sizef UIWidget::getCurrentMinSize() {
+Sizef UIWidget::getMinSize() {
 	Sizef s;
 
 	if ( s.x < mMinSize.x )
@@ -438,19 +449,19 @@ Sizef UIWidget::getCurrentMinSize() {
 	return s;
 }
 
-Sizef UIWidget::getCurrentMaxSize() {
+Sizef UIWidget::getMaxSize() {
 	Sizef s;
 
 	if ( !mMaxWidthEq.empty() ) {
 		Float length =
 			lengthFromValueAsDp( mMaxWidthEq, CSS::PropertyRelativeTarget::ContainingBlockWidth );
-		s.x = eemin( s.x, length );
+		s.x = eemax( s.x, length );
 	}
 
 	if ( !mMaxHeightEq.empty() ) {
 		Float length =
 			lengthFromValueAsDp( mMaxHeightEq, CSS::PropertyRelativeTarget::ContainingBlockHeight );
-		s.y = eemin( s.y, length );
+		s.y = eemax( s.y, length );
 	}
 
 	return s;
@@ -1276,12 +1287,12 @@ std::vector<UIWidget*> UIWidget::querySelectorAll( const std::string& selector )
 	return querySelectorAll( CSS::StyleSheetSelector( selector ) );
 }
 
-std::string UIWidget::getPropertyString( const std::string& property ) {
+std::string UIWidget::getPropertyString( const std::string& property ) const {
 	return getPropertyString( StyleSheetSpecification::instance()->getProperty( property ) );
 }
 
 std::string UIWidget::getPropertyString( const PropertyDefinition* propertyDef,
-										 const Uint32& propertyIndex ) {
+										 const Uint32& propertyIndex ) const {
 	if ( NULL == propertyDef )
 		return "";
 

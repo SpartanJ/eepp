@@ -185,7 +185,7 @@ UITextView* UITextView::setFontStyle( const Uint32& fontStyle ) {
 	return this;
 }
 
-const String& UITextView::getText() {
+const String& UITextView::getText() const {
 	if ( mFlags & UI_WORD_WRAP )
 		return mString;
 
@@ -265,7 +265,7 @@ UITextView* UITextView::setSelectionBackColor( const Color& color ) {
 	return this;
 }
 
-void UITextView::autoShrink() {
+void UITextView::autoWrap() {
 	if ( mFlags & UI_WORD_WRAP ) {
 		wrapText( mSize.getWidth() );
 	}
@@ -286,13 +286,25 @@ void UITextView::onAutoSize() {
 	}
 
 	if ( mWidthPolicy == SizePolicy::WrapContent ) {
-		setInternalPixelsWidth( (int)mTextCache->getTextWidth() + mPaddingPx.Left +
-								mPaddingPx.Right );
+		Float totW = (int)mTextCache->getTextWidth() + mPaddingPx.Left + mPaddingPx.Right;
+		if ( !getMaxWidthEq().empty() ) {
+			Float oldW = totW;
+			totW = eemin( totW, getMaxSize().getWidth() );
+			if ( oldW != totW )
+				clipEnable();
+		}
+		setInternalPixelsWidth( totW );
 	}
 
 	if ( mHeightPolicy == SizePolicy::WrapContent ) {
-		setInternalPixelsHeight( (int)mTextCache->getTextHeight() + mPaddingPx.Top +
-								 mPaddingPx.Bottom );
+		Float totH = (int)mTextCache->getTextHeight() + mPaddingPx.Top + mPaddingPx.Bottom;
+		if ( !getMaxHeightEq().empty() ) {
+			Float oldH = totH;
+			totH = eemin( totH, getMaxSize().getHeight() );
+			if ( oldH != totH )
+				clipEnable();
+		}
+		setInternalPixelsHeight( totH );
 	}
 }
 
@@ -593,7 +605,7 @@ void UITextView::recalculate() {
 	mFontLineCenter = eefloor(
 		(Float)( ( mTextCache->getFont()->getLineSpacing( fontHeight ) - fontHeight ) / 2 ) );
 
-	autoShrink();
+	autoWrap();
 	onAutoSize();
 	alignFix();
 	resetSelCache();
@@ -641,7 +653,7 @@ bool UITextView::applyProperty( const StyleSheetProperty& attribute ) {
 			if ( flags & UI_WORD_WRAP ) {
 				mFlags |= UI_WORD_WRAP;
 				flags &= ~UI_WORD_WRAP;
-				autoShrink();
+				autoWrap();
 			}
 
 			setFontStyle( flags );
@@ -652,7 +664,7 @@ bool UITextView::applyProperty( const StyleSheetProperty& attribute ) {
 				mFlags |= UI_WORD_WRAP;
 			else
 				mFlags &= ~UI_WORD_WRAP;
-			autoShrink();
+			autoWrap();
 			break;
 		case PropertyId::TextStrokeWidth:
 			setOutlineThickness( lengthFromValue( attribute ) );
@@ -681,7 +693,7 @@ bool UITextView::applyProperty( const StyleSheetProperty& attribute ) {
 }
 
 std::string UITextView::getPropertyString( const PropertyDefinition* propertyDef,
-										   const Uint32& propertyIndex ) {
+										   const Uint32& propertyIndex ) const {
 	if ( NULL == propertyDef )
 		return "";
 

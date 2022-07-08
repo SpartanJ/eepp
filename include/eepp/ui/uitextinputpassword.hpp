@@ -15,7 +15,7 @@ class EE_API UITextInputPassword : public UITextInput {
 
 	virtual void draw();
 
-	virtual const String& getText();
+	virtual const String& getText() const;
 
 	virtual UITextView* setText( const String& text );
 

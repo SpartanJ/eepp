@@ -9,10 +9,9 @@ jobs:
       MSBUILD_PATH: C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin\
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         fetch-depth: 2
-        ref: develop
     - name: Checkout submodules
       run: |
         git submodule update --init --recursive

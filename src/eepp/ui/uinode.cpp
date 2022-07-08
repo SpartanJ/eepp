@@ -670,8 +670,8 @@ Uint32 UINode::getForegroundRadius() const {
 	return NULL != mForeground ? mForeground->getBorderRadius() : 0;
 }
 
-UIBorderDrawable* UINode::setBorderEnabled( bool enabled ) {
-	writeFlag( UI_BORDER, enabled ? 1 : 0 );
+UIBorderDrawable* UINode::setBorderEnabled( bool enabled ) const {
+	const_cast<UINode*>( this )->writeFlag( UI_BORDER, enabled ? 1 : 0 );
 
 	if ( enabled && NULL == mBorder ) {
 		getBorder();
@@ -681,7 +681,7 @@ UIBorderDrawable* UINode::setBorderEnabled( bool enabled ) {
 		}
 	}
 
-	invalidateDraw();
+	const_cast<UINode*>( this )->invalidateDraw();
 
 	return NULL != mBorder ? mBorder : NULL;
 }
@@ -812,23 +812,23 @@ void UINode::clearBackground() {
 	eeSAFE_DELETE( mBackground );
 }
 
-UINodeDrawable* UINode::getBackground() {
+UINodeDrawable* UINode::getBackground() const {
 	if ( NULL == mBackground ) {
-		mBackground = UINodeDrawable::New( this );
+		mBackground = UINodeDrawable::New( const_cast<UINode*>( this ) );
 	}
 
 	return mBackground;
 }
 
-UINodeDrawable* UINode::getForeground() {
+UINodeDrawable* UINode::getForeground() const {
 	if ( NULL == mForeground ) {
-		mForeground = UINodeDrawable::New( this );
+		mForeground = UINodeDrawable::New( const_cast<UINode*>( this ) );
 	}
 
 	return mForeground;
 }
 
-UIBorderDrawable* UINode::getBorder() {
+UIBorderDrawable* UINode::getBorder() const {
 	if ( NULL == mBorder ) {
 		mBorder = UIBorderDrawable::New( this );
 		mBorder->setColor( Color::Transparent );
@@ -1221,7 +1221,7 @@ void UINode::setFocus() {
 
 Float UINode::getPropertyRelativeTargetContainerLength(
 	const CSS::PropertyRelativeTarget& relativeTarget, const Float& defaultValue,
-	const Uint32& propertyIndex ) {
+	const Uint32& propertyIndex ) const {
 	Float containerLength = defaultValue;
 	switch ( relativeTarget ) {
 		case PropertyRelativeTarget::ContainingBlockWidth:
@@ -1271,7 +1271,7 @@ Float UINode::getPropertyRelativeTargetContainerLength(
 
 Float UINode::lengthFromValue( const std::string& value,
 							   const PropertyRelativeTarget& relativeTarget,
-							   const Float& defaultValue, const Uint32& propertyIndex ) {
+							   const Float& defaultValue, const Uint32& propertyIndex ) const {
 	Float containerLength =
 		getPropertyRelativeTargetContainerLength( relativeTarget, defaultValue, propertyIndex );
 	return convertLength( CSS::StyleSheetLength( value, defaultValue ), containerLength );
@@ -1286,7 +1286,7 @@ Float UINode::lengthFromValue( const CSS::StyleSheetProperty& property,
 
 Float UINode::lengthFromValueAsDp( const std::string& value,
 								   const PropertyRelativeTarget& relativeTarget,
-								   const Float& defaultValue, const Uint32& propertyIndex ) {
+								   const Float& defaultValue, const Uint32& propertyIndex ) const {
 	Float containerLength =
 		getPropertyRelativeTargetContainerLength( relativeTarget, defaultValue, propertyIndex );
 	return convertLengthAsDp( CSS::StyleSheetLength::fromString( value, defaultValue ),
@@ -1294,7 +1294,7 @@ Float UINode::lengthFromValueAsDp( const std::string& value,
 }
 
 Float UINode::lengthFromValueAsDp( const CSS::StyleSheetProperty& property,
-								   const Float& defaultValue ) {
+								   const Float& defaultValue ) const {
 	return lengthFromValueAsDp( property.getValue(),
 								property.getPropertyDefinition()->getRelativeTarget(), defaultValue,
 								property.getIndex() );
@@ -1319,7 +1319,8 @@ void UINode::onSceneChange() {
 	}
 }
 
-Float UINode::convertLength( const CSS::StyleSheetLength& length, const Float& containerLength ) {
+Float UINode::convertLength( const CSS::StyleSheetLength& length,
+							 const Float& containerLength ) const {
 	Float elFontSize = 12;
 	Float rootFontSize = 12;
 
@@ -1348,7 +1349,7 @@ Float UINode::convertLength( const CSS::StyleSheetLength& length, const Float& c
 		}
 	} else if ( length.getUnit() == CSS::StyleSheetLength::Unit::Em ) {
 		if ( isWidget() ) {
-			std::string fontSizeStr( asType<UIWidget>()->getPropertyString(
+			std::string fontSizeStr( asConstType<UIWidget>()->getPropertyString(
 				CSS::StyleSheetSpecification::instance()->getProperty(
 					(Uint32)PropertyId::FontSize ) ) );
 			if ( !fontSizeStr.empty() ) {
@@ -1399,11 +1400,11 @@ Float UINode::convertLength( const CSS::StyleSheetLength& length, const Float& c
 }
 
 Float UINode::convertLengthAsDp( const CSS::StyleSheetLength& length,
-								 const Float& containerLength ) {
+								 const Float& containerLength ) const {
 	return PixelDensity::pxToDp( convertLength( length, containerLength ) );
 }
 
-UISceneNode* UINode::getUISceneNode() {
+UISceneNode* UINode::getUISceneNode() const {
 	return mUISceneNode;
 }
 

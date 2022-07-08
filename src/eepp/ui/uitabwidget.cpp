@@ -141,7 +141,7 @@ void UITabWidget::setStyleConfig( const StyleConfig& styleConfig ) {
 }
 
 std::string UITabWidget::getPropertyString( const PropertyDefinition* propertyDef,
-											const Uint32& propertyIndex ) {
+											const Uint32& propertyIndex ) const {
 	if ( NULL == propertyDef )
 		return "";
 
@@ -149,9 +149,9 @@ std::string UITabWidget::getPropertyString( const PropertyDefinition* propertyDe
 		case PropertyId::MaxTextLength:
 			return String::toString( getMaxTextLength() );
 		case PropertyId::MinTabWidth:
-			return String::fromFloat( getMinTabWidth(), "dp" );
+			return getMinTabWidth();
 		case PropertyId::MaxTabWidth:
-			return String::fromFloat( getMaxTabWidth(), "dp" );
+			return getMaxTabWidth();
 		case PropertyId::TabClosable:
 			return getTabsClosable() ? "true" : "false";
 		case PropertyId::TabsEdgesDiffSkin:
@@ -221,10 +221,10 @@ bool UITabWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			setMaxTextLength( attribute.asUint( 1 ) );
 			break;
 		case PropertyId::MinTabWidth:
-			setMinTabWidth( attribute.asDpDimension( this, "1" ) );
+			setMinTabWidth( attribute.asString() );
 			break;
 		case PropertyId::MaxTabWidth:
-			setMaxTabWidth( attribute.asDpDimension( this ) );
+			setMaxTabWidth( attribute.asString() );
 			break;
 		case PropertyId::TabClosable:
 			setTabsClosable( attribute.asBool() );
@@ -281,11 +281,11 @@ void UITabWidget::setMaxTextLength( const Uint32& maxTextLength ) {
 	}
 }
 
-Float UITabWidget::getMinTabWidth() const {
+std::string UITabWidget::getMinTabWidth() const {
 	return mStyleConfig.MinTabWidth;
 }
 
-void UITabWidget::setMinTabWidth( const Float& minTabWidth ) {
+void UITabWidget::setMinTabWidth( const std::string& minTabWidth ) {
 	if ( minTabWidth != mStyleConfig.MinTabWidth ) {
 		mStyleConfig.MinTabWidth = minTabWidth;
 		updateTabs();
@@ -293,11 +293,11 @@ void UITabWidget::setMinTabWidth( const Float& minTabWidth ) {
 	}
 }
 
-Float UITabWidget::getMaxTabWidth() const {
+std::string UITabWidget::getMaxTabWidth() const {
 	return mStyleConfig.MaxTabWidth;
 }
 
-void UITabWidget::setMaxTabWidth( const Float& maxTabWidth ) {
+void UITabWidget::setMaxTabWidth( const std::string& maxTabWidth ) {
 	if ( maxTabWidth != mStyleConfig.MaxTabWidth ) {
 		mStyleConfig.MaxTabWidth = maxTabWidth;
 		updateTabs();
@@ -464,6 +464,18 @@ UITabWidget* UITabWidget::add( UITab* tab ) {
 	sendEvent( &tabEvent );
 
 	return this;
+}
+
+UITab* UITabWidget::getTabFromOwnedWidget( const UIWidget* widget ) {
+	for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
+		if ( mTabs[i]->isType( UI_TYPE_TAB ) ) {
+			UITab* tTab = mTabs[i]->asType<UITab>();
+
+			if ( tTab->getOwnedWidget() == widget )
+				return tTab;
+		}
+	}
+	return nullptr;
 }
 
 UITab* UITabWidget::getTab( const Uint32& index ) {

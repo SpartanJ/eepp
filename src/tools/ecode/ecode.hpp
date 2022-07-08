@@ -13,6 +13,9 @@
 #include "widgetcommandexecuter.hpp"
 #include <eepp/ee.hpp>
 #include <efsw/efsw.hpp>
+#include <eterm/ui/uiterminal.hpp>
+
+using namespace eterm::UI;
 
 namespace ecode {
 
@@ -28,7 +31,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	void createWidgetTreeView();
 
-	void init( std::string file, const Float& pidelDensity, const std::string& colorScheme );
+	void init( std::string file, const Float& pidelDensity, const std::string& colorScheme,
+			   bool terminal );
 
 	void setAppTitle( const std::string& title );
 
@@ -76,6 +80,12 @@ class App : public UICodeEditorSplitter::Client {
 	bool isDirTreeReady() const;
 
 	NotificationCenter* getNotificationCenter() const;
+
+	void createNewTerminal( const std::string& title = "", UITabWidget* inTabWidget = nullptr );
+
+	std::map<KeyBindings::Shortcut, std::string> getAppKeybindings();
+
+	void fullscreenToggle();
 
   protected:
 	EE::Window::Window* mWindow{ nullptr };
@@ -130,6 +140,7 @@ class App : public UICodeEditorSplitter::Client {
 	std::string mCurrentProject;
 	FontTrueType* mFont{ nullptr };
 	FontTrueType* mFontMono{ nullptr };
+	FontTrueType* mFontMonoNerdFont{ nullptr };
 	efsw::FileWatcher* mFileWatcher{ nullptr };
 	FileSystemListener* mFileSystemListener{ nullptr };
 	Mutex mWatchesLock;
@@ -163,8 +174,6 @@ class App : public UICodeEditorSplitter::Client {
 	void updateEditorTabTitle( UICodeEditor* editor );
 
 	std::string titleFromEditor( UICodeEditor* editor );
-
-	bool tryTabClose( UICodeEditor* editor );
 
 	bool onCloseRequestCallback( EE::Window::Window* );
 
@@ -229,6 +238,8 @@ class App : public UICodeEditorSplitter::Client {
 	void onDocumentSelectionChange( UICodeEditor* editor, TextDocument& );
 
 	void onDocumentCursorPosChange( UICodeEditor* editor, TextDocument& );
+
+	void onWidgetFocusChange( UIWidget* widget );
 
 	void onCodeEditorFocusChange( UICodeEditor* editor );
 

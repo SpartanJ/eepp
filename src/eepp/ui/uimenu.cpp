@@ -587,7 +587,7 @@ void UIMenu::loadFromXmlNode( const pugi::xml_node& node ) {
 }
 
 std::string UIMenu::getPropertyString( const PropertyDefinition* propertyDef,
-									   const Uint32& propertyIndex ) {
+									   const Uint32& propertyIndex ) const {
 	if ( nullptr == propertyDef )
 		return "";
 

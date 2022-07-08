@@ -47,7 +47,7 @@ class EE_API UITextView : public UIWidget {
 
 	UITextView* setOutlineColor( const Color& outlineColor );
 
-	virtual const String& getText();
+	virtual const String& getText() const;
 
 	virtual UITextView* setText( const String& text );
 
@@ -86,7 +86,7 @@ class EE_API UITextView : public UIWidget {
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
-										   const Uint32& propertyIndex = 0 );
+										   const Uint32& propertyIndex = 0 ) const;
 
 	void setTextAlign( const Uint32& align );
 
@@ -96,7 +96,7 @@ class EE_API UITextView : public UIWidget {
 
 	const Vector2f& getRealAlignOffset() const;
 
-	protected:
+  protected:
 	Text* mTextCache;
 	String mString;
 	UIFontStyleConfig mFontStyleConfig;
@@ -119,7 +119,7 @@ class EE_API UITextView : public UIWidget {
 
 	virtual void onSizeChange();
 
-	virtual void autoShrink();
+	virtual void autoWrap();
 
 	virtual void onAutoSize();
 

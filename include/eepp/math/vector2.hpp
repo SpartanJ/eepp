@@ -3,6 +3,7 @@
 
 #include <cmath>
 #include <eepp/config.hpp>
+#include <eepp/math/math.hpp>
 
 namespace EE { namespace Math {
 
@@ -98,6 +99,12 @@ template <typename T> class Vector2 {
 
 	Vector2<T> floor() const;
 
+	Vector2<T> round() const;
+
+	Vector2<T> roundUp() const;
+
+	Vector2<T> roundDown() const;
+
 	Vector2<T> abs() const;
 
 	Vector2<Float> asFloat() const;
@@ -134,8 +141,8 @@ template <typename T> Vector2<T> Vector2<T>::sphericalLerp( const Vector2<T>& Ve
 	if ( omega ) {
 		T denom = 1 / eesin( omega );
 
-		return ( Vector2<T>( x, y ) * ( T )( eesin( ( 1 - Time ) * omega ) * denom ) +
-				 Vec * ( T )( eesin( Time * omega ) * denom ) );
+		return ( Vector2<T>( x, y ) * (T)( eesin( ( 1 - Time ) * omega ) * denom ) +
+				 Vec * (T)( eesin( Time * omega ) * denom ) );
 	} else {
 		return Vector2<T>( x, y );
 	}
@@ -384,6 +391,18 @@ template <typename T> Vector2<T> Vector2<T>::ceil() const {
 
 template <typename T> Vector2<T> Vector2<T>::floor() const {
 	return Vector2<T>( eefloor( x ), eefloor( y ) );
+}
+
+template <typename T> Vector2<T> Vector2<T>::round() const {
+	return Vector2<T>( Math::round( x ), Math::round( y ) );
+}
+
+template <typename T> Vector2<T> Vector2<T>::roundUp() const {
+	return Vector2<T>( Math::roundUp( x ), Math::roundUp( y ) );
+}
+
+template <typename T> Vector2<T> Vector2<T>::roundDown() const {
+	return Vector2<T>( Math::roundDown( x ), Math::roundDown( y ) );
 }
 
 template <typename T> Vector2<T> Vector2<T>::abs() const {

@@ -203,7 +203,7 @@ const Vector2f& UITextureRegion::getAlignOffset() const {
 }
 
 std::string UITextureRegion::getPropertyString( const PropertyDefinition* propertyDef,
-												const Uint32& propertyIndex ) {
+												const Uint32& propertyIndex ) const {
 	if ( NULL == propertyDef )
 		return "";
 

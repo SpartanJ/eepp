@@ -274,7 +274,7 @@ void UIRadioButton::setTextSeparation( const Int32& textSeparation ) {
 }
 
 std::string UIRadioButton::getPropertyString( const PropertyDefinition* propertyDef,
-											  const Uint32& propertyIndex ) {
+											  const Uint32& propertyIndex ) const {
 	if ( NULL == propertyDef )
 		return "";
 

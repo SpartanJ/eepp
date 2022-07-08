@@ -63,6 +63,16 @@ template <typename T> class tRECT {
 
 	T getHeight() const;
 
+	tRECT<T> ceil() const;
+
+	tRECT<T> floor() const;
+
+	tRECT<T> round() const;
+
+	tRECT<T> roundUp() const;
+
+	tRECT<T> roundDown() const;
+
 	void scale( T scale, const Vector2<T>& center );
 
 	void scale( T scale );
@@ -143,44 +153,44 @@ template <typename T> tRECT<T>& operator-=( tRECT<T>& R, tRECT<T> X ) {
 }
 
 template <typename T, typename Y> tRECT<T> operator*( const tRECT<T>& R, Y X ) {
-	return tRECT<T>( ( T )( (Y)R.Left * X ), ( T )( (Y)R.Top * X ), ( T )( (Y)R.Right * X ),
-					 ( T )( (Y)R.Bottom * X ) );
+	return tRECT<T>( (T)( (Y)R.Left * X ), (T)( (Y)R.Top * X ), (T)( (Y)R.Right * X ),
+					 (T)( (Y)R.Bottom * X ) );
 }
 
 template <typename T, typename Y> tRECT<T>& operator*=( tRECT<T>& R, Y X ) {
-	R.Left = ( T )( (Y)R.Left * X );
-	R.Top = ( T )( (Y)R.Top * X );
-	R.Right = ( T )( (Y)R.Right * X );
-	R.Bottom = ( T )( (Y)R.Bottom * X );
+	R.Left = (T)( (Y)R.Left * X );
+	R.Top = (T)( (Y)R.Top * X );
+	R.Right = (T)( (Y)R.Right * X );
+	R.Bottom = (T)( (Y)R.Bottom * X );
 	return R;
 }
 
 template <typename T, typename Y> tRECT<T>& operator*( tRECT<T>& R, Y X ) {
-	R.Left = ( T )( (Y)R.Left * X );
-	R.Top = ( T )( (Y)R.Top * X );
-	R.Right = ( T )( (Y)R.Right * X );
-	R.Bottom = ( T )( (Y)R.Bottom * X );
+	R.Left = (T)( (Y)R.Left * X );
+	R.Top = (T)( (Y)R.Top * X );
+	R.Right = (T)( (Y)R.Right * X );
+	R.Bottom = (T)( (Y)R.Bottom * X );
 	return R;
 }
 
 template <typename T, typename Y> tRECT<T> operator/( const tRECT<T>& R, Y X ) {
-	return tRECT<T>( ( T )( (Y)R.Left / X ), ( T )( (Y)R.Top / X ), ( T )( (Y)R.Right / X ),
-					 ( T )( (Y)R.Bottom / X ) );
+	return tRECT<T>( (T)( (Y)R.Left / X ), (T)( (Y)R.Top / X ), (T)( (Y)R.Right / X ),
+					 (T)( (Y)R.Bottom / X ) );
 }
 
 template <typename T, typename Y> tRECT<T>& operator/=( tRECT<T>& R, Y X ) {
-	R.Left = ( T )( (Y)R.Left / X );
-	R.Top = ( T )( (Y)R.Top / X );
-	R.Right = ( T )( (Y)R.Right / X );
-	R.Bottom = ( T )( (Y)R.Bottom / X );
+	R.Left = (T)( (Y)R.Left / X );
+	R.Top = (T)( (Y)R.Top / X );
+	R.Right = (T)( (Y)R.Right / X );
+	R.Bottom = (T)( (Y)R.Bottom / X );
 	return R;
 }
 
 template <typename T, typename Y> tRECT<T>& operator/( tRECT<T>& R, Y X ) {
-	R.Left = ( T )( (Y)R.Left / X );
-	R.Top = ( T )( (Y)R.Top / X );
-	R.Right = ( T )( (Y)R.Right / X );
-	R.Bottom = ( T )( (Y)R.Bottom / X );
+	R.Left = (T)( (Y)R.Left / X );
+	R.Top = (T)( (Y)R.Top / X );
+	R.Right = (T)( (Y)R.Right / X );
+	R.Bottom = (T)( (Y)R.Bottom / X );
 	return R;
 }
 
@@ -311,8 +321,8 @@ template <typename T> bool tRECT<T>::intersectCircle( Vector2<T> pos, const T& r
 }
 
 template <typename T> bool tRECT<T>::intersectCircles( const tRECT<T>& b ) const {
-	Float ra = ( Float )( Right - Left ) * 0.5f;
-	Float rb = ( Float )( b.Right - b.Left ) * 0.5f;
+	Float ra = (Float)( Right - Left ) * 0.5f;
+	Float rb = (Float)( b.Right - b.Left ) * 0.5f;
 	Float dist = ra + rb;
 	Float dx = ( b.Left + rb ) - ( Left + ra );
 	Float dy = ( b.Top + rb ) - ( Top + ra );
@@ -361,6 +371,29 @@ template <typename T> void tRECT<T>::scale( T scale ) {
 
 template <typename T> void tRECT<T>::scale( Vector2<T> scale ) {
 	scale( scale, getCenter() );
+}
+
+template <typename T> tRECT<T> tRECT<T>::ceil() const {
+	return tRECT<T>( eeceil( Left ), eeceil( Top ), eeceil( Right ), eeceil( Bottom ) );
+}
+
+template <typename T> tRECT<T> tRECT<T>::floor() const {
+	return tRECT<T>( eefloor( Left ), eefloor( Top ), eefloor( Right ), eefloor( Bottom ) );
+}
+
+template <typename T> tRECT<T> tRECT<T>::round() const {
+	return tRECT<T>( Math::round( Left ), Math::round( Top ), Math::round( Right ),
+					 Math::round( Bottom ) );
+}
+
+template <typename T> tRECT<T> tRECT<T>::roundUp() const {
+	return tRECT<T>( Math::roundUp( Left ), Math::roundUp( Top ), Math::roundUp( Right ),
+					 Math::roundUp( Bottom ) );
+}
+
+template <typename T> tRECT<T> tRECT<T>::roundDown() const {
+	return tRECT<T>( Math::roundDown( Left ), Math::roundDown( Top ), Math::roundDown( Right ),
+					 Math::roundDown( Bottom ) );
 }
 
 typedef tRECT<unsigned int> Rectu;

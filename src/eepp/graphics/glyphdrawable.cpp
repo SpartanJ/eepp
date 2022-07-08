@@ -38,6 +38,12 @@ void GlyphDrawable::draw( const Vector2f& position, const Sizef& size ) {
 						  mSrcRect.Top + mSrcRect.Bottom );
 	if ( mDrawMode == DrawMode::Image ) {
 		BR->batchQuad( position.x, position.y, size.getWidth(), size.getHeight() );
+	} else if ( mDrawMode == DrawMode::TextItalic ) {
+		Float x = position.x + mGlyphOffset.x;
+		Float y = position.y + mGlyphOffset.y;
+		Float italic = 0.208f * size.getWidth(); // 12 degrees
+		BR->batchQuadFree( x + italic, y, x, y + size.getHeight(), x + size.getWidth(),
+						   y + size.getHeight(), x + size.getWidth() + italic, y );
 	} else {
 		BR->batchQuad( position.x + mGlyphOffset.x, position.y + mGlyphOffset.y, size.getWidth(),
 					   size.getHeight() );
@@ -74,7 +80,7 @@ const Vector2f& GlyphDrawable::getGlyphOffset() const {
 }
 
 void GlyphDrawable::setGlyphOffset( const Vector2f& glyphOffset ) {
-	mGlyphOffset = glyphOffset;
+	mGlyphOffset = glyphOffset.roundDown();
 }
 
 const GlyphDrawable::DrawMode& GlyphDrawable::getDrawMode() const {

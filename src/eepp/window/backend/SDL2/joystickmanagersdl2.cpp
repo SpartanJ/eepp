@@ -44,10 +44,14 @@ void JoystickManagerSDL::openAsync() {
 			create( i );
 
 		mInit = true;
+
+		if ( mOpenCb )
+			mOpenCb();
 	}
 }
 
-void JoystickManagerSDL::open() {
+void JoystickManagerSDL::open( OpenCb openCb ) {
+	mOpenCb = openCb;
 	mAsyncInit.launch();
 }
 

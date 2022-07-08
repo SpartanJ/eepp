@@ -11,7 +11,8 @@
 	"warning_pattern_order": { "line": 3, "col": 4, "message": 2, "type": 1 },
 	"command": "jq -e . $FILENAME",
 	"expected_exitcodes": [1, 2, 3, 4],
-	"no_errors_exit_code": 0
+	"no_errors_exit_code": 0,
+	"use_tmp_folder": true
   },
   {
 	"file_patterns": ["%.js$", "%.ts$"],

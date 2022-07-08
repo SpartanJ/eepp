@@ -80,6 +80,15 @@ template <typename T> inline T roundUp( T r ) {
 	return ( r > 0.0f ) ? ceil( r ) : ceil( r - 0.5f );
 }
 
+/** Round the number always to the lower value */
+template <typename T> inline T roundDown( T x ) {
+	T ipart;
+	T fpart = std::modf( x, &ipart );
+	if ( fpart != 0.0 )
+		return fpart <= 0.5 ? std::floor( x ) : std::ceil( x );
+	return std::round( x );
+}
+
 /** @return The number of digits in a number. */
 template <typename T> static T countDigits( T num ) {
 	T count = 0;

@@ -113,7 +113,7 @@ BorderType Borders::toBorderType( const std::string& borderType ) {
 	return BorderType::Inside;
 }
 
-Sizef Borders::radiusFromString( UINode* node, const std::string& val ) {
+Sizef Borders::radiusFromString( const UINode* node, const std::string& val ) {
 	auto split = String::split( val, ' ' );
 	Sizef size;
 	size.x = node->lengthFromValue( split[0], CSS::PropertyRelativeTarget::LocalBlockRadiusWidth );

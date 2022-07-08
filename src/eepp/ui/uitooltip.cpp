@@ -336,7 +336,7 @@ void UITooltip::setFontStyleConfig( const UIFontStyleConfig& styleConfig ) {
 }
 
 std::string UITooltip::getPropertyString( const PropertyDefinition* propertyDef,
-										  const Uint32& propertyIndex ) {
+										  const Uint32& propertyIndex ) const {
 	if ( NULL == propertyDef )
 		return "";
 

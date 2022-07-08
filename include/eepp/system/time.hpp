@@ -39,7 +39,7 @@ class EE_API Time {
 	static const Time Zero; ///< Predefined "zero" time value
 
 	/** Converts the time into a human readable string. */
-	std::string toString();
+	std::string toString() const;
 
   private:
 	friend EE_API Time Seconds( double );

@@ -146,6 +146,9 @@ void EETest::init() {
 		KM = mWindow->getInput();
 		JM = KM->getJoystickManager();
 
+		if ( mJoyEnabled )
+			KM->getJoystickManager()->open();
+
 		PS.resize( 5 );
 
 		Scenes[0] = cb::Make0( this, &EETest::physicsUpdate );
@@ -901,7 +904,7 @@ void EETest::createNewUI() {
 		->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::Fixed )
 		->setSize( 0, 105 )
 		->setParent( lay2 );
-	lbox->addListBoxItems( {"This", "is", "a", "ListBox"} );
+	lbox->addListBoxItems( { "This", "is", "a", "ListBox" } );
 	lay2->setParent( layPar );
 	lay->setParent( layPar );
 
@@ -909,7 +912,7 @@ void EETest::createNewUI() {
 	drop->setLayoutMargin( Rectf( 10, 10, 10, 10 ) )
 		->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
 		->setParent( layWin );
-	drop->getListBox()->addListBoxItems( {"Car", "Bus", "Plane", "Submarine"} );
+	drop->getListBox()->addListBoxItems( { "Car", "Bus", "Plane", "Submarine" } );
 	drop->getListBox()->setSelected( 0 );
 	win->show();
 
@@ -1135,7 +1138,7 @@ void EETest::createDecoratedWindow() {
 	Button->addEventListener( Event::MouseClick, cb::Make1( this, &EETest::onButtonClick ) );
 
 	mUIWindow->setKeyBindingCommand( "button-click", [&] { addFlyingIcon(); } );
-	mUIWindow->addKeyBinding( {KEY_C, KEYMOD_LALT}, "button-click" );
+	mUIWindow->addKeyBinding( { KEY_C, KEYMOD_LALT }, "button-click" );
 
 	UITabWidget* TabWidget = UITabWidget::New();
 	TabWidget->setLayoutMargin( Rectf( 5, 5, 5, 5 ) )
@@ -1601,12 +1604,12 @@ void EETest::screen2() {
 	if ( mUseShaders )
 		mShaderProgram->unbind();
 
-	TNP[3]->draw( HWidth - 128, HHeight, 0, Vector2f::One, Color( 255, 255, 255, 150 ), BlendMode::Alpha(),
-				  RENDER_ISOMETRIC );
+	TNP[3]->draw( HWidth - 128, HHeight, 0, Vector2f::One, Color( 255, 255, 255, 150 ),
+				  BlendMode::Alpha(), RENDER_ISOMETRIC );
 	TNP[3]->draw( HWidth - 128, HHeight - 128, 0, Vector2f::One, Color( 255, 255, 255, 50 ),
 				  BlendMode::Alpha(), RENDER_ISOMETRIC );
-	TNP[3]->draw( HWidth - 128, HHeight, 0, Vector2f::One, Color( 255, 255, 255, 50 ), BlendMode::Alpha(),
-				  RENDER_ISOMETRIC_VERTICAL );
+	TNP[3]->draw( HWidth - 128, HHeight, 0, Vector2f::One, Color( 255, 255, 255, 50 ),
+				  BlendMode::Alpha(), RENDER_ISOMETRIC_VERTICAL );
 	TNP[3]->draw( HWidth, HHeight, 0, Vector2f::One, Color( 255, 255, 255, 50 ), BlendMode::Alpha(),
 				  RENDER_ISOMETRIC_VERTICAL_NEGATIVE );
 
@@ -1692,7 +1695,7 @@ void EETest::screen2() {
 		PR.setColor( Color( 255, 255, 0, 255 ) );
 
 	PR.setFillMode( DRAW_LINE );
-	PR.drawCircle( Vector2f( Mousef.x, Mousef.y ), 80.f, ( Uint32 )( Ang / 3 ) );
+	PR.drawCircle( Vector2f( Mousef.x, Mousef.y ), 80.f, (Uint32)( Ang / 3 ) );
 	PR.drawTriangle( Triangle2f( Vector2f( Mousef.x, Mousef.y - 10.f ),
 								 Vector2f( Mousef.x - 10.f, Mousef.y + 10.f ),
 								 Vector2f( Mousef.x + 10.f, Mousef.y + 10.f ) ) );
@@ -1760,8 +1763,8 @@ void EETest::screen4() {
 		mVBO->unbind();
 
 		mFBOText.setAlign( TEXT_ALIGN_CENTER );
-		mFBOText.draw( 128.f - ( Float )( Int32 )( mFBOText.getTextWidth() * 0.5f ),
-					   25.f - ( Float )( Int32 )( mFBOText.getTextHeight() * 0.5f ) );
+		mFBOText.draw( 128.f - (Float)(Int32)( mFBOText.getTextWidth() * 0.5f ),
+					   25.f - (Float)(Int32)( mFBOText.getTextHeight() * 0.5f ) );
 	}
 
 	Vector2f center( mFBO->getWidth() * 0.5f, mFBO->getHeight() * 0.5f );
@@ -1916,7 +1919,9 @@ void EETest::render() {
 
 void EETest::input() {
 	KM->update();
-	JM->update();
+
+	if ( mJoyEnabled )
+		JM->update();
 
 	Mouse = KM->getMousePos();
 	Mousef = Vector2f( (Float)Mouse.x, (Float)Mouse.y );
@@ -2017,9 +2022,9 @@ void EETest::input() {
 	if ( KM->isKeyUp( KEY_6 ) && KM->isControlPressed() )
 		setScreen( 5 );
 
-	Joystick* Joy = JM->getJoystick( 0 );
+	Joystick* Joy = mJoyEnabled ? JM->getJoystick( 0 ) : NULL;
 
-	if ( mJoyEnabled && NULL != Joy ) {
+	if ( NULL != Joy ) {
 		if ( Joy->isButtonDown( 0 ) )
 			KM->injectButtonPress( EE_BUTTON_LEFT );
 		if ( Joy->isButtonDown( 1 ) )

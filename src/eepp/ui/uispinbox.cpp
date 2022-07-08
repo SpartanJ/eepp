@@ -283,7 +283,7 @@ void UISpinBox::onPaddingChange() {
 }
 
 std::string UISpinBox::getPropertyString( const PropertyDefinition* propertyDef,
-										  const Uint32& propertyIndex ) {
+										  const Uint32& propertyIndex ) const {
 	if ( NULL == propertyDef )
 		return "";
 

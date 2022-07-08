@@ -557,7 +557,7 @@ Uint32 UISlider::onMessage( const NodeMessage* Msg ) {
 }
 
 std::string UISlider::getPropertyString( const PropertyDefinition* propertyDef,
-										 const Uint32& propertyIndex ) {
+										 const Uint32& propertyIndex ) const {
 	if ( NULL == propertyDef )
 		return "";
 

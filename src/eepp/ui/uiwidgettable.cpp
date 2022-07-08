@@ -191,7 +191,7 @@ void UIWidgetTable::updateHScroll() {
 
 			Int32 ScrollH = mTotalWidth - mContainer->getSize().getWidth();
 
-			Int32 HScrolleable = ( Uint32 )( mHScrollBar->getValue() * ScrollH );
+			Int32 HScrolleable = (Uint32)( mHScrollBar->getValue() * ScrollH );
 
 			mHScrollInit = -HScrolleable;
 		} else {
@@ -270,7 +270,7 @@ void UIWidgetTable::updateScroll( bool FromScrollChange ) {
 
 	if ( Clipped && mSmoothScroll ) {
 		if ( Scrolleable >= 0 )
-			RelPos = ( Uint32 )( mVScrollBar->getValue() * Scrolleable );
+			RelPos = (Uint32)( mVScrollBar->getValue() * Scrolleable );
 		else
 			RelPos = 0;
 
@@ -308,7 +308,7 @@ void UIWidgetTable::updateScroll( bool FromScrollChange ) {
 		RelPosMax = (Uint32)mItems.size();
 
 		if ( mItemsNotVisible > 0 ) {
-			RelPos = ( Uint32 )( mVScrollBar->getValue() * mItemsNotVisible );
+			RelPos = (Uint32)( mVScrollBar->getValue() * mItemsNotVisible );
 			RelPosMax = RelPos + VisibleItems;
 		}
 
@@ -529,7 +529,7 @@ void UIWidgetTable::setVerticalScrollMode( const ScrollBarMode& mode ) {
 	}
 }
 
-const ScrollBarMode& UIWidgetTable::getVerticalScrollMode() {
+const ScrollBarMode& UIWidgetTable::getVerticalScrollMode() const {
 	return mVScrollMode;
 }
 
@@ -551,7 +551,7 @@ void UIWidgetTable::setHorizontalScrollMode( const ScrollBarMode& mode ) {
 	}
 }
 
-const ScrollBarMode& UIWidgetTable::getHorizontalScrollMode() {
+const ScrollBarMode& UIWidgetTable::getHorizontalScrollMode() const {
 	return mHScrollMode;
 }
 
@@ -638,7 +638,7 @@ void UIWidgetTable::onPaddingChange() {
 void UIWidgetTable::onTouchDragValueChange( Vector2f diff ) {
 	if ( mVScrollBar->isEnabled() )
 		mVScrollBar->setValue( mVScrollBar->getValue() +
-							   ( -diff.y / ( Float )( ( mItems.size() - 1 ) * mRowHeight ) ) );
+							   ( -diff.y / (Float)( ( mItems.size() - 1 ) * mRowHeight ) ) );
 
 	if ( mHScrollBar->isEnabled() )
 		mHScrollBar->setValue( mHScrollBar->getValue() + ( -diff.x / mTotalWidth ) );
@@ -655,7 +655,7 @@ void UIWidgetTable::updatePageStep() {
 }
 
 std::string UIWidgetTable::getPropertyString( const PropertyDefinition* propertyDef,
-											  const Uint32& propertyIndex ) {
+											  const Uint32& propertyIndex ) const {
 	if ( NULL == propertyDef )
 		return "";
 

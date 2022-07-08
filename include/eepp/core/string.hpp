@@ -121,7 +121,8 @@ class EE_API String {
 	 * splitting, detects functions, arrays, braces and quotes for the splitting. */
 	static std::vector<std::string> split( const std::string& str, const std::string& delims,
 										   const std::string& delimsPreserve = "",
-										   const std::string& quote = "\"" );
+										   const std::string& quote = "\"",
+										   const bool& removeQuotes = false );
 
 	/** Joins a string vector into a single string */
 	static std::string join( const std::vector<std::string>& strArray, const Int8& joinchar = ' ',

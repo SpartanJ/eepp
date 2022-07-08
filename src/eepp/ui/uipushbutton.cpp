@@ -54,8 +54,6 @@ UIPushButton::UIPushButton( const std::string& tag,
 	mTextBox->addEventListener( Event::OnTextChanged, cb );
 	mTextBox->addEventListener( Event::OnVisibleChange, cb );
 
-	onSizeChange();
-
 	applyDefaultTheme();
 }
 
@@ -102,12 +100,39 @@ void UIPushButton::onAutoSize() {
 		setInternalHeight( getSkinSize().getHeight() );
 	}
 
-	if ( mWidthPolicy == SizePolicy::WrapContent ) {
-		setInternalPixelsWidth( getContentSize().getWidth() );
-	} else if ( mFlags & UI_AUTO_SIZE ) {
-		Float minSize = getContentSize().getWidth();
-		if ( minSize > mSize.getWidth() )
-			setInternalPixelsWidth( minSize );
+	if ( mWidthPolicy == SizePolicy::WrapContent || ( mFlags & UI_AUTO_SIZE ) ) {
+		Sizef size = getContentSize();
+
+		if ( mWidthPolicy != SizePolicy::WrapContent && ( mFlags & UI_AUTO_SIZE ) &&
+			 size.getWidth() < mSize.getWidth() ) {
+			return;
+		}
+
+		Sizef fsize = fitMinMaxSize( size );
+
+		if ( size.getWidth() != fsize.getWidth() ) {
+			UIWidget* eiw = getExtraInnerWidget();
+			Float nonTextW =
+				( NULL != mIcon ? mIcon->getSize().getWidth() + mIcon->getLayoutMargin().Left +
+									  mIcon->getLayoutMargin().Right
+								: 0 ) +
+				( NULL != eiw && eiw->isVisible()
+					  ? eiw->getSize().getWidth() + eiw->getLayoutMargin().Left +
+							eiw->getLayoutMargin().Right
+					  : 0 ) +
+				getSkinSize().getWidth();
+
+			Float textW = mTextBox->getSize().getWidth();
+
+			if ( textW > fsize.getWidth() - nonTextW ) {
+				Float mw = eemax( 0.f, fsize.getWidth() - nonTextW );
+				getTextBox()->setMaxWidthEq( String::format( "%.0fdp", mw ) );
+			}
+			if ( getTextBox()->getTextWidth() > getTextBox()->getSize().getWidth() )
+				getTextBox()->setHorizontalAlign( UI_HALIGN_LEFT );
+		}
+
+		setInternalPixelsWidth( size.getWidth() );
 	}
 }
 
@@ -278,7 +303,7 @@ UIPushButton* UIPushButton::setText( const String& text ) {
 	return this;
 }
 
-const String& UIPushButton::getText() {
+const String& UIPushButton::getText() const {
 	return mTextBox->getText();
 }
 
@@ -371,6 +396,7 @@ Sizef UIPushButton::getContentSize() const {
 	if ( getSkin() )
 		size.x += PixelDensity::dpToPxI( getSkin()->getBorderSize().Left +
 										 getSkin()->getBorderSize().Right );
+
 	return size;
 }
 
@@ -387,7 +413,7 @@ void UIPushButton::setInnerWidgetOrientation(
 }
 
 std::string UIPushButton::getPropertyString( const PropertyDefinition* propertyDef,
-											 const Uint32& propertyIndex ) {
+											 const Uint32& propertyIndex ) const {
 	if ( NULL == propertyDef )
 		return "";
 

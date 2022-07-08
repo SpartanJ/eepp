@@ -56,12 +56,13 @@ void FileLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locateInpu
 	mLocateTable->setHeadersVisible( false );
 	mLocateTable->setVisible( false );
 	mLocateInput->addEventListener( Event::OnTextChanged, [&]( const Event* ) {
-		if ( mEditorSplitter->getCurEditor() &&
+		if ( mEditorSplitter->curEditorExistsAndFocused() &&
 			 String::startsWith( mLocateInput->getText(), String( "l " ) ) ) {
 			String number( mLocateInput->getText().substr( 2 ) );
 			Int64 val;
 			if ( String::fromString( val, number ) && val - 1 >= 0 ) {
-				mEditorSplitter->getCurEditor()->goToLine( { val - 1, 0 } );
+				if ( mEditorSplitter->curEditorExistsAndFocused() )
+					mEditorSplitter->getCurEditor()->goToLine( { val - 1, 0 } );
 				mLocateTable->setVisible( false );
 			}
 		} else {
@@ -75,7 +76,7 @@ void FileLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locateInpu
 		}
 	} );
 	mLocateInput->addEventListener( Event::OnPressEnter, [&]( const Event* ) {
-		KeyEvent keyEvent( mLocateTable, Event::KeyDown, KEY_RETURN, 0, 0 );
+		KeyEvent keyEvent( mLocateTable, Event::KeyDown, KEY_RETURN, SCANCODE_UNKNOWN, 0, 0 );
 		mLocateTable->forceKeyDown( keyEvent );
 	} );
 	mLocateInput->addEventListener( Event::KeyDown, [&]( const Event* event ) {
@@ -84,7 +85,8 @@ void FileLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locateInpu
 	} );
 	mLocateBarLayout->addCommand( "close-locatebar", [&] {
 		hideLocateBar();
-		mEditorSplitter->getCurEditor()->setFocus();
+		if ( mEditorSplitter->getCurWidget() )
+			mEditorSplitter->getCurWidget()->setFocus();
 	} );
 	mLocateBarLayout->getKeyBindings().addKeybindsString( {
 		{ "escape", "close-locatebar" },
@@ -148,4 +150,4 @@ void FileLocator::showLocateBar() {
 	updateLocateBar();
 }
 
-}
+} // namespace ecode

@@ -13,8 +13,10 @@ class EE_API GlyphDrawable : public DrawableResource {
 							   const std::string& resourceName = "" );
 
 	enum class DrawMode {
-		Image, ///< It will be treated as a simple image, no special offset is applied.
-		Text   ///< Will add the glyph offset corresponding to that character
+		Image,	   ///< It will be treated as a simple image, no special offset is applied.
+		Text,	   ///< Will add the glyph offset corresponding to that character
+		TextItalic ///< Will add the glyph offset corresponding to that character and simulate
+				   ///< italic skew
 	};
 
 	GlyphDrawable( Texture* texture, const Rect& srcRect, const std::string& resourceName = "" );
@@ -55,7 +57,7 @@ class EE_API GlyphDrawable : public DrawableResource {
 	Rectf mSrcRect;
 	Float mPixelDensity;
 	Vector2f mGlyphOffset;
-	DrawMode mDrawMode{DrawMode::Image};
+	DrawMode mDrawMode{ DrawMode::Image };
 };
 
 }} // namespace EE::Graphics

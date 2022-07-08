@@ -47,6 +47,10 @@ size_t GlobalSearchController::replaceInFiles( const std::string& replaceText,
 	return count;
 }
 
+void GlobalSearchController::showGlobalSearch() {
+	showGlobalSearch( isUsingSearchReplaceTree() );
+}
+
 void GlobalSearchController::initGlobalSearchBar(
 	UIGlobalSearchBar* globalSearchBar, const GlobalSearchBarConfig& globalSearchBarConfig,
 	std::unordered_map<std::string, std::string> keybindings ) {
@@ -132,8 +136,8 @@ void GlobalSearchController::initGlobalSearchBar(
 	} );
 	mGlobalSearchBarLayout->addCommand( "close-global-searchbar", [&] {
 		hideGlobalSearchBar();
-		if ( mEditorSplitter->getCurEditor() )
-			mEditorSplitter->getCurEditor()->setFocus();
+		if ( mEditorSplitter->getCurWidget() )
+			mEditorSplitter->getCurWidget()->setFocus();
 	} );
 	mGlobalSearchBarLayout->addCommand( "expand-all", [&] {
 		mGlobalSearchTree->expandAll();
@@ -159,7 +163,8 @@ void GlobalSearchController::initGlobalSearchBar(
 		if ( mGlobalSearchInput->hasFocus() ) {
 			mGlobalSearchBarLayout->execute( "search-in-files" );
 		} else {
-			KeyEvent keyEvent( mGlobalSearchTree, Event::KeyDown, KEY_RETURN, 0, 0 );
+			KeyEvent keyEvent( mGlobalSearchTree, Event::KeyDown, KEY_RETURN, SCANCODE_UNKNOWN, 0,
+							   0 );
 			mGlobalSearchTree->forceKeyDown( keyEvent );
 		}
 	} );
@@ -269,7 +274,7 @@ void GlobalSearchController::showGlobalSearch( bool searchReplace ) {
 	mGlobalSearchInput->setFocus();
 	mGlobalSearchLayout->setVisible( true );
 	UICheckBox* escapeSequenceChk = mGlobalSearchBarLayout->find<UICheckBox>( "escape_sequence" );
-	if ( mEditorSplitter->getCurEditor() &&
+	if ( mEditorSplitter->curEditorExistsAndFocused() &&
 		 mEditorSplitter->getCurEditor()->getDocument().hasSelection() ) {
 		auto& doc = mEditorSplitter->getCurEditor()->getDocument();
 		String text = doc.getSelectedText();
@@ -458,7 +463,7 @@ void GlobalSearchController::doGlobalSearch( String text, bool caseSensitive, bo
 }
 
 void GlobalSearchController::onLoadDone( const Variant& lineNum, const Variant& colNum ) {
-	if ( mEditorSplitter->getCurEditor() && lineNum.isValid() && colNum.isValid() &&
+	if ( mEditorSplitter->curEditorExistsAndFocused() && lineNum.isValid() && colNum.isValid() &&
 		 lineNum.is( Variant::Type::Int64 ) && colNum.is( Variant::Type::Int64 ) ) {
 		TextPosition pos{ lineNum.asInt64(), colNum.asInt64() };
 		mEditorSplitter->getCurEditor()->getDocument().setSelection( pos );
@@ -533,4 +538,4 @@ void GlobalSearchController::initGlobalSearchTree( UITreeViewGlobalSearch* searc
 	} );
 }
 
-}
+} // namespace ecode

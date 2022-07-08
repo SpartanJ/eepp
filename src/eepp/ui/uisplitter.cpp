@@ -130,7 +130,7 @@ bool UISplitter::applyProperty( const StyleSheetProperty& attribute ) {
 }
 
 std::string UISplitter::getPropertyString( const PropertyDefinition* propertyDef,
-										   const Uint32& propertyIndex ) {
+										   const Uint32& propertyIndex ) const {
 	if ( NULL == propertyDef )
 		return "";
 
@@ -188,13 +188,13 @@ void UISplitter::updateFromDrag() {
 	mSplitter->setEnabled( mSplitter->isVisible() );
 
 	if ( UIOrientation::Horizontal == mOrientation ) {
-		Float fMinSize = mFirstWidget ? mFirstWidget->getCurrentMinSize().getWidth() : 0.f;
+		Float fMinSize = mFirstWidget ? mFirstWidget->getMinSize().getWidth() : 0.f;
 
 		if ( mSplitter->getPosition().x < mPadding.Left + fMinSize ) {
 			mSplitter->setPosition( mPadding.Left + fMinSize, mSplitter->getPosition().y );
 		}
 
-		Float lMinSize = mLastWidget ? mLastWidget->getCurrentMinSize().getWidth() : 0.f;
+		Float lMinSize = mLastWidget ? mLastWidget->getMinSize().getWidth() : 0.f;
 
 		if ( mSplitter->getPosition().x + mSplitter->getSize().getWidth() >
 			 mDpSize.getWidth() - mPadding.Right - lMinSize ) {
@@ -206,13 +206,13 @@ void UISplitter::updateFromDrag() {
 		mSplitter->setPixelsSize( mSplitter->getPixelsSize().getWidth(),
 								  mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom );
 	} else {
-		Float fMinSize = mFirstWidget ? mFirstWidget->getCurrentMinSize().getHeight() : 0.f;
+		Float fMinSize = mFirstWidget ? mFirstWidget->getMinSize().getHeight() : 0.f;
 
 		if ( mSplitter->getPosition().y < mPadding.Top + fMinSize ) {
 			mSplitter->setPosition( mSplitter->getPosition().x, mPadding.Top + fMinSize );
 		}
 
-		Float lMinSize = mLastWidget ? mLastWidget->getCurrentMinSize().getHeight() : 0.f;
+		Float lMinSize = mLastWidget ? mLastWidget->getMinSize().getHeight() : 0.f;
 
 		if ( mSplitter->getPosition().y + mSplitter->getSize().getHeight() >
 			 mDpSize.getHeight() - mPadding.Bottom - lMinSize ) {
@@ -346,7 +346,7 @@ void UISplitter::updateLayout() {
 		mFirstWidget->setPixelsPosition( mPaddingPx.Left, mPaddingPx.Top );
 
 		if ( UIOrientation::Horizontal == mOrientation ) {
-			Float fMinSize = mFirstWidget ? mFirstWidget->getCurrentMinSize().getWidth() : 0.f;
+			Float fMinSize = mFirstWidget ? mFirstWidget->getMinSize().getWidth() : 0.f;
 
 			firstSplit = eemax( firstSplit, fMinSize );
 			secondSplit = totalSpace - firstSplit;
@@ -361,7 +361,7 @@ void UISplitter::updateLayout() {
 									  mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom );
 		} else {
 
-			Float fMinSize = mFirstWidget ? mFirstWidget->getCurrentMinSize().getHeight() : 0.f;
+			Float fMinSize = mFirstWidget ? mFirstWidget->getMinSize().getHeight() : 0.f;
 
 			firstSplit = eemax( firstSplit, fMinSize );
 			secondSplit = totalSpace - firstSplit;

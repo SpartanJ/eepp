@@ -219,7 +219,7 @@ void UICheckBox::setTextSeparation( const Int32& textSeparation ) {
 }
 
 std::string UICheckBox::getPropertyString( const PropertyDefinition* propertyDef,
-										   const Uint32& propertyIndex ) {
+										   const Uint32& propertyIndex ) const {
 	if ( NULL == propertyDef )
 		return "";
 

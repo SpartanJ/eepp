@@ -36,7 +36,7 @@ class EE_API UIImage : public UIWidget {
 	const Vector2f& getAlignOffset() const;
 
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
-										   const Uint32& propertyIndex = 0 );
+										   const Uint32& propertyIndex = 0 ) const;
 
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 

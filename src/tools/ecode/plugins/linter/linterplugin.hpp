@@ -5,6 +5,7 @@
 #include <eepp/system/mutex.hpp>
 #include <eepp/system/threadpool.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
+#include <memory>
 #include <set>
 using namespace EE;
 using namespace EE::System;
@@ -81,9 +82,12 @@ class LinterPlugin : public UICodeEditorPlugin {
 	Time mDelayTime{ Seconds( 0.5f ) };
 	Mutex mDocMutex;
 	Mutex mMatchesMutex;
+	std::mutex mWorkMutex;
+	std::condition_variable mWorkerCondition;
+	Int32 mWorkersCount{ 0 };
 
 	bool mReady{ false };
-	bool mClosing{ false };
+	bool mShuttingDown{ false };
 
 	void load( const std::string& lintersPath );
 
@@ -103,6 +107,6 @@ class LinterPlugin : public UICodeEditorPlugin {
 	std::string getMatchString( const LinterType& type );
 };
 
-}
+} // namespace ecode
 
 #endif // ECODE_LINTERPLUGIN_HPP

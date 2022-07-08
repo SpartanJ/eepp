@@ -42,9 +42,12 @@ class FormatterPlugin : public UICodeEditorPlugin {
 	std::shared_ptr<ThreadPool> mPool;
 	std::vector<Formatter> mFormatters;
 	std::set<UICodeEditor*> mEditors;
+	std::mutex mWorkMutex;
+	std::condition_variable mWorkerCondition;
+	Int32 mWorkersCount{ 0 };
 
 	bool mAutoFormatOnSave{ false };
-	bool mClosing{ false };
+	bool mShuttingDown{ false };
 	bool mReady{ false };
 
 	void load( const std::string& formatterPath );
@@ -56,6 +59,6 @@ class FormatterPlugin : public UICodeEditorPlugin {
 	FormatterPlugin::Formatter supportsFormatter( std::shared_ptr<TextDocument> doc );
 };
 
-}
+} // namespace ecode
 
 #endif // ECODE_FORMATTERPLUGIN_HPP

@@ -9,6 +9,8 @@ namespace EE { namespace Window {
 /** @brief A Joystick Manager class */
 class EE_API JoystickManager {
   public:
+	typedef std::function<void()> OpenCb;
+
 	JoystickManager();
 
 	virtual ~JoystickManager();
@@ -31,12 +33,13 @@ class EE_API JoystickManager {
 	virtual void close();
 
 	/** Open all the joysticks */
-	virtual void open();
+	virtual void open( OpenCb openCb = nullptr );
 
   protected:
 	friend class Joystick;
 
 	bool mInit;
+	OpenCb mOpenCb;
 
 	Joystick* mJoysticks[MAX_JOYSTICKS];
 

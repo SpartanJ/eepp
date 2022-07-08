@@ -2,7 +2,6 @@ package org.libsdl.app;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
 import java.util.Hashtable;
 import java.lang.reflect.Method;
 import java.lang.Math;
@@ -30,6 +29,8 @@ import android.hardware.*;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ApplicationInfo;
+
+import com.ensoft.eepp.BuildConfig;
 
 /**
     SDL Activity
@@ -143,7 +144,8 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
             // "SDL2_mixer",
             // "SDL2_net",
             // "SDL2_ttf",
-            "main"
+            // "main"
+            BuildConfig.SO_NAME
         };
     }
 

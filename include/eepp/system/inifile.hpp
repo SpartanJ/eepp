@@ -123,6 +123,10 @@ class EE_API IniFile {
 	int getValueI( std::string const keyname, std::string const valuename,
 				   int const defValue = 0 ) const;
 
+	/** Gets the value as an unsigned long */
+	unsigned long getValueU( std::string const keyname, std::string const valuename,
+							 unsigned long const defValue = 0 ) const;
+
 	/** Gets the value as boolean */
 	bool getValueB( std::string const keyname, std::string const valuename,
 					bool const defValue = false ) const;
@@ -163,6 +167,15 @@ class EE_API IniFile {
 	 */
 	bool setValueI( std::string const keyname, std::string const valuename, int const value,
 					bool create = true );
+
+	/** Sets a unsigned long value from a keyname and a valuename
+	 *	@param keyname The key name
+	 *	@param valuename The value name
+	 *	@param value The value to assign
+	 *	@param create If true it will create the keyname if doesn't exists
+	 */
+	bool setValueU( std::string const keyname, std::string const valuename,
+					unsigned long const value, bool create = true );
 
 	/** Sets a boolean value from a keyname and a valuename
 	 *	@param keyname The key name
