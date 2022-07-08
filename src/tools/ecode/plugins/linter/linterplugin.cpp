@@ -271,10 +271,12 @@ void LinterPlugin::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 			data += buffer.substr( 0, bytesRead );
 		} while ( bytesRead != 0 && subprocess_alive( &subprocess ) && !mShuttingDown );
 
-		if ( subprocess_alive( &subprocess ) && !mShuttingDown )
-			subprocess_join( &subprocess, &returnCode );
-		else
-			returnCode = subprocess.return_status;
+		if ( mShuttingDown ) {
+			subprocess_terminate( &subprocess );
+			return;
+		}
+
+		subprocess_join( &subprocess, &returnCode );
 		subprocess_destroy( &subprocess );
 
 		if ( linter.hasNoErrorsExitCode && linter.noErrorsExitCode == returnCode ) {
