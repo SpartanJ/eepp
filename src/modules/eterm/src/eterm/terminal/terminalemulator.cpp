@@ -580,7 +580,7 @@ char* TerminalEmulator::getsel( void ) const {
 }
 
 bool TerminalEmulator::hasSelection() const {
-	return mSel.ob.x != -1;
+	return mSel.mode == SEL_READY;
 }
 
 std::string TerminalEmulator::getSelection() const {
@@ -682,6 +682,16 @@ void TerminalEmulator::kscrollup( const TerminalArg* a ) {
 	}
 }
 
+void TerminalEmulator::kscrollto( const TerminalArg* a ) {
+	int n = a->i;
+
+	if ( 0 <= n && n <= mTerm.histi ) {
+		mTerm.scr = n;
+		selscroll( 0, n );
+		tfulldirt();
+	}
+}
+
 int TerminalEmulator::tisaltscr() {
 	return IS_SET( MODE_ALTSCREEN );
 }
@@ -699,6 +709,10 @@ void TerminalEmulator::clearHistory() {
 		free( mTerm.hist[i] );
 	mTerm.hist.clear();
 	mTerm.histi = 0;
+}
+
+int TerminalEmulator::scrollPos() {
+	return mTerm.scr;
 }
 
 bool TerminalEmulator::isScrolling() const {
@@ -2599,6 +2613,10 @@ bool TerminalEmulator::hasExited() const {
 
 int TerminalEmulator::getExitCode() const {
 	return mExitCode;
+}
+
+int TerminalEmulator::getHistorySize() const {
+	return mTerm.histi;
 }
 
 int TerminalEmulator::write( const char* buf, size_t buflen ) {

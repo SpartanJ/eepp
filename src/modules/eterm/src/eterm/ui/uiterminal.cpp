@@ -43,16 +43,35 @@ void UITerminal::draw() {
 UITerminal::UITerminal( const std::shared_ptr<TerminalDisplay>& terminalDisplay ) :
 	UIWidget( "terminal" ),
 	mKeyBindings( getUISceneNode()->getWindow()->getInput() ),
+	mVScroll( UIScrollBar::NewVertical() ),
 	mTerm( terminalDisplay ) {
 	mFlags |= UI_TAB_STOP;
 	mTerm->pushEventCallback( [&]( const TerminalDisplay::Event& event ) {
-		if ( event.type == TerminalDisplay::EventType::TITLE && getParent() ) {
-			if ( !mIsCustomTitle && mTitle != event.eventData ) {
-				mTitle = event.eventData;
-				sendTextEvent( Event::OnTitleChange, mTitle );
+		switch ( event.type ) {
+			case TerminalDisplay::EventType::TITLE: {
+				if ( !mIsCustomTitle && mTitle != event.eventData ) {
+					mTitle = event.eventData;
+					sendTextEvent( Event::OnTitleChange, mTitle );
+				}
+				break;
+			}
+			case TerminalDisplay::EventType::HISTORY_LENGTH_CHANGE: {
+				if ( !mTerm->getTerminal()->tisaltscr() )
+					onContentSizeChange();
+				break;
+			}
+			case TerminalDisplay::EventType::SCROLL_HISTORY: {
+				updateScrollPosition();
+				break;
+			}
+			default: {
 			}
 		}
 	} );
+
+	mVScroll->setParent( this );
+	mVScroll->addEventListener( Event::OnValueChange, [&]( const Event* ) { updateScroll(); } );
+
 	setCommand( "terminal-scroll-up-screen",
 				[&] { mTerm->action( TerminalShortcutAction::SCROLLUP_SCREEN ); } );
 	setCommand( "terminal-scroll-down-screen",
@@ -75,14 +94,197 @@ UITerminal::UITerminal( const std::shared_ptr<TerminalDisplay>& terminalDisplay 
 	subscribeScheduledUpdate();
 }
 
+int UITerminal::getContentSize() const {
+	if ( mTerm && mTerm->getTerminal() )
+		return mTerm->getTerminal()->getHistorySize() + mTerm->getTerminal()->getNumRows();
+	return 0;
+}
+
+void UITerminal::onContentSizeChange() {
+	int contentSize( getContentSize() );
+	int visibleArea( getVisibleArea() );
+
+	if ( ScrollBarMode::AlwaysOn == mVScrollMode ) {
+		mVScroll->setVisible( true )->setEnabled( true );
+	} else if ( ScrollBarMode::AlwaysOff == mVScrollMode ) {
+		mVScroll->setVisible( false )->setEnabled( false );
+	} else {
+		bool visible = !mTerm->getTerminal()->tisaltscr() && contentSize > visibleArea;
+		mVScroll->setVisible( visible )->setEnabled( visible );
+	}
+
+	mVScroll->setPixelsPosition( getPixelsSize().getWidth() - mVScroll->getPixelsSize().getWidth() -
+									 mPaddingPx.Right,
+								 mPaddingPx.Top );
+
+	mVScroll->setPixelsSize( mVScroll->getPixelsSize().getWidth(),
+							 getPixelsSize().getHeight() - mPaddingPx.Top - mPaddingPx.Bottom );
+
+	mVScroll->setPageStep( visibleArea / (Float)contentSize );
+
+	updateScrollPosition();
+	updateScroll();
+}
+
+const ScrollBarMode& UITerminal::getVerticalScrollMode() const {
+	return mVScrollMode;
+}
+
+const UITerminal::ScrollViewType& UITerminal::getViewType() const {
+	return mViewType;
+}
+
+void UITerminal::setViewType( const ScrollViewType& viewType ) {
+	if ( viewType != mViewType ) {
+		mViewType = viewType;
+		onContentSizeChange();
+	}
+}
+
+UIScrollBar* UITerminal::getVerticalScrollBar() const {
+	return mVScroll;
+}
+
+void UITerminal::onAlphaChange() {
+	UIWidget::onAlphaChange();
+	mVScroll->setAlpha( mAlpha );
+}
+
+void UITerminal::onPaddingChange() {
+	mTerm->setPadding(
+		{ mPaddingPx.Left, mPaddingPx.Top,
+		  mPaddingPx.Right +
+			  ( mViewType == Exclusive ? mVScroll->getPixelsSize().getWidth() : 0.f ),
+		  mPaddingPx.Bottom } );
+	onContentSizeChange();
+	UIWidget::onPaddingChange();
+}
+
+int UITerminal::getVisibleArea() const {
+	return ( mTerm && mTerm->getTerminal() ) ? mTerm->getTerminal()->getNumRows() : 0;
+}
+
+void UITerminal::updateScrollPosition() {
+	if ( mTerm && mTerm->getTerminal() )
+		mVScroll->setValue( 1.f - mTerm->getTerminal()->scrollPos() /
+									  (Float)mTerm->getTerminal()->getHistorySize(),
+							false );
+}
+
+int UITerminal::getScrollableArea() const {
+	int contentSize( getContentSize() );
+	int size( getVisibleArea() );
+	return contentSize - size;
+}
+
+void UITerminal::updateScroll() {
+	int totalScroll = getScrollableArea();
+	int initScroll( mScrollOffset );
+	mScrollOffset = 0;
+
+	if ( mVScroll->isVisible() && totalScroll > 0 )
+		mScrollOffset = totalScroll * mVScroll->getValue();
+
+	if ( initScroll != mScrollOffset )
+		onScrollChange();
+}
+
+void UITerminal::onScrollChange() {
+	if ( !mTerm || !mTerm->getTerminal() )
+		return;
+	int scrollTo = ( getScrollableArea() - mScrollOffset );
+	TerminalArg arg( scrollTo );
+	mTerm->getTerminal()->kscrollto( &arg );
+}
+
+void UITerminal::setVerticalScrollMode( const ScrollBarMode& Mode ) {
+	if ( Mode != mVScrollMode ) {
+		mVScrollMode = Mode;
+		onContentSizeChange();
+	}
+}
+
+std::string UITerminal::getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& propertyIndex ) const {
+	if ( NULL == propertyDef )
+		return "";
+
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::VScrollMode:
+			return getVerticalScrollMode() == ScrollBarMode::Auto
+					   ? "auto"
+					   : ( getVerticalScrollMode() == ScrollBarMode::AlwaysOn ? "on" : "off" );
+		case PropertyId::ScrollBarStyle:
+			return mVScroll->getScrollBarType() == UIScrollBar::NoButtons ? "no-buttons"
+																		  : "two-buttons";
+		case PropertyId::ScrollBarMode:
+			return getViewType() == Inclusive ? "inclusive" : "exclusive";
+		default:
+			return UIWidget::getPropertyString( propertyDef, propertyIndex );
+	}
+}
+
+bool UITerminal::applyProperty( const StyleSheetProperty& attribute ) {
+	if ( !checkPropertyDefinition( attribute ) )
+		return false;
+
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::ScrollBarMode: {
+			std::string val( attribute.asString() );
+			String::toLowerInPlace( val );
+			if ( "inclusive" == val || "inside" == val )
+				setViewType( Inclusive );
+			else if ( "exclusive" == val || "outside" == val )
+				setViewType( Exclusive );
+			break;
+		}
+		case PropertyId::VScrollMode: {
+			std::string val( attribute.asString() );
+			String::toLowerInPlace( val );
+
+			if ( "on" == val )
+				setVerticalScrollMode( ScrollBarMode::AlwaysOn );
+			else if ( "off" == val )
+				setVerticalScrollMode( ScrollBarMode::AlwaysOn );
+			else if ( "auto" == val )
+				setVerticalScrollMode( ScrollBarMode::Auto );
+			break;
+		}
+		case PropertyId::ScrollBarStyle: {
+			std::string val( attribute.asString() );
+			String::toLowerInPlace( val );
+
+			if ( "no-buttons" == val || "nobuttons" == val ) {
+				mVScroll->setScrollBarStyle( UIScrollBar::NoButtons );
+			} else if ( "two-buttons" == val || "twobuttons" == val ) {
+				mVScroll->setScrollBarStyle( UIScrollBar::TwoButtons );
+			}
+			break;
+		}
+		default:
+			return UIWidget::applyProperty( attribute );
+	}
+
+	return true;
+}
+
 const std::shared_ptr<TerminalDisplay>& UITerminal::getTerm() const {
 	return mTerm;
 }
 
 void UITerminal::scheduledUpdate( const Time& ) {
 	mTerm->update();
+
 	if ( mTerm->isDirty() )
 		invalidateDraw();
+
+	if ( ScrollBarMode::AlwaysOn == mVScrollMode ) {
+		mVScroll->setVisible( !mTerm->getTerminal()->tisaltscr() )
+			->setEnabled( !mTerm->getTerminal()->tisaltscr() );
+	} else if ( ScrollBarMode::Auto == mVScrollMode ) {
+		if ( mViewType == Inclusive && mMouseClock.getElapsedTime() > Seconds( 1 ) )
+			mVScroll->setVisible( false )->setEnabled( false );
+	}
 }
 
 const std::string& UITerminal::getTitle() const {
@@ -188,6 +390,13 @@ Uint32 UITerminal::onKeyUp( const KeyEvent& ) {
 }
 
 Uint32 UITerminal::onMouseMove( const Vector2i& position, const Uint32& flags ) {
+	if ( mViewType == Inclusive && ScrollBarMode::Auto == mVScrollMode ) {
+		mMouseClock.restart();
+		bool visible = !mTerm->getTerminal()->tisaltscr() && getContentSize() > getVisibleArea() &&
+					   !mTerm->getTerminal()->hasSelection();
+		mVScroll->setVisible( visible )->setEnabled( visible );
+	}
+
 	if ( getUISceneNode()->getUIEventDispatcher()->isNodeDragging() )
 		return 0;
 
@@ -231,7 +440,13 @@ void UITerminal::onPositionChange() {
 }
 
 void UITerminal::onSizeChange() {
-	mTerm->setSize( getPixelsSize() );
+	mTerm->setSize( { getPixelsSize().getWidth(), getPixelsSize().getHeight() } );
+	mTerm->setPadding(
+		{ mPaddingPx.Left, mPaddingPx.Top,
+		  mPaddingPx.Right +
+			  ( mViewType == Exclusive ? mVScroll->getPixelsSize().getWidth() : 0.f ),
+		  mPaddingPx.Bottom } );
+	onContentSizeChange();
 	UIWidget::onSizeChange();
 }
 

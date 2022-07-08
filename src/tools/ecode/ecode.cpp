@@ -1806,7 +1806,7 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 			 { { KEY_F3, KEYMOD_SHIFT }, "find-prev" },
 			 { { KEY_F12, KEYMOD_NONE }, "console-toggle" },
 			 { { KEY_F, KeyMod::getDefaultModifier() }, "find-replace" },
-			 { { KEY_Q, KeyMod::getDefaultModifier() }, "close-app" },
+			 { { KEY_Q, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "close-app" },
 			 { { KEY_O, KeyMod::getDefaultModifier() }, "open-file" },
 			 { { KEY_W, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "download-file-web" },
 			 { { KEY_O, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-folder" },
@@ -3001,7 +3001,8 @@ FontTrueType* App::loadFont( const std::string& name, std::string fontPath,
 	return FontTrueType::New( name, fontPath );
 }
 
-void App::init( std::string file, const Float& pidelDensity, const std::string& colorScheme ) {
+void App::init( std::string file, const Float& pidelDensity, const std::string& colorScheme,
+				bool terminal ) {
 	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
 	Display* currentDisplay = displayManager->getDisplayIndex( 0 );
 	mDisplayDPI = currentDisplay->getDPI();
@@ -3498,7 +3499,11 @@ void App::init( std::string file, const Float& pidelDensity, const std::string& 
 			file = "";
 #endif
 
-		initProjectTreeView( file );
+		if ( terminal && file.empty() ) {
+			createNewTerminal();
+		} else {
+			initProjectTreeView( file );
+		}
 
 		Log::info( "Init ProjectTreeView took: %.2fms",
 				   globalClock.getElapsedTime().asMilliseconds() );
@@ -3546,7 +3551,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	args::ValueFlag<std::string> prefersColorScheme(
 		parser, "prefers-color-scheme", "Set the preferred color scheme (\"light\" or \"dark\")",
 		{ 'c', "prefers-color-scheme" } );
-
+	args::Flag terminal( parser, "terminal", "Open a new terminal", { 't', "terminal", "folder" } );
 	try {
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 		parser.ParseCLI( argc, argv );
@@ -3569,7 +3574,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	appInstance = eeNew( App, () );
 	appInstance->init( filePos ? filePos.Get() : file.Get(),
 					   pixelDenstiyConf ? pixelDenstiyConf.Get() : 0.f,
-					   prefersColorScheme ? prefersColorScheme.Get() : "" );
+					   prefersColorScheme ? prefersColorScheme.Get() : "", terminal.Get() );
 	eeSAFE_DELETE( appInstance );
 
 	Engine::destroySingleton();

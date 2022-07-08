@@ -132,11 +132,11 @@ static const Scancode asciiScancodeTable[] = {
 
 class TerminalDisplay : public ITerminalDisplay {
   public:
-	enum class EventType { TITLE, ICON_TITLE, UNKNOWN };
+	enum class EventType { TITLE, ICON_TITLE, SCROLL_HISTORY, HISTORY_LENGTH_CHANGE, UNKNOWN };
 
 	struct Event {
 		EventType type{ EventType::UNKNOWN };
-		std::string eventData;
+		std::string eventData{};
 	};
 
 	typedef std::function<void( const TerminalDisplay::Event& event )> EventFunc;
@@ -217,9 +217,9 @@ class TerminalDisplay : public ITerminalDisplay {
 
 	bool isBlinkingCursor();
 
-	const Sizef& getPadding() const;
+	const Rectf& getPadding() const;
 
-	void setPadding( const Sizef& padding );
+	void setPadding( const Rectf& padding );
 
 	const std::shared_ptr<TerminalEmulator>& getTerminal() const;
 
@@ -247,7 +247,7 @@ class TerminalDisplay : public ITerminalDisplay {
 
 	Font* mFont{ nullptr };
 	Float mFontSize{ 12 };
-	Sizef mPadding;
+	Rectf mPadding;
 	Vector2f mPosition;
 	Sizef mSize;
 	std::vector<bool> mDirtyLines;

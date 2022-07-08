@@ -3,6 +3,7 @@
 
 #include <eepp/ui/keyboardshortcut.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
+#include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uiwidget.hpp>
 #include <eterm/terminal/terminaldisplay.hpp>
 
@@ -13,6 +14,8 @@ namespace eterm { namespace UI {
 
 class UITerminal : public UIWidget {
   public:
+	enum ScrollViewType { Inclusive, Exclusive };
+
 	static UITerminal* New( Font* font, const Float& fontSize, const Sizef& pixelsSize,
 							std::string program = "", const std::vector<std::string>& args = {},
 							const std::string& workingDir = "", const size_t& historySize = 10000,
@@ -72,6 +75,21 @@ class UITerminal : public UIWidget {
 
 	bool isUsingCustomTitle() const;
 
+	void setVerticalScrollMode( const ScrollBarMode& Mode );
+
+	const ScrollBarMode& getVerticalScrollMode() const;
+
+	UIScrollBar* getVerticalScrollBar() const;
+
+	const ScrollViewType& getViewType() const;
+
+	void setViewType( const ScrollViewType& viewType );
+
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
+
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& propertyIndex = 0 ) const;
+
   protected:
 	std::string mTitle;
 	bool mIsCustomTitle{ false };
@@ -82,6 +100,12 @@ class UITerminal : public UIWidget {
 	std::map<std::string, TerminalCommand> mCommands;
 	UIPopUpMenu* mCurrentMenu{ nullptr };
 	size_t mMenuIconSize{ 16 };
+	ScrollViewType mViewType{ Inclusive };
+	ScrollBarMode mVScrollMode{ ScrollBarMode::Auto };
+	UIScrollBar* mVScroll{ nullptr };
+	int mScrollOffset;
+	bool mScrollByBar{ false };
+	Clock mMouseClock;
 
 	UITerminal( const std::shared_ptr<TerminalDisplay>& terminalDisplay );
 
@@ -105,9 +129,19 @@ class UITerminal : public UIWidget {
 
 	virtual void onSizeChange();
 
+	virtual void onAlphaChange();
+
+	virtual void onPaddingChange();
+
 	virtual Uint32 onFocus();
 
 	virtual Uint32 onFocusLoss();
+
+	virtual void updateScroll();
+
+	virtual void onContentSizeChange();
+
+	virtual int getContentSize() const;
 
 	UIMenuItem* menuAdd( UIPopUpMenu* menu, const std::string& translateKey,
 						 const String& translateString, const std::string& icon,
@@ -118,6 +152,14 @@ class UITerminal : public UIWidget {
 	Drawable* findIcon( const std::string& name );
 
 	void createDefaultContextMenuOptions( UIPopUpMenu* menu );
+
+	int getScrollableArea() const;
+
+	int getVisibleArea() const;
+
+	virtual void updateScrollPosition();
+
+	virtual void onScrollChange();
 };
 
 }} // namespace eterm::UI

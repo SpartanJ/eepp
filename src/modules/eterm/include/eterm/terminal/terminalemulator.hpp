@@ -156,7 +156,7 @@ class TerminalEmulator final {
 
 	inline int getNumRows() const { return mTerm.row; }
 
-	inline int getHistorySize() const { return mTerm.histi; }
+	int getHistorySize() const;
 
 	int write( const char* buf, size_t buflen );
 
@@ -197,6 +197,8 @@ class TerminalEmulator final {
 
 	void kscrollup( const TerminalArg* a );
 
+	void kscrollto( const TerminalArg* a );
+
 	bool isScrolling() const;
 
 	void ttywrite( const char* s, size_t n, int may_echo );
@@ -208,6 +210,8 @@ class TerminalEmulator final {
 	int rowCount() const;
 
 	void clearHistory();
+
+	int scrollPos();
 
   private:
 	DpyPtr mDpy;

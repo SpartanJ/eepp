@@ -499,11 +499,11 @@ bool TerminalDisplay::isBlinkingCursor() {
 		   mCursorMode == Terminal::BlinkUnderline || mCursorMode == Terminal::BlinkBar;
 }
 
-const Sizef& TerminalDisplay::getPadding() const {
+const Rectf& TerminalDisplay::getPadding() const {
 	return mPadding;
 }
 
-void TerminalDisplay::setPadding( const Sizef& padding ) {
+void TerminalDisplay::setPadding( const Rectf& padding ) {
 	if ( mPadding != padding.ceil() ) {
 		mPadding = padding.ceil();
 		onSizeChange();
@@ -553,8 +553,12 @@ void TerminalDisplay::update() {
 		mClock.restart();
 		invalidateCursor();
 	}
-	if ( mTerminal )
+	if ( mTerminal ) {
+		int histi = mTerminal->getHistorySize();
 		mTerminal->update();
+		if ( histi != mTerminal->getHistorySize() )
+			sendEvent( { EventType::HISTORY_LENGTH_CHANGE } );
+	}
 }
 
 void TerminalDisplay::action( TerminalShortcutAction action ) {
@@ -574,31 +578,37 @@ void TerminalDisplay::action( TerminalShortcutAction action ) {
 		case TerminalShortcutAction::SCROLLUP_SCREEN: {
 			TerminalArg arg( (int)-1 );
 			mTerminal->kscrollup( &arg );
+			sendEvent( { EventType::SCROLL_HISTORY } );
 			break;
 		}
 		case TerminalShortcutAction::SCROLLDOWN_SCREEN: {
 			TerminalArg arg( (int)-1 );
 			mTerminal->kscrolldown( &arg );
+			sendEvent( { EventType::SCROLL_HISTORY } );
 			break;
 		}
 		case TerminalShortcutAction::SCROLLUP_ROW: {
 			TerminalArg arg( (int)1 );
 			mTerminal->kscrollup( &arg );
+			sendEvent( { EventType::SCROLL_HISTORY } );
 			break;
 		}
 		case TerminalShortcutAction::SCROLLDOWN_ROW: {
 			TerminalArg arg( (int)1 );
 			mTerminal->kscrolldown( &arg );
+			sendEvent( { EventType::SCROLL_HISTORY } );
 			break;
 		}
 		case TerminalShortcutAction::SCROLLUP_HISTORY: {
 			TerminalArg arg( (int)INT_MAX );
 			mTerminal->kscrollup( &arg );
+			sendEvent( { EventType::SCROLL_HISTORY } );
 			break;
 		}
 		case TerminalShortcutAction::SCROLLDOWN_HISTORY: {
 			TerminalArg arg( (int)INT_MAX );
 			mTerminal->kscrolldown( &arg );
+			sendEvent( { EventType::SCROLL_HISTORY } );
 			break;
 		}
 		case TerminalShortcutAction::FONTSIZE_GROW: {
@@ -682,7 +692,8 @@ void TerminalDisplay::drawCursor( int cx, int cy, TerminalGlyph g, int, int, Ter
 void TerminalDisplay::drawEnd() {}
 
 void TerminalDisplay::draw() {
-	draw( nullptr != mFrameBuffer ? mPadding : mPosition.floor() + mPadding );
+	draw( nullptr != mFrameBuffer ? Vector2f( mPadding.Left, mPadding.Top )
+								  : mPosition.floor() + Vector2f( mPadding.Left, mPadding.Top ) );
 }
 
 void TerminalDisplay::onMouseDoubleClick( const Vector2i& pos, const Uint32& flags ) {
@@ -1194,7 +1205,7 @@ void TerminalDisplay::draw( const Vector2f& pos ) {
 }
 
 Vector2i TerminalDisplay::positionToGrid( const Vector2i& pos ) {
-	Vector2f relPos = { pos.x - mPosition.x - mPadding.x, pos.y - mPosition.y - mPadding.y };
+	Vector2f relPos = { pos.x - mPosition.x - mPadding.Left, pos.y - mPosition.y - mPadding.Top };
 	int mouseX = 0;
 	int mouseY = 0;
 
@@ -1216,7 +1227,9 @@ Vector2i TerminalDisplay::positionToGrid( const Vector2i& pos ) {
 }
 
 void TerminalDisplay::onSizeChange() {
-	Sizei gridSize( gridSizeFromTermDimensions( mFont, mFontSize, mSize - mPadding * 2.f ) );
+	Sizei gridSize( gridSizeFromTermDimensions(
+		mFont, mFontSize,
+		mSize - Vector2f( mPadding.Left + mPadding.Right, mPadding.Top + mPadding.Bottom ) ) );
 	if ( mTerminal ) {
 		if ( gridSize.getWidth() != mTerminal->getNumColumns() ||
 			 gridSize.getHeight() != mTerminal->getNumRows() ) {
