@@ -630,6 +630,15 @@ void UICodeEditorSplitter::forEachWidgetStoppable( std::function<bool( UIWidget*
 	}
 }
 
+void UICodeEditorSplitter::forEachWidget( std::function<void( UIWidget* )> run ) const {
+	for ( auto tabWidget : mTabWidgets ) {
+		for ( size_t i = 0; i < tabWidget->getTabCount(); i++ ) {
+			if ( tabWidget->getTab( i )->getOwnedWidget()->isWidget() )
+				run( tabWidget->getTab( i )->getOwnedWidget()->asType<UIWidget>() );
+		}
+	}
+}
+
 void UICodeEditorSplitter::forEachDocStoppable( std::function<bool( TextDocument& )> run ) const {
 	for ( auto tabWidget : mTabWidgets ) {
 		for ( size_t i = 0; i < tabWidget->getTabCount(); i++ ) {
@@ -964,6 +973,15 @@ bool UICodeEditorSplitter::curWidgetExists() const {
 		return false;
 	} );
 	return found || mCurWidget == nullptr;
+}
+
+UICodeEditor* UICodeEditorSplitter::getSomeEditor() {
+	UICodeEditor* ed = nullptr;
+	forEachEditorStoppable( [&]( UICodeEditor* editor ) {
+		ed = editor;
+		return true;
+	} );
+	return ed;
 }
 
 UICodeEditor* UICodeEditorSplitter::getCurEditor() const {

@@ -117,6 +117,8 @@ class EE_API UICodeEditorSplitter {
 
 	void forEachWidgetStoppable( std::function<bool( UIWidget* )> run ) const;
 
+	void forEachWidget( std::function<void( UIWidget* )> run ) const;
+
 	void forEachEditor( std::function<void( UICodeEditor* )> run ) const;
 
 	void forEachDoc( std::function<void( TextDocument& doc )> run ) const;
@@ -170,6 +172,8 @@ class EE_API UICodeEditorSplitter {
 	void setCurentWidget( UIWidget* curWidget );
 
 	bool curWidgetExists() const;
+
+	UICodeEditor* getSomeEditor();
 
   protected:
 	UISceneNode* mUISceneNode{ nullptr };

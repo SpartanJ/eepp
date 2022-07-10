@@ -282,7 +282,8 @@ void UITerminal::scheduledUpdate( const Time& ) {
 		mVScroll->setVisible( !mTerm->getTerminal()->tisaltscr() )
 			->setEnabled( !mTerm->getTerminal()->tisaltscr() );
 	} else if ( ScrollBarMode::Auto == mVScrollMode ) {
-		if ( mViewType == Inclusive && mMouseClock.getElapsedTime() > Seconds( 1 ) )
+		if ( mViewType == Inclusive && mMouseClock.getElapsedTime() > Seconds( 1 ) &&
+			 !mVScroll->isDragging() )
 			mVScroll->setVisible( false )->setEnabled( false );
 	}
 }
@@ -301,6 +302,22 @@ void UITerminal::setTitle( const std::string& title ) {
 
 KeyBindings& UITerminal::getKeyBindings() {
 	return mKeyBindings;
+}
+
+Float UITerminal::getFontSize() const {
+	return mTerm->getFontSize();
+}
+
+void UITerminal::setFontSize( Float fontSize ) {
+	mTerm->setFontSize( fontSize );
+}
+
+Font* UITerminal::getFont() const {
+	return mTerm->getFont();
+}
+
+void UITerminal::setFont( Font* font ) {
+	mTerm->setFont( font );
 }
 
 void UITerminal::setKeyBindings( const KeyBindings& keyBindings ) {

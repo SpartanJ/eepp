@@ -1383,7 +1383,18 @@ void TerminalDisplay::onKeyDown( const Keycode& keyCode, const Uint32& /*chr*/, 
 	}
 }
 
-Float TerminalDisplay::getFontSize() const {
+Font* TerminalDisplay::getFont() const {
+	return mFont;
+}
+
+void TerminalDisplay::setFont( Font* font ) {
+	if ( mFont != font ) {
+		mFont = font;
+		onSizeChange();
+	}
+}
+
+const Float& TerminalDisplay::getFontSize() const {
 	return mFontSize;
 }
 

@@ -189,7 +189,11 @@ class TerminalDisplay : public ITerminalDisplay {
 	virtual void onKeyDown( const Keycode& keyCode, const Uint32& chr, const Uint32& mod,
 							const Scancode& scancode );
 
-	Float getFontSize() const;
+	Font* getFont() const;
+
+	void setFont( Font* font );
+
+	const Float& getFontSize() const;
 
 	void setFontSize( const Float& FontSize );
 

@@ -23,11 +23,12 @@ class App;
 enum class PanelPosition { Left, Right };
 
 struct UIConfig {
-	StyleSheetLength fontSize{ 12, StyleSheetLength::Dp };
+	StyleSheetLength fontSize{ 11, StyleSheetLength::Dp };
 	bool showSidePanel{ true };
 	PanelPosition panelPosition{ PanelPosition::Left };
 	std::string serifFont;
 	std::string monospaceFont;
+	std::string terminalFont;
 	ColorSchemePreference colorScheme{ ColorSchemePreference::Dark };
 };
 
@@ -43,7 +44,7 @@ struct WindowConfig {
 
 struct CodeEditorConfig {
 	std::string colorScheme{ "lite" };
-	StyleSheetLength fontSize{ 12, StyleSheetLength::Dp };
+	StyleSheetLength fontSize{ 11, StyleSheetLength::Dp };
 	bool showLineNumbers{ true };
 	bool showWhiteSpaces{ true };
 	bool highlightMatchingBracket{ true };
@@ -98,10 +99,15 @@ struct ProjectDocumentConfig {
 	ProjectDocumentConfig( const DocumentConfig& doc ) { this->doc = doc; }
 };
 
+struct TerminalConfig {
+	StyleSheetLength fontSize{ 11, StyleSheetLength::Dp };
+};
+
 struct AppConfig {
 	WindowConfig window;
 	CodeEditorConfig editor;
 	DocumentConfig doc;
+	TerminalConfig term;
 	UIConfig ui;
 	IniFile ini;
 	IniFile iniState;

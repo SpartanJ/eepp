@@ -43,6 +43,14 @@ class UITerminal : public UIWidget {
 
 	KeyBindings& getKeyBindings();
 
+	Float getFontSize() const;
+
+	void setFontSize( Float fontSize );
+
+	Font* getFont() const;
+
+	void setFont( Font* font );
+
 	void setKeyBindings( const KeyBindings& keyBindings );
 
 	void addKeyBindingString( const std::string& shortcut, const std::string& command );
@@ -65,7 +73,9 @@ class UITerminal : public UIWidget {
 
 	bool hasCommand( const std::string& command );
 
-	static std::string getExclusiveModeToggleCommandName() { return "toggle-exclusive-mode"; }
+	static std::string getExclusiveModeToggleCommandName() {
+		return "terminal-toggle-exclusive-mode";
+	}
 
 	bool getExclusiveMode() const;
 

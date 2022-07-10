@@ -74,6 +74,8 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	ui.panelPosition = panelPositionFromString( ini.getValue( "ui", "panel_position", "left" ) );
 	ui.serifFont = ini.getValue( "ui", "serif_font", "fonts/NotoSans-Regular.ttf" );
 	ui.monospaceFont = ini.getValue( "ui", "monospace_font", "fonts/DejaVuSansMono.ttf" );
+	ui.terminalFont =
+		ini.getValue( "ui", "terminal_font", "fonts/DejaVuSansMonoNerdFontComplete.ttf" );
 	ui.colorScheme = ini.getValue( "ui", "ui_color_scheme", "dark" ) == "light"
 						 ? ColorSchemePreference::Light
 						 : ColorSchemePreference::Dark;
@@ -114,6 +116,8 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	globalSearchBarConfig.wholeWord = ini.getValueB( "global_search_bar", "whole_word", false );
 	globalSearchBarConfig.escapeSequence =
 		ini.getValueB( "global_search_bar", "escape_sequence", false );
+
+	term.fontSize = ini.getValue( "terminal", "font_size", "11dp" );
 
 	iniInfo = FileInfo( ini.path() );
 }
@@ -163,6 +167,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValue( "ui", "panel_position", panelPositionToString( ui.panelPosition ) );
 	ini.setValue( "ui", "serif_font", ui.serifFont );
 	ini.setValue( "ui", "monospace_font", ui.monospaceFont );
+	ini.setValue( "ui", "terminal_font", ui.terminalFont );
 	ini.setValue( "ui", "ui_color_scheme",
 				  ui.colorScheme == ColorSchemePreference::Light ? "light" : "dark" );
 	ini.setValueB( "document", "trim_trailing_whitespaces", doc.trimTrailingWhitespaces );
@@ -197,6 +202,8 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "global_search_bar", "lua_pattern", globalSearchBarConfig.luaPattern );
 	ini.setValueB( "global_search_bar", "whole_word", globalSearchBarConfig.wholeWord );
 	ini.setValueB( "global_search_bar", "escape_sequence", globalSearchBarConfig.escapeSequence );
+
+	ini.setValue( "terminal", "font_size", term.fontSize.toString() );
 
 	ini.writeFile();
 	iniState.writeFile();

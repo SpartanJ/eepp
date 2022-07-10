@@ -59,6 +59,10 @@ class EE_API KeyBindings {
 
 	bool existsKeybind( const Shortcut& keys );
 
+	void removeCommandKeybind( const std::string& command );
+
+	void removeCommandsKeybind( const std::vector<std::string>& command );
+
 	std::string getCommandFromKeyBind( const Shortcut& keys );
 
 	std::string getCommandKeybindString( const std::string& command ) const;

@@ -60,6 +60,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	std::vector<std::string> getUnlockedCommands();
 
+	bool isUnlockedCommand( const std::string& command );
+
 	void saveAll();
 
 	ProjectDirectoryTree* getDirTree() const;
@@ -83,9 +85,11 @@ class App : public UICodeEditorSplitter::Client {
 
 	void createNewTerminal( const std::string& title = "", UITabWidget* inTabWidget = nullptr );
 
-	std::map<KeyBindings::Shortcut, std::string> getAppKeybindings();
+	std::map<KeyBindings::Shortcut, std::string> getTerminalKeybindings();
 
 	void fullscreenToggle();
+
+	void downloadFileWebDialog();
 
   protected:
 	EE::Window::Window* mWindow{ nullptr };
@@ -114,7 +118,7 @@ class App : public UICodeEditorSplitter::Client {
 	UIPopUpMenu* mProjectMenu{ nullptr };
 	UISplitter* mProjectSplitter{ nullptr };
 	UITabWidget* mSidePanel{ nullptr };
-	UICodeEditorSplitter* mEditorSplitter{ nullptr };
+	UICodeEditorSplitter* mSplitter{ nullptr };
 	std::string mInitColorScheme;
 	std::unordered_map<std::string, std::string> mKeybindings;
 	std::unordered_map<std::string, std::string> mKeybindingsInvert;
@@ -281,6 +285,12 @@ class App : public UICodeEditorSplitter::Client {
 	void createProjectTreeMenu( const FileInfo& file );
 
 	void setUIColorScheme( const ColorSchemePreference& colorScheme );
+
+	UIMessageBox* errorMsgBox( const String& msg );
+
+	UIMessageBox* fileAlreadyExistsMsgBox();
+
+	void renameFile( const FileInfo& file );
 };
 
 } // namespace ecode

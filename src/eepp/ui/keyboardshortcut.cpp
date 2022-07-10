@@ -96,7 +96,7 @@ KeyBindings::Shortcut KeyBindings::getShortcutFromString( const std::string& key
 }
 
 void KeyBindings::removeKeybind( const KeyBindings::Shortcut& keys ) {
-	auto it = mShortcuts.find( keys.key );
+	auto it = mShortcuts.find( keys.toUint64() );
 	if ( it != mShortcuts.end() ) {
 		mShortcuts.erase( it );
 	}
@@ -104,6 +104,19 @@ void KeyBindings::removeKeybind( const KeyBindings::Shortcut& keys ) {
 
 bool KeyBindings::existsKeybind( const KeyBindings::Shortcut& keys ) {
 	return mShortcuts.find( keys.toUint64() ) != mShortcuts.end();
+}
+
+void KeyBindings::removeCommandKeybind( const std::string& command ) {
+	auto kbIt = mKeybindingsInvert.find( command );
+	if ( kbIt != mKeybindingsInvert.end() ) {
+		removeKeybind( kbIt->second );
+		mKeybindingsInvert.erase( command );
+	}
+}
+
+void KeyBindings::removeCommandsKeybind( const std::vector<std::string>& commands ) {
+	for ( auto& cmd : commands )
+		removeCommandKeybind( cmd );
 }
 
 std::string KeyBindings::getCommandFromKeyBind( const KeyBindings::Shortcut& keys ) {
