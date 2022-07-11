@@ -150,7 +150,7 @@ class TerminalEmulator final {
 
 	inline uint32_t getDefaultCursorColor() const { return mDefaultCs; }
 
-	inline uint32_t getDefaultReverseCursorColor() const { return mDefaultrCs; }
+	inline uint32_t getDefaultReverseCursorColor() const { return mDefaultRCs; }
 
 	inline int getNumColumns() const { return mTerm.col; }
 
@@ -235,7 +235,7 @@ class TerminalEmulator final {
 	uint32_t mDefaultFg;
 	uint32_t mDefaultBg;
 	uint32_t mDefaultCs;
-	uint32_t mDefaultrCs;
+	uint32_t mDefaultRCs;
 
 	int mAllowAltScreen;
 	int mAllowWindowOps;

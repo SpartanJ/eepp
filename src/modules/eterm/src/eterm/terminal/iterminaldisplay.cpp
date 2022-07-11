@@ -44,7 +44,7 @@ void ITerminalDisplay::bell() {}
 
 void ITerminalDisplay::resetColors() {}
 
-int ITerminalDisplay::resetColor( Uint32 /*index*/, const char* /*name*/ ) {
+int ITerminalDisplay::resetColor( const Uint32& /*index*/, const char* /*name*/ ) {
 	return 0;
 }
 

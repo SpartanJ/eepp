@@ -13,6 +13,7 @@
 #include "widgetcommandexecuter.hpp"
 #include <eepp/ee.hpp>
 #include <efsw/efsw.hpp>
+#include <eterm/terminal/terminalcolorscheme.hpp>
 #include <eterm/ui/uiterminal.hpp>
 
 using namespace eterm::UI;
@@ -83,7 +84,9 @@ class App : public UICodeEditorSplitter::Client {
 
 	NotificationCenter* getNotificationCenter() const;
 
-	void createNewTerminal( const std::string& title = "", UITabWidget* inTabWidget = nullptr );
+	UITerminal* createNewTerminal( const std::string& title = "",
+								   UITabWidget* inTabWidget = nullptr,
+								   const std::string& workingDir = "" );
 
 	std::map<KeyBindings::Shortcut, std::string> getTerminalKeybindings();
 
@@ -126,6 +129,8 @@ class App : public UICodeEditorSplitter::Client {
 	std::unordered_map<std::string, std::string> mDocumentSearchKeybindings;
 	std::string mConfigPath;
 	std::string mPluginsPath;
+	std::string mColorSchemesPath;
+	std::string mTerminalColorSchemesPath;
 	std::string mKeybindingsPath;
 	Float mDisplayDPI{ 96 };
 	std::string mResPath;
@@ -156,6 +161,12 @@ class App : public UICodeEditorSplitter::Client {
 	std::unique_ptr<NotificationCenter> mNotificationCenter;
 	std::string mLastFileFolder;
 	ColorSchemePreference mUIColorScheme;
+	std::map<std::string, TerminalColorScheme> mTerminalColorSchemes;
+	std::string mTerminalCurrentColorScheme;
+
+	void applyTerminalColorScheme( const TerminalColorScheme& colorScheme );
+
+	void setTerminalColorScheme( const std::string& name );
 
 	void saveAllProcess();
 
@@ -291,6 +302,8 @@ class App : public UICodeEditorSplitter::Client {
 	UIMessageBox* fileAlreadyExistsMsgBox();
 
 	void renameFile( const FileInfo& file );
+
+	void loadTerminalColorSchemes();
 };
 
 } // namespace ecode

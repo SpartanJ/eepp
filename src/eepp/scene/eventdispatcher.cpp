@@ -119,6 +119,13 @@ void EventDispatcher::update( const Time& time ) {
 				Node* lastFocusNode = mFocusNode;
 
 				if ( NULL != mOverNode ) {
+					if ( mInput->getReleaseTrigger() & EE_BUTTONS_WUWD ) {
+						mOverNode->onMouseDown( mMousePosi,
+												mInput->getReleaseTrigger() & EE_BUTTONS_WUWD );
+						if ( NULL != mOverNode )
+							sendMsg( mOverNode, NodeMessage::MouseUp,
+									 mInput->getReleaseTrigger() & EE_BUTTONS_WUWD );
+					}
 					mOverNode->onMouseUp( mMousePosi, mInput->getReleaseTrigger() );
 					if ( NULL != mOverNode )
 						sendMsg( mOverNode, NodeMessage::MouseUp, mInput->getReleaseTrigger() );

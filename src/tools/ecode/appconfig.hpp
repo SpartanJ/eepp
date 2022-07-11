@@ -43,7 +43,7 @@ struct WindowConfig {
 };
 
 struct CodeEditorConfig {
-	std::string colorScheme{ "lite" };
+	std::string colorScheme{ "ecode" };
 	StyleSheetLength fontSize{ 11, StyleSheetLength::Dp };
 	bool showLineNumbers{ true };
 	bool showWhiteSpaces{ true };
@@ -100,6 +100,7 @@ struct ProjectDocumentConfig {
 };
 
 struct TerminalConfig {
+	std::string colorScheme{ "eterm" };
 	StyleSheetLength fontSize{ 11, StyleSheetLength::Dp };
 };
 

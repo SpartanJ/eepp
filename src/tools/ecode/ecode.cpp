@@ -333,6 +333,9 @@ void App::loadConfig() {
 		FileSystem::makeDir( mConfigPath );
 	FileSystem::dirAddSlashAtEnd( mConfigPath );
 	mPluginsPath = mConfigPath + "plugins";
+	mColorSchemesPath = mConfigPath + "colorschemes";
+	mTerminalColorSchemesPath =
+		mConfigPath + "terminal" + FileSystem::getOSSlash() + "colorschemes";
 	if ( !FileSystem::fileExists( mPluginsPath ) )
 		FileSystem::makeDir( mPluginsPath );
 	FileSystem::dirAddSlashAtEnd( mPluginsPath );
@@ -1867,6 +1870,9 @@ void App::onCodeEditorFocusChange( UICodeEditor* editor ) {
 void App::onColorSchemeChanged( const std::string& ) {
 	updateColorSchemeMenu();
 	mGlobalSearchController->updateColorScheme( mSplitter->getCurrentColorScheme() );
+	mNotificationCenter->addNotification(
+		String::format( i18n( "color_scheme_set", "Color scheme: %s" ).toUtf8().c_str(),
+						mSplitter->getCurrentColorScheme().getName().c_str() ) );
 }
 
 void App::onDocumentLoaded( UICodeEditor* editor, const std::string& path ) {
@@ -2133,13 +2139,44 @@ void App::fullscreenToggle() {
 		->setActive( !mWindow->isWindowed() );
 }
 
-void App::createNewTerminal( const std::string& title, UITabWidget* inTabWidget ) {
+void App::loadTerminalColorSchemes() {
+	auto colorSchemes =
+		TerminalColorScheme::loadFromFile( mResPath + "colorschemes/terminalcolorschemes.conf" );
+	if ( colorSchemes.empty() )
+		colorSchemes.emplace_back( TerminalColorScheme::getDefault() );
+	if ( FileSystem::isDirectory( mTerminalColorSchemesPath ) ) {
+		auto colorSchemesFiles = FileSystem::filesGetInPath( mTerminalColorSchemesPath );
+		for ( auto& file : colorSchemesFiles ) {
+			auto colorSchemesInFile = TerminalColorScheme::loadFromFile( file );
+			for ( auto& coloScheme : colorSchemesInFile )
+				colorSchemes.emplace_back( coloScheme );
+		}
+	}
+	for ( const auto& colorScheme : colorSchemes )
+		mTerminalColorSchemes.insert( { colorScheme.getName(), colorScheme } );
+	mTerminalCurrentColorScheme = mConfig.term.colorScheme;
+	if ( mTerminalColorSchemes.find( mTerminalCurrentColorScheme ) == mTerminalColorSchemes.end() )
+		mTerminalCurrentColorScheme = mTerminalColorSchemes.begin()->first;
+}
+
+UITerminal* App::createNewTerminal( const std::string& title, UITabWidget* inTabWidget,
+									const std::string& workingDir ) {
+#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+	UIMessageBox* msgBox = UIMessageBox::New(
+		UIMessageBox::OK,
+		i18n( "feature_not_supported_in_emscripten",
+			  "This feature is only supported in the desktop version of ecode." ) );
+	msgBox->showWhenReady();
+	return nullptr;
+#else
+	if ( mTerminalColorSchemes.empty() )
+		loadTerminalColorSchemes();
 	UITabWidget* tabWidget = nullptr;
 
 	if ( !inTabWidget ) {
 		UIWidget* curWidget = mSplitter->getCurWidget();
 		if ( !curWidget )
-			return;
+			return nullptr;
 		tabWidget = mSplitter->tabWidgetFromWidget( curWidget );
 	} else {
 		tabWidget = inTabWidget;
@@ -2149,18 +2186,19 @@ void App::createNewTerminal( const std::string& title, UITabWidget* inTabWidget 
 		if ( !mSplitter->getTabWidgets().empty() ) {
 			tabWidget = mSplitter->getTabWidgets()[0];
 		} else {
-			return;
+			return nullptr;
 		}
 	}
-	UITerminal* term =
-		UITerminal::New( mFontMonoNerdFont ? mFontMonoNerdFont : mFontMono,
-						 mConfig.term.fontSize.asPixels( 0, Sizef(), mDisplayDPI ), Sizef( 16, 16 ),
-						 "", {}, !mCurrentProject.empty() ? mCurrentProject : "" );
+	UITerminal* term = UITerminal::New(
+		mFontMonoNerdFont ? mFontMonoNerdFont : mFontMono,
+		mConfig.term.fontSize.asPixels( 0, Sizef(), mDisplayDPI ), Sizef( 16, 16 ), "", {},
+		!workingDir.empty() ? workingDir : ( !mCurrentProject.empty() ? mCurrentProject : "" ) );
 	auto ret = mSplitter->createWidgetInTabWidget(
 		tabWidget, term, title.empty() ? i18n( "shell", "Shell" ).toUtf8() : title, true );
 	mSplitter->removeUnusedTab( tabWidget );
 	ret.first->setIcon( findIcon( "filetype-bash" ) );
 	term->setTitle( title );
+	term->setColorScheme( mTerminalColorSchemes.at( mTerminalCurrentColorScheme ) );
 	term->addEventListener( Event::OnTitleChange, [&]( const Event* event ) {
 		if ( event->getNode() != mSplitter->getCurWidget() )
 			return;
@@ -2294,11 +2332,47 @@ void App::createNewTerminal( const std::string& title, UITabWidget* inTabWidget 
 	term->setCommand( "open-global-search", [&] { mGlobalSearchController->showGlobalSearch(); } );
 	term->setCommand( "open-locatebar", [&] { mFileLocator->showLocateBar(); } );
 	term->setCommand( "download-file-web", [&] { downloadFileWebDialog(); } );
+
+	term->setCommand( "switch-to-previous-colorscheme", [&] {
+		auto it = mTerminalColorSchemes.find( mTerminalCurrentColorScheme );
+		auto prev = std::prev( it, 1 );
+		if ( prev != mTerminalColorSchemes.end() ) {
+			setTerminalColorScheme( prev->first );
+		} else {
+			setTerminalColorScheme( mTerminalColorSchemes.rbegin()->first );
+		}
+	} );
+	term->setCommand( "switch-to-next-colorscheme", [&] {
+		auto it = mTerminalColorSchemes.find( mTerminalCurrentColorScheme );
+		setTerminalColorScheme( ++it != mTerminalColorSchemes.end()
+									? it->first
+									: mTerminalColorSchemes.begin()->first );
+	} );
 	// debug-draw-highlight-toggle
 	// debug-draw-boxes-toggle
 	// debug-draw-debug-data
 	// debug-widget-tree-view
 	term->setFocus();
+	return term;
+#endif
+}
+
+void App::applyTerminalColorScheme( const TerminalColorScheme& colorScheme ) {
+	mSplitter->forEachWidget( [colorScheme]( UIWidget* widget ) {
+		if ( widget->isType( UI_TYPE_TERMINAL ) )
+			widget->asType<UITerminal>()->setColorScheme( colorScheme );
+	} );
+}
+
+void App::setTerminalColorScheme( const std::string& name ) {
+	if ( name != mTerminalCurrentColorScheme ) {
+		mTerminalCurrentColorScheme = name;
+		mConfig.term.colorScheme = name;
+		applyTerminalColorScheme( mTerminalColorSchemes.at( mTerminalCurrentColorScheme ) );
+		mNotificationCenter->addNotification( String::format(
+			i18n( "terminal_color_scheme_set", "Terminal color scheme: %s" ).toUtf8().c_str(),
+			mTerminalCurrentColorScheme.c_str() ) );
+	}
 }
 
 void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
@@ -2973,6 +3047,29 @@ void App::createProjectTreeMenu( const FileInfo& file ) {
 		->setId( "rename" );
 	mProjectTreeMenu->add( i18n( "remove", "Remove..." ), findIcon( "delete-bin" ) )
 		->setId( "remove" );
+
+	if ( file.isDirectory() || file.isExecutable() ) {
+		mProjectTreeMenu->addSeparator();
+
+		if ( file.isDirectory() ) {
+			mProjectTreeMenu
+				->add( i18n( "execute_dir_in_terminal", "Open directory in terminal" ),
+					   findIcon( "filetype-bash" ) )
+				->setId( "execute_dir_in_terminal" );
+		} else if ( file.isExecutable() ) {
+			mProjectTreeMenu
+				->add( i18n( "execute_in_terminal", "Execute in terminal" ),
+					   findIcon( "filetype-bash" ) )
+				->setId( "execute_in_terminal" );
+		}
+	}
+
+	mProjectTreeMenu->addSeparator();
+	mProjectTreeMenu
+		->addCheckBox( i18n( "show_hidden_files", "Show hidden files" ),
+					   !mFileSystemModel->getDisplayConfig().ignoreHidden )
+		->setId( "show_hidden_files" );
+
 	mProjectTreeMenu->addEventListener( Event::OnItemClicked, [&, file]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
@@ -3059,6 +3156,18 @@ void App::createProjectTreeMenu( const FileInfo& file ) {
 			Engine::instance()->openURI( file.getDirectoryPath() );
 		} else if ( "open_folder" == id ) {
 			Engine::instance()->openURI( file.getFilepath() );
+		} else if ( "show_hidden_files" == id ) {
+			mFileSystemModel = FileSystemModel::New(
+				mFileSystemModel->getRootPath(), FileSystemModel::Mode::FilesAndDirectories,
+				{ true, true, !mFileSystemModel->getDisplayConfig().ignoreHidden } );
+			mProjectTreeView->setModel( mFileSystemModel );
+		} else if ( "execute_in_terminal" == id ) {
+			UITerminal* term = createNewTerminal( "", nullptr, file.getDirectoryPath() );
+			if ( !term )
+				return;
+			term->executeFile( file.getFilepath() );
+		} else if ( "execute_dir_in_terminal" == id ) {
+			createNewTerminal( "", nullptr, file.getDirectoryPath() );
 		}
 	} );
 
@@ -3606,6 +3715,7 @@ void App::init( std::string file, const Float& pidelDensity, const std::string& 
 			{ "folder-user", 0xed84 },
 			{ "help", 0xf045 },
 			{ "terminal", 0xf1f6 },
+			{ "earth", 0xec7a },
 		};
 		for ( const auto& icon : icons )
 			iconTheme->add( UIGlyphIcon::New( icon.first, iconFont, icon.second ) );
@@ -3673,10 +3783,17 @@ void App::init( std::string file, const Float& pidelDensity, const std::string& 
 		if ( !mConfig.ui.showSidePanel )
 			showSidePanel( mConfig.ui.showSidePanel );
 
-		mSplitter = UICodeEditorSplitter::New(
-			this, mUISceneNode,
-			SyntaxColorScheme::loadFromFile( mResPath + "colorschemes/colorschemes.conf" ),
-			mInitColorScheme );
+		auto colorSchemes(
+			SyntaxColorScheme::loadFromFile( mResPath + "colorschemes/colorschemes.conf" ) );
+		if ( FileSystem::isDirectory( mColorSchemesPath ) ) {
+			auto colorSchemesFiles = FileSystem::filesGetInPath( mColorSchemesPath );
+			for ( auto& file : colorSchemesFiles ) {
+				auto colorSchemesInFile = SyntaxColorScheme::loadFromFile( file );
+				for ( auto& coloScheme : colorSchemesInFile )
+					colorSchemes.emplace_back( coloScheme );
+			}
+		}
+		mSplitter = UICodeEditorSplitter::New( this, mUISceneNode, colorSchemes, mInitColorScheme );
 		mSplitter->setHideTabBarOnSingleTab( mConfig.editor.hideTabBarOnSingleTab );
 
 		Log::info( "Base UI took: %.2fms", globalClock.getElapsedTime().asMilliseconds() );

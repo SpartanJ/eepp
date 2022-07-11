@@ -10,6 +10,7 @@
 #include <eepp/window/window.hpp>
 #include <eterm/system/iprocessfactory.hpp>
 #include <eterm/terminal/iterminaldisplay.hpp>
+#include <eterm/terminal/terminalcolorscheme.hpp>
 #include <eterm/terminal/terminalemulator.hpp>
 
 #include <atomic>
@@ -119,16 +120,7 @@ class TerminalKeyMap {
 	}
 };
 
-constexpr int TerminalKeyModFlags_Any = 0xFFFFFFFF;
-
 extern TerminalKeyMap terminalKeyMap;
-
-static const Scancode asciiScancodeTable[] = {
-	SCANCODE_A, SCANCODE_B, SCANCODE_C,			  SCANCODE_D,	  SCANCODE_E,			SCANCODE_F,
-	SCANCODE_G, SCANCODE_H, SCANCODE_I,			  SCANCODE_J,	  SCANCODE_K,			SCANCODE_L,
-	SCANCODE_M, SCANCODE_N, SCANCODE_O,			  SCANCODE_P,	  SCANCODE_Q,			SCANCODE_R,
-	SCANCODE_S, SCANCODE_T, SCANCODE_U,			  SCANCODE_V,	  SCANCODE_W,			SCANCODE_X,
-	SCANCODE_Y, SCANCODE_Z, SCANCODE_LEFTBRACKET, SCANCODE_SLASH, SCANCODE_RIGHTBRACKET };
 
 class TerminalDisplay : public ITerminalDisplay {
   public:
@@ -155,7 +147,7 @@ class TerminalDisplay : public ITerminalDisplay {
 	virtual ~TerminalDisplay();
 
 	virtual void resetColors();
-	virtual int resetColor( Uint32 index, const char* name );
+	virtual int resetColor( const Uint32& index, const char* name );
 
 	virtual void setTitle( const char* title );
 	virtual void setIconTitle( const char* title );
@@ -239,10 +231,16 @@ class TerminalDisplay : public ITerminalDisplay {
 
 	Float getLineHeight() const;
 
+	const TerminalColorScheme& getColorScheme() const;
+
+	void setColorScheme( const TerminalColorScheme& colorScheme );
+
+	bool isAltScr() const;
+
   protected:
 	EE::Window::Window* mWindow;
 	std::vector<TerminalGlyph> mBuffer;
-	std::vector<std::pair<Color, std::string>> mColors;
+	std::vector<Color> mColors;
 	std::shared_ptr<TerminalEmulator> mTerminal;
 	mutable String mClipboard;
 	mutable std::string mClipboardUtf8;
@@ -264,12 +262,14 @@ class TerminalDisplay : public ITerminalDisplay {
 	bool mPasteNewlineFix{ true };
 	bool mFocus{ true };
 	bool mUseFrameBuffer{ true };
+	bool mAlreadyClickedLButton{ false };
 	bool mAlreadyClickedMButton{ false };
 	Clock mClock;
 	Clock mLastDoubleClick;
 	int mColumns{ 0 };
 	int mRows{ 0 };
 	FrameBuffer* mFrameBuffer{ nullptr };
+	TerminalColorScheme mColorScheme;
 
 	std::string mProgram;
 	std::vector<std::string> mArgs;

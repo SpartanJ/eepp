@@ -2533,7 +2533,7 @@ TerminalEmulator::TerminalEmulator( PtyPtr&& pty, ProcPtr&& process,
 	mDefaultFg( 7 ),
 	mDefaultBg( 0 ),
 	mDefaultCs( 7 ),
-	mDefaultrCs( 0 ),
+	mDefaultRCs( 0 ),
 	mAllowAltScreen( 1 ),
 	mAllowWindowOps( 1 ) {
 	memset( mBuf, 0, sizeof( mBuf ) );

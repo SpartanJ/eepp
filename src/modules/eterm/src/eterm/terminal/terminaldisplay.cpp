@@ -17,6 +17,13 @@ namespace eterm { namespace Terminal {
 #define DIV( n, d ) ( ( ( n ) + ( d ) / 2.0f ) / ( d ) )
 #define DIVI( n, d ) ( ( ( n ) + ( d ) / 2 ) / ( d ) )
 
+static const Scancode asciiScancodeTable[] = {
+	SCANCODE_A, SCANCODE_B, SCANCODE_C,			  SCANCODE_D,	  SCANCODE_E,			SCANCODE_F,
+	SCANCODE_G, SCANCODE_H, SCANCODE_I,			  SCANCODE_J,	  SCANCODE_K,			SCANCODE_L,
+	SCANCODE_M, SCANCODE_N, SCANCODE_O,			  SCANCODE_P,	  SCANCODE_Q,			SCANCODE_R,
+	SCANCODE_S, SCANCODE_T, SCANCODE_U,			  SCANCODE_V,	  SCANCODE_W,			SCANCODE_X,
+	SCANCODE_Y, SCANCODE_Z, SCANCODE_LEFTBRACKET, SCANCODE_SLASH, SCANCODE_RIGHTBRACKET };
+
 static Uint32 sanitizeMod( const Uint32& mod ) {
 	Uint32 smod = 0;
 	if ( mod & KEYMOD_CTRL )
@@ -267,13 +274,6 @@ TerminalKeyMap terminalKeyMap{
 	keys,	   eeARRAY_SIZE( keys ),	  platformKeys,	  eeARRAY_SIZE( platformKeys ),
 	shortcuts, eeARRAY_SIZE( shortcuts ), mouseShortcuts, eeARRAY_SIZE( mouseShortcuts ) };
 
-/* Terminal colors (16 first used in escape sequence) */
-// This is the customizable colorscheme
-static std::vector<std::string> colornames{ "#1e2127", "#e06c75", "#98c379", "#d19a66", "#61afef",
-											"#c678dd", "#56b6c2", "#abb2bf", "#5c6370", "#e06c75",
-											"#98c379", "#d19a66", "#61afef", "#c678dd", "#56b6c2",
-											"#ffffff", "#1e2127", "#abb2bf" };
-
 // This is the default Xterm palette
 static const Color colormapped[256] = {
 	Color( 0, 0, 0 ),		Color( 128, 0, 0 ),		Color( 0, 128, 0 ),
@@ -452,12 +452,12 @@ TerminalDisplay::TerminalDisplay( EE::Window::Window* window, Font* font, const 
 	mFont( font ),
 	mFontSize( fontSize ),
 	mSize( pixelsSize ),
-	mUseFrameBuffer( useFrameBuffer ) {
+	mUseFrameBuffer( useFrameBuffer ),
+	mColorScheme( TerminalColorScheme::getDefault() ) {
 	TerminalGlyph defaultGlyph;
 	defaultGlyph.mode = ATTR_INVISIBLE;
-	auto defaultColor = std::make_pair<Uint32, std::string>( 0U, "" );
 	mCursorGlyph = defaultGlyph;
-	mColors.resize( eeARRAY_SIZE( colormapped ), defaultColor );
+	mColors.resize( eeARRAY_SIZE( colormapped ), Color::Transparent );
 	mBuffer.resize( mColumns * mRows, defaultGlyph );
 	( (int&)mMode ) |= MODE_FOCUSED;
 
@@ -470,24 +470,24 @@ TerminalDisplay::TerminalDisplay( EE::Window::Window* window, Font* font, const 
 
 void TerminalDisplay::resetColors() {
 	for ( Uint32 i = 0; i < eeARRAY_SIZE( colormapped ); i++ )
-		resetColor( i, i < colornames.size() ? colornames[i].c_str() : nullptr );
+		resetColor( i, i < mColorScheme.getPaletteSize()
+						   ? mColorScheme.getPaletteIndex( i ).toHexString().c_str()
+						   : nullptr );
 }
 
-int TerminalDisplay::resetColor( Uint32 index, const char* name ) {
+int TerminalDisplay::resetColor( const Uint32& index, const char* name ) {
 	if ( !name && index < mColors.size() ) {
 		Color col = 0x000000FF;
 
 		if ( index < 256 )
 			col = colormapped[index];
 
-		mColors[index].first = col;
-		mColors[index].second = "";
+		mColors[index] = col;
 		return 0;
 	}
 
 	if ( index < mColors.size() ) {
-		mColors[index].first = Color::fromString( name );
-		mColors[index].second = name;
+		mColors[index] = Color::fromString( name );
 	}
 
 	return 1;
@@ -545,6 +545,20 @@ void TerminalDisplay::popEventCallback( const Uint32& id ) {
 
 Float TerminalDisplay::getLineHeight() const {
 	return mFont->getFontHeight( mFontSize );
+}
+
+const TerminalColorScheme& TerminalDisplay::getColorScheme() const {
+	return mColorScheme;
+}
+
+void TerminalDisplay::setColorScheme( const TerminalColorScheme& colorScheme ) {
+	mColorScheme = colorScheme;
+	resetColors();
+	invalidateLines();
+}
+
+bool TerminalDisplay::isAltScr() const {
+	return mEmulator && mEmulator->tisaltscr();
 }
 
 void TerminalDisplay::update() {
@@ -700,7 +714,7 @@ void TerminalDisplay::onMouseDoubleClick( const Vector2i& pos, const Uint32& fla
 	if ( flags & EE_BUTTON_LMASK )
 		mLastDoubleClick.restart();
 
-	if ( ( flags & EE_BUTTON_LMASK ) &&
+	if ( !isAltScr() && ( flags & EE_BUTTON_LMASK ) &&
 		 ( mTerminal->getSelectionMode() == TerminalSelectionMode::SEL_EMPTY ||
 		   mTerminal->getSelectionMode() == TerminalSelectionMode::SEL_IDLE ) ) {
 		auto gridPos{ positionToGrid( pos ) };
@@ -710,7 +724,7 @@ void TerminalDisplay::onMouseDoubleClick( const Vector2i& pos, const Uint32& fla
 }
 
 void TerminalDisplay::onMouseMove( const Vector2i& pos, const Uint32& flags ) {
-	if ( ( flags & EE_BUTTON_LMASK ) &&
+	if ( !isAltScr() && ( flags & EE_BUTTON_LMASK ) &&
 		 ( mTerminal->getSelectionMode() == TerminalSelectionMode::SEL_EMPTY ||
 		   mTerminal->getSelectionMode() == TerminalSelectionMode::SEL_READY ) ) {
 		auto gridPos{ positionToGrid( pos ) };
@@ -726,10 +740,10 @@ void TerminalDisplay::onMouseMove( const Vector2i& pos, const Uint32& flags ) {
 void TerminalDisplay::onMouseDown( const Vector2i& pos, const Uint32& flags ) {
 	auto gridPos{ positionToGrid( pos ) };
 
-	if ( ( flags & EE_BUTTON_LMASK ) &&
+	if ( !isAltScr() && ( flags & EE_BUTTON_LMASK ) &&
 		 mLastDoubleClick.getElapsedTime() < Milliseconds( 300.f ) ) {
 		mTerminal->selstart( gridPos.x, gridPos.y, SNAP_LINE );
-	} else if ( flags & EE_BUTTON_LMASK ) {
+	} else if ( !isAltScr() && ( flags & EE_BUTTON_LMASK ) ) {
 		if ( mTerminal->getSelectionMode() == TerminalSelectionMode::SEL_IDLE ) {
 			mTerminal->selstart( gridPos.x, gridPos.y, 0 );
 			invalidateLines();
@@ -752,12 +766,22 @@ void TerminalDisplay::onMouseDown( const Vector2i& pos, const Uint32& flags ) {
 			}
 		}
 	}
+	if ( ( flags & EE_BUTTON_LMASK ) ) {
+		if ( !mAlreadyClickedLButton ) {
+			mAlreadyClickedLButton = true;
+		} else {
+			return;
+		}
+	}
 	mTerminal->mousereport( TerminalMouseEventType::MouseButtonDown, positionToGrid( pos ), flags,
 							mWindow->getInput()->getModState() );
 }
 
 void TerminalDisplay::onMouseUp( const Vector2i& pos, const Uint32& flags ) {
 	Uint32 smod = sanitizeMod( mWindow->getInput()->getModState() );
+
+	if ( flags & EE_BUTTON_LMASK )
+		mAlreadyClickedLButton = false;
 
 	if ( flags & EE_BUTTON_MMASK )
 		mAlreadyClickedMButton = false;
@@ -790,10 +814,9 @@ void TerminalDisplay::onMouseUp( const Vector2i& pos, const Uint32& flags ) {
 							flags, mWindow->getInput()->getModState() );
 }
 
-static inline Color termColor( unsigned int terminalColor,
-							   const std::vector<std::pair<Color, std::string>>& colors ) {
+static inline Color termColor( unsigned int terminalColor, const std::vector<Color>& colors ) {
 	if ( ( terminalColor & ( 1 << 24 ) ) == 0 ) {
-		return colors[terminalColor & 0xFF].first;
+		return colors[terminalColor & 0xFF];
 	}
 	return Color( ( terminalColor >> 16 ) & 0xFF, ( terminalColor >> 8 ) & 0xFF,
 				  terminalColor & 0xFF, ( ~( ( terminalColor >> 25 ) & 0xFF ) ) & 0xFF );
@@ -960,8 +983,8 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 	float x = 0.0f;
 	float y = pos.y;
 	const float lineHeight = fontSize;
-	auto defaultFg = termColor( mEmulator->getDefaultForeground(), mColors );
-	auto defaultBg = termColor( mEmulator->getDefaultBackground(), mColors );
+	auto defaultFg = mColorScheme.getForeground();
+	auto defaultBg = mColorScheme.getBackground();
 	auto cursorThickness = Math::roundDown( PixelDensity::dpToPx( 1.f ) );
 	Rectf xBounds = mFont->getGlyph( L'x', mFontSize, false ).bounds;
 	Float strikeThroughOffset = lineHeight + xBounds.Top + cursorThickness;
@@ -1114,15 +1137,13 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 		Color drawcol;
 		if ( IS_SET( MODE_REVERSE ) ) {
 			if ( mEmulator->isSelected( mCursor.x, mCursor.y ) ) {
-				drawcol = termColor( mEmulator->getDefaultCursorColor(), mColors );
+				drawcol = mColorScheme.getCursor();
 			} else {
-				drawcol = termColor( mEmulator->getDefaultReverseCursorColor(), mColors );
+				drawcol = mColorScheme.getBackground();
 			}
 		} else {
-			drawcol = termColor( mEmulator->isSelected( mCursor.x, mCursor.y )
-									 ? mEmulator->getDefaultReverseCursorColor()
-									 : mEmulator->getDefaultCursorColor(),
-								 mColors );
+			drawcol = mEmulator->isSelected( mCursor.x, mCursor.y ) ? mColorScheme.getBackground()
+																	: mColorScheme.getCursor();
 		}
 
 		Vector2f a{}, b{}, c{}, d{};

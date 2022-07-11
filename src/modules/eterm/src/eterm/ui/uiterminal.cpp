@@ -1,9 +1,11 @@
 #include <eepp/scene/scenemanager.hpp>
+#include <eepp/system/luapattern.hpp>
 #include <eepp/ui/uieventdispatcher.hpp>
 #include <eepp/ui/uiicon.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitabwidget.hpp>
 #include <eepp/window/clipboard.hpp>
+#include <eepp/window/engine.hpp>
 #include <eterm/ui/uiterminal.hpp>
 
 using namespace EE::Scene;
@@ -91,6 +93,8 @@ UITerminal::UITerminal( const std::shared_ptr<TerminalDisplay>& terminalDisplay 
 	setCommand( "terminal-paste", [&] { mTerm->action( TerminalShortcutAction::PASTE ); } );
 	setCommand( "terminal-copy", [&] { mTerm->action( TerminalShortcutAction::COPY ); } );
 	setCommand( "terminal-paste", [&] { mTerm->action( TerminalShortcutAction::PASTE ); } );
+	setCommand( "terminal-open-link",
+				[&] { Engine::instance()->openURI( mTerm->getTerminal()->getSelection() ); } );
 	subscribeScheduledUpdate();
 }
 
@@ -109,7 +113,7 @@ void UITerminal::onContentSizeChange() {
 	} else if ( ScrollBarMode::AlwaysOff == mVScrollMode ) {
 		mVScroll->setVisible( false )->setEnabled( false );
 	} else {
-		bool visible = !mTerm->getTerminal()->tisaltscr() && contentSize > visibleArea;
+		bool visible = !mTerm->isAltScr() && contentSize > visibleArea;
 		mVScroll->setVisible( visible )->setEnabled( visible );
 	}
 
@@ -222,6 +226,23 @@ std::string UITerminal::getPropertyString( const PropertyDefinition* propertyDef
 		default:
 			return UIWidget::getPropertyString( propertyDef, propertyIndex );
 	}
+}
+
+void UITerminal::executeFile( const std::string& cmd ) {
+	if ( mTerm && mTerm->getTerminal() ) {
+		std::string rcmd( cmd + "\r" );
+		char clearLine = 0x15;
+		mTerm->getTerminal()->ttywrite( &clearLine, 1, 1 );
+		mTerm->getTerminal()->ttywrite( rcmd.c_str(), rcmd.size(), 1 );
+	}
+}
+
+const TerminalColorScheme& UITerminal::getColorScheme() const {
+	return mTerm->getColorScheme();
+}
+
+void UITerminal::setColorScheme( const TerminalColorScheme& colorScheme ) {
+	mTerm->setColorScheme( colorScheme );
 }
 
 bool UITerminal::applyProperty( const StyleSheetProperty& attribute ) {
@@ -482,6 +503,14 @@ Uint32 UITerminal::onFocusLoss() {
 void UITerminal::createDefaultContextMenuOptions( UIPopUpMenu* menu ) {
 	if ( !mCreateDefaultContextMenuOptions )
 		return;
+
+	if ( mTerm->getTerminal()->hasSelection() ) {
+		auto sel( mTerm->getTerminal()->getSelection() );
+
+		if ( LuaPattern::matches( sel, LuaPattern::getURIPattern() ) ) {
+			menuAdd( menu, "open_link", "Open Link", "earth", "terminal-open-link" );
+		}
+	}
 
 	menuAdd( menu, "copy", "Copy", "copy", "terminal-copy" )
 		->setEnabled( mTerm->getTerminal() && mTerm->getTerminal()->hasSelection() );

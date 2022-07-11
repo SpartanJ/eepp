@@ -1010,6 +1010,7 @@
 ../../src/modules/eterm/include/eterm/terminal/ipseudoterminal.hpp
 ../../src/modules/eterm/include/eterm/terminal/iterminaldisplay.hpp
 ../../src/modules/eterm/include/eterm/terminal/pseudoterminal.hpp
+../../src/modules/eterm/include/eterm/terminal/terminalcolorscheme.hpp
 ../../src/modules/eterm/include/eterm/terminal/terminaldisplay.hpp
 ../../src/modules/eterm/include/eterm/terminal/terminalemulator.hpp
 ../../src/modules/eterm/include/eterm/terminal/terminaltypes.hpp
@@ -1022,6 +1023,7 @@
 ../../src/modules/eterm/src/eterm/terminal/iterminaldisplay.cpp
 ../../src/modules/eterm/src/eterm/terminal/nonspacing.hpp
 ../../src/modules/eterm/src/eterm/terminal/pseudoterminal.cpp
+../../src/modules/eterm/src/eterm/terminal/terminalcolorscheme.cpp
 ../../src/modules/eterm/src/eterm/terminal/terminaldisplay.cpp
 ../../src/modules/eterm/src/eterm/terminal/terminalemulator.cpp
 ../../src/modules/eterm/src/eterm/terminal/types.hpp

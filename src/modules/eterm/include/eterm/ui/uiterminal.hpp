@@ -100,6 +100,12 @@ class UITerminal : public UIWidget {
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
 										   const Uint32& propertyIndex = 0 ) const;
 
+	void executeFile( const std::string& cmd );
+
+	const TerminalColorScheme& getColorScheme() const;
+
+	void setColorScheme( const TerminalColorScheme& colorScheme );
+
   protected:
 	std::string mTitle;
 	bool mIsCustomTitle{ false };

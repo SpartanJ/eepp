@@ -52,7 +52,7 @@ class ITerminalDisplay {
 
 	virtual void resetColors();
 
-	virtual int resetColor( Uint32 index, const char* name );
+	virtual int resetColor( const Uint32& index, const char* name );
 
 	virtual void setMode( TerminalWinMode mode, int set );
 
