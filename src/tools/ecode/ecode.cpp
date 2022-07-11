@@ -2211,7 +2211,7 @@ UITerminal* App::createNewTerminal( const std::string& title, UITabWidget* inTab
 	term->getKeyBindings().removeCommandsKeybind(
 		{ "open-file", "download-file-web", "open-folder", "debug-draw-highlight-toggle",
 		  "debug-draw-boxes-toggle", "debug-draw-debug-data", "debug-widget-tree-view",
-		  "open-locatebar", "open-global-search", "menu-toggle", "console-toggle" } );
+		  "open-locatebar", "open-global-search", "menu-toggle", "console-toggle", "go-to-line" } );
 	term->setCommand( "switch-side-panel", [&] { switchSidePanel(); } );
 	term->setCommand( "fullscreen-toggle", [&]() { fullscreenToggle(); } );
 	for ( int i = 1; i <= 10; i++ )

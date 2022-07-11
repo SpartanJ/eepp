@@ -123,7 +123,7 @@ void EventDispatcher::update( const Time& time ) {
 						mOverNode->onMouseDown( mMousePosi,
 												mInput->getReleaseTrigger() & EE_BUTTONS_WUWD );
 						if ( NULL != mOverNode )
-							sendMsg( mOverNode, NodeMessage::MouseUp,
+							sendMsg( mOverNode, NodeMessage::MouseDown,
 									 mInput->getReleaseTrigger() & EE_BUTTONS_WUWD );
 					}
 					mOverNode->onMouseUp( mMousePosi, mInput->getReleaseTrigger() );
