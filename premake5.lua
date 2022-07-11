@@ -778,6 +778,8 @@ workspace "eepp"
 		files { "src/thirdparty/efsw/src/efsw/*.cpp" }
 		build_base_cpp_configuration( "efsw" )
 		defines { "EFSW_USE_CXX11" }
+		filter "action:not vs*"
+			cppdialect "C++14"
 		filter "system:windows"
 			files { "src/thirdparty/efsw/src/efsw/platform/win/*.cpp" }
 			excludes {

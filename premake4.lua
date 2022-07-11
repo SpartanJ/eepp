@@ -1019,6 +1019,10 @@ solution "eepp"
 		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
 		includedirs { "src/thirdparty/efsw/include", "src/thirdparty/efsw/src" }
 		defines { "EFSW_USE_CXX11" }
+		if not is_vs() then
+			buildoptions{ "-std=c++14" }
+		end
+
 		if os.is("windows") then
 			osfiles = "src/thirdparty/efsw/src/efsw/platform/win/*.cpp"
 		else
