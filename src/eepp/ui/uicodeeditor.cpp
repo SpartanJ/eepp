@@ -1635,6 +1635,8 @@ const bool& UICodeEditor::isLocked() const {
 void UICodeEditor::setLocked( bool locked ) {
 	if ( mLocked != locked ) {
 		mLocked = locked;
+		if ( !mLocked && hasFocus() )
+			mDoc->setActiveClient( this );
 		invalidateDraw();
 	}
 }

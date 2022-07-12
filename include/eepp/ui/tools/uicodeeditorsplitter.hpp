@@ -169,7 +169,7 @@ class EE_API UICodeEditorSplitter {
 
 	UIWidget* getCurWidget() const;
 
-	void setCurentWidget( UIWidget* curWidget );
+	void setCurrentWidget( UIWidget* curWidget );
 
 	bool curWidgetExists() const;
 

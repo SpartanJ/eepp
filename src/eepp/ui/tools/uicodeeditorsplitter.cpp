@@ -284,7 +284,7 @@ UICodeEditor* UICodeEditorSplitter::createCodeEditor() {
 			mCurEditor->copyFilePath();
 	} );
 	editor->addEventListener( Event::OnFocus, [&]( const Event* event ) {
-		setCurrentEditor( event->getNode()->asType<UICodeEditor>() );
+		setCurrentWidget( event->getNode()->asType<UICodeEditor>() );
 	} );
 	editor->addEventListener( Event::OnTextChanged, [&]( const Event* event ) {
 		mClient->onDocumentModified( event->getNode()->asType<UICodeEditor>(),
@@ -437,7 +437,7 @@ void UICodeEditorSplitter::setCurrentEditor( UICodeEditor* editor ) {
 		mClient->onDocumentStateChanged( editor, editor->getDocument() );
 }
 
-void UICodeEditorSplitter::setCurentWidget( UIWidget* curWidget ) {
+void UICodeEditorSplitter::setCurrentWidget( UIWidget* curWidget ) {
 	if ( curWidget->isType( UI_TYPE_CODEEDITOR ) ) {
 		setCurrentEditor( curWidget->asType<UICodeEditor>() );
 		return;
@@ -477,7 +477,7 @@ UICodeEditorSplitter::createWidgetInTabWidget( UITabWidget* tabWidget, UIWidget*
 	UITab* tab = tabWidget->add( tabName, widget );
 	widget->setData( (UintPtr)tab );
 	widget->addEventListener( Event::OnFocus, [&]( const Event* event ) {
-		setCurentWidget( event->getNode()->asType<UIWidget>() );
+		setCurrentWidget( event->getNode()->asType<UIWidget>() );
 	} );
 	widget->addEventListener( Event::OnTitleChange, [&]( const Event* event ) {
 		const TextEvent* tevent = static_cast<const TextEvent*>( event );
@@ -524,7 +524,7 @@ UITabWidget* UICodeEditorSplitter::createEditorWithTabWidget( Node* parent, bool
 			setCurrentEditor(
 				tabWidget->getTabSelected()->getOwnedWidget()->asType<UICodeEditor>() );
 		} else {
-			setCurentWidget( tabWidget->getTabSelected()->getOwnedWidget()->asType<UIWidget>() );
+			setCurrentWidget( tabWidget->getTabSelected()->getOwnedWidget()->asType<UIWidget>() );
 		}
 	} );
 	tabWidget->setTabTryCloseCallback( [&]( UITab* tab ) -> bool {

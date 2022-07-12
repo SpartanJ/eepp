@@ -2198,7 +2198,10 @@ UITerminal* App::createNewTerminal( const std::string& title, UITabWidget* inTab
 	mSplitter->removeUnusedTab( tabWidget );
 	ret.first->setIcon( findIcon( "filetype-bash" ) );
 	term->setTitle( title );
-	term->setColorScheme( mTerminalColorSchemes.at( mTerminalCurrentColorScheme ) );
+	auto csIt = mTerminalColorSchemes.find( mTerminalCurrentColorScheme );
+	term->setColorScheme( csIt != mTerminalColorSchemes.end()
+							  ? mTerminalColorSchemes.at( mTerminalCurrentColorScheme )
+							  : TerminalColorScheme::getDefault() );
 	term->addEventListener( Event::OnTitleChange, [&]( const Event* event ) {
 		if ( event->getNode() != mSplitter->getCurWidget() )
 			return;
@@ -2368,7 +2371,10 @@ void App::setTerminalColorScheme( const std::string& name ) {
 	if ( name != mTerminalCurrentColorScheme ) {
 		mTerminalCurrentColorScheme = name;
 		mConfig.term.colorScheme = name;
-		applyTerminalColorScheme( mTerminalColorSchemes.at( mTerminalCurrentColorScheme ) );
+		auto csIt = mTerminalColorSchemes.find( mTerminalCurrentColorScheme );
+		applyTerminalColorScheme( csIt != mTerminalColorSchemes.end()
+									  ? mTerminalColorSchemes.at( mTerminalCurrentColorScheme )
+									  : TerminalColorScheme::getDefault() );
 		mNotificationCenter->addNotification( String::format(
 			i18n( "terminal_color_scheme_set", "Terminal color scheme: %s" ).toUtf8().c_str(),
 			mTerminalCurrentColorScheme.c_str() ) );

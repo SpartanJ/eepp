@@ -506,9 +506,11 @@ bool TextDocument::save( IOStream& stream, bool keepUndoRedoStatus ) {
 			}
 		}
 		if ( mLineEnding == LineEnding::CRLF ) {
-			text[text.size() - 1] = '\r';
+			if ( text[text.size() - 1] == '\n' ) {
+				text[text.size() - 1] = '\r';
+				text += "\n";
+			}
 			stream.write( text.c_str(), text.size() );
-			stream.write( &nl, 1 );
 		} else {
 			stream.write( text.c_str(), text.size() );
 		}
