@@ -1210,7 +1210,7 @@ solution "eepp"
 		if os.is("haiku") then
 			links { "bsd" }
 		end
-		includedirs { "src/modules/eterm/include/" }
+		includedirs { "src/modules/eterm/include/", "src/thirdparty" }
 		build_link_configuration( "eterm", true )
 
 	project "eepp-texturepacker"

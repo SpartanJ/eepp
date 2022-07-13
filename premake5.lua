@@ -943,7 +943,7 @@ workspace "eepp"
 	project "eterm"
 		set_kind()
 		language "C++"
-		incdirs { "src/modules/eterm/include/" }
+		incdirs { "src/modules/eterm/include/", "src/thirdparty" }
 		files { "src/tools/eterm/**.cpp" }
 		links { "eterm-static" }
 		build_link_configuration( "eterm", true )

@@ -3895,7 +3895,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	args::ValueFlag<std::string> prefersColorScheme(
 		parser, "prefers-color-scheme", "Set the preferred color scheme (\"light\" or \"dark\")",
 		{ 'c', "prefers-color-scheme" } );
-	args::Flag terminal( parser, "terminal", "Open a new terminal", { 't', "terminal", "folder" } );
+	args::Flag terminal( parser, "terminal", "Open a new terminal", { 't', "terminal" } );
 	try {
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 		parser.ParseCLI( argc, argv );

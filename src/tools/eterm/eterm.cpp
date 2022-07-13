@@ -1,3 +1,4 @@
+#include <args/args.hxx>
 #include <eepp/ee.hpp>
 #include <eterm/terminal/terminaldisplay.hpp>
 
@@ -11,7 +12,7 @@ void inputCallback( InputEvent* event ) {
 	switch ( event->Type ) {
 		case InputEvent::MouseMotion: {
 			terminal->onMouseMove( win->getInput()->getMousePos(),
-									 win->getInput()->getPressTrigger() );
+								   win->getInput()->getPressTrigger() );
 			break;
 		}
 		case InputEvent::MouseButtonDown: {
@@ -88,11 +89,43 @@ void mainLoop() {
 	}
 }
 
-EE_MAIN_FUNC int main( int, char*[] ) {
+EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 #ifdef EE_DEBUG
 	Log::instance()->setConsoleOutput( true );
 	Log::instance()->setLiveWrite( true );
 #endif
+	args::ArgumentParser parser( "eterm" );
+	args::HelpFlag help( parser, "help", "Display this help menu", { 'h', "help" } );
+	args::ValueFlag<std::string> shell( parser, "shell", "Shell name or path", { 's', "shell" },
+										"" );
+	args::ValueFlag<size_t> historySize( parser, "scrollback", "Maximum history size (lines)",
+										 { 'l', "scrollback" }, 10000 );
+	args::Flag fb( parser, "framebuffer", "Use frame buffer (more memory usage, less CPU usage)",
+				   { "framebuffer" } );
+	args::ValueFlag<std::string> fontPath( parser, "fontpath", "Font path", { 'f', "font" } );
+	args::ValueFlag<Float> fontSize( parser, "fontsize", "Font size (in dp)", { 's', "fontsize" },
+									 11 );
+	args::ValueFlag<Float> width( parser, "winwidth", "Window width (in dp)", { "width" }, 1280 );
+	args::ValueFlag<Float> height( parser, "winheight", "Window height (in dp)", { "height" },
+								   720 );
+	args::ValueFlag<Float> pixelDenstiyConf( parser, "pixel-density",
+											 "Set default application pixel density",
+											 { 'd', "pixel-density" } );
+	try {
+		parser.ParseCLI( argc, argv );
+	} catch ( const args::Help& ) {
+		std::cout << parser;
+		return EXIT_SUCCESS;
+	} catch ( const args::ParseError& e ) {
+		std::cerr << e.what() << std::endl;
+		std::cerr << parser;
+		return EXIT_FAILURE;
+	} catch ( args::ValidationError& e ) {
+		std::cerr << e.what() << std::endl;
+		std::cerr << parser;
+		return EXIT_FAILURE;
+	}
+
 	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
 	Display* currentDisplay = displayManager->getDisplayIndex( 0 );
 
@@ -117,19 +150,29 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 	displayManager->enableMouseFocusClickThrough();
 	displayManager->disableBypassCompositor();
 
-	Sizei winSize( 1280, 720 );
+	Sizei winSize( width.Get(), height.Get() );
 	win = Engine::instance()->createWindow(
 		WindowSettings( winSize.getWidth(), winSize.getHeight(), "eterm", WindowStyle::Default,
 						WindowBackend::Default, 32, resPath + "icon/ee.png",
-						currentDisplay->getPixelDensity() ),
+						pixelDenstiyConf ? pixelDenstiyConf.Get()
+										 : currentDisplay->getPixelDensity() ),
 		ContextSettings( true ) );
 
 	if ( win->isOpen() ) {
 		win->setClearColor( RGB( 0, 0, 0 ) );
 
-		FontTrueType* fontMono = FontTrueType::New( "monospace" );
-		fontMono->loadFromFile( resPath + "fonts/DejaVuSansMonoNerdFontComplete.ttf" );
-		fontMono->setEnableEmojiFallback( false );
+		FontTrueType* fontMono = nullptr;
+		if ( fontPath && FileSystem::fileExists( fontPath.Get() ) ) {
+			FileInfo file( fontPath.Get() );
+			fontMono = FontTrueType::New( "monospace" );
+			if ( !fontMono->loadFromFile( file.getFilepath() ) )
+				fontMono = nullptr;
+		}
+		if ( fontMono == nullptr ) {
+			fontMono = FontTrueType::New( "monospace" );
+			fontMono->loadFromFile( resPath + "fonts/DejaVuSansMonoNerdFontComplete.ttf" );
+			fontMono->setEnableEmojiFallback( false );
+		}
 
 		if ( FileSystem::fileExists( resPath + "fonts/NotoColorEmoji.ttf" ) ) {
 			FontTrueType::New( "emoji-color" )
@@ -140,8 +183,10 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 		}
 
 		if ( !terminal || terminal->hasTerminated() ) {
-			terminal = TerminalDisplay::create( win, fontMono, PixelDensity::dpToPx( 11 ),
-												win->getSize().asFloat() );
+			terminal = TerminalDisplay::create(
+				win, fontMono, PixelDensity::dpToPx( fontSize.Get() ), win->getSize().asFloat(),
+				shell.Get(), {}, FileSystem::getCurrentWorkingDirectory(), historySize.Get(),
+				nullptr, fb.Get() );
 			terminal->pushEventCallback( [&]( const TerminalDisplay::Event& event ) {
 				if ( event.type == TerminalDisplay::EventType::TITLE )
 					win->setTitle( "eterm - " + event.eventData );
