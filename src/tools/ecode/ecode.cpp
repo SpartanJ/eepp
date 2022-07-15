@@ -2159,6 +2159,10 @@ void App::loadTerminalColorSchemes() {
 		mTerminalCurrentColorScheme = mTerminalColorSchemes.begin()->first;
 }
 
+void App::showGlobalSearch() {
+	mGlobalSearchController->showGlobalSearch();
+}
+
 UITerminal* App::createNewTerminal( const std::string& title, UITabWidget* inTabWidget,
 									const std::string& workingDir ) {
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
@@ -2332,7 +2336,7 @@ UITerminal* App::createNewTerminal( const std::string& title, UITabWidget* inTab
 		mSplitter->forEachEditor( [lock]( UICodeEditor* editor ) { editor->setLocked( lock ); } );
 	} );
 	term->setCommand( "menu-toggle", [&] { toggleSettingsMenu(); } );
-	term->setCommand( "open-global-search", [&] { mGlobalSearchController->showGlobalSearch(); } );
+	term->setCommand( "open-global-search", [&] { showGlobalSearch(); } );
 	term->setCommand( "open-locatebar", [&] { mFileLocator->showLocateBar(); } );
 	term->setCommand( "download-file-web", [&] { downloadFileWebDialog(); } );
 
@@ -2381,6 +2385,10 @@ void App::setTerminalColorScheme( const std::string& name ) {
 	}
 }
 
+void App::showFindView() {
+	mDocSearchController->showFindView();
+}
+
 void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	const CodeEditorConfig& config = mConfig.editor;
 	const DocumentConfig& docc = !mCurrentProject.empty() && !mProjectDocConfig.useGlobalSettings
@@ -2423,8 +2431,8 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 			saveFileDialog( mSplitter->getCurEditor() );
 	} );
 	doc.setCommand( "save-all", [&] { saveAll(); } );
-	doc.setCommand( "find-replace", [&] { mDocSearchController->showFindView(); } );
-	doc.setCommand( "open-global-search", [&] { mGlobalSearchController->showGlobalSearch(); } );
+	doc.setCommand( "find-replace", [&] { showFindView(); } );
+	doc.setCommand( "open-global-search", [&] { showGlobalSearch(); } );
 	doc.setCommand( "open-locatebar", [&] { mFileLocator->showLocateBar(); } );
 	doc.setCommand( "repeat-find", [&] {
 		mDocSearchController->findNextText( mDocSearchController->getSearchState() );
@@ -3023,6 +3031,105 @@ void App::renameFile( const FileInfo& file ) {
 	} );
 }
 
+void App::showProjectTreeMenu() {
+	Vector2f pos( mWindow->getInput()->getMousePosf() );
+	mProjectTreeMenu->nodeToWorldTranslation( pos );
+	UIMenu::findBestMenuPos( pos, mProjectTreeMenu );
+	mProjectTreeMenu->setPixelsPosition( pos );
+	mProjectTreeMenu->show();
+}
+
+void App::createProjectTreeMenu() {
+	if ( mProjectTreeMenu && mProjectTreeMenu->isVisible() )
+		mProjectTreeMenu->close();
+
+	mProjectTreeMenu = UIPopUpMenu::New();
+
+	if ( !mCurrentProject.empty() ) {
+		mProjectTreeMenu->add( i18n( "new_file", "New File..." ), findIcon( "file-add" ) )
+			->setId( "new_file" );
+		mProjectTreeMenu->add( i18n( "new_folder", "New Folder..." ), findIcon( "folder-add" ) )
+			->setId( "new_folder" );
+		mProjectTreeMenu->add( i18n( "open_folder", "Open Folder..." ), findIcon( "folder-open" ) )
+			->setId( "open_folder" );
+		mProjectTreeMenu
+			->add( i18n( "execute_dir_in_terminal", "Open directory in terminal" ),
+				   findIcon( "filetype-bash" ) )
+			->setId( "execute_dir_in_terminal" );
+		mProjectTreeMenu->addSeparator();
+	}
+
+	mProjectTreeMenu->add( i18n( "collapse_all", "Collapse All" ) )->setId( "collapse-all" );
+	mProjectTreeMenu->add( i18n( "expand_all", "Expand All" ) )->setId( "expand-all" );
+	mProjectTreeMenu->addSeparator();
+	mProjectTreeMenu
+		->addCheckBox( i18n( "show_hidden_files", "Show hidden files" ),
+					   !mFileSystemModel->getDisplayConfig().ignoreHidden )
+		->setId( "show_hidden_files" );
+
+	mProjectTreeMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
+		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+			return;
+		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
+		std::string id( item->getId() );
+		if ( "new_file" == id || "new_file_in_place" == id ) {
+			newFile( FileInfo( mCurrentProject ) );
+		} else if ( "new_folder" == id ) {
+			newFolder( FileInfo( mCurrentProject ) );
+		} else if ( "open_folder" == id ) {
+			Engine::instance()->openURI( mCurrentProject );
+		} else if ( "execute_dir_in_terminal" == id ) {
+			createNewTerminal( "", nullptr, mCurrentProject );
+		} else if ( "show_hidden_files" == id ) {
+			toggleHiddenFiles();
+		} else if ( "collapse-all" == id ) {
+			mProjectTreeView->collapseAll();
+		} else if ( "expand-all" == id ) {
+			mProjectTreeView->expandAll();
+		}
+	} );
+
+	showProjectTreeMenu();
+}
+
+void App::toggleHiddenFiles() {
+	mFileSystemModel = FileSystemModel::New(
+		mFileSystemModel->getRootPath(), FileSystemModel::Mode::FilesAndDirectories,
+		{ true, true, !mFileSystemModel->getDisplayConfig().ignoreHidden } );
+	mProjectTreeView->setModel( mFileSystemModel );
+}
+
+void App::newFile( const FileInfo& file ) {
+	UIMessageBox* msgBox = newInputMsgBox( i18n( "create_new_file", "Create new file" ),
+										   i18n( "enter_new_file_name", "Enter new file name:" ) );
+	msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, file, msgBox]( const Event* ) {
+		auto newFilePath( getNewFilePath( file, msgBox ) );
+		if ( !FileSystem::fileExists( newFilePath ) ) {
+			if ( !FileSystem::fileWrite( newFilePath, nullptr, 0 ) )
+				errorMsgBox( i18n( "couldnt_create_file", "Couldn't create file." ) );
+			msgBox->closeWindow();
+		} else {
+			fileAlreadyExistsMsgBox();
+		}
+	} );
+}
+
+void App::newFolder( const FileInfo& file ) {
+	UIMessageBox* msgBox =
+		newInputMsgBox( i18n( "create_new_folder", "Create new folder" ),
+						i18n( "enter_new_folder_name", "Enter new folder name:" ) );
+	msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, file, msgBox]( const Event* ) {
+		auto newFolderPath( getNewFilePath( file, msgBox ) );
+		if ( !FileSystem::fileExists( newFolderPath ) ) {
+			if ( !FileSystem::makeDir( newFolderPath ) )
+				errorMsgBox( i18n( "couldnt_create_directory", "Couldn't create directory." ) );
+			msgBox->closeWindow();
+		} else {
+			fileAlreadyExistsMsgBox();
+		}
+	} );
+}
+
 void App::createProjectTreeMenu( const FileInfo& file ) {
 	if ( mProjectTreeMenu && mProjectTreeMenu->isVisible() )
 		mProjectTreeMenu->close();
@@ -3035,7 +3142,7 @@ void App::createProjectTreeMenu( const FileInfo& file ) {
 		mProjectTreeMenu->add( i18n( "open_folder", "Open Folder..." ), findIcon( "folder-open" ) )
 			->setId( "open_folder" );
 	} else {
-		mProjectTreeMenu->add( i18n( "open_fole", "Open File" ), findIcon( "document-open" ) )
+		mProjectTreeMenu->add( i18n( "open_folder", "Open File" ), findIcon( "document-open" ) )
 			->setId( "open_file" );
 		mProjectTreeMenu
 			->add( i18n( "open_containin_folder", "Open Containing Folder..." ),
@@ -3076,6 +3183,10 @@ void App::createProjectTreeMenu( const FileInfo& file ) {
 					   !mFileSystemModel->getDisplayConfig().ignoreHidden )
 		->setId( "show_hidden_files" );
 
+	mProjectTreeMenu->addSeparator();
+	mProjectTreeMenu->add( i18n( "collapse_all", "Collapse All" ) )->setId( "collapse-all" );
+	mProjectTreeMenu->add( i18n( "expand_all", "Expand All" ) )->setId( "expand-all" );
+
 	mProjectTreeMenu->addEventListener( Event::OnItemClicked, [&, file]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
@@ -3083,34 +3194,9 @@ void App::createProjectTreeMenu( const FileInfo& file ) {
 		std::string id( item->getId() );
 
 		if ( "new_file" == id || "new_file_in_place" == id ) {
-			UIMessageBox* msgBox =
-				newInputMsgBox( i18n( "create_new_file", "Create new file" ),
-								i18n( "enter_new_file_name", "Enter new file name:" ) );
-			msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, file, msgBox]( const Event* ) {
-				auto newFilePath( getNewFilePath( file, msgBox ) );
-				if ( !FileSystem::fileExists( newFilePath ) ) {
-					if ( !FileSystem::fileWrite( newFilePath, nullptr, 0 ) )
-						errorMsgBox( i18n( "couldnt_create_file", "Couldn't create file." ) );
-					msgBox->closeWindow();
-				} else {
-					fileAlreadyExistsMsgBox();
-				}
-			} );
+			newFile( file );
 		} else if ( "new_folder" == id ) {
-			UIMessageBox* msgBox =
-				newInputMsgBox( i18n( "create_new_folder", "Create new folder" ),
-								i18n( "enter_new_folder_name", "Enter new folder name:" ) );
-			msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, file, msgBox]( const Event* ) {
-				auto newFolderPath( getNewFilePath( file, msgBox ) );
-				if ( !FileSystem::fileExists( newFolderPath ) ) {
-					if ( !FileSystem::makeDir( newFolderPath ) )
-						errorMsgBox(
-							i18n( "couldnt_create_directory", "Couldn't create directory." ) );
-					msgBox->closeWindow();
-				} else {
-					fileAlreadyExistsMsgBox();
-				}
-			} );
+			newFolder( file );
 		} else if ( "open_file" == id ) {
 			loadFileFromPath( file.getFilepath() );
 		} else if ( "remove" == id ) {
@@ -3163,10 +3249,7 @@ void App::createProjectTreeMenu( const FileInfo& file ) {
 		} else if ( "open_folder" == id ) {
 			Engine::instance()->openURI( file.getFilepath() );
 		} else if ( "show_hidden_files" == id ) {
-			mFileSystemModel = FileSystemModel::New(
-				mFileSystemModel->getRootPath(), FileSystemModel::Mode::FilesAndDirectories,
-				{ true, true, !mFileSystemModel->getDisplayConfig().ignoreHidden } );
-			mProjectTreeView->setModel( mFileSystemModel );
+			toggleHiddenFiles();
 		} else if ( "execute_in_terminal" == id ) {
 			UITerminal* term = createNewTerminal( "", nullptr, file.getDirectoryPath() );
 			if ( !term )
@@ -3174,14 +3257,14 @@ void App::createProjectTreeMenu( const FileInfo& file ) {
 			term->executeFile( file.getFilepath() );
 		} else if ( "execute_dir_in_terminal" == id ) {
 			createNewTerminal( "", nullptr, file.getDirectoryPath() );
+		} else if ( "collapse-all" == id ) {
+			mProjectTreeView->collapseAll();
+		} else if ( "expand-all" == id ) {
+			mProjectTreeView->expandAll();
 		}
 	} );
 
-	Vector2f pos( mWindow->getInput()->getMousePosf() );
-	mProjectTreeMenu->nodeToWorldTranslation( pos );
-	UIMenu::findBestMenuPos( pos, mProjectTreeMenu );
-	mProjectTreeMenu->setPixelsPosition( pos );
-	mProjectTreeMenu->show();
+	showProjectTreeMenu();
 }
 
 void App::initProjectTreeView( const std::string& path ) {
@@ -3224,6 +3307,11 @@ void App::initProjectTreeView( const std::string& path ) {
 				}
 			}
 		}
+	} );
+	mProjectTreeView->addEventListener( Event::MouseClick, [&]( const Event* event ) {
+		const MouseEvent* mouseEvent = static_cast<const MouseEvent*>( event );
+		if ( mouseEvent->getFlags() & EE_BUTTON_RMASK )
+			createProjectTreeMenu();
 	} );
 	mProjectTreeView->addEventListener( Event::KeyDown, [&]( const Event* event ) {
 		const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );

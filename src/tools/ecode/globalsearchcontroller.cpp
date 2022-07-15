@@ -64,6 +64,7 @@ void GlobalSearchController::initGlobalSearchBar(
 		} );
 	};
 	auto& kbind = mGlobalSearchBarLayout->getKeyBindings();
+	kbind.addKeybindsString( { { mApp->getKeybind( "find-replace" ), "find-replace" } } );
 	kbind.addKeybindsStringUnordered( keybindings );
 
 	UIPushButton* searchButton = mGlobalSearchBarLayout->find<UIPushButton>( "global_search" );
@@ -159,6 +160,7 @@ void GlobalSearchController::initGlobalSearchBar(
 	mGlobalSearchBarLayout->addCommand( "change-escape-sequence", [&, escapeSequenceChk] {
 		escapeSequenceChk->setChecked( !escapeSequenceChk->isChecked() );
 	} );
+	mGlobalSearchBarLayout->addCommand( "find-replace", [&] { mApp->showFindView(); } );
 	mGlobalSearchInput->addEventListener( Event::OnPressEnter, [&]( const Event* ) {
 		if ( mGlobalSearchInput->hasFocus() ) {
 			mGlobalSearchBarLayout->execute( "search-in-files" );

@@ -94,6 +94,18 @@ class App : public UICodeEditorSplitter::Client {
 
 	void downloadFileWebDialog();
 
+	void showGlobalSearch();
+
+	void showFindView();
+
+	void showProjectTreeMenu();
+
+	void toggleHiddenFiles();
+
+	void newFile( const FileInfo& file );
+
+	void newFolder( const FileInfo& file );
+
   protected:
 	EE::Window::Window* mWindow{ nullptr };
 	UISceneNode* mUISceneNode{ nullptr };
@@ -294,6 +306,8 @@ class App : public UICodeEditorSplitter::Client {
 	void syncProjectTreeWithEditor( UICodeEditor* editor );
 
 	void createProjectTreeMenu( const FileInfo& file );
+
+	void createProjectTreeMenu();
 
 	void setUIColorScheme( const ColorSchemePreference& colorScheme );
 

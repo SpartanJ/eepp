@@ -372,8 +372,6 @@ void UITreeView::setAllExpanded( const ModelIndex& index, bool expanded ) {
 		if ( model.rowCount( curIndex ) > 0 )
 			setAllExpanded( curIndex, expanded );
 	}
-
-	createOrUpdateColumns();
 }
 
 void UITreeView::expandAll( const ModelIndex& index ) {

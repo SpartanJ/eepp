@@ -26,10 +26,10 @@ void DocSearchController::initSearchBar(
 	};
 
 	auto& kbind = mSearchBarLayout->getKeyBindings();
-	kbind.addKeybindsString( {
-		{ mApp->getKeybind( "repeat-find" ), "repeat-find" },
-		{ mApp->getKeybind( "find-prev" ), "find-prev" }
-	} );
+	kbind.addKeybindsString(
+		{ { mApp->getKeybind( "repeat-find" ), "repeat-find" },
+		  { mApp->getKeybind( "find-prev" ), "find-prev" },
+		  { mApp->getKeybind( "open-global-search" ), "open-global-search" } } );
 	kbind.addKeybindsStringUnordered( keybindings );
 
 	UITextInput* findInput = mSearchBarLayout->find<UITextInput>( "search_find" );
@@ -139,6 +139,7 @@ void DocSearchController::initSearchBar(
 	mSearchBarLayout->addCommand( "toggle-lua-pattern", [&, luaPatternChk] {
 		luaPatternChk->setChecked( !luaPatternChk->isChecked() );
 	} );
+	mSearchBarLayout->addCommand( "open-global-search", [&] { mApp->showGlobalSearch(); } );
 
 	addReturnListener( findInput, "repeat-find" );
 	addReturnListener( replaceInput, "find-and-replace" );
@@ -371,4 +372,4 @@ SearchBarConfig DocSearchController::getSearchBarConfig() const {
 	return searchBarConfig;
 }
 
-}
+} // namespace ecode
