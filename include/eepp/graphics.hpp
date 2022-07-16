@@ -5,7 +5,6 @@
 #include <eepp/graphics/batchrenderer.hpp>
 #include <eepp/graphics/blendmode.hpp>
 #include <eepp/graphics/circledrawable.hpp>
-#include <eepp/graphics/console.hpp>
 #include <eepp/graphics/convexshapedrawable.hpp>
 #include <eepp/graphics/drawablegroup.hpp>
 #include <eepp/graphics/drawablesearcher.hpp>

@@ -69,7 +69,7 @@ class EETest : private Thread {
 
 	bool DrawBack;
 
-	Console Con;
+	UIConsole* Con;
 	virtual void run();
 
 	Vector2f Point;

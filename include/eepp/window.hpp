@@ -6,7 +6,6 @@
 #include <eepp/window/cursormanager.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/input.hpp>
-#include <eepp/window/inputtextbuffer.hpp>
 #include <eepp/window/joystick.hpp>
 #include <eepp/window/joystickmanager.hpp>
 #include <eepp/window/platformhelper.hpp>

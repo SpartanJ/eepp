@@ -206,9 +206,7 @@ class EE_API Model {
 	Mutex mResourceLock;
 };
 
-inline ModelIndex ModelIndex::parent() const {
-	return mModel ? mModel->parentIndex( *this ) : ModelIndex();
-}
+
 
 }}} // namespace EE::UI::Models
 

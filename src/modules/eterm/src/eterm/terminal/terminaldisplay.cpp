@@ -9,6 +9,7 @@
 #include <eterm/system/processfactory.hpp>
 #include <eterm/terminal/boxdrawdata.hpp>
 #include <eterm/terminal/terminaldisplay.hpp>
+#include <limits.h>
 
 namespace eterm { namespace Terminal {
 

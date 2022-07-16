@@ -27,7 +27,7 @@ using namespace EE::Scene;
 namespace EE { namespace UI {
 
 UIConsole* UIConsole::New() {
-	return eeNew( UIConsole, ( nullptr, true, false, 8192 ) );
+	return eeNew( UIConsole, ( nullptr, true, true, 8192 ) );
 }
 
 UIConsole* UIConsole::NewOpt( Font* font, const bool& makeDefaultCommands, const bool& attachToLog,
@@ -261,6 +261,26 @@ UIConsole* UIConsole::setFontSelectionBackColor( const Color& color ) {
 
 const Color& UIConsole::getFontSelectionBackColor() const {
 	return mFontStyleConfig.getFontSelectionBackColor();
+}
+
+UIConsole* UIConsole::setFontShadowColor( const Color& color ) {
+	if ( color != mFontStyleConfig.getFontShadowColor() ) {
+		mFontStyleConfig.ShadowColor = color;
+		onFontStyleChanged();
+	}
+	return this;
+}
+
+const Color& UIConsole::getFontShadowColor() const {
+	return mFontStyleConfig.ShadowColor;
+}
+
+UIConsole* UIConsole::setFontStyle( const Uint32& fontStyle ) {
+	if ( mFontStyleConfig.Style != fontStyle ) {
+		mFontStyleConfig.Style = fontStyle;
+		onFontStyleChanged();
+	}
+	return this;
 }
 
 UIConsole* UIConsole::setFontOutlineThickness( const Float& outlineThickness ) {

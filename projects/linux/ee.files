@@ -51,7 +51,6 @@
 ../../include/eepp/graphics/batchrenderer.hpp
 ../../include/eepp/graphics/blendmode.hpp
 ../../include/eepp/graphics/circledrawable.hpp
-../../include/eepp/graphics/console.hpp
 ../../include/eepp/graphics/convexshapedrawable.hpp
 ../../include/eepp/graphics/drawablegroup.hpp
 ../../include/eepp/graphics/drawable.hpp
@@ -443,7 +442,6 @@
 ../../include/eepp/window/inputfinger.hpp
 ../../include/eepp/window/inputhelper.hpp
 ../../include/eepp/window/input.hpp
-../../include/eepp/window/inputtextbuffer.hpp
 ../../include/eepp/window/joycodes.hpp
 ../../include/eepp/window/joystick.hpp
 ../../include/eepp/window/joystickmanager.hpp
@@ -527,7 +525,6 @@
 ../../src/eepp/graphics/batchrenderer.cpp
 ../../src/eepp/graphics/blendmode.cpp
 ../../src/eepp/graphics/circledrawable.cpp
-../../src/eepp/graphics/console.cpp
 ../../src/eepp/graphics/convexshapedrawable.cpp
 ../../src/eepp/graphics/drawable.cpp
 ../../src/eepp/graphics/drawablegroup.cpp
@@ -987,7 +984,6 @@
 ../../src/eepp/window/input.cpp
 ../../src/eepp/window/inputfinger.cpp
 ../../src/eepp/window/inputhelper.cpp
-../../src/eepp/window/inputtextbuffer.cpp
 ../../src/eepp/window/joystick.cpp
 ../../src/eepp/window/joystickmanager.cpp
 ../../src/eepp/window/keycodes.cpp

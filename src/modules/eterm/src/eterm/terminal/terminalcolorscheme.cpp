@@ -106,7 +106,6 @@ const std::vector<Color>& TerminalColorScheme::getPalette() const {
 }
 
 const Color& TerminalColorScheme::getPaletteIndex( const size_t& index ) const {
-	eeASSERT( index < mPalette.size() );
 	return mPalette[index];
 }
 

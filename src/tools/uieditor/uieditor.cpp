@@ -64,7 +64,7 @@ std::string basePath;
 
 Vector2i mousePos;
 Clock mouseClock;
-Console* console = NULL;
+UIConsole* console = NULL;
 
 std::map<std::string, std::string> layouts;
 std::vector<std::string> recentProjects;
@@ -789,16 +789,12 @@ void mainLoop() {
 		refreshStyleSheet();
 	}
 
-	Time elapsed = SceneManager::instance()->getElapsed();
 	SceneManager::instance()->update();
 
-	if ( appUiSceneNode->invalidated() || uiSceneNode->invalidated() || console->isActive() ||
-		 console->isFading() ) {
+	if ( appUiSceneNode->invalidated() || uiSceneNode->invalidated() ) {
 		window->clear();
 
 		SceneManager::instance()->draw();
-
-		console->draw( elapsed );
 
 		window->display();
 	} else {
@@ -919,6 +915,10 @@ void createAppMenu() {
 	uiMenuBar->addMenuButton( "Resources", uiResourceMenu );
 	uiResourceMenu->addEventListener( Event::OnItemClicked, cb::Make1( fileMenuClick ) );
 
+	console = UIConsole::New();
+	console->setQuakeMode( true );
+	console->setVisible( false );
+
 	SceneManager::instance()->setCurrentUISceneNode( uiSceneNode );
 }
 
@@ -1027,10 +1027,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 
 		FontTrueType* font =
 			FontTrueType::New( "NotoSans-Regular", resPath + "assets/fonts/NotoSans-Regular.ttf" );
-		FontTrueType* fontMono =
-			FontTrueType::New( "monospace", resPath + "assets/fonts/DejaVuSansMono.ttf" );
-
-		console = eeNew( Console, ( fontMono, true, true, 1024 * 1000, 0, window ) );
+		FontTrueType::New( "monospace", resPath + "assets/fonts/DejaVuSansMono.ttf" );
 
 		theme = UITheme::load( "uitheme" + pd, "uitheme" + pd,
 							   resPath + "assets/ui/uitheme" + pd + ".eta", font,

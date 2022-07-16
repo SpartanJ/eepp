@@ -262,9 +262,6 @@ void EETest::onFontLoaded() {
 	eeASSERT( TTF != NULL );
 	eeASSERT( monospace != NULL );
 
-	Con.create( monospace, true );
-	Con.ignoreCharOnPrompt( 186 ); // 'º'
-
 	mBuda = String::fromUtf8(
 		"El mono ve el pez en el agua y sufre. Piensa que su mundo es el único que existe, el "
 		"mejor, el real. Sufre porque es bueno y tiene compasión, lo ve y piensa: \"Pobre se está "
@@ -273,6 +270,10 @@ void EETest::onFontLoaded() {
 		"el mar en tu cabeza, que es un balde." );
 
 	createUI();
+	Con = UIConsole::NewOpt( monospace, true, true, 8191 );
+	Con->setQuakeMode( true );
+	Con->setVisible( false );
+	Con->addCommand( "setparticlesnum", cb::Make1( this, &EETest::cmdSetPartsNum ) );
 
 	mEEText.create( TTF, "Entropia Engine++\nCTRL + Number to change Demo Screen\nRight click to "
 						 "see the PopUp Menu" );
@@ -1196,13 +1197,7 @@ void EETest::onItemClick( const Event* event ) {
 	} else if ( "Show Screen 6" == txt ) {
 		setScreen( 5 );
 	} else if ( "Show Console" == txt ) {
-		Con.toggle();
-
-		if ( Con.isActive() ) {
-			mWindow->startTextInput();
-		} else {
-			mWindow->stopTextInput();
-		}
+		Con->toggle();
 	} else if ( "Show Window" == txt ) {
 		UIMenuCheckBox* Chk = event->getNode()->asType<UIMenuCheckBox>();
 
@@ -1335,9 +1330,9 @@ void EETest::cmdSetPartsNum( const std::vector<String>& params ) {
 			PS[2].create( ParticleEffect::WormHole, tInt, TN[5],
 						  Vector2f( mWindow->getWidth() * 0.5f, mWindow->getHeight() * 0.5f ), 32,
 						  true );
-			Con.pushText( "Wormhole Particles Number Changed to: " + String::toString( tInt ) );
+			Con->pushText( "Wormhole Particles Number Changed to: " + String::toString( tInt ) );
 		} else
-			Con.pushText( "Valid parameters are between 0 and 100000 (0 = no limit)." );
+			Con->pushText( "Valid parameters are between 0 and 100000 (0 = no limit)." );
 	}
 }
 
@@ -1433,8 +1428,6 @@ void EETest::loadTextures() {
 				  Vector2f( mWindow->getWidth() * 0.5f, mWindow->getHeight() * 0.5f ), 32, true );
 	PS[3].create( ParticleEffect::Fire, 350, TN[5], Vector2f( -50.f, -50.f ), 32, true );
 	PS[4].create( ParticleEffect::Fire, 350, TN[5], Vector2f( -50.f, -50.f ), 32, true );
-
-	Con.addCommand( "setparticlesnum", cb::Make1( this, &EETest::cmdSetPartsNum ) );
 
 	Texture* Tex = TNP[2];
 
@@ -1914,7 +1907,6 @@ void EETest::render() {
 	mInfoText.draw( 6.f, 6.f );
 
 	SceneManager::instance()->draw();
-	Con.draw();
 }
 
 void EETest::input() {
@@ -1976,7 +1968,7 @@ void EETest::input() {
 	if ( KM->isAltPressed() && KM->isKeyUp( KEY_C ) )
 		mWindow->centerToDisplay();
 
-	if ( KM->isAltPressed() && KM->isKeyUp( KEY_M ) && !Con.isActive() ) {
+	if ( KM->isAltPressed() && KM->isKeyUp( KEY_M ) && !Con->isActive() ) {
 		if ( !mWindow->isMaximized() )
 			mWindow->maximize();
 	}
@@ -2001,7 +1993,7 @@ void EETest::input() {
 		KM->grabInput( !KM->grabInput() );
 
 	if ( KM->isKeyUp( KEY_F3 ) || KM->isKeyUp( KEY_BACKSLASH ) ) {
-		Con.toggle();
+		Con->toggle();
 	}
 
 	if ( KM->isKeyUp( KEY_1 ) && KM->isControlPressed() )
