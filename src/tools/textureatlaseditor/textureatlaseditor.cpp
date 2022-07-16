@@ -6,6 +6,7 @@
 #include <eepp/ui/uitheme.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/window/engine.hpp>
+#include <eepp/window/input.hpp>
 #include <eepp/window/window.hpp>
 
 using namespace EE;
@@ -19,14 +20,14 @@ EE::Window::Window* win = NULL;
 UIMessageBox* MsgBox = NULL;
 TextureAtlasEditor* Editor = NULL;
 
-bool onCloseRequestCallback( EE::Window::Window* w ) {
+bool onCloseRequestCallback( EE::Window::Window* ) {
 	if ( NULL != Editor && Editor->isEdited() ) {
 		MsgBox = UIMessageBox::New(
 			UIMessageBox::OK_CANCEL,
 			"Do you really want to close the texture atlas editor?\nAll changes will be lost." );
 		MsgBox->addEventListener( Event::MsgBoxConfirmClick,
-								  []( const Event* event ) { win->close(); } );
-		MsgBox->addEventListener( Event::OnClose, []( const Event* event ) { MsgBox = NULL; } );
+								  []( const Event* ) { win->close(); } );
+		MsgBox->addEventListener( Event::OnClose, []( const Event* ) { MsgBox = NULL; } );
 		MsgBox->setTitle( "Close Texture Atlas Editor?" );
 		MsgBox->center();
 		MsgBox->show();
@@ -72,7 +73,7 @@ void mainLoop() {
 	}
 }
 
-EE_MAIN_FUNC int main( int argc, char* argv[] ) {
+EE_MAIN_FUNC int main( int, char*[] ) {
 	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
 	displayManager->enableScreenSaver();
 	displayManager->enableMouseFocusClickThrough();

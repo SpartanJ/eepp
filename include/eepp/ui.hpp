@@ -4,6 +4,7 @@
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uicombobox.hpp>
+#include <eepp/ui/uiconsole.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
 #include <eepp/ui/uifiledialog.hpp>
 #include <eepp/ui/uigridlayout.hpp>

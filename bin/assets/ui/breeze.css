@@ -38,6 +38,8 @@
 	--menu-font-disabled: #6e7275;
 	--win-icon: #dbdbdd;
 	--floating-icon: #eff0f188;
+	--term-back-color: #1e2127;
+	--term-font-color: #abb2bf;
 	droppable-hovering-color: #FFFFFF20;
 }
 
@@ -963,6 +965,15 @@ tab:not(:selected):hover > tab::icon {
 	tint: var(--menu-font-active);
 }
 
+console {
+	background-color: var(--term-back-color);
+	color: var(--term-font-color);
+	padding: 2dp;
+	font-size: 11dp;
+	border-bottom-color: var(--separator);
+	border-bottom-width: var(--border-width);
+}
+
 @media (prefers-color-scheme: light) {
 
 :root {
@@ -1004,6 +1015,8 @@ tab:not(:selected):hover > tab::icon {
 	--menu-font-disabled: #a8a9aa;
 	--win-icon: #232627;
 	--floating-icon: #cbcdcd;
+	--term-back-color: #eff0f1;
+	--term-font-color: #232627;
 	droppable-hovering-color: #00000020;
 }
 

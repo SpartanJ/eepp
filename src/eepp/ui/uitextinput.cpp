@@ -12,6 +12,7 @@
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/window/clipboard.hpp>
 #include <eepp/window/engine.hpp>
+#include <eepp/window/input.hpp>
 #include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {

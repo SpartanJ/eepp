@@ -283,11 +283,11 @@ void Node::close() {
 void Node::draw() {}
 
 void Node::update( const Time& time ) {
-	Node* ChildLoop = mChild;
+	Node* childLoop = mChild;
 
-	while ( NULL != ChildLoop ) {
-		ChildLoop->update( time );
-		ChildLoop = ChildLoop->mNext;
+	while ( NULL != childLoop ) {
+		childLoop->update( time );
+		childLoop = childLoop->mNext;
 	}
 
 	writeNodeFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 0 );

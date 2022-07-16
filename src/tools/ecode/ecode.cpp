@@ -408,14 +408,11 @@ void App::closeApp() {
 
 void App::mainLoop() {
 	mWindow->getInput()->update();
-	Time elapsed = SceneManager::instance()->getElapsed();
 	SceneManager::instance()->update();
 
-	if ( SceneManager::instance()->getUISceneNode()->invalidated() || mConsole->isActive() ||
-		 mConsole->isFading() ) {
+	if ( SceneManager::instance()->getUISceneNode()->invalidated() ) {
 		mWindow->clear();
 		SceneManager::instance()->draw();
-		mConsole->draw( elapsed );
 		mWindow->display();
 		if ( firstFrame ) {
 			Log::info( "First frame took: %.2fms", globalClock.getElapsed().asMilliseconds() );
@@ -2330,11 +2327,7 @@ UITerminal* App::createNewTerminal( const std::string& title, UITabWidget* inTab
 	term->setCommand( "close-app", [&] { closeApp(); } );
 	term->setCommand( "open-file", [&] { openFileDialog(); } );
 	term->setCommand( "open-folder", [&] { openFolderDialog(); } );
-	term->setCommand( "console-toggle", [&] {
-		mConsole->toggle();
-		bool lock = mConsole->isActive();
-		mSplitter->forEachEditor( [lock]( UICodeEditor* editor ) { editor->setLocked( lock ); } );
-	} );
+	term->setCommand( "console-toggle", [&] { consoleToggle(); } );
 	term->setCommand( "menu-toggle", [&] { toggleSettingsMenu(); } );
 	term->setCommand( "open-global-search", [&] { showGlobalSearch(); } );
 	term->setCommand( "open-locatebar", [&] { mFileLocator->showLocateBar(); } );
@@ -2445,11 +2438,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	doc.setCommand( "fullscreen-toggle", [&]() { fullscreenToggle(); } );
 	doc.setCommand( "open-file", [&] { openFileDialog(); } );
 	doc.setCommand( "open-folder", [&] { openFolderDialog(); } );
-	doc.setCommand( "console-toggle", [&] {
-		mConsole->toggle();
-		bool lock = mConsole->isActive();
-		mSplitter->forEachEditor( [lock]( UICodeEditor* editor ) { editor->setLocked( lock ); } );
-	} );
+	doc.setCommand( "console-toggle", [&] { consoleToggle(); } );
 	doc.setCommand( "lock", [&] {
 		if ( mSplitter->curEditorExistsAndFocused() ) {
 			mSplitter->getCurEditor()->setLocked( true );
@@ -3128,6 +3117,12 @@ void App::newFolder( const FileInfo& file ) {
 			fileAlreadyExistsMsgBox();
 		}
 	} );
+}
+
+void App::consoleToggle() {
+	mConsole->toggle();
+	bool lock = mConsole->isActive();
+	mSplitter->forEachEditor( [lock]( UICodeEditor* editor ) { editor->setLocked( lock ); } );
 }
 
 void App::createProjectTreeMenu( const FileInfo& file ) {
@@ -3921,7 +3916,9 @@ void App::init( std::string file, const Float& pidelDensity, const std::string& 
 
 		mSplitter->createEditorWithTabWidget( mBaseLayout );
 
-		mConsole = eeNew( Console, ( mFontMono, true, true, 1024 * 1000, 0, mWindow ) );
+		mConsole = UIConsole::NewOpt( mFontMono, true, true, 1024 * 10 );
+		mConsole->setQuakeMode( true );
+		mConsole->setVisible( false );
 
 		Log::info( "Complete UI took: %.2fms", globalClock.getElapsedTime().asMilliseconds() );
 

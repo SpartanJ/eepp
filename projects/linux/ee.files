@@ -1,6 +1,7 @@
 ../../README.md
 ../../TODO.md
 ../../bin/assets/colorschemes/colorschemes.conf
+../../bin/assets/colorschemes/terminalcolorschemes.conf
 ../../bin/assets/ee.ini
 ../../bin/assets/plugins/formatters.json
 ../../bin/assets/plugins/linters.json
@@ -358,6 +359,7 @@
 ../../include/eepp/ui/uicheckbox.hpp
 ../../include/eepp/ui/uicodeeditor.hpp
 ../../include/eepp/ui/uicombobox.hpp
+../../include/eepp/ui/uiconsole.hpp
 ../../include/eepp/ui/uidropdownlist.hpp
 ../../include/eepp/ui/uieventdispatcher.hpp
 ../../include/eepp/ui/uifiledialog.hpp
@@ -840,6 +842,7 @@
 ../../src/eepp/ui/uicheckbox.cpp
 ../../src/eepp/ui/uicodeeditor.cpp
 ../../src/eepp/ui/uicombobox.cpp
+../../src/eepp/ui/uiconsole.cpp
 ../../src/eepp/ui/uidropdownlist.cpp
 ../../src/eepp/ui/uieventdispatcher.cpp
 ../../src/eepp/ui/uifiledialog.cpp

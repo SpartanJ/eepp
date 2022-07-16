@@ -5,7 +5,6 @@
 #include <eepp/ui/keyboardshortcut.hpp>
 #include <eepp/ui/uinode.hpp>
 #include <eepp/ui/uitextview.hpp>
-#include <eepp/window/inputtextbuffer.hpp>
 
 using namespace EE::UI::Doc;
 

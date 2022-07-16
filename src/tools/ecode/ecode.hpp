@@ -106,10 +106,12 @@ class App : public UICodeEditorSplitter::Client {
 
 	void newFolder( const FileInfo& file );
 
+	void consoleToggle();
+
   protected:
 	EE::Window::Window* mWindow{ nullptr };
 	UISceneNode* mUISceneNode{ nullptr };
-	Console* mConsole{ nullptr };
+	UIConsole* mConsole{ nullptr };
 	std::string mWindowTitle{ "ecode" };
 	UILayout* mMainLayout{ nullptr };
 	UILayout* mBaseLayout{ nullptr };

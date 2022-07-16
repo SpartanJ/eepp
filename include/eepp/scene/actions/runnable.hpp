@@ -14,12 +14,15 @@ class EE_API Runnable : public Delay {
 
 	void update( const Time& time ) override;
 
+	bool isDone() override;
+
 	Action* clone() const override;
 
 	Action* reverse() const override;
 
   protected:
 	RunnableFunc mCallback;
+	bool mCalled{ false };
 
 	explicit Runnable( RunnableFunc callback, const Time& time = Seconds( 0 ) );
 

@@ -28,8 +28,8 @@ class EE_API Console : protected LogReaderInterface {
 	Console( EE::Window::Window* window = NULL );
 
 	/** Creates the console */
-	Console( Font* Font, const bool& MakeDefaultCommands = true, const bool& AttachToLog = true,
-			 const unsigned int& MaxLogLines = 1024, const Uint32& textureId = 0,
+	Console( Font* Font, const bool& makeDefaultCommands = true, const bool& attachToLog = true,
+			 const unsigned int& maxLogLines = 1024, const Uint32& textureId = 0,
 			 EE::Window::Window* window = NULL );
 
 	virtual ~Console();
@@ -103,8 +103,8 @@ class EE_API Console : protected LogReaderInterface {
 	 * @param MaxLogLines Maximum number of lines stored on the console
 	 * @param textureId Background texture id ( 0 for no texture )
 	 */
-	void create( Font* Font, const bool& MakeDefaultCommands = true, const bool& AttachToLog = true,
-				 const unsigned int& MaxLogLines = 1024, const Uint32& textureId = 0 );
+	void create( Font* Font, const bool& makeDefaultCommands = true, const bool& attachToLog = true,
+				 const unsigned int& maxLogLines = 1024, const Uint32& textureId = 0 );
 
 	/** Add Text to Console */
 	void pushText( const String& str );
@@ -146,71 +146,68 @@ class EE_API Console : protected LogReaderInterface {
 	std::deque<String> mCmdLog;
 	std::deque<String> mLastCommands;
 
-	EE::Window::Window* mWindow;
+	EE::Window::Window* mWindow{ nullptr };
 
-	Color mConColor;
-	Color mConLineColor;
-	Color mFontLineColor;
+	Color mConColor{ 0x201F1FEE };
+	Color mConLineColor{ 0x666666EE };
+	Color mFontLineColor{ 255, 255, 255, 230 };
 
-	Float mWidth;
-	Float mHeight;
-	Float mHeightMin;
-	Float mCurHeight;
-	Float mY;
-	Float mA;
-	Float mMaxAlpha;
-	Float mTempY;
-	Float mFontSize;
-	Time mFadeSpeed;
+	Sizef mSize;
+#if EE_PLATFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_IOS
+	Float mHeightMin{ 0.5f };
+#else
+	Float mHeightMin{ 0.6f };
+#endif
+	Float mCurHeight{ 0.f };
+	Float mY{ 0.f };
+	Float mA{ 0.f };
+	Float mMaxAlpha{ 255.f };
+	Float mTempY{ 0.f };
+	Float mFontSize{ 12.f };
+	Time mFadeSpeed{ Milliseconds( 250.f ) };
 
-	Uint32 mMyCallback;
-	Uint32 mVidCb;
-	Uint32 mEx;
-	Uint32 mMaxLogLines;
-	int mLastLogPos;
+	Uint32 mMyCallback{ 0 };
+	Uint32 mVidCb{ 0 };
+	Uint32 mEx{ 0 };
+	Uint32 mMaxLogLines{ 1024 };
+	int mLastLogPos{ 0 };
 
-	InputTextBuffer* mTBuf;
+	InputTextBuffer* mTBuf{ nullptr };
 
 	Primitives mPri;
-	Uint32 mTexId;
+	Uint32 mTexId{ 0 };
 
 	struct sCon {
-		int ConMin;
-		int ConMax;
-		int ConModif;
+		int ConMin{ 0 };
+		int ConMax{ 0 };
+		int ConModif{ 0 };
 	};
 	sCon mCon;
 
-	Float mCurAlpha;
+	Float mCurAlpha{ 0.f };
 	std::vector<Text> mTextCache;
 	FontStyleConfig mFontStyleConfig;
-	bool mEnabled;
-	bool mVisible;
-	bool mFadeIn;
-	bool mFadeOut;
-	bool mExpand;
-	bool mFading;
-	bool mShowFps;
-	bool mCurSide;
+	bool mEnabled{ false };
+	bool mVisible{ false };
+	bool mFadeIn{ false };
+	bool mFadeOut{ false };
+	bool mExpand{ false };
+	bool mFading{ false };
+	bool mShowFps{ false };
+	bool mCurSide{ false };
 
 	void createDefaultCommands();
 
 	void fade( const Time& elapsedTime );
 
-	/** Internal Callback for default command ( clear ) */
-	void cmdClear( const std::vector<String>& params );
-
 	/** Internal Callback for default command ( maximize ) */
-	void cmdMaximize( const std::vector<String>& params );
+	void cmdMaximize();
 
 	/** Internal Callback for default command ( minimize ) */
-	void cmdMinimize( const std::vector<String>& params );
-
-	/** Internal Callback for default command ( quit ) */
-	void cmdQuit( const std::vector<String>& params );
+	void cmdMinimize();
 
 	/** Internal Callback for default command ( cmdlist ) */
-	void cmdCmdList( const std::vector<String>& params );
+	void cmdCmdList();
 
 	/** Internal Callback for default command ( showcursor ) */
 	void cmdShowCursor( const std::vector<String>& params );
@@ -218,17 +215,11 @@ class EE_API Console : protected LogReaderInterface {
 	/** Internal Callback for default command ( setfpslimit ) */
 	void cmdFrameLimit( const std::vector<String>& params );
 
-	/** Internal Callback for default command ( getlog ) */
-	void cmdGetLog( const std::vector<String>& params );
-
 	/** Internal Callback for default command ( setgamma ) */
 	void cmdSetGamma( const std::vector<String>& params );
 
 	/** Internal Callback for default command ( setvolume ) */
 	void cmdSetVolume( const std::vector<String>& params );
-
-	/** Internal Callback for default command ( getgpuextensions ) */
-	void cmdGetGpuExtensions( const std::vector<String>& params );
 
 	/** Internal Callback for default command ( dir and ls ) */
 	void cmdDir( const std::vector<String>& params );
@@ -237,10 +228,7 @@ class EE_API Console : protected LogReaderInterface {
 	void cmdShowFps( const std::vector<String>& params );
 
 	/** Internal Callback for default command ( gettexturememory ) */
-	void cmdGetTextureMemory( const std::vector<String>& params );
-
-	/** Internal Callback for default command ( hide ) */
-	void cmdHideConsole( const std::vector<String>& params );
+	void cmdGetTextureMemory();
 
 	/** The Default Commands Callbacks for the Console ( don't call it ) */
 	void privInputCallback( InputEvent* Event );
@@ -261,7 +249,7 @@ class EE_API Console : protected LogReaderInterface {
 
 	void printCommandsStartingWith( const String& start );
 
-	void privVideoResize( EE::Window::Window* win );
+	void privVideoResize( EE::Window::Window* );
 
 	void writeLog( const std::string& Text );
 

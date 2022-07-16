@@ -121,6 +121,8 @@ class EE_API TextDocument {
 
 	size_t linesCount() const;
 
+	const TextDocumentLine& getCurrentLine() const;
+
 	std::vector<TextDocumentLine>& lines();
 
 	bool hasSelection() const;
@@ -142,6 +144,8 @@ class EE_API TextDocument {
 	TextPosition positionOffset( TextPosition position, TextPosition offset ) const;
 
 	bool replaceLine( const Int64& lineNum, const String& text );
+
+	bool replaceCurrentLine( const String& text );
 
 	void print() const;
 

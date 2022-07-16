@@ -27,15 +27,6 @@ class FontStyleConfig {
 
 	FontStyleConfig() {}
 
-	FontStyleConfig( const FontStyleConfig& fontStyleConfig ) :
-		Font( fontStyleConfig.Font ),
-		CharacterSize( fontStyleConfig.CharacterSize ),
-		Style( fontStyleConfig.Style ),
-		FontColor( fontStyleConfig.FontColor ),
-		ShadowColor( fontStyleConfig.ShadowColor ),
-		OutlineThickness( fontStyleConfig.OutlineThickness ),
-		OutlineColor( fontStyleConfig.OutlineColor ) {}
-
 	virtual void updateFontStyleConfig( const FontStyleConfig& fontStyleConfig ) {
 		Font = fontStyleConfig.Font;
 		Style = fontStyleConfig.Style;

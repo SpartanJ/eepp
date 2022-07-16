@@ -16,6 +16,8 @@ class EE_API TextDocumentLine {
 
 	const String& getText() const { return mText; }
 
+	String getTextWithoutNewLine() const { return mText.substr( 0, mText.size() - 1 ); }
+
 	void operator=( const std::string& right ) { setText( right ); }
 
 	String::StringBaseType operator[]( std::size_t index ) const { return mText[index]; }

@@ -605,6 +605,10 @@ size_t TextDocument::linesCount() const {
 	return mLines.size();
 }
 
+const TextDocumentLine& TextDocument::getCurrentLine() const {
+	return mLines[mSelection.start().line()];
+}
+
 std::vector<TextDocumentLine>& TextDocument::lines() {
 	return mLines;
 }
@@ -787,6 +791,10 @@ bool TextDocument::replaceLine( const Int64& lineNum, const String& text ) {
 		return true;
 	}
 	return false;
+}
+
+bool TextDocument::replaceCurrentLine( const String& text ) {
+	return replaceLine( getSelection().start().line(), text );
 }
 
 TextPosition TextDocument::nextChar( TextPosition position ) const {

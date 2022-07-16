@@ -11,6 +11,7 @@
 #include <eepp/ui/tools/uicolorpicker.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#include <eepp/window/window.hpp>
 
 namespace EE { namespace UI { namespace Tools {
 

@@ -16,81 +16,23 @@ using namespace EE::Window;
 namespace EE { namespace Graphics {
 
 Console::Console( EE::Window::Window* window ) :
-	mWindow( window ),
-	mConColor( 0x201F1FEE ),
-	mConLineColor( 0x666666EE ),
-	mFontLineColor( 255, 255, 255, 230 ),
-	mWidth( 0 ),
-	mHeight( 0 ),
-#if EE_PLATFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_IOS
-	mHeightMin( 0.5f ),
-#else
-	mHeightMin( 0.6f ),
-#endif
-	mY( 0.0f ),
-	mA( 0.0f ),
-	mFadeSpeed( Milliseconds( 250.f ) ),
-	mMyCallback( 0 ),
-	mVidCb( 0 ),
-	mMaxLogLines( 1024 ),
-	mLastLogPos( 0 ),
-	mTBuf( InputTextBuffer::New() ),
-	mTexId( 0 ),
-	mCurAlpha( 0 ),
-	mEnabled( false ),
-	mVisible( false ),
-	mFadeIn( false ),
-	mFadeOut( false ),
-	mExpand( false ),
-	mFading( false ),
-	mShowFps( false ),
-	mCurSide( false ) {
+	mWindow( window ), mTBuf( InputTextBuffer::New() ) {
 	mFontStyleConfig.FontColor = Color( 0xCFCFCFFF );
 
-	if ( NULL == mWindow ) {
+	if ( NULL == mWindow )
 		mWindow = Engine::instance()->getCurrentWindow();
-	}
 }
 
-Console::Console( Font* font, const bool& MakeDefaultCommands, const bool& AttachToLog,
-				  const unsigned int& MaxLogLines, const Uint32& TextureId,
+Console::Console( Font* font, const bool& makeDefaultCommands, const bool& attachToLog,
+				  const unsigned int& maxLogLines, const Uint32& textureId,
 				  EE::Window::Window* window ) :
-	mWindow( window ),
-	mConColor( 0x201F1FEE ),
-	mConLineColor( 0x666666EE ),
-	mFontLineColor( 255, 255, 255, 230 ),
-	mWidth( 0 ),
-	mHeight( 0 ),
-#if EE_PLATFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_IOS
-	mHeightMin( 0.5f ),
-#else
-	mHeightMin( 0.6f ),
-#endif
-	mY( 0.0f ),
-	mA( 0.0f ),
-	mFadeSpeed( Milliseconds( 250.f ) ),
-	mMyCallback( 0 ),
-	mVidCb( 0 ),
-	mMaxLogLines( 1024 ),
-	mLastLogPos( 0 ),
-	mTBuf( InputTextBuffer::New() ),
-	mTexId( 0 ),
-	mCurAlpha( 0 ),
-	mEnabled( false ),
-	mVisible( false ),
-	mFadeIn( false ),
-	mFadeOut( false ),
-	mExpand( false ),
-	mFading( false ),
-	mShowFps( false ),
-	mCurSide( false ) {
+	mWindow( window ), mTBuf( InputTextBuffer::New() ) {
 	mFontStyleConfig.FontColor = Color( 0xCFCFCFFF );
 
-	if ( NULL == mWindow ) {
+	if ( NULL == mWindow )
 		mWindow = Engine::instance()->getCurrentWindow();
-	}
 
-	create( font, MakeDefaultCommands, AttachToLog, MaxLogLines, TextureId );
+	create( font, makeDefaultCommands, attachToLog, maxLogLines, textureId );
 }
 
 Console::~Console() {
@@ -102,9 +44,8 @@ Console::~Console() {
 
 	eeSAFE_DELETE( mTBuf );
 
-	if ( Log::existsSingleton() ) {
+	if ( Log::existsSingleton() )
 		Log::instance()->removeLogReader( this );
-	}
 }
 
 void Console::setConsoleMinimizedHeight( const EE::Float& MinHeight ) {
@@ -133,7 +74,7 @@ void Console::setBackgroundColor( const Color& BackColor ) {
 
 void Console::setCharacterSize( const EE::Uint32& characterSize ) {
 	mFontStyleConfig.CharacterSize = characterSize;
-	mFontSize = ( Float )( mFontStyleConfig.Font->getFontHeight(
+	mFontSize = (Float)( mFontStyleConfig.Font->getFontHeight(
 		PixelDensity::dpToPxI( mFontStyleConfig.CharacterSize ) ) );
 }
 
@@ -165,29 +106,28 @@ const Color& Console::getFontLineColor() const {
 	return mFontLineColor;
 }
 
-void Console::create( Font* Font, const bool& MakeDefaultCommands, const bool& AttachToLog,
-					  const unsigned int& MaxLogLines, const Uint32& TextureId ) {
-	if ( NULL == mWindow ) {
+void Console::create( Font* Font, const bool& makeDefaultCommands, const bool& attachToLog,
+					  const unsigned int& maxLogLines, const Uint32& textureId ) {
+	if ( NULL == mWindow )
 		mWindow = Engine::instance()->getCurrentWindow();
-	}
 
 	mFontStyleConfig.Font = Font;
-	mFontSize = ( Float )( mFontStyleConfig.Font->getFontHeight(
+	mFontSize = (Float)( mFontStyleConfig.Font->getFontHeight(
 		PixelDensity::dpToPxI( mFontStyleConfig.CharacterSize ) ) );
 
-	if ( TextureId > 0 )
-		mTexId = TextureId;
+	if ( textureId > 0 )
+		mTexId = textureId;
 
-	mMaxLogLines = MaxLogLines;
+	mMaxLogLines = maxLogLines;
 	mMaxAlpha = (Float)mConColor.a;
 
 	mEnabled = true;
 
-	if ( MakeDefaultCommands )
+	if ( makeDefaultCommands )
 		createDefaultCommands();
 
-	mWidth = (Float)mWindow->getWidth();
-	mHeight = (Float)mWindow->getHeight();
+	mSize.x = (Float)mWindow->getWidth();
+	mSize.y = (Float)mWindow->getHeight();
 
 	mTextCache.resize( maxLinesOnScreen() );
 
@@ -207,9 +147,8 @@ void Console::create( Font* Font, const bool& MakeDefaultCommands, const bool& A
 
 	cmdGetLog();
 
-	if ( AttachToLog ) {
+	if ( attachToLog )
 		Log::instance()->addLogReader( this );
-	}
 }
 
 void Console::addCommand( const String& Command, ConsoleCallback CB ) {
@@ -226,24 +165,24 @@ void Console::draw( const Time& elapsedTime ) {
 			if ( mTexId == 0 ) {
 				mPri.setColor(
 					Color( mConColor.r, mConColor.g, mConColor.b, static_cast<Uint8>( mA ) ) );
-				mPri.drawRectangle( Rectf( Vector2f( 0.0f, 0.0f ), Sizef( mWidth, mY ) ) );
+				mPri.drawRectangle( Rectf( Vector2f( 0.0f, 0.0f ), Sizef( mSize.x, mY ) ) );
 			} else {
 				Color C( mConColor.r, mConColor.g, mConColor.b, static_cast<Uint8>( mA ) );
 
 				Texture* Tex = TextureFactory::instance()->getTexture( mTexId );
 
 				if ( NULL != Tex )
-					Tex->drawEx( 0.0f, 0.0f, mWidth, mY, 0.0f, Vector2f::One, C, C, C, C );
+					Tex->drawEx( 0.0f, 0.0f, mSize.x, mY, 0.0f, Vector2f::One, C, C, C, C );
 			}
 			mPri.setColor( Color( mConLineColor.r, mConLineColor.g, mConLineColor.b,
 								  static_cast<Uint8>( mA ) ) );
 			mPri.drawRectangle(
-				Rectf( Vector2f( 0.0f, mY ), Sizef( mWidth, PixelDensity::dpToPx( 2.0f ) ) ) );
+				Rectf( Vector2f( 0.0f, mY ), Sizef( mSize.x, PixelDensity::dpToPx( 2.0f ) ) ) );
 
 			Int32 linesInScreen = this->linesOnScreen();
 
 			if ( static_cast<Int32>( mCmdLog.size() ) > linesInScreen )
-				mEx = ( Uint32 )( mCmdLog.size() - linesInScreen );
+				mEx = (Uint32)( mCmdLog.size() - linesInScreen );
 			else
 				mEx = 0;
 			mTempY = -mCurHeight;
@@ -365,7 +304,7 @@ const Time& Console::getFadeSpeed() const {
 	return mFadeSpeed;
 }
 
-static std::vector<String> SplitCommandParams( String str ) {
+static std::vector<String> splitCommandParams( String str ) {
 	std::vector<String> params = String::split( str, ' ' );
 	std::vector<String> rparams;
 	String tstr;
@@ -399,7 +338,7 @@ static std::vector<String> SplitCommandParams( String str ) {
 
 void Console::processLine() {
 	String str = mTBuf->getBuffer();
-	std::vector<String> params = SplitCommandParams( str );
+	std::vector<String> params = splitCommandParams( str );
 
 	mLastCommands.push_back( str );
 	mLastLogPos = (int)mLastCommands.size();
@@ -492,9 +431,9 @@ void Console::fade( const Time& elapsedTime ) {
 	}
 
 	if ( mExpand )
-		mCurHeight = mHeight;
+		mCurHeight = mSize.y;
 	else
-		mCurHeight = eefloor( mHeightMin * mHeight );
+		mCurHeight = eefloor( mHeightMin * mSize.y );
 
 	if ( mFadeIn ) {
 		mFadeOut = false;
@@ -594,16 +533,16 @@ void Console::printCommandsStartingWith( const String& start ) {
 	}
 }
 
-void Console::privVideoResize( EE::Window::Window* win ) {
-	mWidth = (Float)mWindow->getWidth();
-	mHeight = (Float)mWindow->getHeight();
+void Console::privVideoResize( EE::Window::Window* ) {
+	mSize.x = (Float)mWindow->getWidth();
+	mSize.y = (Float)mWindow->getHeight();
 	mTextCache.resize( maxLinesOnScreen() );
 
 	if ( mVisible ) {
 		if ( mExpand )
-			mCurHeight = mHeight;
+			mCurHeight = mSize.y;
 		else
-			mCurHeight = eefloor( mHeightMin * mHeight );
+			mCurHeight = eefloor( mHeightMin * mSize.y );
 
 		mY = mCurHeight;
 	}
@@ -699,7 +638,7 @@ Int32 Console::linesOnScreen() {
 }
 
 Int32 Console::maxLinesOnScreen() {
-	return static_cast<Int32>( ( mHeight / mFontSize ) + 3 );
+	return static_cast<Int32>( ( mSize.y / mFontSize ) + 3 );
 }
 
 void Console::privInputCallback( InputEvent* Event ) {
@@ -797,63 +736,55 @@ void Console::privInputCallback( InputEvent* Event ) {
 }
 
 void Console::createDefaultCommands() {
-	addCommand( "clear", cb::Make1( this, &Console::cmdClear ) );
-	addCommand( "quit", cb::Make1( this, &Console::cmdQuit ) );
-	addCommand( "maximize", cb::Make1( this, &Console::cmdMaximize ) );
-	addCommand( "minimize", cb::Make1( this, &Console::cmdMinimize ) );
-	addCommand( "cmdlist", cb::Make1( this, &Console::cmdCmdList ) );
-	addCommand( "help", cb::Make1( this, &Console::cmdCmdList ) );
-	addCommand( "showcursor", cb::Make1( this, &Console::cmdShowCursor ) );
-	addCommand( "setfpslimit", cb::Make1( this, &Console::cmdFrameLimit ) );
-	addCommand( "getlog", cb::Make1( this, &Console::cmdGetLog ) );
-	addCommand( "setgamma", cb::Make1( this, &Console::cmdSetGamma ) );
-	addCommand( "setvolume", cb::Make1( this, &Console::cmdSetVolume ) );
-	addCommand( "getgpuextensions", cb::Make1( this, &Console::cmdGetGpuExtensions ) );
-	addCommand( "dir", cb::Make1( this, &Console::cmdDir ) );
-	addCommand( "ls", cb::Make1( this, &Console::cmdDir ) );
-	addCommand( "showfps", cb::Make1( this, &Console::cmdShowFps ) );
-	addCommand( "gettexturememory", cb::Make1( this, &Console::cmdGetTextureMemory ) );
-	addCommand( "hide", cb::Make1( this, &Console::cmdHideConsole ) );
+	addCommand( "clear", [&]( const auto& ) { cmdClear(); } );
+	addCommand( "quit", [&]( const auto& ) { mWindow->close(); } );
+	addCommand( "maximize", [&]( const auto& ) { cmdMaximize(); } );
+	addCommand( "minimize", [&]( const auto& ) { cmdMinimize(); } );
+	addCommand( "cmdlist", [&]( const auto& ) { cmdCmdList(); } );
+	addCommand( "help", [&]( const auto& ) { cmdCmdList(); } );
+	addCommand( "showcursor", [&]( const auto& params ) { cmdShowCursor( params ); } );
+	addCommand( "setfpslimit", [&]( const auto& params ) { cmdFrameLimit( params ); } );
+	addCommand( "getlog", [&]( const auto& ) { cmdGetLog(); } );
+	addCommand( "setgamma", [&]( const auto& params ) { cmdSetGamma( params ); } );
+	addCommand( "setvolume", [&]( const auto& params ) { cmdSetVolume( params ); } );
+	addCommand( "getgpuextensions", [&]( const auto& ) { cmdGetGpuExtensions(); } );
+	addCommand( "dir", [&]( const auto& params ) { cmdDir( params ); } );
+	addCommand( "ls", [&]( const auto& params ) { cmdDir( params ); } );
+	addCommand( "showfps", [&]( const auto& params ) { cmdShowFps( params ); } );
+	addCommand( "gettexturememory", [&]( const auto& ) { cmdGetTextureMemory(); } );
+	addCommand( "hide", [&]( const auto& ) { fadeOut(); } );
 }
 
 void Console::cmdClear() {
 	Uint16 CutLines;
 	if ( mExpand ) {
-		CutLines = ( Uint16 )( mHeight / mFontSize );
+		CutLines = (Uint16)( mSize.y / mFontSize );
 	} else {
-		CutLines = ( Uint16 )( ( mHeightMin * mHeight ) / mFontSize );
+		CutLines = (Uint16)( ( mHeightMin * mSize.y ) / mFontSize );
 	}
 
 	for ( Uint16 i = 0; i < CutLines; i++ )
 		privPushText( "" );
 }
 
-void Console::cmdClear( const std::vector<String>& params ) {
-	cmdClear();
-}
-
-void Console::cmdMaximize( const std::vector<String>& params ) {
+void Console::cmdMaximize() {
 	mExpand = true;
-	mY = mHeight;
+	mY = mSize.y;
 	privPushText( "Console Maximized" );
 }
 
-void Console::cmdMinimize( const std::vector<String>& params ) {
+void Console::cmdMinimize() {
 	mExpand = false;
-	mY = eefloor( mHeightMin * mHeight );
+	mY = eefloor( mHeightMin * mSize.y );
 	privPushText( "Console Minimized" );
 }
 
-void Console::cmdQuit( const std::vector<String>& params ) {
-	mWindow->close();
-}
-
-void Console::cmdGetTextureMemory( const std::vector<String>& params ) {
+void Console::cmdGetTextureMemory() {
 	privPushText( "Total texture memory used: " +
 				  FileSystem::sizeToString( TextureFactory::instance()->getTextureMemorySize() ) );
 }
 
-void Console::cmdCmdList( const std::vector<String>& params ) {
+void Console::cmdCmdList() {
 	std::map<String, ConsoleCallback>::iterator itr;
 	for ( itr = mCallbacks.begin(); itr != mCallbacks.end(); ++itr ) {
 		privPushText( "\t" + itr->first );
@@ -899,10 +830,6 @@ void Console::cmdGetLog() {
 	}
 }
 
-void Console::cmdGetLog( const std::vector<String>& params ) {
-	cmdGetLog();
-}
-
 void Console::cmdGetGpuExtensions() {
 	std::vector<String> tvec = String::split( String( GLi->getExtensions() ), ' ' );
 	if ( tvec.size() > 0 ) {
@@ -911,14 +838,9 @@ void Console::cmdGetGpuExtensions() {
 	}
 }
 
-void Console::cmdGetGpuExtensions( const std::vector<String>& params ) {
-	cmdGetGpuExtensions();
-}
-
 void Console::cmdSetGamma( const std::vector<String>& params ) {
 	if ( params.size() >= 2 ) {
 		Float tFloat = 0.f;
-
 		bool Res = String::fromString<Float>( tFloat, params[1] );
 
 		if ( Res && ( tFloat > 0.1f && tFloat <= 10.0f ) ) {
@@ -1016,10 +938,6 @@ void Console::cmdShowFps( const std::vector<String>& params ) {
 	}
 
 	privPushText( "Valid parameters are 0 ( hide ) or 1 ( show )." );
-}
-
-void Console::cmdHideConsole( const std::vector<String>& params ) {
-	fadeOut();
 }
 
 void Console::ignoreCharOnPrompt( const Uint32& ch ) {

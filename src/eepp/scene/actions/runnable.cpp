@@ -10,9 +10,16 @@ Runnable::Runnable( Runnable::RunnableFunc callback, const Time& time ) :
 	Delay( time ), mCallback( callback ) {}
 
 void Runnable::update( const Time& ) {
-	if ( mCallback && isDone() ) {
+	if ( mCallback && Delay::isDone() && !mCalled ) {
 		mCallback();
+		mCalled = true;
+	} else if ( !mCallback ) {
+		mCalled = true;
 	}
+}
+
+bool Runnable::isDone() {
+	return Delay::isDone() && mCalled;
 }
 
 Action* Runnable::clone() const {
