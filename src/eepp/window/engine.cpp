@@ -113,11 +113,11 @@ Engine::~Engine() {
 }
 
 void Engine::destroy() {
-	std::list<Window*>::iterator it;
-
-	for ( it = mWindows.begin(); it != mWindows.end(); ++it ) {
-		eeSAFE_DELETE( *it );
+	for ( auto& it : mWindows ) {
+		eeSAFE_DELETE( it.second );
 	}
+
+	mWindows.clear();
 
 	mWindow = NULL;
 }
@@ -172,7 +172,7 @@ EE::Window::Window* Engine::createWindow( WindowSettings Settings, ContextSettin
 
 	setCurrentWindow( window );
 
-	mWindows.push_back( mWindow );
+	mWindows.insert( { mWindow->getWindowID(), mWindow } );
 
 	PixelDensity::setPixelDensity( Settings.PixelDensity );
 
@@ -180,11 +180,11 @@ EE::Window::Window* Engine::createWindow( WindowSettings Settings, ContextSettin
 }
 
 void Engine::destroyWindow( EE::Window::Window* window ) {
-	mWindows.remove( window );
+	mWindows.erase( window->getWindowID() );
 
 	if ( window == mWindow ) {
 		if ( mWindows.size() > 0 ) {
-			mWindow = mWindows.back();
+			mWindow = mWindows.begin()->second;
 		} else {
 			mWindow = NULL;
 		}
@@ -196,12 +196,25 @@ void Engine::destroyWindow( EE::Window::Window* window ) {
 bool Engine::existsWindow( EE::Window::Window* window ) {
 	std::list<Window*>::iterator it;
 
-	for ( it = mWindows.begin(); it != mWindows.end(); ++it ) {
-		if ( ( *it ) == window )
+	for ( auto& it : mWindows ) {
+		if ( it.second == window )
 			return true;
 	}
 
 	return false;
+}
+
+void Engine::forEachWindow( std::function<void( EE::Window::Window* )> cb ) {
+	for ( auto& it : mWindows )
+		cb( it.second );
+}
+
+EE::Window::Window* Engine::getWindowID( const Uint32& winID ) {
+	for ( auto& it : mWindows ) {
+		if ( it.first == winID )
+			return it.second;
+	}
+	return nullptr;
 }
 
 EE::Window::Window* Engine::getCurrentWindow() const {

@@ -229,6 +229,9 @@ class EE_API Input {
 	/** @return the state of the mod keys. */
 	const Uint32& getModState() const;
 
+	/** Process an input event. Called by the input update. */
+	void processEvent( InputEvent* Event );
+
   protected:
 	friend class Window;
 
@@ -262,8 +265,6 @@ class EE_API Input {
 	InputFinger mFingers[EE_MAX_FINGERS];
 
 	std::map<Uint32, InputCallback> mCallbacks;
-
-	void processEvent( InputEvent* Event );
 
 	InputFinger* getFingerId( const Int64& fingerId );
 

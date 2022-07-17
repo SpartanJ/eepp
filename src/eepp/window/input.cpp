@@ -1,3 +1,4 @@
+#include <eepp/window/engine.hpp>
 #include <eepp/window/input.hpp>
 
 namespace EE { namespace Window {
@@ -51,6 +52,8 @@ void Input::sendEvent( InputEvent* Event ) {
 void Input::processEvent( InputEvent* Event ) {
 	switch ( Event->Type ) {
 		case InputEvent::Window: {
+			if ( Event->window.type == InputEvent::WindowClose )
+				mWindow->onCloseRequest();
 			break;
 		}
 		case InputEvent::KeyDown: {
@@ -152,8 +155,8 @@ void Input::processEvent( InputEvent* Event ) {
 			InputFinger* Finger = getFingerId( Event->finger.fingerId );
 
 			Finger->writeLast();
-			Finger->x = ( Uint16 )( Event->finger.x * (Float)mWindow->getWidth() );
-			Finger->y = ( Uint16 )( Event->finger.y * (Float)mWindow->getHeight() );
+			Finger->x = (Uint16)( Event->finger.x * (Float)mWindow->getWidth() );
+			Finger->y = (Uint16)( Event->finger.y * (Float)mWindow->getHeight() );
 			Finger->pressure = Event->finger.pressure;
 			Finger->down = true;
 			Finger->xdelta = Event->finger.dx;
@@ -169,8 +172,8 @@ void Input::processEvent( InputEvent* Event ) {
 			InputFinger* Finger = getFingerId( Event->finger.fingerId );
 
 			Finger->writeLast();
-			Finger->x = ( Uint16 )( Event->finger.x * (Float)mWindow->getWidth() );
-			Finger->y = ( Uint16 )( Event->finger.y * (Float)mWindow->getHeight() );
+			Finger->x = (Uint16)( Event->finger.x * (Float)mWindow->getWidth() );
+			Finger->y = (Uint16)( Event->finger.y * (Float)mWindow->getHeight() );
 			Finger->pressure = Event->finger.pressure;
 			Finger->down = false;
 			Finger->wasDown = true;
@@ -187,8 +190,8 @@ void Input::processEvent( InputEvent* Event ) {
 			InputFinger* Finger = getFingerId( Event->finger.fingerId );
 
 			Finger->writeLast();
-			Finger->x = ( Uint16 )( Event->finger.x * (Float)mWindow->getWidth() );
-			Finger->y = ( Uint16 )( Event->finger.y * (Float)mWindow->getHeight() );
+			Finger->x = (Uint16)( Event->finger.x * (Float)mWindow->getWidth() );
+			Finger->y = (Uint16)( Event->finger.y * (Float)mWindow->getHeight() );
 			Finger->pressure = Event->finger.pressure;
 			Finger->down = true;
 			Finger->xdelta = Event->finger.dx;
@@ -205,7 +208,10 @@ void Input::processEvent( InputEvent* Event ) {
 			break;
 		}
 		case InputEvent::Quit: {
-			mWindow->onCloseRequest();
+			if ( Engine::isEngineRunning() ) {
+				Engine::instance()->forEachWindow(
+					[&]( EE::Window::Window* win ) { win->onCloseRequest(); } );
+			}
 			break;
 		}
 	}

@@ -25,6 +25,14 @@ class EE_API WindowSDL : public Window {
 
 	bool create( WindowSettings Settings, ContextSettings Context );
 
+	Uint32 getWindowID();
+
+	void makeCurrent();
+
+	void close();
+
+	void setCurrent();
+
 	void toggleFullscreen();
 
 	void setTitle( const std::string& title );
@@ -100,6 +108,7 @@ class EE_API WindowSDL : public Window {
 	SDL_GLContext mGLContext;
 	SDL_GLContext mGLContextThread;
 	Mutex mGLContextMutex;
+	Uint32 mID{ 0 };
 
 #ifdef EE_USE_WMINFO
 	WMInfo* mWMinfo;

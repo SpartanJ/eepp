@@ -203,6 +203,9 @@ class InputEvent {
 	/** Event Type */
 	Uint32 Type;
 
+	/** Window ID */
+	Uint32 WinID{ 0 };
+
 	/** General event structure */
 	union {
 		WindowEvent window;

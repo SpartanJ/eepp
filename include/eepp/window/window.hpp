@@ -163,6 +163,11 @@ class EE_API Window {
 	/** Creates a new window and GL context */
 	virtual bool create( WindowSettings Settings, ContextSettings Context ) = 0;
 
+	/** Bind the OpenGL context to the current window */
+	virtual void makeCurrent() = 0;
+
+	virtual Uint32 getWindowID() = 0;
+
 	/** Toogle the screen to Fullscreen, if it's in fullscreen toogle to windowed mode. */
 	virtual void toggleFullscreen() = 0;
 

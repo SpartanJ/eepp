@@ -6,6 +6,7 @@
 #include <eepp/window/backend/SDL2/inputsdl2.hpp>
 #include <eepp/window/backend/SDL2/joystickmanagersdl2.hpp>
 #include <eepp/window/backend/SDL2/windowsdl2.hpp>
+#include <eepp/window/engine.hpp>
 
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
@@ -119,65 +120,76 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 			switch ( SDLEvent.window.event ) {
 				case SDL_WINDOWEVENT_RESIZED: {
 					event.Type = InputEvent::VideoResize;
+					event.WinID = SDLEvent.window.windowID;
 					event.resize.w = SDLEvent.window.data1 * mDPIScale;
 					event.resize.h = SDLEvent.window.data2 * mDPIScale;
 					break;
 				}
 				case SDL_WINDOWEVENT_HIT_TEST: {
 					event.Type = InputEvent::Window;
+					event.WinID = SDLEvent.window.windowID;
 					event.window.gain = 1;
 					event.window.type = InputEvent::WindowHitTest;
 					break;
 				}
 				case SDL_WINDOWEVENT_TAKE_FOCUS: {
 					event.Type = InputEvent::VideoExpose;
+					event.WinID = SDLEvent.window.windowID;
 					event.expose.type = event.Type;
 					break;
 				}
 				case SDL_WINDOWEVENT_CLOSE: {
 					event.Type = InputEvent::Window;
 					event.window.gain = 0;
+					event.WinID = SDLEvent.window.windowID;
 					event.window.type = InputEvent::WindowClose;
 					break;
 				}
 				case SDL_WINDOWEVENT_SIZE_CHANGED: {
 					event.Type = InputEvent::Window;
 					event.window.gain = 1;
+					event.WinID = SDLEvent.window.windowID;
 					event.window.type = InputEvent::WindowSizeChanged;
 					break;
 				}
 				case SDL_WINDOWEVENT_MAXIMIZED: {
 					event.Type = InputEvent::Window;
 					event.window.gain = 1;
+					event.WinID = SDLEvent.window.windowID;
 					event.window.type = InputEvent::WindowMaximized;
 					break;
 				}
 				case SDL_WINDOWEVENT_EXPOSED: {
 					event.Type = InputEvent::VideoExpose;
+					event.WinID = SDLEvent.window.windowID;
 					event.expose.type = event.Type;
 					break;
 				}
 				case SDL_WINDOWEVENT_MOVED: {
 					event.Type = InputEvent::Window;
 					event.window.gain = 1;
+					event.WinID = SDLEvent.window.windowID;
 					event.window.type = InputEvent::WindowMoved;
 					break;
 				}
 				case SDL_WINDOWEVENT_SHOWN: {
 					event.Type = InputEvent::Window;
 					event.window.gain = 1;
+					event.WinID = SDLEvent.window.windowID;
 					event.window.type = InputEvent::WindowShown;
 					break;
 				}
 				case SDL_WINDOWEVENT_HIDDEN: {
 					event.Type = InputEvent::Window;
 					event.window.gain = 0;
+					event.WinID = SDLEvent.window.windowID;
 					event.window.type = InputEvent::WindowHidden;
 					break;
 				}
 				case SDL_WINDOWEVENT_MINIMIZED: {
 					event.Type = InputEvent::Window;
 					event.window.gain = 0;
+					event.WinID = SDLEvent.window.windowID;
 					event.window.type = InputEvent::WindowMinimized;
 					break;
 				}
@@ -190,24 +202,28 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 				case SDL_WINDOWEVENT_ENTER: {
 					event.Type = InputEvent::Window;
 					event.window.gain = 1;
+					event.WinID = SDLEvent.window.windowID;
 					event.window.type = InputEvent::WindowMouseEnter;
 					break;
 				}
 				case SDL_WINDOWEVENT_LEAVE: {
 					event.Type = InputEvent::Window;
 					event.window.gain = 0;
+					event.WinID = SDLEvent.window.windowID;
 					event.window.type = InputEvent::WindowMouseLeave;
 					break;
 				}
 				case SDL_WINDOWEVENT_FOCUS_GAINED: {
 					event.Type = InputEvent::Window;
 					event.window.gain = 1;
+					event.WinID = SDLEvent.window.windowID;
 					event.window.type = InputEvent::WindowKeyboardFocusGain;
 					break;
 				}
 				case SDL_WINDOWEVENT_FOCUS_LOST: {
 					event.Type = InputEvent::Window;
 					event.window.gain = 0;
+					event.WinID = SDLEvent.window.windowID;
 					event.window.type = InputEvent::WindowKeyboardFocusLost;
 					break;
 				}
@@ -219,6 +235,7 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 			String txt = String::fromUtf8( SDLEvent.text.text );
 			event.Type = InputEvent::TextInput;
 			event.text.timestamp = SDLEvent.text.timestamp;
+			event.WinID = SDLEvent.text.windowID;
 			event.text.text = txt[0];
 			break;
 		}
@@ -230,6 +247,7 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 			event.key.keysym.scancode = (Scancode)SDLEvent.key.keysym.scancode;
 			event.key.keysym.mod = SDLEvent.key.keysym.mod;
 			event.key.keysym.unicode = 0;
+			event.WinID = SDLEvent.key.windowID;
 			break;
 		}
 		case SDL_KEYUP: {
@@ -240,6 +258,7 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 			event.key.keysym.scancode = (Scancode)SDLEvent.key.keysym.scancode;
 			event.key.keysym.mod = SDLEvent.key.keysym.mod;
 			event.key.keysym.unicode = 0;
+			event.WinID = SDLEvent.key.windowID;
 			break;
 		}
 		case SDL_MOUSEMOTION: {
@@ -250,6 +269,7 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 			event.motion.y = SDLEvent.motion.y * mDPIScale;
 			event.motion.xrel = SDLEvent.motion.xrel * mDPIScale;
 			event.motion.yrel = SDLEvent.motion.yrel * mDPIScale;
+			event.WinID = SDLEvent.motion.windowID;
 			break;
 		}
 		case SDL_MOUSEBUTTONDOWN: {
@@ -259,6 +279,7 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 			event.button.state = SDLEvent.button.state;
 			event.button.x = SDLEvent.button.x;
 			event.button.y = SDLEvent.button.y;
+			event.WinID = SDLEvent.button.windowID;
 			break;
 		}
 		case SDL_MOUSEBUTTONUP: {
@@ -268,6 +289,7 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 			event.button.state = SDLEvent.button.state;
 			event.button.x = SDLEvent.button.x;
 			event.button.y = SDLEvent.button.y;
+			event.WinID = SDLEvent.button.windowID;
 			break;
 		}
 		case SDL_MOUSEWHEEL: {
@@ -296,6 +318,7 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 			event.button.x = x;
 			event.button.y = y;
 			event.button.which = SDLEvent.wheel.windowID;
+			event.WinID = SDLEvent.wheel.windowID;
 
 			event.Type = InputEvent::MouseButtonDown;
 			event.button.state = 1;
@@ -315,6 +338,7 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 			event.finger.dx = SDLEvent.tfinger.dx;
 			event.finger.dy = SDLEvent.tfinger.dy;
 			event.finger.pressure = SDLEvent.tfinger.pressure;
+			event.WinID = SDLEvent.tfinger.windowID;
 			break;
 		}
 		case SDL_FINGERDOWN: {
@@ -326,6 +350,7 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 			event.finger.y = SDLEvent.tfinger.y;
 			event.finger.dx = SDLEvent.tfinger.dx;
 			event.finger.dy = SDLEvent.tfinger.dy;
+			event.WinID = SDLEvent.tfinger.windowID;
 			event.finger.pressure = SDLEvent.tfinger.pressure;
 			break;
 		}
@@ -338,6 +363,7 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 			event.finger.y = SDLEvent.tfinger.y;
 			event.finger.dx = SDLEvent.tfinger.dx;
 			event.finger.dy = SDLEvent.tfinger.dy;
+			event.WinID = SDLEvent.tfinger.windowID;
 			event.finger.pressure = SDLEvent.tfinger.pressure;
 			break;
 		}
@@ -390,11 +416,13 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 		case SDL_DROPFILE: {
 			event.Type = InputEvent::FileDropped;
 			event.file.file = SDLEvent.drop.file;
+			event.WinID = SDLEvent.drop.windowID;
 			break;
 		}
 		case SDL_DROPTEXT: {
 			event.Type = InputEvent::TextDropped;
 			event.textdrop.text = SDLEvent.drop.file;
+			event.WinID = SDLEvent.drop.windowID;
 			break;
 		}
 		default: {
@@ -404,13 +432,25 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 				event.user.code = SDLEvent.user.code;
 				event.user.data1 = SDLEvent.user.data1;
 				event.user.data2 = SDLEvent.user.data2;
+				event.WinID = SDLEvent.user.windowID;
 			} else {
 				event.Type = InputEvent::NoEvent;
 			}
 		}
 	}
-	if ( InputEvent::NoEvent != event.Type )
-		processEvent( &event );
+
+	EE::Window::Window* win;
+
+	if ( InputEvent::NoEvent != event.Type ) {
+		if ( event.WinID == mWindow->getWindowID() || event.WinID == 0 ) {
+			processEvent( &event );
+		} else if ( ( win = Engine::instance()->getWindowID( event.WinID ) ) ) {
+			win->getInput()->processEvent( &event );
+		} else {
+			processEvent( &event );
+		}
+	}
+
 	if ( InputEvent::FileDropped == event.Type || InputEvent::TextDropped == event.Type )
 		SDL_free( SDLEvent.drop.file );
 }

@@ -186,6 +186,10 @@ void Window::createView() {
 }
 
 void Window::setup2D( const bool& KeepView ) {
+	EE::Window::Window* curWin = Engine::instance()->getCurrentWindow();
+	if ( curWin != this )
+		Engine::instance()->setCurrentWindow( this );
+
 	GLi->pixelStorei( GL_UNPACK_ALIGNMENT, 1 );
 	GLi->pixelStorei( GL_PACK_ALIGNMENT, 1 );
 
@@ -217,6 +221,9 @@ void Window::setup2D( const bool& KeepView ) {
 		GLi->enableClientState( GL_TEXTURE_COORD_ARRAY );
 		GLi->enableClientState( GL_COLOR_ARRAY );
 	}
+
+	if ( curWin != this )
+		Engine::instance()->setCurrentWindow( curWin );
 }
 
 const WindowInfo* Window::getWindowInfo() const {

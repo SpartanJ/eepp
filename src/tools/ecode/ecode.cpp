@@ -2764,15 +2764,15 @@ void App::createSettingsMenu() {
 		}
 	} );
 	UIMenuSubMenu* colorSchemeMenu = mSettingsMenu->addSubMenu(
-		i18n( "color_scheme", "Color Scheme" ), nullptr, createColorSchemeMenu() );
-	colorSchemeMenu->addEventListener( Event::OnMenuShow, [&, fileTypeMenu]( const Event* ) {
-		if ( mFileTypeMenuesCreatedWithHeight != mUISceneNode->getPixelsSize().getHeight() ) {
-			for ( UIPopUpMenu* menu : mFileTypeMenues )
+		i18n( "syntax_color_scheme", "Syntax Color Scheme" ), nullptr, createColorSchemeMenu() );
+	colorSchemeMenu->addEventListener( Event::OnMenuShow, [&, colorSchemeMenu]( const Event* ) {
+		if ( mColorSchemeMenuesCreatedWithHeight != mUISceneNode->getPixelsSize().getHeight() ) {
+			for ( UIPopUpMenu* menu : mColorSchemeMenues )
 				menu->close();
-			mFileTypeMenues.clear();
-			auto* newMenu = createFileTypeMenu();
+			mColorSchemeMenues.clear();
+			auto* newMenu = createColorSchemeMenu();
 			newMenu->reloadStyle( true, true );
-			fileTypeMenu->setSubMenu( newMenu );
+			colorSchemeMenu->setSubMenu( newMenu );
 		}
 	} );
 	mSettingsMenu->addSubMenu( i18n( "document", "Document" ), nullptr, createDocumentMenu() )

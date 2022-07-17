@@ -379,6 +379,8 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 
 	SDL_GL_MakeCurrent( mSDLWindow, mGLContext );
 
+	mID = SDL_GetWindowID( mSDLWindow );
+
 #ifdef EE_USE_WMINFO
 	mWMinfo = eeNew( WMInfo, ( mSDLWindow ) );
 #endif
@@ -416,6 +418,26 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 	SDL_SetHint( SDL_HINT_RETURN_KEY_HIDES_IME, "0" );
 
 	return true;
+}
+
+Uint32 WindowSDL::getWindowID() {
+	return mID;
+}
+
+void WindowSDL::makeCurrent() {
+	SDL_GL_MakeCurrent( mSDLWindow, mGLContext );
+}
+
+void WindowSDL::close() {
+	SDL_DestroyWindow( mSDLWindow );
+	mSDLWindow = NULL;
+	mGLContext = NULL;
+	mGLContextThread = NULL;
+	Window::close();
+}
+
+void WindowSDL::setCurrent() {
+	makeCurrent();
 }
 
 bool WindowSDL::isThreadedGLContext() {

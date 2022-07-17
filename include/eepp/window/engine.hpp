@@ -51,6 +51,10 @@ class EE_API Engine {
 	/** @return If the window instance is inside the window list. */
 	bool existsWindow( EE::Window::Window* window );
 
+	void forEachWindow( std::function<void( EE::Window::Window* )> cb );
+
+	EE::Window::Window* getWindowID( const Uint32& winID );
+
 	/** Constructs WindowSettings from an ini file
 	It will search for the following properties:
 		Width			Window width
@@ -145,7 +149,7 @@ class EE_API Engine {
 	friend class Window;
 
 	Backend::WindowBackendLibrary* mBackend;
-	std::list<Window*> mWindows;
+	std::map<Uint32, Window*> mWindows;
 	EE::Window::Window* mWindow;
 	bool mSharedGLContext;
 	Uint32 mMainThreadId;
