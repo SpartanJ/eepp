@@ -338,9 +338,9 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 			event.finger.dx = SDLEvent.tfinger.dx;
 			event.finger.dy = SDLEvent.tfinger.dy;
 			event.finger.pressure = SDLEvent.tfinger.pressure;
-			#if SDL_VERSION_ATLEAST(2,0,12)
+#if SDL_VERSION_ATLEAST( 2, 0, 12 )
 			event.WinID = SDLEvent.tfinger.windowID;
-			#endif
+#endif
 			break;
 		}
 		case SDL_FINGERDOWN: {
@@ -353,9 +353,9 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 			event.finger.dx = SDLEvent.tfinger.dx;
 			event.finger.dy = SDLEvent.tfinger.dy;
 			event.finger.pressure = SDLEvent.tfinger.pressure;
-			#if SDL_VERSION_ATLEAST(2,0,12)
+#if SDL_VERSION_ATLEAST( 2, 0, 12 )
 			event.WinID = SDLEvent.tfinger.windowID;
-			#endif
+#endif
 			break;
 		}
 		case SDL_FINGERUP: {
@@ -367,8 +367,10 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 			event.finger.y = SDLEvent.tfinger.y;
 			event.finger.dx = SDLEvent.tfinger.dx;
 			event.finger.dy = SDLEvent.tfinger.dy;
-			event.WinID = SDLEvent.tfinger.windowID;
 			event.finger.pressure = SDLEvent.tfinger.pressure;
+#if SDL_VERSION_ATLEAST( 2, 0, 12 )
+			event.WinID = SDLEvent.tfinger.windowID;
+#endif
 			break;
 		}
 		case SDL_JOYAXISMOTION: {
