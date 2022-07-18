@@ -133,8 +133,8 @@ UITerminal* TerminalManager::createNewTerminal( const std::string& title, UITabW
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 	UIMessageBox* msgBox = UIMessageBox::New(
 		UIMessageBox::OK,
-		i18n( "feature_not_supported_in_emscripten",
-			  "This feature is only supported in the desktop version of ecode." ) );
+		mApp->i18n( "feature_not_supported_in_emscripten",
+					"This feature is only supported in the desktop version of ecode." ) );
 	msgBox->showWhenReady();
 	return nullptr;
 #else
