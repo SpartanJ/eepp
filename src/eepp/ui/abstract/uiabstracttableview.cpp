@@ -409,7 +409,7 @@ UIWidget* UIAbstractTableView::createCell( UIWidget* rowWidget, const ModelIndex
 	UITableCell* widget = UITableCell::New( mTag + "::cell" );
 	widget->setParent( rowWidget );
 	widget->unsetFlags( UI_AUTO_SIZE );
-	widget->clipEnable();
+	widget->setClipType( ClipType::ContentBox );
 	widget->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 	widget->setTextAlign( UI_HALIGN_LEFT );
 	widget->setCurIndex( index );

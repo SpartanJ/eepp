@@ -208,10 +208,6 @@ void Input::processEvent( InputEvent* Event ) {
 			break;
 		}
 		case InputEvent::Quit: {
-			if ( Engine::isEngineRunning() ) {
-				Engine::instance()->forEachWindow(
-					[&]( EE::Window::Window* win ) { win->onCloseRequest(); } );
-			}
 			break;
 		}
 	}

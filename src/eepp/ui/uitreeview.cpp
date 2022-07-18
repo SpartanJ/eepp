@@ -17,7 +17,7 @@ UITreeView::UITreeView() :
 	UIAbstractTableView( "treeview" ),
 	mIndentWidth( PixelDensity::dpToPx( 12 ) ),
 	mExpanderIconSize( PixelDensity::dpToPxI( 12 ) ) {
-	clipEnable();
+	setClipType( ClipType::ContentBox );
 	mExpandIcon = getUISceneNode()->findIcon( "tree-expanded" );
 	mContractIcon = getUISceneNode()->findIcon( "tree-contracted" );
 }
@@ -144,7 +144,7 @@ UIWidget* UITreeView::setupCell( UITableCell* widget, UIWidget* rowWidget,
 								 const ModelIndex& index ) {
 	widget->setParent( rowWidget );
 	widget->unsetFlags( UI_AUTO_SIZE );
-	widget->clipEnable();
+	widget->setClipType( ClipType::ContentBox );
 	widget->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 	widget->setTextAlign( UI_HALIGN_LEFT );
 	widget->setCurIndex( index );

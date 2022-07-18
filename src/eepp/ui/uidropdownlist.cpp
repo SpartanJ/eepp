@@ -19,7 +19,7 @@ UIDropDownList* UIDropDownList::New() {
 
 UIDropDownList::UIDropDownList( const std::string& tag ) :
 	UITextInput( tag ), mListBox( NULL ), mFriendNode( NULL ) {
-	clipEnable();
+	setClipType( ClipType::ContentBox );
 	setFlags( UI_AUTO_SIZE | UI_AUTO_PADDING );
 	unsetFlags( UI_TEXT_SELECTION_ENABLED );
 

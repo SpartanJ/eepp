@@ -239,6 +239,30 @@ void UIBorderDrawable::onPositionChange() {
 	mNeedsUpdate = true;
 }
 
+Rectf UIBorderDrawable::getBorderBoxDiff() const {
+	Rectf bd;
+	switch ( mBorderType ) {
+		case BorderType::Outside: {
+			bd.Left = -mBorders.left.width;
+			bd.Right = mBorders.right.width;
+			bd.Top = -mBorders.top.width;
+			bd.Bottom = mBorders.bottom.width;
+			break;
+		}
+		case BorderType::Outline: {
+			bd.Left = -( mBorders.left.width * 0.5f );
+			bd.Right = mBorders.right.width * 0.5f;
+			bd.Top = -( mBorders.top.width * 0.5f );
+			bd.Bottom = mBorders.bottom.width * 0.5f;
+			break;
+		}
+		case BorderType::Inside: {
+			break;
+		}
+	}
+	return bd;
+}
+
 void UIBorderDrawable::update() {
 	updateBorders();
 

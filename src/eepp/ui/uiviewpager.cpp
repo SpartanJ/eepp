@@ -33,7 +33,7 @@ UIViewPager::UIViewPager() :
 	mContainer = UIWidget::New();
 	mContainer->setParent( this );
 	mContainer->setFlags( UI_OWNS_CHILDS_POSITION );
-	clipEnable();
+	setClipType( ClipType::ContentBox );
 }
 
 UIViewPager::~UIViewPager() {

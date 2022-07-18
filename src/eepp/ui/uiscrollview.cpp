@@ -25,7 +25,7 @@ UIScrollView::UIScrollView() :
 	mVScroll->setParent( this );
 	mHScroll->setParent( this );
 	mContainer->setParent( this );
-	mContainer->clipEnable();
+	mContainer->setClipType( ClipType::ContentBox );
 	mContainer->setFlags( UI_OWNS_CHILDS_POSITION );
 	mContainer->enableReportSizeChangeToChilds();
 

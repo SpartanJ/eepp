@@ -154,7 +154,7 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "layout-to-right-of", "" ).addAlias( "layout_to_right_of" );
 	registerProperty( "layout-to-top-of", "" ).addAlias( "layout_to_top_of" );
 	registerProperty( "layout-to-bottom-of", "" ).addAlias( "layout_to_bottom_of" );
-	registerProperty( "clip", "" ).setType( PropertyType::Bool );
+	registerProperty( "clip", "" ).setType( PropertyType::String );
 	registerProperty( "rotation", "" ).setType( PropertyType::NumberFloat );
 	registerProperty( "scale", "" ).setType( PropertyType::Vector2 );
 	registerProperty( "rotation-origin-point-x", "50%" )

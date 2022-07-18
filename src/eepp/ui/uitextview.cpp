@@ -291,7 +291,7 @@ void UITextView::onAutoSize() {
 			Float oldW = totW;
 			totW = eemin( totW, getMaxSize().getWidth() );
 			if ( oldW != totW )
-				clipEnable();
+				setClipType( ClipType::ContentBox );
 		}
 		setInternalPixelsWidth( totW );
 	}
@@ -302,7 +302,7 @@ void UITextView::onAutoSize() {
 			Float oldH = totH;
 			totH = eemin( totH, getMaxSize().getHeight() );
 			if ( oldH != totH )
-				clipEnable();
+				setClipType( ClipType::ContentBox );
 		}
 		setInternalPixelsHeight( totH );
 	}

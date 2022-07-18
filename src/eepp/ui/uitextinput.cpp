@@ -59,7 +59,7 @@ UITextInput::UITextInput( const std::string& tag ) :
 	subscribeScheduledUpdate();
 
 	setFlags( UI_AUTO_PADDING | UI_AUTO_SIZE | UI_TEXT_SELECTION_ENABLED );
-	clipEnable();
+	setClipType( ClipType::ContentBox );
 
 	mDoc.registerClient( this );
 	registerCommands();
@@ -133,11 +133,12 @@ void UITextInput::draw() {
 		if ( mTextCache->getTextWidth() ) {
 			drawSelection( mTextCache );
 
-			if ( isClipped() ) {
-				clipSmartEnable( mScreenPos.x + mPaddingPx.Left, mScreenPos.y + mPaddingPx.Top,
-								 mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right,
-								 mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom );
-			}
+			//			if ( getClipType() == ClipType::PaddingBox ) {
+			//				clipSmartEnable( mScreenPos.x + mPaddingPx.Left, mScreenPos.y +
+			//mPaddingPx.Top, 								 mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right,
+			//								 mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom
+			//);
+			//			}
 
 			mTextCache->setAlign( getFlags() );
 			mTextCache->draw( (Float)mScreenPosi.x + (int)mRealAlignOffset.x + (int)mPaddingPx.Left,
@@ -145,24 +146,25 @@ void UITextInput::draw() {
 								  (int)mPaddingPx.Top,
 							  Vector2f::One, 0.f, getBlendMode() );
 
-			if ( isClipped() ) {
-				clipSmartDisable();
-			}
+			//			if ( getClipType() == ClipType::PaddingBox ) {
+			//				clipSmartDisable();
+			//			}
 		} else if ( !mHintCache->getString().empty() ) {
-			if ( isClipped() ) {
-				clipSmartEnable( mScreenPos.x + mPaddingPx.Left, mScreenPos.y + mPaddingPx.Top,
-								 mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right,
-								 mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom );
-			}
+			//			if ( getClipType() == ClipType::PaddingBox ) {
+			//				clipSmartEnable( mScreenPos.x + mPaddingPx.Left, mScreenPos.y +
+			//mPaddingPx.Top, 								 mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right,
+			//								 mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom
+			//);
+			//			}
 
 			mHintCache->draw( (Float)mScreenPosi.x + (int)mRealAlignOffset.x + (int)mPaddingPx.Left,
 							  mFontLineCenter + (Float)mScreenPosi.y + (int)mRealAlignOffset.y +
 								  (int)mPaddingPx.Top,
 							  Vector2f::One, 0.f, getBlendMode() );
 
-			if ( isClipped() ) {
-				clipSmartDisable();
-			}
+			//			if ( getClipType() == ClipType::PaddingBox ) {
+			//				clipSmartDisable();
+			//			}
 		}
 	}
 

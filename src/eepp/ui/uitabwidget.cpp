@@ -25,7 +25,7 @@ UITabWidget::UITabWidget() :
 	mAllowDragAndDropTabs( false ),
 	mTabVerticalDragResistance( PixelDensity::dpToPx( 64 ) ) {
 	setHorizontalAlign( UI_HALIGN_CENTER );
-	clipEnable();
+	setClipType( ClipType::ContentBox );
 
 	mTabBar = UIWidget::NewWithTag( "tabwidget::tabbar" );
 	mTabBar->setPixelsSize( mSize.getWidth(), mStyleConfig.TabHeight )

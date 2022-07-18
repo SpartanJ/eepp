@@ -142,7 +142,7 @@ UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegis
 
 	setFontSize( getUISceneNode()->getUIThemeManager()->getDefaultFontSize() );
 
-	clipEnable();
+	setClipType( ClipType::ContentBox );
 	mDoc->registerClient( this );
 	subscribeScheduledUpdate();
 

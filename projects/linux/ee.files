@@ -356,6 +356,7 @@
 ../../include/eepp/ui/uibackgrounddrawable.hpp
 ../../include/eepp/ui/uiborderdrawable.hpp
 ../../include/eepp/ui/uicheckbox.hpp
+../../include/eepp/ui/uiclip.hpp
 ../../include/eepp/ui/uicodeeditor.hpp
 ../../include/eepp/ui/uicombobox.hpp
 ../../include/eepp/ui/uiconsole.hpp
@@ -837,6 +838,7 @@
 ../../src/eepp/ui/uibackgrounddrawable.cpp
 ../../src/eepp/ui/uiborderdrawable.cpp
 ../../src/eepp/ui/uicheckbox.cpp
+../../src/eepp/ui/uiclip.cpp
 ../../src/eepp/ui/uicodeeditor.cpp
 ../../src/eepp/ui/uicombobox.cpp
 ../../src/eepp/ui/uiconsole.cpp
@@ -1155,6 +1157,8 @@
 ../../src/tools/ecode/projectsearch.cpp
 ../../src/tools/ecode/projectsearch.hpp
 ../../src/tools/ecode/scopedop.hpp
+../../src/tools/ecode/terminalmanager.cpp
+../../src/tools/ecode/terminalmanager.hpp
 ../../src/tools/ecode/uicodeeditorsplitter.cpp
 ../../src/tools/ecode/uicodeeditorsplitter.hpp
 ../../src/tools/ecode/uitreeviewglobalsearch.cpp

@@ -26,6 +26,7 @@ bool App::onCloseRequestCallback( EE::Window::Window* ) {
 		msgBox->addEventListener( Event::MsgBoxConfirmClick, [&]( const Event* ) {
 			if ( !mCurrentProject.empty() )
 				mConfig.saveProject( mCurrentProject, mSplitter, mConfigPath, mProjectDocConfig );
+			saveConfig();
 			mWindow->close();
 		} );
 		msgBox->addEventListener( Event::OnClose, [&]( const Event* ) { msgBox = nullptr; } );
@@ -37,6 +38,7 @@ bool App::onCloseRequestCallback( EE::Window::Window* ) {
 	} else {
 		if ( !mCurrentProject.empty() )
 			mConfig.saveProject( mCurrentProject, mSplitter, mConfigPath, mProjectDocConfig );
+		saveConfig();
 		return true;
 	}
 }
@@ -334,8 +336,9 @@ void App::loadConfig() {
 	FileSystem::dirAddSlashAtEnd( mConfigPath );
 	mPluginsPath = mConfigPath + "plugins";
 	mColorSchemesPath = mConfigPath + "colorschemes";
-	mTerminalColorSchemesPath =
-		mConfigPath + "terminal" + FileSystem::getOSSlash() + "colorschemes";
+	mTerminalManager = std::make_unique<TerminalManager>( this );
+	mTerminalManager->setTerminalColorSchemesPath( mConfigPath + "terminal" +
+												   FileSystem::getOSSlash() + "colorschemes" );
 	if ( !FileSystem::fileExists( mPluginsPath ) )
 		FileSystem::makeDir( mPluginsPath );
 	FileSystem::dirAddSlashAtEnd( mPluginsPath );
@@ -415,7 +418,7 @@ void App::mainLoop() {
 		SceneManager::instance()->draw();
 		mWindow->display();
 		if ( firstFrame ) {
-			Log::info( "First frame took: %.2fms", globalClock.getElapsed().asMilliseconds() );
+			Log::info( "First frame took: %.2f ms", globalClock.getElapsed().asMilliseconds() );
 			firstFrame = false;
 		}
 	} else {
@@ -468,7 +471,6 @@ App::~App() {
 		delete mFileWatcher;
 	if ( mFileSystemListener )
 		delete mFileSystemListener;
-	saveConfig();
 	eeSAFE_DELETE( mSplitter );
 	eeSAFE_DELETE( mAutoCompletePlugin );
 	eeSAFE_DELETE( mLinterPlugin );
@@ -1908,19 +1910,10 @@ const CodeEditorConfig& App::getCodeEditorConfig() const {
 	return mConfig.editor;
 }
 
-std::map<KeyBindings::Shortcut, std::string> App::getTerminalKeybindings() {
-	return {
-		{ { KEY_T, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "create-new-terminal" },
-		{ { KEY_E, KEYMOD_CTRL | KEYMOD_LALT | KEYMOD_SHIFT },
-		  UITerminal::getExclusiveModeToggleCommandName() },
-		{ { KEY_S, KEYMOD_LALT | KEYMOD_CTRL }, "terminal-rename" },
-	};
-}
-
 std::map<KeyBindings::Shortcut, std::string> App::getDefaultKeybindings() {
 	auto bindings = UICodeEditorSplitter::getDefaultKeybindings();
 	auto local = getLocalKeybindings();
-	auto app = getTerminalKeybindings();
+	auto app = TerminalManager::getTerminalKeybindings();
 	local.insert( bindings.begin(), bindings.end() );
 	local.insert( app.begin(), app.end() );
 	return local;
@@ -2136,246 +2129,8 @@ void App::fullscreenToggle() {
 		->setActive( !mWindow->isWindowed() );
 }
 
-void App::loadTerminalColorSchemes() {
-	auto colorSchemes =
-		TerminalColorScheme::loadFromFile( mResPath + "colorschemes/terminalcolorschemes.conf" );
-	if ( colorSchemes.empty() )
-		colorSchemes.emplace_back( TerminalColorScheme::getDefault() );
-	if ( FileSystem::isDirectory( mTerminalColorSchemesPath ) ) {
-		auto colorSchemesFiles = FileSystem::filesGetInPath( mTerminalColorSchemesPath );
-		for ( auto& file : colorSchemesFiles ) {
-			auto colorSchemesInFile = TerminalColorScheme::loadFromFile( file );
-			for ( auto& coloScheme : colorSchemesInFile )
-				colorSchemes.emplace_back( coloScheme );
-		}
-	}
-	for ( const auto& colorScheme : colorSchemes )
-		mTerminalColorSchemes.insert( { colorScheme.getName(), colorScheme } );
-	mTerminalCurrentColorScheme = mConfig.term.colorScheme;
-	if ( mTerminalColorSchemes.find( mTerminalCurrentColorScheme ) == mTerminalColorSchemes.end() )
-		mTerminalCurrentColorScheme = mTerminalColorSchemes.begin()->first;
-}
-
 void App::showGlobalSearch() {
 	mGlobalSearchController->showGlobalSearch();
-}
-
-UITerminal* App::createNewTerminal( const std::string& title, UITabWidget* inTabWidget,
-									const std::string& workingDir ) {
-#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
-	UIMessageBox* msgBox = UIMessageBox::New(
-		UIMessageBox::OK,
-		i18n( "feature_not_supported_in_emscripten",
-			  "This feature is only supported in the desktop version of ecode." ) );
-	msgBox->showWhenReady();
-	return nullptr;
-#else
-	if ( mTerminalColorSchemes.empty() )
-		loadTerminalColorSchemes();
-	UITabWidget* tabWidget = nullptr;
-
-	if ( !inTabWidget ) {
-		UIWidget* curWidget = mSplitter->getCurWidget();
-		if ( !curWidget )
-			return nullptr;
-		tabWidget = mSplitter->tabWidgetFromWidget( curWidget );
-	} else {
-		tabWidget = inTabWidget;
-	}
-
-	if ( !tabWidget ) {
-		if ( !mSplitter->getTabWidgets().empty() ) {
-			tabWidget = mSplitter->getTabWidgets()[0];
-		} else {
-			return nullptr;
-		}
-	}
-	UITerminal* term = UITerminal::New(
-		mFontMonoNerdFont ? mFontMonoNerdFont : mFontMono,
-		mConfig.term.fontSize.asPixels( 0, Sizef(), mDisplayDPI ), Sizef( 16, 16 ), "", {},
-		!workingDir.empty() ? workingDir : ( !mCurrentProject.empty() ? mCurrentProject : "" ) );
-	auto ret = mSplitter->createWidgetInTabWidget(
-		tabWidget, term, title.empty() ? i18n( "shell", "Shell" ).toUtf8() : title, true );
-	mSplitter->removeUnusedTab( tabWidget );
-	ret.first->setIcon( findIcon( "filetype-bash" ) );
-	term->setTitle( title );
-	auto csIt = mTerminalColorSchemes.find( mTerminalCurrentColorScheme );
-	term->setColorScheme( csIt != mTerminalColorSchemes.end()
-							  ? mTerminalColorSchemes.at( mTerminalCurrentColorScheme )
-							  : TerminalColorScheme::getDefault() );
-	term->addEventListener( Event::OnTitleChange, [&]( const Event* event ) {
-		if ( event->getNode() != mSplitter->getCurWidget() )
-			return;
-		setAppTitle( event->getNode()->asType<UITerminal>()->getTitle() );
-	} );
-	term->addKeyBinds( getLocalKeybindings() );
-	term->addKeyBinds( UICodeEditorSplitter::getLocalDefaultKeybindings() );
-	term->addKeyBinds( getTerminalKeybindings() );
-	// Remove the keybinds that are problematic for a terminal
-	term->getKeyBindings().removeCommandsKeybind(
-		{ "open-file", "download-file-web", "open-folder", "debug-draw-highlight-toggle",
-		  "debug-draw-boxes-toggle", "debug-draw-debug-data", "debug-widget-tree-view",
-		  "open-locatebar", "open-global-search", "menu-toggle", "console-toggle", "go-to-line" } );
-	term->setCommand( "switch-side-panel", [&] { switchSidePanel(); } );
-	term->setCommand( "fullscreen-toggle", [&]() { fullscreenToggle(); } );
-	for ( int i = 1; i <= 10; i++ )
-		term->setCommand( String::format( "switch-to-tab-%d", i ),
-						  [&, i] { mSplitter->switchToTab( i - 1 ); } );
-	term->setCommand( "switch-to-first-tab", [&] {
-		UITabWidget* tabWidget = mSplitter->tabWidgetFromWidget( mSplitter->getCurWidget() );
-		if ( tabWidget && tabWidget->getTabCount() ) {
-			mSplitter->switchToTab( 0 );
-		}
-	} );
-	term->setCommand( "switch-to-last-tab", [&] {
-		UITabWidget* tabWidget = mSplitter->tabWidgetFromWidget( mSplitter->getCurWidget() );
-		if ( tabWidget && tabWidget->getTabCount() ) {
-			mSplitter->switchToTab( tabWidget->getTabCount() - 1 );
-		}
-	} );
-	term->setCommand( "switch-to-previous-split",
-					  [&] { mSplitter->switchPreviousSplit( mSplitter->getCurWidget() ); } );
-	term->setCommand( "switch-to-next-split",
-					  [&] { mSplitter->switchNextSplit( mSplitter->getCurWidget() ); } );
-	term->setCommand( "close-tab", [&] { mSplitter->tryTabClose( mSplitter->getCurWidget() ); } );
-	term->setCommand( "create-new", [&] {
-		auto d = mSplitter->createCodeEditorInTabWidget(
-			mSplitter->tabWidgetFromWidget( mSplitter->getCurWidget() ) );
-		d.first->getTabWidget()->setTabSelected( d.first );
-	} );
-	term->setCommand( "next-tab", [&] {
-		UITabWidget* tabWidget = mSplitter->tabWidgetFromWidget( mSplitter->getCurWidget() );
-		if ( tabWidget && tabWidget->getTabCount() > 1 ) {
-			UITab* tab = (UITab*)mSplitter->getCurWidget()->getData();
-			Uint32 tabIndex = tabWidget->getTabIndex( tab );
-			mSplitter->switchToTab( ( tabIndex + 1 ) % tabWidget->getTabCount() );
-		}
-	} );
-	term->setCommand( "previous-tab", [&] {
-		UITabWidget* tabWidget = mSplitter->tabWidgetFromWidget( mSplitter->getCurWidget() );
-		if ( tabWidget && tabWidget->getTabCount() > 1 ) {
-			UITab* tab = (UITab*)mSplitter->getCurWidget()->getData();
-			Uint32 tabIndex = tabWidget->getTabIndex( tab );
-			Int32 newTabIndex = (Int32)tabIndex - 1;
-			mSplitter->switchToTab( newTabIndex < 0 ? tabWidget->getTabCount() - newTabIndex
-													: newTabIndex );
-		}
-	} );
-	term->setCommand( "split-right", [&] {
-		mSplitter->split( UICodeEditorSplitter::SplitDirection::Right, mSplitter->getCurWidget(),
-						  mSplitter->curEditorExistsAndFocused() );
-	} );
-	term->setCommand( "split-bottom", [&] {
-		mSplitter->split( UICodeEditorSplitter::SplitDirection::Bottom, mSplitter->getCurWidget(),
-						  mSplitter->curEditorExistsAndFocused() );
-	} );
-	term->setCommand( "split-left", [&] {
-		mSplitter->split( UICodeEditorSplitter::SplitDirection::Left, mSplitter->getCurWidget(),
-						  mSplitter->curEditorExistsAndFocused() );
-	} );
-	term->setCommand( "split-top", [&] {
-		mSplitter->split( UICodeEditorSplitter::SplitDirection::Top, mSplitter->getCurWidget(),
-						  mSplitter->curEditorExistsAndFocused() );
-	} );
-	term->setCommand( "split-swap", [&] {
-		if ( UISplitter* splitter = mSplitter->splitterFromWidget( mSplitter->getCurWidget() ) )
-			splitter->swap();
-	} );
-	term->setCommand( "terminal-split-right", [&, term] {
-		mSplitter->split( UICodeEditorSplitter::SplitDirection::Right, mSplitter->getCurWidget(),
-						  false );
-		term->execute( "create-new-terminal" );
-	} );
-	term->setCommand( "terminal-split-bottom", [&, term] {
-		mSplitter->split( UICodeEditorSplitter::SplitDirection::Bottom, mSplitter->getCurWidget(),
-						  false );
-		term->execute( "create-new-terminal" );
-	} );
-	term->setCommand( "terminal-split-left", [&, term] {
-		mSplitter->split( UICodeEditorSplitter::SplitDirection::Left, mSplitter->getCurWidget(),
-						  false );
-		term->execute( "create-new-terminal" );
-	} );
-	term->setCommand( "terminal-split-top", [&, term] {
-		mSplitter->split( UICodeEditorSplitter::SplitDirection::Top, mSplitter->getCurWidget(),
-						  false );
-		term->execute( "create-new-terminal" );
-	} );
-	term->setCommand( "split-swap", [&] {
-		if ( UISplitter* splitter = mSplitter->splitterFromWidget( mSplitter->getCurWidget() ) )
-			splitter->swap();
-	} );
-	term->setCommand( UITerminal::getExclusiveModeToggleCommandName(),
-					  [term] { term->setExclusiveMode( !term->getExclusiveMode() ); } );
-	term->setCommand( "create-new-terminal", [&] { createNewTerminal(); } );
-	term->setCommand( "terminal-rename", [&, term] {
-		UIMessageBox* msgBox = UIMessageBox::New(
-			UIMessageBox::INPUT, i18n( "new_terminal_name", "New terminal name:" ) );
-		msgBox->setTitle( "ecode" );
-		msgBox->getTextInput()->setHint( i18n( "any_name", "Any name..." ) );
-		msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
-		msgBox->showWhenReady();
-		msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox, term]( const Event* ) {
-			std::string title( msgBox->getTextInput()->getText().toUtf8() );
-			term->setTitle( title );
-			msgBox->close();
-			term->setFocus();
-		} );
-	} );
-	term->setCommand( "move-panel-left", [&] { panelPosition( PanelPosition::Left ); } );
-	term->setCommand( "move-panel-right", [&] { panelPosition( PanelPosition::Right ); } );
-	term->setCommand( "close-app", [&] { closeApp(); } );
-	term->setCommand( "open-file", [&] { openFileDialog(); } );
-	term->setCommand( "open-folder", [&] { openFolderDialog(); } );
-	term->setCommand( "console-toggle", [&] { consoleToggle(); } );
-	term->setCommand( "menu-toggle", [&] { toggleSettingsMenu(); } );
-	term->setCommand( "open-global-search", [&] { showGlobalSearch(); } );
-	term->setCommand( "open-locatebar", [&] { mFileLocator->showLocateBar(); } );
-	term->setCommand( "download-file-web", [&] { downloadFileWebDialog(); } );
-
-	term->setCommand( "switch-to-previous-colorscheme", [&] {
-		auto it = mTerminalColorSchemes.find( mTerminalCurrentColorScheme );
-		auto prev = std::prev( it, 1 );
-		if ( prev != mTerminalColorSchemes.end() ) {
-			setTerminalColorScheme( prev->first );
-		} else {
-			setTerminalColorScheme( mTerminalColorSchemes.rbegin()->first );
-		}
-	} );
-	term->setCommand( "switch-to-next-colorscheme", [&] {
-		auto it = mTerminalColorSchemes.find( mTerminalCurrentColorScheme );
-		setTerminalColorScheme( ++it != mTerminalColorSchemes.end()
-									? it->first
-									: mTerminalColorSchemes.begin()->first );
-	} );
-	// debug-draw-highlight-toggle
-	// debug-draw-boxes-toggle
-	// debug-draw-debug-data
-	// debug-widget-tree-view
-	term->setFocus();
-	return term;
-#endif
-}
-
-void App::applyTerminalColorScheme( const TerminalColorScheme& colorScheme ) {
-	mSplitter->forEachWidget( [colorScheme]( UIWidget* widget ) {
-		if ( widget->isType( UI_TYPE_TERMINAL ) )
-			widget->asType<UITerminal>()->setColorScheme( colorScheme );
-	} );
-}
-
-void App::setTerminalColorScheme( const std::string& name ) {
-	if ( name != mTerminalCurrentColorScheme ) {
-		mTerminalCurrentColorScheme = name;
-		mConfig.term.colorScheme = name;
-		auto csIt = mTerminalColorSchemes.find( mTerminalCurrentColorScheme );
-		applyTerminalColorScheme( csIt != mTerminalColorSchemes.end()
-									  ? mTerminalColorSchemes.at( mTerminalCurrentColorScheme )
-									  : TerminalColorScheme::getDefault() );
-		mNotificationCenter->addNotification( String::format(
-			i18n( "terminal_color_scheme_set", "Terminal color scheme: %s" ).toUtf8().c_str(),
-			mTerminalCurrentColorScheme.c_str() ) );
-	}
 }
 
 void App::showFindView() {
@@ -2474,7 +2229,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	doc.setCommand( "download-file-web", [&] { downloadFileWebDialog(); } );
 	doc.setCommand( "move-panel-left", [&] { panelPosition( PanelPosition::Left ); } );
 	doc.setCommand( "move-panel-right", [&] { panelPosition( PanelPosition::Right ); } );
-	doc.setCommand( "create-new-terminal", [&] { createNewTerminal(); } );
+	doc.setCommand( "create-new-terminal", [&] { mTerminalManager->createNewTerminal(); } );
 	doc.setCommand( "terminal-split-right", [&] {
 		mSplitter->split( UICodeEditorSplitter::SplitDirection::Right, mSplitter->getCurWidget(),
 						  false );
@@ -2708,6 +2463,7 @@ void App::toggleSettingsMenu() {
 }
 
 void App::createSettingsMenu() {
+	Clock clock;
 	mSettingsMenu = UIPopUpMenu::New();
 	mSettingsMenu->setId( "settings_menu" );
 	mSettingsMenu
@@ -2775,6 +2531,14 @@ void App::createSettingsMenu() {
 			colorSchemeMenu->setSubMenu( newMenu );
 		}
 	} );
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+	UIMenuSubMenu* termColorSchemeMenu =
+		mSettingsMenu->addSubMenu( i18n( "terminal_color_scheme", "Terminal Color Scheme" ),
+								   nullptr, mTerminalManager->createColorSchemeMenu() );
+	colorSchemeMenu->addEventListener( Event::OnMenuShow, [&, termColorSchemeMenu]( const Event* ) {
+		mTerminalManager->updateMenuColorScheme( termColorSchemeMenu );
+	} );
+#endif
 	mSettingsMenu->addSubMenu( i18n( "document", "Document" ), nullptr, createDocumentMenu() )
 		->setId( "doc-menu" );
 	mSettingsMenu->addSubMenu( i18n( "edit", "Edit" ), nullptr, createEditMenu() );
@@ -2804,10 +2568,11 @@ void App::createSettingsMenu() {
 	} );
 	updateRecentFiles();
 	updateRecentFolders();
+	Log::info( "Settings Menu took: %.2f ms", clock.getElapsedTime().asMilliseconds() );
 }
 
 void App::updateColorSchemeMenu() {
-	for ( UIPopUpMenu* menu : mFileTypeMenues ) {
+	for ( UIPopUpMenu* menu : mColorSchemeMenues ) {
 		for ( size_t i = 0; i < menu->getCount(); i++ ) {
 			UIWidget* widget = menu->getItem( i );
 			if ( widget->isType( UI_TYPE_MENURADIOBUTTON ) ) {
@@ -3068,7 +2833,7 @@ void App::createProjectTreeMenu() {
 		} else if ( "open_folder" == id ) {
 			Engine::instance()->openURI( mCurrentProject );
 		} else if ( "execute_dir_in_terminal" == id ) {
-			createNewTerminal( "", nullptr, mCurrentProject );
+			mTerminalManager->createNewTerminal( "", nullptr, mCurrentProject );
 		} else if ( "show_hidden_files" == id ) {
 			toggleHiddenFiles();
 		} else if ( "collapse-all" == id ) {
@@ -3246,12 +3011,13 @@ void App::createProjectTreeMenu( const FileInfo& file ) {
 		} else if ( "show_hidden_files" == id ) {
 			toggleHiddenFiles();
 		} else if ( "execute_in_terminal" == id ) {
-			UITerminal* term = createNewTerminal( "", nullptr, file.getDirectoryPath() );
+			UITerminal* term =
+				mTerminalManager->createNewTerminal( "", nullptr, file.getDirectoryPath() );
 			if ( !term )
 				return;
 			term->executeFile( file.getFilepath() );
 		} else if ( "execute_dir_in_terminal" == id ) {
-			createNewTerminal( "", nullptr, file.getDirectoryPath() );
+			mTerminalManager->createNewTerminal( "", nullptr, file.getDirectoryPath() );
 		} else if ( "collapse-all" == id ) {
 			mProjectTreeView->collapseAll();
 		} else if ( "expand-all" == id ) {
@@ -3478,7 +3244,7 @@ void App::init( std::string file, const Float& pidelDensity, const std::string& 
 			   ecode::Version::getCodename().c_str() );
 
 	if ( mWindow->isOpen() ) {
-		Log::info( "Window creation took: %.2fms", globalClock.getElapsedTime().asMilliseconds() );
+		Log::info( "Window creation took: %.2f ms", globalClock.getElapsedTime().asMilliseconds() );
 
 		if ( mConfig.window.position != Vector2i( -1, -1 ) &&
 			 mConfig.window.displayIndex < displayManager->getDisplayCount() ) {
@@ -3882,10 +3648,13 @@ void App::init( std::string file, const Float& pidelDensity, const std::string& 
 					colorSchemes.emplace_back( coloScheme );
 			}
 		}
+
+		mTerminalManager->loadTerminalColorSchemes();
+
 		mSplitter = UICodeEditorSplitter::New( this, mUISceneNode, colorSchemes, mInitColorScheme );
 		mSplitter->setHideTabBarOnSingleTab( mConfig.editor.hideTabBarOnSingleTab );
 
-		Log::info( "Base UI took: %.2fms", globalClock.getElapsedTime().asMilliseconds() );
+		Log::info( "Base UI took: %.2f ms", globalClock.getElapsedTime().asMilliseconds() );
 
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 		mFileWatcher = new efsw::FileWatcher();
@@ -3920,7 +3689,7 @@ void App::init( std::string file, const Float& pidelDensity, const std::string& 
 		mConsole->setQuakeMode( true );
 		mConsole->setVisible( false );
 
-		Log::info( "Complete UI took: %.2fms", globalClock.getElapsedTime().asMilliseconds() );
+		Log::info( "Complete UI took: %.2f ms", globalClock.getElapsedTime().asMilliseconds() );
 
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 		if ( file == "./this.program" )
@@ -3929,12 +3698,12 @@ void App::init( std::string file, const Float& pidelDensity, const std::string& 
 
 		if ( terminal && file.empty() ) {
 			showSidePanel( false );
-			createNewTerminal();
+			mTerminalManager->createNewTerminal();
 		} else {
 			initProjectTreeView( file );
 		}
 
-		Log::info( "Init ProjectTreeView took: %.2fms",
+		Log::info( "Init ProjectTreeView took: %.2f ms",
 				   globalClock.getElapsedTime().asMilliseconds() );
 
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN

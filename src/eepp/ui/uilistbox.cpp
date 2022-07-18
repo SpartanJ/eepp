@@ -48,7 +48,7 @@ UIListBox::UIListBox( const std::string& tag ) :
 	mContainer->setEnabled( true );
 	mContainer->setFlags( mFlags );
 	mContainer->setPosition( 0, 0 );
-	mContainer->clipEnable();
+	mContainer->setClipType( ClipType::ContentBox );
 
 	mVScrollBar = UIScrollBar::NewVertical();
 	mVScrollBar->setParent( this );

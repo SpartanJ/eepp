@@ -331,8 +331,8 @@ static void loadDocuments( UICodeEditorSplitter* editorSplitter, std::shared_ptr
 					},
 					curTabWidget );
 			} else if ( file["type"] == "terminal" ) {
-				app->createNewTerminal( file.contains( "title" ) ? file["title"] : "",
-										curTabWidget );
+				app->getTerminalManager()->createNewTerminal(
+					file.contains( "title" ) ? file["title"] : "", curTabWidget );
 
 				if ( curTabWidget->getTabCount() == totalToLoad )
 					curTabWidget->setTabSelected(

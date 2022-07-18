@@ -6,6 +6,7 @@
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/css/stylesheetlength.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
+#include <eepp/ui/uiclip.hpp>
 #include <eepp/ui/uihelper.hpp>
 #include <eepp/ui/uiskin.hpp>
 #include <eepp/ui/uiskinstate.hpp>
@@ -267,6 +268,14 @@ class EE_API UINode : public Node {
 
 	void clearBackground();
 
+	const ClipType& getClipType() const;
+
+	UINode* setClipType( const ClipType& clipType );
+
+	bool hasBorder() const;
+
+	virtual const Rectf& getPixelsPadding() const;
+
   protected:
 	Vector2f mDpPos;
 	Sizef mDpSize;
@@ -281,6 +290,9 @@ class EE_API UINode : public Node {
 	Uint32 mDragButton;
 	Color mSkinColor;
 	UISceneNode* mUISceneNode;
+	Rectf mPadding;
+	Rectf mPaddingPx;
+	UIClip mClip;
 
 	virtual Uint32 onMouseDown( const Vector2i& position, const Uint32& flags );
 
@@ -358,6 +370,10 @@ class EE_API UINode : public Node {
 	void setInternalPixelsHeight( const Float& height );
 
 	virtual void updateOriginPoint();
+
+	void smartClipStart( const ClipType& reqClipType );
+
+	void smartClipEnd( const ClipType& reqClipType );
 };
 
 }} // namespace EE::UI

@@ -619,9 +619,9 @@ UIWidgetTable* UIWidgetTable::setSmoothScroll( bool smoothScroll ) {
 	mSmoothScroll = smoothScroll;
 
 	if ( mSmoothScroll ) {
-		mContainer->clipEnable();
+		mContainer->setClipType( ClipType::ContentBox );
 	} else {
-		mContainer->clipDisable();
+		mContainer->setClipType( ClipType::None );
 	}
 
 	return this;

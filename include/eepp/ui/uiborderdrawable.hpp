@@ -78,6 +78,8 @@ class EE_API UIBorderDrawable : public Drawable {
 
 	const Borders& getBorders() const;
 
+	Rectf getBorderBoxDiff() const;
+
   protected:
 	const UINode* mOwner;
 	VertexBuffer* mVertexBuffer;

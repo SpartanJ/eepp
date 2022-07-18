@@ -605,10 +605,6 @@ void UIWidget::notifyLayoutAttrChangeParent() {
 }
 
 void UIWidget::updateAnchors( const Vector2f& sizeChange ) {
-	if ( hasClass( "doc_alert" ) ) {
-		clipDisable();
-	}
-
 	if ( !( mFlags & ( UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM ) ) )
 		return;
 
@@ -1362,7 +1358,7 @@ std::string UIWidget::getPropertyString( const PropertyDefinition* propertyDef,
 		case PropertyId::LayoutHeight:
 			return getLayoutHeightPolicyString();
 		case PropertyId::Clip:
-			return isClipped() ? "true" : "false";
+			return UIClip::toString( mClip.getClipType() );
 		case PropertyId::BackgroundPositionX:
 			return getBackground()->getLayer( propertyIndex )->getPositionX();
 		case PropertyId::BackgroundPositionY:
@@ -1569,7 +1565,7 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 						setFlags( UI_AUTO_SIZE );
 						notifyLayoutAttrChange();
 					} else if ( "clip" == cur ) {
-						clipEnable();
+						setClipType( ClipType::ContentBox );
 					} else if ( "multiselect" == cur ) {
 						setFlags( UI_MULTI_SELECT );
 					} else if ( "auto_padding" == cur || "autopadding" == cur ) {
@@ -1706,10 +1702,7 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		}
 		case PropertyId::Clip:
-			if ( attribute.asBool() )
-				clipEnable();
-			else
-				clipDisable();
+			setClipType( UIClip::fromString( attribute.asString() ) );
 			break;
 		case PropertyId::Rotation:
 			setRotation( attribute.asFloat() );

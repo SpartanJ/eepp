@@ -11,7 +11,7 @@ UITableView* UITableView::New() {
 }
 
 UITableView::UITableView( const std::string& tag ) : UIAbstractTableView( tag ) {
-	clipEnable();
+	setClipType( ClipType::ContentBox );
 }
 
 UITableView::UITableView() : UITableView( "tableview" ) {}

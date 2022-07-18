@@ -72,10 +72,12 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const StyleConfig& w
 			break;
 	}
 
+	setId( "window" );
+
 	mContainer->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 	mContainer->writeNodeFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 	mContainer->setParent( this );
-	mContainer->clipEnable();
+	mContainer->setClipType( ClipType::ContentBox );
 	mContainer->enableReportSizeChangeToChilds();
 	mContainer->addEventListener( Event::OnPositionChange,
 								  cb::Make1( this, &UIWindow::onContainerPositionChange ) );
@@ -1173,7 +1175,7 @@ void UIWindow::setTitle( const String& text ) {
 		mTitle->setHorizontalAlign( getHorizontalAlign() );
 		mTitle->setVerticalAlign( getVerticalAlign() );
 		mTitle->setEnabled( false );
-		mTitle->clipEnable();
+		mTitle->setClipType( ClipType::ContentBox );
 		mTitle->setVisible( !( mStyleConfig.WinFlags & UI_WIN_NO_DECORATION ) );
 	}
 
@@ -1233,7 +1235,11 @@ Uint32 UIWindow::onMouseDoubleClick( const Vector2i&, const Uint32& Flags ) {
 
 void UIWindow::nodeDraw() {
 	if ( mVisible && 0 != mAlpha ) {
-		updateScreenPos();
+		if ( mNodeFlags & NODE_FLAG_POSITION_DIRTY )
+			updateScreenPos();
+
+		if ( mNodeFlags & NODE_FLAG_POLYGON_DIRTY )
+			updateWorldPolygon();
 
 		preDraw();
 
@@ -1248,16 +1254,46 @@ void UIWindow::nodeDraw() {
 
 		matrixSet();
 
+		smartClipStart( ClipType::BorderBox );
+
 		if ( !ownsFrameBuffer() || ( NULL != mSceneNode && !mSceneNode->usesInvalidation() ) ||
 			 invalidated() ) {
-			clipStart();
+			smartClipStart( ClipType::ContentBox );
+
+			if ( 0.f != mAlpha ) {
+				drawBackground();
+
+				drawSkin();
+			}
+
+			smartClipStart( ClipType::PaddingBox );
 
 			draw();
 
 			drawChilds();
 
-			clipEnd();
+			smartClipEnd( ClipType::PaddingBox );
+
+			if ( 0.f != mAlpha )
+				drawForeground();
+
+			smartClipEnd( ClipType::ContentBox );
 		}
+
+		drawBorder();
+
+		if ( mNodeFlags & NODE_FLAG_DROPPABLE_HOVERING )
+			drawDroppableHovering();
+
+		drawHighlightFocus();
+
+		drawOverNode();
+
+		updateDebugData();
+
+		drawBox();
+
+		smartClipEnd( ClipType::BorderBox );
 
 		matrixUnset();
 

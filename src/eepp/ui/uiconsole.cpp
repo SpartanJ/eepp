@@ -40,7 +40,7 @@ UIConsole::UIConsole( Font* font, const bool& makeDefaultCommands, const bool& a
 	UIWidget( "console" ), mKeyBindings( getUISceneNode()->getWindow()->getInput() ) {
 	setFlags( UI_AUTO_PADDING );
 	mFlags |= UI_TAB_STOP;
-	clipEnable();
+	setClipType( ClipType::ContentBox );
 
 	setBackgroundColor( 0x201F1FEE );
 

@@ -15,7 +15,7 @@ UITextEdit* UITextEdit::New() {
 
 UITextEdit::UITextEdit() : UICodeEditor( "textedit", true, true ) {
 	setFlags( UI_AUTO_PADDING );
-	clipEnable();
+	setClipType( ClipType::ContentBox );
 	mFont = NULL;
 	mHorizontalScrollBarEnabled = true;
 

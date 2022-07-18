@@ -433,10 +433,15 @@ element.
 
 ### clip
 
-Enables/disables clipping to the element box.
+Specifies how the clipping is applied to the element if clip is enabled.
 
 * Applicable to: Any element
-* Data Type: [boolean](#boolean-data-type)
+* Data Type: [string-list](#string-list-data-type)
+* Value List:
+  * `none`: No clipping is applied.
+  * `content-box`: Clips the content box of the element (means the whole box).
+  * `padding-box`: Clips the padding box of the element (the whole box minus the padding).
+  * `border-box`: Clips the border box of the element (the content box plus the border).
 * Default Value: Varies for each widget/element.
 
 ---

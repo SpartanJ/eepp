@@ -24,13 +24,13 @@ UILinearLayout* UILinearLayout::NewHorizontal() {
 UILinearLayout::UILinearLayout() :
 	UILayout( "linearlayout" ), mOrientation( UIOrientation::Vertical ) {
 	mFlags |= UI_OWNS_CHILDS_POSITION;
-	clipEnable();
+	setClipType( ClipType::ContentBox );
 }
 
 UILinearLayout::UILinearLayout( const std::string& tag, const UIOrientation& orientation ) :
 	UILayout( tag ), mOrientation( orientation ) {
 	mFlags |= UI_OWNS_CHILDS_POSITION;
-	clipEnable();
+	setClipType( ClipType::ContentBox );
 }
 
 Uint32 UILinearLayout::getType() const {

@@ -9,6 +9,7 @@
 #include "notificationcenter.hpp"
 #include "projectdirectorytree.hpp"
 #include "projectsearch.hpp"
+#include "terminalmanager.hpp"
 #include "uitreeviewglobalsearch.hpp"
 #include "widgetcommandexecuter.hpp"
 #include <eepp/ee.hpp>
@@ -84,12 +85,6 @@ class App : public UICodeEditorSplitter::Client {
 
 	NotificationCenter* getNotificationCenter() const;
 
-	UITerminal* createNewTerminal( const std::string& title = "",
-								   UITabWidget* inTabWidget = nullptr,
-								   const std::string& workingDir = "" );
-
-	std::map<KeyBindings::Shortcut, std::string> getTerminalKeybindings();
-
 	void fullscreenToggle();
 
 	void downloadFileWebDialog();
@@ -107,6 +102,40 @@ class App : public UICodeEditorSplitter::Client {
 	void newFolder( const FileInfo& file );
 
 	void consoleToggle();
+
+	String i18n( const std::string& key, const String& def );
+
+	UICodeEditorSplitter* getSplitter() const { return mSplitter; }
+
+	TerminalConfig& termConfig() { return mConfig.term; }
+
+	const std::string& resPath() const { return mResPath; }
+
+	Font* getFontMonoNerdFont() const { return mFontMonoNerdFont; }
+
+	Font* getFontMono() const { return mFontMono; }
+
+	const Float& getDisplayDPI() const { return mDisplayDPI; }
+
+	const std::string& getCurrentProject() const { return mCurrentProject; }
+
+	Drawable* findIcon( const std::string& name );
+
+	std::map<KeyBindings::Shortcut, std::string> getDefaultKeybindings();
+
+	std::map<KeyBindings::Shortcut, std::string> getLocalKeybindings();
+
+	void switchSidePanel();
+
+	void panelPosition( const PanelPosition& panelPosition );
+
+	void toggleSettingsMenu();
+
+	FileLocator* getFileLocator() const { return mFileLocator.get(); }
+
+	TerminalManager* getTerminalManager() const { return mTerminalManager.get(); }
+
+	UISceneNode* uiSceneNode() const { return mUISceneNode; }
 
   protected:
 	EE::Window::Window* mWindow{ nullptr };
@@ -144,7 +173,6 @@ class App : public UICodeEditorSplitter::Client {
 	std::string mConfigPath;
 	std::string mPluginsPath;
 	std::string mColorSchemesPath;
-	std::string mTerminalColorSchemesPath;
 	std::string mKeybindingsPath;
 	Float mDisplayDPI{ 96 };
 	std::string mResPath;
@@ -175,12 +203,7 @@ class App : public UICodeEditorSplitter::Client {
 	std::unique_ptr<NotificationCenter> mNotificationCenter;
 	std::string mLastFileFolder;
 	ColorSchemePreference mUIColorScheme;
-	std::map<std::string, TerminalColorScheme> mTerminalColorSchemes;
-	std::string mTerminalCurrentColorScheme;
-
-	void applyTerminalColorScheme( const TerminalColorScheme& colorScheme );
-
-	void setTerminalColorScheme( const std::string& name );
+	std::unique_ptr<TerminalManager> mTerminalManager;
 
 	void saveAllProcess();
 
@@ -236,10 +259,6 @@ class App : public UICodeEditorSplitter::Client {
 
 	UIMenu* createHelpMenu();
 
-	Drawable* findIcon( const std::string& name );
-
-	String i18n( const std::string& key, const String& def );
-
 	void updateProjectSettingsMenu();
 
 	UIMenu* createDocumentMenu();
@@ -247,10 +266,6 @@ class App : public UICodeEditorSplitter::Client {
 	void updateDocumentMenu();
 
 	void loadKeybindings();
-
-	std::map<KeyBindings::Shortcut, std::string> getDefaultKeybindings();
-
-	std::map<KeyBindings::Shortcut, std::string> getLocalKeybindings();
 
 	void onDocumentStateChanged( UICodeEditor*, TextDocument& );
 
@@ -288,18 +303,12 @@ class App : public UICodeEditorSplitter::Client {
 
 	void loadCurrentDirectory();
 
-	void toggleSettingsMenu();
-
 	FontTrueType* loadFont( const std::string& name, std::string fontPath,
 							const std::string& fallback = "" );
 
 	void closeFolder();
 
 	void closeEditors();
-
-	void switchSidePanel();
-
-	void panelPosition( const PanelPosition& panelPosition );
 
 	void removeFolderWatches();
 
@@ -318,8 +327,6 @@ class App : public UICodeEditorSplitter::Client {
 	UIMessageBox* fileAlreadyExistsMsgBox();
 
 	void renameFile( const FileInfo& file );
-
-	void loadTerminalColorSchemes();
 };
 
 } // namespace ecode

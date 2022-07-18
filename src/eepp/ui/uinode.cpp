@@ -426,13 +426,7 @@ void UINode::drawSkin() {
 	}
 }
 
-void UINode::draw() {
-	if ( 0.f != mAlpha ) {
-		drawBackground();
-
-		drawSkin();
-	}
-}
+void UINode::draw() {}
 
 Uint32 UINode::onMouseDown( const Vector2i& position, const Uint32& flags ) {
 	if ( NULL != getEventDispatcher() && !getEventDispatcher()->isNodeDragging() &&
@@ -762,6 +756,42 @@ void UINode::drawBorder() {
 	}
 }
 
+void UINode::smartClipStart( const ClipType& reqClipType ) {
+	if ( mClip.getClipType() != reqClipType )
+		return;
+	switch ( mClip.getClipType() ) {
+		case ClipType::PaddingBox: {
+			const Rectf& pd = getPixelsPadding();
+			clipSmartEnable( mScreenPos.x + pd.Left, mScreenPos.y + pd.Top,
+							 mSize.getWidth() - pd.Left - pd.Right,
+							 mSize.getHeight() - pd.Top - pd.Bottom );
+			break;
+		}
+		case ClipType::ContentBox: {
+			clipSmartEnable( mScreenPos.x, mScreenPos.y, mSize.getWidth(), mSize.getHeight() );
+			break;
+		}
+		case ClipType::BorderBox: {
+			Rectf borderDiff;
+			if ( mBorder )
+				borderDiff = mBorder->getBorderBoxDiff();
+			clipSmartEnable( mScreenPos.x + borderDiff.Left, mScreenPos.y + borderDiff.Top,
+							 mSize.getWidth() + borderDiff.Right,
+							 mSize.getHeight() + borderDiff.Bottom );
+			break;
+		}
+		case ClipType::None: {
+			break;
+		}
+	}
+}
+
+void UINode::smartClipEnd( const ClipType& reqClipType ) {
+	if ( mVisible && isClipped() && mClip.getClipType() == reqClipType ) {
+		clipEnd();
+	}
+}
+
 void UINode::nodeDraw() {
 	if ( mVisible ) {
 		if ( mNodeFlags & NODE_FLAG_POSITION_DIRTY )
@@ -772,17 +802,29 @@ void UINode::nodeDraw() {
 
 		matrixSet();
 
+		smartClipStart( ClipType::BorderBox );
+
 		if ( mWorldBounds.intersect( mSceneNode->getWorldBounds() ) ) {
-			clipStart();
+			smartClipStart( ClipType::ContentBox );
+
+			if ( 0.f != mAlpha ) {
+				drawBackground();
+
+				drawSkin();
+			}
+
+			smartClipStart( ClipType::PaddingBox );
 
 			draw();
 
 			drawChilds();
 
+			smartClipEnd( ClipType::PaddingBox );
+
 			if ( 0.f != mAlpha )
 				drawForeground();
 
-			clipEnd();
+			smartClipEnd( ClipType::ContentBox );
 		} else if ( !isClipped() ) {
 			drawChilds();
 		}
@@ -800,6 +842,8 @@ void UINode::nodeDraw() {
 
 		drawBox();
 
+		smartClipEnd( ClipType::BorderBox );
+
 		matrixUnset();
 	}
 }
@@ -810,6 +854,31 @@ void UINode::clearForeground() {
 
 void UINode::clearBackground() {
 	eeSAFE_DELETE( mBackground );
+}
+
+const ClipType& UINode::getClipType() const {
+	return mClip.getClipType();
+}
+
+UINode* UINode::setClipType( const ClipType& clipType ) {
+	if ( mClip.getClipType() != clipType ) {
+		mClip.setClipType( clipType );
+		if ( mClip.getClipType() != ClipType::None ) {
+			clipEnable();
+		} else {
+			clipDisable();
+		}
+	}
+	return this;
+}
+
+bool UINode::hasBorder() const {
+	return ( mFlags & UI_BORDER ) != 0;
+}
+
+const Rectf& UINode::getPixelsPadding() const {
+	static const Rectf Zero{};
+	return Zero;
 }
 
 UINodeDrawable* UINode::getBackground() const {
