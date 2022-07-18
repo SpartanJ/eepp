@@ -16,6 +16,7 @@
 #include <efsw/efsw.hpp>
 #include <eterm/terminal/terminalcolorscheme.hpp>
 #include <eterm/ui/uiterminal.hpp>
+#include <stack>
 
 using namespace eterm::UI;
 
@@ -137,6 +138,10 @@ class App : public UICodeEditorSplitter::Client {
 
 	UISceneNode* uiSceneNode() const { return mUISceneNode; }
 
+	void reopenClosedTab();
+
+	void updatedReopenClosedFileState();
+
   protected:
 	EE::Window::Window* mWindow{ nullptr };
 	UISceneNode* mUISceneNode{ nullptr };
@@ -146,6 +151,7 @@ class App : public UICodeEditorSplitter::Client {
 	UILayout* mBaseLayout{ nullptr };
 	UILayout* mImageLayout{ nullptr };
 	UIPopUpMenu* mSettingsMenu{ nullptr };
+	UIPopUpMenu* mRecentFilesMenu{ nullptr };
 	UITextView* mSettingsButton{ nullptr };
 	std::vector<UIPopUpMenu*> mColorSchemeMenues;
 	Float mColorSchemeMenuesCreatedWithHeight{ 0 };
@@ -154,6 +160,7 @@ class App : public UICodeEditorSplitter::Client {
 	UILinearLayout* mDocInfo{ nullptr };
 	UITextView* mDocInfoText{ nullptr };
 	std::vector<std::string> mRecentFiles;
+	std::stack<std::string> mRecentClosedFiles;
 	std::vector<std::string> mRecentFolders;
 	AppConfig mConfig;
 	UIPopUpMenu* mDocMenu{ nullptr };

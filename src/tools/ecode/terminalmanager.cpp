@@ -331,6 +331,7 @@ UITerminal* TerminalManager::createNewTerminal( const std::string& title, UITabW
 									? it->first
 									: mTerminalColorSchemes.begin()->first );
 	} );
+	term->setCommand( "reopen-closed-tab", [&] { mApp->reopenClosedTab(); } );
 	// debug-draw-highlight-toggle
 	// debug-draw-boxes-toggle
 	// debug-draw-debug-data

@@ -503,6 +503,11 @@ void App::updateRecentFiles() {
 		menu->removeEventsOfType( Event::OnItemClicked );
 		if ( mRecentFiles.empty() )
 			return;
+		menu->add( i18n( "reopen_closed_editor", "Reopen Closed Editor" ), nullptr,
+				   getKeybind( "reopen-closed-tab" ) )
+			->setId( "reopen-closed-tab" )
+			->setEnabled( !mRecentClosedFiles.empty() );
+		menu->addSeparator();
 		for ( const auto& file : mRecentFiles )
 			menu->add( file );
 		menu->addSeparator();
@@ -511,7 +516,12 @@ void App::updateRecentFiles() {
 			if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 				return;
 			const std::string& id = event->getNode()->asType<UIMenuItem>()->getId();
-			if ( id != "clear-menu" ) {
+			if ( id == "reopen-closed-tab" ) {
+				reopenClosedTab();
+			} else if ( id == "clear-menu" ) {
+				mRecentFiles.clear();
+				updateRecentFiles();
+			} else {
 				const String& txt = event->getNode()->asType<UIMenuItem>()->getText();
 				std::string path( txt.toUtf8() );
 				if ( ( FileSystem::fileExists( path ) && !FileSystem::isDirectory( path ) ) ||
@@ -519,9 +529,6 @@ void App::updateRecentFiles() {
 					 String::startsWith( path, "http://" ) ) {
 					loadFileFromPath( path );
 				}
-			} else {
-				mRecentFiles.clear();
-				updateRecentFiles();
 			}
 		} );
 	}
@@ -1946,6 +1953,7 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 		{ { KEY_I, KEYMOD_CTRL | KEYMOD_LALT | KEYMOD_SHIFT }, "terminal-split-top" },
 		{ { KEY_K, KEYMOD_CTRL | KEYMOD_LALT | KEYMOD_SHIFT }, "terminal-split-bottom" },
 		{ { KEY_S, KEYMOD_CTRL | KEYMOD_LALT | KEYMOD_SHIFT }, "terminal-split-swap" },
+		{ { KEY_T, KEYMOD_CTRL | KEYMOD_LALT | KEYMOD_SHIFT }, "reopen-closed-tab" },
 	};
 }
 
@@ -1955,7 +1963,7 @@ std::vector<std::string> App::getUnlockedCommands() {
 			 "open-global-search",	 "menu-toggle",			"switch-side-panel",
 			 "download-file-web",	 "create-new-terminal", "terminal-split-left",
 			 "terminal-split-right", "terminal-split-top",	"terminal-split-bottom",
-			 "terminal-split-swap" };
+			 "terminal-split-swap",	 "reopen-closed-tab" };
 }
 
 bool App::isUnlockedCommand( const std::string& command ) {
@@ -1964,6 +1972,8 @@ bool App::isUnlockedCommand( const std::string& command ) {
 }
 
 void App::closeEditors() {
+	mRecentClosedFiles = {};
+
 	mConfig.saveProject( mCurrentProject, mSplitter, mConfigPath, mProjectDocConfig );
 	std::vector<UICodeEditor*> editors = mSplitter->getAllEditors();
 	while ( !editors.empty() ) {
@@ -2250,6 +2260,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 						  false );
 		doc.execute( "create-new-terminal" );
 	} );
+	doc.setCommand( "reopen-closed-tab", [&] { reopenClosedTab(); } );
 
 	editor->addEventListener( Event::OnDocumentSave, [&]( const Event* event ) {
 		UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
@@ -2299,6 +2310,8 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 		std::string dir( FileSystem::fileRemoveFileName( docEvent->getDoc()->getFilePath() ) );
 		if ( dir.empty() )
 			return;
+		mRecentClosedFiles.push( docEvent->getDoc()->getFilePath() );
+		updatedReopenClosedFileState();
 		Lock l( mWatchesLock );
 		auto itWatch = mFilesFolderWatches.find( dir );
 		if ( mFileWatcher && itWatch != mFilesFolderWatches.end() ) {
@@ -2462,6 +2475,26 @@ void App::toggleSettingsMenu() {
 	}
 }
 
+void App::updatedReopenClosedFileState() {
+	if ( mRecentFilesMenu ) {
+		auto* reopenBtn = mRecentFilesMenu->find( "reopen-closed-tab" );
+		if ( reopenBtn )
+			reopenBtn->setEnabled( !mRecentClosedFiles.empty() );
+	}
+}
+
+void App::reopenClosedTab() {
+	if ( mRecentClosedFiles.empty() )
+		return;
+
+	auto prevTabPath = mRecentClosedFiles.top();
+	mRecentClosedFiles.pop();
+
+	updatedReopenClosedFileState();
+
+	loadFileFromPath( prevTabPath );
+}
+
 void App::createSettingsMenu() {
 	Clock clock;
 	mSettingsMenu = UIPopUpMenu::New();
@@ -2488,7 +2521,7 @@ void App::createSettingsMenu() {
 		->setId( "download-file-web" );
 	mSettingsMenu
 		->addSubMenu( i18n( "recent_files", "Recent Files" ), findIcon( "document-recent" ),
-					  UIPopUpMenu::New() )
+					  ( mRecentFilesMenu = UIPopUpMenu::New() ) )
 		->setId( "menu-recent-files" );
 	mSettingsMenu
 		->addSubMenu( i18n( "recent_folders", "Recent Folders" ), findIcon( "document-recent" ),
