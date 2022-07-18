@@ -996,6 +996,11 @@ void UIConsole::onSizeChange() {
 	return UIWidget::onSizeChange();
 }
 
+void UIConsole::onParentSizeChange( const Vector2f& sizeChange ) {
+	updateQuakeMode();
+	return UIWidget::onParentSizeChange( sizeChange );
+}
+
 void UIConsole::getFilesFrom( std::string txt, const Uint32& curPos ) {
 	static char OSSlash = FileSystem::getOSSlash().at( 0 );
 	size_t pos;
@@ -1136,14 +1141,17 @@ bool UIConsole::getQuakeMode() const {
 void UIConsole::setQuakeMode( bool quakeMode ) {
 	if ( mQuakeMode != quakeMode ) {
 		mQuakeMode = quakeMode;
-
-		if ( mQuakeMode ) {
-			setParent( mUISceneNode->getRoot() );
-			Sizef ps( mUISceneNode->getRoot()->getPixelsSize() );
-			setPixelsSize( { ps.getWidth(), eefloor( ps.getHeight() * mQuakeModeHeightPercent ) } );
-			setPosition( { 0, 0 } );
-		}
+		updateQuakeMode();
 	}
+}
+
+void UIConsole::updateQuakeMode() {
+	if ( !mQuakeMode )
+		return;
+	setParent( mUISceneNode->getRoot() );
+	Sizef ps( mUISceneNode->getRoot()->getPixelsSize() );
+	setPixelsSize( { ps.getWidth(), eefloor( ps.getHeight() * mQuakeModeHeightPercent ) } );
+	setPosition( { 0, 0 } );
 }
 
 void UIConsole::show() {

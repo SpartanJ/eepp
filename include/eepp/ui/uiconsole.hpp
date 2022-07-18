@@ -219,6 +219,8 @@ class EE_API UIConsole : public UIWidget,
 
 	virtual void onSizeChange();
 
+	virtual void onParentSizeChange( const Vector2f& sizeChange );
+
 	void registerKeybindings();
 
 	void registerCommands();
@@ -282,6 +284,8 @@ class EE_API UIConsole : public UIWidget,
 	void processLine();
 
 	Int32 maxLinesOnScreen();
+
+	void updateQuakeMode();
 };
 
 }} // namespace EE::UI
