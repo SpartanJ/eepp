@@ -2108,7 +2108,7 @@ Shorthand for [min-width](#min-width) and [min-height](#min-height)
 
 ---
 
-### min-size
+### max-size
 
 Shorthand for [max-width](#max-width) and [max-height](#max-height)
 

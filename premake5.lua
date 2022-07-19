@@ -924,6 +924,22 @@ workspace "eepp"
 		filter { "system:not windows", "system:not haiku" }
 			links { "pthread" }
 
+	project "ecode-macos-helper-static"
+		kind "StaticLib"
+		language "C++"
+		targetdir("libs/" .. os.target() .. "/thirdparty/")
+		filter "system:macosx"
+			files { "src/tools/ecode/macos/*.m" }
+		filter { "configurations:debug*", "action:not vs*" }
+			defines { "DEBUG", "EE_DEBUG", "EE_MEMORY_MANAGER" }
+			symbols "On"
+			buildoptions{ "-Wall" }
+			targetname ( "ecode-macos-helper-static-debug" )
+		filter { "configurations:release*", "action:not vs*" }
+			defines { "NDEBUG" }
+			optimize "Speed"
+			targetname ( "ecode-macos-helper-static" )
+
 	project "ecode"
 		set_kind()
 		language "C++"
@@ -932,7 +948,8 @@ workspace "eepp"
 		links { "efsw-static", "eterm-static" }
 		build_link_configuration( "ecode", true )
 		filter "system:macosx"
-			links { "CoreFoundation.framework", "CoreServices.framework" }
+			links { "CoreFoundation.framework", "CoreServices.framework", "Cocoa.framework" }
+			links { "ecode-macos-helper-static" }
 		filter { "system:not windows", "system:not haiku" }
 			links { "pthread" }
 		filter "system:linux"
