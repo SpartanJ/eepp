@@ -6,6 +6,10 @@
 #include <algorithm>
 #include <args/args.hxx>
 
+#if EE_PLATFORM == EE_PLATFORM_MACOSX
+#include "macos/macos.hpp"
+#endif
+
 namespace ecode {
 
 Clock globalClock;
@@ -3277,6 +3281,10 @@ void App::init( std::string file, const Float& pidelDensity, const std::string& 
 			   ecode::Version::getCodename().c_str() );
 
 	if ( mWindow->isOpen() ) {
+#if EE_PLATFORM == EE_PLATFORM_MACOSX
+		macOS_CreateApplicationMenus();
+#endif
+
 		Log::info( "Window creation took: %.2f ms", globalClock.getElapsedTime().asMilliseconds() );
 
 		if ( mConfig.window.position != Vector2i( -1, -1 ) &&

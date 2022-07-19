@@ -1168,16 +1168,37 @@ solution "eepp"
 		language "C++"
 		includedirs { "src/thirdparty/efsw/include", "src/thirdparty" }
 
-		if not os.is("windows") and not os.is("haiku") then
+		if not os.is_real("windows") and not os.is_real("haiku") then
 			links { "pthread" }
 		end
-		if os.is("macosx") then
+		if os.is_real("macosx") then
 			links { "CoreFoundation.framework", "CoreServices.framework" }
 		end
 
 		links { "efsw-static", "pugixml-static" }
 		files { "src/tools/uieditor/*.cpp" }
 		build_link_configuration( "eepp-UIEditor", true )
+
+	if os.is("macosx") then
+	project "ecode-macos-helper-static"
+		kind "StaticLib"
+		language "C++"
+		files { "src/tools/ecode/macos/*.m" }
+		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+
+		configuration "debug"
+			defines { "DEBUG", "EE_DEBUG", "EE_MEMORY_MANAGER" }
+			flags { "Symbols" }
+			buildoptions{ "-Wall" }
+			buildoptions{ "-g3" }
+			targetname ( "ecode-macos-helper-static-debug" )
+
+		configuration "release"
+			defines { "NDEBUG" }
+			flags { "OptimizeSpeed" }
+			buildoptions{ "-O3" }
+			targetname ( "ecode-macos-helper-static" )
+	end
 
 	project "ecode"
 		set_kind()
@@ -1189,7 +1210,8 @@ solution "eepp"
 			links { "pthread" }
 		end
 		if os.is("macosx") then
-			links { "CoreFoundation.framework", "CoreServices.framework" }
+			links { "CoreFoundation.framework", "CoreServices.framework", "Cocoa.framework" }
+			links { "ecode-macos-helper-static" }
 		end
 		if os.is_real("linux") then
 			links { "util" }

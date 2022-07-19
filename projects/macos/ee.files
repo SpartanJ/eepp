@@ -1139,6 +1139,8 @@
 ../../src/tools/ecode/globalsearchcontroller.hpp
 ../../src/tools/ecode/ignorematcher.cpp
 ../../src/tools/ecode/ignorematcher.hpp
+../../src/tools/ecode/macos/macos.hpp
+../../src/tools/ecode/macos/macos.m
 ../../src/tools/ecode/plugins/autocomplete/autocompleteplugin.cpp
 ../../src/tools/ecode/plugins/autocomplete/autocompleteplugin.hpp
 ../../src/tools/ecode/plugins/formatter/formatterplugin.cpp
