@@ -34,8 +34,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	void createWidgetTreeView();
 
-	void init( std::string file, const Float& pidelDensity, const std::string& colorScheme,
-			   bool terminal );
+	void init( const LogLevel& logLevel, std::string file, const Float& pidelDensity,
+			   const std::string& colorScheme, bool terminal );
 
 	void setAppTitle( const std::string& title );
 
@@ -55,7 +55,7 @@ class App : public UICodeEditorSplitter::Client {
 
 	void runCommand( const std::string& command );
 
-	void loadConfig();
+	void loadConfig( const LogLevel& logLevel );
 
 	void saveConfig();
 

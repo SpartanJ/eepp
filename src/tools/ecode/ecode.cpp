@@ -333,7 +333,7 @@ void App::runCommand( const std::string& command ) {
 	}
 }
 
-void App::loadConfig() {
+void App::loadConfig( const LogLevel& logLevel ) {
 	mConfigPath = Sys::getConfigPath( "ecode" );
 	if ( !FileSystem::fileExists( mConfigPath ) )
 		FileSystem::makeDir( mConfigPath );
@@ -347,9 +347,9 @@ void App::loadConfig() {
 		FileSystem::makeDir( mPluginsPath );
 	FileSystem::dirAddSlashAtEnd( mPluginsPath );
 #ifndef EE_DEBUG
-	Log::create( mConfigPath + "ecode.log", LogLevel::Info, false, true );
+	Log::create( mConfigPath + "ecode.log", logLevel, false, true );
 #else
-	Log::create( mConfigPath + "ecode.log", LogLevel::Debug, true, true );
+	Log::create( mConfigPath + "ecode.log", logLevel, true, true );
 #endif
 
 	mConfig.load( mConfigPath, mKeybindingsPath, mInitColorScheme, mRecentFiles, mRecentFolders,
@@ -3221,13 +3221,13 @@ FontTrueType* App::loadFont( const std::string& name, std::string fontPath,
 	return FontTrueType::New( name, fontPath );
 }
 
-void App::init( std::string file, const Float& pidelDensity, const std::string& colorScheme,
-				bool terminal ) {
+void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDensity,
+				const std::string& colorScheme, bool terminal ) {
 	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
 	Display* currentDisplay = displayManager->getDisplayIndex( 0 );
 	mDisplayDPI = currentDisplay->getDPI();
 
-	loadConfig();
+	loadConfig( logLevel );
 
 	currentDisplay = displayManager->getDisplayIndex( mConfig.window.displayIndex <
 															  displayManager->getDisplayCount()
@@ -3275,8 +3275,8 @@ void App::init( std::string file, const Float& pidelDensity, const std::string& 
 	}
 	ContextSettings contextSettings = engine->createContextSettings( &mConfig.ini, "window" );
 	contextSettings.SharedGLContext = true;
-	mWindow = engine->createWindow( winSettings, contextSettings );
 
+	mWindow = engine->createWindow( winSettings, contextSettings );
 	Log::info( "%s (codename: \"%s\") initializing", ecode::Version::getVersionName().c_str(),
 			   ecode::Version::getCodename().c_str() );
 
@@ -3791,6 +3791,10 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		parser, "prefers-color-scheme", "Set the preferred color scheme (\"light\" or \"dark\")",
 		{ 'c', "prefers-color-scheme" } );
 	args::Flag terminal( parser, "terminal", "Open a new terminal", { 't', "terminal" } );
+	args::MapFlag<std::string, LogLevel> logLevel(
+		parser, "log-level", "The level of details that the application will emmit logs.",
+		{ 'l', "log-level" }, Log::getMapFlag(), Log::getDefaultLogLevel() );
+
 	try {
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 		parser.ParseCLI( argc, argv );
@@ -3811,7 +3815,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	}
 
 	appInstance = eeNew( App, () );
-	appInstance->init( filePos ? filePos.Get() : file.Get(),
+	appInstance->init( logLevel.Get(), filePos ? filePos.Get() : file.Get(),
 					   pixelDenstiyConf ? pixelDenstiyConf.Get() : 0.f,
 					   prefersColorScheme ? prefersColorScheme.Get() : "", terminal.Get() );
 	eeSAFE_DELETE( appInstance );

@@ -162,8 +162,8 @@ void FormatterPlugin::formatDoc( UICodeEditor* editor ) {
 		path = doc->getFilePath();
 	}
 
-	Log::info( "FormatterPlugin::formatDoc for %s took %.2fms", path.c_str(),
-			   clock.getElapsedTime().asMilliseconds() );
+	Log::debug( "FormatterPlugin::formatDoc for %s took %.2fms", path.c_str(),
+				clock.getElapsedTime().asMilliseconds() );
 }
 
 void FormatterPlugin::runFormatter( UICodeEditor* editor, const Formatter& formatter,

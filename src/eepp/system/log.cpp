@@ -20,6 +20,13 @@ namespace EE { namespace System {
 
 SINGLETON_DECLARE_IMPLEMENTATION( Log )
 
+std::unordered_map<std::string, LogLevel> Log::getMapFlag() {
+	return { { "debug", LogLevel::Debug },	 { "info", LogLevel::Info },
+			 { "notice", LogLevel::Notice }, { "warning", LogLevel::Warning },
+			 { "error", LogLevel::Error },	 { "critical", LogLevel::Critical },
+			 { "assert", LogLevel::Assert } };
+}
+
 Log* Log::create( const std::string& logPath, const LogLevel& level, bool consoleOutput,
 				  bool liveWrite ) {
 	if ( NULL == ms_singleton ) {

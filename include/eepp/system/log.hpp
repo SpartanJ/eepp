@@ -6,6 +6,7 @@
 #include <eepp/system/singleton.hpp>
 #include <eepp/system/sys.hpp>
 #include <list>
+#include <unordered_map>
 
 namespace EE { namespace System {
 
@@ -32,6 +33,16 @@ class EE_API Log : protected Mutex {
 	SINGLETON_DECLARE_HEADERS( Log )
 
   public:
+	static std::unordered_map<std::string, LogLevel> getMapFlag();
+
+	static constexpr LogLevel getDefaultLogLevel() {
+#ifdef EE_DEBUG
+		return LogLevel::Debug;
+#else
+		return LogLevel::Info;
+#endif
+	}
+
 	static Log* create( const std::string& logPath, const LogLevel& level, bool consoleOutput,
 						bool liveWrite );
 
@@ -112,7 +123,9 @@ class EE_API Log : protected Mutex {
 		Log::instance()->writel( LogLevel::Debug, text );
 	}
 
-	static void info( const std::string& text ) { Log::instance()->writel( LogLevel::Info, text ); }
+	static void info( const std::string& text ) {
+		Log::instance()->writel( LogLevel::Info, text );
+	}
 
 	static void notice( const std::string& text ) {
 		Log::instance()->writel( LogLevel::Notice, text );
@@ -172,11 +185,7 @@ class EE_API Log : protected Mutex {
 	bool mSave;
 	bool mConsoleOutput;
 	bool mLiveWrite;
-#ifdef EE_DEBUG
-	LogLevel mLogLevelThreshold{ LogLevel::Debug };
-#else
-	LogLevel mLogLevelThreshold{ LogLevel::Notice };
-#endif
+	LogLevel mLogLevelThreshold{ getDefaultLogLevel() };
 	IOStreamFile* mFS;
 	std::list<LogReaderInterface*> mReaders;
 

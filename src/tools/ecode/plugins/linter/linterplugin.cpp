@@ -376,10 +376,10 @@ void LinterPlugin::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 
 		invalidateEditors( doc.get() );
 
-		Log::info( "LinterPlugin::runLinter for %s took %.2fms. Found: %d matches. Errors: %d, "
-				   "Warnings: %d, Notices: %d.",
-				   path.c_str(), clock.getElapsedTime().asMilliseconds(), totalMatches, totalErrors,
-				   totalWarns, totalNotice );
+		Log::debug( "LinterPlugin::runLinter for %s took %.2fms. Found: %d matches. Errors: %d, "
+					"Warnings: %d, Notices: %d.",
+					path.c_str(), clock.getElapsedTime().asMilliseconds(), totalMatches,
+					totalErrors, totalWarns, totalNotice );
 	}
 }
 

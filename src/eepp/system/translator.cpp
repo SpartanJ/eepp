@@ -226,7 +226,7 @@ void Translator::setLanguageFromLocale( std::locale locale ) {
 	if ( "C" == name ) {
 #if defined( EE_SUPPORT_EXCEPTIONS ) && EE_PLATFORM != EE_PLATFORM_WIN
 		try {
-			const char* loc = setlocale( LC_ALL, "" );
+			const char* loc = setlocale( LC_CTYPE, "" );
 			locale = std::locale( loc );
 			name = locale.name();
 		} catch ( ... ) {
