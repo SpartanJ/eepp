@@ -388,6 +388,11 @@ void UITabWidget::posTabs() {
 		}
 
 		x += mTabs[i]->getPixelsSize().getWidth() + mStyleConfig.TabSeparation;
+
+		if ( mStyleConfig.TabHeight != 0 && mTabs[i]->getPixelsSize().getHeight() == 0 ) {
+			mTabs[i]->setPixelsSize( mTabs[i]->getPixelsSize().getWidth(),
+									 PixelDensity::dpToPx( mStyleConfig.TabHeight ) );
+		}
 	}
 
 	updateScrollBar();

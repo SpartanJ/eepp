@@ -174,7 +174,7 @@ class EE_API Http : NonCopyable {
 					 ///< target resource.
 			Patch,	 ///< The PATCH method is used to apply partial modifications to a resource.
 			Connect	 ///< The CONNECT method starts two-way communications with the requested
-					 ///< resource. It can be used to open a tunnel.
+					///< resource. It can be used to open a tunnel.
 		};
 
 		/** @brief Enumerate the available states for a request */
@@ -335,6 +335,12 @@ class EE_API Http : NonCopyable {
 		// Types
 		typedef std::map<std::string, std::string> FieldTable;
 
+		/** @return True if request is verbose logging */
+		bool isVerbose() const;
+
+		/** Set verbose logging */
+		void setVerbose( bool verbose );
+
 	  private:
 		friend class Http;
 
@@ -360,6 +366,7 @@ class EE_API Http : NonCopyable {
 		bool mCompressedResponse;	///< Request comrpessed response
 		bool mContinue;				///< Resume download
 		mutable bool mCancel;		///< Cancel state of current request
+		bool mVerbose{ false };		///< Enable/Disable verbosity
 		ProgressCallback mProgressCallback;		///< Progress callback
 		unsigned int mMaxRedirections;			///< Maximun number of redirections allowed
 		mutable unsigned int mRedirectionCount; ///< Number of redirections followed by the request

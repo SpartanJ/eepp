@@ -673,6 +673,7 @@ SpinBox::btnup:hover {
 
 MenuBar {
 	height: 24dp;
+	background-color: var(--back);
 }
 
 Menu,

@@ -35,7 +35,7 @@ class App : public UICodeEditorSplitter::Client {
 	void createWidgetTreeView();
 
 	void init( const LogLevel& logLevel, std::string file, const Float& pidelDensity,
-			   const std::string& colorScheme, bool terminal );
+			   const std::string& colorScheme, bool terminal, bool frameBuffer );
 
 	void setAppTitle( const std::string& title );
 
@@ -193,6 +193,7 @@ class App : public UICodeEditorSplitter::Client {
 	size_t mMenuIconSize;
 	bool mDirTreeReady{ false };
 	bool mIsBundledApp{ false };
+	bool mUseFrameBuffer{ false };
 	ProjectDocumentConfig mProjectDocConfig;
 	std::unordered_set<Doc::TextDocument*> mTmpDocs;
 	std::string mCurrentProject;

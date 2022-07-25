@@ -161,7 +161,7 @@ bool UIStyle::isStructurallyVolatile() const {
 }
 
 void UIStyle::reloadFontFamily() {
-	if ( mDefinition->getPropertyIds().contains( (Uint32)PropertyId::FontFamily ) ) {
+	if ( mDefinition && mDefinition->getPropertyIds().contains( (Uint32)PropertyId::FontFamily ) ) {
 		auto propIt = mDefinition->getProperties().find( (Uint32)PropertyId::FontFamily );
 		if ( propIt != mDefinition->getProperties().end() ) {
 			applyStyleSheetProperty( propIt->second, nullptr );

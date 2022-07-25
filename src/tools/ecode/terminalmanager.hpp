@@ -41,6 +41,10 @@ class TerminalManager {
 
 	void updateColorSchemeMenu();
 
+	bool getUseFrameBuffer() const;
+
+	void setUseFrameBuffer( bool useFrameBuffer );
+
   protected:
 	App* mApp;
 	std::string mTerminalColorSchemesPath;
@@ -49,6 +53,7 @@ class TerminalManager {
 
 	Float mColorSchemeMenuesCreatedWithHeight{ 0 };
 	std::vector<UIPopUpMenu*> mColorSchemeMenues;
+	bool mUseFrameBuffer{ false };
 };
 
 } // namespace ecode

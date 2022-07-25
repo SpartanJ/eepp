@@ -1127,15 +1127,10 @@ void TextDocument::deleteCurrentLine() {
 		deleteSelection();
 		return;
 	}
-	if ( getSelection().start().line() + 1 >= (Int64)linesCount() ) {
-		remove( { startOfLine( getSelection().start() ),
-				  startOfLine( { getSelection().start().line() - 1, 0 } ) } );
-		setSelection( startOfLine( getSelection().start() ) );
-	} else {
-		remove( { startOfLine( getSelection().start() ),
-				  startOfLine( { getSelection().start().line() + 1, 0 } ) } );
-		setSelection( startOfLine( getSelection().start() ) );
-	}
+	auto start = startOfLine( getSelection().start() );
+	auto end = positionOffset( endOfLine( getSelection().start() ), 1 );
+	remove( { start, end } );
+	setSelection( start );
 }
 
 void TextDocument::selectToPreviousChar() {

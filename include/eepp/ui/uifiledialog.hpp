@@ -26,14 +26,13 @@ class EE_API UIFileDialog : public UIWindow {
 		ShowHidden = ( 1 << 5 )
 	};
 
-	static const Uint32 DefaultFlags = FoldersFirst | SortAlphabetically | UIFileDialog::ShowHidden;
+	static const Uint32 DefaultFlags = UIFileDialog::Flags::FoldersFirst |
+									   UIFileDialog::Flags::SortAlphabetically |
+									   UIFileDialog::Flags::ShowHidden;
 
-	static UIFileDialog* New( Uint32 dialogFlags = DefaultFlags,
+	static UIFileDialog* New( Uint32 dialogFlags = UIFileDialog::DefaultFlags,
 							  const std::string& defaultFilePattern = "*",
 							  const std::string& defaultDirectory = Sys::getProcessPath() );
-
-	UIFileDialog( Uint32 dialogFlags = DefaultFlags, const std::string& defaultFilePattern = "*",
-				  const std::string& defaultDirectory = Sys::getProcessPath() );
 
 	virtual ~UIFileDialog();
 
@@ -137,6 +136,10 @@ class EE_API UIFileDialog : public UIWindow {
 	KeyBindings::Shortcut mCloseShortcut;
 	KeyBindings::Shortcut mOpenShortut{ KEY_RETURN, KeyMod::getDefaultModifier() };
 	std::shared_ptr<FileSystemModel> mModel;
+
+	UIFileDialog( Uint32 dialogFlags = UIFileDialog::DefaultFlags,
+				  const std::string& defaultFilePattern = "*",
+				  const std::string& defaultDirectory = Sys::getProcessPath() );
 
 	virtual void onWindowReady();
 

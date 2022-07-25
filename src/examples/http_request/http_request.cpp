@@ -5,6 +5,7 @@
 void printResponseHeaders( Http::Response& response ) {
 	Http::Response::FieldTable headers = response.getHeaders();
 
+	std::cout << "Response:" << std::endl;
 	std::cout << "HTTP/" << response.getMajorHttpVersion() << "." << response.getMinorHttpVersion()
 			  << " " << response.getStatus() << " "
 			  << Http::Response::statusToString( response.getStatus() ) << std::endl;
@@ -18,31 +19,32 @@ void printResponseHeaders( Http::Response& response ) {
 
 EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	args::ArgumentParser parser( "HTTP request program example" );
-	args::HelpFlag help( parser, "help", "Display this help menu", {'h', "help"} );
+	args::HelpFlag help( parser, "help", "Display this help menu", { 'h', "help" } );
 	args::Flag resume( parser, "continue", "Resume getting a partially-downloaded file",
-					   {'c', "continue"} );
-	args::Flag compressed( parser, "compressed", "Request compressed response", {"compressed"} );
-	args::ValueFlag<std::string> postData( parser, "data", "HTTP POST data", {'d', "data"} );
-	args::ValueFlagList<std::string> multipartData( parser, "multipart-data",
-													"Specify multipart MIME data", {'F', "form"} );
+					   { 'c', "continue" } );
+	args::Flag compressed( parser, "compressed", "Request compressed response", { "compressed" } );
+	args::ValueFlag<std::string> postData( parser, "data", "HTTP POST data", { 'd', "data" } );
+	args::ValueFlagList<std::string> multipartData(
+		parser, "multipart-data", "Specify multipart MIME data", { 'F', "form" } );
 	args::ValueFlagList<std::string> headers( parser, "header", "Pass custom header(s) to server",
-											  {'H', "header"} );
+											  { 'H', "header" } );
 	args::Flag includeHead( parser, "include", "Include protocol response headers in the output",
-							{'i', "include"} );
+							{ 'i', "include" } );
 	args::Flag insecure( parser, "insecure", "Allow insecure server connections when using SSL",
-						 {'k', "insecure"} );
-	args::Flag location( parser, "location", "Follow redirects", {'L', "location"} );
+						 { 'k', "insecure" } );
+	args::Flag location( parser, "location", "Follow redirects", { 'L', "location" } );
 	args::ValueFlag<unsigned int> maxRedirs(
-		parser, "max-redirs", "Maximum number of redirects allowed", {"max-redirs"} );
+		parser, "max-redirs", "Maximum number of redirects allowed", { "max-redirs" } );
 	args::ValueFlag<std::string> output( parser, "file", "Write to file instead of stdout",
-										 {'o', "output"} );
+										 { 'o', "output" } );
 	args::ValueFlag<std::string> proxy( parser, "proxy", "[protocol://]host[:port] Use this proxy",
-										{'x', "proxy"} );
+										{ 'x', "proxy" } );
 	args::Flag progress( parser, "progress", "Show current progress of a download",
-						 {'p', "progress"} );
-	args::Flag verbose( parser, "verbose", "Make the operation more talkative", {'v', "verbose"} );
+						 { 'p', "progress" } );
+	args::Flag verbose( parser, "verbose", "Make the operation more talkative",
+						{ 'v', "verbose" } );
 	args::ValueFlag<std::string> requestMethod( parser, "request", "Specify request command to use",
-												{'X', "request"} );
+												{ 'X', "request" } );
 	args::Positional<std::string> url( parser, "URL", "The URL to request" );
 
 	try {
@@ -69,6 +71,8 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 			std::cout << parser;
 			return EXIT_SUCCESS;
 		} else {
+			request.setVerbose( verbose );
+
 			// If the user provided the URL, creates an instance of URI to parse it.
 			URI uri( url.Get() );
 
@@ -218,14 +222,16 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 				// Check the status code and display the result
 				Http::Response::Status status = response.getStatus();
 
-				if ( includeHead )
+				if ( includeHead || verbose )
 					printResponseHeaders( response );
 
 				if ( status == Http::Response::Ok ) {
 					std::cout << response.getBody();
 				} else {
-					std::cout << "Error " << status << std::endl
-							  << response.getStatusDescription() << std::endl;
+					if ( verbose ) {
+						std::cout << "Error " << status << std::endl
+								  << response.getStatusDescription() << std::endl;
+					}
 					std::cout << response.getBody();
 				}
 			} else {
@@ -257,7 +263,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 				// Download the request response into a file
 				Http::Response response = http.downloadRequest( request, path, Seconds( 5 ) );
 
-				if ( includeHead )
+				if ( includeHead || verbose )
 					printResponseHeaders( response );
 			}
 		}

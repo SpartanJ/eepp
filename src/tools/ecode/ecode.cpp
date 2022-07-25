@@ -343,6 +343,8 @@ void App::loadConfig( const LogLevel& logLevel ) {
 	mTerminalManager = std::make_unique<TerminalManager>( this );
 	mTerminalManager->setTerminalColorSchemesPath( mConfigPath + "terminal" +
 												   FileSystem::getOSSlash() + "colorschemes" );
+	mTerminalManager->setUseFrameBuffer( mUseFrameBuffer );
+
 	if ( !FileSystem::fileExists( mPluginsPath ) )
 		FileSystem::makeDir( mPluginsPath );
 	FileSystem::dirAddSlashAtEnd( mPluginsPath );
@@ -3222,10 +3224,11 @@ FontTrueType* App::loadFont( const std::string& name, std::string fontPath,
 }
 
 void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDensity,
-				const std::string& colorScheme, bool terminal ) {
+				const std::string& colorScheme, bool terminal, bool frameBuffer ) {
 	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
 	Display* currentDisplay = displayManager->getDisplayIndex( 0 );
 	mDisplayDPI = currentDisplay->getDPI();
+	mUseFrameBuffer = frameBuffer;
 
 	loadConfig( logLevel );
 
@@ -3794,6 +3797,8 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	args::MapFlag<std::string, LogLevel> logLevel(
 		parser, "log-level", "The level of details that the application will emmit logs.",
 		{ 'l', "log-level" }, Log::getMapFlag(), Log::getDefaultLogLevel() );
+	args::Flag fb( parser, "framebuffer", "Use frame buffer (more memory usage, less CPU usage)",
+				   { "fb", "framebuffer" } );
 
 	try {
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
@@ -3817,7 +3822,8 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	appInstance = eeNew( App, () );
 	appInstance->init( logLevel.Get(), filePos ? filePos.Get() : file.Get(),
 					   pixelDenstiyConf ? pixelDenstiyConf.Get() : 0.f,
-					   prefersColorScheme ? prefersColorScheme.Get() : "", terminal.Get() );
+					   prefersColorScheme ? prefersColorScheme.Get() : "", terminal.Get(),
+					   fb.Get() );
 	eeSAFE_DELETE( appInstance );
 
 	Engine::destroySingleton();

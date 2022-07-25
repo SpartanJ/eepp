@@ -78,6 +78,14 @@ void TerminalManager::updateColorSchemeMenu() {
 	}
 }
 
+bool TerminalManager::getUseFrameBuffer() const {
+	return mUseFrameBuffer;
+}
+
+void TerminalManager::setUseFrameBuffer( bool useFrameBuffer ) {
+	mUseFrameBuffer = useFrameBuffer;
+}
+
 UIMenu* TerminalManager::createColorSchemeMenu() {
 	mColorSchemeMenuesCreatedWithHeight = mApp->uiSceneNode()->getPixelsSize().getHeight();
 	size_t maxItems = 19;
@@ -162,7 +170,8 @@ UITerminal* TerminalManager::createNewTerminal( const std::string& title, UITabW
 		"", {},
 		!workingDir.empty()
 			? workingDir
-			: ( !mApp->getCurrentProject().empty() ? mApp->getCurrentProject() : "" ) );
+			: ( !mApp->getCurrentProject().empty() ? mApp->getCurrentProject() : "" ),
+		10000, nullptr, mUseFrameBuffer );
 	auto ret = mApp->getSplitter()->createWidgetInTabWidget(
 		tabWidget, term, title.empty() ? mApp->i18n( "shell", "Shell" ).toUtf8() : title, true );
 	mApp->getSplitter()->removeUnusedTab( tabWidget );

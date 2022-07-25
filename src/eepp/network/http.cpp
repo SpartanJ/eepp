@@ -11,6 +11,7 @@
 #include <eepp/system/iostreaminflate.hpp>
 #include <eepp/system/iostreamstring.hpp>
 #include <eepp/system/sys.hpp>
+#include <iostream>
 #include <iterator>
 #include <limits>
 #include <sstream>
@@ -192,6 +193,14 @@ std::string Http::Request::prepareTunnel( const Http& http ) {
 	out << "\r\n";
 
 	return out.str();
+}
+
+bool Http::Request::isVerbose() const {
+	return mVerbose;
+}
+
+void Http::Request::setVerbose( bool verbose ) {
+	mVerbose = verbose;
 }
 
 void Http::Request::setContinue( const bool& resume ) {
@@ -848,7 +857,10 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 		// Convert the request to string and send it through the connected socket
 		std::string requestStr = toSend.prepare( *this );
 
-		eePRINTL( "%s", requestStr.c_str() );
+		if ( request.isVerbose() ) {
+			std::cout << "Request:" << std::endl;
+			std::cout << requestStr << std::endl;
+		}
 
 		if ( !requestStr.empty() ) {
 			Socket::Status status;

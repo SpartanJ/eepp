@@ -309,18 +309,17 @@ CheckBox:checked {
 }
 
 #test_4 > RelativeLayout > TextView {
-	transition: all 10s;
+	transition: all 0.2s;
 }
 
 #test_4 > RelativeLayout:hover > TextView {
-	margin-left: 800dp;
+	margin-left: 24dp;
 }
 
 TabWidget {
 	padding-left: 8dp;
 	padding-right: 8dp;
 	padding-bottom: 8dp;
-	padding-top: 20dp;
 	background-color: #656565;
 }
 

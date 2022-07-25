@@ -101,7 +101,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	args::ValueFlag<size_t> historySize( parser, "scrollback", "Maximum history size (lines)",
 										 { 'l', "scrollback" }, 10000 );
 	args::Flag fb( parser, "framebuffer", "Use frame buffer (more memory usage, less CPU usage)",
-				   { "framebuffer" } );
+				   { "fb", "framebuffer" } );
 	args::ValueFlag<std::string> fontPath( parser, "fontpath", "Font path", { 'f', "font" } );
 	args::ValueFlag<Float> fontSize( parser, "fontsize", "Font size (in dp)", { 's', "fontsize" },
 									 11 );
@@ -111,6 +111,8 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	args::ValueFlag<Float> pixelDenstiyConf( parser, "pixel-density",
 											 "Set default application pixel density",
 											 { 'd', "pixel-density" } );
+	args::Positional<std::string> wd( parser, "wording-dir", "Working Directory" );
+
 	try {
 		parser.ParseCLI( argc, argv );
 	} catch ( const args::Help& ) {
@@ -185,8 +187,8 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		if ( !terminal || terminal->hasTerminated() ) {
 			terminal = TerminalDisplay::create(
 				win, fontMono, PixelDensity::dpToPx( fontSize.Get() ), win->getSize().asFloat(),
-				shell.Get(), {}, FileSystem::getCurrentWorkingDirectory(), historySize.Get(),
-				nullptr, fb.Get() );
+				shell.Get(), {}, wd ? wd.Get() : FileSystem::getCurrentWorkingDirectory(),
+				historySize.Get(), nullptr, fb.Get() );
 			terminal->pushEventCallback( [&]( const TerminalDisplay::Event& event ) {
 				if ( event.type == TerminalDisplay::EventType::TITLE )
 					win->setTitle( "eterm - " + event.eventData );
